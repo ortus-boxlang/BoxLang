@@ -1,0 +1,36 @@
+# This is a reusable workflow for executing the full ColdBox Test Suites
+name: ColdBox Test Suites
+
+# We are a reusable Workflow only
+on:
+  workflow_call:
+    secrets:
+      SLACK_WEBHOOK_URL:
+        required: true
+
+jobs:
+  tests:
+    name: Test Suites
+    runs-on: ubuntu-20.04
+    env:
+      DB_USER: root
+      DB_PASSWORD: root
+    continue-on-error: ${{ matrix.experimental }}
+    strategy:
+      fail-fast: false
+      matrix:
+        jdkVersion: [ "11", "17" ]
+        experimental: [false]
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v2
+
+      - name: Setup Java
+        uses: actions/setup-java@v3
+        with:
+          distribution: "temurin"
+          java-version: ${{ matrix.jdkVersion }}
+
+      - name: Run Tests
+        run: |
+          gradle tests
