@@ -1,0 +1,67 @@
+import java.text.SimpleDateFormat
+import java.util.Date
+
+/**
+ * Project Plugins
+ */
+plugins {
+    id 'java'
+}
+
+/**
+ * Project Properties
+ */
+group = 'ortus.boxlang'
+
+// Java Compilation Options
+java.sourceCompatibility = JavaVersion.VERSION_11
+java.targetCompatibility = JavaVersion.VERSION_11
+
+/**
+ * Repositories for dependencies in order
+ */
+repositories {
+    mavenLocal()
+	mavenCentral()
+    maven {
+        url = uri('https://repo.maven.apache.org/maven2/')
+    }
+}
+
+/**
+ * Project Dependencies
+ */
+dependencies {
+	// Compile Time Only
+	// compileOnly 'javax.servlet:javax.servlet-api:3.1.0'
+	// Runtime
+    //implementation 'redis.clients:jedis:2.9.3'
+}
+
+/**
+ * Compile
+ */
+tasks.withType( JavaCompile ) {
+    options.encoding = 'UTF-8'
+	options.debug()
+}
+
+/**
+ * Create shaded Jar from extension and dependencies
+ */
+jar {
+    //archiveFileName = "${project.property( 'jarName' )}.jar"
+    destinationDirectory = file( 'build/libs' )
+	from {
+        configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree( it ) }
+    }
+}
+
+/**
+ * Copy runtime dependencies to build/runtime
+ * Useful for testing and deebugging
+ */
+task getDeps( type: Copy ) {
+  from sourceSets.main.runtimeClasspath
+  into 'build/runtime/'
+}
