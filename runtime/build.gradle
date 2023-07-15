@@ -3,8 +3,9 @@ import java.util.Date
 
 
 plugins {
-    // Apply the application plugin to add support for building a CLI application in Java.
     id 'java'
+    // Apply the application plugin to add support for building a CLI application in Java.
+	// This produces the distributions and scripts for any OS
 	id 'application'
 }
 
