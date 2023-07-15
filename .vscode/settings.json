@@ -1,13 +1,12 @@
 {
-    "java.project.sourcePaths": [
-		"src/main/java",
-		"src/test/java"
-	],
     "java.format.enabled": true,
     "java.format.settings.url": "workbench/ortus-java-style.xml",
     "java.configuration.updateBuildConfiguration": "automatic",
-    "files.associations": {
+    "java.dependency.packagePresentation": "hierarchical",
+    "java.project.explorer.showNonJavaResources": false,
+	"files.associations": {
         "*.bx": "cfml",
         "*.bxm": "cfml"
-    }
+    },
+    "java.compile.nullAnalysis.mode": "automatic",
 }

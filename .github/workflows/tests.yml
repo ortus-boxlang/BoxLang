@@ -31,6 +31,7 @@ jobs:
           distribution: "temurin"
           java-version: ${{ matrix.jdkVersion }}
 
-      - name: Run Tests
+      - name: Build & Test
         run: |
-          gradle tests
+          gradle build
+          gradle test
