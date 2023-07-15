@@ -29,8 +29,10 @@ repositories {
  * Project Dependencies
  */
 dependencies {
-    // Use JUnit Jupiter for testing.
-    testImplementation 'org.junit.jupiter:junit-jupiter:5.9.1'
+    // Testing Dependencies
+    testImplementation "org.junit.jupiter:junit-jupiter:5.+"
+	testImplementation "org.mockito:mockito-core:5.+"
+	testImplementation "com.google.truth:truth:1.+"
 
     // This dependency is used by the application.
     //implementation 'com.google.guava:guava:31.1-jre'

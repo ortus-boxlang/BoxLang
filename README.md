@@ -21,3 +21,9 @@ The project is split into multiple sub-projects:
 | `jar`             | Packages your project's compiled classes and resources into a JAR file `build/libs` folder							|
 | `tasks`			| Show all the available tasks in the project																			|
 | `test`            | Executes the unit tests in your project and produces the reports in the `build/reports/tests` folder					|
+
+
+## Resources
+
+- **Mockito** - The Mocking library we use: https://www.baeldung.com/mockito-series
+- **JUnit** - Our testing framework: https://junit.org/junit5/docs/current/user-guide/, https://www.baeldung.com/junit
