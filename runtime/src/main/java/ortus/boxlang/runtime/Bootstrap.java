@@ -11,7 +11,7 @@ public class Bootstrap {
 
 	/**
 	 * This method handles ad-hoc execution
-	 * @param args
+	 * @param args Args to pass
 	 */
 	public static void main( String[] args ) {
 		BoxRuntime boxRuntime = BoxRuntime.startup();
