@@ -17,6 +17,7 @@
  */
 package ortus.boxlang.runtime.scopes;
 
+import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -27,6 +28,11 @@ public class BaseScope extends ConcurrentHashMap<Key, Object> implements IScope 
 
 	private int lookupOrder;
 
+	/**
+	 * Constructor
+	 * 
+	 * @param lookupOrder
+	 */
 	public BaseScope( int lookupOrder ) {
 		super();
 		this.lookupOrder = lookupOrder;
@@ -36,9 +42,30 @@ public class BaseScope extends ConcurrentHashMap<Key, Object> implements IScope 
 		return this.lookupOrder;
 	}
 
-	// private Map<Key,Object> data = new HashMap<Key,Object>();
 	// public Object getValue( Key name ) { }
-
 	// public IScope setValue( Key name, Object value ) { }
 
+	/**
+	 * Verifies equality with the following rules:
+	 * - Same object
+	 * - Same state + super class
+	 */
+	@Override
+	public boolean equals( Object obj ) {
+		// Same object
+		if ( this == obj ) {
+			return true;
+		}
+		// Null and class checks
+		if ( obj == null || getClass() != obj.getClass() ) {
+			return false;
+		}
+		// State + Super
+		return lookupOrder == ( ( BaseScope ) obj ).getLookupOrder() && super.equals( obj );
+	}
+
+	@Override
+	public int hashCode() {
+		return Objects.hash( this.lookupOrder, super.hashCode() );
+	}
 }
