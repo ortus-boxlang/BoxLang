@@ -1,10 +1,16 @@
-# Project Jericho Runtime
+# Project Jericho
 
 ## Projects
 
 The project is split into multiple sub-projects:
 
+- **compiler** - The BoxLang Compiler/Parser and ByteCode Generator
 - **runtime** - The BoxLang Runtime
+
+## JDK Targets
+
+- JDK 17 LTS is our compiled code JDK Baseline which will be supported until 2026 with extended support until 2029.
+- https://www.oracle.com/java/technologies/java-se-support-roadmap.html
 
 ## Basic Gradle Tasks
 
@@ -23,7 +29,25 @@ The project is split into multiple sub-projects:
 | `test`            | Executes the unit tests in your project and produces the reports in the `build/reports/tests` folder					|
 
 
-## Resources
+## Core Dependencies
 
-- **Mockito** - The Mocking library we use: https://www.baeldung.com/mockito-series
-- **JUnit** - Our testing framework: https://junit.org/junit5/docs/current/user-guide/, https://www.baeldung.com/junit
+Here is a listing of all of our core dependencies.  If you add one, make sure you document it here.
+
+| Dependency | Version | License | Description |
+|------------|---------|---------|-------------|
+| [boxlang-compiler](https://github.com/ortus-solutions-private/boxlang-compiler) | 1.0.0 | Apache2 | The BoxLang Parser, Compiler, and BytCode Generator |
+
+## Dev Dependencies
+
+Here is a listing of all of our dev dependencies.  If you add one, make sure you document it here.
+
+| Library   	| Description                                                  |
+| ------------- | ------------------------------------------------------------ |
+| **JUnit**     | Testing Framework: [JUnit User Guide](https://junit.org/junit5/docs/current/user-guide/) |
+| **Mockito**   | Mocking library we use: [Mockito](https://www.baeldung.com/mockito-series) |
+| **Truth**     | Extended assertion library: [Truth](https://github.com/google/truth) |
+
+## Contributing
+
+- All code should be formatted using either our Java Formatter or the CFFormatter.
+- All code should have a license/copyright header based on [CodeHeader.txt](workbench/CodeHeader.txt)
