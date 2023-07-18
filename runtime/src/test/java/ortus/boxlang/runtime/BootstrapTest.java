@@ -1,13 +1,14 @@
 package ortus.boxlang.runtime;
 
+import static com.google.common.truth.Truth.assertThat;
+
 import org.junit.jupiter.api.Test;
-import static org.junit.jupiter.api.Assertions.*;
 
 class BootstrapTest {
 
 	@Test
 	void appCanGreat() {
 		Bootstrap runtime = new Bootstrap();
-		assertTrue( runtime.getGreeting().contains( "Hello" ), "greeting should contain 'Hello'" );
+		assertThat( runtime.getGreeting() ).contains( "Hello" );
 	}
 }

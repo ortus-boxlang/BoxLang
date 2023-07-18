@@ -1,7 +1,7 @@
 package ortus.boxlang.runtime;
 
 /**
- * BoxLang bootstrapper.  Loads up the engine
+ * BoxLang bootstrapper. Loads up the engine
  */
 public class Bootstrap {
 
@@ -9,10 +9,10 @@ public class Bootstrap {
 		return "Hello World!";
 	}
 
-	/**
-	 * This method handles ad-hoc execution
-	 * @param args Args to pass
-	 */
+	public String getGreeting( String name ) {
+		return "Hello " + name + "!";
+	}
+
 	public static void main( String[] args ) {
 		BoxRuntime boxRuntime = BoxRuntime.startup();
 
