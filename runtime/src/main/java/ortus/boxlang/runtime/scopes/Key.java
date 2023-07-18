@@ -25,31 +25,80 @@ public class Key {
 	private String name;
 	private String nameNoCase;
 
+	/**
+	 * Constructor
+	 *
+	 * @param name The target key to use.
+	 */
 	public Key( String name ) {
 		this.name		= name;
 		this.nameNoCase	= name.toUpperCase();
 	}
 
+	/**
+	 * @return The key name in upper case.
+	 */
 	public String getNameNoCase() {
 		return this.nameNoCase;
 	}
 
+	/**
+	 * @return The original key case.
+	 */
 	public String getName() {
 		return this.name;
 	}
 
+	/**
+	 * Verifies equality with the following rules:
+	 * - Same object
+	 * - Same key name (case-sensitive)
+	 */
 	@Override
 	public boolean equals( Object obj ) {
+		// Same object
 		if ( this == obj )
 			return true;
-		return false;
+		// Null and class checks
+		if ( obj == null || getClass() != obj.getClass() ) {
+			return false;
+		}
+		// Same key name
+		return getName().equals( ( ( Key ) obj ).getName() );
 	}
 
+	/**
+	 * Verifies equality with the following rules:
+	 * - Same object
+	 * - Same key name (case-insensitive)
+	 */
+	public boolean equalsNoCase( Object obj ) {
+		// Same object
+		if ( this == obj )
+			return true;
+		// Null and class checks
+		if ( obj == null || getClass() != obj.getClass() ) {
+			return false;
+		}
+		// Same key name
+		return getNameNoCase().equals( ( ( Key ) obj ).getNameNoCase() );
+	}
+
+	/**
+	 * @return The hash code of the key name in upper case.
+	 */
 	@Override
 	public int hashCode() {
 		return nameNoCase.hashCode();
 	}
 
+	/**
+	 * Static builder of case-insensitive key trackers
+	 *
+	 * @param name The key name to use.
+	 *
+	 * @return A case-insensitive key class
+	 */
 	public static Key of( String name ) {
 		return new Key( name );
 	}
