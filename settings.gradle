@@ -8,4 +8,5 @@
  */
 
 rootProject.name = 'boxlang'
+include( 'compiler' )
 include( 'runtime' )
