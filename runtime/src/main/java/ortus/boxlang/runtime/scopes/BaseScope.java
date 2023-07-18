@@ -17,13 +17,13 @@
  */
 package ortus.boxlang.runtime.scopes;
 
-import java.util.HashMap;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Base scope implementation. Extends HashMap for now. May want to switch to composition over inheritance, but this
  * is simpler for now and using the Key class provides our case insensitivity automatically.
  */
-public class BaseScope extends HashMap<Key, Object> implements IScope {
+public class BaseScope extends ConcurrentHashMap<Key, Object> implements IScope {
 
 	private int lookupOrder;
 
