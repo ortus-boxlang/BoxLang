@@ -53,6 +53,8 @@ public class Key {
 	 * Verifies equality with the following rules:
 	 * - Same object
 	 * - Same key name (case-sensitive)
+	 *
+	 * @param obj The object to compare against.
 	 */
 	@Override
 	public boolean equals( Object obj ) {
@@ -71,6 +73,8 @@ public class Key {
 	 * Verifies equality with the following rules:
 	 * - Same object
 	 * - Same key name (case-insensitive)
+	 *
+	 * @param obj The object to compare against.
 	 */
 	public boolean equalsNoCase( Object obj ) {
 		// Same object

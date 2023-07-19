@@ -14,8 +14,8 @@ plugins {
  */
 group = 'ortus.boxlang'
 version = '1.0.0'
-java.sourceCompatibility = JavaVersion.VERSION_11
-java.targetCompatibility = JavaVersion.VERSION_11
+java.sourceCompatibility = JavaVersion.VERSION_17
+java.targetCompatibility = JavaVersion.VERSION_17
 
 /**
  * Repositories for dependencies in order

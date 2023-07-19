@@ -30,8 +30,8 @@ public class BaseScope extends ConcurrentHashMap<Key, Object> implements IScope 
 
 	/**
 	 * Constructor
-	 * 
-	 * @param lookupOrder
+	 *
+	 * @param lookupOrder Used for scope hunting. Lower numbers are searched first.
 	 */
 	public BaseScope( int lookupOrder ) {
 		super();
