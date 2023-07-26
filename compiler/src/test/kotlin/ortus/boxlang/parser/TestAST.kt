@@ -74,11 +74,7 @@ class TestAST {
             val result = unknownLanguageResult.asCFScript().orCFML()
 
             // TODO: for now, ignore file with actual, expected errors
-            if (!result.correct && result.issues.all { it.message.contains("\uFEFF") }) {
-                ignored += "Ignoring file://${file.absolutePath}${System.lineSeparator()}\t" +
-                        "The only errors are related to the \uFEFF UNICODE character"
-            }
-            else if (file.name == "BaseSpec.cfc" && result.issues[0].message.contains("mismatched input 'boolean'")) {
+            if (file.name == "BaseSpec.cfc" && result.issues[0].message.contains("mismatched input 'boolean'")) {
                 ignored += "Ignoring file://${file.absolutePath}${System.lineSeparator()}\t" +
                         "There is a missing ',' in a statement"
             }
