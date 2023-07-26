@@ -4,6 +4,10 @@ plugins {
     // Apply the application plugin to add support for building a CLI application in Java.
 	// This produces the distributions and scripts for any OS
 	id 'application'
+
+	id 'org.jetbrains.kotlin.jvm' version "${kotlinVersion}"
+	id 'java-library'
+	id 'antlr'
 }
 
 /**
@@ -13,6 +17,15 @@ group = 'ortus.boxlang'
 version = '1.0.0'
 java.sourceCompatibility = JavaVersion.VERSION_11
 java.targetCompatibility = JavaVersion.VERSION_11
+
+def antlrGeneratedParserPackage = "ortus.boxlang.parser"
+def generatedSrcDir = "build/generated-src"
+def antlrGeneratedParserBaseDir = "$generatedSrcDir/antlr/main"
+def antlrGeneratedParserPackageDir = antlrGeneratedParserPackage.replaceAll("\\.", "/")
+def antlrGrammarDir = "src/main/antlr"
+
+sourceSets.main.java.srcDirs += "$antlrGeneratedParserBaseDir"
+sourceSets.main.kotlin.srcDirs += "$antlrGeneratedParserBaseDir"
 
 /**
  * Repositories for dependencies in order
@@ -27,12 +40,19 @@ repositories {
  */
 dependencies {
     // Testing Dependencies
-    testImplementation "org.junit.jupiter:junit-jupiter:5.+"
-	testImplementation "org.mockito:mockito-core:5.+"
-	testImplementation "com.google.truth:truth:1.+"
+//    testImplementation "org.junit.jupiter:junit-jupiter:5.+"
+//	testImplementation "org.mockito:mockito-core:5.+"
+//	testImplementation "com.google.truth:truth:1.+"
 
     // This dependency is used by the application.
     //implementation 'com.google.guava:guava:31.1-jre'
+
+	antlr "org.antlr:antlr4:$antlrVersion"
+	implementation "org.jetbrains.kotlin:kotlin-stdlib:$kotlinVersion"
+	implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8"
+	implementation "org.antlr:antlr4-runtime:$antlrVersion"
+	implementation "com.strumenta.kolasu:kolasu-core:$kolasuVersion"
+	testImplementation "org.jetbrains.kotlin:kotlin-test:$kotlinVersion"
 }
 
 /**
@@ -64,7 +84,7 @@ jar {
 
 /**
  * Copy runtime dependencies to build/runtime
- * Useful for testing and deebugging
+ * Useful for testing and debugging
  */
 task getDependencies( type: Copy ) {
   from sourceSets.main.runtimeClasspath
@@ -82,12 +102,62 @@ javadoc {
 /**
  * Test Task Influence
  */
-tasks.named( 'test' ) {
-    // Use JUnit Platform for unit tests.
-    useJUnitPlatform()
-}
+//tasks.named( 'test' ) {
+//    // Use JUnit Platform for unit tests.
+//    useJUnitPlatform()
+//}
 
 /**
  * Custom tasks to run in the `build` task lifecycle
  */
  build.finalizedBy( javadoc )
+
+compileJava {
+	sourceCompatibility = "$jvmVersion"
+	targetCompatibility = "$jvmVersion"
+	source sourceSets.main.java
+}
+
+compileTestJava {
+	sourceCompatibility = "$jvmVersion"
+	targetCompatibility = "$jvmVersion"
+	source sourceSets.test.java
+	dependsOn compileJava
+}
+
+compileKotlin {
+	sourceCompatibility = "$jvmVersion"
+	targetCompatibility = "$jvmVersion"
+	source sourceSets.main.java, sourceSets.main.kotlin
+	kotlinOptions.jvmTarget = "$jvmVersion"
+	dependsOn generateGrammarSource
+}
+
+compileTestKotlin {
+	sourceCompatibility = "$jvmVersion"
+	targetCompatibility = "$jvmVersion"
+	source sourceSets.test.java, sourceSets.test.kotlin
+	kotlinOptions.jvmTarget = "$jvmVersion"
+	dependsOn compileKotlin
+}
+
+generateGrammarSource {
+	inputs.files fileTree(antlrGrammarDir).include('*.g4')
+	maxHeapSize = "256m"
+	arguments += ['-package', antlrGeneratedParserPackage]
+	arguments += ['-listener', '-visitor']
+	outputDirectory = file("$projectDir/$antlrGeneratedParserBaseDir/$antlrGeneratedParserPackageDir")
+}
+
+clean {
+	delete generatedSrcDir
+}
+
+test {
+	testLogging {
+		showStandardStreams = true
+	}
+	systemProperties.putIfAbsent("testboxdir", testboxDir)
+	systemProperties.putIfAbsent("contentboxdir", contentboxDir)
+	systemProperties.putIfAbsent("coldboxdir", coldboxDir)
+}
