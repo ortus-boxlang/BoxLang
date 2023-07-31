@@ -160,4 +160,5 @@ test {
 	systemProperties.putIfAbsent("testboxdir", testboxDir)
 	systemProperties.putIfAbsent("contentboxdir", contentboxDir)
 	systemProperties.putIfAbsent("coldboxdir", coldboxDir)
+	dependsOn compileKotlin, compileTestKotlin
 }
