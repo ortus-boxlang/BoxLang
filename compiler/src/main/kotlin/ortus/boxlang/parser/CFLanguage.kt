@@ -4,6 +4,8 @@ import com.strumenta.kolasu.parsing.FirstStageParsingResult
 import com.strumenta.kolasu.parsing.ParsingResult
 import org.antlr.v4.runtime.*
 import org.antlr.v4.runtime.tree.ErrorNodeImpl
+import org.apache.commons.io.ByteOrderMark
+import org.apache.commons.io.input.BOMInputStream
 import java.io.File
 import java.lang.IllegalArgumentException
 
@@ -23,15 +25,23 @@ class CFLanguageParser {
         private lateinit var cfscriptParseResult: FirstStageParsingResult<CFParser.ScriptContext>
         private lateinit var cfmlParseResult: FirstStageParsingResult<CFMLParser.HtmlDocumentContext>
 
+		private fun streamWithoutBom(file: File) = BOMInputStream.builder()
+			.setPath(file.path)
+			.setByteOrderMarks(ByteOrderMark.UTF_8)
+			.setInclude(false)
+			.get()
+
         fun asCFScript() : CFLanguageFirstStageParsingResult<CFParser.ScriptContext> {
             if (!this::cfscriptParseResult.isInitialized)
-                cfscriptParseResult = cfParser.parseFirstStage(file)
+//				cfscriptParseResult = cfParser.parseFirstStage(streamWithoutBom(file))
+				cfscriptParseResult = cfParser.parseFirstStage(BOMInputStream(file.inputStream()))
             return CFLanguageFirstStageParsingResult(file, cfscriptParseResult)
         }
 
         fun asCFML() : CFLanguageFirstStageParsingResult<CFMLParser.HtmlDocumentContext> {
             if (!this::cfmlParseResult.isInitialized)
-                cfmlParseResult = cfmlParser.parseFirstStage(file)
+//				cfmlParseResult = cfmlParser.parseFirstStage(streamWithoutBom(file))
+				cfmlParseResult = cfmlParser.parseFirstStage(BOMInputStream(file.inputStream()))
             return CFLanguageFirstStageParsingResult(file, cfmlParseResult)
         }
 

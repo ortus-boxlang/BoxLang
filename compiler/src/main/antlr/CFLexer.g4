@@ -4,9 +4,6 @@ options {
     caseInsensitive = true;
 }
 
-// TODO: temporary patch for parsed files beginning with the \uFEFF unicode character
-ZWNBSP: '\uFEFF' { System.err.println("Ignoring \\uFEFF unicode character"); } -> skip;
-
 BEGIN:  -> skip, pushMode(codeMode);
 
 mode codeMode;
