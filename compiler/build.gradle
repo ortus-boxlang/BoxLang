@@ -53,6 +53,7 @@ dependencies {
 	implementation "org.antlr:antlr4-runtime:$antlrVersion"
 	implementation "com.strumenta.kolasu:kolasu-core:$kolasuVersion"
 	implementation "commons-io:commons-io:2.13.0"
+	implementation 'com.github.javaparser:javaparser-symbol-solver-core:3.25.4'
 	testImplementation "org.jetbrains.kotlin:kotlin-test:$kotlinVersion"
 }
 
