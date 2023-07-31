@@ -2,12 +2,9 @@ package ortus.boxlang.parser;
 
 import com.strumenta.kolasu.parsing.FirstStageParsingResult
 import com.strumenta.kolasu.parsing.ParsingResult
-import org.antlr.v4.runtime.*
+import org.antlr.v4.runtime.ParserRuleContext
 import org.antlr.v4.runtime.tree.ErrorNodeImpl
-import org.apache.commons.io.ByteOrderMark
-import org.apache.commons.io.input.BOMInputStream
 import java.io.File
-import java.lang.IllegalArgumentException
 
 // Usage:
 // CFLanguageParser()
