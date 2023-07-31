@@ -6,3 +6,6 @@ build/
 bin/
 runtime/build/
 runtime/bin/
+
+# IDEA files
+.idea
