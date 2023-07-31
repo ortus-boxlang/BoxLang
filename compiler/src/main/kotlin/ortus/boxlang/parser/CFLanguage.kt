@@ -4,6 +4,8 @@ import com.strumenta.kolasu.parsing.FirstStageParsingResult
 import com.strumenta.kolasu.parsing.ParsingResult
 import org.antlr.v4.runtime.*
 import org.antlr.v4.runtime.tree.ErrorNodeImpl
+import org.apache.commons.io.ByteOrderMark
+import org.apache.commons.io.input.BOMInputStream
 import java.io.File
 import java.lang.IllegalArgumentException
 
@@ -19,49 +21,50 @@ import java.lang.IllegalArgumentException
 //      .result
 //
 class CFLanguageParser {
-    open inner class UnknownCFLanguageFirstStageParser(private val file: File) {
-        private lateinit var cfscriptParseResult: FirstStageParsingResult<CFParser.ScriptContext>
-        private lateinit var cfmlParseResult: FirstStageParsingResult<CFMLParser.HtmlDocumentContext>
+	open inner class UnknownCFLanguageFirstStageParser(private val file: File) {
+		private lateinit var cfscriptParseResult: FirstStageParsingResult<CFParser.ScriptContext>
+		private lateinit var cfmlParseResult: FirstStageParsingResult<CFMLParser.HtmlDocumentContext>
 
-        fun asCFScript() : CFLanguageFirstStageParsingResult<CFParser.ScriptContext> {
-            if (!this::cfscriptParseResult.isInitialized)
-                cfscriptParseResult = cfParser.parseFirstStage(file)
-            return CFLanguageFirstStageParsingResult(file, cfscriptParseResult)
-        }
+		fun asCFScript(): CFLanguageFirstStageParsingResult<CFParser.ScriptContext> {
+			if (!this::cfscriptParseResult.isInitialized)
+				cfscriptParseResult = cfParser.parseFirstStage(file.inputStreamWithoutBOM())
+			return CFLanguageFirstStageParsingResult(file, cfscriptParseResult)
+		}
 
-        fun asCFML() : CFLanguageFirstStageParsingResult<CFMLParser.HtmlDocumentContext> {
-            if (!this::cfmlParseResult.isInitialized)
-                cfmlParseResult = cfmlParser.parseFirstStage(file)
-            return CFLanguageFirstStageParsingResult(file, cfmlParseResult)
-        }
+		fun asCFML(): CFLanguageFirstStageParsingResult<CFMLParser.HtmlDocumentContext> {
+			if (!this::cfmlParseResult.isInitialized)
+				cfmlParseResult = cfmlParser.parseFirstStage(file.inputStreamWithoutBOM())
+			return CFLanguageFirstStageParsingResult(file, cfmlParseResult)
+		}
 
-        private fun isParsable(result: CFLanguageFirstStageParsingResult<out ParserRuleContext>) =
-            result.result.root?.children?.any { it !is ErrorNodeImpl } ?: false
-        fun isCFScriptParsable() = isParsable(asCFScript())
-        fun isCFMLParsable() = isParsable(asCFML())
-    }
+		private fun isParsable(result: CFLanguageFirstStageParsingResult<out ParserRuleContext>) =
+			result.result.root?.children?.any { it !is ErrorNodeImpl } ?: false
 
-    inner class CFLanguageFirstStageParsingResult<C : ParserRuleContext>(
-        file: File,
-        val result: FirstStageParsingResult<C>
-    ) : UnknownCFLanguageFirstStageParser(file) {
-        fun orCFScript() = if (isCFMLParsable()) this.result else asCFScript().result
-        fun orCFML() = if (isCFScriptParsable()) this.result else asCFML().result
-    }
+		fun isCFScriptParsable() = isParsable(asCFScript())
+		fun isCFMLParsable() = isParsable(asCFML())
+	}
 
-    private val cfParser = CFKolasuParser()
-    private val cfmlParser = CFMLKolasuParser()
+	inner class CFLanguageFirstStageParsingResult<C : ParserRuleContext>(
+		file: File,
+		val result: FirstStageParsingResult<C>
+	) : UnknownCFLanguageFirstStageParser(file) {
+		fun orCFScript() = if (isCFMLParsable()) this.result else asCFScript().result
+		fun orCFML() = if (isCFScriptParsable()) this.result else asCFML().result
+	}
 
-    fun parseFirstStage(file: File) = UnknownCFLanguageFirstStageParser(file)
+	private val cfParser = CFKolasuParser()
+	private val cfmlParser = CFMLKolasuParser()
 
-    fun parse(file: File) : ParsingResult<CFScript> {
-        // FIXME: this approach will perform the same first-stage parsing twice, either in A) or B) below
-        val firstStageResult = parseFirstStage(file)
-        return if (firstStageResult.isCFScriptParsable())
-            cfParser.parse(file) // A)
-        else if (firstStageResult.isCFMLParsable())
-            cfmlParser.parse(file) // B)
-        else
-            throw IllegalArgumentException("Unknown CF language type for file: ${file.absolutePath}")
-    }
+	fun parseFirstStage(file: File) = UnknownCFLanguageFirstStageParser(file)
+
+	fun parse(file: File): ParsingResult<CFScript> {
+		// FIXME: this approach will perform the same first-stage parsing twice, either in A) or B) below
+		val firstStageResult = parseFirstStage(file)
+		return if (firstStageResult.isCFScriptParsable())
+			cfParser.parse(file) // A)
+		else if (firstStageResult.isCFMLParsable())
+			cfmlParser.parse(file) // B)
+		else
+			throw IllegalArgumentException("Unknown CF language type for file: ${file.absolutePath}")
+	}
 }

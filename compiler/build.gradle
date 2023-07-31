@@ -52,6 +52,7 @@ dependencies {
 	implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8"
 	implementation "org.antlr:antlr4-runtime:$antlrVersion"
 	implementation "com.strumenta.kolasu:kolasu-core:$kolasuVersion"
+	implementation "commons-io:commons-io:2.13.0"
 	testImplementation "org.jetbrains.kotlin:kotlin-test:$kotlinVersion"
 }
 
