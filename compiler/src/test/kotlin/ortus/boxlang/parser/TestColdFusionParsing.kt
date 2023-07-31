@@ -1,9 +1,8 @@
 package ortus.boxlang.parser
 
-import com.strumenta.kolasu.parsing.*
+import com.strumenta.kolasu.parsing.ParsingResult
 import org.apache.commons.io.input.BOMInputStream
 import org.junit.Ignore
-
 import org.junit.Test
 import java.io.File
 import kotlin.io.path.Path
@@ -11,10 +10,7 @@ import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
 
-class TestAST {
-	private val testboxDirectory = requireNotNull(System.getProperty("testboxdir"))
-	private val contentboxDirectory = requireNotNull(System.getProperty("contentboxdir"))
-	private val coldboxDirectory = requireNotNull(System.getProperty("coldboxdir"))
+class TestColdFusionParsing : BaseTest() {
 
 	private fun scanForFiles(pathname: String, extensions: Set<String>, exclude: List<String> = emptyList()): List<File> {
 		val fileList = mutableListOf<File>()
