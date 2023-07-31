@@ -1,7 +1,6 @@
-
 plugins {
-    id 'java'
-    // Apply the application plugin to add support for building a CLI application in Java.
+	id 'java'
+	// Apply the application plugin to add support for building a CLI application in Java.
 	// This produces the distributions and scripts for any OS
 	id 'application'
 
@@ -31,7 +30,7 @@ sourceSets.main.kotlin.srcDirs += "$antlrGeneratedParserBaseDir"
  * Repositories for dependencies in order
  */
 repositories {
-    mavenLocal()
+	mavenLocal()
 	mavenCentral()
 }
 
@@ -39,13 +38,13 @@ repositories {
  * Project Dependencies
  */
 dependencies {
-    // Testing Dependencies
+	// Testing Dependencies
 //    testImplementation "org.junit.jupiter:junit-jupiter:5.+"
 //	testImplementation "org.mockito:mockito-core:5.+"
 //	testImplementation "com.google.truth:truth:1.+"
 
-    // This dependency is used by the application.
-    //implementation 'com.google.guava:guava:31.1-jre'
+	// This dependency is used by the application.
+	//implementation 'com.google.guava:guava:31.1-jre'
 
 	antlr "org.antlr:antlr4:$antlrVersion"
 	implementation "org.jetbrains.kotlin:kotlin-stdlib:$kotlinVersion"
@@ -60,8 +59,8 @@ dependencies {
 /**
  * Influence the Java compiler
  */
-tasks.withType( JavaCompile ) {
-    options.encoding = 'UTF-8'
+tasks.withType(JavaCompile) {
+	options.encoding = 'UTF-8'
 	options.debug()
 }
 
@@ -69,16 +68,16 @@ tasks.withType( JavaCompile ) {
  * Application Build
  */
 application {
-    // Define the main class for the application.
-    // mainClass = 'boxlang.runtime.Bootstrap'
+	// Define the main class for the application.
+	// mainClass = 'boxlang.runtime.Bootstrap'
 }
 
 /**
  * Control the Jar naming schema
  */
 jar {
-    archiveBaseName = 'ortus-boxlang-compiler'
-    archiveVersion =  "${version}"
+	archiveBaseName = 'ortus-boxlang-compiler'
+	archiveVersion = "${version}"
 // 	manifest {
 //       attributes 'Main-Class': 'com.example.main.Application'
 //    }
@@ -88,9 +87,9 @@ jar {
  * Copy runtime dependencies to build/runtime
  * Useful for testing and debugging
  */
-task getDependencies( type: Copy ) {
-  from sourceSets.main.runtimeClasspath
-  into 'build/dependencies/'
+task getDependencies(type: Copy) {
+	from sourceSets.main.runtimeClasspath
+	into 'build/dependencies/'
 }
 
 /**
@@ -112,7 +111,7 @@ javadoc {
 /**
  * Custom tasks to run in the `build` task lifecycle
  */
- build.finalizedBy( javadoc )
+build.finalizedBy(javadoc)
 
 compileJava {
 	sourceCompatibility = "$jvmVersion"
