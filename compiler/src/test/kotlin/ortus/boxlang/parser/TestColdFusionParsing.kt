@@ -14,7 +14,7 @@ class TestColdFusionParsing : BaseTest() {
 
 	private fun testCfDirectory(path: String) {
 		val cfLanguageParser = CFLanguageParser()
-		val cfExtensions = setOf("cfc")
+		val cfExtensions = setOf("cfc") // TODO: add "cfm"
 		val files = scanForFiles(path, cfExtensions, exclude = listOf())
 		val errors = hashMapOf<String, Int>()
 		var ok = 0
