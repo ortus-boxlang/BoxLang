@@ -170,7 +170,7 @@ simpleStatement
         | paramStatement
         | return
         | settingStatement
-        ) eos
+        ) eos?
     ;
 
 incrementDecrementStatement
