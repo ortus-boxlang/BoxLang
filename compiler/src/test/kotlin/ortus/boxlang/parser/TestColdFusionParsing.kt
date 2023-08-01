@@ -1,11 +1,8 @@
 package ortus.boxlang.parser
 
-import com.strumenta.kolasu.parsing.ParsingResult
 import org.junit.Ignore
 import org.junit.Test
 import java.io.File
-import kotlin.io.path.Path
-import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 
@@ -95,7 +92,7 @@ class TestColdFusionParsing : BaseTest() {
 	@Test
 	fun testHelloWorld() {
 		val file = File("../examples/cf_to_java/HelloWorld/HelloWorld.cfm")
-		val firstStageParseResult = CFLanguageParser().source(file).firstStageParse()
+		val firstStageParseResult = CFLanguageParser().source(file).parseFirstStage()
 		assert(firstStageParseResult.correct) { "First stage parsing is not correct: ${file.absolutePath}" }
 		assertNotNull(firstStageParseResult.root) { "Parse tree root node is null: ${file.absolutePath}" }
 	}
