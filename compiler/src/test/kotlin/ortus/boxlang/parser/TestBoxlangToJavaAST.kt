@@ -55,7 +55,7 @@ class TestBoxlangToJavaAST : BaseTest() {
 	@Test
 	fun dummyBoxlangToASTTest() {
 		val file = Path(testsBaseFolder.pathString, "Test", "Test.cfc").toFile()
-		val parseResult = cfParser.parse(file)
+		val parseResult = cfParser.source(file).parse()
 		require(parseResult.correct)
 		requireNotNull(parseResult.root)
 
@@ -65,6 +65,24 @@ class TestBoxlangToJavaAST : BaseTest() {
 				testsBaseFolder.pathString,
 				"Test",
 				"Test.java"
+			).toFile()
+		).result.get()
+		assertASTEqual(expectedAst, actualAst)
+	}
+
+	@Test
+	fun helloWorldTest() {
+		val file = Path(testsBaseFolder.pathString, "HelloWorld", "HelloWorld.cfm").toFile()
+		val parseResult = cfParser.source(file).parse()
+		require(parseResult.correct)
+		requireNotNull(parseResult.root)
+
+		val actualAst = parseResult.root!!.toJava()
+		val expectedAst = javaParser.parse(
+			Path(
+				testsBaseFolder.pathString,
+				"HelloWorld",
+				"HelloWorld.java"
 			).toFile()
 		).result.get()
 		assertASTEqual(expectedAst, actualAst)

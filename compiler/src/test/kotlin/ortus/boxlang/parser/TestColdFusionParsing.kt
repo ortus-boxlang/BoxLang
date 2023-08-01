@@ -14,14 +14,13 @@ class TestColdFusionParsing : BaseTest() {
 
 	private fun testCfDirectory(path: String) {
 		val cfLanguageParser = CFLanguageParser()
-		val cfExtensions = setOf("cfc") // TODO: add "cfm"
+		val cfExtensions = setOf("cfc", "cfm", "cfml")
 		val files = scanForFiles(path, cfExtensions, exclude = listOf())
 		val errors = hashMapOf<String, Int>()
 		var ok = 0
 		var ignored: MutableList<String> = mutableListOf()
 		var cfmlCount = 0
 		var cfscriptCount = 0
-		var unknownCount = 0
 		var totalLines = 0
 
 		println("+----------+----------+----------")
@@ -32,20 +31,14 @@ class TestColdFusionParsing : BaseTest() {
 		files.forEach { file ->
 			totalLines += file.readLines().size
 
-			val unknownLanguageResult = cfLanguageParser.parseFirstStage(file)
-			var type = "unknown"
+			val parser = cfLanguageParser.source(file)
 
-			if (unknownLanguageResult.isCFScriptParsable()) {
-				type = "CFScript"
-				cfscriptCount++
-			} else if (unknownLanguageResult.isCFMLParsable()) {
-				type = "CFML"
-				cfmlCount++
-			} else {
-				unknownCount++
+			when (parser.language()) {
+				CFLanguage.CFML -> cfmlCount++
+				CFLanguage.CFScript -> cfscriptCount++
 			}
 
-			val result = unknownLanguageResult.asCFScript().orCFML()
+			val result = parser.parseFirstStage()
 
 			// TODO: for now, ignore file with actual, expected errors
 			if (file.name == "BaseSpec.cfc") {
@@ -62,7 +55,7 @@ class TestColdFusionParsing : BaseTest() {
 				ok++
 			} else {
 				// really?
-				System.out.format("| %-8s | %8d | %s%n", type, result.issues.size, "file://${file.absolutePath}")
+				System.out.format("| %-8s | %8d | %s%n", parser.language(), result.issues.size, "file://${file.absolutePath}")
 				errors[file.absolutePath] = result.issues.size
 			}
 		}
@@ -73,7 +66,6 @@ class TestColdFusionParsing : BaseTest() {
 
 		println("CFML: $cfmlCount")
 		println("CFScript: $cfscriptCount")
-		println("Unknown: $unknownCount")
 		println("OK: ${ok}/${files.size}")
 		println("Ignored: ${ignored.size}")
 		println("Errors: ${errors.keys.size}")
@@ -124,13 +116,12 @@ class TestColdFusionParsing : BaseTest() {
 	@Test
 	fun testCfExamplesHelloWorld() {
 		val file = File("../examples/cf_to_java/HelloWorld/HelloWorld.cfm")
-		val firstStageParseResult = CFLanguageParser().parseFirstStage(file)
-			.asCFML()
-			.orCFScript()
+		val parser = CFLanguageParser().source(file)
+		val firstStageParseResult = parser.parseFirstStage()
 		assert(firstStageParseResult.correct) { "First stage parsing is not correct: ${file.absolutePath}" }
 		assertNotNull(firstStageParseResult.root) { "Parse tree root node is null: ${file.absolutePath}" }
 
-		val result = CFLanguageParser().parse(file)
+		val result = parser.parse()
 		assert(result.correct) { "Parsing is not correct: ${file.absolutePath}" }
 		assertNotNull(result.root) { "AST root node is null: ${file.absolutePath}" }
 	}
