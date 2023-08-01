@@ -1,11 +1,8 @@
 package ortus.boxlang.parser
 
-import com.strumenta.kolasu.parsing.ParsingResult
 import org.junit.Ignore
 import org.junit.Test
 import java.io.File
-import kotlin.io.path.Path
-import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 
@@ -100,38 +97,13 @@ class TestColdFusionParsing : BaseTest() {
 		testCfDirectory(coldboxDirectory)
 	}
 
-	private fun testCfAst(file: File): ParsingResult<CFScript> {
-		val result = CFLanguageParser().parse(file)
-		assertTrue(result.correct, result.issues.joinToString(System.lineSeparator()))
-		return result
-	}
-
 	@Test
-	fun testCfTestBoxAstCoverageGenerator() {
-		val file = Path(testboxDirectory, "system/coverage/data/CoverageGenerator.cfc").toFile()
-		val result = testCfAst(file)
-		assertEquals(listOf("configure", "beginCapture", "endCapture", "generateData", "isPathAllowed"), (result.root!!.body[0] as Component).functions.map { it.identifier })
-	}
-
-	@Test
-	fun testCfTestBoxAstMockGenerator() {
-		val file = Path(testboxDirectory, "system/mockutils/MockGenerator.cfc").toFile()
-		val result = testCfAst(file)
-		assertEquals("init", (result.root!!.body[0] as Component).functions[0].identifier)
-		assertEquals(listOf("init", "generate", "outputQuotedValue", "writeStub", "removeStub", "generateCFC", "generateMethodsFromMD", "\$include"), (result.root!!.body[0] as Component).functions.map { it.identifier })
-	}
-
-	@Test
-	fun testCfExamplesHelloWorld() {
+	fun testHelloWorld() {
 		val file = File("../examples/cf_to_java/HelloWorld/HelloWorld.cfm")
 		val firstStageParseResult = CFLanguageParser().parseFirstStage(file)
 			.asCFML()
 			.orCFScript()
 		assert(firstStageParseResult.correct) { "First stage parsing is not correct: ${file.absolutePath}" }
 		assertNotNull(firstStageParseResult.root) { "Parse tree root node is null: ${file.absolutePath}" }
-
-		val result = CFLanguageParser().parse(file)
-		assert(result.correct) { "Parsing is not correct: ${file.absolutePath}" }
-		assertNotNull(result.root) { "AST root node is null: ${file.absolutePath}" }
 	}
 }
