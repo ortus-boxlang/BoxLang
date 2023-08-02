@@ -1,0 +1,13 @@
+{
+    "name":"boxlang-compiler-resources",
+    "dependencies":{
+        "coldbox":"^7.0.0+7",
+        "contentbox":"^5.3.0+246",
+        "testbox":"^5.3.0+5"
+    },
+    "installPaths":{
+        "coldbox":"cfml-parser-tests/coldbox/",
+        "contentbox":"cfml-parser-tests/contentbox/",
+        "testbox":"cfml-parser-tests/testbox/"
+    }
+}

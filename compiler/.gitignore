@@ -1,2 +1,5 @@
 src/main/gen
 *.tokens
+
+# CFML Parser test packages coming from CommandBox
+cfml-parser-tests/**
