@@ -1,1 +1,5 @@
+# Generated sources
 src/main/gen
+
+# CFML Parser test packages coming from CommandBox
+cfml-parser-tests/**

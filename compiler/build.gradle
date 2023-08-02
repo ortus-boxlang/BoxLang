@@ -14,8 +14,8 @@ plugins {
  */
 group = 'ortus.boxlang'
 version = '1.0.0'
-java.sourceCompatibility = JavaVersion.VERSION_11
-java.targetCompatibility = JavaVersion.VERSION_11
+java.sourceCompatibility = JavaVersion.VERSION_17
+java.targetCompatibility = JavaVersion.VERSION_17
 
 def antlrGeneratedParserPackage = "ortus.boxlang.parser"
 def generatedSrcDir = "build/generated-src"
@@ -162,4 +162,13 @@ test {
 	systemProperties.putIfAbsent("contentboxdir", contentboxDir)
 	systemProperties.putIfAbsent("coldboxdir", coldboxDir)
 	dependsOn compileKotlin, compileTestKotlin
+}
+
+/**
+ * Install the CFML dependencies for the parser tests via CommandBox
+ */
+task installCommandBoxDependencies(type: Exec) {
+    // Set the command to execute your operating system binary
+    commandLine 'box', 'install'
+    workingDir = project.projectDir
 }
