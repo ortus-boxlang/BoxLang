@@ -15,17 +15,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package ortus.boxlang.runtime.scopes;
+package ortus.boxlang.runtime.dynamic;
 
-import java.util.Map;
+import ortus.boxlang.runtime.context.ExecutionContext;
 
-/**
- * All scope implementations must implement this interface
- */
-public interface IScope extends Map {
+public interface ITemplate {
 
-	public int getLookupOrder();
-	// public Object getValue( Key name );
+	/**
+	 * Invoke the template
+	 *
+	 * @param context The context to invoke the template with
+	 *
+	 * @return The template itself
+	 */
+	public ITemplate invoke( ExecutionContext context );
 
-	// public IScope setValue( Key name, Object value );
 }

@@ -15,15 +15,29 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package ortus.boxlang.runtime;
+package ortus.boxlang.runtime.context;
 
 import ortus.boxlang.runtime.scopes.*;
 
 /**
  * Represents an execution context. May be subclassed for more specific contexts such as servlet.
  * Each thread/request has a new execution context and may share the same BoxRuntime instance.
+ *
+ * This is the core execution context that is used by the runtime to execute a template or class via the CLI
  */
 public class ExecutionContext {
+
+	/**
+	 * --------------------------------------------------------------------------
+	 * Public Properties
+	 * --------------------------------------------------------------------------
+	 */
+
+	/**
+	 * --------------------------------------------------------------------------
+	 * Private Properties
+	 * --------------------------------------------------------------------------
+	 */
 
 	// Should the execution context store an array of scopes so new ones can be registered?
 	private IScope[] scopes;
@@ -37,10 +51,58 @@ public class ExecutionContext {
 	private IScope variablesScope;
 	private IScope thisScope;
 
+	/**
+	 * The template that this execution context is bound to
+	 */
+	private String templatePath = null;
+
 	// Also, should variables, this, local, arguments live here, or in the associated page or component they belong to, which in turn, gets associated
 	// here?
 	// Should the non-web context have even server, session, or application, or would a pure boxlang context only know about local, arguments, variables,
 	// and this?
 	// Decisions, decisions...
+
+	/**
+	 * --------------------------------------------------------------------------
+	 * Methods
+	 * --------------------------------------------------------------------------
+	 */
+
+	/**
+	 * Creates a new execution context with a bounded execution template
+	 *
+	 * @param templatePath The template that this execution context is bound to
+	 */
+	public ExecutionContext( String templatePath ) {
+		this.templatePath = templatePath;
+	}
+
+	/**
+	 * Creates a new execution context with no bounded template
+	 */
+	public ExecutionContext() {
+	}
+
+	public ExecutionContext setTemplatePath( String templatePath ) {
+		this.templatePath = templatePath;
+		return this;
+	}
+
+	public String getTemplatePath() {
+		return this.templatePath;
+	}
+
+	public boolean hasTemplatePath() {
+		return this.templatePath != null;
+	}
+
+	/**
+	 * Get the variables scope of the template
+	 * 
+	 * @return
+	 */
+	public IScope getVariablesScope() {
+		return this.variablesScope;
+	}
 
 }
