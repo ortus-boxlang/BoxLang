@@ -2,7 +2,6 @@
 package c_drive.projects.examples;
 
 // Interface for object representing a .cfm template
-
 import ortus.boxlang.runtime.dynamic.ITemplate;
 import ortus.boxlang.runtime.ExecutionContext;
 import ortus.boxlang.runtime.scopes.IScope;
@@ -44,14 +43,14 @@ public class HelloWorld$cfm implements ITemplate {
 	// The date time of compilation of this template
 	public static final LocalDateTime compiledOn = "2023-07-26T17:45:16.669276";
 	// The AST that models this template
-	public static final CFScript ast = astRep;
+	public static final ??? ast = astRep;
 
 	/**
 	 * Each template must implement the invoke() method which executes the template
 	 *
 	 * @param context The execution context requesting the execution
 	 */
-	public invoke( ExecutionContext context ) throws Throwable {
+	pubilc static invoke( ExecutionContext context ) throws Throwable {
 		// Reference to the variables scope
 		// TODO: How will we track this brad, since this belongs to THIS template, shouldn't each template get
 		// it's own `variables` scope
@@ -69,7 +68,8 @@ public class HelloWorld$cfm implements ITemplate {
 			Key.of( "GREETING" ),
 
 			// Invoke callsite
-			Invoker.invokeConstructor( context,
+			Invoker.invokeConstructor(
+				context,
 
 				// Method: De-reference String.init
 				Derefrencer.derefrence( context, oString, "init" ),
@@ -78,23 +78,39 @@ public class HelloWorld$cfm implements ITemplate {
 				new Object[] { "Hello" },
 
 				// Argument Class Types
-				new Object[] { String.class } ) );
+				new Object[] { String.class }
+			);
+    );
 
-		if ( EqualsEquals.invoke( context, variablesScope.get( Key.of( "GREETING" ) ), "Hello" ) ) {
+		if( EqualsEquals.invoke( context, variablesScope.get( Key.of( "GREETING" ) ), "Hello" ) ) {
 
 			Invoker.invoke(
 				// Context
 				context,
 
 				// Method
-				Derefrencer.derefrence( context,
-					Derefrencer.derefrence( context, variablesScope.get( Key.of( "system" ) ), "out" ), "println" ),
+				Derefrencer.derefrence(
+					context,
+					Derefrencer.derefrence(
+						context,
+						variablesScope.get( Key.of( "system" ) ),
+						"out"
+					),
+					"println"
+				),
 
 				// Argument Values
-				new Object[] { Concat.invoke( context, context.scopeFind( Key.of( "GREETING" ) ), " world" ) },
+				new Object[] {
+					Concat.invoke(
+						context,
+						context.scopeFind( Key.of( "GREETING" ) ),
+						" world"
+					)
+				},
 
 				// Argument Type Classes
-				new Object[] { String.class } );
+				new Object[] { String.class }
+			);
 
 		}
 
