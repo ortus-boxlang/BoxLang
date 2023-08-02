@@ -17,34 +17,50 @@ data class Assignment(
 	val right: Expression
 ) : Statement()
 
-data class Function(
-	val identifier: String,
+data class FunctionDefinition(
+	override val name: String,
 	val returnType: String,
 	val parameters: List<String> = emptyList(),
 	val body: List<Statement> = emptyList()
-) : BoxNode()
+) : Statement(), Named
+
+data class MethodDefinition(
+	override val name: String,
+	val returnType: String,
+	val parameters: List<String> = emptyList(),
+	val body: List<Statement> = emptyList()
+) : Statement(), Named
 
 data class Component(
 	val identifier: String,
-	val functions: List<Function>
+	val functions: List<FunctionDefinition>
 ) : Statement()
 
 interface ExpressionType
 sealed class Expression(var type: ExpressionType? = null) : BoxNode()
 
-data class IntegerLiteral(val value: String) : Expression()
-data class FloatLiteral(val value: String) : Expression()
-data class StringLiteral(val value: String) : Expression()
-data class BooleanLiteral(val value: String) : Expression()
+sealed class LiteralExpression : Expression()
+data class IntegerLiteral(val value: String) : LiteralExpression()
+data class FloatLiteral(val value: String) : LiteralExpression()
+data class StringLiteral(val value: String) : LiteralExpression()
+data class BooleanLiteral(val value: String) : LiteralExpression()
 
-data class Identifier(override val name: String) : Expression(), Named
+data class Identifier(
+	val scope: ReferenceByName<ScopeExpression>?,
+	override val name: String
+) : Expression(), Named
 
 enum class BinaryOperator {
 	Concat
 }
 
 enum class ComparisonOperator {
-	Equals
+	Equal,
+	GreaterThan,
+	GreaterEqualsThan,
+	LessThan,
+	LessEqualThan,
+	NotEqual
 }
 
 data class BinaryExpression(
@@ -59,13 +75,45 @@ data class ComparisonExpression(
 	var right: Expression
 ) : Expression()
 
-data class ScopeVariablesExpression(
-	val key: String
-) : Expression()
+sealed class ScopeExpression(
+	override val name: String
+) : Expression(), Named
+
+data class VariablesScopeExpression(
+	override val name: String
+) : ScopeExpression(name)
+
+sealed class InvokationExpression : AccessExpression()
 
 data class FunctionInvokationExpression(
-	val name: ReferenceByName<Identifier>,
+	val name: ReferenceByName<FunctionDefinition>,
 	val arguments: List<Expression>
-) : Expression()
+) : InvokationExpression()
 
+data class MethodInvokationStatement(
+	val invokation: MethodInvokationExpression
+) : Statement()
 
+data class MethodInvokationExpression(
+	val methodName: ReferenceByName<MethodDefinition>,
+	val obj: AccessExpression,
+	val arguments: List<Expression>
+) : InvokationExpression()
+
+sealed class AccessExpression : Expression()
+
+data class ArrayAccessExpression(
+	val context: AccessExpression,
+	val index: Expression
+) : AccessExpression()
+
+data class ObjectAccessExpression(
+	val context: AccessExpression? = null,
+	val access: Expression
+) : AccessExpression()
+
+data class IfStatement(
+	val condition: Expression,
+	val body: List<Statement>,
+	val elseStatement: List<Statement>?
+) : Statement()

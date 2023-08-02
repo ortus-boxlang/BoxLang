@@ -23,15 +23,15 @@ class TestColdFusionToBoxlang : BaseTest() {
 	fun testTestBoxCoverageGenerator() {
 		val file = Path(testboxDirectory, "system/coverage/data/CoverageGenerator.cfc").toFile()
 		val result = testCfAst(file)
-		assertEquals(listOf("configure", "beginCapture", "endCapture", "generateData", "isPathAllowed"), (result.root!!.body[0] as Component).functions.map { it.identifier })
+		assertEquals(listOf("configure", "beginCapture", "endCapture", "generateData", "isPathAllowed"), (result.root!!.body[0] as Component).functions.map { it.name })
 	}
 
 	@Test
 	fun testTestBoxMockGenerator() {
 		val file = Path(testboxDirectory, "system/mockutils/MockGenerator.cfc").toFile()
 		val result = testCfAst(file)
-		assertEquals("init", (result.root!!.body[0] as Component).functions[0].identifier)
-		assertEquals(listOf("init", "generate", "outputQuotedValue", "writeStub", "removeStub", "generateCFC", "generateMethodsFromMD", "\$include"), (result.root!!.body[0] as Component).functions.map { it.identifier })
+		assertEquals("init", (result.root!!.body[0] as Component).functions[0].name)
+		assertEquals(listOf("init", "generate", "outputQuotedValue", "writeStub", "removeStub", "generateCFC", "generateMethodsFromMD", "\$include"), (result.root!!.body[0] as Component).functions.map { it.name })
 	}
 
 	private fun testCfAst(file: File): ParsingResult<CFScript> {

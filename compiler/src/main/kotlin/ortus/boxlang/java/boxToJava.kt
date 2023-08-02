@@ -31,7 +31,7 @@ fun Component.toJava(): ClassOrInterfaceDeclaration {
 	if (!this.identifier.isNullOrBlank())
 		classDeclaration.name = SimpleName(this.identifier)
 	this.functions.forEach {
-		classDeclaration.addMethod(it.identifier)
+		classDeclaration.addMethod(it.name)
 	}
 	return classDeclaration
 }

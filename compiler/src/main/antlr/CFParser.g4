@@ -153,7 +153,7 @@ statement
     |   saveContentStatement
     |   simpleStatement
     |   switch
-    |   statementBlock
+//    |   statementBlock
     |   threadStatement
     |   throw
     |   try
@@ -239,10 +239,10 @@ argument
   ;
 
 if
-    :   IF LPAREN expression RPAREN statement ( ELSE statement )?
-    |   IF LPAREN expression RPAREN statementBlock ( ELSE statement )?
-    |   IF LPAREN expression RPAREN statement ( ELSE statementBlock )?
-    |   IF LPAREN expression RPAREN statementBlock ( ELSE statementBlock )?
+    :   IF LPAREN expression RPAREN ifStmt=statement ( ELSE elseStmt=statement )?
+    |   IF LPAREN expression RPAREN ifStmtBlock=statementBlock ( ELSE elseStmt=statement )?
+    |   IF LPAREN expression RPAREN ifStmt=statement ( ELSE elseStmtBlock=statementBlock )?
+    |   IF LPAREN expression RPAREN ifStmtBlock=statementBlock ( ELSE elseStmtBlock=statementBlock )?
     ;
 for
     :   FOR LPAREN VAR? identifier IN expression RPAREN statementBlock
@@ -290,9 +290,8 @@ switch
   ;
 
 case
-  : ( CASE (expression) COLON statement*)
-    |
-    ( DEFAULT COLON statement* )
+	: CASE (expression) COLON (statement | statementBlock)?
+	| DEFAULT COLON (statement | statementBlock)?
   ;
 
 identifier

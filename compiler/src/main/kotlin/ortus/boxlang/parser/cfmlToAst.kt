@@ -29,14 +29,27 @@ fun CFMLParser.HtmlDocumentContext.toAst(): CFScript {
 			// TODO: cfmlElements
 		}
 	}
-	this.cfmlElement().forEach {
+
+	this.cfmlElement().forEach { element ->
 		when {
-			it.cfcomponent() != null -> {
-				statements += it.cfcomponent().toAst()
+			element.cfcomponent() != null -> {
+				statements += element.cfcomponent().toAst()
+			}
+
+			element.cfscript() != null -> {
+				val scriptAst = element.cfscript().toAst()
+				scriptAst.body.forEach { statements += it }
 			}
 		}
 	}
 	return CFScript(statements)
+}
+
+fun CFMLParser.CfscriptContext.toAst(): CFScript {
+	val scriptCode = this.CFSCRIPT_BODY().text.removeSuffix("</cfscript>")
+	val cfParser = CFKolasuParser() //<-- TODO: externalise
+	val result = cfParser.parse(scriptCode)
+	return result.root!! //<-- TODO: handle errors
 }
 
 fun CFMLParser.CfcomponentContext.toAst() = Component(
@@ -48,8 +61,8 @@ fun CFMLParser.CfcomponentContext.toAst() = Component(
 		.map { it.cffunction().toAst() }
 )
 
-fun CFMLParser.CffunctionContext.toAst() = Function(
-	identifier = this.htmlAttribute()
+fun CFMLParser.CffunctionContext.toAst() = FunctionDefinition(
+	name = this.htmlAttribute()
 		.firstOrNull { it.htmlAttributeName().text.lowercase() == "name" }
 		?.htmlAttributeValue()?.text?.let { getAttributeValue(it) } ?: "",
 	returnType = this.htmlAttribute()
@@ -58,14 +71,14 @@ fun CFMLParser.CffunctionContext.toAst() = Function(
 )
 
 private fun CFMLParser.HtmlTagNameContext.toAst(identifier: String, htmlElements: MutableList<CFMLParser.HtmlElementsContext>): Statement {
-	val functions = mutableListOf<Function>()
+	val functions = mutableListOf<FunctionDefinition>()
 	htmlElements.forEach {
 		when {
 			it is CFMLParser.HtmlElementsContext -> {
 				if (it.htmlElement().htmlTagName(0).text.equals("cffunction", true)) {
 					val name = findAttribute("name", it.htmlElement())
 					val returnType = findAttribute("returntype", it.htmlElement())
-					functions += Function(name, returnType, emptyList())
+					functions += FunctionDefinition(name, returnType, emptyList())
 				}
 
 			}
