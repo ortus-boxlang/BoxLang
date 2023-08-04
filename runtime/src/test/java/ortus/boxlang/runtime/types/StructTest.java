@@ -25,6 +25,7 @@ import com.google.common.truth.ThrowableSubject;
 import com.google.common.truth.Truth;
 
 import ortus.boxlang.runtime.scopes.Key;
+import ortus.boxlang.runtime.types.exceptions.CantCastException;
 
 import static com.google.common.truth.Truth.assertThat;
 
@@ -33,8 +34,8 @@ public class StructTest {
 	@DisplayName( "Test equals and hash code with no data" )
 	@Test
 	void testEqualsAndHashCode() {
-		Struct struct1 = new Struct();
-		Struct struct2 = new Struct();
+		Struct	struct1	= new Struct();
+		Struct	struct2	= new Struct();
 
 		// Test equals()
 		assertThat( struct1 ).isEqualTo( struct2 );
@@ -90,12 +91,12 @@ public class StructTest {
 
 	@Test
 	void testAsStringThrowsException() {
-		Struct struct = new Struct();
+		Struct				struct		= new Struct();
 
 		// Test that the method throws the expected exception
-		CantCastException exception = assertThrows( CantCastException.class, () -> {
-			struct.asString();
-		} );
+		CantCastException	exception	= assertThrows( CantCastException.class, () -> {
+											struct.asString();
+										} );
 
 		assertThat( exception.getMessage() ).isEqualTo( "Can't cast a struct to a string. Try serializing it" );
 	}

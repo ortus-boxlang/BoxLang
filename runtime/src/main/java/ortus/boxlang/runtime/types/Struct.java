@@ -17,10 +17,14 @@
  */
 package ortus.boxlang.runtime.types;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 
 import ortus.boxlang.runtime.scopes.Key;
+import ortus.boxlang.runtime.types.exceptions.CantCastException;
+import ortus.boxlang.runtime.types.exceptions.KeyNotFoundException;
 
 /**
  * A struct is a collection of key-value pairs, where the key is unique and case insensitive
@@ -121,5 +125,42 @@ public class Struct extends ConcurrentHashMap<Key, Object> implements IType {
 	@Override
 	public String asString() {
 		throw new CantCastException( "Can't cast a struct to a string. Try serializing it" );
+	}
+
+	/**
+	 * Returns the value of the key if found.
+	 * We override in order to present nicer exception messages
+	 *
+	 * @param key The key to look for
+	 *
+	 * @return The value of the key
+	 *
+	 * @throws KeyNotFoundException If the key is not found
+	 */
+	public Object get( Key key ) {
+		if ( super.containsKey( key ) ) {
+			return super.get( key );
+		}
+		throw new KeyNotFoundException(
+				String.format( "The key %s was not found in the struct. Valid keys are (%s)", key.getName(), getKeys() ), this
+		);
+	}
+
+	/**
+	 * Get an array list of all the keys in the struct
+	 *
+	 * @return An array list of all the keys in the struct
+	 */
+	public List<String> getKeys() {
+		return super.keySet().stream().map( Key::getNameNoCase ).collect( java.util.stream.Collectors.toList() );
+	}
+
+	/**
+	 * Get an array list of all the keys in the struct with case-sensitivity
+	 *
+	 * @return An array list of all the keys in the struct
+	 */
+	public List<String> getKeysWithCase() {
+		return super.keySet().stream().map( Key::getName ).collect( java.util.stream.Collectors.toList() );
 	}
 }

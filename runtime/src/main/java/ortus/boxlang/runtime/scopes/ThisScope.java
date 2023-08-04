@@ -41,7 +41,7 @@ public class ThisScope extends BaseScope {
 	 */
 
 	public ThisScope() {
-		super( 30 );
+		super( 30, "this" );
 	}
 
 	/**

@@ -27,7 +27,7 @@ public class BaseScopeTest {
 
 	@BeforeAll
 	public static void setUp() {
-		scope = new BaseScope();
+		scope = new BaseScope( "test" );
 	}
 
 	@Test

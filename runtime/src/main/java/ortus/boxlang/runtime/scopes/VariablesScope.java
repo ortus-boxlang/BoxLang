@@ -41,7 +41,7 @@ public class VariablesScope extends BaseScope {
 	 */
 
 	public VariablesScope() {
-		super( 30 );
+		super( 30, "variables" );
 	}
 
 	/**

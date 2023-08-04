@@ -18,6 +18,7 @@
 package ortus.boxlang.runtime.context;
 
 import ortus.boxlang.runtime.scopes.*;
+import ortus.boxlang.runtime.types.exceptions.KeyNotFoundException;
 
 /**
  * Represents an execution context. May be subclassed for more specific contexts such as servlet.
@@ -39,22 +40,15 @@ public class ExecutionContext {
 	 * --------------------------------------------------------------------------
 	 */
 
-	// Should the execution context store an array of scopes so new ones can be registered?
-	private IScope[] scopes;
-
-	// Or perhaps separtley store searchable and non-searchable scopes?
-	private IScope[] searchableScopes;
-	private IScope[] adHocScopes;
-
-	// Or is there really a set number and they should be stored separately and maybe we don't need the lookup order at all as the context knows the
-	// order?
-	private IScope variablesScope;
-	private IScope thisScope;
+	/**
+	 * A template has a variables scope
+	 */
+	private IScope	variablesScope;
 
 	/**
 	 * The template that this execution context is bound to
 	 */
-	private String templatePath = null;
+	private String	templatePath	= null;
 
 	// Also, should variables, this, local, arguments live here, or in the associated page or component they belong to, which in turn, gets associated
 	// here?
@@ -126,6 +120,46 @@ public class ExecutionContext {
 	 */
 	public IScope getVariablesScope() {
 		return this.variablesScope;
+	}
+
+	/**
+	 * Try to get the requested key from the unscoped scope
+	 * Meaning it needs to search scopes in order
+	 *
+	 * Here is the order for bx templates
+	 * (Not all yet implemented and some will be according to platform: WebContext, AndroidContext, IOSContext, etc)
+	 *
+	 * 1. Query (only in query loops)
+	 * 2. Thread
+	 * 3. Variables
+	 * 4. CGI (should it exist in the core runtime?)
+	 * 5. CFFILE
+	 * 6. URL (Only for web runtime)
+	 * 7. FORM (Only for web runtime)
+	 * 8. COOKIE (Only for web runtime)
+	 * 9. CLIENT (Only for web runtime)
+	 *
+	 * @param key The key to search for
+	 *
+	 * @return The value of the key if found
+	 *
+	 * @throws KeyNotFoundException If the key was not found in any scope
+	 */
+	public Object scopeFind( Key key ) {
+
+		// In query loop?
+
+		// In Thread scope?
+
+		// In Variables scope?
+		if ( getVariablesScope().containsKey( key ) ) {
+			return getVariablesScope().get( key );
+		}
+
+		// Not found anywhere
+		throw new KeyNotFoundException(
+				String.format( "The requested key [%s] was not located in any scope or it's undefined", key.getName() )
+		);
 	}
 
 }

@@ -15,7 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package ortus.boxlang.runtime.types;
+package ortus.boxlang.runtime.types.exceptions;
 
 /**
  * This exception is thrown when a cast can't be done on any type
