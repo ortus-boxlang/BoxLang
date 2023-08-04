@@ -9,4 +9,5 @@
         "*.bxm": "cfml"
     },
     "java.compile.nullAnalysis.mode": "automatic",
+    "java.debug.settings.onBuildFailureProceed": true,
 }

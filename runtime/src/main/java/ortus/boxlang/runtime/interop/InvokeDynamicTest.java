@@ -25,7 +25,7 @@ import java.lang.reflect.Method;
 import java.util.Arrays;
 import java.util.Optional;
 
-import ortus.boxlang.runtime.Bootstrap;
+import ortus.boxlang.runtime.BoxRunner;
 
 import java.lang.invoke.MethodHandles;
 

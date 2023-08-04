@@ -21,19 +21,14 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
-import ortus.boxlang.runtime.Bootstrap.RuntimeOptions;
-
 import static com.google.common.truth.Truth.assertThat;
-import static org.junit.Assert.assertThrows;
 
 public class BoxRuntimeTest {
-
-	RuntimeOptions options = new Bootstrap.RuntimeOptions( "bogus.bx", true );
 
 	@Before
 	public void setUp() {
 		// Start the runtime before each test
-		BoxRuntime.startup( options );
+		BoxRuntime.startup();
 	}
 
 	@After
@@ -46,7 +41,7 @@ public class BoxRuntimeTest {
 	public void testGetInstance() {
 		// Ensure getInstance() returns the same instance as startup()
 		BoxRuntime instance1 = BoxRuntime.getInstance();
-		BoxRuntime instance2 = BoxRuntime.startup( options );
+		BoxRuntime instance2 = BoxRuntime.startup();
 
 		assertThat( instance1 ).isNotNull();
 		assertThat( instance1 ).isSameInstanceAs( instance2 );
@@ -56,7 +51,7 @@ public class BoxRuntimeTest {
 	public void testStartup() {
 		// Ensure startup() returns the same instance as getInstance()
 		BoxRuntime instance1 = BoxRuntime.getInstance();
-		BoxRuntime instance2 = BoxRuntime.startup( options );
+		BoxRuntime instance2 = BoxRuntime.startup();
 
 		assertThat( instance1 ).isNotNull();
 		assertThat( instance1 ).isSameInstanceAs( instance2 );

@@ -17,7 +17,6 @@
  */
 package ortus.boxlang.runtime;
 
-import ortus.boxlang.runtime.Bootstrap.RuntimeOptions;
 import ortus.boxlang.runtime.dynamic.ITemplate;
 import ortus.boxlang.runtime.dynamic.MockTemplate;
 
@@ -39,11 +38,6 @@ public class BoxPiler {
 	 * Singelton instance
 	 */
 	private static BoxPiler instance;
-
-	/**
-	 * The runtime options
-	 */
-	private RuntimeOptions options;
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -78,19 +72,6 @@ public class BoxPiler {
 	 */
 
 	/**
-	 * Set the runtime/compiler options
-	 *
-	 * @param options The runtime options
-	 *
-	 * @return The BoxPiler instance
-	 */
-	public static BoxPiler setOptions( RuntimeOptions options ) {
-		// Set the runtime/compiler options
-		instance.options = options;
-		return instance;
-	}
-
-	/**
 	 * Parse a template into an executable dynamic ITemplate object
 	 *
 	 * @param templatePath The path to the template
@@ -99,14 +80,14 @@ public class BoxPiler {
 	 */
 	public static ITemplate parse( String templatePath ) {
 
-		// Verify if we have it loaded in cache already
+		// TODO: Check if the template is in cache (local or ram)
 
 		// If not, discover it, parse it, ast it and cache it
 		// TODO: Parse the template
 		// TODO: AST the template
 		// TODO: Cache the template
 
-		// Parse the template
+		// Return the template
 		return new MockTemplate();
 	}
 

@@ -15,16 +15,32 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package ortus.boxlang.runtime;
+package ortus.boxlang.runtime.scopes;
 
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 import static com.google.common.truth.Truth.assertThat;
 
-import org.junit.jupiter.api.Test;
+public class BaseScopeTest {
 
-class BootstrapTest {
+	private static BaseScope scope;
+
+	@BeforeAll
+	public static void setUp() {
+		scope = new BaseScope();
+	}
 
 	@Test
-	void appCanGreat() {
-		Bootstrap runtime = new Bootstrap();
+	void testBasicGetAndSet() {
+		Key key = Key.of( "testKey" );
+		Object value = "testValue";
+
+		// Test getValue() and setValue()
+		assertThat( scope.get( key ) ).isNull();
+
+		scope.put( key, value );
+		assertThat( scope.get( key ) ).isEqualTo( value );
+		assertThat( scope.get( Key.of( "TestKey" ) ) ).isEqualTo( value );
 	}
+
 }

@@ -26,7 +26,7 @@ import ortus.boxlang.runtime.context.ExecutionContext;
  * The Bootstrap class is the entry point for the BoxLang runtime. It is responsible for
  * executing the incoming script template or class and creating the execution context.
  */
-public class Bootstrap {
+public class BoxRunner {
 
 	public static void main( String[] args ) {
 		// Verify incoming arguments
@@ -35,18 +35,18 @@ public class Bootstrap {
 			System.exit( 1 );
 		}
 
-		// Parse runtime options
-		RuntimeOptions options = parseCommandLineOptions( args );
+		// Parse CLI options
+		CLIOptions options = parseCommandLineOptions( args );
 
 		// Get a runtime going
-		BoxRuntime.startup( options );
+		BoxRuntime.startup();
 
 		// Build out the execution context for this execution and bind it to the incoming template
 		ExecutionContext context = new ExecutionContext( options.templatePath() );
 
 		// Here is where we presumably boostrap a page or class that we are executing in our new context.
 		// JIT if neccessary
-		BoxPiler.setOptions( options ).parse( options.templatePath() ).invoke( context );
+		BoxPiler.parse( options.templatePath() ).invoke( context );
 
 		// Bye bye! Ciao Bella!
 		BoxRuntime.shutdown();
@@ -59,20 +59,20 @@ public class Bootstrap {
 	 *
 	 * @return The CLIOptions object with the parsed options
 	 */
-	private static RuntimeOptions parseCommandLineOptions( String[] args ) {
+	private static CLIOptions parseCommandLineOptions( String[] args ) {
 		// Initialize options with defaults
 		Map<String, Boolean> options = new HashMap<>( Map.of( "debug", false ) );
 
 		// Verify Flags
+		// Example: --debug
 		for ( String arg : args ) {
-			// Example: --debug
 			if ( arg.equalsIgnoreCase( "--debug" ) ) {
 				options.put( "debug", true );
 			}
 			// Add more options handling here as needed...
 		}
 
-		return new RuntimeOptions( args[ 0 ], options.get( "debug" ) );
+		return new CLIOptions( args[ 0 ], options.get( "debug" ) );
 	}
 
 	/**
@@ -81,7 +81,7 @@ public class Bootstrap {
 	 * @param templatePath The path to the template to execute. Can be a class or template
 	 * @param debug        Whether or not to run in debug mode.
 	 */
-	public record RuntimeOptions( String templatePath, boolean debug ) {
+	public record CLIOptions( String templatePath, boolean debug ) {
 		// The record automatically generates the constructor, getters, equals, hashCode, and toString methods.
 	}
 

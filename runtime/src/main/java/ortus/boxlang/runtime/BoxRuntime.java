@@ -20,8 +20,6 @@ package ortus.boxlang.runtime;
 import java.time.Instant;
 import java.util.Optional;
 
-import ortus.boxlang.runtime.Bootstrap.RuntimeOptions;
-
 /**
  * Represents the top level runtime container for box lang. Config, global scopes, mappings, threadpools, etc all go here.
  * All threads, requests, invocations, etc share this.
@@ -51,11 +49,6 @@ public class BoxRuntime {
 	private Instant startTime;
 
 	/**
-	 * The runtime options
-	 */
-	private RuntimeOptions options;
-
-	/**
 	 * --------------------------------------------------------------------------
 	 * Methods
 	 * --------------------------------------------------------------------------
@@ -75,15 +68,6 @@ public class BoxRuntime {
 	 */
 	public static Optional<Instant> getStartTime() {
 		return ( instance == null ) ? Optional.empty() : Optional.ofNullable( instance.startTime );
-	}
-
-	/**
-	 * Get the runtime options
-	 * 
-	 * @return the runtime options
-	 */
-	public static Optional<RuntimeOptions> getOptions() {
-		return ( instance == null ) ? Optional.empty() : Optional.ofNullable( instance.options );
 	}
 
 	/**
@@ -113,7 +97,7 @@ public class BoxRuntime {
 	 *
 	 * @return The runtime instance
 	 */
-	public static synchronized BoxRuntime startup( RuntimeOptions options ) {
+	public static synchronized BoxRuntime startup() {
 		if ( instance != null ) {
 			return getInstance();
 		}
@@ -121,7 +105,6 @@ public class BoxRuntime {
 
 		instance			= new BoxRuntime();
 		instance.startTime	= Instant.now();
-		instance.options	= options;
 
 		System.out.println( "BoxLang Runtime Started" );
 		return instance;

@@ -64,7 +64,7 @@ public class ExecutionContext {
 
 	/**
 	 * --------------------------------------------------------------------------
-	 * Methods
+	 * Constructors
 	 * --------------------------------------------------------------------------
 	 */
 
@@ -83,23 +83,46 @@ public class ExecutionContext {
 	public ExecutionContext() {
 	}
 
+	/**
+	 * --------------------------------------------------------------------------
+	 * Methods
+	 * --------------------------------------------------------------------------
+	 */
+
+	/**
+	 * Set the template path of execution
+	 *
+	 * @param templatePath The template that this execution context is bound to
+	 *
+	 * @return ExecutionContext
+	 */
 	public ExecutionContext setTemplatePath( String templatePath ) {
 		this.templatePath = templatePath;
 		return this;
 	}
 
+	/**
+	 * Get the template path of execution
+	 *
+	 * @return The template that this execution context is bound to
+	 */
 	public String getTemplatePath() {
 		return this.templatePath;
 	}
 
+	/**
+	 * Has the execution context been bound to a template?
+	 *
+	 * @return True if bound, else false
+	 */
 	public boolean hasTemplatePath() {
 		return this.templatePath != null;
 	}
 
 	/**
 	 * Get the variables scope of the template
-	 * 
-	 * @return
+	 *
+	 * @return The variables scope of the template
 	 */
 	public IScope getVariablesScope() {
 		return this.variablesScope;

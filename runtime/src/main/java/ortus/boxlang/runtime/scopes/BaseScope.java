@@ -18,15 +18,37 @@
 package ortus.boxlang.runtime.scopes;
 
 import java.util.Objects;
-import java.util.concurrent.ConcurrentHashMap;
+
+import ortus.boxlang.runtime.types.Struct;
 
 /**
  * Base scope implementation. Extends HashMap for now. May want to switch to composition over inheritance, but this
  * is simpler for now and using the Key class provides our case insensitivity automatically.
  */
-public class BaseScope extends ConcurrentHashMap<Key, Object> implements IScope {
+public class BaseScope extends Struct implements IScope {
 
+	/**
+	 * --------------------------------------------------------------------------
+	 * Public Properties
+	 * --------------------------------------------------------------------------
+	 */
+
+	/**
+	 * --------------------------------------------------------------------------
+	 * Private Properties
+	 * --------------------------------------------------------------------------
+	 */
+
+	/**
+	 * Used for scope hunting. Lower numbers are searched first.
+	 */
 	private int lookupOrder;
+
+	/**
+	 * --------------------------------------------------------------------------
+	 * Constructors
+	 * --------------------------------------------------------------------------
+	 */
 
 	/**
 	 * Constructor
@@ -38,12 +60,26 @@ public class BaseScope extends ConcurrentHashMap<Key, Object> implements IScope 
 		this.lookupOrder = lookupOrder;
 	}
 
+	/**
+	 * Constructor with default lookup order
+	 */
+	public BaseScope() {
+		super();
+		this.lookupOrder = 0;
+	}
+
+	/**
+	 * --------------------------------------------------------------------------
+	 * Methods
+	 * --------------------------------------------------------------------------
+	 */
+
+	/**
+	 * Returns the lookup order
+	 */
 	public int getLookupOrder() {
 		return this.lookupOrder;
 	}
-
-	// public Object getValue( Key name ) { }
-	// public IScope setValue( Key name, Object value ) { }
 
 	/**
 	 * Verifies equality with the following rules:
@@ -64,6 +100,9 @@ public class BaseScope extends ConcurrentHashMap<Key, Object> implements IScope 
 		return lookupOrder == ( ( BaseScope ) obj ).getLookupOrder() && super.equals( obj );
 	}
 
+	/**
+	 * Hashes the lookupOrder and super class
+	 */
 	@Override
 	public int hashCode() {
 		return Objects.hash( this.lookupOrder, super.hashCode() );

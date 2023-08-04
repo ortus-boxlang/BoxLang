@@ -15,17 +15,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package ortus.boxlang.runtime.scopes;
+package ortus.boxlang.runtime;
 
-import java.util.Map;
+import static com.google.common.truth.Truth.assertThat;
 
-/**
- * All scope implementations must implement this interface
- */
-public interface IScope extends Map<Key, Object> {
+import org.junit.jupiter.api.Test;
 
-	/**
-	 * Returns the lookup order
-	 */
-	public int getLookupOrder();
+class BoxRunnerTest {
+
+	@Test
+	void appCanGreat() {
+		BoxRunner runtime = new BoxRunner();
+	}
 }

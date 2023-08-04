@@ -25,6 +25,7 @@ public class MockTemplate implements ITemplate {
 	@Override
 	public ITemplate invoke( ExecutionContext context ) {
 
+		// I can store variables in the context
 		context.getVariablesScope().put( Key.of( "MockTemplate" ), "Yea baby!!" );
 
 		System.out.println( "MockTemplate invoked, woot woot!" );

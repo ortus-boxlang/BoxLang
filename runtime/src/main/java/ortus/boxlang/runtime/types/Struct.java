@@ -1,0 +1,125 @@
+/**
+ * [BoxLang]
+ *
+ * Copyright [2023] [Ortus Solutions, Corp]
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package ortus.boxlang.runtime.types;
+
+import java.util.Objects;
+import java.util.concurrent.ConcurrentHashMap;
+
+import ortus.boxlang.runtime.scopes.Key;
+
+/**
+ * A struct is a collection of key-value pairs, where the key is unique and case insensitive
+ */
+public class Struct extends ConcurrentHashMap<Key, Object> implements IType {
+
+	/**
+	 * --------------------------------------------------------------------------
+	 * Public Properties
+	 * --------------------------------------------------------------------------
+	 */
+
+	/**
+	 * --------------------------------------------------------------------------
+	 * Private Properties
+	 * --------------------------------------------------------------------------
+	 */
+
+	/**
+	 * In general, a common approach is to choose an initial capacity that is a power of two.
+	 * For example, 16, 32, 64, etc. This is because ConcurrentHashMap uses power-of-two-sized hash tables,
+	 * and using a power-of-two capacity can lead to better distribution of elements in the table.
+	 */
+	private static final int INITIAL_CAPACITY = 32;
+
+	/**
+	 * --------------------------------------------------------------------------
+	 * Constructors
+	 * --------------------------------------------------------------------------
+	 */
+
+	/**
+	 * Constructor
+	 */
+	public Struct() {
+		super( INITIAL_CAPACITY );
+	}
+
+	/**
+	 * --------------------------------------------------------------------------
+	 * Methods
+	 * --------------------------------------------------------------------------
+	 */
+
+	/**
+	 * Verifies equality with the following rules:
+	 * - Same object
+	 * - Super class
+	 */
+	@Override
+	public boolean equals( Object obj ) {
+		// Same object
+		if ( this == obj ) {
+			return true;
+		}
+		// Null and class checks
+		if ( obj == null || getClass() != obj.getClass() ) {
+			return false;
+		}
+		// Super
+		return super.equals( obj );
+	}
+
+	/**
+	 * Struct Hashcode
+	 */
+	@Override
+	public int hashCode() {
+		return Objects.hash( super.hashCode() );
+	}
+
+	/**
+	 * Convert the struct to a human-readable string, usually great for debugging
+	 * Remember structs have no order except their internal hash code
+	 *
+	 * @return The string representation of the struct using the format {key=value, key=value}
+	 */
+	@Override
+	public String toString() {
+		return entrySet().stream().map( entry -> entry.getKey().getNameNoCase() + "=" + entry.getValue() )
+				.collect( java.util.stream.Collectors.joining( ", ", "{", "}" ) );
+	}
+
+	/**
+	 * Convert the struct to a human-readable string, usually great for debugging
+	 * Remember structs have no order except their internal hash code
+	 *
+	 * @return The string representation of the struct using the format {key=value, key=value}
+	 */
+	public String toStringWithCase() {
+		return entrySet().stream().map( entry -> entry.getKey().getName() + "=" + entry.getValue() )
+				.collect( java.util.stream.Collectors.joining( ", ", "{", "}" ) );
+	}
+
+	/**
+	 * Represent as string, or throw exception if not possible
+	 */
+	@Override
+	public String asString() {
+		throw new CantCastException( "Can't cast a struct to a string. Try serializing it" );
+	}
+}
