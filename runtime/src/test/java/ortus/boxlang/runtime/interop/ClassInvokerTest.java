@@ -40,11 +40,10 @@ public class ClassInvokerTest {
 	}
 
 	@Test
-	@SuppressWarnings( "unchecked" )
 	void testItCanCallConstructorsWithManyArguments() throws Throwable {
 		ClassInvoker target = new ClassInvoker( LinkedHashMap.class );
 		System.out.println( int.class );
-		LinkedHashMap results = ( LinkedHashMap ) target.invokeConstructor( 16, 0.75f, true );
+		LinkedHashMap<?, ?> results = ( LinkedHashMap<?, ?> ) target.invokeConstructor( 16, 0.75f, true );
 		assertThat( results.getClass() ).isEqualTo( LinkedHashMap.class );
 	}
 
