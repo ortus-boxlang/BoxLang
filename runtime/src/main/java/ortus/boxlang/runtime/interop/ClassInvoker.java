@@ -91,7 +91,9 @@ public class ClassInvoker {
 
 	public Object invokeConstructor( Object... args ) throws Throwable {
 		// Convert the arguments to an array of classes
-		Class<?>[]		argTypes			= Arrays.stream( args ).map( ClassInvoker::toClass ).toArray( Class<?>[]::new );
+		Class<?>[]		argTypes			= Arrays.stream( args )
+		        .map( ClassInvoker::argumentToClass )
+		        .toArray( Class<?>[]::new );
 		// Method signature for a constructor is void (Object...)
 		MethodType		constructorType		= MethodType.methodType( void.class, argTypes );
 		// Define the bootstrap method
@@ -105,7 +107,7 @@ public class ClassInvoker {
 		return this.targetInstance;
 	}
 
-	public static Class<?> toClass( Object thisArg ) {
+	public static Class<?> argumentToClass( Object thisArg ) {
 		// TODO: Not sure what happens when the arg is null?
 		if ( thisArg == null ) {
 			return Object.class;
@@ -116,13 +118,13 @@ public class ClassInvoker {
 
 	public Object invoke( String methodName, Object... args ) throws Throwable {
 		MethodHandle method = lookup.findVirtual( this.targetClass, methodName,
-				MethodType.methodType( Object.class, args.getClass() ) );
+		        MethodType.methodType( Object.class, args.getClass() ) );
 		return method.invokeWithArguments( args );
 	}
 
 	public Object invokeStatic( String methodName, Object... args ) throws Throwable {
 		MethodHandle method = lookup.findStatic( this.targetClass, methodName,
-				MethodType.methodType( Object.class, args.getClass() ) );
+		        MethodType.methodType( Object.class, args.getClass() ) );
 		return method.invokeWithArguments( args );
 	}
 }
