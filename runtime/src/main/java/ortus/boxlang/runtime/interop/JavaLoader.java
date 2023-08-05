@@ -1,10 +1,7 @@
 package ortus.boxlang.runtime.interop;
 
-import java.lang.invoke.MethodHandles;
-import java.lang.invoke.MethodType;
 import java.util.Optional;
 
-import ortus.boxlang.runtime.BoxPiler;
 import ortus.boxlang.runtime.BoxRuntime;
 
 public class JavaLoader {
@@ -57,7 +54,7 @@ public class JavaLoader {
 	 * --------------------------------------------------------------------------
 	 */
 
-	public static Class<?> load( String fullyQualifiedClassName ) throws ClassNotFoundException {
+	public static ClassInvoker load( String fullyQualifiedClassName ) throws ClassNotFoundException {
 		return loadFromModules( fullyQualifiedClassName ).or( () -> loadFromSystem( fullyQualifiedClassName ) )
 				.orElseThrow( () -> new ClassNotFoundException(
 						String.format( "The requested class [%s] has not been located", fullyQualifiedClassName ) )
@@ -65,9 +62,9 @@ public class JavaLoader {
 
 	}
 
-	public static Optional<Class<?>> loadFromSystem( String fullyQualifiedClassName ) {
+	public static Optional<ClassInvoker> loadFromSystem( String fullyQualifiedClassName ) {
 		try {
-			return Optional.of( Class.forName( fullyQualifiedClassName ) );
+			return Optional.of( new ClassInvoker( Class.forName( fullyQualifiedClassName ) ) );
 		} catch ( ClassNotFoundException e ) {
 			return Optional.empty();
 		}
@@ -80,7 +77,7 @@ public class JavaLoader {
 	 *
 	 * @return The loaded class or null if not found
 	 */
-	public static Optional<Class<?>> loadFromModules( String fullyQualifiedClassName ) {
+	public static Optional<ClassInvoker> loadFromModules( String fullyQualifiedClassName ) {
 		return Optional.ofNullable( null );
 	}
 
