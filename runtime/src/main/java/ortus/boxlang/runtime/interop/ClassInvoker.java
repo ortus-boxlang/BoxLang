@@ -1,3 +1,20 @@
+/**
+ * [BoxLang]
+ *
+ * Copyright [2023] [Ortus Solutions, Corp]
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package ortus.boxlang.runtime.interop;
 
 import java.lang.invoke.CallSite;
@@ -6,8 +23,6 @@ import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashMap;
 import java.util.Map;
 
 /**
@@ -21,6 +36,21 @@ import java.util.Map;
  */
 public class ClassInvoker {
 
+	/**
+	 * --------------------------------------------------------------------------
+	 * Public Properties
+	 * --------------------------------------------------------------------------
+	 */
+
+	/**
+	 * --------------------------------------------------------------------------
+	 * Private Properties
+	 * --------------------------------------------------------------------------
+	 */
+
+	/**
+	 * This is a map of primitive types to their native counterparts
+	 */
 	// @formatter:off
 	private static final Map<Class<?>, Class<?>> PRIMITIVE_MAP = Map.of(
             Boolean.class, boolean.class,
@@ -44,16 +74,41 @@ public class ClassInvoker {
 	 */
 	private Object									targetInstance	= null;
 
+	/**
+	 * This is the method handle lookup for the class
+	 */
 	private final MethodHandles.Lookup				lookup			= MethodHandles.lookup();
 
+	/**
+	 * --------------------------------------------------------------------------
+	 * Constructors
+	 * --------------------------------------------------------------------------
+	 */
+
+	/**
+	 * Create a new class invoker for the given class
+	 *
+	 * @param targetClass
+	 */
 	public ClassInvoker( Class<?> targetClass ) {
 		this.targetClass = targetClass;
 	}
 
+	/**
+	 * Create a new class invoker for the given instance
+	 *
+	 * @param targetInstance
+	 */
 	public ClassInvoker( Object targetInstance ) {
 		this.targetInstance	= targetInstance;
 		this.targetClass	= targetInstance.getClass();
 	}
+
+	/**
+	 * --------------------------------------------------------------------------
+	 * Methods
+	 * --------------------------------------------------------------------------
+	 */
 
 	/**
 	 * @return the targetClass
@@ -85,10 +140,24 @@ public class ClassInvoker {
 		return this;
 	}
 
+	/**
+	 * Verifies if the target calss is an interface or not
+	 *
+	 * @return
+	 */
 	boolean isInterface() {
 		return this.targetClass.isInterface();
 	}
 
+	/**
+	 * Invokes the constructor for the class with the given arguments
+	 *
+	 * @param args The arguments to pass to the constructor
+	 *
+	 * @return The instance of the class
+	 *
+	 * @throws Throwable
+	 */
 	public Object invokeConstructor( Object... args ) throws Throwable {
 		// Convert the arguments to an array of classes
 		Class<?>[]		argTypes			= Arrays.stream( args )
@@ -107,6 +176,13 @@ public class ClassInvoker {
 		return this.targetInstance;
 	}
 
+	/**
+	 * Converts the argument to a class representation
+	 *
+	 * @param thisArg The argument to convert
+	 *
+	 * @return The class representation of the argument
+	 */
 	public static Class<?> argumentToClass( Object thisArg ) {
 		// TODO: Not sure what happens when the arg is null?
 		if ( thisArg == null ) {
@@ -116,12 +192,32 @@ public class ClassInvoker {
 		return PRIMITIVE_MAP.getOrDefault( clazz, clazz );
 	}
 
+	/**
+	 * Invokes a public/protected method with the given name and arguments
+	 *
+	 * @param methodName The name of the method to invoke
+	 * @param args       The arguments to pass to the method
+	 *
+	 * @return The result of the method invocation or null if the method is void
+	 *
+	 * @throws Throwable
+	 */
 	public Object invoke( String methodName, Object... args ) throws Throwable {
 		MethodHandle method = lookup.findVirtual( this.targetClass, methodName,
 		        MethodType.methodType( Object.class, args.getClass() ) );
 		return method.invokeWithArguments( args );
 	}
 
+	/**
+	 * Invokes a static method with the given name and arguments
+	 *
+	 * @param methodName The name of the method to invoke
+	 * @param args       The arguments to pass to the method
+	 *
+	 * @return The result of the method invocation or null if the method is void
+	 *
+	 * @throws Throwable
+	 */
 	public Object invokeStatic( String methodName, Object... args ) throws Throwable {
 		MethodHandle method = lookup.findStatic( this.targetClass, methodName,
 		        MethodType.methodType( Object.class, args.getClass() ) );
