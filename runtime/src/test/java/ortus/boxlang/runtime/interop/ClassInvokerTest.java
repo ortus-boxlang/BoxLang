@@ -3,6 +3,7 @@ package ortus.boxlang.runtime.interop;
 import ortus.boxlang.runtime.types.IType;
 
 import java.lang.String;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 
 import org.junit.jupiter.api.Test;
@@ -53,6 +54,13 @@ public class ClassInvokerTest {
 		String			results	= ( String ) target.invokeConstructor();
 		assertThat( results ).isEqualTo( "" );
 		assertThat( results.getClass() ).isEqualTo( String.class );
+	}
+
+	@Test
+	void testItCanCallMethods() throws Throwable {
+		ClassInvoker myMapInvoker = new ClassInvoker( HashMap.class );
+		myMapInvoker.invokeConstructor();
+		myMapInvoker.invoke( "put", "name", "BoxLang" );
 	}
 
 }
