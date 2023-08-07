@@ -6,55 +6,55 @@ import com.strumenta.kolasu.model.ReferenceByName
 
 sealed class BoxNode : Node()
 
-data class CFScript(
-	val body: List<Statement>
+data class BoxScript(
+	val body: List<BoxStatement>
 ) : Node()
 
-sealed class Statement : BoxNode()
+sealed class BoxStatement : BoxNode()
 
-data class Assignment(
-	val left: Expression,
-	val right: Expression
-) : Statement()
+data class BoxAssignment(
+	val left: BoxExpression,
+	val right: BoxExpression
+) : BoxStatement()
 
-data class FunctionDefinition(
+data class BoxFunctionDefinition(
 	override val name: String,
 	val returnType: String,
 	val parameters: List<String> = emptyList(),
-	val body: List<Statement> = emptyList()
-) : Statement(), Named
+	val body: List<BoxStatement> = emptyList()
+) : BoxStatement(), Named
 
-data class MethodDefinition(
+data class BoxMethodDefinition(
 	override val name: String,
 	val returnType: String,
 	val parameters: List<String> = emptyList(),
-	val body: List<Statement> = emptyList()
-) : Statement(), Named
+	val body: List<BoxStatement> = emptyList()
+) : BoxStatement(), Named
 
-data class Component(
+data class BoxComponent(
 	val identifier: String,
-	val functions: List<FunctionDefinition>
-) : Statement()
+	val functions: List<BoxFunctionDefinition>
+) : BoxStatement()
 
-interface ExpressionType
-sealed class Expression(var type: ExpressionType? = null) : BoxNode()
+interface BoxExpressionType
+sealed class BoxExpression(var type: BoxExpressionType? = null) : BoxNode()
 
-sealed class LiteralExpression : Expression()
-data class IntegerLiteral(val value: String) : LiteralExpression()
-data class FloatLiteral(val value: String) : LiteralExpression()
-data class StringLiteral(val value: String) : LiteralExpression()
-data class BooleanLiteral(val value: String) : LiteralExpression()
+sealed class BoxLiteralExpression : BoxExpression()
+data class BoxIntegerLiteral(val value: String) : BoxLiteralExpression()
+data class BoxFloatLiteral(val value: String) : BoxLiteralExpression()
+data class BoxStringLiteral(val value: String) : BoxLiteralExpression()
+data class BoxBooleanLiteral(val value: String) : BoxLiteralExpression()
 
-data class Identifier(
-	val scope: ReferenceByName<ScopeExpression>?,
+data class BoxIdentifier(
+	val scope: ReferenceByName<BoxScopeExpression>?,
 	override val name: String
-) : Expression(), Named
+) : BoxExpression(), Named
 
-enum class BinaryOperator {
+enum class BoxBinaryOperator {
 	Concat
 }
 
-enum class ComparisonOperator {
+enum class BoxComparisonOperator {
 	Equal,
 	GreaterThan,
 	GreaterEqualsThan,
@@ -63,57 +63,57 @@ enum class ComparisonOperator {
 	NotEqual
 }
 
-data class BinaryExpression(
-	var left: Expression,
-	var op: BinaryOperator,
-	var right: Expression
-) : Expression()
+data class BoxBinaryExpression(
+	var left: BoxExpression,
+	var op: BoxBinaryOperator,
+	var right: BoxExpression
+) : BoxExpression()
 
-data class ComparisonExpression(
-	var left: Expression,
-	var op: ComparisonOperator,
-	var right: Expression
-) : Expression()
+data class BoxComparisonExpression(
+	var left: BoxExpression,
+	var op: BoxComparisonOperator,
+	var right: BoxExpression
+) : BoxExpression()
 
-sealed class ScopeExpression(
+sealed class BoxScopeExpression(
 	override val name: String
-) : Expression(), Named
+) : BoxExpression(), Named
 
-data class VariablesScopeExpression(
+data class BoxVariablesScopeExpression(
 	override val name: String
-) : ScopeExpression(name)
+) : BoxScopeExpression(name)
 
-sealed class InvokationExpression : AccessExpression()
+sealed class BoxInvokationExpression : BoxAccessExpression()
 
 data class FunctionInvokationExpression(
-	val name: ReferenceByName<FunctionDefinition>,
-	val arguments: List<Expression>
-) : InvokationExpression()
+	val name: ReferenceByName<BoxFunctionDefinition>,
+	val arguments: List<BoxExpression>
+) : BoxInvokationExpression()
 
-data class MethodInvokationStatement(
-	val invokation: MethodInvokationExpression
-) : Statement()
+data class BoxMethodInvokationStatement(
+	val invokation: BoxMethodInvokationExpression
+) : BoxStatement()
 
-data class MethodInvokationExpression(
-	val methodName: ReferenceByName<MethodDefinition>,
-	val obj: AccessExpression,
-	val arguments: List<Expression>
-) : InvokationExpression()
+data class BoxMethodInvokationExpression(
+	val methodName: ReferenceByName<BoxMethodDefinition>,
+	val obj: BoxAccessExpression,
+	val arguments: List<BoxExpression>
+) : BoxInvokationExpression()
 
-sealed class AccessExpression : Expression()
+sealed class BoxAccessExpression : BoxExpression()
 
 data class ArrayAccessExpression(
-	val context: AccessExpression,
-	val index: Expression
-) : AccessExpression()
+	val context: BoxAccessExpression,
+	val index: BoxExpression
+) : BoxAccessExpression()
 
-data class ObjectAccessExpression(
-	val context: AccessExpression? = null,
-	val access: Expression
-) : AccessExpression()
+data class BoxObjectAccessExpression(
+	val context: BoxAccessExpression? = null,
+	val access: BoxExpression
+) : BoxAccessExpression()
 
-data class IfStatement(
-	val condition: Expression,
-	val body: List<Statement>,
-	val elseStatement: List<Statement>?
-) : Statement()
+data class BoxIfStatement(
+	val condition: BoxExpression,
+	val body: List<BoxStatement>,
+	val elseStatement: List<BoxStatement>?
+) : BoxStatement()

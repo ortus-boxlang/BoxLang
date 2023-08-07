@@ -14,8 +14,8 @@ private fun findAttribute(name: String, htmlElementContext: CFMLParser.HtmlEleme
 private fun getAttributeValue(attribute: String) =
 	attribute.substring(1, attribute.length - 1)
 
-fun CFMLParser.HtmlDocumentContext.toAst(): CFScript {
-	val statements = mutableListOf<Statement>()
+fun CFMLParser.HtmlDocumentContext.toAst(): BoxScript {
+	val statements = mutableListOf<BoxStatement>()
 	this.htmlElements().forEach {
 		when {
 			it is CFMLParser.HtmlElementsContext -> {
@@ -42,17 +42,17 @@ fun CFMLParser.HtmlDocumentContext.toAst(): CFScript {
 			}
 		}
 	}
-	return CFScript(statements)
+	return BoxScript(statements)
 }
 
-fun CFMLParser.CfscriptContext.toAst(): CFScript {
+fun CFMLParser.CfscriptContext.toAst(): BoxScript {
 	val scriptCode = this.CFSCRIPT_BODY().text.removeSuffix("</cfscript>")
 	val cfParser = CFKolasuParser() //<-- TODO: externalise
 	val result = cfParser.parse(scriptCode)
 	return result.root!! //<-- TODO: handle errors
 }
 
-fun CFMLParser.CfcomponentContext.toAst() = Component(
+fun CFMLParser.CfcomponentContext.toAst() = BoxComponent(
 	identifier = this.htmlAttribute()
 		.firstOrNull { it.htmlAttributeName().text.lowercase() == "name" }
 		?.htmlAttributeValue()?.text?.let { getAttributeValue(it) } ?: "",
@@ -61,7 +61,7 @@ fun CFMLParser.CfcomponentContext.toAst() = Component(
 		.map { it.cffunction().toAst() }
 )
 
-fun CFMLParser.CffunctionContext.toAst() = FunctionDefinition(
+fun CFMLParser.CffunctionContext.toAst() = BoxFunctionDefinition(
 	name = this.htmlAttribute()
 		.firstOrNull { it.htmlAttributeName().text.lowercase() == "name" }
 		?.htmlAttributeValue()?.text?.let { getAttributeValue(it) } ?: "",
@@ -70,21 +70,21 @@ fun CFMLParser.CffunctionContext.toAst() = FunctionDefinition(
 		?.htmlAttributeValue()?.text?.let { getAttributeValue(it) } ?: ""
 )
 
-private fun CFMLParser.HtmlTagNameContext.toAst(identifier: String, htmlElements: MutableList<CFMLParser.HtmlElementsContext>): Statement {
-	val functions = mutableListOf<FunctionDefinition>()
+private fun CFMLParser.HtmlTagNameContext.toAst(identifier: String, htmlElements: MutableList<CFMLParser.HtmlElementsContext>): BoxStatement {
+	val functions = mutableListOf<BoxFunctionDefinition>()
 	htmlElements.forEach {
 		when {
 			it is CFMLParser.HtmlElementsContext -> {
 				if (it.htmlElement().htmlTagName(0).text.equals("cffunction", true)) {
 					val name = findAttribute("name", it.htmlElement())
 					val returnType = findAttribute("returntype", it.htmlElement())
-					functions += FunctionDefinition(name, returnType, emptyList())
+					functions += BoxFunctionDefinition(name, returnType, emptyList())
 				}
 
 			}
 		}
 	}
-	return Component(
+	return BoxComponent(
 		identifier,
 		functions
 	)

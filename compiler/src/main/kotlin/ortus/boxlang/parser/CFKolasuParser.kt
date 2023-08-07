@@ -16,7 +16,7 @@ import java.io.InputStream
 import java.nio.charset.Charset
 
 
-class CFKolasuParser : KolasuParser<CFScript, CFParser, CFParser.ScriptContext, KolasuANTLRToken>(ANTLRTokenFactory()) {
+class CFKolasuParser : KolasuParser<BoxScript, CFParser, CFParser.ScriptContext, KolasuANTLRToken>(ANTLRTokenFactory()) {
 	override fun createANTLRLexer(inputStream: InputStream, charset: Charset): Lexer {
 		return CFLexer(CharStreams.fromStream(inputStream.withoutBOM()))
 	}
@@ -29,11 +29,11 @@ class CFKolasuParser : KolasuParser<CFScript, CFParser, CFParser.ScriptContext, 
 		return CFParser(tokenStream)
 	}
 
-	override fun parse(file: File, charset: Charset, considerPosition: Boolean, measureLexingTime: Boolean): ParsingResult<CFScript> {
+	override fun parse(file: File, charset: Charset, considerPosition: Boolean, measureLexingTime: Boolean): ParsingResult<BoxScript> {
 		return parse(file.inputStreamWithoutBOM(), charset, considerPosition, measureLexingTime, FileSource(file))
 	}
 
-	override fun parse(inputStream: InputStream, charset: Charset, considerPosition: Boolean, measureLexingTime: Boolean, source: Source?): ParsingResult<CFScript> {
+	override fun parse(inputStream: InputStream, charset: Charset, considerPosition: Boolean, measureLexingTime: Boolean, source: Source?): ParsingResult<BoxScript> {
 		return super.parse(inputStream.withoutBOM(), charset, considerPosition, measureLexingTime, source)
 	}
 
@@ -42,7 +42,7 @@ class CFKolasuParser : KolasuParser<CFScript, CFParser, CFParser.ScriptContext, 
 		considerPosition: Boolean,
 		issues: MutableList<Issue>,
 		source: Source?
-	): CFScript? {
+	): BoxScript? {
 		return parseTreeRoot.toAst()
 	}
 }

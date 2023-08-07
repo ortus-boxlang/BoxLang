@@ -95,7 +95,7 @@ class TestBoxlangToJavaAST : BaseTest() {
 	private fun assertCodeEqual(expected: String, actual: String) =
 		assertASTEqual(javaParser.parse(expected).result.get(), javaParser.parse(actual).result.get())
 
-	private fun cfmlToBoxlang(file: File): ParsingResult<CFScript> = cfParser.source(file).parse()
+	private fun cfmlToBoxlang(file: File): ParsingResult<BoxScript> = cfParser.source(file).parse()
 	private fun parseJava(file: File): ParseResult<CompilationUnit> {
 		val result = javaParser.parse(file)
 		System.err.println(

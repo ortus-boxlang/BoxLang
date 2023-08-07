@@ -59,7 +59,7 @@ class CFLanguageParser {
 		private lateinit var detectedLanguage: CFLanguage
 		private lateinit var cfFirstStageParseResult: FirstStageParsingResult<ScriptContext>
 		private lateinit var cfmlFirstStageParseResult: FirstStageParsingResult<HtmlDocumentContext>
-		private lateinit var parseResult: ParsingResult<CFScript>
+		private lateinit var parseResult: ParsingResult<BoxScript>
 
 		private fun getCfParseResult(): FirstStageParsingResult<ScriptContext> {
 			if (!this::cfFirstStageParseResult.isInitialized)
@@ -73,7 +73,7 @@ class CFLanguageParser {
 			return cfmlFirstStageParseResult
 		}
 
-		private fun getParseResult(): ParsingResult<CFScript> {
+		private fun getParseResult(): ParsingResult<BoxScript> {
 			if (!this::parseResult.isInitialized)
 				parseResult = when (detectLanguage()) {
 					CFLanguage.CFML -> cfmlParser.parse(code)
@@ -101,7 +101,7 @@ class CFLanguageParser {
 			CFLanguage.CFScript -> getCfParseResult()
 		}
 
-		fun parse(): ParsingResult<CFScript> = getParseResult()
+		fun parse(): ParsingResult<BoxScript> = getParseResult()
 
 		fun isCFML() = detectLanguage() == CFLanguage.CFML
 		fun isCFScript() = detectLanguage() == CFLanguage.CFScript
@@ -171,7 +171,7 @@ class CFLanguageParser {
 	fun parseFirstStage(file: File) = UnknownCFLanguageFirstStageParser(file)
 
 	@Deprecated("")
-	fun parse(file: File): ParsingResult<CFScript> {
+	fun parse(file: File): ParsingResult<BoxScript> {
 		// FIXME: this approach will perform the same first-stage parsing twice, either in A) or B) below
 		val firstStageResult = parseFirstStage(file)
 		return if (firstStageResult.isCFScriptParsable())
