@@ -46,7 +46,7 @@ data class BoxStringLiteral(val value: String) : BoxLiteralExpression()
 data class BoxBooleanLiteral(val value: String) : BoxLiteralExpression()
 
 data class BoxIdentifier(
-	val scope: ReferenceByName<BoxScopeExpression>?,
+	val scope: BoxScopeExpression?,
 	override val name: String
 ) : BoxExpression(), Named
 

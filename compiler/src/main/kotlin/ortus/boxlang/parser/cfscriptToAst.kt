@@ -159,7 +159,7 @@ fun CFParser.AccessExpressionContext.toAst(): BoxAccessExpression {
 
 private fun CFParser.IdentifierContext.toAst() = BoxIdentifier(
 	name = this.simpleIdentifier().text,
-	scope = this.scope()?.text?.let { ReferenceByName(it) }
+	scope = this.scope()?.toAst()
 )
 
 private fun CFParser.ScopeContext.toAst(): BoxScopeExpression {

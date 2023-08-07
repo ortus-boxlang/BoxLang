@@ -220,14 +220,7 @@ fun BoxMethodInvokationExpression.toJava(): MethodCallExpr = MethodCallExpr(
 
 fun BoxIdentifier.toJava(): Expression = when {
 	this.scope == null -> NameExpr(this.name)
-	this.scope != null -> {
-		if (this.scope.resolved)
-			FieldAccessExpr(this.scope.referred!!.toJava(), this.name)
-		else
-			FieldAccessExpr(NameExpr(this.scope.name), this.name)
-//			throw IllegalStateException("${this.javaClass.simpleName} scope is not resolved")
-	}
-
+	this.scope != null -> FieldAccessExpr(NameExpr(this.scope.name), this.name)
 	else -> throw this.notImplemented()
 }
 
