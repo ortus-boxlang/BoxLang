@@ -22,9 +22,12 @@ import java.lang.invoke.ConstantCallSite;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
+import java.lang.reflect.Method;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * This class is used to represent a BX/Java Class and invoke methods on classes using invoke dynamic.
@@ -53,36 +56,43 @@ public class ClassInvoker {
 	 * This is a map of primitive types to their native Java counterparts
 	 * so we can do the right casting for primitives
 	 */
-	private static final Map<Class<?>, Class<?>>	PRIMITIVE_MAP;
+	private static final Map<Class<?>, Class<?>>			PRIMITIVE_MAP;
 	/**
 	 * This is the method handle lookup for the class
 	 */
-	private static final MethodHandles.Lookup		METHOD_LOOKUP;
+	private static final MethodHandles.Lookup				METHOD_LOOKUP;
 
 	/**
 	 * The bound class for this invoker
 	 */
-	private Class<?>								targetClass;
+	private Class<?>										targetClass;
 
 	/**
 	 * The bound instance for this invoker (if any)
 	 */
-	private Object									targetInstance	= null;
+	private Object											targetInstance		= null;
+
+	/**
+	 * This is a map of method handles for the class
+	 */
+	private final ConcurrentHashMap<String, MethodHandle>	methodHandleCache	= new ConcurrentHashMap<String, MethodHandle>(
+	        32 );
 
 	/**
 	 * Static Initializer
 	 */
 	static {
 		METHOD_LOOKUP	= MethodHandles.lookup();
-		PRIMITIVE_MAP	= new HashMap<>();
-		PRIMITIVE_MAP.put( Boolean.class, boolean.class );
-		PRIMITIVE_MAP.put( Byte.class, byte.class );
-		PRIMITIVE_MAP.put( Character.class, char.class );
-		PRIMITIVE_MAP.put( Short.class, short.class );
-		PRIMITIVE_MAP.put( Integer.class, int.class );
-		PRIMITIVE_MAP.put( Long.class, long.class );
-		PRIMITIVE_MAP.put( Float.class, float.class );
-		PRIMITIVE_MAP.put( Double.class, double.class );
+		PRIMITIVE_MAP	= Map.of(
+		        Boolean.class, boolean.class,
+		        Byte.class, byte.class,
+		        Character.class, char.class,
+		        Short.class, short.class,
+		        Integer.class, int.class,
+		        Long.class, long.class,
+		        Float.class, float.class,
+		        Double.class, double.class
+		);
 	}
 
 	/**
@@ -175,14 +185,14 @@ public class ClassInvoker {
 	 */
 
 	/**
-	 * Invokes the constructor for the class with the given arguments
+	 * Invokes the constructor for the class with the given arguments and returns the instance of the object
 	 *
 	 * @param args The arguments to pass to the constructor
 	 *
 	 * @return The instance of the class
 	 *
 	 * @throws Throwable             If the constructor cannot be invoked
-	 * @throws IllegalStateException If the class is an interface
+	 * @throws IllegalStateException If the class is an interface, you can't call a constructor on an interface
 	 */
 	public Object invokeConstructor( Object... args ) throws Throwable {
 
@@ -207,42 +217,95 @@ public class ClassInvoker {
 	/**
 	 * Invokes a public method on a class or interface with the given name and arguments
 	 *
+	 * TODO:
+	 * [ ] - Test against interfaces
+	 *
 	 * @param methodName The name of the method to invoke
-	 * @param args       The arguments to pass to the method
+	 * @param arguments  The arguments to pass to the method
 	 *
 	 * @return The result of the method invocation or null if the method is void
 	 *
 	 * @throws Throwable
+	 * @throws IllegalArgumentException If the method name is null or empty
 	 */
-	public Object invoke( String methodName, Object... args ) throws Throwable {
-		// Find the method handle for the method
-		MethodHandle method = METHOD_LOOKUP.findVirtual(
-		        this.targetClass,
-		        methodName,
-		        MethodType.methodType( Object.class, argumentsToClasses( args ) )
-		);
+	public Object invoke( String methodName, Object... arguments ) throws Throwable {
+		// Verify method name
+		if ( methodName == null || methodName.isEmpty() ) {
+			throw new IllegalArgumentException( "Method name cannot be null or empty." );
+		}
 
 		// Execute it baby!
-		return method.invokeWithArguments( args );
+		return getMethodHandle( methodName, argumentsToClasses( arguments ) )
+		        .bindTo( this.targetInstance )
+		        .invokeWithArguments( arguments );
+	}
+
+	/**
+	 * Gets the method handle for the given method name and arguments, from the cache if possible
+	 * or creates a new one if not found.
+	 *
+	 * @param methodName         The name of the method to get the handle for
+	 * @param argumentsAsClasses The array of arguments as classes to map
+	 *
+	 * @return The method handle representing the method signature
+	 *
+	 * @throws RuntimeException       If the method cannot be found
+	 * @throws NoSuchMethodException  If the method handle cannot be found
+	 * @throws IllegalAccessException If the method handle cannot be accessed
+	 */
+	private MethodHandle getMethodHandle( String methodName, Class<?>[] argumentsAsClasses )
+	        throws RuntimeException, NoSuchMethodException, IllegalAccessException {
+
+		String			cacheKey		= methodName + "-" + Objects.hash( methodName, Arrays.toString( argumentsAsClasses ) );
+		MethodHandle	methodHandle	= methodHandleCache.get( cacheKey );
+
+		if ( methodHandle == null ) {
+			Method targetMethod;
+			try {
+				targetMethod = this.targetClass.getMethod( methodName, argumentsAsClasses );
+			} catch ( NoSuchMethodException | SecurityException e ) {
+				e.printStackTrace();
+				throw new RuntimeException(
+				        String.format(
+				                "Could not find method [%s] on the class: [%s] with the following argument signature [%s].",
+				                methodName,
+				                this.targetClass.getName(),
+				                Arrays.toString( argumentsAsClasses )
+				        )
+				);
+			}
+
+			return METHOD_LOOKUP.findVirtual(
+			        this.targetClass,
+			        methodName,
+			        MethodType.methodType( targetMethod.getReturnType(), argumentsAsClasses )
+			);
+		}
+
+		return methodHandle;
 	}
 
 	/**
 	 * Invokes a static method with the given name and arguments
 	 *
 	 * @param methodName The name of the method to invoke
-	 * @param args       The arguments to pass to the method
+	 * @param arguments  The arguments to pass to the method
 	 *
 	 * @return The result of the method invocation or null if the method is void
 	 *
 	 * @throws Throwable
 	 */
-	public Object invokeStatic( String methodName, Object... args ) throws Throwable {
-		MethodHandle method = METHOD_LOOKUP.findStatic(
+	public Object invokeStatic( String methodName, Object... arguments ) throws Throwable {
+		Class<?>[]		argumentsAsClasses	= argumentsToClasses( arguments );
+		Method			targetMethod		= this.targetClass.getMethod( methodName, argumentsAsClasses );
+
+		MethodHandle	method				= METHOD_LOOKUP.findStatic(
 		        this.targetClass,
 		        methodName,
-		        MethodType.methodType( Object.class, argumentsToClasses( args ) )
+		        MethodType.methodType( targetMethod.getReturnType(), argumentsAsClasses )
 		);
-		return method.invokeWithArguments( args );
+
+		return method.invokeWithArguments( arguments );
 	}
 
 	/**
@@ -285,6 +348,7 @@ public class ClassInvoker {
 	 * @return The array of classes
 	 */
 	public static Class<?>[] argumentsToClasses( Object... args ) {
+		System.out.println( "argumentsToClasses -> " + Arrays.toString( args ) );
 		// Convert the arguments to an array of classes
 		return Arrays.stream( args )
 		        .map( ClassInvoker::argumentToClass )

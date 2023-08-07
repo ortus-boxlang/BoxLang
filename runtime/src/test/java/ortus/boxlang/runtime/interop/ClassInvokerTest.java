@@ -57,10 +57,11 @@ public class ClassInvokerTest {
 	}
 
 	@Test
-	void testItCanCallMethods() throws Throwable {
+	void testItCanCallMethodsWithNoArguments() throws Throwable {
 		ClassInvoker myMapInvoker = new ClassInvoker( HashMap.class );
 		myMapInvoker.invokeConstructor();
-		myMapInvoker.invoke( "put", "name", "BoxLang" );
+		assertThat( myMapInvoker.invoke( "size" ) ).isEqualTo( 0 );
+		assertThat( ( Boolean ) myMapInvoker.invoke( "isEmpty" ) ).isTrue();
 	}
 
 }
