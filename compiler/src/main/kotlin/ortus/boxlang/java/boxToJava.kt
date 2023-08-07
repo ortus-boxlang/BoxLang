@@ -1,9 +1,9 @@
 package ortus.boxlang.java
 
-import com.github.javaparser.ast.ImportDeclaration
-import com.github.javaparser.ast.NodeList
-import com.github.javaparser.ast.PackageDeclaration
+import com.github.javaparser.ast.*
 import com.github.javaparser.ast.body.ClassOrInterfaceDeclaration
+import com.github.javaparser.ast.body.MethodDeclaration
+import com.github.javaparser.ast.body.Parameter
 import com.github.javaparser.ast.body.TypeDeclaration
 import com.github.javaparser.ast.expr.*
 import com.github.javaparser.ast.modules.ModuleDeclaration
@@ -11,9 +11,79 @@ import com.github.javaparser.ast.stmt.BlockStmt
 import com.github.javaparser.ast.stmt.ExpressionStmt
 import com.github.javaparser.ast.stmt.IfStmt
 import com.github.javaparser.ast.stmt.Statement
+import com.github.javaparser.ast.type.ClassOrInterfaceType
+import com.github.javaparser.ast.type.VoidType
 import com.strumenta.kolasu.model.children
 import com.strumenta.kolasu.model.processNodesOfType
 import ortus.boxlang.parser.*
+
+
+class BoxToJavaMapper(
+	private val boxAstRoot: BoxScript,
+	private val fileName: String? = null
+) {
+	private val cu = CompilationUnit()
+
+	fun toJava(): CompilationUnit =
+		if (boxAstRoot.body.any { it !is BoxComponent })
+			SingleScriptTemplate(
+				boxAstRoot.body.filter { it !is BoxComponent },
+				cu,
+				fileName
+			).toJava()
+		else
+			cu
+}
+
+class SingleScriptTemplate(
+	private val scriptStatements: List<BoxStatement>,
+	private val cu: CompilationUnit,
+	private val fileName: String? = null
+) {
+	inner class ExecutionContextType : ClassOrInterfaceType("ExecutionContext") {
+		init {
+			cu.addImport("ortus.boxlang.runtime.ExecutionContext")
+		}
+	}
+
+	private val executionContextType = ExecutionContextType()
+	private val iTemplateType = ClassOrInterfaceType("ITemplate")
+		.apply { cu.addImport("ortus.boxlang.runtime.dynamic.ITemplate") }
+	private val iScopeType = ClassOrInterfaceType("IScope")
+		.apply { cu.addImport("ortus.boxlang.runtime.scopes.IScope") }
+	private val executionContextParameter = Parameter(executionContextType, "context")
+	private val invokeMethodDeclaration = MethodDeclaration()
+		.apply { name = SimpleName("invoke") }
+		.apply {
+			setBody(
+				BlockStmt().apply {
+					addStatement(
+						ExpressionStmt(AssignExpr(
+							VariableDeclarationExpr(iScopeType, "variablesScope"),
+							MethodCallExpr(NameExpr("context"), "getVariablesScope"),
+							AssignExpr.Operator.ASSIGN
+						)))
+				}
+			)
+		}
+		.apply { addModifier(Modifier.Keyword.PUBLIC) }
+		.apply { parameters = NodeList(executionContextParameter) }
+		.apply { type = VoidType() }
+		.apply { addThrownException(Throwable::class.java) }
+	private val classDefinition = ClassOrInterfaceDeclaration()
+		.apply { addMember(invokeMethodDeclaration) }
+		.apply { fileName?.let { setName(it.replace(Regex("""(.*)\.([^.]+)"""), """$1\$$2""")) } }
+		.apply { addModifier(Modifier.Keyword.PUBLIC) }
+		.apply { addImplementedType(iTemplateType) }
+
+	fun toJava(): CompilationUnit {
+		scriptStatements.forEach {
+			invokeMethodDeclaration.body.orElseThrow().addStatement(it.toJava())
+		}
+		return cu
+			.apply { addType(classDefinition) }
+	}
+}
 
 fun BoxScript.toJava(): com.github.javaparser.ast.CompilationUnit {
 	val packageDeclaration = PackageDeclaration()

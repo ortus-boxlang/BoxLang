@@ -6,6 +6,7 @@ import com.github.javaparser.ast.CompilationUnit
 import com.strumenta.kolasu.parsing.ParsingResult
 import junit.framework.TestCase.assertEquals
 import org.junit.Test
+import ortus.boxlang.java.BoxToJavaMapper
 import ortus.boxlang.java.toJava
 import java.io.File
 import java.nio.file.Path
@@ -84,7 +85,8 @@ class TestBoxlangToJavaAST : BaseTest() {
 		check(javaParseResult.isSuccessful) { "The Java file seems incorrect ${javaFile.absolutePath}" }
 		check(javaParseResult.result.isPresent) { "The Java file parsing did not produce a result ${javaFile.absolutePath}" }
 
-		val boxlangToJava = cfmlParseResult.root!!.toJava()
+		val boxToJavaMapper = BoxToJavaMapper(cfmlParseResult.root!!, cfFile.name)
+		val boxlangToJava = boxToJavaMapper.toJava()
 		val expectedJavaAst = javaParseResult.result.orElseThrow()
 		assertASTEqual(expectedJavaAst, boxlangToJava) { "" }
 	}
