@@ -51,7 +51,7 @@ public class HelloWorld$cfm implements ITemplate {
 	 *
 	 * @param context The execution context requesting the execution
 	 */
-	public invoke( ExecutionContext context ) throws Throwable {
+	public void invoke( ExecutionContext context ) throws Throwable {
 		// Reference to the variables scope
 		// TODO: How will we track this brad, since this belongs to THIS template, shouldn't each template get
 		// it's own `variables` scope
