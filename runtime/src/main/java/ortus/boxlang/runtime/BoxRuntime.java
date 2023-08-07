@@ -17,32 +17,105 @@
  */
 package ortus.boxlang.runtime;
 
+import java.time.Instant;
+import java.util.Optional;
+
 /**
  * Represents the top level runtime container for box lang. Config, global scopes, mappings, threadpools, etc all go here.
  * All threads, requests, invocations, etc share this.
  */
 public class BoxRuntime {
 
-	private static BoxRuntime boxRuntimeInstance;
+	/**
+	 * --------------------------------------------------------------------------
+	 * Public Properties
+	 * --------------------------------------------------------------------------
+	 */
 
-	// Prevent outside instantiation to follow singleton pattern
-	protected BoxRuntime() {
+	/**
+	 * --------------------------------------------------------------------------
+	 * Private Properties
+	 * --------------------------------------------------------------------------
+	 */
 
+	/**
+	 * Singleton instance
+	 */
+	private static BoxRuntime instance;
+
+	/**
+	 * The timestamp when the runtime was started
+	 */
+	private Instant startTime;
+
+	/**
+	 * --------------------------------------------------------------------------
+	 * Methods
+	 * --------------------------------------------------------------------------
+	 */
+
+	/**
+	 * Static constructor
+	 */
+	private BoxRuntime() {
+		// Initialization code, if needed
 	}
 
-	public synchronized static BoxRuntime startup() {
-		System.out.println( "Starting up Box Runtime" );
-		boxRuntimeInstance = new BoxRuntime();
-		return getInstance();
+	/**
+	 * Get the start time of the runtime, null if not started
+	 *
+	 * @return the runtime start time
+	 */
+	public static Optional<Instant> getStartTime() {
+		return ( instance == null ) ? Optional.empty() : Optional.ofNullable( instance.startTime );
 	}
 
-	public static void shutdown() {
-		System.out.println( "Shutting down Box Runtime" );
-		boxRuntimeInstance = null;
-	}
-
+	/**
+	 * Get the singleton instance.
+	 *
+	 * @return BoxRuntime
+	 *
+	 * @throws RuntimeException if the runtime has not been started
+	 */
 	public static BoxRuntime getInstance() {
-		return boxRuntimeInstance;
+		return instance;
+	}
+
+	/**
+	 * Check if the runtime has been started
+	 *
+	 * @return true if the runtime has been started
+	 */
+	public static Boolean isStarted() {
+		return instance != null;
+	}
+
+	/**
+	 * Start up the runtime
+	 *
+	 * @param options The runtime options
+	 *
+	 * @return The runtime instance
+	 */
+	public static synchronized BoxRuntime startup() {
+		if ( instance != null ) {
+			return getInstance();
+		}
+		System.out.println( "Starting up BoxLang Runtime" );
+
+		instance			= new BoxRuntime();
+		instance.startTime	= Instant.now();
+
+		System.out.println( "BoxLang Runtime Started" );
+		return instance;
+	}
+
+	/**
+	 * Shut down the runtime
+	 */
+	public static synchronized void shutdown() {
+		System.out.println( "Shutting down BoxLang Runtime" );
+		instance = null;
 	}
 
 }

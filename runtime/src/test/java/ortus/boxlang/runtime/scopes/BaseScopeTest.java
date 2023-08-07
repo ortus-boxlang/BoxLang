@@ -17,15 +17,30 @@
  */
 package ortus.boxlang.runtime.scopes;
 
-import java.util.Map;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+import static com.google.common.truth.Truth.assertThat;
 
-/**
- * All scope implementations must implement this interface
- */
-public interface IScope extends Map<Key, Object> {
+public class BaseScopeTest {
 
-	/**
-	 * Returns the lookup order
-	 */
-	public int getLookupOrder();
+	private static BaseScope scope;
+
+	@BeforeAll
+	public static void setUp() {
+		scope = new BaseScope( "test" );
+	}
+
+	@Test
+	void testBasicGetAndSet() {
+		Key key = Key.of( "testKey" );
+		Object value = "testValue";
+
+		// Test getValue() and setValue()
+		assertThat( scope.get( key ) ).isNull();
+
+		scope.put( key, value );
+		assertThat( scope.get( key ) ).isEqualTo( value );
+		assertThat( scope.get( Key.of( "TestKey" ) ) ).isEqualTo( value );
+	}
+
 }

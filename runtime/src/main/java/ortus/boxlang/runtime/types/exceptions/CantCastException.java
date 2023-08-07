@@ -15,17 +15,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package ortus.boxlang.runtime.scopes;
-
-import java.util.Map;
+package ortus.boxlang.runtime.types.exceptions;
 
 /**
- * All scope implementations must implement this interface
+ * This exception is thrown when a cast can't be done on any type
  */
-public interface IScope extends Map<Key, Object> {
+public class CantCastException extends RuntimeException {
 
 	/**
-	 * Returns the lookup order
+	 * Constructor
+	 *
+	 * @param message Why the cast can't be done
 	 */
-	public int getLookupOrder();
+	public CantCastException( String message ) {
+		super( message );
+	}
 }

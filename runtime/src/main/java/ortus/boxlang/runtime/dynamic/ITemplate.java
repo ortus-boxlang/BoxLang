@@ -15,30 +15,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package ortus.boxlang.runtime;
+package ortus.boxlang.runtime.dynamic;
 
-/**
- * BoxLang bootstrapper. Loads up the engine
- */
-public class Bootstrap {
+import ortus.boxlang.runtime.context.ExecutionContext;
 
-	public String getGreeting() {
-		return "Hello World!";
-	}
+public interface ITemplate {
 
-	public String getGreeting( String name ) {
-		return "Hello " + name + "!";
-	}
+	/**
+	 * Invoke the template
+	 *
+	 * @param context The context to invoke the template with
+	 *
+	 * @return The template itself
+	 */
+	public ITemplate invoke( ExecutionContext context );
 
-	public static void main( String[] args ) {
-		BoxRuntime boxRuntime = BoxRuntime.startup();
-
-		ExecutionContext context = new ExecutionContext();
-		// Here is where we presumably boostrap a page or class that we are executing in our new context.
-		// JIT if neccessary
-
-		System.out.println( new Bootstrap().getGreeting() );
-
-		boxRuntime.shutdown();
-	}
 }

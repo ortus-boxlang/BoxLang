@@ -21,11 +21,10 @@ import static com.google.common.truth.Truth.assertThat;
 
 import org.junit.jupiter.api.Test;
 
-class BootstrapTest {
+class BoxRunnerTest {
 
 	@Test
 	void appCanGreat() {
-		Bootstrap runtime = new Bootstrap();
-		assertThat( runtime.getGreeting() ).contains( "Hello" );
+		BoxRunner runtime = new BoxRunner();
 	}
 }

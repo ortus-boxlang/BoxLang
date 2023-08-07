@@ -15,12 +15,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package ortus.boxlang.runtime.scopes;
+package ortus.boxlang.runtime;
 
-/**
- * represents boxlang this scope container
- */
-public class ThisScope extends BaseScope {
+import ortus.boxlang.runtime.dynamic.ITemplate;
+import ortus.boxlang.runtime.dynamic.MockTemplate;
+
+public class BoxPiler {
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -35,18 +35,60 @@ public class ThisScope extends BaseScope {
 	 */
 
 	/**
+	 * Singelton instance
+	 */
+	private static BoxPiler instance;
+
+	/**
 	 * --------------------------------------------------------------------------
-	 * Constructors
+	 * Constructor(s)
 	 * --------------------------------------------------------------------------
 	 */
 
-	public ThisScope() {
-		super( 30, "this" );
+	/**
+	 * Constructor
+	 */
+	private BoxPiler() {
+		// Any initialization code can be placed here
+		getInstance();
+	}
+
+	/**
+	 * Get an instance of the BoxPiler
+	 *
+	 * @return The BoxPiler instance
+	 */
+	public static synchronized BoxPiler getInstance() {
+		if ( instance == null ) {
+			instance = new BoxPiler();
+		}
+		return instance;
 	}
 
 	/**
 	 * --------------------------------------------------------------------------
-	 * Methods
+	 * Public Methods
 	 * --------------------------------------------------------------------------
 	 */
+
+	/**
+	 * Parse a template into an executable dynamic ITemplate object
+	 *
+	 * @param templatePath The path to the template
+	 *
+	 * @return The parsed template instance
+	 */
+	public static ITemplate parse( String templatePath ) {
+
+		// TODO: Check if the template is in cache (local or ram)
+
+		// If not, discover it, parse it, ast it and cache it
+		// TODO: Parse the template
+		// TODO: AST the template
+		// TODO: Cache the template
+
+		// Return the template
+		return new MockTemplate();
+	}
+
 }

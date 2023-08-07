@@ -15,17 +15,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package ortus.boxlang.runtime.scopes;
+package ortus.boxlang.runtime;
 
-import java.util.Map;
+public class BoxPilerTest {
 
-/**
- * All scope implementations must implement this interface
- */
-public interface IScope extends Map<Key, Object> {
-
-	/**
-	 * Returns the lookup order
-	 */
-	public int getLookupOrder();
 }

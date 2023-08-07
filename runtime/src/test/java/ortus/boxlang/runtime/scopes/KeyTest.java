@@ -38,9 +38,18 @@ public class KeyTest {
 	@Test
 	public void testEquals() {
 		Key key1 = new Key( "Test" );
-		Key key2 = new Key( "Test" );
+		Key key2 = new Key( "test" );
 		assertThat( key1 ).isEqualTo( key1 );
 		assertThat( key1 ).isEqualTo( key2 );
+	}
+
+	@Test
+	public void testEqualsWithCase() {
+		Key key1 = new Key( "Test" );
+		Key key2 = new Key( "test" );
+		Key key3 = new Key( "Test" );
+		assertThat( key1.equalsWithCase( key2 ) ).isFalse();
+		assertThat( key1.equalsWithCase( key3 ) ).isTrue();
 	}
 
 	@Test

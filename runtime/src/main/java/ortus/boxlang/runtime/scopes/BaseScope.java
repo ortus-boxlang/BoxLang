@@ -18,32 +18,86 @@
 package ortus.boxlang.runtime.scopes;
 
 import java.util.Objects;
-import java.util.concurrent.ConcurrentHashMap;
+
+import ortus.boxlang.runtime.types.Struct;
 
 /**
  * Base scope implementation. Extends HashMap for now. May want to switch to composition over inheritance, but this
  * is simpler for now and using the Key class provides our case insensitivity automatically.
  */
-public class BaseScope extends ConcurrentHashMap<Key, Object> implements IScope {
+public class BaseScope extends Struct implements IScope {
 
+	/**
+	 * --------------------------------------------------------------------------
+	 * Public Properties
+	 * --------------------------------------------------------------------------
+	 */
+
+	/**
+	 * --------------------------------------------------------------------------
+	 * Private Properties
+	 * --------------------------------------------------------------------------
+	 */
+
+	/**
+	 * Each scope can have a human friendly name
+	 */
+	private String name = "none";
+
+	/**
+	 * Used for scope hunting. Lower numbers are searched first.
+	 */
 	private int lookupOrder;
+
+	/**
+	 * --------------------------------------------------------------------------
+	 * Constructors
+	 * --------------------------------------------------------------------------
+	 */
 
 	/**
 	 * Constructor
 	 *
 	 * @param lookupOrder Used for scope hunting. Lower numbers are searched first.
 	 */
-	public BaseScope( int lookupOrder ) {
+	public BaseScope( int lookupOrder, String name ) {
 		super();
-		this.lookupOrder = lookupOrder;
+		this.lookupOrder	= lookupOrder;
+		this.name			= name;
 	}
 
+	/**
+	 * Constructor with default lookup order
+	 *
+	 * @param name The name of the scope
+	 */
+	public BaseScope( String name ) {
+		super();
+		this.lookupOrder	= 0;
+		this.name			= name;
+	}
+
+	/**
+	 * --------------------------------------------------------------------------
+	 * Methods
+	 * --------------------------------------------------------------------------
+	 */
+
+	/**
+	 * Gets the name of the scope
+	 *
+	 * @return The name of the scope
+	 */
+	public String getName() {
+		return name;
+	}
+
+	/**
+	 * Returns the lookup order
+	 */
 	public int getLookupOrder() {
 		return this.lookupOrder;
 	}
-
-	// public Object getValue( Key name ) { }
-	// public IScope setValue( Key name, Object value ) { }
 
 	/**
 	 * Verifies equality with the following rules:
@@ -61,11 +115,15 @@ public class BaseScope extends ConcurrentHashMap<Key, Object> implements IScope 
 			return false;
 		}
 		// State + Super
-		return lookupOrder == ( ( BaseScope ) obj ).getLookupOrder() && super.equals( obj );
+		BaseScope target = ( BaseScope ) obj;
+		return this.lookupOrder == target.getLookupOrder() && this.name == target.getName() == super.equals( obj );
 	}
 
+	/**
+	 * Hashes the lookupOrder and super class
+	 */
 	@Override
 	public int hashCode() {
-		return Objects.hash( this.lookupOrder, super.hashCode() );
+		return Objects.hash( this.name, this.lookupOrder, super.hashCode() );
 	}
 }
