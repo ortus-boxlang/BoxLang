@@ -23,6 +23,7 @@ import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.Map;
 
 /**
@@ -52,33 +53,37 @@ public class ClassInvoker {
 	 * This is a map of primitive types to their native Java counterparts
 	 * so we can do the right casting for primitives
 	 */
-	// @formatter:off
-	private static final Map<Class<?>, Class<?>> PRIMITIVE_MAP = Map.of(
-            Boolean.class, boolean.class,
-            Byte.class, byte.class,
-            Character.class, char.class,
-            Short.class, short.class,
-            Integer.class, int.class,
-            Long.class, long.class,
-            Float.class, float.class,
-            Double.class, double.class
-    );
-	// @formatter:on
+	private static final Map<Class<?>, Class<?>>	PRIMITIVE_MAP;
+	/**
+	 * This is the method handle lookup for the class
+	 */
+	private static final MethodHandles.Lookup		METHOD_LOOKUP;
 
 	/**
-	 * This invokers works of this targeted class
+	 * The bound class for this invoker
 	 */
 	private Class<?>								targetClass;
 
 	/**
-	 * This is the instance of the targeted class if it exists, since it could be static method calls or interface calls
+	 * The bound instance for this invoker (if any)
 	 */
 	private Object									targetInstance	= null;
 
 	/**
-	 * This is the method handle lookup for the class
+	 * Static Initializer
 	 */
-	private final MethodHandles.Lookup				lookup			= MethodHandles.lookup();
+	static {
+		METHOD_LOOKUP	= MethodHandles.lookup();
+		PRIMITIVE_MAP	= new HashMap<>();
+		PRIMITIVE_MAP.put( Boolean.class, boolean.class );
+		PRIMITIVE_MAP.put( Byte.class, byte.class );
+		PRIMITIVE_MAP.put( Character.class, char.class );
+		PRIMITIVE_MAP.put( Short.class, short.class );
+		PRIMITIVE_MAP.put( Integer.class, int.class );
+		PRIMITIVE_MAP.put( Long.class, long.class );
+		PRIMITIVE_MAP.put( Float.class, float.class );
+		PRIMITIVE_MAP.put( Double.class, double.class );
+	}
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -129,7 +134,7 @@ public class ClassInvoker {
 
 	/**
 	 * --------------------------------------------------------------------------
-	 * Methods
+	 * Setters & Getters
 	 * --------------------------------------------------------------------------
 	 */
 
@@ -164,13 +169,10 @@ public class ClassInvoker {
 	}
 
 	/**
-	 * Verifies if the target calss is an interface or not
-	 *
-	 * @return
+	 * --------------------------------------------------------------------------
+	 * Invokers
+	 * --------------------------------------------------------------------------
 	 */
-	boolean isInterface() {
-		return this.targetClass.isInterface();
-	}
 
 	/**
 	 * Invokes the constructor for the class with the given arguments
@@ -191,7 +193,7 @@ public class ClassInvoker {
 		// Method signature for a constructor is void (Object...)
 		MethodType		constructorType		= MethodType.methodType( void.class, argumentsToClasses( args ) );
 		// Define the bootstrap method
-		MethodHandle	constructorHandle	= lookup.findConstructor( this.targetClass, constructorType );
+		MethodHandle	constructorHandle	= METHOD_LOOKUP.findConstructor( this.targetClass, constructorType );
 		// Create a callsite using the constructor handle
 		CallSite		callSite			= new ConstantCallSite( constructorHandle );
 		// Bind the CallSite and invoke the constructor with the provided arguments
@@ -214,7 +216,7 @@ public class ClassInvoker {
 	 */
 	public Object invoke( String methodName, Object... args ) throws Throwable {
 		// Find the method handle for the method
-		MethodHandle method = lookup.findVirtual(
+		MethodHandle method = METHOD_LOOKUP.findVirtual(
 		        this.targetClass,
 		        methodName,
 		        MethodType.methodType( Object.class, argumentsToClasses( args ) )
@@ -235,12 +237,27 @@ public class ClassInvoker {
 	 * @throws Throwable
 	 */
 	public Object invokeStatic( String methodName, Object... args ) throws Throwable {
-		MethodHandle method = lookup.findStatic(
+		MethodHandle method = METHOD_LOOKUP.findStatic(
 		        this.targetClass,
 		        methodName,
 		        MethodType.methodType( Object.class, argumentsToClasses( args ) )
 		);
 		return method.invokeWithArguments( args );
+	}
+
+	/**
+	 * --------------------------------------------------------------------------
+	 * Helpers
+	 * --------------------------------------------------------------------------
+	 */
+
+	/**
+	 * Verifies if the target calss is an interface or not
+	 *
+	 * @return
+	 */
+	boolean isInterface() {
+		return this.targetClass.isInterface();
 	}
 
 	/**
