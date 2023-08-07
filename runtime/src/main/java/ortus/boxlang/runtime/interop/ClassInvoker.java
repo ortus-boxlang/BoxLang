@@ -28,6 +28,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
 
 /**
  * This class is used to represent a BX/Java Class and invoke methods on classes using invoke dynamic.
@@ -75,8 +76,12 @@ public class ClassInvoker {
 	/**
 	 * This is a map of method handles for the class
 	 */
-	private final ConcurrentHashMap<String, MethodHandle>	methodHandleCache	= new ConcurrentHashMap<String, MethodHandle>(
-	        32 );
+	private final ConcurrentHashMap<String, MethodHandle>	methodHandleCache	= new ConcurrentHashMap<>( 32 );
+
+	/**
+	 * This enables or disables the method handles cache
+	 */
+	private Boolean											handlesCacheEnabled	= true;
 
 	/**
 	 * Static Initializer
@@ -149,6 +154,21 @@ public class ClassInvoker {
 	 */
 
 	/**
+	 * @return the handlesCacheEnabled
+	 */
+	public Boolean getHandlesCacheEnabled() {
+		return handlesCacheEnabled;
+	}
+
+	/**
+	 * @param handlesCacheEnabled Enable or not the handles cache
+	 */
+	public ClassInvoker setHandlesCacheEnabled( Boolean handlesCacheEnabled ) {
+		this.handlesCacheEnabled = handlesCacheEnabled;
+		return this;
+	}
+
+	/**
 	 * @return the targetClass
 	 */
 	public Class<?> getTargetClass() {
@@ -187,6 +207,9 @@ public class ClassInvoker {
 	/**
 	 * Invokes the constructor for the class with the given arguments and returns the instance of the object
 	 *
+	 * TODO
+	 * [ ] - Cache the constructor handle
+	 *
 	 * @param args The arguments to pass to the constructor
 	 *
 	 * @return The instance of the class
@@ -196,6 +219,7 @@ public class ClassInvoker {
 	 */
 	public Object invokeConstructor( Object... args ) throws Throwable {
 
+		// Thou shalt not pass!
 		if ( isInterface() ) {
 			throw new IllegalStateException( "Cannot invoke a constructor on an interface" );
 		}
@@ -234,55 +258,10 @@ public class ClassInvoker {
 			throw new IllegalArgumentException( "Method name cannot be null or empty." );
 		}
 
-		// Execute it baby!
+		// Discover and Execute it baby!
 		return getMethodHandle( methodName, argumentsToClasses( arguments ) )
 		        .bindTo( this.targetInstance )
 		        .invokeWithArguments( arguments );
-	}
-
-	/**
-	 * Gets the method handle for the given method name and arguments, from the cache if possible
-	 * or creates a new one if not found.
-	 *
-	 * @param methodName         The name of the method to get the handle for
-	 * @param argumentsAsClasses The array of arguments as classes to map
-	 *
-	 * @return The method handle representing the method signature
-	 *
-	 * @throws RuntimeException       If the method cannot be found
-	 * @throws NoSuchMethodException  If the method handle cannot be found
-	 * @throws IllegalAccessException If the method handle cannot be accessed
-	 */
-	private MethodHandle getMethodHandle( String methodName, Class<?>[] argumentsAsClasses )
-	        throws RuntimeException, NoSuchMethodException, IllegalAccessException {
-
-		String			cacheKey		= methodName + "-" + Objects.hash( methodName, Arrays.toString( argumentsAsClasses ) );
-		MethodHandle	methodHandle	= methodHandleCache.get( cacheKey );
-
-		if ( methodHandle == null ) {
-			Method targetMethod;
-			try {
-				targetMethod = this.targetClass.getMethod( methodName, argumentsAsClasses );
-			} catch ( NoSuchMethodException | SecurityException e ) {
-				e.printStackTrace();
-				throw new RuntimeException(
-				        String.format(
-				                "Could not find method [%s] on the class: [%s] with the following argument signature [%s].",
-				                methodName,
-				                this.targetClass.getName(),
-				                Arrays.toString( argumentsAsClasses )
-				        )
-				);
-			}
-
-			return METHOD_LOOKUP.findVirtual(
-			        this.targetClass,
-			        methodName,
-			        MethodType.methodType( targetMethod.getReturnType(), argumentsAsClasses )
-			);
-		}
-
-		return methodHandle;
 	}
 
 	/**
@@ -296,16 +275,14 @@ public class ClassInvoker {
 	 * @throws Throwable
 	 */
 	public Object invokeStatic( String methodName, Object... arguments ) throws Throwable {
-		Class<?>[]		argumentsAsClasses	= argumentsToClasses( arguments );
-		Method			targetMethod		= this.targetClass.getMethod( methodName, argumentsAsClasses );
+		// Verify method name
+		if ( methodName == null || methodName.isEmpty() ) {
+			throw new IllegalArgumentException( "Method name cannot be null or empty." );
+		}
 
-		MethodHandle	method				= METHOD_LOOKUP.findStatic(
-		        this.targetClass,
-		        methodName,
-		        MethodType.methodType( targetMethod.getReturnType(), argumentsAsClasses )
-		);
-
-		return method.invokeWithArguments( arguments );
+		// Discover and Execute it baby!
+		return getMethodHandle( methodName, argumentsToClasses( arguments ) )
+		        .invokeWithArguments( arguments );
 	}
 
 	/**
@@ -313,6 +290,110 @@ public class ClassInvoker {
 	 * Helpers
 	 * --------------------------------------------------------------------------
 	 */
+
+	/**
+	 * Gets the method handle for the given method name and arguments, from the cache if possible
+	 * or creates a new one if not found or throws an exception if the method signature doesn't exist
+	 *
+	 * @param methodName         The name of the method to get the handle for
+	 * @param argumentsAsClasses The array of arguments as classes to map
+	 *
+	 * @return The method handle representing the method signature
+	 *
+	 * @throws RuntimeException       If the method cannot be found
+	 * @throws NoSuchMethodException  If the method or method handle cannot be found
+	 * @throws IllegalAccessException If the method handle cannot be accessed
+	 */
+	public MethodHandle getMethodHandle( String methodName, Class<?>[] argumentsAsClasses )
+	        throws RuntimeException, NoSuchMethodException, IllegalAccessException {
+
+		// We use the method signature as the cache key
+		String			cacheKey		= methodName + Objects.hash( methodName, Arrays.toString( argumentsAsClasses ) );
+		MethodHandle	methodHandle	= methodHandleCache.get( cacheKey );
+
+		// Double lock to avoid race-conditions
+		if ( methodHandle == null || !handlesCacheEnabled ) {
+			synchronized ( methodHandleCache ) {
+				if ( methodHandle == null || !handlesCacheEnabled ) {
+					methodHandle = discoverMethodHandle( methodName, argumentsAsClasses );
+					methodHandleCache.put( cacheKey, methodHandle );
+				}
+			}
+		}
+
+		return methodHandle;
+	}
+
+	/**
+	 * Discovers the method handle for the given method name and arguments according to two algorithms:
+	 *
+	 * 1. Exact Match : Matches the incoming argument class types to the method signature
+	 * 2. Discovery : Matches the incoming argument class types to the method signature by discovery of matching method names and argument counts
+	 *
+	 * @param methodName         The name of the method to discover
+	 * @param argumentsAsClasses The array of arguments as classes to map
+	 *
+	 * @return The method handle representing the method signature
+	 *
+	 * @throws NoSuchMethodException  If the method cannot be found using the discovery algorithm
+	 * @throws IllegalAccessException If the method handle cannot be accessed
+	 */
+	public MethodHandle discoverMethodHandle( String methodName, Class<?>[] argumentsAsClasses )
+	        throws NoSuchMethodException, IllegalAccessException {
+		// Our target we must find!
+		Method targetMethod;
+
+		// 1: Exact Match
+		try {
+			// This can fail if the arguments are not the exact same class types
+			targetMethod = this.targetClass.getMethod( methodName, argumentsAsClasses );
+			return METHOD_LOOKUP.findVirtual(
+			        this.targetClass,
+			        methodName,
+			        MethodType.methodType( targetMethod.getReturnType(), argumentsAsClasses )
+			);
+		} catch ( NoSuchMethodException e ) {
+			// 2: Let's go by discovery now
+			return Arrays.stream( this.targetClass.getMethods() )
+			        // Do it fast!
+			        .parallel()
+			        // filter by the method name we need
+			        .filter( method -> method.getName().equals( methodName ) )
+			        // Now by the number of arguments we have
+			        .filter( method -> method.getParameterCount() == argumentsAsClasses.length )
+			        // TODO: Filter by Argument Cast Matching
+			        // Give me the first one found
+			        .findFirst()
+			        // Convert it to the method handle
+			        .map( ClassInvoker::toMethodHandle )
+			        // Or throw an exception
+			        .orElseThrow( () -> new NoSuchMethodException(
+			                String.format(
+			                        "No such method [%s] found in the class [%s] using [%d] arguments.",
+			                        methodName,
+			                        this.targetClass.getName(),
+			                        argumentsAsClasses.length
+			                )
+			        ) );
+		}
+	}
+
+	/**
+	 * Utility method to convert a method to a method handle
+	 *
+	 * @param method The method to convert
+	 *
+	 * @return The method handle representing the method or an exception if it fails
+	 *
+	 * @throws RuntimeException If the method handle cannot be accessed
+	 */
+	public static MethodHandle toMethodHandle( Method method ) {
+		try {
+			return METHOD_LOOKUP.unreflect( method );
+		} catch ( IllegalAccessException e ) {
+			throw new RuntimeException( "Error creating MethodHandle for method [" + method + "]", e );
+		}
+	}
 
 	/**
 	 * Verifies if the target calss is an interface or not
@@ -348,7 +429,7 @@ public class ClassInvoker {
 	 * @return The array of classes
 	 */
 	public static Class<?>[] argumentsToClasses( Object... args ) {
-		System.out.println( "argumentsToClasses -> " + Arrays.toString( args ) );
+		// System.out.println( "argumentsToClasses -> " + Arrays.toString( args ) );
 		// Convert the arguments to an array of classes
 		return Arrays.stream( args )
 		        .map( ClassInvoker::argumentToClass )
