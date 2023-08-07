@@ -36,7 +36,7 @@ fun BoxScript.toJava(): com.github.javaparser.ast.CompilationUnit {
 		?.let { block ->
 			ClassOrInterfaceDeclaration()
 				.apply {
-					this.addMethod("init")
+					this.addMethod("invoke")
 						.apply { this.setBody(block) }
 				}
 		}
