@@ -64,4 +64,13 @@ public class ClassInvokerTest {
 		assertThat( ( Boolean ) myMapInvoker.invoke( "isEmpty" ) ).isTrue();
 	}
 
+	@Test
+	void testItCanCallMethodsWithArguments() throws Throwable {
+		ClassInvoker myMapInvoker = new ClassInvoker( HashMap.class );
+		myMapInvoker.invokeConstructor();
+		myMapInvoker.invoke( "put", "name", "luis" );
+		assertThat( myMapInvoker.invoke( "size" ) ).isEqualTo( 1 );
+		assertThat( myMapInvoker.invoke( "get", "name" ) ).isEqualTo( "luis" );
+	}
+
 }
