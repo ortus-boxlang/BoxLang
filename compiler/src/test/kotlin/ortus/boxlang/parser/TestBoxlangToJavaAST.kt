@@ -91,6 +91,29 @@ class TestBoxlangToJavaAST : BaseTest() {
 		assertASTEqual(expectedJavaAst, boxlangToJava) { "" }
 	}
 
+	@Test
+	fun dictionaryLikeObjectAccess() {
+		val cfml = """
+			<cfscript>
+				foo['bar'] = 3;
+			</cfscript>
+		""".trimIndent()
+		val cfmlParseResult = CFMLKolasuParser().parse(cfml)
+		check(cfmlParseResult.correct)
+		checkNotNull(cfmlParseResult.root)
+
+		val javaAst = BoxToJavaMapper(cfmlParseResult.root!!, "test.cfm").toJava()
+		val expr = javaAst
+			.getClassByName("test\$cfm").orElseThrow()
+			.getMethodsByName("invoke")
+			.first()
+			.body.orElseThrow()
+			.getStatement(1).asExpressionStmt()
+			.expression.asAssignExpr()
+			.target
+		assert(expr.isFieldAccessExpr) { expr::class.java }
+	}
+
 	private fun assertASTEqual(expected: CompilationUnit, actual: CompilationUnit, message: () -> String = { "" }) =
 		assertEquals(message.invoke(), expected.toString(), actual.toString())
 

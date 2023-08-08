@@ -182,6 +182,7 @@ fun BoxExpression.toJava(): JExpression = when (this) {
 	is BoxIdentifier -> this.toJava()
 	is FunctionInvokationExpression -> this.toJava()
 	is BoxStringLiteral -> this.toJava()
+	is BoxIntegerLiteral -> this.toJava()
 	is BoxMethodInvokationExpression -> this.toJava()
 	is BoxComparisonExpression -> this.toJava()
 	is BoxBinaryExpression -> this.toJava()
@@ -190,10 +191,10 @@ fun BoxExpression.toJava(): JExpression = when (this) {
 	else -> throw this.notImplemented()
 }
 
-fun BoxArrayAccessExpression.toJava(): JExpression = ArrayAccessExpr(
-	this.context.toJava(),
-	this.index.toJava()
-)
+fun BoxArrayAccessExpression.toJava(): JExpression = when (val index = this.index.toJava()) {
+	is StringLiteralExpr -> FieldAccessExpr(this.context.toJava(), index.value)
+	else -> ArrayAccessExpr(this.context.toJava(), index)
+}
 
 fun BoxBinaryExpression.toJava(): BinaryExpr = BinaryExpr(
 	this.left.toJava(),
@@ -227,6 +228,9 @@ fun BoxVariablesScopeExpression.toJava() = NameExpr("variablesScope")
 fun BoxIdentifier.toJava() = NameExpr(this.name)
 
 fun BoxStringLiteral.toJava(): StringLiteralExpr = StringLiteralExpr(this.value)
+
+fun BoxIntegerLiteral.toJava(): IntegerLiteralExpr = IntegerLiteralExpr(this.value)
+
 
 fun BoxNode.notImplemented() = NotImplementedError(
 	"""
