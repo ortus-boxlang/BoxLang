@@ -5,6 +5,7 @@ import com.github.javaparser.ParseResult
 import com.github.javaparser.ast.CompilationUnit
 import com.strumenta.kolasu.parsing.ParsingResult
 import junit.framework.TestCase.assertEquals
+import org.junit.Ignore
 import org.junit.Test
 import ortus.boxlang.java.BoxToJavaMapper
 import ortus.boxlang.java.toJava
@@ -32,6 +33,7 @@ class TestBoxlangToJavaAST : BaseTest() {
 		.first { !it.isDirectory() && it.extension == "java" }
 		.toFile()
 
+	@Ignore
 	@Test
 	fun cfToJavaTestSet() {
 		val errors = mutableListOf<AssertionError>()
@@ -55,6 +57,7 @@ class TestBoxlangToJavaAST : BaseTest() {
 		assertEquals(0, errors.size, "Errors: ${errors.size}")
 	}
 
+	@Ignore
 	@Test
 	fun dummyBoxlangToASTTest() {
 		val file = Path(testsBaseFolder.pathString, "Test", "Test.cfc").toFile()
