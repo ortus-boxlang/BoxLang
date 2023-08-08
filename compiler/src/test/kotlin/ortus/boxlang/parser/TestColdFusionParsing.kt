@@ -175,4 +175,33 @@ class TestColdFusionParsing : BaseTest() {
 			result
 		)
 	}
+
+	@Test
+	fun testObjectAccessExpression() {
+		val code = "variables.a.b.c = x.y.z"
+		val parser = CFKolasuParser()
+		val result = parser.parseStatement(code)
+		val expected = BoxAssignment(
+			left = BoxObjectAccessExpression(
+				context = BoxVariablesScopeExpression(),
+				access = BoxObjectAccessExpression(
+					context = BoxIdentifier("a"),
+					access = BoxObjectAccessExpression(
+						context = BoxIdentifier("b"),
+						access = BoxIdentifier("c"))
+				)
+			),
+			right = BoxObjectAccessExpression(
+				context = BoxIdentifier("x"),
+				access = BoxObjectAccessExpression(
+					context = BoxIdentifier("y"),
+					access = BoxIdentifier("z")
+				)
+			)
+		)
+		assertASTsAreEqual(
+			expected = expected,
+			result
+		)
+	}
 }
