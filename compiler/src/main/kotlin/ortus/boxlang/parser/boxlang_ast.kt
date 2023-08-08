@@ -97,7 +97,7 @@ data class BoxMethodInvokationExpression(
 
 sealed class BoxAccessExpression : BoxExpression()
 
-data class ArrayAccessExpression(
+data class BoxArrayAccessExpression(
 	val context: BoxAccessExpression,
 	val index: BoxExpression
 ) : BoxAccessExpression()
