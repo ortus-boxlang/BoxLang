@@ -3,8 +3,17 @@ package ortus.boxlang.runtime.interop;
 import ortus.boxlang.runtime.types.IType;
 
 import java.lang.String;
+import java.lang.reflect.Array;
+import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Set;
+import java.time.Duration;
 
 import org.junit.jupiter.api.Test;
 import static com.google.common.truth.Truth.assertThat;
@@ -13,7 +22,7 @@ public class ClassInvokerTest {
 
 	@Test
 	void testItCanBeCreatedWithAnInstance() {
-		ClassInvoker target = new ClassInvoker( this );
+		ClassInvoker target = ClassInvoker.of( this );
 		assertThat( target.getTargetClass() ).isEqualTo( this.getClass() );
 		assertThat( target.getTargetInstance() ).isEqualTo( this );
 		assertThat( target.isInterface() ).isFalse();
@@ -21,7 +30,7 @@ public class ClassInvokerTest {
 
 	@Test
 	void testItCanBeCreatedWithAClass() {
-		ClassInvoker target = new ClassInvoker( String.class );
+		ClassInvoker target = ClassInvoker.of( String.class );
 		assertThat( target.getTargetClass() ).isEqualTo( String.class );
 		assertThat( target.isInterface() ).isFalse();
 	}
@@ -65,12 +74,19 @@ public class ClassInvokerTest {
 	}
 
 	@Test
-	void testItCanCallMethodsWithArguments() throws Throwable {
+	void testItCanCallMethodsWithManyArguments() throws Throwable {
 		ClassInvoker myMapInvoker = new ClassInvoker( HashMap.class );
 		myMapInvoker.invokeConstructor();
 		myMapInvoker.invoke( "put", "name", "luis" );
 		assertThat( myMapInvoker.invoke( "size" ) ).isEqualTo( 1 );
 		assertThat( myMapInvoker.invoke( "get", "name" ) ).isEqualTo( "luis" );
+	}
+
+	@Test
+	void testItCanCallStaticMethods() throws Throwable {
+		ClassInvoker	myInvoker	= ClassInvoker.of( Duration.class );
+		Duration		results		= ( Duration ) myInvoker.invokeStatic( "ofSeconds", new Object[] { 120 } );
+		assertThat( results.toString() ).isEqualTo( "PT2M" );
 	}
 
 }

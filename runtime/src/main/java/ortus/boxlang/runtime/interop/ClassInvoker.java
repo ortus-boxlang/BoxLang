@@ -24,11 +24,12 @@ import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.lang.reflect.Method;
 import java.util.Arrays;
-import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.stream.Collectors;
 
 /**
  * This class is used to represent a BX/Java Class and invoke methods on classes using invoke dynamic.
@@ -36,8 +37,13 @@ import java.util.stream.Collectors;
  * This class is not in charge of casting the results. That is up to the caller to determine.
  * We basically just invoke and forget!
  *
- * TODO:
- * - Is there a way to cache method handles?
+ * {@pre
+ * {@code
+ * ClassInvoker target = new ClassInvoker( String.class );
+ * ClassInvoker target = ClassInvoker.of( String.class );
+ * ClassInvoker target = new ClassInvoker( new String() );
+ * ClassInvoker target = ClassInvoker.of( new String() );
+ * }}
  */
 public class ClassInvoker {
 
@@ -275,6 +281,9 @@ public class ClassInvoker {
 	 * @throws Throwable
 	 */
 	public Object invokeStatic( String methodName, Object... arguments ) throws Throwable {
+
+		System.out.println( "invokeStatic.arguments -> " + arguments[ 0 ] );
+
 		// Verify method name
 		if ( methodName == null || methodName.isEmpty() ) {
 			throw new IllegalArgumentException( "Method name cannot be null or empty." );
@@ -353,12 +362,15 @@ public class ClassInvoker {
 			        MethodType.methodType( targetMethod.getReturnType(), argumentsAsClasses )
 			);
 		} catch ( NoSuchMethodException e ) {
+
 			// 2: Let's go by discovery now
-			return Arrays.stream( this.targetClass.getMethods() )
+			return getCallableMethods()
+			        .stream()
 			        // Do it fast!
-			        .parallel()
+			        // .parallel()
 			        // filter by the method name we need
 			        .filter( method -> method.getName().equals( methodName ) )
+			        // .peek( method -> System.out.println( "PeekMethod -> " + method.getName() ) )
 			        // Now by the number of arguments we have
 			        .filter( method -> method.getParameterCount() == argumentsAsClasses.length )
 			        // TODO: Filter by Argument Cast Matching
@@ -376,6 +388,18 @@ public class ClassInvoker {
 			                )
 			        ) );
 		}
+	}
+
+	/**
+	 * Get a HashSet of methods of all the unique callable method signatures for the given class
+	 *
+	 * @return A unique set of callable methods
+	 */
+	private Set<Method> getCallableMethods() {
+		Set<Method> allMethods = new HashSet<>();
+		allMethods.addAll( new HashSet<>( List.of( this.targetClass.getMethods() ) ) );
+		allMethods.addAll( new HashSet<>( List.of( this.targetClass.getDeclaredMethods() ) ) );
+		return allMethods;
 	}
 
 	/**
@@ -429,10 +453,10 @@ public class ClassInvoker {
 	 * @return The array of classes
 	 */
 	public static Class<?>[] argumentsToClasses( Object... args ) {
-		// System.out.println( "argumentsToClasses -> " + Arrays.toString( args ) );
 		// Convert the arguments to an array of classes
 		return Arrays.stream( args )
 		        .map( ClassInvoker::argumentToClass )
+		        // .peek( clazz -> System.out.println( "argumentToClass -> " + clazz ) )
 		        .toArray( Class<?>[]::new );
 	}
 }
