@@ -369,13 +369,12 @@ arrayValues
     ;
 
 arrayAccess
-    // TODO: tell arrays from structs
     :   identifier arrayAccessIndex
     |   arrayAccess arrayAccessIndex
     ;
 arrayAccessIndex
     :   LBRACKET
-        (integerLiteral | stringLiteral | functionInvokation | methodInvokation | accessExpression | incrementDecrementStatement) // TODO: what about just expression?
+        expression
         RBRACKET
     ;
 

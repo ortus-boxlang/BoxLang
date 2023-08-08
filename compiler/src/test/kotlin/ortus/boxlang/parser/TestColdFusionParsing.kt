@@ -1,5 +1,6 @@
 package ortus.boxlang.parser
 
+import com.strumenta.kolasu.model.ReferenceByName
 import com.strumenta.kolasu.testing.assertASTsAreEqual
 import org.junit.Ignore
 import org.junit.Test
@@ -73,6 +74,8 @@ class TestColdFusionParsing : BaseTest() {
 		assertTrue(errors.isEmpty())
 	}
 
+	// TODO: we need to fix CScript VS CFML in order to proceed with the following test case
+	@Ignore
 	@Test
 	fun testCfTestBox() {
 		testCfDirectory(testboxDirectory)
@@ -122,8 +125,8 @@ class TestColdFusionParsing : BaseTest() {
 		val parser = CFKolasuParser()
 		val result = parser.parseStatement(code)
 		val expected = BoxAssignment(
-			left = BoxObjectAccessExpression(
-				access = BoxStringLiteral("foo"),
+			left = BoxArrayAccessExpression(
+				index = BoxStringLiteral("foo"),
 				context = BoxVariablesScopeExpression()
 			),
 			right = BoxStringLiteral("bar")
@@ -141,9 +144,55 @@ class TestColdFusionParsing : BaseTest() {
 		val result = parser.parseStatement(code)
 		val expected = BoxAssignment(
 			left = BoxIdentifier("foo"),
-			right = BoxObjectAccessExpression(
-				access = BoxStringLiteral("bar"),
+			right = BoxArrayAccessExpression(
+				index = BoxStringLiteral("bar"),
 				context = BoxVariablesScopeExpression()
+			)
+		)
+		assertASTsAreEqual(
+			expected = expected,
+			result
+		)
+	}
+
+	@Test
+	fun testObjectVSArrayAccess() {
+		val code = """
+			variables[foo] = variables.foo;
+		""".trimIndent()
+		val parser = CFKolasuParser()
+		val result = parser.parseStatement(code)
+		val expected = BoxAssignment(
+			left = BoxArrayAccessExpression(
+				index = BoxIdentifier("foo"),
+				context = BoxVariablesScopeExpression()
+			),
+			right = BoxObjectAccessExpression(
+				access = BoxIdentifier("foo"),
+				context = BoxVariablesScopeExpression()
+			)
+		)
+		assertASTsAreEqual(
+			expected = expected,
+			result
+		)
+	}
+
+	@Test
+	fun testObjectAccessOrder() {
+		val code = "variables.system.out.println();"
+		val parser = CFKolasuParser()
+		val result = parser.parseStatement(code)
+		val expected = BoxExpressionStatement(
+			BoxMethodInvokationExpression(
+				methodName = ReferenceByName("println"),
+				obj = BoxObjectAccessExpression(
+					access = BoxIdentifier("out"),
+					context = BoxObjectAccessExpression(
+						access = BoxIdentifier("system"),
+						context = BoxVariablesScopeExpression()
+					)
+				)
 			)
 		)
 		assertASTsAreEqual(

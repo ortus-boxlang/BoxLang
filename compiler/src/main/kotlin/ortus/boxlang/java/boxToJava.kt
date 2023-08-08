@@ -16,6 +16,7 @@ import com.github.javaparser.ast.type.VoidType
 import com.strumenta.kolasu.model.children
 import com.strumenta.kolasu.model.processNodesOfType
 import ortus.boxlang.parser.*
+import com.github.javaparser.ast.expr.Expression as JExpression
 
 
 class BoxToJavaMapper(
@@ -135,31 +136,27 @@ fun BoxComponent.toJava(): ClassOrInterfaceDeclaration {
 fun BoxStatement.toJava(): Statement = when (this) {
 	is BoxAssignment -> this.toJava()
 	is BoxIfStatement -> this.toJava()
-	is BoxMethodInvokationStatement -> this.toJava()
+	is BoxExpressionStatement -> this.toJava()
 	else -> throw this.notImplemented()
 }
 
-fun BoxMethodInvokationStatement.toJava(): ExpressionStmt = ExpressionStmt(
-	this.invokation.toJava()
+fun BoxExpressionStatement.toJava(): ExpressionStmt = ExpressionStmt(
+	this.expression.toJava()
 )
 
-fun BoxObjectAccessExpression.toJava(): Expression = when {
-	this.context == null -> this.access.toJava()
-	this.context != null -> FieldAccessExpr(
-		this.context.toJava(),
-		when (this.access) {
-			is BoxIdentifier -> this.access.name
-			is BoxStringLiteral -> this.access.value
-			is BoxObjectAccessExpression -> when {
-				this.access.context == null && this.access.access is BoxIdentifier -> this.access.access.name
-				else -> throw this.notImplemented()
-			}
-
+fun BoxObjectAccessExpression.toJava(): JExpression = FieldAccessExpr(
+	// TODO
+	this.context.toJava(),
+	when (this.access) {
+		is BoxIdentifier -> this.access.name
+		is BoxStringLiteral -> this.access.value
+		is BoxObjectAccessExpression -> when {
+			this.access.context == null && this.access.access is BoxIdentifier -> this.access.access.name
 			else -> throw this.notImplemented()
-		})
+		}
 
-	else -> throw this.notImplemented()
-}
+		else -> throw this.notImplemented()
+	})
 
 fun FunctionInvokationExpression.toJava(): MethodCallExpr {
 	val arguments = this.arguments.map { it.toJava() }.toTypedArray()
@@ -180,7 +177,7 @@ fun BoxIfStatement.toJava(): IfStmt = IfStmt(
 	BlockStmt(NodeList(this.elseStatement?.map { it.toJava() } ?: emptyList<Statement>()))
 )
 
-fun BoxExpression.toJava(): Expression = when (this) {
+fun BoxExpression.toJava(): JExpression = when (this) {
 	is BoxObjectAccessExpression -> this.toJava()
 	is BoxIdentifier -> this.toJava()
 	is FunctionInvokationExpression -> this.toJava()
@@ -188,8 +185,15 @@ fun BoxExpression.toJava(): Expression = when (this) {
 	is BoxMethodInvokationExpression -> this.toJava()
 	is BoxComparisonExpression -> this.toJava()
 	is BoxBinaryExpression -> this.toJava()
+	is BoxVariablesScopeExpression -> this.toJava()
+	is BoxArrayAccessExpression -> this.toJava()
 	else -> throw this.notImplemented()
 }
+
+fun BoxArrayAccessExpression.toJava(): JExpression = ArrayAccessExpr(
+	this.context.toJava(),
+	this.index.toJava()
+)
 
 fun BoxBinaryExpression.toJava(): BinaryExpr = BinaryExpr(
 	this.left.toJava(),

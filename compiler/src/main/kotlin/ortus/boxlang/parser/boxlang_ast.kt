@@ -85,14 +85,14 @@ data class FunctionInvokationExpression(
 	val arguments: List<BoxExpression>
 ) : BoxInvokationExpression()
 
-data class BoxMethodInvokationStatement(
-	val invokation: BoxMethodInvokationExpression
+data class BoxExpressionStatement(
+	val expression: BoxExpression
 ) : BoxStatement()
 
 data class BoxMethodInvokationExpression(
 	val methodName: ReferenceByName<BoxMethodDefinition>,
 	val obj: BoxExpression,
-	val arguments: List<BoxExpression>
+	val arguments: List<BoxExpression> = mutableListOf()
 ) : BoxInvokationExpression()
 
 sealed class BoxAccessExpression : BoxExpression()

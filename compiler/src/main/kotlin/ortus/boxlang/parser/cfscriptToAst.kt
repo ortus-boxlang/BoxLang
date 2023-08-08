@@ -1,6 +1,7 @@
 package ortus.boxlang.parser
 
 import com.strumenta.kolasu.model.ReferenceByName
+import com.strumenta.kolasu.parsing.withParseTreeNode
 import org.antlr.v4.runtime.ParserRuleContext
 
 private fun ParserRuleContext.astConversionNotImplemented() = NotImplementedError(
@@ -53,7 +54,7 @@ fun CFParser.StatementBlockContext.toAst() = this.statement().map { it.toAst() }
 fun CFParser.SimpleStatementContext.toAst(): BoxStatement {
 	return when {
 		this.assignment() != null -> this.assignment().toAst()
-		this.methodInvokation() != null -> BoxMethodInvokationStatement(this.methodInvokation().toAst())
+		this.methodInvokation() != null -> BoxExpressionStatement(this.methodInvokation().toAst())
 		else -> throw this.astConversionNotImplemented()
 	}
 }
@@ -116,6 +117,7 @@ private fun CFParser.MethodInvokationContext.toAst() = BoxMethodInvokationExpres
 private fun CFParser.LiteralExpressionContext.toAst(): BoxLiteralExpression {
 	return when {
 		this.stringLiteral() != null -> this.stringLiteral().toAst()
+		this.integerLiteral() != null -> this.integerLiteral().toAst()
 		else -> throw this.astConversionNotImplemented()
 	}
 }
@@ -124,7 +126,7 @@ fun CFParser.ObjectExpressionContext.toAst(): BoxExpression {
 	return when {
 		this.functionInvokation() != null -> this.functionInvokation().toAst()
 		this.identifier() != null -> this.identifier().toAst()
-		this.arrayAccess() != null -> this.arrayAccess().toAst()
+		this.arrayAccess() != null -> this.arrayAccess().toAst().withParseTreeNode(this@toAst) // TODO
 		else -> throw this.astConversionNotImplemented()
 	}
 }
@@ -164,26 +166,19 @@ private fun CFParser.ScopeContext.toAst(): BoxScopeExpression {
 	}
 }
 
-fun CFParser.ArrayAccessContext.toAst(): BoxAccessExpression {
+fun CFParser.ArrayAccessContext.toAst(): BoxArrayAccessExpression {
 	val context = when {
 		this.identifier() != null -> this.identifier().toAst()
 		this.arrayAccess() != null -> this.arrayAccess().toAst()
 		else -> throw this.astConversionNotImplemented()
 	}
-	return when {
-		this.arrayAccessIndex().stringLiteral() != null -> BoxObjectAccessExpression(
-			access = this.arrayAccessIndex().stringLiteral().toAst(),
-			context = context
-		)
-
-		this.arrayAccessIndex().integerLiteral() != null -> BoxArrayAccessExpression(
-			index = this.arrayAccessIndex().integerLiteral().toAst(),
-			context = context
-		)
-
-		else -> throw this.astConversionNotImplemented()
-	}
+	return BoxArrayAccessExpression(
+		context = context,
+		index = this.arrayAccessIndex().toAst()
+	)
 }
+
+private fun CFParser.ArrayAccessIndexContext.toAst() = this.expression().toAst()
 
 private fun CFParser.IntegerLiteralContext.toAst() = BoxIntegerLiteral(value = this.text)
 
