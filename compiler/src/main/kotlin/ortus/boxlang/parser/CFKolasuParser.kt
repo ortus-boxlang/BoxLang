@@ -45,4 +45,13 @@ class CFKolasuParser : KolasuParser<BoxScript, CFParser, CFParser.ScriptContext,
 	): BoxScript? {
 		return parseTreeRoot.toAst()
 	}
+
+	fun parseStatement(
+		code: String
+	): ParsingResult<BoxStatement> {
+		val issues = mutableListOf<Issue>()
+		val parser = createParser(CharStreams.fromString(code), issues)
+		val ast = parser.statement().toAst()
+		return ParsingResult(issues, ast)
+	}
 }

@@ -46,7 +46,6 @@ data class BoxStringLiteral(val value: String) : BoxLiteralExpression()
 data class BoxBooleanLiteral(val value: String) : BoxLiteralExpression()
 
 data class BoxIdentifier(
-	val scope: BoxScopeExpression?,
 	override val name: String
 ) : BoxExpression(), Named
 
@@ -75,13 +74,9 @@ data class BoxComparisonExpression(
 	var right: BoxExpression
 ) : BoxExpression()
 
-sealed class BoxScopeExpression(
-	override val name: String
-) : BoxExpression(), Named
+sealed class BoxScopeExpression : BoxExpression()
 
-data class BoxVariablesScopeExpression(
-	override val name: String
-) : BoxScopeExpression(name)
+class BoxVariablesScopeExpression : BoxScopeExpression()
 
 sealed class BoxInvokationExpression : BoxAccessExpression()
 
@@ -96,7 +91,7 @@ data class BoxMethodInvokationStatement(
 
 data class BoxMethodInvokationExpression(
 	val methodName: ReferenceByName<BoxMethodDefinition>,
-	val obj: BoxAccessExpression,
+	val obj: BoxExpression,
 	val arguments: List<BoxExpression>
 ) : BoxInvokationExpression()
 
@@ -108,7 +103,7 @@ data class ArrayAccessExpression(
 ) : BoxAccessExpression()
 
 data class BoxObjectAccessExpression(
-	val context: BoxAccessExpression? = null,
+	val context: BoxExpression? = null,
 	val access: BoxExpression
 ) : BoxAccessExpression()
 

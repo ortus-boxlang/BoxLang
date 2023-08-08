@@ -218,11 +218,9 @@ fun BoxMethodInvokationExpression.toJava(): MethodCallExpr = MethodCallExpr(
 	NodeList(this.arguments.map { it.toJava() })
 )
 
-fun BoxIdentifier.toJava(): Expression = when {
-	this.scope == null -> NameExpr(this.name)
-	this.scope != null -> FieldAccessExpr(NameExpr(this.scope.name), this.name)
-	else -> throw this.notImplemented()
-}
+fun BoxVariablesScopeExpression.toJava() = NameExpr("variablesScope")
+
+fun BoxIdentifier.toJava() = NameExpr(this.name)
 
 fun BoxStringLiteral.toJava(): StringLiteralExpr = StringLiteralExpr(this.value)
 

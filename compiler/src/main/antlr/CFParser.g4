@@ -63,7 +63,7 @@ implementsAttribute
     ;
 
 functionOptions
-    :   (parameters+=simpleIdentifier (EQUAL values+=literalExpression)?)+
+    :   (parameters+=identifier (EQUAL values+=literalExpression)?)+
     ;
 functionSignature
     :   accessModifier? STATIC?  returnType?
@@ -249,7 +249,7 @@ for
     |   FOR LPAREN forAssignment eos forCondition eos forIncrement RPAREN statementBlock
     ;
 forAssignment
-    :   VAR? simpleIdentifier EQUAL expression
+    :   VAR? identifier EQUAL expression
     ;
 forCondition
     :   expression
@@ -295,32 +295,23 @@ case
   ;
 
 identifier
-    :   (scope DOT)? simpleIdentifier
-    ;
-simpleIdentifier
     :   IDENTIFIER
-    |   reservedKeyword
+    |	reservedKeyword
     ;
 reservedKeyword
-    :   APPLICATION
-    |   ARGUMENTS
-    |   CONTAINS
+    :   CONTAINS
     |   DEFAULT
     |   EXTENDS
     |   IMPLEMENTS
     |   INCLUDE
     |   INIT
     |   NEW
-    |   REQUEST
     |   SETTING
     |   STRUCT
     |   PRIVATE
     |   QUERY
-    |   THIS
-    |   THREAD
     |   TYPE
     |   VAR
-    |   VARIABLES
     |   WHEN
     ;
 scope
@@ -421,6 +412,7 @@ expression
     |   incrementDecrementStatement
     |   literalExpression
     |   objectExpression
+    |	identifier
     |   LPAREN expression RPAREN
     |   accessExpression
     |   methodInvokation
@@ -448,6 +440,7 @@ objectExpression
     |   functionInvokation
     |   identifier
     |   new
+    | 	scope
     ;
 
 accessExpression

@@ -1,5 +1,6 @@
 package ortus.boxlang.parser
 
+import com.strumenta.kolasu.testing.assertASTsAreEqual
 import org.junit.Ignore
 import org.junit.Test
 import java.io.File
@@ -95,5 +96,23 @@ class TestColdFusionParsing : BaseTest() {
 		val firstStageParseResult = CFLanguageParser().source(file).parseFirstStage()
 		assert(firstStageParseResult.correct) { "First stage parsing is not correct: ${file.absolutePath}" }
 		assertNotNull(firstStageParseResult.root) { "Parse tree root node is null: ${file.absolutePath}" }
+	}
+
+	@Test
+	fun testScopeParsing() {
+		val code = "variables.greeting = \"foo\""
+		val parser = CFKolasuParser()
+		val result = parser.parseStatement(code)
+		val expected = BoxAssignment(
+			left = BoxObjectAccessExpression(
+				access = BoxIdentifier("greeting"),
+				context = BoxVariablesScopeExpression()
+			),
+			right = BoxStringLiteral("foo")
+		)
+		assertASTsAreEqual(
+			expected = expected,
+			result
+		)
 	}
 }

@@ -120,13 +120,11 @@ private fun CFParser.LiteralExpressionContext.toAst(): BoxLiteralExpression {
 	}
 }
 
-fun CFParser.ObjectExpressionContext.toAst(): BoxAccessExpression {
+fun CFParser.ObjectExpressionContext.toAst(): BoxExpression {
 	return when {
 		this.functionInvokation() != null -> this.functionInvokation().toAst()
-		this.identifier() != null -> BoxObjectAccessExpression(
-			access = this.identifier().toAst()
-		)
-
+		this.identifier() != null -> this.identifier().toAst()
+		this.scope() != null -> this.scope().toAst()
 		else -> throw this.astConversionNotImplemented()
 	}
 }
@@ -141,12 +139,9 @@ private fun CFParser.ArgumentContext.toAst(): BoxExpression {
 	return this.expression()[0].toAst()
 }
 
-fun CFParser.AccessExpressionContext.toAst(): BoxAccessExpression {
+fun CFParser.AccessExpressionContext.toAst(): BoxExpression {
 	return when {
-		this.identifier() != null -> BoxObjectAccessExpression(
-			access = this.identifier().toAst()
-		)
-
+		this.identifier() != null -> this.identifier().toAst()
 		this.arrayAccess() != null -> this.arrayAccess().toAst()
 		this.objectExpression() != null -> BoxObjectAccessExpression(
 			access = this.accessExpression().toAst(),
@@ -157,14 +152,11 @@ fun CFParser.AccessExpressionContext.toAst(): BoxAccessExpression {
 	}
 }
 
-private fun CFParser.IdentifierContext.toAst() = BoxIdentifier(
-	name = this.simpleIdentifier().text,
-	scope = this.scope()?.toAst()
-)
+private fun CFParser.IdentifierContext.toAst() = BoxIdentifier(this.text)
 
 private fun CFParser.ScopeContext.toAst(): BoxScopeExpression {
 	return when {
-		this.VARIABLES() != null -> BoxVariablesScopeExpression(this.text)
+		this.VARIABLES() != null -> BoxVariablesScopeExpression()
 		else -> throw this.astConversionNotImplemented()
 	}
 }
