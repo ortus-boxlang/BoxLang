@@ -227,24 +227,55 @@ class TestColdFusionParsing : BaseTest() {
 
 	@Test
 	fun testObjectAccessExpression() {
+		val code = "a.b.c.d = x.y.z"
+		val parser = CFKolasuParser()
+		val result = parser.parseStatement(code)
+		val expected = BoxAssignment(
+			left = BoxObjectAccessExpression(
+				access = BoxIdentifier("d"),
+				context = BoxObjectAccessExpression(
+					access = BoxIdentifier("c"),
+					context = BoxObjectAccessExpression(
+						access = BoxIdentifier("b"),
+						context = BoxIdentifier("a")
+					)
+				)
+			),
+			right = BoxObjectAccessExpression(
+				access = BoxIdentifier("z"),
+				context = BoxObjectAccessExpression(
+					access = BoxIdentifier("y"),
+					context = BoxIdentifier("x")
+				)
+			)
+		)
+		assertASTsAreEqual(
+			expected = expected,
+			result
+		)
+	}
+
+	@Test
+	fun testObjectAccessExpressionWithVariables() {
 		val code = "variables.a.b.c = x.y.z"
 		val parser = CFKolasuParser()
 		val result = parser.parseStatement(code)
 		val expected = BoxAssignment(
 			left = BoxObjectAccessExpression(
-				context = BoxVariablesScopeExpression(),
-				access = BoxObjectAccessExpression(
-					context = BoxIdentifier("a"),
-					access = BoxObjectAccessExpression(
-						context = BoxIdentifier("b"),
-						access = BoxIdentifier("c"))
+				access = BoxIdentifier("c"),
+				context = BoxObjectAccessExpression(
+					access = BoxIdentifier("b"),
+					context = BoxObjectAccessExpression(
+						access = BoxIdentifier("a"),
+						context = BoxVariablesScopeExpression()
+					)
 				)
 			),
 			right = BoxObjectAccessExpression(
-				context = BoxIdentifier("x"),
-				access = BoxObjectAccessExpression(
-					context = BoxIdentifier("y"),
-					access = BoxIdentifier("z")
+				access = BoxIdentifier("z"),
+				context = BoxObjectAccessExpression(
+					access = BoxIdentifier("y"),
+					context = BoxIdentifier("x")
 				)
 			)
 		)

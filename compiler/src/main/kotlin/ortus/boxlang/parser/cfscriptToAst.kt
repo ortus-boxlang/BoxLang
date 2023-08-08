@@ -145,10 +145,27 @@ fun CFParser.AccessExpressionContext.toAst(): BoxExpression {
 	return when {
 		this.identifier() != null -> this.identifier().toAst()
 		this.arrayAccess() != null -> this.arrayAccess().toAst()
-		this.objectExpression() != null -> BoxObjectAccessExpression(
-			access = this.accessExpression().toAst(),
-			context = this.objectExpression().toAst()
-		)
+		this.objectExpression() != null -> {
+			val stack = ArrayDeque<BoxExpression>()
+			var acc = this
+
+			while (acc.objectExpression() != null) {
+				stack.addLast(acc.objectExpression().toAst())
+				acc = acc.accessExpression()
+			}
+
+			stack.addLast(acc.toAst())
+
+			fun f(s: ArrayDeque<BoxExpression>): BoxObjectAccessExpression {
+				val acc = s.removeLast()
+				return BoxObjectAccessExpression(
+					access = acc,
+					context = if (s.size == 1) s.removeLast() else f(s)
+				)
+			}
+
+			f(stack)
+		}
 
 		else -> throw this.astConversionNotImplemented()
 	}
