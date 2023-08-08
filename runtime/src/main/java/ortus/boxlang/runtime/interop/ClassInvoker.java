@@ -247,9 +247,6 @@ public class ClassInvoker {
 	/**
 	 * Invokes a public method on a class or interface with the given name and arguments
 	 *
-	 * TODO:
-	 * [ ] - Test against interfaces
-	 *
 	 * @param methodName The name of the method to invoke
 	 * @param arguments  The arguments to pass to the method
 	 *
@@ -257,11 +254,17 @@ public class ClassInvoker {
 	 *
 	 * @throws Throwable
 	 * @throws IllegalArgumentException If the method name is null or empty
+	 * @throws IllegalStateException    If the target class is an interface
 	 */
 	public Object invoke( String methodName, Object... arguments ) throws Throwable {
 		// Verify method name
 		if ( methodName == null || methodName.isEmpty() ) {
 			throw new IllegalArgumentException( "Method name cannot be null or empty." );
+		}
+
+		// Only Instances, no interfaces
+		if ( this.targetClass.isInterface() ) {
+			throw new IllegalStateException( "You can't call invoke on an interface. Use [invokeStatic] instead." );
 		}
 
 		// Discover and Execute it baby!
@@ -271,7 +274,7 @@ public class ClassInvoker {
 	}
 
 	/**
-	 * Invokes a static method with the given name and arguments
+	 * Invokes a static method with the given name and arguments on a class or an interface
 	 *
 	 * @param methodName The name of the method to invoke
 	 * @param arguments  The arguments to pass to the method

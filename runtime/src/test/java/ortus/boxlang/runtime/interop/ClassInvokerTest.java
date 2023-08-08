@@ -89,4 +89,12 @@ public class ClassInvokerTest {
 		assertThat( results.toString() ).isEqualTo( "PT2M" );
 	}
 
+	@Test
+	void testItCanCallMethodsOnInterfaces() throws Throwable {
+		ClassInvoker	myInvoker	= ClassInvoker.of( List.class );
+		List			results		= ( List ) myInvoker.invokeStatic( "of", new Object[] { "Hello" } );
+		assertThat( results.toString() ).isEqualTo( "[Hello]" );
+		assertThat( results ).isNotEmpty();
+	}
+
 }
