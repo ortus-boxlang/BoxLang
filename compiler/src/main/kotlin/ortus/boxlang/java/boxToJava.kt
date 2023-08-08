@@ -119,7 +119,7 @@ fun BoxScript.toJava(): com.github.javaparser.ast.CompilationUnit {
 	)
 
 	val module = ModuleDeclaration()
-	return com.github.javaparser.ast.CompilationUnit(packageDeclaration, imports, statements, null)
+	return CompilationUnit(packageDeclaration, imports, statements, null)
 }
 
 fun BoxComponent.toJava(): ClassOrInterfaceDeclaration {

@@ -99,7 +99,7 @@ class TestColdFusionParsing : BaseTest() {
 	}
 
 	@Test
-	fun testScopeParsing() {
+	fun testScope() {
 		val code = "variables.greeting = \"foo\""
 		val parser = CFKolasuParser()
 		val result = parser.parseStatement(code)
@@ -109,6 +109,66 @@ class TestColdFusionParsing : BaseTest() {
 				context = BoxVariablesScopeExpression()
 			),
 			right = BoxStringLiteral("foo")
+		)
+		assertASTsAreEqual(
+			expected = expected,
+			result
+		)
+	}
+
+	@Test
+	fun testScopeAccessAsDictionary() {
+		val code = "variables['foo'] = \"bar\""
+		val parser = CFKolasuParser()
+		val result = parser.parseStatement(code)
+		val expected = BoxAssignment(
+			left = BoxObjectAccessExpression(
+				access = BoxStringLiteral("foo"),
+				context = BoxVariablesScopeExpression()
+			),
+			right = BoxStringLiteral("bar")
+		)
+		assertASTsAreEqual(
+			expected = expected,
+			result
+		)
+	}
+
+	@Test
+	fun testScopeReadingValue() {
+		val code = "foo = variables['bar']"
+		val parser = CFKolasuParser()
+		val result = parser.parseStatement(code)
+		val expected = BoxAssignment(
+			left = BoxIdentifier("foo"),
+			right = BoxObjectAccessExpression(
+				access = BoxStringLiteral("bar"),
+				context = BoxVariablesScopeExpression()
+			)
+		)
+		assertASTsAreEqual(
+			expected = expected,
+			result
+		)
+	}
+
+	@Test
+	fun testArrayAccess() {
+		val code = "ar[1][2] = ray[3]"
+		val parser = CFKolasuParser()
+		val result = parser.parseStatement(code)
+		val expected = BoxAssignment(
+			left = BoxArrayAccessExpression(
+				index = BoxIntegerLiteral("2"),
+				context = BoxArrayAccessExpression(
+					index = BoxIntegerLiteral("1"),
+					context = BoxIdentifier("ar")
+				)
+			),
+			right = BoxArrayAccessExpression(
+				index = BoxIntegerLiteral("3"),
+				context = BoxIdentifier("ray")
+			)
 		)
 		assertASTsAreEqual(
 			expected = expected,

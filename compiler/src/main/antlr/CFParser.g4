@@ -299,7 +299,8 @@ identifier
     |	reservedKeyword
     ;
 reservedKeyword
-    :   CONTAINS
+    :   scope
+    |	CONTAINS
     |   DEFAULT
     |   EXTENDS
     |   IMPLEMENTS
@@ -440,7 +441,6 @@ objectExpression
     |   functionInvokation
     |   identifier
     |   new
-    | 	scope
     ;
 
 accessExpression

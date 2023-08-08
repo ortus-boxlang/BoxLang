@@ -124,7 +124,7 @@ fun CFParser.ObjectExpressionContext.toAst(): BoxExpression {
 	return when {
 		this.functionInvokation() != null -> this.functionInvokation().toAst()
 		this.identifier() != null -> this.identifier().toAst()
-		this.scope() != null -> this.scope().toAst()
+		this.arrayAccess() != null -> this.arrayAccess().toAst()
 		else -> throw this.astConversionNotImplemented()
 	}
 }
@@ -152,7 +152,10 @@ fun CFParser.AccessExpressionContext.toAst(): BoxExpression {
 	}
 }
 
-private fun CFParser.IdentifierContext.toAst() = BoxIdentifier(this.text)
+private fun CFParser.IdentifierContext.toAst() = when {
+	this.reservedKeyword()?.scope() != null -> this.reservedKeyword()!!.scope().toAst()
+	else -> BoxIdentifier(this.text)
+}
 
 private fun CFParser.ScopeContext.toAst(): BoxScopeExpression {
 	return when {
@@ -163,7 +166,7 @@ private fun CFParser.ScopeContext.toAst(): BoxScopeExpression {
 
 fun CFParser.ArrayAccessContext.toAst(): BoxAccessExpression {
 	val context = when {
-		this.identifier() != null -> BoxObjectAccessExpression(access = this.identifier().toAst())
+		this.identifier() != null -> this.identifier().toAst()
 		this.arrayAccess() != null -> this.arrayAccess().toAst()
 		else -> throw this.astConversionNotImplemented()
 	}
@@ -173,7 +176,7 @@ fun CFParser.ArrayAccessContext.toAst(): BoxAccessExpression {
 			context = context
 		)
 
-		this.arrayAccessIndex().integerLiteral() != null -> ArrayAccessExpression(
+		this.arrayAccessIndex().integerLiteral() != null -> BoxArrayAccessExpression(
 			index = this.arrayAccessIndex().integerLiteral().toAst(),
 			context = context
 		)

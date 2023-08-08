@@ -98,12 +98,12 @@ data class BoxMethodInvokationExpression(
 sealed class BoxAccessExpression : BoxExpression()
 
 data class BoxArrayAccessExpression(
-	val context: BoxAccessExpression,
+	val context: BoxExpression,
 	val index: BoxExpression
 ) : BoxAccessExpression()
 
 data class BoxObjectAccessExpression(
-	val context: BoxExpression? = null,
+	val context: BoxExpression,
 	val access: BoxExpression
 ) : BoxAccessExpression()
 
