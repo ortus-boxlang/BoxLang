@@ -1,20 +1,33 @@
+/**
+ * [BoxLang]
+ *
+ * Copyright [2023] [Ortus Solutions, Corp]
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package ortus.boxlang.runtime.interop;
 
 import ortus.boxlang.runtime.types.IType;
 
 import java.lang.String;
-import java.lang.reflect.Array;
-import java.lang.reflect.Method;
-import java.lang.reflect.Modifier;
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Set;
 import java.time.Duration;
 
+import TestCases.PrivateConstructors;
+
+import org.junit.Ignore;
 import org.junit.jupiter.api.Test;
 import static com.google.common.truth.Truth.assertThat;
 
@@ -95,6 +108,14 @@ public class ClassInvokerTest {
 		List			results		= ( List ) myInvoker.invokeStatic( "of", new Object[] { "Hello" } ).get();
 		assertThat( results.toString() ).isEqualTo( "[Hello]" );
 		assertThat( results ).isNotEmpty();
+	}
+
+	@Ignore
+	@Test
+	void testItCanCreateWithPrivateConstructors() throws Throwable {
+		ClassInvoker myInvoker = ClassInvoker.of( PrivateConstructors.class );
+		assertThat( myInvoker ).isNotNull();
+		myInvoker.invoke( "getInstance" );
 	}
 
 }

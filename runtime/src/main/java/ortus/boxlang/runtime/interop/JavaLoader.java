@@ -77,7 +77,6 @@ public class JavaLoader {
 	 * Methods
 	 * --------------------------------------------------------------------------
 	 */
-
 	public static ClassInvoker load( String fullyQualifiedClassName ) throws ClassNotFoundException {
 		return loadFromModules( fullyQualifiedClassName ).or( () -> loadFromSystem( fullyQualifiedClassName ) )
 		        .orElseThrow( () -> new ClassNotFoundException(
