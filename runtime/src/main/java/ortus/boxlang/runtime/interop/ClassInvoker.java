@@ -289,10 +289,9 @@ public class ClassInvoker {
 
 		// Discover and Execute it baby!
 		return Optional.ofNullable(
-		        methodRecord
-		                .methodHandle()
-		                .bindTo( Boolean.TRUE.equals( methodRecord.isStatic() ) ? null : this.targetInstance )
-		                .invokeWithArguments( arguments )
+		        Boolean.TRUE.equals( methodRecord.isStatic() )
+		                ? methodRecord.methodHandle().invokeWithArguments( arguments )
+		                : methodRecord.methodHandle().bindTo( this.targetInstance ).invokeWithArguments( arguments )
 		);
 	}
 

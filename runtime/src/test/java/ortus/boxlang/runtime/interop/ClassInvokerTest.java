@@ -115,6 +115,9 @@ public class ClassInvokerTest {
 	void testItCanCreateWithPrivateConstructors() throws Throwable {
 		ClassInvoker myInvoker = ClassInvoker.of( PrivateConstructors.class );
 		assertThat( myInvoker ).isNotNull();
+		// myInvoker.invokeStatic( "getInstance" );
+
+		// Now call it via normal `invoke()`
 		myInvoker.invoke( "getInstance" );
 	}
 
