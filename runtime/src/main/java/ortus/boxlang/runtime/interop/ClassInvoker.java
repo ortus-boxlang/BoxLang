@@ -35,8 +35,9 @@ import java.util.concurrent.ConcurrentHashMap;
  * This class is used to represent a BX/Java Class and invoke methods on classes using invoke dynamic.
  *
  * This class is not in charge of casting the results. That is up to the caller to determine.
- * We basically just invoke and forget!
+ * We basically just invoke and return the results!
  *
+ * To create a new class invoker you can use the following:
  * {@pre
  * {@code
  * ClassInvoker target = new ClassInvoker( String.class );
@@ -44,6 +45,12 @@ import java.util.concurrent.ConcurrentHashMap;
  * ClassInvoker target = new ClassInvoker( new String() );
  * ClassInvoker target = ClassInvoker.of( new String() );
  * }}
+ *
+ * You can then use the following methods to invoke methods on the class:
+ * - {@code invokeConstructor( Object... args )} - Invoke a constructor on the class, and store the instance for future method calls
+ * - {@code invokeStaticMethod( String methodName, Object... args )} - Invoke a static method on the class
+ * - {@code invoke( String methodName, Object... args )} - Invoke a method on the instance of the class
+ *
  */
 public class ClassInvoker {
 
@@ -64,8 +71,11 @@ public class ClassInvoker {
 	 * so we can do the right casting for primitives
 	 */
 	private static final Map<Class<?>, Class<?>>			PRIMITIVE_MAP;
+
 	/**
-	 * This is the method handle lookup for the class
+	 * This is the method handle lookup
+	 *
+	 * @see https://docs.oracle.com/javase/11/docs/api/java/lang/invoke/MethodHandles.Lookup.html
 	 */
 	private static final MethodHandles.Lookup				METHOD_LOOKUP;
 
@@ -76,11 +86,12 @@ public class ClassInvoker {
 
 	/**
 	 * The bound instance for this invoker (if any)
+	 * If this is null, then we are invoking static methods or a constructor has not been called on it yet.
 	 */
 	private Object											targetInstance		= null;
 
 	/**
-	 * This is a map of method handles for the class
+	 * This caches the method handles for the class so we don't have to look them up every time
 	 */
 	private final ConcurrentHashMap<String, MethodHandle>	methodHandleCache	= new ConcurrentHashMap<>( 32 );
 
@@ -160,9 +171,9 @@ public class ClassInvoker {
 	 */
 
 	/**
-	 * @return the handlesCacheEnabled
+	 * @return the handlesCacheEnabled flag
 	 */
-	public Boolean getHandlesCacheEnabled() {
+	public Boolean isHandlesCacheEnabled() {
 		return handlesCacheEnabled;
 	}
 
@@ -212,9 +223,6 @@ public class ClassInvoker {
 
 	/**
 	 * Invokes the constructor for the class with the given arguments and returns the instance of the object
-	 *
-	 * TODO
-	 * [ ] - Cache the constructor handle
 	 *
 	 * @param args The arguments to pass to the constructor
 	 *
@@ -285,7 +293,7 @@ public class ClassInvoker {
 	 */
 	public Object invokeStatic( String methodName, Object... arguments ) throws Throwable {
 
-		System.out.println( "invokeStatic.arguments -> " + arguments[ 0 ] );
+		// System.out.println( "invokeStatic.arguments -> " + arguments[ 0 ] );
 
 		// Verify method name
 		if ( methodName == null || methodName.isEmpty() ) {
@@ -358,6 +366,7 @@ public class ClassInvoker {
 		// 1: Exact Match
 		try {
 			// This can fail if the arguments are not the exact same class types
+			// Which can happen for certain generic types, and even some primitive types
 			targetMethod = this.targetClass.getMethod( methodName, argumentsAsClasses );
 			return METHOD_LOOKUP.findVirtual(
 			        this.targetClass,
@@ -370,13 +379,15 @@ public class ClassInvoker {
 			return getCallableMethods()
 			        .stream()
 			        // Do it fast!
-			        // .parallel()
+			        .parallel()
 			        // filter by the method name we need
 			        .filter( method -> method.getName().equals( methodName ) )
 			        // .peek( method -> System.out.println( "PeekMethod -> " + method.getName() ) )
 			        // Now by the number of arguments we have
 			        .filter( method -> method.getParameterCount() == argumentsAsClasses.length )
 			        // TODO: Filter by Argument Cast Matching
+			        // Right now we take the first match, but @bdw429s mentioned we need to do auto-casting
+			        // So that would have to be done here.
 			        // Give me the first one found
 			        .findFirst()
 			        // Convert it to the method handle
