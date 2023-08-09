@@ -28,6 +28,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -259,13 +260,13 @@ public class ClassInvoker {
 	 * @param methodName The name of the method to invoke
 	 * @param arguments  The arguments to pass to the method
 	 *
-	 * @return The result of the method invocation or null if the method is void
+	 * @return The result of the method invocation wrapped in an Optional
 	 *
 	 * @throws Throwable
 	 * @throws IllegalArgumentException If the method name is null or empty
 	 * @throws IllegalStateException    If the target class is an interface
 	 */
-	public Object invoke( String methodName, Object... arguments ) throws Throwable {
+	public Optional<Object> invoke( String methodName, Object... arguments ) throws Throwable {
 		// Verify method name
 		if ( methodName == null || methodName.isEmpty() ) {
 			throw new IllegalArgumentException( "Method name cannot be null or empty." );
@@ -277,9 +278,11 @@ public class ClassInvoker {
 		}
 
 		// Discover and Execute it baby!
-		return getMethodHandle( methodName, argumentsToClasses( arguments ) )
-		        .bindTo( this.targetInstance )
-		        .invokeWithArguments( arguments );
+		return Optional.ofNullable(
+		        getMethodHandle( methodName, argumentsToClasses( arguments ) )
+		                .bindTo( this.targetInstance )
+		                .invokeWithArguments( arguments )
+		);
 	}
 
 	/**
@@ -288,11 +291,11 @@ public class ClassInvoker {
 	 * @param methodName The name of the method to invoke
 	 * @param arguments  The arguments to pass to the method
 	 *
-	 * @return The result of the method invocation or null if the method is void
+	 * @return The result of the method invocation wrapped in an Optional
 	 *
 	 * @throws Throwable
 	 */
-	public Object invokeStatic( String methodName, Object... arguments ) throws Throwable {
+	public Optional<Object> invokeStatic( String methodName, Object... arguments ) throws Throwable {
 
 		// System.out.println( "invokeStatic.arguments -> " + arguments[ 0 ] );
 
@@ -302,8 +305,10 @@ public class ClassInvoker {
 		}
 
 		// Discover and Execute it baby!
-		return getMethodHandle( methodName, argumentsToClasses( arguments ) )
-		        .invokeWithArguments( arguments );
+		return Optional.ofNullable(
+		        getMethodHandle( methodName, argumentsToClasses( arguments ) )
+		                .invokeWithArguments( arguments )
+		);
 	}
 
 	/**
