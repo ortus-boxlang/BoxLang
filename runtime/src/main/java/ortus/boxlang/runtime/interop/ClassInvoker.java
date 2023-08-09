@@ -222,7 +222,8 @@ public class ClassInvoker {
 	 */
 
 	/**
-	 * Invokes the constructor for the class with the given arguments and returns the instance of the object
+	 * Invokes the constructor for the class with the given arguments and stores the instance of the object
+	 * into the targetInstance property for future method calls.
 	 *
 	 * @param args The arguments to pass to the constructor
 	 *
@@ -231,7 +232,7 @@ public class ClassInvoker {
 	 * @throws Throwable             If the constructor cannot be invoked
 	 * @throws IllegalStateException If the class is an interface, you can't call a constructor on an interface
 	 */
-	public Object invokeConstructor( Object... args ) throws Throwable {
+	public ClassInvoker invokeConstructor( Object... args ) throws Throwable {
 
 		// Thou shalt not pass!
 		if ( isInterface() ) {
@@ -249,7 +250,7 @@ public class ClassInvoker {
 		MethodHandle	constructorInvoker	= callSite.dynamicInvoker();
 		this.targetInstance = constructorInvoker.invokeWithArguments( args );
 
-		return this.targetInstance;
+		return this;
 	}
 
 	/**
