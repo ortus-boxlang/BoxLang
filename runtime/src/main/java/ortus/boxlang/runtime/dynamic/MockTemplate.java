@@ -17,13 +17,13 @@
  */
 package ortus.boxlang.runtime.dynamic;
 
-import ortus.boxlang.runtime.context.ExecutionContext;
+import ortus.boxlang.runtime.context.TemplateContext;
 import ortus.boxlang.runtime.scopes.Key;
 
 public class MockTemplate implements ITemplate {
 
 	@Override
-	public ITemplate invoke( ExecutionContext context ) {
+	public ITemplate invoke( TemplateContext context ) {
 
 		// I can store variables in the context
 		context.getVariablesScope().put( Key.of( "MockTemplate" ), "Yea baby!!" );

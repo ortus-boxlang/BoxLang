@@ -21,12 +21,9 @@ import ortus.boxlang.runtime.scopes.*;
 import ortus.boxlang.runtime.types.exceptions.KeyNotFoundException;
 
 /**
- * Represents an execution context. May be subclassed for more specific contexts such as servlet.
- * Each thread/request has a new execution context and may share the same BoxRuntime instance.
- *
- * This is the core execution context that is used by the runtime to execute a template or class via the CLI
+ * This context represents the context of a template execution in BoxLang
  */
-public class ExecutionContext {
+public class TemplateContext extends BaseContext {
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -41,20 +38,9 @@ public class ExecutionContext {
 	 */
 
 	/**
-	 * A template has a variables scope
-	 */
-	private IScope	variablesScope;
-
-	/**
 	 * The template that this execution context is bound to
 	 */
-	private String	templatePath	= null;
-
-	// Also, should variables, this, local, arguments live here, or in the associated page or component they belong to, which in turn, gets associated
-	// here?
-	// Should the non-web context have even server, session, or application, or would a pure boxlang context only know about local, arguments, variables,
-	// and this?
-	// Decisions, decisions...
+	private String templatePath = null;
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -67,19 +53,21 @@ public class ExecutionContext {
 	 *
 	 * @param templatePath The template that this execution context is bound to
 	 */
-	public ExecutionContext( String templatePath ) {
-		this.templatePath = templatePath;
+	public TemplateContext( String templatePath ) {
+		this.templatePath	= templatePath;
+		this.name			= "template";
 	}
 
 	/**
-	 * Creates a new execution context with no bounded template
+	 * Creates a new template context with no bounded template
 	 */
-	public ExecutionContext() {
+	public TemplateContext() {
+		this.name = "template";
 	}
 
 	/**
 	 * --------------------------------------------------------------------------
-	 * Methods
+	 * Getters & Setters
 	 * --------------------------------------------------------------------------
 	 */
 
@@ -90,7 +78,7 @@ public class ExecutionContext {
 	 *
 	 * @return ExecutionContext
 	 */
-	public ExecutionContext setTemplatePath( String templatePath ) {
+	public TemplateContext setTemplatePath( String templatePath ) {
 		this.templatePath = templatePath;
 		return this;
 	}
@@ -111,15 +99,6 @@ public class ExecutionContext {
 	 */
 	public boolean hasTemplatePath() {
 		return this.templatePath != null;
-	}
-
-	/**
-	 * Get the variables scope of the template
-	 *
-	 * @return The variables scope of the template
-	 */
-	public IScope getVariablesScope() {
-		return this.variablesScope;
 	}
 
 	/**
@@ -145,6 +124,7 @@ public class ExecutionContext {
 	 *
 	 * @throws KeyNotFoundException If the key was not found in any scope
 	 */
+	@Override
 	public Object scopeFind( Key key ) {
 
 		// In query loop?
@@ -158,7 +138,7 @@ public class ExecutionContext {
 
 		// Not found anywhere
 		throw new KeyNotFoundException(
-				String.format( "The requested key [%s] was not located in any scope or it's undefined", key.getName() )
+		        String.format( "The requested key [%s] was not located in any scope or it's undefined", key.getName() )
 		);
 	}
 

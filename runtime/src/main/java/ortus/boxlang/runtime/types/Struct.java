@@ -17,13 +17,12 @@
  */
 package ortus.boxlang.runtime.types;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 
 import ortus.boxlang.runtime.scopes.Key;
-import ortus.boxlang.runtime.types.exceptions.CantCastException;
+import ortus.boxlang.runtime.types.exceptions.CastException;
 import ortus.boxlang.runtime.types.exceptions.KeyNotFoundException;
 
 /**
@@ -105,7 +104,7 @@ public class Struct extends ConcurrentHashMap<Key, Object> implements IType {
 	@Override
 	public String toString() {
 		return entrySet().stream().map( entry -> entry.getKey().getNameNoCase() + "=" + entry.getValue() )
-				.collect( java.util.stream.Collectors.joining( ", ", "{", "}" ) );
+		        .collect( java.util.stream.Collectors.joining( ", ", "{", "}" ) );
 	}
 
 	/**
@@ -116,7 +115,7 @@ public class Struct extends ConcurrentHashMap<Key, Object> implements IType {
 	 */
 	public String toStringWithCase() {
 		return entrySet().stream().map( entry -> entry.getKey().getName() + "=" + entry.getValue() )
-				.collect( java.util.stream.Collectors.joining( ", ", "{", "}" ) );
+		        .collect( java.util.stream.Collectors.joining( ", ", "{", "}" ) );
 	}
 
 	/**
@@ -124,7 +123,7 @@ public class Struct extends ConcurrentHashMap<Key, Object> implements IType {
 	 */
 	@Override
 	public String asString() {
-		throw new CantCastException( "Can't cast a struct to a string. Try serializing it" );
+		throw new CastException( "Can't cast a struct to a string. Try serializing it" );
 	}
 
 	/**
@@ -142,7 +141,7 @@ public class Struct extends ConcurrentHashMap<Key, Object> implements IType {
 			return super.get( key );
 		}
 		throw new KeyNotFoundException(
-				String.format( "The key %s was not found in the struct. Valid keys are (%s)", key.getName(), getKeys() ), this
+		        String.format( "The key %s was not found in the struct. Valid keys are (%s)", key.getName(), getKeys() ), this
 		);
 	}
 

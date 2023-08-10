@@ -20,7 +20,7 @@ package ortus.boxlang.runtime;
 import java.util.HashMap;
 import java.util.Map;
 
-import ortus.boxlang.runtime.context.ExecutionContext;
+import ortus.boxlang.runtime.context.TemplateContext;
 
 /**
  * The Bootstrap class is the entry point for the BoxLang runtime. It is responsible for
@@ -42,7 +42,7 @@ public class BoxRunner {
 		BoxRuntime.startup();
 
 		// Build out the execution context for this execution and bind it to the incoming template
-		ExecutionContext context = new ExecutionContext( options.templatePath() );
+		TemplateContext context = new TemplateContext( options.templatePath() );
 
 		// Here is where we presumably boostrap a page or class that we are executing in our new context.
 		// JIT if neccessary

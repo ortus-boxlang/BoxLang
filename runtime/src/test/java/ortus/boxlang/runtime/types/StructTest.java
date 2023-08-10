@@ -22,7 +22,7 @@ import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
 
 import ortus.boxlang.runtime.scopes.Key;
-import ortus.boxlang.runtime.types.exceptions.CantCastException;
+import ortus.boxlang.runtime.types.exceptions.CastException;
 
 import static com.google.common.truth.Truth.assertThat;
 
@@ -88,12 +88,12 @@ public class StructTest {
 
 	@Test
 	void testAsStringThrowsException() {
-		Struct				struct		= new Struct();
+		Struct			struct		= new Struct();
 
 		// Test that the method throws the expected exception
-		CantCastException	exception	= assertThrows( CantCastException.class, () -> {
-											struct.asString();
-										} );
+		CastException	exception	= assertThrows( CastException.class, () -> {
+										struct.asString();
+									} );
 
 		assertThat( exception.getMessage() ).isEqualTo( "Can't cast a struct to a string. Try serializing it" );
 	}

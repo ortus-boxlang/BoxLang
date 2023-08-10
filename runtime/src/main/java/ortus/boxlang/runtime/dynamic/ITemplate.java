@@ -17,7 +17,7 @@
  */
 package ortus.boxlang.runtime.dynamic;
 
-import ortus.boxlang.runtime.context.ExecutionContext;
+import ortus.boxlang.runtime.context.TemplateContext;
 
 public interface ITemplate {
 
@@ -28,6 +28,6 @@ public interface ITemplate {
 	 *
 	 * @return The template itself
 	 */
-	public ITemplate invoke( ExecutionContext context );
+	public ITemplate invoke( TemplateContext context );
 
 }

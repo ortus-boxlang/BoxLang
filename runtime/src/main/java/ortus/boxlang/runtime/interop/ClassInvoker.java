@@ -225,7 +225,7 @@ public class ClassInvoker {
 
 	/**
 	 * Invokes the constructor for the class with the given arguments and stores the instance of the object
-	 * into the targetInstance property for future method calls.
+	 * into the {@code targetInstance} property for future method calls.
 	 *
 	 * @param args The arguments to pass to the constructor
 	 *
@@ -256,8 +256,7 @@ public class ClassInvoker {
 	}
 
 	/**
-	 * Invoke can be used to invoke public methods on instances,
-	 * or static methods on classes/interfaces.
+	 * Invoke can be used to invoke public methods on instances, or static methods on classes/interfaces.
 	 *
 	 * If it's determined that the method handle is static, then the target instance is ignored.
 	 * If it's determined that the method handle is not static, then the target instance is used.

@@ -45,11 +45,6 @@ public class BaseScope extends Struct implements IScope {
 	private String name = "none";
 
 	/**
-	 * Used for scope hunting. Lower numbers are searched first.
-	 */
-	private int lookupOrder;
-
-	/**
 	 * --------------------------------------------------------------------------
 	 * Constructors
 	 * --------------------------------------------------------------------------
@@ -58,23 +53,11 @@ public class BaseScope extends Struct implements IScope {
 	/**
 	 * Constructor
 	 *
-	 * @param lookupOrder Used for scope hunting. Lower numbers are searched first.
-	 */
-	public BaseScope( int lookupOrder, String name ) {
-		super();
-		this.lookupOrder	= lookupOrder;
-		this.name			= name;
-	}
-
-	/**
-	 * Constructor with default lookup order
-	 *
 	 * @param name The name of the scope
 	 */
 	public BaseScope( String name ) {
 		super();
-		this.lookupOrder	= 0;
-		this.name			= name;
+		this.name = name;
 	}
 
 	/**
@@ -90,13 +73,6 @@ public class BaseScope extends Struct implements IScope {
 	 */
 	public String getName() {
 		return name;
-	}
-
-	/**
-	 * Returns the lookup order
-	 */
-	public int getLookupOrder() {
-		return this.lookupOrder;
 	}
 
 	/**
@@ -116,7 +92,7 @@ public class BaseScope extends Struct implements IScope {
 		}
 		// State + Super
 		BaseScope target = ( BaseScope ) obj;
-		return this.lookupOrder == target.getLookupOrder() && this.name == target.getName() == super.equals( obj );
+		return this.name == target.getName() == super.equals( obj );
 	}
 
 	/**
@@ -124,6 +100,6 @@ public class BaseScope extends Struct implements IScope {
 	 */
 	@Override
 	public int hashCode() {
-		return Objects.hash( this.name, this.lookupOrder, super.hashCode() );
+		return Objects.hash( this.name, super.hashCode() );
 	}
 }
