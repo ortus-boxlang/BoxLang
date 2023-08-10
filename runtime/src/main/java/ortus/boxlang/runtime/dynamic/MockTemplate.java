@@ -17,10 +17,31 @@
  */
 package ortus.boxlang.runtime.dynamic;
 
+// BoxLang Auto Imports
 import ortus.boxlang.runtime.context.TemplateContext;
+import ortus.boxlang.runtime.interop.ClassInvoker;
+import ortus.boxlang.runtime.loader.ClassLocator;
 import ortus.boxlang.runtime.scopes.Key;
+import ortus.boxlang.runtime.scopes.Key;
+import ortus.boxlang.runtime.scopes.IScope;
+
+// Classes Auto-Imported on all Templates and Classes by BoxLang
+import java.time.LocalDateTime;
+import java.time.Instant;
+import java.lang.System;
+import java.lang.String;
+import java.lang.Character;
+import java.lang.Boolean;
+import java.lang.Double;
+import java.lang.Integer;
 
 public class MockTemplate extends BaseTemplate {
+
+	/**
+	 * --------------------------------------------------------------------------
+	 * Public Properties
+	 * --------------------------------------------------------------------------
+	 */
 
 	private static MockTemplate instance;
 

@@ -17,12 +17,39 @@
  */
 package ortus.boxlang.runtime.dynamic;
 
+import java.time.LocalDateTime;
+
 import ortus.boxlang.runtime.context.TemplateContext;
 
-// Auto Imports for the language
-import java.time.Instant;
+/// import ortus.boxlang.runtime.core.Derefrencer;
 
 public class BaseTemplate {
+
+	/**
+	 * --------------------------------------------------------------------------
+	 * Public Properties
+	 * --------------------------------------------------------------------------
+	 */
+
+	public String			name;
+	public String			extension;
+	public String			path;
+	public LocalDateTime	lastModified;
+	public LocalDateTime	compiledOn;
+
+	// public ??? ast;
+
+	/**
+	 * --------------------------------------------------------------------------
+	 * Private Properties
+	 * --------------------------------------------------------------------------
+	 */
+
+	/**
+	 * --------------------------------------------------------------------------
+	 * Methods
+	 * --------------------------------------------------------------------------
+	 */
 
 	/**
 	 * Invoke the template

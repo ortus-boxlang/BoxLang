@@ -23,13 +23,17 @@ import java.lang.String;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Optional;
 import java.time.Duration;
 
+import TestCases.InvokeDynamicFields;
 import TestCases.PrivateConstructors;
 
 import org.junit.Ignore;
 import org.junit.jupiter.api.Test;
 import static com.google.common.truth.Truth.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class ClassInvokerTest {
 
@@ -110,7 +114,6 @@ public class ClassInvokerTest {
 		assertThat( results ).isNotEmpty();
 	}
 
-	@Ignore
 	@Test
 	void testItCanCreateWithPrivateConstructors() throws Throwable {
 		ClassInvoker myInvoker = ClassInvoker.of( PrivateConstructors.class );
@@ -119,6 +122,30 @@ public class ClassInvokerTest {
 
 		// Now call it via normal `invoke()`
 		myInvoker.invoke( "getInstance" );
+	}
+
+	@Test
+	void testItCanGetPublicFields() throws Throwable {
+		ClassInvoker myInvoker = ClassInvoker.of( InvokeDynamicFields.class );
+		myInvoker.invokeConstructor();
+		Object results = myInvoker.getField( "name" );
+	}
+
+	@Test
+	void testItCanGetStaticPublicFields() throws Throwable {
+		ClassInvoker myInvoker = ClassInvoker.of( InvokeDynamicFields.class );
+		assertThat( ( String ) myInvoker.getField( "HELLO" ).get() ).isEqualTo( "Hello World" );
+		assertThat( ( Integer ) myInvoker.getField( "MY_PRIMITIVE" ).get() ).isEqualTo( 42 );
+	}
+
+	@Test
+	void testItCanThrowExceptionForInvalidFields() {
+		NoSuchFieldException exception = assertThrows( NoSuchFieldException.class, () -> {
+			ClassInvoker myInvoker = ClassInvoker.of( InvokeDynamicFields.class );
+			myInvoker.invokeConstructor();
+			myInvoker.getField( "uknown" );
+		} );
+		assertEquals( "uknown", exception.getMessage() );
 	}
 
 }

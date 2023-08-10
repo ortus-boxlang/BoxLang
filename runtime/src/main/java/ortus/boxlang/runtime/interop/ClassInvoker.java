@@ -22,6 +22,7 @@ import java.lang.invoke.ConstantCallSite;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
+import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.Arrays;
@@ -53,6 +54,8 @@ import java.util.concurrent.ConcurrentHashMap;
  * - {@code invokeStaticMethod( String methodName, Object... args )} - Invoke a static method on the class
  * - {@code invoke( String methodName, Object... args )} - Invoke a method on the instance of the class
  *
+ * TODO:
+ * [ ] - Set public fields
  */
 public class ClassInvoker {
 
@@ -316,6 +319,27 @@ public class ClassInvoker {
 		        getMethodHandle( methodName, argumentsToClasses( arguments ) )
 		                .methodHandle()
 		                .invokeWithArguments( arguments )
+		);
+	}
+
+	/**
+	 *
+	 * @param fieldName
+	 *
+	 * @return
+	 *
+	 * @throws Throwable
+	 * @throws NoSuchFieldException If the field doesn't exist
+	 */
+	public Optional<Object> getField( String fieldName ) throws Throwable {
+		Field			field		= this.targetClass.getField( fieldName );
+		MethodHandle	fieldHandle	= METHOD_LOOKUP.unreflectGetter( field );
+		Boolean			isStatic	= Modifier.isStatic( field.getModifiers() );
+
+		return Optional.ofNullable(
+		        Boolean.TRUE.equals( isStatic )
+		                ? fieldHandle.invoke()
+		                : fieldHandle.invoke( this.targetInstance )
 		);
 	}
 
