@@ -35,7 +35,7 @@ public class BoxPiler {
 	 */
 
 	/**
-	 * Singelton instance
+	 * Singleton instance
 	 */
 	private static BoxPiler instance;
 
@@ -76,9 +76,9 @@ public class BoxPiler {
 	 *
 	 * @param templatePath The path to the template
 	 *
-	 * @return The parsed template instance
+	 * @return The parsed template class
 	 */
-	public static ITemplate parse( String templatePath ) {
+	public static Class<? extends ITemplate> parse( String templatePath ) {
 
 		// TODO: Check if the template is in cache (local or ram)
 
@@ -88,7 +88,7 @@ public class BoxPiler {
 		// TODO: Cache the template
 
 		// Return the template
-		return new MockTemplate();
+		return MockTemplate.class;
 	}
 
 }

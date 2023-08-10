@@ -22,15 +22,18 @@ import ortus.boxlang.runtime.scopes.Key;
 
 public class MockTemplate implements ITemplate {
 
-	@Override
-	public ITemplate invoke( TemplateContext context ) {
+	/**
+	 * Private constructor
+	 */
+	private MockTemplate() {
+	}
+
+	public static void invoke( TemplateContext context ) {
 
 		// I can store variables in the context
 		context.getVariablesScope().put( Key.of( "MockTemplate" ), "Yea baby!!" );
 
 		System.out.println( "MockTemplate invoked, woot woot!" );
-
-		return this;
 	}
 
 }

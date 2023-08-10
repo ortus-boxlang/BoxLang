@@ -25,9 +25,9 @@ public interface ITemplate {
 	 * Invoke the template
 	 *
 	 * @param context The context to invoke the template with
-	 *
-	 * @return The template itself
 	 */
-	public ITemplate invoke( TemplateContext context );
+	public static void invoke( TemplateContext context ) {
+		throw new UnsupportedOperationException( "This method must be overridden as a static method." );
+	}
 
 }

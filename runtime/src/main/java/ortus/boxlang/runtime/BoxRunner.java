@@ -21,6 +21,8 @@ import java.util.HashMap;
 import java.util.Map;
 
 import ortus.boxlang.runtime.context.TemplateContext;
+import ortus.boxlang.runtime.dynamic.ITemplate;
+import ortus.boxlang.runtime.dynamic.MockTemplate;
 
 /**
  * The Bootstrap class is the entry point for the BoxLang runtime. It is responsible for
@@ -47,6 +49,10 @@ public class BoxRunner {
 		// Here is where we presumably boostrap a page or class that we are executing in our new context.
 		// JIT if neccessary
 		BoxPiler.parse( options.templatePath() ).invoke( context );
+
+		Class<? extends ITemplate> test = MockTemplate.class;
+
+		test.invoke( context );
 
 		// Bye bye! Ciao Bella!
 		BoxRuntime.shutdown();
