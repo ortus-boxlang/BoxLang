@@ -20,15 +20,22 @@ package ortus.boxlang.runtime.dynamic;
 import ortus.boxlang.runtime.context.TemplateContext;
 import ortus.boxlang.runtime.scopes.Key;
 
-public class MockTemplate implements ITemplate {
+public class MockTemplate extends BaseTemplate {
 
-	/**
-	 * Private constructor
-	 */
+	private static MockTemplate instance;
+
 	private MockTemplate() {
 	}
 
-	public static void invoke( TemplateContext context ) {
+	public static synchronized MockTemplate getInstance() {
+		if ( instance == null ) {
+			instance = new MockTemplate();
+		}
+		return instance;
+	}
+
+	@Override
+	public void invoke( TemplateContext context ) {
 
 		// I can store variables in the context
 		context.getVariablesScope().put( Key.of( "MockTemplate" ), "Yea baby!!" );

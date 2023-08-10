@@ -19,15 +19,17 @@ package ortus.boxlang.runtime.dynamic;
 
 import ortus.boxlang.runtime.context.TemplateContext;
 
-public interface ITemplate {
+// Auto Imports for the language
+import java.time.Instant;
+
+public class BaseTemplate {
 
 	/**
 	 * Invoke the template
 	 *
 	 * @param context The context to invoke the template with
 	 */
-	public static void invoke( TemplateContext context ) {
+	public void invoke( TemplateContext context ) {
 		throw new UnsupportedOperationException( "This method must be overridden as a static method." );
 	}
-
 }

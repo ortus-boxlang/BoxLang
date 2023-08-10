@@ -50,10 +50,6 @@ public class BoxRunner {
 		// JIT if neccessary
 		BoxPiler.parse( options.templatePath() ).invoke( context );
 
-		Class<? extends ITemplate> test = MockTemplate.class;
-
-		test.invoke( context );
-
 		// Bye bye! Ciao Bella!
 		BoxRuntime.shutdown();
 	}
