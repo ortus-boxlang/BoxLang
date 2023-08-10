@@ -17,10 +17,14 @@
  */
 package ortus.boxlang.runtime.loader;
 
-import java.util.Map;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentHashMap.KeySetView;
+import java.util.concurrent.ConcurrentMap;
 
 /**
  * This class is in charge of locating Box classes in the lookup algorithm
@@ -33,7 +37,7 @@ import java.util.concurrent.ConcurrentHashMap.KeySetView;
  * - If not, verify if the class is in the application path
  * - If not, verify if the class is a Java class
  */
-public class ClassLocator {
+public class ClassLocator extends ClassLoader {
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -44,11 +48,15 @@ public class ClassLocator {
 	/**
 	 * The internal type of a BoxLang class
 	 */
-	public static final int TYPE_BX = 1;
+	public static final int							TYPE_BX			= 1;
 	/**
 	 * The internal type of a Java class
 	 */
-	public static final int TYPE_JAVA = 2;
+	public static final int							TYPE_JAVA		= 2;
+	/**
+	 * The class extension to use for loading classes
+	 */
+	public static final String						CLASS_EXTENSION	= ".class";
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -56,36 +64,57 @@ public class ClassLocator {
 	 * --------------------------------------------------------------------------
 	 */
 
+	private String									classDirectory;
+
 	/**
 	 * Singleton instance
 	 */
-	private static final ClassLocator instance = new ClassLocator();
+	private static ClassLocator						instance;
 
 	/**
 	 * The cache of resolved classes
 	 */
-	private ConcurrentHashMap<String, ClassLocation> resolverCache = new ConcurrentHashMap<String, ClassLocation>();
+	private ConcurrentMap<String, ClassLocation>	resolverCache	= new ConcurrentHashMap<>();
 
 	/**
 	 * --------------------------------------------------------------------------
-	 * Methods
+	 * Constructors
 	 * --------------------------------------------------------------------------
 	 */
 
 	/**
 	 * Static constructor
 	 */
-	private ClassLocator() {
-		// Initialization code, if needed
+	private ClassLocator( String classDirectory ) {
+		super( getSystemClassLoader() );
+		this.classDirectory = classDirectory;
 	}
 
 	/**
 	 * Get the singleton instance
 	 *
+	 * @param classDirectory The class directory for generated bx classes
+	 *
 	 * @return ClassLocator
 	 */
-	public static ClassLocator getInstance() {
+	public static synchronized ClassLocator getInstance( String classDirectory ) {
+		if ( instance == null ) {
+			instance = new ClassLocator( classDirectory );
+		}
 		return instance;
+	}
+
+	/**
+	 * --------------------------------------------------------------------------
+	 * Getters & Setters
+	 * --------------------------------------------------------------------------
+	 */
+
+	/**
+	 * @return the classDirectory
+	 */
+	public String getClassDirectory() {
+		return classDirectory;
 	}
 
 	/**
@@ -93,19 +122,15 @@ public class ClassLocator {
 	 *
 	 * @return The cache of resolved classes
 	 */
-	public ConcurrentHashMap<String, ClassLocation> getResolverCache() {
+	public ConcurrentMap<String, ClassLocation> getResolverCache() {
 		return resolverCache;
 	}
 
 	/**
-	 * Set the cache of resolved classes
-	 *
-	 * @param resolverCache The cache of resolved classes
+	 * --------------------------------------------------------------------------
+	 * Resolver Utilities
+	 * --------------------------------------------------------------------------
 	 */
-	public ClassLocator setResolverCache( ConcurrentHashMap<String, ClassLocation> resolverCache ) {
-		this.resolverCache = resolverCache;
-		return this;
-	}
 
 	/**
 	 * Verifies if the class resolver is empty or not
@@ -138,56 +163,35 @@ public class ClassLocator {
 	/**
 	 * Clear a specific key from the resolver cache
 	 *
-	 * @param key The key to clear
+	 * @param name The fully qualified path of the class to remove
 	 *
 	 * @return The class locator instance
 	 */
-	public ClassLocator removeClass( String key ) {
-		resolverCache.remove( key );
+	public ClassLocator removeClass( String name ) {
+		resolverCache.remove( name );
 		return instance;
 	}
 
 	/**
 	 * Get the class record from the resolver cache
 	 *
-	 * @param key The key to get
+	 * @param name The fully qualified path of the class to get
 	 *
 	 * @return An optional containing the class record if found, empty otherwise
 	 */
-	public Optional<ClassLocation> getClass( String key ) {
-		return Optional.of( resolverCache.get( key ) );
-	}
-
-	/**
-	 * Resolve a class path to a class location and type
-	 *
-	 * @param path The class path to resolve
-	 *
-	 * @return The class location record
-	 */
-	public ClassLocation resolve( String path ) throws ClassNotFoundException {
-		// Verify if the class record is already in the cache
-		if ( hasClass( path ) ) {
-			return getClass( path ).get();
-		}
-		// Verify if the class is in the declared class mappings path
-
-		// Verify if the lcass in in the app path
-
-		// Verify if the class is a Java class
-
-		throw new ClassNotFoundException( String.format( "The requested class [%s] was not found anywhere", path ) );
+	public Optional<ClassLocation> getClass( String name ) {
+		return Optional.of( resolverCache.get( name ) );
 	}
 
 	/**
 	 * Verifies if the passed path key is in the resolver cache
 	 *
-	 * @param key The path key to verify
+	 * @param name The fully qualified path of the class to verify
 	 *
 	 * @return True if the key is in the resolver cache, false otherwise
 	 */
-	boolean hasClass( String key ) {
-		return resolverCache.containsKey( key );
+	boolean hasClass( String name ) {
+		return resolverCache.containsKey( name );
 	}
 
 	/**
@@ -195,8 +199,81 @@ public class ClassLocator {
 	 *
 	 * @return The keys in the resolver cache
 	 */
-	public KeySetView<String, ClassLocation> classSet() {
+	public Set<String> classSet() {
 		return resolverCache.keySet();
+	}
+
+	/**
+	 * --------------------------------------------------------------------------
+	 * Class Loader Methods
+	 * --------------------------------------------------------------------------
+	 */
+
+	/**
+	 * Load a class using this class loader
+	 *
+	 * @param name The fully qualified path of the class to resolve
+	 *
+	 * @throws ClassNotFoundException If the class was not found anywhere in the system
+	 *
+	 * @return The class requested to be loaded
+	 */
+	@Override
+	public Class loadClass( String name ) throws ClassNotFoundException {
+		return resolve( name ).clazz();
+	}
+
+	/**
+	 * This method is in charge of resolving the class location in the system and generating a cacheable {@link ClassLocation} record
+	 *
+	 * @param name The fully qualified path of the class to resolve
+	 *
+	 * @throws ClassNotFoundException If the class was not found anywhere in the system
+	 *
+	 * @return The resolved class location
+	 */
+	public ClassLocation resolve( String name ) throws ClassNotFoundException {
+		// Verify if the class record is already in the cache
+		Optional<ClassLocation> classLocation = getClass( name );
+
+		// If the class is already in the cache, return it
+		if ( classLocation.isPresent() ) {
+			return classLocation.get();
+		}
+
+		// Verify if the class is in the declared class mappings path
+
+		// Verify if the class in in the app path
+
+		// Verify if the class is a Java class
+
+		// Ask the system to load it
+		Class clazz = super.loadClass( name );
+
+		throw new ClassNotFoundException( String.format( "The requested class [%s] was not found anywhere", name ) );
+	}
+
+	/**
+	 * Get the system class loader
+	 *
+	 * @return The system class loader
+	 */
+	public static ClassLoader getSystemClassLoader() {
+		return ClassLoader.getSystemClassLoader();
+	}
+
+	/**
+	 * Load a class from the declared class mappings path
+	 *
+	 * @param name The fully qualified path of the class to load
+	 *
+	 * @return The loaded class
+	 *
+	 * @throws IOException
+	 */
+	private byte[] loadClassBytes( String name ) throws IOException {
+		Path fullPath = Paths.get( this.classDirectory, name.replace( '.', '/' ) + CLASS_EXTENSION );
+		return Files.readAllBytes( fullPath );
 	}
 
 	/**
@@ -208,12 +285,22 @@ public class ClassLocator {
 	/**
 	 * This record represents a class location in the application
 	 *
-	 * @param path         The instantiation path to the class, e.g. mapping.models.User, path.models.User, java.util.Date
+	 * @param name         The fully qualified path to the class, e.g. mapping.models.User, path.models.User, java.util.Date
 	 * @param resolvedPath The resolved path to the class
-	 * @param type         The type of class it is: 1. Box class (this.BX_TYPE), 2. Java class (this.JAVA_TYPE) (TODO: Change to enum or static fields)
-	 * @param loader       The classloader that can load the class
+	 * @param type         The type of class it is: 1. Box class (this.BX_TYPE), 2. Java class (this.JAVA_TYPE)
+	 * @param clazz        The class object that represents the loaded class
+	 * @param module       The module the class belongs to, null if none
 	 */
-	public record ClassLocation( String path, String resolvedPath, int type, ClassLoader loader ) {
+	public record ClassLocation(
+	        String name,
+	        String resolvedPath,
+	        int type,
+	        Class<?> clazz,
+	        String module ) {
+
+		Boolean isFromModule() {
+			return module != null;
+		}
 	}
 
 }
