@@ -31,6 +31,8 @@ public class TemplateContext extends BaseContext {
 	 * --------------------------------------------------------------------------
 	 */
 
+	public static final String	SCOPE_NAME		= "template";
+
 	/**
 	 * --------------------------------------------------------------------------
 	 * Private Properties
@@ -40,7 +42,7 @@ public class TemplateContext extends BaseContext {
 	/**
 	 * The template that this execution context is bound to
 	 */
-	private String templatePath = null;
+	private String				templatePath	= null;
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -54,15 +56,15 @@ public class TemplateContext extends BaseContext {
 	 * @param templatePath The template that this execution context is bound to
 	 */
 	public TemplateContext( String templatePath ) {
-		this.templatePath	= templatePath;
-		this.name			= "template";
+		super( SCOPE_NAME );
+		this.templatePath = templatePath;
 	}
 
 	/**
 	 * Creates a new template context with no bounded template
 	 */
 	public TemplateContext() {
-		this.name = "template";
+		super( SCOPE_NAME );
 	}
 
 	/**
