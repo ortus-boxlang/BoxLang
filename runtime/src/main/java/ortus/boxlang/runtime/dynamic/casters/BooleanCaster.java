@@ -18,7 +18,7 @@
 package ortus.boxlang.runtime.dynamic.casters;
 
 /**
- * I handle de
+ * I handle casting anything to a boolean
  */
 public class BooleanCaster {
 

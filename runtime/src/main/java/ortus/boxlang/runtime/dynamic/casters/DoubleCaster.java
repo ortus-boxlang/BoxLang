@@ -17,32 +17,30 @@
  */
 package ortus.boxlang.runtime.dynamic.casters;
 
-import java.text.DecimalFormat;
-
 /**
- * I handle casting anything to a string
+ * I handle casting anything to a Double
  */
-public class StringCaster {
+public class DoubleCaster {
 
 	 /**
-	  * Used to cast anything to a string
+	  * Used to cast anything to a double
 	  *
-	  * @param value The value to cast to a string
-	  * @return The String value
+	  * @param value The value to cast to a double
+	  * @return The double value
 	  */
-	 public static String cast( Object object ) {
+	 public static double cast( Object object ) {
 		if( object == null ) {
-			return "";
+			return Double.valueOf( 0 );
+		}
+		if( object instanceof Double ) {
+			return (Double)object;
 		}
 		if( object instanceof Number ) {
-			// This removes the ".0" that Doubles' .toString() method adds
-			return new DecimalFormat("#.##########################################").format(object);
+			return ((Number)object).doubleValue();
 		}
-		if( object instanceof byte[] ) {
-			return new String( (byte[])object );
-		}
-		// TODO: Figure out which types need specific casting
-		return object.toString();
+
+		// May throw NumberFormatException
+		return Double.valueOf( StringCaster.cast( object ) );
 	 }
 
 }
