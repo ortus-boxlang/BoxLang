@@ -41,6 +41,7 @@ public class KeyTest {
 		Key key2 = new Key( "test" );
 		assertThat( key1 ).isEqualTo( key1 );
 		assertThat( key1 ).isEqualTo( key2 );
+		assertThat( key1.equals( key2 ) ).isTrue();
 	}
 
 	@Test

@@ -214,7 +214,7 @@ public class TemplateBoxContext implements IBoxContext {
 
 		// Not found anywhere
 		throw new ScopeNotFoundException(
-		        String.format( "The requested key [%s] was not located in any scope or it's undefined", name.getName() )
+		        String.format( "The requested scope name [%s] was not located in any context", name.getName() )
 		);
 
 	}
@@ -227,7 +227,7 @@ public class TemplateBoxContext implements IBoxContext {
 	 */
 	public IScope getScopeLocal( Key name ) throws ScopeNotFoundException {
 		// Check the scopes I know about
-		if ( name == variablesScopeName ) {
+		if( name.equals( variablesScopeName ) ) {
 			return variablesScope;
 		}
 

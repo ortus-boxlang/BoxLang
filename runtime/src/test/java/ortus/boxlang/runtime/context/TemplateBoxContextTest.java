@@ -61,7 +61,7 @@ public class TemplateBoxContextTest {
 	void testScopeFindExistingKey() {
 		TemplateBoxContext	context	= new TemplateBoxContext();
 		Key				key		= Key.of( "testIt" );
-		context.getScope( Key.of( "variables" ) ).put( key, "value" );
+		context.getScopeLocal( Key.of( "variables" ) ).put( key, "value" );
 		assertThat( context.scopeFindLocal( key ) ).isEqualTo( "value" );
 	}
 
