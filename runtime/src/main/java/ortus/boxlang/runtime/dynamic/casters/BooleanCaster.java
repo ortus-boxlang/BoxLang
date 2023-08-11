@@ -44,7 +44,7 @@ public class BooleanCaster {
 			// String true and yes are truthy
 			if( o.equalsIgnoreCase( "true" ) || o.equalsIgnoreCase( "yes" ) ) {
 				return true;
-			// String false and no are truthy
+			// String false and no are falsey
 			} else if( o.equalsIgnoreCase( "false" ) || o.equalsIgnoreCase( "no" ) ) {
 				return false;
 			}
