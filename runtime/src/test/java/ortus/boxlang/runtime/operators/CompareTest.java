@@ -26,13 +26,28 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class CompareTest {
 
-	@DisplayName( "It can compare strings" )
+	@DisplayName( "It can compare strings case insensitive" )
 	@Test
-	void testItCanCompareStrings() {
+	void testItCanCompareStringsCaseInsensitive() {
 		assertThat( Compare.invoke( "Brad", "Brad" ) ).isEqualTo( 0 );
 		assertThat( Compare.invoke( "Brad", "BRAD" ) ).isEqualTo( 0 );
 		assertThat( Compare.invoke( "A", "B" ) ).isEqualTo( -1 );
+		assertThat( Compare.invoke( "A", "b" ) ).isEqualTo( -1 );
 		assertThat( Compare.invoke( "B", "A" ) ).isEqualTo( 1 );
+		assertThat( Compare.invoke( "B", "a" ) ).isEqualTo( 1 );
+
+		assertThat( Compare.invoke( "A", "a" ) ).isEqualTo( 0 );
+		assertThat( Compare.invoke( "a", "A" ) ).isEqualTo( 0 );
+	}
+
+	@DisplayName( "It can compare strings case sensitive" )
+	@Test
+	void testItCanCompareStringsCaseSensitive() {
+		assertThat( Compare.invoke( "Brad", "BRAD", true ) ).isGreaterThan( 0 );
+		assertThat( Compare.invoke( "BRAD", "Brad", true ) ).isLessThan( 0 );
+		assertThat( Compare.invoke( "A", "A", true ) ).isEqualTo( 0 );
+		assertThat( Compare.invoke( "A", "a", true ) ).isLessThan( 0 );
+		assertThat( Compare.invoke( "a", "A", true ) ).isGreaterThan( 0 );
 	}
 
 	@DisplayName( "It can compare numbers" )

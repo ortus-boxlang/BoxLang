@@ -23,11 +23,15 @@ package ortus.boxlang.runtime.operators;
  */
 public class Compare implements IOperator {
 
+
+	static int invoke( Object left, Object right ) {
+		return invoke( left, right, false );
+	}
 	/**
 	 * @return 1 if greater than, -1 if less than, = if equal
 	 */
 	@SuppressWarnings("unchecked")
-	static int invoke( Object left, Object right ) {
+	static int invoke( Object left, Object right, Boolean caseSensitive ) {
 
 		if( left == null ) {
 			left = "";
@@ -46,7 +50,11 @@ public class Compare implements IOperator {
 
 		// TODO: This is too simplistic
 		if( left instanceof String || right instanceof String ) {
-			return left.toString().compareToIgnoreCase( right.toString() );
+			if( caseSensitive ) {
+				return left.toString().compareTo( right.toString() );
+			} else {
+				return left.toString().compareToIgnoreCase( right.toString() );
+			}
 		}
 
 		if( left instanceof Comparable && right instanceof Comparable ) {
