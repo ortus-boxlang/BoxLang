@@ -22,7 +22,6 @@ import ortus.boxlang.runtime.types.exceptions.KeyNotFoundException;
 
 /**
  * This represents the most basic execution context. It will usually be sub-classed for more specific contexts.
- * TODO: Should we make it abstract?
  */
 public class BaseContext {
 
@@ -39,14 +38,14 @@ public class BaseContext {
 	 */
 
 	/**
-	 * A context has a variables scope
+	 * Every context has a variables scope
 	 */
-	protected BaseScope	variablesScope;
+	protected BaseScope	variablesScope	= new VariablesScope();
 
 	/**
-	 * The context has a unique name
+	 * Every context has a unique name
 	 */
-	protected String	name;
+	protected String	name			= "base";
 
 	/**
 	 * --------------------------------------------------------------------------

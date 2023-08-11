@@ -137,8 +137,9 @@ public class Struct extends ConcurrentHashMap<Key, Object> implements IType {
 	 * @throws KeyNotFoundException If the key is not found
 	 */
 	public Object get( Key key ) {
-		if ( super.containsKey( key ) ) {
-			return super.get( key );
+		Object target = super.get( key );
+		if ( target != null ) {
+			return target;
 		}
 		throw new KeyNotFoundException(
 		        String.format( "The key %s was not found in the struct. Valid keys are (%s)", key.getName(), getKeys() ), this

@@ -17,8 +17,14 @@
  */
 package ortus.boxlang.runtime.scopes;
 
+import static org.junit.Assert.assertThrows;
+
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+
+import ortus.boxlang.runtime.types.exceptions.CastException;
+import ortus.boxlang.runtime.types.exceptions.KeyNotFoundException;
+
 import static com.google.common.truth.Truth.assertThat;
 
 public class BaseScopeTest {
@@ -32,12 +38,11 @@ public class BaseScopeTest {
 
 	@Test
 	void testBasicGetAndSet() {
-		Key key = Key.of( "testKey" );
-		Object value = "testValue";
-
 		// Test getValue() and setValue()
-		assertThat( scope.get( key ) ).isNull();
+		assertThrows( KeyNotFoundException.class, () -> scope.get( Key.of( "InvalidKey" ) ) );
 
+		Key		key		= Key.of( "testKey" );
+		Object	value	= "testValue";
 		scope.put( key, value );
 		assertThat( scope.get( key ) ).isEqualTo( value );
 		assertThat( scope.get( Key.of( "TestKey" ) ) ).isEqualTo( value );

@@ -16,19 +16,55 @@
  * limitations under the License.
  */
 
-package ortus.boxlang.runtime;
+package ortus.boxlang.runtime.context;
+
+import static org.junit.Assert.assertNull;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import org.junit.Ignore;
 import org.junit.jupiter.api.Test;
+
+import ortus.boxlang.runtime.scopes.BaseScope;
+import ortus.boxlang.runtime.scopes.Key;
+import ortus.boxlang.runtime.types.exceptions.KeyNotFoundException;
+
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import static com.google.common.truth.Truth.assertThat;
 
 public class BaseContextTest {
 
-	@DisplayName( "Test it" )
+	private BaseContext context;
+
+	@BeforeEach
+	void setUp() {
+		context = new BaseContext();
+	}
+
 	@Test
-	void testIt() {
-		assertThat( true ).isTrue();
+	void testGetName() {
+		assertThat( context.getName() ).isEqualTo( "base" );
+	}
+
+	@Test
+	void testGetVariablesScope() {
+		assertNotNull( context.getVariablesScope() );
+		assertThat( context.getVariablesScope().getName() ).isEqualTo( "variables" );
+	}
+
+	@Test
+	void testScopeFindKeyFound() {
+		Key		key		= Key.of( "testKey" );
+		Object	value	= "testValue";
+		context.getVariablesScope().put( key, value );
+		assertEquals( value, context.scopeFind( key ) ); // Key should be found in variables scope
+	}
+
+	@Test
+	void testScopeFindKeyNotFound() {
+		assertThrows( KeyNotFoundException.class, () -> context.scopeFind( new Key( "nonExistentKey" ) ) );
 	}
 
 }

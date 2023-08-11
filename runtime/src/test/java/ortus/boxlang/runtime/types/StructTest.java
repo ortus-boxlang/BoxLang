@@ -89,12 +89,8 @@ public class StructTest {
 	@Test
 	void testAsStringThrowsException() {
 		Struct			struct		= new Struct();
-
 		// Test that the method throws the expected exception
-		CastException	exception	= assertThrows( CastException.class, () -> {
-										struct.asString();
-									} );
-
+		CastException	exception	= assertThrows( CastException.class, () -> struct.asString() );
 		assertThat( exception.getMessage() ).isEqualTo( "Can't cast a struct to a string. Try serializing it" );
 	}
 }
