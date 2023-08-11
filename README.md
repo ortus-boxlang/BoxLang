@@ -1,4 +1,14 @@
-# Project Jericho
+# ⚡︎ Project Jericho - BoxLang
+
+> A next generation multi-runtime dynamic programming language for the JVM. InvokeDynamic is our first name!
+
+```
+██████   ██████  ██   ██ ██       █████  ███    ██  ██████
+██   ██ ██    ██  ██ ██  ██      ██   ██ ████   ██ ██
+██████  ██    ██   ███   ██      ███████ ██ ██  ██ ██   ███
+██   ██ ██    ██  ██ ██  ██      ██   ██ ██  ██ ██ ██    ██
+██████   ██████  ██   ██ ███████ ██   ██ ██   ████  ██████
+```
 
 ----
 
@@ -24,6 +34,17 @@ The project is split into multiple sub-projects:
 
 - JDK 17 LTS is our compiled code JDK Baseline which will be supported until 2026 with extended support until 2029.
 - https://www.oracle.com/java/technologies/java-se-support-roadmap.html
+
+## VSCode Snippets
+
+You will find a `.vscode` folder in the root. This contains our custom shortcuts, mappings, snippets, builds and more.
+
+### Snippets
+
+| Snippet 				| Description 							|
+|-----------------------|---------------------------------------|
+| `header` 				| Adds a license header 				|
+| `testclass` 			| Creates a Junit5 test class 			|
 
 ## Basic Gradle Tasks
 
