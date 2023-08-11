@@ -28,7 +28,7 @@ public class StringCaster {
 	  * Used to cast anything to a string
 	  *
 	  * @param value The value to cast to a string
-	  * @return The String version
+	  * @return The String value
 	  */
 	 public static String cast( Object object ) {
 		if( object == null ) {

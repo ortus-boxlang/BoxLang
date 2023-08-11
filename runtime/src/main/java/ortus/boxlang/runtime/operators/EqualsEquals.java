@@ -29,7 +29,7 @@ public class EqualsEquals implements IOperator {
 	static Boolean invoke( Object left, Object right ) {
 		// TODO: actually if inputs are numeric, don't just cast and catch.
 		try{
-			return Double.valueOf( left.toString() ).compare( Double.valueOf( right.toString() ) ) == 0;
+			return Double.valueOf( left.toString() ).compareTo( Double.valueOf( right.toString() ) ) == 0;
 		} catch( NumberFormatException e ) {
 			// If the operands are not numbers, ignore
 		}
