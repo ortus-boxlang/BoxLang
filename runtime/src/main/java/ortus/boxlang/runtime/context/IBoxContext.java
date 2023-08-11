@@ -27,25 +27,7 @@ import ortus.boxlang.runtime.types.exceptions.ScopeNotFoundException;
 public interface IBoxContext {
 
 	/**
-	 * --------------------------------------------------------------------------
-	 * Public Properties
-	 * --------------------------------------------------------------------------
-	 */
-
-	/**
-	 * --------------------------------------------------------------------------
-	 * Private Properties
-	 * --------------------------------------------------------------------------
-	 */
-
-	/**
-	 * --------------------------------------------------------------------------
-	 * Getters & Setters
-	 * --------------------------------------------------------------------------
-	 */
-
-	/**
-	 * Get a scope from the context.  If not found, the parent context is asked.
+	 * Get a scope from the context. If not found, the parent context is asked.
 	 * Don't search for scopes which are local to an execution context
 	 *
 	 * @return The requested scope
@@ -53,18 +35,12 @@ public interface IBoxContext {
 	public IScope getScope( Key name ) throws ScopeNotFoundException;
 
 	/**
-	 * Get a scope from the context.  If not found, the parent context is asked.
+	 * Get a scope from the context. If not found, the parent context is asked.
 	 * Search all konwn scopes
 	 *
 	 * @return The requested scope
 	 */
 	public IScope getScopeLocal( Key name ) throws ScopeNotFoundException;
-
-	/**
-	 * --------------------------------------------------------------------------
-	 * Methods
-	 * --------------------------------------------------------------------------
-	 */
 
 	/**
 	 * Try to get the requested key from the unscoped scope
@@ -94,9 +70,9 @@ public interface IBoxContext {
 	public Object scopeFindLocal( Key key );
 
 	/**
-	 * Returns the parent box context.  Null if none.
+	 * Returns the parent box context. Null if none.
 	 *
-	 * @return The parent box context.  Null if none.
+	 * @return The parent box context. Null if none.
 	 */
 	public IBoxContext getParent();
 
