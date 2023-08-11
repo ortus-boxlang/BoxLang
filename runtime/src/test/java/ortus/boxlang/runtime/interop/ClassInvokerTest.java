@@ -30,6 +30,7 @@ import TestCases.InvokeDynamicFields;
 import TestCases.PrivateConstructors;
 
 import org.junit.Ignore;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import static com.google.common.truth.Truth.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -37,6 +38,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class ClassInvokerTest {
 
+	@DisplayName( "It can create class invokers of instances" )
 	@Test
 	void testItCanBeCreatedWithAnInstance() {
 		ClassInvoker target = ClassInvoker.of( this );
@@ -45,6 +47,7 @@ public class ClassInvokerTest {
 		assertThat( target.isInterface() ).isFalse();
 	}
 
+	@DisplayName( "It can create class invokers of classes" )
 	@Test
 	void testItCanBeCreatedWithAClass() {
 		ClassInvoker target = ClassInvoker.of( String.class );
@@ -52,12 +55,14 @@ public class ClassInvokerTest {
 		assertThat( target.isInterface() ).isFalse();
 	}
 
+	@DisplayName( "It can create class invokers of interfaces" )
 	@Test
 	void testItCanBeCreatedWithAnInterface() {
 		ClassInvoker target = new ClassInvoker( IType.class );
 		assertThat( target.isInterface() ).isTrue();
 	}
 
+	@DisplayName( "It can call a constructor with one argument" )
 	@Test
 	void testItCanCallConstructorsWithOneArgument() throws Throwable {
 		ClassInvoker target = new ClassInvoker( String.class );
@@ -66,6 +71,7 @@ public class ClassInvokerTest {
 		assertThat( target.getTargetInstance() ).isEqualTo( "Hello World" );
 	}
 
+	@DisplayName( "It can call a constructor with many arguments" )
 	@Test
 	void testItCanCallConstructorsWithManyArguments() throws Throwable {
 		ClassInvoker target = new ClassInvoker( LinkedHashMap.class );
@@ -74,6 +80,7 @@ public class ClassInvokerTest {
 		assertThat( target.getTargetClass() ).isEqualTo( LinkedHashMap.class );
 	}
 
+	@DisplayName( "It can call a constructor with no arguments" )
 	@Test
 	void testItCanCallConstructorsWithNoArguments() throws Throwable {
 		ClassInvoker target = new ClassInvoker( String.class );
@@ -82,6 +89,7 @@ public class ClassInvokerTest {
 		assertThat( target.getTargetInstance() ).isEqualTo( "" );
 	}
 
+	@DisplayName( "It can call instance methods with no arguments" )
 	@Test
 	void testItCanCallMethodsWithNoArguments() throws Throwable {
 		ClassInvoker myMapInvoker = new ClassInvoker( HashMap.class );
@@ -90,6 +98,7 @@ public class ClassInvokerTest {
 		assertThat( ( Boolean ) myMapInvoker.invoke( "isEmpty" ).get() ).isTrue();
 	}
 
+	@DisplayName( "It can call instance methods with many arguments" )
 	@Test
 	void testItCanCallMethodsWithManyArguments() throws Throwable {
 		ClassInvoker myMapInvoker = new ClassInvoker( HashMap.class );
@@ -99,6 +108,7 @@ public class ClassInvokerTest {
 		assertThat( myMapInvoker.invoke( "get", "name" ).get() ).isEqualTo( "luis" );
 	}
 
+	@DisplayName( "It can call static methods on classes" )
 	@Test
 	void testItCanCallStaticMethods() throws Throwable {
 		ClassInvoker	myInvoker	= ClassInvoker.of( Duration.class );
@@ -106,6 +116,7 @@ public class ClassInvokerTest {
 		assertThat( results.toString() ).isEqualTo( "PT2M" );
 	}
 
+	@DisplayName( "It can call methods on interfaces" )
 	@Test
 	void testItCanCallMethodsOnInterfaces() throws Throwable {
 		ClassInvoker	myInvoker	= ClassInvoker.of( List.class );
@@ -114,23 +125,32 @@ public class ClassInvokerTest {
 		assertThat( results ).isNotEmpty();
 	}
 
+	@DisplayName( "It can create a class with private constructors" )
 	@Test
 	void testItCanCreateWithPrivateConstructors() throws Throwable {
 		ClassInvoker myInvoker = ClassInvoker.of( PrivateConstructors.class );
 		assertThat( myInvoker ).isNotNull();
-		// myInvoker.invokeStatic( "getInstance" );
-
 		// Now call it via normal `invoke()`
 		myInvoker.invoke( "getInstance" );
 	}
 
+	@DisplayName( "It can get public fields" )
 	@Test
 	void testItCanGetPublicFields() throws Throwable {
 		ClassInvoker myInvoker = ClassInvoker.of( InvokeDynamicFields.class );
 		myInvoker.invokeConstructor();
-		Object results = myInvoker.getField( "name" );
+		assertThat( myInvoker.getField( "name" ).get() ).isEqualTo( "luis" );
 	}
 
+	@DisplayName( "It can get non-existent field with a default value" )
+	@Test
+	void testItCanGetPublicFieldsWithADefaultValue() throws Throwable {
+		ClassInvoker myInvoker = ClassInvoker.of( InvokeDynamicFields.class );
+		myInvoker.invokeConstructor();
+		assertThat( myInvoker.getField( "InvalidFieldBaby", "sorry" ).get() ).isEqualTo( "sorry" );
+	}
+
+	@DisplayName( "It can get static public fields" )
 	@Test
 	void testItCanGetStaticPublicFields() throws Throwable {
 		ClassInvoker myInvoker = ClassInvoker.of( InvokeDynamicFields.class );
@@ -138,14 +158,26 @@ public class ClassInvokerTest {
 		assertThat( ( Integer ) myInvoker.getField( "MY_PRIMITIVE" ).get() ).isEqualTo( 42 );
 	}
 
+	@DisplayName( "It can throw an exception when getting an invalid field" )
 	@Test
 	void testItCanThrowExceptionForInvalidFields() {
 		NoSuchFieldException exception = assertThrows( NoSuchFieldException.class, () -> {
 			ClassInvoker myInvoker = ClassInvoker.of( InvokeDynamicFields.class );
 			myInvoker.invokeConstructor();
-			myInvoker.getField( "uknown" );
+			myInvoker.getField( "InvalidField" );
 		} );
-		assertEquals( "uknown", exception.getMessage() );
+		assertEquals( "InvalidField", exception.getMessage() );
+	}
+
+	@DisplayName( "It can get set values on public fields" )
+	@Test
+	void testItCanSetPublicFields() throws Throwable {
+		ClassInvoker myInvoker = ClassInvoker.of( InvokeDynamicFields.class );
+		myInvoker.invokeConstructor();
+
+		myInvoker.setField( "name", "Hola Tests" );
+
+		assertThat( myInvoker.getField( "name" ).get() ).isEqualTo( "Hola Tests" );
 	}
 
 }

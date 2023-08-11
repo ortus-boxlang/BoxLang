@@ -352,6 +352,45 @@ public class ClassInvoker {
 		);
 	}
 
+	public ClassInvoker setField( String fieldName, Object value ) throws Throwable {
+		Field			field		= this.targetClass.getField( fieldName );
+		MethodHandle	fieldHandle	= METHOD_LOOKUP.unreflectSetter( field );
+		Boolean			isStatic	= Modifier.isStatic( field.getModifiers() );
+
+		// If it's not static, we need a target instance, verify it's not null
+		if ( Boolean.FALSE.equals( isStatic ) && this.targetInstance == null ) {
+			throw new IllegalStateException(
+			        "You are trying to set a public field but there is not instance set on the invoker, please make sure the [invokeConstructor] has been called."
+			);
+		}
+
+		if ( Boolean.TRUE.equals( isStatic ) ) {
+			fieldHandle.invokeWithArguments( value );
+
+		} else {
+			fieldHandle.bindTo( this.targetInstance ).invokeWithArguments( value );
+		}
+
+		return this;
+	}
+
+	/**
+	 * Get the value of a public or public static field on a class or instance but if it doesn't exist
+	 * return the default value passed in.
+	 *
+	 * @param fieldName    The name of the field to get
+	 * @param defaultValue The default value to return if the field doesn't exist
+	 *
+	 * @return The value of the field or the default value wrapped in an Optional
+	 */
+	public Optional<Object> getField( String fieldName, Object defaultValue ) throws Throwable {
+		try {
+			return getField( fieldName );
+		} catch ( NoSuchFieldException | IllegalStateException e ) {
+			return Optional.ofNullable( defaultValue );
+		}
+	}
+
 	/**
 	 * --------------------------------------------------------------------------
 	 * Helpers
