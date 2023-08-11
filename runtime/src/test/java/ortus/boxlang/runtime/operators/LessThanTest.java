@@ -24,29 +24,27 @@ import static com.google.common.truth.Truth.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-public class EqualsEqualsTest {
+public class LessThanTest {
 
 	@DisplayName( "It can compare strings" )
 	@Test
 	void testItCanCompareStrings() {
-		assertThat( EqualsEquals.invoke( "Brad", "Brad" ) ).isTrue();
-		assertThat( EqualsEquals.invoke( "Brad", "BRAD" ) ).isTrue();
+		assertThat( LessThan.invoke( "A", "B" ) ).isTrue();
 	}
 
 	@DisplayName( "It can compare numbers" )
 	@Test
 	void testItCanCompareNumbers() {
-		assertThat( EqualsEquals.invoke( 1, 1 ) ).isTrue();
-		assertThat( EqualsEquals.invoke( 1.5, 1.5 ) ).isTrue();
+		assertThat( LessThan.invoke( 1, 2 ) ).isTrue();
+		assertThat( LessThan.invoke( 1.5, 1.7 ) ).isTrue();
 	}
 
 	@DisplayName( "It can compare strings as numbers" )
 	@Test
 	void testItCanCompareStringsAsNumbers() {
-		assertThat( EqualsEquals.invoke( "1", "1" ) ).isTrue();
-		assertThat( EqualsEquals.invoke( "1.5", "1.5" ) ).isTrue();
-		assertThat( EqualsEquals.invoke( "1.5", "1.500" ) ).isTrue();
+		assertThat( LessThan.invoke( "1", "2" ) ).isTrue();
+		assertThat( LessThan.invoke( "1.5", "1.7" ) ).isTrue();
+		assertThat( LessThan.invoke( "1.5000", "1.7" ) ).isTrue();
 	}
-
 
 }

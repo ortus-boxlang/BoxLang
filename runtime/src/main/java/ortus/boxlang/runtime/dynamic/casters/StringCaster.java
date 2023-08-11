@@ -35,7 +35,8 @@ public class StringCaster {
 			return "";
 		}
 		if( object instanceof Number ) {
-			return new DecimalFormat("#.##").format(object);
+			// This removes the ".0" that Doubles' .toString() method adds
+			return new DecimalFormat("#.##########################################").format(object);
 		}
 		if( object instanceof byte[] ) {
 			return new String( (byte[])object );

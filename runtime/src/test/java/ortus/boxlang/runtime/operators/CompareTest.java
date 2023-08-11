@@ -24,29 +24,43 @@ import static com.google.common.truth.Truth.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-public class EqualsEqualsTest {
+public class CompareTest {
 
 	@DisplayName( "It can compare strings" )
 	@Test
 	void testItCanCompareStrings() {
-		assertThat( EqualsEquals.invoke( "Brad", "Brad" ) ).isTrue();
-		assertThat( EqualsEquals.invoke( "Brad", "BRAD" ) ).isTrue();
+		assertThat( Compare.invoke( "Brad", "Brad" ) ).isEqualTo( 0 );
+		assertThat( Compare.invoke( "Brad", "BRAD" ) ).isEqualTo( 0 );
+		assertThat( Compare.invoke( "A", "B" ) ).isEqualTo( -1 );
+		assertThat( Compare.invoke( "B", "A" ) ).isEqualTo( 1 );
 	}
 
 	@DisplayName( "It can compare numbers" )
 	@Test
 	void testItCanCompareNumbers() {
-		assertThat( EqualsEquals.invoke( 1, 1 ) ).isTrue();
-		assertThat( EqualsEquals.invoke( 1.5, 1.5 ) ).isTrue();
+		assertThat( Compare.invoke( 1, 1 ) ).isEqualTo( 0 );
+		assertThat( Compare.invoke( 1, 2 ) ).isEqualTo( -1 );
+		assertThat( Compare.invoke( 2, 1 ) ).isEqualTo( 1 );
+
+		assertThat( Compare.invoke( 1.5, 1.5 ) ).isEqualTo( 0 );
+		assertThat( Compare.invoke( 1.5, 1.7 ) ).isEqualTo( -1 );
+		assertThat( Compare.invoke( 2.8, 0.6 ) ).isEqualTo( 1 );
 	}
 
 	@DisplayName( "It can compare strings as numbers" )
 	@Test
 	void testItCanCompareStringsAsNumbers() {
-		assertThat( EqualsEquals.invoke( "1", "1" ) ).isTrue();
-		assertThat( EqualsEquals.invoke( "1.5", "1.5" ) ).isTrue();
-		assertThat( EqualsEquals.invoke( "1.5", "1.500" ) ).isTrue();
-	}
+		assertThat( Compare.invoke( "1", "1" ) ).isEqualTo( 0 );
+		assertThat( Compare.invoke( "1", "2" ) ).isEqualTo( -1 );
+		assertThat( Compare.invoke( "2", "1" ) ).isEqualTo( 1 );
 
+		assertThat( Compare.invoke( "1.5", "1.5" ) ).isEqualTo( 0 );
+		assertThat( Compare.invoke( "1.5", "1.7" ) ).isEqualTo( -1 );
+		assertThat( Compare.invoke( "2.8", "0.6" ) ).isEqualTo( 1 );
+
+		assertThat( Compare.invoke( "1.5", "1.500" ) ).isEqualTo( 0 );
+		assertThat( Compare.invoke( "1.5000", "1.7" ) ).isEqualTo( -1 );
+		assertThat( Compare.invoke( "2.8", "00000.600000" ) ).isEqualTo( 1 );
+	}
 
 }

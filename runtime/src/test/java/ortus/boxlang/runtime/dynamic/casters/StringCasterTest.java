@@ -58,6 +58,7 @@ public class StringCasterTest {
 	void testItCanCastADouble() {
 		assertThat( StringCaster.cast( Double.valueOf( "5" ) ) ).isEqualTo( "5" );
 		assertThat( StringCaster.cast( Double.valueOf( "5.6" ) ) ).isEqualTo( "5.6" );
+		assertThat( StringCaster.cast( Double.valueOf( "1.2345678901234567" ) ) ).isEqualTo( "1.2345678901234567" );
 	}
 
 	@DisplayName( "It can cast a Float to a string" )

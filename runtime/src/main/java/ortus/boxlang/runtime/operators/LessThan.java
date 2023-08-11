@@ -18,16 +18,16 @@
 package ortus.boxlang.runtime.operators;
 
 /**
- * Performs EQ or == comparison
+ * Performs LT or < comparison
  * Compares numbers as numbers, compares strings case insensitive
  */
-public class EqualsEquals implements IOperator {
+public class LessThan implements IOperator {
 
 	/**
-	 * @return True if operands are the equal
+	 * @return True if left is less than right
 	 */
 	static Boolean invoke( Object left, Object right ) {
-		return Compare.invoke( left, right ) == 0;
+		return Compare.invoke( left, right ) < 0;
 	}
 
 }

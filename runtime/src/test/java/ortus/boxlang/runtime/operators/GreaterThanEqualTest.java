@@ -24,29 +24,37 @@ import static com.google.common.truth.Truth.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-public class EqualsEqualsTest {
+public class GreaterThanEqualTest {
 
 	@DisplayName( "It can compare strings" )
 	@Test
 	void testItCanCompareStrings() {
-		assertThat( EqualsEquals.invoke( "Brad", "Brad" ) ).isTrue();
-		assertThat( EqualsEquals.invoke( "Brad", "BRAD" ) ).isTrue();
+		assertThat( GreaterThanEqual.invoke( "Brad", "Brad" ) ).isTrue();
+		assertThat( GreaterThanEqual.invoke( "Brad", "BRAD" ) ).isTrue();
+		assertThat( GreaterThanEqual.invoke( "B", "A" ) ).isTrue();
 	}
 
 	@DisplayName( "It can compare numbers" )
 	@Test
 	void testItCanCompareNumbers() {
-		assertThat( EqualsEquals.invoke( 1, 1 ) ).isTrue();
-		assertThat( EqualsEquals.invoke( 1.5, 1.5 ) ).isTrue();
+		assertThat( GreaterThanEqual.invoke( 1, 1 ) ).isTrue();
+		assertThat( GreaterThanEqual.invoke( 2, 1 ) ).isTrue();
+
+		assertThat( GreaterThanEqual.invoke( 1.5, 1.5 ) ).isTrue();
+		assertThat( GreaterThanEqual.invoke( 2.8, 0.6 ) ).isTrue();
 	}
 
 	@DisplayName( "It can compare strings as numbers" )
 	@Test
 	void testItCanCompareStringsAsNumbers() {
-		assertThat( EqualsEquals.invoke( "1", "1" ) ).isTrue();
-		assertThat( EqualsEquals.invoke( "1.5", "1.5" ) ).isTrue();
-		assertThat( EqualsEquals.invoke( "1.5", "1.500" ) ).isTrue();
-	}
+		assertThat( GreaterThanEqual.invoke( "1", "1" ) ).isTrue();
+		assertThat( GreaterThanEqual.invoke( "2", "1" ) ).isTrue();
 
+		assertThat( GreaterThanEqual.invoke( "1.5", "1.5" ) ).isTrue();
+		assertThat( GreaterThanEqual.invoke( "2.8", "0.6" ) ).isTrue();
+
+		assertThat( GreaterThanEqual.invoke( "1.5", "1.500" ) ).isTrue();
+		assertThat( GreaterThanEqual.invoke( "2.8", "00000.600000" ) ).isTrue();
+	}
 
 }
