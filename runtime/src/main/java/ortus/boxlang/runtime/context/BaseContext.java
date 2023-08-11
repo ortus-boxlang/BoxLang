@@ -41,7 +41,7 @@ public class BaseContext {
 	/**
 	 * A context has a variables scope
 	 */
-	protected IScope	variablesScope;
+	protected BaseScope	variablesScope;
 
 	/**
 	 * The context has a unique name
@@ -87,7 +87,7 @@ public class BaseContext {
 	 *
 	 * @return The variables scope
 	 */
-	public IScope getVariablesScope() {
+	public BaseScope getVariablesScope() {
 		return this.variablesScope;
 	}
 

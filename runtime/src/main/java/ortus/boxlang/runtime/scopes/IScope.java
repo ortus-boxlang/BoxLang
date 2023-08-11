@@ -24,8 +24,4 @@ import java.util.Map;
  */
 public interface IScope extends Map<Key, Object> {
 
-	/**
-	 * Returns the lookup order
-	 */
-	public int getLookupOrder();
 }
