@@ -19,7 +19,7 @@ package ortus.boxlang.runtime.dynamic;
 
 import java.time.LocalDateTime;
 
-import ortus.boxlang.runtime.context.TemplateContext;
+import ortus.boxlang.runtime.context.IBoxContext;
 
 /// import ortus.boxlang.runtime.core.Derefrencer;
 
@@ -56,7 +56,7 @@ public class BaseTemplate {
 	 *
 	 * @param context The context to invoke the template with
 	 */
-	public void invoke( TemplateContext context ) {
+	public void invoke( IBoxContext context ) {
 		throw new UnsupportedOperationException( "This method must be overridden as a static method." );
 	}
 }

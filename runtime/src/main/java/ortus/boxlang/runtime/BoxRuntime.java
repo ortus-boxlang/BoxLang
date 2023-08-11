@@ -20,7 +20,9 @@ package ortus.boxlang.runtime;
 import java.time.Instant;
 import java.util.Optional;
 
-import ortus.boxlang.runtime.context.TemplateContext;
+import ortus.boxlang.runtime.context.IBoxContext;
+import ortus.boxlang.runtime.context.TemplateBoxContext;
+import ortus.boxlang.runtime.context.IBoxContext;
 
 /**
  * Represents the top level runtime container for box lang. Config, global scopes, mappings, threadpools, etc all go here.
@@ -126,7 +128,7 @@ public class BoxRuntime {
 	public void executeTemplate( String templatePath  ) {
 
 		// Build out the execution context for this execution and bind it to the incoming template
-		TemplateContext context = new TemplateContext( templatePath );
+		IBoxContext context = new TemplateBoxContext( templatePath );
 
 		// Here is where we presumably boostrap a page or class that we are executing in our new context.
 		// JIT if neccessary

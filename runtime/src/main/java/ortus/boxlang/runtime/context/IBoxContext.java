@@ -19,11 +19,12 @@ package ortus.boxlang.runtime.context;
 
 import ortus.boxlang.runtime.scopes.*;
 import ortus.boxlang.runtime.types.exceptions.KeyNotFoundException;
+import ortus.boxlang.runtime.types.exceptions.ScopeNotFoundException;
 
 /**
- * This represents the most basic execution context. It will usually be sub-classed for more specific contexts.
+ * This represents the most basic box context.
  */
-public class BaseContext {
+public interface IBoxContext {
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -38,57 +39,26 @@ public class BaseContext {
 	 */
 
 	/**
-	 * Every context has a variables scope
-	 */
-	protected BaseScope	variablesScope	= new VariablesScope();
-
-	/**
-	 * Every context has a unique name
-	 */
-	protected String	name			= "base";
-
-	/**
-	 * --------------------------------------------------------------------------
-	 * Constructors
-	 * --------------------------------------------------------------------------
-	 */
-
-	/**
-	 * Creates a new execution context
-	 */
-	public BaseContext() {
-	}
-
-	/**
-	 * Creates a new execution context
-	 */
-	public BaseContext( String name ) {
-		this.name = name;
-	}
-
-	/**
 	 * --------------------------------------------------------------------------
 	 * Getters & Setters
 	 * --------------------------------------------------------------------------
 	 */
 
 	/**
-	 * Get the name of the context
+	 * Get a scope from the context.  If not found, the parent context is asked.
+	 * Don't search for scopes which are local to an execution context
 	 *
-	 * @return the name
+	 * @return The requested scope
 	 */
-	public String getName() {
-		return name;
-	}
+	public IScope getScope( Key name ) throws ScopeNotFoundException;
 
 	/**
-	 * Get the variables scope of the context
+	 * Get a scope from the context.  If not found, the parent context is asked.
+	 * Search all konwn scopes
 	 *
-	 * @return The variables scope
+	 * @return The requested scope
 	 */
-	public BaseScope getVariablesScope() {
-		return this.variablesScope;
-	}
+	public IScope getScopeLocal( Key name ) throws ScopeNotFoundException;
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -99,6 +69,8 @@ public class BaseContext {
 	/**
 	 * Try to get the requested key from the unscoped scope
 	 * Meaning it needs to search scopes in order according to it's context.
+	 * Unlike scopeFindLocal(), this version only searches trancedent scopes like
+	 * cgi or server which are never encapsulated like variables is inside a CFC.
 	 *
 	 * @param key The key to search for
 	 *
@@ -106,17 +78,26 @@ public class BaseContext {
 	 *
 	 * @throws KeyNotFoundException If the key was not found in any scope
 	 */
-	public Object scopeFind( Key key ) {
+	public Object scopeFind( Key key );
 
-		// In Variables scope?
-		if ( getVariablesScope().containsKey( key ) ) {
-			return getVariablesScope().get( key );
-		}
+	/**
+	 * Try to get the requested key from the unscoped scope
+	 * Meaning it needs to search scopes in order according to it's context.
+	 * A local lookup is used for the closest context to the executing code
+	 *
+	 * @param key The key to search for
+	 *
+	 * @return The value of the key if found
+	 *
+	 * @throws KeyNotFoundException If the key was not found in any scope
+	 */
+	public Object scopeFindLocal( Key key );
 
-		// Not found anywhere
-		throw new KeyNotFoundException(
-		        String.format( "The requested key [%s] was not located in any scope or it's undefined", key.getName() )
-		);
-	}
+	/**
+	 * Returns the parent box context.  Null if none.
+	 *
+	 * @return The parent box context.  Null if none.
+	 */
+	public IBoxContext getParent();
 
 }

@@ -19,11 +19,13 @@ package ortus.boxlang.runtime.context;
 
 import ortus.boxlang.runtime.scopes.*;
 import ortus.boxlang.runtime.types.exceptions.KeyNotFoundException;
+import ortus.boxlang.runtime.types.exceptions.ScopeNotFoundException;
+
 
 /**
  * This context represents the context of a template execution in BoxLang
  */
-public class TemplateContext extends BaseContext {
+public class TemplateBoxContext implements IBoxContext {
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -31,18 +33,20 @@ public class TemplateContext extends BaseContext {
 	 * --------------------------------------------------------------------------
 	 */
 
-	public static final String	SCOPE_NAME		= "template";
-
 	/**
 	 * --------------------------------------------------------------------------
 	 * Private Properties
 	 * --------------------------------------------------------------------------
 	 */
+	private IBoxContext parent;
 
 	/**
 	 * The template that this execution context is bound to
 	 */
 	private String				templatePath	= null;
+
+	protected IScope	variablesScope	= new VariablesScope();
+	private Key variablesScopeName = Key.of( "variables" );
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -51,20 +55,31 @@ public class TemplateContext extends BaseContext {
 	 */
 
 	/**
+	 * Creates a new execution context with a bounded execution template and parent context
+	 *
+	 * @param templatePath The template that this execution context is bound to
+	 * @param parent The parent context
+	 */
+	public TemplateBoxContext( String templatePath, IBoxContext parent ) {
+		this.templatePath = templatePath;
+		this.parent = parent;
+	}
+
+	/**
 	 * Creates a new execution context with a bounded execution template
 	 *
 	 * @param templatePath The template that this execution context is bound to
 	 */
-	public TemplateContext( String templatePath ) {
-		super( SCOPE_NAME );
-		this.templatePath = templatePath;
+	public TemplateBoxContext( String templatePath ) {
+		this( templatePath, null );
 	}
 
 	/**
-	 * Creates a new template context with no bounded template
+	 * Creates a new execution context
+	 *
 	 */
-	public TemplateContext() {
-		super( SCOPE_NAME );
+	public TemplateBoxContext() {
+		this( null, null );
 	}
 
 	/**
@@ -78,9 +93,9 @@ public class TemplateContext extends BaseContext {
 	 *
 	 * @param templatePath The template that this execution context is bound to
 	 *
-	 * @return ExecutionContext
+	 * @return IBoxContext
 	 */
-	public TemplateContext setTemplatePath( String templatePath ) {
+	public IBoxContext setTemplatePath( String templatePath ) {
 		this.templatePath = templatePath;
 		return this;
 	}
@@ -105,7 +120,8 @@ public class TemplateContext extends BaseContext {
 
 	/**
 	 * Try to get the requested key from the unscoped scope
-	 * Meaning it needs to search scopes in order
+	 * Meaning it needs to search scopes in order according to it's context.
+	 * A local lookup is used for the closest context to the executing code
 	 *
 	 * Here is the order for bx templates
 	 * (Not all yet implemented and some will be according to platform: WebContext, AndroidContext, IOSContext, etc)
@@ -126,22 +142,91 @@ public class TemplateContext extends BaseContext {
 	 *
 	 * @throws KeyNotFoundException If the key was not found in any scope
 	 */
-	@Override
-	public Object scopeFind( Key key ) {
+	public Object scopeFindLocal( Key key ) {
 
 		// In query loop?
+		// Need to add mechanism to keep a stack of temp scopes based on cfoutput or cfloop based on query
 
-		// In Thread scope?
 
-		// In Variables scope?
-		if ( getVariablesScope().containsKey( key ) ) {
-			return getVariablesScope().get( key );
+		// In Variables scope?  (thread-safe lookup and get)
+		Object result = variablesScope.get( key );
+		// Handle full null support
+		if ( result != null ) {
+			return result;
+		}
+
+		return scopeFind( key );
+	}
+
+	/**
+	 * Try to get the requested key from the unscoped scope
+	 * Meaning it needs to search scopes in order according to it's context.
+	 * Unlike scopeFindLocal(), this version only searches trancedent scopes like
+	 * cgi or server which are never encapsulated like variables is inside a CFC.
+	 *
+	 * @param key The key to search for
+	 *
+	 * @return The value of the key if found
+	 *
+	 * @throws KeyNotFoundException If the key was not found in any scope
+	 */
+	public Object scopeFind( Key key ) {
+
+		// The templateBoxContext has no "global" scopes, so just defer to parent
+
+		if( parent != null ) {
+			return parent.scopeFind( key );
 		}
 
 		// Not found anywhere
 		throw new KeyNotFoundException(
 		        String.format( "The requested key [%s] was not located in any scope or it's undefined", key.getName() )
 		);
+	}
+
+	/**
+	 * Returns the parent box context.  Null if none.
+	 *
+	 * @return The parent box context.  Null if none.
+	 */
+	public IBoxContext getParent() {
+		return this.parent;
+	}
+
+	/**
+	 * Get a scope from the context.  If not found, the parent context is asked.
+	 * Don't search for scopes which are local to an execution context
+	 *
+	 * @return The requested scope
+	 */
+	public IScope getScope( Key name ) throws ScopeNotFoundException {
+
+		// The templateBoxContext has no "global" scopes, so just defer to parent
+		if( parent != null ) {
+			return parent.getScope( name );
+		}
+
+		// Not found anywhere
+		throw new ScopeNotFoundException(
+		        String.format( "The requested key [%s] was not located in any scope or it's undefined", name.getName() )
+		);
+
+	}
+
+	/**
+	 * Get a scope from the context.  If not found, the parent context is asked.
+	 * Search all konwn scopes
+	 *
+	 * @return The requested scope
+	 */
+	public IScope getScopeLocal( Key name ) throws ScopeNotFoundException {
+		// Check the scopes I know about
+		if( name == variablesScopeName ) {
+			return variablesScope;
+		}
+
+		return getScope( name );
+
 	}
 
 }
