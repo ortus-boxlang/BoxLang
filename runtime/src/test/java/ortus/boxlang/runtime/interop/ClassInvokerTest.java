@@ -26,8 +26,8 @@ import java.util.List;
 import java.util.Optional;
 import java.time.Duration;
 
-import TestCases.InvokeDynamicFields;
-import TestCases.PrivateConstructors;
+import TestCases.interop.InvokeDynamicFields;
+import TestCases.interop.PrivateConstructors;
 
 import org.junit.Ignore;
 import org.junit.jupiter.api.DisplayName;

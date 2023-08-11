@@ -15,10 +15,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package ortus.boxlang.runtime.dynamic;
+package ortus.boxlang.runtime.testing;
 
 // BoxLang Auto Imports
 import ortus.boxlang.runtime.context.TemplateContext;
+import ortus.boxlang.runtime.dynamic.BaseTemplate;
 import ortus.boxlang.runtime.interop.ClassInvoker;
 import ortus.boxlang.runtime.loader.ClassLocator;
 import ortus.boxlang.runtime.scopes.Key;

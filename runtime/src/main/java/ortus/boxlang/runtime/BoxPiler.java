@@ -18,8 +18,7 @@
 package ortus.boxlang.runtime;
 
 import ortus.boxlang.runtime.dynamic.BaseTemplate;
-import ortus.boxlang.runtime.dynamic.ITemplate;
-import ortus.boxlang.runtime.dynamic.MockTemplate;
+import ortus.boxlang.runtime.testing.MockTemplate;
 
 public class BoxPiler {
 
@@ -89,6 +88,7 @@ public class BoxPiler {
 		// TODO: Cache the template
 
 		// Return the template
+		// We are now using the MockTemplate for testing purposes
 		return MockTemplate.getInstance();
 	}
 

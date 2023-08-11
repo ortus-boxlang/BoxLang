@@ -1,4 +1,4 @@
-package TestCases;
+package TestCases.interop;
 
 public class InvokeDynamicFields {
 

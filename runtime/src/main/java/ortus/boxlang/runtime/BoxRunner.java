@@ -21,8 +21,6 @@ import java.util.HashMap;
 import java.util.Map;
 
 import ortus.boxlang.runtime.context.TemplateContext;
-import ortus.boxlang.runtime.dynamic.ITemplate;
-import ortus.boxlang.runtime.dynamic.MockTemplate;
 
 /**
  * The Bootstrap class is the entry point for the BoxLang runtime. It is responsible for
