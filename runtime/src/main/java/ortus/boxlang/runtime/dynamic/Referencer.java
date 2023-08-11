@@ -24,12 +24,6 @@ import ortus.boxlang.runtime.scopes.Key;
  */
 public class Referencer {
 
-	/**
-	 * --------------------------------------------------------------------------
-	 * Methods
-	 * --------------------------------------------------------------------------
-	 */
-
 	 /**
 	  * Used to implement any time an object is derefernced,
 	  * @param object

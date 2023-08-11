@@ -15,8 +15,33 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package ortus.boxlang.runtime.operators;
+package ortus.boxlang.runtime.dynamic.casters;
 
-public interface IOperator {
+import java.text.DecimalFormat;
+
+/**
+ * I handle de
+ */
+public class StringCaster {
+
+	 /**
+	  * Used to cast anything to a string
+	  *
+	  * @param value The value to cast to a string
+	  * @return The String version
+	  */
+	 public static String cast( Object object ) {
+		if( object == null ) {
+			return "";
+		}
+		if( object instanceof Number ) {
+			return new DecimalFormat("#.##").format(object);
+		}
+		if( object instanceof byte[] ) {
+			return new String( (byte[])object );
+		}
+		// TODO: Figure out which types need specific casting
+		return object.toString();
+	 }
 
 }
