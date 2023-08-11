@@ -21,7 +21,6 @@ import ortus.boxlang.runtime.scopes.*;
 import ortus.boxlang.runtime.types.exceptions.KeyNotFoundException;
 import ortus.boxlang.runtime.types.exceptions.ScopeNotFoundException;
 
-
 /**
  * This context represents the context of a template execution in BoxLang
  */
@@ -38,15 +37,15 @@ public class TemplateBoxContext implements IBoxContext {
 	 * Private Properties
 	 * --------------------------------------------------------------------------
 	 */
-	private IBoxContext parent;
+	private IBoxContext	parent;
 
 	/**
 	 * The template that this execution context is bound to
 	 */
-	private String				templatePath	= null;
+	private String		templatePath		= null;
 
-	protected IScope	variablesScope	= new VariablesScope();
-	private Key variablesScopeName = Key.of( "variables" );
+	protected IScope	variablesScope		= new VariablesScope();
+	private Key			variablesScopeName	= Key.of( "variables" );
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -58,11 +57,11 @@ public class TemplateBoxContext implements IBoxContext {
 	 * Creates a new execution context with a bounded execution template and parent context
 	 *
 	 * @param templatePath The template that this execution context is bound to
-	 * @param parent The parent context
+	 * @param parent       The parent context
 	 */
 	public TemplateBoxContext( String templatePath, IBoxContext parent ) {
-		this.templatePath = templatePath;
-		this.parent = parent;
+		this.templatePath	= templatePath;
+		this.parent			= parent;
 	}
 
 	/**
@@ -76,7 +75,6 @@ public class TemplateBoxContext implements IBoxContext {
 
 	/**
 	 * Creates a new execution context
-	 *
 	 */
 	public TemplateBoxContext() {
 		this( null, null );
@@ -147,8 +145,7 @@ public class TemplateBoxContext implements IBoxContext {
 		// In query loop?
 		// Need to add mechanism to keep a stack of temp scopes based on cfoutput or cfloop based on query
 
-
-		// In Variables scope?  (thread-safe lookup and get)
+		// In Variables scope? (thread-safe lookup and get)
 		Object result = variablesScope.get( key );
 		// Handle full null support
 		if ( result != null ) {
@@ -174,7 +171,7 @@ public class TemplateBoxContext implements IBoxContext {
 
 		// The templateBoxContext has no "global" scopes, so just defer to parent
 
-		if( parent != null ) {
+		if ( parent != null ) {
 			return parent.scopeFind( key );
 		}
 
@@ -185,16 +182,25 @@ public class TemplateBoxContext implements IBoxContext {
 	}
 
 	/**
-	 * Returns the parent box context.  Null if none.
+	 * Returns the parent box context. Null if none.
 	 *
-	 * @return The parent box context.  Null if none.
+	 * @return The parent box context. Null if none.
 	 */
 	public IBoxContext getParent() {
 		return this.parent;
 	}
 
 	/**
-	 * Get a scope from the context.  If not found, the parent context is asked.
+	 * Verifies if a parent context is attached to this context
+	 *
+	 * @return True if a parent context is attached to this context, else false
+	 */
+	public Boolean hasParent() {
+		return this.parent != null;
+	}
+
+	/**
+	 * Get a scope from the context. If not found, the parent context is asked.
 	 * Don't search for scopes which are local to an execution context
 	 *
 	 * @return The requested scope
@@ -202,7 +208,7 @@ public class TemplateBoxContext implements IBoxContext {
 	public IScope getScope( Key name ) throws ScopeNotFoundException {
 
 		// The templateBoxContext has no "global" scopes, so just defer to parent
-		if( parent != null ) {
+		if ( parent != null ) {
 			return parent.getScope( name );
 		}
 
@@ -214,14 +220,14 @@ public class TemplateBoxContext implements IBoxContext {
 	}
 
 	/**
-	 * Get a scope from the context.  If not found, the parent context is asked.
+	 * Get a scope from the context. If not found, the parent context is asked.
 	 * Search all konwn scopes
 	 *
 	 * @return The requested scope
 	 */
 	public IScope getScopeLocal( Key name ) throws ScopeNotFoundException {
 		// Check the scopes I know about
-		if( name == variablesScopeName ) {
+		if ( name == variablesScopeName ) {
 			return variablesScope;
 		}
 
