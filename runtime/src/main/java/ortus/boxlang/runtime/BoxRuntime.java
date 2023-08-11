@@ -41,12 +41,12 @@ public class BoxRuntime {
 	/**
 	 * Singleton instance
 	 */
-	private static BoxRuntime instance;
+	private static BoxRuntime	instance;
 
 	/**
 	 * The timestamp when the runtime was started
 	 */
-	private Instant startTime;
+	private Instant				startTime;
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -92,8 +92,6 @@ public class BoxRuntime {
 
 	/**
 	 * Start up the runtime
-	 *
-	 * @param options The runtime options
 	 *
 	 * @return The runtime instance
 	 */

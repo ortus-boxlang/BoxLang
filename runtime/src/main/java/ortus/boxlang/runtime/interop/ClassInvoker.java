@@ -41,13 +41,15 @@ import java.util.concurrent.ConcurrentHashMap;
  * We basically just invoke and return the results!
  *
  * To create a new class invoker you can use the following:
- * {@pre
- * {@code
+ *
+ * <pre>{@code
+ * 
  * ClassInvoker target = new ClassInvoker( String.class );
  * ClassInvoker target = ClassInvoker.of( String.class );
  * ClassInvoker target = new ClassInvoker( new String() );
  * ClassInvoker target = ClassInvoker.of( new String() );
- * }}
+ * }
+ * </pre>
  *
  * You can then use the following methods to invoke methods on the class:
  * - {@code invokeConstructor( Object... args )} - Invoke a constructor on the class, and store the instance for future method calls
