@@ -39,6 +39,21 @@ public class DoubleCaster {
 			return ((Number)object).doubleValue();
 		}
 
+		if( object instanceof Boolean ) {
+			return (Boolean)object ? 1 : 0;
+		}
+
+		if( object instanceof String ) {
+			String o = (String)object;
+			// String true and yes are truthy
+			if( o.equalsIgnoreCase( "true" ) || o.equalsIgnoreCase( "yes" ) ) {
+				return 1;
+			// String false and no are truthy
+			} else if( o.equalsIgnoreCase( "false" ) || o.equalsIgnoreCase( "no" ) ) {
+				return 0;
+			}
+		}
+
 		// May throw NumberFormatException
 		return Double.valueOf( StringCaster.cast( object ) );
 	 }

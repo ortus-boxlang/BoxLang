@@ -57,4 +57,15 @@ public class DoubleCasterTest {
 		assertThat( DoubleCaster.cast( "12345".getBytes() ) ).isEqualTo( 12345 );
 	}
 
+	@DisplayName( "It can cast a boolean to a Double" )
+	@Test
+	void testItCanCastABoolean() {
+		assertThat( DoubleCaster.cast( true ) ).isEqualTo( 1 );
+		assertThat( DoubleCaster.cast( false ) ).isEqualTo( 0 );
+		assertThat( DoubleCaster.cast( "true" ) ).isEqualTo( 1 );
+		assertThat( DoubleCaster.cast( "false" ) ).isEqualTo( 0 );
+		assertThat( DoubleCaster.cast( "yes" ) ).isEqualTo( 1 );
+		assertThat( DoubleCaster.cast( "no" ) ).isEqualTo( 0 );
+	}
+
 }
