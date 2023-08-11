@@ -17,8 +17,9 @@
  */
 package ortus.boxlang.runtime.testing;
 
+import ortus.boxlang.runtime.context.IBoxContext;
 // BoxLang Auto Imports
-import ortus.boxlang.runtime.context.TemplateContext;
+import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.dynamic.BaseTemplate;
 import ortus.boxlang.runtime.interop.ClassInvoker;
 import ortus.boxlang.runtime.loader.ClassLocator;
@@ -57,10 +58,10 @@ public class MockTemplate extends BaseTemplate {
 	}
 
 	@Override
-	public void invoke( TemplateContext context ) {
+	public void invoke( IBoxContext context ) {
 
 		// I can store variables in the context
-		context.getVariablesScope().put( Key.of( "MockTemplate" ), "Yea baby!!" );
+		context.getScopeLocal( Key.of( "variables" ) ).put( Key.of( "MockTemplate" ), "Yea baby!!" );
 
 		System.out.println( "MockTemplate invoked, woot woot!" );
 	}

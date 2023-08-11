@@ -19,9 +19,11 @@ package ortus.boxlang.runtime.scopes;
 
 import java.util.Map;
 
+import ortus.boxlang.runtime.dynamic.IReferenceable;
+
 /**
  * All scope implementations must implement this interface
  */
-public interface IScope extends Map<Key, Object> {
+public interface IScope extends Map<Key, Object>, IReferenceable {
 
 }

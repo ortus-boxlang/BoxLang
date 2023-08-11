@@ -21,6 +21,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 
+import ortus.boxlang.runtime.dynamic.IReferenceable;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.exceptions.CastException;
 import ortus.boxlang.runtime.types.exceptions.KeyNotFoundException;
@@ -28,7 +29,7 @@ import ortus.boxlang.runtime.types.exceptions.KeyNotFoundException;
 /**
  * A struct is a collection of key-value pairs, where the key is unique and case insensitive
  */
-public class Struct extends ConcurrentHashMap<Key, Object> implements IType {
+public class Struct extends ConcurrentHashMap<Key, Object> implements IType, IReferenceable {
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -162,5 +163,45 @@ public class Struct extends ConcurrentHashMap<Key, Object> implements IType {
 	 */
 	public List<String> getKeysWithCase() {
 		return super.keySet().stream().map( Key::getName ).collect( java.util.stream.Collectors.toList() );
+	}
+
+	/**
+	 * Derefernce this object by a key and return the value, or throw exception
+	 *
+	 * @return The requested obect
+	 */
+	public Object __dereference( Key name ) throws KeyNotFoundException {
+		return get( name );
+	}
+
+	/**
+	 * Dereference this object by a key and invoke the result as an invokable (UDF, java method)
+	 *
+	 * @return The requested object
+	 */
+	public Object __dereferenceAndInvoke( Key name ) throws KeyNotFoundException {
+		Object object = __dereference( name );
+		// Test if the object is invokable (a UDF or java call site) and invoke it or throw exception if not invokable
+		// Ideally, the invoker logic is not here, but in a helper
+		throw new RuntimeException( "not implemeneted yet" );
+	}
+
+	/**
+	 * Safely derefernce this object by a key and return the value, or null if not found
+	 *
+	 * @return The requested object or null
+	 */
+	public Object __safeDereference( Key name ) {
+		return super.get( name );
+	}
+
+	/**
+	 * Get a scope from the context.  If not found, the parent context is asked.
+	 * Search all konwn scopes
+	 *
+	 * @return The requested scope
+	 */
+	public void __assign( Key name, Object value ) {
+		put( name, value);
 	}
 }

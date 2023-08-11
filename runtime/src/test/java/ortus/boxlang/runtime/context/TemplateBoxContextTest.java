@@ -28,23 +28,22 @@ import org.junit.jupiter.api.DisplayName;
 import static com.google.common.truth.Truth.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-@DisplayName( "TemplateContext Tests" )
-public class TemplateContextTest {
+@DisplayName( "TemplateBoxContext Tests" )
+public class TemplateBoxContextTest {
 
 	@Test
 	@DisplayName( "Test default constructor" )
 	void testDefaultConstructor() {
-		TemplateContext context = new TemplateContext();
-		assertThat( "template" ).isEqualTo( context.getName() );
+		TemplateBoxContext context = new TemplateBoxContext();
 		assertThat( context.getTemplatePath() ).isNull();
+		assertThat( context.getParent() ).isNull();
 		assertThat( context.hasTemplatePath() ).isFalse();
 	}
 
 	@Test
 	@DisplayName( "Test constructor with template path" )
 	void testConstructorWithTemplatePath() {
-		TemplateContext context = new TemplateContext( "templatePath" );
-		assertThat( "template" ).isEqualTo( context.getName() );
+		TemplateBoxContext context = new TemplateBoxContext( "templatePath" );
 		assertThat( context.getTemplatePath() ).isNotNull();
 		assertThat( context.hasTemplatePath() ).isTrue();
 	}
@@ -52,7 +51,7 @@ public class TemplateContextTest {
 	@Test
 	@DisplayName( "Test setTemplatePath" )
 	void testSetTemplatePath() {
-		TemplateContext context = new TemplateContext();
+		TemplateBoxContext context = new TemplateBoxContext();
 		context.setTemplatePath( "newTemplatePath" );
 		assertThat( "newTemplatePath" ).isEqualTo( context.getTemplatePath() );
 	}
@@ -60,16 +59,16 @@ public class TemplateContextTest {
 	@Test
 	@DisplayName( "Test scopeFind with existing key" )
 	void testScopeFindExistingKey() {
-		TemplateContext	context	= new TemplateContext();
+		TemplateBoxContext	context	= new TemplateBoxContext();
 		Key				key		= Key.of( "testIt" );
-		context.getVariablesScope().put( key, "value" );
-		assertThat( context.scopeFind( key ) ).isEqualTo( "value" );
+		context.getScope( Key.of( "variables" ) ).put( key, "value" );
+		assertThat( context.scopeFindLocal( key ) ).isEqualTo( "value" );
 	}
 
 	@Test
 	@DisplayName( "Test scopeFind with missing key" )
 	void testScopeFindMissingKey() {
-		TemplateContext context = new TemplateContext();
-		assertThrows( KeyNotFoundException.class, () -> context.scopeFind( new Key( "nonExistentKey" ) ) );
+		TemplateBoxContext context = new TemplateBoxContext();
+		assertThrows( KeyNotFoundException.class, () -> context.scopeFindLocal( new Key( "nonExistentKey" ) ) );
 	}
 }
