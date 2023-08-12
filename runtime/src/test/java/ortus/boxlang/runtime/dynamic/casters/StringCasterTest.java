@@ -57,7 +57,16 @@ public class StringCasterTest {
 	@Test
 	void testItCanCastADouble() {
 		assertThat( StringCaster.cast( Double.valueOf( "5" ) ) ).isEqualTo( "5" );
+		assertThat( StringCaster.cast( Double.valueOf( "5.0" ) ) ).isEqualTo( "5" );
+		assertThat( StringCaster.cast( Double.valueOf( "5.1" ) ) ).isEqualTo( "5.1" );
+		assertThat( StringCaster.cast( Double.valueOf( "5.2" ) ) ).isEqualTo( "5.2" );
+		assertThat( StringCaster.cast( Double.valueOf( "5.3" ) ) ).isEqualTo( "5.3" );
+		assertThat( StringCaster.cast( Double.valueOf( "5.4" ) ) ).isEqualTo( "5.4" );
+		assertThat( StringCaster.cast( Double.valueOf( "5.5" ) ) ).isEqualTo( "5.5" );
 		assertThat( StringCaster.cast( Double.valueOf( "5.6" ) ) ).isEqualTo( "5.6" );
+		assertThat( StringCaster.cast( Double.valueOf( "5.7" ) ) ).isEqualTo( "5.7" );
+		assertThat( StringCaster.cast( Double.valueOf( "5.8" ) ) ).isEqualTo( "5.8" );
+		assertThat( StringCaster.cast( Double.valueOf( "5.9" ) ) ).isEqualTo( "5.9" );
 		assertThat( StringCaster.cast( Double.valueOf( "1.2345678901234567" ) ) ).isEqualTo( "1.2345678901234567" );
 	}
 
@@ -66,14 +75,34 @@ public class StringCasterTest {
 	void testItCanCastAFloat() {
 		assertThat( StringCaster.cast( Float.valueOf( "5" ) ) ).isEqualTo( "5" );
 		assertThat( StringCaster.cast( Float.valueOf( "5.0" ) ) ).isEqualTo( "5" );
+		assertThat( StringCaster.cast( Float.valueOf( "5.1" ) ) ).isEqualTo( "5.1" );
+		assertThat( StringCaster.cast( Float.valueOf( "5.2" ) ) ).isEqualTo( "5.2" );
+		assertThat( StringCaster.cast( Float.valueOf( "5.3" ) ) ).isEqualTo( "5.3" );
+		assertThat( StringCaster.cast( Float.valueOf( "5.4" ) ) ).isEqualTo( "5.4" );
+		assertThat( StringCaster.cast( Float.valueOf( "5.5" ) ) ).isEqualTo( "5.5" );
+		assertThat( StringCaster.cast( Float.valueOf( "5.6" ) ) ).isEqualTo( "5.6" );
 		assertThat( StringCaster.cast( Float.valueOf( "5.7" ) ) ).isEqualTo( "5.7" );
+		assertThat( StringCaster.cast( Float.valueOf( "5.8" ) ) ).isEqualTo( "5.8" );
+		assertThat( StringCaster.cast( Float.valueOf( "5.9" ) ) ).isEqualTo( "5.9" );
+		// Max float decimal precision
+		assertThat( StringCaster.cast( Float.valueOf( "1.2345678" ) ) ).isEqualTo( "1.2345678" );
 	}
 
 	@DisplayName( "It can cast a BigDecimal to a string" )
 	@Test
 	void testItCanCastABigDecimal() {
 		assertThat( StringCaster.cast( BigDecimal.valueOf( 5 ) ) ).isEqualTo( "5" );
+		assertThat( StringCaster.cast( BigDecimal.valueOf( 5.0 ) ) ).isEqualTo( "5" );
+		assertThat( StringCaster.cast( BigDecimal.valueOf( 5.1 ) ) ).isEqualTo( "5.1" );
+		assertThat( StringCaster.cast( BigDecimal.valueOf( 5.2 ) ) ).isEqualTo( "5.2" );
+		assertThat( StringCaster.cast( BigDecimal.valueOf( 5.3 ) ) ).isEqualTo( "5.3" );
+		assertThat( StringCaster.cast( BigDecimal.valueOf( 5.4 ) ) ).isEqualTo( "5.4" );
+		assertThat( StringCaster.cast( BigDecimal.valueOf( 5.5 ) ) ).isEqualTo( "5.5" );
 		assertThat( StringCaster.cast( BigDecimal.valueOf( 5.6 ) ) ).isEqualTo( "5.6" );
+		assertThat( StringCaster.cast( BigDecimal.valueOf( 5.7 ) ) ).isEqualTo( "5.7" );
+		assertThat( StringCaster.cast( BigDecimal.valueOf( 5.8 ) ) ).isEqualTo( "5.8" );
+		assertThat( StringCaster.cast( BigDecimal.valueOf( 5.9 ) ) ).isEqualTo( "5.9" );
+		assertThat( StringCaster.cast( new BigDecimal( "1.12345789123456789123456789123456789123456789" ) ) ).isEqualTo( "1.12345789123456789123456789123456789123456789" );
 	}
 
 	@DisplayName( "It can cast a byte array to a string" )
@@ -82,6 +111,13 @@ public class StringCasterTest {
 		assertThat( StringCaster.cast( "Brad".getBytes() ) ).isEqualTo( "Brad" );
 	}
 
-
+	@DisplayName( "It can attempt to cast" )
+	@Test
+	void testItCanAttemptToCast() {
+		CastAttempt<String> attempt = StringCaster.attempt( "brad" );
+		assertThat( attempt.wasSuccessful() ).isTrue();
+		assertThat( attempt.get() ).isEqualTo( "brad" );
+		assertThat( attempt.ifSuccessful( (v)->System.out.println(v) ) );
+	}
 
 }

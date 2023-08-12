@@ -68,4 +68,22 @@ public class DoubleCasterTest {
 		assertThat( DoubleCaster.cast( "no" ) ).isEqualTo( 0 );
 	}
 
+	@DisplayName( "It can attempt to cast" )
+	@Test
+	void testItCanAttemptToCast() {
+		CastAttempt<Double> attempt = DoubleCaster.attempt( 5 );
+		assertThat( attempt.wasSuccessful() ).isTrue();
+		assertThat( attempt.get() ).isEqualTo( 5 );
+		assertThat( attempt.ifSuccessful( (v)->System.out.println(v) ) );
+
+		final CastAttempt<Double> attempt2 = DoubleCaster.attempt( "Brad" );
+		assertThat( attempt2.wasSuccessful() ).isFalse();
+
+		assertThrows(RuntimeException.class, () -> attempt2.get() );
+		assertThat( attempt2.ifSuccessful( (v)->System.out.println(v) ) );
+		assertThat( attempt2.getOrDefault( 42D ) ).isEqualTo( 42 );
+		assertThat( attempt2.getOrSupply( ()->40D+2D ) ).isEqualTo( 42 );
+
+	}
+
 }

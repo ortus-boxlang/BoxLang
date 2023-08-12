@@ -22,13 +22,36 @@ package ortus.boxlang.runtime.dynamic.casters;
  */
 public class DoubleCaster {
 
+	/**
+	 * Tests to see if the value can be cast to a Double.
+	 * Returns a CastAttempt<T> which will contain the result if casting was
+	 * was successfull, or can be interogated to proceed otherwise.
+	 *
+	 * @param value The value to cast to a Double
+	 * @return The Double value
+	 */
+	public static CastAttempt<Double> attempt( Object object ) {
+	   return CastAttempt.ofNullable( cast( object, false ) );
+	}
+
+	/**
+	 * Used to cast anything to a Double, throwing exception if we fail
+	 *
+	 * @param value The value to cast to a Double
+	 * @return The Double value
+	 */
+	public static Double cast( Object object ) {
+	   return cast( object, true );
+	}
+
+
 	 /**
 	  * Used to cast anything to a double
 	  *
 	  * @param value The value to cast to a double
 	  * @return The double value
 	  */
-	 public static double cast( Object object ) {
+	 public static Double cast( Object object, Boolean fail ) {
 		if( object == null ) {
 			return Double.valueOf( 0 );
 		}
@@ -40,22 +63,30 @@ public class DoubleCaster {
 		}
 
 		if( object instanceof Boolean ) {
-			return (Boolean)object ? 1 : 0;
+			return (Boolean)object ? 1D : 0D;
 		}
 
 		if( object instanceof String ) {
 			String o = (String)object;
 			// String true and yes are truthy
 			if( o.equalsIgnoreCase( "true" ) || o.equalsIgnoreCase( "yes" ) ) {
-				return 1;
+				return 1D;
 			// String false and no are truthy
 			} else if( o.equalsIgnoreCase( "false" ) || o.equalsIgnoreCase( "no" ) ) {
-				return 0;
+				return 0D;
+			}
+		}
+		try {
+			return Double.valueOf( StringCaster.cast( object ) );
+		} catch( NumberFormatException e ) {
+			if( fail ) {
+				throw e;
+			} else {
+				return null;
 			}
 		}
 
-		// May throw NumberFormatException
-		return Double.valueOf( StringCaster.cast( object ) );
+
 	 }
 
 }
