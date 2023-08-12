@@ -76,6 +76,7 @@ public class DoubleCaster {
 				return 0D;
 			}
 		}
+		// TODO: Find a way to check if the string can be cast without throwing an exception here
 		try {
 			return Double.valueOf( StringCaster.cast( object ) );
 		} catch( NumberFormatException e ) {
