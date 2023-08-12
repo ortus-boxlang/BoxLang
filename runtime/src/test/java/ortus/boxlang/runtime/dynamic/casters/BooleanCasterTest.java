@@ -56,6 +56,22 @@ public class BooleanCasterTest {
 		assertThrows(RuntimeException.class, () -> BooleanCaster.cast( "Brad" ) );
 	}
 
+	@DisplayName( "It can attempt to cast" )
+	@Test
+	void testItCanAttemptToCast() {
+		CastAttempt<Boolean> attempt = BooleanCaster.attempt( true );
+		assertThat( attempt.wasSuccessful() ).isTrue();
+		assertThat( attempt.get() ).isEqualTo( true );
+		assertThat( attempt.ifSuccessful( (v)->System.out.println(v) ) );
 
+		final CastAttempt<Boolean> attempt2 = BooleanCaster.attempt( "Brad" );
+		assertThat( attempt2.wasSuccessful() ).isFalse();
+
+		assertThrows(RuntimeException.class, () -> attempt2.get() );
+		assertThat( attempt2.ifSuccessful( (v)->System.out.println(v) ) );
+		assertThat( attempt2.getOrDefault( false ) ).isEqualTo( false );
+		assertThat( attempt2.getOrSupply( ()->1==2 ) ).isEqualTo( false );
+
+	}
 
 }

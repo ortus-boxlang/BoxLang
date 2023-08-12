@@ -23,12 +23,35 @@ package ortus.boxlang.runtime.dynamic.casters;
 public class BooleanCaster {
 
 	 /**
-	  * Used to cast anything to a boolean
+	  * Tests to see if the value can be cast to a boolean.
+	  * Returns a CastAttempt<T> which will contain the result if casting was
+	  * was successfull, or can be interogated to proceed otherwise.
+	  *
+	  * @param value The value to cast to a boolean
+	  * @return The boolean value
+	  */
+	 public static CastAttempt<Boolean> attempt( Object object ) {
+		return CastAttempt.ofNullable( cast( object, false ) );
+	 }
+
+	 /**
+	  * Used to cast anything to a boolean, throwing exception if we fail
 	  *
 	  * @param value The value to cast to a boolean
 	  * @return The boolean value
 	  */
 	 public static Boolean cast( Object object ) {
+		return cast( object, true );
+	 }
+
+	 /**
+	  * Used to cast anything to a boolean
+	  *
+	  * @param value The value to cast to a boolean
+	  * @param fail True to throw exception when failing.
+	  * @return The boolean value, or null when cannot be cast
+	  */
+	 public static Boolean cast( Object object, Boolean fail ) {
 		if( object == null ) {
 			return false;
 		}
@@ -48,13 +71,21 @@ public class BooleanCaster {
 			} else if( o.equalsIgnoreCase( "false" ) || o.equalsIgnoreCase( "no" ) ) {
 				return false;
 			}
-			throw new RuntimeException(
-				String.format( "String [%s] cannot be cast to a boolean", o )
-			 );
+			if( fail ) {
+				throw new RuntimeException(
+					String.format( "String [%s] cannot be cast to a boolean", o )
+				);
+			} else {
+				return null;
+			}
 		}
-		throw new RuntimeException(
-			String.format( "Value [%s] cannot be cast to a boolean", object.getClass().getName() )
-		);
+		if( fail ) {
+			throw new RuntimeException(
+				String.format( "Value [%s] cannot be cast to a boolean", object.getClass().getName() )
+			);
+		} else {
+			return null;
+		}
 	}
 
 }
