@@ -86,6 +86,37 @@ class SingleScriptTemplate(
 	}
 }
 
+sealed class ScopeNameExpr(name: String) : NameExpr(name) {
+	fun constructSetExpression(fieldName: String, value: JExpression) = ScopeSetExpression(this, fieldName, value)
+	fun constructGetExpression(fieldName: String) = ScopeGetExpression(this, fieldName)
+}
+
+class VariablesScopeNameExpr : ScopeNameExpr("variablesScope")
+
+class ScopeSetExpression(
+	scopeNameExpression: ScopeNameExpr,
+	fieldName: String,
+	value: JExpression
+) : MethodCallExpr(scopeNameExpression, "put", NodeList(fieldName.toKeyOf(), value))
+
+class ScopeGetExpression(
+	val scopeNameExpression: ScopeNameExpr,
+	private val fieldName: String
+) : MethodCallExpr(scopeNameExpression, "get", NodeList(fieldName.toKeyOf())) {
+	fun toSetExpression(value: JExpression) = ScopeSetExpression(
+		scopeNameExpression,
+		fieldName,
+		value)
+}
+
+fun String.toKeyOf() = MethodCallExpr(
+	NameExpr("Key"),
+	"of",
+	NodeList(StringLiteralExpr(this))
+)
+
+fun NameExpr.toKeyOf() = this.nameAsString.toKeyOf()
+
 fun BoxScript.toJava(): com.github.javaparser.ast.CompilationUnit {
 	val packageDeclaration = PackageDeclaration()
 
@@ -144,32 +175,87 @@ fun BoxExpressionStatement.toJava(): ExpressionStmt = ExpressionStmt(
 	this.expression.toJava()
 )
 
-fun BoxObjectAccessExpression.toJava(): JExpression = FieldAccessExpr(
-	// TODO
-	this.context.toJava(),
-	when (this.access) {
-		is BoxIdentifier -> this.access.name
-		is BoxStringLiteral -> this.access.value
-		is BoxObjectAccessExpression -> when {
-			this.access.context == null && this.access.access is BoxIdentifier -> this.access.access.name
-			else -> throw this.notImplemented()
+fun BoxObjectAccessExpression.toJava(): JExpression {
+	val scope = this.context.toJava()
+
+	return when (scope) {
+		is ScopeNameExpr -> scope.constructGetExpression(
+			when (this.access) {
+				is BoxIdentifier -> this.access.name
+				is BoxStringLiteral -> this.access.value
+				else -> throw this.notImplemented()
+			})
+
+		else -> {
+			FieldAccessExpr(
+				scope,
+				when (this.access) {
+					is BoxIdentifier -> this.access.name
+					is BoxStringLiteral -> this.access.value
+					is BoxObjectAccessExpression -> when {
+						this.access.context == null && this.access.access is BoxIdentifier -> this.access.access.name
+						else -> throw this.notImplemented()
+					}
+
+					else -> throw this.notImplemented()
+				})
 		}
-
-		else -> throw this.notImplemented()
-	})
-
-fun FunctionInvokationExpression.toJava(): MethodCallExpr {
-	val arguments = this.arguments.map { it.toJava() }.toTypedArray()
-	return MethodCallExpr(this.name.name, *arguments)
+	}
 }
 
-fun BoxAssignment.toJava(): ExpressionStmt = ExpressionStmt(
-	AssignExpr(
-		this.left.toJava(),
-		this.right.toJava(),
-		AssignExpr.Operator.ASSIGN
+fun FunctionInvokationExpression.toJava(): MethodCallExpr {
+	/* TODO: move this toJava() definition inside the SingleScriptTemplate
+		so that it knows about "context"
+	*/
+	val arguments = this.arguments.map { it.toJava() }.toTypedArray()
+
+	return if (this.name.name == "createObject" && arguments.size == 2) {
+		MethodCallExpr(
+			when {
+				arguments[0] is StringLiteralExpr &&
+					arguments[0].asStringLiteralExpr().value == "java" -> NameExpr("JavaLoader")
+
+				else -> throw notImplemented()
+			},
+			"load",
+			NodeList(mutableListOf<JExpression>(NameExpr("context")) + arguments.toList().subList(1, arguments.size))
+		)
+	} else {
+		MethodCallExpr(this.name.name, *arguments)
+	}
+}
+
+fun BoxAssignment.toJava(): ExpressionStmt {
+	val assignmentLeftExpression = this.left.toJava()
+	val assignmentRightExpression = this.right.toJava()
+
+	val possiblyScopeExpression = when (assignmentLeftExpression) {
+		is FieldAccessExpr -> assignmentLeftExpression.scope
+		is ScopeGetExpression -> assignmentLeftExpression.scopeNameExpression
+		else -> null
+	}
+
+	return ExpressionStmt(
+		if (possiblyScopeExpression is ScopeNameExpr) {
+			when (assignmentLeftExpression) {
+				is FieldAccessExpr -> possiblyScopeExpression.constructSetExpression(
+					assignmentLeftExpression.nameAsString,
+					assignmentRightExpression
+				)
+
+				is ScopeGetExpression -> assignmentLeftExpression.toSetExpression(assignmentRightExpression)
+
+				else -> throw notImplemented()
+			}
+		} else {
+			AssignExpr(
+				assignmentLeftExpression,
+				assignmentRightExpression,
+				AssignExpr.Operator.ASSIGN
+			)
+		}
 	)
-)
+}
 
 fun BoxIfStatement.toJava(): IfStmt = IfStmt(
 	this.condition.toJava(),
@@ -192,40 +278,59 @@ fun BoxExpression.toJava(): JExpression = when (this) {
 }
 
 fun BoxArrayAccessExpression.toJava(): JExpression = when (val index = this.index.toJava()) {
-	is StringLiteralExpr -> FieldAccessExpr(this.context.toJava(), index.value)
+	is StringLiteralExpr -> FieldAccessExpr(this.context.toJava(), index.value) // TODO: variables scope case
 	else -> ArrayAccessExpr(this.context.toJava(), index)
 }
 
-fun BoxBinaryExpression.toJava(): BinaryExpr = BinaryExpr(
-	this.left.toJava(),
-	this.right.toJava(),
+fun BoxBinaryExpression.toJava() = MethodCallExpr(
+	NameExpr("Concat"),
+	"invoke",
+	NodeList(
+		NameExpr("context"),
+		this.left.toJava().let {
+			if (it.isNameExpr)
+				it.asNameExpr().toKeyOf()
+			else
+				it
+		},
+		this.right.toJava()
+	)
+)
+
+fun BoxComparisonExpression.toJava() = MethodCallExpr(
 	when (this.op) {
-		BoxBinaryOperator.Concat -> BinaryExpr.Operator.PLUS
+		BoxComparisonOperator.Equal -> NameExpr("EqualsEquals")
+		else -> throw notImplemented()
+	},
+	"invoke",
+	NodeList(NameExpr("context"), this.left.toJava(), this.right.toJava())
+)
+
+fun BoxMethodInvokationExpression.toJava(): MethodCallExpr {
+	val scope = this.obj.toJava()
+
+	return if (this.methodName.name == "init") {
+		MethodCallExpr(
+			scope,
+			"invokeConstructor",
+			NodeList(ArrayCreationExpr(
+				ClassOrInterfaceType("Object"),
+				NodeList(ArrayCreationLevel()),
+				ArrayInitializerExpr(NodeList(this.arguments.map { it.toJava() }))
+			))
+		)
+	} else {
+		MethodCallExpr(
+			scope,
+			this.methodName.name,
+			NodeList(this.arguments.map { it.toJava() })
+		)
 	}
-)
+}
 
-fun BoxComparisonExpression.toJava(): BinaryExpr = BinaryExpr(
-	this.left.toJava(),
-	this.right.toJava(),
-	when (this.op) {
-		BoxComparisonOperator.Equal -> BinaryExpr.Operator.EQUALS
-		BoxComparisonOperator.GreaterThan -> BinaryExpr.Operator.GREATER
-		BoxComparisonOperator.GreaterEqualsThan -> BinaryExpr.Operator.GREATER_EQUALS
-		BoxComparisonOperator.LessThan -> BinaryExpr.Operator.LESS
-		BoxComparisonOperator.LessEqualThan -> BinaryExpr.Operator.LESS_EQUALS
-		BoxComparisonOperator.NotEqual -> BinaryExpr.Operator.NOT_EQUALS
-	}
-)
+fun BoxVariablesScopeExpression.toJava() = VariablesScopeNameExpr()
 
-fun BoxMethodInvokationExpression.toJava(): MethodCallExpr = MethodCallExpr(
-	this.obj.toJava(),
-	this.methodName.name,
-	NodeList(this.arguments.map { it.toJava() })
-)
-
-fun BoxVariablesScopeExpression.toJava() = NameExpr("variablesScope")
-
-fun BoxIdentifier.toJava() = NameExpr(this.name)
+fun BoxIdentifier.toJava(): JExpression = NameExpr(this.name)
 
 fun BoxStringLiteral.toJava(): StringLiteralExpr = StringLiteralExpr(this.value)
 
