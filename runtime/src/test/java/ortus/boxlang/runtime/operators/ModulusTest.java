@@ -29,7 +29,7 @@ public class ModulusTest {
 	@DisplayName( "It can Modulus numbers" )
 	@Test
 	void testItCanModulusNumbers() {
-		assertThat( Modulus.invoke( 9, 3 ) ).isEqualTo( 0  );
+		assertThat( Modulus.invoke( 9, 3 ) ).isEqualTo( 0 );
 		assertThat( Modulus.invoke( 3, 1.5 ) ).isEqualTo( 0 );
 		assertThat( Modulus.invoke( 3, 2 ) ).isEqualTo( 1 );
 		assertThat( Modulus.invoke( 9, 5 ) ).isEqualTo( 4 );
@@ -47,6 +47,5 @@ public class ModulusTest {
 	void testItCanNotModulusByZero() {
 		assertThrows( RuntimeException.class, () -> Modulus.invoke( 1, 0 ) );
 	}
-
 
 }

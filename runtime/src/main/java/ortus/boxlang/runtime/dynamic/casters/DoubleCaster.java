@@ -28,66 +28,67 @@ public class DoubleCaster {
 	 * was successfull, or can be interogated to proceed otherwise.
 	 *
 	 * @param value The value to cast to a Double
+	 * 
 	 * @return The Double value
 	 */
 	public static CastAttempt<Double> attempt( Object object ) {
-	   return CastAttempt.ofNullable( cast( object, false ) );
+		return CastAttempt.ofNullable( cast( object, false ) );
 	}
 
 	/**
 	 * Used to cast anything to a Double, throwing exception if we fail
 	 *
 	 * @param value The value to cast to a Double
+	 * 
 	 * @return The Double value
 	 */
 	public static Double cast( Object object ) {
-	   return cast( object, true );
+		return cast( object, true );
 	}
 
-
-	 /**
-	  * Used to cast anything to a double
-	  *
-	  * @param value The value to cast to a double
-	  * @return The double value
-	  */
-	 public static Double cast( Object object, Boolean fail ) {
-		if( object == null ) {
+	/**
+	 * Used to cast anything to a double
+	 *
+	 * @param value The value to cast to a double
+	 * 
+	 * @return The double value
+	 */
+	public static Double cast( Object object, Boolean fail ) {
+		if ( object == null ) {
 			return Double.valueOf( 0 );
 		}
-		if( object instanceof Double ) {
-			return (Double)object;
+		if ( object instanceof Double ) {
+			return ( Double ) object;
 		}
-		if( object instanceof Number ) {
-			return ((Number)object).doubleValue();
-		}
-
-		if( object instanceof Boolean ) {
-			return (Boolean)object ? 1D : 0D;
+		if ( object instanceof Number ) {
+			return ( ( Number ) object ).doubleValue();
 		}
 
-		if( object instanceof String ) {
-			String o = (String)object;
+		if ( object instanceof Boolean ) {
+			return ( Boolean ) object ? 1D : 0D;
+		}
+
+		if ( object instanceof String ) {
+			String o = ( String ) object;
 			// String true and yes are truthy
-			if( o.equalsIgnoreCase( "true" ) || o.equalsIgnoreCase( "yes" ) ) {
+			if ( o.equalsIgnoreCase( "true" ) || o.equalsIgnoreCase( "yes" ) ) {
 				return 1D;
-			// String false and no are truthy
-			} else if( o.equalsIgnoreCase( "false" ) || o.equalsIgnoreCase( "no" ) ) {
+				// String false and no are truthy
+			} else if ( o.equalsIgnoreCase( "false" ) || o.equalsIgnoreCase( "no" ) ) {
 				return 0D;
 			}
 		}
 		// TODO: Find a way to check if the string can be cast without throwing an exception here
 		try {
 			return Double.valueOf( StringCaster.cast( object ) );
-		} catch( NumberFormatException e ) {
-			if( fail ) {
+		} catch ( NumberFormatException e ) {
+			if ( fail ) {
 				throw e;
 			} else {
 				return null;
 			}
 		}
 
-
-	 }
+	}
 
 }

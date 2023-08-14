@@ -37,12 +37,12 @@ public class Key {
 	/**
 	 * The original key name
 	 */
-	private String name;
+	private String	name;
 
 	/**
 	 * The key name in upper case
 	 */
-	private String nameNoCase;
+	private String	nameNoCase;
 
 	/**
 	 * --------------------------------------------------------------------------

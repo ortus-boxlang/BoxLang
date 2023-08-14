@@ -54,7 +54,7 @@ public interface IReferenceable {
 	public Object __safeDereference( Key name );
 
 	/**
-	 * Get a scope from the context.  If not found, the parent context is asked.
+	 * Get a scope from the context. If not found, the parent context is asked.
 	 * Search all konwn scopes
 	 *
 	 */

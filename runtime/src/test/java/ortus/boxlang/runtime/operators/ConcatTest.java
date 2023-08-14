@@ -59,6 +59,4 @@ public class ConcatTest {
 		assertThat( Concat.invoke( "Brad".getBytes(), "Wood".getBytes() ) ).isEqualTo( "BradWood" );
 	}
 
-
-
 }

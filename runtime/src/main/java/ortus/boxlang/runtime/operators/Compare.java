@@ -23,48 +23,48 @@ package ortus.boxlang.runtime.operators;
  */
 public class Compare implements IOperator {
 
-
 	static int invoke( Object left, Object right ) {
 		return invoke( left, right, false );
 	}
+
 	/**
 	 * @return 1 if greater than, -1 if less than, = if equal
 	 */
-	@SuppressWarnings("unchecked")
+	@SuppressWarnings( "unchecked" )
 	static int invoke( Object left, Object right, Boolean caseSensitive ) {
 
-		if( left == null ) {
+		if ( left == null ) {
 			left = "";
 		}
 
-		if( right == null ) {
+		if ( right == null ) {
 			right = "";
 		}
 
 		// TODO: actually if inputs are numeric, don't just cast and catch.
-		try{
+		try {
 			return Double.valueOf( left.toString() ).compareTo( Double.valueOf( right.toString() ) );
-		} catch( NumberFormatException e ) {
+		} catch ( NumberFormatException e ) {
 			// If the operands are not numbers, ignore
 		}
 
 		// TODO: This is too simplistic
-		if( left instanceof String || right instanceof String ) {
-			if( caseSensitive ) {
+		if ( left instanceof String || right instanceof String ) {
+			if ( caseSensitive ) {
 				return left.toString().compareTo( right.toString() );
 			} else {
 				return left.toString().compareToIgnoreCase( right.toString() );
 			}
 		}
 
-		if( left instanceof Comparable && right instanceof Comparable ) {
-			return ((Comparable)left).compareTo( (Comparable)right );
+		if ( left instanceof Comparable && right instanceof Comparable ) {
+			return ( ( Comparable ) left ).compareTo( ( Comparable ) right );
 		}
 
 		// TODO: Dates
 
 		throw new RuntimeException(
-			String.format( "Can't compare [%s] against [%s]", left.getClass().getName(), right.getClass().getName() )
+		        String.format( "Can't compare [%s] against [%s]", left.getClass().getName(), right.getClass().getName() )
 		);
 	}
 

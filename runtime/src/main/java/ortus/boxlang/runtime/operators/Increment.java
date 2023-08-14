@@ -18,6 +18,7 @@
 package ortus.boxlang.runtime.operators;
 
 import ortus.boxlang.runtime.dynamic.casters.DoubleCaster;
+
 /**
  * Performs Math i++
  */
@@ -27,7 +28,7 @@ public class Increment implements IOperator {
 	 * @return The the sum
 	 */
 	static Double invoke( Object object ) {
-		return DoubleCaster.cast( object )+1;
+		return DoubleCaster.cast( object ) + 1;
 	}
 
 }

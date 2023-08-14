@@ -18,6 +18,7 @@
 package ortus.boxlang.runtime.operators;
 
 import ortus.boxlang.runtime.dynamic.casters.DoubleCaster;
+
 /**
  * Performs Math Divide
  */
@@ -28,7 +29,7 @@ public class Divide implements IOperator {
 	 */
 	static Double invoke( Object left, Object right ) {
 		Double dRight = DoubleCaster.cast( right );
-		if( dRight == 0 ) {
+		if ( dRight == 0 ) {
 			throw new RuntimeException( "You cannot divide by zero." );
 		}
 		return DoubleCaster.cast( left ) / dRight;

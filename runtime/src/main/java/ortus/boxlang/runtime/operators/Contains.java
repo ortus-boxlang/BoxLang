@@ -18,6 +18,7 @@
 package ortus.boxlang.runtime.operators;
 
 import ortus.boxlang.runtime.dynamic.casters.StringCaster;
+
 /**
  * Performs String Contains check
  */
@@ -28,11 +29,11 @@ public class Contains implements IOperator {
 	 */
 	static Boolean invoke( Object left, Object right ) {
 
-		if( left == null || right == null ) {
+		if ( left == null || right == null ) {
 			return false;
 		}
 
-		return (StringCaster.cast(left)).toLowerCase().indexOf( StringCaster.cast(right).toLowerCase() ) != -1;
+		return ( StringCaster.cast( left ) ).toLowerCase().indexOf( StringCaster.cast( right ).toLowerCase() ) != -1;
 	}
 
 }

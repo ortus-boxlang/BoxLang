@@ -37,8 +37,8 @@ public class KeyTest {
 
 	@Test
 	public void testEquals() {
-		Key key1 = new Key( "Test" );
-		Key key2 = new Key( "test" );
+		Key	key1	= new Key( "Test" );
+		Key	key2	= new Key( "test" );
 		assertThat( key1 ).isEqualTo( key1 );
 		assertThat( key1 ).isEqualTo( key2 );
 		assertThat( key1.equals( key2 ) ).isTrue();
@@ -46,17 +46,17 @@ public class KeyTest {
 
 	@Test
 	public void testEqualsWithCase() {
-		Key key1 = new Key( "Test" );
-		Key key2 = new Key( "test" );
-		Key key3 = new Key( "Test" );
+		Key	key1	= new Key( "Test" );
+		Key	key2	= new Key( "test" );
+		Key	key3	= new Key( "Test" );
 		assertThat( key1.equalsWithCase( key2 ) ).isFalse();
 		assertThat( key1.equalsWithCase( key3 ) ).isTrue();
 	}
 
 	@Test
 	public void testNotEquals() {
-		Key key1 = new Key( "Test2" );
-		Key key2 = new Key( "Test" );
+		Key	key1	= new Key( "Test2" );
+		Key	key2	= new Key( "Test" );
 		assertThat( key1 ).isNotEqualTo( key2 );
 	}
 

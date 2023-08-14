@@ -18,6 +18,7 @@
 package ortus.boxlang.runtime.operators;
 
 import ortus.boxlang.runtime.dynamic.casters.StringCaster;
+
 /**
  * Performs String Concat
  */
@@ -27,7 +28,7 @@ public class Concat implements IOperator {
 	 * @return The two strings conctenated
 	 */
 	static String invoke( Object left, Object right ) {
-		return (StringCaster.cast(left)).concat( StringCaster.cast(right) );
+		return ( StringCaster.cast( left ) ).concat( StringCaster.cast( right ) );
 	}
 
 }

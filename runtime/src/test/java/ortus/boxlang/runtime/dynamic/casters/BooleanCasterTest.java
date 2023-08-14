@@ -17,7 +17,6 @@
  */
 package ortus.boxlang.runtime.dynamic.casters;
 
-
 import org.junit.Ignore;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -53,7 +52,7 @@ public class BooleanCasterTest {
 		assertThat( BooleanCaster.cast( "yes" ) ).isTrue();
 		assertThat( BooleanCaster.cast( "no" ) ).isFalse();
 
-		assertThrows(RuntimeException.class, () -> BooleanCaster.cast( "Brad" ) );
+		assertThrows( RuntimeException.class, () -> BooleanCaster.cast( "Brad" ) );
 	}
 
 	@DisplayName( "It can attempt to cast" )
@@ -62,15 +61,15 @@ public class BooleanCasterTest {
 		CastAttempt<Boolean> attempt = BooleanCaster.attempt( true );
 		assertThat( attempt.wasSuccessful() ).isTrue();
 		assertThat( attempt.get() ).isEqualTo( true );
-		assertThat( attempt.ifSuccessful( (v)->System.out.println(v) ) );
+		assertThat( attempt.ifSuccessful( ( v ) -> System.out.println( v ) ) );
 
 		final CastAttempt<Boolean> attempt2 = BooleanCaster.attempt( "Brad" );
 		assertThat( attempt2.wasSuccessful() ).isFalse();
 
-		assertThrows(RuntimeException.class, () -> attempt2.get() );
-		assertThat( attempt2.ifSuccessful( (v)->System.out.println(v) ) );
+		assertThrows( RuntimeException.class, () -> attempt2.get() );
+		assertThat( attempt2.ifSuccessful( ( v ) -> System.out.println( v ) ) );
 		assertThat( attempt2.getOrDefault( false ) ).isEqualTo( false );
-		assertThat( attempt2.getOrSupply( ()->1==2 ) ).isEqualTo( false );
+		assertThat( attempt2.getOrSupply( () -> 1 == 2 ) ).isEqualTo( false );
 
 	}
 

@@ -37,7 +37,7 @@ public class ContainsTest {
 	@DisplayName( "It can find number in string" )
 	@Test
 	void testItCanFindNumberInString() {
-		assertThat( Contains.invoke( "Brad is 43 years old.", 43  ) ).isTrue();
+		assertThat( Contains.invoke( "Brad is 43 years old.", 43 ) ).isTrue();
 		assertThat( Contains.invoke( "Brad is 43 years old.", 82 ) ).isFalse();
 	}
 

@@ -24,36 +24,38 @@ import ortus.boxlang.runtime.scopes.Key;
  */
 public class Referencer {
 
-	 /**
-	  * Used to implement any time an object is derefernced,
-	  * @param object
-	  * @param key
-	  * @return
-	  */
-	 public static Object get( Object object, Key key ) {
+	/**
+	 * Used to implement any time an object is derefernced,
+	 * 
+	 * @param object
+	 * @param key
+	 * 
+	 * @return
+	 */
+	public static Object get( Object object, Key key ) {
 		// If this object is referenable,
-		if( object instanceof IReferenceable ) {
+		if ( object instanceof IReferenceable ) {
 			// ask it to do the work
-			return ((IReferenceable)object).__dereference( key );
-		// TODO: handle other scenarios of unknown objects
+			return ( ( IReferenceable ) object ).__dereference( key );
+			// TODO: handle other scenarios of unknown objects
 		} else {
 			throw new RuntimeException(
-				String.format( "Unable to dereference object [%s] by key [%s]", object.getClass().getName(), key.getName() )
-			 );
+			        String.format( "Unable to dereference object [%s] by key [%s]", object.getClass().getName(), key.getName() )
+			);
 		}
-	 }
+	}
 
-	 public static Object set( Object object, Key key, Object value ) {
+	public static Object set( Object object, Key key, Object value ) {
 		// If this object is referenable,
-		if( object instanceof IReferenceable ) {
+		if ( object instanceof IReferenceable ) {
 			// ask it to do the work
-			((IReferenceable)object).__assign( key, value );
+			( ( IReferenceable ) object ).__assign( key, value );
 			return value;
-		// TODO: handle other scenarios of unknown objects
+			// TODO: handle other scenarios of unknown objects
 		} else {
 			throw new RuntimeException(
-				String.format( "Unable to assign object [%s] a key [%s]", object.getClass().getName(), key.getName() )
-			 );
+			        String.format( "Unable to assign object [%s] a key [%s]", object.getClass().getName(), key.getName() )
+			);
 		}
-	 }
+	}
 }

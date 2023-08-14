@@ -48,5 +48,4 @@ public class EqualsEqualsTest {
 		assertThat( EqualsEquals.invoke( "1.5", "1.500" ) ).isTrue();
 	}
 
-
 }
