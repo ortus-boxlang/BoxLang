@@ -227,7 +227,7 @@ public class TemplateBoxContext implements IBoxContext {
 	 */
 	public IScope getScopeLocal( Key name ) throws ScopeNotFoundException {
 		// Check the scopes I know about
-		if( name.equals( variablesScopeName ) ) {
+		if ( name.equals( variablesScopeName ) ) {
 			return variablesScope;
 		}
 

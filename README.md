@@ -59,6 +59,8 @@ You will find a `.vscode` folder in the root. This contains our custom shortcuts
 | `compileTestJava` | Compiles Java test source code files located in the `src/test/java` directory											|
 | `getDependencies` | Downloads all the dependencies defined in `build.gradle` and puts them in the `build/dependencies` folder 			|
 | `jar`             | Packages your project's compiled classes and resources into a JAR file `build/libs` folder							|
+| `spotlessApply`   | Runs the Spotless plugin to format the code																			|
+| `spotlessCheck`   | Runs the Spotless plugin to check the formatting of the code															|
 | `tasks`			| Show all the available tasks in the project																			|
 | `test`            | Executes the unit tests in your project and produces the reports in the `build/reports/tests` folder					|
 

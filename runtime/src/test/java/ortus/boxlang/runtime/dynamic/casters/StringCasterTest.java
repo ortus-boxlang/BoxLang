@@ -17,7 +17,6 @@
  */
 package ortus.boxlang.runtime.dynamic.casters;
 
-
 import org.junit.Ignore;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -102,7 +101,8 @@ public class StringCasterTest {
 		assertThat( StringCaster.cast( BigDecimal.valueOf( 5.7 ) ) ).isEqualTo( "5.7" );
 		assertThat( StringCaster.cast( BigDecimal.valueOf( 5.8 ) ) ).isEqualTo( "5.8" );
 		assertThat( StringCaster.cast( BigDecimal.valueOf( 5.9 ) ) ).isEqualTo( "5.9" );
-		assertThat( StringCaster.cast( new BigDecimal( "1.12345789123456789123456789123456789123456789" ) ) ).isEqualTo( "1.12345789123456789123456789123456789123456789" );
+		assertThat( StringCaster.cast( new BigDecimal( "1.12345789123456789123456789123456789123456789" ) ) )
+		        .isEqualTo( "1.12345789123456789123456789123456789123456789" );
 	}
 
 	@DisplayName( "It can cast a byte array to a string" )
@@ -117,7 +117,7 @@ public class StringCasterTest {
 		CastAttempt<String> attempt = StringCaster.attempt( "brad" );
 		assertThat( attempt.wasSuccessful() ).isTrue();
 		assertThat( attempt.get() ).isEqualTo( "brad" );
-		assertThat( attempt.ifSuccessful( (v)->System.out.println(v) ) );
+		assertThat( attempt.ifSuccessful( ( v ) -> System.out.println( v ) ) );
 	}
 
 }

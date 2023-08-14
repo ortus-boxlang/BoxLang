@@ -22,16 +22,16 @@ package ortus.boxlang.runtime.types;
  *
  * Type Hierarchy
  * - Struct
- *   - sorted, ordered, etc
+ * - sorted, ordered, etc
  * - Array
  * - XML
  * - Query
  * - Simple
- *   - String
- *   - Numeric
- *   - Boolean
- *   - List
- *   - Date
+ * - String
+ * - Numeric
+ * - Boolean
+ * - List
+ * - Date
  */
 public interface IType {
 

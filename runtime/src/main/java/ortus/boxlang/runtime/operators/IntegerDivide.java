@@ -18,8 +18,9 @@
 package ortus.boxlang.runtime.operators;
 
 import ortus.boxlang.runtime.dynamic.casters.DoubleCaster;
+
 /**
- * Performs Math Integer Division.  Remainder is discarded
+ * Performs Math Integer Division. Remainder is discarded
  */
 public class IntegerDivide implements IOperator {
 
@@ -28,8 +29,8 @@ public class IntegerDivide implements IOperator {
 	 */
 	static double invoke( Object left, Object right ) {
 		return Math.floor( Divide.invoke(
-			Math.floor( DoubleCaster.cast( left ) ),
-			Math.floor( DoubleCaster.cast( right ) )
+		        Math.floor( DoubleCaster.cast( left ) ),
+		        Math.floor( DoubleCaster.cast( right ) )
 		) );
 	}
 

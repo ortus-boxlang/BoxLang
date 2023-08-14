@@ -47,5 +47,4 @@ public class DivideTest {
 		assertThrows( RuntimeException.class, () -> Divide.invoke( 1, 0 ) );
 	}
 
-
 }

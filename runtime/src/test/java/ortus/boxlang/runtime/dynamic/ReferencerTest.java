@@ -21,7 +21,6 @@ import ortus.boxlang.runtime.types.*;
 import ortus.boxlang.runtime.dynamic.Referencer;
 import ortus.boxlang.runtime.scopes.*;
 
-
 import org.junit.Ignore;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -34,8 +33,8 @@ public class ReferencerTest {
 	@DisplayName( "It can assign to a scope" )
 	@Test
 	void testItCanAssignToAScope() {
-		Key key = Key.of( "brad" );
-		IScope variablesScope = new VariablesScope();
+		Key		key				= Key.of( "brad" );
+		IScope	variablesScope	= new VariablesScope();
 		Referencer.set( variablesScope, key, "Wood" );
 		assertThat( variablesScope.get( key ) ).isEqualTo( "Wood" );
 		assertThat( variablesScope.get( Key.of( "BRAD" ) ) ).isEqualTo( "Wood" );
@@ -44,8 +43,8 @@ public class ReferencerTest {
 	@DisplayName( "It can derefernce from a scope" )
 	@Test
 	void testItCanDerefernceFromAScope() {
-		Key key = Key.of( "brad" );
-		IScope variablesScope = new VariablesScope();
+		Key		key				= Key.of( "brad" );
+		IScope	variablesScope	= new VariablesScope();
 		variablesScope.put( key, "Wood" );
 		assertThat( Referencer.get( variablesScope, key ) ).isEqualTo( "Wood" );
 	}
@@ -53,8 +52,8 @@ public class ReferencerTest {
 	@DisplayName( "It can assign to a struct" )
 	@Test
 	void testItCanAssignToAStruct() {
-		Key key = Key.of( "brad" );
-		Struct struct = new Struct();
+		Key		key		= Key.of( "brad" );
+		Struct	struct	= new Struct();
 		Referencer.set( struct, key, "Wood" );
 		assertThat( struct.get( key ) ).isEqualTo( "Wood" );
 		assertThat( struct.get( Key.of( "BRAD" ) ) ).isEqualTo( "Wood" );
@@ -63,11 +62,10 @@ public class ReferencerTest {
 	@DisplayName( "It can derefernce from a struct" )
 	@Test
 	void testItCanDerefernceFromAStruct() {
-		Key key = Key.of( "brad" );
-		Struct struct = new Struct();
+		Key		key		= Key.of( "brad" );
+		Struct	struct	= new Struct();
 		struct.put( key, "Wood" );
 		assertThat( Referencer.get( struct, key ) ).isEqualTo( "Wood" );
 	}
-
 
 }

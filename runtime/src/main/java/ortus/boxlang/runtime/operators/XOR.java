@@ -17,18 +17,26 @@
  */
 package ortus.boxlang.runtime.operators;
 
-import ortus.boxlang.runtime.dynamic.casters.DoubleCaster;
+import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
 
 /**
- * Performs Math Multiply
+ * Performs logical XOR
  */
-public class Multiply implements IOperator {
+public class XOR implements IOperator {
 
 	/**
-	 * @return The the result
+	 * @return The result
 	 */
-	static Double invoke( Object left, Object right ) {
-		return DoubleCaster.cast( left ) * DoubleCaster.cast( right );
+	static Boolean invoke( Object left, Object right ) {
+		Boolean	bLeft	= BooleanCaster.cast( left );
+		Boolean	bRight	= BooleanCaster.cast( right );
+
+		if ( bLeft && !bRight ) {
+			return Boolean.TRUE;
+		} else if ( !bLeft && bRight ) {
+			return Boolean.TRUE;
+		}
+		return Boolean.FALSE;
 	}
 
 }

@@ -40,8 +40,8 @@ public class BoxRuntimeTest {
 	@Test
 	public void testGetInstance() {
 		// Ensure getInstance() returns the same instance as startup()
-		BoxRuntime instance1 = BoxRuntime.getInstance();
-		BoxRuntime instance2 = BoxRuntime.startup();
+		BoxRuntime	instance1	= BoxRuntime.getInstance();
+		BoxRuntime	instance2	= BoxRuntime.startup();
 
 		assertThat( instance1 ).isNotNull();
 		assertThat( instance1 ).isSameInstanceAs( instance2 );
@@ -50,8 +50,8 @@ public class BoxRuntimeTest {
 	@Test
 	public void testStartup() {
 		// Ensure startup() returns the same instance as getInstance()
-		BoxRuntime instance1 = BoxRuntime.getInstance();
-		BoxRuntime instance2 = BoxRuntime.startup();
+		BoxRuntime	instance1	= BoxRuntime.getInstance();
+		BoxRuntime	instance2	= BoxRuntime.startup();
 
 		assertThat( instance1 ).isNotNull();
 		assertThat( instance1 ).isSameInstanceAs( instance2 );

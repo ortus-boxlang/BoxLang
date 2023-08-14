@@ -22,66 +22,69 @@ package ortus.boxlang.runtime.dynamic.casters;
  */
 public class BooleanCaster {
 
-	 /**
-	  * Tests to see if the value can be cast to a boolean.
-	  * Returns a CastAttempt<T> which will contain the result if casting was
-	  * was successfull, or can be interogated to proceed otherwise.
-	  *
-	  * @param value The value to cast to a boolean
-	  * @return The boolean value
-	  */
-	 public static CastAttempt<Boolean> attempt( Object object ) {
+	/**
+	 * Tests to see if the value can be cast to a boolean.
+	 * Returns a CastAttempt<T> which will contain the result if casting was
+	 * was successfull, or can be interogated to proceed otherwise.
+	 *
+	 * @param value The value to cast to a boolean
+	 * 
+	 * @return The boolean value
+	 */
+	public static CastAttempt<Boolean> attempt( Object object ) {
 		return CastAttempt.ofNullable( cast( object, false ) );
-	 }
+	}
 
-	 /**
-	  * Used to cast anything to a boolean, throwing exception if we fail
-	  *
-	  * @param value The value to cast to a boolean
-	  * @return The boolean value
-	  */
-	 public static Boolean cast( Object object ) {
+	/**
+	 * Used to cast anything to a boolean, throwing exception if we fail
+	 *
+	 * @param value The value to cast to a boolean
+	 * 
+	 * @return The boolean value
+	 */
+	public static Boolean cast( Object object ) {
 		return cast( object, true );
-	 }
+	}
 
-	 /**
-	  * Used to cast anything to a boolean
-	  *
-	  * @param value The value to cast to a boolean
-	  * @param fail True to throw exception when failing.
-	  * @return The boolean value, or null when cannot be cast
-	  */
-	 public static Boolean cast( Object object, Boolean fail ) {
-		if( object == null ) {
+	/**
+	 * Used to cast anything to a boolean
+	 *
+	 * @param value The value to cast to a boolean
+	 * @param fail  True to throw exception when failing.
+	 * 
+	 * @return The boolean value, or null when cannot be cast
+	 */
+	public static Boolean cast( Object object, Boolean fail ) {
+		if ( object == null ) {
 			return false;
 		}
-		if( object instanceof Boolean ) {
-			return (Boolean)object;
+		if ( object instanceof Boolean ) {
+			return ( Boolean ) object;
 		}
-		if( object instanceof Number ) {
+		if ( object instanceof Number ) {
 			// Positive and negative numbers are true, zero is false
-			return ((Number)object).doubleValue() != 0;
+			return ( ( Number ) object ).doubleValue() != 0;
 		}
-		if( object instanceof String ) {
-			String o = (String)object;
+		if ( object instanceof String ) {
+			String o = ( String ) object;
 			// String true and yes are truthy
-			if( o.equalsIgnoreCase( "true" ) || o.equalsIgnoreCase( "yes" ) ) {
+			if ( o.equalsIgnoreCase( "true" ) || o.equalsIgnoreCase( "yes" ) ) {
 				return true;
-			// String false and no are falsey
-			} else if( o.equalsIgnoreCase( "false" ) || o.equalsIgnoreCase( "no" ) ) {
+				// String false and no are falsey
+			} else if ( o.equalsIgnoreCase( "false" ) || o.equalsIgnoreCase( "no" ) ) {
 				return false;
 			}
-			if( fail ) {
+			if ( fail ) {
 				throw new RuntimeException(
-					String.format( "String [%s] cannot be cast to a boolean", o )
+				        String.format( "String [%s] cannot be cast to a boolean", o )
 				);
 			} else {
 				return null;
 			}
 		}
-		if( fail ) {
+		if ( fail ) {
 			throw new RuntimeException(
-				String.format( "Value [%s] cannot be cast to a boolean", object.getClass().getName() )
+			        String.format( "Value [%s] cannot be cast to a boolean", object.getClass().getName() )
 			);
 		} else {
 			return null;

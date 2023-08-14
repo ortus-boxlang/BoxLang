@@ -18,6 +18,7 @@
 package ortus.boxlang.runtime.operators;
 
 import ortus.boxlang.runtime.dynamic.casters.DoubleCaster;
+
 /**
  * Performs Math Plus
  */

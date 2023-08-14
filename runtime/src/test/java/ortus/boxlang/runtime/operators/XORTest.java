@@ -24,35 +24,33 @@ import static com.google.common.truth.Truth.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-public class ContainsTest {
+public class XORTest {
 
-	@DisplayName( "It can find string in string" )
+	@DisplayName( "It can perform XOR on booleans" )
 	@Test
-	void testItCanFindStringInString() {
-		assertThat( Contains.invoke( "BradWood", "Wood" ) ).isTrue();
-		assertThat( Contains.invoke( "BradWood", "wOOD" ) ).isTrue();
-		assertThat( Contains.invoke( "Luis", "Wood" ) ).isFalse();
+	void testItCanXORBooleans() {
+		assertThat( XOR.invoke( true, false ) ).isTrue();
+		assertThat( XOR.invoke( false, true ) ).isTrue();
+		assertThat( XOR.invoke( false, false ) ).isFalse();
+		assertThat( XOR.invoke( true, true ) ).isFalse();
 	}
 
-	@DisplayName( "It can find number in string" )
+	@DisplayName( "It can perform XOR on numbers" )
 	@Test
-	void testItCanFindNumberInString() {
-		assertThat( Contains.invoke( "Brad is 43 years old.", 43 ) ).isTrue();
-		assertThat( Contains.invoke( "Brad is 43 years old.", 82 ) ).isFalse();
+	void testItCanXORNumbers() {
+		assertThat( XOR.invoke( 1, 0 ) ).isTrue();
+		assertThat( XOR.invoke( 0, 1 ) ).isTrue();
+		assertThat( XOR.invoke( 0, 0 ) ).isFalse();
+		assertThat( XOR.invoke( 1, 1 ) ).isFalse();
 	}
 
-	@DisplayName( "It can find char in string" )
+	@DisplayName( "It can perform XOR on strings" )
 	@Test
-	void testItCanFindCharInString() {
-		assertThat( Contains.invoke( "ABCDEFG", 'F' ) ).isTrue();
-		assertThat( Contains.invoke( "ABCDEFG", 'f' ) ).isTrue();
-	}
-
-	@DisplayName( "It can find number in number" )
-	@Test
-	void testItCanFindNumberInNumber() {
-		assertThat( Contains.invoke( 12345, 3 ) ).isTrue();
-		assertThat( Contains.invoke( 12345, 9 ) ).isFalse();
+	void testItCanXORStrings() {
+		assertThat( XOR.invoke( "true", "false" ) ).isTrue();
+		assertThat( XOR.invoke( "false", "true" ) ).isTrue();
+		assertThat( XOR.invoke( "false", "false" ) ).isFalse();
+		assertThat( XOR.invoke( "true", "true" ) ).isFalse();
 	}
 
 }

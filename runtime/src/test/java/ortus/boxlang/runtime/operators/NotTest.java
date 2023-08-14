@@ -26,7 +26,6 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class NotTest {
 
-
 	@DisplayName( "It can boolean negate a boolean" )
 	@Test
 	void testItCanCastABoolean() {
@@ -53,7 +52,7 @@ public class NotTest {
 		assertThat( Not.invoke( "yes" ) ).isFalse();
 		assertThat( Not.invoke( "no" ) ).isTrue();
 
-		assertThrows(RuntimeException.class, () -> Not.invoke( "Brad" ) );
+		assertThrows( RuntimeException.class, () -> Not.invoke( "Brad" ) );
 	}
 
 }

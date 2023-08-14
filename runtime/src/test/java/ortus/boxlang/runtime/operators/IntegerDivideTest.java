@@ -48,5 +48,4 @@ public class IntegerDivideTest {
 		assertThrows( RuntimeException.class, () -> IntegerDivide.invoke( 1, 0 ) );
 	}
 
-
 }

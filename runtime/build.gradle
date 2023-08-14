@@ -3,10 +3,12 @@ import java.util.Date
 
 
 plugins {
-    id 'java'
+    id "java"
     // Apply the application plugin to add support for building a CLI application in Java.
 	// This produces the distributions and scripts for any OS
-	id 'application'
+	id "application"
+	// For source code formatting
+	id "com.diffplug.spotless" version "6.20.0"
 }
 
 /**
@@ -37,6 +39,20 @@ dependencies {
     // This dependency is used by the application.
     //implementation 'com.google.guava:guava:31.1-jre'
 }
+
+/**
+ * Source Code Formatting
+ */
+spotless {
+    java {
+		target fileTree( "." ) {
+            include "**/*.java"
+            exclude "**/build/**", "bin/**"
+        }
+        eclipse().configFile( "../workbench/ortus-java-style.xml" )
+    }
+}
+
 
 /**
  * Influence the Java compiler
