@@ -31,12 +31,7 @@ public class XOR implements IOperator {
 		Boolean	bLeft	= BooleanCaster.cast( left );
 		Boolean	bRight	= BooleanCaster.cast( right );
 
-		if ( bLeft && !bRight ) {
-			return Boolean.TRUE;
-		} else if ( !bLeft && bRight ) {
-			return Boolean.TRUE;
-		}
-		return Boolean.FALSE;
+		return bLeft != bRight;
 	}
 
 }
