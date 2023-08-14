@@ -58,43 +58,37 @@ public class HelloWorld$cfm implements ITemplate {
 		IScope variablesScope = context.getVariablesScope();
 
 		// Case sensitive set
-		variablesScope.set( Key.of( "system" ), JavaLoader.load( context, "java.lang.System" ) );
+		variablesScope.put( Key.of( "system" ), JavaLoader.load( context, "java.lang.System" ) );
 
 		// This is a Class, or a Java proxy instance?
 		// Let's start with a direct class for now
 		Class oString = JavaLoader.load( context, "java.lang.String" );
 
-		variablesScope.set(
+		variablesScope.put(
 			// Case insensitive set
 			Key.of( "GREETING" ),
 
 			// Invoke callsite
-			Invoker.invokeConstructor( context,
-
-				// Method: De-reference String.init
-				Derefrencer.derefrence( context, oString, "init" ),
-
+			oString.invokeConstructor(
 				// Argument Values
-				new Object[] { "Hello" },
-
-				// Argument Class Types
-				new Object[] { String.class } ) );
+				new Object[] { "Hello" } ) );
 
 		if ( EqualsEquals.invoke( context, variablesScope.get( Key.of( "GREETING" ) ), "Hello" ) ) {
 
-			Invoker.invoke(
-				// Context
-				context,
+			Referencer.getAndInvoke(
+
+				// Object
+				Referencer.get( variablesScope.get( Key.of( "SYSTEM" ) ), Key.of( "OUT" ) ),
 
 				// Method
-				Derefrencer.derefrence( context,
-					Derefrencer.derefrence( context, variablesScope.get( Key.of( "system" ) ), "out" ), "println" ),
+				"println",
 
-				// Argument Values
-				new Object[] { Concat.invoke( context, context.scopeFind( Key.of( "GREETING" ) ), " world" ) },
+				// Arguments
+				new Object[] {
 
-				// Argument Type Classes
-				new Object[] { String.class } );
+					Concat.invoke( context, context.scopeFindLOcal( Key.of( "GREETING" ) ), " world" )
+
+				} );
 
 		}
 
