@@ -47,7 +47,7 @@ public interface IReferenceable {
 	public Object dereferenceAndInvoke( Key name, Object[] arguments ) throws KeyNotFoundException;
 
 	/**
-	 * Safely derefernce this object by a key and return the value, or null if not found
+	 * Safely dereference this object by a key and return the value, or null if not found
 	 *
 	 * @return The requested object or null
 	 */

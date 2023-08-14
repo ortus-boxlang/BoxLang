@@ -602,9 +602,9 @@ public class ClassInvoker implements IReferenceable {
 
 	/**
 	 * Unwrap an object if it's inside a ClassInvoker instance
-	 * 
+	 *
 	 * @param param
-	 * 
+	 *
 	 * @return
 	 */
 	public static Object unWrap( Object param ) {
@@ -622,9 +622,9 @@ public class ClassInvoker implements IReferenceable {
 
 	/**
 	 * Unwrap any ClassInvoker instances in the arguments
-	 * 
+	 *
 	 * @param arguments
-	 * 
+	 *
 	 * @return
 	 */
 	void unWrapArguments( Object[] arguments ) {
@@ -663,7 +663,7 @@ public class ClassInvoker implements IReferenceable {
 	 */
 
 	/**
-	 * Derefernce this object by a key and return the value, or throw exception
+	 * Dereference this object by a key and return the value, or throw exception
 	 *
 	 * @return The requested obect
 	 */
@@ -706,7 +706,7 @@ public class ClassInvoker implements IReferenceable {
 	}
 
 	/**
-	 * Safely derefernce this object by a key and return the value, or null if not found
+	 * Safely dereference this object by a key and return the value, or null if not found
 	 *
 	 * @return The requested object or null
 	 */

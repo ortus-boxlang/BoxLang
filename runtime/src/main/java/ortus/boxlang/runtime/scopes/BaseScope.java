@@ -105,7 +105,7 @@ public class BaseScope extends Struct implements IScope {
 	}
 
 	/**
-	 * Derefernce this object by a key and return the value, or throw exception
+	 * Dereference this object by a key and return the value, or throw exception
 	 *
 	 * @return The requested obect
 	 */

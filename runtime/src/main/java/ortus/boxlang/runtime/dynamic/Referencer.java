@@ -26,7 +26,7 @@ import ortus.boxlang.runtime.interop.ClassInvoker;
 public class Referencer {
 
 	/**
-	 * Used to implement any time an object is derefernced,
+	 * Used to implement any time an object is dereferenced,
 	 *
 	 * @param object
 	 * @param key
@@ -52,7 +52,7 @@ public class Referencer {
 	}
 
 	/**
-	 * Used to implement any time an object is derefernced,
+	 * Used to implement any time an object is dereferenced,
 	 *
 	 * @param object
 	 * @param key

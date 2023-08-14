@@ -166,7 +166,7 @@ public class Struct extends ConcurrentHashMap<Key, Object> implements IType, IRe
 	}
 
 	/**
-	 * Derefernce this object by a key and return the value, or throw exception
+	 * Dereference this object by a key and return the value, or throw exception
 	 *
 	 * @return The requested obect
 	 */
@@ -187,7 +187,7 @@ public class Struct extends ConcurrentHashMap<Key, Object> implements IType, IRe
 	}
 
 	/**
-	 * Safely derefernce this object by a key and return the value, or null if not found
+	 * Safely dereference this object by a key and return the value, or null if not found
 	 *
 	 * @return The requested object or null
 	 */
