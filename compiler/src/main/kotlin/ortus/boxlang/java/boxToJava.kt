@@ -255,21 +255,6 @@ fun BoxAssignment.toJava(): ExpressionStmt {
 			)
 		}
 	)
-
-//	return ExpressionStmt(
-//		if (assignmentLeftExpression is FieldAccessExpr && assignmentLeftExpression.scope is ScopeNameExpr) {
-//			(assignmentLeftExpression.scope as ScopeNameExpr).constructSetExpression(
-//				assignmentLeftExpression.name.identifier,
-//				assignmentRightExpression
-//			)
-//		} else {
-//			AssignExpr(
-//				assignmentLeftExpression,
-//				assignmentRightExpression,
-//				AssignExpr.Operator.ASSIGN
-//			)
-//		}
-//	)
 }
 
 fun BoxIfStatement.toJava(): IfStmt = IfStmt(
