@@ -28,7 +28,7 @@ public class Not implements IOperator {
 	/**
 	 * @return The result
 	 */
-	static Boolean invoke( Object object ) {
+	public static Boolean invoke( Object object ) {
 		return !BooleanCaster.cast( object );
 	}
 

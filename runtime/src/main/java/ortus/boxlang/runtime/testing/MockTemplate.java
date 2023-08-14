@@ -22,9 +22,10 @@ import ortus.boxlang.runtime.context.IBoxContext;
 // BoxLang Auto Imports
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.dynamic.BaseTemplate;
+import ortus.boxlang.runtime.dynamic.Referencer;
 import ortus.boxlang.runtime.interop.ClassInvoker;
 import ortus.boxlang.runtime.loader.ClassLocator;
-import ortus.boxlang.runtime.scopes.Key;
+import ortus.boxlang.runtime.operators.*;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.IScope;
 
@@ -58,8 +59,7 @@ public class MockTemplate extends BaseTemplate {
 		return instance;
 	}
 
-	@Override
-	public void invoke( IBoxContext context ) throws Exception {
+	public void invoke2( IBoxContext context ) throws Exception {
 		IScope variablesScope = context.getScopeLocal( Key.of( "variables" ) );
 
 		// I can store variables in the context
@@ -70,6 +70,57 @@ public class MockTemplate extends BaseTemplate {
 		System.out.println( "MockTemplate invoked, woot woot!" );
 	}
 
+	@Override
+	public void invoke( IBoxContext context ) throws Throwable {
+		// Reference to the variables scope
+		IScope variablesScope = context.getScopeLocal( Key.of( "variables" ) );
+
+		// Case sensitive set
+		variablesScope.put( Key.of( "system" ), ClassLocator.getInstance().load( context, "java.lang.System" ) );
+
+		// Every class (box|java) is represented as a ClassInvoker
+		ClassInvoker oString = ClassLocator.getInstance().load( context, "java.lang.String" );
+
+		variablesScope.put(
+		        // Case insensitive set
+		        Key.of( "GREETING" ),
+
+		        // Invoke callsite
+		        oString.invokeConstructor(
+		                // Argument Values
+		                new Object[] { "Hello" }
+		        )
+		);
+
+		if ( EqualsEquals.invoke( variablesScope.get( Key.of( "GREETING" ) ), "Hello" ) ) {
+
+			Referencer.getAndInvoke(
+
+			        // Object
+			        Referencer.get(
+			                variablesScope.get( Key.of( "SYSTEM" ) ),
+			                Key.of( "out" )
+			        ),
+
+			        // Method
+			        Key.of( "println" ),
+
+			        // Arguments
+			        new Object[] {
+
+			                Concat.invoke(
+			                        context.scopeFindLocal( Key.of( "GREETING" ) ),
+			                        " world"
+			                )
+
+					}
+
+			);
+
+		}
+
+	}
+
 	public static void main( String[] args ) {
 		// This is the main method, it will be invoked when the template is executed
 		// You can use this
@@ -78,7 +129,7 @@ public class MockTemplate extends BaseTemplate {
 
 		try {
 			BoxRuntime.getInstance().executeTemplate( "" );
-		} catch ( Exception e ) {
+		} catch ( Throwable e ) {
 			e.printStackTrace();
 			System.exit( 1 );
 		}

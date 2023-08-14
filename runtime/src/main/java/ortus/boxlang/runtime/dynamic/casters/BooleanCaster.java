@@ -17,6 +17,8 @@
  */
 package ortus.boxlang.runtime.dynamic.casters;
 
+import ortus.boxlang.runtime.interop.ClassInvoker;
+
 /**
  * I handle casting anything to a boolean
  */
@@ -28,7 +30,7 @@ public class BooleanCaster {
 	 * was successfull, or can be interogated to proceed otherwise.
 	 *
 	 * @param value The value to cast to a boolean
-	 * 
+	 *
 	 * @return The boolean value
 	 */
 	public static CastAttempt<Boolean> attempt( Object object ) {
@@ -39,7 +41,7 @@ public class BooleanCaster {
 	 * Used to cast anything to a boolean, throwing exception if we fail
 	 *
 	 * @param value The value to cast to a boolean
-	 * 
+	 *
 	 * @return The boolean value
 	 */
 	public static Boolean cast( Object object ) {
@@ -51,13 +53,16 @@ public class BooleanCaster {
 	 *
 	 * @param value The value to cast to a boolean
 	 * @param fail  True to throw exception when failing.
-	 * 
+	 *
 	 * @return The boolean value, or null when cannot be cast
 	 */
 	public static Boolean cast( Object object, Boolean fail ) {
 		if ( object == null ) {
 			return false;
 		}
+
+		object = ClassInvoker.unWrap( object );
+
 		if ( object instanceof Boolean ) {
 			return ( Boolean ) object;
 		}

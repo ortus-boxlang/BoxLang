@@ -27,7 +27,7 @@ public class Increment implements IOperator {
 	/**
 	 * @return The the sum
 	 */
-	static Double invoke( Object object ) {
+	public static Double invoke( Object object ) {
 		return DoubleCaster.cast( object ) + 1;
 	}
 

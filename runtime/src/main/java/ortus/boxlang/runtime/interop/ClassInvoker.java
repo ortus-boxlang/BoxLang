@@ -17,6 +17,10 @@
  */
 package ortus.boxlang.runtime.interop;
 
+import ortus.boxlang.runtime.dynamic.IReferenceable;
+import ortus.boxlang.runtime.types.exceptions.KeyNotFoundException;
+import ortus.boxlang.runtime.scopes.Key;
+
 import java.lang.invoke.CallSite;
 import java.lang.invoke.ConstantCallSite;
 import java.lang.invoke.MethodHandle;
@@ -43,7 +47,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * To create a new class invoker you can use the following:
  *
  * <pre>{@code
- * 
+ *
  * ClassInvoker target = new ClassInvoker( String.class );
  * ClassInvoker target = ClassInvoker.of( String.class );
  * ClassInvoker target = new ClassInvoker( new String() );
@@ -59,7 +63,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * TODO:
  * [ ] - Set public fields
  */
-public class ClassInvoker {
+public class ClassInvoker implements IReferenceable {
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -246,6 +250,8 @@ public class ClassInvoker {
 			throw new IllegalStateException( "Cannot invoke a constructor on an interface" );
 		}
 
+		// Unwrap any ClassInvoker instances
+		unWrapArguments( args );
 		// Method signature for a constructor is void (Object...)
 		MethodType		constructorType		= MethodType.methodType( void.class, argumentsToClasses( args ) );
 		// Define the bootstrap method
@@ -281,11 +287,14 @@ public class ClassInvoker {
 			throw new IllegalArgumentException( "Method name cannot be null or empty." );
 		}
 
+		// Unwrap any ClassInvoker instances
+		unWrapArguments( arguments );
+
 		// Get the invoke dynamic method handle from our cache and discovery techniques
 		MethodRecord methodRecord = getMethodHandle( methodName, argumentsToClasses( arguments ) );
 
 		// If it's not static, we need a target instance
-		if ( Boolean.FALSE.equals( methodRecord.isStatic() ) && this.targetInstance == null ) {
+		if ( Boolean.FALSE.equals( methodRecord.isStatic() ) && !hasInstance() ) {
 			throw new IllegalStateException(
 			        "You can't call invoke on a null target instance. Use [invokeStatic] instead or set the target instance manually or via the constructor."
 			);
@@ -316,6 +325,9 @@ public class ClassInvoker {
 			throw new IllegalArgumentException( "Method name cannot be null or empty." );
 		}
 
+		// Unwrap any ClassInvoker instances
+		unWrapArguments( arguments );
+
 		// Discover and Execute it baby!
 		return Optional.ofNullable(
 		        getMethodHandle( methodName, argumentsToClasses( arguments ) )
@@ -341,7 +353,7 @@ public class ClassInvoker {
 		Boolean			isStatic	= Modifier.isStatic( field.getModifiers() );
 
 		// If it's not static, we need a target instance
-		if ( Boolean.FALSE.equals( isStatic ) && this.targetInstance == null ) {
+		if ( Boolean.FALSE.equals( isStatic ) && !hasInstance() ) {
 			throw new IllegalStateException(
 			        "You are trying to get a public field but there is not instance set on the invoker, please make sure the [invokeConstructor] has been called."
 			);
@@ -360,7 +372,7 @@ public class ClassInvoker {
 		Boolean			isStatic	= Modifier.isStatic( field.getModifiers() );
 
 		// If it's not static, we need a target instance, verify it's not null
-		if ( Boolean.FALSE.equals( isStatic ) && this.targetInstance == null ) {
+		if ( Boolean.FALSE.equals( isStatic ) && !hasInstance() ) {
 			throw new IllegalStateException(
 			        "You are trying to set a public field but there is not instance set on the invoker, please make sure the [invokeConstructor] has been called."
 			);
@@ -589,6 +601,39 @@ public class ClassInvoker {
 	}
 
 	/**
+	 * Unwrap an object if it's inside a ClassInvoker instance
+	 * 
+	 * @param param
+	 * 
+	 * @return
+	 */
+	public static Object unWrap( Object param ) {
+		if ( param instanceof ClassInvoker ) {
+			ClassInvoker invoker = ( ClassInvoker ) param;
+			if ( invoker.hasInstance() ) {
+				return invoker.getTargetInstance();
+			} else {
+				return invoker.getTargetClass();
+			}
+		} else {
+			return param;
+		}
+	}
+
+	/**
+	 * Unwrap any ClassInvoker instances in the arguments
+	 * 
+	 * @param arguments
+	 * 
+	 * @return
+	 */
+	void unWrapArguments( Object[] arguments ) {
+		for ( int j = 0; j < arguments.length; j++ ) {
+			arguments[ j ] = unWrap( arguments[ j ] );
+		}
+	}
+
+	/**
 	 * This immutable record represents an executable method handle and it's metadata.
 	 * This record is the one that is cached in the {@link ClassInvoker#methodCache} map.
 	 *
@@ -605,5 +650,84 @@ public class ClassInvoker {
 	        boolean isStatic,
 	        int argumentCount ) {
 		// A beautiful java record of our method handle
+	}
+
+	public Boolean hasInstance() {
+		return this.targetInstance != null;
+	}
+
+	/**
+	 * --------------------------------------------------------------------------
+	 * Implementation of IReferencable
+	 * --------------------------------------------------------------------------
+	 */
+
+	/**
+	 * Derefernce this object by a key and return the value, or throw exception
+	 *
+	 * @return The requested obect
+	 */
+	public Object dereference( Key name ) throws KeyNotFoundException {
+		try {
+			Optional<Object> result = getField( name.getName() );
+
+			// Handle full null support
+			if ( result.isPresent() ) {
+				return result.get();
+			}
+		} catch ( Throwable e ) {
+			throw new RuntimeException( e );
+		}
+
+		// Field not found anywhere
+		if ( hasInstance() ) {
+			throw new KeyNotFoundException(
+			        String.format( "The instance [%s] has no public field [%s].", getTargetInstance().getClass().getName(),
+			                name.getName() )
+			);
+		} else {
+			throw new KeyNotFoundException(
+			        String.format( "The class [%s] has no static field [%s].", getTargetClass().getName(), name.getName() )
+			);
+		}
+	}
+
+	/**
+	 * Dereference this object by a key and invoke the result as an invokable (UDF, java method)
+	 *
+	 * @return The requested object
+	 */
+	public Object dereferenceAndInvoke( Key name, Object[] arguments ) throws KeyNotFoundException {
+		try {
+			return invoke( name.getName(), arguments ).orElse( null );
+		} catch ( Throwable e ) {
+			throw new RuntimeException( e );
+		}
+	}
+
+	/**
+	 * Safely derefernce this object by a key and return the value, or null if not found
+	 *
+	 * @return The requested object or null
+	 */
+	public Object safeDereference( Key name ) {
+		try {
+			return getField( name.getName() ).orElse( null );
+		} catch ( Throwable e ) {
+			throw new RuntimeException( e );
+		}
+	}
+
+	/**
+	 * Assign a value to a field
+	 *
+	 * @return The requested scope
+	 */
+	public void assign( Key name, Object value ) {
+		try {
+			setField( name.getName(), value );
+		} catch ( Throwable e ) {
+			throw new RuntimeException( e );
+		}
 	}
 }

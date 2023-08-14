@@ -42,7 +42,11 @@ public class BoxRunner {
 		// Get a runtime going
 		BoxRuntime.startup();
 
-		BoxRuntime.getInstance().executeTemplate( options.templatePath() );
+		try {
+			BoxRuntime.getInstance().executeTemplate( options.templatePath() );
+		} catch ( Throwable e ) {
+			throw new RuntimeException( e );
+		}
 
 		// Bye bye! Ciao Bella!
 		BoxRuntime.shutdown();

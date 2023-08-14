@@ -27,7 +27,7 @@ public class Plus implements IOperator {
 	/**
 	 * @return The the sum
 	 */
-	static Double invoke( Object left, Object right ) {
+	public static Double invoke( Object left, Object right ) {
 		return DoubleCaster.cast( left ) + DoubleCaster.cast( right );
 	}
 

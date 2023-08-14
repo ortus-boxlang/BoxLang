@@ -26,7 +26,7 @@ public class GreaterThan implements IOperator {
 	/**
 	 * @return True if left is greater than right
 	 */
-	static Boolean invoke( Object left, Object right ) {
+	public static Boolean invoke( Object left, Object right ) {
 		return Compare.invoke( left, right ) > 0;
 	}
 

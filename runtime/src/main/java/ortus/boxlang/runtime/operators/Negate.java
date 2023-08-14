@@ -28,7 +28,7 @@ public class Negate implements IOperator {
 	/**
 	 * @return The result
 	 */
-	static Double invoke( Object object ) {
+	public static Double invoke( Object object ) {
 		return -DoubleCaster.cast( object );
 	}
 

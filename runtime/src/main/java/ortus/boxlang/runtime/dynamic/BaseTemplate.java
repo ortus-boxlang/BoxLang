@@ -56,7 +56,7 @@ public class BaseTemplate {
 	 *
 	 * @param context The context to invoke the template with
 	 */
-	public void invoke( IBoxContext context ) throws Exception {
+	public void invoke( IBoxContext context ) throws Throwable {
 		throw new UnsupportedOperationException( "This method must be overridden as a static method." );
 	}
 }

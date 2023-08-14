@@ -27,7 +27,7 @@ public class XOR implements IOperator {
 	/**
 	 * @return The result
 	 */
-	static Boolean invoke( Object left, Object right ) {
+	public static Boolean invoke( Object left, Object right ) {
 		Boolean	bLeft	= BooleanCaster.cast( left );
 		Boolean	bRight	= BooleanCaster.cast( right );
 

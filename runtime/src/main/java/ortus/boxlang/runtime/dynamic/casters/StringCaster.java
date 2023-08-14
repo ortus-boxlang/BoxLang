@@ -20,6 +20,8 @@ package ortus.boxlang.runtime.dynamic.casters;
 import java.math.BigDecimal;
 import java.text.DecimalFormat;
 
+import ortus.boxlang.runtime.interop.ClassInvoker;
+
 /**
  * I handle casting anything to a string
  */
@@ -31,7 +33,7 @@ public class StringCaster {
 	 * was successfull, or can be interogated to proceed otherwise.
 	 *
 	 * @param value The value to cast to a string
-	 * 
+	 *
 	 * @return The string value
 	 */
 	public static CastAttempt<String> attempt( Object object ) {
@@ -42,7 +44,7 @@ public class StringCaster {
 	 * Used to cast anything to a string, throwing exception if we fail
 	 *
 	 * @param value The value to cast to a string
-	 * 
+	 *
 	 * @return The string value
 	 */
 	public static String cast( Object object ) {
@@ -54,13 +56,15 @@ public class StringCaster {
 	 *
 	 * @param value The value to cast to a string
 	 * @param fail  True to throw exception when failing.
-	 * 
+	 *
 	 * @return The String value
 	 */
 	public static String cast( Object object, Boolean fail ) {
 		if ( object == null ) {
 			return "";
 		}
+		object = ClassInvoker.unWrap( object );
+
 		if ( object instanceof BigDecimal || object instanceof Float ) {
 			String result = object.toString();
 			if ( result.endsWith( ".0" ) ) {

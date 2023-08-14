@@ -27,7 +27,7 @@ public class Power implements IOperator {
 	/**
 	 * @return The the result
 	 */
-	static Double invoke( Object left, Object right ) {
+	public static Double invoke( Object left, Object right ) {
 		return Math.pow( DoubleCaster.cast( left ), DoubleCaster.cast( right ) );
 	}
 

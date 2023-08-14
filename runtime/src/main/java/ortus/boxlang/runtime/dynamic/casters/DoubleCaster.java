@@ -17,6 +17,8 @@
  */
 package ortus.boxlang.runtime.dynamic.casters;
 
+import ortus.boxlang.runtime.interop.ClassInvoker;
+
 /**
  * I handle casting anything to a Double
  */
@@ -28,7 +30,7 @@ public class DoubleCaster {
 	 * was successfull, or can be interogated to proceed otherwise.
 	 *
 	 * @param value The value to cast to a Double
-	 * 
+	 *
 	 * @return The Double value
 	 */
 	public static CastAttempt<Double> attempt( Object object ) {
@@ -39,7 +41,7 @@ public class DoubleCaster {
 	 * Used to cast anything to a Double, throwing exception if we fail
 	 *
 	 * @param value The value to cast to a Double
-	 * 
+	 *
 	 * @return The Double value
 	 */
 	public static Double cast( Object object ) {
@@ -50,13 +52,16 @@ public class DoubleCaster {
 	 * Used to cast anything to a double
 	 *
 	 * @param value The value to cast to a double
-	 * 
+	 *
 	 * @return The double value
 	 */
 	public static Double cast( Object object, Boolean fail ) {
 		if ( object == null ) {
 			return Double.valueOf( 0 );
 		}
+
+		object = ClassInvoker.unWrap( object );
+
 		if ( object instanceof Double ) {
 			return ( Double ) object;
 		}

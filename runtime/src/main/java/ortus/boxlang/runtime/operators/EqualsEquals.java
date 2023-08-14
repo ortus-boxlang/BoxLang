@@ -26,7 +26,7 @@ public class EqualsEquals implements IOperator {
 	/**
 	 * @return True if operands are the equal
 	 */
-	static Boolean invoke( Object left, Object right ) {
+	public static Boolean invoke( Object left, Object right ) {
 		return Compare.invoke( left, right ) == 0;
 	}
 

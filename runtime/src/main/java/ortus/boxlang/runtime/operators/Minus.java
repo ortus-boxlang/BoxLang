@@ -27,7 +27,7 @@ public class Minus implements IOperator {
 	/**
 	 * @return The the result
 	 */
-	static Double invoke( Object left, Object right ) {
+	public static Double invoke( Object left, Object right ) {
 		return DoubleCaster.cast( left ) - DoubleCaster.cast( right );
 	}
 

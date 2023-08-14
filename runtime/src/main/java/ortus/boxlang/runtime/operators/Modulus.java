@@ -27,7 +27,7 @@ public class Modulus implements IOperator {
 	/**
 	 * @return The the result
 	 */
-	static Double invoke( Object left, Object right ) {
+	public static Double invoke( Object left, Object right ) {
 		Double dRight = DoubleCaster.cast( right );
 		if ( dRight == 0 ) {
 			throw new RuntimeException( "You cannot divide by zero." );

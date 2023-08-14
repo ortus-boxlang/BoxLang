@@ -27,7 +27,7 @@ public class Concat implements IOperator {
 	/**
 	 * @return The two strings conctenated
 	 */
-	static String invoke( Object left, Object right ) {
+	public static String invoke( Object left, Object right ) {
 		return ( StringCaster.cast( left ) ).concat( StringCaster.cast( right ) );
 	}
 

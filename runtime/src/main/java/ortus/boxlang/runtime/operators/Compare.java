@@ -17,13 +17,15 @@
  */
 package ortus.boxlang.runtime.operators;
 
+import ortus.boxlang.runtime.interop.ClassInvoker;
+
 /**
  * Performs EQ, GT, and LT comparisons
  * Compares numbers as numbers, compares strings case insensitive
  */
 public class Compare implements IOperator {
 
-	static int invoke( Object left, Object right ) {
+	public static int invoke( Object left, Object right ) {
 		return invoke( left, right, false );
 	}
 
@@ -31,7 +33,9 @@ public class Compare implements IOperator {
 	 * @return 1 if greater than, -1 if less than, = if equal
 	 */
 	@SuppressWarnings( "unchecked" )
-	static int invoke( Object left, Object right, Boolean caseSensitive ) {
+	public static int invoke( Object left, Object right, Boolean caseSensitive ) {
+		left	= ClassInvoker.unWrap( left );
+		right	= ClassInvoker.unWrap( right );
 
 		if ( left == null ) {
 			left = "";

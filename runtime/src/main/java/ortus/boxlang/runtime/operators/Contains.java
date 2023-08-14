@@ -27,7 +27,7 @@ public class Contains implements IOperator {
 	/**
 	 * @return true if right is contained within left case insensitive
 	 */
-	static Boolean invoke( Object left, Object right ) {
+	public static Boolean invoke( Object left, Object right ) {
 
 		if ( left == null || right == null ) {
 			return false;

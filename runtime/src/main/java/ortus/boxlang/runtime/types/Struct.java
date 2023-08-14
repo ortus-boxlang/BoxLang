@@ -170,7 +170,7 @@ public class Struct extends ConcurrentHashMap<Key, Object> implements IType, IRe
 	 *
 	 * @return The requested obect
 	 */
-	public Object __dereference( Key name ) throws KeyNotFoundException {
+	public Object dereference( Key name ) throws KeyNotFoundException {
 		return get( name );
 	}
 
@@ -179,8 +179,8 @@ public class Struct extends ConcurrentHashMap<Key, Object> implements IType, IRe
 	 *
 	 * @return The requested object
 	 */
-	public Object __dereferenceAndInvoke( Key name ) throws KeyNotFoundException {
-		Object object = __dereference( name );
+	public Object dereferenceAndInvoke( Key name, Object[] arguments ) throws KeyNotFoundException {
+		Object object = dereference( name );
 		// Test if the object is invokable (a UDF or java call site) and invoke it or throw exception if not invokable
 		// Ideally, the invoker logic is not here, but in a helper
 		throw new RuntimeException( "not implemeneted yet" );
@@ -191,7 +191,7 @@ public class Struct extends ConcurrentHashMap<Key, Object> implements IType, IRe
 	 *
 	 * @return The requested object or null
 	 */
-	public Object __safeDereference( Key name ) {
+	public Object safeDereference( Key name ) {
 		return super.get( name );
 	}
 
@@ -201,7 +201,7 @@ public class Struct extends ConcurrentHashMap<Key, Object> implements IType, IRe
 	 *
 	 * @return The requested scope
 	 */
-	public void __assign( Key name, Object value ) {
+	public void assign( Key name, Object value ) {
 		put( name, value );
 	}
 }
