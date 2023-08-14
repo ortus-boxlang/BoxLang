@@ -18,23 +18,46 @@
 package ortus.boxlang.runtime.loader;
 
 import org.junit.Ignore;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import static com.google.common.truth.Truth.assertThat;
 
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
+import ortus.boxlang.runtime.context.TemplateBoxContext;
+import ortus.boxlang.runtime.interop.ClassInvoker;
+
+import static com.google.common.truth.Truth.assertThat;
 
 public class ClassLocatorTest {
 
+	@DisplayName( "It can load native Java classes" )
 	@Test
-	public void tester() {
-		ClassLocator	cl	= ClassLocator.getInstance( "" );
-		ConcurrentMap	map	= new ConcurrentHashMap();
+	public void testCanLoadJavaClasses() throws Throwable {
+		ClassLocator	locator		= ClassLocator.getInstance( "" );
+		String			targetClass	= "java.lang.String";
 
-		map.put( "test", "test" );
-		map.put( "hello", "t" );
+		locator.clear();
+		assertThat( locator.size() ).isEqualTo( 0 );
 
-		System.out.println( map.keySet() );
+		ClassInvoker target = locator.load( new TemplateBoxContext(), targetClass );
+		target.invokeConstructor( "Hola ClassLoader" );
+		assertThat( target.getTargetInstance() ).isEqualTo( "Hola ClassLoader" );
+
+		assertThat( target ).isNotNull();
+		assertThat( target.getTargetClass() ).isEqualTo( String.class );
+		assertThat( locator.size() ).isEqualTo( 1 );
+		assertThat( locator.hasClass( targetClass ) ).isTrue();
+		assertThat( locator.classSet() ).containsAnyIn( new Object[] { targetClass } );
+	}
+
+	@DisplayName( "It can work with the resolver cache" )
+	@Test
+	public void testCanWorkWithTheResolverCache() throws ClassNotFoundException {
+		ClassLocator	locator		= ClassLocator.getInstance( "" );
+		String			targetClass	= "java.lang.String";
+
+		assertThat( locator.getResolverCache().size() ).isEqualTo( 0 );
+		assertThat( locator.size() ).isEqualTo( 0 );
+		assertThat( locator.hasClass( targetClass ) ).isFalse();
+		assertThat( locator.isEmpty() ).isTrue();
 	}
 
 }

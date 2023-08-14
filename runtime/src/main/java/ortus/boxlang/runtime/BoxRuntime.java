@@ -123,7 +123,7 @@ public class BoxRuntime {
 	/**
 	 * Execute a single template in its own context
 	 */
-	public void executeTemplate( String templatePath ) {
+	public void executeTemplate( String templatePath ) throws Exception {
 
 		// Build out the execution context for this execution and bind it to the incoming template
 		IBoxContext context = new TemplateBoxContext( templatePath );

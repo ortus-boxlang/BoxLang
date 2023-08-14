@@ -17,6 +17,7 @@
  */
 package ortus.boxlang.runtime.testing;
 
+import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.IBoxContext;
 // BoxLang Auto Imports
 import ortus.boxlang.runtime.context.IBoxContext;
@@ -58,12 +59,31 @@ public class MockTemplate extends BaseTemplate {
 	}
 
 	@Override
-	public void invoke( IBoxContext context ) {
+	public void invoke( IBoxContext context ) throws Exception {
+		IScope variablesScope = context.getScopeLocal( Key.of( "variables" ) );
 
 		// I can store variables in the context
-		context.getScopeLocal( Key.of( "variables" ) ).put( Key.of( "MockTemplate" ), "Yea baby!!" );
+		variablesScope.put( Key.of( "MockTemplate" ), "Yea baby!!" );
+		// Case sensitive set
+		variablesScope.put( Key.of( "system" ), ClassLocator.getInstance().load( context, "java.lang.System" ) );
 
 		System.out.println( "MockTemplate invoked, woot woot!" );
 	}
 
+	public static void main( String[] args ) {
+		// This is the main method, it will be invoked when the template is executed
+		// You can use this
+		// Get a runtime going
+		BoxRuntime.startup();
+
+		try {
+			BoxRuntime.getInstance().executeTemplate( "" );
+		} catch ( Exception e ) {
+			e.printStackTrace();
+			System.exit( 1 );
+		}
+
+		// Bye bye! Ciao Bella!
+		BoxRuntime.shutdown();
+	}
 }
