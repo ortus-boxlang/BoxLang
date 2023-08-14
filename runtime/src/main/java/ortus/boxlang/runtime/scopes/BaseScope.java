@@ -133,7 +133,7 @@ public class BaseScope extends Struct implements IScope {
 		// Test if the object is invokable (a UDF or java call site) and invoke it or throw exception if not invokable
 		// Also handle member functions on scopes, taking into account precedent over name collisions
 		// Ideally, the invoker logic is not here, but in a helper
-		throw new RuntimeException( "not implemeneted yet" );
+		throw new RuntimeException( "not implemented yet" );
 	}
 
 	/**

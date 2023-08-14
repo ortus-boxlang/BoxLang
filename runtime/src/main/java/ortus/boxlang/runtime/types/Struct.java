@@ -183,7 +183,7 @@ public class Struct extends ConcurrentHashMap<Key, Object> implements IType, IRe
 		Object object = dereference( name );
 		// Test if the object is invokable (a UDF or java call site) and invoke it or throw exception if not invokable
 		// Ideally, the invoker logic is not here, but in a helper
-		throw new RuntimeException( "not implemeneted yet" );
+		throw new RuntimeException( "not implemented yet" );
 	}
 
 	/**
