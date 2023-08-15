@@ -37,6 +37,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Stream;
 
 /**
  * This class is used to represent a BX/Java Class and invoke methods on classes using invoke dynamic.
@@ -337,6 +338,12 @@ public class ClassInvoker implements IReferenceable {
 	}
 
 	/**
+	 * --------------------------------------------------------------------------
+	 * Field Methods
+	 * --------------------------------------------------------------------------
+	 */
+
+	/**
 	 * Get the value of a public or public static field on a class or instance
 	 *
 	 * @param fieldName The name of the field to get
@@ -366,6 +373,33 @@ public class ClassInvoker implements IReferenceable {
 		);
 	}
 
+	/**
+	 * Get the value of a public or public static field on a class or instance but if it doesn't exist
+	 * return the default value passed in.
+	 *
+	 * @param fieldName    The name of the field to get
+	 * @param defaultValue The default value to return if the field doesn't exist
+	 *
+	 * @return The value of the field or the default value wrapped in an Optional
+	 */
+	public Optional<Object> getField( String fieldName, Object defaultValue ) throws Throwable {
+		try {
+			return getField( fieldName );
+		} catch ( NoSuchFieldException | IllegalStateException e ) {
+			return Optional.ofNullable( defaultValue );
+		}
+	}
+
+	/**
+	 * Set the value of a public or public static field on a class or instance
+	 *
+	 * @param fieldName The name of the field to set
+	 * @param value     The value to set the field to
+	 *
+	 * @return The class invoker
+	 *
+	 * @throws IllegalStateException If the field is not static and the target instance is null
+	 */
 	public ClassInvoker setField( String fieldName, Object value ) throws Throwable {
 		Field			field		= this.targetClass.getField( fieldName );
 		MethodHandle	fieldHandle	= METHOD_LOOKUP.unreflectSetter( field );
@@ -389,20 +423,59 @@ public class ClassInvoker implements IReferenceable {
 	}
 
 	/**
-	 * Get the value of a public or public static field on a class or instance but if it doesn't exist
-	 * return the default value passed in.
+	 * Verifies if the class has a public or public static field with the given name
 	 *
-	 * @param fieldName    The name of the field to get
-	 * @param defaultValue The default value to return if the field doesn't exist
+	 * @param fieldName The name of the field to check
 	 *
-	 * @return The value of the field or the default value wrapped in an Optional
+	 * @return True if the field exists, false otherwise
 	 */
-	public Optional<Object> getField( String fieldName, Object defaultValue ) throws Throwable {
-		try {
-			return getField( fieldName );
-		} catch ( NoSuchFieldException | IllegalStateException e ) {
-			return Optional.ofNullable( defaultValue );
-		}
+	public Boolean hasField( String fieldName ) {
+		return getFieldNames().contains( fieldName );
+	}
+
+	/**
+	 * Verifies if the class has a public or public static field with the given name and no case-sensitivity (upper case)
+	 *
+	 * @param fieldName The name of the field to check
+	 *
+	 * @return True if the field exists, false otherwise
+	 */
+	public Boolean hasFieldNoCase( String fieldName ) {
+		return getFieldNamesNoCase().contains( fieldName.toUpperCase() );
+	}
+
+	/**
+	 * Get an array of fields of all the public fields for the given class
+	 *
+	 * @return The fields in the class
+	 */
+	public Field[] getFields() {
+		return this.targetClass.getFields();
+	}
+
+	/**
+	 * Get a list of field names for the given class with case-sensitivity
+	 *
+	 * @return A list of field names
+	 */
+	public List<String> getFieldNames() {
+		return Stream.of( getFields() )
+		        .map( Field::getName )
+		        .toList();
+
+	}
+
+	/**
+	 * Get a list of field names for the given class with no case-sensitivity (upper case)
+	 *
+	 * @return A list of field names
+	 */
+	public List<String> getFieldNamesNoCase() {
+		return Stream.of( getFields() )
+		        .map( Field::getName )
+		        .map( String::toUpperCase )
+		        .toList();
+
 	}
 
 	/**
@@ -535,7 +608,7 @@ public class ClassInvoker implements IReferenceable {
 	 *
 	 * @return A unique set of callable methods
 	 */
-	private Set<Method> getCallableMethods() {
+	public Set<Method> getCallableMethods() {
 		Set<Method> allMethods = new HashSet<>();
 		allMethods.addAll( new HashSet<>( List.of( this.targetClass.getMethods() ) ) );
 		allMethods.addAll( new HashSet<>( List.of( this.targetClass.getDeclaredMethods() ) ) );
@@ -603,9 +676,9 @@ public class ClassInvoker implements IReferenceable {
 	/**
 	 * Unwrap an object if it's inside a ClassInvoker instance
 	 *
-	 * @param param
+	 * @param param The object to unwrap
 	 *
-	 * @return
+	 * @return The target instance or class, depending which one is set
 	 */
 	public static Object unWrap( Object param ) {
 		if ( param instanceof ClassInvoker ) {
@@ -652,6 +725,11 @@ public class ClassInvoker implements IReferenceable {
 		// A beautiful java record of our method handle
 	}
 
+	/**
+	 * Verifies if the class invoker has an instance or not
+	 *
+	 * @return True if it has an instance, false otherwise
+	 */
 	public Boolean hasInstance() {
 		return this.targetInstance != null;
 	}

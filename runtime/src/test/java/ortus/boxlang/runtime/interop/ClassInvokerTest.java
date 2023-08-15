@@ -20,10 +20,13 @@ package ortus.boxlang.runtime.interop;
 import ortus.boxlang.runtime.types.IType;
 
 import java.lang.String;
+import java.lang.reflect.Field;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.time.Duration;
 
 import TestCases.interop.InvokeDynamicFields;
@@ -178,6 +181,58 @@ public class ClassInvokerTest {
 		myInvoker.setField( "name", "Hola Tests" );
 
 		assertThat( myInvoker.getField( "name" ).get() ).isEqualTo( "Hola Tests" );
+	}
+
+	@DisplayName( "It can get all the fields of a class" )
+	@Test
+	void testItCanGetAllFields() throws Throwable {
+		ClassInvoker	myInvoker	= ClassInvoker.of( InvokeDynamicFields.class );
+		Field[]			fields		= myInvoker.getFields();
+		assertThat( fields ).isNotEmpty();
+		assertThat( fields.length ).isEqualTo( 3 );
+	}
+
+	@DisplayName( "It can get all the field names of a class" )
+	@Test
+	void testItCanGetAllFieldNames() throws Throwable {
+		ClassInvoker	myInvoker	= ClassInvoker.of( InvokeDynamicFields.class );
+		List<String>	names		= myInvoker.getFieldNames();
+		assertThat( names ).isNotEmpty();
+		assertThat( names.size() ).isEqualTo( 3 );
+		assertThat( names ).containsExactly( new Object[] { "name", "HELLO", "MY_PRIMITIVE" } );
+	}
+
+	@DisplayName( "It can get all the field names of a class with no case sensitivity" )
+	@Test
+	void testItCanGetAllFieldNamesNoCase() throws Throwable {
+		ClassInvoker	myInvoker	= ClassInvoker.of( InvokeDynamicFields.class );
+		List<String>	names		= myInvoker.getFieldNamesNoCase();
+		assertThat( names ).isNotEmpty();
+		assertThat( names.size() ).isEqualTo( 3 );
+		assertThat( names ).containsExactly( new Object[] { "NAME", "HELLO", "MY_PRIMITIVE" } );
+
+	}
+
+	@DisplayName( "It can verify if a field with a specific name exists" )
+	@Test
+	void testItCanCheckForFields() throws Throwable {
+		ClassInvoker myInvoker = ClassInvoker.of( InvokeDynamicFields.class );
+
+		assertThat(
+		        myInvoker.hasField( "name" )
+		).isTrue();
+
+		assertThat(
+		        myInvoker.hasField( "NaMe" )
+		).isFalse();
+		assertThat(
+		        myInvoker.hasFieldNoCase( "NaMe" )
+		).isTrue();
+
+		assertThat(
+		        myInvoker.hasField( "bogus" )
+		).isFalse();
+
 	}
 
 }
