@@ -17,7 +17,7 @@
  */
 package ortus.boxlang.runtime.dynamic.casters;
 
-import ortus.boxlang.runtime.interop.ClassInvoker;
+import ortus.boxlang.runtime.interop.DynamicObject;
 
 /**
  * I handle casting anything to a Double
@@ -60,7 +60,7 @@ public class DoubleCaster {
 			return Double.valueOf( 0 );
 		}
 
-		object = ClassInvoker.unWrap( object );
+		object = DynamicObject.unWrap( object );
 
 		if ( object instanceof Double ) {
 			return ( Double ) object;

@@ -17,7 +17,7 @@
  */
 package ortus.boxlang.runtime.operators;
 
-import ortus.boxlang.runtime.interop.ClassInvoker;
+import ortus.boxlang.runtime.interop.DynamicObject;
 
 public interface IOperator {
 

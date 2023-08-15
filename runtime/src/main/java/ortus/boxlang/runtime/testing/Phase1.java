@@ -23,7 +23,7 @@ import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.dynamic.BaseTemplate;
 import ortus.boxlang.runtime.dynamic.Referencer;
-import ortus.boxlang.runtime.interop.ClassInvoker;
+import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.loader.ClassLocator;
 import ortus.boxlang.runtime.operators.*;
 import ortus.boxlang.runtime.scopes.Key;
@@ -39,7 +39,7 @@ import java.lang.Boolean;
 import java.lang.Double;
 import java.lang.Integer;
 
-public class MockTemplate extends BaseTemplate {
+public class Phase1 extends BaseTemplate {
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -47,14 +47,14 @@ public class MockTemplate extends BaseTemplate {
 	 * --------------------------------------------------------------------------
 	 */
 
-	private static MockTemplate instance;
+	private static Phase1 instance;
 
-	private MockTemplate() {
+	private Phase1() {
 	}
 
-	public static synchronized MockTemplate getInstance() {
+	public static synchronized Phase1 getInstance() {
 		if ( instance == null ) {
-			instance = new MockTemplate();
+			instance = new Phase1();
 		}
 		return instance;
 	}
@@ -79,7 +79,7 @@ public class MockTemplate extends BaseTemplate {
 		variablesScope.put( Key.of( "system" ), ClassLocator.getInstance().load( context, "java.lang.System" ) );
 
 		// Every class (box|java) is represented as a ClassInvoker
-		ClassInvoker oString = ClassLocator.getInstance().load( context, "java.lang.String" );
+		DynamicObject oString = ClassLocator.getInstance().load( context, "java.lang.String" );
 
 		variablesScope.put(
 		        // Case insensitive set

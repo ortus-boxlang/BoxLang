@@ -17,7 +17,7 @@
  */
 package ortus.boxlang.runtime.dynamic.casters;
 
-import ortus.boxlang.runtime.interop.ClassInvoker;
+import ortus.boxlang.runtime.interop.DynamicObject;
 
 /**
  * I handle casting anything to a boolean
@@ -61,7 +61,7 @@ public class BooleanCaster {
 			return false;
 		}
 
-		object = ClassInvoker.unWrap( object );
+		object = DynamicObject.unWrap( object );
 
 		if ( object instanceof Boolean ) {
 			return ( Boolean ) object;

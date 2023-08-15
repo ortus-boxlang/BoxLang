@@ -27,7 +27,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 import ortus.boxlang.runtime.context.IBoxContext;
-import ortus.boxlang.runtime.interop.ClassInvoker;
+import ortus.boxlang.runtime.interop.DynamicObject;
 
 /**
  * This class is in charge of locating Box classes in the lookup algorithm
@@ -235,8 +235,8 @@ public class ClassLocator extends ClassLoader {
 	 * 1. Registered modules
 	 * 2. System loader
 	 *
-	 * The return value is an invokable representation of the class using invokeDynamic and our {@link ClassInvoker} class.
-	 * Every Java/BoxLang class is represented by a {@link ClassInvoker} instance so you can invoke dynamically.
+	 * The return value is an invokable representation of the class using invokeDynamic and our {@link DynamicObject} class.
+	 * Every Java/BoxLang class is represented by a {@link DynamicObject} instance so you can invoke dynamically.
 	 *
 	 * @param context The current context of execution
 	 * @param name    The fully qualified path/name of the class to load
@@ -245,8 +245,8 @@ public class ClassLocator extends ClassLoader {
 	 *
 	 * @throws ClassNotFoundException If the class was not found anywhere in the system
 	 */
-	public ClassInvoker load( IBoxContext context, String name ) throws ClassNotFoundException {
-		return ClassInvoker.of( findClass( name ) );
+	public DynamicObject load( IBoxContext context, String name ) throws ClassNotFoundException {
+		return DynamicObject.of( findClass( name ) );
 	}
 
 	/**

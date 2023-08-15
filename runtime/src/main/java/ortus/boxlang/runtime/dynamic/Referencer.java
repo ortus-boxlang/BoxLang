@@ -18,7 +18,7 @@
 package ortus.boxlang.runtime.dynamic;
 
 import ortus.boxlang.runtime.scopes.Key;
-import ortus.boxlang.runtime.interop.ClassInvoker;
+import ortus.boxlang.runtime.interop.DynamicObject;
 
 /**
  * I handle de
@@ -42,7 +42,7 @@ public class Referencer {
 
 			// Treat it like a Java object and generically look for a field
 		} else {
-			return ClassInvoker.of( object ).dereference( key );
+			return DynamicObject.of( object ).dereference( key );
 
 			// Do we ever throw here, or do we always delagate the Java objet, letting the ClassInvoker throw?
 			// throw new RuntimeException(
@@ -68,7 +68,7 @@ public class Referencer {
 
 			// Treat it like a Java object and generically invoke a method
 		} else {
-			return ClassInvoker.of( object ).dereferenceAndInvoke( key, arguments );
+			return DynamicObject.of( object ).dereferenceAndInvoke( key, arguments );
 
 			// Do we ever throw here, or do we always delagate the Java objet, letting the ClassInvoker throw?
 			// throw new RuntimeException(
@@ -86,7 +86,7 @@ public class Referencer {
 
 			// Treat it like a Java object and generically look for a field
 		} else {
-			ClassInvoker.of( object ).assign( key, value );
+			DynamicObject.of( object ).assign( key, value );
 
 			// Do we ever throw here, or do we always delagate the Java objet, letting the ClassInvoker throw?
 			// throw new RuntimeException(

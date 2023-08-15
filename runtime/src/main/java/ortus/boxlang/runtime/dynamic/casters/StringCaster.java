@@ -20,7 +20,7 @@ package ortus.boxlang.runtime.dynamic.casters;
 import java.math.BigDecimal;
 import java.text.DecimalFormat;
 
-import ortus.boxlang.runtime.interop.ClassInvoker;
+import ortus.boxlang.runtime.interop.DynamicObject;
 
 /**
  * I handle casting anything to a string
@@ -63,7 +63,7 @@ public class StringCaster {
 		if ( object == null ) {
 			return "";
 		}
-		object = ClassInvoker.unWrap( object );
+		object = DynamicObject.unWrap( object );
 
 		if ( object instanceof BigDecimal || object instanceof Float ) {
 			String result = object.toString();

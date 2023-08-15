@@ -41,12 +41,12 @@ import static com.google.common.truth.Truth.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-public class ClassInvokerTest {
+public class DynamicObjectTest {
 
 	@DisplayName( "It can create class invokers of instances" )
 	@Test
 	void testItCanBeCreatedWithAnInstance() {
-		ClassInvoker target = ClassInvoker.of( this );
+		DynamicObject target = DynamicObject.of( this );
 		assertThat( target.getTargetClass() ).isEqualTo( this.getClass() );
 		assertThat( target.getTargetInstance() ).isEqualTo( this );
 		assertThat( target.isInterface() ).isFalse();
@@ -55,7 +55,7 @@ public class ClassInvokerTest {
 	@DisplayName( "It can create class invokers of classes" )
 	@Test
 	void testItCanBeCreatedWithAClass() {
-		ClassInvoker target = ClassInvoker.of( String.class );
+		DynamicObject target = DynamicObject.of( String.class );
 		assertThat( target.getTargetClass() ).isEqualTo( String.class );
 		assertThat( target.isInterface() ).isFalse();
 	}
@@ -63,14 +63,14 @@ public class ClassInvokerTest {
 	@DisplayName( "It can create class invokers of interfaces" )
 	@Test
 	void testItCanBeCreatedWithAnInterface() {
-		ClassInvoker target = new ClassInvoker( IType.class );
+		DynamicObject target = new DynamicObject( IType.class );
 		assertThat( target.isInterface() ).isTrue();
 	}
 
 	@DisplayName( "It can call a constructor with one argument" )
 	@Test
 	void testItCanCallConstructorsWithOneArgument() throws Throwable {
-		ClassInvoker target = new ClassInvoker( String.class );
+		DynamicObject target = new DynamicObject( String.class );
 		target.invokeConstructor( "Hello World" );
 		assertThat( target.getTargetClass() ).isEqualTo( String.class );
 		assertThat( target.getTargetInstance() ).isEqualTo( "Hello World" );
@@ -79,7 +79,7 @@ public class ClassInvokerTest {
 	@DisplayName( "It can call a constructor with many arguments" )
 	@Test
 	void testItCanCallConstructorsWithManyArguments() throws Throwable {
-		ClassInvoker target = new ClassInvoker( LinkedHashMap.class );
+		DynamicObject target = new DynamicObject( LinkedHashMap.class );
 		System.out.println( int.class );
 		target.invokeConstructor( 16, 0.75f, true );
 		assertThat( target.getTargetClass() ).isEqualTo( LinkedHashMap.class );
@@ -88,7 +88,7 @@ public class ClassInvokerTest {
 	@DisplayName( "It can call a constructor with no arguments" )
 	@Test
 	void testItCanCallConstructorsWithNoArguments() throws Throwable {
-		ClassInvoker target = new ClassInvoker( String.class );
+		DynamicObject target = new DynamicObject( String.class );
 		target.invokeConstructor();
 		assertThat( target.getTargetClass() ).isEqualTo( String.class );
 		assertThat( target.getTargetInstance() ).isEqualTo( "" );
@@ -97,7 +97,7 @@ public class ClassInvokerTest {
 	@DisplayName( "It can call instance methods with no arguments" )
 	@Test
 	void testItCanCallMethodsWithNoArguments() throws Throwable {
-		ClassInvoker myMapInvoker = new ClassInvoker( HashMap.class );
+		DynamicObject myMapInvoker = new DynamicObject( HashMap.class );
 		myMapInvoker.invokeConstructor();
 		assertThat( myMapInvoker.invoke( "size" ).get() ).isEqualTo( 0 );
 		assertThat( ( Boolean ) myMapInvoker.invoke( "isEmpty" ).get() ).isTrue();
@@ -106,7 +106,7 @@ public class ClassInvokerTest {
 	@DisplayName( "It can call instance methods with many arguments" )
 	@Test
 	void testItCanCallMethodsWithManyArguments() throws Throwable {
-		ClassInvoker myMapInvoker = new ClassInvoker( HashMap.class );
+		DynamicObject myMapInvoker = new DynamicObject( HashMap.class );
 		myMapInvoker.invokeConstructor();
 		myMapInvoker.invoke( "put", "name", "luis" );
 		assertThat( myMapInvoker.invoke( "size" ).get() ).isEqualTo( 1 );
@@ -116,7 +116,7 @@ public class ClassInvokerTest {
 	@DisplayName( "It can call static methods on classes" )
 	@Test
 	void testItCanCallStaticMethods() throws Throwable {
-		ClassInvoker	myInvoker	= ClassInvoker.of( Duration.class );
+		DynamicObject	myInvoker	= DynamicObject.of( Duration.class );
 		Duration		results		= null;
 
 		// Use int to long promotion
@@ -131,7 +131,7 @@ public class ClassInvokerTest {
 	@DisplayName( "It can call methods on interfaces" )
 	@Test
 	void testItCanCallMethodsOnInterfaces() throws Throwable {
-		ClassInvoker	myInvoker	= ClassInvoker.of( List.class );
+		DynamicObject	myInvoker	= DynamicObject.of( List.class );
 		List			results		= ( List ) myInvoker.invoke( "of", new Object[] { "Hello" } ).get();
 		assertThat( results.toString() ).isEqualTo( "[Hello]" );
 		assertThat( results ).isNotEmpty();
@@ -140,7 +140,7 @@ public class ClassInvokerTest {
 	@DisplayName( "It can create a class with private constructors" )
 	@Test
 	void testItCanCreateWithPrivateConstructors() throws Throwable {
-		ClassInvoker myInvoker = ClassInvoker.of( PrivateConstructors.class );
+		DynamicObject myInvoker = DynamicObject.of( PrivateConstructors.class );
 		assertThat( myInvoker ).isNotNull();
 		// Now call it via normal `invoke()`
 		myInvoker.invoke( "getInstance" );
@@ -149,7 +149,7 @@ public class ClassInvokerTest {
 	@DisplayName( "It can get public fields" )
 	@Test
 	void testItCanGetPublicFields() throws Throwable {
-		ClassInvoker myInvoker = ClassInvoker.of( InvokeDynamicFields.class );
+		DynamicObject myInvoker = DynamicObject.of( InvokeDynamicFields.class );
 		myInvoker.invokeConstructor();
 		assertThat( myInvoker.getField( "name" ).get() ).isEqualTo( "luis" );
 	}
@@ -157,7 +157,7 @@ public class ClassInvokerTest {
 	@DisplayName( "It can get public fields with any case-sensitivity" )
 	@Test
 	void testItCanGetPublicFieldsInAnyCase() throws Throwable {
-		ClassInvoker myInvoker = ClassInvoker.of( InvokeDynamicFields.class );
+		DynamicObject myInvoker = DynamicObject.of( InvokeDynamicFields.class );
 		myInvoker.invokeConstructor();
 		assertThat( myInvoker.getField( "NaMe" ).get() ).isEqualTo( "luis" );
 	}
@@ -165,7 +165,7 @@ public class ClassInvokerTest {
 	@DisplayName( "It can get non-existent field with a default value" )
 	@Test
 	void testItCanGetPublicFieldsWithADefaultValue() throws Throwable {
-		ClassInvoker myInvoker = ClassInvoker.of( InvokeDynamicFields.class );
+		DynamicObject myInvoker = DynamicObject.of( InvokeDynamicFields.class );
 		myInvoker.invokeConstructor();
 		assertThat( myInvoker.getField( "InvalidFieldBaby", "sorry" ).get() ).isEqualTo( "sorry" );
 	}
@@ -173,7 +173,7 @@ public class ClassInvokerTest {
 	@DisplayName( "It can get static public fields" )
 	@Test
 	void testItCanGetStaticPublicFields() throws Throwable {
-		ClassInvoker myInvoker = ClassInvoker.of( InvokeDynamicFields.class );
+		DynamicObject myInvoker = DynamicObject.of( InvokeDynamicFields.class );
 		assertThat( ( String ) myInvoker.getField( "HELLO" ).get() ).isEqualTo( "Hello World" );
 		assertThat( ( Integer ) myInvoker.getField( "MY_PRIMITIVE" ).get() ).isEqualTo( 42 );
 	}
@@ -182,7 +182,7 @@ public class ClassInvokerTest {
 	@Test
 	void testItCanThrowExceptionForInvalidFields() {
 		NoSuchFieldException exception = assertThrows( NoSuchFieldException.class, () -> {
-			ClassInvoker myInvoker = ClassInvoker.of( InvokeDynamicFields.class );
+			DynamicObject myInvoker = DynamicObject.of( InvokeDynamicFields.class );
 			myInvoker.invokeConstructor();
 			myInvoker.getField( "InvalidField" );
 		} );
@@ -192,7 +192,7 @@ public class ClassInvokerTest {
 	@DisplayName( "It can get set values on public fields" )
 	@Test
 	void testItCanSetPublicFields() throws Throwable {
-		ClassInvoker myInvoker = ClassInvoker.of( InvokeDynamicFields.class );
+		DynamicObject myInvoker = DynamicObject.of( InvokeDynamicFields.class );
 		myInvoker.invokeConstructor();
 
 		myInvoker.setField( "name", "Hola Tests" );
@@ -203,7 +203,7 @@ public class ClassInvokerTest {
 	@DisplayName( "It can get all the fields of a class" )
 	@Test
 	void testItCanGetAllFields() throws Throwable {
-		ClassInvoker	myInvoker	= ClassInvoker.of( InvokeDynamicFields.class );
+		DynamicObject	myInvoker	= DynamicObject.of( InvokeDynamicFields.class );
 		Field[]			fields		= myInvoker.getFields();
 		assertThat( fields ).isNotEmpty();
 		assertThat( fields.length ).isEqualTo( 3 );
@@ -212,7 +212,7 @@ public class ClassInvokerTest {
 	@DisplayName( "It can get all the field names of a class" )
 	@Test
 	void testItCanGetAllFieldNames() throws Throwable {
-		ClassInvoker	myInvoker	= ClassInvoker.of( InvokeDynamicFields.class );
+		DynamicObject	myInvoker	= DynamicObject.of( InvokeDynamicFields.class );
 		List<String>	names		= myInvoker.getFieldNames();
 		assertThat( names ).isNotEmpty();
 		assertThat( names.size() ).isEqualTo( 3 );
@@ -222,7 +222,7 @@ public class ClassInvokerTest {
 	@DisplayName( "It can get all the field names of a class with no case sensitivity" )
 	@Test
 	void testItCanGetAllFieldNamesNoCase() throws Throwable {
-		ClassInvoker	myInvoker	= ClassInvoker.of( InvokeDynamicFields.class );
+		DynamicObject	myInvoker	= DynamicObject.of( InvokeDynamicFields.class );
 		List<String>	names		= myInvoker.getFieldNamesNoCase();
 		assertThat( names ).isNotEmpty();
 		assertThat( names.size() ).isEqualTo( 3 );
@@ -232,7 +232,7 @@ public class ClassInvokerTest {
 	@DisplayName( "It can verify if a field with a specific name exists" )
 	@Test
 	void testItCanCheckForFields() throws Throwable {
-		ClassInvoker myInvoker = ClassInvoker.of( InvokeDynamicFields.class );
+		DynamicObject myInvoker = DynamicObject.of( InvokeDynamicFields.class );
 
 		assertThat(
 		        myInvoker.hasField( "name" )
@@ -254,7 +254,7 @@ public class ClassInvokerTest {
 	@DisplayName( "It can get all the callable method names of a class" )
 	@Test
 	void testItCanGetAllMethodNames() throws Throwable {
-		ClassInvoker	myInvoker	= ClassInvoker.of( InvokeDynamicFields.class );
+		DynamicObject	myInvoker	= DynamicObject.of( InvokeDynamicFields.class );
 		List<String>	names		= myInvoker.getMethodNames();
 		assertThat( names ).isNotEmpty();
 		assertThat( names.size() ).isEqualTo( 16 );
@@ -266,7 +266,7 @@ public class ClassInvokerTest {
 	@DisplayName( "It can get all the callable method names of a class with no case" )
 	@Test
 	void testItCanGetAllMethodNamesNoCase() throws Throwable {
-		ClassInvoker	myInvoker	= ClassInvoker.of( InvokeDynamicFields.class );
+		DynamicObject	myInvoker	= DynamicObject.of( InvokeDynamicFields.class );
 		List<String>	names		= myInvoker.getMethodNamesNoCase();
 		assertThat( names ).isNotEmpty();
 		assertThat( names.size() ).isEqualTo( 16 );
@@ -278,7 +278,7 @@ public class ClassInvokerTest {
 	@DisplayName( "It can get check if a class has specific method names" )
 	@Test
 	void testItCanCheckIfItHasMethodNames() throws Throwable {
-		ClassInvoker myInvoker = ClassInvoker.of( InvokeDynamicFields.class );
+		DynamicObject myInvoker = DynamicObject.of( InvokeDynamicFields.class );
 
 		assertThat(
 		        myInvoker.hasMethod( "getName" )
@@ -298,7 +298,7 @@ public class ClassInvokerTest {
 	@DisplayName( "It can find methods by case-insensitive name and types" )
 	@Test
 	void testItCanFindMatchingMethod() throws NoSuchMethodException {
-		ClassInvoker	myInvoker	= ClassInvoker.of( InvokeDynamicFields.class );
+		DynamicObject	myInvoker	= DynamicObject.of( InvokeDynamicFields.class );
 		Method			method		= null;
 
 		// True Check

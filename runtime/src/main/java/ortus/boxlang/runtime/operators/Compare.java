@@ -17,7 +17,7 @@
  */
 package ortus.boxlang.runtime.operators;
 
-import ortus.boxlang.runtime.interop.ClassInvoker;
+import ortus.boxlang.runtime.interop.DynamicObject;
 
 /**
  * Performs EQ, GT, and LT comparisons
@@ -34,8 +34,8 @@ public class Compare implements IOperator {
 	 */
 	@SuppressWarnings( "unchecked" )
 	public static int invoke( Object left, Object right, Boolean caseSensitive ) {
-		left	= ClassInvoker.unWrap( left );
-		right	= ClassInvoker.unWrap( right );
+		left	= DynamicObject.unWrap( left );
+		right	= DynamicObject.unWrap( right );
 
 		if ( left == null ) {
 			left = "";

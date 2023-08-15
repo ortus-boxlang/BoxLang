@@ -22,7 +22,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import ortus.boxlang.runtime.context.TemplateBoxContext;
-import ortus.boxlang.runtime.interop.ClassInvoker;
+import ortus.boxlang.runtime.interop.DynamicObject;
 
 import static com.google.common.truth.Truth.assertThat;
 
@@ -37,7 +37,7 @@ public class ClassLocatorTest {
 		locator.clear();
 		assertThat( locator.size() ).isEqualTo( 0 );
 
-		ClassInvoker target = locator.load( new TemplateBoxContext(), targetClass );
+		DynamicObject target = locator.load( new TemplateBoxContext(), targetClass );
 		target.invokeConstructor( "Hola ClassLoader" );
 		assertThat( target.getTargetInstance() ).isEqualTo( "Hola ClassLoader" );
 

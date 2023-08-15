@@ -38,7 +38,6 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 import org.apache.commons.lang3.ClassUtils;
@@ -65,7 +64,7 @@ import org.apache.commons.lang3.ClassUtils;
  * - {@code invokeStaticMethod( String methodName, Object... args )} - Invoke a static method on the class
  * - {@code invoke( String methodName, Object... args )} - Invoke a method on the instance of the class
  */
-public class ClassInvoker implements IReferenceable {
+public class DynamicObject implements IReferenceable {
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -146,7 +145,7 @@ public class ClassInvoker implements IReferenceable {
 	 *
 	 * @param targetClass
 	 */
-	public ClassInvoker( Class<?> targetClass ) {
+	public DynamicObject( Class<?> targetClass ) {
 		this.targetClass = targetClass;
 	}
 
@@ -155,7 +154,7 @@ public class ClassInvoker implements IReferenceable {
 	 *
 	 * @param targetInstance
 	 */
-	public ClassInvoker( Object targetInstance ) {
+	public DynamicObject( Object targetInstance ) {
 		this.targetInstance	= targetInstance;
 		this.targetClass	= targetInstance.getClass();
 	}
@@ -167,8 +166,8 @@ public class ClassInvoker implements IReferenceable {
 	 *
 	 * @return The class invoker
 	 */
-	public static ClassInvoker of( Class<?> targetClass ) {
-		return new ClassInvoker( targetClass );
+	public static DynamicObject of( Class<?> targetClass ) {
+		return new DynamicObject( targetClass );
 	}
 
 	/**
@@ -178,8 +177,8 @@ public class ClassInvoker implements IReferenceable {
 	 *
 	 * @return The class invoker
 	 */
-	public static ClassInvoker of( Object targetInstance ) {
-		return new ClassInvoker( targetInstance );
+	public static DynamicObject of( Object targetInstance ) {
+		return new DynamicObject( targetInstance );
 	}
 
 	/**
@@ -198,7 +197,7 @@ public class ClassInvoker implements IReferenceable {
 	/**
 	 * @param handlesCacheEnabled Enable or not the handles cache
 	 */
-	public ClassInvoker setHandlesCacheEnabled( Boolean handlesCacheEnabled ) {
+	public DynamicObject setHandlesCacheEnabled( Boolean handlesCacheEnabled ) {
 		this.handlesCacheEnabled = handlesCacheEnabled;
 		return this;
 	}
@@ -213,7 +212,7 @@ public class ClassInvoker implements IReferenceable {
 	/**
 	 * @param targetClass the targetClass to set
 	 */
-	public ClassInvoker setTargetClass( Class<?> targetClass ) {
+	public DynamicObject setTargetClass( Class<?> targetClass ) {
 		this.targetClass = targetClass;
 		return this;
 	}
@@ -228,7 +227,7 @@ public class ClassInvoker implements IReferenceable {
 	/**
 	 * @param targetInstance the targetInstance to set
 	 */
-	public ClassInvoker setTargetInstance( Object targetInstance ) {
+	public DynamicObject setTargetInstance( Object targetInstance ) {
 		this.targetInstance = targetInstance;
 		return this;
 	}
@@ -250,7 +249,7 @@ public class ClassInvoker implements IReferenceable {
 	 * @throws Throwable             If the constructor cannot be invoked
 	 * @throws IllegalStateException If the class is an interface, you can't call a constructor on an interface
 	 */
-	public ClassInvoker invokeConstructor( Object... args ) throws Throwable {
+	public DynamicObject invokeConstructor( Object... args ) throws Throwable {
 
 		// Thou shalt not pass!
 		if ( isInterface() ) {
@@ -409,7 +408,7 @@ public class ClassInvoker implements IReferenceable {
 	 *
 	 * @throws IllegalStateException If the field is not static and the target instance is null
 	 */
-	public ClassInvoker setField( String fieldName, Object value ) throws Throwable {
+	public DynamicObject setField( String fieldName, Object value ) throws Throwable {
 		// Discover the field with no case sensitivity
 		Field			field		= findField( fieldName );
 		MethodHandle	fieldHandle	= METHOD_LOOKUP.unreflectSetter( field );
@@ -760,7 +759,7 @@ public class ClassInvoker implements IReferenceable {
 	public static Class<?>[] argumentsToClasses( Object... args ) {
 		// Convert the arguments to an array of classes
 		return Arrays.stream( args )
-		        .map( ClassInvoker::argumentToClass )
+		        .map( DynamicObject::argumentToClass )
 		        // .peek( clazz -> System.out.println( "argumentToClass -> " + clazz ) )
 		        .toArray( Class<?>[]::new );
 	}
@@ -773,8 +772,8 @@ public class ClassInvoker implements IReferenceable {
 	 * @return The target instance or class, depending which one is set
 	 */
 	public static Object unWrap( Object param ) {
-		if ( param instanceof ClassInvoker ) {
-			ClassInvoker invoker = ( ClassInvoker ) param;
+		if ( param instanceof DynamicObject ) {
+			DynamicObject invoker = ( DynamicObject ) param;
 			if ( invoker.hasInstance() ) {
 				return invoker.getTargetInstance();
 			} else {
@@ -809,7 +808,7 @@ public class ClassInvoker implements IReferenceable {
 
 	/**
 	 * This immutable record represents an executable method handle and it's metadata.
-	 * This record is the one that is cached in the {@link ClassInvoker#methodCache} map.
+	 * This record is the one that is cached in the {@link DynamicObject#methodCache} map.
 	 *
 	 * @param methodName    The name of the method
 	 * @param method        The method representation
