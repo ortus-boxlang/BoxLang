@@ -10,4 +10,34 @@ public class InvokeDynamicFields {
 	public InvokeDynamicFields() {
 	}
 
+	/**
+	 * @return the name
+	 */
+	public String getName() {
+		return name;
+	}
+
+	/**
+	 * @param name the name to set
+	 */
+	public void setName( String name ) {
+		this.name = name;
+	}
+
+	public Boolean hasName() {
+		return this.name != null;
+	}
+
+	public String hello() {
+		return "Hello";
+	}
+
+	public String hello( String name ) {
+		return "Hello " + name;
+	}
+
+	public Long getNow() {
+		return System.currentTimeMillis();
+	}
+
 }

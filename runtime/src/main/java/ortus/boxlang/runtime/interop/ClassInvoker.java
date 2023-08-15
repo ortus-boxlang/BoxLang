@@ -598,7 +598,7 @@ public class ClassInvoker implements IReferenceable {
 		} catch ( NoSuchMethodException e ) {
 
 			// 2: Let's go by discovery now
-			targetMethod = getCallableMethods()
+			targetMethod = getMethods()
 			        .stream()
 			        // Do it fast!
 			        .parallel()
@@ -638,11 +638,65 @@ public class ClassInvoker implements IReferenceable {
 	 *
 	 * @return A unique set of callable methods
 	 */
-	public Set<Method> getCallableMethods() {
+	public Set<Method> getMethods() {
 		Set<Method> allMethods = new HashSet<>();
 		allMethods.addAll( new HashSet<>( List.of( this.targetClass.getMethods() ) ) );
 		allMethods.addAll( new HashSet<>( List.of( this.targetClass.getDeclaredMethods() ) ) );
 		return allMethods;
+	}
+
+	/**
+	 * Get a stream of methods of all the unique callable method signatures for the given class
+	 *
+	 * @return A stream of unique callable methods
+	 */
+	public Stream<Method> getMethodsAsStream() {
+		return getMethods().stream();
+	}
+
+	/**
+	 * Get a list of method names for the given class
+	 *
+	 * @return A list of method names
+	 */
+	public List<String> getMethodNames() {
+		return getMethodsAsStream()
+		        .map( Method::getName )
+		        .toList();
+	}
+
+	/**
+	 * Get a list of method names for the given class with no case-sensitivity (upper case)
+	 *
+	 * @return A list of method names with no case
+	 */
+	public List<String> getMethodNamesNoCase() {
+		return getMethodsAsStream()
+		        .map( Method::getName )
+		        .map( String::toUpperCase )
+		        .toList();
+	}
+
+	/**
+	 * Verifies if the class has a public or public static method with the given name
+	 *
+	 * @param methodName The name of the method to check
+	 *
+	 * @return True if the method exists, false otherwise
+	 */
+	public Boolean hasMethod( String methodName ) {
+		return getMethodNames().contains( methodName );
+	}
+
+	/**
+	 * Verifies if the class has a public or public static method with the given name and no case-sensitivity (upper case)
+	 *
+	 * @param fieldName The name of the method to check
+	 *
+	 * @return True if the method exists, false otherwise
+	 */
+	public Boolean hasMethodNoCase( String methodName ) {
+		return getMethodNamesNoCase().contains( methodName.toUpperCase() );
 	}
 
 	/**

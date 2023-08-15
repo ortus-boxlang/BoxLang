@@ -218,7 +218,6 @@ public class ClassInvokerTest {
 		assertThat( names ).isNotEmpty();
 		assertThat( names.size() ).isEqualTo( 3 );
 		assertThat( names ).containsExactly( new Object[] { "NAME", "HELLO", "MY_PRIMITIVE" } );
-
 	}
 
 	@DisplayName( "It can verify if a field with a specific name exists" )
@@ -241,6 +240,50 @@ public class ClassInvokerTest {
 		        myInvoker.hasField( "bogus" )
 		).isFalse();
 
+	}
+
+	@DisplayName( "It can get all the callable method names of a class" )
+	@Test
+	void testItCanGetAllMethodNames() throws Throwable {
+		ClassInvoker	myInvoker	= ClassInvoker.of( InvokeDynamicFields.class );
+		List<String>	names		= myInvoker.getMethodNames();
+		assertThat( names ).isNotEmpty();
+		assertThat( names.size() ).isEqualTo( 15 );
+		assertThat( names ).containsAtLeast(
+		        "getName", "setName", "hasName", "hello", "getNow", "equals", "hashCode"
+		);
+	}
+
+	@DisplayName( "It can get all the callable method names of a class with no case" )
+	@Test
+	void testItCanGetAllMethodNamesNoCase() throws Throwable {
+		ClassInvoker	myInvoker	= ClassInvoker.of( InvokeDynamicFields.class );
+		List<String>	names		= myInvoker.getMethodNamesNoCase();
+		assertThat( names ).isNotEmpty();
+		assertThat( names.size() ).isEqualTo( 15 );
+		assertThat( names ).containsAtLeast(
+		        "GETNAME", "SETNAME", "HASNAME", "HELLO", "GETNOW", "EQUALS", "HASHCODE"
+		);
+	}
+
+	@DisplayName( "It can get check if a class has specific method names" )
+	@Test
+	void testItCanCheckIfItHasMethodNames() throws Throwable {
+		ClassInvoker myInvoker = ClassInvoker.of( InvokeDynamicFields.class );
+
+		assertThat(
+		        myInvoker.hasMethod( "getName" )
+		).isTrue();
+		assertThat(
+		        myInvoker.hasMethod( "GETnAme" )
+		).isFalse();
+
+		assertThat(
+		        myInvoker.hasMethodNoCase( "getNamE" )
+		).isTrue();
+		assertThat(
+		        myInvoker.hasMethodNoCase( "bogus" )
+		).isFalse();
 	}
 
 }
