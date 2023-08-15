@@ -21,6 +21,7 @@ import ortus.boxlang.runtime.types.IType;
 
 import java.lang.String;
 import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -284,6 +285,39 @@ public class ClassInvokerTest {
 		assertThat(
 		        myInvoker.hasMethodNoCase( "bogus" )
 		).isFalse();
+	}
+
+	@DisplayName( "It can find methods by case-insensitive name and types" )
+	@Test
+	void testItCanFindMatchingMethod() throws NoSuchMethodException {
+		ClassInvoker	myInvoker	= ClassInvoker.of( InvokeDynamicFields.class );
+		Method			method		= null;
+
+		// True Check
+		method = myInvoker.findMatchingMethod( "GetNAME", new Class[] {} );
+		assertThat( method.getName() ).isEqualTo( "getName" );
+		method = myInvoker.findMatchingMethod( "getNoW", new Class[] {} );
+		assertThat( method.getName() ).isEqualTo( "getNow" );
+		method = myInvoker.findMatchingMethod( "setName", new Class[] { String.class } );
+		assertThat( method.getName() ).isEqualTo( "setName" );
+		method = myInvoker.findMatchingMethod( "HELLO", new Class[] {} );
+		assertThat( method.getName() ).isEqualTo( "hello" );
+		method = myInvoker.findMatchingMethod( "HELLO", new Class[] { String.class } );
+		assertThat( method.getName() ).isEqualTo( "hello" );
+		method = myInvoker.findMatchingMethod( "HELLO", new Class[] { String.class, int.class } );
+		assertThat( method.getName() ).isEqualTo( "hello" );
+
+		// False Check
+		assertThrows( NoSuchMethodException.class, () -> {
+			myInvoker.findMatchingMethod( "getName", new Class[] { String.class } );
+		} );
+		assertThrows( NoSuchMethodException.class, () -> {
+			myInvoker.findMatchingMethod( "BogusName", new Class[] { String.class } );
+		} );
+		assertThrows( NoSuchMethodException.class, () -> {
+			myInvoker.findMatchingMethod( "setName", new Class[] { Integer.class } );
+		} );
+
 	}
 
 }

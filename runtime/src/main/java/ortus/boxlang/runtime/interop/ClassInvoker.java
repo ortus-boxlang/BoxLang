@@ -29,6 +29,7 @@ import java.lang.invoke.MethodType;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
+import java.lang.reflect.Parameter;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
@@ -37,6 +38,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 /**
@@ -697,6 +699,50 @@ public class ClassInvoker implements IReferenceable {
 	 */
 	public Boolean hasMethodNoCase( String methodName ) {
 		return getMethodNamesNoCase().contains( methodName.toUpperCase() );
+	}
+
+	/**
+	 * This method is used to verify if the class has the same method signature as the incoming one with no case-sensitivity (upper case)
+	 *
+	 * @param methodName     The name of the method to check
+	 * @param parameterTypes The parameter types of the method to check
+	 *
+	 * @return The matched method signature
+	 *
+	 * @throws NoSuchMethodException If the method cannot be found
+	 */
+	public Method findMatchingMethod( String methodName, Class<?>[] argumentsAsClasses ) throws NoSuchMethodException {
+		return getMethodsAsStream()
+		        .filter( method -> method.getName().equalsIgnoreCase( methodName ) )
+		        .filter( method -> hasMatchingParameterTypes( method, argumentsAsClasses ) )
+		        .findFirst()
+		        .orElseThrow( () -> new NoSuchMethodException(
+		                String.format(
+		                        "No such method [%s] found in the class [%s] using [%d] arguments.",
+		                        methodName,
+		                        this.targetClass.getName(),
+		                        argumentsAsClasses.length
+		                )
+		        ) );
+	}
+
+	/**
+	 * Verifies if the method has the same parameter types as the incoming ones
+	 *
+	 * @param method             The method to check
+	 * @param argumentsAsClasses The arguments to check
+	 *
+	 * @return True if the method has the same parameter types, false otherwise
+	 */
+	private static boolean hasMatchingParameterTypes( Method method, Class<?>[] argumentsAsClasses ) {
+		Parameter[] methodParameters = method.getParameters();
+
+		if ( methodParameters.length != argumentsAsClasses.length ) {
+			return false;
+		}
+
+		return IntStream.range( 0, methodParameters.length )
+		        .allMatch( i -> methodParameters[ i ].getType().equals( argumentsAsClasses[ i ] ) );
 	}
 
 	/**

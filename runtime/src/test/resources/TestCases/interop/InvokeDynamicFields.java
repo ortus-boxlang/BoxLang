@@ -36,6 +36,10 @@ public class InvokeDynamicFields {
 		return "Hello " + name;
 	}
 
+	public String hello( String name, int test ) {
+		return "Hello " + name + test;
+	}
+
 	public Long getNow() {
 		return System.currentTimeMillis();
 	}
