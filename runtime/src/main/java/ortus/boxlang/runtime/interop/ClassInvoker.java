@@ -302,7 +302,7 @@ public class ClassInvoker implements IReferenceable {
 		MethodRecord methodRecord = getMethodHandle( methodName, argumentsToClasses( arguments ) );
 
 		// If it's not static, we need a target instance
-		if ( Boolean.FALSE.equals( methodRecord.isStatic() ) && !hasInstance() ) {
+		if ( !methodRecord.isStatic() && !hasInstance() ) {
 			throw new IllegalStateException(
 			        "You can't call invoke on a null target instance. Use [invokeStatic] instead or set the target instance manually or via the constructor."
 			);
@@ -310,7 +310,7 @@ public class ClassInvoker implements IReferenceable {
 
 		// Discover and Execute it baby!
 		return Optional.ofNullable(
-		        Boolean.TRUE.equals( methodRecord.isStatic() )
+		        methodRecord.isStatic()
 		                ? methodRecord.methodHandle().invokeWithArguments( arguments )
 		                : methodRecord.methodHandle().bindTo( this.targetInstance ).invokeWithArguments( arguments )
 		);
@@ -369,14 +369,14 @@ public class ClassInvoker implements IReferenceable {
 		Boolean			isStatic	= Modifier.isStatic( field.getModifiers() );
 
 		// If it's not static, we need a target instance
-		if ( Boolean.FALSE.equals( isStatic ) && !hasInstance() ) {
+		if ( !isStatic && !hasInstance() ) {
 			throw new IllegalStateException(
 			        "You are trying to get a public field but there is not instance set on the invoker, please make sure the [invokeConstructor] has been called."
 			);
 		}
 
 		return Optional.ofNullable(
-		        Boolean.TRUE.equals( isStatic )
+		        isStatic
 		                ? fieldHandle.invoke()
 		                : fieldHandle.invoke( this.targetInstance )
 		);
@@ -416,13 +416,13 @@ public class ClassInvoker implements IReferenceable {
 		Boolean			isStatic	= Modifier.isStatic( field.getModifiers() );
 
 		// If it's not static, we need a target instance, verify it's not null
-		if ( Boolean.FALSE.equals( isStatic ) && !hasInstance() ) {
+		if ( !isStatic && !hasInstance() ) {
 			throw new IllegalStateException(
 			        "You are trying to set a public field but there is not instance set on the invoker, please make sure the [invokeConstructor] has been called."
 			);
 		}
 
-		if ( Boolean.TRUE.equals( isStatic ) ) {
+		if ( isStatic ) {
 			fieldHandle.invokeWithArguments( value );
 
 		} else {
@@ -842,7 +842,7 @@ public class ClassInvoker implements IReferenceable {
 	public Object dereference( Key name ) throws KeyNotFoundException {
 		try {
 			// If we have the field, return it's value, even if it's null
-			if ( Boolean.TRUE.equals( hasField( name.getName() ) ) ) {
+			if ( hasField( name.getName() ) ) {
 				return getField( name.getName() ).orElse( null );
 			}
 		} catch ( Throwable e ) {
@@ -850,7 +850,7 @@ public class ClassInvoker implements IReferenceable {
 		}
 
 		// Field not found anywhere
-		if ( Boolean.TRUE.equals( hasInstance() ) ) {
+		if ( hasInstance() ) {
 			throw new KeyNotFoundException(
 			        String.format( "The instance [%s] has no public field [%s].  The allowed fields are [%s]",
 			                ClassUtils.getCanonicalName( getTargetClass() ),
@@ -893,7 +893,7 @@ public class ClassInvoker implements IReferenceable {
 	public Object safeDereference( Key name ) {
 		try {
 			// If we have the field, return it's value, even if it's null
-			if ( Boolean.TRUE.equals( hasField( name.getName() ) ) ) {
+			if ( hasField( name.getName() ) ) {
 				return getField( name.getName() ).orElse( null );
 			} else {
 				return null;
