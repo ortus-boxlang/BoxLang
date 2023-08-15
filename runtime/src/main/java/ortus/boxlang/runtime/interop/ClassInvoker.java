@@ -41,6 +41,8 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
+import org.apache.commons.lang3.ClassUtils;
+
 /**
  * This class is used to represent a BX/Java Class and invoke methods on classes using invoke dynamic.
  *
@@ -62,9 +64,6 @@ import java.util.stream.Stream;
  * - {@code invokeConstructor( Object... args )} - Invoke a constructor on the class, and store the instance for future method calls
  * - {@code invokeStaticMethod( String methodName, Object... args )} - Invoke a static method on the class
  * - {@code invoke( String methodName, Object... args )} - Invoke a method on the instance of the class
- *
- * TODO:
- * [ ] - Set public fields
  */
 public class ClassInvoker implements IReferenceable {
 
@@ -73,6 +72,11 @@ public class ClassInvoker implements IReferenceable {
 	 * Public Properties
 	 * --------------------------------------------------------------------------
 	 */
+
+	/**
+	 * Helper for all class utility methods from apache commons lang 3
+	 */
+	public static final Class<ClassUtils>					CLASS_UTILS			= ClassUtils.class;
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -280,9 +284,10 @@ public class ClassInvoker implements IReferenceable {
 	 *
 	 * @return The result of the method invocation wrapped in an Optional
 	 *
-	 * @throws Throwable
 	 * @throws IllegalArgumentException If the method name is null or empty
 	 * @throws IllegalStateException    If the method handle is not static and the target instance is null
+	 * @throws IllegalAccessException   If the method handle cannot be accessed
+	 * @throws NoSuchMethodException    If the method cannot be found
 	 */
 	public Optional<Object> invoke( String methodName, Object... arguments ) throws Throwable {
 		// Verify method name
@@ -565,74 +570,19 @@ public class ClassInvoker implements IReferenceable {
 	 */
 	public MethodRecord discoverMethodHandle( String methodName, Class<?>[] argumentsAsClasses )
 	        throws NoSuchMethodException, IllegalAccessException {
-		// Our target we must find!
-		Method targetMethod;
+		// Our target we must find using our dynamic rules:
+		// - case insensitivity
+		// - argument count
+		// - argument class asignability
+		Method targetMethod = findMatchingMethod( methodName, argumentsAsClasses );
 
-		// 1: Exact Match
-		// This can fail if the arguments are not the exact same class types
-		// Which can happen for certain generic types, and even some primitive types
-		try {
-			targetMethod = this.targetClass.getMethod( methodName, argumentsAsClasses );
-
-			// Static Match?
-			if ( Modifier.isStatic( targetMethod.getModifiers() ) ) {
-				MethodHandle methodHandle = METHOD_LOOKUP.findStatic(
-				        this.targetClass,
-				        methodName,
-				        MethodType.methodType( targetMethod.getReturnType(), argumentsAsClasses )
-				);
-				return new MethodRecord( methodName, targetMethod, methodHandle, Boolean.TRUE, argumentsAsClasses.length );
-			}
-
-			// Virtual Lookup
-			MethodHandle methodHandle = METHOD_LOOKUP.findVirtual(
-			        this.targetClass,
-			        methodName,
-			        MethodType.methodType( targetMethod.getReturnType(), argumentsAsClasses )
-			);
-			return new MethodRecord(
-			        methodName,
-			        targetMethod,
-			        methodHandle,
-			        Boolean.FALSE,
-			        argumentsAsClasses.length
-			);
-		} catch ( NoSuchMethodException e ) {
-
-			// 2: Let's go by discovery now
-			targetMethod = getMethods()
-			        .stream()
-			        // Do it fast!
-			        .parallel()
-			        // filter by the method name we need
-			        .filter( method -> method.getName().equals( methodName ) )
-			        // .peek( method -> System.out.println( "PeekMethod -> " + method.getName() ) )
-			        // Now by the number of arguments we have
-			        .filter( method -> method.getParameterCount() == argumentsAsClasses.length )
-			        // TODO: Filter by Argument Cast Matching
-			        // Right now we take the first match, but @bdw429s mentioned we need to do auto-casting
-			        // So that would have to be done here.
-			        // Give me the first one found
-			        .findFirst()
-			        // Or throw an exception
-			        .orElseThrow( () -> new NoSuchMethodException(
-			                String.format(
-			                        "No such method [%s] found in the class [%s] using [%d] arguments.",
-			                        methodName,
-			                        this.targetClass.getName(),
-			                        argumentsAsClasses.length
-			                )
-			        ) );
-
-			// Return our discovered method
-			return new MethodRecord(
-			        methodName,
-			        targetMethod,
-			        toMethodHandle( targetMethod ),
-			        Modifier.isStatic( targetMethod.getModifiers() ),
-			        argumentsAsClasses.length
-			);
-		}
+		return new MethodRecord(
+		        methodName,
+		        targetMethod,
+		        METHOD_LOOKUP.unreflect( targetMethod ),
+		        Modifier.isStatic( targetMethod.getModifiers() ),
+		        argumentsAsClasses.length
+		);
 	}
 
 	/**
@@ -663,6 +613,7 @@ public class ClassInvoker implements IReferenceable {
 	 */
 	public List<String> getMethodNames() {
 		return getMethodsAsStream()
+		        .parallel()
 		        .map( Method::getName )
 		        .toList();
 	}
@@ -674,6 +625,7 @@ public class ClassInvoker implements IReferenceable {
 	 */
 	public List<String> getMethodNamesNoCase() {
 		return getMethodsAsStream()
+		        .parallel()
 		        .map( Method::getName )
 		        .map( String::toUpperCase )
 		        .toList();
@@ -713,15 +665,17 @@ public class ClassInvoker implements IReferenceable {
 	 */
 	public Method findMatchingMethod( String methodName, Class<?>[] argumentsAsClasses ) throws NoSuchMethodException {
 		return getMethodsAsStream()
+		        .parallel()
 		        .filter( method -> method.getName().equalsIgnoreCase( methodName ) )
 		        .filter( method -> hasMatchingParameterTypes( method, argumentsAsClasses ) )
 		        .findFirst()
 		        .orElseThrow( () -> new NoSuchMethodException(
 		                String.format(
-		                        "No such method [%s] found in the class [%s] using [%d] arguments.",
+		                        "No such method [%s] found in the class [%s] using [%d] arguments of types [%s]",
 		                        methodName,
 		                        this.targetClass.getName(),
-		                        argumentsAsClasses.length
+		                        argumentsAsClasses.length,
+		                        Arrays.toString( argumentsAsClasses )
 		                )
 		        ) );
 	}
@@ -729,20 +683,28 @@ public class ClassInvoker implements IReferenceable {
 	/**
 	 * Verifies if the method has the same parameter types as the incoming ones
 	 *
+	 * @see https://commons.apache.org/proper/commons-lang/javadocs/api-release/index.html
+	 *
 	 * @param method             The method to check
 	 * @param argumentsAsClasses The arguments to check
 	 *
 	 * @return True if the method has the same parameter types, false otherwise
 	 */
 	private static boolean hasMatchingParameterTypes( Method method, Class<?>[] argumentsAsClasses ) {
-		Parameter[] methodParameters = method.getParameters();
+		Class<?>[] methodParams = Arrays
+		        .stream( method.getParameters() )
+		        .map( Parameter::getType )
+		        .toArray( Class<?>[]::new );
 
-		if ( methodParameters.length != argumentsAsClasses.length ) {
+		if ( methodParams.length != argumentsAsClasses.length ) {
 			return false;
 		}
 
-		return IntStream.range( 0, methodParameters.length )
-		        .allMatch( i -> methodParameters[ i ].getType().equals( argumentsAsClasses[ i ] ) );
+		// Verify assignability including primitive autoboxing
+		return ClassUtils.isAssignable( argumentsAsClasses, methodParams );
+
+		// return IntStream.range( 0, methodParameters.length )
+		// .allMatch( i -> ClassUtils.isAssignable( argumentsAsClasses[ i ], methodParameters[ i ].getType() ) );
 	}
 
 	/**
@@ -826,14 +788,23 @@ public class ClassInvoker implements IReferenceable {
 	/**
 	 * Unwrap any ClassInvoker instances in the arguments
 	 *
-	 * @param arguments
+	 * @param arguments The arguments to unwrap
 	 *
-	 * @return
+	 * @return The unwrapped arguments
 	 */
 	void unWrapArguments( Object[] arguments ) {
 		for ( int j = 0; j < arguments.length; j++ ) {
 			arguments[ j ] = unWrap( arguments[ j ] );
 		}
+	}
+
+	/**
+	 * Verifies if the class invoker has an instance or not
+	 *
+	 * @return True if it has an instance, false otherwise
+	 */
+	public Boolean hasInstance() {
+		return this.targetInstance != null;
 	}
 
 	/**
@@ -856,15 +827,6 @@ public class ClassInvoker implements IReferenceable {
 	}
 
 	/**
-	 * Verifies if the class invoker has an instance or not
-	 *
-	 * @return True if it has an instance, false otherwise
-	 */
-	public Boolean hasInstance() {
-		return this.targetInstance != null;
-	}
-
-	/**
 	 * --------------------------------------------------------------------------
 	 * Implementation of IReferencable
 	 * --------------------------------------------------------------------------
@@ -873,29 +835,36 @@ public class ClassInvoker implements IReferenceable {
 	/**
 	 * Dereference this object by a key and return the value, or throw exception
 	 *
-	 * @return The requested obect
+	 * @param name The name of the key to dereference
+	 *
+	 * @return The requested object
 	 */
 	public Object dereference( Key name ) throws KeyNotFoundException {
 		try {
-			Optional<Object> result = getField( name.getName() );
-
-			// Handle full null support
-			if ( result.isPresent() ) {
-				return result.get();
+			// If we have the field, return it's value, even if it's null
+			if ( Boolean.TRUE.equals( hasField( name.getName() ) ) ) {
+				return getField( name.getName() ).orElse( null );
 			}
 		} catch ( Throwable e ) {
 			throw new RuntimeException( e );
 		}
 
 		// Field not found anywhere
-		if ( hasInstance() ) {
+		if ( Boolean.TRUE.equals( hasInstance() ) ) {
 			throw new KeyNotFoundException(
-			        String.format( "The instance [%s] has no public field [%s].", getTargetInstance().getClass().getName(),
-			                name.getName() )
+			        String.format( "The instance [%s] has no public field [%s].  The allowed fields are [%s]",
+			                ClassUtils.getCanonicalName( getTargetClass() ),
+			                name.getName(),
+			                getFieldNames()
+			        )
 			);
 		} else {
 			throw new KeyNotFoundException(
-			        String.format( "The class [%s] has no static field [%s].", getTargetClass().getName(), name.getName() )
+			        String.format( "The instance [%s] has no static field [%s].  The allowed fields are [%s]",
+			                ClassUtils.getCanonicalName( getTargetClass() ),
+			                name.getName(),
+			                getFieldNames()
+			        )
 			);
 		}
 	}
@@ -903,7 +872,10 @@ public class ClassInvoker implements IReferenceable {
 	/**
 	 * Dereference this object by a key and invoke the result as an invokable (UDF, java method)
 	 *
-	 * @return The requested object
+	 * @param name      The name of the key to dereference, which becomes the method name
+	 * @param arguments The arguments to pass to the invokable
+	 *
+	 * @return The requested return value or null
 	 */
 	public Object dereferenceAndInvoke( Key name, Object[] arguments ) throws KeyNotFoundException {
 		try {
@@ -920,7 +892,12 @@ public class ClassInvoker implements IReferenceable {
 	 */
 	public Object safeDereference( Key name ) {
 		try {
-			return getField( name.getName() ).orElse( null );
+			// If we have the field, return it's value, even if it's null
+			if ( Boolean.TRUE.equals( hasField( name.getName() ) ) ) {
+				return getField( name.getName() ).orElse( null );
+			} else {
+				return null;
+			}
 		} catch ( Throwable e ) {
 			throw new RuntimeException( e );
 		}
@@ -929,7 +906,8 @@ public class ClassInvoker implements IReferenceable {
 	/**
 	 * Assign a value to a field
 	 *
-	 * @return The requested scope
+	 * @param name  The name of the field to assign
+	 * @param value The value to assign
 	 */
 	public void assign( Key name, Object value ) {
 		try {

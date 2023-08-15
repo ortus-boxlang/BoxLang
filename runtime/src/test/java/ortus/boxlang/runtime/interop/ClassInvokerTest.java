@@ -33,6 +33,7 @@ import java.time.Duration;
 import TestCases.interop.InvokeDynamicFields;
 import TestCases.interop.PrivateConstructors;
 
+import org.apache.commons.lang3.ClassUtils;
 import org.junit.Ignore;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -116,15 +117,22 @@ public class ClassInvokerTest {
 	@Test
 	void testItCanCallStaticMethods() throws Throwable {
 		ClassInvoker	myInvoker	= ClassInvoker.of( Duration.class );
-		Duration		results		= ( Duration ) myInvoker.invokeStatic( "ofSeconds", new Object[] { 120 } ).get();
+		Duration		results		= null;
+
+		// Use int to long promotion
+		results = ( Duration ) myInvoker.invoke( "ofSeconds", new Object[] { 120 } ).get();
 		assertThat( results.toString() ).isEqualTo( "PT2M" );
+
+		// Normal Long
+		results = ( Duration ) myInvoker.invoke( "ofSeconds", new Object[] { 200L } ).get();
+		assertThat( results.toString() ).isEqualTo( "PT3M20S" );
 	}
 
 	@DisplayName( "It can call methods on interfaces" )
 	@Test
 	void testItCanCallMethodsOnInterfaces() throws Throwable {
 		ClassInvoker	myInvoker	= ClassInvoker.of( List.class );
-		List			results		= ( List ) myInvoker.invokeStatic( "of", new Object[] { "Hello" } ).get();
+		List			results		= ( List ) myInvoker.invoke( "of", new Object[] { "Hello" } ).get();
 		assertThat( results.toString() ).isEqualTo( "[Hello]" );
 		assertThat( results ).isNotEmpty();
 	}
@@ -249,7 +257,7 @@ public class ClassInvokerTest {
 		ClassInvoker	myInvoker	= ClassInvoker.of( InvokeDynamicFields.class );
 		List<String>	names		= myInvoker.getMethodNames();
 		assertThat( names ).isNotEmpty();
-		assertThat( names.size() ).isEqualTo( 15 );
+		assertThat( names.size() ).isEqualTo( 16 );
 		assertThat( names ).containsAtLeast(
 		        "getName", "setName", "hasName", "hello", "getNow", "equals", "hashCode"
 		);
@@ -261,7 +269,7 @@ public class ClassInvokerTest {
 		ClassInvoker	myInvoker	= ClassInvoker.of( InvokeDynamicFields.class );
 		List<String>	names		= myInvoker.getMethodNamesNoCase();
 		assertThat( names ).isNotEmpty();
-		assertThat( names.size() ).isEqualTo( 15 );
+		assertThat( names.size() ).isEqualTo( 16 );
 		assertThat( names ).containsAtLeast(
 		        "GETNAME", "SETNAME", "HASNAME", "HELLO", "GETNOW", "EQUALS", "HASHCODE"
 		);
