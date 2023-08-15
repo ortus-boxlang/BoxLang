@@ -145,6 +145,14 @@ public class ClassInvokerTest {
 		assertThat( myInvoker.getField( "name" ).get() ).isEqualTo( "luis" );
 	}
 
+	@DisplayName( "It can get public fields with any case-sensitivity" )
+	@Test
+	void testItCanGetPublicFieldsInAnyCase() throws Throwable {
+		ClassInvoker myInvoker = ClassInvoker.of( InvokeDynamicFields.class );
+		myInvoker.invokeConstructor();
+		assertThat( myInvoker.getField( "NaMe" ).get() ).isEqualTo( "luis" );
+	}
+
 	@DisplayName( "It can get non-existent field with a default value" )
 	@Test
 	void testItCanGetPublicFieldsWithADefaultValue() throws Throwable {
@@ -169,7 +177,7 @@ public class ClassInvokerTest {
 			myInvoker.invokeConstructor();
 			myInvoker.getField( "InvalidField" );
 		} );
-		assertEquals( "InvalidField", exception.getMessage() );
+		assertThat( exception.getMessage() ).contains( "InvalidField" );
 	}
 
 	@DisplayName( "It can get set values on public fields" )

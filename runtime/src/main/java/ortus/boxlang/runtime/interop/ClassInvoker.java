@@ -355,7 +355,9 @@ public class ClassInvoker implements IReferenceable {
 	 * @throws IllegalStateException If the field is not static and the target instance is null
 	 */
 	public Optional<Object> getField( String fieldName ) throws Throwable {
-		Field			field		= this.targetClass.getField( fieldName );
+		// Discover the field with no case sensitivity
+		Field			field		= findField( fieldName );
+		// Now get the method handle for the field to execute
 		MethodHandle	fieldHandle	= METHOD_LOOKUP.unreflectGetter( field );
 		Boolean			isStatic	= Modifier.isStatic( field.getModifiers() );
 
@@ -401,7 +403,8 @@ public class ClassInvoker implements IReferenceable {
 	 * @throws IllegalStateException If the field is not static and the target instance is null
 	 */
 	public ClassInvoker setField( String fieldName, Object value ) throws Throwable {
-		Field			field		= this.targetClass.getField( fieldName );
+		// Discover the field with no case sensitivity
+		Field			field		= findField( fieldName );
 		MethodHandle	fieldHandle	= METHOD_LOOKUP.unreflectSetter( field );
 		Boolean			isStatic	= Modifier.isStatic( field.getModifiers() );
 
@@ -420,6 +423,24 @@ public class ClassInvoker implements IReferenceable {
 		}
 
 		return this;
+	}
+
+	/**
+	 * Find a field by name with no case-sensitivity (upper case) in the class
+	 *
+	 * @param fieldName The name of the field to find
+	 *
+	 * @return The field if discovered
+	 *
+	 * @throws NoSuchFieldException If the field cannot be found
+	 */
+	public Field findField( String fieldName ) throws NoSuchFieldException {
+		return getFieldsAsStream()
+		        .filter( target -> target.getName().equalsIgnoreCase( fieldName ) )
+		        .findFirst()
+		        .orElseThrow( () -> new NoSuchFieldException(
+		                String.format( "No such field [%s] found in the class [%s].", fieldName, this.targetClass.getName() )
+		        ) );
 	}
 
 	/**
@@ -454,12 +475,21 @@ public class ClassInvoker implements IReferenceable {
 	}
 
 	/**
+	 * Get a stream of fields of all the public fields for the given class
+	 *
+	 * @return The stream of fields in the class
+	 */
+	public Stream<Field> getFieldsAsStream() {
+		return Stream.of( getFields() );
+	}
+
+	/**
 	 * Get a list of field names for the given class with case-sensitivity
 	 *
 	 * @return A list of field names
 	 */
 	public List<String> getFieldNames() {
-		return Stream.of( getFields() )
+		return getFieldsAsStream()
 		        .map( Field::getName )
 		        .toList();
 
@@ -471,7 +501,7 @@ public class ClassInvoker implements IReferenceable {
 	 * @return A list of field names
 	 */
 	public List<String> getFieldNamesNoCase() {
-		return Stream.of( getFields() )
+		return getFieldsAsStream()
 		        .map( Field::getName )
 		        .map( String::toUpperCase )
 		        .toList();
