@@ -6,6 +6,13 @@
     "configurations": [
         {
             "type": "java",
+            "name": "Phase1",
+            "request": "launch",
+            "mainClass": "ortus.boxlang.runtime.testing.Phase1",
+            "projectName": "runtime"
+        },
+        {
+            "type": "java",
             "name": "MockTemplate",
             "request": "launch",
             "mainClass": "ortus.boxlang.runtime.testing.MockTemplate",

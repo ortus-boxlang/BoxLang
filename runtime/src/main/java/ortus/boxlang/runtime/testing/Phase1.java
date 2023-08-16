@@ -19,8 +19,8 @@ package ortus.boxlang.runtime.testing;
 
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.IBoxContext;
+
 // BoxLang Auto Imports
-import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.dynamic.BaseTemplate;
 import ortus.boxlang.runtime.dynamic.Referencer;
 import ortus.boxlang.runtime.interop.DynamicObject;
@@ -59,27 +59,18 @@ public class Phase1 extends BaseTemplate {
 		return instance;
 	}
 
-	public void invoke2( IBoxContext context ) throws Exception {
-		IScope variablesScope = context.getScopeLocal( Key.of( "variables" ) );
-
-		// I can store variables in the context
-		variablesScope.put( Key.of( "MockTemplate" ), "Yea baby!!" );
-		// Case sensitive set
-		variablesScope.put( Key.of( "system" ), ClassLocator.getInstance().load( context, "java.lang.System" ) );
-
-		System.out.println( "MockTemplate invoked, woot woot!" );
-	}
-
 	@Override
 	public void invoke( IBoxContext context ) throws Throwable {
+		ClassLocator	classLocator	= ClassLocator.getInstance();
+
 		// Reference to the variables scope
-		IScope variablesScope = context.getScopeLocal( Key.of( "variables" ) );
+		IScope			variablesScope	= context.getScopeLocal( Key.of( "variables" ) );
 
 		// Case sensitive set
-		variablesScope.put( Key.of( "system" ), ClassLocator.getInstance().load( context, "java.lang.System" ) );
+		variablesScope.put( Key.of( "system" ), classLocator.load( context, "java.lang.System" ) );
 
 		// Every class (box|java) is represented as a ClassInvoker
-		DynamicObject oString = ClassLocator.getInstance().load( context, "java.lang.String" );
+		DynamicObject oString = classLocator.load( context, "java.lang.String" );
 
 		variablesScope.put(
 		        // Case insensitive set
