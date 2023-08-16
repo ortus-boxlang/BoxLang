@@ -9,3 +9,6 @@ runtime/bin/
 
 # IDEA files
 .idea
+
+# Mac Files
+.DS_Store
