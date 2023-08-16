@@ -1,10 +1,7 @@
 package ortus.boxlang.java
 
 import com.github.javaparser.ast.*
-import com.github.javaparser.ast.body.ClassOrInterfaceDeclaration
-import com.github.javaparser.ast.body.MethodDeclaration
-import com.github.javaparser.ast.body.Parameter
-import com.github.javaparser.ast.body.TypeDeclaration
+import com.github.javaparser.ast.body.*
 import com.github.javaparser.ast.expr.*
 import com.github.javaparser.ast.modules.ModuleDeclaration
 import com.github.javaparser.ast.stmt.BlockStmt
@@ -16,12 +13,14 @@ import com.github.javaparser.ast.type.VoidType
 import com.strumenta.kolasu.model.children
 import com.strumenta.kolasu.model.processNodesOfType
 import ortus.boxlang.parser.*
+import java.io.File
 import com.github.javaparser.ast.expr.Expression as JExpression
 
 
 class BoxToJavaMapper(
 	private val boxAstRoot: BoxScript,
-	private val fileName: String? = null
+	private val fileName: String? = null,
+	private val packageName: String? = null
 ) {
 	private val cu = CompilationUnit()
 
@@ -30,7 +29,10 @@ class BoxToJavaMapper(
 			SingleScriptTemplate(
 				boxAstRoot.body.filter { it !is BoxComponent },
 				cu,
-				fileName
+				fileName,
+				packageName,
+				"<JSON AST>",
+				boxAstRoot
 			).toJava()
 		else
 			cu
@@ -39,7 +41,10 @@ class BoxToJavaMapper(
 class SingleScriptTemplate(
 	private val scriptStatements: List<BoxStatement>,
 	private val cu: CompilationUnit,
-	private val fileName: String? = null
+	private val fileName: String? = null,
+	private val packageName: String? = null,
+	private val jsonBoxAst: String? = null,
+	private val boxAstRoot: BoxScript? = null
 ) {
 	inner class ExecutionContextType : ClassOrInterfaceType("ExecutionContext") {
 		init {
@@ -72,6 +77,77 @@ class SingleScriptTemplate(
 		.apply { type = VoidType() }
 		.apply { addThrownException(Throwable::class.java) }
 	private val classDefinition = ClassOrInterfaceDeclaration()
+		.apply {
+			if (fileName != null)
+				addMember(
+					FieldDeclaration(
+						NodeList(
+							Modifier.publicModifier(),
+							Modifier.staticModifier(),
+							Modifier.finalModifier()
+						),
+						VariableDeclarator(
+							useTypeAndAddImport("java.lang.String"),
+							"name",
+							StringLiteralExpr(File(fileName).nameWithoutExtension)
+						)
+					)
+				)
+		}
+		.apply {
+			if (fileName != null)
+				addMember(
+					FieldDeclaration(
+						NodeList(
+							Modifier.publicModifier(),
+							Modifier.staticModifier(),
+							Modifier.finalModifier()
+						),
+						VariableDeclarator(
+							useTypeAndAddImport("java.lang.String"),
+							"extension",
+							StringLiteralExpr(File(fileName).extension)
+						)
+					)
+				)
+		}
+		.apply {
+			if (jsonBoxAst != null)
+				addMember(
+					FieldDeclaration(
+						NodeList(
+							Modifier.publicModifier(),
+							Modifier.staticModifier(),
+							Modifier.finalModifier()
+						),
+						VariableDeclarator(
+							useTypeAndAddImport(BoxScript::class.java.name),
+							"ast",
+							MethodCallExpr(
+								"JsonDeserialize",
+								StringLiteralExpr(jsonBoxAst)
+							)
+						)
+					)
+				)
+		}
+		.apply {
+			if (boxAstRoot != null)
+				addMember(
+					FieldDeclaration(
+						NodeList(
+							Modifier.publicModifier(),
+							Modifier.staticModifier(),
+							Modifier.finalModifier()
+						),
+						VariableDeclarator(
+							useTypeAndAddImport(BoxScript::class.java.name),
+							"ast",
+							generationCode(boxAstRoot)
+						)
+					)
+				)
+		}
 		.apply { addMember(invokeMethodDeclaration) }
 		.apply { fileName?.let { setName(it.replace(Regex("""(.*)\.([^.]+)"""), """$1\$$2""")) } }
 		.apply { addModifier(Modifier.Keyword.PUBLIC) }
@@ -83,6 +159,30 @@ class SingleScriptTemplate(
 		}
 		return cu
 			.apply { addType(classDefinition) }
+			.apply { packageName?.let { this.setPackageDeclaration(it) } }
+	}
+
+	private fun generationCode(boxAst: BoxScript) = ObjectCreationExpr(
+		null,
+		useTypeAndAddImport(BoxScript::class.java.name),
+		NodeList(
+			ObjectCreationExpr(
+				null,
+				ClassOrInterfaceType("ArrayList"),
+				NodeList(
+					ObjectCreationExpr(
+						null,
+						ClassOrInterfaceType("BoxFunctionDefinition"),
+						NodeList()
+					)
+				)
+			)
+		)
+	)
+
+	private fun useTypeAndAddImport(fqn: String): ClassOrInterfaceType {
+		cu.addImport(fqn)
+		return ClassOrInterfaceType(fqn.substring(fqn.lastIndexOf(".") + 1))
 	}
 }
 
