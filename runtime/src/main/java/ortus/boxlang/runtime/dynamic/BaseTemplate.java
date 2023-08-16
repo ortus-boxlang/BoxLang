@@ -31,10 +31,29 @@ public class BaseTemplate {
 	 * --------------------------------------------------------------------------
 	 */
 
+	/**
+	 * The name of the template
+	 */
 	public String			name;
+
+	/**
+	 * The extension of the template
+	 */
 	public String			extension;
+
+	/**
+	 * The path to the template
+	 */
 	public String			path;
+
+	/**
+	 * The last modified date of the template
+	 */
 	public LocalDateTime	lastModified;
+
+	/**
+	 * The date the template was compiled
+	 */
 	public LocalDateTime	compiledOn;
 
 	// public ??? ast;

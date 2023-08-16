@@ -41,12 +41,6 @@ import java.lang.Integer;
 
 public class Phase1 extends BaseTemplate {
 
-	/**
-	 * --------------------------------------------------------------------------
-	 * Public Properties
-	 * --------------------------------------------------------------------------
-	 */
-
 	private static Phase1 instance;
 
 	private Phase1() {
