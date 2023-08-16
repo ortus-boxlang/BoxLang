@@ -60,16 +60,12 @@ public class HelloWorld$cfm implements ITemplate {
 		// Case sensitive set
 		variablesScope.put( Key.of( "system" ), JavaLoader.load( context, "java.lang.System" ) );
 
-		// This is a Class, or a Java proxy instance?
-		// Let's start with a direct class for now
-		Class oString = JavaLoader.load( context, "java.lang.String" );
-
 		variablesScope.put(
 			// Case insensitive set
 			Key.of( "GREETING" ),
 
 			// Invoke callsite
-			oString.invokeConstructor(
+			JavaLoader.load( context, "java.lang.String" ).invokeConstructor(
 				// Argument Values
 				new Object[] { "Hello" } ) );
 
@@ -86,7 +82,7 @@ public class HelloWorld$cfm implements ITemplate {
 				// Arguments
 				new Object[] {
 
-					Concat.invoke( context, context.scopeFindLOcal( Key.of( "GREETING" ) ), " world" )
+					Concat.invoke( context, context.scopeFindLocal( Key.of( "GREETING" ) ), " world" )
 
 				} );
 

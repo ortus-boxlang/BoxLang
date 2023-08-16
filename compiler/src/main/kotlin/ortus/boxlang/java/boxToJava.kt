@@ -109,13 +109,55 @@ class ScopeGetExpression(
 		value)
 }
 
+class ScopeFindLocalMethodCall(key: String) : MethodCallExpr(
+	NameExpr("context"),
+	"scopeFindLocal",
+	NodeList(key.toKeyOf())
+)
+
+class ReferencerGetExpression(
+	scopesList: MutableList<JExpression> = mutableListOf()
+) : MethodCallExpr(
+	NameExpr("Referencer"),
+	"get",
+	NodeList(scopesList.map { if (it is NameExpr) it.toKeyOf() else it })
+) {
+	fun addLastScope(scope: JExpression) = arguments.addLast(transform(scope))
+	fun addFirstScope(scope: JExpression) = arguments.addFirst(transform(scope))
+	private fun transform(expression: JExpression) =
+		if (expression is NameExpr)
+			expression.toKeyOf()
+		else
+			expression
+}
+
+class ReferencerGetAndInvokeExpression(
+	methodName: String,
+	arguments: List<JExpression> = listOf(),
+	scope: JExpression? = null
+) : MethodCallExpr(
+	NameExpr("Referencer"),
+	"getAndInvoke",
+	NodeList(
+		if (scope is NameExpr) scope.toKeyOf() else scope,
+		StringLiteralExpr(methodName),
+		ArrayCreationExpr(
+			ClassOrInterfaceType("Object"),
+			NodeList(ArrayCreationLevel()),
+			ArrayInitializerExpr(NodeList(arguments))
+		)
+	)
+)
+
 fun String.toKeyOf() = MethodCallExpr(
 	NameExpr("Key"),
 	"of",
-	NodeList(StringLiteralExpr(this))
+	NodeList(StringLiteralExpr(this.uppercase()))
 )
 
 fun NameExpr.toKeyOf() = this.nameAsString.toKeyOf()
+
+fun NameExpr.toScopeFindLocal() = ScopeFindLocalMethodCall(nameAsString)
 
 fun BoxScript.toJava(): com.github.javaparser.ast.CompilationUnit {
 	val packageDeclaration = PackageDeclaration()
@@ -186,19 +228,13 @@ fun BoxObjectAccessExpression.toJava(): JExpression {
 				else -> throw this.notImplemented()
 			})
 
-		else -> {
-			FieldAccessExpr(
-				scope,
-				when (this.access) {
-					is BoxIdentifier -> this.access.name
-					is BoxStringLiteral -> this.access.value
-					is BoxObjectAccessExpression -> when {
-						this.access.context == null && this.access.access is BoxIdentifier -> this.access.access.name
-						else -> throw this.notImplemented()
-					}
+		is ReferencerGetExpression -> scope.apply { addFirstScope(scope) }
 
-					else -> throw this.notImplemented()
-				})
+		else -> {
+			ReferencerGetExpression(mutableListOf(scope, when (this.access) {
+				is BoxIdentifier -> NameExpr(this.access.name)
+				else -> this.access.toJava()
+			}))
 		}
 	}
 }
@@ -320,17 +356,22 @@ fun BoxMethodInvokationExpression.toJava(): MethodCallExpr {
 			))
 		)
 	} else {
-		MethodCallExpr(
-			scope,
+		ReferencerGetAndInvokeExpression(
 			this.methodName.name,
-			NodeList(this.arguments.map { it.toJava() })
+			this.arguments.map { it.toJava() },
+			scope
 		)
+//		MethodCallExpr(
+//			scope,
+//			this.methodName.name,
+//			NodeList(this.arguments.map { it.toJava() })
+//		)
 	}
 }
 
 fun BoxVariablesScopeExpression.toJava() = VariablesScopeNameExpr()
 
-fun BoxIdentifier.toJava(): JExpression = NameExpr(this.name)
+fun BoxIdentifier.toJava(): JExpression = NameExpr(this.name).toScopeFindLocal()
 
 fun BoxStringLiteral.toJava(): StringLiteralExpr = StringLiteralExpr(this.value)
 

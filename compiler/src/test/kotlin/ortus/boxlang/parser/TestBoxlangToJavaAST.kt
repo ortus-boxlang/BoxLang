@@ -3,6 +3,7 @@ package ortus.boxlang.parser
 import com.github.javaparser.JavaParser
 import com.github.javaparser.ParseResult
 import com.github.javaparser.ast.CompilationUnit
+import com.github.javaparser.ast.comments.Comment
 import com.strumenta.kolasu.parsing.ParsingResult
 import junit.framework.TestCase.assertEquals
 import org.junit.Ignore
@@ -44,6 +45,9 @@ class TestBoxlangToJavaAST : BaseTest() {
 			val cfParseResult = CFLanguageParser().parse(cfFile)
 			check(cfParseResult.correct) { "Parse failed: file://${cfFile.absolutePath}" }
 			checkNotNull(cfParseResult.root) { "Parse result has no root: file://${cfFile.absolutePath}" }
+			val actualJavaAst = javaParser.parse(javaFile).result.get()
+				.walk(Comment::class.java) { TODO() }
+
 			try {
 				assertASTEqual(
 					javaParser.parse(javaFile).result.get(),
@@ -91,6 +95,10 @@ class TestBoxlangToJavaAST : BaseTest() {
 		val boxToJavaMapper = BoxToJavaMapper(cfmlParseResult.root!!, cfFile.name)
 		val boxlangToJava = boxToJavaMapper.toJava()
 		val expectedJavaAst = javaParseResult.result.orElseThrow()
+		expectedJavaAst.walk(Comment::class.java) { it.remove() }
+		expectedJavaAst.walk {
+			it.setComment(null)
+		}
 		assertASTEqual(expectedJavaAst, boxlangToJava) { "" }
 	}
 
