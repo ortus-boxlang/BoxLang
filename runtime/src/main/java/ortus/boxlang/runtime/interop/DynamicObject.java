@@ -143,7 +143,7 @@ public class DynamicObject implements IReferenceable {
 	/**
 	 * Create a new class invoker for the given class
 	 *
-	 * @param targetClass
+	 * @param targetClass The class to create the invoker for
 	 */
 	public DynamicObject( Class<?> targetClass ) {
 		this.targetClass = targetClass;
@@ -152,7 +152,7 @@ public class DynamicObject implements IReferenceable {
 	/**
 	 * Create a new class invoker for the given instance
 	 *
-	 * @param targetInstance
+	 * @param targetInstance The instance to create the invoker for
 	 */
 	public DynamicObject( Object targetInstance ) {
 		this.targetInstance	= targetInstance;

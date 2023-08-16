@@ -37,6 +37,8 @@ public interface IType {
 
 	/**
 	 * Represent as string, or throw exception if not possible
+	 * 
+	 * @return The string representation
 	 */
 	public String asString();
 

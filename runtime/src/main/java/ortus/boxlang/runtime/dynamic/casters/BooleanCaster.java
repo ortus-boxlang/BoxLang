@@ -51,8 +51,8 @@ public class BooleanCaster {
 	/**
 	 * Used to cast anything to a boolean
 	 *
-	 * @param value The value to cast to a boolean
-	 * @param fail  True to throw exception when failing.
+	 * @param object The value to cast to a boolean
+	 * @param fail   True to throw exception when failing.
 	 *
 	 * @return The boolean value, or null when cannot be cast
 	 */

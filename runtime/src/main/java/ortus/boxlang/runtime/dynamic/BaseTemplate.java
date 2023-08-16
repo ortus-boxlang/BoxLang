@@ -55,6 +55,8 @@ public class BaseTemplate {
 	 * Invoke a BoxLang template
 	 *
 	 * @param context The context to invoke the template with
+	 *
+	 * @throws Throwable If an error occurs
 	 */
 	public void invoke( IBoxContext context ) throws Throwable {
 		throw new UnsupportedOperationException( "This method must be overridden as a static method." );

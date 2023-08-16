@@ -122,6 +122,10 @@ public class BoxRuntime {
 
 	/**
 	 * Execute a single template in its own context
+	 *
+	 * @param templatePath The path to the template to execute
+	 *
+	 * @throws Throwable if the template cannot be executed
 	 */
 	public void executeTemplate( String templatePath ) throws Throwable {
 

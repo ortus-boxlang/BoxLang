@@ -125,6 +125,8 @@ public final class CastAttempt<T> {
 	 *
 	 * @param consumer block to be executed if a value is present
 	 *
+	 * @return this {@code CastAttempt}
+	 * 
 	 * @throws NullPointerException if value is present and {@code consumer} is
 	 *                              null
 	 */
