@@ -25,11 +25,25 @@ import ortus.boxlang.runtime.interop.DynamicObject;
  */
 public class Compare implements IOperator {
 
+	/**
+	 * Invokes the comparison
+	 *
+	 * @param left  The left operand
+	 * @param right The right operand
+	 *
+	 * @return 1 if greater than, -1 if less than, = if equal
+	 */
 	public static int invoke( Object left, Object right ) {
 		return invoke( left, right, false );
 	}
 
 	/**
+	 * Invokes the comparison
+	 * 
+	 * @param left          The left operand
+	 * @param right         The right operand
+	 * @param caseSensitive Whether to compare strings case sensitive
+	 * 
 	 * @return 1 if greater than, -1 if less than, = if equal
 	 */
 	@SuppressWarnings( "unchecked" )

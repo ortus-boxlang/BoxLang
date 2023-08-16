@@ -26,6 +26,8 @@ import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
 public class Not implements IOperator {
 
 	/**
+	 * @param object The object to negate
+	 *
 	 * @return The result
 	 */
 	public static Boolean invoke( Object object ) {

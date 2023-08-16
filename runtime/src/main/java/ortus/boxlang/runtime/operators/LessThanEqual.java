@@ -18,12 +18,15 @@
 package ortus.boxlang.runtime.operators;
 
 /**
- * Performs LTE or <= comparison
+ * Performs LTE or {@code <=} comparison
  * Compares numbers as numbers, compares strings case insensitive
  */
 public class LessThanEqual implements IOperator {
 
 	/**
+	 * @param left  The left operand
+	 * @param right The right operand
+	 * 
 	 * @return True if left is less than or equal to right
 	 */
 	public static Boolean invoke( Object left, Object right ) {

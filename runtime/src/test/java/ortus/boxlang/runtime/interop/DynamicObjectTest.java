@@ -22,23 +22,17 @@ import ortus.boxlang.runtime.types.IType;
 import java.lang.String;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Optional;
-import java.util.Set;
 import java.time.Duration;
 
 import TestCases.interop.InvokeDynamicFields;
 import TestCases.interop.PrivateConstructors;
 
-import org.apache.commons.lang3.ClassUtils;
-import org.junit.Ignore;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import static com.google.common.truth.Truth.assertThat;
-import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class DynamicObjectTest {

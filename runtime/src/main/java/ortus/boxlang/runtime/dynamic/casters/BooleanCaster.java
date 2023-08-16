@@ -26,10 +26,10 @@ public class BooleanCaster {
 
 	/**
 	 * Tests to see if the value can be cast to a boolean.
-	 * Returns a CastAttempt<T> which will contain the result if casting was
+	 * Returns a {@code CastAttempt<T>} which will contain the result if casting was
 	 * was successfull, or can be interogated to proceed otherwise.
 	 *
-	 * @param value The value to cast to a boolean
+	 * @param object The value to cast to a boolean
 	 *
 	 * @return The boolean value
 	 */
@@ -40,7 +40,7 @@ public class BooleanCaster {
 	/**
 	 * Used to cast anything to a boolean, throwing exception if we fail
 	 *
-	 * @param value The value to cast to a boolean
+	 * @param object The value to cast to a boolean
 	 *
 	 * @return The boolean value
 	 */

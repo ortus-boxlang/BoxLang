@@ -19,6 +19,9 @@ package ortus.boxlang.runtime.operators;
 
 import ortus.boxlang.runtime.interop.DynamicObject;
 
+/**
+ * The base interface for all operators
+ */
 public interface IOperator {
 
 }

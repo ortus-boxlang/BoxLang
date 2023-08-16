@@ -154,7 +154,7 @@ public class ClassLocator extends ClassLoader {
 	/**
 	 * Verifies if the class resolver is empty or not
 	 *
-	 * @return
+	 * @return True if the resolver cache is empty, false otherwise
 	 */
 	public Boolean isEmpty() {
 		return resolverCache.isEmpty();

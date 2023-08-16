@@ -126,8 +126,12 @@ public class BaseScope extends Struct implements IScope {
 	/**
 	 * Dereference this object by a key and invoke the result as an invokable (UDF, java method)
 	 *
+	 * @param name      The key to look for
+	 * @param arguments The arguments to pass to the invokable
+	 * 
 	 * @return The requested object
 	 */
+	@Override
 	public Object dereferenceAndInvoke( Key name, Object[] arguments ) throws KeyNotFoundException {
 		Object object = dereference( name );
 		// Test if the object is invokable (a UDF or java call site) and invoke it or throw exception if not invokable
@@ -139,17 +143,22 @@ public class BaseScope extends Struct implements IScope {
 	/**
 	 * Safely dereference this object by a key and return the value, or null if not found
 	 *
+	 * @param name The key to look for
+	 *
 	 * @return The requested object or null
 	 */
+	@Override
 	public Object safeDereference( Key name ) {
 		return get( name );
 	}
 
 	/**
-	 * Assign a value to a key
+	 * Derefence by assignment (x = y)
 	 *
-	 * @return The requested scope
+	 * @param name  The key to assign to
+	 * @param value The value to assign
 	 */
+	@Override
 	public void assign( Key name, Object value ) {
 		put( name, value );
 	}

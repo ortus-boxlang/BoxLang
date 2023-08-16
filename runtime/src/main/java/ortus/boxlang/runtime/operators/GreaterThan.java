@@ -24,6 +24,9 @@ package ortus.boxlang.runtime.operators;
 public class GreaterThan implements IOperator {
 
 	/**
+	 * @param left  The left operand
+	 * @param right The right operand
+	 * 
 	 * @return True if left is greater than right
 	 */
 	public static Boolean invoke( Object left, Object right ) {

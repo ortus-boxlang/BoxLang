@@ -196,10 +196,10 @@ public class Struct extends ConcurrentHashMap<Key, Object> implements IType, IRe
 	}
 
 	/**
-	 * Get a scope from the context. If not found, the parent context is asked.
-	 * Search all konwn scopes
-	 *
-	 * @return The requested scope
+	 * Derefence by assignment (x = y)
+	 * 
+	 * @param name  The key to assign to
+	 * @param value The value to assign
 	 */
 	public void assign( Key name, Object value ) {
 		put( name, value );

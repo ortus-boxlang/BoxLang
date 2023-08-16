@@ -24,6 +24,9 @@ package ortus.boxlang.runtime.operators;
 public class EqualsEquals implements IOperator {
 
 	/**
+	 * @param left  The left operand
+	 * @param right The right operand
+	 *
 	 * @return True if operands are the equal
 	 */
 	public static Boolean invoke( Object left, Object right ) {

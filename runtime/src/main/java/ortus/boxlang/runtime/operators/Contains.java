@@ -25,6 +25,9 @@ import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 public class Contains implements IOperator {
 
 	/**
+	 * @param left  The left operand
+	 * @param right The right operand
+	 * 
 	 * @return true if right is contained within left case insensitive
 	 */
 	public static Boolean invoke( Object left, Object right ) {

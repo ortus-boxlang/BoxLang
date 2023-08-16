@@ -196,6 +196,8 @@ public class DynamicObject implements IReferenceable {
 
 	/**
 	 * @param handlesCacheEnabled Enable or not the handles cache
+	 *
+	 * @return The Dynamic Object
 	 */
 	public DynamicObject setHandlesCacheEnabled( Boolean handlesCacheEnabled ) {
 		this.handlesCacheEnabled = handlesCacheEnabled;
@@ -211,6 +213,8 @@ public class DynamicObject implements IReferenceable {
 
 	/**
 	 * @param targetClass the targetClass to set
+	 *
+	 * @return The Dynamic Object
 	 */
 	public DynamicObject setTargetClass( Class<?> targetClass ) {
 		this.targetClass = targetClass;
@@ -226,6 +230,8 @@ public class DynamicObject implements IReferenceable {
 
 	/**
 	 * @param targetInstance the targetInstance to set
+	 *
+	 * @return The Dynamic Object
 	 */
 	public DynamicObject setTargetInstance( Object targetInstance ) {
 		this.targetInstance = targetInstance;
@@ -323,7 +329,7 @@ public class DynamicObject implements IReferenceable {
 	 *
 	 * @return The result of the method invocation wrapped in an Optional
 	 *
-	 * @throws Throwable
+	 * @throws Throwable If the method cannot be invoked
 	 */
 	public Optional<Object> invokeStatic( String methodName, Object... arguments ) throws Throwable {
 
@@ -356,7 +362,7 @@ public class DynamicObject implements IReferenceable {
 	 *
 	 * @return The value of the field wrapped in an Optional
 	 *
-	 * @throws Throwable
+	 * @throws Throwable             If the field cannot be retrieved
 	 * @throws NoSuchFieldException  If the field doesn't exist
 	 * @throws IllegalStateException If the field is not static and the target instance is null
 	 */
@@ -388,6 +394,8 @@ public class DynamicObject implements IReferenceable {
 	 * @param fieldName    The name of the field to get
 	 * @param defaultValue The default value to return if the field doesn't exist
 	 *
+	 * @throws Throwable If the field cannot be retrieved
+	 *
 	 * @return The value of the field or the default value wrapped in an Optional
 	 */
 	public Optional<Object> getField( String fieldName, Object defaultValue ) throws Throwable {
@@ -406,6 +414,7 @@ public class DynamicObject implements IReferenceable {
 	 *
 	 * @return The class invoker
 	 *
+	 * @throws Throwable             If the field cannot be set
 	 * @throws IllegalStateException If the field is not static and the target instance is null
 	 */
 	public DynamicObject setField( String fieldName, Object value ) throws Throwable {
@@ -644,7 +653,7 @@ public class DynamicObject implements IReferenceable {
 	/**
 	 * Verifies if the class has a public or public static method with the given name and no case-sensitivity (upper case)
 	 *
-	 * @param fieldName The name of the method to check
+	 * @param methodName The name of the method to check
 	 *
 	 * @return True if the method exists, false otherwise
 	 */
@@ -655,8 +664,8 @@ public class DynamicObject implements IReferenceable {
 	/**
 	 * This method is used to verify if the class has the same method signature as the incoming one with no case-sensitivity (upper case)
 	 *
-	 * @param methodName     The name of the method to check
-	 * @param parameterTypes The parameter types of the method to check
+	 * @param methodName         The name of the method to check
+	 * @param argumentsAsClasses The parameter types of the method to check
 	 *
 	 * @return The matched method signature
 	 *

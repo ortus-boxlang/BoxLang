@@ -26,6 +26,8 @@ import ortus.boxlang.runtime.dynamic.casters.DoubleCaster;
 public class Negate implements IOperator {
 
 	/**
+	 * @param object The object to negate
+	 * 
 	 * @return The result
 	 */
 	public static Double invoke( Object object ) {

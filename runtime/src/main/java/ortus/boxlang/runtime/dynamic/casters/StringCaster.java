@@ -29,10 +29,10 @@ public class StringCaster {
 
 	/**
 	 * Tests to see if the value can be cast to a string.
-	 * Returns a CastAttempt<T> which will contain the result if casting was
+	 * Returns a {@code CastAttempt<T>} which will contain the result if casting was
 	 * was successfull, or can be interogated to proceed otherwise.
 	 *
-	 * @param value The value to cast to a string
+	 * @param object The value to cast to a string
 	 *
 	 * @return The string value
 	 */
@@ -43,7 +43,7 @@ public class StringCaster {
 	/**
 	 * Used to cast anything to a string, throwing exception if we fail
 	 *
-	 * @param value The value to cast to a string
+	 * @param object The value to cast to a string
 	 *
 	 * @return The string value
 	 */
@@ -54,8 +54,8 @@ public class StringCaster {
 	/**
 	 * Used to cast anything to a string
 	 *
-	 * @param value The value to cast to a string
-	 * @param fail  True to throw exception when failing.
+	 * @param object The value to cast to a string
+	 * @param fail   True to throw exception when failing.
 	 *
 	 * @return The String value
 	 */

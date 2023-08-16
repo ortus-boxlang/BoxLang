@@ -25,6 +25,9 @@ import ortus.boxlang.runtime.dynamic.casters.DoubleCaster;
 public class Plus implements IOperator {
 
 	/**
+	 * @param left  The left operand
+	 * @param right The right operand
+	 * 
 	 * @return The the sum
 	 */
 	public static Double invoke( Object left, Object right ) {

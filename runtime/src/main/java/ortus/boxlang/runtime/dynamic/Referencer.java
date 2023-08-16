@@ -21,17 +21,17 @@ import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.interop.DynamicObject;
 
 /**
- * I handle de
+ * I handle dereferencing of objects
  */
 public class Referencer {
 
 	/**
 	 * Used to implement any time an object is dereferenced,
 	 *
-	 * @param object
-	 * @param key
+	 * @param object The object to dereference
+	 * @param key    The key to dereference
 	 *
-	 * @return
+	 * @return The value that was dereferenced
 	 */
 	public static Object get( Object object, Key key ) {
 		// If this object is referenable,
@@ -54,10 +54,11 @@ public class Referencer {
 	/**
 	 * Used to implement any time an object is dereferenced,
 	 *
-	 * @param object
-	 * @param key
+	 * @param object    The object to dereference
+	 * @param key       The key to dereference
+	 * @param arguments The arguments to pass to the method
 	 *
-	 * @return
+	 * @return The value that was assigned
 	 */
 	public static Object getAndInvoke( Object object, Key key, Object[] arguments ) {
 		// If this object is referenable,
@@ -77,6 +78,15 @@ public class Referencer {
 		}
 	}
 
+	/**
+	 * Used to implement any time an object is dereferenced,
+	 *
+	 * @param object The object to dereference
+	 * @param key    The key to dereference
+	 * @param value  The value to assign
+	 *
+	 * @return The value that was assigned
+	 */
 	public static Object set( Object object, Key key, Object value ) {
 		// If this object is referenable,
 		if ( object instanceof IReferenceable ) {

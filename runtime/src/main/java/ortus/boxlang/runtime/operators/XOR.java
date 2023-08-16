@@ -25,6 +25,9 @@ import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
 public class XOR implements IOperator {
 
 	/**
+	 * @param left  The left operand
+	 * @param right The right operand
+	 * 
 	 * @return The result
 	 */
 	public static Boolean invoke( Object left, Object right ) {
