@@ -25,39 +25,43 @@ import ortus.boxlang.runtime.loader.ClassLocator.ClassLocation;
 /**
  * This resolver deals with BoxLang classes only.
  */
-public class BoxResolver extends BaseResolver implements IClassResolver {
-
-	/**
-	 * --------------------------------------------------------------------------
-	 * Public Properties
-	 * --------------------------------------------------------------------------
-	 */
-
-	/**
-	 * The name of a resolver
-	 */
-	public static final String	NAME			= "BoxResolver";
-
-	/**
-	 * The prefix of a resolver
-	 */
-	public static final String	PREFIX			= "bx";
-
-	/**
-	 * The class extension to use for loading classes
-	 */
-	public static final String	CLASS_EXTENSION	= ".class";
-
-	/**
-	 * --------------------------------------------------------------------------
-	 * Private Properties
-	 * --------------------------------------------------------------------------
-	 */
+public class BoxResolver extends BaseResolver {
 
 	/**
 	 * The class directory for generated bx classes
 	 */
-	private String				classDirectory;
+	private String					classDirectory;
+
+	/**
+	 * Singleton instance
+	 */
+	protected static BoxResolver	instance;
+
+	/**
+	 * --------------------------------------------------------------------------
+	 * Constructor
+	 * --------------------------------------------------------------------------
+	 */
+
+	/**
+	 * Private constructor
+	 */
+	private BoxResolver() {
+		super( "BoxResolver", "bx" );
+	}
+
+	/**
+	 * Singleton instance
+	 *
+	 * @return The instance
+	 */
+	public static synchronized BoxResolver getInstance() {
+		if ( instance == null ) {
+			instance = new BoxResolver();
+		}
+
+		return instance;
+	}
 
 	/**
 	 * --------------------------------------------------------------------------

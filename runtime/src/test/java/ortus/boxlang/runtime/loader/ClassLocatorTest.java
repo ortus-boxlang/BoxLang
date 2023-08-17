@@ -17,6 +17,8 @@
  */
 package ortus.boxlang.runtime.loader;
 
+import static org.junit.Assert.assertThrows;
+
 import org.junit.Ignore;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -29,30 +31,53 @@ import static com.google.common.truth.Truth.assertThat;
 
 public class ClassLocatorTest {
 
+	@DisplayName( "It can register the core resolvers" )
+	@Test
+	public void testCanRegisterCoreResolvers() {
+		ClassLocator locator = ClassLocator.getInstance();
+		System.out.println( "prefixes " + locator.getResolvedPrefixes() );
+		assertThat( locator.hasResolver( "bx" ) ).isTrue();
+		assertThat( locator.hasResolver( "java" ) ).isTrue();
+		assertThat( locator.getResolvedPrefixes() ).containsAtLeast( "bx", "java" );
+		assertThat( locator.getResolver( "bx" ) ).isInstanceOf( BoxResolver.class );
+	}
+
+	@DisplayName( "It can throw an exception if you try to remove a core resolver" )
+	@Test
+	public void testItCannotRemoveACoreResolver() {
+		ClassLocator locator = ClassLocator.getInstance();
+		assertThrows( IllegalStateException.class, () -> {
+			locator.removeResolver( "java" );
+		} );
+		assertThrows( IllegalStateException.class, () -> {
+			locator.removeResolver( "bx" );
+		} );
+	}
+
 	@DisplayName( "It can load native Java classes and add to the resolver cache" )
 	@Test
 	public void testCanLoadJavaClassesWithCaching() throws Throwable {
-		ClassLocator	locator		= ClassLocator.getInstance( "" );
+		ClassLocator	locator		= ClassLocator.getInstance();
 		String			targetClass	= "java.lang.String";
 
 		locator.clear();
 		assertThat( locator.size() ).isEqualTo( 0 );
 
-		DynamicObject target = locator.load( new TemplateBoxContext(), targetClass );
+		DynamicObject target = locator.load( new TemplateBoxContext(), targetClass, "java" );
 		target.invokeConstructor( "Hola ClassLoader" );
 		assertThat( target.getTargetInstance() ).isEqualTo( "Hola ClassLoader" );
 
 		assertThat( target ).isNotNull();
 		assertThat( target.getTargetClass() ).isEqualTo( String.class );
 		assertThat( locator.size() ).isEqualTo( 1 );
-		assertThat( locator.hasClass( targetClass ) ).isTrue();
-		assertThat( locator.classSet() ).containsAnyIn( new Object[] { targetClass } );
+		assertThat( locator.hasClass( "java:" + targetClass ) ).isTrue();
+		assertThat( locator.classSet() ).containsAnyIn( new Object[] { "java:" + targetClass } );
 	}
 
 	@DisplayName( "Resolver cache methods work" )
 	@Test
 	public void testResolverCacheMethods() throws ClassNotFoundException {
-		ClassLocator	locator		= ClassLocator.getInstance( "" );
+		ClassLocator	locator		= ClassLocator.getInstance();
 		String			targetClass	= "java.lang.String";
 
 		assertThat( locator.isEmpty() ).isTrue();
@@ -64,8 +89,9 @@ public class ClassLocatorTest {
 		locator.getResolverCache().put(
 		        targetClass,
 		        new ClassLocation(
+		                "String",
 		                targetClass,
-		                targetClass,
+		                "java.lang",
 		                ClassLocator.TYPE_JAVA,
 		                String.class,
 		                null

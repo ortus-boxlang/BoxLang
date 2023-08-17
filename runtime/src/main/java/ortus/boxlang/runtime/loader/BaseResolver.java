@@ -17,43 +17,35 @@
  */
 package ortus.boxlang.runtime.loader;
 
+import java.util.Optional;
+
+import ortus.boxlang.runtime.context.IBoxContext;
+import ortus.boxlang.runtime.loader.ClassLocator.ClassLocation;
+
 /**
  * This class is the base class for all resolvers.
  */
-public class BaseResolver {
+public class BaseResolver implements IClassResolver {
 
 	/**
 	 * The name of a resolver
 	 */
-	public static final String		NAME	= "";
+	protected String	name	= "";
 
 	/**
 	 * The prefix of a resolver
 	 */
-	public static final String		PREFIX	= "";
-
-	/**
-	 * Singleton
-	 */
-	protected static BaseResolver	instance;
+	protected String	prefix	= "";
 
 	/**
 	 * Private constructor
-	 */
-	protected BaseResolver() {
-		// Base resolver does not need anything
-	}
-
-	/**
-	 * Singleton instance
 	 *
-	 * @return The instance
+	 * @param name   The name of the resolver
+	 * @param prefix The prefix of the resolver
 	 */
-	public static synchronized BaseResolver getInstance() {
-		if ( instance == null ) {
-			instance = new BaseResolver();
-		}
-		return instance;
+	protected BaseResolver( String name, String prefix ) {
+		this.name	= name;
+		this.prefix	= prefix.toLowerCase();
 	}
 
 	/**
@@ -62,7 +54,7 @@ public class BaseResolver {
 	 * @return The resolver name
 	 */
 	public String getName() {
-		return NAME;
+		return name;
 	}
 
 	/**
@@ -73,7 +65,20 @@ public class BaseResolver {
 	 * @return The prefix
 	 */
 	public String getPrefix() {
-		return PREFIX;
+		return prefix;
+	}
+
+	/**
+	 * Each resolver has a way to resolve the class it represents.
+	 *
+	 * @param context The current context of execution
+	 * @param name    The name of the class to resolve
+	 *
+	 * @return An optional class object representing the class if found
+	 */
+	@Override
+	public Optional<ClassLocation> resolve( IBoxContext context, String name ) {
+		throw new UnsupportedOperationException( "Implement the [resolve] method in your own resolver" );
 	}
 
 }

@@ -19,57 +19,45 @@ package ortus.boxlang.runtime.loader;
 
 import java.util.Optional;
 
+import org.apache.commons.lang3.ClassUtils;
+
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.loader.ClassLocator.ClassLocation;
 
 /**
  * This resolver deals with Java classes only.
  */
-public class JavaResolver extends BaseResolver implements IClassResolver {
+public class JavaResolver extends BaseResolver {
+
+	/**
+	 * Singleton instance
+	 */
+	protected static JavaResolver instance;
 
 	/**
 	 * --------------------------------------------------------------------------
-	 * Public Properties
-	 * --------------------------------------------------------------------------
-	 */
-
-	/**
-	 * The name of a resolver
-	 */
-	public static final String	NAME			= "JavaResolver";
-
-	/**
-	 * The prefix of a resolver
-	 */
-	public static final String	PREFIX			= "java";
-
-	/**
-	 * The class extension to use for loading java classes
-	 */
-	public static final String	CLASS_EXTENSION	= ".java";
-
-	/**
-	 * --------------------------------------------------------------------------
-	 * Private Properties
+	 * Constructor
 	 * --------------------------------------------------------------------------
 	 */
 
 	/**
-	 * The class directory for generated java classes
+	 * Private constructor
 	 */
-	private String				classDirectory;
+	private JavaResolver() {
+		super( "JavaResolver", "java" );
+	}
 
 	/**
-	 * --------------------------------------------------------------------------
-	 * Getters & Setters
-	 * --------------------------------------------------------------------------
+	 * Singleton instance
+	 *
+	 * @return The instance
 	 */
+	public static synchronized JavaResolver getInstance() {
+		if ( instance == null ) {
+			instance = new JavaResolver();
+		}
 
-	/**
-	 * @return the classDirectory
-	 */
-	public String getClassDirectory() {
-		return classDirectory;
+		return instance;
 	}
 
 	/**
@@ -113,14 +101,17 @@ public class JavaResolver extends BaseResolver implements IClassResolver {
 	 * @return The {@link ClassLocation} record wrapped in an optional if found, empty otherwise
 	 */
 	public Optional<ClassLocation> findFromSystem( String name ) {
+		Class<?> clazz;
 		try {
+			clazz = getSystemClassLoader().loadClass( name );
 			return Optional.of(
 			        new ClassLocation(
-			                name, // fully qualified name
-			                name, // resolved path, same in java
-			                ClassLocator.TYPE_JAVA, // type
-			                getSystemClassLoader().loadClass( name ), // talk to the system class loader
-			                null // no module
+			                ClassUtils.getSimpleName( clazz ),
+			                name,
+			                ClassUtils.getPackageName( clazz ),
+			                ClassLocator.TYPE_JAVA,
+			                clazz,
+			                null
 			        )
 			);
 		} catch ( ClassNotFoundException e ) {

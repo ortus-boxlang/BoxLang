@@ -17,10 +17,7 @@
  */
 package ortus.boxlang.runtime.loader;
 
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -28,6 +25,7 @@ import java.util.concurrent.ConcurrentMap;
 
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.interop.DynamicObject;
+import ortus.boxlang.runtime.types.exceptions.KeyNotFoundException;
 
 /**
  * This is a Class Loader is in charge of locating Box classes in the lookup algorithm
@@ -82,9 +80,14 @@ public class ClassLocator extends ClassLoader {
 	private ConcurrentMap<String, ClassLocation>		resolverCache		= new ConcurrentHashMap<>();
 
 	/**
-	 * The map of custom resolvers
+	 * The map of class resolvers we track
 	 */
-	private ConcurrentHashMap<String, IClassResolver>	customResolvers		= new ConcurrentHashMap<>();
+	private ConcurrentHashMap<String, IClassResolver>	resolvers			= new ConcurrentHashMap<>();
+
+	/**
+	 * The list of reserved resolvers
+	 */
+	private static final List<String>					RESERVED_RESOLVERS	= List.of( "bx", "java" );
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -93,7 +96,7 @@ public class ClassLocator extends ClassLoader {
 	 */
 
 	/**
-	 * Static constructor
+	 * Private constructor
 	 */
 	private ClassLocator() {
 		super( getSystemClassLoader() );
@@ -107,13 +110,16 @@ public class ClassLocator extends ClassLoader {
 	public static synchronized ClassLocator getInstance() {
 		if ( instance == null ) {
 			instance = new ClassLocator();
+			// Register core box and java resolvers
+			instance.registerResolver( BoxResolver.getInstance() );
+			instance.registerResolver( JavaResolver.getInstance() );
 		}
 		return instance;
 	}
 
 	/**
 	 * --------------------------------------------------------------------------
-	 * Getters & Setters
+	 * Resolvers Registration
 	 * --------------------------------------------------------------------------
 	 */
 
@@ -123,7 +129,77 @@ public class ClassLocator extends ClassLoader {
 	 * @return The cache of resolved classes
 	 */
 	public ConcurrentMap<String, ClassLocation> getResolverCache() {
-		return resolverCache;
+		return this.resolverCache;
+	}
+
+	/**
+	 * Register a class resolver
+	 *
+	 * @param resolver The class resolver to register
+	 */
+	public void registerResolver( IClassResolver resolver ) {
+		this.resolvers.put( resolver.getPrefix(), resolver );
+	}
+
+	/**
+	 * Get the registered resolver prefixes
+	 *
+	 * @return The registered resolver names
+	 */
+	public List<String> getResolvedPrefixes() {
+		return this.resolvers.keySet().stream().toList();
+	}
+
+	/**
+	 * Get a registered resolver by prefix
+	 *
+	 * @param prefix The prefix of the resolver
+	 *
+	 * @return The registered resolver or null if not found
+	 *
+	 * @throws KeyNotFoundException If the resolver is not found
+	 */
+	public IClassResolver getResolver( String prefix ) throws KeyNotFoundException {
+		IClassResolver target = this.resolvers.get( prefix.toLowerCase() );
+		if ( target == null ) {
+			throw new KeyNotFoundException(
+			        String.format(
+			                "The resolver [%s] was not found in the registered resolvers. Valid resolvers are [%s]",
+			                prefix,
+			                getResolvedPrefixes()
+			        ) );
+		}
+		return target;
+	}
+
+	/**
+	 * Verify if a resolver is registered
+	 *
+	 * @param prefix The prefix of the resolver
+	 *
+	 * @return True if the resolver is registered, false otherwise
+	 */
+	public Boolean hasResolver( String prefix ) {
+		return this.resolvers.containsKey( prefix.toLowerCase() );
+	}
+
+	/**
+	 * Remove a resolver by prefix
+	 *
+	 * @param prefix The prefix of the resolver
+	 *
+	 * @return True if the resolver was removed, false otherwise
+	 *
+	 * @throws IllegalStateException If the resolver is reserved and cannot be removed
+	 */
+	public Boolean removeResolver( String prefix ) throws IllegalStateException {
+		prefix = prefix.toLowerCase();
+
+		if ( RESERVED_RESOLVERS.contains( prefix ) ) {
+			throw new IllegalStateException( String.format( "The resolver [%s] is reserved and cannot be removed", prefix ) );
+		}
+
+		return ( this.resolvers.remove( prefix ) != null );
 	}
 
 	/**
@@ -209,14 +285,10 @@ public class ClassLocator extends ClassLoader {
 	 */
 
 	/**
-	 * This is the main entry point into the system ClassLocator. It allows you to
-	 * search for the incoming class name in the following order:
+	 * Load a class by discovering the resolver to use:
 	 *
-	 * 1. Registered modules
-	 * 2. System loader
-	 *
-	 * The return value is an invokable representation of the class using invokeDynamic and our {@link DynamicObject} class.
-	 * Every Java/BoxLang class is represented by a {@link DynamicObject} instance so you can invoke dynamically.
+	 * 1. Bx Resolver
+	 * 2. Java Resolver
 	 *
 	 * @param context The current context of execution
 	 * @param name    The fully qualified path/name of the class to load
@@ -226,38 +298,50 @@ public class ClassLocator extends ClassLoader {
 	 * @throws ClassNotFoundException If the class was not found anywhere in the system
 	 */
 	public DynamicObject load( IBoxContext context, String name ) throws ClassNotFoundException {
-		return load(
-		        context,
-		        name,
-		        DEFAULT_RESOLVER
+		return DynamicObject.of(
+		        resolve( context, name ).clazz()
 		);
 	}
 
-	public DynamicObject load( IBoxContext context, String name, String resolverName ) throws ClassNotFoundException {
-		DynamicObject target = null;
-
-		switch ( resolverName ) {
-			case "java" :
-				break;
-
-			case "bx" :
-
-				break;
-
-			// Check the custom resolvers
-			default :
-				break;
-		}
-
-		return target;
+	/**
+	 * Load a class from a specific resolver
+	 *
+	 * @param context        The current context of execution
+	 * @param name           The fully qualified path/name of the class to load
+	 * @param resolverPrefix The prefix of the resolver to use
+	 *
+	 * @return The invokable representation of the class
+	 *
+	 * @throws ClassNotFoundException If the class was not found anywhere in the system
+	 */
+	public DynamicObject load( IBoxContext context, String name, String resolverPrefix ) throws ClassNotFoundException {
+		String cacheKey = resolverPrefix + ":" + name;
+		return DynamicObject.of(
+		        // Get from cache?
+		        getClass( cacheKey )
+		                // Resolve it
+		                .or( () -> getResolver( resolverPrefix ).resolve( context, name ) )
+		                // If found, cache it
+		                .map( ( target ) -> {
+			                resolverCache.put( cacheKey, target );
+			                return target;
+		                } )
+		                // If not found, throw an exception
+		                .orElseThrow(
+		                        () -> new ClassNotFoundException(
+		                                String.format(
+		                                        "The requested class [%s] has not been located in the [%s] resolver.",
+		                                        name,
+		                                        resolverPrefix
+		                                )
+		                        )
+		                )
+		                // Get the class to make the dynamic object
+		                .clazz()
+		);
 	}
 
 	/**
-	 * Find a class from BoxLang. It will try to locate it in the following order:
-	 *
-	 * 1. Registered modules
-	 * 2. System loader
-	 *
 	 * This method ONLY returns the class representation, it does not cache it.
 	 *
 	 * @param name The fully qualified path/name of the class to load
@@ -266,35 +350,32 @@ public class ClassLocator extends ClassLoader {
 	 *
 	 * @return The class requested to be loaded represented by the incoming name
 	 */
-	@Override
-	public Class<?> findClass( String name ) throws ClassNotFoundException {
-		return resolve( name ).clazz();
+	public Class<?> findClass( IBoxContext context, String name ) throws ClassNotFoundException {
+		return resolve( context, name ).clazz();
 	}
 
 	/**
 	 * This method is in charge of resolving the class location in the system and
-	 * generating a cacheable {@link ClassLocation} record.
+	 * generating a cacheable {@link ClassLocation} record when you don't know the resolver to use.
 	 *
 	 * This resolver has no prior knowledge of which resolver to use, so it traverses them in order:
-	 * 1. All registered modules
-	 * 2. Bx compiled class files
-	 * 3. System class loader
+	 * 1. Bx Resolver
+	 * 2. Java Resolver
 	 *
-	 * @param name The fully qualified path of the class to resolve
+	 * @param context The current context of execution
+	 * @param name    The fully qualified path of the class to resolve
 	 *
 	 * @throws ClassNotFoundException If the class was not found anywhere in the system
 	 *
 	 * @return The resolved class location
 	 */
-	public ClassLocation resolve( String name ) throws ClassNotFoundException {
+	public ClassLocation resolve( IBoxContext context, String name ) throws ClassNotFoundException {
 		// Try to get it from cache
 		return getClass( name )
-		        // BxClass: if not found, then try to find it in the registered modules
-		        .or( () -> findFromModules( name ) )
-		        // BxClass : if not found, then try to find it in the local byte code
-		        .or( () -> findFromLocal( name ) )
-		        // else from the system class loader: it must be a native or class loaded Java class
-		        .or( () -> findFromSystem( name ) )
+		        // Is it a BoxClass?
+		        .or( () -> getResolver( "bx" ).resolve( context, name ) )
+		        // Is it a JavaClass?
+		        .or( () -> getResolver( "java" ).resolve( context, name ) )
 		        // If found, cache it
 		        .map( ( target ) -> {
 			        resolverCache.put( name, target );
@@ -303,63 +384,9 @@ public class ClassLocator extends ClassLoader {
 		        // If not found, throw an exception
 		        .orElseThrow(
 		                () -> new ClassNotFoundException(
-		                        String.format( "The requested class [%s] has not been located", name )
+		                        String.format( "The requested class [%s] has not been located in any class resolver.", name )
 		                )
 		        );
-	}
-
-	/**
-	 * Get the system class loader
-	 *
-	 * @return The system class loader
-	 */
-	public static ClassLoader getSystemClassLoader() {
-		return ClassLoader.getSystemClassLoader();
-	}
-
-	/**
-	 * Load a class from the registered runtime module class loaders
-	 *
-	 * @param name The fully qualified path of the class to load
-	 *
-	 * @return The loaded class or null if not found
-	 */
-	public Optional<ClassLocation> findFromModules( String name ) {
-		return Optional.ofNullable( null );
-	}
-
-	/**
-	 * Load a class from the configured directory byte code
-	 *
-	 * @param name The fully qualified path of the class to load
-	 *
-	 * @return The loaded class or null if not found
-	 */
-	public Optional<ClassLocation> findFromLocal( String name ) {
-		return Optional.ofNullable( null );
-	}
-
-	/**
-	 * Load a class from the system class loader
-	 *
-	 * @param name The fully qualified path of the class to load
-	 *
-	 * @return The {@link ClassLocation} record wrapped in an optional if found, empty otherwise
-	 */
-	public Optional<ClassLocation> findFromSystem( String name ) {
-		try {
-			return Optional.of(
-			        new ClassLocation(
-			                name, // fully qualified name
-			                name, // resolved path, same in java
-			                TYPE_JAVA, // type
-			                super.loadClass( name ), // talk to the system class loader
-			                null // no module
-			        )
-			);
-		} catch ( ClassNotFoundException e ) {
-			return Optional.empty();
-		}
 	}
 
 	/**
@@ -371,15 +398,17 @@ public class ClassLocator extends ClassLoader {
 	/**
 	 * This record represents a class location in the application
 	 *
-	 * @param name         The fully qualified path to the class, e.g. mapping.models.User, path.models.User, java.util.Date
-	 * @param resolvedPath The resolved path to the class
-	 * @param type         The type of class it is: 1. Box class (this.BX_TYPE), 2. Java class (this.JAVA_TYPE)
-	 * @param clazz        The class object that represents the loaded class
-	 * @param module       The module the class belongs to, null if none
+	 * @param name        The name of the class
+	 * @param path        The fully qualified path to the class
+	 * @param packageName The package the class belongs to
+	 * @param type        The type of class it is: 1. Box class (this.BX_TYPE), 2. Java class (this.JAVA_TYPE)
+	 * @param clazz       The class object that represents the loaded class
+	 * @param module      The module the class belongs to, null if none
 	 */
 	public record ClassLocation(
 	        String name,
-	        String resolvedPath,
+	        String path,
+	        String packageName,
 	        int type,
 	        Class<?> clazz,
 	        String module ) {
