@@ -53,17 +53,17 @@ public class ClassLocator extends ClassLoader {
 	/**
 	 * The internal type of a BoxLang class
 	 */
-	public static final int							TYPE_BX			= 1;
+	public static final int								TYPE_BX				= 1;
 
 	/**
 	 * The internal type of a Java class
 	 */
-	public static final int							TYPE_JAVA		= 2;
+	public static final int								TYPE_JAVA			= 2;
 
 	/**
-	 * The class extension to use for loading classes
+	 * The default resolver name
 	 */
-	public static final String						CLASS_EXTENSION	= ".class";
+	public static final String							DEFAULT_RESOLVER	= "bx";
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -72,19 +72,19 @@ public class ClassLocator extends ClassLoader {
 	 */
 
 	/**
-	 * The class directory for generated bx classes
-	 */
-	private String									classDirectory;
-
-	/**
 	 * Singleton instance
 	 */
-	private static ClassLocator						instance;
+	private static ClassLocator							instance;
 
 	/**
 	 * The cache of resolved classes
 	 */
-	private ConcurrentMap<String, ClassLocation>	resolverCache	= new ConcurrentHashMap<>();
+	private ConcurrentMap<String, ClassLocation>		resolverCache		= new ConcurrentHashMap<>();
+
+	/**
+	 * The map of custom resolvers
+	 */
+	private ConcurrentHashMap<String, IClassResolver>	customResolvers		= new ConcurrentHashMap<>();
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -95,23 +95,8 @@ public class ClassLocator extends ClassLoader {
 	/**
 	 * Static constructor
 	 */
-	private ClassLocator( String classDirectory ) {
+	private ClassLocator() {
 		super( getSystemClassLoader() );
-		this.classDirectory = classDirectory;
-	}
-
-	/**
-	 * Get the singleton instance
-	 *
-	 * @param classDirectory The class directory for generated bx classes
-	 *
-	 * @return ClassLocator
-	 */
-	public static synchronized ClassLocator getInstance( String classDirectory ) {
-		if ( instance == null ) {
-			instance = new ClassLocator( classDirectory );
-		}
-		return instance;
 	}
 
 	/**
@@ -120,7 +105,10 @@ public class ClassLocator extends ClassLoader {
 	 * @return ClassLocator
 	 */
 	public static synchronized ClassLocator getInstance() {
-		return getInstance( null );
+		if ( instance == null ) {
+			instance = new ClassLocator();
+		}
+		return instance;
 	}
 
 	/**
@@ -128,13 +116,6 @@ public class ClassLocator extends ClassLoader {
 	 * Getters & Setters
 	 * --------------------------------------------------------------------------
 	 */
-
-	/**
-	 * @return the classDirectory
-	 */
-	public String getClassDirectory() {
-		return classDirectory;
-	}
 
 	/**
 	 * Get the cache of resolved classes
@@ -147,7 +128,7 @@ public class ClassLocator extends ClassLoader {
 
 	/**
 	 * --------------------------------------------------------------------------
-	 * Resolver Utilities
+	 * Resolver Cache Methods
 	 * --------------------------------------------------------------------------
 	 */
 
@@ -245,7 +226,30 @@ public class ClassLocator extends ClassLoader {
 	 * @throws ClassNotFoundException If the class was not found anywhere in the system
 	 */
 	public DynamicObject load( IBoxContext context, String name ) throws ClassNotFoundException {
-		return DynamicObject.of( findClass( name ) );
+		return load(
+		        context,
+		        name,
+		        DEFAULT_RESOLVER
+		);
+	}
+
+	public DynamicObject load( IBoxContext context, String name, String resolverName ) throws ClassNotFoundException {
+		DynamicObject target = null;
+
+		switch ( resolverName ) {
+			case "java" :
+				break;
+
+			case "bx" :
+
+				break;
+
+			// Check the custom resolvers
+			default :
+				break;
+		}
+
+		return target;
 	}
 
 	/**
@@ -268,7 +272,13 @@ public class ClassLocator extends ClassLoader {
 	}
 
 	/**
-	 * This method is in charge of resolving the class location in the system and generating a cacheable {@link ClassLocation} record
+	 * This method is in charge of resolving the class location in the system and
+	 * generating a cacheable {@link ClassLocation} record.
+	 *
+	 * This resolver has no prior knowledge of which resolver to use, so it traverses them in order:
+	 * 1. All registered modules
+	 * 2. Bx compiled class files
+	 * 3. System class loader
 	 *
 	 * @param name The fully qualified path of the class to resolve
 	 *
