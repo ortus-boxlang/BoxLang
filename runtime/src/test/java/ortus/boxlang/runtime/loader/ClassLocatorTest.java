@@ -23,14 +23,15 @@ import org.junit.jupiter.api.Test;
 
 import ortus.boxlang.runtime.context.TemplateBoxContext;
 import ortus.boxlang.runtime.interop.DynamicObject;
+import ortus.boxlang.runtime.loader.ClassLocator.ClassLocation;
 
 import static com.google.common.truth.Truth.assertThat;
 
 public class ClassLocatorTest {
 
-	@DisplayName( "It can load native Java classes" )
+	@DisplayName( "It can load native Java classes and add to the resolver cache" )
 	@Test
-	public void testCanLoadJavaClasses() throws Throwable {
+	public void testCanLoadJavaClassesWithCaching() throws Throwable {
 		ClassLocator	locator		= ClassLocator.getInstance( "" );
 		String			targetClass	= "java.lang.String";
 
@@ -48,16 +49,34 @@ public class ClassLocatorTest {
 		assertThat( locator.classSet() ).containsAnyIn( new Object[] { targetClass } );
 	}
 
-	@DisplayName( "It can work with the resolver cache" )
+	@DisplayName( "Resolver cache methods work" )
 	@Test
-	public void testCanWorkWithTheResolverCache() throws ClassNotFoundException {
+	public void testResolverCacheMethods() throws ClassNotFoundException {
 		ClassLocator	locator		= ClassLocator.getInstance( "" );
 		String			targetClass	= "java.lang.String";
 
-		assertThat( locator.getResolverCache().size() ).isEqualTo( 0 );
-		assertThat( locator.size() ).isEqualTo( 0 );
-		assertThat( locator.hasClass( targetClass ) ).isFalse();
 		assertThat( locator.isEmpty() ).isTrue();
+		assertThat( locator.size() ).isEqualTo( 0 );
+		assertThat( locator.getResolverCache().size() ).isEqualTo( 0 );
+		assertThat( locator.hasClass( targetClass ) ).isFalse();
+		assertThat( locator.clear( "bogus" ) ).isFalse();
+
+		locator.getResolverCache().put(
+		        targetClass,
+		        new ClassLocation(
+		                targetClass,
+		                targetClass,
+		                ClassLocator.TYPE_JAVA,
+		                String.class,
+		                null
+		        )
+		);
+		assertThat( locator.hasClass( targetClass ) ).isTrue();
+		assertThat( locator.size() ).isEqualTo( 1 );
+		assertThat( locator.isEmpty() ).isFalse();
+		assertThat( locator.getClass( targetClass ).isPresent() ).isTrue();
+		assertThat( locator.classSet() ).contains( targetClass );
+		assertThat( locator.clear( targetClass ) ).isTrue();
 	}
 
 }

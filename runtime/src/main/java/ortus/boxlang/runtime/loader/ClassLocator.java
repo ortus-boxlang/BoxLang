@@ -30,7 +30,7 @@ import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.interop.DynamicObject;
 
 /**
- * This class is in charge of locating Box classes in the lookup algorithm
+ * This is a Class Loader is in charge of locating Box classes in the lookup algorithm
  * and also Java classes in the classloader paths. The resolution is done once
  * per class path and stored for quicker lookups.
  *
@@ -184,11 +184,10 @@ public class ClassLocator extends ClassLoader {
 	 *
 	 * @param name The fully qualified path of the class to remove
 	 *
-	 * @return The class locator instance
+	 * @return True, if it was removed, else if it didn't exist
 	 */
-	public ClassLocator removeClass( String name ) {
-		resolverCache.remove( name );
-		return instance;
+	public Boolean clear( String name ) {
+		return ( resolverCache.remove( name ) != null );
 	}
 
 	/**
