@@ -72,6 +72,7 @@ Here is a listing of all of our core dependencies.  If you add one, make sure yo
 | Dependency | Version | License | Description |
 |------------|---------|---------|-------------|
 | [boxlang-compiler](https://github.com/ortus-solutions-private/boxlang-compiler) | 1.0.0 | Apache2 | The BoxLang Parser, Compiler, and BytCode Generator |
+| [apache-commons-lang3](https://commons.apache.org/proper/commons-lang/) | 3.12.0 | Apache2 | Apache Commons Lang |
 
 ## Dev Dependencies
 

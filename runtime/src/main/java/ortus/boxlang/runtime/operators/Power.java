@@ -20,14 +20,18 @@ package ortus.boxlang.runtime.operators;
 import ortus.boxlang.runtime.dynamic.casters.DoubleCaster;
 
 /**
- * Performs Math Power
+ * Performs Math Power for BoxLang
+ * {@code a = 2 ^ 3}
  */
 public class Power implements IOperator {
 
 	/**
+	 * @param left  The left operand
+	 * @param right The right operand
+	 *
 	 * @return The the result
 	 */
-	static Double invoke( Object left, Object right ) {
+	public static Double invoke( Object left, Object right ) {
 		return Math.pow( DoubleCaster.cast( left ), DoubleCaster.cast( right ) );
 	}
 

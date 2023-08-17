@@ -21,13 +21,17 @@ import ortus.boxlang.runtime.dynamic.casters.DoubleCaster;
 
 /**
  * Performs Math Divide
+ * {@code a = 10 / 2}
  */
 public class Divide implements IOperator {
 
 	/**
+	 * @param left  The left operand
+	 * @param right The right operand
+	 *
 	 * @return The the result
 	 */
-	static Double invoke( Object left, Object right ) {
+	public static Double invoke( Object left, Object right ) {
 		Double dRight = DoubleCaster.cast( right );
 		if ( dRight == 0 ) {
 			throw new RuntimeException( "You cannot divide by zero." );

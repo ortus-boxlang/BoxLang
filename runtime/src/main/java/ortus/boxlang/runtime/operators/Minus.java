@@ -21,13 +21,17 @@ import ortus.boxlang.runtime.dynamic.casters.DoubleCaster;
 
 /**
  * Performs Math minus
+ * {@code a = b - c}
  */
 public class Minus implements IOperator {
 
 	/**
+	 * @param left  The left operand
+	 * @param right The right operand
+	 *
 	 * @return The the result
 	 */
-	static Double invoke( Object left, Object right ) {
+	public static Double invoke( Object left, Object right ) {
 		return DoubleCaster.cast( left ) - DoubleCaster.cast( right );
 	}
 

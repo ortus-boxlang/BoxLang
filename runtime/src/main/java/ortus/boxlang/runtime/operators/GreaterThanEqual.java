@@ -18,15 +18,18 @@
 package ortus.boxlang.runtime.operators;
 
 /**
- * Performs GTE or >= comparison
+ * Performs {@code GTE or >=} comparison
  * Compares numbers as numbers, compares strings case insensitive
  */
 public class GreaterThanEqual implements IOperator {
 
 	/**
+	 * @param left  The left operand
+	 * @param right The right operand
+	 *
 	 * @return True if left is greater than or equal to right
 	 */
-	static Boolean invoke( Object left, Object right ) {
+	public static Boolean invoke( Object left, Object right ) {
 		return Compare.invoke( left, right ) >= 0;
 	}
 

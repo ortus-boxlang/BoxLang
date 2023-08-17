@@ -17,21 +17,39 @@
  */
 package ortus.boxlang.runtime.operators;
 
+import ortus.boxlang.runtime.interop.DynamicObject;
+
 /**
  * Performs EQ, GT, and LT comparisons
  * Compares numbers as numbers, compares strings case insensitive
  */
 public class Compare implements IOperator {
 
-	static int invoke( Object left, Object right ) {
+	/**
+	 * Invokes the comparison
+	 *
+	 * @param left  The left operand
+	 * @param right The right operand
+	 *
+	 * @return 1 if greater than, -1 if less than, = if equal
+	 */
+	public static int invoke( Object left, Object right ) {
 		return invoke( left, right, false );
 	}
 
 	/**
+	 * Invokes the comparison
+	 * 
+	 * @param left          The left operand
+	 * @param right         The right operand
+	 * @param caseSensitive Whether to compare strings case sensitive
+	 * 
 	 * @return 1 if greater than, -1 if less than, = if equal
 	 */
 	@SuppressWarnings( "unchecked" )
-	static int invoke( Object left, Object right, Boolean caseSensitive ) {
+	public static int invoke( Object left, Object right, Boolean caseSensitive ) {
+		left	= DynamicObject.unWrap( left );
+		right	= DynamicObject.unWrap( right );
 
 		if ( left == null ) {
 			left = "";

@@ -49,7 +49,7 @@ public final class CastAttempt<T> {
 	 * CastAttempt.
 	 *
 	 * @param <T> Type of the non-existent value
-	 * 
+	 *
 	 * @return an empty {@code CastAttempt}
 	 */
 	public static <T> CastAttempt<T> empty() {
@@ -72,7 +72,7 @@ public final class CastAttempt<T> {
 	 *
 	 * @param <T>   the class of the value
 	 * @param value the value to be present, which must be non-null
-	 * 
+	 *
 	 * @return an {@code CastAttempt} with the value present
 	 */
 	public static <T> CastAttempt<T> of( T value ) {
@@ -85,7 +85,7 @@ public final class CastAttempt<T> {
 	 *
 	 * @param <T>   the class of the value
 	 * @param value the possibly-null value to describe
-	 * 
+	 *
 	 * @return an {@code CastAttempt} with a present value if the specified value
 	 *         is non-null, otherwise an empty {@code CastAttempt}
 	 */
@@ -98,7 +98,7 @@ public final class CastAttempt<T> {
 	 * otherwise throws {@code RuntimeException}.
 	 *
 	 * @return the non-null value held by this {@code CastAttempt}
-	 * 
+	 *
 	 * @throws RuntimeException if there is no value present
 	 *
 	 * @see CastAttempt#wasSuccessful()
@@ -124,6 +124,8 @@ public final class CastAttempt<T> {
 	 * otherwise do nothing.
 	 *
 	 * @param consumer block to be executed if a value is present
+	 *
+	 * @return this {@code CastAttempt}
 	 * 
 	 * @throws NullPointerException if value is present and {@code consumer} is
 	 *                              null
@@ -140,7 +142,7 @@ public final class CastAttempt<T> {
 	 *
 	 * @param other the value to be returned if there is no value present, may
 	 *              be null
-	 * 
+	 *
 	 * @return the value, if present, otherwise {@code other}
 	 */
 	public T getOrDefault( T other ) {
@@ -153,9 +155,9 @@ public final class CastAttempt<T> {
 	 *
 	 * @param other a {@code Supplier} whose result is returned if no value
 	 *              is present
-	 * 
+	 *
 	 * @return the value if present otherwise the result of {@code other.get()}
-	 * 
+	 *
 	 * @throws NullPointerException if value is not present and {@code other} is
 	 *                              null
 	 */
@@ -164,7 +166,7 @@ public final class CastAttempt<T> {
 	}
 
 	/**
-	 * Return the contained value, if present, otherwise throw an exception
+	 * @return The contained value, if present, otherwise throw an exception
 	 */
 	public T getOrFail() {
 		if ( value != null ) {

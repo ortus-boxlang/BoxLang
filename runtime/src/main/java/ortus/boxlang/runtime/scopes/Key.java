@@ -107,6 +107,8 @@ public class Key {
 	 * - Same key name (case-sensitive)
 	 *
 	 * @param obj The object to compare against.
+	 * 
+	 * @return True if the objects are equal.
 	 */
 	public boolean equalsWithCase( Object obj ) {
 		// Same object

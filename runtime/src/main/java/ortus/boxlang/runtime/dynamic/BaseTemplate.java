@@ -31,10 +31,29 @@ public class BaseTemplate {
 	 * --------------------------------------------------------------------------
 	 */
 
+	/**
+	 * The name of the template
+	 */
 	public String			name;
+
+	/**
+	 * The extension of the template
+	 */
 	public String			extension;
+
+	/**
+	 * The path to the template
+	 */
 	public String			path;
+
+	/**
+	 * The last modified date of the template
+	 */
 	public LocalDateTime	lastModified;
+
+	/**
+	 * The date the template was compiled
+	 */
 	public LocalDateTime	compiledOn;
 
 	// public ??? ast;
@@ -52,11 +71,13 @@ public class BaseTemplate {
 	 */
 
 	/**
-	 * Invoke the template
+	 * Invoke a BoxLang template
 	 *
 	 * @param context The context to invoke the template with
+	 *
+	 * @throws Throwable If an error occurs
 	 */
-	public void invoke( IBoxContext context ) {
+	public void invoke( IBoxContext context ) throws Throwable {
 		throw new UnsupportedOperationException( "This method must be overridden as a static method." );
 	}
 }

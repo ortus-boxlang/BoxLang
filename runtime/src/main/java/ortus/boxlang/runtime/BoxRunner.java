@@ -27,7 +27,7 @@ import java.util.Map;
 public class BoxRunner {
 
 	/**
-	 * @param args
+	 * @param args The command-line arguments
 	 */
 	public static void main( String[] args ) {
 		// Verify incoming arguments
@@ -42,7 +42,11 @@ public class BoxRunner {
 		// Get a runtime going
 		BoxRuntime.startup();
 
-		BoxRuntime.getInstance().executeTemplate( options.templatePath() );
+		try {
+			BoxRuntime.getInstance().executeTemplate( options.templatePath() );
+		} catch ( Throwable e ) {
+			throw new RuntimeException( e );
+		}
 
 		// Bye bye! Ciao Bella!
 		BoxRuntime.shutdown();

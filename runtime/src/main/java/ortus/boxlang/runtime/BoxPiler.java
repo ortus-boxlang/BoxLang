@@ -18,8 +18,12 @@
 package ortus.boxlang.runtime;
 
 import ortus.boxlang.runtime.dynamic.BaseTemplate;
-import ortus.boxlang.runtime.testing.MockTemplate;
+import ortus.boxlang.runtime.testing.Phase1;
 
+/**
+ * The BoxPiler is the main entry point for the BoxLang runtime. It is responsible for
+ * parsing, ASTing, and caching templates.
+ */
 public class BoxPiler {
 
 	/**
@@ -89,7 +93,7 @@ public class BoxPiler {
 
 		// Return the template
 		// We are now using the MockTemplate for testing purposes
-		return MockTemplate.getInstance();
+		return Phase1.getInstance();
 	}
 
 }

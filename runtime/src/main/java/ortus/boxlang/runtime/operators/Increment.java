@@ -21,13 +21,16 @@ import ortus.boxlang.runtime.dynamic.casters.DoubleCaster;
 
 /**
  * Performs Math i++
+ * {@code a = b++ or a = ++b}
  */
 public class Increment implements IOperator {
 
 	/**
-	 * @return The the sum
+	 * @param object The object to increment
+	 *
+	 * @return The result
 	 */
-	static Double invoke( Object object ) {
+	public static Double invoke( Object object ) {
 		return DoubleCaster.cast( object ) + 1;
 	}
 

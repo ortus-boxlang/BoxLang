@@ -21,13 +21,16 @@ import ortus.boxlang.runtime.dynamic.casters.DoubleCaster;
 
 /**
  * Performs Math i--
+ * {@code a = i-- or a = --i}
  */
 public class Decrement implements IOperator {
 
 	/**
+	 * @param object The object to decrement
+	 *
 	 * @return The the sum
 	 */
-	static Double invoke( Object object ) {
+	public static Double invoke( Object object ) {
 		return DoubleCaster.cast( object ) - 1;
 	}
 

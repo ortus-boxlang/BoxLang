@@ -21,13 +21,17 @@ import ortus.boxlang.runtime.dynamic.casters.DoubleCaster;
 
 /**
  * Performs Math Integer Division. Remainder is discarded
+ * {@code a = b \ c}
  */
 public class IntegerDivide implements IOperator {
 
 	/**
+	 * @param left  The left operand
+	 * @param right The right operand
+	 *
 	 * @return The the result
 	 */
-	static double invoke( Object left, Object right ) {
+	public static double invoke( Object left, Object right ) {
 		return Math.floor( Divide.invoke(
 		        Math.floor( DoubleCaster.cast( left ) ),
 		        Math.floor( DoubleCaster.cast( right ) )

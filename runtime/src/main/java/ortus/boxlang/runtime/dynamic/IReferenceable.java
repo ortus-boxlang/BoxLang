@@ -35,29 +35,39 @@ public interface IReferenceable {
 	/**
 	 * Dereference this object by a key and return the value, or throw exception
 	 *
+	 * @param name The key to dereference
+	 *
 	 * @return The requested object
 	 */
-	public Object __dereference( Key name ) throws KeyNotFoundException;
+	public Object dereference( Key name ) throws KeyNotFoundException;
 
 	/**
 	 * Dereference this object by a key and invoke the result as an invokable (UDF, java method)
 	 *
+	 * @param name      The key to dereference
+	 * @param arguments The arguments to pass to the invokable
+	 *
 	 * @return The requested object
 	 */
-	public Object __dereferenceAndInvoke( Key name ) throws KeyNotFoundException;
+	public Object dereferenceAndInvoke( Key name, Object[] arguments ) throws KeyNotFoundException;
 
 	/**
-	 * Safely derefernce this object by a key and return the value, or null if not found
+	 * Safely dereference this object by a key and return the value, or null if not found
+	 *
+	 * @param name The key to dereference
 	 *
 	 * @return The requested object or null
 	 */
-	public Object __safeDereference( Key name );
+	public Object safeDereference( Key name );
 
 	/**
 	 * Get a scope from the context. If not found, the parent context is asked.
 	 * Search all konwn scopes
 	 *
+	 * @param name  The name of the scope to get
+	 * @param value The value to assign to the scope
+	 *
 	 */
-	public void __assign( Key name, Object value );
+	public void assign( Key name, Object value );
 
 }

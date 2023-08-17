@@ -30,6 +30,8 @@ public interface IBoxContext {
 	 * Get a scope from the context. If not found, the parent context is asked.
 	 * Don't search for scopes which are local to an execution context
 	 *
+	 * @param name The name of the scope to get
+	 *
 	 * @return The requested scope
 	 *
 	 * @throws ScopeNotFoundException If the scope was not found in any context
@@ -40,8 +42,10 @@ public interface IBoxContext {
 	 * Get a scope from the context. If not found, the parent context is asked.
 	 * Search all known scopes
 	 *
-	 * @return The requested scope
+	 * @param name The name of the scope to get
 	 * 
+	 * @return The requested scope
+	 *
 	 * @throws ScopeNotFoundException If the scope was not found in any context
 	 */
 	public IScope getScopeLocal( Key name ) throws ScopeNotFoundException;

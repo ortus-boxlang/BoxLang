@@ -40,9 +40,9 @@ public class ReferencerTest {
 		assertThat( variablesScope.get( Key.of( "BRAD" ) ) ).isEqualTo( "Wood" );
 	}
 
-	@DisplayName( "It can derefernce from a scope" )
+	@DisplayName( "It can dereference from a scope" )
 	@Test
-	void testItCanDerefernceFromAScope() {
+	void testItCanDereferenceFromAScope() {
 		Key		key				= Key.of( "brad" );
 		IScope	variablesScope	= new VariablesScope();
 		variablesScope.put( key, "Wood" );
@@ -59,9 +59,9 @@ public class ReferencerTest {
 		assertThat( struct.get( Key.of( "BRAD" ) ) ).isEqualTo( "Wood" );
 	}
 
-	@DisplayName( "It can derefernce from a struct" )
+	@DisplayName( "It can dereference from a struct" )
 	@Test
-	void testItCanDerefernceFromAStruct() {
+	void testItCanDereferenceFromAStruct() {
 		Key		key		= Key.of( "brad" );
 		Struct	struct	= new Struct();
 		struct.put( key, "Wood" );

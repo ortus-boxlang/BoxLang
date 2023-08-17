@@ -21,13 +21,17 @@ import ortus.boxlang.runtime.dynamic.casters.DoubleCaster;
 
 /**
  * Performs Math Modulus
+ * {@code a = b % c, or a = b mod c}
  */
 public class Modulus implements IOperator {
 
 	/**
+	 * @param left  The left operand
+	 * @param right The right operand
+	 *
 	 * @return The the result
 	 */
-	static Double invoke( Object left, Object right ) {
+	public static Double invoke( Object left, Object right ) {
 		Double dRight = DoubleCaster.cast( right );
 		if ( dRight == 0 ) {
 			throw new RuntimeException( "You cannot divide by zero." );

@@ -21,22 +21,21 @@ import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
 
 /**
  * Performs logical XOR
+ * {@code a = b XOR c}
  */
 public class XOR implements IOperator {
 
 	/**
+	 * @param left  The left operand
+	 * @param right The right operand
+	 *
 	 * @return The result
 	 */
-	static Boolean invoke( Object left, Object right ) {
+	public static Boolean invoke( Object left, Object right ) {
 		Boolean	bLeft	= BooleanCaster.cast( left );
 		Boolean	bRight	= BooleanCaster.cast( right );
 
-		if ( bLeft && !bRight ) {
-			return Boolean.TRUE;
-		} else if ( !bLeft && bRight ) {
-			return Boolean.TRUE;
-		}
-		return Boolean.FALSE;
+		return bLeft != bRight;
 	}
 
 }

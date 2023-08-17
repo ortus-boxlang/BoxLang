@@ -21,14 +21,16 @@ import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
 
 /**
  * Performs boolean Negation
- * !bool
+ * {@code a = !bool}
  */
 public class Not implements IOperator {
 
 	/**
+	 * @param object The object to negate
+	 *
 	 * @return The result
 	 */
-	static Boolean invoke( Object object ) {
+	public static Boolean invoke( Object object ) {
 		return !BooleanCaster.cast( object );
 	}
 

@@ -44,7 +44,14 @@ public class TemplateBoxContext implements IBoxContext {
 	 */
 	private String		templatePath		= null;
 
+	/**
+	 * The variables scope
+	 */
 	protected IScope	variablesScope		= new VariablesScope();
+
+	/**
+	 * The name of the variables scope as a case-insensitive key
+	 */
 	private Key			variablesScopeName	= Key.of( "variables" );
 
 	/**

@@ -18,44 +18,92 @@
 package ortus.boxlang.runtime.dynamic;
 
 import ortus.boxlang.runtime.scopes.Key;
+import ortus.boxlang.runtime.interop.DynamicObject;
 
 /**
- * I handle de
+ * I handle dereferencing of objects
  */
 public class Referencer {
 
 	/**
-	 * Used to implement any time an object is derefernced,
-	 * 
-	 * @param object
-	 * @param key
-	 * 
-	 * @return
+	 * Used to implement any time an object is dereferenced,
+	 *
+	 * @param object The object to dereference
+	 * @param key    The key to dereference
+	 *
+	 * @return The value that was dereferenced
 	 */
 	public static Object get( Object object, Key key ) {
 		// If this object is referenable,
 		if ( object instanceof IReferenceable ) {
+
 			// ask it to do the work
-			return ( ( IReferenceable ) object ).__dereference( key );
-			// TODO: handle other scenarios of unknown objects
+			return ( ( IReferenceable ) object ).dereference( key );
+
+			// Treat it like a Java object and generically look for a field
 		} else {
-			throw new RuntimeException(
-			        String.format( "Unable to dereference object [%s] by key [%s]", object.getClass().getName(), key.getName() )
-			);
+			return DynamicObject.of( object ).dereference( key );
+
+			// Do we ever throw here, or do we always delagate the Java objet, letting the ClassInvoker throw?
+			// throw new RuntimeException(
+			// String.format( "Unable to dereference object [%s] by key [%s]", object.getClass().getName(), key.getName() )
+			// );
 		}
 	}
 
+	/**
+	 * Used to implement any time an object is dereferenced,
+	 *
+	 * @param object    The object to dereference
+	 * @param key       The key to dereference
+	 * @param arguments The arguments to pass to the method
+	 *
+	 * @return The value that was assigned
+	 */
+	public static Object getAndInvoke( Object object, Key key, Object[] arguments ) {
+		// If this object is referenable,
+		if ( object instanceof IReferenceable ) {
+
+			// ask it to do the work
+			return ( ( IReferenceable ) object ).dereferenceAndInvoke( key, arguments );
+
+			// Treat it like a Java object and generically invoke a method
+		} else {
+			return DynamicObject.of( object ).dereferenceAndInvoke( key, arguments );
+
+			// Do we ever throw here, or do we always delagate the Java objet, letting the ClassInvoker throw?
+			// throw new RuntimeException(
+			// String.format( "Unable to dereference object [%s] by key [%s]", object.getClass().getName(), key.getName() )
+			// );
+		}
+	}
+
+	/**
+	 * Used to implement any time an object is dereferenced,
+	 *
+	 * @param object The object to dereference
+	 * @param key    The key to dereference
+	 * @param value  The value to assign
+	 *
+	 * @return The value that was assigned
+	 */
 	public static Object set( Object object, Key key, Object value ) {
 		// If this object is referenable,
 		if ( object instanceof IReferenceable ) {
+
 			// ask it to do the work
-			( ( IReferenceable ) object ).__assign( key, value );
-			return value;
-			// TODO: handle other scenarios of unknown objects
+			( ( IReferenceable ) object ).assign( key, value );
+
+			// Treat it like a Java object and generically look for a field
 		} else {
-			throw new RuntimeException(
-			        String.format( "Unable to assign object [%s] a key [%s]", object.getClass().getName(), key.getName() )
-			);
+			DynamicObject.of( object ).assign( key, value );
+
+			// Do we ever throw here, or do we always delagate the Java objet, letting the ClassInvoker throw?
+			// throw new RuntimeException(
+			// String.format( "Unable to assign object [%s] a key [%s]", object.getClass().getName(), key.getName() )
+			// );
 		}
+
+		return value;
 	}
 }

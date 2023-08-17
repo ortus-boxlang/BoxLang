@@ -26,6 +26,9 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
+import ortus.boxlang.runtime.context.IBoxContext;
+import ortus.boxlang.runtime.interop.DynamicObject;
+
 /**
  * This class is in charge of locating Box classes in the lookup algorithm
  * and also Java classes in the classloader paths. The resolution is done once
@@ -36,6 +39,8 @@ import java.util.concurrent.ConcurrentMap;
  * - If not, verify if the class is in the declared class mappings path
  * - If not, verify if the class is in the application path
  * - If not, verify if the class is a Java class
+ *
+ * If the class is found, it will be cached for future lookups.
  */
 public class ClassLocator extends ClassLoader {
 
@@ -49,10 +54,12 @@ public class ClassLocator extends ClassLoader {
 	 * The internal type of a BoxLang class
 	 */
 	public static final int							TYPE_BX			= 1;
+
 	/**
 	 * The internal type of a Java class
 	 */
 	public static final int							TYPE_JAVA		= 2;
+
 	/**
 	 * The class extension to use for loading classes
 	 */
@@ -64,6 +71,9 @@ public class ClassLocator extends ClassLoader {
 	 * --------------------------------------------------------------------------
 	 */
 
+	/**
+	 * The class directory for generated bx classes
+	 */
 	private String									classDirectory;
 
 	/**
@@ -105,6 +115,15 @@ public class ClassLocator extends ClassLoader {
 	}
 
 	/**
+	 * Get the singleton instance
+	 *
+	 * @return ClassLocator
+	 */
+	public static synchronized ClassLocator getInstance() {
+		return getInstance( null );
+	}
+
+	/**
 	 * --------------------------------------------------------------------------
 	 * Getters & Setters
 	 * --------------------------------------------------------------------------
@@ -135,7 +154,7 @@ public class ClassLocator extends ClassLoader {
 	/**
 	 * Verifies if the class resolver is empty or not
 	 *
-	 * @return
+	 * @return True if the resolver cache is empty, false otherwise
 	 */
 	public Boolean isEmpty() {
 		return resolverCache.isEmpty();
@@ -180,7 +199,7 @@ public class ClassLocator extends ClassLoader {
 	 * @return An optional containing the class record if found, empty otherwise
 	 */
 	public Optional<ClassLocation> getClass( String name ) {
-		return Optional.of( resolverCache.get( name ) );
+		return Optional.ofNullable( resolverCache.get( name ) );
 	}
 
 	/**
@@ -210,16 +229,42 @@ public class ClassLocator extends ClassLoader {
 	 */
 
 	/**
-	 * Load a class using this class loader
+	 * This is the main entry point into the system ClassLocator. It allows you to
+	 * search for the incoming class name in the following order:
 	 *
-	 * @param name The fully qualified path of the class to resolve
+	 * 1. Registered modules
+	 * 2. System loader
+	 *
+	 * The return value is an invokable representation of the class using invokeDynamic and our {@link DynamicObject} class.
+	 * Every Java/BoxLang class is represented by a {@link DynamicObject} instance so you can invoke dynamically.
+	 *
+	 * @param context The current context of execution
+	 * @param name    The fully qualified path/name of the class to load
+	 *
+	 * @return The invokable representation of the class
+	 *
+	 * @throws ClassNotFoundException If the class was not found anywhere in the system
+	 */
+	public DynamicObject load( IBoxContext context, String name ) throws ClassNotFoundException {
+		return DynamicObject.of( findClass( name ) );
+	}
+
+	/**
+	 * Find a class from BoxLang. It will try to locate it in the following order:
+	 *
+	 * 1. Registered modules
+	 * 2. System loader
+	 *
+	 * This method ONLY returns the class representation, it does not cache it.
+	 *
+	 * @param name The fully qualified path/name of the class to load
 	 *
 	 * @throws ClassNotFoundException If the class was not found anywhere in the system
 	 *
-	 * @return The class requested to be loaded
+	 * @return The class requested to be loaded represented by the incoming name
 	 */
 	@Override
-	public Class loadClass( String name ) throws ClassNotFoundException {
+	public Class<?> findClass( String name ) throws ClassNotFoundException {
 		return resolve( name ).clazz();
 	}
 
@@ -233,24 +278,25 @@ public class ClassLocator extends ClassLoader {
 	 * @return The resolved class location
 	 */
 	public ClassLocation resolve( String name ) throws ClassNotFoundException {
-		// Verify if the class record is already in the cache
-		Optional<ClassLocation> classLocation = getClass( name );
-
-		// If the class is already in the cache, return it
-		if ( classLocation.isPresent() ) {
-			return classLocation.get();
-		}
-
-		// Verify if the class is in the declared class mappings path
-
-		// Verify if the class in in the app path
-
-		// Verify if the class is a Java class
-
-		// Ask the system to load it
-		Class clazz = super.loadClass( name );
-
-		throw new ClassNotFoundException( String.format( "The requested class [%s] was not found anywhere", name ) );
+		// Try to get it from cache
+		return getClass( name )
+		        // BxClass: if not found, then try to find it in the registered modules
+		        .or( () -> findFromModules( name ) )
+		        // BxClass : if not found, then try to find it in the local byte code
+		        .or( () -> findFromLocal( name ) )
+		        // else from the system class loader: it must be a native or class loaded Java class
+		        .or( () -> findFromSystem( name ) )
+		        // If found, cache it
+		        .map( ( target ) -> {
+			        resolverCache.put( name, target );
+			        return target;
+		        } )
+		        // If not found, throw an exception
+		        .orElseThrow(
+		                () -> new ClassNotFoundException(
+		                        String.format( "The requested class [%s] has not been located", name )
+		                )
+		        );
 	}
 
 	/**
@@ -263,22 +309,53 @@ public class ClassLocator extends ClassLoader {
 	}
 
 	/**
-	 * Load a class from the declared class mappings path
+	 * Load a class from the registered runtime module class loaders
 	 *
 	 * @param name The fully qualified path of the class to load
 	 *
-	 * @return The loaded class
-	 *
-	 * @throws IOException
+	 * @return The loaded class or null if not found
 	 */
-	private byte[] loadClassBytes( String name ) throws IOException {
-		Path fullPath = Paths.get( this.classDirectory, name.replace( '.', '/' ) + CLASS_EXTENSION );
-		return Files.readAllBytes( fullPath );
+	public Optional<ClassLocation> findFromModules( String name ) {
+		return Optional.ofNullable( null );
+	}
+
+	/**
+	 * Load a class from the configured directory byte code
+	 *
+	 * @param name The fully qualified path of the class to load
+	 *
+	 * @return The loaded class or null if not found
+	 */
+	public Optional<ClassLocation> findFromLocal( String name ) {
+		return Optional.ofNullable( null );
+	}
+
+	/**
+	 * Load a class from the system class loader
+	 *
+	 * @param name The fully qualified path of the class to load
+	 *
+	 * @return The {@link ClassLocation} record wrapped in an optional if found, empty otherwise
+	 */
+	public Optional<ClassLocation> findFromSystem( String name ) {
+		try {
+			return Optional.of(
+			        new ClassLocation(
+			                name, // fully qualified name
+			                name, // resolved path, same in java
+			                TYPE_JAVA, // type
+			                super.loadClass( name ), // talk to the system class loader
+			                null // no module
+			        )
+			);
+		} catch ( ClassNotFoundException e ) {
+			return Optional.empty();
+		}
 	}
 
 	/**
 	 * --------------------------------------------------------------------------
-	 * Record Definitions
+	 * ClassLocation Record
 	 * --------------------------------------------------------------------------
 	 */
 

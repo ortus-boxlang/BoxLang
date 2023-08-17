@@ -17,6 +17,10 @@
  */
 package ortus.boxlang.runtime.interop;
 
+import ortus.boxlang.runtime.dynamic.IReferenceable;
+import ortus.boxlang.runtime.types.exceptions.KeyNotFoundException;
+import ortus.boxlang.runtime.scopes.Key;
+
 import java.lang.invoke.CallSite;
 import java.lang.invoke.ConstantCallSite;
 import java.lang.invoke.MethodHandle;
@@ -25,6 +29,7 @@ import java.lang.invoke.MethodType;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
+import java.lang.reflect.Parameter;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
@@ -33,6 +38,9 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Stream;
+
+import org.apache.commons.lang3.ClassUtils;
 
 /**
  * This class is used to represent a BX/Java Class and invoke methods on classes using invoke dynamic.
@@ -43,7 +51,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * To create a new class invoker you can use the following:
  *
  * <pre>{@code
- * 
+ *
  * ClassInvoker target = new ClassInvoker( String.class );
  * ClassInvoker target = ClassInvoker.of( String.class );
  * ClassInvoker target = new ClassInvoker( new String() );
@@ -55,17 +63,19 @@ import java.util.concurrent.ConcurrentHashMap;
  * - {@code invokeConstructor( Object... args )} - Invoke a constructor on the class, and store the instance for future method calls
  * - {@code invokeStaticMethod( String methodName, Object... args )} - Invoke a static method on the class
  * - {@code invoke( String methodName, Object... args )} - Invoke a method on the instance of the class
- *
- * TODO:
- * [ ] - Set public fields
  */
-public class ClassInvoker {
+public class DynamicObject implements IReferenceable {
 
 	/**
 	 * --------------------------------------------------------------------------
 	 * Public Properties
 	 * --------------------------------------------------------------------------
 	 */
+
+	/**
+	 * Helper for all class utility methods from apache commons lang 3
+	 */
+	public static final Class<ClassUtils>					CLASS_UTILS			= ClassUtils.class;
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -133,18 +143,18 @@ public class ClassInvoker {
 	/**
 	 * Create a new class invoker for the given class
 	 *
-	 * @param targetClass
+	 * @param targetClass The class to create the invoker for
 	 */
-	public ClassInvoker( Class<?> targetClass ) {
+	public DynamicObject( Class<?> targetClass ) {
 		this.targetClass = targetClass;
 	}
 
 	/**
 	 * Create a new class invoker for the given instance
 	 *
-	 * @param targetInstance
+	 * @param targetInstance The instance to create the invoker for
 	 */
-	public ClassInvoker( Object targetInstance ) {
+	public DynamicObject( Object targetInstance ) {
 		this.targetInstance	= targetInstance;
 		this.targetClass	= targetInstance.getClass();
 	}
@@ -156,8 +166,8 @@ public class ClassInvoker {
 	 *
 	 * @return The class invoker
 	 */
-	public static ClassInvoker of( Class<?> targetClass ) {
-		return new ClassInvoker( targetClass );
+	public static DynamicObject of( Class<?> targetClass ) {
+		return new DynamicObject( targetClass );
 	}
 
 	/**
@@ -167,8 +177,8 @@ public class ClassInvoker {
 	 *
 	 * @return The class invoker
 	 */
-	public static ClassInvoker of( Object targetInstance ) {
-		return new ClassInvoker( targetInstance );
+	public static DynamicObject of( Object targetInstance ) {
+		return new DynamicObject( targetInstance );
 	}
 
 	/**
@@ -186,8 +196,10 @@ public class ClassInvoker {
 
 	/**
 	 * @param handlesCacheEnabled Enable or not the handles cache
+	 *
+	 * @return The Dynamic Object
 	 */
-	public ClassInvoker setHandlesCacheEnabled( Boolean handlesCacheEnabled ) {
+	public DynamicObject setHandlesCacheEnabled( Boolean handlesCacheEnabled ) {
 		this.handlesCacheEnabled = handlesCacheEnabled;
 		return this;
 	}
@@ -201,8 +213,10 @@ public class ClassInvoker {
 
 	/**
 	 * @param targetClass the targetClass to set
+	 *
+	 * @return The Dynamic Object
 	 */
-	public ClassInvoker setTargetClass( Class<?> targetClass ) {
+	public DynamicObject setTargetClass( Class<?> targetClass ) {
 		this.targetClass = targetClass;
 		return this;
 	}
@@ -216,8 +230,10 @@ public class ClassInvoker {
 
 	/**
 	 * @param targetInstance the targetInstance to set
+	 *
+	 * @return The Dynamic Object
 	 */
-	public ClassInvoker setTargetInstance( Object targetInstance ) {
+	public DynamicObject setTargetInstance( Object targetInstance ) {
 		this.targetInstance = targetInstance;
 		return this;
 	}
@@ -239,13 +255,15 @@ public class ClassInvoker {
 	 * @throws Throwable             If the constructor cannot be invoked
 	 * @throws IllegalStateException If the class is an interface, you can't call a constructor on an interface
 	 */
-	public ClassInvoker invokeConstructor( Object... args ) throws Throwable {
+	public DynamicObject invokeConstructor( Object... args ) throws Throwable {
 
 		// Thou shalt not pass!
 		if ( isInterface() ) {
 			throw new IllegalStateException( "Cannot invoke a constructor on an interface" );
 		}
 
+		// Unwrap any ClassInvoker instances
+		unWrapArguments( args );
 		// Method signature for a constructor is void (Object...)
 		MethodType		constructorType		= MethodType.methodType( void.class, argumentsToClasses( args ) );
 		// Define the bootstrap method
@@ -271,9 +289,10 @@ public class ClassInvoker {
 	 *
 	 * @return The result of the method invocation wrapped in an Optional
 	 *
-	 * @throws Throwable
 	 * @throws IllegalArgumentException If the method name is null or empty
 	 * @throws IllegalStateException    If the method handle is not static and the target instance is null
+	 * @throws IllegalAccessException   If the method handle cannot be accessed
+	 * @throws NoSuchMethodException    If the method cannot be found
 	 */
 	public Optional<Object> invoke( String methodName, Object... arguments ) throws Throwable {
 		// Verify method name
@@ -281,11 +300,14 @@ public class ClassInvoker {
 			throw new IllegalArgumentException( "Method name cannot be null or empty." );
 		}
 
+		// Unwrap any ClassInvoker instances
+		unWrapArguments( arguments );
+
 		// Get the invoke dynamic method handle from our cache and discovery techniques
 		MethodRecord methodRecord = getMethodHandle( methodName, argumentsToClasses( arguments ) );
 
 		// If it's not static, we need a target instance
-		if ( Boolean.FALSE.equals( methodRecord.isStatic() ) && this.targetInstance == null ) {
+		if ( !methodRecord.isStatic() && !hasInstance() ) {
 			throw new IllegalStateException(
 			        "You can't call invoke on a null target instance. Use [invokeStatic] instead or set the target instance manually or via the constructor."
 			);
@@ -293,7 +315,7 @@ public class ClassInvoker {
 
 		// Discover and Execute it baby!
 		return Optional.ofNullable(
-		        Boolean.TRUE.equals( methodRecord.isStatic() )
+		        methodRecord.isStatic()
 		                ? methodRecord.methodHandle().invokeWithArguments( arguments )
 		                : methodRecord.methodHandle().bindTo( this.targetInstance ).invokeWithArguments( arguments )
 		);
@@ -307,7 +329,7 @@ public class ClassInvoker {
 	 *
 	 * @return The result of the method invocation wrapped in an Optional
 	 *
-	 * @throws Throwable
+	 * @throws Throwable If the method cannot be invoked
 	 */
 	public Optional<Object> invokeStatic( String methodName, Object... arguments ) throws Throwable {
 
@@ -315,6 +337,9 @@ public class ClassInvoker {
 		if ( methodName == null || methodName.isEmpty() ) {
 			throw new IllegalArgumentException( "Method name cannot be null or empty." );
 		}
+
+		// Unwrap any ClassInvoker instances
+		unWrapArguments( arguments );
 
 		// Discover and Execute it baby!
 		return Optional.ofNullable(
@@ -325,48 +350,87 @@ public class ClassInvoker {
 	}
 
 	/**
+	 * --------------------------------------------------------------------------
+	 * Field Methods
+	 * --------------------------------------------------------------------------
+	 */
+
+	/**
 	 * Get the value of a public or public static field on a class or instance
 	 *
 	 * @param fieldName The name of the field to get
 	 *
 	 * @return The value of the field wrapped in an Optional
 	 *
-	 * @throws Throwable
+	 * @throws Throwable             If the field cannot be retrieved
 	 * @throws NoSuchFieldException  If the field doesn't exist
 	 * @throws IllegalStateException If the field is not static and the target instance is null
 	 */
 	public Optional<Object> getField( String fieldName ) throws Throwable {
-		Field			field		= this.targetClass.getField( fieldName );
+		// Discover the field with no case sensitivity
+		Field			field		= findField( fieldName );
+		// Now get the method handle for the field to execute
 		MethodHandle	fieldHandle	= METHOD_LOOKUP.unreflectGetter( field );
 		Boolean			isStatic	= Modifier.isStatic( field.getModifiers() );
 
 		// If it's not static, we need a target instance
-		if ( Boolean.FALSE.equals( isStatic ) && this.targetInstance == null ) {
+		if ( !isStatic && !hasInstance() ) {
 			throw new IllegalStateException(
 			        "You are trying to get a public field but there is not instance set on the invoker, please make sure the [invokeConstructor] has been called."
 			);
 		}
 
 		return Optional.ofNullable(
-		        Boolean.TRUE.equals( isStatic )
+		        isStatic
 		                ? fieldHandle.invoke()
 		                : fieldHandle.invoke( this.targetInstance )
 		);
 	}
 
-	public ClassInvoker setField( String fieldName, Object value ) throws Throwable {
-		Field			field		= this.targetClass.getField( fieldName );
+	/**
+	 * Get the value of a public or public static field on a class or instance but if it doesn't exist
+	 * return the default value passed in.
+	 *
+	 * @param fieldName    The name of the field to get
+	 * @param defaultValue The default value to return if the field doesn't exist
+	 *
+	 * @throws Throwable If the field cannot be retrieved
+	 *
+	 * @return The value of the field or the default value wrapped in an Optional
+	 */
+	public Optional<Object> getField( String fieldName, Object defaultValue ) throws Throwable {
+		try {
+			return getField( fieldName );
+		} catch ( NoSuchFieldException | IllegalStateException e ) {
+			return Optional.ofNullable( defaultValue );
+		}
+	}
+
+	/**
+	 * Set the value of a public or public static field on a class or instance
+	 *
+	 * @param fieldName The name of the field to set
+	 * @param value     The value to set the field to
+	 *
+	 * @return The class invoker
+	 *
+	 * @throws Throwable             If the field cannot be set
+	 * @throws IllegalStateException If the field is not static and the target instance is null
+	 */
+	public DynamicObject setField( String fieldName, Object value ) throws Throwable {
+		// Discover the field with no case sensitivity
+		Field			field		= findField( fieldName );
 		MethodHandle	fieldHandle	= METHOD_LOOKUP.unreflectSetter( field );
 		Boolean			isStatic	= Modifier.isStatic( field.getModifiers() );
 
 		// If it's not static, we need a target instance, verify it's not null
-		if ( Boolean.FALSE.equals( isStatic ) && this.targetInstance == null ) {
+		if ( !isStatic && !hasInstance() ) {
 			throw new IllegalStateException(
 			        "You are trying to set a public field but there is not instance set on the invoker, please make sure the [invokeConstructor] has been called."
 			);
 		}
 
-		if ( Boolean.TRUE.equals( isStatic ) ) {
+		if ( isStatic ) {
 			fieldHandle.invokeWithArguments( value );
 
 		} else {
@@ -377,20 +441,86 @@ public class ClassInvoker {
 	}
 
 	/**
-	 * Get the value of a public or public static field on a class or instance but if it doesn't exist
-	 * return the default value passed in.
+	 * Find a field by name with no case-sensitivity (upper case) in the class
 	 *
-	 * @param fieldName    The name of the field to get
-	 * @param defaultValue The default value to return if the field doesn't exist
+	 * @param fieldName The name of the field to find
 	 *
-	 * @return The value of the field or the default value wrapped in an Optional
+	 * @return The field if discovered
+	 *
+	 * @throws NoSuchFieldException If the field cannot be found
 	 */
-	public Optional<Object> getField( String fieldName, Object defaultValue ) throws Throwable {
-		try {
-			return getField( fieldName );
-		} catch ( NoSuchFieldException | IllegalStateException e ) {
-			return Optional.ofNullable( defaultValue );
-		}
+	public Field findField( String fieldName ) throws NoSuchFieldException {
+		return getFieldsAsStream()
+		        .filter( target -> target.getName().equalsIgnoreCase( fieldName ) )
+		        .findFirst()
+		        .orElseThrow( () -> new NoSuchFieldException(
+		                String.format( "No such field [%s] found in the class [%s].", fieldName, this.targetClass.getName() )
+		        ) );
+	}
+
+	/**
+	 * Verifies if the class has a public or public static field with the given name
+	 *
+	 * @param fieldName The name of the field to check
+	 *
+	 * @return True if the field exists, false otherwise
+	 */
+	public Boolean hasField( String fieldName ) {
+		return getFieldNames().contains( fieldName );
+	}
+
+	/**
+	 * Verifies if the class has a public or public static field with the given name and no case-sensitivity (upper case)
+	 *
+	 * @param fieldName The name of the field to check
+	 *
+	 * @return True if the field exists, false otherwise
+	 */
+	public Boolean hasFieldNoCase( String fieldName ) {
+		return getFieldNamesNoCase().contains( fieldName.toUpperCase() );
+	}
+
+	/**
+	 * Get an array of fields of all the public fields for the given class
+	 *
+	 * @return The fields in the class
+	 */
+	public Field[] getFields() {
+		return this.targetClass.getFields();
+	}
+
+	/**
+	 * Get a stream of fields of all the public fields for the given class
+	 *
+	 * @return The stream of fields in the class
+	 */
+	public Stream<Field> getFieldsAsStream() {
+		return Stream.of( getFields() );
+	}
+
+	/**
+	 * Get a list of field names for the given class with case-sensitivity
+	 *
+	 * @return A list of field names
+	 */
+	public List<String> getFieldNames() {
+		return getFieldsAsStream()
+		        .map( Field::getName )
+		        .toList();
+
+	}
+
+	/**
+	 * Get a list of field names for the given class with no case-sensitivity (upper case)
+	 *
+	 * @return A list of field names
+	 */
+	public List<String> getFieldNamesNoCase() {
+		return getFieldsAsStream()
+		        .map( Field::getName )
+		        .map( String::toUpperCase )
+		        .toList();
+
 	}
 
 	/**
@@ -448,74 +578,19 @@ public class ClassInvoker {
 	 */
 	public MethodRecord discoverMethodHandle( String methodName, Class<?>[] argumentsAsClasses )
 	        throws NoSuchMethodException, IllegalAccessException {
-		// Our target we must find!
-		Method targetMethod;
+		// Our target we must find using our dynamic rules:
+		// - case insensitivity
+		// - argument count
+		// - argument class asignability
+		Method targetMethod = findMatchingMethod( methodName, argumentsAsClasses );
 
-		// 1: Exact Match
-		// This can fail if the arguments are not the exact same class types
-		// Which can happen for certain generic types, and even some primitive types
-		try {
-			targetMethod = this.targetClass.getMethod( methodName, argumentsAsClasses );
-
-			// Static Match?
-			if ( Modifier.isStatic( targetMethod.getModifiers() ) ) {
-				MethodHandle methodHandle = METHOD_LOOKUP.findStatic(
-				        this.targetClass,
-				        methodName,
-				        MethodType.methodType( targetMethod.getReturnType(), argumentsAsClasses )
-				);
-				return new MethodRecord( methodName, targetMethod, methodHandle, Boolean.TRUE, argumentsAsClasses.length );
-			}
-
-			// Virtual Lookup
-			MethodHandle methodHandle = METHOD_LOOKUP.findVirtual(
-			        this.targetClass,
-			        methodName,
-			        MethodType.methodType( targetMethod.getReturnType(), argumentsAsClasses )
-			);
-			return new MethodRecord(
-			        methodName,
-			        targetMethod,
-			        methodHandle,
-			        Boolean.FALSE,
-			        argumentsAsClasses.length
-			);
-		} catch ( NoSuchMethodException e ) {
-
-			// 2: Let's go by discovery now
-			targetMethod = getCallableMethods()
-			        .stream()
-			        // Do it fast!
-			        .parallel()
-			        // filter by the method name we need
-			        .filter( method -> method.getName().equals( methodName ) )
-			        // .peek( method -> System.out.println( "PeekMethod -> " + method.getName() ) )
-			        // Now by the number of arguments we have
-			        .filter( method -> method.getParameterCount() == argumentsAsClasses.length )
-			        // TODO: Filter by Argument Cast Matching
-			        // Right now we take the first match, but @bdw429s mentioned we need to do auto-casting
-			        // So that would have to be done here.
-			        // Give me the first one found
-			        .findFirst()
-			        // Or throw an exception
-			        .orElseThrow( () -> new NoSuchMethodException(
-			                String.format(
-			                        "No such method [%s] found in the class [%s] using [%d] arguments.",
-			                        methodName,
-			                        this.targetClass.getName(),
-			                        argumentsAsClasses.length
-			                )
-			        ) );
-
-			// Return our discovered method
-			return new MethodRecord(
-			        methodName,
-			        targetMethod,
-			        toMethodHandle( targetMethod ),
-			        Modifier.isStatic( targetMethod.getModifiers() ),
-			        argumentsAsClasses.length
-			);
-		}
+		return new MethodRecord(
+		        methodName,
+		        targetMethod,
+		        METHOD_LOOKUP.unreflect( targetMethod ),
+		        Modifier.isStatic( targetMethod.getModifiers() ),
+		        argumentsAsClasses.length
+		);
 	}
 
 	/**
@@ -523,11 +598,121 @@ public class ClassInvoker {
 	 *
 	 * @return A unique set of callable methods
 	 */
-	private Set<Method> getCallableMethods() {
+	public Set<Method> getMethods() {
 		Set<Method> allMethods = new HashSet<>();
 		allMethods.addAll( new HashSet<>( List.of( this.targetClass.getMethods() ) ) );
 		allMethods.addAll( new HashSet<>( List.of( this.targetClass.getDeclaredMethods() ) ) );
 		return allMethods;
+	}
+
+	/**
+	 * Get a stream of methods of all the unique callable method signatures for the given class
+	 *
+	 * @return A stream of unique callable methods
+	 */
+	public Stream<Method> getMethodsAsStream() {
+		return getMethods().stream();
+	}
+
+	/**
+	 * Get a list of method names for the given class
+	 *
+	 * @return A list of method names
+	 */
+	public List<String> getMethodNames() {
+		return getMethodsAsStream()
+		        .parallel()
+		        .map( Method::getName )
+		        .toList();
+	}
+
+	/**
+	 * Get a list of method names for the given class with no case-sensitivity (upper case)
+	 *
+	 * @return A list of method names with no case
+	 */
+	public List<String> getMethodNamesNoCase() {
+		return getMethodsAsStream()
+		        .parallel()
+		        .map( Method::getName )
+		        .map( String::toUpperCase )
+		        .toList();
+	}
+
+	/**
+	 * Verifies if the class has a public or public static method with the given name
+	 *
+	 * @param methodName The name of the method to check
+	 *
+	 * @return True if the method exists, false otherwise
+	 */
+	public Boolean hasMethod( String methodName ) {
+		return getMethodNames().contains( methodName );
+	}
+
+	/**
+	 * Verifies if the class has a public or public static method with the given name and no case-sensitivity (upper case)
+	 *
+	 * @param methodName The name of the method to check
+	 *
+	 * @return True if the method exists, false otherwise
+	 */
+	public Boolean hasMethodNoCase( String methodName ) {
+		return getMethodNamesNoCase().contains( methodName.toUpperCase() );
+	}
+
+	/**
+	 * This method is used to verify if the class has the same method signature as the incoming one with no case-sensitivity (upper case)
+	 *
+	 * @param methodName         The name of the method to check
+	 * @param argumentsAsClasses The parameter types of the method to check
+	 *
+	 * @return The matched method signature
+	 *
+	 * @throws NoSuchMethodException If the method cannot be found
+	 */
+	public Method findMatchingMethod( String methodName, Class<?>[] argumentsAsClasses ) throws NoSuchMethodException {
+		return getMethodsAsStream()
+		        .parallel()
+		        .filter( method -> method.getName().equalsIgnoreCase( methodName ) )
+		        .filter( method -> hasMatchingParameterTypes( method, argumentsAsClasses ) )
+		        .findFirst()
+		        .orElseThrow( () -> new NoSuchMethodException(
+		                String.format(
+		                        "No such method [%s] found in the class [%s] using [%d] arguments of types [%s]",
+		                        methodName,
+		                        this.targetClass.getName(),
+		                        argumentsAsClasses.length,
+		                        Arrays.toString( argumentsAsClasses )
+		                )
+		        ) );
+	}
+
+	/**
+	 * Verifies if the method has the same parameter types as the incoming ones
+	 *
+	 * @see https://commons.apache.org/proper/commons-lang/javadocs/api-release/index.html
+	 *
+	 * @param method             The method to check
+	 * @param argumentsAsClasses The arguments to check
+	 *
+	 * @return True if the method has the same parameter types, false otherwise
+	 */
+	private static boolean hasMatchingParameterTypes( Method method, Class<?>[] argumentsAsClasses ) {
+		Class<?>[] methodParams = Arrays
+		        .stream( method.getParameters() )
+		        .map( Parameter::getType )
+		        .toArray( Class<?>[]::new );
+
+		if ( methodParams.length != argumentsAsClasses.length ) {
+			return false;
+		}
+
+		// Verify assignability including primitive autoboxing
+		return ClassUtils.isAssignable( argumentsAsClasses, methodParams );
+
+		// return IntStream.range( 0, methodParameters.length )
+		// .allMatch( i -> ClassUtils.isAssignable( argumentsAsClasses[ i ], methodParameters[ i ].getType() ) );
 	}
 
 	/**
@@ -583,14 +768,56 @@ public class ClassInvoker {
 	public static Class<?>[] argumentsToClasses( Object... args ) {
 		// Convert the arguments to an array of classes
 		return Arrays.stream( args )
-		        .map( ClassInvoker::argumentToClass )
+		        .map( DynamicObject::argumentToClass )
 		        // .peek( clazz -> System.out.println( "argumentToClass -> " + clazz ) )
 		        .toArray( Class<?>[]::new );
 	}
 
 	/**
+	 * Unwrap an object if it's inside a ClassInvoker instance
+	 *
+	 * @param param The object to unwrap
+	 *
+	 * @return The target instance or class, depending which one is set
+	 */
+	public static Object unWrap( Object param ) {
+		if ( param instanceof DynamicObject ) {
+			DynamicObject invoker = ( DynamicObject ) param;
+			if ( invoker.hasInstance() ) {
+				return invoker.getTargetInstance();
+			} else {
+				return invoker.getTargetClass();
+			}
+		} else {
+			return param;
+		}
+	}
+
+	/**
+	 * Unwrap any ClassInvoker instances in the arguments
+	 *
+	 * @param arguments The arguments to unwrap
+	 *
+	 * @return The unwrapped arguments
+	 */
+	void unWrapArguments( Object[] arguments ) {
+		for ( int j = 0; j < arguments.length; j++ ) {
+			arguments[ j ] = unWrap( arguments[ j ] );
+		}
+	}
+
+	/**
+	 * Verifies if the class invoker has an instance or not
+	 *
+	 * @return True if it has an instance, false otherwise
+	 */
+	public Boolean hasInstance() {
+		return this.targetInstance != null;
+	}
+
+	/**
 	 * This immutable record represents an executable method handle and it's metadata.
-	 * This record is the one that is cached in the {@link ClassInvoker#methodCache} map.
+	 * This record is the one that is cached in the {@link DynamicObject#methodCache} map.
 	 *
 	 * @param methodName    The name of the method
 	 * @param method        The method representation
@@ -605,5 +832,96 @@ public class ClassInvoker {
 	        boolean isStatic,
 	        int argumentCount ) {
 		// A beautiful java record of our method handle
+	}
+
+	/**
+	 * --------------------------------------------------------------------------
+	 * Implementation of IReferencable
+	 * --------------------------------------------------------------------------
+	 */
+
+	/**
+	 * Dereference this object by a key and return the value, or throw exception
+	 *
+	 * @param name The name of the key to dereference
+	 *
+	 * @return The requested object
+	 */
+	public Object dereference( Key name ) throws KeyNotFoundException {
+		try {
+			// If we have the field, return it's value, even if it's null
+			if ( hasField( name.getName() ) ) {
+				return getField( name.getName() ).orElse( null );
+			}
+		} catch ( Throwable e ) {
+			throw new RuntimeException( e );
+		}
+
+		// Field not found anywhere
+		if ( hasInstance() ) {
+			throw new KeyNotFoundException(
+			        String.format( "The instance [%s] has no public field [%s].  The allowed fields are [%s]",
+			                ClassUtils.getCanonicalName( getTargetClass() ),
+			                name.getName(),
+			                getFieldNames()
+			        )
+			);
+		} else {
+			throw new KeyNotFoundException(
+			        String.format( "The instance [%s] has no static field [%s].  The allowed fields are [%s]",
+			                ClassUtils.getCanonicalName( getTargetClass() ),
+			                name.getName(),
+			                getFieldNames()
+			        )
+			);
+		}
+	}
+
+	/**
+	 * Dereference this object by a key and invoke the result as an invokable (UDF, java method)
+	 *
+	 * @param name      The name of the key to dereference, which becomes the method name
+	 * @param arguments The arguments to pass to the invokable
+	 *
+	 * @return The requested return value or null
+	 */
+	public Object dereferenceAndInvoke( Key name, Object[] arguments ) throws KeyNotFoundException {
+		try {
+			return invoke( name.getName(), arguments ).orElse( null );
+		} catch ( Throwable e ) {
+			throw new RuntimeException( e );
+		}
+	}
+
+	/**
+	 * Safely dereference this object by a key and return the value, or null if not found
+	 *
+	 * @return The requested object or null
+	 */
+	public Object safeDereference( Key name ) {
+		try {
+			// If we have the field, return it's value, even if it's null
+			if ( hasField( name.getName() ) ) {
+				return getField( name.getName() ).orElse( null );
+			} else {
+				return null;
+			}
+		} catch ( Throwable e ) {
+			throw new RuntimeException( e );
+		}
+	}
+
+	/**
+	 * Assign a value to a field
+	 *
+	 * @param name  The name of the field to assign
+	 * @param value The value to assign
+	 */
+	public void assign( Key name, Object value ) {
+		try {
+			setField( name.getName(), value );
+		} catch ( Throwable e ) {
+			throw new RuntimeException( e );
+		}
 	}
 }
