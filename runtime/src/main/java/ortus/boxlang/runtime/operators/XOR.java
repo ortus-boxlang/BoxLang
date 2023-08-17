@@ -21,13 +21,14 @@ import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
 
 /**
  * Performs logical XOR
+ * {@code a = b XOR c}
  */
 public class XOR implements IOperator {
 
 	/**
 	 * @param left  The left operand
 	 * @param right The right operand
-	 * 
+	 *
 	 * @return The result
 	 */
 	public static Boolean invoke( Object left, Object right ) {

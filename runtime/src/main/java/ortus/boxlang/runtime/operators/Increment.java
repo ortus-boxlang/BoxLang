@@ -21,6 +21,7 @@ import ortus.boxlang.runtime.dynamic.casters.DoubleCaster;
 
 /**
  * Performs Math i++
+ * {@code a = b++ or a = ++b}
  */
 public class Increment implements IOperator {
 

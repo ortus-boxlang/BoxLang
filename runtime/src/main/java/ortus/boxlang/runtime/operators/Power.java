@@ -20,7 +20,8 @@ package ortus.boxlang.runtime.operators;
 import ortus.boxlang.runtime.dynamic.casters.DoubleCaster;
 
 /**
- * Performs Math Power
+ * Performs Math Power for BoxLang
+ * {@code a = 2 ^ 3}
  */
 public class Power implements IOperator {
 

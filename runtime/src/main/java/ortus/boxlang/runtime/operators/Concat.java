@@ -21,13 +21,14 @@ import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 
 /**
  * Performs String Concat
+ * {@code a = "Hello" & "World" }
  */
 public class Concat implements IOperator {
 
 	/**
 	 * @param left  The left operand
 	 * @param right The right operand
-	 * 
+	 *
 	 * @return The two strings conctenated
 	 */
 	public static String invoke( Object left, Object right ) {

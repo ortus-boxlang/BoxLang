@@ -21,7 +21,7 @@ import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
 
 /**
  * Performs boolean Negation
- * !bool
+ * {@code a = !bool}
  */
 public class Not implements IOperator {
 

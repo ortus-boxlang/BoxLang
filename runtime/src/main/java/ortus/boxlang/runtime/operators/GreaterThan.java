@@ -18,7 +18,7 @@
 package ortus.boxlang.runtime.operators;
 
 /**
- * Performs GT or > comparison
+ * Performs {@code GT or >} comparison
  * Compares numbers as numbers, compares strings case insensitive
  */
 public class GreaterThan implements IOperator {
@@ -26,7 +26,7 @@ public class GreaterThan implements IOperator {
 	/**
 	 * @param left  The left operand
 	 * @param right The right operand
-	 * 
+	 *
 	 * @return True if left is greater than right
 	 */
 	public static Boolean invoke( Object left, Object right ) {

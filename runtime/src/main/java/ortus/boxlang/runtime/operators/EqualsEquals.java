@@ -18,7 +18,7 @@
 package ortus.boxlang.runtime.operators;
 
 /**
- * Performs EQ or == comparison
+ * Performs {@code EQ or ==} comparison
  * Compares numbers as numbers, compares strings case insensitive
  */
 public class EqualsEquals implements IOperator {
