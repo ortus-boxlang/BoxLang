@@ -136,8 +136,13 @@ public class ClassLocator extends ClassLoader {
 	 * Register a class resolver
 	 *
 	 * @param resolver The class resolver to register
+	 *
+	 * @throws IllegalStateException If the resolver is already registered
 	 */
-	public void registerResolver( IClassResolver resolver ) {
+	public void registerResolver( IClassResolver resolver ) throws IllegalStateException {
+		if ( hasResolver( resolver.getPrefix() ) ) {
+			throw new IllegalStateException( String.format( "The resolver [%s] is already registered", resolver.getPrefix() ) );
+		}
 		this.resolvers.put( resolver.getPrefix(), resolver );
 	}
 
