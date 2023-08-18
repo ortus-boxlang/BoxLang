@@ -20,52 +20,61 @@ package ortus.boxlang.runtime;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.jupiter.api.DisplayName;
 
 import static com.google.common.truth.Truth.assertThat;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+
+import java.net.URL;
 
 public class BoxRuntimeTest {
 
-	@Before
-	public void setUp() {
-		// Start the runtime before each test
-		BoxRuntime.startup();
-	}
-
-	@After
-	public void tearDown() {
-		// Shutdown the runtime after each test
-		BoxRuntime.shutdown();
-	}
-
+	@DisplayName( "It can startup" )
 	@Test
-	public void testGetInstance() {
+	public void testItCanStartUp() {
 		// Ensure getInstance() returns the same instance as startup()
-		BoxRuntime	instance1	= BoxRuntime.getInstance();
-		BoxRuntime	instance2	= BoxRuntime.startup();
+		BoxRuntime instance1 = BoxRuntime.getInstance();
+		assertThat( instance1 ).isNull();
 
-		assertThat( instance1 ).isNotNull();
-		assertThat( instance1 ).isSameInstanceAs( instance2 );
-	}
-
-	@Test
-	public void testStartup() {
-		// Ensure startup() returns the same instance as getInstance()
-		BoxRuntime	instance1	= BoxRuntime.getInstance();
-		BoxRuntime	instance2	= BoxRuntime.startup();
-
-		assertThat( instance1 ).isNotNull();
-		assertThat( instance1 ).isSameInstanceAs( instance2 );
-		assertThat( BoxRuntime.isStarted() ).isTrue();
+		BoxRuntime instance2 = BoxRuntime.startup();
+		assertThat( BoxRuntime.getInstance() ).isSameInstanceAs( instance2 );
+		assertThat( BoxRuntime.hasStarted() ).isTrue();
 		assertThat( BoxRuntime.getStartTime().isPresent() ).isTrue();
 	}
 
+	@DisplayName( "It can shutdown" )
 	@Test
-	public void testShutdown() {
+	public void testItCanShutdown() {
+		BoxRuntime.startup();
 		// Ensure shutdown sets instance to null
 		BoxRuntime.shutdown();
 		assertThat( BoxRuntime.getInstance() ).isNull();
-		assertThat( BoxRuntime.isStarted() ).isFalse();
+		assertThat( BoxRuntime.hasStarted() ).isFalse();
 		assertThat( BoxRuntime.getStartTime().isPresent() ).isFalse();
+	}
+
+	@DisplayName( "It can execute a template" )
+	@Test
+	public void testItCanExecuteATemplate() throws Throwable {
+		String testTemplate = getClass().getResource( "/test-templates/BoxRuntime.bx" ).getPath();
+
+		assertDoesNotThrow( () -> {
+			BoxRuntime.startup();
+			BoxRuntime.executeTemplate( testTemplate );
+			BoxRuntime.shutdown();
+		} );
+	}
+
+	@DisplayName( "It can execute a template URL" )
+	@Test
+	public void testItCanExecuteATemplateURL() throws Throwable {
+		URL testTemplate = getClass().getResource( "/test-templates/BoxRuntime.bx" );
+
+		assertDoesNotThrow( () -> {
+			BoxRuntime.startup();
+			BoxRuntime.executeTemplate( testTemplate );
+			BoxRuntime.shutdown();
+		} );
 	}
 
 }

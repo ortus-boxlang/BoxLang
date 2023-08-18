@@ -17,24 +17,18 @@
  */
 package ortus.boxlang.runtime;
 
+import java.net.URL;
 import java.time.Instant;
 import java.util.Optional;
 
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.TemplateBoxContext;
-import ortus.boxlang.runtime.context.IBoxContext;
 
 /**
  * Represents the top level runtime container for box lang. Config, global scopes, mappings, threadpools, etc all go here.
  * All threads, requests, invocations, etc share this.
  */
 public class BoxRuntime {
-
-	/**
-	 * --------------------------------------------------------------------------
-	 * Public Properties
-	 * --------------------------------------------------------------------------
-	 */
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -54,7 +48,7 @@ public class BoxRuntime {
 
 	/**
 	 * --------------------------------------------------------------------------
-	 * Methods
+	 * Constructor
 	 * --------------------------------------------------------------------------
 	 */
 
@@ -66,16 +60,7 @@ public class BoxRuntime {
 	}
 
 	/**
-	 * Get the start time of the runtime, null if not started
-	 *
-	 * @return the runtime start time
-	 */
-	public static Optional<Instant> getStartTime() {
-		return ( instance == null ) ? Optional.empty() : Optional.ofNullable( instance.startTime );
-	}
-
-	/**
-	 * Get the singleton instance.
+	 * Get the singleton instance. This can be null if the runtime has not been started yet.
 	 *
 	 * @return BoxRuntime
 	 *
@@ -86,11 +71,26 @@ public class BoxRuntime {
 	}
 
 	/**
+	 * --------------------------------------------------------------------------
+	 * Methods
+	 * --------------------------------------------------------------------------
+	 */
+
+	/**
+	 * Get the start time of the runtime, null if not started
+	 *
+	 * @return the runtime start time
+	 */
+	public static Optional<Instant> getStartTime() {
+		return ( instance == null ) ? Optional.empty() : Optional.ofNullable( instance.startTime );
+	}
+
+	/**
 	 * Check if the runtime has been started
 	 *
 	 * @return true if the runtime has been started
 	 */
-	public static Boolean isStarted() {
+	public static Boolean hasStarted() {
 		return instance != null;
 	}
 
@@ -127,7 +127,7 @@ public class BoxRuntime {
 	 *
 	 * @throws Throwable if the template cannot be executed
 	 */
-	public void executeTemplate( String templatePath ) throws Throwable {
+	public static void executeTemplate( String templatePath ) throws Throwable {
 
 		// Build out the execution context for this execution and bind it to the incoming template
 		IBoxContext context = new TemplateBoxContext( templatePath );
@@ -135,6 +135,23 @@ public class BoxRuntime {
 		// Here is where we presumably boostrap a page or class that we are executing in our new context.
 		// JIT if neccessary
 		BoxPiler.parse( templatePath ).invoke( context );
+	}
+
+	/**
+	 * Execute a single template in its own context using a {@see URL} of the template to execution
+	 *
+	 * @param templateURL A URL location to execution
+	 *
+	 * @throws Throwable if the template cannot be executed
+	 */
+	public static void executeTemplate( URL templatePath ) throws Throwable {
+
+		// Build out the execution context for this execution and bind it to the incoming template
+		IBoxContext context = new TemplateBoxContext( templatePath.getPath() );
+
+		// Here is where we presumably boostrap a page or class that we are executing in our new context.
+		// JIT if neccessary
+		BoxPiler.parse( templatePath.getPath() ).invoke( context );
 	}
 
 }

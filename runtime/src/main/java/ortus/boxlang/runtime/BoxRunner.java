@@ -47,7 +47,7 @@ public class BoxRunner {
 		BoxRuntime.startup();
 
 		try {
-			BoxRuntime.getInstance().executeTemplate( options.templatePath() );
+			BoxRuntime.executeTemplate( options.templatePath() );
 		} catch ( Throwable e ) {
 			throw new RuntimeException( e );
 		}
