@@ -1,0 +1,81 @@
+/**
+ * [BoxLang]
+ *
+ * Copyright [2023] [Ortus Solutions, Corp]
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package ortus.boxlang.runtime.events;
+
+import org.junit.Ignore;
+import org.junit.jupiter.api.Test;
+
+import com.google.common.truth.Truth;
+
+import ortus.boxlang.runtime.interop.DynamicObject;
+import ortus.boxlang.runtime.scopes.Key;
+import ortus.boxlang.runtime.types.Struct;
+
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import static com.google.common.truth.Truth.assertThat;
+
+import java.util.HashMap;
+import java.util.Map;
+
+public class InterceptorStateTest {
+
+	private InterceptorState	interceptorState;
+	private DynamicObject		observer1;
+	private DynamicObject		observer2;
+
+	@BeforeEach
+	void setUp() {
+		interceptorState	= InterceptorState.getInstance( "onTests" );
+		observer1			= DynamicObject.of( this );
+		observer2			= DynamicObject.of( this );
+		assertThat( interceptorState.getName() ).isEqualTo( "onTests" );
+	}
+
+	@DisplayName( "It can register and unregister observers" )
+	@Test
+	void testItCanRegisterObservers() {
+		interceptorState.register( observer1 );
+		assertThat( interceptorState.exists( observer1 ) ).isTrue();
+		interceptorState.unregister( observer1 );
+		assertThat( interceptorState.exists( observer1 ) ).isFalse();
+	}
+
+	@DisplayName( "It can process observers" )
+	@Test
+	void testItCanProcessObservers() throws Throwable {
+		interceptorState.register( observer1 );
+		interceptorState.register( observer2 );
+
+		Key		counterKey	= Key.of( "counter" );
+		Struct	data		= new Struct();
+		data.put( counterKey, 0 );
+
+		interceptorState.process( data );
+
+		assertThat( data.get( counterKey ) ).isEqualTo( 2 );
+	}
+
+	public void onTests( Struct data ) {
+		Key	counterKey	= Key.of( "counter" );
+		int	counter		= ( int ) data.get( counterKey );
+		data.put( counterKey, counter + 1 );
+	}
+
+}

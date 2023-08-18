@@ -19,18 +19,18 @@ package ortus.boxlang.runtime.events;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
-import java.util.Observer;
 import java.util.Optional;
 
 import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
 import ortus.boxlang.runtime.interop.DynamicObject;
-import ortus.boxlang.runtime.loader.BoxResolver;
+import ortus.boxlang.runtime.types.Struct;
 
 /**
- * An interceptor state is a state that is used to intercept a method call, and
- * allow observers to be notified of the method call. The observers can then
- * modify the data, or even short circuit the method call.
+ * An interceptor state is an event state that is used to hold observers that want to listent
+ * to that specific state. For example, the "preProcess" state is used to hold observers that
+ * listen to "preProcess" events.
+ *
+ * The {@see InterceptorService} is in charge of managing all states and event registrations in BoxLang.
  */
 public class InterceptorState {
 
@@ -57,6 +57,8 @@ public class InterceptorState {
 
 	/**
 	 * Private constructor
+	 *
+	 * @param name The state name
 	 */
 	private InterceptorState( String name ) {
 		this.name = name;
@@ -65,34 +67,74 @@ public class InterceptorState {
 	/**
 	 * Singleton instance
 	 *
+	 * @param name The state name
+	 *
 	 * @return The instance
 	 */
 	public static synchronized InterceptorState getInstance( String name ) {
 		if ( instance == null ) {
 			instance = new InterceptorState( name );
 		}
-
 		return instance;
 	}
 
+	/**
+	 * Get the state name
+	 *
+	 * @return The state name
+	 */
 	public String getName() {
 		return name;
 	}
 
-	public void addObserver( DynamicObject observer ) {
+	/**
+	 * Register an observer for this state
+	 *
+	 * @param observer The observer
+	 *
+	 * @return The same state
+	 */
+	public InterceptorState register( DynamicObject observer ) {
 		observers.add( observer );
+		return this;
 	}
 
-	public void removeObserver( DynamicObject observer ) {
+	/**
+	 * Unregister an observer for this state
+	 *
+	 * @param observer The observer
+	 *
+	 * @return The same state
+	 */
+	public InterceptorState unregister( DynamicObject observer ) {
 		observers.remove( observer );
+		return this;
 	}
 
-	public void notifyObservers( Map<?, ?> data ) throws Throwable {
+	/**
+	 * Check if an observer is registered for this state
+	 *
+	 * @param observer The observer to check
+	 *
+	 * @return True if the observer is registered, false otherwise
+	 */
+	public Boolean exists( DynamicObject observer ) {
+		return observers.contains( observer );
+	}
+
+	/**
+	 * Process the state by announcing it to all observers
+	 *
+	 * @param data The struct of data to pass to the observers
+	 *
+	 * @throws Throwable If an error occurs while processing the state
+	 */
+	public void process( Struct data ) throws Throwable {
 		for ( DynamicObject observer : observers ) {
 			// Announce to the observer
-			Optional<?> shortCircuit = observer.invoke( getName(), new Object[] { data } );
+			Optional<?> stopChain = observer.invoke( getName(), new Object[] { data } );
 			// If the observer returns true, we short circuit the rest of the observers
-			if ( shortCircuit.isPresent() && BooleanCaster.cast( shortCircuit.get() ) ) {
+			if ( stopChain.isPresent() && BooleanCaster.cast( stopChain.get() ) ) {
 				break;
 			}
 		}
