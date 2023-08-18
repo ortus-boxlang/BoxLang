@@ -39,6 +39,10 @@ dependencies {
     // This dependency is used by the application.
     //implementation 'com.google.guava:guava:31.1-jre'
 	implementation 'org.apache.commons:commons-lang3:3.13.0'
+	// https://mvnrepository.com/artifact/org.slf4j/slf4j-api
+	implementation group: 'org.slf4j', name: 'slf4j-api', version: '2.0.7'
+	// https://mvnrepository.com/artifact/org.slf4j/slf4j-jdk14
+	implementation group: 'org.slf4j', name: 'slf4j-jdk14', version: '2.0.7'
 }
 
 /**
