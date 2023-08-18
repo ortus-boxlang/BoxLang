@@ -18,6 +18,7 @@
 package ortus.boxlang.runtime.dynamic;
 
 import ortus.boxlang.runtime.types.*;
+import ortus.boxlang.runtime.types.exceptions.KeyNotFoundException;
 import ortus.boxlang.runtime.dynamic.Referencer;
 import ortus.boxlang.runtime.scopes.*;
 
@@ -46,7 +47,18 @@ public class ReferencerTest {
 		Key		key				= Key.of( "brad" );
 		IScope	variablesScope	= new VariablesScope();
 		variablesScope.put( key, "Wood" );
-		assertThat( Referencer.get( variablesScope, key ) ).isEqualTo( "Wood" );
+		assertThat( Referencer.get( variablesScope, key, false ) ).isEqualTo( "Wood" );
+		assertThrows( KeyNotFoundException.class, () -> Referencer.get( variablesScope, Key.of( "nonExistent" ), false ) );
+	}
+
+	@DisplayName( "It can safely dereference from a scope" )
+	@Test
+	void testItCanSafelyDereferenceFromAScope() {
+		Key		key				= Key.of( "brad" );
+		IScope	variablesScope	= new VariablesScope();
+		variablesScope.put( key, "Wood" );
+		assertThat( Referencer.get( variablesScope, key, true ) ).isEqualTo( "Wood" );
+		assertThat( Referencer.get( variablesScope, Key.of( "nonExistent" ), true ) ).isNull();
 	}
 
 	@DisplayName( "It can assign to a struct" )
@@ -65,7 +77,18 @@ public class ReferencerTest {
 		Key		key		= Key.of( "brad" );
 		Struct	struct	= new Struct();
 		struct.put( key, "Wood" );
-		assertThat( Referencer.get( struct, key ) ).isEqualTo( "Wood" );
+		assertThat( Referencer.get( struct, key, false ) ).isEqualTo( "Wood" );
+		assertThrows( KeyNotFoundException.class, () -> Referencer.get( struct, Key.of( "nonExistent" ), false ) );
+	}
+
+	@DisplayName( "It can safely dereference from a struct" )
+	@Test
+	void testItCanSafelyDereferenceFromAStruct() {
+		Key		key		= Key.of( "brad" );
+		Struct	struct	= new Struct();
+		struct.put( key, "Wood" );
+		assertThat( Referencer.get( struct, key, true ) ).isEqualTo( "Wood" );
+		assertThat( Referencer.get( struct, Key.of( "nonExistent" ), true ) ).isNull();
 	}
 
 }

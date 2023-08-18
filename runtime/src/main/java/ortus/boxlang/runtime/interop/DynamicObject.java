@@ -844,17 +844,21 @@ public class DynamicObject implements IReferenceable {
 	 * Dereference this object by a key and return the value, or throw exception
 	 *
 	 * @param name The name of the key to dereference
+	 * @param safe If true, return null if the method is not found, otherwise throw an exception
 	 *
 	 * @return The requested object
 	 */
-	public Object dereference( Key name ) throws KeyNotFoundException {
-		try {
-			// If we have the field, return it's value, even if it's null
+	public Object dereference( Key name, Boolean safe ) throws KeyNotFoundException {
+		try {			// If we have the field, return it's value, even if it's null
 			if ( hasField( name.getName() ) ) {
 				return getField( name.getName() ).orElse( null );
 			}
 		} catch ( Throwable e ) {
 			throw new RuntimeException( e );
+		}
+
+		if ( safe ) {
+			return null;
 		}
 
 		// Field not found anywhere
@@ -882,30 +886,17 @@ public class DynamicObject implements IReferenceable {
 	 *
 	 * @param name      The name of the key to dereference, which becomes the method name
 	 * @param arguments The arguments to pass to the invokable
+	 * @param safe      If true, return null if the method is not found, otherwise throw an exception
 	 *
 	 * @return The requested return value or null
 	 */
-	public Object dereferenceAndInvoke( Key name, Object[] arguments ) throws KeyNotFoundException {
+	public Object dereferenceAndInvoke( Key name, Object[] arguments, Boolean safe ) throws KeyNotFoundException {
+		if ( safe && !hasMethod( name.getName() ) ) {
+			return null;
+		}
+
 		try {
 			return invoke( name.getName(), arguments ).orElse( null );
-		} catch ( Throwable e ) {
-			throw new RuntimeException( e );
-		}
-	}
-
-	/**
-	 * Safely dereference this object by a key and return the value, or null if not found
-	 *
-	 * @return The requested object or null
-	 */
-	public Object safeDereference( Key name ) {
-		try {
-			// If we have the field, return it's value, even if it's null
-			if ( hasField( name.getName() ) ) {
-				return getField( name.getName() ).orElse( null );
-			} else {
-				return null;
-			}
 		} catch ( Throwable e ) {
 			throw new RuntimeException( e );
 		}

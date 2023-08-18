@@ -107,9 +107,16 @@ public class BaseScope extends Struct implements IScope {
 	/**
 	 * Dereference this object by a key and return the value, or throw exception
 	 *
+	 * @param name The key to look for
+	 * @param safe Whether to throw an exception if the key is not found
+	 *
 	 * @return The requested obect
 	 */
-	public Object dereference( Key name ) throws KeyNotFoundException {
+	public Object dereference( Key name, Boolean safe ) throws KeyNotFoundException {
+
+		if ( safe && !super.containsKey( name ) ) {
+			return null;
+		}
 
 		Object result = get( name );
 		// Handle full null support
@@ -128,28 +135,16 @@ public class BaseScope extends Struct implements IScope {
 	 *
 	 * @param name      The key to look for
 	 * @param arguments The arguments to pass to the invokable
-	 * 
+	 *
 	 * @return The requested object
 	 */
 	@Override
-	public Object dereferenceAndInvoke( Key name, Object[] arguments ) throws KeyNotFoundException {
-		Object object = dereference( name );
+	public Object dereferenceAndInvoke( Key name, Object[] arguments, Boolean safe ) throws KeyNotFoundException {
+		Object object = dereference( name, safe );
 		// Test if the object is invokable (a UDF or java call site) and invoke it or throw exception if not invokable
 		// Also handle member functions on scopes, taking into account precedent over name collisions
 		// Ideally, the invoker logic is not here, but in a helper
 		throw new RuntimeException( "not implemented yet" );
-	}
-
-	/**
-	 * Safely dereference this object by a key and return the value, or null if not found
-	 *
-	 * @param name The key to look for
-	 *
-	 * @return The requested object or null
-	 */
-	@Override
-	public Object safeDereference( Key name ) {
-		return get( name );
 	}
 
 	/**

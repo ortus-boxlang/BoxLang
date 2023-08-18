@@ -36,29 +36,22 @@ public interface IReferenceable {
 	 * Dereference this object by a key and return the value, or throw exception
 	 *
 	 * @param name The key to dereference
+	 * @param safe Whether to throw an exception if the key is not found
 	 *
 	 * @return The requested object
 	 */
-	public Object dereference( Key name ) throws KeyNotFoundException;
+	public Object dereference( Key name, Boolean safe ) throws KeyNotFoundException;
 
 	/**
 	 * Dereference this object by a key and invoke the result as an invokable (UDF, java method)
 	 *
 	 * @param name      The key to dereference
 	 * @param arguments The arguments to pass to the invokable
+	 * @param safe      Whether to throw an exception if the key is not found
 	 *
 	 * @return The requested object
 	 */
-	public Object dereferenceAndInvoke( Key name, Object[] arguments ) throws KeyNotFoundException;
-
-	/**
-	 * Safely dereference this object by a key and return the value, or null if not found
-	 *
-	 * @param name The key to dereference
-	 *
-	 * @return The requested object or null
-	 */
-	public Object safeDereference( Key name );
+	public Object dereferenceAndInvoke( Key name, Object[] arguments, Boolean safe ) throws KeyNotFoundException;
 
 	/**
 	 * Get a scope from the context. If not found, the parent context is asked.

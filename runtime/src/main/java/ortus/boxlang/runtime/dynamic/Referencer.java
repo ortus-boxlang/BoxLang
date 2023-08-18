@@ -30,11 +30,12 @@ public class Referencer {
 	 *
 	 * @param object The object to dereference
 	 * @param key    The key to dereference
+	 * @param safe   Whether to throw an exception if the key is not found
 	 *
 	 * @return The value that was dereferenced
 	 */
-	public static Object get( Object object, Key key ) {
-		return getReferenceable( object ).dereference( key );
+	public static Object get( Object object, Key key, Boolean safe ) {
+		return getReferenceable( object ).dereference( key, safe );
 	}
 
 	/**
@@ -43,11 +44,12 @@ public class Referencer {
 	 * @param object    The object to dereference
 	 * @param key       The key to dereference
 	 * @param arguments The arguments to pass to the method
+	 * @param safe      Whether to throw an exception if the key is not found
 	 *
 	 * @return The value that was assigned
 	 */
-	public static Object getAndInvoke( Object object, Key key, Object[] arguments ) {
-		return getReferenceable( object ).dereferenceAndInvoke( key, arguments );
+	public static Object getAndInvoke( Object object, Key key, Object[] arguments, Boolean safe ) {
+		return getReferenceable( object ).dereferenceAndInvoke( key, arguments, safe );
 	}
 
 	/**

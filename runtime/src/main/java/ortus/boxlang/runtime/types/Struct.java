@@ -138,8 +138,23 @@ public class Struct extends ConcurrentHashMap<Key, Object> implements IType, IRe
 	 * @throws KeyNotFoundException If the key is not found
 	 */
 	public Object get( Key key ) {
+		return get( key, false );
+	}
+
+	/**
+	 * Returns the value of the key if found.
+	 * We override in order to present nicer exception messages
+	 *
+	 * @param key  The key to look for
+	 * @param safe Whether to throw an exception if the key is not found
+	 *
+	 * @return The value of the key
+	 *
+	 * @throws KeyNotFoundException If the key is not found
+	 */
+	public Object get( Key key, Boolean safe ) {
 		Object target = super.get( key );
-		if ( target != null ) {
+		if ( target != null || safe ) {
 			return target;
 		}
 		throw new KeyNotFoundException(
@@ -170,8 +185,8 @@ public class Struct extends ConcurrentHashMap<Key, Object> implements IType, IRe
 	 *
 	 * @return The requested obect
 	 */
-	public Object dereference( Key name ) throws KeyNotFoundException {
-		return get( name );
+	public Object dereference( Key name, Boolean safe ) throws KeyNotFoundException {
+		return get( name, safe );
 	}
 
 	/**
@@ -179,25 +194,16 @@ public class Struct extends ConcurrentHashMap<Key, Object> implements IType, IRe
 	 *
 	 * @return The requested object
 	 */
-	public Object dereferenceAndInvoke( Key name, Object[] arguments ) throws KeyNotFoundException {
-		Object object = dereference( name );
+	public Object dereferenceAndInvoke( Key name, Object[] arguments, Boolean safe ) throws KeyNotFoundException {
+		Object object = dereference( name, safe );
 		// Test if the object is invokable (a UDF or java call site) and invoke it or throw exception if not invokable
 		// Ideally, the invoker logic is not here, but in a helper
 		throw new RuntimeException( "not implemented yet" );
 	}
 
 	/**
-	 * Safely dereference this object by a key and return the value, or null if not found
-	 *
-	 * @return The requested object or null
-	 */
-	public Object safeDereference( Key name ) {
-		return super.get( name );
-	}
-
-	/**
 	 * Derefence by assignment (x = y)
-	 * 
+	 *
 	 * @param name  The key to assign to
 	 * @param value The value to assign
 	 */
