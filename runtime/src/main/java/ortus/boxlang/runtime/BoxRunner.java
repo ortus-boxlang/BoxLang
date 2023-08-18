@@ -19,12 +19,16 @@ package ortus.boxlang.runtime;
 
 import java.util.HashMap;
 import java.util.Map;
+import org.slf4j.LoggerFactory;
+import org.slf4j.Logger;
 
 /**
  * The BoxRunner class is an entry point for the BoxLang runtime. It is responsible for
- * executing the a single incoming script template or class
+ * executing a single incoming script template or class
  */
 public class BoxRunner {
+
+	private static final Logger logger = LoggerFactory.getLogger( BoxRunner.class );
 
 	/**
 	 * @param args The command-line arguments
@@ -32,7 +36,7 @@ public class BoxRunner {
 	public static void main( String[] args ) {
 		// Verify incoming arguments
 		if ( args.length == 0 ) {
-			System.out.println( "No script specified. We need a script or class to execute!" );
+			logger.error( "No script specified. We need a script or class to execute!" );
 			System.exit( 1 );
 		}
 
