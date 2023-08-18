@@ -61,20 +61,16 @@ public class Phase1 extends BaseTemplate {
 		IScope			variablesScope	= context.getScopeLocal( Key.of( "variables" ) );
 
 		// Case sensitive set
-		variablesScope.put( Key.of( "system" ), classLocator.load( context, "java.lang.System" ) );
-
-		// Every class (box|java) is represented as a ClassInvoker
-		DynamicObject oString = classLocator.load( context, "java.lang.String" );
+		variablesScope.put( Key.of( "system" ), classLocator.load( context, "java.lang.System", "java" ) );
 
 		variablesScope.put(
 		        // Case insensitive set
 		        Key.of( "GREETING" ),
 
-		        // Invoke callsite
-		        oString.invokeConstructor(
-		                // Argument Values
-		                new Object[] { "Hello" }
-		        )
+		        // Every class (box|java) is represented as a DynamicObject
+		        classLocator
+		                .load( context, "java.lang.String", "java" )
+		                .invokeConstructor( new Object[] { "Hello" } )
 		);
 
 		if ( EqualsEquals.invoke( variablesScope.get( Key.of( "GREETING" ) ), "Hello" ) ) {
