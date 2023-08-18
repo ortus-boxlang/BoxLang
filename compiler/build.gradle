@@ -69,7 +69,7 @@ tasks.withType(JavaCompile) {
  */
 application {
 	// Define the main class for the application.
-	// mainClass = 'boxlang.runtime.Bootstrap'
+	// mainClass = 'ortus.boxlang.runtime.BoxRunner'
 }
 
 /**
