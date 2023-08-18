@@ -35,6 +35,9 @@ public class Referencer {
 	 * @return The value that was dereferenced
 	 */
 	public static Object get( Object object, Key key, Boolean safe ) {
+		if ( safe && object == null ) {
+			return null;
+		}
 		return getReferenceable( object ).dereference( key, safe );
 	}
 
@@ -49,6 +52,9 @@ public class Referencer {
 	 * @return The value that was assigned
 	 */
 	public static Object getAndInvoke( Object object, Key key, Object[] arguments, Boolean safe ) {
+		if ( safe && object == null ) {
+			return null;
+		}
 		return getReferenceable( object ).dereferenceAndInvoke( key, arguments, safe );
 	}
 

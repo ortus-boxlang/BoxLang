@@ -59,6 +59,7 @@ public class ReferencerTest {
 		variablesScope.put( key, "Wood" );
 		assertThat( Referencer.get( variablesScope, key, true ) ).isEqualTo( "Wood" );
 		assertThat( Referencer.get( variablesScope, Key.of( "nonExistent" ), true ) ).isNull();
+		assertThat( Referencer.get( null, Key.of( "doesn't matter" ), true ) ).isNull();
 	}
 
 	@DisplayName( "It can assign to a struct" )
@@ -89,6 +90,7 @@ public class ReferencerTest {
 		struct.put( key, "Wood" );
 		assertThat( Referencer.get( struct, key, true ) ).isEqualTo( "Wood" );
 		assertThat( Referencer.get( struct, Key.of( "nonExistent" ), true ) ).isNull();
+		assertThat( Referencer.get( null, Key.of( "doesn't matter" ), true ) ).isNull();
 	}
 
 }
