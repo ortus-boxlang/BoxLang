@@ -17,24 +17,24 @@
  */
 package ortus.boxlang.runtime.operators;
 
-import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
-
 /**
- * Performs logical ternary operator
- * condition ? ifTrue : ifFalse
+ * Performs elvis operator (null coaslescing)
+ * {@code expr ?: expr}
+ *
+ * Note: Any deferencing performed in the evaluation of of the left operand must be done safely
+ * So,
+ * {@code foo.bar ?: expr}
+ * must be the equivalent of
+ * {@code foo?.bar ?: expr}
  */
-public class Ternary implements IOperator {
+public class Elvis implements IOperator {
 
-	/**
-	 *
-	 * @param condition Boollean to evaluate
-	 * @param ifTrue    Value to use if condition is true
-	 * @param ifFalse   Value to use if condition is false
-	 *
-	 * @return
-	 */
-	public static Object invoke( Object condition, Object ifTrue, Object ifFalse ) {
-		return BooleanCaster.cast( condition ) ? ifTrue : ifFalse;
+	public static Object invoke( Object left, Object right ) {
+		if ( left != null ) {
+			return left;
+		} else {
+			return right;
+		}
 	}
 
 }

@@ -17,24 +17,21 @@
  */
 package ortus.boxlang.runtime.operators;
 
-import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
+import org.junit.Ignore;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import static com.google.common.truth.Truth.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
-/**
- * Performs logical ternary operator
- * condition ? ifTrue : ifFalse
- */
-public class Ternary implements IOperator {
+public class ElvisTest {
 
-	/**
-	 *
-	 * @param condition Boollean to evaluate
-	 * @param ifTrue    Value to use if condition is true
-	 * @param ifFalse   Value to use if condition is false
-	 *
-	 * @return
-	 */
-	public static Object invoke( Object condition, Object ifTrue, Object ifFalse ) {
-		return BooleanCaster.cast( condition ) ? ifTrue : ifFalse;
+	@DisplayName( "It can null coalesce" )
+	@Test
+	void testItNullCoalesce() {
+		assertThat( Elvis.invoke( "left", "right" ) ).isEqualTo( "left" );
+		assertThat( Elvis.invoke( null, "right" ) ).isEqualTo( "right" );
+
 	}
 
 }
