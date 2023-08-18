@@ -18,11 +18,16 @@
 package ortus.boxlang.runtime;
 
 import java.net.URL;
+import java.text.DecimalFormat;
 import java.time.Instant;
 import java.util.Optional;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.TemplateBoxContext;
+import ortus.boxlang.runtime.util.Timer;
 
 /**
  * Represents the top level runtime container for box lang. Config, global scopes, mappings, threadpools, etc all go here.
@@ -37,9 +42,19 @@ public class BoxRuntime {
 	 */
 
 	/**
+	 * The timer utility class
+	 */
+	private static final Timer	timerUtil	= new Timer();
+
+	/**
 	 * Singleton instance
 	 */
 	private static BoxRuntime	instance;
+
+	/**
+	 * Logger
+	 */
+	private static final Logger	logger		= LoggerFactory.getLogger( BoxRuntime.class );
 
 	/**
 	 * The timestamp when the runtime was started
@@ -103,12 +118,17 @@ public class BoxRuntime {
 		if ( instance != null ) {
 			return getInstance();
 		}
-		System.out.println( "Starting up BoxLang Runtime" );
+		timerUtil.start( "startup" );
+		logger.atInfo().log( "Starting up BoxLang Runtime" );
 
 		instance			= new BoxRuntime();
 		instance.startTime	= Instant.now();
 
-		System.out.println( "BoxLang Runtime Started" );
+		logger.atInfo().log(
+		        "BoxLang Runtime Started at [{}] in [{}]",
+		        Instant.now(),
+		        timerUtil.stopAndGetMillis( "startup" )
+		);
 		return instance;
 	}
 
@@ -116,7 +136,7 @@ public class BoxRuntime {
 	 * Shut down the runtime
 	 */
 	public static synchronized void shutdown() {
-		System.out.println( "Shutting down BoxLang Runtime" );
+		logger.atInfo().log( "Shutting down BoxLang Runtime" );
 		instance = null;
 	}
 
@@ -128,6 +148,9 @@ public class BoxRuntime {
 	 * @throws Throwable if the template cannot be executed
 	 */
 	public static void executeTemplate( String templatePath ) throws Throwable {
+		// Debugging Timers
+		timerUtil.start( "execute-" + templatePath.hashCode() );
+		logger.atDebug().log( "Executing template [{}]", templatePath );
 
 		// Build out the execution context for this execution and bind it to the incoming template
 		IBoxContext context = new TemplateBoxContext( templatePath );
@@ -135,6 +158,13 @@ public class BoxRuntime {
 		// Here is where we presumably boostrap a page or class that we are executing in our new context.
 		// JIT if neccessary
 		BoxPiler.parse( templatePath ).invoke( context );
+
+		// Debugging Timer
+		logger.atDebug().log(
+		        "Executed template [{}] in [{}] ms",
+		        templatePath,
+		        timerUtil.stopAndGetMillis( "execute-" + templatePath.hashCode() )
+		);
 	}
 
 	/**
