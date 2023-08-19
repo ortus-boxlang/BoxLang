@@ -108,7 +108,7 @@ public class Phase1 extends BaseTemplate {
 		// This is the main method, it will be invoked when the template is executed
 		// You can use this
 		// Get a runtime going
-		BoxRuntime.startup();
+		BoxRuntime.startup( true );
 
 		try {
 			BoxRuntime.getInstance().executeTemplate( "" );
