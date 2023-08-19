@@ -37,17 +37,12 @@ public class InterceptorState {
 	/**
 	 * The state name (e.g. "preProcess", "postProcess", "onRuntimeStartup" etc.)
 	 */
-	private String					name;
+	private String				name;
 
 	/**
 	 * The observers for this state
 	 */
-	private List<DynamicObject>		observers	= new ArrayList<>();
-
-	/**
-	 * Singleton instance
-	 */
-	private static InterceptorState	instance;
+	private List<DynamicObject>	observers	= new ArrayList<>();
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -56,26 +51,12 @@ public class InterceptorState {
 	 */
 
 	/**
-	 * Private constructor
+	 * Constructor
 	 *
 	 * @param name The state name
 	 */
-	private InterceptorState( String name ) {
+	public InterceptorState( String name ) {
 		this.name = name;
-	}
-
-	/**
-	 * Singleton instance
-	 *
-	 * @param name The state name
-	 *
-	 * @return The instance
-	 */
-	public static synchronized InterceptorState getInstance( String name ) {
-		if ( instance == null ) {
-			instance = new InterceptorState( name );
-		}
-		return instance;
 	}
 
 	/**
@@ -129,7 +110,7 @@ public class InterceptorState {
 	 *
 	 * @throws Throwable If an error occurs while processing the state
 	 */
-	public void process( Struct data ) throws Throwable {
+	public void announce( Struct data ) throws Throwable {
 		for ( DynamicObject observer : observers ) {
 			// Announce to the observer
 			Optional<?> stopChain = observer.invoke( getName(), new Object[] { data } );

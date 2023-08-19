@@ -42,7 +42,7 @@ public class InterceptorStateTest {
 
 	@BeforeEach
 	void setUp() {
-		interceptorState	= InterceptorState.getInstance( "onTests" );
+		interceptorState	= new InterceptorState( "onTests" );
 		observer1			= DynamicObject.of( this );
 		observer2			= DynamicObject.of( this );
 		assertThat( interceptorState.getName() ).isEqualTo( "onTests" );
@@ -67,7 +67,7 @@ public class InterceptorStateTest {
 		Struct	data		= new Struct();
 		data.put( counterKey, 0 );
 
-		interceptorState.process( data );
+		interceptorState.announce( data );
 
 		assertThat( data.get( counterKey ) ).isEqualTo( 2 );
 	}
