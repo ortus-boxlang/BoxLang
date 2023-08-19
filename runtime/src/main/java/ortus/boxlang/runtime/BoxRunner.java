@@ -22,6 +22,8 @@ import java.util.Map;
 import org.slf4j.LoggerFactory;
 import org.slf4j.Logger;
 
+import ortus.boxlang.runtime.logging.SLF4JConfigurator;
+
 /**
  * The BoxRunner class is an entry point for the BoxLang runtime. It is responsible for
  * executing a single incoming script template or class
@@ -34,6 +36,8 @@ public class BoxRunner {
 	 * @param args The command-line arguments
 	 */
 	public static void main( String[] args ) {
+		SLF4JConfigurator.configure();
+
 		// Verify incoming arguments
 		if ( args.length == 0 ) {
 			logger.error( "No script specified. We need a script or class to execute!" );
