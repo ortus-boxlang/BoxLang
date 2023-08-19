@@ -32,25 +32,27 @@ public class BoxRuntimeTest {
 	@DisplayName( "It can startup" )
 	@Test
 	public void testItCanStartUp() {
-		// Ensure getInstance() returns the same instance as startup()
+		// Ensure getInstance() returns the same instance as startup( true )
 		BoxRuntime instance1 = BoxRuntime.getInstance();
 		assertThat( instance1 ).isNull();
 
-		BoxRuntime instance2 = BoxRuntime.startup();
+		BoxRuntime instance2 = BoxRuntime.startup( true );
 		assertThat( BoxRuntime.getInstance() ).isSameInstanceAs( instance2 );
 		assertThat( BoxRuntime.hasStarted() ).isTrue();
-		assertThat( BoxRuntime.getStartTime().isPresent() ).isTrue();
+		assertThat( BoxRuntime.inDebugMode() ).isTrue();
+		assertThat( BoxRuntime.getStartTime() ).isNotNull();
 	}
 
 	@DisplayName( "It can shutdown" )
 	@Test
 	public void testItCanShutdown() {
-		BoxRuntime.startup();
+		BoxRuntime.startup( true );
 		// Ensure shutdown sets instance to null
 		BoxRuntime.shutdown();
 		assertThat( BoxRuntime.getInstance() ).isNull();
 		assertThat( BoxRuntime.hasStarted() ).isFalse();
-		assertThat( BoxRuntime.getStartTime().isPresent() ).isFalse();
+		assertThat( BoxRuntime.getStartTime() ).isNull();
+		assertThat( BoxRuntime.inDebugMode() ).isNull();
 	}
 
 	@DisplayName( "It can execute a template" )
@@ -59,7 +61,7 @@ public class BoxRuntimeTest {
 		String testTemplate = getClass().getResource( "/test-templates/BoxRuntime.bx" ).getPath();
 
 		assertDoesNotThrow( () -> {
-			BoxRuntime.startup();
+			BoxRuntime.startup( true );
 			BoxRuntime.executeTemplate( testTemplate );
 			BoxRuntime.shutdown();
 		} );
@@ -71,7 +73,7 @@ public class BoxRuntimeTest {
 		URL testTemplate = getClass().getResource( "/test-templates/BoxRuntime.bx" );
 
 		assertDoesNotThrow( () -> {
-			BoxRuntime.startup();
+			BoxRuntime.startup( true );
 			BoxRuntime.executeTemplate( testTemplate );
 			BoxRuntime.shutdown();
 		} );

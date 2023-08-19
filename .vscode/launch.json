@@ -13,44 +13,20 @@
         },
         {
             "type": "java",
-            "name": "MockTemplate",
-            "request": "launch",
-            "mainClass": "ortus.boxlang.runtime.testing.MockTemplate",
-            "projectName": "runtime"
-        },
-        {
-            "type": "java",
-            "name": "Test",
-            "request": "launch",
-            "mainClass": "ortus.boxlang.runtime.interop.Test",
-            "projectName": "runtime"
-        },
-        {
-            "type": "java",
             "name": "Current File",
             "request": "launch",
             "mainClass": "${file}"
         },
         {
             "type": "java",
-            "name": "PrivateConstructors",
-            "request": "launch",
-            "mainClass": "TestCases.PrivateConstructors",
-            "projectName": "runtime"
-        },
-        {
-            "type": "java",
             "name": "BoxRunner",
             "request": "launch",
             "mainClass": "ortus.boxlang.runtime.BoxRunner",
-            "projectName": "runtime"
-        },
-        {
-            "type": "java",
-            "name": "MockTemplate",
-            "request": "launch",
-            "mainClass": "ortus.boxlang.runtime.dynamic.MockTemplate",
-            "projectName": "runtime"
+            "projectName": "runtime",
+			"args": [
+				"ortus.boxlang.runtime.testing.Phase1",
+				"--debug"
+			]
         }
-    ]
+	]
 }

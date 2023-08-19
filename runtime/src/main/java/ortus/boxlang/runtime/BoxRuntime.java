@@ -27,6 +27,7 @@ import org.slf4j.LoggerFactory;
 
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.TemplateBoxContext;
+import ortus.boxlang.runtime.logging.SLF4JConfigurator;
 import ortus.boxlang.runtime.util.Timer;
 
 /**
@@ -62,6 +63,11 @@ public class BoxRuntime {
 	private Instant				startTime;
 
 	/**
+	 * Debug mode
+	 */
+	private Boolean				debugMode	= false;
+
+	/**
 	 * --------------------------------------------------------------------------
 	 * Constructor
 	 * --------------------------------------------------------------------------
@@ -92,15 +98,6 @@ public class BoxRuntime {
 	 */
 
 	/**
-	 * Get the start time of the runtime, null if not started
-	 *
-	 * @return the runtime start time
-	 */
-	public static Optional<Instant> getStartTime() {
-		return ( instance == null ) ? Optional.empty() : Optional.ofNullable( instance.startTime );
-	}
-
-	/**
 	 * Check if the runtime has been started
 	 *
 	 * @return true if the runtime has been started
@@ -110,24 +107,54 @@ public class BoxRuntime {
 	}
 
 	/**
-	 * Start up the runtime
+	 * Get the start time of the runtime, null if not started
+	 *
+	 * @return the runtime start time
+	 */
+	public static Instant getStartTime() {
+		return ( hasStarted() ? instance.startTime : null );
+	}
+
+	/**
+	 * Verifies if the runtime is in debug mode
+	 *
+	 * @return true if the runtime is in debug mode
+	 */
+	public static Boolean inDebugMode() {
+		return ( hasStarted() ? instance.debugMode : null );
+	}
+
+	/**
+	 * Start up then BoxLang runtime
+	 *
+	 * @param debugMode If true, enables debug mode
 	 *
 	 * @return The runtime instance
 	 */
-	public static synchronized BoxRuntime startup() {
+	public static synchronized BoxRuntime startup( Boolean debugMode ) {
+		// If we have already started, just return the instance
 		if ( instance != null ) {
 			return getInstance();
 		}
+		// Internal timer
 		timerUtil.start( "startup" );
-		logger.atInfo().log( "Starting up BoxLang Runtime" );
 
+		// Startup logging
+		SLF4JConfigurator.configure( debugMode );
+
+		// We can now log the startup
+		logger.atInfo().log( "+ Starting up BoxLang Runtime" + ( debugMode ? " in debug mode" : "" ) );
+
+		// Create singleton instance
 		instance			= new BoxRuntime();
 		instance.startTime	= Instant.now();
+		instance.debugMode	= debugMode;
 
+		// Runtime Started
 		logger.atInfo().log(
-		        "BoxLang Runtime Started at [{}] in [{}]",
+		        "+ BoxLang Runtime Started at [{}] in [{}]",
 		        Instant.now(),
-		        timerUtil.stopAndGetMillis( "startup" )
+		        timerUtil.stop( "startup" )
 		);
 		return instance;
 	}

@@ -19,36 +19,53 @@ package ortus.boxlang.runtime;
 
 import java.util.HashMap;
 import java.util.Map;
-import org.slf4j.LoggerFactory;
-import org.slf4j.Logger;
 
-import ortus.boxlang.runtime.logging.SLF4JConfigurator;
+import ortus.boxlang.runtime.util.Timer;
 
 /**
- * The BoxRunner class is an entry point for the BoxLang runtime. It is responsible for
- * executing a single incoming script template or class
+ * This class is in charge of executing templates/classes with a
+ * BoxLang runtime. There are several CLI options that can be passed
+ * to this class to control the runtime and execution.
+ *
+ * <h4>CLI Options</h4>
+ * <ul>
+ * <li><code>--debug</code> - Enables debug mode</li>
+ * </ul>
+ *
+ * You will execute this class with the following command:
+ *
+ * <pre>
+ * // The first argument is ALWAYS the template to execute
+ * java -jar boxlang-runtime.jar /path/to/template --debug
+ * </pre>
  */
 public class BoxRunner {
 
-	private static final Logger logger = LoggerFactory.getLogger( BoxRunner.class );
-
 	/**
+	 * Main entry point for the BoxLang runtime
+	 *
 	 * @param args The command-line arguments
 	 */
 	public static void main( String[] args ) {
-		SLF4JConfigurator.configure();
+		Timer timer = new Timer();
 
 		// Verify incoming arguments
 		if ( args.length == 0 ) {
-			logger.error( "No script specified. We need a script or class to execute!" );
+			System.out.println( "No script specified. We need a script or class to execute!" );
 			System.exit( 1 );
 		}
 
 		// Parse CLI options
 		CLIOptions options = parseCommandLineOptions( args );
 
+		// Debug mode?
+		if ( options.debug() ) {
+			System.out.println( "+++ Debug mode enabled!" );
+			timer.start( "BoxRunner" );
+		}
+
 		// Get a runtime going
-		BoxRuntime.startup();
+		BoxRuntime.startup( options.debug() );
 
 		try {
 			BoxRuntime.executeTemplate( options.templatePath() );
@@ -58,6 +75,10 @@ public class BoxRunner {
 
 		// Bye bye! Ciao Bella!
 		BoxRuntime.shutdown();
+
+		if ( options.debug() ) {
+			System.out.println( "+++ BoxRunner executed in " + timer.stop( "BoxRunner" ) );
+		}
 	}
 
 	/**
