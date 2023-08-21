@@ -128,6 +128,54 @@ public class Struct extends ConcurrentHashMap<Key, Object> implements IType, IRe
 	}
 
 	/**
+	 * Checks the struct for a key using a string which is auto-converted to a Key object
+	 *
+	 * @param key The string key to check
+	 *
+	 * @return True if the key exists, false otherwise
+	 */
+	public Boolean containsKey( String key ) {
+		return super.containsKey( Key.of( key ) );
+	}
+
+	/**
+	 * Set a value in the struct by a string key, which we auto-convert to a Key object
+	 *
+	 * @param key   The string key to set
+	 * @param value The value to set
+	 *
+	 * @return The previous value of the key, or null if not found
+	 */
+	public Object put( String key, Object value ) {
+		return super.put( Key.of( key ), value );
+	}
+
+	/**
+	 * If the specified key is not already associated with a value, associates it with the given value
+	 *
+	 * @param key   The string key to set
+	 * @param value The value to set
+	 *
+	 * @return The previous value associated with the specified key, or null if there was no mapping for the key
+	 */
+	public Object putIfAbsent( String key, Object value ) {
+		return super.putIfAbsent( Key.of( key ), value );
+	}
+
+	/**
+	 * Get helper using a string key, which we auto-convert to a Key object
+	 *
+	 * @param key The string key to look for
+	 *
+	 * @return The value of the key
+	 *
+	 * @throws KeyNotFoundException If the key is not found
+	 */
+	public Object get( String key ) {
+		return get( Key.of( key ) );
+	}
+
+	/**
 	 * Returns the value of the key if found.
 	 * We override in order to present nicer exception messages
 	 *

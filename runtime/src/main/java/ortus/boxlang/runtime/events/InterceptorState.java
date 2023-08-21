@@ -104,6 +104,15 @@ public class InterceptorState {
 	}
 
 	/**
+	 * Get the number of observers registered for this state
+	 * 
+	 * @return The number of observers registered for this state
+	 */
+	public int size() {
+		return observers.size();
+	}
+
+	/**
 	 * Process the state by announcing it to all observers
 	 *
 	 * @param data The struct of data to pass to the observers

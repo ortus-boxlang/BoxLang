@@ -33,6 +33,11 @@ import ortus.boxlang.runtime.types.Struct;
  * The interceptor service is responsible for managing all events in BoxLang.
  * A developer will register an interceptor with the service, and the service will
  * invoke the interceptor when the event is fired.
+ *
+ * The interceptor service is a singleton.
+ *
+ * Each service manages interception points, which are the events that the service can announce
+ * and their states, which are where interceptors can register to listen to.
  */
 public class InterceptorService {
 
@@ -92,14 +97,23 @@ public class InterceptorService {
 	 * --------------------------------------------------------------------------
 	 */
 
+	/**
+	 * The startup event is fired when the runtime starts up
+	 */
 	public static void onStartup() {
 		logger.info( "InterceptorService.onStartup()" );
 	}
 
+	/**
+	 * The configuration load event is fired when the runtime loads its configuration
+	 */
 	public static void onConfigurationLoad() {
 		logger.info( "InterceptorService.onConfigurationLoad()" );
 	}
 
+	/**
+	 * The shutdown event is fired when the runtime shuts down
+	 */
 	public static void onShutdown() {
 		logger.info( "InterceptorService.onShutdown()" );
 	}
@@ -111,20 +125,48 @@ public class InterceptorService {
 	 * Interception points are just events that we must be able to listen to.
 	 */
 
+	/**
+	 * Get the list of interception points that the service can announce
+	 *
+	 * @return The list of interception points
+	 */
 	public static Set<String> getInterceptionPoints() {
 		return interceptionPoints;
 	}
 
+	/**
+	 * Check if the service has an interception point
+	 *
+	 * @param interceptionPoint The interception point to check
+	 *
+	 * @return True if the service has the interception point, false otherwise
+	 */
 	public static Boolean hasInterceptionPoint( String interceptionPoint ) {
 		return interceptionPoints.contains( interceptionPoint );
 	}
 
+	/**
+	 * Register an interception point(s) with the service
+	 *
+	 * @param points The interception point(s) to register
+	 *
+	 * @return The same service
+	 */
 	public static InterceptorService registerInterceptionPoint( String... points ) {
+		logger.atDebug().log( "InterceptorService.registerInterceptionPoint() - registering {}", Arrays.toString( points ) );
 		interceptionPoints.addAll( Arrays.asList( points ) );
 		return instance;
 	}
 
+	/**
+	 * Remove an interception point(s) from the service
+	 *
+	 * @param points The interception point(s) to remove
+	 *
+	 * @return The same service
+	 */
 	public static InterceptorService removeInterceptionPoint( String... points ) {
+		logger.atDebug().log( "InterceptorService.removeInterceptionPoint() - removing {}", Arrays.toString( points ) );
 		interceptionPoints.removeAll( Arrays.asList( points ) );
 		interceptionStates.keySet().removeAll( Arrays.asList( points ) );
 		return instance;
@@ -140,21 +182,62 @@ public class InterceptorService {
 	 * registration.
 	 */
 
+	/**
+	 * Get the {@link InterceptorState} by name
+	 *
+	 * @param name The name of the state
+	 *
+	 * @return The state if it exists, null otherwise
+	 */
 	public static InterceptorState getState( String name ) {
 		return interceptionStates.get( name );
 	}
 
+	/**
+	 * Check if the service has the {@link InterceptorState}
+	 *
+	 * @param name The name of the state
+	 *
+	 * @return True if the service has the state, false otherwise
+	 */
 	public static Boolean hasState( String name ) {
 		return interceptionStates.containsKey( name );
 	}
 
+	/**
+	 * Register a new {@link InterceptorState} with the service and returns it.
+	 * This verifies if there is already an interception point by that name.
+	 * If there is not, it will add it.
+	 *
+	 * @param name The name of the state
+	 *
+	 * @return The registered {@link InterceptorState}
+	 */
 	public static synchronized InterceptorState registerState( String name ) {
+		logger.atDebug().log( "InterceptorService.registerState() - registering {}", name );
+
+		// Verify point, else add it
+		if ( !hasInterceptionPoint( name ) ) {
+			logger.atDebug().log( "InterceptorService.registerState() - point not found, registering {}", name );
+			registerInterceptionPoint( name );
+		}
+
+		// Register it
 		interceptionStates.putIfAbsent( name, new InterceptorState( name ) );
 		return getState( name );
 	}
 
+	/**
+	 * Remove the {@link InterceptorState} from the service. This essentially
+	 * destroys all the interceptor references in the state
+	 *
+	 * @param name The name of the state
+	 *
+	 * @return The same service
+	 */
 	public static synchronized InterceptorService removeState( String name ) {
 		if ( hasState( name ) ) {
+			logger.atDebug().log( "InterceptorService.removeState() - removing {}", name );
 			interceptionStates.remove( name );
 		}
 		return instance;
@@ -166,27 +249,67 @@ public class InterceptorService {
 	 * --------------------------------------------------------------------------
 	 */
 
+	/**
+	 * Register an interceptor with the service which must be an instance of
+	 * {@link DynamicObject}. The interceptor must have a method(s) according to the passed
+	 * states.
+	 *
+	 * @param interceptor The interceptor to register
+	 * @param states      The states to register the interceptor with
+	 *
+	 * @return The same service
+	 */
 	public static InterceptorService register( DynamicObject interceptor, String... states ) {
 		Arrays.stream( states )
 		        .forEach( state -> {
+			        logger.atDebug().log(
+			                "InterceptorService.register() - registering {} with {}",
+			                interceptor.getTargetClass().getName(),
+			                state
+			        );
 			        registerState( state ).register( interceptor );
 		        } );
 		return instance;
 	}
 
+	/**
+	 * Unregister an interceptor from the provided states.
+	 *
+	 * @param interceptor The interceptor to unregister
+	 * @param states      The states to unregister the interceptor from
+	 *
+	 * @return The same service
+	 */
 	public static InterceptorService unregister( DynamicObject interceptor, String... states ) {
 		Arrays.stream( states )
 		        .forEach( state -> {
 			        if ( hasState( state ) ) {
+				        logger.atDebug().log(
+				                "InterceptorService.unregister() - unregistering {} with {}",
+				                interceptor.getTargetClass().getName(),
+				                state
+				        );
 				        getState( state ).unregister( interceptor );
 			        }
 		        } );
 		return instance;
 	}
 
+	/**
+	 * Unregister an interceptor from all states
+	 *
+	 * @param interceptor The interceptor to unregister
+	 *
+	 * @return The same service
+	 */
 	public static InterceptorService unregister( DynamicObject interceptor ) {
 		interceptionStates.values().stream()
 		        .forEach( state -> {
+			        logger.atDebug().log(
+			                "InterceptorService.unregister() - unregistering {} with {}",
+			                interceptor.getTargetClass().getName(),
+			                state
+			        );
 			        state.unregister( interceptor );
 		        } );
 		return instance;
@@ -196,14 +319,27 @@ public class InterceptorService {
 	 * --------------------------------------------------------------------------
 	 * Announcements Methods
 	 * --------------------------------------------------------------------------
-	 * 
-	 * @throws Throwable
 	 */
 
+	/**
+	 * Announce an event with the provided {@link Struct} of data.
+	 *
+	 * @param state The state to announce
+	 * @param data  The data to announce
+	 *
+	 * @throws Throwable If an error occurs while announcing the event
+	 */
 	public static void announce( String state, Struct data ) throws Throwable {
 		if ( hasState( state ) ) {
+			logger.atDebug().log( "InterceptorService.announce() - announcing {}", state );
+
 			getState( state ).announce( data );
+
+			logger.atDebug().log( "Finished announcing {}", state );
+		} else {
+			logger.atDebug().log( "InterceptorService.announce() - No state found for: {}", state );
 		}
+
 	}
 
 }
