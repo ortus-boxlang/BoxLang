@@ -22,6 +22,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
+import javax.management.RuntimeErrorException;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -88,6 +90,19 @@ public class InterceptorService {
 		if ( instance == null ) {
 			instance = new InterceptorService();
 		}
+		return instance;
+	}
+
+	/**
+	 * Get an instance of the service but init it with some interception points
+	 *
+	 * @points The interception points to init the service with
+	 *
+	 * @return The singleton instance
+	 */
+	public static synchronized InterceptorService getInstance( String... points ) {
+		getInstance();
+		registerInterceptionPoint( points );
 		return instance;
 	}
 
@@ -326,14 +341,18 @@ public class InterceptorService {
 	 *
 	 * @param state The state to announce
 	 * @param data  The data to announce
-	 *
-	 * @throws Throwable If an error occurs while announcing the event
 	 */
-	public static void announce( String state, Struct data ) throws Throwable {
+	public static void announce( String state, Struct data ) {
 		if ( hasState( state ) ) {
 			logger.atDebug().log( "InterceptorService.announce() - announcing {}", state );
 
-			getState( state ).announce( data );
+			try {
+				getState( state ).announce( data );
+			} catch ( Throwable e ) {
+				String errorMessage = String.format( "Errors announcing [%s] interception", state );
+				logger.error( errorMessage, e );
+				throw new RuntimeException( errorMessage );
+			}
 
 			logger.atDebug().log( "Finished announcing {}", state );
 		} else {
