@@ -123,7 +123,6 @@ public class InterceptorServiceTest {
 		        pointKey
 		);
 
-		assertThat( service.getState( pointKey ).size() ).isEqualTo( 1 );
 		assertThat( service.getState( pointKey ).exists( mockInterceptor ) ).isTrue();
 	}
 

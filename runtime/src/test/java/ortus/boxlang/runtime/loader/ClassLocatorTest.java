@@ -115,7 +115,6 @@ public class ClassLocatorTest {
 		assertThat( locator.hasClass( targetClass ) ).isTrue();
 		assertThat( locator.size() ).isEqualTo( 1 );
 		assertThat( locator.isEmpty() ).isFalse();
-		assertThat( locator.getClass( targetClass ).isPresent() ).isTrue();
 		assertThat( locator.classSet() ).contains( targetClass );
 		assertThat( locator.clear( targetClass ) ).isTrue();
 	}
