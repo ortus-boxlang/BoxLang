@@ -41,7 +41,9 @@ jobs:
         uses: actions/upload-artifact@v3
         with:
           name: Test Results - JDK${{ matrix.jdkVersion }}
-          path: build/reports/tests/**
+          path: |
+            runtime/build/reports/tests/**
+            runtime/build/test-results/**
 
   publish-test-results:
     name: Publish Test Results
