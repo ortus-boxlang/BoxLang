@@ -29,6 +29,7 @@ import ortus.boxlang.runtime.dynamic.BaseTemplate;
 import ortus.boxlang.runtime.logging.LoggingConfigurator;
 import ortus.boxlang.runtime.services.InterceptorService;
 import ortus.boxlang.runtime.types.Struct;
+import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.util.Timer;
 
 /**
@@ -46,38 +47,38 @@ public class BoxRuntime {
 	/**
 	 * Register all the core runtime events here
 	 */
-	private static final String[]	RUNTIME_EVENTS	= {
+	private static final Key[]	RUNTIME_EVENTS	= Key.of(
 	        "onRuntimeStart",
 	        "onRuntimeShutdown",
 	        "onRuntimeConfigurationLoad",
 	        "preTemplateInvoke",
 	        "postTemplateInvoke"
-	};
+	);
 
 	/**
 	 * The timer utility class
 	 */
-	private static final Timer		timerUtil		= new Timer();
+	private static final Timer	timerUtil		= new Timer();
 
 	/**
 	 * Singleton instance
 	 */
-	private static BoxRuntime		instance;
+	private static BoxRuntime	instance;
 
 	/**
 	 * Logger
 	 */
-	private Logger					logger;
+	private Logger				logger;
 
 	/**
 	 * The timestamp when the runtime was started
 	 */
-	private Instant					startTime;
+	private Instant				startTime;
 
 	/**
 	 * Debug mode
 	 */
-	private Boolean					debugMode		= false;
+	private Boolean				debugMode		= false;
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -88,7 +89,7 @@ public class BoxRuntime {
 	/**
 	 * The interceptor service
 	 */
-	private InterceptorService		interceptorService;
+	private InterceptorService	interceptorService;
 
 	/**
 	 * --------------------------------------------------------------------------

@@ -18,6 +18,7 @@
  */
 package ortus.boxlang.runtime.scopes;
 
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import static com.google.common.truth.Truth.assertThat;
 
@@ -66,10 +67,22 @@ public class KeyTest {
 		assertThat( key.hashCode() ).isEqualTo( key.getNameNoCase().hashCode() );
 	}
 
+	@DisplayName( "Test the builder with one key" )
 	@Test
 	public void testOfBuilder() {
 		Key key = Key.of( "Test" );
 		assertThat( key.getName() ).isEqualTo( "Test" );
 		assertThat( key.getNameNoCase() ).isEqualTo( "TEST" );
+	}
+
+	@DisplayName( "Test the builder with multiple keys" )
+	@Test
+	public void testOfBuilderMultiple() {
+		Key[] keys = Key.of( "Test", "Test2", "Test3" );
+
+		assertThat( keys.length ).isEqualTo( 3 );
+		assertThat( keys[ 0 ].getName() ).isEqualTo( "Test" );
+		assertThat( keys[ 1 ].getName() ).isEqualTo( "Test2" );
+		assertThat( keys[ 2 ].getName() ).isEqualTo( "Test3" );
 	}
 }
