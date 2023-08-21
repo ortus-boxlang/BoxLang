@@ -12,6 +12,11 @@ jobs:
   tests:
     uses: ./.github/workflows/tests.yml
     secrets: inherit
+    permissions:
+      checks: write
+      pull-requests: write
+      contents: read
+      issues: read
 
   ##########################################################################################
   # Format Source Code
@@ -41,5 +46,8 @@ jobs:
     uses: ./.github/workflows/release.yml
     needs: [ tests, format ]
     secrets: inherit
+    permissions:
+      checks: write
+      contents: write
     with:
       snapshot: true
