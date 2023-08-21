@@ -67,7 +67,7 @@ public class BoxRuntime {
 	/**
 	 * Logger
 	 */
-	private static final Logger		logger			= LoggerFactory.getLogger( BoxRuntime.class );
+	private Logger					logger;
 
 	/**
 	 * The timestamp when the runtime was started
@@ -173,6 +173,8 @@ public class BoxRuntime {
 
 		// Startup logging
 		LoggingConfigurator.configure( debugMode );
+		// Attach logging now that it's configured
+		Logger logger = LoggerFactory.getLogger( BoxRuntime.class );
 
 		// We can now log the startup
 		logger.atInfo().log( "+ Starting up BoxLang Runtime" + ( debugMode ? " in debug mode" : "" ) );
@@ -181,6 +183,7 @@ public class BoxRuntime {
 		instance					= new BoxRuntime();
 		instance.startTime			= Instant.now();
 		instance.debugMode			= debugMode;
+		instance.logger				= logger;
 
 		// Create Services
 		instance.interceptorService	= InterceptorService.getInstance( RUNTIME_EVENTS );
@@ -205,7 +208,7 @@ public class BoxRuntime {
 	 * Shut down the runtime
 	 */
 	public static synchronized void shutdown() {
-		logger.atInfo().log( "Shutting down BoxLang Runtime..." );
+		instance.logger.atInfo().log( "Shutting down BoxLang Runtime..." );
 
 		// Announce it globally!
 		InterceptorService.announce( "onRuntimeShutdown", new Struct() );
@@ -213,11 +216,11 @@ public class BoxRuntime {
 		// Shutdown the services
 		InterceptorService.onShutdown();
 
+		// Shutdown logging
+		instance.logger.info( "+ BoxLang Runtime has been shutdown" );
+
 		// Shutdown the runtime
 		instance = null;
-
-		// Shutdown logging
-		logger.info( "+ BoxLang Runtime Shutdown" );
 	}
 
 	/**
@@ -230,7 +233,7 @@ public class BoxRuntime {
 	public static void executeTemplate( String templatePath ) throws Throwable {
 		// Debugging Timers
 		timerUtil.start( "execute-" + templatePath.hashCode() );
-		logger.atDebug().log( "Executing template [{}]", templatePath );
+		instance.logger.atDebug().log( "Executing template [{}]", templatePath );
 
 		// Build out the execution context for this execution and bind it to the incoming template
 		IBoxContext		context			= new TemplateBoxContext( templatePath );
@@ -253,7 +256,7 @@ public class BoxRuntime {
 		InterceptorService.announce( "postTemplateInvoke", data );
 
 		// Debugging Timer
-		logger.atDebug().log(
+		instance.logger.atDebug().log(
 		        "Executed template [{}] in [{}] ms",
 		        templatePath,
 		        timerUtil.stopAndGetMillis( "execute-" + templatePath.hashCode() )
