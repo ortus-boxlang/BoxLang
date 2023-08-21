@@ -139,10 +139,18 @@ compileTestKotlin {
 	targetCompatibility = "$jvmVersion"
 	source sourceSets.test.java, sourceSets.test.kotlin
 	kotlinOptions.jvmTarget = "$jvmVersion"
-	dependsOn compileKotlin
+	dependsOn compileKotlin, generateTestGrammarSource
 }
 
 generateGrammarSource {
+	inputs.files fileTree(antlrGrammarDir).include('*.g4')
+	maxHeapSize = "256m"
+	arguments += ['-package', antlrGeneratedParserPackage]
+	arguments += ['-listener', '-visitor']
+	outputDirectory = file("$projectDir/$antlrGeneratedParserBaseDir/$antlrGeneratedParserPackageDir")
+}
+
+generateTestGrammarSource {
 	inputs.files fileTree(antlrGrammarDir).include('*.g4')
 	maxHeapSize = "256m"
 	arguments += ['-package', antlrGeneratedParserPackage]
