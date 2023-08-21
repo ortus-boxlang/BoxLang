@@ -46,6 +46,24 @@ public class DynamicObjectTest {
 		assertThat( target.isInterface() ).isFalse();
 	}
 
+	@DisplayName( "It can unwrap statically" )
+	@Test
+	void testItCanUnwrapStatically() {
+		DynamicObject target = DynamicObject.of( this );
+		assertThat( DynamicObject.unWrap( target ) ).isEqualTo( this );
+		DynamicObject target2 = DynamicObject.of( this.getClass() );
+		assertThat( DynamicObject.unWrap( target2 ) ).isEqualTo( this.getClass() );
+	}
+
+	@DisplayName( "It can unwrap itself" )
+	@Test
+	void testItCanUnwrapItself() {
+		DynamicObject target = DynamicObject.of( this );
+		assertThat( target.unWrap() ).isEqualTo( this );
+		DynamicObject target2 = DynamicObject.of( this.getClass() );
+		assertThat( target2.unWrap() ).isEqualTo( this.getClass() );
+	}
+
 	@DisplayName( "It can create class invokers of classes" )
 	@Test
 	void testItCanBeCreatedWithAClass() {

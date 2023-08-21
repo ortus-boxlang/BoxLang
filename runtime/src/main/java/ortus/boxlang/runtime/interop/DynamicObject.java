@@ -794,6 +794,19 @@ public class DynamicObject implements IReferenceable {
 	}
 
 	/**
+	 * Instance method to unwrap itself
+	 *
+	 * @return The target instance or class, depending which one is set
+	 */
+	public Object unWrap() {
+		if ( hasInstance() ) {
+			return getTargetInstance();
+		} else {
+			return getTargetClass();
+		}
+	}
+
+	/**
 	 * Unwrap any ClassInvoker instances in the arguments
 	 *
 	 * @param arguments The arguments to unwrap
