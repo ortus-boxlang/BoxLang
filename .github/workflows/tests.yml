@@ -12,14 +12,12 @@ jobs:
     name: Test BoxLang
     runs-on: ubuntu-latest
     continue-on-error: ${{ matrix.experimental }}
-
     strategy:
       fail-fast: false
       matrix:
         jdkVersion: [ "17" ]
         experimental: [false]
-
-     steps:
+    steps:
       - name: Checkout Repository
         uses: actions/checkout@v3
 
