@@ -30,11 +30,16 @@ jobs:
           distribution: "temurin"
           java-version: ${{ matrix.jdkVersion }}
 
+      - name: Setup Gradle
+        uses: gradle/gradle-build-action@v2
+        with:
+          gradle-version: "8.2"
+
       # TODO: Add the compiler once it's stable
       - name: Build & Test The Runtime
         run: |
           cd runtime
-          gradle test
+          ./gradlew test
 
       - name: Upload Test Results
         if: always()
