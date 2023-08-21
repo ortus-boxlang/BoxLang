@@ -35,10 +35,8 @@ jobs:
         with:
           gradle-version: "8.2"
 
-      # TODO: Add the compiler once it's stable
-      - name: Build & Test The Runtime
+      - name: Test BoxLang
         run: |
-          cd runtime
           gradle test --stacktrace --console=plain
 
       - name: Upload Test Results

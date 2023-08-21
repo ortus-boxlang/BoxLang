@@ -116,7 +116,7 @@ public class Phase1 extends BaseTemplate {
 		BoxRuntime.startup( true );
 
 		try {
-			BoxRuntime.getInstance().executeTemplate( "" );
+			BoxRuntime.executeTemplate( "" );
 		} catch ( Throwable e ) {
 			e.printStackTrace();
 			System.exit( 1 );

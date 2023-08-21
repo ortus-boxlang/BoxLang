@@ -18,16 +18,17 @@
 package ortus.boxlang.runtime;
 
 import java.net.URL;
-import java.text.DecimalFormat;
 import java.time.Instant;
-import java.util.Optional;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.TemplateBoxContext;
+import ortus.boxlang.runtime.dynamic.BaseTemplate;
 import ortus.boxlang.runtime.logging.SLF4JConfigurator;
+import ortus.boxlang.runtime.services.InterceptorService;
+import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.util.Timer;
 
 /**
@@ -43,29 +44,51 @@ public class BoxRuntime {
 	 */
 
 	/**
+	 * Register all the core runtime events here
+	 */
+	private static final String[]	RUNTIME_EVENTS	= {
+	        "onRuntimeStart",
+	        "onRuntimeShutdown",
+	        "onRuntimeConfigurationLoad",
+	        "preTemplateInvoke",
+	        "postTemplateInvoke"
+	};
+
+	/**
 	 * The timer utility class
 	 */
-	private static final Timer	timerUtil	= new Timer();
+	private static final Timer		timerUtil		= new Timer();
 
 	/**
 	 * Singleton instance
 	 */
-	private static BoxRuntime	instance;
+	private static BoxRuntime		instance;
 
 	/**
 	 * Logger
 	 */
-	private static final Logger	logger		= LoggerFactory.getLogger( BoxRuntime.class );
+	private static final Logger		logger			= LoggerFactory.getLogger( BoxRuntime.class );
 
 	/**
 	 * The timestamp when the runtime was started
 	 */
-	private Instant				startTime;
+	private Instant					startTime;
 
 	/**
 	 * Debug mode
 	 */
-	private Boolean				debugMode	= false;
+	private Boolean					debugMode		= false;
+
+	/**
+	 * --------------------------------------------------------------------------
+	 * Services
+	 * --------------------------------------------------------------------------
+	 */
+
+	/**
+	 * The interceptor service
+	 */
+	private InterceptorService		interceptorService;
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -98,6 +121,15 @@ public class BoxRuntime {
 	 */
 
 	/**
+	 * Get the interceptor service
+	 *
+	 * @return {@link InterceptorService} or null if the runtime has not started
+	 */
+	public InterceptorService getInterceptorService() {
+		return ( hasStarted() ? instance.interceptorService : null );
+	}
+
+	/**
 	 * Check if the runtime has been started
 	 *
 	 * @return true if the runtime has been started
@@ -107,9 +139,9 @@ public class BoxRuntime {
 	}
 
 	/**
-	 * Get the start time of the runtime, null if not started
+	 * Get the start time of the runtime
 	 *
-	 * @return the runtime start time
+	 * @return the runtime start time, or null if not started
 	 */
 	public static Instant getStartTime() {
 		return ( hasStarted() ? instance.startTime : null );
@@ -118,7 +150,7 @@ public class BoxRuntime {
 	/**
 	 * Verifies if the runtime is in debug mode
 	 *
-	 * @return true if the runtime is in debug mode
+	 * @return true if the runtime is in debug mode, or null if not started
 	 */
 	public static Boolean inDebugMode() {
 		return ( hasStarted() ? instance.debugMode : null );
@@ -131,7 +163,7 @@ public class BoxRuntime {
 	 *
 	 * @return The runtime instance
 	 */
-	public static synchronized BoxRuntime startup( Boolean debugMode ) {
+	public static synchronized BoxRuntime startup( Boolean debugMode ) throws RuntimeException {
 		// If we have already started, just return the instance
 		if ( instance != null ) {
 			return getInstance();
@@ -145,10 +177,16 @@ public class BoxRuntime {
 		// We can now log the startup
 		logger.atInfo().log( "+ Starting up BoxLang Runtime" + ( debugMode ? " in debug mode" : "" ) );
 
-		// Create singleton instance
-		instance			= new BoxRuntime();
-		instance.startTime	= Instant.now();
-		instance.debugMode	= debugMode;
+		// Create Runtime Instance
+		instance					= new BoxRuntime();
+		instance.startTime			= Instant.now();
+		instance.debugMode			= debugMode;
+
+		// Create Services
+		instance.interceptorService	= InterceptorService.getInstance( RUNTIME_EVENTS );
+
+		// Announce Startup to Services
+		InterceptorService.onStartup();
 
 		// Runtime Started
 		logger.atInfo().log(
@@ -156,6 +194,10 @@ public class BoxRuntime {
 		        Instant.now(),
 		        timerUtil.stop( "startup" )
 		);
+
+		// Announce it baby!
+		InterceptorService.announce( "onRuntimeStart", new Struct() );
+
 		return instance;
 	}
 
@@ -163,8 +205,19 @@ public class BoxRuntime {
 	 * Shut down the runtime
 	 */
 	public static synchronized void shutdown() {
-		logger.atInfo().log( "Shutting down BoxLang Runtime" );
+		logger.atInfo().log( "Shutting down BoxLang Runtime..." );
+
+		// Announce it globally!
+		InterceptorService.announce( "onRuntimeShutdown", new Struct() );
+
+		// Shutdown the services
+		InterceptorService.onShutdown();
+
+		// Shutdown the runtime
 		instance = null;
+
+		// Shutdown logging
+		logger.info( "+ BoxLang Runtime Shutdown" );
 	}
 
 	/**
@@ -180,11 +233,24 @@ public class BoxRuntime {
 		logger.atDebug().log( "Executing template [{}]", templatePath );
 
 		// Build out the execution context for this execution and bind it to the incoming template
-		IBoxContext context = new TemplateBoxContext( templatePath );
+		IBoxContext		context			= new TemplateBoxContext( templatePath );
 
 		// Here is where we presumably boostrap a page or class that we are executing in our new context.
 		// JIT if neccessary
-		BoxPiler.parse( templatePath ).invoke( context );
+		BaseTemplate	targetTemplate	= BoxPiler.parse( templatePath );
+
+		// Announcements
+		Struct			data			= new Struct();
+		data.put( "context", context );
+		data.put( "template", targetTemplate );
+		data.put( "templatePath", templatePath );
+		InterceptorService.announce( "preTemplateInvoke", data );
+
+		// Fire!!!
+		targetTemplate.invoke( context );
+
+		// Announce
+		InterceptorService.announce( "postTemplateInvoke", data );
 
 		// Debugging Timer
 		logger.atDebug().log(
@@ -202,13 +268,7 @@ public class BoxRuntime {
 	 * @throws Throwable if the template cannot be executed
 	 */
 	public static void executeTemplate( URL templateURL ) throws Throwable {
-
-		// Build out the execution context for this execution and bind it to the incoming template
-		IBoxContext context = new TemplateBoxContext( templateURL.getPath() );
-
-		// Here is where we presumably boostrap a page or class that we are executing in our new context.
-		// JIT if neccessary
-		BoxPiler.parse( templateURL.getPath() ).invoke( context );
+		executeTemplate( templateURL.getPath() );
 	}
 
 }
