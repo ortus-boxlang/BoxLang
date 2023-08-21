@@ -46,18 +46,7 @@ class SingleScriptTemplate(
 	private val jsonBoxAst: String? = null,
 	private val boxAstRoot: BoxScript? = null
 ) {
-	inner class ExecutionContextType : ClassOrInterfaceType("ExecutionContext") {
-		init {
-			cu.addImport("ortus.boxlang.runtime.ExecutionContext")
-		}
-	}
-
-	private val executionContextType = ExecutionContextType()
-	private val iTemplateType = ClassOrInterfaceType("ITemplate")
-		.apply { cu.addImport("ortus.boxlang.runtime.dynamic.ITemplate") }
-	private val iScopeType = ClassOrInterfaceType("IScope")
-		.apply { cu.addImport("ortus.boxlang.runtime.scopes.IScope") }
-	private val executionContextParameter = Parameter(executionContextType, "context")
+	private val executionContextParameter = Parameter(useTypeAndAddImport("ortus.boxlang.runtime.ExecutionContext"), "context")
 	private val invokeMethodDeclaration = MethodDeclaration()
 		.apply { name = SimpleName("invoke") }
 		.apply {
@@ -65,7 +54,7 @@ class SingleScriptTemplate(
 				BlockStmt().apply {
 					addStatement(
 						ExpressionStmt(AssignExpr(
-							VariableDeclarationExpr(iScopeType, "variablesScope"),
+							VariableDeclarationExpr(useTypeAndAddImport("ortus.boxlang.runtime.scopes.IScope"), "variablesScope"),
 							MethodCallExpr(NameExpr("context"), "getVariablesScope"),
 							AssignExpr.Operator.ASSIGN
 						)))
@@ -151,7 +140,7 @@ class SingleScriptTemplate(
 		.apply { addMember(invokeMethodDeclaration) }
 		.apply { fileName?.let { setName(it.replace(Regex("""(.*)\.([^.]+)"""), """$1\$$2""")) } }
 		.apply { addModifier(Modifier.Keyword.PUBLIC) }
-		.apply { addImplementedType(iTemplateType) }
+		.apply { addImplementedType(useTypeAndAddImport("ortus.boxlang.runtime.dynamic.ITemplate")) }
 
 	fun toJava(): CompilationUnit {
 		scriptStatements.forEach {
@@ -180,10 +169,12 @@ class SingleScriptTemplate(
 		)
 	)
 
-	private fun useTypeAndAddImport(fqn: String): ClassOrInterfaceType {
-		cu.addImport(fqn)
-		return ClassOrInterfaceType(fqn.substring(fqn.lastIndexOf(".") + 1))
-	}
+	private fun useTypeAndAddImport(fqn: String) = useTypeAndAddImport(fqn, cu)
+}
+
+private fun useTypeAndAddImport(fqn: String, cu: CompilationUnit? = null): ClassOrInterfaceType {
+	cu?.addImport(fqn)
+	return ClassOrInterfaceType(fqn.substring(fqn.lastIndexOf(".") + 1))
 }
 
 sealed class ScopeNameExpr(name: String) : NameExpr(name) {
@@ -250,7 +241,7 @@ class ReferencerGetAndInvokeExpression(
 )
 
 fun String.toKeyOf() = MethodCallExpr(
-	NameExpr("Key"),
+	useTypeAndAddImport("ortus.boxlang.runtime.scopes.Key").nameAsExpression,
 	"of",
 	NodeList(StringLiteralExpr(this.uppercase()))
 )
@@ -396,7 +387,8 @@ fun BoxAssignment.toJava(): ExpressionStmt {
 fun BoxIfStatement.toJava(): IfStmt = IfStmt(
 	this.condition.toJava(),
 	BlockStmt(NodeList(this.body.map { it.toJava() })),
-	BlockStmt(NodeList(this.elseStatement?.map { it.toJava() } ?: emptyList<Statement>()))
+	this.elseStatement?.let { statement -> BlockStmt(NodeList(statement.map { it.toJava() })) }
+//	BlockStmt(NodeList(this.elseStatement?.map { it.toJava() } ?: emptyList<Statement>()))
 )
 
 fun BoxExpression.toJava(): JExpression = when (this) {
@@ -461,11 +453,6 @@ fun BoxMethodInvokationExpression.toJava(): MethodCallExpr {
 			this.arguments.map { it.toJava() },
 			scope
 		)
-//		MethodCallExpr(
-//			scope,
-//			this.methodName.name,
-//			NodeList(this.arguments.map { it.toJava() })
-//		)
 	}
 }
 
