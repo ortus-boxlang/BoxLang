@@ -74,7 +74,7 @@ public class LoggingConfigurator {
 	 */
 	private static InputStream loadDynamicConfig( java.util.logging.Level rootLogLevel ) {
 		String logConfig = """
-		        .level=
+		        .level=%s
 		        handlers=java.util.logging.ConsoleHandler
 		        """.formatted( rootLogLevel );
 		return new java.io.ByteArrayInputStream( logConfig.getBytes( StandardCharsets.UTF_8 ) );
