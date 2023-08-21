@@ -64,10 +64,11 @@ jobs:
       - name: Download Artifacts
         uses: actions/download-artifact@v3
         with:
+          name: tests-JDK${{ matrix.jdkVersion }}
           path: artifacts
 
       - name: Publish Test Results
         uses: EnricoMi/publish-unit-test-result-action@v2
         with:
           files: |
-            artifacts/**/*.xml- name: Publish Test Results
+            artifacts/**/*.xml
