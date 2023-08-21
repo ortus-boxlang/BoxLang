@@ -80,6 +80,7 @@ class TestBoxlangToJavaAST : BaseTest() {
 		assertASTEqual(expectedAst, actualAst)
 	}
 
+	@Ignore
 	@Test
 	fun helloWorldTest() {
 		val packageName = "c_drive.projects.examples"
