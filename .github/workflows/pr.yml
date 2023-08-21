@@ -1,0 +1,33 @@
+name: Pull Requests
+
+on:
+  push:
+    branches-ignore:
+      - "main"
+      - "development"
+      - "releases/**"
+  pull_request:
+    branches:
+      - development
+      - "releases/**"
+
+jobs:
+  tests:
+    uses: ./.github/workflows/tests.yml
+    secrets: inherit
+
+  format_check:
+    name: Checks Source Code Formatting
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+
+      - name: Setup Java
+        uses: actions/setup-java@v3
+        with:
+          distribution: "temurin"
+          java-version: 17
+
+      - name: Verify Code Formatting
+        run: ./gradlew spotlessCheck
