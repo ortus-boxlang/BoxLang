@@ -40,7 +40,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v3
         with:
-          name: Test Results - JDK${{ matrix.jdkVersion }}
+          name: tests-JDK${{ matrix.jdkVersion }}
           path: |
             runtime/build/reports/tests/**
             runtime/build/test-results/**
@@ -65,4 +65,4 @@ jobs:
         uses: EnricoMi/publish-unit-test-result-action@v2
         with:
           files: |
-            artifacts/test-results/test/**/*.xml- name: Publish Test Results
+            artifacts/**/*.xml- name: Publish Test Results

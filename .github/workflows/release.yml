@@ -53,7 +53,7 @@ jobs:
         id: current_version
         run: |
           # Read Version from gradle.properties
-          echo "VERSION=`grep '^version=' gradle.properties | cut -d'=' -f2" >> $GITHUB_ENV
+          echo "VERSION=`grep '^version=' gradle.properties | cut -d'=' -f2`" >> $GITHUB_ENV
 
           # Stable
           echo "Github Ref is $GITHUB_REF"
