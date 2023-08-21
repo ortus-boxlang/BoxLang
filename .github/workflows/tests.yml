@@ -45,7 +45,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v3
         with:
-          name: tests-JDK${{ matrix.jdkVersion }}
+          name: tests
           path: |
             runtime/build/reports/tests/**
             runtime/build/test-results/**
@@ -64,7 +64,7 @@ jobs:
       - name: Download Artifacts
         uses: actions/download-artifact@v3
         with:
-          name: tests-JDK${{ matrix.jdkVersion }}
+          name: tests
           path: artifacts
 
       - name: Publish Test Results
