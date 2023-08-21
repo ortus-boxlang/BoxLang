@@ -39,7 +39,7 @@ jobs:
       - name: Build & Test The Runtime
         run: |
           cd runtime
-          ./gradlew test
+          gradle test
 
       - name: Upload Test Results
         if: always()
