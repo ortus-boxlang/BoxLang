@@ -17,6 +17,9 @@ jobs:
       matrix:
         jdkVersion: [ "17" ]
         experimental: [false]
+        include:
+          - jdkVersion: "20"
+            experimental: true
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v3
