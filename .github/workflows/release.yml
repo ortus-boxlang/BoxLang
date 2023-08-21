@@ -48,7 +48,7 @@ jobs:
         with:
           distribution: "temurin"
           java-version: ${{ env.JDK }}
-`
+
       - name: Setup Environment Variables For Build Process
         id: current_version
         run: |
