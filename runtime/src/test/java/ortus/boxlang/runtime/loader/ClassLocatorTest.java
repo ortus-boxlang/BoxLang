@@ -19,6 +19,8 @@ package ortus.boxlang.runtime.loader;
 
 import static org.junit.Assert.assertThrows;
 
+import java.util.Optional;
+
 import org.junit.Ignore;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -72,6 +74,19 @@ public class ClassLocatorTest {
 		assertThat( locator.size() ).isEqualTo( 1 );
 		assertThat( locator.hasClass( "java:" + targetClass ) ).isTrue();
 		assertThat( locator.classSet() ).containsAnyIn( new Object[] { "java:" + targetClass } );
+	}
+
+	@DisplayName( "It can safe load non-existen classes without throwing an exception" )
+	@Test
+	public void testCanSafeLoad() {
+		ClassLocator			locator		= ClassLocator.getInstance();
+		String					targetClass	= "java.lang.Bogus";
+
+		Optional<DynamicObject>	target		= locator.safeLoad( new TemplateBoxContext(), targetClass, "java" );
+		assertThat( target.isPresent() ).isFalse();
+
+		target = locator.safeLoad( new TemplateBoxContext(), targetClass );
+		assertThat( target.isPresent() ).isFalse();
 	}
 
 	@DisplayName( "Resolver cache methods work" )

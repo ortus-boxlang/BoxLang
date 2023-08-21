@@ -259,7 +259,7 @@ public class ClassLocator extends ClassLoader {
 	 *
 	 * @return An optional containing the class record if found, empty otherwise
 	 */
-	public Optional<ClassLocation> getClass( String name ) {
+	private Optional<ClassLocation> getClass( String name ) {
 		return Optional.ofNullable( resolverCache.get( name ) );
 	}
 
@@ -309,6 +309,23 @@ public class ClassLocator extends ClassLoader {
 	}
 
 	/**
+	 * Same as the load method, but it will not throw an exception if the class is not found,
+	 * it will return an empty optional instead.
+	 *
+	 * @param context The current context of execution
+	 * @param name    The fully qualified path/name of the class to load
+	 *
+	 * @return The invokable representation of the class or an empty optional if not found
+	 */
+	public Optional<DynamicObject> safeLoad( IBoxContext context, String name ) {
+		try {
+			return Optional.of( load( context, name ) );
+		} catch ( ClassNotFoundException e ) {
+			return Optional.empty();
+		}
+	}
+
+	/**
 	 * Load a class from a specific resolver
 	 *
 	 * @param context        The current context of execution
@@ -347,6 +364,25 @@ public class ClassLocator extends ClassLoader {
 	}
 
 	/**
+	 * Load a class from a specific resolver
+	 *
+	 * @param context        The current context of execution
+	 * @param name           The fully qualified path/name of the class to load
+	 * @param resolverPrefix The prefix of the resolver to use
+	 *
+	 * @return The invokable representation of the class
+	 *
+	 * @throws ClassNotFoundException If the class was not found anywhere in the system
+	 */
+	public Optional<DynamicObject> safeLoad( IBoxContext context, String name, String resolverPrefix ) {
+		try {
+			return Optional.of( load( context, name, resolverPrefix ) );
+		} catch ( ClassNotFoundException e ) {
+			return Optional.empty();
+		}
+	}
+
+	/**
 	 * This method ONLY returns the class representation, it does not cache it.
 	 *
 	 * @param name The fully qualified path/name of the class to load
@@ -374,7 +410,7 @@ public class ClassLocator extends ClassLoader {
 	 *
 	 * @return The resolved class location
 	 */
-	public ClassLocation resolve( IBoxContext context, String name ) throws ClassNotFoundException {
+	private ClassLocation resolve( IBoxContext context, String name ) throws ClassNotFoundException {
 		// Try to get it from cache
 		return getClass( name )
 		        // Is it a BoxClass?
