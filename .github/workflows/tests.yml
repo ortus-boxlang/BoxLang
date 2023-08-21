@@ -43,6 +43,7 @@ jobs:
   publish-test-results:
     name: Publish Test Results
     runs-on: ubuntu-latest
+    needs: tests
     permissions:
       checks: write
       pull-requests: write
