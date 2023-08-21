@@ -38,7 +38,8 @@ import ortus.boxlang.runtime.loader.ClassLocator;
 public class InstanceOf implements IOperator {
 
 	/**
-	 * @param object The object to negate
+	 * @param left  The object to perform type check on
+	 * @param right The type to check against
 	 *
 	 * @return The result
 	 */
