@@ -27,7 +27,7 @@ import org.slf4j.LoggerFactory;
 
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.TemplateBoxContext;
-import ortus.boxlang.runtime.logging.SLF4JConfigurator;
+import ortus.boxlang.runtime.logging.LoggingConfigurator;
 import ortus.boxlang.runtime.util.Timer;
 
 /**
@@ -140,7 +140,7 @@ public class BoxRuntime {
 		timerUtil.start( "startup" );
 
 		// Startup logging
-		SLF4JConfigurator.configure( debugMode );
+		LoggingConfigurator.configure( debugMode );
 
 		// We can now log the startup
 		logger.atInfo().log( "+ Starting up BoxLang Runtime" + ( debugMode ? " in debug mode" : "" ) );

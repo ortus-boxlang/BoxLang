@@ -19,11 +19,8 @@ package ortus.boxlang.runtime.logging;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.logging.LogManager;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.slf4j.event.Level;
 
 /**
  * Configures the bundled SLF4J provider.
@@ -38,7 +35,7 @@ import org.slf4j.event.Level;
  *
  * or anything else, this class will ensure the provider logs according to the defined configuration.
  */
-public class SLF4JConfigurator {
+public class LoggingConfigurator {
 
 	/**
 	 * The default logging file to load
@@ -52,11 +49,10 @@ public class SLF4JConfigurator {
 	 */
 	public static void configure( Boolean debugMode ) {
 		try {
-			LogManager.getLogManager().readConfiguration( loadFromPropertiesFile() );
-
-			if ( debugMode ) {
-				// TODO: @michaelborn debug mode
-			}
+			LogManager.getLogManager().readConfiguration( debugMode
+			        ? loadDynamicConfig( java.util.logging.Level.FINE )
+			        : loadFromPropertiesFile()
+			);
 		} catch ( IOException e ) {
 			e.printStackTrace();
 		}
@@ -66,6 +62,21 @@ public class SLF4JConfigurator {
 	 * Read logging configuration from the `logging.properties` file
 	 */
 	private static InputStream loadFromPropertiesFile() {
-		return SLF4JConfigurator.class.getClassLoader().getResourceAsStream( DEFAULT_CONFIG_FILE );
+		return LoggingConfigurator.class.getClassLoader().getResourceAsStream( DEFAULT_CONFIG_FILE );
+	}
+
+	/**
+	 * Build JDK logging configuration dynamically using the provided parameters.
+	 * 
+	 * @param rootLogLevel Default log level for root loggers.
+	 * 
+	 * @return an InputStream safe for feeding to the JDK LogManager's `readConfiguration()` method.
+	 */
+	private static InputStream loadDynamicConfig( java.util.logging.Level rootLogLevel ) {
+		String logConfig = """
+		        .level=
+		        handlers=java.util.logging.ConsoleHandler
+		        """.formatted( rootLogLevel );
+		return new java.io.ByteArrayInputStream( logConfig.getBytes( StandardCharsets.UTF_8 ) );
 	}
 }
