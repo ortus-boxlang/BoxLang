@@ -1,0 +1,45 @@
+name: BoxLang Snapshots
+
+on:
+  push:
+    branches:
+      - development
+
+jobs:
+  #############################################
+  # Tests First baby! We fail, no build :(
+  #############################################
+  tests:
+    uses: ./.github/workflows/tests.yml
+    secrets: inherit
+
+  ##########################################################################################
+  # Format Source Code
+  ##########################################################################################
+  format:
+    name: Code Auto-Formatting
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      checks: write
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Setup Java
+        uses: actions/setup-java@v3
+        with:
+          distribution: "temurin"
+          java-version: 17
+
+      - name: Verify Code Formatting
+        run: ./gradlew spotlessApply --stacktrace
+
+  #############################################
+  # Build Snapshot Release
+  #############################################
+  build:
+    uses: ./.github/workflows/release.yml
+    needs: [ tests, format ]
+    secrets: inherit
+    with:
+      snapshot: true

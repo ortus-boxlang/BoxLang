@@ -1,0 +1,204 @@
+# This workflow is used to build releases
+# It can also be called by other workflows to reuse the release flow.
+name: ColdBox Release
+
+on:
+  # If you push to main this will trigger a stable release
+  push:
+    branches:
+      - main
+
+  # Reusable workflow : Usually called by a `snapshot` workflow
+  workflow_call:
+    inputs:
+      snapshot:
+        description: 'Is this a snapshot build?'
+        required: false
+        default: false
+        type: boolean
+
+  # Manual Trigger for LTS Releases
+  workflow_dispatch:
+    inputs:
+      lts:
+        description: 'The LTS marker'
+        required: false
+        default: true
+        type: boolean
+
+env:
+  SNAPSHOT: ${{ inputs.snapshot || false }}
+  LTS: ${{ inputs.lts || false }}
+  JDK: 17
+
+jobs:
+  #############################################
+  # Build Snapshot or Final Release
+  # JDK 17 is our target release for now
+  #############################################
+  build:
+    name: Build & Publish Release
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+
+      - name: Setup Java
+        uses: actions/setup-java@v3
+        with:
+          distribution: "temurin"
+          java-version: ${{ env.JDK }}
+`
+      - name: Setup Environment Variables For Build Process
+        id: current_version
+        run: |
+          # Read Version from gradle.properties
+          echo "VERSION=`grep '^version=' gradle.properties | cut -d'=' -f2" >> $GITHUB_ENV
+
+          # Stable
+          echo "Github Ref is $GITHUB_REF"
+          echo "BRANCH=main" >> $GITHUB_ENV
+
+          # Snapshot
+          if [ $GITHUB_REF == 'refs/heads/development' ]
+          then
+            echo "BRANCH=development" >> $GITHUB_ENV
+          fi
+
+      - name: Update changelog [unreleased] with latest version
+        uses: thomaseizinger/keep-a-changelog-new-release@1.3.0
+        if: env.SNAPSHOT == 'false'
+        with:
+          changelogPath: ./changelog.md
+          tag: v${{ env.VERSION }}
+
+      - name: Build it!
+        run: |
+          npm install -g markdownlint-cli
+          markdownlint changelog.md --fix
+          ./gradlew clean build --stacktrace --console=plain
+
+      - name: Commit Changelog [unreleased] with latest version
+        uses: EndBug/add-and-commit@v9.1.1
+        if: env.SNAPSHOT == 'false'
+        with:
+          author_name: Github Actions
+          author_email: info@ortussolutions.com
+          message: 'Finalized changelog for v${{ env.VERSION }}'
+          add: changelog.md
+
+      - name: Tag Version
+        uses: rickstaa/action-create-tag@v1.6.1
+        if: env.SNAPSHOT == 'false'
+        with:
+          tag: "v${{ env.VERSION }}"
+          force_push_tag: true
+          message: "Latest Release v${{ env.VERSION }}"
+
+      - name: Upload Build Artifacts
+        if: success()
+        uses: actions/upload-artifact@v2
+        with:
+          name: boxlang-build
+          path: |
+            runtime/build/distributions/**
+            runtime/build/docs/**
+            runtime/build/libs/**
+            runtime/build/scripts/**
+            changelog.md
+
+      # - name: Upload Binaries to S3
+      #   uses: jakejarvis/s3-sync-action@master
+      #   with:
+      #     args: --acl public-read
+      #   env:
+      #     AWS_S3_BUCKET: "downloads.ortussolutions.com"
+      #     AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY }}
+      #     AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_ACCESS_SECRET }}
+      #     SOURCE_DIR: "artifacts"
+      #     DEST_DIR: "ortussolutions"
+
+      # - name: Upload API Docs to S3
+      #   uses: jakejarvis/s3-sync-action@master
+      #   with:
+      #     args: --acl public-read
+      #   env:
+      #     AWS_S3_BUCKET: "apidocs.ortussolutions.com"
+      #     AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY }}
+      #     AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_ACCESS_SECRET }}
+      #     SOURCE_DIR: "build-coldbox/apidocs"
+      #     DEST_DIR: ""
+
+      # - name: Publish to Maven Central
+      #   run: |
+
+      - name: Create Github Release
+        uses: taiki-e/create-gh-release-action@v1.6.2
+        continue-on-error: true
+        if: env.SNAPSHOT == 'false'
+        with:
+          title: ${{ env.VERSION }}
+          changelog: changelog.md
+          token: ${{ secrets.GITHUB_TOKEN }}
+          ref: refs/tags/v${{ env.VERSION }}
+
+      - name: Inform Slack
+        if: ${{ always() }}
+        uses: rtCamp/action-slack-notify@v2
+        env:
+          SLACK_CHANNEL: coding
+          SLACK_COLOR: ${{ job.status }} # or a specific color like 'green' or '#ff00ff'
+          SLACK_ICON_EMOJI: ":bell:"
+          SLACK_MESSAGE: 'ColdBox ${{ env.VERSION }} Built with ${{ job.status }}!'
+          SLACK_TITLE: "ColdBox Build"
+          SLACK_USERNAME: CI
+          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK_URL }}
+
+  ##########################################################################################
+  # Prep Next Release
+  ##########################################################################################
+  prep_next_release:
+    name: Prep Next Release
+    if: github.ref != 'refs/heads/development'
+    runs-on: ubuntu-latest
+    needs: [ build ]
+    steps:
+      - name: Checkout Development Repository
+        uses: actions/checkout@v3
+        if: env.LTS == 'false'
+        with:
+          ref: development
+
+      - name: Checkout LTS Repository
+        uses: actions/checkout@v3
+        if: env.LTS == 'true'
+
+      - name: Download build artifacts
+        uses: actions/download-artifact@v2
+        with:
+          name: boxlang-build
+          path: .tmp
+
+      - name: Copy Changelog
+        run: |
+          cp .tmp/changelog.md changelog.md
+
+      - name: Bump Version
+        run: |
+          if [ $LTS == 'true' ]
+          then
+            ./gradlew bumpPatchVersion --stacktrace --console=plain
+          else
+            ./gradlew bumpMinorVersion --stacktrace --console=plain
+          fi
+          git pull
+
+      - name: Commit Version Bump
+        uses: EndBug/add-and-commit@v9.1.1
+        with:
+          author_name: Github Actions
+          author_email: info@ortussolutions.com
+          message: 'Version bump'
+          add: |
+            gradle.properties
+            changelog.md
