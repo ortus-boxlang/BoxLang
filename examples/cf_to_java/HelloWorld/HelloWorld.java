@@ -1,29 +1,18 @@
 // Auto package creation according to file path on disk
 package c_drive.projects.examples;
 
-// Interface for object representing a .cfm template
+// BoxLang Auto Imports
 
-import ortus.boxlang.runtime.dynamic.ITemplate;
-import ortus.boxlang.runtime.ExecutionContext;
-import ortus.boxlang.runtime.scopes.IScope;
+import ortus.boxlang.runtime.context.TemplateContext;
+import ortus.boxlang.runtime.interop.ClassInvoker;
+import ortus.boxlang.runtime.loader.ClassLocator;
 import ortus.boxlang.runtime.scopes.Key;
-
-// This class reponsible for finding and loading Java classes
-// If we don't know the type: java or boxlang, we use ClassLoader so it can figure it out via the ClassLocator class
-import ortus.boxlang.runtime.interop.JavaLoader;
-// Called anytime we have (expression)() in our code, which invokes the BIF, UDF, or Java method (callsite)
-import ortus.boxlang.runtime.interop.Invoker;
-
-// Need better name, but generically handles de-referncing of `foo.bar` or `foo['bar']` based on runtime values
-import ortus.boxlang.runtime.core.Derefrencer;
-
-// Operators-- do we have a class for ecah one or one huge class of all operators?
-import ortus.boxlang.runtime.operators.EqualsEquals;
-import ortus.boxlang.runtime.operators.Concat;
+import ortus.boxlang.runtime.scopes.Key;
+import ortus.boxlang.runtime.scopes.IScope;
 
 // Classes Auto-Imported on all Templates and Classes by BoxLang
-// TODO: Determine which classes will be auto-imported
 import java.time.LocalDateTime;
+import java.time.Instant;
 import java.lang.System;
 import java.lang.String;
 import java.lang.Character;
@@ -31,20 +20,30 @@ import java.lang.Boolean;
 import java.lang.Double;
 import java.lang.Integer;
 
-public class HelloWorld$cfm implements ITemplate {
+// Imports based on AST Tree
+import ortus.boxlang.runtime.operators.EqualsEquals;
+import ortus.boxlang.runtime.operators.Concat;
 
-	// The name of the current template
-	public static final String name = "HelloWorld";
-	// The type of extension the template has
-	public static final String extension = "cfm";
-	// The absolute path of the current template
-	public static final String path = "c:/projects/examples";
-	// The last modified date of the current template
-	public static final LocalDateTime lastModified = "2023-07-26T17:45:16.669276";
-	// The date time of compilation of this template
-	public static final LocalDateTime compiledOn = "2023-07-26T17:45:16.669276";
-	// The AST that models this template
-	public static final CFScript ast = astRep;
+public class HelloWorld$cfm extends BaseTemplate {
+
+	// Auto-Generated Singleton Helpers
+	private static HelloWorld$cfm instance;
+
+	private HelloWorld$cfm() {
+		this.name         = "HelloWorld";
+		this.extension    = "cfm";
+		this.path         = "c:/projects/examples";
+		this.lastModified = "2023-07-26T17:45:16.669276";
+		this.compiledOn   = "2023-07-26T17:45:16.669276";
+		// this.ast = ???
+	}
+
+	public static synchronized HelloWorld$cfm getInstance() {
+		if ( instance == null ) {
+			instance = new HelloWorld$cfm();
+		}
+		return instance;
+	}
 
 	/**
 	 * Each template must implement the invoke() method which executes the template
@@ -52,10 +51,9 @@ public class HelloWorld$cfm implements ITemplate {
 	 * @param context The execution context requesting the execution
 	 */
 	public void invoke( ExecutionContext context ) throws Throwable {
+
 		// Reference to the variables scope
-		// TODO: How will we track this brad, since this belongs to THIS template, shouldn't each template get
-		// it's own `variables` scope
-		IScope variablesScope = context.getVariablesScope();
+		IScope variablesScope = context.getScopeLocal( Key.of( "variables" ) );
 
 		// Case sensitive set
 		variablesScope.put( Key.of( "system" ), JavaLoader.load( context, "java.lang.System" ) );
@@ -65,7 +63,7 @@ public class HelloWorld$cfm implements ITemplate {
 			Key.of( "GREETING" ),
 
 			// Invoke callsite
-			JavaLoader.load( context, "java.lang.String" ).invokeConstructor(
+			ClassLoader.load( context, "java.lang.String" ).invokeConstructor(
 				// Argument Values
 				new Object[] { "Hello" } ) );
 
@@ -84,10 +82,10 @@ public class HelloWorld$cfm implements ITemplate {
 
 					Concat.invoke( context, context.scopeFindLocal( Key.of( "GREETING" ) ), " world" )
 
-				} );
+				}
 
+			);
 		}
-
 	}
 
 }

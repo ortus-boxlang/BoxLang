@@ -80,7 +80,6 @@ class TestBoxlangToJavaAST : BaseTest() {
 		assertASTEqual(expectedAst, actualAst)
 	}
 
-	@Ignore
 	@Test
 	fun helloWorldTest() {
 		val packageName = "c_drive.projects.examples"
@@ -94,7 +93,7 @@ class TestBoxlangToJavaAST : BaseTest() {
 		check(javaParseResult.isSuccessful) { "The Java file seems incorrect ${javaFile.absolutePath}" }
 		check(javaParseResult.result.isPresent) { "The Java file parsing did not produce a result ${javaFile.absolutePath}" }
 
-		val boxToJavaMapper = BoxToJavaMapper(cfmlParseResult.root!!, cfFile.name, packageName)
+		val boxToJavaMapper = BoxToJavaMapper(cfmlParseResult.root!!, cfFile, packageName)
 		val boxlangToJava = boxToJavaMapper.toJava()
 		val expectedJavaAst = javaParseResult.result.orElseThrow()
 		expectedJavaAst.walk(Comment::class.java) { it.remove() }
@@ -115,7 +114,7 @@ class TestBoxlangToJavaAST : BaseTest() {
 		check(cfmlParseResult.correct)
 		checkNotNull(cfmlParseResult.root)
 
-		val javaAst = BoxToJavaMapper(cfmlParseResult.root!!, "test.cfm").toJava()
+		val javaAst = BoxToJavaMapper(cfmlParseResult.root!!, File("test.cfm")).toJava()
 		val expr = javaAst
 			.getClassByName("test\$cfm").orElseThrow()
 			.getMethodsByName("invoke")
