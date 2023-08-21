@@ -15,7 +15,6 @@ plugins {
  * Project Properties
  */
 group = 'ortus.boxlang'
-version = '1.0.0'
 java.sourceCompatibility = JavaVersion.VERSION_17
 java.targetCompatibility = JavaVersion.VERSION_17
 
@@ -43,6 +42,36 @@ dependencies {
 	implementation group: 'org.slf4j', name: 'slf4j-api', version: '2.0.7'
 	// https://mvnrepository.com/artifact/org.slf4j/slf4j-jdk14
 	implementation group: 'org.slf4j', name: 'slf4j-jdk14', version: '2.0.7'
+}
+
+/**
+ * Project Wide Helper functions
+ */
+project.ext.bumpVersion = { boolean major = false, boolean minor = false, boolean patch = false ->
+
+	def propertiesFile = file( '../gradle.properties' );
+	def properties = new Properties();
+
+	properties.load( propertiesFile.newDataInputStream() )
+	def versionTarget = major ? 0 : minor ? 1 : 2
+
+	def currentVersion = properties.getProperty( 'version' )
+	def versionParts = currentVersion.split( '\\.' )
+	def newPathVersion = versionParts[ versionTarget ].toInteger() + 1
+	def newVersion = '';
+
+	if( patch ){
+		newVersion = "${versionParts[ 0 ]}.${versionParts[ 1 ]}.${newPathVersion}"
+	} else if( minor ){
+		newVersion = "${versionParts[ 0 ]}.${newPathVersion}.${versionParts[ 2 ]}"
+	} else if( major ){
+		newVersion = "${newPathVersion}.${versionParts[ 1 ]}.${versionParts[ 2 ]}"
+	}
+
+	properties.setProperty( 'version', newVersion )
+	properties.store( propertiesFile.newWriter(), null )
+
+	println "Bumped version from ${currentVersion} to ${newVersion}"
 }
 
 /**
@@ -115,3 +144,31 @@ tasks.named( 'test' ) {
  * Custom tasks to run in the `build` task lifecycle
  */
  build.finalizedBy( javadoc )
+
+
+/**
+ * Bump the major version number
+ */
+task bumpMajorVersion {
+	doLast{
+		bumpVersion( true )
+	}
+}
+
+/**
+ * Bump the minor version number
+ */
+task bumpMinorVersion {
+	doLast{
+		bumpVersion( false, true )
+	}
+}
+
+/**
+ * Bump the patch version number
+ */
+task bumpPatchVersion {
+	doLast{
+		bumpVersion( false, false, true )
+	}
+}
