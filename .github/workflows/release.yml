@@ -141,11 +141,26 @@ jobs:
         uses: taiki-e/create-gh-release-action@v1.6.2
         continue-on-error: true
         if: env.SNAPSHOT == 'false'
+        id: create_release
         with:
           title: ${{ env.VERSION }}
           changelog: changelog.md
           token: ${{ secrets.GITHUB_TOKEN }}
           ref: refs/tags/v${{ env.VERSION }}
+
+      - name: Upload Release Asset
+        uses: sekwah41/upload-release-assets@v1
+        if: env.SNAPSHOT == 'false'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: |
+            runtime/build/distributions/**
+            runtime/build/docs/**
+            runtime/build/libs/**
+            runtime/build/scripts/**
+            changelog.md
 
       - name: Inform Slack
         if: ${{ always() }}
