@@ -29,8 +29,6 @@ import ortus.boxlang.runtime.types.Struct;
 import org.junit.jupiter.api.DisplayName;
 import static com.google.common.truth.Truth.assertThat;
 
-import tests.ortus.boxlang.runtime.services.MockInterceptor;
-
 public class InterceptorServiceTest {
 
 	@DisplayName( "Test it can get an instance of the service" )

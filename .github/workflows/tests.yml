@@ -39,7 +39,7 @@ jobs:
       - name: Build & Test The Runtime
         run: |
           cd runtime
-          gradle test
+          gradle test --stacktrace --console=plain
 
       - name: Upload Test Results
         if: always()
@@ -47,8 +47,8 @@ jobs:
         with:
           name: tests
           path: |
-            runtime/build/reports/tests/**
-            runtime/build/test-results/**
+            **/build/reports/tests/**
+            **/build/test-results/**
 
   publish-test-results:
     name: Publish Test Results
