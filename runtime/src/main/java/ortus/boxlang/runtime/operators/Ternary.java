@@ -31,7 +31,7 @@ public class Ternary implements IOperator {
 	 * @param ifTrue    Value to use if condition is true
 	 * @param ifFalse   Value to use if condition is false
 	 *
-	 * @return
+	 * @return The result of the ternary operation
 	 */
 	public static Object invoke( Object condition, Object ifTrue, Object ifFalse ) {
 		return BooleanCaster.cast( condition ) ? ifTrue : ifFalse;

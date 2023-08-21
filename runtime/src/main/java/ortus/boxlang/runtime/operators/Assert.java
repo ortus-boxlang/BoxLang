@@ -32,7 +32,7 @@ public class Assert implements IOperator {
 	 *
 	 * @return true if the boolean result is true, else an exception
 	 *
-	 * @throws AssertionError
+	 * @throws AssertionError if the result is false or null
 	 */
 	public static Boolean invoke( Object result ) throws AssertionError {
 

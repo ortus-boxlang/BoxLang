@@ -201,14 +201,14 @@ public class BoxRuntime {
 	 *
 	 * @throws Throwable if the template cannot be executed
 	 */
-	public static void executeTemplate( URL templatePath ) throws Throwable {
+	public static void executeTemplate( URL templateURL ) throws Throwable {
 
 		// Build out the execution context for this execution and bind it to the incoming template
-		IBoxContext context = new TemplateBoxContext( templatePath.getPath() );
+		IBoxContext context = new TemplateBoxContext( templateURL.getPath() );
 
 		// Here is where we presumably boostrap a page or class that we are executing in our new context.
 		// JIT if neccessary
-		BoxPiler.parse( templatePath.getPath() ).invoke( context );
+		BoxPiler.parse( templateURL.getPath() ).invoke( context );
 	}
 
 }

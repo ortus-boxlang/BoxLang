@@ -104,6 +104,11 @@ public class Phase1 extends BaseTemplate {
 
 	}
 
+	/**
+	 * Main method
+	 *
+	 * @param args
+	 */
 	public static void main( String[] args ) {
 		// This is the main method, it will be invoked when the template is executed
 		// You can use this

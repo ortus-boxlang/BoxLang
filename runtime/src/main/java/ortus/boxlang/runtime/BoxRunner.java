@@ -27,7 +27,7 @@ import ortus.boxlang.runtime.util.Timer;
  * BoxLang runtime. There are several CLI options that can be passed
  * to this class to control the runtime and execution.
  *
- * <h4>CLI Options</h4>
+ * <strong>CLI Options</strong>
  * <ul>
  * <li><code>--debug</code> - Enables debug mode</li>
  * </ul>
