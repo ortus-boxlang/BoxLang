@@ -67,9 +67,9 @@ public class LoggingConfigurator {
 
 	/**
 	 * Build JDK logging configuration dynamically using the provided parameters.
-	 * 
+	 *
 	 * @param rootLogLevel Default log level for root loggers.
-	 * 
+	 *
 	 * @return an InputStream safe for feeding to the JDK LogManager's `readConfiguration()` method.
 	 */
 	private static InputStream loadDynamicConfig( java.util.logging.Level rootLogLevel ) {
