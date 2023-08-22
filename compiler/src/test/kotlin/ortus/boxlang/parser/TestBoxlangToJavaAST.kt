@@ -9,8 +9,14 @@ import junit.framework.TestCase.assertEquals
 import org.junit.Ignore
 import org.junit.Test
 import ortus.boxlang.java.BoxToJavaMapper
+import ortus.boxlang.java.toJava
+import java.io.ByteArrayOutputStream
 import java.io.File
+import java.io.PrintStream
+import java.net.URLClassLoader
 import java.nio.file.Path
+import java.util.*
+import javax.tools.ToolProvider
 import kotlin.io.path.*
 
 
@@ -34,51 +40,6 @@ class TestBoxlangToJavaAST : BaseTest() {
 
 	@Ignore
 	@Test
-	fun cfToJavaTestSet() {
-		val errors = mutableListOf<AssertionError>()
-
-		retrieveTestCasesFolders().forEach { testFolder ->
-			val cfFile = retrieveCfCase(testFolder)
-			val javaFile = retrieveJavaCase(testFolder)
-			val cfParseResult = CFLanguageParser().parse(cfFile)
-			check(cfParseResult.correct) { "Parse failed: file://${cfFile.absolutePath}" }
-			checkNotNull(cfParseResult.root) { "Parse result has no root: file://${cfFile.absolutePath}" }
-			val actualJavaAst = javaParser.parse(javaFile).result.get()
-				.walk(Comment::class.java) { TODO() }
-
-			try {
-				assertASTEqual(
-					javaParser.parse(javaFile).result.get(),
-					BoxToJavaMapper(cfParseResult.root!!, cfFile, "some.package").toJava()
-				) { testFolder.pathString }
-			} catch (e: AssertionError) {
-				errors.add(e)
-			}
-		}
-
-		assertEquals("Errors: ${errors.size}", 0, errors.size)
-	}
-
-	@Ignore
-	@Test
-	fun dummyBoxlangToASTTest() {
-		val file = Path(testsBaseFolder.pathString, "Test", "Test.cfc").toFile()
-		val parseResult = cfParser.source(file).parse()
-		require(parseResult.correct)
-		requireNotNull(parseResult.root)
-
-		val actualAst = BoxToJavaMapper(parseResult.root!!, file, "some.package").toJava()
-		val expectedAst = javaParser.parse(
-			Path(
-				testsBaseFolder.pathString,
-				"Test",
-				"Test.java"
-			).toFile()
-		).result.get()
-		assertASTEqual(expectedAst, actualAst)
-	}
-
-	@Test
 	fun helloWorldTest() {
 		val packageName = "c_drive.projects.examples"
 		val cfFile = Path(testsBaseFolder.pathString, "HelloWorld", "HelloWorld.cfm").toFile()
@@ -91,7 +52,7 @@ class TestBoxlangToJavaAST : BaseTest() {
 		check(javaParseResult.isSuccessful) { "The Java file seems incorrect ${javaFile.absolutePath}" }
 		check(javaParseResult.result.isPresent) { "The Java file parsing did not produce a result ${javaFile.absolutePath}" }
 
-		val boxToJavaMapper = BoxToJavaMapper(cfmlParseResult.root!!, cfFile, packageName)
+		val boxToJavaMapper = BoxToJavaMapper(cfmlParseResult.root!!, cfFile)
 		val boxlangToJava = boxToJavaMapper.toJava()
 		val expectedJavaAst = javaParseResult.result.orElseThrow()
 		expectedJavaAst.walk(Comment::class.java) { it.remove() }
@@ -99,6 +60,126 @@ class TestBoxlangToJavaAST : BaseTest() {
 			it.setComment(null)
 		}
 		assertASTEqual(expectedJavaAst, boxlangToJava) { "" }
+	}
+
+	@Test
+	fun runHelloWorldTest() {
+
+		// Parsing CFML to Boxlang AST
+		val cfFile = Path(testsBaseFolder.pathString, "HelloWorld", "HelloWorld.cfm").toFile()
+		val cfmlParseResult = cfParser.source(cfFile).parse()
+		check(cfmlParseResult.correct) { "Cannot correctly parse the CF file: ${cfFile.absolutePath}" }
+		checkNotNull(cfmlParseResult.root) { "Something may be wrong with the CF to Boxlang conversion: ${cfFile.absolutePath}" }
+
+		// Converting Boxlang AST to Java
+		val javaAST = BoxToJavaMapper(cfmlParseResult.root!!, cfFile).toJava()
+
+		// Compiling Java and executing the invoke() method
+		val printStream = PrintStream(ByteArrayOutputStream())
+		System.setOut(printStream)
+		generateByteCode(
+			packageName = javaAST.packageDeclaration.orElseThrow().nameAsString,
+			className = javaAST.getClassByName("HelloWorld\$cfm").orElseThrow().nameAsString,
+			code = javaAST.toString()
+		)
+
+		// Testing stdout against the "Hello world" string
+		assertEquals("Hello world", printStream.toString())
+	}
+
+	@Test
+	fun templateTest() {
+		val cfmlFile = Path(testsBaseFolder.pathString, "HelloWorld", "HelloWorld.cfm").toFile()
+		val className = cfmlFile.name.replace(Regex("""(.*)\.([^.]+)"""), """$1\$$2""") ?: "MockTemplate"
+		val fileName = cfmlFile.name
+		val fileExtension = cfmlFile.extension
+		val fileFolderPath = cfmlFile.parentFile?.toPath()?.toRealPath()?.pathString ?: ""
+		val packageName = Path(fileFolderPath).toRealPath().pathString.replace(File.separator, ".").replace(Regex("^."), "")
+		val lastModifiedTimestamp = Date(cfmlFile.lastModified()).toString()
+		val compiledOnTimestamp = Date().toString()
+
+		val templateCode = """
+			// Auto package creation according to file path on disk
+			package $packageName;
+
+			import ortus.boxlang.runtime.BoxRuntime;
+			import ortus.boxlang.runtime.context.IBoxContext;
+
+			// BoxLang Auto Imports
+			import ortus.boxlang.runtime.dynamic.BaseTemplate;
+			import ortus.boxlang.runtime.dynamic.Referencer;
+			import ortus.boxlang.runtime.interop.DynamicObject;
+			import ortus.boxlang.runtime.loader.ClassLocator;
+			import ortus.boxlang.runtime.operators.*;
+			import ortus.boxlang.runtime.scopes.Key;
+			import ortus.boxlang.runtime.scopes.IScope;
+
+			// Classes Auto-Imported on all Templates and Classes by BoxLang
+			import java.time.LocalDateTime;
+			import java.time.Instant;
+			import java.lang.System;
+			import java.lang.String;
+			import java.lang.Character;
+			import java.lang.Boolean;
+			import java.lang.Double;
+			import java.lang.Integer;
+
+			public class $className extends BaseTemplate {
+
+				// Auto-Generated Singleton Helpers
+				private static $className instance;
+
+				public $className() {
+					this.name         = "$fileName";
+					this.extension    = "$fileExtension";
+					this.path         = "$fileFolderPath";
+					// this.lastModified = "$lastModifiedTimestamp";
+					// this.compiledOn   = "$compiledOnTimestamp";
+					// this.ast = ???
+				}
+
+				public static synchronized $className getInstance() {
+					if ( instance == null ) {
+						instance = new $className();
+					}
+					return instance;
+				}
+
+				/**
+				 * Each template must implement the invoke() method which executes the template
+				 *
+				 * @param context The execution context requesting the execution
+				 */
+				public void invoke( IBoxContext context ) throws Throwable {
+					System.out.println("I am in!");
+
+					// Reference to the variables scope
+					IScope variablesScope = context.getScopeLocal( Key.of( "variables" ) );
+
+					ClassLocator JavaLoader = ClassLocator.getInstance();
+				}
+			}
+		""".trimIndent()
+
+		val templateAst = parseJava(templateCode)
+		templateAst.problems.forEach { println(it) }
+
+		val cu = templateAst.result.orElseThrow().findCompilationUnit().orElseThrow()
+		val cfmlAst = CFMLKolasuParser().parse(cfmlFile.readText())
+		val cfscriptJavaStatements = cfmlAst.root!!.body.map { it.toJava(cu) }
+
+		val invokeMethodBody = templateAst.result.orElseThrow()
+			.findCompilationUnit().orElseThrow()
+			.getClassByName(className).orElseThrow()
+			.getMethodsByName("invoke")[0]
+			.body.orElseThrow()
+
+		// Convert Box statements to Java
+		cfscriptJavaStatements.forEach { invokeMethodBody.addStatement(it) }
+
+		val cfmlJava = cu.toString()
+
+		generateByteCode(packageName, className, cfmlJava)
 	}
 
 	@Test
@@ -139,5 +220,54 @@ class TestBoxlangToJavaAST : BaseTest() {
 			}
 		)
 		return result
+	}
+
+	private fun parseJava(code: String): ParseResult<CompilationUnit> {
+		val result = javaParser.parse(code)
+		System.err.println(
+			result.problems.joinToString(separator = System.lineSeparator()) { problem ->
+				"${problem.message}${System.lineSeparator()}\t${problem.location.map { "${it.begin.range.map { ":${it.begin.line}:${it.begin.column}" }.orElse("")}" }.orElse("")}"
+			}
+		)
+		return result
+	}
+
+	private fun generateByteCode(packageName: String, className: String, code: String) {
+		// see: https://stackoverflow.com/questions/2946338/how-do-i-programmatically-compile-and-instantiate-a-java-class
+
+		// Write source to file
+		val rootDirectory = File("build/cfml_to_java")
+		val javaFile = File(
+			Path(
+				rootDirectory.absolutePath,
+				packageName.replace(".", File.separator)
+			).toFile(),
+			"$className.java"
+		)
+
+		javaFile.parentFile.mkdirs()
+		javaFile.writeText(code)
+
+		// Compile
+		val runtimeRoot = "../runtime/build/classes/java/main"
+		val compiler = ToolProvider.getSystemJavaCompiler()
+		compiler.run(null, null, null,
+			"-cp",
+			"${System.getProperty("java.class.path")}${File.pathSeparator}$runtimeRoot",
+			javaFile.path
+		)
+
+		// Load and instantiate compiled class
+		val classLoader = URLClassLoader.newInstance(arrayOf(
+			rootDirectory.toURI().toURL(),
+			File(runtimeRoot).toURI().toURL()
+		))
+		val cls = Class.forName("$packageName.$className", true, classLoader)
+		val instance = cls.getDeclaredConstructor().newInstance()
+		val iboxClass = Class.forName("ortus.boxlang.runtime.context.IBoxContext", true, classLoader)
+		val iboxContextInstance = Class.forName("ortus.boxlang.runtime.context.TemplateBoxContext", true, classLoader)
+			.getDeclaredConstructor().newInstance()
+		val invokeMethod = instance.javaClass.getDeclaredMethod("invoke", iboxClass)
+		invokeMethod.invoke(instance, iboxContextInstance)
 	}
 }
