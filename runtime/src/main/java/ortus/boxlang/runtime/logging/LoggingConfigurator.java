@@ -38,9 +38,26 @@ import java.util.logging.LogManager;
 public class LoggingConfigurator {
 
 	/**
+	 * Please see the Java docs for this obtuse logger format...
+	 * ... but in a nutshell:
+	 * <li>`1$` inserts the date
+	 * <li>`3$` inserts the logger name
+	 * <li>`4$` inserts the log level
+	 * 
+	 * Formats:
+	 * <li>`tF` formats timestamp to `"%tY-%tm-%td"`
+	 * <li>`tT` formats timestamp to 24-hour `"%tH:%tM:%tS`
+	 * <li>`s` formats string as, uh, string.
+	 * <li>`%n` inserts line separator
+	 * 
+	 * @see https://docs.oracle.com/en/java/javase/17/docs/api/java.logging/java/util/logging/SimpleFormatter.html#format(java.util.logging.LogRecord)
+	 */
+	private static String		logFormat			= "[%1$tF %1$tT] [%3$s] [%4$s] %5$s %n";
+
+	/**
 	 * The default logging file to load
 	 */
-	private static final String DEFAULT_CONFIG_FILE = "config/logging.properties";
+	private static final String	DEFAULT_CONFIG_FILE	= "config/logging.properties";
 
 	/**
 	 * Read and apply configuration for the currently installed SLF4J provider
@@ -76,7 +93,10 @@ public class LoggingConfigurator {
 		String logConfig = """
 		        .level=%s
 		        handlers=java.util.logging.ConsoleHandler
-		        """.formatted( rootLogLevel );
+		        java.util.logging.ConsoleHandler.formatter = java.util.logging.SimpleFormatter
+		        java.util.logging.SimpleFormatter.format=%s
+		        """
+		        .formatted( rootLogLevel, logFormat );
 		return new java.io.ByteArrayInputStream( logConfig.getBytes( StandardCharsets.UTF_8 ) );
 	}
 }
