@@ -4,10 +4,7 @@ import com.github.javaparser.ast.*
 import com.github.javaparser.ast.body.*
 import com.github.javaparser.ast.expr.*
 import com.github.javaparser.ast.modules.ModuleDeclaration
-import com.github.javaparser.ast.stmt.BlockStmt
-import com.github.javaparser.ast.stmt.ExpressionStmt
-import com.github.javaparser.ast.stmt.IfStmt
-import com.github.javaparser.ast.stmt.Statement
+import com.github.javaparser.ast.stmt.*
 import com.github.javaparser.ast.type.ClassOrInterfaceType
 import com.github.javaparser.ast.type.VoidType
 import com.strumenta.kolasu.model.children
@@ -70,21 +67,19 @@ class SingleScriptTemplate(
 		.apply { parameters = NodeList(executionContextParameter) }
 		.apply { type = VoidType() }
 		.apply { addThrownException(Throwable::class.java) }
+	private val instanceClassFieldName = "instance"
+	private val instanceClassFieldDeclaration = FieldDeclaration(
+		NodeList(
+			Modifier.privateModifier(),
+			Modifier.staticModifier()
+		),
+		VariableDeclarator(
+			ClassOrInterfaceType(className),
+			instanceClassFieldName
+		)
+	)
 	private val classDefinition = ClassOrInterfaceDeclaration()
-		.apply {
-			addMember(
-				FieldDeclaration(
-					NodeList(
-						Modifier.privateModifier(),
-						Modifier.staticModifier()
-					),
-					VariableDeclarator(
-						ClassOrInterfaceType(className),
-						"instance"
-					)
-				)
-			)
-		}
+		.apply { addMember(instanceClassFieldDeclaration) }
 		.apply {
 			addMember(
 				ConstructorDeclaration(NodeList(Modifier.privateModifier()), className).apply {
@@ -101,7 +96,7 @@ class SingleScriptTemplate(
 						)),
 						ExpressionStmt(AssignExpr(
 							FieldAccessExpr(ThisExpr(), "path"),
-							StringLiteralExpr(originalFile.parentFile.absolutePath),
+							StringLiteralExpr(originalFile.parentFile?.absolutePath ?: ""),
 							AssignExpr.Operator.ASSIGN
 						)),
 						ExpressionStmt(AssignExpr(
@@ -128,6 +123,44 @@ class SingleScriptTemplate(
 				}
 			)
 		}
+		.apply {
+			addMember(
+				MethodDeclaration()
+					.apply { name = SimpleName("getInstance") }
+					.apply { addModifier(Modifier.Keyword.PUBLIC) }
+					.apply { addModifier(Modifier.Keyword.STATIC) }
+					.apply { addModifier(Modifier.Keyword.SYNCHRONIZED) }
+					.apply { type = ClassOrInterfaceType(className) }
+					.apply {
+						setBody(
+							BlockStmt().apply {
+								addStatement(
+									IfStmt(
+										BinaryExpr(
+											NameExpr(instanceClassFieldName),
+											NullLiteralExpr(),
+											BinaryExpr.Operator.EQUALS
+										),
+										BlockStmt(NodeList(
+											ExpressionStmt(AssignExpr(
+												NameExpr(instanceClassFieldName),
+												ObjectCreationExpr(
+													null,
+													ClassOrInterfaceType(className),
+													NodeList()
+												),
+												AssignExpr.Operator.ASSIGN
+											))
+										)),
+										null
+									)
+								)
+								addStatement(ReturnStmt(NameExpr(instanceClassFieldName)))
+							}
+						)
+					}
+			)
+		}
 		.apply { addMember(invokeMethodDeclaration) }
 		.apply { setName(className) }
 		.apply { addModifier(Modifier.Keyword.PUBLIC) }
@@ -135,11 +168,30 @@ class SingleScriptTemplate(
 
 	fun toJava(): CompilationUnit {
 		scriptStatements.forEach {
-			invokeMethodDeclaration.body.orElseThrow().addStatement(it.toJava())
+			invokeMethodDeclaration.body.orElseThrow().addStatement(it.toJava(cu))
 		}
 		return cu
 			.apply { addType(classDefinition) }
 			.apply { packageName?.let { this.setPackageDeclaration(it) } }
+			.apply {
+				// BoxLang Auto Imports
+				addImport("ortus.boxlang.runtime.context.TemplateContext")
+				addImport("ortus.boxlang.runtime.interop.ClassInvoker")
+				addImport("ortus.boxlang.runtime.loader.ClassLocator")
+				addImport("ortus.boxlang.runtime.scopes.Key")
+				addImport("ortus.boxlang.runtime.scopes.Key")
+				addImport("ortus.boxlang.runtime.scopes.IScope")
+
+				// Classes Auto-Imported on all Templates and Classes by BoxLang
+				addImport("java.time.LocalDateTime")
+				addImport("java.time.Instant")
+				addImport("java.lang.System")
+				addImport("java.lang.String")
+				addImport("java.lang.Character")
+				addImport("java.lang.Boolean")
+				addImport("java.lang.Double")
+				addImport("java.lang.Integer")
+			}
 	}
 
 	private fun generationCode(boxAst: BoxScript) = ObjectCreationExpr(
@@ -247,7 +299,7 @@ fun NameExpr.toKeyOf() = this.nameAsString.toKeyOf()
 
 fun NameExpr.toScopeFindLocal() = ScopeFindLocalMethodCall(nameAsString)
 
-fun BoxScript.toJava(): com.github.javaparser.ast.CompilationUnit {
+fun BoxScript.toJava(cu: CompilationUnit): com.github.javaparser.ast.CompilationUnit {
 	val packageDeclaration = PackageDeclaration()
 
 	val imports = NodeList<ImportDeclaration>()
@@ -263,7 +315,7 @@ fun BoxScript.toJava(): com.github.javaparser.ast.CompilationUnit {
 		.takeIf { it.isNotEmpty() }
 		?.fold(
 			initial = BlockStmt(),
-			operation = { block, statement -> block.apply { this.addStatement(statement.toJava()) } }
+			operation = { block, statement -> block.apply { this.addStatement(statement.toJava(cu)) } }
 		)
 		?.let { block ->
 			ClassOrInterfaceDeclaration()
@@ -277,14 +329,14 @@ fun BoxScript.toJava(): com.github.javaparser.ast.CompilationUnit {
 	//
 	this.processNodesOfType(
 		BoxComponent::class.java,
-		{ component -> statements.add(component.toJava()) }
+		{ component -> statements.add(component.toJava(cu)) }
 	)
 
 	val module = ModuleDeclaration()
 	return CompilationUnit(packageDeclaration, imports, statements, null)
 }
 
-fun BoxComponent.toJava(): ClassOrInterfaceDeclaration {
+fun BoxComponent.toJava(cu: CompilationUnit): ClassOrInterfaceDeclaration {
 	val classDeclaration = ClassOrInterfaceDeclaration()
 	if (!this.identifier.isNullOrBlank())
 		classDeclaration.name = SimpleName(this.identifier)
@@ -294,19 +346,19 @@ fun BoxComponent.toJava(): ClassOrInterfaceDeclaration {
 	return classDeclaration
 }
 
-fun BoxStatement.toJava(): Statement = when (this) {
-	is BoxAssignment -> this.toJava()
-	is BoxIfStatement -> this.toJava()
-	is BoxExpressionStatement -> this.toJava()
+fun BoxStatement.toJava(cu: CompilationUnit): Statement = when (this) {
+	is BoxAssignment -> this.toJava(cu)
+	is BoxIfStatement -> this.toJava(cu)
+	is BoxExpressionStatement -> this.toJava(cu)
 	else -> throw this.notImplemented()
 }
 
-fun BoxExpressionStatement.toJava(): ExpressionStmt = ExpressionStmt(
-	this.expression.toJava()
+fun BoxExpressionStatement.toJava(cu: CompilationUnit): ExpressionStmt = ExpressionStmt(
+	this.expression.toJava(cu)
 )
 
-fun BoxObjectAccessExpression.toJava(): JExpression {
-	val scope = this.context.toJava()
+fun BoxObjectAccessExpression.toJava(cu: CompilationUnit): JExpression {
+	val scope = this.context.toJava(cu)
 
 	return when (scope) {
 		is ScopeNameExpr -> scope.constructGetExpression(
@@ -321,17 +373,17 @@ fun BoxObjectAccessExpression.toJava(): JExpression {
 		else -> {
 			ReferencerGetExpression(mutableListOf(scope, when (this.access) {
 				is BoxIdentifier -> NameExpr(this.access.name)
-				else -> this.access.toJava()
+				else -> this.access.toJava(cu)
 			}))
 		}
 	}
 }
 
-fun FunctionInvokationExpression.toJava(): MethodCallExpr {
+fun FunctionInvokationExpression.toJava(cu: CompilationUnit): MethodCallExpr {
 	/* TODO: move this toJava() definition inside the SingleScriptTemplate
 		so that it knows about "context"
 	*/
-	val arguments = this.arguments.map { it.toJava() }.toTypedArray()
+	val arguments = this.arguments.map { it.toJava(cu) }.toTypedArray()
 
 	return if (this.name.name == "createObject" && arguments.size == 2) {
 		MethodCallExpr(
@@ -349,9 +401,9 @@ fun FunctionInvokationExpression.toJava(): MethodCallExpr {
 	}
 }
 
-fun BoxAssignment.toJava(): ExpressionStmt {
-	val assignmentLeftExpression = this.left.toJava()
-	val assignmentRightExpression = this.right.toJava()
+fun BoxAssignment.toJava(cu: CompilationUnit): ExpressionStmt {
+	val assignmentLeftExpression = this.left.toJava(cu)
+	val assignmentRightExpression = this.right.toJava(cu)
 
 	val possiblyScopeExpression = when (assignmentLeftExpression) {
 		is FieldAccessExpr -> assignmentLeftExpression.scope
@@ -381,57 +433,57 @@ fun BoxAssignment.toJava(): ExpressionStmt {
 	)
 }
 
-fun BoxIfStatement.toJava(): IfStmt = IfStmt(
-	this.condition.toJava(),
-	BlockStmt(NodeList(this.body.map { it.toJava() })),
-	this.elseStatement?.let { statement -> BlockStmt(NodeList(statement.map { it.toJava() })) }
+fun BoxIfStatement.toJava(cu: CompilationUnit): IfStmt = IfStmt(
+	this.condition.toJava(cu),
+	BlockStmt(NodeList(this.body.map { it.toJava(cu) })),
+	this.elseStatement?.let { statement -> BlockStmt(NodeList(statement.map { it.toJava(cu) })) }
 )
 
-fun BoxExpression.toJava(): JExpression = when (this) {
-	is BoxObjectAccessExpression -> this.toJava()
-	is BoxIdentifier -> this.toJava()
-	is FunctionInvokationExpression -> this.toJava()
-	is BoxStringLiteral -> this.toJava()
-	is BoxIntegerLiteral -> this.toJava()
-	is BoxMethodInvokationExpression -> this.toJava()
-	is BoxComparisonExpression -> this.toJava()
-	is BoxBinaryExpression -> this.toJava()
-	is BoxVariablesScopeExpression -> this.toJava()
-	is BoxArrayAccessExpression -> this.toJava()
+fun BoxExpression.toJava(cu: CompilationUnit): JExpression = when (this) {
+	is BoxObjectAccessExpression -> this.toJava(cu)
+	is BoxIdentifier -> this.toJava(cu)
+	is FunctionInvokationExpression -> this.toJava(cu)
+	is BoxStringLiteral -> this.toJava(cu)
+	is BoxIntegerLiteral -> this.toJava(cu)
+	is BoxMethodInvokationExpression -> this.toJava(cu)
+	is BoxComparisonExpression -> this.toJava(cu)
+	is BoxBinaryExpression -> this.toJava(cu)
+	is BoxVariablesScopeExpression -> this.toJava(cu)
+	is BoxArrayAccessExpression -> this.toJava(cu)
 	else -> throw this.notImplemented()
 }
 
-fun BoxArrayAccessExpression.toJava(): JExpression = when (val index = this.index.toJava()) {
-	is StringLiteralExpr -> FieldAccessExpr(this.context.toJava(), index.value) // TODO: variables scope case
-	else -> ArrayAccessExpr(this.context.toJava(), index)
+fun BoxArrayAccessExpression.toJava(cu: CompilationUnit): JExpression = when (val index = this.index.toJava(cu)) {
+	is StringLiteralExpr -> FieldAccessExpr(this.context.toJava(cu), index.value) // TODO: variables scope case
+	else -> ArrayAccessExpr(this.context.toJava(cu), index)
 }
 
-fun BoxBinaryExpression.toJava() = MethodCallExpr(
-	NameExpr("Concat"),
+fun BoxBinaryExpression.toJava(cu: CompilationUnit) = MethodCallExpr(
+	TypeExpr(useTypeAndAddImport("ortus.boxlang.runtime.operators.Concat", cu)),
 	"invoke",
 	NodeList(
 		NameExpr("context"),
-		this.left.toJava().let {
+		this.left.toJava(cu).let {
 			if (it.isNameExpr)
 				it.asNameExpr().toKeyOf()
 			else
 				it
 		},
-		this.right.toJava()
+		this.right.toJava(cu)
 	)
 )
 
-fun BoxComparisonExpression.toJava() = MethodCallExpr(
+fun BoxComparisonExpression.toJava(cu: CompilationUnit) = MethodCallExpr(
 	when (this.op) {
-		BoxComparisonOperator.Equal -> NameExpr("EqualsEquals")
+		BoxComparisonOperator.Equal -> TypeExpr(useTypeAndAddImport("ortus.boxlang.runtime.operators.EqualsEquals", cu))
 		else -> throw notImplemented()
 	},
 	"invoke",
-	NodeList(NameExpr("context"), this.left.toJava(), this.right.toJava())
+	NodeList(NameExpr("context"), this.left.toJava(cu), this.right.toJava(cu))
 )
 
-fun BoxMethodInvokationExpression.toJava(): MethodCallExpr {
-	val scope = this.obj.toJava()
+fun BoxMethodInvokationExpression.toJava(cu: CompilationUnit): MethodCallExpr {
+	val scope = this.obj.toJava(cu)
 
 	return if (this.methodName.name == "init") {
 		MethodCallExpr(
@@ -440,25 +492,25 @@ fun BoxMethodInvokationExpression.toJava(): MethodCallExpr {
 			NodeList(ArrayCreationExpr(
 				ClassOrInterfaceType("Object"),
 				NodeList(ArrayCreationLevel()),
-				ArrayInitializerExpr(NodeList(this.arguments.map { it.toJava() }))
+				ArrayInitializerExpr(NodeList(this.arguments.map { it.toJava(cu) }))
 			))
 		)
 	} else {
 		ReferencerGetAndInvokeExpression(
 			this.methodName.name,
-			this.arguments.map { it.toJava() },
+			this.arguments.map { it.toJava(cu) },
 			scope
 		)
 	}
 }
 
-fun BoxVariablesScopeExpression.toJava() = VariablesScopeNameExpr()
+fun BoxVariablesScopeExpression.toJava(cu: CompilationUnit) = VariablesScopeNameExpr()
 
-fun BoxIdentifier.toJava(): JExpression = NameExpr(this.name).toScopeFindLocal()
+fun BoxIdentifier.toJava(cu: CompilationUnit): JExpression = NameExpr(this.name).toScopeFindLocal()
 
-fun BoxStringLiteral.toJava(): StringLiteralExpr = StringLiteralExpr(this.value)
+fun BoxStringLiteral.toJava(cu: CompilationUnit): StringLiteralExpr = StringLiteralExpr(this.value)
 
-fun BoxIntegerLiteral.toJava(): IntegerLiteralExpr = IntegerLiteralExpr(this.value)
+fun BoxIntegerLiteral.toJava(cu: CompilationUnit): IntegerLiteralExpr = IntegerLiteralExpr(this.value)
 
 
 fun BoxNode.notImplemented() = NotImplementedError(

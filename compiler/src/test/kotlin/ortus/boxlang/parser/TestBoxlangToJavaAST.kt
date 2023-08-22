@@ -9,11 +9,9 @@ import junit.framework.TestCase.assertEquals
 import org.junit.Ignore
 import org.junit.Test
 import ortus.boxlang.java.BoxToJavaMapper
-import ortus.boxlang.java.toJava
 import java.io.File
 import java.nio.file.Path
 import kotlin.io.path.*
-import kotlin.test.assertEquals
 
 
 class TestBoxlangToJavaAST : BaseTest() {
@@ -51,14 +49,14 @@ class TestBoxlangToJavaAST : BaseTest() {
 			try {
 				assertASTEqual(
 					javaParser.parse(javaFile).result.get(),
-					cfParseResult.root!!.toJava()
+					BoxToJavaMapper(cfParseResult.root!!, cfFile, "some.package").toJava()
 				) { testFolder.pathString }
 			} catch (e: AssertionError) {
 				errors.add(e)
 			}
 		}
 
-		assertEquals(0, errors.size, "Errors: ${errors.size}")
+		assertEquals("Errors: ${errors.size}", 0, errors.size)
 	}
 
 	@Ignore
@@ -69,7 +67,7 @@ class TestBoxlangToJavaAST : BaseTest() {
 		require(parseResult.correct)
 		requireNotNull(parseResult.root)
 
-		val actualAst = parseResult.root!!.toJava()
+		val actualAst = BoxToJavaMapper(parseResult.root!!, file, "some.package").toJava()
 		val expectedAst = javaParser.parse(
 			Path(
 				testsBaseFolder.pathString,
@@ -80,7 +78,6 @@ class TestBoxlangToJavaAST : BaseTest() {
 		assertASTEqual(expectedAst, actualAst)
 	}
 
-	@Ignore
 	@Test
 	fun helloWorldTest() {
 		val packageName = "c_drive.projects.examples"
