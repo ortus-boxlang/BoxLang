@@ -65,7 +65,7 @@ public class ClassLocatorTest {
 		locator.clear();
 		assertThat( locator.size() ).isEqualTo( 0 );
 
-		DynamicObject target = locator.load( new TemplateBoxContext(), targetClass, "java" );
+		DynamicObject target = locator.load( new TemplateBoxContext(), targetClass, "java", true );
 		target.invokeConstructor( "Hola ClassLoader" );
 		assertThat( target.getTargetInstance() ).isEqualTo( "Hola ClassLoader" );
 
@@ -76,9 +76,9 @@ public class ClassLocatorTest {
 		assertThat( locator.classSet() ).containsAnyIn( new Object[] { "java:" + targetClass } );
 	}
 
-	@DisplayName( "It can safe load non-existen classes without throwing an exception" )
+	@DisplayName( "It can safe load non-existent classes without throwing an exception" )
 	@Test
-	public void testCanSafeLoad() {
+	public void testCanSafeLoad() throws ClassNotFoundException {
 		ClassLocator			locator		= ClassLocator.getInstance();
 		String					targetClass	= "java.lang.Bogus";
 
@@ -102,15 +102,15 @@ public class ClassLocatorTest {
 		assertThat( locator.clear( "bogus" ) ).isFalse();
 
 		locator.getResolverCache().put(
+		    targetClass,
+		    new ClassLocation(
+		        "String",
 		        targetClass,
-		        new ClassLocation(
-		                "String",
-		                targetClass,
-		                "java.lang",
-		                ClassLocator.TYPE_JAVA,
-		                String.class,
-		                null
-		        )
+		        "java.lang",
+		        ClassLocator.TYPE_JAVA,
+		        String.class,
+		        null
+		    )
 		);
 		assertThat( locator.hasClass( targetClass ) ).isTrue();
 		assertThat( locator.size() ).isEqualTo( 1 );

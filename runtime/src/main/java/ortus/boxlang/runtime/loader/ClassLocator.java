@@ -253,7 +253,7 @@ public class ClassLocator extends ClassLoader {
 	}
 
 	/**
-	 * Get the class record from the resolver cache
+	 * Get the class record from the resolver cache, used internally only
 	 *
 	 * @param name The fully qualified path of the class to get
 	 *
@@ -290,7 +290,10 @@ public class ClassLocator extends ClassLoader {
 	 */
 
 	/**
-	 * Load a class by discovering the resolver to use:
+	 * Load a class without a direct resolver. This will require a system resolution
+	 * of the class location and will cache the result for future lookups.
+	 *
+	 * The lookup order is:
 	 *
 	 * 1. Bx Resolver
 	 * 2. Java Resolver
@@ -304,7 +307,7 @@ public class ClassLocator extends ClassLoader {
 	 */
 	public DynamicObject load( IBoxContext context, String name ) throws ClassNotFoundException {
 		return DynamicObject.of(
-		    resolve( context, name ).clazz()
+		    resolveFromSystem( context, name, true ).clazz()
 		);
 	}
 
@@ -316,13 +319,19 @@ public class ClassLocator extends ClassLoader {
 	 * @param name    The fully qualified path/name of the class to load
 	 *
 	 * @return The invokable representation of the class or an empty optional if not found
+	 *
+	 * @throws ClassNotFoundException If the class was not found anywhere in the system
 	 */
-	public Optional<DynamicObject> safeLoad( IBoxContext context, String name ) {
-		try {
-			return Optional.of( load( context, name ) );
-		} catch ( ClassNotFoundException e ) {
-			return Optional.empty();
-		}
+	public Optional<DynamicObject> safeLoad( IBoxContext context, String name ) throws ClassNotFoundException {
+		ClassLocation location = resolveFromSystem( context, name, false );
+		// If not found, return an empty optional
+		return ( location == null )
+		    ? Optional.empty()
+		    : Optional.of(
+		        DynamicObject.of(
+		            location.clazz()
+		        )
+		    );
 	}
 
 	/**
@@ -331,36 +340,39 @@ public class ClassLocator extends ClassLoader {
 	 * @param context        The current context of execution
 	 * @param name           The fully qualified path/name of the class to load
 	 * @param resolverPrefix The prefix of the resolver to use
+	 * @param throwException If true, it will throw an exception if the class is not found, else it will return null
 	 *
 	 * @return The invokable representation of the class
 	 *
 	 * @throws ClassNotFoundException If the class was not found anywhere in the system
 	 */
-	public DynamicObject load( IBoxContext context, String name, String resolverPrefix ) throws ClassNotFoundException {
-		String cacheKey = resolverPrefix + ":" + name;
-		return DynamicObject.of(
-		    // Get from cache?
-		    getClass( cacheKey )
-		        // Resolve it
-		        .or( () -> getResolver( resolverPrefix ).resolve( context, name ) )
-		        // If found, cache it
-		        .map( ( target ) -> {
-			        resolverCache.put( cacheKey, target );
-			        return target;
-		        } )
-		        // If not found, throw an exception
-		        .orElseThrow(
-		            () -> new ClassNotFoundException(
-		                String.format(
-		                    "The requested class [%s] has not been located in the [%s] resolver.",
-		                    name,
-		                    resolverPrefix
-		                )
-		            )
-		        )
-		        // Get the class to make the dynamic object
-		        .clazz()
-		);
+	public DynamicObject load( IBoxContext context, String name, String resolverPrefix, Boolean throwException )
+	    throws ClassNotFoundException {
+
+		// Unique Cache Key
+		String					cacheKey		= resolverPrefix + ":" + name;
+
+		// Try to resolve it
+		Optional<ClassLocation>	resolvedClass	= getClass( cacheKey )
+		    // Resolve it
+		    .or( () -> getResolver( resolverPrefix ).resolve( context, name ) )
+		    // If found, cache it
+		    .map( ( target ) -> {
+			    resolverCache.put( cacheKey, target );
+			    return target;
+		    } );
+
+		if ( resolvedClass.isPresent() ) {
+			return DynamicObject.of( resolvedClass.get().clazz() );
+		}
+
+		if ( throwException ) {
+			throw new ClassNotFoundException(
+			    String.format( "The requested class [%s] has not been located in an the [%s] resolver.", name, resolverPrefix )
+			);
+		}
+
+		return null;
 	}
 
 	/**
@@ -371,17 +383,23 @@ public class ClassLocator extends ClassLoader {
 	 * @param resolverPrefix The prefix of the resolver to use
 	 *
 	 * @return The invokable representation of the class
+	 *
+	 * @throws ClassNotFoundException If the class was not found in the resolver
 	 */
-	public Optional<DynamicObject> safeLoad( IBoxContext context, String name, String resolverPrefix ) {
-		try {
-			return Optional.of( load( context, name, resolverPrefix ) );
-		} catch ( ClassNotFoundException e ) {
-			return Optional.empty();
-		}
+	public Optional<DynamicObject> safeLoad( IBoxContext context, String name, String resolverPrefix )
+	    throws ClassNotFoundException {
+		DynamicObject target = load( context, name, resolverPrefix, false );
+		// If not found, return an empty optional
+		return ( target == null )
+		    ? Optional.empty()
+		    : Optional.of(
+		        target
+		    );
 	}
 
 	/**
 	 * This method ONLY returns the class representation, it does not cache it.
+	 * It is here to support the Java ClassLoader interface.
 	 *
 	 * @param name The fully qualified path/name of the class to load
 	 *
@@ -390,7 +408,7 @@ public class ClassLocator extends ClassLoader {
 	 * @return The class requested to be loaded represented by the incoming name
 	 */
 	public Class<?> findClass( IBoxContext context, String name ) throws ClassNotFoundException {
-		return resolve( context, name ).clazz();
+		return resolveFromSystem( context, name, true ).clazz();
 	}
 
 	/**
@@ -401,16 +419,19 @@ public class ClassLocator extends ClassLoader {
 	 * 1. Bx Resolver
 	 * 2. Java Resolver
 	 *
-	 * @param context The current context of execution
-	 * @param name    The fully qualified path of the class to resolve
+	 * @param context        The current context of execution
+	 * @param name           The fully qualified path of the class to resolve
+	 * @param throwException If true, it will throw an exception if the class is not found, else it will return null
 	 *
 	 * @throws ClassNotFoundException If the class was not found anywhere in the system
 	 *
-	 * @return The resolved class location
+	 * @return The resolved class location or null if throwException is false and the class is not found
 	 */
-	private ClassLocation resolve( IBoxContext context, String name ) throws ClassNotFoundException {
+	private ClassLocation resolveFromSystem( IBoxContext context, String name, Boolean throwException )
+	    throws ClassNotFoundException {
+
 		// Try to get it from cache
-		return getClass( name )
+		Optional<ClassLocation> resolvedClass = getClass( name )
 		    // Is it a BoxClass?
 		    .or( () -> getResolver( "bx" ).resolve( context, name ) )
 		    // Is it a JavaClass?
@@ -419,13 +440,19 @@ public class ClassLocator extends ClassLoader {
 		    .map( ( target ) -> {
 			    resolverCache.put( name, target );
 			    return target;
-		    } )
-		    // If not found, throw an exception
-		    .orElseThrow(
-		        () -> new ClassNotFoundException(
-		            String.format( "The requested class [%s] has not been located in any class resolver.", name )
-		        )
-		    );
+		    } );
+
+		if ( resolvedClass.isPresent() ) {
+			return resolvedClass.get();
+		}
+
+		if ( throwException ) {
+			throw new ClassNotFoundException(
+			    String.format( "The requested class [%s] has not been located in any class resolver.", name )
+			);
+		}
+
+		return null;
 	}
 
 	/**
