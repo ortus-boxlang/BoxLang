@@ -17,6 +17,8 @@
  */
 package ortus.boxlang.runtime.operators;
 
+import java.util.Optional;
+
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 import ortus.boxlang.runtime.interop.DynamicObject;
@@ -68,15 +70,10 @@ public class InstanceOf implements IOperator {
 		// TODO: Perform CFC inheritance check
 
 		// Perform Java inheritance check
-		// TODO: swap this for method that doesn't error when Luis provides
-		try {
-			javaType = ClassLocator.getInstance().load( context, type ).getTargetClass();
-			// true if left's class is the same as, or a superclass or superinterface of javaType
-			if ( javaType.isAssignableFrom( left.getClass() ) ) {
-				return true;
-			}
-		} catch ( ClassNotFoundException e ) {
-			return false;
+		Optional<DynamicObject> loadResult = ClassLocator.getInstance().safeLoad( context, type );
+		// true if left's class is the same as, or a superclass or superinterface of javaType
+		if ( loadResult.isPresent() && loadResult.get().getTargetClass().isAssignableFrom( left.getClass() ) ) {
+			return true;
 		}
 
 		return false;
