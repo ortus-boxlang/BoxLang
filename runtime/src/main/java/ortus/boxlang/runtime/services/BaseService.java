@@ -17,10 +17,26 @@
  */
 package ortus.boxlang.runtime.services;
 
+import ortus.boxlang.runtime.util.Timer;
+
 /**
  * A base service class that all services should extend.
  */
 public abstract class BaseService {
+
+	/**
+	 * The timer utility class
+	 */
+	private static final Timer timerUtil = new Timer();
+
+	/**
+	 * Get the timer utility class
+	 *
+	 * @return The timer utility class
+	 */
+	public static Timer getTimerUtil() {
+		return timerUtil;
+	}
 
 	/**
 	 * --------------------------------------------------------------------------

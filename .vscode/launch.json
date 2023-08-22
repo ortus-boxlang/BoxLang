@@ -9,7 +9,10 @@
             "name": "Phase1",
             "request": "launch",
             "mainClass": "ortus.boxlang.runtime.testing.Phase1",
-            "projectName": "runtime"
+            "projectName": "runtime",
+			"args": [
+				"--debug"
+			]
         },
         {
             "type": "java",

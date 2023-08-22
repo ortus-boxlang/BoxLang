@@ -22,6 +22,9 @@ import org.apache.commons.lang3.ClassUtils;
 import org.junit.Ignore;
 import org.junit.jupiter.api.Test;
 
+import com.google.common.base.Function;
+
+import ortus.boxlang.runtime.context.TemplateBoxContext;
 import ortus.boxlang.runtime.functions.BIF;
 import ortus.boxlang.runtime.functions.global.Print;
 import ortus.boxlang.runtime.util.ClassDiscovery;
@@ -38,6 +41,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Enumeration;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -48,10 +52,30 @@ public class FunctionServiceTest {
 	void testItCanCreateIt() throws Throwable {
 		FunctionService functionService = FunctionService.getInstance();
 		assertThat( functionService ).isNotNull();
+	}
 
-		String packageName = "ortus.boxlang.runtime.functions.global";
+	@DisplayName( "It can startup and register global functions" )
+	@Test
+	void testItCanStartup() throws Throwable {
+		FunctionService.getInstance();
+		FunctionService.onStartup();
 
-		System.out.println( Arrays.toString( ClassDiscovery.getClassFiles( packageName ) ) );
+		assertThat( FunctionService.getGlobalFunctionCount() ).isGreaterThan( 0 );
+		assertThat( FunctionService.hasGlobalFunction( "print" ) ).isTrue();
+	}
+
+	@DisplayName( "It can invoke a global function" )
+	@Test
+	void testItCanInvokeAGlobalFunction() throws Throwable {
+		FunctionService.getInstance();
+		FunctionService.onStartup();
+
+		assertThat( FunctionService.hasGlobalFunction( "print" ) ).isTrue();
+
+		Object result = FunctionService.getGlobalFunction( "print" )
+		    .invoke(
+		        new Object[] { new TemplateBoxContext(), "Hello Luis" }
+		    );
 	}
 
 }

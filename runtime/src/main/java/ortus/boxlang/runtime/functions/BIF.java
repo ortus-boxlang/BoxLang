@@ -4,7 +4,7 @@ import ortus.boxlang.runtime.context.IBoxContext;
 
 public abstract class BIF {
 
-	public static void invoke( IBoxContext context, Object... arguments ) throws RuntimeException {
+	public static Object invoke( IBoxContext context, Object... arguments ) throws RuntimeException {
 		throw new UnsupportedOperationException( "Please implement the function" );
 	}
 

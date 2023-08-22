@@ -10,6 +10,10 @@ import java.util.stream.Stream;
 
 /**
  * The {@code ClassDiscovery} class is used to discover classes in a given package at runtime
+ *
+ * - {@code getClassFilesAsStream} will return a stream of fully qualified class names
+ * - {@code getClassFiles} will return an array of fully qualified class names
+ * - {@code loadClassFiles} will return an array of loaded classes
  */
 public class ClassDiscovery {
 
@@ -28,10 +32,10 @@ public class ClassDiscovery {
 		Enumeration<URL>	resources	= classLoader.getResources( path );
 
 		return Collections.list( resources )
-		        .stream()
-		        .map( URL::getFile )
-		        .map( File::new )
-		        .flatMap( directory -> Stream.of( findClassNames( directory, packageName ) ) );
+		    .stream()
+		    .map( URL::getFile )
+		    .map( File::new )
+		    .flatMap( directory -> Stream.of( findClassNames( directory, packageName ) ) );
 	}
 
 	/**
@@ -45,7 +49,7 @@ public class ClassDiscovery {
 	 */
 	public static String[] getClassFiles( String packageName ) throws IOException {
 		return getClassFilesAsStream( packageName )
-		        .toArray( String[]::new );
+		    .toArray( String[]::new );
 	}
 
 	/**
@@ -62,16 +66,16 @@ public class ClassDiscovery {
 	 */
 	public static Class<?>[] loadClassFiles( String packageName ) throws IOException {
 		return getClassFilesAsStream( packageName )
-		        .parallel()
-		        .map( className -> {
-			        try {
-				        return Class.forName( className );
-			        } catch ( ClassNotFoundException e ) {
-				        e.printStackTrace();
-				        return null;
-			        }
-		        } )
-		        .toArray( Class<?>[]::new );
+		    .parallel()
+		    .map( className -> {
+			    try {
+				    return Class.forName( className );
+			    } catch ( ClassNotFoundException e ) {
+				    e.printStackTrace();
+				    return null;
+			    }
+		    } )
+		    .toArray( Class<?>[]::new );
 	}
 
 	/**
@@ -86,17 +90,17 @@ public class ClassDiscovery {
 	 */
 	private static String[] findClassNames( File directory, String packageName ) {
 		return Arrays.stream( directory.listFiles() )
-		        .parallel()
-		        .flatMap( file -> {
-			        if ( file.isDirectory() ) {
-				        return Arrays.stream( findClassNames( file, packageName + "." + file.getName() ) );
-			        } else {
-				        return file.getName().endsWith( ".class" )
-				                ? Stream.of( packageName + "." + file.getName().replace( ".class", "" ) )
-				                : Stream.empty();
-			        }
-		        } )
-		        .toArray( String[]::new );
+		    .parallel()
+		    .flatMap( file -> {
+			    if ( file.isDirectory() ) {
+				    return Arrays.stream( findClassNames( file, packageName + "." + file.getName() ) );
+			    } else {
+				    return file.getName().endsWith( ".class" )
+				        ? Stream.of( packageName + "." + file.getName().replace( ".class", "" ) )
+				        : Stream.empty();
+			    }
+		    } )
+		    .toArray( String[]::new );
 	}
 
 }

@@ -21,28 +21,32 @@ import java.io.IOException;
 import java.lang.reflect.Array;
 import java.util.Arrays;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
-import javax.management.RuntimeErrorException;
-
+import org.apache.commons.lang3.ClassUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import ortus.boxlang.runtime.events.InterceptorState;
 import ortus.boxlang.runtime.functions.FunctionNamespace;
 import ortus.boxlang.runtime.functions.BIF;
+import ortus.boxlang.runtime.functions.FunctionDescriptor;
 import ortus.boxlang.runtime.interop.DynamicObject;
+import ortus.boxlang.runtime.loader.IClassResolver;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Struct;
+import ortus.boxlang.runtime.types.exceptions.KeyNotFoundException;
 import ortus.boxlang.runtime.util.ClassDiscovery;
+import ortus.boxlang.runtime.util.Timer;
 
 /**
  * The {@code FunctionService} is in charge of managing the runtime's built-in functions.
  * It will also be used by the module services to register functions.
  */
-public class FunctionService {
+public class FunctionService extends BaseService {
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -65,7 +69,7 @@ public class FunctionService {
 	/**
 	 * The set of global functions registered with the service
 	 */
-	private static Map<Key, BIF>				globalFunctions		= new ConcurrentHashMap<>();
+	private static Map<Key, FunctionDescriptor>	globalFunctions		= new ConcurrentHashMap<>();
 
 	/**
 	 * The set of namespaced functions registered with the service
@@ -130,15 +134,88 @@ public class FunctionService {
 		logger.info( "FunctionService.onShutdown()" );
 	}
 
+	/**
+	 * --------------------------------------------------------------------------
+	 * Global Function Methods
+	 * --------------------------------------------------------------------------
+	 */
+
+	public static long getGlobalFunctionCount() {
+		return globalFunctions.size();
+	}
+
+	public static Set<String> getGlobalFunctionNames() {
+		return globalFunctions.keySet().stream().map( Key::getName ).collect( Collectors.toSet() );
+	}
+
+	public static Boolean hasGlobalFunction( String name ) {
+		return globalFunctions.containsKey( Key.of( name ) );
+	}
+
+	public static FunctionDescriptor getGlobalFunction( String name ) throws KeyNotFoundException {
+		FunctionDescriptor target = globalFunctions.get( Key.of( name ) );
+		if ( target == null ) {
+			throw new KeyNotFoundException(
+			    String.format(
+			        "The global function [%s] does not exist.",
+			        name
+			    ) );
+		}
+		return target;
+	}
+
+	public static FunctionDescriptor getGlobalFunctionDescriptor( String name ) {
+		return globalFunctions.get( Key.of( name ) );
+	}
+
+	public static void registerGlobalFunction( FunctionDescriptor descriptor ) throws IllegalArgumentException {
+		if ( hasGlobalFunction( descriptor.name ) ) {
+			throw new IllegalArgumentException( "Global function " + descriptor.name + " already exists" );
+		}
+		globalFunctions.put( Key.of( descriptor.name ), descriptor );
+	}
+
+	public static void registerGlobalFunction( String name, BIF function, String module ) throws IllegalArgumentException {
+		if ( hasGlobalFunction( name ) ) {
+			throw new IllegalArgumentException( "Global function " + name + " already exists" );
+		}
+
+		globalFunctions.put(
+		    Key.of( name ),
+		    new FunctionDescriptor(
+		        name,
+		        ClassUtils.getCanonicalName( function.getClass() ),
+		        module,
+		        null,
+		        true,
+		        DynamicObject.of( function )
+		    )
+		);
+	}
+
+	public static void unregisterGlobalFunction( String name ) {
+		globalFunctions.remove( Key.of( name ) );
+	}
+
 	public static void loadGlobalFunctions() throws IOException {
-		globalFunctions = ClassDiscovery.getClassFilesAsStream( FUNCTIONS_PACKAGE + ".global" )
-		        .collect(
-		                Collectors.toConcurrentMap(
-		                        Key::of,
-		                        value -> null,  // We lazy load all functions, this is just discovery
-		                        ( existingValue, newValue ) -> existingValue,
-		                        ConcurrentHashMap::new
-		                )
-		        );
+		globalFunctions = ClassDiscovery
+		    .getClassFilesAsStream( FUNCTIONS_PACKAGE + ".global" )
+		    .collect(
+		        Collectors.toConcurrentMap(
+		            value -> Key.of( ClassUtils.getShortClassName( value ) ),
+		            value -> new FunctionDescriptor(
+		                ClassUtils.getShortClassName( value ),
+		                value,
+		                null,
+		                null,
+		                true,
+		                null
+		            )
+		        )
+		    );
+	}
+
+	public static long getNamespaceCount() {
+		return namespaces.size();
 	}
 }

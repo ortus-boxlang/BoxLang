@@ -148,4 +148,15 @@ public class Key {
 		return Arrays.stream( names ).map( Key::of ).toArray( Key[]::new );
 	}
 
+	/**
+	 * The string representation of the key which includes
+	 * the original case and the upper case version.
+	 *
+	 * @return The string representation of the key
+	 */
+	@Override
+	public String toString() {
+		return String.format( "Key [name=%s, nameNoCase=%s]", name, nameNoCase );
+	}
+
 }

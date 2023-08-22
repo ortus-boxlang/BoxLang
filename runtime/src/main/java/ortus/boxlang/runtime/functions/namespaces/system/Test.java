@@ -6,8 +6,9 @@ import ortus.boxlang.runtime.functions.BIF;
 
 public class Test extends BIF {
 
-	public static void invoke( IBoxContext context, Object message ) throws RuntimeException {
-		System.out.println( StringCaster.cast( message ) );
+	public static Object invoke( IBoxContext context, String message ) throws RuntimeException {
+		System.out.println( message );
+		return true;
 	}
 
 }
