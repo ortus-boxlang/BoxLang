@@ -29,6 +29,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -173,6 +174,33 @@ public class CastAsTest {
 		                "5.7"
 		        )
 		).isTrue();
+	}
+
+	@DisplayName( "It can cast Array to array" )
+	@Test
+	void testItCanCastArrayToArray() {
+		Object result = CastAs.invoke( new Object[] { "Brad", "Wood" }, "string[]" );
+		assertThat( result.getClass().isArray() ).isTrue();
+		Object[] arrResult = ( ( Object[] ) result );
+		assertThat( arrResult.length ).isEqualTo( 2 );
+		assertThat( arrResult[ 0 ] instanceof String ).isTrue();
+		assertThat( arrResult[ 0 ] ).isEqualTo( "Brad" );
+		assertThat( arrResult[ 1 ] instanceof String ).isTrue();
+		assertThat( arrResult[ 1 ] ).isEqualTo( "Wood" );
+	}
+
+	@DisplayName( "It can cast List to array" )
+	@Test
+	void testItCanCastListToArray() {
+		// assertThat( CastAs.invoke( new Object[] { "Brad", "Wood" }, "string[]" ) );
+		Object result = CastAs.invoke( Arrays.asList( new Object[] { "Brad", "Wood" } ), "string[]" );
+		assertThat( result.getClass().isArray() ).isTrue();
+		Object[] arrResult = ( ( Object[] ) result );
+		assertThat( arrResult.length ).isEqualTo( 2 );
+		assertThat( arrResult[ 0 ] instanceof String ).isTrue();
+		assertThat( arrResult[ 0 ] ).isEqualTo( "Brad" );
+		assertThat( arrResult[ 1 ] instanceof String ).isTrue();
+		assertThat( arrResult[ 1 ] ).isEqualTo( "Wood" );
 	}
 
 }

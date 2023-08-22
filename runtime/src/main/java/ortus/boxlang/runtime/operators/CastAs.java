@@ -31,6 +31,7 @@ import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.loader.ClassLocator;
 import java.math.BigDecimal;
+import java.util.List;
 
 /**
  * Casts input to Java type
@@ -51,7 +52,32 @@ public class CastAs implements IOperator {
 			return null;
 		}
 
-		// TODO: handle arrays like int[]
+		// Handle arrays like int[]
+		if ( type.endsWith( "[]" ) ) {
+
+			Object[] incomingList;
+
+			if ( left.getClass().isArray() ) {
+				incomingList = ( Object[] ) left;
+			} else if ( left instanceof List ) {
+				incomingList = ( ( List<Object> ) left ).toArray();
+			} else {
+				throw new RuntimeException(
+				    String.format( "You asked for type %s, but input %s cannot be cast to an array.", type,
+				        left.getClass().getName() )
+				);
+			}
+			// TODO: Determine actual class of type, don't use Object.class
+			Object[]	result	= ( Object[] ) java.lang.reflect.Array.newInstance( Object.class,
+			    incomingList.length );
+
+			String		newType	= type.substring( 0, type.length() - 2 );
+			for ( int i = incomingList.length - 1; i >= 0; i-- ) {
+				result[ i ] = CastAs.invoke( incomingList[ i ], newType );
+			}
+			return result;
+
+		}
 
 		if ( type.equals( "string" ) ) {
 			return StringCaster.cast( left );
@@ -85,7 +111,7 @@ public class CastAs implements IOperator {
 		}
 
 		throw new RuntimeException(
-		        String.format( "Invalid cast type [%s]", type )
+		    String.format( "Invalid cast type [%s]", type )
 		);
 	}
 }
