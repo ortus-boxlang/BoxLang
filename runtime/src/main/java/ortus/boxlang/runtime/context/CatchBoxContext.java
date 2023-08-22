@@ -17,6 +17,8 @@
  */
 package ortus.boxlang.runtime.context;
 
+import java.util.Map;
+
 import ortus.boxlang.runtime.scopes.*;
 import ortus.boxlang.runtime.types.exceptions.KeyNotFoundException;
 import ortus.boxlang.runtime.types.exceptions.ScopeNotFoundException;
@@ -24,13 +26,7 @@ import ortus.boxlang.runtime.types.exceptions.ScopeNotFoundException;
 /**
  * This context represents the context of a template execution in BoxLang
  */
-public class TemplateBoxContext implements IBoxContext {
-
-	/**
-	 * --------------------------------------------------------------------------
-	 * Public Properties
-	 * --------------------------------------------------------------------------
-	 */
+public class CatchBoxContext implements IBoxContext {
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -40,14 +36,9 @@ public class TemplateBoxContext implements IBoxContext {
 	private IBoxContext	parent;
 
 	/**
-	 * The template that this execution context is bound to
-	 */
-	private String		templatePath	= null;
-
-	/**
 	 * The variables scope
 	 */
-	protected IScope	variablesScope	= new VariablesScope();
+	private IScope		variablesScope;
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -61,25 +52,12 @@ public class TemplateBoxContext implements IBoxContext {
 	 * @param templatePath The template that this execution context is bound to
 	 * @param parent       The parent context
 	 */
-	public TemplateBoxContext( String templatePath, IBoxContext parent ) {
-		this.templatePath	= templatePath;
+	public CatchBoxContext( IBoxContext parent, Key exceptionKey, Throwable exception ) {
 		this.parent			= parent;
-	}
-
-	/**
-	 * Creates a new execution context with a bounded execution template
-	 *
-	 * @param templatePath The template that this execution context is bound to
-	 */
-	public TemplateBoxContext( String templatePath ) {
-		this( templatePath, null );
-	}
-
-	/**
-	 * Creates a new execution context
-	 */
-	public TemplateBoxContext() {
-		this( null, null );
+		this.variablesScope	= new ScopeWrapper(
+		    parent.getScope( VariablesScope.name ),
+		    Map.of( exceptionKey, exception )
+		);
 	}
 
 	/**
@@ -89,52 +67,9 @@ public class TemplateBoxContext implements IBoxContext {
 	 */
 
 	/**
-	 * Set the template path of execution
-	 *
-	 * @param templatePath The template that this execution context is bound to
-	 *
-	 * @return IBoxContext
-	 */
-	public IBoxContext setTemplatePath( String templatePath ) {
-		this.templatePath = templatePath;
-		return this;
-	}
-
-	/**
-	 * Get the template path of execution
-	 *
-	 * @return The template that this execution context is bound to
-	 */
-	public String getTemplatePath() {
-		return this.templatePath;
-	}
-
-	/**
-	 * Has the execution context been bound to a template?
-	 *
-	 * @return True if bound, else false
-	 */
-	public boolean hasTemplatePath() {
-		return this.templatePath != null;
-	}
-
-	/**
 	 * Try to get the requested key from the unscoped scope
 	 * Meaning it needs to search scopes in order according to it's context.
 	 * A local lookup is used for the closest context to the executing code
-	 *
-	 * Here is the order for bx templates
-	 * (Not all yet implemented and some will be according to platform: WebContext, AndroidContext, IOSContext, etc)
-	 *
-	 * 1. Query (only in query loops)
-	 * 2. Thread
-	 * 3. Variables
-	 * 4. CGI (should it exist in the core runtime?)
-	 * 5. CFFILE
-	 * 6. URL (Only for web runtime)
-	 * 7. FORM (Only for web runtime)
-	 * 8. COOKIE (Only for web runtime)
-	 * 9. CLIENT (Only for web runtime)
 	 *
 	 * @param key The key to search for
 	 *
@@ -171,10 +106,8 @@ public class TemplateBoxContext implements IBoxContext {
 	 */
 	public Object scopeFind( Key key ) {
 
-		// The templateBoxContext has no "global" scopes, so just defer to parent
-
 		if ( parent != null ) {
-			return parent.scopeFind( key );
+			return parent.scopeFindLocal( key );
 		}
 
 		// Not found anywhere
@@ -209,9 +142,8 @@ public class TemplateBoxContext implements IBoxContext {
 	 */
 	public IScope getScope( Key name ) throws ScopeNotFoundException {
 
-		// The templateBoxContext has no "global" scopes, so just defer to parent
 		if ( parent != null ) {
-			return parent.getScope( name );
+			return parent.getScopeLocal( name );
 		}
 
 		// Not found anywhere
@@ -229,7 +161,7 @@ public class TemplateBoxContext implements IBoxContext {
 	 */
 	public IScope getScopeLocal( Key name ) throws ScopeNotFoundException {
 		// Check the scopes I know about
-		if ( name.equals( variablesScope.getName() ) ) {
+		if ( name.equals( VariablesScope.name ) ) {
 			return variablesScope;
 		}
 

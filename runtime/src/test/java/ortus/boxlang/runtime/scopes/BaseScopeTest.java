@@ -33,7 +33,7 @@ public class BaseScopeTest {
 
 	@BeforeAll
 	public static void setUp() {
-		scope = new BaseScope( "test" );
+		scope = new BaseScope( Key.of( "test" ) );
 	}
 
 	@Test

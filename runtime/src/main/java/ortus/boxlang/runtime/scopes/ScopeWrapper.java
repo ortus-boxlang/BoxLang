@@ -17,21 +17,22 @@
  */
 package ortus.boxlang.runtime.scopes;
 
-import java.util.Objects;
+import java.util.Map;
 
-import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.KeyNotFoundException;
 
 /**
- * Base scope implementation. Extends HashMap for now. May want to switch to composition over inheritance, but this
- * is simpler for now and using the Key class provides our case insensitivity automatically.
+ * I am decorator/wrapper for a scope that allows you to spoof variables in the wrapped scope.
  */
-public class BaseScope extends Struct implements IScope {
+public class ScopeWrapper extends BaseScope {
 
 	/**
-	 * Each scope can have a human friendly name
+	 * --------------------------------------------------------------------------
+	 * Private Properties
+	 * --------------------------------------------------------------------------
 	 */
-	private Key scopeName;
+	IScope	wrapped;
+	IScope	override;
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -39,14 +40,19 @@ public class BaseScope extends Struct implements IScope {
 	 * --------------------------------------------------------------------------
 	 */
 
-	/**
-	 * Constructor
-	 *
-	 * @param scopeName The name of the scope
-	 */
-	public BaseScope( Key scopeName ) {
-		super();
-		this.scopeName = scopeName;
+	public ScopeWrapper( IScope wrapped, IScope override ) {
+		super( Key.of( "wrapper" ) );
+		this.wrapped	= wrapped;
+		this.override	= override;
+	}
+
+	public ScopeWrapper( IScope wrapped ) {
+		this( wrapped, new BaseScope( Key.of( "override" ) ) );
+	}
+
+	public ScopeWrapper( IScope wrapped, Map<Key, Object> override ) {
+		this( wrapped );
+		this.override.putAll( override );
 	}
 
 	/**
@@ -54,6 +60,21 @@ public class BaseScope extends Struct implements IScope {
 	 * Methods
 	 * --------------------------------------------------------------------------
 	 */
+	public IScope getWrapped() {
+		return wrapped;
+	}
+
+	public void setWrapped( IScope wrapped ) {
+		this.wrapped = wrapped;
+	}
+
+	public IScope getOverride() {
+		return override;
+	}
+
+	public void setOverride( IScope override ) {
+		this.override = override;
+	}
 
 	/**
 	 * Gets the name of the scope
@@ -61,35 +82,7 @@ public class BaseScope extends Struct implements IScope {
 	 * @return The name of the scope
 	 */
 	public Key getName() {
-		return scopeName;
-	}
-
-	/**
-	 * Verifies equality with the following rules:
-	 * - Same object
-	 * - Same state + super class
-	 */
-	@Override
-	public boolean equals( Object obj ) {
-		// Same object
-		if ( this == obj ) {
-			return true;
-		}
-		// Null and class checks
-		if ( obj == null || getClass() != obj.getClass() ) {
-			return false;
-		}
-		// State + Super
-		BaseScope target = ( BaseScope ) obj;
-		return this.scopeName == target.getName() == super.equals( obj );
-	}
-
-	/**
-	 * Hashes the lookupOrder and super class
-	 */
-	@Override
-	public int hashCode() {
-		return Objects.hash( this.scopeName, super.hashCode() );
+		return wrapped.getName();
 	}
 
 	/**
@@ -101,21 +94,10 @@ public class BaseScope extends Struct implements IScope {
 	 * @return The requested obect
 	 */
 	public Object dereference( Key name, Boolean safe ) throws KeyNotFoundException {
-
-		if ( safe && !super.containsKey( name ) ) {
-			return null;
+		if ( override.containsKey( name ) ) {
+			return override.dereference( name, safe );
 		}
-
-		Object result = get( name );
-		// Handle full null support
-		if ( result != null ) {
-			return result;
-		}
-
-		// Not found anywhere
-		throw new KeyNotFoundException(
-		    String.format( "The scope [%s] is not deferencable by key [%s].", this.scopeName, name.getName() )
-		);
+		return wrapped.dereference( name, safe );
 	}
 
 	/**
@@ -128,11 +110,10 @@ public class BaseScope extends Struct implements IScope {
 	 */
 	@Override
 	public Object dereferenceAndInvoke( Key name, Object[] arguments, Boolean safe ) throws KeyNotFoundException {
-		Object object = dereference( name, safe );
-		// Test if the object is invokable (a UDF or java call site) and invoke it or throw exception if not invokable
-		// Also handle member functions on scopes, taking into account precedent over name collisions
-		// Ideally, the invoker logic is not here, but in a helper
-		throw new RuntimeException( "not implemented yet" );
+		if ( override.containsKey( name ) ) {
+			return override.dereferenceAndInvoke( name, arguments, safe );
+		}
+		return wrapped.dereferenceAndInvoke( name, arguments, safe );
 	}
 
 	/**
@@ -143,6 +124,10 @@ public class BaseScope extends Struct implements IScope {
 	 */
 	@Override
 	public void assign( Key name, Object value ) {
-		put( name, value );
+		if ( override.containsKey( name ) ) {
+			override.assign( name, value );
+		}
+		wrapped.assign( name, value );
 	}
+
 }

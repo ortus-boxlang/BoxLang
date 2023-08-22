@@ -27,12 +27,7 @@ public class VariablesScope extends BaseScope {
 	 * Public Properties
 	 * --------------------------------------------------------------------------
 	 */
-
-	/**
-	 * --------------------------------------------------------------------------
-	 * Private Properties
-	 * --------------------------------------------------------------------------
-	 */
+	public static final Key name = Key.of( "variables" );
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -41,7 +36,7 @@ public class VariablesScope extends BaseScope {
 	 */
 
 	public VariablesScope() {
-		super( "variables" );
+		super( VariablesScope.name );
 	}
 
 	/**

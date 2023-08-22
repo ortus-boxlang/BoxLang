@@ -27,6 +27,7 @@ public class ThisScope extends BaseScope {
 	 * Public Properties
 	 * --------------------------------------------------------------------------
 	 */
+	public static final Key name = Key.of( "this" );
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -41,7 +42,7 @@ public class ThisScope extends BaseScope {
 	 */
 
 	public ThisScope() {
-		super( "this" );
+		super( ThisScope.name );
 	}
 
 	/**

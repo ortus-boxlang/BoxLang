@@ -322,8 +322,14 @@ public class ClassLocator extends ClassLoader {
 	 *
 	 * @throws ClassNotFoundException If the class was not found anywhere in the system
 	 */
-	public Optional<DynamicObject> safeLoad( IBoxContext context, String name ) throws ClassNotFoundException {
-		ClassLocation location = resolveFromSystem( context, name, false );
+	public Optional<DynamicObject> safeLoad( IBoxContext context, String name ) {
+		ClassLocation location;
+		try {
+			location = resolveFromSystem( context, name, false );
+			// This will never get thrown since we're passing throwException=false
+		} catch ( ClassNotFoundException e ) {
+			throw new RuntimeException( e );
+		}
 		// If not found, return an empty optional
 		return ( location == null )
 		    ? Optional.empty()
@@ -376,6 +382,18 @@ public class ClassLocator extends ClassLoader {
 	}
 
 	/**
+	 * Overloaded version of method above, it will throw an exception if the class is not found
+	 */
+	public DynamicObject load( IBoxContext context, String name, String resolverPrefix ) {
+		try {
+			return load( context, name, resolverPrefix, true );
+			// This will never get thrown since we're passing throwException=false
+		} catch ( ClassNotFoundException e ) {
+			throw new RuntimeException( e );
+		}
+	}
+
+	/**
 	 * Load a class from a specific resolver
 	 *
 	 * @param context        The current context of execution
@@ -386,9 +404,14 @@ public class ClassLocator extends ClassLoader {
 	 *
 	 * @throws ClassNotFoundException If the class was not found in the resolver
 	 */
-	public Optional<DynamicObject> safeLoad( IBoxContext context, String name, String resolverPrefix )
-	    throws ClassNotFoundException {
-		DynamicObject target = load( context, name, resolverPrefix, false );
+	public Optional<DynamicObject> safeLoad( IBoxContext context, String name, String resolverPrefix ) {
+		DynamicObject target;
+		try {
+			target = load( context, name, resolverPrefix, false );
+			// This will never get thrown since we're passing throwException=false
+		} catch ( ClassNotFoundException e ) {
+			throw new RuntimeException( e );
+		}
 		// If not found, return an empty optional
 		return ( target == null )
 		    ? Optional.empty()

@@ -39,16 +39,16 @@ import java.lang.Boolean;
 import java.lang.Double;
 import java.lang.Integer;
 
-public class Phase1 extends BaseTemplate {
+public class Phase1TryCatch extends BaseTemplate {
 
-	private static Phase1 instance;
+	private static Phase1TryCatch instance;
 
-	private Phase1() {
+	private Phase1TryCatch() {
 	}
 
-	public static synchronized Phase1 getInstance() {
+	public static synchronized Phase1TryCatch getInstance() {
 		if ( instance == null ) {
-			instance = new Phase1();
+			instance = new Phase1TryCatch();
 		}
 		return instance;
 	}
@@ -56,20 +56,10 @@ public class Phase1 extends BaseTemplate {
 	/**
 	 * <pre>
 	<cfscript>
-	  // Static reference to System (java proxy?)
-	  variables['system'] = create java:java.lang.System;
-	  // call constructor to create instance
-	  variables.greeting = new java:java.lang.String( 'Hello' );
-	
-	
-	  // Conditional, requires operation support
-	  if( variables.greeting == 'Hello' ) {
-	    // De-referencing "out" and "println" and calling Java method via invoke dynamic
-	    variables.system.out.println(
-	      // Multi-line statement, expression requires concat operator and possible casting
-	      // Unscoped lookup requires scope search
-	      greeting & " world"
-	    )
+	  try {
+		1/0;
+	  } catch (any e) {
+	    (create java:java.lang.System).out.println(e.message);
 	  }
 	</cfscript>
 	 * </pre>
