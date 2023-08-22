@@ -67,11 +67,11 @@ public class CastAs implements IOperator {
 				        left.getClass().getName() )
 				);
 			}
-			// TODO: Determine actual class of type, don't use Object.class
-			Object[]	result	= ( Object[] ) java.lang.reflect.Array.newInstance( Object.class,
-			    incomingList.length );
 
 			String		newType	= type.substring( 0, type.length() - 2 );
+			Object[]	result	= ( Object[] ) java.lang.reflect.Array.newInstance( getClassFromType( newType ),
+			    incomingList.length );
+
 			for ( int i = incomingList.length - 1; i >= 0; i-- ) {
 				result[ i ] = CastAs.invoke( incomingList[ i ], newType );
 			}
@@ -110,6 +110,43 @@ public class CastAs implements IOperator {
 			return FloatCaster.cast( left );
 		}
 
+		throw new RuntimeException(
+		    String.format( "Invalid cast type [%s]", type )
+		);
+	}
+
+	public static Class getClassFromType( String type ) {
+
+		if ( type.equals( "string" ) ) {
+			return String.class;
+		}
+		if ( type.equals( "double" ) ) {
+			return Double.class;
+		}
+		if ( type.equals( "boolean" ) ) {
+			return Boolean.class;
+		}
+		if ( type.equals( "bigdecimal" ) ) {
+			return BigDecimal.class;
+		}
+		if ( type.equals( "char" ) ) {
+			return Character.class;
+		}
+		if ( type.equals( "byte" ) ) {
+			return Byte.class;
+		}
+		if ( type.equals( "int" ) ) {
+			return Integer.class;
+		}
+		if ( type.equals( "long" ) ) {
+			return Long.class;
+		}
+		if ( type.equals( "short" ) ) {
+			return Short.class;
+		}
+		if ( type.equals( "float" ) ) {
+			return Float.class;
+		}
 		throw new RuntimeException(
 		    String.format( "Invalid cast type [%s]", type )
 		);

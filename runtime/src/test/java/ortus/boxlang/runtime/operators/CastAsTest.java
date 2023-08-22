@@ -51,10 +51,10 @@ public class CastAsTest {
 		assertThat( CastAs.invoke( 5, "bigdecimal" ).getClass().getName() ).isEqualTo( "java.math.BigDecimal" );
 		assertThat( CastAs.invoke( "5", "bigdecimal" ).getClass().getName() ).isEqualTo( "java.math.BigDecimal" );
 		assertThat(
-		        EqualsEquals.invoke(
-		                CastAs.invoke( 5, "bigdecimal" ),
-		                5
-		        )
+		    EqualsEquals.invoke(
+		        CastAs.invoke( 5, "bigdecimal" ),
+		        5
+		    )
 		).isTrue();
 	}
 
@@ -65,10 +65,10 @@ public class CastAsTest {
 		assertThat( CastAs.invoke( "true", "boolean" ).getClass().getName() ).isEqualTo( "java.lang.Boolean" );
 		assertThat( CastAs.invoke( 1, "boolean" ).getClass().getName() ).isEqualTo( "java.lang.Boolean" );
 		assertThat(
-		        EqualsEquals.invoke(
-		                CastAs.invoke( true, "boolean" ),
-		                true
-		        )
+		    EqualsEquals.invoke(
+		        CastAs.invoke( true, "boolean" ),
+		        true
+		    )
 		).isTrue();
 	}
 
@@ -78,10 +78,10 @@ public class CastAsTest {
 		assertThat( CastAs.invoke( 1, "byte" ).getClass().getName() ).isEqualTo( "java.lang.Byte" );
 		assertThat( CastAs.invoke( "0", "byte" ).getClass().getName() ).isEqualTo( "java.lang.Byte" );
 		assertThat(
-		        EqualsEquals.invoke(
-		                CastAs.invoke( 1, "byte" ),
-		                1
-		        )
+		    EqualsEquals.invoke(
+		        CastAs.invoke( 1, "byte" ),
+		        1
+		    )
 		).isTrue();
 	}
 
@@ -91,10 +91,10 @@ public class CastAsTest {
 		assertThat( CastAs.invoke( "B", "char" ).getClass().getName() ).isEqualTo( "java.lang.Character" );
 		assertThat( CastAs.invoke( 66, "char" ).getClass().getName() ).isEqualTo( "java.lang.Character" );
 		assertThat(
-		        EqualsEquals.invoke(
-		                CastAs.invoke( 66, "char" ),
-		                "B"
-		        )
+		    EqualsEquals.invoke(
+		        CastAs.invoke( 66, "char" ),
+		        "B"
+		    )
 		).isTrue();
 	}
 
@@ -104,10 +104,10 @@ public class CastAsTest {
 		assertThat( CastAs.invoke( 5, "int" ).getClass().getName() ).isEqualTo( "java.lang.Integer" );
 		assertThat( CastAs.invoke( true, "int" ).getClass().getName() ).isEqualTo( "java.lang.Integer" );
 		assertThat(
-		        EqualsEquals.invoke(
-		                CastAs.invoke( 5.7, "int" ),
-		                5
-		        )
+		    EqualsEquals.invoke(
+		        CastAs.invoke( 5.7, "int" ),
+		        5
+		    )
 		).isTrue();
 	}
 
@@ -117,10 +117,10 @@ public class CastAsTest {
 		assertThat( CastAs.invoke( 5, "long" ).getClass().getName() ).isEqualTo( "java.lang.Long" );
 		assertThat( CastAs.invoke( true, "long" ).getClass().getName() ).isEqualTo( "java.lang.Long" );
 		assertThat(
-		        EqualsEquals.invoke(
-		                CastAs.invoke( 5.7, "long" ),
-		                5
-		        )
+		    EqualsEquals.invoke(
+		        CastAs.invoke( 5.7, "long" ),
+		        5
+		    )
 		).isTrue();
 	}
 
@@ -130,10 +130,10 @@ public class CastAsTest {
 		assertThat( CastAs.invoke( 5, "float" ).getClass().getName() ).isEqualTo( "java.lang.Float" );
 		assertThat( CastAs.invoke( true, "float" ).getClass().getName() ).isEqualTo( "java.lang.Float" );
 		assertThat(
-		        EqualsEquals.invoke(
-		                CastAs.invoke( 5.7, "float" ),
-		                5.7
-		        )
+		    EqualsEquals.invoke(
+		        CastAs.invoke( 5.7, "float" ),
+		        5.7
+		    )
 		).isTrue();
 	}
 
@@ -143,10 +143,10 @@ public class CastAsTest {
 		assertThat( CastAs.invoke( 5, "double" ).getClass().getName() ).isEqualTo( "java.lang.Double" );
 		assertThat( CastAs.invoke( true, "double" ).getClass().getName() ).isEqualTo( "java.lang.Double" );
 		assertThat(
-		        EqualsEquals.invoke(
-		                CastAs.invoke( 5.7, "double" ),
-		                5.7
-		        )
+		    EqualsEquals.invoke(
+		        CastAs.invoke( 5.7, "double" ),
+		        5.7
+		    )
 		).isTrue();
 	}
 
@@ -156,10 +156,10 @@ public class CastAsTest {
 		assertThat( CastAs.invoke( 5, "short" ).getClass().getName() ).isEqualTo( "java.lang.Short" );
 		assertThat( CastAs.invoke( true, "short" ).getClass().getName() ).isEqualTo( "java.lang.Short" );
 		assertThat(
-		        EqualsEquals.invoke(
-		                CastAs.invoke( 5.7, "short" ),
-		                5
-		        )
+		    EqualsEquals.invoke(
+		        CastAs.invoke( 5.7, "short" ),
+		        5
+		    )
 		).isTrue();
 	}
 
@@ -169,10 +169,10 @@ public class CastAsTest {
 		assertThat( CastAs.invoke( 5, "string" ).getClass().getName() ).isEqualTo( "java.lang.String" );
 		assertThat( CastAs.invoke( true, "string" ).getClass().getName() ).isEqualTo( "java.lang.String" );
 		assertThat(
-		        EqualsEquals.invoke(
-		                CastAs.invoke( 5.7, "string" ),
-		                "5.7"
-		        )
+		    EqualsEquals.invoke(
+		        CastAs.invoke( 5.7, "string" ),
+		        "5.7"
+		    )
 		).isTrue();
 	}
 
@@ -192,7 +192,6 @@ public class CastAsTest {
 	@DisplayName( "It can cast List to array" )
 	@Test
 	void testItCanCastListToArray() {
-		// assertThat( CastAs.invoke( new Object[] { "Brad", "Wood" }, "string[]" ) );
 		Object result = CastAs.invoke( Arrays.asList( new Object[] { "Brad", "Wood" } ), "string[]" );
 		assertThat( result.getClass().isArray() ).isTrue();
 		Object[] arrResult = ( ( Object[] ) result );
