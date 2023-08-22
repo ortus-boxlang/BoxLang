@@ -89,7 +89,7 @@ public class InterceptorService extends BaseService {
 	/**
 	 * Get an instance of the service but init it with some interception points
 	 *
-	 * @points The interception points to init the service with
+	 * @param points The interception points to init the service with
 	 *
 	 * @return The singleton instance
 	 */

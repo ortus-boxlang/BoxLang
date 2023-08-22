@@ -17,6 +17,9 @@
  */
 package ortus.boxlang.runtime.functions;
 
+import java.util.Optional;
+
+import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.interop.DynamicObject;
 
 public class FunctionDescriptor {
@@ -60,7 +63,12 @@ public class FunctionDescriptor {
 		return this.BIF;
 	}
 
-	public Object invoke( Object... arguments ) throws Throwable {
+	public Optional<Object> invoke( Object... arguments ) throws Throwable, IllegalArgumentException {
+		// Check first argument, it must be the context
+		if ( arguments.length == 0 || ! ( arguments[ 0 ] instanceof IBoxContext ) ) {
+			throw new IllegalArgumentException( "First argument must be an IBoxContext" );
+		}
+		// Invoke it baby!
 		return this.getBIF().invoke( "invoke", arguments );
 	}
 

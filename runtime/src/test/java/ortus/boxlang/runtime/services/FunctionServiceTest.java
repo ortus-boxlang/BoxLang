@@ -72,10 +72,13 @@ public class FunctionServiceTest {
 
 		assertThat( FunctionService.hasGlobalFunction( "print" ) ).isTrue();
 
-		Object result = FunctionService.getGlobalFunction( "print" )
+		Optional<Object> result = FunctionService.getGlobalFunction( "print" )
 		    .invoke(
-		        new Object[] { new TemplateBoxContext(), "Hello Luis" }
+		        new TemplateBoxContext(), "Hello Unit Test"
 		    );
+
+		assertThat( result.isPresent() ).isTrue();
+		assertThat( ( Boolean ) result.get() ).isTrue();
 	}
 
 }

@@ -168,11 +168,11 @@ public class ClassLocator extends ClassLoader {
 		IClassResolver target = this.resolvers.get( prefix.toLowerCase() );
 		if ( target == null ) {
 			throw new KeyNotFoundException(
-			        String.format(
-			                "The resolver [%s] was not found in the registered resolvers. Valid resolvers are [%s]",
-			                prefix,
-			                getResolvedPrefixes()
-			        ) );
+			    String.format(
+			        "The resolver [%s] was not found in the registered resolvers. Valid resolvers are [%s]",
+			        prefix,
+			        getResolvedPrefixes()
+			    ) );
 		}
 		return target;
 	}
@@ -304,7 +304,7 @@ public class ClassLocator extends ClassLoader {
 	 */
 	public DynamicObject load( IBoxContext context, String name ) throws ClassNotFoundException {
 		return DynamicObject.of(
-		        resolve( context, name ).clazz()
+		    resolve( context, name ).clazz()
 		);
 	}
 
@@ -339,27 +339,27 @@ public class ClassLocator extends ClassLoader {
 	public DynamicObject load( IBoxContext context, String name, String resolverPrefix ) throws ClassNotFoundException {
 		String cacheKey = resolverPrefix + ":" + name;
 		return DynamicObject.of(
-		        // Get from cache?
-		        getClass( cacheKey )
-		                // Resolve it
-		                .or( () -> getResolver( resolverPrefix ).resolve( context, name ) )
-		                // If found, cache it
-		                .map( ( target ) -> {
-			                resolverCache.put( cacheKey, target );
-			                return target;
-		                } )
-		                // If not found, throw an exception
-		                .orElseThrow(
-		                        () -> new ClassNotFoundException(
-		                                String.format(
-		                                        "The requested class [%s] has not been located in the [%s] resolver.",
-		                                        name,
-		                                        resolverPrefix
-		                                )
-		                        )
+		    // Get from cache?
+		    getClass( cacheKey )
+		        // Resolve it
+		        .or( () -> getResolver( resolverPrefix ).resolve( context, name ) )
+		        // If found, cache it
+		        .map( ( target ) -> {
+			        resolverCache.put( cacheKey, target );
+			        return target;
+		        } )
+		        // If not found, throw an exception
+		        .orElseThrow(
+		            () -> new ClassNotFoundException(
+		                String.format(
+		                    "The requested class [%s] has not been located in the [%s] resolver.",
+		                    name,
+		                    resolverPrefix
 		                )
-		                // Get the class to make the dynamic object
-		                .clazz()
+		            )
+		        )
+		        // Get the class to make the dynamic object
+		        .clazz()
 		);
 	}
 
@@ -371,8 +371,6 @@ public class ClassLocator extends ClassLoader {
 	 * @param resolverPrefix The prefix of the resolver to use
 	 *
 	 * @return The invokable representation of the class
-	 *
-	 * @throws ClassNotFoundException If the class was not found anywhere in the system
 	 */
 	public Optional<DynamicObject> safeLoad( IBoxContext context, String name, String resolverPrefix ) {
 		try {
@@ -413,21 +411,21 @@ public class ClassLocator extends ClassLoader {
 	private ClassLocation resolve( IBoxContext context, String name ) throws ClassNotFoundException {
 		// Try to get it from cache
 		return getClass( name )
-		        // Is it a BoxClass?
-		        .or( () -> getResolver( "bx" ).resolve( context, name ) )
-		        // Is it a JavaClass?
-		        .or( () -> getResolver( "java" ).resolve( context, name ) )
-		        // If found, cache it
-		        .map( ( target ) -> {
-			        resolverCache.put( name, target );
-			        return target;
-		        } )
-		        // If not found, throw an exception
-		        .orElseThrow(
-		                () -> new ClassNotFoundException(
-		                        String.format( "The requested class [%s] has not been located in any class resolver.", name )
-		                )
-		        );
+		    // Is it a BoxClass?
+		    .or( () -> getResolver( "bx" ).resolve( context, name ) )
+		    // Is it a JavaClass?
+		    .or( () -> getResolver( "java" ).resolve( context, name ) )
+		    // If found, cache it
+		    .map( ( target ) -> {
+			    resolverCache.put( name, target );
+			    return target;
+		    } )
+		    // If not found, throw an exception
+		    .orElseThrow(
+		        () -> new ClassNotFoundException(
+		            String.format( "The requested class [%s] has not been located in any class resolver.", name )
+		        )
+		    );
 	}
 
 	/**
@@ -447,12 +445,12 @@ public class ClassLocator extends ClassLoader {
 	 * @param module      The module the class belongs to, null if none
 	 */
 	public record ClassLocation(
-	        String name,
-	        String path,
-	        String packageName,
-	        int type,
-	        Class<?> clazz,
-	        String module ) {
+	    String name,
+	    String path,
+	    String packageName,
+	    int type,
+	    Class<?> clazz,
+	    String module ) {
 
 		Boolean isFromModule() {
 			return module != null;
