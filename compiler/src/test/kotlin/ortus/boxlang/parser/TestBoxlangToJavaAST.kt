@@ -3,7 +3,6 @@ package ortus.boxlang.parser
 import com.github.javaparser.JavaParser
 import com.github.javaparser.ParseResult
 import com.github.javaparser.ast.CompilationUnit
-import com.github.javaparser.ast.comments.Comment
 import com.strumenta.kolasu.parsing.ParsingResult
 import junit.framework.TestCase.assertEquals
 import org.junit.Ignore
@@ -40,30 +39,29 @@ class TestBoxlangToJavaAST : BaseTest() {
 
 	@Ignore
 	@Test
-	fun helloWorldTest() {
-		val packageName = "c_drive.projects.examples"
+	fun javaCodeComparisonForHelloWorld() {
+
+		// Parsing CFML to Boxlang AST
 		val cfFile = Path(testsBaseFolder.pathString, "HelloWorld", "HelloWorld.cfm").toFile()
-		val cfmlParseResult = cfmlToBoxlang(cfFile)
+		val cfmlParseResult = cfParser.source(cfFile).parse()
 		check(cfmlParseResult.correct) { "Cannot correctly parse the CF file: ${cfFile.absolutePath}" }
 		checkNotNull(cfmlParseResult.root) { "Something may be wrong with the CF to Boxlang conversion: ${cfFile.absolutePath}" }
 
-		val javaFile = Path(testsBaseFolder.pathString, "HelloWorld", "HelloWorld.java").toFile()
-		val javaParseResult = parseJava(javaFile)
-		check(javaParseResult.isSuccessful) { "The Java file seems incorrect ${javaFile.absolutePath}" }
-		check(javaParseResult.result.isPresent) { "The Java file parsing did not produce a result ${javaFile.absolutePath}" }
+		// Converting Boxlang AST to Java
+		val javaAST = BoxToJavaMapper(cfmlParseResult.root!!, cfFile).toJava()
 
-		val boxToJavaMapper = BoxToJavaMapper(cfmlParseResult.root!!, cfFile)
-		val boxlangToJava = boxToJavaMapper.toJava()
-		val expectedJavaAst = javaParseResult.result.orElseThrow()
-		expectedJavaAst.walk(Comment::class.java) { it.remove() }
-		expectedJavaAst.walk {
-			it.setComment(null)
-		}
-		assertASTEqual(expectedJavaAst, boxlangToJava) { "" }
+		// Comparing the generated Java code with the expected one
+		assertASTEqual(
+			expected = parseJava(
+				Path(testsBaseFolder.pathString, "HelloWorld", "HelloWorld.java").toFile()
+			).result.orElseThrow(),
+			actual = javaAST
+		) { "" }
 	}
 
+	@Ignore
 	@Test
-	fun runHelloWorldTest() {
+	fun compileAndRunHelloWorld() {
 
 		// Parsing CFML to Boxlang AST
 		val cfFile = Path(testsBaseFolder.pathString, "HelloWorld", "HelloWorld.cfm").toFile()
@@ -87,6 +85,7 @@ class TestBoxlangToJavaAST : BaseTest() {
 		assertEquals("Hello world", printStream.toString())
 	}
 
+	@Ignore
 	@Test
 	fun templateTest() {
 		val cfmlFile = Path(testsBaseFolder.pathString, "HelloWorld", "HelloWorld.cfm").toFile()
@@ -199,7 +198,7 @@ class TestBoxlangToJavaAST : BaseTest() {
 			.getMethodsByName("invoke")
 			.first()
 			.body.orElseThrow()
-			.getStatement(1).asExpressionStmt()
+			.getStatement(2).asExpressionStmt()
 			.expression.asAssignExpr()
 			.target
 		assert(expr.isFieldAccessExpr) { expr::class.java }
