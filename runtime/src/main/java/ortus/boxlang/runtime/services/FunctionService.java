@@ -35,11 +35,11 @@ import ortus.boxlang.runtime.functions.FunctionNamespace;
 import ortus.boxlang.runtime.functions.BIF;
 import ortus.boxlang.runtime.functions.FunctionDescriptor;
 import ortus.boxlang.runtime.interop.DynamicObject;
-import ortus.boxlang.runtime.loader.IClassResolver;
+import ortus.boxlang.runtime.loader.resolvers.IClassResolver;
+import ortus.boxlang.runtime.loader.util.ClassDiscovery;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.KeyNotFoundException;
-import ortus.boxlang.runtime.util.ClassDiscovery;
 import ortus.boxlang.runtime.util.Timer;
 
 /**

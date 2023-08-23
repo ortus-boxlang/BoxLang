@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-package ortus.boxlang.runtime.loader;
+package ortus.boxlang.runtime.loader.resolvers;
 
 import org.apache.commons.lang3.ClassUtils;
 import org.junit.Ignore;
@@ -24,11 +24,14 @@ import org.junit.jupiter.api.Test;
 
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.TemplateBoxContext;
+import ortus.boxlang.runtime.loader.ClassLocator;
 import ortus.boxlang.runtime.loader.ClassLocator.ClassLocation;
+import ortus.boxlang.runtime.loader.resolvers.JavaResolver;
 
 import org.junit.jupiter.api.DisplayName;
 import static com.google.common.truth.Truth.assertThat;
 
+import java.util.ArrayList;
 import java.util.Optional;
 import java.util.logging.ConsoleHandler;
 
@@ -47,7 +50,7 @@ public class JavaResolverTest {
 	public void testFindFromModules() {
 		JavaResolver	javaResolver	= JavaResolver.getInstance();
 		String			className		= "java.util.Map"; // Example class name
-		assertThat( javaResolver.findFromModules( className ).isPresent() ).isFalse();
+		assertThat( javaResolver.findFromModules( className, new ArrayList<>() ).isPresent() ).isFalse();
 	}
 
 	@DisplayName( "It can find classes from the system" )
@@ -55,7 +58,7 @@ public class JavaResolverTest {
 	public void testFindFromSystem() {
 		JavaResolver			javaResolver	= JavaResolver.getInstance();
 		String					className		= "java.util.logging.ConsoleHandler";
-		Optional<ClassLocation>	classLocation	= javaResolver.findFromSystem( className );
+		Optional<ClassLocation>	classLocation	= javaResolver.findFromSystem( className, new ArrayList<>() );
 
 		assertThat( classLocation.isPresent() ).isTrue();
 		assertThat( classLocation.get().clazz() ).isEqualTo( ConsoleHandler.class );
@@ -70,7 +73,7 @@ public class JavaResolverTest {
 	public void testFindFromDependentLibraries() {
 		JavaResolver			javaResolver	= JavaResolver.getInstance();
 		String					className		= "org.apache.commons.lang3.ClassUtils";
-		Optional<ClassLocation>	classLocation	= javaResolver.findFromSystem( className );
+		Optional<ClassLocation>	classLocation	= javaResolver.findFromSystem( className, new ArrayList<>() );
 
 		assertThat( classLocation.isPresent() ).isTrue();
 		assertThat( classLocation.get().clazz() ).isEqualTo( ClassUtils.class );
@@ -86,7 +89,7 @@ public class JavaResolverTest {
 		JavaResolver			javaResolver	= JavaResolver.getInstance();
 		IBoxContext				context			= new TemplateBoxContext();
 		String					className		= "org.apache.commons.lang3.ClassUtils";
-		Optional<ClassLocation>	classLocation	= javaResolver.findFromSystem( className );
+		Optional<ClassLocation>	classLocation	= javaResolver.findFromSystem( className, new ArrayList<>() );
 
 		assertThat( classLocation.isPresent() ).isTrue();
 		assertThat( classLocation.get().clazz() ).isEqualTo( ClassUtils.class );

@@ -16,16 +16,19 @@
  * limitations under the License.
  */
 
-package ortus.boxlang.runtime.loader;
+package ortus.boxlang.runtime.loader.resolvers;
 
 import org.junit.Ignore;
 import org.junit.jupiter.api.Test;
 
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.TemplateBoxContext;
+import ortus.boxlang.runtime.loader.resolvers.BoxResolver;
 
 import org.junit.jupiter.api.DisplayName;
 import static com.google.common.truth.Truth.assertThat;
+
+import java.util.ArrayList;
 
 public class BoxResolverTest {
 
@@ -42,7 +45,7 @@ public class BoxResolverTest {
 	public void testFindFromModules() {
 		BoxResolver	boxResolver	= BoxResolver.getInstance();
 		String		className	= "apppath.models.User"; // Example class name
-		assertThat( boxResolver.findFromModules( className ).isPresent() ).isFalse();
+		assertThat( boxResolver.findFromModules( className, new ArrayList<>() ).isPresent() ).isFalse();
 	}
 
 	@DisplayName( "It can find classes from local disk" )
@@ -50,7 +53,7 @@ public class BoxResolverTest {
 	public void testFindFromLocal() {
 		BoxResolver	boxResolver	= BoxResolver.getInstance();
 		String		className	= "apppath.models.User"; // Example class name
-		assertThat( boxResolver.findFromLocal( className ).isPresent() ).isFalse();
+		assertThat( boxResolver.findFromLocal( className, new ArrayList<>() ).isPresent() ).isFalse();
 	}
 
 	@DisplayName( "It can resolve classes" )

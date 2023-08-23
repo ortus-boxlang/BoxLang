@@ -28,6 +28,7 @@ import org.junit.jupiter.api.Test;
 import ortus.boxlang.runtime.context.TemplateBoxContext;
 import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.loader.ClassLocator.ClassLocation;
+import ortus.boxlang.runtime.loader.resolvers.BoxResolver;
 
 import static com.google.common.truth.Truth.assertThat;
 

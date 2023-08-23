@@ -15,11 +15,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package ortus.boxlang.runtime.loader;
+package ortus.boxlang.runtime.loader.resolvers;
 
+import java.util.List;
 import java.util.Optional;
 
 import ortus.boxlang.runtime.context.IBoxContext;
+import ortus.boxlang.runtime.loader.ClassLocator;
 import ortus.boxlang.runtime.loader.ClassLocator.ClassLocation;
 
 /**
@@ -79,6 +81,52 @@ public class BaseResolver implements IClassResolver {
 	@Override
 	public Optional<ClassLocation> resolve( IBoxContext context, String name ) {
 		throw new UnsupportedOperationException( "Implement the [resolve] method in your own resolver" );
+	}
+
+	/**
+	 * Each resolver has a way to resolve the class it represents.
+	 * This method will be called by the {@link ClassLocator} class
+	 * to resolve the class if the prefix matches with imports.
+	 *
+	 * @param context The current context of execution
+	 * @param name    The name of the class to resolve
+	 * @param imports The list of imports to use
+	 *
+	 * @return An optional class object representing the class if found
+	 */
+	@Override
+	public Optional<ClassLocation> resolve( IBoxContext context, String name, List<String> imports ) {
+		throw new UnsupportedOperationException( "Implement the [resolve] method in your own resolver" );
+	}
+
+	/**
+	 * Tries to resolve the class name using the imports list given. If the class
+	 * name is not found, it will return the original class name.
+	 *
+	 * @param context   The current context of execution
+	 * @param className The name of the class to resolve
+	 * @param imports   The list of imports to use
+	 *
+	 * @return The resolved class name or the original class name if not found
+	 */
+	public static String resolveFromImport( IBoxContext context, String className, List<String> imports ) {
+		return imports.stream()
+		    // Remove the resolvers by prefix
+		    .map( thisImport -> thisImport.replaceAll( "[^:]+:", "" ) )
+		    // Discover import
+		    .filter( thisImport -> {
+			    String[] parts		= thisImport.split( "\\." );
+			    String[] aliasParts	= thisImport.split( "\\s+" );
+			    String	shortName	= parts[ parts.length - 1 ];
+			    String	aliasName	= aliasParts[ aliasParts.length - 1 ];
+
+			    return shortName.equalsIgnoreCase( className ) || aliasName.equalsIgnoreCase( className );
+		    } )
+		    // Return the first one, the first one wins
+		    .findFirst()
+		    .map( thisImport -> thisImport.split( "(?i) as " )[ 0 ] )
+		    // Nothing found, return the original class name
+		    .orElse( className );
 	}
 
 }

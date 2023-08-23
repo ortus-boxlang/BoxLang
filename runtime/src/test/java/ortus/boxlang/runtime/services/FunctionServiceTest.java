@@ -27,7 +27,7 @@ import com.google.common.base.Function;
 import ortus.boxlang.runtime.context.TemplateBoxContext;
 import ortus.boxlang.runtime.functions.BIF;
 import ortus.boxlang.runtime.functions.global.Print;
-import ortus.boxlang.runtime.util.ClassDiscovery;
+import ortus.boxlang.runtime.loader.util.ClassDiscovery;
 
 import org.junit.jupiter.api.DisplayName;
 import static com.google.common.truth.Truth.assertThat;
