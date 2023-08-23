@@ -19,6 +19,7 @@ package ortus.boxlang.runtime.context;
 
 import ortus.boxlang.runtime.dynamic.BaseTemplate;
 import ortus.boxlang.runtime.scopes.*;
+import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.KeyNotFoundException;
 import ortus.boxlang.runtime.types.exceptions.ScopeNotFoundException;
 
@@ -149,10 +150,11 @@ public class TemplateBoxContext implements IBoxContext {
 		// Need to add mechanism to keep a stack of temp scopes based on cfoutput or cfloop based on query
 
 		// In Variables scope? (thread-safe lookup and get)
-		Object result = variablesScope.get( key );
-		// Handle full null support
+		Object result = variablesScope.getRaw( key );
+		// Null means not found
 		if ( result != null ) {
-			return result;
+			// Unwrap the value now in case it was really actually null for real
+			return Struct.unWrapNull( result );
 		}
 
 		return scopeFind( key );

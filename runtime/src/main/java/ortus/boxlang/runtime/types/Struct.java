@@ -105,7 +105,7 @@ public class Struct extends ConcurrentHashMap<Key, Object> implements IType, IRe
 	@Override
 	public String toString() {
 		return entrySet().stream().map( entry -> entry.getKey().getNameNoCase() + "=" + entry.getValue() )
-		        .collect( java.util.stream.Collectors.joining( ", ", "{", "}" ) );
+		    .collect( java.util.stream.Collectors.joining( ", ", "{", "}" ) );
 	}
 
 	/**
@@ -116,7 +116,7 @@ public class Struct extends ConcurrentHashMap<Key, Object> implements IType, IRe
 	 */
 	public String toStringWithCase() {
 		return entrySet().stream().map( entry -> entry.getKey().getName() + "=" + entry.getValue() )
-		        .collect( java.util.stream.Collectors.joining( ", ", "{", "}" ) );
+		    .collect( java.util.stream.Collectors.joining( ", ", "{", "}" ) );
 	}
 
 	/**
@@ -151,6 +151,18 @@ public class Struct extends ConcurrentHashMap<Key, Object> implements IType, IRe
 	}
 
 	/**
+	 * Set a value in the struct by a string key, which we auto-convert to a Key object
+	 *
+	 * @param key   The string key to set
+	 * @param value The value to set
+	 *
+	 * @return The previous value of the key, or null if not found
+	 */
+	public Object put( Key key, Object value ) {
+		return super.put( key, wrapNull( value ) );
+	}
+
+	/**
 	 * If the specified key is not already associated with a value, associates it with the given value
 	 *
 	 * @param key   The string key to set
@@ -159,7 +171,7 @@ public class Struct extends ConcurrentHashMap<Key, Object> implements IType, IRe
 	 * @return The previous value associated with the specified key, or null if there was no mapping for the key
 	 */
 	public Object putIfAbsent( String key, Object value ) {
-		return super.putIfAbsent( Key.of( key ), value );
+		return super.putIfAbsent( Key.of( key ), wrapNull( value ) );
 	}
 
 	/**
@@ -190,24 +202,40 @@ public class Struct extends ConcurrentHashMap<Key, Object> implements IType, IRe
 	}
 
 	/**
-	 * Returns the value of the key if found.
-	 * We override in order to present nicer exception messages
+	 * Returns the value of the key if found, throwing an exception if not.
+	 *
+	 * When safe=true, missing keys return null sa well so there is no differnce between a missing key and a legitimately null value
 	 *
 	 * @param key  The key to look for
 	 * @param safe Whether to throw an exception if the key is not found
 	 *
-	 * @return The value of the key
+	 * @return The value of the key, or null if not found and safe=true
 	 *
 	 * @throws KeyNotFoundException If the key is not found
 	 */
 	public Object get( Key key, Boolean safe ) {
-		Object target = super.get( key );
+		Object target = getRaw( key );
+
+		// Revisit for full CFML null support
 		if ( target != null || safe ) {
-			return target;
+			return unWrapNull( target );
 		}
+
 		throw new KeyNotFoundException(
-		        String.format( "The key %s was not found in the struct. Valid keys are (%s)", key.getName(), getKeys() ), this
+		    String.format( "The key %s was not found in the struct. Valid keys are (%s)", key.getName(), getKeys() ), this
 		);
+
+	}
+
+	/**
+	 * Returns the value of the key safely, nulls will be wrapped in a NullValue still.
+	 *
+	 * @param key The key to look for
+	 *
+	 * @return The value of the key or a NullValue object, null means the key didn't exist *
+	 */
+	public Object getRaw( Key key ) {
+		return super.get( key );
 	}
 
 	/**
@@ -257,5 +285,26 @@ public class Struct extends ConcurrentHashMap<Key, Object> implements IType, IRe
 	 */
 	public void assign( Key name, Object value ) {
 		put( name, value );
+	}
+
+	/**
+	 * Wrap null values in an instance of the NullValue class
+	 *
+	 * @param value
+	 *
+	 * @return
+	 */
+	public static Object wrapNull( Object value ) {
+		if ( value == null ) {
+			return new NullValue();
+		}
+		return value;
+	}
+
+	public static Object unWrapNull( Object value ) {
+		if ( value instanceof NullValue ) {
+			return null;
+		}
+		return value;
 	}
 }

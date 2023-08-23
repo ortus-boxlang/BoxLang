@@ -101,21 +101,7 @@ public class BaseScope extends Struct implements IScope {
 	 * @return The requested obect
 	 */
 	public Object dereference( Key name, Boolean safe ) throws KeyNotFoundException {
-
-		if ( safe && !super.containsKey( name ) ) {
-			return null;
-		}
-
-		Object result = get( name );
-		// Handle full null support
-		if ( result != null ) {
-			return result;
-		}
-
-		// Not found anywhere
-		throw new KeyNotFoundException(
-		    String.format( "The scope [%s] is not deferencable by key [%s].", this.scopeName, name.getName() )
-		);
+		return get( name, safe );
 	}
 
 	/**

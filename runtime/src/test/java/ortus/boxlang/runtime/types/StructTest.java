@@ -93,4 +93,13 @@ public class StructTest {
 		CastException	exception	= assertThrows( CastException.class, () -> struct.asString() );
 		assertThat( exception.getMessage() ).isEqualTo( "Can't cast a struct to a string. Try serializing it" );
 	}
+
+	@Test
+	void testCanHandleNull() {
+		Struct	struct	= new Struct();
+		Key		key		= Key.of( "nully" );
+		struct.put( key, null );
+
+		assertThat( struct.get( key ) ).isEqualTo( null );
+	}
 }

@@ -33,4 +33,13 @@ public interface IScope extends Map<Key, Object>, IReferenceable {
      */
     public Key getName();
 
+    /**
+     * Returns the value of the key safely, nulls will be wrapped in a NullValue still.
+     *
+     * @param key The key to look for
+     *
+     * @return The value of the key or a NullValue object, null means the key didn't exist *
+     */
+    public Object getRaw( Key key );
+
 }
