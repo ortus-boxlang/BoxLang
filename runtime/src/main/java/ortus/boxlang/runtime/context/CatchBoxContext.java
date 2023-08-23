@@ -48,6 +48,9 @@ public class CatchBoxContext extends BaseBoxContext {
 	 */
 	public CatchBoxContext( IBoxContext parent, Key exceptionKey, Throwable exception ) {
 		super( parent );
+		if ( parent == null ) {
+			throw new IllegalArgumentException( "Parent context cannot be null for CatchBoxContext" );
+		}
 		this.variablesScope = new ScopeWrapper(
 		    parent.getScopeNearby( VariablesScope.name ),
 		    Map.of( exceptionKey, exception )

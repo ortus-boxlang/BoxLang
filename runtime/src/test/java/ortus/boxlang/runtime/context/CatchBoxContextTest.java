@@ -1,0 +1,45 @@
+/**
+ * [BoxLang]
+ *
+ * Copyright [2023] [Ortus Solutions, Corp]
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package ortus.boxlang.runtime.context;
+
+import org.junit.Ignore;
+import org.junit.jupiter.api.Test;
+
+import ortus.boxlang.runtime.context.IBoxContext.ScopeSearchResult;
+import ortus.boxlang.runtime.dynamic.BaseTemplate;
+import ortus.boxlang.runtime.scopes.IScope;
+import ortus.boxlang.runtime.scopes.Key;
+import ortus.boxlang.runtime.types.exceptions.KeyNotFoundException;
+
+import org.junit.jupiter.api.DisplayName;
+import static com.google.common.truth.Truth.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+
+@DisplayName( "CatchBoxContext Tests" )
+public class CatchBoxContextTest {
+
+	@Test
+	@DisplayName( "Test default constructor" )
+	void testDefaultConstructor() {
+		CatchBoxContext context = new CatchBoxContext( new TemplateBoxContext(), Key.of( "e" ), new Exception() );
+		assertThat( context.getParent() ).isNotNull();
+		assertThat( context.scopeFindNearby( Key.of( "e" ), null ).value() instanceof Exception ).isTrue();
+	}
+
+}
