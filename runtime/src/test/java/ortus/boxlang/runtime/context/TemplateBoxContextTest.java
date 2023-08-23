@@ -21,6 +21,7 @@ package ortus.boxlang.runtime.context;
 import org.junit.Ignore;
 import org.junit.jupiter.api.Test;
 
+import ortus.boxlang.runtime.dynamic.BaseTemplate;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.exceptions.KeyNotFoundException;
 
@@ -35,25 +36,27 @@ public class TemplateBoxContextTest {
 	@DisplayName( "Test default constructor" )
 	void testDefaultConstructor() {
 		TemplateBoxContext context = new TemplateBoxContext();
-		assertThat( context.getTemplatePath() ).isNull();
+		assertThat( context.getTemplate() ).isNull();
 		assertThat( context.getParent() ).isNull();
-		assertThat( context.hasTemplatePath() ).isFalse();
+		assertThat( context.hasTemplate() ).isFalse();
 	}
 
 	@Test
 	@DisplayName( "Test constructor with template path" )
 	void testConstructorWithTemplatePath() {
-		TemplateBoxContext context = new TemplateBoxContext( "templatePath" );
-		assertThat( context.getTemplatePath() ).isNotNull();
-		assertThat( context.hasTemplatePath() ).isTrue();
+		TemplateBoxContext context = new TemplateBoxContext( new BaseTemplate() );
+		assertThat( context.getTemplate() ).isNotNull();
+		assertThat( context.hasTemplate() ).isTrue();
 	}
 
 	@Test
-	@DisplayName( "Test setTemplatePath" )
-	void testSetTemplatePath() {
-		TemplateBoxContext context = new TemplateBoxContext();
-		context.setTemplatePath( "newTemplatePath" );
-		assertThat( "newTemplatePath" ).isEqualTo( context.getTemplatePath() );
+	@DisplayName( "Test setTemplate" )
+	void testsetTemplate() {
+		TemplateBoxContext	context		= new TemplateBoxContext();
+		BaseTemplate		template	= new BaseTemplate();
+		template.path = "my/path/to/template";
+		context.setTemplate( template );
+		assertThat( "my/path/to/template" ).isEqualTo( context.getTemplate().path );
 	}
 
 	@Test

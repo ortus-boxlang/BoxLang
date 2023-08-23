@@ -17,16 +17,12 @@
  */
 package ortus.boxlang.runtime.scopes;
 
+import java.util.Arrays;
+
 /**
  * Represents a case-insenstive key, while retaining the original case too.
  */
 public class Key {
-
-	/**
-	 * --------------------------------------------------------------------------
-	 * Public Properties
-	 * --------------------------------------------------------------------------
-	 */
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -107,7 +103,7 @@ public class Key {
 	 * - Same key name (case-sensitive)
 	 *
 	 * @param obj The object to compare against.
-	 * 
+	 *
 	 * @return True if the objects are equal.
 	 */
 	public boolean equalsWithCase( Object obj ) {
@@ -131,7 +127,7 @@ public class Key {
 	}
 
 	/**
-	 * Static builder of case-insensitive key trackers
+	 * Static builder of a case-insensitive key using the incoming key name
 	 *
 	 * @param name The key name to use.
 	 *
@@ -139,6 +135,28 @@ public class Key {
 	 */
 	public static Key of( String name ) {
 		return new Key( name );
+	}
+
+	/**
+	 * Static builder of case-insensitive key trackers using an incoming array of key names
+	 *
+	 * @param names The key names to use. This can be on or more.
+	 *
+	 * @return An array of case-insensitive key classes
+	 */
+	public static Key[] of( String... names ) {
+		return Arrays.stream( names ).map( Key::of ).toArray( Key[]::new );
+	}
+
+	/**
+	 * The string representation of the key which includes
+	 * the original case and the upper case version.
+	 *
+	 * @return The string representation of the key
+	 */
+	@Override
+	public String toString() {
+		return String.format( "Key [name=%s, nameNoCase=%s]", name, nameNoCase );
 	}
 
 }

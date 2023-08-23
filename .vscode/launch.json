@@ -6,10 +6,20 @@
     "configurations": [
         {
             "type": "java",
+            "name": "Phase1TryCatch",
+            "request": "launch",
+            "mainClass": "ortus.boxlang.runtime.testing.Phase1TryCatch",
+            "projectName": "runtime"
+        },
+        {
+            "type": "java",
             "name": "Phase1",
             "request": "launch",
             "mainClass": "ortus.boxlang.runtime.testing.Phase1",
-            "projectName": "runtime"
+            "projectName": "runtime",
+            "args": [
+                "--debug"
+            ]
         },
         {
             "type": "java",
@@ -23,10 +33,10 @@
             "request": "launch",
             "mainClass": "ortus.boxlang.runtime.BoxRunner",
             "projectName": "runtime",
-			"args": [
-				"ortus.boxlang.runtime.testing.Phase1",
-				"--debug"
-			]
+            "args": [
+                "ortus.boxlang.runtime.testing.Phase1",
+                "--debug"
+            ]
         }
-	]
+    ]
 }

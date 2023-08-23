@@ -5,7 +5,7 @@ import ortus.boxlang.runtime.types.Struct;
 /**
  * Thrown when a key is not found in a struct
  */
-public class KeyNotFoundException extends RuntimeException {
+public class KeyNotFoundException extends BoxLangException {
 
 	/**
 	 * Constructor when we know the actual struct that was being searched

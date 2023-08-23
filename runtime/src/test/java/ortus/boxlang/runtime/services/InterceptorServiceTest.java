@@ -24,6 +24,7 @@ import org.junit.Ignore;
 import org.junit.jupiter.api.Test;
 
 import ortus.boxlang.runtime.interop.DynamicObject;
+import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Struct;
 
 import org.junit.jupiter.api.DisplayName;
@@ -63,8 +64,8 @@ public class InterceptorServiceTest {
 	@Test
 	void testItCanRegisterInterceptionPoints() {
 		InterceptorService service = InterceptorService.getInstance();
-		service.registerInterceptionPoint( "onRequestStart", "onRequestStart", "onRequestEnd" );
-		assertThat( service.getInterceptionPoints() ).containsExactly( "onRequestStart", "onRequestEnd" );
+		service.registerInterceptionPoint( Key.of( "onRequestStart", "onRequestStart", "onRequestEnd" ) );
+		assertThat( service.getInterceptionPointsNames() ).containsExactly( "onRequestStart", "onRequestEnd" );
 		assertThat( service.getInterceptionPoints().size() ).isEqualTo( 2 );
 	}
 
@@ -72,38 +73,42 @@ public class InterceptorServiceTest {
 	@Test
 	void testItCanRemoveInterceptionPoints() {
 		InterceptorService service = InterceptorService.getInstance();
-		service.registerInterceptionPoint( "onRequestStart" );
-		assertThat( service.hasInterceptionPoint( "onRequestStart" ) ).isTrue();
+		service.registerInterceptionPoint( Key.of( "onRequestStart" ) );
+		assertThat( service.hasInterceptionPoint( Key.of( "onRequestStart" ) ) ).isTrue();
 
-		service.removeInterceptionPoint( "onRequestStart" );
-		assertThat( service.hasInterceptionPoint( "onRequestStart" ) ).isFalse();
+		service.removeInterceptionPoint( Key.of( "onRequestStart" ) );
+		assertThat( service.hasInterceptionPoint( Key.of( "onRequestStart" ) ) ).isFalse();
 	}
 
 	@DisplayName( "It can register new interception states with an existing point" )
 	@Test
 	void testItCanRegisterInterceptionStatesWithExistingPoint() {
-		InterceptorService service = InterceptorService.getInstance();
-		service.registerInterceptionPoint( "onRequestStart" );
-		service.registerState( "onRequestStart" );
+		InterceptorService	service		= InterceptorService.getInstance();
+		Key					pointKey	= Key.of( "onRequestStart" );
 
-		assertThat( service.hasState( "onRequestStart" ) ).isTrue();
-		assertThat( service.getState( "onRequestStart" ).getName() ).isEqualTo( "onRequestStart" );
+		service.registerInterceptionPoint( pointKey );
+		service.registerState( pointKey );
 
-		service.removeState( "onRequestStart" );
-		assertThat( service.hasState( "onRequestStart" ) ).isFalse();
+		assertThat( service.hasState( pointKey ) ).isTrue();
+		assertThat( service.getState( pointKey ).getName() ).isEqualTo( pointKey.getName() );
+
+		service.removeState( pointKey );
+		assertThat( service.hasState( pointKey ) ).isFalse();
 	}
 
 	@DisplayName( "It can register new interception states with a non-existing point" )
 	@Test
 	void testItCanRegisterInterceptionStatesWithNonExistingPoint() {
-		InterceptorService service = InterceptorService.getInstance();
-		service.registerState( "onRequestStart" );
+		InterceptorService	service		= InterceptorService.getInstance();
+		Key					pointKey	= Key.of( "onRequestStart" );
 
-		assertThat( service.hasState( "onRequestStart" ) ).isTrue();
-		assertThat( service.getState( "onRequestStart" ).getName() ).isEqualTo( "onRequestStart" );
+		service.registerState( pointKey );
 
-		service.removeState( "onRequestStart" );
-		assertThat( service.hasState( "onRequestStart" ) ).isFalse();
+		assertThat( service.hasState( pointKey ) ).isTrue();
+		assertThat( service.getState( pointKey ).getName() ).isEqualTo( pointKey.getName() );
+
+		service.removeState( pointKey );
+		assertThat( service.hasState( pointKey ) ).isFalse();
 	}
 
 	@DisplayName( "it can register new interceptors" )
@@ -111,14 +116,14 @@ public class InterceptorServiceTest {
 	void testItCanRegisterInterceptors() {
 		InterceptorService	service			= InterceptorService.getInstance();
 		DynamicObject		mockInterceptor	= DynamicObject.of( new MockInterceptor() );
+		Key					pointKey		= Key.of( "onRequestStart" );
 
 		service.register(
 		        mockInterceptor,
-		        "onRequestStart"
+		        pointKey
 		);
 
-		assertThat( service.getState( "onRequestStart" ).size() ).isEqualTo( 1 );
-		assertThat( service.getState( "onRequestStart" ).exists( mockInterceptor ) ).isTrue();
+		assertThat( service.getState( pointKey ).exists( mockInterceptor ) ).isTrue();
 	}
 
 	@DisplayName( "it can unregister interceptors with a specific state" )
@@ -126,20 +131,21 @@ public class InterceptorServiceTest {
 	void testItCanUnregisterInterceptors() {
 		InterceptorService	service			= InterceptorService.getInstance();
 		DynamicObject		mockInterceptor	= DynamicObject.of( new MockInterceptor() );
+		Key					pointKey		= Key.of( "onRequestStart" );
 
 		service.register(
 		        mockInterceptor,
-		        "onRequestStart"
+		        pointKey
 		);
 
-		assertThat( service.getState( "onRequestStart" ).exists( mockInterceptor ) ).isTrue();
+		assertThat( service.getState( pointKey ).exists( mockInterceptor ) ).isTrue();
 
 		service.unregister(
 		        mockInterceptor,
-		        "onRequestStart"
+		        pointKey
 		);
 
-		assertThat( service.getState( "onRequestStart" ).exists( mockInterceptor ) ).isFalse();
+		assertThat( service.getState( pointKey ).exists( mockInterceptor ) ).isFalse();
 	}
 
 	@DisplayName( "it can unregister interceptors with all states" )
@@ -150,16 +156,16 @@ public class InterceptorServiceTest {
 
 		service.register(
 		        mockInterceptor,
-		        "onRequestStart", "onRequestEnd"
+		        Key.of( "onRequestStart", "onRequestEnd" )
 		);
 
-		assertThat( service.getState( "onRequestStart" ).exists( mockInterceptor ) ).isTrue();
-		assertThat( service.getState( "onRequestEnd" ).exists( mockInterceptor ) ).isTrue();
+		assertThat( service.getState( Key.of( "onRequestStart" ) ).exists( mockInterceptor ) ).isTrue();
+		assertThat( service.getState( Key.of( "onRequestEnd" ) ).exists( mockInterceptor ) ).isTrue();
 
 		service.unregister( mockInterceptor );
 
-		assertThat( service.getState( "onRequestStart" ).exists( mockInterceptor ) ).isFalse();
-		assertThat( service.getState( "onRequestEnd" ).exists( mockInterceptor ) ).isFalse();
+		assertThat( service.getState( Key.of( "onRequestStart" ) ).exists( mockInterceptor ) ).isFalse();
+		assertThat( service.getState( Key.of( "onRequestEnd" ) ).exists( mockInterceptor ) ).isFalse();
 	}
 
 	@DisplayName( "it can announce an event to a specific state" )
@@ -168,23 +174,54 @@ public class InterceptorServiceTest {
 		InterceptorService	service				= InterceptorService.getInstance();
 		DynamicObject		mockInterceptor1	= DynamicObject.of( new MockInterceptor() );
 		DynamicObject		mockInterceptor2	= DynamicObject.of( new MockInterceptor() );
+		Key					pointKey			= Key.of( "onRequestStart" );
 
 		service.register(
 		        mockInterceptor1,
-		        "onRequestStart"
+		        pointKey
 		);
 		service.register(
 		        mockInterceptor2,
-		        "onRequestStart"
+		        pointKey
 		);
 
-		assertThat( service.getState( "onRequestStart" ).size() ).isEqualTo( 2 );
+		assertThat( service.getState( pointKey ).size() ).isEqualTo( 2 );
 
 		Struct data = new Struct();
 		data.put( "counter", 0 );
 
 		service.announce(
-		        "onRequestStart",
+		        pointKey,
+		        data
+		);
+
+		assertThat( data.get( "counter" ) ).isEqualTo( 2 );
+	}
+
+	@DisplayName( "it can announce an event to a specific state with case-insensitivity" )
+	@Test
+	void testItCanAnnounceEventToSpecificStateWithNoCase() throws Throwable {
+		InterceptorService	service				= InterceptorService.getInstance();
+		DynamicObject		mockInterceptor1	= DynamicObject.of( new MockInterceptor() );
+		DynamicObject		mockInterceptor2	= DynamicObject.of( new MockInterceptor() );
+		Key					pointKey			= Key.of( "onRequestStart" );
+
+		service.register(
+		        mockInterceptor1,
+		        pointKey
+		);
+		service.register(
+		        mockInterceptor2,
+		        pointKey
+		);
+
+		assertThat( service.getState( pointKey ).size() ).isEqualTo( 2 );
+
+		Struct data = new Struct();
+		data.put( "COUNTER", 0 );
+
+		service.announce(
+		        pointKey,
 		        data
 		);
 

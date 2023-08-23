@@ -17,6 +17,8 @@
  */
 package ortus.boxlang.runtime.interop;
 
+import ortus.boxlang.runtime.dynamic.Referencer;
+import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.IType;
 
 import java.lang.String;
@@ -247,18 +249,18 @@ public class DynamicObjectTest {
 		DynamicObject myInvoker = DynamicObject.of( InvokeDynamicFields.class );
 
 		assertThat(
-		        myInvoker.hasField( "name" )
+		    myInvoker.hasField( "name" )
 		).isTrue();
 
 		assertThat(
-		        myInvoker.hasField( "NaMe" )
+		    myInvoker.hasField( "NaMe" )
 		).isFalse();
 		assertThat(
-		        myInvoker.hasFieldNoCase( "NaMe" )
+		    myInvoker.hasFieldNoCase( "NaMe" )
 		).isTrue();
 
 		assertThat(
-		        myInvoker.hasField( "bogus" )
+		    myInvoker.hasField( "bogus" )
 		).isFalse();
 
 	}
@@ -271,7 +273,7 @@ public class DynamicObjectTest {
 		assertThat( names ).isNotEmpty();
 		assertThat( names.size() ).isEqualTo( 16 );
 		assertThat( names ).containsAtLeast(
-		        "getName", "setName", "hasName", "hello", "getNow", "equals", "hashCode"
+		    "getName", "setName", "hasName", "hello", "getNow", "equals", "hashCode"
 		);
 	}
 
@@ -283,7 +285,7 @@ public class DynamicObjectTest {
 		assertThat( names ).isNotEmpty();
 		assertThat( names.size() ).isEqualTo( 16 );
 		assertThat( names ).containsAtLeast(
-		        "GETNAME", "SETNAME", "HASNAME", "HELLO", "GETNOW", "EQUALS", "HASHCODE"
+		    "GETNAME", "SETNAME", "HASNAME", "HELLO", "GETNOW", "EQUALS", "HASHCODE"
 		);
 	}
 
@@ -293,17 +295,17 @@ public class DynamicObjectTest {
 		DynamicObject myInvoker = DynamicObject.of( InvokeDynamicFields.class );
 
 		assertThat(
-		        myInvoker.hasMethod( "getName" )
+		    myInvoker.hasMethod( "getName" )
 		).isTrue();
 		assertThat(
-		        myInvoker.hasMethod( "GETnAme" )
+		    myInvoker.hasMethod( "GETnAme" )
 		).isFalse();
 
 		assertThat(
-		        myInvoker.hasMethodNoCase( "getNamE" )
+		    myInvoker.hasMethodNoCase( "getNamE" )
 		).isTrue();
 		assertThat(
-		        myInvoker.hasMethodNoCase( "bogus" )
+		    myInvoker.hasMethodNoCase( "bogus" )
 		).isFalse();
 	}
 
@@ -338,6 +340,65 @@ public class DynamicObjectTest {
 			myInvoker.findMatchingMethod( "setName", new Class[] { Integer.class } );
 		} );
 
+	}
+
+	@DisplayName( "It use native arrays" )
+	@Test
+	void testItCanUseNativeArrays() {
+		DynamicObject myInvoker = DynamicObject.of( new String[] { "Brad", "Wood" } );
+		assertThat(
+		    myInvoker.dereference(
+		        Key.of( "1" ),
+		        false
+		    )
+		).isEqualTo( "Brad" );
+
+		myInvoker.assign(
+		    Key.of( "2" ),
+		    "Ortus Solutions"
+		);
+
+		assertThat(
+		    myInvoker.dereference(
+		        Key.of( "2" ),
+		        false
+		    )
+		).isEqualTo( "Ortus Solutions" );
+
+		assertThat(
+		    myInvoker.dereference(
+		        Key.of( "length" ),
+		        false
+		    )
+		).isEqualTo( 2 );
+
+		assertThrows( Throwable.class, () -> {
+			myInvoker.dereference(
+			    Key.of( "test" ),
+			    false
+			);
+		} );
+
+		assertThrows( Throwable.class, () -> {
+			myInvoker.dereference(
+			    Key.of( "0" ),
+			    false
+			);
+		} );
+
+		assertThrows( Throwable.class, () -> {
+			myInvoker.dereference(
+			    Key.of( "1.5" ),
+			    false
+			);
+		} );
+
+		assertThrows( Throwable.class, () -> {
+			myInvoker.dereference(
+			    Key.of( "50" ),
+			    false
+			);
+		} );
 	}
 
 }

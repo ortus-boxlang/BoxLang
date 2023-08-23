@@ -26,4 +26,11 @@ import ortus.boxlang.runtime.dynamic.IReferenceable;
  */
 public interface IScope extends Map<Key, Object>, IReferenceable {
 
+    /**
+     * Gets the name of the scope
+     *
+     * @return The name of the scope
+     */
+    public Key getName();
+
 }

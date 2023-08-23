@@ -29,21 +29,9 @@ import ortus.boxlang.runtime.types.exceptions.KeyNotFoundException;
 public class BaseScope extends Struct implements IScope {
 
 	/**
-	 * --------------------------------------------------------------------------
-	 * Public Properties
-	 * --------------------------------------------------------------------------
-	 */
-
-	/**
-	 * --------------------------------------------------------------------------
-	 * Private Properties
-	 * --------------------------------------------------------------------------
-	 */
-
-	/**
 	 * Each scope can have a human friendly name
 	 */
-	private String scopeName = "none";
+	private Key scopeName;
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -56,7 +44,7 @@ public class BaseScope extends Struct implements IScope {
 	 *
 	 * @param scopeName The name of the scope
 	 */
-	public BaseScope( String scopeName ) {
+	public BaseScope( Key scopeName ) {
 		super();
 		this.scopeName = scopeName;
 	}
@@ -72,7 +60,7 @@ public class BaseScope extends Struct implements IScope {
 	 *
 	 * @return The name of the scope
 	 */
-	public String getName() {
+	public Key getName() {
 		return scopeName;
 	}
 
@@ -126,7 +114,7 @@ public class BaseScope extends Struct implements IScope {
 
 		// Not found anywhere
 		throw new KeyNotFoundException(
-		        String.format( "The scope [%s] is not deferencable by key [%s].", this.scopeName, name.getName() )
+		    String.format( "The scope [%s] is not deferencable by key [%s].", this.scopeName, name.getName() )
 		);
 	}
 

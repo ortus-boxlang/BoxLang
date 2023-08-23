@@ -22,13 +22,12 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
-import javax.management.RuntimeErrorException;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import ortus.boxlang.runtime.events.InterceptorState;
 import ortus.boxlang.runtime.interop.DynamicObject;
+import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Struct;
 
 /**
@@ -41,7 +40,7 @@ import ortus.boxlang.runtime.types.Struct;
  * Each service manages interception points, which are the events that the service can announce
  * and their states, which are where interceptors can register to listen to.
  */
-public class InterceptorService {
+public class InterceptorService extends BaseService {
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -52,34 +51,28 @@ public class InterceptorService {
 	/**
 	 * Logger
 	 */
-	private static final Logger						logger				= LoggerFactory.getLogger( InterceptorService.class );
+	private static final Logger					logger				= LoggerFactory.getLogger( InterceptorService.class );
 
 	/**
 	 * Singleton instance
 	 */
-	private static InterceptorService				instance;
+	private static InterceptorService			instance;
 
 	/**
 	 * The list of interception points we can listen for
 	 */
-	private static Set<String>						interceptionPoints	= ConcurrentHashMap.newKeySet( 32 );
+	private static Set<Key>						interceptionPoints	= ConcurrentHashMap.newKeySet( 32 );
 
 	/**
 	 * The collection of interception states registered with the service
 	 */
-	private static Map<String, InterceptorState>	interceptionStates	= new ConcurrentHashMap<>();
+	private static Map<Key, InterceptorState>	interceptionStates	= new ConcurrentHashMap<>();
 
 	/**
 	 * --------------------------------------------------------------------------
 	 * Constructor(s)
 	 * --------------------------------------------------------------------------
 	 */
-
-	/**
-	 * Constructor
-	 */
-	private InterceptorService() {
-	}
 
 	/**
 	 * Get an instance of the service
@@ -96,11 +89,11 @@ public class InterceptorService {
 	/**
 	 * Get an instance of the service but init it with some interception points
 	 *
-	 * @points The interception points to init the service with
+	 * @param points The interception points to init the service with
 	 *
 	 * @return The singleton instance
 	 */
-	public static synchronized InterceptorService getInstance( String... points ) {
+	public static synchronized InterceptorService getInstance( Key... points ) {
 		getInstance();
 		registerInterceptionPoint( points );
 		return instance;
@@ -145,8 +138,18 @@ public class InterceptorService {
 	 *
 	 * @return The list of interception points
 	 */
-	public static Set<String> getInterceptionPoints() {
+	public static Set<Key> getInterceptionPoints() {
 		return interceptionPoints;
+	}
+
+	/**
+	 * Get the list of interception points that the service can announce but as a Set of string names not
+	 * case insensitive Key objects
+	 *
+	 * @return The list of interception points
+	 */
+	public static Set<String> getInterceptionPointsNames() {
+		return interceptionPoints.stream().map( Key::getName ).collect( java.util.stream.Collectors.toSet() );
 	}
 
 	/**
@@ -156,7 +159,7 @@ public class InterceptorService {
 	 *
 	 * @return True if the service has the interception point, false otherwise
 	 */
-	public static Boolean hasInterceptionPoint( String interceptionPoint ) {
+	public static Boolean hasInterceptionPoint( Key interceptionPoint ) {
 		return interceptionPoints.contains( interceptionPoint );
 	}
 
@@ -167,7 +170,7 @@ public class InterceptorService {
 	 *
 	 * @return The same service
 	 */
-	public static InterceptorService registerInterceptionPoint( String... points ) {
+	public static InterceptorService registerInterceptionPoint( Key... points ) {
 		logger.atDebug().log( "InterceptorService.registerInterceptionPoint() - registering {}", Arrays.toString( points ) );
 		interceptionPoints.addAll( Arrays.asList( points ) );
 		return instance;
@@ -180,7 +183,7 @@ public class InterceptorService {
 	 *
 	 * @return The same service
 	 */
-	public static InterceptorService removeInterceptionPoint( String... points ) {
+	public static InterceptorService removeInterceptionPoint( Key... points ) {
 		logger.atDebug().log( "InterceptorService.removeInterceptionPoint() - removing {}", Arrays.toString( points ) );
 		interceptionPoints.removeAll( Arrays.asList( points ) );
 		interceptionStates.keySet().removeAll( Arrays.asList( points ) );
@@ -204,7 +207,7 @@ public class InterceptorService {
 	 *
 	 * @return The state if it exists, null otherwise
 	 */
-	public static InterceptorState getState( String name ) {
+	public static InterceptorState getState( Key name ) {
 		return interceptionStates.get( name );
 	}
 
@@ -215,7 +218,7 @@ public class InterceptorService {
 	 *
 	 * @return True if the service has the state, false otherwise
 	 */
-	public static Boolean hasState( String name ) {
+	public static Boolean hasState( Key name ) {
 		return interceptionStates.containsKey( name );
 	}
 
@@ -228,17 +231,17 @@ public class InterceptorService {
 	 *
 	 * @return The registered {@link InterceptorState}
 	 */
-	public static synchronized InterceptorState registerState( String name ) {
-		logger.atDebug().log( "InterceptorService.registerState() - registering {}", name );
+	public static synchronized InterceptorState registerState( Key name ) {
+		logger.atDebug().log( "InterceptorService.registerState() - registering {}", name.getName() );
 
 		// Verify point, else add it
 		if ( !hasInterceptionPoint( name ) ) {
-			logger.atDebug().log( "InterceptorService.registerState() - point not found, registering {}", name );
+			logger.atDebug().log( "InterceptorService.registerState() - point not found, registering {}", name.getName() );
 			registerInterceptionPoint( name );
 		}
 
 		// Register it
-		interceptionStates.putIfAbsent( name, new InterceptorState( name ) );
+		interceptionStates.putIfAbsent( name, new InterceptorState( name.getName() ) );
 		return getState( name );
 	}
 
@@ -250,9 +253,9 @@ public class InterceptorService {
 	 *
 	 * @return The same service
 	 */
-	public static synchronized InterceptorService removeState( String name ) {
+	public static synchronized InterceptorService removeState( Key name ) {
 		if ( hasState( name ) ) {
-			logger.atDebug().log( "InterceptorService.removeState() - removing {}", name );
+			logger.atDebug().log( "InterceptorService.removeState() - removing {}", name.getName() );
 			interceptionStates.remove( name );
 		}
 		return instance;
@@ -274,16 +277,16 @@ public class InterceptorService {
 	 *
 	 * @return The same service
 	 */
-	public static InterceptorService register( DynamicObject interceptor, String... states ) {
+	public static InterceptorService register( DynamicObject interceptor, Key... states ) {
 		Arrays.stream( states )
-		        .forEach( state -> {
-			        logger.atDebug().log(
-			                "InterceptorService.register() - registering {} with {}",
-			                interceptor.getTargetClass().getName(),
-			                state
-			        );
-			        registerState( state ).register( interceptor );
-		        } );
+		    .forEach( state -> {
+			    logger.atDebug().log(
+			        "InterceptorService.register() - registering {} with {}",
+			        interceptor.getTargetClass().getName(),
+			        state.getName()
+			    );
+			    registerState( state ).register( interceptor );
+		    } );
 		return instance;
 	}
 
@@ -295,18 +298,18 @@ public class InterceptorService {
 	 *
 	 * @return The same service
 	 */
-	public static InterceptorService unregister( DynamicObject interceptor, String... states ) {
+	public static InterceptorService unregister( DynamicObject interceptor, Key... states ) {
 		Arrays.stream( states )
-		        .forEach( state -> {
-			        if ( hasState( state ) ) {
-				        logger.atDebug().log(
-				                "InterceptorService.unregister() - unregistering {} with {}",
-				                interceptor.getTargetClass().getName(),
-				                state
-				        );
-				        getState( state ).unregister( interceptor );
-			        }
-		        } );
+		    .forEach( state -> {
+			    if ( hasState( state ) ) {
+				    logger.atDebug().log(
+				        "InterceptorService.unregister() - unregistering {} with {}",
+				        interceptor.getTargetClass().getName(),
+				        state.getName()
+				    );
+				    getState( state ).unregister( interceptor );
+			    }
+		    } );
 		return instance;
 	}
 
@@ -319,14 +322,14 @@ public class InterceptorService {
 	 */
 	public static InterceptorService unregister( DynamicObject interceptor ) {
 		interceptionStates.values().stream()
-		        .forEach( state -> {
-			        logger.atDebug().log(
-			                "InterceptorService.unregister() - unregistering {} with {}",
-			                interceptor.getTargetClass().getName(),
-			                state
-			        );
-			        state.unregister( interceptor );
-		        } );
+		    .forEach( state -> {
+			    logger.atDebug().log(
+			        "InterceptorService.unregister() - unregistering {} with {}",
+			        interceptor.getTargetClass().getName(),
+			        state
+			    );
+			    state.unregister( interceptor );
+		    } );
 		return instance;
 	}
 
@@ -343,22 +346,31 @@ public class InterceptorService {
 	 * @param data  The data to announce
 	 */
 	public static void announce( String state, Struct data ) {
+		announce( Key.of( state ), data );
+	}
+
+	/**
+	 * Announce an event with the provided {@link Struct} of data.
+	 *
+	 * @param state The state key to announce
+	 * @param data  The data to announce
+	 */
+	public static void announce( Key state, Struct data ) {
 		if ( hasState( state ) ) {
-			logger.atDebug().log( "InterceptorService.announce() - announcing {}", state );
+			logger.atDebug().log( "InterceptorService.announce() - announcing {}", state.getName() );
 
 			try {
 				getState( state ).announce( data );
 			} catch ( Throwable e ) {
-				String errorMessage = String.format( "Errors announcing [%s] interception", state );
+				String errorMessage = String.format( "Errors announcing [%s] interception", state.getName() );
 				logger.error( errorMessage, e );
 				throw new RuntimeException( errorMessage );
 			}
 
-			logger.atDebug().log( "Finished announcing {}", state );
+			logger.atDebug().log( "Finished announcing {}", state.getName() );
 		} else {
-			logger.atDebug().log( "InterceptorService.announce() - No state found for: {}", state );
+			logger.atDebug().log( "InterceptorService.announce() - No state found for: {}", state.getName() );
 		}
-
 	}
 
 }

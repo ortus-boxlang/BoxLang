@@ -17,17 +17,27 @@
  */
 package ortus.boxlang.runtime.types.exceptions;
 
+import ortus.boxlang.runtime.context.IBoxContext;
+import ortus.boxlang.runtime.operators.InstanceOf;
+
 /**
  * This exception is thrown when a cast can't be done on any type
  */
-public class CastException extends BoxLangException {
+public class ExceptionUtil {
 
-	/**
-	 * Constructor
-	 *
-	 * @param message Why the cast can't be done
-	 */
-	public CastException( String message ) {
-		super( message );
+	public static Boolean exceptionIsOfType( IBoxContext context, Throwable e, String type ) {
+		// BoxLangExceptions check the type
+		if ( e instanceof BoxLangException ) {
+			BoxLangException ble = ( BoxLangException ) e;
+			// Either direct match to type, or "foo.bar" matches "foo.bar.baz
+			if ( ble.type.equalsIgnoreCase( type ) || ble.type.toLowerCase().startsWith( type + "." ) )
+				return true;
+		}
+
+		// Native exceptions just check the class hierarchy
+		if ( InstanceOf.invoke( context, e, type ) ) {
+			return true;
+		}
+		return false;
 	}
 }

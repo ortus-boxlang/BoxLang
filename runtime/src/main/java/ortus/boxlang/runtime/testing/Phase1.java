@@ -53,6 +53,28 @@ public class Phase1 extends BaseTemplate {
 		return instance;
 	}
 
+	/**
+	 * <pre>
+	<cfscript>
+	  // Static reference to System (java proxy?)
+	  variables['system'] = create java:java.lang.System;
+	  // call constructor to create instance
+	  variables.greeting = new java:java.lang.String( 'Hello' );
+	
+	
+	  // Conditional, requires operation support
+	  if( variables.greeting == 'Hello' ) {
+	    // De-referencing "out" and "println" and calling Java method via invoke dynamic
+	    variables.system.out.println(
+	      // Multi-line statement, expression requires concat operator and possible casting
+	      // Unscoped lookup requires scope search
+	      greeting & " world"
+	    )
+	  }
+	</cfscript>
+	 * </pre>
+	 */
+
 	@Override
 	public void invoke( IBoxContext context ) throws Throwable {
 		ClassLocator	classLocator	= ClassLocator.getInstance();
@@ -64,42 +86,41 @@ public class Phase1 extends BaseTemplate {
 		variablesScope.put( Key.of( "system" ), classLocator.load( context, "java.lang.System", "java" ) );
 
 		variablesScope.put(
-		        // Case insensitive set
-		        Key.of( "GREETING" ),
+		    // Case insensitive set
+		    Key.of( "GREETING" ),
 
-		        // Every class (box|java) is represented as a DynamicObject
-		        classLocator
-		                .load( context, "java.lang.String", "java" )
-		                .invokeConstructor( new Object[] { "Hello" } )
+		    // Every class (box|java) is represented as a DynamicObject
+		    classLocator
+		        .load( context, "java.lang.String", "java" )
+		        .invokeConstructor( new Object[] { "Hello" } )
 		);
 
 		if ( EqualsEquals.invoke( variablesScope.get( Key.of( "GREETING" ) ), "Hello" ) ) {
 
 			Referencer.getAndInvoke(
 
-			        // Object
-			        Referencer.get(
-			                variablesScope.get( Key.of( "SYSTEM" ) ),
-			                Key.of( "out" ),
-			                false
-			        ),
-
-			        // Method
-			        Key.of( "println" ),
-
-			        // Arguments
-			        new Object[] {
-
-			                Concat.invoke(
-			                        context.scopeFindLocal( Key.of( "GREETING" ) ),
-			                        " world"
-			                )
-
-					},
+			    // Object
+			    Referencer.get(
+			        variablesScope.get( Key.of( "SYSTEM" ) ),
+			        Key.of( "out" ),
 			        false
+			    ),
+
+			    // Method
+			    Key.of( "println" ),
+
+			    // Arguments
+			    new Object[] {
+
+			        Concat.invoke(
+			            context.scopeFindLocal( Key.of( "GREETING" ) ),
+			            " world"
+			        )
+
+				},
+			    false
 
 			);
-
 		}
 
 	}
