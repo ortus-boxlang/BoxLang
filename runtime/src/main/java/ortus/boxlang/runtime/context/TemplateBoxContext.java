@@ -26,7 +26,7 @@ import ortus.boxlang.runtime.types.exceptions.ScopeNotFoundException;
 /**
  * This context represents the context of a template execution in BoxLang
  */
-public class TemplateBoxContext implements IBoxContext {
+public class TemplateBoxContext extends BaseBoxContext {
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -39,7 +39,6 @@ public class TemplateBoxContext implements IBoxContext {
 	 * Private Properties
 	 * --------------------------------------------------------------------------
 	 */
-	private IBoxContext		parent;
 
 	/**
 	 * The template that this execution context is bound to
@@ -64,8 +63,8 @@ public class TemplateBoxContext implements IBoxContext {
 	 * @param parent   The parent context
 	 */
 	public TemplateBoxContext( BaseTemplate template, IBoxContext parent ) {
-		this.template	= template;
-		this.parent		= parent;
+		super( parent );
+		this.template = template;
 	}
 
 	/**
@@ -188,24 +187,6 @@ public class TemplateBoxContext implements IBoxContext {
 		throw new KeyNotFoundException(
 		    String.format( "The requested key [%s] was not located in any scope or it's undefined", key.getName() )
 		);
-	}
-
-	/**
-	 * Returns the parent box context. Null if none.
-	 *
-	 * @return The parent box context. Null if none.
-	 */
-	public IBoxContext getParent() {
-		return this.parent;
-	}
-
-	/**
-	 * Verifies if a parent context is attached to this context
-	 *
-	 * @return True if a parent context is attached to this context, else false
-	 */
-	public Boolean hasParent() {
-		return this.parent != null;
 	}
 
 	/**

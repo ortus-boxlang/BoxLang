@@ -27,19 +27,12 @@ import ortus.boxlang.runtime.types.exceptions.ScopeNotFoundException;
 /**
  * This context represents the context of a template execution in BoxLang
  */
-public class CatchBoxContext implements IBoxContext {
-
-	/**
-	 * --------------------------------------------------------------------------
-	 * Private Properties
-	 * --------------------------------------------------------------------------
-	 */
-	private IBoxContext	parent;
+public class CatchBoxContext extends BaseBoxContext {
 
 	/**
 	 * The variables scope
 	 */
-	private IScope		variablesScope;
+	private IScope variablesScope;
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -54,8 +47,8 @@ public class CatchBoxContext implements IBoxContext {
 	 * @param parent       The parent context
 	 */
 	public CatchBoxContext( IBoxContext parent, Key exceptionKey, Throwable exception ) {
-		this.parent			= parent;
-		this.variablesScope	= new ScopeWrapper(
+		super( parent );
+		this.variablesScope = new ScopeWrapper(
 		    parent.getScopeNearby( VariablesScope.name ),
 		    Map.of( exceptionKey, exception )
 		);
@@ -118,24 +111,6 @@ public class CatchBoxContext implements IBoxContext {
 		throw new KeyNotFoundException(
 		    String.format( "The requested key [%s] was not located in any scope or it's undefined", key.getName() )
 		);
-	}
-
-	/**
-	 * Returns the parent box context. Null if none.
-	 *
-	 * @return The parent box context. Null if none.
-	 */
-	public IBoxContext getParent() {
-		return this.parent;
-	}
-
-	/**
-	 * Verifies if a parent context is attached to this context
-	 *
-	 * @return True if a parent context is attached to this context, else false
-	 */
-	public Boolean hasParent() {
-		return this.parent != null;
 	}
 
 	/**
