@@ -55,6 +55,8 @@ public class HelloWorld$cfm extends BaseTemplate {
 		// Reference to the variables scope
 		IScope variablesScope = context.getScopeLocal( Key.of( "variables" ) );
 
+		ClassLocator JavaLoader = ClassLocator.getInstance();
+
 		// Case sensitive set
 		variablesScope.put( Key.of( "system" ), JavaLoader.load( context, "java.lang.System" ) );
 
