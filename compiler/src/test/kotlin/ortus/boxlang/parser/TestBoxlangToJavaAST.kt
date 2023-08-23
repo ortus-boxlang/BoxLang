@@ -75,7 +75,7 @@ class TestBoxlangToJavaAST : BaseTest() {
 		// Compiling Java and executing the invoke() method
 		val printStream = PrintStream(ByteArrayOutputStream())
 		System.setOut(printStream)
-		generateByteCode(
+		runClassFromCode(
 			packageName = javaAST.packageDeclaration.orElseThrow().nameAsString,
 			className = javaAST.getClassByName("HelloWorld\$cfm").orElseThrow().nameAsString,
 			code = javaAST.toString()
@@ -178,7 +178,7 @@ class TestBoxlangToJavaAST : BaseTest() {
 
 		val cfmlJava = cu.toString()
 
-		generateByteCode(packageName, className, cfmlJava)
+		runClassFromCode(packageName, className, cfmlJava)
 	}
 
 	@Test
@@ -231,7 +231,7 @@ class TestBoxlangToJavaAST : BaseTest() {
 		return result
 	}
 
-	private fun generateByteCode(packageName: String, className: String, code: String) {
+	private fun runClassFromCode(packageName: String, className: String, code: String) {
 		// see: https://stackoverflow.com/questions/2946338/how-do-i-programmatically-compile-and-instantiate-a-java-class
 
 		// Write source to file
@@ -264,8 +264,11 @@ class TestBoxlangToJavaAST : BaseTest() {
 		val cls = Class.forName("$packageName.$className", true, classLoader)
 		val instance = cls.getDeclaredConstructor().newInstance()
 		val iboxClass = Class.forName("ortus.boxlang.runtime.context.IBoxContext", true, classLoader)
+
+		// FIXME: probably we want to pass something different to the invoke() method?
 		val iboxContextInstance = Class.forName("ortus.boxlang.runtime.context.TemplateBoxContext", true, classLoader)
 			.getDeclaredConstructor().newInstance()
+
 		val invokeMethod = instance.javaClass.getDeclaredMethod("invoke", iboxClass)
 		invokeMethod.invoke(instance, iboxContextInstance)
 	}
