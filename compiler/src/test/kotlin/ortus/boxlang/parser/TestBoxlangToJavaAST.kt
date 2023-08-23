@@ -3,21 +3,22 @@ package ortus.boxlang.parser
 import com.github.javaparser.JavaParser
 import com.github.javaparser.ParseResult
 import com.github.javaparser.ast.CompilationUnit
-import com.github.javaparser.ast.comments.Comment
 import com.strumenta.kolasu.parsing.ParsingResult
 import junit.framework.TestCase.assertEquals
 import org.junit.Ignore
 import org.junit.Test
 import ortus.boxlang.java.BoxToJavaMapper
-import ortus.boxlang.java.toJava
+import java.io.ByteArrayOutputStream
 import java.io.File
+import java.io.PrintStream
+import java.net.URLClassLoader
 import java.nio.file.Path
+import java.util.*
+import javax.tools.ToolProvider
 import kotlin.io.path.*
-import kotlin.test.assertEquals
 
 
 class TestBoxlangToJavaAST : BaseTest() {
-
 	private val testsBaseFolder = Path("../examples/cf_to_java")
 	private val javaParser = JavaParser()
 	private val cfParser = CFLanguageParser()
@@ -36,71 +37,50 @@ class TestBoxlangToJavaAST : BaseTest() {
 
 	@Ignore
 	@Test
-	fun cfToJavaTestSet() {
-		val errors = mutableListOf<AssertionError>()
+	fun javaCodeComparisonForHelloWorld() {
 
-		retrieveTestCasesFolders().forEach { testFolder ->
-			val cfFile = retrieveCfCase(testFolder)
-			val javaFile = retrieveJavaCase(testFolder)
-			val cfParseResult = CFLanguageParser().parse(cfFile)
-			check(cfParseResult.correct) { "Parse failed: file://${cfFile.absolutePath}" }
-			checkNotNull(cfParseResult.root) { "Parse result has no root: file://${cfFile.absolutePath}" }
-			val actualJavaAst = javaParser.parse(javaFile).result.get()
-				.walk(Comment::class.java) { TODO() }
-
-			try {
-				assertASTEqual(
-					javaParser.parse(javaFile).result.get(),
-					cfParseResult.root!!.toJava()
-				) { testFolder.pathString }
-			} catch (e: AssertionError) {
-				errors.add(e)
-			}
-		}
-
-		assertEquals(0, errors.size, "Errors: ${errors.size}")
-	}
-
-	@Ignore
-	@Test
-	fun dummyBoxlangToASTTest() {
-		val file = Path(testsBaseFolder.pathString, "Test", "Test.cfc").toFile()
-		val parseResult = cfParser.source(file).parse()
-		require(parseResult.correct)
-		requireNotNull(parseResult.root)
-
-		val actualAst = parseResult.root!!.toJava()
-		val expectedAst = javaParser.parse(
-			Path(
-				testsBaseFolder.pathString,
-				"Test",
-				"Test.java"
-			).toFile()
-		).result.get()
-		assertASTEqual(expectedAst, actualAst)
-	}
-
-	@Test
-	fun helloWorldTest() {
-		val packageName = "c_drive.projects.examples"
+		// Parsing CFML to Boxlang AST
 		val cfFile = Path(testsBaseFolder.pathString, "HelloWorld", "HelloWorld.cfm").toFile()
-		val cfmlParseResult = cfmlToBoxlang(cfFile)
+		val cfmlParseResult = cfParser.source(cfFile).parse()
 		check(cfmlParseResult.correct) { "Cannot correctly parse the CF file: ${cfFile.absolutePath}" }
 		checkNotNull(cfmlParseResult.root) { "Something may be wrong with the CF to Boxlang conversion: ${cfFile.absolutePath}" }
 
-		val javaFile = Path(testsBaseFolder.pathString, "HelloWorld", "HelloWorld.java").toFile()
-		val javaParseResult = parseJava(javaFile)
-		check(javaParseResult.isSuccessful) { "The Java file seems incorrect ${javaFile.absolutePath}" }
-		check(javaParseResult.result.isPresent) { "The Java file parsing did not produce a result ${javaFile.absolutePath}" }
+		// Converting Boxlang AST to Java
+		val javaAST = BoxToJavaMapper(cfmlParseResult.root!!, cfFile).toJava()
 
-		val boxToJavaMapper = BoxToJavaMapper(cfmlParseResult.root!!, cfFile, packageName)
-		val boxlangToJava = boxToJavaMapper.toJava()
-		val expectedJavaAst = javaParseResult.result.orElseThrow()
-		expectedJavaAst.walk(Comment::class.java) { it.remove() }
-		expectedJavaAst.walk {
-			it.setComment(null)
-		}
-		assertASTEqual(expectedJavaAst, boxlangToJava) { "" }
+		// Comparing the generated Java code with the expected one
+		assertASTEqual(
+			expected = parseJava(
+				Path(testsBaseFolder.pathString, "HelloWorld", "HelloWorld.java").toFile()
+			).result.orElseThrow(),
+			actual = javaAST
+		) { "" }
+	}
+
+	@Test
+	fun compileAndRunHelloWorld() {
+
+		// Parsing CFML to Boxlang AST
+		val cfFile = Path(testsBaseFolder.pathString, "HelloWorld", "HelloWorld.cfm").toFile()
+		val cfmlParseResult = cfParser.source(cfFile).parse()
+		check(cfmlParseResult.correct) { "Cannot correctly parse the CF file: ${cfFile.absolutePath}" }
+		checkNotNull(cfmlParseResult.root) { "Something may be wrong with the CF to Boxlang conversion: ${cfFile.absolutePath}" }
+
+		// Converting Boxlang AST to Java
+		val javaAST = BoxToJavaMapper(cfmlParseResult.root!!, cfFile).toJava()
+
+		// Compiling Java and executing the invoke() method
+		val outputStream = ByteArrayOutputStream()
+		val printStream = PrintStream(outputStream)
+		System.setOut(printStream)
+		runClassFromCode(
+			packageName = javaAST.packageDeclaration.orElseThrow().nameAsString,
+			className = javaAST.getClassByName("HelloWorld\$cfm").orElseThrow().nameAsString,
+			code = javaAST.toString()
+		)
+
+		// Testing stdout against the "Hello world" string
+		assertEquals("Hello world${System.lineSeparator()}", outputStream.toString())
 	}
 
 	@Test
@@ -120,7 +100,7 @@ class TestBoxlangToJavaAST : BaseTest() {
 			.getMethodsByName("invoke")
 			.first()
 			.body.orElseThrow()
-			.getStatement(1).asExpressionStmt()
+			.getStatement(2).asExpressionStmt()
 			.expression.asAssignExpr()
 			.target
 		assert(expr.isFieldAccessExpr) { expr::class.java }
@@ -141,5 +121,53 @@ class TestBoxlangToJavaAST : BaseTest() {
 			}
 		)
 		return result
+	}
+
+	private fun parseJava(code: String): ParseResult<CompilationUnit> {
+		val result = javaParser.parse(code)
+		System.err.println(
+			result.problems.joinToString(separator = System.lineSeparator()) { problem ->
+				"${problem.message}${System.lineSeparator()}\t${problem.location.map { "${it.begin.range.map { ":${it.begin.line}:${it.begin.column}" }.orElse("")}" }.orElse("")}"
+			}
+		)
+		return result
+	}
+
+	private fun runClassFromCode(packageName: String, className: String, code: String) {
+		// see: https://stackoverflow.com/questions/2946338/how-do-i-programmatically-compile-and-instantiate-a-java-class
+
+		// Write source to file
+		val rootDirectory = File("build/cfml_to_java")
+		val javaFile = File(
+			Path(
+				rootDirectory.absolutePath,
+				packageName.replace(".", File.separator)
+			).toFile(),
+			"$className.java"
+		)
+
+		javaFile.parentFile.mkdirs()
+		javaFile.writeText(code)
+
+		// Compile
+		val runtimeRoot = "../runtime/build/classes/java/main"
+		val compiler = ToolProvider.getSystemJavaCompiler()
+		compiler.run(null, null, null,
+			"-cp",
+			"${System.getProperty("java.class.path")}${File.pathSeparator}$runtimeRoot",
+			javaFile.path
+		)
+
+		// Load and instantiate compiled class
+		val classLoader = URLClassLoader.newInstance(arrayOf(
+			rootDirectory.toURI().toURL(),
+			File(runtimeRoot).toURI().toURL()
+		))
+		val cls = Class.forName("$packageName.$className", true, classLoader)
+		val instance = cls.getDeclaredConstructor().newInstance()
+		val mainMethod = cls.getDeclaredMethod("main", Array<String>::class.java)
+
+		// Run the main method
+		mainMethod.invoke(instance, arrayOf<String>())
 	}
 }

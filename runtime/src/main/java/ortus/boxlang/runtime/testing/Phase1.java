@@ -92,8 +92,7 @@ public class Phase1 extends BaseTemplate {
 		    // Every class (box|java) is represented as a DynamicObject
 		    classLocator
 		        .load( context, "java.lang.String", "java" )
-		        .invokeConstructor( new Object[] { "Hello" } )
-		);
+		        .invokeConstructor( new Object[] { "Hello" } ) );
 
 		if ( EqualsEquals.invoke( variablesScope.get( Key.of( "GREETING" ) ), "Hello" ) ) {
 
@@ -103,8 +102,7 @@ public class Phase1 extends BaseTemplate {
 			    Referencer.get(
 			        variablesScope.get( Key.of( "SYSTEM" ) ),
 			        Key.of( "out" ),
-			        false
-			    ),
+			        false ),
 
 			    // Method
 			    Key.of( "println" ),
@@ -114,8 +112,7 @@ public class Phase1 extends BaseTemplate {
 
 			        Concat.invoke(
 			            context.scopeFindLocal( Key.of( "GREETING" ) ),
-			            " world"
-			        )
+			            " world" )
 
 				},
 			    false
@@ -137,7 +134,7 @@ public class Phase1 extends BaseTemplate {
 		BoxRuntime.startup( true );
 
 		try {
-			BoxRuntime.executeTemplate( "" );
+			BoxRuntime.executeTemplate( Phase1.getInstance() );
 		} catch ( Throwable e ) {
 			e.printStackTrace();
 			System.exit( 1 );
