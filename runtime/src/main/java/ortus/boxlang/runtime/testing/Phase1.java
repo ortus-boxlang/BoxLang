@@ -47,7 +47,7 @@ public class Phase1 extends BaseTemplate {
 	}
 
 	public static synchronized Phase1 getInstance() {
-		if (instance == null) {
+		if ( instance == null ) {
 			instance = new Phase1();
 		}
 		return instance;
@@ -76,46 +76,46 @@ public class Phase1 extends BaseTemplate {
 	 */
 
 	@Override
-	public void invoke(IBoxContext context) throws Throwable {
-		ClassLocator classLocator = ClassLocator.getInstance();
+	public void invoke( IBoxContext context ) throws Throwable {
+		ClassLocator	classLocator	= ClassLocator.getInstance();
 
 		// Reference to the variables scope
-		IScope variablesScope = context.getScopeLocal(Key.of("variables"));
+		IScope			variablesScope	= context.getScopeLocal( Key.of( "variables" ) );
 
 		// Case sensitive set
-		variablesScope.put(Key.of("system"), classLocator.load(context, "java.lang.System", "java"));
+		variablesScope.put( Key.of( "system" ), classLocator.load( context, "java.lang.System", "java" ) );
 
 		variablesScope.put(
-				// Case insensitive set
-				Key.of("GREETING"),
+		    // Case insensitive set
+		    Key.of( "GREETING" ),
 
-				// Every class (box|java) is represented as a DynamicObject
-				classLocator
-						.load(context, "java.lang.String", "java")
-						.invokeConstructor(new Object[] { "Hello" }));
+		    // Every class (box|java) is represented as a DynamicObject
+		    classLocator
+		        .load( context, "java.lang.String", "java" )
+		        .invokeConstructor( new Object[] { "Hello" } ) );
 
-		if (EqualsEquals.invoke(variablesScope.get(Key.of("GREETING")), "Hello")) {
+		if ( EqualsEquals.invoke( variablesScope.get( Key.of( "GREETING" ) ), "Hello" ) ) {
 
 			Referencer.getAndInvoke(
 
-					// Object
-					Referencer.get(
-							variablesScope.get(Key.of("SYSTEM")),
-							Key.of("out"),
-							false),
+			    // Object
+			    Referencer.get(
+			        variablesScope.get( Key.of( "SYSTEM" ) ),
+			        Key.of( "out" ),
+			        false ),
 
-					// Method
-					Key.of("println"),
+			    // Method
+			    Key.of( "println" ),
 
-					// Arguments
-					new Object[] {
+			    // Arguments
+			    new Object[] {
 
-							Concat.invoke(
-									context.scopeFindLocal(Key.of("GREETING")),
-									" world")
+			        Concat.invoke(
+			            context.scopeFindLocal( Key.of( "GREETING" ) ),
+			            " world" )
 
-					},
-					false
+				},
+			    false
 
 			);
 		}
@@ -127,17 +127,17 @@ public class Phase1 extends BaseTemplate {
 	 *
 	 * @param args
 	 */
-	public static void main(String[] args) {
+	public static void main( String[] args ) {
 		// This is the main method, it will be invoked when the template is executed
 		// You can use this
 		// Get a runtime going
-		BoxRuntime.startup(true);
+		BoxRuntime.startup( true );
 
 		try {
-			BoxRuntime.executeTemplate(Phase1TryCatch.getInstance());
-		} catch (Throwable e) {
+			BoxRuntime.executeTemplate( Phase1.getInstance() );
+		} catch ( Throwable e ) {
 			e.printStackTrace();
-			System.exit(1);
+			System.exit( 1 );
 		}
 
 		// Bye bye! Ciao Bella!
