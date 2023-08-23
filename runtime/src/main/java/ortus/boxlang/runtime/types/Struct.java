@@ -134,8 +134,30 @@ public class Struct extends ConcurrentHashMap<Key, Object> implements IType, IRe
 	 *
 	 * @return True if the key exists, false otherwise
 	 */
-	public Boolean containsKey( String key ) {
-		return super.containsKey( Key.of( key ) );
+	public boolean containsKey( String key ) {
+		return containsKey( Key.of( key ) );
+	}
+
+	/**
+	 * Checks the struct for a key using a string which is auto-converted to a Key object
+	 *
+	 * @param key The string key to check
+	 *
+	 * @return True if the key exists, false otherwise
+	 */
+	public boolean containsKey( Key key ) {
+		return getRaw( key ) != null;
+	}
+
+	/**
+	 * Checks the struct for a key using a string which is auto-converted to a Key object
+	 *
+	 * @param key The string key to check
+	 *
+	 * @return True if the key exists, false otherwise
+	 */
+	public boolean containsKey( Object key ) {
+		return containsKey( ( Key ) key );
 	}
 
 	/**
@@ -199,6 +221,20 @@ public class Struct extends ConcurrentHashMap<Key, Object> implements IType, IRe
 	 */
 	public Object get( Key key ) {
 		return get( key, false );
+	}
+
+	/**
+	 * Returns the value of the key if found.
+	 * We override in order to present nicer exception messages
+	 *
+	 * @param key The key to look for
+	 *
+	 * @return The value of the key
+	 *
+	 * @throws KeyNotFoundException If the key is not found
+	 */
+	public Object get( Object key ) {
+		return get( ( Key ) key, false );
 	}
 
 	/**

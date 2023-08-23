@@ -19,6 +19,7 @@ package ortus.boxlang.runtime.scopes;
 
 import java.util.Map;
 
+import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.KeyNotFoundException;
 
 /**
@@ -81,10 +82,27 @@ public class ScopeWrapper extends BaseScope {
 		return wrapped.containsKey( name );
 	}
 
+	public boolean containsKey( Key name ) throws ClassCastException, NullPointerException {
+		if ( super.containsKey( name ) ) {
+			return true;
+		}
+		return wrapped.containsKey( name );
+	}
+
 	@Override
 	public Object get( Key name ) throws KeyNotFoundException {
-		if ( super.containsKey( name ) ) {
-			return super.get( name );
+		Object result = super.getRaw( name );
+		if ( result != null ) {
+			return Struct.unWrapNull( result );
+		}
+		return wrapped.get( name );
+	}
+
+	@Override
+	public Object get( Object name ) throws KeyNotFoundException {
+		Object result = super.getRaw( ( Key ) name );
+		if ( result != null ) {
+			return Struct.unWrapNull( result );
 		}
 		return wrapped.get( name );
 	}
