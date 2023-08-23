@@ -18,6 +18,9 @@
 package ortus.boxlang.runtime.interop;
 
 import ortus.boxlang.runtime.dynamic.IReferenceable;
+import ortus.boxlang.runtime.dynamic.casters.CastAttempt;
+import ortus.boxlang.runtime.dynamic.casters.DoubleCaster;
+import ortus.boxlang.runtime.types.exceptions.BoxLangException;
 import ortus.boxlang.runtime.types.exceptions.KeyNotFoundException;
 import ortus.boxlang.runtime.scopes.Key;
 
@@ -83,6 +86,13 @@ public class DynamicObject implements IReferenceable {
 	 * --------------------------------------------------------------------------
 	 */
 
+	Set<Key>												exceptionKeys		= new HashSet<Key>( Arrays.asList(
+	    BoxLangException.messageKey,
+	    BoxLangException.detailKey,
+	    BoxLangException.typeKey,
+	    BoxLangException.tagContextKey,
+	    BoxLangException.ExtendedInfoKey
+	) );
 	/**
 	 * This is a map of primitive types to their native Java counterparts
 	 * so we can do the right casting for primitives
@@ -123,14 +133,14 @@ public class DynamicObject implements IReferenceable {
 	static {
 		METHOD_LOOKUP	= MethodHandles.lookup();
 		PRIMITIVE_MAP	= Map.of(
-		        Boolean.class, boolean.class,
-		        Byte.class, byte.class,
-		        Character.class, char.class,
-		        Short.class, short.class,
-		        Integer.class, int.class,
-		        Long.class, long.class,
-		        Float.class, float.class,
-		        Double.class, double.class
+		    Boolean.class, boolean.class,
+		    Byte.class, byte.class,
+		    Character.class, char.class,
+		    Short.class, short.class,
+		    Integer.class, int.class,
+		    Long.class, long.class,
+		    Float.class, float.class,
+		    Double.class, double.class
 		);
 	}
 
@@ -309,15 +319,15 @@ public class DynamicObject implements IReferenceable {
 		// If it's not static, we need a target instance
 		if ( !methodRecord.isStatic() && !hasInstance() ) {
 			throw new IllegalStateException(
-			        "You can't call invoke on a null target instance. Use [invokeStatic] instead or set the target instance manually or via the constructor."
+			    "You can't call invoke on a null target instance. Use [invokeStatic] instead or set the target instance manually or via the constructor."
 			);
 		}
 
 		// Discover and Execute it baby!
 		return Optional.ofNullable(
-		        methodRecord.isStatic()
-		                ? methodRecord.methodHandle().invokeWithArguments( arguments )
-		                : methodRecord.methodHandle().bindTo( this.targetInstance ).invokeWithArguments( arguments )
+		    methodRecord.isStatic()
+		        ? methodRecord.methodHandle().invokeWithArguments( arguments )
+		        : methodRecord.methodHandle().bindTo( this.targetInstance ).invokeWithArguments( arguments )
 		);
 	}
 
@@ -343,9 +353,9 @@ public class DynamicObject implements IReferenceable {
 
 		// Discover and Execute it baby!
 		return Optional.ofNullable(
-		        getMethodHandle( methodName, argumentsToClasses( arguments ) )
-		                .methodHandle()
-		                .invokeWithArguments( arguments )
+		    getMethodHandle( methodName, argumentsToClasses( arguments ) )
+		        .methodHandle()
+		        .invokeWithArguments( arguments )
 		);
 	}
 
@@ -376,14 +386,14 @@ public class DynamicObject implements IReferenceable {
 		// If it's not static, we need a target instance
 		if ( !isStatic && !hasInstance() ) {
 			throw new IllegalStateException(
-			        "You are trying to get a public field but there is not instance set on the invoker, please make sure the [invokeConstructor] has been called."
+			    "You are trying to get a public field but there is not instance set on the invoker, please make sure the [invokeConstructor] has been called."
 			);
 		}
 
 		return Optional.ofNullable(
-		        isStatic
-		                ? fieldHandle.invoke()
-		                : fieldHandle.invoke( this.targetInstance )
+		    isStatic
+		        ? fieldHandle.invoke()
+		        : fieldHandle.invoke( this.targetInstance )
 		);
 	}
 
@@ -426,7 +436,7 @@ public class DynamicObject implements IReferenceable {
 		// If it's not static, we need a target instance, verify it's not null
 		if ( !isStatic && !hasInstance() ) {
 			throw new IllegalStateException(
-			        "You are trying to set a public field but there is not instance set on the invoker, please make sure the [invokeConstructor] has been called."
+			    "You are trying to set a public field but there is not instance set on the invoker, please make sure the [invokeConstructor] has been called."
 			);
 		}
 
@@ -451,11 +461,11 @@ public class DynamicObject implements IReferenceable {
 	 */
 	public Field findField( String fieldName ) throws NoSuchFieldException {
 		return getFieldsAsStream()
-		        .filter( target -> target.getName().equalsIgnoreCase( fieldName ) )
-		        .findFirst()
-		        .orElseThrow( () -> new NoSuchFieldException(
-		                String.format( "No such field [%s] found in the class [%s].", fieldName, this.targetClass.getName() )
-		        ) );
+		    .filter( target -> target.getName().equalsIgnoreCase( fieldName ) )
+		    .findFirst()
+		    .orElseThrow( () -> new NoSuchFieldException(
+		        String.format( "No such field [%s] found in the class [%s].", fieldName, this.targetClass.getName() )
+		    ) );
 	}
 
 	/**
@@ -505,8 +515,8 @@ public class DynamicObject implements IReferenceable {
 	 */
 	public List<String> getFieldNames() {
 		return getFieldsAsStream()
-		        .map( Field::getName )
-		        .toList();
+		    .map( Field::getName )
+		    .toList();
 
 	}
 
@@ -517,9 +527,9 @@ public class DynamicObject implements IReferenceable {
 	 */
 	public List<String> getFieldNamesNoCase() {
 		return getFieldsAsStream()
-		        .map( Field::getName )
-		        .map( String::toUpperCase )
-		        .toList();
+		    .map( Field::getName )
+		    .map( String::toUpperCase )
+		    .toList();
 
 	}
 
@@ -543,7 +553,7 @@ public class DynamicObject implements IReferenceable {
 	 * @throws IllegalAccessException If the method handle cannot be accessed
 	 */
 	public MethodRecord getMethodHandle( String methodName, Class<?>[] argumentsAsClasses )
-	        throws RuntimeException, NoSuchMethodException, IllegalAccessException {
+	    throws RuntimeException, NoSuchMethodException, IllegalAccessException {
 
 		// We use the method signature as the cache key
 		String			cacheKey		= methodName + Objects.hash( methodName, Arrays.toString( argumentsAsClasses ) );
@@ -577,7 +587,7 @@ public class DynamicObject implements IReferenceable {
 	 * @throws IllegalAccessException If the method handle cannot be accessed
 	 */
 	public MethodRecord discoverMethodHandle( String methodName, Class<?>[] argumentsAsClasses )
-	        throws NoSuchMethodException, IllegalAccessException {
+	    throws NoSuchMethodException, IllegalAccessException {
 		// Our target we must find using our dynamic rules:
 		// - case insensitivity
 		// - argument count
@@ -585,11 +595,11 @@ public class DynamicObject implements IReferenceable {
 		Method targetMethod = findMatchingMethod( methodName, argumentsAsClasses );
 
 		return new MethodRecord(
-		        methodName,
-		        targetMethod,
-		        METHOD_LOOKUP.unreflect( targetMethod ),
-		        Modifier.isStatic( targetMethod.getModifiers() ),
-		        argumentsAsClasses.length
+		    methodName,
+		    targetMethod,
+		    METHOD_LOOKUP.unreflect( targetMethod ),
+		    Modifier.isStatic( targetMethod.getModifiers() ),
+		    argumentsAsClasses.length
 		);
 	}
 
@@ -621,9 +631,9 @@ public class DynamicObject implements IReferenceable {
 	 */
 	public List<String> getMethodNames() {
 		return getMethodsAsStream()
-		        .parallel()
-		        .map( Method::getName )
-		        .toList();
+		    .parallel()
+		    .map( Method::getName )
+		    .toList();
 	}
 
 	/**
@@ -633,10 +643,10 @@ public class DynamicObject implements IReferenceable {
 	 */
 	public List<String> getMethodNamesNoCase() {
 		return getMethodsAsStream()
-		        .parallel()
-		        .map( Method::getName )
-		        .map( String::toUpperCase )
-		        .toList();
+		    .parallel()
+		    .map( Method::getName )
+		    .map( String::toUpperCase )
+		    .toList();
 	}
 
 	/**
@@ -673,19 +683,19 @@ public class DynamicObject implements IReferenceable {
 	 */
 	public Method findMatchingMethod( String methodName, Class<?>[] argumentsAsClasses ) throws NoSuchMethodException {
 		return getMethodsAsStream()
-		        .parallel()
-		        .filter( method -> method.getName().equalsIgnoreCase( methodName ) )
-		        .filter( method -> hasMatchingParameterTypes( method, argumentsAsClasses ) )
-		        .findFirst()
-		        .orElseThrow( () -> new NoSuchMethodException(
-		                String.format(
-		                        "No such method [%s] found in the class [%s] using [%d] arguments of types [%s]",
-		                        methodName,
-		                        this.targetClass.getName(),
-		                        argumentsAsClasses.length,
-		                        Arrays.toString( argumentsAsClasses )
-		                )
-		        ) );
+		    .parallel()
+		    .filter( method -> method.getName().equalsIgnoreCase( methodName ) )
+		    .filter( method -> hasMatchingParameterTypes( method, argumentsAsClasses ) )
+		    .findFirst()
+		    .orElseThrow( () -> new NoSuchMethodException(
+		        String.format(
+		            "No such method [%s] found in the class [%s] using [%d] arguments of types [%s]",
+		            methodName,
+		            this.targetClass.getName(),
+		            argumentsAsClasses.length,
+		            Arrays.toString( argumentsAsClasses )
+		        )
+		    ) );
 	}
 
 	/**
@@ -700,9 +710,9 @@ public class DynamicObject implements IReferenceable {
 	 */
 	private static boolean hasMatchingParameterTypes( Method method, Class<?>[] argumentsAsClasses ) {
 		Class<?>[] methodParams = Arrays
-		        .stream( method.getParameters() )
-		        .map( Parameter::getType )
-		        .toArray( Class<?>[]::new );
+		    .stream( method.getParameters() )
+		    .map( Parameter::getType )
+		    .toArray( Class<?>[]::new );
 
 		if ( methodParams.length != argumentsAsClasses.length ) {
 			return false;
@@ -768,9 +778,9 @@ public class DynamicObject implements IReferenceable {
 	public static Class<?>[] argumentsToClasses( Object... args ) {
 		// Convert the arguments to an array of classes
 		return Arrays.stream( args )
-		        .map( DynamicObject::argumentToClass )
-		        // .peek( clazz -> System.out.println( "argumentToClass -> " + clazz ) )
-		        .toArray( Class<?>[]::new );
+		    .map( DynamicObject::argumentToClass )
+		    // .peek( clazz -> System.out.println( "argumentToClass -> " + clazz ) )
+		    .toArray( Class<?>[]::new );
 	}
 
 	/**
@@ -839,11 +849,11 @@ public class DynamicObject implements IReferenceable {
 	 * @param argumentCount The number of arguments the method takes
 	 */
 	private record MethodRecord(
-	        String methodName,
-	        Method method,
-	        MethodHandle methodHandle,
-	        boolean isStatic,
-	        int argumentCount ) {
+	    String methodName,
+	    Method method,
+	    MethodHandle methodHandle,
+	    boolean isStatic,
+	    int argumentCount ) {
 		// A beautiful java record of our method handle
 	}
 
@@ -862,9 +872,52 @@ public class DynamicObject implements IReferenceable {
 	 * @return The requested object
 	 */
 	public Object dereference( Key name, Boolean safe ) throws KeyNotFoundException {
-		try {			// If we have the field, return it's value, even if it's null
+		try {
+			// If we have the field, return it's value, even if it's null
 			if ( hasField( name.getName() ) ) {
 				return getField( name.getName() ).orElse( null );
+				// Special logic so we can treat exceptions as referencable. Possibly move to helper
+			} else if ( getTargetInstance() instanceof Throwable && exceptionKeys.contains( name ) ) {
+				// Throwable.message always delegates through to the message field
+				if ( name.equals( BoxLangException.messageKey ) ) {
+					return ( ( Throwable ) getTargetInstance() ).getMessage();
+				} else {
+					// CFML returns "" for Throwable.detail, etc
+					return "";
+				}
+				// Special logic for native arrays. Possibly move to helper
+			} else if ( hasInstance() && getTargetInstance().getClass().isArray() ) {
+				Object[] arr = ( ( Object[] ) getTargetInstance() );
+				if ( name.equals( Key.of( "length" ) ) ) {
+					return arr.length;
+				}
+				CastAttempt<Double> indexAtt = DoubleCaster.attempt( name.getName() );
+				if ( !indexAtt.wasSuccessful() ) {
+					throw new RuntimeException( String.format(
+					    "Array cannot be deferenced by key %s", name.getName()
+					) );
+				}
+				Double	dIndex	= indexAtt.get();
+				Integer	index	= dIndex.intValue();
+				// Dissallow non-integer indexes foo[1.5]
+				if ( index.doubleValue() != dIndex ) {
+					throw new RuntimeException( String.format(
+					    "Array index [%s] is invalid.  Index must be an integer.", dIndex
+					) );
+				}
+				// Dissallow negative indexes foo[-1]
+				if ( index < 1 ) {
+					throw new RuntimeException( String.format(
+					    "Array cannot be indexed by a number smaller than 1"
+					) );
+				}
+				// Disallow out of bounds indexes foo[5]
+				if ( index > arr.length ) {
+					throw new RuntimeException( String.format(
+					    "Array index [%s] is out of bounds for an array of length [%s]", index, arr.length
+					) );
+				}
+				return arr[ index - 1 ];
 			}
 		} catch ( Throwable e ) {
 			throw new RuntimeException( e );
@@ -877,19 +930,19 @@ public class DynamicObject implements IReferenceable {
 		// Field not found anywhere
 		if ( hasInstance() ) {
 			throw new KeyNotFoundException(
-			        String.format( "The instance [%s] has no public field [%s].  The allowed fields are [%s]",
-			                ClassUtils.getCanonicalName( getTargetClass() ),
-			                name.getName(),
-			                getFieldNames()
-			        )
+			    String.format( "The instance [%s] has no public field [%s].  The allowed fields are [%s]",
+			        ClassUtils.getCanonicalName( getTargetClass() ),
+			        name.getName(),
+			        getFieldNames()
+			    )
 			);
 		} else {
 			throw new KeyNotFoundException(
-			        String.format( "The instance [%s] has no static field [%s].  The allowed fields are [%s]",
-			                ClassUtils.getCanonicalName( getTargetClass() ),
-			                name.getName(),
-			                getFieldNames()
-			        )
+			    String.format( "The instance [%s] has no static field [%s].  The allowed fields are [%s]",
+			        ClassUtils.getCanonicalName( getTargetClass() ),
+			        name.getName(),
+			        getFieldNames()
+			    )
 			);
 		}
 	}
@@ -922,9 +975,46 @@ public class DynamicObject implements IReferenceable {
 	 * @param value The value to assign
 	 */
 	public void assign( Key name, Object value ) {
+		if ( hasInstance() && getTargetInstance().getClass().isArray() ) {
+			CastAttempt<Double> indexAtt = DoubleCaster.attempt( name.getName() );
+			if ( !indexAtt.wasSuccessful() ) {
+				throw new RuntimeException( String.format(
+				    "Array cannot be assigned with key %s", name.getName()
+				) );
+			}
+			Double	dIndex	= indexAtt.get();
+			Integer	index	= dIndex.intValue();
+			// Dissallow non-integer indexes foo[1.5]
+			if ( index.doubleValue() != dIndex ) {
+				throw new RuntimeException( String.format(
+				    "Array index [%s] is invalid.  Index must be an integer.", dIndex
+				) );
+			}
+			// Dissallow negative indexes foo[-1]
+			if ( index < 1 ) {
+				throw new RuntimeException( String.format(
+				    "Array cannot be assigned by a number smaller than 1"
+				) );
+			}
+			Object[] arr = ( ( Object[] ) getTargetInstance() );
+			// Disallow out of bounds indexes foo[5]
+			if ( index > arr.length ) {
+				throw new RuntimeException( String.format(
+				    "Invalid index [%s] for Native Array, can't expand Native Arrays.  Current array length is [%s]", index,
+				    arr.length
+				) );
+			}
+			arr[ index - 1 ] = value;
+			return;
+		}
+
 		try {
 			setField( name.getName(), value );
 		} catch ( Throwable e ) {
+			// CFML ignores Throwable.foo = "bar"
+			if ( getTargetInstance() instanceof Throwable ) {
+				return;
+			}
 			throw new RuntimeException( e );
 		}
 	}

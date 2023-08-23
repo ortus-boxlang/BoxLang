@@ -55,7 +55,7 @@ public class CatchBoxContext implements IBoxContext {
 	public CatchBoxContext( IBoxContext parent, Key exceptionKey, Throwable exception ) {
 		this.parent			= parent;
 		this.variablesScope	= new ScopeWrapper(
-		    parent.getScope( VariablesScope.name ),
+		    parent.getScopeLocal( VariablesScope.name ),
 		    Map.of( exceptionKey, exception )
 		);
 	}
@@ -78,9 +78,6 @@ public class CatchBoxContext implements IBoxContext {
 	 * @throws KeyNotFoundException If the key was not found in any scope
 	 */
 	public Object scopeFindLocal( Key key ) {
-
-		// In query loop?
-		// Need to add mechanism to keep a stack of temp scopes based on cfoutput or cfloop based on query
 
 		// In Variables scope? (thread-safe lookup and get)
 		Object result = variablesScope.get( key );

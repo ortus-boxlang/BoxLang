@@ -31,8 +31,7 @@ public class ScopeWrapper extends BaseScope {
 	 * Private Properties
 	 * --------------------------------------------------------------------------
 	 */
-	IScope	wrapped;
-	IScope	override;
+	IScope wrapped;
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -40,19 +39,16 @@ public class ScopeWrapper extends BaseScope {
 	 * --------------------------------------------------------------------------
 	 */
 
-	public ScopeWrapper( IScope wrapped, IScope override ) {
-		super( Key.of( "wrapper" ) );
-		this.wrapped	= wrapped;
-		this.override	= override;
-	}
-
 	public ScopeWrapper( IScope wrapped ) {
-		this( wrapped, new BaseScope( Key.of( "override" ) ) );
+		this( wrapped, null );
 	}
 
 	public ScopeWrapper( IScope wrapped, Map<Key, Object> override ) {
-		this( wrapped );
-		this.override.putAll( override );
+		super( Key.of( "wrapper" ) );
+		this.wrapped = wrapped;
+		if ( override != null ) {
+			this.putAll( override );
+		}
 	}
 
 	/**
@@ -68,14 +64,6 @@ public class ScopeWrapper extends BaseScope {
 		this.wrapped = wrapped;
 	}
 
-	public IScope getOverride() {
-		return override;
-	}
-
-	public void setOverride( IScope override ) {
-		this.override = override;
-	}
-
 	/**
 	 * Gets the name of the scope
 	 *
@@ -85,49 +73,28 @@ public class ScopeWrapper extends BaseScope {
 		return wrapped.getName();
 	}
 
-	/**
-	 * Dereference this object by a key and return the value, or throw exception
-	 *
-	 * @param name The key to look for
-	 * @param safe Whether to throw an exception if the key is not found
-	 *
-	 * @return The requested obect
-	 */
-	public Object dereference( Key name, Boolean safe ) throws KeyNotFoundException {
-		if ( override.containsKey( name ) ) {
-			return override.dereference( name, safe );
+	@Override
+	public boolean containsKey( Object name ) throws ClassCastException, NullPointerException {
+		if ( super.containsKey( name ) ) {
+			return true;
 		}
-		return wrapped.dereference( name, safe );
+		return wrapped.containsKey( name );
 	}
 
-	/**
-	 * Dereference this object by a key and invoke the result as an invokable (UDF, java method)
-	 *
-	 * @param name      The key to look for
-	 * @param arguments The arguments to pass to the invokable
-	 *
-	 * @return The requested object
-	 */
 	@Override
-	public Object dereferenceAndInvoke( Key name, Object[] arguments, Boolean safe ) throws KeyNotFoundException {
-		if ( override.containsKey( name ) ) {
-			return override.dereferenceAndInvoke( name, arguments, safe );
+	public Object get( Key name ) throws KeyNotFoundException {
+		if ( super.containsKey( name ) ) {
+			return super.get( name );
 		}
-		return wrapped.dereferenceAndInvoke( name, arguments, safe );
+		return wrapped.get( name );
 	}
 
-	/**
-	 * Derefence by assignment (x = y)
-	 *
-	 * @param name  The key to assign to
-	 * @param value The value to assign
-	 */
 	@Override
-	public void assign( Key name, Object value ) {
-		if ( override.containsKey( name ) ) {
-			override.assign( name, value );
+	public Object put( Key name, Object value ) {
+		if ( super.containsKey( name ) ) {
+			return super.put( name, value );
 		}
-		wrapped.assign( name, value );
+		return wrapped.put( name, value );
 	}
 
 }

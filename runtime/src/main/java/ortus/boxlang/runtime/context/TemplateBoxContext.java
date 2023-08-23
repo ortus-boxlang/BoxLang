@@ -17,6 +17,7 @@
  */
 package ortus.boxlang.runtime.context;
 
+import ortus.boxlang.runtime.dynamic.BaseTemplate;
 import ortus.boxlang.runtime.scopes.*;
 import ortus.boxlang.runtime.types.exceptions.KeyNotFoundException;
 import ortus.boxlang.runtime.types.exceptions.ScopeNotFoundException;
@@ -37,17 +38,17 @@ public class TemplateBoxContext implements IBoxContext {
 	 * Private Properties
 	 * --------------------------------------------------------------------------
 	 */
-	private IBoxContext	parent;
+	private IBoxContext		parent;
 
 	/**
 	 * The template that this execution context is bound to
 	 */
-	private String		templatePath	= null;
+	private BaseTemplate	template		= null;
 
 	/**
 	 * The variables scope
 	 */
-	protected IScope	variablesScope	= new VariablesScope();
+	protected IScope		variablesScope	= new VariablesScope();
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -58,12 +59,12 @@ public class TemplateBoxContext implements IBoxContext {
 	/**
 	 * Creates a new execution context with a bounded execution template and parent context
 	 *
-	 * @param templatePath The template that this execution context is bound to
-	 * @param parent       The parent context
+	 * @param template The template that this execution context is bound to
+	 * @param parent   The parent context
 	 */
-	public TemplateBoxContext( String templatePath, IBoxContext parent ) {
-		this.templatePath	= templatePath;
-		this.parent			= parent;
+	public TemplateBoxContext( BaseTemplate template, IBoxContext parent ) {
+		this.template	= template;
+		this.parent		= parent;
 	}
 
 	/**
@@ -71,8 +72,8 @@ public class TemplateBoxContext implements IBoxContext {
 	 *
 	 * @param templatePath The template that this execution context is bound to
 	 */
-	public TemplateBoxContext( String templatePath ) {
-		this( templatePath, null );
+	public TemplateBoxContext( BaseTemplate template ) {
+		this( template, null );
 	}
 
 	/**
@@ -95,8 +96,8 @@ public class TemplateBoxContext implements IBoxContext {
 	 *
 	 * @return IBoxContext
 	 */
-	public IBoxContext setTemplatePath( String templatePath ) {
-		this.templatePath = templatePath;
+	public IBoxContext setTemplate( BaseTemplate template ) {
+		this.template = template;
 		return this;
 	}
 
@@ -105,8 +106,8 @@ public class TemplateBoxContext implements IBoxContext {
 	 *
 	 * @return The template that this execution context is bound to
 	 */
-	public String getTemplatePath() {
-		return this.templatePath;
+	public BaseTemplate getTemplate() {
+		return this.template;
 	}
 
 	/**
@@ -114,8 +115,8 @@ public class TemplateBoxContext implements IBoxContext {
 	 *
 	 * @return True if bound, else false
 	 */
-	public boolean hasTemplatePath() {
-		return this.templatePath != null;
+	public boolean hasTemplate() {
+		return this.template != null;
 	}
 
 	/**

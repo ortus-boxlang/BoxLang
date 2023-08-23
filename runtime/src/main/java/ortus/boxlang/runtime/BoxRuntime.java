@@ -48,11 +48,11 @@ public class BoxRuntime {
 	 * Register all the core runtime events here
 	 */
 	private static final Key[]	RUNTIME_EVENTS	= Key.of(
-	        "onRuntimeStart",
-	        "onRuntimeShutdown",
-	        "onRuntimeConfigurationLoad",
-	        "preTemplateInvoke",
-	        "postTemplateInvoke"
+	    "onRuntimeStart",
+	    "onRuntimeShutdown",
+	    "onRuntimeConfigurationLoad",
+	    "preTemplateInvoke",
+	    "postTemplateInvoke"
 	);
 
 	/**
@@ -194,9 +194,9 @@ public class BoxRuntime {
 
 		// Runtime Started
 		logger.atInfo().log(
-		        "+ BoxLang Runtime Started at [{}] in [{}]",
-		        Instant.now(),
-		        timerUtil.stop( "startup" )
+		    "+ BoxLang Runtime Started at [{}] in [{}]",
+		    Instant.now(),
+		    timerUtil.stop( "startup" )
 		);
 
 		// Announce it baby!
@@ -232,36 +232,10 @@ public class BoxRuntime {
 	 * @throws Throwable if the template cannot be executed
 	 */
 	public static void executeTemplate( String templatePath ) throws Throwable {
-		// Debugging Timers
-		timerUtil.start( "execute-" + templatePath.hashCode() );
-		instance.logger.atDebug().log( "Executing template [{}]", templatePath );
-
-		// Build out the execution context for this execution and bind it to the incoming template
-		IBoxContext		context			= new TemplateBoxContext( templatePath );
-
 		// Here is where we presumably boostrap a page or class that we are executing in our new context.
 		// JIT if neccessary
-		BaseTemplate	targetTemplate	= BoxPiler.parse( templatePath );
-
-		// Announcements
-		Struct			data			= new Struct();
-		data.put( "context", context );
-		data.put( "template", targetTemplate );
-		data.put( "templatePath", templatePath );
-		InterceptorService.announce( "preTemplateInvoke", data );
-
-		// Fire!!!
-		targetTemplate.invoke( context );
-
-		// Announce
-		InterceptorService.announce( "postTemplateInvoke", data );
-
-		// Debugging Timer
-		instance.logger.atDebug().log(
-		        "Executed template [{}] in [{}] ms",
-		        templatePath,
-		        timerUtil.stopAndGetMillis( "execute-" + templatePath.hashCode() )
-		);
+		BaseTemplate targetTemplate = BoxPiler.parse( templatePath );
+		executeTemplate( targetTemplate );
 	}
 
 	/**
@@ -273,6 +247,44 @@ public class BoxRuntime {
 	 */
 	public static void executeTemplate( URL templateURL ) throws Throwable {
 		executeTemplate( templateURL.getPath() );
+	}
+
+	/**
+	 * Execute a single template in its own context using a {@see URL} of the template to execution
+	 *
+	 * @param templateURL A URL location to execution
+	 *
+	 * @throws Throwable if the template cannot be executed
+	 */
+	public static void executeTemplate( BaseTemplate template ) throws Throwable {
+		// Debugging Timers
+		timerUtil.start( "execute-" + template.hashCode() );
+		instance.logger.atDebug().log( "Executing template [{}]", template.path );
+
+		// Build out the execution context for this execution and bind it to the incoming template
+		IBoxContext	context	= new TemplateBoxContext( template );
+
+		// Announcements
+		Struct		data	= new Struct();
+		data.put( "context", context );
+		data.put( "template", template );
+		// Can't put nulls in concurrenthashmaps
+		// data.put( "templatePath", template.path );
+		InterceptorService.announce( "preTemplateInvoke", data );
+
+		// Fire!!!
+		template.invoke( context );
+
+		// Announce
+		InterceptorService.announce( "postTemplateInvoke", data );
+
+		// Debugging Timer
+		instance.logger.atDebug().log(
+		    "Executed template [{}] in [{}] ms",
+		    template.path,
+		    timerUtil.stopAndGetMillis( "execute-" + template.hashCode() )
+		);
+
 	}
 
 }

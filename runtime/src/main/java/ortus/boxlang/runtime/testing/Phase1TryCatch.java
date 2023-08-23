@@ -18,6 +18,7 @@
 package ortus.boxlang.runtime.testing;
 
 import ortus.boxlang.runtime.BoxRuntime;
+import ortus.boxlang.runtime.context.CatchBoxContext;
 import ortus.boxlang.runtime.context.IBoxContext;
 
 // BoxLang Auto Imports
@@ -27,6 +28,7 @@ import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.loader.ClassLocator;
 import ortus.boxlang.runtime.operators.*;
 import ortus.boxlang.runtime.scopes.Key;
+import ortus.boxlang.runtime.types.exceptions.ExceptionUtil;
 import ortus.boxlang.runtime.scopes.IScope;
 
 // Classes Auto-Imported on all Templates and Classes by BoxLang
@@ -56,10 +58,22 @@ public class Phase1TryCatch extends BaseTemplate {
 	/**
 	 * <pre>
 	<cfscript>
+	  system = create java:java.lang.System;
+	
 	  try {
-		1/0;
+		1/0
 	  } catch (any e) {
-	    (create java:java.lang.System).out.println(e.message);
+	    variables.system.out.println(e.message);
+	  } finally {
+	    variables.system.out.println("Finally");
+	  }
+	
+	  try {
+		throw new java:ortus.boxlang.runtime.types.exceptions.BoxLangException( "My Message", "My detail", "com.foo.type" );
+	  } catch ("com.foo.type" e) {
+	   variables.system.out.println(e.message);
+	  } catch (java.lang.RuntimeException e) {
+	   variables.system.out.println(e.message);
 	  }
 	</cfscript>
 	 * </pre>
@@ -68,43 +82,35 @@ public class Phase1TryCatch extends BaseTemplate {
 	@Override
 	public void invoke( IBoxContext context ) throws Throwable {
 		ClassLocator	classLocator	= ClassLocator.getInstance();
+		IBoxContext		catchContext;
 
 		// Reference to the variables scope
 		IScope			variablesScope	= context.getScopeLocal( Key.of( "variables" ) );
-
-		// Case sensitive set
-		variablesScope.put( Key.of( "system" ), classLocator.load( context, "java.lang.System", "java" ) );
-
 		variablesScope.put(
-		    // Case insensitive set
-		    Key.of( "GREETING" ),
-
-		    // Every class (box|java) is represented as a DynamicObject
-		    classLocator
-		        .load( context, "java.lang.String", "java" )
-		        .invokeConstructor( new Object[] { "Hello" } )
+		    Key.of( "system" ),
+		    classLocator.load( context, "java.lang.System", "java" )
 		);
 
-		if ( EqualsEquals.invoke( variablesScope.get( Key.of( "GREETING" ) ), "Hello" ) ) {
-
+		try {
+			Divide.invoke( 1, 0 );
+		} catch ( Throwable e ) {
+			// This this context for all code in the catch block
+			catchContext = new CatchBoxContext( context, Key.of( "e" ), e );
 			Referencer.getAndInvoke(
-
 			    // Object
 			    Referencer.get(
-			        variablesScope.get( Key.of( "SYSTEM" ) ),
+			        variablesScope.get( Key.of( "system" ) ),
 			        Key.of( "out" ),
 			        false
 			    ),
-
 			    // Method
 			    Key.of( "println" ),
-
 			    // Arguments
 			    new Object[] {
-
-			        Concat.invoke(
-			            context.scopeFindLocal( Key.of( "GREETING" ) ),
-			            " world"
+			        Referencer.get(
+			            catchContext.scopeFindLocal( Key.of( "e" ) ),
+			            Key.of( "message" ),
+			            false
 			        )
 
 				},
@@ -112,6 +118,75 @@ public class Phase1TryCatch extends BaseTemplate {
 
 			);
 
+		} finally {
+
+			Referencer.getAndInvoke(
+			    // Object
+			    Referencer.get(
+			        variablesScope.get( Key.of( "system" ) ),
+			        Key.of( "out" ),
+			        false
+			    ),
+			    // Method
+			    Key.of( "println" ),
+			    // Arguments
+			    new Object[] { "Finally" },
+			    false
+			);
+		}
+
+		try {
+			throw ( Throwable ) classLocator
+			    .load( context, "ortus.boxlang.runtime.types.exceptions.BoxLangException", "java" )
+			    .invokeConstructor( new Object[] { "My Message", "My detail", "com.foo.type" } ).getTargetInstance();
+		} catch ( Throwable e ) {
+			// This this context for all code in the catch block
+			catchContext = new CatchBoxContext( context, Key.of( "e" ), e );
+
+			if ( ExceptionUtil.exceptionIsOfType( catchContext, e, "com.foo.type" ) ) {
+				Referencer.getAndInvoke(
+				    // Object
+				    Referencer.get(
+				        variablesScope.get( Key.of( "system" ) ),
+				        Key.of( "out" ),
+				        false
+				    ),
+				    // Method
+				    Key.of( "println" ),
+				    // Arguments
+				    new Object[] {
+				        Referencer.get(
+				            catchContext.scopeFindLocal( Key.of( "e" ) ),
+				            Key.of( "message" ),
+				            false
+				        )
+				    },
+				    false
+				);
+			} else if ( ExceptionUtil.exceptionIsOfType( catchContext, e, "java.lang.RuntimeException" ) ) {
+				Referencer.getAndInvoke(
+				    // Object
+				    Referencer.get(
+				        variablesScope.get( Key.of( "system" ) ),
+				        Key.of( "out" ),
+				        false
+				    ),
+				    // Method
+				    Key.of( "println" ),
+				    // Arguments
+				    new Object[] {
+				        Referencer.get(
+				            catchContext.scopeFindLocal( Key.of( "e" ) ),
+				            Key.of( "message" ),
+				            false
+				        )
+				    },
+				    false
+				);
+			} else {
+				// Because there is no "any" catch block, we rethrow if we didn't match the type above.
+				throw e;
+			}
 		}
 
 	}
@@ -128,7 +203,7 @@ public class Phase1TryCatch extends BaseTemplate {
 		BoxRuntime.startup( true );
 
 		try {
-			BoxRuntime.executeTemplate( "" );
+			BoxRuntime.executeTemplate( Phase1TryCatch.getInstance() );
 		} catch ( Throwable e ) {
 			e.printStackTrace();
 			System.exit( 1 );
