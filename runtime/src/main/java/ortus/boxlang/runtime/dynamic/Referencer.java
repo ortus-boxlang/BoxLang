@@ -18,6 +18,10 @@
 package ortus.boxlang.runtime.dynamic;
 
 import ortus.boxlang.runtime.scopes.Key;
+
+import java.util.HashMap;
+import java.util.Map;
+
 import ortus.boxlang.runtime.interop.DynamicObject;
 
 /**
@@ -59,7 +63,7 @@ public class Referencer {
 	}
 
 	/**
-	 * Used to implement any time an object is dereferenced,
+	 * Used to implement any time an object is assigned to,
 	 *
 	 * @param object The object to dereference
 	 * @param key    The key to dereference
@@ -69,6 +73,48 @@ public class Referencer {
 	 */
 	public static Object set( Object object, Key key, Object value ) {
 		getReferenceable( object ).assign( key, value );
+		return value;
+	}
+
+	/**
+	 * Used to implement any time an object is assigned via deep keys like foo.bar.baz=1
+	 * Missing keys will be created as needed as HashMaps
+	 * An exception will be thrown if any intermediate keys exists, but are not a Map.
+	 *
+	 * @param object The object to dereference
+	 * @param value  The value to assign
+	 * @param key    The key to dereference
+	 *
+	 * @return The value that was assigned
+	 */
+	public static Object setDeep( Object object, Object value, Key... keys ) {
+		IReferenceable obj = getReferenceable( object );
+
+		for ( int i = 0; i <= keys.length - 1; i++ ) {
+			Key key = keys[ i ];
+			// At the final key, just assign our value and we're done
+			if ( i == keys.length - 1 ) {
+				obj.assign( key, value );
+				return value;
+			}
+
+			// For all intermediate keys, check if they exist and are a Map
+			Object next = obj.dereference( key, true );
+			// If missing, create as a map
+			// TODO: this needs to be a proper struct
+			if ( next == null ) {
+				next = new HashMap<Key, Object>();
+				obj.assign( key, next );
+				// If it's not null, it needs to be a Map
+			} else if ( ! ( next instanceof Map ) ) {
+				throw new RuntimeException(
+				    String.format( "Cannot assign to key [%s] because it is a [%s] and not a Map", key,
+				        next.getClass().getName() )
+				);
+			}
+			obj = getReferenceable( next );
+		}
+
 		return value;
 	}
 

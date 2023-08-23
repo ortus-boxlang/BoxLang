@@ -29,6 +29,8 @@ import static com.google.common.truth.Truth.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
+import java.util.Map;
+
 public class ReferencerTest {
 
 	@DisplayName( "It can assign to a scope" )
@@ -70,6 +72,21 @@ public class ReferencerTest {
 		Referencer.set( struct, key, "Wood" );
 		assertThat( struct.get( key ) ).isEqualTo( "Wood" );
 		assertThat( struct.get( Key.of( "BRAD" ) ) ).isEqualTo( "Wood" );
+	}
+
+	@DisplayName( "It can assign deeply" )
+	@Test
+	void testItCanAssignDeeply() {
+		IScope	scope	= new VariablesScope();
+		Key		foo		= Key.of( "foo" );
+		Key		bar		= Key.of( "bar" );
+		Key		baz		= Key.of( "baz" );
+
+		Referencer.setDeep( scope, true, foo, bar, baz );
+
+		assertThat( scope.get( foo ) instanceof Map ).isTrue();
+		assertThat( ( ( Map ) scope.get( foo ) ).get( "bar" ) instanceof Map ).isTrue();
+		assertThat( ( ( Map ) ( ( Map ) scope.get( foo ) ).get( "bar" ) ).get( "baz" ) ).isEqualTo( true );
 	}
 
 	@DisplayName( "It can dereference from a struct" )

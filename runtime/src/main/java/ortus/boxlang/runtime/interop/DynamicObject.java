@@ -1007,6 +1007,11 @@ public class DynamicObject implements IReferenceable {
 			arr[ index - 1 ] = value;
 			return;
 		}
+		if ( getTargetInstance() instanceof Map ) {
+			// If it's a raw Map, then we use a string key
+			( ( Map<Object, Object> ) getTargetInstance() ).put( name.getName(), value );
+			return;
+		}
 
 		try {
 			setField( name.getName(), value );
