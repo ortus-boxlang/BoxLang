@@ -144,7 +144,7 @@ public class TemplateBoxContext implements IBoxContext {
 	 *
 	 * @throws KeyNotFoundException If the key was not found in any scope
 	 */
-	public Object scopeFindLocal( Key key ) {
+	public ScopeSearchResult scopeFindNearby( Key key, IScope defaultScope ) {
 
 		// In query loop?
 		// Need to add mechanism to keep a stack of temp scopes based on cfoutput or cfloop based on query
@@ -154,16 +154,16 @@ public class TemplateBoxContext implements IBoxContext {
 		// Null means not found
 		if ( result != null ) {
 			// Unwrap the value now in case it was really actually null for real
-			return Struct.unWrapNull( result );
+			return new ScopeSearchResult( variablesScope, Struct.unWrapNull( result ) );
 		}
 
-		return scopeFind( key );
+		return scopeFind( key, defaultScope );
 	}
 
 	/**
 	 * Try to get the requested key from the unscoped scope
 	 * Meaning it needs to search scopes in order according to it's context.
-	 * Unlike scopeFindLocal(), this version only searches trancedent scopes like
+	 * Unlike scopeFindNearby(), this version only searches trancedent scopes like
 	 * cgi or server which are never encapsulated like variables is inside a CFC.
 	 *
 	 * @param key The key to search for
@@ -172,14 +172,18 @@ public class TemplateBoxContext implements IBoxContext {
 	 *
 	 * @throws KeyNotFoundException If the key was not found in any scope
 	 */
-	public Object scopeFind( Key key ) {
+	public ScopeSearchResult scopeFind( Key key, IScope defaultScope ) {
 
 		// The templateBoxContext has no "global" scopes, so just defer to parent
 
 		if ( parent != null ) {
-			return parent.scopeFind( key );
+			return parent.scopeFind( key, defaultScope );
 		}
 
+		// Default scope requested for missing keys
+		if ( defaultScope != null ) {
+			return new ScopeSearchResult( defaultScope, null );
+		}
 		// Not found anywhere
 		throw new KeyNotFoundException(
 		    String.format( "The requested key [%s] was not located in any scope or it's undefined", key.getName() )
@@ -230,7 +234,7 @@ public class TemplateBoxContext implements IBoxContext {
 	 *
 	 * @return The requested scope
 	 */
-	public IScope getScopeLocal( Key name ) throws ScopeNotFoundException {
+	public IScope getScopeNearby( Key name ) throws ScopeNotFoundException {
 		// Check the scopes I know about
 		if ( name.equals( variablesScope.getName() ) ) {
 			return variablesScope;

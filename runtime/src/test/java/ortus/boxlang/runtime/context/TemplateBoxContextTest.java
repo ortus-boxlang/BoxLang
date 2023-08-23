@@ -21,7 +21,9 @@ package ortus.boxlang.runtime.context;
 import org.junit.Ignore;
 import org.junit.jupiter.api.Test;
 
+import ortus.boxlang.runtime.context.IBoxContext.ScopeSearchResult;
 import ortus.boxlang.runtime.dynamic.BaseTemplate;
+import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.exceptions.KeyNotFoundException;
 
@@ -62,16 +64,30 @@ public class TemplateBoxContextTest {
 	@Test
 	@DisplayName( "Test scopeFind with existing key" )
 	void testScopeFindExistingKey() {
-		TemplateBoxContext	context	= new TemplateBoxContext();
-		Key					key		= Key.of( "testIt" );
-		context.getScopeLocal( Key.of( "variables" ) ).put( key, "value" );
-		assertThat( context.scopeFindLocal( key ) ).isEqualTo( "value" );
+		TemplateBoxContext	context			= new TemplateBoxContext();
+		Key					key				= Key.of( "testIt" );
+		IScope				variablesScope	= context.getScopeNearby( Key.of( "variables" ) );
+		variablesScope.put( key, "value" );
+		ScopeSearchResult result = context.scopeFindNearby( key, null );
+		assertThat( result.value() ).isEqualTo( "value" );
+		assertThat( result.scope() ).isEqualTo( variablesScope );
+	}
+
+	@Test
+	@DisplayName( "Test scopeFind default scope" )
+	void testScopeFindDefaultScope() {
+		TemplateBoxContext	context			= new TemplateBoxContext();
+		Key					key				= Key.of( "testIt" );
+		IScope				variablesScope	= context.getScopeNearby( Key.of( "variables" ) );
+		ScopeSearchResult	result			= context.scopeFindNearby( key, variablesScope );
+		assertThat( result.value() ).isEqualTo( null );
+		assertThat( result.scope() ).isEqualTo( variablesScope );
 	}
 
 	@Test
 	@DisplayName( "Test scopeFind with missing key" )
 	void testScopeFindMissingKey() {
 		TemplateBoxContext context = new TemplateBoxContext();
-		assertThrows( KeyNotFoundException.class, () -> context.scopeFindLocal( new Key( "nonExistentKey" ) ) );
+		assertThrows( KeyNotFoundException.class, () -> context.scopeFindNearby( new Key( "nonExistentKey" ), null ) );
 	}
 }

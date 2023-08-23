@@ -53,7 +53,7 @@ public class HelloWorld$cfm extends BaseTemplate {
 	public void invoke( ExecutionContext context ) throws Throwable {
 
 		// Reference to the variables scope
-		IScope variablesScope = context.getScopeLocal( Key.of( "variables" ) );
+		IScope variablesScope = context.getScopeNearby( Key.of( "variables" ) );
 
 		ClassLocator JavaLoader = ClassLocator.getInstance();
 
@@ -82,7 +82,7 @@ public class HelloWorld$cfm extends BaseTemplate {
 				// Arguments
 				new Object[] {
 
-					Concat.invoke( context, context.scopeFindLocal( Key.of( "GREETING" ) ), " world" )
+					Concat.invoke( context, context.scopeFindNearby( Key.of( "GREETING" ), null ).value(), " world" )
 
 				}
 

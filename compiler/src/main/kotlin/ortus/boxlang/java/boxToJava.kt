@@ -118,7 +118,7 @@ class SingleScriptTemplate(
 				 */
 				public void invoke( IBoxContext context ) throws Throwable {
 					// Reference to the variables scope
-					IScope variablesScope = context.getScopeLocal( Key.of( "variables" ) );
+					IScope variablesScope = context.getScopeNearby( Key.of( "variables" ) );
 
 					ClassLocator JavaLoader = ClassLocator.getInstance();
 				}
@@ -210,15 +210,15 @@ class ScopeGetExpression(
 		value)
 }
 
-class ScopeFindLocalMethodCall(key: String) : MethodCallExpr(
+class ScopeFindNearbyMethodCall(key: String) : MethodCallExpr(
 	NameExpr("context"),
-	"scopeFindLocal",
+	"scopeFindNearby",
 	NodeList(key.toKeyOf())
 )
 
-class GetScopeLocalMethodCall(key: String) : MethodCallExpr(
+class GetScopeNearbyMethodCall(key: String) : MethodCallExpr(
 	NameExpr("context"),
-	"getScopeLocal",
+	"getScopeNearby",
 	NodeList(key.toKeyOf())
 )
 
@@ -266,7 +266,7 @@ fun String.toKeyOf() = MethodCallExpr(
 
 fun NameExpr.toKeyOf() = this.nameAsString.toKeyOf()
 
-fun NameExpr.toScopeFindLocal() = ScopeFindLocalMethodCall(nameAsString)
+fun NameExpr.toScopeFindNearby() = ScopeFindNearbyMethodCall(nameAsString)
 
 fun BoxScript.toJava(cu: CompilationUnit): com.github.javaparser.ast.CompilationUnit {
 	val packageDeclaration = PackageDeclaration()
@@ -476,7 +476,7 @@ fun BoxMethodInvokationExpression.toJava(cu: CompilationUnit): MethodCallExpr {
 
 fun BoxVariablesScopeExpression.toJava(cu: CompilationUnit) = VariablesScopeNameExpr()
 
-fun BoxIdentifier.toJava(cu: CompilationUnit): JExpression = NameExpr(this.name).toScopeFindLocal()
+fun BoxIdentifier.toJava(cu: CompilationUnit): JExpression = NameExpr(this.name).toScopeFindNearby()
 
 fun BoxStringLiteral.toJava(cu: CompilationUnit): StringLiteralExpr = StringLiteralExpr(this.value)
 

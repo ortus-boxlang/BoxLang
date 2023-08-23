@@ -80,7 +80,7 @@ public class Phase1 extends BaseTemplate {
 		ClassLocator	classLocator	= ClassLocator.getInstance();
 
 		// Reference to the variables scope
-		IScope			variablesScope	= context.getScopeLocal( Key.of( "variables" ) );
+		IScope			variablesScope	= context.getScopeNearby( Key.of( "variables" ) );
 
 		// Case sensitive set
 		variablesScope.put( Key.of( "system" ), classLocator.load( context, "java.lang.System", "java" ) );
@@ -111,7 +111,7 @@ public class Phase1 extends BaseTemplate {
 			    new Object[] {
 
 			        Concat.invoke(
-			            context.scopeFindLocal( Key.of( "GREETING" ) ),
+			            context.scopeFindNearby( Key.of( "GREETING" ), null ).value(),
 			            " world" )
 
 				},

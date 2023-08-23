@@ -85,7 +85,7 @@ public class Phase1TryCatch extends BaseTemplate {
 		IBoxContext		catchContext;
 
 		// Reference to the variables scope
-		IScope			variablesScope	= context.getScopeLocal( Key.of( "variables" ) );
+		IScope			variablesScope	= context.getScopeNearby( Key.of( "variables" ) );
 		variablesScope.put(
 		    Key.of( "system" ),
 		    classLocator.load( context, "java.lang.System", "java" )
@@ -108,7 +108,7 @@ public class Phase1TryCatch extends BaseTemplate {
 			    // Arguments
 			    new Object[] {
 			        Referencer.get(
-			            catchContext.scopeFindLocal( Key.of( "e" ) ),
+			            catchContext.scopeFindNearby( Key.of( "e" ), null ).value(),
 			            Key.of( "message" ),
 			            false
 			        )
@@ -156,7 +156,7 @@ public class Phase1TryCatch extends BaseTemplate {
 				    // Arguments
 				    new Object[] {
 				        Referencer.get(
-				            catchContext.scopeFindLocal( Key.of( "e" ) ),
+				            catchContext.scopeFindNearby( Key.of( "e" ), null ).value(),
 				            Key.of( "message" ),
 				            false
 				        )
@@ -176,7 +176,7 @@ public class Phase1TryCatch extends BaseTemplate {
 				    // Arguments
 				    new Object[] {
 				        Referencer.get(
-				            catchContext.scopeFindLocal( Key.of( "e" ) ),
+				            catchContext.scopeFindNearby( Key.of( "e" ), null ),
 				            Key.of( "message" ),
 				            false
 				        )

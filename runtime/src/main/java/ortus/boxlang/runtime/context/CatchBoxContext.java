@@ -56,7 +56,7 @@ public class CatchBoxContext implements IBoxContext {
 	public CatchBoxContext( IBoxContext parent, Key exceptionKey, Throwable exception ) {
 		this.parent			= parent;
 		this.variablesScope	= new ScopeWrapper(
-		    parent.getScopeLocal( VariablesScope.name ),
+		    parent.getScopeNearby( VariablesScope.name ),
 		    Map.of( exceptionKey, exception )
 		);
 	}
@@ -70,7 +70,7 @@ public class CatchBoxContext implements IBoxContext {
 	/**
 	 * Try to get the requested key from the unscoped scope
 	 * Meaning it needs to search scopes in order according to it's context.
-	 * A local lookup is used for the closest context to the executing code
+	 * A nearby lookup is used for the closest context to the executing code
 	 *
 	 * @param key The key to search for
 	 *
@@ -78,23 +78,23 @@ public class CatchBoxContext implements IBoxContext {
 	 *
 	 * @throws KeyNotFoundException If the key was not found in any scope
 	 */
-	public Object scopeFindLocal( Key key ) {
+	public ScopeSearchResult scopeFindNearby( Key key, IScope defaultScope ) {
 
 		// In Variables scope? (thread-safe lookup and get)
 		Object result = variablesScope.getRaw( key );
 		// Null means not found
 		if ( result != null ) {
 			// Unwrap the value now in case it was really actually null for real
-			return Struct.unWrapNull( result );
+			return new ScopeSearchResult( variablesScope, Struct.unWrapNull( result ) );
 		}
 
-		return scopeFind( key );
+		return scopeFind( key, defaultScope );
 	}
 
 	/**
 	 * Try to get the requested key from the unscoped scope
 	 * Meaning it needs to search scopes in order according to it's context.
-	 * Unlike scopeFindLocal(), this version only searches trancedent scopes like
+	 * Unlike scopeFindNearby(), this version only searches trancedent scopes like
 	 * cgi or server which are never encapsulated like variables is inside a CFC.
 	 *
 	 * @param key The key to search for
@@ -103,10 +103,15 @@ public class CatchBoxContext implements IBoxContext {
 	 *
 	 * @throws KeyNotFoundException If the key was not found in any scope
 	 */
-	public Object scopeFind( Key key ) {
+	public ScopeSearchResult scopeFind( Key key, IScope defaultScope ) {
 
 		if ( parent != null ) {
-			return parent.scopeFindLocal( key );
+			return parent.scopeFindNearby( key, defaultScope );
+		}
+
+		// Default scope requested for missing keys
+		if ( defaultScope != null ) {
+			return new ScopeSearchResult( defaultScope, null );
 		}
 
 		// Not found anywhere
@@ -135,14 +140,14 @@ public class CatchBoxContext implements IBoxContext {
 
 	/**
 	 * Get a scope from the context. If not found, the parent context is asked.
-	 * Don't search for scopes which are local to an execution context
+	 * Don't search for scopes which are nearby to an execution context
 	 *
 	 * @return The requested scope
 	 */
 	public IScope getScope( Key name ) throws ScopeNotFoundException {
 
 		if ( parent != null ) {
-			return parent.getScopeLocal( name );
+			return parent.getScopeNearby( name );
 		}
 
 		// Not found anywhere
@@ -158,7 +163,7 @@ public class CatchBoxContext implements IBoxContext {
 	 *
 	 * @return The requested scope
 	 */
-	public IScope getScopeLocal( Key name ) throws ScopeNotFoundException {
+	public IScope getScopeNearby( Key name ) throws ScopeNotFoundException {
 		// Check the scopes I know about
 		if ( name.equals( VariablesScope.name ) ) {
 			return variablesScope;

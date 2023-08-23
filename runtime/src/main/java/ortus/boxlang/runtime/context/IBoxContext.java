@@ -28,7 +28,7 @@ public interface IBoxContext {
 
 	/**
 	 * Get a scope from the context. If not found, the parent context is asked.
-	 * Don't search for scopes which are local to an execution context
+	 * Don't search for scopes which are nearby to an execution context
 	 *
 	 * @param name The name of the scope to get
 	 *
@@ -43,31 +43,37 @@ public interface IBoxContext {
 	 * Search all known scopes
 	 *
 	 * @param name The name of the scope to get
-	 * 
+	 *
 	 * @return The requested scope
 	 *
 	 * @throws ScopeNotFoundException If the scope was not found in any context
 	 */
-	public IScope getScopeLocal( Key name ) throws ScopeNotFoundException;
+	public IScope getScopeNearby( Key name ) throws ScopeNotFoundException;
 
 	/**
 	 * Try to get the requested key from the unscoped scope
 	 * Meaning it needs to search scopes in order according to it's context.
-	 * Unlike scopeFindLocal(), this version only searches trancedent scopes like
+	 * Unlike scopeFindNearby(), this version only searches trancedent scopes like
 	 * cgi or server which are never encapsulated like variables is inside a CFC.
 	 *
+	 * If defaultScope is null and the key can't be found, a KeyNotFoundException will be thrown
+	 * If defaultScope is not null, it will return a record with the default scope and null value if the key is not found
+	 *
 	 * @param key The key to search for
 	 *
 	 * @return The value of the key if found
 	 *
 	 * @throws KeyNotFoundException If the key was not found in any scope
 	 */
-	public Object scopeFind( Key key );
+	public ScopeSearchResult scopeFind( Key key, IScope defaultScope );
 
 	/**
 	 * Try to get the requested key from the unscoped scope
 	 * Meaning it needs to search scopes in order according to it's context.
-	 * A local lookup is used for the closest context to the executing code
+	 * A nearby lookup is used for the closest context to the executing code
+	 *
+	 * If defaultScope is null and the key can't be found, a KeyNotFoundException will be thrown
+	 * If defaultScope is not null, it will return a record with the default scope and null value if the key is not found
 	 *
 	 * @param key The key to search for
 	 *
@@ -75,7 +81,7 @@ public interface IBoxContext {
 	 *
 	 * @throws KeyNotFoundException If the key was not found in any scope
 	 */
-	public Object scopeFindLocal( Key key );
+	public ScopeSearchResult scopeFindNearby( Key key, IScope defaultScope );
 
 	/**
 	 * Returns the parent box context. Null if none.
@@ -84,4 +90,13 @@ public interface IBoxContext {
 	 */
 	public IBoxContext getParent();
 
+	/**
+	 * Represents the results of a successful scope hunting expedition.
+	 *
+	 * @param scope The scope which was found
+	 * @param value The value of the key in the scope
+	 */
+	public record ScopeSearchResult( IScope scope, Object value ) {
+		// The record automatically generates the constructor, getters, equals, hashCode, and toString methods.
+	}
 }
