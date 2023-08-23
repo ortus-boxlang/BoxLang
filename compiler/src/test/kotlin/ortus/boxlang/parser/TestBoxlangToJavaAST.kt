@@ -8,7 +8,6 @@ import junit.framework.TestCase.assertEquals
 import org.junit.Ignore
 import org.junit.Test
 import ortus.boxlang.java.BoxToJavaMapper
-import ortus.boxlang.java.toJava
 import java.io.ByteArrayOutputStream
 import java.io.File
 import java.io.PrintStream
@@ -20,7 +19,6 @@ import kotlin.io.path.*
 
 
 class TestBoxlangToJavaAST : BaseTest() {
-
 	private val testsBaseFolder = Path("../examples/cf_to_java")
 	private val javaParser = JavaParser()
 	private val cfParser = CFLanguageParser()
@@ -59,7 +57,6 @@ class TestBoxlangToJavaAST : BaseTest() {
 		) { "" }
 	}
 
-	@Ignore
 	@Test
 	fun compileAndRunHelloWorld() {
 
@@ -73,7 +70,8 @@ class TestBoxlangToJavaAST : BaseTest() {
 		val javaAST = BoxToJavaMapper(cfmlParseResult.root!!, cfFile).toJava()
 
 		// Compiling Java and executing the invoke() method
-		val printStream = PrintStream(ByteArrayOutputStream())
+		val outputStream = ByteArrayOutputStream()
+		val printStream = PrintStream(outputStream)
 		System.setOut(printStream)
 		runClassFromCode(
 			packageName = javaAST.packageDeclaration.orElseThrow().nameAsString,
@@ -82,103 +80,7 @@ class TestBoxlangToJavaAST : BaseTest() {
 		)
 
 		// Testing stdout against the "Hello world" string
-		assertEquals("Hello world", printStream.toString())
-	}
-
-	@Ignore
-	@Test
-	fun templateTest() {
-		val cfmlFile = Path(testsBaseFolder.pathString, "HelloWorld", "HelloWorld.cfm").toFile()
-		val className = cfmlFile.name.replace(Regex("""(.*)\.([^.]+)"""), """$1\$$2""") ?: "MockTemplate"
-		val fileName = cfmlFile.name
-		val fileExtension = cfmlFile.extension
-		val fileFolderPath = cfmlFile.parentFile?.toPath()?.toRealPath()?.pathString ?: ""
-		val packageName = Path(fileFolderPath).toRealPath().pathString.replace(File.separator, ".").replace(Regex("^."), "")
-		val lastModifiedTimestamp = Date(cfmlFile.lastModified()).toString()
-		val compiledOnTimestamp = Date().toString()
-
-		val templateCode = """
-			// Auto package creation according to file path on disk
-			package $packageName;
-
-			import ortus.boxlang.runtime.BoxRuntime;
-			import ortus.boxlang.runtime.context.IBoxContext;
-
-			// BoxLang Auto Imports
-			import ortus.boxlang.runtime.dynamic.BaseTemplate;
-			import ortus.boxlang.runtime.dynamic.Referencer;
-			import ortus.boxlang.runtime.interop.DynamicObject;
-			import ortus.boxlang.runtime.loader.ClassLocator;
-			import ortus.boxlang.runtime.operators.*;
-			import ortus.boxlang.runtime.scopes.Key;
-			import ortus.boxlang.runtime.scopes.IScope;
-
-			// Classes Auto-Imported on all Templates and Classes by BoxLang
-			import java.time.LocalDateTime;
-			import java.time.Instant;
-			import java.lang.System;
-			import java.lang.String;
-			import java.lang.Character;
-			import java.lang.Boolean;
-			import java.lang.Double;
-			import java.lang.Integer;
-
-			public class $className extends BaseTemplate {
-
-				// Auto-Generated Singleton Helpers
-				private static $className instance;
-
-				public $className() {
-					this.name         = "$fileName";
-					this.extension    = "$fileExtension";
-					this.path         = "$fileFolderPath";
-					// this.lastModified = "$lastModifiedTimestamp";
-					// this.compiledOn   = "$compiledOnTimestamp";
-					// this.ast = ???
-				}
-
-				public static synchronized $className getInstance() {
-					if ( instance == null ) {
-						instance = new $className();
-					}
-					return instance;
-				}
-
-				/**
-				 * Each template must implement the invoke() method which executes the template
-				 *
-				 * @param context The execution context requesting the execution
-				 */
-				public void invoke( IBoxContext context ) throws Throwable {
-					System.out.println("I am in!");
-
-					// Reference to the variables scope
-					IScope variablesScope = context.getScopeLocal( Key.of( "variables" ) );
-
-					ClassLocator JavaLoader = ClassLocator.getInstance();
-				}
-			}
-		""".trimIndent()
-
-		val templateAst = parseJava(templateCode)
-		templateAst.problems.forEach { println(it) }
-
-		val cu = templateAst.result.orElseThrow().findCompilationUnit().orElseThrow()
-		val cfmlAst = CFMLKolasuParser().parse(cfmlFile.readText())
-		val cfscriptJavaStatements = cfmlAst.root!!.body.map { it.toJava(cu) }
-
-		val invokeMethodBody = templateAst.result.orElseThrow()
-			.findCompilationUnit().orElseThrow()
-			.getClassByName(className).orElseThrow()
-			.getMethodsByName("invoke")[0]
-			.body.orElseThrow()
-
-		// Convert Box statements to Java
-		cfscriptJavaStatements.forEach { invokeMethodBody.addStatement(it) }
-
-		val cfmlJava = cu.toString()
-
-		runClassFromCode(packageName, className, cfmlJava)
+		assertEquals("Hello world${System.lineSeparator()}", outputStream.toString())
 	}
 
 	@Test
@@ -263,13 +165,9 @@ class TestBoxlangToJavaAST : BaseTest() {
 		))
 		val cls = Class.forName("$packageName.$className", true, classLoader)
 		val instance = cls.getDeclaredConstructor().newInstance()
-		val iboxClass = Class.forName("ortus.boxlang.runtime.context.IBoxContext", true, classLoader)
+		val mainMethod = cls.getDeclaredMethod("main", Array<String>::class.java)
 
-		// FIXME: probably we want to pass something different to the invoke() method?
-		val iboxContextInstance = Class.forName("ortus.boxlang.runtime.context.TemplateBoxContext", true, classLoader)
-			.getDeclaredConstructor().newInstance()
-
-		val invokeMethod = instance.javaClass.getDeclaredMethod("invoke", iboxClass)
-		invokeMethod.invoke(instance, iboxContextInstance)
+		// Run the main method
+		mainMethod.invoke(instance, arrayOf<String>())
 	}
 }

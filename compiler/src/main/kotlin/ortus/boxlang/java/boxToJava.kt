@@ -122,6 +122,23 @@ class SingleScriptTemplate(
 
 					ClassLocator JavaLoader = ClassLocator.getInstance();
 				}
+
+				public static void main( String[] args ) {
+					// This is the main method, it will be invoked when the template is executed
+					// You can use this
+					// Get a runtime going
+					BoxRuntime.startup( true );
+
+					try {
+						BoxRuntime.executeTemplate( $className.getInstance() );
+					} catch ( Throwable e ) {
+						e.printStackTrace();
+						System.exit( 1 );
+					}
+
+					// Bye bye! Ciao Bella!
+					BoxRuntime.shutdown();
+				}
 			}
 		""".trimIndent())
 
