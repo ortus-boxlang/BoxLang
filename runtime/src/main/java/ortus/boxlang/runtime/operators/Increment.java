@@ -17,7 +17,10 @@
  */
 package ortus.boxlang.runtime.operators;
 
+import ortus.boxlang.runtime.context.IBoxContext;
+import ortus.boxlang.runtime.dynamic.Referencer;
 import ortus.boxlang.runtime.dynamic.casters.DoubleCaster;
+import ortus.boxlang.runtime.scopes.Key;
 
 /**
  * Performs Math i++
@@ -32,6 +35,29 @@ public class Increment implements IOperator {
 	 */
 	public static Double invoke( Object object ) {
 		return DoubleCaster.cast( object ) + 1;
+	}
+
+	/**
+	 * Apply this operator to an object/key and set the new value back in the same object/key
+	 *
+	 * @return The result
+	 */
+	public static Double invokePre( Object target, Key name ) {
+		Double result = invoke( Referencer.get( target, name, false ) );
+		Referencer.set( target, name, result );
+		return result;
+	}
+
+	/**
+	 * Apply this operator to an object/key and set the new value back in the same object/key
+	 *
+	 * @return The variable PRIOR to the operation
+	 */
+	public static Double invokePost( Object target, Key name ) {
+		Double	original	= DoubleCaster.cast( Referencer.get( target, name, false ) );
+		Double	result		= invoke( original );
+		Referencer.set( target, name, result );
+		return original;
 	}
 
 }

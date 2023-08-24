@@ -17,7 +17,9 @@
  */
 package ortus.boxlang.runtime.operators;
 
+import ortus.boxlang.runtime.dynamic.Referencer;
 import ortus.boxlang.runtime.dynamic.casters.DoubleCaster;
+import ortus.boxlang.runtime.scopes.Key;
 
 /**
  * Performs Math minus
@@ -33,6 +35,17 @@ public class Minus implements IOperator {
 	 */
 	public static Double invoke( Object left, Object right ) {
 		return DoubleCaster.cast( left ) - DoubleCaster.cast( right );
+	}
+
+	/**
+	 * Apply this operator to an object/key and set the new value back in the same object/key
+	 *
+	 * @return The result
+	 */
+	public static Double invoke( Object target, Key name, Object right ) {
+		Double result = invoke( Referencer.get( target, name, false ), right );
+		Referencer.set( target, name, result );
+		return result;
 	}
 
 }

@@ -20,6 +20,11 @@ package ortus.boxlang.runtime.operators;
 import org.junit.Ignore;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+
+import ortus.boxlang.runtime.scopes.IScope;
+import ortus.boxlang.runtime.scopes.Key;
+import ortus.boxlang.runtime.scopes.VariablesScope;
+
 import static com.google.common.truth.Truth.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -45,6 +50,15 @@ public class DivideTest {
 	@Test
 	void testItCanNotDivideByZero() {
 		assertThrows( RuntimeException.class, () -> Divide.invoke( 1, 0 ) );
+	}
+
+	@DisplayName( "It can compound Divide" )
+	@Test
+	void testItCanCompountDivide() {
+		IScope scope = new VariablesScope();
+		scope.put( Key.of( "i" ), 4 );
+		assertThat( Divide.invoke( scope, Key.of( "i" ), 2 ) ).isEqualTo( 2 );
+		assertThat( scope.get( Key.of( "i" ) ) ).isEqualTo( 2 );
 	}
 
 }

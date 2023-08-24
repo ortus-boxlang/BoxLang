@@ -17,7 +17,10 @@
  */
 package ortus.boxlang.runtime.operators;
 
+import ortus.boxlang.runtime.dynamic.Referencer;
+import ortus.boxlang.runtime.dynamic.casters.DoubleCaster;
 import ortus.boxlang.runtime.dynamic.casters.StringCaster;
+import ortus.boxlang.runtime.scopes.Key;
 
 /**
  * Performs String Concat
@@ -33,6 +36,17 @@ public class Concat implements IOperator {
 	 */
 	public static String invoke( Object left, Object right ) {
 		return ( StringCaster.cast( left ) ).concat( StringCaster.cast( right ) );
+	}
+
+	/**
+	 * Apply this operator to an object/key and set the new value back in the same object/key
+	 *
+	 * @return The result
+	 */
+	public static String invoke( Object target, Key name, Object right ) {
+		String result = invoke( Referencer.get( target, name, false ), right );
+		Referencer.set( target, name, result );
+		return result;
 	}
 
 }

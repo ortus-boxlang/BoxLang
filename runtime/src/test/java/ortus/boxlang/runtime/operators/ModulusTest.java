@@ -20,6 +20,11 @@ package ortus.boxlang.runtime.operators;
 import org.junit.Ignore;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+
+import ortus.boxlang.runtime.scopes.IScope;
+import ortus.boxlang.runtime.scopes.Key;
+import ortus.boxlang.runtime.scopes.VariablesScope;
+
 import static com.google.common.truth.Truth.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -46,6 +51,15 @@ public class ModulusTest {
 	@Test
 	void testItCanNotModulusByZero() {
 		assertThrows( RuntimeException.class, () -> Modulus.invoke( 1, 0 ) );
+	}
+
+	@DisplayName( "It can compound Modulus" )
+	@Test
+	void testItCanCompountModulus() {
+		IScope scope = new VariablesScope();
+		scope.put( Key.of( "i" ), 4 );
+		assertThat( Modulus.invoke( scope, Key.of( "i" ), 2 ) ).isEqualTo( 0 );
+		assertThat( scope.get( Key.of( "i" ) ) ).isEqualTo( 0 );
 	}
 
 }

@@ -20,6 +20,11 @@ package ortus.boxlang.runtime.operators;
 import org.junit.Ignore;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+
+import ortus.boxlang.runtime.scopes.IScope;
+import ortus.boxlang.runtime.scopes.Key;
+import ortus.boxlang.runtime.scopes.VariablesScope;
+
 import static com.google.common.truth.Truth.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -38,6 +43,15 @@ public class PlusTest {
 	void testItCanAddStrings() {
 		assertThat( Plus.invoke( "3", "2" ) ).isEqualTo( 5 );
 		assertThat( Plus.invoke( "3.5", "2.5" ) ).isEqualTo( 6 );
+	}
+
+	@DisplayName( "It can compound add" )
+	@Test
+	void testItCanCompountAdd() {
+		IScope scope = new VariablesScope();
+		scope.put( Key.of( "i" ), 4 );
+		assertThat( Plus.invoke( scope, Key.of( "i" ), 2 ) ).isEqualTo( 6 );
+		assertThat( scope.get( Key.of( "i" ) ) ).isEqualTo( 6 );
 	}
 
 }

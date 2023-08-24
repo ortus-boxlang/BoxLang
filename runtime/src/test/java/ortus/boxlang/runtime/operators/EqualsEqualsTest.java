@@ -48,4 +48,12 @@ public class EqualsEqualsTest {
 		assertThat( EqualsEquals.invoke( "1.5", "1.500" ) ).isTrue();
 	}
 
+	@DisplayName( "It can compare nulls" )
+	@Test
+	void testItCanCompareNulls() {
+		assertThat( EqualsEquals.invoke( null, null ) ).isTrue();
+		assertThat( EqualsEquals.invoke( "brad", null ) ).isFalse();
+		assertThat( EqualsEquals.invoke( null, "brad" ) ).isFalse();
+	}
+
 }

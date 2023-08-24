@@ -39,25 +39,30 @@ public class Compare implements IOperator {
 
 	/**
 	 * Invokes the comparison
-	 * 
+	 *
 	 * @param left          The left operand
 	 * @param right         The right operand
 	 * @param caseSensitive Whether to compare strings case sensitive
-	 * 
+	 *
 	 * @return 1 if greater than, -1 if less than, = if equal
 	 */
 	@SuppressWarnings( "unchecked" )
 	public static int invoke( Object left, Object right, Boolean caseSensitive ) {
+		// Two nulls are equal
+		if ( left == null && right == null ) {
+			return 0;
+		}
+		// null is less than than non null
+		if ( left == null && right != null ) {
+			return -1;
+		}
+		// Non null is greater than null
+		if ( left != null && right == null ) {
+			return 1;
+		}
+
 		left	= DynamicObject.unWrap( left );
 		right	= DynamicObject.unWrap( right );
-
-		if ( left == null ) {
-			left = "";
-		}
-
-		if ( right == null ) {
-			right = "";
-		}
 
 		// TODO: actually if inputs are numeric, don't just cast and catch.
 		try {
@@ -82,7 +87,7 @@ public class Compare implements IOperator {
 		// TODO: Dates
 
 		throw new RuntimeException(
-		        String.format( "Can't compare [%s] against [%s]", left.getClass().getName(), right.getClass().getName() )
+		    String.format( "Can't compare [%s] against [%s]", left.getClass().getName(), right.getClass().getName() )
 		);
 	}
 

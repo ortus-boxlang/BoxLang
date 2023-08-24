@@ -20,6 +20,11 @@ package ortus.boxlang.runtime.operators;
 import org.junit.Ignore;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+
+import ortus.boxlang.runtime.scopes.IScope;
+import ortus.boxlang.runtime.scopes.Key;
+import ortus.boxlang.runtime.scopes.VariablesScope;
+
 import static com.google.common.truth.Truth.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -57,6 +62,15 @@ public class ConcatTest {
 	@Test
 	void testItCanConcatByteArray() {
 		assertThat( Concat.invoke( "Brad".getBytes(), "Wood".getBytes() ) ).isEqualTo( "BradWood" );
+	}
+
+	@DisplayName( "It can compound concatenate" )
+	@Test
+	void testItCanCompountConcatenate() {
+		IScope scope = new VariablesScope();
+		scope.put( Key.of( "i" ), "brad" );
+		assertThat( Concat.invoke( scope, Key.of( "i" ), "wood" ) ).isEqualTo( "bradwood" );
+		assertThat( scope.get( Key.of( "i" ) ) ).isEqualTo( "bradwood" );
 	}
 
 }

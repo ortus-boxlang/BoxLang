@@ -78,4 +78,12 @@ public class CompareTest {
 		assertThat( Compare.invoke( "2.8", "00000.600000" ) ).isEqualTo( 1 );
 	}
 
+	@DisplayName( "It can compare nulls" )
+	@Test
+	void testItCanCompareNulls() {
+		assertThat( Compare.invoke( null, null ) ).isEqualTo( 0 );
+		assertThat( Compare.invoke( "brad", null ) ).isEqualTo( 1 );
+		assertThat( Compare.invoke( null, "brad" ) ).isEqualTo( -1 );
+	}
+
 }

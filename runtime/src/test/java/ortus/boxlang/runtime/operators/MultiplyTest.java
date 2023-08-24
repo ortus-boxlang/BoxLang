@@ -20,6 +20,11 @@ package ortus.boxlang.runtime.operators;
 import org.junit.Ignore;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+
+import ortus.boxlang.runtime.scopes.IScope;
+import ortus.boxlang.runtime.scopes.Key;
+import ortus.boxlang.runtime.scopes.VariablesScope;
+
 import static com.google.common.truth.Truth.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -38,6 +43,15 @@ public class MultiplyTest {
 	void testItCanMultiplyStrings() {
 		assertThat( Multiply.invoke( "3", "2" ) ).isEqualTo( 6 );
 		assertThat( Multiply.invoke( "3.5", "2.5" ) ).isEqualTo( 8.75 );
+	}
+
+	@DisplayName( "It can compound Multiply" )
+	@Test
+	void testItCanCompountMultiply() {
+		IScope scope = new VariablesScope();
+		scope.put( Key.of( "i" ), 4 );
+		assertThat( Multiply.invoke( scope, Key.of( "i" ), 4 ) ).isEqualTo( 16 );
+		assertThat( scope.get( Key.of( "i" ) ) ).isEqualTo( 16 );
 	}
 
 }

@@ -17,12 +17,14 @@
  */
 package ortus.boxlang.runtime.operators;
 
-import org.junit.Ignore;
+import static com.google.common.truth.Truth.assertThat;
+
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import static com.google.common.truth.Truth.assertThat;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
+
+import ortus.boxlang.runtime.scopes.IScope;
+import ortus.boxlang.runtime.scopes.Key;
+import ortus.boxlang.runtime.scopes.VariablesScope;
 
 public class IncrementTest {
 
@@ -38,6 +40,19 @@ public class IncrementTest {
 	void testItCanAddStrings() {
 		assertThat( Increment.invoke( "3" ) ).isEqualTo( 4 );
 		assertThat( Increment.invoke( "3.5" ) ).isEqualTo( 4.5 );
+	}
+
+	@DisplayName( "It can compound Increment" )
+	@Test
+	void testItCanCompountIncrement() {
+		IScope scope = new VariablesScope();
+		scope.put( Key.of( "i" ), 5 );
+		assertThat( Increment.invokePre( scope, Key.of( "i" ) ) ).isEqualTo( 6 );
+		assertThat( scope.get( Key.of( "i" ) ) ).isEqualTo( 6 );
+
+		scope.put( Key.of( "i" ), 5 );
+		assertThat( Increment.invokePost( scope, Key.of( "i" ) ) ).isEqualTo( 5 );
+		assertThat( scope.get( Key.of( "i" ) ) ).isEqualTo( 6 );
 	}
 
 }
