@@ -6,6 +6,13 @@
     "configurations": [
         {
             "type": "java",
+            "name": "Phase1Switch",
+            "request": "launch",
+            "mainClass": "ortus.boxlang.runtime.testing.Phase1Switch",
+            "projectName": "runtime"
+        },
+        {
+            "type": "java",
             "name": "Phase1TryCatch",
             "request": "launch",
             "mainClass": "ortus.boxlang.runtime.testing.Phase1TryCatch",

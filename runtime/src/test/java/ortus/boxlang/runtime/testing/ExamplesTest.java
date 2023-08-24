@@ -43,4 +43,11 @@ public class ExamplesTest {
 		} );
 	}
 
+	@DisplayName( "It can execute Phase1 switch example" )
+	@Test
+	public void testItCanExecutePhase1Switch() throws Throwable {
+		Phase1Switch.main( new String[] {
+		} );
+	}
+
 }
