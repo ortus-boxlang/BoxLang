@@ -22,6 +22,7 @@ import org.junit.Ignore;
 import org.junit.jupiter.api.Test;
 
 import ortus.boxlang.runtime.context.TemplateBoxContext;
+import ortus.boxlang.runtime.loader.ImportRecord;
 import ortus.boxlang.runtime.loader.resolvers.BaseResolver;
 
 import org.junit.jupiter.api.DisplayName;
@@ -41,31 +42,33 @@ public class BaseResolverTest {
         assertThat( target.getPrefix() ).isEqualTo( "test" );
     }
 
-    @DisplayName( "It can resolve imports" )
+    @DisplayName( "It can expand imports" )
     @Test
     void testItCanResolveImports() {
-        List<String> imports = Arrays.asList(
-            "java:java.lang.String",
-            "java:java.lang.Integer",
-            "java.lang.Integer",
-            "ortus.boxlang.runtime.loader.resolvers.BaseResolver",
-            "bx:models.test.HelloWorld",
-            "java:java.lang.List as jList"
+        List<ImportRecord> imports   = Arrays.asList(
+            ImportRecord.parse( "java:java.lang.String" ),
+            ImportRecord.parse( "java:java.lang.Integer" ),
+            ImportRecord.parse( "java.lang.Integer" ),
+            ImportRecord.parse( "ortus.boxlang.runtime.loader.resolvers.BaseResolver" ),
+            // The Java resolver will ignore this mapping
+            ImportRecord.parse( "bx:models.test.HelloWorld" ),
+            ImportRecord.parse( "java:java.lang.List as jList" )
         );
-
-        String       fqn     = BaseResolver.resolveFromImport( new TemplateBoxContext(), "String", imports );
+        BaseResolver       jResolver = JavaResolver.getInstance();
+        String             fqn       = jResolver.expandFromImport( new TemplateBoxContext(), "String", imports );
         assertThat( fqn ).isEqualTo( "java.lang.String" );
 
-        fqn = BaseResolver.resolveFromImport( new TemplateBoxContext(), "Integer", imports );
+        fqn = jResolver.expandFromImport( new TemplateBoxContext(), "Integer", imports );
         assertThat( fqn ).isEqualTo( "java.lang.Integer" );
 
-        fqn = BaseResolver.resolveFromImport( new TemplateBoxContext(), "HelloWorld", imports );
-        assertThat( fqn ).isEqualTo( "models.test.HelloWorld" );
+        // The Java resolver will ignore this mapping
+        fqn = jResolver.expandFromImport( new TemplateBoxContext(), "HelloWorld", imports );
+        assertThat( fqn ).isEqualTo( "HelloWorld" );
 
-        fqn = BaseResolver.resolveFromImport( new TemplateBoxContext(), "BaseResolver", imports );
+        fqn = jResolver.expandFromImport( new TemplateBoxContext(), "BaseResolver", imports );
         assertThat( fqn ).isEqualTo( "ortus.boxlang.runtime.loader.resolvers.BaseResolver" );
 
-        fqn = BaseResolver.resolveFromImport( new TemplateBoxContext(), "jList", imports );
+        fqn = jResolver.expandFromImport( new TemplateBoxContext(), "jList", imports );
         assertThat( fqn ).isEqualTo( "java.lang.List" );
     }
 

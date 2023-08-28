@@ -26,6 +26,7 @@ import ortus.boxlang.runtime.dynamic.BaseTemplate;
 import ortus.boxlang.runtime.dynamic.Referencer;
 import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.loader.ClassLocator;
+import ortus.boxlang.runtime.loader.ImportRecord;
 import ortus.boxlang.runtime.operators.*;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.exceptions.ExceptionUtil;
@@ -33,17 +34,14 @@ import ortus.boxlang.runtime.scopes.IScope;
 
 // Classes Auto-Imported on all Templates and Classes by BoxLang
 import java.time.LocalDateTime;
+import java.util.List;
 import java.time.Instant;
-import java.lang.System;
-import java.lang.String;
-import java.lang.Character;
-import java.lang.Boolean;
-import java.lang.Double;
-import java.lang.Integer;
 
 public class Phase1TryCatch extends BaseTemplate {
 
-	private static Phase1TryCatch instance;
+	private static Phase1TryCatch			instance;
+
+	private final static List<ImportRecord>	imports	= List.of();
 
 	private Phase1TryCatch() {
 	}
@@ -88,7 +86,7 @@ public class Phase1TryCatch extends BaseTemplate {
 		IScope			variablesScope	= context.getScopeNearby( Key.of( "variables" ) );
 		variablesScope.put(
 		    Key.of( "system" ),
-		    classLocator.load( context, "java.lang.System", "java" )
+		    classLocator.load( context, "java:java.lang.System", imports )
 		);
 
 		try {
@@ -137,7 +135,7 @@ public class Phase1TryCatch extends BaseTemplate {
 
 		try {
 			throw ( Throwable ) classLocator
-			    .load( context, "ortus.boxlang.runtime.types.exceptions.BoxLangException", "java" )
+			    .load( context, "java:ortus.boxlang.runtime.types.exceptions.BoxLangException", imports )
 			    .invokeConstructor( new Object[] { "My Message", "My detail", "com.foo.type" } ).getTargetInstance();
 		} catch ( Throwable e ) {
 			// This this context for all code in the catch block

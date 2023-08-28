@@ -24,6 +24,7 @@ import org.apache.commons.lang3.ClassUtils;
 
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.loader.ClassLocator;
+import ortus.boxlang.runtime.loader.ImportRecord;
 import ortus.boxlang.runtime.loader.ClassLocator.ClassLocation;
 
 /**
@@ -89,41 +90,41 @@ public class JavaResolver extends BaseResolver {
 	 * to resolve the class if the prefix matches with imports.
 	 *
 	 * @param context The current context of execution
-	 * @param name    The name of the class to resolve
+	 * @param name    The fully qualified name OR imported alias of the class to resolve
 	 * @param imports The list of imports to use
 	 *
 	 * @return An optional class object representing the class if found
 	 */
 	@Override
-	public Optional<ClassLocation> resolve( IBoxContext context, String name, List<String> imports ) {
-		return findFromModules( name, imports )
-		    .or( () -> findFromSystem( name, imports ) );
+	public Optional<ClassLocation> resolve( IBoxContext context, String name, List<ImportRecord> imports ) {
+		String fullyQualifiedName = expandFromImport( null, name, imports );
+		return findFromModules( fullyQualifiedName, imports )
+		    .or( () -> findFromSystem( fullyQualifiedName, imports ) );
 	}
 
 	/**
 	 * Load a class from the registered runtime module class loaders
 	 *
-	 * @param name    The fully qualified path of the class to load
-	 * @param imports The list of imports to use
+	 * @param fullyQualifiedName The fully qualified path of the class to load
+	 * @param imports            The list of imports to use
 	 *
 	 * @return The loaded class or null if not found
 	 */
-	public Optional<ClassLocation> findFromModules( String name, List<String> imports ) {
+	public Optional<ClassLocation> findFromModules( String fullyQualifiedName, List<ImportRecord> imports ) {
 		return Optional.ofNullable( null );
 	}
 
 	/**
 	 * Load a class from the system class loader
 	 *
-	 * @param name    The fully qualified path of the class to load
-	 * @param imports The list of imports to use
+	 * @param fullyQualifiedName The fully qualified path of the class to load
+	 * @param imports            The list of imports to use
 	 *
 	 * @return The {@link ClassLocation} record wrapped in an optional if found, empty otherwise
 	 */
-	public Optional<ClassLocation> findFromSystem( String name, List<String> imports ) {
+	public Optional<ClassLocation> findFromSystem( String fullyQualifiedName, List<ImportRecord> imports ) {
 		Class<?> clazz;
 		try {
-			String fullyQualifiedName = resolveFromImport( null, name, imports );
 			clazz = getSystemClassLoader().loadClass( fullyQualifiedName );
 			return Optional.of(
 			    new ClassLocation(

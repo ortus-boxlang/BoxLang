@@ -19,6 +19,7 @@ package ortus.boxlang.runtime.loader;
 
 import static org.junit.Assert.assertThrows;
 
+import java.util.List;
 import java.util.Optional;
 
 import org.junit.Ignore;
@@ -55,6 +56,47 @@ public class ClassLocatorTest {
 		assertThrows( IllegalStateException.class, () -> {
 			locator.removeResolver( "bx" );
 		} );
+	}
+
+	@DisplayName( "It can load classes with resolver prefix part of name" )
+	@Test
+	public void testCanLoadClassWithResolverInName() throws Throwable {
+		ClassLocator	locator		= ClassLocator.getInstance();
+		String			targetClass	= "java:java.lang.String";
+
+		DynamicObject	target		= locator.load( new TemplateBoxContext(), targetClass );
+		target.invokeConstructor( "Hola ClassLoader" );
+		assertThat( target.getTargetInstance() ).isEqualTo( "Hola ClassLoader" );
+
+	}
+
+	@DisplayName( "It can load classes with system resolver lookup" )
+	@Test
+	public void testCanLoadClassWithSystemResolver() throws Throwable {
+		ClassLocator	locator		= ClassLocator.getInstance();
+		String			targetClass	= "java.lang.String";
+
+		DynamicObject	target		= locator.load( new TemplateBoxContext(), targetClass );
+		target.invokeConstructor( "Hola ClassLoader" );
+		assertThat( target.getTargetInstance() ).isEqualTo( "Hola ClassLoader" );
+
+	}
+
+	@DisplayName( "It can find appropriate imports based on resolver type" )
+	@Test
+	public void testCanFindAppropriateImports() throws Throwable {
+		ClassLocator		locator		= ClassLocator.getInstance();
+		String				targetClass	= "java:String";
+		List<ImportRecord>	imports		= List.of( ImportRecord.parse( "java:java.lang.String as String" ) );
+
+		DynamicObject		target		= locator.load(
+		    new TemplateBoxContext(),
+		    targetClass,
+		    imports
+		);
+		target.invokeConstructor( "Hola ClassLoader" );
+		assertThat( target.getTargetInstance() ).isEqualTo( "Hola ClassLoader" );
+
 	}
 
 	@DisplayName( "It can load native Java classes and add to the resolver cache" )
@@ -95,6 +137,7 @@ public class ClassLocatorTest {
 	public void testResolverCacheMethods() throws ClassNotFoundException {
 		ClassLocator	locator		= ClassLocator.getInstance();
 		String			targetClass	= "java.lang.String";
+		locator.getResolverCache().clear();
 
 		assertThat( locator.isEmpty() ).isTrue();
 		assertThat( locator.size() ).isEqualTo( 0 );

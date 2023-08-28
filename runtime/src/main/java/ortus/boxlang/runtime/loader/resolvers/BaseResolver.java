@@ -22,6 +22,7 @@ import java.util.Optional;
 
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.loader.ClassLocator;
+import ortus.boxlang.runtime.loader.ImportRecord;
 import ortus.boxlang.runtime.loader.ClassLocator.ClassLocation;
 
 /**
@@ -95,13 +96,13 @@ public class BaseResolver implements IClassResolver {
 	 * @return An optional class object representing the class if found
 	 */
 	@Override
-	public Optional<ClassLocation> resolve( IBoxContext context, String name, List<String> imports ) {
+	public Optional<ClassLocation> resolve( IBoxContext context, String name, List<ImportRecord> imports ) {
 		throw new UnsupportedOperationException( "Implement the [resolve] method in your own resolver" );
 	}
 
 	/**
-	 * Tries to resolve the class name using the imports list given. If the class
-	 * name is not found, it will return the original class name.
+	 * Tries to expand the full class name using the import aliases given. If the class
+	 * name is not found as an import, we return the original class name.
 	 *
 	 * @param context   The current context of execution
 	 * @param className The name of the class to resolve
@@ -109,24 +110,29 @@ public class BaseResolver implements IClassResolver {
 	 *
 	 * @return The resolved class name or the original class name if not found
 	 */
-	public static String resolveFromImport( IBoxContext context, String className, List<String> imports ) {
+	public String expandFromImport( IBoxContext context, String className, List<ImportRecord> imports ) {
 		return imports.stream()
-		    // Remove the resolvers by prefix
-		    .map( thisImport -> thisImport.replaceAll( "[^:]+:", "" ) )
 		    // Discover import
 		    .filter( thisImport -> {
-			    String[] parts		= thisImport.split( "\\." );
-			    String[] aliasParts	= thisImport.split( "\\s+" );
-			    String	shortName	= parts[ parts.length - 1 ];
-			    String	aliasName	= aliasParts[ aliasParts.length - 1 ];
-
-			    return shortName.equalsIgnoreCase( className ) || aliasName.equalsIgnoreCase( className );
+			    return importApplies( thisImport ) && thisImport.alias().equalsIgnoreCase( className );
 		    } )
 		    // Return the first one, the first one wins
 		    .findFirst()
-		    .map( thisImport -> thisImport.split( "(?i) as " )[ 0 ] )
+		    .map( thisImport -> thisImport.className() )
 		    // Nothing found, return the original class name
 		    .orElse( className );
+	}
+
+	/**
+	 * Checks if the import applies to this resolver. Applicable imports have a
+	 * resolver prefix that matches this resolver's prefix, or no prefix at all
+	 *
+	 * @param thisImport The import to check
+	 *
+	 * @return True if the import applies to this resolver
+	 */
+	protected boolean importApplies( ImportRecord thisImport ) {
+		return thisImport.resolverPrefix() == null || thisImport.resolverPrefix().equalsIgnoreCase( this.prefix );
 	}
 
 }

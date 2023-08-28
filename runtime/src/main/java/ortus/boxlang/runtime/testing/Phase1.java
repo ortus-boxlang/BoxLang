@@ -25,23 +25,22 @@ import ortus.boxlang.runtime.dynamic.BaseTemplate;
 import ortus.boxlang.runtime.dynamic.Referencer;
 import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.loader.ClassLocator;
+import ortus.boxlang.runtime.loader.ImportRecord;
 import ortus.boxlang.runtime.operators.*;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.IScope;
 
 // Classes Auto-Imported on all Templates and Classes by BoxLang
 import java.time.LocalDateTime;
+import java.util.Arrays;
+import java.util.List;
 import java.time.Instant;
-import java.lang.System;
-import java.lang.String;
-import java.lang.Character;
-import java.lang.Boolean;
-import java.lang.Double;
-import java.lang.Integer;
 
 public class Phase1 extends BaseTemplate {
 
-	private static Phase1 instance;
+	private static Phase1					instance;
+
+	private final static List<ImportRecord>	imports	= List.of();
 
 	private Phase1() {
 	}
@@ -83,7 +82,7 @@ public class Phase1 extends BaseTemplate {
 		IScope			variablesScope	= context.getScopeNearby( Key.of( "variables" ) );
 
 		// Case sensitive set
-		variablesScope.put( Key.of( "system" ), classLocator.load( context, "java.lang.System", "java" ) );
+		variablesScope.put( Key.of( "system" ), classLocator.load( context, "java:java.lang.System", imports ) );
 
 		variablesScope.put(
 		    // Case insensitive set
@@ -91,7 +90,7 @@ public class Phase1 extends BaseTemplate {
 
 		    // Every class (box|java) is represented as a DynamicObject
 		    classLocator
-		        .load( context, "java.lang.String", "java" )
+		        .load( context, "java:java.lang.String", imports )
 		        .invokeConstructor( new Object[] { "Hello" } ) );
 
 		if ( EqualsEquals.invoke( variablesScope.get( Key.of( "GREETING" ) ), "Hello" ) ) {
