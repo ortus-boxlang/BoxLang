@@ -2,10 +2,10 @@ parser grammar CFMLParser;
 
 options { tokenVocab=CFMLLexer; }
 
-htmlDocument    
-    : (scriptlet | SEA_WS)* xml? (scriptlet | SEA_WS)* dtd? (scriptlet | SEA_WS)* 
+htmlDocument
+    : (scriptlet | SEA_WS)* xml? (scriptlet | SEA_WS)* cfmlElement* dtd? (scriptlet | SEA_WS)*
     	( cfmlElement | htmlElements)*
-    	EOF
+    	EOF?
     ;
 
 cfmlComment:
@@ -16,17 +16,20 @@ cfmlCloseTag:
 
 htmlElements
     : htmlMisc* htmlElement htmlMisc*
-    ; 
+    ;
 
-htmlElement     
+htmlElement
     : cfmlCloseTag
     | TAG_OPEN htmlTagName htmlAttribute* TAG_CLOSE htmlContent TAG_OPEN TAG_SLASH htmlTagName TAG_CLOSE
     | TAG_OPEN htmlTagName htmlAttribute* TAG_SLASH_CLOSE
     | TAG_OPEN htmlTagName htmlAttribute* TAG_CLOSE
-    
+    | dtd
     | scriptlet
     | script
     | style
+    | HTML_TEXT
+    | INTERPOLATION
+    | htmlComment
     ;
 
 cfmlElement
@@ -37,12 +40,14 @@ cfmlElement
     | cfinterface
     | htmlComment
     | cfscript
+    | cfmlStatement
     ;
 
 cfmlStatement
     : cfset
     | cfdump
     | htmlComment
+    | htmlElement
     | cfscript
     | cfargument
     | cfreturn
@@ -60,6 +65,7 @@ cfmlStatement
     | cfinvoke1
     | cfinvokeargument
     | cffile
+    | cfoutput
     ;
 
 cfcomponent
@@ -103,7 +109,7 @@ cfargument
     ;
 
 cfreturn
-    : TAG_OPEN CFRETURN cfexpression (TAG_SLASH_CLOSE | TAG_CLOSE)
+    : TAG_OPEN CFRETURN cfexpression? (TAG_SLASH_CLOSE | TAG_CLOSE)
     ;
 
 cfif
@@ -181,17 +187,25 @@ cffile
     : TAG_OPEN CFFILE htmlAttribute* TAG_CLOSE
     ;
 
+cfoutput
+	: TAG_OPEN CFOUTPUT htmlAttribute* TAG_SLASH_CLOSE
+	| TAG_OPEN CFOUTPUT htmlAttribute* TAG_CLOSE htmlDocument? TAG_OPEN TAG_SLASH CFOUTPUT TAG_CLOSE
+	| TAG_OPEN CFOUTPUT htmlAttribute* TAG_CLOSE (cfmlElement | htmlElement | INTERPOLATION)+ TAG_OPEN TAG_SLASH CFOUTPUT TAG_CLOSE
+	;
+
 cfexpression
 	: EXPRESSION
-	; 
+	;
 
-htmlContent     
+htmlContent
     : htmlChardata? ((htmlElement | xhtmlCDATA | htmlComment) htmlChardata?)*
+    | INTERPOLATION
     ;
 
-htmlAttribute   
+htmlAttribute
     : htmlAttributeName TAG_EQUALS htmlAttributeValue
     | htmlAttributeName
+//    | cfmlElement
     ;
 
 htmlAttributeName
@@ -206,13 +220,13 @@ htmlTagName
     : TAG_NAME
     ;
 
-htmlChardata    
-    : HTML_TEXT 
+htmlChardata
+    : HTML_TEXT
     | SEA_WS
     ;
 
-htmlMisc        
-    : htmlComment 
+htmlMisc
+    : htmlComment
     | SEA_WS
     ;
 

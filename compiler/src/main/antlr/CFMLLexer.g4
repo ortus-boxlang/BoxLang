@@ -53,9 +53,23 @@ TAG_OPEN
     : '<' -> pushMode(TAG)
     ;
 
+INTERPOLATION
+	: HASHHASH
+	;
+
+POSSIBLE_INTERPOLATION_START
+	: '#' -> skip, pushMode(POSSIBLE_INTERPOLATION)
+	;
+
 HTML_TEXT
-    : ~'<'+
+    : ~[<#]+
     ;
+
+mode POSSIBLE_INTERPOLATION;
+INTPR_HTML		: (~[#<]+ '\r'? '\n'
+				| '#')				{ setText("#" + getText()); } 	-> type(HTML_TEXT), popMode;
+INTRP_CONTENT	: ~[#]+ '#' 		{ setText("#" + getText()); } 	-> type(INTERPOLATION), popMode;
+
 
 
 
@@ -89,6 +103,7 @@ CFINVOKE        : 'cfinvoke';
 CFSET	        : 'cfset ' -> pushMode(CFEXPRESSION_MODE);
 CFINVOKEARGUMENT: 'cfinvokeargument';
 CFFILE          : 'cffile' ;
+CFOUTPUT		: 'cfoutput' ;
 
 
 TAG_CLOSE
@@ -117,6 +132,22 @@ TAG_NAME
 TAG_WHITESPACE
     : [ \t\r\n] -> skip
     ;
+
+//INNER_TAG_OPEN
+//	: '<' -> type(TAG_OPEN), pushMode(TAG)
+//	;
+
+//INNER_INTERPOLATION
+//	: HASHHASH
+//	;
+//
+//INNER_POSSIBLE_INTERPOLATION_START
+//	: '#' -> skip, pushMode(POSSIBLE_INTERPOLATION)
+//	;
+//
+//INNER_HTML_TEXT
+//    : ~[<#]+
+//    ;
 
 fragment
 HEXDIGIT
@@ -228,11 +259,11 @@ fragment DECCHARS
     ;
 
 fragment DOUBLE_QUOTE_STRING
-    : '"' (~[<"]+? | HASHHASH)* '"'
+    : '"' (~["#]+? | '##' | HASHHASH)* '"'
     ;
 
 fragment SINGLE_QUOTE_STRING
-    : '\'' (~[<']+? | HASHHASH) '\''
+    : '\'' (~['#]+? | '##' | HASHHASH) '\''
     ;
 
 fragment HASHHASH

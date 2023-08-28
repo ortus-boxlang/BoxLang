@@ -120,7 +120,7 @@ constructor
     ;
 
 property
-    :   PROPERTY identifier EQUAL expression (TYPE EQUAL stringLiteral)? (DEFAULT EQUAL stringLiteral)? eos
+    :   PROPERTY (identifier EQUAL expression)+ (TYPE EQUAL stringLiteral)? (DEFAULT EQUAL stringLiteral)? eos
     ;
 
 anonymousFunction
@@ -303,17 +303,24 @@ reservedKeyword
     |	CONTAINS
     |   DEFAULT
     |   EXTENDS
+    |	FUNCTION
     |   IMPLEMENTS
     |   INCLUDE
     |   INIT
+    |	MOD
     |   NEW
+    |	NUMERIC
     |   SETTING
+    |	STRING
     |   STRUCT
     |   PRIVATE
     |   QUERY
     |   TYPE
     |   VAR
     |   WHEN
+    | 	DOES
+    | 	NOT
+    | 	CONTAIN
     ;
 scope
     :   APPLICATION
@@ -419,10 +426,11 @@ expression
     |   anonymousFunction
     |   expression QM expression COLON expression // Ternary
     |   expression (AND | OR) expression // Logical
-    |   expression (PLUS | MINUS | STAR | SLASH | PERCENT | AMPERSAND) expression // Math
+    |   expression (PLUS | MINUS | STAR | SLASH | PERCENT | AMPERSAND | MOD) expression // Math
     |   expression (EQ | GT | GTE | LT | LTE | NEQ | CONTAINS) expression // Comparision
     |   expression ELVIS expression // Elvis operator
     |   expression IS expression // IS operator
+    |	expression DOES NOT CONTAIN expression
     ;
 
 literalExpression
@@ -447,4 +455,5 @@ accessExpression
 //    |   functionInvokation
     |   arrayAccess
     |   objectExpression DOT accessExpression
+    |	stringLiteral
     ;
