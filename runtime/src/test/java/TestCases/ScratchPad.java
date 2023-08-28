@@ -22,7 +22,7 @@ import org.junit.Ignore;
 import org.junit.jupiter.api.Test;
 
 import ortus.boxlang.runtime.context.TemplateBoxContext;
-import ortus.boxlang.runtime.loader.ImportRecord;
+import ortus.boxlang.runtime.loader.ImportDefinition;
 import ortus.boxlang.runtime.loader.resolvers.BaseResolver;
 import ortus.boxlang.runtime.loader.resolvers.JavaResolver;
 
@@ -37,16 +37,16 @@ public class ScratchPad {
     @DisplayName( "Test it" )
     @Test
     void testIt() {
-        List<ImportRecord> imports   = Arrays.asList(
-            ImportRecord.parse( "java:java.lang.String" ),
-            ImportRecord.parse( "java:java.lang.Integer" ),
-            ImportRecord.parse( "ortus.boxlang.runtime.loader.resolvers.BaseResolver" ),
-            ImportRecord.parse( "java:java.lang.List as jList" )
+        List<ImportDefinition> imports   = Arrays.asList(
+            ImportDefinition.parse( "java:java.lang.String" ),
+            ImportDefinition.parse( "java:java.lang.Integer" ),
+            ImportDefinition.parse( "ortus.boxlang.runtime.loader.resolvers.BaseResolver" ),
+            ImportDefinition.parse( "java:java.lang.List as jList" )
         );
 
-        BaseResolver       jResolver = JavaResolver.getInstance();
+        BaseResolver           jResolver = JavaResolver.getInstance();
 
-        String             fqn       = jResolver.expandFromImport( new TemplateBoxContext(), "String", imports );
+        String                 fqn       = jResolver.expandFromImport( new TemplateBoxContext(), "String", imports );
         assertThat( fqn ).isEqualTo( "java.lang.String" );
 
         fqn = jResolver.expandFromImport( new TemplateBoxContext(), "Integer", imports );

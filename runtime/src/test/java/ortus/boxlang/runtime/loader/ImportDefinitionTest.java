@@ -34,48 +34,48 @@ import ortus.boxlang.runtime.scopes.Key;
 
 import static com.google.common.truth.Truth.assertThat;
 
-public class ImportRecordTest {
+public class ImportDefinitionTest {
 
 	@DisplayName( "It can use default constructor" )
 	@Test
 	public void testCanUseDefaultConstructor() {
-		ImportRecord importRecord = new ImportRecord( "java.lang.String", "java", "jString" );
+		ImportDefinition ImportDefinition = new ImportDefinition( "java.lang.String", "java", "jString" );
 
-		assertThat( importRecord.className() ).isEqualTo( "java.lang.String" );
-		assertThat( importRecord.resolverPrefix() ).isEqualTo( "java" );
-		assertThat( importRecord.alias() ).isEqualTo( "jString" );
+		assertThat( ImportDefinition.className() ).isEqualTo( "java.lang.String" );
+		assertThat( ImportDefinition.resolverPrefix() ).isEqualTo( "java" );
+		assertThat( ImportDefinition.alias() ).isEqualTo( "jString" );
 	}
 
 	@DisplayName( "It can use default constructor with nulls" )
 	@Test
 	public void testCanUseDefaultConstructorWithNulls() {
-		ImportRecord importRecord = new ImportRecord( "java.lang.String", null, null );
+		ImportDefinition ImportDefinition = new ImportDefinition( "java.lang.String", null, null );
 
-		assertThat( importRecord.className() ).isEqualTo( "java.lang.String" );
-		assertThat( importRecord.resolverPrefix() ).isEqualTo( null );
-		assertThat( importRecord.alias() ).isEqualTo( null );
+		assertThat( ImportDefinition.className() ).isEqualTo( "java.lang.String" );
+		assertThat( ImportDefinition.resolverPrefix() ).isEqualTo( null );
+		assertThat( ImportDefinition.alias() ).isEqualTo( null );
 
-		assertThrows( Throwable.class, () -> new ImportRecord( null, null, null ) );
+		assertThrows( Throwable.class, () -> new ImportDefinition( null, null, null ) );
 
 	}
 
 	@DisplayName( "It can use static constructor" )
 	@Test
 	public void testCanUseStaticConstructor() {
-		ImportRecord importRecord = ImportRecord.parse( "java:java.lang.String AS jString" );
-		assertThat( importRecord.className() ).isEqualTo( "java.lang.String" );
-		assertThat( importRecord.resolverPrefix() ).isEqualTo( "java" );
-		assertThat( importRecord.alias() ).isEqualTo( "jString" );
+		ImportDefinition importDef = ImportDefinition.parse( "java:java.lang.String AS jString" );
+		assertThat( importDef.className() ).isEqualTo( "java.lang.String" );
+		assertThat( importDef.resolverPrefix() ).isEqualTo( "java" );
+		assertThat( importDef.alias() ).isEqualTo( "jString" );
 
-		importRecord = ImportRecord.parse( "java:java.lang.String" );
-		assertThat( importRecord.className() ).isEqualTo( "java.lang.String" );
-		assertThat( importRecord.resolverPrefix() ).isEqualTo( "java" );
-		assertThat( importRecord.alias() ).isEqualTo( "String" );
+		importDef = ImportDefinition.parse( "java:java.lang.String" );
+		assertThat( importDef.className() ).isEqualTo( "java.lang.String" );
+		assertThat( importDef.resolverPrefix() ).isEqualTo( "java" );
+		assertThat( importDef.alias() ).isEqualTo( "String" );
 
-		importRecord = ImportRecord.parse( "java.lang.String" );
-		assertThat( importRecord.className() ).isEqualTo( "java.lang.String" );
-		assertThat( importRecord.resolverPrefix() ).isEqualTo( null );
-		assertThat( importRecord.alias() ).isEqualTo( "String" );
+		importDef = ImportDefinition.parse( "java.lang.String" );
+		assertThat( importDef.className() ).isEqualTo( "java.lang.String" );
+		assertThat( importDef.resolverPrefix() ).isEqualTo( null );
+		assertThat( importDef.alias() ).isEqualTo( "String" );
 	}
 
 }

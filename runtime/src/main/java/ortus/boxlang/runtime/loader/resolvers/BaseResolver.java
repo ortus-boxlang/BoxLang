@@ -22,7 +22,7 @@ import java.util.Optional;
 
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.loader.ClassLocator;
-import ortus.boxlang.runtime.loader.ImportRecord;
+import ortus.boxlang.runtime.loader.ImportDefinition;
 import ortus.boxlang.runtime.loader.ClassLocator.ClassLocation;
 
 /**
@@ -96,7 +96,7 @@ public class BaseResolver implements IClassResolver {
 	 * @return An optional class object representing the class if found
 	 */
 	@Override
-	public Optional<ClassLocation> resolve( IBoxContext context, String name, List<ImportRecord> imports ) {
+	public Optional<ClassLocation> resolve( IBoxContext context, String name, List<ImportDefinition> imports ) {
 		throw new UnsupportedOperationException( "Implement the [resolve] method in your own resolver" );
 	}
 
@@ -110,7 +110,7 @@ public class BaseResolver implements IClassResolver {
 	 *
 	 * @return The resolved class name or the original class name if not found
 	 */
-	public String expandFromImport( IBoxContext context, String className, List<ImportRecord> imports ) {
+	public String expandFromImport( IBoxContext context, String className, List<ImportDefinition> imports ) {
 		return imports.stream()
 		    // Discover import
 		    .filter( thisImport -> {
@@ -131,7 +131,7 @@ public class BaseResolver implements IClassResolver {
 	 *
 	 * @return True if the import applies to this resolver
 	 */
-	protected boolean importApplies( ImportRecord thisImport ) {
+	protected boolean importApplies( ImportDefinition thisImport ) {
 		return thisImport.resolverPrefix() == null || thisImport.resolverPrefix().equalsIgnoreCase( this.prefix );
 	}
 

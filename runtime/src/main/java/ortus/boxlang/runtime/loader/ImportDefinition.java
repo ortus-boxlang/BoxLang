@@ -26,16 +26,16 @@ package ortus.boxlang.runtime.loader;
  * @param resolverPrefix The resolver prefix
  * @param alias          The alias
  */
-public record ImportRecord( String className, String resolverPrefix, String alias ) {
+public record ImportDefinition( String className, String resolverPrefix, String alias ) {
 
 	// Compact constructor disallows null className
-	public ImportRecord {
+	public ImportDefinition {
 		if ( className == null ) {
 			throw new IllegalArgumentException( "Class name cannot be null." );
 		}
 	}
 
-	public static ImportRecord parse( String importStr ) {
+	public static ImportDefinition parse( String importStr ) {
 		String	className			= importStr;
 		String	resolverPrefix		= null;
 		String	alias				= null;
@@ -56,6 +56,6 @@ public record ImportRecord( String className, String resolverPrefix, String alia
 			className		= className.substring( resolverDelimiterPos + 1 );
 		}
 
-		return new ImportRecord( className, resolverPrefix, alias );
+		return new ImportDefinition( className, resolverPrefix, alias );
 	}
 }

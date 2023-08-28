@@ -85,11 +85,11 @@ public class ClassLocatorTest {
 	@DisplayName( "It can find appropriate imports based on resolver type" )
 	@Test
 	public void testCanFindAppropriateImports() throws Throwable {
-		ClassLocator		locator		= ClassLocator.getInstance();
-		String				targetClass	= "java:String";
-		List<ImportRecord>	imports		= List.of( ImportRecord.parse( "java:java.lang.String as String" ) );
+		ClassLocator			locator		= ClassLocator.getInstance();
+		String					targetClass	= "java:String";
+		List<ImportDefinition>	imports		= List.of( ImportDefinition.parse( "java:java.lang.String as String" ) );
 
-		DynamicObject		target		= locator.load(
+		DynamicObject			target		= locator.load(
 		    new TemplateBoxContext(),
 		    targetClass,
 		    imports

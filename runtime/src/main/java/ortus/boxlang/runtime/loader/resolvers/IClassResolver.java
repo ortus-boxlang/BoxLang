@@ -22,7 +22,7 @@ import java.util.Optional;
 
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.loader.ClassLocator;
-import ortus.boxlang.runtime.loader.ImportRecord;
+import ortus.boxlang.runtime.loader.ImportDefinition;
 import ortus.boxlang.runtime.loader.ClassLocator.ClassLocation;
 
 /**
@@ -72,6 +72,6 @@ public interface IClassResolver {
 	 *
 	 * @return An optional class object representing the class if found
 	 */
-	public Optional<ClassLocation> resolve( IBoxContext context, String name, List<ImportRecord> imports );
+	public Optional<ClassLocation> resolve( IBoxContext context, String name, List<ImportDefinition> imports );
 
 }

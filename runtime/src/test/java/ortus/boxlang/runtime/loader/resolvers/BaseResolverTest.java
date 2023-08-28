@@ -22,7 +22,7 @@ import org.junit.Ignore;
 import org.junit.jupiter.api.Test;
 
 import ortus.boxlang.runtime.context.TemplateBoxContext;
-import ortus.boxlang.runtime.loader.ImportRecord;
+import ortus.boxlang.runtime.loader.ImportDefinition;
 import ortus.boxlang.runtime.loader.resolvers.BaseResolver;
 
 import org.junit.jupiter.api.DisplayName;
@@ -45,17 +45,17 @@ public class BaseResolverTest {
     @DisplayName( "It can expand imports" )
     @Test
     void testItCanResolveImports() {
-        List<ImportRecord> imports   = Arrays.asList(
-            ImportRecord.parse( "java:java.lang.String" ),
-            ImportRecord.parse( "java:java.lang.Integer" ),
-            ImportRecord.parse( "java.lang.Integer" ),
-            ImportRecord.parse( "ortus.boxlang.runtime.loader.resolvers.BaseResolver" ),
+        List<ImportDefinition> imports   = Arrays.asList(
+            ImportDefinition.parse( "java:java.lang.String" ),
+            ImportDefinition.parse( "java:java.lang.Integer" ),
+            ImportDefinition.parse( "java.lang.Integer" ),
+            ImportDefinition.parse( "ortus.boxlang.runtime.loader.resolvers.BaseResolver" ),
             // The Java resolver will ignore this mapping
-            ImportRecord.parse( "bx:models.test.HelloWorld" ),
-            ImportRecord.parse( "java:java.lang.List as jList" )
+            ImportDefinition.parse( "bx:models.test.HelloWorld" ),
+            ImportDefinition.parse( "java:java.lang.List as jList" )
         );
-        BaseResolver       jResolver = JavaResolver.getInstance();
-        String             fqn       = jResolver.expandFromImport( new TemplateBoxContext(), "String", imports );
+        BaseResolver           jResolver = JavaResolver.getInstance();
+        String                 fqn       = jResolver.expandFromImport( new TemplateBoxContext(), "String", imports );
         assertThat( fqn ).isEqualTo( "java.lang.String" );
 
         fqn = jResolver.expandFromImport( new TemplateBoxContext(), "Integer", imports );

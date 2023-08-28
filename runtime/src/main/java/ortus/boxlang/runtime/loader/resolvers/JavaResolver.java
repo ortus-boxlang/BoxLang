@@ -24,7 +24,7 @@ import org.apache.commons.lang3.ClassUtils;
 
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.loader.ClassLocator;
-import ortus.boxlang.runtime.loader.ImportRecord;
+import ortus.boxlang.runtime.loader.ImportDefinition;
 import ortus.boxlang.runtime.loader.ClassLocator.ClassLocation;
 
 /**
@@ -96,7 +96,7 @@ public class JavaResolver extends BaseResolver {
 	 * @return An optional class object representing the class if found
 	 */
 	@Override
-	public Optional<ClassLocation> resolve( IBoxContext context, String name, List<ImportRecord> imports ) {
+	public Optional<ClassLocation> resolve( IBoxContext context, String name, List<ImportDefinition> imports ) {
 		String fullyQualifiedName = expandFromImport( null, name, imports );
 		return findFromModules( fullyQualifiedName, imports )
 		    .or( () -> findFromSystem( fullyQualifiedName, imports ) );
@@ -110,7 +110,7 @@ public class JavaResolver extends BaseResolver {
 	 *
 	 * @return The loaded class or null if not found
 	 */
-	public Optional<ClassLocation> findFromModules( String fullyQualifiedName, List<ImportRecord> imports ) {
+	public Optional<ClassLocation> findFromModules( String fullyQualifiedName, List<ImportDefinition> imports ) {
 		return Optional.ofNullable( null );
 	}
 
@@ -122,7 +122,7 @@ public class JavaResolver extends BaseResolver {
 	 *
 	 * @return The {@link ClassLocation} record wrapped in an optional if found, empty otherwise
 	 */
-	public Optional<ClassLocation> findFromSystem( String fullyQualifiedName, List<ImportRecord> imports ) {
+	public Optional<ClassLocation> findFromSystem( String fullyQualifiedName, List<ImportDefinition> imports ) {
 		Class<?> clazz;
 		try {
 			clazz = getSystemClassLoader().loadClass( fullyQualifiedName );

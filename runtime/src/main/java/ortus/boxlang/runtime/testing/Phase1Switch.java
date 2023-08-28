@@ -26,7 +26,7 @@ import ortus.boxlang.runtime.dynamic.BaseTemplate;
 import ortus.boxlang.runtime.dynamic.Referencer;
 import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.loader.ClassLocator;
-import ortus.boxlang.runtime.loader.ImportRecord;
+import ortus.boxlang.runtime.loader.ImportDefinition;
 import ortus.boxlang.runtime.operators.*;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.exceptions.ExceptionUtil;
@@ -39,9 +39,9 @@ import java.time.Instant;
 
 public class Phase1Switch extends BaseTemplate {
 
-	private static Phase1Switch				instance;
+	private static Phase1Switch					instance;
 
-	private final static List<ImportRecord>	imports	= List.of();
+	private final static List<ImportDefinition>	imports	= List.of();
 
 	private Phase1Switch() {
 	}

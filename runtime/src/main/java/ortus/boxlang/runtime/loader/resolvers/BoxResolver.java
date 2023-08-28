@@ -22,7 +22,7 @@ import java.util.Optional;
 
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.loader.ClassLocator;
-import ortus.boxlang.runtime.loader.ImportRecord;
+import ortus.boxlang.runtime.loader.ImportDefinition;
 import ortus.boxlang.runtime.loader.ClassLocator.ClassLocation;
 
 /**
@@ -112,7 +112,7 @@ public class BoxResolver extends BaseResolver {
 	 * @return An optional class object representing the class if found
 	 */
 	@Override
-	public Optional<ClassLocation> resolve( IBoxContext context, String name, List<ImportRecord> imports ) {
+	public Optional<ClassLocation> resolve( IBoxContext context, String name, List<ImportDefinition> imports ) {
 		return findFromModules( name, imports )
 		    .or( () -> findFromLocal( name, imports ) );
 	}
@@ -125,7 +125,7 @@ public class BoxResolver extends BaseResolver {
 	 *
 	 * @return The loaded class or null if not found
 	 */
-	public Optional<ClassLocation> findFromModules( String name, List<ImportRecord> imports ) {
+	public Optional<ClassLocation> findFromModules( String name, List<ImportDefinition> imports ) {
 		return Optional.ofNullable( null );
 	}
 
@@ -137,7 +137,7 @@ public class BoxResolver extends BaseResolver {
 	 *
 	 * @return The loaded class or null if not found
 	 */
-	public Optional<ClassLocation> findFromLocal( String name, List<ImportRecord> imports ) {
+	public Optional<ClassLocation> findFromLocal( String name, List<ImportDefinition> imports ) {
 		return Optional.ofNullable( null );
 	}
 
