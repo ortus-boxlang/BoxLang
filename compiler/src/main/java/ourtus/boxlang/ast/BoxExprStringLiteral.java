@@ -14,18 +14,16 @@
  */
 package ourtus.boxlang.ast;
 
-public class BoxExprIdentifier extends BoxExpr implements Named {
+public class BoxExprStringLiteral extends BoxExpr {
 
-	private final String name;
+	private final String value;
 
-	@Override
-	public String getName() {
-		return name;
+	public String getValue() {
+		return value;
 	}
 
-	public BoxExprIdentifier( String name, Position position, String sourceText ) {
+	public BoxExprStringLiteral( String value, Position position, String sourceText ) {
 		super( position, sourceText );
-		this.name = name;
+		this.value = value;
 	}
-
 }

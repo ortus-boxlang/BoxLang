@@ -14,18 +14,26 @@
  */
 package ourtus.boxlang.ast;
 
-public class BoxExprIdentifier extends BoxExpr implements Named {
+import java.util.ArrayList;
+import java.util.List;
 
-	private final String name;
+public class BoxExprFunctionInvocation extends BoxExprInvocation {
 
-	@Override
-	public String getName() {
+	private final ReferenceByName name;
+
+	public ReferenceByName getName() {
 		return name;
 	}
 
-	public BoxExprIdentifier( String name, Position position, String sourceText ) {
-		super( position, sourceText );
-		this.name = name;
+	private final List<BoxExpr> arguments;
+
+	public List<BoxExpr> getArguments() {
+		return arguments;
 	}
 
+	public BoxExprFunctionInvocation( String name, Position position, String sourceText ) {
+		super( position, sourceText );
+		this.name      = new ReferenceByName( name );
+		this.arguments = new ArrayList<>();
+	}
 }
