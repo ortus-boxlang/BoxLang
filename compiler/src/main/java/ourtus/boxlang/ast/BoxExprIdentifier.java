@@ -14,32 +14,21 @@
  */
 package ourtus.boxlang.ast;
 
-public class Node {
+public class BoxExprIdentifier extends BoxExpr implements Named {
 
-	protected Position position;
-	private final String sourceText;
-	private Node parent;
+	private String name;
 
-	private Node originator;
-
-	public Node( Position position, String sourceText ) {
-		this.position   = position;
-		this.sourceText = sourceText;
+	@Override
+	public String getName() {
+		return name;
 	}
 
-	public Position getPosition() {
-		return position;
+	public void setName( String name ) {
+		this.name = name;
 	}
 
-	public String getSourceText() {
-		return sourceText;
+	public BoxExprIdentifier( Position position, String sourceText ) {
+		super( position, sourceText );
 	}
 
-	public Node getParent() {
-		return parent;
-	}
-
-	public Node getOriginator() {
-		return originator;
-	}
 }

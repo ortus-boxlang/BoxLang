@@ -14,32 +14,30 @@
  */
 package ourtus.boxlang.ast;
 
-public class Node {
+public class BoxStmtAssignment extends BoxStatement {
 
-	protected Position position;
-	private final String sourceText;
-	private Node parent;
+	private BoxExpr left;
+	private BoxExpr right;
 
-	private Node originator;
-
-	public Node( Position position, String sourceText ) {
-		this.position   = position;
-		this.sourceText = sourceText;
+	public BoxExpr getLeft() {
+		return left;
 	}
 
-	public Position getPosition() {
-		return position;
+	public void setLeft( BoxExpr left ) {
+		this.left = left;
 	}
 
-	public String getSourceText() {
-		return sourceText;
+	public BoxExpr getRight() {
+		return right;
 	}
 
-	public Node getParent() {
-		return parent;
+	public void setRight( BoxExpr right ) {
+		this.right = right;
 	}
 
-	public Node getOriginator() {
-		return originator;
+	public BoxStmtAssignment( BoxExpr left, BoxExpr right, Position position, String sourceText ) {
+		super( position, sourceText );
+		this.left  = left;
+		this.right = right;
 	}
 }

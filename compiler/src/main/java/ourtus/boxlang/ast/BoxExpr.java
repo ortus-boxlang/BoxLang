@@ -14,32 +14,9 @@
  */
 package ourtus.boxlang.ast;
 
-public class Node {
+public abstract class BoxExpr extends BoxNode {
 
-	protected Position position;
-	private final String sourceText;
-	private Node parent;
-
-	private Node originator;
-
-	public Node( Position position, String sourceText ) {
-		this.position   = position;
-		this.sourceText = sourceText;
-	}
-
-	public Position getPosition() {
-		return position;
-	}
-
-	public String getSourceText() {
-		return sourceText;
-	}
-
-	public Node getParent() {
-		return parent;
-	}
-
-	public Node getOriginator() {
-		return originator;
+	public BoxExpr( Position position, String sourceText ) {
+		super( position, sourceText );
 	}
 }

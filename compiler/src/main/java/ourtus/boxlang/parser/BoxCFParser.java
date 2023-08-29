@@ -70,12 +70,28 @@ public class BoxCFParser extends BoxAbstractParser {
 		} else if ( node.statement() != null ) {
 			return toAst( file, node.statement() );
 		} else {
-			throw new IllegalStateException( "not implemented" );
+			throw new IllegalStateException( "not implemented: " + node.getClass().getSimpleName() );
 		}
 	}
 
-	private BoxStatement toAst( File file, CFParser.StatementContext statement ) {
-		return null; // TODO
+	private BoxStatement toAst( File file, CFParser.StatementContext node ) {
+		if ( node.simpleStatement() != null ) {
+			return toAst( file, node.simpleStatement() );
+		} else {
+			throw new IllegalStateException( "not implemented: " + node.getClass().getSimpleName() );
+		}
+	}
+
+	private BoxStatement toAst( File file, CFParser.SimpleStatementContext node ) {
+		if ( node.assignment() != null ) {
+			return toAst( file, node.assignment() );
+		} else {
+			throw new IllegalStateException( "not implemented: " + node.getClass().getSimpleName() );
+		}
+	}
+
+	private BoxStatement toAst( File file, CFParser.AssignmentContext node ) {
+		throw new IllegalStateException( "not implemented: " + node.getClass().getSimpleName() );
 	}
 
 	private BoxStatement toAst( File file, CFParser.FunctionContext function ) {
