@@ -85,12 +85,19 @@ class CFLanguageParser {
 		protected open fun detectLanguage(): CFLanguage {
 			if (!this::detectedLanguage.isInitialized) {
 				detectedLanguage = code.lineSequence()
-					.first { it.contains("component") }
+					.firstOrNull { it.contains("component") }
 					.let {
-						if (it.contains("<cfcomponent"))
+						if (it == null) {
+							when {
+								isParsable(getCfParseResult()) -> CFLanguage.CFScript
+								isParsable(getCfmlParseResult()) -> CFLanguage.CFML
+								else -> throw IllegalStateException("Unknown language")
+							}
+						} else if (it.contains("<cfcomponent")) {
 							CFLanguage.CFML
-						else
+						} else {
 							CFLanguage.CFScript
+						}
 					}
 			}
 			return detectedLanguage
@@ -106,9 +113,16 @@ class CFLanguageParser {
 		fun isCFML() = detectLanguage() == CFLanguage.CFML
 		fun isCFScript() = detectLanguage() == CFLanguage.CFScript
 		fun language() = detectLanguage()
+
+		private fun isParsable(result: FirstStageParsingResult<out ParserRuleContext>) =
+			result.root?.children?.any { it !is ErrorNodeImpl } ?: false
 	}
 
-	open inner class UnknownCFLanguageFileParser(private val file: File) : UnknownCFLanguageCodeParser(file.readText()) {
+	open inner class UnknownCFLanguageFileParser(
+		private val file: File
+	) : UnknownCFLanguageCodeParser(
+		code = file.inputStreamWithoutBOM().bufferedReader().use { it.readText() }
+	) {
 
 		override fun detectLanguage(): CFLanguage {
 			check(file.exists()) { "File does not exists! ${file.absolutePath}" }
