@@ -289,6 +289,20 @@ public class DynamicObject implements IReferenceable {
 	}
 
 	/**
+	 * Invokes the no-arg constructor for the class with the given arguments and stores the instance of the object
+	 * into the {@code targetInstance} property for future method calls.
+	 * *
+	 *
+	 * @return The instance of the class
+	 *
+	 * @throws Throwable             If the constructor cannot be invoked
+	 * @throws IllegalStateException If the class is an interface, you can't call a constructor on an interface
+	 */
+	public DynamicObject invokeConstructor() throws Throwable {
+		return invokeConstructor( new Object[] {} );
+	}
+
+	/**
 	 * Invoke can be used to invoke public methods on instances, or static methods on classes/interfaces.
 	 *
 	 * If it's determined that the method handle is static, then the target instance is ignored.

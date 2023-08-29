@@ -26,6 +26,7 @@ import ortus.boxlang.runtime.dynamic.BaseTemplate;
 import ortus.boxlang.runtime.dynamic.Referencer;
 import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.loader.ClassLocator;
+import ortus.boxlang.runtime.loader.ImportDefinition;
 import ortus.boxlang.runtime.operators.*;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.exceptions.ExceptionUtil;
@@ -33,17 +34,14 @@ import ortus.boxlang.runtime.scopes.IScope;
 
 // Classes Auto-Imported on all Templates and Classes by BoxLang
 import java.time.LocalDateTime;
+import java.util.List;
 import java.time.Instant;
-import java.lang.System;
-import java.lang.String;
-import java.lang.Character;
-import java.lang.Boolean;
-import java.lang.Double;
-import java.lang.Integer;
 
 public class Phase1Switch extends BaseTemplate {
 
-	private static Phase1Switch instance;
+	private static Phase1Switch					instance;
+
+	private final static List<ImportDefinition>	imports	= List.of();
 
 	private Phase1Switch() {
 	}
@@ -97,7 +95,7 @@ public class Phase1Switch extends BaseTemplate {
 		variablesScope.assign(
 		    Key.of( "systemOut" ),
 		    Referencer.get(
-		        classLocator.load( context, "java.lang.System", "java" ),
+		        classLocator.load( context, "java:java.lang.System", imports ),
 		        Key.of( "out" ),
 		        false
 		    )

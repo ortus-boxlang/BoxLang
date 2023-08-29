@@ -22,7 +22,9 @@ import org.junit.Ignore;
 import org.junit.jupiter.api.Test;
 
 import ortus.boxlang.runtime.context.TemplateBoxContext;
+import ortus.boxlang.runtime.loader.ImportDefinition;
 import ortus.boxlang.runtime.loader.resolvers.BaseResolver;
+import ortus.boxlang.runtime.loader.resolvers.JavaResolver;
 
 import org.junit.jupiter.api.DisplayName;
 import static com.google.common.truth.Truth.assertThat;
@@ -35,23 +37,25 @@ public class ScratchPad {
     @DisplayName( "Test it" )
     @Test
     void testIt() {
-        List<String> imports = Arrays.asList(
-            "java:java.lang.String",
-            "java:java.lang.Integer",
-            "ortus.boxlang.runtime.loader.resolvers.BaseResolver",
-            "java:java.lang.List as jList"
+        List<ImportDefinition> imports   = Arrays.asList(
+            ImportDefinition.parse( "java:java.lang.String" ),
+            ImportDefinition.parse( "java:java.lang.Integer" ),
+            ImportDefinition.parse( "ortus.boxlang.runtime.loader.resolvers.BaseResolver" ),
+            ImportDefinition.parse( "java:java.lang.List as jList" )
         );
 
-        String       fqn     = BaseResolver.resolveFromImport( new TemplateBoxContext(), "String", imports );
+        BaseResolver           jResolver = JavaResolver.getInstance();
+
+        String                 fqn       = jResolver.expandFromImport( new TemplateBoxContext(), "String", imports );
         assertThat( fqn ).isEqualTo( "java.lang.String" );
 
-        fqn = BaseResolver.resolveFromImport( new TemplateBoxContext(), "Integer", imports );
+        fqn = jResolver.expandFromImport( new TemplateBoxContext(), "Integer", imports );
         assertThat( fqn ).isEqualTo( "java.lang.Integer" );
 
-        fqn = BaseResolver.resolveFromImport( new TemplateBoxContext(), "BaseResolver", imports );
+        fqn = jResolver.expandFromImport( new TemplateBoxContext(), "BaseResolver", imports );
         assertThat( fqn ).isEqualTo( "ortus.boxlang.runtime.loader.resolvers.BaseResolver" );
 
-        fqn = BaseResolver.resolveFromImport( new TemplateBoxContext(), "jList", imports );
+        fqn = jResolver.expandFromImport( new TemplateBoxContext(), "jList", imports );
         assertThat( fqn ).isEqualTo( "java.lang.List" );
 
     }
