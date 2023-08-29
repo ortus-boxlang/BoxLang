@@ -75,7 +75,6 @@ class TestColdFusionParsing : BaseTest() {
 	}
 
 	// TODO: we need to fix CScript VS CFML in order to proceed with the following test case
-	@Ignore
 	@Test
 	fun testCfTestBox() {
 		testCfDirectory(testboxDirectory)
