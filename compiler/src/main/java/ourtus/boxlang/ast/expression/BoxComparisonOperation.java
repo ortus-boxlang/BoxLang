@@ -12,32 +12,32 @@
  * BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language
  * governing permissions and limitations under the License.
  */
-package ourtus.boxlang.ast;
+package ourtus.boxlang.ast.expression;
 
-public class BoxStmtAssignment extends BoxStatement {
+import ourtus.boxlang.ast.BoxExpr;
+import ourtus.boxlang.ast.Position;
 
-	private BoxExpr left;
-	private BoxExpr right;
+public class BoxComparisonOperation extends BoxExpr  {
+	private final BoxExpr left;
+	private final BoxExpr right;
+	private final BoxComparisonOperator operator;
+
+	public BoxComparisonOperation(BoxExpr left, BoxComparisonOperator operator, BoxExpr right, Position position, String sourceText) {
+		super(position, sourceText);
+		this.left = left;
+		this.right = right;
+		this.operator = operator;
+	}
 
 	public BoxExpr getLeft() {
 		return left;
-	}
-
-	public void setLeft( BoxExpr left ) {
-		this.left = left;
 	}
 
 	public BoxExpr getRight() {
 		return right;
 	}
 
-	public void setRight( BoxExpr right ) {
-		this.right = right;
-	}
-
-	public BoxStmtAssignment( BoxExpr left, BoxExpr right, Position position, String sourceText ) {
-		super( position, sourceText );
-		this.left  = left;
-		this.right = right;
+	public BoxComparisonOperator getOperator() {
+		return operator;
 	}
 }

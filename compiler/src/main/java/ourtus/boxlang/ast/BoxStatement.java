@@ -14,9 +14,12 @@
  */
 package ourtus.boxlang.ast;
 
+import ourtus.boxlang.ast.BoxNode;
+import ourtus.boxlang.ast.Position;
+
 public abstract class BoxStatement extends BoxNode {
 
-	public BoxStatement( Position position, String sourceText ) {
+	public BoxStatement(Position position, String sourceText ) {
 		super( position, sourceText );
 	}
 }

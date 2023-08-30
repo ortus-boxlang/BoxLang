@@ -13,7 +13,7 @@ public class TestAST extends TestBase {
 	public void testParser() throws IOException {
 		BoxLangParser parser = new BoxLangParser();
 		//		List<Path> files = scanForFiles( testboxDirectory, Set.of( "cfc", "cfm", "cfml" ) );
-		List<Path> files = scanForFiles( "/home/fob/git/ortus/boxlang/examples/cf_to_java/HelloWorld",
+		List<Path> files = scanForFiles( "/home/madytyoo/IdeaProjects/boxlang/examples/cf_to_java/HelloWorld",
 			Set.of( "cfc", "cfm", "cfml" ) );
 		for ( Path file : files ) {
 			System.out.println( file );

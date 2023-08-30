@@ -12,18 +12,15 @@
  * BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language
  * governing permissions and limitations under the License.
  */
-package ourtus.boxlang.ast;
+package ourtus.boxlang.ast.expression;
 
-public class BoxExprStringLiteral extends BoxExpr {
+import ourtus.boxlang.ast.BoxExpr;
+import ourtus.boxlang.ast.Position;
 
-	private final String value;
+public abstract class BoxAccess extends BoxExpr {
 
-	public String getValue() {
-		return value;
-	}
 
-	public BoxExprStringLiteral( String value, Position position, String sourceText ) {
+	public BoxAccess(Position position, String sourceText ) {
 		super( position, sourceText );
-		this.value = value;
 	}
 }

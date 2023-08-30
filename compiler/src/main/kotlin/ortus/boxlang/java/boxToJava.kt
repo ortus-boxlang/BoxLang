@@ -213,7 +213,7 @@ class ScopeGetExpression(
 class ScopeFindNearbyMethodCall(key: String) : MethodCallExpr(
 	NameExpr("context"),
 	"scopeFindNearby",
-	NodeList(key.toKeyOf())
+	NodeList(key.toKeyOf(),NullLiteralExpr())
 )
 
 class GetScopeNearbyMethodCall(key: String) : MethodCallExpr(

@@ -12,20 +12,14 @@
  * BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language
  * governing permissions and limitations under the License.
  */
-package ourtus.boxlang.ast;
+package ourtus.boxlang.ast.expression;
 
-public class BoxExprIdentifier extends BoxExpr implements Named {
-
-	private final String name;
-
-	@Override
-	public String getName() {
-		return name;
-	}
-
-	public BoxExprIdentifier( String name, Position position, String sourceText ) {
-		super( position, sourceText );
-		this.name = name;
-	}
-
+public enum BoxComparisonOperator {
+	Equal,
+	GreaterThan,
+	GreaterEqualsThan,
+	LessThan,
+	LessEqualThan,
+	NotEqual,
+	Contains
 }

@@ -12,14 +12,8 @@
  * BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language
  * governing permissions and limitations under the License.
  */
-package ourtus.boxlang.ast;
+package ourtus.boxlang.ast.expression;
 
-import ourtus.boxlang.ast.BoxNode;
-import ourtus.boxlang.ast.Position;
-
-public abstract class BoxExpr extends BoxNode {
-
-	public BoxExpr(Position position, String sourceText ) {
-		super( position, sourceText );
-	}
+public enum BoxBinaryOperator {
+	Concat
 }

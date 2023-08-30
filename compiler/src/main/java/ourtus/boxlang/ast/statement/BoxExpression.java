@@ -12,33 +12,21 @@
  * BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language
  * governing permissions and limitations under the License.
  */
-package ourtus.boxlang.ast;
+package ourtus.boxlang.ast.statement;
 
-public class BoxExprObjectAccess extends BoxExprAccess {
+import ourtus.boxlang.ast.BoxExpr;
+import ourtus.boxlang.ast.BoxStatement;
+import ourtus.boxlang.ast.Position;
 
-	private BoxExpr context;
-	private BoxExpr access;
+public class BoxExpression extends BoxStatement {
+	private final BoxExpr expression;
 
-	public BoxExpr getContext() {
-		return context;
+	public BoxExpression(BoxExpr expression, Position position, String sourceText) {
+		super(position, sourceText);
+		this.expression = expression;
 	}
 
-	public void setContext( BoxExpr context ) {
-		this.context = context;
+	public BoxExpr getExpression() {
+		return expression;
 	}
-
-	public BoxExpr getAccess() {
-		return access;
-	}
-
-	public void setAccess( BoxExpr access ) {
-		this.access = access;
-	}
-
-	public BoxExprObjectAccess( BoxExpr context, BoxExpr access, Position position, String sourceText ) {
-		super( position, sourceText );
-		this.context = context;
-		this.access  = access;
-	}
-
 }

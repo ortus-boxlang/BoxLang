@@ -12,33 +12,32 @@
  * BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language
  * governing permissions and limitations under the License.
  */
-package ourtus.boxlang.ast;
+package ourtus.boxlang.ast.expression;
 
-public class BoxExprArrayAccess extends BoxExprAccess {
+import ourtus.boxlang.ast.BoxExpr;
+import ourtus.boxlang.ast.Position;
+import ourtus.boxlang.ast.ReferenceByName;
 
-	private BoxExpr context;
-	private BoxExpr index;
+import java.util.ArrayList;
+import java.util.List;
 
-	public BoxExpr getContext() {
-		return context;
+public class BoxFunctionInvocation extends BoxExpr {
+
+	private final ReferenceByName name;
+
+	public ReferenceByName getName() {
+		return name;
 	}
 
-	public void setContext( BoxExpr context ) {
-		this.context = context;
+	private final List<BoxExpr> arguments;
+
+	public List<BoxExpr> getArguments() {
+		return arguments;
 	}
 
-	public BoxExpr getIndex() {
-		return index;
-	}
-
-	public void setIndex( BoxExpr index ) {
-		this.index = index;
-	}
-
-	public BoxExprArrayAccess( BoxExpr context, BoxExpr index, Position position, String sourceText ) {
+	public BoxFunctionInvocation(String name, Position position, String sourceText ) {
 		super( position, sourceText );
-		this.context = context;
-		this.index   = index;
+		this.name      = new ReferenceByName( name );
+		this.arguments = new ArrayList<>();
 	}
-
 }

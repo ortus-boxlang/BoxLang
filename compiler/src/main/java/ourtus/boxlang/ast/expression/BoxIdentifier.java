@@ -12,14 +12,24 @@
  * BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language
  * governing permissions and limitations under the License.
  */
-package ourtus.boxlang.ast;
+package ourtus.boxlang.ast.expression;
 
-import ourtus.boxlang.ast.BoxNode;
+import ourtus.boxlang.ast.BoxExpr;
+import ourtus.boxlang.ast.Named;
 import ourtus.boxlang.ast.Position;
 
-public abstract class BoxExpr extends BoxNode {
+public class BoxIdentifier extends BoxExpr implements Named {
 
-	public BoxExpr(Position position, String sourceText ) {
-		super( position, sourceText );
+	private final String name;
+
+	@Override
+	public String getName() {
+		return name;
 	}
+
+	public BoxIdentifier(String name, Position position, String sourceText ) {
+		super( position, sourceText );
+		this.name = name;
+	}
+
 }

@@ -12,14 +12,36 @@
  * BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language
  * governing permissions and limitations under the License.
  */
-package ourtus.boxlang.ast;
+package ourtus.boxlang.ast.statement;
 
-import ourtus.boxlang.ast.BoxNode;
+import ourtus.boxlang.ast.BoxStatement;
 import ourtus.boxlang.ast.Position;
+import ourtus.boxlang.ast.BoxExpr;
 
-public abstract class BoxExpr extends BoxNode {
+public class BoxAssignment extends BoxStatement {
 
-	public BoxExpr(Position position, String sourceText ) {
+	private BoxExpr left;
+	private BoxExpr right;
+
+	public BoxExpr getLeft() {
+		return left;
+	}
+
+	public void setLeft( BoxExpr left ) {
+		this.left = left;
+	}
+
+	public BoxExpr getRight() {
+		return right;
+	}
+
+	public void setRight( BoxExpr right ) {
+		this.right = right;
+	}
+
+	public BoxAssignment(BoxExpr left, BoxExpr right, Position position, String sourceText ) {
 		super( position, sourceText );
+		this.left  = left;
+		this.right = right;
 	}
 }
