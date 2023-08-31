@@ -15,18 +15,26 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package ourtus.boxlang.ast;
+package ourtus.boxlang.parser;
+
+import ourtus.boxlang.ast.BoxNode;
+import ourtus.boxlang.ast.BoxScript;
+import ourtus.boxlang.ast.Issue;
 
 import java.util.ArrayList;
 import java.util.List;
 
 public class ParsingResult {
-	private Node root;
+	private BoxNode root;
 	private  final List<Issue> issues;
 
-	public ParsingResult(Node root, List<Issue> issues) {
+	public ParsingResult(BoxNode root, List<Issue> issues) {
 		this.root = root;
 		this.issues = issues;
+	}
+
+	public BoxNode getRoot() {
+		return root;
 	}
 
 	public List<Issue> getIssues() {

@@ -14,6 +14,9 @@
  */
 package ourtus.boxlang.ast;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public class Node {
 
 	protected Position position;
@@ -21,10 +24,12 @@ public class Node {
 	private Node parent;
 
 	private Node originator;
+	private final List<Node> children;
 
 	public Node( Position position, String sourceText ) {
 		this.position   = position;
 		this.sourceText = sourceText;
+		this.children = new ArrayList<>();
 	}
 
 	public Position getPosition() {
@@ -35,8 +40,16 @@ public class Node {
 		return sourceText;
 	}
 
+	public void setParent(Node parent) {
+		this.parent = parent;
+	}
+
 	public Node getParent() {
 		return parent;
+	}
+
+	public List<Node> getChildren() {
+		return children;
 	}
 
 	public Node getOriginator() {

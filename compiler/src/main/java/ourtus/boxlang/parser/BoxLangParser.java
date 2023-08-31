@@ -17,11 +17,8 @@
  */
 package ourtus.boxlang.parser;
 
-import ourtus.boxlang.ast.ParsingResult;
-
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
 import java.nio.file.Files;
 import java.util.List;
 
@@ -54,6 +51,23 @@ public class BoxLangParser {
 			}
 		}
 
+	}
+	public ParsingResult parse(String code,BoxFileType fileType) throws IOException {
+		switch (fileType) {
+			case CF -> {
+				return new BoxCFParser().parse(code); }
+			case CFML ->  {
+				return new BoxCFMLParser().parse(code);
+			}
+			default -> {
+				throw new RuntimeException("Unsupported language");
+			}
+		}
+
+	}
+
+	public ParsingResult parseExpression(String code) throws IOException {
+		return new BoxCFParser().parseExpression(code);
 	}
 
 }

@@ -12,24 +12,12 @@
  * BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language
  * governing permissions and limitations under the License.
  */
-package ourtus.boxlang.ast.expression;
+package ourtus.boxlang.transpiler.transformer;
 
-import ourtus.boxlang.ast.BoxExpr;
-import ourtus.boxlang.ast.Position;
+import com.github.javaparser.ast.Node;
+import ourtus.boxlang.ast.BoxNode;
 
-public class BoxStringLiteral extends BoxExpr {
+public interface Transformer {
 
-	private final String value;
-
-	public String getValue() {
-		return value;
-	}
-
-	public BoxStringLiteral(String value, Position position, String sourceText ) {
-		super( position, sourceText );
-		StringBuilder sb = new StringBuilder(value);
-		sb.deleteCharAt(value.length() - 1);
-		sb.deleteCharAt(0);
-		this.value =  sb.toString();
-	}
+	  Node transform(BoxNode node) throws IllegalStateException;
 }

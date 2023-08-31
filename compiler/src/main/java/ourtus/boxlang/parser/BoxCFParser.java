@@ -17,6 +17,7 @@ package ourtus.boxlang.parser;
 import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
 import org.antlr.v4.runtime.ParserRuleContext;
+import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.input.BOMInputStream;
 import ortus.boxlang.parser.CFLexer;
 import ortus.boxlang.parser.CFParser;
@@ -29,6 +30,7 @@ import ourtus.boxlang.ast.statement.BoxIfElse;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.List;
 
 public class BoxCFParser extends BoxAbstractParser {
@@ -37,11 +39,10 @@ public class BoxCFParser extends BoxAbstractParser {
 		super();
 	}
 
-	@Override
-	protected ParserRuleContext parserFirstStage( File file ) throws IOException {
-		BOMInputStream inputStream = getInputStream( file );
 
-		CFLexer lexer = new CFLexer( CharStreams.fromStream( inputStream ) );
+	@Override
+	protected ParserRuleContext parserFirstStage(InputStream stream) throws IOException {
+		CFLexer lexer = new CFLexer( CharStreams.fromStream( stream ) );
 		CFParser parser = new CFParser( new CommonTokenStream( lexer ) );
 		addErrorListeners( lexer, parser );
 
@@ -57,9 +58,28 @@ public class BoxCFParser extends BoxAbstractParser {
 	}
 
 	public ParsingResult parse( File file ) throws IOException {
-		CFParser.ScriptContext parseTree = ( CFParser.ScriptContext ) parserFirstStage( file );
+		BOMInputStream inputStream = getInputStream( file );
+		CFParser.ScriptContext parseTree = ( CFParser.ScriptContext ) parserFirstStage( inputStream );
 		BoxScript ast = parseTreeToAst( file, parseTree );
 		return new ParsingResult( ast, issues );
+	}
+	public ParsingResult parse( String code ) throws IOException {
+		InputStream inputStream = IOUtils.toInputStream(code);
+
+		CFParser.ScriptContext parseTree = ( CFParser.ScriptContext ) parserFirstStage( inputStream );
+		BoxScript ast = parseTreeToAst( file, parseTree );
+		return new ParsingResult( ast, issues );
+	}
+
+	public ParsingResult parseExpression( String code ) throws IOException {
+		InputStream inputStream = IOUtils.toInputStream(code);
+
+		CFLexer lexer = new CFLexer( CharStreams.fromStream( inputStream ) );
+		CFParser parser = new CFParser( new CommonTokenStream( lexer ) );
+		addErrorListeners( lexer, parser );
+		CFParser.ExpressionContext parseTree = parser.expression();
+		BoxExpr ast = toAst(null,parseTree);
+		return new ParsingResult(ast,issues);
 	}
 
 	private BoxStatement toAst( File file, CFParser.FunctionOrStatementContext node ) {
@@ -149,9 +169,22 @@ public class BoxCFParser extends BoxAbstractParser {
 	private BoxExpr toAst( File file, CFParser.ExpressionContext expression ) {
 		if ( expression.literalExpression() != null ) {
 			if ( expression.literalExpression().stringLiteral() != null ) {
-				return new BoxStringLiteral( expression.literalExpression().stringLiteral().getText(),
-					getPosition( expression.literalExpression().stringLiteral() ),
-					getSourceText( expression.literalExpression().stringLiteral() ) );
+				CFParser.StringLiteralContext node = expression.literalExpression().stringLiteral();
+				return new BoxStringLiteral( node.getText(),
+					getPosition( node ),
+					getSourceText( node ) );
+			}
+			if ( expression.literalExpression().integerLiteral() != null ) {
+				CFParser.IntegerLiteralContext node = expression.literalExpression().integerLiteral();
+				return new BoxIntegerLiteral( node.getText(),
+					getPosition( node ),
+					getSourceText( node ) );
+			}
+			if ( expression.literalExpression().booleanLiteral() != null ) {
+				CFParser.BooleanLiteralContext node = expression.literalExpression().booleanLiteral();
+				return new BoxBooleanLiteral( node.getText(),
+					getPosition( node ),
+					getSourceText( node ) );
 			}
 			// TODO: add other cases
 		} else if ( expression.identifier() != null ) {
@@ -162,6 +195,10 @@ public class BoxCFParser extends BoxAbstractParser {
 			return toAst( file, expression.objectExpression() );
 		} else if ( expression.methodInvokation() != null ) {
 			return toAst( file, expression.methodInvokation() );
+		} else if ( expression.PLUS() != null ) {
+			BoxExpr left = toAst(file,expression.expression(0));
+			BoxExpr right = toAst(file,expression.expression(1));
+			return new BoxBinaryOperation(left,BoxBinaryOperator.Plus,right,getPosition(expression),getSourceText(expression));
 		} else if ( expression.EQ() != null ) {
 			BoxExpr left = toAst(file,expression.expression(0));
 			BoxExpr right = toAst(file,expression.expression(1));
@@ -170,6 +207,13 @@ public class BoxCFParser extends BoxAbstractParser {
 			BoxExpr left = toAst(file,expression.expression(0));
 			BoxExpr right = toAst(file,expression.expression(1));
 			return new BoxBinaryOperation(left,BoxBinaryOperator.Concat,right,getPosition(expression),getSourceText(expression));
+		} else if ( expression.not() != null ) {
+			BoxExpr expr = toAst(file,expression.not().expression());
+			return new BoxNegateOperation(expr,BoxNegateOperator.Not,getPosition(expression),getSourceText(expression));
+		} else if ( expression.CONTAINS() != null ) {
+			BoxExpr left = toAst(file,expression.expression(0));
+			BoxExpr right = toAst(file,expression.expression(1));
+			return new BoxBinaryOperation(left,BoxBinaryOperator.Contains,right,getPosition(expression),getSourceText(expression));
 		}
 
 		throw new IllegalStateException( "not implemented: " + expression.getClass().getSimpleName() );

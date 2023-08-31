@@ -66,13 +66,27 @@ class TestBoxlangToJavaAST : BaseTest() {
 		check(cfmlParseResult.correct) { "Cannot correctly parse the CF file: ${cfFile.absolutePath}" }
 		checkNotNull(cfmlParseResult.root) { "Something may be wrong with the CF to Boxlang conversion: ${cfFile.absolutePath}" }
 
+		println("Compiling: ${cfFile.absolutePath}")
 		// Converting Boxlang AST to Java
 		val javaAST = BoxToJavaMapper(cfmlParseResult.root!!, cfFile).toJava()
 
+
+		val rootDirectory = File("build/cfml_to_java")
+		val javaFile = File(
+			Path(
+				rootDirectory.absolutePath,
+				javaAST.packageDeclaration.orElseThrow().nameAsString.replace(".", File.separator)
+			).toFile(),
+			javaAST.getClassByName("HelloWorld\$cfm").orElseThrow().nameAsString + ".java"
+		)
+		println("Compiling: ${javaFile.absolutePath}")
+		println("Running: /home/madytyoo/IdeaProjects/boxlang/compiler/build/cfml_to_java/home/madytyoo/IdeaProjects/boxlang/examples/cf_to_java/HelloWorld/HelloWorld\$cfm.class")
 		// Compiling Java and executing the invoke() method
 		val outputStream = ByteArrayOutputStream()
 		val printStream = PrintStream(outputStream)
 		System.setOut(printStream)
+
+
 		runClassFromCode(
 			packageName = javaAST.packageDeclaration.orElseThrow().nameAsString,
 			className = javaAST.getClassByName("HelloWorld\$cfm").orElseThrow().nameAsString,

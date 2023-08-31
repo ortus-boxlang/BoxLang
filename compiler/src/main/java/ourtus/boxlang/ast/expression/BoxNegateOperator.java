@@ -14,22 +14,6 @@
  */
 package ourtus.boxlang.ast.expression;
 
-import ourtus.boxlang.ast.BoxExpr;
-import ourtus.boxlang.ast.Position;
-
-public class BoxStringLiteral extends BoxExpr {
-
-	private final String value;
-
-	public String getValue() {
-		return value;
-	}
-
-	public BoxStringLiteral(String value, Position position, String sourceText ) {
-		super( position, sourceText );
-		StringBuilder sb = new StringBuilder(value);
-		sb.deleteCharAt(value.length() - 1);
-		sb.deleteCharAt(0);
-		this.value =  sb.toString();
-	}
+public enum BoxNegateOperator {
+	Not,
 }

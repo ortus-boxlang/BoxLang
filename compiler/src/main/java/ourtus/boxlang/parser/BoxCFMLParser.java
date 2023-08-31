@@ -17,6 +17,7 @@ package ourtus.boxlang.parser;
 import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
 import org.antlr.v4.runtime.ParserRuleContext;
+import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.input.BOMInputStream;
 import ortus.boxlang.parser.CFMLLexer;
 import ortus.boxlang.parser.CFMLParser;
@@ -24,6 +25,7 @@ import ourtus.boxlang.ast.*;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 
 public class BoxCFMLParser extends BoxAbstractParser {
 
@@ -32,9 +34,7 @@ public class BoxCFMLParser extends BoxAbstractParser {
 	}
 
 	@Override
-	protected ParserRuleContext parserFirstStage( File file ) throws IOException {
-		BOMInputStream inputStream = getInputStream( file );
-
+	protected ParserRuleContext parserFirstStage( InputStream inputStream ) throws IOException {
 		CFMLLexer lexer = new CFMLLexer( CharStreams.fromStream( inputStream ) );
 		CFMLParser parser = new CFMLParser( new CommonTokenStream( lexer ) );
 		addErrorListeners( lexer, parser );
@@ -51,8 +51,17 @@ public class BoxCFMLParser extends BoxAbstractParser {
 	}
 
 	public ParsingResult parse( File file ) throws IOException {
-		CFMLParser.HtmlDocumentContext parseTree = ( CFMLParser.HtmlDocumentContext ) parserFirstStage( file );
+		BOMInputStream inputStream = getInputStream( file );
+
+		CFMLParser.HtmlDocumentContext parseTree = ( CFMLParser.HtmlDocumentContext ) parserFirstStage( inputStream );
 		BoxScript ast = parseTreeToAst( file, parseTree );
 		return new ParsingResult( ast, issues );
 	}
+	public ParsingResult parse( String code ) throws IOException {
+		InputStream inputStream = IOUtils.toInputStream(code);
+		CFMLParser.HtmlDocumentContext parseTree = ( CFMLParser.HtmlDocumentContext ) parserFirstStage( inputStream );
+		BoxScript ast = parseTreeToAst( file, parseTree );
+		return new ParsingResult( ast, issues );
+	}
+
 }

@@ -12,37 +12,20 @@
  * BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language
  * governing permissions and limitations under the License.
  */
-package ourtus.boxlang.ast.statement;
+package ourtus.boxlang.transpiler.transformer.expression;
 
+import com.github.javaparser.ast.Node;
+import com.github.javaparser.ast.expr.IntegerLiteralExpr;
+import com.github.javaparser.ast.expr.StringLiteralExpr;
 import ourtus.boxlang.ast.BoxNode;
-import ourtus.boxlang.ast.BoxStatement;
-import ourtus.boxlang.ast.Position;
-import ourtus.boxlang.ast.BoxExpr;
+import ourtus.boxlang.ast.expression.BoxIntegerLiteral;
+import ourtus.boxlang.ast.expression.BoxStringLiteral;
+import ourtus.boxlang.transpiler.transformer.AbstractTransformer;
 
-public class BoxAssignment extends BoxStatement {
-
-	private BoxExpr left;
-	private BoxExpr right;
-
-	public BoxExpr getLeft() {
-		return left;
-	}
-
-	public void setLeft( BoxExpr left ) {
-		this.left = left;
-	}
-
-	public BoxExpr getRight() {
-		return right;
-	}
-
-	public void setRight( BoxExpr right ) {
-		this.right = right;
-	}
-
-	public BoxAssignment(BoxExpr left, BoxExpr right, Position position, String sourceText) {
-		super( position, sourceText );
-		this.left  = left;
-		this.right = right;
+public class BoxIntegerLiteralTransformer extends AbstractTransformer {
+	@Override
+	public Node transform(BoxNode node) throws IllegalStateException {
+		BoxIntegerLiteral literal = (BoxIntegerLiteral) node;
+		return new IntegerLiteralExpr(literal.getValue());
 	}
 }

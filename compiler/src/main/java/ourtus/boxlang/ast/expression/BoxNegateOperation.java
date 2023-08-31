@@ -17,19 +17,22 @@ package ourtus.boxlang.ast.expression;
 import ourtus.boxlang.ast.BoxExpr;
 import ourtus.boxlang.ast.Position;
 
-public class BoxStringLiteral extends BoxExpr {
+public class BoxNegateOperation extends BoxExpr {
 
-	private final String value;
+	private final BoxExpr expr;
+	private final BoxNegateOperator operator;
 
-	public String getValue() {
-		return value;
+	public BoxNegateOperation(BoxExpr expr, BoxNegateOperator operator, Position position, String sourceText ) {
+		super( position, sourceText );
+		this.expr = expr;
+		this.operator = operator;
 	}
 
-	public BoxStringLiteral(String value, Position position, String sourceText ) {
-		super( position, sourceText );
-		StringBuilder sb = new StringBuilder(value);
-		sb.deleteCharAt(value.length() - 1);
-		sb.deleteCharAt(0);
-		this.value =  sb.toString();
+	public BoxExpr getExpr() {
+		return expr;
+	}
+
+	public BoxNegateOperator getOperator() {
+		return operator;
 	}
 }

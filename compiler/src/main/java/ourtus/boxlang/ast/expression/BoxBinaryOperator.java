@@ -15,5 +15,8 @@
 package ourtus.boxlang.ast.expression;
 
 public enum BoxBinaryOperator {
-	Concat
+	Concat,
+	Contains,
+	Plus,
+
 }

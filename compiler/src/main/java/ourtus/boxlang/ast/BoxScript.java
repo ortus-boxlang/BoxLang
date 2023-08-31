@@ -24,7 +24,6 @@ public class BoxScript extends BoxNode {
 	public BoxScript( Position position, String sourceText ) {
 		super( position, sourceText );
 		this.statements = new ArrayList<>();
-
 	}
 
 	public BoxScript( Position position, String sourceText, List<BoxStatement> statements ) {

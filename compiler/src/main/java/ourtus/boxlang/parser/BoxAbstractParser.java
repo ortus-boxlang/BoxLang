@@ -22,6 +22,7 @@ import ourtus.boxlang.ast.*;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -61,7 +62,7 @@ public abstract class BoxAbstractParser {
 		parser.addErrorListener( errorListener );
 	}
 
-	protected abstract ParserRuleContext parserFirstStage( File file ) throws IOException;
+	protected abstract ParserRuleContext parserFirstStage( InputStream stream ) throws IOException;
 
 	protected abstract BoxScript parseTreeToAst( File file, ParserRuleContext parseTree ) throws IOException;
 }

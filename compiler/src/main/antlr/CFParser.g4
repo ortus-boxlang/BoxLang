@@ -427,7 +427,7 @@ expression
     |   expression QM expression COLON expression // Ternary
     |   expression (AND | OR) expression // Logical
     |   expression (PLUS | MINUS | STAR | SLASH | PERCENT | AMPERSAND | MOD) expression // Math
-    |   expression (EQ | GT | GTE | LT | LTE | NEQ | CONTAINS) expression // Comparision
+    |   expression (EQ | GT | GTE | LT | LTE | NEQ | CONTAINS | NOT CONTAINS) expression // Comparision
     |   expression ELVIS expression // Elvis operator
     |   expression IS expression // IS operator
     |	expression DOES NOT CONTAIN expression
