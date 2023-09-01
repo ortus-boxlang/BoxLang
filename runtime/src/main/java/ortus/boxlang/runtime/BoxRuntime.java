@@ -100,8 +100,38 @@ public class BoxRuntime {
 	/**
 	 * Static constructor
 	 */
-	private BoxRuntime() {
-		// Initialization code, if needed
+	private BoxRuntime( Boolean debugMode ) {
+		// Internal timer
+		timerUtil.start( "startup" );
+
+		// Startup logging
+		LoggingConfigurator.configure( debugMode );
+		// Attach logging now that it's configured
+		Logger logger = LoggerFactory.getLogger( BoxRuntime.class );
+
+		// We can now log the startup
+		logger.atInfo().log( "+ Starting up BoxLang Runtime" + ( debugMode ? " in debug mode" : "" ) );
+
+		// Create Runtime Instance
+		this.startTime			= Instant.now();
+		this.debugMode			= debugMode;
+		this.logger				= logger;
+
+		// Create Services
+		this.interceptorService	= InterceptorService.getInstance( RUNTIME_EVENTS );
+
+		// Announce Startup to Services
+		interceptorService.onStartup();
+
+		// Runtime Started
+		logger.atInfo().log(
+		    "+ BoxLang Runtime Started at [{}] in [{}]",
+		    Instant.now(),
+		    timerUtil.stop( "startup" )
+		);
+
+		// Announce it baby!
+		interceptorService.announce( "onRuntimeStart", new Struct() );
 	}
 
 	/**
@@ -111,8 +141,15 @@ public class BoxRuntime {
 	 *
 	 * @throws RuntimeException if the runtime has not been started
 	 */
-	public static BoxRuntime getInstance() {
+	public static BoxRuntime getInstance( Boolean debugMode ) {
+		if ( instance == null ) {
+			instance = new BoxRuntime( debugMode );
+		}
 		return instance;
+	}
+
+	public static BoxRuntime getInstance() {
+		return getInstance( false );
 	}
 
 	/**
@@ -127,16 +164,7 @@ public class BoxRuntime {
 	 * @return {@link InterceptorService} or null if the runtime has not started
 	 */
 	public InterceptorService getInterceptorService() {
-		return ( hasStarted() ? instance.interceptorService : null );
-	}
-
-	/**
-	 * Check if the runtime has been started
-	 *
-	 * @return true if the runtime has been started
-	 */
-	public static Boolean hasStarted() {
-		return instance != null;
+		return interceptorService;
 	}
 
 	/**
@@ -144,8 +172,8 @@ public class BoxRuntime {
 	 *
 	 * @return the runtime start time, or null if not started
 	 */
-	public static Instant getStartTime() {
-		return ( hasStarted() ? instance.startTime : null );
+	public Instant getStartTime() {
+		return instance.startTime;
 	}
 
 	/**
@@ -153,69 +181,21 @@ public class BoxRuntime {
 	 *
 	 * @return true if the runtime is in debug mode, or null if not started
 	 */
-	public static Boolean inDebugMode() {
-		return ( hasStarted() ? instance.debugMode : null );
-	}
-
-	/**
-	 * Start up then BoxLang runtime
-	 *
-	 * @param debugMode If true, enables debug mode
-	 *
-	 * @return The runtime instance
-	 */
-	public static synchronized BoxRuntime startup( Boolean debugMode ) throws RuntimeException {
-		// If we have already started, just return the instance
-		if ( instance != null ) {
-			return getInstance();
-		}
-		// Internal timer
-		timerUtil.start( "startup" );
-
-		// Startup logging
-		LoggingConfigurator.configure( debugMode );
-		// Attach logging now that it's configured
-		Logger logger = LoggerFactory.getLogger( BoxRuntime.class );
-
-		// We can now log the startup
-		logger.atInfo().log( "+ Starting up BoxLang Runtime" + ( debugMode ? " in debug mode" : "" ) );
-
-		// Create Runtime Instance
-		instance					= new BoxRuntime();
-		instance.startTime			= Instant.now();
-		instance.debugMode			= debugMode;
-		instance.logger				= logger;
-
-		// Create Services
-		instance.interceptorService	= InterceptorService.getInstance( RUNTIME_EVENTS );
-
-		// Announce Startup to Services
-		InterceptorService.onStartup();
-
-		// Runtime Started
-		logger.atInfo().log(
-		    "+ BoxLang Runtime Started at [{}] in [{}]",
-		    Instant.now(),
-		    timerUtil.stop( "startup" )
-		);
-
-		// Announce it baby!
-		InterceptorService.announce( "onRuntimeStart", new Struct() );
-
-		return instance;
+	public Boolean inDebugMode() {
+		return instance.debugMode;
 	}
 
 	/**
 	 * Shut down the runtime
 	 */
-	public static synchronized void shutdown() {
+	public synchronized void shutdown() {
 		instance.logger.atInfo().log( "Shutting down BoxLang Runtime..." );
 
 		// Announce it globally!
-		InterceptorService.announce( "onRuntimeShutdown", new Struct() );
+		interceptorService.announce( "onRuntimeShutdown", new Struct() );
 
 		// Shutdown the services
-		InterceptorService.onShutdown();
+		interceptorService.onShutdown();
 
 		// Shutdown logging
 		instance.logger.info( "+ BoxLang Runtime has been shutdown" );
@@ -231,7 +211,7 @@ public class BoxRuntime {
 	 *
 	 * @throws Throwable if the template cannot be executed
 	 */
-	public static void executeTemplate( String templatePath ) throws Throwable {
+	public void executeTemplate( String templatePath ) throws Throwable {
 		// Here is where we presumably boostrap a page or class that we are executing in our new context.
 		// JIT if neccessary
 		BaseTemplate targetTemplate = BoxPiler.parse( templatePath );
@@ -245,7 +225,7 @@ public class BoxRuntime {
 	 *
 	 * @throws Throwable if the template cannot be executed
 	 */
-	public static void executeTemplate( URL templateURL ) throws Throwable {
+	public void executeTemplate( URL templateURL ) throws Throwable {
 		executeTemplate( templateURL.getPath() );
 	}
 
@@ -256,7 +236,7 @@ public class BoxRuntime {
 	 *
 	 * @throws Throwable if the template cannot be executed
 	 */
-	public static void executeTemplate( BaseTemplate template ) throws Throwable {
+	public void executeTemplate( BaseTemplate template ) throws Throwable {
 		// Debugging Timers
 		timerUtil.start( "execute-" + template.hashCode() );
 		instance.logger.atDebug().log( "Executing template [{}]", template.path );
@@ -270,13 +250,13 @@ public class BoxRuntime {
 		data.put( "template", template );
 		// Can't put nulls in concurrenthashmaps
 		// data.put( "templatePath", template.path );
-		InterceptorService.announce( "preTemplateInvoke", data );
+		interceptorService.announce( "preTemplateInvoke", data );
 
 		// Fire!!!
 		template.invoke( context );
 
 		// Announce
-		InterceptorService.announce( "postTemplateInvoke", data );
+		interceptorService.announce( "postTemplateInvoke", data );
 
 		// Debugging Timer
 		instance.logger.atDebug().log(

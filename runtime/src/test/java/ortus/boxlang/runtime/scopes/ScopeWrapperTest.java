@@ -51,7 +51,7 @@ public class ScopeWrapperTest {
 
 		// But the spoofed var doesn't actually exist in the variables scope
 		assertThat( variablesScope.containsKey( spoofed ) ).isFalse();
-		assertThrows( KeyNotFoundException.class, () -> variablesScope.get( spoofed ) );
+		assertThrows( KeyNotFoundException.class, () -> variablesScope.dereference( spoofed, false ) );
 	}
 
 }

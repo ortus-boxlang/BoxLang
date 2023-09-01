@@ -17,10 +17,14 @@
  */
 package ortus.boxlang.runtime.context;
 
+import java.util.Map;
+
 import ortus.boxlang.runtime.context.IBoxContext.ScopeSearchResult;
 import ortus.boxlang.runtime.dynamic.BaseTemplate;
 import ortus.boxlang.runtime.scopes.*;
+import ortus.boxlang.runtime.types.Function;
 import ortus.boxlang.runtime.types.Struct;
+import ortus.boxlang.runtime.types.UDF;
 import ortus.boxlang.runtime.types.exceptions.KeyNotFoundException;
 import ortus.boxlang.runtime.types.exceptions.ScopeNotFoundException;
 
@@ -90,35 +94,52 @@ public class BaseBoxContext implements IBoxContext {
 	 *
 	 * @return Return value of the function call
 	 */
-	public Object invokeFunction( Key name, Object[] args ) {
-		// Check for registered BIF
-
-		ScopeSearchResult result = scopeFindNearby( name, null );
-		return null;
-		// TODO: UDFs!
-		// if( result.value() instanceof ??? ) {
-		// Invoke BIF
-		// }
+	public Object invokeFunction( Key name, Object[] positionalArguments ) {
+		Function			function	= getFunction( name );
+		FunctionBoxContext	fContext	= new FunctionBoxContext( this, function.createArgumentsScope( positionalArguments ) );
+		return function.invoke( fContext );
 	}
 
-	@Override
+	public Object invokeFunction( Key name, Map<Key, Object> namedArguments ) {
+		Function			function	= getFunction( name );
+		FunctionBoxContext	fContext	= new FunctionBoxContext( this, function.createArgumentsScope( namedArguments ) );
+		return function.invoke( fContext );
+	}
+
+	public Function getFunction( Key name ) {
+		// TODO: Check for registered BIF
+
+		ScopeSearchResult result = scopeFindNearby( name, null );
+		if ( result == null ) {
+			throw new RuntimeException( "Function '" + name.toString() + "' not found" );
+		}
+		Object value = result.value();
+		if ( value instanceof Function ) {
+			return ( ( Function ) value );
+		} else {
+			throw new RuntimeException(
+			    "Variable '" + name + "' of type  '" + value.getClass().getName() + "'  is not a function " );
+		}
+	}
+
 	public IScope getScope( Key name ) throws ScopeNotFoundException {
 		throw new UnsupportedOperationException( "Unimplemented method 'getScope'" );
 	}
 
-	@Override
 	public IScope getScopeNearby( Key name ) throws ScopeNotFoundException {
 		throw new UnsupportedOperationException( "Unimplemented method 'getScopeNearby'" );
 	}
 
-	@Override
 	public ScopeSearchResult scopeFind( Key key, IScope defaultScope ) {
 		throw new UnsupportedOperationException( "Unimplemented method 'scopeFind'" );
 	}
 
-	@Override
 	public ScopeSearchResult scopeFindNearby( Key key, IScope defaultScope ) {
 		throw new UnsupportedOperationException( "Unimplemented method 'scopeFindNearby'" );
+	}
+
+	public void regsiterUDF( UDF udf ) {
+		throw new UnsupportedOperationException( "This context cannot register a function" );
 	}
 
 }

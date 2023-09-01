@@ -34,7 +34,7 @@ public abstract class BaseService {
 	 *
 	 * @return The timer utility class
 	 */
-	public static Timer getTimerUtil() {
+	public Timer getTimerUtil() {
 		return timerUtil;
 	}
 
@@ -47,21 +47,21 @@ public abstract class BaseService {
 	/**
 	 * The startup event is fired when the runtime starts up
 	 */
-	public static void onStartup() {
+	public void onStartup() {
 		throw new RuntimeException( "onStartup() not implemented" );
 	}
 
 	/**
 	 * The configuration load event is fired when the runtime loads its configuration
 	 */
-	public static void onConfigurationLoad() {
+	public void onConfigurationLoad() {
 		throw new RuntimeException( "onConfigurationLoad() not implemented" );
 	}
 
 	/**
 	 * The shutdown event is fired when the runtime shuts down
 	 */
-	public static void onShutdown() {
+	public void onShutdown() {
 		throw new RuntimeException( "onShutdown() not implemented" );
 	}
 

@@ -90,16 +90,7 @@ public class ScopeWrapper extends BaseScope {
 	}
 
 	@Override
-	public Object get( Key name ) throws KeyNotFoundException {
-		Object result = super.getRaw( name );
-		if ( result != null ) {
-			return Struct.unWrapNull( result );
-		}
-		return wrapped.get( name );
-	}
-
-	@Override
-	public Object get( Object name ) throws KeyNotFoundException {
+	public Object get( Object name ) {
 		Object result = super.getRaw( ( Key ) name );
 		if ( result != null ) {
 			return Struct.unWrapNull( result );

@@ -174,7 +174,7 @@ public class Phase1TryCatch extends BaseTemplate {
 				    // Arguments
 				    new Object[] {
 				        Referencer.get(
-				            catchContext.scopeFindNearby( Key.of( "e" ), null ),
+				            catchContext.scopeFindNearby( Key.of( "e" ), null ).value(),
 				            Key.of( "message" ),
 				            false
 				        )
@@ -198,16 +198,16 @@ public class Phase1TryCatch extends BaseTemplate {
 		// This is the main method, it will be invoked when the template is executed
 		// You can use this
 		// Get a runtime going
-		BoxRuntime.startup( true );
+		BoxRuntime boxRuntime = BoxRuntime.getInstance( true );
 
 		try {
-			BoxRuntime.executeTemplate( Phase1TryCatch.getInstance() );
+			boxRuntime.executeTemplate( Phase1TryCatch.getInstance() );
 		} catch ( Throwable e ) {
 			e.printStackTrace();
 			System.exit( 1 );
 		}
 
 		// Bye bye! Ciao Bella!
-		BoxRuntime.shutdown();
+		boxRuntime.shutdown();
 	}
 }
