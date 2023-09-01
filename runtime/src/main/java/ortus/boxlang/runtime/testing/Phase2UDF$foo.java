@@ -47,14 +47,6 @@ public class Phase2UDF$foo extends UDF {
 
     private static Phase2UDF$foo instance;
 
-    /**
-     * <pre>
-        function greet( required string name='Brad' ) hint="My Function Hint" {
-            var greeting = "Hello " & name;
-            return greeting;
-        }
-     * </pre>
-     */
     private Phase2UDF$foo() {
         super(
             Access.PUBLIC,
@@ -75,8 +67,17 @@ public class Phase2UDF$foo extends UDF {
         return instance;
     }
 
+    /**
+     * <pre>
+        function greet( required string name='Brad' ) hint="My Function Hint" {
+            var greeting = "Hello " & name;
+            return greeting;
+        }
+     * </pre>
+     */
     @Override
     public Object invoke( FunctionBoxContext context ) {
+
         context.getScopeNearby( LocalScope.name ).assign(
             Key.of( "Greeting" ),
             Concat.invoke(
@@ -84,8 +85,10 @@ public class Phase2UDF$foo extends UDF {
                 context.scopeFindNearby( Key.of( "name" ), null ).value()
             )
         );
+
         // TODO: check return type before returning
         return context.scopeFindNearby( Key.of( "greeting" ), null ).value();
+
     }
 
 }

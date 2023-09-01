@@ -73,24 +73,22 @@ public class Phase2UDF extends BaseTemplate {
     public void invoke( IBoxContext context ) throws Throwable {
         ClassLocator classLocator = ClassLocator.getInstance();
 
+        // Create instance of UDF and register in the variables scope
         context.regsiterUDF( Phase2UDF$foo.getInstance() );
-        Referencer.getAndInvoke(
 
+        Referencer.getAndInvoke(
             // Object
             Referencer.get(
                 classLocator.load( context, "java:java.lang.System", imports ),
                 Key.of( "out" ),
                 false ),
-
             // Method
             Key.of( "println" ),
-
             // Arguments
             new Object[] {
                 context.invokeFunction( Key.of( "foo" ), new Object[] { "John" } )
             },
             false
-
         );
 
     }
