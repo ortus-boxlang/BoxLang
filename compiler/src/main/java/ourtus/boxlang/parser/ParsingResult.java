@@ -19,16 +19,16 @@ package ourtus.boxlang.parser;
 
 import ourtus.boxlang.ast.BoxNode;
 import ourtus.boxlang.ast.BoxScript;
-import ourtus.boxlang.ast.Issue;
+import ourtus.boxlang.ast.ParseException;
 
 import java.util.ArrayList;
 import java.util.List;
 
 public class ParsingResult {
 	private BoxNode root;
-	private  final List<Issue> issues;
+	private  final List<ParseException> issues;
 
-	public ParsingResult(BoxNode root, List<Issue> issues) {
+	public ParsingResult(BoxNode root, List<ParseException> issues) {
 		this.root = root;
 		this.issues = issues;
 	}
@@ -37,7 +37,7 @@ public class ParsingResult {
 		return root;
 	}
 
-	public List<Issue> getIssues() {
+	public List<ParseException> getIssues() {
 		return issues;
 	}
 

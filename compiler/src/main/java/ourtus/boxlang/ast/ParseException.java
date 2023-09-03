@@ -17,11 +17,27 @@
  */
 package ourtus.boxlang.ast;
 
-public class Issue {
+/**
+ * Thrown upon failure to parse either BoxLang, CFML, or CFScript.
+ */
+public class ParseException {
+	/**
+	 * Exception string message - try to be clear, precise, and accurate.
+	 * Instead of "Unknown parsing error", say "Encountered unexpected ':', expected one of X, Ym or Z"
+	 */
 	private final String message;
+	/**
+	 * Line and character position of the offending source code. May optionally contain a file source.
+	 */
 	private final Position position;
 
-	public Issue(String message, Position position) {
+	/**
+	 * Build new parse exception with message and position.
+	 *
+	 * @param message Exception string message - try to be clear, precise, and accurate. "error parsing XYZ" is not enough!
+	 * @param position Invalid syntax position, including start and end and (optionally) the file name.
+	 */
+	public ParseException(String message, Position position) {
 		this.message = message;
 		this.position = position;
 	}
@@ -34,6 +50,10 @@ public class Issue {
 		return position;
 	}
 
+	/**
+	 * Stringify the parse exception - more useful for debugging and CLI usage.
+	 * Use .toPrettyString() to print source with "pointer".
+	 */
 	@Override
 	public String toString() {
 		StringBuilder sb = new StringBuilder();
@@ -44,7 +64,6 @@ public class Issue {
 		sb.append(position.getStart().getLine());
 		sb.append(" - ");
 		sb.append(this.message);
-
 
 		return sb.toString();
 	}

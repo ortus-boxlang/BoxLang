@@ -29,7 +29,7 @@ import java.util.List;
 public abstract class BoxAbstractParser {
 
 	protected File file;
-	protected final List<Issue> issues;
+	protected final List<ParseException> issues;
 
 	private final BaseErrorListener errorListener = new BaseErrorListener() {
 
@@ -41,7 +41,7 @@ public abstract class BoxAbstractParser {
 			if ( file != null ) {
 				position.setSource( new SourceFile( file ) );
 			}
-			issues.add( new Issue( errorMessage, position ) );
+			issues.add( new ParseException( errorMessage, position ) );
 		}
 	};
 
