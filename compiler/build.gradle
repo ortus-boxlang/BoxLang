@@ -120,29 +120,22 @@ javadoc {
 build.finalizedBy(javadoc)
 
 compileJava {
-	sourceCompatibility = "$jvmVersion"
-	targetCompatibility = "$jvmVersion"
 	source sourceSets.main.java
+	dependsOn generateTestGrammarSource
 }
 
 compileTestJava {
-	sourceCompatibility = "$jvmVersion"
-	targetCompatibility = "$jvmVersion"
 	source sourceSets.test.java
 	dependsOn compileJava
 }
 
 compileKotlin {
-	sourceCompatibility = "$jvmVersion"
-	targetCompatibility = "$jvmVersion"
 	source sourceSets.main.java, sourceSets.main.kotlin
 	kotlinOptions.jvmTarget = "$jvmVersion"
 	dependsOn generateGrammarSource
 }
 
 compileTestKotlin {
-	sourceCompatibility = "$jvmVersion"
-	targetCompatibility = "$jvmVersion"
 	source sourceSets.test.java, sourceSets.test.kotlin
 	kotlinOptions.jvmTarget = "$jvmVersion"
 	dependsOn compileKotlin, generateTestGrammarSource
