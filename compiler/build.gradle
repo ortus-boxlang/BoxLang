@@ -39,7 +39,7 @@ repositories {
  */
 dependencies {
 	// Testing Dependencies
-//    testImplementation "org.junit.jupiter:junit-jupiter:5.+"
+	testImplementation "org.junit.jupiter:junit-jupiter:5.+"
 //	testImplementation "org.mockito:mockito-core:5.+"
 //	testImplementation "com.google.truth:truth:1.+"
 
@@ -168,7 +168,7 @@ test {
 	systemProperties.putIfAbsent("testboxdir", testboxDir)
 	systemProperties.putIfAbsent("contentboxdir", contentboxDir)
 	systemProperties.putIfAbsent("coldboxdir", coldboxDir)
-	dependsOn compileKotlin, compileTestKotlin
+	dependsOn compileKotlin, compileTestKotlin, compileTestJava
 }
 
 /**
