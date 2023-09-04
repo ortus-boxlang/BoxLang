@@ -65,16 +65,16 @@ public class BoxRunner {
 		}
 
 		// Get a runtime going
-		BoxRuntime.startup( options.debug() );
+		BoxRuntime boxRuntime = BoxRuntime.getInstance( options.debug() );
 
 		try {
-			BoxRuntime.executeTemplate( options.templatePath() );
+			boxRuntime.executeTemplate( options.templatePath() );
 		} catch ( Throwable e ) {
 			throw new RuntimeException( e );
 		}
 
 		// Bye bye! Ciao Bella!
-		BoxRuntime.shutdown();
+		boxRuntime.shutdown();
 
 		if ( options.debug() ) {
 			System.out.println( "+++ BoxRunner executed in " + timer.stop( "BoxRunner" ) );

@@ -50,4 +50,11 @@ public class ExamplesTest {
 		} );
 	}
 
+	@DisplayName( "It can execute Phase2 UDF example" )
+	@Test
+	public void testItCanExecutePhase2UDF() throws Throwable {
+		Phase2UDF.main( new String[] {
+		} );
+	}
+
 }

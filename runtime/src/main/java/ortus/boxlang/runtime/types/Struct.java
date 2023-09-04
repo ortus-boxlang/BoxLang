@@ -17,8 +17,13 @@
  */
 package ortus.boxlang.runtime.types;
 
+import java.util.Collection;
+import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Objects;
+import java.util.Map;
+import java.util.Set;
+import java.util.TreeMap;
 import java.util.concurrent.ConcurrentHashMap;
 
 import ortus.boxlang.runtime.dynamic.IReferenceable;
@@ -26,29 +31,27 @@ import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.exceptions.CastException;
 import ortus.boxlang.runtime.types.exceptions.KeyNotFoundException;
 
-/**
- * A struct is a collection of key-value pairs, where the key is unique and case insensitive
- */
-public class Struct extends ConcurrentHashMap<Key, Object> implements IType, IReferenceable {
+public class Struct implements Map<Key, Object>, IType, IReferenceable {
 
-	/**
-	 * --------------------------------------------------------------------------
-	 * Public Properties
-	 * --------------------------------------------------------------------------
-	 */
+	public enum Type {
+		LINKED,
+		SORTED,
+		DEFAULT
+	}
 
 	/**
 	 * --------------------------------------------------------------------------
 	 * Private Properties
 	 * --------------------------------------------------------------------------
 	 */
+	private final Map<Key, Object>	wrapped;
 
 	/**
 	 * In general, a common approach is to choose an initial capacity that is a power of two.
 	 * For example, 16, 32, 64, etc. This is because ConcurrentHashMap uses power-of-two-sized hash tables,
 	 * and using a power-of-two capacity can lead to better distribution of elements in the table.
 	 */
-	private static final int INITIAL_CAPACITY = 32;
+	private static final int		INITIAL_CAPACITY	= 32;
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -59,15 +62,134 @@ public class Struct extends ConcurrentHashMap<Key, Object> implements IType, IRe
 	/**
 	 * Constructor
 	 */
+	public Struct( Type type ) {
+		if ( type.equals( Type.DEFAULT ) ) {
+			wrapped = new ConcurrentHashMap<Key, Object>( INITIAL_CAPACITY );
+			return;
+		} else if ( type.equals( Type.LINKED ) ) {
+			wrapped = Collections.synchronizedMap( new LinkedHashMap<Key, Object>( INITIAL_CAPACITY ) );
+			return;
+		} else if ( type.equals( Type.SORTED ) ) {
+			wrapped = Collections.synchronizedMap( new TreeMap<Key, Object>() );
+			return;
+		}
+		throw new RuntimeException( "Invalid struct type" );
+	}
+
 	public Struct() {
-		super( INITIAL_CAPACITY );
+		this( Type.DEFAULT );
 	}
 
 	/**
 	 * --------------------------------------------------------------------------
-	 * Methods
+	 * Map Interface Methods
 	 * --------------------------------------------------------------------------
 	 */
+
+	@Override
+	public int size() {
+		return wrapped.size();
+	}
+
+	@Override
+	public boolean isEmpty() {
+		return wrapped.isEmpty();
+	}
+
+	@Override
+	public boolean containsKey( Object key ) {
+		return wrapped.containsKey( key );
+	}
+
+	@Override
+	public boolean containsValue( Object value ) {
+		return wrapped.containsValue( value );
+	}
+
+	@Override
+	public Object get( Object key ) {
+		return unWrapNull( wrapped.get( key ) );
+	}
+
+	public Object get( String key ) {
+		return wrapped.get( Key.of( key ) );
+	}
+
+	/**
+	 * Returns the value of the key safely, nulls will be wrapped in a NullValue still.
+	 *
+	 * @param key The key to look for
+	 *
+	 * @return The value of the key or a NullValue object, null means the key didn't exist *
+	 */
+	public Object getRaw( Key key ) {
+		return wrapped.get( key );
+	}
+
+	@Override
+	public Object put( Key key, Object value ) {
+		return wrapped.put( key, wrapNull( value ) );
+	}
+
+	/**
+	 * Set a value in the struct by a string key, which we auto-convert to a Key object
+	 *
+	 * @param key   The string key to set
+	 * @param value The value to set
+	 *
+	 * @return The previous value of the key, or null if not found
+	 */
+	public Object put( String key, Object value ) {
+		return put( Key.of( key ), value );
+	}
+
+	@Override
+	public Object putIfAbsent( Key key, Object value ) {
+		return wrapped.putIfAbsent( key, wrapNull( value ) );
+	}
+
+	@Override
+	public Object remove( Object key ) {
+		return wrapped.remove( key );
+	}
+
+	@Override
+	public void putAll( Map<? extends Key, ? extends Object> map ) {
+		wrapped.putAll( map );
+	}
+
+	public void addAll( Map<Object, Object> map ) {
+		for ( Map.Entry<Object, Object> entry : map.entrySet() ) {
+			Key key;
+			if ( entry.getKey() instanceof Key ) {
+				key = ( Key ) entry.getKey();
+			} else {
+				key = Key.of( entry.getKey().toString() );
+			}
+			Object value = entry.getValue();
+			put( key, value );
+		}
+	}
+
+	@Override
+	public void clear() {
+		wrapped.clear();
+	}
+
+	@Override
+	public Set<Key> keySet() {
+		return wrapped.keySet();
+	}
+
+	@Override
+	public Collection<Object> values() {
+		return wrapped.values();
+	}
+
+	@Override
+	public Set<Entry<Key, Object>> entrySet() {
+		return wrapped.entrySet();
+	}
 
 	/**
 	 * Verifies equality with the following rules:
@@ -76,16 +198,7 @@ public class Struct extends ConcurrentHashMap<Key, Object> implements IType, IRe
 	 */
 	@Override
 	public boolean equals( Object obj ) {
-		// Same object
-		if ( this == obj ) {
-			return true;
-		}
-		// Null and class checks
-		if ( obj == null || getClass() != obj.getClass() ) {
-			return false;
-		}
-		// Super
-		return super.equals( obj );
+		return wrapped.equals( obj );
 	}
 
 	/**
@@ -93,7 +206,7 @@ public class Struct extends ConcurrentHashMap<Key, Object> implements IType, IRe
 	 */
 	@Override
 	public int hashCode() {
-		return Objects.hash( super.hashCode() );
+		return wrapped.hashCode();
 	}
 
 	/**
@@ -120,207 +233,44 @@ public class Struct extends ConcurrentHashMap<Key, Object> implements IType, IRe
 	}
 
 	/**
-	 * Represent as string, or throw exception if not possible
+	 * --------------------------------------------------------------------------
+	 * IType Interface Methods
+	 * --------------------------------------------------------------------------
 	 */
+
 	@Override
 	public String asString() {
-		throw new CastException( "Can't cast a struct to a string. Try serializing it" );
+		return wrapped.toString();
 	}
 
 	/**
-	 * Checks the struct for a key using a string which is auto-converted to a Key object
-	 *
-	 * @param key The string key to check
-	 *
-	 * @return True if the key exists, false otherwise
+	 * --------------------------------------------------------------------------
+	 * IReferenceable Interface Methods
+	 * --------------------------------------------------------------------------
 	 */
-	public boolean containsKey( String key ) {
-		return containsKey( Key.of( key ) );
+
+	@Override
+	public void assign( Key key, Object value ) {
+		put( key, value );
 	}
 
-	/**
-	 * Checks the struct for a key using a string which is auto-converted to a Key object
-	 *
-	 * @param key The string key to check
-	 *
-	 * @return True if the key exists, false otherwise
-	 */
-	public boolean containsKey( Key key ) {
-		return getRaw( key ) != null;
-	}
-
-	/**
-	 * Checks the struct for a key using a string which is auto-converted to a Key object
-	 *
-	 * @param key The string key to check
-	 *
-	 * @return True if the key exists, false otherwise
-	 */
-	public boolean containsKey( Object key ) {
-		return containsKey( ( Key ) key );
-	}
-
-	/**
-	 * Set a value in the struct by a string key, which we auto-convert to a Key object
-	 *
-	 * @param key   The string key to set
-	 * @param value The value to set
-	 *
-	 * @return The previous value of the key, or null if not found
-	 */
-	public Object put( String key, Object value ) {
-		return super.put( Key.of( key ), value );
-	}
-
-	/**
-	 * Set a value in the struct by a string key, which we auto-convert to a Key object
-	 *
-	 * @param key   The string key to set
-	 * @param value The value to set
-	 *
-	 * @return The previous value of the key, or null if not found
-	 */
-	public Object put( Key key, Object value ) {
-		return super.put( key, wrapNull( value ) );
-	}
-
-	/**
-	 * If the specified key is not already associated with a value, associates it with the given value
-	 *
-	 * @param key   The string key to set
-	 * @param value The value to set
-	 *
-	 * @return The previous value associated with the specified key, or null if there was no mapping for the key
-	 */
-	public Object putIfAbsent( String key, Object value ) {
-		return super.putIfAbsent( Key.of( key ), wrapNull( value ) );
-	}
-
-	/**
-	 * Get helper using a string key, which we auto-convert to a Key object
-	 *
-	 * @param key The string key to look for
-	 *
-	 * @return The value of the key
-	 *
-	 * @throws KeyNotFoundException If the key is not found
-	 */
-	public Object get( String key ) {
-		return get( Key.of( key ) );
-	}
-
-	/**
-	 * Returns the value of the key if found.
-	 * We override in order to present nicer exception messages
-	 *
-	 * @param key The key to look for
-	 *
-	 * @return The value of the key
-	 *
-	 * @throws KeyNotFoundException If the key is not found
-	 */
-	public Object get( Key key ) {
-		return get( key, false );
-	}
-
-	/**
-	 * Returns the value of the key if found.
-	 * We override in order to present nicer exception messages
-	 *
-	 * @param key The key to look for
-	 *
-	 * @return The value of the key
-	 *
-	 * @throws KeyNotFoundException If the key is not found
-	 */
-	public Object get( Object key ) {
-		return get( ( Key ) key, false );
-	}
-
-	/**
-	 * Returns the value of the key if found, throwing an exception if not.
-	 *
-	 * When safe=true, missing keys return null sa well so there is no differnce between a missing key and a legitimately null value
-	 *
-	 * @param key  The key to look for
-	 * @param safe Whether to throw an exception if the key is not found
-	 *
-	 * @return The value of the key, or null if not found and safe=true
-	 *
-	 * @throws KeyNotFoundException If the key is not found
-	 */
-	public Object get( Key key, Boolean safe ) {
-		Object target = getRaw( key );
-
-		// Revisit for full CFML null support
-		if ( target != null || safe ) {
-			return unWrapNull( target );
+	@Override
+	public Object dereference( Key key, Boolean safe ) throws KeyNotFoundException {
+		Object value = get( key );
+		if ( value == null && !safe ) {
+			throw new KeyNotFoundException(
+			    String.format( "The key %s was not found in the struct. Valid keys are (%s)", key.getName(), getKeys() ), this
+			);
 		}
-
-		throw new KeyNotFoundException(
-		    String.format( "The key %s was not found in the struct. Valid keys are (%s)", key.getName(), getKeys() ), this
-		);
-
+		return value;
 	}
 
-	/**
-	 * Returns the value of the key safely, nulls will be wrapped in a NullValue still.
-	 *
-	 * @param key The key to look for
-	 *
-	 * @return The value of the key or a NullValue object, null means the key didn't exist *
-	 */
-	public Object getRaw( Key key ) {
-		return super.get( key );
-	}
-
-	/**
-	 * Get an array list of all the keys in the struct
-	 *
-	 * @return An array list of all the keys in the struct
-	 */
-	public List<String> getKeys() {
-		return super.keySet().stream().map( Key::getNameNoCase ).collect( java.util.stream.Collectors.toList() );
-	}
-
-	/**
-	 * Get an array list of all the keys in the struct with case-sensitivity
-	 *
-	 * @return An array list of all the keys in the struct
-	 */
-	public List<String> getKeysWithCase() {
-		return super.keySet().stream().map( Key::getName ).collect( java.util.stream.Collectors.toList() );
-	}
-
-	/**
-	 * Dereference this object by a key and return the value, or throw exception
-	 *
-	 * @return The requested obect
-	 */
-	public Object dereference( Key name, Boolean safe ) throws KeyNotFoundException {
-		return get( name, safe );
-	}
-
-	/**
-	 * Dereference this object by a key and invoke the result as an invokable (UDF, java method)
-	 *
-	 * @return The requested object
-	 */
-	public Object dereferenceAndInvoke( Key name, Object[] arguments, Boolean safe ) throws KeyNotFoundException {
-		Object object = dereference( name, safe );
+	@Override
+	public Object dereferenceAndInvoke( Key key, Object[] args, Boolean safe ) throws KeyNotFoundException, CastException {
+		Object value = dereference( key, safe );
 		// Test if the object is invokable (a UDF or java call site) and invoke it or throw exception if not invokable
 		// Ideally, the invoker logic is not here, but in a helper
 		throw new RuntimeException( "not implemented yet" );
-	}
-
-	/**
-	 * Derefence by assignment (x = y)
-	 *
-	 * @param name  The key to assign to
-	 * @param value The value to assign
-	 */
-	public void assign( Key name, Object value ) {
-		put( name, value );
 	}
 
 	/**
@@ -337,10 +287,20 @@ public class Struct extends ConcurrentHashMap<Key, Object> implements IType, IRe
 		return value;
 	}
 
+	/**
+	 * Get an array list of all the keys in the struct
+	 *
+	 * @return An array list of all the keys in the struct
+	 */
+	public List<String> getKeys() {
+		return keySet().stream().map( Key::getNameNoCase ).collect( java.util.stream.Collectors.toList() );
+	}
+
 	public static Object unWrapNull( Object value ) {
 		if ( value instanceof NullValue ) {
 			return null;
 		}
 		return value;
 	}
+
 }

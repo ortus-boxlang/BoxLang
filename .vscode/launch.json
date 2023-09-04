@@ -6,6 +6,13 @@
     "configurations": [
         {
             "type": "java",
+            "name": "Phase2UDF",
+            "request": "launch",
+            "mainClass": "ortus.boxlang.runtime.testing.Phase2UDF",
+            "projectName": "runtime"
+        },
+        {
+            "type": "java",
             "name": "Phase1Switch",
             "request": "launch",
             "mainClass": "ortus.boxlang.runtime.testing.Phase1Switch",

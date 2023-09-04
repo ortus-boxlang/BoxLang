@@ -57,22 +57,20 @@ public class FunctionServiceTest {
 	@DisplayName( "It can startup and register global functions" )
 	@Test
 	void testItCanStartup() throws Throwable {
-		FunctionService.getInstance();
-		FunctionService.onStartup();
+		FunctionService functionService = FunctionService.getInstance();
 
-		assertThat( FunctionService.getGlobalFunctionCount() ).isGreaterThan( 0 );
-		assertThat( FunctionService.hasGlobalFunction( "print" ) ).isTrue();
+		assertThat( functionService.getGlobalFunctionCount() ).isGreaterThan( 0 );
+		assertThat( functionService.hasGlobalFunction( "print" ) ).isTrue();
 	}
 
 	@DisplayName( "It can invoke a global function" )
 	@Test
 	void testItCanInvokeAGlobalFunction() throws Throwable {
-		FunctionService.getInstance();
-		FunctionService.onStartup();
+		FunctionService functionService = FunctionService.getInstance();
 
-		assertThat( FunctionService.hasGlobalFunction( "print" ) ).isTrue();
+		assertThat( functionService.hasGlobalFunction( "print" ) ).isTrue();
 
-		Optional<Object> result = FunctionService.getGlobalFunction( "print" )
+		Optional<Object> result = functionService.getGlobalFunction( "print" )
 		    .invoke(
 		        new TemplateBoxContext(), "Hello Unit Test"
 		    );

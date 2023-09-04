@@ -15,69 +15,33 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package ortus.boxlang.runtime.dynamic;
+package ortus.boxlang.runtime.scopes;
 
-import java.time.LocalDateTime;
-
-import ortus.boxlang.runtime.context.IBoxContext;
-
-/// import ortus.boxlang.runtime.core.Derefrencer;
-
-public class BaseTemplate {
+/**
+ * Variables scope implementation in BoxLang
+ */
+public class LocalScope extends BaseScope {
 
 	/**
 	 * --------------------------------------------------------------------------
 	 * Public Properties
 	 * --------------------------------------------------------------------------
 	 */
-
-	/**
-	 * The name of the template
-	 */
-	public String			name;
-
-	/**
-	 * The extension of the template
-	 */
-	public String			extension;
-
-	/**
-	 * The path to the template
-	 */
-	public String			path;
-
-	/**
-	 * The last modified date of the template
-	 */
-	public LocalDateTime	lastModified;
-
-	/**
-	 * The date the template was compiled
-	 */
-	public LocalDateTime	compiledOn;
-
-	// public ??? ast;
+	public static final Key name = Key.of( "local" );
 
 	/**
 	 * --------------------------------------------------------------------------
-	 * Private Properties
+	 * Constructors
 	 * --------------------------------------------------------------------------
 	 */
+
+	public LocalScope() {
+		super( LocalScope.name );
+	}
 
 	/**
 	 * --------------------------------------------------------------------------
 	 * Methods
 	 * --------------------------------------------------------------------------
 	 */
-
-	/**
-	 * Invoke a BoxLang template
-	 *
-	 * @param context The context to invoke the template with
-	 *
-	 * @throws Throwable If an error occurs
-	 */
-	public void invoke( IBoxContext context ) throws Throwable {
-		throw new UnsupportedOperationException( "This method must be overridden." );
-	}
 }

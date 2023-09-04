@@ -54,27 +54,27 @@ public class FunctionService extends BaseService {
 	 * --------------------------------------------------------------------------
 	 */
 
-	private static final String					FUNCTIONS_PACKAGE	= "ortus.boxlang.runtime.functions";
+	private static final String				FUNCTIONS_PACKAGE	= "ortus.boxlang.runtime.functions";
 
 	/**
 	 * Logger
 	 */
-	private static final Logger					logger				= LoggerFactory.getLogger( FunctionService.class );
+	private static final Logger				logger				= LoggerFactory.getLogger( FunctionService.class );
 
 	/**
 	 * Singleton instance
 	 */
-	private static FunctionService				instance;
+	private static FunctionService			instance;
 
 	/**
 	 * The set of global functions registered with the service
 	 */
-	private static Map<Key, FunctionDescriptor>	globalFunctions		= new ConcurrentHashMap<>();
+	private Map<Key, FunctionDescriptor>	globalFunctions		= new ConcurrentHashMap<>();
 
 	/**
 	 * The set of namespaced functions registered with the service
 	 */
-	private static Map<Key, FunctionNamespace>	namespaces			= new ConcurrentHashMap<>();
+	private Map<Key, FunctionNamespace>		namespaces			= new ConcurrentHashMap<>();
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -86,6 +86,14 @@ public class FunctionService extends BaseService {
 	 * Constructor
 	 */
 	private FunctionService() {
+		logger.info( "FunctionService.onStartup()" );
+		// Load global functions
+		try {
+			loadGlobalFunctions();
+		} catch ( IOException e ) {
+			e.printStackTrace();
+			throw new RuntimeException( "Cannot load global functions", e );
+		}
 	}
 
 	/**
@@ -109,28 +117,20 @@ public class FunctionService extends BaseService {
 	/**
 	 * The startup event is fired when the runtime starts up
 	 */
-	public static void onStartup() {
-		logger.info( "FunctionService.onStartup()" );
-		// Load global functions
-		try {
-			loadGlobalFunctions();
-		} catch ( IOException e ) {
-			e.printStackTrace();
-			throw new RuntimeException( "Cannot load global functions", e );
-		}
+	public void onStartup() {
 	}
 
 	/**
 	 * The configuration load event is fired when the runtime loads its configuration
 	 */
-	public static void onConfigurationLoad() {
+	public void onConfigurationLoad() {
 		logger.info( "FunctionService.onConfigurationLoad()" );
 	}
 
 	/**
 	 * The shutdown event is fired when the runtime shuts down
 	 */
-	public static void onShutdown() {
+	public void onShutdown() {
 		logger.info( "FunctionService.onShutdown()" );
 	}
 
@@ -140,19 +140,19 @@ public class FunctionService extends BaseService {
 	 * --------------------------------------------------------------------------
 	 */
 
-	public static long getGlobalFunctionCount() {
+	public long getGlobalFunctionCount() {
 		return globalFunctions.size();
 	}
 
-	public static Set<String> getGlobalFunctionNames() {
+	public Set<String> getGlobalFunctionNames() {
 		return globalFunctions.keySet().stream().map( Key::getName ).collect( Collectors.toSet() );
 	}
 
-	public static Boolean hasGlobalFunction( String name ) {
+	public Boolean hasGlobalFunction( String name ) {
 		return globalFunctions.containsKey( Key.of( name ) );
 	}
 
-	public static FunctionDescriptor getGlobalFunction( String name ) throws KeyNotFoundException {
+	public FunctionDescriptor getGlobalFunction( String name ) throws KeyNotFoundException {
 		FunctionDescriptor target = globalFunctions.get( Key.of( name ) );
 		if ( target == null ) {
 			throw new KeyNotFoundException(
@@ -164,18 +164,18 @@ public class FunctionService extends BaseService {
 		return target;
 	}
 
-	public static FunctionDescriptor getGlobalFunctionDescriptor( String name ) {
+	public FunctionDescriptor getGlobalFunctionDescriptor( String name ) {
 		return globalFunctions.get( Key.of( name ) );
 	}
 
-	public static void registerGlobalFunction( FunctionDescriptor descriptor ) throws IllegalArgumentException {
+	public void registerGlobalFunction( FunctionDescriptor descriptor ) throws IllegalArgumentException {
 		if ( hasGlobalFunction( descriptor.name ) ) {
 			throw new IllegalArgumentException( "Global function " + descriptor.name + " already exists" );
 		}
 		globalFunctions.put( Key.of( descriptor.name ), descriptor );
 	}
 
-	public static void registerGlobalFunction( String name, BIF function, String module ) throws IllegalArgumentException {
+	public void registerGlobalFunction( String name, BIF function, String module ) throws IllegalArgumentException {
 		if ( hasGlobalFunction( name ) ) {
 			throw new IllegalArgumentException( "Global function " + name + " already exists" );
 		}
@@ -193,11 +193,11 @@ public class FunctionService extends BaseService {
 		);
 	}
 
-	public static void unregisterGlobalFunction( String name ) {
+	public void unregisterGlobalFunction( String name ) {
 		globalFunctions.remove( Key.of( name ) );
 	}
 
-	public static void loadGlobalFunctions() throws IOException {
+	public void loadGlobalFunctions() throws IOException {
 		globalFunctions = ClassDiscovery
 		    .getClassFilesAsStream( FUNCTIONS_PACKAGE + ".global" )
 		    .collect(
@@ -215,7 +215,7 @@ public class FunctionService extends BaseService {
 		    );
 	}
 
-	public static long getNamespaceCount() {
+	public long getNamespaceCount() {
 		return namespaces.size();
 	}
 }

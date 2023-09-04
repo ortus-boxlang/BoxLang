@@ -19,7 +19,9 @@ package ortus.boxlang.runtime.context;
 
 import ortus.boxlang.runtime.dynamic.BaseTemplate;
 import ortus.boxlang.runtime.scopes.*;
+import ortus.boxlang.runtime.types.Function;
 import ortus.boxlang.runtime.types.Struct;
+import ortus.boxlang.runtime.types.UDF;
 import ortus.boxlang.runtime.types.exceptions.KeyNotFoundException;
 import ortus.boxlang.runtime.types.exceptions.ScopeNotFoundException;
 
@@ -220,9 +222,11 @@ public class TemplateBoxContext extends BaseBoxContext {
 		if ( name.equals( variablesScope.getName() ) ) {
 			return variablesScope;
 		}
-
 		return getScope( name );
+	}
 
+	public void regsiterUDF( UDF udf ) {
+		variablesScope.put( udf.getName(), udf );
 	}
 
 }

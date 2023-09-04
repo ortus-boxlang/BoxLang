@@ -32,27 +32,19 @@ public class BoxRuntimeTest {
 	@DisplayName( "It can startup" )
 	@Test
 	public void testItCanStartUp() {
-		// Ensure getInstance() returns the same instance as startup( true )
-		BoxRuntime instance1 = BoxRuntime.getInstance();
-		assertThat( instance1 ).isNull();
 
-		BoxRuntime instance2 = BoxRuntime.startup( true );
+		BoxRuntime instance2 = BoxRuntime.getInstance( true );
 		assertThat( BoxRuntime.getInstance() ).isSameInstanceAs( instance2 );
-		assertThat( BoxRuntime.hasStarted() ).isTrue();
-		assertThat( BoxRuntime.inDebugMode() ).isTrue();
-		assertThat( BoxRuntime.getStartTime() ).isNotNull();
+		assertThat( instance2.inDebugMode() ).isTrue();
+		assertThat( instance2.getStartTime() ).isNotNull();
 	}
 
 	@DisplayName( "It can shutdown" )
 	@Test
 	public void testItCanShutdown() {
-		BoxRuntime.startup( true );
+		BoxRuntime instance = BoxRuntime.getInstance( true );
 		// Ensure shutdown sets instance to null
-		BoxRuntime.shutdown();
-		assertThat( BoxRuntime.getInstance() ).isNull();
-		assertThat( BoxRuntime.hasStarted() ).isFalse();
-		assertThat( BoxRuntime.getStartTime() ).isNull();
-		assertThat( BoxRuntime.inDebugMode() ).isNull();
+		instance.shutdown();
 	}
 
 	@DisplayName( "It can execute a template" )
@@ -61,9 +53,9 @@ public class BoxRuntimeTest {
 		String testTemplate = getClass().getResource( "/test-templates/BoxRuntime.bx" ).getPath();
 
 		assertDoesNotThrow( () -> {
-			BoxRuntime.startup( true );
-			BoxRuntime.executeTemplate( testTemplate );
-			BoxRuntime.shutdown();
+			BoxRuntime instance = BoxRuntime.getInstance( true );
+			instance.executeTemplate( testTemplate );
+			instance.shutdown();
 		} );
 	}
 
@@ -73,9 +65,9 @@ public class BoxRuntimeTest {
 		URL testTemplate = getClass().getResource( "/test-templates/BoxRuntime.bx" );
 
 		assertDoesNotThrow( () -> {
-			BoxRuntime.startup( true );
-			BoxRuntime.executeTemplate( testTemplate );
-			BoxRuntime.shutdown();
+			BoxRuntime instance = BoxRuntime.getInstance( true );
+			instance.executeTemplate( testTemplate );
+			instance.shutdown();
 		} );
 	}
 

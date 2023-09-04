@@ -51,22 +51,22 @@ public class InterceptorService extends BaseService {
 	/**
 	 * Logger
 	 */
-	private static final Logger					logger				= LoggerFactory.getLogger( InterceptorService.class );
+	private static final Logger			logger				= LoggerFactory.getLogger( InterceptorService.class );
 
 	/**
 	 * Singleton instance
 	 */
-	private static InterceptorService			instance;
+	private static InterceptorService	instance;
 
 	/**
 	 * The list of interception points we can listen for
 	 */
-	private static Set<Key>						interceptionPoints	= ConcurrentHashMap.newKeySet( 32 );
+	private Set<Key>					interceptionPoints	= ConcurrentHashMap.newKeySet( 32 );
 
 	/**
 	 * The collection of interception states registered with the service
 	 */
-	private static Map<Key, InterceptorState>	interceptionStates	= new ConcurrentHashMap<>();
+	private Map<Key, InterceptorState>	interceptionStates	= new ConcurrentHashMap<>();
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -94,9 +94,8 @@ public class InterceptorService extends BaseService {
 	 * @return The singleton instance
 	 */
 	public static synchronized InterceptorService getInstance( Key... points ) {
-		getInstance();
-		registerInterceptionPoint( points );
-		return instance;
+		return getInstance()
+		    .registerInterceptionPoint( points );
 	}
 
 	/**
@@ -108,21 +107,21 @@ public class InterceptorService extends BaseService {
 	/**
 	 * The startup event is fired when the runtime starts up
 	 */
-	public static void onStartup() {
+	public void onStartup() {
 		logger.info( "InterceptorService.onStartup()" );
 	}
 
 	/**
 	 * The configuration load event is fired when the runtime loads its configuration
 	 */
-	public static void onConfigurationLoad() {
+	public void onConfigurationLoad() {
 		logger.info( "InterceptorService.onConfigurationLoad()" );
 	}
 
 	/**
 	 * The shutdown event is fired when the runtime shuts down
 	 */
-	public static void onShutdown() {
+	public void onShutdown() {
 		logger.info( "InterceptorService.onShutdown()" );
 	}
 
@@ -138,7 +137,7 @@ public class InterceptorService extends BaseService {
 	 *
 	 * @return The list of interception points
 	 */
-	public static Set<Key> getInterceptionPoints() {
+	public Set<Key> getInterceptionPoints() {
 		return interceptionPoints;
 	}
 
@@ -148,7 +147,7 @@ public class InterceptorService extends BaseService {
 	 *
 	 * @return The list of interception points
 	 */
-	public static Set<String> getInterceptionPointsNames() {
+	public Set<String> getInterceptionPointsNames() {
 		return interceptionPoints.stream().map( Key::getName ).collect( java.util.stream.Collectors.toSet() );
 	}
 
@@ -159,7 +158,7 @@ public class InterceptorService extends BaseService {
 	 *
 	 * @return True if the service has the interception point, false otherwise
 	 */
-	public static Boolean hasInterceptionPoint( Key interceptionPoint ) {
+	public Boolean hasInterceptionPoint( Key interceptionPoint ) {
 		return interceptionPoints.contains( interceptionPoint );
 	}
 
@@ -170,10 +169,10 @@ public class InterceptorService extends BaseService {
 	 *
 	 * @return The same service
 	 */
-	public static InterceptorService registerInterceptionPoint( Key... points ) {
+	public InterceptorService registerInterceptionPoint( Key... points ) {
 		logger.atDebug().log( "InterceptorService.registerInterceptionPoint() - registering {}", Arrays.toString( points ) );
 		interceptionPoints.addAll( Arrays.asList( points ) );
-		return instance;
+		return this;
 	}
 
 	/**
@@ -183,11 +182,11 @@ public class InterceptorService extends BaseService {
 	 *
 	 * @return The same service
 	 */
-	public static InterceptorService removeInterceptionPoint( Key... points ) {
+	public InterceptorService removeInterceptionPoint( Key... points ) {
 		logger.atDebug().log( "InterceptorService.removeInterceptionPoint() - removing {}", Arrays.toString( points ) );
 		interceptionPoints.removeAll( Arrays.asList( points ) );
 		interceptionStates.keySet().removeAll( Arrays.asList( points ) );
-		return instance;
+		return this;
 	}
 
 	/**
@@ -207,7 +206,7 @@ public class InterceptorService extends BaseService {
 	 *
 	 * @return The state if it exists, null otherwise
 	 */
-	public static InterceptorState getState( Key name ) {
+	public InterceptorState getState( Key name ) {
 		return interceptionStates.get( name );
 	}
 
@@ -218,7 +217,7 @@ public class InterceptorService extends BaseService {
 	 *
 	 * @return True if the service has the state, false otherwise
 	 */
-	public static Boolean hasState( Key name ) {
+	public Boolean hasState( Key name ) {
 		return interceptionStates.containsKey( name );
 	}
 
@@ -231,7 +230,7 @@ public class InterceptorService extends BaseService {
 	 *
 	 * @return The registered {@link InterceptorState}
 	 */
-	public static synchronized InterceptorState registerState( Key name ) {
+	public synchronized InterceptorState registerState( Key name ) {
 		logger.atDebug().log( "InterceptorService.registerState() - registering {}", name.getName() );
 
 		// Verify point, else add it
@@ -253,12 +252,12 @@ public class InterceptorService extends BaseService {
 	 *
 	 * @return The same service
 	 */
-	public static synchronized InterceptorService removeState( Key name ) {
+	public synchronized InterceptorService removeState( Key name ) {
 		if ( hasState( name ) ) {
 			logger.atDebug().log( "InterceptorService.removeState() - removing {}", name.getName() );
 			interceptionStates.remove( name );
 		}
-		return instance;
+		return this;
 	}
 
 	/**
@@ -277,7 +276,7 @@ public class InterceptorService extends BaseService {
 	 *
 	 * @return The same service
 	 */
-	public static InterceptorService register( DynamicObject interceptor, Key... states ) {
+	public InterceptorService register( DynamicObject interceptor, Key... states ) {
 		Arrays.stream( states )
 		    .forEach( state -> {
 			    logger.atDebug().log(
@@ -287,7 +286,7 @@ public class InterceptorService extends BaseService {
 			    );
 			    registerState( state ).register( interceptor );
 		    } );
-		return instance;
+		return this;
 	}
 
 	/**
@@ -298,7 +297,7 @@ public class InterceptorService extends BaseService {
 	 *
 	 * @return The same service
 	 */
-	public static InterceptorService unregister( DynamicObject interceptor, Key... states ) {
+	public InterceptorService unregister( DynamicObject interceptor, Key... states ) {
 		Arrays.stream( states )
 		    .forEach( state -> {
 			    if ( hasState( state ) ) {
@@ -310,7 +309,7 @@ public class InterceptorService extends BaseService {
 				    getState( state ).unregister( interceptor );
 			    }
 		    } );
-		return instance;
+		return this;
 	}
 
 	/**
@@ -320,7 +319,7 @@ public class InterceptorService extends BaseService {
 	 *
 	 * @return The same service
 	 */
-	public static InterceptorService unregister( DynamicObject interceptor ) {
+	public InterceptorService unregister( DynamicObject interceptor ) {
 		interceptionStates.values().stream()
 		    .forEach( state -> {
 			    logger.atDebug().log(
@@ -330,7 +329,7 @@ public class InterceptorService extends BaseService {
 			    );
 			    state.unregister( interceptor );
 		    } );
-		return instance;
+		return this;
 	}
 
 	/**
@@ -345,7 +344,7 @@ public class InterceptorService extends BaseService {
 	 * @param state The state to announce
 	 * @param data  The data to announce
 	 */
-	public static void announce( String state, Struct data ) {
+	public void announce( String state, Struct data ) {
 		announce( Key.of( state ), data );
 	}
 
@@ -355,7 +354,7 @@ public class InterceptorService extends BaseService {
 	 * @param state The state key to announce
 	 * @param data  The data to announce
 	 */
-	public static void announce( Key state, Struct data ) {
+	public void announce( Key state, Struct data ) {
 		if ( hasState( state ) ) {
 			logger.atDebug().log( "InterceptorService.announce() - announcing {}", state.getName() );
 

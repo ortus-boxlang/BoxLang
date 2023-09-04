@@ -39,7 +39,7 @@ public class BaseScopeTest {
 	@Test
 	void testBasicGetAndSet() {
 		// Test getValue() and setValue()
-		assertThrows( KeyNotFoundException.class, () -> scope.get( Key.of( "InvalidKey" ) ) );
+		assertThrows( KeyNotFoundException.class, () -> scope.dereference( Key.of( "InvalidKey" ), false ) );
 
 		Key		key		= Key.of( "testKey" );
 		Object	value	= "testValue";

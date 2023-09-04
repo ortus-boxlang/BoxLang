@@ -17,7 +17,11 @@
  */
 package ortus.boxlang.runtime.context;
 
+import java.util.Map;
+
 import ortus.boxlang.runtime.scopes.*;
+import ortus.boxlang.runtime.types.Function;
+import ortus.boxlang.runtime.types.UDF;
 import ortus.boxlang.runtime.types.exceptions.KeyNotFoundException;
 import ortus.boxlang.runtime.types.exceptions.ScopeNotFoundException;
 
@@ -88,7 +92,14 @@ public interface IBoxContext {
 	 *
 	 * @return Return value of the function call
 	 */
-	public Object invokeFunction( Key name, Object[] args );
+	public Object invokeFunction( Key name, Object[] positionalArguments );
+
+	public Object invokeFunction( Key name, Map<Key, Object> namedArguments );
+
+	/**
+	 * Register a UDF with the local context.
+	 */
+	public void regsiterUDF( UDF udf );
 
 	/**
 	 * Verifies if a parent context is attached to this context

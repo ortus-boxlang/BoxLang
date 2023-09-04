@@ -45,7 +45,11 @@ public class BaseScope extends Struct implements IScope {
 	 * @param scopeName The name of the scope
 	 */
 	public BaseScope( Key scopeName ) {
-		super();
+		this( scopeName, Struct.Type.DEFAULT );
+	}
+
+	public BaseScope( Key scopeName, Struct.Type type ) {
+		super( type );
 		this.scopeName = scopeName;
 	}
 
@@ -64,71 +68,4 @@ public class BaseScope extends Struct implements IScope {
 		return scopeName;
 	}
 
-	/**
-	 * Verifies equality with the following rules:
-	 * - Same object
-	 * - Same state + super class
-	 */
-	@Override
-	public boolean equals( Object obj ) {
-		// Same object
-		if ( this == obj ) {
-			return true;
-		}
-		// Null and class checks
-		if ( obj == null || getClass() != obj.getClass() ) {
-			return false;
-		}
-		// State + Super
-		BaseScope target = ( BaseScope ) obj;
-		return this.scopeName == target.getName() == super.equals( obj );
-	}
-
-	/**
-	 * Hashes the lookupOrder and super class
-	 */
-	@Override
-	public int hashCode() {
-		return Objects.hash( this.scopeName, super.hashCode() );
-	}
-
-	/**
-	 * Dereference this object by a key and return the value, or throw exception
-	 *
-	 * @param name The key to look for
-	 * @param safe Whether to throw an exception if the key is not found
-	 *
-	 * @return The requested obect
-	 */
-	public Object dereference( Key name, Boolean safe ) throws KeyNotFoundException {
-		return get( name, safe );
-	}
-
-	/**
-	 * Dereference this object by a key and invoke the result as an invokable (UDF, java method)
-	 *
-	 * @param name      The key to look for
-	 * @param arguments The arguments to pass to the invokable
-	 *
-	 * @return The requested object
-	 */
-	@Override
-	public Object dereferenceAndInvoke( Key name, Object[] arguments, Boolean safe ) throws KeyNotFoundException {
-		Object object = dereference( name, safe );
-		// Test if the object is invokable (a UDF or java call site) and invoke it or throw exception if not invokable
-		// Also handle member functions on scopes, taking into account precedent over name collisions
-		// Ideally, the invoker logic is not here, but in a helper
-		throw new RuntimeException( "not implemented yet" );
-	}
-
-	/**
-	 * Derefence by assignment (x = y)
-	 *
-	 * @param name  The key to assign to
-	 * @param value The value to assign
-	 */
-	@Override
-	public void assign( Key name, Object value ) {
-		put( name, value );
-	}
 }
