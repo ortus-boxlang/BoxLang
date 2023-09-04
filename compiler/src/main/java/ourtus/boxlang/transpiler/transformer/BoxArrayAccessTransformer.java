@@ -46,7 +46,7 @@ public class BoxArrayAccessTransformer extends AbstractTransformer {
 				return parseExpression(template,values);
 			} else {
 				String template = """
-    			.Key.of(${variable})
+    			${scope}.get(Key.of(${variable}))
 			""";
 				return parseExpression(template,values);
 			}

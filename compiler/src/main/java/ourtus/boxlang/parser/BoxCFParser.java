@@ -88,6 +88,17 @@ public class BoxCFParser extends BoxAbstractParser {
 		return new ParsingResult(ast,issues);
 	}
 
+	public ParsingResult parseStatement(String code) throws IOException {
+		InputStream inputStream = IOUtils.toInputStream(code);
+
+		CFLexer lexer = new CFLexer( CharStreams.fromStream( inputStream ) );
+		CFParser parser = new CFParser( new CommonTokenStream( lexer ) );
+		addErrorListeners( lexer, parser );
+		CFParser.StatementContext parseTree = parser.statement();
+		BoxStatement ast = toAst(null,parseTree,null);
+		return new ParsingResult(ast,issues);
+	}
+
 	private BoxStatement toAst(File file, CFParser.FunctionOrStatementContext node, Node parent) {
 		if ( node.constructor() != null ) {
 			return toAst( file, node.constructor() );
@@ -138,6 +149,7 @@ public class BoxCFParser extends BoxAbstractParser {
 		} else if(node.methodInvokation() != null) {
 			BoxExpr expr = toAst(file,node.methodInvokation(),parent);
 			BoxStatement stmt = new BoxExpression(expr,getPosition(node),getSourceText(node));
+
 			stmt.setParent(parent);
 			expr.setParent(stmt);
 			return stmt;
@@ -181,7 +193,7 @@ public class BoxCFParser extends BoxAbstractParser {
 	private BoxExpr toAst( File file, CFParser.ArrayAccessContext node , Node parent) {
 		BoxExpr index = toAst( file, node.arrayAccessIndex().expression(),parent );
 		BoxExpr context = toAst( file, node.identifier(), parent);
-		return new BoxArrayAccess( context, index, getPosition( node ), getSourceText( node ) );
+		return new BoxArrayAccess( context, index, parent, getPosition( node ), getSourceText( node ) );
 	}
 
 	private BoxExpr toAst( File file, CFParser.IdentifierContext identifier , Node parent) {
@@ -282,7 +294,13 @@ public class BoxCFParser extends BoxAbstractParser {
 
 		if(expression.accessExpression() != null) {
 			BoxExpr obj = toAst(file, expression.accessExpression(),parent);
-			return new BoxMethodInvocation(name, obj, getPosition(expression), getSourceText(expression));
+			BoxMethodInvocation stmt = new BoxMethodInvocation(name, obj, getPosition(expression), getSourceText(expression));
+			if(expression.functionInvokation().argumentList() != null) {
+				for(CFParser.ArgumentContext arg : expression.functionInvokation().argumentList().argument()) {
+					stmt.getArguments().add( toAst(file,arg, stmt));
+				}
+			}
+			return stmt;
 		} else if(expression.objectExpression() != null) {
 			BoxExpr obj = toAst(file,expression.objectExpression(),parent);
 			if(expression.functionInvokation() != null) {
@@ -344,4 +362,6 @@ public class BoxCFParser extends BoxAbstractParser {
 	private String getSourceText( ParserRuleContext rule ) {
 		return rule.getText(); // TODO
 	}
+
+
 }

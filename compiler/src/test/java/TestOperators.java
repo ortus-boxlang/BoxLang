@@ -183,4 +183,39 @@ public class TestOperators {
 
 	}
 
+	@Test
+	public void testScopeRead() throws IOException {
+		String expression = """
+   			variables["system"]
+			""";
+
+		BoxLangParser parser = new BoxLangParser();
+		ParsingResult result = parser.parseExpression( expression);
+
+		Node javaAST = BoxLangTranspiler.transform(result.getRoot());
+
+		assertEquals(
+			"variablesScope.get(Key.of(\"system\"))",
+			javaAST.toString()
+		);
+
+	}
+	@Test
+	public void testScopeWrite() throws IOException {
+		String expression = """
+   			variables["system"] = ""
+			""";
+
+		BoxLangParser parser = new BoxLangParser();
+		ParsingResult result = parser.parseStatement(expression);
+
+		Node javaAST = BoxLangTranspiler.transform(result.getRoot());
+
+		assertEquals(
+			"variablesScope.put(Key.of(\"system\"), \"\");",
+			javaAST.toString()
+		);
+
+	}
+
 }

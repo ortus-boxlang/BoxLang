@@ -15,6 +15,7 @@
 package ourtus.boxlang.ast.expression;
 
 import ourtus.boxlang.ast.BoxExpr;
+import ourtus.boxlang.ast.Node;
 import ourtus.boxlang.ast.Position;
 
 public class BoxArrayAccess extends BoxAccess {
@@ -38,10 +39,13 @@ public class BoxArrayAccess extends BoxAccess {
 		this.index = index;
 	}
 
-	public BoxArrayAccess(BoxExpr context, BoxExpr index, Position position, String sourceText ) {
+	public BoxArrayAccess(BoxExpr context, BoxExpr index, Node parent, Position position, String sourceText ) {
 		super( position, sourceText );
+		//this.setParent( parent );
 		this.context = context;
+		context.setParent(this);
 		this.index   = index;
+		context.setParent(this);
 	}
 
 }

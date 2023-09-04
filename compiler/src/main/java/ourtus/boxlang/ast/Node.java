@@ -41,8 +41,10 @@ public class Node {
 
 	public void setParent(Node parent) {
 		this.parent = parent;
-		if(!parent.children.contains(this))
-			parent.getChildren().add(this);
+		if(parent != null) {
+			if(!parent.children.contains(this))
+				parent.getChildren().add(this);
+		}
 	}
 
 	public Node getParent() {
