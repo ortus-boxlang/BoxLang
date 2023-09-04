@@ -37,7 +37,7 @@ public class TestOperators {
 		Node javaAST = BoxLangTranspiler.transform(result.getRoot());
 
 		assertEquals(
-			"Concat.invoke(context, \"Hello \", \"world\")",
+			"Concat.invoke(\"Hello \", \"world\")",
 			javaAST.toString()
 		);
 
@@ -55,7 +55,7 @@ public class TestOperators {
 		Node javaAST = BoxLangTranspiler.transform(result.getRoot());
 
 		assertEquals(
-			"Plus.invoke(context, 1, 2)",
+			"Plus.invoke(1, 2)",
 			javaAST.toString()
 		);
 
@@ -73,7 +73,7 @@ public class TestOperators {
 		Node javaAST = BoxLangTranspiler.transform(result.getRoot());
 
 		assertEquals(
-			"Minus.invoke(context, 1, 2)",
+			"Minus.invoke(1, 2)",
 			javaAST.toString()
 		);
 
@@ -91,7 +91,7 @@ public class TestOperators {
 		Node javaAST = BoxLangTranspiler.transform(result.getRoot());
 
 		assertEquals(
-			"Multiply.invoke(context, 1, 2)",
+			"Multiply.invoke(1, 2)",
 			javaAST.toString()
 		);
 
@@ -109,7 +109,7 @@ public class TestOperators {
 		Node javaAST = BoxLangTranspiler.transform(result.getRoot());
 
 		assertEquals(
-			"Divide.invoke(context, 1, 2)",
+			"Divide.invoke(1, 2)",
 			javaAST.toString()
 		);
 
@@ -126,7 +126,7 @@ public class TestOperators {
 		Node javaAST = BoxLangTranspiler.transform(result.getRoot());
 
 		assertEquals(
-			"Contains.contains(context, \"Brad Wood\", \"Wood\")",
+			"Contains.contains(\"Brad Wood\", \"Wood\")",
 			javaAST.toString()
 		);
 
@@ -143,7 +143,7 @@ public class TestOperators {
 		Node javaAST = BoxLangTranspiler.transform(result.getRoot());
 
 		assertEquals(
-			"Negate.invoke(context, \"True\")",
+			"Negate.invoke(\"True\")",
 			javaAST.toString()
 		);
 
@@ -160,7 +160,7 @@ public class TestOperators {
 		Node javaAST = BoxLangTranspiler.transform(result.getRoot());
 
 		assertEquals(
-			"Negate.invoke(context, Negate.invoke(context, \"False\"))",
+			"Negate.invoke(Negate.invoke(\"False\"))",
 			javaAST.toString()
 		);
 
@@ -177,7 +177,7 @@ public class TestOperators {
 		Node javaAST = BoxLangTranspiler.transform(result.getRoot());
 
 		assertEquals(
-			"Ternary.invoke(context, Key.of(\"isGood\"), \"eat\", \"toss\")",
+			"Ternary.invoke(Key.of(\"isGood\"), \"eat\", \"toss\")",
 			javaAST.toString()
 		);
 

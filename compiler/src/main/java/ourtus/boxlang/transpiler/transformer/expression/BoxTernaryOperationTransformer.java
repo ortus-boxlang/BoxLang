@@ -25,7 +25,7 @@ public class BoxTernaryOperationTransformer extends AbstractTransformer {
 			put("whenTrue", whenTrue.toString());
 			put("whenFalse", whenFalse.toString());
 		}};
-		String template = "Ternary.invoke(context,${condition},${whenTrue},${whenFalse})";;
+		String template = "Ternary.invoke(${condition},${whenTrue},${whenFalse})";;
 
 		return parseExpression(template,values);
 	}

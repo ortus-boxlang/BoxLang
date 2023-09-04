@@ -40,7 +40,7 @@ public class BoxNegateOperationTransformer extends AbstractTransformer {
 			Expression expr = (Expression) BoxLangTranspiler.transform(operation.getExpr());
 			values.put( "expr", expr.toString());
 		}
-		String template =  "Negate.invoke(context,${expr})";
+		String template =  "Negate.invoke(${expr})";
 
 		return parseExpression(template,values);
 	}
