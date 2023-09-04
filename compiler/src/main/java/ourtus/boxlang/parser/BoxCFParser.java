@@ -52,9 +52,15 @@ public class BoxCFParser extends BoxAbstractParser {
 	@Override
 	protected BoxScript parseTreeToAst( File file, ParserRuleContext rule ) throws IOException {
 		CFParser.ScriptContext parseTree = ( CFParser.ScriptContext ) rule;
-		List<BoxStatement> statements = parseTree.functionOrStatement().stream().map(it -> toAst( file, it ) ).toList();
-
-		return new BoxScript( getPosition( rule ), getSourceText( rule ), statements );
+		BoxScript script = new BoxScript( getPosition( rule ), getSourceText( rule ));
+		parseTree.functionOrStatement().stream().map(
+			it -> {
+                return toAst( file, it , script );
+			}
+		).forEach( stmt -> {
+			script.getStatements().add(stmt);
+		});
+		return script;
 	}
 
 	public ParsingResult parse( File file ) throws IOException {
@@ -78,95 +84,127 @@ public class BoxCFParser extends BoxAbstractParser {
 		CFParser parser = new CFParser( new CommonTokenStream( lexer ) );
 		addErrorListeners( lexer, parser );
 		CFParser.ExpressionContext parseTree = parser.expression();
-		BoxExpr ast = toAst(null,parseTree);
+		BoxExpr ast = toAst(null,parseTree,null);
 		return new ParsingResult(ast,issues);
 	}
 
-	private BoxStatement toAst( File file, CFParser.FunctionOrStatementContext node ) {
+	private BoxStatement toAst(File file, CFParser.FunctionOrStatementContext node, Node parent) {
 		if ( node.constructor() != null ) {
 			return toAst( file, node.constructor() );
 		} else if ( node.function() != null ) {
 			return toAst( file, node.function() );
 		} else if ( node.statement() != null ) {
-			return toAst( file, node.statement() );
+			return toAst( file, node.statement() , parent );
 		} else {
 			throw new IllegalStateException( "not implemented: " + node.getClass().getSimpleName() );
 		}
 	}
 
-	private BoxStatement toAst( File file, CFParser.StatementContext node ) {
+	private BoxStatement toAst( File file, CFParser.StatementContext node, Node parent ) {
 		if ( node.simpleStatement() != null ) {
-			return toAst( file, node.simpleStatement() );
+			return toAst( file, node.simpleStatement(),parent );
 		} else if ( node.if_() != null ) {
-			return toAst(file,node.if_());
+			return toAst(file,node.if_(),parent);
 		} else {
 			throw new IllegalStateException( "not implemented: " + node.getClass().getSimpleName() );
 		}
 	}
 
-	private BoxIfElse toAst(File file, CFParser.IfContext node) {
-		BoxExpr condition = toAst(file,node.expression());
-		BoxIfElse ifStmt = new BoxIfElse(condition,getPosition(node),getSourceText(node));
+
+	private BoxIfElse toAst(File file, CFParser.IfContext node, Node parent) {
+		BoxIfElse ifStmt = new BoxIfElse(getPosition(node),getSourceText(node));
+		BoxExpr condition = toAst(file,node.expression(),ifStmt);
+		ifStmt.setCondition(condition);
 
 		if(node.ifStmtBlock != null) {
-			ifStmt.getBody().addAll(toAst(file,node.ifStmtBlock));
+			ifStmt.getThenBody().addAll(toAst(file,node.ifStmtBlock,ifStmt));
 		}
-
+		if(node.elseStmtBlock != null) {
+			ifStmt.getElseBody().addAll(toAst(file,node.elseStmtBlock,ifStmt));
+		}
+		ifStmt.setParent(parent);
 		return  ifStmt;
 	}
 
-	private List<BoxStatement> toAst(File file, CFParser.StatementBlockContext block) {
-		return block.statement().stream().map( stmt -> toAst(file,stmt) ).toList();
+	private List<BoxStatement> toAst(File file, CFParser.StatementBlockContext block,Node parent) {
+		return block.statement().stream().map( stmt -> toAst(file,stmt,parent) ).toList();
 	}
 
-	private BoxStatement toAst( File file, CFParser.SimpleStatementContext node ) {
+	private BoxStatement toAst( File file, CFParser.SimpleStatementContext node, Node parent ) {
 		if ( node.assignment() != null ) {
-			return toAst( file, node.assignment() );
+			BoxStatement stmt = toAst( file, node.assignment(), parent);
+			stmt.setParent(parent);
+			return stmt;
 		} else if(node.methodInvokation() != null) {
-			BoxExpr expr = toAst(file,node.methodInvokation());
-			return new BoxExpression(expr,getPosition(node),getSourceText(node));
+			BoxExpr expr = toAst(file,node.methodInvokation(),parent);
+			BoxStatement stmt = new BoxExpression(expr,getPosition(node),getSourceText(node));
+			stmt.setParent(parent);
+			expr.setParent(stmt);
+			return stmt;
 		}
 		throw new IllegalStateException( "not implemented: " + node.getClass().getSimpleName() );
 
 	}
 
-	private BoxStatement toAst( File file, CFParser.AssignmentContext node ) {
-		BoxExpr left = toAst( file, node.assignmentLeft() );
-		BoxExpr right = toAst( file, node.assignmentRight() );
-		return new BoxAssignment( left, right, getPosition( node ), getSourceText( node ) );
+	private BoxStatement toAst( File file, CFParser.AssignmentContext node, Node parent ) {
+
+		BoxExpr left = toAst( file, node.assignmentLeft(), parent );
+		BoxExpr right = toAst( file, node.assignmentRight(), parent );
+
+		BoxAssignment stmt = new BoxAssignment( left, right, getPosition( node ), getSourceText( node ) );
+		stmt.setParent(parent);
+		left.setParent(stmt);
+		right.setParent(stmt);
+		return stmt;
 	}
 
-	private BoxExpr toAst( File file, CFParser.AssignmentLeftContext left ) {
+	private BoxExpr toAst( File file, CFParser.AssignmentLeftContext left, Node parent) {
 		// TODO: case with assignmentLeft
-		return toAst( file, left.accessExpression() );
+		return toAst( file, left.accessExpression(), parent );
 	}
 
-	private BoxExpr toAst( File file, CFParser.AccessExpressionContext expression ) {
+	private BoxExpr toAst( File file, CFParser.AccessExpressionContext expression, Node parent ) {
 		if ( expression.identifier() != null )
-			return toAst( file, expression.identifier() );
+			return toAst( file, expression.identifier() , parent );
 		if ( expression.arrayAccess() != null )
-			return toAst( file, expression.arrayAccess() );
-		if ( expression.objectExpression() != null )
-			return toAst( file, expression.objectExpression() );
+			return toAst( file, expression.arrayAccess(), parent );
+		if ( expression.objectExpression() != null ) {
+			BoxExpr context = toAst( file, expression.objectExpression(), parent);
+			BoxExpr target = toAst( file, expression.accessExpression(), parent );
+			return new  BoxObjectAccess(context,target,getPosition(expression),getSourceText(expression));
+		}
+
 
 		throw new IllegalStateException( "not implemented: " + expression.getClass().getSimpleName() );
 	}
 
-	private BoxExpr toAst( File file, CFParser.ArrayAccessContext node ) {
-		BoxExpr index = toAst( file, node.arrayAccessIndex().expression() );
-		BoxExpr context = toAst( file, node.identifier() );
+	private BoxExpr toAst( File file, CFParser.ArrayAccessContext node , Node parent) {
+		BoxExpr index = toAst( file, node.arrayAccessIndex().expression(),parent );
+		BoxExpr context = toAst( file, node.identifier(), parent);
 		return new BoxArrayAccess( context, index, getPosition( node ), getSourceText( node ) );
 	}
 
-	private BoxExpr toAst( File file, CFParser.IdentifierContext identifier ) {
+	private BoxExpr toAst( File file, CFParser.IdentifierContext identifier , Node parent) {
+		CFParser.ReservedKeywordContext keyword = identifier.reservedKeyword();
+		if(keyword != null && keyword.scope() != null) {
+			return toAst(file,keyword.scope());
+		}
+
 		return new BoxIdentifier( identifier.getText(), getPosition( identifier ), getSourceText( identifier ) );
 	}
 
-	private BoxExpr toAst( File file, CFParser.AssignmentRightContext right ) {
-		return toAst( file, right.expression() );
+	private BoxExpr toAst(File file, CFParser.ScopeContext scope) {
+		if(scope.VARIABLES() != null) {
+			return new BoxScope( scope.VARIABLES().getText(), getPosition( scope ), getSourceText( scope ) );
+		}
+		throw new IllegalStateException( "not implemented: " + scope.getClass().getSimpleName() );
 	}
 
-	private BoxExpr toAst( File file, CFParser.ExpressionContext expression ) {
+	private BoxExpr toAst( File file, CFParser.AssignmentRightContext right,Node parent ) {
+		return toAst( file, right.expression(), parent );
+	}
+
+	private BoxExpr toAst( File file, CFParser.ExpressionContext expression, Node parent ) {
 		if ( expression.literalExpression() != null ) {
 			if ( expression.literalExpression().stringLiteral() != null ) {
 				CFParser.StringLiteralContext node = expression.literalExpression().stringLiteral();
@@ -188,76 +226,105 @@ public class BoxCFParser extends BoxAbstractParser {
 			}
 			// TODO: add other cases
 		} else if ( expression.identifier() != null ) {
-			return toAst( file, expression.identifier() );
+			return toAst( file, expression.identifier(),parent );
 		} else if ( expression.accessExpression() != null ) {
-			return toAst( file, expression.accessExpression() );
+			return toAst( file, expression.accessExpression(),parent );
 		} else if ( expression.objectExpression() != null ) {
-			return toAst( file, expression.objectExpression() );
+			return toAst( file, expression.objectExpression(), parent );
 		} else if ( expression.methodInvokation() != null ) {
-			return toAst( file, expression.methodInvokation() );
+			return toAst( file, expression.methodInvokation(), parent );
 		} else if ( expression.PLUS() != null ) {
-			BoxExpr left = toAst(file,expression.expression(0));
-			BoxExpr right = toAst(file,expression.expression(1));
+			BoxExpr left = toAst(file,expression.expression(0), parent);
+			BoxExpr right = toAst(file,expression.expression(1),parent);
 			return new BoxBinaryOperation(left,BoxBinaryOperator.Plus,right,getPosition(expression),getSourceText(expression));
+		} else if ( expression.MINUS() != null ) {
+			BoxExpr left = toAst(file,expression.expression(0),parent);
+			BoxExpr right = toAst(file,expression.expression(1),parent);
+			return new BoxBinaryOperation(left,BoxBinaryOperator.Minus,right,getPosition(expression),getSourceText(expression));
+		}  else if ( expression.STAR() != null ) {
+			BoxExpr left = toAst(file,expression.expression(0),parent);
+			BoxExpr right = toAst(file,expression.expression(1),parent);
+			return new BoxBinaryOperation(left,BoxBinaryOperator.Star,right,getPosition(expression),getSourceText(expression));
+		}  else if ( expression.SLASH() != null ) {
+			BoxExpr left = toAst(file,expression.expression(0),parent);
+			BoxExpr right = toAst(file,expression.expression(1),parent);
+			return new BoxBinaryOperation(left,BoxBinaryOperator.Slash,right,getPosition(expression),getSourceText(expression));
 		} else if ( expression.EQ() != null ) {
-			BoxExpr left = toAst(file,expression.expression(0));
-			BoxExpr right = toAst(file,expression.expression(1));
-			return new BoxComparisonOperation(left, BoxComparisonOperator.Equal,right,getPosition(expression),getSourceText(expression));
+			BoxExpr left = toAst(file,expression.expression(0),parent);
+			BoxExpr right = toAst(file,expression.expression(1),parent);
+			BoxComparisonOperation stmt = new BoxComparisonOperation(left, BoxComparisonOperator.Equal,right,getPosition(expression),getSourceText(expression));
+			stmt.setParent(parent);
+			return stmt;
 		} else if ( expression.AMPERSAND() != null ) {
-			BoxExpr left = toAst(file,expression.expression(0));
-			BoxExpr right = toAst(file,expression.expression(1));
+			BoxExpr left = toAst(file,expression.expression(0),parent);
+			BoxExpr right = toAst(file,expression.expression(1),parent);
 			return new BoxBinaryOperation(left,BoxBinaryOperator.Concat,right,getPosition(expression),getSourceText(expression));
+		} else if ( expression.QM() != null ) {
+			BoxExpr condition = toAst(file,expression.expression(0),parent);
+			BoxExpr whenTrue = toAst(file,expression.expression(1),parent);
+			BoxExpr whenFalse = toAst(file,expression.expression(2),parent);
+			return new BoxTernaryOperation(condition,whenTrue,whenFalse,getPosition(expression),getSourceText(expression));
 		} else if ( expression.not() != null ) {
-			BoxExpr expr = toAst(file,expression.not().expression());
+			BoxExpr expr = toAst(file,expression.not().expression(),parent);
 			return new BoxNegateOperation(expr,BoxNegateOperator.Not,getPosition(expression),getSourceText(expression));
 		} else if ( expression.CONTAINS() != null ) {
-			BoxExpr left = toAst(file,expression.expression(0));
-			BoxExpr right = toAst(file,expression.expression(1));
+			BoxExpr left = toAst(file,expression.expression(0),parent);
+			BoxExpr right = toAst(file,expression.expression(1),parent);
 			return new BoxBinaryOperation(left,BoxBinaryOperator.Contains,right,getPosition(expression),getSourceText(expression));
 		}
 
 		throw new IllegalStateException( "not implemented: " + expression.getClass().getSimpleName() );
 	}
 
-	private BoxExpr toAst(File file, CFParser.MethodInvokationContext expression) {
+	private BoxExpr toAst(File file, CFParser.MethodInvokationContext expression, Node parent) {
+
+		String name = expression.functionInvokation().identifier().getText();
 
 		if(expression.accessExpression() != null) {
-			BoxExpr obj = toAst(file, expression.accessExpression());
-			String name = expression.functionInvokation().identifier().getText();
+			BoxExpr obj = toAst(file, expression.accessExpression(),parent);
 			return new BoxMethodInvocation(name, obj, getPosition(expression), getSourceText(expression));
 		} else if(expression.objectExpression() != null) {
-			return toAst(file,expression.objectExpression());
+			BoxExpr obj = toAst(file,expression.objectExpression(),parent);
+			if(expression.functionInvokation() != null) {
+				BoxMethodInvocation stmt = new BoxMethodInvocation(name, obj, getPosition(expression), getSourceText(expression));
+				if(expression.functionInvokation().argumentList() != null) {
+					for(CFParser.ArgumentContext arg : expression.functionInvokation().argumentList().argument()) {
+						stmt.getArguments().add( toAst(file,arg, stmt));
+					}
+				}
+				return stmt;
+			}
 		}
 
 		throw new IllegalStateException( "not implemented: " + expression.getClass().getSimpleName() );
 	}
 
-	private BoxExpr toAst( File file, CFParser.ObjectExpressionContext expression ) {
+	private BoxExpr toAst( File file, CFParser.ObjectExpressionContext expression, Node parent ) {
 		if ( expression.arrayAccess() != null )
-			return toAst( file, expression.arrayAccess() );
+			return toAst( file, expression.arrayAccess() , parent);
 		else if ( expression.functionInvokation() != null )
-			return toAst( file, expression.functionInvokation() );
+			return toAst( file, expression.functionInvokation(),parent );
 		else if ( expression.identifier() != null )
-			return toAst( file, expression.identifier() );
+			return toAst( file, expression.identifier() , parent );
 		// TODO: add other cases
 
 		throw new IllegalStateException( "not implemented: " + expression.getClass().getSimpleName() );
 	}
 
-	private BoxExpr toAst( File file, CFParser.FunctionInvokationContext invocation ) {
-		BoxFunctionInvocation functionInvocation = new BoxFunctionInvocation( invocation.identifier().getText(),
+	private BoxExpr toAst( File file, CFParser.FunctionInvokationContext invocation, Node parent ) {
+		BoxFunctionInvocation stmt = new BoxFunctionInvocation( invocation.identifier().getText(),
 			getPosition( invocation ), getSourceText( invocation ) );
 
 		if ( invocation.argumentList() != null ) {
-			invocation.argumentList().argument().stream().map( arg -> toAst( file, arg ) )
-				.forEach( arg -> functionInvocation.getArguments().add( arg ) );
+			invocation.argumentList().argument().stream().map( arg -> toAst( file, arg ,stmt ) )
+				.forEach( arg -> stmt.getArguments().add( arg ) );
 		}
 
-		return functionInvocation;
+		return stmt;
 	}
 
-	private BoxExpr toAst( File file, CFParser.ArgumentContext argument ) {
-		return toAst( file, argument.expression().get( 0 ) );
+	private BoxExpr toAst( File file, CFParser.ArgumentContext argument, Node parent ) {
+		return toAst( file, argument.expression().get( 0 ),parent );
 		// TODO: handle default value (when expression().size() == 2
 	}
 

@@ -18,13 +18,14 @@ import com.github.javaparser.ast.Node;
 import ourtus.boxlang.ast.BoxNode;
 import ourtus.boxlang.ast.expression.BoxIdentifier;
 import ourtus.boxlang.transpiler.transformer.AbstractTransformer;
+import ourtus.boxlang.transpiler.transformer.TransformerContext;
 
 import java.util.HashMap;
 import java.util.Map;
 
 public class BoxIdentifierTransformer extends AbstractTransformer {
 	@Override
-	public Node transform(BoxNode node) throws IllegalStateException {
+	public Node transform(BoxNode node, TransformerContext context) throws IllegalStateException {
 		BoxIdentifier identifier = (BoxIdentifier)node;
 		Map<String, String> values = new HashMap<>() {{
 			put("identifier", identifier.getName());

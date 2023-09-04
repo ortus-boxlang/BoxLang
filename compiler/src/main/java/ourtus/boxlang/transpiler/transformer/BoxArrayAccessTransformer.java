@@ -17,7 +17,6 @@ package ourtus.boxlang.transpiler.transformer;
 import com.github.javaparser.ast.Node;
 import com.github.javaparser.ast.expr.Expression;
 import com.github.javaparser.ast.expr.StringLiteralExpr;
-import org.apache.commons.text.StringSubstitutor;
 import ourtus.boxlang.ast.BoxNode;
 import ourtus.boxlang.ast.expression.BoxArrayAccess;
 import ourtus.boxlang.ast.expression.BoxStringLiteral;
@@ -28,21 +27,30 @@ import java.util.Map;
 
 public class BoxArrayAccessTransformer extends AbstractTransformer {
 	@Override
-	public Node transform(BoxNode node) throws IllegalStateException {
+	public Node transform(BoxNode node, TransformerContext context) throws IllegalStateException {
 		BoxArrayAccess expr = (BoxArrayAccess)node;
-		/* Case variables['x'] */
+		/* Case variables['x']  */
 		if(expr.getIndex() instanceof BoxStringLiteral) {
-			Expression scope = (Expression) BoxLangTranspiler.transform(expr.getContext());
+			Expression scope = (Expression) BoxLangTranspiler.transform(expr.getContext(),context);
 			StringLiteralExpr variable = (StringLiteralExpr) BoxLangTranspiler.transform(expr.getIndex());
+
 			Map<String, String> values = new HashMap<>() {{
 				put("scope",scope.toString());
 				put("variable",variable.toString());
 			}};
-			String template = """
-    			Key.of(${variable})
+
+			if(context == TransformerContext.LEFT) {
+				String template = """
+    			${scope}.put(Key.of(${variable}))
 			""";
-			return parseExpression(template,values);
+				return parseExpression(template,values);
+			} else {
+				String template = """
+    			.Key.of(${variable})
+			""";
+				return parseExpression(template,values);
+			}
 		}
-		return null;
+		throw new IllegalStateException("Not implemented");
 	}
 }

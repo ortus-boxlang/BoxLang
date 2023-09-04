@@ -17,18 +17,18 @@ package ourtus.boxlang.transpiler.transformer.expression;
 import com.github.javaparser.ast.Node;
 import com.github.javaparser.ast.expr.Expression;
 import ourtus.boxlang.ast.BoxNode;
-import ourtus.boxlang.ast.expression.BoxBinaryOperator;
 import ourtus.boxlang.ast.expression.BoxBooleanLiteral;
 import ourtus.boxlang.ast.expression.BoxNegateOperation;
 import ourtus.boxlang.transpiler.BoxLangTranspiler;
 import ourtus.boxlang.transpiler.transformer.AbstractTransformer;
+import ourtus.boxlang.transpiler.transformer.TransformerContext;
 
 import java.util.HashMap;
 import java.util.Map;
 
 public class BoxNegateOperationTransformer extends AbstractTransformer {
 	@Override
-	public Node transform(BoxNode node) throws IllegalStateException {
+	public Node transform(BoxNode node, TransformerContext context) throws IllegalStateException {
 		BoxNegateOperation operation = (BoxNegateOperation) node;
 		Map<String, String> values = new HashMap<>();
 

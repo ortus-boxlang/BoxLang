@@ -19,18 +19,16 @@ import com.github.javaparser.ast.expr.Expression;
 import ourtus.boxlang.ast.BoxNode;
 import ourtus.boxlang.ast.expression.BoxBinaryOperation;
 import ourtus.boxlang.ast.expression.BoxBinaryOperator;
-import ourtus.boxlang.ast.expression.BoxFunctionInvocation;
-import ourtus.boxlang.ast.statement.BoxAssignment;
 import ourtus.boxlang.transpiler.BoxLangTranspiler;
 import ourtus.boxlang.transpiler.transformer.AbstractTransformer;
+import ourtus.boxlang.transpiler.transformer.TransformerContext;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Objects;
 
 public class BoxBinaryOperationTransformer extends AbstractTransformer {
 	@Override
-	public Node transform(BoxNode node) throws IllegalStateException {
+	public Node transform(BoxNode node, TransformerContext context) throws IllegalStateException {
 		BoxBinaryOperation operation = (BoxBinaryOperation)node;
 		Expression left = (Expression) BoxLangTranspiler.transform(operation.getLeft());
 		Expression right = (Expression) BoxLangTranspiler.transform(operation.getRight());
@@ -40,14 +38,20 @@ public class BoxBinaryOperationTransformer extends AbstractTransformer {
 			put("right", right.toString());
 
 		}};
-		String template = "";
 
+		String template = "";
 		if (operation.getOperator() == BoxBinaryOperator.Concat) {
-			template = "Concat.invoke(context,${left},${right})";
+			template = "Concat.invoke(${left},${right})";
 		} else if (operation.getOperator() == BoxBinaryOperator.Plus) {
-			template = "Plus.invoke(context,${left},${right})";
+			template = "Plus.invoke(${left},${right})";
+		} else if (operation.getOperator() == BoxBinaryOperator.Minus) {
+			template = "Minus.invoke(${left},${right})";
+		} else if (operation.getOperator() == BoxBinaryOperator.Star) {
+			template = "Multiply.invoke(${left},${right})";
+		} else if (operation.getOperator() == BoxBinaryOperator.Slash) {
+			template = "Divide.invoke(${left},${right})";
 		} else if (operation.getOperator() == BoxBinaryOperator.Contains) {
-			template = "Contains.contains(context,${left},${right})";
+			template = "Contains.contains(${left},${right})";
 		}
 		return parseExpression(template,values);
 	}

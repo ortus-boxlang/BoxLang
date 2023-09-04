@@ -23,13 +23,12 @@ import java.util.List;
 
 public class BoxIfElse extends BoxStatement {
 
-	private final BoxExpr condition;
-	private final List<BoxStatement> body;
+	private  BoxExpr condition;
+	private final List<BoxStatement> thenBody;
 	private final List<BoxStatement> elseBody;
-	public BoxIfElse(BoxExpr condition,Position position, String sourceText) {
+	public BoxIfElse(Position position, String sourceText) {
 		super(position, sourceText);
-		this.condition = condition;
-		this.body = new ArrayList<>();
+		this.thenBody = new ArrayList<>();
 		this.elseBody = new ArrayList<>();
 	}
 
@@ -37,8 +36,12 @@ public class BoxIfElse extends BoxStatement {
 		return condition;
 	}
 
-	public List<BoxStatement> getBody() {
-		return body;
+	public void setCondition(BoxExpr condition) {
+		this.condition = condition;
+	}
+
+	public List<BoxStatement> getThenBody() {
+		return thenBody;
 	}
 
 	public List<BoxStatement> getElseBody() {

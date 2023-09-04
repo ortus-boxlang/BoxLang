@@ -51,6 +51,7 @@ public class TestAST extends TestBase {
 			System.out.println( file );
 			ParsingResult result = parser.parse( file.toFile() );
 			CompilationUnit javaAST = transpiler.transpile(result.getRoot());
+			System.out.println(javaAST);
 		}
 
 	}

@@ -14,6 +14,8 @@
  */
 package ourtus.boxlang.transpiler.transformer;
 
+import com.github.javaparser.ast.expr.MethodCallExpr;
+import com.github.javaparser.ast.stmt.ExpressionStmt;
 import ourtus.boxlang.ast.BoxNode;
 import com.github.javaparser.ast.*;
 import com.github.javaparser.ast.expr.Expression;
@@ -27,17 +29,16 @@ public class BoxAssignmentTransformer extends AbstractTransformer{
 
 	public BoxAssignmentTransformer() { }
 	@Override
-	public Node transform(BoxNode node) throws IllegalStateException {
-		Expression left = (Expression) BoxLangTranspiler.transform(((BoxAssignment)node).getLeft());
-		Expression right = (Expression) BoxLangTranspiler.transform(((BoxAssignment)node).getRight());
-		Map<String, String> values = new HashMap<>() {{
-			put("left", left.toString());
-			put("right", right.toString());
+	public Node transform(BoxNode node, TransformerContext context) throws IllegalStateException {
+		Expression left = (Expression) BoxLangTranspiler.transform(((BoxAssignment)node).getLeft(),TransformerContext.LEFT);
+		Expression right = (Expression) BoxLangTranspiler.transform(((BoxAssignment)node).getRight(),TransformerContext.RIGHT);
 
-		}};
-		String template = "variableScope.put(${left},${right});";
-		return parseStatement(template,values);
-
+		if(left instanceof MethodCallExpr method) {
+			if("put".equalsIgnoreCase(method.getName().asString())) {
+				method.getArguments().add(right);
+			}
+		}
+		return new ExpressionStmt(left);
 	}
 
 

@@ -14,12 +14,29 @@
  */
 package ourtus.boxlang.ast.expression;
 
-public enum BoxBinaryOperator {
-	Concat,
-	Contains,
-	Plus,
-	Minus,
-	Star,
-	Slash
+import ourtus.boxlang.ast.BoxExpr;
+import ourtus.boxlang.ast.Position;
 
+public class BoxTernaryOperation extends BoxExpr  {
+	private final BoxExpr condition;
+	private final BoxExpr whenTrue;
+	private final BoxExpr whenFalse;
+	public BoxTernaryOperation(BoxExpr condition, BoxExpr whenTrue, BoxExpr whenFalse, Position position, String sourceText) {
+		super(position, sourceText);
+		this.condition = condition;
+		this.whenTrue = whenTrue;
+		this.whenFalse = whenFalse;
+	}
+
+	public BoxExpr getCondition() {
+		return condition;
+	}
+
+	public BoxExpr getWhenTrue() {
+		return whenTrue;
+	}
+
+	public BoxExpr getWhenFalse() {
+		return whenFalse;
+	}
 }
