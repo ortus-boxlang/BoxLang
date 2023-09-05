@@ -19,10 +19,11 @@ import com.github.javaparser.ast.expr.StringLiteralExpr;
 import ourtus.boxlang.ast.BoxNode;
 import ourtus.boxlang.ast.expression.BoxStringLiteral;
 import ourtus.boxlang.transpiler.transformer.AbstractTransformer;
+import ourtus.boxlang.transpiler.transformer.TransformerContext;
 
 public class BoxStringLiteralTransformer extends AbstractTransformer {
 	@Override
-	public Node transform(BoxNode node) throws IllegalStateException {
+	public Node transform(BoxNode node, TransformerContext context) throws IllegalStateException {
 		BoxStringLiteral literal = (BoxStringLiteral)node;
 		return new StringLiteralExpr(literal.getValue());
 	}

@@ -16,11 +16,15 @@ package ourtus.boxlang.transpiler;
 
 import com.github.javaparser.ast.CompilationUnit;
 import com.github.javaparser.ast.Node;
+import com.github.javaparser.ast.body.MethodDeclaration;
+import com.github.javaparser.ast.stmt.Statement;
 import ourtus.boxlang.ast.BoxNode;
 import ourtus.boxlang.ast.BoxScript;
 import ourtus.boxlang.ast.BoxStatement;
 import ourtus.boxlang.ast.expression.*;
 import ourtus.boxlang.ast.statement.BoxAssignment;
+import ourtus.boxlang.ast.statement.BoxExpression;
+import ourtus.boxlang.ast.statement.BoxIfElse;
 import ourtus.boxlang.transpiler.transformer.*;
 import ourtus.boxlang.transpiler.transformer.expression.*;
 
@@ -29,33 +33,53 @@ import java.util.HashMap;
 public class BoxLangTranspiler {
 
 	private  static HashMap<Class, Transformer> registry  = new HashMap<>() {{
+
+		put(BoxScript.class,new BoxScriptTransformer());
 		put(BoxAssignment.class,new BoxAssignmentTransformer());
 		put(BoxArrayAccess.class,new BoxArrayAccessTransformer());
+		put(BoxIfElse.class,new BoxIfElseTransformer());
+		put(BoxExpression.class,new BoxExpressionTransformer());
+
 		// Expressions
 		put(BoxIdentifier.class,new BoxIdentifierTransformer());
+		put(BoxScope.class,new BoxScopeTransformer());
 		// Literals
 		put(BoxStringLiteral.class,new BoxStringLiteralTransformer());
 		put(BoxIntegerLiteral.class,new BoxIntegerLiteralTransformer());
 		put(BoxBooleanLiteral.class,new BoxBooleanLiteralTransformer());
 
 		put(BoxBinaryOperation.class,new BoxBinaryOperationTransformer());
+		put(BoxTernaryOperation.class,new BoxTernaryOperationTransformer());
 		put(BoxNegateOperation.class,new BoxNegateOperationTransformer());
+		put(BoxComparisonOperation.class,new BoxComparisonOperationTransformer());
+		put(BoxObjectAccess.class,new BoxObjectAccessTransformer());
+
+		put(BoxMethodInvocation.class,new BoxMethodInvocationTransformer());
 		put(BoxFunctionInvocation.class,new BoxFunctionInvocationTransformer());
 
 	}};
 	public BoxLangTranspiler() { }
-	public static com.github.javaparser.ast.Node transform(BoxNode node) throws IllegalStateException {
+	public static Node transform(BoxNode node) throws IllegalStateException {
+		return BoxLangTranspiler.transform(node,TransformerContext.NONE);
+	}
+	public static Node transform(BoxNode node,TransformerContext context) throws IllegalStateException {
 		Transformer transformer = registry.get(node.getClass());
 		if(transformer != null) {
-			return transformer.transform(node);
+			return transformer.transform(node,context);
 		}
 		throw new IllegalStateException("unsupported: " + node.getClass().getSimpleName());
 	}
 	public CompilationUnit transpile(BoxNode node) throws IllegalStateException {
 		BoxScript source = (BoxScript) node;
+		CompilationUnit javaClass = (CompilationUnit) transform(source);
+		MethodDeclaration invokeMethod = javaClass.findCompilationUnit().orElseThrow()
+			.getClassByName("TestClass").orElseThrow()
+			.getMethodsByName("invoke").get(0);
+
 		for(BoxStatement statement : source.getStatements()) {
-			Node s = transform(statement);
+			Node javaStmt = transform(statement);
+			invokeMethod.getBody().get().addStatement((Statement) javaStmt);
 		}
-		return null;
+		return javaClass;
 	}
 }

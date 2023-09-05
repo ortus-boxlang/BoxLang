@@ -70,4 +70,8 @@ public class BoxLangParser {
 		return new BoxCFParser().parseExpression(code);
 	}
 
+	public ParsingResult parseStatement(String code) throws IOException {
+		return new BoxCFParser().parseStatement(code);
+	}
+
 }

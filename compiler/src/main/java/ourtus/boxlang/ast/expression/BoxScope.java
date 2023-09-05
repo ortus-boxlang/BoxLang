@@ -12,13 +12,23 @@
  * BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language
  * governing permissions and limitations under the License.
  */
-package ourtus.boxlang.transpiler.transformer;
+package ourtus.boxlang.ast.expression;
 
-import com.github.javaparser.ast.Node;
-import ourtus.boxlang.ast.BoxNode;
+import ourtus.boxlang.ast.BoxExpr;
+import ourtus.boxlang.ast.Named;
+import ourtus.boxlang.ast.Position;
 
-public interface Transformer {
+public class BoxScope extends BoxExpr  {
 
-	  Node transform(BoxNode node) throws IllegalStateException;
-	  Node transform(BoxNode node, TransformerContext context) throws IllegalStateException;
+	private final String name;
+
+	public String getName() {
+		return name;
+	}
+
+	public BoxScope(String name, Position position, String sourceText ) {
+		super( position, sourceText );
+		this.name = name;
+	}
+
 }

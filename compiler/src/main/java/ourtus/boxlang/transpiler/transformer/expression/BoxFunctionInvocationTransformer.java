@@ -16,28 +16,24 @@ package ourtus.boxlang.transpiler.transformer.expression;
 
 import com.github.javaparser.ast.Node;
 import com.github.javaparser.ast.expr.Expression;
-import ourtus.boxlang.ast.BoxExpr;
 import ourtus.boxlang.ast.BoxNode;
 import ourtus.boxlang.ast.expression.BoxFunctionInvocation;
-import ourtus.boxlang.ast.expression.BoxIdentifier;
 import ourtus.boxlang.transpiler.BoxLangTranspiler;
 import ourtus.boxlang.transpiler.transformer.AbstractTransformer;
+import ourtus.boxlang.transpiler.transformer.TransformerContext;
 
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.Map;
 
 public class BoxFunctionInvocationTransformer extends AbstractTransformer {
-	private final HashMap<String,String> builtin;
+
 
 	public BoxFunctionInvocationTransformer() {
-		this.builtin = new HashMap<>() {{
-			put("createobject","JavaLoader.load( context, ${arg1} )");
-		}};
+
 	}
 
 	@Override
-	public Node transform(BoxNode node) throws IllegalStateException {
+	public Node transform(BoxNode node, TransformerContext context) throws IllegalStateException {
 		BoxFunctionInvocation function = (BoxFunctionInvocation)node;
 		Map<String, String> values = new HashMap<>();
 		for (int i = 0; i < function.getArguments().size(); i++) {
@@ -50,7 +46,8 @@ public class BoxFunctionInvocationTransformer extends AbstractTransformer {
 	}
 
 	private String getTemplate(BoxFunctionInvocation function) {
-		String target = builtin.get(function.getName().getName().toLowerCase());
+
+		String target = BoxBuiltinRegistry.getInstance().getRegistry().get(function.getName().getName().toLowerCase());;
 		if(target != null)
 			return target;
 		StringBuilder sb = new StringBuilder(function.getName().getName());

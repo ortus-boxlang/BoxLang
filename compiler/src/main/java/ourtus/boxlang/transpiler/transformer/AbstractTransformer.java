@@ -27,7 +27,10 @@ import java.util.Map;
 public abstract class AbstractTransformer implements Transformer {
 	protected static JavaParser javaParser= new JavaParser();
 	@Override
-	public abstract Node transform(BoxNode node) throws IllegalStateException;
+	public abstract Node transform(BoxNode node, TransformerContext context) throws IllegalStateException;
+	public  Node transform(BoxNode node) throws IllegalStateException {
+		return this.transform(node,TransformerContext.NONE);
+	}
 	protected Node parseExpression(String template, Map<String,String> values) {
 		StringSubstitutor sub = new StringSubstitutor(values);
 		String code = sub.replace(template);

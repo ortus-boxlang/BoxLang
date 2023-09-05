@@ -1,4 +1,5 @@
 // Static reference to System (java proxy?)
+
 variables['system'] = createObject('java','java.lang.System');
 // Static reference to String
 variables.greeting = createObject('java','java.lang.String')
@@ -13,5 +14,10 @@ variables.system.out.println(
   // Unscoped lookup requires scope search
   greeting & " world"
 )
+
+} else {
+variables['system'] = createObject('java','java.lang.System');
+}
+
 }
 

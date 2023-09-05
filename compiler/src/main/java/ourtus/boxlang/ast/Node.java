@@ -21,10 +21,9 @@ public class Node {
 
 	protected Position position;
 	private final String sourceText;
-	private Node parent;
-
-	private Node originator;
+	private Node parent = null;
 	private final List<Node> children;
+	private Node originator;
 
 	public Node( Position position, String sourceText ) {
 		this.position   = position;
@@ -42,6 +41,10 @@ public class Node {
 
 	public void setParent(Node parent) {
 		this.parent = parent;
+		if(parent != null) {
+			if(!parent.children.contains(this))
+				parent.getChildren().add(this);
+		}
 	}
 
 	public Node getParent() {

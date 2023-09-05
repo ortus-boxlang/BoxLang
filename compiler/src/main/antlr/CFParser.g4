@@ -330,7 +330,7 @@ scope
     |   VARIABLES
     |   THIS
     |   THREAD
-    //  TODO add additional scopes
+    //  TODO add additional known scopes
     ;
 
 try

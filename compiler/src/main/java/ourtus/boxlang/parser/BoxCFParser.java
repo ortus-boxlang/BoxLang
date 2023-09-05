@@ -52,9 +52,15 @@ public class BoxCFParser extends BoxAbstractParser {
 	@Override
 	protected BoxScript parseTreeToAst( File file, ParserRuleContext rule ) throws IOException {
 		CFParser.ScriptContext parseTree = ( CFParser.ScriptContext ) rule;
-		List<BoxStatement> statements = parseTree.functionOrStatement().stream().map(it -> toAst( file, it ) ).toList();
-
-		return new BoxScript( getPosition( rule ), getSourceText( rule ), statements );
+		BoxScript script = new BoxScript( getPosition( rule ), getSourceText( rule ));
+		parseTree.functionOrStatement().stream().map(
+			it -> {
+                return toAst( file, it , script );
+			}
+		).forEach( stmt -> {
+			script.getStatements().add(stmt);
+		});
+		return script;
 	}
 
 	public ParsingResult parse( File file ) throws IOException {
