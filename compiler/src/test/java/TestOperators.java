@@ -12,6 +12,7 @@
  * BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language
  * governing permissions and limitations under the License.
  */
+
 import com.github.javaparser.ast.Node;
 import org.junit.Test;
 import ourtus.boxlang.parser.BoxLangParser;
@@ -27,194 +28,297 @@ public class TestOperators {
 	@Test
 	public void testConcat() throws IOException {
 		String expression = """
-   			"Hello " & "world";
+						"Hello " & "world";
 			""";
 
 		BoxLangParser parser = new BoxLangParser();
 		BoxLangTranspiler transpiler = new BoxLangTranspiler();
-		ParsingResult result = parser.parseExpression( expression);
+		ParsingResult result = parser.parseExpression( expression );
 
-		Node javaAST = BoxLangTranspiler.transform(result.getRoot());
+		Node javaAST = BoxLangTranspiler.transform( result.getRoot() );
 
-		assertEquals(
-			"Concat.invoke(\"Hello \", \"world\")",
-			javaAST.toString()
-		);
+		assertEquals( "Concat.invoke(\"Hello \", \"world\")", javaAST.toString() );
+
+	}
+
+	@Test
+	public void testConcatWithVariable() throws IOException {
+		String expression = """
+						someObject & "world";
+			""";
+
+		BoxLangParser parser = new BoxLangParser();
+		ParsingResult result = parser.parseExpression( expression );
+		Node javaAST = BoxLangTranspiler.transform( result.getRoot() );
+
+		assertEquals( "Concat.invoke(someObject, \"world\")", javaAST.toString() );
 
 	}
 
 	@Test
 	public void testPlus() throws IOException {
 		String expression = """
-   			1 + 2
+						1 + 2
 			""";
 
 		BoxLangParser parser = new BoxLangParser();
-		ParsingResult result = parser.parseExpression( expression);
+		ParsingResult result = parser.parseExpression( expression );
 
-		Node javaAST = BoxLangTranspiler.transform(result.getRoot());
+		Node javaAST = BoxLangTranspiler.transform( result.getRoot() );
 
-		assertEquals(
-			"Plus.invoke(1, 2)",
-			javaAST.toString()
-		);
+		assertEquals( "Plus.invoke(1, 2)", javaAST.toString() );
+
+	}
+
+	@Test
+	public void testPlusWithVariable() throws IOException {
+		String expression = """
+						1 + aNumber
+			""";
+
+		BoxLangParser parser = new BoxLangParser();
+		ParsingResult result = parser.parseExpression( expression );
+
+		Node javaAST = BoxLangTranspiler.transform( result.getRoot() );
+
+		assertEquals( "Plus.invoke(1, aNumber)", javaAST.toString() );
 
 	}
 
 	@Test
 	public void testMinus() throws IOException {
 		String expression = """
-   			1 - 2
+						1 - 2
 			""";
 
 		BoxLangParser parser = new BoxLangParser();
-		ParsingResult result = parser.parseExpression( expression);
+		ParsingResult result = parser.parseExpression( expression );
 
-		Node javaAST = BoxLangTranspiler.transform(result.getRoot());
+		Node javaAST = BoxLangTranspiler.transform( result.getRoot() );
 
-		assertEquals(
-			"Minus.invoke(1, 2)",
-			javaAST.toString()
-		);
+		assertEquals( "Minus.invoke(1, 2)", javaAST.toString() );
 
 	}
 
 	@Test
 	public void testStar() throws IOException {
 		String expression = """
-   			1 * 2
+						1 * 2
 			""";
 
 		BoxLangParser parser = new BoxLangParser();
-		ParsingResult result = parser.parseExpression( expression);
+		ParsingResult result = parser.parseExpression( expression );
 
-		Node javaAST = BoxLangTranspiler.transform(result.getRoot());
+		Node javaAST = BoxLangTranspiler.transform( result.getRoot() );
 
-		assertEquals(
-			"Multiply.invoke(1, 2)",
-			javaAST.toString()
-		);
+		assertEquals( "Multiply.invoke(1, 2)", javaAST.toString() );
 
 	}
 
 	@Test
 	public void testSlash() throws IOException {
 		String expression = """
-   			1 / 2
+						1 / 2
 			""";
 
 		BoxLangParser parser = new BoxLangParser();
-		ParsingResult result = parser.parseExpression( expression);
+		ParsingResult result = parser.parseExpression( expression );
 
-		Node javaAST = BoxLangTranspiler.transform(result.getRoot());
+		Node javaAST = BoxLangTranspiler.transform( result.getRoot() );
 
-		assertEquals(
-			"Divide.invoke(1, 2)",
-			javaAST.toString()
-		);
+		assertEquals( "Divide.invoke(1, 2)", javaAST.toString() );
 
 	}
+
 	@Test
 	public void testContains() throws IOException {
 		String expression = """
-   			"Brad Wood" contains "Wood"
+						"Brad Wood" contains "Wood"
 			""";
 
 		BoxLangParser parser = new BoxLangParser();
-		ParsingResult result = parser.parseExpression( expression);
+		ParsingResult result = parser.parseExpression( expression );
 
-		Node javaAST = BoxLangTranspiler.transform(result.getRoot());
+		Node javaAST = BoxLangTranspiler.transform( result.getRoot() );
 
-		assertEquals(
-			"Contains.contains(\"Brad Wood\", \"Wood\")",
-			javaAST.toString()
-		);
+		assertEquals( "Contains.contains(\"Brad Wood\", \"Wood\")", javaAST.toString() );
 
 	}
+
+	@Test
+	public void testContainsWithVariable() throws IOException {
+		String expression = """
+						"Brad Wood" contains wood
+			""";
+
+		BoxLangParser parser = new BoxLangParser();
+		ParsingResult result = parser.parseExpression( expression );
+
+		Node javaAST = BoxLangTranspiler.transform( result.getRoot() );
+
+		assertEquals( "Contains.contains(\"Brad Wood\", wood)", javaAST.toString() );
+
+	}
+
+	@Test
+	public void testDoesNotContains() throws IOException {
+		String expression = """
+						"Brad Wood" does not contains "Luis"
+			""";
+
+		BoxLangParser parser = new BoxLangParser();
+		ParsingResult result = parser.parseExpression( expression );
+
+		Node javaAST = BoxLangTranspiler.transform( result.getRoot() );
+
+		assertEquals( "!Contains.contains(\"Brad Wood\", \"Luis\")", javaAST.toString() );
+
+	}
+
 	@Test
 	public void testNegate() throws IOException {
 		String expression = """
-   			!True
+						!True
 			""";
 
 		BoxLangParser parser = new BoxLangParser();
-		ParsingResult result = parser.parseExpression( expression);
+		ParsingResult result = parser.parseExpression( expression );
 
-		Node javaAST = BoxLangTranspiler.transform(result.getRoot());
+		Node javaAST = BoxLangTranspiler.transform( result.getRoot() );
 
-		assertEquals(
-			"Negate.invoke(\"True\")",
-			javaAST.toString()
-		);
+		assertEquals( "Negate.invoke(\"True\")", javaAST.toString() );
 
 	}
+
 	@Test
 	public void testNegateNegate() throws IOException {
 		String expression = """
-   			!!False
+						!!False
 			""";
 
 		BoxLangParser parser = new BoxLangParser();
-		ParsingResult result = parser.parseExpression( expression);
+		ParsingResult result = parser.parseExpression( expression );
 
-		Node javaAST = BoxLangTranspiler.transform(result.getRoot());
+		Node javaAST = BoxLangTranspiler.transform( result.getRoot() );
 
-		assertEquals(
-			"Negate.invoke(Negate.invoke(\"False\"))",
-			javaAST.toString()
-		);
+		assertEquals( "Negate.invoke(Negate.invoke(\"False\"))", javaAST.toString() );
 
 	}
+
 	@Test
 	public void testTernary() throws IOException {
 		String expression = """
-   			isGood ? "eat" : "toss"
+						isGood ? "eat" : "toss"
 			""";
 
 		BoxLangParser parser = new BoxLangParser();
-		ParsingResult result = parser.parseExpression( expression);
+		ParsingResult result = parser.parseExpression( expression );
 
-		Node javaAST = BoxLangTranspiler.transform(result.getRoot());
+		Node javaAST = BoxLangTranspiler.transform( result.getRoot() );
 
-		assertEquals(
-			"Ternary.invoke(Key.of(\"isGood\"), \"eat\", \"toss\")",
-			javaAST.toString()
-		);
+		assertEquals( "Ternary.invoke(Key.of(\"isGood\"), \"eat\", \"toss\")", javaAST.toString() );
 
 	}
 
 	@Test
 	public void testScopeRead() throws IOException {
 		String expression = """
-   			variables["system"]
+						variables["system"]
 			""";
 
 		BoxLangParser parser = new BoxLangParser();
-		ParsingResult result = parser.parseExpression( expression);
+		ParsingResult result = parser.parseExpression( expression );
 
-		Node javaAST = BoxLangTranspiler.transform(result.getRoot());
+		Node javaAST = BoxLangTranspiler.transform( result.getRoot() );
 
-		assertEquals(
-			"variablesScope.get(Key.of(\"system\"))",
-			javaAST.toString()
-		);
+		assertEquals( "variablesScope.get(Key.of(\"system\"))", javaAST.toString() );
 
 	}
+
 	@Test
 	public void testScopeWrite() throws IOException {
 		String expression = """
-   			variables["system"] = ""
+						variables["system"] = ""
 			""";
 
 		BoxLangParser parser = new BoxLangParser();
-		ParsingResult result = parser.parseStatement(expression);
+		ParsingResult result = parser.parseStatement( expression );
 
-		Node javaAST = BoxLangTranspiler.transform(result.getRoot());
+		Node javaAST = BoxLangTranspiler.transform( result.getRoot() );
 
-		assertEquals(
-			"variablesScope.put(Key.of(\"system\"), \"\");",
-			javaAST.toString()
-		);
+		assertEquals( "variablesScope.put(Key.of(\"system\"), \"\");", javaAST.toString() );
+
+	}
+
+	@Test
+	public void testElvis() throws IOException {
+		String expression = """
+						maybeNull ?: "use if null"
+			""";
+
+		BoxLangParser parser = new BoxLangParser();
+		ParsingResult result = parser.parseStatement( expression );
+
+		Node javaAST = BoxLangTranspiler.transform( result.getRoot() );
+
+		assertEquals( "Elvis.invoke( maybeNull , \"use if null\" )", javaAST.toString() );
+
+	}
+
+	@Test
+	public void testElvisLeftDereferencing() throws IOException {
+		String expression = """
+						variables.foo.bar ?: "brad"
+			""";
+
+		BoxLangParser parser = new BoxLangParser();
+		ParsingResult result = parser.parseStatement( expression );
+
+		Node javaAST = BoxLangTranspiler.transform( result.getRoot() );
+
+		assertEquals( """
+			Elvis.invoke(
+				Referencer.get(
+					context.getScopeLocal( Key.of( "variables" ) )
+					  .get(
+					    Key.of( "foo" ),
+					    true
+					  ),
+						Key.of( "bar" ),
+					  true
+				),
+			  "brad"
+			)""".replaceAll( "[ \\r\\n\\t]", "" ), javaAST.toString().replaceAll( "[ \\t\\r\\n]", "" ) );
+
+	}
+
+	@Test
+	public void testXor() throws IOException {
+		String expression = """
+						isCar XOR isCar
+			""";
+
+		BoxLangParser parser = new BoxLangParser();
+		ParsingResult result = parser.parseStatement( expression );
+
+		Node javaAST = BoxLangTranspiler.transform( result.getRoot() );
+
+		assertEquals( "XOR.invoke( isCar, isCar )", javaAST.toString() );
+
+	}
+
+	@Test
+	public void testInstanceOf() throws IOException {
+		String expression = """
+			foo instanceOf "String"
+			""";
+
+		BoxLangParser parser = new BoxLangParser();
+		ParsingResult result = parser.parseStatement( expression );
+
+		Node javaAST = BoxLangTranspiler.transform( result.getRoot() );
+
+		assertEquals( "InstanceOf.invoke( context, foo, \"String\" )", javaAST.toString() );
 
 	}
 
