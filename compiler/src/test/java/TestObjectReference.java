@@ -106,4 +106,24 @@ public class TestObjectReference {
 			  );
 			  """, javaAST.toString() );
 	}
+
+	@Test
+	public void invokeMethod() throws IOException {
+		String expression = """
+						myObject.myMethod( obj1, "foo", 42 )
+			""";
+
+		BoxLangParser parser = new BoxLangParser();
+		ParsingResult result = parser.parseStatement( expression );
+		Node javaAST = BoxLangTranspiler.transform( result.getRoot() );
+
+		assertEqualsNoWhiteSpaces( """
+			Referencer.getAndInvoke(
+			  myObject,
+			  Key.of( "myMethod" ),
+			  new Object[] { obj1, "foo", 42 },
+			  false
+			);
+			  """, javaAST.toString() );
+	}
 }
