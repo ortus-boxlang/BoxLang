@@ -80,7 +80,7 @@ class TestBoxlangToJavaAST : BaseTest() {
 			javaAST.getClassByName("HelloWorld\$cfm").orElseThrow().nameAsString + ".java"
 		)
 		println("Compiling: ${javaFile.absolutePath}")
-		println("Running: /home/madytyoo/IdeaProjects/boxlang/compiler/build/cfml_to_java/home/madytyoo/IdeaProjects/boxlang/examples/cf_to_java/HelloWorld/HelloWorld\$cfm.class")
+		println("Running: cf_to_java/HelloWorld/HelloWorld\$cfm.class")
 		// Compiling Java and executing the invoke() method
 		val outputStream = ByteArrayOutputStream()
 		val printStream = PrintStream(outputStream)

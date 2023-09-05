@@ -12,6 +12,7 @@
  * BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language
  * governing permissions and limitations under the License.
  */
+import java.io.File;
 import java.io.IOException;
 import java.nio.file.*;
 import java.nio.file.attribute.BasicFileAttributes;
@@ -22,11 +23,14 @@ import java.util.Set;
 
 public class TestBase {
 
+	private final String baseExampleDirectory = new File("src/test/resources").getAbsolutePath();
 	protected String testboxDirectory = System.getProperty( "testboxdir" );
 	protected String contentboxDirectory = System.getProperty( "contentboxdir" );
 	protected String coldboxDirectory = System.getProperty( "coldboxdir" );
 
 	protected List<Path> scanForFiles( String path, Set<String> extensions ) {
+		path = this.baseExampleDirectory + path;
+		System.out.println( path );
 		List<Path> fileList = new ArrayList<Path>();
 
 		try {

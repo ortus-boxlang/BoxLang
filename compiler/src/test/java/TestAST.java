@@ -29,13 +29,12 @@ public class TestAST extends TestBase {
 	public void testParser() throws IOException {
 		BoxLangParser parser = new BoxLangParser();
 		//		List<Path> files = scanForFiles( testboxDirectory, Set.of( "cfc", "cfm", "cfml" ) );
-		List<Path> files = scanForFiles( "/home/madytyoo/IdeaProjects/boxlang/examples/cf_to_java/HelloWorld",
-			Set.of( "cfc", "cfm", "cfml" ) );
+		List<Path> files = scanForFiles( "/cf_to_java/HelloWorld", Set.of( "cfc", "cfm", "cfml" ) );
 		for ( Path file : files ) {
 			System.out.println( file );
 			ParsingResult result = parser.parse( file.toFile() );
 			if ( !result.isCorrect() ) {
-				result.getIssues().forEach( error -> System.out.println( error ) );
+				result.getIssues().forEach(System.out::println);
 			}
 		}
 	}
@@ -45,8 +44,7 @@ public class TestAST extends TestBase {
 		BoxLangParser parser = new BoxLangParser();
 		BoxLangTranspiler transpiler = new BoxLangTranspiler();
 
-		List<Path> files = scanForFiles( "/home/madytyoo/IdeaProjects/boxlang/examples/cf_to_java/HelloWorld",
-			Set.of( "cfc" ) );
+		List<Path> files = scanForFiles( "/cf_to_java/HelloWorld", Set.of( "cfc" ) );
 		for ( Path file : files ) {
 			System.out.println( file );
 			ParsingResult result = parser.parse( file.toFile() );
