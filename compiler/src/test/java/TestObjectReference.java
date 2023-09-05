@@ -126,4 +126,20 @@ public class TestObjectReference {
 			);
 			  """, javaAST.toString() );
 	}
+
+	@Test
+	public void invokeMethodWithKnownScope() throws IOException {
+		String expression = """
+						variables.system.out.println(
+						 "hello world"
+					   )
+			""";
+
+		BoxLangParser parser = new BoxLangParser();
+		ParsingResult result = parser.parseStatement( expression );
+		Node javaAST = BoxLangTranspiler.transform( result.getRoot() );
+
+		// TODO
+		assertEqualsNoWhiteSpaces( "", javaAST.toString() );
+	}
 }
