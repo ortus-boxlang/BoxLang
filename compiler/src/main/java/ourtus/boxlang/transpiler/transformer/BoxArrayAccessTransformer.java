@@ -19,6 +19,7 @@ import com.github.javaparser.ast.expr.Expression;
 import com.github.javaparser.ast.expr.StringLiteralExpr;
 import ourtus.boxlang.ast.BoxNode;
 import ourtus.boxlang.ast.expression.BoxArrayAccess;
+import ourtus.boxlang.ast.expression.BoxScope;
 import ourtus.boxlang.ast.expression.BoxStringLiteral;
 import ourtus.boxlang.transpiler.BoxLangTranspiler;
 
@@ -26,31 +27,41 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class BoxArrayAccessTransformer extends AbstractTransformer {
+
 	@Override
-	public Node transform(BoxNode node, TransformerContext context) throws IllegalStateException {
-		BoxArrayAccess expr = (BoxArrayAccess)node;
+	public Node transform( BoxNode node, TransformerContext context ) throws IllegalStateException {
+		BoxArrayAccess expr = ( BoxArrayAccess ) node;
 		/* Case variables['x']  */
-		if(expr.getIndex() instanceof BoxStringLiteral) {
-			Expression scope = (Expression) BoxLangTranspiler.transform(expr.getContext(),context);
-			StringLiteralExpr variable = (StringLiteralExpr) BoxLangTranspiler.transform(expr.getIndex());
+		if ( expr.getIndex() instanceof BoxStringLiteral ) {
+			Expression scope = ( Expression ) BoxLangTranspiler.transform( expr.getContext(), context );
+			StringLiteralExpr variable = ( StringLiteralExpr ) BoxLangTranspiler.transform( expr.getIndex() );
 
 			Map<String, String> values = new HashMap<>() {{
-				put("scope",scope.toString());
-				put("variable",variable.toString());
+				put( "scope", scope.toString() );
+				put( "variable", variable.toString() );
 			}};
 
-			if(context == TransformerContext.LEFT) {
-				String template = """
-    			${scope}.put(Key.of(${variable}))
-			""";
-				return parseExpression(template,values);
+			String template;
+
+			if ( context == TransformerContext.LEFT ) {
+				template = """
+					 			${scope}.put(Key.of(${variable}))
+					""";
+				return parseExpression( template, values );
+			} else if ( expr.getContext() instanceof BoxScope ) {
+				template = "context.getScopeNearby( Key.of( \"${scope}\" ) ).get( Key.of( \"${variable}\" ) )";
 			} else {
-				String template = """
-    			${scope}.get(Key.of(${variable}))
-			""";
-				return parseExpression(template,values);
+				template = """
+					Referencer.get(
+					  context.scopeFindNearby( Key.of( "${scope}" ), null ).value(),
+					  Key.of( ${variable} ),
+					  false
+					)
+					""";
 			}
+
+			return parseExpression( template, values );
 		}
-		throw new IllegalStateException("Not implemented");
+		throw new IllegalStateException( "Not implemented" );
 	}
 }

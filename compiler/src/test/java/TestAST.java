@@ -12,10 +12,11 @@
  * BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language
  * governing permissions and limitations under the License.
  */
+
 import com.github.javaparser.ast.CompilationUnit;
 import org.junit.Test;
-import ourtus.boxlang.parser.ParsingResult;
 import ourtus.boxlang.parser.BoxLangParser;
+import ourtus.boxlang.parser.ParsingResult;
 import ourtus.boxlang.transpiler.BoxLangTranspiler;
 
 import java.io.IOException;
@@ -45,13 +46,12 @@ public class TestAST extends TestBase {
 		BoxLangParser parser = new BoxLangParser();
 		BoxLangTranspiler transpiler = new BoxLangTranspiler();
 
-		List<Path> files = scanForFiles( "/home/madytyoo/IdeaProjects/boxlang/examples/cf_to_java/HelloWorld",
-			Set.of( "cfc" ) );
+		List<Path> files = scanForFiles( "../examples/cf_to_java/HelloWorld", Set.of( "cfc" ) );
 		for ( Path file : files ) {
 			System.out.println( file );
 			ParsingResult result = parser.parse( file.toFile() );
-			CompilationUnit javaAST = transpiler.transpile(result.getRoot());
-			System.out.println(javaAST);
+			CompilationUnit javaAST = transpiler.transpile( result.getRoot() );
+			System.out.println( javaAST );
 		}
 
 	}

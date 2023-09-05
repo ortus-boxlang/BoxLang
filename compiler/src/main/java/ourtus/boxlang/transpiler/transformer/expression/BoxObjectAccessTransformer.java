@@ -28,24 +28,29 @@ public class BoxObjectAccessTransformer extends AbstractTransformer {
 		String template;
 
 		if ( objectAccess.getContext() instanceof BoxScope ) {
-			template = """
-				context.getScopeNearby( Key.of( "${scope}" ) ).get( Key.of( "${variable}" ) )
-				""";
+			template = switch ( context ) {
+				case LEFT -> """
+					context.getScopeNearby( Key.of( "${scope}" ) ).put(Key.of("${variable}"))
+					""";
+				default -> """
+					context.getScopeNearby( Key.of( "${scope}" ) ).get( Key.of( "${variable}" ) )
+					""";
+			};
 		} else {
 			template = """
 				Referencer.get(context.scopeFindNearby(Key.of("${scope}"), null).value(), Key.of("${variable}"), false)
 				""";
 		}
-
-		template = switch ( context ) {
-			case LEFT -> """
-							${scope}.put(${variable})
-				""";
-			case RIGHT -> """
-							Referencer.get(context.scopeFindNearby(Key.of("${scope}"), null).value(), Key.of("${variable}"), false)
-				""";
-			default -> template;
-		};
+		//
+		//		template = switch ( context ) {
+		//			case LEFT -> """
+		//							${scope}.put(${variable})
+		//				""";
+		//			case RIGHT -> """
+		//							Referencer.get(context.scopeFindNearby(Key.of("${scope}"), null).value(), Key.of("${variable}"), false)
+		//				""";
+		//			default -> template;
+		//		};
 
 		return parseExpression( template, values );
 	}

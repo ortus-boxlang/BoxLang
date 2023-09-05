@@ -45,6 +45,36 @@ public class TestObjectReference {
 	}
 
 	@Test
+	public void testDereferenceByKeyAsDictionary() throws IOException {
+		String expression = """
+						foo["bar"]
+			""";
+
+		BoxLangParser parser = new BoxLangParser();
+		ParsingResult result = parser.parseExpression( expression );
+		Node javaAST = BoxLangTranspiler.transform( result.getRoot() );
+
+		assertEqualsNoWhiteSpaces(
+			"Referencer.get( context.scopeFindNearby( Key.of( \"foo\" ), null ).value(), Key.of( \"bar\" ), false )",
+			javaAST.toString() );
+	}
+
+	@Test
+	public void testDereferenceByKeyAsDictionaryWithSingleQuotes() throws IOException {
+		String expression = """
+						foo['bar']
+			""";
+
+		BoxLangParser parser = new BoxLangParser();
+		ParsingResult result = parser.parseExpression( expression );
+		Node javaAST = BoxLangTranspiler.transform( result.getRoot() );
+
+		assertEqualsNoWhiteSpaces(
+			"Referencer.get( context.scopeFindNearby( Key.of( \"foo\" ), null ).value(), Key.of( \"bar\" ), false )",
+			javaAST.toString() );
+	}
+
+	@Test
 	public void testDereferenceByKeyFromKnownScope() throws IOException {
 		String expression = """
 						variables.foo
@@ -56,5 +86,24 @@ public class TestObjectReference {
 
 		assertEqualsNoWhiteSpaces( "context.getScopeNearby( Key.of( \"variablesScope\" ) ).get( Key.of( \"foo\" ) )",
 			javaAST.toString() );
+	}
+
+	@Test
+	public void knownScopeAssignment() throws IOException {
+		String expression = """
+						variables.foo=bar
+			""";
+
+		BoxLangParser parser = new BoxLangParser();
+		ParsingResult result = parser.parseStatement( expression );
+		Node javaAST = BoxLangTranspiler.transform( result.getRoot() );
+
+		assertEqualsNoWhiteSpaces( """
+			context.getScopeNearby( Key.of( "variablesScope" ) )
+			  .put(
+			    Key.of( "foo" ),
+			    bar
+			  );
+			  """, javaAST.toString() );
 	}
 }

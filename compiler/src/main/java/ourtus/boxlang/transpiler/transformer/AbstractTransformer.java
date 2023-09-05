@@ -25,28 +25,33 @@ import ourtus.boxlang.ast.BoxNode;
 import java.util.Map;
 
 public abstract class AbstractTransformer implements Transformer {
-	protected static JavaParser javaParser= new JavaParser();
+
+	protected static JavaParser javaParser = new JavaParser();
+
 	@Override
-	public abstract Node transform(BoxNode node, TransformerContext context) throws IllegalStateException;
-	public  Node transform(BoxNode node) throws IllegalStateException {
-		return this.transform(node,TransformerContext.NONE);
+	public abstract Node transform( BoxNode node, TransformerContext context ) throws IllegalStateException;
+
+	public Node transform( BoxNode node ) throws IllegalStateException {
+		return this.transform( node, TransformerContext.NONE );
 	}
-	protected Node parseExpression(String template, Map<String,String> values) {
-		StringSubstitutor sub = new StringSubstitutor(values);
-		String code = sub.replace(template);
-		ParseResult<Expression> result = javaParser.parseExpression(code);
-		if(!result.isSuccessful()) {
-			throw new IllegalStateException(result.toString());
+
+	protected Node parseExpression( String template, Map<String, String> values ) {
+		StringSubstitutor sub = new StringSubstitutor( values );
+		String code = sub.replace( template );
+		ParseResult<Expression> result = javaParser.parseExpression( code );
+		if ( !result.isSuccessful() ) {
+			System.out.println( code );
+			throw new IllegalStateException( result.toString() );
 		}
 		return result.getResult().get();
 	}
 
-	protected Node parseStatement(String template, Map<String,String> values) {
-		StringSubstitutor sub = new StringSubstitutor(values);
-		String code = sub.replace(template);
-		ParseResult<Statement> result = javaParser.parseStatement(code);
-		if(!result.isSuccessful()) {
-			throw new IllegalStateException(result.toString());
+	protected Node parseStatement( String template, Map<String, String> values ) {
+		StringSubstitutor sub = new StringSubstitutor( values );
+		String code = sub.replace( template );
+		ParseResult<Statement> result = javaParser.parseStatement( code );
+		if ( !result.isSuccessful() ) {
+			throw new IllegalStateException( result.toString() );
 		}
 		return result.getResult().get();
 	}

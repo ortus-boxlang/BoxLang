@@ -13,22 +13,23 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class BoxComparisonOperationTransformer extends AbstractTransformer {
+
 	@Override
-	public Node transform(BoxNode node, TransformerContext context) throws IllegalStateException {
-		BoxComparisonOperation operation = (BoxComparisonOperation) node;
-		Expression left = (Expression) BoxLangTranspiler.transform(operation.getLeft());
-		Expression right = (Expression) BoxLangTranspiler.transform(operation.getRight());
+	public Node transform( BoxNode node, TransformerContext context ) throws IllegalStateException {
+		BoxComparisonOperation operation = ( BoxComparisonOperation ) node;
+		Expression left = ( Expression ) BoxLangTranspiler.transform( operation.getLeft() );
+		Expression right = ( Expression ) BoxLangTranspiler.transform( operation.getRight() );
 
 		Map<String, String> values = new HashMap<>() {{
-			put("left", left.toString());
-			put("right", right.toString());
+			put( "left", left.toString() );
+			put( "right", right.toString() );
 
 		}};
 		String template = "";
 
-		if (operation.getOperator() == BoxComparisonOperator.Equal) {
-			template = "EqualsEquals.invoke(context,${left},${right})";
+		if ( operation.getOperator() == BoxComparisonOperator.Equal ) {
+			template = "EqualsEquals.invoke(${left},${right})";
 		}
-		return parseExpression(template,values);
+		return parseExpression( template, values );
 	}
 }
