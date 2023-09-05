@@ -19,7 +19,7 @@ import kotlin.io.path.*
 
 
 class TestBoxlangToJavaAST : BaseTest() {
-	private val testsBaseFolder = Path("../examples/cf_to_java")
+	private val testsBaseFolder = Path(baseExampleDirectory,"/cf_to_java")
 	private val javaParser = JavaParser()
 	private val cfParser = CFLanguageParser()
 

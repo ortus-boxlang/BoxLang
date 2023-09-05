@@ -3,6 +3,7 @@ package ortus.boxlang.parser
 import java.io.File
 
 open class BaseTest {
+	protected val baseExampleDirectory = File("src/test/resources").absolutePath
 	protected val testboxDirectory = requireNotNull(System.getProperty("testboxdir"))
 	protected val contentboxDirectory = requireNotNull(System.getProperty("contentboxdir"))
 	protected val coldboxDirectory = requireNotNull(System.getProperty("coldboxdir"))

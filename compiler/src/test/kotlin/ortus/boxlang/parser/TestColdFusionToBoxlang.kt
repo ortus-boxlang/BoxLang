@@ -13,7 +13,7 @@ class TestColdFusionToBoxlang : BaseTest() {
 
 	@Test
 	fun testHelloWorld() {
-		val file = File("../examples/cf_to_java/HelloWorld/HelloWorld.cfm")
+		val file = Path(baseExampleDirectory,"/cf_to_java/HelloWorld/HelloWorld.cfm").toFile()
 		val result = CFLanguageParser().parse(file)
 		assert(result.correct) { "Parsing is not correct: ${file.absolutePath}" }
 		assertNotNull(result.root) { "AST root node is null: ${file.absolutePath}" }
