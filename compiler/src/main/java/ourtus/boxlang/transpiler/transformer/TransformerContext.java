@@ -15,7 +15,7 @@
 package ourtus.boxlang.transpiler.transformer;
 
 public enum TransformerContext {
-	NONE,
-	LEFT,
-	RIGHT
+	NONE, LEFT, RIGHT,
+
+	DEREFERENCING
 }

@@ -216,7 +216,7 @@ public class TestOperators {
 
 		Node javaAST = BoxLangTranspiler.transform( result.getRoot() );
 
-		assertEquals( "Ternary.invoke(Key.of(\"isGood\"), \"eat\", \"toss\")", javaAST.toString() );
+		assertEquals( "Ternary.invoke(isGood, \"eat\", \"toss\")", javaAST.toString() );
 
 	}
 

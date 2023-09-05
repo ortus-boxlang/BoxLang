@@ -24,15 +24,20 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class BoxIdentifierTransformer extends AbstractTransformer {
+
 	@Override
-	public Node transform(BoxNode node, TransformerContext context) throws IllegalStateException {
-		BoxIdentifier identifier = (BoxIdentifier)node;
+	public Node transform( BoxNode node, TransformerContext context ) throws IllegalStateException {
+		BoxIdentifier identifier = ( BoxIdentifier ) node;
 		Map<String, String> values = new HashMap<>() {{
-			put("identifier", identifier.getName());
+			put( "identifier", identifier.getName() );
 		}};
 
-		String template = " Key.of( \"${identifier}\" )";
-		return parseExpression(template,values);
+		String template = switch ( context ) {
+			case DEREFERENCING -> "Key.of( \"${identifier}\" )";
+			default -> "${identifier}";
+		};
+
+		return parseExpression( template, values );
 
 	}
 }
