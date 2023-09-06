@@ -49,7 +49,19 @@ public class FunctionBoxContext extends BaseBoxContext {
 			return new ScopeSearchResult( argumentsScope, Struct.unWrapNull( result ) );
 		}
 
-		return scopeFind( key, defaultScope );
+		if ( parent != null ) {
+			// A UDF is "transparent" and can see everything in the parent scope as a "local" observer
+			return parent.scopeFindNearby( key, defaultScope );
+		}
+
+		// Default scope requested for missing keys
+		if ( defaultScope != null ) {
+			return new ScopeSearchResult( defaultScope, null );
+		}
+		// Not found anywhere
+		throw new KeyNotFoundException(
+		    String.format( "The requested key [%s] was not located in any scope or it's undefined", key.getName() )
+		);
 	}
 
 	public ScopeSearchResult scopeFind( Key key, IScope defaultScope ) {
@@ -58,7 +70,7 @@ public class FunctionBoxContext extends BaseBoxContext {
 
 		if ( parent != null ) {
 			// A UDF is "transparent" and can see everything in the parent scope as a "local" observer
-			return parent.scopeFindNearby( key, defaultScope );
+			return parent.scopeFind( key, defaultScope );
 		}
 
 		// Default scope requested for missing keys
