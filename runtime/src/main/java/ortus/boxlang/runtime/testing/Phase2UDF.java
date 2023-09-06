@@ -18,6 +18,7 @@
 package ortus.boxlang.runtime.testing;
 
 import java.util.List;
+import java.util.Map;
 
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.IBoxContext;
@@ -26,6 +27,7 @@ import ortus.boxlang.runtime.dynamic.BaseTemplate;
 import ortus.boxlang.runtime.dynamic.Referencer;
 import ortus.boxlang.runtime.loader.ClassLocator;
 import ortus.boxlang.runtime.loader.ImportDefinition;
+import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 
 /**
@@ -55,30 +57,55 @@ public class Phase2UDF extends BaseTemplate {
             var greeting = "Hello " & name;
             return greeting;
         }
-
-        new java.lang.System.out.println( greet( 'John' ) );
+        variables.out = (create java.lang.System).out;
+    
+        // Positional args
+        variables.out.println( greet( 'John' ) );
+    
+        // named args
+        variables.out.println( greet( name='John' ) );
     </cfscript>
      * </pre>
      */
 
     @Override
     public void invoke( IBoxContext context ) throws Throwable {
-        ClassLocator classLocator = ClassLocator.getInstance();
+        ClassLocator classLocator   = ClassLocator.getInstance();
+        IScope       variablesScope = context.getScopeNearby( Key.of( "variables" ) );
 
         // Create instance of UDF and register in the variables scope
         context.regsiterUDF( Phase2UDF$foo.getInstance() );
 
-        Referencer.getAndInvoke(
-            // Object
+        variablesScope.put(
+            Key.of( "out" ),
             Referencer.get(
                 classLocator.load( context, "java:java.lang.System", imports ),
                 Key.of( "out" ),
-                false ),
+                false )
+        );
+
+        // Positional args
+        Referencer.getAndInvoke(
+            // Object
+            variablesScope.get( Key.of( "out" ) ),
             // Method
             Key.of( "println" ),
             // Arguments
             new Object[] {
                 context.invokeFunction( Key.of( "foo" ), new Object[] { "John" } )
+            },
+            false
+        );
+
+        // named args
+        Referencer.getAndInvoke(
+            // Object
+            variablesScope.get( Key.of( "out" ) ),
+            // Method
+            Key.of( "println" ),
+            // Arguments
+            new Object[] {
+                context.invokeFunction( Key.of( "foo" ), Map.of( Key.of( "name" ), "Bob" ) )
             },
             false
         );

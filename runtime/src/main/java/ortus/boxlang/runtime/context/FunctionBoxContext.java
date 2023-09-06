@@ -57,7 +57,8 @@ public class FunctionBoxContext extends BaseBoxContext {
 		// The FunctionBoxContext has no "global" scopes, so just defer to parent
 
 		if ( parent != null ) {
-			return parent.scopeFind( key, defaultScope );
+			// A UDF is "transparent" and can see everything in the parent scope as a "local" observer
+			return parent.scopeFindNearby( key, defaultScope );
 		}
 
 		// Default scope requested for missing keys
