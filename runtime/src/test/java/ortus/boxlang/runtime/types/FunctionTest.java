@@ -180,6 +180,23 @@ public class FunctionTest {
 		assertThrows( Throwable.class, () -> udf.createArgumentsScope( Map.of( firstName, "Luis" ) ) );
 	}
 
+	@DisplayName( "can process no args" )
+	@Test
+	void testCanProcessNoArgs() {
+		Key			firstName	= Key.of( "firstName" );
+		Key			lastName	= Key.of( "lastName" );
+		Argument[]	args		= new Argument[] {
+		    new Function.Argument( false, "String", firstName, "brad", "First Name" ),
+		    new Function.Argument( false, "String", lastName, "wood", "Last Name" )
+		};
+		UDF			udf			= new func( UDF.Access.PUBLIC, Key.of( "foo" ), "any", args, "Cool function", false );
+		IScope		argscope	= udf.createArgumentsScope();
+
+		assertThat( argscope.get( firstName ) ).isEqualTo( "brad" );
+		assertThat( argscope.get( lastName ) ).isEqualTo( "wood" );
+		assertThat( argscope.size() ).isEqualTo( 2 );
+	}
+
 	class func extends UDF {
 
 		public func( Access access, Key name, String returnType, Argument[] arguments, String description, boolean isAbstract ) {

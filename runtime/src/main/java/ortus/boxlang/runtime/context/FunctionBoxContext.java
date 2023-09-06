@@ -106,7 +106,15 @@ public class FunctionBoxContext extends BaseBoxContext {
 			return argumentsScope;
 		}
 
-		return getScope( name );
+		// The FunctionBoxContext has no "global" scopes, so just defer to parent
+		if ( parent != null ) {
+			return parent.getScopeNearby( name );
+		}
+
+		// Not found anywhere
+		throw new ScopeNotFoundException(
+		    String.format( "The requested scope name [%s] was not located in any context", name.getName() )
+		);
 
 	}
 

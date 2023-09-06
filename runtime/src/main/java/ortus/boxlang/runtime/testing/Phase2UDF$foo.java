@@ -55,7 +55,7 @@ public class Phase2UDF$foo extends UDF {
 
     /**
      * <pre>
-        function greet( required string name='Brad' ) hint="My Function Hint" {
+        string function greet( required string name='Brad' ) hint="My Function Hint" {
             local.race = "Local scope value";
             arguments.race = "Arguments scope value";
     
@@ -70,6 +70,7 @@ public class Phase2UDF$foo extends UDF {
      */
     @Override
     public Object invoke( FunctionBoxContext context ) {
+        Object returnVal = null;
 
         // Create local.race and arguments.race to show scope lookup
         context.getScopeNearby( LocalScope.name ).put(
@@ -102,8 +103,9 @@ public class Phase2UDF$foo extends UDF {
             false
         );
 
-        // TODO: check return type before returning
-        return context.scopeFindNearby( Key.of( "greeting" ), null ).value();
+        returnVal = context.scopeFindNearby( Key.of( "greeting" ), null ).value();
+        // TODO: Check return type of function against return value
+        return returnVal;
 
     }
 

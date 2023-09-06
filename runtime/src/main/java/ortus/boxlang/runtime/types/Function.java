@@ -109,16 +109,8 @@ public abstract class Function implements IType {
 		return scope;
 	}
 
-	// TODO: Refactor this to just call createArgumentsScope( Object[] positionalArguments )
 	public ArgumentsScope createArgumentsScope() {
-		ArgumentsScope scope = new ArgumentsScope();
-		for ( int i = 0; i < arguments.length; i++ ) {
-			if ( arguments[ i ].required() && arguments[ i ].defaultValue() == null ) {
-				throw new RuntimeException( "Required argument " + arguments[ i ].name() + " is missing" );
-			}
-			scope.put( arguments[ i ].name(), arguments[ i ].defaultValue() );
-		}
-		return scope;
+		return createArgumentsScope( new Object[] {} );
 	}
 
 	public String asString() {
