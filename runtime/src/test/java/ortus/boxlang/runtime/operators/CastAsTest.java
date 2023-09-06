@@ -17,23 +17,12 @@
  */
 package ortus.boxlang.runtime.operators;
 
-import org.junit.Ignore;
+import static com.google.common.truth.Truth.assertThat;
+
+import java.util.Arrays;
+
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-
-import ortus.boxlang.runtime.context.IBoxContext;
-import ortus.boxlang.runtime.context.TemplateBoxContext;
-
-import static com.google.common.truth.Truth.assertThat;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 
 public class CastAsTest {
 

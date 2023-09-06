@@ -17,14 +17,12 @@
  */
 package ortus.boxlang.runtime.dynamic.casters;
 
-import org.junit.Ignore;
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Test;
 import static com.google.common.truth.Truth.assertThat;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.math.BigDecimal;
+
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
 
 public class StringCasterTest {
 
@@ -102,7 +100,7 @@ public class StringCasterTest {
 		assertThat( StringCaster.cast( BigDecimal.valueOf( 5.8 ) ) ).isEqualTo( "5.8" );
 		assertThat( StringCaster.cast( BigDecimal.valueOf( 5.9 ) ) ).isEqualTo( "5.9" );
 		assertThat( StringCaster.cast( new BigDecimal( "1.12345789123456789123456789123456789123456789" ) ) )
-		        .isEqualTo( "1.12345789123456789123456789123456789123456789" );
+		    .isEqualTo( "1.12345789123456789123456789123456789123456789" );
 	}
 
 	@DisplayName( "It can cast a byte array to a string" )

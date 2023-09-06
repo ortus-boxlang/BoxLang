@@ -17,8 +17,6 @@
  */
 package ortus.boxlang.runtime.types.exceptions;
 
-import java.lang.annotation.Native;
-
 import ortus.boxlang.runtime.scopes.Key;
 
 /**

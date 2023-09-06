@@ -17,14 +17,12 @@
  */
 package ortus.boxlang.runtime.types;
 
+import static com.google.common.truth.Truth.assertThat;
+
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import static org.junit.jupiter.api.Assertions.*;
 
 import ortus.boxlang.runtime.scopes.Key;
-import ortus.boxlang.runtime.types.exceptions.CastException;
-
-import static com.google.common.truth.Truth.assertThat;
 
 public class StructTest {
 

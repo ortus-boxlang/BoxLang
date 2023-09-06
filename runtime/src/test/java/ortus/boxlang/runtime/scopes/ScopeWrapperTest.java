@@ -17,17 +17,14 @@
  */
 package ortus.boxlang.runtime.scopes;
 
+import static com.google.common.truth.Truth.assertThat;
 import static org.junit.Assert.assertThrows;
 
 import java.util.Map;
 
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
-import ortus.boxlang.runtime.types.exceptions.CastException;
 import ortus.boxlang.runtime.types.exceptions.KeyNotFoundException;
-
-import static com.google.common.truth.Truth.assertThat;
 
 public class ScopeWrapperTest {
 

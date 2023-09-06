@@ -17,12 +17,12 @@
  */
 package ortus.boxlang.runtime.loader;
 
+import static com.google.common.truth.Truth.assertThat;
 import static org.junit.Assert.assertThrows;
 
 import java.util.List;
 import java.util.Optional;
 
-import org.junit.Ignore;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -30,8 +30,6 @@ import ortus.boxlang.runtime.context.TemplateBoxContext;
 import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.loader.ClassLocator.ClassLocation;
 import ortus.boxlang.runtime.loader.resolvers.BoxResolver;
-
-import static com.google.common.truth.Truth.assertThat;
 
 public class ClassLocatorTest {
 

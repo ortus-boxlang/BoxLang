@@ -21,9 +21,7 @@ import java.util.Map;
 
 import ortus.boxlang.runtime.context.FunctionBoxContext;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
-import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
-import ortus.boxlang.runtime.types.Function.Argument;
 
 /**
  * A struct is a collection of key-value pairs, where the key is unique and case insensitive

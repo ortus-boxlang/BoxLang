@@ -17,7 +17,6 @@
  */
 package ortus.boxlang.runtime.types;
 
-import ortus.boxlang.runtime.context.FunctionBoxContext;
 import ortus.boxlang.runtime.scopes.Key;
 
 /**

@@ -17,10 +17,7 @@
  */
 package ortus.boxlang.runtime.scopes;
 
-import java.util.Objects;
-
 import ortus.boxlang.runtime.types.Struct;
-import ortus.boxlang.runtime.types.exceptions.KeyNotFoundException;
 
 /**
  * Base scope implementation. Extends HashMap for now. May want to switch to composition over inheritance, but this

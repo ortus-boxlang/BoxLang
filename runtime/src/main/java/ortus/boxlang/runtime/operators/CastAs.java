@@ -17,7 +17,9 @@
  */
 package ortus.boxlang.runtime.operators;
 
-import ortus.boxlang.runtime.context.IBoxContext;
+import java.math.BigDecimal;
+import java.util.List;
+
 import ortus.boxlang.runtime.dynamic.casters.BigDecimalCaster;
 import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
 import ortus.boxlang.runtime.dynamic.casters.ByteCaster;
@@ -28,10 +30,6 @@ import ortus.boxlang.runtime.dynamic.casters.IntegerCaster;
 import ortus.boxlang.runtime.dynamic.casters.LongCaster;
 import ortus.boxlang.runtime.dynamic.casters.ShortCaster;
 import ortus.boxlang.runtime.dynamic.casters.StringCaster;
-import ortus.boxlang.runtime.interop.DynamicObject;
-import ortus.boxlang.runtime.loader.ClassLocator;
-import java.math.BigDecimal;
-import java.util.List;
 
 /**
  * Casts input to Java type

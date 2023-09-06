@@ -17,22 +17,19 @@
  */
 package ortus.boxlang.runtime.types;
 
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Test;
-import static org.junit.jupiter.api.Assertions.*;
+import static com.google.common.truth.Truth.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.util.HashMap;
 import java.util.Map;
 
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
 import ortus.boxlang.runtime.context.FunctionBoxContext;
-import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Function.Argument;
-import ortus.boxlang.runtime.types.exceptions.CastException;
-import ortus.boxlang.runtime.types.exceptions.KeyNotFoundException;
-
-import static com.google.common.truth.Truth.assertThat;
 
 public class FunctionTest {
 
