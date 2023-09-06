@@ -20,6 +20,8 @@ package ortus.boxlang.runtime.types;
 import java.util.Map;
 
 import ortus.boxlang.runtime.context.FunctionBoxContext;
+import ortus.boxlang.runtime.dynamic.casters.CastAttempt;
+import ortus.boxlang.runtime.dynamic.casters.GenericCaster;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 
@@ -59,14 +61,15 @@ public abstract class Function implements IType {
 		ArgumentsScope scope = new ArgumentsScope();
 		// Add all incoming args to the scope, using the name if declared, otherwise using the position
 		for ( int i = 0; i < positionalArguments.length; i++ ) {
-			Key name;
+			Key		name;
+			Object	value	= positionalArguments[ i ];
 			if ( arguments.length - 1 >= i ) {
-				// TODO: Check types of declared args
-				name = arguments[ i ].name();
+				name	= arguments[ i ].name();
+				value	= ensureArgumentType( name, value, arguments[ i ].type() );
 			} else {
 				name = Key.of( Integer.toString( i + 1 ) );
 			}
-			scope.put( name, positionalArguments[ i ] );
+			scope.put( name, value );
 		}
 
 		// Fill in any remaining declared arguments with default value
@@ -75,7 +78,8 @@ public abstract class Function implements IType {
 				if ( arguments[ i ].required() && arguments[ i ].defaultValue() == null ) {
 					throw new RuntimeException( "Required argument " + arguments[ i ].name() + " is missing" );
 				}
-				scope.put( arguments[ i ].name(), arguments[ i ].defaultValue() );
+				scope.put( arguments[ i ].name(),
+				    ensureArgumentType( arguments[ i ].name(), arguments[ i ].defaultValue(), arguments[ i ].type() ) );
 			}
 		}
 		return scope;
@@ -89,21 +93,26 @@ public abstract class Function implements IType {
 		    && namedArguments.get( ARGUMENT_COLLECTION ) instanceof Map<?, ?> ) {
 			@SuppressWarnings( "unchecked" )
 			Map<Key, Object> argumentCollection = ( Map<Key, Object> ) namedArguments.get( ARGUMENT_COLLECTION );
-			// TODO: Check types of declared args
 			scope.putAll( argumentCollection );
 			namedArguments.remove( ARGUMENT_COLLECTION );
 		}
 
 		// Put all remaining incoming args
-		// TODO: Check types of declared args
 		scope.putAll( namedArguments );
 
+		// For all declared args
 		for ( Argument argument : arguments ) {
+			// If they aren't here, add their default value (if defined)
 			if ( !scope.containsKey( argument.name() ) ) {
 				if ( argument.required() && argument.defaultValue() == null ) {
 					throw new RuntimeException( "Required argument " + argument.name() + " is missing" );
 				}
-				scope.put( argument.name(), argument.defaultValue() );
+				// Make sure the default value is valid
+				scope.put( argument.name(), ensureArgumentType( argument.name(), argument.defaultValue(), argument.type() ) );
+				// If they are here, confirm their types
+			} else {
+				scope.put( argument.name(),
+				    ensureArgumentType( argument.name(), scope.get( argument.name() ), argument.type() ) );
 			}
 		}
 		return scope;
@@ -128,5 +137,17 @@ public abstract class Function implements IType {
 	 */
 	public record Argument( boolean required, String type, Key name, Object defaultValue, String hint ) {
 		// The record automatically generates the constructor, getters, equals, hashCode, and toString methods.
+	}
+
+	protected Object ensureArgumentType( Key name, Object value, String type ) {
+		CastAttempt<Object> typeCheck = GenericCaster.attempt( value, type, true );
+		if ( !typeCheck.wasSuccessful() ) {
+			throw new RuntimeException(
+			    String.format( "Argument [%s] with a type of [%s] does not match the declared type of [%s]",
+			        name.getName(), value.getClass().getName(), type )
+			);
+		}
+		// Should we actually return the casted value??? Not CFML Compat!
+		return value;
 	}
 }

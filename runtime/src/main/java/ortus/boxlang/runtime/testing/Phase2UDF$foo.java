@@ -103,10 +103,7 @@ public class Phase2UDF$foo extends UDF {
             false
         );
 
-        returnVal = context.scopeFindNearby( Key.of( "greeting" ), null ).value();
-        // TODO: Check return type of function against return value
-        return returnVal;
-
+        return ensureReturnType( context.scopeFindNearby( Key.of( "greeting" ), null ).value() );
     }
 
 }

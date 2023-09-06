@@ -47,7 +47,7 @@ public class FunctionBoxContextTest {
 
 	@Test
 	@DisplayName( "Test scope lookup" )
-	void testConstructorWithTemplatePath() {
+	void testScopeLookup() {
 		IBoxContext		parentContext	= new TemplateBoxContext();
 		ArgumentsScope	argumentsScope	= new ArgumentsScope();
 		IBoxContext		context			= new FunctionBoxContext( parentContext, argumentsScope );

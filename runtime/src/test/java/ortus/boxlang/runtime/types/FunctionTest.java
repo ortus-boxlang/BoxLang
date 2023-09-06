@@ -27,6 +27,9 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import ortus.boxlang.runtime.context.FunctionBoxContext;
+import ortus.boxlang.runtime.context.IBoxContext;
+import ortus.boxlang.runtime.context.TemplateBoxContext;
+import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Function.Argument;
@@ -40,7 +43,7 @@ public class FunctionTest {
 		    new Function.Argument( true, "String", Key.of( "firstName" ), "brad", "First Name" ),
 		    new Function.Argument( true, "String", Key.of( "lastName" ), "wood", "Last Name" )
 		};
-		new func( UDF.Access.PUBLIC, Key.of( "foo" ), "any", args, "Cool function", false );
+		new func( UDF.Access.PUBLIC, Key.of( "foo" ), "any", args, "Cool function", false, null );
 
 	}
 
@@ -56,7 +59,7 @@ public class FunctionTest {
 		    new Function.Argument( true, "String", lastName, "wood", "Last Name" ),
 		    new Function.Argument( false, "String", age, 43, null )
 		};
-		UDF			udf			= new func( UDF.Access.PUBLIC, Key.of( "foo" ), "any", args, "Cool function", false );
+		UDF			udf			= new func( UDF.Access.PUBLIC, Key.of( "foo" ), "any", args, "Cool function", false, null );
 		IScope		argscope	= udf.createArgumentsScope();
 
 		assertThat( argscope.get( firstName ) ).isEqualTo( "brad" );
@@ -74,7 +77,7 @@ public class FunctionTest {
 		    new Function.Argument( true, "String", firstName, "brad", "First Name" ),
 		    new Function.Argument( true, "String", lastName, "wood", "Last Name" )
 		};
-		UDF			udf			= new func( UDF.Access.PUBLIC, Key.of( "foo" ), "any", args, "Cool function", false );
+		UDF			udf			= new func( UDF.Access.PUBLIC, Key.of( "foo" ), "any", args, "Cool function", false, null );
 		IScope		argscope	= udf.createArgumentsScope( new Object[] { "Luis", "Majano", "Extra" } );
 
 		assertThat( argscope.get( firstName ) ).isEqualTo( "Luis" );
@@ -92,7 +95,7 @@ public class FunctionTest {
 		    new Function.Argument( true, "String", firstName, "brad", "First Name" ),
 		    new Function.Argument( true, "String", lastName, "wood", "Last Name" )
 		};
-		UDF			udf			= new func( UDF.Access.PUBLIC, Key.of( "foo" ), "any", args, "Cool function", false );
+		UDF			udf			= new func( UDF.Access.PUBLIC, Key.of( "foo" ), "any", args, "Cool function", false, null );
 		IScope		argscope	= udf.createArgumentsScope( new Object[] { "Luis" } );
 
 		assertThat( argscope.get( firstName ) ).isEqualTo( "Luis" );
@@ -110,7 +113,7 @@ public class FunctionTest {
 		    new Function.Argument( true, "String", firstName, "brad", "First Name" ),
 		    new Function.Argument( true, "String", lastName, "wood", "Last Name" )
 		};
-		UDF			udf			= new func( UDF.Access.PUBLIC, Key.of( "foo" ), "any", args, "Cool function", false );
+		UDF			udf			= new func( UDF.Access.PUBLIC, Key.of( "foo" ), "any", args, "Cool function", false, null );
 		IScope		argscope	= udf
 		    .createArgumentsScope( Map.of( firstName, "Luis", lastName, "Majano", extra, "Gavin" ) );
 
@@ -118,6 +121,25 @@ public class FunctionTest {
 		assertThat( argscope.get( lastName ) ).isEqualTo( "Majano" );
 		assertThat( argscope.size() ).isEqualTo( 3 );
 		assertThat( argscope.get( extra ) ).isEqualTo( "Gavin" );
+	}
+
+	@DisplayName( "can reject invalid named arg types" )
+	@Test
+	void testCanRejectInvalidNamedArgTypes() {
+		Key			age		= Key.of( "age" );
+		Argument[]	args	= new Argument[] {
+		    new Function.Argument( true, "numeric", age, "sdf", "Age" )
+		};
+		UDF			udf		= new func( UDF.Access.PUBLIC, Key.of( "foo" ), "any", args, "Cool function", false, null );
+
+		// Explicit named arg
+		assertThrows( Throwable.class, () -> udf.createArgumentsScope( Map.of( age, "sdf" ) ) );
+		// Explicit positional arg
+		assertThrows( Throwable.class, () -> udf.createArgumentsScope( new Object[] { "sdf" } ) );
+		// Default postiional arg
+		assertThrows( Throwable.class, () -> udf.createArgumentsScope() );
+		// Default named arg
+		assertThrows( Throwable.class, () -> udf.createArgumentsScope( Map.of() ) );
 	}
 
 	@DisplayName( "can default missing named args" )
@@ -129,7 +151,7 @@ public class FunctionTest {
 		    new Function.Argument( true, "String", firstName, "brad", "First Name" ),
 		    new Function.Argument( true, "String", lastName, "wood", "Last Name" )
 		};
-		UDF			udf			= new func( UDF.Access.PUBLIC, Key.of( "foo" ), "any", args, "Cool function", false );
+		UDF			udf			= new func( UDF.Access.PUBLIC, Key.of( "foo" ), "any", args, "Cool function", false, null );
 		IScope		argscope	= udf
 		    .createArgumentsScope( Map.of( firstName, "Luis" ) );
 
@@ -149,7 +171,7 @@ public class FunctionTest {
 		    new Function.Argument( true, "String", firstName, "brad", "First Name" ),
 		    new Function.Argument( true, "String", lastName, "wood", "Last Name" )
 		};
-		UDF			udf			= new func( UDF.Access.PUBLIC, Key.of( "foo" ), "any", args, "Cool function", false );
+		UDF			udf			= new func( UDF.Access.PUBLIC, Key.of( "foo" ), "any", args, "Cool function", false, null );
 		IScope		argscope	= udf
 		    .createArgumentsScope( new HashMap<Key, Object>( Map.of(
 		        Function.ARGUMENT_COLLECTION, Map.of( firstName, "Luis", lastName, "Majano", extra, "Gavin" ),
@@ -163,6 +185,23 @@ public class FunctionTest {
 		assertThat( argscope.get( extraExtra ) ).isEqualTo( "Jorge" );
 	}
 
+	@DisplayName( "can override argumentCollection with args" )
+	@Test
+	void testOverrideArgumentCollectionWithArgs() {
+		Key			firstName	= Key.of( "firstName" );
+		Argument[]	args		= new Argument[] {
+		    new Function.Argument( true, "String", firstName, "brad", "First Name" )
+		};
+		UDF			udf			= new func( UDF.Access.PUBLIC, Key.of( "foo" ), "any", args, "Cool function", false, null );
+		IScope		argscope	= udf
+		    .createArgumentsScope( new HashMap<Key, Object>( Map.of(
+		        Function.ARGUMENT_COLLECTION, Map.of( firstName, "from collection" ),
+		        firstName, "top level"
+		    ) ) );
+
+		assertThat( argscope.get( firstName ) ).isEqualTo( "top level" );
+	}
+
 	@DisplayName( "errors for required arg" )
 	@Test
 	void testErrorsForRequired() {
@@ -173,7 +212,7 @@ public class FunctionTest {
 		    new Function.Argument( true, "String", firstName, null, "First Name" ),
 		    new Function.Argument( true, "String", lastName, null, "Last Name" )
 		};
-		UDF			udf			= new func( UDF.Access.PUBLIC, Key.of( "foo" ), "any", args, "Cool function", false );
+		UDF			udf			= new func( UDF.Access.PUBLIC, Key.of( "foo" ), "any", args, "Cool function", false, null );
 
 		assertThrows( Throwable.class, () -> udf.createArgumentsScope() );
 		assertThrows( Throwable.class, () -> udf.createArgumentsScope( new Object[] { "Luis" } ) );
@@ -189,7 +228,7 @@ public class FunctionTest {
 		    new Function.Argument( false, "String", firstName, "brad", "First Name" ),
 		    new Function.Argument( false, "String", lastName, "wood", "Last Name" )
 		};
-		UDF			udf			= new func( UDF.Access.PUBLIC, Key.of( "foo" ), "any", args, "Cool function", false );
+		UDF			udf			= new func( UDF.Access.PUBLIC, Key.of( "foo" ), "any", args, "Cool function", false, null );
 		IScope		argscope	= udf.createArgumentsScope();
 
 		assertThat( argscope.get( firstName ) ).isEqualTo( "brad" );
@@ -197,15 +236,44 @@ public class FunctionTest {
 		assertThat( argscope.size() ).isEqualTo( 2 );
 	}
 
+	@DisplayName( "can verify return types of functions" )
+	@Test
+	void testCanVerifyReturnTypes() {
+		UDF					udf				= new func( UDF.Access.PUBLIC, Key.of( "foo" ), "String", new Argument[] {}, "",
+		    false, "Brad" );
+		ArgumentsScope		argscope		= udf.createArgumentsScope();
+
+		IBoxContext			parentContext	= new TemplateBoxContext();
+		FunctionBoxContext	context			= new FunctionBoxContext( parentContext, argscope );
+		Object				result			= udf.invoke( context );
+		assertThat( result ).isEqualTo( "Brad" );
+
+		udf		= new func( UDF.Access.PUBLIC, Key.of( "foo" ), "integer", new Argument[] {}, "",
+		    false, "42" );
+
+		result	= udf.invoke( context );
+		assertThat( result ).isEqualTo( "42" );
+
+		final UDF badUdf = new func( UDF.Access.PUBLIC, Key.of( "foo" ), "numeric", new Argument[] {}, "",
+		    false, "Luis" );
+
+		// Can't function return value of string to numeric
+		assertThrows( Throwable.class, () -> badUdf.invoke( context ) );
+	}
+
 	class func extends UDF {
 
-		public func( Access access, Key name, String returnType, Argument[] arguments, String description, boolean isAbstract ) {
-			super( access, name, returnType, arguments, description, isAbstract );
+		Object returnVal = null;
+
+		public func( Access access, Key name, String returnType, Argument[] arguments, String hint, boolean output,
+		    Object returnVal ) {
+			super( access, name, returnType, arguments, hint, output );
+			this.returnVal = returnVal;
 		}
 
 		@Override
 		public Object invoke( FunctionBoxContext context ) {
-			return null;
+			return ensureReturnType( returnVal );
 		}
 	}
 
