@@ -50,8 +50,7 @@ public class InstanceOf implements IOperator {
 			return false;
 		}
 
-		String		type		= StringCaster.cast( right );
-		Class<?>	javaType	= null;
+		String type = StringCaster.cast( right );
 
 		left = DynamicObject.unWrap( left );
 

@@ -142,9 +142,10 @@ public class DynamicObjectTest {
 
 	@DisplayName( "It can call methods on interfaces" )
 	@Test
+	@SuppressWarnings( "unchecked" )
 	void testItCanCallMethodsOnInterfaces() throws Throwable {
 		DynamicObject	myInvoker	= DynamicObject.of( List.class );
-		List			results		= ( List ) myInvoker.invoke( "of", new Object[] { "Hello" } ).get();
+		List<Object>	results		= ( List<Object> ) myInvoker.invoke( "of", new Object[] { "Hello" } ).get();
 		assertThat( results.toString() ).isEqualTo( "[Hello]" );
 		assertThat( results ).isNotEmpty();
 	}

@@ -76,7 +76,6 @@ public class Phase1Switch extends BaseTemplate {
 	@Override
 	public void invoke( IBoxContext context ) throws Throwable {
 		ClassLocator	classLocator	= ClassLocator.getInstance();
-		IBoxContext		catchContext;
 
 		// Reference to the variables scope
 		IScope			variablesScope	= context.getScopeNearby( Key.of( "variables" ) );

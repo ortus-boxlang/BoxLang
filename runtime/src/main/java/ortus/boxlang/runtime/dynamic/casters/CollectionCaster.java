@@ -62,6 +62,7 @@ public class CollectionCaster {
 	 *
 	 * @return The collection value
 	 */
+	@SuppressWarnings( "unchecked" )
 	public static Collection<Object> cast( Object object, Boolean fail ) {
 		if ( object == null ) {
 			if ( fail ) {

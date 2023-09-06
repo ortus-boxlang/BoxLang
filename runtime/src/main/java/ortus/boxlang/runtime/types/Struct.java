@@ -268,7 +268,7 @@ public class Struct implements Map<Key, Object>, IType, IReferenceable {
 
 	@Override
 	public Object dereferenceAndInvoke( Key key, Object[] args, Boolean safe ) throws KeyNotFoundException, CastException {
-		Object value = dereference( key, safe );
+		//  Object value = dereference( key, safe );
 		// Test if the object is invokable (a UDF or java call site) and invoke it or throw exception if not invokable
 		// Ideally, the invoker logic is not here, but in a helper
 		throw new RuntimeException( "not implemented yet" );

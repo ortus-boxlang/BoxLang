@@ -18,17 +18,15 @@
 
 package ortus.boxlang.runtime.loader.resolvers;
 
-import org.junit.Ignore;
+import static com.google.common.truth.Truth.assertThat;
+
+import java.util.ArrayList;
+
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.TemplateBoxContext;
-import ortus.boxlang.runtime.loader.resolvers.BoxResolver;
-
-import org.junit.jupiter.api.DisplayName;
-import static com.google.common.truth.Truth.assertThat;
-
-import java.util.ArrayList;
 
 public class BoxResolverTest {
 

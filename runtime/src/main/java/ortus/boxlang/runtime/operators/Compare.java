@@ -81,7 +81,7 @@ public class Compare implements IOperator {
 		}
 
 		if ( left instanceof Comparable && right instanceof Comparable ) {
-			return ( ( Comparable ) left ).compareTo( ( Comparable ) right );
+			return ( ( Comparable<Object> ) left ).compareTo( ( Comparable<Object> ) right );
 		}
 
 		// TODO: Dates

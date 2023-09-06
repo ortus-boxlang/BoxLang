@@ -58,7 +58,7 @@ public class CollectionCasterTest {
 	void testItCanCastAMap() {
 		Collection<Object> result = CollectionCaster.cast( Map.of( "Brad", "Wood", "Luis", "Majano" ) );
 		assertThat( result instanceof Collection ).isTrue();
-		Iterator<Object> it = result.iterator();
+		result.iterator();
 		assertThat( result.contains( "Brad" ) ).isTrue();
 		assertThat( result.contains( "Luis" ) ).isTrue();
 	}
@@ -70,7 +70,7 @@ public class CollectionCasterTest {
 		scope.putAll( Map.of( Key.of( "Brad" ), "Wood", Key.of( "Luis" ), "Majano" ) );
 		Collection<Object> result = CollectionCaster.cast( scope );
 		assertThat( result instanceof Collection ).isTrue();
-		Iterator<Object> it = result.iterator();
+		result.iterator();
 		assertThat( result.contains( "Brad" ) ).isTrue();
 		assertThat( result.contains( "Luis" ) ).isTrue();
 	}

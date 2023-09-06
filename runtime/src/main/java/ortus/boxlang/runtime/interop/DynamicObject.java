@@ -988,6 +988,7 @@ public class DynamicObject implements IReferenceable {
 	 * @param name  The name of the field to assign
 	 * @param value The value to assign
 	 */
+	@SuppressWarnings( "unchecked" )
 	public void assign( Key name, Object value ) {
 		if ( hasInstance() && getTargetInstance().getClass().isArray() ) {
 			CastAttempt<Double> indexAtt = DoubleCaster.attempt( name.getName() );

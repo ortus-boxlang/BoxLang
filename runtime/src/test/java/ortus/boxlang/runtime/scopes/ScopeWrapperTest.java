@@ -28,8 +28,6 @@ import ortus.boxlang.runtime.types.exceptions.KeyNotFoundException;
 
 public class ScopeWrapperTest {
 
-	private static BaseScope scope;
-
 	@Test
 	void testWrapperScope() {
 		Key		inVar			= Key.of( "InVar" );

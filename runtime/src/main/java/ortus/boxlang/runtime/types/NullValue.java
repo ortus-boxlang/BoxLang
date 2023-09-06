@@ -17,12 +17,6 @@
  */
 package ortus.boxlang.runtime.types;
 
-import java.util.List;
-import java.util.Objects;
-
-import ortus.boxlang.runtime.types.exceptions.CastException;
-import ortus.boxlang.runtime.types.exceptions.KeyNotFoundException;
-
 /**
  * I represent a null value so we can store it in a ConcurrentHashMap
  */

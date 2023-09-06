@@ -81,14 +81,16 @@ public abstract class Function implements IType {
 		return scope;
 	}
 
-	// TODO handle required args
 	public ArgumentsScope createArgumentsScope( Map<Key, Object> namedArguments ) {
 		ArgumentsScope scope = new ArgumentsScope();
 
 		// If argumentCollection exists, add it
-		if ( namedArguments.containsKey( ARGUMENT_COLLECTION ) && namedArguments.get( ARGUMENT_COLLECTION ) instanceof Map ) {
+		if ( namedArguments.containsKey( ARGUMENT_COLLECTION )
+		    && namedArguments.get( ARGUMENT_COLLECTION ) instanceof Map<?, ?> ) {
+			@SuppressWarnings( "unchecked" )
+			Map<Key, Object> argumentCollection = ( Map<Key, Object> ) namedArguments.get( ARGUMENT_COLLECTION );
 			// TODO: Check types of declared args
-			scope.addAll( ( Map<Object, Object> ) namedArguments.get( ARGUMENT_COLLECTION ) );
+			scope.putAll( argumentCollection );
 			namedArguments.remove( ARGUMENT_COLLECTION );
 		}
 
@@ -107,6 +109,7 @@ public abstract class Function implements IType {
 		return scope;
 	}
 
+	// TODO: Refactor this to just call createArgumentsScope( Object[] positionalArguments )
 	public ArgumentsScope createArgumentsScope() {
 		ArgumentsScope scope = new ArgumentsScope();
 		for ( int i = 0; i < arguments.length; i++ ) {

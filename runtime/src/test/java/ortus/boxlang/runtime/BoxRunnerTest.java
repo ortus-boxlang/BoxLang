@@ -23,6 +23,6 @@ class BoxRunnerTest {
 
 	@Test
 	void appCanGreat() {
-		BoxRunner runtime = new BoxRunner();
+		new BoxRunner();
 	}
 }

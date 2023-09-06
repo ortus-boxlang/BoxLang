@@ -36,11 +36,11 @@ public class FunctionTest {
 	@DisplayName( "can define UDF" )
 	@Test
 	void testCanDefineUDF() {
-		Argument[]	args	= new Argument[] {
+		Argument[] args = new Argument[] {
 		    new Function.Argument( true, "String", Key.of( "firstName" ), "brad", "First Name" ),
 		    new Function.Argument( true, "String", Key.of( "lastName" ), "wood", "Last Name" )
 		};
-		UDF			udf		= new func( UDF.Access.PUBLIC, Key.of( "foo" ), "any", args, "Cool function", false );
+		new func( UDF.Access.PUBLIC, Key.of( "foo" ), "any", args, "Cool function", false );
 
 	}
 

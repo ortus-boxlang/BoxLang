@@ -58,7 +58,7 @@ public class CastAs implements IOperator {
 			if ( left.getClass().isArray() ) {
 				incomingList = ( Object[] ) left;
 			} else if ( left instanceof List ) {
-				incomingList = ( ( List<Object> ) left ).toArray();
+				incomingList = ( ( List<?> ) left ).toArray();
 			} else {
 				throw new RuntimeException(
 				    String.format( "You asked for type %s, but input %s cannot be cast to an array.", type,
@@ -113,7 +113,7 @@ public class CastAs implements IOperator {
 		);
 	}
 
-	public static Class getClassFromType( String type ) {
+	public static Class<?> getClassFromType( String type ) {
 
 		if ( type.equals( "string" ) ) {
 			return String.class;

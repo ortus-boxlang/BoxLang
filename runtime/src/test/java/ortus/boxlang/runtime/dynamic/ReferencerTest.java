@@ -76,6 +76,7 @@ public class ReferencerTest {
 
 	@DisplayName( "It can assign deeply" )
 	@Test
+	@SuppressWarnings( "unchecked" )
 	void testItCanAssignDeeply() {
 		IScope	scope	= new VariablesScope();
 		Key		foo		= Key.of( "foo" );
@@ -85,8 +86,9 @@ public class ReferencerTest {
 		Referencer.setDeep( scope, true, foo, bar, baz );
 
 		assertThat( scope.get( foo ) instanceof Map ).isTrue();
-		assertThat( ( ( Map ) scope.get( foo ) ).get( "bar" ) instanceof Map ).isTrue();
-		assertThat( ( ( Map ) ( ( Map ) scope.get( foo ) ).get( "bar" ) ).get( "baz" ) ).isEqualTo( true );
+		assertThat( ( ( Map<Object, Object> ) scope.get( foo ) ).get( "bar" ) instanceof Map ).isTrue();
+		assertThat( ( ( Map<Object, Object> ) ( ( Map<Object, Object> ) scope.get( foo ) ).get( "bar" ) ).get( "baz" ) )
+		    .isEqualTo( true );
 	}
 
 	@DisplayName( "It can dereference from a struct" )
