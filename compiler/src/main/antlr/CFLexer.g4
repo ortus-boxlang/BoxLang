@@ -39,6 +39,7 @@ IMPORT          :   'IMPORT';
 INCLUDE         :   'INCLUDE';
 INIT            :   'INIT';
 INTERFACE       :   'INTERFACE';
+INSTANCEOF      :   'INSTANCEOF';
 IS              :   'IS';
 LOCAL           :   'LOCAL';
 LOCK            :   'LOCK';
@@ -72,6 +73,7 @@ VAR             :   'VAR';
 VARIABLES       :   'VARIABLES';
 WHEN            :   'WHEN';
 WHILE           :   'WHILE';
+XOR				:	'XOR';
 
 AMPERSAND       :   '&';
 AND             :   '&&' | 'AND';
@@ -105,6 +107,7 @@ STAR            :   '*';
 STRCONCASSIGN   :   '&=';
 PLUSEQUAL       :   '+=';
 PLUS            :   '+';
+TEQ				:   '===';
 
 
 

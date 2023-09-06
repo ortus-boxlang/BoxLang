@@ -20,6 +20,8 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import static org.junit.Assert.assertEquals;
+
 public class TestBase {
 
 	protected String testboxDirectory = System.getProperty( "testboxdir" );
@@ -68,5 +70,7 @@ public class TestBase {
 		}
 		return fileList;
 	}
-
+	protected void assertEqualsNoWhiteSpaces( String expected, String actual ) {
+		assertEquals( expected.replaceAll( "[ \\t\\r\\n]", "" ), actual.replaceAll( "[ \\t\\r\\n]", "" ) );
+	}
 }

@@ -17,6 +17,7 @@ package ourtus.boxlang.transpiler;
 import com.github.javaparser.ast.CompilationUnit;
 import com.github.javaparser.ast.Node;
 import com.github.javaparser.ast.body.MethodDeclaration;
+import com.github.javaparser.ast.stmt.BlockStmt;
 import com.github.javaparser.ast.stmt.Statement;
 import ourtus.boxlang.ast.BoxNode;
 import ourtus.boxlang.ast.BoxScript;
@@ -25,6 +26,7 @@ import ourtus.boxlang.ast.expression.*;
 import ourtus.boxlang.ast.statement.BoxAssignment;
 import ourtus.boxlang.ast.statement.BoxExpression;
 import ourtus.boxlang.ast.statement.BoxIfElse;
+import ourtus.boxlang.ast.statement.BoxLocalDeclaration;
 import ourtus.boxlang.transpiler.transformer.*;
 import ourtus.boxlang.transpiler.transformer.expression.*;
 
@@ -50,6 +52,7 @@ public class BoxLangTranspiler {
 		put(BoxIntegerLiteral.class,new BoxIntegerLiteralTransformer());
 		put(BoxBooleanLiteral.class,new BoxBooleanLiteralTransformer());
 
+		put(BoxParenthesis.class,new BoxParenthesisTransformer());
 		put(BoxBinaryOperation.class,new BoxBinaryOperationTransformer());
 		put(BoxTernaryOperation.class,new BoxTernaryOperationTransformer());
 		put(BoxNegateOperation.class,new BoxNegateOperationTransformer());
@@ -58,11 +61,11 @@ public class BoxLangTranspiler {
 
 		put(BoxMethodInvocation.class,new BoxMethodInvocationTransformer());
 		put(BoxFunctionInvocation.class,new BoxFunctionInvocationTransformer());
+		put(BoxLocalDeclaration.class,new BoxLocalDeclarationTransformer());
 
 	}};
 	public BoxLangTranspiler() { }
 	public static Node transform(BoxNode node) throws IllegalStateException {
-
 		return BoxLangTranspiler.transform(node,TransformerContext.NONE);
 	}
 	public static Node transform(BoxNode node,TransformerContext context) throws IllegalStateException {
@@ -83,7 +86,12 @@ public class BoxLangTranspiler {
 
 		for(BoxStatement statement : source.getStatements()) {
 			Node javaStmt = transform(statement);
-			invokeMethod.getBody().get().addStatement((Statement) javaStmt);
+			if(javaStmt instanceof BlockStmt) {
+				BlockStmt stmt = (BlockStmt)javaStmt;
+				stmt.getStatements().stream().forEach( it -> invokeMethod.getBody().get().addStatement((Statement) it) );
+			} else {
+				invokeMethod.getBody().get().addStatement((Statement) javaStmt);
+			}
 		}
 		return javaClass;
 	}

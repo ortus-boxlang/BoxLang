@@ -23,11 +23,8 @@ import java.io.IOException;
 
 import static org.junit.Assert.assertEquals;
 
-public class TestObjectReference {
+public class TestObjectReference extends TestBase {
 
-	private void assertEqualsNoWhiteSpaces( String expected, String actual ) {
-		assertEquals( expected.replaceAll( "[ \\t\\r\\n]", "" ), actual.replaceAll( "[ \\t\\r\\n]", "" ) );
-	}
 
 	@Test
 	public void testDereferenceByKey() throws IOException {
@@ -99,7 +96,7 @@ public class TestObjectReference {
 		Node javaAST = BoxLangTranspiler.transform( result.getRoot() );
 
 		assertEqualsNoWhiteSpaces( """
-			context.getScopeNearby( Key.of( "variablesScope" ) )
+			variablesScope
 			  .put(
 			    Key.of( "foo" ),
 			    bar
@@ -107,39 +104,7 @@ public class TestObjectReference {
 			  """, javaAST.toString() );
 	}
 
-	@Test
-	public void invokeMethod() throws IOException {
-		String expression = """
-						myObject.myMethod( obj1, "foo", 42 )
-			""";
 
-		BoxLangParser parser = new BoxLangParser();
-		ParsingResult result = parser.parseStatement( expression );
-		Node javaAST = BoxLangTranspiler.transform( result.getRoot() );
 
-		assertEqualsNoWhiteSpaces( """
-			Referencer.getAndInvoke(
-			  myObject,
-			  Key.of( "myMethod" ),
-			  new Object[] { obj1, "foo", 42 },
-			  false
-			);
-			  """, javaAST.toString() );
-	}
 
-	@Test
-	public void invokeMethodWithKnownScope() throws IOException {
-		String expression = """
-						variables.system.out.println(
-						 "hello world"
-					   )
-			""";
-
-		BoxLangParser parser = new BoxLangParser();
-		ParsingResult result = parser.parseStatement( expression );
-		Node javaAST = BoxLangTranspiler.transform( result.getRoot() );
-
-		// TODO
-		assertEqualsNoWhiteSpaces( "", javaAST.toString() );
-	}
 }

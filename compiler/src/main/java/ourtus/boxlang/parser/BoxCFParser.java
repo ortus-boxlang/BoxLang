@@ -27,6 +27,7 @@ import ourtus.boxlang.ast.BoxStatement;
 import ourtus.boxlang.ast.statement.BoxAssignment;
 import ourtus.boxlang.ast.statement.BoxExpression;
 import ourtus.boxlang.ast.statement.BoxIfElse;
+import ourtus.boxlang.ast.statement.BoxLocalDeclaration;
 
 import java.io.File;
 import java.io.IOException;
@@ -160,6 +161,14 @@ public class BoxCFParser extends BoxAbstractParser {
 			stmt.setParent(parent);
 			expr.setParent(stmt);
 			return stmt;
+		} else if(node.localDeclaration() != null) {
+			List<BoxExpr> identifiers = node.localDeclaration().identifier().stream().map(it -> toAst(file,it,parent) ).toList();
+			BoxLocalDeclaration stmt = new BoxLocalDeclaration(identifiers,getPosition(node),getSourceText(node));
+			if(node.localDeclaration().expression() != null) {
+				BoxExpr expr = toAst(file,node.localDeclaration().expression(),parent);
+				stmt.setExpression(expr);
+			}
+			return stmt;
 		}
 		throw new IllegalStateException( "not implemented: " + node.getClass().getSimpleName() );
 
@@ -268,28 +277,97 @@ public class BoxCFParser extends BoxAbstractParser {
 			BoxExpr left = toAst(file,expression.expression(0),parent);
 			BoxExpr right = toAst(file,expression.expression(1),parent);
 			return new BoxBinaryOperation(left,BoxBinaryOperator.Slash,right,getPosition(expression),getSourceText(expression));
-		} else if ( expression.EQ() != null ) {
+		} else if ( expression.XOR() != null ) {
+			BoxExpr left = toAst(file,expression.expression(0),parent);
+			BoxExpr right = toAst(file,expression.expression(1),parent);
+			return new BoxBinaryOperation(left,BoxBinaryOperator.Xor,right,getPosition(expression),getSourceText(expression));
+		} else if ( expression.MOD() != null ) {
+			BoxExpr left = toAst(file,expression.expression(0),parent);
+			BoxExpr right = toAst(file,expression.expression(1),parent);
+			return new BoxBinaryOperation(left,BoxBinaryOperator.Mod,right,getPosition(expression),getSourceText(expression));
+		} else if ( expression.AND() != null ) {
+			BoxExpr left = toAst(file,expression.expression(0),parent);
+			BoxExpr right = toAst(file,expression.expression(1),parent);
+			return new BoxBinaryOperation(left,BoxBinaryOperator.And,right,getPosition(expression),getSourceText(expression));
+		} else if ( expression.OR() != null ) {
+			BoxExpr left = toAst(file,expression.expression(0),parent);
+			BoxExpr right = toAst(file,expression.expression(1),parent);
+			return new BoxBinaryOperation(left,BoxBinaryOperator.Or,right,getPosition(expression),getSourceText(expression));
+		} else if ( expression.INSTANCEOF() != null ) {
+			BoxExpr left = toAst(file,expression.expression(0),parent);
+			BoxExpr right = toAst(file,expression.expression(1),parent);
+			return new BoxBinaryOperation(left,BoxBinaryOperator.InstanceOf,right,getPosition(expression),getSourceText(expression));
+		} else if ( expression.EQ() != null || expression.IS() != null) {
 			BoxExpr left = toAst(file,expression.expression(0),parent);
 			BoxExpr right = toAst(file,expression.expression(1),parent);
 			BoxComparisonOperation stmt = new BoxComparisonOperation(left, BoxComparisonOperator.Equal,right,getPosition(expression),getSourceText(expression));
+			stmt.setParent(parent);
+			return stmt;
+		} else if ( expression.TEQ() != null) {
+			BoxExpr left = toAst(file,expression.expression(0),parent);
+			BoxExpr right = toAst(file,expression.expression(1),parent);
+			BoxComparisonOperation stmt = new BoxComparisonOperation(left, BoxComparisonOperator.TEqual,right,getPosition(expression),getSourceText(expression));
+			stmt.setParent(parent);
+			return stmt;
+
+		} else if ( expression.NEQ() != null) {
+			BoxExpr left = toAst(file,expression.expression(0),parent);
+			BoxExpr right = toAst(file,expression.expression(1),parent);
+			BoxComparisonOperation stmt = new BoxComparisonOperation(left, BoxComparisonOperator.NotEqual,right,getPosition(expression),getSourceText(expression));
+			stmt.setParent(parent);
+			return stmt;
+		} else if ( expression.GT() != null) {
+			BoxExpr left = toAst(file,expression.expression(0),parent);
+			BoxExpr right = toAst(file,expression.expression(1),parent);
+			BoxComparisonOperation stmt = new BoxComparisonOperation(left, BoxComparisonOperator.GreaterThan,right,getPosition(expression),getSourceText(expression));
+			stmt.setParent(parent);
+			return stmt;
+		} else if ( expression.GTE() != null) {
+			BoxExpr left = toAst(file,expression.expression(0),parent);
+			BoxExpr right = toAst(file,expression.expression(1),parent);
+			BoxComparisonOperation stmt = new BoxComparisonOperation(left, BoxComparisonOperator.GreaterThanEquals,right,getPosition(expression),getSourceText(expression));
+			stmt.setParent(parent);
+			return stmt;
+		} else if ( expression.LT() != null) {
+			BoxExpr left = toAst(file,expression.expression(0),parent);
+			BoxExpr right = toAst(file,expression.expression(1),parent);
+			BoxComparisonOperation stmt = new BoxComparisonOperation(left, BoxComparisonOperator.LessThan,right,getPosition(expression),getSourceText(expression));
+			stmt.setParent(parent);
+			return stmt;
+		} else if ( expression.LTE() != null) {
+			BoxExpr left = toAst(file,expression.expression(0),parent);
+			BoxExpr right = toAst(file,expression.expression(1),parent);
+			BoxComparisonOperation stmt = new BoxComparisonOperation(left, BoxComparisonOperator.LesslThanEqual,right,getPosition(expression),getSourceText(expression));
 			stmt.setParent(parent);
 			return stmt;
 		} else if ( expression.AMPERSAND() != null ) {
 			BoxExpr left = toAst(file,expression.expression(0),parent);
 			BoxExpr right = toAst(file,expression.expression(1),parent);
 			return new BoxBinaryOperation(left,BoxBinaryOperator.Concat,right,getPosition(expression),getSourceText(expression));
+		} else if ( expression.ELVIS() != null ) {
+			BoxExpr left = toAst(file,expression.expression(0),parent);
+			BoxExpr right = toAst(file,expression.expression(1),parent);
+			return new BoxBinaryOperation(left,BoxBinaryOperator.Elvis,right,getPosition(expression),getSourceText(expression));
 		} else if ( expression.QM() != null ) {
 			BoxExpr condition = toAst(file,expression.expression(0),parent);
 			BoxExpr whenTrue = toAst(file,expression.expression(1),parent);
 			BoxExpr whenFalse = toAst(file,expression.expression(2),parent);
 			return new BoxTernaryOperation(condition,whenTrue,whenFalse,getPosition(expression),getSourceText(expression));
-		} else if ( expression.not() != null ) {
+		} else if ( expression.not() != null && expression.CONTAIN() == null ) {
 			BoxExpr expr = toAst(file,expression.not().expression(),parent);
 			return new BoxNegateOperation(expr,BoxNegateOperator.Not,getPosition(expression),getSourceText(expression));
 		} else if ( expression.CONTAINS() != null ) {
 			BoxExpr left = toAst(file,expression.expression(0),parent);
 			BoxExpr right = toAst(file,expression.expression(1),parent);
 			return new BoxBinaryOperation(left,BoxBinaryOperator.Contains,right,getPosition(expression),getSourceText(expression));
+		} else if( expression.CONTAIN() != null && expression.DOES() != null && expression.NOT() != null) {
+			BoxExpr left = toAst(file,expression.expression(0),parent);
+			BoxExpr right = toAst(file,expression.expression(1),parent);
+
+			return new BoxBinaryOperation(left,BoxBinaryOperator.NotContains,right,getPosition(expression),getSourceText(expression));
+		} else if ( expression.LPAREN() != null ) {
+			BoxExpr expr  = toAst(file,expression.expression(0),parent);
+			return new BoxParenthesis(expr,getPosition(expression),getSourceText(expression));
 		}
 
 		throw new IllegalStateException( "not implemented: " + expression.getClass().getSimpleName() );

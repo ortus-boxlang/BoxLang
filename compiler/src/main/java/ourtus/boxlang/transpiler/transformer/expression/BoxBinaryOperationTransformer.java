@@ -24,20 +24,20 @@ import ourtus.boxlang.ast.expression.BoxBinaryOperation;
 import ourtus.boxlang.ast.expression.BoxBinaryOperator;
 import ourtus.boxlang.transpiler.BoxLangTranspiler;
 import ourtus.boxlang.transpiler.transformer.AbstractTransformer;
-import ourtus.boxlang.transpiler.transformer.BoxAssignmentTransformer;
 import ourtus.boxlang.transpiler.transformer.TransformerContext;
 
 import java.util.HashMap;
 import java.util.Map;
 
 public class BoxBinaryOperationTransformer extends AbstractTransformer {
-	Logger logger = LoggerFactory.getLogger( BoxBinaryOperationTransformer.class );
+	Logger logger = LoggerFactory.getLogger(BoxBinaryOperationTransformer.class);
+
 	@Override
 	public Node transform(BoxNode node, TransformerContext context) throws IllegalStateException {
-		logger.info(node.getSourceText() );
-		BoxBinaryOperation operation = (BoxBinaryOperation)node;
-		Expression left = (Expression) resolveScope(BoxLangTranspiler.transform(operation.getLeft()));
-		Expression right = (Expression) resolveScope(BoxLangTranspiler.transform(operation.getRight()));
+		logger.info(node.getSourceText());
+		BoxBinaryOperation operation = (BoxBinaryOperation) node;
+		Expression left = (Expression) resolveScope(BoxLangTranspiler.transform(operation.getLeft()),context);
+		Expression right = (Expression) resolveScope(BoxLangTranspiler.transform(operation.getRight()), context);
 
 		Map<String, String> values = new HashMap<>() {{
 			put("left", left.toString());
@@ -56,17 +56,39 @@ public class BoxBinaryOperationTransformer extends AbstractTransformer {
 			template = "Multiply.invoke(${left},${right})";
 		} else if (operation.getOperator() == BoxBinaryOperator.Slash) {
 			template = "Divide.invoke(${left},${right})";
+		} else if (operation.getOperator() == BoxBinaryOperator.Xor) {
+			template = "Xor.invoke(${left},${right})";
+		} else if (operation.getOperator() == BoxBinaryOperator.Mod) {
+			template = "Mod.invoke(${left},${right})";
+		} else if(operation.getOperator()==BoxBinaryOperator.And) {
+			template = "And.contains(${left},${right})";
+		} else if(operation.getOperator()==BoxBinaryOperator.Or) {
+			template = "Or.contains(${left},${right})";
+		} else if (operation.getOperator() == BoxBinaryOperator.Elvis) {
+			template = "Elvis.invoke(${left},${right})";
+		} else if (operation.getOperator() == BoxBinaryOperator.InstanceOf) {
+			template = "InstanceOf.invoke(${left},${right})";
 		} else if (operation.getOperator() == BoxBinaryOperator.Contains) {
 			template = "Contains.contains(${left},${right})";
+		} else if (operation.getOperator() == BoxBinaryOperator.NotContains) {
+			template = "!Contains.contains(${left},${right})";
+		} else {
+			throw new IllegalStateException("not implemented");
 		}
-
-		return parseExpression(template,values);
+		Node javaExpr = parseExpression( template, values );
+		logger.info(node.getSourceText() + " -> " + javaExpr);
+		return javaExpr;
 	}
 
-	private Node resolveScope(Node expr) {
+	private Node resolveScope(Node expr, TransformerContext context) {
 		if(expr instanceof NameExpr) {
 			String id = expr.toString();
-			String template = "context.scopeFindNearby(Key.of(\"${id}\"))";
+			String template = switch (context)  {
+				case RIGHT -> "context.scopeFindNearby(Key.of(\"${id}\")).value()";
+				default -> "context.scopeFindNearby(Key.of(\"${id}\"))";
+			}
+
+				;
 			Map<String, String> values = new HashMap<>() {{
 				put("id", id.toString());
 			}};

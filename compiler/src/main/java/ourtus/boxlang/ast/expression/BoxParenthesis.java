@@ -14,20 +14,19 @@
  */
 package ourtus.boxlang.ast.expression;
 
-public enum BoxBinaryOperator {
-	Concat,
-	Contains,
-	NotContains,
-	Plus,
-	Minus,
-	Star,
-	Slash,
-	Xor,
-	Mod,
-	InstanceOf,
-	Elvis,
-	And,
-	Or,
+import ourtus.boxlang.ast.BoxExpr;
+import ourtus.boxlang.ast.Position;
 
+public class BoxParenthesis extends BoxExpr {
 
+	private final BoxExpr expression;
+
+	public BoxExpr getExpression() {
+		return expression;
+	}
+
+	public BoxParenthesis(BoxExpr expression, Position position, String sourceText ) {
+		super( position, sourceText );
+		this.expression =  expression;
+	}
 }

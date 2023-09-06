@@ -15,6 +15,7 @@
 package ourtus.boxlang.transpiler.transformer.expression;
 
 import com.github.javaparser.ast.Node;
+import com.github.javaparser.ast.expr.NameExpr;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import ourtus.boxlang.ast.BoxNode;
@@ -41,10 +42,22 @@ public class BoxIdentifierTransformer extends AbstractTransformer {
 			default -> "${identifier}";
 		};
 
-		Node javaExpr = parseExpression( template, values );
+		Node javaExpr = parseExpression( template, values ) ;
 		logger.info(side + node.getSourceText() + " -> " + javaExpr);
 
 		return javaExpr;
 
+	}
+	private Node resolveScope(Node expr) {
+		if(expr instanceof NameExpr) {
+			String id = expr.toString();
+			String template = "context.scopeFindNearby(Key.of(\"${id}\"))";
+			Map<String, String> values = new HashMap<>() {{
+				put("id", id.toString());
+			}};
+			return  parseExpression(template,values);
+
+		}
+		return expr;
 	}
 }

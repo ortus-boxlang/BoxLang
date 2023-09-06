@@ -17,9 +17,10 @@ package ourtus.boxlang.ast.expression;
 public enum BoxComparisonOperator {
 	Equal,
 	GreaterThan,
-	GreaterEqualsThan,
+	GreaterThanEquals,
 	LessThan,
-	LessEqualThan,
+	LesslThanEqual,
 	NotEqual,
-	Contains
+	Contains,
+	TEqual
 }
