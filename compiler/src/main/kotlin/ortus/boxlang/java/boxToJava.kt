@@ -127,17 +127,18 @@ class SingleScriptTemplate(
 					// This is the main method, it will be invoked when the template is executed
 					// You can use this
 					// Get a runtime going
-					BoxRuntime.startup( true );
+					BoxRuntime rt = BoxRuntime.getInstance();
+					//rt.startup( true );
 
 					try {
-						BoxRuntime.executeTemplate( $className.getInstance() );
+						rt.executeTemplate( $className.getInstance() );
 					} catch ( Throwable e ) {
 						e.printStackTrace();
 						System.exit( 1 );
 					}
 
 					// Bye bye! Ciao Bella!
-					BoxRuntime.shutdown();
+					rt.shutdown();
 				}
 			}
 		""".trimIndent())

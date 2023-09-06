@@ -10,7 +10,7 @@ public class BoxBuiltinRegistry {
 	private BoxBuiltinRegistry() {
 		this.registry = new HashMap<>() {{
 			put("init","invokeConstructor( new Object[] { ${args} }  )");
-			put("createobject","ClassLoader.load( context, ${arg1} )");
+			put("createobject","JavaLoader.load( context, ${arg1} )");
 		}};
 	}
 	public static synchronized BoxBuiltinRegistry getInstance() {

@@ -16,22 +16,28 @@ package ourtus.boxlang.transpiler.transformer.expression;
 
 import com.github.javaparser.ast.Node;
 import com.github.javaparser.ast.expr.Expression;
+import com.github.javaparser.ast.expr.NameExpr;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import ourtus.boxlang.ast.BoxNode;
 import ourtus.boxlang.ast.expression.BoxBinaryOperation;
 import ourtus.boxlang.ast.expression.BoxBinaryOperator;
 import ourtus.boxlang.transpiler.BoxLangTranspiler;
 import ourtus.boxlang.transpiler.transformer.AbstractTransformer;
+import ourtus.boxlang.transpiler.transformer.BoxAssignmentTransformer;
 import ourtus.boxlang.transpiler.transformer.TransformerContext;
 
 import java.util.HashMap;
 import java.util.Map;
 
 public class BoxBinaryOperationTransformer extends AbstractTransformer {
+	Logger logger = LoggerFactory.getLogger( BoxBinaryOperationTransformer.class );
 	@Override
 	public Node transform(BoxNode node, TransformerContext context) throws IllegalStateException {
+		logger.info(node.getSourceText() );
 		BoxBinaryOperation operation = (BoxBinaryOperation)node;
-		Expression left = (Expression) BoxLangTranspiler.transform(operation.getLeft());
-		Expression right = (Expression) BoxLangTranspiler.transform(operation.getRight());
+		Expression left = (Expression) resolveScope(BoxLangTranspiler.transform(operation.getLeft()));
+		Expression right = (Expression) resolveScope(BoxLangTranspiler.transform(operation.getRight()));
 
 		Map<String, String> values = new HashMap<>() {{
 			put("left", left.toString());
@@ -53,7 +59,20 @@ public class BoxBinaryOperationTransformer extends AbstractTransformer {
 		} else if (operation.getOperator() == BoxBinaryOperator.Contains) {
 			template = "Contains.contains(${left},${right})";
 		}
+
 		return parseExpression(template,values);
 	}
 
+	private Node resolveScope(Node expr) {
+		if(expr instanceof NameExpr) {
+			String id = expr.toString();
+			String template = "context.scopeFindNearby(Key.of(\"${id}\"))";
+			Map<String, String> values = new HashMap<>() {{
+				put("id", id.toString());
+			}};
+			return  parseExpression(template,values);
+
+		}
+		return expr;
+	}
 }

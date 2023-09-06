@@ -16,15 +16,21 @@ package ourtus.boxlang.transpiler.transformer.expression;
 
 import com.github.javaparser.ast.Node;
 import com.github.javaparser.ast.expr.StringLiteralExpr;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import ourtus.boxlang.ast.BoxNode;
 import ourtus.boxlang.ast.expression.BoxStringLiteral;
 import ourtus.boxlang.transpiler.transformer.AbstractTransformer;
 import ourtus.boxlang.transpiler.transformer.TransformerContext;
 
 public class BoxStringLiteralTransformer extends AbstractTransformer {
+	Logger logger = LoggerFactory.getLogger( BoxStringLiteralTransformer.class );
 	@Override
 	public Node transform(BoxNode node, TransformerContext context) throws IllegalStateException {
 		BoxStringLiteral literal = (BoxStringLiteral)node;
-		return new StringLiteralExpr(literal.getValue());
+		StringLiteralExpr expr = new StringLiteralExpr(literal.getValue());
+		String side = context == TransformerContext.NONE ? "" : "(" +context.toString() + ") ";
+		logger.info(side + node.getSourceText() + " -> " +expr);
+		return expr;
 	}
 }

@@ -22,7 +22,6 @@ public class BoxIfElseTransformer extends AbstractTransformer  {
 			put("condition", condition.toString());
 		}};
 
-
 		String template = "if( ${condition}) {}";
 		IfStmt javaIfStmt = (IfStmt) parseStatement(template,values);
 		BlockStmt thenBlock = new BlockStmt();
@@ -35,7 +34,8 @@ public class BoxIfElseTransformer extends AbstractTransformer  {
 		}
 
 		javaIfStmt.setThenStmt(thenBlock);
-		javaIfStmt.setElseStmt(elseBlock);
+		if(elseBlock.getStatements().isNonEmpty())
+			javaIfStmt.setElseStmt(elseBlock);
 		return javaIfStmt;
 
 	}

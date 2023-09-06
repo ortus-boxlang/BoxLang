@@ -15,6 +15,8 @@
 package ourtus.boxlang.transpiler.transformer.expression;
 
 import com.github.javaparser.ast.Node;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import ourtus.boxlang.ast.BoxNode;
 import ourtus.boxlang.ast.expression.BoxIdentifier;
 import ourtus.boxlang.transpiler.transformer.AbstractTransformer;
@@ -25,9 +27,11 @@ import java.util.Map;
 
 public class BoxIdentifierTransformer extends AbstractTransformer {
 
+	Logger logger = LoggerFactory.getLogger( BoxScopeTransformer.class );
 	@Override
 	public Node transform( BoxNode node, TransformerContext context ) throws IllegalStateException {
 		BoxIdentifier identifier = ( BoxIdentifier ) node;
+		String side = context == TransformerContext.NONE ? "" : "(" + context.toString() + ") ";
 		Map<String, String> values = new HashMap<>() {{
 			put( "identifier", identifier.getName() );
 		}};
@@ -37,7 +41,10 @@ public class BoxIdentifierTransformer extends AbstractTransformer {
 			default -> "${identifier}";
 		};
 
-		return parseExpression( template, values );
+		Node javaExpr = parseExpression( template, values );
+		logger.info(side + node.getSourceText() + " -> " + javaExpr);
+
+		return javaExpr;
 
 	}
 }

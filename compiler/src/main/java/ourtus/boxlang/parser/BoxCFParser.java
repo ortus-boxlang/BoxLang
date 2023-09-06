@@ -127,12 +127,19 @@ public class BoxCFParser extends BoxAbstractParser {
 		BoxExpr condition = toAst(file,node.expression(),ifStmt);
 		ifStmt.setCondition(condition);
 
+		if(node.ifStmt != null) {
+			ifStmt.getThenBody().add(toAst(file,node.ifStmt,ifStmt));
+		}
 		if(node.ifStmtBlock != null) {
 			ifStmt.getThenBody().addAll(toAst(file,node.ifStmtBlock,ifStmt));
 		}
 		if(node.elseStmtBlock != null) {
 			ifStmt.getElseBody().addAll(toAst(file,node.elseStmtBlock,ifStmt));
 		}
+		if(node.elseStmt != null) {
+			ifStmt.getElseBody().add(toAst(file,node.elseStmt,ifStmt));
+		}
+
 		ifStmt.setParent(parent);
 		return  ifStmt;
 	}

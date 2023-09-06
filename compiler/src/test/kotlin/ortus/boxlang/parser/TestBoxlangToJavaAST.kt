@@ -164,7 +164,7 @@ class TestBoxlangToJavaAST : BaseTest() {
 		javaFile.writeText(code)
 
 		// Compile
-		val runtimeRoot = "../runtime/build/classes/java/main"
+		val runtimeRoot = "/home/madytyoo/IdeaProjects/boxlang/runtime/build/classes/java/main"
 		val compiler = ToolProvider.getSystemJavaCompiler()
 		compiler.run(null, null, null,
 			"-cp",

@@ -2,6 +2,8 @@ package ourtus.boxlang.transpiler.transformer.expression;
 
 import com.github.javaparser.ast.Node;
 import com.github.javaparser.ast.expr.Expression;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import ourtus.boxlang.ast.BoxNode;
 import ourtus.boxlang.ast.expression.BoxMethodInvocation;
 import ourtus.boxlang.transpiler.BoxLangTranspiler;
@@ -13,11 +15,14 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 public class BoxMethodInvocationTransformer extends AbstractTransformer {
-
+	Logger logger = LoggerFactory.getLogger( BoxScopeTransformer.class );
 	@Override
 	public Node transform( BoxNode node, TransformerContext context ) throws IllegalStateException {
 		BoxMethodInvocation invocation = ( BoxMethodInvocation ) node;
-		Expression expr = ( Expression ) BoxLangTranspiler.transform( invocation.getObj() );
+		String side = context == TransformerContext.NONE ? "" : "(" + context.toString() + ") ";
+
+
+		Expression expr = ( Expression ) BoxLangTranspiler.transform( invocation.getObj(), TransformerContext.RIGHT );
 
 		String args = invocation.getArguments().stream().map( it -> BoxLangTranspiler.transform( it ).toString() )
 			.collect( Collectors.joining( ", " ) );
@@ -44,7 +49,8 @@ public class BoxMethodInvocationTransformer extends AbstractTransformer {
 				)
 				""";
 		}
-
-		return parseExpression( template, values );
+		Node javaExpr = parseExpression( template, values );
+		logger.info(side + node.getSourceText() + " -> " + javaExpr);
+		return javaExpr;
 	}
 }

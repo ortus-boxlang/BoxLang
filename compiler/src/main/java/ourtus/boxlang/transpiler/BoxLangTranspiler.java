@@ -29,8 +29,10 @@ import ourtus.boxlang.transpiler.transformer.*;
 import ourtus.boxlang.transpiler.transformer.expression.*;
 
 import java.util.HashMap;
-
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 public class BoxLangTranspiler {
+	static Logger logger = LoggerFactory.getLogger( BoxLangTranspiler.class );
 
 	private  static HashMap<Class, Transformer> registry  = new HashMap<>() {{
 
@@ -60,14 +62,17 @@ public class BoxLangTranspiler {
 	}};
 	public BoxLangTranspiler() { }
 	public static Node transform(BoxNode node) throws IllegalStateException {
+
 		return BoxLangTranspiler.transform(node,TransformerContext.NONE);
 	}
 	public static Node transform(BoxNode node,TransformerContext context) throws IllegalStateException {
 		Transformer transformer = registry.get(node.getClass());
 		if(transformer != null) {
-			return transformer.transform(node,context);
+			Node javaNode = transformer.transform(node,context);
+			//logger.info(transformer.getClass().getSimpleName() + " : " + node.getSourceText() + " -> " + javaNode );
+			return javaNode;
 		}
-		throw new IllegalStateException("unsupported: " + node.getClass().getSimpleName());
+		throw new IllegalStateException("unsupported: " + node.getClass().getSimpleName() + " : " + node.getSourceText());
 	}
 	public CompilationUnit transpile(BoxNode node) throws IllegalStateException {
 		BoxScript source = (BoxScript) node;

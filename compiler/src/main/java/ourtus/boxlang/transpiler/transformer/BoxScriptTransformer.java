@@ -97,9 +97,12 @@ public class BoxScriptTransformer extends AbstractTransformer  {
 
 	@Override
 	public Node transform(BoxNode node, TransformerContext context) throws IllegalStateException {
+
 		BoxScript script = (BoxScript)node;
 		String packageName = "com.ortus"; // TODO
 		String className = "TestClass"; // TODO
+
+
 		Map<String, String> values = new HashMap<>() {{
 			put("packageName", packageName);
 			put("className", className);

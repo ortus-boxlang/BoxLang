@@ -16,6 +16,8 @@ package ourtus.boxlang.transpiler.transformer;
 
 import com.github.javaparser.ast.expr.MethodCallExpr;
 import com.github.javaparser.ast.stmt.ExpressionStmt;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import ourtus.boxlang.ast.BoxNode;
 import com.github.javaparser.ast.*;
 import com.github.javaparser.ast.expr.Expression;
@@ -26,10 +28,11 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class BoxAssignmentTransformer extends AbstractTransformer{
-
+	Logger logger = LoggerFactory.getLogger( BoxAssignmentTransformer.class );
 	public BoxAssignmentTransformer() { }
 	@Override
 	public Node transform(BoxNode node, TransformerContext context) throws IllegalStateException {
+		logger.info(node.getSourceText());
 		Expression left = (Expression) BoxLangTranspiler.transform(((BoxAssignment)node).getLeft(),TransformerContext.LEFT);
 		Expression right = (Expression) BoxLangTranspiler.transform(((BoxAssignment)node).getRight(),TransformerContext.RIGHT);
 
@@ -38,7 +41,9 @@ public class BoxAssignmentTransformer extends AbstractTransformer{
 				method.getArguments().add(right);
 			}
 		}
-		return new ExpressionStmt(left);
+		ExpressionStmt javaExpr = new ExpressionStmt(left);
+
+		return javaExpr;
 	}
 
 
