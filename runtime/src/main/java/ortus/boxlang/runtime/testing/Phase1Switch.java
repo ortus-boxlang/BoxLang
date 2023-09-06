@@ -100,6 +100,7 @@ public class Phase1Switch extends BaseTemplate {
 			if ( EqualsEquals.invoke( switchValue, "brad" ) ) {
 				caseMatched = true;
 				Referencer.getAndInvoke(
+				    context,
 				    variablesScope.get( Key.of( "systemOut" ) ),
 				    Key.of( "println" ),
 				    new Object[] { "case 1" },
@@ -110,6 +111,7 @@ public class Phase1Switch extends BaseTemplate {
 			if ( caseMatched || EqualsEquals.invoke( switchValue, 42 ) ) {
 				caseMatched = true;
 				Referencer.getAndInvoke(
+				    context,
 				    variablesScope.get( Key.of( "systemOut" ) ),
 				    Key.of( "println" ),
 				    new Object[] { "case 2" },
@@ -121,6 +123,7 @@ public class Phase1Switch extends BaseTemplate {
 			if ( caseMatched || EqualsEquals.invoke( switchValue, Plus.invoke( 5, 7 ) ) ) {
 				caseMatched = true;
 				Referencer.getAndInvoke(
+				    context,
 				    variablesScope.get( Key.of( "systemOut" ) ),
 				    Key.of( "println" ),
 				    new Object[] { "case 3" },
@@ -130,6 +133,7 @@ public class Phase1Switch extends BaseTemplate {
 			if ( caseMatched || EqualsEquals.invoke( switchValue, variablesScope.get( Key.of( "foo" ) ) ) ) {
 				caseMatched = true;
 				Referencer.getAndInvoke(
+				    context,
 				    variablesScope.get( Key.of( "systemOut" ) ),
 				    Key.of( "println" ),
 				    new Object[] { "case 4" },
@@ -139,6 +143,7 @@ public class Phase1Switch extends BaseTemplate {
 			}
 
 			Referencer.getAndInvoke(
+			    context,
 			    variablesScope.get( Key.of( "systemOut" ) ),
 			    Key.of( "println" ),
 			    new Object[] { "default case" },

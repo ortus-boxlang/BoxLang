@@ -90,6 +90,7 @@ public class Phase1TryCatch extends BaseTemplate {
 			// This this context for all code in the catch block
 			catchContext = new CatchBoxContext( context, Key.of( "e" ), e );
 			Referencer.getAndInvoke(
+			    context,
 			    // Object
 			    Referencer.get(
 			        variablesScope.get( Key.of( "system" ) ),
@@ -114,6 +115,7 @@ public class Phase1TryCatch extends BaseTemplate {
 		} finally {
 
 			Referencer.getAndInvoke(
+			    context,
 			    // Object
 			    Referencer.get(
 			        variablesScope.get( Key.of( "system" ) ),
@@ -138,6 +140,7 @@ public class Phase1TryCatch extends BaseTemplate {
 
 			if ( ExceptionUtil.exceptionIsOfType( catchContext, e, "com.foo.type" ) ) {
 				Referencer.getAndInvoke(
+				    context,
 				    // Object
 				    Referencer.get(
 				        variablesScope.get( Key.of( "system" ) ),
@@ -158,6 +161,7 @@ public class Phase1TryCatch extends BaseTemplate {
 				);
 			} else if ( ExceptionUtil.exceptionIsOfType( catchContext, e, "java.lang.RuntimeException" ) ) {
 				Referencer.getAndInvoke(
+				    context,
 				    // Object
 				    Referencer.get(
 				        variablesScope.get( Key.of( "system" ) ),

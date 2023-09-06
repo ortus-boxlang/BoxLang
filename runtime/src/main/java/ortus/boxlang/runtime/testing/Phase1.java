@@ -91,7 +91,7 @@ public class Phase1 extends BaseTemplate {
 		if ( EqualsEquals.invoke( variablesScope.get( Key.of( "GREETING" ) ), "Hello" ) ) {
 
 			Referencer.getAndInvoke(
-
+			    context,
 			    // Object
 			    Referencer.get(
 			        variablesScope.get( Key.of( "SYSTEM" ) ),

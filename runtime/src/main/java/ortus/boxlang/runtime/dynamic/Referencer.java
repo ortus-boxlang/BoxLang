@@ -17,12 +17,12 @@
  */
 package ortus.boxlang.runtime.dynamic;
 
-import ortus.boxlang.runtime.scopes.Key;
-
 import java.util.HashMap;
 import java.util.Map;
 
+import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.interop.DynamicObject;
+import ortus.boxlang.runtime.scopes.Key;
 
 /**
  * I handle dereferencing of objects
@@ -55,11 +55,11 @@ public class Referencer {
 	 *
 	 * @return The value that was assigned
 	 */
-	public static Object getAndInvoke( Object object, Key key, Object[] arguments, Boolean safe ) {
+	public static Object getAndInvoke( IBoxContext context, Object object, Key key, Object[] arguments, Boolean safe ) {
 		if ( safe && object == null ) {
 			return null;
 		}
-		return getReferenceable( object ).dereferenceAndInvoke( key, arguments, safe );
+		return getReferenceable( object ).dereferenceAndInvoke( context, key, arguments, safe );
 	}
 
 	/**

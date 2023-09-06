@@ -94,6 +94,7 @@ public class Phase2UDF extends BaseTemplate {
 
         // Positional args
         Referencer.getAndInvoke(
+            context,
             // Object
             variablesScope.get( Key.of( "out" ) ),
             // Method
@@ -107,6 +108,7 @@ public class Phase2UDF extends BaseTemplate {
 
         // named args
         Referencer.getAndInvoke(
+            context,
             // Object
             variablesScope.get( Key.of( "out" ) ),
             // Method

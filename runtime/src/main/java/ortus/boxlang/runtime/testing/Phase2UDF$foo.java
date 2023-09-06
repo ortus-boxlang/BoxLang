@@ -92,6 +92,7 @@ public class Phase2UDF$foo extends UDF {
 
         // Reach "into" parent context and get "out" from variables scope
         Referencer.getAndInvoke(
+            context,
             // Object
             context.scopeFindNearby( Key.of( "out" ), null ).value(),
             // Method
