@@ -17,9 +17,11 @@
  */
 package ortus.boxlang.runtime.dynamic;
 
-import ortus.boxlang.runtime.types.exceptions.KeyNotFoundException;
+import java.util.Map;
 
+import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.scopes.Key;
+import ortus.boxlang.runtime.types.exceptions.KeyNotFoundException;
 
 /**
  * This represents the most basic box context.
@@ -43,15 +45,28 @@ public interface IReferenceable {
 	public Object dereference( Key name, Boolean safe ) throws KeyNotFoundException;
 
 	/**
-	 * Dereference this object by a key and invoke the result as an invokable (UDF, java method)
+	 * Dereference this object by a key and invoke the result as an invokable (UDF, java method) using positional arguments
 	 *
-	 * @param name      The key to dereference
-	 * @param arguments The arguments to pass to the invokable
-	 * @param safe      Whether to throw an exception if the key is not found
+	 * @param name                The key to dereference
+	 * @param positionalArguments The positional arguments to pass to the invokable
+	 * @param safe                Whether to throw an exception if the key is not found
 	 *
 	 * @return The requested object
 	 */
-	public Object dereferenceAndInvoke( Key name, Object[] arguments, Boolean safe ) throws KeyNotFoundException;
+	public Object dereferenceAndInvoke( IBoxContext context, Key name, Object[] positionalArguments, Boolean safe )
+	    throws KeyNotFoundException;
+
+	/**
+	 * Dereference this object by a key and invoke the result as an invokable (UDF, java method) using named arguments
+	 *
+	 * @param name           The key to dereference
+	 * @param namedArguments The named arguments to pass to the invokable
+	 * @param safe           Whether to throw an exception if the key is not found
+	 *
+	 * @return The requested object
+	 */
+	public Object dereferenceAndInvoke( IBoxContext context, Key name, Map<Key, Object> namedArguments, Boolean safe )
+	    throws KeyNotFoundException;
 
 	/**
 	 * Get a scope from the context. If not found, the parent context is asked.

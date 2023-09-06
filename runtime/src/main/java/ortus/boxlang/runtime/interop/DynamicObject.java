@@ -38,6 +38,7 @@ import java.util.stream.Stream;
 
 import org.apache.commons.lang3.ClassUtils;
 
+import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.dynamic.IReferenceable;
 import ortus.boxlang.runtime.dynamic.casters.CastAttempt;
 import ortus.boxlang.runtime.dynamic.casters.DoubleCaster;
@@ -964,22 +965,37 @@ public class DynamicObject implements IReferenceable {
 	/**
 	 * Dereference this object by a key and invoke the result as an invokable (UDF, java method)
 	 *
-	 * @param name      The name of the key to dereference, which becomes the method name
-	 * @param arguments The arguments to pass to the invokable
-	 * @param safe      If true, return null if the method is not found, otherwise throw an exception
+	 * @param name                The name of the key to dereference, which becomes the method name
+	 * @param positionalArguments The arguments to pass to the invokable
+	 * @param safe                If true, return null if the method is not found, otherwise throw an exception
 	 *
 	 * @return The requested return value or null
 	 */
-	public Object dereferenceAndInvoke( Key name, Object[] arguments, Boolean safe ) throws KeyNotFoundException {
+	public Object dereferenceAndInvoke( IBoxContext context, Key name, Object[] positionalArguments, Boolean safe )
+	    throws KeyNotFoundException {
 		if ( safe && !hasMethod( name.getName() ) ) {
 			return null;
 		}
 
 		try {
-			return invoke( name.getName(), arguments ).orElse( null );
+			return invoke( name.getName(), positionalArguments ).orElse( null );
 		} catch ( Throwable e ) {
 			throw new RuntimeException( e );
 		}
+	}
+
+	/**
+	 * Dereference this object by a key and invoke the result as an invokable (UDF, java method)
+	 *
+	 * @param name           The name of the key to dereference, which becomes the method name
+	 * @param namedArguments The arguments to pass to the invokable
+	 * @param safe           If true, return null if the method is not found, otherwise throw an exception
+	 *
+	 * @return The requested return value or null
+	 */
+	public Object dereferenceAndInvoke( IBoxContext context, Key name, Map<Key, Object> namedArguments, Boolean safe )
+	    throws KeyNotFoundException {
+		throw new RuntimeException( "Java objects cannot be called with named argumments" );
 	}
 
 	/**
