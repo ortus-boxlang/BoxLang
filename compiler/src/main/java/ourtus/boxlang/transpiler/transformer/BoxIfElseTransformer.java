@@ -17,7 +17,7 @@ public class BoxIfElseTransformer extends AbstractTransformer  {
 	@Override
 	public Node transform(BoxNode node, TransformerContext context) throws IllegalStateException {
 		BoxIfElse ifElse = (BoxIfElse) node;
-		Expression condition =  (Expression) BoxLangTranspiler.transform(ifElse.getCondition());
+		Expression condition =  (Expression) BoxLangTranspiler.transform(ifElse.getCondition(),TransformerContext.RIGHT);
 		Map<String, String> values = new HashMap<>() {{
 			put("condition", condition.toString());
 		}};

@@ -2,6 +2,7 @@ package ourtus.boxlang.transpiler.transformer.expression;
 
 import com.github.javaparser.ast.Node;
 import com.github.javaparser.ast.expr.Expression;
+import com.github.javaparser.ast.expr.NameExpr;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import ourtus.boxlang.ast.BoxNode;
@@ -19,8 +20,8 @@ public class BoxComparisonOperationTransformer extends AbstractTransformer {
 	@Override
 	public Node transform( BoxNode node, TransformerContext context ) throws IllegalStateException {
 		BoxComparisonOperation operation = ( BoxComparisonOperation ) node;
-		Expression left = ( Expression ) BoxLangTranspiler.transform( operation.getLeft() );
-		Expression right = ( Expression ) BoxLangTranspiler.transform( operation.getRight() );
+		Expression left = ( Expression ) resolveScope( BoxLangTranspiler.transform( operation.getLeft()),context );
+		Expression right = ( Expression ) resolveScope(BoxLangTranspiler.transform( operation.getRight()),context );
 
 		Map<String, String> values = new HashMap<>() {{
 			put( "left", left.toString() );
@@ -50,4 +51,6 @@ public class BoxComparisonOperationTransformer extends AbstractTransformer {
 		logger.info(node.getSourceText() + " -> " + javaExpr);
 		return javaExpr;
 	}
+
+
 }

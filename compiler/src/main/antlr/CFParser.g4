@@ -425,12 +425,14 @@ expression
     |   methodInvokation
     |   anonymousFunction
     |   expression QM expression COLON expression // Ternary
-    |   expression (AND | OR) expression // Logical
-    |   expression (PLUS | MINUS | STAR | SLASH | PERCENT | AMPERSAND | MOD | XOR | INSTANCEOF) expression // Math
+    |	expression (STAR | SLASH | PERCENT) expression
+    |   expression (PLUS | MINUS | MOD ) expression
+    |   expression ( AMPERSAND |  XOR | INSTANCEOF) expression // Math
     |   expression (EQ | GT | GTE | LT | LTE | NEQ | CONTAINS | NOT CONTAINS | TEQ) expression // Comparision
     |   expression ELVIS expression // Elvis operator
     |   expression IS expression // IS operator
     |	expression DOES NOT CONTAIN expression
+    |   expression (AND | OR) expression // Logical
     ;
 
 literalExpression

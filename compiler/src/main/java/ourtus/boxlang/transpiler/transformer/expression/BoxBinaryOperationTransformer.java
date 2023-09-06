@@ -16,7 +16,6 @@ package ourtus.boxlang.transpiler.transformer.expression;
 
 import com.github.javaparser.ast.Node;
 import com.github.javaparser.ast.expr.Expression;
-import com.github.javaparser.ast.expr.NameExpr;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import ourtus.boxlang.ast.BoxNode;
@@ -36,8 +35,8 @@ public class BoxBinaryOperationTransformer extends AbstractTransformer {
 	public Node transform(BoxNode node, TransformerContext context) throws IllegalStateException {
 		logger.info(node.getSourceText());
 		BoxBinaryOperation operation = (BoxBinaryOperation) node;
-		Expression left = (Expression) resolveScope(BoxLangTranspiler.transform(operation.getLeft()),context);
-		Expression right = (Expression) resolveScope(BoxLangTranspiler.transform(operation.getRight()), context);
+		Expression left = (Expression) resolveScope(BoxLangTranspiler.transform(operation.getLeft(),context),context);
+		Expression right = (Expression) resolveScope(BoxLangTranspiler.transform(operation.getRight(),context), context);
 
 		Map<String, String> values = new HashMap<>() {{
 			put("left", left.toString());
@@ -61,9 +60,9 @@ public class BoxBinaryOperationTransformer extends AbstractTransformer {
 		} else if (operation.getOperator() == BoxBinaryOperator.Mod) {
 			template = "Mod.invoke(${left},${right})";
 		} else if(operation.getOperator()==BoxBinaryOperator.And) {
-			template = "And.contains(${left},${right})";
+			template = "And.invoke(${left},${right})";
 		} else if(operation.getOperator()==BoxBinaryOperator.Or) {
-			template = "Or.contains(${left},${right})";
+			template = "Or.invoke(${left},${right})";
 		} else if (operation.getOperator() == BoxBinaryOperator.Elvis) {
 			template = "Elvis.invoke(${left},${right})";
 		} else if (operation.getOperator() == BoxBinaryOperator.InstanceOf) {
@@ -80,21 +79,4 @@ public class BoxBinaryOperationTransformer extends AbstractTransformer {
 		return javaExpr;
 	}
 
-	private Node resolveScope(Node expr, TransformerContext context) {
-		if(expr instanceof NameExpr) {
-			String id = expr.toString();
-			String template = switch (context)  {
-				case RIGHT -> "context.scopeFindNearby(Key.of(\"${id}\")).value()";
-				default -> "context.scopeFindNearby(Key.of(\"${id}\"))";
-			}
-
-				;
-			Map<String, String> values = new HashMap<>() {{
-				put("id", id.toString());
-			}};
-			return  parseExpression(template,values);
-
-		}
-		return expr;
-	}
 }

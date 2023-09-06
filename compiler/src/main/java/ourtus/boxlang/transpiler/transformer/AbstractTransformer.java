@@ -18,6 +18,7 @@ import com.github.javaparser.JavaParser;
 import com.github.javaparser.ParseResult;
 import com.github.javaparser.ast.Node;
 import com.github.javaparser.ast.expr.Expression;
+import com.github.javaparser.ast.expr.NameExpr;
 import com.github.javaparser.ast.stmt.Statement;
 import org.apache.commons.text.StringSubstitutor;
 import org.slf4j.Logger;
@@ -25,6 +26,7 @@ import org.slf4j.LoggerFactory;
 import ourtus.boxlang.ast.BoxNode;
 import ourtus.boxlang.transpiler.BoxLangTranspiler;
 
+import java.util.HashMap;
 import java.util.Map;
 
 public abstract class AbstractTransformer implements Transformer {
@@ -58,4 +60,22 @@ public abstract class AbstractTransformer implements Transformer {
 		}
 		return result.getResult().get();
 	}
+
+    protected Node resolveScope(Node expr, TransformerContext context) {
+        if(expr instanceof NameExpr) {
+            String id = expr.toString();
+            String template = switch (context)  {
+                case RIGHT -> "context.scopeFindNearby(Key.of(\"${id}\")).value()";
+                default -> "context.scopeFindNearby(Key.of(\"${id}\"))";
+            }
+
+                ;
+            Map<String, String> values = new HashMap<>() {{
+                put("id", id.toString());
+            }};
+            return  parseExpression(template,values);
+
+        }
+        return expr;
+    }
 }

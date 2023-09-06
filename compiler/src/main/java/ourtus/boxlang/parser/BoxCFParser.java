@@ -261,6 +261,14 @@ public class BoxCFParser extends BoxAbstractParser {
 			return toAst( file, expression.objectExpression(), parent );
 		} else if ( expression.methodInvokation() != null ) {
 			return toAst( file, expression.methodInvokation(), parent );
+		} else if ( expression.AND() != null ) {
+			BoxExpr left = toAst(file,expression.expression(0),parent);
+			BoxExpr right = toAst(file,expression.expression(1),parent);
+			return new BoxBinaryOperation(left,BoxBinaryOperator.And,right,getPosition(expression),getSourceText(expression));
+		} else if ( expression.OR() != null ) {
+			BoxExpr left = toAst(file,expression.expression(0),parent);
+			BoxExpr right = toAst(file,expression.expression(1),parent);
+			return new BoxBinaryOperation(left,BoxBinaryOperator.Or,right,getPosition(expression),getSourceText(expression));
 		} else if ( expression.PLUS() != null ) {
 			BoxExpr left = toAst(file,expression.expression(0), parent);
 			BoxExpr right = toAst(file,expression.expression(1),parent);
@@ -285,14 +293,6 @@ public class BoxCFParser extends BoxAbstractParser {
 			BoxExpr left = toAst(file,expression.expression(0),parent);
 			BoxExpr right = toAst(file,expression.expression(1),parent);
 			return new BoxBinaryOperation(left,BoxBinaryOperator.Mod,right,getPosition(expression),getSourceText(expression));
-		} else if ( expression.AND() != null ) {
-			BoxExpr left = toAst(file,expression.expression(0),parent);
-			BoxExpr right = toAst(file,expression.expression(1),parent);
-			return new BoxBinaryOperation(left,BoxBinaryOperator.And,right,getPosition(expression),getSourceText(expression));
-		} else if ( expression.OR() != null ) {
-			BoxExpr left = toAst(file,expression.expression(0),parent);
-			BoxExpr right = toAst(file,expression.expression(1),parent);
-			return new BoxBinaryOperation(left,BoxBinaryOperator.Or,right,getPosition(expression),getSourceText(expression));
 		} else if ( expression.INSTANCEOF() != null ) {
 			BoxExpr left = toAst(file,expression.expression(0),parent);
 			BoxExpr right = toAst(file,expression.expression(1),parent);

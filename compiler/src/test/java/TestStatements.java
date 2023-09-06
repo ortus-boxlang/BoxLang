@@ -80,8 +80,9 @@ public class TestStatements extends TestBase {
 	@Test
 	public void ifElse() throws IOException {
 		String expression = """
-      					var a = "0";
-						if( variables.a == "0" ) {
+      					var a = 1 + 2 * 3;
+      					var b = "0";
+						if( variables.a == "0" &&  variables.b == "0" ) {
 							variables.a = a & "1";
 						} else if( !foo ) {
 							variables.a = a & "2";
