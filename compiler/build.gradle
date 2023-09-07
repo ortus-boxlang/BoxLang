@@ -122,13 +122,14 @@ compileJava {
 	sourceCompatibility = "$jvmVersion"
 	targetCompatibility = "$jvmVersion"
 	source sourceSets.main.java
+	dependsOn generateGrammarSource,  generateTestGrammarSource
 }
 
 compileTestJava {
 	sourceCompatibility = "$jvmVersion"
 	targetCompatibility = "$jvmVersion"
 	source sourceSets.test.java
-	dependsOn compileJava
+	dependsOn compileJava, generateTestGrammarSource
 }
 
 compileKotlin {
