@@ -14,9 +14,11 @@
  */
 package ourtus.boxlang.parser;
 
+import org.antlr.v4.runtime.CharStream;
 import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
 import org.antlr.v4.runtime.ParserRuleContext;
+import org.antlr.v4.runtime.misc.Interval;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.input.BOMInputStream;
 import ortus.boxlang.parser.CFLexer;
@@ -444,7 +446,8 @@ public class BoxCFParser extends BoxAbstractParser {
 	}
 
 	private String getSourceText( ParserRuleContext rule ) {
-		return rule.getText(); // TODO
+		CharStream s = rule.getStart().getTokenSource().getInputStream();
+		return s.getText(new Interval(rule.getStart().getStartIndex(),rule.getStop().getStopIndex()));
 	}
 
 
