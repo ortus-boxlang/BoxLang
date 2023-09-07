@@ -1,6 +1,5 @@
 package ortus.boxlang.runtime.services;
 
-import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Struct;
 

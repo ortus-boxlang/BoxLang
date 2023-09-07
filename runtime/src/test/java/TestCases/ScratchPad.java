@@ -18,19 +18,18 @@
 
 package TestCases;
 
-import org.junit.Ignore;
+import static com.google.common.truth.Truth.assertThat;
+
+import java.util.Arrays;
+import java.util.List;
+
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import ortus.boxlang.runtime.context.TemplateBoxContext;
 import ortus.boxlang.runtime.loader.ImportDefinition;
 import ortus.boxlang.runtime.loader.resolvers.BaseResolver;
 import ortus.boxlang.runtime.loader.resolvers.JavaResolver;
-
-import org.junit.jupiter.api.DisplayName;
-import static com.google.common.truth.Truth.assertThat;
-
-import java.util.Arrays;
-import java.util.List;
 
 public class ScratchPad {
 

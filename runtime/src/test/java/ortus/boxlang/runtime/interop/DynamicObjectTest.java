@@ -17,25 +17,23 @@
  */
 package ortus.boxlang.runtime.interop;
 
-import ortus.boxlang.runtime.dynamic.Referencer;
-import ortus.boxlang.runtime.scopes.Key;
-import ortus.boxlang.runtime.types.IType;
+import static com.google.common.truth.Truth.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
-import java.lang.String;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
+import java.time.Duration;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
-import java.time.Duration;
-
-import TestCases.interop.InvokeDynamicFields;
-import TestCases.interop.PrivateConstructors;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import static com.google.common.truth.Truth.assertThat;
-import static org.junit.jupiter.api.Assertions.assertThrows;
+
+import TestCases.interop.InvokeDynamicFields;
+import TestCases.interop.PrivateConstructors;
+import ortus.boxlang.runtime.scopes.Key;
+import ortus.boxlang.runtime.types.IType;
 
 public class DynamicObjectTest {
 
@@ -144,9 +142,10 @@ public class DynamicObjectTest {
 
 	@DisplayName( "It can call methods on interfaces" )
 	@Test
+	@SuppressWarnings( "unchecked" )
 	void testItCanCallMethodsOnInterfaces() throws Throwable {
 		DynamicObject	myInvoker	= DynamicObject.of( List.class );
-		List			results		= ( List ) myInvoker.invoke( "of", new Object[] { "Hello" } ).get();
+		List<Object>	results		= ( List<Object> ) myInvoker.invoke( "of", new Object[] { "Hello" } ).get();
 		assertThat( results.toString() ).isEqualTo( "[Hello]" );
 		assertThat( results ).isNotEmpty();
 	}

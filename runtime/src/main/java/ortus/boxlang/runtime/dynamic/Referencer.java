@@ -17,12 +17,12 @@
  */
 package ortus.boxlang.runtime.dynamic;
 
-import ortus.boxlang.runtime.scopes.Key;
-
 import java.util.HashMap;
 import java.util.Map;
 
+import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.interop.DynamicObject;
+import ortus.boxlang.runtime.scopes.Key;
 
 /**
  * I handle dereferencing of objects
@@ -48,18 +48,36 @@ public class Referencer {
 	/**
 	 * Used to implement any time an object is dereferenced,
 	 *
-	 * @param object    The object to dereference
-	 * @param key       The key to dereference
-	 * @param arguments The arguments to pass to the method
-	 * @param safe      Whether to throw an exception if the key is not found
+	 * @param object              The object to dereference
+	 * @param key                 The key to dereference
+	 * @param positionalArguments The arguments to pass to the method
+	 * @param safe                Whether to throw an exception if the key is not found
 	 *
 	 * @return The value that was assigned
 	 */
-	public static Object getAndInvoke( Object object, Key key, Object[] arguments, Boolean safe ) {
+	public static Object getAndInvoke( IBoxContext context, Object object, Key key, Object[] positionalArguments, Boolean safe ) {
 		if ( safe && object == null ) {
 			return null;
 		}
-		return getReferenceable( object ).dereferenceAndInvoke( key, arguments, safe );
+		return getReferenceable( object ).dereferenceAndInvoke( context, key, positionalArguments, safe );
+	}
+
+	/**
+	 * Used to implement any time an object is dereferenced,
+	 *
+	 * @param object         The object to dereference
+	 * @param key            The key to dereference
+	 * @param namedArguments The arguments to pass to the method
+	 * @param safe           Whether to throw an exception if the key is not found
+	 *
+	 * @return The value that was assigned
+	 */
+	public static Object getAndInvoke( IBoxContext context, Object object, Key key, Map<Key, Object> namedArguments,
+	    Boolean safe ) {
+		if ( safe && object == null ) {
+			return null;
+		}
+		return getReferenceable( object ).dereferenceAndInvoke( context, key, namedArguments, safe );
 	}
 
 	/**

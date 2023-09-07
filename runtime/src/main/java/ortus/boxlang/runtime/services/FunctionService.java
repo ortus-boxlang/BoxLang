@@ -18,10 +18,7 @@
 package ortus.boxlang.runtime.services;
 
 import java.io.IOException;
-import java.lang.reflect.Array;
-import java.util.Arrays;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
@@ -30,17 +27,13 @@ import org.apache.commons.lang3.ClassUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import ortus.boxlang.runtime.events.InterceptorState;
-import ortus.boxlang.runtime.functions.FunctionNamespace;
 import ortus.boxlang.runtime.functions.BIF;
 import ortus.boxlang.runtime.functions.FunctionDescriptor;
+import ortus.boxlang.runtime.functions.FunctionNamespace;
 import ortus.boxlang.runtime.interop.DynamicObject;
-import ortus.boxlang.runtime.loader.resolvers.IClassResolver;
 import ortus.boxlang.runtime.loader.util.ClassDiscovery;
 import ortus.boxlang.runtime.scopes.Key;
-import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.KeyNotFoundException;
-import ortus.boxlang.runtime.util.Timer;
 
 /**
  * The {@code FunctionService} is in charge of managing the runtime's built-in functions.

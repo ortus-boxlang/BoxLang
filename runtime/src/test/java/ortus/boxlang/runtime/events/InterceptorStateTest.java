@@ -18,21 +18,15 @@
 
 package ortus.boxlang.runtime.events;
 
-import org.junit.Ignore;
-import org.junit.jupiter.api.Test;
+import static com.google.common.truth.Truth.assertThat;
 
-import com.google.common.truth.Truth;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
 
 import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Struct;
-
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.DisplayName;
-import static com.google.common.truth.Truth.assertThat;
-
-import java.util.HashMap;
-import java.util.Map;
 
 public class InterceptorStateTest {
 

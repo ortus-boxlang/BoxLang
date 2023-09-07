@@ -17,8 +17,6 @@
  */
 package ortus.boxlang.runtime.dynamic.casters;
 
-import java.math.BigDecimal;
-
 import ortus.boxlang.runtime.interop.DynamicObject;
 
 /**
@@ -93,7 +91,7 @@ public class CharacterCaster {
 
 		if ( fail ) {
 			throw new RuntimeException(
-			        String.format( "Can't cast [%s] to a char.", object.getClass().getName() )
+			    String.format( "Can't cast [%s] to a char.", object.getClass().getName() )
 			);
 		} else {
 			return null;

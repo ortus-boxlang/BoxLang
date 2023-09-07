@@ -18,7 +18,10 @@
 
 package ortus.boxlang.runtime.context;
 
-import org.junit.Ignore;
+import static com.google.common.truth.Truth.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import ortus.boxlang.runtime.context.IBoxContext.ScopeSearchResult;
@@ -26,10 +29,6 @@ import ortus.boxlang.runtime.dynamic.BaseTemplate;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.exceptions.KeyNotFoundException;
-
-import org.junit.jupiter.api.DisplayName;
-import static com.google.common.truth.Truth.assertThat;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @DisplayName( "TemplateBoxContext Tests" )
 public class TemplateBoxContextTest {

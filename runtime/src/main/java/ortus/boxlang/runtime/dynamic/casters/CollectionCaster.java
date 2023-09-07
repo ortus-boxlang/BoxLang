@@ -19,13 +19,11 @@ package ortus.boxlang.runtime.dynamic.casters;
 
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
 import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.scopes.IScope;
-import ortus.boxlang.runtime.scopes.Key;
 
 /**
  * I handle casting anything to a collection
@@ -64,6 +62,7 @@ public class CollectionCaster {
 	 *
 	 * @return The collection value
 	 */
+	@SuppressWarnings( "unchecked" )
 	public static Collection<Object> cast( Object object, Boolean fail ) {
 		if ( object == null ) {
 			if ( fail ) {

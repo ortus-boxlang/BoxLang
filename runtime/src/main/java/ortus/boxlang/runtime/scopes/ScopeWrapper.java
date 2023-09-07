@@ -20,7 +20,6 @@ package ortus.boxlang.runtime.scopes;
 import java.util.Map;
 
 import ortus.boxlang.runtime.types.Struct;
-import ortus.boxlang.runtime.types.exceptions.KeyNotFoundException;
 
 /**
  * I am decorator/wrapper for a scope that allows you to spoof variables in the wrapped scope.

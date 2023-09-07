@@ -19,8 +19,6 @@ package ortus.boxlang.runtime.dynamic.casters;
 
 import java.math.BigDecimal;
 
-import ortus.boxlang.runtime.interop.DynamicObject;
-
 /**
  * I handle casting anything
  */

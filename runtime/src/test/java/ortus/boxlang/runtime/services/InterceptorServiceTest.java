@@ -18,17 +18,15 @@
 
 package ortus.boxlang.runtime.services;
 
+import static com.google.common.truth.Truth.assertThat;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 
-import org.junit.Ignore;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Struct;
-
-import org.junit.jupiter.api.DisplayName;
-import static com.google.common.truth.Truth.assertThat;
 
 public class InterceptorServiceTest {
 
@@ -119,8 +117,8 @@ public class InterceptorServiceTest {
 		Key					pointKey		= Key.of( "onRequestStart" );
 
 		service.register(
-		        mockInterceptor,
-		        pointKey
+		    mockInterceptor,
+		    pointKey
 		);
 
 		assertThat( service.getState( pointKey ).exists( mockInterceptor ) ).isTrue();
@@ -134,15 +132,15 @@ public class InterceptorServiceTest {
 		Key					pointKey		= Key.of( "onRequestStart" );
 
 		service.register(
-		        mockInterceptor,
-		        pointKey
+		    mockInterceptor,
+		    pointKey
 		);
 
 		assertThat( service.getState( pointKey ).exists( mockInterceptor ) ).isTrue();
 
 		service.unregister(
-		        mockInterceptor,
-		        pointKey
+		    mockInterceptor,
+		    pointKey
 		);
 
 		assertThat( service.getState( pointKey ).exists( mockInterceptor ) ).isFalse();
@@ -155,8 +153,8 @@ public class InterceptorServiceTest {
 		DynamicObject		mockInterceptor	= DynamicObject.of( new MockInterceptor() );
 
 		service.register(
-		        mockInterceptor,
-		        Key.of( "onRequestStart", "onRequestEnd" )
+		    mockInterceptor,
+		    Key.of( "onRequestStart", "onRequestEnd" )
 		);
 
 		assertThat( service.getState( Key.of( "onRequestStart" ) ).exists( mockInterceptor ) ).isTrue();
@@ -177,12 +175,12 @@ public class InterceptorServiceTest {
 		Key					pointKey			= Key.of( "onRequestStart" );
 
 		service.register(
-		        mockInterceptor1,
-		        pointKey
+		    mockInterceptor1,
+		    pointKey
 		);
 		service.register(
-		        mockInterceptor2,
-		        pointKey
+		    mockInterceptor2,
+		    pointKey
 		);
 
 		assertThat( service.getState( pointKey ).size() ).isEqualTo( 2 );
@@ -191,8 +189,8 @@ public class InterceptorServiceTest {
 		data.put( "counter", 0 );
 
 		service.announce(
-		        pointKey,
-		        data
+		    pointKey,
+		    data
 		);
 
 		assertThat( data.get( "counter" ) ).isEqualTo( 2 );
@@ -207,12 +205,12 @@ public class InterceptorServiceTest {
 		Key					pointKey			= Key.of( "onRequestStart" );
 
 		service.register(
-		        mockInterceptor1,
-		        pointKey
+		    mockInterceptor1,
+		    pointKey
 		);
 		service.register(
-		        mockInterceptor2,
-		        pointKey
+		    mockInterceptor2,
+		    pointKey
 		);
 
 		assertThat( service.getState( pointKey ).size() ).isEqualTo( 2 );
@@ -221,8 +219,8 @@ public class InterceptorServiceTest {
 		data.put( "COUNTER", 0 );
 
 		service.announce(
-		        pointKey,
-		        data
+		    pointKey,
+		    data
 		);
 
 		assertThat( data.get( "counter" ) ).isEqualTo( 2 );

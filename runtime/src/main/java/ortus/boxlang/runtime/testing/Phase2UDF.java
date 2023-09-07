@@ -17,24 +17,18 @@
  */
 package ortus.boxlang.runtime.testing;
 
+import java.util.List;
+import java.util.Map;
+
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.IBoxContext;
-
 // BoxLang Auto Imports
 import ortus.boxlang.runtime.dynamic.BaseTemplate;
 import ortus.boxlang.runtime.dynamic.Referencer;
-import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.loader.ClassLocator;
 import ortus.boxlang.runtime.loader.ImportDefinition;
-import ortus.boxlang.runtime.operators.*;
-import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.IScope;
-
-// Classes Auto-Imported on all Templates and Classes by BoxLang
-import java.time.LocalDateTime;
-import java.util.Arrays;
-import java.util.List;
-import java.time.Instant;
+import ortus.boxlang.runtime.scopes.Key;
 
 /**
  * Phase 2 BoxLang
@@ -59,34 +53,69 @@ public class Phase2UDF extends BaseTemplate {
     /**
      * <pre>
     <cfscript>
-        function greet( required string name='Brad' ) hint="My Function Hint" {
+        string function greet( required string name='Brad' ) hint="My Function Hint" {
+            local.race = "Local scope value";
+            arguments.race = "Arguments scope value";
+    
             var greeting = "Hello " & name;
+    
+            // Reach "into" parent context and get "out" from variables scope
+            out.println( "Inside UDF, race scope lookup finds: " & race )
+    
             return greeting;
         }
     
-        new java.lang.System.out.println( greet( 'John' ) );
+        variables.out = (create java.lang.System).out;
+    
+        // Positional args
+        variables.out.println( greet( 'John' ) );
+    
+        // named args
+        variables.out.println( greet( name='John' ) );
     </cfscript>
      * </pre>
      */
 
     @Override
     public void invoke( IBoxContext context ) throws Throwable {
-        ClassLocator classLocator = ClassLocator.getInstance();
+        ClassLocator classLocator   = ClassLocator.getInstance();
+        IScope       variablesScope = context.getScopeNearby( Key.of( "variables" ) );
 
         // Create instance of UDF and register in the variables scope
         context.regsiterUDF( Phase2UDF$foo.getInstance() );
 
-        Referencer.getAndInvoke(
-            // Object
+        variablesScope.put(
+            Key.of( "out" ),
             Referencer.get(
                 classLocator.load( context, "java:java.lang.System", imports ),
                 Key.of( "out" ),
-                false ),
+                false )
+        );
+
+        // Positional args
+        Referencer.getAndInvoke(
+            context,
+            // Object
+            variablesScope.get( Key.of( "out" ) ),
             // Method
             Key.of( "println" ),
             // Arguments
             new Object[] {
                 context.invokeFunction( Key.of( "foo" ), new Object[] { "John" } )
+            },
+            false
+        );
+
+        // named args
+        Referencer.getAndInvoke(
+            context,
+            // Object
+            variablesScope.get( Key.of( "out" ) ),
+            // Method
+            Key.of( "println" ),
+            // Arguments
+            new Object[] {
+                context.invokeFunction( Key.of( "foo" ), Map.of( Key.of( "name" ), "Bob" ) )
             },
             false
         );

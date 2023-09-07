@@ -18,32 +18,14 @@
 
 package ortus.boxlang.runtime.services;
 
-import org.apache.commons.lang3.ClassUtils;
-import org.junit.Ignore;
-import org.junit.jupiter.api.Test;
-
-import com.google.common.base.Function;
-
-import ortus.boxlang.runtime.context.TemplateBoxContext;
-import ortus.boxlang.runtime.functions.BIF;
-import ortus.boxlang.runtime.functions.global.Print;
-import ortus.boxlang.runtime.loader.util.ClassDiscovery;
-
-import org.junit.jupiter.api.DisplayName;
 import static com.google.common.truth.Truth.assertThat;
 
-import java.io.File;
-import java.io.IOException;
-import java.net.URL;
-import java.net.URLClassLoader;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Enumeration;
-import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
+
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import ortus.boxlang.runtime.context.TemplateBoxContext;
 
 public class FunctionServiceTest {
 

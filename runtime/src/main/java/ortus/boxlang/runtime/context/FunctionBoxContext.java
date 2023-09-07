@@ -1,13 +1,9 @@
 package ortus.boxlang.runtime.context;
 
-import java.util.Map;
-
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.LocalScope;
-import ortus.boxlang.runtime.scopes.ScopeWrapper;
-import ortus.boxlang.runtime.scopes.VariablesScope;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.KeyNotFoundException;
 import ortus.boxlang.runtime.types.exceptions.ScopeNotFoundException;
@@ -53,7 +49,19 @@ public class FunctionBoxContext extends BaseBoxContext {
 			return new ScopeSearchResult( argumentsScope, Struct.unWrapNull( result ) );
 		}
 
-		return scopeFind( key, defaultScope );
+		if ( parent != null ) {
+			// A UDF is "transparent" and can see everything in the parent scope as a "local" observer
+			return parent.scopeFindNearby( key, defaultScope );
+		}
+
+		// Default scope requested for missing keys
+		if ( defaultScope != null ) {
+			return new ScopeSearchResult( defaultScope, null );
+		}
+		// Not found anywhere
+		throw new KeyNotFoundException(
+		    String.format( "The requested key [%s] was not located in any scope or it's undefined", key.getName() )
+		);
 	}
 
 	public ScopeSearchResult scopeFind( Key key, IScope defaultScope ) {
@@ -61,6 +69,7 @@ public class FunctionBoxContext extends BaseBoxContext {
 		// The FunctionBoxContext has no "global" scopes, so just defer to parent
 
 		if ( parent != null ) {
+			// A UDF is "transparent" and can see everything in the parent scope as a "local" observer
 			return parent.scopeFind( key, defaultScope );
 		}
 
@@ -97,7 +106,15 @@ public class FunctionBoxContext extends BaseBoxContext {
 			return argumentsScope;
 		}
 
-		return getScope( name );
+		// The FunctionBoxContext has no "global" scopes, so just defer to parent
+		if ( parent != null ) {
+			return parent.getScopeNearby( name );
+		}
+
+		// Not found anywhere
+		throw new ScopeNotFoundException(
+		    String.format( "The requested scope name [%s] was not located in any context", name.getName() )
+		);
 
 	}
 

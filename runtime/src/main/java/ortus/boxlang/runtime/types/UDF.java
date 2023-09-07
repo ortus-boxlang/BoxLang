@@ -17,7 +17,8 @@
  */
 package ortus.boxlang.runtime.types;
 
-import ortus.boxlang.runtime.context.FunctionBoxContext;
+import ortus.boxlang.runtime.dynamic.casters.CastAttempt;
+import ortus.boxlang.runtime.dynamic.casters.GenericCaster;
 import ortus.boxlang.runtime.scopes.Key;
 
 /**
@@ -83,5 +84,17 @@ public abstract class UDF extends Function {
 
 	public boolean isOutput() {
 		return output;
+	}
+
+	protected Object ensureReturnType( Object value ) {
+		CastAttempt<Object> typeCheck = GenericCaster.attempt( value, getReturnType(), true );
+		if ( !typeCheck.wasSuccessful() ) {
+			throw new RuntimeException(
+			    String.format( "The return value of the function [%s] does not match the declared type of [%s]",
+			        value.getClass().getName(), getReturnType() )
+			);
+		}
+		// Should we actually return the casted value??? Not CFML Compat!
+		return value;
 	}
 }

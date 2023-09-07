@@ -17,14 +17,12 @@
  */
 package ortus.boxlang.runtime;
 
-import static com.google.common.truth.Truth.assertThat;
-
 import org.junit.jupiter.api.Test;
 
 class BoxRunnerTest {
 
 	@Test
 	void appCanGreat() {
-		BoxRunner runtime = new BoxRunner();
+		new BoxRunner();
 	}
 }

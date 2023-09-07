@@ -18,7 +18,6 @@
 package ortus.boxlang.runtime.operators;
 
 import ortus.boxlang.runtime.dynamic.Referencer;
-import ortus.boxlang.runtime.dynamic.casters.DoubleCaster;
 import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 import ortus.boxlang.runtime.scopes.Key;
 

@@ -17,15 +17,13 @@
  */
 package ortus.boxlang.runtime;
 
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.jupiter.api.DisplayName;
-
 import static com.google.common.truth.Truth.assertThat;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 
 import java.net.URL;
+
+import org.junit.Test;
+import org.junit.jupiter.api.DisplayName;
 
 public class BoxRuntimeTest {
 

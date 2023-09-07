@@ -50,8 +50,7 @@ public class InstanceOf implements IOperator {
 			return false;
 		}
 
-		String		type		= StringCaster.cast( right );
-		Class<?>	javaType	= null;
+		String type = StringCaster.cast( right );
 
 		left = DynamicObject.unWrap( left );
 
@@ -62,8 +61,8 @@ public class InstanceOf implements IOperator {
 
 		// Perform exact Java type check
 		if ( left.getClass().getName().equalsIgnoreCase( type )
-		        // Lucee does some loose typing here, not sure exactly how it works, but it's along these lines
-		        || left.getClass().getName().toLowerCase().endsWith( "." + type.toLowerCase() ) ) {
+		    // Lucee does some loose typing here, not sure exactly how it works, but it's along these lines
+		    || left.getClass().getName().toLowerCase().endsWith( "." + type.toLowerCase() ) ) {
 			return true;
 		}
 

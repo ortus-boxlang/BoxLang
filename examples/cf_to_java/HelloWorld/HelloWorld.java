@@ -72,7 +72,7 @@ public class HelloWorld$cfm extends BaseTemplate {
 		if ( EqualsEquals.invoke( context, variablesScope.get( Key.of( "GREETING" ) ), "Hello" ) ) {
 
 			Referencer.getAndInvoke(
-
+				context,
 				// Object
 				Referencer.get( variablesScope.get( Key.of( "SYSTEM" ) ), Key.of( "OUT" ) ),
 

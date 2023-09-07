@@ -17,25 +17,19 @@
  */
 package ortus.boxlang.runtime.testing;
 
-import ortus.boxlang.runtime.BoxRuntime;
-import ortus.boxlang.runtime.context.CatchBoxContext;
-import ortus.boxlang.runtime.context.IBoxContext;
+import java.util.List;
 
+import ortus.boxlang.runtime.BoxRuntime;
+import ortus.boxlang.runtime.context.IBoxContext;
 // BoxLang Auto Imports
 import ortus.boxlang.runtime.dynamic.BaseTemplate;
 import ortus.boxlang.runtime.dynamic.Referencer;
-import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.loader.ClassLocator;
 import ortus.boxlang.runtime.loader.ImportDefinition;
-import ortus.boxlang.runtime.operators.*;
-import ortus.boxlang.runtime.scopes.Key;
-import ortus.boxlang.runtime.types.exceptions.ExceptionUtil;
+import ortus.boxlang.runtime.operators.EqualsEquals;
+import ortus.boxlang.runtime.operators.Plus;
 import ortus.boxlang.runtime.scopes.IScope;
-
-// Classes Auto-Imported on all Templates and Classes by BoxLang
-import java.time.LocalDateTime;
-import java.util.List;
-import java.time.Instant;
+import ortus.boxlang.runtime.scopes.Key;
 
 public class Phase1Switch extends BaseTemplate {
 
@@ -82,7 +76,6 @@ public class Phase1Switch extends BaseTemplate {
 	@Override
 	public void invoke( IBoxContext context ) throws Throwable {
 		ClassLocator	classLocator	= ClassLocator.getInstance();
-		IBoxContext		catchContext;
 
 		// Reference to the variables scope
 		IScope			variablesScope	= context.getScopeNearby( Key.of( "variables" ) );
@@ -107,6 +100,7 @@ public class Phase1Switch extends BaseTemplate {
 			if ( EqualsEquals.invoke( switchValue, "brad" ) ) {
 				caseMatched = true;
 				Referencer.getAndInvoke(
+				    context,
 				    variablesScope.get( Key.of( "systemOut" ) ),
 				    Key.of( "println" ),
 				    new Object[] { "case 1" },
@@ -117,6 +111,7 @@ public class Phase1Switch extends BaseTemplate {
 			if ( caseMatched || EqualsEquals.invoke( switchValue, 42 ) ) {
 				caseMatched = true;
 				Referencer.getAndInvoke(
+				    context,
 				    variablesScope.get( Key.of( "systemOut" ) ),
 				    Key.of( "println" ),
 				    new Object[] { "case 2" },
@@ -128,6 +123,7 @@ public class Phase1Switch extends BaseTemplate {
 			if ( caseMatched || EqualsEquals.invoke( switchValue, Plus.invoke( 5, 7 ) ) ) {
 				caseMatched = true;
 				Referencer.getAndInvoke(
+				    context,
 				    variablesScope.get( Key.of( "systemOut" ) ),
 				    Key.of( "println" ),
 				    new Object[] { "case 3" },
@@ -137,6 +133,7 @@ public class Phase1Switch extends BaseTemplate {
 			if ( caseMatched || EqualsEquals.invoke( switchValue, variablesScope.get( Key.of( "foo" ) ) ) ) {
 				caseMatched = true;
 				Referencer.getAndInvoke(
+				    context,
 				    variablesScope.get( Key.of( "systemOut" ) ),
 				    Key.of( "println" ),
 				    new Object[] { "case 4" },
@@ -146,6 +143,7 @@ public class Phase1Switch extends BaseTemplate {
 			}
 
 			Referencer.getAndInvoke(
+			    context,
 			    variablesScope.get( Key.of( "systemOut" ) ),
 			    Key.of( "println" ),
 			    new Object[] { "default case" },

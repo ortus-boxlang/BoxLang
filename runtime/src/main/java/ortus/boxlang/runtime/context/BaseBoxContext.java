@@ -19,13 +19,10 @@ package ortus.boxlang.runtime.context;
 
 import java.util.Map;
 
-import ortus.boxlang.runtime.context.IBoxContext.ScopeSearchResult;
-import ortus.boxlang.runtime.dynamic.BaseTemplate;
-import ortus.boxlang.runtime.scopes.*;
+import ortus.boxlang.runtime.scopes.IScope;
+import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Function;
-import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.UDF;
-import ortus.boxlang.runtime.types.exceptions.KeyNotFoundException;
 import ortus.boxlang.runtime.types.exceptions.ScopeNotFoundException;
 
 /**

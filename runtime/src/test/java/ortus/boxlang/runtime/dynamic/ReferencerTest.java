@@ -17,19 +17,19 @@
  */
 package ortus.boxlang.runtime.dynamic;
 
-import ortus.boxlang.runtime.types.*;
-import ortus.boxlang.runtime.types.exceptions.KeyNotFoundException;
-import ortus.boxlang.runtime.dynamic.Referencer;
-import ortus.boxlang.runtime.scopes.*;
-
-import org.junit.Ignore;
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Test;
 import static com.google.common.truth.Truth.assertThat;
-import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.util.Map;
+
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import ortus.boxlang.runtime.scopes.IScope;
+import ortus.boxlang.runtime.scopes.Key;
+import ortus.boxlang.runtime.scopes.VariablesScope;
+import ortus.boxlang.runtime.types.Struct;
+import ortus.boxlang.runtime.types.exceptions.KeyNotFoundException;
 
 public class ReferencerTest {
 
@@ -76,6 +76,7 @@ public class ReferencerTest {
 
 	@DisplayName( "It can assign deeply" )
 	@Test
+	@SuppressWarnings( "unchecked" )
 	void testItCanAssignDeeply() {
 		IScope	scope	= new VariablesScope();
 		Key		foo		= Key.of( "foo" );
@@ -85,8 +86,9 @@ public class ReferencerTest {
 		Referencer.setDeep( scope, true, foo, bar, baz );
 
 		assertThat( scope.get( foo ) instanceof Map ).isTrue();
-		assertThat( ( ( Map ) scope.get( foo ) ).get( "bar" ) instanceof Map ).isTrue();
-		assertThat( ( ( Map ) ( ( Map ) scope.get( foo ) ).get( "bar" ) ).get( "baz" ) ).isEqualTo( true );
+		assertThat( ( ( Map<Object, Object> ) scope.get( foo ) ).get( "bar" ) instanceof Map ).isTrue();
+		assertThat( ( ( Map<Object, Object> ) ( ( Map<Object, Object> ) scope.get( foo ) ).get( "bar" ) ).get( "baz" ) )
+		    .isEqualTo( true );
 	}
 
 	@DisplayName( "It can dereference from a struct" )

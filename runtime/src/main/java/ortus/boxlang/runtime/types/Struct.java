@@ -26,9 +26,10 @@ import java.util.Set;
 import java.util.TreeMap;
 import java.util.concurrent.ConcurrentHashMap;
 
+import ortus.boxlang.runtime.context.FunctionBoxContext;
+import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.dynamic.IReferenceable;
 import ortus.boxlang.runtime.scopes.Key;
-import ortus.boxlang.runtime.types.exceptions.CastException;
 import ortus.boxlang.runtime.types.exceptions.KeyNotFoundException;
 
 public class Struct implements Map<Key, Object>, IType, IReferenceable {
@@ -266,12 +267,46 @@ public class Struct implements Map<Key, Object>, IType, IReferenceable {
 		return value;
 	}
 
-	@Override
-	public Object dereferenceAndInvoke( Key key, Object[] args, Boolean safe ) throws KeyNotFoundException, CastException {
-		Object value = dereference( key, safe );
-		// Test if the object is invokable (a UDF or java call site) and invoke it or throw exception if not invokable
-		// Ideally, the invoker logic is not here, but in a helper
-		throw new RuntimeException( "not implemented yet" );
+	public Object dereferenceAndInvoke( IBoxContext context, Key name, Object[] positionalArguments, Boolean safe )
+	    throws KeyNotFoundException {
+		Object value = dereference( name, safe );
+		if ( value instanceof Function ) {
+			Function			function	= ( Function ) value;
+			FunctionBoxContext	fContext	= new FunctionBoxContext(
+			    context,
+			    function.createArgumentsScope( positionalArguments )
+			);
+			return function.invoke( fContext );
+		} else {
+			throw new RuntimeException(
+			    "key '" + name.getName() + "' of type  '" + value.getClass().getName() + "'  is not a function " );
+		}
+	}
+
+	/**
+	 * Dereference this object by a key and invoke the result as an invokable (UDF, java method)
+	 *
+	 * @param name           The name of the key to dereference, which becomes the method name
+	 * @param namedArguments The arguments to pass to the invokable
+	 * @param safe           If true, return null if the method is not found, otherwise throw an exception
+	 *
+	 * @return The requested return value or null
+	 */
+	public Object dereferenceAndInvoke( IBoxContext context, Key name, Map<Key, Object> namedArguments, Boolean safe )
+	    throws KeyNotFoundException {
+		Object value = dereference( name, safe );
+		if ( value instanceof Function ) {
+			Function			function	= ( Function ) value;
+			FunctionBoxContext	fContext	= new FunctionBoxContext(
+			    context,
+			    function.createArgumentsScope( namedArguments )
+			);
+			return function.invoke( fContext );
+		} else {
+			throw new RuntimeException(
+			    "key '" + name.getName() + "' of type  '" + value.getClass().getName() + "'  is not a function "
+			);
+		}
 	}
 
 	/**
