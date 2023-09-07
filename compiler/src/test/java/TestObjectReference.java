@@ -81,7 +81,7 @@ public class TestObjectReference extends TestBase {
 		ParsingResult result = parser.parseExpression( expression );
 		Node javaAST = BoxLangTranspiler.transform( result.getRoot() );
 
-		assertEqualsNoWhiteSpaces( "context.getScopeNearby( Key.of( \"variablesScope\" ) ).get( Key.of( \"foo\" ) )",
+		assertEqualsNoWhiteSpaces( "variablesScope.get( Key.of( \"foo\" ) )",
 			javaAST.toString() );
 	}
 
