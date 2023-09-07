@@ -40,6 +40,7 @@ public class TemplateBoxContextTest {
 		assertThat( context.getTemplate() ).isNull();
 		assertThat( context.getParent() ).isNull();
 		assertThat( context.hasTemplate() ).isFalse();
+		assertThat( context.findClosestFunction() ).isNull();
 	}
 
 	@Test

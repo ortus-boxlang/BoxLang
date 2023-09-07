@@ -45,14 +45,24 @@ public abstract class Function implements IType {
 	private Argument[]	arguments;
 
 	/**
+	 * The name of the function
+	 */
+	private Key			name;
+
+	/**
 	 * Constructor
 	 */
-	public Function( Argument[] arguments ) {
-		this.arguments = arguments;
+	public Function( Key name, Argument[] arguments ) {
+		this.name		= name;
+		this.arguments	= arguments;
 	}
 
 	public Argument[] getArguments() {
 		return arguments;
+	}
+
+	public Key getName() {
+		return name;
 	}
 
 	public abstract Object invoke( FunctionBoxContext context );

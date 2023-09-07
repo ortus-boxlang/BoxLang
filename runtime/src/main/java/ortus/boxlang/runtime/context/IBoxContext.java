@@ -21,6 +21,7 @@ import java.util.Map;
 
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
+import ortus.boxlang.runtime.types.Function;
 import ortus.boxlang.runtime.types.UDF;
 import ortus.boxlang.runtime.types.exceptions.KeyNotFoundException;
 import ortus.boxlang.runtime.types.exceptions.ScopeNotFoundException;
@@ -114,6 +115,13 @@ public interface IBoxContext {
 	 * @return The parent box context. Null if none.
 	 */
 	public IBoxContext getParent();
+
+	/**
+	 * Finds the closest function call
+	 *
+	 * @return The Function instance
+	 */
+	public Function findClosestFunction();
 
 	/**
 	 * Represents the results of a successful scope hunting expedition.

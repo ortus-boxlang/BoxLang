@@ -92,18 +92,20 @@ public class BaseBoxContext implements IBoxContext {
 	 * @return Return value of the function call
 	 */
 	public Object invokeFunction( Key name, Object[] positionalArguments ) {
-		Function			function	= getFunction( name );
-		FunctionBoxContext	fContext	= new FunctionBoxContext( this, function.createArgumentsScope( positionalArguments ) );
+		Function			function	= findFunction( name );
+		FunctionBoxContext	fContext	= new FunctionBoxContext( this, function,
+		    function.createArgumentsScope( positionalArguments ) );
 		return function.invoke( fContext );
 	}
 
 	public Object invokeFunction( Key name, Map<Key, Object> namedArguments ) {
-		Function			function	= getFunction( name );
-		FunctionBoxContext	fContext	= new FunctionBoxContext( this, function.createArgumentsScope( namedArguments ) );
+		Function			function	= findFunction( name );
+		FunctionBoxContext	fContext	= new FunctionBoxContext( this, function,
+		    function.createArgumentsScope( namedArguments ) );
 		return function.invoke( fContext );
 	}
 
-	public Function getFunction( Key name ) {
+	private Function findFunction( Key name ) {
 		// TODO: Check for registered BIF
 
 		ScopeSearchResult result = scopeFindNearby( name, null );
@@ -137,6 +139,23 @@ public class BaseBoxContext implements IBoxContext {
 
 	public void regsiterUDF( UDF udf ) {
 		throw new UnsupportedOperationException( "This context cannot register a function" );
+	}
+
+	/**
+	 * Finds the closest function call
+	 *
+	 * @return The Function instance if found, null if this code is not called from a function
+	 */
+	public Function findClosestFunction() {
+		IBoxContext context = this;
+		// Climb the context tree until we find a function
+		while ( context != null ) {
+			if ( context instanceof FunctionBoxContext ) {
+				return ( ( FunctionBoxContext ) context ).getFunction();
+			}
+			context = context.getParent();
+		}
+		return null;
 	}
 
 }

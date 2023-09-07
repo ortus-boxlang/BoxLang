@@ -274,6 +274,7 @@ public class Struct implements Map<Key, Object>, IType, IReferenceable {
 			Function			function	= ( Function ) value;
 			FunctionBoxContext	fContext	= new FunctionBoxContext(
 			    context,
+			    function,
 			    function.createArgumentsScope( positionalArguments )
 			);
 			return function.invoke( fContext );
@@ -299,6 +300,7 @@ public class Struct implements Map<Key, Object>, IType, IReferenceable {
 			Function			function	= ( Function ) value;
 			FunctionBoxContext	fContext	= new FunctionBoxContext(
 			    context,
+			    function,
 			    function.createArgumentsScope( namedArguments )
 			);
 			return function.invoke( fContext );
