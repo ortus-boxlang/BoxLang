@@ -33,7 +33,6 @@ public class BoxBinaryOperationTransformer extends AbstractTransformer {
 
 	@Override
 	public Node transform(BoxNode node, TransformerContext context) throws IllegalStateException {
-		logger.info(node.getSourceText());
 		BoxBinaryOperation operation = (BoxBinaryOperation) node;
 		Expression left = (Expression) resolveScope(BoxLangTranspiler.transform(operation.getLeft(),context),context);
 		Expression right = (Expression) resolveScope(BoxLangTranspiler.transform(operation.getRight(),context), context);

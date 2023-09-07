@@ -19,7 +19,6 @@ import ourtus.boxlang.ast.Node;
 import ourtus.boxlang.ast.Position;
 
 public class BoxArrayAccess extends BoxAccess {
-
 	private BoxExpr context;
 	private BoxExpr index;
 

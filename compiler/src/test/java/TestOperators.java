@@ -181,7 +181,7 @@ public class TestOperators extends TestBase {
 	@Test
 	public void referenceToVariablesScope() throws IOException {
 		String expression = """
-						variables["system"]
+						variables['system']
 			""";
 
 		BoxLangParser parser = new BoxLangParser();
@@ -300,7 +300,7 @@ public class TestOperators extends TestBase {
 	@Test
 	public void parenthesis() throws IOException {
 		String expression = """
-			(1+2) * 3
+			(1+ 2) * 3
 			""";
 
 		BoxLangParser parser = new BoxLangParser();
@@ -477,7 +477,7 @@ public class TestOperators extends TestBase {
 
 		Node javaAST = BoxLangTranspiler.transform( result.getRoot() );
 
-		assertEquals( "And.contains(true, \"true\")", javaAST.toString() );
+		assertEquals( "And.invoke(true, \"true\")", javaAST.toString() );
 
 		expression = """
 			true AND "true"
@@ -485,7 +485,7 @@ public class TestOperators extends TestBase {
 		result = parser.parseExpression( expression );
 
 		javaAST = BoxLangTranspiler.transform( result.getRoot() );
-		assertEquals( "And.contains(true, \"true\")", javaAST.toString() );
+		assertEquals( "And.invoke(true, \"true\")", javaAST.toString() );
 
 	}
 	@Test
@@ -499,7 +499,7 @@ public class TestOperators extends TestBase {
 
 		Node javaAST = BoxLangTranspiler.transform( result.getRoot() );
 
-		assertEquals( "Or.contains(true, \"true\")", javaAST.toString() );
+		assertEquals( "Or.invoke(true, \"true\")", javaAST.toString() );
 
 		expression = """
 			true OR "true"
@@ -507,7 +507,7 @@ public class TestOperators extends TestBase {
 		result = parser.parseExpression( expression );
 
 		javaAST = BoxLangTranspiler.transform( result.getRoot() );
-		assertEquals( "Or.contains(true, \"true\")", javaAST.toString() );
+		assertEquals( "Or.invoke(true, \"true\")", javaAST.toString() );
 
 	}
 

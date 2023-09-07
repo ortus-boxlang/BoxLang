@@ -19,7 +19,6 @@ import ourtus.boxlang.ast.Position;
 
 public abstract class BoxAccess extends BoxExpr {
 
-
 	public BoxAccess(Position position, String sourceText ) {
 		super( position, sourceText );
 	}

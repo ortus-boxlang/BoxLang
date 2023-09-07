@@ -252,7 +252,6 @@ public class BoxCFParser extends BoxAbstractParser {
 					getPosition( node ),
 					getSourceText( node ) );
 			}
-			// TODO: add other cases
 		} else if ( expression.identifier() != null ) {
 			return toAst( file, expression.identifier(),parent );
 		} else if ( expression.accessExpression() != null ) {
@@ -369,7 +368,7 @@ public class BoxCFParser extends BoxAbstractParser {
 			BoxExpr expr  = toAst(file,expression.expression(0),parent);
 			return new BoxParenthesis(expr,getPosition(expression),getSourceText(expression));
 		}
-
+		// TODO: add other cases
 		throw new IllegalStateException( "not implemented: " + expression.getClass().getSimpleName() );
 	}
 
