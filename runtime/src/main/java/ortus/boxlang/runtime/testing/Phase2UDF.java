@@ -77,7 +77,7 @@ public class Phase2UDF extends BaseTemplate {
      */
 
     @Override
-    public void invoke( IBoxContext context ) throws Throwable {
+    public void _invoke( IBoxContext context ) throws Throwable {
         ClassLocator classLocator   = ClassLocator.getInstance();
         IScope       variablesScope = context.getScopeNearby( Key.of( "variables" ) );
 

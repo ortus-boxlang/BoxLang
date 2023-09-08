@@ -40,7 +40,7 @@ public class FunctionBoxContextTest {
 	@DisplayName( "Test constructors" )
 	void testConstructor() {
 		assertThrows( Throwable.class, () -> new FunctionBoxContext( null, null ) );
-		IBoxContext			parentContext	= new TemplateBoxContext();
+		IBoxContext			parentContext	= new ScriptingBoxContext();
 		FunctionBoxContext	context			= new FunctionBoxContext( parentContext, null );
 		assertThat( context.getParent() ).isNotNull();
 		assertThat( context.getFunction() ).isNull();
@@ -52,7 +52,7 @@ public class FunctionBoxContextTest {
 	@Test
 	@DisplayName( "Test scope lookup" )
 	void testScopeLookup() {
-		IBoxContext		parentContext	= new TemplateBoxContext();
+		IBoxContext		parentContext	= new ScriptingBoxContext();
 		ArgumentsScope	argumentsScope	= new ArgumentsScope();
 		IBoxContext		context			= new FunctionBoxContext( parentContext, null, argumentsScope );
 		IScope			localScope		= context.getScopeNearby( LocalScope.name );
@@ -96,7 +96,7 @@ public class FunctionBoxContextTest {
 	void testCanFindClosestFunction() {
 		// We call a function
 		Key					funcName		= Key.of( "MyFunc$" );
-		IBoxContext			parentContext	= new TemplateBoxContext();
+		IBoxContext			parentContext	= new ScriptingBoxContext();
 		UDF					udf				= new SampleUDF( UDF.Access.PUBLIC, funcName, "String", new Argument[] {}, "", false, null );
 		FunctionBoxContext	context			= new FunctionBoxContext( parentContext, udf );
 
@@ -104,19 +104,19 @@ public class FunctionBoxContextTest {
 		assertThat( context.findClosestFunction().getName() ).isEqualTo( funcName );
 
 		// Our function includes a template
-		IBoxContext childContext = new TemplateBoxContext( null, context );
+		IBoxContext childContext = new ScriptingBoxContext( context );
 
 		assertThat( childContext.findClosestFunction() ).isNotNull();
 		assertThat( childContext.findClosestFunction().getName() ).isEqualTo( funcName );
 
 		// which includes another template
-		IBoxContext childChildContext = new TemplateBoxContext( null, childContext );
+		IBoxContext childChildContext = new ScriptingBoxContext( childContext );
 
 		assertThat( childChildContext.findClosestFunction() ).isNotNull();
 		assertThat( childChildContext.findClosestFunction().getName() ).isEqualTo( funcName );
 
 		// which includes ANOTHER template
-		IBoxContext childChildChildContext = new TemplateBoxContext( null, childChildContext );
+		IBoxContext childChildChildContext = new ScriptingBoxContext( childChildContext );
 
 		assertThat( childChildChildContext.findClosestFunction() ).isNotNull();
 		assertThat( childChildChildContext.findClosestFunction().getName() ).isEqualTo( funcName );

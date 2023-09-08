@@ -73,7 +73,7 @@ public class Phase1TryCatch extends BaseTemplate {
 	 */
 
 	@Override
-	public void invoke( IBoxContext context ) throws Throwable {
+	public void _invoke( IBoxContext context ) throws Throwable {
 		ClassLocator	classLocator	= ClassLocator.getInstance();
 		IBoxContext		catchContext;
 

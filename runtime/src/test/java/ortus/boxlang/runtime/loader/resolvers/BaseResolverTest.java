@@ -26,7 +26,7 @@ import java.util.List;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-import ortus.boxlang.runtime.context.TemplateBoxContext;
+import ortus.boxlang.runtime.context.ScriptingBoxContext;
 import ortus.boxlang.runtime.loader.ImportDefinition;
 
 public class BaseResolverTest {
@@ -53,20 +53,20 @@ public class BaseResolverTest {
 		    ImportDefinition.parse( "java:java.lang.List as jList" )
 		);
 		BaseResolver			jResolver	= JavaResolver.getInstance();
-		String					fqn			= jResolver.expandFromImport( new TemplateBoxContext(), "String", imports );
+		String					fqn			= jResolver.expandFromImport( new ScriptingBoxContext(), "String", imports );
 		assertThat( fqn ).isEqualTo( "java.lang.String" );
 
-		fqn = jResolver.expandFromImport( new TemplateBoxContext(), "Integer", imports );
+		fqn = jResolver.expandFromImport( new ScriptingBoxContext(), "Integer", imports );
 		assertThat( fqn ).isEqualTo( "java.lang.Integer" );
 
 		// The Java resolver will ignore this mapping
-		fqn = jResolver.expandFromImport( new TemplateBoxContext(), "HelloWorld", imports );
+		fqn = jResolver.expandFromImport( new ScriptingBoxContext(), "HelloWorld", imports );
 		assertThat( fqn ).isEqualTo( "HelloWorld" );
 
-		fqn = jResolver.expandFromImport( new TemplateBoxContext(), "BaseResolver", imports );
+		fqn = jResolver.expandFromImport( new ScriptingBoxContext(), "BaseResolver", imports );
 		assertThat( fqn ).isEqualTo( "ortus.boxlang.runtime.loader.resolvers.BaseResolver" );
 
-		fqn = jResolver.expandFromImport( new TemplateBoxContext(), "jList", imports );
+		fqn = jResolver.expandFromImport( new ScriptingBoxContext(), "jList", imports );
 		assertThat( fqn ).isEqualTo( "java.lang.List" );
 	}
 

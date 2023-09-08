@@ -26,7 +26,7 @@ import java.util.Optional;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-import ortus.boxlang.runtime.context.TemplateBoxContext;
+import ortus.boxlang.runtime.context.ScriptingBoxContext;
 import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.loader.ClassLocator.ClassLocation;
 import ortus.boxlang.runtime.loader.resolvers.BoxResolver;
@@ -62,7 +62,7 @@ public class ClassLocatorTest {
 		ClassLocator	locator		= ClassLocator.getInstance();
 		String			targetClass	= "java:java.lang.String";
 
-		DynamicObject	target		= locator.load( new TemplateBoxContext(), targetClass );
+		DynamicObject	target		= locator.load( new ScriptingBoxContext(), targetClass );
 		target.invokeConstructor( "Hola ClassLoader" );
 		assertThat( target.getTargetInstance() ).isEqualTo( "Hola ClassLoader" );
 
@@ -74,7 +74,7 @@ public class ClassLocatorTest {
 		ClassLocator	locator		= ClassLocator.getInstance();
 		String			targetClass	= "java.lang.String";
 
-		DynamicObject	target		= locator.load( new TemplateBoxContext(), targetClass );
+		DynamicObject	target		= locator.load( new ScriptingBoxContext(), targetClass );
 		target.invokeConstructor( "Hola ClassLoader" );
 		assertThat( target.getTargetInstance() ).isEqualTo( "Hola ClassLoader" );
 
@@ -88,7 +88,7 @@ public class ClassLocatorTest {
 		List<ImportDefinition>	imports		= List.of( ImportDefinition.parse( "java:java.lang.String as String" ) );
 
 		DynamicObject			target		= locator.load(
-		    new TemplateBoxContext(),
+		    new ScriptingBoxContext(),
 		    targetClass,
 		    imports
 		);
@@ -106,7 +106,7 @@ public class ClassLocatorTest {
 		locator.clear();
 		assertThat( locator.size() ).isEqualTo( 0 );
 
-		DynamicObject target = locator.load( new TemplateBoxContext(), targetClass, "java", true );
+		DynamicObject target = locator.load( new ScriptingBoxContext(), targetClass, "java", true );
 		target.invokeConstructor( "Hola ClassLoader" );
 		assertThat( target.getTargetInstance() ).isEqualTo( "Hola ClassLoader" );
 
@@ -123,10 +123,10 @@ public class ClassLocatorTest {
 		ClassLocator			locator		= ClassLocator.getInstance();
 		String					targetClass	= "java.lang.Bogus";
 
-		Optional<DynamicObject>	target		= locator.safeLoad( new TemplateBoxContext(), targetClass, "java" );
+		Optional<DynamicObject>	target		= locator.safeLoad( new ScriptingBoxContext(), targetClass, "java" );
 		assertThat( target.isPresent() ).isFalse();
 
-		target = locator.safeLoad( new TemplateBoxContext(), targetClass );
+		target = locator.safeLoad( new ScriptingBoxContext(), targetClass );
 		assertThat( target.isPresent() ).isFalse();
 	}
 

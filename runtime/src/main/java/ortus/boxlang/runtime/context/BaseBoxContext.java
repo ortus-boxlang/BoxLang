@@ -18,7 +18,9 @@
 package ortus.boxlang.runtime.context;
 
 import java.util.Map;
+import java.util.Stack;
 
+import ortus.boxlang.runtime.dynamic.BaseTemplate;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Function;
@@ -41,7 +43,9 @@ public class BaseBoxContext implements IBoxContext {
 	 * Private Properties
 	 * --------------------------------------------------------------------------
 	 */
-	protected IBoxContext parent;
+	protected IBoxContext			parent;
+
+	protected Stack<BaseTemplate>	templates	= new Stack<BaseTemplate>();
 
 	/**
 	 * Creates a new execution context with a bounded execution template and parent context
@@ -67,6 +71,56 @@ public class BaseBoxContext implements IBoxContext {
 	 * Getters & Setters
 	 * --------------------------------------------------------------------------
 	 */
+
+	/**
+	 * Push a template to the stack
+	 *
+	 * @param templatePath The template that this execution context is bound to
+	 *
+	 * @return IBoxContext
+	 */
+	public IBoxContext pushTemplate( BaseTemplate template ) {
+		this.templates.push( template );
+		return this;
+	}
+
+	/**
+	 * Pop a template from the stack
+	 *
+	 * @return The template that this execution context is bound to
+	 */
+	public BaseTemplate popTemplate() {
+		return this.templates.pop();
+	}
+
+	/**
+	 * Has the execution context been bound to a template?
+	 *
+	 * @return True if bound, else false
+	 */
+	public boolean hasTemplates() {
+		return !this.templates.empty();
+	}
+
+	/**
+	 * Finds the closest template
+	 *
+	 * @return The template instance if found, null if this code is not called from a template
+	 */
+	public BaseTemplate findClosestTemplate() {
+		// If this context has templates, grab the first
+		if ( hasTemplates() ) {
+			return this.templates.peek();
+		}
+
+		// Otherwise, if we have a parent, as them
+		if ( hasParent() ) {
+			return getParent().findClosestTemplate();
+		}
+
+		// There is none to be found!
+		return null;
+	}
 
 	/**
 	 * Returns the parent box context. Null if none.

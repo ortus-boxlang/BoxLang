@@ -17,7 +17,6 @@
  */
 package ortus.boxlang.runtime.context;
 
-import ortus.boxlang.runtime.dynamic.BaseTemplate;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
@@ -29,13 +28,7 @@ import ortus.boxlang.runtime.types.exceptions.ScopeNotFoundException;
 /**
  * This context represents the context of a template execution in BoxLang
  */
-public class TemplateBoxContext extends BaseBoxContext {
-
-	/**
-	 * --------------------------------------------------------------------------
-	 * Public Properties
-	 * --------------------------------------------------------------------------
-	 */
+public class ScriptingBoxContext extends BaseBoxContext {
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -44,14 +37,9 @@ public class TemplateBoxContext extends BaseBoxContext {
 	 */
 
 	/**
-	 * The template that this execution context is bound to
-	 */
-	private BaseTemplate	template		= null;
-
-	/**
 	 * The variables scope
 	 */
-	protected IScope		variablesScope	= new VariablesScope();
+	protected IScope variablesScope = new VariablesScope();
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -65,25 +53,15 @@ public class TemplateBoxContext extends BaseBoxContext {
 	 * @param template The template that this execution context is bound to
 	 * @param parent   The parent context
 	 */
-	public TemplateBoxContext( BaseTemplate template, IBoxContext parent ) {
+	public ScriptingBoxContext( IBoxContext parent ) {
 		super( parent );
-		this.template = template;
-	}
-
-	/**
-	 * Creates a new execution context with a bounded execution template
-	 *
-	 * @param templatePath The template that this execution context is bound to
-	 */
-	public TemplateBoxContext( BaseTemplate template ) {
-		this( template, null );
 	}
 
 	/**
 	 * Creates a new execution context
 	 */
-	public TemplateBoxContext() {
-		this( null, null );
+	public ScriptingBoxContext() {
+		this( null );
 	}
 
 	/**
@@ -91,36 +69,6 @@ public class TemplateBoxContext extends BaseBoxContext {
 	 * Getters & Setters
 	 * --------------------------------------------------------------------------
 	 */
-
-	/**
-	 * Set the template path of execution
-	 *
-	 * @param templatePath The template that this execution context is bound to
-	 *
-	 * @return IBoxContext
-	 */
-	public IBoxContext setTemplate( BaseTemplate template ) {
-		this.template = template;
-		return this;
-	}
-
-	/**
-	 * Get the template path of execution
-	 *
-	 * @return The template that this execution context is bound to
-	 */
-	public BaseTemplate getTemplate() {
-		return this.template;
-	}
-
-	/**
-	 * Has the execution context been bound to a template?
-	 *
-	 * @return True if bound, else false
-	 */
-	public boolean hasTemplate() {
-		return this.template != null;
-	}
 
 	/**
 	 * Try to get the requested key from the unscoped scope
@@ -176,7 +124,7 @@ public class TemplateBoxContext extends BaseBoxContext {
 	 */
 	public ScopeSearchResult scopeFind( Key key, IScope defaultScope ) {
 
-		// The templateBoxContext has no "global" scopes, so just defer to parent
+		// The ScriptingBoxContext has no "global" scopes, so just defer to parent
 
 		if ( parent != null ) {
 			return parent.scopeFind( key, defaultScope );
@@ -200,7 +148,7 @@ public class TemplateBoxContext extends BaseBoxContext {
 	 */
 	public IScope getScope( Key name ) throws ScopeNotFoundException {
 
-		// The templateBoxContext has no "global" scopes, so just defer to parent
+		// The ScriptingBoxContext has no "global" scopes, so just defer to parent
 		if ( parent != null ) {
 			return parent.getScope( name );
 		}

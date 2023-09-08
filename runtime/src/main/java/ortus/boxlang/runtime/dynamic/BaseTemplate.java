@@ -78,6 +78,15 @@ public class BaseTemplate {
 	 * @throws Throwable If an error occurs
 	 */
 	public void invoke( IBoxContext context ) throws Throwable {
+		context.pushTemplate( this );
+		try {
+			_invoke( context );
+		} finally {
+			context.popTemplate();
+		}
+	}
+
+	public void _invoke( IBoxContext context ) throws Throwable {
 		throw new UnsupportedOperationException( "This method must be overridden." );
 	}
 }

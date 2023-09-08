@@ -28,7 +28,7 @@ import org.junit.jupiter.api.Test;
 
 import ortus.boxlang.runtime.context.FunctionBoxContext;
 import ortus.boxlang.runtime.context.IBoxContext;
-import ortus.boxlang.runtime.context.TemplateBoxContext;
+import ortus.boxlang.runtime.context.ScriptingBoxContext;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
@@ -243,7 +243,7 @@ public class FunctionTest {
 		    false, "Brad" );
 		ArgumentsScope		argscope		= udf.createArgumentsScope();
 
-		IBoxContext			parentContext	= new TemplateBoxContext();
+		IBoxContext			parentContext	= new ScriptingBoxContext();
 		FunctionBoxContext	context			= new FunctionBoxContext( parentContext, udf, argscope );
 		Object				result			= udf.invoke( context );
 		assertThat( result ).isEqualTo( "Brad" );
