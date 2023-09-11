@@ -47,7 +47,7 @@ public class BoxMethodInvocation extends BoxExpr {
 		this.obj       = obj;
 		this.obj.setParent(this);
 		this.arguments = Collections.unmodifiableList(arguments);
-		this.arguments.stream().forEach( arg -> arg.setParent(this));
+		this.arguments.forEach(arg -> arg.setParent(this));
 	}
 
 	public ReferenceByName getName() {
