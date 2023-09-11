@@ -38,12 +38,19 @@ public class BoxArrayAccess extends BoxAccess {
 		this.index = index;
 	}
 
+	/**
+	 * Array access expression i.e variable['a'] or a[2]
+	 * @param context
+	 * @param index
+	 * @param parent
+	 * @param position
+	 * @param sourceText
+	 */
 	public BoxArrayAccess(BoxExpr context, BoxExpr index, Node parent, Position position, String sourceText ) {
 		super( position, sourceText );
-		//this.setParent( parent );
 		this.context = context;
-		context.setParent(this);
 		this.index   = index;
+		context.setParent(this);
 		context.setParent(this);
 	}
 
