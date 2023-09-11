@@ -26,7 +26,10 @@ public class BoxStringLiteral extends BoxExpr {
 		return value;
 	}
 
-
+	@Override
+	public boolean isLiteral() {
+		return true;
+	}
 
 	/**
 	 * Terminal node StringLiteral
