@@ -180,4 +180,13 @@ public class ScriptingBoxContext extends BaseBoxContext {
 		variablesScope.put( udf.getName(), udf );
 	}
 
+	/**
+	 * Get the default variable assignment scope for this context
+	 *
+	 * @return The scope reference to use
+	 */
+	public IScope getDefaultAssignmentScope() {
+		return variablesScope;
+	}
+
 }

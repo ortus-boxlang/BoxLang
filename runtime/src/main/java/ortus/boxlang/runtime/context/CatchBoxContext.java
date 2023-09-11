@@ -19,7 +19,10 @@ package ortus.boxlang.runtime.context;
 
 import java.util.Map;
 
-import ortus.boxlang.runtime.scopes.*;
+import ortus.boxlang.runtime.scopes.IScope;
+import ortus.boxlang.runtime.scopes.Key;
+import ortus.boxlang.runtime.scopes.ScopeWrapper;
+import ortus.boxlang.runtime.scopes.VariablesScope;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.KeyNotFoundException;
 import ortus.boxlang.runtime.types.exceptions.ScopeNotFoundException;
@@ -149,6 +152,16 @@ public class CatchBoxContext extends BaseBoxContext {
 
 		return getScope( name );
 
+	}
+
+	/**
+	 * Get the default variable assignment scope for this context
+	 *
+	 * @return The scope reference to use
+	 */
+	public IScope getDefaultAssignmentScope() {
+		// parent is never null
+		return getParent().getDefaultAssignmentScope();
 	}
 
 }

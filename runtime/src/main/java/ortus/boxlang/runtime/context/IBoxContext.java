@@ -160,6 +160,13 @@ public interface IBoxContext {
 	public BaseTemplate findClosestTemplate();
 
 	/**
+	 * Get the default variable assignment scope for this context
+	 * 
+	 * @return The scope reference to use
+	 */
+	public IScope getDefaultAssignmentScope();
+
+	/**
 	 * Represents the results of a successful scope hunting expedition.
 	 *
 	 * @param scope The scope which was found

@@ -118,7 +118,7 @@ public class BaseBoxContext implements IBoxContext {
 			return getParent().findClosestTemplate();
 		}
 
-		// There is none to be found!
+		// There are none to be found!
 		return null;
 	}
 
@@ -205,6 +205,15 @@ public class BaseBoxContext implements IBoxContext {
 
 	public void regsiterUDF( UDF udf ) {
 		throw new UnsupportedOperationException( "This context cannot register a function" );
+	}
+
+	/**
+	 * Get the default variable assignment scope for this context
+	 *
+	 * @return The scope reference to use
+	 */
+	public IScope getDefaultAssignmentScope() {
+		throw new UnsupportedOperationException( "Unimplemented method 'getDefaultAssignmentScope'" );
 	}
 
 	/**

@@ -36,4 +36,11 @@ public class CatchBoxContextTest {
 		assertThat( context.scopeFindNearby( Key.of( "e" ), null ).value() instanceof Exception ).isTrue();
 	}
 
+	@Test
+	@DisplayName( "Test default assignment scope" )
+	void testDefaultAssignmentScope() {
+		CatchBoxContext context = new CatchBoxContext( new ScriptingBoxContext(), Key.of( "e" ), new Exception() );
+		assertThat( context.getDefaultAssignmentScope().getName().getName() ).isEqualTo( "variables" );
+	}
+
 }

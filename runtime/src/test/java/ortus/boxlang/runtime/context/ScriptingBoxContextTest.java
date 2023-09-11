@@ -80,4 +80,11 @@ public class ScriptingBoxContextTest {
 		ScriptingBoxContext context = new ScriptingBoxContext();
 		assertThrows( KeyNotFoundException.class, () -> context.scopeFindNearby( new Key( "nonExistentKey" ), null ) );
 	}
+
+	@Test
+	@DisplayName( "Test default assignment scope" )
+	void testDefaultAssignmentScope() {
+		ScriptingBoxContext context = new ScriptingBoxContext();
+		assertThat( context.getDefaultAssignmentScope().getName().getName() ).isEqualTo( "variables" );
+	}
 }
