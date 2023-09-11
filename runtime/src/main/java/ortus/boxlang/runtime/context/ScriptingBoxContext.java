@@ -26,7 +26,9 @@ import ortus.boxlang.runtime.types.exceptions.KeyNotFoundException;
 import ortus.boxlang.runtime.types.exceptions.ScopeNotFoundException;
 
 /**
- * This context represents the context of a template execution in BoxLang
+ * This context represents the context of a scripting execution in BoxLang
+ * There is only a variables scope present.
+ * There may or may NOT be a template defined.
  */
 public class ScriptingBoxContext extends BaseBoxContext {
 

@@ -77,6 +77,7 @@ public class Phase2UDF$foo extends UDF {
             Key.of( "race" ),
             "Local scope value"
         );
+
         context.getScopeNearby( ArgumentsScope.name ).put(
             Key.of( "race" ),
             "Arguments scope value"

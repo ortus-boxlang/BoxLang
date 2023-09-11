@@ -141,7 +141,7 @@ public class BaseBoxContext implements IBoxContext {
 	}
 
 	/**
-	 * Invoke a function call such as foo(). Will check for a registered BIF first, then search known scopes for a UDF.
+	 * Invoke a function call such as foo() using positional args. Will check for a registered BIF first, then search known scopes for a UDF.
 	 *
 	 * @return Return value of the function call
 	 */
@@ -152,6 +152,11 @@ public class BaseBoxContext implements IBoxContext {
 		return function.invoke( fContext );
 	}
 
+	/**
+	 * Invoke a function call such as foo() using named args. Will check for a registered BIF first, then search known scopes for a UDF.
+	 *
+	 * @return Return value of the function call
+	 */
 	public Object invokeFunction( Key name, Map<Key, Object> namedArguments ) {
 		Function			function	= findFunction( name );
 		FunctionBoxContext	fContext	= new FunctionBoxContext( this, function,
@@ -159,6 +164,13 @@ public class BaseBoxContext implements IBoxContext {
 		return function.invoke( fContext );
 	}
 
+	/**
+	 * Find a function in the corrent context. Will check for a registered BIF first, then search known scopes for a UDF.
+	 *
+	 * @param name The name of the function to find
+	 *
+	 * @return The function instance
+	 */
 	private Function findFunction( Key name ) {
 		// TODO: Check for registered BIF
 
