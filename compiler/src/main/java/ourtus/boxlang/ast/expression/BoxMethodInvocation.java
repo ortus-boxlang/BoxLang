@@ -19,24 +19,35 @@ import ourtus.boxlang.ast.Position;
 import ourtus.boxlang.ast.ReferenceByName;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 public class BoxMethodInvocation extends BoxExpr {
 
 	private final ReferenceByName name;
 
-	private final List<BoxExpr> arguments;
+	private final List<BoxArgument> arguments;
 	private final BoxExpr obj;
 
-	public List<BoxExpr> getArguments() {
+	public final List<BoxArgument> getArguments() {
 		return arguments;
 	}
 
-	public BoxMethodInvocation(String name,BoxExpr obj,Position position, String sourceText ) {
+	/**
+	 * Method Invocation i.e. object.method(1,2)
+	 * @param name
+	 * @param obj
+	 * @param arguments
+	 * @param position
+	 * @param sourceText
+	 */
+	public BoxMethodInvocation(String name,BoxExpr obj,List<BoxArgument> arguments,Position position, String sourceText ) {
 		super( position, sourceText );
 		this.name      = new ReferenceByName( name );
 		this.obj       = obj;
-		this.arguments = new ArrayList<>();
+		this.obj.setParent(this);
+		this.arguments = Collections.unmodifiableList(arguments);
+		this.arguments.stream().forEach( arg -> arg.setParent(this));
 	}
 
 	public ReferenceByName getName() {
