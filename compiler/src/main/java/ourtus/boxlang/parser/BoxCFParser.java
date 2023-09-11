@@ -123,9 +123,43 @@ public class BoxCFParser extends BoxAbstractParser {
 			return toAst(file,node.break_(),parent);
 		} else if ( node.continue_() != null ) {
 			return toAst(file,node.continue_(),parent);
+		} else if ( node.switch_() != null ) {
+			return toAst(file,node.switch_(),parent);
 		} else {
 			throw new IllegalStateException( "not implemented: " + node.getClass().getSimpleName() );
 		}
+	}
+
+	private BoxStatement toAst(File file, CFParser.SwitchContext node, Node parent) {
+		BoxExpr condition = toAst(file,node.expression(),parent);
+		List<BoxSwitchCase> cases = new ArrayList<>();
+		for(CFParser.CaseContext c : node.case_()) {
+			cases.add(toAst(file,c,condition,parent));
+		}
+		return new BoxSwitch(condition,cases,getPosition(node),getSourceText(node));
+	}
+
+	private BoxSwitchCase toAst(File file, CFParser.CaseContext node,BoxExpr condition, Node parent) {
+		BoxExpr expr = null;
+		if( node.expression() != null) {
+			BoxExpr temp =  toAst(file,node.expression(),parent);
+            if (!temp.isLiteral()) {
+				expr = temp;
+            } else {
+                expr = new BoxComparisonOperation(condition,BoxComparisonOperator.Equal,temp,getPosition(node.expression()),getSourceText(node.expression()));
+            }
+
+        }
+
+		List<BoxStatement> statements = new ArrayList<>();
+		if(node.statement() != null) {
+			statements.add(toAst(file,node.statement(),parent));
+		}
+		if(node.statementBlock() != null) {
+			statements.addAll(toAst(file,node.statementBlock(),parent));
+		}
+
+		return new BoxSwitchCase(expr,statements,getPosition(node),getSourceText(node));
 	}
 
 	private BoxStatement toAst(File file, CFParser.ContinueContext node, Node parent) {
