@@ -6,7 +6,6 @@ import org.slf4j.LoggerFactory;
 import ourtus.boxlang.ast.BoxNode;
 import ourtus.boxlang.ast.expression.BoxScope;
 import ourtus.boxlang.transpiler.transformer.AbstractTransformer;
-import ourtus.boxlang.transpiler.transformer.BoxArrayAccessTransformer;
 import ourtus.boxlang.transpiler.transformer.TransformerContext;
 
 import java.util.HashMap;
