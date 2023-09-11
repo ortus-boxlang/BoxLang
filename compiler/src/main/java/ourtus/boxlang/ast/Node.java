@@ -21,7 +21,7 @@ public class Node {
 
 	protected Position position;
 	private final String sourceText;
-	private Node parent = null;
+	protected Node parent = null;
 	private final List<Node> children;
 	private Node originator;
 
@@ -57,5 +57,14 @@ public class Node {
 
 	public Node getOriginator() {
 		return originator;
+	}
+
+	public List<Node> walk() {
+		List<Node> result = new ArrayList<>();
+		result.add(this);
+		for (Node node : this.children) {
+			result.addAll(node.walk());
+		}
+		return result;
 	}
 }
