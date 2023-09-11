@@ -28,7 +28,10 @@ public class BoxSwitchCase extends BoxStatement {
 	public BoxSwitchCase(BoxExpr condition,List<BoxStatement> body, Position position, String sourceText) {
 		super(position, sourceText);
 		this.condition = condition;
-		this.condition.setParent(this);
+		// condition == null is the default case
+		if(condition != null) {
+			this.condition.setParent(this);
+		}
 		this.body = Collections.unmodifiableList(body);
 		this.body.forEach(arg -> arg.setParent(this));
 	}
