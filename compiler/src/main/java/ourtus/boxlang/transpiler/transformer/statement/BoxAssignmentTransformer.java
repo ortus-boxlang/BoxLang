@@ -12,7 +12,7 @@
  * BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language
  * governing permissions and limitations under the License.
  */
-package ourtus.boxlang.transpiler.transformer;
+package ourtus.boxlang.transpiler.transformer.statement;
 
 import com.github.javaparser.ast.expr.MethodCallExpr;
 import com.github.javaparser.ast.stmt.ExpressionStmt;
@@ -23,11 +23,10 @@ import com.github.javaparser.ast.*;
 import com.github.javaparser.ast.expr.Expression;
 import ourtus.boxlang.ast.statement.BoxAssignment;
 import ourtus.boxlang.transpiler.BoxLangTranspiler;
+import ourtus.boxlang.transpiler.transformer.AbstractTransformer;
+import ourtus.boxlang.transpiler.transformer.TransformerContext;
 
-import java.util.HashMap;
-import java.util.Map;
-
-public class BoxAssignmentTransformer extends AbstractTransformer{
+public class BoxAssignmentTransformer extends AbstractTransformer {
 	Logger logger = LoggerFactory.getLogger( BoxAssignmentTransformer.class );
 	public BoxAssignmentTransformer() { }
 	@Override
@@ -41,8 +40,8 @@ public class BoxAssignmentTransformer extends AbstractTransformer{
 				method.getArguments().add(right);
 			}
 		}
-		ExpressionStmt javaExpr = new ExpressionStmt(left);
-
+		ExpressionStmt javaExpr =  new ExpressionStmt(left) ;
+		addIndex(javaExpr,node);
 		return javaExpr;
 	}
 

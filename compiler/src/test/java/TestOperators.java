@@ -89,6 +89,21 @@ public class TestOperators extends TestBase {
 	}
 
 	@Test
+	public void power() throws IOException {
+		String expression = """
+						1 ^ 2
+			""";
+
+		BoxLangParser parser = new BoxLangParser();
+		ParsingResult result = parser.parseExpression( expression );
+
+		Node javaAST = BoxLangTranspiler.transform( result.getRoot() );
+
+		assertEquals( "Power.invoke(1, 2)", javaAST.toString() );
+
+	}
+
+	@Test
 	public void slash() throws IOException {
 		String expression = """
 						1 / 2
@@ -100,6 +115,20 @@ public class TestOperators extends TestBase {
 		Node javaAST = BoxLangTranspiler.transform( result.getRoot() );
 
 		assertEquals( "Divide.invoke(1, 2)", javaAST.toString() );
+
+	}
+	@Test
+	public void backslash() throws IOException {
+		String expression = """
+						1 \\ 2
+			""";
+
+		BoxLangParser parser = new BoxLangParser();
+		ParsingResult result = parser.parseExpression( expression );
+
+		Node javaAST = BoxLangTranspiler.transform( result.getRoot() );
+
+		assertEquals( "IntegerDivide.invoke(1, 2)", javaAST.toString() );
 
 	}
 

@@ -21,10 +21,13 @@ import com.github.javaparser.ast.expr.Expression;
 import com.github.javaparser.ast.expr.NameExpr;
 import com.github.javaparser.ast.stmt.Statement;
 import org.apache.commons.text.StringSubstitutor;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import ourtus.boxlang.ast.BoxExpr;
 import ourtus.boxlang.ast.BoxNode;
-import ourtus.boxlang.transpiler.BoxLangTranspiler;
+import ourtus.boxlang.ast.expression.BoxBinaryOperation;
+import ourtus.boxlang.ast.expression.BoxBinaryOperator;
+import ourtus.boxlang.ast.expression.BoxNegateOperation;
+import ourtus.boxlang.transpiler.transformer.indexer.BoxLangCrossReferencer;
+import ourtus.boxlang.transpiler.transformer.indexer.BoxLangCrossReferencerDefault;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -32,6 +35,7 @@ import java.util.Map;
 public abstract class AbstractTransformer implements Transformer {
 
 	protected static JavaParser javaParser = new JavaParser();
+	protected static BoxLangCrossReferencer crossReferencer = new BoxLangCrossReferencerDefault();
 
 	@Override
 	public abstract Node transform( BoxNode node, TransformerContext context ) throws IllegalStateException;
@@ -78,4 +82,26 @@ public abstract class AbstractTransformer implements Transformer {
         }
         return expr;
     }
+
+
+	protected Node addIndex(Node javaNode, BoxNode boxNode) {
+		if(crossReferencer != null) {
+			crossReferencer.storeReference(javaNode,boxNode);
+		}
+		return javaNode;
+	}
+
+	protected boolean requiresBooleanCaster(BoxExpr condition) {
+		if(condition instanceof BoxBinaryOperation) {
+			BoxBinaryOperation op = (BoxBinaryOperation) condition;
+			if(op.getOperator() == BoxBinaryOperator.Or)
+				return false;
+			if(op.getOperator() == BoxBinaryOperator.And)
+				return false;
+		}
+		if(condition instanceof BoxNegateOperation) {
+			return false;
+		}
+		return true;
+	}
 }
