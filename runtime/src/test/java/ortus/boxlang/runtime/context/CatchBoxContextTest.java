@@ -31,7 +31,7 @@ public class CatchBoxContextTest {
 	@Test
 	@DisplayName( "Test default constructor" )
 	void testDefaultConstructor() {
-		CatchBoxContext context = new CatchBoxContext( new TemplateBoxContext(), Key.of( "e" ), new Exception() );
+		CatchBoxContext context = new CatchBoxContext( new ScriptingBoxContext(), Key.of( "e" ), new Exception() );
 		assertThat( context.getParent() ).isNotNull();
 		assertThat( context.scopeFindNearby( Key.of( "e" ), null ).value() instanceof Exception ).isTrue();
 	}

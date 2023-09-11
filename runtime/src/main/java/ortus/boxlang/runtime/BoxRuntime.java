@@ -24,12 +24,12 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import ortus.boxlang.runtime.context.IBoxContext;
-import ortus.boxlang.runtime.context.TemplateBoxContext;
+import ortus.boxlang.runtime.context.ScriptingBoxContext;
 import ortus.boxlang.runtime.dynamic.BaseTemplate;
 import ortus.boxlang.runtime.logging.LoggingConfigurator;
+import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.services.InterceptorService;
 import ortus.boxlang.runtime.types.Struct;
-import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.util.Timer;
 
 /**
@@ -242,7 +242,7 @@ public class BoxRuntime {
 		instance.logger.atDebug().log( "Executing template [{}]", template.path );
 
 		// Build out the execution context for this execution and bind it to the incoming template
-		IBoxContext	context	= new TemplateBoxContext( template );
+		IBoxContext	context	= new ScriptingBoxContext();
 
 		// Announcements
 		Struct		data	= new Struct();

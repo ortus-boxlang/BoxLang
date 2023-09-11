@@ -26,7 +26,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import ortus.boxlang.runtime.context.IBoxContext;
-import ortus.boxlang.runtime.context.TemplateBoxContext;
+import ortus.boxlang.runtime.context.ScriptingBoxContext;
 
 public class BoxResolverTest {
 
@@ -59,7 +59,7 @@ public class BoxResolverTest {
 	public void testResolve() {
 		BoxResolver	boxResolver	= BoxResolver.getInstance();
 
-		IBoxContext	context		= new TemplateBoxContext();
+		IBoxContext	context		= new ScriptingBoxContext();
 		String		className	= "apppath.models.User"; // Example class name
 
 		assertThat( boxResolver.resolve( context, className ).isPresent() ).isFalse();

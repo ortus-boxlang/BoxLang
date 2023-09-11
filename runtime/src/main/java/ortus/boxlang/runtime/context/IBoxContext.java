@@ -19,8 +19,10 @@ package ortus.boxlang.runtime.context;
 
 import java.util.Map;
 
+import ortus.boxlang.runtime.dynamic.BaseTemplate;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
+import ortus.boxlang.runtime.types.Function;
 import ortus.boxlang.runtime.types.UDF;
 import ortus.boxlang.runtime.types.exceptions.KeyNotFoundException;
 import ortus.boxlang.runtime.types.exceptions.ScopeNotFoundException;
@@ -114,6 +116,43 @@ public interface IBoxContext {
 	 * @return The parent box context. Null if none.
 	 */
 	public IBoxContext getParent();
+
+	/**
+	 * Finds the closest function call
+	 *
+	 * @return The Function instance
+	 */
+	public Function findClosestFunction();
+
+	/**
+	 * Push a template to the stack
+	 *
+	 * @param templatePath The template that this execution context is bound to
+	 *
+	 * @return IBoxContext
+	 */
+	public IBoxContext pushTemplate( BaseTemplate template );
+
+	/**
+	 * Pop a template from the stack
+	 *
+	 * @return The template that this execution context is bound to
+	 */
+	public BaseTemplate popTemplate();
+
+	/**
+	 * Has the execution context been bound to a template?
+	 *
+	 * @return True if bound, else false
+	 */
+	public boolean hasTemplates();
+
+	/**
+	 * Finds the closest template
+	 *
+	 * @return The template instance if found, null if this code is not called from a template
+	 */
+	public BaseTemplate findClosestTemplate();
 
 	/**
 	 * Represents the results of a successful scope hunting expedition.

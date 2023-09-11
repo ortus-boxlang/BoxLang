@@ -25,7 +25,7 @@ import java.util.Optional;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-import ortus.boxlang.runtime.context.TemplateBoxContext;
+import ortus.boxlang.runtime.context.ScriptingBoxContext;
 
 public class FunctionServiceTest {
 
@@ -54,7 +54,7 @@ public class FunctionServiceTest {
 
 		Optional<Object> result = functionService.getGlobalFunction( "print" )
 		    .invoke(
-		        new TemplateBoxContext(), "Hello Unit Test"
+		        new ScriptingBoxContext(), "Hello Unit Test"
 		    );
 
 		assertThat( result.isPresent() ).isTrue();

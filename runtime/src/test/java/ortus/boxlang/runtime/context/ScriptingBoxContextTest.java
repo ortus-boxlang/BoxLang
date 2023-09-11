@@ -30,40 +30,31 @@ import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.exceptions.KeyNotFoundException;
 
-@DisplayName( "TemplateBoxContext Tests" )
-public class TemplateBoxContextTest {
+@DisplayName( "ScriptingBoxContext Tests" )
+public class ScriptingBoxContextTest {
 
 	@Test
 	@DisplayName( "Test default constructor" )
 	void testDefaultConstructor() {
-		TemplateBoxContext context = new TemplateBoxContext();
-		assertThat( context.getTemplate() ).isNull();
+		ScriptingBoxContext context = new ScriptingBoxContext();
 		assertThat( context.getParent() ).isNull();
-		assertThat( context.hasTemplate() ).isFalse();
+		assertThat( context.hasTemplates() ).isFalse();
+		assertThat( context.findClosestFunction() ).isNull();
 	}
 
 	@Test
-	@DisplayName( "Test constructor with template path" )
-	void testConstructorWithTemplatePath() {
-		TemplateBoxContext context = new TemplateBoxContext( new BaseTemplate() );
-		assertThat( context.getTemplate() ).isNotNull();
-		assertThat( context.hasTemplate() ).isTrue();
-	}
-
-	@Test
-	@DisplayName( "Test setTemplate" )
-	void testsetTemplate() {
-		TemplateBoxContext	context		= new TemplateBoxContext();
-		BaseTemplate		template	= new BaseTemplate();
-		template.path = "my/path/to/template";
-		context.setTemplate( template );
-		assertThat( "my/path/to/template" ).isEqualTo( context.getTemplate().path );
+	@DisplayName( "Test template path" )
+	void testTemplatePath() {
+		ScriptingBoxContext context = new ScriptingBoxContext();
+		context.pushTemplate( new BaseTemplate() );
+		assertThat( context.findClosestTemplate() ).isNotNull();
+		assertThat( context.hasTemplates() ).isTrue();
 	}
 
 	@Test
 	@DisplayName( "Test scopeFind with existing key" )
 	void testScopeFindExistingKey() {
-		TemplateBoxContext	context			= new TemplateBoxContext();
+		ScriptingBoxContext	context			= new ScriptingBoxContext();
 		Key					key				= Key.of( "testIt" );
 		IScope				variablesScope	= context.getScopeNearby( Key.of( "variables" ) );
 		variablesScope.put( key, "value" );
@@ -75,7 +66,7 @@ public class TemplateBoxContextTest {
 	@Test
 	@DisplayName( "Test scopeFind default scope" )
 	void testScopeFindDefaultScope() {
-		TemplateBoxContext	context			= new TemplateBoxContext();
+		ScriptingBoxContext	context			= new ScriptingBoxContext();
 		Key					key				= Key.of( "testIt" );
 		IScope				variablesScope	= context.getScopeNearby( Key.of( "variables" ) );
 		ScopeSearchResult	result			= context.scopeFindNearby( key, variablesScope );
@@ -86,7 +77,7 @@ public class TemplateBoxContextTest {
 	@Test
 	@DisplayName( "Test scopeFind with missing key" )
 	void testScopeFindMissingKey() {
-		TemplateBoxContext context = new TemplateBoxContext();
+		ScriptingBoxContext context = new ScriptingBoxContext();
 		assertThrows( KeyNotFoundException.class, () -> context.scopeFindNearby( new Key( "nonExistentKey" ), null ) );
 	}
 }

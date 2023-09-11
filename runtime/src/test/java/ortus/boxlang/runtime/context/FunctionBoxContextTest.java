@@ -29,6 +29,9 @@ import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.LocalScope;
 import ortus.boxlang.runtime.scopes.VariablesScope;
+import ortus.boxlang.runtime.types.Function.Argument;
+import ortus.boxlang.runtime.types.SampleUDF;
+import ortus.boxlang.runtime.types.UDF;
 
 @DisplayName( "FunctionBoxContextTest Tests" )
 public class FunctionBoxContextTest {
@@ -36,21 +39,22 @@ public class FunctionBoxContextTest {
 	@Test
 	@DisplayName( "Test constructors" )
 	void testConstructor() {
-		assertThrows( Throwable.class, () -> new FunctionBoxContext( null ) );
-		IBoxContext			parentContext	= new TemplateBoxContext();
-		FunctionBoxContext	context			= new FunctionBoxContext( parentContext );
+		assertThrows( Throwable.class, () -> new FunctionBoxContext( null, null ) );
+		IBoxContext			parentContext	= new ScriptingBoxContext();
+		FunctionBoxContext	context			= new FunctionBoxContext( parentContext, null );
 		assertThat( context.getParent() ).isNotNull();
+		assertThat( context.getFunction() ).isNull();
 
-		context = new FunctionBoxContext( parentContext, new ArgumentsScope() );
+		context = new FunctionBoxContext( parentContext, null, new ArgumentsScope() );
 		assertThat( context.getScopeNearby( ArgumentsScope.name ).getName() ).isEqualTo( ArgumentsScope.name );
 	}
 
 	@Test
 	@DisplayName( "Test scope lookup" )
 	void testScopeLookup() {
-		IBoxContext		parentContext	= new TemplateBoxContext();
+		IBoxContext		parentContext	= new ScriptingBoxContext();
 		ArgumentsScope	argumentsScope	= new ArgumentsScope();
-		IBoxContext		context			= new FunctionBoxContext( parentContext, argumentsScope );
+		IBoxContext		context			= new FunctionBoxContext( parentContext, null, argumentsScope );
 		IScope			localScope		= context.getScopeNearby( LocalScope.name );
 		IScope			variablesScope	= context.getScopeNearby( VariablesScope.name );
 		Key				ambiguous		= Key.of( "ambiguous" );
@@ -87,4 +91,42 @@ public class FunctionBoxContextTest {
 		assertThat( context.scopeFindNearby( variablesOnly, null ).value() ).isEqualTo( "variables scope only" );
 	}
 
+	@Test
+	@DisplayName( "Can find closest function" )
+	void testCanFindClosestFunction() {
+		// We call a function
+		Key					funcName		= Key.of( "MyFunc$" );
+		IBoxContext			parentContext	= new ScriptingBoxContext();
+		UDF					udf				= new SampleUDF( UDF.Access.PUBLIC, funcName, "String", new Argument[] {}, "", false, null );
+		FunctionBoxContext	context			= new FunctionBoxContext( parentContext, udf );
+
+		assertThat( context.findClosestFunction() ).isNotNull();
+		assertThat( context.findClosestFunction().getName() ).isEqualTo( funcName );
+
+		// Our function includes a template
+		IBoxContext childContext = new ScriptingBoxContext( context );
+
+		assertThat( childContext.findClosestFunction() ).isNotNull();
+		assertThat( childContext.findClosestFunction().getName() ).isEqualTo( funcName );
+
+		// which includes another template
+		IBoxContext childChildContext = new ScriptingBoxContext( childContext );
+
+		assertThat( childChildContext.findClosestFunction() ).isNotNull();
+		assertThat( childChildContext.findClosestFunction().getName() ).isEqualTo( funcName );
+
+		// which includes ANOTHER template
+		IBoxContext childChildChildContext = new ScriptingBoxContext( childChildContext );
+
+		assertThat( childChildChildContext.findClosestFunction() ).isNotNull();
+		assertThat( childChildChildContext.findClosestFunction().getName() ).isEqualTo( funcName );
+
+		// which calls another function
+		Key					funcName2	= Key.of( "another_function_here" );
+		UDF					udf2		= new SampleUDF( UDF.Access.PUBLIC, funcName2, "String", new Argument[] {}, "", false, null );
+		FunctionBoxContext	context2	= new FunctionBoxContext( childChildChildContext, udf2 );
+
+		assertThat( context2.findClosestFunction() ).isNotNull();
+		assertThat( context2.findClosestFunction().getName() ).isEqualTo( funcName2 );
+	}
 }

@@ -33,11 +33,6 @@ public abstract class UDF extends Function {
 	private Access	access;
 
 	/**
-	 * The name of the function
-	 */
-	private Key		name;
-
-	/**
 	 * The return type of the function
 	 */
 	private String	returnType;
@@ -52,15 +47,14 @@ public abstract class UDF extends Function {
 	 */
 	private boolean	output;
 
-	// TODO: cachedwithin, modifier, localmode
+	// TODO: cachedwithin, modifier, localmode, return format
 
 	/**
 	 * Constructor
 	 */
 	public UDF( Access access, Key name, String returnType, Argument[] arguments, String hint, boolean output ) {
-		super( arguments );
+		super( name, arguments );
 		this.access		= access;
-		this.name		= name;
 		this.returnType	= returnType;
 		this.hint		= hint;
 		this.output		= output;
@@ -68,10 +62,6 @@ public abstract class UDF extends Function {
 
 	public Access getAccess() {
 		return access;
-	}
-
-	public Key getName() {
-		return name;
 	}
 
 	public String getReturnType() {
