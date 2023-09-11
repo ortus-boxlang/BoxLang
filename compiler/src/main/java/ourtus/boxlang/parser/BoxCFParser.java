@@ -26,14 +26,12 @@ import ortus.boxlang.parser.CFParser;
 import ourtus.boxlang.ast.*;
 import ourtus.boxlang.ast.expression.*;
 import ourtus.boxlang.ast.BoxStatement;
-import ourtus.boxlang.ast.statement.BoxAssignment;
-import ourtus.boxlang.ast.statement.BoxExpression;
-import ourtus.boxlang.ast.statement.BoxIfElse;
-import ourtus.boxlang.ast.statement.BoxLocalDeclaration;
+import ourtus.boxlang.ast.statement.*;
 
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.ArrayList;
 import java.util.List;
 
 public class BoxCFParser extends BoxAbstractParser {
@@ -119,32 +117,54 @@ public class BoxCFParser extends BoxAbstractParser {
 			return toAst( file, node.simpleStatement(),parent );
 		} else if ( node.if_() != null ) {
 			return toAst(file,node.if_(),parent);
+		} else if ( node.while_() != null ) {
+			return toAst(file,node.while_(),parent);
+		} else if ( node.break_() != null ) {
+			return toAst(file,node.break_(),parent);
+		} else if ( node.continue_() != null ) {
+			return toAst(file,node.continue_(),parent);
 		} else {
 			throw new IllegalStateException( "not implemented: " + node.getClass().getSimpleName() );
 		}
 	}
 
+	private BoxStatement toAst(File file, CFParser.ContinueContext node, Node parent) {
+		return new BoxContinue(getPosition(node),getSourceText(node));
+	}
+
+	private BoxStatement toAst(File file, CFParser.BreakContext node, Node parent)  {
+		return new BoxBreak(getPosition(node),getSourceText(node));
+	}
+
+	private BoxStatement toAst(File file, CFParser.WhileContext node, Node parent) {
+		BoxExpr condition = toAst(file,node.expression(),parent);
+		List<BoxStatement> body = new ArrayList<>();
+
+		if(node.statementBlock() != null) {
+			body.addAll(toAst(file,node.statementBlock(),parent));
+		}
+		return  new BoxWhile(condition, body,getPosition(node),getSourceText(node));
+	}
+
 
 	private BoxIfElse toAst(File file, CFParser.IfContext node, Node parent) {
-		BoxIfElse ifStmt = new BoxIfElse(getPosition(node),getSourceText(node));
-		BoxExpr condition = toAst(file,node.expression(),ifStmt);
-		ifStmt.setCondition(condition);
+		BoxExpr condition = toAst(file,node.expression(),parent);
+		List<BoxStatement> thenBody = new ArrayList<>();
+		List<BoxStatement> elseBody = new ArrayList<>();
 
 		if(node.ifStmt != null) {
-			ifStmt.getThenBody().add(toAst(file,node.ifStmt,ifStmt));
+			thenBody.add(toAst(file,node.ifStmt,parent));
 		}
 		if(node.ifStmtBlock != null) {
-			ifStmt.getThenBody().addAll(toAst(file,node.ifStmtBlock,ifStmt));
-		}
-		if(node.elseStmtBlock != null) {
-			ifStmt.getElseBody().addAll(toAst(file,node.elseStmtBlock,ifStmt));
+			thenBody.addAll(toAst(file,node.ifStmtBlock,parent));
 		}
 		if(node.elseStmt != null) {
-			ifStmt.getElseBody().add(toAst(file,node.elseStmt,ifStmt));
+			elseBody.add(toAst(file,node.elseStmt,parent));
 		}
-
-		ifStmt.setParent(parent);
-		return  ifStmt;
+		if(node.elseStmtBlock != null) {
+			elseBody.addAll(toAst(file,node.elseStmtBlock,parent));
+		}
+		return  new BoxIfElse(condition, thenBody, elseBody,getPosition(node),getSourceText(node));
 	}
 
 	private List<BoxStatement> toAst(File file, CFParser.StatementBlockContext block,Node parent) {
@@ -219,7 +239,6 @@ public class BoxCFParser extends BoxAbstractParser {
 		if(keyword != null && keyword.scope() != null) {
 			return toAst(file,keyword.scope());
 		}
-
 		return new BoxIdentifier( identifier.getText(), getPosition( identifier ), getSourceText( identifier ) );
 	}
 
@@ -238,19 +257,32 @@ public class BoxCFParser extends BoxAbstractParser {
 		if ( expression.literalExpression() != null ) {
 			if ( expression.literalExpression().stringLiteral() != null ) {
 				CFParser.StringLiteralContext node = expression.literalExpression().stringLiteral();
-				return new BoxStringLiteral( node.getText(),
+				return  new BoxStringLiteral(
+					node.getText(),
 					getPosition( node ),
-					getSourceText( node ) );
+					getSourceText( node )
+				);
 			}
 			if ( expression.literalExpression().integerLiteral() != null ) {
 				CFParser.IntegerLiteralContext node = expression.literalExpression().integerLiteral();
-				return new BoxIntegerLiteral( node.getText(),
+				return new BoxIntegerLiteral(
+					node.getText(),
 					getPosition( node ),
-					getSourceText( node ) );
+					getSourceText( node )
+				);
+			}
+			if ( expression.literalExpression().floatLiteral() != null ) {
+				CFParser.FloatLiteralContext node = expression.literalExpression().floatLiteral();
+				return new BoxDecimalLiteral(
+					node.getText(),
+					getPosition( node ),
+					getSourceText( node )
+				);
 			}
 			if ( expression.literalExpression().booleanLiteral() != null ) {
 				CFParser.BooleanLiteralContext node = expression.literalExpression().booleanLiteral();
-				return new BoxBooleanLiteral( node.getText(),
+				return new BoxBooleanLiteral(
+					node.getText(),
 					getPosition( node ),
 					getSourceText( node ) );
 			}
@@ -262,6 +294,8 @@ public class BoxCFParser extends BoxAbstractParser {
 			return toAst( file, expression.objectExpression(), parent );
 		} else if ( expression.methodInvokation() != null ) {
 			return toAst( file, expression.methodInvokation(), parent );
+		} else if ( expression.unary() != null ) {
+			return toAst( file, expression.unary(), parent );
 		} else if ( expression.AND() != null ) {
 			BoxExpr left = toAst(file,expression.expression(0),parent);
 			BoxExpr right = toAst(file,expression.expression(1),parent);
@@ -286,6 +320,14 @@ public class BoxCFParser extends BoxAbstractParser {
 			BoxExpr left = toAst(file,expression.expression(0),parent);
 			BoxExpr right = toAst(file,expression.expression(1),parent);
 			return new BoxBinaryOperation(left,BoxBinaryOperator.Slash,right,getPosition(expression),getSourceText(expression));
+		}  else if ( expression.BACKSLASH() != null ) {
+			BoxExpr left = toAst(file,expression.expression(0),parent);
+			BoxExpr right = toAst(file,expression.expression(1),parent);
+			return new BoxBinaryOperation(left,BoxBinaryOperator.Backslash,right,getPosition(expression),getSourceText(expression));
+		} else if ( expression.POWER() != null ) {
+			BoxExpr left = toAst(file,expression.expression(0),parent);
+			BoxExpr right = toAst(file,expression.expression(1),parent);
+			return new BoxBinaryOperation(left,BoxBinaryOperator.Power,right,getPosition(expression),getSourceText(expression));
 		} else if ( expression.XOR() != null ) {
 			BoxExpr left = toAst(file,expression.expression(0),parent);
 			BoxExpr right = toAst(file,expression.expression(1),parent);
@@ -364,7 +406,6 @@ public class BoxCFParser extends BoxAbstractParser {
 		} else if( expression.CONTAIN() != null && expression.DOES() != null && expression.NOT() != null) {
 			BoxExpr left = toAst(file,expression.expression(0),parent);
 			BoxExpr right = toAst(file,expression.expression(1),parent);
-
 			return new BoxBinaryOperation(left,BoxBinaryOperator.NotContains,right,getPosition(expression),getSourceText(expression));
 		} else if ( expression.LPAREN() != null ) {
 			BoxExpr expr  = toAst(file,expression.expression(0),parent);
@@ -374,29 +415,35 @@ public class BoxCFParser extends BoxAbstractParser {
 		throw new IllegalStateException( "not implemented: " + expression.getClass().getSimpleName() );
 	}
 
+	private BoxExpr toAst(File file, CFParser.UnaryContext expression, Node parent) {
+		BoxExpr expr = toAst(file,expression.expression(),parent);
+		BoxBinaryOperator op = expression.MINUS() != null ? BoxBinaryOperator.Plus : BoxBinaryOperator.Minus ;
+		return new BoxUnaryOperation(expr,op,getPosition(expression),getSourceText(expression));
+	}
+
 	private BoxExpr toAst(File file, CFParser.MethodInvokationContext expression, Node parent) {
 
+		List<BoxArgument> args = new ArrayList<>();
 		String name = expression.functionInvokation().identifier().getText();
 
 		if(expression.accessExpression() != null) {
 			BoxExpr obj = toAst(file, expression.accessExpression(),parent);
-			BoxMethodInvocation stmt = new BoxMethodInvocation(name, obj, getPosition(expression), getSourceText(expression));
 			if(expression.functionInvokation().argumentList() != null) {
 				for(CFParser.ArgumentContext arg : expression.functionInvokation().argumentList().argument()) {
-					stmt.getArguments().add( toAst(file,arg, stmt));
+					args.add( toAst(file,arg, parent));
+					//args.add( toAst(file,arg, parent));
 				}
 			}
-			return stmt;
+			return new BoxMethodInvocation(name, obj, args, getPosition(expression), getSourceText(expression));
 		} else if(expression.objectExpression() != null) {
 			BoxExpr obj = toAst(file,expression.objectExpression(),parent);
 			if(expression.functionInvokation() != null) {
-				BoxMethodInvocation stmt = new BoxMethodInvocation(name, obj, getPosition(expression), getSourceText(expression));
 				if(expression.functionInvokation().argumentList() != null) {
 					for(CFParser.ArgumentContext arg : expression.functionInvokation().argumentList().argument()) {
-						stmt.getArguments().add( toAst(file,arg, stmt));
+						args.add( toAst(file,arg, parent));
 					}
 				}
-				return stmt;
+				return new BoxMethodInvocation(name, obj, args, getPosition(expression), getSourceText(expression));
 			}
 		}
 
@@ -416,20 +463,27 @@ public class BoxCFParser extends BoxAbstractParser {
 	}
 
 	private BoxExpr toAst( File file, CFParser.FunctionInvokationContext invocation, Node parent ) {
-		BoxFunctionInvocation stmt = new BoxFunctionInvocation( invocation.identifier().getText(),
-			getPosition( invocation ), getSourceText( invocation ) );
-
-		if ( invocation.argumentList() != null ) {
-			invocation.argumentList().argument().stream().map( arg -> toAst( file, arg ,stmt ) )
-				.forEach( arg -> stmt.getArguments().add( arg ) );
+		List<BoxArgument> args = new ArrayList<>();
+		if(invocation.argumentList() != null) {
+			for(CFParser.ArgumentContext arg : invocation.argumentList().argument()) {
+				args.add( toAst(file,arg, parent));
+			}
 		}
-
-		return stmt;
+		return  new BoxFunctionInvocation( invocation.identifier().getText(),
+			args,
+			getPosition( invocation ), getSourceText( invocation ) );
 	}
 
-	private BoxExpr toAst( File file, CFParser.ArgumentContext argument, Node parent ) {
-		return toAst( file, argument.expression().get( 0 ),parent );
-		// TODO: handle default value (when expression().size() == 2
+	private BoxArgument toAst( File file, CFParser.ArgumentContext argument, Node parent ) {
+
+		if(argument.EQUAL() != null || argument.COLON() != null) {
+			BoxExpr value = toAst( file, argument.expression().get( 1 ),parent );
+			BoxExpr name = toAst( file, argument.expression().get( 0 ),parent );
+			return new BoxArgument(name,value,getPosition(argument),getSourceText(argument));
+		} else {
+			BoxExpr value = toAst( file, argument.expression().get( 0 ),parent );
+			return new BoxArgument(value,getPosition(argument),getSourceText(argument));
+		}
 	}
 
 	private BoxStatement toAst( File file, CFParser.FunctionContext function ) {

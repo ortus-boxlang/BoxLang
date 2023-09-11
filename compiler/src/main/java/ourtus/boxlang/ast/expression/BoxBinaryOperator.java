@@ -22,6 +22,8 @@ public enum BoxBinaryOperator {
 	Minus,
 	Star,
 	Slash,
+	Power,
+	Backslash,
 	Xor,
 	Mod,
 	InstanceOf,
