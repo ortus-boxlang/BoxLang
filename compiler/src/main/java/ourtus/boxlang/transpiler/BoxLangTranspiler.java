@@ -23,16 +23,15 @@ import ourtus.boxlang.ast.BoxNode;
 import ourtus.boxlang.ast.BoxScript;
 import ourtus.boxlang.ast.BoxStatement;
 import ourtus.boxlang.ast.expression.*;
-import ourtus.boxlang.ast.statement.BoxAssignment;
-import ourtus.boxlang.ast.statement.BoxExpression;
-import ourtus.boxlang.ast.statement.BoxIfElse;
-import ourtus.boxlang.ast.statement.BoxLocalDeclaration;
+import ourtus.boxlang.ast.statement.*;
 import ourtus.boxlang.transpiler.transformer.*;
 import ourtus.boxlang.transpiler.transformer.expression.*;
 
 import java.util.HashMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import ourtus.boxlang.transpiler.transformer.statement.*;
+
 public class BoxLangTranspiler {
 	static Logger logger = LoggerFactory.getLogger( BoxLangTranspiler.class );
 
@@ -41,7 +40,6 @@ public class BoxLangTranspiler {
 		put(BoxScript.class,new BoxScriptTransformer());
 		put(BoxAssignment.class,new BoxAssignmentTransformer());
 		put(BoxArrayAccess.class,new BoxArrayAccessTransformer());
-		put(BoxIfElse.class,new BoxIfElseTransformer());
 		put(BoxExpression.class,new BoxExpressionTransformer());
 
 		// Expressions
@@ -51,6 +49,7 @@ public class BoxLangTranspiler {
 		put(BoxStringLiteral.class,new BoxStringLiteralTransformer());
 		put(BoxIntegerLiteral.class,new BoxIntegerLiteralTransformer());
 		put(BoxBooleanLiteral.class,new BoxBooleanLiteralTransformer());
+		put(BoxArgument.class,new BoxArgumentTransformer());
 
 		put(BoxParenthesis.class,new BoxParenthesisTransformer());
 		put(BoxBinaryOperation.class,new BoxBinaryOperationTransformer());
@@ -62,6 +61,10 @@ public class BoxLangTranspiler {
 		put(BoxMethodInvocation.class,new BoxMethodInvocationTransformer());
 		put(BoxFunctionInvocation.class,new BoxFunctionInvocationTransformer());
 		put(BoxLocalDeclaration.class,new BoxLocalDeclarationTransformer());
+		put(BoxIfElse.class,new BoxIfElseTransformer());
+		put(BoxWhile.class,new BoxWhileTransformer());
+		put(BoxBreak.class,new BoxBreakTransformer());
+		put(BoxContinue.class,new BoxContinueTransformer());
 
 	}};
 	public BoxLangTranspiler() { }
