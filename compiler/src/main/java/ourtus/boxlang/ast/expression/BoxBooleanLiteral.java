@@ -15,6 +15,7 @@
 package ourtus.boxlang.ast.expression;
 
 import ourtus.boxlang.ast.BoxExpr;
+import ourtus.boxlang.ast.Node;
 import ourtus.boxlang.ast.Position;
 
 public class BoxBooleanLiteral extends BoxExpr {
@@ -24,7 +25,12 @@ public class BoxBooleanLiteral extends BoxExpr {
 	public String getValue() {
 		return value;
 	}
-
+	/**
+	 * Terminal node BooleanLiteral
+	 * @param value
+	 * @param position
+	 * @param sourceText
+	 */
 	public BoxBooleanLiteral(String value, Position position, String sourceText ) {
 		super( position, sourceText );
 		this.value =  value;

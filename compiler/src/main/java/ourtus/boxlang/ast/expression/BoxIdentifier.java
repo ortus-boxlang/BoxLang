@@ -27,6 +27,12 @@ public class BoxIdentifier extends BoxExpr implements Named {
 		return name;
 	}
 
+	/**
+	 * Identifier
+	 * @param name
+	 * @param position
+	 * @param sourceText
+	 */
 	public BoxIdentifier(String name, Position position, String sourceText ) {
 		super( position, sourceText );
 		this.name = name;

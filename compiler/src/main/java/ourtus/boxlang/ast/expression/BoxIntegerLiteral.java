@@ -15,6 +15,7 @@
 package ourtus.boxlang.ast.expression;
 
 import ourtus.boxlang.ast.BoxExpr;
+import ourtus.boxlang.ast.Node;
 import ourtus.boxlang.ast.Position;
 
 public class BoxIntegerLiteral extends BoxExpr {
@@ -24,7 +25,12 @@ public class BoxIntegerLiteral extends BoxExpr {
 	public String getValue() {
 		return value;
 	}
-
+	/**
+	 * Terminal node IntegerLiteral
+	 * @param value
+	 * @param position
+	 * @param sourceText
+	 */
 	public BoxIntegerLiteral(String value, Position position, String sourceText ) {
 		super( position, sourceText );
 		this.value =  value;
