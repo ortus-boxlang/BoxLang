@@ -54,6 +54,10 @@ public class BoxBinaryOperationTransformer extends AbstractTransformer {
 			template = "Multiply.invoke(${left},${right})";
 		} else if (operation.getOperator() == BoxBinaryOperator.Slash) {
 			template = "Divide.invoke(${left},${right})";
+		} else if (operation.getOperator() == BoxBinaryOperator.Backslash) {
+			template = "IntegerDivide.invoke(${left},${right})";
+		} else if (operation.getOperator() == BoxBinaryOperator.Power) {
+			template = "Power.invoke(${left},${right})";
 		} else if (operation.getOperator() == BoxBinaryOperator.Xor) {
 			template = "Xor.invoke(${left},${right})";
 		} else if (operation.getOperator() == BoxBinaryOperator.Mod) {
