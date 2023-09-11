@@ -24,6 +24,14 @@ public class BoxAssignment extends BoxStatement {
 	private BoxExpr left;
 	private BoxExpr right;
 
+	public BoxAssignment(BoxExpr left, BoxExpr right, Position position, String sourceText) {
+		super( position, sourceText );
+		this.left  = left;
+		this.right = right;
+		this.left.setParent(this);
+		this.right.setParent(this);
+	}
+
 	public BoxExpr getLeft() {
 		return left;
 	}
@@ -37,12 +45,6 @@ public class BoxAssignment extends BoxStatement {
 	}
 
 	public void setRight( BoxExpr right ) {
-		this.right = right;
-	}
-
-	public BoxAssignment(BoxExpr left, BoxExpr right, Position position, String sourceText) {
-		super( position, sourceText );
-		this.left  = left;
 		this.right = right;
 	}
 }
