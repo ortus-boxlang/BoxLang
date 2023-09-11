@@ -397,7 +397,7 @@ structMember
     ;
 
 unary
-    :   (MINUS | PLUS) literalExpression
+    :   (MINUS | PLUS) expression
     ;
 
 not
@@ -425,7 +425,7 @@ expression
     |   methodInvokation
     |   anonymousFunction
     |   expression QM expression COLON expression // Ternary
-    |	expression (STAR | SLASH | PERCENT) expression
+    |	expression (STAR | SLASH | PERCENT | BACKSLASH | POWER) expression
     |   expression (PLUS | MINUS | MOD ) expression
     |   expression ( AMPERSAND |  XOR | INSTANCEOF) expression // Math
     |   expression (EQ | GT | GTE | LT | LTE | NEQ | CONTAINS | NOT CONTAINS | TEQ) expression // Comparision
@@ -453,9 +453,9 @@ objectExpression
     ;
 
 accessExpression
-    :   identifier
+    :   identifier QM?
 //    |   functionInvokation
-    |   arrayAccess
-    |   objectExpression DOT accessExpression
+    |   arrayAccess QM?
+    |   objectExpression QM? DOT  accessExpression
     |	stringLiteral
     ;
