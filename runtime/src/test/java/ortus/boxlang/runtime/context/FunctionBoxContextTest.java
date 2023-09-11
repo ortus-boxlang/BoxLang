@@ -129,4 +129,14 @@ public class FunctionBoxContextTest {
 		assertThat( context2.findClosestFunction() ).isNotNull();
 		assertThat( context2.findClosestFunction().getName() ).isEqualTo( funcName2 );
 	}
+
+	@Test
+	@DisplayName( "Test default assignment scope" )
+	void testDefaultAssignmentScope() {
+		Key					funcName		= Key.of( "MyFunc$" );
+		IBoxContext			parentContext	= new ScriptingBoxContext();
+		UDF					udf				= new SampleUDF( UDF.Access.PUBLIC, funcName, "String", new Argument[] {}, "", false, null );
+		FunctionBoxContext	context			= new FunctionBoxContext( parentContext, udf );
+		assertThat( context.getDefaultAssignmentScope().getName().getName() ).isEqualTo( "local" );
+	}
 }

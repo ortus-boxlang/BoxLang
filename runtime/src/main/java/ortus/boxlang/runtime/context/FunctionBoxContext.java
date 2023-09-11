@@ -147,4 +147,14 @@ public class FunctionBoxContext extends BaseBoxContext {
 		return function;
 	}
 
+	/**
+	 * Get the default variable assignment scope for this context
+	 *
+	 * @return The scope reference to use
+	 */
+	public IScope getDefaultAssignmentScope() {
+		// DIFFERENT FROM CFML ENGINES! Same as Lucee's "local mode"
+		return localScope;
+	}
+
 }
