@@ -125,9 +125,19 @@ public class BoxCFParser extends BoxAbstractParser {
 			return toAst(file,node.continue_(),parent);
 		} else if ( node.switch_() != null ) {
 			return toAst(file,node.switch_(),parent);
+		} else if ( node.for_() != null ) {
+			return toAst(file,node.for_(),parent);
 		} else {
 			throw new IllegalStateException( "not implemented: " + node.getClass().getSimpleName() );
 		}
+	}
+
+	private BoxStatement toAst(File file, CFParser.ForContext node, Node parent) {
+		BoxExpr variable = toAst(file,node.identifier(),parent);
+		BoxExpr collection = toAst(file,node.expression(),parent);
+		List<BoxStatement> body = toAst(file,node.statementBlock(),parent);
+
+		return new BoxForIn(variable,collection,body,getPosition(node),getSourceText(node));
 	}
 
 	private BoxStatement toAst(File file, CFParser.SwitchContext node, Node parent) {
