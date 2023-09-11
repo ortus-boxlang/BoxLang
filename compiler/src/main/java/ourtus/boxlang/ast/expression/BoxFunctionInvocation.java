@@ -19,6 +19,7 @@ import ourtus.boxlang.ast.Position;
 import ourtus.boxlang.ast.ReferenceByName;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 public class BoxFunctionInvocation extends BoxExpr {
@@ -29,15 +30,23 @@ public class BoxFunctionInvocation extends BoxExpr {
 		return name;
 	}
 
-	private final List<BoxExpr> arguments;
+	private final List<BoxArgument> arguments;
 
-	public List<BoxExpr> getArguments() {
+	public List<BoxArgument> getArguments() {
 		return arguments;
 	}
 
-	public BoxFunctionInvocation(String name, Position position, String sourceText ) {
+	/**
+	 * Function invocation i.e. create(x)
+	 * @param name
+	 * @param arguments
+	 * @param position
+	 * @param sourceText
+	 */
+	public BoxFunctionInvocation(String name, List<BoxArgument> arguments, Position position, String sourceText ) {
 		super( position, sourceText );
 		this.name      = new ReferenceByName( name );
-		this.arguments = new ArrayList<>();
+		this.arguments = Collections.unmodifiableList(arguments);
+		this.arguments.stream().forEach( arg -> arg.setParent(this));
 	}
 }
