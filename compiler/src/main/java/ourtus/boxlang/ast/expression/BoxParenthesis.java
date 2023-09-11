@@ -28,5 +28,6 @@ public class BoxParenthesis extends BoxExpr {
 	public BoxParenthesis(BoxExpr expression, Position position, String sourceText ) {
 		super( position, sourceText );
 		this.expression =  expression;
+		this.expression.setParent(this);
 	}
 }

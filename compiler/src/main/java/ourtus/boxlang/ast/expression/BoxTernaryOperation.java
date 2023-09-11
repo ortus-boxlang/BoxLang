@@ -26,6 +26,9 @@ public class BoxTernaryOperation extends BoxExpr  {
 		this.condition = condition;
 		this.whenTrue = whenTrue;
 		this.whenFalse = whenFalse;
+		this.condition.setParent(this);
+		this.whenTrue.setParent(this);
+		this.whenFalse.setParent(this);
 	}
 
 	public BoxExpr getCondition() {

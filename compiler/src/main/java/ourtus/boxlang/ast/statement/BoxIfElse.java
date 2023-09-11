@@ -19,25 +19,27 @@ import ourtus.boxlang.ast.Position;
 import ourtus.boxlang.ast.BoxExpr;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 public class BoxIfElse extends BoxStatement {
 
-	private  BoxExpr condition;
+	private  final BoxExpr condition;
 	private final List<BoxStatement> thenBody;
 	private final List<BoxStatement> elseBody;
-	public BoxIfElse(Position position, String sourceText) {
+
+	public BoxIfElse(BoxExpr condition, List<BoxStatement> thenBody, List<BoxStatement> elseBody, Position position, String sourceText) {
 		super(position, sourceText);
-		this.thenBody = new ArrayList<>();
-		this.elseBody = new ArrayList<>();
+		this.condition = condition;
+		this.condition.setParent(this);
+		this.thenBody = Collections.unmodifiableList(thenBody);
+		this.elseBody = Collections.unmodifiableList(elseBody);
+		this.thenBody.forEach(arg -> arg.setParent(this));
+		this.elseBody.forEach(arg -> arg.setParent(this));
 	}
 
 	public BoxExpr getCondition() {
 		return condition;
-	}
-
-	public void setCondition(BoxExpr condition) {
-		this.condition = condition;
 	}
 
 	public List<BoxStatement> getThenBody() {

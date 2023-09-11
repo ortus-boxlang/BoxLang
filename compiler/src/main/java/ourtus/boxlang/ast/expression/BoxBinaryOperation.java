@@ -22,11 +22,21 @@ public class BoxBinaryOperation extends BoxExpr  {
 	private final BoxExpr right;
 	private final BoxBinaryOperator operator;
 
+	/**
+	 * Binary operation i.e. a + 1
+	 * @param left
+	 * @param operator
+	 * @param right
+	 * @param position
+	 * @param sourceText
+	 */
 	public BoxBinaryOperation(BoxExpr left, BoxBinaryOperator operator, BoxExpr right, Position position, String sourceText) {
 		super(position, sourceText);
 		this.left = left;
 		this.right = right;
 		this.operator = operator;
+		this.left.setParent(this);
+		this.right.setParent(this);
 	}
 
 	public BoxExpr getLeft() {

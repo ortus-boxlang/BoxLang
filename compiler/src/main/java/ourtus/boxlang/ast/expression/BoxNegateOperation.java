@@ -22,10 +22,18 @@ public class BoxNegateOperation extends BoxExpr {
 	private final BoxExpr expr;
 	private final BoxNegateOperator operator;
 
+	/**
+	 * Negate (not)
+	 * @param expr
+	 * @param operator
+	 * @param position
+	 * @param sourceText
+	 */
 	public BoxNegateOperation(BoxExpr expr, BoxNegateOperator operator, Position position, String sourceText ) {
 		super( position, sourceText );
 		this.expr = expr;
 		this.operator = operator;
+		this.expr.setParent(this);
 	}
 
 	public BoxExpr getExpr() {
