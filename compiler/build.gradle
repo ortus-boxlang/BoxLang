@@ -4,9 +4,13 @@ plugins {
 	// This produces the distributions and scripts for any OS
 	id 'application'
 
+	// Parser + Compiler
 	id 'org.jetbrains.kotlin.jvm' version "${kotlinVersion}"
 	id 'java-library'
 	id 'antlr'
+
+	// For source code formatting
+	id "com.diffplug.spotless" version "6.20.0"
 }
 
 /**
@@ -60,6 +64,19 @@ dependencies {
 
 	testImplementation "org.jetbrains.kotlin:kotlin-test:$kotlinVersion"
 	testImplementation 'org.apache.commons:commons-lang3:3.13.0'
+}
+
+/**
+ * Source Code Formatting
+ */
+spotless {
+    java {
+		target fileTree( "." ) {
+            include "**/*.java"
+            exclude "**/build/**", "bin/**"
+        }
+        eclipse().configFile( "../workbench/ortus-java-style.xml" )
+    }
 }
 
 /**
