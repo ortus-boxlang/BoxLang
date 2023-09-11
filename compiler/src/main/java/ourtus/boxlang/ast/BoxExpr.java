@@ -19,6 +19,9 @@ import ourtus.boxlang.ast.Position;
 
 public abstract class BoxExpr extends BoxNode {
 
+	public boolean isLiteral() {
+		return false;
+	}
 	public BoxExpr(Position position, String sourceText ) {
 		super( position, sourceText );
 	}
