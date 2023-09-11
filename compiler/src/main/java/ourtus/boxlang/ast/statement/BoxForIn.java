@@ -17,27 +17,32 @@ package ourtus.boxlang.ast.statement;
 import ourtus.boxlang.ast.BoxExpr;
 import ourtus.boxlang.ast.BoxStatement;
 import ourtus.boxlang.ast.Position;
+import ourtus.boxlang.ast.expression.BoxIdentifier;
 
 import java.util.Collections;
 import java.util.List;
 
-public class BoxSwitchCase extends BoxStatement {
+public class BoxForIn extends BoxStatement {
 
-	private final BoxExpr condition;
+	private  final	BoxExpr variable;
+	private  final	BoxExpr expression;
 	private final List<BoxStatement> body;
-	public BoxSwitchCase(BoxExpr condition,List<BoxStatement> body, Position position, String sourceText) {
+	public BoxForIn(BoxExpr variable,BoxExpr expression, List<BoxStatement> body, Position position, String sourceText) {
 		super(position, sourceText);
-		this.condition = condition;
-		// condition == null is the default case
-		if(condition != null) {
-			this.condition.setParent(this);
-		}
+		this.variable = variable;
+		this.variable.setParent(this);
+		this.expression = expression;
+		this.expression.setParent(this);
 		this.body = Collections.unmodifiableList(body);
 		this.body.forEach(arg -> arg.setParent(this));
 	}
 
-	public BoxExpr getCondition() {
-		return condition;
+	public BoxExpr getVariable() {
+		return variable;
+	}
+
+	public BoxExpr getExpression() {
+		return expression;
 	}
 
 	public List<BoxStatement> getBody() {

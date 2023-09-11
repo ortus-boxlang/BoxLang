@@ -22,6 +22,11 @@ public class BoxDecimalLiteral extends BoxExpr {
 
 	private final String value;
 
+	@Override
+	public boolean isLiteral() {
+		return true;
+	}
+
 	public String getValue() {
 		return value;
 	}

@@ -63,8 +63,10 @@ public class BoxLangTranspiler {
 		put(BoxLocalDeclaration.class,new BoxLocalDeclarationTransformer());
 		put(BoxIfElse.class,new BoxIfElseTransformer());
 		put(BoxWhile.class,new BoxWhileTransformer());
+		put(BoxSwitch.class,new BoxSwitchTransformer());
 		put(BoxBreak.class,new BoxBreakTransformer());
 		put(BoxContinue.class,new BoxContinueTransformer());
+		put(BoxForIn.class,new BoxForInTransformer());
 
 	}};
 	public BoxLangTranspiler() { }
