@@ -9,22 +9,27 @@ import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.KeyNotFoundException;
 import ortus.boxlang.runtime.types.exceptions.ScopeNotFoundException;
 
+/**
+ * This context represents the context of any function execution in BoxLang
+ * It encapsulates the arguments scope and local scope and has a reference to the function being invoked.
+ * This context is extended for use with both UDFs and Closures as well
+ */
 public class FunctionBoxContext extends BaseBoxContext {
 
 	/**
 	 * The arguments scope
 	 */
-	private IScope		argumentsScope;
+	protected IScope	argumentsScope;
 
 	/**
 	 * The local scope
 	 */
-	private IScope		localScope;
+	protected IScope	localScope;
 
 	/**
 	 * The Function being invoked with this context
 	 */
-	private Function	function;
+	protected Function	function;
 
 	/**
 	 * Creates a new execution context with a bounded function instance and parent context
@@ -36,6 +41,13 @@ public class FunctionBoxContext extends BaseBoxContext {
 		this( parent, function, new ArgumentsScope() );
 	}
 
+	/**
+	 * Creates a new execution context with a bounded function instance and parent context and arguments scope
+	 *
+	 * @param parent         The parent context
+	 * @param function       The function being invoked with this context
+	 * @param argumentsScope The arguments scope
+	 */
 	public FunctionBoxContext( IBoxContext parent, Function function, ArgumentsScope argumentsScope ) {
 		super( parent );
 		if ( parent == null ) {
@@ -53,6 +65,9 @@ public class FunctionBoxContext extends BaseBoxContext {
 		return function;
 	}
 
+	/**
+	 * Search for a variable in "nearby" scopes
+	 */
 	public ScopeSearchResult scopeFindNearby( Key key, IScope defaultScope ) {
 
 		Object result = localScope.getRaw( key );
@@ -84,6 +99,9 @@ public class FunctionBoxContext extends BaseBoxContext {
 		);
 	}
 
+	/**
+	 * Search for a variable in scopes
+	 */
 	public ScopeSearchResult scopeFind( Key key, IScope defaultScope ) {
 
 		// The FunctionBoxContext has no "global" scopes, so just defer to parent
@@ -103,6 +121,9 @@ public class FunctionBoxContext extends BaseBoxContext {
 		);
 	}
 
+	/**
+	 * Look for a scope by name
+	 */
 	public IScope getScope( Key name ) throws ScopeNotFoundException {
 
 		// The FunctionBoxContext has no "global" scopes, so just defer to parent
@@ -117,6 +138,9 @@ public class FunctionBoxContext extends BaseBoxContext {
 
 	}
 
+	/**
+	 * Look for a "nearby" scope by name
+	 */
 	public IScope getScopeNearby( Key name ) throws ScopeNotFoundException {
 		// Check the scopes I know about
 		if ( name.equals( localScope.getName() ) ) {
