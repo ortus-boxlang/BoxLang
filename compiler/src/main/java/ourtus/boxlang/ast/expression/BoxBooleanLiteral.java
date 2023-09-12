@@ -18,6 +18,9 @@ import ourtus.boxlang.ast.BoxExpr;
 import ourtus.boxlang.ast.Node;
 import ourtus.boxlang.ast.Position;
 
+/**
+ * AST Node representing a boolean value
+ */
 public class BoxBooleanLiteral extends BoxExpr {
 
 	private final String value;
@@ -31,10 +34,10 @@ public class BoxBooleanLiteral extends BoxExpr {
 		return value;
 	}
 	/**
-	 * Terminal node BooleanLiteral
-	 * @param value
-	 * @param position
-	 * @param sourceText
+	 * Creates the AST node
+	 * @param value boolean value
+	 * @param position position of the statement in the source code
+	 * @param sourceText source code that originated the Node
 	 */
 	public BoxBooleanLiteral(String value, Position position, String sourceText ) {
 		super( position, sourceText );
