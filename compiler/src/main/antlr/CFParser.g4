@@ -414,9 +414,13 @@ fqn
 
 expression
     :   unary
+	|	pre=PLUSPLUS expression
+    |	pre=MINUSMINUS expression
+	|	expression post=PLUSPLUS
+	|	expression post=MINUSMINUS
     |   not
     |   new
-    |   incrementDecrementStatement
+//    |   incrementDecrementStatement
     |   literalExpression
     |   objectExpression
     |	identifier

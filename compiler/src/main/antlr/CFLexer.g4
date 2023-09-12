@@ -97,6 +97,7 @@ ARROW_RIGHT     :   '=>';
 LT              :   '<'  | 'LT';
 LTE             :   '<=' | 'LTE';
 MINUS           :   '-';
+MINUSMINUS      :   '--';
 NEQ             :   '!=' | 'NEQ' | '<>';
 NOT             :   '!'  | 'NOT';
 OR              :   '||' | 'OR';
@@ -109,6 +110,7 @@ STAR            :   '*';
 STRCONCASSIGN   :   '&=';
 PLUSEQUAL       :   '+=';
 PLUS            :   '+';
+PLUSPLUS        :   '++';
 TEQ				:   '===';
 
 
