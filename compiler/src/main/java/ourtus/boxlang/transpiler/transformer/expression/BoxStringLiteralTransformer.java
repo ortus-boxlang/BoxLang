@@ -23,6 +23,9 @@ import ourtus.boxlang.ast.expression.BoxStringLiteral;
 import ourtus.boxlang.transpiler.transformer.AbstractTransformer;
 import ourtus.boxlang.transpiler.transformer.TransformerContext;
 
+/**
+ * Transform aBoxStringLiteral Node the equivalent Java Parser AST nodes
+ */
 public class BoxStringLiteralTransformer extends AbstractTransformer {
 
 	Logger logger = LoggerFactory.getLogger( BoxStringLiteralTransformer.class );
