@@ -17,6 +17,10 @@ package ourtus.boxlang.ast.expression;
 import ourtus.boxlang.ast.BoxExpr;
 import ourtus.boxlang.ast.Position;
 
+/**
+ * AST Node representing an argument.
+ * Argument can have a name like: <code>a=10</code>
+ */
 public class BoxArgument extends BoxExpr {
 
 	private BoxExpr name = null;
@@ -34,10 +38,10 @@ public class BoxArgument extends BoxExpr {
 	}
 
 	/**
-	 * Argument expression
-	 * @param value
-	 * @param position
-	 * @param sourceText
+	 * Creates the AST node for an anonymous argument
+	 * @param value expression representing the value of the argument
+	 * @param position position of the statement in the source code
+	 * @param sourceText source code that originated the Node
 	 */
 	public BoxArgument(BoxExpr value, Position position, String sourceText ) {
 		super( position, sourceText );
@@ -46,11 +50,11 @@ public class BoxArgument extends BoxExpr {
 	}
 
 	/**
-	 * Named argument
-	 * @param name
-	 * @param value
-	 * @param position
-	 * @param sourceText
+	 * Creates the AST node for a named argument
+	 * @param name expression representing the name of the argument
+	 * @param value expression representing the value of the argument
+	 * @param position position of the statement in the source code
+	 * @param sourceText source code that originated the Node
 	 */
 	public BoxArgument(BoxExpr name,BoxExpr value, Position position, String sourceText ) {
 		super( position, sourceText );
