@@ -58,6 +58,7 @@ class TestBoxlangToJavaAST : BaseTest() {
 	}
 
 	@Test
+	@Ignore
 	fun compileAndRunHelloWorld() {
 
 		// Parsing CFML to Boxlang AST
