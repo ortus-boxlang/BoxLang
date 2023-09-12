@@ -17,6 +17,11 @@ package ourtus.boxlang.ast.expression;
 import ourtus.boxlang.ast.BoxExpr;
 import ourtus.boxlang.ast.Position;
 
+
+/**
+ * AST Node representing access with a dot like:
+ * <code>object.property</code> or <code>object.method()</code>
+ */
 public class BoxObjectAccess extends BoxAccess {
 
 	private BoxExpr context;
@@ -38,6 +43,13 @@ public class BoxObjectAccess extends BoxAccess {
 		this.access = access;
 	}
 
+	/**
+	 * Creates the AST node
+	 * @param context expression representing the object
+	 * @param access expression after the dot
+	 * @param position position of the statement in the source code
+	 * @param sourceText source code that originated the Node
+	 */
 	public BoxObjectAccess(BoxExpr context, BoxExpr access, Position position, String sourceText ) {
 		super( position, sourceText );
 		this.context = context;
