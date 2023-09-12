@@ -26,6 +26,8 @@ import ourtus.boxlang.ast.*;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.List;
 
 public class BoxCFMLParser extends BoxAbstractParser {
 
@@ -46,8 +48,8 @@ public class BoxCFMLParser extends BoxAbstractParser {
 		Position position = new Position( new Point( parseTree.start.getLine(), parseTree.start.getCharPositionInLine() ),
 			new Point( parseTree.stop.getLine(), parseTree.stop.getCharPositionInLine() ), new SourceFile( file ) );
 		String sourceText = ""; // TODO: extract from parse tree
-		// TODO: also pass statements
-		return new BoxScript( position, sourceText );
+		List<BoxStatement> statements = new ArrayList<>();
+		return new BoxScript(statements, position, sourceText );
 	}
 
 	public ParsingResult parse( File file ) throws IOException {
