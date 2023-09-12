@@ -34,7 +34,7 @@ public class BoxLocalDeclaration extends BoxStatement {
 	 * Creates the AST node
 	 *
 	 * @param identifiers list of identifiers
-	 * @param expression        expression representing the value to assign
+	 * @param expression  expression representing the value to assign
 	 * @param position    position of the statement in the source code
 	 * @param sourceText  source code that originated the Node
 	 */
@@ -42,7 +42,7 @@ public class BoxLocalDeclaration extends BoxStatement {
 		super( position, sourceText );
 		this.expression = expression;
 		this.expression.setParent( this );
-		this.identifiers  = Collections.unmodifiableList( identifiers  );
+		this.identifiers = Collections.unmodifiableList( identifiers );
 		this.identifiers.forEach( id -> id.setParent( this ) );
 	}
 
