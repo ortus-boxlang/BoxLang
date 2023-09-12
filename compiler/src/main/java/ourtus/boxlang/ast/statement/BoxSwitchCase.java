@@ -21,10 +21,21 @@ import ourtus.boxlang.ast.Position;
 import java.util.Collections;
 import java.util.List;
 
+/**
+ * AST Node representing a switch case statement
+ */
 public class BoxSwitchCase extends BoxStatement {
 
 	private final BoxExpr condition;
 	private final List<BoxStatement> body;
+
+	/**
+	 * Creates the AST node
+	 * @param condition expression representing the condition to test, null for the default
+	 * @param body  list of the statements to execute when the condition is true
+	 * @param position position of the statement in the source code
+	 * @param sourceText source code that originated the Node
+	 */
 	public BoxSwitchCase(BoxExpr condition,List<BoxStatement> body, Position position, String sourceText) {
 		super(position, sourceText);
 		this.condition = condition;
