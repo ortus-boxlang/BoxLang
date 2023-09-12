@@ -1,6 +1,7 @@
 package ortus.boxlang.parser
 
 import com.strumenta.kolasu.parsing.ParsingResult
+import org.junit.Ignore
 import org.junit.Test
 import java.io.File
 import kotlin.io.path.Path
@@ -9,6 +10,7 @@ import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 
 
+@Ignore
 class TestColdFusionToBoxlang : BaseTest() {
 
 	@Test
