@@ -22,6 +22,10 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+/**
+ * AST Node representing a method invocation like:
+ * <code>object.method(1,"a")</code>
+ */
 public class BoxMethodInvocation extends BoxExpr {
 
 	private final ReferenceByName name;
@@ -34,12 +38,13 @@ public class BoxMethodInvocation extends BoxExpr {
 	}
 
 	/**
-	 * Method Invocation i.e. object.method(1,2)
-	 * @param name
-	 * @param obj
-	 * @param arguments
-	 * @param position
-	 * @param sourceText
+	 * Creates the AST node
+	 * @param name name of the method
+	 * @param obj object
+	 * @param arguments list of BoxArgument representing the arguments
+	 * @param position position of the statement in the source code
+	 * @param sourceText source code that originated the Node
+	 * @see  BoxArgument
 	 */
 	public BoxMethodInvocation(String name,BoxExpr obj,List<BoxArgument> arguments,Position position, String sourceText ) {
 		super( position, sourceText );
