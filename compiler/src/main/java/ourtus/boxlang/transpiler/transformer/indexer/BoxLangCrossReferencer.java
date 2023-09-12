@@ -4,12 +4,21 @@ import com.github.javaparser.ast.Node;
 
 import java.io.File;
 
+/**
+ * Cross-reference abstract class
+ */
 public abstract class BoxLangCrossReferencer {
 
 	protected File		source;
 	protected File		destination;
 	protected boolean	enabled;
 
+	/**
+	 * Store a reference into the index
+	 * @param javaNode Java Parser AST Node
+	 * @param boxNode BoxLang AST Node
+	 * @return
+	 */
 	public abstract Node storeReference( Node javaNode, ourtus.boxlang.ast.BoxNode boxNode );
 
 	public BoxLangCrossReferencer() {
