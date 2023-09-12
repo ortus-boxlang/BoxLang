@@ -17,34 +17,66 @@
  */
 package ourtus.boxlang.ast;
 
+/**
+ * Represents a region of code within a text
+ */
 public class Position {
 	private Point start;
 	private Point end;
 	private Source source;
+
+	/**
+	 * Creates a position
+	 * @param start the start position in the source code
+	 * @param end the end position in the source code
+	 */
 	public Position(Point start, Point end) {
 		this.start = start;
 		this.end = end;
 		this.source = null;
 	}
 
+	/**
+	 * Creates a position including the file information
+	 * @param start the start position in the source code
+	 * @param end the end position in the source code
+	 * @param source the source file reference
+	 */
 	public Position(Point start, Point end, Source source) {
 		this.start = start;
 		this.end = end;
 		this.source = source;
 	}
 
+	/**
+	 * Returns the start point
+	 * @return  the start point of the region
+	 */
 	public Point getStart() {
 		return start;
 	}
-
+	/**
+	 * Returns the end point
+	 * @return  the end point of the region
+	 */
 	public Point getEnd() {
 		return end;
 	}
 
+	/**
+	 * Returns the source of the position
+	 * @return  the start point of the region
+	 * @see Source
+	 */
 	public Source getSource() {
 		return source;
 	}
 
+	/**
+	 * Set the source of the position
+	 * @param source  The source of the position (i.e. file)
+	 * @see Source
+	 */
 	public void setSource(Source source) {
 		this.source = source;
 	}

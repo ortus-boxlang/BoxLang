@@ -17,16 +17,22 @@ package ourtus.boxlang.ast;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Root node for a script (program) cf/cfm/box
+ */
 public class BoxScript extends BoxNode {
 
 	private final List<BoxStatement> statements;
-
-	public BoxScript( Position position, String sourceText ) {
-		super( position, sourceText );
-		this.statements = new ArrayList<>();
-	}
-
-	public BoxScript( Position position, String sourceText, List<BoxStatement> statements ) {
+	/**
+	 * Creates an AST for a program which is represented by a list of statements
+	 *
+	 * @param statements list of the statements nodes
+	 * @param position   position  within the source code
+	 * @param sourceText source code
+	 * @see Position
+	 * @see BoxStatement
+	 */
+	public BoxScript(List<BoxStatement> statements, Position position, String sourceText ) {
 		super( position, sourceText );
 		this.statements = statements;
 	}

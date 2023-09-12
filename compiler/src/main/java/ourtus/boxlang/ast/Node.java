@@ -17,6 +17,9 @@ package ourtus.boxlang.ast;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Represent a Node in the AST
+ */
 public class Node {
 
 	protected Position position;
@@ -25,20 +28,38 @@ public class Node {
 	private final List<Node> children;
 	private Node originator;
 
+	/**
+	 * AST node constructor
+	 * @param position  the position within the source code that originated the node
+	 * @param sourceText the original source code that represented by the node
+	 */
 	public Node( Position position, String sourceText ) {
 		this.position   = position;
 		this.sourceText = sourceText;
 		this.children = new ArrayList<>();
 	}
 
+	/**
+	 * Returns the position in code that the node represents
+	 * @return a Position instance
+	 * @see Position
+	 */
 	public Position getPosition() {
 		return position;
 	}
 
+	/**
+	 * Returns the source code that originated the Node
+	 * @return the snipped of the source code
+	 */
 	public String getSourceText() {
 		return sourceText;
 	}
 
+	/**
+	 * Set the parent and the children of the Node
+	 * @param parent an instance of the parent code
+	 */
 	public void setParent(Node parent) {
 		this.parent = parent;
 		if(parent != null) {
@@ -47,10 +68,18 @@ public class Node {
 		}
 	}
 
+	/**
+	 * Returns the parent Node of node or null if has no parent
+	 * @return the parent Node of the current Node
+	 */
 	public Node getParent() {
 		return parent;
 	}
 
+	/**
+	 * Returns the list ov children of the current node
+	 * @return a list of children Node
+	 */
 	public List<Node> getChildren() {
 		return children;
 	}
@@ -59,6 +88,10 @@ public class Node {
 		return originator;
 	}
 
+	/**
+	 * Walk the tree
+	 * @return a list of nodes traversed
+	 */
 	public List<Node> walk() {
 		List<Node> result = new ArrayList<>();
 		result.add(this);

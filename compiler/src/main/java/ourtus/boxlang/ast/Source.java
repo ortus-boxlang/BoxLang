@@ -17,6 +17,9 @@
  */
 package ourtus.boxlang.ast;
 
+/**
+ * Abstract Source class to represent the origin of the code
+ */
 public abstract class Source {
 
 }

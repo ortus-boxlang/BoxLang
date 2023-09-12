@@ -17,11 +17,22 @@ package ourtus.boxlang.ast;
 import ourtus.boxlang.ast.BoxNode;
 import ourtus.boxlang.ast.Position;
 
+/**
+ * Abstract class representing Expressions
+ */
 public abstract class BoxExpr extends BoxNode {
-
+	/**
+	 * Utility method to detect if an expression node is a terminal Literal
+	 * @return true if it is false otherwise
+	 */
 	public boolean isLiteral() {
 		return false;
 	}
+	/**
+	 * Constructor
+	 * @param position position of the expression in the source code
+	 * @param sourceText source code of the expression
+	 */
 	public BoxExpr(Position position, String sourceText ) {
 		super( position, sourceText );
 	}
