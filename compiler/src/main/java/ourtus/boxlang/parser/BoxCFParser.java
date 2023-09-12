@@ -406,7 +406,10 @@ public class BoxCFParser extends BoxAbstractParser {
 				expr = toAst( file, node.localDeclaration().expression() );
 			}
 			return new BoxLocalDeclaration( identifiers, expr, getPosition( node ), getSourceText( node ) );
+		} else if ( node.incrementDecrementStatement() != null ) {
+
 		}
+
 		throw new IllegalStateException( "not implemented: " + node.getClass().getSimpleName() );
 
 	}
@@ -688,6 +691,22 @@ public class BoxCFParser extends BoxAbstractParser {
 		} else if ( expression.LPAREN() != null ) {
 			BoxExpr expr = toAst( file, expression.expression( 0 ) );
 			return new BoxParenthesis( expr, getPosition( expression ), getSourceText( expression ) );
+		} else if ( expression.pre != null ) {
+			BoxExpr expr = toAst( file, expression.expression( 0 ) );
+			if ( expression.PLUSPLUS() != null ) {
+				return new BoxUnaryOperation( expr, BoxUnaryOperator.PrePlusPlus, getPosition( expression ), getSourceText( expression ) );
+			}
+			if ( expression.MINUSMINUS() != null ) {
+				return new BoxUnaryOperation( expr, BoxUnaryOperator.PreMinusMinus, getPosition( expression ), getSourceText( expression ) );
+			}
+		} else if ( expression.post != null ) {
+			BoxExpr expr = toAst( file, expression.expression( 0 ) );
+			if ( expression.PLUSPLUS() != null ) {
+				return new BoxUnaryOperation( expr, BoxUnaryOperator.PostPlusPlus, getPosition( expression ), getSourceText( expression ) );
+			}
+			if ( expression.MINUSMINUS() != null ) {
+				return new BoxUnaryOperation( expr, BoxUnaryOperator.PostMinusMinus, getPosition( expression ), getSourceText( expression ) );
+			}
 		}
 		// TODO: add other cases
 		throw new IllegalStateException( "not implemented: " + expression.getClass().getSimpleName() );
@@ -702,10 +721,11 @@ public class BoxCFParser extends BoxAbstractParser {
 	 * @return corresponding AST BoxUnaryOperation
 	 *
 	 * @see BoxUnaryOperation
+	 * @see BoxUnaryOperator
 	 */
 	private BoxExpr toAst( File file, CFParser.UnaryContext node ) {
 		BoxExpr				expr	= toAst( file, node.expression() );
-		BoxBinaryOperator	op		= node.MINUS() != null ? BoxBinaryOperator.Plus : BoxBinaryOperator.Minus;
+		BoxUnaryOperator	op		= node.MINUS() != null ? BoxUnaryOperator.Plus : BoxUnaryOperator.Minus;
 		return new BoxUnaryOperation( expr, op, getPosition( node ), getSourceText( node ) );
 	}
 
