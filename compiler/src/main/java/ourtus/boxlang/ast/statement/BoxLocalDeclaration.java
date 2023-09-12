@@ -18,6 +18,7 @@ import ourtus.boxlang.ast.BoxExpr;
 import ourtus.boxlang.ast.BoxStatement;
 import ourtus.boxlang.ast.Position;
 
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -31,15 +32,18 @@ public class BoxLocalDeclaration extends BoxStatement {
 
 	/**
 	 * Creates the AST node
-	 * 
+	 *
 	 * @param identifiers list of identifiers
-	 * @param expr        expression representing the value to assign
+	 * @param expression        expression representing the value to assign
 	 * @param position    position of the statement in the source code
 	 * @param sourceText  source code that originated the Node
 	 */
-	public BoxLocalDeclaration( List<BoxExpr> identifiers, BoxExpr expr, Position position, String sourceText ) {
+	public BoxLocalDeclaration( List<BoxExpr> identifiers, BoxExpr expression, Position position, String sourceText ) {
 		super( position, sourceText );
-		this.identifiers = identifiers;
+		this.expression = expression;
+		this.expression.setParent( this );
+		this.identifiers  = Collections.unmodifiableList( identifiers  );
+		this.identifiers.forEach( id -> id.setParent( this ) );
 	}
 
 	public List<BoxExpr> getIdentifiers() {
