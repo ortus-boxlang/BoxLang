@@ -20,19 +20,20 @@ import ourtus.boxlang.ast.Position;
 public class BoxUnaryOperation extends BoxExpr {
 
 	private final BoxExpr			expr;
-	private final BoxBinaryOperator	operator;
+	private final BoxUnaryOperator	operator;
 
-	public BoxUnaryOperation( BoxExpr expr, BoxBinaryOperator operator, Position position, String sourceText ) {
+	public BoxUnaryOperation( BoxExpr expr, BoxUnaryOperator operator, Position position, String sourceText ) {
 		super( position, sourceText );
-		this.expr		= expr;
-		this.operator	= operator;
+		this.expr = expr;
+		this.expr.setParent( this );
+		this.operator = operator;
 	}
 
 	public BoxExpr getExpr() {
 		return expr;
 	}
 
-	public BoxBinaryOperator getOperator() {
+	public BoxUnaryOperator getOperator() {
 		return operator;
 	}
 
