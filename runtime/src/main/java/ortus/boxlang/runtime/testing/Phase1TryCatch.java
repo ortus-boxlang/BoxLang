@@ -22,6 +22,7 @@ import java.util.List;
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.CatchBoxContext;
 import ortus.boxlang.runtime.context.IBoxContext;
+import ortus.boxlang.runtime.context.IBoxContext.ScopeSearchResult;
 // BoxLang Auto Imports
 import ortus.boxlang.runtime.dynamic.BaseTemplate;
 import ortus.boxlang.runtime.dynamic.Referencer;
@@ -74,12 +75,18 @@ public class Phase1TryCatch extends BaseTemplate {
 
 	@Override
 	public void _invoke( IBoxContext context ) throws Throwable {
-		ClassLocator	classLocator	= ClassLocator.getInstance();
-		IBoxContext		catchContext;
+		ClassLocator		classLocator	= ClassLocator.getInstance();
+		IBoxContext			catchContext;
 
 		// Reference to the variables scope
-		IScope			variablesScope	= context.getScopeNearby( Key.of( "variables" ) );
-		variablesScope.put(
+		IScope				variablesScope	= context.getScopeNearby( Key.of( "variables" ) );
+
+		// unscoped assignment performs lookup to find the scope to assign to
+		ScopeSearchResult	result			= context.scopeFindNearby(
+		    Key.of( "system" ),
+		    context.getDefaultAssignmentScope()
+		);
+		result.scope().put(
 		    Key.of( "system" ),
 		    classLocator.load( context, "java:java.lang.System", imports )
 		);

@@ -90,12 +90,17 @@ public interface IBoxContext {
 	public ScopeSearchResult scopeFindNearby( Key key, IScope defaultScope );
 
 	/**
-	 * Invoke a function call such as foo(). Will check for a registered BIF first, then search known scopes for a UDF.
+	 * Invoke a function call such as foo() using positional args. Will check for a registered BIF first, then search known scopes for a UDF.
 	 *
 	 * @return Return value of the function call
 	 */
 	public Object invokeFunction( Key name, Object[] positionalArguments );
 
+	/**
+	 * Invoke a function call such as foo() using named args. Will check for a registered BIF first, then search known scopes for a UDF.
+	 *
+	 * @return Return value of the function call
+	 */
 	public Object invokeFunction( Key name, Map<Key, Object> namedArguments );
 
 	/**
@@ -153,6 +158,13 @@ public interface IBoxContext {
 	 * @return The template instance if found, null if this code is not called from a template
 	 */
 	public BaseTemplate findClosestTemplate();
+
+	/**
+	 * Get the default variable assignment scope for this context
+	 * 
+	 * @return The scope reference to use
+	 */
+	public IScope getDefaultAssignmentScope();
 
 	/**
 	 * Represents the results of a successful scope hunting expedition.

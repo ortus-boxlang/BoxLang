@@ -26,7 +26,9 @@ import ortus.boxlang.runtime.types.exceptions.KeyNotFoundException;
 import ortus.boxlang.runtime.types.exceptions.ScopeNotFoundException;
 
 /**
- * This context represents the context of a template execution in BoxLang
+ * This context represents the context of a scripting execution in BoxLang
+ * There is only a variables scope present.
+ * There may or may NOT be a template defined.
  */
 public class ScriptingBoxContext extends BaseBoxContext {
 
@@ -176,6 +178,15 @@ public class ScriptingBoxContext extends BaseBoxContext {
 
 	public void regsiterUDF( UDF udf ) {
 		variablesScope.put( udf.getName(), udf );
+	}
+
+	/**
+	 * Get the default variable assignment scope for this context
+	 *
+	 * @return The scope reference to use
+	 */
+	public IScope getDefaultAssignmentScope() {
+		return variablesScope;
 	}
 
 }
