@@ -17,18 +17,22 @@ package ourtus.boxlang.ast.expression;
 import ourtus.boxlang.ast.BoxExpr;
 import ourtus.boxlang.ast.Position;
 
+/**
+ * AST Node representing access binary operation
+ */
 public class BoxBinaryOperation extends BoxExpr  {
 	private final BoxExpr left;
 	private final BoxExpr right;
 	private final BoxBinaryOperator operator;
 
 	/**
-	 * Binary operation i.e. a + 1
-	 * @param left
-	 * @param operator
-	 * @param right
-	 * @param position
-	 * @param sourceText
+	 * Creates the AST node
+	 * @param left left expression of binary operation
+	 * @param operator operator
+	 * @param right left expression of binary operation
+	 * @param position position of the statement in the source code
+	 * @param sourceText source code that originated the Node
+	 * @see BoxBinaryOperator for the supported operators
 	 */
 	public BoxBinaryOperation(BoxExpr left, BoxBinaryOperator operator, BoxExpr right, Position position, String sourceText) {
 		super(position, sourceText);
