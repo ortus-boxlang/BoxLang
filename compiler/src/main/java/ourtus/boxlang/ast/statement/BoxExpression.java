@@ -18,10 +18,20 @@ import ourtus.boxlang.ast.BoxExpr;
 import ourtus.boxlang.ast.BoxStatement;
 import ourtus.boxlang.ast.Position;
 
+/**
+ * AST Node representing an Expression statement
+ */
 public class BoxExpression extends BoxStatement {
 
 	private final BoxExpr expression;
 
+	/**
+	 * Creates the AST node
+	 * 
+	 * @param expression an expression to be executed as a statement
+	 * @param position   position of the statement in the source code
+	 * @param sourceText source code that originated the Node
+	 */
 	public BoxExpression( BoxExpr expression, Position position, String sourceText ) {
 		super( position, sourceText );
 		this.expression = expression;

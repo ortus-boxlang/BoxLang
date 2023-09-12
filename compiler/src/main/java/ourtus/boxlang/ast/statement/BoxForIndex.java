@@ -21,12 +21,24 @@ import ourtus.boxlang.ast.Position;
 import java.util.Collections;
 import java.util.List;
 
+/**
+ * AST Node representing a for statement like:
+ * <code>for(variable;expression;expression) body</code>
+ */
 public class BoxForIndex extends BoxStatement {
 
 	private final BoxExpr				variable;
 	private final BoxExpr				expression;
 	private final List<BoxStatement>	body;
 
+	/**
+	 *
+	 * @param variable
+	 * @param expression
+	 * @param body
+	 * @param position
+	 * @param sourceText
+	 */
 	public BoxForIndex( BoxExpr variable, BoxExpr expression, List<BoxStatement> body, Position position, String sourceText ) {
 		super( position, sourceText );
 		this.variable = variable;

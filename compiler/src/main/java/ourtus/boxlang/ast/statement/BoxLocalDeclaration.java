@@ -17,16 +17,27 @@ package ourtus.boxlang.ast.statement;
 import ourtus.boxlang.ast.BoxExpr;
 import ourtus.boxlang.ast.BoxStatement;
 import ourtus.boxlang.ast.Position;
-import ourtus.boxlang.ast.expression.BoxIdentifier;
 
 import java.util.List;
 
+/**
+ * AST Node representing a local declaration statement like:
+ * <code>var a = b = "Hello"</code>
+ */
 public class BoxLocalDeclaration extends BoxStatement {
 
 	private final List<BoxExpr>	identifiers;
 	private BoxExpr				expression;
 
-	public BoxLocalDeclaration( List<BoxExpr> identifiers, Position position, String sourceText ) {
+	/**
+	 * Creates the AST node
+	 * 
+	 * @param identifiers list of identifiers
+	 * @param expr        expression representing the value to assign
+	 * @param position    position of the statement in the source code
+	 * @param sourceText  source code that originated the Node
+	 */
+	public BoxLocalDeclaration( List<BoxExpr> identifiers, BoxExpr expr, Position position, String sourceText ) {
 		super( position, sourceText );
 		this.identifiers = identifiers;
 	}

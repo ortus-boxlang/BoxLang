@@ -24,11 +24,20 @@ import ourtus.boxlang.ast.Issue;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * The results returned when parsing code.
+ */
 public class ParsingResult {
 
 	private BoxNode				root;
 	private final List<Issue>	issues;
 
+	/**
+	 * General constructor.
+	 * 
+	 * @param root   the AST, or null if it wasn't created.
+	 * @param issues a list of encountered parsing problems
+	 */
 	public ParsingResult( BoxNode root, List<Issue> issues ) {
 		this.root	= root;
 		this.issues	= issues;
@@ -42,6 +51,11 @@ public class ParsingResult {
 		return issues;
 	}
 
+	/**
+	 * Returns if parsing was successful
+	 * 
+	 * @return true if no errors of any kind were encountered.
+	 */
 	public boolean isCorrect() {
 		return this.issues.isEmpty();
 	}

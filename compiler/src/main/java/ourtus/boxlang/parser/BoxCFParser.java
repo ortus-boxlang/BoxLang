@@ -46,13 +46,13 @@ public class BoxCFParser extends BoxAbstractParser {
 
 	/**
 	 * Parse a cf script file
-	 * 
+	 *
 	 * @param file source file to parse
-	 * 
+	 *
 	 * @return a ParsingResult containing the AST with a BoxScript as root and the list of errors (if any)
-	 * 
+	 *
 	 * @throws IOException
-	 * 
+	 *
 	 * @see BoxScript
 	 * @see ParsingResult
 	 */
@@ -65,13 +65,13 @@ public class BoxCFParser extends BoxAbstractParser {
 
 	/**
 	 * Parse a cf script string
-	 * 
+	 *
 	 * @param code source code to parse
-	 * 
+	 *
 	 * @return a ParsingResult containing the AST with a BoxScript as root and the list of errors (if any)
-	 * 
+	 *
 	 * @throws IOException
-	 * 
+	 *
 	 * @see BoxScript
 	 * @see ParsingResult
 	 */
@@ -85,13 +85,13 @@ public class BoxCFParser extends BoxAbstractParser {
 
 	/**
 	 * Parse a cf script string expression
-	 * 
+	 *
 	 * @param code source of the expression to parse
-	 * 
+	 *
 	 * @return a ParsingResult containing the AST with a BoxExpr as root and the list of errors (if any)
-	 * 
+	 *
 	 * @throws IOException
-	 * 
+	 *
 	 * @see ParsingResult
 	 * @see BoxExpr
 	 */
@@ -108,13 +108,13 @@ public class BoxCFParser extends BoxAbstractParser {
 
 	/**
 	 * Parse a cf script string statement
-	 * 
+	 *
 	 * @param code source of the expression to parse
-	 * 
+	 *
 	 * @return a ParsingResult containing the AST with a BoxStatement as root and the list of errors (if any)
-	 * 
+	 *
 	 * @throws IOException
-	 * 
+	 *
 	 * @see ParsingResult
 	 * @see BoxStatement
 	 */
@@ -131,11 +131,11 @@ public class BoxCFParser extends BoxAbstractParser {
 
 	/**
 	 * Fist stage parser
-	 * 
+	 *
 	 * @param stream input stream (file or string) of the source code
-	 * 
+	 *
 	 * @return the ANTLR ParserRule representing the parse tree of the code
-	 * 
+	 *
 	 * @throws IOException io error
 	 */
 	@Override
@@ -150,12 +150,12 @@ public class BoxCFParser extends BoxAbstractParser {
 	/**
 	 * Second stage parser, performs the transformation from ANTLR parse tree
 	 * to the AST
-	 * 
+	 *
 	 * @param file source file, if any
 	 * @param rule ANTLR parser rule to transform
-	 * 
+	 *
 	 * @return a BoxScript Node
-	 * 
+	 *
 	 * @see BoxScript
 	 */
 	@Override
@@ -170,12 +170,12 @@ public class BoxCFParser extends BoxAbstractParser {
 
 	/**
 	 * Converts the FunctionOrStatement parser rule to the corresponding AST node
-	 * 
+	 *
 	 * @param file source file, if any
 	 * @param node ANTLR FunctionOrStatementContext rule
-	 * 
+	 *
 	 * @return the corresponding AST BoxStatement
-	 * 
+	 *
 	 * @see BoxStatement
 	 */
 	private BoxStatement toAst( File file, CFParser.FunctionOrStatementContext node ) {
@@ -192,12 +192,12 @@ public class BoxCFParser extends BoxAbstractParser {
 
 	/**
 	 * Converts the Statement parser rule to the corresponding AST node
-	 * 
+	 *
 	 * @param file source file, if any
 	 * @param node ANTLR StatementContext rule
-	 * 
+	 *
 	 * @return the corresponding AST BoxStatement
-	 * 
+	 *
 	 * @see BoxStatement
 	 */
 	private BoxStatement toAst( File file, CFParser.StatementContext node ) {
@@ -222,12 +222,12 @@ public class BoxCFParser extends BoxAbstractParser {
 
 	/**
 	 * Converts the For parser rule to the corresponding AST node
-	 * 
+	 *
 	 * @param file source file, if any
 	 * @param node ANTLR ForContext rule
-	 * 
+	 *
 	 * @return the corresponding AST BoxStatement
-	 * 
+	 *
 	 * @see BoxForIn
 	 */
 	private BoxStatement toAst( File file, CFParser.ForContext node ) {
@@ -240,12 +240,12 @@ public class BoxCFParser extends BoxAbstractParser {
 
 	/**
 	 * Converts the Switch parser rule to the corresponding AST node
-	 * 
+	 *
 	 * @param file source file, if any
 	 * @param node ANTLR SwitchContext rule
-	 * 
+	 *
 	 * @return the corresponding AST BoxStatement
-	 * 
+	 *
 	 * @see BoxSwitch
 	 */
 	private BoxStatement toAst( File file, CFParser.SwitchContext node ) {
@@ -259,12 +259,12 @@ public class BoxCFParser extends BoxAbstractParser {
 
 	/**
 	 * Converts the Case parser rule to the corresponding AST node
-	 * 
+	 *
 	 * @param file source file, if any
 	 * @param node ANTLR CaseContext rule
-	 * 
+	 *
 	 * @return the corresponding AST BoxStatement
-	 * 
+	 *
 	 * @see BoxSwitchCase
 	 */
 	private BoxSwitchCase toAst( File file, CFParser.CaseContext node, BoxExpr condition ) {
@@ -293,12 +293,12 @@ public class BoxCFParser extends BoxAbstractParser {
 
 	/**
 	 * Converts the Continue parser rule to the corresponding AST node
-	 * 
+	 *
 	 * @param file source file, if any
 	 * @param node ANTLR ContinueContext rule
-	 * 
+	 *
 	 * @return the corresponding AST BoxStatement
-	 * 
+	 *
 	 * @see BoxContinue
 	 */
 	private BoxStatement toAst( File file, CFParser.ContinueContext node ) {
@@ -307,12 +307,12 @@ public class BoxCFParser extends BoxAbstractParser {
 
 	/**
 	 * Converts the Break parser rule to the corresponding AST node
-	 * 
+	 *
 	 * @param file source file, if any
 	 * @param node ANTLR BreakContext rule
-	 * 
+	 *
 	 * @return the corresponding AST BoxStatement
-	 * 
+	 *
 	 * @see BoxBreak
 	 */
 	private BoxStatement toAst( File file, CFParser.BreakContext node ) {
@@ -321,12 +321,12 @@ public class BoxCFParser extends BoxAbstractParser {
 
 	/**
 	 * Converts the While parser rule to the corresponding AST node
-	 * 
+	 *
 	 * @param file source file, if any
 	 * @param node ANTLR WhileContext rule
-	 * 
+	 *
 	 * @return the corresponding AST BoxStatement
-	 * 
+	 *
 	 * @see BoxWhile
 	 */
 	private BoxStatement toAst( File file, CFParser.WhileContext node ) {
@@ -341,11 +341,11 @@ public class BoxCFParser extends BoxAbstractParser {
 
 	/**
 	 * Converts the IfContext parser rule to the corresponding AST node
-	 * 
+	 *
 	 * @param file source file, if any
-	 * 
+	 *
 	 * @return the corresponding AST BoxIfElse
-	 * 
+	 *
 	 * @see BoxIfElse
 	 */
 	private BoxIfElse toAst( File file, CFParser.IfContext node ) {
@@ -370,12 +370,12 @@ public class BoxCFParser extends BoxAbstractParser {
 
 	/**
 	 * Converts the StatementBlock parser rule to the corresponding AST node
-	 * 
+	 *
 	 * @param file source file, if any
 	 * @param node ANTLR BreakContext rule
-	 * 
+	 *
 	 * @return the list of the corresponding AST BoxStatement subclasses in the block
-	 * 
+	 *
 	 * @see BoxStatement
 	 */
 	private List<BoxStatement> toAst( File file, CFParser.StatementBlockContext node ) {
@@ -385,12 +385,12 @@ public class BoxCFParser extends BoxAbstractParser {
 	/**
 	 * Converts the SimpleStatement parser rule to the corresponding AST node.
 	 * The SimpleStatement contains rules of an Expression statement
-	 * 
+	 *
 	 * @param file source file, if any
 	 * @param node ANTLR SimpleStatementContext rule
-	 * 
+	 *
 	 * @return the corresponding AST BoxStatement subclass
-	 * 
+	 *
 	 * @see BoxStatement
 	 */
 	private BoxStatement toAst( File file, CFParser.SimpleStatementContext node ) {
@@ -400,13 +400,12 @@ public class BoxCFParser extends BoxAbstractParser {
 			BoxExpr expr = toAst( file, node.methodInvokation() );
 			return new BoxExpression( expr, getPosition( node ), getSourceText( node ) );
 		} else if ( node.localDeclaration() != null ) {
-			List<BoxExpr>		identifiers	= node.localDeclaration().identifier().stream().map( it -> toAst( file, it ) ).toList();
-			BoxLocalDeclaration	stmt		= new BoxLocalDeclaration( identifiers, getPosition( node ), getSourceText( node ) );
+			List<BoxExpr>	identifiers	= node.localDeclaration().identifier().stream().map( it -> toAst( file, it ) ).toList();
+			BoxExpr			expr		= null;
 			if ( node.localDeclaration().expression() != null ) {
-				BoxExpr expr = toAst( file, node.localDeclaration().expression() );
-				stmt.setExpression( expr );
+				expr = toAst( file, node.localDeclaration().expression() );
 			}
-			return stmt;
+			return new BoxLocalDeclaration( identifiers, expr, getPosition( node ), getSourceText( node ) );
 		}
 		throw new IllegalStateException( "not implemented: " + node.getClass().getSimpleName() );
 
@@ -414,12 +413,12 @@ public class BoxCFParser extends BoxAbstractParser {
 
 	/**
 	 * Converts the Assignment parser rule to the corresponding AST node.
-	 * 
+	 *
 	 * @param file source file, if any
 	 * @param node ANTLR AssignmentContext rule
-	 * 
+	 *
 	 * @return the corresponding AST BoxStatement subclass
-	 * 
+	 *
 	 * @see BoxAssignment
 	 */
 	private BoxStatement toAst( File file, CFParser.AssignmentContext node ) {
@@ -430,12 +429,12 @@ public class BoxCFParser extends BoxAbstractParser {
 
 	/**
 	 * Converts the AssignmentLeft parser rule to the corresponding AST node.
-	 * 
+	 *
 	 * @param file source file, if any
 	 * @param node ANTLR AssignmentLeftContext rule
-	 * 
+	 *
 	 * @return the corresponding AST BoxExpression subclass
-	 * 
+	 *
 	 * @see BoxExpr
 	 */
 	private BoxExpr toAst( File file, CFParser.AssignmentLeftContext node ) {
@@ -445,12 +444,12 @@ public class BoxCFParser extends BoxAbstractParser {
 
 	/**
 	 * Converts the AssignmentRightContext parser rule to the corresponding AST node.
-	 * 
+	 *
 	 * @param file source file, if any
 	 * @param node ANTLR AssignmentLeftContext rule
-	 * 
+	 *
 	 * @return the corresponding AST BoxExpression subclass
-	 * 
+	 *
 	 * @see BoxExpr
 	 */
 	private BoxExpr toAst( File file, CFParser.AssignmentRightContext node ) {
@@ -459,12 +458,12 @@ public class BoxCFParser extends BoxAbstractParser {
 
 	/**
 	 * Converts the AccessExpression parser rule to the corresponding AST node.
-	 * 
+	 *
 	 * @param file source file, if any
 	 * @param node ANTLR AccessExpressionContext rule
-	 * 
+	 *
 	 * @return the corresponding AST BoxExpression subclass
-	 * 
+	 *
 	 * @see BoxIdentifier
 	 * @see BoxArrayAccess
 	 * @see BoxObjectAccess
@@ -485,12 +484,12 @@ public class BoxCFParser extends BoxAbstractParser {
 
 	/**
 	 * Converts the AccessExpression parser rule to the corresponding AST node.
-	 * 
+	 *
 	 * @param file source file, if any
 	 * @param node ANTLR ArrayAccessContext rule
-	 * 
+	 *
 	 * @return the corresponding AST BoxArrayAccess
-	 * 
+	 *
 	 * @see BoxArrayAccess
 	 */
 	private BoxExpr toAst( File file, CFParser.ArrayAccessContext node ) {
@@ -501,12 +500,12 @@ public class BoxCFParser extends BoxAbstractParser {
 
 	/**
 	 * Converts the IdentifierContext parser rule to the corresponding AST node.
-	 * 
+	 *
 	 * @param file source file, if any
 	 * @param node ANTLR ArrayAccessContext rule
-	 * 
+	 *
 	 * @return the corresponding AST BoxIdentifier or a BoxScope if it is a reserved keyword
-	 * 
+	 *
 	 * @see BoxScope
 	 * @see BoxIdentifier
 	 */
@@ -520,12 +519,12 @@ public class BoxCFParser extends BoxAbstractParser {
 
 	/**
 	 * Converts the Scope parser rule to the corresponding AST node.
-	 * 
+	 *
 	 * @param file source file, if any
 	 * @param node ANTLR ArrayAccessContext rule
-	 * 
+	 *
 	 * @return corresponding AST BoxScope
-	 * 
+	 *
 	 * @see BoxScope for the reserved keywords used to identify a scope
 	 */
 	private BoxExpr toAst( File file, CFParser.ScopeContext node ) {
@@ -538,12 +537,12 @@ public class BoxCFParser extends BoxAbstractParser {
 	/**
 	 * Converts the Expression parser rule to the corresponding AST node.
 	 * The operator precedence resolved in the ANTLR grammar
-	 * 
+	 *
 	 * @param file       source file, if any
 	 * @param expression ANTLR ArrayAccessContext rule
-	 * 
+	 *
 	 * @return corresponding AST BoxExpr subclass
-	 * 
+	 *
 	 * @see BoxExpr subclasses
 	 * @see BoxBinaryOperator
 	 */
@@ -696,12 +695,12 @@ public class BoxCFParser extends BoxAbstractParser {
 
 	/**
 	 * Converts the UnaryContext parser rule to the corresponding AST node.
-	 * 
+	 *
 	 * @param file source file, if any
 	 * @param node ANTLR ArrayAccessContext rule
-	 * 
+	 *
 	 * @return corresponding AST BoxUnaryOperation
-	 * 
+	 *
 	 * @see BoxUnaryOperation
 	 */
 	private BoxExpr toAst( File file, CFParser.UnaryContext node ) {
@@ -712,12 +711,12 @@ public class BoxCFParser extends BoxAbstractParser {
 
 	/**
 	 * Converts the MethodInvokation parser rule to the corresponding AST node.
-	 * 
+	 *
 	 * @param file source file, if any
 	 * @param node ANTLR ArrayAccessContext rule
-	 * 
+	 *
 	 * @return corresponding AST BoxMethodInvocation
-	 * 
+	 *
 	 * @see BoxMethodInvocation
 	 */
 	private BoxExpr toAst( File file, CFParser.MethodInvokationContext node ) {
@@ -751,11 +750,11 @@ public class BoxCFParser extends BoxAbstractParser {
 
 	/**
 	 * Converts the ObjectExpression parser rule to the corresponding AST node. * @param file
-	 * 
+	 *
 	 * @param node ANTLR ObjectExpressionContext rule
-	 * 
+	 *
 	 * @return corresponding AST BoxAccess or an BoxIdentifier
-	 * 
+	 *
 	 * @see BoxAccess subclasses
 	 * @see BoxIdentifier subclasses
 	 */
@@ -773,11 +772,11 @@ public class BoxCFParser extends BoxAbstractParser {
 
 	/**
 	 * Converts the Function Invocation parser rule to the corresponding AST node. * @param file
-	 * 
+	 *
 	 * @param node ANTLR FunctionInvokationContext rule
-	 * 
+	 *
 	 * @return corresponding AST BoxFunctionInvocation
-	 * 
+	 *
 	 * @see BoxFunctionInvocation subclasses
 	 * @see BoxArgument subclasses
 	 */
@@ -795,11 +794,11 @@ public class BoxCFParser extends BoxAbstractParser {
 
 	/**
 	 * Converts the Argument parser rule to the corresponding AST node.
-	 * 
+	 *
 	 * @param node ANTLR FunctionInvokationContext rule
-	 * 
+	 *
 	 * @return corresponding AST BoxArgument
-	 * 
+	 *
 	 * @see BoxArgument
 	 */
 	private BoxArgument toAst( File file, CFParser.ArgumentContext node ) {

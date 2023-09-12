@@ -17,6 +17,9 @@
  */
 package ourtus.boxlang.parser;
 
+/**
+ * Supported files
+ */
 public enum BoxFileType {
 	CF,
 	CFML,

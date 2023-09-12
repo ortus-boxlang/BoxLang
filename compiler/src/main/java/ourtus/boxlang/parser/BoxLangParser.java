@@ -17,6 +17,10 @@
  */
 package ourtus.boxlang.parser;
 
+import ourtus.boxlang.ast.BoxExpr;
+import ourtus.boxlang.ast.BoxScript;
+import ourtus.boxlang.ast.BoxStatement;
+
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -24,6 +28,15 @@ import java.util.List;
 
 public class BoxLangParser {
 
+	/**
+	 * Attempt to detect the type of source code based on the contents
+	 * 
+	 * @param file File to check
+	 * 
+	 * @return a BoxFileType
+	 * 
+	 * @see BoxFileType
+	 */
 	public static BoxFileType detectFile( File file ) {
 		try {
 			List<String> content = Files.readAllLines( file.toPath() );
@@ -38,6 +51,19 @@ public class BoxLangParser {
 		return BoxFileType.CF;
 
 	}
+
+	/**
+	 * Parse a cf script file
+	 *
+	 * @param file source file to parse
+	 *
+	 * @return a ParsingResult containing the AST with a BoxScript as root and the list of errors (if any)
+	 *
+	 * @throws IOException
+	 *
+	 * @see BoxScript
+	 * @see ParsingResult
+	 */
 
 	public ParsingResult parse( File file ) throws IOException {
 		BoxFileType fileType = detectFile( file );
@@ -55,6 +81,18 @@ public class BoxLangParser {
 
 	}
 
+	/**
+	 * Parse a cf script string expression
+	 *
+	 * @param code source of the expression to parse
+	 *
+	 * @return a ParsingResult containing the AST with a BoxExpr as root and the list of errors (if any)
+	 *
+	 * @throws IOException
+	 *
+	 * @see ParsingResult
+	 * @see BoxExpr
+	 */
 	public ParsingResult parse( String code, BoxFileType fileType ) throws IOException {
 		switch ( fileType ) {
 			case CF -> {
@@ -70,6 +108,18 @@ public class BoxLangParser {
 
 	}
 
+	/**
+	 * Parse a cf script string statement
+	 *
+	 * @param code source of the expression to parse
+	 *
+	 * @return a ParsingResult containing the AST with a BoxStatement as root and the list of errors (if any)
+	 *
+	 * @throws IOException
+	 *
+	 * @see ParsingResult
+	 * @see BoxStatement
+	 */
 	public ParsingResult parseExpression( String code ) throws IOException {
 		return new BoxCFParser().parseExpression( code );
 	}
