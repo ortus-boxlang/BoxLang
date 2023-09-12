@@ -18,6 +18,16 @@ import ourtus.boxlang.ast.BoxExpr;
 import ourtus.boxlang.ast.Named;
 import ourtus.boxlang.ast.Position;
 
+/**
+ * AST Node representing a scopes
+ * Scopes are identified with the following keywords:
+ * <code>APPLICATION</code>
+ * <code>ARGUMENTS</code>
+ * <code>LOCAL</code>
+ * <code>REQUEST</code>
+ * <code>THIS</code>
+ * <code>THREAD</code>
+ */
 public class BoxScope extends BoxExpr  {
 
 	private final String name;
@@ -26,6 +36,12 @@ public class BoxScope extends BoxExpr  {
 		return name;
 	}
 
+	/**
+	 * Creates the AST node
+	 * @param name scope name identified by a scope reserved keyword
+	 * @param position
+	 * @param sourceText
+	 */
 	public BoxScope(String name, Position position, String sourceText ) {
 		super( position, sourceText );
 		this.name = name;
