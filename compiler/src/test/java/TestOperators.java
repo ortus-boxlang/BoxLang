@@ -547,4 +547,71 @@ public class TestOperators extends TestBase {
 
 	}
 
+	@Test
+	public void postIncrement() throws IOException {
+		String			expression	= """
+		                              variables['a']++
+		                              """;
+
+		BoxLangParser	parser		= new BoxLangParser();
+		ParsingResult	result		= parser.parseExpression( expression );
+
+		Node			javaAST		= BoxLangTranspiler.transform( result.getRoot() );
+		System.out.println( javaAST );
+		assertEqualsNoWhiteSpaces(
+		    """
+		    	Increment.invokePost(variablesScope.get(Key.of("a")))
+		    """, javaAST.toString() );
+	}
+
+	@Test
+	public void preIncrement() throws IOException {
+		String			expression	= """
+		                              ++variables['a']
+		                              """;
+
+		BoxLangParser	parser		= new BoxLangParser();
+		ParsingResult	result		= parser.parseExpression( expression );
+
+		Node			javaAST		= BoxLangTranspiler.transform( result.getRoot() );
+		System.out.println( javaAST );
+		assertEqualsNoWhiteSpaces(
+		    """
+		    	Increment.invokePre(variablesScope.get(Key.of("a")))
+		    """, javaAST.toString() );
+	}
+
+	@Test
+	public void postDecrement() throws IOException {
+		String			expression	= """
+		                              variables['a']--
+		                              """;
+
+		BoxLangParser	parser		= new BoxLangParser();
+		ParsingResult	result		= parser.parseExpression( expression );
+
+		Node			javaAST		= BoxLangTranspiler.transform( result.getRoot() );
+		System.out.println( javaAST );
+		assertEqualsNoWhiteSpaces(
+		    """
+		    	Decrement.invokePost(variablesScope.get(Key.of("a")))
+		    """, javaAST.toString() );
+	}
+
+	@Test
+	public void preDecrement() throws IOException {
+		String			expression	= """
+		                              --variables['a']
+		                              """;
+
+		BoxLangParser	parser		= new BoxLangParser();
+		ParsingResult	result		= parser.parseExpression( expression );
+
+		Node			javaAST		= BoxLangTranspiler.transform( result.getRoot() );
+		System.out.println( javaAST );
+		assertEqualsNoWhiteSpaces(
+		    """
+		    	Decrement.invokePre(variablesScope.get(Key.of("a")))
+		    """, javaAST.toString() );
+	}
 }
