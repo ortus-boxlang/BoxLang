@@ -18,6 +18,9 @@ import ourtus.boxlang.ast.BoxExpr;
 import ourtus.boxlang.ast.Node;
 import ourtus.boxlang.ast.Position;
 
+/**
+ * AST Node representing a decimal value
+ */
 public class BoxDecimalLiteral extends BoxExpr {
 
 	private final String value;
@@ -31,10 +34,10 @@ public class BoxDecimalLiteral extends BoxExpr {
 		return value;
 	}
 	/**
-	 * Terminal node DecimalLiteral
-	 * @param value
-	 * @param position
-	 * @param sourceText
+	 * Creates the AST node
+	 * @param value decimal value
+	 * @param position position of the statement in the source code
+	 * @param sourceText source code that originated the Node
 	 */
 	public BoxDecimalLiteral(String value, Position position, String sourceText ) {
 		super( position, sourceText );
