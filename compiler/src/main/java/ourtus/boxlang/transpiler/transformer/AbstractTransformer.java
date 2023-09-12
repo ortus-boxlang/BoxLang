@@ -32,6 +32,10 @@ import ourtus.boxlang.transpiler.transformer.indexer.BoxLangCrossReferencerDefau
 import java.util.HashMap;
 import java.util.Map;
 
+/**
+ * Abstract Transformer class
+ * Implements common functionality used by all the transformer sub classes
+ */
 public abstract class AbstractTransformer implements Transformer {
 
 	protected static JavaParser				javaParser		= new JavaParser();
@@ -44,6 +48,12 @@ public abstract class AbstractTransformer implements Transformer {
 		return this.transform( node, TransformerContext.NONE );
 	}
 
+	/**
+	 * Returns the Java Parser AST nodes for the given template
+	 * @param template a string template with the expression to parse
+	 * @param values a map of values to be replaced in the template
+	 * @return the Java Parser AST representation of the expression
+	 */
 	protected Node parseExpression( String template, Map<String, String> values ) {
 		StringSubstitutor		sub		= new StringSubstitutor( values );
 		String					code	= sub.replace( template );
@@ -54,7 +64,12 @@ public abstract class AbstractTransformer implements Transformer {
 		}
 		return result.getResult().get();
 	}
-
+	/**
+	 * Returns the Java Parser AST  for the given template
+	 * @param template a string template with the statement to parse
+	 * @param values a map of values to be replaced in the template
+	 * @return the Java Parser AST representation of the statement
+	 */
 	protected Node parseStatement( String template, Map<String, String> values ) {
 		StringSubstitutor		sub		= new StringSubstitutor( values );
 		String					code	= sub.replace( template );
@@ -65,6 +80,13 @@ public abstract class AbstractTransformer implements Transformer {
 		return result.getResult().get();
 	}
 
+
+	/**
+	 * Returns the appropriate template code to access the scope
+	 * @param expr expression to be solved
+	 * @param context transformation context LEFT or RIGHT indicating the side of the expression
+	 * @return
+	 */
 	protected Node resolveScope( Node expr, TransformerContext context ) {
 		if ( expr instanceof NameExpr ) {
 			String				id			= expr.toString();
@@ -86,13 +108,11 @@ public abstract class AbstractTransformer implements Transformer {
 		return expr;
 	}
 
-	protected Node addIndex( Node javaNode, BoxNode boxNode ) {
-		if ( crossReferencer != null ) {
-			crossReferencer.storeReference( javaNode, boxNode );
-		}
-		return javaNode;
-	}
-
+	/**
+	 * Detects if a statement requires a BooleanCaster
+	 * @param condition the expression to evaluate
+	 * @return true if the BooleanCaster is required
+	 */
 	protected boolean requiresBooleanCaster( BoxExpr condition ) {
 		if ( condition instanceof BoxBinaryOperation ) {
 			BoxBinaryOperation op = ( BoxBinaryOperation ) condition;
@@ -106,4 +126,18 @@ public abstract class AbstractTransformer implements Transformer {
 		}
 		return true;
 	}
+
+	/**
+	 * Add  cross-reference index entry
+	 * @param javaNode Java Parser Node
+	 * @param boxNode BoxLang Node
+	 * @return the Java Parser Node
+	 */
+	protected Node addIndex( Node javaNode, BoxNode boxNode ) {
+		if ( crossReferencer != null ) {
+			crossReferencer.storeReference( javaNode, boxNode );
+		}
+		return javaNode;
+	}
+
 }
