@@ -32,6 +32,13 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import ourtus.boxlang.transpiler.transformer.statement.*;
 
+/**
+ * BoxLang AST to Java AST transpiler
+ * The registry maps a AST node to the corresponding Transformer Java class instance.
+ * Each transformer implements the logic to convert the BoxLang AST nodes into Java
+ * AST nodes.
+ *
+ */
 public class BoxLangTranspiler {
 
 	static Logger								logger		= LoggerFactory.getLogger( BoxLangTranspiler.class );
@@ -77,10 +84,24 @@ public class BoxLangTranspiler {
 	public BoxLangTranspiler() {
 	}
 
+
+	/**
+	 * Utility method to transform a node
+	 * @param node a BoxLang AST Node
+	 * @return a JavaParser AST Node
+	 * @throws IllegalStateException
+	 */
 	public static Node transform( BoxNode node ) throws IllegalStateException {
 		return BoxLangTranspiler.transform( node, TransformerContext.NONE );
 	}
-
+	/**
+	 * Utility method to transform a node with a transformation context
+	 * @param node a BoxLang AST Node
+	 * @param context transformation context
+	 * @return
+	 * @throws IllegalStateException
+	 * @see TransformerContext
+	 */
 	public static Node transform( BoxNode node, TransformerContext context ) throws IllegalStateException {
 		Transformer transformer = registry.get( node.getClass() );
 		if ( transformer != null ) {
@@ -91,9 +112,16 @@ public class BoxLangTranspiler {
 		throw new IllegalStateException( "unsupported: " + node.getClass().getSimpleName() + " : " + node.getSourceText() );
 	}
 
+	/**
+	 * Transpile a BoxLang AST into a Java Pareser AST
+	 * @return a Java Parser CompilationUnit representing the equivalent Java code
+	 * @throws IllegalStateException
+	 * @see CompilationUnit
+	 */
 	public CompilationUnit transpile( BoxNode node ) throws IllegalStateException {
 		BoxScript			source			= ( BoxScript ) node;
 		CompilationUnit		javaClass		= ( CompilationUnit ) transform( source );
+		// TODO resolve names
 		MethodDeclaration	invokeMethod	= javaClass.findCompilationUnit().orElseThrow()
 		    .getClassByName( "TestClass" ).orElseThrow()
 		    .getMethodsByName( "invoke" ).get( 0 );
