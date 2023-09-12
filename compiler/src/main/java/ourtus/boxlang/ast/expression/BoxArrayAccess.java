@@ -18,6 +18,11 @@ import ourtus.boxlang.ast.BoxExpr;
 import ourtus.boxlang.ast.Node;
 import ourtus.boxlang.ast.Position;
 
+
+/**
+ * AST Node representing access with a square bracket like:
+ * <code>variables['a']</code> or <code>a[10]</code>
+ */
 public class BoxArrayAccess extends BoxAccess {
 	private BoxExpr context;
 	private BoxExpr index;
@@ -39,14 +44,13 @@ public class BoxArrayAccess extends BoxAccess {
 	}
 
 	/**
-	 * Array access expression i.e variable['a'] or a[2]
-	 * @param context
-	 * @param index
-	 * @param parent
-	 * @param position
-	 * @param sourceText
+	 * Creates the AST node
+	 * @param context expression representing the variable or a scope
+	 * @param index expression within the brackets
+	 * @param position position of the statement in the source code
+	 * @param sourceText source code that originated the Node
 	 */
-	public BoxArrayAccess(BoxExpr context, BoxExpr index, Node parent, Position position, String sourceText ) {
+	public BoxArrayAccess(BoxExpr context, BoxExpr index, Position position, String sourceText ) {
 		super( position, sourceText );
 		this.context = context;
 		this.index   = index;
