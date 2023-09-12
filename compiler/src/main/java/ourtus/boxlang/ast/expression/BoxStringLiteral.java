@@ -35,7 +35,7 @@ public class BoxStringLiteral extends BoxExpr {
 	}
 
 	/**
-	 * Terminal node StringLiteral
+	 * Creates the AST node
 	 * @param value string value
 	 * @param position position of the statement in the source code
 	 * @param sourceText source code that originated the Node
