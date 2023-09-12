@@ -22,11 +22,23 @@ import ourtus.boxlang.ast.expression.BoxIdentifier;
 import java.util.Collections;
 import java.util.List;
 
+/**
+ * AST Node representing a for statement
+ */
 public class BoxForIn extends BoxStatement {
 
 	private  final	BoxExpr variable;
 	private  final	BoxExpr expression;
 	private final List<BoxStatement> body;
+
+	/**
+	 * Creates the AST node
+	 * @param variable for loop variable
+	 * @param expression for loop collection
+	 * @param body list of the statement in the body of the loop
+	 * @param position position of the statement in the source code
+	 * @param sourceText source code that originated the Node
+	 */
 	public BoxForIn(BoxExpr variable,BoxExpr expression, List<BoxStatement> body, Position position, String sourceText) {
 		super(position, sourceText);
 		this.variable = variable;
