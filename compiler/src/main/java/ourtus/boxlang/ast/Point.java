@@ -21,21 +21,24 @@ package ourtus.boxlang.ast;
  * Represents a position in the source code with line and column
  */
 public class Point {
-	private final int line;
-	private final int column;
+
+	private final int	line;
+	private final int	column;
 
 	/**
 	 * Create a point
-	 * @param line line withing the code
+	 * 
+	 * @param line   line withing the code
 	 * @param column
 	 */
-	public Point(int line, int column) {
-		this.line = line;
-		this.column = column;
+	public Point( int line, int column ) {
+		this.line	= line;
+		this.column	= column;
 	}
 
 	/**
 	 * Returns the line
+	 * 
 	 * @return line in the code
 	 */
 	public int getLine() {
@@ -44,6 +47,7 @@ public class Point {
 
 	/**
 	 * Returns the column
+	 * 
 	 * @return column in the code
 	 */
 	public int getColumn() {

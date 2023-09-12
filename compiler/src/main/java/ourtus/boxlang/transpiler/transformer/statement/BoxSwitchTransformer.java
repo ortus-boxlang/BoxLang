@@ -19,60 +19,63 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class BoxSwitchTransformer extends AbstractTransformer {
+
 	Logger logger = LoggerFactory.getLogger( BoxParenthesisTransformer.class );
 
 	@Override
-	public Node transform(BoxNode node, TransformerContext context) throws IllegalStateException {
-		BoxSwitch boxSwitch = (BoxSwitch) node;
-		Expression condition =  (Expression) BoxLangTranspiler.transform(boxSwitch.getCondition(),TransformerContext.RIGHT);
+	public Node transform( BoxNode node, TransformerContext context ) throws IllegalStateException {
+		BoxSwitch	boxSwitch	= ( BoxSwitch ) node;
+		Expression	condition	= ( Expression ) BoxLangTranspiler.transform( boxSwitch.getCondition(), TransformerContext.RIGHT );
 
+		String		template	= """
+		                          do {
 
-		String template = """
-			do {
-
-			} while(false);
-			""";
-		BlockStmt body = new BlockStmt();
-		DoStmt javaSwitch = (DoStmt) parseStatement(template,new HashMap<>());
+		                          } while(false);
+		                          """;
+		BlockStmt	body		= new BlockStmt();
+		DoStmt		javaSwitch	= ( DoStmt ) parseStatement( template, new HashMap<>() );
 		boxSwitch.getCases().forEach( c -> {
-			if (c.getCondition() != null ) {
+			if ( c.getCondition() != null ) {
 				String caseTemplate = "if(  ${condition}  ) {}";
-				if(requiresBooleanCaster(c.getCondition())) {
+				if ( requiresBooleanCaster( c.getCondition() ) ) {
 					caseTemplate = "if( BooleanCaster.cast( ${condition} ) ) {}";
 				}
-				Expression switchExpr = (Expression) BoxLangTranspiler.transform(c.getCondition());
-				Map<String, String> values = new HashMap<>() {{
-					put("condition", switchExpr.toString());
-				}};
-				IfStmt javaIfStmt = (IfStmt) parseStatement(caseTemplate,values);
-				BlockStmt thenBlock = new BlockStmt();
+				Expression			switchExpr	= ( Expression ) BoxLangTranspiler.transform( c.getCondition() );
+				Map<String, String>	values		= new HashMap<>() {
+
+													{
+														put( "condition", switchExpr.toString() );
+													}
+												};
+				IfStmt				javaIfStmt	= ( IfStmt ) parseStatement( caseTemplate, values );
+				BlockStmt			thenBlock	= new BlockStmt();
 				c.getBody().forEach( stmt -> {
-					thenBlock.addStatement((Statement) BoxLangTranspiler.transform(stmt));
-				});
-				javaIfStmt.setThenStmt(thenBlock);
-				body.addStatement(javaIfStmt);
+					thenBlock.addStatement( ( Statement ) BoxLangTranspiler.transform( stmt ) );
+				} );
+				javaIfStmt.setThenStmt( thenBlock );
+				body.addStatement( javaIfStmt );
 			}
-		});
+		} );
 		boxSwitch.getCases().forEach( c -> {
-			if (c.getCondition() == null ) {
+			if ( c.getCondition() == null ) {
 				c.getBody().forEach( stmt -> {
-					body.addStatement((Statement) BoxLangTranspiler.transform(stmt));
-				});
+					body.addStatement( ( Statement ) BoxLangTranspiler.transform( stmt ) );
+				} );
 			}
-		});
-		javaSwitch.setBody(body);
-//		if(requiresBooleanCaster(boxSwitch.getCondition())) {
-//			template = "while( BooleanCaster.cast( ${condition} ) ) {}";
-//		}
-//		Map<String, String> values = new HashMap<>() {{
-//			put("condition", condition.toString());
-//		}};
-//		WhileStmt javaWhile = (WhileStmt) parseStatement(template,values);
-//		BlockStmt body = new BlockStmt();
-//		for(BoxStatement statement : boxSwitch.getBody()) {
-//			body.getStatements().add((Statement) BoxLangTranspiler.transform(statement));
-//		}
-//		javaWhile.setBody(body);
+		} );
+		javaSwitch.setBody( body );
+		// if(requiresBooleanCaster(boxSwitch.getCondition())) {
+		// template = "while( BooleanCaster.cast( ${condition} ) ) {}";
+		// }
+		// Map<String, String> values = new HashMap<>() {{
+		// put("condition", condition.toString());
+		// }};
+		// WhileStmt javaWhile = (WhileStmt) parseStatement(template,values);
+		// BlockStmt body = new BlockStmt();
+		// for(BoxStatement statement : boxSwitch.getBody()) {
+		// body.getStatements().add((Statement) BoxLangTranspiler.transform(statement));
+		// }
+		// javaWhile.setBody(body);
 		return javaSwitch;
 	}
 }

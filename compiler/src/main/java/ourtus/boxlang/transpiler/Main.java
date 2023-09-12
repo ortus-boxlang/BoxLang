@@ -1,6 +1,5 @@
 package ourtus.boxlang.transpiler;
 
-
 import com.github.javaparser.ast.CompilationUnit;
 import org.apache.commons.cli.*;
 import ourtus.boxlang.parser.BoxLangParser;
@@ -19,30 +18,35 @@ public class Main {
 
 	/**
 	 * Compiler options
+	 * 
 	 * @return list of options
 	 */
 	private static List<Option> options() {
-        return new ArrayList<>() {{
-			// Input file/directory
-			add(
-				Option.builder("i").longOpt("input")
-					.argName("path")
-					.hasArg()
-					.required(true)
-					.desc("input file or directory").build()
-			);
-			// Output file/directory
-			add(
-				Option.builder("o").longOpt("output")
-					.argName("path")
-					.hasArg()
-					.required(true)
-					.desc("input file or directory").build()
+		return new ArrayList<>() {
 
-			);
+			{
+				// Input file/directory
+				add(
+				    Option.builder( "i" ).longOpt( "input" )
+				        .argName( "path" )
+				        .hasArg()
+				        .required( true )
+				        .desc( "input file or directory" ).build()
+				);
+				// Output file/directory
+				add(
+				    Option.builder( "o" ).longOpt( "output" )
+				        .argName( "path" )
+				        .hasArg()
+				        .required( true )
+				        .desc( "input file or directory" ).build()
 
-		}};
+				);
+
+			}
+		};
 	}
+
 	private static List<Path> scanForFiles( String path, Set<String> extensions ) {
 		List<Path> fileList = new ArrayList<Path>();
 
@@ -59,7 +63,7 @@ public class Main {
 				}
 
 				@Override
-				public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs ) throws IOException {
+				public FileVisitResult preVisitDirectory( Path dir, BasicFileAttributes attrs ) throws IOException {
 					return FileVisitResult.CONTINUE;
 				}
 
@@ -85,31 +89,31 @@ public class Main {
 		}
 		return fileList;
 	}
-	public static void main(String[] args) throws IOException {
+
+	public static void main( String[] args ) throws IOException {
 		Options options = new Options();
 
+		options().forEach( options::addOption );
 
-		options().forEach(options::addOption);
-
-		List<Path> files = new ArrayList<>();
-		BoxLangParser parser = new BoxLangParser();
-		BoxLangTranspiler transpiler = new BoxLangTranspiler();
+		List<Path>			files		= new ArrayList<>();
+		BoxLangParser		parser		= new BoxLangParser();
+		BoxLangTranspiler	transpiler	= new BoxLangTranspiler();
 		try {
-			CommandLine cmd = new DefaultParser().parse(options, args);
-			if(cmd.hasOption("input")) {
-				String inputFile = cmd.getOptionValue("input");
-				if(!Files.exists(Paths.get(inputFile))) {
-					System.out.printf("File not found: %s ",inputFile);
-					System.exit(0);
+			CommandLine cmd = new DefaultParser().parse( options, args );
+			if ( cmd.hasOption( "input" ) ) {
+				String inputFile = cmd.getOptionValue( "input" );
+				if ( !Files.exists( Paths.get( inputFile ) ) ) {
+					System.out.printf( "File not found: %s ", inputFile );
+					System.exit( 0 );
 				}
 				files.addAll(
-					scanForFiles(
-						inputFile,
-						Set.of( "cfc", "cfm", "cfml" )
-					)
+				    scanForFiles(
+				        inputFile,
+				        Set.of( "cfc", "cfm", "cfml" )
+				    )
 				);
 			}
-			if (cmd.hasOption("output")) {
+			if ( cmd.hasOption( "output" ) ) {
 
 			}
 			for ( Path file : files ) {
@@ -117,17 +121,16 @@ public class Main {
 				ParsingResult result = parser.parse( file.toFile() );
 				if ( result.isCorrect() ) {
 					CompilationUnit javaAST = transpiler.transpile( result.getRoot() );
-					System.out.println(javaAST.toString());
+					System.out.println( javaAST.toString() );
 				} else {
 					result.getIssues().forEach( error -> System.err.println( error ) );
 				}
 			}
 
-
-		} catch (ParseException e) {
-			System.out.println(e.getMessage());
-			new HelpFormatter().printHelp("Usage:", options);
-			System.exit(0);
+		} catch ( ParseException e ) {
+			System.out.println( e.getMessage() );
+			new HelpFormatter().printHelp( "Usage:", options );
+			System.exit( 0 );
 		}
 	}
 

@@ -25,9 +25,9 @@ public class BoxParenthesis extends BoxExpr {
 		return expression;
 	}
 
-	public BoxParenthesis(BoxExpr expression, Position position, String sourceText ) {
+	public BoxParenthesis( BoxExpr expression, Position position, String sourceText ) {
 		super( position, sourceText );
-		this.expression =  expression;
-		this.expression.setParent(this);
+		this.expression = expression;
+		this.expression.setParent( this );
 	}
 }

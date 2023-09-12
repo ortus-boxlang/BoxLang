@@ -17,18 +17,20 @@ package ourtus.boxlang.ast.expression;
 import ourtus.boxlang.ast.BoxExpr;
 import ourtus.boxlang.ast.Position;
 
-public class BoxTernaryOperation extends BoxExpr  {
-	private final BoxExpr condition;
-	private final BoxExpr whenTrue;
-	private final BoxExpr whenFalse;
-	public BoxTernaryOperation(BoxExpr condition, BoxExpr whenTrue, BoxExpr whenFalse, Position position, String sourceText) {
-		super(position, sourceText);
-		this.condition = condition;
-		this.whenTrue = whenTrue;
-		this.whenFalse = whenFalse;
-		this.condition.setParent(this);
-		this.whenTrue.setParent(this);
-		this.whenFalse.setParent(this);
+public class BoxTernaryOperation extends BoxExpr {
+
+	private final BoxExpr	condition;
+	private final BoxExpr	whenTrue;
+	private final BoxExpr	whenFalse;
+
+	public BoxTernaryOperation( BoxExpr condition, BoxExpr whenTrue, BoxExpr whenFalse, Position position, String sourceText ) {
+		super( position, sourceText );
+		this.condition	= condition;
+		this.whenTrue	= whenTrue;
+		this.whenFalse	= whenFalse;
+		this.condition.setParent( this );
+		this.whenTrue.setParent( this );
+		this.whenFalse.setParent( this );
 	}
 
 	public BoxExpr getCondition() {

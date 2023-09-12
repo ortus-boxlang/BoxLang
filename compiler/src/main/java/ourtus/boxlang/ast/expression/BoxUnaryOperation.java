@@ -17,15 +17,15 @@ package ourtus.boxlang.ast.expression;
 import ourtus.boxlang.ast.BoxExpr;
 import ourtus.boxlang.ast.Position;
 
-public class BoxUnaryOperation extends BoxExpr  {
+public class BoxUnaryOperation extends BoxExpr {
 
-	private final BoxExpr expr;
-	private final BoxBinaryOperator operator;
+	private final BoxExpr			expr;
+	private final BoxBinaryOperator	operator;
 
-	public BoxUnaryOperation(BoxExpr expr, BoxBinaryOperator operator, Position position, String sourceText ) {
+	public BoxUnaryOperation( BoxExpr expr, BoxBinaryOperator operator, Position position, String sourceText ) {
 		super( position, sourceText );
-		this.expr = expr;
-		this.operator = operator;
+		this.expr		= expr;
+		this.operator	= operator;
 	}
 
 	public BoxExpr getExpr() {

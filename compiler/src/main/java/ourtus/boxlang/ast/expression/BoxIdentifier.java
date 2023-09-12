@@ -32,11 +32,12 @@ public class BoxIdentifier extends BoxExpr implements Named {
 
 	/**
 	 * Creates the AST node
-	 * @param name name of the identifier
-	 * @param position position of the statement in the source code
+	 * 
+	 * @param name       name of the identifier
+	 * @param position   position of the statement in the source code
 	 * @param sourceText source code that originated the Node
 	 */
-	public BoxIdentifier(String name, Position position, String sourceText ) {
+	public BoxIdentifier( String name, Position position, String sourceText ) {
 		super( position, sourceText );
 		this.name = name;
 	}

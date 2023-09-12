@@ -29,56 +29,60 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class BoxBinaryOperationTransformer extends AbstractTransformer {
-	Logger logger = LoggerFactory.getLogger(BoxBinaryOperationTransformer.class);
+
+	Logger logger = LoggerFactory.getLogger( BoxBinaryOperationTransformer.class );
 
 	@Override
-	public Node transform(BoxNode node, TransformerContext context) throws IllegalStateException {
-		BoxBinaryOperation operation = (BoxBinaryOperation) node;
-		Expression left = (Expression) resolveScope(BoxLangTranspiler.transform(operation.getLeft(),context),context);
-		Expression right = (Expression) resolveScope(BoxLangTranspiler.transform(operation.getRight(),context), context);
+	public Node transform( BoxNode node, TransformerContext context ) throws IllegalStateException {
+		BoxBinaryOperation	operation	= ( BoxBinaryOperation ) node;
+		Expression			left		= ( Expression ) resolveScope( BoxLangTranspiler.transform( operation.getLeft(), context ), context );
+		Expression			right		= ( Expression ) resolveScope( BoxLangTranspiler.transform( operation.getRight(), context ), context );
 
-		Map<String, String> values = new HashMap<>() {{
-			put("left", left.toString());
-			put("right", right.toString());
+		Map<String, String>	values		= new HashMap<>() {
 
-		}};
+											{
+												put( "left", left.toString() );
+												put( "right", right.toString() );
 
-		String template = "";
-		if (operation.getOperator() == BoxBinaryOperator.Concat) {
+											}
+										};
+
+		String				template	= "";
+		if ( operation.getOperator() == BoxBinaryOperator.Concat ) {
 			template = "Concat.invoke(${left},${right})";
-		} else if (operation.getOperator() == BoxBinaryOperator.Plus) {
+		} else if ( operation.getOperator() == BoxBinaryOperator.Plus ) {
 			template = "Plus.invoke(${left},${right})";
-		} else if (operation.getOperator() == BoxBinaryOperator.Minus) {
+		} else if ( operation.getOperator() == BoxBinaryOperator.Minus ) {
 			template = "Minus.invoke(${left},${right})";
-		} else if (operation.getOperator() == BoxBinaryOperator.Star) {
+		} else if ( operation.getOperator() == BoxBinaryOperator.Star ) {
 			template = "Multiply.invoke(${left},${right})";
-		} else if (operation.getOperator() == BoxBinaryOperator.Slash) {
+		} else if ( operation.getOperator() == BoxBinaryOperator.Slash ) {
 			template = "Divide.invoke(${left},${right})";
-		} else if (operation.getOperator() == BoxBinaryOperator.Backslash) {
+		} else if ( operation.getOperator() == BoxBinaryOperator.Backslash ) {
 			template = "IntegerDivide.invoke(${left},${right})";
-		} else if (operation.getOperator() == BoxBinaryOperator.Power) {
+		} else if ( operation.getOperator() == BoxBinaryOperator.Power ) {
 			template = "Power.invoke(${left},${right})";
-		} else if (operation.getOperator() == BoxBinaryOperator.Xor) {
+		} else if ( operation.getOperator() == BoxBinaryOperator.Xor ) {
 			template = "Xor.invoke(${left},${right})";
-		} else if (operation.getOperator() == BoxBinaryOperator.Mod) {
+		} else if ( operation.getOperator() == BoxBinaryOperator.Mod ) {
 			template = "Mod.invoke(${left},${right})";
-		} else if(operation.getOperator()==BoxBinaryOperator.And) {
+		} else if ( operation.getOperator() == BoxBinaryOperator.And ) {
 			template = "And.invoke(${left},${right})";
-		} else if(operation.getOperator()==BoxBinaryOperator.Or) {
+		} else if ( operation.getOperator() == BoxBinaryOperator.Or ) {
 			template = "Or.invoke(${left},${right})";
-		} else if (operation.getOperator() == BoxBinaryOperator.Elvis) {
+		} else if ( operation.getOperator() == BoxBinaryOperator.Elvis ) {
 			template = "Elvis.invoke(${left},${right})";
-		} else if (operation.getOperator() == BoxBinaryOperator.InstanceOf) {
+		} else if ( operation.getOperator() == BoxBinaryOperator.InstanceOf ) {
 			template = "InstanceOf.invoke(${left},${right})";
-		} else if (operation.getOperator() == BoxBinaryOperator.Contains) {
+		} else if ( operation.getOperator() == BoxBinaryOperator.Contains ) {
 			template = "Contains.contains(${left},${right})";
-		} else if (operation.getOperator() == BoxBinaryOperator.NotContains) {
+		} else if ( operation.getOperator() == BoxBinaryOperator.NotContains ) {
 			template = "!Contains.contains(${left},${right})";
 		} else {
-			throw new IllegalStateException("not implemented");
+			throw new IllegalStateException( "not implemented" );
 		}
 		Node javaExpr = parseExpression( template, values );
-		logger.info(node.getSourceText() + " -> " + javaExpr);
+		logger.info( node.getSourceText() + " -> " + javaExpr );
 		return javaExpr;
 	}
 

@@ -24,54 +24,58 @@ import java.util.List;
 
 public class BoxLangParser {
 
-	public static BoxFileType detectFile(File file) {
+	public static BoxFileType detectFile( File file ) {
 		try {
-			List<String> content = Files.readAllLines(file.toPath());
-			if(content.stream().anyMatch(lines -> lines.contains("<cfcomponent") || lines.contains("<cfset") || lines.contains("<cfparam")
-				|| lines.contains("<cfoutput") || lines.contains("<cfinterface")   )) {
+			List<String> content = Files.readAllLines( file.toPath() );
+			if ( content.stream().anyMatch( lines -> lines.contains( "<cfcomponent" ) || lines.contains( "<cfset" ) || lines.contains( "<cfparam" )
+			    || lines.contains( "<cfoutput" ) || lines.contains( "<cfinterface" ) ) ) {
 				return BoxFileType.CFML;
 			}
 
-		} catch (IOException e) {
-			throw new RuntimeException(e);
+		} catch ( IOException e ) {
+			throw new RuntimeException( e );
 		}
 		return BoxFileType.CF;
 
 	}
-	public ParsingResult parse(File file) throws IOException {
-		BoxFileType fileType = detectFile(file);
-		switch (fileType) {
-			case CF -> {
-				return new BoxCFParser().parse(file); }
-			case CFML ->  {
-				return new BoxCFMLParser().parse(file);
-			}
-			default -> {
-				throw new RuntimeException("Unsupported file: " + file.getAbsolutePath());
-			}
-		}
 
-	}
-	public ParsingResult parse(String code,BoxFileType fileType) throws IOException {
-		switch (fileType) {
+	public ParsingResult parse( File file ) throws IOException {
+		BoxFileType fileType = detectFile( file );
+		switch ( fileType ) {
 			case CF -> {
-				return new BoxCFParser().parse(code); }
-			case CFML ->  {
-				return new BoxCFMLParser().parse(code);
+				return new BoxCFParser().parse( file );
+			}
+			case CFML -> {
+				return new BoxCFMLParser().parse( file );
 			}
 			default -> {
-				throw new RuntimeException("Unsupported language");
+				throw new RuntimeException( "Unsupported file: " + file.getAbsolutePath() );
 			}
 		}
 
 	}
 
-	public ParsingResult parseExpression(String code) throws IOException {
-		return new BoxCFParser().parseExpression(code);
+	public ParsingResult parse( String code, BoxFileType fileType ) throws IOException {
+		switch ( fileType ) {
+			case CF -> {
+				return new BoxCFParser().parse( code );
+			}
+			case CFML -> {
+				return new BoxCFMLParser().parse( code );
+			}
+			default -> {
+				throw new RuntimeException( "Unsupported language" );
+			}
+		}
+
 	}
 
-	public ParsingResult parseStatement(String code) throws IOException {
-		return new BoxCFParser().parseStatement(code);
+	public ParsingResult parseExpression( String code ) throws IOException {
+		return new BoxCFParser().parseExpression( code );
+	}
+
+	public ParsingResult parseStatement( String code ) throws IOException {
+		return new BoxCFParser().parseStatement( code );
 	}
 
 }

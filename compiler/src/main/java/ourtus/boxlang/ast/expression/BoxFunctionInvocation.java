@@ -38,15 +38,16 @@ public class BoxFunctionInvocation extends BoxExpr {
 
 	/**
 	 * Function invocation i.e. create(x)
+	 * 
 	 * @param name
 	 * @param arguments
 	 * @param position
 	 * @param sourceText
 	 */
-	public BoxFunctionInvocation(String name, List<BoxArgument> arguments, Position position, String sourceText ) {
+	public BoxFunctionInvocation( String name, List<BoxArgument> arguments, Position position, String sourceText ) {
 		super( position, sourceText );
-		this.name      = new ReferenceByName( name );
-		this.arguments = Collections.unmodifiableList(arguments);
-		this.arguments.stream().forEach( arg -> arg.setParent(this));
+		this.name		= new ReferenceByName( name );
+		this.arguments	= Collections.unmodifiableList( arguments );
+		this.arguments.stream().forEach( arg -> arg.setParent( this ) );
 	}
 }

@@ -37,32 +37,33 @@ public class BoxCFMLParser extends BoxAbstractParser {
 
 	@Override
 	protected ParserRuleContext parserFirstStage( InputStream inputStream ) throws IOException {
-		CFMLLexer lexer = new CFMLLexer( CharStreams.fromStream( inputStream ) );
-		CFMLParser parser = new CFMLParser( new CommonTokenStream( lexer ) );
+		CFMLLexer	lexer	= new CFMLLexer( CharStreams.fromStream( inputStream ) );
+		CFMLParser	parser	= new CFMLParser( new CommonTokenStream( lexer ) );
 		addErrorListeners( lexer, parser );
 		return parser.htmlDocument();
 	}
 
 	@Override
 	protected BoxScript parseTreeToAst( File file, ParserRuleContext parseTree ) throws IOException {
-		Position position = new Position( new Point( parseTree.start.getLine(), parseTree.start.getCharPositionInLine() ),
-			new Point( parseTree.stop.getLine(), parseTree.stop.getCharPositionInLine() ), new SourceFile( file ) );
-		String sourceText = ""; // TODO: extract from parse tree
-		List<BoxStatement> statements = new ArrayList<>();
-		return new BoxScript(statements, position, sourceText );
+		Position			position	= new Position( new Point( parseTree.start.getLine(), parseTree.start.getCharPositionInLine() ),
+		    new Point( parseTree.stop.getLine(), parseTree.stop.getCharPositionInLine() ), new SourceFile( file ) );
+		String				sourceText	= ""; // TODO: extract from parse tree
+		List<BoxStatement>	statements	= new ArrayList<>();
+		return new BoxScript( statements, position, sourceText );
 	}
 
 	public ParsingResult parse( File file ) throws IOException {
-		BOMInputStream inputStream = getInputStream( file );
+		BOMInputStream					inputStream	= getInputStream( file );
 
-		CFMLParser.HtmlDocumentContext parseTree = ( CFMLParser.HtmlDocumentContext ) parserFirstStage( inputStream );
-		BoxScript ast = parseTreeToAst( file, parseTree );
+		CFMLParser.HtmlDocumentContext	parseTree	= ( CFMLParser.HtmlDocumentContext ) parserFirstStage( inputStream );
+		BoxScript						ast			= parseTreeToAst( file, parseTree );
 		return new ParsingResult( ast, issues );
 	}
+
 	public ParsingResult parse( String code ) throws IOException {
-		InputStream inputStream = IOUtils.toInputStream(code);
-		CFMLParser.HtmlDocumentContext parseTree = ( CFMLParser.HtmlDocumentContext ) parserFirstStage( inputStream );
-		BoxScript ast = parseTreeToAst( file, parseTree );
+		InputStream						inputStream	= IOUtils.toInputStream( code );
+		CFMLParser.HtmlDocumentContext	parseTree	= ( CFMLParser.HtmlDocumentContext ) parserFirstStage( inputStream );
+		BoxScript						ast			= parseTreeToAst( file, parseTree );
 		return new ParsingResult( ast, issues );
 	}
 

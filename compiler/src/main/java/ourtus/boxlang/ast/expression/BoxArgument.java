@@ -23,12 +23,13 @@ import ourtus.boxlang.ast.Position;
  */
 public class BoxArgument extends BoxExpr {
 
-	private BoxExpr name = null;
-	private final BoxExpr value;
+	private BoxExpr			name	= null;
+	private final BoxExpr	value;
 
-	public void setName(BoxExpr name) {
+	public void setName( BoxExpr name ) {
 		this.name = name;
 	}
+
 	public BoxExpr getName() {
 		return name;
 	}
@@ -39,28 +40,30 @@ public class BoxArgument extends BoxExpr {
 
 	/**
 	 * Creates the AST node for an anonymous argument
-	 * @param value expression representing the value of the argument
-	 * @param position position of the statement in the source code
+	 * 
+	 * @param value      expression representing the value of the argument
+	 * @param position   position of the statement in the source code
 	 * @param sourceText source code that originated the Node
 	 */
-	public BoxArgument(BoxExpr value, Position position, String sourceText ) {
+	public BoxArgument( BoxExpr value, Position position, String sourceText ) {
 		super( position, sourceText );
-		this.value =  value;
-		this.value.setParent(this);
+		this.value = value;
+		this.value.setParent( this );
 	}
 
 	/**
 	 * Creates the AST node for a named argument
-	 * @param name expression representing the name of the argument
-	 * @param value expression representing the value of the argument
-	 * @param position position of the statement in the source code
+	 * 
+	 * @param name       expression representing the name of the argument
+	 * @param value      expression representing the value of the argument
+	 * @param position   position of the statement in the source code
 	 * @param sourceText source code that originated the Node
 	 */
-	public BoxArgument(BoxExpr name,BoxExpr value, Position position, String sourceText ) {
+	public BoxArgument( BoxExpr name, BoxExpr value, Position position, String sourceText ) {
 		super( position, sourceText );
-		this.name =  name;
-		this.value =  value;
-		this.name.setParent(this);
-		this.value.setParent(this);
+		this.name	= name;
+		this.value	= value;
+		this.name.setParent( this );
+		this.value.setParent( this );
 	}
 }

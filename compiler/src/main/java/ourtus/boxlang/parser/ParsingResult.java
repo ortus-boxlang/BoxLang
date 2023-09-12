@@ -25,12 +25,13 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class ParsingResult {
-	private BoxNode root;
-	private  final List<Issue> issues;
 
-	public ParsingResult(BoxNode root, List<Issue> issues) {
-		this.root = root;
-		this.issues = issues;
+	private BoxNode				root;
+	private final List<Issue>	issues;
+
+	public ParsingResult( BoxNode root, List<Issue> issues ) {
+		this.root	= root;
+		this.issues	= issues;
 	}
 
 	public BoxNode getRoot() {

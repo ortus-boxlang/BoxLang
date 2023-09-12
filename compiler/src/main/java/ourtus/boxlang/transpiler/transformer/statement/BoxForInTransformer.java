@@ -17,33 +17,35 @@ import java.util.Map;
 public class BoxForInTransformer extends AbstractTransformer {
 
 	@Override
-	public Node transform(BoxNode node, TransformerContext context) throws IllegalStateException {
-		BoxForIn boxFor = (BoxForIn) node;
-		Node variable = BoxLangTranspiler.transform(boxFor.getVariable());
-		Node collection = BoxLangTranspiler.transform(boxFor.getExpression());
+	public Node transform( BoxNode node, TransformerContext context ) throws IllegalStateException {
+		BoxForIn			boxFor		= ( BoxForIn ) node;
+		Node				variable	= BoxLangTranspiler.transform( boxFor.getVariable() );
+		Node				collection	= BoxLangTranspiler.transform( boxFor.getExpression() );
 
-		BlockStmt stmt = new BlockStmt();
-		Map<String, String> values = new HashMap<>() {{
-			put("variable", variable.toString());
-			put("collection", collection.toString());
-		}};
+		BlockStmt			stmt		= new BlockStmt();
+		Map<String, String>	values		= new HashMap<>() {
 
+											{
+												put( "variable", variable.toString() );
+												put( "collection", collection.toString() );
+											}
+										};
 
-		String template1 = """
-				Iterator ${variable} = CollectionCaster.cast( ${collection} ).iterator();
-			""";
-		String template2 = """
-				while( ${variable}.hasNext() ) {
-					${collection}.put( Key.of( "${variable}" ), ${variable}.next() );
-				}
-			""";
-			WhileStmt whileStmt = (WhileStmt) parseStatement(template2,values);
-			stmt.addStatement((Statement) parseStatement(template1,values));
-			boxFor.getBody().forEach( it -> {
-				whileStmt.getBody().asBlockStmt().addStatement((Statement) BoxLangTranspiler.transform(it));
-			});
-			stmt.addStatement( whileStmt );
+		String				template1	= """
+		                                  	Iterator ${variable} = CollectionCaster.cast( ${collection} ).iterator();
+		                                  """;
+		String				template2	= """
+		                                  	while( ${variable}.hasNext() ) {
+		                                  		${collection}.put( Key.of( "${variable}" ), ${variable}.next() );
+		                                  	}
+		                                  """;
+		WhileStmt			whileStmt	= ( WhileStmt ) parseStatement( template2, values );
+		stmt.addStatement( ( Statement ) parseStatement( template1, values ) );
+		boxFor.getBody().forEach( it -> {
+			whileStmt.getBody().asBlockStmt().addStatement( ( Statement ) BoxLangTranspiler.transform( it ) );
+		} );
+		stmt.addStatement( whileStmt );
 
-			return stmt;
+		return stmt;
 	}
 }

@@ -1,3 +1,4 @@
+
 /**
  * [BoxLang]
  *
@@ -24,9 +25,9 @@ import static org.junit.Assert.assertEquals;
 
 public class TestBase {
 
-	protected String testboxDirectory = System.getProperty( "testboxdir" );
-	protected String contentboxDirectory = System.getProperty( "contentboxdir" );
-	protected String coldboxDirectory = System.getProperty( "coldboxdir" );
+	protected String	testboxDirectory	= System.getProperty( "testboxdir" );
+	protected String	contentboxDirectory	= System.getProperty( "contentboxdir" );
+	protected String	coldboxDirectory	= System.getProperty( "coldboxdir" );
 
 	protected List<Path> scanForFiles( String path, Set<String> extensions ) {
 		List<Path> fileList = new ArrayList<Path>();
@@ -70,6 +71,7 @@ public class TestBase {
 		}
 		return fileList;
 	}
+
 	protected void assertEqualsNoWhiteSpaces( String expected, String actual ) {
 		assertEquals( expected.replaceAll( "[ \\t\\r\\n]", "" ), actual.replaceAll( "[ \\t\\r\\n]", "" ) );
 	}

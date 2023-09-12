@@ -23,10 +23,11 @@ import java.util.List;
 
 public class BoxLocalDeclaration extends BoxStatement {
 
-	private final List<BoxExpr> identifiers;
-	private  BoxExpr expression;
-	public BoxLocalDeclaration(List<BoxExpr> identifiers,Position position, String sourceText) {
-		super(position, sourceText);
+	private final List<BoxExpr>	identifiers;
+	private BoxExpr				expression;
+
+	public BoxLocalDeclaration( List<BoxExpr> identifiers, Position position, String sourceText ) {
+		super( position, sourceText );
 		this.identifiers = identifiers;
 	}
 
@@ -38,7 +39,7 @@ public class BoxLocalDeclaration extends BoxStatement {
 		return expression;
 	}
 
-	public void setExpression(BoxExpr expression) {
+	public void setExpression( BoxExpr expression ) {
 		this.expression = expression;
 	}
 }

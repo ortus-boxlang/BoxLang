@@ -33,36 +33,41 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class BoxIfElseTransformer extends AbstractTransformer {
-	Logger logger = LoggerFactory.getLogger( BoxParenthesisTransformer.class );
-	@Override
-	public Node transform(BoxNode node, TransformerContext context) throws IllegalStateException {
-		BoxIfElse ifElse = (BoxIfElse) node;
-		Expression condition =  (Expression) BoxLangTranspiler.transform(ifElse.getCondition(),TransformerContext.RIGHT);
 
-		String template = "if(  ${condition}  ) {}";
-		if(requiresBooleanCaster(ifElse.getCondition())) {
+	Logger logger = LoggerFactory.getLogger( BoxParenthesisTransformer.class );
+
+	@Override
+	public Node transform( BoxNode node, TransformerContext context ) throws IllegalStateException {
+		BoxIfElse	ifElse		= ( BoxIfElse ) node;
+		Expression	condition	= ( Expression ) BoxLangTranspiler.transform( ifElse.getCondition(), TransformerContext.RIGHT );
+
+		String		template	= "if(  ${condition}  ) {}";
+		if ( requiresBooleanCaster( ifElse.getCondition() ) ) {
 			template = "if( BooleanCaster.cast( ${condition} ) ) {}";
 		}
-		Map<String, String> values = new HashMap<>() {{
-			put("condition", condition.toString());
-		}};
+		Map<String, String>	values		= new HashMap<>() {
 
-		IfStmt javaIfStmt = (IfStmt) parseStatement(template,values);
-		BlockStmt thenBlock = new BlockStmt();
-		BlockStmt elseBlock = new BlockStmt();
-		for(BoxStatement statement : ifElse.getThenBody()) {
-			thenBlock.getStatements().add((Statement) BoxLangTranspiler.transform(statement));
+											{
+												put( "condition", condition.toString() );
+											}
+										};
+
+		IfStmt				javaIfStmt	= ( IfStmt ) parseStatement( template, values );
+		BlockStmt			thenBlock	= new BlockStmt();
+		BlockStmt			elseBlock	= new BlockStmt();
+		for ( BoxStatement statement : ifElse.getThenBody() ) {
+			thenBlock.getStatements().add( ( Statement ) BoxLangTranspiler.transform( statement ) );
 		}
-		for(BoxStatement statement : ifElse.getElseBody()) {
-			elseBlock.getStatements().add((Statement) BoxLangTranspiler.transform(statement));
+		for ( BoxStatement statement : ifElse.getElseBody() ) {
+			elseBlock.getStatements().add( ( Statement ) BoxLangTranspiler.transform( statement ) );
 		}
 
-		javaIfStmt.setThenStmt(thenBlock);
-		if(elseBlock.getStatements().isNonEmpty() ) {
-			if(elseBlock.getStatements().size() > 1)
-				javaIfStmt.setElseStmt(elseBlock);
+		javaIfStmt.setThenStmt( thenBlock );
+		if ( elseBlock.getStatements().isNonEmpty() ) {
+			if ( elseBlock.getStatements().size() > 1 )
+				javaIfStmt.setElseStmt( elseBlock );
 			else
-				javaIfStmt.setElseStmt(elseBlock.getStatement(0));
+				javaIfStmt.setElseStmt( elseBlock.getStatement( 0 ) );
 		}
 		return javaIfStmt;
 

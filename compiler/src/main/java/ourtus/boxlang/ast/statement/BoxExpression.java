@@ -19,10 +19,11 @@ import ourtus.boxlang.ast.BoxStatement;
 import ourtus.boxlang.ast.Position;
 
 public class BoxExpression extends BoxStatement {
+
 	private final BoxExpr expression;
 
-	public BoxExpression(BoxExpr expression, Position position, String sourceText) {
-		super(position, sourceText);
+	public BoxExpression( BoxExpr expression, Position position, String sourceText ) {
+		super( position, sourceText );
 		this.expression = expression;
 	}
 

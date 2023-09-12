@@ -33,14 +33,16 @@ public class BoxIntegerLiteral extends BoxExpr {
 	public String getValue() {
 		return value;
 	}
+
 	/**
 	 * Creates the AST node
-	 * @param value integer value
-	 * @param position position of the statement in the source code
+	 * 
+	 * @param value      integer value
+	 * @param position   position of the statement in the source code
 	 * @param sourceText source code that originated the Node
 	 */
-	public BoxIntegerLiteral(String value, Position position, String sourceText ) {
+	public BoxIntegerLiteral( String value, Position position, String sourceText ) {
 		super( position, sourceText );
-		this.value =  value;
+		this.value = value;
 	}
 }

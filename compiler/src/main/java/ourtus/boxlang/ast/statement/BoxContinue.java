@@ -24,10 +24,11 @@ public class BoxContinue extends BoxStatement {
 
 	/**
 	 * Creates the AST node
-	 * @param position position of the statement in the source code
+	 * 
+	 * @param position   position of the statement in the source code
 	 * @param sourceText source code that originated the Node
 	 */
-	public BoxContinue(Position position, String sourceText) {
-		super(position, sourceText);
+	public BoxContinue( Position position, String sourceText ) {
+		super( position, sourceText );
 	}
 }

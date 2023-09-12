@@ -14,21 +14,26 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class BoxArgumentTransformer extends AbstractTransformer {
+
 	Logger logger = LoggerFactory.getLogger( BoxArrayAccessTransformer.class );
+
 	@Override
-	public Node transform(BoxNode node, TransformerContext context) throws IllegalStateException {
-		BoxArgument arg = (BoxArgument)node;
-		String side = context == TransformerContext.NONE ? "" : "(" + context.toString() + ") ";
-		Expression expr = (Expression) BoxLangTranspiler.transform(arg.getValue());
+	public Node transform( BoxNode node, TransformerContext context ) throws IllegalStateException {
+		BoxArgument			arg			= ( BoxArgument ) node;
+		String				side		= context == TransformerContext.NONE ? "" : "(" + context.toString() + ") ";
+		Expression			expr		= ( Expression ) BoxLangTranspiler.transform( arg.getValue() );
 		// TODO handle named parameters
-		Map<String, String> values = new HashMap<>() {{
-			put( "expr", expr.toString() );
-		}};
+		Map<String, String>	values		= new HashMap<>() {
 
-		String template = "${expr}";
+											{
+												put( "expr", expr.toString() );
+											}
+										};
 
-		Node javaExpr = parseExpression( template, values ) ;
-		logger.info(side + node.getSourceText() + " -> " + javaExpr);
+		String				template	= "${expr}";
+
+		Node				javaExpr	= parseExpression( template, values );
+		logger.info( side + node.getSourceText() + " -> " + javaExpr );
 
 		return javaExpr;
 	}

@@ -30,42 +30,44 @@ import java.util.Map;
 public class BoxFunctionInvocationTransformer extends AbstractTransformer {
 
 	Logger logger = LoggerFactory.getLogger( BoxFunctionInvocationTransformer.class );
+
 	public BoxFunctionInvocationTransformer() {
 
 	}
 
 	@Override
-	public Node transform(BoxNode node, TransformerContext context) throws IllegalStateException {
+	public Node transform( BoxNode node, TransformerContext context ) throws IllegalStateException {
 
-		BoxFunctionInvocation function = (BoxFunctionInvocation)node;
-		String side = context == TransformerContext.NONE ? "" : "(" + context.toString() + ") ";
-		logger.info(side + node.getSourceText());
+		BoxFunctionInvocation	function	= ( BoxFunctionInvocation ) node;
+		String					side		= context == TransformerContext.NONE ? "" : "(" + context.toString() + ") ";
+		logger.info( side + node.getSourceText() );
 
 		Map<String, String> values = new HashMap<>();
-		for (int i = 0; i < function.getArguments().size(); i++) {
-			Expression expr = (Expression) BoxLangTranspiler.transform(function.getArguments().get(i));
-			values.put("arg"+i,expr.toString());
+		for ( int i = 0; i < function.getArguments().size(); i++ ) {
+			Expression expr = ( Expression ) BoxLangTranspiler.transform( function.getArguments().get( i ) );
+			values.put( "arg" + i, expr.toString() );
 		}
-		String template = getTemplate(function);
-		Node javaExpr =  parseExpression(template,values);
-		logger.info(side + node.getSourceText() + " -> " +javaExpr);
+		String	template	= getTemplate( function );
+		Node	javaExpr	= parseExpression( template, values );
+		logger.info( side + node.getSourceText() + " -> " + javaExpr );
 		return javaExpr;
 	}
 
-	private String getTemplate(BoxFunctionInvocation function) {
+	private String getTemplate( BoxFunctionInvocation function ) {
 
-		String target = BoxBuiltinRegistry.getInstance().getRegistry().get(function.getName().getName().toLowerCase());;
-		if(target != null)
+		String target = BoxBuiltinRegistry.getInstance().getRegistry().get( function.getName().getName().toLowerCase() );
+		;
+		if ( target != null )
 			return target;
-		StringBuilder sb = new StringBuilder(function.getName().getName());
-		sb.append("(");
-		for (int i = 0; i < function.getArguments().size(); i++) {
-			sb.append("${").append("arg").append(i).append("}");
-			if(i < function.getArguments().size()-1) {
-				sb.append(",");
+		StringBuilder sb = new StringBuilder( function.getName().getName() );
+		sb.append( "(" );
+		for ( int i = 0; i < function.getArguments().size(); i++ ) {
+			sb.append( "${" ).append( "arg" ).append( i ).append( "}" );
+			if ( i < function.getArguments().size() - 1 ) {
+				sb.append( "," );
 			}
 		}
-		sb.append(")");
+		sb.append( ")" );
 		return sb.toString();
 	}
 }

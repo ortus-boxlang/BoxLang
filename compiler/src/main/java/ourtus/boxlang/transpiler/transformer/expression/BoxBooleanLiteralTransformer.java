@@ -22,9 +22,10 @@ import ourtus.boxlang.transpiler.transformer.AbstractTransformer;
 import ourtus.boxlang.transpiler.transformer.TransformerContext;
 
 public class BoxBooleanLiteralTransformer extends AbstractTransformer {
+
 	@Override
-	public Node transform(BoxNode node, TransformerContext context) throws IllegalStateException {
-		BoxBooleanLiteral literal = (BoxBooleanLiteral) node;
-		return new BooleanLiteralExpr("true".equalsIgnoreCase(literal.getValue()));
+	public Node transform( BoxNode node, TransformerContext context ) throws IllegalStateException {
+		BoxBooleanLiteral literal = ( BoxBooleanLiteral ) node;
+		return new BooleanLiteralExpr( "true".equalsIgnoreCase( literal.getValue() ) );
 	}
 }

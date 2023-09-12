@@ -33,14 +33,16 @@ public class BoxBooleanLiteral extends BoxExpr {
 	public String getValue() {
 		return value;
 	}
+
 	/**
 	 * Creates the AST node
-	 * @param value boolean value
-	 * @param position position of the statement in the source code
+	 * 
+	 * @param value      boolean value
+	 * @param position   position of the statement in the source code
 	 * @param sourceText source code that originated the Node
 	 */
-	public BoxBooleanLiteral(String value, Position position, String sourceText ) {
+	public BoxBooleanLiteral( String value, Position position, String sourceText ) {
 		super( position, sourceText );
-		this.value =  value;
+		this.value = value;
 	}
 }

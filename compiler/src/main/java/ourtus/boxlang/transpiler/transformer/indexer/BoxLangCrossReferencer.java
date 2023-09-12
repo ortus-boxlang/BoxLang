@@ -5,26 +5,28 @@ import com.github.javaparser.ast.Node;
 import java.io.File;
 
 public abstract class BoxLangCrossReferencer {
-	protected File source;
-	protected File destination;
-	protected boolean enabled;
-	public abstract Node storeReference(Node javaNode, ourtus.boxlang.ast.BoxNode boxNode);
+
+	protected File		source;
+	protected File		destination;
+	protected boolean	enabled;
+
+	public abstract Node storeReference( Node javaNode, ourtus.boxlang.ast.BoxNode boxNode );
 
 	public BoxLangCrossReferencer() {
 		this.enabled = true;
 	}
 
-	public BoxLangCrossReferencer(File source, File destination) {
-		this.source = source;
-		this.destination = destination;
-		this.enabled = true;
+	public BoxLangCrossReferencer( File source, File destination ) {
+		this.source			= source;
+		this.destination	= destination;
+		this.enabled		= true;
 	}
 
 	public File getSource() {
 		return source;
 	}
 
-	public void setSource(File source) {
+	public void setSource( File source ) {
 		this.source = source;
 	}
 
@@ -32,7 +34,7 @@ public abstract class BoxLangCrossReferencer {
 		return destination;
 	}
 
-	public void setDestination(File destination) {
+	public void setDestination( File destination ) {
 		this.destination = destination;
 	}
 }

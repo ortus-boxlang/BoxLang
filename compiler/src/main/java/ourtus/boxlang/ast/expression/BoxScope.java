@@ -28,7 +28,7 @@ import ourtus.boxlang.ast.Position;
  * <code>THIS</code>
  * <code>THREAD</code>
  */
-public class BoxScope extends BoxExpr  {
+public class BoxScope extends BoxExpr {
 
 	private final String name;
 
@@ -38,11 +38,12 @@ public class BoxScope extends BoxExpr  {
 
 	/**
 	 * Creates the AST node
-	 * @param name scope name identified by a scope reserved keyword
+	 * 
+	 * @param name       scope name identified by a scope reserved keyword
 	 * @param position
 	 * @param sourceText
 	 */
-	public BoxScope(String name, Position position, String sourceText ) {
+	public BoxScope( String name, Position position, String sourceText ) {
 		super( position, sourceText );
 		this.name = name;
 	}

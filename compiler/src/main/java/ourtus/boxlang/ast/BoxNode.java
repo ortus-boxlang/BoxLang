@@ -18,9 +18,11 @@ package ourtus.boxlang.ast;
  * Base class for the BoxLang AST Nodes
  */
 public abstract class BoxNode extends Node {
+
 	/**
 	 * Constructor
-	 * @param position position of the statement or expression in the source code
+	 * 
+	 * @param position   position of the statement or expression in the source code
 	 * @param sourceText source code of the statement/expression
 	 */
 	public BoxNode( Position position, String sourceText ) {

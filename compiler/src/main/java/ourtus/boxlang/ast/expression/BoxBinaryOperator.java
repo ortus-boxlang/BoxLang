@@ -31,5 +31,4 @@ public enum BoxBinaryOperator {
 	And,
 	Or,
 
-
 }

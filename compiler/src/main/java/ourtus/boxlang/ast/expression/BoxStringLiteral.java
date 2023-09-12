@@ -36,16 +36,17 @@ public class BoxStringLiteral extends BoxExpr {
 
 	/**
 	 * Creates the AST node
-	 * @param value string value
-	 * @param position position of the statement in the source code
+	 * 
+	 * @param value      string value
+	 * @param position   position of the statement in the source code
 	 * @param sourceText source code that originated the Node
 	 */
-	public BoxStringLiteral(String value, Position position, String sourceText ) {
+	public BoxStringLiteral( String value, Position position, String sourceText ) {
 		super( position, sourceText );
-		StringBuilder sb = new StringBuilder(value);
-		sb.deleteCharAt(value.length() - 1);
-		sb.deleteCharAt(0);
-		this.value =  sb.toString();
-		this.parent = parent;
+		StringBuilder sb = new StringBuilder( value );
+		sb.deleteCharAt( value.length() - 1 );
+		sb.deleteCharAt( 0 );
+		this.value	= sb.toString();
+		this.parent	= parent;
 	}
 }

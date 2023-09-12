@@ -16,41 +16,45 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class BoxComparisonOperationTransformer extends AbstractTransformer {
+
 	Logger logger = LoggerFactory.getLogger( BoxComparisonOperationTransformer.class );
+
 	@Override
 	public Node transform( BoxNode node, TransformerContext context ) throws IllegalStateException {
-		BoxComparisonOperation operation = ( BoxComparisonOperation ) node;
-		Expression left = ( Expression ) resolveScope( BoxLangTranspiler.transform( operation.getLeft()),context );
-		Expression right = ( Expression ) resolveScope(BoxLangTranspiler.transform( operation.getRight()),context );
+		BoxComparisonOperation	operation	= ( BoxComparisonOperation ) node;
+		Expression				left		= ( Expression ) resolveScope( BoxLangTranspiler.transform( operation.getLeft() ), context );
+		Expression				right		= ( Expression ) resolveScope( BoxLangTranspiler.transform( operation.getRight() ), context );
 
-		Map<String, String> values = new HashMap<>() {{
-			put( "left", left.toString() );
-			put( "right", right.toString() );
+		Map<String, String>		values		= new HashMap<>() {
 
-		}};
-		String template = "";
+												{
+													put( "left", left.toString() );
+													put( "right", right.toString() );
+
+												}
+											};
+		String					template	= "";
 
 		if ( operation.getOperator() == BoxComparisonOperator.Equal ) {
 			template = "EqualsEquals.invoke(${left},${right})";
-		} else if(operation.getOperator() == BoxComparisonOperator.NotEqual) {
+		} else if ( operation.getOperator() == BoxComparisonOperator.NotEqual ) {
 			template = "!EqualsEquals.invoke(${left},${right})";
-		} else if(operation.getOperator() == BoxComparisonOperator.TEqual) {
+		} else if ( operation.getOperator() == BoxComparisonOperator.TEqual ) {
 			template = "EqualsEqualsEquals.invoke(${left},${right})";
-		} else if(operation.getOperator() == BoxComparisonOperator.GreaterThan) {
+		} else if ( operation.getOperator() == BoxComparisonOperator.GreaterThan ) {
 			template = "GreaterThan.invoke(${left},${right})";
-		} else if(operation.getOperator() == BoxComparisonOperator.GreaterThanEquals) {
+		} else if ( operation.getOperator() == BoxComparisonOperator.GreaterThanEquals ) {
 			template = "GreaterThanEqual.invoke(${left},${right})";
-		} else if(operation.getOperator() == BoxComparisonOperator.LessThan) {
+		} else if ( operation.getOperator() == BoxComparisonOperator.LessThan ) {
 			template = "LessThan.invoke(${left},${right})";
-		} else if(operation.getOperator() == BoxComparisonOperator.LesslThanEqual) {
+		} else if ( operation.getOperator() == BoxComparisonOperator.LesslThanEqual ) {
 			template = "LessThanEqual.invoke(${left},${right})";
 		} else {
-			throw new IllegalStateException("not implemented");
+			throw new IllegalStateException( "not implemented" );
 		}
 		Node javaExpr = parseExpression( template, values );
-		logger.info(node.getSourceText() + " -> " + javaExpr);
+		logger.info( node.getSourceText() + " -> " + javaExpr );
 		return javaExpr;
 	}
-
 
 }

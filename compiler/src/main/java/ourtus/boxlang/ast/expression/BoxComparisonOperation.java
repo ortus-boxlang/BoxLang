@@ -17,26 +17,28 @@ package ourtus.boxlang.ast.expression;
 import ourtus.boxlang.ast.BoxExpr;
 import ourtus.boxlang.ast.Position;
 
-public class BoxComparisonOperation extends BoxExpr  {
-	private final BoxExpr left;
-	private final BoxExpr right;
-	private final BoxComparisonOperator operator;
+public class BoxComparisonOperation extends BoxExpr {
+
+	private final BoxExpr				left;
+	private final BoxExpr				right;
+	private final BoxComparisonOperator	operator;
 
 	/**
 	 * Comparision
+	 * 
 	 * @param left
 	 * @param operator
 	 * @param right
 	 * @param position
 	 * @param sourceText
 	 */
-	public BoxComparisonOperation(BoxExpr left, BoxComparisonOperator operator, BoxExpr right, Position position, String sourceText) {
-		super(position, sourceText);
-		this.left = left;
-		this.right = right;
-		this.operator = operator;
-		this.left.setParent(this);
-		this.right.setParent(this);
+	public BoxComparisonOperation( BoxExpr left, BoxComparisonOperator operator, BoxExpr right, Position position, String sourceText ) {
+		super( position, sourceText );
+		this.left		= left;
+		this.right		= right;
+		this.operator	= operator;
+		this.left.setParent( this );
+		this.right.setParent( this );
 	}
 
 	public BoxExpr getLeft() {

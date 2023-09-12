@@ -19,6 +19,7 @@ import ourtus.boxlang.ast.BoxNode;
 
 public interface Transformer {
 
-	  Node transform(BoxNode node) throws IllegalStateException;
-	  Node transform(BoxNode node, TransformerContext context) throws IllegalStateException;
+	Node transform( BoxNode node ) throws IllegalStateException;
+
+	Node transform( BoxNode node, TransformerContext context ) throws IllegalStateException;
 }

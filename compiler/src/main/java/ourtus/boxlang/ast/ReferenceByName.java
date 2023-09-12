@@ -1,16 +1,16 @@
 package ourtus.boxlang.ast;
 
-
 /**
  * Represent a reference by the name to a Node
  */
 public class ReferenceByName {
 
-	private final String name;
-	private Node reference;
+	private final String	name;
+	private Node			reference;
 
 	/**
 	 * Returns the name of the reference
+	 * 
 	 * @return name of the reference
 	 */
 	public String getName() {
@@ -19,7 +19,9 @@ public class ReferenceByName {
 
 	/**
 	 * Returns the referenced node
+	 * 
 	 * @return the Node referenced by the name
+	 * 
 	 * @see Node
 	 */
 	public Node getReference() {
@@ -28,10 +30,12 @@ public class ReferenceByName {
 
 	/**
 	 * Set the referenced node referred by the name
+	 * 
 	 * @param reference the Node referred
+	 * 
 	 * @see Node
 	 */
-	public void setReference(Node reference) {
+	public void setReference( Node reference ) {
 		this.reference = reference;
 	}
 

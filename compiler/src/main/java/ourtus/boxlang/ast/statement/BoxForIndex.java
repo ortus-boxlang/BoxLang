@@ -23,17 +23,18 @@ import java.util.List;
 
 public class BoxForIndex extends BoxStatement {
 
-	private  final	BoxExpr variable;
-	private  final	BoxExpr expression;
-	private final List<BoxStatement> body;
-	public BoxForIndex(BoxExpr variable, BoxExpr expression, List<BoxStatement> body, Position position, String sourceText) {
-		super(position, sourceText);
+	private final BoxExpr				variable;
+	private final BoxExpr				expression;
+	private final List<BoxStatement>	body;
+
+	public BoxForIndex( BoxExpr variable, BoxExpr expression, List<BoxStatement> body, Position position, String sourceText ) {
+		super( position, sourceText );
 		this.variable = variable;
-		this.variable.setParent(this);
+		this.variable.setParent( this );
 		this.expression = expression;
-		this.expression.setParent(this);
-		this.body = Collections.unmodifiableList(body);
-		this.body.forEach(arg -> arg.setParent(this));
+		this.expression.setParent( this );
+		this.body = Collections.unmodifiableList( body );
+		this.body.forEach( arg -> arg.setParent( this ) );
 	}
 
 	public BoxExpr getVariable() {

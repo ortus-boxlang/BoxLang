@@ -19,94 +19,101 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class BoxObjectAccessTransformer extends AbstractTransformer {
+
 	Logger logger = LoggerFactory.getLogger( BoxObjectAccessTransformer.class );
 
 	@Override
 	public Node transform( BoxNode node, TransformerContext context ) throws IllegalStateException {
-		BoxObjectAccess objectAccess = ( BoxObjectAccess ) node;
-		String side = context == TransformerContext.NONE ? "" : "(" + context.toString() + ") ";
-		logger.info(side + node.getSourceText());
+		BoxObjectAccess	objectAccess	= ( BoxObjectAccess ) node;
+		String			side			= context == TransformerContext.NONE ? "" : "(" + context.toString() + ") ";
+		logger.info( side + node.getSourceText() );
 
-		if( objectAccess.getContext() instanceof BoxScope &&  objectAccess.getAccess() instanceof BoxObjectAccess) {
-			Expression scope = ( Expression ) BoxLangTranspiler.transform( objectAccess.getContext() ,TransformerContext.LEFT);
-			Node variable = BoxLangTranspiler.transform( objectAccess.getAccess() ,TransformerContext.RIGHT);
+		if ( objectAccess.getContext() instanceof BoxScope && objectAccess.getAccess() instanceof BoxObjectAccess ) {
+			Expression	scope		= ( Expression ) BoxLangTranspiler.transform( objectAccess.getContext(), TransformerContext.LEFT );
+			Node		variable	= BoxLangTranspiler.transform( objectAccess.getAccess(), TransformerContext.RIGHT );
 
-			if(variable instanceof ArrayInitializerExpr) {
-				ArrayInitializerExpr vars = (ArrayInitializerExpr)variable;
+			if ( variable instanceof ArrayInitializerExpr ) {
+				ArrayInitializerExpr	vars		= ( ArrayInitializerExpr ) variable;
 
+				Map<String, String>		values		= new HashMap<>() {
 
-				Map<String, String> values = new HashMap<>() {{
-					put( "scope", scope.toString() );
-					put( "var0", vars.getValues().get(0).toString() );
-					put( "var1", vars.getValues().get(1).toString() );
-				}};
+														{
+															put( "scope", scope.toString() );
+															put( "var0", vars.getValues().get( 0 ).toString() );
+															put( "var1", vars.getValues().get( 1 ).toString() );
+														}
+													};
 
-				String template = switch ( context ) {
-				case LEFT -> """
-					${scope}.get( Key.of( ${var0} ) ).get(Key.of( ${var1} ))
-					""";
-				default -> """
-					Referencer.get(${scope}.get( Key.of( ${var0} ) ).get(Key.of( ${var1} )),false)
-					""";
-				};
+				String					template	= switch ( context ) {
+														case LEFT -> """
+														             ${scope}.get( Key.of( ${var0} ) ).get(Key.of( ${var1} ))
+														             """;
+														default -> """
+														           Referencer.get(${scope}.get( Key.of( ${var0} ) ).get(Key.of( ${var1} )),false)
+														           """;
+													};
 				return parseExpression( template, values );
 
-
 			} else {
-				Map<String, String> values = new HashMap<>() {{
-					put( "scope", scope.toString() );
-					put( "variable", variable.toString() );
-				}};
+				Map<String, String>	values		= new HashMap<>() {
 
-				String template = switch ( context ) {
-					case LEFT -> """
-					${scope}.put(Key.of("${variable}"))
-					""";
-					default -> """
-					${scope}.get( Key.of( "${variable}" ) )
-					""";
+													{
+														put( "scope", scope.toString() );
+														put( "variable", variable.toString() );
+													}
+												};
 
-				};
+				String				template	= switch ( context ) {
+													case LEFT -> """
+													             ${scope}.put(Key.of("${variable}"))
+													             """;
+													default -> """
+													           ${scope}.get( Key.of( "${variable}" ) )
+													           """;
+
+												};
 				return parseExpression( template, values );
 			}
 
+		} else if ( objectAccess.getContext() instanceof BoxIdentifier && objectAccess.getAccess() instanceof BoxIdentifier ) {
+			Expression				scope		= ( Expression ) BoxLangTranspiler.transform( objectAccess.getContext(), TransformerContext.LEFT );
+			Expression				variable	= ( Expression ) BoxLangTranspiler.transform( objectAccess.getAccess(), TransformerContext.RIGHT );
+			Map<String, String>		values		= new HashMap<>() {
 
+													{
+														put( "scope", scope.toString() );
+														put( "variable", variable.toString() );
+													}
+												};
+			ArrayInitializerExpr	expr		= new ArrayInitializerExpr(
+			    NodeList.nodeList(
+			        new StringLiteralExpr( scope.toString() ),
+			        new StringLiteralExpr( variable.toString() )
 
-		} else if( objectAccess.getContext() instanceof BoxIdentifier &&  objectAccess.getAccess() instanceof BoxIdentifier ) {
-			Expression scope = ( Expression ) BoxLangTranspiler.transform( objectAccess.getContext() ,TransformerContext.LEFT);
-			Expression variable = ( Expression ) BoxLangTranspiler.transform( objectAccess.getAccess() ,TransformerContext.RIGHT);
-			Map<String, String> values = new HashMap<>() {{
-				put( "scope", scope.toString() );
-				put( "variable", variable.toString() );
-			}};
-			ArrayInitializerExpr expr = new ArrayInitializerExpr(
-				NodeList.nodeList(
-					new StringLiteralExpr(scope.toString()),
-					new StringLiteralExpr(variable.toString())
-
-					)
+			    )
 			);
 			return expr;
-		}
-		else if( objectAccess.getContext() instanceof BoxScope &&  objectAccess.getAccess() instanceof BoxIdentifier ) {
-			Expression scope = ( Expression ) BoxLangTranspiler.transform( objectAccess.getContext() ,TransformerContext.LEFT);
-			Expression variable = ( Expression ) BoxLangTranspiler.transform( objectAccess.getAccess() ,TransformerContext.RIGHT);
-			Map<String, String> values = new HashMap<>() {{
-				put( "scope", scope.toString() );
-				put( "variable", variable.toString() );
-			}};
-			String template = switch ( context ) {
-				case LEFT -> """
-					${scope}.put(Key.of("${variable}"))
-					""";
-				default -> """
-					${scope}.get( Key.of( "${variable}" ) )
-					""";
-			};
+		} else if ( objectAccess.getContext() instanceof BoxScope && objectAccess.getAccess() instanceof BoxIdentifier ) {
+			Expression			scope		= ( Expression ) BoxLangTranspiler.transform( objectAccess.getContext(), TransformerContext.LEFT );
+			Expression			variable	= ( Expression ) BoxLangTranspiler.transform( objectAccess.getAccess(), TransformerContext.RIGHT );
+			Map<String, String>	values		= new HashMap<>() {
+
+												{
+													put( "scope", scope.toString() );
+													put( "variable", variable.toString() );
+												}
+											};
+			String				template	= switch ( context ) {
+												case LEFT -> """
+												             ${scope}.put(Key.of("${variable}"))
+												             """;
+												default -> """
+												           ${scope}.get( Key.of( "${variable}" ) )
+												           """;
+											};
 			return parseExpression( template, values );
 		}
 
-
-		throw new IllegalStateException("");
+		throw new IllegalStateException( "" );
 	}
 }

@@ -22,26 +22,29 @@ import java.util.List;
  */
 public class Node {
 
-	protected Position position;
-	private final String sourceText;
-	protected Node parent = null;
-	private final List<Node> children;
-	private Node originator;
+	protected Position			position;
+	private final String		sourceText;
+	protected Node				parent	= null;
+	private final List<Node>	children;
+	private Node				originator;
 
 	/**
 	 * AST node constructor
-	 * @param position  the position within the source code that originated the node
+	 * 
+	 * @param position   the position within the source code that originated the node
 	 * @param sourceText the original source code that represented by the node
 	 */
 	public Node( Position position, String sourceText ) {
-		this.position   = position;
-		this.sourceText = sourceText;
-		this.children = new ArrayList<>();
+		this.position	= position;
+		this.sourceText	= sourceText;
+		this.children	= new ArrayList<>();
 	}
 
 	/**
 	 * Returns the position in code that the node represents
+	 * 
 	 * @return a Position instance
+	 * 
 	 * @see Position
 	 */
 	public Position getPosition() {
@@ -50,6 +53,7 @@ public class Node {
 
 	/**
 	 * Returns the source code that originated the Node
+	 * 
 	 * @return the snipped of the source code
 	 */
 	public String getSourceText() {
@@ -58,18 +62,20 @@ public class Node {
 
 	/**
 	 * Set the parent and the children of the Node
+	 * 
 	 * @param parent an instance of the parent code
 	 */
-	public void setParent(Node parent) {
+	public void setParent( Node parent ) {
 		this.parent = parent;
-		if(parent != null) {
-			if(!parent.children.contains(this))
-				parent.getChildren().add(this);
+		if ( parent != null ) {
+			if ( !parent.children.contains( this ) )
+				parent.getChildren().add( this );
 		}
 	}
 
 	/**
 	 * Returns the parent Node of node or null if has no parent
+	 * 
 	 * @return the parent Node of the current Node
 	 */
 	public Node getParent() {
@@ -78,6 +84,7 @@ public class Node {
 
 	/**
 	 * Returns the list ov children of the current node
+	 * 
 	 * @return a list of children Node
 	 */
 	public List<Node> getChildren() {
@@ -90,13 +97,14 @@ public class Node {
 
 	/**
 	 * Walk the tree
+	 * 
 	 * @return a list of nodes traversed
 	 */
 	public List<Node> walk() {
 		List<Node> result = new ArrayList<>();
-		result.add(this);
-		for (Node node : this.children) {
-			result.addAll(node.walk());
+		result.add( this );
+		for ( Node node : this.children ) {
+			result.addAll( node.walk() );
 		}
 		return result;
 	}

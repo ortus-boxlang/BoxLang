@@ -26,22 +26,23 @@ import java.util.List;
  */
 public class BoxSwitch extends BoxStatement {
 
-	private final BoxExpr condition;
-	private final List<BoxSwitchCase> cases;
+	private final BoxExpr				condition;
+	private final List<BoxSwitchCase>	cases;
 
 	/**
 	 * Creates the AST node
-	 * @param condition the expression of the switch statement
-	 * @param cases list of the cases
-	 * @param position position of the statement in the source code
+	 * 
+	 * @param condition  the expression of the switch statement
+	 * @param cases      list of the cases
+	 * @param position   position of the statement in the source code
 	 * @param sourceText source code that originated the Node
 	 */
-	public BoxSwitch(BoxExpr condition,List<BoxSwitchCase> cases,Position position, String sourceText) {
-		super(position, sourceText);
+	public BoxSwitch( BoxExpr condition, List<BoxSwitchCase> cases, Position position, String sourceText ) {
+		super( position, sourceText );
 		this.condition = condition;
-		this.condition.setParent(this);
-		this.cases = Collections.unmodifiableList(cases);
-		this.cases.forEach(arg -> arg.setParent(this));
+		this.condition.setParent( this );
+		this.cases = Collections.unmodifiableList( cases );
+		this.cases.forEach( arg -> arg.setParent( this ) );
 	}
 
 	public BoxExpr getCondition() {

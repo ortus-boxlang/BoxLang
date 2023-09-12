@@ -31,37 +31,40 @@ import ourtus.boxlang.transpiler.transformer.expression.BoxParenthesisTransforme
 import java.util.HashMap;
 import java.util.Map;
 
-
 public class BoxLocalDeclarationTransformer extends AbstractTransformer {
+
 	Logger logger = LoggerFactory.getLogger( BoxParenthesisTransformer.class );
+
 	@Override
-	public Node transform(BoxNode node, TransformerContext context) throws IllegalStateException {
-		BoxLocalDeclaration declaration = (BoxLocalDeclaration)node;
-		BlockStmt stmt = new BlockStmt();
-		if(  declaration.getExpression() != null  ) {
-			Expression expr = (Expression) BoxLangTranspiler.transform(declaration.getExpression(),TransformerContext.RIGHT);;
-				declaration.getIdentifiers().stream().forEach( it -> {
-					BoxIdentifier variable = (BoxIdentifier) it;
-					Map<String, String> values = new HashMap<>() {{
-						put("variable", variable.getName() );
-						put("expr", expr.toString());
-					}};
+	public Node transform( BoxNode node, TransformerContext context ) throws IllegalStateException {
+		BoxLocalDeclaration	declaration	= ( BoxLocalDeclaration ) node;
+		BlockStmt			stmt		= new BlockStmt();
+		if ( declaration.getExpression() != null ) {
+			Expression expr = ( Expression ) BoxLangTranspiler.transform( declaration.getExpression(), TransformerContext.RIGHT );
+			;
+			declaration.getIdentifiers().stream().forEach( it -> {
+				BoxIdentifier		variable	= ( BoxIdentifier ) it;
+				Map<String, String>	values		= new HashMap<>() {
 
-					String template = """
-						context.getScopeNearby( Key.of( LocalScope.name ) )
-							.put(Key.of( "${variable}" ),
-							${expr});
-						""";
+													{
+														put( "variable", variable.getName() );
+														put( "expr", expr.toString() );
+													}
+												};
 
-					Node javaStmt = parseStatement( template, values );
-					logger.info(node.getSourceText() + " -> " + javaStmt);
-					stmt.getStatements().add((Statement) javaStmt);
+				String				template	= """
+				                                  context.getScopeNearby( Key.of( LocalScope.name ) )
+				                                  	.put(Key.of( "${variable}" ),
+				                                  	${expr});
+				                                  """;
 
-				});
+				Node				javaStmt	= parseStatement( template, values );
+				logger.info( node.getSourceText() + " -> " + javaStmt );
+				stmt.getStatements().add( ( Statement ) javaStmt );
+
+			} );
 
 		}
-
-
 
 		return stmt;
 	}

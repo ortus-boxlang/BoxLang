@@ -23,6 +23,7 @@ import java.io.File;
  * Represent a File as source
  */
 public class SourceFile extends Source {
+
 	private final File file;
 
 	/**
@@ -30,12 +31,13 @@ public class SourceFile extends Source {
 	 *
 	 * @param file source File
 	 */
-	public SourceFile(File file) {
+	public SourceFile( File file ) {
 		this.file = file;
 	}
 
 	/**
 	 * Returns the File associate to the source
+	 * 
 	 * @return a File instance
 	 */
 	public File getFile() {

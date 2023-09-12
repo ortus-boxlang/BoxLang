@@ -27,21 +27,22 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class BoxNegateOperationTransformer extends AbstractTransformer {
+
 	@Override
-	public Node transform(BoxNode node, TransformerContext context) throws IllegalStateException {
-		BoxNegateOperation operation = (BoxNegateOperation) node;
-		Map<String, String> values = new HashMap<>();
+	public Node transform( BoxNode node, TransformerContext context ) throws IllegalStateException {
+		BoxNegateOperation	operation	= ( BoxNegateOperation ) node;
+		Map<String, String>	values		= new HashMap<>();
 
-		if( operation.getExpr() instanceof BoxBooleanLiteral) {
-			StringBuilder sb = new StringBuilder();
-			BoxBooleanLiteral value = (BoxBooleanLiteral)operation.getExpr();
-			values.put( "expr", sb.append('"').append(value.getValue()).append('"').toString());
+		if ( operation.getExpr() instanceof BoxBooleanLiteral ) {
+			StringBuilder		sb		= new StringBuilder();
+			BoxBooleanLiteral	value	= ( BoxBooleanLiteral ) operation.getExpr();
+			values.put( "expr", sb.append( '"' ).append( value.getValue() ).append( '"' ).toString() );
 		} else {
-			Expression expr = (Expression) BoxLangTranspiler.transform(operation.getExpr());
-			values.put( "expr", expr.toString());
+			Expression expr = ( Expression ) BoxLangTranspiler.transform( operation.getExpr() );
+			values.put( "expr", expr.toString() );
 		}
-		String template =  "Negate.invoke(${expr})";
+		String template = "Negate.invoke(${expr})";
 
-		return parseExpression(template,values);
+		return parseExpression( template, values );
 	}
 }

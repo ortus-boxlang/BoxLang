@@ -34,8 +34,8 @@ import java.util.Map;
 
 public abstract class AbstractTransformer implements Transformer {
 
-	protected static JavaParser javaParser = new JavaParser();
-	protected static BoxLangCrossReferencer crossReferencer = new BoxLangCrossReferencerDefault();
+	protected static JavaParser				javaParser		= new JavaParser();
+	protected static BoxLangCrossReferencer	crossReferencer	= new BoxLangCrossReferencerDefault();
 
 	@Override
 	public abstract Node transform( BoxNode node, TransformerContext context ) throws IllegalStateException;
@@ -45,9 +45,9 @@ public abstract class AbstractTransformer implements Transformer {
 	}
 
 	protected Node parseExpression( String template, Map<String, String> values ) {
-		StringSubstitutor sub = new StringSubstitutor( values );
-		String code = sub.replace( template );
-		ParseResult<Expression> result = javaParser.parseExpression( code );
+		StringSubstitutor		sub		= new StringSubstitutor( values );
+		String					code	= sub.replace( template );
+		ParseResult<Expression>	result	= javaParser.parseExpression( code );
 		if ( !result.isSuccessful() ) {
 			System.out.println( code );
 			throw new IllegalStateException( result.toString() );
@@ -56,50 +56,52 @@ public abstract class AbstractTransformer implements Transformer {
 	}
 
 	protected Node parseStatement( String template, Map<String, String> values ) {
-		StringSubstitutor sub = new StringSubstitutor( values );
-		String code = sub.replace( template );
-		ParseResult<Statement> result = javaParser.parseStatement( code );
+		StringSubstitutor		sub		= new StringSubstitutor( values );
+		String					code	= sub.replace( template );
+		ParseResult<Statement>	result	= javaParser.parseStatement( code );
 		if ( !result.isSuccessful() ) {
 			throw new IllegalStateException( result.toString() );
 		}
 		return result.getResult().get();
 	}
 
-    protected Node resolveScope(Node expr, TransformerContext context) {
-        if(expr instanceof NameExpr) {
-            String id = expr.toString();
-            String template = switch (context)  {
-                case RIGHT -> "context.scopeFindNearby(Key.of(\"${id}\")).value()";
-                default -> "context.scopeFindNearby(Key.of(\"${id}\"))";
-            }
+	protected Node resolveScope( Node expr, TransformerContext context ) {
+		if ( expr instanceof NameExpr ) {
+			String				id			= expr.toString();
+			String				template	= switch ( context ) {
+												case RIGHT -> "context.scopeFindNearby(Key.of(\"${id}\")).value()";
+												default -> "context.scopeFindNearby(Key.of(\"${id}\"))";
+											}
 
-                ;
-            Map<String, String> values = new HashMap<>() {{
-                put("id", id.toString());
-            }};
-            return  parseExpression(template,values);
+			;
+			Map<String, String>	values		= new HashMap<>() {
 
-        }
-        return expr;
-    }
+												{
+													put( "id", id.toString() );
+												}
+											};
+			return parseExpression( template, values );
 
+		}
+		return expr;
+	}
 
-	protected Node addIndex(Node javaNode, BoxNode boxNode) {
-		if(crossReferencer != null) {
-			crossReferencer.storeReference(javaNode,boxNode);
+	protected Node addIndex( Node javaNode, BoxNode boxNode ) {
+		if ( crossReferencer != null ) {
+			crossReferencer.storeReference( javaNode, boxNode );
 		}
 		return javaNode;
 	}
 
-	protected boolean requiresBooleanCaster(BoxExpr condition) {
-		if(condition instanceof BoxBinaryOperation) {
-			BoxBinaryOperation op = (BoxBinaryOperation) condition;
-			if(op.getOperator() == BoxBinaryOperator.Or)
+	protected boolean requiresBooleanCaster( BoxExpr condition ) {
+		if ( condition instanceof BoxBinaryOperation ) {
+			BoxBinaryOperation op = ( BoxBinaryOperation ) condition;
+			if ( op.getOperator() == BoxBinaryOperator.Or )
 				return false;
-			if(op.getOperator() == BoxBinaryOperator.And)
+			if ( op.getOperator() == BoxBinaryOperator.And )
 				return false;
 		}
-		if(condition instanceof BoxNegateOperation) {
+		if ( condition instanceof BoxNegateOperation ) {
 			return false;
 		}
 		return true;

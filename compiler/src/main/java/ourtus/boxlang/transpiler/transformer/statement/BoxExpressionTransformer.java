@@ -27,8 +27,8 @@ public class BoxExpressionTransformer extends AbstractTransformer {
 
 	@Override
 	public Node transform( BoxNode node, TransformerContext context ) throws IllegalStateException {
-		BoxExpression exprStmt = ( BoxExpression ) node;
-		Expression expr = ( Expression ) BoxLangTranspiler.transform( exprStmt.getExpression() );
+		BoxExpression	exprStmt	= ( BoxExpression ) node;
+		Expression		expr		= ( Expression ) BoxLangTranspiler.transform( exprStmt.getExpression() );
 		return new ExpressionStmt( expr );
 	}
 }

@@ -23,16 +23,18 @@ import java.util.List;
 public class BoxScript extends BoxNode {
 
 	private final List<BoxStatement> statements;
+
 	/**
 	 * Creates an AST for a program which is represented by a list of statements
 	 *
 	 * @param statements list of the statements nodes
-	 * @param position   position  within the source code
+	 * @param position   position within the source code
 	 * @param sourceText source code
+	 * 
 	 * @see Position
 	 * @see BoxStatement
 	 */
-	public BoxScript(List<BoxStatement> statements, Position position, String sourceText ) {
+	public BoxScript( List<BoxStatement> statements, Position position, String sourceText ) {
 		super( position, sourceText );
 		this.statements = statements;
 	}
