@@ -17,6 +17,9 @@ package ourtus.boxlang.ast.expression;
 import ourtus.boxlang.ast.BoxExpr;
 import ourtus.boxlang.ast.Position;
 
+/**
+ * Abstract class representing Aceess Operations
+ */
 public abstract class BoxAccess extends BoxExpr {
 
 	public BoxAccess(Position position, String sourceText ) {
