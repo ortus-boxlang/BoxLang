@@ -22,10 +22,21 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+/**
+ * AST Node representing a while loop statement
+ */
 public class BoxWhile extends BoxStatement {
 
 	private  final	BoxExpr condition;
 	private final List<BoxStatement> body;
+
+	/**
+	 * Creates the AST node
+	 * @param condition the expression of the while statement
+	 * @param body  list of the statements in the body if the loop
+	 * @param position position of the statement in the source code
+	 * @param sourceText source code that originated the Node
+	 */
 	public BoxWhile(BoxExpr condition,List<BoxStatement> body,Position position, String sourceText) {
 		super(position, sourceText);
 		this.condition = condition;
