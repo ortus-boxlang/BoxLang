@@ -193,7 +193,7 @@ public class TestStatements extends TestBase {
 		ParsingResult	result		= parseStatement( statement );
 
 		Node			javaAST		= BoxLangTranspiler.transform( result.getRoot() );
-		System.out.println( javaAST );
+
 		assertEqualsNoWhiteSpaces(
 		    """
 		    do {
@@ -234,4 +234,5 @@ public class TestStatements extends TestBase {
 		    }
 		    """, javaAST.toString() );
 	}
+
 }
