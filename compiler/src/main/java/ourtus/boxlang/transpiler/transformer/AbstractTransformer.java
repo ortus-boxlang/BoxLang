@@ -50,8 +50,10 @@ public abstract class AbstractTransformer implements Transformer {
 
 	/**
 	 * Returns the Java Parser AST nodes for the given template
+	 * 
 	 * @param template a string template with the expression to parse
-	 * @param values a map of values to be replaced in the template
+	 * @param values   a map of values to be replaced in the template
+	 * 
 	 * @return the Java Parser AST representation of the expression
 	 */
 	protected Node parseExpression( String template, Map<String, String> values ) {
@@ -64,10 +66,13 @@ public abstract class AbstractTransformer implements Transformer {
 		}
 		return result.getResult().get();
 	}
+
 	/**
-	 * Returns the Java Parser AST  for the given template
+	 * Returns the Java Parser AST for the given template
+	 * 
 	 * @param template a string template with the statement to parse
-	 * @param values a map of values to be replaced in the template
+	 * @param values   a map of values to be replaced in the template
+	 * 
 	 * @return the Java Parser AST representation of the statement
 	 */
 	protected Node parseStatement( String template, Map<String, String> values ) {
@@ -80,11 +85,12 @@ public abstract class AbstractTransformer implements Transformer {
 		return result.getResult().get();
 	}
 
-
 	/**
 	 * Returns the appropriate template code to access the scope
-	 * @param expr expression to be solved
+	 * 
+	 * @param expr    expression to be solved
 	 * @param context transformation context LEFT or RIGHT indicating the side of the expression
+	 * 
 	 * @return
 	 */
 	protected Node resolveScope( Node expr, TransformerContext context ) {
@@ -110,7 +116,9 @@ public abstract class AbstractTransformer implements Transformer {
 
 	/**
 	 * Detects if a statement requires a BooleanCaster
+	 * 
 	 * @param condition the expression to evaluate
+	 * 
 	 * @return true if the BooleanCaster is required
 	 */
 	protected boolean requiresBooleanCaster( BoxExpr condition ) {
@@ -128,9 +136,11 @@ public abstract class AbstractTransformer implements Transformer {
 	}
 
 	/**
-	 * Add  cross-reference index entry
+	 * Add cross-reference index entry
+	 * 
 	 * @param javaNode Java Parser Node
-	 * @param boxNode BoxLang Node
+	 * @param boxNode  BoxLang Node
+	 * 
 	 * @return the Java Parser Node
 	 */
 	protected Node addIndex( Node javaNode, BoxNode boxNode ) {

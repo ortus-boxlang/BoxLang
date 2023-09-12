@@ -84,22 +84,29 @@ public class BoxLangTranspiler {
 	public BoxLangTranspiler() {
 	}
 
-
 	/**
 	 * Utility method to transform a node
+	 * 
 	 * @param node a BoxLang AST Node
+	 * 
 	 * @return a JavaParser AST Node
+	 * 
 	 * @throws IllegalStateException
 	 */
 	public static Node transform( BoxNode node ) throws IllegalStateException {
 		return BoxLangTranspiler.transform( node, TransformerContext.NONE );
 	}
+
 	/**
 	 * Utility method to transform a node with a transformation context
-	 * @param node a BoxLang AST Node
+	 * 
+	 * @param node    a BoxLang AST Node
 	 * @param context transformation context
+	 * 
 	 * @return
+	 * 
 	 * @throws IllegalStateException
+	 * 
 	 * @see TransformerContext
 	 */
 	public static Node transform( BoxNode node, TransformerContext context ) throws IllegalStateException {
@@ -114,8 +121,11 @@ public class BoxLangTranspiler {
 
 	/**
 	 * Transpile a BoxLang AST into a Java Pareser AST
+	 * 
 	 * @return a Java Parser CompilationUnit representing the equivalent Java code
+	 * 
 	 * @throws IllegalStateException
+	 * 
 	 * @see CompilationUnit
 	 */
 	public CompilationUnit transpile( BoxNode node ) throws IllegalStateException {
