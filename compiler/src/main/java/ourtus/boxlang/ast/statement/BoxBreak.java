@@ -21,8 +21,16 @@ import ourtus.boxlang.ast.Position;
 import java.util.Collections;
 import java.util.List;
 
+/**
+ * AST Node representing a break statement
+ */
 public class BoxBreak extends BoxStatement {
 
+	/**
+	 * Creates the AST node
+	 * @param position position of the statement in the source code
+	 * @param sourceText source code that originated the Node
+	 */
 	public BoxBreak(Position position, String sourceText) {
 		super(position, sourceText);
 	}
