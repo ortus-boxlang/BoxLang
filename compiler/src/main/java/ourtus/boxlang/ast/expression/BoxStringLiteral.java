@@ -18,6 +18,9 @@ import ourtus.boxlang.ast.BoxExpr;
 import ourtus.boxlang.ast.Node;
 import ourtus.boxlang.ast.Position;
 
+/**
+ * AST Node representing a string literal value
+ */
 public class BoxStringLiteral extends BoxExpr {
 
 	private final String value;
@@ -33,10 +36,9 @@ public class BoxStringLiteral extends BoxExpr {
 
 	/**
 	 * Terminal node StringLiteral
-	 * @param value
-	 * @param position
-	 * @param sourceText
-	 * Terminal nodes receives the Parent in the constructor
+	 * @param value string value
+	 * @param position position of the statement in the source code
+	 * @param sourceText source code that originated the Node
 	 */
 	public BoxStringLiteral(String value, Position position, String sourceText ) {
 		super( position, sourceText );
