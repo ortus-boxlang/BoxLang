@@ -26,6 +26,9 @@ import ourtus.boxlang.transpiler.transformer.TransformerContext;
 import java.util.HashMap;
 import java.util.Map;
 
+/**
+ * Transform a BoxIdentifier Node the equivalent Java Parser AST nodes
+ */
 public class BoxIdentifierTransformer extends AbstractTransformer {
 
 	Logger logger = LoggerFactory.getLogger( BoxScopeTransformer.class );
@@ -48,24 +51,7 @@ public class BoxIdentifierTransformer extends AbstractTransformer {
 
 		Node				javaExpr	= parseExpression( template, values );
 		logger.info( side + node.getSourceText() + " -> " + javaExpr );
-
 		return javaExpr;
 
-	}
-
-	private Node resolveScope( Node expr ) {
-		if ( expr instanceof NameExpr ) {
-			String				id			= expr.toString();
-			String				template	= "context.scopeFindNearby(Key.of(\"${id}\"))";
-			Map<String, String>	values		= new HashMap<>() {
-
-												{
-													put( "id", id.toString() );
-												}
-											};
-			return parseExpression( template, values );
-
-		}
-		return expr;
 	}
 }

@@ -21,6 +21,9 @@ import ourtus.boxlang.ast.expression.BoxIntegerLiteral;
 import ourtus.boxlang.transpiler.transformer.AbstractTransformer;
 import ourtus.boxlang.transpiler.transformer.TransformerContext;
 
+/**
+ * Transform a BoxIntegerLiteral Node the equivalent Java Parser AST nodes
+ */
 public class BoxIntegerLiteralTransformer extends AbstractTransformer {
 
 	@Override
