@@ -31,21 +31,25 @@ import java.util.Map;
  * Transform a BoxUnaryOperatorTransformer Node the equivalent Java Parser AST node
  */
 public class BoxUnaryOperationTransformer extends AbstractTransformer {
+
 	/**
 	 * Transform a unary operator
-	 * @param node  a BoxUnaryOperator instance
-	 * @param context transformation  context
-	 * @return Generates a Method invocation to the Runtime  Increment/Increment
+	 * 
+	 * @param node    a BoxUnaryOperator instance
+	 * @param context transformation context
+	 * 
+	 * @return Generates a Method invocation to the Runtime Increment/Increment
+	 * 
 	 * @throws IllegalStateException
 	 */
 	@Override
-	public Node transform(BoxNode node, TransformerContext context) throws IllegalStateException {
-		BoxUnaryOperation operation	= ( BoxUnaryOperation ) node;
+	public Node transform( BoxNode node, TransformerContext context ) throws IllegalStateException {
+		BoxUnaryOperation	operation	= ( BoxUnaryOperation ) node;
 		Map<String, String>	values		= new HashMap<>();
 
-		Expression expr = ( Expression ) BoxLangTranspiler.transform( operation.getExpr() );
+		Expression			expr		= ( Expression ) BoxLangTranspiler.transform( operation.getExpr() );
 		values.put( "expr", expr.toString() );
-		String template = switch (operation.getOperator()) {
+		String template = switch ( operation.getOperator() ) {
 			case PrePlusPlus -> "Increment.invokePre(${expr})";
 			case PostPlusPlus -> "Increment.invokePost(${expr})";
 			case PreMinusMinus -> "Decrement.invokePre(${expr})";
