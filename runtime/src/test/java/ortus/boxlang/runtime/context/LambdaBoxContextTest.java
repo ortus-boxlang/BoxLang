@@ -29,48 +29,43 @@ import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.LocalScope;
 import ortus.boxlang.runtime.scopes.VariablesScope;
-import ortus.boxlang.runtime.types.Closure;
 import ortus.boxlang.runtime.types.Function.Argument;
-import ortus.boxlang.runtime.types.SampleClosure;
+import ortus.boxlang.runtime.types.Lambda;
+import ortus.boxlang.runtime.types.SampleLambda;
 
-@DisplayName( "ClosureBoxContextTest Tests" )
-public class ClosureBoxContextTest {
+@DisplayName( "LambdaBoxContextTest Tests" )
+public class LambdaBoxContextTest {
 
 	@Test
 	@DisplayName( "Test constructors" )
 	void testConstructor() {
-		assertThrows( Throwable.class, () -> new ClosureBoxContext( null, null ) );
+		assertThrows( Throwable.class, () -> new LambdaBoxContext( null, null ) );
 		IBoxContext			parentContext	= new ScriptingBoxContext();
-		Closure				closure			= new SampleClosure( new Argument[] {}, new ScriptingBoxContext(), "Brad" );
-		ClosureBoxContext	context			= new ClosureBoxContext( parentContext, closure );
+		Lambda				Lambda			= new SampleLambda( new Argument[] {}, "Brad" );
+		LambdaBoxContext	context			= new LambdaBoxContext( parentContext, Lambda );
 		assertThat( context.getParent() ).isNotNull();
 		assertThat( context.getFunction() ).isNotNull();
 
-		context = new ClosureBoxContext( parentContext, closure, new ArgumentsScope() );
+		context = new LambdaBoxContext( parentContext, Lambda, new ArgumentsScope() );
 		assertThat( context.getScopeNearby( ArgumentsScope.name ).getName() ).isEqualTo( ArgumentsScope.name );
 	}
 
 	@Test
 	@DisplayName( "Test scope lookup" )
 	void testScopeLookup() {
+		Lambda			Lambda			= new SampleLambda( new Argument[] {}, "Brad" );
+		IBoxContext		parentContext	= new ScriptingBoxContext();
+		ArgumentsScope	argumentsScope	= new ArgumentsScope();
+		IBoxContext		context			= new LambdaBoxContext( parentContext, Lambda, argumentsScope );
+		IScope			localScope		= context.getScopeNearby( LocalScope.name );
 
-		IBoxContext		declaringDeclaringContext	= new ScriptingBoxContext();
-		IBoxContext		dummyParentContext			= new ScriptingBoxContext();
-		Closure			declaringclosure			= new SampleClosure( new Argument[] {}, declaringDeclaringContext, "Brad" );
-
-		IBoxContext		declaringContext			= new ClosureBoxContext( dummyParentContext, declaringclosure );
-		Closure			closure						= new SampleClosure( new Argument[] {}, declaringContext, "Brad" );
-		IBoxContext		parentContext				= new ScriptingBoxContext();
-		ArgumentsScope	argumentsScope				= new ArgumentsScope();
-		IBoxContext		context						= new ClosureBoxContext( parentContext, closure, argumentsScope );
-		IScope			localScope					= context.getScopeNearby( LocalScope.name );
-		IScope			variablesScope				= context.getScopeNearby( VariablesScope.name );
-		Key				ambiguous					= Key.of( "ambiguous" );
-		Key				localOnly					= Key.of( "localOnly" );
-		Key				variablesOnly				= Key.of( "variablesOnly" );
-		Key				argsOnly					= Key.of( "argsOnly" );
-		Key				declaringOnly				= Key.of( "declaringOnly" );
-		Key				declaringDeclaringOnly		= Key.of( "declaringDeclaringOnly" );
+		// Lambda has no visiblity to this scope
+		assertThrows( Throwable.class, () -> context.getScopeNearby( VariablesScope.name ) );
+		IScope	variablesScope	= parentContext.getScopeNearby( VariablesScope.name );
+		Key		ambiguous		= Key.of( "ambiguous" );
+		Key		localOnly		= Key.of( "localOnly" );
+		Key		variablesOnly	= Key.of( "variablesOnly" );
+		Key		argsOnly		= Key.of( "argsOnly" );
 
 		// The variable scope that the function "sees" is the same one from the parent template context
 		assertThat( variablesScope ).isEqualTo( parentContext.getScopeNearby( VariablesScope.name ) );
@@ -78,22 +73,18 @@ public class ClosureBoxContextTest {
 		localScope.put( ambiguous, "local scope ambiguous" );
 		argumentsScope.put( ambiguous, "arguments scope ambiguous" );
 		variablesScope.put( ambiguous, "variables scope ambiguous" );
-		declaringContext.getScopeNearby( LocalScope.name ).put( ambiguous, "declaring scope ambiguous" );
-		declaringDeclaringContext.getScopeNearby( VariablesScope.name ).put( ambiguous, "declaring declaring scope ambiguous" );
 
 		localScope.put( localOnly, "local scope only" );
 		argumentsScope.put( argsOnly, "arguments scope only" );
 		variablesScope.put( variablesOnly, "variables scope only" );
-		declaringContext.getScopeNearby( LocalScope.name ).put( declaringOnly, "declaring scope only" );
-		declaringDeclaringContext.getScopeNearby( VariablesScope.name ).put( declaringDeclaringOnly, "declaring declaring scope only" );
 
 		// ambiguous finds local scope
 		assertThat( context.scopeFindNearby( ambiguous, null ).value() ).isEqualTo( "local scope ambiguous" );
 
 		// local.ambiguous works
 		assertThat( context.getScopeNearby( LocalScope.name ).get( ambiguous ) ).isEqualTo( "local scope ambiguous" );
-		// variables.ambiguous works
-		assertThat( context.getScopeNearby( VariablesScope.name ).get( ambiguous ) ).isEqualTo( "variables scope ambiguous" );
+		// Lambda has no visiblity to variables.ambiguous
+		assertThrows( Throwable.class, () -> context.getScopeNearby( VariablesScope.name ).get( ambiguous ) );
 		// arguments.ambiguous works
 		assertThat( context.getScopeNearby( ArgumentsScope.name ).get( ambiguous ) ).isEqualTo( "arguments scope ambiguous" );
 
@@ -101,23 +92,19 @@ public class ClosureBoxContextTest {
 		assertThat( context.scopeFindNearby( localOnly, null ).value() ).isEqualTo( "local scope only" );
 		// find var in arguments
 		assertThat( context.scopeFindNearby( argsOnly, null ).value() ).isEqualTo( "arguments scope only" );
-		// find var in variables
-		assertThat( context.scopeFindNearby( variablesOnly, null ).value() ).isEqualTo( "variables scope only" );
-		// find var in declaring scope
-		assertThat( context.scopeFindNearby( declaringOnly, null ).value() ).isEqualTo( "declaring scope only" );
-		// find var in declaring closure's declaring scope
-		assertThat( context.scopeFindNearby( declaringDeclaringOnly, null ).value() ).isEqualTo( "declaring declaring scope only" );
+
+		// Lambda has no visiblity to variables scope
+		assertThrows( Throwable.class, () -> context.getScopeNearby( VariablesScope.name ).get( ambiguous ) );
 	}
 
 	@Test
 	@DisplayName( "Can find closest function" )
 	void testCanFindClosestFunction() {
 		// We call a function
-		IBoxContext	declaringContext	= new ScriptingBoxContext();
-		Key			funcName			= Key.of( "closure" );
-		IBoxContext	parentContext		= new ScriptingBoxContext();
-		Closure		closure				= new SampleClosure( new Argument[] {}, declaringContext, "Brad" );
-		IBoxContext	context				= new ClosureBoxContext( parentContext, closure );
+		Key			funcName		= Key.of( "lambda" );
+		IBoxContext	parentContext	= new ScriptingBoxContext();
+		Lambda		Lambda			= new SampleLambda( new Argument[] {}, "Brad" );
+		IBoxContext	context			= new LambdaBoxContext( parentContext, Lambda );
 
 		assertThat( context.findClosestFunction() ).isNotNull();
 		assertThat( context.findClosestFunction().getName() ).isEqualTo( funcName );
@@ -141,8 +128,8 @@ public class ClosureBoxContextTest {
 		assertThat( childChildChildContext.findClosestFunction().getName() ).isEqualTo( funcName );
 
 		// which calls another function
-		Closure		closure2	= new SampleClosure( new Argument[] {}, declaringContext, "Brad" );
-		IBoxContext	context2	= new ClosureBoxContext( parentContext, closure );
+		Lambda		Lambda2		= new SampleLambda( new Argument[] {}, "Brad" );
+		IBoxContext	context2	= new LambdaBoxContext( parentContext, Lambda );
 
 		assertThat( context2.findClosestFunction() ).isNotNull();
 		assertThat( context2.findClosestFunction().getName() ).isEqualTo( funcName );
@@ -151,10 +138,9 @@ public class ClosureBoxContextTest {
 	@Test
 	@DisplayName( "Test default assignment scope" )
 	void testDefaultAssignmentScope() {
-		IBoxContext	declaringContext	= new ScriptingBoxContext();
-		IBoxContext	parentContext		= new ScriptingBoxContext();
-		Closure		closure				= new SampleClosure( new Argument[] {}, declaringContext, "Brad" );
-		IBoxContext	context				= new ClosureBoxContext( parentContext, closure );
+		IBoxContext	parentContext	= new ScriptingBoxContext();
+		Lambda		Lambda			= new SampleLambda( new Argument[] {}, "Brad" );
+		IBoxContext	context			= new LambdaBoxContext( parentContext, Lambda );
 		assertThat( context.getDefaultAssignmentScope().getName().getName() ).isEqualTo( "local" );
 	}
 }

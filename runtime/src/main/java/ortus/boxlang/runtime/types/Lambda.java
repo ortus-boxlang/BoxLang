@@ -17,34 +17,24 @@
  */
 package ortus.boxlang.runtime.types;
 
-import java.util.Objects;
-
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.scopes.Key;
 
 /**
- * Represents a closure, which is a function, but has less data than a UDF and also retains a reference to the declaring context.
+ * Represents a Lambda, which is a function, but has less data than a UDF and performs NO scope lookups outside of itself.
+ * Lambdas aim to be "pure" functions, by
+ * - being deterministic (same inputs always produce the same output)
+ * - having no side effects (no scope lookups outside of itself)
+ * - being immutable (this requires you to pass immutable arguments to the lambda)
  */
-public abstract class Closure extends Function {
-
-	private IBoxContext declaringContext;
+public abstract class Lambda extends Function {
 
 	/**
 	 * Constructor
 	 */
-	public Closure( Argument[] arguments, IBoxContext declaringContext ) {
-		super( Key.of( "Closure" ), arguments );
-		Objects.requireNonNull( declaringContext, "A Closure's declaring context cannot be null." );
-		this.declaringContext = declaringContext;
+	public Lambda( Argument[] arguments ) {
+		super( Key.of( "Lambda" ), arguments );
 	}
 
-	/**
-	 * Get the context in which this closure was declared.
-	 *
-	 * @return the context.
-	 */
-	public IBoxContext getDeclaringContext() {
-		return declaringContext;
-	}
-
+	
 }
