@@ -34,18 +34,18 @@ import ortus.boxlang.runtime.scopes.Key;
  * Phase 2 BoxLang
  * Example of UDF delcaration and execution
  */
-public class Phase2UDF extends BaseTemplate {
+public class Phase2Closure extends BaseTemplate {
 
-    private static Phase2UDF                    instance;
+    private static Phase2Closure                instance;
 
     private final static List<ImportDefinition> imports = List.of();
 
-    private Phase2UDF() {
+    private Phase2Closure() {
     }
 
-    public static synchronized Phase2UDF getInstance() {
+    public static synchronized Phase2Closure getInstance() {
         if ( instance == null ) {
-            instance = new Phase2UDF();
+            instance = new Phase2Closure();
         }
         return instance;
     }
@@ -53,14 +53,11 @@ public class Phase2UDF extends BaseTemplate {
     /**
      * <pre>
     <cfscript>
-        string function greet( required string name='Brad' ) hint="My Function Hint" {
-            local.race = "Local scope value";
-            arguments.race = "Arguments scope value";
-    
+        variables.outside = "Outside scope value";
+        variables.greet = ( required string name='Brad' ) => {
             var greeting = "Hello " & name;
     
-            // Reach "into" parent context and get "out" from variables scope
-            out.println( "Inside UDF, race scope lookup finds: " & race )
+            out.println( "Inside Closure, outside lookup finds: " & outside )
     
             return greeting;
         }
@@ -81,8 +78,16 @@ public class Phase2UDF extends BaseTemplate {
         ClassLocator classLocator   = ClassLocator.getInstance();
         IScope       variablesScope = context.getScopeNearby( Key.of( "variables" ) );
 
-        // Create instance of UDF and register in the variables scope
-        context.regsiterUDF( Phase2UDF$greet.getInstance() );
+        variablesScope.put(
+            Key.of( "outside" ),
+            "Outside scope value"
+        );
+
+        // Create instance of Closure and set in the variables scope
+        variablesScope.put(
+            Key.of( "greet" ),
+            new Phase2Closure$greet( context )
+        );
 
         variablesScope.put(
             Key.of( "out" ),
@@ -134,7 +139,7 @@ public class Phase2UDF extends BaseTemplate {
         BoxRuntime boxRuntime = BoxRuntime.getInstance( true );
 
         try {
-            boxRuntime.executeTemplate( Phase2UDF.getInstance() );
+            boxRuntime.executeTemplate( Phase2Closure.getInstance() );
         } catch ( Throwable e ) {
             e.printStackTrace();
             System.exit( 1 );

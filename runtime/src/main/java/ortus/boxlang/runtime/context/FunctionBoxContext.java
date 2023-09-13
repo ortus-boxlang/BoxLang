@@ -9,22 +9,27 @@ import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.KeyNotFoundException;
 import ortus.boxlang.runtime.types.exceptions.ScopeNotFoundException;
 
+/**
+ * This context represents the context of any function execution in BoxLang
+ * It encapsulates the arguments scope and local scope and has a reference to the function being invoked.
+ * This context is extended for use with both UDFs and Closures as well
+ */
 public class FunctionBoxContext extends BaseBoxContext {
 
 	/**
 	 * The arguments scope
 	 */
-	private IScope		argumentsScope;
+	protected IScope	argumentsScope;
 
 	/**
 	 * The local scope
 	 */
-	private IScope		localScope;
+	protected IScope	localScope;
 
 	/**
 	 * The Function being invoked with this context
 	 */
-	private Function	function;
+	protected Function	function;
 
 	/**
 	 * Creates a new execution context with a bounded function instance and parent context
@@ -36,10 +41,20 @@ public class FunctionBoxContext extends BaseBoxContext {
 		this( parent, function, new ArgumentsScope() );
 	}
 
+	/**
+	 * Creates a new execution context with a bounded function instance and parent context and arguments scope
+	 *
+	 * @param parent         The parent context
+	 * @param function       The function being invoked with this context
+	 * @param argumentsScope The arguments scope
+	 */
 	public FunctionBoxContext( IBoxContext parent, Function function, ArgumentsScope argumentsScope ) {
 		super( parent );
 		if ( parent == null ) {
 			throw new IllegalArgumentException( "Parent context cannot be null for FunctionBoxContext" );
+		}
+		if ( function == null ) {
+			throw new IllegalArgumentException( "function cannot be null for FunctionBoxContext" );
 		}
 		this.localScope		= new LocalScope();
 		this.argumentsScope	= argumentsScope;
@@ -53,7 +68,10 @@ public class FunctionBoxContext extends BaseBoxContext {
 		return function;
 	}
 
-	public ScopeSearchResult scopeFindNearby( Key key, IScope defaultScope ) {
+	/**
+	 * Search for a variable in "nearby" scopes
+	 */
+	public ScopeSearchResult scopeFindNearby( Key key, IScope defaultScope, boolean shallow ) {
 
 		Object result = localScope.getRaw( key );
 		// Null means not found
@@ -69,21 +87,18 @@ public class FunctionBoxContext extends BaseBoxContext {
 			return new ScopeSearchResult( argumentsScope, Struct.unWrapNull( result ) );
 		}
 
-		if ( parent != null ) {
-			// A UDF is "transparent" and can see everything in the parent scope as a "local" observer
-			return parent.scopeFindNearby( key, defaultScope );
+		if ( shallow ) {
+			return null;
 		}
 
-		// Default scope requested for missing keys
-		if ( defaultScope != null ) {
-			return new ScopeSearchResult( defaultScope, null );
-		}
-		// Not found anywhere
-		throw new KeyNotFoundException(
-		    String.format( "The requested key [%s] was not located in any scope or it's undefined", key.getName() )
-		);
+		// A UDF is "transparent" and can see everything in the parent scope as a "local" observer
+		return parent.scopeFindNearby( key, defaultScope );
+
 	}
 
+	/**
+	 * Search for a variable in scopes
+	 */
 	public ScopeSearchResult scopeFind( Key key, IScope defaultScope ) {
 
 		// The FunctionBoxContext has no "global" scopes, so just defer to parent
@@ -103,6 +118,9 @@ public class FunctionBoxContext extends BaseBoxContext {
 		);
 	}
 
+	/**
+	 * Look for a scope by name
+	 */
 	public IScope getScope( Key name ) throws ScopeNotFoundException {
 
 		// The FunctionBoxContext has no "global" scopes, so just defer to parent
@@ -117,6 +135,9 @@ public class FunctionBoxContext extends BaseBoxContext {
 
 	}
 
+	/**
+	 * Look for a "nearby" scope by name
+	 */
 	public IScope getScopeNearby( Key name ) throws ScopeNotFoundException {
 		// Check the scopes I know about
 		if ( name.equals( localScope.getName() ) ) {
@@ -155,6 +176,16 @@ public class FunctionBoxContext extends BaseBoxContext {
 	public IScope getDefaultAssignmentScope() {
 		// DIFFERENT FROM CFML ENGINES! Same as Lucee's "local mode"
 		return localScope;
+	}
+
+	/**
+	 * Get parent context for a function execution happening in this context
+	 *
+	 * @return The context to use
+	 */
+	public IBoxContext getFunctionParentContext() {
+		// If a function is executed inside another function, it uses the parent since there is nothing a function can "see" from inside it's calling function
+		return getParent();
 	}
 
 }

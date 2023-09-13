@@ -50,4 +50,11 @@ public class ExamplesTest {
 		} );
 	}
 
+	@DisplayName( "It can execute Phase2 Closure example" )
+	@Test
+	public void testItCanExecutePhase2Closure() throws Throwable {
+		Phase2Closure.main( new String[] {
+		} );
+	}
+
 }

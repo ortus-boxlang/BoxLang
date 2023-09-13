@@ -21,10 +21,12 @@ import java.util.Map;
 import java.util.Stack;
 
 import ortus.boxlang.runtime.dynamic.BaseTemplate;
+import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Function;
 import ortus.boxlang.runtime.types.UDF;
+import ortus.boxlang.runtime.types.exceptions.KeyNotFoundException;
 import ortus.boxlang.runtime.types.exceptions.ScopeNotFoundException;
 
 /**
@@ -146,10 +148,8 @@ public class BaseBoxContext implements IBoxContext {
 	 * @return Return value of the function call
 	 */
 	public Object invokeFunction( Key name, Object[] positionalArguments ) {
-		Function			function	= findFunction( name );
-		FunctionBoxContext	fContext	= new FunctionBoxContext( this, function,
-		    function.createArgumentsScope( positionalArguments ) );
-		return function.invoke( fContext );
+		Function function = findFunction( name );
+		return invokeFunction( function, function.createArgumentsScope( positionalArguments ) );
 	}
 
 	/**
@@ -158,9 +158,35 @@ public class BaseBoxContext implements IBoxContext {
 	 * @return Return value of the function call
 	 */
 	public Object invokeFunction( Key name, Map<Key, Object> namedArguments ) {
-		Function			function	= findFunction( name );
-		FunctionBoxContext	fContext	= new FunctionBoxContext( this, function,
-		    function.createArgumentsScope( namedArguments ) );
+		Function function = findFunction( name );
+		return invokeFunction( function, function.createArgumentsScope( namedArguments ) );
+	}
+
+	/**
+	 * Invoke a function expression such as (()=>{})() using positional args.
+	 *
+	 * @return Return value of the function call
+	 */
+	public Object invokeFunction( Function function, Object[] positionalArguments ) {
+		return invokeFunction( function, function.createArgumentsScope( positionalArguments ) );
+	}
+
+	/**
+	 * Invoke a function expression such as (()=>{})() using named args.
+	 *
+	 * @return Return value of the function call
+	 */
+	public Object invokeFunction( Function function, Map<Key, Object> namedArguments ) {
+		return invokeFunction( function, function.createArgumentsScope( namedArguments ) );
+	}
+
+	/**
+	 * Invoke a function expression such as (()=>{})() using named args.
+	 *
+	 * @return Return value of the function call
+	 */
+	public Object invokeFunction( Function function, ArgumentsScope argumentsScope ) {
+		FunctionBoxContext fContext = new FunctionBoxContext( getFunctionParentContext(), function, argumentsScope );
 		return function.invoke( fContext );
 	}
 
@@ -199,7 +225,7 @@ public class BaseBoxContext implements IBoxContext {
 		throw new UnsupportedOperationException( "Unimplemented method 'scopeFind'" );
 	}
 
-	public ScopeSearchResult scopeFindNearby( Key key, IScope defaultScope ) {
+	public ScopeSearchResult scopeFindNearby( Key key, IScope defaultScope, boolean shallow ) {
 		throw new UnsupportedOperationException( "Unimplemented method 'scopeFindNearby'" );
 	}
 
@@ -231,6 +257,28 @@ public class BaseBoxContext implements IBoxContext {
 			context = context.getParent();
 		}
 		return null;
+	}
+
+	/**
+	 * Get parent context for a function execution happening in this context
+	 *
+	 * @return The context to use
+	 */
+	public IBoxContext getFunctionParentContext() {
+		return this;
+	}
+
+	/**
+	 * Try to get the requested key from an unkonwn scope but overriding the parent to check if not found
+	 *
+	 * @param key The key to search for
+	 *
+	 * @return The value of the key if found
+	 *
+	 * @throws KeyNotFoundException If the key was not found in any scope
+	 */
+	public ScopeSearchResult scopeFindNearby( Key key, IScope defaultScope ) {
+		return scopeFindNearby( key, defaultScope, false );
 	}
 
 }
