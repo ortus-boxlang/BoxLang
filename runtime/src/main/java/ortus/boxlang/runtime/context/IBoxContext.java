@@ -57,7 +57,7 @@ public interface IBoxContext {
 	public IScope getScopeNearby( Key name ) throws ScopeNotFoundException;
 
 	/**
-	 * Try to get the requested key from the unscoped scope
+	 * Try to get the requested key from an unknown scope
 	 * Meaning it needs to search scopes in order according to it's context.
 	 * Unlike scopeFindNearby(), this version only searches trancedent scopes like
 	 * cgi or server which are never encapsulated like variables is inside a CFC.
@@ -74,7 +74,7 @@ public interface IBoxContext {
 	public ScopeSearchResult scopeFind( Key key, IScope defaultScope );
 
 	/**
-	 * Try to get the requested key from the unscoped scope
+	 * Try to get the requested key from an unknown scope
 	 * Meaning it needs to search scopes in order according to it's context.
 	 * A nearby lookup is used for the closest context to the executing code
 	 *
@@ -88,6 +88,19 @@ public interface IBoxContext {
 	 * @throws KeyNotFoundException If the key was not found in any scope
 	 */
 	public ScopeSearchResult scopeFindNearby( Key key, IScope defaultScope );
+
+	/**
+	 * Try to get the requested key from an unkonwn scope but not delegating to parent or default missing keys
+	 *
+	 * @param key          The key to search for
+	 * @param defaultScope The default scope to return if the key is not found
+	 * @param shallow      true, do not delegate to parent or default scope if not found
+	 *
+	 * @return The result of the search. Null if performing a shallow search and nothing was fond
+	 *
+	 * @throws KeyNotFoundException If the key was not found in any scope
+	 */
+	public ScopeSearchResult scopeFindNearby( Key key, IScope defaultScope, boolean shallow );
 
 	/**
 	 * Invoke a function call such as foo() using positional args. Will check for a registered BIF first, then search known scopes for a UDF.
@@ -161,10 +174,17 @@ public interface IBoxContext {
 
 	/**
 	 * Get the default variable assignment scope for this context
-	 * 
+	 *
 	 * @return The scope reference to use
 	 */
 	public IScope getDefaultAssignmentScope();
+
+	/**
+	 * Get parent context for a function execution happening in this context
+	 *
+	 * @return The context to use
+	 */
+	public IBoxContext getFunctionParentContext();
 
 	/**
 	 * Represents the results of a successful scope hunting expedition.

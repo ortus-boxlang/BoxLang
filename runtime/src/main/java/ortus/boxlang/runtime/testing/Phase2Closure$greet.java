@@ -18,51 +18,34 @@
 package ortus.boxlang.runtime.testing;
 
 import ortus.boxlang.runtime.context.FunctionBoxContext;
+import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.dynamic.Referencer;
 import ortus.boxlang.runtime.operators.Concat;
-import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.LocalScope;
-import ortus.boxlang.runtime.types.UDF;
+import ortus.boxlang.runtime.types.Closure;
 
 /**
  * Phase 2 BoxLang
  * Example of UDF delcaration and execution
  */
-public class Phase2UDF$foo extends UDF {
+public class Phase2Closure$greet extends Closure {
 
-    private static Phase2UDF$foo instance;
-
-    private Phase2UDF$foo() {
+    public Phase2Closure$greet( IBoxContext declaringContext ) {
         super(
-            Access.PUBLIC,
-            Key.of( "foo" ),
-            "String",
             new Argument[] {
                 new Argument( true, "String", Key.of( "name" ), "Brad", "" )
             },
-            "My Function Hint",
-            true
+            declaringContext
         );
-    }
-
-    public static synchronized Phase2UDF$foo getInstance() {
-        if ( instance == null ) {
-            instance = new Phase2UDF$foo();
-        }
-        return instance;
     }
 
     /**
      * <pre>
-        string function greet( required string name='Brad' ) hint="My Function Hint" {
-            local.race = "Local scope value";
-            arguments.race = "Arguments scope value";
-    
+        ( required string name='Brad' ) => {
             var greeting = "Hello " & name;
     
-            // Reach "into" parent context and get "out" from variables scope
-            out.println( "Inside UDF, race scope lookup finds: " & race )
+            out.println( "Inside Closure, outside lookup finds: " & outside )
     
             return greeting;
         }
@@ -70,18 +53,6 @@ public class Phase2UDF$foo extends UDF {
      */
     @Override
     public Object invoke( FunctionBoxContext context ) {
-        Object returnVal = null;
-
-        // Create local.race and arguments.race to show scope lookup
-        context.getScopeNearby( LocalScope.name ).put(
-            Key.of( "race" ),
-            "Local scope value"
-        );
-
-        context.getScopeNearby( ArgumentsScope.name ).put(
-            Key.of( "race" ),
-            "Arguments scope value"
-        );
 
         context.getScopeNearby( LocalScope.name ).assign(
             Key.of( "Greeting" ),
@@ -100,12 +71,12 @@ public class Phase2UDF$foo extends UDF {
             Key.of( "println" ),
             // Arguments
             new Object[] {
-                "Inside UDF, race scope lookup finds: " + context.scopeFindNearby( Key.of( "race" ), null ).value()
+                "Inside Closure, outside lookup finds: " + context.scopeFindNearby( Key.of( "outside" ), null ).value()
             },
             false
         );
 
-        return ensureReturnType( context.scopeFindNearby( Key.of( "greeting" ), null ).value() );
+        return context.scopeFindNearby( Key.of( "greeting" ), null ).value();
     }
 
 }

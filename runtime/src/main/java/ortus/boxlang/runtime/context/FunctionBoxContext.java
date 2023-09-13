@@ -53,6 +53,9 @@ public class FunctionBoxContext extends BaseBoxContext {
 		if ( parent == null ) {
 			throw new IllegalArgumentException( "Parent context cannot be null for FunctionBoxContext" );
 		}
+		if ( function == null ) {
+			throw new IllegalArgumentException( "function cannot be null for FunctionBoxContext" );
+		}
 		this.localScope		= new LocalScope();
 		this.argumentsScope	= argumentsScope;
 		this.function		= function;
@@ -68,7 +71,7 @@ public class FunctionBoxContext extends BaseBoxContext {
 	/**
 	 * Search for a variable in "nearby" scopes
 	 */
-	public ScopeSearchResult scopeFindNearby( Key key, IScope defaultScope ) {
+	public ScopeSearchResult scopeFindNearby( Key key, IScope defaultScope, boolean shallow ) {
 
 		Object result = localScope.getRaw( key );
 		// Null means not found
@@ -84,19 +87,13 @@ public class FunctionBoxContext extends BaseBoxContext {
 			return new ScopeSearchResult( argumentsScope, Struct.unWrapNull( result ) );
 		}
 
-		if ( parent != null ) {
-			// A UDF is "transparent" and can see everything in the parent scope as a "local" observer
-			return parent.scopeFindNearby( key, defaultScope );
+		if ( shallow ) {
+			return null;
 		}
 
-		// Default scope requested for missing keys
-		if ( defaultScope != null ) {
-			return new ScopeSearchResult( defaultScope, null );
-		}
-		// Not found anywhere
-		throw new KeyNotFoundException(
-		    String.format( "The requested key [%s] was not located in any scope or it's undefined", key.getName() )
-		);
+		// A UDF is "transparent" and can see everything in the parent scope as a "local" observer
+		return parent.scopeFindNearby( key, defaultScope );
+
 	}
 
 	/**
@@ -179,6 +176,16 @@ public class FunctionBoxContext extends BaseBoxContext {
 	public IScope getDefaultAssignmentScope() {
 		// DIFFERENT FROM CFML ENGINES! Same as Lucee's "local mode"
 		return localScope;
+	}
+
+	/**
+	 * Get parent context for a function execution happening in this context
+	 *
+	 * @return The context to use
+	 */
+	public IBoxContext getFunctionParentContext() {
+		// If a function is executed inside another function, it uses the parent since there is nothing a function can "see" from inside it's calling function
+		return getParent();
 	}
 
 }
