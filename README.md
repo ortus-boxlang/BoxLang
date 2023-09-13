@@ -28,7 +28,7 @@ Holy Ghost which is given unto us. ." Romans 5:5
 The project is split into multiple sub-projects:
 
 - **compiler** - The BoxLang Compiler/Parser and ByteCode Generator
-- **runtime** - The BoxLang Runtime
+- **runtime** - The BoxLang Core Runtime
 
 ## JDK Targets
 
@@ -65,24 +65,31 @@ You will find a `.vscode` folder in the root. This contains our custom shortcuts
 | `test`            | Executes the unit tests in your project and produces the reports in the `build/reports/tests` folder					|
 
 
-## Core Dependencies
+## Dependencies
 
 Here is a listing of all of our core dependencies.  If you add one, make sure you document it here.
 
+### Runtime
+
 | Dependency | Version | License | Description |
 |------------|---------|---------|-------------|
-| [boxlang-compiler](https://github.com/ortus-solutions-private/boxlang-compiler) | 1.0.0 | Apache2 | The BoxLang Parser, Compiler, and BytCode Generator |
+| [boxlang-compiler](https://github.com/ortus-solutions-private/boxlang-compiler) | 1.0.0 | Apache2 | The BoxLang Parser, Compiler, and ByteCode Generator |
 | [apache-commons-lang3](https://commons.apache.org/proper/commons-lang/) | 3.12.0 | Apache2 | Apache Commons Lang |
+| [slf4j-api](https://mvnrepository.com/artifact/org.slf4j/slf4j-api) | 2.0.7 | MIT | API for SLF4J (The Simple Logging Facade for Java)  |
+| [slf4j-jdk14](https://mvnrepository.com/artifact/org.slf4j/slf4j-jdk14) | 2.0.7 | MIT | SLF4J JDK14 Provider |
 
-## Dev Dependencies
+### Compiler
 
-Here is a listing of all of our dev dependencies.  If you add one, make sure you document it here.
-
-| Library   	| Description                                                  |
-| ------------- | ------------------------------------------------------------ |
-| **JUnit**     | Testing Framework: [JUnit User Guide](https://junit.org/junit5/docs/current/user-guide/) |
-| **Mockito**   | Mocking library we use: [Mockito](https://www.baeldung.com/mockito-series) |
-| **Truth**     | Extended assertion library: [Truth](https://github.com/google/truth) |
+| Dependency | Version | License | Description |
+|------------|---------|---------|-------------|
+| [antlr4-runtime](https://mvnrepository.com/artifact/org.antlr/antlr4-runtime) | 4.12.0 | BSD 3-clause | ANTLR parser |
+| [commons-cli](https://mvnrepository.com/artifact/commons-cli/commons-cli) | 1.5.0 | Apache 2 | Apache Commons CLI provides a simple API for presenting, processing and validating a Command Line Interface. |
+| [commons-io](https://mvnrepository.com/artifact/commons-io/commons-io) | 2.13.0 | Apache 2 | The Apache Commons IO library contains utility classes, stream implementations, file filters, file comparators, endian transformation classes, and much more. |
+| [commons-text](https://mvnrepository.com/artifact/org.apache.commons/commons-text) | 1.10.0 | Apache 2 | The Commons Text library provides additions to the standard JDK text handling. It includes algorithms for string similarity and for calculating the distance between strings. |
+| [javaparser-symbol-solver-core](https://github.com/javaparser/javaparser) | 3.25.4 | Apache 2 | Java 1-17 Parser and Abstract Syntax Tree for Java with advanced analysis functionalities. |
+| [kolasu-core](https://github.com/Strumenta/kolasu) | 1.5.24 | Apache 2 | Kotlin Language Support – AST Library |
+| [slf4j-api](https://mvnrepository.com/artifact/org.slf4j/slf4j-api) | 2.0.7 | MIT | API for SLF4J (The Simple Logging Facade for Java)  |
+| [slf4j-jdk14](https://mvnrepository.com/artifact/org.slf4j/slf4j-jdk14) | 2.0.7 | MIT | SLF4J JDK14 Provider |
 
 ## Contributing
 
