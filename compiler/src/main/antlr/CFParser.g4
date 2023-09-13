@@ -250,14 +250,14 @@ for
     |   FOR LPAREN forAssignment eos forCondition eos forIncrement RPAREN statementBlock
     ;
 forAssignment
-    :   VAR? identifier EQUAL expression
+    :   VAR? expression EQUAL expression
     ;
 forCondition
     :   expression
     ;
 forIncrement
-    :   incrementDecrementStatement
-    |   assignment
+    :   expression
+    |   assignment // ??
     ;
 
 while

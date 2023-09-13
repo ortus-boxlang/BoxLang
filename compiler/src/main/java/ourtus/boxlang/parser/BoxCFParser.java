@@ -224,7 +224,7 @@ public class BoxCFParser extends BoxAbstractParser {
 
 	/**
 	 * Converts the assert parser rule to the corresponding AST node
-	 * 
+	 *
 	 * @param file source file, if any
 	 * @param node ANTLR AssertContext rule
 	 *
@@ -246,13 +246,22 @@ public class BoxCFParser extends BoxAbstractParser {
 	 * @return the corresponding AST BoxStatement
 	 *
 	 * @see BoxForIn
+	 * @see BoxForIndex
 	 */
 	private BoxStatement toAst( File file, CFParser.ForContext node ) {
-		BoxExpr				variable	= toAst( file, node.identifier() );
-		BoxExpr				collection	= toAst( file, node.expression() );
-		List<BoxStatement>	body		= toAst( file, node.statementBlock() );
+		List<BoxStatement> body = toAst( file, node.statementBlock() );
+		if ( node.IN() != null ) {
+			BoxExpr	variable	= toAst( file, node.identifier() );
+			BoxExpr	collection	= toAst( file, node.expression() );
 
-		return new BoxForIn( variable, collection, body, getPosition( node ), getSourceText( node ) );
+			return new BoxForIn( variable, collection, body, getPosition( node ), getSourceText( node ) );
+		}
+		BoxExpr	variable	= toAst( file, node.forAssignment().expression( 0 ) );
+		BoxExpr	initial		= toAst( file, node.forAssignment().expression( 1 ) );
+		BoxExpr	condition	= toAst( file, node.forCondition().expression() );
+		BoxExpr	step		= toAst( file, node.forIncrement().expression() );
+
+		return new BoxForIndex( variable, initial, condition, step, body, getPosition( node ), getSourceText( node ) );
 	}
 
 	/**

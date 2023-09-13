@@ -236,6 +236,28 @@ public class TestStatements extends TestBase {
 	}
 
 	@Test
+	public void forIndex_() throws IOException {
+		String			statement	= """
+		                              for(variables.a = 0; variables.a < 10; variables.a++){
+		                              }
+		                                                         """;
+
+		ParsingResult	result		= parseStatement( statement );
+
+		Node			javaAST		= BoxLangTranspiler.transform( result.getRoot() );
+		System.out.println( javaAST );
+		assertEqualsNoWhiteSpaces(
+		    """
+		    {
+		    	variablesScope.put(Key.of("a"), 0);
+		    	while (BooleanCaster.cast(LessThan.invoke(variablesScope.get(Key.of("a")), 10))) {
+		    		Increment.invokePost(variablesScope.get(Key.of("a")));
+		    	}
+		    }
+		       """, javaAST.toString() );
+	}
+
+	@Test
 	public void assert_() throws IOException {
 		String			statement	= """
 		                              		assert variables['a'] == 0

@@ -28,23 +28,30 @@ import java.util.List;
 public class BoxForIndex extends BoxStatement {
 
 	private final BoxExpr				variable;
-	private final BoxExpr				expression;
+	private final BoxExpr				initial;
+	private final BoxExpr				condition;
+	private final BoxExpr				step;
 	private final List<BoxStatement>	body;
 
 	/**
 	 *
 	 * @param variable
-	 * @param expression
+	 * @param condition
 	 * @param body
 	 * @param position
 	 * @param sourceText
 	 */
-	public BoxForIndex( BoxExpr variable, BoxExpr expression, List<BoxStatement> body, Position position, String sourceText ) {
+	public BoxForIndex( BoxExpr variable, BoxExpr initial, BoxExpr condition, BoxExpr step, List<BoxStatement> body, Position position, String sourceText ) {
 		super( position, sourceText );
 		this.variable = variable;
 		this.variable.setParent( this );
-		this.expression = expression;
-		this.expression.setParent( this );
+		this.initial = initial;
+		this.initial.setParent( this );
+		this.condition = condition;
+		this.condition.setParent( this );
+		this.step = step;
+		this.step.setParent( this );
+
 		this.body = Collections.unmodifiableList( body );
 		this.body.forEach( arg -> arg.setParent( this ) );
 	}
@@ -53,8 +60,16 @@ public class BoxForIndex extends BoxStatement {
 		return variable;
 	}
 
-	public BoxExpr getExpression() {
-		return expression;
+	public BoxExpr getCondition() {
+		return condition;
+	}
+
+	public BoxExpr getStep() {
+		return step;
+	}
+
+	public BoxExpr getInitial() {
+		return initial;
 	}
 
 	public List<BoxStatement> getBody() {
