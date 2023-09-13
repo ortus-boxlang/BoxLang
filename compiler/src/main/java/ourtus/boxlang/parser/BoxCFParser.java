@@ -215,9 +215,26 @@ public class BoxCFParser extends BoxAbstractParser {
 			return toAst( file, node.switch_() );
 		} else if ( node.for_() != null ) {
 			return toAst( file, node.for_() );
+		} else if ( node.assert_() != null ) {
+			return toAst( file, node.assert_() );
 		} else {
 			throw new IllegalStateException( "not implemented: " + node.getClass().getSimpleName() );
 		}
+	}
+
+	/**
+	 * Converts the assert parser rule to the corresponding AST node
+	 *
+	 * @param file source file, if any
+	 * @param node ANTLR AssertContext rule
+	 *
+	 * @return the corresponding AST BoxStatement
+	 *
+	 * @see BoxAssert
+	 */
+	private BoxStatement toAst( File file, CFParser.AssertContext node ) {
+		BoxExpr expression = toAst( file, node.expression() );
+		return new BoxAssert( expression, getPosition( node ), getSourceText( node ) );
 	}
 
 	/**
@@ -229,13 +246,22 @@ public class BoxCFParser extends BoxAbstractParser {
 	 * @return the corresponding AST BoxStatement
 	 *
 	 * @see BoxForIn
+	 * @see BoxForIndex
 	 */
 	private BoxStatement toAst( File file, CFParser.ForContext node ) {
-		BoxExpr				variable	= toAst( file, node.identifier() );
-		BoxExpr				collection	= toAst( file, node.expression() );
-		List<BoxStatement>	body		= toAst( file, node.statementBlock() );
+		List<BoxStatement> body = toAst( file, node.statementBlock() );
+		if ( node.IN() != null ) {
+			BoxExpr	variable	= toAst( file, node.identifier() );
+			BoxExpr	collection	= toAst( file, node.expression() );
 
-		return new BoxForIn( variable, collection, body, getPosition( node ), getSourceText( node ) );
+			return new BoxForIn( variable, collection, body, getPosition( node ), getSourceText( node ) );
+		}
+		BoxExpr	variable	= toAst( file, node.forAssignment().expression( 0 ) );
+		BoxExpr	initial		= toAst( file, node.forAssignment().expression( 1 ) );
+		BoxExpr	condition	= toAst( file, node.forCondition().expression() );
+		BoxExpr	step		= toAst( file, node.forIncrement().expression() );
+
+		return new BoxForIndex( variable, initial, condition, step, body, getPosition( node ), getSourceText( node ) );
 	}
 
 	/**

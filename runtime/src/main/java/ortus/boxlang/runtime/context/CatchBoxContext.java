@@ -77,7 +77,7 @@ public class CatchBoxContext extends BaseBoxContext {
 	 *
 	 * @throws KeyNotFoundException If the key was not found in any scope
 	 */
-	public ScopeSearchResult scopeFindNearby( Key key, IScope defaultScope ) {
+	public ScopeSearchResult scopeFindNearby( Key key, IScope defaultScope, boolean shallow ) {
 
 		// In Variables scope? (thread-safe lookup and get)
 		Object result = variablesScope.getRaw( key );
@@ -85,6 +85,10 @@ public class CatchBoxContext extends BaseBoxContext {
 		if ( result != null ) {
 			// Unwrap the value now in case it was really actually null for real
 			return new ScopeSearchResult( variablesScope, Struct.unWrapNull( result ) );
+		}
+
+		if ( shallow ) {
+			return null;
 		}
 
 		return scopeFind( key, defaultScope );

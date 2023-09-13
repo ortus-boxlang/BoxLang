@@ -142,7 +142,8 @@ statementParameters
     :   (parameters+=accessExpression EQUAL (values+=stringLiteral | expressions+=expression))+
     ;
 statement
-    :   break
+    :   assert
+    |   break
     |   continue
     |   for
     |   if
@@ -249,20 +250,23 @@ for
     |   FOR LPAREN forAssignment eos forCondition eos forIncrement RPAREN statementBlock
     ;
 forAssignment
-    :   VAR? identifier EQUAL expression
+    :   VAR? expression EQUAL expression
     ;
 forCondition
     :   expression
     ;
 forIncrement
-    :   incrementDecrementStatement
-    |   assignment
+    :   expression
+    |   assignment // ??
     ;
 
 while
     :   WHILE LPAREN expression RPAREN statementBlock
     ;
 
+assert
+	:	ASSERT expression
+	;
 break
     :   BREAK eos
     ;

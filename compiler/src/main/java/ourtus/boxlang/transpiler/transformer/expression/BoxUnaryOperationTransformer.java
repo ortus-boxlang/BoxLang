@@ -16,6 +16,8 @@ package ourtus.boxlang.transpiler.transformer.expression;
 
 import com.github.javaparser.ast.Node;
 import com.github.javaparser.ast.expr.Expression;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import ourtus.boxlang.ast.BoxNode;
 import ourtus.boxlang.ast.expression.BoxBooleanLiteral;
 import ourtus.boxlang.ast.expression.BoxNegateOperation;
@@ -23,6 +25,7 @@ import ourtus.boxlang.ast.expression.BoxUnaryOperation;
 import ourtus.boxlang.transpiler.BoxLangTranspiler;
 import ourtus.boxlang.transpiler.transformer.AbstractTransformer;
 import ourtus.boxlang.transpiler.transformer.TransformerContext;
+import ourtus.boxlang.transpiler.transformer.statement.BoxAssertTransformer;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -32,14 +35,16 @@ import java.util.Map;
  */
 public class BoxUnaryOperationTransformer extends AbstractTransformer {
 
+	Logger logger = LoggerFactory.getLogger( BoxUnaryOperationTransformer.class );
+
 	/**
 	 * Transform a unary operator
-	 * 
+	 *
 	 * @param node    a BoxUnaryOperator instance
 	 * @param context transformation context
-	 * 
+	 *
 	 * @return Generates a Method invocation to the Runtime Increment/Increment
-	 * 
+	 *
 	 * @throws IllegalStateException
 	 */
 	@Override
@@ -49,15 +54,17 @@ public class BoxUnaryOperationTransformer extends AbstractTransformer {
 
 		Expression			expr		= ( Expression ) BoxLangTranspiler.transform( operation.getExpr() );
 		values.put( "expr", expr.toString() );
-		String template = switch ( operation.getOperator() ) {
-			case PrePlusPlus -> "Increment.invokePre(${expr})";
-			case PostPlusPlus -> "Increment.invokePost(${expr})";
-			case PreMinusMinus -> "Decrement.invokePre(${expr})";
-			case PostMinusMinus -> "Decrement.invokePost(${expr})";
-			case Minus -> "Negate.invoke(${expr})";
-			default -> "";
-		};
-
-		return parseExpression( template, values );
+		String	template	= switch ( operation.getOperator() ) {
+								case PrePlusPlus -> "Increment.invokePre(${expr})";
+								case PostPlusPlus -> "Increment.invokePost(${expr})";
+								case PreMinusMinus -> "Decrement.invokePre(${expr})";
+								case PostMinusMinus -> "Decrement.invokePost(${expr})";
+								case Minus -> "Negate.invoke(${expr})";
+								default -> "";
+							};
+		Node	javaExpr	= parseExpression( template, values );
+		logger.info( node.getSourceText() + " -> " + javaExpr );
+		addIndex( javaExpr, node );
+		return javaExpr;
 	}
 }

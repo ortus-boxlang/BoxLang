@@ -30,10 +30,25 @@ import ourtus.boxlang.transpiler.transformer.TransformerContext;
 import java.util.HashMap;
 import java.util.Map;
 
+/**
+ * Transform a BoxArrayAccess Node the equivalent Java Parser AST nodes
+ */
 public class BoxArrayAccessTransformer extends AbstractTransformer {
 
 	Logger logger = LoggerFactory.getLogger( BoxArrayAccessTransformer.class );
 
+	/**
+	 * Transform BoxArrayAccess argument
+	 *
+	 * @param node    a BoxArrayAccess instance
+	 * @param context transformation context
+	 *
+	 * @return generates a Java Parser Expression accessing the scope
+	 * 
+	 * @throws IllegalStateException
+	 * 
+	 * @see BoxArrayAccess
+	 */
 	@Override
 	public Node transform( BoxNode node, TransformerContext context ) throws IllegalStateException {
 		BoxArrayAccess	expr	= ( BoxArrayAccess ) node;
@@ -75,6 +90,7 @@ public class BoxArrayAccessTransformer extends AbstractTransformer {
 
 			Node javaNode = parseExpression( template, values );
 			// logger.info(side + node.getSourceText() + " -> " + javaNode);
+			addIndex( javaNode, expr );
 			return javaNode;
 		}
 		throw new IllegalStateException( "Not implemented" );

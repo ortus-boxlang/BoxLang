@@ -26,7 +26,7 @@ import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 
 /**
- * A struct is a collection of key-value pairs, where the key is unique and case insensitive
+ * A BoxLang Function base class
  */
 public abstract class Function implements IType {
 

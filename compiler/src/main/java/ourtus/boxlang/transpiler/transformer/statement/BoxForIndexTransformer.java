@@ -15,66 +15,73 @@
 package ourtus.boxlang.transpiler.transformer.statement;
 
 import com.github.javaparser.ast.Node;
+import com.github.javaparser.ast.expr.Expression;
+import com.github.javaparser.ast.expr.MethodCallExpr;
 import com.github.javaparser.ast.stmt.BlockStmt;
+import com.github.javaparser.ast.stmt.ExpressionStmt;
 import com.github.javaparser.ast.stmt.Statement;
 import com.github.javaparser.ast.stmt.WhileStmt;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import ourtus.boxlang.ast.BoxNode;
-import ourtus.boxlang.ast.statement.BoxForIn;
+import ourtus.boxlang.ast.statement.BoxForIndex;
 import ourtus.boxlang.transpiler.BoxLangTranspiler;
 import ourtus.boxlang.transpiler.transformer.AbstractTransformer;
 import ourtus.boxlang.transpiler.transformer.TransformerContext;
 
-import java.beans.Expression;
 import java.util.HashMap;
 import java.util.Map;
 
 /**
- * Transform a BoxForIn Node the equivalent Java Parser AST nodes
+ * Transform a BoxForIndex Node the equivalent Java Parser AST nodes
  */
-public class BoxForInTransformer extends AbstractTransformer {
+public class BoxForIndexTransformer extends AbstractTransformer {
 
 	Logger logger = LoggerFactory.getLogger( BoxForIndexTransformer.class );
 
 	/**
-	 * Transform a collection for statement
+	 * Transform an BoxForIndex for statement
 	 *
 	 * @param node    a BoxForIn instance
 	 * @param context transformation context
 	 *
 	 * @return a Java Parser Block statement with an iterator and a while loop
-	 *
+	 * 
 	 * @throws IllegalStateException
 	 */
 	@Override
 	public Node transform( BoxNode node, TransformerContext context ) throws IllegalStateException {
-		BoxForIn			boxFor		= ( BoxForIn ) node;
-		Node				variable	= BoxLangTranspiler.transform( boxFor.getVariable() );
-		Node				collection	= BoxLangTranspiler.transform( boxFor.getExpression() );
-
-		BlockStmt			stmt		= new BlockStmt();
+		BoxForIndex			boxFor		= ( BoxForIndex ) node;
+		Expression			variable	= ( Expression ) BoxLangTranspiler.transform( boxFor.getVariable(), TransformerContext.LEFT );
+		Expression			initial		= ( Expression ) BoxLangTranspiler.transform( boxFor.getInitial(), TransformerContext.RIGHT );
+		Expression			condition	= ( Expression ) BoxLangTranspiler.transform( boxFor.getCondition() );
+		Expression			step		= ( Expression ) BoxLangTranspiler.transform( boxFor.getStep() );
 		Map<String, String>	values		= new HashMap<>() {
 
 											{
-												put( "variable", variable.toString() );
-												put( "collection", collection.toString() );
+												put( "condition", condition.toString() );
 											}
 										};
 
-		String				template1	= """
-		                                  	Iterator ${variable} = CollectionCaster.cast( ${collection} ).iterator();
-		                                  """;
-		String				template2	= """
-		                                  	while( ${variable}.hasNext() ) {
-		                                  		${collection}.put( Key.of( "${variable}" ), ${variable}.next() );
-		                                  	}
-		                                  """;
-		WhileStmt			whileStmt	= ( WhileStmt ) parseStatement( template2, values );
-		stmt.addStatement( ( Statement ) parseStatement( template1, values ) );
+		if ( variable instanceof MethodCallExpr method ) {
+			if ( "put".equalsIgnoreCase( method.getName().asString() ) ) {
+				method.getArguments().add( initial );
+			}
+		}
+
+		String template2 = "while( ${condition} ) {}";
+		if ( requiresBooleanCaster( boxFor.getCondition() ) ) {
+			template2 = "while( BooleanCaster.cast( ${condition} ) ) {}";
+		}
+		BlockStmt		stmt	= new BlockStmt();
+		ExpressionStmt	init	= new ExpressionStmt( variable );
+		stmt.addStatement( init );
+		WhileStmt whileStmt = ( WhileStmt ) parseStatement( template2, values );
 		boxFor.getBody().forEach( it -> {
 			whileStmt.getBody().asBlockStmt().addStatement( ( Statement ) BoxLangTranspiler.transform( it ) );
 		} );
+		ExpressionStmt stepStmt = new ExpressionStmt( step );
+		whileStmt.getBody().asBlockStmt().addStatement( stepStmt );
 		stmt.addStatement( whileStmt );
 		logger.info( node.getSourceText() + " -> " + stmt );
 		addIndex( stmt, node );

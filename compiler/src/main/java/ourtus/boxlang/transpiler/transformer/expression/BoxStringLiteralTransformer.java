@@ -24,12 +24,20 @@ import ourtus.boxlang.transpiler.transformer.AbstractTransformer;
 import ourtus.boxlang.transpiler.transformer.TransformerContext;
 
 /**
- * Transform aBoxStringLiteral Node the equivalent Java Parser AST nodes
+ * Transform a BoxStringLiteral Node the equivalent Java Parser AST nodes
  */
 public class BoxStringLiteralTransformer extends AbstractTransformer {
 
 	Logger logger = LoggerFactory.getLogger( BoxStringLiteralTransformer.class );
 
+	/**
+	 * Transform BoxStringLiteral argument
+	 *
+	 * @param node    a BoxStringLiteral instance
+	 * @param context transformation context
+	 *
+	 * @return generates a Java Parser string Literal
+	 */
 	@Override
 	public Node transform( BoxNode node, TransformerContext context ) throws IllegalStateException {
 		BoxStringLiteral	literal	= ( BoxStringLiteral ) node;
