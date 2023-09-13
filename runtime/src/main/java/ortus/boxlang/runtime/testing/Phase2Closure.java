@@ -86,7 +86,7 @@ public class Phase2Closure extends BaseTemplate {
         // Create instance of Closure and set in the variables scope
         variablesScope.put(
             Key.of( "greet" ),
-            new Phase2Closure$greet( context )
+            new Phase2Closure$closure1( context )
         );
 
         variablesScope.put(

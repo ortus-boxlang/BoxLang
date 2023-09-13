@@ -17,8 +17,8 @@
  */
 package ortus.boxlang.runtime.context;
 
+import java.util.ArrayDeque;
 import java.util.Map;
-import java.util.Stack;
 
 import ortus.boxlang.runtime.dynamic.BaseTemplate;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
@@ -43,12 +43,12 @@ public class BaseBoxContext implements IBoxContext {
 	/**
 	 * Any context can have a parent it can delegate to
 	 */
-	protected IBoxContext			parent;
+	protected IBoxContext				parent;
 
 	/**
 	 * A way to discover the current executing template
 	 */
-	protected Stack<BaseTemplate>	templates	= new Stack<BaseTemplate>();
+	protected ArrayDeque<BaseTemplate>	templates	= new ArrayDeque<BaseTemplate>();
 
 	/**
 	 * Creates a new execution context with a bounded execution template and parent context
@@ -102,7 +102,7 @@ public class BaseBoxContext implements IBoxContext {
 	 * @return True if bound, else false
 	 */
 	public boolean hasTemplates() {
-		return !this.templates.empty();
+		return !this.templates.isEmpty();
 	}
 
 	/**

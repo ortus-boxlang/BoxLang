@@ -77,7 +77,7 @@ public class Phase2Lambda extends BaseTemplate {
         // Create instance of Lambda and set in the variables scope
         variablesScope.put(
             Key.of( "greet" ),
-            Phase2Lambda$greet.getInstance()
+            Phase2Lambda$lambda1.getInstance()
         );
 
         variablesScope.put(

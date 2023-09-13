@@ -142,7 +142,7 @@ public class ClosureBoxContextTest {
 
 		// which calls another function
 		Closure		closure2	= new SampleClosure( new Argument[] {}, declaringContext, "Brad" );
-		IBoxContext	context2	= new ClosureBoxContext( parentContext, closure );
+		IBoxContext	context2	= new ClosureBoxContext( parentContext, closure2 );
 
 		assertThat( context2.findClosestFunction() ).isNotNull();
 		assertThat( context2.findClosestFunction().getName() ).isEqualTo( funcName );

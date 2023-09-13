@@ -18,38 +18,35 @@
 package ortus.boxlang.runtime.testing;
 
 import ortus.boxlang.runtime.context.FunctionBoxContext;
+import ortus.boxlang.runtime.context.IBoxContext;
+import ortus.boxlang.runtime.dynamic.Referencer;
 import ortus.boxlang.runtime.operators.Concat;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.LocalScope;
-import ortus.boxlang.runtime.types.Lambda;
+import ortus.boxlang.runtime.types.Closure;
 
 /**
  * Phase 2 BoxLang
  * Example of UDF delcaration and execution
  */
-public class Phase2Lambda$greet extends Lambda {
+public class Phase2Closure$closure1 extends Closure {
 
-    private static Phase2Lambda$greet instance;
-
-    private Phase2Lambda$greet() {
+    public Phase2Closure$closure1( IBoxContext declaringContext ) {
         super(
             new Argument[] {
                 new Argument( true, "String", Key.of( "name" ), "Brad", "" )
-            }
+            },
+            declaringContext
         );
-    }
-
-    public static synchronized Phase2Lambda$greet getInstance() {
-        if ( instance == null ) {
-            instance = new Phase2Lambda$greet();
-        }
-        return instance;
     }
 
     /**
      * <pre>
-        ( required string name='Brad' ) -> {
+        ( required string name='Brad' ) => {
             var greeting = "Hello " & name;
+    
+            out.println( "Inside Closure, outside lookup finds: " & outside )
+    
             return greeting;
         }
      * </pre>
@@ -63,6 +60,20 @@ public class Phase2Lambda$greet extends Lambda {
                 "Hello ",
                 context.scopeFindNearby( Key.of( "name" ), null ).value()
             )
+        );
+
+        // Reach "into" parent context and get "out" from variables scope
+        Referencer.getAndInvoke(
+            context,
+            // Object
+            context.scopeFindNearby( Key.of( "out" ), null ).value(),
+            // Method
+            Key.of( "println" ),
+            // Arguments
+            new Object[] {
+                "Inside Closure, outside lookup finds: " + context.scopeFindNearby( Key.of( "outside" ), null ).value()
+            },
+            false
         );
 
         return context.scopeFindNearby( Key.of( "greeting" ), null ).value();
