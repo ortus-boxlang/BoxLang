@@ -36,17 +36,18 @@ public class BaseBoxContext implements IBoxContext {
 
 	/**
 	 * --------------------------------------------------------------------------
-	 * Public Properties
+	 * Private Properties
 	 * --------------------------------------------------------------------------
 	 */
 
 	/**
-	 * --------------------------------------------------------------------------
-	 * Private Properties
-	 * --------------------------------------------------------------------------
+	 * Any context can have a parent it can delegate to
 	 */
 	protected IBoxContext			parent;
 
+	/**
+	 * A way to discover the current executing template
+	 */
 	protected Stack<BaseTemplate>	templates	= new Stack<BaseTemplate>();
 
 	/**
