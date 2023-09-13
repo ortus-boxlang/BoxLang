@@ -17,6 +17,7 @@
  */
 package ortus.boxlang.runtime.types;
 
+import java.util.HashMap;
 import java.util.Map;
 
 import ortus.boxlang.runtime.context.FunctionBoxContext;
@@ -37,24 +38,38 @@ public abstract class Function implements IType {
 		REMOTE
 	}
 
-	public static Key	ARGUMENT_COLLECTION	= Key.of( "argumentCollection" );
+	public static Key				ARGUMENT_COLLECTION	= Key.of( "argumentCollection" );
 
 	/**
 	 * The arguments of the function
 	 */
-	private Argument[]	arguments;
+	private Argument[]				arguments;
 
 	/**
 	 * The name of the function
 	 */
-	private Key			name;
+	private Key						name;
+
+	/**
+	 * Additional abitrary metadata about this function.
+	 */
+	private HashMap<Key, Object>	metadata;
 
 	/**
 	 * Constructor
 	 */
-	public Function( Key name, Argument[] arguments ) {
+	public Function( Key name, Argument[] arguments, HashMap<Key, Object> metadata ) {
 		this.name		= name;
 		this.arguments	= arguments;
+		this.metadata	= metadata;
+	}
+
+	public Function( Key name, Argument[] arguments ) {
+		this( name, arguments, new HashMap<Key, Object>() );
+	}
+
+	public Function( Key name ) {
+		this( name, new Argument[] {}, new HashMap<Key, Object>() );
 	}
 
 	public Argument[] getArguments() {
@@ -63,6 +78,10 @@ public abstract class Function implements IType {
 
 	public Key getName() {
 		return name;
+	}
+
+	public HashMap<Key, Object> getMetadata() {
+		return metadata;
 	}
 
 	public abstract Object invoke( FunctionBoxContext context );
@@ -145,8 +164,37 @@ public abstract class Function implements IType {
 	 * @param defaultValue The default value of the argument
 	 *
 	 */
-	public record Argument( boolean required, String type, Key name, Object defaultValue, String hint ) {
-		// The record automatically generates the constructor, getters, equals, hashCode, and toString methods.
+	public record Argument( boolean required, String type, Key name, Object defaultValue, String hint, HashMap<Key, Object> metadata ) {
+
+		public Argument( Key name ) {
+			this( false, "any", name, null, "", new HashMap<Key, Object>() );
+		}
+
+		public Argument( boolean required, String type, Key name ) {
+			this( required, type, name, null, "", new HashMap<Key, Object>() );
+		}
+
+		public Argument( boolean required, String type, Key name, Object defaultValue ) {
+			this( required, type, name, defaultValue, "", new HashMap<Key, Object>() );
+		}
+
+		public Argument( boolean required, String type, Key name, Object defaultValue, String hint ) {
+			this( required, type, name, defaultValue, hint, new HashMap<Key, Object>() );
+		}
+
+		public Argument( boolean required, String type, Key name, Object defaultValue, HashMap<Key, Object> metadata ) {
+			this( required, type, name, defaultValue, "", metadata );
+		}
+
+		public Argument( boolean required, String type, Key name, Object defaultValue, String hint, HashMap<Key, Object> metadata ) {
+			this.required		= required;
+			this.type			= type;
+			this.name			= name;
+			this.defaultValue	= defaultValue;
+			this.hint			= hint;
+			this.metadata		= metadata;
+		}
+
 	}
 
 	protected Object ensureArgumentType( Key name, Object value, String type ) {
