@@ -70,7 +70,14 @@ public class FunctionBoxContext extends BaseBoxContext {
 
 	/**
 	 * Search for a variable in "nearby" scopes
+	 *
+	 * @param key          The key to search for
+	 * @param defaultScope The default scope to use if the key is not found
+	 * @param shallow      Whether to search only the "nearby" scopes or all scopes
+	 *
+	 * @return The search result
 	 */
+	@Override
 	public ScopeSearchResult scopeFindNearby( Key key, IScope defaultScope, boolean shallow ) {
 
 		Object result = localScope.getRaw( key );
@@ -98,7 +105,13 @@ public class FunctionBoxContext extends BaseBoxContext {
 
 	/**
 	 * Search for a variable in scopes
+	 *
+	 * @param key          The key to search for
+	 * @param defaultScope The default scope to use if the key is not found
+	 *
+	 * @return The search result
 	 */
+	@Override
 	public ScopeSearchResult scopeFind( Key key, IScope defaultScope ) {
 
 		// The FunctionBoxContext has no "global" scopes, so just defer to parent
@@ -120,7 +133,12 @@ public class FunctionBoxContext extends BaseBoxContext {
 
 	/**
 	 * Look for a scope by name
+	 *
+	 * @param name The name of the scope to look for
+	 *
+	 * @return The scope reference to use
 	 */
+	@Override
 	public IScope getScope( Key name ) throws ScopeNotFoundException {
 
 		// The FunctionBoxContext has no "global" scopes, so just defer to parent
@@ -137,7 +155,12 @@ public class FunctionBoxContext extends BaseBoxContext {
 
 	/**
 	 * Look for a "nearby" scope by name
+	 *
+	 * @param name The name of the scope to look for
+	 *
+	 * @return The scope reference to use
 	 */
+	@Override
 	public IScope getScopeNearby( Key name ) throws ScopeNotFoundException {
 		// Check the scopes I know about
 		if ( name.equals( localScope.getName() ) ) {
@@ -164,6 +187,7 @@ public class FunctionBoxContext extends BaseBoxContext {
 	 *
 	 * @return The Function instance
 	 */
+	@Override
 	public Function findClosestFunction() {
 		return function;
 	}
@@ -173,6 +197,7 @@ public class FunctionBoxContext extends BaseBoxContext {
 	 *
 	 * @return The scope reference to use
 	 */
+	@Override
 	public IScope getDefaultAssignmentScope() {
 		// DIFFERENT FROM CFML ENGINES! Same as Lucee's "local mode"
 		return localScope;
@@ -183,6 +208,7 @@ public class FunctionBoxContext extends BaseBoxContext {
 	 *
 	 * @return The context to use
 	 */
+	@Override
 	public IBoxContext getFunctionParentContext() {
 		// If a function is executed inside another function, it uses the parent since there is nothing a function can "see" from inside it's calling function
 		return getParent();
