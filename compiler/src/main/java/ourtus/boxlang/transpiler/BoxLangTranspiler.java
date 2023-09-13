@@ -78,6 +78,7 @@ public class BoxLangTranspiler {
 																	put( BoxBreak.class, new BoxBreakTransformer() );
 																	put( BoxContinue.class, new BoxContinueTransformer() );
 																	put( BoxForIn.class, new BoxForInTransformer() );
+																	put( BoxAssert.class, new BoxAssertTransformer() );
 
 																}
 															};
