@@ -215,9 +215,26 @@ public class BoxCFParser extends BoxAbstractParser {
 			return toAst( file, node.switch_() );
 		} else if ( node.for_() != null ) {
 			return toAst( file, node.for_() );
+		} else if ( node.assert_() != null ) {
+			return toAst( file, node.assert_() );
 		} else {
 			throw new IllegalStateException( "not implemented: " + node.getClass().getSimpleName() );
 		}
+	}
+
+	/**
+	 * Converts the assert parser rule to the corresponding AST node
+	 * 
+	 * @param file source file, if any
+	 * @param node ANTLR AssertContext rule
+	 *
+	 * @return the corresponding AST BoxStatement
+	 *
+	 * @see BoxAssert
+	 */
+	private BoxStatement toAst( File file, CFParser.AssertContext node ) {
+		BoxExpr expression = toAst( file, node.expression() );
+		return new BoxAssert( expression, getPosition( node ), getSourceText( node ) );
 	}
 
 	/**
