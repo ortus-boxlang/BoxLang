@@ -57,4 +57,11 @@ public class ExamplesTest {
 		} );
 	}
 
+	@DisplayName( "It can execute Phase2 Lambda example" )
+	@Test
+	public void testItCanExecutePhase2Lambda() throws Throwable {
+		Phase2Lambda.main( new String[] {
+		} );
+	}
+
 }
