@@ -142,7 +142,8 @@ statementParameters
     :   (parameters+=accessExpression EQUAL (values+=stringLiteral | expressions+=expression))+
     ;
 statement
-    :   break
+    :   assert
+    |   break
     |   continue
     |   for
     |   if
@@ -263,6 +264,9 @@ while
     :   WHILE LPAREN expression RPAREN statementBlock
     ;
 
+assert
+	:	ASSERT expression
+	;
 break
     :   BREAK eos
     ;

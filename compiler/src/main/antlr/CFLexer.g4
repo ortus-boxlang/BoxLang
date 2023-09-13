@@ -14,6 +14,7 @@ ANY             :   'ANY';
 APPLICATION     :   'APPLICATION';
 ARGUMENTS       :   'ARGUMENTS';
 ARRAY           :   'ARRAY';
+ASSERT			:	'ASSERT';
 BOOLEAN         :   'BOOLEAN';
 BREAK           :   'BREAK';
 CASE            :   'CASE';
