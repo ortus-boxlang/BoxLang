@@ -5,6 +5,7 @@ import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Closure;
 import ortus.boxlang.runtime.types.Struct;
+import ortus.boxlang.runtime.types.exceptions.KeyNotFoundException;
 
 /**
  * This context represents the execution of a closure. Closures are a simpler form of a Function which,
@@ -38,7 +39,15 @@ public class ClosureBoxContext extends FunctionBoxContext {
 	}
 
 	/**
-	 * Search for a variable in "nearby" scopes
+	 * Try to get the requested key from an unkonwn scope but not delegating to parent or default missing keys
+	 *
+	 * @param key          The key to search for
+	 * @param defaultScope The default scope to return if the key is not found
+	 * @param shallow      true, do not delegate to parent or default scope if not found
+	 *
+	 * @return The result of the search. Null if performing a shallow search and nothing was fond
+	 *
+	 * @throws KeyNotFoundException If the key was not found in any scope
 	 */
 	public ScopeSearchResult scopeFindNearby( Key key, IScope defaultScope, boolean shallow ) {
 
