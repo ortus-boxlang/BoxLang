@@ -230,7 +230,7 @@ public class BaseBoxContext implements IBoxContext {
 		throw new UnsupportedOperationException( "Unimplemented method 'scopeFindNearby'" );
 	}
 
-	public void regsiterUDF( UDF udf ) {
+	public void registerUDF( UDF udf ) {
 		throw new UnsupportedOperationException( "This context cannot register a function" );
 	}
 
