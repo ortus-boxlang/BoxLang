@@ -57,6 +57,19 @@ public interface IBoxContext {
 	public IScope getScopeNearby( Key name ) throws ScopeNotFoundException;
 
 	/**
+	 * Get a scope from the context. If not found, the parent context is asked.
+	 * Search all known scopes
+	 *
+	 * @param name    The name of the scope to get
+	 * @param shallow true, do not delegate to parent or default scope if not found
+	 *
+	 * @return The requested scope
+	 *
+	 * @throws ScopeNotFoundException If the scope was not found in any context
+	 */
+	public IScope getScopeNearby( Key name, boolean shallow ) throws ScopeNotFoundException;
+
+	/**
 	 * Try to get the requested key from an unknown scope
 	 * Meaning it needs to search scopes in order according to it's context.
 	 * Unlike scopeFindNearby(), this version only searches trancedent scopes like

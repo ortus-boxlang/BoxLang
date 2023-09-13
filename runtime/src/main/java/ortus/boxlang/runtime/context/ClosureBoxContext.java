@@ -6,6 +6,7 @@ import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Closure;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.KeyNotFoundException;
+import ortus.boxlang.runtime.types.exceptions.ScopeNotFoundException;
 
 /**
  * This context represents the execution of a closure. Closures are a simpler form of a Function which,
@@ -78,13 +79,44 @@ public class ClosureBoxContext extends FunctionBoxContext {
 		}
 
 		// Now we pick up where we left off at the original closure context's parent.
-		// A UDF is "transparent" and can see everything in the parent scope as a "local" observer, so we call scopeFindNearby() on the parent
-		return parent.scopeFindNearby( key, defaultScope );
+		// Closures don't care about the "nearby" scopes of their parent execution contexts! We only climb the parent chain to find global scopes like CGI or
+		// server
+		return parent.scopeFind( key, defaultScope );
 
 	}
 
-	// scopeFind(), getScope() and getScopeNearby() do not need to be overridden, as the closure's declaring context does not affect specific scope
-	// lookups
+	/**
+	 * Look for a "nearby" scope by name
+	 *
+	 * @param name The name of the scope to look for
+	 *
+	 * @return The scope reference to use
+	 */
+	@Override
+	public IScope getScopeNearby( Key name, boolean shallow ) throws ScopeNotFoundException {
+		// Check the scopes I know about
+		if ( name.equals( localScope.getName() ) ) {
+			return localScope;
+		}
+		if ( name.equals( argumentsScope.getName() ) ) {
+			return argumentsScope;
+		}
+
+		// After a closure has checked local and arguments, it stops to do a shallow lookup in the declaring scope. If the declaring scope
+		// is also a CLosureBoxContext, it will do the same thing, and so on until it finds a non-ClosureBoxContext.
+		IScope declaringContextResult = getFunction().getDeclaringContext().getScopeNearby( name, true );
+		if ( declaringContextResult != null ) {
+			return declaringContextResult;
+		}
+
+		if ( shallow ) {
+			return null;
+		}
+
+		// The FunctionBoxContext has no "global" scopes, so just defer to parent
+		return parent.getScope( name );
+
+	}
 
 	/**
 	 * Returns the function being invoked with this context, cast as a Closure

@@ -17,16 +17,26 @@
  */
 package ortus.boxlang.runtime.types;
 
+import java.util.HashMap;
+
 import ortus.boxlang.runtime.context.FunctionBoxContext;
 import ortus.boxlang.runtime.context.IBoxContext;
+import ortus.boxlang.runtime.scopes.Key;
 
 public class SampleClosure extends Closure {
 
     Object returnVal = null;
 
+    static {
+        arguments = new Argument[] {};
+        metadata  = new HashMap<Key, Object>();
+    }
+
     public SampleClosure( Argument[] arguments, IBoxContext declaringContext, Object returnVal ) {
-        super( arguments, declaringContext );
+        super( declaringContext );
         this.returnVal = returnVal;
+        // This is not how "real" closures will work. I'm just doing this to re-use this sample class for testing.
+        this.arguments = arguments;
     }
 
     @Override

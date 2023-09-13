@@ -232,13 +232,14 @@ public class BaseBoxContext implements IBoxContext {
 	 * Get a scope from the context. If not found, the parent context is asked.
 	 * Search all known scopes
 	 *
-	 * @param name The name of the scope to get
+	 * @param name    The name of the scope to get
+	 * @param shallow true, do not delegate to parent or default scope if not found
 	 *
 	 * @return The requested scope
 	 *
 	 * @throws ScopeNotFoundException If the scope was not found in any context
 	 */
-	public IScope getScopeNearby( Key name ) throws ScopeNotFoundException {
+	public IScope getScopeNearby( Key name, boolean shallow ) throws ScopeNotFoundException {
 		throw new UnsupportedOperationException( "Unimplemented method 'getScopeNearby'" );
 	}
 
@@ -334,6 +335,20 @@ public class BaseBoxContext implements IBoxContext {
 	 */
 	public ScopeSearchResult scopeFindNearby( Key key, IScope defaultScope ) {
 		return scopeFindNearby( key, defaultScope, false );
+	}
+
+	/**
+	 * Get a scope from the context. If not found, the parent context is asked.
+	 * Search all known scopes
+	 *
+	 * @param name The name of the scope to get
+	 *
+	 * @return The requested scope
+	 *
+	 * @throws ScopeNotFoundException If the scope was not found in any context
+	 */
+	public IScope getScopeNearby( Key name ) throws ScopeNotFoundException {
+		return getScopeNearby( name, false );
 	}
 
 }

@@ -87,7 +87,8 @@ public abstract class Function implements IType {
 	public abstract Object invoke( FunctionBoxContext context );
 
 	public ArgumentsScope createArgumentsScope( Object[] positionalArguments ) {
-		ArgumentsScope scope = new ArgumentsScope();
+		Argument[]		arguments	= getArguments();
+		ArgumentsScope	scope		= new ArgumentsScope();
 		// Add all incoming args to the scope, using the name if declared, otherwise using the position
 		for ( int i = 0; i < positionalArguments.length; i++ ) {
 			Key		name;
@@ -115,7 +116,8 @@ public abstract class Function implements IType {
 	}
 
 	public ArgumentsScope createArgumentsScope( Map<Key, Object> namedArguments ) {
-		ArgumentsScope scope = new ArgumentsScope();
+		Argument[]		arguments	= getArguments();
+		ArgumentsScope	scope		= new ArgumentsScope();
 
 		// If argumentCollection exists, add it
 		if ( namedArguments.containsKey( ARGUMENT_COLLECTION )

@@ -6,7 +6,6 @@ import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.LocalScope;
 import ortus.boxlang.runtime.types.Function;
 import ortus.boxlang.runtime.types.Struct;
-import ortus.boxlang.runtime.types.exceptions.KeyNotFoundException;
 import ortus.boxlang.runtime.types.exceptions.ScopeNotFoundException;
 
 /**
@@ -113,22 +112,8 @@ public class FunctionBoxContext extends BaseBoxContext {
 	 */
 	@Override
 	public ScopeSearchResult scopeFind( Key key, IScope defaultScope ) {
-
 		// The FunctionBoxContext has no "global" scopes, so just defer to parent
-
-		if ( parent != null ) {
-			// A UDF is "transparent" and can see everything in the parent scope as a "local" observer
-			return parent.scopeFind( key, defaultScope );
-		}
-
-		// Default scope requested for missing keys
-		if ( defaultScope != null ) {
-			return new ScopeSearchResult( defaultScope, null );
-		}
-		// Not found anywhere
-		throw new KeyNotFoundException(
-		    String.format( "The requested key [%s] was not located in any scope or it's undefined", key.getName() )
-		);
+		return parent.scopeFind( key, defaultScope );
 	}
 
 	/**
@@ -140,17 +125,8 @@ public class FunctionBoxContext extends BaseBoxContext {
 	 */
 	@Override
 	public IScope getScope( Key name ) throws ScopeNotFoundException {
-
 		// The FunctionBoxContext has no "global" scopes, so just defer to parent
-		if ( parent != null ) {
-			return parent.getScope( name );
-		}
-
-		// Not found anywhere
-		throw new ScopeNotFoundException(
-		    String.format( "The requested scope name [%s] was not located in any context", name.getName() )
-		);
-
+		return parent.getScope( name );
 	}
 
 	/**
@@ -161,7 +137,7 @@ public class FunctionBoxContext extends BaseBoxContext {
 	 * @return The scope reference to use
 	 */
 	@Override
-	public IScope getScopeNearby( Key name ) throws ScopeNotFoundException {
+	public IScope getScopeNearby( Key name, boolean shallow ) throws ScopeNotFoundException {
 		// Check the scopes I know about
 		if ( name.equals( localScope.getName() ) ) {
 			return localScope;
@@ -170,16 +146,12 @@ public class FunctionBoxContext extends BaseBoxContext {
 			return argumentsScope;
 		}
 
-		// The FunctionBoxContext has no "global" scopes, so just defer to parent
-		if ( parent != null ) {
-			return parent.getScopeNearby( name );
+		if ( shallow ) {
+			return null;
 		}
 
-		// Not found anywhere
-		throw new ScopeNotFoundException(
-		    String.format( "The requested scope name [%s] was not located in any context", name.getName() )
-		);
-
+		// The FunctionBoxContext has no "global" scopes, so just defer to parent
+		return parent.getScopeNearby( name );
 	}
 
 	/**
