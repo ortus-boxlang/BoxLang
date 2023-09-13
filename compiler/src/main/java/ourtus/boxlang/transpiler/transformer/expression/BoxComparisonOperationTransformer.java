@@ -6,6 +6,8 @@ import com.github.javaparser.ast.expr.NameExpr;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import ourtus.boxlang.ast.BoxNode;
+import ourtus.boxlang.ast.expression.BoxBinaryOperation;
+import ourtus.boxlang.ast.expression.BoxBinaryOperator;
 import ourtus.boxlang.ast.expression.BoxComparisonOperation;
 import ourtus.boxlang.ast.expression.BoxComparisonOperator;
 import ourtus.boxlang.transpiler.BoxLangTranspiler;
@@ -15,10 +17,26 @@ import ourtus.boxlang.transpiler.transformer.TransformerContext;
 import java.util.HashMap;
 import java.util.Map;
 
+/**
+ * Transform a BoxComparisonOperation Node the equivalent Java Parser AST nodes
+ */
 public class BoxComparisonOperationTransformer extends AbstractTransformer {
 
 	Logger logger = LoggerFactory.getLogger( BoxComparisonOperationTransformer.class );
 
+	/**
+	 * Transform BoxComparisonOperation operator
+	 *
+	 * @param node    a BoxComparisonOperation instance
+	 * @param context transformation context
+	 *
+	 * @return generates a Java Parser Method invocation to the corresponding runtime implementation
+	 *
+	 * @throws IllegalStateException
+	 *
+	 * @see BoxComparisonOperation
+	 * @see BoxComparisonOperator foe the supported comparision operators
+	 */
 	@Override
 	public Node transform( BoxNode node, TransformerContext context ) throws IllegalStateException {
 		BoxComparisonOperation	operation	= ( BoxComparisonOperation ) node;
@@ -54,6 +72,7 @@ public class BoxComparisonOperationTransformer extends AbstractTransformer {
 		}
 		Node javaExpr = parseExpression( template, values );
 		logger.info( node.getSourceText() + " -> " + javaExpr );
+		addIndex( javaExpr, node );
 		return javaExpr;
 	}
 

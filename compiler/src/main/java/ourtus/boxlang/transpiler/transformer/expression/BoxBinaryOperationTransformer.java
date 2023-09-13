@@ -28,10 +28,26 @@ import ourtus.boxlang.transpiler.transformer.TransformerContext;
 import java.util.HashMap;
 import java.util.Map;
 
+/**
+ * Transform a BoxBinaryOperation Node the equivalent Java Parser AST nodes
+ */
 public class BoxBinaryOperationTransformer extends AbstractTransformer {
 
 	Logger logger = LoggerFactory.getLogger( BoxBinaryOperationTransformer.class );
 
+	/**
+	 * Transform BoxBinaryOperation argument
+	 *
+	 * @param node    a BoxBinaryOperation instance
+	 * @param context transformation context
+	 *
+	 * @return generates a Java Parser Method invocation to the corresponding runtime implementation
+	 *
+	 * @throws IllegalStateException
+	 * 
+	 * @see BoxBinaryOperation
+	 * @see BoxBinaryOperator foe the supported operators
+	 */
 	@Override
 	public Node transform( BoxNode node, TransformerContext context ) throws IllegalStateException {
 		BoxBinaryOperation	operation	= ( BoxBinaryOperation ) node;
@@ -83,6 +99,7 @@ public class BoxBinaryOperationTransformer extends AbstractTransformer {
 		}
 		Node javaExpr = parseExpression( template, values );
 		logger.info( node.getSourceText() + " -> " + javaExpr );
+		addIndex( javaExpr, node );
 		return javaExpr;
 	}
 

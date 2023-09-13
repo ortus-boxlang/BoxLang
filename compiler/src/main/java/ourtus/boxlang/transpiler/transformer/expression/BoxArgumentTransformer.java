@@ -13,10 +13,25 @@ import ourtus.boxlang.transpiler.transformer.TransformerContext;
 import java.util.HashMap;
 import java.util.Map;
 
+/**
+ * Transform a BoxArgument Node the equivalent Java Parser AST nodes
+ */
 public class BoxArgumentTransformer extends AbstractTransformer {
 
 	Logger logger = LoggerFactory.getLogger( BoxArrayAccessTransformer.class );
 
+	/**
+	 * Transform a function/method argument
+	 *
+	 * @param node    a BoxArgument instance
+	 * @param context transformation context
+	 *
+	 * @return Generates a Java Parser Expression
+	 *
+	 * @throws IllegalStateException
+	 * 
+	 * @see BoxArgument
+	 */
 	@Override
 	public Node transform( BoxNode node, TransformerContext context ) throws IllegalStateException {
 		BoxArgument			arg			= ( BoxArgument ) node;
@@ -34,7 +49,7 @@ public class BoxArgumentTransformer extends AbstractTransformer {
 
 		Node				javaExpr	= parseExpression( template, values );
 		logger.info( side + node.getSourceText() + " -> " + javaExpr );
-
+		addIndex( javaExpr, arg );
 		return javaExpr;
 	}
 }

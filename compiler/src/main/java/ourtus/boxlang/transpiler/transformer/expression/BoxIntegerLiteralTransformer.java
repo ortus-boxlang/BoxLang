@@ -15,8 +15,12 @@
 package ourtus.boxlang.transpiler.transformer.expression;
 
 import com.github.javaparser.ast.Node;
+import com.github.javaparser.ast.expr.BooleanLiteralExpr;
 import com.github.javaparser.ast.expr.IntegerLiteralExpr;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import ourtus.boxlang.ast.BoxNode;
+import ourtus.boxlang.ast.expression.BoxBooleanLiteral;
 import ourtus.boxlang.ast.expression.BoxIntegerLiteral;
 import ourtus.boxlang.transpiler.transformer.AbstractTransformer;
 import ourtus.boxlang.transpiler.transformer.TransformerContext;
@@ -26,9 +30,22 @@ import ourtus.boxlang.transpiler.transformer.TransformerContext;
  */
 public class BoxIntegerLiteralTransformer extends AbstractTransformer {
 
+	Logger logger = LoggerFactory.getLogger( BoxBinaryOperationTransformer.class );
+
+	/**
+	 * Transform BoxIntegerLiteral argument
+	 *
+	 * @param node    a BoxIntegerLiteral instance
+	 * @param context transformation context
+	 *
+	 * @return generates a Java Parser integer Literal
+	 */
 	@Override
 	public Node transform( BoxNode node, TransformerContext context ) throws IllegalStateException {
-		BoxIntegerLiteral literal = ( BoxIntegerLiteral ) node;
-		return new IntegerLiteralExpr( literal.getValue() );
+		BoxIntegerLiteral	literal		= ( BoxIntegerLiteral ) node;
+		IntegerLiteralExpr	javaExpr	= new IntegerLiteralExpr( literal.getValue() );
+		logger.info( node.getSourceText() + " -> " + javaExpr );
+		addIndex( javaExpr, node );
+		return javaExpr;
 	}
 }
