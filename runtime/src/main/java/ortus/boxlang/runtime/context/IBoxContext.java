@@ -121,7 +121,7 @@ public interface IBoxContext {
 	 *
 	 * @param udf The UDF to register
 	 */
-	public void regsiterUDF( UDF udf );
+	public void registerUDF( UDF udf );
 
 	/**
 	 * Verifies if a parent context is attached to this context
