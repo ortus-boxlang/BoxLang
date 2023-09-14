@@ -113,12 +113,10 @@ public class BaseResolver implements IClassResolver {
 	public String expandFromImport( IBoxContext context, String className, List<ImportDefinition> imports ) {
 		return imports.stream()
 		    // Discover import
-		    .filter( thisImport -> {
-			    return importApplies( thisImport ) && thisImport.alias().equalsIgnoreCase( className );
-		    } )
+		    .filter( thisImport -> importApplies( thisImport ) && thisImport.alias().equalsIgnoreCase( className ) )
 		    // Return the first one, the first one wins
 		    .findFirst()
-		    .map( thisImport -> thisImport.className() )
+		    .map( ImportDefinition::className )
 		    // Nothing found, return the original class name
 		    .orElse( className );
 	}

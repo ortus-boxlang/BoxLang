@@ -97,7 +97,7 @@ public class JavaResolver extends BaseResolver {
 	 */
 	@Override
 	public Optional<ClassLocation> resolve( IBoxContext context, String name, List<ImportDefinition> imports ) {
-		String fullyQualifiedName = expandFromImport( null, name, imports );
+		String fullyQualifiedName = expandFromImport( context, name, imports );
 		return findFromModules( fullyQualifiedName, imports )
 		    .or( () -> findFromSystem( fullyQualifiedName, imports ) );
 	}
