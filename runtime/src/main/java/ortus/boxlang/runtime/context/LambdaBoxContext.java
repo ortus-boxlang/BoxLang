@@ -58,6 +58,10 @@ public class LambdaBoxContext extends FunctionBoxContext {
 			return new ScopeSearchResult( argumentsScope, Struct.unWrapNull( result ) );
 		}
 
+		if ( shallow ) {
+			return null;
+		}
+
 		// Lambdas don't look anywhere else!
 		throw new KeyNotFoundException(
 		    String.format( "The requested key [%s] was not located in any scope or it's undefined", key.getName() )
@@ -78,13 +82,17 @@ public class LambdaBoxContext extends FunctionBoxContext {
 	/**
 	 * Look for a "nearby" scope by name
 	 */
-	public IScope getScopeNearby( Key name ) throws ScopeNotFoundException {
+	public IScope getScopeNearby( Key name, boolean shallow ) throws ScopeNotFoundException {
 		// Check the scopes I know about
 		if ( name.equals( localScope.getName() ) ) {
 			return localScope;
 		}
 		if ( name.equals( argumentsScope.getName() ) ) {
 			return argumentsScope;
+		}
+
+		if ( shallow ) {
+			return null;
 		}
 
 		// Lambdas don't look anywhere else!

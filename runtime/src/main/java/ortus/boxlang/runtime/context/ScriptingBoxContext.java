@@ -172,11 +172,16 @@ public class ScriptingBoxContext extends BaseBoxContext {
      *
      * @return The requested scope
      */
-    public IScope getScopeNearby( Key name ) throws ScopeNotFoundException {
+    public IScope getScopeNearby( Key name, boolean shallow ) throws ScopeNotFoundException {
         // Check the scopes I know about
         if ( name.equals( variablesScope.getName() ) ) {
             return variablesScope;
         }
+
+        if ( shallow ) {
+            return null;
+        }
+
         return getScope( name );
     }
 

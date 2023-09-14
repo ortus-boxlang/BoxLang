@@ -17,8 +17,8 @@
  */
 package ortus.boxlang.runtime.context;
 
+import java.util.ArrayDeque;
 import java.util.Map;
-import java.util.Stack;
 
 import ortus.boxlang.runtime.dynamic.BaseTemplate;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
@@ -43,12 +43,12 @@ public class BaseBoxContext implements IBoxContext {
 	/**
 	 * Any context can have a parent it can delegate to
 	 */
-	protected IBoxContext			parent;
+	protected IBoxContext				parent;
 
 	/**
 	 * A way to discover the current executing template
 	 */
-	protected Stack<BaseTemplate>	templates	= new Stack<BaseTemplate>();
+	protected ArrayDeque<BaseTemplate>	templates	= new ArrayDeque<BaseTemplate>();
 
 	/**
 	 * Creates a new execution context with a bounded execution template and parent context
@@ -102,7 +102,7 @@ public class BaseBoxContext implements IBoxContext {
 	 * @return True if bound, else false
 	 */
 	public boolean hasTemplates() {
-		return !this.templates.empty();
+		return !this.templates.isEmpty();
 	}
 
 	/**
@@ -214,22 +214,77 @@ public class BaseBoxContext implements IBoxContext {
 		}
 	}
 
+	/**
+	 * Get a scope from the context. If not found, the parent context is asked.
+	 * Don't search for scopes which are nearby to an execution context
+	 *
+	 * @param name The name of the scope to get
+	 *
+	 * @return The requested scope
+	 *
+	 * @throws ScopeNotFoundException If the scope was not found in any context
+	 */
 	public IScope getScope( Key name ) throws ScopeNotFoundException {
 		throw new UnsupportedOperationException( "Unimplemented method 'getScope'" );
 	}
 
-	public IScope getScopeNearby( Key name ) throws ScopeNotFoundException {
+	/**
+	 * Get a scope from the context. If not found, the parent context is asked.
+	 * Search all known scopes
+	 *
+	 * @param name    The name of the scope to get
+	 * @param shallow true, do not delegate to parent or default scope if not found
+	 *
+	 * @return The requested scope
+	 *
+	 * @throws ScopeNotFoundException If the scope was not found in any context
+	 */
+	public IScope getScopeNearby( Key name, boolean shallow ) throws ScopeNotFoundException {
 		throw new UnsupportedOperationException( "Unimplemented method 'getScopeNearby'" );
 	}
 
+	/**
+	 * Try to get the requested key from an unknown scope
+	 * Meaning it needs to search scopes in order according to it's context.
+	 * Unlike scopeFindNearby(), this version only searches trancedent scopes like
+	 * cgi or server which are never encapsulated like variables is inside a CFC.
+	 *
+	 * If defaultScope is null and the key can't be found, a KeyNotFoundException will be thrown
+	 * If defaultScope is not null, it will return a record with the default scope and null value if the key is not found
+	 *
+	 * @param key The key to search for
+	 *
+	 * @return The value of the key if found
+	 *
+	 * @throws KeyNotFoundException If the key was not found in any scope
+	 */
 	public ScopeSearchResult scopeFind( Key key, IScope defaultScope ) {
 		throw new UnsupportedOperationException( "Unimplemented method 'scopeFind'" );
 	}
 
+	/**
+	 * Try to get the requested key from an unknown scope
+	 * Meaning it needs to search scopes in order according to it's context.
+	 * A nearby lookup is used for the closest context to the executing code
+	 *
+	 * If defaultScope is null and the key can't be found, a KeyNotFoundException will be thrown
+	 * If defaultScope is not null, it will return a record with the default scope and null value if the key is not found
+	 *
+	 * @param key The key to search for
+	 *
+	 * @return The value of the key if found
+	 *
+	 * @throws KeyNotFoundException If the key was not found in any scope
+	 */
 	public ScopeSearchResult scopeFindNearby( Key key, IScope defaultScope, boolean shallow ) {
 		throw new UnsupportedOperationException( "Unimplemented method 'scopeFindNearby'" );
 	}
 
+	/**
+	 * Register a UDF with the local context.
+	 *
+	 * @param udf The UDF to register
+	 */
 	public void registerUDF( UDF udf ) {
 		throw new UnsupportedOperationException( "This context cannot register a function" );
 	}
@@ -280,6 +335,20 @@ public class BaseBoxContext implements IBoxContext {
 	 */
 	public ScopeSearchResult scopeFindNearby( Key key, IScope defaultScope ) {
 		return scopeFindNearby( key, defaultScope, false );
+	}
+
+	/**
+	 * Get a scope from the context. If not found, the parent context is asked.
+	 * Search all known scopes
+	 *
+	 * @param name The name of the scope to get
+	 *
+	 * @return The requested scope
+	 *
+	 * @throws ScopeNotFoundException If the scope was not found in any context
+	 */
+	public IScope getScopeNearby( Key name ) throws ScopeNotFoundException {
+		return getScopeNearby( name, false );
 	}
 
 }

@@ -17,7 +17,6 @@
  */
 package ortus.boxlang.runtime.types;
 
-import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.scopes.Key;
 
 /**
@@ -36,5 +35,4 @@ public abstract class Lambda extends Function {
 		super( Key.of( "Lambda" ), arguments );
 	}
 
-	
 }

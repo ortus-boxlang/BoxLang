@@ -54,7 +54,7 @@ public class ClosureTest {
 		Argument[]	args		= new Argument[] {
 		    new Function.Argument( true, "String", firstName, "brad", "First Name" ),
 		    new Function.Argument( true, "String", lastName, "wood", "Last Name" ),
-		    new Function.Argument( false, "String", age, 43, null )
+		    new Function.Argument( false, "String", age, 43 )
 		};
 		Closure		Closure		= new SampleClosure( args, new ScriptingBoxContext(), "Brad" );
 		IScope		argscope	= Closure.createArgumentsScope();

@@ -129,7 +129,7 @@ public class LambdaBoxContextTest {
 
 		// which calls another function
 		Lambda		Lambda2		= new SampleLambda( new Argument[] {}, "Brad" );
-		IBoxContext	context2	= new LambdaBoxContext( parentContext, Lambda );
+		IBoxContext	context2	= new LambdaBoxContext( parentContext, Lambda2 );
 
 		assertThat( context2.findClosestFunction() ).isNotNull();
 		assertThat( context2.findClosestFunction().getName() ).isEqualTo( funcName );

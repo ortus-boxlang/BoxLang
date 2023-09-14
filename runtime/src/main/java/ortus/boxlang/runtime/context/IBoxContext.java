@@ -32,167 +32,182 @@ import ortus.boxlang.runtime.types.exceptions.ScopeNotFoundException;
  */
 public interface IBoxContext {
 
-    /**
-     * Get a scope from the context. If not found, the parent context is asked.
-     * Don't search for scopes which are nearby to an execution context
-     *
-     * @param name The name of the scope to get
-     *
-     * @return The requested scope
-     *
-     * @throws ScopeNotFoundException If the scope was not found in any context
-     */
-    public IScope getScope( Key name ) throws ScopeNotFoundException;
+	/**
+	 * Get a scope from the context. If not found, the parent context is asked.
+	 * Don't search for scopes which are nearby to an execution context
+	 *
+	 * @param name The name of the scope to get
+	 *
+	 * @return The requested scope
+	 *
+	 * @throws ScopeNotFoundException If the scope was not found in any context
+	 */
+	public IScope getScope( Key name ) throws ScopeNotFoundException;
 
-    /**
-     * Get a scope from the context. If not found, the parent context is asked.
-     * Search all known scopes
-     *
-     * @param name The name of the scope to get
-     *
-     * @return The requested scope
-     *
-     * @throws ScopeNotFoundException If the scope was not found in any context
-     */
-    public IScope getScopeNearby( Key name ) throws ScopeNotFoundException;
+	/**
+	 * Get a scope from the context. If not found, the parent context is asked.
+	 * Search all known scopes
+	 *
+	 * @param name The name of the scope to get
+	 *
+	 * @return The requested scope
+	 *
+	 * @throws ScopeNotFoundException If the scope was not found in any context
+	 */
+	public IScope getScopeNearby( Key name ) throws ScopeNotFoundException;
 
-    /**
-     * Try to get the requested key from an unknown scope
-     * Meaning it needs to search scopes in order according to it's context.
-     * Unlike scopeFindNearby(), this version only searches trancedent scopes like
-     * cgi or server which are never encapsulated like variables is inside a CFC.
-     *
-     * If defaultScope is null and the key can't be found, a KeyNotFoundException will be thrown
-     * If defaultScope is not null, it will return a record with the default scope and null value if the key is not found
-     *
-     * @param key The key to search for
-     *
-     * @return The value of the key if found
-     *
-     * @throws KeyNotFoundException If the key was not found in any scope
-     */
-    public ScopeSearchResult scopeFind( Key key, IScope defaultScope );
+	/**
+	 * Get a scope from the context. If not found, the parent context is asked.
+	 * Search all known scopes
+	 *
+	 * @param name    The name of the scope to get
+	 * @param shallow true, do not delegate to parent or default scope if not found
+	 *
+	 * @return The requested scope
+	 *
+	 * @throws ScopeNotFoundException If the scope was not found in any context
+	 */
+	public IScope getScopeNearby( Key name, boolean shallow ) throws ScopeNotFoundException;
 
-    /**
-     * Try to get the requested key from an unknown scope
-     * Meaning it needs to search scopes in order according to it's context.
-     * A nearby lookup is used for the closest context to the executing code
-     *
-     * If defaultScope is null and the key can't be found, a KeyNotFoundException will be thrown
-     * If defaultScope is not null, it will return a record with the default scope and null value if the key is not found
-     *
-     * @param key The key to search for
-     *
-     * @return The value of the key if found
-     *
-     * @throws KeyNotFoundException If the key was not found in any scope
-     */
-    public ScopeSearchResult scopeFindNearby( Key key, IScope defaultScope );
+	/**
+	 * Try to get the requested key from an unknown scope
+	 * Meaning it needs to search scopes in order according to it's context.
+	 * Unlike scopeFindNearby(), this version only searches trancedent scopes like
+	 * cgi or server which are never encapsulated like variables is inside a CFC.
+	 *
+	 * If defaultScope is null and the key can't be found, a KeyNotFoundException will be thrown
+	 * If defaultScope is not null, it will return a record with the default scope and null value if the key is not found
+	 *
+	 * @param key The key to search for
+	 *
+	 * @return The value of the key if found
+	 *
+	 * @throws KeyNotFoundException If the key was not found in any scope
+	 */
+	public ScopeSearchResult scopeFind( Key key, IScope defaultScope );
 
-    /**
-     * Try to get the requested key from an unkonwn scope but not delegating to parent or default missing keys
-     *
-     * @param key          The key to search for
-     * @param defaultScope The default scope to return if the key is not found
-     * @param shallow      true, do not delegate to parent or default scope if not found
-     *
-     * @return The result of the search. Null if performing a shallow search and nothing was fond
-     *
-     * @throws KeyNotFoundException If the key was not found in any scope
-     */
-    public ScopeSearchResult scopeFindNearby( Key key, IScope defaultScope, boolean shallow );
+	/**
+	 * Try to get the requested key from an unknown scope
+	 * Meaning it needs to search scopes in order according to it's context.
+	 * A nearby lookup is used for the closest context to the executing code
+	 *
+	 * If defaultScope is null and the key can't be found, a KeyNotFoundException will be thrown
+	 * If defaultScope is not null, it will return a record with the default scope and null value if the key is not found
+	 *
+	 * @param key The key to search for
+	 *
+	 * @return The value of the key if found
+	 *
+	 * @throws KeyNotFoundException If the key was not found in any scope
+	 */
+	public ScopeSearchResult scopeFindNearby( Key key, IScope defaultScope );
 
-    /**
-     * Invoke a function call such as foo() using positional args. Will check for a registered BIF first, then search known scopes for a UDF.
-     *
-     * @return Return value of the function call
-     */
-    public Object invokeFunction( Key name, Object[] positionalArguments );
+	/**
+	 * Try to get the requested key from an unkonwn scope but not delegating to parent or default missing keys
+	 *
+	 * @param key          The key to search for
+	 * @param defaultScope The default scope to return if the key is not found
+	 * @param shallow      true, do not delegate to parent or default scope if not found
+	 *
+	 * @return The result of the search. Null if performing a shallow search and nothing was fond
+	 *
+	 * @throws KeyNotFoundException If the key was not found in any scope
+	 */
+	public ScopeSearchResult scopeFindNearby( Key key, IScope defaultScope, boolean shallow );
 
-    /**
-     * Invoke a function call such as foo() using named args. Will check for a registered BIF first, then search known scopes for a UDF.
-     *
-     * @return Return value of the function call
-     */
-    public Object invokeFunction( Key name, Map<Key, Object> namedArguments );
+	/**
+	 * Invoke a function call such as foo() using positional args. Will check for a registered BIF first, then search known scopes for a UDF.
+	 *
+	 * @return Return value of the function call
+	 */
+	public Object invokeFunction( Key name, Object[] positionalArguments );
 
-    /**
-     * Register a UDF with the local context.
-     */
-    public void registerUDF( UDF udf );
+	/**
+	 * Invoke a function call such as foo() using named args. Will check for a registered BIF first, then search known scopes for a UDF.
+	 *
+	 * @return Return value of the function call
+	 */
+	public Object invokeFunction( Key name, Map<Key, Object> namedArguments );
 
-    /**
-     * Verifies if a parent context is attached to this context
-     *
-     * @return True if a parent context is attached to this context, else false
-     */
-    public Boolean hasParent();
+	/**
+	 * Register a UDF with the local context.
+	 *
+	 * @param udf The UDF to register
+	 */
+	public void registerUDF( UDF udf );
 
-    /**
-     * Returns the parent box context. Null if none.
-     *
-     * @return The parent box context. Null if none.
-     */
-    public IBoxContext getParent();
+	/**
+	 * Verifies if a parent context is attached to this context
+	 *
+	 * @return True if a parent context is attached to this context, else false
+	 */
+	public Boolean hasParent();
 
-    /**
-     * Finds the closest function call
-     *
-     * @return The Function instance
-     */
-    public Function findClosestFunction();
+	/**
+	 * Returns the parent box context. Null if none.
+	 *
+	 * @return The parent box context. Null if none.
+	 */
+	public IBoxContext getParent();
 
-    /**
-     * Push a template to the stack
-     *
-     * @param templatePath The template that this execution context is bound to
-     *
-     * @return IBoxContext
-     */
-    public IBoxContext pushTemplate( BaseTemplate template );
+	/**
+	 * Finds the closest function call
+	 *
+	 * @return The Function instance
+	 */
+	public Function findClosestFunction();
 
-    /**
-     * Pop a template from the stack
-     *
-     * @return The template that this execution context is bound to
-     */
-    public BaseTemplate popTemplate();
+	/**
+	 * Push a template to the stack
+	 *
+	 * @param templatePath The template that this execution context is bound to
+	 *
+	 * @return IBoxContext
+	 */
+	public IBoxContext pushTemplate( BaseTemplate template );
 
-    /**
-     * Has the execution context been bound to a template?
-     *
-     * @return True if bound, else false
-     */
-    public boolean hasTemplates();
+	/**
+	 * Pop a template from the stack
+	 *
+	 * @return The template that this execution context is bound to
+	 */
+	public BaseTemplate popTemplate();
 
-    /**
-     * Finds the closest template
-     *
-     * @return The template instance if found, null if this code is not called from a template
-     */
-    public BaseTemplate findClosestTemplate();
+	/**
+	 * Has the execution context been bound to a template?
+	 *
+	 * @return True if bound, else false
+	 */
+	public boolean hasTemplates();
 
-    /**
-     * Get the default variable assignment scope for this context
-     *
-     * @return The scope reference to use
-     */
-    public IScope getDefaultAssignmentScope();
+	/**
+	 * Finds the closest template
+	 *
+	 * @return The template instance if found, null if this code is not called from a template
+	 */
+	public BaseTemplate findClosestTemplate();
 
-    /**
-     * Get parent context for a function execution happening in this context
-     *
-     * @return The context to use
-     */
-    public IBoxContext getFunctionParentContext();
+	/**
+	 * Get the default variable assignment scope for this context
+	 *
+	 * @return The scope reference to use
+	 */
+	public IScope getDefaultAssignmentScope();
 
-    /**
-     * Represents the results of a successful scope hunting expedition.
-     *
-     * @param scope The scope which was found
-     * @param value The value of the key in the scope
-     */
-    public record ScopeSearchResult( IScope scope, Object value ) {
-        // The record automatically generates the constructor, getters, equals, hashCode, and toString methods.
-    }
+	/**
+	 * Get parent context for a function execution happening in this context
+	 *
+	 * @return The context to use
+	 */
+	public IBoxContext getFunctionParentContext();
+
+	/**
+	 * Represents the results of a successful scope hunting expedition.
+	 *
+	 * @param scope The scope which was found
+	 * @param value The value of the key in the scope
+	 */
+	public record ScopeSearchResult( IScope scope, Object value ) {
+		// The record automatically generates the constructor, getters, equals, hashCode, and toString methods.
+	}
 }

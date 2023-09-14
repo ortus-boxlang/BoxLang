@@ -72,20 +72,19 @@ public class ClosureBoxContextTest {
 		Key				declaringOnly				= Key.of( "declaringOnly" );
 		Key				declaringDeclaringOnly		= Key.of( "declaringDeclaringOnly" );
 
-		// The variable scope that the function "sees" is the same one from the parent template context
-		assertThat( variablesScope ).isEqualTo( parentContext.getScopeNearby( VariablesScope.name ) );
-
 		localScope.put( ambiguous, "local scope ambiguous" );
 		argumentsScope.put( ambiguous, "arguments scope ambiguous" );
-		variablesScope.put( ambiguous, "variables scope ambiguous" );
 		declaringContext.getScopeNearby( LocalScope.name ).put( ambiguous, "declaring scope ambiguous" );
 		declaringDeclaringContext.getScopeNearby( VariablesScope.name ).put( ambiguous, "declaring declaring scope ambiguous" );
 
 		localScope.put( localOnly, "local scope only" );
 		argumentsScope.put( argsOnly, "arguments scope only" );
-		variablesScope.put( variablesOnly, "variables scope only" );
+		variablesScope.put( variablesOnly, "declaring declaring variables scope only" );
 		declaringContext.getScopeNearby( LocalScope.name ).put( declaringOnly, "declaring scope only" );
 		declaringDeclaringContext.getScopeNearby( VariablesScope.name ).put( declaringDeclaringOnly, "declaring declaring scope only" );
+
+		// The variable scope that the function "sees" is the same one from the parent template context
+		assertThat( variablesScope ).isEqualTo( declaringDeclaringContext.getScopeNearby( VariablesScope.name ) );
 
 		// ambiguous finds local scope
 		assertThat( context.scopeFindNearby( ambiguous, null ).value() ).isEqualTo( "local scope ambiguous" );
@@ -93,7 +92,7 @@ public class ClosureBoxContextTest {
 		// local.ambiguous works
 		assertThat( context.getScopeNearby( LocalScope.name ).get( ambiguous ) ).isEqualTo( "local scope ambiguous" );
 		// variables.ambiguous works
-		assertThat( context.getScopeNearby( VariablesScope.name ).get( ambiguous ) ).isEqualTo( "variables scope ambiguous" );
+		assertThat( context.getScopeNearby( VariablesScope.name ).get( ambiguous ) ).isEqualTo( "declaring declaring scope ambiguous" );
 		// arguments.ambiguous works
 		assertThat( context.getScopeNearby( ArgumentsScope.name ).get( ambiguous ) ).isEqualTo( "arguments scope ambiguous" );
 
@@ -102,7 +101,7 @@ public class ClosureBoxContextTest {
 		// find var in arguments
 		assertThat( context.scopeFindNearby( argsOnly, null ).value() ).isEqualTo( "arguments scope only" );
 		// find var in variables
-		assertThat( context.scopeFindNearby( variablesOnly, null ).value() ).isEqualTo( "variables scope only" );
+		assertThat( context.scopeFindNearby( variablesOnly, null ).value() ).isEqualTo( "declaring declaring variables scope only" );
 		// find var in declaring scope
 		assertThat( context.scopeFindNearby( declaringOnly, null ).value() ).isEqualTo( "declaring scope only" );
 		// find var in declaring closure's declaring scope
@@ -142,7 +141,7 @@ public class ClosureBoxContextTest {
 
 		// which calls another function
 		Closure		closure2	= new SampleClosure( new Argument[] {}, declaringContext, "Brad" );
-		IBoxContext	context2	= new ClosureBoxContext( parentContext, closure );
+		IBoxContext	context2	= new ClosureBoxContext( parentContext, closure2 );
 
 		assertThat( context2.findClosestFunction() ).isNotNull();
 		assertThat( context2.findClosestFunction().getName() ).isEqualTo( funcName );
