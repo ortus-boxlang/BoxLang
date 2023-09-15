@@ -19,37 +19,37 @@ import ortus.boxlang.ast.Position;
 
 public class BoxComparisonOperation extends BoxExpr {
 
-    private final BoxExpr               left;
-    private final BoxExpr               right;
-    private final BoxComparisonOperator operator;
+	private final BoxExpr				left;
+	private final BoxExpr				right;
+	private final BoxComparisonOperator	operator;
 
-    /**
-     * Comparision
-     *
-     * @param left
-     * @param operator
-     * @param right
-     * @param position
-     * @param sourceText
-     */
-    public BoxComparisonOperation( BoxExpr left, BoxComparisonOperator operator, BoxExpr right, Position position, String sourceText ) {
-        super( position, sourceText );
-        this.left     = left;
-        this.right    = right;
-        this.operator = operator;
-        this.left.setParent( this );
-        this.right.setParent( this );
-    }
+	/**
+	 * Comparision
+	 *
+	 * @param left
+	 * @param operator
+	 * @param right
+	 * @param position
+	 * @param sourceText
+	 */
+	public BoxComparisonOperation( BoxExpr left, BoxComparisonOperator operator, BoxExpr right, Position position, String sourceText ) {
+		super( position, sourceText );
+		this.left		= left;
+		this.right		= right;
+		this.operator	= operator;
+		this.left.setParent( this );
+		this.right.setParent( this );
+	}
 
-    public BoxExpr getLeft() {
-        return left;
-    }
+	public BoxExpr getLeft() {
+		return left;
+	}
 
-    public BoxExpr getRight() {
-        return right;
-    }
+	public BoxExpr getRight() {
+		return right;
+	}
 
-    public BoxComparisonOperator getOperator() {
-        return operator;
-    }
+	public BoxComparisonOperator getOperator() {
+		return operator;
+	}
 }

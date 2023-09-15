@@ -15,10 +15,10 @@
 package ortus.boxlang.ast.expression;
 
 public enum BoxUnaryOperator {
-    Plus,
-    Minus,
-    PrePlusPlus,
-    PreMinusMinus,
-    PostPlusPlus,
-    PostMinusMinus,
+	Plus,
+	Minus,
+	PrePlusPlus,
+	PreMinusMinus,
+	PostPlusPlus,
+	PostMinusMinus,
 }

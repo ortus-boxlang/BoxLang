@@ -15,23 +15,23 @@ import java.util.Map;
 
 public class BoxParenthesisTransformer extends AbstractTransformer {
 
-    Logger logger = LoggerFactory.getLogger( BoxParenthesisTransformer.class );
+	Logger logger = LoggerFactory.getLogger( BoxParenthesisTransformer.class );
 
-    @Override
-    public Node transform( BoxNode node, TransformerContext context ) throws IllegalStateException {
-        BoxParenthesis      parenthesis = ( BoxParenthesis ) node;
-        Expression          expr        = ( Expression ) BoxLangTranspiler.transform( parenthesis.getExpression() );
-        String              side        = context == TransformerContext.NONE ? "" : "(" + context.toString() + ") ";
-        Map<String, String> values      = new HashMap<>() {
+	@Override
+	public Node transform( BoxNode node, TransformerContext context ) throws IllegalStateException {
+		BoxParenthesis		parenthesis	= ( BoxParenthesis ) node;
+		Expression			expr		= ( Expression ) BoxLangTranspiler.transform( parenthesis.getExpression() );
+		String				side		= context == TransformerContext.NONE ? "" : "(" + context.toString() + ") ";
+		Map<String, String>	values		= new HashMap<>() {
 
-                                            {
-                                                put( "expr", expr.toString() );
-                                            }
-                                        };
-        String              template    = "(${expr})";
-        Node                javaExpr    = parseExpression( template, values );
-        logger.info( side + node.getSourceText() + " -> " + javaExpr );
-        return javaExpr;
+											{
+												put( "expr", expr.toString() );
+											}
+										};
+		String				template	= "(${expr})";
+		Node				javaExpr	= parseExpression( template, values );
+		logger.info( side + node.getSourceText() + " -> " + javaExpr );
+		return javaExpr;
 
-    }
+	}
 }

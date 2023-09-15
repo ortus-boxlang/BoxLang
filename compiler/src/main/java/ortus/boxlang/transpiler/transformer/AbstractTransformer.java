@@ -38,116 +38,116 @@ import java.util.Map;
  */
 public abstract class AbstractTransformer implements Transformer {
 
-    protected static JavaParser             javaParser      = new JavaParser();
-    protected static BoxLangCrossReferencer crossReferencer = new BoxLangCrossReferencerDefault();
+	protected static JavaParser				javaParser		= new JavaParser();
+	protected static BoxLangCrossReferencer	crossReferencer	= new BoxLangCrossReferencerDefault();
 
-    @Override
-    public abstract Node transform( BoxNode node, TransformerContext context ) throws IllegalStateException;
+	@Override
+	public abstract Node transform( BoxNode node, TransformerContext context ) throws IllegalStateException;
 
-    public Node transform( BoxNode node ) throws IllegalStateException {
-        return this.transform( node, TransformerContext.NONE );
-    }
+	public Node transform( BoxNode node ) throws IllegalStateException {
+		return this.transform( node, TransformerContext.NONE );
+	}
 
-    /**
-     * Returns the Java Parser AST nodes for the given template
-     *
-     * @param template a string template with the expression to parse
-     * @param values   a map of values to be replaced in the template
-     *
-     * @return the Java Parser AST representation of the expression
-     */
-    protected Node parseExpression( String template, Map<String, String> values ) {
-        StringSubstitutor       sub    = new StringSubstitutor( values );
-        String                  code   = sub.replace( template );
-        ParseResult<Expression> result = javaParser.parseExpression( code );
-        if ( !result.isSuccessful() ) {
-            System.out.println( code );
-            throw new IllegalStateException( result.toString() );
-        }
-        return result.getResult().get();
-    }
+	/**
+	 * Returns the Java Parser AST nodes for the given template
+	 *
+	 * @param template a string template with the expression to parse
+	 * @param values   a map of values to be replaced in the template
+	 *
+	 * @return the Java Parser AST representation of the expression
+	 */
+	protected Node parseExpression( String template, Map<String, String> values ) {
+		StringSubstitutor		sub		= new StringSubstitutor( values );
+		String					code	= sub.replace( template );
+		ParseResult<Expression>	result	= javaParser.parseExpression( code );
+		if ( !result.isSuccessful() ) {
+			System.out.println( code );
+			throw new IllegalStateException( result.toString() );
+		}
+		return result.getResult().get();
+	}
 
-    /**
-     * Returns the Java Parser AST for the given template
-     *
-     * @param template a string template with the statement to parse
-     * @param values   a map of values to be replaced in the template
-     *
-     * @return the Java Parser AST representation of the statement
-     */
-    protected Node parseStatement( String template, Map<String, String> values ) {
-        StringSubstitutor      sub    = new StringSubstitutor( values );
-        String                 code   = sub.replace( template );
-        ParseResult<Statement> result = javaParser.parseStatement( code );
-        if ( !result.isSuccessful() ) {
-            throw new IllegalStateException( result.toString() );
-        }
-        return result.getResult().get();
-    }
+	/**
+	 * Returns the Java Parser AST for the given template
+	 *
+	 * @param template a string template with the statement to parse
+	 * @param values   a map of values to be replaced in the template
+	 *
+	 * @return the Java Parser AST representation of the statement
+	 */
+	protected Node parseStatement( String template, Map<String, String> values ) {
+		StringSubstitutor		sub		= new StringSubstitutor( values );
+		String					code	= sub.replace( template );
+		ParseResult<Statement>	result	= javaParser.parseStatement( code );
+		if ( !result.isSuccessful() ) {
+			throw new IllegalStateException( result.toString() );
+		}
+		return result.getResult().get();
+	}
 
-    /**
-     * Returns the appropriate template code to access the scope
-     *
-     * @param expr    expression to be solved
-     * @param context transformation context LEFT or RIGHT indicating the side of the expression
-     *
-     * @return
-     */
-    protected Node resolveScope( Node expr, TransformerContext context ) {
-        if ( expr instanceof NameExpr ) {
-            String              id       = expr.toString();
-            String              template = switch ( context ) {
-                                             case RIGHT -> "context.scopeFindNearby(Key.of(\"${id}\")).value()";
-                                             default -> "context.scopeFindNearby(Key.of(\"${id}\"))";
-                                         }
+	/**
+	 * Returns the appropriate template code to access the scope
+	 *
+	 * @param expr    expression to be solved
+	 * @param context transformation context LEFT or RIGHT indicating the side of the expression
+	 *
+	 * @return
+	 */
+	protected Node resolveScope( Node expr, TransformerContext context ) {
+		if ( expr instanceof NameExpr ) {
+			String				id			= expr.toString();
+			String				template	= switch ( context ) {
+												case RIGHT -> "context.scopeFindNearby(Key.of(\"${id}\")).value()";
+												default -> "context.scopeFindNearby(Key.of(\"${id}\"))";
+											}
 
-            ;
-            Map<String, String> values   = new HashMap<>() {
+			;
+			Map<String, String>	values		= new HashMap<>() {
 
-                                             {
-                                                 put( "id", id.toString() );
-                                             }
-                                         };
-            return parseExpression( template, values );
+												{
+													put( "id", id.toString() );
+												}
+											};
+			return parseExpression( template, values );
 
-        }
-        return expr;
-    }
+		}
+		return expr;
+	}
 
-    /**
-     * Detects if a statement requires a BooleanCaster
-     *
-     * @param condition the expression to evaluate
-     *
-     * @return true if the BooleanCaster is required
-     */
-    protected boolean requiresBooleanCaster( BoxExpr condition ) {
-        if ( condition instanceof BoxBinaryOperation ) {
-            BoxBinaryOperation op = ( BoxBinaryOperation ) condition;
-            if ( op.getOperator() == BoxBinaryOperator.Or )
-                return false;
-            if ( op.getOperator() == BoxBinaryOperator.And )
-                return false;
-        }
-        if ( condition instanceof BoxNegateOperation ) {
-            return false;
-        }
-        return true;
-    }
+	/**
+	 * Detects if a statement requires a BooleanCaster
+	 *
+	 * @param condition the expression to evaluate
+	 *
+	 * @return true if the BooleanCaster is required
+	 */
+	protected boolean requiresBooleanCaster( BoxExpr condition ) {
+		if ( condition instanceof BoxBinaryOperation ) {
+			BoxBinaryOperation op = ( BoxBinaryOperation ) condition;
+			if ( op.getOperator() == BoxBinaryOperator.Or )
+				return false;
+			if ( op.getOperator() == BoxBinaryOperator.And )
+				return false;
+		}
+		if ( condition instanceof BoxNegateOperation ) {
+			return false;
+		}
+		return true;
+	}
 
-    /**
-     * Add cross-reference index entry
-     *
-     * @param javaNode Java Parser Node
-     * @param boxNode  BoxLang Node
-     *
-     * @return the Java Parser Node
-     */
-    protected Node addIndex( Node javaNode, BoxNode boxNode ) {
-        if ( crossReferencer != null ) {
-            crossReferencer.storeReference( javaNode, boxNode );
-        }
-        return javaNode;
-    }
+	/**
+	 * Add cross-reference index entry
+	 *
+	 * @param javaNode Java Parser Node
+	 * @param boxNode  BoxLang Node
+	 *
+	 * @return the Java Parser Node
+	 */
+	protected Node addIndex( Node javaNode, BoxNode boxNode ) {
+		if ( crossReferencer != null ) {
+			crossReferencer.storeReference( javaNode, boxNode );
+		}
+		return javaNode;
+	}
 
 }

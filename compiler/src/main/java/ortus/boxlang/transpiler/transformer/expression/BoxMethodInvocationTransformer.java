@@ -18,46 +18,46 @@ import ortus.boxlang.transpiler.transformer.TransformerContext;
 
 public class BoxMethodInvocationTransformer extends AbstractTransformer {
 
-    Logger logger = LoggerFactory.getLogger( BoxScopeTransformer.class );
+	Logger logger = LoggerFactory.getLogger( BoxScopeTransformer.class );
 
-    @Override
-    public Node transform( BoxNode node, TransformerContext context ) throws IllegalStateException {
-        BoxMethodInvocation invocation = ( BoxMethodInvocation ) node;
-        String              side       = context == TransformerContext.NONE ? "" : "(" + context.toString() + ") ";
+	@Override
+	public Node transform( BoxNode node, TransformerContext context ) throws IllegalStateException {
+		BoxMethodInvocation	invocation	= ( BoxMethodInvocation ) node;
+		String				side		= context == TransformerContext.NONE ? "" : "(" + context.toString() + ") ";
 
-        Expression          expr       = ( Expression ) BoxLangTranspiler.transform( invocation.getObj(),
-            TransformerContext.RIGHT );
+		Expression			expr		= ( Expression ) BoxLangTranspiler.transform( invocation.getObj(),
+		    TransformerContext.RIGHT );
 
-        String              args       = invocation.getArguments().stream()
-            .map( it -> BoxLangTranspiler.transform( it ).toString() )
-            .collect( Collectors.joining( ", " ) );
+		String				args		= invocation.getArguments().stream()
+		    .map( it -> BoxLangTranspiler.transform( it ).toString() )
+		    .collect( Collectors.joining( ", " ) );
 
-        Map<String, String> values     = new HashMap<>();
+		Map<String, String>	values		= new HashMap<>();
 
-        String              target     = BoxBuiltinRegistry.getInstance().getRegistry().get( invocation.getName().getName() );
+		String				target		= BoxBuiltinRegistry.getInstance().getRegistry().get( invocation.getName().getName() );
 
-        values.put( "expr", expr.toString() );
-        values.put( "args", args );
+		values.put( "expr", expr.toString() );
+		values.put( "args", args );
 
-        String template;
+		String template;
 
-        if ( target != null ) {
-            template = "${expr}." + target;
-        } else {
-            values.put( "method", invocation.getName().getName().toString() );
-            template = """
-                       Referencer.getAndInvoke(
-                         context,
-                         ${expr},
-                         Key.of( "${method}" ),
-                         new Object[] { ${args} },
-                         false
-                       )
-                       """;
-        }
-        Node javaExpr = parseExpression( template, values );
-        logger.info( side + node.getSourceText() + " -> " + javaExpr );
-        addIndex( javaExpr, node );
-        return javaExpr;
-    }
+		if ( target != null ) {
+			template = "${expr}." + target;
+		} else {
+			values.put( "method", invocation.getName().getName().toString() );
+			template = """
+			           Referencer.getAndInvoke(
+			             context,
+			             ${expr},
+			             Key.of( "${method}" ),
+			             new Object[] { ${args} },
+			             false
+			           )
+			           """;
+		}
+		Node javaExpr = parseExpression( template, values );
+		logger.info( side + node.getSourceText() + " -> " + javaExpr );
+		addIndex( javaExpr, node );
+		return javaExpr;
+	}
 }

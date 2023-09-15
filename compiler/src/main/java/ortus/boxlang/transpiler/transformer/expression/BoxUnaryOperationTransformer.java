@@ -35,36 +35,36 @@ import java.util.Map;
  */
 public class BoxUnaryOperationTransformer extends AbstractTransformer {
 
-    Logger logger = LoggerFactory.getLogger( BoxUnaryOperationTransformer.class );
+	Logger logger = LoggerFactory.getLogger( BoxUnaryOperationTransformer.class );
 
-    /**
-     * Transform a unary operator
-     *
-     * @param node    a BoxUnaryOperator instance
-     * @param context transformation context
-     *
-     * @return Generates a Method invocation to the Runtime Increment/Increment
-     *
-     * @throws IllegalStateException
-     */
-    @Override
-    public Node transform( BoxNode node, TransformerContext context ) throws IllegalStateException {
-        BoxUnaryOperation   operation = ( BoxUnaryOperation ) node;
-        Map<String, String> values    = new HashMap<>();
+	/**
+	 * Transform a unary operator
+	 *
+	 * @param node    a BoxUnaryOperator instance
+	 * @param context transformation context
+	 *
+	 * @return Generates a Method invocation to the Runtime Increment/Increment
+	 *
+	 * @throws IllegalStateException
+	 */
+	@Override
+	public Node transform( BoxNode node, TransformerContext context ) throws IllegalStateException {
+		BoxUnaryOperation	operation	= ( BoxUnaryOperation ) node;
+		Map<String, String>	values		= new HashMap<>();
 
-        Expression          expr      = ( Expression ) BoxLangTranspiler.transform( operation.getExpr() );
-        values.put( "expr", expr.toString() );
-        String template = switch ( operation.getOperator() ) {
-                            case PrePlusPlus -> "Increment.invokePre(${expr})";
-                            case PostPlusPlus -> "Increment.invokePost(${expr})";
-                            case PreMinusMinus -> "Decrement.invokePre(${expr})";
-                            case PostMinusMinus -> "Decrement.invokePost(${expr})";
-                            case Minus -> "Negate.invoke(${expr})";
-                            default -> "";
-                        };
-        Node   javaExpr = parseExpression( template, values );
-        logger.info( node.getSourceText() + " -> " + javaExpr );
-        addIndex( javaExpr, node );
-        return javaExpr;
-    }
+		Expression			expr		= ( Expression ) BoxLangTranspiler.transform( operation.getExpr() );
+		values.put( "expr", expr.toString() );
+		String	template	= switch ( operation.getOperator() ) {
+								case PrePlusPlus -> "Increment.invokePre(${expr})";
+								case PostPlusPlus -> "Increment.invokePost(${expr})";
+								case PreMinusMinus -> "Decrement.invokePre(${expr})";
+								case PostMinusMinus -> "Decrement.invokePost(${expr})";
+								case Minus -> "Negate.invoke(${expr})";
+								default -> "";
+							};
+		Node	javaExpr	= parseExpression( template, values );
+		logger.info( node.getSourceText() + " -> " + javaExpr );
+		addIndex( javaExpr, node );
+		return javaExpr;
+	}
 }

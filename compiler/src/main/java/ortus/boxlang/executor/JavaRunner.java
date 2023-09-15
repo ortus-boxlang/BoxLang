@@ -34,141 +34,141 @@ import java.util.*;
  */
 public class JavaRunner {
 
-    final static String fqn      = "ortus.boxlang.test.TestClass";
-    String              template = """
-                                                          	package ortus.boxlang.test;
+	final static String	fqn			= "ortus.boxlang.test.TestClass";
+	String				template	= """
+	                                                         	package ortus.boxlang.test;
 
-                                                          	import ortus.boxlang.runtime.BoxRuntime;
-                                                          	import ortus.boxlang.runtime.context.IBoxContext;
+	                                                         	import ortus.boxlang.runtime.BoxRuntime;
+	                                                         	import ortus.boxlang.runtime.context.IBoxContext;
 
-                                                          	// BoxLang Auto Imports
-                                                          	import ortus.boxlang.runtime.dynamic.BaseTemplate;
-                                                          	import ortus.boxlang.runtime.dynamic.Referencer;
-                                                          	import ortus.boxlang.runtime.interop.DynamicObject;
-                                                          	import ortus.boxlang.runtime.loader.ClassLocator;
-                                                          	import ortus.boxlang.runtime.operators.*;
-                                                          	import ortus.boxlang.runtime.scopes.Key;
-                                                          	import ortus.boxlang.runtime.scopes.IScope;
-                                                          	import ortus.boxlang.runtime.dynamic.casters.*;
+	                                                         	// BoxLang Auto Imports
+	                                                         	import ortus.boxlang.runtime.dynamic.BaseTemplate;
+	                                                         	import ortus.boxlang.runtime.dynamic.Referencer;
+	                                                         	import ortus.boxlang.runtime.interop.DynamicObject;
+	                                                         	import ortus.boxlang.runtime.loader.ClassLocator;
+	                                                         	import ortus.boxlang.runtime.operators.*;
+	                                                         	import ortus.boxlang.runtime.scopes.Key;
+	                                                         	import ortus.boxlang.runtime.scopes.IScope;
+	                                                         	import ortus.boxlang.runtime.dynamic.casters.*;
 
-                                                          	import ortus.boxlang.executor.BoxJavaClass;
+	                                                         	import ortus.boxlang.executor.BoxJavaClass;
 
-                                                          	public class TestClass extends BaseTemplate {
+	                                                         	public class TestClass extends BaseTemplate {
 
-                                                          		private static TestClass instance;
+	                                                         		private static TestClass instance;
 
-                                                          		public TestClass() {
-                                                          		}
+	                                                         		public TestClass() {
+	                                                         		}
 
-                                                          		public static synchronized TestClass getInstance() {
-                                                          			if ( instance == null ) {
-                                                          				instance = new TestClass();
-                                                          			}
-                                                          			return instance;
-                                                          		}
-                                                          		/**
-                                                          		 * Each template must implement the invoke() method which executes the template
-                                                          		 *
-                                                          		 * @param context The execution context requesting the execution
-                                                          		 */
-                                                          		public void invoke( IBoxContext context ) throws Throwable {
-                                                          			// Reference to the variables scope
-                                                          			IScope variablesScope = context.getScopeNearby( Key.of( "variables" ) );
-                                                          			ClassLocator JavaLoader = ClassLocator.getInstance();
-                                                          			${javaCode};
-                                   String result = variablesScope.toString();
-                                   System.out.println(result);
-                                                          		}
+	                                                         		public static synchronized TestClass getInstance() {
+	                                                         			if ( instance == null ) {
+	                                                         				instance = new TestClass();
+	                                                         			}
+	                                                         			return instance;
+	                                                         		}
+	                                                         		/**
+	                                                         		 * Each template must implement the invoke() method which executes the template
+	                                                         		 *
+	                                                         		 * @param context The execution context requesting the execution
+	                                                         		 */
+	                                                         		public void invoke( IBoxContext context ) throws Throwable {
+	                                                         			// Reference to the variables scope
+	                                                         			IScope variablesScope = context.getScopeNearby( Key.of( "variables" ) );
+	                                                         			ClassLocator JavaLoader = ClassLocator.getInstance();
+	                                                         			${javaCode};
+	                                  String result = variablesScope.toString();
+	                                  System.out.println(result);
+	                                                         		}
 
-                                                          		public static void main(String[] args) {
-                                                            			BoxRuntime rt = BoxRuntime.getInstance();
+	                                                         		public static void main(String[] args) {
+	                                                           			BoxRuntime rt = BoxRuntime.getInstance();
 
-                                                          			try {
-                                                          				rt.executeTemplate( TestClass.getInstance() );
-                                                          			} catch ( Throwable e ) {
-                                                          				e.printStackTrace();
-                                                          				System.exit( 1 );
-                                                          			}
+	                                                         			try {
+	                                                         				rt.executeTemplate( TestClass.getInstance() );
+	                                                         			} catch ( Throwable e ) {
+	                                                         				e.printStackTrace();
+	                                                         				System.exit( 1 );
+	                                                         			}
 
-                                                          			// Bye bye! Ciao Bella!
-                                                          			rt.shutdown();
+	                                                         			// Bye bye! Ciao Bella!
+	                                                         			rt.shutdown();
 
 
-                                                          		}
-                                                          	}
-                                                          """;
+	                                                         		}
+	                                                         	}
+	                                                         """;
 
-    Logger              logger   = LoggerFactory.getLogger( JavaRunner.class );
+	Logger				logger		= LoggerFactory.getLogger( JavaRunner.class );
 
-    public void runExpression( String javaCode ) {
+	public void runExpression( String javaCode ) {
 
-        try {
-            Map<String, String>                 values      = new HashMap<>() {
+		try {
+			Map<String, String>					values		= new HashMap<>() {
 
-                                                                {
-                                                                    put( "javaCode", javaCode );
-                                                                }
-                                                            };
+																{
+																	put( "javaCode", javaCode );
+																}
+															};
 
-            StringSubstitutor                   sub         = new StringSubstitutor( values );
-            String                              javaClass   = sub.replace( template );
+			StringSubstitutor					sub			= new StringSubstitutor( values );
+			String								javaClass	= sub.replace( template );
 
-            JavaCompiler                        compiler    = ToolProvider.getSystemJavaCompiler();
-            DiagnosticCollector<JavaFileObject> diagnostics = new DiagnosticCollector<>();
-            JavaMemoryManager                   manager     = new JavaMemoryManager( compiler.getStandardFileManager( null, null, null ) );
+			JavaCompiler						compiler	= ToolProvider.getSystemJavaCompiler();
+			DiagnosticCollector<JavaFileObject>	diagnostics	= new DiagnosticCollector<>();
+			JavaMemoryManager					manager		= new JavaMemoryManager( compiler.getStandardFileManager( null, null, null ) );
 
-            String                              javaRT      = System.getProperty( "java.class.path" );
-            String                              boxRT       = "/home/madytyoo/IdeaProjects/boxlang/runtime/build/classes/java/main";
-            String                              compRT      = "/home/madytyoo/IdeaProjects/boxlang1/compiler/build/classes/java/main";
+			String								javaRT		= System.getProperty( "java.class.path" );
+			String								boxRT		= "/home/madytyoo/IdeaProjects/boxlang/runtime/build/classes/java/main";
+			String								compRT		= "/home/madytyoo/IdeaProjects/boxlang1/compiler/build/classes/java/main";
 
-            List<JavaFileObject>                sourceFiles = Collections.singletonList( new JavaSourceString( fqn, javaClass ) );
-            List<String>                        options     = new ArrayList<>() {
+			List<JavaFileObject>				sourceFiles	= Collections.singletonList( new JavaSourceString( fqn, javaClass ) );
+			List<String>						options		= new ArrayList<>() {
 
-                                                                {
-                                                                    add( "-g" );
-                                                                    add( "-cp" );
-                                                                    add( javaRT + File.pathSeparator + boxRT + File.pathSeparator + File.pathSeparator
-                                                                        + compRT );
+																{
+																	add( "-g" );
+																	add( "-cp" );
+																	add( javaRT + File.pathSeparator + boxRT + File.pathSeparator + File.pathSeparator
+																	    + compRT );
 
-                                                                }
-                                                            };
-            JavaCompiler.CompilationTask        task        = compiler.getTask( null, manager, diagnostics, options, null, sourceFiles );
-            boolean                             result      = task.call();
+																}
+															};
+			JavaCompiler.CompilationTask		task		= compiler.getTask( null, manager, diagnostics, options, null, sourceFiles );
+			boolean								result		= task.call();
 
-            if ( !result ) {
-                diagnostics.getDiagnostics()
-                    .forEach( d -> logger.error( String.valueOf( d ) ) );
-                throw new RuntimeException( "Compiler Error" );
-            } else {
-                // ClassLoader classLoader = manager.getClassLoader( null );
-                // Class<?> clazz = ( ( JavaDynamicClassLoader ) classLoader ).define( fqn );
-                // BoxJavaClass instanceOfClass = ( BoxJavaClass ) clazz.newInstance();
+			if ( !result ) {
+				diagnostics.getDiagnostics()
+				    .forEach( d -> logger.error( String.valueOf( d ) ) );
+				throw new RuntimeException( "Compiler Error" );
+			} else {
+				// ClassLoader classLoader = manager.getClassLoader( null );
+				// Class<?> clazz = ( ( JavaDynamicClassLoader ) classLoader ).define( fqn );
+				// BoxJavaClass instanceOfClass = ( BoxJavaClass ) clazz.newInstance();
 
-                JavaDynamicClassLoader classLoader = new JavaDynamicClassLoader(
-                    new URL[] {
-                        new File( boxRT ).toURI().toURL()
-                    },
-                    this.getClass().getClassLoader(),
-                    manager );
+				JavaDynamicClassLoader	classLoader	= new JavaDynamicClassLoader(
+				    new URL[] {
+				        new File( boxRT ).toURI().toURL()
+				    },
+				    this.getClass().getClassLoader(),
+				    manager );
 
-                // JavaDynamicClassLoader classLoader = (JavaDynamicClassLoader) manager.getClassLoader( null );
-                // classLoader.defineClass(fqn);
-                Class                  cls         = Class.forName( fqn, true, classLoader );
-                Method                 meth        = cls.getMethod( "main", String[].class );
-                String[]               params      = null; // init params accordingly
-                meth.invoke( null, ( Object ) params );
+				// JavaDynamicClassLoader classLoader = (JavaDynamicClassLoader) manager.getClassLoader( null );
+				// classLoader.defineClass(fqn);
+				Class					cls			= Class.forName( fqn, true, classLoader );
+				Method					meth		= cls.getMethod( "main", String[].class );
+				String[]				params		= null; // init params accordingly
+				meth.invoke( null, ( Object ) params );
 
-            }
-        } catch ( ClassNotFoundException e ) {
-            throw new RuntimeException( e );
-        } catch ( IllegalAccessException e ) {
-            throw new RuntimeException( e );
-        } catch ( InvocationTargetException e ) {
-            throw new RuntimeException( e );
-        } catch ( NoSuchMethodException e ) {
-            throw new RuntimeException( e );
-        } catch ( MalformedURLException e ) {
-            throw new RuntimeException( e );
-        }
-    }
+			}
+		} catch ( ClassNotFoundException e ) {
+			throw new RuntimeException( e );
+		} catch ( IllegalAccessException e ) {
+			throw new RuntimeException( e );
+		} catch ( InvocationTargetException e ) {
+			throw new RuntimeException( e );
+		} catch ( NoSuchMethodException e ) {
+			throw new RuntimeException( e );
+		} catch ( MalformedURLException e ) {
+			throw new RuntimeException( e );
+		}
+	}
 }

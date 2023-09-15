@@ -23,8 +23,8 @@ import ortus.boxlang.transpiler.transformer.TransformerContext;
 
 public class BoxContinueTransformer extends AbstractTransformer {
 
-    @Override
-    public Node transform( BoxNode node, TransformerContext context ) throws IllegalStateException {
-        return addIndex( new ContinueStmt(), node );
-    }
+	@Override
+	public Node transform( BoxNode node, TransformerContext context ) throws IllegalStateException {
+		return addIndex( new ContinueStmt(), node );
+	}
 }

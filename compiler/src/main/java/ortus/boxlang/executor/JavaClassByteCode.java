@@ -25,19 +25,19 @@ import java.net.URI;
  */
 public class JavaClassByteCode extends SimpleJavaFileObject {
 
-    protected ByteArrayOutputStream bos = new ByteArrayOutputStream();
+	protected ByteArrayOutputStream bos = new ByteArrayOutputStream();
 
-    public JavaClassByteCode( String name, Kind kind ) {
-        super( URI.create( "string:///" + name.replace( '.', '/' )
-            + kind.extension ), kind );
-    }
+	public JavaClassByteCode( String name, Kind kind ) {
+		super( URI.create( "string:///" + name.replace( '.', '/' )
+		    + kind.extension ), kind );
+	}
 
-    public byte[] getBytes() {
-        return bos.toByteArray();
-    }
+	public byte[] getBytes() {
+		return bos.toByteArray();
+	}
 
-    @Override
-    public OutputStream openOutputStream() {
-        return bos;
-    }
+	@Override
+	public OutputStream openOutputStream() {
+		return bos;
+	}
 }

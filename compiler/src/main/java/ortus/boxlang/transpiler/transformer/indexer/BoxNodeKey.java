@@ -22,6 +22,6 @@ import ortus.boxlang.ast.BoxNode;
  */
 public class BoxNodeKey extends DataKey<BoxNode> {
 
-    public static final DataKey<BoxNode> BOX_NODE_DATA_KEY = new DataKey<BoxNode>() {
-    };
+	public static final DataKey<BoxNode> BOX_NODE_DATA_KEY = new DataKey<BoxNode>() {
+	};
 }

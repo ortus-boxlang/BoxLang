@@ -23,27 +23,27 @@ import ortus.boxlang.ast.Position;
  */
 public class BoxDecimalLiteral extends BoxExpr {
 
-    private final String value;
+	private final String value;
 
-    @Override
-    public boolean isLiteral() {
-        return true;
-    }
+	@Override
+	public boolean isLiteral() {
+		return true;
+	}
 
-    public String getValue() {
-        return value;
-    }
+	public String getValue() {
+		return value;
+	}
 
-    /**
-     * Creates the AST node
-     *
-     * @param value      decimal value
-     * @param position   position of the statement in the source code
-     * @param sourceText source code that originated the Node
-     */
-    public BoxDecimalLiteral( String value, Position position, String sourceText ) {
-        super( position, sourceText );
-        this.value = value;
-    }
+	/**
+	 * Creates the AST node
+	 *
+	 * @param value      decimal value
+	 * @param position   position of the statement in the source code
+	 * @param sourceText source code that originated the Node
+	 */
+	public BoxDecimalLiteral( String value, Position position, String sourceText ) {
+		super( position, sourceText );
+		this.value = value;
+	}
 
 }

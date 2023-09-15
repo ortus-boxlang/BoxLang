@@ -24,33 +24,33 @@ import java.io.File;
  */
 public class SourceFile extends Source {
 
-    private final File file;
+	private final File file;
 
-    /**
-     * Create a source for a given file
-     *
-     * @param file source File
-     */
-    public SourceFile( File file ) {
-        this.file = file;
-    }
+	/**
+	 * Create a source for a given file
+	 *
+	 * @param file source File
+	 */
+	public SourceFile( File file ) {
+		this.file = file;
+	}
 
-    /**
-     * Returns the File associate to the source
-     *
-     * @return a File instance
-     */
-    public File getFile() {
-        return file;
-    }
+	/**
+	 * Returns the File associate to the source
+	 *
+	 * @return a File instance
+	 */
+	public File getFile() {
+		return file;
+	}
 
-    /**
-     * String representation of a file source
-     * 
-     * @return the absolute path of the File
-     */
-    @Override
-    public String toString() {
-        return file.getAbsolutePath();
-    }
+	/**
+	 * String representation of a file source
+	 * 
+	 * @return the absolute path of the File
+	 */
+	@Override
+	public String toString() {
+		return file.getAbsolutePath();
+	}
 }

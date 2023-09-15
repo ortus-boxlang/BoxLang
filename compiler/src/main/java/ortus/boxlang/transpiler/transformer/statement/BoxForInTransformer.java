@@ -35,49 +35,49 @@ import java.util.Map;
  */
 public class BoxForInTransformer extends AbstractTransformer {
 
-    Logger logger = LoggerFactory.getLogger( BoxForIndexTransformer.class );
+	Logger logger = LoggerFactory.getLogger( BoxForIndexTransformer.class );
 
-    /**
-     * Transform a collection for statement
-     *
-     * @param node    a BoxForIn instance
-     * @param context transformation context
-     *
-     * @return a Java Parser Block statement with an iterator and a while loop
-     *
-     * @throws IllegalStateException
-     */
-    @Override
-    public Node transform( BoxNode node, TransformerContext context ) throws IllegalStateException {
-        BoxForIn            boxFor     = ( BoxForIn ) node;
-        Node                variable   = BoxLangTranspiler.transform( boxFor.getVariable() );
-        Node                collection = BoxLangTranspiler.transform( boxFor.getExpression() );
+	/**
+	 * Transform a collection for statement
+	 *
+	 * @param node    a BoxForIn instance
+	 * @param context transformation context
+	 *
+	 * @return a Java Parser Block statement with an iterator and a while loop
+	 *
+	 * @throws IllegalStateException
+	 */
+	@Override
+	public Node transform( BoxNode node, TransformerContext context ) throws IllegalStateException {
+		BoxForIn			boxFor		= ( BoxForIn ) node;
+		Node				variable	= BoxLangTranspiler.transform( boxFor.getVariable() );
+		Node				collection	= BoxLangTranspiler.transform( boxFor.getExpression() );
 
-        BlockStmt           stmt       = new BlockStmt();
-        Map<String, String> values     = new HashMap<>() {
+		BlockStmt			stmt		= new BlockStmt();
+		Map<String, String>	values		= new HashMap<>() {
 
-                                           {
-                                               put( "variable", variable.toString() );
-                                               put( "collection", collection.toString() );
-                                           }
-                                       };
+											{
+												put( "variable", variable.toString() );
+												put( "collection", collection.toString() );
+											}
+										};
 
-        String              template1  = """
-                                         	Iterator ${variable} = CollectionCaster.cast( ${collection} ).iterator();
-                                         """;
-        String              template2  = """
-                                         	while( ${variable}.hasNext() ) {
-                                         		${collection}.put( Key.of( "${variable}" ), ${variable}.next() );
-                                         	}
-                                         """;
-        WhileStmt           whileStmt  = ( WhileStmt ) parseStatement( template2, values );
-        stmt.addStatement( ( Statement ) parseStatement( template1, values ) );
-        boxFor.getBody().forEach( it -> {
-            whileStmt.getBody().asBlockStmt().addStatement( ( Statement ) BoxLangTranspiler.transform( it ) );
-        } );
-        stmt.addStatement( whileStmt );
-        logger.info( node.getSourceText() + " -> " + stmt );
-        addIndex( stmt, node );
-        return stmt;
-    }
+		String				template1	= """
+		                                  	Iterator ${variable} = CollectionCaster.cast( ${collection} ).iterator();
+		                                  """;
+		String				template2	= """
+		                                  	while( ${variable}.hasNext() ) {
+		                                  		${collection}.put( Key.of( "${variable}" ), ${variable}.next() );
+		                                  	}
+		                                  """;
+		WhileStmt			whileStmt	= ( WhileStmt ) parseStatement( template2, values );
+		stmt.addStatement( ( Statement ) parseStatement( template1, values ) );
+		boxFor.getBody().forEach( it -> {
+			whileStmt.getBody().asBlockStmt().addStatement( ( Statement ) BoxLangTranspiler.transform( it ) );
+		} );
+		stmt.addStatement( whileStmt );
+		logger.info( node.getSourceText() + " -> " + stmt );
+		addIndex( stmt, node );
+		return stmt;
+	}
 }

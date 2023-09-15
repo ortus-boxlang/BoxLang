@@ -28,22 +28,22 @@ import ortus.boxlang.transpiler.transformer.TransformerContext;
  */
 public class BoxBooleanLiteralTransformer extends AbstractTransformer {
 
-    Logger logger = LoggerFactory.getLogger( BoxBinaryOperationTransformer.class );
+	Logger logger = LoggerFactory.getLogger( BoxBinaryOperationTransformer.class );
 
-    /**
-     * Transform BoxBooleanLiteral argument
-     *
-     * @param node    a BoxBooleanLiteral instance
-     * @param context transformation context
-     *
-     * @return generates a Java Parser boolean Literal
-     */
-    @Override
-    public Node transform( BoxNode node, TransformerContext context ) throws IllegalStateException {
-        BoxBooleanLiteral  literal  = ( BoxBooleanLiteral ) node;
-        BooleanLiteralExpr javaExpr = new BooleanLiteralExpr( "true".equalsIgnoreCase( literal.getValue() ) );
-        logger.info( node.getSourceText() + " -> " + javaExpr );
-        addIndex( javaExpr, node );
-        return javaExpr;
-    }
+	/**
+	 * Transform BoxBooleanLiteral argument
+	 *
+	 * @param node    a BoxBooleanLiteral instance
+	 * @param context transformation context
+	 *
+	 * @return generates a Java Parser boolean Literal
+	 */
+	@Override
+	public Node transform( BoxNode node, TransformerContext context ) throws IllegalStateException {
+		BoxBooleanLiteral	literal		= ( BoxBooleanLiteral ) node;
+		BooleanLiteralExpr	javaExpr	= new BooleanLiteralExpr( "true".equalsIgnoreCase( literal.getValue() ) );
+		logger.info( node.getSourceText() + " -> " + javaExpr );
+		addIndex( javaExpr, node );
+		return javaExpr;
+	}
 }

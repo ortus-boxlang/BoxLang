@@ -33,82 +33,82 @@ import static ortus.boxlang.transpiler.transformer.indexer.BoxNodeKey.BOX_NODE_D
  */
 public class IndexPrettyPrinterVisitor extends DefaultPrettyPrinterVisitor {
 
-    public IndexPrettyPrinterVisitor( PrinterConfiguration configuration ) {
-        super( configuration );
-    }
+	public IndexPrettyPrinterVisitor( PrinterConfiguration configuration ) {
+		super( configuration );
+	}
 
-    /**
-     * Detects if a Node has an BOX_NODE_DATA_KEY with a BoxNode
-     * 
-     * @param node a Java Parser Node
-     * 
-     * @return the associated BoxNode (if any) or null
-     */
-    private Object hasBoxNodeKey( Node node ) {
+	/**
+	 * Detects if a Node has an BOX_NODE_DATA_KEY with a BoxNode
+	 * 
+	 * @param node a Java Parser Node
+	 * 
+	 * @return the associated BoxNode (if any) or null
+	 */
+	private Object hasBoxNodeKey( Node node ) {
 
-        if ( !node.getDataKeys().isEmpty() ) {
-            for ( Object key : node.getDataKeys() ) {
-                if ( key.equals( BOX_NODE_DATA_KEY ) ) {
-                    return node.getData( BOX_NODE_DATA_KEY );
-                }
+		if ( !node.getDataKeys().isEmpty() ) {
+			for ( Object key : node.getDataKeys() ) {
+				if ( key.equals( BOX_NODE_DATA_KEY ) ) {
+					return node.getData( BOX_NODE_DATA_KEY );
+				}
 
-            }
-        }
-        return null;
-    }
+			}
+		}
+		return null;
+	}
 
-    /**
-     * Visits an ExpressionStmt Node
-     * 
-     * @param node a Java Parser ExpressionStmt
-     * @param arg  void
-     */
-    @Override
-    public void visit( ExpressionStmt node, Void arg ) {
-        BoxNode boxNode = ( BoxNode ) hasBoxNodeKey( node );
-        if ( boxNode != null ) {
-            Position start = printer.getCursor();
-            super.visit( node, arg );
-            Position end = printer.getCursor();
-        } else {
-            super.visit( node, arg );
-        }
-    }
+	/**
+	 * Visits an ExpressionStmt Node
+	 * 
+	 * @param node a Java Parser ExpressionStmt
+	 * @param arg  void
+	 */
+	@Override
+	public void visit( ExpressionStmt node, Void arg ) {
+		BoxNode boxNode = ( BoxNode ) hasBoxNodeKey( node );
+		if ( boxNode != null ) {
+			Position start = printer.getCursor();
+			super.visit( node, arg );
+			Position end = printer.getCursor();
+		} else {
+			super.visit( node, arg );
+		}
+	}
 
-    /**
-     * Visits an IfStmt Node
-     * 
-     * @param node a Java Parser IfStmt
-     * @param arg  void
-     */
-    @Override
-    public void visit( IfStmt node, Void arg ) {
-        BoxNode boxNode = ( BoxNode ) hasBoxNodeKey( node );
-        if ( boxNode != null ) {
-            Position start = printer.getCursor();
-            super.visit( node, arg );
-            Position end = printer.getCursor();
-        } else {
-            super.visit( node, arg );
-        }
-    }
+	/**
+	 * Visits an IfStmt Node
+	 * 
+	 * @param node a Java Parser IfStmt
+	 * @param arg  void
+	 */
+	@Override
+	public void visit( IfStmt node, Void arg ) {
+		BoxNode boxNode = ( BoxNode ) hasBoxNodeKey( node );
+		if ( boxNode != null ) {
+			Position start = printer.getCursor();
+			super.visit( node, arg );
+			Position end = printer.getCursor();
+		} else {
+			super.visit( node, arg );
+		}
+	}
 
-    /**
-     * Visits an DoStmt Node
-     * 
-     * @param node a Java Parser DoStmt
-     * @param arg  void
-     */
-    @Override
-    public void visit( DoStmt node, Void arg ) {
-        BoxNode boxNode = ( BoxNode ) hasBoxNodeKey( node );
-        if ( boxNode != null ) {
-            Position start = printer.getCursor();
-            super.visit( node, arg );
-            Position end = printer.getCursor();
-        } else {
-            super.visit( node, arg );
-        }
-    }
+	/**
+	 * Visits an DoStmt Node
+	 * 
+	 * @param node a Java Parser DoStmt
+	 * @param arg  void
+	 */
+	@Override
+	public void visit( DoStmt node, Void arg ) {
+		BoxNode boxNode = ( BoxNode ) hasBoxNodeKey( node );
+		if ( boxNode != null ) {
+			Position start = printer.getCursor();
+			super.visit( node, arg );
+			Position end = printer.getCursor();
+		} else {
+			super.visit( node, arg );
+		}
+	}
 
 }

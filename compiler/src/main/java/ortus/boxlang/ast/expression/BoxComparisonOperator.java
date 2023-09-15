@@ -15,12 +15,12 @@
 package ortus.boxlang.ast.expression;
 
 public enum BoxComparisonOperator {
-    Equal,
-    GreaterThan,
-    GreaterThanEquals,
-    LessThan,
-    LesslThanEqual,
-    NotEqual,
-    Contains,
-    TEqual
+	Equal,
+	GreaterThan,
+	GreaterThanEquals,
+	LessThan,
+	LesslThanEqual,
+	NotEqual,
+	Contains,
+	TEqual
 }

@@ -19,15 +19,15 @@ import ortus.boxlang.ast.Position;
 
 public class BoxParenthesis extends BoxExpr {
 
-    private final BoxExpr expression;
+	private final BoxExpr expression;
 
-    public BoxExpr getExpression() {
-        return expression;
-    }
+	public BoxExpr getExpression() {
+		return expression;
+	}
 
-    public BoxParenthesis( BoxExpr expression, Position position, String sourceText ) {
-        super( position, sourceText );
-        this.expression = expression;
-        this.expression.setParent( this );
-    }
+	public BoxParenthesis( BoxExpr expression, Position position, String sourceText ) {
+		super( position, sourceText );
+		this.expression = expression;
+		this.expression.setParent( this );
+	}
 }

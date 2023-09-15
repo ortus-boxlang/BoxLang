@@ -19,22 +19,22 @@ import ortus.boxlang.ast.Position;
 
 public class BoxUnaryOperation extends BoxExpr {
 
-    private final BoxExpr          expr;
-    private final BoxUnaryOperator operator;
+	private final BoxExpr			expr;
+	private final BoxUnaryOperator	operator;
 
-    public BoxUnaryOperation( BoxExpr expr, BoxUnaryOperator operator, Position position, String sourceText ) {
-        super( position, sourceText );
-        this.expr = expr;
-        this.expr.setParent( this );
-        this.operator = operator;
-    }
+	public BoxUnaryOperation( BoxExpr expr, BoxUnaryOperator operator, Position position, String sourceText ) {
+		super( position, sourceText );
+		this.expr = expr;
+		this.expr.setParent( this );
+		this.operator = operator;
+	}
 
-    public BoxExpr getExpr() {
-        return expr;
-    }
+	public BoxExpr getExpr() {
+		return expr;
+	}
 
-    public BoxUnaryOperator getOperator() {
-        return operator;
-    }
+	public BoxUnaryOperator getOperator() {
+		return operator;
+	}
 
 }

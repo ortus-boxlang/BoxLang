@@ -27,25 +27,25 @@ import java.util.Map;
  */
 public class JavaMemoryManager extends ForwardingJavaFileManager<JavaFileManager> {
 
-    private final Map<String, JavaClassByteCode> compiledClasses;
+	private final Map<String, JavaClassByteCode> compiledClasses;
 
-    public JavaMemoryManager( StandardJavaFileManager standardFileManager ) {
-        super( standardFileManager );
-        this.compiledClasses = new Hashtable<>();
-    }
+	public JavaMemoryManager( StandardJavaFileManager standardFileManager ) {
+		super( standardFileManager );
+		this.compiledClasses = new Hashtable<>();
+	}
 
-    @Override
-    public JavaFileObject getJavaFileForOutput( Location location, String className, JavaFileObject.Kind kind,
-        FileObject sibling ) {
+	@Override
+	public JavaFileObject getJavaFileForOutput( Location location, String className, JavaFileObject.Kind kind,
+	    FileObject sibling ) {
 
-        JavaClassByteCode classAsBytes = new JavaClassByteCode(
-            className, kind );
-        compiledClasses.put( className, classAsBytes );
+		JavaClassByteCode classAsBytes = new JavaClassByteCode(
+		    className, kind );
+		compiledClasses.put( className, classAsBytes );
 
-        return classAsBytes;
-    }
+		return classAsBytes;
+	}
 
-    public Map<String, JavaClassByteCode> getBytesMap() {
-        return compiledClasses;
-    }
+	public Map<String, JavaClassByteCode> getBytesMap() {
+		return compiledClasses;
+	}
 }

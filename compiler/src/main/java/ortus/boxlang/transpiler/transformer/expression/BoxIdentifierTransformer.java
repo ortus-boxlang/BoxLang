@@ -31,27 +31,27 @@ import java.util.Map;
  */
 public class BoxIdentifierTransformer extends AbstractTransformer {
 
-    Logger logger = LoggerFactory.getLogger( BoxScopeTransformer.class );
+	Logger logger = LoggerFactory.getLogger( BoxScopeTransformer.class );
 
-    @Override
-    public Node transform( BoxNode node, TransformerContext context ) throws IllegalStateException {
-        BoxIdentifier       identifier = ( BoxIdentifier ) node;
-        String              side       = context == TransformerContext.NONE ? "" : "(" + context.toString() + ") ";
-        Map<String, String> values     = new HashMap<>() {
+	@Override
+	public Node transform( BoxNode node, TransformerContext context ) throws IllegalStateException {
+		BoxIdentifier		identifier	= ( BoxIdentifier ) node;
+		String				side		= context == TransformerContext.NONE ? "" : "(" + context.toString() + ") ";
+		Map<String, String>	values		= new HashMap<>() {
 
-                                           {
-                                               put( "identifier", identifier.getName() );
-                                           }
-                                       };
+											{
+												put( "identifier", identifier.getName() );
+											}
+										};
 
-        String              template   = switch ( context ) {
-                                           case DEREFERENCING -> "Key.of( \"${identifier}\" )";
-                                           default -> "${identifier}";
-                                       };
+		String				template	= switch ( context ) {
+											case DEREFERENCING -> "Key.of( \"${identifier}\" )";
+											default -> "${identifier}";
+										};
 
-        Node                javaExpr   = parseExpression( template, values );
-        logger.info( side + node.getSourceText() + " -> " + javaExpr );
-        return javaExpr;
+		Node				javaExpr	= parseExpression( template, values );
+		logger.info( side + node.getSourceText() + " -> " + javaExpr );
+		return javaExpr;
 
-    }
+	}
 }

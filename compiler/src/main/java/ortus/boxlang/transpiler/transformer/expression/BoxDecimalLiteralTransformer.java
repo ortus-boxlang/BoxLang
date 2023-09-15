@@ -30,22 +30,22 @@ import ortus.boxlang.transpiler.transformer.TransformerContext;
  */
 public class BoxDecimalLiteralTransformer extends AbstractTransformer {
 
-    Logger logger = LoggerFactory.getLogger( BoxDecimalLiteralTransformer.class );
+	Logger logger = LoggerFactory.getLogger( BoxDecimalLiteralTransformer.class );
 
-    /**
-     * Transform BoxDecimalLiteral argument
-     *
-     * @param node    a BoxDecimalLiteral instance
-     * @param context transformation context
-     *
-     * @return generates a Java Parser boolean Literal
-     */
-    @Override
-    public Node transform( BoxNode node, TransformerContext context ) throws IllegalStateException {
-        BoxDecimalLiteral literal  = ( BoxDecimalLiteral ) node;
-        DoubleLiteralExpr javaExpr = new DoubleLiteralExpr( literal.getValue() );
-        logger.info( node.getSourceText() + " -> " + javaExpr );
-        addIndex( javaExpr, node );
-        return javaExpr;
-    }
+	/**
+	 * Transform BoxDecimalLiteral argument
+	 *
+	 * @param node    a BoxDecimalLiteral instance
+	 * @param context transformation context
+	 *
+	 * @return generates a Java Parser boolean Literal
+	 */
+	@Override
+	public Node transform( BoxNode node, TransformerContext context ) throws IllegalStateException {
+		BoxDecimalLiteral	literal		= ( BoxDecimalLiteral ) node;
+		DoubleLiteralExpr	javaExpr	= new DoubleLiteralExpr( literal.getValue() );
+		logger.info( node.getSourceText() + " -> " + javaExpr );
+		addIndex( javaExpr, node );
+		return javaExpr;
+	}
 }

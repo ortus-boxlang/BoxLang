@@ -26,13 +26,13 @@ import java.util.List;
  */
 public class BoxBreak extends BoxStatement {
 
-    /**
-     * Creates the AST node
-     *
-     * @param position   position of the statement in the source code
-     * @param sourceText source code that originated the Node
-     */
-    public BoxBreak( Position position, String sourceText ) {
-        super( position, sourceText );
-    }
+	/**
+	 * Creates the AST node
+	 *
+	 * @param position   position of the statement in the source code
+	 * @param sourceText source code that originated the Node
+	 */
+	public BoxBreak( Position position, String sourceText ) {
+		super( position, sourceText );
+	}
 }

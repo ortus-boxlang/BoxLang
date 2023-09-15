@@ -22,7 +22,7 @@ import ortus.boxlang.ast.Position;
  */
 public abstract class BoxAccess extends BoxExpr {
 
-    public BoxAccess( Position position, String sourceText ) {
-        super( position, sourceText );
-    }
+	public BoxAccess( Position position, String sourceText ) {
+		super( position, sourceText );
+	}
 }

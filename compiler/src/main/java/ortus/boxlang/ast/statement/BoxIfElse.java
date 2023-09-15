@@ -27,38 +27,38 @@ import java.util.List;
  */
 public class BoxIfElse extends BoxStatement {
 
-    private final BoxExpr            condition;
-    private final List<BoxStatement> thenBody;
-    private final List<BoxStatement> elseBody;
+	private final BoxExpr				condition;
+	private final List<BoxStatement>	thenBody;
+	private final List<BoxStatement>	elseBody;
 
-    /**
-     * Creates the AST node
-     *
-     * @param condition  expression representing the condition to test
-     * @param thenBody   list of the statements to execute when the condition is true
-     * @param elseBody   list of the statements foe the else, empty if the else body is not present
-     * @param position   position of the statement in the source code
-     * @param sourceText source code that originated the Node
-     */
-    public BoxIfElse( BoxExpr condition, List<BoxStatement> thenBody, List<BoxStatement> elseBody, Position position, String sourceText ) {
-        super( position, sourceText );
-        this.condition = condition;
-        this.condition.setParent( this );
-        this.thenBody = Collections.unmodifiableList( thenBody );
-        this.elseBody = Collections.unmodifiableList( elseBody );
-        this.thenBody.forEach( arg -> arg.setParent( this ) );
-        this.elseBody.forEach( arg -> arg.setParent( this ) );
-    }
+	/**
+	 * Creates the AST node
+	 *
+	 * @param condition  expression representing the condition to test
+	 * @param thenBody   list of the statements to execute when the condition is true
+	 * @param elseBody   list of the statements foe the else, empty if the else body is not present
+	 * @param position   position of the statement in the source code
+	 * @param sourceText source code that originated the Node
+	 */
+	public BoxIfElse( BoxExpr condition, List<BoxStatement> thenBody, List<BoxStatement> elseBody, Position position, String sourceText ) {
+		super( position, sourceText );
+		this.condition = condition;
+		this.condition.setParent( this );
+		this.thenBody	= Collections.unmodifiableList( thenBody );
+		this.elseBody	= Collections.unmodifiableList( elseBody );
+		this.thenBody.forEach( arg -> arg.setParent( this ) );
+		this.elseBody.forEach( arg -> arg.setParent( this ) );
+	}
 
-    public BoxExpr getCondition() {
-        return condition;
-    }
+	public BoxExpr getCondition() {
+		return condition;
+	}
 
-    public List<BoxStatement> getThenBody() {
-        return thenBody;
-    }
+	public List<BoxStatement> getThenBody() {
+		return thenBody;
+	}
 
-    public List<BoxStatement> getElseBody() {
-        return elseBody;
-    }
+	public List<BoxStatement> getElseBody() {
+		return elseBody;
+	}
 }

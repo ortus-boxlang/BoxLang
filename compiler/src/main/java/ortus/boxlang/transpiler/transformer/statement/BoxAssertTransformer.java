@@ -33,34 +33,34 @@ import java.util.Map;
  */
 public class BoxAssertTransformer extends AbstractTransformer {
 
-    Logger logger = LoggerFactory.getLogger( BoxAssertTransformer.class );
+	Logger logger = LoggerFactory.getLogger( BoxAssertTransformer.class );
 
-    /**
-     * Transform an assert statement
-     *
-     * @param node    a BoxAssert instance
-     * @param context transformation context
-     *
-     * @return Generates a Method invocation to the Runtime Assert
-     *
-     * @throws IllegalStateException
-     */
-    @Override
-    public Node transform( BoxNode node, TransformerContext context ) throws IllegalStateException {
-        BoxAssert           boxAssert = ( BoxAssert ) node;
-        Expression          expr      = ( Expression ) BoxLangTranspiler.transform( boxAssert.getExpression(), TransformerContext.RIGHT );
-        Map<String, String> values    = new HashMap<>() {
+	/**
+	 * Transform an assert statement
+	 *
+	 * @param node    a BoxAssert instance
+	 * @param context transformation context
+	 *
+	 * @return Generates a Method invocation to the Runtime Assert
+	 *
+	 * @throws IllegalStateException
+	 */
+	@Override
+	public Node transform( BoxNode node, TransformerContext context ) throws IllegalStateException {
+		BoxAssert			boxAssert	= ( BoxAssert ) node;
+		Expression			expr		= ( Expression ) BoxLangTranspiler.transform( boxAssert.getExpression(), TransformerContext.RIGHT );
+		Map<String, String>	values		= new HashMap<>() {
 
-                                          {
-                                              put( "expr", expr.toString() );
+											{
+												put( "expr", expr.toString() );
 
-                                          }
-                                      };
-        String              template  = "Assert.invoke(${expr});";
-        Node                javaStmt  = parseStatement( template, values );
-        logger.info( node.getSourceText() + " -> " + javaStmt );
-        addIndex( javaStmt, node );
-        return javaStmt;
+											}
+										};
+		String				template	= "Assert.invoke(${expr});";
+		Node				javaStmt	= parseStatement( template, values );
+		logger.info( node.getSourceText() + " -> " + javaStmt );
+		addIndex( javaStmt, node );
+		return javaStmt;
 
-    }
+	}
 }

@@ -4,28 +4,28 @@ import java.util.HashMap;
 
 public class BoxBuiltinRegistry {
 
-    private static BoxBuiltinRegistry     instance;
+	private static BoxBuiltinRegistry		instance;
 
-    private final HashMap<String, String> registry;
+	private final HashMap<String, String>	registry;
 
-    private BoxBuiltinRegistry() {
-        this.registry = new HashMap<>() {
+	private BoxBuiltinRegistry() {
+		this.registry = new HashMap<>() {
 
-            {
-                put( "init", "invokeConstructor( new Object[] { ${args} }  )" );
-                put( "createobject", "JavaLoader.load( context, ${arg1} )" );
-            }
-        };
-    }
+			{
+				put( "init", "invokeConstructor( new Object[] { ${args} }  )" );
+				put( "createobject", "JavaLoader.load( context, ${arg1} )" );
+			}
+		};
+	}
 
-    public static synchronized BoxBuiltinRegistry getInstance() {
-        if ( instance == null ) {
-            instance = new BoxBuiltinRegistry();
-        }
-        return instance;
-    }
+	public static synchronized BoxBuiltinRegistry getInstance() {
+		if ( instance == null ) {
+			instance = new BoxBuiltinRegistry();
+		}
+		return instance;
+	}
 
-    public HashMap<String, String> getRegistry() {
-        return registry;
-    }
+	public HashMap<String, String> getRegistry() {
+		return registry;
+	}
 }

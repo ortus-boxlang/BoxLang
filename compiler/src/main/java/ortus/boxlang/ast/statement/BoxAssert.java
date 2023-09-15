@@ -9,22 +9,22 @@ import ortus.boxlang.ast.Position;
  */
 public class BoxAssert extends BoxStatement {
 
-    private final BoxExpr expression;
+	private final BoxExpr expression;
 
-    /**
-     * Creates the AST node
-     *
-     * @param expression argument expression to assert
-     * @param position   position of the statement in the source code
-     * @param sourceText source code that originated the Node
-     */
-    public BoxAssert( BoxExpr expression, Position position, String sourceText ) {
-        super( position, sourceText );
-        this.expression = expression;
-        this.expression.setParent( this );
-    }
+	/**
+	 * Creates the AST node
+	 *
+	 * @param expression argument expression to assert
+	 * @param position   position of the statement in the source code
+	 * @param sourceText source code that originated the Node
+	 */
+	public BoxAssert( BoxExpr expression, Position position, String sourceText ) {
+		super( position, sourceText );
+		this.expression = expression;
+		this.expression.setParent( this );
+	}
 
-    public BoxExpr getExpression() {
-        return expression;
-    }
+	public BoxExpr getExpression() {
+		return expression;
+	}
 }

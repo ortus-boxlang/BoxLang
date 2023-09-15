@@ -23,49 +23,49 @@ package ortus.boxlang.ast;
  */
 public class Issue {
 
-    private final String   message;
-    private final Position position;
+	private final String	message;
+	private final Position	position;
 
-    /**
-     * Creates a parsing error message
-     *
-     * @param message  error message
-     * @param position position within the source code
-     */
-    public Issue( String message, Position position ) {
-        this.message  = message;
-        this.position = position;
-    }
+	/**
+	 * Creates a parsing error message
+	 *
+	 * @param message  error message
+	 * @param position position within the source code
+	 */
+	public Issue( String message, Position position ) {
+		this.message	= message;
+		this.position	= position;
+	}
 
-    public String getMessage() {
-        return message;
-    }
+	public String getMessage() {
+		return message;
+	}
 
-    public Position getPosition() {
-        return position;
-    }
+	public Position getPosition() {
+		return position;
+	}
 
-    /**
-     * Returns the string representation of an error message.
-     * Ii includes the position and the error message
-     * If the error has been generated parsing a file, the message includes the full
-     * path of the file.
-     *
-     * @return the (file path) position and error message
-     *
-     * @see Position
-     */
-    @Override
-    public String toString() {
-        StringBuilder sb = new StringBuilder();
-        if ( this.position.getSource() != null ) {
-            sb.append( position.getSource() );
-            sb.append( ":" );
-        }
-        sb.append( position.getStart().getLine() );
-        sb.append( " - " );
-        sb.append( this.message );
+	/**
+	 * Returns the string representation of an error message.
+	 * Ii includes the position and the error message
+	 * If the error has been generated parsing a file, the message includes the full
+	 * path of the file.
+	 *
+	 * @return the (file path) position and error message
+	 *
+	 * @see Position
+	 */
+	@Override
+	public String toString() {
+		StringBuilder sb = new StringBuilder();
+		if ( this.position.getSource() != null ) {
+			sb.append( position.getSource() );
+			sb.append( ":" );
+		}
+		sb.append( position.getStart().getLine() );
+		sb.append( " - " );
+		sb.append( this.message );
 
-        return sb.toString();
-    }
+		return sb.toString();
+	}
 }

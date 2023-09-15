@@ -29,53 +29,53 @@ import java.util.Map;
 
 public class BoxFunctionInvocationTransformer extends AbstractTransformer {
 
-    Logger logger = LoggerFactory.getLogger( BoxFunctionInvocationTransformer.class );
+	Logger logger = LoggerFactory.getLogger( BoxFunctionInvocationTransformer.class );
 
-    public BoxFunctionInvocationTransformer() {
+	public BoxFunctionInvocationTransformer() {
 
-    }
+	}
 
-    @Override
-    public Node transform( BoxNode node, TransformerContext context ) throws IllegalStateException {
+	@Override
+	public Node transform( BoxNode node, TransformerContext context ) throws IllegalStateException {
 
-        BoxFunctionInvocation function = ( BoxFunctionInvocation ) node;
-        String                side     = context == TransformerContext.NONE ? "" : "(" + context.toString() + ") ";
-        logger.info( side + node.getSourceText() );
+		BoxFunctionInvocation	function	= ( BoxFunctionInvocation ) node;
+		String					side		= context == TransformerContext.NONE ? "" : "(" + context.toString() + ") ";
+		logger.info( side + node.getSourceText() );
 
-        Map<String, String> values = new HashMap<>() {
+		Map<String, String> values = new HashMap<>() {
 
-            {
-                put( "name", function.getName().getName() );
-            }
-        };
-        for ( int i = 0; i < function.getArguments().size(); i++ ) {
-            Expression expr = ( Expression ) BoxLangTranspiler.transform( function.getArguments().get( i ) );
-            values.put( "arg" + i, expr.toString() );
-        }
-        String template = getTemplate( function );
-        Node   javaExpr = parseExpression( template, values );
-        logger.info( side + node.getSourceText() + " -> " + javaExpr );
-        addIndex( javaExpr, node );
-        return javaExpr;
-    }
+			{
+				put( "name", function.getName().getName() );
+			}
+		};
+		for ( int i = 0; i < function.getArguments().size(); i++ ) {
+			Expression expr = ( Expression ) BoxLangTranspiler.transform( function.getArguments().get( i ) );
+			values.put( "arg" + i, expr.toString() );
+		}
+		String	template	= getTemplate( function );
+		Node	javaExpr	= parseExpression( template, values );
+		logger.info( side + node.getSourceText() + " -> " + javaExpr );
+		addIndex( javaExpr, node );
+		return javaExpr;
+	}
 
-    private String getTemplate( BoxFunctionInvocation function ) {
+	private String getTemplate( BoxFunctionInvocation function ) {
 
-        String target = BoxBuiltinRegistry.getInstance().getRegistry().get( function.getName().getName().toLowerCase() );
-        ;
-        if ( target != null )
-            return target;
-        StringBuilder sb = new StringBuilder( "context.invokeFunction( Key.of( \"${name}\" )" );
+		String target = BoxBuiltinRegistry.getInstance().getRegistry().get( function.getName().getName().toLowerCase() );
+		;
+		if ( target != null )
+			return target;
+		StringBuilder sb = new StringBuilder( "context.invokeFunction( Key.of( \"${name}\" )" );
 
-        sb.append( ", new Object[] { " );
-        for ( int i = 0; i < function.getArguments().size(); i++ ) {
-            sb.append( "${" ).append( "arg" ).append( i ).append( "}" );
-            if ( i < function.getArguments().size() - 1 ) {
-                sb.append( "," );
-            }
-        }
-        sb.append( "}" );
-        sb.append( ")" );
-        return sb.toString();
-    }
+		sb.append( ", new Object[] { " );
+		for ( int i = 0; i < function.getArguments().size(); i++ ) {
+			sb.append( "${" ).append( "arg" ).append( i ).append( "}" );
+			if ( i < function.getArguments().size() - 1 ) {
+				sb.append( "," );
+			}
+		}
+		sb.append( "}" );
+		sb.append( ")" );
+		return sb.toString();
+	}
 }

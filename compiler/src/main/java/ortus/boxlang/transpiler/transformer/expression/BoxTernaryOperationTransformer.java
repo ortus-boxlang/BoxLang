@@ -13,24 +13,24 @@ import java.util.Map;
 
 public class BoxTernaryOperationTransformer extends AbstractTransformer {
 
-    @Override
-    public Node transform( BoxNode node, TransformerContext context ) throws IllegalStateException {
-        BoxTernaryOperation operation = ( BoxTernaryOperation ) node;
-        Expression          condition = ( Expression ) BoxLangTranspiler.transform( operation.getCondition() );
-        Expression          whenTrue  = ( Expression ) BoxLangTranspiler.transform( operation.getWhenTrue() );
-        Expression          whenFalse = ( Expression ) BoxLangTranspiler.transform( operation.getWhenFalse() );
+	@Override
+	public Node transform( BoxNode node, TransformerContext context ) throws IllegalStateException {
+		BoxTernaryOperation	operation	= ( BoxTernaryOperation ) node;
+		Expression			condition	= ( Expression ) BoxLangTranspiler.transform( operation.getCondition() );
+		Expression			whenTrue	= ( Expression ) BoxLangTranspiler.transform( operation.getWhenTrue() );
+		Expression			whenFalse	= ( Expression ) BoxLangTranspiler.transform( operation.getWhenFalse() );
 
-        Map<String, String> values    = new HashMap<>() {
+		Map<String, String>	values		= new HashMap<>() {
 
-                                          {
-                                              put( "condition", condition.toString() );
-                                              put( "whenTrue", whenTrue.toString() );
-                                              put( "whenFalse", whenFalse.toString() );
-                                          }
-                                      };
-        String              template  = "Ternary.invoke(${condition},${whenTrue},${whenFalse})";
-        ;
+											{
+												put( "condition", condition.toString() );
+												put( "whenTrue", whenTrue.toString() );
+												put( "whenFalse", whenFalse.toString() );
+											}
+										};
+		String				template	= "Ternary.invoke(${condition},${whenTrue},${whenFalse})";
+		;
 
-        return parseExpression( template, values );
-    }
+		return parseExpression( template, values );
+	}
 }

@@ -27,38 +27,38 @@ import java.util.List;
  */
 public class BoxForIn extends BoxStatement {
 
-    private final BoxExpr            variable;
-    private final BoxExpr            expression;
-    private final List<BoxStatement> body;
+	private final BoxExpr				variable;
+	private final BoxExpr				expression;
+	private final List<BoxStatement>	body;
 
-    /**
-     * Creates the AST node
-     *
-     * @param variable   for loop variable
-     * @param expression for loop collection
-     * @param body       list of the statement in the body of the loop
-     * @param position   position of the statement in the source code
-     * @param sourceText source code that originated the Node
-     */
-    public BoxForIn( BoxExpr variable, BoxExpr expression, List<BoxStatement> body, Position position, String sourceText ) {
-        super( position, sourceText );
-        this.variable = variable;
-        this.variable.setParent( this );
-        this.expression = expression;
-        this.expression.setParent( this );
-        this.body = Collections.unmodifiableList( body );
-        this.body.forEach( arg -> arg.setParent( this ) );
-    }
+	/**
+	 * Creates the AST node
+	 *
+	 * @param variable   for loop variable
+	 * @param expression for loop collection
+	 * @param body       list of the statement in the body of the loop
+	 * @param position   position of the statement in the source code
+	 * @param sourceText source code that originated the Node
+	 */
+	public BoxForIn( BoxExpr variable, BoxExpr expression, List<BoxStatement> body, Position position, String sourceText ) {
+		super( position, sourceText );
+		this.variable = variable;
+		this.variable.setParent( this );
+		this.expression = expression;
+		this.expression.setParent( this );
+		this.body = Collections.unmodifiableList( body );
+		this.body.forEach( arg -> arg.setParent( this ) );
+	}
 
-    public BoxExpr getVariable() {
-        return variable;
-    }
+	public BoxExpr getVariable() {
+		return variable;
+	}
 
-    public BoxExpr getExpression() {
-        return expression;
-    }
+	public BoxExpr getExpression() {
+		return expression;
+	}
 
-    public List<BoxStatement> getBody() {
-        return body;
-    }
+	public List<BoxStatement> getBody() {
+		return body;
+	}
 }

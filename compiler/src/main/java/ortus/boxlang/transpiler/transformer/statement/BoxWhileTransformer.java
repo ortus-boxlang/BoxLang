@@ -36,29 +36,29 @@ import java.util.Map;
 
 public class BoxWhileTransformer extends AbstractTransformer {
 
-    Logger logger = LoggerFactory.getLogger( BoxParenthesisTransformer.class );
+	Logger logger = LoggerFactory.getLogger( BoxParenthesisTransformer.class );
 
-    @Override
-    public Node transform( BoxNode node, TransformerContext context ) throws IllegalStateException {
-        BoxWhile   boxWhile  = ( BoxWhile ) node;
-        Expression condition = ( Expression ) BoxLangTranspiler.transform( boxWhile.getCondition(), TransformerContext.RIGHT );
+	@Override
+	public Node transform( BoxNode node, TransformerContext context ) throws IllegalStateException {
+		BoxWhile	boxWhile	= ( BoxWhile ) node;
+		Expression	condition	= ( Expression ) BoxLangTranspiler.transform( boxWhile.getCondition(), TransformerContext.RIGHT );
 
-        String     template  = "while(  ${condition}  ) {}";
-        if ( requiresBooleanCaster( boxWhile.getCondition() ) ) {
-            template = "while( BooleanCaster.cast( ${condition} ) ) {}";
-        }
-        Map<String, String> values    = new HashMap<>() {
+		String		template	= "while(  ${condition}  ) {}";
+		if ( requiresBooleanCaster( boxWhile.getCondition() ) ) {
+			template = "while( BooleanCaster.cast( ${condition} ) ) {}";
+		}
+		Map<String, String>	values		= new HashMap<>() {
 
-                                          {
-                                              put( "condition", condition.toString() );
-                                          }
-                                      };
-        WhileStmt           javaWhile = ( WhileStmt ) parseStatement( template, values );
-        BlockStmt           body      = new BlockStmt();
-        for ( BoxStatement statement : boxWhile.getBody() ) {
-            body.getStatements().add( ( Statement ) BoxLangTranspiler.transform( statement ) );
-        }
-        javaWhile.setBody( body );
-        return javaWhile;
-    }
+											{
+												put( "condition", condition.toString() );
+											}
+										};
+		WhileStmt			javaWhile	= ( WhileStmt ) parseStatement( template, values );
+		BlockStmt			body		= new BlockStmt();
+		for ( BoxStatement statement : boxWhile.getBody() ) {
+			body.getStatements().add( ( Statement ) BoxLangTranspiler.transform( statement ) );
+		}
+		javaWhile.setBody( body );
+		return javaWhile;
+	}
 }

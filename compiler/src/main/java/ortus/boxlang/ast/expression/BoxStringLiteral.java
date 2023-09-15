@@ -23,30 +23,30 @@ import ortus.boxlang.ast.Position;
  */
 public class BoxStringLiteral extends BoxExpr {
 
-    private final String value;
+	private final String value;
 
-    public String getValue() {
-        return value;
-    }
+	public String getValue() {
+		return value;
+	}
 
-    @Override
-    public boolean isLiteral() {
-        return true;
-    }
+	@Override
+	public boolean isLiteral() {
+		return true;
+	}
 
-    /**
-     * Creates the AST node
-     *
-     * @param value      string value
-     * @param position   position of the statement in the source code
-     * @param sourceText source code that originated the Node
-     */
-    public BoxStringLiteral( String value, Position position, String sourceText ) {
-        super( position, sourceText );
-        StringBuilder sb = new StringBuilder( value );
-        sb.deleteCharAt( value.length() - 1 );
-        sb.deleteCharAt( 0 );
-        this.value  = sb.toString();
-        this.parent = parent;
-    }
+	/**
+	 * Creates the AST node
+	 *
+	 * @param value      string value
+	 * @param position   position of the statement in the source code
+	 * @param sourceText source code that originated the Node
+	 */
+	public BoxStringLiteral( String value, Position position, String sourceText ) {
+		super( position, sourceText );
+		StringBuilder sb = new StringBuilder( value );
+		sb.deleteCharAt( value.length() - 1 );
+		sb.deleteCharAt( 0 );
+		this.value	= sb.toString();
+		this.parent	= parent;
+	}
 }

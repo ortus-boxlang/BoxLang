@@ -28,25 +28,25 @@ import ortus.boxlang.transpiler.transformer.TransformerContext;
 
 public class BoxAssignmentTransformer extends AbstractTransformer {
 
-    Logger logger = LoggerFactory.getLogger( BoxAssignmentTransformer.class );
+	Logger logger = LoggerFactory.getLogger( BoxAssignmentTransformer.class );
 
-    public BoxAssignmentTransformer() {
-    }
+	public BoxAssignmentTransformer() {
+	}
 
-    @Override
-    public Node transform( BoxNode node, TransformerContext context ) throws IllegalStateException {
-        logger.info( node.getSourceText() );
-        Expression left  = ( Expression ) BoxLangTranspiler.transform( ( ( BoxAssignment ) node ).getLeft(), TransformerContext.LEFT );
-        Expression right = ( Expression ) BoxLangTranspiler.transform( ( ( BoxAssignment ) node ).getRight(), TransformerContext.RIGHT );
+	@Override
+	public Node transform( BoxNode node, TransformerContext context ) throws IllegalStateException {
+		logger.info( node.getSourceText() );
+		Expression	left	= ( Expression ) BoxLangTranspiler.transform( ( ( BoxAssignment ) node ).getLeft(), TransformerContext.LEFT );
+		Expression	right	= ( Expression ) BoxLangTranspiler.transform( ( ( BoxAssignment ) node ).getRight(), TransformerContext.RIGHT );
 
-        if ( left instanceof MethodCallExpr method ) {
-            if ( "put".equalsIgnoreCase( method.getName().asString() ) ) {
-                method.getArguments().add( right );
-            }
-        }
-        ExpressionStmt javaExpr = new ExpressionStmt( left );
-        addIndex( javaExpr, node );
-        return javaExpr;
-    }
+		if ( left instanceof MethodCallExpr method ) {
+			if ( "put".equalsIgnoreCase( method.getName().asString() ) ) {
+				method.getArguments().add( right );
+			}
+		}
+		ExpressionStmt javaExpr = new ExpressionStmt( left );
+		addIndex( javaExpr, node );
+		return javaExpr;
+	}
 
 }

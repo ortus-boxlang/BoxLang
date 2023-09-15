@@ -37,54 +37,54 @@ import java.util.Map;
  */
 public class BoxForIndexTransformer extends AbstractTransformer {
 
-    Logger logger = LoggerFactory.getLogger( BoxForIndexTransformer.class );
+	Logger logger = LoggerFactory.getLogger( BoxForIndexTransformer.class );
 
-    /**
-     * Transform an BoxForIndex for statement
-     *
-     * @param node    a BoxForIn instance
-     * @param context transformation context
-     *
-     * @return a Java Parser Block statement with an iterator and a while loop
-     *
-     * @throws IllegalStateException
-     */
-    @Override
-    public Node transform( BoxNode node, TransformerContext context ) throws IllegalStateException {
-        BoxForIndex         boxFor    = ( BoxForIndex ) node;
-        Expression          variable  = ( Expression ) BoxLangTranspiler.transform( boxFor.getVariable(), TransformerContext.LEFT );
-        Expression          initial   = ( Expression ) BoxLangTranspiler.transform( boxFor.getInitial(), TransformerContext.RIGHT );
-        Expression          condition = ( Expression ) BoxLangTranspiler.transform( boxFor.getCondition() );
-        Expression          step      = ( Expression ) BoxLangTranspiler.transform( boxFor.getStep() );
-        Map<String, String> values    = new HashMap<>() {
+	/**
+	 * Transform an BoxForIndex for statement
+	 *
+	 * @param node    a BoxForIn instance
+	 * @param context transformation context
+	 *
+	 * @return a Java Parser Block statement with an iterator and a while loop
+	 *
+	 * @throws IllegalStateException
+	 */
+	@Override
+	public Node transform( BoxNode node, TransformerContext context ) throws IllegalStateException {
+		BoxForIndex			boxFor		= ( BoxForIndex ) node;
+		Expression			variable	= ( Expression ) BoxLangTranspiler.transform( boxFor.getVariable(), TransformerContext.LEFT );
+		Expression			initial		= ( Expression ) BoxLangTranspiler.transform( boxFor.getInitial(), TransformerContext.RIGHT );
+		Expression			condition	= ( Expression ) BoxLangTranspiler.transform( boxFor.getCondition() );
+		Expression			step		= ( Expression ) BoxLangTranspiler.transform( boxFor.getStep() );
+		Map<String, String>	values		= new HashMap<>() {
 
-                                          {
-                                              put( "condition", condition.toString() );
-                                          }
-                                      };
+											{
+												put( "condition", condition.toString() );
+											}
+										};
 
-        if ( variable instanceof MethodCallExpr method ) {
-            if ( "put".equalsIgnoreCase( method.getName().asString() ) ) {
-                method.getArguments().add( initial );
-            }
-        }
+		if ( variable instanceof MethodCallExpr method ) {
+			if ( "put".equalsIgnoreCase( method.getName().asString() ) ) {
+				method.getArguments().add( initial );
+			}
+		}
 
-        String template2 = "while( ${condition} ) {}";
-        if ( requiresBooleanCaster( boxFor.getCondition() ) ) {
-            template2 = "while( BooleanCaster.cast( ${condition} ) ) {}";
-        }
-        BlockStmt      stmt = new BlockStmt();
-        ExpressionStmt init = new ExpressionStmt( variable );
-        stmt.addStatement( init );
-        WhileStmt whileStmt = ( WhileStmt ) parseStatement( template2, values );
-        boxFor.getBody().forEach( it -> {
-            whileStmt.getBody().asBlockStmt().addStatement( ( Statement ) BoxLangTranspiler.transform( it ) );
-        } );
-        ExpressionStmt stepStmt = new ExpressionStmt( step );
-        whileStmt.getBody().asBlockStmt().addStatement( stepStmt );
-        stmt.addStatement( whileStmt );
-        logger.info( node.getSourceText() + " -> " + stmt );
-        addIndex( stmt, node );
-        return stmt;
-    }
+		String template2 = "while( ${condition} ) {}";
+		if ( requiresBooleanCaster( boxFor.getCondition() ) ) {
+			template2 = "while( BooleanCaster.cast( ${condition} ) ) {}";
+		}
+		BlockStmt		stmt	= new BlockStmt();
+		ExpressionStmt	init	= new ExpressionStmt( variable );
+		stmt.addStatement( init );
+		WhileStmt whileStmt = ( WhileStmt ) parseStatement( template2, values );
+		boxFor.getBody().forEach( it -> {
+			whileStmt.getBody().asBlockStmt().addStatement( ( Statement ) BoxLangTranspiler.transform( it ) );
+		} );
+		ExpressionStmt stepStmt = new ExpressionStmt( step );
+		whileStmt.getBody().asBlockStmt().addStatement( stepStmt );
+		stmt.addStatement( whileStmt );
+		logger.info( node.getSourceText() + " -> " + stmt );
+		addIndex( stmt, node );
+		return stmt;
+	}
 }

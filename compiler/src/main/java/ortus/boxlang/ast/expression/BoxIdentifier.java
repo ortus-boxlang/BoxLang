@@ -23,23 +23,23 @@ import ortus.boxlang.ast.Position;
  */
 public class BoxIdentifier extends BoxExpr implements Named {
 
-    private final String name;
+	private final String name;
 
-    @Override
-    public String getName() {
-        return name;
-    }
+	@Override
+	public String getName() {
+		return name;
+	}
 
-    /**
-     * Creates the AST node
-     *
-     * @param name       name of the identifier
-     * @param position   position of the statement in the source code
-     * @param sourceText source code that originated the Node
-     */
-    public BoxIdentifier( String name, Position position, String sourceText ) {
-        super( position, sourceText );
-        this.name = name;
-    }
+	/**
+	 * Creates the AST node
+	 *
+	 * @param name       name of the identifier
+	 * @param position   position of the statement in the source code
+	 * @param sourceText source code that originated the Node
+	 */
+	public BoxIdentifier( String name, Position position, String sourceText ) {
+		super( position, sourceText );
+		this.name = name;
+	}
 
 }

@@ -22,39 +22,39 @@ import ortus.boxlang.ast.Position;
  */
 public class BoxBinaryOperation extends BoxExpr {
 
-    private final BoxExpr           left;
-    private final BoxExpr           right;
-    private final BoxBinaryOperator operator;
+	private final BoxExpr			left;
+	private final BoxExpr			right;
+	private final BoxBinaryOperator	operator;
 
-    /**
-     * Creates the AST node
-     *
-     * @param left       left expression of binary operation
-     * @param operator   operator
-     * @param right      left expression of binary operation
-     * @param position   position of the statement in the source code
-     * @param sourceText source code that originated the Node
-     *
-     * @see BoxBinaryOperator for the supported operators
-     */
-    public BoxBinaryOperation( BoxExpr left, BoxBinaryOperator operator, BoxExpr right, Position position, String sourceText ) {
-        super( position, sourceText );
-        this.left     = left;
-        this.right    = right;
-        this.operator = operator;
-        this.left.setParent( this );
-        this.right.setParent( this );
-    }
+	/**
+	 * Creates the AST node
+	 *
+	 * @param left       left expression of binary operation
+	 * @param operator   operator
+	 * @param right      left expression of binary operation
+	 * @param position   position of the statement in the source code
+	 * @param sourceText source code that originated the Node
+	 *
+	 * @see BoxBinaryOperator for the supported operators
+	 */
+	public BoxBinaryOperation( BoxExpr left, BoxBinaryOperator operator, BoxExpr right, Position position, String sourceText ) {
+		super( position, sourceText );
+		this.left		= left;
+		this.right		= right;
+		this.operator	= operator;
+		this.left.setParent( this );
+		this.right.setParent( this );
+	}
 
-    public BoxExpr getLeft() {
-        return left;
-    }
+	public BoxExpr getLeft() {
+		return left;
+	}
 
-    public BoxExpr getRight() {
-        return right;
-    }
+	public BoxExpr getRight() {
+		return right;
+	}
 
-    public BoxBinaryOperator getOperator() {
-        return operator;
-    }
+	public BoxBinaryOperator getOperator() {
+		return operator;
+	}
 }

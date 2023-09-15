@@ -18,38 +18,38 @@ import java.util.Map;
  */
 public class BoxArgumentTransformer extends AbstractTransformer {
 
-    Logger logger = LoggerFactory.getLogger( BoxArrayAccessTransformer.class );
+	Logger logger = LoggerFactory.getLogger( BoxArrayAccessTransformer.class );
 
-    /**
-     * Transform a function/method argument
-     *
-     * @param node    a BoxArgument instance
-     * @param context transformation context
-     *
-     * @return Generates a Java Parser Expression
-     *
-     * @throws IllegalStateException
-     *
-     * @see BoxArgument
-     */
-    @Override
-    public Node transform( BoxNode node, TransformerContext context ) throws IllegalStateException {
-        BoxArgument         arg      = ( BoxArgument ) node;
-        String              side     = context == TransformerContext.NONE ? "" : "(" + context.toString() + ") ";
-        Expression          expr     = ( Expression ) BoxLangTranspiler.transform( arg.getValue() );
-        // TODO handle named parameters
-        Map<String, String> values   = new HashMap<>() {
+	/**
+	 * Transform a function/method argument
+	 *
+	 * @param node    a BoxArgument instance
+	 * @param context transformation context
+	 *
+	 * @return Generates a Java Parser Expression
+	 *
+	 * @throws IllegalStateException
+	 *
+	 * @see BoxArgument
+	 */
+	@Override
+	public Node transform( BoxNode node, TransformerContext context ) throws IllegalStateException {
+		BoxArgument			arg			= ( BoxArgument ) node;
+		String				side		= context == TransformerContext.NONE ? "" : "(" + context.toString() + ") ";
+		Expression			expr		= ( Expression ) BoxLangTranspiler.transform( arg.getValue() );
+		// TODO handle named parameters
+		Map<String, String>	values		= new HashMap<>() {
 
-                                         {
-                                             put( "expr", expr.toString() );
-                                         }
-                                     };
+											{
+												put( "expr", expr.toString() );
+											}
+										};
 
-        String              template = "${expr}";
+		String				template	= "${expr}";
 
-        Node                javaExpr = parseExpression( template, values );
-        logger.info( side + node.getSourceText() + " -> " + javaExpr );
+		Node				javaExpr	= parseExpression( template, values );
+		logger.info( side + node.getSourceText() + " -> " + javaExpr );
 
-        return javaExpr;
-    }
+		return javaExpr;
+	}
 }

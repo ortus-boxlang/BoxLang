@@ -30,22 +30,22 @@ import ortus.boxlang.transpiler.transformer.TransformerContext;
  */
 public class BoxIntegerLiteralTransformer extends AbstractTransformer {
 
-    Logger logger = LoggerFactory.getLogger( BoxBinaryOperationTransformer.class );
+	Logger logger = LoggerFactory.getLogger( BoxBinaryOperationTransformer.class );
 
-    /**
-     * Transform BoxIntegerLiteral argument
-     *
-     * @param node    a BoxIntegerLiteral instance
-     * @param context transformation context
-     *
-     * @return generates a Java Parser integer Literal
-     */
-    @Override
-    public Node transform( BoxNode node, TransformerContext context ) throws IllegalStateException {
-        BoxIntegerLiteral  literal  = ( BoxIntegerLiteral ) node;
-        IntegerLiteralExpr javaExpr = new IntegerLiteralExpr( literal.getValue() );
-        logger.info( node.getSourceText() + " -> " + javaExpr );
-        addIndex( javaExpr, node );
-        return javaExpr;
-    }
+	/**
+	 * Transform BoxIntegerLiteral argument
+	 *
+	 * @param node    a BoxIntegerLiteral instance
+	 * @param context transformation context
+	 *
+	 * @return generates a Java Parser integer Literal
+	 */
+	@Override
+	public Node transform( BoxNode node, TransformerContext context ) throws IllegalStateException {
+		BoxIntegerLiteral	literal		= ( BoxIntegerLiteral ) node;
+		IntegerLiteralExpr	javaExpr	= new IntegerLiteralExpr( literal.getValue() );
+		logger.info( node.getSourceText() + " -> " + javaExpr );
+		addIndex( javaExpr, node );
+		return javaExpr;
+	}
 }

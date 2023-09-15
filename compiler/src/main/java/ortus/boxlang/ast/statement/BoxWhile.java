@@ -27,30 +27,30 @@ import java.util.List;
  */
 public class BoxWhile extends BoxStatement {
 
-    private final BoxExpr            condition;
-    private final List<BoxStatement> body;
+	private final BoxExpr				condition;
+	private final List<BoxStatement>	body;
 
-    /**
-     * Creates the AST node
-     *
-     * @param condition  the expression of the while statement
-     * @param body       list of the statements in the body if the loop
-     * @param position   position of the statement in the source code
-     * @param sourceText source code that originated the Node
-     */
-    public BoxWhile( BoxExpr condition, List<BoxStatement> body, Position position, String sourceText ) {
-        super( position, sourceText );
-        this.condition = condition;
-        this.condition.setParent( this );
-        this.body = Collections.unmodifiableList( body );
-        this.body.forEach( arg -> arg.setParent( this ) );
-    }
+	/**
+	 * Creates the AST node
+	 *
+	 * @param condition  the expression of the while statement
+	 * @param body       list of the statements in the body if the loop
+	 * @param position   position of the statement in the source code
+	 * @param sourceText source code that originated the Node
+	 */
+	public BoxWhile( BoxExpr condition, List<BoxStatement> body, Position position, String sourceText ) {
+		super( position, sourceText );
+		this.condition = condition;
+		this.condition.setParent( this );
+		this.body = Collections.unmodifiableList( body );
+		this.body.forEach( arg -> arg.setParent( this ) );
+	}
 
-    public BoxExpr getCondition() {
-        return condition;
-    }
+	public BoxExpr getCondition() {
+		return condition;
+	}
 
-    public List<BoxStatement> getBody() {
-        return body;
-    }
+	public List<BoxStatement> getBody() {
+		return body;
+	}
 }

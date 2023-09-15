@@ -27,34 +27,34 @@ import java.util.List;
  */
 public class BoxLocalDeclaration extends BoxStatement {
 
-    private final List<BoxExpr> identifiers;
-    private BoxExpr             expression;
+	private final List<BoxExpr>	identifiers;
+	private BoxExpr				expression;
 
-    /**
-     * Creates the AST node
-     *
-     * @param identifiers list of identifiers
-     * @param expression  expression representing the value to assign
-     * @param position    position of the statement in the source code
-     * @param sourceText  source code that originated the Node
-     */
-    public BoxLocalDeclaration( List<BoxExpr> identifiers, BoxExpr expression, Position position, String sourceText ) {
-        super( position, sourceText );
-        this.expression = expression;
-        this.expression.setParent( this );
-        this.identifiers = Collections.unmodifiableList( identifiers );
-        this.identifiers.forEach( id -> id.setParent( this ) );
-    }
+	/**
+	 * Creates the AST node
+	 *
+	 * @param identifiers list of identifiers
+	 * @param expression  expression representing the value to assign
+	 * @param position    position of the statement in the source code
+	 * @param sourceText  source code that originated the Node
+	 */
+	public BoxLocalDeclaration( List<BoxExpr> identifiers, BoxExpr expression, Position position, String sourceText ) {
+		super( position, sourceText );
+		this.expression = expression;
+		this.expression.setParent( this );
+		this.identifiers = Collections.unmodifiableList( identifiers );
+		this.identifiers.forEach( id -> id.setParent( this ) );
+	}
 
-    public List<BoxExpr> getIdentifiers() {
-        return identifiers;
-    }
+	public List<BoxExpr> getIdentifiers() {
+		return identifiers;
+	}
 
-    public BoxExpr getExpression() {
-        return expression;
-    }
+	public BoxExpr getExpression() {
+		return expression;
+	}
 
-    public void setExpression( BoxExpr expression ) {
-        this.expression = expression;
-    }
+	public void setExpression( BoxExpr expression ) {
+		this.expression = expression;
+	}
 }

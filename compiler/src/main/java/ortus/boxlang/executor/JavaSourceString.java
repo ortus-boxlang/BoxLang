@@ -25,16 +25,16 @@ import static java.util.Objects.requireNonNull;
  */
 public class JavaSourceString extends SimpleJavaFileObject {
 
-    private String sourceCode;
+	private String sourceCode;
 
-    public JavaSourceString( String name, String sourceCode ) {
-        super( URI.create( "string:///" + name.replace( '.', '/' ) + Kind.SOURCE.extension ),
-            Kind.SOURCE );
-        this.sourceCode = requireNonNull( sourceCode, "sourceCode must not be null" );
-    }
+	public JavaSourceString( String name, String sourceCode ) {
+		super( URI.create( "string:///" + name.replace( '.', '/' ) + Kind.SOURCE.extension ),
+		    Kind.SOURCE );
+		this.sourceCode = requireNonNull( sourceCode, "sourceCode must not be null" );
+	}
 
-    @Override
-    public CharSequence getCharContent( boolean ignoreEncodingErrors ) {
-        return sourceCode;
-    }
+	@Override
+	public CharSequence getCharContent( boolean ignoreEncodingErrors ) {
+		return sourceCode;
+	}
 }

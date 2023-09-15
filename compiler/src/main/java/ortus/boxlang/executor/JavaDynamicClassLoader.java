@@ -25,34 +25,34 @@ import java.util.Map;
  */
 public class JavaDynamicClassLoader extends URLClassLoader {
 
-    private JavaMemoryManager manager;
+	private JavaMemoryManager manager;
 
-    public JavaDynamicClassLoader( URL[] urls, ClassLoader parent, JavaMemoryManager manager ) {
-        super( urls, parent );
-        this.manager = manager;
+	public JavaDynamicClassLoader( URL[] urls, ClassLoader parent, JavaMemoryManager manager ) {
+		super( urls, parent );
+		this.manager = manager;
 
-    }
+	}
 
-    @Override
-    protected Class<?> findClass( String name ) throws ClassNotFoundException {
+	@Override
+	protected Class<?> findClass( String name ) throws ClassNotFoundException {
 
-        Map<String, JavaClassByteCode> compiledClasses = manager
-            .getBytesMap();
+		Map<String, JavaClassByteCode> compiledClasses = manager
+		    .getBytesMap();
 
-        if ( compiledClasses.containsKey( name ) ) {
-            byte[] bytes = compiledClasses.get( name )
-                .getBytes();
-            return defineClass( name, bytes, 0, bytes.length );
-        } else {
-            return super.findClass( name );
-        }
-    }
+		if ( compiledClasses.containsKey( name ) ) {
+			byte[] bytes = compiledClasses.get( name )
+			    .getBytes();
+			return defineClass( name, bytes, 0, bytes.length );
+		} else {
+			return super.findClass( name );
+		}
+	}
 
-    /*
-     * Required for Java Agents when this classloader is used as the system classloader
-     */
-    @SuppressWarnings( "unused" )
-    private void appendToClassPathForInstrumentation( String jarfile ) throws IOException {
-        addURL( Paths.get( jarfile ).toRealPath().toUri().toURL() );
-    }
+	/*
+	 * Required for Java Agents when this classloader is used as the system classloader
+	 */
+	@SuppressWarnings( "unused" )
+	private void appendToClassPathForInstrumentation( String jarfile ) throws IOException {
+		addURL( Paths.get( jarfile ).toRealPath().toUri().toURL() );
+	}
 }

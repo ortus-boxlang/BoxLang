@@ -23,21 +23,21 @@ import ortus.boxlang.ast.Position;
  */
 public class BoxExpression extends BoxStatement {
 
-    private final BoxExpr expression;
+	private final BoxExpr expression;
 
-    /**
-     * Creates the AST node
-     *
-     * @param expression an expression to be executed as a statement
-     * @param position   position of the statement in the source code
-     * @param sourceText source code that originated the Node
-     */
-    public BoxExpression( BoxExpr expression, Position position, String sourceText ) {
-        super( position, sourceText );
-        this.expression = expression;
-    }
+	/**
+	 * Creates the AST node
+	 *
+	 * @param expression an expression to be executed as a statement
+	 * @param position   position of the statement in the source code
+	 * @param sourceText source code that originated the Node
+	 */
+	public BoxExpression( BoxExpr expression, Position position, String sourceText ) {
+		super( position, sourceText );
+		this.expression = expression;
+	}
 
-    public BoxExpr getExpression() {
-        return expression;
-    }
+	public BoxExpr getExpression() {
+		return expression;
+	}
 }

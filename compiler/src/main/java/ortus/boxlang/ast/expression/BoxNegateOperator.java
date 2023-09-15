@@ -15,5 +15,5 @@
 package ortus.boxlang.ast.expression;
 
 public enum BoxNegateOperator {
-    Not,
+	Not,
 }

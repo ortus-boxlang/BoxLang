@@ -30,22 +30,22 @@ import ortus.boxlang.ast.Position;
  */
 public class BoxScope extends BoxExpr {
 
-    private final String name;
+	private final String name;
 
-    public String getName() {
-        return name;
-    }
+	public String getName() {
+		return name;
+	}
 
-    /**
-     * Creates the AST node
-     *
-     * @param name       scope name identified by a scope reserved keyword
-     * @param position
-     * @param sourceText
-     */
-    public BoxScope( String name, Position position, String sourceText ) {
-        super( position, sourceText );
-        this.name = name;
-    }
+	/**
+	 * Creates the AST node
+	 *
+	 * @param name       scope name identified by a scope reserved keyword
+	 * @param position
+	 * @param sourceText
+	 */
+	public BoxScope( String name, Position position, String sourceText ) {
+		super( position, sourceText );
+		this.name = name;
+	}
 
 }

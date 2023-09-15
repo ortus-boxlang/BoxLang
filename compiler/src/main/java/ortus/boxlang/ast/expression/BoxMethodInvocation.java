@@ -28,40 +28,40 @@ import java.util.List;
  */
 public class BoxMethodInvocation extends BoxExpr {
 
-    private final ReferenceByName   name;
+	private final ReferenceByName	name;
 
-    private final List<BoxArgument> arguments;
-    private final BoxExpr           obj;
+	private final List<BoxArgument>	arguments;
+	private final BoxExpr			obj;
 
-    public final List<BoxArgument> getArguments() {
-        return arguments;
-    }
+	public final List<BoxArgument> getArguments() {
+		return arguments;
+	}
 
-    /**
-     * Creates the AST node
-     *
-     * @param name       name of the method
-     * @param obj        object
-     * @param arguments  list of BoxArgument representing the arguments
-     * @param position   position of the statement in the source code
-     * @param sourceText source code that originated the Node
-     *
-     * @see BoxArgument
-     */
-    public BoxMethodInvocation( String name, BoxExpr obj, List<BoxArgument> arguments, Position position, String sourceText ) {
-        super( position, sourceText );
-        this.name = new ReferenceByName( name );
-        this.obj  = obj;
-        this.obj.setParent( this );
-        this.arguments = Collections.unmodifiableList( arguments );
-        this.arguments.forEach( arg -> arg.setParent( this ) );
-    }
+	/**
+	 * Creates the AST node
+	 *
+	 * @param name       name of the method
+	 * @param obj        object
+	 * @param arguments  list of BoxArgument representing the arguments
+	 * @param position   position of the statement in the source code
+	 * @param sourceText source code that originated the Node
+	 *
+	 * @see BoxArgument
+	 */
+	public BoxMethodInvocation( String name, BoxExpr obj, List<BoxArgument> arguments, Position position, String sourceText ) {
+		super( position, sourceText );
+		this.name	= new ReferenceByName( name );
+		this.obj	= obj;
+		this.obj.setParent( this );
+		this.arguments = Collections.unmodifiableList( arguments );
+		this.arguments.forEach( arg -> arg.setParent( this ) );
+	}
 
-    public ReferenceByName getName() {
-        return name;
-    }
+	public ReferenceByName getName() {
+		return name;
+	}
 
-    public BoxExpr getObj() {
-        return obj;
-    }
+	public BoxExpr getObj() {
+		return obj;
+	}
 }

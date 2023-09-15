@@ -22,13 +22,13 @@ import ortus.boxlang.ast.Position;
  */
 public abstract class BoxStatement extends BoxNode {
 
-    /**
-     * Constructor
-     *
-     * @param position   position of the statement in the source code
-     * @param sourceText source code of the statement
-     */
-    public BoxStatement( Position position, String sourceText ) {
-        super( position, sourceText );
-    }
+	/**
+	 * Constructor
+	 *
+	 * @param position   position of the statement in the source code
+	 * @param sourceText source code of the statement
+	 */
+	public BoxStatement( Position position, String sourceText ) {
+		super( position, sourceText );
+	}
 }

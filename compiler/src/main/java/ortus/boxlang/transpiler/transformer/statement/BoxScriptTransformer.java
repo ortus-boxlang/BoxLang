@@ -32,106 +32,106 @@ import java.util.Map;
 
 public class BoxScriptTransformer extends AbstractTransformer {
 
-    private final String template = """
-                                    	// Auto package creation according to file path on disk
-                                    	package ${packageName};
+	private final String template = """
+	                                	// Auto package creation according to file path on disk
+	                                	package ${packageName};
 
-                                    	import ortus.boxlang.runtime.BoxRuntime;
-                                    	import ortus.boxlang.runtime.context.IBoxContext;
+	                                	import ortus.boxlang.runtime.BoxRuntime;
+	                                	import ortus.boxlang.runtime.context.IBoxContext;
 
-                                    	// BoxLang Auto Imports
-                                    	import ortus.boxlang.runtime.dynamic.BaseTemplate;
-                                    	import ortus.boxlang.runtime.dynamic.Referencer;
-                                    	import ortus.boxlang.runtime.interop.DynamicObject;
-                                    	import ortus.boxlang.runtime.loader.ClassLocator;
-                                    	import ortus.boxlang.runtime.operators.*;
-                                    	import ortus.boxlang.runtime.scopes.Key;
-                                    	import ortus.boxlang.runtime.scopes.IScope;
+	                                	// BoxLang Auto Imports
+	                                	import ortus.boxlang.runtime.dynamic.BaseTemplate;
+	                                	import ortus.boxlang.runtime.dynamic.Referencer;
+	                                	import ortus.boxlang.runtime.interop.DynamicObject;
+	                                	import ortus.boxlang.runtime.loader.ClassLocator;
+	                                	import ortus.boxlang.runtime.operators.*;
+	                                	import ortus.boxlang.runtime.scopes.Key;
+	                                	import ortus.boxlang.runtime.scopes.IScope;
 
-                                    	// Classes Auto-Imported on all Templates and Classes by BoxLang
-                                    	import java.time.LocalDateTime;
-                                    	import java.time.Instant;
-                                    	import java.lang.System;
-                                    	import java.lang.String;
-                                    	import java.lang.Character;
-                                    	import java.lang.Boolean;
-                                    	import java.lang.Double;
-                                    	import java.lang.Integer;
+	                                	// Classes Auto-Imported on all Templates and Classes by BoxLang
+	                                	import java.time.LocalDateTime;
+	                                	import java.time.Instant;
+	                                	import java.lang.System;
+	                                	import java.lang.String;
+	                                	import java.lang.Character;
+	                                	import java.lang.Boolean;
+	                                	import java.lang.Double;
+	                                	import java.lang.Integer;
 
-                                    	public class ${className} extends BaseTemplate {
+	                                	public class ${className} extends BaseTemplate {
 
-                                    		// Auto-Generated Singleton Helpers
-                                    		private static ${className} instance;
+	                                		// Auto-Generated Singleton Helpers
+	                                		private static ${className} instance;
 
-                                    		public $className() {
-                                    			this.name         = "${fileName}";
-                                    			this.extension    = "${fileExtension}";
-                                    			this.path         = "{$fileFolderPath}";
-                                    			// this.lastModified = "$lastModifiedTimestamp";
-                                    			// this.compiledOn   = "$compiledOnTimestamp";
-                                    			// this.ast = ???
-                                    		}
+	                                		public $className() {
+	                                			this.name         = "${fileName}";
+	                                			this.extension    = "${fileExtension}";
+	                                			this.path         = "{$fileFolderPath}";
+	                                			// this.lastModified = "$lastModifiedTimestamp";
+	                                			// this.compiledOn   = "$compiledOnTimestamp";
+	                                			// this.ast = ???
+	                                		}
 
-                                    		public static synchronized $className getInstance() {
-                                    			if ( instance == null ) {
-                                    				instance = new $className();
-                                    			}
-                                    			return instance;
-                                    		}
+	                                		public static synchronized $className getInstance() {
+	                                			if ( instance == null ) {
+	                                				instance = new $className();
+	                                			}
+	                                			return instance;
+	                                		}
 
-                                    		/**
-                                    		 * Each template must implement the invoke() method which executes the template
-                                    		 *
-                                    		 * @param context The execution context requesting the execution
-                                    		 */
-                                    		public void invoke( IBoxContext context ) throws Throwable {
-                                    			// Reference to the variables scope
-                                    			IScope variablesScope = context.getScopeNearby( Key.of( "variables" ) );
+	                                		/**
+	                                		 * Each template must implement the invoke() method which executes the template
+	                                		 *
+	                                		 * @param context The execution context requesting the execution
+	                                		 */
+	                                		public void invoke( IBoxContext context ) throws Throwable {
+	                                			// Reference to the variables scope
+	                                			IScope variablesScope = context.getScopeNearby( Key.of( "variables" ) );
 
-                                    			ClassLocator JavaLoader = ClassLocator.getInstance();
-                                    		}
+	                                			ClassLocator JavaLoader = ClassLocator.getInstance();
+	                                		}
 
-                                    		public static void main( String[] args ) {
-                                    			// This is the main method, it will be invoked when the template is executed
-                                    			// You can use this
-                                    			// Get a runtime going
-                                    			BoxRuntime.startup( true );
+	                                		public static void main( String[] args ) {
+	                                			// This is the main method, it will be invoked when the template is executed
+	                                			// You can use this
+	                                			// Get a runtime going
+	                                			BoxRuntime.startup( true );
 
-                                    			try {
-                                    				BoxRuntime.executeTemplate( $className.getInstance() );
-                                    			} catch ( Throwable e ) {
-                                    				e.printStackTrace();
-                                    				System.exit( 1 );
-                                    			}
+	                                			try {
+	                                				BoxRuntime.executeTemplate( $className.getInstance() );
+	                                			} catch ( Throwable e ) {
+	                                				e.printStackTrace();
+	                                				System.exit( 1 );
+	                                			}
 
-                                    			// Bye bye! Ciao Bella!
-                                    			BoxRuntime.shutdown();
-                                    		}
-                                    	}
-                                    """;
+	                                			// Bye bye! Ciao Bella!
+	                                			BoxRuntime.shutdown();
+	                                		}
+	                                	}
+	                                """;
 
-    @Override
-    public Node transform( BoxNode node, TransformerContext context ) throws IllegalStateException {
+	@Override
+	public Node transform( BoxNode node, TransformerContext context ) throws IllegalStateException {
 
-        BoxScript                    script      = ( BoxScript ) node;
-        String                       packageName = "com.ortus"; // TODO
-        String                       className   = "TestClass"; // TODO
+		BoxScript						script		= ( BoxScript ) node;
+		String							packageName	= "com.ortus"; // TODO
+		String							className	= "TestClass"; // TODO
 
-        Map<String, String>          values      = new HashMap<>() {
+		Map<String, String>				values		= new HashMap<>() {
 
-                                                     {
-                                                         put( "packageName", packageName );
-                                                         put( "className", className );
-                                                     }
-                                                 };
+														{
+															put( "packageName", packageName );
+															put( "className", className );
+														}
+													};
 
-        StringSubstitutor            sub         = new StringSubstitutor( values );
-        String                       code        = sub.replace( template );
-        ParseResult<CompilationUnit> result      = javaParser.parse( code );
-        if ( !result.isSuccessful() ) {
-            throw new IllegalStateException( result.toString() );
-        }
+		StringSubstitutor				sub			= new StringSubstitutor( values );
+		String							code		= sub.replace( template );
+		ParseResult<CompilationUnit>	result		= javaParser.parse( code );
+		if ( !result.isSuccessful() ) {
+			throw new IllegalStateException( result.toString() );
+		}
 
-        return result.getResult().get();
-    }
+		return result.getResult().get();
+	}
 }

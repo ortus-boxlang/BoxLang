@@ -5,10 +5,10 @@ package ortus.boxlang.ast;
  */
 public interface Named {
 
-    /**
-     * Return the name of the symbol
-     *
-     * @return a String representing the name of the symbol
-     */
-    String getName();
+	/**
+	 * Return the name of the symbol
+	 *
+	 * @return a String representing the name of the symbol
+	 */
+	String getName();
 }

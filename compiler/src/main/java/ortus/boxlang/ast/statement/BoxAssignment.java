@@ -24,38 +24,38 @@ import ortus.boxlang.ast.BoxExpr;
  */
 public class BoxAssignment extends BoxStatement {
 
-    private BoxExpr left;
-    private BoxExpr right;
+	private BoxExpr	left;
+	private BoxExpr	right;
 
-    /**
-     * Creates the AST node
-     *
-     * @param left       expression on the left of the assigment
-     * @param right      expression on the right of the assigment
-     * @param position   position of the statement in the source code
-     * @param sourceText source code that originated the Node
-     */
-    public BoxAssignment( BoxExpr left, BoxExpr right, Position position, String sourceText ) {
-        super( position, sourceText );
-        this.left  = left;
-        this.right = right;
-        this.left.setParent( this );
-        this.right.setParent( this );
-    }
+	/**
+	 * Creates the AST node
+	 *
+	 * @param left       expression on the left of the assigment
+	 * @param right      expression on the right of the assigment
+	 * @param position   position of the statement in the source code
+	 * @param sourceText source code that originated the Node
+	 */
+	public BoxAssignment( BoxExpr left, BoxExpr right, Position position, String sourceText ) {
+		super( position, sourceText );
+		this.left	= left;
+		this.right	= right;
+		this.left.setParent( this );
+		this.right.setParent( this );
+	}
 
-    public BoxExpr getLeft() {
-        return left;
-    }
+	public BoxExpr getLeft() {
+		return left;
+	}
 
-    public void setLeft( BoxExpr left ) {
-        this.left = left;
-    }
+	public void setLeft( BoxExpr left ) {
+		this.left = left;
+	}
 
-    public BoxExpr getRight() {
-        return right;
-    }
+	public BoxExpr getRight() {
+		return right;
+	}
 
-    public void setRight( BoxExpr right ) {
-        this.right = right;
-    }
+	public void setRight( BoxExpr right ) {
+		this.right = right;
+	}
 }

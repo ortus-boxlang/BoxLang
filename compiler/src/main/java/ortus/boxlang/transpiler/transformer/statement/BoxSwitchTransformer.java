@@ -37,63 +37,63 @@ import java.util.Map;
  */
 public class BoxSwitchTransformer extends AbstractTransformer {
 
-    Logger logger = LoggerFactory.getLogger( BoxParenthesisTransformer.class );
+	Logger logger = LoggerFactory.getLogger( BoxParenthesisTransformer.class );
 
-    /**
-     * Transform a collection for statement
-     *
-     * @param node    a BoxForIn instance
-     * @param context transformation context
-     *
-     * @return a Java Parser Block statement with an iterator and a while loop
-     *
-     * @throws IllegalStateException
-     */
-    @Override
-    public Node transform( BoxNode node, TransformerContext context ) throws IllegalStateException {
-        BoxSwitch  boxSwitch  = ( BoxSwitch ) node;
-        Expression condition  = ( Expression ) BoxLangTranspiler.transform( boxSwitch.getCondition(), TransformerContext.RIGHT );
+	/**
+	 * Transform a collection for statement
+	 *
+	 * @param node    a BoxForIn instance
+	 * @param context transformation context
+	 *
+	 * @return a Java Parser Block statement with an iterator and a while loop
+	 *
+	 * @throws IllegalStateException
+	 */
+	@Override
+	public Node transform( BoxNode node, TransformerContext context ) throws IllegalStateException {
+		BoxSwitch	boxSwitch	= ( BoxSwitch ) node;
+		Expression	condition	= ( Expression ) BoxLangTranspiler.transform( boxSwitch.getCondition(), TransformerContext.RIGHT );
 
-        String     template   = """
-                                do {
+		String		template	= """
+		                          do {
 
-                                } while(false);
-                                """;
-        BlockStmt  body       = new BlockStmt();
-        DoStmt     javaSwitch = ( DoStmt ) parseStatement( template, new HashMap<>() );
-        boxSwitch.getCases().forEach( c -> {
-            if ( c.getCondition() != null ) {
-                String caseTemplate = "if(  ${condition}  ) {}";
-                if ( requiresBooleanCaster( c.getCondition() ) ) {
-                    caseTemplate = "if( BooleanCaster.cast( ${condition} ) ) {}";
-                }
-                Expression          switchExpr = ( Expression ) BoxLangTranspiler.transform( c.getCondition() );
-                Map<String, String> values     = new HashMap<>() {
+		                          } while(false);
+		                          """;
+		BlockStmt	body		= new BlockStmt();
+		DoStmt		javaSwitch	= ( DoStmt ) parseStatement( template, new HashMap<>() );
+		boxSwitch.getCases().forEach( c -> {
+			if ( c.getCondition() != null ) {
+				String caseTemplate = "if(  ${condition}  ) {}";
+				if ( requiresBooleanCaster( c.getCondition() ) ) {
+					caseTemplate = "if( BooleanCaster.cast( ${condition} ) ) {}";
+				}
+				Expression			switchExpr	= ( Expression ) BoxLangTranspiler.transform( c.getCondition() );
+				Map<String, String>	values		= new HashMap<>() {
 
-                                                   {
-                                                       put( "condition", switchExpr.toString() );
-                                                   }
-                                               };
-                IfStmt              javaIfStmt = ( IfStmt ) parseStatement( caseTemplate, values );
-                BlockStmt           thenBlock  = new BlockStmt();
-                c.getBody().forEach( stmt -> {
-                    thenBlock.addStatement( ( Statement ) BoxLangTranspiler.transform( stmt ) );
-                } );
-                javaIfStmt.setThenStmt( thenBlock );
-                body.addStatement( javaIfStmt );
-                addIndex( javaIfStmt, c );
-            }
-        } );
-        boxSwitch.getCases().forEach( c -> {
-            if ( c.getCondition() == null ) {
-                c.getBody().forEach( stmt -> {
-                    body.addStatement( ( Statement ) BoxLangTranspiler.transform( stmt ) );
-                } );
-            }
-        } );
-        javaSwitch.setBody( body );
-        logger.info( node.getSourceText() + " -> " + javaSwitch );
-        addIndex( javaSwitch, node );
-        return javaSwitch;
-    }
+													{
+														put( "condition", switchExpr.toString() );
+													}
+												};
+				IfStmt				javaIfStmt	= ( IfStmt ) parseStatement( caseTemplate, values );
+				BlockStmt			thenBlock	= new BlockStmt();
+				c.getBody().forEach( stmt -> {
+					thenBlock.addStatement( ( Statement ) BoxLangTranspiler.transform( stmt ) );
+				} );
+				javaIfStmt.setThenStmt( thenBlock );
+				body.addStatement( javaIfStmt );
+				addIndex( javaIfStmt, c );
+			}
+		} );
+		boxSwitch.getCases().forEach( c -> {
+			if ( c.getCondition() == null ) {
+				c.getBody().forEach( stmt -> {
+					body.addStatement( ( Statement ) BoxLangTranspiler.transform( stmt ) );
+				} );
+			}
+		} );
+		javaSwitch.setBody( body );
+		logger.info( node.getSourceText() + " -> " + javaSwitch );
+		addIndex( javaSwitch, node );
+		return javaSwitch;
+	}
 }
