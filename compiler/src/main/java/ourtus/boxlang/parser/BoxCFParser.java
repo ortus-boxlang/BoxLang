@@ -59,8 +59,11 @@ public class BoxCFParser extends BoxAbstractParser {
 	public ParsingResult parse( File file ) throws IOException {
 		BOMInputStream			inputStream	= getInputStream( file );
 		CFParser.ScriptContext	parseTree	= ( CFParser.ScriptContext ) parserFirstStage( inputStream );
-		BoxScript				ast			= parseTreeToAst( file, parseTree );
-		return new ParsingResult( ast, issues );
+		if ( issues.isEmpty() ) {
+			BoxScript ast = parseTreeToAst( file, parseTree );
+			return new ParsingResult( ast, issues );
+		}
+		return new ParsingResult( null, issues );
 	}
 
 	/**
@@ -79,8 +82,11 @@ public class BoxCFParser extends BoxAbstractParser {
 		InputStream				inputStream	= IOUtils.toInputStream( code );
 
 		CFParser.ScriptContext	parseTree	= ( CFParser.ScriptContext ) parserFirstStage( inputStream );
-		BoxScript				ast			= parseTreeToAst( file, parseTree );
-		return new ParsingResult( ast, issues );
+		if ( issues.isEmpty() ) {
+			BoxScript ast = parseTreeToAst( file, parseTree );
+			return new ParsingResult( ast, issues );
+		}
+		return new ParsingResult( null, issues );
 	}
 
 	/**
