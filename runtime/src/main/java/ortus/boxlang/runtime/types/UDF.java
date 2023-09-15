@@ -52,7 +52,7 @@ public abstract class UDF extends Function {
 	/**
 	 * Constructor
 	 */
-	public UDF( Access access, Key name, String returnType, Argument[] arguments, String hint, boolean output ) {
+	protected UDF( Access access, Key name, String returnType, Argument[] arguments, String hint, boolean output ) {
 		super( name, arguments );
 		this.access		= access;
 		this.returnType	= returnType;
