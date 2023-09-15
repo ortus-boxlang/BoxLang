@@ -39,6 +39,34 @@ public record ImportDefinition( String className, String resolverPrefix, String 
 	}
 
 	/**
+	 * Is this import a wildcard import?
+	 *
+	 * @return True if it is a wildcard import, false otherwise
+	 */
+	public Boolean isMultiImport() {
+		return className.endsWith( ".*" );
+	}
+
+	/**
+	 * Returns the package name of the import definition
+	 *
+	 * @return The package name
+	 */
+	public String getPackageName() {
+		return className.substring( 0, className.lastIndexOf( "." ) );
+	}
+
+	/**
+	 * Returns the fully qualified class name of the import definition
+	 * considering if it is a wildcard import or not
+	 *
+	 * @return The fully qualified class name
+	 */
+	public String getFullyQualifiedClass() {
+		return isMultiImport() ? getPackageName() + "." + className : className;
+	}
+
+	/**
 	 * Parses an import string into an ImportDefinition
 	 *
 	 * @param importStr The import string
