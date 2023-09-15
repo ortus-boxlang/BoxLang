@@ -273,7 +273,7 @@ public class ClassLocator extends ClassLoader {
 	 *
 	 * @return True if the key is in the resolver cache, false otherwise
 	 */
-	boolean hasClass( String name ) {
+	public boolean hasClass( String name ) {
 		return resolverCache.containsKey( name );
 	}
 
@@ -417,7 +417,7 @@ public class ClassLocator extends ClassLoader {
 		    // Resolve it
 		    .or( () -> getResolver( resolverPrefix ).resolve( context, name, imports ) )
 		    // If found, cache it
-		    .map( ( target ) -> {
+		    .map( target -> {
 			    resolverCache.put( cacheKey, target );
 			    return target;
 		    } );
@@ -572,7 +572,7 @@ public class ClassLocator extends ClassLoader {
 		    // Is it a JavaClass?
 		    .or( () -> getResolver( "java" ).resolve( context, name, imports ) )
 		    // If found, cache it
-		    .map( ( target ) -> {
+		    .map( target -> {
 			    resolverCache.put( name, target );
 			    return target;
 		    } );

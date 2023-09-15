@@ -48,9 +48,9 @@ public class ImportDefinitionTest {
 
 	}
 
-	@DisplayName( "It can use static constructor" )
+	@DisplayName( "It can use static constructor parser" )
 	@Test
-	public void testCanUseStaticConstructor() {
+	public void testCanUseStaticConstructorParser() {
 		ImportDefinition importDef = ImportDefinition.parse( "java:java.lang.String AS jString" );
 		assertThat( importDef.className() ).isEqualTo( "java.lang.String" );
 		assertThat( importDef.resolverPrefix() ).isEqualTo( "java" );
@@ -65,6 +65,11 @@ public class ImportDefinitionTest {
 		assertThat( importDef.className() ).isEqualTo( "java.lang.String" );
 		assertThat( importDef.resolverPrefix() ).isEqualTo( null );
 		assertThat( importDef.alias() ).isEqualTo( "String" );
+
+		importDef = ImportDefinition.parse( "java.util.*" );
+		assertThat( importDef.className() ).isEqualTo( "java.util.*" );
+		assertThat( importDef.resolverPrefix() ).isEqualTo( null );
+		assertThat( importDef.alias() ).isEqualTo( "*" );
 	}
 
 }

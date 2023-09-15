@@ -18,9 +18,12 @@
 package ortus.boxlang.runtime.loader;
 
 /**
- * Represents an import
+ * Represents an import in BoxLang
  *
  * import prefix:package.to.Class as alias
+ * import package.to.Class
+ * import package.to.Class as alias
+ * import package.to.*
  *
  * @param className      The class name
  * @param resolverPrefix The resolver prefix
@@ -35,6 +38,13 @@ public record ImportDefinition( String className, String resolverPrefix, String 
 		}
 	}
 
+	/**
+	 * Parses an import string into an ImportDefinition
+	 *
+	 * @param importStr The import string
+	 *
+	 * @return The ImportDefinition instance
+	 */
 	public static ImportDefinition parse( String importStr ) {
 		String	className			= importStr;
 		String	resolverPrefix		= null;
