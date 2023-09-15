@@ -32,14 +32,15 @@ import ortus.boxlang.runtime.types.Closure;
 public class Phase2Closure$closure1 extends Closure {
 
 	// TODO: Was not working.
-	// public Phase2Closure$closure1( IBoxContext declaringContext ) {
-	// super(
-	// new Argument[] {
-	// new Argument( true, "String", Key.of( "name" ), "Brad", "" )
-	// },
-	// declaringContext
-	// );
-	// }
+	public Phase2Closure$closure1( IBoxContext declaringContext ) {
+		super( declaringContext );
+		// super(
+		// new Argument[] {
+		// new Argument( true, "String", Key.of( "name" ), "Brad", "" )
+		// },
+		// declaringContext
+		// );
+	}
 
 	/**
 	 * <pre>
