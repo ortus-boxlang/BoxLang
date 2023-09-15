@@ -28,7 +28,7 @@ public class Position {
 
 	/**
 	 * Creates a position
-	 * 
+	 *
 	 * @param start the start position in the source code
 	 * @param end   the end position in the source code
 	 */
@@ -40,7 +40,7 @@ public class Position {
 
 	/**
 	 * Creates a position including the file information
-	 * 
+	 *
 	 * @param start  the start position in the source code
 	 * @param end    the end position in the source code
 	 * @param source the source file reference
@@ -53,7 +53,7 @@ public class Position {
 
 	/**
 	 * Returns the start point
-	 * 
+	 *
 	 * @return the start point of the region
 	 */
 	public Point getStart() {
@@ -62,7 +62,7 @@ public class Position {
 
 	/**
 	 * Returns the end point
-	 * 
+	 *
 	 * @return the end point of the region
 	 */
 	public Point getEnd() {
@@ -71,9 +71,9 @@ public class Position {
 
 	/**
 	 * Returns the source of the position
-	 * 
+	 *
 	 * @return the start point of the region
-	 * 
+	 *
 	 * @see Source
 	 */
 	public Source getSource() {
@@ -82,12 +82,34 @@ public class Position {
 
 	/**
 	 * Set the source of the position
-	 * 
+	 *
 	 * @param source The source of the position (i.e. file)
-	 * 
+	 *
 	 * @see Source
 	 */
 	public void setSource( Source source ) {
 		this.source = source;
+	}
+
+	/**
+	 * String representation of the Position
+	 * @return a String representation of the position including the source file if available
+	 */
+	@Override
+	public String toString() {
+		StringBuilder sb = new StringBuilder();
+		if ( this.getSource() != null ) {
+			sb.append( this.getSource() );
+			sb.append( ": " );
+		}
+		sb.append( this.getStart().getLine() )
+		    .append( "," )
+		    .append( this.getStart().getColumn() );
+		sb.append( " - " );
+		sb.append( this.getEnd().getLine() )
+		    .append( "," )
+		    .append( this.getEnd().getColumn() );
+
+		return sb.toString();
 	}
 }
