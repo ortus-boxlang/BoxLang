@@ -20,12 +20,18 @@ package ortus.boxlang.runtime.loader.resolvers;
 
 import static com.google.common.truth.Truth.assertThat;
 
+import java.io.File;
+import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
+import com.google.common.reflect.ClassPath;
 import ortus.boxlang.runtime.context.ScriptingBoxContext;
 import ortus.boxlang.runtime.loader.ImportDefinition;
 
@@ -40,9 +46,9 @@ public class BaseResolverTest {
 		assertThat( target.getPrefix() ).isEqualTo( "test" );
 	}
 
-	@DisplayName( "It can expand imports" )
+	@DisplayName( "It can expand basic imports" )
 	@Test
-	void testItCanResolveImports() {
+	void testItCanResolveBasicImports() {
 		List<ImportDefinition>	imports		= Arrays.asList(
 		    ImportDefinition.parse( "java:java.lang.String" ),
 		    ImportDefinition.parse( "java:java.lang.Integer" ),

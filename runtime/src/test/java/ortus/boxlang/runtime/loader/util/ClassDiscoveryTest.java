@@ -31,7 +31,17 @@ public class ClassDiscoveryTest {
 	@DisplayName( "It can get class files by package name" )
 	@Test
 	void testGetClassFiles() throws IOException {
-		String[] classes = ClassDiscovery.getClassFiles( "ortus.boxlang.runtime.loader" );
+		String[] classes = ClassDiscovery.getClassFiles( "ortus.boxlang.runtime.loader", false );
+		System.out.println( Arrays.deepToString( classes ) );
+		assertThat( classes ).isNotEmpty();
+		assertThat( classes ).asList().contains( "ortus.boxlang.runtime.loader.ClassLocator" );
+	}
+
+	@DisplayName( "It can get class files by package name recursively" )
+	@Test
+	void testGetClassFilesRecursively() throws IOException {
+		String[] classes = ClassDiscovery.getClassFiles( "ortus.boxlang.runtime.loader", true );
+		System.out.println( Arrays.deepToString( classes ) );
 		assertThat( classes ).isNotEmpty();
 		assertThat( classes ).asList().contains( "ortus.boxlang.runtime.loader.util.ClassDiscovery" );
 	}

@@ -17,6 +17,7 @@
  */
 package ortus.boxlang.runtime.loader.resolvers;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.Optional;
 
@@ -24,6 +25,7 @@ import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.loader.ClassLocator;
 import ortus.boxlang.runtime.loader.ImportDefinition;
 import ortus.boxlang.runtime.loader.ClassLocator.ClassLocation;
+import ortus.boxlang.runtime.loader.util.ClassDiscovery;
 
 /**
  * This class is the base class for all resolvers.
@@ -112,13 +114,26 @@ public class BaseResolver implements IClassResolver {
 	 */
 	public String expandFromImport( IBoxContext context, String className, List<ImportDefinition> imports ) {
 		return imports.stream()
-		    // Discover import
-		    .filter( thisImport -> importApplies( thisImport ) && thisImport.alias().equalsIgnoreCase( className ) )
+		    // Discover import by matching the resolver prefix and the class name or alias or multi-import
+		    .filter( thisImport -> importApplies( thisImport ) && importHas( thisImport, className ) )
 		    // Return the first one, the first one wins
 		    .findFirst()
-		    .map( ImportDefinition::className )
+		    .map( targetImport -> targetImport.getFullyQualifiedClass( className ) )
 		    // Nothing found, return the original class name
 		    .orElse( className );
+	}
+
+	/**
+	 * Checks if the import has the given class
+	 *
+	 * @param thisImport The import to check
+	 * @param className  The class name to check
+	 *
+	 * @return True if the import has the class name, false otherwise
+	 */
+	protected boolean importHas( ImportDefinition thisImport, String className ) {
+		// Not a multi-import, check if the class name matches the alias
+		return thisImport.alias().equalsIgnoreCase( className );
 	}
 
 	/**

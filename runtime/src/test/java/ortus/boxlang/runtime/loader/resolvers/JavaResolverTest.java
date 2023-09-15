@@ -21,6 +21,8 @@ package ortus.boxlang.runtime.loader.resolvers;
 import static com.google.common.truth.Truth.assertThat;
 
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Optional;
 import java.util.logging.ConsoleHandler;
 
@@ -28,8 +30,10 @@ import org.apache.commons.lang3.ClassUtils;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
+import ortus.boxlang.runtime.context.ScriptingBoxContext;
 import ortus.boxlang.runtime.loader.ClassLocator;
 import ortus.boxlang.runtime.loader.ClassLocator.ClassLocation;
+import ortus.boxlang.runtime.loader.ImportDefinition;
 
 public class JavaResolverTest {
 
@@ -92,6 +96,25 @@ public class JavaResolverTest {
 		assertThat( classLocation.get().packageName() ).isEqualTo( "org.apache.commons.lang3" );
 		assertThat( classLocation.get().type() ).isEqualTo( ClassLocator.TYPE_JAVA );
 		assertThat( classLocation.get().module() ).isNull();
+	}
+
+	@DisplayName( "It can resolve wildcard imports from the JDK itself" )
+	@Test
+	void testItCanResolveWildcardImports() throws Exception {
+		List<ImportDefinition>	imports		= Arrays.asList(
+		    ImportDefinition.parse( "java:java.lang.*" ),
+		    ImportDefinition.parse( "java:java.util.*" )
+		);
+
+		JavaResolver			jResolver	= JavaResolver.getInstance();
+		String					fqn			= jResolver.expandFromImport( new ScriptingBoxContext(), "String", imports );
+		assertThat( fqn ).isEqualTo( "java.lang.String" );
+
+		fqn = jResolver.expandFromImport( new ScriptingBoxContext(), "Integer", imports );
+		assertThat( fqn ).isEqualTo( "java.lang.Integer" );
+
+		fqn = jResolver.expandFromImport( new ScriptingBoxContext(), "List", imports );
+		assertThat( fqn ).isEqualTo( "java.util.List" );
 	}
 
 }

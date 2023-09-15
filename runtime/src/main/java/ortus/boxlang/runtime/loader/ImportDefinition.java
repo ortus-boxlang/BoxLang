@@ -32,7 +32,9 @@ package ortus.boxlang.runtime.loader;
 public record ImportDefinition( String className, String resolverPrefix, String alias ) {
 
 	// Compact constructor disallows null className
-	public ImportDefinition {
+	public ImportDefinition
+
+	{
 		if ( className == null ) {
 			throw new IllegalArgumentException( "Class name cannot be null." );
 		}
@@ -60,10 +62,16 @@ public record ImportDefinition( String className, String resolverPrefix, String 
 	 * Returns the fully qualified class name of the import definition
 	 * considering if it is a wildcard import or not
 	 *
+	 * @param targetClass The class name in code that needed qualification
+	 *
 	 * @return The fully qualified class name
 	 */
-	public String getFullyQualifiedClass() {
-		return isMultiImport() ? getPackageName() + "." + className : className;
+	public String getFullyQualifiedClass( String targetClass ) {
+		if ( isMultiImport() ) {
+			return String.format( "%s.%s", className.substring( 0, className.length() - 2 ), targetClass );
+		} else {
+			return className;
+		}
 	}
 
 	/**

@@ -17,6 +17,7 @@
  */
 package ortus.boxlang.runtime.loader.resolvers;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.Optional;
 
@@ -25,6 +26,7 @@ import org.apache.commons.lang3.ClassUtils;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.loader.ClassLocator;
 import ortus.boxlang.runtime.loader.ImportDefinition;
+import ortus.boxlang.runtime.loader.util.ClassDiscovery;
 import ortus.boxlang.runtime.loader.ClassLocator.ClassLocation;
 
 /**
@@ -139,6 +141,48 @@ public class JavaResolver extends BaseResolver {
 		} catch ( ClassNotFoundException e ) {
 			return Optional.empty();
 		}
+	}
+
+	/**
+	 * Checks if the import has the given class name as :
+	 * - an alias
+	 * - as a class
+	 * - as a multi-import (java.util.*) definition
+	 *
+	 * @param thisImport The import to check
+	 * @param className  The class name to check
+	 *
+	 * @return True if the import has the class name, false otherwise
+	 *
+	 * @throws IOException
+	 */
+	@Override
+	protected boolean importHas( ImportDefinition thisImport, String className ) {
+		if ( thisImport.isMultiImport() ) {
+			// We can't interrogate the JDK due to limitations in the JDK itself
+			if ( thisImport.className().startsWith( "java." ) || thisImport.className().startsWith( "javax." ) ) {
+				// Here we do a simple check to see if the class name can be loaded
+				// from the system class loader. This is not a perfect check, but it
+				// will do for now.
+				try {
+					Class.forName( thisImport.getFullyQualifiedClass( className ), false, getSystemClassLoader() );
+					return true;
+				} catch ( ClassNotFoundException e ) {
+					return false;
+				}
+			} else {
+				try {
+					return ClassDiscovery
+					    .getClassFilesAsStream( thisImport.getPackageName(), false )
+					    .anyMatch( clazzName -> ClassUtils.getShortClassName( clazzName ).equalsIgnoreCase( className ) );
+				} catch ( IOException e ) {
+					e.printStackTrace();
+					throw new RuntimeException( "Could not discover classes in package [" + thisImport.getPackageName() + "]", e );
+				}
+			}
+		}
+		// Not a multi-import, check if the class name matches the alias
+		return thisImport.alias().equalsIgnoreCase( className );
 	}
 
 	/**

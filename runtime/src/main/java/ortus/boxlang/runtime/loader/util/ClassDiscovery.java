@@ -21,12 +21,13 @@ public class ClassDiscovery {
 	 * Scans all classes accessible from the context class loader which belong to the given package and subpackages.
 	 *
 	 * @param packageName The base package
+	 * @param recursive   Whether to scan recursively or not
 	 *
 	 * @return The discovered classes as a stream of loadable fully qualified names
 	 *
 	 * @throws IOException If the classpath cannot be read
 	 */
-	public static Stream<String> getClassFilesAsStream( String packageName ) throws IOException {
+	public static Stream<String> getClassFilesAsStream( String packageName, Boolean recursive ) throws IOException {
 		ClassLoader			classLoader	= ClassLoader.getSystemClassLoader();
 		String				path		= packageName.replace( '.', '/' );
 		Enumeration<URL>	resources	= classLoader.getResources( path );
@@ -35,20 +36,21 @@ public class ClassDiscovery {
 		    .stream()
 		    .map( URL::getFile )
 		    .map( File::new )
-		    .flatMap( directory -> Stream.of( findClassNames( directory, packageName ) ) );
+		    .flatMap( directory -> Stream.of( findClassNames( directory, packageName, recursive ) ) );
 	}
 
 	/**
 	 * Scans all classes accessible from the context class loader which belong to the given package and subpackages.
 	 *
 	 * @param packageName The base package
+	 * @param recursive   Whether to scan recursively or not
 	 *
 	 * @return The discovered classes as loadable fully qualified names
 	 *
 	 * @throws IOException If the classpath cannot be read
 	 */
-	public static String[] getClassFiles( String packageName ) throws IOException {
-		return getClassFilesAsStream( packageName )
+	public static String[] getClassFiles( String packageName, Boolean recursive ) throws IOException {
+		return getClassFilesAsStream( packageName, recursive )
 		    .toArray( String[]::new );
 	}
 
@@ -59,13 +61,14 @@ public class ClassDiscovery {
 	 * If a class can't be loaded it will be {@code null} in that position in the array
 	 *
 	 * @param packageName The base package
+	 * @param recursive   Whether to scan recursively or not
 	 *
 	 * @return The discovered classes as loaded classes
 	 *
 	 * @throws IOException
 	 */
-	public static Class<?>[] loadClassFiles( String packageName ) throws IOException {
-		return getClassFilesAsStream( packageName )
+	public static Class<?>[] loadClassFiles( String packageName, Boolean recursive ) throws IOException {
+		return getClassFilesAsStream( packageName, recursive )
 		    .parallel()
 		    .map( className -> {
 			    try {
@@ -88,12 +91,15 @@ public class ClassDiscovery {
 	 *
 	 * @throws ClassNotFoundException
 	 */
-	private static String[] findClassNames( File directory, String packageName ) {
+	private static String[] findClassNames( File directory, String packageName, Boolean recursive ) {
 		return Arrays.stream( directory.listFiles() )
 		    .parallel()
 		    .flatMap( file -> {
 			    if ( file.isDirectory() ) {
-				    return Arrays.stream( findClassNames( file, packageName + "." + file.getName() ) );
+				    if ( recursive ) {
+					    return Arrays.stream( findClassNames( file, packageName + "." + file.getName(), recursive ) );
+				    }
+				    return Stream.empty();
 			    } else {
 				    return file.getName().endsWith( ".class" )
 				        ? Stream.of( packageName + "." + file.getName().replace( ".class", "" ) )
