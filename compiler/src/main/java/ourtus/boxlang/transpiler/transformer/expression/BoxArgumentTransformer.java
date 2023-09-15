@@ -29,7 +29,7 @@ public class BoxArgumentTransformer extends AbstractTransformer {
 	 * @return Generates a Java Parser Expression
 	 *
 	 * @throws IllegalStateException
-	 * 
+	 *
 	 * @see BoxArgument
 	 */
 	@Override
@@ -49,7 +49,7 @@ public class BoxArgumentTransformer extends AbstractTransformer {
 
 		Node				javaExpr	= parseExpression( template, values );
 		logger.info( side + node.getSourceText() + " -> " + javaExpr );
-		addIndex( javaExpr, arg );
+
 		return javaExpr;
 	}
 }
