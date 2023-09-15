@@ -45,7 +45,7 @@ public abstract class Closure extends Function {
 	/**
 	 * Constructor
 	 */
-	public Closure( IBoxContext declaringContext ) {
+	protected Closure( IBoxContext declaringContext ) {
 		super( Key.of( "Closure" ), null, null );
 		Objects.requireNonNull( declaringContext, "A Closure's declaring context cannot be null." );
 		this.declaringContext = declaringContext;
@@ -64,10 +64,6 @@ public abstract class Closure extends Function {
 	 */
 	public IBoxContext getDeclaringContext() {
 		return declaringContext;
-	}
-
-	public Argument[] getArguments() {
-		return arguments;
 	}
 
 }
