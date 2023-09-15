@@ -42,7 +42,12 @@ public class BoxFunctionInvocationTransformer extends AbstractTransformer {
 		String					side		= context == TransformerContext.NONE ? "" : "(" + context.toString() + ") ";
 		logger.info( side + node.getSourceText() );
 
-		Map<String, String> values = new HashMap<>();
+		Map<String, String> values = new HashMap<>() {
+
+			{
+				put( "name", function.getName().getName() );
+			}
+		};
 		for ( int i = 0; i < function.getArguments().size(); i++ ) {
 			Expression expr = ( Expression ) BoxLangTranspiler.transform( function.getArguments().get( i ) );
 			values.put( "arg" + i, expr.toString() );
@@ -50,6 +55,7 @@ public class BoxFunctionInvocationTransformer extends AbstractTransformer {
 		String	template	= getTemplate( function );
 		Node	javaExpr	= parseExpression( template, values );
 		logger.info( side + node.getSourceText() + " -> " + javaExpr );
+		addIndex( javaExpr, node );
 		return javaExpr;
 	}
 
@@ -59,14 +65,16 @@ public class BoxFunctionInvocationTransformer extends AbstractTransformer {
 		;
 		if ( target != null )
 			return target;
-		StringBuilder sb = new StringBuilder( function.getName().getName() );
-		sb.append( "(" );
+		StringBuilder sb = new StringBuilder( "context.invokeFunction( Key.of( \"${name}\" )" );
+
+		sb.append( ", new Object[] { " );
 		for ( int i = 0; i < function.getArguments().size(); i++ ) {
 			sb.append( "${" ).append( "arg" ).append( i ).append( "}" );
 			if ( i < function.getArguments().size() - 1 ) {
 				sb.append( "," );
 			}
 		}
+		sb.append( "}" );
 		sb.append( ")" );
 		return sb.toString();
 	}
