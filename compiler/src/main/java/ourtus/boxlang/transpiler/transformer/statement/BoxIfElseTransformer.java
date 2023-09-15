@@ -69,6 +69,7 @@ public class BoxIfElseTransformer extends AbstractTransformer {
 			else
 				javaIfStmt.setElseStmt( elseBlock.getStatement( 0 ) );
 		}
+		addIndex( javaIfStmt, node );
 		return javaIfStmt;
 
 	}
