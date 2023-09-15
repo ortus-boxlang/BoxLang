@@ -44,7 +44,7 @@ public class BoxBinaryOperationTransformer extends AbstractTransformer {
 	 * @return generates a Java Parser Method invocation to the corresponding runtime implementation
 	 *
 	 * @throws IllegalStateException
-	 * 
+	 *
 	 * @see BoxBinaryOperation
 	 * @see BoxBinaryOperator foe the supported operators
 	 */
@@ -99,7 +99,7 @@ public class BoxBinaryOperationTransformer extends AbstractTransformer {
 		}
 		Node javaExpr = parseExpression( template, values );
 		logger.info( node.getSourceText() + " -> " + javaExpr );
-		addIndex( javaExpr, node );
+		// addIndex( javaExpr, node );
 		return javaExpr;
 	}
 

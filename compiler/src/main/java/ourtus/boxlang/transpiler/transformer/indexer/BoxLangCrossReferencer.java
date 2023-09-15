@@ -15,10 +15,10 @@ public abstract class BoxLangCrossReferencer {
 
 	/**
 	 * Store a reference into the index
-	 * 
+	 *
 	 * @param javaNode Java Parser AST Node
 	 * @param boxNode  BoxLang AST Node
-	 * 
+	 *
 	 * @return
 	 */
 	public abstract Node storeReference( Node javaNode, ourtus.boxlang.ast.BoxNode boxNode );

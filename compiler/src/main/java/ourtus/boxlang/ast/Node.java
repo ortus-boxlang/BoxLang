@@ -30,7 +30,7 @@ public class Node {
 
 	/**
 	 * AST node constructor
-	 * 
+	 *
 	 * @param position   the position within the source code that originated the node
 	 * @param sourceText the original source code that represented by the node
 	 */
@@ -42,9 +42,9 @@ public class Node {
 
 	/**
 	 * Returns the position in code that the node represents
-	 * 
+	 *
 	 * @return a Position instance
-	 * 
+	 *
 	 * @see Position
 	 */
 	public Position getPosition() {
@@ -53,7 +53,7 @@ public class Node {
 
 	/**
 	 * Returns the source code that originated the Node
-	 * 
+	 *
 	 * @return the snipped of the source code
 	 */
 	public String getSourceText() {
@@ -62,7 +62,7 @@ public class Node {
 
 	/**
 	 * Set the parent and the children of the Node
-	 * 
+	 *
 	 * @param parent an instance of the parent code
 	 */
 	public void setParent( Node parent ) {
@@ -75,7 +75,7 @@ public class Node {
 
 	/**
 	 * Returns the parent Node of node or null if has no parent
-	 * 
+	 *
 	 * @return the parent Node of the current Node
 	 */
 	public Node getParent() {
@@ -84,7 +84,7 @@ public class Node {
 
 	/**
 	 * Returns the list ov children of the current node
-	 * 
+	 *
 	 * @return a list of children Node
 	 */
 	public List<Node> getChildren() {
@@ -97,7 +97,7 @@ public class Node {
 
 	/**
 	 * Walk the tree
-	 * 
+	 *
 	 * @return a list of nodes traversed
 	 */
 	public List<Node> walk() {
@@ -108,4 +108,5 @@ public class Node {
 		}
 		return result;
 	}
+
 }
