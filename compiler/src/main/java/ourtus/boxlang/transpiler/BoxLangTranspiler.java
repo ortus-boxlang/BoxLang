@@ -14,11 +14,17 @@
  */
 package ourtus.boxlang.transpiler;
 
+import com.github.javaparser.JavaParser;
+import com.github.javaparser.ParseResult;
 import com.github.javaparser.ast.CompilationUnit;
 import com.github.javaparser.ast.Node;
 import com.github.javaparser.ast.body.MethodDeclaration;
 import com.github.javaparser.ast.stmt.BlockStmt;
 import com.github.javaparser.ast.stmt.Statement;
+import com.github.javaparser.ast.visitor.VoidVisitor;
+import com.github.javaparser.printer.DefaultPrettyPrinterVisitor;
+import com.github.javaparser.printer.Printer;
+import com.github.javaparser.printer.configuration.DefaultPrinterConfiguration;
 import ourtus.boxlang.ast.BoxNode;
 import ourtus.boxlang.ast.BoxScript;
 import ourtus.boxlang.ast.BoxStatement;
@@ -28,8 +34,11 @@ import ourtus.boxlang.transpiler.transformer.*;
 import ourtus.boxlang.transpiler.transformer.expression.*;
 
 import java.util.HashMap;
+import java.util.Optional;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import ourtus.boxlang.transpiler.transformer.indexer.IndexPrettyPrinterVisitor;
 import ourtus.boxlang.transpiler.transformer.statement.*;
 
 /**
@@ -59,6 +68,7 @@ public class BoxLangTranspiler {
 																	put( BoxStringLiteral.class, new BoxStringLiteralTransformer() );
 																	put( BoxIntegerLiteral.class, new BoxIntegerLiteralTransformer() );
 																	put( BoxBooleanLiteral.class, new BoxBooleanLiteralTransformer() );
+																	put( BoxDecimalLiteral.class, new BoxDecimalLiteralTransformer() );
 																	put( BoxArgument.class, new BoxArgumentTransformer() );
 
 																	put( BoxParenthesis.class, new BoxParenthesisTransformer() );
@@ -148,6 +158,10 @@ public class BoxLangTranspiler {
 				invokeMethod.getBody().get().addStatement( ( Statement ) javaStmt );
 			}
 		}
+
+		VoidVisitor<Void> visitor = new IndexPrettyPrinterVisitor( new DefaultPrinterConfiguration() );
+		javaClass.accept( visitor, null );
+
 		return javaClass;
 	}
 }
