@@ -18,15 +18,16 @@ public class BoxLangCrossReferencerDefault extends BoxLangCrossReferencer {
 
 	/**
 	 * Creates the cross-reference between the Java AST node and BoxNone
+	 * 
 	 * @param javaNode Java Parser AST Node
 	 * @param boxNode  BoxLang AST Node
 	 *
 	 * @return the Java AST with a BoxNode in the data collection
 	 */
 	public Node storeReference( Node javaNode, ourtus.boxlang.ast.BoxNode boxNode ) {
-		if (this.enabled) {
-			if (javaNode instanceof Statement) {
-				javaNode.setData(BOX_NODE_DATA_KEY, boxNode);
+		if ( this.enabled ) {
+			if ( javaNode instanceof Statement ) {
+				javaNode.setData( BOX_NODE_DATA_KEY, boxNode );
 			}
 		}
 		return javaNode;
