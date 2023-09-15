@@ -44,9 +44,9 @@ public class BoxArrayAccessTransformer extends AbstractTransformer {
 	 * @param context transformation context
 	 *
 	 * @return generates a Java Parser Expression accessing the scope
-	 * 
+	 *
 	 * @throws IllegalStateException
-	 * 
+	 *
 	 * @see BoxArrayAccess
 	 */
 	@Override
@@ -90,7 +90,7 @@ public class BoxArrayAccessTransformer extends AbstractTransformer {
 
 			Node javaNode = parseExpression( template, values );
 			// logger.info(side + node.getSourceText() + " -> " + javaNode);
-			addIndex( javaNode, expr );
+			addIndex( javaNode, node );
 			return javaNode;
 		}
 		throw new IllegalStateException( "Not implemented" );
