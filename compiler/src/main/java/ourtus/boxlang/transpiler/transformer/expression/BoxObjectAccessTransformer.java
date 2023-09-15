@@ -26,7 +26,6 @@ public class BoxObjectAccessTransformer extends AbstractTransformer {
 	public Node transform( BoxNode node, TransformerContext context ) throws IllegalStateException {
 		BoxObjectAccess	objectAccess	= ( BoxObjectAccess ) node;
 		String			side			= context == TransformerContext.NONE ? "" : "(" + context.toString() + ") ";
-		logger.info( side + node.getSourceText() );
 
 		if ( objectAccess.getContext() instanceof BoxScope && objectAccess.getAccess() instanceof BoxObjectAccess ) {
 			Expression	scope		= ( Expression ) BoxLangTranspiler.transform( objectAccess.getContext(), TransformerContext.LEFT );
@@ -52,7 +51,10 @@ public class BoxObjectAccessTransformer extends AbstractTransformer {
 														           Referencer.get(${scope}.get( Key.of( ${var0} ) ).get(Key.of( ${var1} )),false)
 														           """;
 													};
-				return parseExpression( template, values );
+				Node					javaExpr	= parseExpression( template, values );
+				logger.info( side + node.getSourceText() + " -> " + javaExpr );
+				addIndex( javaExpr, node );
+				return javaExpr;
 
 			} else {
 				Map<String, String>	values		= new HashMap<>() {
@@ -72,7 +74,10 @@ public class BoxObjectAccessTransformer extends AbstractTransformer {
 													           """;
 
 												};
-				return parseExpression( template, values );
+				Node				javaExpr	= parseExpression( template, values );
+				logger.info( side + node.getSourceText() + " -> " + javaExpr );
+				addIndex( javaExpr, node );
+				return javaExpr;
 			}
 
 		} else if ( objectAccess.getContext() instanceof BoxIdentifier && objectAccess.getAccess() instanceof BoxIdentifier ) {
@@ -111,7 +116,10 @@ public class BoxObjectAccessTransformer extends AbstractTransformer {
 												           ${scope}.get( Key.of( "${variable}" ) )
 												           """;
 											};
-			return parseExpression( template, values );
+			Node				javaExpr	= parseExpression( template, values );
+			logger.info( side + node.getSourceText() + " -> " + javaExpr );
+			addIndex( javaExpr, node );
+			return javaExpr;
 		}
 
 		throw new IllegalStateException( "" );
