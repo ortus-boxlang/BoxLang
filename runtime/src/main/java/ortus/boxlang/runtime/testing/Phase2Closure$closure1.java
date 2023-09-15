@@ -31,52 +31,53 @@ import ortus.boxlang.runtime.types.Closure;
  */
 public class Phase2Closure$closure1 extends Closure {
 
-    public Phase2Closure$closure1( IBoxContext declaringContext ) {
-        super(
-            new Argument[] {
-                new Argument( true, "String", Key.of( "name" ), "Brad", "" )
-            },
-            declaringContext
-        );
-    }
+	// TODO: Was not working.
+	// public Phase2Closure$closure1( IBoxContext declaringContext ) {
+	// super(
+	// new Argument[] {
+	// new Argument( true, "String", Key.of( "name" ), "Brad", "" )
+	// },
+	// declaringContext
+	// );
+	// }
 
-    /**
-     * <pre>
-        ( required string name='Brad' ) => {
-            var greeting = "Hello " & name;
-    
-            out.println( "Inside Closure, outside lookup finds: " & outside )
-    
-            return greeting;
-        }
-     * </pre>
-     */
-    @Override
-    public Object invoke( FunctionBoxContext context ) {
+	/**
+	 * <pre>
+	    ( required string name='Brad' ) => {
+	        var greeting = "Hello " & name;
+	
+	        out.println( "Inside Closure, outside lookup finds: " & outside )
+	
+	        return greeting;
+	    }
+	 * </pre>
+	 */
+	@Override
+	public Object invoke( FunctionBoxContext context ) {
 
-        context.getScopeNearby( LocalScope.name ).assign(
-            Key.of( "Greeting" ),
-            Concat.invoke(
-                "Hello ",
-                context.scopeFindNearby( Key.of( "name" ), null ).value()
-            )
-        );
+		context.getScopeNearby( LocalScope.name ).assign(
+		    Key.of( "Greeting" ),
+		    Concat.invoke(
+		        "Hello ",
+		        context.scopeFindNearby( Key.of( "name" ), null ).value()
+		    )
+		);
 
-        // Reach "into" parent context and get "out" from variables scope
-        Referencer.getAndInvoke(
-            context,
-            // Object
-            context.scopeFindNearby( Key.of( "out" ), null ).value(),
-            // Method
-            Key.of( "println" ),
-            // Arguments
-            new Object[] {
-                "Inside Closure, outside lookup finds: " + context.scopeFindNearby( Key.of( "outside" ), null ).value()
-            },
-            false
-        );
+		// Reach "into" parent context and get "out" from variables scope
+		Referencer.getAndInvoke(
+		    context,
+		    // Object
+		    context.scopeFindNearby( Key.of( "out" ), null ).value(),
+		    // Method
+		    Key.of( "println" ),
+		    // Arguments
+		    new Object[] {
+		        "Inside Closure, outside lookup finds: " + context.scopeFindNearby( Key.of( "outside" ), null ).value()
+		    },
+		    false
+		);
 
-        return context.scopeFindNearby( Key.of( "greeting" ), null ).value();
-    }
+		return context.scopeFindNearby( Key.of( "greeting" ), null ).value();
+	}
 
 }
