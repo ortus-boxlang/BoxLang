@@ -37,10 +37,19 @@ public class SourceFile extends Source {
 
 	/**
 	 * Returns the File associate to the source
-	 * 
+	 *
 	 * @return a File instance
 	 */
 	public File getFile() {
 		return file;
+	}
+
+	/**
+	 * String representation of a file source
+	 * @return the absolute path of the File
+	 */
+	@Override
+	public String toString() {
+		return file.getAbsolutePath();
 	}
 }
