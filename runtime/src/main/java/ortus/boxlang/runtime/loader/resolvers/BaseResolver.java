@@ -17,7 +17,6 @@
  */
 package ortus.boxlang.runtime.loader.resolvers;
 
-import java.io.IOException;
 import java.util.List;
 import java.util.Optional;
 
@@ -25,7 +24,6 @@ import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.loader.ClassLocator;
 import ortus.boxlang.runtime.loader.ImportDefinition;
 import ortus.boxlang.runtime.loader.ClassLocator.ClassLocation;
-import ortus.boxlang.runtime.loader.util.ClassDiscovery;
 
 /**
  * This class is the base class for all resolvers.
@@ -124,7 +122,7 @@ public class BaseResolver implements IClassResolver {
 	}
 
 	/**
-	 * Checks if the import has the given class
+	 * Checks if the import has the given class. This method is used for single imports only
 	 *
 	 * @param thisImport The import to check
 	 * @param className  The class name to check

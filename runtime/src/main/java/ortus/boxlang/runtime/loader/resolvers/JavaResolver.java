@@ -22,6 +22,7 @@ import java.util.List;
 import java.util.Optional;
 
 import org.apache.commons.lang3.ClassUtils;
+import org.apache.commons.lang3.StringUtils;
 
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.loader.ClassLocator;
@@ -153,36 +154,46 @@ public class JavaResolver extends BaseResolver {
 	 * @param className  The class name to check
 	 *
 	 * @return True if the import has the class name, false otherwise
-	 *
-	 * @throws IOException
 	 */
 	@Override
 	protected boolean importHas( ImportDefinition thisImport, String className ) {
-		if ( thisImport.isMultiImport() ) {
-			// We can't interrogate the JDK due to limitations in the JDK itself
-			if ( thisImport.className().startsWith( "java." ) || thisImport.className().startsWith( "javax." ) ) {
-				// Here we do a simple check to see if the class name can be loaded
-				// from the system class loader. This is not a perfect check, but it
-				// will do for now.
-				try {
-					Class.forName( thisImport.getFullyQualifiedClass( className ), false, getSystemClassLoader() );
-					return true;
-				} catch ( ClassNotFoundException e ) {
-					return false;
-				}
-			} else {
-				try {
-					return ClassDiscovery
-					    .getClassFilesAsStream( thisImport.getPackageName(), false )
-					    .anyMatch( clazzName -> ClassUtils.getShortClassName( clazzName ).equalsIgnoreCase( className ) );
-				} catch ( IOException e ) {
-					e.printStackTrace();
-					throw new RuntimeException( "Could not discover classes in package [" + thisImport.getPackageName() + "]", e );
-				}
+		return thisImport.isMultiImport()
+		    ? importHasMulti( thisImport, className )
+		    : super.importHas( thisImport, className );
+	}
+
+	/**
+	 * Checks if the import has the given class name as a multi-import
+	 *
+	 * @param thisImport The import to check
+	 * @param className  The class name to check
+	 *
+	 * @return True if the import has the class name, false otherwise
+	 */
+	private boolean importHasMulti( ImportDefinition thisImport, String className ) {
+		// TODO: Add caching
+
+		// We can't interrogate the JDK due to limitations in the JDK itself
+		if ( thisImport.className().matches( "(?i)(java|javax)\\." ) ) {
+			// Here we do a simple check to see if the class name can be loaded
+			// from the system class loader. This is not a perfect check, but it
+			// will do for now.
+			try {
+				Class.forName( thisImport.getFullyQualifiedClass( className ), false, getSystemClassLoader() );
+				return true;
+			} catch ( ClassNotFoundException e ) {
+				return false;
+			}
+		} else {
+			try {
+				return ClassDiscovery
+				    .getClassFilesAsStream( thisImport.getPackageName(), false )
+				    .anyMatch( clazzName -> ClassUtils.getShortClassName( clazzName ).equalsIgnoreCase( className ) );
+			} catch ( IOException e ) {
+				e.printStackTrace();
+				throw new RuntimeException( "Could not discover classes in package [" + thisImport.getPackageName() + "]", e );
 			}
 		}
-		// Not a multi-import, check if the class name matches the alias
-		return thisImport.alias().equalsIgnoreCase( className );
 	}
 
 	/**
