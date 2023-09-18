@@ -20,6 +20,9 @@ package ortus.boxlang.runtime.loader.resolvers;
 import java.io.IOException;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentHashMap.KeySetView;
 
 import org.apache.commons.lang3.ClassUtils;
 
@@ -37,12 +40,23 @@ public class BaseResolver implements IClassResolver {
 	/**
 	 * The name of a resolver
 	 */
-	protected String	name	= "";
+	protected String	name		= "";
 
 	/**
 	 * The prefix of a resolver
 	 */
-	protected String	prefix	= "";
+	protected String	prefix		= "";
+
+	/**
+	 * The import cache
+	 */
+	private Set<String>	importCache	= ConcurrentHashMap.newKeySet();
+
+	/**
+	 * --------------------------------------------------------------------------
+	 * Constructor
+	 * --------------------------------------------------------------------------
+	 */
 
 	/**
 	 * Private constructor
@@ -54,6 +68,12 @@ public class BaseResolver implements IClassResolver {
 		this.name	= name;
 		this.prefix	= prefix.toLowerCase();
 	}
+
+	/**
+	 * --------------------------------------------------------------------------
+	 * Getters
+	 * --------------------------------------------------------------------------
+	 */
 
 	/**
 	 * Each resolver has a unique human-readable name
@@ -74,6 +94,37 @@ public class BaseResolver implements IClassResolver {
 	public String getPrefix() {
 		return prefix;
 	}
+
+	/**
+	 * Get the import cache
+	 *
+	 * @return The importCache set
+	 */
+	public Set<String> getImportCache() {
+		return importCache;
+	}
+
+	/**
+	 * Get the import cache size
+	 *
+	 * @return The importCache size
+	 */
+	public Integer getImportCacheSize() {
+		return importCache.size();
+	}
+
+	/**
+	 * Clear the import cache
+	 */
+	public void clearImportCache() {
+		importCache.clear();
+	}
+
+	/**
+	 * --------------------------------------------------------------------------
+	 * Resolvers
+	 * --------------------------------------------------------------------------
+	 */
 
 	/**
 	 * Each resolver has a way to resolve the class it represents.
@@ -105,6 +156,12 @@ public class BaseResolver implements IClassResolver {
 	}
 
 	/**
+	 * --------------------------------------------------------------------------
+	 * Import Helpers
+	 * --------------------------------------------------------------------------
+	 */
+
+	/**
 	 * Tries to expand the full class name using the import aliases given. If the class
 	 * name is not found as an import, we return the original class name.
 	 *
@@ -120,7 +177,11 @@ public class BaseResolver implements IClassResolver {
 		    .filter( thisImport -> importApplies( thisImport ) && importHas( thisImport, className ) )
 		    // Return the first one, the first one wins
 		    .findFirst()
-		    .map( targetImport -> targetImport.getFullyQualifiedClass( className ) )
+		    .map( targetImport -> {
+			    String fqn = targetImport.getFullyQualifiedClass( className );
+			    importCache.add( className + ":" + fqn );
+			    return fqn;
+		    } )
 		    // Nothing found, return the original class name
 		    .orElse( className );
 	}
@@ -134,6 +195,13 @@ public class BaseResolver implements IClassResolver {
 	 * @return True if the import has the class name, false otherwise
 	 */
 	protected boolean importHas( ImportDefinition thisImport, String className ) {
+		String cacheKey = className + ":" + thisImport.getFullyQualifiedClass( className );
+
+		// Verify cache
+		if ( importCache.contains( cacheKey ) ) {
+			return true;
+		}
+
 		// Not a multi-import, check if the class name matches the alias
 		return thisImport.isMultiImport()
 		    ? importHasMulti( thisImport, className )
@@ -170,6 +238,12 @@ public class BaseResolver implements IClassResolver {
 	protected boolean importApplies( ImportDefinition thisImport ) {
 		return thisImport.resolverPrefix() == null || thisImport.resolverPrefix().equalsIgnoreCase( this.prefix );
 	}
+
+	/**
+	 * --------------------------------------------------------------------------
+	 * Utilities
+	 * --------------------------------------------------------------------------
+	 */
 
 	/**
 	 * Get the system class loader

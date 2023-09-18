@@ -20,18 +20,11 @@ package ortus.boxlang.runtime.loader.resolvers;
 
 import static com.google.common.truth.Truth.assertThat;
 
-import java.io.File;
-import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Set;
-import java.util.stream.Collectors;
-
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-import com.google.common.reflect.ClassPath;
 import ortus.boxlang.runtime.context.ScriptingBoxContext;
 import ortus.boxlang.runtime.loader.ImportDefinition;
 
@@ -44,6 +37,7 @@ public class BaseResolverTest {
 		assertThat( target ).isInstanceOf( BaseResolver.class );
 		assertThat( target.getName() ).isEqualTo( "test" );
 		assertThat( target.getPrefix() ).isEqualTo( "test" );
+		assertThat( target.getImportCacheSize() ).isEqualTo( 0 );
 	}
 
 	@DisplayName( "It can expand basic imports" )
@@ -59,21 +53,28 @@ public class BaseResolverTest {
 		    ImportDefinition.parse( "java:java.lang.List as jList" )
 		);
 		BaseResolver			jResolver	= JavaResolver.getInstance();
-		String					fqn			= jResolver.expandFromImport( new ScriptingBoxContext(), "String", imports );
+		jResolver.clearImportCache();
+
+		String fqn = jResolver.expandFromImport( new ScriptingBoxContext(), "String", imports );
 		assertThat( fqn ).isEqualTo( "java.lang.String" );
+		assertThat( jResolver.getImportCacheSize() ).isEqualTo( 1 );
 
 		fqn = jResolver.expandFromImport( new ScriptingBoxContext(), "Integer", imports );
 		assertThat( fqn ).isEqualTo( "java.lang.Integer" );
+		assertThat( jResolver.getImportCacheSize() ).isEqualTo( 2 );
 
 		// The Java resolver will ignore this mapping
 		fqn = jResolver.expandFromImport( new ScriptingBoxContext(), "HelloWorld", imports );
 		assertThat( fqn ).isEqualTo( "HelloWorld" );
+		assertThat( jResolver.getImportCacheSize() ).isEqualTo( 2 );
 
 		fqn = jResolver.expandFromImport( new ScriptingBoxContext(), "BaseResolver", imports );
 		assertThat( fqn ).isEqualTo( "ortus.boxlang.runtime.loader.resolvers.BaseResolver" );
+		assertThat( jResolver.getImportCacheSize() ).isEqualTo( 3 );
 
 		fqn = jResolver.expandFromImport( new ScriptingBoxContext(), "jList", imports );
 		assertThat( fqn ).isEqualTo( "java.lang.List" );
+		assertThat( jResolver.getImportCacheSize() ).isEqualTo( 4 );
 	}
 
 }

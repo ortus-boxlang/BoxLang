@@ -34,6 +34,7 @@ import ortus.boxlang.runtime.loader.ClassLocator.ClassLocation;
 
 /**
  * This resolver deals with Java classes only.
+ * It has two import caches as well to deal with JDK classes and non-JDK classes.
  */
 public class JavaResolver extends BaseResolver {
 
