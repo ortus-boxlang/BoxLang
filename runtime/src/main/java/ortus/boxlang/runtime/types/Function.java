@@ -64,18 +64,6 @@ public abstract class Function implements IType {
 	protected Function() {
 	}
 
-	public abstract Key getName();
-
-	public abstract Argument[] getArguments();
-
-	public abstract String getReturnType();
-
-	public abstract String getHint();
-
-	public abstract boolean isOutput();
-
-	public abstract Map<Key, Object> getMetadata();
-
 	/**
 	 * Return a string representation of the function
 	 */
@@ -100,15 +88,6 @@ public abstract class Function implements IType {
 		// Pre/post interceptors?
 		return ensureReturnType( _invoke( context ) );
 	}
-
-	/**
-	 * Implement this method to invoke the actual function logic
-	 *
-	 * @param context
-	 *
-	 * @return
-	 */
-	public abstract Object _invoke( FunctionBoxContext context );
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -221,7 +200,7 @@ public abstract class Function implements IType {
 			        name.getName(), value.getClass().getName(), type )
 			);
 		}
-		// Should we actually return the casted value??? Not CFML Compat!
+		// Should we actually return the casted value??? Not CFML Compat! If so, return typeCheck.get() with check for NullValue instances.
 		return value;
 	}
 
@@ -240,9 +219,67 @@ public abstract class Function implements IType {
 			        value.getClass().getName(), getReturnType() )
 			);
 		}
-		// Should we actually return the casted value??? Not CFML Compat!
+		// Should we actually return the casted value??? Not CFML Compat! If so, return typeCheck.get() with check for NullValue instances.
 		return value;
 	}
+
+	/**
+	 * --------------------------------------------------------------------------
+	 * Abstract methods for concrete classes to implement.
+	 * --------------------------------------------------------------------------
+	 */
+
+	/**
+	 * Get the name of the function.
+	 *
+	 * @return function name
+	 */
+	public abstract Key getName();
+
+	/**
+	 * Get the arguments of the function.
+	 *
+	 * @return array of arguments
+	 */
+
+	public abstract Argument[] getArguments();
+
+	/**
+	 * Get the return type of the function.
+	 *
+	 * @return return type
+	 */
+	public abstract String getReturnType();
+
+	/**
+	 * Get the hint of the function.
+	 *
+	 * @return function hint
+	 */
+	public abstract String getHint();
+
+	/**
+	 * Get the output of the function.
+	 *
+	 * @return function output flag
+	 */
+	public abstract boolean isOutput();
+
+	/**
+	 * Get the metadata of the function.
+	 *
+	 * @return function metadata
+	 */
+	public abstract Map<Key, Object> getMetadata();
+
+	/**
+	 * Implement this method to invoke the actual function logic
+	 *
+	 * @param context
+	 *
+	 * @return
+	 */
+	public abstract Object _invoke( FunctionBoxContext context );
 
 	/**
 	 * Represents an argument to a function

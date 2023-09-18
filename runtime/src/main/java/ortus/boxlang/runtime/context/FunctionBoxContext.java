@@ -31,7 +31,7 @@ public class FunctionBoxContext extends BaseBoxContext {
 	protected Function	function;
 
 	/**
-	 * The Function name being invoked with this context
+	 * The Function name being invoked with this context. Note this may or may not be the name the function was declared as.
 	 */
 	protected Key		functionCalledName;
 
