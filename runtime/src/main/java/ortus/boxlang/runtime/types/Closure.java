@@ -17,7 +17,6 @@
  */
 package ortus.boxlang.runtime.types;
 
-import java.util.HashMap;
 import java.util.Objects;
 
 import ortus.boxlang.runtime.context.IBoxContext;
@@ -28,33 +27,20 @@ import ortus.boxlang.runtime.scopes.Key;
  */
 public abstract class Closure extends Function {
 
-	private IBoxContext						declaringContext;
+	static public final Key	defaultName	= Key.of( "Closure" );
 
 	/**
-	 * The arguments of the function
-	 * Declared as static JUST for closures so each transient closure instance can share the same argument definition.
+	 * The context in which this closure was declared.
 	 */
-	protected static Argument[]				arguments;
-
-	/**
-	 * Additional abitrary metadata about this function.
-	 * Declared as static JUST for closures so each transient closure instance can share the same metadata.
-	 */
-	protected static HashMap<Key, Object>	metadata;
+	private IBoxContext		declaringContext;
 
 	/**
 	 * Constructor
 	 */
 	protected Closure( IBoxContext declaringContext ) {
-		super( Key.of( "Closure" ), null, null );
+		super();
 		Objects.requireNonNull( declaringContext, "A Closure's declaring context cannot be null." );
 		this.declaringContext = declaringContext;
-		if ( arguments == null ) {
-			throw new RuntimeException( "Closure subclasses must statically initialize arguments" );
-		}
-		if ( metadata == null ) {
-			throw new RuntimeException( "Closure subclasses must statically initialize metadata" );
-		}
 	}
 
 	/**

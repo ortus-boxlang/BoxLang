@@ -99,40 +99,40 @@ public class LambdaBoxContextTest {
 
 	@Test
 	@DisplayName( "Can find closest function" )
-	void testCanFindClosestFunction() {
+	void testCanfindClosestFunctionName() {
 		// We call a function
 		Key			funcName		= Key.of( "lambda" );
 		IBoxContext	parentContext	= new ScriptingBoxContext();
 		Lambda		Lambda			= new SampleLambda( new Argument[] {}, "Brad" );
 		IBoxContext	context			= new LambdaBoxContext( parentContext, Lambda );
 
-		assertThat( context.findClosestFunction() ).isNotNull();
-		assertThat( context.findClosestFunction().getName() ).isEqualTo( funcName );
+		assertThat( context.findClosestFunctionName() ).isNotNull();
+		assertThat( context.findClosestFunctionName() ).isEqualTo( funcName );
 
 		// Our function includes a template
 		IBoxContext childContext = new ScriptingBoxContext( context );
 
-		assertThat( childContext.findClosestFunction() ).isNotNull();
-		assertThat( childContext.findClosestFunction().getName() ).isEqualTo( funcName );
+		assertThat( childContext.findClosestFunctionName() ).isNotNull();
+		assertThat( childContext.findClosestFunctionName() ).isEqualTo( funcName );
 
 		// which includes another template
 		IBoxContext childChildContext = new ScriptingBoxContext( childContext );
 
-		assertThat( childChildContext.findClosestFunction() ).isNotNull();
-		assertThat( childChildContext.findClosestFunction().getName() ).isEqualTo( funcName );
+		assertThat( childChildContext.findClosestFunctionName() ).isNotNull();
+		assertThat( childChildContext.findClosestFunctionName() ).isEqualTo( funcName );
 
 		// which includes ANOTHER template
 		IBoxContext childChildChildContext = new ScriptingBoxContext( childChildContext );
 
-		assertThat( childChildChildContext.findClosestFunction() ).isNotNull();
-		assertThat( childChildChildContext.findClosestFunction().getName() ).isEqualTo( funcName );
+		assertThat( childChildChildContext.findClosestFunctionName() ).isNotNull();
+		assertThat( childChildChildContext.findClosestFunctionName() ).isEqualTo( funcName );
 
 		// which calls another function
 		Lambda		Lambda2		= new SampleLambda( new Argument[] {}, "Brad" );
 		IBoxContext	context2	= new LambdaBoxContext( parentContext, Lambda2 );
 
-		assertThat( context2.findClosestFunction() ).isNotNull();
-		assertThat( context2.findClosestFunction().getName() ).isEqualTo( funcName );
+		assertThat( context2.findClosestFunctionName() ).isNotNull();
+		assertThat( context2.findClosestFunctionName() ).isEqualTo( funcName );
 	}
 
 	@Test

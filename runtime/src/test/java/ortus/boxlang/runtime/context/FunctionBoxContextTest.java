@@ -96,41 +96,41 @@ public class FunctionBoxContextTest {
 
 	@Test
 	@DisplayName( "Can find closest function" )
-	void testCanFindClosestFunction() {
+	void testCanfindClosestFunctionName() {
 		// We call a function
 		Key					funcName		= Key.of( "MyFunc$" );
 		IBoxContext			parentContext	= new ScriptingBoxContext();
 		UDF					udf				= new SampleUDF( UDF.Access.PUBLIC, funcName, "String", new Argument[] {}, "", false, null );
 		FunctionBoxContext	context			= new FunctionBoxContext( parentContext, udf );
 
-		assertThat( context.findClosestFunction() ).isNotNull();
-		assertThat( context.findClosestFunction().getName() ).isEqualTo( funcName );
+		assertThat( context.findClosestFunctionName() ).isNotNull();
+		assertThat( context.findClosestFunctionName() ).isEqualTo( funcName );
 
 		// Our function includes a template
 		IBoxContext childContext = new ScriptingBoxContext( context );
 
-		assertThat( childContext.findClosestFunction() ).isNotNull();
-		assertThat( childContext.findClosestFunction().getName() ).isEqualTo( funcName );
+		assertThat( childContext.findClosestFunctionName() ).isNotNull();
+		assertThat( childContext.findClosestFunctionName() ).isEqualTo( funcName );
 
 		// which includes another template
 		IBoxContext childChildContext = new ScriptingBoxContext( childContext );
 
-		assertThat( childChildContext.findClosestFunction() ).isNotNull();
-		assertThat( childChildContext.findClosestFunction().getName() ).isEqualTo( funcName );
+		assertThat( childChildContext.findClosestFunctionName() ).isNotNull();
+		assertThat( childChildContext.findClosestFunctionName() ).isEqualTo( funcName );
 
 		// which includes ANOTHER template
 		IBoxContext childChildChildContext = new ScriptingBoxContext( childChildContext );
 
-		assertThat( childChildChildContext.findClosestFunction() ).isNotNull();
-		assertThat( childChildChildContext.findClosestFunction().getName() ).isEqualTo( funcName );
+		assertThat( childChildChildContext.findClosestFunctionName() ).isNotNull();
+		assertThat( childChildChildContext.findClosestFunctionName() ).isEqualTo( funcName );
 
 		// which calls another function
 		Key					funcName2	= Key.of( "another_function_here" );
 		UDF					udf2		= new SampleUDF( UDF.Access.PUBLIC, funcName2, "String", new Argument[] {}, "", false, null );
 		FunctionBoxContext	context2	= new FunctionBoxContext( childChildChildContext, udf2 );
 
-		assertThat( context2.findClosestFunction() ).isNotNull();
-		assertThat( context2.findClosestFunction().getName() ).isEqualTo( funcName2 );
+		assertThat( context2.findClosestFunctionName() ).isNotNull();
+		assertThat( context2.findClosestFunctionName() ).isEqualTo( funcName2 );
 	}
 
 	@Test

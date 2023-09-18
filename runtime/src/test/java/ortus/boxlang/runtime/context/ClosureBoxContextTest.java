@@ -110,7 +110,7 @@ public class ClosureBoxContextTest {
 
 	@Test
 	@DisplayName( "Can find closest function" )
-	void testCanFindClosestFunction() {
+	void testCanfindClosestFunctionName() {
 		// We call a function
 		IBoxContext	declaringContext	= new ScriptingBoxContext();
 		Key			funcName			= Key.of( "closure" );
@@ -118,33 +118,33 @@ public class ClosureBoxContextTest {
 		Closure		closure				= new SampleClosure( new Argument[] {}, declaringContext, "Brad" );
 		IBoxContext	context				= new ClosureBoxContext( parentContext, closure );
 
-		assertThat( context.findClosestFunction() ).isNotNull();
-		assertThat( context.findClosestFunction().getName() ).isEqualTo( funcName );
+		assertThat( context.findClosestFunctionName() ).isNotNull();
+		assertThat( context.findClosestFunctionName() ).isEqualTo( funcName );
 
 		// Our function includes a template
 		IBoxContext childContext = new ScriptingBoxContext( context );
 
-		assertThat( childContext.findClosestFunction() ).isNotNull();
-		assertThat( childContext.findClosestFunction().getName() ).isEqualTo( funcName );
+		assertThat( childContext.findClosestFunctionName() ).isNotNull();
+		assertThat( childContext.findClosestFunctionName() ).isEqualTo( funcName );
 
 		// which includes another template
 		IBoxContext childChildContext = new ScriptingBoxContext( childContext );
 
-		assertThat( childChildContext.findClosestFunction() ).isNotNull();
-		assertThat( childChildContext.findClosestFunction().getName() ).isEqualTo( funcName );
+		assertThat( childChildContext.findClosestFunctionName() ).isNotNull();
+		assertThat( childChildContext.findClosestFunctionName() ).isEqualTo( funcName );
 
 		// which includes ANOTHER template
 		IBoxContext childChildChildContext = new ScriptingBoxContext( childChildContext );
 
-		assertThat( childChildChildContext.findClosestFunction() ).isNotNull();
-		assertThat( childChildChildContext.findClosestFunction().getName() ).isEqualTo( funcName );
+		assertThat( childChildChildContext.findClosestFunctionName() ).isNotNull();
+		assertThat( childChildChildContext.findClosestFunctionName() ).isEqualTo( funcName );
 
 		// which calls another function
 		Closure		closure2	= new SampleClosure( new Argument[] {}, declaringContext, "Brad" );
 		IBoxContext	context2	= new ClosureBoxContext( parentContext, closure2 );
 
-		assertThat( context2.findClosestFunction() ).isNotNull();
-		assertThat( context2.findClosestFunction().getName() ).isEqualTo( funcName );
+		assertThat( context2.findClosestFunctionName() ).isNotNull();
+		assertThat( context2.findClosestFunctionName() ).isEqualTo( funcName );
 	}
 
 	@Test

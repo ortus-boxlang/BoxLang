@@ -150,7 +150,7 @@ public class BaseBoxContext implements IBoxContext {
 	 */
 	public Object invokeFunction( Key name, Object[] positionalArguments ) {
 		Function function = findFunction( name );
-		return invokeFunction( function, function.createArgumentsScope( positionalArguments ) );
+		return invokeFunction( function, name, function.createArgumentsScope( positionalArguments ) );
 	}
 
 	/**
@@ -160,7 +160,7 @@ public class BaseBoxContext implements IBoxContext {
 	 */
 	public Object invokeFunction( Key name, Map<Key, Object> namedArguments ) {
 		Function function = findFunction( name );
-		return invokeFunction( function, function.createArgumentsScope( namedArguments ) );
+		return invokeFunction( function, name, function.createArgumentsScope( namedArguments ) );
 	}
 
 	/**
@@ -169,7 +169,7 @@ public class BaseBoxContext implements IBoxContext {
 	 * @return Return value of the function call
 	 */
 	public Object invokeFunction( Function function, Object[] positionalArguments ) {
-		return invokeFunction( function, function.createArgumentsScope( positionalArguments ) );
+		return invokeFunction( function, function.getName(), function.createArgumentsScope( positionalArguments ) );
 	}
 
 	/**
@@ -178,7 +178,7 @@ public class BaseBoxContext implements IBoxContext {
 	 * @return Return value of the function call
 	 */
 	public Object invokeFunction( Function function, Map<Key, Object> namedArguments ) {
-		return invokeFunction( function, function.createArgumentsScope( namedArguments ) );
+		return invokeFunction( function, function.getName(), function.createArgumentsScope( namedArguments ) );
 	}
 
 	/**
@@ -186,8 +186,8 @@ public class BaseBoxContext implements IBoxContext {
 	 *
 	 * @return Return value of the function call
 	 */
-	public Object invokeFunction( Function function, ArgumentsScope argumentsScope ) {
-		FunctionBoxContext fContext = new FunctionBoxContext( getFunctionParentContext(), function, argumentsScope );
+	public Object invokeFunction( Function function, Key calledName, ArgumentsScope argumentsScope ) {
+		FunctionBoxContext fContext = new FunctionBoxContext( getFunctionParentContext(), function, calledName, argumentsScope );
 		return function.invoke( fContext );
 	}
 
@@ -299,18 +299,13 @@ public class BaseBoxContext implements IBoxContext {
 	}
 
 	/**
-	 * Finds the closest function call
+	 * Finds the closest function call name
 	 *
-	 * @return The Function instance if found, null if this code is not called from a function
+	 * @return The called name of the function if found, null if this code is not called from a function
 	 */
-	public Function findClosestFunction() {
-		IBoxContext context = this;
-		// Climb the context tree until we find a function
-		while ( context != null ) {
-			if ( context instanceof FunctionBoxContext ) {
-				return ( ( FunctionBoxContext ) context ).getFunction();
-			}
-			context = context.getParent();
+	public Key findClosestFunctionName() {
+		if ( hasParent() ) {
+			return getParent().findClosestFunctionName();
 		}
 		return null;
 	}

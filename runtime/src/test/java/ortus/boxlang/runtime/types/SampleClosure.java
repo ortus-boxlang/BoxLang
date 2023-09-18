@@ -18,6 +18,7 @@
 package ortus.boxlang.runtime.types;
 
 import java.util.HashMap;
+import java.util.Map;
 
 import ortus.boxlang.runtime.context.FunctionBoxContext;
 import ortus.boxlang.runtime.context.IBoxContext;
@@ -25,11 +26,38 @@ import ortus.boxlang.runtime.scopes.Key;
 
 public class SampleClosure extends Closure {
 
-    Object returnVal = null;
+    Object                   returnVal  = null;
 
-    static {
-        arguments = new Argument[] {};
-        metadata  = new HashMap<Key, Object>();
+    // These are not static just because this is a test class that is always transient! Do not copy this implementation.
+    private Key              name       = Closure.defaultName;
+    private Argument[]       arguments;
+    private String           returnType = "any";
+    private String           hint       = "";
+    private boolean          output     = true;
+    private Map<Key, Object> metadata   = new HashMap<Key, Object>();
+
+    public Key getName() {
+        return name;
+    }
+
+    public Argument[] getArguments() {
+        return arguments;
+    }
+
+    public String getReturnType() {
+        return returnType;
+    }
+
+    public String getHint() {
+        return hint;
+    }
+
+    public boolean isOutput() {
+        return output;
+    }
+
+    public Map<Key, Object> getMetadata() {
+        return metadata;
     }
 
     public SampleClosure( Argument[] arguments, IBoxContext declaringContext, Object returnVal ) {
@@ -40,7 +68,7 @@ public class SampleClosure extends Closure {
     }
 
     @Override
-    public Object invoke( FunctionBoxContext context ) {
+    public Object _invoke( FunctionBoxContext context ) {
         return returnVal;
     }
 }

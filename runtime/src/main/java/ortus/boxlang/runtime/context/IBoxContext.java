@@ -22,7 +22,6 @@ import java.util.Map;
 import ortus.boxlang.runtime.dynamic.BaseTemplate;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
-import ortus.boxlang.runtime.types.Function;
 import ortus.boxlang.runtime.types.UDF;
 import ortus.boxlang.runtime.types.exceptions.KeyNotFoundException;
 import ortus.boxlang.runtime.types.exceptions.ScopeNotFoundException;
@@ -151,11 +150,11 @@ public interface IBoxContext {
 	public IBoxContext getParent();
 
 	/**
-	 * Finds the closest function call
+	 * Finds the closest function call name
 	 *
-	 * @return The Function instance
+	 * @return The called name of the function if found, null if this code is not called from a function
 	 */
-	public Function findClosestFunction();
+	public Key findClosestFunctionName();
 
 	/**
 	 * Push a template to the stack

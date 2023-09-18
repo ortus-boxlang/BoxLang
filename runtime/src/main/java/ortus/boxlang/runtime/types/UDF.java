@@ -17,10 +17,6 @@
  */
 package ortus.boxlang.runtime.types;
 
-import ortus.boxlang.runtime.dynamic.casters.CastAttempt;
-import ortus.boxlang.runtime.dynamic.casters.GenericCaster;
-import ortus.boxlang.runtime.scopes.Key;
-
 /**
  * Represents a UDF. A UDF is specifically a function that is defined with the "function name()" syntax.
  * UDFs have names, access, hints, etc which closures do not have.
@@ -28,63 +24,12 @@ import ortus.boxlang.runtime.scopes.Key;
 public abstract class UDF extends Function {
 
 	/**
-	 * The access modifier of the function
-	 */
-	private Access	access;
-
-	/**
-	 * The return type of the function
-	 */
-	private String	returnType;
-
-	/**
-	 * The hint of the function
-	 */
-	private String	hint;
-
-	/**
-	 * Whether the function outputs
-	 */
-	private boolean	output;
-
-	// TODO: cachedwithin, modifier, localmode, return format
-
-	/**
 	 * Constructor
 	 */
-	protected UDF( Access access, Key name, String returnType, Argument[] arguments, String hint, boolean output ) {
-		super( name, arguments );
-		this.access		= access;
-		this.returnType	= returnType;
-		this.hint		= hint;
-		this.output		= output;
+	protected UDF() {
+		super();
 	}
 
-	public Access getAccess() {
-		return access;
-	}
+	public abstract Access getAccess();
 
-	public String getReturnType() {
-		return returnType;
-	}
-
-	public String getHint() {
-		return hint;
-	}
-
-	public boolean isOutput() {
-		return output;
-	}
-
-	protected Object ensureReturnType( Object value ) {
-		CastAttempt<Object> typeCheck = GenericCaster.attempt( value, getReturnType(), true );
-		if ( !typeCheck.wasSuccessful() ) {
-			throw new RuntimeException(
-			    String.format( "The return value of the function [%s] does not match the declared type of [%s]",
-			        value.getClass().getName(), getReturnType() )
-			);
-		}
-		// Should we actually return the casted value??? Not CFML Compat!
-		return value;
-	}
 }

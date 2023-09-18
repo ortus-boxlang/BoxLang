@@ -31,13 +31,30 @@ public class FunctionBoxContext extends BaseBoxContext {
 	protected Function	function;
 
 	/**
+	 * The Function name being invoked with this context
+	 */
+	protected Key		functionCalledName;
+
+	/**
 	 * Creates a new execution context with a bounded function instance and parent context
 	 *
 	 * @param parent   The parent context
 	 * @param function The function being invoked with this context
 	 */
 	public FunctionBoxContext( IBoxContext parent, Function function ) {
-		this( parent, function, new ArgumentsScope() );
+		this( parent, function, function.getName() );
+	}
+
+	/**
+	 * Creates a new execution context with a bounded function instance and parent context
+	 *
+	 * @param parent             The parent context
+	 * @param function           The function being invoked with this context
+	 * @param functionCalledName The name of the function being invoked
+	 *
+	 */
+	public FunctionBoxContext( IBoxContext parent, Function function, Key functionCalledName ) {
+		this( parent, function, functionCalledName, new ArgumentsScope() );
 	}
 
 	/**
@@ -48,6 +65,17 @@ public class FunctionBoxContext extends BaseBoxContext {
 	 * @param argumentsScope The arguments scope
 	 */
 	public FunctionBoxContext( IBoxContext parent, Function function, ArgumentsScope argumentsScope ) {
+		this( parent, function, function.getName(), argumentsScope );
+	}
+
+	/**
+	 * Creates a new execution context with a bounded function instance and parent context and arguments scope
+	 *
+	 * @param parent         The parent context
+	 * @param function       The function being invoked with this context
+	 * @param argumentsScope The arguments scope
+	 */
+	public FunctionBoxContext( IBoxContext parent, Function function, Key functionCalledName, ArgumentsScope argumentsScope ) {
 		super( parent );
 		if ( parent == null ) {
 			throw new IllegalArgumentException( "Parent context cannot be null for FunctionBoxContext" );
@@ -55,9 +83,10 @@ public class FunctionBoxContext extends BaseBoxContext {
 		if ( function == null ) {
 			throw new IllegalArgumentException( "function cannot be null for FunctionBoxContext" );
 		}
-		this.localScope		= new LocalScope();
-		this.argumentsScope	= argumentsScope;
-		this.function		= function;
+		this.localScope			= new LocalScope();
+		this.argumentsScope		= argumentsScope;
+		this.function			= function;
+		this.functionCalledName	= functionCalledName;
 	}
 
 	/**
@@ -155,14 +184,14 @@ public class FunctionBoxContext extends BaseBoxContext {
 	}
 
 	/**
-	 * Finds the closest function call
+	 * Finds the closest function call name
 	 *
-	 * @return The Function instance
+	 * @return The called name of the function if found, null if this code is not called from a function
 	 */
 	@Override
-	public Function findClosestFunction() {
-		return function;
-	}
+	public Key findClosestFunctionName() {
+		return functionCalledName;
+	};
 
 	/**
 	 * Get the default variable assignment scope for this context

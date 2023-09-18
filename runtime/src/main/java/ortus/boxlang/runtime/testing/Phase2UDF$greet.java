@@ -17,6 +17,9 @@
  */
 package ortus.boxlang.runtime.testing;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import ortus.boxlang.runtime.context.FunctionBoxContext;
 import ortus.boxlang.runtime.dynamic.Referencer;
 import ortus.boxlang.runtime.operators.Concat;
@@ -31,19 +34,78 @@ import ortus.boxlang.runtime.types.UDF;
  */
 public class Phase2UDF$greet extends UDF {
 
-    private static Phase2UDF$greet instance;
+    private static Phase2UDF$greet        instance;
+
+    /**
+     * The name of the function
+     */
+    private final static Key              name       = Key.of( "greet" );
+
+    /**
+     * The arguments of the function
+     */
+    private final static Argument[]       arguments  = new Argument[] {
+        new Argument( true, "String", Key.of( "name" ), "Brad", "" )
+    };
+
+    /**
+     * The return type of the function
+     */
+    private final static String           returnType = "String";
+
+    /**
+     * The hint of the function
+     */
+    private final static String           hint       = "My Function Hint";
+
+    /**
+     * Whether the function outputs
+     * TODO: Break CFML compat here?
+     */
+    private final static boolean          output     = true;
+
+    /**
+     * The access modifier of the function
+     */
+    private Access                        access     = Access.PUBLIC;
+
+    // TODO: cachedwithin, modifier, localmode, return format
+
+    /**
+     * Additional abitrary metadata about this function.
+     */
+    private final static Map<Key, Object> metadata   = new HashMap<Key, Object>();
+
+    public Key getName() {
+        return name;
+    }
+
+    public Argument[] getArguments() {
+        return arguments;
+    }
+
+    public String getReturnType() {
+        return returnType;
+    }
+
+    public String getHint() {
+        return hint;
+    }
+
+    public boolean isOutput() {
+        return output;
+    }
+
+    public Map<Key, Object> getMetadata() {
+        return metadata;
+    }
+
+    public Access getAccess() {
+        return access;
+    }
 
     private Phase2UDF$greet() {
-        super(
-            Access.PUBLIC,
-            Key.of( "greet" ),
-            "String",
-            new Argument[] {
-                new Argument( true, "String", Key.of( "name" ), "Brad", "" )
-            },
-            "My Function Hint",
-            true
-        );
+        super();
     }
 
     public static synchronized Phase2UDF$greet getInstance() {
@@ -69,7 +131,7 @@ public class Phase2UDF$greet extends UDF {
      * </pre>
      */
     @Override
-    public Object invoke( FunctionBoxContext context ) {
+    public Object _invoke( FunctionBoxContext context ) {
 
         // Create local.race and arguments.race to show scope lookup
         context.getScopeNearby( LocalScope.name ).put(
@@ -104,7 +166,7 @@ public class Phase2UDF$greet extends UDF {
             false
         );
 
-        return ensureReturnType( context.scopeFindNearby( Key.of( "greeting" ), null ).value() );
+        return context.scopeFindNearby( Key.of( "greeting" ), null ).value();
     }
 
 }

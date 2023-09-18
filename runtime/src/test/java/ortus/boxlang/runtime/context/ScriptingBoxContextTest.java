@@ -39,7 +39,7 @@ public class ScriptingBoxContextTest {
 		ScriptingBoxContext context = new ScriptingBoxContext();
 		assertThat( context.getParent() ).isNull();
 		assertThat( context.hasTemplates() ).isFalse();
-		assertThat( context.findClosestFunction() ).isNull();
+		assertThat( context.findClosestFunctionName() ).isNull();
 	}
 
 	@Test

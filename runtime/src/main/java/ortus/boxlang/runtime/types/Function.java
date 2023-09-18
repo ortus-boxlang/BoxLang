@@ -50,28 +50,7 @@ public abstract class Function implements IType {
 	/**
 	 * The argument collection key which defaults to : {@code argumentCollection}
 	 */
-	public static Key			ARGUMENT_COLLECTION	= Key.of( "argumentCollection" );
-
-	/**
-	 * --------------------------------------------------------------------------
-	 * Private Properties
-	 * --------------------------------------------------------------------------
-	 */
-
-	/**
-	 * The arguments of the function
-	 */
-	private Argument[]			arguments;
-
-	/**
-	 * The name of the function
-	 */
-	private Key					name;
-
-	/**
-	 * Additional abitrary metadata about this function.
-	 */
-	private Map<Key, Object>	metadata;
+	public static Key ARGUMENT_COLLECTION = Key.of( "argumentCollection" );
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -81,68 +60,21 @@ public abstract class Function implements IType {
 
 	/**
 	 * Constructor
-	 *
-	 * @param name      The name of the function
-	 * @param arguments The arguments of the function
-	 * @param metadata  Additional abitrary metadata about this function.
 	 */
-	protected Function( Key name, Argument[] arguments, Map<Key, Object> metadata ) {
-		this.name		= name;
-		this.arguments	= arguments;
-		this.metadata	= metadata;
+	protected Function() {
 	}
 
-	/**
-	 * Constructor
-	 *
-	 * @param name      The name of the function
-	 * @param arguments The arguments of the function
-	 */
-	protected Function( Key name, Argument[] arguments ) {
-		this( name, arguments, new HashMap<>() );
-	}
+	public abstract Key getName();
 
-	/**
-	 * Constructor
-	 *
-	 * @param name The name of the function
-	 */
-	protected Function( Key name ) {
-		this( name, new Argument[] {}, new HashMap<>() );
-	}
+	public abstract Argument[] getArguments();
 
-	/**
-	 * --------------------------------------------------------------------------
-	 * Getters
-	 * --------------------------------------------------------------------------
-	 */
+	public abstract String getReturnType();
 
-	/**
-	 * Get the arguments of the function
-	 *
-	 * @return The arguments
-	 */
-	public Argument[] getArguments() {
-		return arguments;
-	}
+	public abstract String getHint();
 
-	/**
-	 * Get the name of the function
-	 *
-	 * @return The name
-	 */
-	public Key getName() {
-		return name;
-	}
+	public abstract boolean isOutput();
 
-	/**
-	 * Get the metadata of the function
-	 *
-	 * @return The metadata
-	 */
-	public Map<Key, Object> getMetadata() {
-		return metadata;
-	}
+	public abstract Map<Key, Object> getMetadata();
 
 	/**
 	 * Return a string representation of the function
@@ -158,13 +90,25 @@ public abstract class Function implements IType {
 	 */
 
 	/**
-	 * Implement this method to invoke the function
+	 * Call this method externally to invoke the function
 	 *
 	 * @param context
 	 *
 	 * @return
 	 */
-	public abstract Object invoke( FunctionBoxContext context );
+	public Object invoke( FunctionBoxContext context ) {
+		// Pre/post interceptors?
+		return ensureReturnType( _invoke( context ) );
+	}
+
+	/**
+	 * Implement this method to invoke the actual function logic
+	 *
+	 * @param context
+	 *
+	 * @return
+	 */
+	public abstract Object _invoke( FunctionBoxContext context );
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -259,6 +203,48 @@ public abstract class Function implements IType {
 	}
 
 	/**
+	 * Ensure the argument is the correct type
+	 *
+	 * @param name  The name of the argument
+	 * @param value The value of the argument
+	 * @param type  The type of the argument
+	 *
+	 * @return The value of the argument
+	 *
+	 * @throws RuntimeException if the argument is not the correct type
+	 */
+	protected Object ensureArgumentType( Key name, Object value, String type ) {
+		CastAttempt<Object> typeCheck = GenericCaster.attempt( value, type, true );
+		if ( !typeCheck.wasSuccessful() ) {
+			throw new RuntimeException(
+			    String.format( "Argument [%s] with a type of [%s] does not match the declared type of [%s]",
+			        name.getName(), value.getClass().getName(), type )
+			);
+		}
+		// Should we actually return the casted value??? Not CFML Compat!
+		return value;
+	}
+
+	/**
+	 * Ensure the return value of the function is the correct type
+	 *
+	 * @param value
+	 *
+	 * @return
+	 */
+	protected Object ensureReturnType( Object value ) {
+		CastAttempt<Object> typeCheck = GenericCaster.attempt( value, getReturnType(), true );
+		if ( !typeCheck.wasSuccessful() ) {
+			throw new RuntimeException(
+			    String.format( "The return value of the function [%s] does not match the declared type of [%s]",
+			        value.getClass().getName(), getReturnType() )
+			);
+		}
+		// Should we actually return the casted value??? Not CFML Compat!
+		return value;
+	}
+
+	/**
 	 * Represents an argument to a function
 	 *
 	 * @param required     Whether the argument is required
@@ -294,28 +280,5 @@ public abstract class Function implements IType {
 			this.metadata		= metadata;
 		}
 
-	}
-
-	/**
-	 * Ensure the argument is the correct type
-	 *
-	 * @param name  The name of the argument
-	 * @param value The value of the argument
-	 * @param type  The type of the argument
-	 *
-	 * @return The value of the argument
-	 *
-	 * @throws RuntimeException if the argument is not the correct type
-	 */
-	protected Object ensureArgumentType( Key name, Object value, String type ) {
-		CastAttempt<Object> typeCheck = GenericCaster.attempt( value, type, true );
-		if ( !typeCheck.wasSuccessful() ) {
-			throw new RuntimeException(
-			    String.format( "Argument [%s] with a type of [%s] does not match the declared type of [%s]",
-			        name.getName(), value.getClass().getName(), type )
-			);
-		}
-		// Should we actually return the casted value??? Not CFML Compat!
-		return value;
 	}
 }
