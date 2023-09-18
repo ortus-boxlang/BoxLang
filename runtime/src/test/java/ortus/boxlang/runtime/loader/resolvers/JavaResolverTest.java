@@ -107,7 +107,10 @@ public class JavaResolverTest {
 		);
 
 		JavaResolver			jResolver	= JavaResolver.getInstance();
-		String					fqn			= jResolver.expandFromImport( new ScriptingBoxContext(), "String", imports );
+		jResolver.clearJdkImportCache();
+		assertThat( jResolver.getJdkImportCacheSize() ).isEqualTo( 0 );
+
+		String fqn = jResolver.expandFromImport( new ScriptingBoxContext(), "String", imports );
 		assertThat( fqn ).isEqualTo( "java.lang.String" );
 
 		fqn = jResolver.expandFromImport( new ScriptingBoxContext(), "Integer", imports );

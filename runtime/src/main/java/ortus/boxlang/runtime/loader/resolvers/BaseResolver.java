@@ -17,12 +17,16 @@
  */
 package ortus.boxlang.runtime.loader.resolvers;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.Optional;
+
+import org.apache.commons.lang3.ClassUtils;
 
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.loader.ClassLocator;
 import ortus.boxlang.runtime.loader.ImportDefinition;
+import ortus.boxlang.runtime.loader.util.ClassDiscovery;
 import ortus.boxlang.runtime.loader.ClassLocator.ClassLocation;
 
 /**
@@ -131,7 +135,28 @@ public class BaseResolver implements IClassResolver {
 	 */
 	protected boolean importHas( ImportDefinition thisImport, String className ) {
 		// Not a multi-import, check if the class name matches the alias
-		return thisImport.alias().equalsIgnoreCase( className );
+		return thisImport.isMultiImport()
+		    ? importHasMulti( thisImport, className )
+		    : thisImport.alias().equalsIgnoreCase( className );
+	}
+
+	/**
+	 * Checks if the import has the given class name as a multi-import
+	 *
+	 * @param thisImport The import to check
+	 * @param className  The class name to check
+	 *
+	 * @return True if the import has the class name, false otherwise
+	 */
+	protected boolean importHasMulti( ImportDefinition thisImport, String className ) {
+		try {
+			return ClassDiscovery
+			    .getClassFilesAsStream( thisImport.getPackageName(), false )
+			    .anyMatch( clazzName -> ClassUtils.getShortClassName( clazzName ).equalsIgnoreCase( className ) );
+		} catch ( IOException e ) {
+			e.printStackTrace();
+			throw new RuntimeException( "Could not discover classes in package [" + thisImport.getPackageName() + "]", e );
+		}
 	}
 
 	/**
@@ -144,6 +169,15 @@ public class BaseResolver implements IClassResolver {
 	 */
 	protected boolean importApplies( ImportDefinition thisImport ) {
 		return thisImport.resolverPrefix() == null || thisImport.resolverPrefix().equalsIgnoreCase( this.prefix );
+	}
+
+	/**
+	 * Get the system class loader
+	 *
+	 * @return The system class loader
+	 */
+	protected static ClassLoader getSystemClassLoader() {
+		return ClassLoader.getSystemClassLoader();
 	}
 
 }

@@ -17,17 +17,19 @@
  */
 package ortus.boxlang.runtime.loader.resolvers;
 
-import java.io.IOException;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 import org.apache.commons.lang3.ClassUtils;
-import org.apache.commons.lang3.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.loader.ClassLocator;
 import ortus.boxlang.runtime.loader.ImportDefinition;
-import ortus.boxlang.runtime.loader.util.ClassDiscovery;
+import ortus.boxlang.runtime.services.InterceptorService;
 import ortus.boxlang.runtime.loader.ClassLocator.ClassLocation;
 
 /**
@@ -38,7 +40,17 @@ public class JavaResolver extends BaseResolver {
 	/**
 	 * Singleton instance
 	 */
-	protected static JavaResolver instance;
+	protected static JavaResolver	instance;
+
+	/**
+	 * The JDK class import cache
+	 */
+	private Set<String>				jdkClassImportCache	= ConcurrentHashMap.newKeySet();
+
+	/**
+	 * Logger
+	 */
+	private static final Logger		logger				= LoggerFactory.getLogger( JavaResolver.class );
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -140,9 +152,16 @@ public class JavaResolver extends BaseResolver {
 			    )
 			);
 		} catch ( ClassNotFoundException e ) {
+			logger.atError().setCause( e ).log( "Could not find class [{}]", fullyQualifiedName );
 			return Optional.empty();
 		}
 	}
+
+	/**
+	 * --------------------------------------------------------------------------
+	 * Import Helpers
+	 * --------------------------------------------------------------------------
+	 */
 
 	/**
 	 * Checks if the import has the given class name as :
@@ -163,46 +182,75 @@ public class JavaResolver extends BaseResolver {
 	}
 
 	/**
-	 * Checks if the import has the given class name as a multi-import
+	 * Checks if the import has the given class name as a multi-import.
+	 * However, we can't interrogate the JDK due to limitations in the JDK itself.
+	 * So we do a simple check to see if the class name can be loaded from the
+	 * system class loader. This is not a perfect check, but it will do for now.
+	 *
+	 * If the class is not a JDK class, we delegate to the super class.
 	 *
 	 * @param thisImport The import to check
 	 * @param className  The class name to check
 	 *
 	 * @return True if the import has the class name, false otherwise
 	 */
-	private boolean importHasMulti( ImportDefinition thisImport, String className ) {
-		// TODO: Add caching
-
+	@Override
+	protected boolean importHasMulti( ImportDefinition thisImport, String className ) {
 		// We can't interrogate the JDK due to limitations in the JDK itself
-		if ( thisImport.className().matches( "(?i)(java|javax)\\." ) ) {
-			// Here we do a simple check to see if the class name can be loaded
-			// from the system class loader. This is not a perfect check, but it
-			// will do for now.
+		if ( thisImport.className().matches( "(?i)(java|javax)\\..*" ) ) {
+
+			logger.atDebug().log( "Checking if [{}] is a JDK class", thisImport.getFullyQualifiedClass( className ) );
+
+			// Do we have it in the cache?
+			if ( jdkClassImportCache.contains( thisImport.getFullyQualifiedClass( className ) ) ) {
+				return true;
+			}
+
 			try {
 				Class.forName( thisImport.getFullyQualifiedClass( className ), false, getSystemClassLoader() );
+				jdkClassImportCache.add( thisImport.getFullyQualifiedClass( className ) );
+				logger.atDebug().log( "Found JDK Class [{}] and added to jdk import cache", thisImport.getFullyQualifiedClass( className ) );
+
 				return true;
 			} catch ( ClassNotFoundException e ) {
+				logger.atDebug().log( "Could not find JDK Class [{}]", thisImport.getFullyQualifiedClass( className ) );
 				return false;
 			}
 		} else {
-			try {
-				return ClassDiscovery
-				    .getClassFilesAsStream( thisImport.getPackageName(), false )
-				    .anyMatch( clazzName -> ClassUtils.getShortClassName( clazzName ).equalsIgnoreCase( className ) );
-			} catch ( IOException e ) {
-				e.printStackTrace();
-				throw new RuntimeException( "Could not discover classes in package [" + thisImport.getPackageName() + "]", e );
-			}
+			// Use the base resolver
+			return super.importHasMulti( thisImport, className );
 		}
 	}
 
 	/**
-	 * Get the system class loader
-	 *
-	 * @return The system class loader
+	 * --------------------------------------------------------------------------
+	 * Import Cache Helpers
+	 * --------------------------------------------------------------------------
 	 */
-	private static ClassLoader getSystemClassLoader() {
-		return ClassLoader.getSystemClassLoader();
+
+	/**
+	 * Clear the JDK import cache
+	 */
+	public void clearJdkImportCache() {
+		jdkClassImportCache.clear();
+	}
+
+	/**
+	 * Get the JDK import cache
+	 *
+	 * @return The JDK import cache
+	 */
+	public Set<String> getJdkImportCache() {
+		return jdkClassImportCache;
+	}
+
+	/**
+	 * Get the size of the JDK import cache
+	 *
+	 * @return The size of the JDK import cache
+	 */
+	public Integer getJdkImportCacheSize() {
+		return jdkClassImportCache.size();
 	}
 
 }
