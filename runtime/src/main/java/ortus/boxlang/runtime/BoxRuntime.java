@@ -118,7 +118,7 @@ public class BoxRuntime {
 		this.logger = LoggerFactory.getLogger( BoxRuntime.class );
 
 		// We can now log the startup
-		this.logger.atInfo().log( "+ Starting up BoxLang Runtime" + ( debugMode ? " in debug mode" : "" ) );
+		this.logger.atInfo().log( "+ Starting up BoxLang Runtime" + ( debugMode ? " in debug mode" : " in production mode" ) );
 
 		// Seed startup properties
 		this.startTime			= Instant.now();
