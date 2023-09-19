@@ -439,11 +439,52 @@ public class BoxCFParser extends BoxAbstractParser {
 			}
 			return new BoxLocalDeclaration( identifiers, expr, getPosition( node ), getSourceText( node ) );
 		} else if ( node.incrementDecrementStatement() != null ) {
-
+			return toAst( file, node.incrementDecrementStatement() );
 		}
 
 		throw new IllegalStateException( "not implemented: " + node.getClass().getSimpleName() );
 
+	}
+
+	/**
+	 * Converts the IncrementDecrementStatement parser rule to the corresponding AST node.
+	 *
+	 * @param file source file, if any
+	 * @param node ANTLR IncrementDecrementStatementContext rule
+	 *
+	 * @return the corresponding AST BoxStatement subclass
+	 *
+	 * @see
+	 */
+	private BoxStatement toAst( File file, CFParser.IncrementDecrementStatementContext node ) {
+		if ( node instanceof CFParser.PostIncrementContext ) {
+			CFParser.PostIncrementContext	ctx		= ( CFParser.PostIncrementContext ) node;
+			BoxExpr							expr	= toAst( file, ctx.accessExpression() );
+			BoxUnaryOperation				post	= new BoxUnaryOperation( expr, BoxUnaryOperator.PostPlusPlus, getPosition( node ), getSourceText( node ) );
+			return new BoxExpression( post, getPosition( node ), getSourceText( node ) );
+		}
+		if ( node instanceof CFParser.PostDecrementContext ) {
+			CFParser.PostDecrementContext	ctx		= ( CFParser.PostDecrementContext ) node;
+			BoxExpr							expr	= toAst( file, ctx.accessExpression() );
+			BoxUnaryOperation				post	= new BoxUnaryOperation( expr, BoxUnaryOperator.PostMinusMinus, getPosition( node ),
+			    getSourceText( node ) );
+			return new BoxExpression( post, getPosition( node ), getSourceText( node ) );
+		}
+		if ( node instanceof CFParser.PreIncrementContext ) {
+			CFParser.PreIncrementContext	ctx		= ( CFParser.PreIncrementContext ) node;
+			BoxExpr							expr	= toAst( file, ctx.accessExpression() );
+			BoxUnaryOperation				post	= new BoxUnaryOperation( expr, BoxUnaryOperator.PrePlusPlus, getPosition( node ),
+			    getSourceText( node ) );
+			return new BoxExpression( post, getPosition( node ), getSourceText( node ) );
+		}
+		if ( node instanceof CFParser.PreDecremenentContext ) {
+			CFParser.PreDecremenentContext	ctx		= ( CFParser.PreDecremenentContext ) node;
+			BoxExpr							expr	= toAst( file, ctx.accessExpression() );
+			BoxUnaryOperation				post	= new BoxUnaryOperation( expr, BoxUnaryOperator.PreMinusMinus, getPosition( node ),
+			    getSourceText( node ) );
+			return new BoxExpression( post, getPosition( node ), getSourceText( node ) );
+		}
+		throw new IllegalStateException( "not implemented: " + node.getClass().getSimpleName() );
 	}
 
 	/**
