@@ -17,6 +17,7 @@ package ortus.boxlang.parser;
 import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
 import org.antlr.v4.runtime.ParserRuleContext;
+import org.antlr.v4.runtime.RuleContext;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.input.BOMInputStream;
 import ortus.boxlang.parser.CFLexer;
@@ -502,7 +503,7 @@ public class BoxCFParser extends BoxAbstractParser {
 		BoxExpr					right	= toAst( file, node.assignmentRight() );
 		BoxAssigmentOperator	op		= BoxAssigmentOperator.Equal;
 		if ( node.PLUSEQUAL() != null ) {
-			op		= BoxAssigmentOperator.PlusEqual;
+			op = BoxAssigmentOperator.PlusEqual;
 		} else if ( node.MINUSEQUAL() != null ) {
 			op = BoxAssigmentOperator.MinusEqual;
 		} else if ( node.STAREQUAL() != null ) {
@@ -640,12 +641,29 @@ public class BoxCFParser extends BoxAbstractParser {
 	private BoxExpr toAst( File file, CFParser.ExpressionContext expression ) {
 		if ( expression.literalExpression() != null ) {
 			if ( expression.literalExpression().stringLiteral() != null ) {
-				CFParser.StringLiteralContext node = expression.literalExpression().stringLiteral();
-				return new BoxStringLiteral(
-				    node.getText(),
-				    getPosition( node ),
-				    getSourceText( node )
-				);
+				if(expression.literalExpression().stringLiteral()
+					.expression().isEmpty() ) {
+					CFParser.StringLiteralContext	node		= expression.literalExpression().stringLiteral();
+					return new BoxStringLiteral(
+						node.getText(),
+						getPosition( node ),
+						getSourceText( node )
+					);
+
+				} else {
+					List<BoxExpr> parts = new ArrayList<>();
+					expression.literalExpression().stringLiteral().children.forEach( it -> {
+						if(it != null && it instanceof CFParser.StringLiteralPartContext) {
+							parts.add(new BoxStringLiteral("\""+getSourceText((ParserRuleContext) it) + "\"",getPosition((ParserRuleContext) it),getSourceText((ParserRuleContext) it)));
+						}
+						if(it != null && it instanceof CFParser.ExpressionContext) {
+							parts.add(toAst(file, (CFParser.ExpressionContext) it));
+						}
+					} );
+					return new BoxStringInterpolation(parts,getPosition( expression), getSourceText(expression));
+				}
+
+
 			}
 			if ( expression.literalExpression().integerLiteral() != null ) {
 				CFParser.IntegerLiteralContext node = expression.literalExpression().integerLiteral();
@@ -716,7 +734,7 @@ public class BoxCFParser extends BoxAbstractParser {
 			BoxExpr	left	= toAst( file, expression.expression( 0 ) );
 			BoxExpr	right	= toAst( file, expression.expression( 1 ) );
 			return new BoxBinaryOperation( left, BoxBinaryOperator.Xor, right, getPosition( expression ), getSourceText( expression ) );
-		} else if ( expression.MOD() != null ) {
+		} else if ( expression.PERCENT() != null ) {
 			BoxExpr	left	= toAst( file, expression.expression( 0 ) );
 			BoxExpr	right	= toAst( file, expression.expression( 1 ) );
 			return new BoxBinaryOperation( left, BoxBinaryOperator.Mod, right, getPosition( expression ), getSourceText( expression ) );
@@ -767,7 +785,8 @@ public class BoxCFParser extends BoxAbstractParser {
 			return new BoxTernaryOperation( condition, whenTrue, whenFalse, getPosition( expression ), getSourceText( expression ) );
 		} else if ( expression.not() != null && expression.CONTAIN() == null ) {
 			BoxExpr expr = toAst( file, expression.not().expression() );
-			return new BoxNegateOperation( expr, BoxNegateOperator.Not, getPosition( expression ), getSourceText( expression ) );
+			return new BoxUnaryOperation( expr, BoxUnaryOperator.Not, getPosition( expression ), getSourceText( expression ) );
+			// return new BoxNegateOperation( expr, BoxNegateOperator.Not, getPosition( expression ), getSourceText( expression ) );
 		} else if ( expression.CONTAINS() != null ) {
 			BoxExpr	left	= toAst( file, expression.expression( 0 ) );
 			BoxExpr	right	= toAst( file, expression.expression( 1 ) );
@@ -813,7 +832,7 @@ public class BoxCFParser extends BoxAbstractParser {
 	 */
 	private BoxExpr toAst( File file, CFParser.UnaryContext node ) {
 		BoxExpr				expr	= toAst( file, node.expression() );
-		BoxUnaryOperator	op		= node.MINUS() != null ? BoxUnaryOperator.Plus : BoxUnaryOperator.Minus;
+		BoxUnaryOperator	op		= node.MINUS() != null ? BoxUnaryOperator.Minus : BoxUnaryOperator.Plus;
 		return new BoxUnaryOperation( expr, op, getPosition( node ), getSourceText( node ) );
 	}
 
