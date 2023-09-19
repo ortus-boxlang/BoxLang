@@ -33,7 +33,9 @@ import ortus.boxlang.ast.statement.*;
 import ortus.boxlang.transpiler.transformer.*;
 import ortus.boxlang.transpiler.transformer.expression.*;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Optional;
 
 import org.slf4j.Logger;
@@ -94,6 +96,7 @@ public class BoxLangTranspiler {
 																}
 															};
 
+	private List<Statement> statements = new ArrayList<>();
 	public BoxLangTranspiler() {
 	}
 
@@ -153,9 +156,13 @@ public class BoxLangTranspiler {
 			Node javaStmt = transform( statement );
 			if ( javaStmt instanceof BlockStmt ) {
 				BlockStmt stmt = ( BlockStmt ) javaStmt;
-				stmt.getStatements().stream().forEach( it -> invokeMethod.getBody().get().addStatement( ( Statement ) it ) );
+				stmt.getStatements().stream().forEach( it -> {
+					invokeMethod.getBody().get().addStatement( it );
+					statements.add( it );
+				});
 			} else {
 				invokeMethod.getBody().get().addStatement( ( Statement ) javaStmt );
+				statements.add(( Statement ) javaStmt );
 			}
 		}
 
@@ -163,5 +170,9 @@ public class BoxLangTranspiler {
 		javaClass.accept( visitor, null );
 
 		return javaClass;
+	}
+
+	public List<Statement> getStatements() {
+		return statements;
 	}
 }
