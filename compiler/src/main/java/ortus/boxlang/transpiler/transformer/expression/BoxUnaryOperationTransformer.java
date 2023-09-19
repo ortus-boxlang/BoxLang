@@ -20,10 +20,7 @@ import com.github.javaparser.ast.expr.MethodCallExpr;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import ortus.boxlang.ast.BoxNode;
-import ortus.boxlang.ast.expression.BoxBooleanLiteral;
-import ortus.boxlang.ast.expression.BoxIdentifier;
-import ortus.boxlang.ast.expression.BoxNegateOperation;
-import ortus.boxlang.ast.expression.BoxUnaryOperation;
+import ortus.boxlang.ast.expression.*;
 import ortus.boxlang.transpiler.BoxLangTranspiler;
 import ortus.boxlang.transpiler.transformer.AbstractTransformer;
 import ortus.boxlang.transpiler.transformer.TransformerContext;
@@ -64,16 +61,24 @@ public class BoxUnaryOperationTransformer extends AbstractTransformer {
 			values.put( "key", methodCall.getArguments().get( 0 ).toString() );
 
 		}
+		String template = "";
+		if ( operation.getOperator() == BoxUnaryOperator.PrePlusPlus ) {
+			template = "Increment.invokePre(${expr},${key})";
+		} else if ( operation.getOperator() == BoxUnaryOperator.PostPlusPlus ) {
+			template = "Increment.invokePost(${expr},${key})";
+		} else if ( operation.getOperator() == BoxUnaryOperator.PreMinusMinus ) {
+			template = "Decrement.invokePre(${expr},${key})";
+		} else if ( operation.getOperator() == BoxUnaryOperator.PostMinusMinus ) {
+			template = "Decrement.invokePost(${expr},${key})";
+		} else if ( operation.getOperator() == BoxUnaryOperator.Minus ) {
+			values.put( "expr", expr.toString() );
+			template = "Negate.invoke(${expr})";
+		} else if ( operation.getOperator() == BoxUnaryOperator.Not ) {
+			values.put( "expr", expr.toString() );
+			template = "Not.invoke(${expr})";
+		}
 
-		String	template	= switch ( operation.getOperator() ) {
-								case PrePlusPlus -> "Increment.invokePre(${expr},${key})";
-								case PostPlusPlus -> "Increment.invokePost(${expr},${key})";
-								case PreMinusMinus -> "Decrement.invokePre(${expr},${key})";
-								case PostMinusMinus -> "Decrement.invokePost(${expr},${key})";
-								case Minus -> "Negate.invoke(${expr})";
-								default -> "";
-							};
-		Node	javaExpr	= parseExpression( template, values );
+		Node javaExpr = parseExpression( template, values );
 		logger.info( node.getSourceText() + " -> " + javaExpr );
 		addIndex( javaExpr, node );
 		return javaExpr;
