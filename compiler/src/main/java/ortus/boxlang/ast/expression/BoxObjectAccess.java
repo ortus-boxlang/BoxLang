@@ -54,6 +54,8 @@ public class BoxObjectAccess extends BoxAccess {
 		super( position, sourceText );
 		this.context	= context;
 		this.access		= access;
+		this.context.setParent(this);
+		this.access.setParent(this);
 	}
 
 }
