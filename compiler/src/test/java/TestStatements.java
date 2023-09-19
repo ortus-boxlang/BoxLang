@@ -30,13 +30,11 @@ public class TestStatements extends TestBase {
 
 		assertEqualsNoWhiteSpaces( """
 		                           Referencer.getAndInvoke(
-		                             context,
-		                             myObject,
-		                             Key.of( "myMethod" ),
-		                             new Object[] { obj1, "foo", 42 },
-		                             false
-		                           );
-		                             """, javaAST.toString() );
+		                           myObject,
+		                           Key.of("myMethod"),
+		                           newObject[]{obj1,"foo",42},
+		                           false);
+		                                                  """, javaAST.toString() );
 	}
 
 	@Test
@@ -52,13 +50,13 @@ public class TestStatements extends TestBase {
 
 		assertEqualsNoWhiteSpaces( """
 		                           Referencer.getAndInvoke(
-		                           	context,
 		                           	Referencer.get(
-		                           					variablesScope.get(Key.of("system")).get(Key.of("out")),false),
-		                           					Key.of("println"),
-		                           					newObject[]{"helloworld"},
-		                           					false);
-		                           """, javaAST.toString() );
+		                           		variablesScope.get(Key.of("system")),
+		                           		Key.of("out"),
+		                           		false),
+		                           		Key.of("println"),
+		                           		newObject[]{"helloworld"},false);
+		                                                 """, javaAST.toString() );
 	}
 
 	@Test
@@ -247,12 +245,12 @@ public class TestStatements extends TestBase {
 		assertEqualsNoWhiteSpaces(
 		    """
 		    {
-		    	variablesScope.put(Key.of("a"), 0);
-		    	while (BooleanCaster.cast(LessThan.invoke(variablesScope.get(Key.of("a")), 10))) {
-		    		Increment.invokePost(variablesScope.get(Key.of("a")));
+		    	variablesScope.put(Key.of("a"),0);
+		    	while(BooleanCaster.cast(LessThan.invoke(variablesScope.get(Key.of("a")),10))){
+		    		Increment.invokePost(variablesScope,Key.of("a"));
 		    	}
 		    }
-		       """, javaAST.toString() );
+		         """, javaAST.toString() );
 	}
 
 	@Test

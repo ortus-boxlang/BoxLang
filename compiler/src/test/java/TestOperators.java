@@ -17,6 +17,7 @@
 import com.github.javaparser.ast.Node;
 import org.junit.Ignore;
 import org.junit.Test;
+import ortus.boxlang.executor.JavaRunner;
 import ortus.boxlang.parser.BoxParser;
 import ortus.boxlang.parser.ParsingResult;
 import ortus.boxlang.transpiler.BoxLangTranspiler;
@@ -45,7 +46,6 @@ public class TestOperators extends TestBase {
 		Node			javaAST		= BoxLangTranspiler.transform( result.getRoot() );
 
 		assertEquals( "Concat.invoke(\"Hello \", \"world\")", javaAST.toString() );
-
 	}
 
 	@Test
@@ -523,7 +523,7 @@ public class TestOperators extends TestBase {
 		System.out.println( javaAST );
 		assertEqualsNoWhiteSpaces(
 		    """
-		    	Increment.invokePost(variablesScope.get(Key.of("a")))
+		    	Increment.invokePost(variablesScope,Key.of("a"))
 		    """, javaAST.toString() );
 	}
 
@@ -539,7 +539,7 @@ public class TestOperators extends TestBase {
 		System.out.println( javaAST );
 		assertEqualsNoWhiteSpaces(
 		    """
-		    	Increment.invokePre(variablesScope.get(Key.of("a")))
+		    	Increment.invokePre(variablesScope,Key.of("a"))
 		    """, javaAST.toString() );
 	}
 
@@ -555,7 +555,7 @@ public class TestOperators extends TestBase {
 		System.out.println( javaAST );
 		assertEqualsNoWhiteSpaces(
 		    """
-		    	Decrement.invokePost(variablesScope.get(Key.of("a")))
+		    	Decrement.invokePost(variablesScope,Key.of("a"))
 		    """, javaAST.toString() );
 	}
 
@@ -571,7 +571,7 @@ public class TestOperators extends TestBase {
 		System.out.println( javaAST );
 		assertEqualsNoWhiteSpaces(
 		    """
-		    	Decrement.invokePre(variablesScope.get(Key.of("a")))
+		    	Decrement.invokePre(variablesScope,Key.of("a"))
 		    """, javaAST.toString() );
 	}
 }
