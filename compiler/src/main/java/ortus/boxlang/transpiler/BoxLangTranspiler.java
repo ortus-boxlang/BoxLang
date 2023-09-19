@@ -71,6 +71,7 @@ public class BoxLangTranspiler {
 																	put( BoxIntegerLiteral.class, new BoxIntegerLiteralTransformer() );
 																	put( BoxBooleanLiteral.class, new BoxBooleanLiteralTransformer() );
 																	put( BoxDecimalLiteral.class, new BoxDecimalLiteralTransformer() );
+																	put( BoxStringInterpolation.class, new BoxStringInterpolationTransformer() );
 																	put( BoxArgument.class, new BoxArgumentTransformer() );
 
 																	put( BoxParenthesis.class, new BoxParenthesisTransformer() );
