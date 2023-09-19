@@ -47,7 +47,6 @@ public abstract class BoxLangException extends RuntimeException {
 	 * - lock: catches lock exceptions
 	 * - custom_type: catches the specified custom exception type that is defined in a cfthrow tag
 	 * - searchengine: catches Solr search engine exceptions
-	 * - any: catches all exception types
 	 *
 	 * The type must ALWAYS be set for a BoxLangException by the superclass extending this base class. This will also
 	 * ensure the type string matches the exception class as well.

@@ -50,9 +50,8 @@ public class MissingIncludeException extends BoxLangException {
 	 * @param cause           The cause
 	 */
 	public MissingIncludeException( String message, String detail, String missingFileName, Throwable cause ) {
-		super( message, "missingInclude", cause );
-		this.detail				= detail;
-		this.missingFileName	= missingFileName;
+		super( message, detail, "missingInclude", cause );
+		this.missingFileName = missingFileName;
 	}
 
 }

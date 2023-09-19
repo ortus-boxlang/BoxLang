@@ -69,9 +69,20 @@ public class ApplicationException extends BoxLangException {
 	 * @param cause     The cause
 	 */
 	public ApplicationException( String message, String detail, String extendedInfo, Throwable cause ) {
-		super( message, "application", cause );
-		this.detail			= detail;
-		this.extendedInfo	= extendedInfo;
+		this( message, detail, "application", extendedInfo, cause );
+	}
+
+	/**
+	 * Constructor
+	 *
+	 * @param message   The message
+	 * @param detail    The detail
+	 * @param errorCode The errorCode
+	 * @param cause     The cause
+	 */
+	public ApplicationException( String message, String detail, String type, String extendedInfo, Throwable cause ) {
+		super( message, detail, type, cause );
+		this.extendedInfo = extendedInfo;
 	}
 
 }

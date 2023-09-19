@@ -67,8 +67,7 @@ public class LockException extends BoxLangException {
 	 * @param cause         The cause
 	 */
 	public LockException( String message, String detail, String lockName, String lockOperation, Throwable cause ) {
-		super( message, "lock", cause );
-		this.detail			= detail;
+		super( message, detail, "lock", cause );
 		this.lockName		= lockName;
 		this.lockOperation	= lockOperation;
 	}

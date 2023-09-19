@@ -50,9 +50,8 @@ public class ExpressionException extends BoxLangException {
 	 * @param cause     The cause
 	 */
 	public ExpressionException( String message, String detail, String errNumber, Throwable cause ) {
-		super( message, "missingInclude", cause );
-		this.detail		= detail;
-		this.errNumber	= errNumber;
+		super( message, detail, "missingInclude", cause );
+		this.errNumber = errNumber;
 	}
 
 }
