@@ -21,4 +21,5 @@ public enum BoxUnaryOperator {
 	PreMinusMinus,
 	PostPlusPlus,
 	PostMinusMinus,
+	Not,
 }
