@@ -79,6 +79,7 @@ public class JavaRunner {
 	                                  		${javaCode};
 	                                  		String result = variablesScope.toString();
 	                                  		System.out.println(result);
+
 	                                  	}
 
 	                                  	public static void main(String[] args) {

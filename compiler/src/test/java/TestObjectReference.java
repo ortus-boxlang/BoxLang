@@ -31,7 +31,7 @@ public class TestObjectReference extends TestBase {
 	@Ignore
 	public void testDereferenceByKey() throws IOException {
 		String			expression	= """
-		                              			foo.bar
+		                              			a
 		                              """;
 
 		BoxParser		parser		= new BoxParser();

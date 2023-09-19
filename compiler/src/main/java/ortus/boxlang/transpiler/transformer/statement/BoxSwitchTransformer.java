@@ -67,7 +67,7 @@ public class BoxSwitchTransformer extends AbstractTransformer {
 				if ( requiresBooleanCaster( c.getCondition() ) ) {
 					caseTemplate = "if( BooleanCaster.cast( ${condition} ) ) {}";
 				}
-				Expression			switchExpr	= ( Expression ) BoxLangTranspiler.transform( c.getCondition() );
+				Expression			switchExpr	= ( Expression ) BoxLangTranspiler.transform( c.getCondition(), TransformerContext.RIGHT );
 				Map<String, String>	values		= new HashMap<>() {
 
 													{

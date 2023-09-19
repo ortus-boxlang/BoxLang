@@ -95,8 +95,8 @@ public abstract class AbstractTransformer implements Transformer {
 		if ( expr instanceof NameExpr ) {
 			String				id			= expr.toString();
 			String				template	= switch ( context ) {
-												case RIGHT -> "context.scopeFindNearby(Key.of(\"${id}\")).value()";
-												default -> "context.scopeFindNearby(Key.of(\"${id}\"))";
+												case RIGHT -> "context.scopeFindNearby(Key.of(\"${id}\"),variablesScope).value()";
+												default -> "context.scopeFindNearby(Key.of(\"${id}\"),variablesScope).scope().get(Key.of(\"${id}\"))";
 											}
 
 			;

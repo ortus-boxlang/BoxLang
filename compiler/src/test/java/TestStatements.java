@@ -61,6 +61,9 @@ public class TestStatements extends TestBase {
 
 	@Test
 	public void assigment() throws IOException {
+		// String statement = """
+		// variables["system"] = "Hello"
+		// """;
 		String			statement	= """
 		                              			variables["system"] = "Hello"
 		                              """;
@@ -100,12 +103,12 @@ public class TestStatements extends TestBase {
 		Node			javaAST		= BoxLangTranspiler.transform( result.getRoot() );
 		assertEqualsNoWhiteSpaces(
 		    """
-		    if (BooleanCaster.cast(EqualsEquals.invoke(variablesScope.get(Key.of("a")), "0"))) {
-		    	variablesScope.put(Key.of("a"), Concat.invoke(context.scopeFindNearby(Key.of("a")).value(), "1"));
-		    } else if (Negate.invoke(foo)) {
-		    	variablesScope.put(Key.of("a"), Concat.invoke(context.scopeFindNearby(Key.of("a")).value(), "2"));
+		    if(BooleanCaster.cast(EqualsEquals.invoke(variablesScope.get(Key.of("a")),"0"))){
+		    	variablesScope.put(Key.of("a"),Concat.invoke(context.scopeFindNearby(Key.of("a"),variablesScope).value(),"1"));
+		    } else if(Not.invoke(foo)){
+		    	variablesScope.put(Key.of("a"),Concat.invoke(context.scopeFindNearby(Key.of("a"),variablesScope).value(),"2"));
 		    }
-		    """, javaAST.toString() );
+		       """, javaAST.toString() );
 	}
 
 	@Test

@@ -157,18 +157,31 @@ public class TestOperators extends TestBase {
 	@Test
 	public void negate() throws IOException {
 		String			expression	= """
+		                              			-5
+		                              """;
+
+		ParsingResult	result		= parseExpression( expression );
+		Node			javaAST		= BoxLangTranspiler.transform( result.getRoot() );
+
+		assertEquals( "Negate.invoke(5)", javaAST.toString() );
+
+	}
+
+	@Test
+	public void not() throws IOException {
+		String			expression	= """
 		                              			!True
 		                              """;
 
 		ParsingResult	result		= parseExpression( expression );
 		Node			javaAST		= BoxLangTranspiler.transform( result.getRoot() );
 
-		assertEquals( "Negate.invoke(\"True\")", javaAST.toString() );
+		assertEquals( "Not.invoke(true)", javaAST.toString() );
 
 	}
 
 	@Test
-	public void negateNegate() throws IOException {
+	public void notNot() throws IOException {
 		String			expression	= """
 		                              			!!False
 		                              """;
@@ -176,7 +189,7 @@ public class TestOperators extends TestBase {
 		ParsingResult	result		= parseExpression( expression );
 		Node			javaAST		= BoxLangTranspiler.transform( result.getRoot() );
 
-		assertEquals( "Negate.invoke(Negate.invoke(\"False\"))", javaAST.toString() );
+		assertEquals( "Not.invoke(Not.invoke(false))", javaAST.toString() );
 
 	}
 
@@ -283,7 +296,7 @@ public class TestOperators extends TestBase {
 
 		Node			javaAST		= BoxLangTranspiler.transform( result.getRoot() );
 
-		assertEquals( "Mod.invoke(2, 3)", javaAST.toString() );
+		assertEquals( "Modulus.invoke(2, 3)", javaAST.toString() );
 
 	}
 
@@ -297,7 +310,8 @@ public class TestOperators extends TestBase {
 
 		Node			javaAST		= BoxLangTranspiler.transform( result.getRoot() );
 
-		assertEquals( "InstanceOf.invoke(context.scopeFindNearby(Key.of(\"foo\")), \"String\")", javaAST.toString() );
+		assertEquals( "InstanceOf.invoke(context.scopeFindNearby(Key.of(\"foo\"), variablesScope).scope().get(Key.of(\"foo\")), \"String\")",
+		    javaAST.toString() );
 
 	}
 
@@ -573,5 +587,21 @@ public class TestOperators extends TestBase {
 		    """
 		    	Decrement.invokePre(variablesScope,Key.of("a"))
 		    """, javaAST.toString() );
+	}
+
+	@Test
+	public void interpolation() throws IOException {
+		String			expression	= """
+		                              "a is #variables.a# and b is #variables.b#"
+		                              """;
+
+		ParsingResult	result		= parseExpression( expression );
+
+		Node			javaAST		= BoxLangTranspiler.transform( result.getRoot() );
+		System.out.println( javaAST );
+		assertEqualsNoWhiteSpaces(
+		    """
+		    "a is " + variablesScope.get(Key.of("a")) + " and b is " + variablesScope.get(Key.of("b"))
+		      """, javaAST.toString() );
 	}
 }

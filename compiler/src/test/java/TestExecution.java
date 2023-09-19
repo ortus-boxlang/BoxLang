@@ -33,12 +33,25 @@ public class TestExecution extends TestBase {
 		String			statement	= """
 		                              variables['system'] = createObject('java','java.lang.System');
 
-		                              variables.a = 10;
-		                              while(variables.a > 0) {
-		                              	variables.a;
-		                              	variables.system.out.println(variables.a);
+		                              a = 1;
+		                              while(a < 10) {
+		                                 switch(variables.a) {
+		                                 case 0: {
+		                                   variables.system.out.println("zero");
+		                                   break;
+		                                 }
+		                                default: {
+		                                   variables.system.out.println("non zero");
+		                                   break;
+		                                 }
 		                              }
-		                              assert(variables["a"] == 10);
+		                              if(!a % 2 == 0) {
+		                                  variables.system.out.println("even and a=#variables.a#");
+		                              }
+		                              a +=1;
+
+		                              }
+		                              //assert(variables["a"] == 10);
 		                              """;
 		BoxParser		parser		= new BoxParser();
 		ParsingResult	result		= parser.parse( statement, BoxFileType.CF );
@@ -55,7 +68,7 @@ public class TestExecution extends TestBase {
 		String			statement	= """
 		                                                     variables['system'] = createObject('java','java.lang.System');
 
-		                                                     for(variables.a = 0; variables.a < 10; variables.a++){
+		                                                     for(variables.a = 0; a < 10; variables.a++){
 		                                                     	variables.system.out.println(variables.a);
 		                                                     }
 		                              assert(variables["a"] == 10);
