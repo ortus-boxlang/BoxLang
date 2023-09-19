@@ -17,7 +17,7 @@
 import com.github.javaparser.ast.Node;
 import org.junit.Ignore;
 import org.junit.Test;
-import ortus.boxlang.parser.BoxLangIParser;
+import ortus.boxlang.parser.BoxParser;
 import ortus.boxlang.parser.ParsingResult;
 import ortus.boxlang.transpiler.BoxLangTranspiler;
 
@@ -34,7 +34,7 @@ public class TestObjectReference extends TestBase {
 		                              			foo.bar
 		                              """;
 
-		BoxLangIParser	parser		= new BoxLangIParser();
+		BoxParser		parser		= new BoxParser();
 		ParsingResult	result		= parser.parseExpression( expression );
 		Node			javaAST		= BoxLangTranspiler.transform( result.getRoot() );
 
@@ -49,7 +49,7 @@ public class TestObjectReference extends TestBase {
 		                              			foo["bar"]
 		                              """;
 
-		BoxLangIParser	parser		= new BoxLangIParser();
+		BoxParser		parser		= new BoxParser();
 		ParsingResult	result		= parser.parseExpression( expression );
 		Node			javaAST		= BoxLangTranspiler.transform( result.getRoot() );
 
@@ -64,7 +64,7 @@ public class TestObjectReference extends TestBase {
 		                              			foo['bar']
 		                              """;
 
-		BoxLangIParser	parser		= new BoxLangIParser();
+		BoxParser		parser		= new BoxParser();
 		ParsingResult	result		= parser.parseExpression( expression );
 		Node			javaAST		= BoxLangTranspiler.transform( result.getRoot() );
 
@@ -79,7 +79,7 @@ public class TestObjectReference extends TestBase {
 		                              			variables.foo
 		                              """;
 
-		BoxLangIParser	parser		= new BoxLangIParser();
+		BoxParser		parser		= new BoxParser();
 		ParsingResult	result		= parser.parseExpression( expression );
 		Node			javaAST		= BoxLangTranspiler.transform( result.getRoot() );
 
@@ -93,7 +93,7 @@ public class TestObjectReference extends TestBase {
 		                              			variables.foo=bar
 		                              """;
 
-		BoxLangIParser	parser		= new BoxLangIParser();
+		BoxParser		parser		= new BoxParser();
 		ParsingResult	result		= parser.parseStatement( expression );
 		Node			javaAST		= BoxLangTranspiler.transform( result.getRoot() );
 

@@ -17,7 +17,7 @@
 import com.github.javaparser.ast.CompilationUnit;
 import org.junit.Test;
 import ortus.boxlang.ast.expression.BoxBinaryOperation;
-import ortus.boxlang.parser.BoxLangIParser;
+import ortus.boxlang.parser.BoxParser;
 import ortus.boxlang.parser.ParsingResult;
 import ortus.boxlang.transpiler.BoxLangTranspiler;
 
@@ -31,7 +31,7 @@ import static org.junit.Assert.assertTrue;
 
 public class TestAST extends TestBase {
 
-	protected BoxLangIParser parser = new BoxLangIParser();
+	protected BoxParser parser = new BoxParser();
 
 	@Test
 	public void testBinaryOperation() throws IOException {
