@@ -73,8 +73,9 @@ Here is a listing of all of our core dependencies.  If you add one, make sure yo
 
 | Dependency | Version | License | Description |
 |------------|---------|---------|-------------|
+| [apache-commons-lang3](https://commons.apache.org/proper/commons-lang/) | 3.12.0 | Apache2 | Used for many utilities, class helpers and more |
 | [boxlang-compiler](https://github.com/ortus-solutions-private/boxlang-compiler) | 1.0.0 | Apache2 | The BoxLang Parser, Compiler, and ByteCode Generator |
-| [apache-commons-lang3](https://commons.apache.org/proper/commons-lang/) | 3.12.0 | Apache2 | Apache Commons Lang |
+| [caffeine](https://mvnrepository.com/artifact/com.github.ben-manes.caffeine/caffeine) | 3.1.8| Apache2 | Caching engine  |
 | [slf4j-api](https://mvnrepository.com/artifact/org.slf4j/slf4j-api) | 2.0.7 | MIT | API for SLF4J (The Simple Logging Facade for Java)  |
 | [slf4j-jdk14](https://mvnrepository.com/artifact/org.slf4j/slf4j-jdk14) | 2.0.7 | MIT | SLF4J JDK14 Provider |
 
