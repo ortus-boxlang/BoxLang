@@ -20,7 +20,7 @@ package ortus.boxlang.runtime.types.exceptions;
 /**
  * This exception is thrown when a cast can't be done on any type
  */
-public class CastException extends BoxLangException {
+public class CastException extends ApplicationException {
 
 	/**
 	 * Constructor
