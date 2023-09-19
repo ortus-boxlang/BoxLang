@@ -175,10 +175,10 @@ simpleStatement
     ;
 
 incrementDecrementStatement
-    :   PLUS PLUS accessExpression      #preIncrement
-    |   accessExpression PLUS PLUS      #postIncrement
-    |   MINUS MINUS accessExpression    #preDecremenent
-    |   accessExpression MINUS MINUS    #postDecrement
+    :   PLUSPLUS accessExpression      #preIncrement
+    |   accessExpression PLUSPLUS      #postIncrement
+    |   MINUSMINUS accessExpression    #preDecremenent
+    |   accessExpression MINUSMINUS    #postDecrement
     ;
 
 assignment
