@@ -5,6 +5,12 @@
 	"runtime" : {
 		"modulesDirectory" : "{user-home}/.boxlang/modules",
 		"caches" : {
+			"importCache" : {
+				"type" : "Caffeine",
+				"properties" : {
+					"maximumSize" : 1000
+				}
+			}
 		}
 	}
 }
