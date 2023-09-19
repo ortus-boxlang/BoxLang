@@ -96,7 +96,8 @@ public class BoxLangTranspiler {
 																}
 															};
 
-	private List<Statement> statements = new ArrayList<>();
+	private List<Statement>						statements	= new ArrayList<>();
+
 	public BoxLangTranspiler() {
 	}
 
@@ -159,10 +160,10 @@ public class BoxLangTranspiler {
 				stmt.getStatements().stream().forEach( it -> {
 					invokeMethod.getBody().get().addStatement( it );
 					statements.add( it );
-				});
+				} );
 			} else {
 				invokeMethod.getBody().get().addStatement( ( Statement ) javaStmt );
-				statements.add(( Statement ) javaStmt );
+				statements.add( ( Statement ) javaStmt );
 			}
 		}
 
