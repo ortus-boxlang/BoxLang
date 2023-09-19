@@ -156,10 +156,6 @@ public class JavaRunner {
 				    .forEach( d -> logger.error( String.valueOf( d ) ) );
 				throw new RuntimeException( "Compiler Error" );
 			} else {
-				// ClassLoader classLoader = manager.getClassLoader( null );
-				// Class<?> clazz = ( ( JavaDynamicClassLoader ) classLoader ).define( fqn );
-				// BoxJavaClass instanceOfClass = ( BoxJavaClass ) clazz.newInstance();
-
 				JavaDynamicClassLoader	classLoader	= new JavaDynamicClassLoader(
 				    new URL[] {
 				        new File( boxRT ).toURI().toURL()
