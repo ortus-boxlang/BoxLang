@@ -24,20 +24,25 @@ import ortus.boxlang.transpiler.BoxLangTranspiler;
 import java.io.IOException;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 public class TestOperators extends TestBase {
 
+	public ParsingResult parseExpression( String statement ) throws IOException {
+		BoxParser		parser	= new BoxParser();
+		ParsingResult	result	= parser.parseExpression( statement );
+		assertTrue( result.isCorrect() );
+		return result;
+	}
+
 	@Test
 	public void concat() throws IOException {
-		String				expression	= """
-		                                  			"Hello " & "world";
-		                                  """;
+		String			expression	= """
+		                              			"Hello " & "world";
+		                              """;
 
-		BoxParser			parser		= new BoxParser();
-		BoxLangTranspiler	transpiler	= new BoxLangTranspiler();
-		ParsingResult		result		= parser.parseExpression( expression );
-
-		Node				javaAST		= BoxLangTranspiler.transform( result.getRoot() );
+		ParsingResult	result		= parseExpression( expression );
+		Node			javaAST		= BoxLangTranspiler.transform( result.getRoot() );
 
 		assertEquals( "Concat.invoke(\"Hello \", \"world\")", javaAST.toString() );
 
@@ -49,9 +54,7 @@ public class TestOperators extends TestBase {
 		                              			1 + 2
 		                              """;
 
-		BoxParser		parser		= new BoxParser();
-		ParsingResult	result		= parser.parseExpression( expression );
-
+		ParsingResult	result		= parseExpression( expression );
 		Node			javaAST		= BoxLangTranspiler.transform( result.getRoot() );
 
 		assertEquals( "Plus.invoke(1, 2)", javaAST.toString() );
@@ -64,9 +67,7 @@ public class TestOperators extends TestBase {
 		                              			1 - 2
 		                              """;
 
-		BoxParser		parser		= new BoxParser();
-		ParsingResult	result		= parser.parseExpression( expression );
-
+		ParsingResult	result		= parseExpression( expression );
 		Node			javaAST		= BoxLangTranspiler.transform( result.getRoot() );
 
 		assertEquals( "Minus.invoke(1, 2)", javaAST.toString() );
@@ -79,8 +80,7 @@ public class TestOperators extends TestBase {
 		                              			1 * 2
 		                              """;
 
-		BoxParser		parser		= new BoxParser();
-		ParsingResult	result		= parser.parseExpression( expression );
+		ParsingResult	result		= parseExpression( expression );
 
 		Node			javaAST		= BoxLangTranspiler.transform( result.getRoot() );
 
@@ -94,8 +94,7 @@ public class TestOperators extends TestBase {
 		                              			1 ^ 2
 		                              """;
 
-		BoxParser		parser		= new BoxParser();
-		ParsingResult	result		= parser.parseExpression( expression );
+		ParsingResult	result		= parseExpression( expression );
 
 		Node			javaAST		= BoxLangTranspiler.transform( result.getRoot() );
 
@@ -109,9 +108,7 @@ public class TestOperators extends TestBase {
 		                              			1 / 2
 		                              """;
 
-		BoxParser		parser		= new BoxParser();
-		ParsingResult	result		= parser.parseExpression( expression );
-
+		ParsingResult	result		= parseExpression( expression );
 		Node			javaAST		= BoxLangTranspiler.transform( result.getRoot() );
 
 		assertEquals( "Divide.invoke(1, 2)", javaAST.toString() );
@@ -124,9 +121,7 @@ public class TestOperators extends TestBase {
 		                              			1 \\ 2
 		                              """;
 
-		BoxParser		parser		= new BoxParser();
-		ParsingResult	result		= parser.parseExpression( expression );
-
+		ParsingResult	result		= parseExpression( expression );
 		Node			javaAST		= BoxLangTranspiler.transform( result.getRoot() );
 
 		assertEquals( "IntegerDivide.invoke(1, 2)", javaAST.toString() );
@@ -139,9 +134,7 @@ public class TestOperators extends TestBase {
 		                              			"Brad Wood" contains "Wood"
 		                              """;
 
-		BoxParser		parser		= new BoxParser();
-		ParsingResult	result		= parser.parseExpression( expression );
-
+		ParsingResult	result		= parseExpression( expression );
 		Node			javaAST		= BoxLangTranspiler.transform( result.getRoot() );
 
 		assertEquals( "Contains.contains(\"Brad Wood\", \"Wood\")", javaAST.toString() );
@@ -154,9 +147,7 @@ public class TestOperators extends TestBase {
 		                              			"Brad Wood" does not contain "Luis"
 		                              """;
 
-		BoxParser		parser		= new BoxParser();
-		ParsingResult	result		= parser.parseExpression( expression );
-
+		ParsingResult	result		= parseExpression( expression );
 		Node			javaAST		= BoxLangTranspiler.transform( result.getRoot() );
 
 		assertEquals( "!Contains.contains(\"Brad Wood\", \"Luis\")", javaAST.toString() );
@@ -169,9 +160,7 @@ public class TestOperators extends TestBase {
 		                              			!True
 		                              """;
 
-		BoxParser		parser		= new BoxParser();
-		ParsingResult	result		= parser.parseExpression( expression );
-
+		ParsingResult	result		= parseExpression( expression );
 		Node			javaAST		= BoxLangTranspiler.transform( result.getRoot() );
 
 		assertEquals( "Negate.invoke(\"True\")", javaAST.toString() );
@@ -184,9 +173,7 @@ public class TestOperators extends TestBase {
 		                              			!!False
 		                              """;
 
-		BoxParser		parser		= new BoxParser();
-		ParsingResult	result		= parser.parseExpression( expression );
-
+		ParsingResult	result		= parseExpression( expression );
 		Node			javaAST		= BoxLangTranspiler.transform( result.getRoot() );
 
 		assertEquals( "Negate.invoke(Negate.invoke(\"False\"))", javaAST.toString() );
@@ -199,9 +186,7 @@ public class TestOperators extends TestBase {
 		                              			isGood ? "eat" : "toss"
 		                              """;
 
-		BoxParser		parser		= new BoxParser();
-		ParsingResult	result		= parser.parseExpression( expression );
-
+		ParsingResult	result		= parseExpression( expression );
 		Node			javaAST		= BoxLangTranspiler.transform( result.getRoot() );
 
 		assertEquals( "Ternary.invoke(isGood, \"eat\", \"toss\")", javaAST.toString() );
@@ -214,9 +199,7 @@ public class TestOperators extends TestBase {
 		                              			variables['system']
 		                              """;
 
-		BoxParser		parser		= new BoxParser();
-		ParsingResult	result		= parser.parseExpression( expression );
-
+		ParsingResult	result		= parseExpression( expression );
 		Node			javaAST		= BoxLangTranspiler.transform( result.getRoot() );
 
 		assertEquals( "variablesScope.get(Key.of(\"system\"))", javaAST.toString() );
@@ -230,9 +213,7 @@ public class TestOperators extends TestBase {
 		                              			foo
 		                              """;
 
-		BoxParser		parser		= new BoxParser();
-		ParsingResult	result		= parser.parseExpression( expression );
-
+		ParsingResult	result		= parseExpression( expression );
 		Node			javaAST		= BoxLangTranspiler.transform( result.getRoot() );
 
 		assertEquals( "context.scopeFindNearby(Key.of(\"foo\"))", javaAST.toString() );
@@ -245,9 +226,7 @@ public class TestOperators extends TestBase {
 		                              			variables.maybeNull ?: "use if null"
 		                              """;
 
-		BoxParser		parser		= new BoxParser();
-		ParsingResult	result		= parser.parseExpression( expression );
-
+		ParsingResult	result		= parseExpression( expression );
 		Node			javaAST		= BoxLangTranspiler.transform( result.getRoot() );
 
 		assertEquals( "Elvis.invoke(variablesScope.get(Key.of(\"maybeNull\")), \"use if null\")", javaAST.toString() );
@@ -261,9 +240,7 @@ public class TestOperators extends TestBase {
 		                              			variables.foo.bar ?: "brad"
 		                              """;
 
-		BoxParser		parser		= new BoxParser();
-		ParsingResult	result		= parser.parseExpression( expression );
-
+		ParsingResult	result		= parseExpression( expression );
 		Node			javaAST		= BoxLangTranspiler.transform( result.getRoot() );
 
 		assertEqualsNoWhiteSpaces( """
@@ -288,8 +265,7 @@ public class TestOperators extends TestBase {
 		                              			2 XOR 3
 		                              """;
 
-		BoxParser		parser		= new BoxParser();
-		ParsingResult	result		= parser.parseExpression( expression );
+		ParsingResult	result		= parseExpression( expression );
 
 		Node			javaAST		= BoxLangTranspiler.transform( result.getRoot() );
 
@@ -303,8 +279,7 @@ public class TestOperators extends TestBase {
 		                              			2 MOD 3
 		                              """;
 
-		BoxParser		parser		= new BoxParser();
-		ParsingResult	result		= parser.parseExpression( expression );
+		ParsingResult	result		= parseExpression( expression );
 
 		Node			javaAST		= BoxLangTranspiler.transform( result.getRoot() );
 
@@ -318,8 +293,7 @@ public class TestOperators extends TestBase {
 		                              foo instanceOf "String"
 		                              """;
 
-		BoxParser		parser		= new BoxParser();
-		ParsingResult	result		= parser.parseExpression( expression );
+		ParsingResult	result		= parseExpression( expression );
 
 		Node			javaAST		= BoxLangTranspiler.transform( result.getRoot() );
 
@@ -333,8 +307,7 @@ public class TestOperators extends TestBase {
 		                              (1+ 2) * 3
 		                              """;
 
-		BoxParser		parser		= new BoxParser();
-		ParsingResult	result		= parser.parseExpression( expression );
+		ParsingResult	result		= parseExpression( expression );
 
 		Node			javaAST		= BoxLangTranspiler.transform( result.getRoot() );
 
@@ -348,8 +321,7 @@ public class TestOperators extends TestBase {
 		                              1 == 3
 		                              """;
 
-		BoxParser		parser		= new BoxParser();
-		ParsingResult	result		= parser.parseExpression( expression );
+		ParsingResult	result		= parseExpression( expression );
 
 		Node			javaAST		= BoxLangTranspiler.transform( result.getRoot() );
 
@@ -358,14 +330,14 @@ public class TestOperators extends TestBase {
 		expression	= """
 		              1 EQ 3
 		              """;
-		result		= parser.parseExpression( expression );
+		result		= parseExpression( expression );
 
 		javaAST		= BoxLangTranspiler.transform( result.getRoot() );
 		assertEquals( "EqualsEquals.invoke(1, 3)", javaAST.toString() );
 		expression	= """
 		              1 IS 3
 		              """;
-		result		= parser.parseExpression( expression );
+		result		= parseExpression( expression );
 
 		javaAST		= BoxLangTranspiler.transform( result.getRoot() );
 		assertEquals( "EqualsEquals.invoke(1, 3)", javaAST.toString() );
@@ -378,8 +350,7 @@ public class TestOperators extends TestBase {
 		                              true === "true"
 		                              """;
 
-		BoxParser		parser		= new BoxParser();
-		ParsingResult	result		= parser.parseExpression( expression );
+		ParsingResult	result		= parseExpression( expression );
 
 		Node			javaAST		= BoxLangTranspiler.transform( result.getRoot() );
 
@@ -392,8 +363,7 @@ public class TestOperators extends TestBase {
 		                              1 != 3
 		                              """;
 
-		BoxParser		parser		= new BoxParser();
-		ParsingResult	result		= parser.parseExpression( expression );
+		ParsingResult	result		= parseExpression( expression );
 
 		Node			javaAST		= BoxLangTranspiler.transform( result.getRoot() );
 
@@ -402,7 +372,7 @@ public class TestOperators extends TestBase {
 		expression	= """
 		              1 NEQ 3
 		              """;
-		result		= parser.parseExpression( expression );
+		result		= parseExpression( expression );
 
 		javaAST		= BoxLangTranspiler.transform( result.getRoot() );
 		assertEquals( "!EqualsEquals.invoke(1, 3)", javaAST.toString() );
@@ -415,8 +385,7 @@ public class TestOperators extends TestBase {
 		                              1 > 3
 		                              """;
 
-		BoxParser		parser		= new BoxParser();
-		ParsingResult	result		= parser.parseExpression( expression );
+		ParsingResult	result		= parseExpression( expression );
 
 		Node			javaAST		= BoxLangTranspiler.transform( result.getRoot() );
 
@@ -425,7 +394,7 @@ public class TestOperators extends TestBase {
 		expression	= """
 		              1 GT 3
 		              """;
-		result		= parser.parseExpression( expression );
+		result		= parseExpression( expression );
 
 		javaAST		= BoxLangTranspiler.transform( result.getRoot() );
 		assertEquals( "GreaterThan.invoke(1, 3)", javaAST.toString() );
@@ -438,8 +407,7 @@ public class TestOperators extends TestBase {
 		                              1 >= 3
 		                              """;
 
-		BoxParser		parser		= new BoxParser();
-		ParsingResult	result		= parser.parseExpression( expression );
+		ParsingResult	result		= parseExpression( expression );
 
 		Node			javaAST		= BoxLangTranspiler.transform( result.getRoot() );
 
@@ -448,7 +416,7 @@ public class TestOperators extends TestBase {
 		expression	= """
 		              1 GTE 3
 		              """;
-		result		= parser.parseExpression( expression );
+		result		= parseExpression( expression );
 
 		javaAST		= BoxLangTranspiler.transform( result.getRoot() );
 		assertEquals( "GreaterThanEqual.invoke(1, 3)", javaAST.toString() );
@@ -461,8 +429,7 @@ public class TestOperators extends TestBase {
 		                              1 < 3
 		                              """;
 
-		BoxParser		parser		= new BoxParser();
-		ParsingResult	result		= parser.parseExpression( expression );
+		ParsingResult	result		= parseExpression( expression );
 
 		Node			javaAST		= BoxLangTranspiler.transform( result.getRoot() );
 
@@ -471,7 +438,7 @@ public class TestOperators extends TestBase {
 		expression	= """
 		              1 LT 3
 		              """;
-		result		= parser.parseExpression( expression );
+		result		= parseExpression( expression );
 
 		javaAST		= BoxLangTranspiler.transform( result.getRoot() );
 		assertEquals( "LessThan.invoke(1, 3)", javaAST.toString() );
@@ -484,8 +451,7 @@ public class TestOperators extends TestBase {
 		                              1 <= 3
 		                              """;
 
-		BoxParser		parser		= new BoxParser();
-		ParsingResult	result		= parser.parseExpression( expression );
+		ParsingResult	result		= parseExpression( expression );
 
 		Node			javaAST		= BoxLangTranspiler.transform( result.getRoot() );
 
@@ -494,7 +460,7 @@ public class TestOperators extends TestBase {
 		expression	= """
 		              1 LTE 3
 		              """;
-		result		= parser.parseExpression( expression );
+		result		= parseExpression( expression );
 
 		javaAST		= BoxLangTranspiler.transform( result.getRoot() );
 		assertEquals( "LessThanEqual.invoke(1, 3)", javaAST.toString() );
@@ -507,8 +473,7 @@ public class TestOperators extends TestBase {
 		                              true && "true"
 		                              """;
 
-		BoxParser		parser		= new BoxParser();
-		ParsingResult	result		= parser.parseExpression( expression );
+		ParsingResult	result		= parseExpression( expression );
 
 		Node			javaAST		= BoxLangTranspiler.transform( result.getRoot() );
 
@@ -517,7 +482,7 @@ public class TestOperators extends TestBase {
 		expression	= """
 		              true AND "true"
 		              """;
-		result		= parser.parseExpression( expression );
+		result		= parseExpression( expression );
 
 		javaAST		= BoxLangTranspiler.transform( result.getRoot() );
 		assertEquals( "And.invoke(true, \"true\")", javaAST.toString() );
@@ -530,8 +495,7 @@ public class TestOperators extends TestBase {
 		                              true || "true"
 		                              """;
 
-		BoxParser		parser		= new BoxParser();
-		ParsingResult	result		= parser.parseExpression( expression );
+		ParsingResult	result		= parseExpression( expression );
 
 		Node			javaAST		= BoxLangTranspiler.transform( result.getRoot() );
 
@@ -540,7 +504,7 @@ public class TestOperators extends TestBase {
 		expression	= """
 		              true OR "true"
 		              """;
-		result		= parser.parseExpression( expression );
+		result		= parseExpression( expression );
 
 		javaAST		= BoxLangTranspiler.transform( result.getRoot() );
 		assertEquals( "Or.invoke(true, \"true\")", javaAST.toString() );
@@ -553,8 +517,7 @@ public class TestOperators extends TestBase {
 		                              variables['a']++
 		                              """;
 
-		BoxParser		parser		= new BoxParser();
-		ParsingResult	result		= parser.parseExpression( expression );
+		ParsingResult	result		= parseExpression( expression );
 
 		Node			javaAST		= BoxLangTranspiler.transform( result.getRoot() );
 		System.out.println( javaAST );
@@ -570,8 +533,7 @@ public class TestOperators extends TestBase {
 		                              ++variables['a']
 		                              """;
 
-		BoxParser		parser		= new BoxParser();
-		ParsingResult	result		= parser.parseExpression( expression );
+		ParsingResult	result		= parseExpression( expression );
 
 		Node			javaAST		= BoxLangTranspiler.transform( result.getRoot() );
 		System.out.println( javaAST );
@@ -587,8 +549,7 @@ public class TestOperators extends TestBase {
 		                              variables['a']--
 		                              """;
 
-		BoxParser		parser		= new BoxParser();
-		ParsingResult	result		= parser.parseExpression( expression );
+		ParsingResult	result		= parseExpression( expression );
 
 		Node			javaAST		= BoxLangTranspiler.transform( result.getRoot() );
 		System.out.println( javaAST );
@@ -604,8 +565,7 @@ public class TestOperators extends TestBase {
 		                              --variables['a']
 		                              """;
 
-		BoxParser		parser		= new BoxParser();
-		ParsingResult	result		= parser.parseExpression( expression );
+		ParsingResult	result		= parseExpression( expression );
 
 		Node			javaAST		= BoxLangTranspiler.transform( result.getRoot() );
 		System.out.println( javaAST );
