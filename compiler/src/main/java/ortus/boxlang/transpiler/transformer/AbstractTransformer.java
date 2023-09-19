@@ -23,9 +23,7 @@ import com.github.javaparser.ast.stmt.Statement;
 import org.apache.commons.text.StringSubstitutor;
 import ortus.boxlang.ast.BoxExpr;
 import ortus.boxlang.ast.BoxNode;
-import ortus.boxlang.ast.expression.BoxBinaryOperation;
-import ortus.boxlang.ast.expression.BoxBinaryOperator;
-import ortus.boxlang.ast.expression.BoxNegateOperation;
+import ortus.boxlang.ast.expression.*;
 import ortus.boxlang.transpiler.transformer.indexer.BoxLangCrossReferencer;
 import ortus.boxlang.transpiler.transformer.indexer.BoxLangCrossReferencerDefault;
 
@@ -129,8 +127,10 @@ public abstract class AbstractTransformer implements Transformer {
 			if ( op.getOperator() == BoxBinaryOperator.And )
 				return false;
 		}
-		if ( condition instanceof BoxNegateOperation ) {
-			return false;
+		if ( condition instanceof BoxUnaryOperation ) {
+			BoxUnaryOperation op = ( BoxUnaryOperation ) condition;
+			if ( op.getOperator() == BoxUnaryOperator.Not )
+				return false;
 		}
 		return true;
 	}
