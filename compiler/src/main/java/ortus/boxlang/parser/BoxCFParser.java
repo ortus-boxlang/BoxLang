@@ -641,28 +641,28 @@ public class BoxCFParser extends BoxAbstractParser {
 	private BoxExpr toAst( File file, CFParser.ExpressionContext expression ) {
 		if ( expression.literalExpression() != null ) {
 			if ( expression.literalExpression().stringLiteral() != null ) {
-				if(expression.literalExpression().stringLiteral()
-					.expression().isEmpty() ) {
-					CFParser.StringLiteralContext	node		= expression.literalExpression().stringLiteral();
+				if ( expression.literalExpression().stringLiteral()
+				    .expression().isEmpty() ) {
+					CFParser.StringLiteralContext node = expression.literalExpression().stringLiteral();
 					return new BoxStringLiteral(
-						node.getText(),
-						getPosition( node ),
-						getSourceText( node )
+					    node.getText(),
+					    getPosition( node ),
+					    getSourceText( node )
 					);
 
 				} else {
 					List<BoxExpr> parts = new ArrayList<>();
 					expression.literalExpression().stringLiteral().children.forEach( it -> {
-						if(it != null && it instanceof CFParser.StringLiteralPartContext) {
-							parts.add(new BoxStringLiteral("\""+getSourceText((ParserRuleContext) it) + "\"",getPosition((ParserRuleContext) it),getSourceText((ParserRuleContext) it)));
+						if ( it != null && it instanceof CFParser.StringLiteralPartContext ) {
+							parts.add( new BoxStringLiteral( "\"" + getSourceText( ( ParserRuleContext ) it ) + "\"", getPosition( ( ParserRuleContext ) it ),
+							    getSourceText( ( ParserRuleContext ) it ) ) );
 						}
-						if(it != null && it instanceof CFParser.ExpressionContext) {
-							parts.add(toAst(file, (CFParser.ExpressionContext) it));
+						if ( it != null && it instanceof CFParser.ExpressionContext ) {
+							parts.add( toAst( file, ( CFParser.ExpressionContext ) it ) );
 						}
 					} );
-					return new BoxStringInterpolation(parts,getPosition( expression), getSourceText(expression));
+					return new BoxStringInterpolation( parts, getPosition( expression ), getSourceText( expression ) );
 				}
-
 
 			}
 			if ( expression.literalExpression().integerLiteral() != null ) {
@@ -734,7 +734,7 @@ public class BoxCFParser extends BoxAbstractParser {
 			BoxExpr	left	= toAst( file, expression.expression( 0 ) );
 			BoxExpr	right	= toAst( file, expression.expression( 1 ) );
 			return new BoxBinaryOperation( left, BoxBinaryOperator.Xor, right, getPosition( expression ), getSourceText( expression ) );
-		} else if ( expression.PERCENT() != null ) {
+		} else if ( expression.PERCENT() != null || expression.MOD() != null ) {
 			BoxExpr	left	= toAst( file, expression.expression( 0 ) );
 			BoxExpr	right	= toAst( file, expression.expression( 1 ) );
 			return new BoxBinaryOperation( left, BoxBinaryOperator.Mod, right, getPosition( expression ), getSourceText( expression ) );

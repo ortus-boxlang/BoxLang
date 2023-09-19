@@ -26,7 +26,7 @@ import java.util.List;
  */
 public class BoxStringLiteral extends BoxExpr {
 
-	private final String		value;
+	private final String value;
 
 	public String getValue() {
 		return value;
@@ -44,12 +44,12 @@ public class BoxStringLiteral extends BoxExpr {
 	 * @param position   position of the statement in the source code
 	 * @param sourceText source code that originated the Node
 	 */
-	public BoxStringLiteral( String value,  Position position, String sourceText ) {
+	public BoxStringLiteral( String value, Position position, String sourceText ) {
 		super( position, sourceText );
 		StringBuilder sb = new StringBuilder( value );
 		sb.deleteCharAt( value.length() - 1 );
 		sb.deleteCharAt( 0 );
-		this.value			= sb.toString();
+		this.value = sb.toString();
 	}
 
 }

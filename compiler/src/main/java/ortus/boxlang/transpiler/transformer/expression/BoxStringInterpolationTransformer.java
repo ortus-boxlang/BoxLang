@@ -16,24 +16,25 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.stream.Collectors;
 
-public class BoxStringInterpolationTransformer extends AbstractTransformer  {
+public class BoxStringInterpolationTransformer extends AbstractTransformer {
+
 	Logger logger = LoggerFactory.getLogger( BoxStringInterpolationTransformer.class );
 
 	@Override
-	public Node transform(BoxNode node, TransformerContext context) throws IllegalStateException {
-		BoxStringInterpolation interpolation = (BoxStringInterpolation) node;
-		String expr = interpolation.getValues()
-			.stream()
-			.map(it -> {
-				return BoxLangTranspiler.transform(it, TransformerContext.RIGHT).toString();
+	public Node transform( BoxNode node, TransformerContext context ) throws IllegalStateException {
+		BoxStringInterpolation	interpolation	= ( BoxStringInterpolation ) node;
+		String					expr			= interpolation.getValues()
+		    .stream()
+		    .map( it -> {
+													    return BoxLangTranspiler.transform( it, TransformerContext.RIGHT ).toString();
 
-			})
-			.collect(Collectors.joining("+"));
+												    } )
+		    .collect( Collectors.joining( "+" ) );
 		;
 
-		Node javaExpr = parseExpression(expr, new HashMap<>());
-		logger.info(node.getSourceText() + " -> " + javaExpr);
-		addIndex(javaExpr, node);
+		Node javaExpr = parseExpression( expr, new HashMap<>() );
+		logger.info( node.getSourceText() + " -> " + javaExpr );
+		addIndex( javaExpr, node );
 		return javaExpr;
 	}
 }

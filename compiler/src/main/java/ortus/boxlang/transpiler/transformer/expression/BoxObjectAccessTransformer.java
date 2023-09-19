@@ -90,6 +90,7 @@ public class BoxObjectAccessTransformer extends AbstractTransformer {
 														put( "variable", variable.toString() );
 													}
 												};
+
 			ArrayInitializerExpr	expr		= new ArrayInitializerExpr(
 			    NodeList.nodeList(
 			        new StringLiteralExpr( scope.toString() ),

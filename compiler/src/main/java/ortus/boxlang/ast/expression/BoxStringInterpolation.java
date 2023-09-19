@@ -25,7 +25,7 @@ import java.util.List;
  */
 public class BoxStringInterpolation extends BoxExpr {
 
-	private final List<BoxExpr>		values;
+	private final List<BoxExpr> values;
 
 	public List<BoxExpr> getValues() {
 		return values;
@@ -38,15 +38,15 @@ public class BoxStringInterpolation extends BoxExpr {
 	 * @param position   position of the statement in the source code
 	 * @param sourceText source code that originated the Node
 	 */
-	public BoxStringInterpolation(List<BoxExpr> parts, Position position, String sourceText ) {
+	public BoxStringInterpolation( List<BoxExpr> parts, Position position, String sourceText ) {
 		super( position, sourceText );
-		this.values	= Collections.unmodifiableList( parts );
+		this.values = Collections.unmodifiableList( parts );
 		this.values.forEach( arg -> arg.setParent( this ) );
 
-//		StringBuilder sb = new StringBuilder( value );
-//		sb.deleteCharAt( value.length() - 1 );
-//		sb.deleteCharAt( 0 );
-//		this.value			= sb.toString();
+		// StringBuilder sb = new StringBuilder( value );
+		// sb.deleteCharAt( value.length() - 1 );
+		// sb.deleteCharAt( 0 );
+		// this.value = sb.toString();
 	}
 
 }
