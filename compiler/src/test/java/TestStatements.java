@@ -1,9 +1,7 @@
 import com.github.javaparser.ast.Node;
-import com.github.javaparser.ast.body.MethodDeclaration;
 import com.github.javaparser.ast.stmt.BlockStmt;
 import org.junit.Test;
-import ortus.boxlang.parser.BoxFileType;
-import ortus.boxlang.parser.BoxLangParser;
+import ortus.boxlang.parser.BoxLangIParser;
 import ortus.boxlang.parser.ParsingResult;
 import ortus.boxlang.transpiler.BoxLangTranspiler;
 
@@ -15,7 +13,7 @@ import static org.junit.Assert.assertTrue;
 public class TestStatements extends TestBase {
 
 	public ParsingResult parseStatement( String statement ) throws IOException {
-		BoxLangParser	parser	= new BoxLangParser();
+		BoxLangIParser	parser	= new BoxLangIParser();
 		ParsingResult	result	= parser.parseStatement( statement );
 		assertTrue( result.isCorrect() );
 		return result;

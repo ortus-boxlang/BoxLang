@@ -15,11 +15,9 @@
  */
 
 import com.github.javaparser.ast.CompilationUnit;
-import org.checkerframework.checker.units.qual.N;
 import org.junit.Test;
-import ortus.boxlang.ast.Node;
 import ortus.boxlang.ast.expression.BoxBinaryOperation;
-import ortus.boxlang.parser.BoxLangParser;
+import ortus.boxlang.parser.BoxLangIParser;
 import ortus.boxlang.parser.ParsingResult;
 import ortus.boxlang.transpiler.BoxLangTranspiler;
 
@@ -33,7 +31,7 @@ import static org.junit.Assert.assertTrue;
 
 public class TestAST extends TestBase {
 
-	protected BoxLangParser parser = new BoxLangParser();
+	protected BoxLangIParser parser = new BoxLangIParser();
 
 	@Test
 	public void testBinaryOperation() throws IOException {

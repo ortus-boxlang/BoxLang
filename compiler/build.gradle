@@ -5,7 +5,6 @@ plugins {
 	id 'application'
 
 	// Parser + Compiler
-	id 'org.jetbrains.kotlin.jvm' version "${kotlinVersion}"
 	id 'java-library'
 	id 'antlr'
 
@@ -28,7 +27,6 @@ def antlrGeneratedParserPackageDir = antlrGeneratedParserPackage.replaceAll("\\.
 def antlrGrammarDir = "src/main/antlr"
 
 sourceSets.main.java.srcDirs += "$antlrGeneratedParserBaseDir"
-sourceSets.main.kotlin.srcDirs += "$antlrGeneratedParserBaseDir"
 
 /**
  * Repositories for dependencies in order
@@ -62,7 +60,8 @@ dependencies {
 	implementation group: 'org.slf4j', name: 'slf4j-api', version: '2.0.7'
 	implementation group: 'org.slf4j', name: 'slf4j-jdk14', version: '2.0.7'
 
-	testImplementation "org.jetbrains.kotlin:kotlin-test:$kotlinVersion"
+
+	testImplementation 'junit:junit:4.13.2'
 	testImplementation 'org.apache.commons:commons-lang3:3.13.0'
 }
 
@@ -150,22 +149,6 @@ compileTestJava {
 	dependsOn compileJava, generateTestGrammarSource
 }
 
-compileKotlin {
-	sourceCompatibility = "$jvmVersion"
-	targetCompatibility = "$jvmVersion"
-	source sourceSets.main.java, sourceSets.main.kotlin
-	kotlinOptions.jvmTarget = "$jvmVersion"
-	dependsOn generateGrammarSource
-}
-
-compileTestKotlin {
-	sourceCompatibility = "$jvmVersion"
-	targetCompatibility = "$jvmVersion"
-	source sourceSets.test.java, sourceSets.test.kotlin
-	kotlinOptions.jvmTarget = "$jvmVersion"
-	dependsOn compileKotlin, generateTestGrammarSource
-}
-
 generateGrammarSource {
 	inputs.files fileTree(antlrGrammarDir).include('*.g4')
 	maxHeapSize = "256m"
@@ -193,7 +176,7 @@ test {
 	systemProperties.putIfAbsent("testboxdir", testboxDir)
 	systemProperties.putIfAbsent("contentboxdir", contentboxDir)
 	systemProperties.putIfAbsent("coldboxdir", coldboxDir)
-	dependsOn compileKotlin, compileTestKotlin
+	dependsOn compileJava, compileTestJava
 }
 
 /**

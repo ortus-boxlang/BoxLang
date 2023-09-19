@@ -67,8 +67,8 @@ public class LoggingConfigurator {
 	public static void configure( Boolean debugMode ) {
 		try {
 			LogManager.getLogManager().readConfiguration( debugMode
-			        ? loadDynamicConfig( java.util.logging.Level.FINE )
-			        : loadFromPropertiesFile()
+			    ? loadDynamicConfig( java.util.logging.Level.FINE )
+			    : loadFromPropertiesFile()
 			);
 		} catch ( IOException e ) {
 			e.printStackTrace();
@@ -91,12 +91,12 @@ public class LoggingConfigurator {
 	 */
 	private static InputStream loadDynamicConfig( java.util.logging.Level rootLogLevel ) {
 		String logConfig = """
-		        .level=%s
-		        handlers=java.util.logging.ConsoleHandler
-		        java.util.logging.ConsoleHandler.formatter = java.util.logging.SimpleFormatter
-		        java.util.logging.SimpleFormatter.format=%s
-		        """
-		        .formatted( rootLogLevel, logFormat );
+		                   .level=%s
+		                   handlers=java.util.logging.ConsoleHandler
+		                   java.util.logging.ConsoleHandler.formatter = java.util.logging.SimpleFormatter
+		                   java.util.logging.SimpleFormatter.format=%s
+		                   """
+		    .formatted( rootLogLevel, logFormat );
 		return new java.io.ByteArrayInputStream( logConfig.getBytes( StandardCharsets.UTF_8 ) );
 	}
 }

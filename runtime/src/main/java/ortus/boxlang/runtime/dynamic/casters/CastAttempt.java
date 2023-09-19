@@ -186,7 +186,7 @@ public final class CastAttempt<T> {
 	@Override
 	public String toString() {
 		return value != null
-		        ? String.format( "CastAttempt[%s]", value )
-		        : "CastAttempt.empty";
+		    ? String.format( "CastAttempt[%s]", value )
+		    : "CastAttempt.empty";
 	}
 }

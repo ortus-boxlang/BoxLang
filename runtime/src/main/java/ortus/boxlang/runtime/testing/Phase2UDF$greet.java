@@ -34,139 +34,139 @@ import ortus.boxlang.runtime.types.UDF;
  */
 public class Phase2UDF$greet extends UDF {
 
-    private static Phase2UDF$greet        instance;
+	private static Phase2UDF$greet			instance;
 
-    /**
-     * The name of the function
-     */
-    private final static Key              name       = Key.of( "greet" );
+	/**
+	 * The name of the function
+	 */
+	private final static Key				name		= Key.of( "greet" );
 
-    /**
-     * The arguments of the function
-     */
-    private final static Argument[]       arguments  = new Argument[] {
-        new Argument( true, "String", Key.of( "name" ), "Brad", "" )
-    };
+	/**
+	 * The arguments of the function
+	 */
+	private final static Argument[]			arguments	= new Argument[] {
+	    new Argument( true, "String", Key.of( "name" ), "Brad", "" )
+	};
 
-    /**
-     * The return type of the function
-     */
-    private final static String           returnType = "String";
+	/**
+	 * The return type of the function
+	 */
+	private final static String				returnType	= "String";
 
-    /**
-     * The hint of the function
-     */
-    private final static String           hint       = "My Function Hint";
+	/**
+	 * The hint of the function
+	 */
+	private final static String				hint		= "My Function Hint";
 
-    /**
-     * Whether the function outputs
-     * TODO: Break CFML compat here?
-     */
-    private final static boolean          output     = true;
+	/**
+	 * Whether the function outputs
+	 * TODO: Break CFML compat here?
+	 */
+	private final static boolean			output		= true;
 
-    /**
-     * The access modifier of the function
-     */
-    private Access                        access     = Access.PUBLIC;
+	/**
+	 * The access modifier of the function
+	 */
+	private Access							access		= Access.PUBLIC;
 
-    // TODO: cachedwithin, modifier, localmode, return format
+	// TODO: cachedwithin, modifier, localmode, return format
 
-    /**
-     * Additional abitrary metadata about this function.
-     */
-    private final static Map<Key, Object> metadata   = new HashMap<Key, Object>();
+	/**
+	 * Additional abitrary metadata about this function.
+	 */
+	private final static Map<Key, Object>	metadata	= new HashMap<Key, Object>();
 
-    public Key getName() {
-        return name;
-    }
+	public Key getName() {
+		return name;
+	}
 
-    public Argument[] getArguments() {
-        return arguments;
-    }
+	public Argument[] getArguments() {
+		return arguments;
+	}
 
-    public String getReturnType() {
-        return returnType;
-    }
+	public String getReturnType() {
+		return returnType;
+	}
 
-    public String getHint() {
-        return hint;
-    }
+	public String getHint() {
+		return hint;
+	}
 
-    public boolean isOutput() {
-        return output;
-    }
+	public boolean isOutput() {
+		return output;
+	}
 
-    public Map<Key, Object> getMetadata() {
-        return metadata;
-    }
+	public Map<Key, Object> getMetadata() {
+		return metadata;
+	}
 
-    public Access getAccess() {
-        return access;
-    }
+	public Access getAccess() {
+		return access;
+	}
 
-    private Phase2UDF$greet() {
-        super();
-    }
+	private Phase2UDF$greet() {
+		super();
+	}
 
-    public static synchronized Phase2UDF$greet getInstance() {
-        if ( instance == null ) {
-            instance = new Phase2UDF$greet();
-        }
-        return instance;
-    }
+	public static synchronized Phase2UDF$greet getInstance() {
+		if ( instance == null ) {
+			instance = new Phase2UDF$greet();
+		}
+		return instance;
+	}
 
-    /**
-     * <pre>
-        string function greet( required string name='Brad' ) hint="My Function Hint" {
-            local.race = "Local scope value";
-            arguments.race = "Arguments scope value";
-    
-            var greeting = "Hello " & name;
-    
-            // Reach "into" parent context and get "out" from variables scope
-            out.println( "Inside UDF, race scope lookup finds: " & race )
-    
-            return greeting;
-        }
-     * </pre>
-     */
-    @Override
-    public Object _invoke( FunctionBoxContext context ) {
+	/**
+	 * <pre>
+	    string function greet( required string name='Brad' ) hint="My Function Hint" {
+	        local.race = "Local scope value";
+	        arguments.race = "Arguments scope value";
+	
+	        var greeting = "Hello " & name;
+	
+	        // Reach "into" parent context and get "out" from variables scope
+	        out.println( "Inside UDF, race scope lookup finds: " & race )
+	
+	        return greeting;
+	    }
+	 * </pre>
+	 */
+	@Override
+	public Object _invoke( FunctionBoxContext context ) {
 
-        // Create local.race and arguments.race to show scope lookup
-        context.getScopeNearby( LocalScope.name ).put(
-            Key.of( "race" ),
-            "Local scope value"
-        );
+		// Create local.race and arguments.race to show scope lookup
+		context.getScopeNearby( LocalScope.name ).put(
+		    Key.of( "race" ),
+		    "Local scope value"
+		);
 
-        context.getScopeNearby( ArgumentsScope.name ).put(
-            Key.of( "race" ),
-            "Arguments scope value"
-        );
+		context.getScopeNearby( ArgumentsScope.name ).put(
+		    Key.of( "race" ),
+		    "Arguments scope value"
+		);
 
-        context.getScopeNearby( LocalScope.name ).assign(
-            Key.of( "Greeting" ),
-            Concat.invoke(
-                "Hello ",
-                context.scopeFindNearby( Key.of( "name" ), null ).value()
-            )
-        );
+		context.getScopeNearby( LocalScope.name ).assign(
+		    Key.of( "Greeting" ),
+		    Concat.invoke(
+		        "Hello ",
+		        context.scopeFindNearby( Key.of( "name" ), null ).value()
+		    )
+		);
 
-        // Reach "into" parent context and get "out" from variables scope
-        Referencer.getAndInvoke(
-            context,
-            // Object
-            context.scopeFindNearby( Key.of( "out" ), null ).value(),
-            // Method
-            Key.of( "println" ),
-            // Arguments
-            new Object[] {
-                "Inside UDF, race scope lookup finds: " + context.scopeFindNearby( Key.of( "race" ), null ).value()
-            },
-            false
-        );
+		// Reach "into" parent context and get "out" from variables scope
+		Referencer.getAndInvoke(
+		    context,
+		    // Object
+		    context.scopeFindNearby( Key.of( "out" ), null ).value(),
+		    // Method
+		    Key.of( "println" ),
+		    // Arguments
+		    new Object[] {
+		        "Inside UDF, race scope lookup finds: " + context.scopeFindNearby( Key.of( "race" ), null ).value()
+		    },
+		    false
+		);
 
-        return context.scopeFindNearby( Key.of( "greeting" ), null ).value();
-    }
+		return context.scopeFindNearby( Key.of( "greeting" ), null ).value();
+	}
 
 }

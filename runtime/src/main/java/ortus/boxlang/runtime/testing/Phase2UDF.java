@@ -56,20 +56,20 @@ public class Phase2UDF extends BaseTemplate {
 	    string function greet( required string name='Brad' ) hint="My Function Hint" {
 	        local.race = "Local scope value";
 	        arguments.race = "Arguments scope value";
-
+	
 	        var greeting = "Hello " & name;
-
+	
 	        // Reach "into" parent context and get "out" from variables scope
 	        out.println( "Inside UDF, race scope lookup finds: " & race )
-
+	
 	        return greeting;
 	    }
-
+	
 	    variables.out = (create java.lang.System).out;
-
+	
 	    // Positional args
 	    variables.out.println( greet( 'John' ) );
-
+	
 	    // named args
 	    variables.out.println( greet( name='John' ) );
 	</cfscript>

@@ -33,30 +33,30 @@ import ortus.boxlang.runtime.loader.resolvers.JavaResolver;
 
 public class ScratchPad {
 
-    @DisplayName( "Test it" )
-    @Test
-    void testIt() {
-        List<ImportDefinition> imports   = Arrays.asList(
-            ImportDefinition.parse( "java:java.lang.String" ),
-            ImportDefinition.parse( "java:java.lang.Integer" ),
-            ImportDefinition.parse( "ortus.boxlang.runtime.loader.resolvers.BaseResolver" ),
-            ImportDefinition.parse( "java:java.lang.List as jList" )
-        );
+	@DisplayName( "Test it" )
+	@Test
+	void testIt() {
+		List<ImportDefinition>	imports		= Arrays.asList(
+		    ImportDefinition.parse( "java:java.lang.String" ),
+		    ImportDefinition.parse( "java:java.lang.Integer" ),
+		    ImportDefinition.parse( "ortus.boxlang.runtime.loader.resolvers.BaseResolver" ),
+		    ImportDefinition.parse( "java:java.lang.List as jList" )
+		);
 
-        BaseResolver           jResolver = JavaResolver.getInstance();
+		BaseResolver			jResolver	= JavaResolver.getInstance();
 
-        String                 fqn       = jResolver.expandFromImport( new ScriptingBoxContext(), "String", imports );
-        assertThat( fqn ).isEqualTo( "java.lang.String" );
+		String					fqn			= jResolver.expandFromImport( new ScriptingBoxContext(), "String", imports );
+		assertThat( fqn ).isEqualTo( "java.lang.String" );
 
-        fqn = jResolver.expandFromImport( new ScriptingBoxContext(), "Integer", imports );
-        assertThat( fqn ).isEqualTo( "java.lang.Integer" );
+		fqn = jResolver.expandFromImport( new ScriptingBoxContext(), "Integer", imports );
+		assertThat( fqn ).isEqualTo( "java.lang.Integer" );
 
-        fqn = jResolver.expandFromImport( new ScriptingBoxContext(), "BaseResolver", imports );
-        assertThat( fqn ).isEqualTo( "ortus.boxlang.runtime.loader.resolvers.BaseResolver" );
+		fqn = jResolver.expandFromImport( new ScriptingBoxContext(), "BaseResolver", imports );
+		assertThat( fqn ).isEqualTo( "ortus.boxlang.runtime.loader.resolvers.BaseResolver" );
 
-        fqn = jResolver.expandFromImport( new ScriptingBoxContext(), "jList", imports );
-        assertThat( fqn ).isEqualTo( "java.lang.List" );
+		fqn = jResolver.expandFromImport( new ScriptingBoxContext(), "jList", imports );
+		assertThat( fqn ).isEqualTo( "java.lang.List" );
 
-    }
+	}
 
 }

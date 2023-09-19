@@ -25,48 +25,48 @@ import ortus.boxlang.runtime.scopes.Key;
 
 public class SampleLambda extends Lambda {
 
-    Object                   returnVal  = null;
+	Object						returnVal	= null;
 
-    // These are not static just because this is a test class that is always transient! Do not copy this implementation.
-    private Key              name       = Lambda.defaultName;
-    private Argument[]       arguments;
-    private String           returnType = "any";
-    private String           hint       = "";
-    private boolean          output     = true;
-    private Map<Key, Object> metadata   = new HashMap<Key, Object>();
+	// These are not static just because this is a test class that is always transient! Do not copy this implementation.
+	private Key					name		= Lambda.defaultName;
+	private Argument[]			arguments;
+	private String				returnType	= "any";
+	private String				hint		= "";
+	private boolean				output		= true;
+	private Map<Key, Object>	metadata	= new HashMap<Key, Object>();
 
-    public Key getName() {
-        return name;
-    }
+	public Key getName() {
+		return name;
+	}
 
-    public Argument[] getArguments() {
-        return arguments;
-    }
+	public Argument[] getArguments() {
+		return arguments;
+	}
 
-    public String getReturnType() {
-        return returnType;
-    }
+	public String getReturnType() {
+		return returnType;
+	}
 
-    public String getHint() {
-        return hint;
-    }
+	public String getHint() {
+		return hint;
+	}
 
-    public boolean isOutput() {
-        return output;
-    }
+	public boolean isOutput() {
+		return output;
+	}
 
-    public Map<Key, Object> getMetadata() {
-        return metadata;
-    }
+	public Map<Key, Object> getMetadata() {
+		return metadata;
+	}
 
-    public SampleLambda( Argument[] arguments, Object returnVal ) {
-        super();
-        this.returnVal = returnVal;
-        this.arguments = arguments;
-    }
+	public SampleLambda( Argument[] arguments, Object returnVal ) {
+		super();
+		this.returnVal	= returnVal;
+		this.arguments	= arguments;
+	}
 
-    @Override
-    public Object _invoke( FunctionBoxContext context ) {
-        return returnVal;
-    }
+	@Override
+	public Object _invoke( FunctionBoxContext context ) {
+		return returnVal;
+	}
 }

@@ -32,170 +32,170 @@ import ortus.boxlang.runtime.types.exceptions.ScopeNotFoundException;
  */
 public class ScriptingBoxContext extends BaseBoxContext {
 
-    /**
-     * --------------------------------------------------------------------------
-     * Private Properties
-     * --------------------------------------------------------------------------
-     */
+	/**
+	 * --------------------------------------------------------------------------
+	 * Private Properties
+	 * --------------------------------------------------------------------------
+	 */
 
-    /**
-     * The variables scope
-     */
-    protected IScope variablesScope = new VariablesScope();
+	/**
+	 * The variables scope
+	 */
+	protected IScope variablesScope = new VariablesScope();
 
-    /**
-     * --------------------------------------------------------------------------
-     * Constructors
-     * --------------------------------------------------------------------------
-     */
+	/**
+	 * --------------------------------------------------------------------------
+	 * Constructors
+	 * --------------------------------------------------------------------------
+	 */
 
-    /**
-     * Creates a new execution context with a bounded execution template and parent context
-     *
-     * @param template The template that this execution context is bound to
-     * @param parent   The parent context
-     */
-    public ScriptingBoxContext( IBoxContext parent ) {
-        super( parent );
-    }
+	/**
+	 * Creates a new execution context with a bounded execution template and parent context
+	 *
+	 * @param template The template that this execution context is bound to
+	 * @param parent   The parent context
+	 */
+	public ScriptingBoxContext( IBoxContext parent ) {
+		super( parent );
+	}
 
-    /**
-     * Creates a new execution context
-     */
-    public ScriptingBoxContext() {
-        this( null );
-    }
+	/**
+	 * Creates a new execution context
+	 */
+	public ScriptingBoxContext() {
+		this( null );
+	}
 
-    /**
-     * --------------------------------------------------------------------------
-     * Getters & Setters
-     * --------------------------------------------------------------------------
-     */
+	/**
+	 * --------------------------------------------------------------------------
+	 * Getters & Setters
+	 * --------------------------------------------------------------------------
+	 */
 
-    /**
-     * Try to get the requested key from the unscoped scope
-     * Meaning it needs to search scopes in order according to it's context.
-     * A local lookup is used for the closest context to the executing code
-     *
-     * Here is the order for bx templates
-     * (Not all yet implemented and some will be according to platform: WebContext, AndroidContext, IOSContext, etc)
-     *
-     * 1. Query (only in query loops)
-     * 2. Thread
-     * 3. Variables
-     * 4. CGI (should it exist in the core runtime?)
-     * 5. CFFILE
-     * 6. URL (Only for web runtime)
-     * 7. FORM (Only for web runtime)
-     * 8. COOKIE (Only for web runtime)
-     * 9. CLIENT (Only for web runtime)
-     *
-     * @param key The key to search for
-     *
-     * @return The value of the key if found
-     *
-     * @throws KeyNotFoundException If the key was not found in any scope
-     */
-    public ScopeSearchResult scopeFindNearby( Key key, IScope defaultScope, boolean shallow ) {
+	/**
+	 * Try to get the requested key from the unscoped scope
+	 * Meaning it needs to search scopes in order according to it's context.
+	 * A local lookup is used for the closest context to the executing code
+	 *
+	 * Here is the order for bx templates
+	 * (Not all yet implemented and some will be according to platform: WebContext, AndroidContext, IOSContext, etc)
+	 *
+	 * 1. Query (only in query loops)
+	 * 2. Thread
+	 * 3. Variables
+	 * 4. CGI (should it exist in the core runtime?)
+	 * 5. CFFILE
+	 * 6. URL (Only for web runtime)
+	 * 7. FORM (Only for web runtime)
+	 * 8. COOKIE (Only for web runtime)
+	 * 9. CLIENT (Only for web runtime)
+	 *
+	 * @param key The key to search for
+	 *
+	 * @return The value of the key if found
+	 *
+	 * @throws KeyNotFoundException If the key was not found in any scope
+	 */
+	public ScopeSearchResult scopeFindNearby( Key key, IScope defaultScope, boolean shallow ) {
 
-        // In query loop?
-        // Need to add mechanism to keep a stack of temp scopes based on cfoutput or cfloop based on query
+		// In query loop?
+		// Need to add mechanism to keep a stack of temp scopes based on cfoutput or cfloop based on query
 
-        // In Variables scope? (thread-safe lookup and get)
-        Object result = variablesScope.getRaw( key );
-        // Null means not found
-        if ( result != null ) {
-            // Unwrap the value now in case it was really actually null for real
-            return new ScopeSearchResult( variablesScope, Struct.unWrapNull( result ) );
-        }
+		// In Variables scope? (thread-safe lookup and get)
+		Object result = variablesScope.getRaw( key );
+		// Null means not found
+		if ( result != null ) {
+			// Unwrap the value now in case it was really actually null for real
+			return new ScopeSearchResult( variablesScope, Struct.unWrapNull( result ) );
+		}
 
-        if ( shallow ) {
-            return null;
-        }
+		if ( shallow ) {
+			return null;
+		}
 
-        return scopeFind( key, defaultScope );
-    }
+		return scopeFind( key, defaultScope );
+	}
 
-    /**
-     * Try to get the requested key from the unscoped scope
-     * Meaning it needs to search scopes in order according to it's context.
-     * Unlike scopeFindNearby(), this version only searches trancedent scopes like
-     * cgi or server which are never encapsulated like variables is inside a CFC.
-     *
-     * @param key The key to search for
-     *
-     * @return The value of the key if found
-     *
-     * @throws KeyNotFoundException If the key was not found in any scope
-     */
-    public ScopeSearchResult scopeFind( Key key, IScope defaultScope ) {
+	/**
+	 * Try to get the requested key from the unscoped scope
+	 * Meaning it needs to search scopes in order according to it's context.
+	 * Unlike scopeFindNearby(), this version only searches trancedent scopes like
+	 * cgi or server which are never encapsulated like variables is inside a CFC.
+	 *
+	 * @param key The key to search for
+	 *
+	 * @return The value of the key if found
+	 *
+	 * @throws KeyNotFoundException If the key was not found in any scope
+	 */
+	public ScopeSearchResult scopeFind( Key key, IScope defaultScope ) {
 
-        // The ScriptingBoxContext has no "global" scopes, so just defer to parent
+		// The ScriptingBoxContext has no "global" scopes, so just defer to parent
 
-        if ( parent != null ) {
-            return parent.scopeFind( key, defaultScope );
-        }
+		if ( parent != null ) {
+			return parent.scopeFind( key, defaultScope );
+		}
 
-        // Default scope requested for missing keys
-        if ( defaultScope != null ) {
-            return new ScopeSearchResult( defaultScope, null );
-        }
-        // Not found anywhere
-        throw new KeyNotFoundException(
-            String.format( "The requested key [%s] was not located in any scope or it's undefined", key.getName() )
-        );
-    }
+		// Default scope requested for missing keys
+		if ( defaultScope != null ) {
+			return new ScopeSearchResult( defaultScope, null );
+		}
+		// Not found anywhere
+		throw new KeyNotFoundException(
+		    String.format( "The requested key [%s] was not located in any scope or it's undefined", key.getName() )
+		);
+	}
 
-    /**
-     * Get a scope from the context. If not found, the parent context is asked.
-     * Don't search for scopes which are local to an execution context
-     *
-     * @return The requested scope
-     */
-    public IScope getScope( Key name ) throws ScopeNotFoundException {
+	/**
+	 * Get a scope from the context. If not found, the parent context is asked.
+	 * Don't search for scopes which are local to an execution context
+	 *
+	 * @return The requested scope
+	 */
+	public IScope getScope( Key name ) throws ScopeNotFoundException {
 
-        // The ScriptingBoxContext has no "global" scopes, so just defer to parent
-        if ( parent != null ) {
-            return parent.getScope( name );
-        }
+		// The ScriptingBoxContext has no "global" scopes, so just defer to parent
+		if ( parent != null ) {
+			return parent.getScope( name );
+		}
 
-        // Not found anywhere
-        throw new ScopeNotFoundException(
-            String.format( "The requested scope name [%s] was not located in any context", name.getName() )
-        );
+		// Not found anywhere
+		throw new ScopeNotFoundException(
+		    String.format( "The requested scope name [%s] was not located in any context", name.getName() )
+		);
 
-    }
+	}
 
-    /**
-     * Get a scope from the context. If not found, the parent context is asked.
-     * Search all konwn scopes
-     *
-     * @return The requested scope
-     */
-    public IScope getScopeNearby( Key name, boolean shallow ) throws ScopeNotFoundException {
-        // Check the scopes I know about
-        if ( name.equals( variablesScope.getName() ) ) {
-            return variablesScope;
-        }
+	/**
+	 * Get a scope from the context. If not found, the parent context is asked.
+	 * Search all konwn scopes
+	 *
+	 * @return The requested scope
+	 */
+	public IScope getScopeNearby( Key name, boolean shallow ) throws ScopeNotFoundException {
+		// Check the scopes I know about
+		if ( name.equals( variablesScope.getName() ) ) {
+			return variablesScope;
+		}
 
-        if ( shallow ) {
-            return null;
-        }
+		if ( shallow ) {
+			return null;
+		}
 
-        return getScope( name );
-    }
+		return getScope( name );
+	}
 
-    public void registerUDF( UDF udf ) {
-        variablesScope.put( udf.getName(), udf );
-    }
+	public void registerUDF( UDF udf ) {
+		variablesScope.put( udf.getName(), udf );
+	}
 
-    /**
-     * Get the default variable assignment scope for this context
-     *
-     * @return The scope reference to use
-     */
-    public IScope getDefaultAssignmentScope() {
-        return variablesScope;
-    }
+	/**
+	 * Get the default variable assignment scope for this context
+	 *
+	 * @return The scope reference to use
+	 */
+	public IScope getDefaultAssignmentScope() {
+		return variablesScope;
+	}
 
 }

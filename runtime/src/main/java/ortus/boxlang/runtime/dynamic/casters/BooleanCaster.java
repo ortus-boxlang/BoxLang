@@ -81,7 +81,7 @@ public class BooleanCaster {
 			}
 			if ( fail ) {
 				throw new RuntimeException(
-				        String.format( "String [%s] cannot be cast to a boolean", o )
+				    String.format( "String [%s] cannot be cast to a boolean", o )
 				);
 			} else {
 				return null;
@@ -89,7 +89,7 @@ public class BooleanCaster {
 		}
 		if ( fail ) {
 			throw new RuntimeException(
-			        String.format( "Value [%s] cannot be cast to a boolean", object.getClass().getName() )
+			    String.format( "Value [%s] cannot be cast to a boolean", object.getClass().getName() )
 			);
 		} else {
 			return null;

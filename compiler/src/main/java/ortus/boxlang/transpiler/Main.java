@@ -2,10 +2,9 @@ package ortus.boxlang.transpiler;
 
 import com.github.javaparser.ast.CompilationUnit;
 import org.apache.commons.cli.*;
-import ortus.boxlang.parser.BoxLangParser;
+import ortus.boxlang.parser.BoxLangIParser;
 import ortus.boxlang.parser.ParsingResult;
 
-import java.io.File;
 import java.io.IOException;
 import java.nio.file.*;
 import java.nio.file.attribute.BasicFileAttributes;
@@ -96,7 +95,7 @@ public class Main {
 		options().forEach( options::addOption );
 
 		List<Path>			files		= new ArrayList<>();
-		BoxLangParser		parser		= new BoxLangParser();
+		BoxLangIParser		parser		= new BoxLangIParser();
 		BoxLangTranspiler	transpiler	= new BoxLangTranspiler();
 		try {
 			CommandLine cmd = new DefaultParser().parse( options, args );

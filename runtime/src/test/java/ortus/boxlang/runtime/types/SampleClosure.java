@@ -26,49 +26,49 @@ import ortus.boxlang.runtime.scopes.Key;
 
 public class SampleClosure extends Closure {
 
-    Object                   returnVal  = null;
+	Object						returnVal	= null;
 
-    // These are not static just because this is a test class that is always transient! Do not copy this implementation.
-    private Key              name       = Closure.defaultName;
-    private Argument[]       arguments;
-    private String           returnType = "any";
-    private String           hint       = "";
-    private boolean          output     = true;
-    private Map<Key, Object> metadata   = new HashMap<Key, Object>();
+	// These are not static just because this is a test class that is always transient! Do not copy this implementation.
+	private Key					name		= Closure.defaultName;
+	private Argument[]			arguments;
+	private String				returnType	= "any";
+	private String				hint		= "";
+	private boolean				output		= true;
+	private Map<Key, Object>	metadata	= new HashMap<Key, Object>();
 
-    public Key getName() {
-        return name;
-    }
+	public Key getName() {
+		return name;
+	}
 
-    public Argument[] getArguments() {
-        return arguments;
-    }
+	public Argument[] getArguments() {
+		return arguments;
+	}
 
-    public String getReturnType() {
-        return returnType;
-    }
+	public String getReturnType() {
+		return returnType;
+	}
 
-    public String getHint() {
-        return hint;
-    }
+	public String getHint() {
+		return hint;
+	}
 
-    public boolean isOutput() {
-        return output;
-    }
+	public boolean isOutput() {
+		return output;
+	}
 
-    public Map<Key, Object> getMetadata() {
-        return metadata;
-    }
+	public Map<Key, Object> getMetadata() {
+		return metadata;
+	}
 
-    public SampleClosure( Argument[] arguments, IBoxContext declaringContext, Object returnVal ) {
-        super( declaringContext );
-        this.returnVal = returnVal;
-        // This is not how "real" closures will work. I'm just doing this to re-use this sample class for testing.
-        this.arguments = arguments;
-    }
+	public SampleClosure( Argument[] arguments, IBoxContext declaringContext, Object returnVal ) {
+		super( declaringContext );
+		this.returnVal	= returnVal;
+		// This is not how "real" closures will work. I'm just doing this to re-use this sample class for testing.
+		this.arguments	= arguments;
+	}
 
-    @Override
-    public Object _invoke( FunctionBoxContext context ) {
-        return returnVal;
-    }
+	@Override
+	public Object _invoke( FunctionBoxContext context ) {
+		return returnVal;
+	}
 }

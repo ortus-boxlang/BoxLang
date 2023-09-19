@@ -26,7 +26,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.util.List;
 
-public class BoxLangParser {
+public class BoxLangIParser {
 
 	/**
 	 * Attempt to detect the type of source code based on the contents

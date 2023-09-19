@@ -33,8 +33,8 @@ public class IntegerDivide implements IOperator {
 	 */
 	public static double invoke( Object left, Object right ) {
 		return Math.floor( Divide.invoke(
-		        Math.floor( DoubleCaster.cast( left ) ),
-		        Math.floor( DoubleCaster.cast( right ) )
+		    Math.floor( DoubleCaster.cast( left ) ),
+		    Math.floor( DoubleCaster.cast( right ) )
 		) );
 	}
 
