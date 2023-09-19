@@ -1,3 +1,10 @@
 {
-
+	"compiler" : {
+		"classGenerationDirectory" : "{java-temp}/boxlang"
+	},
+	"runtime" : {
+		"modulesDirectory" : "{user-home}/.boxlang/modules",
+		"caches" : {
+		}
+	}
 }

@@ -28,6 +28,7 @@ import ortus.boxlang.runtime.context.ScriptingBoxContext;
 import ortus.boxlang.runtime.dynamic.BaseTemplate;
 import ortus.boxlang.runtime.logging.LoggingConfigurator;
 import ortus.boxlang.runtime.scopes.Key;
+import ortus.boxlang.runtime.services.FunctionService;
 import ortus.boxlang.runtime.services.InterceptorService;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.util.Timer;
@@ -66,7 +67,7 @@ public class BoxRuntime {
 	private static BoxRuntime	instance;
 
 	/**
-	 * Logger
+	 * Logger for the runtime
 	 */
 	private Logger				logger;
 
@@ -76,7 +77,7 @@ public class BoxRuntime {
 	private Instant				startTime;
 
 	/**
-	 * Debug mode
+	 * Debug mode; defaults to false
 	 */
 	private Boolean				debugMode		= false;
 
@@ -92,6 +93,11 @@ public class BoxRuntime {
 	private InterceptorService	interceptorService;
 
 	/**
+	 * The function service
+	 */
+	private FunctionService		functionSerice;
+
+	/**
 	 * --------------------------------------------------------------------------
 	 * Constructor
 	 * --------------------------------------------------------------------------
@@ -99,6 +105,8 @@ public class BoxRuntime {
 
 	/**
 	 * Static constructor
+	 *
+	 * @param debugMode true if the runtime should be started in debug mode
 	 */
 	private BoxRuntime( Boolean debugMode ) {
 		// Internal timer
@@ -107,15 +115,14 @@ public class BoxRuntime {
 		// Startup logging
 		LoggingConfigurator.configure( debugMode );
 		// Attach logging now that it's configured
-		Logger logger = LoggerFactory.getLogger( BoxRuntime.class );
+		this.logger = LoggerFactory.getLogger( BoxRuntime.class );
 
 		// We can now log the startup
-		logger.atInfo().log( "+ Starting up BoxLang Runtime" + ( debugMode ? " in debug mode" : "" ) );
+		this.logger.atInfo().log( "+ Starting up BoxLang Runtime" + ( debugMode ? " in debug mode" : "" ) );
 
-		// Create Runtime Instance
+		// Seed startup properties
 		this.startTime			= Instant.now();
 		this.debugMode			= debugMode;
-		this.logger				= logger;
 
 		// Create Services
 		this.interceptorService	= InterceptorService.getInstance( RUNTIME_EVENTS );
@@ -124,7 +131,7 @@ public class BoxRuntime {
 		interceptorService.onStartup();
 
 		// Runtime Started
-		logger.atInfo().log(
+		this.logger.atInfo().log(
 		    "+ BoxLang Runtime Started at [{}] in [{}]",
 		    Instant.now(),
 		    timerUtil.stop( "startup" )
@@ -148,6 +155,11 @@ public class BoxRuntime {
 		return instance;
 	}
 
+	/**
+	 * Get the singleton instance. This can be null if the runtime has not been started yet.
+	 *
+	 * @return BoxRuntime
+	 */
 	public static BoxRuntime getInstance() {
 		return getInstance( false );
 	}
