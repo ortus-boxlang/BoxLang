@@ -48,7 +48,7 @@ public class BoxObjectAccessTransformer extends AbstractTransformer {
 														             ${scope}.get( Key.of( ${var0} ) ).get(Key.of( ${var1} ))
 														             """;
 														default -> """
-														           Referencer.get(${scope}.get( Key.of( ${var0} ) ).get(Key.of( ${var1} )),false)
+														           Referencer.get(${scope}.get(Key.of( ${var0} )) ,Key.of( ${var1}),false)
 														           """;
 													};
 				Node					javaExpr	= parseExpression( template, values );
