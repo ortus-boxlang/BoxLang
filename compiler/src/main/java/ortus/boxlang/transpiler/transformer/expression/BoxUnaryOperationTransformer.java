@@ -16,10 +16,12 @@ package ortus.boxlang.transpiler.transformer.expression;
 
 import com.github.javaparser.ast.Node;
 import com.github.javaparser.ast.expr.Expression;
+import com.github.javaparser.ast.expr.MethodCallExpr;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import ortus.boxlang.ast.BoxNode;
 import ortus.boxlang.ast.expression.BoxBooleanLiteral;
+import ortus.boxlang.ast.expression.BoxIdentifier;
 import ortus.boxlang.ast.expression.BoxNegateOperation;
 import ortus.boxlang.ast.expression.BoxUnaryOperation;
 import ortus.boxlang.transpiler.BoxLangTranspiler;
@@ -28,6 +30,7 @@ import ortus.boxlang.transpiler.transformer.TransformerContext;
 import ortus.boxlang.transpiler.transformer.statement.BoxAssertTransformer;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -54,11 +57,19 @@ public class BoxUnaryOperationTransformer extends AbstractTransformer {
 
 		Expression			expr		= ( Expression ) BoxLangTranspiler.transform( operation.getExpr() );
 		values.put( "expr", expr.toString() );
+
+		if ( expr instanceof MethodCallExpr ) {
+			MethodCallExpr methodCall = ( MethodCallExpr ) expr;
+			values.put( "expr", methodCall.getScope().get().toString() );
+			values.put( "key", methodCall.getArguments().get( 0 ).toString() );
+
+		}
+
 		String	template	= switch ( operation.getOperator() ) {
-								case PrePlusPlus -> "Increment.invokePre(${expr})";
-								case PostPlusPlus -> "Increment.invokePost(${expr})";
-								case PreMinusMinus -> "Decrement.invokePre(${expr})";
-								case PostMinusMinus -> "Decrement.invokePost(${expr})";
+								case PrePlusPlus -> "Increment.invokePre(${expr},${key})";
+								case PostPlusPlus -> "Increment.invokePost(${expr},${key})";
+								case PreMinusMinus -> "Decrement.invokePre(${expr},${key})";
+								case PostMinusMinus -> "Decrement.invokePost(${expr},${key})";
 								case Minus -> "Negate.invoke(${expr})";
 								default -> "";
 							};
