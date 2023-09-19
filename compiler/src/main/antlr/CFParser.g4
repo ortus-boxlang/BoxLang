@@ -182,7 +182,15 @@ incrementDecrementStatement
     ;
 
 assignment
-    :   assignmentLeft (EQUAL | PLUSEQUAL | STRCONCASSIGN) assignmentRight
+    :   assignmentLeft (
+    		EQUAL |
+    		PLUSEQUAL |
+    		MINUSEQUAL |
+    		STAREQUAL |
+    		SLASHEQUAL |
+    		MODEQUAL |
+    		CONCATEQUAL
+     ) assignmentRight
     ;
 assignmentLeft
     :   accessExpression
