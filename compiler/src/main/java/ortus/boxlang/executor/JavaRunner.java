@@ -15,9 +15,11 @@
 
 package ortus.boxlang.executor;
 
+import com.github.javaparser.ast.stmt.Statement;
 import org.apache.commons.text.StringSubstitutor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import ortus.boxlang.transpiler.BoxLangTranspiler;
 
 import javax.tools.DiagnosticCollector;
 import javax.tools.JavaCompiler;
@@ -28,6 +30,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.net.*;
 import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * Dynamic in memory Java executor
@@ -36,83 +39,96 @@ public class JavaRunner {
 
 	final static String	fqn			= "ortus.boxlang.test.TestClass";
 	String				template	= """
-	                                                         	package ortus.boxlang.test;
+	                                  package ortus.boxlang.test;
 
-	                                                         	import ortus.boxlang.runtime.BoxRuntime;
-	                                                         	import ortus.boxlang.runtime.context.IBoxContext;
+	                                  import ortus.boxlang.runtime.BoxRuntime;
+	                                  import ortus.boxlang.runtime.context.IBoxContext;
 
-	                                                         	// BoxLang Auto Imports
-	                                                         	import ortus.boxlang.runtime.dynamic.BaseTemplate;
-	                                                         	import ortus.boxlang.runtime.dynamic.Referencer;
-	                                                         	import ortus.boxlang.runtime.interop.DynamicObject;
-	                                                         	import ortus.boxlang.runtime.loader.ClassLocator;
-	                                                         	import ortus.boxlang.runtime.operators.*;
-	                                                         	import ortus.boxlang.runtime.scopes.Key;
-	                                                         	import ortus.boxlang.runtime.scopes.IScope;
-	                                                         	import ortus.boxlang.runtime.dynamic.casters.*;
+	                                  // BoxLang Auto Imports
+	                                  import ortus.boxlang.runtime.dynamic.BaseTemplate;
+	                                  import ortus.boxlang.runtime.dynamic.Referencer;
+	                                  import ortus.boxlang.runtime.interop.DynamicObject;
+	                                  import ortus.boxlang.runtime.loader.ClassLocator;
+	                                  import ortus.boxlang.runtime.operators.*;
+	                                  import ortus.boxlang.runtime.scopes.Key;
+	                                  import ortus.boxlang.runtime.scopes.IScope;
+	                                  import ortus.boxlang.runtime.dynamic.casters.*;
 
-	                                                         	import ortus.boxlang.executor.BoxJavaClass;
+	                                  public class TestClass extends BaseTemplate {
 
-	                                                         	public class TestClass extends BaseTemplate {
+	                                  	private static TestClass instance;
 
-	                                                         		private static TestClass instance;
+	                                  	public TestClass() {
+	                                  	}
 
-	                                                         		public TestClass() {
-	                                                         		}
+	                                  	public static synchronized TestClass getInstance() {
+	                                  		if ( instance == null ) {
+	                                  			instance = new TestClass();
+	                                  		}
+	                                  		return instance;
+	                                  	}
+	                                  	/**
+	                                  	 * Each template must implement the invoke() method which executes the template
+	                                  	 *
+	                                  	 * @param context The execution context requesting the execution
+	                                  	 */
+	                                  	public void invoke( IBoxContext context ) throws Throwable {
+	                                  		// Reference to the variables scope
+	                                  		IScope variablesScope = context.getScopeNearby( Key.of( "variables" ) );
+	                                  		ClassLocator JavaLoader = ClassLocator.getInstance();
+	                                  		${javaCode};
+	                                  		String result = variablesScope.toString();
+	                                  		System.out.println(result);
+	                                  	}
 
-	                                                         		public static synchronized TestClass getInstance() {
-	                                                         			if ( instance == null ) {
-	                                                         				instance = new TestClass();
-	                                                         			}
-	                                                         			return instance;
-	                                                         		}
-	                                                         		/**
-	                                                         		 * Each template must implement the invoke() method which executes the template
-	                                                         		 *
-	                                                         		 * @param context The execution context requesting the execution
-	                                                         		 */
-	                                                         		public void invoke( IBoxContext context ) throws Throwable {
-	                                                         			// Reference to the variables scope
-	                                                         			IScope variablesScope = context.getScopeNearby( Key.of( "variables" ) );
-	                                                         			ClassLocator JavaLoader = ClassLocator.getInstance();
-	                                                         			${javaCode};
-	                                  String result = variablesScope.toString();
-	                                  System.out.println(result);
-	                                                         		}
+	                                  	public static void main(String[] args) {
+	                                  		BoxRuntime rt = BoxRuntime.getInstance();
 
-	                                                         		public static void main(String[] args) {
-	                                                           			BoxRuntime rt = BoxRuntime.getInstance();
+	                                  		try {
+	                                  			rt.executeTemplate( TestClass.getInstance() );
+	                                  		} catch ( Throwable e ) {
+	                                  			e.printStackTrace();
+	                                  			System.exit( 1 );
+	                                  		}
 
-	                                                         			try {
-	                                                         				rt.executeTemplate( TestClass.getInstance() );
-	                                                         			} catch ( Throwable e ) {
-	                                                         				e.printStackTrace();
-	                                                         				System.exit( 1 );
-	                                                         			}
-
-	                                                         			// Bye bye! Ciao Bella!
-	                                                         			rt.shutdown();
+	                                  		// Bye bye! Ciao Bella!
+	                                  		rt.shutdown();
 
 
-	                                                         		}
-	                                                         	}
-	                                                         """;
+	                                  	}
+	                                  }
+	                                  """;
 
 	Logger				logger		= LoggerFactory.getLogger( JavaRunner.class );
 
-	public void runExpression( String javaCode ) {
+	private String makeClass( String javaCode ) {
+		Map<String, String>	values	= new HashMap<>() {
 
+										{
+											put( "javaCode", javaCode );
+										}
+									};
+
+		StringSubstitutor	sub		= new StringSubstitutor( values );
+		return sub.replace( template );
+	}
+
+	public void runExpression( String expression ) {
+		run(
+		    makeClass( expression )
+		);
+	}
+
+	public void run( List<Statement> statements ) {
+		String javaCode = statements.stream().map( it -> it.toString() )
+		    .collect( Collectors.joining( "\n" ) );
+		run(
+		    makeClass( javaCode )
+		);
+	}
+
+	private void run( String javaClass ) {
 		try {
-			Map<String, String>					values		= new HashMap<>() {
-
-																{
-																	put( "javaCode", javaCode );
-																}
-															};
-
-			StringSubstitutor					sub			= new StringSubstitutor( values );
-			String								javaClass	= sub.replace( template );
-
 			JavaCompiler						compiler	= ToolProvider.getSystemJavaCompiler();
 			DiagnosticCollector<JavaFileObject>	diagnostics	= new DiagnosticCollector<>();
 			JavaMemoryManager					manager		= new JavaMemoryManager( compiler.getStandardFileManager( null, null, null ) );
