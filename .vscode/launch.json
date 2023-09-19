@@ -6,6 +6,13 @@
     "configurations": [
         {
             "type": "java",
+            "name": "ConfigLoader",
+            "request": "launch",
+            "mainClass": "ortus.boxlang.runtime.config.ConfigLoader",
+            "projectName": "runtime"
+        },
+        {
+            "type": "java",
             "name": "Phase2Lambda",
             "request": "launch",
             "mainClass": "ortus.boxlang.runtime.testing.Phase2Lambda",
