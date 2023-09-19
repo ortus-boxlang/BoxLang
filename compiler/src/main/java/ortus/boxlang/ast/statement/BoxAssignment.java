@@ -23,8 +23,8 @@ import ortus.boxlang.ast.BoxExpr;
  */
 public class BoxAssignment extends BoxStatement {
 
-	private BoxExpr	left;
-	private BoxExpr	right;
+	private BoxExpr					left;
+	private BoxExpr					right;
 	private BoxAssigmentOperator	op;
 
 	/**
@@ -36,10 +36,10 @@ public class BoxAssignment extends BoxStatement {
 	 * @param position   position of the statement in the source code
 	 * @param sourceText source code that originated the Node
 	 */
-	public BoxAssignment(BoxExpr left, BoxAssigmentOperator op, BoxExpr right, Position position, String sourceText ) {
+	public BoxAssignment( BoxExpr left, BoxAssigmentOperator op, BoxExpr right, Position position, String sourceText ) {
 		super( position, sourceText );
 		this.left	= left;
-		this.op = op;
+		this.op		= op;
 		this.right	= right;
 		this.left.setParent( this );
 		this.right.setParent( this );

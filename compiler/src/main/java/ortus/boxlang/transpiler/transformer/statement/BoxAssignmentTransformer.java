@@ -21,10 +21,14 @@ import org.slf4j.LoggerFactory;
 import ortus.boxlang.ast.BoxNode;
 import com.github.javaparser.ast.*;
 import com.github.javaparser.ast.expr.Expression;
+import ortus.boxlang.ast.statement.BoxAssigmentOperator;
 import ortus.boxlang.ast.statement.BoxAssignment;
 import ortus.boxlang.transpiler.BoxLangTranspiler;
 import ortus.boxlang.transpiler.transformer.AbstractTransformer;
 import ortus.boxlang.transpiler.transformer.TransformerContext;
+
+import java.util.HashMap;
+import java.util.Map;
 
 public class BoxAssignmentTransformer extends AbstractTransformer {
 
@@ -36,15 +40,71 @@ public class BoxAssignmentTransformer extends AbstractTransformer {
 	@Override
 	public Node transform( BoxNode node, TransformerContext context ) throws IllegalStateException {
 		logger.info( node.getSourceText() );
-		Expression	left	= ( Expression ) BoxLangTranspiler.transform( ( ( BoxAssignment ) node ).getLeft(), TransformerContext.LEFT );
-		Expression	right	= ( Expression ) BoxLangTranspiler.transform( ( ( BoxAssignment ) node ).getRight(), TransformerContext.RIGHT );
+		BoxAssignment		assigment	= ( BoxAssignment ) node;
+		Expression			left		= ( Expression ) BoxLangTranspiler.transform( ( ( BoxAssignment ) node ).getLeft(), TransformerContext.LEFT );
+		Expression			right		= ( Expression ) BoxLangTranspiler.transform( ( ( BoxAssignment ) node ).getRight(), TransformerContext.RIGHT );
+		Map<String, String>	values		= new HashMap<>();
 
+		ExpressionStmt		javaExpr	= new ExpressionStmt( left );
 		if ( left instanceof MethodCallExpr method ) {
 			if ( "put".equalsIgnoreCase( method.getName().asString() ) ) {
 				method.getArguments().add( right );
 			}
 		}
-		ExpressionStmt javaExpr = new ExpressionStmt( left );
+
+		if ( assigment.getOp() == BoxAssigmentOperator.PlusEqual ) {
+			MethodCallExpr methodCall = ( MethodCallExpr ) left;
+			values.put( "expr", methodCall.getScope().get().toString() );
+			values.put( "key", methodCall.getArguments().get( 0 ).toString() );
+			values.put( "right", right.toString() );
+			String template = "Plus.invoke(${expr},${key},${right})";
+			javaExpr = new ExpressionStmt( ( Expression ) parseExpression( template, values ) );
+		}
+
+		if ( assigment.getOp() == BoxAssigmentOperator.MinusEqual ) {
+			MethodCallExpr methodCall = ( MethodCallExpr ) left;
+			values.put( "expr", methodCall.getScope().get().toString() );
+			values.put( "key", methodCall.getArguments().get( 0 ).toString() );
+			values.put( "right", right.toString() );
+			String template = "Minus.invoke(${expr},${key},${right})";
+			javaExpr = new ExpressionStmt( ( Expression ) parseExpression( template, values ) );
+		}
+
+		if ( assigment.getOp() == BoxAssigmentOperator.StarEqual ) {
+			MethodCallExpr methodCall = ( MethodCallExpr ) left;
+			values.put( "expr", methodCall.getScope().get().toString() );
+			values.put( "key", methodCall.getArguments().get( 0 ).toString() );
+			values.put( "right", right.toString() );
+			String template = "Multiply.invoke(${expr},${key},${right})";
+			javaExpr = new ExpressionStmt( ( Expression ) parseExpression( template, values ) );
+		}
+
+		if ( assigment.getOp() == BoxAssigmentOperator.SlashEqual ) {
+			MethodCallExpr methodCall = ( MethodCallExpr ) left;
+			values.put( "expr", methodCall.getScope().get().toString() );
+			values.put( "key", methodCall.getArguments().get( 0 ).toString() );
+			values.put( "right", right.toString() );
+			String template = "Divide.invoke(${expr},${key},${right})";
+			javaExpr = new ExpressionStmt( ( Expression ) parseExpression( template, values ) );
+		}
+
+		if ( assigment.getOp() == BoxAssigmentOperator.ModEqual ) {
+			MethodCallExpr methodCall = ( MethodCallExpr ) left;
+			values.put( "expr", methodCall.getScope().get().toString() );
+			values.put( "key", methodCall.getArguments().get( 0 ).toString() );
+			values.put( "right", right.toString() );
+			String template = "Module.invoke(${expr},${key},${right})";
+			javaExpr = new ExpressionStmt( ( Expression ) parseExpression( template, values ) );
+		}
+		if ( assigment.getOp() == BoxAssigmentOperator.ConcatEqual ) {
+			MethodCallExpr methodCall = ( MethodCallExpr ) left;
+			values.put( "expr", methodCall.getScope().get().toString() );
+			values.put( "key", methodCall.getArguments().get( 0 ).toString() );
+			values.put( "right", right.toString() );
+			String template = "Concat.invoke(${expr},${key},${right})";
+			javaExpr = new ExpressionStmt( ( Expression ) parseExpression( template, values ) );
+		}
+
 		addIndex( javaExpr, node );
 		return javaExpr;
 	}
