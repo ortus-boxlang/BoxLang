@@ -73,6 +73,7 @@ public class BoxLangTranspiler {
 																	put( BoxDecimalLiteral.class, new BoxDecimalLiteralTransformer() );
 																	put( BoxStringInterpolation.class, new BoxStringInterpolationTransformer() );
 																	put( BoxArgument.class, new BoxArgumentTransformer() );
+																	put( BoxFQN.class, new BoxFQNTransformer() );
 
 																	put( BoxParenthesis.class, new BoxParenthesisTransformer() );
 																	put( BoxBinaryOperation.class, new BoxBinaryOperationTransformer() );
@@ -87,12 +88,16 @@ public class BoxLangTranspiler {
 																	put( BoxLocalDeclaration.class, new BoxLocalDeclarationTransformer() );
 																	put( BoxIfElse.class, new BoxIfElseTransformer() );
 																	put( BoxWhile.class, new BoxWhileTransformer() );
+																	put( BoxDo.class, new BoxDoTransformer() );
 																	put( BoxSwitch.class, new BoxSwitchTransformer() );
 																	put( BoxBreak.class, new BoxBreakTransformer() );
 																	put( BoxContinue.class, new BoxContinueTransformer() );
 																	put( BoxForIn.class, new BoxForInTransformer() );
 																	put( BoxForIndex.class, new BoxForIndexTransformer() );
 																	put( BoxAssert.class, new BoxAssertTransformer() );
+																	put( BoxTry.class, new BoxTryTransformer() );
+																	put( BoxThrow.class, new BoxThrowTransformer() );
+																	put( BoxNewOperation.class, new BoxNewOperationTransformer() );
 
 																}
 															};
