@@ -74,14 +74,14 @@ public class ScopeWrapper extends BaseScope {
 	}
 
 	@Override
-	public boolean containsKey( Object name ) throws ClassCastException, NullPointerException {
+	public boolean containsKey( Object name ) throws NullPointerException {
 		if ( super.containsKey( name ) ) {
 			return true;
 		}
 		return wrapped.containsKey( name );
 	}
 
-	public boolean containsKey( Key name ) throws ClassCastException, NullPointerException {
+	public boolean containsKey( Key name ) throws NullPointerException {
 		if ( super.containsKey( name ) ) {
 			return true;
 		}

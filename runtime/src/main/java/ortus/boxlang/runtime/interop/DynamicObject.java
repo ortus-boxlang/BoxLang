@@ -43,6 +43,7 @@ import ortus.boxlang.runtime.dynamic.IReferenceable;
 import ortus.boxlang.runtime.dynamic.casters.CastAttempt;
 import ortus.boxlang.runtime.dynamic.casters.DoubleCaster;
 import ortus.boxlang.runtime.scopes.Key;
+import ortus.boxlang.runtime.types.exceptions.ApplicationException;
 import ortus.boxlang.runtime.types.exceptions.BoxLangException;
 import ortus.boxlang.runtime.types.exceptions.KeyNotFoundException;
 
@@ -92,7 +93,7 @@ public class DynamicObject implements IReferenceable {
 	    BoxLangException.detailKey,
 	    BoxLangException.typeKey,
 	    BoxLangException.tagContextKey,
-	    BoxLangException.ExtendedInfoKey
+	    ApplicationException.ExtendedInfoKey
 	) );
 	/**
 	 * This is a map of primitive types to their native Java counterparts

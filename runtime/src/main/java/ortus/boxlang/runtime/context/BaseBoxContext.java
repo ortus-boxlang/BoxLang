@@ -21,6 +21,7 @@ import java.util.ArrayDeque;
 import java.util.Map;
 
 import ortus.boxlang.runtime.dynamic.BaseTemplate;
+import ortus.boxlang.runtime.dynamic.casters.FunctionCaster;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
@@ -164,21 +165,46 @@ public class BaseBoxContext implements IBoxContext {
 	}
 
 	/**
-	 * Invoke a function expression such as (()=>{})() using positional args.
+	 * Invoke a function call such as foo() using no args.
 	 *
 	 * @return Return value of the function call
 	 */
-	public Object invokeFunction( Function function, Object[] positionalArguments ) {
-		return invokeFunction( function, function.getName(), function.createArgumentsScope( positionalArguments ) );
+	public Object invokeFunction( Key name ) {
+		Function function = findFunction( name );
+		return invokeFunction( function, name, function.createArgumentsScope( new Object[] {} ) );
+	}
+
+	/**
+	 * Invoke a function expression such as (()=>{})() using positional args.
+	 * This method will validate the incoming object is a function type.
+	 *
+	 * @return Return value of the function call
+	 */
+	public Object invokeFunction( Object function, Object[] positionalArguments ) {
+		Function func = FunctionCaster.cast( function );
+		return invokeFunction( func, func.getName(), func.createArgumentsScope( positionalArguments ) );
 	}
 
 	/**
 	 * Invoke a function expression such as (()=>{})() using named args.
+	 * This method will validate the incoming object is a function type.
 	 *
 	 * @return Return value of the function call
 	 */
-	public Object invokeFunction( Function function, Map<Key, Object> namedArguments ) {
-		return invokeFunction( function, function.getName(), function.createArgumentsScope( namedArguments ) );
+	public Object invokeFunction( Object function, Map<Key, Object> namedArguments ) {
+		Function func = FunctionCaster.cast( function );
+		return invokeFunction( func, func.getName(), func.createArgumentsScope( namedArguments ) );
+	}
+
+	/**
+	 * Invoke a function expression such as (()=>{})() using no args.
+	 * This method will validate the incoming object is a function type.
+	 *
+	 * @return Return value of the function call
+	 */
+	public Object invokeFunction( Object function ) {
+		Function func = FunctionCaster.cast( function );
+		return invokeFunction( func, func.getName(), func.createArgumentsScope( new Object[] {} ) );
 	}
 
 	/**
@@ -210,7 +236,7 @@ public class BaseBoxContext implements IBoxContext {
 			return ( ( Function ) value );
 		} else {
 			throw new RuntimeException(
-			    "Variable '" + name + "' of type  '" + value.getClass().getName() + "'  is not a function " );
+			    "Variable '" + name + "' of type  '" + value.getClass().getName() + "'  is not a function." );
 		}
 	}
 

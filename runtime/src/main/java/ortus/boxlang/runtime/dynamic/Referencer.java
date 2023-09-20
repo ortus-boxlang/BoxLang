@@ -65,6 +65,22 @@ public class Referencer {
 	/**
 	 * Used to implement any time an object is dereferenced,
 	 *
+	 * @param object The object to dereference
+	 * @param key    The key to dereference
+	 * @param safe   Whether to throw an exception if the key is not found
+	 *
+	 * @return The value that was assigned
+	 */
+	public static Object getAndInvoke( IBoxContext context, Object object, Key key, Boolean safe ) {
+		if ( safe && object == null ) {
+			return null;
+		}
+		return getReferenceable( object ).dereferenceAndInvoke( context, key, new Object[] {}, safe );
+	}
+
+	/**
+	 * Used to implement any time an object is dereferenced,
+	 *
 	 * @param object         The object to dereference
 	 * @param key            The key to dereference
 	 * @param namedArguments The arguments to pass to the method

@@ -129,6 +129,37 @@ public interface IBoxContext {
 	public Object invokeFunction( Key name, Map<Key, Object> namedArguments );
 
 	/**
+	 * Invoke a function call such as foo() using no args.
+	 *
+	 * @return Return value of the function call
+	 */
+	public Object invokeFunction( Key name );
+
+	/**
+	 * Invoke a function expression such as (()=>{})() using positional args.
+	 * This method will validate the incoming object is a function type.
+	 *
+	 * @return Return value of the function call
+	 */
+	public Object invokeFunction( Object function, Object[] positionalArguments );
+
+	/**
+	 * Invoke a function expression such as (()=>{})() using named args.
+	 * This method will validate the incoming object is a function type.
+	 *
+	 * @return Return value of the function call
+	 */
+	public Object invokeFunction( Object function, Map<Key, Object> namedArguments );
+
+	/**
+	 * Invoke a function expression such as (()=>{})() using no args.
+	 * This method will validate the incoming object is a function type.
+	 *
+	 * @return Return value of the function call
+	 */
+	public Object invokeFunction( Object function );
+
+	/**
 	 * Register a UDF with the local context.
 	 *
 	 * @param udf The UDF to register

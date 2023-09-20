@@ -5,7 +5,7 @@ import ortus.boxlang.runtime.types.Struct;
 /**
  * Thrown when a key is not found in a struct
  */
-public class KeyNotFoundException extends BoxLangException {
+public class KeyNotFoundException extends ApplicationException {
 
 	/**
 	 * Constructor when we know the actual struct that was being searched
@@ -24,6 +24,16 @@ public class KeyNotFoundException extends BoxLangException {
 	 */
 	public KeyNotFoundException( String message ) {
 		super( message );
+	}
+
+	/**
+	 * Constructor
+	 *
+	 * @param message The message to display
+	 * @param cause   The cause
+	 */
+	public KeyNotFoundException( String message, Throwable cause ) {
+		super( message, cause );
 	}
 
 }
