@@ -339,6 +339,7 @@ reservedKeyword
     | 	DOES
     | 	NOT
     | 	CONTAIN
+    | 	JAVA
     ;
 scope
     :   APPLICATION
@@ -419,7 +420,7 @@ unary
     ;
 
 new
-    :   NEW (JAVA COLONCOLON) (fqn | stringLiteral) LPAREN argumentList? RPAREN
+    :   NEW (JAVA COLON)? (fqn | stringLiteral) LPAREN argumentList? RPAREN
     // TODO add namespace
     ;
 
