@@ -52,7 +52,7 @@ public class BoxSwitchTransformer extends AbstractTransformer {
 	@Override
 	public Node transform( BoxNode node, TransformerContext context ) throws IllegalStateException {
 		BoxSwitch	boxSwitch	= ( BoxSwitch ) node;
-		Expression	condition	= ( Expression ) BoxLangTranspiler.transform( boxSwitch.getCondition(), TransformerContext.RIGHT );
+		Expression	condition	= ( Expression ) resolveScope( BoxLangTranspiler.transform( boxSwitch.getCondition(), TransformerContext.RIGHT ), context );
 
 		String		template	= """
 		                          do {
