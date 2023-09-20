@@ -27,6 +27,7 @@ import ortus.boxlang.ast.expression.*;
 import ortus.boxlang.ast.BoxStatement;
 import ortus.boxlang.ast.statement.*;
 
+import java.beans.Expression;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -902,9 +903,31 @@ public class BoxCFParser extends BoxAbstractParser {
 			if ( expression.MINUSMINUS() != null ) {
 				return new BoxUnaryOperation( expr, BoxUnaryOperator.PostMinusMinus, getPosition( expression ), getSourceText( expression ) );
 			}
+		} else if ( expression.new_() != null ) {
+			BoxExpr				expr	= null;
+			List<BoxArgument>	args	= new ArrayList<>();
+			if ( expression.new_().argumentList() != null ) {
+				for ( CFParser.ArgumentContext arg : expression.new_().argumentList().argument() ) {
+					args.add( toAst( file, arg ) );
+				}
+			}
+			if ( expression.new_().fqn() != null ) {
+				expr = toAst( file, expression.new_().fqn() );
+				return new BoxNewOperation( expr, args, getPosition( expression ), getSourceText( expression ) );
+			}
 		}
 		// TODO: add other cases
 		throw new IllegalStateException( "not implemented: " + expression.getClass().getSimpleName() );
+	}
+
+	/**
+	 * Converts the UnaryContext parser rule to the corresponding AST node.
+	 * 
+	 * @param file source file, if any
+	 * @param node ANTLR FqnContext rule
+	 */
+	private BoxExpr toAst( File file, CFParser.FqnContext node ) {
+		return new BoxFQN( node.getText(), getPosition( node ), getSourceText( node ) );
 	}
 
 	/**
