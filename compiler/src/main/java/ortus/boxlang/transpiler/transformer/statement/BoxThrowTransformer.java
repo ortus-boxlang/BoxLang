@@ -31,7 +31,8 @@ public class BoxThrowTransformer extends AbstractTransformer {
 	@Override
 	public Node transform( BoxNode node, TransformerContext context ) throws IllegalStateException {
 		BoxThrow			boxAssert	= ( BoxThrow ) node;
-		Expression			expr		= ( Expression ) BoxLangTranspiler.transform( boxAssert.getExpression(), TransformerContext.RIGHT );
+		Expression			expr		= ( Expression ) resolveScope( BoxLangTranspiler.transform( boxAssert.getExpression(), TransformerContext.RIGHT ),
+		    context );
 		Map<String, String>	values		= new HashMap<>() {
 
 											{
