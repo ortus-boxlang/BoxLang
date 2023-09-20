@@ -91,7 +91,7 @@ public class TestStatements extends TestBase {
 		String			statement	= """
 		                              			if( variables.a == "0" ) {
 		                              				variables.a = a & "1";
-		                              			} else if( !foo ) {
+		                              			} else if( !foo == false ) {
 		                              				variables.a = a & "2";
 		                                  		}
 		                              """;
@@ -101,12 +101,10 @@ public class TestStatements extends TestBase {
 		Node			javaAST		= BoxLangTranspiler.transform( result.getRoot() );
 		assertEqualsNoWhiteSpaces(
 		    """
-		    if(BooleanCaster.cast(EqualsEquals.invoke(variablesScope.get(Key.of("a")),"0"))){
-		    	variablesScope.put(Key.of("a"),Concat.invoke(context.scopeFindNearby(Key.of("a"),variablesScope).value(),"1"));
-		    } else if(Not.invoke(foo)){
-		    	variablesScope.put(Key.of("a"),Concat.invoke(context.scopeFindNearby(Key.of("a"),variablesScope).value(),"2"));
-		    }
-		       """, javaAST.toString() );
+		    if(BooleanCaster.cast(EqualsEquals.invoke(variablesScope.get(Key.of("a")),"0"))){variablesScope.put(Key.of("a"),Concat.invoke(context.scopeFindNearby(Key.of("a"),variablesScope).value(),"1"));}elseif(Not.invoke(EqualsEquals.invoke(context.scopeFindNearby(Key.of("foo"),variablesScope).scope().get(Key.of("foo")),false))){variablesScope.put(Key.of("a"),Concat.invoke(context.scopeFindNearby(Key.of("a"),variablesScope).value(),"2"));}
+
+		         """,
+		    javaAST.toString() );
 	}
 
 	@Test

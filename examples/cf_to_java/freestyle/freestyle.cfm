@@ -44,7 +44,7 @@
 		}
 		a++;
 	}
-	assert(a == 9.0)
+	assert(a == 10.0)
 
 
 </cfscript>
