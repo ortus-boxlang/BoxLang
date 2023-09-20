@@ -17,6 +17,7 @@ package ortus.boxlang.transpiler.transformer.expression;
 import com.github.javaparser.ast.Node;
 import com.github.javaparser.ast.expr.Expression;
 import com.github.javaparser.ast.expr.MethodCallExpr;
+import com.github.javaparser.ast.expr.NameExpr;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import ortus.boxlang.ast.BoxNode;
@@ -52,11 +53,10 @@ public class BoxUnaryOperationTransformer extends AbstractTransformer {
 		BoxUnaryOperation	operation	= ( BoxUnaryOperation ) node;
 		Map<String, String>	values		= new HashMap<>();
 
-		Expression			expr		= ( Expression ) BoxLangTranspiler.transform( operation.getExpr() );
+		Expression			expr		= ( Expression ) resolveScope( BoxLangTranspiler.transform( operation.getExpr() ), context );
 		values.put( "expr", expr.toString() );
 
-		if ( expr instanceof MethodCallExpr ) {
-			MethodCallExpr methodCall = ( MethodCallExpr ) expr;
+		if ( expr instanceof MethodCallExpr methodCall ) {
 			values.put( "expr", methodCall.getScope().get().toString() );
 			values.put( "key", methodCall.getArguments().get( 0 ).toString() );
 
