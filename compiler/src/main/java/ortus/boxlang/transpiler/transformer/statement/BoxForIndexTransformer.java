@@ -52,7 +52,7 @@ public class BoxForIndexTransformer extends AbstractTransformer {
 	@Override
 	public Node transform( BoxNode node, TransformerContext context ) throws IllegalStateException {
 		BoxForIndex			boxFor		= ( BoxForIndex ) node;
-		Expression			variable	= ( Expression ) BoxLangTranspiler.transform( boxFor.getVariable(), TransformerContext.LEFT );
+		Expression			variable	= ( Expression ) resolveScope( BoxLangTranspiler.transform( boxFor.getVariable(), TransformerContext.LEFT ), context );
 		Expression			initial		= ( Expression ) BoxLangTranspiler.transform( boxFor.getInitial(), TransformerContext.RIGHT );
 		Expression			condition	= ( Expression ) BoxLangTranspiler.transform( boxFor.getCondition() );
 		Expression			step		= ( Expression ) BoxLangTranspiler.transform( boxFor.getStep() );
