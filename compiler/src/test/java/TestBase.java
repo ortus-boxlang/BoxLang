@@ -72,6 +72,10 @@ public class TestBase {
 		return fileList;
 	}
 
+	private void formatHere() {
+
+	}
+
 	protected void assertEqualsNoWhiteSpaces( String expected, String actual ) {
 		assertEquals( expected.replaceAll( "[ \\t\\r\\n]", "" ), actual.replaceAll( "[ \\t\\r\\n]", "" ) );
 	}

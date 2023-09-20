@@ -28,13 +28,11 @@ public class TestStatements extends TestBase {
 		ParsingResult	result		= parseStatement( statement );
 		Node			javaAST		= BoxLangTranspiler.transform( result.getRoot() );
 
-		assertEqualsNoWhiteSpaces( """
-		                           Referencer.getAndInvoke(
-		                           myObject,
-		                           Key.of("myMethod"),
-		                           newObject[]{obj1,"foo",42},
-		                           false);
-		                                                  """, javaAST.toString() );
+		assertEqualsNoWhiteSpaces(
+		    """
+		    Referencer.getAndInvoke(myObject,Key.of("myMethod"),newObject[]{context.scopeFindNearby(Key.of("obj1"),variablesScope).scope().get(Key.of("obj1")),"foo",42},false);
+		    		                                                  """,
+		    javaAST.toString() );
 	}
 
 	@Test
@@ -156,18 +154,19 @@ public class TestStatements extends TestBase {
 		assertEqualsNoWhiteSpaces(
 		    """
 		    do {
-		    	if (BooleanCaster.cast(EqualsEquals.invoke((variablesScope.get(Key.of("a"))), "9"))) {
-		    		variablesScope.put(Key.of("a"), "0");
+		    	if ( BooleanCaster.cast( EqualsEquals.invoke( variablesScope.get( Key.of( "a" ) ), "9" ) ) ) {
+		    		variablesScope.put( Key.of( "a" ), "0" );
 		    		break;
 		    	}
-		    	if (BooleanCaster.cast(EqualsEquals.invoke((variablesScope.get(Key.of("a"))), "1"))) {
-		    		variablesScope.put(Key.of("a"), "1");
+		    	if ( BooleanCaster.cast( EqualsEquals.invoke( variablesScope.get( Key.of( "a" ) ), "1" ) ) ) {
+		    		variablesScope.put( Key.of( "a" ), "1" );
 		    		break;
 		    	}
-		    	variablesScope.put(Key.of("a"), "default");
+		    	variablesScope.put( Key.of( "a" ), "default" );
 		    	break;
-		    } while (false);
-		    """, javaAST.toString() );
+		    } while ( false );
+		        		    """,
+		    javaAST.toString() );
 	}
 
 	@Test
@@ -196,18 +195,18 @@ public class TestStatements extends TestBase {
 		assertEqualsNoWhiteSpaces(
 		    """
 		    do {
-		    	if (BooleanCaster.cast(GreaterThan.invoke(variablesScope.get(Key.of("a")), "0"))) {
-		    		variablesScope.put(Key.of("a"), "0");
-		    		break;
-		    	}
-		    	if (BooleanCaster.cast(LessThan.invoke(variablesScope.get(Key.of("a")), "1"))) {
-		    		variablesScope.put(Key.of("a"), "1");
-		    		break;
-		    	}
-		    	variablesScope.put(Key.of("a"), "default");
-		    	break;
-		    } while (false);
-		    """, javaAST.toString() );
+		    			if ( BooleanCaster.cast( GreaterThan.invoke( variablesScope.get( Key.of( "a" ) ), "0" ) ) ) {
+		    				variablesScope.put( Key.of( "a" ), "0" );
+		    				break;
+		    			}
+		    			if ( BooleanCaster.cast( LessThan.invoke( variablesScope.get( Key.of( "a" ) ), "1" ) ) ) {
+		    				variablesScope.put( Key.of( "a" ), "1" );
+		    				break;
+		    			}
+		    			variablesScope.put( Key.of( "a" ), "default" );
+		    			break;
+		    		} while ( false );
+		    		      """, javaAST.toString() );
 	}
 
 	@Test
@@ -270,6 +269,86 @@ public class TestStatements extends TestBase {
 		    """
 		    Assert.invoke(EqualsEquals.invoke(variablesScope.get(Key.of("a")),0));
 		    """, javaAST.toString() );
+	}
+
+	@Test
+	public void try_() throws IOException {
+		String			statement	= """
+		                              	                             try {
+		                              	                              	a = 1/0
+		                              	                              } catch (any e) {
+		                              	                              // Logic to run in catch
+		                              	                              } finally {
+		                              	                              // Logic to always run
+		                              	                              }
+		                              """;
+
+		ParsingResult	result		= parseStatement( statement );
+
+		Node			javaAST		= BoxLangTranspiler.transform( result.getRoot() );
+		System.out.println( javaAST );
+		assertEqualsNoWhiteSpaces(
+		    """
+		    try{
+		    	context.scopeFindNearby(Key.of("a"),variablesScope).scope().put(Key.of("a"),Divide.invoke(1,0));
+		    } catch(Throwablee) {
+		    	catchContext=newCatchBoxContext(context,Key.of("e"),e);
+		    } finally{
+		    }
+
+		      """, javaAST.toString() );
+	}
+
+	@Test
+	public void expression() throws IOException {
+		String			statement	= """
+		                              a+=1;
+		                                                    """;
+
+		ParsingResult	result		= parseStatement( statement );
+
+		Node			javaAST		= BoxLangTranspiler.transform( result.getRoot() );
+		System.out.println( javaAST );
+		assertEqualsNoWhiteSpaces(
+		    """
+		    Plus.invoke(context.scopeFindNearby(Key.of("a"),variablesScope).scope(),Key.of("a"),1);
+		    """, javaAST.toString() );
+	}
+
+	@Test
+	public void do_() throws IOException {
+		String			statement	= """
+		                              do {
+		                              		a = 0;
+		                                   } while(true)
+		                                                                                 """;
+
+		ParsingResult	result		= parseStatement( statement );
+
+		Node			javaAST		= BoxLangTranspiler.transform( result.getRoot() );
+		System.out.println( javaAST );
+		assertEqualsNoWhiteSpaces(
+		    """
+		    do{
+		    	context.scopeFindNearby(Key.of("a"),variablesScope).scope().put(Key.of("a"),0);
+		    } while(BooleanCaster.cast(true));
+		      """, javaAST.toString() );
+	}
+
+	@Test
+	public void throw_() throws IOException {
+		String			statement	= """
+		                              throw new java.lang.RuntimeException("MyMessage");e;
+		                              """;
+
+		ParsingResult	result		= parseStatement( statement );
+
+		Node			javaAST		= BoxLangTranspiler.transform( result.getRoot() );
+		System.out.println( javaAST );
+		assertEqualsNoWhiteSpaces(
+		    """
+		    throw(newjava.lang.RuntimeException("MyMessage"));
+		     """, javaAST.toString() );
 	}
 
 }

@@ -604,4 +604,20 @@ public class TestOperators extends TestBase {
 		    "a is " + variablesScope.get(Key.of("a")) + " and b is " + variablesScope.get(Key.of("b"))
 		      """, javaAST.toString() );
 	}
+
+	@Test
+	public void new_() throws IOException {
+		String			statement	= """
+		                              new java:java.lang.RuntimeException( "My Message" );
+		                              """;
+
+		ParsingResult	result		= parseExpression( statement );
+
+		Node			javaAST		= BoxLangTranspiler.transform( result.getRoot() );
+		System.out.println( javaAST );
+		assertEqualsNoWhiteSpaces(
+		    """
+		    new java.lang.RuntimeException("MyMessage")
+		    	""", javaAST.toString() );
+	}
 }

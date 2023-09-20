@@ -6,6 +6,7 @@ import ortus.boxlang.parser.BoxParser;
 import ortus.boxlang.parser.ParsingResult;
 import ortus.boxlang.transpiler.BoxLangTranspiler;
 
+import java.io.File;
 import java.io.IOException;
 
 import static org.junit.Assert.assertTrue;
@@ -28,6 +29,17 @@ import static org.junit.Assert.assertTrue;
 public class TestExecution extends TestBase {
 
 	@Test
+	public void executeFreeStyle() throws IOException {
+		BoxParser		parser	= new BoxParser();
+		ParsingResult	result	= parser.parse( new File( "../examples/cf_to_java/freestyle/freestyle.cfm" ) );
+		result.getIssues().forEach( it -> System.out.println( it ) );
+		assertTrue( result.isCorrect() );
+
+		BoxLangTranspiler	transpiler	= new BoxLangTranspiler();
+		Node				javaAST		= transpiler.transpile( result.getRoot() );
+		new JavaRunner().run( transpiler.getStatements() );
+	}
+
 	public void executeWhile() throws IOException {
 
 		String			statement	= """
@@ -66,13 +78,13 @@ public class TestExecution extends TestBase {
 	public void executeFor() throws IOException {
 
 		String			statement	= """
-		                                                     variables['system'] = createObject('java','java.lang.System');
-
-		                                                     for(variables.a = 0; a < 10; variables.a++){
-		                                                     	variables.system.out.println(variables.a);
-		                                                     }
-		                              assert(variables["a"] == 10);
-		                                                     """;
+		                                                                     variables['system'] = createObject('java','java.lang.System');
+		                              variables.a = 0;
+		                                                                     for(a = 0; a < 10; a++){
+		                                                                     	variables.system.out.println(a);
+		                                                                     }
+		                                              assert(variables["a"] == 10);
+		                                                                     """;
 		BoxParser		parser		= new BoxParser();
 		ParsingResult	result		= parser.parse( statement, BoxFileType.CF );
 		assertTrue( result.isCorrect() );
@@ -80,6 +92,7 @@ public class TestExecution extends TestBase {
 		BoxLangTranspiler	transpiler	= new BoxLangTranspiler();
 		Node				javaAST		= transpiler.transpile( result.getRoot() );
 		new JavaRunner().run( transpiler.getStatements() );
+
 	}
 
 }
