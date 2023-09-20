@@ -93,13 +93,13 @@ public class Position {
 
 	/**
 	 * String representation of the Position
-	 * 
+	 *
 	 * @return a String representation of the position including the source file if available
 	 */
 	@Override
 	public String toString() {
 		StringBuilder sb = new StringBuilder();
-		if ( this.getSource() != null ) {
+		if ( this.source != null ) {
 			sb.append( this.getSource() );
 			sb.append( ": " );
 		}

@@ -46,11 +46,11 @@ public class SourceFile extends Source {
 
 	/**
 	 * String representation of a file source
-	 * 
+	 *
 	 * @return the absolute path of the File
 	 */
 	@Override
 	public String toString() {
-		return file.getAbsolutePath();
+		return this.file != null ? file.getAbsolutePath() : "";
 	}
 }
