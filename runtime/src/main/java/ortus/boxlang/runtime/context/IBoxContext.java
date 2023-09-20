@@ -22,7 +22,6 @@ import java.util.Map;
 import ortus.boxlang.runtime.dynamic.BaseTemplate;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
-import ortus.boxlang.runtime.types.Function;
 import ortus.boxlang.runtime.types.UDF;
 import ortus.boxlang.runtime.types.exceptions.KeyNotFoundException;
 import ortus.boxlang.runtime.types.exceptions.ScopeNotFoundException;
@@ -138,24 +137,27 @@ public interface IBoxContext {
 
 	/**
 	 * Invoke a function expression such as (()=>{})() using positional args.
+	 * This method will validate the incoming object is a function type.
 	 *
 	 * @return Return value of the function call
 	 */
-	public Object invokeFunction( Function function, Object[] positionalArguments );
+	public Object invokeFunction( Object function, Object[] positionalArguments );
 
 	/**
 	 * Invoke a function expression such as (()=>{})() using named args.
+	 * This method will validate the incoming object is a function type.
 	 *
 	 * @return Return value of the function call
 	 */
-	public Object invokeFunction( Function function, Map<Key, Object> namedArguments );
+	public Object invokeFunction( Object function, Map<Key, Object> namedArguments );
 
 	/**
 	 * Invoke a function expression such as (()=>{})() using no args.
+	 * This method will validate the incoming object is a function type.
 	 *
 	 * @return Return value of the function call
 	 */
-	public Object invokeFunction( Function function );
+	public Object invokeFunction( Object function );
 
 	/**
 	 * Register a UDF with the local context.
