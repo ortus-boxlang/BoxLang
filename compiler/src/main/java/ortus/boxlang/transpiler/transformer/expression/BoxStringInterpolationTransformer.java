@@ -26,7 +26,7 @@ public class BoxStringInterpolationTransformer extends AbstractTransformer {
 		String					expr			= interpolation.getValues()
 		    .stream()
 		    .map( it -> {
-													    return resolveScope( BoxLangTranspiler.transform( it, TransformerContext.RIGHT ) , context).toString();
+													    return resolveScope( BoxLangTranspiler.transform( it, TransformerContext.RIGHT ), context ).toString();
 
 												    } )
 		    .collect( Collectors.joining( "+" ) );
