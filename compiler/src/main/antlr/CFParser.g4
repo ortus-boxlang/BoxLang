@@ -293,7 +293,7 @@ throw
     ;
 
 switch
-  : SWITCH expression LBRACE
+  : SWITCH LPAREN expression RPAREN LBRACE
     (
       case
     )*
@@ -412,9 +412,6 @@ unary
     :   (MINUS | PLUS) expression
     ;
 
-not
-    :   NOT expression
-    ;
 new
     :   NEW (fqn | stringLiteral) LPAREN argumentList? RPAREN
     // TODO add namespace
@@ -430,7 +427,6 @@ expression
     |	pre=MINUSMINUS expression
 	|	expression post=PLUSPLUS
 	|	expression post=MINUSMINUS
-    |   not
     |   new
 //    |   incrementDecrementStatement
     |   literalExpression
@@ -448,6 +444,7 @@ expression
     |   expression ELVIS expression // Elvis operator
     |   expression IS expression // IS operator
     |	expression DOES NOT CONTAIN expression
+    |   NOT expression
     |   expression (AND | OR) expression // Logical
     ;
 
