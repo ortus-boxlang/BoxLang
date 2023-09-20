@@ -32,6 +32,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Stack;
 
 /**
  * Parser for CF scripts
@@ -169,6 +170,13 @@ public class BoxCFParser extends BoxAbstractParser {
 	protected BoxScript parseTreeToAst( File file, ParserRuleContext rule ) {
 		CFParser.ScriptContext	parseTree	= ( CFParser.ScriptContext ) rule;
 		List<BoxStatement>		statements	= new ArrayList<>();
+
+		if ( parseTree.tag() != null ) {
+			parseTree = parseTree.tag().script();
+		} else {
+
+		}
+
 		parseTree.functionOrStatement().forEach( stmt -> {
 			statements.add( toAst( file, stmt ) );
 		} );
@@ -214,6 +222,8 @@ public class BoxCFParser extends BoxAbstractParser {
 			return toAst( file, node.if_() );
 		} else if ( node.while_() != null ) {
 			return toAst( file, node.while_() );
+		} else if ( node.do_() != null ) {
+			return toAst( file, node.do_() );
 		} else if ( node.break_() != null ) {
 			return toAst( file, node.break_() );
 		} else if ( node.continue_() != null ) {
@@ -222,11 +232,89 @@ public class BoxCFParser extends BoxAbstractParser {
 			return toAst( file, node.switch_() );
 		} else if ( node.for_() != null ) {
 			return toAst( file, node.for_() );
+		} else if ( node.try_() != null ) {
+			return toAst( file, node.try_() );
 		} else if ( node.assert_() != null ) {
 			return toAst( file, node.assert_() );
+		} else if ( node.throw_() != null ) {
+			return toAst( file, node.throw_() );
 		} else {
 			throw new IllegalStateException( "not implemented: " + node.getClass().getSimpleName() );
 		}
+	}
+
+	/**
+	 * Converts the do parser rule to the corresponding AST node
+	 *
+	 * @param file source file, if any
+	 * @param node ANTLR ThrowContext rule
+	 *
+	 * @return the corresponding AST BoxStatement
+	 *
+	 * @see BoxThrow
+	 */
+	private BoxStatement toAst( File file, CFParser.ThrowContext node ) {
+		BoxExpr expression = toAst( file, node.expression() );
+		return new BoxThrow( expression, getPosition( node ), getSourceText( node ) );
+	}
+
+	/**
+	 * Converts the do parser rule to the corresponding AST node
+	 *
+	 * @param file source file, if any
+	 * @param node ANTLR TryContext rule
+	 *
+	 * @return the corresponding AST BoxStatement
+	 *
+	 * @see BoxDo
+	 */
+	private BoxStatement toAst( File file, CFParser.DoContext node ) {
+		BoxExpr				condition	= toAst( file, node.expression() );
+		List<BoxStatement>	body		= new ArrayList<>();
+
+		if ( node.statementBlock() != null ) {
+			body.addAll( toAst( file, node.statementBlock() ) );
+		}
+		return new BoxDo( condition, body, getPosition( node ), getSourceText( node ) );
+	}
+
+	/**
+	 * Converts the try parser rule to the corresponding AST node
+	 *
+	 * @param file source file, if any
+	 * @param node ANTLR TryContext rule
+	 *
+	 * @return the corresponding AST BoxStatement
+	 *
+	 * @see BoxTry
+	 */
+	private BoxStatement toAst( File file, CFParser.TryContext node ) {
+		List<BoxStatement>	tryBody		= toAst( file, node.statementBlock() );
+		List<BoxTryCatch>	catches		= node.catch_().stream().map( it -> toAst( file, it ) ).toList();
+		List<BoxStatement>	finallyBody	= new ArrayList<>();
+		if ( node.finally_() != null ) {
+			finallyBody.addAll( toAst( file, node.finally_().statementBlock() ) );
+		}
+		return new BoxTry( tryBody, catches, finallyBody, getPosition( node ), getSourceText( node ) );
+	}
+
+	private BoxTryCatch toAst( File file, CFParser.Catch_Context node ) {
+		BoxExpr				expr		= toAst( file, node.expression() );
+		List<BoxStatement>	catchBody	= toAst( file, node.statementBlock() );
+		String				name		= "";
+		BoxTryCatchType		type		= BoxTryCatchType.Any;
+		if ( node.catchType() != null ) {
+			if ( node.catchType().stringLiteral() != null ) {
+				type	= BoxTryCatchType.String;
+				name	= node.catchType().stringLiteral().getText();
+			} else if ( node.catchType().type() != null ) {
+				if ( node.catchType().type().ANY() != null ) {
+					type = BoxTryCatchType.Any;
+				}
+			}
+		}
+
+		return new BoxTryCatch( type, name, expr, catchBody, getPosition( node ), getSourceText( node ) );
 	}
 
 	/**
@@ -783,8 +871,8 @@ public class BoxCFParser extends BoxAbstractParser {
 			BoxExpr	whenTrue	= toAst( file, expression.expression( 1 ) );
 			BoxExpr	whenFalse	= toAst( file, expression.expression( 2 ) );
 			return new BoxTernaryOperation( condition, whenTrue, whenFalse, getPosition( expression ), getSourceText( expression ) );
-		} else if ( expression.not() != null && expression.CONTAIN() == null ) {
-			BoxExpr expr = toAst( file, expression.not().expression() );
+		} else if ( expression.NOT() != null && expression.CONTAIN() == null ) {
+			BoxExpr expr = toAst( file, expression.expression( 0 ) );
 			return new BoxUnaryOperation( expr, BoxUnaryOperator.Not, getPosition( expression ), getSourceText( expression ) );
 			// return new BoxNegateOperation( expr, BoxNegateOperator.Not, getPosition( expression ), getSourceText( expression ) );
 		} else if ( expression.CONTAINS() != null ) {

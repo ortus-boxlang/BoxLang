@@ -145,6 +145,7 @@ statement
     :   assert
     |   break
     |   continue
+    |   do
     |   for
     |   if
     |   include
@@ -268,6 +269,10 @@ forIncrement
     |   assignment // ??
     ;
 
+do
+    :   DO statementBlock WHILE LPAREN expression RPAREN
+    ;
+
 while
     :   WHILE LPAREN expression RPAREN statementBlock
     ;
@@ -289,7 +294,8 @@ rethrow
     :   RETHROW eos
     ;
 throw
-    :   THROW LPAREN argumentList? RPAREN eos
+    :   THROW LPAREN expression RPAREN eos
+    |   THROW  expression  eos
     ;
 
 switch
@@ -413,7 +419,7 @@ unary
     ;
 
 new
-    :   NEW (fqn | stringLiteral) LPAREN argumentList? RPAREN
+    :   NEW (JAVA COLONCOLON) (fqn | stringLiteral) LPAREN argumentList? RPAREN
     // TODO add namespace
     ;
 
