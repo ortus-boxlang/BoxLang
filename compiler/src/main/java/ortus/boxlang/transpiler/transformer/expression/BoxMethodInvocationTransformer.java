@@ -29,7 +29,7 @@ public class BoxMethodInvocationTransformer extends AbstractTransformer {
 		    TransformerContext.RIGHT );
 
 		String				args		= invocation.getArguments().stream()
-		    .map( it -> BoxLangTranspiler.transform( it ).toString() )
+		    .map( it -> resolveScope( BoxLangTranspiler.transform( it ), context ).toString() )
 		    .collect( Collectors.joining( ", " ) );
 
 		Map<String, String>	values		= new HashMap<>();
