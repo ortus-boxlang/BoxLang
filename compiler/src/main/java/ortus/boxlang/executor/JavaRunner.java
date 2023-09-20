@@ -39,66 +39,70 @@ public class JavaRunner {
 
 	final static String	fqn			= "ortus.boxlang.test.TestClass";
 	String				template	= """
-	                                  package ortus.boxlang.test;
+	                                                          package ortus.boxlang.test;
 
-	                                  import ortus.boxlang.runtime.BoxRuntime;
-	                                  import ortus.boxlang.runtime.context.IBoxContext;
+	                                                          import ortus.boxlang.runtime.BoxRuntime;
+	                                                          import ortus.boxlang.runtime.context.*;
 
-	                                  // BoxLang Auto Imports
-	                                  import ortus.boxlang.runtime.dynamic.BaseTemplate;
-	                                  import ortus.boxlang.runtime.dynamic.Referencer;
-	                                  import ortus.boxlang.runtime.interop.DynamicObject;
-	                                  import ortus.boxlang.runtime.loader.ClassLocator;
-	                                  import ortus.boxlang.runtime.operators.*;
-	                                  import ortus.boxlang.runtime.scopes.Key;
-	                                  import ortus.boxlang.runtime.scopes.IScope;
-	                                  import ortus.boxlang.runtime.dynamic.casters.*;
+	                                                          // BoxLang Auto Imports
+	                                                          import ortus.boxlang.runtime.dynamic.BaseTemplate;
+	                                                          import ortus.boxlang.runtime.dynamic.Referencer;
+	                                                          import ortus.boxlang.runtime.interop.DynamicObject;
+	                                                          import ortus.boxlang.runtime.loader.ClassLocator;
+	                                                          import ortus.boxlang.runtime.operators.*;
+	                                                          import ortus.boxlang.runtime.scopes.Key;
+	                                                          import ortus.boxlang.runtime.scopes.IScope;
+	                                                          import ortus.boxlang.runtime.dynamic.casters.*;
 
-	                                  public class TestClass extends BaseTemplate {
+	                                                          public class TestClass extends BaseTemplate {
 
-	                                  	private static TestClass instance;
+	                                                          	private static TestClass instance;
 
-	                                  	public TestClass() {
-	                                  	}
+	                                                          	public TestClass() {
+	                                                          	}
 
-	                                  	public static synchronized TestClass getInstance() {
-	                                  		if ( instance == null ) {
-	                                  			instance = new TestClass();
-	                                  		}
-	                                  		return instance;
-	                                  	}
-	                                  	/**
-	                                  	 * Each template must implement the invoke() method which executes the template
-	                                  	 *
-	                                  	 * @param context The execution context requesting the execution
-	                                  	 */
-	                                  	public void invoke( IBoxContext context ) throws Throwable {
-	                                  		// Reference to the variables scope
-	                                  		IScope variablesScope = context.getScopeNearby( Key.of( "variables" ) );
-	                                  		ClassLocator JavaLoader = ClassLocator.getInstance();
-	                                  		${javaCode};
-	                                  		String result = variablesScope.toString();
-	                                  		System.out.println(result);
+	                                                          	public static synchronized TestClass getInstance() {
+	                                                          		if ( instance == null ) {
+	                                                          			instance = new TestClass();
+	                                                          		}
+	                                                          		return instance;
+	                                                          	}
+	                                                          	/**
+	                                                          	 * Each template must implement the invoke() method which executes the template
+	                                                          	 *
+	                                                          	 * @param context The execution context requesting the execution
+	                                                          	 */
+	                                                          	public void invoke( IBoxContext context ) throws Throwable {
+	                                                          		// Reference to the variables scope
+	                                                          		IScope variablesScope = context.getScopeNearby( Key.of( "variables" ) );
+	                                                          		ClassLocator JavaLoader = ClassLocator.getInstance();
+	                                  IBoxContext			catchContext = null;
+	                                                          		${javaCode};
+	                                                          		String result = variablesScope.toString();
+	                                                          		System.out.println(result);
+	                                                          		if(catchContext != null) {
+	                                                          			System.out.println(catchContext);
+	                                                          		}
 
-	                                  	}
+	                                                          	}
 
-	                                  	public static void main(String[] args) {
-	                                  		BoxRuntime rt = BoxRuntime.getInstance();
+	                                                          	public static void main(String[] args) {
+	                                                          		BoxRuntime rt = BoxRuntime.getInstance();
 
-	                                  		try {
-	                                  			rt.executeTemplate( TestClass.getInstance() );
-	                                  		} catch ( Throwable e ) {
-	                                  			e.printStackTrace();
-	                                  			System.exit( 1 );
-	                                  		}
+	                                                          		try {
+	                                                          			rt.executeTemplate( TestClass.getInstance() );
+	                                                          		} catch ( Throwable e ) {
+	                                                          			e.printStackTrace();
+	                                                          			System.exit( 1 );
+	                                                          		}
 
-	                                  		// Bye bye! Ciao Bella!
-	                                  		rt.shutdown();
+	                                                          		// Bye bye! Ciao Bella!
+	                                                          		rt.shutdown();
 
 
-	                                  	}
-	                                  }
-	                                  """;
+	                                                          	}
+	                                                          }
+	                                                          """;
 
 	Logger				logger		= LoggerFactory.getLogger( JavaRunner.class );
 
