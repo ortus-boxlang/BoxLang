@@ -164,6 +164,16 @@ public class BaseBoxContext implements IBoxContext {
 	}
 
 	/**
+	 * Invoke a function call such as foo() using no args.
+	 *
+	 * @return Return value of the function call
+	 */
+	public Object invokeFunction( Key name ) {
+		Function function = findFunction( name );
+		return invokeFunction( function, name, function.createArgumentsScope( new Object[] {} ) );
+	}
+
+	/**
 	 * Invoke a function expression such as (()=>{})() using positional args.
 	 *
 	 * @return Return value of the function call
@@ -179,6 +189,15 @@ public class BaseBoxContext implements IBoxContext {
 	 */
 	public Object invokeFunction( Function function, Map<Key, Object> namedArguments ) {
 		return invokeFunction( function, function.getName(), function.createArgumentsScope( namedArguments ) );
+	}
+
+	/**
+	 * Invoke a function expression such as (()=>{})() using no args.
+	 *
+	 * @return Return value of the function call
+	 */
+	public Object invokeFunction( Function function ) {
+		return invokeFunction( function, function.getName(), function.createArgumentsScope( new Object[] {} ) );
 	}
 
 	/**

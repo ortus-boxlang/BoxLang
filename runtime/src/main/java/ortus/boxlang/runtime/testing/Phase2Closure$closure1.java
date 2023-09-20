@@ -30,7 +30,7 @@ import ortus.boxlang.runtime.types.Closure;
 
 /**
  * Phase 2 BoxLang
- * Example of UDF delcaration and execution
+ * Example of Closure delcaration and execution
  */
 public class Phase2Closure$closure1 extends Closure {
 
