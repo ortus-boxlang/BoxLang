@@ -51,8 +51,7 @@ public class RuntimeBoxContext extends BaseBoxContext {
 	/**
 	 * Creates a new execution context with a bounded execution template and parent context
 	 *
-	 * @param template The template that this execution context is bound to
-	 * @param parent   The parent context
+	 * @param parent The parent context
 	 */
 	public RuntimeBoxContext( IBoxContext parent ) {
 		super( parent );
