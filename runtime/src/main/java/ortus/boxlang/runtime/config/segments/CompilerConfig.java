@@ -19,6 +19,8 @@ package ortus.boxlang.runtime.config.segments;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
+import ortus.boxlang.runtime.config.util.PlaceholderHelper;
+
 /**
  * The BoxLang compiler configuration
  */
@@ -29,16 +31,21 @@ public class CompilerConfig {
 	 * The default is the system temp directory + {@code /boxlang}
 	 */
 	@JsonProperty( "classGenerationDirectory" )
-	private String classGenerationDirectory = System.getProperty( "java.io.tmpdir" ) + "/boxlang";
+	public String classGenerationDirectory = System.getProperty( "java.io.tmpdir" ) + "/boxlang";
+
+	/**
+	 * @param classGenerationDirectory the classGenerationDirectory to set
+	 */
+	public void setClassGenerationDirectory( String classGenerationDirectory ) {
+		this.classGenerationDirectory = PlaceholderHelper.resolve( classGenerationDirectory );
+	}
+
+	/**
+	 * --------------------------------------------------------------------------
+	 * Methods
+	 * --------------------------------------------------------------------------
+	 */
 
 	public CompilerConfig() {
-	}
-
-	public String getClassGenerationDirectory() {
-		return classGenerationDirectory;
-	}
-
-	public void setClassGenerationDirectory( String classGenerationDirectory ) {
-		this.classGenerationDirectory = classGenerationDirectory;
 	}
 }

@@ -3,6 +3,7 @@
 		"classGenerationDirectory" : "{java-temp}/boxlang"
 	},
 	"runtime" : {
+		"mappings" : {},
 		"modulesDirectory" : "{user-home}/.boxlang/modules",
 		"caches" : {
 			"importCache" : {

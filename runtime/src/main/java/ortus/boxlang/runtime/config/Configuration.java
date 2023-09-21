@@ -31,30 +31,20 @@ public class Configuration {
 	 * The compiler configuration, defaulted to the default compiler configuration
 	 */
 	@JsonProperty( "compiler" )
-	private CompilerConfig	compiler	= new CompilerConfig();
+	public CompilerConfig	compiler	= new CompilerConfig();
 
 	/**
 	 * The runtime configuration, defaulted to the default runtime configuration
 	 */
 	@JsonProperty( "runtime" )
-	private RuntimeConfig	runtime		= new RuntimeConfig();
+	public RuntimeConfig	runtime		= new RuntimeConfig();
+
+	/**
+	 * --------------------------------------------------------------------------
+	 * Methods
+	 * --------------------------------------------------------------------------
+	 */
 
 	public Configuration() {
-	}
-
-	public CompilerConfig getCompiler() {
-		return compiler;
-	}
-
-	public void setCompiler( CompilerConfig compiler ) {
-		this.compiler = compiler;
-	}
-
-	public RuntimeConfig getRuntime() {
-		return runtime;
-	}
-
-	public void setRuntime( RuntimeConfig runtime ) {
-		this.runtime = runtime;
 	}
 }

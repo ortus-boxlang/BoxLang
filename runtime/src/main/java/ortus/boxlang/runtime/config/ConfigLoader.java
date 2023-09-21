@@ -19,24 +19,39 @@ package ortus.boxlang.runtime.config;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import ortus.boxlang.runtime.types.exceptions.ConfigurationException;
+
 import java.io.IOException;
 
+/**
+ * This class is responsible for loading the core configuration file from the `resources` folder
+ * and parsing it into the Configuration class.
+ *
+ * It can also load from a custom location.
+ */
 public class ConfigLoader {
+
+	/**
+	 * --------------------------------------------------------------------------
+	 * Private Properties
+	 * --------------------------------------------------------------------------
+	 */
 
 	/**
 	 * Path to the core config file in the `resources` folder
 	 */
-	private static final String		CONFIG_FILE	= "config/config.json";
+	private static final String	DEFAULT_CONFIG_FILE	= "config/config.json";
 
 	/**
 	 * The ConfigLoader instance
 	 */
-	private static ConfigLoader		instance;
+	private static ConfigLoader	instance;
 
 	/**
-	 * The parsed configuration
+	 * --------------------------------------------------------------------------
+	 * Singleton Constructor
+	 * --------------------------------------------------------------------------
 	 */
-	private static Configuration	configuration;
 
 	/**
 	 * Constructor
@@ -58,13 +73,10 @@ public class ConfigLoader {
 	}
 
 	/**
-	 * Get the parsed configuration
-	 *
-	 * @return The parsed configuration
+	 * --------------------------------------------------------------------------
+	 * Loaders
+	 * --------------------------------------------------------------------------
 	 */
-	public static Configuration getConfiguration() {
-		return configuration;
-	}
 
 	/**
 	 * Load the config file into the Configuration class from the `resources` folder
@@ -76,25 +88,14 @@ public class ConfigLoader {
 	public static synchronized Configuration load() {
 		// Read JSON file into Configuration class
 		try {
-			instance.configuration = new ObjectMapper().readValue(
-			    ClassLoader.getSystemClassLoader().getResourceAsStream( CONFIG_FILE ),
+			return new ObjectMapper().readValue(
+			    ClassLoader.getSystemClassLoader().getResourceAsStream( DEFAULT_CONFIG_FILE ),
 			    Configuration.class
 			);
 		} catch ( IOException e ) {
 			e.printStackTrace();
-			throw new RuntimeException( "Unable to load core resources config file", e );
+			throw new ConfigurationException( "Unable to load core config file " + e.getMessage(), e );
 		}
-
-		return instance.configuration;
-	}
-
-	public static void main( String[] args ) {
-		Configuration config = ConfigLoader.getInstance().load();
-		// Access the parsed configuration
-		System.out.println( "Compiler Directory: " + config.getCompiler().getClassGenerationDirectory() );
-		System.out.println( "Modules Directory: " + config.getRuntime().getModulesDirectory() );
-		System.out.println( "Cache Type: " + config.getRuntime().getCaches().getType() );
-		System.out.println( "Cache Properties: " + config.getRuntime().getCaches().getProperties() );
 	}
 
 }
