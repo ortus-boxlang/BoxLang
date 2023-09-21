@@ -65,6 +65,18 @@ public class StringCaster {
 		}
 		object = DynamicObject.unWrap( object );
 
+		if ( object instanceof String ) {
+			return ( String ) object;
+		}
+		if ( object instanceof Boolean ) {
+			return ( ( Boolean ) object ) ? "true" : "false";
+		}
+		if ( object instanceof Character ) {
+			return object.toString();
+		}
+		if ( object instanceof Integer || object instanceof Long || object instanceof Short || object instanceof Byte ) {
+			return object.toString();
+		}
 		if ( object instanceof BigDecimal || object instanceof Float ) {
 			String result = object.toString();
 			if ( result.endsWith( ".0" ) ) {
