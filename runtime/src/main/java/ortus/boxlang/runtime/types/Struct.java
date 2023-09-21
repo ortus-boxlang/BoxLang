@@ -29,6 +29,8 @@ import java.util.concurrent.ConcurrentHashMap;
 import ortus.boxlang.runtime.context.FunctionBoxContext;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.dynamic.IReferenceable;
+import ortus.boxlang.runtime.dynamic.casters.CastAttempt;
+import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.exceptions.KeyNotFoundException;
 
@@ -341,6 +343,34 @@ public class Struct implements Map<Key, Object>, IType, IReferenceable {
 			return null;
 		}
 		return value;
+	}
+
+	public static Struct of( Object... values ) {
+		if ( values.length % 2 != 0 ) {
+			throw new RuntimeException( "Invalid number of arguments.  Must be an even number." );
+		}
+		Struct struct = new Struct();
+		for ( int i = 0; i < values.length; i += 2 ) {
+			if ( values[ i ] == null ) {
+				throw new RuntimeException( "Invalid key type.  Cannot be null." );
+			}
+			Key key;
+			if ( values[ i ] instanceof Key ) {
+				key = ( Key ) values[ i ];
+			} else if ( values[ i ] instanceof String ) {
+				key = Key.of( ( String ) values[ i ] );
+			} else {
+				CastAttempt<String> castAttempt = StringCaster.attempt( values[ i ] );
+				if ( castAttempt.wasSuccessful() ) {
+					key = Key.of( castAttempt.get() );
+				} else {
+					throw new RuntimeException( "Invalid key type.  Must be String or Key instance." );
+				}
+			}
+
+			struct.put( key, values[ i + 1 ] );
+		}
+		return struct;
 	}
 
 }

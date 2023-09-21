@@ -40,6 +40,7 @@ public class Phase1TryCatch extends BaseTemplate {
 	private final static List<ImportDefinition>	imports	= List.of();
 
 	private Phase1TryCatch() {
+		this.path = "runtime\\src\\main\\java\\ortus\\boxlang\\runtime\\testing\\Phase1TryCatch.java";
 	}
 
 	public static synchronized Phase1TryCatch getInstance() {

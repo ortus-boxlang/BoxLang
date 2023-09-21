@@ -41,6 +41,7 @@ public class Phase2Lambda extends BaseTemplate {
 	private final static List<ImportDefinition>	imports	= List.of();
 
 	private Phase2Lambda() {
+		this.path = "runtime\\src\\main\\java\\ortus\\boxlang\\runtime\\testing\\Phase2Lambda.java";
 	}
 
 	public static synchronized Phase2Lambda getInstance() {
@@ -50,22 +51,22 @@ public class Phase2Lambda extends BaseTemplate {
 		return instance;
 	}
 
-	/*
+	/**
 	 * <pre>
-	 * <cfscript>
-	 * variables.greet = ( required string name='Brad' ) -> {
-	 * var greeting = "Hello " & name;
-	 * return greeting;
-	 * }
-	 * 
-	 * variables.out = (create java.lang.System).out;
-	 * 
-	 * // Positional args
-	 * variables.out.println( greet( 'John' ) );
-	 * 
-	 * // named args
-	 * variables.out.println( greet( name='John' ) );
-	 * </cfscript>
+	<cfscript>
+	    variables.greet = ( required string name='Brad' ) -> {
+	        var greeting = "Hello " & name;
+	        return greeting;
+	    }
+	
+	    variables.out = (create java.lang.System).out;
+	
+	    // Positional args
+	    variables.out.println( greet( 'John' ) );
+	
+	    // named args
+	    variables.out.println( greet( name='John' ) );
+	</cfscript>
 	 * </pre>
 	 */
 

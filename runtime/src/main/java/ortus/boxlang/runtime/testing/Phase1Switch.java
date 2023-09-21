@@ -38,6 +38,7 @@ public class Phase1Switch extends BaseTemplate {
 	private final static List<ImportDefinition>	imports	= List.of();
 
 	private Phase1Switch() {
+		this.path = "runtime\\src\\main\\java\\ortus\\boxlang\\runtime\\testing\\Phase1Switch.java";
 	}
 
 	public static synchronized Phase1Switch getInstance() {
