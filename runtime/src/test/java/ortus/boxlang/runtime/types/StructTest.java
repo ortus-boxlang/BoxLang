@@ -113,5 +113,8 @@ public class StructTest {
 		assertThrows( Throwable.class, () -> Struct.of( null, "foo" ) );
 		assertThrows( Throwable.class, () -> Struct.of( new HashMap(), "foo" ) );
 
+		struct = Struct.of();
+		assertThat( struct.size() ).isEqualTo( 0 );
+
 	}
 }
