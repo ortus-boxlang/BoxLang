@@ -18,9 +18,10 @@
  */
 package ortus.boxlang.runtime.scopes;
 
+import static com.google.common.truth.Truth.assertThat;
+
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import static com.google.common.truth.Truth.assertThat;
 
 public class KeyTest {
 
