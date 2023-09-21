@@ -18,10 +18,7 @@
 
 package ortus.boxlang.runtime.config;
 
-import org.junit.Ignore;
 import org.junit.jupiter.api.Test;
-
-import ortus.boxlang.runtime.scopes.Key;
 
 import org.junit.jupiter.api.DisplayName;
 import static com.google.common.truth.Truth.assertThat;
@@ -39,7 +36,7 @@ public class ConfigLoaderTest {
 		System.out.println( "classGenerationDirectory " + config.compiler.classGenerationDirectory );
 		System.out.println( "mappings: " + config.runtime.mappings );
 		System.out.println( "modulesDirectory " + config.runtime.modulesDirectory );
-		System.out.println( "caches: " + config.runtime.caches.get( Key.of( "importcache" ) ) );
+		// System.out.println( "caches: " + config.runtime.caches.get( Key.of( "importcache" ) ) );
 	}
 
 }

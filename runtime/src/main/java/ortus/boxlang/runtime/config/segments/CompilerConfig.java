@@ -31,7 +31,7 @@ public class CompilerConfig {
 	 * The default is the system temp directory + {@code /boxlang}
 	 */
 	@JsonProperty( "classGenerationDirectory" )
-	public String classGenerationDirectory = System.getProperty( "java.io.tmpdir" ) + "/boxlang";
+	public String classGenerationDirectory = System.getProperty( "java.io.tmpdir" ) + "boxlang";
 
 	/**
 	 * @param classGenerationDirectory the classGenerationDirectory to set

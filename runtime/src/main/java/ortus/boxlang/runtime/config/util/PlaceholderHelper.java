@@ -24,6 +24,10 @@ import java.util.regex.Pattern;
 
 /**
  * A helper class for resolving placeholders in configuration files
+ * <p>
+ * Placeholders are defined as {@code {placeholder-name}} and can be used in
+ * configuration files to reference system properties or other values.
+ * <p>
  */
 public class PlaceholderHelper {
 
@@ -31,10 +35,10 @@ public class PlaceholderHelper {
 
 	static {
 		// Add default replacements
-		PLACEHOLDER_MAP.put( "{user-home}", System.getProperty( "user.home" ) );
-		PLACEHOLDER_MAP.put( "{java-temp}", System.getProperty( "java.io.tmpdir" ) );
+		PLACEHOLDER_MAP.put( "user-home", System.getProperty( "user.home" ) );
+		PLACEHOLDER_MAP.put( "java-temp", System.getProperty( "java.io.tmpdir" ) );
 		// Add additional replacements here
-		// placeholderMap.put("{your-placeholder}", "replacement-value");
+		// placeholderMap.put("your-placeholder", "replacement-value");
 	}
 
 	/**
@@ -47,7 +51,6 @@ public class PlaceholderHelper {
 	public static String resolve( String input ) {
 		// Create a pattern to match placeholder patterns like "{...}"
 		Pattern	pattern	= Pattern.compile( "\\{([^}]+)\\}" );
-
 		// Use Matcher and the stream API to replace placeholders
 		Matcher	matcher	= pattern.matcher( input );
 		return matcher.replaceAll( match -> PLACEHOLDER_MAP.getOrDefault( match.group( 1 ), match.group() ) );

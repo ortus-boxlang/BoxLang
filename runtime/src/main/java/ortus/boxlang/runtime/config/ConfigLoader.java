@@ -17,11 +17,7 @@
  */
 package ortus.boxlang.runtime.config;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-
-import ortus.boxlang.runtime.types.exceptions.ConfigurationException;
-
-import java.io.IOException;
+import ortus.boxlang.runtime.util.JsonUtil;
 
 /**
  * This class is responsible for loading the core configuration file from the `resources` folder
@@ -86,16 +82,22 @@ public class ConfigLoader {
 	 * @return The parsed configuration
 	 */
 	public static synchronized Configuration load() {
+		return load( DEFAULT_CONFIG_FILE );
+	}
+
+	/**
+	 * Load the config file into the Configuration class from a custom location
+	 *
+	 * @param configFile The path to the config file
+	 *
+	 * @return The parsed configuration
+	 */
+	public static synchronized Configuration load( String configFile ) {
 		// Read JSON file into Configuration class
-		try {
-			return new ObjectMapper().readValue(
-			    ClassLoader.getSystemClassLoader().getResourceAsStream( DEFAULT_CONFIG_FILE ),
-			    Configuration.class
-			);
-		} catch ( IOException e ) {
-			e.printStackTrace();
-			throw new ConfigurationException( "Unable to load core config file " + e.getMessage(), e );
-		}
+		return JsonUtil.fromJson(
+		    Configuration.class,
+		    ClassLoader.getSystemClassLoader().getResourceAsStream( configFile )
+		);
 	}
 
 }
