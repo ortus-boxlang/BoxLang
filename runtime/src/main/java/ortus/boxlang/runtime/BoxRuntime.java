@@ -54,7 +54,8 @@ public class BoxRuntime {
 	    "onRuntimeShutdown",
 	    "onRuntimeConfigurationLoad",
 	    "preTemplateInvoke",
-	    "postTemplateInvoke"
+	    "postTemplateInvoke",
+	    "onScopeCreation"
 	);
 
 	/**
