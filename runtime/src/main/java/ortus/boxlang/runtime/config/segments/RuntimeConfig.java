@@ -17,9 +17,6 @@
  */
 package ortus.boxlang.runtime.config.segments;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import ortus.boxlang.runtime.config.util.PlaceholderHelper;
@@ -46,8 +43,8 @@ public class RuntimeConfig {
 	/**
 	 * The cache configurations for the runtime
 	 */
-	@JsonProperty( "caches" )
-	public Struct	caches				= new Struct();
+	// @JsonProperty( "caches" )
+	// public Struct caches = new Struct();
 
 	/**
 	 * --------------------------------------------------------------------------

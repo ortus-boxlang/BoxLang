@@ -1,6 +1,6 @@
 {
 	"compiler" : {
-		"classGenerationDirectory" : "{java-temp}/boxlang"
+		"classGenerationDirectory" : "{java-temp}boxlang"
 	},
 	"runtime" : {
 		"mappings" : {},
