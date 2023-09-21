@@ -117,7 +117,7 @@ public class Referencer {
 	 *
 	 * @param object The object to dereference
 	 * @param value  The value to assign
-	 * @param key    The key to dereference
+	 * @param keys   The keys to dereference
 	 *
 	 * @return The value that was assigned
 	 */

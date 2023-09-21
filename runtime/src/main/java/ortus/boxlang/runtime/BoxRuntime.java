@@ -244,7 +244,7 @@ public class BoxRuntime {
 	/**
 	 * Execute a single template in its own context using a {@see URL} of the template to execution
 	 *
-	 * @param templateURL A URL location to execution
+	 * @param template A template to execute
 	 *
 	 * @throws Throwable if the template cannot be executed
 	 */

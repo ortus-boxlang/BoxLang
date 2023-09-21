@@ -47,25 +47,25 @@ public class Phase1 extends BaseTemplate {
 		return instance;
 	}
 
-	/**
+	/*
 	 * <pre>
-	<cfscript>
-	  // Static reference to System (java proxy?)
-	  variables['system'] = create java:java.lang.System;
-	  // call constructor to create instance
-	  variables.greeting = new java:java.lang.String( 'Hello' );
-	
-	
-	  // Conditional, requires operation support
-	  if( variables.greeting == 'Hello' ) {
-	    // De-referencing "out" and "println" and calling Java method via invoke dynamic
-	    variables.system.out.println(
-	      // Multi-line statement, expression requires concat operator and possible casting
-	      // Unscoped lookup requires scope search
-	      greeting & " world"
-	    )
-	  }
-	</cfscript>
+	 * <cfscript>
+	 * // Static reference to System (java proxy?)
+	 * variables['system'] = create java:java.lang.System;
+	 * // call constructor to create instance
+	 * variables.greeting = new java:java.lang.String( 'Hello' );
+	 * 
+	 * 
+	 * // Conditional, requires operation support
+	 * if( variables.greeting == 'Hello' ) {
+	 * // De-referencing "out" and "println" and calling Java method via invoke dynamic
+	 * variables.system.out.println(
+	 * // Multi-line statement, expression requires concat operator and possible casting
+	 * // Unscoped lookup requires scope search
+	 * greeting & " world"
+	 * )
+	 * }
+	 * </cfscript>
 	 * </pre>
 	 */
 

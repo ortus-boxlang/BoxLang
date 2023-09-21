@@ -43,8 +43,8 @@ public class ApplicationException extends BoxLangException {
 	/**
 	 * Constructor
 	 *
-	 * @param message   The message
-	 * @param errorCode The errorCode
+	 * @param message The message
+	 * @param cause   The cause
 	 */
 	public ApplicationException( String message, Throwable cause ) {
 		this( message, null, null, cause );
@@ -53,8 +53,8 @@ public class ApplicationException extends BoxLangException {
 	/**
 	 * Constructor
 	 *
-	 * @param message   The message
-	 * @param errorCode The errorCode
+	 * @param message      The message
+	 * @param extendedInfo The extendedInfo
 	 */
 	public ApplicationException( String message, String extendedInfo ) {
 		this( message, null, extendedInfo, null );
@@ -63,10 +63,10 @@ public class ApplicationException extends BoxLangException {
 	/**
 	 * Constructor
 	 *
-	 * @param message   The message
-	 * @param detail    The detail
-	 * @param errorCode The errorCode
-	 * @param cause     The cause
+	 * @param message      The message
+	 * @param detail       The detail
+	 * @param extendedInfo The extendedInfo
+	 * @param cause        The cause
 	 */
 	public ApplicationException( String message, String detail, String extendedInfo, Throwable cause ) {
 		this( message, detail, "application", extendedInfo, cause );
@@ -75,10 +75,10 @@ public class ApplicationException extends BoxLangException {
 	/**
 	 * Constructor
 	 *
-	 * @param message   The message
-	 * @param detail    The detail
-	 * @param errorCode The errorCode
-	 * @param cause     The cause
+	 * @param message      The message
+	 * @param detail       The detail
+	 * @param extendedInfo The extendedInfo
+	 * @param cause        The cause
 	 */
 	public ApplicationException( String message, String detail, String type, String extendedInfo, Throwable cause ) {
 		super( message, detail, type, cause );

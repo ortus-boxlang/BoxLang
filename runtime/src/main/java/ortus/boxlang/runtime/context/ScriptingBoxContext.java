@@ -52,8 +52,7 @@ public class ScriptingBoxContext extends BaseBoxContext {
 	/**
 	 * Creates a new execution context with a bounded execution template and parent context
 	 *
-	 * @param template The template that this execution context is bound to
-	 * @param parent   The parent context
+	 * @param parent The parent context
 	 */
 	public ScriptingBoxContext( IBoxContext parent ) {
 		super( parent );

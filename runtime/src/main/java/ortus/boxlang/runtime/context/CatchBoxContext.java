@@ -46,8 +46,9 @@ public class CatchBoxContext extends BaseBoxContext {
 	/**
 	 * Creates a new execution context with a bounded execution template and parent context
 	 *
-	 * @param templatePath The template that this execution context is bound to
 	 * @param parent       The parent context
+	 * @param exceptionKey The key to use for the exception
+	 * @param exception    The exception to store
 	 */
 	public CatchBoxContext( IBoxContext parent, Key exceptionKey, Throwable exception ) {
 		super( parent );
@@ -71,7 +72,9 @@ public class CatchBoxContext extends BaseBoxContext {
 	 * Meaning it needs to search scopes in order according to it's context.
 	 * A nearby lookup is used for the closest context to the executing code
 	 *
-	 * @param key The key to search for
+	 * @param key          The key to search for
+	 * @param defaultScope The default scope to use if the key is not found
+	 * @param shallow      true, do not delegate to parent or default scope if not found
 	 *
 	 * @return The value of the key if found
 	 *
@@ -100,7 +103,8 @@ public class CatchBoxContext extends BaseBoxContext {
 	 * Unlike scopeFindNearby(), this version only searches trancedent scopes like
 	 * cgi or server which are never encapsulated like variables is inside a CFC.
 	 *
-	 * @param key The key to search for
+	 * @param key          The key to search for
+	 * @param defaultScope The default scope to use if the key is not found
 	 *
 	 * @return The value of the key if found
 	 *
@@ -127,6 +131,8 @@ public class CatchBoxContext extends BaseBoxContext {
 	 * Get a scope from the context. If not found, the parent context is asked.
 	 * Don't search for scopes which are nearby to an execution context
 	 *
+	 * @param name The name of the scope to get
+	 *
 	 * @return The requested scope
 	 */
 	public IScope getScope( Key name ) throws ScopeNotFoundException {
@@ -145,6 +151,9 @@ public class CatchBoxContext extends BaseBoxContext {
 	/**
 	 * Get a scope from the context. If not found, the parent context is asked.
 	 * Search all konwn scopes
+	 *
+	 * @param name    The name of the scope to get
+	 * @param shallow true, do not delegate to parent or default scope if not found
 	 *
 	 * @return The requested scope
 	 */

@@ -47,29 +47,29 @@ public class Phase1Switch extends BaseTemplate {
 		return instance;
 	}
 
-	/**
+	/*
 	 * <pre>
-	<cfscript>
-		variables.foo = "bar";
-		variables.systemOut = (create java:java.lang.System).out;
-	
-		switch( "12" ) {
-		case "brad":
-			variables.systemOut.println("case 1");
-			break;
-		case 42: {
-			variables.systemOut.println("case 2");
-			break;
-		}
-		case 5+7:
-			variables.systemOut.println("case 3");
-		case variables.foo:
-			variables.systemOut.println("case 4");
-			break;
-		default:
-			variables.systemOut.println("default case");
-		}
-	</cfscript>
+	 * <cfscript>
+	 * variables.foo = "bar";
+	 * variables.systemOut = (create java:java.lang.System).out;
+	 *
+	 * switch( "12" ) {
+	 * case "brad":
+	 * variables.systemOut.println("case 1");
+	 * break;
+	 * case 42: {
+	 * variables.systemOut.println("case 2");
+	 * break;
+	 * }
+	 * case 5+7:
+	 * variables.systemOut.println("case 3");
+	 * case variables.foo:
+	 * variables.systemOut.println("case 4");
+	 * break;
+	 * default:
+	 * variables.systemOut.println("default case");
+	 * }
+	 * </cfscript>
 	 * </pre>
 	 */
 

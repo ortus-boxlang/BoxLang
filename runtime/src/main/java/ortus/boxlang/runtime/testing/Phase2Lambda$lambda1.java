@@ -103,12 +103,12 @@ public class Phase2Lambda$lambda1 extends Lambda {
 		return instance;
 	}
 
-	/**
+	/*
 	 * <pre>
-	    ( required string name='Brad' ) -> {
-	        var greeting = "Hello " & name;
-	        return greeting;
-	    }
+	 * ( required string name='Brad' ) -> {
+	 * var greeting = "Hello " & name;
+	 * return greeting;
+	 * }
 	 * </pre>
 	 */
 	@Override

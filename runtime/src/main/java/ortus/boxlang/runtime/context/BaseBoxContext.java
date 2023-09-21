@@ -54,17 +54,14 @@ public class BaseBoxContext implements IBoxContext {
 	/**
 	 * Creates a new execution context with a bounded execution template and parent context
 	 *
-	 * @param template The template that this execution context is bound to
-	 * @param parent   The parent context
+	 * @param parent The parent context
 	 */
 	public BaseBoxContext( IBoxContext parent ) {
 		this.parent = parent;
 	}
 
 	/**
-	 * Creates a new execution context with a bounded execution template
-	 *
-	 * @param templatePath The template that this execution context is bound to
+	 * Creates a new execution context with no execution template
 	 */
 	public BaseBoxContext() {
 		this( null );
@@ -79,7 +76,7 @@ public class BaseBoxContext implements IBoxContext {
 	/**
 	 * Push a template to the stack
 	 *
-	 * @param templatePath The template that this execution context is bound to
+	 * @param template The template that this execution context is bound to
 	 *
 	 * @return IBoxContext
 	 */

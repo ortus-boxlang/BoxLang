@@ -50,26 +50,26 @@ public class Phase2Closure extends BaseTemplate {
 		return instance;
 	}
 
-	/**
+	/*
 	 * <pre>
-	<cfscript>
-	    variables.outside = "Outside scope value";
-	    variables.greet = ( required string name='Brad' ) => {
-	        var greeting = "Hello " & name;
-	
-	        out.println( "Inside Closure, outside lookup finds: " & outside )
-	
-	        return greeting;
-	    }
-	
-	    variables.out = (create java.lang.System).out;
-	
-	    // Positional args
-	    variables.out.println( greet( 'John' ) );
-	
-	    // named args
-	    variables.out.println( greet( name='John' ) );
-	</cfscript>
+	 * <cfscript>
+	 * variables.outside = "Outside scope value";
+	 * variables.greet = ( required string name='Brad' ) => {
+	 * var greeting = "Hello " & name;
+	 * 
+	 * out.println( "Inside Closure, outside lookup finds: " & outside )
+	 * 
+	 * return greeting;
+	 * }
+	 * 
+	 * variables.out = (create java.lang.System).out;
+	 * 
+	 * // Positional args
+	 * variables.out.println( greet( 'John' ) );
+	 * 
+	 * // named args
+	 * variables.out.println( greet( name='John' ) );
+	 * </cfscript>
 	 * </pre>
 	 */
 

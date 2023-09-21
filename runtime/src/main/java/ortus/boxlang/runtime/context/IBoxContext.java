@@ -190,7 +190,7 @@ public interface IBoxContext {
 	/**
 	 * Push a template to the stack
 	 *
-	 * @param templatePath The template that this execution context is bound to
+	 * @param template The template that this execution context is bound to
 	 *
 	 * @return IBoxContext
 	 */

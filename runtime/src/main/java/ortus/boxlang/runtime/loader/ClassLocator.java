@@ -486,7 +486,6 @@ public class ClassLocator extends ClassLoader {
 	 * @param context        The current context of execution
 	 * @param name           The fully qualified path/name of the class to load
 	 * @param resolverPrefix The prefix of the resolver to use
-	 * @param imports        The list of imports to use when resolving the class
 	 *
 	 * @return The invokable representation of the class
 	 *
@@ -505,8 +504,6 @@ public class ClassLocator extends ClassLoader {
 	 * @param imports        The list of imports to use when resolving the class
 	 *
 	 * @return The invokable representation of the class
-	 *
-	 * @throws ClassNotFoundException If the class was not found in the resolver
 	 */
 	public Optional<DynamicObject> safeLoad( IBoxContext context, String name, String resolverPrefix,
 	    List<ImportDefinition> imports ) {

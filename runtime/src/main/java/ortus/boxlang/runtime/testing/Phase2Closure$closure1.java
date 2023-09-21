@@ -97,15 +97,15 @@ public class Phase2Closure$closure1 extends Closure {
 		super( declaringContext );
 	}
 
-	/**
+	/*
 	 * <pre>
-	    ( required string name='Brad' ) => {
-	        var greeting = "Hello " & name;
-	
-	        out.println( "Inside Closure, outside lookup finds: " & outside )
-	
-	        return greeting;
-	    }
+	 * ( required string name='Brad' ) => {
+	 * var greeting = "Hello " & name;
+	 * 
+	 * out.println( "Inside Closure, outside lookup finds: " & outside )
+	 * 
+	 * return greeting;
+	 * }
 	 * </pre>
 	 */
 	@Override

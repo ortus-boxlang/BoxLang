@@ -49,27 +49,27 @@ public class Phase1TryCatch extends BaseTemplate {
 		return instance;
 	}
 
-	/**
+	/*
 	 * <pre>
-	<cfscript>
-	  system = create java:java.lang.System;
-	
-	  try {
-		1/0
-	  } catch (any e) {
-	    variables.system.out.println(e.message);
-	  } finally {
-	    variables.system.out.println("Finally");
-	  }
-	
-	  try {
-		throw new java:ortus.boxlang.runtime.types.exceptions.BoxLangException( "My Message", "My detail", "com.foo.type" );
-	  } catch ("com.foo.type" e) {
-	   variables.system.out.println(e.message);
-	  } catch (java.lang.RuntimeException e) {
-	   variables.system.out.println(e.message);
-	  }
-	</cfscript>
+	 * <cfscript>
+	 * system = create java:java.lang.System;
+	 * 
+	 * try {
+	 * 1/0
+	 * } catch (any e) {
+	 * variables.system.out.println(e.message);
+	 * } finally {
+	 * variables.system.out.println("Finally");
+	 * }
+	 * 
+	 * try {
+	 * throw new java:ortus.boxlang.runtime.types.exceptions.BoxLangException( "My Message", "My detail", "com.foo.type" );
+	 * } catch ("com.foo.type" e) {
+	 * variables.system.out.println(e.message);
+	 * } catch (java.lang.RuntimeException e) {
+	 * variables.system.out.println(e.message);
+	 * }
+	 * </cfscript>
 	 * </pre>
 	 */
 
