@@ -32,97 +32,97 @@ import ortus.boxlang.runtime.types.Lambda;
  */
 public class Phase2Lambda$lambda1 extends Lambda {
 
-    private static Phase2Lambda$lambda1   instance;
-    /**
-     * The name of the function
-     */
-    private final static Key              name       = Lambda.defaultName;
+	private static Phase2Lambda$lambda1		instance;
+	/**
+	 * The name of the function
+	 */
+	private final static Key				name		= Lambda.defaultName;
 
-    /**
-     * The arguments of the function
-     */
-    private final static Argument[]       arguments  = new Argument[] {
-        new Argument( true, "String", Key.of( "name" ), "Brad", "" )
-    };
+	/**
+	 * The arguments of the function
+	 */
+	private static final Argument[]			arguments	= new Argument[] {
+	    new Argument( true, "String", Key.of( "name" ), "Brad", "" )
+	};
 
-    /**
-     * The return type of the function
-     */
-    private final static String           returnType = "any";
+	/**
+	 * The return type of the function
+	 */
+	private static final String				returnType	= "any";
 
-    /**
-     * The hint of the function
-     */
-    private final static String           hint       = "";
+	/**
+	 * The hint of the function
+	 */
+	private static final String				hint		= "";
 
-    /**
-     * Whether the function outputs
-     * TODO: Break CFML compat here?
-     */
-    private final static boolean          output     = true;
+	/**
+	 * Whether the function outputs
+	 * TODO: Break CFML compat here?
+	 */
+	private static final boolean			output		= true;
 
-    // TODO: cachedwithin, modifier, localmode, return format
+	// TODO: cachedwithin, modifier, localmode, return format
 
-    /**
-     * Additional abitrary metadata about this function.
-     */
-    private final static Map<Key, Object> metadata   = new HashMap<Key, Object>();
+	/**
+	 * Additional abitrary metadata about this function.
+	 */
+	private static final Map<Key, Object>	metadata	= new HashMap<Key, Object>();
 
-    public Key getName() {
-        return name;
-    }
+	public Key getName() {
+		return name;
+	}
 
-    public Argument[] getArguments() {
-        return arguments;
-    }
+	public Argument[] getArguments() {
+		return arguments;
+	}
 
-    public String getReturnType() {
-        return returnType;
-    }
+	public String getReturnType() {
+		return returnType;
+	}
 
-    public String getHint() {
-        return hint;
-    }
+	public String getHint() {
+		return hint;
+	}
 
-    public boolean isOutput() {
-        return output;
-    }
+	public boolean isOutput() {
+		return output;
+	}
 
-    public Map<Key, Object> getMetadata() {
-        return metadata;
-    }
+	public Map<Key, Object> getMetadata() {
+		return metadata;
+	}
 
-    private Phase2Lambda$lambda1() {
-        super();
-    }
+	private Phase2Lambda$lambda1() {
+		super();
+	}
 
-    public static synchronized Phase2Lambda$lambda1 getInstance() {
-        if ( instance == null ) {
-            instance = new Phase2Lambda$lambda1();
-        }
-        return instance;
-    }
+	public static synchronized Phase2Lambda$lambda1 getInstance() {
+		if ( instance == null ) {
+			instance = new Phase2Lambda$lambda1();
+		}
+		return instance;
+	}
 
-    /**
-     * <pre>
-        ( required string name='Brad' ) -> {
-            var greeting = "Hello " & name;
-            return greeting;
-        }
-     * </pre>
-     */
-    @Override
-    public Object _invoke( FunctionBoxContext context ) {
+	/**
+	 * <pre>
+	    ( required string name='Brad' ) -> {
+	        var greeting = "Hello " & name;
+	        return greeting;
+	    }
+	 * </pre>
+	 */
+	@Override
+	public Object _invoke( FunctionBoxContext context ) {
 
-        context.getScopeNearby( LocalScope.name ).assign(
-            Key.of( "Greeting" ),
-            Concat.invoke(
-                "Hello ",
-                context.scopeFindNearby( Key.of( "name" ), null ).value()
-            )
-        );
+		context.getScopeNearby( LocalScope.name ).assign(
+		    Key.of( "Greeting" ),
+		    Concat.invoke(
+		        "Hello ",
+		        context.scopeFindNearby( Key.of( "name" ), null ).value()
+		    )
+		);
 
-        return context.scopeFindNearby( Key.of( "greeting" ), null ).value();
-    }
+		return context.scopeFindNearby( Key.of( "greeting" ), null ).value();
+	}
 
 }
