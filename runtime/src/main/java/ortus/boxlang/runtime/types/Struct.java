@@ -83,6 +83,11 @@ public class Struct implements Map<Key, Object>, IType, IReferenceable {
 		this( Type.DEFAULT );
 	}
 
+	public Struct( Map<Object, Object> map ) {
+		this( Type.DEFAULT );
+		addAll( map );
+	}
+
 	/**
 	 * --------------------------------------------------------------------------
 	 * Map Interface Methods

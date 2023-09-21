@@ -18,32 +18,35 @@
 package ortus.boxlang.runtime.scopes;
 
 import static com.google.common.truth.Truth.assertThat;
-import static org.junit.Assert.assertThrows;
 
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
-import ortus.boxlang.runtime.types.exceptions.KeyNotFoundException;
+import ortus.boxlang.runtime.types.Struct;
 
 public class BaseScopeTest {
 
-	private static BaseScope scope;
-
-	@BeforeAll
-	public static void setUp() {
-		scope = new BaseScope( Key.of( "test" ) );
-	}
-
 	@Test
-	void testBasicGetAndSet() {
-		// Test getValue() and setValue()
-		assertThrows( KeyNotFoundException.class, () -> scope.dereference( Key.of( "InvalidKey" ), false ) );
+	public void testConstructor() {
+		IScope scope = new ServerScope();
 
-		Key		key		= Key.of( "testKey" );
-		Object	value	= "testValue";
-		scope.put( key, value );
-		assertThat( scope.get( key ) ).isEqualTo( value );
-		assertThat( scope.get( Key.of( "TestKey" ) ) ).isEqualTo( value );
+		assertThat( scope.size() ).isGreaterThan( 0 );
+		assertThat( scope.containsKey( Key.of( "os" ) ) ).isTrue();
+		assertThat( scope.containsKey( Key.of( "java" ) ) ).isTrue();
+
+		assertThat( scope.containsKey( Key.of( "separator" ) ) ).isTrue();
+		Struct separator = ( Struct ) scope.get( Key.of( "separator" ) );
+		assertThat( separator.containsKey( Key.of( "path" ) ) ).isTrue();
+		assertThat( separator.get( Key.of( "path" ) ) ).isEqualTo( System.getProperty( "path.separator", "" ) );
+		assertThat( separator.containsKey( Key.of( "file" ) ) ).isTrue();
+		assertThat( separator.get( Key.of( "file" ) ) ).isEqualTo( System.getProperty( "file.separator", "" ) );
+		assertThat( separator.containsKey( Key.of( "line" ) ) ).isTrue();
+		assertThat( separator.get( Key.of( "line" ) ) ).isEqualTo( System.getProperty( "line.separator", "" ) );
+
+		assertThat( scope.containsKey( Key.of( "system" ) ) ).isTrue();
+		Struct system = ( Struct ) scope.get( Key.of( "system" ) );
+		assertThat( system.containsKey( Key.of( "environment" ) ) ).isTrue();
+		assertThat( system.containsKey( Key.of( "properties" ) ) ).isTrue();
+
 	}
 
 }
