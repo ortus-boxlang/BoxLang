@@ -18,6 +18,9 @@
 package ortus.boxlang.runtime.types;
 
 import static com.google.common.truth.Truth.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+
+import java.util.HashMap;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -91,5 +94,24 @@ public class StructTest {
 		struct.put( key, null );
 
 		assertThat( struct.get( key ) ).isEqualTo( null );
+	}
+
+	@Test
+	void testCanStructOf() {
+		Struct struct = Struct.of(
+		    "foo", "bar",
+		    Key.of( "baz" ), "bum",
+		    5D, "Brad"
+		);
+
+		assertThat( struct.size() ).isEqualTo( 3 );
+		assertThat( struct.get( Key.of( "foo" ) ) ).isEqualTo( "bar" );
+		assertThat( struct.get( Key.of( "baz" ) ) ).isEqualTo( "bum" );
+		assertThat( struct.get( Key.of( "5" ) ) ).isEqualTo( "Brad" );
+
+		assertThrows( Throwable.class, () -> Struct.of( "test" ) );
+		assertThrows( Throwable.class, () -> Struct.of( null, "foo" ) );
+		assertThrows( Throwable.class, () -> Struct.of( new HashMap(), "foo" ) );
+
 	}
 }

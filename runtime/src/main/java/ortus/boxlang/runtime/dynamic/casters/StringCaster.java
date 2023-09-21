@@ -86,9 +86,12 @@ public class StringCaster {
 		if ( object instanceof byte[] ) {
 			return new String( ( byte[] ) object );
 		}
-		// TODO: Figure out which types need specific casting
-		// For any casting failures, return null if the fail param is set to false!!
-		return object.toString();
+
+		if ( fail ) {
+			throw new RuntimeException( "Can't cast " + object.getClass().getName() + " to a string." );
+		} else {
+			return null;
+		}
 	}
 
 }
