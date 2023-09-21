@@ -27,7 +27,9 @@ import ortus.boxlang.runtime.dynamic.Referencer;
 import ortus.boxlang.runtime.loader.ClassLocator;
 import ortus.boxlang.runtime.loader.ImportDefinition;
 import ortus.boxlang.runtime.operators.Concat;
+import ortus.boxlang.runtime.operators.Elvis;
 import ortus.boxlang.runtime.operators.EqualsEquals;
+import ortus.boxlang.runtime.operators.Increment;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 
@@ -38,6 +40,7 @@ public class Phase1 extends BaseTemplate {
 	private final static List<ImportDefinition>	imports	= List.of();
 
 	private Phase1() {
+		this.path = "runtime\\src\\main\\java\\ortus\\boxlang\\runtime\\testing\\Phase1.java";
 	}
 
 	public static synchronized Phase1 getInstance() {
@@ -52,6 +55,10 @@ public class Phase1 extends BaseTemplate {
 	<cfscript>
 	  // Static reference to System (java proxy?)
 	  variables['system'] = create java:java.lang.System;
+	
+	  server.counter = server.counter ?: 0'
+	  request.running = true;
+	
 	  // call constructor to create instance
 	  variables.greeting = new java:java.lang.String( 'Hello' );
 	
@@ -62,7 +69,7 @@ public class Phase1 extends BaseTemplate {
 	    variables.system.out.println(
 	      // Multi-line statement, expression requires concat operator and possible casting
 	      // Unscoped lookup requires scope search
-	      greeting & " world"
+	      greeting & " world " & server.counter
 	    )
 	  }
 	</cfscript>
@@ -75,9 +82,18 @@ public class Phase1 extends BaseTemplate {
 
 		// Reference to the variables scope
 		IScope			variablesScope	= context.getScopeNearby( Key.of( "variables" ) );
+		IScope			serverScope		= context.getScopeNearby( Key.of( "server" ) );
+		IScope			requestScope	= context.getScopeNearby( Key.of( "server" ) );
 
 		// Case sensitive set
 		variablesScope.put( Key.of( "system" ), classLocator.load( context, "java:java.lang.System", imports ) );
+
+		serverScope.put(
+		    Key.of( "counter" ),
+		    Elvis.invoke( serverScope.get( Key.of( "counter" ) ), 0 )
+		);
+
+		requestScope.put( Key.of( "running" ), true );
 
 		variablesScope.put(
 		    // Case insensitive set
@@ -106,12 +122,15 @@ public class Phase1 extends BaseTemplate {
 
 			        Concat.invoke(
 			            context.scopeFindNearby( Key.of( "GREETING" ), null ).value(),
-			            " world" )
+			            Concat.invoke( " world ", serverScope.get( Key.of( "counter" ) ) )
+			        )
 
 				},
 			    false
 
 			);
+
+			Increment.invokePost( serverScope, Key.of( "counter" ) );
 		}
 
 	}

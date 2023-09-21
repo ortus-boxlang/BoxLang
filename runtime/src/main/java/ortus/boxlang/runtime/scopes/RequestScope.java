@@ -18,16 +18,18 @@
 package ortus.boxlang.runtime.scopes;
 
 /**
- * represents boxlang this scope container
+ * represents boxlang request scope container
+ * Note, this doesn't have to be a "web" request, but could just be a request to execute code
+ * or a template inside a runtime.
  */
-public class ThisScope extends BaseScope {
+public class RequestScope extends BaseScope {
 
 	/**
 	 * --------------------------------------------------------------------------
 	 * Public Properties
 	 * --------------------------------------------------------------------------
 	 */
-	public static final Key name = Key.of( "this" );
+	public static final Key name = Key.of( "request" );
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -35,8 +37,8 @@ public class ThisScope extends BaseScope {
 	 * --------------------------------------------------------------------------
 	 */
 
-	public ThisScope() {
-		super( ThisScope.name );
+	public RequestScope() {
+		super( RequestScope.name );
 	}
 
 }

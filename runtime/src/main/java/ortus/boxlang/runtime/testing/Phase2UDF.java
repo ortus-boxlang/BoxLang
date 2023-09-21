@@ -41,6 +41,7 @@ public class Phase2UDF extends BaseTemplate {
 	private static final List<ImportDefinition>	imports	= List.of();
 
 	private Phase2UDF() {
+		this.path = "runtime\\src\\main\\java\\ortus\\boxlang\\runtime\\testing\\Phase2UDF.java";
 	}
 
 	public static synchronized Phase2UDF getInstance() {

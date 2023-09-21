@@ -24,6 +24,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import ortus.boxlang.runtime.context.IBoxContext;
+import ortus.boxlang.runtime.context.RuntimeBoxContext;
 import ortus.boxlang.runtime.context.ScriptingBoxContext;
 import ortus.boxlang.runtime.dynamic.BaseTemplate;
 import ortus.boxlang.runtime.logging.LoggingConfigurator;
@@ -82,6 +83,11 @@ public class BoxRuntime {
 	private Boolean				debugMode		= false;
 
 	/**
+	 * The runtime context
+	 */
+	private IBoxContext			runtimeContext;
+
+	/**
 	 * --------------------------------------------------------------------------
 	 * Services
 	 * --------------------------------------------------------------------------
@@ -95,7 +101,7 @@ public class BoxRuntime {
 	/**
 	 * The function service
 	 */
-	private FunctionService		functionSerice;
+	private FunctionService		functionService;
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -126,6 +132,9 @@ public class BoxRuntime {
 
 		// Create Services
 		this.interceptorService	= InterceptorService.getInstance( RUNTIME_EVENTS );
+
+		// Create our runtime context that will be the granddaddy of all contexts that execute inside this runtime
+		this.runtimeContext		= new RuntimeBoxContext();
 
 		// Announce Startup to Services
 		interceptorService.onStartup();
@@ -254,7 +263,7 @@ public class BoxRuntime {
 		instance.logger.atDebug().log( "Executing template [{}]", template.path );
 
 		// Build out the execution context for this execution and bind it to the incoming template
-		IBoxContext	context	= new ScriptingBoxContext();
+		IBoxContext	context	= new ScriptingBoxContext( runtimeContext );
 
 		// Announcements
 		Struct		data	= new Struct();
