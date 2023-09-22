@@ -35,8 +35,8 @@ public class PlaceholderHelper {
 
 	static {
 		// Add default replacements
-		PLACEHOLDER_MAP.put( "user-home", System.getProperty( "user.home" ) );
-		PLACEHOLDER_MAP.put( "java-temp", System.getProperty( "java.io.tmpdir" ) );
+		PLACEHOLDER_MAP.put( "user-home", escapeReplacementMetaChars( System.getProperty( "user.home" ) ) );
+		PLACEHOLDER_MAP.put( "java-temp", escapeReplacementMetaChars( System.getProperty( "java.io.tmpdir" ) ) );
 		// Add additional replacements here
 		// placeholderMap.put("your-placeholder", "replacement-value");
 	}
@@ -53,7 +53,12 @@ public class PlaceholderHelper {
 		Pattern	pattern	= Pattern.compile( "\\{([^}]+)\\}" );
 		// Use Matcher and the stream API to replace placeholders
 		Matcher	matcher	= pattern.matcher( input );
+
 		return matcher.replaceAll( match -> PLACEHOLDER_MAP.getOrDefault( match.group( 1 ), match.group() ) );
+	}
+
+	static private String escapeReplacementMetaChars( String input ) {
+		return input.replaceAll( "([\\\\$])", "\\\\$1" );
 	}
 
 }
