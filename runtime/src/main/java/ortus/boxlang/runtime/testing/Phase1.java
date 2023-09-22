@@ -37,7 +37,7 @@ public class Phase1 extends BaseTemplate {
 
 	private static Phase1						instance;
 
-	private final static List<ImportDefinition>	imports	= List.of();
+	private static final List<ImportDefinition>	imports	= List.of();
 
 	private Phase1() {
 		this.path = "runtime\\src\\main\\java\\ortus\\boxlang\\runtime\\testing\\Phase1.java";
@@ -55,14 +55,14 @@ public class Phase1 extends BaseTemplate {
 	 * <cfscript>
 	 * // Static reference to System (java proxy?)
 	 * variables['system'] = create java:java.lang.System;
-	 * 
+	 *
 	 * server.counter = server.counter ?: 0'
 	 * request.running = true;
-	 * 
+	 *
 	 * // call constructor to create instance
 	 * variables.greeting = new java:java.lang.String( 'Hello' );
-	 * 
-	 * 
+	 *
+	 *
 	 * // Conditional, requires operation support
 	 * if( variables.greeting == 'Hello' ) {
 	 * // De-referencing "out" and "println" and calling Java method via invoke dynamic

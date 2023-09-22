@@ -73,7 +73,6 @@ public class Phase1Switch extends BaseTemplate {
 	 * </cfscript>
 	 * </pre>
 	 */
-
 	@Override
 	public void _invoke( IBoxContext context ) throws Throwable {
 		ClassLocator	classLocator	= ClassLocator.getInstance();

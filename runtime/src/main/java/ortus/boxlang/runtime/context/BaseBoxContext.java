@@ -50,7 +50,7 @@ public class BaseBoxContext implements IBoxContext {
 	/**
 	 * A way to discover the current executing template
 	 */
-	protected ArrayDeque<BaseTemplate>	templates	= new ArrayDeque<BaseTemplate>();
+	protected ArrayDeque<BaseTemplate>	templates	= new ArrayDeque<>();
 
 	/**
 	 * Creates a new execution context with a bounded execution template and parent context
@@ -250,7 +250,12 @@ public class BaseBoxContext implements IBoxContext {
 		// Load template class, compiling if neccessary
 		BaseTemplate	template				= BoxPiler.parse( absoluteTemplatePath );
 
-		template.invoke( this );
+		try {
+			template.invoke( this );
+		} catch ( Throwable e ) {
+			// TODO add the right exception
+			throw new RuntimeException( "Error invoking template '" + absoluteTemplatePath + "'", e );
+		}
 	}
 
 	/**
