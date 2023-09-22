@@ -28,7 +28,6 @@ import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Function;
 import ortus.boxlang.runtime.types.UDF;
-import ortus.boxlang.runtime.types.exceptions.KeyNotFoundException;
 import ortus.boxlang.runtime.types.exceptions.ScopeNotFoundException;
 
 /**
@@ -295,7 +294,6 @@ public class BaseBoxContext implements IBoxContext {
 	 *
 	 * @return The value of the key if found
 	 *
-	 * @throws KeyNotFoundException If the key was not found in any scope
 	 */
 	public ScopeSearchResult scopeFind( Key key, IScope defaultScope ) {
 		throw new UnsupportedOperationException( "Unimplemented method 'scopeFind'" );
@@ -313,7 +311,6 @@ public class BaseBoxContext implements IBoxContext {
 	 *
 	 * @return The value of the key if found
 	 *
-	 * @throws KeyNotFoundException If the key was not found in any scope
 	 */
 	public ScopeSearchResult scopeFindNearby( Key key, IScope defaultScope, boolean shallow ) {
 		throw new UnsupportedOperationException( "Unimplemented method 'scopeFindNearby'" );
@@ -365,7 +362,6 @@ public class BaseBoxContext implements IBoxContext {
 	 *
 	 * @return The value of the key if found
 	 *
-	 * @throws KeyNotFoundException If the key was not found in any scope
 	 */
 	public ScopeSearchResult scopeFindNearby( Key key, IScope defaultScope ) {
 		return scopeFindNearby( key, defaultScope, false );

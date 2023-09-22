@@ -145,7 +145,7 @@ public class FunctionService extends BaseService {
 		return globalFunctions.containsKey( Key.of( name ) );
 	}
 
-	public FunctionDescriptor getGlobalFunction( String name ) throws KeyNotFoundException {
+	public FunctionDescriptor getGlobalFunction( String name ) {
 		FunctionDescriptor target = globalFunctions.get( Key.of( name ) );
 		if ( target == null ) {
 			throw new KeyNotFoundException(

@@ -18,6 +18,7 @@
 package ortus.boxlang.runtime.types;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import ortus.boxlang.runtime.context.FunctionBoxContext;
@@ -143,12 +144,31 @@ public abstract class Function implements IType {
 		ArgumentsScope	scope		= new ArgumentsScope();
 
 		// If argumentCollection exists, add it
-		if ( namedArguments.containsKey( ARGUMENT_COLLECTION )
-		    && namedArguments.get( ARGUMENT_COLLECTION ) instanceof Map<?, ?> ) {
-			@SuppressWarnings( "unchecked" )
-			Map<Key, Object> argumentCollection = ( Map<Key, Object> ) namedArguments.get( ARGUMENT_COLLECTION );
-			scope.putAll( argumentCollection );
-			namedArguments.remove( ARGUMENT_COLLECTION );
+		if ( namedArguments.containsKey( ARGUMENT_COLLECTION ) ) {
+			Object argCollection = namedArguments.get( ARGUMENT_COLLECTION );
+			if ( argCollection instanceof Map<?, ?> ) {
+				@SuppressWarnings( "unchecked" )
+				Map<Key, Object> argumentCollection = ( Map<Key, Object> ) argCollection;
+				scope.putAll( argumentCollection );
+				namedArguments.remove( ARGUMENT_COLLECTION );
+			}
+			if ( argCollection instanceof List<?> ) {
+				@SuppressWarnings( "unchecked" )
+				List<Object> argumentCollection = ( List<Object> ) argCollection;
+
+				for ( int i = 0; i < argumentCollection.size(); i++ ) {
+					Key		name;
+					Object	value	= argumentCollection.get( i );
+					if ( arguments.length - 1 >= i ) {
+						name = arguments[ i ].name();
+					} else {
+						name = Key.of( Integer.toString( i + 1 ) );
+					}
+					scope.put( name, value );
+				}
+				namedArguments.remove( ARGUMENT_COLLECTION );
+			}
+			// Lucee leaves non struct, non array argumentCollectionkeys as-is. Adobe removes them. We'll copy Lucee here, though it's an edge case.
 		}
 
 		// Put all remaining incoming args

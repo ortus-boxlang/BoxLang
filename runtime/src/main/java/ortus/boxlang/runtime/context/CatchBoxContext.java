@@ -78,7 +78,6 @@ public class CatchBoxContext extends BaseBoxContext {
 	 *
 	 * @return The value of the key if found
 	 *
-	 * @throws KeyNotFoundException If the key was not found in any scope
 	 */
 	public ScopeSearchResult scopeFindNearby( Key key, IScope defaultScope, boolean shallow ) {
 
@@ -108,7 +107,6 @@ public class CatchBoxContext extends BaseBoxContext {
 	 *
 	 * @return The value of the key if found
 	 *
-	 * @throws KeyNotFoundException If the key was not found in any scope
 	 */
 	public ScopeSearchResult scopeFind( Key key, IScope defaultScope ) {
 
@@ -135,7 +133,7 @@ public class CatchBoxContext extends BaseBoxContext {
 	 *
 	 * @return The requested scope
 	 */
-	public IScope getScope( Key name ) throws ScopeNotFoundException {
+	public IScope getScope( Key name ) {
 
 		if ( parent != null ) {
 			return parent.getScopeNearby( name );
@@ -157,7 +155,7 @@ public class CatchBoxContext extends BaseBoxContext {
 	 *
 	 * @return The requested scope
 	 */
-	public IScope getScopeNearby( Key name, boolean shallow ) throws ScopeNotFoundException {
+	public IScope getScopeNearby( Key name, boolean shallow ) {
 		// Check the scopes I know about
 		if ( name.equals( VariablesScope.name ) ) {
 			return variablesScope;

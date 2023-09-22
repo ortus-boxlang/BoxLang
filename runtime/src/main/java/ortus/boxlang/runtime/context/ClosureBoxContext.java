@@ -5,7 +5,6 @@ import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Closure;
 import ortus.boxlang.runtime.types.Struct;
-import ortus.boxlang.runtime.types.exceptions.KeyNotFoundException;
 import ortus.boxlang.runtime.types.exceptions.ScopeNotFoundException;
 
 /**
@@ -48,7 +47,6 @@ public class ClosureBoxContext extends FunctionBoxContext {
 	 *
 	 * @return The result of the search. Null if performing a shallow search and nothing was fond
 	 *
-	 * @throws KeyNotFoundException If the key was not found in any scope
 	 */
 	public ScopeSearchResult scopeFindNearby( Key key, IScope defaultScope, boolean shallow ) {
 

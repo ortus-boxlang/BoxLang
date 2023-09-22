@@ -21,6 +21,7 @@ import static com.google.common.truth.Truth.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import org.junit.jupiter.api.DisplayName;
@@ -160,9 +161,9 @@ public class FunctionTest {
 		assertThat( argscope.size() ).isEqualTo( 2 );
 	}
 
-	@DisplayName( "can process argumentCollection" )
+	@DisplayName( "can process argumentCollection Struct" )
 	@Test
-	void testCanProcessArgumentCollection() {
+	void testCanProcessArgumentCollectionStruct() {
 		Key			firstName	= Key.of( "firstName" );
 		Key			lastName	= Key.of( "lastName" );
 		Key			extra		= Key.of( "extra" );
@@ -183,6 +184,81 @@ public class FunctionTest {
 		assertThat( argscope.size() ).isEqualTo( 4 );
 		assertThat( argscope.get( extra ) ).isEqualTo( "Gavin" );
 		assertThat( argscope.get( extraExtra ) ).isEqualTo( "Jorge" );
+	}
+
+	@DisplayName( "can process argumentCollection Array" )
+	@Test
+	void testCanProcessArgumentCollectionArray() {
+		Key			firstName	= Key.of( "firstName" );
+		Key			lastName	= Key.of( "lastName" );
+		Key			key3		= Key.of( "3" );
+		Key			extraExtra	= Key.of( "extraExtra" );
+		Argument[]	args		= new Argument[] {
+		    new Function.Argument( true, "String", firstName, "brad", "First Name" ),
+		    new Function.Argument( true, "String", lastName, "wood", "Last Name" )
+		};
+		UDF			udf			= new SampleUDF( UDF.Access.PUBLIC, Key.of( "foo" ), "any", args, "Cool function", false, null );
+		IScope		argscope	= udf
+		    .createArgumentsScope( new HashMap<Key, Object>( Map.of(
+		        Function.ARGUMENT_COLLECTION, List.of( "Luis", "Majano", "Gavin" ),
+		        extraExtra, "Jorge"
+		    ) ) );
+
+		assertThat( argscope.get( firstName ) ).isEqualTo( "Luis" );
+		assertThat( argscope.get( lastName ) ).isEqualTo( "Majano" );
+		assertThat( argscope.size() ).isEqualTo( 4 );
+		assertThat( argscope.get( key3 ) ).isEqualTo( "Gavin" );
+		assertThat( argscope.get( extraExtra ) ).isEqualTo( "Jorge" );
+	}
+
+	@DisplayName( "can process argumentCollection Array override" )
+	@Test
+	void testCanProcessArgumentCollectionArrayOverride() {
+		Key			param		= Key.of( "param" );
+		Key			key2		= Key.of( "2" );
+		Argument[]	args		= new Argument[] {
+		    new Function.Argument( true, "String", param, null, "" )
+		};
+		UDF			udf			= new SampleUDF( UDF.Access.PUBLIC, Key.of( "foo" ), "any", args, "Cool function", false, null );
+		IScope		argscope	= udf
+		    .createArgumentsScope( new HashMap<Key, Object>( Map.of(
+		        Function.ARGUMENT_COLLECTION, List.of( "foo", "bar" ),
+		        param, "42"
+		    ) ) );
+
+		assertThat( argscope.size() ).isEqualTo( 2 );
+		assertThat( argscope.get( param ) ).isEqualTo( "42" );
+		assertThat( argscope.get( key2 ) ).isEqualTo( "bar" );
+	}
+
+	@DisplayName( "can process argumentCollection Struct override" )
+	@Test
+	void testCanProcessArgumentCollectionStructOverride() {
+		Key			param		= Key.of( "param" );
+		Argument[]	args		= new Argument[] {};
+		UDF			udf			= new SampleUDF( UDF.Access.PUBLIC, Key.of( "foo" ), "any", args, "Cool function", false, null );
+		IScope		argscope	= udf
+		    .createArgumentsScope( new HashMap<Key, Object>( Map.of(
+		        Function.ARGUMENT_COLLECTION, Map.of( param, "foo" ),
+		        param, "42"
+		    ) ) );
+
+		assertThat( argscope.size() ).isEqualTo( 1 );
+		assertThat( argscope.get( param ) ).isEqualTo( "42" );
+	}
+
+	@DisplayName( "can ignore invalid argumentCollection" )
+	@Test
+	void testCanIgnoreInvalidArgumentCollection() {
+		Argument[]	args		= new Argument[] {};
+		UDF			udf			= new SampleUDF( UDF.Access.PUBLIC, Key.of( "foo" ), "any", args, "Cool function", false, null );
+		IScope		argscope	= udf
+		    .createArgumentsScope( new HashMap<Key, Object>( Map.of(
+		        Function.ARGUMENT_COLLECTION, "sdf"
+		    ) ) );
+
+		assertThat( argscope.size() ).isEqualTo( 1 );
+		assertThat( argscope.get( Function.ARGUMENT_COLLECTION ) ).isEqualTo( "sdf" );
 	}
 
 	@DisplayName( "can override argumentCollection with args" )

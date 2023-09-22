@@ -21,7 +21,6 @@ import java.util.Map;
 
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.scopes.Key;
-import ortus.boxlang.runtime.types.exceptions.KeyNotFoundException;
 
 /**
  * This represents the most basic box context.
@@ -42,7 +41,7 @@ public interface IReferenceable {
 	 *
 	 * @return The requested object
 	 */
-	public Object dereference( Key name, Boolean safe ) throws KeyNotFoundException;
+	public Object dereference( Key name, Boolean safe );
 
 	/**
 	 * Dereference this object by a key and invoke the result as an invokable (UDF, java method) using positional arguments
@@ -53,8 +52,7 @@ public interface IReferenceable {
 	 *
 	 * @return The requested object
 	 */
-	public Object dereferenceAndInvoke( IBoxContext context, Key name, Object[] positionalArguments, Boolean safe )
-	    throws KeyNotFoundException;
+	public Object dereferenceAndInvoke( IBoxContext context, Key name, Object[] positionalArguments, Boolean safe );
 
 	/**
 	 * Dereference this object by a key and invoke the result as an invokable (UDF, java method) using named arguments
@@ -65,8 +63,7 @@ public interface IReferenceable {
 	 *
 	 * @return The requested object
 	 */
-	public Object dereferenceAndInvoke( IBoxContext context, Key name, Map<Key, Object> namedArguments, Boolean safe )
-	    throws KeyNotFoundException;
+	public Object dereferenceAndInvoke( IBoxContext context, Key name, Map<Key, Object> namedArguments, Boolean safe );
 
 	/**
 	 * Get a scope from the context. If not found, the parent context is asked.

@@ -23,7 +23,6 @@ import ortus.boxlang.runtime.dynamic.BaseTemplate;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.UDF;
-import ortus.boxlang.runtime.types.exceptions.KeyNotFoundException;
 import ortus.boxlang.runtime.types.exceptions.ScopeNotFoundException;
 
 /**
@@ -81,7 +80,6 @@ public interface IBoxContext {
 	 *
 	 * @return The value of the key if found
 	 *
-	 * @throws KeyNotFoundException If the key was not found in any scope
 	 */
 	public ScopeSearchResult scopeFind( Key key, IScope defaultScope );
 
@@ -97,7 +95,6 @@ public interface IBoxContext {
 	 *
 	 * @return The value of the key if found
 	 *
-	 * @throws KeyNotFoundException If the key was not found in any scope
 	 */
 	public ScopeSearchResult scopeFindNearby( Key key, IScope defaultScope );
 
@@ -110,7 +107,6 @@ public interface IBoxContext {
 	 *
 	 * @return The result of the search. Null if performing a shallow search and nothing was fond
 	 *
-	 * @throws KeyNotFoundException If the key was not found in any scope
 	 */
 	public ScopeSearchResult scopeFindNearby( Key key, IScope defaultScope, boolean shallow );
 
@@ -161,7 +157,7 @@ public interface IBoxContext {
 
 	/**
 	 * Invoke a template in the current context
-	 * 
+	 *
 	 * @param templatePath A relateive template path
 	 */
 	public void includeTemplate( String templatePath );

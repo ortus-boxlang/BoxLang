@@ -31,6 +31,7 @@ import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.dynamic.IReferenceable;
 import ortus.boxlang.runtime.dynamic.casters.CastAttempt;
 import ortus.boxlang.runtime.dynamic.casters.StringCaster;
+import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.exceptions.KeyNotFoundException;
 
@@ -406,7 +407,7 @@ public class Struct implements Map<Key, Object>, IType, IReferenceable {
 	 * @return The requested object
 	 */
 	@Override
-	public Object dereference( Key key, Boolean safe ) throws KeyNotFoundException {
+	public Object dereference( Key key, Boolean safe ) {
 		Object value = get( key );
 		if ( value == null && !safe ) {
 			throw new KeyNotFoundException(
@@ -426,22 +427,36 @@ public class Struct implements Map<Key, Object>, IType, IReferenceable {
 	 *
 	 * @return The requested object
 	 */
-	public Object dereferenceAndInvoke( IBoxContext context, Key name, Object[] positionalArguments, Boolean safe )
-	    throws KeyNotFoundException {
-		Object value = dereference( name, safe );
-		if ( value instanceof Function ) {
-			Function			function	= ( Function ) value;
-			FunctionBoxContext	fContext	= new FunctionBoxContext(
-			    context,
-			    function,
-			    name,
-			    function.createArgumentsScope( positionalArguments )
-			);
-			return function.invoke( fContext );
-		} else {
-			throw new RuntimeException(
-			    "key '" + name.getName() + "' of type  '" + value.getClass().getName() + "'  is not a function " );
+	public Object dereferenceAndInvoke( IBoxContext context, Key name, Object[] positionalArguments, Boolean safe ) {
+
+		// Member functions here
+
+		Object value = dereference( name, true );
+		if ( value != null ) {
+
+			if ( value instanceof Function ) {
+				Function			function	= ( Function ) value;
+				FunctionBoxContext	fContext	= new FunctionBoxContext(
+				    context,
+				    function,
+				    name,
+				    function.createArgumentsScope( positionalArguments )
+				);
+				return function.invoke( fContext );
+			} else {
+				throw new RuntimeException(
+				    "key '" + name.getName() + "' of type  '" + value.getClass().getName() + "'  is not a function " );
+			}
 		}
+
+		// If there is no member funtion, look for a native Java method of that name
+		DynamicObject object = DynamicObject.of( this );
+
+		if ( safe && !object.hasMethod( name.getName() ) ) {
+			return null;
+		}
+
+		return object.invoke( name.getName(), positionalArguments ).orElse( null );
 	}
 
 	/**
@@ -453,8 +468,10 @@ public class Struct implements Map<Key, Object>, IType, IReferenceable {
 	 *
 	 * @return The requested return value or null
 	 */
-	public Object dereferenceAndInvoke( IBoxContext context, Key name, Map<Key, Object> namedArguments, Boolean safe )
-	    throws KeyNotFoundException {
+	public Object dereferenceAndInvoke( IBoxContext context, Key name, Map<Key, Object> namedArguments, Boolean safe ) {
+
+		// Member functions here
+
 		Object value = dereference( name, safe );
 		if ( value instanceof Function ) {
 			Function			function	= ( Function ) value;

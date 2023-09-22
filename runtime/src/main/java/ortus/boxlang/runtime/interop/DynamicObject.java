@@ -908,55 +908,56 @@ public class DynamicObject implements IReferenceable {
 	 * @return The requested object
 	 */
 	public Object dereference( Key name, Boolean safe ) {
-		try {
-			// If we have the field, return it's value, even if it's null
-			if ( hasField( name.getName() ) ) {
-				return getField( name.getName() ).orElse( null );
-				// Special logic so we can treat exceptions as referencable. Possibly move to helper
-			} else if ( getTargetInstance() instanceof Throwable && exceptionKeys.contains( name ) ) {
-				// Throwable.message always delegates through to the message field
-				if ( name.equals( BoxLangException.messageKey ) ) {
-					return ( ( Throwable ) getTargetInstance() ).getMessage();
-				} else {
-					// CFML returns "" for Throwable.detail, etc
-					return "";
-				}
-				// Special logic for native arrays. Possibly move to helper
-			} else if ( hasInstance() && getTargetInstance().getClass().isArray() ) {
-				Object[] arr = ( ( Object[] ) getTargetInstance() );
-				if ( name.equals( Key.of( "length" ) ) ) {
-					return arr.length;
-				}
-				CastAttempt<Double> indexAtt = DoubleCaster.attempt( name.getName() );
-				if ( !indexAtt.wasSuccessful() ) {
-					throw new RuntimeException( String.format(
-					    "Array cannot be deferenced by key %s", name.getName()
-					) );
-				}
-				Double	dIndex	= indexAtt.get();
-				Integer	index	= dIndex.intValue();
-				// Dissallow non-integer indexes foo[1.5]
-				if ( index.doubleValue() != dIndex ) {
-					throw new RuntimeException( String.format(
-					    "Array index [%s] is invalid.  Index must be an integer.", dIndex
-					) );
-				}
-				// Dissallow negative indexes foo[-1]
-				if ( index < 1 ) {
-					throw new RuntimeException( String.format(
-					    "Array cannot be indexed by a number smaller than 1"
-					) );
-				}
-				// Disallow out of bounds indexes foo[5]
-				if ( index > arr.length ) {
-					throw new RuntimeException( String.format(
-					    "Array index [%s] is out of bounds for an array of length [%s]", index, arr.length
-					) );
-				}
-				return arr[ index - 1 ];
+
+		if ( hasInstance() && getTargetInstance() instanceof IReferenceable ) {
+			return ( ( IReferenceable ) getTargetInstance() ).dereference( name, safe );
+		}
+
+		// If we have the field, return it's value, even if it's null
+		if ( hasField( name.getName() ) ) {
+			return getField( name.getName() ).orElse( null );
+			// Special logic so we can treat exceptions as referencable. Possibly move to helper
+		} else if ( getTargetInstance() instanceof Throwable && exceptionKeys.contains( name ) ) {
+			// Throwable.message always delegates through to the message field
+			if ( name.equals( BoxLangException.messageKey ) ) {
+				return ( ( Throwable ) getTargetInstance() ).getMessage();
+			} else {
+				// CFML returns "" for Throwable.detail, etc
+				return "";
 			}
-		} catch ( Throwable e ) {
-			throw new RuntimeException( e );
+			// Special logic for native arrays. Possibly move to helper
+		} else if ( hasInstance() && getTargetInstance().getClass().isArray() ) {
+			Object[] arr = ( ( Object[] ) getTargetInstance() );
+			if ( name.equals( Key.of( "length" ) ) ) {
+				return arr.length;
+			}
+			CastAttempt<Double> indexAtt = DoubleCaster.attempt( name.getName() );
+			if ( !indexAtt.wasSuccessful() ) {
+				throw new RuntimeException( String.format(
+				    "Array cannot be deferenced by key %s", name.getName()
+				) );
+			}
+			Double	dIndex	= indexAtt.get();
+			Integer	index	= dIndex.intValue();
+			// Dissallow non-integer indexes foo[1.5]
+			if ( index.doubleValue() != dIndex ) {
+				throw new RuntimeException( String.format(
+				    "Array index [%s] is invalid.  Index must be an integer.", dIndex
+				) );
+			}
+			// Dissallow negative indexes foo[-1]
+			if ( index < 1 ) {
+				throw new RuntimeException( String.format(
+				    "Array cannot be indexed by a number smaller than 1"
+				) );
+			}
+			// Disallow out of bounds indexes foo[5]
+			if ( index > arr.length ) {
+				throw new RuntimeException( String.format(
+				    "Array index [%s] is out of bounds for an array of length [%s]", index, arr.length
+				) );
+			}
+			return arr[ index - 1 ];
 		}
 
 		if ( safe ) {
@@ -993,6 +994,11 @@ public class DynamicObject implements IReferenceable {
 	 * @return The requested return value or null
 	 */
 	public Object dereferenceAndInvoke( IBoxContext context, Key name, Object[] positionalArguments, Boolean safe ) {
+
+		if ( hasInstance() && getTargetInstance() instanceof IReferenceable ) {
+			return ( ( IReferenceable ) getTargetInstance() ).dereferenceAndInvoke( context, name, positionalArguments, safe );
+		}
+
 		if ( safe && !hasMethod( name.getName() ) ) {
 			return null;
 		}
@@ -1014,6 +1020,11 @@ public class DynamicObject implements IReferenceable {
 	 * @return The requested return value or null
 	 */
 	public Object dereferenceAndInvoke( IBoxContext context, Key name, Map<Key, Object> namedArguments, Boolean safe ) {
+
+		if ( hasInstance() && getTargetInstance() instanceof IReferenceable ) {
+			return ( ( IReferenceable ) getTargetInstance() ).dereferenceAndInvoke( context, name, namedArguments, safe );
+		}
+
 		throw new RuntimeException( "Java objects cannot be called with named argumments" );
 	}
 
@@ -1025,6 +1036,11 @@ public class DynamicObject implements IReferenceable {
 	 */
 	@SuppressWarnings( "unchecked" )
 	public void assign( Key name, Object value ) {
+
+		if ( hasInstance() && getTargetInstance() instanceof IReferenceable ) {
+			( ( IReferenceable ) getTargetInstance() ).assign( name, value );
+		}
+
 		if ( hasInstance() && getTargetInstance().getClass().isArray() ) {
 			CastAttempt<Double> indexAtt = DoubleCaster.attempt( name.getName() );
 			if ( !indexAtt.wasSuccessful() ) {

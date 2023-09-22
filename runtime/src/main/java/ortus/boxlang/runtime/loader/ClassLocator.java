@@ -166,9 +166,8 @@ public class ClassLocator extends ClassLoader {
 	 *
 	 * @return The registered resolver or null if not found
 	 *
-	 * @throws KeyNotFoundException If the resolver is not found
 	 */
-	public IClassResolver getResolver( String prefix ) throws KeyNotFoundException {
+	public IClassResolver getResolver( String prefix ) {
 		IClassResolver target = this.resolvers.get( prefix.toLowerCase() );
 		if ( target == null ) {
 			throw new KeyNotFoundException(

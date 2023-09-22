@@ -104,7 +104,6 @@ public class ScriptingBoxContext extends BaseBoxContext {
 	 *
 	 * @return The value of the key if found
 	 *
-	 * @throws KeyNotFoundException If the key was not found in any scope
 	 */
 	public ScopeSearchResult scopeFindNearby( Key key, IScope defaultScope, boolean shallow ) {
 
@@ -136,7 +135,6 @@ public class ScriptingBoxContext extends BaseBoxContext {
 	 *
 	 * @return The value of the key if found
 	 *
-	 * @throws KeyNotFoundException If the key was not found in any scope
 	 */
 	public ScopeSearchResult scopeFind( Key key, IScope defaultScope ) {
 
