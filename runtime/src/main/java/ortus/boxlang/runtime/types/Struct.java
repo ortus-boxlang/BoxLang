@@ -106,8 +106,8 @@ public class Struct implements Map<Key, Object>, IType, IReferenceable {
 
 	/**
 	 * Returns the number of key-value mappings in this map. If the
-	 * map contains more than <tt>Integer.MAX_VALUE</tt> elements, returns
-	 * <tt>Integer.MAX_VALUE</tt>.
+	 * map contains more than {@code Integer.MAX_VALUE} elements, returns
+	 * {@code Integer.MAX_VALUE}.
 	 *
 	 * @return the number of key-value mappings in this map
 	 */
@@ -117,7 +117,7 @@ public class Struct implements Map<Key, Object>, IType, IReferenceable {
 	}
 
 	/**
-	 * Returns <tt>true</tt> if this map contains no key-value mappings.
+	 * Returns {@code true} if this map contains no key-value mappings.
 	 */
 	@Override
 	public boolean isEmpty() {
@@ -125,11 +125,11 @@ public class Struct implements Map<Key, Object>, IType, IReferenceable {
 	}
 
 	/**
-	 * Returns <tt>true</tt> if this map contains a mapping for the specified {@See Key}
+	 * Returns {@code true} if this map contains a mapping for the specified {@code Key}
 	 *
 	 * @param key key whose presence in this map is to be tested
 	 *
-	 * @return <tt>true</tt> if this map contains a mapping for the specified
+	 * @return {@code true} if this map contains a mapping for the specified
 	 */
 	@Override
 	public boolean containsKey( Object key ) {
@@ -137,22 +137,22 @@ public class Struct implements Map<Key, Object>, IType, IReferenceable {
 	}
 
 	/**
-	 * Returns <tt>true</tt> if this map maps one or more keys using a String key
+	 * Returns {@code true} if this map maps one or more keys using a String key
 	 *
 	 * @param key The string key to look for. Automatically converted to Key object
 	 *
-	 * @return <tt>true</tt> if this map contains a mapping for the specified
+	 * @return {@code true} if this map contains a mapping for the specified
 	 */
 	public boolean containsKey( String key ) {
 		return containsKey( Key.of( key ) );
 	}
 
 	/**
-	 * Returns <tt>true</tt> if this map maps has the specified value
+	 * Returns {@code true} if this map maps has the specified value
 	 *
 	 * @param value value whose presence in this map is to be tested
 	 *
-	 * @return <tt>true</tt> if this map contains a mapping for the specified value
+	 * @return {@code true} if this map contains a mapping for the specified value
 	 */
 	@Override
 	public boolean containsValue( Object value ) {
@@ -400,7 +400,7 @@ public class Struct implements Map<Key, Object>, IType, IReferenceable {
 	/**
 	 * Dereference this object by a key and return the value, or throw exception
 	 *
-	 * @param name The key to dereference
+	 * @param key  The key to dereference
 	 * @param safe Whether to throw an exception if the key is not found
 	 *
 	 * @return The requested object

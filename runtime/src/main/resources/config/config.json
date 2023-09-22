@@ -6,7 +6,7 @@
 		"mappings" : {},
 		"modulesDirectory" : "{user-home}/.boxlang/modules",
 		"caches" : {
-			"importCache" : {
+			"imports" : {
 				"type" : "Caffeine",
 				"properties" : {
 					"maximumSize" : 1000

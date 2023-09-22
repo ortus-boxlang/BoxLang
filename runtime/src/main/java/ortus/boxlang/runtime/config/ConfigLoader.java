@@ -19,9 +19,8 @@ package ortus.boxlang.runtime.config;
 
 import java.util.Map;
 
-import org.checkerframework.checker.units.qual.C;
-
-import com.fasterxml.jackson.core.type.TypeReference;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.ConfigurationException;
@@ -50,6 +49,11 @@ public class ConfigLoader {
 	 * The ConfigLoader instance
 	 */
 	private static ConfigLoader	instance;
+
+	/**
+	 * Logger
+	 */
+	private static final Logger	logger				= LoggerFactory.getLogger( ConfigLoader.class );
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -103,13 +107,15 @@ public class ConfigLoader {
 	@SuppressWarnings( "unchecked" )
 	public static synchronized Configuration load( String configFile ) {
 		// Parse it natively to Java objects
-		Object config = JsonUtil.fromJson(
+		Object rawConfig = JsonUtil.fromJson(
 		    ClassLoader.getSystemClassLoader().getResourceAsStream( configFile )
 		);
 
 		// Process it to BoxLang
-		if ( config instanceof Map ) {
-			return new Configuration().process( new Struct( ( Map<Object, Object> ) config ) );
+		if ( rawConfig instanceof Map ) {
+			Configuration config = new Configuration().process( new Struct( ( Map<Object, Object> ) rawConfig ) );
+			logger.info( "Loaded BoxLang configuration file from [{}]", configFile );
+			return config;
 		} else {
 			throw new ConfigurationException( "The config file is not a JSON object. Can't work with it." );
 		}

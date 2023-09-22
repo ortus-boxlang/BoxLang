@@ -83,7 +83,7 @@ public class JsonUtil {
 	 * Read method that will take given JSON Source (of one of supported types),
 	 * read contents and map it to a Java Bean of given type.
 	 *
-	 * Read more here: {@link https://github.com/FasterXML/jackson-jr#readingwriting-simple-objects-beans-listarrays-thereof}
+	 * <a href="https://github.com/FasterXML/jackson-jr#readingwriting-simple-objects-beans-listarrays-thereof">Read more here:</a>
 	 *
 	 * Supported source types include:
 	 * <ul>

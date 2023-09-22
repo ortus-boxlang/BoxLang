@@ -42,6 +42,7 @@ public class ConfigLoaderTest {
 
 		// Cache Checks
 		assertThat( config.runtime.caches ).isNotEmpty();
+		assertThat( config.runtime.caches ).hasSize( 2 );
 
 		// Default Cache Checks
 		CacheConfig defaultCache = ( CacheConfig ) config.runtime.caches.get( "default" );
@@ -53,7 +54,6 @@ public class ConfigLoaderTest {
 
 		// Import Cache Checks
 		CacheConfig importCache = ( CacheConfig ) config.runtime.caches.get( "imports" );
-		assertThat( importCache ).isNotNull();
 		assertThat( importCache.name.getNameNoCase() ).isEqualTo( "IMPORTS" );
 		assertThat( importCache.type.getNameNoCase() ).isEqualTo( "CAFFEINE" );
 		assertThat( importCache.properties ).isNotNull();
