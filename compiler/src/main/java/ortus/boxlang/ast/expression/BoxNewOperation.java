@@ -31,7 +31,8 @@ public class BoxNewOperation extends BoxExpr {
 	/**
 	 * Creates the AST node
 	 *
-	 * @param expr
+	 * @param expression
+	 * @param arguments
 	 * @param position
 	 * @param sourceText
 	 */
