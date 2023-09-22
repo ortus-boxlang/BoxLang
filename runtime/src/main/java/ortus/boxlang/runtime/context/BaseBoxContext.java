@@ -20,6 +20,7 @@ package ortus.boxlang.runtime.context;
 import java.util.ArrayDeque;
 import java.util.Map;
 
+import ortus.boxlang.runtime.BoxPiler;
 import ortus.boxlang.runtime.dynamic.BaseTemplate;
 import ortus.boxlang.runtime.dynamic.casters.FunctionCaster;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
@@ -235,6 +236,21 @@ public class BaseBoxContext implements IBoxContext {
 			throw new RuntimeException(
 			    "Variable '" + name + "' of type  '" + value.getClass().getName() + "'  is not a function." );
 		}
+	}
+
+	/**
+	 * Invoke a template in the current context
+	 *
+	 * @param templatePath A relateive template path
+	 */
+	public void includeTemplate( String templatePath ) {
+		// TODO: Expand relative path to absolute using declared mappings
+		String			absoluteTemplatePath	= templatePath;
+
+		// Load template class, compiling if neccessary
+		BaseTemplate	template				= BoxPiler.parse( absoluteTemplatePath );
+
+		template.invoke( this );
 	}
 
 	/**

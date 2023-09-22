@@ -264,21 +264,10 @@ public class BoxRuntime {
 		instance.logger.atDebug().log( "Executing template [{}]", template.path );
 
 		// Build out the execution context for this execution and bind it to the incoming template
-		IBoxContext	context	= new ScriptingBoxContext( runtimeContext );
-
-		// Announcements
-		Struct		data	= new Struct();
-		data.put( "context", context );
-		data.put( "template", template );
-		// Can't put nulls in concurrenthashmaps
-		// data.put( "templatePath", template.path );
-		interceptorService.announce( "preTemplateInvoke", data );
+		IBoxContext context = new ScriptingBoxContext( runtimeContext );
 
 		// Fire!!!
 		template.invoke( context );
-
-		// Announce
-		interceptorService.announce( "postTemplateInvoke", data );
 
 		// Debugging Timer
 		instance.logger.atDebug().log(

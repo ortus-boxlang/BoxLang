@@ -20,6 +20,8 @@ package ortus.boxlang.runtime.dynamic;
 import java.time.LocalDateTime;
 
 import ortus.boxlang.runtime.context.IBoxContext;
+import ortus.boxlang.runtime.services.InterceptorService;
+import ortus.boxlang.runtime.types.Struct;
 
 /// import ortus.boxlang.runtime.core.Derefrencer;
 
@@ -60,12 +62,6 @@ public class BaseTemplate {
 
 	/**
 	 * --------------------------------------------------------------------------
-	 * Private Properties
-	 * --------------------------------------------------------------------------
-	 */
-
-	/**
-	 * --------------------------------------------------------------------------
 	 * Methods
 	 * --------------------------------------------------------------------------
 	 */
@@ -75,18 +71,31 @@ public class BaseTemplate {
 	 *
 	 * @param context The context to invoke the template with
 	 *
-	 * @throws Throwable If an error occurs
 	 */
-	public void invoke( IBoxContext context ) throws Throwable {
+	public void invoke( IBoxContext context ) {
+		InterceptorService interceptorService = InterceptorService.getInstance();
+
 		context.pushTemplate( this );
 		try {
+			// Announcements
+			Struct data = Struct.of(
+			    "context", context,
+			    "template", this,
+			    "templatePath", this.path
+			);
+			interceptorService.announce( "preTemplateInvoke", data );
+
 			_invoke( context );
+
+			// Announce
+			interceptorService.announce( "postTemplateInvoke", data );
 		} finally {
 			context.popTemplate();
 		}
+
 	}
 
-	public void _invoke( IBoxContext context ) throws Throwable {
+	public void _invoke( IBoxContext context ) {
 		throw new UnsupportedOperationException( "This method must be overridden." );
 	}
 }

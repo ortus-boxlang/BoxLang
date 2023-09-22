@@ -160,6 +160,13 @@ public interface IBoxContext {
 	public Object invokeFunction( Object function );
 
 	/**
+	 * Invoke a template in the current context
+	 * 
+	 * @param templatePath A relateive template path
+	 */
+	public void includeTemplate( String templatePath );
+
+	/**
 	 * Register a UDF with the local context.
 	 *
 	 * @param udf The UDF to register
