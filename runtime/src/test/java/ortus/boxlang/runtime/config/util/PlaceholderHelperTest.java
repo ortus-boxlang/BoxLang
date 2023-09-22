@@ -17,10 +17,10 @@
  */
 package ortus.boxlang.runtime.config.util;
 
+import static com.google.common.truth.Truth.assertThat;
+
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import ortus.boxlang.runtime.config.util.PlaceholderHelper;
-import static com.google.common.truth.Truth.assertThat;
 
 public class PlaceholderHelperTest {
 

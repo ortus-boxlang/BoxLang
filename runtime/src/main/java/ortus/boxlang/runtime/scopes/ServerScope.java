@@ -85,6 +85,7 @@ public class ServerScope extends BaseScope {
 	 * - servlet
 	 * - system
 	 */
+	@SuppressWarnings( "unchecked" )
 	private void seedScope() {
 
 		// TODO: switch to immutable struct
@@ -137,11 +138,14 @@ public class ServerScope extends BaseScope {
 		    "name", ""
 		) );
 
+		Struct	env		= new Struct( ( Map ) System.getenv() );
+		Struct	props	= new Struct( ( Map ) System.getProperties() );
+
 		put( Key.of( "system" ), Struct.of(
 		    // TODO: create wrapper struct that gives live view of env vars, not just a copy
-		    "environment", new Struct( ( Map ) System.getenv() ),
+		    "environment", env,
 		    // TODO: create wrapper struct that gives live view of system properties, not just a copy
-		    "properties", new Struct( ( Map ) System.getProperties() )
+		    "properties", props
 		) );
 	}
 

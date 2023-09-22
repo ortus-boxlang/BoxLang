@@ -17,8 +17,6 @@
  */
 package ortus.boxlang.runtime.util;
 
-import java.util.Map;
-
 import com.fasterxml.jackson.jr.annotationsupport.JacksonAnnotationExtension;
 import com.fasterxml.jackson.jr.ob.JSON;
 

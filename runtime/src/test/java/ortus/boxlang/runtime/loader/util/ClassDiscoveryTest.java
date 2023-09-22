@@ -17,11 +17,10 @@
  */
 package ortus.boxlang.runtime.loader.util;
 
+import static com.google.common.truth.Truth.assertThat;
+
 import java.io.IOException;
 import java.util.Arrays;
-
-import static com.google.common.truth.Truth.assertThat;
-import static org.junit.Assert.assertThrows;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;

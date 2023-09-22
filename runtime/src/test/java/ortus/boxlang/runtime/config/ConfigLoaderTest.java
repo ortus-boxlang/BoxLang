@@ -18,12 +18,12 @@
 
 package ortus.boxlang.runtime.config;
 
+import static com.google.common.truth.Truth.assertThat;
+
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import ortus.boxlang.runtime.config.segments.CacheConfig;
-
-import org.junit.jupiter.api.DisplayName;
-import static com.google.common.truth.Truth.assertThat;
 
 public class ConfigLoaderTest {
 

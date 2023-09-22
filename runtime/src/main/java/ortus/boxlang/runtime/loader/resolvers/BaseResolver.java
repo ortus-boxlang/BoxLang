@@ -22,15 +22,14 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentHashMap.KeySetView;
 
 import org.apache.commons.lang3.ClassUtils;
 
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.loader.ClassLocator;
+import ortus.boxlang.runtime.loader.ClassLocator.ClassLocation;
 import ortus.boxlang.runtime.loader.ImportDefinition;
 import ortus.boxlang.runtime.loader.util.ClassDiscovery;
-import ortus.boxlang.runtime.loader.ClassLocator.ClassLocation;
 
 /**
  * This class is the base class for all resolvers.

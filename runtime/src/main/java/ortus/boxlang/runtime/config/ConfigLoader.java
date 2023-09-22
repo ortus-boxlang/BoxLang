@@ -93,7 +93,7 @@ public class ConfigLoader {
 	 *
 	 * @return The parsed configuration
 	 */
-	public static Configuration load() {
+	public Configuration load() {
 		return load( DEFAULT_CONFIG_FILE );
 	}
 
@@ -105,7 +105,7 @@ public class ConfigLoader {
 	 * @return The parsed configuration
 	 */
 	@SuppressWarnings( "unchecked" )
-	public static synchronized Configuration load( String configFile ) {
+	public synchronized Configuration load( String configFile ) {
 		// Parse it natively to Java objects
 		Object rawConfig = JsonUtil.fromJson(
 		    ClassLoader.getSystemClassLoader().getResourceAsStream( configFile )
