@@ -23,6 +23,8 @@ import java.time.Instant;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import ortus.boxlang.runtime.config.ConfigLoader;
+import ortus.boxlang.runtime.config.Configuration;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.RuntimeBoxContext;
 import ortus.boxlang.runtime.context.ScriptingBoxContext;
@@ -55,7 +57,8 @@ public class BoxRuntime {
 	    "onRuntimeConfigurationLoad",
 	    "preTemplateInvoke",
 	    "postTemplateInvoke",
-	    "onScopeCreation"
+	    "onScopeCreation",
+	    "onConfigurationLoad"
 	);
 
 	/**
@@ -87,6 +90,11 @@ public class BoxRuntime {
 	 * The runtime context
 	 */
 	private IBoxContext			runtimeContext;
+
+	/**
+	 * The BoxLang configuration class
+	 */
+	private Configuration		configuration;
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -134,20 +142,24 @@ public class BoxRuntime {
 		// Create Services
 		this.interceptorService	= InterceptorService.getInstance( RUNTIME_EVENTS );
 
-		// Create our runtime context that will be the granddaddy of all contexts that execute inside this runtime
-		this.runtimeContext		= new RuntimeBoxContext();
+		// Load Core Configuration
+		this.configuration		= ConfigLoader.load();
+		interceptorService.announce( "onConfigurationLoad", Struct.of( "config", this.configuration ) );
 
-		// Announce Startup to Services
+		// Create our runtime context that will be the granddaddy of all contexts that execute inside this runtime
+		this.runtimeContext = new RuntimeBoxContext();
+
+		// Announce Startup to Services only
 		interceptorService.onStartup();
 
-		// Runtime Started
+		// Runtime Started log it
 		this.logger.atInfo().log(
 		    "+ BoxLang Runtime Started at [{}] in [{}]",
 		    Instant.now(),
 		    timerUtil.stop( "startup" )
 		);
 
-		// Announce it baby!
+		// Announce it baby! Runtime is up
 		interceptorService.announce( "onRuntimeStart", new Struct() );
 	}
 
@@ -181,12 +193,21 @@ public class BoxRuntime {
 	 */
 
 	/**
+	 * Get the configuration
+	 *
+	 * @return {@link Configuration} or null if the runtime has not started
+	 */
+	public Configuration getConfiguration() {
+		return instance.configuration;
+	}
+
+	/**
 	 * Get the interceptor service
 	 *
 	 * @return {@link InterceptorService} or null if the runtime has not started
 	 */
 	public InterceptorService getInterceptorService() {
-		return interceptorService;
+		return instance.interceptorService;
 	}
 
 	/**
