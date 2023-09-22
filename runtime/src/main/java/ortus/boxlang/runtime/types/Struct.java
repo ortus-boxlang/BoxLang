@@ -64,10 +64,12 @@ public class Struct implements Map<Key, Object>, IType, IReferenceable {
 
 	/**
 	 * Constructor
+	 *
+	 * @param type The type of struct to create: DEFAULT, LINKED, SORTED
 	 */
 	public Struct( Type type ) {
 		if ( type.equals( Type.DEFAULT ) ) {
-			wrapped = new ConcurrentHashMap<Key, Object>( INITIAL_CAPACITY );
+			wrapped = new ConcurrentHashMap<>( INITIAL_CAPACITY );
 			return;
 		} else if ( type.equals( Type.LINKED ) ) {
 			wrapped = Collections.synchronizedMap( new LinkedHashMap<Key, Object>( INITIAL_CAPACITY ) );
@@ -79,10 +81,18 @@ public class Struct implements Map<Key, Object>, IType, IReferenceable {
 		throw new RuntimeException( "Invalid struct type" );
 	}
 
+	/**
+	 * Create a default struct
+	 */
 	public Struct() {
 		this( Type.DEFAULT );
 	}
 
+	/**
+	 * Create a struct from a map
+	 *
+	 * @param map The map to create the struct from
+	 */
 	public Struct( Map<Object, Object> map ) {
 		this( Type.DEFAULT );
 		addAll( map );
@@ -94,31 +104,80 @@ public class Struct implements Map<Key, Object>, IType, IReferenceable {
 	 * --------------------------------------------------------------------------
 	 */
 
+	/**
+	 * Returns the number of key-value mappings in this map. If the
+	 * map contains more than <tt>Integer.MAX_VALUE</tt> elements, returns
+	 * <tt>Integer.MAX_VALUE</tt>.
+	 *
+	 * @return the number of key-value mappings in this map
+	 */
 	@Override
 	public int size() {
 		return wrapped.size();
 	}
 
+	/**
+	 * Returns <tt>true</tt> if this map contains no key-value mappings.
+	 */
 	@Override
 	public boolean isEmpty() {
 		return wrapped.isEmpty();
 	}
 
+	/**
+	 * Returns <tt>true</tt> if this map contains a mapping for the specified {@See Key}
+	 *
+	 * @param key key whose presence in this map is to be tested
+	 *
+	 * @return <tt>true</tt> if this map contains a mapping for the specified
+	 */
 	@Override
 	public boolean containsKey( Object key ) {
 		return wrapped.containsKey( key );
 	}
 
+	/**
+	 * Returns <tt>true</tt> if this map maps one or more keys using a String key
+	 *
+	 * @param key The string key to look for. Automatically converted to Key object
+	 *
+	 * @return <tt>true</tt> if this map contains a mapping for the specified
+	 */
+	public boolean containsKey( String key ) {
+		return containsKey( Key.of( key ) );
+	}
+
+	/**
+	 * Returns <tt>true</tt> if this map maps has the specified value
+	 *
+	 * @param value value whose presence in this map is to be tested
+	 *
+	 * @return <tt>true</tt> if this map contains a mapping for the specified value
+	 */
 	@Override
 	public boolean containsValue( Object value ) {
 		return wrapped.containsValue( value );
 	}
 
+	/**
+	 * Returns the value to which the specified Key is mapped
+	 *
+	 * @param key the key whose associated value is to be returned
+	 *
+	 * @return the value to which the specified key is mapped or null if not found
+	 */
 	@Override
 	public Object get( Object key ) {
 		return unWrapNull( wrapped.get( key ) );
 	}
 
+	/**
+	 * Returns the value to which the specified String key is mapped.
+	 *
+	 * @param key The string key to look for. Automatically converted to Key object
+	 *
+	 * @return The value of the key or null if not found
+	 */
 	public Object get( String key ) {
 		return wrapped.get( Key.of( key ) );
 	}
@@ -134,6 +193,14 @@ public class Struct implements Map<Key, Object>, IType, IReferenceable {
 		return wrapped.get( key );
 	}
 
+	/**
+	 * Set a value in the struct by a Key object
+	 *
+	 * @param key   The key to set
+	 * @param value The value to set
+	 *
+	 * @return The previous value of the key, or null if not found
+	 */
 	@Override
 	public Object put( Key key, Object value ) {
 		return wrapped.put( key, wrapNull( value ) );
@@ -151,49 +218,106 @@ public class Struct implements Map<Key, Object>, IType, IReferenceable {
 		return put( Key.of( key ), value );
 	}
 
+	/**
+	 * Put a value in the struct if the key doesn't exist
+	 *
+	 * @param key   The key to set
+	 * @param value The value to set
+	 *
+	 * @return The previous value of the key, or null if not found
+	 */
 	@Override
 	public Object putIfAbsent( Key key, Object value ) {
 		return wrapped.putIfAbsent( key, wrapNull( value ) );
 	}
 
+	/**
+	 * Put a value in the struct if the key doesn't exist
+	 *
+	 * @param key   The String key to set
+	 * @param value The value to set
+	 *
+	 * @return The previous value of the key, or null if not found
+	 */
+	public Object putIfAbsent( String key, Object value ) {
+		return putIfAbsent( Key.of( key ), value );
+	}
+
+	/**
+	 * Remove a value from the struct by a Key object
+	 *
+	 * @param key The key to remove
+	 */
 	@Override
 	public Object remove( Object key ) {
 		return wrapped.remove( key );
 	}
 
+	/**
+	 * Remove a value from the struct by a Key object
+	 *
+	 * @param key The String key to remove
+	 */
+	public Object remove( String key ) {
+		return remove( Key.of( key ) );
+	}
+
+	/**
+	 * Copies all of the mappings from the specified map to this map
+	 * (optional operation). It expects the specific key and object generics.
+	 */
 	@Override
 	public void putAll( Map<? extends Key, ? extends Object> map ) {
 		wrapped.putAll( map );
 	}
 
+	/**
+	 * Copies all of the mappings from the specified map to this map (optional operation).
+	 * This method will automatically convert the keys to Key objects
+	 *
+	 * @param map
+	 */
 	public void addAll( Map<Object, Object> map ) {
-		for ( Map.Entry<Object, Object> entry : map.entrySet() ) {
-			Key key;
-			if ( entry.getKey() instanceof Key ) {
-				key = ( Key ) entry.getKey();
-			} else {
-				key = Key.of( entry.getKey().toString() );
-			}
-			Object value = entry.getValue();
-			put( key, value );
-		}
+		map.entrySet()
+		    .parallelStream()
+		    .forEach( entry -> {
+			    Key key;
+			    if ( entry.getKey() instanceof Key ) {
+				    key = ( Key ) entry.getKey();
+			    } else {
+				    key = Key.of( entry.getKey().toString() );
+			    }
+			    put( key, entry.getValue() );
+		    } );
 	}
 
+	/**
+	 * Removes all of the mappings from this map (optional operation).
+	 */
 	@Override
 	public void clear() {
 		wrapped.clear();
 	}
 
+	/**
+	 * Returns a {@link Set} view of the keys contained in this map.
+	 */
 	@Override
 	public Set<Key> keySet() {
 		return wrapped.keySet();
 	}
 
+	/**
+	 * Returns a {@link Collection} view of the values contained in this map.
+	 */
 	@Override
 	public Collection<Object> values() {
 		return wrapped.values();
 	}
 
+	/**
+	 * Returns a {@link Set} view of the mappings contained in this map.
+	 */
 	@Override
 	public Set<Entry<Key, Object>> entrySet() {
 		return wrapped.entrySet();
@@ -246,6 +370,11 @@ public class Struct implements Map<Key, Object>, IType, IReferenceable {
 	 * --------------------------------------------------------------------------
 	 */
 
+	/**
+	 * Represent as string, or throw exception if not possible
+	 *
+	 * @return The string representation
+	 */
 	@Override
 	public String asString() {
 		return wrapped.toString();
@@ -257,11 +386,25 @@ public class Struct implements Map<Key, Object>, IType, IReferenceable {
 	 * --------------------------------------------------------------------------
 	 */
 
+	/**
+	 * Assign a value to a key
+	 *
+	 * @param key   The key to assign
+	 * @param value The value to assign
+	 */
 	@Override
 	public void assign( Key key, Object value ) {
 		put( key, value );
 	}
 
+	/**
+	 * Dereference this object by a key and return the value, or throw exception
+	 *
+	 * @param name The key to dereference
+	 * @param safe Whether to throw an exception if the key is not found
+	 *
+	 * @return The requested object
+	 */
 	@Override
 	public Object dereference( Key key, Boolean safe ) throws KeyNotFoundException {
 		Object value = get( key );
@@ -274,6 +417,15 @@ public class Struct implements Map<Key, Object>, IType, IReferenceable {
 		return value;
 	}
 
+	/**
+	 * Dereference this object by a key and invoke the result as an invokable (UDF, java method) using positional arguments
+	 *
+	 * @param name                The key to dereference
+	 * @param positionalArguments The positional arguments to pass to the invokable
+	 * @param safe                Whether to throw an exception if the key is not found
+	 *
+	 * @return The requested object
+	 */
 	public Object dereferenceAndInvoke( IBoxContext context, Key name, Object[] positionalArguments, Boolean safe )
 	    throws KeyNotFoundException {
 		Object value = dereference( name, safe );
@@ -323,9 +475,9 @@ public class Struct implements Map<Key, Object>, IType, IReferenceable {
 	/**
 	 * Wrap null values in an instance of the NullValue class
 	 *
-	 * @param value
+	 * @param value The value to wrap
 	 *
-	 * @return
+	 * @return The wrapped value
 	 */
 	public static Object wrapNull( Object value ) {
 		if ( value == null ) {
@@ -343,6 +495,13 @@ public class Struct implements Map<Key, Object>, IType, IReferenceable {
 		return keySet().stream().map( Key::getNameNoCase ).collect( java.util.stream.Collectors.toList() );
 	}
 
+	/**
+	 * Unwrap null values from the NullValue class
+	 *
+	 * @param value The value to unwrap
+	 *
+	 * @return The unwrapped value which can be null
+	 */
 	public static Object unWrapNull( Object value ) {
 		if ( value instanceof NullValue ) {
 			return null;
@@ -350,6 +509,13 @@ public class Struct implements Map<Key, Object>, IType, IReferenceable {
 		return value;
 	}
 
+	/**
+	 * Create a struct from a list of values. The values must be in pairs, key, value, key, value, etc.
+	 *
+	 * @param values The values to create the struct from
+	 *
+	 * @return The struct
+	 */
 	public static Struct of( Object... values ) {
 		if ( values.length % 2 != 0 ) {
 			throw new RuntimeException( "Invalid number of arguments.  Must be an even number." );
