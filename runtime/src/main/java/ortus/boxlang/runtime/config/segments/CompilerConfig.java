@@ -17,9 +17,12 @@
  */
 package ortus.boxlang.runtime.config.segments;
 
+import java.util.Map;
+
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import ortus.boxlang.runtime.config.util.PlaceholderHelper;
+import ortus.boxlang.runtime.types.Struct;
 
 /**
  * The BoxLang compiler configuration
@@ -30,15 +33,7 @@ public class CompilerConfig {
 	 * The directory where the generated classes will be placed
 	 * The default is the system temp directory + {@code /boxlang}
 	 */
-	@JsonProperty( "classGenerationDirectory" )
 	public String classGenerationDirectory = System.getProperty( "java.io.tmpdir" ) + "boxlang";
-
-	/**
-	 * @param classGenerationDirectory the classGenerationDirectory to set
-	 */
-	public void setClassGenerationDirectory( String classGenerationDirectory ) {
-		this.classGenerationDirectory = PlaceholderHelper.resolve( classGenerationDirectory );
-	}
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -47,5 +42,21 @@ public class CompilerConfig {
 	 */
 
 	public CompilerConfig() {
+	}
+
+	/**
+	 * Processes the configuration struct. Each segment is processed individually from the initial configuration struct.
+	 *
+	 * @param config the configuration struct
+	 *
+	 * @return the configuration
+	 */
+	public CompilerConfig process( Struct config ) {
+		// Process the class generation directory
+		if ( config.containsKey( "classGenerationDirectory" ) ) {
+			this.classGenerationDirectory = PlaceholderHelper.resolve( ( String ) config.get( "classGenerationDirectory" ) );
+		}
+
+		return this;
 	}
 }

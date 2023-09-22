@@ -17,11 +17,7 @@
  */
 package ortus.boxlang.runtime.config.segments;
 
-import java.util.HashMap;
-import java.util.Map;
-
-import com.fasterxml.jackson.annotation.JsonProperty;
-
+import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Struct;
 
 /**
@@ -32,34 +28,58 @@ public class CacheConfig {
 	/**
 	 * The name of the cache engine
 	 */
-	@JsonProperty( "name" )
-	private String	name		= "default";
+	public Key		name		= Key.of( "default" );
 
 	/**
 	 * The default cache engine type
 	 */
-	@JsonProperty( "type" )
-	private String	type		= "Caffeine";
+	public Key		type		= Key.of( "Caffeine" );
 
 	/**
 	 * The properties for the cache engine
 	 */
-	@JsonProperty( "properties" )
-	private Struct	properties	= new Struct();
+	public Struct	properties	= new Struct();
 
-	public String getType() {
-		return type;
+	/**
+	 * --------------------------------------------------------------------------
+	 * Methods
+	 * --------------------------------------------------------------------------
+	 */
+
+	/**
+	 * Default Constructor
+	 */
+	public CacheConfig() {
 	}
 
-	public void setType( String type ) {
-		this.type = type;
+	/**
+	 * Constructor
+	 *
+	 * @param name The key name of the cache engine
+	 */
+	public CacheConfig( Key name ) {
+		this.name = name;
 	}
 
-	public Struct getProperties() {
-		return properties;
+	/**
+	 * Constructor
+	 *
+	 * @param name The string name of the cache engine
+	 */
+	public CacheConfig( String name ) {
+		this( Key.of( name ) );
 	}
 
-	public void setProperties( Struct properties ) {
-		this.properties = properties;
+	/**
+	 * Processes the configuration struct. Each segment is processed individually from the initial configuration struct.
+	 *
+	 * @param config the configuration struct
+	 *
+	 * @return the configuration
+	 */
+	public CacheConfig process( Struct config ) {
+
+		return this;
 	}
+
 }

@@ -17,6 +17,13 @@
  */
 package ortus.boxlang.runtime.config;
 
+import java.util.Map;
+
+import org.checkerframework.checker.units.qual.C;
+
+import com.fasterxml.jackson.core.type.TypeReference;
+
+import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.util.JsonUtil;
 
 /**
@@ -81,7 +88,7 @@ public class ConfigLoader {
 	 *
 	 * @return The parsed configuration
 	 */
-	public static synchronized Configuration load() {
+	public static Configuration load() {
 		return load( DEFAULT_CONFIG_FILE );
 	}
 
@@ -94,10 +101,15 @@ public class ConfigLoader {
 	 */
 	public static synchronized Configuration load( String configFile ) {
 		// Read JSON file into Configuration class
-		return JsonUtil.fromJson(
-		    Configuration.class,
+		Object config = JsonUtil.fromJson(
 		    ClassLoader.getSystemClassLoader().getResourceAsStream( configFile )
 		);
+		// Process it
+		if ( config instanceof Map ) {
+			return new Configuration().process( new Struct( ( Map<Object, Object> ) config ) );
+		} else {
+			throw new RuntimeException( "Failed to load config file" );
+		}
 	}
 
 }

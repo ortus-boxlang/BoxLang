@@ -11,6 +11,12 @@
 				"properties" : {
 					"maximumSize" : 1000
 				}
+			},
+			"default" : {
+				"type" : "Caffeine",
+				"properties" : {
+					"maximumSize" : 1000
+				}
 			}
 		}
 	}
