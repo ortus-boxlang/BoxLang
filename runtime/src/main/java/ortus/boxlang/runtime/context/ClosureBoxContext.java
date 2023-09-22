@@ -5,6 +5,7 @@ import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Closure;
 import ortus.boxlang.runtime.types.Struct;
+import ortus.boxlang.runtime.types.exceptions.ApplicationException;
 import ortus.boxlang.runtime.types.exceptions.ScopeNotFoundException;
 
 /**
@@ -34,7 +35,7 @@ public class ClosureBoxContext extends FunctionBoxContext {
 	public ClosureBoxContext( IBoxContext parent, Closure function, ArgumentsScope argumentsScope ) {
 		super( parent, function, argumentsScope );
 		if ( parent == null ) {
-			throw new IllegalArgumentException( "Parent context cannot be null for ClosureBoxContext" );
+			throw new ApplicationException( "Parent context cannot be null for ClosureBoxContext" );
 		}
 	}
 

@@ -17,6 +17,8 @@
  */
 package ortus.boxlang.runtime.dynamic.casters;
 
+import ortus.boxlang.runtime.types.exceptions.ApplicationException;
+
 /**
  * I handle casting anything
  */
@@ -57,7 +59,7 @@ public class ByteCaster {
 	public static Byte cast( Object object, Boolean fail ) {
 		if ( object == null ) {
 			if ( fail ) {
-				throw new RuntimeException( "Can't cast null to a byte." );
+				throw new ApplicationException( "Can't cast null to a byte." );
 			} else {
 				return null;
 			}

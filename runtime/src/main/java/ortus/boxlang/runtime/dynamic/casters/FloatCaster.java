@@ -18,6 +18,7 @@
 package ortus.boxlang.runtime.dynamic.casters;
 
 import ortus.boxlang.runtime.interop.DynamicObject;
+import ortus.boxlang.runtime.types.exceptions.ApplicationException;
 
 /**
  * I handle casting anything
@@ -59,7 +60,7 @@ public class FloatCaster {
 	public static Float cast( Object object, Boolean fail ) {
 		if ( object == null ) {
 			if ( fail ) {
-				throw new RuntimeException( "Can't cast null to a float." );
+				throw new ApplicationException( "Can't cast null to a float." );
 			} else {
 				return null;
 			}

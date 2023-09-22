@@ -23,6 +23,8 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
+import ortus.boxlang.runtime.types.exceptions.BoxLangException;
+
 public class DoubleCasterTest {
 
 	@DisplayName( "It can cast a Double to a Double" )
@@ -77,7 +79,7 @@ public class DoubleCasterTest {
 		final CastAttempt<Double> attempt2 = DoubleCaster.attempt( "Brad" );
 		assertThat( attempt2.wasSuccessful() ).isFalse();
 
-		assertThrows( RuntimeException.class, () -> attempt2.get() );
+		assertThrows( BoxLangException.class, () -> attempt2.get() );
 		assertThat( attempt2.ifSuccessful( ( v ) -> System.out.println( v ) ) );
 		assertThat( attempt2.getOrDefault( 42D ) ).isEqualTo( 42 );
 		assertThat( attempt2.getOrSupply( () -> 40D + 2D ) ).isEqualTo( 42 );

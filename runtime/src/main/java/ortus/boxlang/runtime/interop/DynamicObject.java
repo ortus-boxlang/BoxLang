@@ -45,6 +45,7 @@ import ortus.boxlang.runtime.dynamic.casters.DoubleCaster;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.exceptions.ApplicationException;
 import ortus.boxlang.runtime.types.exceptions.BoxLangException;
+import ortus.boxlang.runtime.types.exceptions.ExpressionException;
 import ortus.boxlang.runtime.types.exceptions.KeyNotFoundException;
 import ortus.boxlang.runtime.types.exceptions.NoFieldException;
 import ortus.boxlang.runtime.types.exceptions.NoMethodException;
@@ -271,7 +272,7 @@ public class DynamicObject implements IReferenceable {
 
 		// Thou shalt not pass!
 		if ( isInterface() ) {
-			throw new IllegalStateException( "Cannot invoke a constructor on an interface" );
+			throw new ApplicationException( "Cannot invoke a constructor on an interface" );
 		}
 
 		// Unwrap any ClassInvoker instances
@@ -326,7 +327,7 @@ public class DynamicObject implements IReferenceable {
 	public Optional<Object> invoke( String methodName, Object... arguments ) {
 		// Verify method name
 		if ( methodName == null || methodName.isEmpty() ) {
-			throw new IllegalArgumentException( "Method name cannot be null or empty." );
+			throw new ApplicationException( "Method name cannot be null or empty." );
 		}
 
 		// Unwrap any ClassInvoker instances
@@ -342,7 +343,7 @@ public class DynamicObject implements IReferenceable {
 
 		// If it's not static, we need a target instance
 		if ( !methodRecord.isStatic() && !hasInstance() ) {
-			throw new IllegalStateException(
+			throw new ApplicationException(
 			    "You can't call invoke on a null target instance. Use [invokeStatic] instead or set the target instance manually or via the constructor."
 			);
 		}
@@ -372,7 +373,7 @@ public class DynamicObject implements IReferenceable {
 
 		// Verify method name
 		if ( methodName == null || methodName.isEmpty() ) {
-			throw new IllegalArgumentException( "Method name cannot be null or empty." );
+			throw new ApplicationException( "Method name cannot be null or empty." );
 		}
 
 		// Unwrap any ClassInvoker instances
@@ -418,7 +419,7 @@ public class DynamicObject implements IReferenceable {
 
 		// If it's not static, we need a target instance
 		if ( !isStatic && !hasInstance() ) {
-			throw new IllegalStateException(
+			throw new ApplicationException(
 			    "You are trying to get a public field but there is not instance set on the invoker, please make sure the [invokeConstructor] has been called."
 			);
 		}
@@ -440,14 +441,14 @@ public class DynamicObject implements IReferenceable {
 	 *
 	 * @param fieldName    The name of the field to get
 	 * @param defaultValue The default value to return if the field doesn't exist
-	 *                     *
+	 *
 	 *
 	 * @return The value of the field or the default value wrapped in an Optional
 	 */
 	public Optional<Object> getField( String fieldName, Object defaultValue ) {
 		try {
 			return getField( fieldName );
-		} catch ( NoFieldException | IllegalStateException e ) {
+		} catch ( BoxLangException e ) {
 			return Optional.ofNullable( defaultValue );
 		}
 	}
@@ -474,7 +475,7 @@ public class DynamicObject implements IReferenceable {
 
 		// If it's not static, we need a target instance, verify it's not null
 		if ( !isStatic && !hasInstance() ) {
-			throw new IllegalStateException(
+			throw new ApplicationException(
 			    "You are trying to set a public field but there is not instance set on the invoker, please make sure the [invokeConstructor] has been called."
 			);
 		}
@@ -774,7 +775,7 @@ public class DynamicObject implements IReferenceable {
 		try {
 			return METHOD_LOOKUP.unreflect( method );
 		} catch ( IllegalAccessException e ) {
-			throw new RuntimeException( "Error creating MethodHandle for method [" + method + "]", e );
+			throw new ApplicationException( "Error creating MethodHandle for method [" + method + "]", e );
 		}
 	}
 
@@ -933,7 +934,7 @@ public class DynamicObject implements IReferenceable {
 			}
 			CastAttempt<Double> indexAtt = DoubleCaster.attempt( name.getName() );
 			if ( !indexAtt.wasSuccessful() ) {
-				throw new RuntimeException( String.format(
+				throw new ExpressionException( String.format(
 				    "Array cannot be deferenced by key %s", name.getName()
 				) );
 			}
@@ -941,19 +942,19 @@ public class DynamicObject implements IReferenceable {
 			Integer	index	= dIndex.intValue();
 			// Dissallow non-integer indexes foo[1.5]
 			if ( index.doubleValue() != dIndex ) {
-				throw new RuntimeException( String.format(
+				throw new ExpressionException( String.format(
 				    "Array index [%s] is invalid.  Index must be an integer.", dIndex
 				) );
 			}
 			// Dissallow negative indexes foo[-1]
 			if ( index < 1 ) {
-				throw new RuntimeException( String.format(
+				throw new ExpressionException( String.format(
 				    "Array cannot be indexed by a number smaller than 1"
 				) );
 			}
 			// Disallow out of bounds indexes foo[5]
 			if ( index > arr.length ) {
-				throw new RuntimeException( String.format(
+				throw new ExpressionException( String.format(
 				    "Array index [%s] is out of bounds for an array of length [%s]", index, arr.length
 				) );
 			}
@@ -1003,11 +1004,7 @@ public class DynamicObject implements IReferenceable {
 			return null;
 		}
 
-		try {
-			return invoke( name.getName(), positionalArguments ).orElse( null );
-		} catch ( Throwable e ) {
-			throw new RuntimeException( e );
-		}
+		return invoke( name.getName(), positionalArguments ).orElse( null );
 	}
 
 	/**
@@ -1025,7 +1022,7 @@ public class DynamicObject implements IReferenceable {
 			return ( ( IReferenceable ) getTargetInstance() ).dereferenceAndInvoke( context, name, namedArguments, safe );
 		}
 
-		throw new RuntimeException( "Java objects cannot be called with named argumments" );
+		throw new ApplicationException( "Java objects cannot be called with named argumments" );
 	}
 
 	/**
@@ -1044,7 +1041,7 @@ public class DynamicObject implements IReferenceable {
 		if ( hasInstance() && getTargetInstance().getClass().isArray() ) {
 			CastAttempt<Double> indexAtt = DoubleCaster.attempt( name.getName() );
 			if ( !indexAtt.wasSuccessful() ) {
-				throw new RuntimeException( String.format(
+				throw new ExpressionException( String.format(
 				    "Array cannot be assigned with key %s", name.getName()
 				) );
 			}
@@ -1052,20 +1049,20 @@ public class DynamicObject implements IReferenceable {
 			Integer	index	= dIndex.intValue();
 			// Dissallow non-integer indexes foo[1.5]
 			if ( index.doubleValue() != dIndex ) {
-				throw new RuntimeException( String.format(
+				throw new ExpressionException( String.format(
 				    "Array index [%s] is invalid.  Index must be an integer.", dIndex
 				) );
 			}
 			// Dissallow negative indexes foo[-1]
 			if ( index < 1 ) {
-				throw new RuntimeException( String.format(
+				throw new ExpressionException( String.format(
 				    "Array cannot be assigned by a number smaller than 1"
 				) );
 			}
 			Object[] arr = ( ( Object[] ) getTargetInstance() );
 			// Disallow out of bounds indexes foo[5]
 			if ( index > arr.length ) {
-				throw new RuntimeException( String.format(
+				throw new ExpressionException( String.format(
 				    "Invalid index [%s] for Native Array, can't expand Native Arrays.  Current array length is [%s]", index,
 				    arr.length
 				) );
@@ -1086,7 +1083,7 @@ public class DynamicObject implements IReferenceable {
 			if ( getTargetInstance() instanceof Throwable ) {
 				return;
 			}
-			throw new RuntimeException( e );
+			throw e;
 		}
 	}
 }

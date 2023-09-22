@@ -28,6 +28,7 @@ import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Function;
 import ortus.boxlang.runtime.types.UDF;
+import ortus.boxlang.runtime.types.exceptions.ApplicationException;
 import ortus.boxlang.runtime.types.exceptions.ScopeNotFoundException;
 
 /**
@@ -226,13 +227,13 @@ public class BaseBoxContext implements IBoxContext {
 
 		ScopeSearchResult result = scopeFindNearby( name, null );
 		if ( result == null ) {
-			throw new RuntimeException( "Function '" + name.toString() + "' not found" );
+			throw new ApplicationException( "Function '" + name.toString() + "' not found" );
 		}
 		Object value = result.value();
 		if ( value instanceof Function ) {
 			return ( ( Function ) value );
 		} else {
-			throw new RuntimeException(
+			throw new ApplicationException(
 			    "Variable '" + name + "' of type  '" + value.getClass().getName() + "'  is not a function." );
 		}
 	}
@@ -263,7 +264,7 @@ public class BaseBoxContext implements IBoxContext {
 	 * @throws ScopeNotFoundException If the scope was not found in any context
 	 */
 	public IScope getScope( Key name ) throws ScopeNotFoundException {
-		throw new UnsupportedOperationException( "Unimplemented method 'getScope'" );
+		throw new ApplicationException( "Unimplemented method 'getScope'" );
 	}
 
 	/**
@@ -278,7 +279,7 @@ public class BaseBoxContext implements IBoxContext {
 	 * @throws ScopeNotFoundException If the scope was not found in any context
 	 */
 	public IScope getScopeNearby( Key name, boolean shallow ) throws ScopeNotFoundException {
-		throw new UnsupportedOperationException( "Unimplemented method 'getScopeNearby'" );
+		throw new ApplicationException( "Unimplemented method 'getScopeNearby'" );
 	}
 
 	/**
@@ -296,7 +297,7 @@ public class BaseBoxContext implements IBoxContext {
 	 *
 	 */
 	public ScopeSearchResult scopeFind( Key key, IScope defaultScope ) {
-		throw new UnsupportedOperationException( "Unimplemented method 'scopeFind'" );
+		throw new ApplicationException( "Unimplemented method 'scopeFind'" );
 	}
 
 	/**
@@ -313,7 +314,7 @@ public class BaseBoxContext implements IBoxContext {
 	 *
 	 */
 	public ScopeSearchResult scopeFindNearby( Key key, IScope defaultScope, boolean shallow ) {
-		throw new UnsupportedOperationException( "Unimplemented method 'scopeFindNearby'" );
+		throw new ApplicationException( "Unimplemented method 'scopeFindNearby'" );
 	}
 
 	/**
@@ -322,7 +323,7 @@ public class BaseBoxContext implements IBoxContext {
 	 * @param udf The UDF to register
 	 */
 	public void registerUDF( UDF udf ) {
-		throw new UnsupportedOperationException( "This context cannot register a function" );
+		throw new ApplicationException( "This context cannot register a function" );
 	}
 
 	/**
@@ -331,7 +332,7 @@ public class BaseBoxContext implements IBoxContext {
 	 * @return The scope reference to use
 	 */
 	public IScope getDefaultAssignmentScope() {
-		throw new UnsupportedOperationException( "Unimplemented method 'getDefaultAssignmentScope'" );
+		throw new ApplicationException( "Unimplemented method 'getDefaultAssignmentScope'" );
 	}
 
 	/**

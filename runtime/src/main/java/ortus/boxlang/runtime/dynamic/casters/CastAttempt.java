@@ -17,9 +17,11 @@
  */
 package ortus.boxlang.runtime.dynamic.casters;
 
+import java.util.Objects;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
-import java.util.Objects;
+
+import ortus.boxlang.runtime.types.exceptions.ApplicationException;
 
 /**
  * A container object which may or may not contain the result of a cast attempt
@@ -95,17 +97,15 @@ public final class CastAttempt<T> {
 
 	/**
 	 * If a value is present in this {@code CastAttempt}, returns the value,
-	 * otherwise throws {@code RuntimeException}.
+	 * otherwise throws Exception
 	 *
 	 * @return the non-null value held by this {@code CastAttempt}
-	 *
-	 * @throws RuntimeException if there is no value present
 	 *
 	 * @see CastAttempt#wasSuccessful()
 	 */
 	public T get() {
 		if ( value == null ) {
-			throw new RuntimeException( "The cast was not successful.  You cannot get the value." );
+			throw new ApplicationException( "The cast was not successful.  You cannot get the value." );
 		}
 		return value;
 	}
@@ -126,7 +126,7 @@ public final class CastAttempt<T> {
 	 * @param consumer block to be executed if a value is present
 	 *
 	 * @return this {@code CastAttempt}
-	 * 
+	 *
 	 * @throws NullPointerException if value is present and {@code consumer} is
 	 *                              null
 	 */
@@ -172,7 +172,7 @@ public final class CastAttempt<T> {
 		if ( value != null ) {
 			return value;
 		} else {
-			throw new RuntimeException( "Value could not be cast." );
+			throw new ApplicationException( "Value could not be cast." );
 		}
 	}
 

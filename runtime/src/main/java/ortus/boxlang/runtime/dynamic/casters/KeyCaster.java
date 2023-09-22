@@ -17,75 +17,71 @@
  */
 package ortus.boxlang.runtime.dynamic.casters;
 
-import ortus.boxlang.runtime.interop.DynamicObject;
+import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.exceptions.ApplicationException;
 
 /**
- * I handle casting anything
+ * I handle casting anything to a Key
  */
-public class ShortCaster {
+public class KeyCaster {
 
 	/**
-	 * Tests to see if the value can be cast.
+	 * Tests to see if the value can be cast to a Key.
 	 * Returns a {@code CastAttempt<T>} which will contain the result if casting was
 	 * was successfull, or can be interogated to proceed otherwise.
 	 *
-	 * @param object The value to cast
+	 * @param object The value to cast to a Key
 	 *
-	 * @return The value
+	 * @return The Key value
 	 */
-	public static CastAttempt<Short> attempt( Object object ) {
+	public static CastAttempt<Key> attempt( Object object ) {
 		return CastAttempt.ofNullable( cast( object, false ) );
 	}
 
 	/**
-	 * Used to cast anything, throwing exception if we fail
+	 * Used to cast anything to a Key, throwing exception if we fail
 	 *
-	 * @param object The value to cast
+	 * @param object The value to cast to a Key
 	 *
-	 * @return The value
+	 * @return The Key value
 	 */
-	public static Short cast( Object object ) {
+	public static Key cast( Object object ) {
 		return cast( object, true );
 	}
 
 	/**
-	 * Used to cast anything
+	 * Used to cast anything to a Key
 	 *
-	 * @param object The value to cast
+	 * @param object The value to cast to a Key
 	 * @param fail   True to throw exception when failing.
 	 *
-	 * @return The value, or null when cannot be cast
+	 * @return The Key value
 	 */
-	public static Short cast( Object object, Boolean fail ) {
+	public static Key cast( Object object, Boolean fail ) {
 		if ( object == null ) {
 			if ( fail ) {
-				throw new ApplicationException( "Can't cast null to a short." );
+				throw new ApplicationException( "Can't cast null to a Key." );
 			} else {
 				return null;
 			}
 		}
 
-		object = DynamicObject.unWrap( object );
-
-		if ( object instanceof Number ) {
-			return Short.valueOf( ( ( Number ) object ).shortValue() );
-		}
-		if ( object instanceof Boolean ) {
-			return Short.valueOf( ( short ) ( ( Boolean ) object ? 1 : 0 ) );
-		}
-
-		// TODO: Find a way to check if the string can be cast without throwing an exception here
-		try {
-			return Short.valueOf( StringCaster.cast( object ) );
-		} catch ( NumberFormatException e ) {
-			if ( fail ) {
-				throw e;
-			} else {
-				return null;
+		if ( object instanceof Key ) {
+			return ( Key ) object;
+		} else if ( object instanceof String ) {
+			return Key.of( ( String ) object );
+		} else {
+			CastAttempt<String> castAttempt = StringCaster.attempt( object );
+			if ( castAttempt.wasSuccessful() ) {
+				return Key.of( castAttempt.get() );
 			}
 		}
 
+		if ( fail ) {
+			throw new ApplicationException( "Can't cast " + object.getClass().getName() + " to a Key." );
+		} else {
+			return null;
+		}
 	}
 
 }

@@ -19,6 +19,7 @@ package ortus.boxlang.runtime.dynamic.casters;
 
 import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.types.Function;
+import ortus.boxlang.runtime.types.exceptions.ApplicationException;
 
 /**
  * I handle casting anything to a Function
@@ -60,7 +61,7 @@ public class FunctionCaster {
 	public static Function cast( Object object, boolean fail ) {
 		if ( object == null ) {
 			if ( fail ) {
-				throw new RuntimeException( "Null cannot be cast to a Function" );
+				throw new ApplicationException( "Null cannot be cast to a Function" );
 			} else {
 				return null;
 			}
@@ -72,7 +73,7 @@ public class FunctionCaster {
 			return ( Function ) object;
 		} else {
 			if ( fail ) {
-				throw new RuntimeException(
+				throw new ApplicationException(
 				    String.format( "Value [%s] cannot be cast to a Function", object.getClass().getName() )
 				);
 			} else {

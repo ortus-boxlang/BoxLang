@@ -30,6 +30,7 @@ import ortus.boxlang.runtime.loader.ClassLocator;
 import ortus.boxlang.runtime.loader.ClassLocator.ClassLocation;
 import ortus.boxlang.runtime.loader.ImportDefinition;
 import ortus.boxlang.runtime.loader.util.ClassDiscovery;
+import ortus.boxlang.runtime.types.exceptions.ApplicationException;
 
 /**
  * This class is the base class for all resolvers.
@@ -135,7 +136,7 @@ public class BaseResolver implements IClassResolver {
 	 */
 	@Override
 	public Optional<ClassLocation> resolve( IBoxContext context, String name ) {
-		throw new UnsupportedOperationException( "Implement the [resolve] method in your own resolver" );
+		throw new ApplicationException( "Implement the [resolve] method in your own resolver" );
 	}
 
 	/**
@@ -151,7 +152,7 @@ public class BaseResolver implements IClassResolver {
 	 */
 	@Override
 	public Optional<ClassLocation> resolve( IBoxContext context, String name, List<ImportDefinition> imports ) {
-		throw new UnsupportedOperationException( "Implement the [resolve] method in your own resolver" );
+		throw new ApplicationException( "Implement the [resolve] method in your own resolver" );
 	}
 
 	/**
@@ -221,8 +222,7 @@ public class BaseResolver implements IClassResolver {
 			    .getClassFilesAsStream( thisImport.getPackageName(), false )
 			    .anyMatch( clazzName -> ClassUtils.getShortClassName( clazzName ).equalsIgnoreCase( className ) );
 		} catch ( IOException e ) {
-			e.printStackTrace();
-			throw new RuntimeException( "Could not discover classes in package [" + thisImport.getPackageName() + "]", e );
+			throw new ApplicationException( "Could not discover classes in package [" + thisImport.getPackageName() + "]", e );
 		}
 	}
 

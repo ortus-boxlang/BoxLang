@@ -5,6 +5,7 @@ import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Lambda;
 import ortus.boxlang.runtime.types.Struct;
+import ortus.boxlang.runtime.types.exceptions.ApplicationException;
 import ortus.boxlang.runtime.types.exceptions.KeyNotFoundException;
 import ortus.boxlang.runtime.types.exceptions.ScopeNotFoundException;
 
@@ -35,7 +36,7 @@ public class LambdaBoxContext extends FunctionBoxContext {
 	public LambdaBoxContext( IBoxContext parent, Lambda function, ArgumentsScope argumentsScope ) {
 		super( parent, function, argumentsScope );
 		if ( parent == null ) {
-			throw new IllegalArgumentException( "Parent context cannot be null for LambdaBoxContext" );
+			throw new ApplicationException( "Parent context cannot be null for LambdaBoxContext" );
 		}
 	}
 

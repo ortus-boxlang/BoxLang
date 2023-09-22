@@ -28,6 +28,7 @@ import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.loader.resolvers.BoxResolver;
 import ortus.boxlang.runtime.loader.resolvers.IClassResolver;
 import ortus.boxlang.runtime.loader.resolvers.JavaResolver;
+import ortus.boxlang.runtime.types.exceptions.ApplicationException;
 import ortus.boxlang.runtime.types.exceptions.ClassNotFoundBoxLangException;
 import ortus.boxlang.runtime.types.exceptions.KeyNotFoundException;
 
@@ -141,11 +142,10 @@ public class ClassLocator extends ClassLoader {
 	 *
 	 * @param resolver The class resolver to register
 	 *
-	 * @throws IllegalStateException If the resolver is already registered
 	 */
-	public void registerResolver( IClassResolver resolver ) throws IllegalStateException {
+	public void registerResolver( IClassResolver resolver ) {
 		if ( hasResolver( resolver.getPrefix() ) ) {
-			throw new IllegalStateException( String.format( "The resolver [%s] is already registered", resolver.getPrefix() ) );
+			throw new ApplicationException( String.format( "The resolver [%s] is already registered", resolver.getPrefix() ) );
 		}
 		this.resolvers.put( resolver.getPrefix(), resolver );
 	}
@@ -198,13 +198,12 @@ public class ClassLocator extends ClassLoader {
 	 *
 	 * @return True if the resolver was removed, false otherwise
 	 *
-	 * @throws IllegalStateException If the resolver is reserved and cannot be removed
 	 */
-	public Boolean removeResolver( String prefix ) throws IllegalStateException {
+	public Boolean removeResolver( String prefix ) {
 		prefix = prefix.toLowerCase();
 
 		if ( RESERVED_RESOLVERS.contains( prefix ) ) {
-			throw new IllegalStateException( String.format( "The resolver [%s] is reserved and cannot be removed", prefix ) );
+			throw new ApplicationException( String.format( "The resolver [%s] is reserved and cannot be removed", prefix ) );
 		}
 
 		return ( this.resolvers.remove( prefix ) != null );

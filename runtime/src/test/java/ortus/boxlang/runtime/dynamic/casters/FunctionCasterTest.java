@@ -27,6 +27,7 @@ import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Function;
 import ortus.boxlang.runtime.types.SampleUDF;
 import ortus.boxlang.runtime.types.Struct;
+import ortus.boxlang.runtime.types.exceptions.BoxLangException;
 
 public class FunctionCasterTest {
 
@@ -40,10 +41,10 @@ public class FunctionCasterTest {
 	@DisplayName( "It can not cast a non-function" )
 	@Test
 	void testItCanNotCastANonFunction() {
-		assertThrows( RuntimeException.class, () -> FunctionCaster.cast( "" ) );
-		assertThrows( RuntimeException.class, () -> FunctionCaster.cast( null ) );
-		assertThrows( RuntimeException.class, () -> FunctionCaster.cast( 5 ) );
-		assertThrows( RuntimeException.class, () -> FunctionCaster.cast( new Struct() ) );
+		assertThrows( BoxLangException.class, () -> FunctionCaster.cast( "" ) );
+		assertThrows( BoxLangException.class, () -> FunctionCaster.cast( null ) );
+		assertThrows( BoxLangException.class, () -> FunctionCaster.cast( 5 ) );
+		assertThrows( BoxLangException.class, () -> FunctionCaster.cast( new Struct() ) );
 
 	}
 
@@ -59,7 +60,7 @@ public class FunctionCasterTest {
 		final CastAttempt<Function> attempt2 = FunctionCaster.attempt( "Brad" );
 		assertThat( attempt2.wasSuccessful() ).isFalse();
 
-		assertThrows( RuntimeException.class, () -> attempt2.get() );
+		assertThrows( BoxLangException.class, () -> attempt2.get() );
 		assertThat( attempt2.ifSuccessful( ( v ) -> System.out.println( v ) ) );
 	}
 

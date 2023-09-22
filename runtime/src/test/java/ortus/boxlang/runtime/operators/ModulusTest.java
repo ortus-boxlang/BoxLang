@@ -26,6 +26,7 @@ import org.junit.jupiter.api.Test;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
+import ortus.boxlang.runtime.types.exceptions.BoxLangException;
 
 public class ModulusTest {
 
@@ -48,7 +49,7 @@ public class ModulusTest {
 	@DisplayName( "It can not Modulus by zero" )
 	@Test
 	void testItCanNotModulusByZero() {
-		assertThrows( RuntimeException.class, () -> Modulus.invoke( 1, 0 ) );
+		assertThrows( BoxLangException.class, () -> Modulus.invoke( 1, 0 ) );
 	}
 
 	@DisplayName( "It can compound Modulus" )

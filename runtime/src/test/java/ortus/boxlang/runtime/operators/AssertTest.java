@@ -23,24 +23,44 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
+import ortus.boxlang.runtime.context.ScriptingBoxContext;
+import ortus.boxlang.runtime.scopes.Key;
+import ortus.boxlang.runtime.types.Function;
+import ortus.boxlang.runtime.types.SampleUDF;
+import ortus.boxlang.runtime.types.UDF;
+import ortus.boxlang.runtime.types.exceptions.BoxLangException;
+
 public class AssertTest {
 
 	@DisplayName( "It can assert throw exceptions on null values" )
 	@Test
 	void testItCanThrowOnNullValues() {
-		assertThrows( AssertionError.class, () -> Assert.invoke( null ) );
+		assertThrows( AssertionError.class, () -> Assert.invoke( new ScriptingBoxContext(), null ) );
 	}
 
 	@DisplayName( "It can assert throw exceptions on false values" )
 	@Test
 	void testItCanThrowOnFalseValues() {
-		assertThrows( AssertionError.class, () -> Assert.invoke( false ) );
+		assertThrows( AssertionError.class, () -> Assert.invoke( new ScriptingBoxContext(), false ) );
 	}
 
 	@DisplayName( "It can assert" )
 	@Test
 	void testItCanAssert() {
-		assertThat( Assert.invoke( true ) ).isTrue();
+		assertThat( Assert.invoke( new ScriptingBoxContext(), true ) ).isTrue();
+	}
+
+	@DisplayName( "It can assert UDF" )
+	@Test
+	void testItCanAssertUDF() {
+		UDF udf = new SampleUDF( UDF.Access.PUBLIC, Key.of( "func" ), "any", new Function.Argument[] {}, "", false, true );
+		assertThat( Assert.invoke( new ScriptingBoxContext(), udf ) ).isTrue();
+
+		final UDF udf2 = new SampleUDF( UDF.Access.PUBLIC, Key.of( "func" ), "any", new Function.Argument[] {}, "", false, false );
+		assertThrows( AssertionError.class, () -> Assert.invoke( new ScriptingBoxContext(), udf2 ) );
+
+		final UDF udf3 = new SampleUDF( UDF.Access.PUBLIC, Key.of( "func" ), "any", new Function.Argument[] {}, "", false, "brad" );
+		assertThrows( BoxLangException.class, () -> Assert.invoke( new ScriptingBoxContext(), udf3 ) );
 	}
 
 }

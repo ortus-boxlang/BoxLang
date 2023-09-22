@@ -23,6 +23,8 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
+import ortus.boxlang.runtime.types.exceptions.BoxLangException;
+
 public class NotTest {
 
 	@DisplayName( "It can boolean negate a boolean" )
@@ -51,7 +53,7 @@ public class NotTest {
 		assertThat( Not.invoke( "yes" ) ).isFalse();
 		assertThat( Not.invoke( "no" ) ).isTrue();
 
-		assertThrows( RuntimeException.class, () -> Not.invoke( "Brad" ) );
+		assertThrows( BoxLangException.class, () -> Not.invoke( "Brad" ) );
 	}
 
 }

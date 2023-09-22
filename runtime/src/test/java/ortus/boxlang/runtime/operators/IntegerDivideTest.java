@@ -23,6 +23,8 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
+import ortus.boxlang.runtime.types.exceptions.BoxLangException;
+
 public class IntegerDivideTest {
 
 	@DisplayName( "It can Integer Divide numbers" )
@@ -44,7 +46,7 @@ public class IntegerDivideTest {
 	@DisplayName( "It can not Integer Divide by zero" )
 	@Test
 	void testItCanNotIntegerDivideByZero() {
-		assertThrows( RuntimeException.class, () -> IntegerDivide.invoke( 1, 0 ) );
+		assertThrows( BoxLangException.class, () -> IntegerDivide.invoke( 1, 0 ) );
 	}
 
 }

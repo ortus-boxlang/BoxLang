@@ -30,6 +30,7 @@ import ortus.boxlang.runtime.context.ScriptingBoxContext;
 import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.loader.ClassLocator.ClassLocation;
 import ortus.boxlang.runtime.loader.resolvers.BoxResolver;
+import ortus.boxlang.runtime.types.exceptions.BoxLangException;
 
 public class ClassLocatorTest {
 
@@ -48,10 +49,10 @@ public class ClassLocatorTest {
 	@Test
 	public void testItCannotRemoveACoreResolver() {
 		ClassLocator locator = ClassLocator.getInstance();
-		assertThrows( IllegalStateException.class, () -> {
+		assertThrows( BoxLangException.class, () -> {
 			locator.removeResolver( "java" );
 		} );
-		assertThrows( IllegalStateException.class, () -> {
+		assertThrows( BoxLangException.class, () -> {
 			locator.removeResolver( "bx" );
 		} );
 	}

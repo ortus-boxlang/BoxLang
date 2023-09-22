@@ -43,13 +43,13 @@ public class LoggingConfigurator {
 	 * <li>`1$` inserts the date
 	 * <li>`3$` inserts the logger name
 	 * <li>`4$` inserts the log level
-	 * 
+	 *
 	 * Formats:
 	 * <li>`tF` formats timestamp to `"%tY-%tm-%td"`
 	 * <li>`tT` formats timestamp to 24-hour `"%tH:%tM:%tS`
 	 * <li>`s` formats string as, uh, string.
 	 * <li>`%n` inserts line separator
-	 * 
+	 *
 	 * @see https://docs.oracle.com/en/java/javase/17/docs/api/java.logging/java/util/logging/SimpleFormatter.html#format(java.util.logging.LogRecord)
 	 */
 	private static String		logFormat			= "[%1$tF %1$tT] [%3$s] [%4$s] %5$s %n";
@@ -71,6 +71,7 @@ public class LoggingConfigurator {
 			    : loadFromPropertiesFile()
 			);
 		} catch ( IOException e ) {
+			// use logger for this, or rethrow
 			e.printStackTrace();
 		}
 	}

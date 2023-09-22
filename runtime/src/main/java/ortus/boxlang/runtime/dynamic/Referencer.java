@@ -23,6 +23,7 @@ import java.util.Map;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.scopes.Key;
+import ortus.boxlang.runtime.types.exceptions.ApplicationException;
 
 /**
  * I handle dereferencing of objects
@@ -141,7 +142,7 @@ public class Referencer {
 				obj.assign( key, next );
 				// If it's not null, it needs to be a Map
 			} else if ( ! ( next instanceof Map ) ) {
-				throw new RuntimeException(
+				throw new ApplicationException(
 				    String.format( "Cannot assign to key [%s] because it is a [%s] and not a Map", key,
 				        next.getClass().getName() )
 				);

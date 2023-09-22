@@ -33,6 +33,7 @@ import ortus.boxlang.runtime.functions.FunctionNamespace;
 import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.loader.util.ClassDiscovery;
 import ortus.boxlang.runtime.scopes.Key;
+import ortus.boxlang.runtime.types.exceptions.ApplicationException;
 import ortus.boxlang.runtime.types.exceptions.KeyNotFoundException;
 
 /**
@@ -84,8 +85,7 @@ public class FunctionService extends BaseService {
 		try {
 			loadGlobalFunctions();
 		} catch ( IOException e ) {
-			e.printStackTrace();
-			throw new RuntimeException( "Cannot load global functions", e );
+			throw new ApplicationException( "Cannot load global functions", e );
 		}
 	}
 
@@ -163,14 +163,14 @@ public class FunctionService extends BaseService {
 
 	public void registerGlobalFunction( FunctionDescriptor descriptor ) throws IllegalArgumentException {
 		if ( hasGlobalFunction( descriptor.name ) ) {
-			throw new IllegalArgumentException( "Global function " + descriptor.name + " already exists" );
+			throw new ApplicationException( "Global function " + descriptor.name + " already exists" );
 		}
 		globalFunctions.put( Key.of( descriptor.name ), descriptor );
 	}
 
 	public void registerGlobalFunction( String name, BIF function, String module ) throws IllegalArgumentException {
 		if ( hasGlobalFunction( name ) ) {
-			throw new IllegalArgumentException( "Global function " + name + " already exists" );
+			throw new ApplicationException( "Global function " + name + " already exists" );
 		}
 
 		globalFunctions.put(

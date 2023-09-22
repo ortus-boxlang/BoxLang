@@ -74,6 +74,7 @@ public class ClassDiscovery {
 			    try {
 				    return Class.forName( className );
 			    } catch ( ClassNotFoundException e ) {
+				    // TODO: use logger for this, or remove
 				    e.printStackTrace();
 				    return null;
 			    }

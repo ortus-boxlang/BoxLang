@@ -89,8 +89,6 @@ public class ConfigLoader {
 	/**
 	 * Load the config file into the Configuration class from the `resources` folder
 	 *
-	 * @throws RuntimeException If the config file cannot be loaded
-	 *
 	 * @return The parsed configuration
 	 */
 	public Configuration load() {

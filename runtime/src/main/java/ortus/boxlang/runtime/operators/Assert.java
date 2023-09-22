@@ -17,7 +17,9 @@
  */
 package ortus.boxlang.runtime.operators;
 
+import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
+import ortus.boxlang.runtime.types.Function;
 
 /**
  * Performs an assertion check on an incoming expression value.
@@ -34,14 +36,12 @@ public class Assert implements IOperator {
 	 *
 	 * @throws AssertionError if the result is false or null
 	 */
-	public static Boolean invoke( Object result ) throws AssertionError {
+	public static Boolean invoke( IBoxContext context, Object result ) throws AssertionError {
 
-		/**
-		 * TODO: if the result is a closure/lambda, check it and call it
-		 * if( result instanceOf Closure || result instanceOf Lambda ){
-		 * result = result.invoke();
-		 * }
-		 */
+		// if the result is a Function, check it and call it
+		if ( result instanceof Function ) {
+			result = context.invokeFunction( ( Function ) result );
+		}
 
 		if ( result != null && BooleanCaster.cast( result ) ) {
 			return true;

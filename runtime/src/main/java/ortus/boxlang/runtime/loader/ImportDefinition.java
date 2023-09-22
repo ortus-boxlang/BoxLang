@@ -17,6 +17,8 @@
  */
 package ortus.boxlang.runtime.loader;
 
+import ortus.boxlang.runtime.types.exceptions.ApplicationException;
+
 /**
  * Represents an import in BoxLang
  *
@@ -36,7 +38,7 @@ public record ImportDefinition( String className, String resolverPrefix, String 
 
 	{
 		if ( className == null ) {
-			throw new IllegalArgumentException( "Class name cannot be null." );
+			throw new ApplicationException( "Class name cannot be null." );
 		}
 	}
 

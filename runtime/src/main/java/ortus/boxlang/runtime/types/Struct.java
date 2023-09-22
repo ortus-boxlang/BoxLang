@@ -29,10 +29,10 @@ import java.util.concurrent.ConcurrentHashMap;
 import ortus.boxlang.runtime.context.FunctionBoxContext;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.dynamic.IReferenceable;
-import ortus.boxlang.runtime.dynamic.casters.CastAttempt;
-import ortus.boxlang.runtime.dynamic.casters.StringCaster;
+import ortus.boxlang.runtime.dynamic.casters.KeyCaster;
 import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.scopes.Key;
+import ortus.boxlang.runtime.types.exceptions.ApplicationException;
 import ortus.boxlang.runtime.types.exceptions.KeyNotFoundException;
 
 public class Struct implements Map<Key, Object>, IType, IReferenceable {
@@ -79,7 +79,7 @@ public class Struct implements Map<Key, Object>, IType, IReferenceable {
 			wrapped = Collections.synchronizedMap( new TreeMap<Key, Object>() );
 			return;
 		}
-		throw new RuntimeException( "Invalid struct type" );
+		throw new ApplicationException( "Invalid struct type" );
 	}
 
 	/**
@@ -90,13 +90,60 @@ public class Struct implements Map<Key, Object>, IType, IReferenceable {
 	}
 
 	/**
-	 * Create a struct from a map
+	 * Construct a struct from a map
 	 *
 	 * @param map The map to create the struct from
 	 */
 	public Struct( Map<Object, Object> map ) {
-		this( Type.DEFAULT );
+		this( Type.DEFAULT, map );
+	}
+
+	/**
+	 * Construct a struct of a specific type from a map
+	 *
+	 * @param map  The map to create the struct from
+	 * @param type The type of struct to create: DEFAULT, LINKED, SORTED
+	 */
+	public Struct( Type type, Map<Object, Object> map ) {
+		this( type );
 		addAll( map );
+	}
+
+	/**
+	 * Create a struct from a map
+	 *
+	 * @param map The map to create the struct from
+	 */
+	static public Struct fromMap( Map<Object, Object> map ) {
+		return new Struct( map );
+	}
+
+	/**
+	 * Construct a struct of a specific type from a map
+	 *
+	 * @param map  The map to create the struct from
+	 * @param type The type of struct to create: DEFAULT, LINKED, SORTED
+	 */
+	static public Struct fromMap( Type type, Map<Object, Object> map ) {
+		return new Struct( type, map );
+	}
+
+	/**
+	 * Create a struct from a list of values. The values must be in pairs, key, value, key, value, etc.
+	 *
+	 * @param values The values to create the struct from
+	 *
+	 * @return The struct
+	 */
+	public static Struct of( Object... values ) {
+		if ( values.length % 2 != 0 ) {
+			throw new ApplicationException( "Invalid number of arguments.  Must be an even number." );
+		}
+		Struct struct = new Struct();
+		for ( int i = 0; i < values.length; i += 2 ) {
+			struct.put( KeyCaster.cast( values[ i ] ), values[ i + 1 ] );
+		}
+		return struct;
 	}
 
 	/**
@@ -444,7 +491,7 @@ public class Struct implements Map<Key, Object>, IType, IReferenceable {
 				);
 				return function.invoke( fContext );
 			} else {
-				throw new RuntimeException(
+				throw new ApplicationException(
 				    "key '" + name.getName() + "' of type  '" + value.getClass().getName() + "'  is not a function " );
 			}
 		}
@@ -483,7 +530,7 @@ public class Struct implements Map<Key, Object>, IType, IReferenceable {
 			);
 			return function.invoke( fContext );
 		} else {
-			throw new RuntimeException(
+			throw new ApplicationException(
 			    "key '" + name.getName() + "' of type  '" + value.getClass().getName() + "'  is not a function "
 			);
 		}
@@ -524,41 +571,6 @@ public class Struct implements Map<Key, Object>, IType, IReferenceable {
 			return null;
 		}
 		return value;
-	}
-
-	/**
-	 * Create a struct from a list of values. The values must be in pairs, key, value, key, value, etc.
-	 *
-	 * @param values The values to create the struct from
-	 *
-	 * @return The struct
-	 */
-	public static Struct of( Object... values ) {
-		if ( values.length % 2 != 0 ) {
-			throw new RuntimeException( "Invalid number of arguments.  Must be an even number." );
-		}
-		Struct struct = new Struct();
-		for ( int i = 0; i < values.length; i += 2 ) {
-			if ( values[ i ] == null ) {
-				throw new RuntimeException( "Invalid key type.  Cannot be null." );
-			}
-			Key key;
-			if ( values[ i ] instanceof Key ) {
-				key = ( Key ) values[ i ];
-			} else if ( values[ i ] instanceof String ) {
-				key = Key.of( ( String ) values[ i ] );
-			} else {
-				CastAttempt<String> castAttempt = StringCaster.attempt( values[ i ] );
-				if ( castAttempt.wasSuccessful() ) {
-					key = Key.of( castAttempt.get() );
-				} else {
-					throw new RuntimeException( "Invalid key type.  Must be String or Key instance." );
-				}
-			}
-
-			struct.put( key, values[ i + 1 ] );
-		}
-		return struct;
 	}
 
 }

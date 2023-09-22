@@ -32,6 +32,7 @@ import ortus.boxlang.runtime.dynamic.casters.CastAttempt;
 import ortus.boxlang.runtime.dynamic.casters.DoubleCaster;
 import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.scopes.Key;
+import ortus.boxlang.runtime.types.exceptions.ExpressionException;
 
 public class Array implements List<Object>, IType, IReferenceable {
 
@@ -291,7 +292,7 @@ public class Array implements List<Object>, IType, IReferenceable {
 	public void assign( Key key, Object value ) {
 		CastAttempt<Double> indexAtt = DoubleCaster.attempt( key.getName() );
 		if ( !indexAtt.wasSuccessful() ) {
-			throw new RuntimeException( String.format(
+			throw new ExpressionException( String.format(
 			    "Array cannot be assigned with key %s", key.getName()
 			) );
 		}
@@ -299,13 +300,13 @@ public class Array implements List<Object>, IType, IReferenceable {
 		Integer	index	= dIndex.intValue();
 		// Dissallow non-integer indexes foo[1.5]
 		if ( index.doubleValue() != dIndex ) {
-			throw new RuntimeException( String.format(
+			throw new ExpressionException( String.format(
 			    "Array index [%s] is invalid.  Index must be an integer.", dIndex
 			) );
 		}
 		// Dissallow negative indexes foo[-1]
 		if ( index < 1 ) {
-			throw new RuntimeException( String.format(
+			throw new ExpressionException( String.format(
 			    "Array cannot be assigned by a number smaller than 1"
 			) );
 		}
@@ -336,7 +337,7 @@ public class Array implements List<Object>, IType, IReferenceable {
 			if ( safe ) {
 				return null;
 			}
-			throw new RuntimeException( String.format(
+			throw new ExpressionException( String.format(
 			    "Array cannot be deferenced by key %s", key.getName()
 			) );
 		}
@@ -347,7 +348,7 @@ public class Array implements List<Object>, IType, IReferenceable {
 			if ( safe ) {
 				return null;
 			}
-			throw new RuntimeException( String.format(
+			throw new ExpressionException( String.format(
 			    "Array index [%s] is invalid.  Index must be an integer.", dIndex
 			) );
 		}
@@ -356,7 +357,7 @@ public class Array implements List<Object>, IType, IReferenceable {
 			if ( safe ) {
 				return null;
 			}
-			throw new RuntimeException( String.format(
+			throw new ExpressionException( String.format(
 			    "Array cannot be indexed by a number smaller than 1"
 			) );
 		}
@@ -365,7 +366,7 @@ public class Array implements List<Object>, IType, IReferenceable {
 			if ( safe ) {
 				return null;
 			}
-			throw new RuntimeException( String.format(
+			throw new ExpressionException( String.format(
 			    "Array index [%s] is out of bounds for an array of length [%s]", index, wrapped.size()
 			) );
 		}

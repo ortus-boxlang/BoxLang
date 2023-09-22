@@ -71,7 +71,7 @@ public class FunctionDescriptor {
 	public Optional<Object> invoke( Object... arguments ) {
 		// Check first argument, it must be the context
 		if ( arguments.length == 0 || ! ( arguments[ 0 ] instanceof IBoxContext ) ) {
-			throw new IllegalArgumentException( "First argument must be an IBoxContext" );
+			throw new ApplicationException( "First argument must be an IBoxContext" );
 		}
 		// Invoke it baby!
 		return this.getBIF().invoke( "invoke", arguments );

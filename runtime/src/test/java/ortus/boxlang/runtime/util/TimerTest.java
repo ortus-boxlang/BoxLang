@@ -18,10 +18,12 @@
  */
 package ortus.boxlang.runtime.util;
 
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import com.google.common.truth.Truth;
+
+import ortus.boxlang.runtime.types.exceptions.ApplicationException;
 
 public class TimerTest {
 
@@ -39,7 +41,7 @@ public class TimerTest {
 			try {
 				Thread.sleep( 100 );
 			} catch ( InterruptedException e ) {
-				e.printStackTrace();
+				throw new ApplicationException( e.getMessage(), e );
 			}
 		} );
 
@@ -55,7 +57,7 @@ public class TimerTest {
 		try {
 			Thread.sleep( 100 );
 		} catch ( InterruptedException e ) {
-			e.printStackTrace();
+			throw new ApplicationException( e.getMessage(), e );
 		}
 
 		long elapsedSeconds = timer.stopAndGetSeconds( "testTimer" );
@@ -72,7 +74,7 @@ public class TimerTest {
 		try {
 			Thread.sleep( 100 );
 		} catch ( InterruptedException e ) {
-			e.printStackTrace();
+			throw new ApplicationException( e.getMessage(), e );
 		}
 
 		long elapsedMillis = timer.stopAndGetMillis( "testTimer" );
@@ -89,7 +91,7 @@ public class TimerTest {
 		try {
 			Thread.sleep( 100 );
 		} catch ( InterruptedException e ) {
-			e.printStackTrace();
+			throw new ApplicationException( e.getMessage(), e );
 		}
 
 		long elapsedNanos = timer.stopAndGetNanos( "testTimer" );

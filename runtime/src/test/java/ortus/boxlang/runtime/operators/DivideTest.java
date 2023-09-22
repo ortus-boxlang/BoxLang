@@ -26,6 +26,7 @@ import org.junit.jupiter.api.Test;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
+import ortus.boxlang.runtime.types.exceptions.BoxLangException;
 
 public class DivideTest {
 
@@ -47,7 +48,7 @@ public class DivideTest {
 	@DisplayName( "It can not Divide by zero" )
 	@Test
 	void testItCanNotDivideByZero() {
-		assertThrows( RuntimeException.class, () -> Divide.invoke( 1, 0 ) );
+		assertThrows( BoxLangException.class, () -> Divide.invoke( 1, 0 ) );
 	}
 
 	@DisplayName( "It can compound Divide" )

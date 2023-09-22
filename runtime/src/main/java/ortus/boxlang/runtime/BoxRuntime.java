@@ -168,7 +168,6 @@ public class BoxRuntime {
 	 *
 	 * @return BoxRuntime
 	 *
-	 * @throws RuntimeException if the runtime has not been started
 	 */
 	public static BoxRuntime getInstance( Boolean debugMode ) {
 		if ( instance == null ) {

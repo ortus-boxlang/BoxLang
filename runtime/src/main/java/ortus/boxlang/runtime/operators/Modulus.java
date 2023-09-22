@@ -20,6 +20,7 @@ package ortus.boxlang.runtime.operators;
 import ortus.boxlang.runtime.dynamic.Referencer;
 import ortus.boxlang.runtime.dynamic.casters.DoubleCaster;
 import ortus.boxlang.runtime.scopes.Key;
+import ortus.boxlang.runtime.types.exceptions.ApplicationException;
 
 /**
  * Performs Math Modulus
@@ -36,7 +37,7 @@ public class Modulus implements IOperator {
 	public static Double invoke( Object left, Object right ) {
 		Double dRight = DoubleCaster.cast( right );
 		if ( dRight == 0 ) {
-			throw new RuntimeException( "You cannot divide by zero." );
+			throw new ApplicationException( "You cannot divide by zero." );
 		}
 		return DoubleCaster.cast( left ) % dRight;
 	}

@@ -22,6 +22,7 @@ import java.time.LocalDateTime;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.services.InterceptorService;
 import ortus.boxlang.runtime.types.Struct;
+import ortus.boxlang.runtime.types.exceptions.ApplicationException;
 
 /// import ortus.boxlang.runtime.core.Derefrencer;
 
@@ -102,6 +103,6 @@ public class BaseTemplate {
 	 *
 	 */
 	public void _invoke( IBoxContext context ) {
-		throw new UnsupportedOperationException( "This method must be overridden." );
+		throw new ApplicationException( "This method must be overridden." );
 	}
 }
