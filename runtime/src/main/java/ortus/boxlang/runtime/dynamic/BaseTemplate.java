@@ -72,7 +72,7 @@ public class BaseTemplate {
 	 * @param context The context to invoke the template with
 	 *
 	 */
-	public void invoke( IBoxContext context ) throws Throwable {
+	public void invoke( IBoxContext context ) {
 		InterceptorService interceptorService = InterceptorService.getInstance();
 
 		context.pushTemplate( this );
@@ -100,9 +100,8 @@ public class BaseTemplate {
 	 *
 	 * @param context The context to invoke the template with
 	 *
-	 * @throws Throwable
 	 */
-	public void _invoke( IBoxContext context ) throws Throwable {
+	public void _invoke( IBoxContext context ) {
 		throw new UnsupportedOperationException( "This method must be overridden." );
 	}
 }

@@ -31,14 +31,14 @@ public class FunctionServiceTest {
 
 	@DisplayName( "It can create the function service" )
 	@Test
-	void testItCanCreateIt() throws Throwable {
+	void testItCanCreateIt() {
 		FunctionService functionService = FunctionService.getInstance();
 		assertThat( functionService ).isNotNull();
 	}
 
 	@DisplayName( "It can startup and register global functions" )
 	@Test
-	void testItCanStartup() throws Throwable {
+	void testItCanStartup() {
 		FunctionService functionService = FunctionService.getInstance();
 
 		assertThat( functionService.getGlobalFunctionCount() ).isGreaterThan( 0 );
@@ -47,7 +47,7 @@ public class FunctionServiceTest {
 
 	@DisplayName( "It can invoke a global function" )
 	@Test
-	void testItCanInvokeAGlobalFunction() throws Throwable {
+	void testItCanInvokeAGlobalFunction() {
 		FunctionService functionService = FunctionService.getInstance();
 
 		assertThat( functionService.hasGlobalFunction( "print" ) ).isTrue();

@@ -15,22 +15,28 @@
 
 package ortus.boxlang.executor;
 
-import com.github.javaparser.ast.stmt.Statement;
-import org.apache.commons.text.StringSubstitutor;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import ortus.boxlang.transpiler.BoxLangTranspiler;
+import java.io.File;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 import javax.tools.DiagnosticCollector;
 import javax.tools.JavaCompiler;
 import javax.tools.JavaFileObject;
 import javax.tools.ToolProvider;
-import java.io.File;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
-import java.net.*;
-import java.util.*;
-import java.util.stream.Collectors;
+
+import org.apache.commons.text.StringSubstitutor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import com.github.javaparser.ast.stmt.Statement;
 
 /**
  * Dynamic in memory Java executor
@@ -72,7 +78,7 @@ public class JavaRunner {
 	                                                          	 *
 	                                                          	 * @param context The execution context requesting the execution
 	                                                          	 */
-	                                                          	public void invoke( IBoxContext context ) throws Throwable {
+	                                                          	public void invoke( IBoxContext context ) {
 	                                                          		// Reference to the variables scope
 	                                                          		IScope variablesScope = context.getScopeNearby( Key.of( "variables" ) );
 	                                                          		ClassLocator JavaLoader = ClassLocator.getInstance();

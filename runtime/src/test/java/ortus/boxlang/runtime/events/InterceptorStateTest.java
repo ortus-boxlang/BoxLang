@@ -53,7 +53,7 @@ public class InterceptorStateTest {
 
 	@DisplayName( "It can process observers" )
 	@Test
-	void testItCanProcessObservers() throws Throwable {
+	void testItCanProcessObservers() {
 		interceptorState.register( observer1 );
 		interceptorState.register( observer2 );
 

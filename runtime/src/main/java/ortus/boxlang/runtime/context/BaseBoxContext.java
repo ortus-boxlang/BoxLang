@@ -250,12 +250,7 @@ public class BaseBoxContext implements IBoxContext {
 		// Load template class, compiling if neccessary
 		BaseTemplate	template				= BoxPiler.parse( absoluteTemplatePath );
 
-		try {
-			template.invoke( this );
-		} catch ( Throwable e ) {
-			// TODO add the right exception
-			throw new RuntimeException( "Error invoking template '" + absoluteTemplatePath + "'", e );
-		}
+		template.invoke( this );
 	}
 
 	/**

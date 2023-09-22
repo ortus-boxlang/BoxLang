@@ -31,6 +31,7 @@ import ortus.boxlang.runtime.loader.ImportDefinition;
 import ortus.boxlang.runtime.operators.Divide;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
+import ortus.boxlang.runtime.types.exceptions.ApplicationException;
 import ortus.boxlang.runtime.types.exceptions.ExceptionUtil;
 
 public class Phase1TryCatch extends BaseTemplate {
@@ -54,7 +55,7 @@ public class Phase1TryCatch extends BaseTemplate {
 	 * <pre>
 	 * <cfscript>
 	 * system = create java:java.lang.System;
-	 * 
+	 *
 	 * try {
 	 * 1/0
 	 * } catch (any e) {
@@ -62,7 +63,7 @@ public class Phase1TryCatch extends BaseTemplate {
 	 * } finally {
 	 * variables.system.out.println("Finally");
 	 * }
-	 * 
+	 *
 	 * try {
 	 * throw new java:ortus.boxlang.runtime.types.exceptions.BoxLangException( "My Message", "My detail", "com.foo.type" );
 	 * } catch ("com.foo.type" e) {
@@ -75,7 +76,7 @@ public class Phase1TryCatch extends BaseTemplate {
 	 */
 
 	@Override
-	public void _invoke( IBoxContext context ) throws Throwable {
+	public void _invoke( IBoxContext context ) {
 		ClassLocator		classLocator	= ClassLocator.getInstance();
 		IBoxContext			catchContext;
 
@@ -189,8 +190,13 @@ public class Phase1TryCatch extends BaseTemplate {
 				    false
 				);
 			} else {
-				// Because there is no "any" catch block, we rethrow if we didn't match the type above.
-				throw e;
+				// Because there is no "any" catch block, we rethrow if we didn't match the type above.)
+				if ( e instanceof RuntimeException ) {
+					throw ( RuntimeException ) e;
+				} else {
+					// Pretty sure this can never be reached, but the compiler won't let me blindly rethrow a Throwable
+					throw new ApplicationException( e.getMessage(), e );
+				}
 			}
 		}
 

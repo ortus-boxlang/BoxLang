@@ -14,21 +14,19 @@
  */
 package ortus.boxlang.transpiler.transformer.statement;
 
+import java.util.HashMap;
+import java.util.Map;
+
+import org.apache.commons.text.StringSubstitutor;
+
 import com.github.javaparser.ParseResult;
 import com.github.javaparser.ast.CompilationUnit;
 import com.github.javaparser.ast.Node;
-import com.github.javaparser.ast.expr.Expression;
-import com.github.javaparser.ast.stmt.IfStmt;
-import com.github.javaparser.ast.stmt.Statement;
-import org.apache.commons.text.StringSubstitutor;
+
 import ortus.boxlang.ast.BoxNode;
 import ortus.boxlang.ast.BoxScript;
-import ortus.boxlang.transpiler.BoxLangTranspiler;
 import ortus.boxlang.transpiler.transformer.AbstractTransformer;
 import ortus.boxlang.transpiler.transformer.TransformerContext;
-
-import java.util.HashMap;
-import java.util.Map;
 
 public class BoxScriptTransformer extends AbstractTransformer {
 
@@ -84,7 +82,7 @@ public class BoxScriptTransformer extends AbstractTransformer {
 	                                		 *
 	                                		 * @param context The execution context requesting the execution
 	                                		 */
-	                                		public void invoke( IBoxContext context ) throws Throwable {
+	                                		public void invoke( IBoxContext context ) {
 	                                			// Reference to the variables scope
 	                                			IScope variablesScope = context.getScopeNearby( Key.of( "variables" ) );
 

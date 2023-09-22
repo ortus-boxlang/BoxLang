@@ -168,7 +168,7 @@ public class InterceptorServiceTest {
 
 	@DisplayName( "it can announce an event to a specific state" )
 	@Test
-	void testItCanAnnounceEventToSpecificState() throws Throwable {
+	void testItCanAnnounceEventToSpecificState() {
 		InterceptorService	service				= InterceptorService.getInstance();
 		DynamicObject		mockInterceptor1	= DynamicObject.of( new MockInterceptor() );
 		DynamicObject		mockInterceptor2	= DynamicObject.of( new MockInterceptor() );
@@ -198,7 +198,7 @@ public class InterceptorServiceTest {
 
 	@DisplayName( "it can announce an event to a specific state with case-insensitivity" )
 	@Test
-	void testItCanAnnounceEventToSpecificStateWithNoCase() throws Throwable {
+	void testItCanAnnounceEventToSpecificStateWithNoCase() {
 		InterceptorService	service				= InterceptorService.getInstance();
 		DynamicObject		mockInterceptor1	= DynamicObject.of( new MockInterceptor() );
 		DynamicObject		mockInterceptor2	= DynamicObject.of( new MockInterceptor() );

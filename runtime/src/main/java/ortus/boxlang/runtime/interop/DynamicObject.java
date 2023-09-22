@@ -46,6 +46,8 @@ import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.exceptions.ApplicationException;
 import ortus.boxlang.runtime.types.exceptions.BoxLangException;
 import ortus.boxlang.runtime.types.exceptions.KeyNotFoundException;
+import ortus.boxlang.runtime.types.exceptions.NoFieldException;
+import ortus.boxlang.runtime.types.exceptions.NoMethodException;
 
 /**
  * This class is used to represent a BX/Java Class and invoke methods on classes using invoke dynamic.
@@ -264,10 +266,8 @@ public class DynamicObject implements IReferenceable {
 	 *
 	 * @return The instance of the class
 	 *
-	 * @throws Throwable             If the constructor cannot be invoked
-	 * @throws IllegalStateException If the class is an interface, you can't call a constructor on an interface
 	 */
-	public DynamicObject invokeConstructor( Object... args ) throws Throwable {
+	public DynamicObject invokeConstructor( Object... args ) {
 
 		// Thou shalt not pass!
 		if ( isInterface() ) {
@@ -277,15 +277,24 @@ public class DynamicObject implements IReferenceable {
 		// Unwrap any ClassInvoker instances
 		unWrapArguments( args );
 		// Method signature for a constructor is void (Object...)
-		MethodType		constructorType		= MethodType.methodType( void.class, argumentsToClasses( args ) );
+		MethodType		constructorType	= MethodType.methodType( void.class, argumentsToClasses( args ) );
 		// Define the bootstrap method
-		MethodHandle	constructorHandle	= METHOD_LOOKUP.findConstructor( this.targetClass, constructorType );
+		MethodHandle	constructorHandle;
+		try {
+			constructorHandle = METHOD_LOOKUP.findConstructor( this.targetClass, constructorType );
+		} catch ( NoSuchMethodException | IllegalAccessException e ) {
+			throw new ApplicationException( "Error getting constructor for class " + this.targetClass.getName(), e );
+		}
 		// Create a callsite using the constructor handle
 		CallSite		callSite			= new ConstantCallSite( constructorHandle );
 		// Bind the CallSite and invoke the constructor with the provided arguments
 		// Invoke Dynamic tries to do argument coercion, so we need to convert the arguments to the right types
 		MethodHandle	constructorInvoker	= callSite.dynamicInvoker();
-		this.targetInstance = constructorInvoker.invokeWithArguments( args );
+		try {
+			this.targetInstance = constructorInvoker.invokeWithArguments( args );
+		} catch ( Throwable e ) {
+			throw new ApplicationException( "Error invoking constructor for class " + this.targetClass.getName(), e );
+		}
 
 		return this;
 	}
@@ -297,10 +306,8 @@ public class DynamicObject implements IReferenceable {
 	 *
 	 * @return The instance of the class
 	 *
-	 * @throws Throwable             If the constructor cannot be invoked
-	 * @throws IllegalStateException If the class is an interface, you can't call a constructor on an interface
 	 */
-	public DynamicObject invokeConstructor() throws Throwable {
+	public DynamicObject invokeConstructor() {
 		return invokeConstructor( new Object[] {} );
 	}
 
@@ -315,12 +322,8 @@ public class DynamicObject implements IReferenceable {
 	 *
 	 * @return The result of the method invocation wrapped in an Optional
 	 *
-	 * @throws IllegalArgumentException If the method name is null or empty
-	 * @throws IllegalStateException    If the method handle is not static and the target instance is null
-	 * @throws IllegalAccessException   If the method handle cannot be accessed
-	 * @throws NoSuchMethodException    If the method cannot be found
 	 */
-	public Optional<Object> invoke( String methodName, Object... arguments ) throws Throwable {
+	public Optional<Object> invoke( String methodName, Object... arguments ) {
 		// Verify method name
 		if ( methodName == null || methodName.isEmpty() ) {
 			throw new IllegalArgumentException( "Method name cannot be null or empty." );
@@ -330,7 +333,12 @@ public class DynamicObject implements IReferenceable {
 		unWrapArguments( arguments );
 
 		// Get the invoke dynamic method handle from our cache and discovery techniques
-		MethodRecord methodRecord = getMethodHandle( methodName, argumentsToClasses( arguments ) );
+		MethodRecord methodRecord;
+		try {
+			methodRecord = getMethodHandle( methodName, argumentsToClasses( arguments ) );
+		} catch ( RuntimeException e ) {
+			throw new ApplicationException( "Error getting constructor for class " + this.targetClass.getName(), e );
+		}
 
 		// If it's not static, we need a target instance
 		if ( !methodRecord.isStatic() && !hasInstance() ) {
@@ -340,11 +348,15 @@ public class DynamicObject implements IReferenceable {
 		}
 
 		// Discover and Execute it baby!
-		return Optional.ofNullable(
-		    methodRecord.isStatic()
-		        ? methodRecord.methodHandle().invokeWithArguments( arguments )
-		        : methodRecord.methodHandle().bindTo( this.targetInstance ).invokeWithArguments( arguments )
-		);
+		try {
+			return Optional.ofNullable(
+			    methodRecord.isStatic()
+			        ? methodRecord.methodHandle().invokeWithArguments( arguments )
+			        : methodRecord.methodHandle().bindTo( this.targetInstance ).invokeWithArguments( arguments )
+			);
+		} catch ( Throwable e ) {
+			throw new ApplicationException( "Error invoking method " + methodName + " for class " + this.targetClass.getName(), e );
+		}
 	}
 
 	/**
@@ -355,9 +367,8 @@ public class DynamicObject implements IReferenceable {
 	 *
 	 * @return The result of the method invocation wrapped in an Optional
 	 *
-	 * @throws Throwable If the method cannot be invoked
 	 */
-	public Optional<Object> invokeStatic( String methodName, Object... arguments ) throws Throwable {
+	public Optional<Object> invokeStatic( String methodName, Object... arguments ) {
 
 		// Verify method name
 		if ( methodName == null || methodName.isEmpty() ) {
@@ -368,11 +379,15 @@ public class DynamicObject implements IReferenceable {
 		unWrapArguments( arguments );
 
 		// Discover and Execute it baby!
-		return Optional.ofNullable(
-		    getMethodHandle( methodName, argumentsToClasses( arguments ) )
-		        .methodHandle()
-		        .invokeWithArguments( arguments )
-		);
+		try {
+			return Optional.ofNullable(
+			    getMethodHandle( methodName, argumentsToClasses( arguments ) )
+			        .methodHandle()
+			        .invokeWithArguments( arguments )
+			);
+		} catch ( Throwable e ) {
+			throw new ApplicationException( "Error invoking method " + methodName + " for class " + this.targetClass.getName(), e );
+		}
 	}
 
 	/**
@@ -388,16 +403,18 @@ public class DynamicObject implements IReferenceable {
 	 *
 	 * @return The value of the field wrapped in an Optional
 	 *
-	 * @throws Throwable             If the field cannot be retrieved
-	 * @throws NoSuchFieldException  If the field doesn't exist
-	 * @throws IllegalStateException If the field is not static and the target instance is null
 	 */
-	public Optional<Object> getField( String fieldName ) throws Throwable {
+	public Optional<Object> getField( String fieldName ) {
 		// Discover the field with no case sensitivity
-		Field			field		= findField( fieldName );
+		Field			field	= findField( fieldName );
 		// Now get the method handle for the field to execute
-		MethodHandle	fieldHandle	= METHOD_LOOKUP.unreflectGetter( field );
-		Boolean			isStatic	= Modifier.isStatic( field.getModifiers() );
+		MethodHandle	fieldHandle;
+		try {
+			fieldHandle = METHOD_LOOKUP.unreflectGetter( field );
+		} catch ( IllegalAccessException e ) {
+			throw new ApplicationException( "Error getting field " + fieldName + " for class " + this.targetClass.getName(), e );
+		}
+		Boolean isStatic = Modifier.isStatic( field.getModifiers() );
 
 		// If it's not static, we need a target instance
 		if ( !isStatic && !hasInstance() ) {
@@ -406,11 +423,15 @@ public class DynamicObject implements IReferenceable {
 			);
 		}
 
-		return Optional.ofNullable(
-		    isStatic
-		        ? fieldHandle.invoke()
-		        : fieldHandle.invoke( this.targetInstance )
-		);
+		try {
+			return Optional.ofNullable(
+			    isStatic
+			        ? fieldHandle.invoke()
+			        : fieldHandle.invoke( this.targetInstance )
+			);
+		} catch ( Throwable e ) {
+			throw new ApplicationException( "Error getting field " + fieldName + " for class " + this.targetClass.getName(), e );
+		}
 	}
 
 	/**
@@ -419,15 +440,14 @@ public class DynamicObject implements IReferenceable {
 	 *
 	 * @param fieldName    The name of the field to get
 	 * @param defaultValue The default value to return if the field doesn't exist
-	 *
-	 * @throws Throwable If the field cannot be retrieved
+	 *                     *
 	 *
 	 * @return The value of the field or the default value wrapped in an Optional
 	 */
-	public Optional<Object> getField( String fieldName, Object defaultValue ) throws Throwable {
+	public Optional<Object> getField( String fieldName, Object defaultValue ) {
 		try {
 			return getField( fieldName );
-		} catch ( NoSuchFieldException | IllegalStateException e ) {
+		} catch ( NoFieldException | IllegalStateException e ) {
 			return Optional.ofNullable( defaultValue );
 		}
 	}
@@ -440,14 +460,17 @@ public class DynamicObject implements IReferenceable {
 	 *
 	 * @return The class invoker
 	 *
-	 * @throws Throwable             If the field cannot be set
-	 * @throws IllegalStateException If the field is not static and the target instance is null
 	 */
-	public DynamicObject setField( String fieldName, Object value ) throws Throwable {
+	public DynamicObject setField( String fieldName, Object value ) {
 		// Discover the field with no case sensitivity
-		Field			field		= findField( fieldName );
-		MethodHandle	fieldHandle	= METHOD_LOOKUP.unreflectSetter( field );
-		Boolean			isStatic	= Modifier.isStatic( field.getModifiers() );
+		Field			field	= findField( fieldName );
+		MethodHandle	fieldHandle;
+		try {
+			fieldHandle = METHOD_LOOKUP.unreflectSetter( field );
+		} catch ( IllegalAccessException e ) {
+			throw new ApplicationException( "Error setting field " + fieldName + " for class " + this.targetClass.getName(), e );
+		}
+		Boolean isStatic = Modifier.isStatic( field.getModifiers() );
 
 		// If it's not static, we need a target instance, verify it's not null
 		if ( !isStatic && !hasInstance() ) {
@@ -456,11 +479,14 @@ public class DynamicObject implements IReferenceable {
 			);
 		}
 
-		if ( isStatic ) {
-			fieldHandle.invokeWithArguments( value );
-
-		} else {
-			fieldHandle.bindTo( this.targetInstance ).invokeWithArguments( value );
+		try {
+			if ( isStatic ) {
+				fieldHandle.invokeWithArguments( value );
+			} else {
+				fieldHandle.bindTo( this.targetInstance ).invokeWithArguments( value );
+			}
+		} catch ( Throwable e ) {
+			throw new ApplicationException( "Error setting field " + fieldName + " for class " + this.targetClass.getName(), e );
 		}
 
 		return this;
@@ -473,13 +499,12 @@ public class DynamicObject implements IReferenceable {
 	 *
 	 * @return The field if discovered
 	 *
-	 * @throws NoSuchFieldException If the field cannot be found
 	 */
-	public Field findField( String fieldName ) throws NoSuchFieldException {
+	public Field findField( String fieldName ) {
 		return getFieldsAsStream()
 		    .filter( target -> target.getName().equalsIgnoreCase( fieldName ) )
 		    .findFirst()
-		    .orElseThrow( () -> new NoSuchFieldException(
+		    .orElseThrow( () -> new NoFieldException(
 		        String.format( "No such field [%s] found in the class [%s].", fieldName, this.targetClass.getName() )
 		    ) );
 	}
@@ -564,12 +589,8 @@ public class DynamicObject implements IReferenceable {
 	 *
 	 * @return The method handle representing the method signature
 	 *
-	 * @throws RuntimeException       If the method cannot be found
-	 * @throws NoSuchMethodException  If the method or method handle cannot be found
-	 * @throws IllegalAccessException If the method handle cannot be accessed
 	 */
-	public MethodRecord getMethodHandle( String methodName, Class<?>[] argumentsAsClasses )
-	    throws RuntimeException, NoSuchMethodException, IllegalAccessException {
+	public MethodRecord getMethodHandle( String methodName, Class<?>[] argumentsAsClasses ) {
 
 		// We use the method signature as the cache key
 		String			cacheKey		= methodName + Objects.hash( methodName, Arrays.toString( argumentsAsClasses ) );
@@ -599,24 +620,25 @@ public class DynamicObject implements IReferenceable {
 	 *
 	 * @return The method record representing the method signature and metadata
 	 *
-	 * @throws NoSuchMethodException  If the method cannot be found using the discovery algorithm
-	 * @throws IllegalAccessException If the method handle cannot be accessed
 	 */
-	public MethodRecord discoverMethodHandle( String methodName, Class<?>[] argumentsAsClasses )
-	    throws NoSuchMethodException, IllegalAccessException {
+	public MethodRecord discoverMethodHandle( String methodName, Class<?>[] argumentsAsClasses ) {
 		// Our target we must find using our dynamic rules:
 		// - case insensitivity
 		// - argument count
 		// - argument class asignability
 		Method targetMethod = findMatchingMethod( methodName, argumentsAsClasses );
 
-		return new MethodRecord(
-		    methodName,
-		    targetMethod,
-		    METHOD_LOOKUP.unreflect( targetMethod ),
-		    Modifier.isStatic( targetMethod.getModifiers() ),
-		    argumentsAsClasses.length
-		);
+		try {
+			return new MethodRecord(
+			    methodName,
+			    targetMethod,
+			    METHOD_LOOKUP.unreflect( targetMethod ),
+			    Modifier.isStatic( targetMethod.getModifiers() ),
+			    argumentsAsClasses.length
+			);
+		} catch ( IllegalAccessException e ) {
+			throw new ApplicationException( "Error getting method handle for method " + methodName + " for class " + this.targetClass.getName(), e );
+		}
 	}
 
 	/**
@@ -695,15 +717,14 @@ public class DynamicObject implements IReferenceable {
 	 *
 	 * @return The matched method signature
 	 *
-	 * @throws NoSuchMethodException If the method cannot be found
 	 */
-	public Method findMatchingMethod( String methodName, Class<?>[] argumentsAsClasses ) throws NoSuchMethodException {
+	public Method findMatchingMethod( String methodName, Class<?>[] argumentsAsClasses ) {
 		return getMethodsAsStream()
 		    .parallel()
 		    .filter( method -> method.getName().equalsIgnoreCase( methodName ) )
 		    .filter( method -> hasMatchingParameterTypes( method, argumentsAsClasses ) )
 		    .findFirst()
-		    .orElseThrow( () -> new NoSuchMethodException(
+		    .orElseThrow( () -> new NoMethodException(
 		        String.format(
 		            "No such method [%s] found in the class [%s] using [%d] arguments of types [%s]",
 		            methodName,
@@ -748,7 +769,6 @@ public class DynamicObject implements IReferenceable {
 	 *
 	 * @return The method handle representing the method or an exception if it fails
 	 *
-	 * @throws RuntimeException If the method handle cannot be accessed
 	 */
 	public static MethodHandle toMethodHandle( Method method ) {
 		try {
@@ -887,7 +907,7 @@ public class DynamicObject implements IReferenceable {
 	 *
 	 * @return The requested object
 	 */
-	public Object dereference( Key name, Boolean safe ) throws KeyNotFoundException {
+	public Object dereference( Key name, Boolean safe ) {
 		try {
 			// If we have the field, return it's value, even if it's null
 			if ( hasField( name.getName() ) ) {
@@ -972,8 +992,7 @@ public class DynamicObject implements IReferenceable {
 	 *
 	 * @return The requested return value or null
 	 */
-	public Object dereferenceAndInvoke( IBoxContext context, Key name, Object[] positionalArguments, Boolean safe )
-	    throws KeyNotFoundException {
+	public Object dereferenceAndInvoke( IBoxContext context, Key name, Object[] positionalArguments, Boolean safe ) {
 		if ( safe && !hasMethod( name.getName() ) ) {
 			return null;
 		}
@@ -994,8 +1013,7 @@ public class DynamicObject implements IReferenceable {
 	 *
 	 * @return The requested return value or null
 	 */
-	public Object dereferenceAndInvoke( IBoxContext context, Key name, Map<Key, Object> namedArguments, Boolean safe )
-	    throws KeyNotFoundException {
+	public Object dereferenceAndInvoke( IBoxContext context, Key name, Map<Key, Object> namedArguments, Boolean safe ) {
 		throw new RuntimeException( "Java objects cannot be called with named argumments" );
 	}
 

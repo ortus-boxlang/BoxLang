@@ -58,7 +58,7 @@ public class ClassLocatorTest {
 
 	@DisplayName( "It can load classes with resolver prefix part of name" )
 	@Test
-	public void testCanLoadClassWithResolverInName() throws Throwable {
+	public void testCanLoadClassWithResolverInName() {
 		ClassLocator	locator		= ClassLocator.getInstance();
 		String			targetClass	= "java:java.lang.String";
 
@@ -70,7 +70,7 @@ public class ClassLocatorTest {
 
 	@DisplayName( "It can load classes with system resolver lookup" )
 	@Test
-	public void testCanLoadClassWithSystemResolver() throws Throwable {
+	public void testCanLoadClassWithSystemResolver() {
 		ClassLocator	locator		= ClassLocator.getInstance();
 		String			targetClass	= "java.lang.String";
 
@@ -82,7 +82,7 @@ public class ClassLocatorTest {
 
 	@DisplayName( "It can find appropriate imports based on resolver type" )
 	@Test
-	public void testCanFindAppropriateImports() throws Throwable {
+	public void testCanFindAppropriateImports() {
 		ClassLocator			locator		= ClassLocator.getInstance();
 		String					targetClass	= "java:String";
 		List<ImportDefinition>	imports		= List.of( ImportDefinition.parse( "java:java.lang.String as String" ) );
@@ -99,7 +99,7 @@ public class ClassLocatorTest {
 
 	@DisplayName( "It can load native Java classes and add to the resolver cache" )
 	@Test
-	public void testCanLoadJavaClassesWithCaching() throws Throwable {
+	public void testCanLoadJavaClassesWithCaching() {
 		ClassLocator	locator		= ClassLocator.getInstance();
 		String			targetClass	= "java.lang.String";
 

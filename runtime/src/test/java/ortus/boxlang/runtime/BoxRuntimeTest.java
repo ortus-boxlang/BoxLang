@@ -47,7 +47,7 @@ public class BoxRuntimeTest {
 
 	@DisplayName( "It can execute a template" )
 	@Test
-	public void testItCanExecuteATemplate() throws Throwable {
+	public void testItCanExecuteATemplate() {
 		String testTemplate = getClass().getResource( "/test-templates/BoxRuntime.bx" ).getPath();
 
 		assertDoesNotThrow( () -> {
@@ -59,7 +59,7 @@ public class BoxRuntimeTest {
 
 	@DisplayName( "It can execute a template URL" )
 	@Test
-	public void testItCanExecuteATemplateURL() throws Throwable {
+	public void testItCanExecuteATemplateURL() {
 		URL testTemplate = getClass().getResource( "/test-templates/BoxRuntime.bx" );
 
 		assertDoesNotThrow( () -> {

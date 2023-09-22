@@ -21,6 +21,7 @@ import java.util.Optional;
 
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.interop.DynamicObject;
+import ortus.boxlang.runtime.types.exceptions.ApplicationException;
 
 public class FunctionDescriptor {
 
@@ -54,16 +55,20 @@ public class FunctionDescriptor {
 		return namespace != null;
 	}
 
-	public DynamicObject getBIF() throws ClassNotFoundException {
+	public DynamicObject getBIF() {
 		if ( this.BIF == null ) {
 			synchronized ( this ) {
-				this.BIF = DynamicObject.of( Class.forName( this.className ) );
+				try {
+					this.BIF = DynamicObject.of( Class.forName( this.className ) );
+				} catch ( ClassNotFoundException e ) {
+					throw new ApplicationException( "Error loading class for BIF.", e );
+				}
 			}
 		}
 		return this.BIF;
 	}
 
-	public Optional<Object> invoke( Object... arguments ) throws Throwable, IllegalArgumentException {
+	public Optional<Object> invoke( Object... arguments ) {
 		// Check first argument, it must be the context
 		if ( arguments.length == 0 || ! ( arguments[ 0 ] instanceof IBoxContext ) ) {
 			throw new IllegalArgumentException( "First argument must be an IBoxContext" );

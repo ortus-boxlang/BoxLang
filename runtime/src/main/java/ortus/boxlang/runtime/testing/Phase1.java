@@ -77,7 +77,7 @@ public class Phase1 extends BaseTemplate {
 	 */
 
 	@Override
-	public void _invoke( IBoxContext context ) throws Throwable {
+	public void _invoke( IBoxContext context ) {
 		ClassLocator	classLocator	= ClassLocator.getInstance();
 
 		// Reference to the variables scope

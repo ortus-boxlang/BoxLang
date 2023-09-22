@@ -50,7 +50,7 @@ public class HelloWorld$cfm extends BaseTemplate {
 	 *
 	 * @param context The execution context requesting the execution
 	 */
-	public void invoke( ExecutionContext context ) throws Throwable {
+	public void invoke( ExecutionContext context ) {
 
 		// Reference to the variables scope
 		IScope variablesScope = context.getScopeNearby( Key.of( "variables" ) );

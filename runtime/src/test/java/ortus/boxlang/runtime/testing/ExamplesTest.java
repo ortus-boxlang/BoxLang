@@ -24,42 +24,42 @@ public class ExamplesTest {
 
 	@DisplayName( "It can execute Phase1 example" )
 	@Test
-	public void testItCanExecutePhase1() throws Throwable {
+	public void testItCanExecutePhase1() {
 		Phase1.main( new String[] {
 		} );
 	}
 
 	@DisplayName( "It can execute Phase1 try/catch example" )
 	@Test
-	public void testItCanExecutePhase1TryCatch() throws Throwable {
+	public void testItCanExecutePhase1TryCatch() {
 		Phase1TryCatch.main( new String[] {
 		} );
 	}
 
 	@DisplayName( "It can execute Phase1 switch example" )
 	@Test
-	public void testItCanExecutePhase1Switch() throws Throwable {
+	public void testItCanExecutePhase1Switch() {
 		Phase1Switch.main( new String[] {
 		} );
 	}
 
 	@DisplayName( "It can execute Phase2 UDF example" )
 	@Test
-	public void testItCanExecutePhase2UDF() throws Throwable {
+	public void testItCanExecutePhase2UDF() {
 		Phase2UDF.main( new String[] {
 		} );
 	}
 
 	@DisplayName( "It can execute Phase2 Closure example" )
 	@Test
-	public void testItCanExecutePhase2Closure() throws Throwable {
+	public void testItCanExecutePhase2Closure() {
 		Phase2Closure.main( new String[] {
 		} );
 	}
 
 	@DisplayName( "It can execute Phase2 Lambda example" )
 	@Test
-	public void testItCanExecutePhase2Lambda() throws Throwable {
+	public void testItCanExecutePhase2Lambda() {
 		Phase2Lambda.main( new String[] {
 		} );
 	}

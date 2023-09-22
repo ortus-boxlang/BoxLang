@@ -20,7 +20,7 @@ package ortus.boxlang.runtime.types.exceptions;
 import ortus.boxlang.runtime.scopes.Key;
 
 /**
- * Base exception for all database-related errors
+ * Base exception for all expression-related errors
  */
 public class ExpressionException extends BoxLangException {
 
@@ -30,6 +30,25 @@ public class ExpressionException extends BoxLangException {
 	 * Internal expression error number.
 	 */
 	public String			errNumber		= null;
+
+	/**
+	 * Constructor
+	 *
+	 * @param message The message
+	 */
+	public ExpressionException( String message ) {
+		this( message, null, null, null );
+	}
+
+	/**
+	 * Constructor
+	 *
+	 * @param message The message
+	 * @param cause   The cause
+	 */
+	public ExpressionException( String message, Throwable cause ) {
+		this( message, null, null, cause );
+	}
 
 	/**
 	 * Constructor

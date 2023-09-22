@@ -252,9 +252,8 @@ public class BoxRuntime {
 	 *
 	 * @param templatePath The path to the template to execute
 	 *
-	 * @throws Throwable if the template cannot be executed
 	 */
-	public void executeTemplate( String templatePath ) throws Throwable {
+	public void executeTemplate( String templatePath ) {
 		// Here is where we presumably boostrap a page or class that we are executing in our new context.
 		// JIT if neccessary
 		BaseTemplate targetTemplate = BoxPiler.parse( templatePath );
@@ -266,9 +265,8 @@ public class BoxRuntime {
 	 *
 	 * @param templateURL A URL location to execution
 	 *
-	 * @throws Throwable if the template cannot be executed
 	 */
-	public void executeTemplate( URL templateURL ) throws Throwable {
+	public void executeTemplate( URL templateURL ) {
 		executeTemplate( templateURL.getPath() );
 	}
 
@@ -277,9 +275,8 @@ public class BoxRuntime {
 	 *
 	 * @param template A template to execute
 	 *
-	 * @throws Throwable if the template cannot be executed
 	 */
-	public void executeTemplate( BaseTemplate template ) throws Throwable {
+	public void executeTemplate( BaseTemplate template ) {
 		// Debugging Timers
 		timerUtil.start( "execute-" + template.hashCode() );
 		instance.logger.atDebug().log( "Executing template [{}]", template.path );

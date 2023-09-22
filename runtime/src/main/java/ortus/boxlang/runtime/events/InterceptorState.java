@@ -105,7 +105,7 @@ public class InterceptorState {
 
 	/**
 	 * Get the number of observers registered for this state
-	 * 
+	 *
 	 * @return The number of observers registered for this state
 	 */
 	public int size() {
@@ -117,9 +117,8 @@ public class InterceptorState {
 	 *
 	 * @param data The struct of data to pass to the observers
 	 *
-	 * @throws Throwable If an error occurs while processing the state
 	 */
-	public void announce( Struct data ) throws Throwable {
+	public void announce( Struct data ) {
 		for ( DynamicObject observer : observers ) {
 			// Announce to the observer
 			Optional<?> stopChain = observer.invoke( getName(), new Object[] { data } );

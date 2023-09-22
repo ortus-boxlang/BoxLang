@@ -36,108 +36,108 @@ import ortus.boxlang.runtime.scopes.Key;
  */
 public class Phase2Lambda extends BaseTemplate {
 
-	private static Phase2Lambda					instance;
+    private static Phase2Lambda                 instance;
 
-	private final static List<ImportDefinition>	imports	= List.of();
+    private final static List<ImportDefinition> imports = List.of();
 
-	private Phase2Lambda() {
-		this.path = "runtime\\src\\main\\java\\ortus\\boxlang\\runtime\\testing\\Phase2Lambda.java";
-	}
+    private Phase2Lambda() {
+        this.path = "runtime\\src\\main\\java\\ortus\\boxlang\\runtime\\testing\\Phase2Lambda.java";
+    }
 
-	public static synchronized Phase2Lambda getInstance() {
-		if ( instance == null ) {
-			instance = new Phase2Lambda();
-		}
-		return instance;
-	}
+    public static synchronized Phase2Lambda getInstance() {
+        if ( instance == null ) {
+            instance = new Phase2Lambda();
+        }
+        return instance;
+    }
 
-	/*
-	 * <pre>
-	 * <cfscript>
-	 * variables.greet = ( required string name='Brad' ) -> {
-	 * var greeting = "Hello " & name;
-	 * return greeting;
-	 * }
-	 * 
-	 * variables.out = (create java.lang.System).out;
-	 * 
-	 * // Positional args
-	 * variables.out.println( greet( 'John' ) );
-	 * 
-	 * // named args
-	 * variables.out.println( greet( name='John' ) );
-	 * </cfscript>
-	 * </pre>
-	 */
+    /*
+     * <pre>
+     * <cfscript>
+     * variables.greet = ( required string name='Brad' ) -> {
+     * var greeting = "Hello " & name;
+     * return greeting;
+     * }
+     *
+     * variables.out = (create java.lang.System).out;
+     *
+     * // Positional args
+     * variables.out.println( greet( 'John' ) );
+     *
+     * // named args
+     * variables.out.println( greet( name='John' ) );
+     * </cfscript>
+     * </pre>
+     */
 
-	@Override
-	public void _invoke( IBoxContext context ) throws Throwable {
-		ClassLocator	classLocator	= ClassLocator.getInstance();
-		IScope			variablesScope	= context.getScopeNearby( Key.of( "variables" ) );
+    @Override
+    public void _invoke( IBoxContext context ) {
+        ClassLocator classLocator   = ClassLocator.getInstance();
+        IScope       variablesScope = context.getScopeNearby( Key.of( "variables" ) );
 
-		// Create instance of Lambda and set in the variables scope
-		variablesScope.put(
-		    Key.of( "greet" ),
-		    Phase2Lambda$lambda1.getInstance()
-		);
+        // Create instance of Lambda and set in the variables scope
+        variablesScope.put(
+            Key.of( "greet" ),
+            Phase2Lambda$lambda1.getInstance()
+        );
 
-		variablesScope.put(
-		    Key.of( "out" ),
-		    Referencer.get(
-		        classLocator.load( context, "java:java.lang.System", imports ),
-		        Key.of( "out" ),
-		        false )
-		);
+        variablesScope.put(
+            Key.of( "out" ),
+            Referencer.get(
+                classLocator.load( context, "java:java.lang.System", imports ),
+                Key.of( "out" ),
+                false )
+        );
 
-		// Positional args
-		Referencer.getAndInvoke(
-		    context,
-		    // Object
-		    variablesScope.get( Key.of( "out" ) ),
-		    // Method
-		    Key.of( "println" ),
-		    // Arguments
-		    new Object[] {
-		        context.invokeFunction( Key.of( "greet" ), new Object[] { "John" } )
-		    },
-		    false
-		);
+        // Positional args
+        Referencer.getAndInvoke(
+            context,
+            // Object
+            variablesScope.get( Key.of( "out" ) ),
+            // Method
+            Key.of( "println" ),
+            // Arguments
+            new Object[] {
+                context.invokeFunction( Key.of( "greet" ), new Object[] { "John" } )
+            },
+            false
+        );
 
-		// named args
-		Referencer.getAndInvoke(
-		    context,
-		    // Object
-		    variablesScope.get( Key.of( "out" ) ),
-		    // Method
-		    Key.of( "println" ),
-		    // Arguments
-		    new Object[] {
-		        context.invokeFunction( Key.of( "greet" ), Map.of( Key.of( "name" ), "Bob" ) )
-		    },
-		    false
-		);
+        // named args
+        Referencer.getAndInvoke(
+            context,
+            // Object
+            variablesScope.get( Key.of( "out" ) ),
+            // Method
+            Key.of( "println" ),
+            // Arguments
+            new Object[] {
+                context.invokeFunction( Key.of( "greet" ), Map.of( Key.of( "name" ), "Bob" ) )
+            },
+            false
+        );
 
-	}
+    }
 
-	/**
-	 * Main method
-	 *
-	 * @param args
-	 */
-	public static void main( String[] args ) {
-		// This is the main method, it will be invoked when the template is executed
-		// You can use this
-		// Get a runtime going
-		BoxRuntime boxRuntime = BoxRuntime.getInstance( true );
+    /**
+     * Main method
+     *
+     * @param args
+     */
+    public static void main( String[] args ) {
+        // This is the main method, it will be invoked when the template is executed
+        // You can use this
+        // Get a runtime going
+        BoxRuntime boxRuntime = BoxRuntime.getInstance( true );
 
-		try {
-			boxRuntime.executeTemplate( Phase2Lambda.getInstance() );
-		} catch ( Throwable e ) {
-			e.printStackTrace();
-			System.exit( 1 );
-		}
+        try {
+            boxRuntime.executeTemplate( Phase2Lambda.getInstance() );
+        } catch ( Throwable e ) {
+            e.printStackTrace();
+            System.exit( 1 );
+        }
 
-		// Bye bye! Ciao Bella!
-		boxRuntime.shutdown();
-	}
+        // Bye bye! Ciao Bella!
+        boxRuntime.shutdown();
+    }
 }
