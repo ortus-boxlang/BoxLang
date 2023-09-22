@@ -23,12 +23,12 @@ import com.fasterxml.jackson.jr.annotationsupport.JacksonAnnotationExtension;
 import com.fasterxml.jackson.jr.ob.JSON;
 
 /**
- * Utility class for JSON operations based on our library of choice
+ * Utility class for JSON operations based on our library of choice.
  */
 public class JsonUtil {
 
 	/**
-	 * The JSON builder
+	 * The JSON builder library we use
 	 */
 	private static final JSON JSON_BUILDER = JSON.builder().register( JacksonAnnotationExtension.std ).build();
 
@@ -39,7 +39,9 @@ public class JsonUtil {
 	 */
 
 	/**
-	 * Returns the JSON builder
+	 * Returns the JSON builder library we use
+	 *
+	 * @see com.fasterxml.jackson.jr.ob.JSON
 	 *
 	 * @return The JSON builder
 	 */
@@ -67,7 +69,7 @@ public class JsonUtil {
 	 *
 	 * @param json The JSON to parse
 	 *
-	 * @return The parsed JSON
+	 * @return The parsed JSON in raw Java format
 	 */
 	public static Object fromJson( Object json ) {
 		try {
@@ -78,6 +80,11 @@ public class JsonUtil {
 	}
 
 	/**
+	 * Read method that will take given JSON Source (of one of supported types),
+	 * read contents and map it to a Java Bean of given type.
+	 *
+	 * Read more here: {@link https://github.com/FasterXML/jackson-jr#readingwriting-simple-objects-beans-listarrays-thereof}
+	 *
 	 * Supported source types include:
 	 * <ul>
 	 * <li>{@link java.io.InputStream}</li>
@@ -89,7 +96,7 @@ public class JsonUtil {
 	 * <li><code>char[]</code></li>
 	 * </ul>
 	 *
-	 * @param clazz The class to parse the JSON into
+	 * @param clazz The POJO Java Beans class to parse the JSON into
 	 * @param json  The JSON to parse
 	 *
 	 * @return The parsed JSON into the given class passsed

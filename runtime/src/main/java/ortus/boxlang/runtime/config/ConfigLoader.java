@@ -24,6 +24,7 @@ import org.checkerframework.checker.units.qual.C;
 import com.fasterxml.jackson.core.type.TypeReference;
 
 import ortus.boxlang.runtime.types.Struct;
+import ortus.boxlang.runtime.types.exceptions.ConfigurationException;
 import ortus.boxlang.runtime.util.JsonUtil;
 
 /**
@@ -99,16 +100,18 @@ public class ConfigLoader {
 	 *
 	 * @return The parsed configuration
 	 */
+	@SuppressWarnings( "unchecked" )
 	public static synchronized Configuration load( String configFile ) {
-		// Read JSON file into Configuration class
+		// Parse it natively to Java objects
 		Object config = JsonUtil.fromJson(
 		    ClassLoader.getSystemClassLoader().getResourceAsStream( configFile )
 		);
-		// Process it
+
+		// Process it to BoxLang
 		if ( config instanceof Map ) {
 			return new Configuration().process( new Struct( ( Map<Object, Object> ) config ) );
 		} else {
-			throw new RuntimeException( "Failed to load config file" );
+			throw new ConfigurationException( "The config file is not a JSON object. Can't work with it." );
 		}
 	}
 

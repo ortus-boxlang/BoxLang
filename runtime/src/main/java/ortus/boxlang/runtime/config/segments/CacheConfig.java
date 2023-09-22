@@ -17,6 +17,11 @@
  */
 package ortus.boxlang.runtime.config.segments;
 
+import java.util.Map;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Struct;
 
@@ -28,29 +33,28 @@ public class CacheConfig {
 	/**
 	 * The name of the cache engine
 	 */
-	public Key		name		= Key.of( "default" );
+	public Key					name		= Key.of( "default" );
 
 	/**
 	 * The default cache engine type
 	 */
-	public Key		type		= Key.of( "Caffeine" );
+	public Key					type		= Key.of( "Caffeine" );
 
 	/**
 	 * The properties for the cache engine
 	 */
-	public Struct	properties	= new Struct();
+	public Struct				properties	= new Struct();
+
+	/**
+	 * Logger
+	 */
+	private static final Logger	logger		= LoggerFactory.getLogger( CacheConfig.class );
 
 	/**
 	 * --------------------------------------------------------------------------
 	 * Methods
 	 * --------------------------------------------------------------------------
 	 */
-
-	/**
-	 * Default Constructor
-	 */
-	public CacheConfig() {
-	}
 
 	/**
 	 * Constructor
@@ -77,7 +81,27 @@ public class CacheConfig {
 	 *
 	 * @return the configuration
 	 */
+	@SuppressWarnings( "unchecked" )
 	public CacheConfig process( Struct config ) {
+		// Name
+		if ( config.containsKey( "name" ) ) {
+			this.name = Key.of( ( String ) config.get( "name" ) );
+		}
+
+		// Type
+		if ( config.containsKey( "type" ) ) {
+			this.type = Key.of( ( String ) config.get( "type" ) );
+		}
+
+		// Properties
+		if ( config.containsKey( "properties" ) ) {
+			Object props = config.get( "properties" );
+			if ( props instanceof Map ) {
+				this.properties = new Struct( ( Map<Object, Object> ) props );
+			} else {
+				logger.warn( "The [runtime.caches.{}.properties] configuration is not a JSON Object, ignoring it.", this.name );
+			}
+		}
 
 		return this;
 	}

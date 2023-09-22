@@ -20,10 +20,10 @@ package ortus.boxlang.runtime.config;
 
 import org.junit.jupiter.api.Test;
 
+import ortus.boxlang.runtime.config.segments.CacheConfig;
+
 import org.junit.jupiter.api.DisplayName;
 import static com.google.common.truth.Truth.assertThat;
-
-import java.util.Map;
 
 public class ConfigLoaderTest {
 
@@ -40,9 +40,24 @@ public class ConfigLoaderTest {
 		assertThat( config.runtime.mappings ).isEmpty();
 		assertThat( config.runtime.modulesDirectory ).doesNotContainMatch( "(ignorecase)\\{user-home\\}" );
 
-		System.out.println( config.runtime.caches.toString() );
-		// System.out.println( config.runtime.caches.get( "default" ).toString() );
-		// System.out.println( config.runtime.caches.get( "importCache" ).toString() );
+		// Cache Checks
+		assertThat( config.runtime.caches ).isNotEmpty();
+
+		// Default Cache Checks
+		CacheConfig defaultCache = ( CacheConfig ) config.runtime.caches.get( "default" );
+		assertThat( defaultCache ).isNotNull();
+		assertThat( defaultCache.name.getNameNoCase() ).isEqualTo( "DEFAULT" );
+		assertThat( defaultCache.type.getNameNoCase() ).isEqualTo( "CAFFEINE" );
+		assertThat( defaultCache.properties ).isNotNull();
+		assertThat( defaultCache.properties.get( "maximumSize" ) ).isEqualTo( 1000 );
+
+		// Import Cache Checks
+		CacheConfig importCache = ( CacheConfig ) config.runtime.caches.get( "imports" );
+		assertThat( importCache ).isNotNull();
+		assertThat( importCache.name.getNameNoCase() ).isEqualTo( "IMPORTS" );
+		assertThat( importCache.type.getNameNoCase() ).isEqualTo( "CAFFEINE" );
+		assertThat( importCache.properties ).isNotNull();
+		assertThat( importCache.properties.get( "maximumSize" ) ).isEqualTo( 1000 );
 	}
 
 }

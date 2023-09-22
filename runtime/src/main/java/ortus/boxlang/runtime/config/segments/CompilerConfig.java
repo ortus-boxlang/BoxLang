@@ -17,10 +17,6 @@
  */
 package ortus.boxlang.runtime.config.segments;
 
-import java.util.Map;
-
-import com.fasterxml.jackson.annotation.JsonProperty;
-
 import ortus.boxlang.runtime.config.util.PlaceholderHelper;
 import ortus.boxlang.runtime.types.Struct;
 
@@ -40,9 +36,6 @@ public class CompilerConfig {
 	 * Methods
 	 * --------------------------------------------------------------------------
 	 */
-
-	public CompilerConfig() {
-	}
 
 	/**
 	 * Processes the configuration struct. Each segment is processed individually from the initial configuration struct.
