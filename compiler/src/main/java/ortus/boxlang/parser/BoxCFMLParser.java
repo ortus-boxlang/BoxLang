@@ -19,8 +19,8 @@ import org.antlr.v4.runtime.CommonTokenStream;
 import org.antlr.v4.runtime.ParserRuleContext;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.input.BOMInputStream;
-import ortus.boxlang.parser.CFMLLexer;
-import ortus.boxlang.parser.CFMLParser;
+import ortus.boxlang.parser.antlr.CFMLLexer;
+import ortus.boxlang.parser.antlr.CFMLParser;
 import ortus.boxlang.ast.*;
 
 import java.io.File;

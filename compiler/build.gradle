@@ -20,7 +20,7 @@ version = '1.0.0'
 java.sourceCompatibility = JavaVersion.VERSION_17
 java.targetCompatibility = JavaVersion.VERSION_17
 
-def antlrGeneratedParserPackage = "ortus.boxlang.parser"
+def antlrGeneratedParserPackage = "ortus.boxlang.parser.antlr"
 def generatedSrcDir = "build/generated-src"
 def antlrGeneratedParserBaseDir = "$generatedSrcDir/antlr/main"
 def antlrGeneratedParserPackageDir = antlrGeneratedParserPackage.replaceAll("\\.", "/")

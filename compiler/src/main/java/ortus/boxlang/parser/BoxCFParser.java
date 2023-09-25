@@ -17,23 +17,20 @@ package ortus.boxlang.parser;
 import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
 import org.antlr.v4.runtime.ParserRuleContext;
-import org.antlr.v4.runtime.RuleContext;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.input.BOMInputStream;
-import ortus.boxlang.parser.CFLexer;
-import ortus.boxlang.parser.CFParser;
+import ortus.boxlang.parser.antlr.CFLexer;
+import ortus.boxlang.parser.antlr.CFParser;
 import ortus.boxlang.ast.*;
 import ortus.boxlang.ast.expression.*;
 import ortus.boxlang.ast.BoxStatement;
 import ortus.boxlang.ast.statement.*;
 
-import java.beans.Expression;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Stack;
 
 /**
  * Parser for CF scripts
@@ -922,7 +919,7 @@ public class BoxCFParser extends BoxAbstractParser {
 
 	/**
 	 * Converts the UnaryContext parser rule to the corresponding AST node.
-	 * 
+	 *
 	 * @param file source file, if any
 	 * @param node ANTLR FqnContext rule
 	 */
