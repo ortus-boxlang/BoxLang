@@ -18,7 +18,6 @@ import org.antlr.v4.runtime.*;
 import org.antlr.v4.runtime.misc.Interval;
 import org.apache.commons.io.ByteOrderMark;
 import org.apache.commons.io.input.BOMInputStream;
-import org.jetbrains.annotations.NotNull;
 import ortus.boxlang.ast.*;
 
 import java.io.File;
@@ -82,7 +81,7 @@ public abstract class BoxAbstractParser {
 	 * @param lexer  ANTLR lexer instance
 	 * @param parser ANTLR parser instance
 	 */
-	protected void addErrorListeners( @NotNull Lexer lexer, @NotNull Parser parser ) {
+	protected void addErrorListeners( Lexer lexer, Parser parser ) {
 		lexer.removeErrorListeners();
 		lexer.addErrorListener( errorListener );
 		parser.removeErrorListeners();

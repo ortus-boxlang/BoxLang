@@ -30,7 +30,7 @@ public class TestStatements extends TestBase {
 
 		assertEqualsNoWhiteSpaces(
 		    """
-		    Referencer.getAndInvoke(myObject,Key.of("myMethod"),newObject[]{context.scopeFindNearby(Key.of("obj1"),variablesScope).scope().get(Key.of("obj1")),"foo",42},false);
+		    Referencer.getAndInvoke(context,myObject,Key.of("myMethod"),newObject[]{context.scopeFindNearby(Key.of("obj1"),variablesScope).scope().get(Key.of("obj1")),"foo",42},false);
 		    		                                                  """,
 		    javaAST.toString() );
 	}
@@ -48,6 +48,7 @@ public class TestStatements extends TestBase {
 
 		assertEqualsNoWhiteSpaces( """
 		                           Referencer.getAndInvoke(
+		                           	context,
 		                           	Referencer.get(
 		                           		variablesScope.get(Key.of("system")),
 		                           		Key.of("out"),
@@ -265,7 +266,7 @@ public class TestStatements extends TestBase {
 		System.out.println( javaAST );
 		assertEqualsNoWhiteSpaces(
 		    """
-		    Assert.invoke(EqualsEquals.invoke(variablesScope.get(Key.of("a")),0));
+		    Assert.invoke(context,EqualsEquals.invoke(variablesScope.get(Key.of("a")),0));
 		    """, javaAST.toString() );
 	}
 

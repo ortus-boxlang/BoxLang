@@ -47,6 +47,7 @@ public class BoxMethodInvocationTransformer extends AbstractTransformer {
 			values.put( "method", invocation.getName().getName().toString() );
 			template = """
 			           Referencer.getAndInvoke(
+			             context,
 			             ${expr},
 			             Key.of( "${method}" ),
 			             new Object[] { ${args} },

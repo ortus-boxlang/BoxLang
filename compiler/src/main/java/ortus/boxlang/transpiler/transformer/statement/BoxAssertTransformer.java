@@ -56,7 +56,7 @@ public class BoxAssertTransformer extends AbstractTransformer {
 
 											}
 										};
-		String				template	= "Assert.invoke(${expr});";
+		String				template	= "Assert.invoke(context,${expr});";
 		Node				javaStmt	= parseStatement( template, values );
 		logger.info( node.getSourceText() + " -> " + javaStmt );
 		addIndex( javaStmt, node );

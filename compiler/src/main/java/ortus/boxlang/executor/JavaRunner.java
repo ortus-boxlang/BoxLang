@@ -139,13 +139,14 @@ public class JavaRunner {
 	}
 
 	private void run( String javaClass ) {
+		System.out.println( javaClass );
 		try {
 			JavaCompiler						compiler	= ToolProvider.getSystemJavaCompiler();
 			DiagnosticCollector<JavaFileObject>	diagnostics	= new DiagnosticCollector<>();
 			JavaMemoryManager					manager		= new JavaMemoryManager( compiler.getStandardFileManager( null, null, null ) );
 
 			String								javaRT		= System.getProperty( "java.class.path" );
-			String								boxRT		= "/home/madytyoo/IdeaProjects/boxlang/runtime/build/classes/java/main";
+			String								boxRT		= "/home/madytyoo/IdeaProjects/boxlang1/runtime/build/classes/java/main";
 			String								compRT		= "/home/madytyoo/IdeaProjects/boxlang1/compiler/build/classes/java/main";
 
 			List<JavaFileObject>				sourceFiles	= Collections.singletonList( new JavaSourceString( fqn, javaClass ) );
