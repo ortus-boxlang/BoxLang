@@ -40,12 +40,9 @@ repositories {
  * Project Dependencies
  */
 dependencies {
+
 	// This dependency is used by the application.
 	antlr "org.antlr:antlr4:$antlrVersion"
-	implementation "org.jetbrains.kotlin:kotlin-stdlib:$kotlinVersion"
-	implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8"
-	implementation "org.antlr:antlr4-runtime:$antlrVersion"
-	implementation "com.strumenta.kolasu:kolasu-core:$kolasuVersion"
 	implementation "commons-io:commons-io:2.13.0"
 	implementation 'org.apache.commons:commons-text:1.10.0'
 	implementation 'commons-cli:commons-cli:1.5.0'
@@ -54,6 +51,7 @@ dependencies {
 	implementation 'org.slf4j:slf4j-simple:2.0.7'
 
 	// Testing Dependencies
+	testImplementation project(path: ':runtime')
 	testImplementation 'junit:junit:4.13.2'
 	testImplementation 'org.apache.commons:commons-lang3:3.13.0'
 }
