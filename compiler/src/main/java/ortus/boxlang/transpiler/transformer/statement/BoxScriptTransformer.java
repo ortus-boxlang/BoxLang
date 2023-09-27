@@ -48,7 +48,7 @@ public class BoxScriptTransformer extends AbstractTransformer {
 	                                	import ortus.boxlang.runtime.context.IBoxContext;
 
 	                                	// BoxLang Auto Imports
-	                                	import ortus.boxlang.runtime.dynamic.BaseTemplate;
+	                                	import ortus.boxlang.runtime.runnables.BoxTemplate;
 	                                	import ortus.boxlang.runtime.dynamic.Referencer;
 	                                	import ortus.boxlang.runtime.interop.DynamicObject;
 	                                	import ortus.boxlang.runtime.loader.ClassLocator;
@@ -66,7 +66,7 @@ public class BoxScriptTransformer extends AbstractTransformer {
 	                                	import java.lang.Double;
 	                                	import java.lang.Integer;
 
-	                                	public class ${className} extends BaseTemplate {
+	                                	public class ${className} extends BoxTemplate {
 
 	                                		// Auto-Generated Singleton Helpers
 	                                		private static ${className} instance;

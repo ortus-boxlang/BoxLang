@@ -231,6 +231,30 @@ public class Struct implements Map<Key, Object>, IType, IReferenceable {
 	}
 
 	/**
+	 * Get key, with default value if not found
+	 *
+	 * @param key          The key to look for
+	 * @param defaultValue The default value to return if the key is not found
+	 *
+	 * @return The value of the key
+	 */
+	public Object getOrDefault( Key key, Object defaultValue ) {
+		return unWrapNull( wrapped.getOrDefault( key, defaultValue ) );
+	}
+
+	/**
+	 * Get key, with default value if not found
+	 *
+	 * @param key          The key to look for
+	 * @param defaultValue The default value to return if the key is not found
+	 *
+	 * @return The value of the key
+	 */
+	public Object getOrDefault( String key, Object defaultValue ) {
+		return getOrDefault( Key.of( key ), defaultValue );
+	}
+
+	/**
 	 * Returns the value of the key safely, nulls will be wrapped in a NullValue still.
 	 *
 	 * @param key The key to look for

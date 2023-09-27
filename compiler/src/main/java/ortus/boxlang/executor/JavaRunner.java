@@ -45,70 +45,112 @@ public class JavaRunner {
 
 	final static String	fqn			= "ortus.boxlang.test.TestClass";
 	String				template	= """
-	                                                          package ortus.boxlang.test;
+	                                                                                                                      package ortus.boxlang.test;
 
-	                                                          import ortus.boxlang.runtime.BoxRuntime;
-	                                                          import ortus.boxlang.runtime.context.*;
+	                                                                                                                      import ortus.boxlang.runtime.BoxRuntime;
+	                                                                                                                      import ortus.boxlang.runtime.context.*;
 
-	                                                          // BoxLang Auto Imports
-	                                                          import ortus.boxlang.runtime.runnables.BaseTemplate;
-	                                                          import ortus.boxlang.runtime.dynamic.Referencer;
-	                                                          import ortus.boxlang.runtime.interop.DynamicObject;
-	                                                          import ortus.boxlang.runtime.loader.ClassLocator;
-	                                                          import ortus.boxlang.runtime.operators.*;
-	                                                          import ortus.boxlang.runtime.scopes.Key;
-	                                                          import ortus.boxlang.runtime.scopes.IScope;
-	                                                          import ortus.boxlang.runtime.dynamic.casters.*;
+	                                                                                                                      // BoxLang Auto Imports
+	                                                                                                                      import ortus.boxlang.runtime.runnables.BoxTemplate;
+	                                                                                                                      import ortus.boxlang.runtime.dynamic.Referencer;
+	                                                                                                                      import ortus.boxlang.runtime.interop.DynamicObject;
+	                                                                                                                      import ortus.boxlang.runtime.loader.ClassLocator;
+	                                  import ortus.boxlang.runtime.loader.ImportDefinition;
+	                                                                                                                      import ortus.boxlang.runtime.operators.*;
+	                                                                                                                      import ortus.boxlang.runtime.scopes.Key;
+	                                                                                                                      import ortus.boxlang.runtime.scopes.IScope;
+	                                                                                                                      import ortus.boxlang.runtime.dynamic.casters.*;
 
-	                                                          public class TestClass extends BaseTemplate {
+	                                           import java.nio.file.Path;
+	                                           import java.nio.file.Paths;
+	                                           import java.time.LocalDateTime;
+	                                           import java.util.List;
 
-	                                                          	private static TestClass instance;
+	                                                                                                                      public class TestClass extends BoxTemplate {
 
-	                                                          	public TestClass() {
-	                                                          	}
+	                                                                                                                      	private static TestClass instance;
 
-	                                                          	public static synchronized TestClass getInstance() {
-	                                                          		if ( instance == null ) {
-	                                                          			instance = new TestClass();
-	                                                          		}
-	                                                          		return instance;
-	                                                          	}
-	                                                          	/**
-	                                                          	 * Each template must implement the invoke() method which executes the template
-	                                                          	 *
-	                                                          	 * @param context The execution context requesting the execution
-	                                                          	 */
-	                                                          	public void invoke( IBoxContext context ) {
-	                                                          		// Reference to the variables scope
-	                                                          		IScope variablesScope = context.getScopeNearby( Key.of( "variables" ) );
-	                                                          		ClassLocator JavaLoader = ClassLocator.getInstance();
-	                                  IBoxContext			catchContext = null;
-	                                                          		${javaCode};
-	                                                          		String result = variablesScope.toString();
-	                                                          		System.out.println(result);
-	                                                          		if(catchContext != null) {
-	                                                          			System.out.println(catchContext);
-	                                                          		}
+	                                      private static final List<ImportDefinition>	imports			= List.of();
+	                                                             private static final Path					path			= Paths.get( "" );
+	                                                             private static final long					compileVersion	= 1L;
+	                                                             private static final LocalDateTime			compiledOn		= LocalDateTime.parse( "2023-09-27T10:15:30" );
+	                                                             private static final Object					ast				= null;
 
-	                                                          	}
+	                                                                                                                      	public TestClass() {
+	                                                                                                                      	}
 
-	                                                          	public static void main(String[] args) {
-	                                                          		BoxRuntime rt = BoxRuntime.getInstance();
+	                                                                                                                      	public static synchronized TestClass getInstance() {
+	                                                                                                                      		if ( instance == null ) {
+	                                                                                                                      			instance = new TestClass();
+	                                                                                                                      		}
+	                                                                                                                      		return instance;
+	                                                                                                                      	}
+	                                                                                                                      	/**
+	                                                                                                                      	 * Each template must implement the invoke() method which executes the template
+	                                                                                                                      	 *
+	                                                                                                                      	 * @param context The execution context requesting the execution
+	                                                                                                                      	 */
+	                                                                                                                      	public void _invoke( IBoxContext context ) {
+	                                                                                                                      		// Reference to the variables scope
+	                                                                                                                      		IScope variablesScope = context.getScopeNearby( Key.of( "variables" ) );
+	                                                                                                                      		ClassLocator JavaLoader = ClassLocator.getInstance();
+	                                                                                       									    IBoxContext			catchContext = null;
+	                                                                                                                      		${javaCode};
+	                                                                                                                      		String result = variablesScope.toString();
+	                                                                                                                      		System.out.println(result);
+	                                                                                                                      		if(catchContext != null) {
+	                                                                                                                      			System.out.println(catchContext);
+	                                                                                                                      		}
 
-	                                                          		try {
-	                                                          			rt.executeTemplate( TestClass.getInstance() );
-	                                                          		} catch ( Throwable e ) {
-	                                                          			e.printStackTrace();
-	                                                          			System.exit( 1 );
-	                                                          		}
+	                                                                                                                      	}
 
-	                                                          		// Bye bye! Ciao Bella!
-	                                                          		rt.shutdown();
+	                                                  // ITemplateRunnable implementation methods
+
+	                                                  /**
+	                                                  * The version of the BoxLang runtime
+	                                                  */
+	                                                  public long getRunnableCompileVersion() {
+	                                                  	return TestClass.compileVersion;
+	                                                  }
+
+	                                                  /**
+	                                                  * The date the template was compiled
+	                                                  */
+	                                                  public LocalDateTime getRunnableCompiledOn() {
+	                                                  	return TestClass.compiledOn;
+	                                                  }
+
+	                                                  /**
+	                                                  * The AST (abstract syntax tree) of the runnable
+	                                                  */
+	                                                  public Object getRunnableAST() {
+	                                                  	return TestClass.ast;
+	                                                  }
+
+	                                                  /**
+	                                                  * The path to the template
+	                                                  */
+	                                                  public Path getRunnablePath() {
+	                                                  	return TestClass.path;
+	                                                  }
+
+	                                                                                                                      	public static void main(String[] args) {
+	                                                                                                                      		BoxRuntime rt = BoxRuntime.getInstance();
+
+	                                                                                                                      		try {
+	                                                                                                                      			rt.executeTemplate( TestClass.getInstance() );
+	                                                                                                                      		} catch ( Throwable e ) {
+	                                                                                                                      			e.printStackTrace();
+	                                                                                                                      			System.exit( 1 );
+	                                                                                                                      		}
+
+	                                                                                                                      		// Bye bye! Ciao Bella!
+	                                                                                                                      		rt.shutdown();
 
 
-	                                                          	}
-	                                                          }
-	                                                          """;
+	                                                                                                                      	}
+	                                                                                                                      }
+	                                                                                                                      """;
 
 	Logger				logger		= LoggerFactory.getLogger( JavaRunner.class );
 

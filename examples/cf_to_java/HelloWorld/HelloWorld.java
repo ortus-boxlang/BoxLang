@@ -24,7 +24,7 @@ import java.lang.Integer;
 import ortus.boxlang.runtime.operators.EqualsEquals;
 import ortus.boxlang.runtime.operators.Concat;
 
-public class HelloWorld$cfm extends BaseTemplate {
+public class HelloWorld$cfm extends BoxTemplate {
 
 	// Auto-Generated Singleton Helpers
 	private static HelloWorld$cfm instance;

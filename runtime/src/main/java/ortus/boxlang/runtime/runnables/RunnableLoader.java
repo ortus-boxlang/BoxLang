@@ -17,7 +17,12 @@
  */
 package ortus.boxlang.runtime.runnables;
 
+import java.nio.file.Path;
+import java.nio.file.Paths;
+
+import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.IBoxContext;
+import ortus.boxlang.runtime.types.exceptions.MissingIncludeException;
 
 /**
  * This class is responsible for taking a template on disk or arbitrary set of statements
@@ -73,7 +78,11 @@ public class RunnableLoader {
 	 *
 	 * @return
 	 */
-	public BoxTemplate loadTemplateAbsolute( IBoxContext context, String path ) {
+	public BoxTemplate loadTemplateAbsolute( IBoxContext context, Path path ) {
+		if ( !path.toFile().exists() ) {
+			throw new MissingIncludeException( "The template path could not be found.", path.toString() );
+		}
+		// TODO: enforce valid include extensions (.cfm, .cfs, .bxs, .bxm, .bx)
 		return null;
 	}
 
@@ -85,11 +94,21 @@ public class RunnableLoader {
 	 * @return
 	 */
 	public BoxTemplate loadTemplateRelative( IBoxContext context, String path ) {
-		BoxTemplate template = context.findClosestTemplate();
+		// Determine what this path is relative to
+		BoxTemplate	template	= context.findClosestTemplate();
+		String		relativeBase;
+		// We our current context is executing a template, then we are relative to that template
 		if ( template != null ) {
-			template.getRunnablePath();
+			relativeBase = template.getRunnablePath().getParent().toString();
+		} else {
+			// Otherwise we are relative to the root of the runtime (the / mapping, or the working dir of the process)
+			// TODO: Get config via the context, not directly from the runtime to allow overrides
+			Object rootMapping = BoxRuntime.getInstance().getConfiguration().runtime.mappings.getOrDefault( "/", System.getProperty( "user.dir" ) );
+			relativeBase = ( String ) rootMapping;
 		}
-		return null;
+
+		// Make absolute
+		return loadTemplateAbsolute( context, Paths.get( relativeBase, path ) );
 	}
 
 	/**

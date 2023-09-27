@@ -1,15 +1,17 @@
-import com.github.javaparser.ast.Node;
+import static org.junit.Assert.assertTrue;
+
+import java.io.File;
+import java.io.IOException;
+
 import org.junit.Test;
+
+import com.github.javaparser.ast.Node;
+
 import ortus.boxlang.executor.JavaRunner;
 import ortus.boxlang.parser.BoxFileType;
 import ortus.boxlang.parser.BoxParser;
 import ortus.boxlang.parser.ParsingResult;
 import ortus.boxlang.transpiler.BoxLangTranspiler;
-
-import java.io.File;
-import java.io.IOException;
-
-import static org.junit.Assert.assertTrue;
 
 /**
  * [BoxLang]
@@ -40,6 +42,7 @@ public class TestExecution extends TestBase {
 		new JavaRunner().run( transpiler.getStatements() );
 	}
 
+	@Test
 	public void executeWhile() throws IOException {
 
 		String			statement	= """
@@ -66,7 +69,7 @@ public class TestExecution extends TestBase {
 		                              //assert(variables["a"] == 10);
 		                              """;
 		BoxParser		parser		= new BoxParser();
-		ParsingResult	result		= parser.parse( statement, BoxFileType.CF );
+		ParsingResult	result		= parser.parse( statement, BoxFileType.CFSCRIPT );
 		assertTrue( result.isCorrect() );
 
 		BoxLangTranspiler	transpiler	= new BoxLangTranspiler();
@@ -86,7 +89,7 @@ public class TestExecution extends TestBase {
 		                                              assert(variables["a"] == 10);
 		                                                                     """;
 		BoxParser		parser		= new BoxParser();
-		ParsingResult	result		= parser.parse( statement, BoxFileType.CF );
+		ParsingResult	result		= parser.parse( statement, BoxFileType.CFSCRIPT );
 		assertTrue( result.isCorrect() );
 
 		BoxLangTranspiler	transpiler	= new BoxLangTranspiler();

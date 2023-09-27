@@ -21,8 +21,9 @@ package ortus.boxlang.parser;
  * Supported files
  */
 public enum BoxFileType {
-	CF,
-	CFML,
-	BOX,
+	CFSCRIPT,
+	CFMARKUP,
+	BOXSCRIPT,
+	BOXMARKUP,
 	UNSUPPORTED
 }
