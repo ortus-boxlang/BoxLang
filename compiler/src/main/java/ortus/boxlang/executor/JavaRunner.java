@@ -51,7 +51,7 @@ public class JavaRunner {
 	                                                          import ortus.boxlang.runtime.context.*;
 
 	                                                          // BoxLang Auto Imports
-	                                                          import ortus.boxlang.runtime.dynamic.BaseTemplate;
+	                                                          import ortus.boxlang.runtime.runnables.BaseTemplate;
 	                                                          import ortus.boxlang.runtime.dynamic.Referencer;
 	                                                          import ortus.boxlang.runtime.interop.DynamicObject;
 	                                                          import ortus.boxlang.runtime.loader.ClassLocator;

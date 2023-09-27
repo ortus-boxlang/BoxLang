@@ -17,10 +17,12 @@
  */
 package ortus.boxlang.runtime.types;
 
+import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
 
 import ortus.boxlang.runtime.context.FunctionBoxContext;
+import ortus.boxlang.runtime.runnables.IBoxRunnable;
 import ortus.boxlang.runtime.scopes.Key;
 
 public class SampleLambda extends Lambda {
@@ -57,6 +59,25 @@ public class SampleLambda extends Lambda {
 
 	public Map<Key, Object> getMetadata() {
 		return metadata;
+	}
+
+	@Override
+	public long getRunnableCompileVersion() {
+		return 0;
+	}
+
+	@Override
+	public LocalDateTime getRunnableCompiledOn() {
+		return null;
+	}
+
+	@Override
+	public Object getRunnableAST() {
+		return null;
+	}
+
+	public IBoxRunnable getDeclaringRunnable() {
+		return null;
 	}
 
 	public SampleLambda( Argument[] arguments, Object returnVal ) {

@@ -21,11 +21,14 @@ package ortus.boxlang.runtime.context;
 import static com.google.common.truth.Truth.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
+import java.nio.file.Path;
+import java.time.LocalDateTime;
+
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import ortus.boxlang.runtime.context.IBoxContext.ScopeSearchResult;
-import ortus.boxlang.runtime.dynamic.BaseTemplate;
+import ortus.boxlang.runtime.runnables.BoxTemplate;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.exceptions.KeyNotFoundException;
@@ -46,7 +49,32 @@ public class ScriptingBoxContextTest {
 	@DisplayName( "Test template path" )
 	void testTemplatePath() {
 		ScriptingBoxContext context = new ScriptingBoxContext();
-		context.pushTemplate( new BaseTemplate() );
+		context.pushTemplate( new BoxTemplate() {
+
+			@Override
+			public void _invoke( IBoxContext context ) {
+			}
+
+			@Override
+			public long getRunnableCompileVersion() {
+				return 0;
+			}
+
+			@Override
+			public LocalDateTime getRunnableCompiledOn() {
+				return null;
+			}
+
+			@Override
+			public Object getRunnableAST() {
+				return null;
+			}
+
+			@Override
+			public Path getRunnablePath() {
+				return null;
+			}
+		} );
 		assertThat( context.findClosestTemplate() ).isNotNull();
 		assertThat( context.hasTemplates() ).isTrue();
 	}

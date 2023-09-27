@@ -17,16 +17,18 @@
  */
 package ortus.boxlang.runtime.testing;
 
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.IBoxContext;
-// BoxLang Auto Imports
-import ortus.boxlang.runtime.dynamic.BaseTemplate;
 import ortus.boxlang.runtime.dynamic.Referencer;
 import ortus.boxlang.runtime.loader.ClassLocator;
 import ortus.boxlang.runtime.loader.ImportDefinition;
+import ortus.boxlang.runtime.runnables.BoxTemplate;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 
@@ -34,14 +36,18 @@ import ortus.boxlang.runtime.scopes.Key;
  * Phase 2 BoxLang
  * Example of UDF delcaration and execution
  */
-public class Phase2UDF extends BaseTemplate {
+public class Phase2UDF extends BoxTemplate {
 
 	private static Phase2UDF					instance;
 
-	private static final List<ImportDefinition>	imports	= List.of();
+	private static final List<ImportDefinition>	imports			= List.of();
+
+	private static final Path					path			= Paths.get( "runtime\\src\\main\\java\\ortus\\boxlang\\runtime\\testing\\Phase2UDF.java" );
+	private static final long					compileVersion	= 1L;
+	private static final LocalDateTime			compiledOn		= LocalDateTime.parse( "2023-09-27T10:15:30" );
+	private static final Object					ast				= null;
 
 	private Phase2UDF() {
-		this.path = "runtime\\src\\main\\java\\ortus\\boxlang\\runtime\\testing\\Phase2UDF.java";
 	}
 
 	public static synchronized Phase2UDF getInstance() {
@@ -121,6 +127,36 @@ public class Phase2UDF extends BaseTemplate {
 		    false
 		);
 
+	}
+
+	// ITemplateRunnable implementation methods
+
+	/**
+	 * The version of the BoxLang runtime
+	 */
+	public long getRunnableCompileVersion() {
+		return Phase2UDF.compileVersion;
+	}
+
+	/**
+	 * The date the template was compiled
+	 */
+	public LocalDateTime getRunnableCompiledOn() {
+		return Phase2UDF.compiledOn;
+	}
+
+	/**
+	 * The AST (abstract syntax tree) of the runnable
+	 */
+	public Object getRunnableAST() {
+		return Phase2UDF.ast;
+	}
+
+	/**
+	 * The path to the template
+	 */
+	public Path getRunnablePath() {
+		return Phase2UDF.path;
 	}
 
 	/**

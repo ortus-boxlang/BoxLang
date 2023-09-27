@@ -28,8 +28,8 @@ import ortus.boxlang.runtime.config.Configuration;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.RuntimeBoxContext;
 import ortus.boxlang.runtime.context.ScriptingBoxContext;
-import ortus.boxlang.runtime.dynamic.BaseTemplate;
 import ortus.boxlang.runtime.logging.LoggingConfigurator;
+import ortus.boxlang.runtime.runnables.BoxTemplate;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.services.FunctionService;
 import ortus.boxlang.runtime.services.InterceptorService;
@@ -255,7 +255,7 @@ public class BoxRuntime {
 	public void executeTemplate( String templatePath ) {
 		// Here is where we presumably boostrap a page or class that we are executing in our new context.
 		// JIT if neccessary
-		BaseTemplate targetTemplate = BoxPiler.parse( templatePath );
+		BoxTemplate targetTemplate = BoxPiler.parse( templatePath );
 		executeTemplate( targetTemplate );
 	}
 
@@ -275,10 +275,10 @@ public class BoxRuntime {
 	 * @param template A template to execute
 	 *
 	 */
-	public void executeTemplate( BaseTemplate template ) {
+	public void executeTemplate( BoxTemplate template ) {
 		// Debugging Timers
 		timerUtil.start( "execute-" + template.hashCode() );
-		instance.logger.atDebug().log( "Executing template [{}]", template.path );
+		instance.logger.atDebug().log( "Executing template [{}]", template.getRunnablePath() );
 
 		// Build out the execution context for this execution and bind it to the incoming template
 		IBoxContext context = new ScriptingBoxContext( runtimeContext );
@@ -289,7 +289,7 @@ public class BoxRuntime {
 		// Debugging Timer
 		instance.logger.atDebug().log(
 		    "Executed template [{}] in [{}] ms",
-		    template.path,
+		    template.getRunnablePath(),
 		    timerUtil.stopAndGetMillis( "execute-" + template.hashCode() )
 		);
 

@@ -15,51 +15,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package ortus.boxlang.runtime.dynamic;
+package ortus.boxlang.runtime.runnables;
 
+import java.nio.file.Path;
 import java.time.LocalDateTime;
 
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.services.InterceptorService;
 import ortus.boxlang.runtime.types.Struct;
-import ortus.boxlang.runtime.types.exceptions.ApplicationException;
 
-/// import ortus.boxlang.runtime.core.Derefrencer;
-
-public class BaseTemplate {
-
-	/**
-	 * --------------------------------------------------------------------------
-	 * Public Properties
-	 * --------------------------------------------------------------------------
-	 */
-
-	/**
-	 * The name of the template
-	 */
-	public String			name;
-
-	/**
-	 * The extension of the template
-	 */
-	public String			extension;
-
-	/**
-	 * The path to the template
-	 */
-	public String			path;
-
-	/**
-	 * The last modified date of the template
-	 */
-	public LocalDateTime	lastModified;
-
-	/**
-	 * The date the template was compiled
-	 */
-	public LocalDateTime	compiledOn;
-
-	// public ??? ast;
+public abstract class BoxTemplate implements ITemplateRunnable {
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -82,7 +47,7 @@ public class BaseTemplate {
 			Struct data = Struct.of(
 			    "context", context,
 			    "template", this,
-			    "templatePath", this.path
+			    "templatePath", this.getRunnablePath()
 			);
 			interceptorService.announce( "preTemplateInvoke", data );
 
@@ -102,7 +67,27 @@ public class BaseTemplate {
 	 * @param context The context to invoke the template with
 	 *
 	 */
-	public void _invoke( IBoxContext context ) {
-		throw new ApplicationException( "This method must be overridden." );
-	}
+	public abstract void _invoke( IBoxContext context );
+
+	// ITemplateRunnable implementation methods
+
+	/**
+	 * The version of the BoxLang runtime
+	 */
+	public abstract long getRunnableCompileVersion();
+
+	/**
+	 * The date the template was compiled
+	 */
+	public abstract LocalDateTime getRunnableCompiledOn();
+
+	/**
+	 * The AST (abstract syntax tree) of the runnable
+	 */
+	public abstract Object getRunnableAST();
+
+	/**
+	 * The path to the template
+	 */
+	public abstract Path getRunnablePath();
 }
