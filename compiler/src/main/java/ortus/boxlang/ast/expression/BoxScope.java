@@ -40,8 +40,8 @@ public class BoxScope extends BoxExpr {
 	 * Creates the AST node
 	 *
 	 * @param name       scope name identified by a scope reserved keyword
-	 * @param position
-	 * @param sourceText
+	 * @param position   position of the statement in the source code
+	 * @param sourceText source code that originated the Node
 	 */
 	public BoxScope( String name, Position position, String sourceText ) {
 		super( position, sourceText );

@@ -17,11 +17,21 @@ package ortus.boxlang.ast.expression;
 import ortus.boxlang.ast.BoxExpr;
 import ortus.boxlang.ast.Position;
 
+/**
+ * AST Node representing a unary operator
+ */
 public class BoxUnaryOperation extends BoxExpr {
 
 	private final BoxExpr			expr;
 	private final BoxUnaryOperator	operator;
 
+	/**
+	 *
+	 * @param expr  expression
+	 * @param operator operator to apply
+	 * @param position   position of the statement in the source code
+	 * @param sourceText source code that originated the Node
+	 */
 	public BoxUnaryOperation( BoxExpr expr, BoxUnaryOperator operator, Position position, String sourceText ) {
 		super( position, sourceText );
 		this.expr = expr;

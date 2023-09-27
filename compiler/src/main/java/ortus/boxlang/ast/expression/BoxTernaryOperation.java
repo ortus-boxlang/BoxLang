@@ -17,12 +17,24 @@ package ortus.boxlang.ast.expression;
 import ortus.boxlang.ast.BoxExpr;
 import ortus.boxlang.ast.Position;
 
+/**
+ * AST Node representing a Ternary operator
+ */
 public class BoxTernaryOperation extends BoxExpr {
 
 	private final BoxExpr	condition;
 	private final BoxExpr	whenTrue;
 	private final BoxExpr	whenFalse;
 
+	/**
+	 * Creates the AST node
+	 *
+	 * @param condition expression to evaluate
+	 * @param whenTrue  executed when the condition is true
+	 * @param whenFalse executed when the condition is false
+	 * @param position   position of the statement in the source code
+	 * @param sourceText source code that originated the Node
+	 */
 	public BoxTernaryOperation( BoxExpr condition, BoxExpr whenTrue, BoxExpr whenFalse, Position position, String sourceText ) {
 		super( position, sourceText );
 		this.condition	= condition;

@@ -42,11 +42,6 @@ public class BoxStringInterpolation extends BoxExpr {
 		super( position, sourceText );
 		this.values = Collections.unmodifiableList( parts );
 		this.values.forEach( arg -> arg.setParent( this ) );
-
-		// StringBuilder sb = new StringBuilder( value );
-		// sb.deleteCharAt( value.length() - 1 );
-		// sb.deleteCharAt( 0 );
-		// this.value = sb.toString();
 	}
 
 }
