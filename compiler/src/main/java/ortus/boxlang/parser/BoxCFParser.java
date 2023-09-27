@@ -296,7 +296,6 @@ public class BoxCFParser extends BoxAbstractParser {
 		return new BoxTry( tryBody, catches, finallyBody, getPosition( node ), getSourceText( node ) );
 	}
 
-
 	/**
 	 * Converts the catch parser rule to the corresponding AST node
 	 *

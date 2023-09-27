@@ -29,9 +29,9 @@ public class BoxTernaryOperation extends BoxExpr {
 	/**
 	 * Creates the AST node
 	 *
-	 * @param condition expression to evaluate
-	 * @param whenTrue  executed when the condition is true
-	 * @param whenFalse executed when the condition is false
+	 * @param condition  expression to evaluate
+	 * @param whenTrue   executed when the condition is true
+	 * @param whenFalse  executed when the condition is false
 	 * @param position   position of the statement in the source code
 	 * @param sourceText source code that originated the Node
 	 */

@@ -27,8 +27,8 @@ public class BoxUnaryOperation extends BoxExpr {
 
 	/**
 	 *
-	 * @param expr  expression
-	 * @param operator operator to apply
+	 * @param expr       expression
+	 * @param operator   operator to apply
 	 * @param position   position of the statement in the source code
 	 * @param sourceText source code that originated the Node
 	 */

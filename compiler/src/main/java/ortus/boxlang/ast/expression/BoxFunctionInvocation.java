@@ -42,8 +42,8 @@ public class BoxFunctionInvocation extends BoxExpr {
 	/**
 	 * Function invocation i.e. create(x)
 	 *
-	 * @param name name of the function to invoke
-	 * @param arguments list of arguments
+	 * @param name       name of the function to invoke
+	 * @param arguments  list of arguments
 	 * @param position   position of the statement in the source code
 	 * @param sourceText source code that originated the Node
 	 */
