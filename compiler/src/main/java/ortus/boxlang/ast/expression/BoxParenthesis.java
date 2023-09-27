@@ -31,7 +31,7 @@ public class BoxParenthesis extends BoxExpr {
 	/**
 	 * Creates the AST node
 	 *
-	 * @param expression
+	 * @param expression expression within the parenthesis
 	 * @param position   position of the statement in the source code
 	 * @param sourceText source code that originated the Node
 	 */
