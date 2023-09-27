@@ -296,6 +296,17 @@ public class BoxCFParser extends BoxAbstractParser {
 		return new BoxTry( tryBody, catches, finallyBody, getPosition( node ), getSourceText( node ) );
 	}
 
+
+	/**
+	 * Converts the catch parser rule to the corresponding AST node
+	 *
+	 * @param file source file, if any
+	 * @param node ANTLR TryContext rule
+	 *
+	 * @return the corresponding AST BoxStatement
+	 *
+	 * @see BoxTryCatch
+	 */
 	private BoxTryCatch toAst( File file, CFParser.Catch_Context node ) {
 		BoxExpr				expr		= toAst( file, node.expression() );
 		List<BoxStatement>	catchBody	= toAst( file, node.statementBlock() );
