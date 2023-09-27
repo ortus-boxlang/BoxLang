@@ -21,7 +21,7 @@ import java.util.Collections;
 import java.util.List;
 
 /**
- * AST Node representing an integer literal value
+ * AST Node representing new statement
  */
 public class BoxNewOperation extends BoxExpr {
 
@@ -31,10 +31,10 @@ public class BoxNewOperation extends BoxExpr {
 	/**
 	 * Creates the AST node
 	 *
-	 * @param expression
-	 * @param arguments
-	 * @param position
-	 * @param sourceText
+	 * @param expression expression representing the object to instantiate
+	 * @param arguments constructor arguments list
+	 * @param position   position of the statement in the source code
+	 * @param sourceText source code that originated the Node
 	 */
 	public BoxNewOperation( BoxExpr expression, List<BoxArgument> arguments, Position position, String sourceText ) {
 		super( position, sourceText );
