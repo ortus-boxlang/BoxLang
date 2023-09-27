@@ -17,6 +17,9 @@ package ortus.boxlang.ast.expression;
 import ortus.boxlang.ast.BoxExpr;
 import ortus.boxlang.ast.Position;
 
+/**
+ * AST Node representing and expression within parenthesis
+ */
 public class BoxParenthesis extends BoxExpr {
 
 	private final BoxExpr expression;
@@ -25,6 +28,13 @@ public class BoxParenthesis extends BoxExpr {
 		return expression;
 	}
 
+	/**
+	 * Creates the AST node
+	 *
+	 * @param expression
+	 * @param position   position of the statement in the source code
+	 * @param sourceText source code that originated the Node
+	 */
 	public BoxParenthesis( BoxExpr expression, Position position, String sourceText ) {
 		super( position, sourceText );
 		this.expression = expression;
