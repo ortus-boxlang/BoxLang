@@ -22,6 +22,9 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+/**
+ * AST Node representing a fully qualified name
+ */
 public class BoxFunctionInvocation extends BoxExpr {
 
 	private final ReferenceByName name;
@@ -39,10 +42,10 @@ public class BoxFunctionInvocation extends BoxExpr {
 	/**
 	 * Function invocation i.e. create(x)
 	 *
-	 * @param name
-	 * @param arguments
-	 * @param position
-	 * @param sourceText
+	 * @param name name of the function to invoke
+	 * @param arguments list of arguments
+	 * @param position   position of the statement in the source code
+	 * @param sourceText source code that originated the Node
 	 */
 	public BoxFunctionInvocation( String name, List<BoxArgument> arguments, Position position, String sourceText ) {
 		super( position, sourceText );
