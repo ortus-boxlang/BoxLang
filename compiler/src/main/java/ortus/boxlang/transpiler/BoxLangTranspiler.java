@@ -25,14 +25,14 @@ import com.github.javaparser.ast.visitor.VoidVisitor;
 import com.github.javaparser.printer.DefaultPrettyPrinterVisitor;
 import com.github.javaparser.printer.Printer;
 import com.github.javaparser.printer.configuration.DefaultPrinterConfiguration;
-import ortus.boxlang.ast.BoxNode;
-import ortus.boxlang.ast.BoxScript;
-import ortus.boxlang.ast.BoxStatement;
+import ortus.boxlang.ast.*;
 import ortus.boxlang.ast.expression.*;
 import ortus.boxlang.ast.statement.*;
 import ortus.boxlang.transpiler.transformer.*;
 import ortus.boxlang.transpiler.transformer.expression.*;
 
+import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -143,7 +143,7 @@ public class BoxLangTranspiler {
 	}
 
 	/**
-	 * Transpile a BoxLang AST into a Java Pareser AST
+	 * Transpile a BoxLang AST into a Java Parser AST
 	 *
 	 * @return a Java Parser CompilationUnit representing the equivalent Java code
 	 *
@@ -154,9 +154,10 @@ public class BoxLangTranspiler {
 	public CompilationUnit transpile( BoxNode node ) throws IllegalStateException {
 		BoxScript			source			= ( BoxScript ) node;
 		CompilationUnit		javaClass		= ( CompilationUnit ) transform( source );
-		// TODO resolve names
+
+		String				className		= getClassName( source.getPosition().getSource() );
 		MethodDeclaration	invokeMethod	= javaClass.findCompilationUnit().orElseThrow()
-		    .getClassByName( "TestClass" ).orElseThrow()
+		    .getClassByName( className ).orElseThrow()
 		    .getMethodsByName( "invoke" ).get( 0 );
 
 		for ( BoxStatement statement : source.getStatements() ) {
@@ -181,5 +182,42 @@ public class BoxLangTranspiler {
 
 	public List<Statement> getStatements() {
 		return statements;
+	}
+
+	/**
+	 * Transforms the filename into the class name
+	 *
+	 * @param source
+	 *
+	 * @return returns the class name according the name conventions Test.ext - Test$ext
+	 */
+	public static String getClassName( Source source ) {
+		if ( source instanceof SourceFile file && file.getFile() != null ) {
+			String name = file.getFile().getName().replace( ".", "$" );
+			name = name.substring( 0, 1 ).toUpperCase() + name.substring( 1 );
+			return name;
+		}
+		return "TestClass";
+	}
+
+	/**
+	 * Transforms the path into the package name
+	 *
+	 * @param source
+	 *
+	 * @return returns the class name according the name conventions Test.ext - Test$ext
+	 */
+	public static String getPackageName( Source source ) throws IllegalStateException {
+		if ( source instanceof SourceFile file && file.getFile() != null ) {
+			try {
+				File	path	= file.getFile().getCanonicalFile();
+				String	packg	= path.toString().replace( File.separatorChar + path.getName(), "" );
+				packg = packg.substring( 1 ).replaceAll( "/", "." );
+				return packg;
+			} catch ( IOException e ) {
+				throw new IllegalStateException( e );
+			}
+		}
+		return "TestClass";
 	}
 }

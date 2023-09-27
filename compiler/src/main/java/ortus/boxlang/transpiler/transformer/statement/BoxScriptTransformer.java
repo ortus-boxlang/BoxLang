@@ -14,6 +14,13 @@
  */
 package ortus.boxlang.transpiler.transformer.statement;
 
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.attribute.FileTime;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -25,6 +32,9 @@ import com.github.javaparser.ast.Node;
 
 import ortus.boxlang.ast.BoxNode;
 import ortus.boxlang.ast.BoxScript;
+import ortus.boxlang.ast.Source;
+import ortus.boxlang.ast.SourceFile;
+import ortus.boxlang.transpiler.BoxLangTranspiler;
 import ortus.boxlang.transpiler.transformer.AbstractTransformer;
 import ortus.boxlang.transpiler.transformer.TransformerContext;
 
@@ -64,9 +74,9 @@ public class BoxScriptTransformer extends AbstractTransformer {
 	                                		public $className() {
 	                                			this.name         = "${fileName}";
 	                                			this.extension    = "${fileExtension}";
-	                                			this.path         = "{$fileFolderPath}";
-	                                			// this.lastModified = "$lastModifiedTimestamp";
-	                                			// this.compiledOn   = "$compiledOnTimestamp";
+	                                			this.path         = "${fileFolderPath}";
+	                                			this.lastModified =  ${lastModifiedTimestamp};
+	                                			this.compiledOn   =  ${compiledOnTimestamp};
 	                                			// this.ast = ???
 	                                		}
 
@@ -111,25 +121,58 @@ public class BoxScriptTransformer extends AbstractTransformer {
 	@Override
 	public Node transform( BoxNode node, TransformerContext context ) throws IllegalStateException {
 
-		BoxScript						script		= ( BoxScript ) node;
-		String							packageName	= "com.ortus"; // TODO
-		String							className	= "TestClass"; // TODO
+		BoxScript	script			= ( BoxScript ) node;
+		Source		source			= script.getPosition().getSource();
+		String		packageName		= BoxLangTranspiler.getPackageName( source );
+		String		className		= BoxLangTranspiler.getClassName( source );
+		String		fileName		= source instanceof SourceFile file && file.getFile() != null ? file.getFile().getName() : "unknown";
+		String		fileExt			= fileName.substring( fileName.lastIndexOf( "." ) + 1 );
+		String		filePath		= source instanceof SourceFile file && file.getFile() != null ? file.getFile().getAbsolutePath() : "unknown";
+		// LocalDateTime lastModified = LocalDateTime.now();
+		// LocalDateTime lastCompiled = LocalDateTime.now();
+		String		lastModified	= getDateTime( LocalDateTime.now() );
+		String		compiledOn		= getDateTime( LocalDateTime.now() );
 
-		Map<String, String>				values		= new HashMap<>() {
+		try {
+			if ( source instanceof SourceFile file && file.getFile() != null ) {
+				FileTime		fileTime	= Files.getLastModifiedTime( file.getFile().toPath() );
+				LocalDateTime	ldt			= LocalDateTime.ofInstant( fileTime.toInstant(), ZoneId.systemDefault() );
+				lastModified = getDateTime( ldt );
+				File path = file.getFile().getCanonicalFile();
+				filePath = path.toString().replace( File.separatorChar + path.getName(), "" );
+			}
+		} catch ( IOException e ) {
+			throw new IllegalStateException();
+		}
 
-														{
-															put( "packageName", packageName );
-															put( "className", className );
-														}
-													};
+		String							finalFilePath		= filePath;
+		String							finalLastModified	= lastModified;
+		Map<String, String>				values				= new HashMap<>() {
 
-		StringSubstitutor				sub			= new StringSubstitutor( values );
-		String							code		= sub.replace( template );
-		ParseResult<CompilationUnit>	result		= javaParser.parse( code );
+																{
+																	put( "packageName", packageName );
+																	put( "className", className );
+																	put( "fileName", fileName );
+																	put( "fileExtension", fileExt );
+																	put( "fileFolderPath", finalFilePath );
+																	put( "lastModifiedTimestamp", finalLastModified );
+																	put( "compiledOnTimestamp", compiledOn );
+																}
+															};
+
+		StringSubstitutor				sub					= new StringSubstitutor( values );
+		String							code				= sub.replace( template );
+		ParseResult<CompilationUnit>	result				= javaParser.parse( code );
 		if ( !result.isSuccessful() ) {
 			throw new IllegalStateException( result.toString() );
 		}
 
 		return result.getResult().get();
+	}
+
+	private String getDateTime( LocalDateTime locaTime ) {
+		DateTimeFormatter formatter = DateTimeFormatter.ofPattern( "yyyy-MM-dd'T'hh:mm:ss" );
+
+		return "LocalDateTime.parse(\"" + formatter.format( locaTime ) + "\")";
 	}
 }
