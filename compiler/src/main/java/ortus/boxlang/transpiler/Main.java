@@ -128,23 +128,22 @@ public class Main {
 					CompilationUnit	javaAST		= transpiler.transpile( result.getRoot() );
 					String			output		= cmd.getOptionValue( "output" );
 					String			classpath	= cmd.getOptionValue( "classpath" );
-					String fqn = "";
+					String			fqn			= "";
 					try {
 						fqn = transpiler.compileJava( javaAST, output, List.of( classpath ) );
 						transpiler.runJavaClass( fqn, List.of( classpath, output ) );
 					} catch ( Throwable e ) {
 						e.printStackTrace();
-						for(StackTraceElement s: Arrays.stream(e.getStackTrace()).toList()) {
-							if(fqn.equalsIgnoreCase(s.getClassName())) {
-								BoxNode node = transpiler.resloveReference(s.getLineNumber());
-								if(node != null) {
-									String uri = node.getPosition().getSource().toString();
-									int line = node.getPosition().getStart().getLine();
-									System.err.println(uri+":" + line + "  " +  node.getSourceText());
+						for ( StackTraceElement s : Arrays.stream( e.getStackTrace() ).toList() ) {
+							if ( fqn.equalsIgnoreCase( s.getClassName() ) ) {
+								BoxNode node = transpiler.resloveReference( s.getLineNumber() );
+								if ( node != null ) {
+									String	uri		= node.getPosition().getSource().toString();
+									int		line	= node.getPosition().getStart().getLine();
+									System.err.println( uri + ":" + line + "  " + node.getSourceText() );
 								}
 							}
 						}
-
 
 					}
 				} else {
