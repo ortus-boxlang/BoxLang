@@ -20,9 +20,9 @@ package ortus.boxlang.runtime.context;
 import java.util.ArrayDeque;
 import java.util.Map;
 
-import ortus.boxlang.runtime.BoxPiler;
-import ortus.boxlang.runtime.dynamic.BaseTemplate;
 import ortus.boxlang.runtime.dynamic.casters.FunctionCaster;
+import ortus.boxlang.runtime.runnables.BoxTemplate;
+import ortus.boxlang.runtime.runnables.RunnableLoader;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
@@ -50,7 +50,7 @@ public class BaseBoxContext implements IBoxContext {
 	/**
 	 * A way to discover the current executing template
 	 */
-	protected ArrayDeque<BaseTemplate>	templates	= new ArrayDeque<>();
+	protected ArrayDeque<BoxTemplate>	templates	= new ArrayDeque<>();
 
 	/**
 	 * Creates a new execution context with a bounded execution template and parent context
@@ -81,7 +81,7 @@ public class BaseBoxContext implements IBoxContext {
 	 *
 	 * @return IBoxContext
 	 */
-	public IBoxContext pushTemplate( BaseTemplate template ) {
+	public IBoxContext pushTemplate( BoxTemplate template ) {
 		this.templates.push( template );
 		return this;
 	}
@@ -91,7 +91,7 @@ public class BaseBoxContext implements IBoxContext {
 	 *
 	 * @return The template that this execution context is bound to
 	 */
-	public BaseTemplate popTemplate() {
+	public BoxTemplate popTemplate() {
 		return this.templates.pop();
 	}
 
@@ -109,7 +109,7 @@ public class BaseBoxContext implements IBoxContext {
 	 *
 	 * @return The template instance if found, null if this code is not called from a template
 	 */
-	public BaseTemplate findClosestTemplate() {
+	public BoxTemplate findClosestTemplate() {
 		// If this context has templates, grab the first
 		if ( hasTemplates() ) {
 			return this.templates.peek();
@@ -244,11 +244,9 @@ public class BaseBoxContext implements IBoxContext {
 	 * @param templatePath A relateive template path
 	 */
 	public void includeTemplate( String templatePath ) {
-		// TODO: Expand relative path to absolute using declared mappings
-		String			absoluteTemplatePath	= templatePath;
 
 		// Load template class, compiling if neccessary
-		BaseTemplate	template				= BoxPiler.parse( absoluteTemplatePath );
+		BoxTemplate template = RunnableLoader.getInstance().loadTemplateRelative( this, templatePath );
 
 		template.invoke( this );
 	}

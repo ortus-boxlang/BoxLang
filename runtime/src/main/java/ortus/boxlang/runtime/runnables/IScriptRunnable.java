@@ -15,15 +15,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package ortus.boxlang.parser;
+package ortus.boxlang.runtime.runnables;
 
-/**
- * Supported files
- */
-public enum BoxFileType {
-	CFSCRIPT,
-	CFMARKUP,
-	BOXSCRIPT,
-	BOXMARKUP,
-	UNSUPPORTED
+public interface IScriptRunnable extends IBoxRunnable {
+
+	/**
+	 * --------------------------------------------------------------------------
+	 * Methods
+	 * --------------------------------------------------------------------------
+	 */
+
+	/**
+	 * The source to the script
+	 */
+	public String getRunnableSource();
+
 }

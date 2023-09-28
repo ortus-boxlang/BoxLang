@@ -17,10 +17,12 @@
  */
 package ortus.boxlang.runtime.types;
 
+import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
 
 import ortus.boxlang.runtime.context.FunctionBoxContext;
+import ortus.boxlang.runtime.runnables.IBoxRunnable;
 import ortus.boxlang.runtime.scopes.Key;
 
 public class SampleUDF extends UDF {
@@ -62,6 +64,25 @@ public class SampleUDF extends UDF {
 
 	public Access getAccess() {
 		return access;
+	}
+
+	@Override
+	public long getRunnableCompileVersion() {
+		return 0;
+	}
+
+	@Override
+	public LocalDateTime getRunnableCompiledOn() {
+		return null;
+	}
+
+	@Override
+	public Object getRunnableAST() {
+		return null;
+	}
+
+	public IBoxRunnable getDeclaringRunnable() {
+		return null;
 	}
 
 	public SampleUDF( Access access, Key name, String returnType, Argument[] arguments, String hint, boolean output,

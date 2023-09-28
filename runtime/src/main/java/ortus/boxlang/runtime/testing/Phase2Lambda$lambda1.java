@@ -17,11 +17,13 @@
  */
 package ortus.boxlang.runtime.testing;
 
+import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
 
 import ortus.boxlang.runtime.context.FunctionBoxContext;
 import ortus.boxlang.runtime.operators.Concat;
+import ortus.boxlang.runtime.runnables.IBoxRunnable;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.LocalScope;
 import ortus.boxlang.runtime.types.Lambda;
@@ -36,37 +38,43 @@ public class Phase2Lambda$lambda1 extends Lambda {
 	/**
 	 * The name of the function
 	 */
-	private final static Key				name		= Lambda.defaultName;
+	private final static Key				name				= Lambda.defaultName;
 
 	/**
 	 * The arguments of the function
 	 */
-	private static final Argument[]			arguments	= new Argument[] {
+	private static final Argument[]			arguments			= new Argument[] {
 	    new Argument( true, "String", Key.of( "name" ), "Brad", "" )
 	};
 
 	/**
 	 * The return type of the function
 	 */
-	private static final String				returnType	= "any";
+	private static final String				returnType			= "any";
 
 	/**
 	 * The hint of the function
 	 */
-	private static final String				hint		= "";
+	private static final String				hint				= "";
 
 	/**
 	 * Whether the function outputs
 	 * TODO: Break CFML compat here?
 	 */
-	private static final boolean			output		= true;
+	private static final boolean			output				= true;
 
 	// TODO: cachedwithin, modifier, localmode, return format
 
 	/**
 	 * Additional abitrary metadata about this function.
 	 */
-	private static final Map<Key, Object>	metadata	= new HashMap<Key, Object>();
+	private static final Map<Key, Object>	metadata			= new HashMap<Key, Object>();
+
+	/**
+	 * The Box Runnable that declared this function
+	 */
+	private static final IBoxRunnable		declaringRunnable	= Phase2Lambda.getInstance();
+	private static final Object				ast					= null;
 
 	public Key getName() {
 		return name;
@@ -123,6 +131,36 @@ public class Phase2Lambda$lambda1 extends Lambda {
 		);
 
 		return context.scopeFindNearby( Key.of( "greeting" ), null ).value();
+	}
+
+	// ITemplateRunnable implementation methods
+
+	/**
+	 * The version of the BoxLang runtime
+	 */
+	public long getRunnableCompileVersion() {
+		return Phase2Lambda$lambda1.declaringRunnable.getRunnableCompileVersion();
+	}
+
+	/**
+	 * The date the template was compiled
+	 */
+	public LocalDateTime getRunnableCompiledOn() {
+		return Phase2Lambda$lambda1.declaringRunnable.getRunnableCompiledOn();
+	}
+
+	/**
+	 * The AST (abstract syntax tree) of the runnable
+	 */
+	public Object getRunnableAST() {
+		return Phase2Lambda$lambda1.ast;
+	}
+
+	/**
+	 * An instance of the runnable class that declared this function
+	 */
+	public IBoxRunnable getDeclaringRunnable() {
+		return Phase2Lambda$lambda1.declaringRunnable;
 	}
 
 }

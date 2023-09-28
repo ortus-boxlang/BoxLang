@@ -15,15 +15,30 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package ortus.boxlang.parser;
+package ortus.boxlang.runtime.runnables;
 
-/**
- * Supported files
- */
-public enum BoxFileType {
-	CFSCRIPT,
-	CFMARKUP,
-	BOXSCRIPT,
-	BOXMARKUP,
-	UNSUPPORTED
+import java.time.LocalDateTime;
+
+public interface IBoxRunnable {
+
+	/**
+	 * --------------------------------------------------------------------------
+	 * Methods
+	 * --------------------------------------------------------------------------
+	 */
+
+	/**
+	 * The version of the BoxLang runtime
+	 */
+	public long getRunnableCompileVersion();
+
+	/**
+	 * The date the template was compiled
+	 */
+	public LocalDateTime getRunnableCompiledOn();
+
+	/**
+	 * The AST (abstract syntax tree) of the runnable
+	 */
+	public Object getRunnableAST();
 }

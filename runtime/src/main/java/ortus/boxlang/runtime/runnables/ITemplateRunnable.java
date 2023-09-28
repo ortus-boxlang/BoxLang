@@ -15,15 +15,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package ortus.boxlang.parser;
+package ortus.boxlang.runtime.runnables;
 
-/**
- * Supported files
- */
-public enum BoxFileType {
-	CFSCRIPT,
-	CFMARKUP,
-	BOXSCRIPT,
-	BOXMARKUP,
-	UNSUPPORTED
+import java.nio.file.Path;
+
+public interface ITemplateRunnable extends IBoxRunnable {
+
+	/**
+	 * --------------------------------------------------------------------------
+	 * Methods
+	 * --------------------------------------------------------------------------
+	 */
+
+	/**
+	 * The path to the template
+	 */
+	public Path getRunnablePath();
+
 }

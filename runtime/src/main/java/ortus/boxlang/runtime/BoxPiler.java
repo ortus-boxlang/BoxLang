@@ -17,7 +17,7 @@
  */
 package ortus.boxlang.runtime;
 
-import ortus.boxlang.runtime.dynamic.BaseTemplate;
+import ortus.boxlang.runtime.runnables.BoxTemplate;
 import ortus.boxlang.runtime.testing.Phase1;
 
 /**
@@ -82,7 +82,7 @@ public class BoxPiler {
 	 *
 	 * @return The parsed template class
 	 */
-	public static BaseTemplate parse( String templatePath ) {
+	public static BoxTemplate parse( String templatePath ) {
 
 		// TODO: Check if the template is in cache (local or ram)
 

@@ -17,31 +17,38 @@
  */
 package ortus.boxlang.runtime.testing;
 
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.time.LocalDateTime;
 import java.util.List;
 
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.CatchBoxContext;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.IBoxContext.ScopeSearchResult;
-// BoxLang Auto Imports
-import ortus.boxlang.runtime.dynamic.BaseTemplate;
 import ortus.boxlang.runtime.dynamic.Referencer;
 import ortus.boxlang.runtime.loader.ClassLocator;
 import ortus.boxlang.runtime.loader.ImportDefinition;
 import ortus.boxlang.runtime.operators.Divide;
+import ortus.boxlang.runtime.runnables.BoxTemplate;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.exceptions.ApplicationException;
 import ortus.boxlang.runtime.types.exceptions.ExceptionUtil;
 
-public class Phase1TryCatch extends BaseTemplate {
+public class Phase1TryCatch extends BoxTemplate {
 
 	private static Phase1TryCatch				instance;
 
-	private final static List<ImportDefinition>	imports	= List.of();
+	private final static List<ImportDefinition>	imports			= List.of();
+
+	private static final Path					path			= Paths
+	    .get( "runtime\\src\\main\\java\\ortus\\boxlang\\runtime\\testing\\Phase1TryCatch.java" );
+	private static final long					compileVersion	= 1L;
+	private static final LocalDateTime			compiledOn		= LocalDateTime.parse( "2023-09-27T10:15:30" );
+	private static final Object					ast				= null;
 
 	private Phase1TryCatch() {
-		this.path = "runtime\\src\\main\\java\\ortus\\boxlang\\runtime\\testing\\Phase1TryCatch.java";
 	}
 
 	public static synchronized Phase1TryCatch getInstance() {
@@ -200,6 +207,36 @@ public class Phase1TryCatch extends BaseTemplate {
 			}
 		}
 
+	}
+
+	// ITemplateRunnable implementation methods
+
+	/**
+	 * The version of the BoxLang runtime
+	 */
+	public long getRunnableCompileVersion() {
+		return Phase1TryCatch.compileVersion;
+	}
+
+	/**
+	 * The date the template was compiled
+	 */
+	public LocalDateTime getRunnableCompiledOn() {
+		return Phase1TryCatch.compiledOn;
+	}
+
+	/**
+	 * The AST (abstract syntax tree) of the runnable
+	 */
+	public Object getRunnableAST() {
+		return Phase1TryCatch.ast;
+	}
+
+	/**
+	 * The path to the template
+	 */
+	public Path getRunnablePath() {
+		return Phase1TryCatch.path;
 	}
 
 	/**

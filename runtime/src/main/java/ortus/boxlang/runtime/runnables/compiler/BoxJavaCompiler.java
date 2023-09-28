@@ -1,31 +1,31 @@
 /**
  * [BoxLang]
- * <p>
+ *
  * Copyright [2023] [Ortus Solutions, Corp]
- * <p>
- * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the
- * License. You may obtain a copy of the License at
- * <p>
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
  * http://www.apache.org/licenses/LICENSE-2.0
- * <p>
- * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS"
- * BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language
- * governing permissions and limitations under the License.
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
-
-package ortus.boxlang.executor;
+package ortus.boxlang.runtime.runnables.compiler;
 
 import java.io.File;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 import javax.tools.DiagnosticCollector;
 import javax.tools.JavaCompiler;
@@ -35,13 +35,58 @@ import javax.tools.ToolProvider;
 import org.apache.commons.text.StringSubstitutor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.w3c.dom.Node;
 
-import com.github.javaparser.ast.stmt.Statement;
+import ortus.boxlang.parser.BoxLangTranspiler;
+import ortus.boxlang.parser.BoxParser;
+import ortus.boxlang.parser.ParsingResult;
+import ortus.boxlang.runtime.runnables.BoxTemplate;
 
 /**
- * Dynamic in memory Java executor
+ * This class uses the Java compiler to turn a BoxLang script into a Java class
  */
-public class JavaRunner {
+public class BoxJavaCompiler {
+
+	/**
+	 * --------------------------------------------------------------------------
+	 * Private Properties
+	 * --------------------------------------------------------------------------
+	 */
+
+	/**
+	 * Singleton instance
+	 */
+	private static BoxJavaCompiler instance;
+
+	/**
+	 * --------------------------------------------------------------------------
+	 * Constructors
+	 * --------------------------------------------------------------------------
+	 */
+
+	/**
+	 * Private constructor
+	 */
+	private BoxJavaCompiler() {
+	}
+
+	/**
+	 * Get the singleton instance
+	 *
+	 * @return TemplateLoader
+	 */
+	public static synchronized BoxJavaCompiler getInstance() {
+		if ( instance == null ) {
+			instance = new BoxJavaCompiler();
+		}
+		return instance;
+	}
+
+	/**
+	 * --------------------------------------------------------------------------
+	 * Public Methods
+	 * --------------------------------------------------------------------------
+	 */
 
 	final static String	fqn			= "ortus.boxlang.test.TestClass";
 	String				template	= """
@@ -152,7 +197,7 @@ public class JavaRunner {
 	                                                                         }
 	                                                                         """;
 
-	Logger				logger		= LoggerFactory.getLogger( JavaRunner.class );
+	Logger				logger		= LoggerFactory.getLogger( BoxJavaCompiler.class );
 
 	private String makeClass( String javaCode ) {
 		Map<String, String>	values	= new HashMap<>() {
@@ -172,43 +217,46 @@ public class JavaRunner {
 		);
 	}
 
-	public void run( List<Statement> statements ) {
-		String javaCode = statements.stream().map( it -> it.toString() )
-		    .collect( Collectors.joining( "\n" ) );
-		run(
-		    makeClass( javaCode )
-		);
-	}
+	public Class<BoxTemplate> run( Path path ) {
+		BoxParser		parser	= new BoxParser();
+		ParsingResult	result	= parser.parse( path.toFile() );
+		result.getIssues().forEach( it -> System.out.println( it ) );
+		assert result.isCorrect();
 
-	private void run( String javaClass ) {
-		System.out.println( javaClass );
+		BoxLangTranspiler	transpiler	= new BoxLangTranspiler();
+		Node				javaAST		= transpiler.transpile( result.getRoot() );
+		String				javaClass	= transpiler.getStatementsAsString();
+
 		try {
-			JavaCompiler						compiler	= ToolProvider.getSystemJavaCompiler();
-			DiagnosticCollector<JavaFileObject>	diagnostics	= new DiagnosticCollector<>();
-			JavaMemoryManager					manager		= new JavaMemoryManager( compiler.getStandardFileManager( null, null, null ) );
+			JavaCompiler						compiler		= ToolProvider.getSystemJavaCompiler();
+			DiagnosticCollector<JavaFileObject>	diagnostics		= new DiagnosticCollector<>();
+			JavaMemoryManager					manager			= new JavaMemoryManager( compiler.getStandardFileManager( null, null, null ) );
 
-			String								javaRT		= System.getProperty( "java.class.path" );
-			String								boxRT		= "/home/madytyoo/IdeaProjects/boxlang1/runtime/build/classes/java/main";
-			String								compRT		= "/home/madytyoo/IdeaProjects/boxlang1/compiler/build/classes/java/main";
+			String								javaRT			= System.getProperty( "java.class.path" );
 
-			List<JavaFileObject>				sourceFiles	= Collections.singletonList( new JavaSourceString( fqn, javaClass ) );
-			List<String>						options		= new ArrayList<>() {
+			String								boxRT			= "C:/Users/Brad/Documents/GitHub/boxlang/runtime/build/classes/java/main";
+			String								compRT			= "C:/Users/Brad/Documents/GitHub/boxlang/compiler/build/classes/java/main";
 
-																{
-																	add( "-g" );
-																	add( "-cp" );
-																	add( javaRT + File.pathSeparator + boxRT + File.pathSeparator + File.pathSeparator
-																	    + compRT );
+			List<JavaFileObject>				sourceFiles		= Collections.singletonList( new JavaSourceString( fqn, javaClass ) );
+			List<String>						options			= new ArrayList<>() {
 
-																}
-															};
-			JavaCompiler.CompilationTask		task		= compiler.getTask( null, manager, diagnostics, options, null, sourceFiles );
-			boolean								result		= task.call();
+																	{
+																		add( "-g" );
+																		add( "-cp" );
+																		add( javaRT + File.pathSeparator + boxRT + File.pathSeparator + File.pathSeparator
+																		    + compRT );
 
-			if ( !result ) {
+																	}
+																};
+			JavaCompiler.CompilationTask		task			= compiler.getTask( null, manager, diagnostics, options, null, sourceFiles );
+			boolean								compilerResult	= task.call();
+
+			if ( !compilerResult ) {
 				diagnostics.getDiagnostics()
-				    .forEach( d -> logger.error( String.valueOf( d ) ) );
-				throw new RuntimeException( "Compiler Error" );
+				    .forEach( d -> {
+					    throw new RuntimeException( String.valueOf( d ) );
+				    } );
+
 			} else {
 				JavaDynamicClassLoader	classLoader	= new JavaDynamicClassLoader(
 				    new URL[] {
@@ -217,21 +265,11 @@ public class JavaRunner {
 				    this.getClass().getClassLoader(),
 				    manager );
 
-				// JavaDynamicClassLoader classLoader = (JavaDynamicClassLoader) manager.getClassLoader( null );
-				// classLoader.defineClass(fqn);
-				Class					cls			= Class.forName( fqn, true, classLoader );
-				Method					meth		= cls.getMethod( "main", String[].class );
-				String[]				params		= null; // init params accordingly
-				meth.invoke( null, ( Object ) params );
+				@SuppressWarnings( "unchecked" )
+				Class<BoxTemplate>		cls			= ( Class<BoxTemplate> ) Class.forName( fqn, true, classLoader );
 
 			}
 		} catch ( ClassNotFoundException e ) {
-			throw new RuntimeException( e );
-		} catch ( IllegalAccessException e ) {
-			throw new RuntimeException( e );
-		} catch ( InvocationTargetException e ) {
-			throw new RuntimeException( e );
-		} catch ( NoSuchMethodException e ) {
 			throw new RuntimeException( e );
 		} catch ( MalformedURLException e ) {
 			throw new RuntimeException( e );

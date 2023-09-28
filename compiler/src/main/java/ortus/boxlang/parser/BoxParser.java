@@ -17,14 +17,15 @@
  */
 package ortus.boxlang.parser;
 
-import ortus.boxlang.ast.BoxExpr;
-import ortus.boxlang.ast.BoxScript;
-import ortus.boxlang.ast.BoxStatement;
-
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.util.List;
+import java.util.Optional;
+
+import ortus.boxlang.ast.BoxExpr;
+import ortus.boxlang.ast.BoxScript;
+import ortus.boxlang.ast.BoxStatement;
 
 public class BoxParser {
 
@@ -38,18 +39,64 @@ public class BoxParser {
 	 * @see BoxFileType
 	 */
 	public static BoxFileType detectFile( File file ) {
-		try {
-			List<String> content = Files.readAllLines( file.toPath() );
-			if ( content.stream().anyMatch( lines -> lines.contains( "<cfcomponent" ) || lines.contains( "<cfset" ) || lines.contains( "<cfparam" )
-			    || lines.contains( "<cfoutput" ) || lines.contains( "<cfinterface" ) ) ) {
-				return BoxFileType.CFML;
-			}
-
-		} catch ( IOException e ) {
-			throw new RuntimeException( e );
+		Optional<String> ext = getFileExtension( file.getAbsolutePath() );
+		if ( !ext.isPresent() ) {
+			throw new RuntimeException( "No file extension found for path : " + file.getAbsolutePath() );
 		}
-		return BoxFileType.CF;
 
+		switch ( ext.get() ) {
+			case "cfs" -> {
+				return BoxFileType.CFSCRIPT;
+			}
+			case "cfm" -> {
+				return BoxFileType.CFMARKUP;
+			}
+			case "cfml" -> {
+				return BoxFileType.CFMARKUP;
+			}
+			case "cfc" -> {
+				try {
+					List<String> content = Files.readAllLines( file.toPath() );
+					// TODO: This approach can be tricked by comments
+					if ( content.stream()
+					    .anyMatch( lines -> lines.toLowerCase().contains( "<cfcomponent" ) || lines.toLowerCase().contains( "<cfinterface" ) ) ) {
+						return BoxFileType.CFMARKUP;
+					}
+				} catch ( IOException e ) {
+					throw new RuntimeException( e );
+				}
+				return BoxFileType.CFSCRIPT;
+			}
+			case "bxm" -> {
+				return BoxFileType.BOXMARKUP;
+			}
+			case "bxs" -> {
+				return BoxFileType.BOXSCRIPT;
+			}
+			case "bx" -> {
+				try {
+					List<String> content = Files.readAllLines( file.toPath() );
+					// TODO: This approach can be tricked by comments
+					if ( content.stream()
+					    .anyMatch( lines -> lines.toLowerCase().contains( "<bxclass" ) || lines.toLowerCase().contains( "<bxinterface" ) ) ) {
+						return BoxFileType.BOXMARKUP;
+					}
+				} catch ( IOException e ) {
+					throw new RuntimeException( e );
+				}
+				return BoxFileType.BOXSCRIPT;
+			}
+			default -> {
+				throw new RuntimeException( "Unsupported file: " + file.getAbsolutePath() );
+			}
+		}
+
+	}
+
+	public static Optional<String> getFileExtension( String filename ) {
+		return Optional.ofNullable( filename )
+		    .filter( f -> f.contains( "." ) )
+		    .map( f -> f.substring( filename.lastIndexOf( "." ) + 1 ).toLowerCase() );
 	}
 
 	/**
@@ -68,10 +115,10 @@ public class BoxParser {
 	public ParsingResult parse( File file ) throws IOException {
 		BoxFileType fileType = detectFile( file );
 		switch ( fileType ) {
-			case CF -> {
+			case CFSCRIPT -> {
 				return new BoxCFParser().parse( file );
 			}
-			case CFML -> {
+			case CFMARKUP -> {
 				return new BoxCFMLParser().parse( file );
 			}
 			default -> {
@@ -95,10 +142,10 @@ public class BoxParser {
 	 */
 	public ParsingResult parse( String code, BoxFileType fileType ) throws IOException {
 		switch ( fileType ) {
-			case CF -> {
+			case CFSCRIPT -> {
 				return new BoxCFParser().parse( code );
 			}
-			case CFML -> {
+			case CFMARKUP -> {
 				return new BoxCFMLParser().parse( code );
 			}
 			default -> {

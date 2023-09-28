@@ -17,6 +17,7 @@
  */
 package ortus.boxlang.runtime.types;
 
+import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -24,18 +25,21 @@ import java.util.Map;
 import ortus.boxlang.runtime.context.FunctionBoxContext;
 import ortus.boxlang.runtime.dynamic.casters.CastAttempt;
 import ortus.boxlang.runtime.dynamic.casters.GenericCaster;
+import ortus.boxlang.runtime.runnables.IBoxRunnable;
+import ortus.boxlang.runtime.runnables.IFunctionRunnable;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
+import ortus.boxlang.runtime.services.InterceptorService;
 import ortus.boxlang.runtime.types.exceptions.ApplicationException;
 
 /**
  * A BoxLang Function base class
  */
-public abstract class Function implements IType {
+public abstract class Function implements IType, IFunctionRunnable {
 
 	/**
 	 * --------------------------------------------------------------------------
-	 * Public Properties
+	 * Properties
 	 * --------------------------------------------------------------------------
 	 */
 
@@ -87,8 +91,21 @@ public abstract class Function implements IType {
 	 * @return
 	 */
 	public Object invoke( FunctionBoxContext context ) {
-		// Pre/post interceptors?
-		return ensureReturnType( _invoke( context ) );
+
+		InterceptorService	interceptorService	= InterceptorService.getInstance();
+
+		// Announcements
+		Struct				data				= Struct.of(
+		    "context", context,
+		    "function", this
+		);
+		interceptorService.announce( "preFunctionInvoke", data );
+		Object result = ensureReturnType( _invoke( context ) );
+
+		data.put( "result", result );
+		interceptorService.announce( "postFunctionInvoke", data );
+
+		return data.get( "result" );
 	}
 
 	/**
@@ -300,6 +317,28 @@ public abstract class Function implements IType {
 	 * @return
 	 */
 	public abstract Object _invoke( FunctionBoxContext context );
+
+	// ITemplateRunnable implementation methods
+
+	/**
+	 * Get the version of the BoxLang runtime
+	 */
+	public abstract long getRunnableCompileVersion();
+
+	/**
+	 * Get the date the template was compiled
+	 */
+	public abstract LocalDateTime getRunnableCompiledOn();
+
+	/**
+	 * The AST (abstract syntax tree) of the runnable
+	 */
+	public abstract Object getRunnableAST();
+
+	/**
+	 * Get the instance of the runnable class that declared this function
+	 */
+	public abstract IBoxRunnable getDeclaringRunnable();
 
 	/**
 	 * Represents an argument to a function
