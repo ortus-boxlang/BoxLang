@@ -40,6 +40,7 @@ repositories {
  * Project Dependencies
  */
 dependencies {
+	implementation project(path: ':runtime')
 
 	// This dependency is used by the application.
 	antlr "org.antlr:antlr4:$antlrVersion"
