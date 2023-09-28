@@ -98,7 +98,7 @@ public class BoxScriptTransformer extends AbstractTransformer {
 	                                                       		 *
 	                                                       		 * @param context The execution context requesting the execution
 	                                                       		 */
-	                                                       		public void invoke( IBoxContext context ) {
+	                                                       		public void _invoke( IBoxContext context ) {
 	                                                       			// Reference to the variables scope
 	                                		IBoxContext			catchContext = null;
 	                                                       			IScope variablesScope = context.getScopeNearby( Key.of( "variables" ) );
