@@ -9,7 +9,7 @@
 		// Switch statement
 		switch (a) {
 			case 0: {
-				variables.system.out.println("#a# = zero");
+				variables.system.out.println("#a# = zero!!!");
 				break;
 			}
 			case 1: {
@@ -44,7 +44,7 @@
 		}
 		a++;
 	}
-	assert(a == 10.0)
+	assert(a == 9)
 
 
 </cfscript>
