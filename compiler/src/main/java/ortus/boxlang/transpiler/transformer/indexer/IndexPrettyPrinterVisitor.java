@@ -15,6 +15,7 @@
 package ortus.boxlang.transpiler.transformer.indexer;
 
 import com.github.javaparser.Position;
+import com.github.javaparser.Range;
 import com.github.javaparser.ast.Node;
 import com.github.javaparser.ast.expr.MethodCallExpr;
 import com.github.javaparser.ast.expr.StringLiteralExpr;
@@ -26,6 +27,9 @@ import com.github.javaparser.printer.DefaultPrettyPrinterVisitor;
 import com.github.javaparser.printer.configuration.PrinterConfiguration;
 import ortus.boxlang.ast.BoxNode;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import static ortus.boxlang.transpiler.transformer.indexer.BoxNodeKey.BOX_NODE_DATA_KEY;
 
 /**
@@ -33,15 +37,22 @@ import static ortus.boxlang.transpiler.transformer.indexer.BoxNodeKey.BOX_NODE_D
  */
 public class IndexPrettyPrinterVisitor extends DefaultPrettyPrinterVisitor {
 
+	private final List<CrossReference> crossReferences;
+
+	public List<CrossReference> getCrossReferences() {
+		return crossReferences;
+	}
+
 	public IndexPrettyPrinterVisitor( PrinterConfiguration configuration ) {
 		super( configuration );
+		crossReferences = new ArrayList<>();
 	}
 
 	/**
 	 * Detects if a Node has an BOX_NODE_DATA_KEY with a BoxNode
-	 * 
+	 *
 	 * @param node a Java Parser Node
-	 * 
+	 *
 	 * @return the associated BoxNode (if any) or null
 	 */
 	private Object hasBoxNodeKey( Node node ) {
@@ -59,7 +70,7 @@ public class IndexPrettyPrinterVisitor extends DefaultPrettyPrinterVisitor {
 
 	/**
 	 * Visits an ExpressionStmt Node
-	 * 
+	 *
 	 * @param node a Java Parser ExpressionStmt
 	 * @param arg  void
 	 */
@@ -69,7 +80,9 @@ public class IndexPrettyPrinterVisitor extends DefaultPrettyPrinterVisitor {
 		if ( boxNode != null ) {
 			Position start = printer.getCursor();
 			super.visit( node, arg );
-			Position end = printer.getCursor();
+			Position	end		= printer.getCursor();
+			Range		range	= new Range( start, end );
+			crossReferences.add( new CrossReference( boxNode, range ) );
 		} else {
 			super.visit( node, arg );
 		}
@@ -77,7 +90,7 @@ public class IndexPrettyPrinterVisitor extends DefaultPrettyPrinterVisitor {
 
 	/**
 	 * Visits an IfStmt Node
-	 * 
+	 *
 	 * @param node a Java Parser IfStmt
 	 * @param arg  void
 	 */
@@ -87,7 +100,9 @@ public class IndexPrettyPrinterVisitor extends DefaultPrettyPrinterVisitor {
 		if ( boxNode != null ) {
 			Position start = printer.getCursor();
 			super.visit( node, arg );
-			Position end = printer.getCursor();
+			Position	end		= printer.getCursor();
+			Range		range	= new Range( start, end );
+			crossReferences.add( new CrossReference( boxNode, range ) );
 		} else {
 			super.visit( node, arg );
 		}
@@ -95,7 +110,7 @@ public class IndexPrettyPrinterVisitor extends DefaultPrettyPrinterVisitor {
 
 	/**
 	 * Visits an DoStmt Node
-	 * 
+	 *
 	 * @param node a Java Parser DoStmt
 	 * @param arg  void
 	 */
@@ -105,7 +120,9 @@ public class IndexPrettyPrinterVisitor extends DefaultPrettyPrinterVisitor {
 		if ( boxNode != null ) {
 			Position start = printer.getCursor();
 			super.visit( node, arg );
-			Position end = printer.getCursor();
+			Position	end		= printer.getCursor();
+			Range		range	= new Range( start, end );
+			crossReferences.add( new CrossReference( boxNode, range ) );
 		} else {
 			super.visit( node, arg );
 		}
