@@ -41,82 +41,112 @@ import ortus.boxlang.transpiler.transformer.TransformerContext;
 public class BoxScriptTransformer extends AbstractTransformer {
 
 	private final String template = """
-	                                	// Auto package creation according to file path on disk
-	                                	package ${packageName};
+	                                                      // Auto package creation according to file path on disk
+	                                                      package ${packageName};
 
-	                                	import ortus.boxlang.runtime.BoxRuntime;
-	                                	import ortus.boxlang.runtime.context.IBoxContext;
 
-	                                	// BoxLang Auto Imports
-	                                	import ortus.boxlang.runtime.runnables.BoxTemplate;
-	                                	import ortus.boxlang.runtime.dynamic.Referencer;
-	                                	import ortus.boxlang.runtime.interop.DynamicObject;
-	                                	import ortus.boxlang.runtime.loader.ClassLocator;
-	                                	import ortus.boxlang.runtime.operators.*;
-	                                	import ortus.boxlang.runtime.scopes.Key;
-	                                	import ortus.boxlang.runtime.scopes.IScope;
+	                                                      import ortus.boxlang.runtime.BoxRuntime;
+	                                                      import ortus.boxlang.runtime.context.*;
 
-	                                	// Classes Auto-Imported on all Templates and Classes by BoxLang
-	                                	import java.time.LocalDateTime;
-	                                	import java.time.Instant;
-	                                	import java.lang.System;
-	                                	import java.lang.String;
-	                                	import java.lang.Character;
-	                                	import java.lang.Boolean;
-	                                	import java.lang.Double;
-	                                	import java.lang.Integer;
+	                                                      // BoxLang Auto Imports
+	                                                      import ortus.boxlang.runtime.runnables.BoxTemplate;
+	                                                      import ortus.boxlang.runtime.dynamic.Referencer;
+	                                                      import ortus.boxlang.runtime.interop.DynamicObject;
+	                                                      import ortus.boxlang.runtime.loader.ClassLocator;
+	                                                      import ortus.boxlang.runtime.loader.ImportDefinition;
+	                                                      import ortus.boxlang.runtime.operators.*;
+	                                                      import ortus.boxlang.runtime.scopes.Key;
+	                                                      import ortus.boxlang.runtime.scopes.IScope;
+	                                                      import ortus.boxlang.runtime.dynamic.casters.*;
 
-	                                	public class ${className} extends BoxTemplate {
+	                                                      import java.nio.file.Path;
+	                                                      import java.nio.file.Paths;
+	                                                      import java.time.LocalDateTime;
+	                                                      import java.util.List;
 
-	                                		// Auto-Generated Singleton Helpers
-	                                		private static ${className} instance;
+	                                                      	public class ${className} extends BoxTemplate {
 
-	                                		public $className() {
-	                                			this.name         = "${fileName}";
-	                                			this.extension    = "${fileExtension}";
-	                                			this.path         = "${fileFolderPath}";
-	                                			this.lastModified =  ${lastModifiedTimestamp};
-	                                			this.compiledOn   =  ${compiledOnTimestamp};
-	                                			// this.ast = ???
-	                                		}
+	                                                      		// Auto-Generated Singleton Helpers
+	                                                      		private static ${className} instance;
 
-	                                		public static synchronized $className getInstance() {
-	                                			if ( instance == null ) {
-	                                				instance = new $className();
-	                                			}
-	                                			return instance;
-	                                		}
 
-	                                		/**
-	                                		 * Each template must implement the invoke() method which executes the template
-	                                		 *
-	                                		 * @param context The execution context requesting the execution
-	                                		 */
-	                                		public void invoke( IBoxContext context ) {
-	                                			// Reference to the variables scope
-	                                			IScope variablesScope = context.getScopeNearby( Key.of( "variables" ) );
+	                                                      		private static final List<ImportDefinition>	imports			= List.of();
+	                                                      		private static final Path					path			= Paths.get( "${fileFolderPath}" );
+	                                                      		private static final long					compileVersion	= ${runtimeVersion};
+	                                                      		private static final LocalDateTime			compiledOn		= ${compiledOnTimestamp};
+	                                                      		private static final Object					ast				= null;
 
-	                                			ClassLocator JavaLoader = ClassLocator.getInstance();
-	                                		}
+	                                                      		public $className() {
+	                                                      		}
 
-	                                		public static void main( String[] args ) {
-	                                			// This is the main method, it will be invoked when the template is executed
-	                                			// You can use this
-	                                			// Get a runtime going
-	                                			BoxRuntime.startup( true );
+	                                                      		public static synchronized $className getInstance() {
+	                                                      			if ( instance == null ) {
+	                                                      				instance = new $className();
+	                                                      			}
+	                                                      			return instance;
+	                                                      		}
 
-	                                			try {
-	                                				BoxRuntime.executeTemplate( $className.getInstance() );
-	                                			} catch ( Throwable e ) {
-	                                				e.printStackTrace();
-	                                				System.exit( 1 );
-	                                			}
+	                                                      		/**
+	                                                      			* Each template must implement the invoke() method which executes the template
+	                                                      			*
+	                                                      			* @param context The execution context requesting the execution
+	                                                      			*/
+	                                                      		public void invoke( IBoxContext context ) {
+	                                                      			// Reference to the variables scope
+	                                                      			IScope variablesScope = context.getScopeNearby( Key.of( "variables" ) );
 
-	                                			// Bye bye! Ciao Bella!
-	                                			BoxRuntime.shutdown();
-	                                		}
-	                                	}
-	                                """;
+	                                                      			ClassLocator JavaLoader = ClassLocator.getInstance();
+	                                                      		}
+
+
+	                                // ITemplateRunnable implementation methods
+
+	                                /**
+	                                 * The version of the BoxLang runtime
+	                                */
+	                                public long getRunnableCompileVersion() {
+	                                	return $className.compileVersion;
+	                                }
+
+	                                /**
+	                                 * The date the template was compiled
+	                                */
+	                                public LocalDateTime getRunnableCompiledOn() {
+	                                	return $className.compiledOn;
+	                                }
+
+	                                /**
+	                                 * The AST (abstract syntax tree) of the runnable
+	                                */
+	                                public Object getRunnableAST() {
+	                                	return $className.ast;
+	                                }
+
+	                                /**
+	                                 * The path to the template
+	                                */
+	                                public Path getRunnablePath() {
+	                                	return $className.path;
+	                                }
+
+	                                                      		public static void main( String[] args ) {
+	                                                      			// This is the main method, it will be invoked when the template is executed
+	                                                      			// You can use this
+	                                                      			// Get a runtime going
+	                                                      			BoxRuntime.startup( true );
+
+	                                                      			try {
+	                                                      				BoxRuntime.executeTemplate( $className.getInstance() );
+	                                                      			} catch ( Throwable e ) {
+	                                                      				e.printStackTrace();
+	                                                      				System.exit( 1 );
+	                                                      			}
+
+	                                                      			// Bye bye! Ciao Bella!
+	                                                      			BoxRuntime.shutdown();
+	                                                      		}
+	                                                      	}
+	                                                      """;
 
 	@Override
 	public Node transform( BoxNode node, TransformerContext context ) throws IllegalStateException {
@@ -154,9 +184,10 @@ public class BoxScriptTransformer extends AbstractTransformer {
 																	put( "className", className );
 																	put( "fileName", fileName );
 																	put( "fileExtension", fileExt );
-																	put( "fileFolderPath", finalFilePath );
+																	put( "fileFolderPath", finalFilePath.replaceAll( "\\\\", "\\\\\\\\" ) );
 																	put( "lastModifiedTimestamp", finalLastModified );
 																	put( "compiledOnTimestamp", compiledOn );
+																	put( "runtimeVersion", "1L" );
 																}
 															};
 
