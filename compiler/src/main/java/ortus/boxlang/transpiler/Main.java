@@ -2,16 +2,14 @@ package ortus.boxlang.transpiler;
 
 import com.github.javaparser.ast.CompilationUnit;
 import org.apache.commons.cli.*;
+import ortus.boxlang.ast.BoxNode;
 import ortus.boxlang.parser.BoxParser;
 import ortus.boxlang.parser.ParsingResult;
 
 import java.io.IOException;
 import java.nio.file.*;
 import java.nio.file.attribute.BasicFileAttributes;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 public class Main {
 
@@ -38,8 +36,16 @@ public class Main {
 				        .argName( "path" )
 				        .hasArg()
 				        .required( true )
-				        .desc( "input file or directory" ).build()
+				        .desc( "output directory" ).build()
 
+				);
+				// Classpath
+				add(
+				    Option.builder( "cp" ).longOpt( "classpath" )
+				        .argName( "classpath" )
+				        .hasArg()
+				        .required( true )
+				        .desc( "file or directory" ).build()
 				);
 
 			}
@@ -119,8 +125,28 @@ public class Main {
 				System.out.println( file );
 				ParsingResult result = parser.parse( file.toFile() );
 				if ( result.isCorrect() ) {
-					CompilationUnit javaAST = transpiler.transpile( result.getRoot() );
-					System.out.println( javaAST.toString() );
+					CompilationUnit	javaAST		= transpiler.transpile( result.getRoot() );
+					String			output		= cmd.getOptionValue( "output" );
+					String			classpath	= cmd.getOptionValue( "classpath" );
+					String fqn = "";
+					try {
+						fqn = transpiler.compileJava( javaAST, output, List.of( classpath ) );
+						transpiler.runJavaClass( fqn, List.of( classpath, output ) );
+					} catch ( Throwable e ) {
+						e.printStackTrace();
+						for(StackTraceElement s: Arrays.stream(e.getStackTrace()).toList()) {
+							if(fqn.equalsIgnoreCase(s.getClassName())) {
+								BoxNode node = transpiler.resloveReference(s.getLineNumber());
+								if(node != null) {
+									String uri = node.getPosition().getSource().toString();
+									int line = node.getPosition().getStart().getLine();
+									System.err.println(uri+":" + line + "  " +  node.getSourceText());
+								}
+							}
+						}
+
+
+					}
 				} else {
 					result.getIssues().forEach( error -> System.err.println( error ) );
 				}
