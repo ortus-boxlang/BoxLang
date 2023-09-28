@@ -17,9 +17,12 @@
  */
 package ortus.boxlang.runtime;
 
-import java.util.HashMap;
-import java.util.Map;
+import java.io.ByteArrayInputStream;
+import java.nio.file.Path;
+import java.util.Arrays;
+import java.util.List;
 
+import ortus.boxlang.runtime.types.exceptions.ApplicationException;
 import ortus.boxlang.runtime.util.Timer;
 
 /**
@@ -47,16 +50,10 @@ public class BoxRunner {
 	 * @param args The command-line arguments
 	 */
 	public static void main( String[] args ) {
-		Timer timer = new Timer();
-
-		// Verify incoming arguments
-		if ( args.length == 0 ) {
-			System.out.println( "No script specified. We need a script or class to execute!" );
-			System.exit( 1 );
-		}
+		Timer		timer	= new Timer();
 
 		// Parse CLI options
-		CLIOptions options = parseCommandLineOptions( args );
+		CLIOptions	options	= parseCommandLineOptions( args );
 
 		// Debug mode?
 		if ( options.debug() ) {
@@ -67,7 +64,16 @@ public class BoxRunner {
 		// Get a runtime going
 		BoxRuntime boxRuntime = BoxRuntime.getInstance( options.debug() );
 
-		boxRuntime.executeTemplate( options.templatePath() );
+		if ( options.templatePath() != null ) {
+			// Execute a file
+			boxRuntime.executeTemplate( options.templatePath() );
+		} else if ( options.code() != null ) {
+			// Execute a string of code
+			boxRuntime.executeSource( new ByteArrayInputStream( options.code().getBytes() ) );
+		} else {
+			// Execute code as read from the standard input of the process
+			boxRuntime.executeSource( System.in );
+		}
 
 		// Bye bye! Ciao Bella!
 		boxRuntime.shutdown();
@@ -86,18 +92,43 @@ public class BoxRunner {
 	 */
 	private static CLIOptions parseCommandLineOptions( String[] args ) {
 		// Initialize options with defaults
-		Map<String, Boolean> options = new HashMap<>( Map.of( "debug", false ) );
+		Boolean			debug		= false;
+		List<String>	argsList	= Arrays.asList( args );
+		String			current		= null;
+		String			file		= null;
+		String			code		= null;
 
-		// Verify Flags
+		// Consume args in order
 		// Example: --debug
-		for ( String arg : args ) {
-			if ( arg.equalsIgnoreCase( "--debug" ) ) {
-				options.put( "debug", true );
+		while ( argsList.size() > 0 ) {
+			current = argsList.remove( 0 );
+			if ( current.equalsIgnoreCase( "--debug" ) ) {
+				debug = true;
 			}
-			// Add more options handling here as needed...
+			if ( current.equalsIgnoreCase( "-e" ) ) {
+				if ( argsList.isEmpty() ) {
+					throw new ApplicationException( "Missing inline script to execute with -e flag." );
+				}
+
+				Path templatePath = Path.of( argsList.remove( 0 ) );
+				// If path is not already absolute, make it absolute relative to the worknig directory of our process
+				if ( ! ( templatePath.toFile().isAbsolute() ) ) {
+					templatePath = Path.of( System.getProperty( "user.dir" ), templatePath.toString() );
+				}
+
+				file = templatePath.toString();
+				break;
+			}
+			if ( current.equalsIgnoreCase( "-c" ) ) {
+				if ( argsList.isEmpty() ) {
+					throw new ApplicationException( "Missing inline code to execute with -c flag." );
+				}
+				code = argsList.remove( 0 );
+				break;
+			}
 		}
 
-		return new CLIOptions( args[ 0 ], options.get( "debug" ) );
+		return new CLIOptions( file, debug, code );
 	}
 
 	/**
@@ -105,8 +136,9 @@ public class BoxRunner {
 	 *
 	 * @param templatePath The path to the template to execute. Can be a class or template
 	 * @param debug        Whether or not to run in debug mode.
+	 * @param command      The command to execute
 	 */
-	public record CLIOptions( String templatePath, boolean debug ) {
+	public record CLIOptions( String templatePath, boolean debug, String code ) {
 		// The record automatically generates the constructor, getters, equals, hashCode, and toString methods.
 	}
 

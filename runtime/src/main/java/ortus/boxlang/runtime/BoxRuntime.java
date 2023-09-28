@@ -17,7 +17,14 @@
  */
 package ortus.boxlang.runtime;
 
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.net.URISyntaxException;
 import java.net.URL;
+import java.nio.file.Paths;
 import java.time.Instant;
 
 import org.slf4j.Logger;
@@ -29,11 +36,15 @@ import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.RuntimeBoxContext;
 import ortus.boxlang.runtime.context.ScriptingBoxContext;
 import ortus.boxlang.runtime.logging.LoggingConfigurator;
+import ortus.boxlang.runtime.runnables.BoxScript;
 import ortus.boxlang.runtime.runnables.BoxTemplate;
+import ortus.boxlang.runtime.runnables.RunnableLoader;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.services.FunctionService;
 import ortus.boxlang.runtime.services.InterceptorService;
 import ortus.boxlang.runtime.types.Struct;
+import ortus.boxlang.runtime.types.exceptions.ApplicationException;
+import ortus.boxlang.runtime.types.exceptions.MissingIncludeException;
 import ortus.boxlang.runtime.util.Timer;
 
 /**
@@ -57,6 +68,8 @@ public class BoxRuntime {
 	    "onRuntimeConfigurationLoad",
 	    "preTemplateInvoke",
 	    "postTemplateInvoke",
+	    "preFunctionInvoke",
+	    "postFunctionInvoke",
 	    "onScopeCreation",
 	    "onConfigurationLoad"
 	);
@@ -249,13 +262,13 @@ public class BoxRuntime {
 	/**
 	 * Execute a single template in its own context
 	 *
-	 * @param templatePath The path to the template to execute
+	 * @param templatePath The absolute path to the template to execute
 	 *
 	 */
 	public void executeTemplate( String templatePath ) {
 		// Here is where we presumably boostrap a page or class that we are executing in our new context.
 		// JIT if neccessary
-		BoxTemplate targetTemplate = BoxPiler.parse( templatePath );
+		BoxTemplate targetTemplate = RunnableLoader.getInstance().loadTemplateAbsolute( runtimeContext, Paths.get( templatePath ) );
 		executeTemplate( targetTemplate );
 	}
 
@@ -266,11 +279,17 @@ public class BoxRuntime {
 	 *
 	 */
 	public void executeTemplate( URL templateURL ) {
-		executeTemplate( templateURL.getPath() );
+		String path;
+		try {
+			path = ( new File( templateURL.toURI() ) ).getPath();
+		} catch ( URISyntaxException e ) {
+			throw new MissingIncludeException( "Invalid template path to execute.", "", templateURL.toString(), e );
+		}
+		executeTemplate( path );
 	}
 
 	/**
-	 * Execute a single template in its own context using a {@see URL} of the template to execution
+	 * Execute a single template in its own context using an already-loaded template runnable
 	 *
 	 * @param template A template to execute
 	 *
@@ -280,7 +299,6 @@ public class BoxRuntime {
 		timerUtil.start( "execute-" + template.hashCode() );
 		instance.logger.atDebug().log( "Executing template [{}]", template.getRunnablePath() );
 
-		// Build out the execution context for this execution and bind it to the incoming template
 		IBoxContext context = new ScriptingBoxContext( runtimeContext );
 
 		// Fire!!!
@@ -292,6 +310,70 @@ public class BoxRuntime {
 		    template.getRunnablePath(),
 		    timerUtil.stopAndGetMillis( "execute-" + template.hashCode() )
 		);
+
+	}
+
+	/**
+	 * Execute a source string
+	 *
+	 * @param source A string of source to execute
+	 *
+	 */
+	public void executeSource( String source ) {
+		BoxScript scriptRunnable = RunnableLoader.getInstance().loadSource( source );
+		// Debugging Timers
+		timerUtil.start( "execute-" + source.hashCode() );
+		instance.logger.atDebug().log( "Executing source " );
+
+		IBoxContext context = new ScriptingBoxContext( runtimeContext );
+
+		// Fire!!!
+		scriptRunnable.invoke( context );
+
+		// Debugging Timer
+		instance.logger.atDebug().log(
+		    "Executed source  [{}] ms",
+		    timerUtil.stopAndGetMillis( "execute-" + source.hashCode() )
+		);
+
+	}
+
+	/**
+	 * Execute a source strings from an input stream
+	 *
+	 * @param source An inpout stream to read
+	 *
+	 */
+	public void executeSource( InputStream sourceStream ) {
+		// Build out the execution context for this execution and bind it to the incoming template
+		IBoxContext		context	= new ScriptingBoxContext( runtimeContext );
+
+		BufferedReader	reader	= new BufferedReader( new InputStreamReader( sourceStream ) );
+		String			source;
+		try {
+			while ( ( source = reader.readLine() ) != null ) {
+
+				BoxScript scriptRunnable = RunnableLoader.getInstance().loadSource( source );
+
+				// Debugging Timers
+				timerUtil.start( "execute-" + source.hashCode() );
+				instance.logger.atDebug().log( "Executing source " );
+
+				try {
+					// Fire!!!
+					scriptRunnable.invoke( context );
+				} finally {
+					// Debugging Timer
+					instance.logger.atDebug().log(
+					    "Executed source  [{}] ms",
+					    timerUtil.stopAndGetMillis( "execute-" + source.hashCode() )
+					);
+				}
+
+			}
+		} catch ( IOException e ) {
+			throw new ApplicationException( "Error reading source stream", e );
+		}
 
 	}
 
