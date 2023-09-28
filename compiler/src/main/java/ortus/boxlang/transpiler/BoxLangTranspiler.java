@@ -14,34 +14,41 @@
  */
 package ortus.boxlang.transpiler;
 
-import com.github.javaparser.JavaParser;
-import com.github.javaparser.ParseResult;
 import com.github.javaparser.ast.CompilationUnit;
 import com.github.javaparser.ast.Node;
 import com.github.javaparser.ast.body.MethodDeclaration;
 import com.github.javaparser.ast.stmt.BlockStmt;
 import com.github.javaparser.ast.stmt.Statement;
 import com.github.javaparser.ast.visitor.VoidVisitor;
-import com.github.javaparser.printer.DefaultPrettyPrinterVisitor;
-import com.github.javaparser.printer.Printer;
 import com.github.javaparser.printer.configuration.DefaultPrinterConfiguration;
 import ortus.boxlang.ast.*;
 import ortus.boxlang.ast.expression.*;
 import ortus.boxlang.ast.statement.*;
+import ortus.boxlang.executor.JavaSourceString;
+import ortus.boxlang.runtime.BoxRuntime;
+import ortus.boxlang.runtime.dynamic.BaseTemplate;
 import ortus.boxlang.transpiler.transformer.*;
 import ortus.boxlang.transpiler.transformer.expression.*;
 
 import java.io.File;
+import java.io.FileWriter;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Optional;
+import java.io.Writer;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.net.URLClassLoader;
+import java.util.*;
+import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import ortus.boxlang.transpiler.transformer.indexer.CrossReference;
 import ortus.boxlang.transpiler.transformer.indexer.IndexPrettyPrinterVisitor;
 import ortus.boxlang.transpiler.transformer.statement.*;
+
+import javax.tools.*;
 
 /**
  * BoxLang AST to Java AST transpiler
@@ -103,6 +110,7 @@ public class BoxLangTranspiler {
 															};
 
 	private List<Statement>						statements	= new ArrayList<>();
+	private List<CrossReference>				crossReferences	= new ArrayList<>();
 
 	public BoxLangTranspiler() {
 	}
@@ -174,14 +182,18 @@ public class BoxLangTranspiler {
 			}
 		}
 
-		VoidVisitor<Void> visitor = new IndexPrettyPrinterVisitor( new DefaultPrinterConfiguration() );
+		IndexPrettyPrinterVisitor visitor = new IndexPrettyPrinterVisitor( new DefaultPrinterConfiguration() );
 		javaClass.accept( visitor, null );
-
+		this.crossReferences.addAll(visitor.getCrossReferences());
 		return javaClass;
 	}
 
 	public List<Statement> getStatements() {
 		return statements;
+	}
+
+	public List<CrossReference> getCrossReferences() {
+		return crossReferences;
 	}
 
 	/**
@@ -218,6 +230,120 @@ public class BoxLangTranspiler {
 				throw new IllegalStateException( e );
 			}
 		}
-		return "TestClass";
+		return "ortus.test";
+	}
+
+	/**
+	 * Write a class bytecode
+	 *
+	 * @param cu         java compilation unit
+	 * @param outputPath output directory
+	 * @param classPath  classpath
+	 *
+	 * @throws IllegalStateException in the compilation fails
+	 */
+	public String compileJava( CompilationUnit cu, String outputPath, List<String> classPath ) throws IllegalStateException {
+		JavaCompiler						compiler		= ToolProvider.getSystemJavaCompiler();
+		DiagnosticCollector<JavaFileObject>	diagnostics		= new DiagnosticCollector<>();
+		String								pkg				= cu.getPackageDeclaration().get().getName().toString();
+		String								name			= cu.getType( 0 ).getName().asString();
+		String								fqn				= pkg + "." + name;
+		List<JavaFileObject>				sourceFiles		= Collections.singletonList( new JavaSourceString( fqn, cu.toString() ) );
+
+		Writer								output			= null;
+
+		ArrayList<String>					classPathList	= new ArrayList<>();
+		classPathList.add( System.getProperty( "java.class.path" ) );
+		classPathList.addAll( classPath );
+		classPathList.add( outputPath );
+		String compilerClassPath = classPathList
+		    .stream()
+		    .map( it -> {
+			    return it;
+		    } )
+		    .collect( Collectors.joining( File.pathSeparator ) );
+		;
+		StandardJavaFileManager				stdFileManager	= compiler.getStandardFileManager( null, null, null );
+
+		List<String>						options			= new ArrayList<>(
+		    List.of( "-g",
+		        "-cp",
+		        compilerClassPath,
+		        "-d",
+		        outputPath
+		    )
+		);
+
+		JavaCompiler.CompilationTask		task			= compiler.getTask( output, stdFileManager, diagnostics, options, null, sourceFiles );
+		boolean								result			= task.call();
+
+		if ( !result ) {
+			diagnostics.getDiagnostics()
+			    .forEach( d -> logger.error( String.valueOf( d ) ) );
+			throw new IllegalStateException( "Compiler Error" );
+		}
+		try {
+			stdFileManager.close();
+		} catch ( Exception e ) {
+			throw new IllegalStateException( "Compiler Error" );
+		}
+
+		return fqn;
+	}
+
+	/**
+	 * Runa a java class
+	 *
+	 * @param fqn
+	 * @param classPath
+	 *
+	 * @throws ClassNotFoundException
+	 * @throws InvocationTargetException
+	 * @throws NoSuchMethodException
+	 * @throws IllegalAccessException
+	 */
+	public void runJavaClass( String fqn, List<String> classPath )
+	    throws ClassNotFoundException, InvocationTargetException, NoSuchMethodException, IllegalAccessException {
+		List<URL> finalClassPath = new ArrayList<>();
+		for ( String path : classPath ) {
+			try {
+				finalClassPath.add( new File( path ).toURI().toURL() );
+
+			} catch ( MalformedURLException e ) {
+				throw new RuntimeException( e );
+			}
+		}
+
+		try {
+			URL[]			classLoaderClassPath	= finalClassPath.toArray( new URL[ 0 ] );
+			URLClassLoader	classLoader				= new URLClassLoader(
+			    classLoaderClassPath,
+			    this.getClass().getClassLoader()
+			);
+			Class			boxClass				= Class.forName( fqn, true, classLoader );
+			Method			method					= boxClass.getDeclaredMethod( "getInstance" );
+			Object			instance				= method.invoke( boxClass );
+
+			// Runtime
+			BoxRuntime		rt						= BoxRuntime.getInstance();
+
+			rt.executeTemplate( ( BaseTemplate ) instance );
+
+			rt.shutdown();
+
+		} catch ( Throwable e ) {
+			throw e;
+		}
+
+	}
+
+
+	public BoxNode resloveReference(int lineNumber) {
+		for (var entry : crossReferences) {
+			if(entry.destination.begin.line == lineNumber) {
+				return entry.origin;
+			}
+		}
+		return null;
 	}
 }
