@@ -19,6 +19,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -248,6 +249,12 @@ public class BoxLangTranspiler {
 
 	public List<Statement> getStatements() {
 		return statements;
+	}
+
+	public String getStatemesAsString() {
+		List<Statement> statements = getStatements();
+		return statements.stream().map( it -> it.toString() )
+		    .collect( Collectors.joining( "\n" ) );
 	}
 
 	/**

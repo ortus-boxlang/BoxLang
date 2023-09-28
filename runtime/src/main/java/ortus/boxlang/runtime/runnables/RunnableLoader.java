@@ -22,6 +22,8 @@ import java.nio.file.Paths;
 
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.IBoxContext;
+import ortus.boxlang.runtime.interop.DynamicObject;
+import ortus.boxlang.runtime.runnables.compiler.BoxJavaCompiler;
 import ortus.boxlang.runtime.types.exceptions.MissingIncludeException;
 
 /**
@@ -83,11 +85,12 @@ public class RunnableLoader {
 			throw new MissingIncludeException( "The template path could not be found.", path.toString() );
 		}
 		// TODO: enforce valid include extensions (.cfm, .cfs, .bxs, .bxm, .bx)
-		return null;
+		Class<BoxTemplate> clazz = BoxJavaCompiler.getInstance().run( path );
+		return ( BoxTemplate ) DynamicObject.of( clazz ).invokeStatic( "getInstance" ).get();
 	}
 
 	/**
-	 * Load the class for a template, JIT compiling if needed
+	 * * Load the class for a template, JIT compiling if needed
 	 *
 	 * @param path Relative path on disk to the template
 	 *
