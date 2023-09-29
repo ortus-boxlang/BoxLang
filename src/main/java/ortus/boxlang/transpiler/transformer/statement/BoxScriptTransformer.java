@@ -34,6 +34,7 @@ import ortus.boxlang.ast.BoxNode;
 import ortus.boxlang.ast.BoxScript;
 import ortus.boxlang.ast.Source;
 import ortus.boxlang.ast.SourceFile;
+import ortus.boxlang.runtime.types.exceptions.ApplicationException;
 import ortus.boxlang.transpiler.BoxLangTranspiler;
 import ortus.boxlang.transpiler.transformer.AbstractTransformer;
 import ortus.boxlang.transpiler.transformer.TransformerContext;
@@ -183,31 +184,35 @@ public class BoxScriptTransformer extends AbstractTransformer {
 			throw new IllegalStateException();
 		}
 
-		String				finalFilePath		= filePath;
-		String				finalLastModified	= lastModified;
-		Map<String, String>	values				= new HashMap<>() {
+		String							finalFilePath		= filePath;
+		String							finalLastModified	= lastModified;
+		Map<String, String>				values				= new HashMap<>() {
 
-													{
-														put( "packageName", packageName );
-														put( "className", className );
-														put( "fileName", fileName );
-														put( "fileExtension", fileExt );
-														put( "fileFolderPath", finalFilePath.replaceAll( "\\\\", "\\\\\\\\" ) );
-														put( "lastModifiedTimestamp", finalLastModified );
-														put( "compiledOnTimestamp", compiledOn );
-														put( "compileVersion", "1L" );
-													}
-												};
+																{
+																	put( "packageName", packageName );
+																	put( "className", className );
+																	put( "fileName", fileName );
+																	put( "fileExtension", fileExt );
+																	put( "fileFolderPath", finalFilePath.replaceAll( "\\\\", "\\\\\\\\" ) );
+																	put( "lastModifiedTimestamp", finalLastModified );
+																	put( "compiledOnTimestamp", compiledOn );
+																	put( "compileVersion", "1L" );
+																}
+															};
 
-		StringSubstitutor	sub					= new StringSubstitutor( values );
-		String				code				= sub.replace( template );
+		StringSubstitutor				sub					= new StringSubstitutor( values );
+		String							code				= sub.replace( template );
 
-		if ( false )
-			throw new RuntimeException( code );
-
-		ParseResult<CompilationUnit> result = javaParser.parse( code );
+		ParseResult<CompilationUnit>	result;
+		try {
+			result = javaParser.parse( code );
+		} catch ( Exception e ) {
+			// Temp debugging to see generated Java code
+			throw new ApplicationException( code, e );
+		}
 		if ( !result.isSuccessful() ) {
-			throw new IllegalStateException( result.toString() );
+			// Temp debugging to see generated Java code
+			throw new ApplicationException( result.toString() + "\n" + code );
 		}
 
 		return result.getResult().get();

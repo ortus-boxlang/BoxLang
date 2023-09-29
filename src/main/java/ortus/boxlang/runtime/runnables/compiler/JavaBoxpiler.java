@@ -214,11 +214,14 @@ public class JavaBoxpiler {
 		ParsingResult	result;
 		try {
 			result = parser.parseExpression( source );
+			// result = parser.parse( source, type );
 		} catch ( IOException e ) {
 			throw new ApplicationException( "Error compiing source", e );
 		}
 		result.getIssues().forEach( it -> System.out.println( it ) );
-		assert result.isCorrect();
+		if ( !result.isCorrect() ) {
+			throw new ApplicationException( "Error compiing source" );
+		}
 
 		BoxLangTranspiler	transpiler	= new BoxLangTranspiler();
 		Node				javaAST		= ( Node ) transpiler.transpile( result.getRoot() );

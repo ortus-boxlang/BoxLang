@@ -308,9 +308,19 @@ public class BoxLangTranspiler {
 				if ( packg.startsWith( "/" ) ) {
 					packg = packg.substring( 1 );
 				}
+				// TODO: This needs a lot more work. There are tons of disallowed edge cases such as a folder that is a number.
+				// We probably need to iterate each path segment and clean or remove as neccessary to make it a valid package name.
+				// Also, I'd like cfincluded files to use the relative path as the package name, which will require some refactoring.
+
+				// Take out periods in folder names
+				packg	= packg.replaceAll( "\\.", "" );
+				// Replace / with .
 				packg	= packg.replaceAll( "/", "." );
+				// Remove any : from Windows drives
 				packg	= packg.replaceAll( ":", "" );
+				// Replace \ with .
 				packg	= packg.replaceAll( "\\\\", "." );
+				// Remove any non alpha-numeric chars.
 				packg	= packg.replaceAll( "[^a-zA-Z0-9\\\\.]", "" );
 				return packg;
 			} catch ( IOException e ) {
