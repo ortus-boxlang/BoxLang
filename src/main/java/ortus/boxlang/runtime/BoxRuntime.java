@@ -386,8 +386,7 @@ public class BoxRuntime {
 	/**
 	 * Execute a source strings from an input stream
 	 *
-	 * @param source An inpout stream to read
-	 *
+	 * @param sourceStream An input stream to read
 	 */
 	public void executeSource( InputStream sourceStream ) {
 		executeSource( sourceStream, runtimeContext );
@@ -396,9 +395,8 @@ public class BoxRuntime {
 	/**
 	 * Execute a source strings from an input stream
 	 *
-	 * @param source  An inpout stream to read
-	 * @param context The context to execute the source in
-	 *
+	 * @param sourceStream An input stream to read
+	 * @param context      The context to execute the source in
 	 */
 	public void executeSource( InputStream sourceStream, IBoxContext context ) {
 		IBoxContext		scriptingContext	= ensureContextWithVariables( context );

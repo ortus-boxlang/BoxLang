@@ -68,7 +68,7 @@ public class Array implements List<Object>, IType, IReferenceable {
 	/**
 	 * Constructor to create a Array from a Java array
 	 *
-	 * @param map The array to create the Array from
+	 * @param arr The array to create the Array from
 	 */
 	public Array( Object[] arr ) {
 		wrapped = Collections.synchronizedList( Arrays.asList( arr ) );
@@ -77,7 +77,7 @@ public class Array implements List<Object>, IType, IReferenceable {
 	/**
 	 * Constructor to create a Array from a List
 	 *
-	 * @param map The List to create the Array from
+	 * @param list The List to create the Array from
 	 */
 	public Array( List<Object> list ) {
 		wrapped = list;
@@ -92,7 +92,7 @@ public class Array implements List<Object>, IType, IReferenceable {
 	/**
 	 * Create a Array from a List
 	 *
-	 * @param map The List to create the Array from
+	 * @param list The List to create the Array from
 	 */
 	public static Array fromList( List<Object> list ) {
 		return new Array( list );
@@ -101,7 +101,7 @@ public class Array implements List<Object>, IType, IReferenceable {
 	/**
 	 * Create a Array from a Java array
 	 *
-	 * @param map The array to create the Array from
+	 * @param arr The array to create the Array from
 	 */
 	public static Array fromArray( Object[] arr ) {
 		return new Array( arr );

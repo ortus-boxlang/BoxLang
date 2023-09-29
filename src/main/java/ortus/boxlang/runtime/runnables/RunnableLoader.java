@@ -86,8 +86,9 @@ public class RunnableLoader {
 			throw new MissingIncludeException( "The template path [" + path.toString() + "] could not be found.", path.toString() );
 		}
 		// TODO: enforce valid include extensions (.cfm, .cfs, .bxs, .bxm, .bx)
-		Class<BoxTemplate> clazz = BoxJavaCompiler.getInstance().compileTemplate( path );
-		return ( BoxTemplate ) DynamicObject.of( clazz ).invokeStatic( "getInstance" ).get();
+		// Class<BoxTemplate> clazz = BoxJavaCompiler.getInstance().compileTemplate( path );
+		// return ( BoxTemplate ) DynamicObject.of( clazz ).invokeStatic( "getInstance" ).get();
+		return null;
 	}
 
 	/**
@@ -124,8 +125,10 @@ public class RunnableLoader {
 	 * @return
 	 */
 	public BoxScript loadSource( String source, BoxFileType type ) {
-		Class<BoxScript> clazz = BoxJavaCompiler.getInstance().compileSource( source, type );
-		return ( BoxScript ) DynamicObject.of( clazz ).invokeStatic( "getInstance" ).get();
+		// Class<BoxScript> clazz = BoxJavaCompiler.getInstance().compileSource( source, type );
+		// Class<BoxScript> clazz = BoxJavaCompiler.getInstance().compileSource( source );
+		// return ( BoxScript ) DynamicObject.of( clazz ).invokeStatic( "getInstance" ).get();
+		return null;
 	}
 
 	/**

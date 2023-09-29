@@ -107,7 +107,7 @@ spotless {
     java {
 		target fileTree( "." ) {
             include "**/*.java"
-            exclude "**/build/**", "bin/**"
+            exclude "**/build/**", "bin/**", "examples/**", "src/main/java/ortus/boxlang/runtime/testing/**"
         }
         eclipse().configFile( "workbench/ortus-java-style.xml" )
     }

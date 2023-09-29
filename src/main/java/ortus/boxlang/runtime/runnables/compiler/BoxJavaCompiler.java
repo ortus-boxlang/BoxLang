@@ -18,6 +18,7 @@
 package ortus.boxlang.runtime.runnables.compiler;
 
 import java.io.File;
+import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.file.Path;
@@ -207,45 +208,43 @@ public class BoxJavaCompiler {
 	Logger				logger		= LoggerFactory.getLogger( BoxJavaCompiler.class );
 
 	private String makeClass( String javaCode ) {
-		Map<String, String>	values	= new HashMap<>() {
-
-										{
-											put( "javaCode", javaCode );
-										}
-									};
-
+		Map<String, String>	values	= Map.ofEntries(
+		    Map.entry( "javaCode", javaCode )
+		);
 		StringSubstitutor	sub		= new StringSubstitutor( values );
 		return sub.replace( template );
 	}
 
 	public void runExpression( String expression ) {
-		compileTemplate(
-		    makeClass( expression )
-		);
+		// compileTemplate(
+		// makeClass( expression )
+		// );
 	}
 
-	public Class<BoxScript> compileScript( String source, BoxFileType type ) {
+	public Class<BoxScript> compileScript( String source, BoxFileType type ) throws IOException {
 		BoxParser		parser	= new BoxParser();
 		ParsingResult	result	= parser.parse( source, type );
 		result.getIssues().forEach( it -> System.out.println( it ) );
 		assert result.isCorrect();
 
 		BoxLangTranspiler	transpiler	= new BoxLangTranspiler();
-		Node				javaAST		= transpiler.transpile( result.getRoot() );
+		Node				javaAST		= ( Node ) transpiler.transpile( result.getRoot() );
 
-		return Class < BoxScript > compileSource( makeClass( transpiler.getStatementsAsString() ) );
+		// return Class < BoxScript > compileSource( makeClass( transpiler.getStatementsAsString() ) );
+		return null;
 	}
 
-	public Class<BoxTemplate> compileTemplate( Path path ) {
+	public Class<BoxTemplate> compileTemplate( Path path ) throws IOException {
 		BoxParser		parser	= new BoxParser();
 		ParsingResult	result	= parser.parse( path.toFile() );
 		result.getIssues().forEach( it -> System.out.println( it ) );
 		assert result.isCorrect();
 
 		BoxLangTranspiler	transpiler	= new BoxLangTranspiler();
-		Node				javaAST		= transpiler.transpile( result.getRoot() );
+		Node				javaAST		= ( Node ) transpiler.transpile( result.getRoot() );
 
-		return ( Class<BoxTemplate> ) compileSource( makeClass( transpiler.getStatementsAsString() ) );
+		// return ( Class<BoxTemplate> ) compileSource( makeClass( transpiler.getStatementsAsString() ) );
+		return null;
 	}
 
 	public Class<IBoxRunnable> compileSource( String javaSource ) {

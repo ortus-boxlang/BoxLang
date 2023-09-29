@@ -130,9 +130,9 @@ public class BoxRunner {
 	/**
 	 * Command-line options for the runtime and compiler
 	 *
-	 * @param templatePath The path to the template to execute. Can be a class or template
+	 * @param templatePath The path to the template to execute. Can be a class or template. Mutally exclusive with code
 	 * @param debug        Whether or not to run in debug mode.
-	 * @param command      The command to execute
+	 * @param code         The source code to execute, if any
 	 */
 	public record CLIOptions( String templatePath, boolean debug, String code ) {
 		// The record automatically generates the constructor, getters, equals, hashCode, and toString methods.
