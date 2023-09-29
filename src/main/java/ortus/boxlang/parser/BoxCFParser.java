@@ -29,6 +29,7 @@ import ortus.boxlang.ast.statement.*;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -79,7 +80,7 @@ public class BoxCFParser extends BoxAbstractParser {
 	 * @see ParsingResult
 	 */
 	public ParsingResult parse( String code ) throws IOException {
-		InputStream				inputStream	= IOUtils.toInputStream( code );
+		InputStream				inputStream	= IOUtils.toInputStream( code, StandardCharsets.UTF_8 );
 
 		CFParser.ScriptContext	parseTree	= ( CFParser.ScriptContext ) parserFirstStage( inputStream );
 		if ( issues.isEmpty() ) {
@@ -102,7 +103,7 @@ public class BoxCFParser extends BoxAbstractParser {
 	 * @see BoxExpr
 	 */
 	public ParsingResult parseExpression( String code ) throws IOException {
-		InputStream	inputStream	= IOUtils.toInputStream( code );
+		InputStream	inputStream	= IOUtils.toInputStream( code, StandardCharsets.UTF_8 );
 
 		CFLexer		lexer		= new CFLexer( CharStreams.fromStream( inputStream ) );
 		CFParser	parser		= new CFParser( new CommonTokenStream( lexer ) );
@@ -125,7 +126,7 @@ public class BoxCFParser extends BoxAbstractParser {
 	 * @see BoxStatement
 	 */
 	public ParsingResult parseStatement( String code ) throws IOException {
-		InputStream	inputStream	= IOUtils.toInputStream( code );
+		InputStream	inputStream	= IOUtils.toInputStream( code, StandardCharsets.UTF_8 );
 
 		CFLexer		lexer		= new CFLexer( CharStreams.fromStream( inputStream ) );
 		CFParser	parser		= new CFParser( new CommonTokenStream( lexer ) );
@@ -172,7 +173,7 @@ public class BoxCFParser extends BoxAbstractParser {
 		if ( parseTree.tag() != null ) {
 			parseTree = parseTree.tag().script();
 		} else {
-
+			// TODO : Need to finish this MT
 		}
 
 		parseTree.functionOrStatement().forEach( stmt -> {
@@ -316,6 +317,7 @@ public class BoxCFParser extends BoxAbstractParser {
 				type	= BoxTryCatchType.String;
 				name	= node.catchType().stringLiteral().getText();
 			} else if ( node.catchType().type() != null ) {
+				// TODO: Why this double if?
 				if ( node.catchType().type().ANY() != null ) {
 					type = BoxTryCatchType.Any;
 				}

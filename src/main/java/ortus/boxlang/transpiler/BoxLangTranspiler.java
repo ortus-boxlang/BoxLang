@@ -19,7 +19,6 @@ import com.github.javaparser.ast.Node;
 import com.github.javaparser.ast.body.MethodDeclaration;
 import com.github.javaparser.ast.stmt.BlockStmt;
 import com.github.javaparser.ast.stmt.Statement;
-import com.github.javaparser.ast.visitor.VoidVisitor;
 import com.github.javaparser.printer.configuration.DefaultPrinterConfiguration;
 import ortus.boxlang.ast.*;
 import ortus.boxlang.ast.expression.*;
@@ -31,7 +30,6 @@ import ortus.boxlang.transpiler.transformer.*;
 import ortus.boxlang.transpiler.transformer.expression.*;
 
 import java.io.File;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.io.Writer;
 import java.lang.reflect.InvocationTargetException;

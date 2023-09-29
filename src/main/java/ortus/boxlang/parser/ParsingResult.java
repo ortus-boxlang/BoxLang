@@ -18,10 +18,8 @@
 package ortus.boxlang.parser;
 
 import ortus.boxlang.ast.BoxNode;
-import ortus.boxlang.ast.BoxScript;
 import ortus.boxlang.ast.Issue;
 
-import java.util.ArrayList;
 import java.util.List;
 
 /**
