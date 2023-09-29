@@ -53,12 +53,12 @@ jobs:
             uses: anchore/scan-action@v3
             id: securityscan
             with:
-              path: "./runtime/build"
+              path: "./build"
               acs-report-enable: "true"
-              fail-build: false
+              fail-build: true
 
-          - name: Upload Anchore Report
-            uses: github/codeql-action/upload-sarif@v2
-            with:
-              sarif_file: ${{ steps.imagescan.outputs.sarif }}
-              category: "BoxLang-Runtime-${{ github.env.BRANCH }}"
+          # - name: Upload Anchore Report
+          #   uses: github/codeql-action/upload-sarif@v2
+          #   with:
+          #     sarif_file: ${{ steps.imagescan.outputs.sarif }}
+          #     category: "BoxLang-Runtime-${{ github.env.BRANCH }}"
