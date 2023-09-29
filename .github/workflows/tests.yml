@@ -16,9 +16,9 @@ jobs:
       fail-fast: false
       matrix:
         jdkVersion: [ "17" ]
-        experimental: [false]
+        experimental: [ false ]
         include:
-          - jdkVersion: "20"
+          - jdkVersion: "21"
             experimental: true
     steps:
       - name: Checkout Repository

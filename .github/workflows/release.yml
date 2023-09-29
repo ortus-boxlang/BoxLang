@@ -1,6 +1,6 @@
 # This workflow is used to build releases
 # It can also be called by other workflows to reuse the release flow.
-name: ColdBox Release
+name: BoxLang Release
 
 on:
   # If you push to main this will trigger a stable release
@@ -106,10 +106,10 @@ jobs:
         with:
           name: boxlang-build
           path: |
-            runtime/build/distributions/**
-            runtime/build/docs/**
-            runtime/build/libs/**
-            runtime/build/scripts/**
+            build/distributions/**
+            build/docs/**
+            build/libs/**
+            build/scripts/**
             changelog.md
 
       # - name: Upload Binaries to S3
@@ -155,6 +155,8 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_name: boxlang-${{ env.VERSION }}.zip
+          asset_content_type: application/zip
           asset_path: |
             runtime/build/distributions/**
             runtime/build/docs/**
