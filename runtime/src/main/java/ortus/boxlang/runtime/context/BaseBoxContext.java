@@ -32,7 +32,7 @@ import ortus.boxlang.runtime.types.exceptions.ApplicationException;
 import ortus.boxlang.runtime.types.exceptions.ScopeNotFoundException;
 
 /**
- * This context represents the context of a template execution in BoxLang
+ * This context represents the context of ANYTHING that can execute in BoxLang
  */
 public class BaseBoxContext implements IBoxContext {
 

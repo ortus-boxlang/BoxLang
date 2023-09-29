@@ -24,9 +24,14 @@ import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.ApplicationException;
 
 /**
- * represents boxlang server scope container
+ * Represents the BoxLang "server" scope container
+ * <p>
  * Note, this doesn't have to be a "web", it can reprsesent any long-running runtime which
  * processes one or more "requests" for execution.
+ * </p>
+ * <p>
+ * Unmodifiables keys are : coldfusion, os, lucee, separator, java, servlet, system
+ * </p>
  */
 public class ServerScope extends BaseScope {
 
@@ -68,6 +73,13 @@ public class ServerScope extends BaseScope {
 		intialized = true;
 	}
 
+	/**
+	 * Put a value into the scope container and throw an exception if the key is unmodifiable.
+	 * Unmodifiables keys are : coldfusion, os, lucee, separator, java, servlet, system
+	 *
+	 * @param key   The key to set
+	 * @param value The value to set
+	 */
 	@Override
 	public Object put( Key key, Object value ) {
 		if ( intialized && unmodifiableKeys.contains( key ) ) {
