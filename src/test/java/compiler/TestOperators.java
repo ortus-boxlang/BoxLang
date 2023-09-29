@@ -18,7 +18,6 @@ package compiler;
 import com.github.javaparser.ast.Node;
 import org.junit.Ignore;
 import org.junit.Test;
-import ortus.boxlang.executor.JavaRunner;
 import ortus.boxlang.parser.BoxParser;
 import ortus.boxlang.parser.ParsingResult;
 import ortus.boxlang.transpiler.BoxLangTranspiler;
