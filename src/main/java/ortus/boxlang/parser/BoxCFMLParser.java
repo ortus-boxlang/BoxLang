@@ -26,6 +26,7 @@ import ortus.boxlang.ast.*;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -61,7 +62,7 @@ public class BoxCFMLParser extends BoxAbstractParser {
 	}
 
 	public ParsingResult parse( String code ) throws IOException {
-		InputStream						inputStream	= IOUtils.toInputStream( code );
+		InputStream						inputStream	= IOUtils.toInputStream( code, StandardCharsets.UTF_8 );
 		CFMLParser.HtmlDocumentContext	parseTree	= ( CFMLParser.HtmlDocumentContext ) parserFirstStage( inputStream );
 		BoxScript						ast			= parseTreeToAst( file, parseTree );
 		return new ParsingResult( ast, issues );
