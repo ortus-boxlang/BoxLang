@@ -19,6 +19,7 @@ package ortus.boxlang.runtime;
 
 import java.io.ByteArrayInputStream;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
@@ -93,7 +94,7 @@ public class BoxRunner {
 	private static CLIOptions parseCommandLineOptions( String[] args ) {
 		// Initialize options with defaults
 		Boolean			debug		= false;
-		List<String>	argsList	= Arrays.asList( args );
+		List<String>	argsList	= new ArrayList<String>( Arrays.asList( args ) );
 		String			current		= null;
 		String			file		= null;
 		String			code		= null;
@@ -104,20 +105,7 @@ public class BoxRunner {
 			current = argsList.remove( 0 );
 			if ( current.equalsIgnoreCase( "--debug" ) ) {
 				debug = true;
-			}
-			if ( current.equalsIgnoreCase( "-e" ) ) {
-				if ( argsList.isEmpty() ) {
-					throw new ApplicationException( "Missing inline script to execute with -e flag." );
-				}
-
-				Path templatePath = Path.of( argsList.remove( 0 ) );
-				// If path is not already absolute, make it absolute relative to the worknig directory of our process
-				if ( ! ( templatePath.toFile().isAbsolute() ) ) {
-					templatePath = Path.of( System.getProperty( "user.dir" ), templatePath.toString() );
-				}
-
-				file = templatePath.toString();
-				break;
+				continue;
 			}
 			if ( current.equalsIgnoreCase( "-c" ) ) {
 				if ( argsList.isEmpty() ) {
@@ -126,6 +114,14 @@ public class BoxRunner {
 				code = argsList.remove( 0 );
 				break;
 			}
+
+			Path templatePath = Path.of( current );
+			// If path is not already absolute, make it absolute relative to the worknig directory of our process
+			if ( ! ( templatePath.toFile().isAbsolute() ) ) {
+				templatePath = Path.of( System.getProperty( "user.dir" ), templatePath.toString() );
+			}
+
+			file = templatePath.toString();
 		}
 
 		return new CLIOptions( file, debug, code );

@@ -82,7 +82,7 @@ public class RunnableLoader {
 	 */
 	public BoxTemplate loadTemplateAbsolute( IBoxContext context, Path path ) {
 		if ( !path.toFile().exists() ) {
-			throw new MissingIncludeException( "The template path could not be found.", path.toString() );
+			throw new MissingIncludeException( "The template path [" + path.toString() + "] could not be found.", path.toString() );
 		}
 		// TODO: enforce valid include extensions (.cfm, .cfs, .bxs, .bxm, .bx)
 		Class<BoxTemplate> clazz = BoxJavaCompiler.getInstance().compileTemplate( path );
