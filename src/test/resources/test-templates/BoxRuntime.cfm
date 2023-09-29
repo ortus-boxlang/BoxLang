@@ -1,0 +1,1 @@
+variables.hello = "Hello"

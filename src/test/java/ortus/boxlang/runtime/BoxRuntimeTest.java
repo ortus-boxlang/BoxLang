@@ -54,7 +54,7 @@ public class BoxRuntimeTest {
 	public void testItCanExecuteATemplate() {
 		String testTemplate;
 		try {
-			testTemplate = ( new File( getClass().getResource( "/test-templates/BoxRuntime.bx" ).toURI() ) ).getPath();
+			testTemplate = ( new File( getClass().getResource( "/test-templates/BoxRuntime.cfm" ).toURI() ) ).getPath();
 		} catch ( URISyntaxException e ) {
 			throw new MissingIncludeException( "Invalid template path to execute.", "", getClass().getResource( "/test-templates/BoxRuntime.bx" ).toString(),
 			    e );
@@ -69,7 +69,7 @@ public class BoxRuntimeTest {
 	@DisplayName( "It can execute a template URL" )
 	@Test
 	public void testItCanExecuteATemplateURL() {
-		URL testTemplate = getClass().getResource( "/test-templates/BoxRuntime.bx" );
+		URL testTemplate = getClass().getResource( "/test-templates/BoxRuntime.cfm" );
 
 		assertDoesNotThrow( () -> {
 			BoxRuntime instance = BoxRuntime.getInstance( true );

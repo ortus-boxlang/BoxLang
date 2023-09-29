@@ -86,9 +86,8 @@ public class RunnableLoader {
 			throw new MissingIncludeException( "The template path [" + path.toString() + "] could not be found.", path.toString() );
 		}
 		// TODO: enforce valid include extensions (.cfm, .cfs, .bxs, .bxm, .bx)
-		// Class<BoxTemplate> clazz = BoxJavaCompiler.getInstance().compileTemplate( path );
-		// return ( BoxTemplate ) DynamicObject.of( clazz ).invokeStatic( "getInstance" ).get();
-		return null;
+		Class<IBoxRunnable> clazz = BoxJavaCompiler.getInstance().compileTemplate( path );
+		return ( BoxTemplate ) DynamicObject.of( clazz ).invokeStatic( "getInstance" ).get();
 	}
 
 	/**
@@ -125,10 +124,8 @@ public class RunnableLoader {
 	 * @return
 	 */
 	public BoxScript loadSource( String source, BoxFileType type ) {
-		// Class<BoxScript> clazz = BoxJavaCompiler.getInstance().compileSource( source, type );
-		// Class<BoxScript> clazz = BoxJavaCompiler.getInstance().compileSource( source );
-		// return ( BoxScript ) DynamicObject.of( clazz ).invokeStatic( "getInstance" ).get();
-		return null;
+		Class<IBoxRunnable> clazz = BoxJavaCompiler.getInstance().compileScript( source, type );
+		return ( BoxScript ) DynamicObject.of( clazz ).invokeStatic( "getInstance" ).get();
 	}
 
 	/**
@@ -143,14 +140,4 @@ public class RunnableLoader {
 		return loadSource( source, BoxFileType.CFSCRIPT );
 	}
 
-	/**
-	 * Load the class for a script, JIT compiling if needed
-	 *
-	 * @param source The source to load
-	 *
-	 * @return
-	 */
-	public BoxScript loadScript( IBoxContext context, String source ) {
-		return null;
-	}
 }

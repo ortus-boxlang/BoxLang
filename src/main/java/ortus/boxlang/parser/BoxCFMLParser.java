@@ -14,21 +14,26 @@
  */
 package ortus.boxlang.parser;
 
-import org.antlr.v4.runtime.CharStreams;
-import org.antlr.v4.runtime.CommonTokenStream;
-import org.antlr.v4.runtime.ParserRuleContext;
-import org.apache.commons.io.IOUtils;
-import org.apache.commons.io.input.BOMInputStream;
-import ortus.boxlang.parser.antlr.CFMLLexer;
-import ortus.boxlang.parser.antlr.CFMLParser;
-import ortus.boxlang.ast.*;
-
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
+
+import org.antlr.v4.runtime.CharStreams;
+import org.antlr.v4.runtime.CommonTokenStream;
+import org.antlr.v4.runtime.ParserRuleContext;
+import org.apache.commons.io.IOUtils;
+import org.apache.commons.io.input.BOMInputStream;
+
+import ortus.boxlang.ast.BoxScript;
+import ortus.boxlang.ast.BoxStatement;
+import ortus.boxlang.ast.Point;
+import ortus.boxlang.ast.Position;
+import ortus.boxlang.ast.SourceFile;
+import ortus.boxlang.parser.antlr.CFMLLexer;
+import ortus.boxlang.parser.antlr.CFMLParser;
 
 public class BoxCFMLParser extends BoxAbstractParser {
 

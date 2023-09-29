@@ -35,7 +35,7 @@ public class TestExecution extends TestBase {
 	@Test
 	public void executeFreeStyle() throws IOException {
 		BoxParser		parser	= new BoxParser();
-		ParsingResult	result	= parser.parse( new File( "../examples/cf_to_java/freestyle/freestyle.cfm" ) );
+		ParsingResult	result	= parser.parse( new File( "examples/cf_to_java/freestyle/freestyle.cfm" ) );
 		result.getIssues().forEach( it -> System.out.println( it ) );
 		assertTrue( result.isCorrect() );
 

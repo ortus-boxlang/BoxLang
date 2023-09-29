@@ -6,6 +6,13 @@
     "configurations": [
         {
             "type": "java",
+            "name": "BoxRunner",
+            "request": "launch",
+            "mainClass": "ortus.boxlang.runtime.BoxRunner",
+            "projectName": "boxlang"
+        },
+        {
+            "type": "java",
             "name": "ConfigLoader",
             "request": "launch",
             "mainClass": "ortus.boxlang.runtime.config.ConfigLoader",

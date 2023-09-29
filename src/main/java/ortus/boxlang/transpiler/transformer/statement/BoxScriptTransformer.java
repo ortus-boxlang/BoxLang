@@ -40,89 +40,121 @@ import ortus.boxlang.transpiler.transformer.TransformerContext;
 
 public class BoxScriptTransformer extends AbstractTransformer {
 
+	// @formatter:off
 	private final String template = """
-	                                                       	// Auto package creation according to file path on disk
-	                                                       	package ${packageName};
+		// Auto package creation according to file path on disk
+		package ${packageName};
 
-	                                                       	import ortus.boxlang.runtime.BoxRuntime;
-	                                                       	import ortus.boxlang.runtime.context.*;
+		import ortus.boxlang.runtime.BoxRuntime;
+		import ortus.boxlang.runtime.context.*;
 
-	                                                       	// BoxLang Auto Imports
-	                                import ortus.boxlang.runtime.BoxRuntime;
-	                                import ortus.boxlang.runtime.context.*;
+		// BoxLang Auto Imports
+		import ortus.boxlang.runtime.BoxRuntime;
+		import ortus.boxlang.runtime.context.*;
 
-	                                // BoxLang Auto Imports
-	                                import ortus.boxlang.runtime.dynamic.BaseTemplate;
-	                                import ortus.boxlang.runtime.dynamic.Referencer;
-	                                import ortus.boxlang.runtime.interop.DynamicObject;
-	                                import ortus.boxlang.runtime.loader.ClassLocator;
-	                                import ortus.boxlang.runtime.operators.*;
-	                                import ortus.boxlang.runtime.scopes.Key;
-	                                import ortus.boxlang.runtime.scopes.IScope;
-	                                import ortus.boxlang.runtime.dynamic.casters.*;
-
-
-	                                                       	// Classes Auto-Imported on all Templates and Classes by BoxLang
-	                                                       	import java.time.LocalDateTime;
-	                                                       	import java.time.Instant;
-	                                                       	import java.lang.System;
-	                                                       	import java.lang.String;
-	                                                       	import java.lang.Character;
-	                                                       	import java.lang.Boolean;
-	                                                       	import java.lang.Double;
-	                                                       	import java.lang.Integer;
-
-	                                                       	public class ${className} extends BaseTemplate {
-
-	                                                       		// Auto-Generated Singleton Helpers
-	                                                       		private static ${className} instance;
-
-	                                                       		public ${className}() {
-	                                                       			this.name         = "${fileName}";
-	                                                       			this.extension    = "${fileExtension}";
-	                                                       			this.path         = "${fileFolderPath}";
-	                                                       			this.lastModified =  ${lastModifiedTimestamp};
-	                                                       			this.compiledOn   =  ${compiledOnTimestamp};
-	                                                       			// this.ast = ???
-	                                                       		}
-
-	                                                       		public static synchronized ${className} getInstance() {
-	                                                       			if ( instance == null ) {
-	                                                       				instance = new ${className}();
-	                                                       			}
-	                                                       			return instance;
-	                                                       		}
-
-	                                                       		/**
-	                                                       		 * Each template must implement the invoke() method which executes the template
-	                                                       		 *
-	                                                       		 * @param context The execution context requesting the execution
-	                                                       		 */
-	                                                       		public void _invoke( IBoxContext context ) {
-	                                                       			// Reference to the variables scope
-	                                		IBoxContext			catchContext = null;
-	                                                       			IScope variablesScope = context.getScopeNearby( Key.of( "variables" ) );
-	                                                       			ClassLocator JavaLoader = ClassLocator.getInstance();
-
-	                                                       		}
-
-	                                                       		public static void main(String[] args) {
-	                                		BoxRuntime rt = BoxRuntime.getInstance();
-
-	                                		try {
-	                                			rt.executeTemplate( ${className}.getInstance() );
-	                                		} catch ( Throwable e ) {
-	                                			e.printStackTrace();
-	                                			System.exit( 1 );
-	                                		}
-
-	                                		// Bye bye! Ciao Bella!
-	                                		rt.shutdown();
+		// BoxLang Auto Imports
+		import ortus.boxlang.runtime.dynamic.BaseTemplate;
+		import ortus.boxlang.runtime.dynamic.Referencer;
+		import ortus.boxlang.runtime.interop.DynamicObject;
+		import ortus.boxlang.runtime.loader.ClassLocator;
+		import ortus.boxlang.runtime.operators.*;
+		import ortus.boxlang.runtime.scopes.Key;
+		import ortus.boxlang.runtime.scopes.IScope;
+		import ortus.boxlang.runtime.dynamic.casters.*;
 
 
-	                                	}
-	                                                       	}
-	                                                       """;
+		// Classes Auto-Imported on all Templates and Classes by BoxLang
+		import java.time.LocalDateTime;
+		import java.time.Instant;
+		import java.lang.System;
+		import java.lang.String;
+		import java.lang.Character;
+		import java.lang.Boolean;
+		import java.lang.Double;
+		import java.lang.Integer;
+
+		public class ${className} extends BoxTemplate {
+
+			// Auto-Generated Singleton Helpers
+			private static ${className} instance;
+
+			private static final List<ImportDefinition>	imports			= List.of();
+			private static final Path					path			= Paths.get( "${fileFolderPath}" );
+			private static final long					compileVersion	= ${compileVersion};
+			private static final LocalDateTime			compiledOn		= ${compiledOnTimestamp};
+			private static final Object					ast				= null;
+
+			public ${className}() {
+			}
+
+			public static synchronized ${className} getInstance() {
+				if ( instance == null ) {
+					instance = new ${className}();
+				}
+				return instance;
+			}
+
+			/**
+			* Each template must implement the invoke() method which executes the template
+			*
+			* @param context The execution context requesting the execution
+			*/
+			public void _invoke( IBoxContext context ) {
+				// Reference to the variables scope
+				IBoxContext			catchContext = null;
+				IScope variablesScope = context.getScopeNearby( Key.of( "variables" ) );
+				ClassLocator JavaLoader = ClassLocator.getInstance();
+
+			}
+
+			// ITemplateRunnable implementation methods
+			/**
+			* The version of the BoxLang runtime
+			*/
+			public long getRunnableCompileVersion() {
+			return ${className}.compileVersion;
+			}
+
+			/**
+			* The date the template was compiled
+			*/
+			public LocalDateTime getRunnableCompiledOn() {
+			return ${className}.compiledOn;
+			}
+
+			/**
+			* The AST (abstract syntax tree) of the runnable
+			*/
+			public Object getRunnableAST() {
+			return ${className}.ast;
+			}
+
+			/**
+			* The path to the template
+			*/
+			public Path getRunnablePath() {
+			return ${className}.path;
+			}
+
+
+			public static void main(String[] args) {
+				BoxRuntime rt = BoxRuntime.getInstance();
+
+				try {
+					rt.executeTemplate( ${className}.getInstance() );
+				} catch ( Throwable e ) {
+					e.printStackTrace();
+					System.exit( 1 );
+				}
+
+				// Bye bye! Ciao Bella!
+				rt.shutdown();
+
+
+			}
+		}
+	""";
+	// @formatter:on
 
 	@Override
 	public Node transform( BoxNode node, TransformerContext context ) throws IllegalStateException {
@@ -151,24 +183,29 @@ public class BoxScriptTransformer extends AbstractTransformer {
 			throw new IllegalStateException();
 		}
 
-		String							finalFilePath		= filePath;
-		String							finalLastModified	= lastModified;
-		Map<String, String>				values				= new HashMap<>() {
+		String				finalFilePath		= filePath;
+		String				finalLastModified	= lastModified;
+		Map<String, String>	values				= new HashMap<>() {
 
-																{
-																	put( "packageName", packageName );
-																	put( "className", className );
-																	put( "fileName", fileName );
-																	put( "fileExtension", fileExt );
-																	put( "fileFolderPath", finalFilePath );
-																	put( "lastModifiedTimestamp", finalLastModified );
-																	put( "compiledOnTimestamp", compiledOn );
-																}
-															};
+													{
+														put( "packageName", packageName );
+														put( "className", className );
+														put( "fileName", fileName );
+														put( "fileExtension", fileExt );
+														put( "fileFolderPath", finalFilePath.replaceAll( "\\\\", "\\\\\\\\" ) );
+														put( "lastModifiedTimestamp", finalLastModified );
+														put( "compiledOnTimestamp", compiledOn );
+														put( "compileVersion", "1L" );
+													}
+												};
 
-		StringSubstitutor				sub					= new StringSubstitutor( values );
-		String							code				= sub.replace( template );
-		ParseResult<CompilationUnit>	result				= javaParser.parse( code );
+		StringSubstitutor	sub					= new StringSubstitutor( values );
+		String				code				= sub.replace( template );
+
+		if ( false )
+			throw new RuntimeException( code );
+
+		ParseResult<CompilationUnit> result = javaParser.parse( code );
 		if ( !result.isSuccessful() ) {
 			throw new IllegalStateException( result.toString() );
 		}
