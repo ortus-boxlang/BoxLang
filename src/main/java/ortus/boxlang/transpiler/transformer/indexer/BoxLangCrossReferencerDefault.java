@@ -1,14 +1,7 @@
 package ortus.boxlang.transpiler.transformer.indexer;
 
-import com.github.javaparser.Position;
-import com.github.javaparser.Range;
-import com.github.javaparser.ast.DataKey;
 import com.github.javaparser.ast.Node;
-import com.github.javaparser.ast.comments.BlockComment;
-import com.github.javaparser.ast.comments.LineComment;
 import com.github.javaparser.ast.stmt.Statement;
-import ortus.boxlang.ast.BoxNode;
-
 import static ortus.boxlang.transpiler.transformer.indexer.BoxNodeKey.BOX_NODE_DATA_KEY;
 
 /**

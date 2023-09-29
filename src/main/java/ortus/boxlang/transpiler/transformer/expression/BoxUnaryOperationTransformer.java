@@ -17,7 +17,6 @@ package ortus.boxlang.transpiler.transformer.expression;
 import com.github.javaparser.ast.Node;
 import com.github.javaparser.ast.expr.Expression;
 import com.github.javaparser.ast.expr.MethodCallExpr;
-import com.github.javaparser.ast.expr.NameExpr;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import ortus.boxlang.ast.BoxNode;
@@ -25,10 +24,8 @@ import ortus.boxlang.ast.expression.*;
 import ortus.boxlang.transpiler.BoxLangTranspiler;
 import ortus.boxlang.transpiler.transformer.AbstractTransformer;
 import ortus.boxlang.transpiler.transformer.TransformerContext;
-import ortus.boxlang.transpiler.transformer.statement.BoxAssertTransformer;
 
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 /**
@@ -79,7 +76,7 @@ public class BoxUnaryOperationTransformer extends AbstractTransformer {
 		}
 
 		Node javaExpr = parseExpression( template, values );
-		logger.info( node.getSourceText() + " -> " + javaExpr );
+		logger.info( "{} -> {}", node.getSourceText(), javaExpr );
 		addIndex( javaExpr, node );
 		return javaExpr;
 	}

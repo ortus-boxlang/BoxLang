@@ -33,7 +33,7 @@ public class BoxObjectAccessTransformer extends AbstractTransformer {
 
 			if ( variable instanceof ArrayInitializerExpr ) {
 				ArrayInitializerExpr	vars		= ( ArrayInitializerExpr ) variable;
-
+				// TODO: Why not use Map.ofEntries() instead?
 				Map<String, String>		values		= new HashMap<>() {
 
 														{
@@ -52,7 +52,7 @@ public class BoxObjectAccessTransformer extends AbstractTransformer {
 														           """;
 													};
 				Node					javaExpr	= parseExpression( template, values );
-				logger.info( side + node.getSourceText() + " -> " + javaExpr );
+				logger.info( "{} -> {}", side + node.getSourceText(), javaExpr );
 				addIndex( javaExpr, node );
 				return javaExpr;
 
