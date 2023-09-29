@@ -7,6 +7,7 @@ plugins {
     // Apply the application plugin to add support for building a CLI application in Java.
 	// This produces the distributions and scripts for any OS
 	id "application"
+	id 'antlr'
 	// For source code formatting
 	id "com.diffplug.spotless" version "6.20.0"
 }
@@ -17,6 +18,18 @@ plugins {
 group = 'ortus.boxlang'
 java.sourceCompatibility = JavaVersion.VERSION_17
 java.targetCompatibility = JavaVersion.VERSION_17
+
+/**
+ * ANTLR Properties
+ */
+def antlrGeneratedParserPackage = "ortus.boxlang.parser.antlr"
+def generatedSrcDir = "build/generated-src"
+def antlrGeneratedParserBaseDir = "$generatedSrcDir/antlr/main"
+def antlrGeneratedParserPackageDir = antlrGeneratedParserPackage.replaceAll("\\.", "/")
+def antlrGrammarDir = "src/main/antlr"
+
+// Add ANTLR generated sources to the main source set
+sourceSets.main.java.srcDirs += "$antlrGeneratedParserBaseDir"
 
 /**
  * Repositories for dependencies in order
@@ -35,7 +48,13 @@ dependencies {
 	testImplementation "org.mockito:mockito-core:5.+"
 	testImplementation "com.google.truth:truth:1.+"
 
-	// Runtime Dependencies
+	// Implementation Dependencies
+
+	antlr "org.antlr:antlr4:$antlrVersion"
+	implementation "commons-io:commons-io:2.13.0"
+	implementation 'org.apache.commons:commons-text:1.10.0'
+	implementation 'commons-cli:commons-cli:1.5.0'
+	implementation 'com.github.javaparser:javaparser-symbol-solver-core:3.25.4'
 
 	// https://mvnrepository.com/artifact/org.apache.commons/commons-lang3
 	implementation 'org.apache.commons:commons-lang3:3.13.0'
@@ -49,7 +68,6 @@ dependencies {
 	implementation 'org.slf4j:slf4j-api:2.0.7'
 	// https://mvnrepository.com/artifact/org.slf4j/slf4j-jdk14
 	implementation 'org.slf4j:slf4j-jdk14:2.0.7'
-	implementation 'org.apache.commons:commons-text:1.10.0'
 }
 
 /**
@@ -91,7 +109,7 @@ spotless {
             include "**/*.java"
             exclude "**/build/**", "bin/**"
         }
-        eclipse().configFile( "../workbench/ortus-java-style.xml" )
+        eclipse().configFile( "workbench/ortus-java-style.xml" )
     }
 }
 
@@ -136,8 +154,7 @@ task getDependencies( type: Copy ) {
  * Javadoc Task
  */
 javadoc {
-	//include 'ortus/boxlang/addition/**'
-	//exclude 'ortus/boxlang/subtraction/**'
+	exclude '**/boxlang/parser/**'
 }
 
 /**
@@ -153,6 +170,78 @@ tasks.named( 'test' ) {
  */
  build.finalizedBy( javadoc )
 
+/**
+ * Compile Java Customizations
+ */
+compileJava {
+	source sourceSets.main.java
+	// Generate the ANTLR parser before compiling
+	dependsOn generateGrammarSource,  generateTestGrammarSource
+}
+
+/**
+ * Compile Test Java Customizations
+ */
+compileTestJava {
+	source sourceSets.test.java
+	dependsOn compileJava, generateTestGrammarSource
+}
+
+/**
+ * ANTLR Generated Source
+ */
+generateGrammarSource {
+	inputs.files fileTree( antlrGrammarDir ).include( '*.g4' )
+	maxHeapSize = "256m"
+	arguments += [ '-package', antlrGeneratedParserPackage ]
+	arguments += [ '-listener', '-visitor' ]
+	outputDirectory = file( "$projectDir/$antlrGeneratedParserBaseDir/$antlrGeneratedParserPackageDir" )
+}
+
+/**
+ * ANTLR Generated Test Sources
+ */
+generateTestGrammarSource {
+	inputs.files fileTree( antlrGrammarDir ).include( '*.g4' )
+	maxHeapSize = "256m"
+	arguments += [ '-package', antlrGeneratedParserPackage ]
+	arguments += [ '-listener', '-visitor' ]
+	outputDirectory = file( "$projectDir/$antlrGeneratedParserBaseDir/$antlrGeneratedParserPackageDir" )
+}
+
+/**
+ * Test Task Customizations
+ */
+test {
+	testLogging {
+		showStandardStreams = true
+	}
+	systemProperties.putIfAbsent( "testboxdir", testboxDir)
+	systemProperties.putIfAbsent( "contentboxdir", contentboxDir)
+	systemProperties.putIfAbsent( "coldboxdir", coldboxDir)
+	dependsOn compileJava, compileTestJava
+}
+
+/****************************************************************
+ * CUSTOM TASKS
+ ****************************************************************/
+
+/**
+ * Install the CFML dependencies for the parser tests via CommandBox
+ */
+task installCommandBoxDependencies( type: Exec ) {
+	// Set the command to execute your operating system binary
+	commandLine 'box', 'install'
+	workingDir = project.projectDir
+}
+
+/**
+ * Custom task: clean the ANTLR generated sources
+ */
+clean {
+	// Clean the ANTLR generated sources
+	delete generatedSrcDir
+}
 
 /**
  * Bump the major version number

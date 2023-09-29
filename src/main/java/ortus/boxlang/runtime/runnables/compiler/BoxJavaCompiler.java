@@ -37,10 +37,14 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.w3c.dom.Node;
 
+import ortus.boxlang.parser.BoxFileType;
+import ortus.boxlang.parser.BoxParser;
+import ortus.boxlang.parser.ParsingResult;
 import ortus.boxlang.runtime.runnables.BoxScript;
 import ortus.boxlang.runtime.runnables.BoxTemplate;
 import ortus.boxlang.runtime.runnables.IBoxRunnable;
 import ortus.boxlang.runtime.types.exceptions.ApplicationException;
+import ortus.boxlang.transpiler.BoxLangTranspiler;
 
 /**
  * This class uses the Java compiler to turn a BoxLang script into a Java class
@@ -88,7 +92,9 @@ public class BoxJavaCompiler {
 	 * --------------------------------------------------------------------------
 	 */
 
-	final static String	fqn			= "ortus.boxlang.test.TestClass";
+	static final String	fqn			= "ortus.boxlang.test.TestClass";
+
+	// @formatter:off
 	String				template	= """
 	                                                                        package ortus.boxlang.test;
 
@@ -115,7 +121,7 @@ public class BoxJavaCompiler {
 
 	                                                                         	private static TestClass instance;
 
-	                                  private static final List<ImportDefinition>	imports			= List.of();
+	                                  											private static final List<ImportDefinition>	imports			= List.of();
 	                                                                         	private static final Path					path			= Paths.get( "" );
 	                                                                         	private static final long					compileVersion	= 1L;
 	                                                                         	private static final LocalDateTime			compiledOn		= LocalDateTime.parse( "2023-09-27T10:15:30" );
@@ -196,6 +202,7 @@ public class BoxJavaCompiler {
 	                                                                         	}
 	                                                                        }
 	                                                                        """;
+	// @formatter:on
 
 	Logger				logger		= LoggerFactory.getLogger( BoxJavaCompiler.class );
 

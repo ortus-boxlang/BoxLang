@@ -20,6 +20,7 @@ package ortus.boxlang.runtime.runnables;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
+import ortus.boxlang.parser.BoxFileType;
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.interop.DynamicObject;

@@ -26,7 +26,7 @@ import ortus.boxlang.ast.expression.*;
 import ortus.boxlang.ast.statement.*;
 import ortus.boxlang.executor.JavaSourceString;
 import ortus.boxlang.runtime.BoxRuntime;
-import ortus.boxlang.runtime.dynamic.BaseTemplate;
+import ortus.boxlang.runtime.runnables.BoxTemplate;
 import ortus.boxlang.transpiler.transformer.*;
 import ortus.boxlang.transpiler.transformer.expression.*;
 
@@ -327,7 +327,7 @@ public class BoxLangTranspiler {
 			// Runtime
 			BoxRuntime		rt						= BoxRuntime.getInstance();
 
-			rt.executeTemplate( ( BaseTemplate ) instance );
+			rt.executeTemplate( ( BoxTemplate ) instance );
 
 			rt.shutdown();
 
