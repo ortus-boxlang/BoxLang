@@ -48,7 +48,7 @@ import ortus.boxlang.transpiler.BoxLangTranspiler;
 /**
  * This class uses the Java compiler to turn a BoxLang script into a Java class
  */
-public class BoxJavaCompiler {
+public class JavaBoxpiler {
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -59,7 +59,7 @@ public class BoxJavaCompiler {
 	/**
 	 * Singleton instance
 	 */
-	private static BoxJavaCompiler instance;
+	private static JavaBoxpiler instance;
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -70,7 +70,7 @@ public class BoxJavaCompiler {
 	/**
 	 * Private constructor
 	 */
-	private BoxJavaCompiler() {
+	private JavaBoxpiler() {
 	}
 
 	/**
@@ -78,9 +78,9 @@ public class BoxJavaCompiler {
 	 *
 	 * @return TemplateLoader
 	 */
-	public static synchronized BoxJavaCompiler getInstance() {
+	public static synchronized JavaBoxpiler getInstance() {
 		if ( instance == null ) {
-			instance = new BoxJavaCompiler();
+			instance = new JavaBoxpiler();
 		}
 		return instance;
 	}
@@ -147,11 +147,11 @@ public class BoxJavaCompiler {
 				ClassLocator JavaLoader = ClassLocator.getInstance();
 				IBoxContext			catchContext = null;
 				${javaCode};
-				String result = variablesScope.toString();
-				System.out.println(result);
-				if(catchContext != null) {
-					System.out.println(catchContext);
-				}
+				//String result = variablesScope.toString();
+				//System.out.println(result);
+				//if(catchContext != null) {
+				//	System.out.println(catchContext);
+				//}
 
 			}
 
@@ -189,7 +189,7 @@ public class BoxJavaCompiler {
 	""";
 	// @formatter:on
 
-	Logger				logger		= LoggerFactory.getLogger( BoxJavaCompiler.class );
+	Logger				logger		= LoggerFactory.getLogger( JavaBoxpiler.class );
 
 	private String makeClass( String javaCode, String baseclass ) {
 		Map<String, String>	values	= Map.ofEntries(
@@ -213,7 +213,7 @@ public class BoxJavaCompiler {
 		BoxParser		parser	= new BoxParser();
 		ParsingResult	result;
 		try {
-			result = parser.parse( source, type );
+			result = parser.parseExpression( source );
 		} catch ( IOException e ) {
 			throw new ApplicationException( "Error compiing source", e );
 		}

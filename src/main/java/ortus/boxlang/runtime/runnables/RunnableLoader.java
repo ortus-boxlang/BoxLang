@@ -24,7 +24,7 @@ import ortus.boxlang.parser.BoxFileType;
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.interop.DynamicObject;
-import ortus.boxlang.runtime.runnables.compiler.BoxJavaCompiler;
+import ortus.boxlang.runtime.runnables.compiler.JavaBoxpiler;
 import ortus.boxlang.runtime.types.exceptions.MissingIncludeException;
 
 /**
@@ -86,7 +86,7 @@ public class RunnableLoader {
 			throw new MissingIncludeException( "The template path [" + path.toString() + "] could not be found.", path.toString() );
 		}
 		// TODO: enforce valid include extensions (.cfm, .cfs, .bxs, .bxm, .bx)
-		Class<IBoxRunnable> clazz = BoxJavaCompiler.getInstance().compileTemplate( path );
+		Class<IBoxRunnable> clazz = JavaBoxpiler.getInstance().compileTemplate( path );
 		return ( BoxTemplate ) DynamicObject.of( clazz ).invokeStatic( "getInstance" ).get();
 	}
 
@@ -124,7 +124,7 @@ public class RunnableLoader {
 	 * @return
 	 */
 	public BoxScript loadSource( String source, BoxFileType type ) {
-		Class<IBoxRunnable> clazz = BoxJavaCompiler.getInstance().compileScript( source, type );
+		Class<IBoxRunnable> clazz = JavaBoxpiler.getInstance().compileScript( source, type );
 		return ( BoxScript ) DynamicObject.of( clazz ).invokeStatic( "getInstance" ).get();
 	}
 
@@ -140,4 +140,14 @@ public class RunnableLoader {
 		return loadSource( source, BoxFileType.CFSCRIPT );
 	}
 
+	/**
+	 * Load the class for a script, JIT compiling if needed
+	 *
+	 * @param source The source to load
+	 *
+	 * @return
+	 */
+	public BoxScript loadScript( IBoxContext context, String source ) {
+		return null;
+	}
 }
