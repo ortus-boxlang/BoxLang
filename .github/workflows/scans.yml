@@ -54,7 +54,7 @@ jobs:
             id: securityscan
             with:
               path: "./build"
-              acs-report-enable: "true"
+              output-format: table
               fail-build: true
 
           # - name: Upload Anchore Report
