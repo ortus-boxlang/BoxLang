@@ -17,7 +17,6 @@ package ortus.boxlang.ast.statement;
 import ortus.boxlang.ast.BoxExpr;
 import ortus.boxlang.ast.BoxStatement;
 import ortus.boxlang.ast.Position;
-import ortus.boxlang.ast.expression.BoxIdentifier;
 
 import java.util.Collections;
 import java.util.List;

@@ -15,7 +15,6 @@
 package ortus.boxlang.ast.expression;
 
 import ortus.boxlang.ast.BoxExpr;
-import ortus.boxlang.ast.Named;
 import ortus.boxlang.ast.Position;
 
 /**

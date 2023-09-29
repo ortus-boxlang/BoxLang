@@ -14,9 +14,6 @@
  */
 package ortus.boxlang.ast;
 
-import ortus.boxlang.ast.BoxNode;
-import ortus.boxlang.ast.Position;
-
 /**
  * Abstract Node class representing statements
  */
@@ -28,7 +25,7 @@ public abstract class BoxStatement extends BoxNode {
 	 * @param position   position of the statement in the source code
 	 * @param sourceText source code of the statement
 	 */
-	public BoxStatement( Position position, String sourceText ) {
+	protected BoxStatement( Position position, String sourceText ) {
 		super( position, sourceText );
 	}
 }

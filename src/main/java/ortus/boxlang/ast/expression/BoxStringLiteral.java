@@ -15,11 +15,7 @@
 package ortus.boxlang.ast.expression;
 
 import ortus.boxlang.ast.BoxExpr;
-import ortus.boxlang.ast.Node;
 import ortus.boxlang.ast.Position;
-
-import java.util.Collections;
-import java.util.List;
 
 /**
  * AST Node representing a string literal value

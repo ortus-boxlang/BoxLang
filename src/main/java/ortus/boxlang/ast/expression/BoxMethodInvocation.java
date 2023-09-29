@@ -18,7 +18,6 @@ import ortus.boxlang.ast.BoxExpr;
 import ortus.boxlang.ast.Position;
 import ortus.boxlang.ast.ReferenceByName;
 
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 

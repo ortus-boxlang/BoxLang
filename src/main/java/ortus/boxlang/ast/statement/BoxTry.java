@@ -14,7 +14,6 @@
  */
 package ortus.boxlang.ast.statement;
 
-import ortus.boxlang.ast.BoxExpr;
 import ortus.boxlang.ast.BoxStatement;
 import ortus.boxlang.ast.Position;
 

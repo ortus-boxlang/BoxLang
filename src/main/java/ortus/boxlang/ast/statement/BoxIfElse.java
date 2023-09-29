@@ -18,7 +18,6 @@ import ortus.boxlang.ast.BoxStatement;
 import ortus.boxlang.ast.Position;
 import ortus.boxlang.ast.BoxExpr;
 
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 

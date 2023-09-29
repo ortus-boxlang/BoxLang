@@ -14,9 +14,6 @@
  */
 package ortus.boxlang.ast;
 
-import ortus.boxlang.ast.BoxNode;
-import ortus.boxlang.ast.Position;
-
 /**
  * Abstract class representing Expressions
  */
@@ -37,7 +34,7 @@ public abstract class BoxExpr extends BoxNode {
 	 * @param position   position of the expression in the source code
 	 * @param sourceText source code of the expression
 	 */
-	public BoxExpr( Position position, String sourceText ) {
+	protected BoxExpr( Position position, String sourceText ) {
 		super( position, sourceText );
 	}
 }
