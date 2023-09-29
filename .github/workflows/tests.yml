@@ -18,7 +18,7 @@ jobs:
         jdkVersion: [ "17" ]
         experimental: [ false ]
         include:
-          - jdkVersion: "21"
+          - jdkVersion: "20"
             experimental: true
     steps:
       - name: Checkout Repository
