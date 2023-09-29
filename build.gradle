@@ -134,7 +134,7 @@ application {
  * Control the Jar naming schema
  */
 jar {
-    archiveBaseName = 'ortus-boxlang-runtime'
+    archiveBaseName = 'ortus-boxlang'
     archiveVersion =  "${version}"
 // 	manifest {
 //       attributes 'Main-Class': 'com.example.main.Application'
@@ -142,7 +142,7 @@ jar {
 }
 
 /**
- * Copy runtime dependencies to build/runtime
+ * Copy dependencies to build/dependencies
  * Useful for testing and deebugging
  */
 task getDependencies( type: Copy ) {
