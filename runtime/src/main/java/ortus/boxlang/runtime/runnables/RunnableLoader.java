@@ -82,10 +82,10 @@ public class RunnableLoader {
 	 */
 	public BoxTemplate loadTemplateAbsolute( IBoxContext context, Path path ) {
 		if ( !path.toFile().exists() ) {
-			throw new MissingIncludeException( "The template path could not be found.", path.toString() );
+			throw new MissingIncludeException( "The template path [" + path.toString() + "] could not be found.", path.toString() );
 		}
 		// TODO: enforce valid include extensions (.cfm, .cfs, .bxs, .bxm, .bx)
-		Class<BoxTemplate> clazz = BoxJavaCompiler.getInstance().run( path );
+		Class<BoxTemplate> clazz = BoxJavaCompiler.getInstance().compileTemplate( path );
 		return ( BoxTemplate ) DynamicObject.of( clazz ).invokeStatic( "getInstance" ).get();
 	}
 
@@ -112,6 +112,31 @@ public class RunnableLoader {
 
 		// Make absolute
 		return loadTemplateAbsolute( context, Paths.get( relativeBase, path ) );
+	}
+
+	/**
+	 * Load the class for an ad-hoc script, JIT compiling if needed
+	 *
+	 * @param source The BoxLang or CFML source to compile
+	 * @param type   The type of source to parse
+	 *
+	 * @return
+	 */
+	public BoxScript loadSource( String source, BoxFileType type ) {
+		Class<BoxScript> clazz = BoxJavaCompiler.getInstance().compileSource( source, type );
+		return ( BoxScript ) DynamicObject.of( clazz ).invokeStatic( "getInstance" ).get();
+	}
+
+	/**
+	 * Load the class for an ad-hoc script, JIT compiling if needed
+	 *
+	 * @param source The BoxLang or CFML source to compile
+	 *
+	 * @return
+	 */
+	public BoxScript loadSource( String source ) {
+		// TODO: Change to BoxLangScript once implemented
+		return loadSource( source, BoxFileType.CFSCRIPT );
 	}
 
 	/**

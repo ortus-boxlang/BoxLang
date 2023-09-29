@@ -20,10 +20,14 @@ package ortus.boxlang.runtime;
 import static com.google.common.truth.Truth.assertThat;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 
+import java.io.File;
+import java.net.URISyntaxException;
 import java.net.URL;
 
 import org.junit.Test;
 import org.junit.jupiter.api.DisplayName;
+
+import ortus.boxlang.runtime.types.exceptions.MissingIncludeException;
 
 public class BoxRuntimeTest {
 
@@ -48,8 +52,13 @@ public class BoxRuntimeTest {
 	@DisplayName( "It can execute a template" )
 	@Test
 	public void testItCanExecuteATemplate() {
-		String testTemplate = getClass().getResource( "/test-templates/BoxRuntime.bx" ).getPath();
-
+		String testTemplate;
+		try {
+			testTemplate = ( new File( getClass().getResource( "/test-templates/BoxRuntime.bx" ).toURI() ) ).getPath();
+		} catch ( URISyntaxException e ) {
+			throw new MissingIncludeException( "Invalid template path to execute.", "", getClass().getResource( "/test-templates/BoxRuntime.bx" ).toString(),
+			    e );
+		}
 		assertDoesNotThrow( () -> {
 			BoxRuntime instance = BoxRuntime.getInstance( true );
 			instance.executeTemplate( testTemplate );
