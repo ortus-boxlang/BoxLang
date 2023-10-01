@@ -27,7 +27,7 @@ public class PlaceholderHelperTest {
 	@DisplayName( "PlaceholderHelper.resolve() should resolve placeholders in the input string" )
 	@Test
 	public void testResolveWithValidPlaceholders() {
-		String	input		= "User home directory: {user-home}, Temp directory: {java-temp}";
+		String	input		= "User home directory: ${user-home}, Temp directory: ${java-temp}";
 		String	expected	= "User home directory: " + System.getProperty( "user.home" ) + ", Temp directory: " + System.getProperty( "java.io.tmpdir" );
 
 		String	resolved	= PlaceholderHelper.resolve( input );
@@ -38,8 +38,8 @@ public class PlaceholderHelperTest {
 	@DisplayName( "PlaceholderHelper.resolve() should not resolve unknown placeholders" )
 	@Test
 	public void testResolveWithUnknownPlaceholder() {
-		String	input		= "Unknown placeholder: {unknown-placeholder}";
-		String	expected	= "Unknown placeholder: {unknown-placeholder}";
+		String	input		= "Unknown placeholder: ${unknown-placeholder}";
+		String	expected	= "Unknown placeholder: ${unknown-placeholder}";
 
 		String	resolved	= PlaceholderHelper.resolve( input );
 
@@ -49,8 +49,8 @@ public class PlaceholderHelperTest {
 	@DisplayName( "PlaceholderHelper.resolve() should not resolve placeholders with invalid syntax" )
 	@Test
 	public void testResolveWithMixedPlaceholders() {
-		String	input		= "User home directory: {user-home}, Unknown placeholder: {unknown-placeholder}";
-		String	expected	= "User home directory: " + System.getProperty( "user.home" ) + ", Unknown placeholder: {unknown-placeholder}";
+		String	input		= "User home directory: ${user-home}, Unknown placeholder: ${unknown-placeholder}";
+		String	expected	= "User home directory: " + System.getProperty( "user.home" ) + ", Unknown placeholder: ${unknown-placeholder}";
 
 		String	resolved	= PlaceholderHelper.resolve( input );
 		assertThat( resolved ).isEqualTo( expected );

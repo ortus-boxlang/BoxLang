@@ -1,10 +1,10 @@
 {
 	"compiler" : {
-		"classGenerationDirectory" : "{java-temp}boxlang"
+		"classGenerationDirectory" : "${java-temp}boxlang"
 	},
 	"runtime" : {
 		"mappings" : {},
-		"modulesDirectory" : "{user-home}/.boxlang/modules",
+		"modulesDirectory" : "${user-home}/.boxlang/modules",
 		"caches" : {
 			"imports" : {
 				"type" : "Caffeine",
