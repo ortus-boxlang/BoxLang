@@ -28,10 +28,10 @@ import com.ibm.icu.util.BytesTrie.Entry;
 
 public class PlaceholderHelperTest {
 
-	@DisplayName( "PlaceholderHelper.resolve() should resolve placeholders in the input string" )
+	@DisplayName( "PlaceholderHelper.resolve() should resolve placeholders in the input string with no case sensitivity" )
 	@Test
 	public void testResolveWithValidPlaceholders() {
-		String	input		= "User home directory: ${user-home}, Temp directory: ${java-temp}";
+		String	input		= "User home directory: ${user-HOME}, Temp directory: ${java-temp}";
 		String	expected	= "User home directory: " + System.getProperty( "user.home" ) + ", Temp directory: " + System.getProperty( "java.io.tmpdir" );
 
 		String	resolved	= PlaceholderHelper.resolve( input );

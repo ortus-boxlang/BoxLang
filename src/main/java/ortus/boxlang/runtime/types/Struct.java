@@ -94,7 +94,7 @@ public class Struct implements Map<Key, Object>, IType, IReferenceable {
 	 *
 	 * @param map The map to create the struct from
 	 */
-	public Struct( Map<Object, Object> map ) {
+	public Struct( Map<? extends Object, ? extends Object> map ) {
 		this( Type.DEFAULT, map );
 	}
 
@@ -104,7 +104,7 @@ public class Struct implements Map<Key, Object>, IType, IReferenceable {
 	 * @param map  The map to create the struct from
 	 * @param type The type of struct to create: DEFAULT, LINKED, SORTED
 	 */
-	public Struct( Type type, Map<Object, Object> map ) {
+	public Struct( Type type, Map<? extends Object, ? extends Object> map ) {
 		this( type );
 		addAll( map );
 	}
@@ -114,7 +114,7 @@ public class Struct implements Map<Key, Object>, IType, IReferenceable {
 	 *
 	 * @param map The map to create the struct from
 	 */
-	static public Struct fromMap( Map<Object, Object> map ) {
+	public static Struct fromMap( Map<Object, Object> map ) {
 		return new Struct( map );
 	}
 
@@ -124,7 +124,7 @@ public class Struct implements Map<Key, Object>, IType, IReferenceable {
 	 * @param map  The map to create the struct from
 	 * @param type The type of struct to create: DEFAULT, LINKED, SORTED
 	 */
-	static public Struct fromMap( Type type, Map<Object, Object> map ) {
+	public static Struct fromMap( Type type, Map<Object, Object> map ) {
 		return new Struct( type, map );
 	}
 
@@ -349,7 +349,7 @@ public class Struct implements Map<Key, Object>, IType, IReferenceable {
 	 *
 	 * @param map
 	 */
-	public void addAll( Map<Object, Object> map ) {
+	public void addAll( Map<? extends Object, ? extends Object> map ) {
 		map.entrySet()
 		    .parallelStream()
 		    .forEach( entry -> {

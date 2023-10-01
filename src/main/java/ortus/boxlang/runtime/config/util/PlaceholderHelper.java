@@ -21,8 +21,10 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 import ortus.boxlang.runtime.dynamic.casters.StringCaster;
+import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.ApplicationException;
 
 /**
@@ -37,12 +39,12 @@ public class PlaceholderHelper {
 	/**
 	 * The pattern to match placeholder patterns like "${...}"
 	 */
-	private static final Pattern				PLACEHOLDER_PATTERN	= Pattern.compile( "\\$\\{([^:}]+)(?::([^}]+))?\\}" );
+	private static final Pattern	PLACEHOLDER_PATTERN	= Pattern.compile( "(?i)\\$\\{([^:}]+)(?::([^}]+))?\\}" );
 
 	/**
 	 * Core Replacements
 	 */
-	private static final Map<String, String>	PLACEHOLDER_MAP		= new HashMap<>();
+	private static final Struct		PLACEHOLDER_MAP		= new Struct();
 	static {
 		// Add default core replacements
 		PLACEHOLDER_MAP.put( "user-home", escapeReplacementMetaChars( System.getProperty( "user.home" ) ) );
@@ -56,7 +58,34 @@ public class PlaceholderHelper {
 	 * from the incoming placeholder map.
 	 *
 	 * <p>
-	 * <strong>This method doesn't use the core replacement map.</strong>
+	 * <strong>This method doesn't use the core replacement map, but the passed map</strong>
+	 * </p>
+	 *
+	 * @param input The input string to Resolve
+	 * @param map   The placeholder map to use for resolving the input string
+	 *
+	 * @return The Resolved string
+	 */
+	public static String resolve( String input, Struct map ) {
+		// Create a pattern to match placeholder patterns like "${...}"
+		Matcher matcher = PLACEHOLDER_PATTERN.matcher( input );
+
+		// Replace all placeholders with their values
+		return matcher.replaceAll( matchResult -> {
+			String	placeholder		= matchResult.group( 1 );
+			String	defaultValue	= matchResult.group( 2 );
+			String	replacement		= ( String ) map.getOrDefault( placeholder, defaultValue != null ? defaultValue : matchResult.group() );
+
+			return Matcher.quoteReplacement( replacement );
+		} );
+	}
+
+	/**
+	 * Resolve the input string and replace all placeholders with their values
+	 * from the incoming placeholder map.
+	 *
+	 * <p>
+	 * <strong>This method doesn't use the core replacement map, but the passed map</strong>
 	 * </p>
 	 *
 	 * @param input The input string to Resolve
@@ -65,53 +94,7 @@ public class PlaceholderHelper {
 	 * @return The Resolved string
 	 */
 	public static String resolve( String input, Map<String, String> map ) {
-		// Create a pattern to match placeholder patterns like "${...}"
-		Matcher matcher = PLACEHOLDER_PATTERN.matcher( input );
-
-		// Replace all placeholders with their values
-		return matcher.replaceAll( matchResult -> {
-			String	placeholder		= matchResult.group( 1 );
-			String	defaultValue	= matchResult.group( 2 );
-			String	replacement		= map.getOrDefault( placeholder, defaultValue != null ? defaultValue : matchResult.group() );
-
-			return Matcher.quoteReplacement( replacement );
-		} );
-	}
-
-	/**
-	 * Resolve the input string and replace all placeholders with CORE values
-	 *
-	 * @param input The input string to Resolve
-	 * @param map   The placeholder map to use for resolving the input string
-	 *
-	 * @return The Resolved string
-	 */
-	public static String resolve( StringBuilder input, Map<String, String> map ) {
-		return resolve( input.toString(), map );
-	}
-
-	/**
-	 * Resolve the input string and replace all placeholders with CORE values
-	 *
-	 * @param input The input string to Resolve
-	 * @param map   The placeholder map to use for resolving the input string
-	 *
-	 * @return The Resolved string
-	 */
-	public static String resolve( StringBuffer input, Map<String, String> map ) {
-		return resolve( input.toString(), map );
-	}
-
-	/**
-	 * Resolve the input string and replace all placeholders with CORE values
-	 *
-	 * @param input The input string to Resolve
-	 * @param map   The placeholder map to use for resolving the input string
-	 *
-	 * @return The Resolved string
-	 */
-	public static String resolve( CharSequence input, Map<String, String> map ) {
-		return resolve( input.toString(), map );
+		return resolve( input, new Struct( map ) );
 	}
 
 	/**
@@ -119,12 +102,26 @@ public class PlaceholderHelper {
 	 * using the incoming placeholder map and an Object which will be cast to a
 	 * String using the BoxLang rules
 	 *
-	 * @param input The Object to Resolve
+	 * @param input The Object to Resolve, which we will try to cast to a string
 	 * @param map   The placeholder map to use for resolving the input string
 	 *
 	 * @return The Resolved string
 	 */
 	public static String resolve( Object input, Map<String, String> map ) {
+		return resolve( StringCaster.cast( input ), map );
+	}
+
+	/**
+	 * Resolve the input string and replace all placeholders with CORE values
+	 * using the incoming placeholder map and an Object which will be cast to a
+	 * String using the BoxLang rules
+	 *
+	 * @param input The Object to Resolve, which we will try to cast to a string
+	 * @param map   The placeholder struct to use for resolving the input string
+	 *
+	 * @return The Resolved string
+	 */
+	public static String resolve( Object input, Struct map ) {
 		return resolve( StringCaster.cast( input ), map );
 	}
 
@@ -137,42 +134,6 @@ public class PlaceholderHelper {
 	 */
 	public static String resolve( String input ) {
 		return resolve( input, PLACEHOLDER_MAP );
-	}
-
-	/**
-	 * Resolve the input string and replace all placeholders with CORE values using
-	 * a StringBuilder
-	 *
-	 * @param input The input string to Resolve
-	 *
-	 * @return The Resolved string
-	 */
-	public static String resolve( StringBuilder input ) {
-		return resolve( input.toString() );
-	}
-
-	/**
-	 * Resolve the input string and replace all placeholders with CORE values using
-	 * a StringBuffer
-	 *
-	 * @param input The input string to Resolve
-	 *
-	 * @return The Resolved string
-	 */
-	public static String resolve( StringBuffer input ) {
-		return resolve( input.toString() );
-	}
-
-	/**
-	 * Resolve the input string and replace all placeholders with CORE values using
-	 * a CharSequence
-	 *
-	 * @param input The CharSequence to Resolve
-	 *
-	 * @return The Resolved string
-	 */
-	public static String resolve( CharSequence input ) {
-		return resolve( input.toString() );
 	}
 
 	/**
