@@ -32,11 +32,12 @@ import javax.tools.JavaCompiler;
 import javax.tools.JavaFileObject;
 import javax.tools.ToolProvider;
 
-import org.apache.commons.text.StringSubstitutor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.github.javaparser.ast.stmt.Statement;
+
+import ortus.boxlang.runtime.config.util.PlaceholderHelper;
 
 /**
  * Dynamic in memory Java executor
@@ -157,15 +158,7 @@ public class JavaRunner {
 	Logger				logger		= LoggerFactory.getLogger( JavaRunner.class );
 
 	private String makeClass( String javaCode ) {
-		Map<String, String>	values	= new HashMap<>() {
-
-										{
-											put( "javaCode", javaCode );
-										}
-									};
-
-		StringSubstitutor	sub		= new StringSubstitutor( values );
-		return sub.replace( template );
+		return PlaceholderHelper.resolve( template, Map.of( "javaCode", javaCode ) );
 	}
 
 	public void runExpression( String expression ) {

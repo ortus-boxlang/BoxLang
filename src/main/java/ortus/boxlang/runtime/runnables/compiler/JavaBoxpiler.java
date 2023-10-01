@@ -32,7 +32,6 @@ import javax.tools.JavaCompiler;
 import javax.tools.JavaFileObject;
 import javax.tools.ToolProvider;
 
-import org.apache.commons.text.StringSubstitutor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -41,6 +40,7 @@ import com.github.javaparser.ast.Node;
 import ortus.boxlang.parser.BoxFileType;
 import ortus.boxlang.parser.BoxParser;
 import ortus.boxlang.parser.ParsingResult;
+import ortus.boxlang.runtime.config.util.PlaceholderHelper;
 import ortus.boxlang.runtime.runnables.IBoxRunnable;
 import ortus.boxlang.runtime.types.exceptions.ApplicationException;
 import ortus.boxlang.transpiler.BoxLangTranspiler;
@@ -192,15 +192,12 @@ public class JavaBoxpiler {
 	Logger				logger		= LoggerFactory.getLogger( JavaBoxpiler.class );
 
 	private String makeClass( String javaCode, String baseclass ) {
-		Map<String, String>	values	= Map.ofEntries(
+		Map<String, String> values = Map.ofEntries(
 		    Map.entry( "javaCode", javaCode ),
 		    Map.entry( "baseclass", baseclass ),
 		    Map.entry( "fileFolderPath", "" )
-
 		);
-		StringSubstitutor	sub		= new StringSubstitutor( values );
-		// throw new RuntimeException( sub.replace( template ) );
-		return sub.replace( template );
+		return PlaceholderHelper.resolve( template, values );
 	}
 
 	public void runExpression( String expression ) {

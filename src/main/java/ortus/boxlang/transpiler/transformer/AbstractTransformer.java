@@ -20,10 +20,10 @@ import com.github.javaparser.ast.Node;
 import com.github.javaparser.ast.expr.Expression;
 import com.github.javaparser.ast.expr.NameExpr;
 import com.github.javaparser.ast.stmt.Statement;
-import org.apache.commons.text.StringSubstitutor;
 import ortus.boxlang.ast.BoxExpr;
 import ortus.boxlang.ast.BoxNode;
 import ortus.boxlang.ast.expression.*;
+import ortus.boxlang.runtime.config.util.PlaceholderHelper;
 import ortus.boxlang.transpiler.transformer.indexer.BoxLangCrossReferencer;
 import ortus.boxlang.transpiler.transformer.indexer.BoxLangCrossReferencerDefault;
 
@@ -55,8 +55,7 @@ public abstract class AbstractTransformer implements Transformer {
 	 * @return the Java Parser AST representation of the expression
 	 */
 	protected Node parseExpression( String template, Map<String, String> values ) {
-		StringSubstitutor		sub		= new StringSubstitutor( values );
-		String					code	= sub.replace( template );
+		String					code	= PlaceholderHelper.resolve( template, values );
 		ParseResult<Expression>	result	= javaParser.parseExpression( code );
 		if ( !result.isSuccessful() ) {
 			System.out.println( code );
@@ -74,8 +73,7 @@ public abstract class AbstractTransformer implements Transformer {
 	 * @return the Java Parser AST representation of the statement
 	 */
 	protected Node parseStatement( String template, Map<String, String> values ) {
-		StringSubstitutor		sub		= new StringSubstitutor( values );
-		String					code	= sub.replace( template );
+		String					code	= PlaceholderHelper.resolve( template, values );
 		ParseResult<Statement>	result	= javaParser.parseStatement( code );
 		if ( !result.isSuccessful() ) {
 			throw new IllegalStateException( result.toString() );

@@ -21,10 +21,7 @@ import java.nio.file.attribute.FileTime;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
-import java.util.HashMap;
 import java.util.Map;
-
-import org.apache.commons.text.StringSubstitutor;
 
 import com.github.javaparser.ParseResult;
 import com.github.javaparser.ast.CompilationUnit;
@@ -34,6 +31,7 @@ import ortus.boxlang.ast.BoxNode;
 import ortus.boxlang.ast.BoxScript;
 import ortus.boxlang.ast.Source;
 import ortus.boxlang.ast.SourceFile;
+import ortus.boxlang.runtime.config.util.PlaceholderHelper;
 import ortus.boxlang.runtime.types.exceptions.ApplicationException;
 import ortus.boxlang.transpiler.BoxLangTranspiler;
 import ortus.boxlang.transpiler.transformer.AbstractTransformer;
@@ -186,24 +184,19 @@ public class BoxScriptTransformer extends AbstractTransformer {
 
 		String							finalFilePath		= filePath;
 		String							finalLastModified	= lastModified;
-		Map<String, String>				values				= new HashMap<>() {
-
-																{
-																	put( "packageName", packageName );
-																	put( "className", className );
-																	put( "fileName", fileName );
-																	put( "fileExtension", fileExt );
-																	put( "fileFolderPath", finalFilePath.replaceAll( "\\\\", "\\\\\\\\" ) );
-																	put( "lastModifiedTimestamp", finalLastModified );
-																	put( "compiledOnTimestamp", compiledOn );
-																	put( "compileVersion", "1L" );
-																}
-															};
-
-		StringSubstitutor				sub					= new StringSubstitutor( values );
-		String							code				= sub.replace( template );
-
+		Map<String, String>				values				= Map.ofEntries(
+		    Map.entry( "packageName", packageName ),
+		    Map.entry( "className", className ),
+		    Map.entry( "fileName", fileName ),
+		    Map.entry( "fileExtension", fileExt ),
+		    Map.entry( "fileFolderPath", finalFilePath.replaceAll( "\\\\", "\\\\\\\\" ) ),
+		    Map.entry( "lastModifiedTimestamp", finalLastModified ),
+		    Map.entry( "compiledOnTimestamp", compiledOn ),
+		    Map.entry( "compileVersion", "1L" )
+		);
+		String							code				= PlaceholderHelper.resolve( template, values );
 		ParseResult<CompilationUnit>	result;
+
 		try {
 			result = javaParser.parse( code );
 		} catch ( Exception e ) {

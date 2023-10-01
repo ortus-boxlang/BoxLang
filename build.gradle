@@ -52,7 +52,6 @@ dependencies {
 
 	antlr "org.antlr:antlr4:$antlrVersion"
 	implementation "commons-io:commons-io:2.13.0"
-	implementation 'org.apache.commons:commons-text:1.10.0'
 	implementation 'commons-cli:commons-cli:1.5.0'
 	implementation 'com.github.javaparser:javaparser-symbol-solver-core:3.25.4'
 
