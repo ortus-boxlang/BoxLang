@@ -37,7 +37,7 @@ public class PlaceholderHelper {
 	/**
 	 * The pattern to match placeholder patterns like "${...}"
 	 */
-	private static final Pattern				PLACEHOLDER_PATTERN	= Pattern.compile( "\\$\\{([^}]+)\\}" );
+	private static final Pattern				PLACEHOLDER_PATTERN	= Pattern.compile( "\\$\\{([^:}]+)(?::([^}]+))?\\}" );
 
 	/**
 	 * Core Replacements
@@ -70,8 +70,10 @@ public class PlaceholderHelper {
 
 		// Replace all placeholders with their values
 		return matcher.replaceAll( matchResult -> {
-			String	placeholder	= matchResult.group( 1 );
-			String	replacement	= map.getOrDefault( placeholder, matchResult.group() );
+			String	placeholder		= matchResult.group( 1 );
+			String	defaultValue	= matchResult.group( 2 );
+			String	replacement		= map.getOrDefault( placeholder, defaultValue != null ? defaultValue : matchResult.group() );
+
 			return Matcher.quoteReplacement( replacement );
 		} );
 	}

@@ -19,8 +19,12 @@ package ortus.boxlang.runtime.config.util;
 
 import static com.google.common.truth.Truth.assertThat;
 
+import java.util.Map;
+
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+
+import com.ibm.icu.util.BytesTrie.Entry;
 
 public class PlaceholderHelperTest {
 
@@ -66,4 +70,29 @@ public class PlaceholderHelperTest {
 
 		assertThat( resolved ).isEqualTo( expected );
 	}
+
+	@DisplayName( "Placeholder can replace with a custom map" )
+	@Test
+	public void testResolveWithCustomMap() {
+		String				input		= "User home directory: ${test1}, Temp directory: ${test2} and ${test3}";
+		String				expected	= "User home directory: test, Temp directory: love and ${test3}";
+		Map<String, String>	map			= Map.of( "test1", "test", "test2", "love" );
+
+		String				resolved	= PlaceholderHelper.resolve( input, map );
+
+		assertThat( resolved ).isEqualTo( expected );
+	}
+
+	@DisplayName( "Placeholder can replace with a custom map and default values" )
+	@Test
+	public void testResolveWithCustomMapAndDefaultValues() {
+		String				input		= "User home directory: ${test1}, Temp directory: ${test2} and ${test3:awesome}";
+		String				expected	= "User home directory: test, Temp directory: love and awesome";
+		Map<String, String>	map			= Map.of( "test1", "test", "test2", "love" );
+
+		String				resolved	= PlaceholderHelper.resolve( input, map );
+
+		assertThat( resolved ).isEqualTo( expected );
+	}
+
 }
