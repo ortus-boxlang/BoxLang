@@ -52,7 +52,7 @@ public class BoxScriptTransformer extends AbstractTransformer {
 		import ortus.boxlang.runtime.context.*;
 
 		// BoxLang Auto Imports
-		import ortus.boxlang.runtime.dynamic.BaseTemplate;
+		import ortus.boxlang.runtime.runnables.BoxTemplate;
 		import ortus.boxlang.runtime.dynamic.Referencer;
 		import ortus.boxlang.runtime.interop.DynamicObject;
 		import ortus.boxlang.runtime.loader.ClassLocator;
@@ -60,6 +60,7 @@ public class BoxScriptTransformer extends AbstractTransformer {
 		import ortus.boxlang.runtime.scopes.Key;
 		import ortus.boxlang.runtime.scopes.IScope;
 		import ortus.boxlang.runtime.dynamic.casters.*;
+		import ortus.boxlang.runtime.loader.ImportDefinition;
 
 
 		// Classes Auto-Imported on all Templates and Classes by BoxLang
@@ -71,6 +72,8 @@ public class BoxScriptTransformer extends AbstractTransformer {
 		import java.lang.Boolean;
 		import java.lang.Double;
 		import java.lang.Integer;
+		import java.util.*;
+		import java.nio.file.*;
 
 		public class ${className} extends BoxTemplate {
 
