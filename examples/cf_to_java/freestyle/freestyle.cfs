@@ -24,7 +24,7 @@
 		// Try catch
 		try {
 			a/=a % 2;
-			// throw new java:java.lang.RuntimeException( "My Message" );
+		    // throw new java:java.lang.RuntimeException( "My Message" );
 		} catch (any e) {
 			variables.system.out.println("exception " & a);
 		} finally {
