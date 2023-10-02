@@ -1,4 +1,4 @@
-package compiler;
+package ortus.boxlang.compiler;
 
 /**
  * [BoxLang]

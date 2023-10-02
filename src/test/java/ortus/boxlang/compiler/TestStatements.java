@@ -1,4 +1,4 @@
-package compiler;
+package ortus.boxlang.compiler;
 
 import com.github.javaparser.ast.Node;
 import com.github.javaparser.ast.stmt.BlockStmt;
