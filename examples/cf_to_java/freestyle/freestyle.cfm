@@ -8,7 +8,7 @@
 		c = 0;
 		// Switch statement
 		switch (a) {
-			case 0: {
+	case 0: {
 				variables.system.out.println("#a# = zero!!!");
 				break;
 			}

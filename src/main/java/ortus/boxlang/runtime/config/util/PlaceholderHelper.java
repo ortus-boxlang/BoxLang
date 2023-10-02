@@ -17,11 +17,9 @@
  */
 package ortus.boxlang.runtime.config.util;
 
-import java.util.HashMap;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 
 import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 import ortus.boxlang.runtime.types.Struct;
@@ -47,8 +45,8 @@ public class PlaceholderHelper {
 	private static final Struct		PLACEHOLDER_MAP		= new Struct();
 	static {
 		// Add default core replacements
-		PLACEHOLDER_MAP.put( "user-home", escapeReplacementMetaChars( System.getProperty( "user.home" ) ) );
-		PLACEHOLDER_MAP.put( "java-temp", escapeReplacementMetaChars( System.getProperty( "java.io.tmpdir" ) ) );
+		PLACEHOLDER_MAP.put( "user-home", System.getProperty( "user.home" ) );
+		PLACEHOLDER_MAP.put( "java-temp", System.getProperty( "java.io.tmpdir" ) );
 		// Add additional replacements here
 		// placeholderMap.put("your-placeholder", "replacement-value");
 	}
