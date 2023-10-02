@@ -114,7 +114,7 @@ public class Main {
 				files.addAll(
 				    scanForFiles(
 				        inputFile,
-				        Set.of( "cfc", "cfm", "cfml" )
+				        Set.of( "cfs","cfc", "cfm", "cfml" )
 				    )
 				);
 			}
