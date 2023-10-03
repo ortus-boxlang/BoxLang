@@ -37,6 +37,12 @@ import org.slf4j.LoggerFactory;
 
 import com.github.javaparser.ast.Node;
 
+import ortus.boxlang.ast.BoxExpr;
+import ortus.boxlang.ast.BoxScript;
+import ortus.boxlang.ast.BoxStatement;
+import ortus.boxlang.ast.Point;
+import ortus.boxlang.ast.Position;
+import ortus.boxlang.ast.statement.BoxExpression;
 import ortus.boxlang.parser.BoxFileType;
 import ortus.boxlang.parser.BoxParser;
 import ortus.boxlang.parser.ParsingResult;
@@ -197,6 +203,8 @@ public class JavaBoxpiler {
 		    Map.entry( "baseclass", baseclass ),
 		    Map.entry( "fileFolderPath", "" )
 		);
+		// if ( true )
+		// throw new ApplicationException( PlaceholderHelper.resolve( template, values ) );
 		return PlaceholderHelper.resolve( template, values );
 	}
 
@@ -210,20 +218,39 @@ public class JavaBoxpiler {
 		BoxParser		parser	= new BoxParser();
 		ParsingResult	result;
 		try {
-			result = parser.parseExpression( source );
-			// result = parser.parse( source, type );
+			result = parser.parseStatement( source );
 		} catch ( IOException e ) {
 			throw new ApplicationException( "Error compiing source", e );
+		} catch ( IllegalStateException e ) {
+			try {
+				result = parser.parseExpression( source );
+			} catch ( IOException e2 ) {
+				throw new ApplicationException( "Error compiing source", e2 );
+			}
 		}
 		result.getIssues().forEach( it -> System.out.println( it ) );
-		if ( !result.isCorrect() ) {
-			throw new ApplicationException( "Error compiing source" );
+		if ( !result.isCorrect() )
+
+		{
+			throw new ApplicationException( "Error compiing source. " + result.getIssues().get( 0 ).toString() );
 		}
 
 		BoxLangTranspiler	transpiler	= new BoxLangTranspiler();
-		Node				javaAST		= ( Node ) transpiler.transpile( result.getRoot() );
 
-		return compileSource( makeClass( transpiler.getStatementsAsString(), "BoxScript" ) );
+		Position			position	= new Position( new Point( 1, 1 ), new Point( 1, source.length() ) );
+
+		Node				javaAST		= ( Node ) transpiler.transpile(
+		    new BoxScript(
+		        List.of( result.getRoot() instanceof BoxStatement ? ( BoxStatement ) result.getRoot()
+		            : new BoxExpression( ( BoxExpr ) result.getRoot(), position, source ) ),
+		        position,
+		        source
+		    )
+		);
+
+		return
+
+		compileSource( makeClass( transpiler.getStatementsAsString(), "BoxScript" ) );
 	}
 
 	public Class<IBoxRunnable> compileTemplate( Path path ) {

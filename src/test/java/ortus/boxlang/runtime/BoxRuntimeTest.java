@@ -27,6 +27,10 @@ import java.net.URL;
 import org.junit.Test;
 import org.junit.jupiter.api.DisplayName;
 
+import ortus.boxlang.runtime.context.IBoxContext;
+import ortus.boxlang.runtime.context.ScriptingBoxContext;
+import ortus.boxlang.runtime.scopes.Key;
+import ortus.boxlang.runtime.scopes.VariablesScope;
 import ortus.boxlang.runtime.types.exceptions.MissingIncludeException;
 
 public class BoxRuntimeTest {
@@ -76,6 +80,49 @@ public class BoxRuntimeTest {
 			instance.executeTemplate( testTemplate );
 			instance.shutdown();
 		} );
+	}
+
+	@DisplayName( "It can execute an expression" )
+	@Test
+	public void testItCanExecuteAnExpression() {
+
+		BoxRuntime	instance	= BoxRuntime.getInstance( true );
+		IBoxContext	context		= new ScriptingBoxContext();
+		// TODO: return result of expression
+		instance.executeSource( "3+3", context );
+		instance.shutdown();
+
+	}
+
+	@DisplayName( "It can execute a statement" )
+	@Test
+	public void testItCanExecuteAStatement() {
+
+		BoxRuntime	instance	= BoxRuntime.getInstance( true );
+		IBoxContext	context		= new ScriptingBoxContext();
+
+		instance.executeSource( "foo=2+2", context );
+		assertThat( context.getScopeNearby( VariablesScope.name ).get( Key.of( "foo" ) ) ).isEqualTo( 4 );
+
+		instance.executeSource( "variables.bar=2+3", context );
+		assertThat( context.getScopeNearby( VariablesScope.name ).get( Key.of( "bar" ) ) ).isEqualTo( 5 );
+
+		instance.shutdown();
+
+	}
+
+	@DisplayName( "It can execute statements" )
+	@Test
+	public void testItCanExecuteStatements() {
+
+		BoxRuntime	instance	= BoxRuntime.getInstance( true );
+		IBoxContext	context		= new ScriptingBoxContext();
+
+		// TODO: Doesn't actually work yet
+		instance.executeSource( "brad='wood'; \n luis=brad & ' majano'", context );
+
+		instance.shutdown();
+
 	}
 
 }
