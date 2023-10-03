@@ -147,7 +147,8 @@ public class RunnableLoader {
 	 *
 	 * @return
 	 */
-	public BoxScript loadScript( IBoxContext context, String source ) {
-		return null;
+	public BoxScript loadStatement( String source ) {
+		Class<IBoxRunnable> clazz = JavaBoxpiler.getInstance().compileStatement( source, BoxFileType.CFSCRIPT );
+		return ( BoxScript ) DynamicObject.of( clazz ).invokeStatic( "getInstance" ).get();
 	}
 }

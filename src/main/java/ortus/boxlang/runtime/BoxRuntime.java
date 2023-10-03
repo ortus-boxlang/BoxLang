@@ -349,6 +349,43 @@ public class BoxRuntime {
 	}
 
 	/**
+	 * Execute a single statement
+	 *
+	 * @param source A string of the statement to execute
+	 *
+	 */
+	public Object executeStatement( String source ) {
+		return executeStatement( source, runtimeContext );
+	}
+
+	/**
+	 * Execute a single statement in a specific context
+	 *
+	 * @param source  A string of the statement to execute
+	 * @param context The context to execute the source in
+	 *
+	 */
+	public Object executeStatement( String source, IBoxContext context ) {
+		BoxScript scriptRunnable = RunnableLoader.getInstance().loadStatement( source );
+		// Debugging Timers
+		timerUtil.start( "execute-" + source.hashCode() );
+		instance.logger.atDebug().log( "Executing source " );
+
+		IBoxContext scriptingContext = ensureContextWithVariables( context );
+		try {
+			// Fire!!!
+			return scriptRunnable.invoke( scriptingContext );
+		} finally {
+			// Debugging Timer
+			instance.logger.atDebug().log(
+			    "Executed source  [{}] ms",
+			    timerUtil.stopAndGetMillis( "execute-" + source.hashCode() )
+			);
+		}
+
+	}
+
+	/**
 	 * Execute a source string
 	 *
 	 * @param source A string of source to execute

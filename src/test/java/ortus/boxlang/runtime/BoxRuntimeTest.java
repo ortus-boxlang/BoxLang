@@ -87,9 +87,19 @@ public class BoxRuntimeTest {
 	public void testItCanExecuteAnExpression() {
 
 		BoxRuntime	instance	= BoxRuntime.getInstance( true );
-		IBoxContext	context		= new ScriptingBoxContext();
-		// TODO: return result of expression
-		instance.executeSource( "3+3", context );
+
+		Object		result		= instance.executeStatement( "3+3" );
+		assertThat( result ).isEqualTo( 6 );
+
+		result = instance.executeStatement( "3" );
+		assertThat( result ).isEqualTo( 3 );
+
+		result = instance.executeStatement( "'foo' & 'bar'" );
+		assertThat( result ).isEqualTo( "foobar" );
+
+		result = instance.executeStatement( "5*6" );
+		assertThat( result ).isEqualTo( 30 );
+
 		instance.shutdown();
 
 	}
@@ -101,10 +111,14 @@ public class BoxRuntimeTest {
 		BoxRuntime	instance	= BoxRuntime.getInstance( true );
 		IBoxContext	context		= new ScriptingBoxContext();
 
-		instance.executeSource( "foo=2+2", context );
+		Object		result		= instance.executeStatement( "foo=2+2", context );
+		// TODO: failing, needs to use assing instead of put
+		// assertThat( result ).isEqualTo( 4 );
 		assertThat( context.getScopeNearby( VariablesScope.name ).get( Key.of( "foo" ) ) ).isEqualTo( 4 );
 
-		instance.executeSource( "variables.bar=2+3", context );
+		instance.executeStatement( "variables.bar=2+3", context );
+		// TODO: failing, needs to use assing instead of put
+		// assertThat( result ).isEqualTo( 5 );
 		assertThat( context.getScopeNearby( VariablesScope.name ).get( Key.of( "bar" ) ) ).isEqualTo( 5 );
 
 		instance.shutdown();
@@ -118,8 +132,13 @@ public class BoxRuntimeTest {
 		BoxRuntime	instance	= BoxRuntime.getInstance( true );
 		IBoxContext	context		= new ScriptingBoxContext();
 
-		// TODO: Doesn't actually work yet
-		instance.executeSource( "brad='wood'; \n luis=brad & ' majano'", context );
+		String		src			= """
+		                          brad='wood';
+		                          luis=brad & ' majano'
+		                          """;
+		instance.executeSource( src, context );
+		assertThat( context.getScopeNearby( VariablesScope.name ).get( Key.of( "brad" ) ) ).isEqualTo( "wood" );
+		assertThat( context.getScopeNearby( VariablesScope.name ).get( Key.of( "luis" ) ) ).isEqualTo( "wood majano" );
 
 		instance.shutdown();
 

@@ -147,18 +147,12 @@ public class JavaBoxpiler {
 				*
 				* @param context The execution context requesting the execution
 				*/
-			public void _invoke( IBoxContext context ) {
+			public ${returnType} _invoke( IBoxContext context ) {
 				// Reference to the variables scope
 				IScope variablesScope = context.getScopeNearby( Key.of( "variables" ) );
 				ClassLocator JavaLoader = ClassLocator.getInstance();
 				IBoxContext			catchContext = null;
-				${javaCode};
-				//String result = variablesScope.toString();
-				//System.out.println(result);
-				//if(catchContext != null) {
-				//	System.out.println(catchContext);
-				//}
-
+				${javaCode}
 			}
 
 			// ITemplateRunnable implementation methods
@@ -201,20 +195,15 @@ public class JavaBoxpiler {
 		Map<String, String> values = Map.ofEntries(
 		    Map.entry( "javaCode", javaCode ),
 		    Map.entry( "baseclass", baseclass ),
-		    Map.entry( "fileFolderPath", "" )
+		    Map.entry( "fileFolderPath", "" ),
+		    Map.entry( "returnType", baseclass.equals( "BoxScript" ) ? "Object" : "void" )
 		);
 		// if ( true )
 		// throw new ApplicationException( PlaceholderHelper.resolve( template, values ) );
 		return PlaceholderHelper.resolve( template, values );
 	}
 
-	public void runExpression( String expression ) {
-		// compileTemplate(
-		// makeClass( expression )
-		// );
-	}
-
-	public Class<IBoxRunnable> compileScript( String source, BoxFileType type ) {
+	public Class<IBoxRunnable> compileStatement( String source, BoxFileType type ) {
 		BoxParser		parser	= new BoxParser();
 		ParsingResult	result;
 		try {
@@ -229,9 +218,7 @@ public class JavaBoxpiler {
 			}
 		}
 		result.getIssues().forEach( it -> System.out.println( it ) );
-		if ( !result.isCorrect() )
-
-		{
+		if ( !result.isCorrect() ) {
 			throw new ApplicationException( "Error compiing source. " + result.getIssues().get( 0 ).toString() );
 		}
 
@@ -248,9 +235,46 @@ public class JavaBoxpiler {
 		    )
 		);
 
-		return
+		return compileSource( makeClass( getStatementsAsStringReturnLast( transpiler ), "BoxScript" ) );
+	}
 
-		compileSource( makeClass( transpiler.getStatementsAsString(), "BoxScript" ) );
+	public String getStatementsAsStringReturnLast( BoxLangTranspiler transpiler ) {
+		StringBuilder result = new StringBuilder();
+		// loop over statements
+		for ( int i = 0; i < transpiler.getStatements().size(); i++ ) {
+			// if last statement, return it
+			if ( i == transpiler.getStatements().size() - 1 ) {
+				result.append( "return " );
+			}
+			result.append( transpiler.getStatements().get( i ).toString() );
+			if ( i < transpiler.getStatements().size() - 1 ) {
+				result.append( ";\n" );
+			}
+		}
+		return result.toString();
+	}
+
+	public Class<IBoxRunnable> compileScript( String source, BoxFileType type ) {
+		BoxParser		parser	= new BoxParser();
+		ParsingResult	result;
+		try {
+			result = parser.parse( source, type );
+		} catch ( IOException e ) {
+			throw new ApplicationException( "Error compiing source", e );
+		}
+
+		result.getIssues().forEach( it -> System.out.println( it ) );
+		if ( !result.isCorrect() )
+
+		{
+			throw new ApplicationException( "Error compiing source. " + result.getIssues().get( 0 ).toString() );
+		}
+
+		BoxLangTranspiler	transpiler	= new BoxLangTranspiler();
+
+		Node				javaAST		= ( Node ) transpiler.transpile( ( BoxScript ) result.getRoot() );
+
+		return compileSource( makeClass( transpiler.getStatementsAsString() + "\n return null;", "BoxScript" ) );
 	}
 
 	public Class<IBoxRunnable> compileTemplate( Path path ) {

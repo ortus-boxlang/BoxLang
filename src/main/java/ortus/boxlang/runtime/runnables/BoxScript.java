@@ -63,7 +63,7 @@ public abstract class BoxScript implements IScriptRunnable {
 	 * @param context The context to invoke the source with
 	 *
 	 */
-	public void invoke( IBoxContext context ) {
+	public Object invoke( IBoxContext context ) {
 		InterceptorService	interceptorService	= InterceptorService.getInstance();
 
 		// Announcements
@@ -72,11 +72,11 @@ public abstract class BoxScript implements IScriptRunnable {
 		    "source", this
 		);
 		interceptorService.announce( "preSourceInvoke", data );
-
-		_invoke( context );
-
-		// Announce
-		interceptorService.announce( "postSourceInvoke", data );
+		try {
+			return _invoke( context );
+		} finally {
+			interceptorService.announce( "postSourceInvoke", data );
+		}
 
 	}
 
@@ -86,7 +86,7 @@ public abstract class BoxScript implements IScriptRunnable {
 	 * @param context The context to invoke the source with
 	 *
 	 */
-	public abstract void _invoke( IBoxContext context );
+	public abstract Object _invoke( IBoxContext context );
 
 	// ISourceRunnable implementation methods
 
