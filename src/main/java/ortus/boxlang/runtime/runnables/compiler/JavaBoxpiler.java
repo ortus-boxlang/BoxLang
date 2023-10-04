@@ -274,7 +274,7 @@ public class JavaBoxpiler {
 
 		Node				javaAST		= ( Node ) transpiler.transpile( ( BoxScript ) result.getRoot() );
 
-		return compileSource( makeClass( transpiler.getStatementsAsString() + "\n return null;", "BoxScript" ) );
+		return compileSource( makeClass( transpiler.getStatementsAsString(), "BoxScript" ) );
 	}
 
 	public Class<IBoxRunnable> compileTemplate( Path path ) {

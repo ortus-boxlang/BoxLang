@@ -463,10 +463,11 @@ public class BoxRuntime {
 				try {
 
 					// TODO: I think we need an expression runnable that returns the result of the expression
-					BoxScript scriptRunnable = RunnableLoader.getInstance().loadSource( source );
+					BoxScript	scriptRunnable	= RunnableLoader.getInstance().loadStatement( source );
 
 					// Fire!!!
-					scriptRunnable.invoke( scriptingContext );
+					Object		result			= scriptRunnable.invoke( scriptingContext );
+					System.out.println( result );
 				} catch ( Throwable e ) {
 					e.printStackTrace();
 				} finally {
