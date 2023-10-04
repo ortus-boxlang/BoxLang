@@ -144,4 +144,41 @@ public class BoxRuntimeTest {
 
 	}
 
+	@DisplayName( "It can execute more statements" )
+	@Test
+	public void testItCanExecuteMoreStatements() {
+
+		BoxRuntime	instance	= BoxRuntime.getInstance( true );
+		IBoxContext	context		= new ScriptingBoxContext();
+
+		String		src			= """
+		                          variables['system'] = createObject('java','java.lang.System');
+
+		                          a = 1;
+		                          while(a < 10) {
+		                             switch(variables.a) {
+		                             case 0: {
+		                          	 variables.system.out.println("zero");
+		                          	 break;
+		                             }
+		                            default: {
+		                          	 variables.system.out.println("non zero");
+		                          	 break;
+		                             }
+		                          }
+		                          if(!a % 2 == 0) {
+		                          	variables.system.out.println("even and a=#variables.a#");
+		                          }
+		                          a +=1;
+
+		                          }
+		                          //assert(variables["a"] == 10);
+		                          """;
+		instance.executeSource( src, context );
+		assertThat( context.getScopeNearby( VariablesScope.name ).containsKey( Key.of( "system" ) ) ).isTrue();
+
+		instance.shutdown();
+
+	}
+
 }

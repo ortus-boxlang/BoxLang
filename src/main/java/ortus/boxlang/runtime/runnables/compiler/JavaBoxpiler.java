@@ -198,8 +198,6 @@ public class JavaBoxpiler {
 		    Map.entry( "fileFolderPath", "" ),
 		    Map.entry( "returnType", baseclass.equals( "BoxScript" ) ? "Object" : "void" )
 		);
-		// if ( true )
-		// throw new ApplicationException( PlaceholderHelper.resolve( template, values ) );
 		return PlaceholderHelper.resolve( template, values );
 	}
 
@@ -274,7 +272,7 @@ public class JavaBoxpiler {
 
 		Node				javaAST		= ( Node ) transpiler.transpile( ( BoxScript ) result.getRoot() );
 
-		return compileSource( makeClass( transpiler.getStatementsAsString(), "BoxScript" ) );
+		return compileSource( makeClass( transpiler.getStatementsAsString() + "\n return null;", "BoxScript" ) );
 	}
 
 	public Class<IBoxRunnable> compileTemplate( Path path ) {
@@ -295,6 +293,10 @@ public class JavaBoxpiler {
 	}
 
 	public Class<IBoxRunnable> compileSource( String javaSource ) {
+
+		// if ( true )
+		// throw new ApplicationException( javaSource );
+
 		try {
 			JavaCompiler						compiler		= ToolProvider.getSystemJavaCompiler();
 			DiagnosticCollector<JavaFileObject>	diagnostics		= new DiagnosticCollector<>();
