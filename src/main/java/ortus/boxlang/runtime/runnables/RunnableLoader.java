@@ -81,13 +81,24 @@ public class RunnableLoader {
 	 *
 	 * @return
 	 */
-	public BoxTemplate loadTemplateAbsolute( IBoxContext context, Path path ) {
+	public BoxTemplate loadTemplateAbsolute( IBoxContext context, Path path, String packagePath ) {
 		if ( !path.toFile().exists() ) {
 			throw new MissingIncludeException( "The template path [" + path.toString() + "] could not be found.", path.toString() );
 		}
 		// TODO: enforce valid include extensions (.cfm, .cfs, .bxs, .bxm, .bx)
-		Class<IBoxRunnable> clazz = JavaBoxpiler.getInstance().compileTemplate( path );
+		Class<IBoxRunnable> clazz = JavaBoxpiler.getInstance().compileTemplate( path, packagePath );
 		return ( BoxTemplate ) DynamicObject.of( clazz ).invokeStatic( "getInstance" ).get();
+	}
+
+	/**
+	 * Load the class for a template, JIT compiling if needed
+	 *
+	 * @param path Absolute path on disk to the template
+	 *
+	 * @return
+	 */
+	public BoxTemplate loadTemplateAbsolute( IBoxContext context, Path path ) {
+		return loadTemplateAbsolute( context, path, path.toString() );
 	}
 
 	/**
@@ -112,7 +123,7 @@ public class RunnableLoader {
 		}
 
 		// Make absolute
-		return loadTemplateAbsolute( context, Paths.get( relativeBase, path ) );
+		return loadTemplateAbsolute( context, Paths.get( relativeBase, path ), path );
 	}
 
 	/**

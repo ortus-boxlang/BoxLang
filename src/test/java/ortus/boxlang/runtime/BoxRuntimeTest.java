@@ -87,8 +87,8 @@ public class BoxRuntimeTest {
 	public void testItCanExecuteAnExpression() {
 
 		BoxRuntime	instance	= BoxRuntime.getInstance( true );
-
-		Object		result		= instance.executeStatement( "3+3" );
+		Object		result;
+		result = instance.executeStatement( "3+3" );
 		assertThat( result ).isEqualTo( 6 );
 
 		result = instance.executeStatement( "3" );
