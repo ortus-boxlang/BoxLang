@@ -1,11 +1,18 @@
 <cfscript>
+
+	public function foo(String p = "Hello") {
+		return variables.a + 1;
+	}
+
 	variables['system'] = createObject('java','java.lang.System');
 	a = 0;
 	b = false;
 	c = 0;
 	// While loop
 	while(a < 10) {
-		c = 0;
+
+		d = foo();
+		variables.system.out.println("foo() = #foo()#");
 		// Switch statement
 		switch (a) {
 			case 0: {
@@ -39,7 +46,7 @@
 			variables.system.out.println(c);
 		}
 		// if statement
-		if(!a % 2 == 0 && a > 5 ) {
+		if(a % 2 == 0 && a > 5 ) {
 			variables.system.out.println("even and a=#variables.a#, b = #b#");
 		}
 		a++;
