@@ -2,7 +2,9 @@ package ortus.boxlang.transpiler;
 
 import com.github.javaparser.ast.CompilationUnit;
 import org.apache.commons.cli.*;
+import ortus.boxlang.ast.BoxExpr;
 import ortus.boxlang.ast.BoxNode;
+import ortus.boxlang.ast.BoxStatement;
 import ortus.boxlang.parser.BoxParser;
 import ortus.boxlang.parser.ParsingResult;
 
@@ -124,13 +126,17 @@ public class Main {
 			for ( Path file : files ) {
 				System.out.println( file );
 				ParsingResult result = parser.parse( file.toFile() );
+
 				if ( result.isCorrect() ) {
-					CompilationUnit	javaAST		= transpiler.transpile( result.getRoot() );
-					String			output		= cmd.getOptionValue( "output" );
-					String			classpath	= cmd.getOptionValue( "classpath" );
-					String			fqn			= "";
+					// CompilationUnit javaAST = transpiler.transpileMany( result.getRoot() );
+					List<CompilationUnit>	javaASTs	= transpiler.transpileMany( result.getRoot() );
+					String					output		= cmd.getOptionValue( "output" );
+					String					classpath	= cmd.getOptionValue( "classpath" );
+					String					fqn			= "";
 					try {
-						fqn = transpiler.compileJava( javaAST, output, List.of( classpath ) );
+						for ( CompilationUnit javaAST : javaASTs ) {
+							fqn = transpiler.compileJava( javaAST, output, List.of( classpath ) );
+						}
 						transpiler.runJavaClass( fqn, List.of( classpath, output ) );
 					} catch ( Throwable e ) {
 						e.printStackTrace();

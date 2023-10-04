@@ -69,20 +69,7 @@ import ortus.boxlang.ast.expression.BoxStringInterpolation;
 import ortus.boxlang.ast.expression.BoxStringLiteral;
 import ortus.boxlang.ast.expression.BoxTernaryOperation;
 import ortus.boxlang.ast.expression.BoxUnaryOperation;
-import ortus.boxlang.ast.statement.BoxAssert;
-import ortus.boxlang.ast.statement.BoxAssignment;
-import ortus.boxlang.ast.statement.BoxBreak;
-import ortus.boxlang.ast.statement.BoxContinue;
-import ortus.boxlang.ast.statement.BoxDo;
-import ortus.boxlang.ast.statement.BoxExpression;
-import ortus.boxlang.ast.statement.BoxForIn;
-import ortus.boxlang.ast.statement.BoxForIndex;
-import ortus.boxlang.ast.statement.BoxIfElse;
-import ortus.boxlang.ast.statement.BoxLocalDeclaration;
-import ortus.boxlang.ast.statement.BoxSwitch;
-import ortus.boxlang.ast.statement.BoxThrow;
-import ortus.boxlang.ast.statement.BoxTry;
-import ortus.boxlang.ast.statement.BoxWhile;
+import ortus.boxlang.ast.statement.*;
 import ortus.boxlang.executor.JavaSourceString;
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.runnables.BoxTemplate;
@@ -110,21 +97,7 @@ import ortus.boxlang.transpiler.transformer.expression.BoxTernaryOperationTransf
 import ortus.boxlang.transpiler.transformer.expression.BoxUnaryOperationTransformer;
 import ortus.boxlang.transpiler.transformer.indexer.CrossReference;
 import ortus.boxlang.transpiler.transformer.indexer.IndexPrettyPrinterVisitor;
-import ortus.boxlang.transpiler.transformer.statement.BoxAssertTransformer;
-import ortus.boxlang.transpiler.transformer.statement.BoxAssignmentTransformer;
-import ortus.boxlang.transpiler.transformer.statement.BoxBreakTransformer;
-import ortus.boxlang.transpiler.transformer.statement.BoxContinueTransformer;
-import ortus.boxlang.transpiler.transformer.statement.BoxDoTransformer;
-import ortus.boxlang.transpiler.transformer.statement.BoxExpressionTransformer;
-import ortus.boxlang.transpiler.transformer.statement.BoxForInTransformer;
-import ortus.boxlang.transpiler.transformer.statement.BoxForIndexTransformer;
-import ortus.boxlang.transpiler.transformer.statement.BoxIfElseTransformer;
-import ortus.boxlang.transpiler.transformer.statement.BoxLocalDeclarationTransformer;
-import ortus.boxlang.transpiler.transformer.statement.BoxScriptTransformer;
-import ortus.boxlang.transpiler.transformer.statement.BoxSwitchTransformer;
-import ortus.boxlang.transpiler.transformer.statement.BoxThrowTransformer;
-import ortus.boxlang.transpiler.transformer.statement.BoxTryTransformer;
-import ortus.boxlang.transpiler.transformer.statement.BoxWhileTransformer;
+import ortus.boxlang.transpiler.transformer.statement.*;
 
 /**
  * BoxLang AST to Java AST transpiler
@@ -181,6 +154,8 @@ public class BoxLangTranspiler {
 																		put( BoxTry.class, new BoxTryTransformer() );
 																		put( BoxThrow.class, new BoxThrowTransformer() );
 																		put( BoxNewOperation.class, new BoxNewOperationTransformer() );
+																		put( BoxFunctionDeclaration.class, new BoxFunctionDeclarationTransformer() );
+																		put( BoxReturn.class, new BoxReturnTransformer() );
 
 																	}
 																};
@@ -233,6 +208,8 @@ public class BoxLangTranspiler {
 	 *
 	 * @throws IllegalStateException
 	 *
+	 * @deprecated will be replaced by transpileMany
+	 *
 	 * @see CompilationUnit
 	 */
 	public CompilationUnit transpile( BoxNode node ) throws IllegalStateException {
@@ -245,16 +222,21 @@ public class BoxLangTranspiler {
 		    .getMethodsByName( "_invoke" ).get( 0 );
 
 		for ( BoxStatement statement : source.getStatements() ) {
-			Node javaStmt = transform( statement );
-			if ( javaStmt instanceof BlockStmt ) {
-				BlockStmt stmt = ( BlockStmt ) javaStmt;
-				stmt.getStatements().stream().forEach( it -> {
-					invokeMethod.getBody().get().addStatement( it );
-					statements.add( it );
-				} );
+			if ( statement instanceof BoxFunctionDeclaration ) {
+				// a function declaration generate
+
 			} else {
-				invokeMethod.getBody().get().addStatement( ( Statement ) javaStmt );
-				statements.add( ( Statement ) javaStmt );
+				Node javaStmt = transform( statement );
+				if ( javaStmt instanceof BlockStmt ) {
+					BlockStmt stmt = ( BlockStmt ) javaStmt;
+					stmt.getStatements().stream().forEach( it -> {
+						invokeMethod.getBody().get().addStatement( it );
+						statements.add( it );
+					} );
+				} else {
+					invokeMethod.getBody().get().addStatement( ( Statement ) javaStmt );
+					statements.add( ( Statement ) javaStmt );
+				}
 			}
 		}
 
@@ -262,6 +244,46 @@ public class BoxLangTranspiler {
 		javaClass.accept( visitor, null );
 		this.crossReferences.addAll( visitor.getCrossReferences() );
 		return javaClass;
+	}
+
+	public List<CompilationUnit> transpileMany( BoxNode node ) throws IllegalStateException {
+		List<CompilationUnit>	compilationUnits	= new ArrayList<>();
+		BoxScript				source				= ( BoxScript ) node;
+		CompilationUnit			javaClass			= ( CompilationUnit ) transform( source );
+
+		String					className			= getClassName( source.getPosition().getSource() );
+		MethodDeclaration		invokeMethod		= javaClass.findCompilationUnit().orElseThrow()
+		    .getClassByName( className ).orElseThrow()
+		    .getMethodsByName( "_invoke" ).get( 0 );
+
+		for ( BoxStatement statement : source.getStatements() ) {
+			if ( statement instanceof BoxFunctionDeclaration ) {
+				// a function declaration generate
+				Node function = transform( statement );
+				compilationUnits.add( ( CompilationUnit ) function );
+				Node registrer = transform( statement, TransformerContext.REGISTER );
+				invokeMethod.getBody().get().addStatement( 0, ( Statement ) registrer );
+
+			} else {
+				Node javaStmt = transform( statement );
+				if ( javaStmt instanceof BlockStmt ) {
+					BlockStmt stmt = ( BlockStmt ) javaStmt;
+					stmt.getStatements().stream().forEach( it -> {
+						invokeMethod.getBody().get().addStatement( it );
+						statements.add( it );
+					} );
+				} else {
+					invokeMethod.getBody().get().addStatement( ( Statement ) javaStmt );
+					statements.add( ( Statement ) javaStmt );
+				}
+			}
+		}
+
+		IndexPrettyPrinterVisitor visitor = new IndexPrettyPrinterVisitor( new DefaultPrinterConfiguration() );
+		javaClass.accept( visitor, null );
+		this.crossReferences.addAll( visitor.getCrossReferences() );
+		compilationUnits.add( javaClass );
+		return compilationUnits;
 	}
 
 	public List<Statement> getStatements() {
