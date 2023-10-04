@@ -17,6 +17,7 @@ package ortus.boxlang.parser;
 import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
 import org.antlr.v4.runtime.ParserRuleContext;
+import org.antlr.v4.runtime.RuleContext;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.input.BOMInputStream;
 import ortus.boxlang.parser.antlr.CFLexer;
@@ -131,8 +132,9 @@ public class BoxCFParser extends BoxAbstractParser {
 		CFLexer		lexer		= new CFLexer( CharStreams.fromStream( inputStream ) );
 		CFParser	parser		= new CFParser( new CommonTokenStream( lexer ) );
 		addErrorListeners( lexer, parser );
-		CFParser.StatementContext	parseTree	= parser.statement();
-		BoxStatement				ast			= toAst( null, parseTree );
+		CFParser.FunctionOrStatementContext	parseTree	= parser.functionOrStatement();
+
+		BoxStatement						ast			= toAst( null, parseTree );
 		return new ParsingResult( ast, issues );
 	}
 
@@ -172,8 +174,6 @@ public class BoxCFParser extends BoxAbstractParser {
 
 		if ( parseTree.tag() != null ) {
 			parseTree = parseTree.tag().script();
-		} else {
-			// TODO : Need to finish this MT
 		}
 
 		parseTree.functionOrStatement().forEach( stmt -> {
@@ -537,6 +537,12 @@ public class BoxCFParser extends BoxAbstractParser {
 				expr = toAst( file, node.localDeclaration().expression() );
 			}
 			return new BoxLocalDeclaration( identifiers, expr, getPosition( node ), getSourceText( node ) );
+		} else if ( node.return_() != null ) {
+			BoxExpr expr = null;
+			if ( node.return_().expression() != null ) {
+				expr = toAst( file, node.return_().expression() );
+			}
+			return new BoxReturn( expr, getPosition( node ), getSourceText( node ) );
 		} else if ( node.incrementDecrementStatement() != null ) {
 			return toAst( file, node.incrementDecrementStatement() );
 		}
@@ -998,6 +1004,7 @@ public class BoxCFParser extends BoxAbstractParser {
 	/**
 	 * Converts the ObjectExpression parser rule to the corresponding AST node. * @param file
 	 *
+	 * @param file source file, if any
 	 * @param node ANTLR ObjectExpressionContext rule
 	 *
 	 * @return corresponding AST BoxAccess or an BoxIdentifier
@@ -1020,6 +1027,7 @@ public class BoxCFParser extends BoxAbstractParser {
 	/**
 	 * Converts the Function Invocation parser rule to the corresponding AST node. * @param file
 	 *
+	 * @param file source file, if any
 	 * @param node ANTLR FunctionInvokationContext rule
 	 *
 	 * @return corresponding AST BoxFunctionInvocation
@@ -1042,6 +1050,7 @@ public class BoxCFParser extends BoxAbstractParser {
 	/**
 	 * Converts the Argument parser rule to the corresponding AST node.
 	 *
+	 * @param file source file, if any
 	 * @param node ANTLR FunctionInvokationContext rule
 	 *
 	 * @return corresponding AST BoxArgument
@@ -1060,9 +1069,86 @@ public class BoxCFParser extends BoxAbstractParser {
 		}
 	}
 
+	/**
+	 * Converts the Function declaration parser rule to the corresponding AST node.
+	 *
+	 * @param file source file, if any
+	 * @param node ANTLR FunctionContext rule
+	 *
+	 * @return corresponding AST BoxFunctionDeclaration
+	 *
+	 * @see BoxFunctionDeclaration
+	 */
 	private BoxStatement toAst( File file, CFParser.FunctionContext node ) {
-		// TODO
-		throw new IllegalStateException( "not implemented: " + node.getClass().getSimpleName() );
+		CFParser.IdentifierContext		temp		= node.functionSignature().identifier();
+		BoxReturnType					returnType	= new BoxReturnType( BoxType.Any, null, getPosition( temp ), getSourceText( temp ) );
+		String							name		= "undefined";
+		List<BoxStatement>				body		= new ArrayList<>();
+		List<BoxArgumentDeclaration>	args		= new ArrayList<>();
+		BoxAccessModifier				modifier	= BoxAccessModifier.Public;
+
+		if ( node.functionSignature().identifier() != null ) {
+			name = node.functionSignature().identifier().getText();
+		}
+
+		for ( CFParser.ParamContext arg : node.functionSignature().paramList().param() ) {
+			args.add( toAst( file, arg ) );
+		}
+
+		if ( node.functionSignature().accessModifier() != null ) {
+			if ( node.functionSignature().accessModifier().PUBLIC() == null ) {
+				modifier = BoxAccessModifier.Public;
+			} else if ( node.functionSignature().accessModifier().PRIVATE() == null ) {
+				modifier = BoxAccessModifier.Private;
+			} else if ( node.functionSignature().accessModifier().REMOTE() != null ) {
+				modifier = BoxAccessModifier.Remote;
+			} else if ( node.functionSignature().accessModifier().PACKAGE() != null ) {
+				modifier = BoxAccessModifier.Package;
+			}
+		}
+		if ( node.functionSignature().returnType() != null ) {
+			var targetType = node.functionSignature().returnType().type();
+			if ( targetType != null ) {
+				if ( targetType.BOOLEAN() != null ) {
+					new BoxReturnType( BoxType.Boolean, null, getPosition( targetType ), getSourceText( targetType ) );
+				}
+				if ( targetType.NUMERIC() != null ) {
+					new BoxReturnType( BoxType.Numeric, null, getPosition( targetType ), getSourceText( targetType ) );
+				}
+				if ( targetType.STRING() != null ) {
+					new BoxReturnType( BoxType.String, null, getPosition( targetType ), getSourceText( targetType ) );
+				}
+			}
+			// TODO
+			// Specification required to map the types
+		}
+		if ( node.statementBlock() != null ) {
+			body.addAll( toAst( file, node.statementBlock() ) );
+		}
+
+		return new BoxFunctionDeclaration( modifier, name, returnType, args, body, getPosition( node ), getSourceText( node ) );
+	}
+
+	/**
+	 * Converts the Function argument parser rule to the corresponding AST node.
+	 *
+	 * @param file source file, if any
+	 * @param node ANTLR FunctionContext rule
+	 *
+	 * @return corresponding AST BoxArgumentDeclaration
+	 *
+	 * @see BoxArgumentDeclaration
+	 */
+	private BoxArgumentDeclaration toAst( File file, CFParser.ParamContext node ) {
+		String	name	= "undefined";
+		BoxExpr	expr	= null;
+
+		name = node.identifier().getText();
+		if ( node.expression() != null ) {
+			expr = toAst( file, node.expression() );
+		}
+
+		return new BoxArgumentDeclaration( name, expr, getPosition( node ), getSourceText( node ) );
 	}
 
 	private BoxStatement toAst( File file, CFParser.ConstructorContext node ) {
