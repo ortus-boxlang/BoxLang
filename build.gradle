@@ -48,13 +48,16 @@ dependencies {
 	testImplementation "org.mockito:mockito-core:5.+"
 	testImplementation "com.google.truth:truth:1.+"
 
-	// Implementation Dependencies
-
+	// Antlr
 	antlr "org.antlr:antlr4:$antlrVersion"
-	implementation "commons-io:commons-io:2.13.0"
-	implementation 'commons-cli:commons-cli:1.5.0'
-	implementation 'com.github.javaparser:javaparser-symbol-solver-core:3.25.4'
 
+	// Implementation Dependencies
+	// https://mvnrepository.com/artifact/commons-io/commons-io
+	implementation "commons-io:commons-io:2.14.0"
+	// https://mvnrepository.com/artifact/commons-cli/commons-cli
+	implementation 'commons-cli:commons-cli:1.5.0'
+	// https://mvnrepository.com/artifact/com.github.javaparser/javaparser-symbol-solver-core
+	implementation 'com.github.javaparser:javaparser-symbol-solver-core:3.25.4'
 	// https://mvnrepository.com/artifact/org.apache.commons/commons-lang3
 	implementation 'org.apache.commons:commons-lang3:3.13.0'
 	// https://mvnrepository.com/artifact/com.fasterxml.jackson.jr/jackson-jr-all

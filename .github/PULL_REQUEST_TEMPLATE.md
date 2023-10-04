@@ -10,7 +10,7 @@ IMPORTANT: Please review the [CONTRIBUTING.md](../CONTRIBUTING.md) file for deta
 
 All PRs must have an accompanied Jira issue. Please make sure you created it and linked it here.
 
-> Bug Tracker: https://ortussolutions.atlassian.net/jira/software/c/projects/COLDBOX/issues
+> Bug Tracker: https://ortussolutions.atlassian.net/browse/BL/issues
 
 
 ## Type of change
