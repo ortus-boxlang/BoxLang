@@ -34,6 +34,14 @@ public class DiskClassLoader extends URLClassLoader {
 	private Path				diskStore;
 	private JavaMemoryManager	manager;
 
+	/**
+	 * Constructor
+	 * 
+	 * @param urls      classpath
+	 * @param parent    parent classloader
+	 * @param diskStore disk store
+	 * @param manager   memory manager
+	 */
 	public DiskClassLoader( URL[] urls, ClassLoader parent, Path diskStore, JavaMemoryManager manager ) {
 		super( urls, parent );
 		this.manager	= manager;
@@ -41,6 +49,11 @@ public class DiskClassLoader extends URLClassLoader {
 		diskStore.toFile().mkdirs();
 	}
 
+	/**
+	 * Find class on disk, if not found, delegate to parent
+	 * 
+	 * @param name class name
+	 */
 	@Override
 	protected Class<?> findClass( String name ) throws ClassNotFoundException {
 		Path diskPath = generateDiskPath( name );
@@ -67,10 +80,25 @@ public class DiskClassLoader extends URLClassLoader {
 		}
 	}
 
+	/**
+	 * Check if a class exists on disk
+	 *
+	 * @param name class name
+	 * 
+	 * @return true if class exists on disk
+	 */
 	public boolean hasClass( String name ) {
 		return generateDiskPath( name ).toFile().exists();
 	}
 
+	/**
+	 * Check if a class exists on disk and is up to date
+	 *
+	 * @param name         class name
+	 * @param lastModified last modified timestamp of source file
+	 * 
+	 * @return true if class exists on disk and is up to date
+	 */
 	public boolean hasClass( String name, long lastModified ) {
 		Path diskPath = generateDiskPath( name );
 		if ( !diskPath.toFile().exists() ) {
@@ -84,14 +112,34 @@ public class DiskClassLoader extends URLClassLoader {
 		return true;
 	}
 
+	/**
+	 * Check if a class exists on disk
+	 *
+	 * @param name class name
+	 * 
+	 * @return true if class exists on disk
+	 */
 	private boolean hasClass( Path name ) {
 		return name.toFile().exists();
 	}
 
+	/**
+	 * Generate a disk path for a class name
+	 *
+	 * @param name class name
+	 * 
+	 * @return path to class file
+	 */
 	private Path generateDiskPath( String name ) {
 		return Paths.get( diskStore.toString(), name.replace( ".", File.separator ) + ".class" );
 	}
 
+	/**
+	 * Write class file to disk
+	 *
+	 * @param name  class name
+	 * @param bytes class bytes
+	 */
 	public void writeToDisk( String name, byte[] bytes ) {
 		Path diskPath = generateDiskPath( name );
 		diskPath.toFile().getParentFile().mkdirs();
@@ -99,6 +147,18 @@ public class DiskClassLoader extends URLClassLoader {
 			Files.write( generateDiskPath( name ), bytes );
 		} catch ( IOException e ) {
 			throw new ApplicationException( "Unable to write class file to disk", e );
+		}
+	}
+
+	/**
+	 * clear contents of disk store
+	 *
+	 */
+	public void clear() {
+		try {
+			Files.walk( diskStore ).filter( Files::isRegularFile ).map( Path::toFile ).forEach( File::delete );
+		} catch ( IOException e ) {
+			throw new ApplicationException( "Unable to clear disk store", e );
 		}
 	}
 
