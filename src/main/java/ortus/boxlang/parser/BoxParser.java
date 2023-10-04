@@ -121,6 +121,9 @@ public class BoxParser {
 			case CFMARKUP -> {
 				return new BoxCFMLParser().parse( file );
 			}
+			case BOXSCRIPT -> {
+				return new BoxLangScriptParser().parse( file );
+			}
 			default -> {
 				throw new RuntimeException( "Unsupported file: " + file.getAbsolutePath() );
 			}
