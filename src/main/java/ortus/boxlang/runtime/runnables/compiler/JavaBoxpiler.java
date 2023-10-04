@@ -89,18 +89,20 @@ public class JavaBoxpiler {
 		this.compiler			= ToolProvider.getSystemJavaCompiler();
 		this.manager			= new JavaMemoryManager( compiler.getStandardFileManager( null, null, null ) );
 
+		this.diskClassLoader	= new DiskClassLoader(
+		    new URL[] {},
+		    this.getClass().getClassLoader(),
+		    Paths.get( System.getProperty( "java.io.tmpdir" ) + File.separator + "boxlang" + File.separator + "cfclasses" ),
+		    manager
+		);
+
 		this.classLoader		= new JavaDynamicClassLoader(
 		    new URL[] {
 			// new File( boxRT ).toURI().toURL()
 		    },
 		    this.getClass().getClassLoader(),
-		    manager
-		);
-
-		this.diskClassLoader	= new DiskClassLoader(
-		    new URL[] {},
-		    this.getClass().getClassLoader(),
-		    Paths.get( System.getProperty( "java.io.tmpdir" ) + File.separator + "boxlang" + File.separator + "cfclasses" )
+		    manager,
+		    this.diskClassLoader
 		);
 
 	}
@@ -229,42 +231,47 @@ public class JavaBoxpiler {
 
 	public Class<IBoxRunnable> compileStatement( String source, BoxFileType type ) {
 		String	packageName	= "generated";
-		String	className	= "statement_" + MD5( source );
+		String	className	= "Statement_" + MD5( source );
 		String	fqn			= packageName + "." + className;
 
 		if ( !manager.getBytesMap().containsKey( fqn ) ) {
-			BoxParser		parser	= new BoxParser();
-			ParsingResult	result;
-			try {
-				result = parser.parseStatement( source );
-			} catch ( IOException e ) {
-				throw new ApplicationException( "Error compiing source", e );
-			} catch ( IllegalStateException e ) {
+
+			if ( diskClassLoader.hasClass( fqn ) ) {
+				return getDiskClass( fqn );
+			} else {
+				BoxParser		parser	= new BoxParser();
+				ParsingResult	result;
 				try {
-					result = parser.parseExpression( source );
-				} catch ( IOException e2 ) {
-					throw new ApplicationException( "Error compiing source", e2 );
+					result = parser.parseStatement( source );
+				} catch ( IOException e ) {
+					throw new ApplicationException( "Error compiing source", e );
+				} catch ( IllegalStateException e ) {
+					try {
+						result = parser.parseExpression( source );
+					} catch ( IOException e2 ) {
+						throw new ApplicationException( "Error compiing source", e2 );
+					}
 				}
+				result.getIssues().forEach( it -> System.out.println( it ) );
+				if ( !result.isCorrect() ) {
+					throw new ApplicationException( "Error compiing source. " + result.getIssues().get( 0 ).toString() );
+				}
+
+				BoxLangTranspiler	transpiler	= new BoxLangTranspiler();
+
+				Position			position	= new Position( new Point( 1, 1 ), new Point( 1, source.length() ) );
+
+				Node				javaAST		= ( Node ) transpiler.transpile(
+				    new BoxScript(
+				        List.of( result.getRoot() instanceof BoxStatement ? ( BoxStatement ) result.getRoot()
+				            : new BoxExpression( ( BoxExpr ) result.getRoot(), position, source ) ),
+				        position,
+				        source
+				    )
+				);
+
+				compileSource( makeClass( getStatementsAsStringReturnLast( transpiler ), "BoxScript", packageName, className ), fqn );
 			}
-			result.getIssues().forEach( it -> System.out.println( it ) );
-			if ( !result.isCorrect() ) {
-				throw new ApplicationException( "Error compiing source. " + result.getIssues().get( 0 ).toString() );
-			}
-
-			BoxLangTranspiler	transpiler	= new BoxLangTranspiler();
-
-			Position			position	= new Position( new Point( 1, 1 ), new Point( 1, source.length() ) );
-
-			Node				javaAST		= ( Node ) transpiler.transpile(
-			    new BoxScript(
-			        List.of( result.getRoot() instanceof BoxStatement ? ( BoxStatement ) result.getRoot()
-			            : new BoxExpression( ( BoxExpr ) result.getRoot(), position, source ) ),
-			        position,
-			        source
-			    )
-			);
-
-			compileSource( makeClass( getStatementsAsStringReturnLast( transpiler ), "BoxScript", packageName, className ), fqn );
 		}
 		return getClass( fqn );
 
@@ -272,30 +279,34 @@ public class JavaBoxpiler {
 
 	public Class<IBoxRunnable> compileScript( String source, BoxFileType type ) {
 		String	packageName	= "generated";
-		String	className	= "script_" + MD5( source );
+		String	className	= "Script_" + MD5( source );
 		String	fqn			= packageName + "." + className;
 
 		if ( !manager.getBytesMap().containsKey( fqn ) ) {
-			BoxParser		parser	= new BoxParser();
-			ParsingResult	result;
-			try {
-				result = parser.parse( source, type );
-			} catch ( IOException e ) {
-				throw new ApplicationException( "Error compiing source", e );
+			if ( diskClassLoader.hasClass( fqn ) ) {
+				return getDiskClass( fqn );
+			} else {
+				BoxParser		parser	= new BoxParser();
+				ParsingResult	result;
+				try {
+					result = parser.parse( source, type );
+				} catch ( IOException e ) {
+					throw new ApplicationException( "Error compiing source", e );
+				}
+
+				result.getIssues().forEach( it -> System.out.println( it ) );
+				if ( !result.isCorrect() )
+
+				{
+					throw new ApplicationException( "Error compiing source. " + result.getIssues().get( 0 ).toString() );
+				}
+
+				BoxLangTranspiler	transpiler	= new BoxLangTranspiler();
+
+				Node				javaAST		= ( Node ) transpiler.transpile( ( BoxScript ) result.getRoot() );
+
+				compileSource( makeClass( transpiler.getStatementsAsString() + "\n return null;", "BoxScript", packageName, className ), fqn );
 			}
-
-			result.getIssues().forEach( it -> System.out.println( it ) );
-			if ( !result.isCorrect() )
-
-			{
-				throw new ApplicationException( "Error compiing source. " + result.getIssues().get( 0 ).toString() );
-			}
-
-			BoxLangTranspiler	transpiler	= new BoxLangTranspiler();
-
-			Node				javaAST		= ( Node ) transpiler.transpile( ( BoxScript ) result.getRoot() );
-
-			compileSource( makeClass( transpiler.getStatementsAsString() + "\n return null;", "BoxScript", packageName, className ), fqn );
 		}
 		return getClass( fqn );
 	}
@@ -307,20 +318,24 @@ public class JavaBoxpiler {
 		String	fqn			= packageName + "." + className;
 
 		if ( !manager.getBytesMap().containsKey( fqn ) ) {
-			BoxParser		parser	= new BoxParser();
-			ParsingResult	result;
-			try {
-				result = parser.parse( path.toFile() );
-			} catch ( IOException e ) {
-				throw new ApplicationException( "Error compiing source", e );
+			if ( diskClassLoader.hasClass( fqn, path.toFile().lastModified() ) ) {
+				return getDiskClass( fqn );
+			} else {
+				BoxParser		parser	= new BoxParser();
+				ParsingResult	result;
+				try {
+					result = parser.parse( path.toFile() );
+				} catch ( IOException e ) {
+					throw new ApplicationException( "Error compiing source", e );
+				}
+				result.getIssues().forEach( it -> System.out.println( it ) );
+				assert result.isCorrect();
+
+				BoxLangTranspiler	transpiler	= new BoxLangTranspiler();
+				Node				javaAST		= ( Node ) transpiler.transpile( result.getRoot() );
+
+				compileSource( makeClass( transpiler.getStatementsAsString(), "BoxTemplate", packageName, className ), fqn );
 			}
-			result.getIssues().forEach( it -> System.out.println( it ) );
-			assert result.isCorrect();
-
-			BoxLangTranspiler	transpiler	= new BoxLangTranspiler();
-			Node				javaAST		= ( Node ) transpiler.transpile( result.getRoot() );
-
-			compileSource( makeClass( transpiler.getStatementsAsString(), "BoxTemplate", packageName, className ), fqn );
 		}
 		return getClass( fqn );
 	}
@@ -363,6 +378,14 @@ public class JavaBoxpiler {
 	public Class<IBoxRunnable> getClass( String fqn ) {
 		try {
 			return ( Class<IBoxRunnable> ) classLoader.loadClass( fqn );
+		} catch ( ClassNotFoundException e ) {
+			throw new ApplicationException( "Error compiing source", e );
+		}
+	}
+
+	public Class<IBoxRunnable> getDiskClass( String fqn ) {
+		try {
+			return ( Class<IBoxRunnable> ) diskClassLoader.loadClass( fqn );
 		} catch ( ClassNotFoundException e ) {
 			throw new ApplicationException( "Error compiing source", e );
 		}

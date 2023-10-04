@@ -25,12 +25,13 @@ import java.util.Map;
  */
 public class JavaDynamicClassLoader extends URLClassLoader {
 
-	private JavaMemoryManager manager;
+	private JavaMemoryManager	manager;
+	private DiskClassLoader		diskClassLoader;
 
-	public JavaDynamicClassLoader( URL[] urls, ClassLoader parent, JavaMemoryManager manager ) {
+	public JavaDynamicClassLoader( URL[] urls, ClassLoader parent, JavaMemoryManager manager, DiskClassLoader diskClassLoader ) {
 		super( urls, parent );
-		this.manager = manager;
-
+		this.manager			= manager;
+		this.diskClassLoader	= diskClassLoader;
 	}
 
 	@Override
@@ -42,6 +43,10 @@ public class JavaDynamicClassLoader extends URLClassLoader {
 		if ( compiledClasses.containsKey( name ) ) {
 			byte[] bytes = compiledClasses.get( name )
 			    .getBytes();
+
+			// Cache on disk
+			diskClassLoader.writeToDisk( name, bytes );
+
 			return defineClass( name, bytes, 0, bytes.length );
 		} else {
 			return super.findClass( name );
