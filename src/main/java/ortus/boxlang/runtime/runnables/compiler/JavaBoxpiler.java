@@ -234,7 +234,7 @@ public class JavaBoxpiler {
 		String	className	= "Statement_" + MD5( source );
 		String	fqn			= packageName + "." + className;
 
-		if ( !manager.getBytesMap().containsKey( fqn ) ) {
+		if ( !classLoader.hasClass( fqn ) ) {
 
 			if ( diskClassLoader.hasClass( fqn ) ) {
 				return getDiskClass( fqn );
@@ -282,7 +282,7 @@ public class JavaBoxpiler {
 		String	className	= "Script_" + MD5( source );
 		String	fqn			= packageName + "." + className;
 
-		if ( !manager.getBytesMap().containsKey( fqn ) ) {
+		if ( !classLoader.hasClass( fqn ) ) {
 			if ( diskClassLoader.hasClass( fqn ) ) {
 				return getDiskClass( fqn );
 			} else {
@@ -312,13 +312,14 @@ public class JavaBoxpiler {
 	}
 
 	public Class<IBoxRunnable> compileTemplate( Path path, String packagePath ) {
-		File	lcaseFile	= new File( packagePath.toString().toLowerCase() );
-		String	packageName	= getPackageName( lcaseFile );
-		String	className	= getClassName( lcaseFile );
-		String	fqn			= packageName + "." + className;
+		File	lcaseFile		= new File( packagePath.toString().toLowerCase() );
+		String	packageName		= getPackageName( lcaseFile );
+		String	className		= getClassName( lcaseFile );
+		String	fqn				= packageName + "." + className;
+		long	lastModified	= path.toFile().lastModified();
 
-		if ( !manager.getBytesMap().containsKey( fqn ) ) {
-			if ( diskClassLoader.hasClass( fqn, path.toFile().lastModified() ) ) {
+		if ( !classLoader.hasClass( fqn, lastModified ) ) {
+			if ( diskClassLoader.hasClass( fqn, lastModified ) ) {
 				return getDiskClass( fqn );
 			} else {
 				BoxParser		parser	= new BoxParser();

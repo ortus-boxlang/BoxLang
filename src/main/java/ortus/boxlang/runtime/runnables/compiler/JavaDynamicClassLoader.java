@@ -53,6 +53,38 @@ public class JavaDynamicClassLoader extends URLClassLoader {
 		}
 	}
 
+	/**
+	 * Check if a class exists on disk
+	 *
+	 * @param name class name
+	 *
+	 * @return true if class exists on disk
+	 */
+	public boolean hasClass( String name ) {
+		return manager.getBytesMap().containsKey( name );
+	}
+
+	/**
+	 * Check if a class exists on disk and is up to date
+	 *
+	 * @param name         class name
+	 * @param lastModified last modified timestamp of source file
+	 *
+	 * @return true if class exists on disk and is up to date
+	 */
+	public boolean hasClass( String name, long lastModified ) {
+		JavaClassByteCode jcb = manager.getBytesMap().get( name );
+		if ( jcb == null ) {
+			return false;
+		}
+		// If source file is modified after class file
+		if ( lastModified > jcb.getLastModified() ) {
+			return false;
+		}
+
+		return true;
+	}
+
 	/*
 	 * Required for Java Agents when this classloader is used as the system classloader
 	 */

@@ -22,6 +22,8 @@ import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.logging.LogManager;
 
+import ortus.boxlang.runtime.types.exceptions.ApplicationException;
+
 /**
  * Configures the bundled SLF4J provider.
  *
@@ -80,7 +82,11 @@ public class LoggingConfigurator {
 	 * Read logging configuration from the `logging.properties` file
 	 */
 	private static InputStream loadFromPropertiesFile() {
-		return LoggingConfigurator.class.getClassLoader().getResourceAsStream( DEFAULT_CONFIG_FILE );
+		InputStream configFile = LoggingConfigurator.class.getClassLoader().getResourceAsStream( DEFAULT_CONFIG_FILE );
+		if ( configFile == null ) {
+			throw new ApplicationException( "Unable to load logging configuration from classpath resource: " + DEFAULT_CONFIG_FILE );
+		}
+		return configFile;
 	}
 
 	/**

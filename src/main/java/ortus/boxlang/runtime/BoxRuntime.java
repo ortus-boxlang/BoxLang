@@ -504,4 +504,8 @@ public class BoxRuntime {
 			return new ScriptingBoxContext( context );
 		}
 	}
+
+	public IBoxContext getRuntimeContext() {
+		return runtimeContext;
+	}
 }
