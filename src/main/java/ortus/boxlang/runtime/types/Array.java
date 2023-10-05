@@ -289,7 +289,7 @@ public class Array implements List<Object>, IType, IReferenceable {
 	 * @param value The value to assign
 	 */
 	@Override
-	public void assign( Key key, Object value ) {
+	public Object assign( Key key, Object value ) {
 		CastAttempt<Double> indexAtt = DoubleCaster.attempt( key.getName() );
 		if ( !indexAtt.wasSuccessful() ) {
 			throw new ExpressionException( String.format(
@@ -319,6 +319,7 @@ public class Array implements List<Object>, IType, IReferenceable {
 			}
 		}
 		wrapped.set( index - 1, value );
+		return value;
 	}
 
 	/**

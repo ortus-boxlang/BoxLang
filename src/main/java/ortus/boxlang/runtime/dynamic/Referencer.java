@@ -107,8 +107,7 @@ public class Referencer {
 	 * @return The value that was assigned
 	 */
 	public static Object set( Object object, Key key, Object value ) {
-		getReferenceable( object ).assign( key, value );
-		return value;
+		return getReferenceable( object ).assign( key, value );
 	}
 
 	/**

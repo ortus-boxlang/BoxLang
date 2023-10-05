@@ -226,6 +226,7 @@ public class JavaBoxpiler {
 		    Map.entry( "packageName", packageName ),
 		    Map.entry( "className", className )
 		);
+		System.out.println( javaCode );
 		return PlaceholderHelper.resolve( template, values );
 	}
 
@@ -244,17 +245,17 @@ public class JavaBoxpiler {
 				try {
 					result = parser.parseStatement( source );
 				} catch ( IOException e ) {
-					throw new ApplicationException( "Error compiing source", e );
+					throw new ApplicationException( "Error compiling source", e );
 				} catch ( IllegalStateException e ) {
 					try {
 						result = parser.parseExpression( source );
 					} catch ( IOException e2 ) {
-						throw new ApplicationException( "Error compiing source", e2 );
+						throw new ApplicationException( "Error compiling source", e2 );
 					}
 				}
 				result.getIssues().forEach( it -> System.out.println( it ) );
 				if ( !result.isCorrect() ) {
-					throw new ApplicationException( "Error compiing source. " + result.getIssues().get( 0 ).toString() );
+					throw new ApplicationException( "Error compiling source. " + result.getIssues().get( 0 ).toString() );
 				}
 
 				BoxLangTranspiler	transpiler	= new BoxLangTranspiler();
@@ -291,14 +292,12 @@ public class JavaBoxpiler {
 				try {
 					result = parser.parse( source, type );
 				} catch ( IOException e ) {
-					throw new ApplicationException( "Error compiing source", e );
+					throw new ApplicationException( "Error compiling source", e );
 				}
 
 				result.getIssues().forEach( it -> System.out.println( it ) );
-				if ( !result.isCorrect() )
-
-				{
-					throw new ApplicationException( "Error compiing source. " + result.getIssues().get( 0 ).toString() );
+				if ( !result.isCorrect() ) {
+					throw new ApplicationException( "Error compiling source. " + result.getIssues().get( 0 ).toString() );
 				}
 
 				BoxLangTranspiler	transpiler	= new BoxLangTranspiler();
@@ -327,7 +326,7 @@ public class JavaBoxpiler {
 				try {
 					result = parser.parse( path.toFile() );
 				} catch ( IOException e ) {
-					throw new ApplicationException( "Error compiing source", e );
+					throw new ApplicationException( "Error compiling source", e );
 				}
 				result.getIssues().forEach( it -> System.out.println( it ) );
 				assert result.isCorrect();
@@ -380,7 +379,7 @@ public class JavaBoxpiler {
 		try {
 			return ( Class<IBoxRunnable> ) classLoader.loadClass( fqn );
 		} catch ( ClassNotFoundException e ) {
-			throw new ApplicationException( "Error compiing source", e );
+			throw new ApplicationException( "Error compiling source", e );
 		}
 	}
 
@@ -388,7 +387,7 @@ public class JavaBoxpiler {
 		try {
 			return ( Class<IBoxRunnable> ) diskClassLoader.loadClass( fqn );
 		} catch ( ClassNotFoundException e ) {
-			throw new ApplicationException( "Error compiing source", e );
+			throw new ApplicationException( "Error compiling source", e );
 		}
 	}
 
@@ -418,7 +417,7 @@ public class JavaBoxpiler {
 			}
 			return sb.toString();
 		} catch ( java.security.NoSuchAlgorithmException e ) {
-			throw new ApplicationException( "Error compiing source", e );
+			throw new ApplicationException( "Error compiling source", e );
 		}
 	}
 

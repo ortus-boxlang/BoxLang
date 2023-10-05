@@ -95,7 +95,7 @@ public class Phase1TryCatch extends BoxTemplate {
 		    Key.of( "system" ),
 		    context.getDefaultAssignmentScope()
 		);
-		result.scope().put(
+		result.scope().assign(
 		    Key.of( "system" ),
 		    classLocator.load( context, "java:java.lang.System", imports )
 		);

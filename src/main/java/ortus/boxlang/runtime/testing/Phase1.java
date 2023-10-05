@@ -92,16 +92,16 @@ public class Phase1 extends BoxTemplate {
 		IScope			requestScope	= context.getScopeNearby( Key.of( "server" ) );
 
 		// Case sensitive set
-		variablesScope.put( Key.of( "system" ), classLocator.load( context, "java:java.lang.System", imports ) );
+		variablesScope.assign( Key.of( "system" ), classLocator.load( context, "java:java.lang.System", imports ) );
 
-		serverScope.put(
+		serverScope.assign(
 		    Key.of( "counter" ),
 		    Elvis.invoke( serverScope.get( Key.of( "counter" ) ), 0 )
 		);
 
-		requestScope.put( Key.of( "running" ), true );
+		requestScope.assign( Key.of( "running" ), true );
 
-		variablesScope.put(
+		variablesScope.assign(
 		    // Case insensitive set
 		    Key.of( "GREETING" ),
 

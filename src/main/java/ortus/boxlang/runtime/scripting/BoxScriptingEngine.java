@@ -20,6 +20,8 @@ package ortus.boxlang.runtime.scripting;
 import java.io.Reader;
 
 import javax.script.Bindings;
+import javax.script.Compilable;
+import javax.script.CompiledScript;
 import javax.script.ScriptContext;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineFactory;
@@ -29,8 +31,9 @@ import javax.script.SimpleBindings;
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.ScriptingBoxContext;
+import ortus.boxlang.runtime.runnables.RunnableLoader;
 
-public class BoxScriptingEngine implements ScriptEngine {
+public class BoxScriptingEngine implements ScriptEngine, Compilable {
 
     private IBoxContext         boxContext;
     private BoxScriptingFactory boxScriptingFactory;
@@ -109,5 +112,20 @@ public class BoxScriptingEngine implements ScriptEngine {
     public void setBindings( Bindings bindings, int scope ) {
         scriptContext.setBindings( bindings, scope );
 
+    }
+
+    @Override
+    public CompiledScript compile( String script ) throws ScriptException {
+        return new BoxCompiledScript( this, RunnableLoader.getInstance().loadStatement( script ) );
+    }
+
+    @Override
+    public CompiledScript compile( Reader script ) throws ScriptException {
+        return new BoxCompiledScript( this, RunnableLoader.getInstance().loadStatement( script.toString() ) );
+    }
+
+    // get boxcontext
+    public IBoxContext getBoxContext() {
+        return boxContext;
     }
 }

@@ -1032,7 +1032,7 @@ public class DynamicObject implements IReferenceable {
 	 * @param value The value to assign
 	 */
 	@SuppressWarnings( "unchecked" )
-	public void assign( Key name, Object value ) {
+	public Object assign( Key name, Object value ) {
 
 		if ( hasInstance() && getTargetInstance() instanceof IReferenceable ) {
 			( ( IReferenceable ) getTargetInstance() ).assign( name, value );
@@ -1068,12 +1068,12 @@ public class DynamicObject implements IReferenceable {
 				) );
 			}
 			arr[ index - 1 ] = value;
-			return;
+			return value;
 		}
 		if ( getTargetInstance() instanceof Map ) {
 			// If it's a raw Map, then we use a string key
 			( ( Map<Object, Object> ) getTargetInstance() ).put( name.getName(), value );
-			return;
+			return value;
 		}
 
 		try {
@@ -1081,9 +1081,10 @@ public class DynamicObject implements IReferenceable {
 		} catch ( Throwable e ) {
 			// CFML ignores Throwable.foo = "bar"
 			if ( getTargetInstance() instanceof Throwable ) {
-				return;
+				return value;
 			}
 			throw e;
 		}
+		return value;
 	}
 }

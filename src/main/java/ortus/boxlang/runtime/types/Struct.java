@@ -465,8 +465,9 @@ public class Struct implements Map<Key, Object>, IType, IReferenceable {
 	 * @param value The value to assign
 	 */
 	@Override
-	public void assign( Key key, Object value ) {
+	public Object assign( Key key, Object value ) {
 		put( key, value );
+		return value;
 	}
 
 	/**

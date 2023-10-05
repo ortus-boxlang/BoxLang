@@ -82,12 +82,12 @@ public class Phase2Lambda extends BoxTemplate {
         IScope       variablesScope = context.getScopeNearby( Key.of( "variables" ) );
 
         // Create instance of Lambda and set in the variables scope
-        variablesScope.put(
+        variablesScope.assign(
             Key.of( "greet" ),
             Phase2Lambda$lambda1.getInstance()
         );
 
-        variablesScope.put(
+        variablesScope.assign(
             Key.of( "out" ),
             Referencer.get(
                 classLocator.load( context, "java:java.lang.System", imports ),

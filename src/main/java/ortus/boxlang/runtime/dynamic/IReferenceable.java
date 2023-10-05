@@ -66,13 +66,13 @@ public interface IReferenceable {
 	public Object dereferenceAndInvoke( IBoxContext context, Key name, Map<Key, Object> namedArguments, Boolean safe );
 
 	/**
-	 * Get a scope from the context. If not found, the parent context is asked.
-	 * Search all konwn scopes
+	 * Assign a value to a key in this object
 	 *
 	 * @param name  The name of the scope to get
 	 * @param value The value to assign to the scope
 	 *
+	 * @return The value that was assigned
 	 */
-	public void assign( Key name, Object value );
+	public Object assign( Key name, Object value );
 
 }

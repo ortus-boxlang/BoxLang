@@ -142,12 +142,12 @@ public class Phase2UDF$greet extends UDF {
 	public Object _invoke( FunctionBoxContext context ) {
 
 		// Create local.race and arguments.race to show scope lookup
-		context.getScopeNearby( LocalScope.name ).put(
+		context.getScopeNearby( LocalScope.name ).assign(
 		    Key.of( "race" ),
 		    "Local scope value"
 		);
 
-		context.getScopeNearby( ArgumentsScope.name ).put(
+		context.getScopeNearby( ArgumentsScope.name ).assign(
 		    Key.of( "race" ),
 		    "Arguments scope value"
 		);

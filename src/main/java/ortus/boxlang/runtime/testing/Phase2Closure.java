@@ -86,18 +86,18 @@ public class Phase2Closure extends BoxTemplate {
         ClassLocator classLocator   = ClassLocator.getInstance();
         IScope       variablesScope = context.getScopeNearby( Key.of( "variables" ) );
 
-        variablesScope.put(
+        variablesScope.assign(
             Key.of( "outside" ),
             "Outside scope value"
         );
 
         // Create instance of Closure and set in the variables scope
-        variablesScope.put(
+        variablesScope.assign(
             Key.of( "greet" ),
             new Phase2Closure$closure1( context )
         );
 
-        variablesScope.put(
+        variablesScope.assign(
             Key.of( "out" ),
             Referencer.get(
                 classLocator.load( context, "java:java.lang.System", imports ),

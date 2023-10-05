@@ -91,7 +91,7 @@ public class Phase2UDF extends BoxTemplate {
 		// Create instance of UDF and register in the variables scope
 		context.registerUDF( Phase2UDF$greet.getInstance() );
 
-		variablesScope.put(
+		variablesScope.assign(
 		    Key.of( "out" ),
 		    Referencer.get(
 		        classLocator.load( context, "java:java.lang.System", imports ),
