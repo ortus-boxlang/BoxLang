@@ -99,7 +99,7 @@ public class Phase2Lambda extends BoxTemplate {
         Referencer.getAndInvoke(
             context,
             // Object
-            variablesScope.get( Key.of( "out" ) ),
+            variablesScope.dereference( Key.of( "out" ), false ),
             // Method
             Key.of( "println" ),
             // Arguments
@@ -113,7 +113,7 @@ public class Phase2Lambda extends BoxTemplate {
         Referencer.getAndInvoke(
             context,
             // Object
-            variablesScope.get( Key.of( "out" ) ),
+            variablesScope.dereference( Key.of( "out" ), false ),
             // Method
             Key.of( "println" ),
             // Arguments

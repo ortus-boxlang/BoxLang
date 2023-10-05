@@ -96,7 +96,7 @@ public class Phase1 extends BoxTemplate {
 
 		serverScope.assign(
 		    Key.of( "counter" ),
-		    Elvis.invoke( serverScope.get( Key.of( "counter" ) ), 0 )
+		    Elvis.invoke( serverScope.dereference( Key.of( "counter" ), true ), 0 )
 		);
 
 		requestScope.assign( Key.of( "running" ), true );
@@ -110,13 +110,13 @@ public class Phase1 extends BoxTemplate {
 		        .load( context, "java:java.lang.String", imports )
 		        .invokeConstructor( new Object[] { "Hello" } ) );
 
-		if ( EqualsEquals.invoke( variablesScope.get( Key.of( "GREETING" ) ), "Hello" ) ) {
+		if ( EqualsEquals.invoke( variablesScope.dereference( Key.of( "GREETING" ), false ), "Hello" ) ) {
 
 			Referencer.getAndInvoke(
 			    context,
 			    // Object
 			    Referencer.get(
-			        variablesScope.get( Key.of( "SYSTEM" ) ),
+			        variablesScope.dereference( Key.of( "SYSTEM" ), false ),
 			        Key.of( "out" ),
 			        false ),
 
@@ -128,7 +128,7 @@ public class Phase1 extends BoxTemplate {
 
 			        Concat.invoke(
 			            context.scopeFindNearby( Key.of( "GREETING" ), null ).value(),
-			            Concat.invoke( " world ", serverScope.get( Key.of( "counter" ) ) )
+			            Concat.invoke( " world ", serverScope.dereference( Key.of( "counter" ), false ) )
 			        )
 
 				},

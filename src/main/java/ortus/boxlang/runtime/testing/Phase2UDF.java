@@ -103,7 +103,7 @@ public class Phase2UDF extends BoxTemplate {
 		Referencer.getAndInvoke(
 		    context,
 		    // Object
-		    variablesScope.get( Key.of( "out" ) ),
+		    variablesScope.dereference( Key.of( "out" ), false ),
 		    // Method
 		    Key.of( "println" ),
 		    // Arguments
@@ -117,7 +117,7 @@ public class Phase2UDF extends BoxTemplate {
 		Referencer.getAndInvoke(
 		    context,
 		    // Object
-		    variablesScope.get( Key.of( "out" ) ),
+		    variablesScope.dereference( Key.of( "out" ), false ),
 		    // Method
 		    Key.of( "println" ),
 		    // Arguments

@@ -109,7 +109,7 @@ public class Phase1TryCatch extends BoxTemplate {
 			    context,
 			    // Object
 			    Referencer.get(
-			        variablesScope.get( Key.of( "system" ) ),
+			        variablesScope.dereference( Key.of( "system" ), false ),
 			        Key.of( "out" ),
 			        false
 			    ),
@@ -134,7 +134,7 @@ public class Phase1TryCatch extends BoxTemplate {
 			    context,
 			    // Object
 			    Referencer.get(
-			        variablesScope.get( Key.of( "system" ) ),
+			        variablesScope.dereference( Key.of( "system" ), false ),
 			        Key.of( "out" ),
 			        false
 			    ),
@@ -159,7 +159,7 @@ public class Phase1TryCatch extends BoxTemplate {
 				    context,
 				    // Object
 				    Referencer.get(
-				        variablesScope.get( Key.of( "system" ) ),
+				        variablesScope.dereference( Key.of( "system" ), false ),
 				        Key.of( "out" ),
 				        false
 				    ),
@@ -180,7 +180,7 @@ public class Phase1TryCatch extends BoxTemplate {
 				    context,
 				    // Object
 				    Referencer.get(
-				        variablesScope.get( Key.of( "system" ) ),
+				        variablesScope.dereference( Key.of( "system" ), false ),
 				        Key.of( "out" ),
 				        false
 				    ),

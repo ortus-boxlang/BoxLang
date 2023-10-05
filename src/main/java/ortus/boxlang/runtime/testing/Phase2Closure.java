@@ -109,7 +109,7 @@ public class Phase2Closure extends BoxTemplate {
         Referencer.getAndInvoke(
             context,
             // Object
-            variablesScope.get( Key.of( "out" ) ),
+            variablesScope.dereference( Key.of( "out" ), false ),
             // Method
             Key.of( "println" ),
             // Arguments
@@ -123,7 +123,7 @@ public class Phase2Closure extends BoxTemplate {
         Referencer.getAndInvoke(
             context,
             // Object
-            variablesScope.get( Key.of( "out" ) ),
+            variablesScope.dereference( Key.of( "out" ), false ),
             // Method
             Key.of( "println" ),
             // Arguments
