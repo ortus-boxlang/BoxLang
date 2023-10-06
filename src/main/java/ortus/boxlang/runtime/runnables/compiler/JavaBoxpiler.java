@@ -141,7 +141,7 @@ public class JavaBoxpiler {
 		import ortus.boxlang.runtime.loader.ImportDefinition;
 		import ortus.boxlang.runtime.operators.*;
 		import ortus.boxlang.runtime.scopes.Key;
-		import ortus.boxlang.runtime.scopes.IScope;
+		import ortus.boxlang.runtime.scopes.*;
 		import ortus.boxlang.runtime.dynamic.casters.*;
 
 		import java.nio.file.Path;
