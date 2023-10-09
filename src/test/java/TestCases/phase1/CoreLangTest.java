@@ -226,4 +226,306 @@ public class CoreLangTest {
 
 	}
 
+	@DisplayName( "do while loop" )
+	@Test
+	public void testDoWhileLoop() {
+
+		// Don't know what " no viable alternative at input" mwans
+		instance.executeSource(
+		    """
+		      do {
+		    result = 1;
+		      } while( result < "10"  ) {
+		      	// while logic
+		    result = variables.result + 1;
+		      }
+		      """,
+		    context );
+		assertThat( variables.dereference( result, false ) ).isEqualTo( 10 );
+
+	}
+
+	@DisplayName( "break while" )
+	@Test
+	public void testBreakWhile() {
+
+		instance.executeSource(
+		    """
+		    result = 1;
+		    while( true ) {
+		        result = result + 1;
+		    	if( result > "10" ) {
+		    		break;
+		    	}
+		    }
+		    """,
+		    context );
+		assertThat( variables.dereference( result, false ) ).isEqualTo( 11 );
+
+	}
+
+	@DisplayName( "break do while" )
+	@Test
+	public void testBreakDoWhile() {
+
+		instance.executeSource(
+		    """
+		        do {
+		      	result = 1;
+		        } while( true ) {
+		      	result = variables.result + 1;
+		    if( result > "10" ) {
+		    	break;
+		    }
+		        }
+		        """,
+		    context );
+		assertThat( variables.dereference( result, false ) ).isEqualTo( 11 );
+
+	}
+
+	@DisplayName( "break sentinel" )
+	@Test
+	public void testBreakSentinel() {
+
+		instance.executeSource(
+		    """
+		       result=0
+		    i=0
+		       for( i=0; i==i; i++ ) {
+		       	result++
+		     if( i > 10 ) {
+		     	break;
+		     }
+		       }
+		       """,
+		    context );
+		assertThat( variables.dereference( result, false ) ).isEqualTo( 12 );
+
+	}
+
+	@DisplayName( "while continue" )
+	@Test
+	public void testWhileContinue() {
+
+		instance.executeSource(
+		    """
+		          result=0
+		       while( true ) {
+		    	result++
+		    	if( result < 10 ) {
+		    		continue;
+		    	}
+		    	break;
+		    }
+		          """,
+		    context );
+		assertThat( variables.dereference( result, false ) ).isEqualTo( 10 );
+
+	}
+
+	@DisplayName( "String parsing 1" )
+	@Test
+	public void testStringParsing1() {
+
+		instance.executeSource(
+		    """
+		    // Strings can use single quotes OR double quotes, so long as the “bookends” match.
+		    test1 = "foo" == 'foo'
+		      """,
+		    context );
+		assertThat( variables.dereference( Key.of( "test1" ), false ) ).isEqualTo( true );
+
+	}
+
+	@DisplayName( "String parsing 2" )
+	@Test
+	public void testStringParsing2() {
+
+		instance.executeSource(
+		    """
+		    // A double quote-encased string doesn’t need to escape single quotes inside and vice versa
+		    test2 = "foo'bar"
+		    test3 = 'foo"bar'
+		      """,
+		    context );
+
+		assertThat( variables.dereference( Key.of( "test2" ), false ) ).isEqualTo( "foo'bar" );
+		assertThat( variables.dereference( Key.of( "test3" ), false ) ).isEqualTo( "foo\"bar" );
+
+	}
+
+	@DisplayName( "String parsing 3" )
+	@Test
+	public void testStringParsing3() {
+
+		instance.executeSource(
+		    """
+		    // To escape a quote char, double it.
+		    test4 = "Brad ""the guy"" Wood"
+		    test5 = 'Luis ''the man'' Majano'
+		      """,
+		    context );
+
+		assertThat( variables.dereference( Key.of( "test4" ), false ) ).isEqualTo( "Brad \"the guy\" Wood" );
+		assertThat( variables.dereference( Key.of( "test5" ), false ) ).isEqualTo( "Luis 'the man' Majano" );
+	}
+
+	@DisplayName( "String parsing 4" )
+	@Test
+	public void testStringParsing4() {
+
+		instance.executeSource(
+		    """
+		    // Expressions are always interpolated inside string literals in CFScript by using a hash/pound sign (`#`) such as
+		    timeVar = "12:00 PM"
+		    test6 = "Time is: #timeVar#"
+		    test7 ="Time is: " & timeVar
+		     """,
+		    context );
+		assertThat( variables.dereference( Key.of( "test6" ), false ) ).isEqualTo( "Time is: 12:00 PM" );
+		assertThat( variables.dereference( Key.of( "test7" ), false ) ).isEqualTo( "Time is: 12:00 PM" );
+
+	}
+
+	@DisplayName( "String parsing 5" )
+	@Test
+	public void testStringParsing5() {
+
+		instance.executeSource(
+		    """
+		    // Pound signs in a string are escaped by doubling them
+		    test8 = "I have locker ##20"
+		    // Also "I have locker #20" should throw a parsing syntax exception.
+
+		     """,
+		    context );
+		assertThat( variables.dereference( Key.of( "test8" ), false ) ).isEqualTo( "I have locker #20" );
+
+	}
+
+	@DisplayName( "String parsing unclosed pound" )
+	@Test
+	public void testStringParsingUnclosedPount() {
+
+		Throwable t = assertThrows( ApplicationException.class, () -> instance.executeSource(
+		    """
+		    	// should throw a parsing syntax exception.
+		    resut = "I have locker #20";
+		    	""",
+		    context
+		)
+		);
+		assertThat( t.getMessage() ).contains( "#" );
+
+	}
+
+	@DisplayName( "String parsing 6" )
+	@Test
+	public void testStringParsing6() {
+
+		instance.executeSource(
+		    """
+		     // On an unrelated note, pound signs around CFScript expressions are superfluous and should be ignored by the parser.
+		    timeVar = "12:00 PM"
+		    test9 = "Time is: " & #timeVar#
+		    result = "BoxLang"
+		    test10 = #result#;
+		      """,
+		    context );
+
+		assertThat( variables.dereference( Key.of( "test9" ), false ) ).isEqualTo( "Time is: 12:00 PM" );
+		assertThat( variables.dereference( Key.of( "test10" ), false ) ).isEqualTo( "BoxLang" );
+
+	}
+
+	@DisplayName( "String parsing expression in pounds" )
+	@Test
+	public void testStringParsingExpressionInPounds() {
+
+		// Needs to use Concat operator, not Java's `+`
+		instance.executeSource(
+		    """
+		    result = "Box#5+6#Lang"
+		      """,
+		    context );
+
+		assertThat( variables.dereference( result, false ) ).isEqualTo( "Box11Lang" );
+
+	}
+
+	@DisplayName( "switch" )
+	@Test
+	public void testSwitch() {
+
+		instance.executeSource(
+		    """
+		      	result = ""
+		      variables.foo = "bar";
+
+		      switch( "12" ) {
+		      case "brad":
+		      	// case 1 logic
+		      	result = "case1"
+		      	break;
+		      case 42: {
+		      	// case 2 logic
+		      	result = "case2"
+		      	break;
+		      }
+		      case 5+7:
+		      	// case 3 logic
+		      	result = "case3"
+		      case variables.foo:
+		      	// case 4 logic
+		      	result = "case4"
+		      	break;
+		      default:
+		      	// default case logic
+		    result = "case default"
+		      }
+		          """,
+		    context );
+
+		assertThat( variables.dereference( result, false ) ).isEqualTo( "case4" );
+
+	}
+
+	@DisplayName( "switch default" )
+	@Test
+	public void testSwitchDefault() {
+
+		instance.executeSource(
+		    """
+		      	result = ""
+		      variables.foo = "bar";
+
+		      switch( "sdfsdfsdf" ) {
+		      case "brad":
+		      	// case 1 logic
+		      	result = "case1"
+		      	break;
+		      case 42: {
+		      	// case 2 logic
+		      	result = "case2"
+		      	break;
+		      }
+		      case 5+7:
+		      	// case 3 logic
+		      	result = "case3"
+		      case variables.foo:
+		      	// case 4 logic
+		      	result = "case4"
+		      	break;
+		      default:
+		      	// default case logic
+		    result = "case default"
+		      }
+		          """,
+		    context );
+
+		assertThat( variables.dereference( result, false ) ).isEqualTo( "case default" );
+
+	}
+
 }
