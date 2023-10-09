@@ -387,4 +387,48 @@ public class OperatorsTest {
 
 	}
 
+	@DisplayName( "parens" )
+	@Test
+	public void testParens() {
+
+		Object result = instance.executeStatement( "1 + ( 2 * 3 )", context );
+		assertThat( result ).isEqualTo( 7 );
+
+		result = instance.executeStatement( "( 1 + 2 ) * 3", context );
+		assertThat( result ).isEqualTo( 9 );
+
+		result = instance.executeStatement( "( 1 + 2 * 3 )", context );
+		assertThat( result ).isEqualTo( 7 );
+
+	}
+
+	@DisplayName( "Order of operations" )
+	@Test
+	public void testOrderOfOps() {
+
+		// ^ comes first
+		Object result = instance.executeStatement( "1+2-3*4^5", context );
+		assertThat( result ).isEqualTo( -3069 );
+
+		result = instance.executeStatement( "2+3*4", context );
+		assertThat( result ).isEqualTo( 14 );
+
+		result = instance.executeStatement( "2-3+4", context );
+		assertThat( result ).isEqualTo( 3 );
+
+		result = instance.executeStatement( "2+3/4", context );
+		assertThat( result ).isEqualTo( 2.75 );
+
+		result = instance.executeStatement( "2-3/4", context );
+		assertThat( result ).isEqualTo( 1.25 );
+
+		result = instance.executeStatement( "2*2%3", context );
+		assertThat( result ).isEqualTo( 1 );
+
+		// ++ -- doesn't work
+		result = instance.executeStatement( "++5^--6", context );
+		assertThat( result ).isEqualTo( 7776 );
+
+	}
+
 }

@@ -39,7 +39,7 @@ import ortus.boxlang.runtime.types.Function.Access;
 import ortus.boxlang.runtime.types.Function.Argument;
 import ortus.boxlang.runtime.types.SampleUDF;
 
-public class ObjectReferenceAssignment {
+public class ObjectReferenceAssignmentTest {
 
 	static BoxRuntime	instance;
 	static IBoxContext	context;
