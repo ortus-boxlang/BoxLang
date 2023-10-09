@@ -337,4 +337,45 @@ public class FunctionTest {
 		assertThrows( Throwable.class, () -> badUdf.invoke( context ) );
 	}
 
+	@DisplayName( "can get UDF metadata" )
+	@Test
+	void testCanGetUDFMetadata() {
+		UDF		udf		= new SampleUDF(
+		    UDF.Access.PRIVATE,
+		    Key.of( "foo" ),
+		    "String",
+		    new Argument[] {
+		        new Function.Argument( true, "String", Key.of( "param1" ), null, "First Name" ),
+		        new Function.Argument( false, "any", Key.of( "param2" ), "wood", null )
+		    },
+		    "Brad's func",
+		    false,
+		    "42"
+		);
+		Struct	meta	= udf.getMetaData();
+		assertThat( meta.dereference( Key.of( "name" ), false ) ).isEqualTo( Key.of( "foo" ) );
+		assertThat( meta.dereference( Key.of( "returnType" ), false ) ).isEqualTo( "String" );
+		assertThat( meta.dereference( Key.of( "output" ), false ) ).isEqualTo( false );
+		assertThat( meta.dereference( Key.of( "hint" ), false ) ).isEqualTo( "Brad's func" );
+		assertThat( meta.dereference( Key.of( "access" ), false ) ).isEqualTo( "private" );
+
+		Array arguments = ( Array ) meta.dereference( Key.of( "parameters" ), false );
+		assertThat( arguments.size() ).isEqualTo( 2 );
+
+		Struct arg1 = ( Struct ) arguments.dereference( Key.of( "1" ), false );
+		assertThat( arg1.dereference( Key.of( "name" ), false ) ).isEqualTo( Key.of( "param1" ) );
+		assertThat( arg1.dereference( Key.of( "required" ), false ) ).isEqualTo( true );
+		assertThat( arg1.dereference( Key.of( "type" ), false ) ).isEqualTo( "String" );
+		assertThat( arg1.dereference( Key.of( "default" ), false ) ).isEqualTo( null );
+		assertThat( arg1.dereference( Key.of( "hint" ), false ) ).isEqualTo( "First Name" );
+
+		Struct arg2 = ( Struct ) arguments.dereference( Key.of( "2" ), false );
+		assertThat( arg2.dereference( Key.of( "name" ), false ) ).isEqualTo( Key.of( "param2" ) );
+		assertThat( arg2.dereference( Key.of( "required" ), false ) ).isEqualTo( false );
+		assertThat( arg2.dereference( Key.of( "type" ), false ) ).isEqualTo( "any" );
+		assertThat( arg2.dereference( Key.of( "default" ), false ) ).isEqualTo( "wood" );
+		assertThat( arg2.dereference( Key.of( "hint" ), false ) ).isEqualTo( null );
+
+	}
+
 }

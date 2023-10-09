@@ -37,6 +37,7 @@ public class SampleClosure extends Closure {
 	private String				hint		= "";
 	private boolean				output		= true;
 	private Map<Key, Object>	metadata	= new HashMap<Key, Object>();
+	private Access				access		= Access.PUBLIC;
 
 	public Key getName() {
 		return name;
@@ -58,8 +59,12 @@ public class SampleClosure extends Closure {
 		return output;
 	}
 
-	public Map<Key, Object> getMetadata() {
+	public Map<Key, Object> getAdditionalMetadata() {
 		return metadata;
+	}
+
+	public Access getAccess() {
+		return access;
 	}
 
 	@Override

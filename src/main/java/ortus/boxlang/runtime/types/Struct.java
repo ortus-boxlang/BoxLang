@@ -480,14 +480,14 @@ public class Struct implements Map<Key, Object>, IType, IReferenceable {
 	 */
 	@Override
 	public Object dereference( Key key, Boolean safe ) {
-		Object value = get( key );
+		Object value = getRaw( key );
 		if ( value == null && !safe ) {
 			throw new KeyNotFoundException(
 			    // TODO: Limit the number of keys. There could be thousands!
 			    String.format( "The key %s was not found in the struct. Valid keys are (%s)", key.getName(), getKeys() ), this
 			);
 		}
-		return value;
+		return unWrapNull( value );
 	}
 
 	/**

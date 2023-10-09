@@ -14,14 +14,18 @@
  */
 package ortus.boxlang.transpiler.transformer.statement;
 
+import java.util.Map;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.github.javaparser.ParseResult;
 import com.github.javaparser.ast.CompilationUnit;
 import com.github.javaparser.ast.Node;
 import com.github.javaparser.ast.body.MethodDeclaration;
 import com.github.javaparser.ast.stmt.BlockStmt;
 import com.github.javaparser.ast.stmt.Statement;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+
 import ortus.boxlang.ast.BoxNode;
 import ortus.boxlang.ast.BoxStatement;
 import ortus.boxlang.ast.Source;
@@ -31,8 +35,6 @@ import ortus.boxlang.runtime.types.exceptions.ApplicationException;
 import ortus.boxlang.transpiler.BoxLangTranspiler;
 import ortus.boxlang.transpiler.transformer.AbstractTransformer;
 import ortus.boxlang.transpiler.transformer.TransformerContext;
-
-import java.util.Map;
 
 /**
  * Transform a Function Declaration in the equivalent Java Parser AST nodes
@@ -99,7 +101,7 @@ public class BoxFunctionDeclarationTransformer extends AbstractTransformer {
 				return "";
 			}
 
-   			public  Map<Key, Object> getMetadata() {
+   			public  Map<Key, Object> getAdditionalMetadata() {
    				return null;
    			}
 

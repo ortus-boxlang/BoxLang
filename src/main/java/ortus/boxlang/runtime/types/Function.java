@@ -303,11 +303,18 @@ public abstract class Function implements IType, IFunctionRunnable {
 	public abstract boolean isOutput();
 
 	/**
-	 * Get the metadata of the function.
+	 * Get any ad-hoc metadata keys that were declared for this function, not part of the standard function definition.
 	 *
 	 * @return function metadata
 	 */
-	public abstract Map<Key, Object> getMetadata();
+	public abstract Map<Key, Object> getAdditionalMetadata();
+
+	/**
+	 * Get access modifier of the function
+	 *
+	 * @return function access modifier
+	 */
+	public abstract Access getAccess();
 
 	/**
 	 * Implement this method to invoke the actual function logic
@@ -339,6 +346,38 @@ public abstract class Function implements IType, IFunctionRunnable {
 	 * Get the instance of the runnable class that declared this function
 	 */
 	public abstract IBoxRunnable getDeclaringRunnable();
+
+	/**
+	 * Get the combined metadata for this function and all it's parameters
+	 *
+	 * @return The metadata as a struct
+	 */
+	public Struct getMetaData() {
+		Struct meta = new Struct();
+		if ( getAdditionalMetadata() != null ) {
+			meta.putAll( getAdditionalMetadata() );
+		}
+		meta.put( "name", getName() );
+		meta.put( "returnType", getReturnType() );
+		meta.put( "hint", getHint() );
+		meta.put( "output", isOutput() );
+		meta.put( "access", getAccess().toString().toLowerCase() );
+		Array params = new Array();
+		for ( Argument argument : getArguments() ) {
+			Struct arg = new Struct();
+			arg.put( "name", argument.name() );
+			arg.put( "required", argument.required() );
+			arg.put( "type", argument.type() );
+			arg.put( "default", argument.defaultValue() );
+			arg.put( "hint", argument.hint() );
+			if ( argument.metadata() != null ) {
+				arg.putAll( argument.metadata() );
+			}
+			params.add( arg );
+		}
+		meta.put( "parameters", params );
+		return meta;
+	}
 
 	/**
 	 * Represents an argument to a function

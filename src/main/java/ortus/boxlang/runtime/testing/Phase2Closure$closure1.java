@@ -72,6 +72,11 @@ public class Phase2Closure$closure1 extends Closure {
 	private final static Map<Key, Object>	metadata			= new HashMap<Key, Object>();
 
 	/**
+	 * The access modifier of the function
+	 */
+	private Access							access				= Access.PUBLIC;
+
+	/**
 	 * The Box Runnable that declared this function
 	 */
 	private static final IBoxRunnable		declaringRunnable	= Phase2Closure.getInstance();
@@ -97,8 +102,12 @@ public class Phase2Closure$closure1 extends Closure {
 		return output;
 	}
 
-	public Map<Key, Object> getMetadata() {
+	public Map<Key, Object> getAdditionalMetadata() {
 		return metadata;
+	}
+
+	public Access getAccess() {
+		return access;
 	}
 
 	public Phase2Closure$closure1( IBoxContext declaringContext ) {

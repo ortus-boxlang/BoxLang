@@ -71,6 +71,11 @@ public class Phase2Lambda$lambda1 extends Lambda {
 	private static final Map<Key, Object>	metadata			= new HashMap<Key, Object>();
 
 	/**
+	 * The access modifier of the function
+	 */
+	private Access							access				= Access.PUBLIC;
+
+	/**
 	 * The Box Runnable that declared this function
 	 */
 	private static final IBoxRunnable		declaringRunnable	= Phase2Lambda.getInstance();
@@ -96,8 +101,12 @@ public class Phase2Lambda$lambda1 extends Lambda {
 		return output;
 	}
 
-	public Map<Key, Object> getMetadata() {
+	public Map<Key, Object> getAdditionalMetadata() {
 		return metadata;
+	}
+
+	public Access getAccess() {
+		return access;
 	}
 
 	private Phase2Lambda$lambda1() {

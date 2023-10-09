@@ -104,7 +104,7 @@ public class Phase2UDF$greet extends UDF {
 		return output;
 	}
 
-	public Map<Key, Object> getMetadata() {
+	public Map<Key, Object> getAdditionalMetadata() {
 		return metadata;
 	}
 

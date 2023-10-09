@@ -30,6 +30,4 @@ public abstract class UDF extends Function {
 		super();
 	}
 
-	public abstract Access getAccess();
-
 }
