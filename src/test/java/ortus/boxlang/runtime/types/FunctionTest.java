@@ -358,6 +358,10 @@ public class FunctionTest {
 		assertThat( meta.dereference( Key.of( "output" ), false ) ).isEqualTo( false );
 		assertThat( meta.dereference( Key.of( "hint" ), false ) ).isEqualTo( "Brad's func" );
 		assertThat( meta.dereference( Key.of( "access" ), false ) ).isEqualTo( "private" );
+		assertThat( meta.dereference( Key.of( "closure" ), false ) ).isEqualTo( false );
+		assertThat( meta.dereference( Key.of( "ANONYMOUSCLOSURE" ), false ) ).isEqualTo( false );
+		assertThat( meta.dereference( Key.of( "lambda" ), false ) ).isEqualTo( false );
+		assertThat( meta.dereference( Key.of( "ANONYMOUSLAMBDA" ), false ) ).isEqualTo( false );
 
 		Array arguments = ( Array ) meta.dereference( Key.of( "parameters" ), false );
 		assertThat( arguments.size() ).isEqualTo( 2 );

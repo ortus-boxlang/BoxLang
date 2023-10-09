@@ -376,6 +376,23 @@ public abstract class Function implements IType, IFunctionRunnable {
 			params.add( arg );
 		}
 		meta.put( "parameters", params );
+
+		// polymorphsism is a pain due to storing the metdata as static values on the class, so we'll just add the closure and lambda checks here
+		// Adobe and Lucee only set the following flags when they are true, but that's incosistent, so we will always set them.
+
+		boolean isClosure = this instanceof Closure;
+		// Adobe and Lucee have this
+		meta.put( "closure", isClosure );
+		// Adobe and Lucee have this
+		meta.put( "ANONYMOUSCLOSURE", isClosure );
+
+		// Adobe and Lucee don't have "lambdas" in the same way we have where the actual implementation is a pure function
+		boolean isLambda = this instanceof Lambda;
+		// Neither Adobe nor Lucee have this, but we're setting it for consistency
+		meta.put( "lambda", isLambda );
+		// Luceehas this, but it's true for fat arrow functions. We're setting it true only for skinny arrow (true lambda) functions
+		meta.put( "ANONYMOUSLAMBDA", isLambda );
+
 		return meta;
 	}
 

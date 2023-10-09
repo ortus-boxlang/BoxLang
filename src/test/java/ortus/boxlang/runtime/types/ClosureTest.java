@@ -56,8 +56,8 @@ public class ClosureTest {
 		    new Function.Argument( true, "String", lastName, "wood", "Last Name" ),
 		    new Function.Argument( false, "String", age, 43 )
 		};
-		Closure		Closure		= new SampleClosure( args, new ScriptingBoxContext(), "Brad" );
-		IScope		argscope	= Closure.createArgumentsScope();
+		Closure		closure		= new SampleClosure( args, new ScriptingBoxContext(), "Brad" );
+		IScope		argscope	= closure.createArgumentsScope();
 
 		assertThat( argscope.get( firstName ) ).isEqualTo( "brad" );
 		assertThat( argscope.get( lastName ) ).isEqualTo( "wood" );
@@ -74,8 +74,8 @@ public class ClosureTest {
 		    new Function.Argument( true, "String", firstName, "brad", "First Name" ),
 		    new Function.Argument( true, "String", lastName, "wood", "Last Name" )
 		};
-		Closure		Closure		= new SampleClosure( args, new ScriptingBoxContext(), "Brad" );
-		IScope		argscope	= Closure.createArgumentsScope( new Object[] { "Luis", "Majano", "Extra" } );
+		Closure		closure		= new SampleClosure( args, new ScriptingBoxContext(), "Brad" );
+		IScope		argscope	= closure.createArgumentsScope( new Object[] { "Luis", "Majano", "Extra" } );
 
 		assertThat( argscope.get( firstName ) ).isEqualTo( "Luis" );
 		assertThat( argscope.get( lastName ) ).isEqualTo( "Majano" );
@@ -92,8 +92,8 @@ public class ClosureTest {
 		    new Function.Argument( true, "String", firstName, "brad", "First Name" ),
 		    new Function.Argument( true, "String", lastName, "wood", "Last Name" )
 		};
-		Closure		Closure		= new SampleClosure( args, new ScriptingBoxContext(), "Brad" );
-		IScope		argscope	= Closure.createArgumentsScope( new Object[] { "Luis" } );
+		Closure		closure		= new SampleClosure( args, new ScriptingBoxContext(), "Brad" );
+		IScope		argscope	= closure.createArgumentsScope( new Object[] { "Luis" } );
 
 		assertThat( argscope.get( firstName ) ).isEqualTo( "Luis" );
 		assertThat( argscope.get( lastName ) ).isEqualTo( "wood" );
@@ -110,8 +110,8 @@ public class ClosureTest {
 		    new Function.Argument( true, "String", firstName, "brad", "First Name" ),
 		    new Function.Argument( true, "String", lastName, "wood", "Last Name" )
 		};
-		Closure		Closure		= new SampleClosure( args, new ScriptingBoxContext(), "Brad" );
-		IScope		argscope	= Closure
+		Closure		closure		= new SampleClosure( args, new ScriptingBoxContext(), "Brad" );
+		IScope		argscope	= closure
 		    .createArgumentsScope( Map.of( firstName, "Luis", lastName, "Majano", extra, "Gavin" ) );
 
 		assertThat( argscope.get( firstName ) ).isEqualTo( "Luis" );
@@ -127,16 +127,16 @@ public class ClosureTest {
 		Argument[]	args	= new Argument[] {
 		    new Function.Argument( true, "numeric", age, "sdf", "Age" )
 		};
-		Closure		Closure	= new SampleClosure( args, new ScriptingBoxContext(), "Brad" );
+		Closure		closure	= new SampleClosure( args, new ScriptingBoxContext(), "Brad" );
 
 		// Explicit named arg
-		assertThrows( Throwable.class, () -> Closure.createArgumentsScope( Map.of( age, "sdf" ) ) );
+		assertThrows( Throwable.class, () -> closure.createArgumentsScope( Map.of( age, "sdf" ) ) );
 		// Explicit positional arg
-		assertThrows( Throwable.class, () -> Closure.createArgumentsScope( new Object[] { "sdf" } ) );
+		assertThrows( Throwable.class, () -> closure.createArgumentsScope( new Object[] { "sdf" } ) );
 		// Default postiional arg
-		assertThrows( Throwable.class, () -> Closure.createArgumentsScope() );
+		assertThrows( Throwable.class, () -> closure.createArgumentsScope() );
 		// Default named arg
-		assertThrows( Throwable.class, () -> Closure.createArgumentsScope( Map.of() ) );
+		assertThrows( Throwable.class, () -> closure.createArgumentsScope( Map.of() ) );
 	}
 
 	@DisplayName( "can default missing named args" )
@@ -148,8 +148,8 @@ public class ClosureTest {
 		    new Function.Argument( true, "String", firstName, "brad", "First Name" ),
 		    new Function.Argument( true, "String", lastName, "wood", "Last Name" )
 		};
-		Closure		Closure		= new SampleClosure( args, new ScriptingBoxContext(), "Brad" );
-		IScope		argscope	= Closure
+		Closure		closure		= new SampleClosure( args, new ScriptingBoxContext(), "Brad" );
+		IScope		argscope	= closure
 		    .createArgumentsScope( Map.of( firstName, "Luis" ) );
 
 		assertThat( argscope.get( firstName ) ).isEqualTo( "Luis" );
@@ -168,8 +168,8 @@ public class ClosureTest {
 		    new Function.Argument( true, "String", firstName, "brad", "First Name" ),
 		    new Function.Argument( true, "String", lastName, "wood", "Last Name" )
 		};
-		Closure		Closure		= new SampleClosure( args, new ScriptingBoxContext(), "Brad" );
-		IScope		argscope	= Closure
+		Closure		closure		= new SampleClosure( args, new ScriptingBoxContext(), "Brad" );
+		IScope		argscope	= closure
 		    .createArgumentsScope( new HashMap<Key, Object>( Map.of(
 		        Function.ARGUMENT_COLLECTION, Map.of( firstName, "Luis", lastName, "Majano", extra, "Gavin" ),
 		        extraExtra, "Jorge"
@@ -189,8 +189,8 @@ public class ClosureTest {
 		Argument[]	args		= new Argument[] {
 		    new Function.Argument( true, "String", firstName, "brad", "First Name" )
 		};
-		Closure		Closure		= new SampleClosure( args, new ScriptingBoxContext(), "Brad" );
-		IScope		argscope	= Closure
+		Closure		closure		= new SampleClosure( args, new ScriptingBoxContext(), "Brad" );
+		IScope		argscope	= closure
 		    .createArgumentsScope( new HashMap<Key, Object>( Map.of(
 		        Function.ARGUMENT_COLLECTION, Map.of( firstName, "from collection" ),
 		        firstName, "top level"
@@ -209,11 +209,11 @@ public class ClosureTest {
 		    new Function.Argument( true, "String", firstName, null, "First Name" ),
 		    new Function.Argument( true, "String", lastName, null, "Last Name" )
 		};
-		Closure		Closure		= new SampleClosure( args, new ScriptingBoxContext(), "Brad" );
+		Closure		closure		= new SampleClosure( args, new ScriptingBoxContext(), "Brad" );
 
-		assertThrows( Throwable.class, () -> Closure.createArgumentsScope() );
-		assertThrows( Throwable.class, () -> Closure.createArgumentsScope( new Object[] { "Luis" } ) );
-		assertThrows( Throwable.class, () -> Closure.createArgumentsScope( Map.of( firstName, "Luis" ) ) );
+		assertThrows( Throwable.class, () -> closure.createArgumentsScope() );
+		assertThrows( Throwable.class, () -> closure.createArgumentsScope( new Object[] { "Luis" } ) );
+		assertThrows( Throwable.class, () -> closure.createArgumentsScope( Map.of( firstName, "Luis" ) ) );
 	}
 
 	@DisplayName( "can process no args" )
@@ -225,12 +225,54 @@ public class ClosureTest {
 		    new Function.Argument( false, "String", firstName, "brad", "First Name" ),
 		    new Function.Argument( false, "String", lastName, "wood", "Last Name" )
 		};
-		Closure		Closure		= new SampleClosure( args, new ScriptingBoxContext(), "Brad" );
-		IScope		argscope	= Closure.createArgumentsScope();
+		Closure		closure		= new SampleClosure( args, new ScriptingBoxContext(), "Brad" );
+		IScope		argscope	= closure.createArgumentsScope();
 
 		assertThat( argscope.get( firstName ) ).isEqualTo( "brad" );
 		assertThat( argscope.get( lastName ) ).isEqualTo( "wood" );
 		assertThat( argscope.size() ).isEqualTo( 2 );
+	}
+
+	@DisplayName( "can get Closure metadata" )
+	@Test
+	void testCanGetClosureMetadata() {
+
+		Key			firstName	= Key.of( "firstName" );
+		Key			lastName	= Key.of( "lastName" );
+		Argument[]	args		= new Argument[] {
+		    new Function.Argument( false, "String", firstName, "brad", "First Name" ),
+		    new Function.Argument( false, "String", lastName, "wood", "Last Name" )
+		};
+		Closure		closure		= new SampleClosure( args, new ScriptingBoxContext(), "Brad" );
+
+		Struct		meta		= closure.getMetaData();
+		assertThat( meta.dereference( Key.of( "name" ), false ) ).isEqualTo( Key.of( "closure" ) );
+		assertThat( meta.dereference( Key.of( "returnType" ), false ) ).isEqualTo( "any" );
+		assertThat( meta.dereference( Key.of( "output" ), false ) ).isEqualTo( true );
+		assertThat( meta.dereference( Key.of( "hint" ), false ) ).isEqualTo( "" );
+		assertThat( meta.dereference( Key.of( "access" ), false ) ).isEqualTo( "public" );
+		assertThat( meta.dereference( Key.of( "closure" ), false ) ).isEqualTo( true );
+		assertThat( meta.dereference( Key.of( "ANONYMOUSCLOSURE" ), false ) ).isEqualTo( true );
+		assertThat( meta.dereference( Key.of( "lambda" ), false ) ).isEqualTo( false );
+		assertThat( meta.dereference( Key.of( "ANONYMOUSLAMBDA" ), false ) ).isEqualTo( false );
+
+		Array arguments = ( Array ) meta.dereference( Key.of( "parameters" ), false );
+		assertThat( arguments.size() ).isEqualTo( 2 );
+
+		Struct arg1 = ( Struct ) arguments.dereference( Key.of( "1" ), false );
+		assertThat( arg1.dereference( Key.of( "name" ), false ) ).isEqualTo( firstName );
+		assertThat( arg1.dereference( Key.of( "required" ), false ) ).isEqualTo( false );
+		assertThat( arg1.dereference( Key.of( "type" ), false ) ).isEqualTo( "String" );
+		assertThat( arg1.dereference( Key.of( "default" ), false ) ).isEqualTo( "brad" );
+		assertThat( arg1.dereference( Key.of( "hint" ), false ) ).isEqualTo( "First Name" );
+
+		Struct arg2 = ( Struct ) arguments.dereference( Key.of( "2" ), false );
+		assertThat( arg2.dereference( Key.of( "name" ), false ) ).isEqualTo( lastName );
+		assertThat( arg2.dereference( Key.of( "required" ), false ) ).isEqualTo( false );
+		assertThat( arg2.dereference( Key.of( "type" ), false ) ).isEqualTo( "String" );
+		assertThat( arg2.dereference( Key.of( "default" ), false ) ).isEqualTo( "wood" );
+		assertThat( arg2.dereference( Key.of( "hint" ), false ) ).isEqualTo( "Last Name" );
+
 	}
 
 }
