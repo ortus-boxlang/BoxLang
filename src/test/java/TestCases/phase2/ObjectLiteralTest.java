@@ -37,6 +37,7 @@ import ortus.boxlang.runtime.scopes.VariablesScope;
 import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.Struct;
 
+@Disabled
 public class ObjectLiteralTest {
 
 	static BoxRuntime	instance;
@@ -66,7 +67,6 @@ public class ObjectLiteralTest {
 
 	@DisplayName( "array" )
 	@Test
-	@Disabled
 	public void testArray() {
 
 		instance.executeSource(

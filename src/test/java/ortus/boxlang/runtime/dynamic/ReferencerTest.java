@@ -86,9 +86,10 @@ public class ReferencerTest {
 		Referencer.setDeep( scope, true, foo, bar, baz );
 
 		assertThat( scope.get( foo ) instanceof Map ).isTrue();
-		assertThat( ( ( Map<Object, Object> ) scope.get( foo ) ).get( "bar" ) instanceof Map ).isTrue();
-		assertThat( ( ( Map<Object, Object> ) ( ( Map<Object, Object> ) scope.get( foo ) ).get( "bar" ) ).get( "baz" ) )
-		    .isEqualTo( true );
+		assertThat( ( ( Struct ) scope.dereference( foo, false ) ).dereference( bar, false ) instanceof Map ).isTrue();
+		assertThat(
+		    ( ( Struct ) ( ( Struct ) scope.dereference( foo, false ) ).dereference( bar, false ) ).dereference( baz, false ) )
+		        .isEqualTo( true );
 	}
 
 	@DisplayName( "It can dereference from a struct" )

@@ -17,12 +17,12 @@
  */
 package ortus.boxlang.runtime.dynamic;
 
-import java.util.HashMap;
 import java.util.Map;
 
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.scopes.Key;
+import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.ApplicationException;
 
 /**
@@ -132,17 +132,16 @@ public class Referencer {
 				return value;
 			}
 
-			// For all intermediate keys, check if they exist and are a Map
+			// For all intermediate keys, check if they exist and are a Struct
 			Object next = obj.dereference( key, true );
-			// If missing, create as a map
-			// TODO: this needs to be a proper struct
+			// If missing, create as a Struct
 			if ( next == null ) {
-				next = new HashMap<Key, Object>();
+				next = new Struct();
 				obj.assign( key, next );
 				// If it's not null, it needs to be a Map
 			} else if ( ! ( next instanceof Map ) ) {
 				throw new ApplicationException(
-				    String.format( "Cannot assign to key [%s] because it is a [%s] and not a Map", key,
+				    String.format( "Cannot assign to key [%s] because it is a [%s] and not a Struct", key,
 				        next.getClass().getName() )
 				);
 			}

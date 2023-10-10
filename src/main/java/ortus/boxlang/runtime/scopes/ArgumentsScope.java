@@ -47,5 +47,12 @@ public class ArgumentsScope extends BaseScope {
 	 * --------------------------------------------------------------------------
 	 */
 
+	public Object[] asArray() {
+		return values().toArray();
+	}
+
+	public Struct asStruct() {
+		return ( Struct ) this;
+	}
 	// TODO: Make arguments behave like both a struct and an array
 }
