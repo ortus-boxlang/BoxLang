@@ -43,7 +43,7 @@ import ortus.boxlang.ast.BoxStatement;
 import ortus.boxlang.ast.Point;
 import ortus.boxlang.ast.Position;
 import ortus.boxlang.ast.statement.BoxExpression;
-import ortus.boxlang.parser.BoxFileType;
+import ortus.boxlang.parser.BoxScriptType;
 import ortus.boxlang.parser.BoxParser;
 import ortus.boxlang.parser.ParsingResult;
 import ortus.boxlang.runtime.config.util.PlaceholderHelper;
@@ -230,7 +230,7 @@ public class JavaBoxpiler {
 		return PlaceholderHelper.resolve( template, values );
 	}
 
-	public Class<IBoxRunnable> compileStatement( String source, BoxFileType type ) {
+	public Class<IBoxRunnable> compileStatement( String source, BoxScriptType type ) {
 		String	packageName	= "generated";
 		String	className	= "Statement_" + MD5( source );
 		String	fqn			= packageName + "." + className;
@@ -278,7 +278,7 @@ public class JavaBoxpiler {
 
 	}
 
-	public Class<IBoxRunnable> compileScript( String source, BoxFileType type ) {
+	public Class<IBoxRunnable> compileScript( String source, BoxScriptType type ) {
 		String	packageName	= "generated";
 		String	className	= "Script_" + MD5( source );
 		String	fqn			= packageName + "." + className;
