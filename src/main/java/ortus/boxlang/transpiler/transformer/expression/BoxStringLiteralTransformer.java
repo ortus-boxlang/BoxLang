@@ -41,9 +41,29 @@ public class BoxStringLiteralTransformer extends AbstractTransformer {
 	@Override
 	public Node transform( BoxNode node, TransformerContext context ) throws IllegalStateException {
 		BoxStringLiteral	literal	= ( BoxStringLiteral ) node;
-		StringLiteralExpr	expr	= new StringLiteralExpr( literal.getValue() );
+		StringLiteralExpr	expr	= new StringLiteralExpr( escape( literal.getValue() ) );
 		String				side	= context == TransformerContext.NONE ? "" : "(" + context.toString() + ") ";
 		logger.info( side + node.getSourceText() + " -> " + expr );
 		return expr;
+	}
+
+	/**
+	 * Escape a give String to make it safe to be printed or stored.
+	 *
+	 * @param s The input String.
+	 * 
+	 * @return The output String.
+	 **/
+	private String escape( String s ) {
+		String temp = s.replace( "\"\"", "\"" );
+		temp	= temp.replace( "''", "\"" );
+		temp	= temp.replace( "##", "#" );
+		return temp.replace( "\\", "\\\\" )
+		    .replace( "\t", "\\t" )
+		    .replace( "\b", "\\b" )
+		    .replace( "\n", "\\n" )
+		    .replace( "\r", "\\r" )
+		    .replace( "\f", "\\f" )
+		    .replace( "\"", "\\\"" );
 	}
 }

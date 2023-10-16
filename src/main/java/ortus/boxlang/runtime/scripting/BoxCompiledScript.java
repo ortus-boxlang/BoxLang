@@ -26,22 +26,22 @@ import ortus.boxlang.runtime.runnables.BoxScript;
 
 public class BoxCompiledScript extends CompiledScript {
 
-    private BoxScriptingEngine scriptEngine;
-    private BoxScript          boxScript;
+	private BoxScriptingEngine	scriptEngine;
+	private BoxScript			boxScript;
 
-    public BoxCompiledScript( BoxScriptingEngine scriptEngine, BoxScript boxScript ) {
-        this.scriptEngine = scriptEngine;
-        this.boxScript    = boxScript;
-    }
+	public BoxCompiledScript( BoxScriptingEngine scriptEngine, BoxScript boxScript ) {
+		this.scriptEngine	= scriptEngine;
+		this.boxScript		= boxScript;
+	}
 
-    @Override
-    public Object eval( ScriptContext context ) throws ScriptException {
-        return boxScript.invoke( scriptEngine.getBoxContext() );
-    }
+	@Override
+	public Object eval( ScriptContext context ) throws ScriptException {
+		return boxScript.invoke( scriptEngine.getBoxContext() );
+	}
 
-    @Override
-    public ScriptEngine getEngine() {
-        return scriptEngine;
-    }
+	@Override
+	public ScriptEngine getEngine() {
+		return scriptEngine;
+	}
 
 }

@@ -378,9 +378,9 @@ public class CoreLangTest {
 		instance.executeSource(
 		    """
 		    // Expressions are always interpolated inside string literals in CFScript by using a hash/pound sign (`#`) such as
-		    timeVar = "12:00 PM"
-		    test6 = "Time is: #timeVar#"
-		    test7 ="Time is: " & timeVar
+		    variables.timeVar = "12:00 PM"
+		    variables.test6 = "Time is: #timeVar#"
+		    variables.test7 ="Time is: " & timeVar
 		     """,
 		    context );
 		assertThat( variables.dereference( Key.of( "test6" ), false ) ).isEqualTo( "Time is: 12:00 PM" );
@@ -395,7 +395,7 @@ public class CoreLangTest {
 		instance.executeSource(
 		    """
 		    // Pound signs in a string are escaped by doubling them
-		    test8 = "I have locker ##20"
+		    variables.test8 = "I have locker ##20"
 		    // Also "I have locker #20" should throw a parsing syntax exception.
 
 		     """,

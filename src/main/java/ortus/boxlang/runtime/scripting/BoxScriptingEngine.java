@@ -35,97 +35,97 @@ import ortus.boxlang.runtime.runnables.RunnableLoader;
 
 public class BoxScriptingEngine implements ScriptEngine, Compilable {
 
-    private IBoxContext         boxContext;
-    private BoxScriptingFactory boxScriptingFactory;
-    private BoxRuntime          boxRuntime;
-    private ScriptContext       scriptContext;
+	private IBoxContext			boxContext;
+	private BoxScriptingFactory	boxScriptingFactory;
+	private BoxRuntime			boxRuntime;
+	private ScriptContext		scriptContext;
 
-    public BoxScriptingEngine( BoxScriptingFactory boxScriptingFactory ) {
-        this.boxScriptingFactory = boxScriptingFactory;
-        this.boxContext          = new ScriptingBoxContext( BoxRuntime.getInstance().getRuntimeContext() );
-        this.boxRuntime          = BoxRuntime.getInstance();
-        this.scriptContext       = new BoxScriptingContext( boxContext );
-    }
+	public BoxScriptingEngine( BoxScriptingFactory boxScriptingFactory ) {
+		this.boxScriptingFactory	= boxScriptingFactory;
+		this.boxContext				= new ScriptingBoxContext( BoxRuntime.getInstance().getRuntimeContext() );
+		this.boxRuntime				= BoxRuntime.getInstance();
+		this.scriptContext			= new BoxScriptingContext( boxContext );
+	}
 
-    public Object eval( String script, ScriptContext context ) throws ScriptException {
-        scriptContext = context;
-        return eval( script );
-    }
+	public Object eval( String script, ScriptContext context ) throws ScriptException {
+		scriptContext = context;
+		return eval( script );
+	}
 
-    public Object eval( Reader reader, ScriptContext context ) throws ScriptException {
-        scriptContext = context;
-        return eval( reader );
-    }
+	public Object eval( Reader reader, ScriptContext context ) throws ScriptException {
+		scriptContext = context;
+		return eval( reader );
+	}
 
-    public Object eval( String script ) throws ScriptException {
-        return boxRuntime.executeStatement( script, boxContext );
-    }
+	public Object eval( String script ) throws ScriptException {
+		return boxRuntime.executeStatement( script, boxContext );
+	}
 
-    public Object eval( Reader reader ) throws ScriptException {
-        return eval( reader.toString() );
-    }
+	public Object eval( Reader reader ) throws ScriptException {
+		return eval( reader.toString() );
+	}
 
-    public Bindings createBindings() {
-        return new SimpleBindings();
-    }
+	public Bindings createBindings() {
+		return new SimpleBindings();
+	}
 
-    public ScriptContext getContext() {
-        return scriptContext;
-    }
+	public ScriptContext getContext() {
+		return scriptContext;
+	}
 
-    public void setContext( ScriptContext context ) {
-        scriptContext = context;
-    }
+	public void setContext( ScriptContext context ) {
+		scriptContext = context;
+	}
 
-    public ScriptEngineFactory getFactory() {
-        return boxScriptingFactory;
-    }
+	public ScriptEngineFactory getFactory() {
+		return boxScriptingFactory;
+	}
 
-    @Override
-    public Object eval( String script, Bindings n ) throws ScriptException {
-        setBindings( n, ScriptContext.ENGINE_SCOPE );
-        return eval( script );
-    }
+	@Override
+	public Object eval( String script, Bindings n ) throws ScriptException {
+		setBindings( n, ScriptContext.ENGINE_SCOPE );
+		return eval( script );
+	}
 
-    @Override
-    public Object eval( Reader reader, Bindings n ) throws ScriptException {
-        setBindings( n, ScriptContext.ENGINE_SCOPE );
-        return eval( reader );
-    }
+	@Override
+	public Object eval( Reader reader, Bindings n ) throws ScriptException {
+		setBindings( n, ScriptContext.ENGINE_SCOPE );
+		return eval( reader );
+	}
 
-    @Override
-    public void put( String key, Object value ) {
-        getBindings( ScriptContext.ENGINE_SCOPE ).put( key, value );
-    }
+	@Override
+	public void put( String key, Object value ) {
+		getBindings( ScriptContext.ENGINE_SCOPE ).put( key, value );
+	}
 
-    @Override
-    public Object get( String key ) {
-        return getBindings( ScriptContext.ENGINE_SCOPE ).get( key );
-    }
+	@Override
+	public Object get( String key ) {
+		return getBindings( ScriptContext.ENGINE_SCOPE ).get( key );
+	}
 
-    @Override
-    public Bindings getBindings( int scope ) {
-        return scriptContext.getBindings( scope );
-    }
+	@Override
+	public Bindings getBindings( int scope ) {
+		return scriptContext.getBindings( scope );
+	}
 
-    @Override
-    public void setBindings( Bindings bindings, int scope ) {
-        scriptContext.setBindings( bindings, scope );
+	@Override
+	public void setBindings( Bindings bindings, int scope ) {
+		scriptContext.setBindings( bindings, scope );
 
-    }
+	}
 
-    @Override
-    public CompiledScript compile( String script ) throws ScriptException {
-        return new BoxCompiledScript( this, RunnableLoader.getInstance().loadStatement( script ) );
-    }
+	@Override
+	public CompiledScript compile( String script ) throws ScriptException {
+		return new BoxCompiledScript( this, RunnableLoader.getInstance().loadStatement( script ) );
+	}
 
-    @Override
-    public CompiledScript compile( Reader script ) throws ScriptException {
-        return new BoxCompiledScript( this, RunnableLoader.getInstance().loadStatement( script.toString() ) );
-    }
+	@Override
+	public CompiledScript compile( Reader script ) throws ScriptException {
+		return new BoxCompiledScript( this, RunnableLoader.getInstance().loadStatement( script.toString() ) );
+	}
 
-    // get boxcontext
-    public IBoxContext getBoxContext() {
-        return boxContext;
-    }
+	// get boxcontext
+	public IBoxContext getBoxContext() {
+		return boxContext;
+	}
 }

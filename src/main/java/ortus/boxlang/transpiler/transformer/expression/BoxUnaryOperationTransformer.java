@@ -55,7 +55,8 @@ public class BoxUnaryOperationTransformer extends AbstractTransformer {
 
 		if ( expr instanceof MethodCallExpr methodCall ) {
 			values.put( "expr", methodCall.getScope().get().toString() );
-			values.put( "key", methodCall.getArguments().get( 0 ).toString() );
+			if ( methodCall.getArguments().size() > 0 )
+				values.put( "key", methodCall.getArguments().get( 0 ).toString() );
 
 		}
 		String template = "";
