@@ -16,7 +16,7 @@ package ortus.boxlang.compiler;
  */
 
 import com.github.javaparser.ast.CompilationUnit;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import ortus.boxlang.ast.expression.BoxBinaryOperation;
 import ortus.boxlang.parser.BoxParser;
 import ortus.boxlang.parser.ParsingResult;

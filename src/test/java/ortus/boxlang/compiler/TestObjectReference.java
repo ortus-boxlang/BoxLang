@@ -17,7 +17,8 @@ package ortus.boxlang.compiler;
 
 import com.github.javaparser.ast.Node;
 import org.junit.Ignore;
-import org.junit.Test;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 import ortus.boxlang.parser.BoxParser;
 import ortus.boxlang.parser.ParsingResult;
 import ortus.boxlang.transpiler.BoxLangTranspiler;
@@ -27,7 +28,7 @@ import java.io.IOException;
 public class TestObjectReference extends TestBase {
 
 	@Test
-	@Ignore
+	@Disabled( "Failing due to change in specs" )
 	public void testDereferenceByKey() throws IOException {
 		String			expression	= """
 		                              			a

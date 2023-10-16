@@ -5,12 +5,12 @@ import static org.junit.Assert.assertTrue;
 import java.io.File;
 import java.io.IOException;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import com.github.javaparser.ast.Node;
 
 import ortus.boxlang.executor.JavaRunner;
-import ortus.boxlang.parser.BoxFileType;
+import ortus.boxlang.parser.BoxScriptType;
 import ortus.boxlang.parser.BoxParser;
 import ortus.boxlang.parser.ParsingResult;
 import ortus.boxlang.transpiler.BoxLangTranspiler;
@@ -33,9 +33,10 @@ import ortus.boxlang.transpiler.BoxLangTranspiler;
 public class TestExecution extends TestBase {
 
 	@Test
+
 	public void executeFreeStyle() throws IOException {
 		BoxParser		parser	= new BoxParser();
-		ParsingResult	result	= parser.parse( new File( "examples/cf_to_java/freestyle/freestyle.cfm" ) );
+		ParsingResult	result	= parser.parse( new File( "examples/cf_to_java/freestyle/freestyle.cfs" ) );
 		result.getIssues().forEach( it -> System.out.println( it ) );
 		assertTrue( result.isCorrect() );
 
@@ -71,7 +72,7 @@ public class TestExecution extends TestBase {
 		                              //assert(variables["a"] == 10);
 		                              """;
 		BoxParser		parser		= new BoxParser();
-		ParsingResult	result		= parser.parse( statement, BoxFileType.CFSCRIPT );
+		ParsingResult	result		= parser.parse( statement, BoxScriptType.CFSCRIPT );
 		assertTrue( result.isCorrect() );
 
 		BoxLangTranspiler	transpiler	= new BoxLangTranspiler();
@@ -91,7 +92,7 @@ public class TestExecution extends TestBase {
 		                                              assert(variables["a"] == 10);
 		                                                                     """;
 		BoxParser		parser		= new BoxParser();
-		ParsingResult	result		= parser.parse( statement, BoxFileType.CFSCRIPT );
+		ParsingResult	result		= parser.parse( statement, BoxScriptType.CFSCRIPT );
 		assertTrue( result.isCorrect() );
 
 		BoxLangTranspiler	transpiler	= new BoxLangTranspiler();

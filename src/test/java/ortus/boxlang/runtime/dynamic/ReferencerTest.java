@@ -89,7 +89,7 @@ public class ReferencerTest {
 		assertThat( ( ( Struct ) scope.dereference( foo, false ) ).dereference( bar, false ) instanceof Map ).isTrue();
 		assertThat(
 		    ( ( Struct ) ( ( Struct ) scope.dereference( foo, false ) ).dereference( bar, false ) ).dereference( baz, false ) )
-		        .isEqualTo( true );
+		    .isEqualTo( true );
 	}
 
 	@DisplayName( "It can dereference from a struct" )

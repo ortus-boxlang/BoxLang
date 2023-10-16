@@ -2,7 +2,7 @@ package ortus.boxlang.compiler;
 
 import com.github.javaparser.ast.Node;
 import com.github.javaparser.ast.stmt.BlockStmt;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import ortus.boxlang.parser.BoxParser;
 import ortus.boxlang.parser.ParsingResult;
 import ortus.boxlang.transpiler.BoxLangTranspiler;
@@ -352,4 +352,90 @@ public class TestStatements extends TestBase {
 		     """, javaAST.toString() );
 	}
 
+	@Test
+	public void funcDef() throws IOException {
+		String			statement	= """
+		                              public function foo(String a = "Hello") {
+		                              	variables.a = 0;
+
+		                              }
+		                                                    """;
+
+		ParsingResult	result		= parseStatement( statement );
+
+		Node			javaAST		= BoxLangTranspiler.transform( result.getRoot() );
+		System.out.println( javaAST );
+		assertEqualsNoWhiteSpaces(
+		    """
+		    throw(newjava.lang.RuntimeException("MyMessage"));
+		     """, javaAST.toString() );
+	}
+
+	@Test
+	public void stringEscape1() throws IOException {
+		String			statement	= """
+		                              test4 = "Brad ""the guy"" Wood"
+
+		                               """;
+
+		ParsingResult	result		= parseStatement( statement );
+
+		Node			javaAST		= BoxLangTranspiler.transform( result.getRoot() );
+		System.out.println( javaAST );
+		assertEqualsNoWhiteSpaces(
+		    """
+		    context.scopeFindNearby(Key.of("test4"),variablesScope).scope().put(Key.of("test4"),"Brad\\"the guy\\"Wood");
+		    """, javaAST.toString() );
+	}
+
+	@Test
+	public void stringEscape2() throws IOException {
+		String			statement	= """
+		                              test5 = 'Luis ''the man'' Majano'
+
+		                                              	  """;
+
+		ParsingResult	result		= parseStatement( statement );
+
+		Node			javaAST		= BoxLangTranspiler.transform( result.getRoot() );
+		System.out.println( javaAST );
+		assertEqualsNoWhiteSpaces(
+		    """
+		    context.scopeFindNearby(Key.of("test5"),variablesScope).scope().put(Key.of("test5"),"Luis\\"the man\\"Majano");
+		    """, javaAST.toString() );
+	}
+
+	@Test
+	public void stringEscape5() throws IOException {
+		String			statement	= """
+		                              test5 = "I have locker ##20"
+
+		                                              	  """;
+
+		ParsingResult	result		= parseStatement( statement );
+
+		Node			javaAST		= BoxLangTranspiler.transform( result.getRoot() );
+		System.out.println( javaAST );
+		assertEqualsNoWhiteSpaces(
+		    """
+		    context.scopeFindNearby(Key.of("test5"),variablesScope).scope().put(Key.of("test5"),"I have locker #20");
+		    """, javaAST.toString() );
+	}
+
+	@Test
+	public void stringEscape6() throws IOException {
+		String			statement	= """
+		                              result = "Box#5+6#Lang"
+
+		                                              	  """;
+
+		ParsingResult	result		= parseStatement( statement );
+
+		Node			javaAST		= BoxLangTranspiler.transform( result.getRoot() );
+		System.out.println( javaAST );
+		assertEqualsNoWhiteSpaces(
+		    """
+		    context.scopeFindNearby(Key.of("result"),variablesScope).scope().put(Key.of("result"),"Box"+Plus.invoke(5,6)+"Lang");
+		    """, javaAST.toString() );
+	}
 }
