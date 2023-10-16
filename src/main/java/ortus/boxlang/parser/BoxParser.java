@@ -36,9 +36,9 @@ public class BoxParser {
 	 *
 	 * @return a BoxFileType
 	 *
-	 * @see BoxFileType
+	 * @see BoxScriptType
 	 */
-	public static BoxFileType detectFile( File file ) {
+	public static BoxScriptType detectFile(File file ) {
 		Optional<String> ext = getFileExtension( file.getAbsolutePath() );
 		if ( !ext.isPresent() ) {
 			throw new RuntimeException( "No file extension found for path : " + file.getAbsolutePath() );
@@ -46,13 +46,13 @@ public class BoxParser {
 
 		switch ( ext.get() ) {
 			case "cfs" -> {
-				return BoxFileType.CFSCRIPT;
+				return BoxScriptType.CFSCRIPT;
 			}
 			case "cfm" -> {
-				return BoxFileType.CFMARKUP;
+				return BoxScriptType.CFMARKUP;
 			}
 			case "cfml" -> {
-				return BoxFileType.CFMARKUP;
+				return BoxScriptType.CFMARKUP;
 			}
 			case "cfc" -> {
 				try {
@@ -60,18 +60,18 @@ public class BoxParser {
 					// TODO: This approach can be tricked by comments
 					if ( content.stream()
 					    .anyMatch( lines -> lines.toLowerCase().contains( "<cfcomponent" ) || lines.toLowerCase().contains( "<cfinterface" ) ) ) {
-						return BoxFileType.CFMARKUP;
+						return BoxScriptType.CFMARKUP;
 					}
 				} catch ( IOException e ) {
 					throw new RuntimeException( e );
 				}
-				return BoxFileType.CFSCRIPT;
+				return BoxScriptType.CFSCRIPT;
 			}
 			case "bxm" -> {
-				return BoxFileType.BOXMARKUP;
+				return BoxScriptType.BOXMARKUP;
 			}
 			case "bxs" -> {
-				return BoxFileType.BOXSCRIPT;
+				return BoxScriptType.BOXSCRIPT;
 			}
 			case "bx" -> {
 				try {
@@ -79,12 +79,12 @@ public class BoxParser {
 					// TODO: This approach can be tricked by comments
 					if ( content.stream()
 					    .anyMatch( lines -> lines.toLowerCase().contains( "<bxclass" ) || lines.toLowerCase().contains( "<bxinterface" ) ) ) {
-						return BoxFileType.BOXMARKUP;
+						return BoxScriptType.BOXMARKUP;
 					}
 				} catch ( IOException e ) {
 					throw new RuntimeException( e );
 				}
-				return BoxFileType.BOXSCRIPT;
+				return BoxScriptType.BOXSCRIPT;
 			}
 			default -> {
 				throw new RuntimeException( "Unsupported file: " + file.getAbsolutePath() );
@@ -113,7 +113,7 @@ public class BoxParser {
 	 */
 
 	public ParsingResult parse( File file ) throws IOException {
-		BoxFileType fileType = detectFile( file );
+		BoxScriptType fileType = detectFile( file );
 		switch ( fileType ) {
 			case CFSCRIPT -> {
 				return new BoxCFParser().parse( file );
@@ -143,7 +143,7 @@ public class BoxParser {
 	 * @see ParsingResult
 	 * @see BoxExpr
 	 */
-	public ParsingResult parse( String code, BoxFileType fileType ) throws IOException {
+	public ParsingResult parse( String code, BoxScriptType fileType ) throws IOException {
 		switch ( fileType ) {
 			case CFSCRIPT -> {
 				return new BoxCFParser().parse( code );
