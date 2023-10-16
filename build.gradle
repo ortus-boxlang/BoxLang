@@ -159,6 +159,7 @@ jar {
 
 shadowJar {
     //baseName = 'ortus-boxlang-all'
+	exclude 'com/ibm/icu/**'
     version = '1.0.0'
    // classifier = null
     manifest {
