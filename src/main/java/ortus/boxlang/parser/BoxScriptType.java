@@ -20,7 +20,7 @@ package ortus.boxlang.parser;
 /**
  * Supported files
  */
-public enum BoxFileType {
+public enum BoxScriptType {
 	CFSCRIPT,
 	CFMARKUP,
 	BOXSCRIPT,
