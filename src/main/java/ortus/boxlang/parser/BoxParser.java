@@ -38,7 +38,7 @@ public class BoxParser {
 	 *
 	 * @see BoxScriptType
 	 */
-	public static BoxScriptType detectFile(File file ) {
+	public static BoxScriptType detectFile( File file ) {
 		Optional<String> ext = getFileExtension( file.getAbsolutePath() );
 		if ( !ext.isPresent() ) {
 			throw new RuntimeException( "No file extension found for path : " + file.getAbsolutePath() );
