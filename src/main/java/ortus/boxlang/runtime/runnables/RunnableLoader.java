@@ -20,7 +20,7 @@ package ortus.boxlang.runtime.runnables;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
-import ortus.boxlang.parser.BoxFileType;
+import ortus.boxlang.parser.BoxScriptType;
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.interop.DynamicObject;
@@ -134,7 +134,7 @@ public class RunnableLoader {
 	 *
 	 * @return
 	 */
-	public BoxScript loadSource( String source, BoxFileType type ) {
+	public BoxScript loadSource( String source, BoxScriptType type ) {
 		Class<IBoxRunnable> clazz = JavaBoxpiler.getInstance().compileScript( source, type );
 		return ( BoxScript ) DynamicObject.of( clazz ).invokeStatic( "getInstance" ).get();
 	}
@@ -148,7 +148,7 @@ public class RunnableLoader {
 	 */
 	public BoxScript loadSource( String source ) {
 		// TODO: Change to BoxLangScript once implemented
-		return loadSource( source, BoxFileType.CFSCRIPT );
+		return loadSource( source, BoxScriptType.CFSCRIPT );
 	}
 
 	/**
@@ -159,7 +159,7 @@ public class RunnableLoader {
 	 * @return
 	 */
 	public BoxScript loadStatement( String source ) {
-		Class<IBoxRunnable> clazz = JavaBoxpiler.getInstance().compileStatement( source, BoxFileType.CFSCRIPT );
+		Class<IBoxRunnable> clazz = JavaBoxpiler.getInstance().compileStatement( source, BoxScriptType.CFSCRIPT );
 		return ( BoxScript ) DynamicObject.of( clazz ).invokeStatic( "getInstance" ).get();
 	}
 }
