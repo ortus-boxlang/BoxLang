@@ -172,6 +172,7 @@ simpleStatement
         | paramStatement
         | return
         | settingStatement
+        | expression
         ) eos?
     ;
 
@@ -213,7 +214,7 @@ methodInvokation
     ;
 
 localDeclaration
-    :   VAR identifier ((EQUAL identifier)* EQUAL expression )
+    :   VAR identifier ((EQUAL identifier)* EQUAL expression ) eos
     ;
 
 settingStatement
@@ -278,7 +279,7 @@ while
     ;
 
 assert
-	:	ASSERT expression
+	:	ASSERT expression eos
 	;
 break
     :   BREAK eos
@@ -294,7 +295,7 @@ rethrow
     :   RETHROW eos
     ;
 throw
-    :   THROW LPAREN expression RPAREN eos
+    :   THROW LPAREN (TYPE EQUAL)? expression (COMMA (MESSAGE EQUAL)? stringLiteral)? RPAREN eos
     |   THROW  expression  eos
     ;
 
@@ -340,6 +341,8 @@ reservedKeyword
     | 	NOT
     | 	CONTAIN
     | 	JAVA
+    | 	MESSAGE
+    | 	ASSERT
     ;
 scope
     :   APPLICATION
@@ -447,9 +450,10 @@ expression
     |	expression (STAR | SLASH | PERCENT | BACKSLASH | POWER) expression
     |   expression (PLUS | MINUS | MOD ) expression
     |   expression ( AMPERSAND |  XOR | INSTANCEOF) expression // Math
-    |   expression (EQ | GT | GTE | LT | LTE | NEQ | CONTAINS | NOT CONTAINS | TEQ) expression // Comparision
+    |   expression (EQ | GT | GTE | (LT | LESS THAN) | LTE | NEQ | CONTAINS | NOT CONTAINS | TEQ) expression // Comparision
     |   expression ELVIS expression // Elvis operator
     |   expression IS expression // IS operator
+    |   expression CASTAS expression // IS operator
     |	expression DOES NOT CONTAIN expression
     |   NOT expression
     |   expression (AND | OR) expression // Logical
@@ -466,7 +470,7 @@ objectExpression
     :   anonymousFunction
     |   arrayExpression
     |   arrayAccess
-    |   structExpression
+//    |   structExpression
     |   functionInvokation
     |   identifier
     |   new

@@ -545,6 +545,9 @@ public class BoxCFParser extends BoxAbstractParser {
 			return new BoxReturn( expr, getPosition( node ), getSourceText( node ) );
 		} else if ( node.incrementDecrementStatement() != null ) {
 			return toAst( file, node.incrementDecrementStatement() );
+		} else if ( node.expression() != null ) {
+			BoxExpr expr = toAst( file, node.expression() );
+			return new BoxExpression( expr, getPosition( node ), getSourceText( node ) );
 		}
 
 		throw new IllegalStateException( "not implemented: " + node.getClass().getSimpleName() );
@@ -866,7 +869,7 @@ public class BoxCFParser extends BoxAbstractParser {
 			BoxExpr	left	= toAst( file, expression.expression( 0 ) );
 			BoxExpr	right	= toAst( file, expression.expression( 1 ) );
 			return new BoxComparisonOperation( left, BoxComparisonOperator.GreaterThanEquals, right, getPosition( expression ), getSourceText( expression ) );
-		} else if ( expression.LT() != null ) {
+		} else if ( expression.LT() != null || ( expression.LESS() != null && expression.THAN() != null ) ) {
 			BoxExpr	left	= toAst( file, expression.expression( 0 ) );
 			BoxExpr	right	= toAst( file, expression.expression( 1 ) );
 			return new BoxComparisonOperation( left, BoxComparisonOperator.LessThan, right, getPosition( expression ), getSourceText( expression ) );
@@ -930,6 +933,10 @@ public class BoxCFParser extends BoxAbstractParser {
 				expr = toAst( file, expression.new_().fqn() );
 				return new BoxNewOperation( expr, args, getPosition( expression ), getSourceText( expression ) );
 			}
+		} else if ( expression.CASTAS() != null ) {
+			BoxExpr	left	= toAst( file, expression.expression( 0 ) );
+			BoxExpr	right	= toAst( file, expression.expression( 1 ) );
+			return new BoxBinaryOperation( left, BoxBinaryOperator.CastAs, right, getPosition( expression ), getSourceText( expression ) );
 		}
 		// TODO: add other cases
 		throw new IllegalStateException( "not implemented: " + expression.getClass().getSimpleName() );

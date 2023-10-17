@@ -94,6 +94,8 @@ public class BoxBinaryOperationTransformer extends AbstractTransformer {
 			template = "Contains.contains(${left},${right})";
 		} else if ( operation.getOperator() == BoxBinaryOperator.NotContains ) {
 			template = "!Contains.contains(${left},${right})";
+		} else if ( operation.getOperator() == BoxBinaryOperator.CastAs ) {
+			template = "CastAs.invoke(${left},${right})";
 		} else {
 			throw new IllegalStateException( "not implemented" );
 		}

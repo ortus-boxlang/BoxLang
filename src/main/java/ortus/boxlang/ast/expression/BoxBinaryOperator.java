@@ -17,6 +17,8 @@ package ortus.boxlang.ast.expression;
 public enum BoxBinaryOperator {
 	Concat,
 	Contains,
+	CastAs,
+
 	NotContains,
 	Plus,
 	Minus,
