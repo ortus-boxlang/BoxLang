@@ -10,8 +10,8 @@ import org.junit.jupiter.api.Test;
 import com.github.javaparser.ast.Node;
 
 import ortus.boxlang.executor.JavaRunner;
-import ortus.boxlang.parser.BoxScriptType;
 import ortus.boxlang.parser.BoxParser;
+import ortus.boxlang.parser.BoxScriptType;
 import ortus.boxlang.parser.ParsingResult;
 import ortus.boxlang.transpiler.BoxLangTranspiler;
 
@@ -36,7 +36,7 @@ public class TestExecution extends TestBase {
 
 	public void executeFreeStyle() throws IOException {
 		BoxParser		parser	= new BoxParser();
-		ParsingResult	result	= parser.parse( new File( "examples/cf_to_java/freestyle/freestyle.cfs" ) );
+		ParsingResult	result	= parser.parse( new File( "examples/cf_to_java/freestyle/freestyle.cfm" ) );
 		result.getIssues().forEach( it -> System.out.println( it ) );
 		assertTrue( result.isCorrect() );
 
