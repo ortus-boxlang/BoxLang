@@ -803,13 +803,12 @@ public class BoxCFParser extends BoxAbstractParser {
 			return toAst( file, expression.objectExpression() );
 		} else if ( expression.methodInvokation() != null ) {
 			return toAst( file, expression.methodInvokation() );
-		} else if ( expression.unary() != null ) {
-			return toAst( file, expression.unary() );
+
 		} else if ( expression.AND() != null ) {
 			BoxExpr	left	= toAst( file, expression.expression( 0 ) );
 			BoxExpr	right	= toAst( file, expression.expression( 1 ) );
 			return new BoxBinaryOperation( left, BoxBinaryOperator.And, right, getPosition( expression ), getSourceText( expression ) );
-		} else if ( expression.OR() != null ) {
+		} else if ( expression.OR() != null && ( expression.THAN() == null ) ) {
 			BoxExpr	left	= toAst( file, expression.expression( 0 ) );
 			BoxExpr	right	= toAst( file, expression.expression( 1 ) );
 			return new BoxBinaryOperation( left, BoxBinaryOperator.Or, right, getPosition( expression ), getSourceText( expression ) );
@@ -833,6 +832,8 @@ public class BoxCFParser extends BoxAbstractParser {
 			BoxExpr	left	= toAst( file, expression.expression( 0 ) );
 			BoxExpr	right	= toAst( file, expression.expression( 1 ) );
 			return new BoxBinaryOperation( left, BoxBinaryOperator.Backslash, right, getPosition( expression ), getSourceText( expression ) );
+		} else if ( expression.unary() != null ) {
+			return toAst( file, expression.unary() );
 		} else if ( expression.POWER() != null ) {
 			BoxExpr	left	= toAst( file, expression.expression( 0 ) );
 			BoxExpr	right	= toAst( file, expression.expression( 1 ) );
@@ -861,19 +862,19 @@ public class BoxCFParser extends BoxAbstractParser {
 			BoxExpr	left	= toAst( file, expression.expression( 0 ) );
 			BoxExpr	right	= toAst( file, expression.expression( 1 ) );
 			return new BoxComparisonOperation( left, BoxComparisonOperator.NotEqual, right, getPosition( expression ), getSourceText( expression ) );
-		} else if ( expression.GT() != null ) {
+		} else if ( expression.GT() != null || ( expression.GREATER() != null && expression.THAN() != null ) && expression.OR() == null ) {
 			BoxExpr	left	= toAst( file, expression.expression( 0 ) );
 			BoxExpr	right	= toAst( file, expression.expression( 1 ) );
 			return new BoxComparisonOperation( left, BoxComparisonOperator.GreaterThan, right, getPosition( expression ), getSourceText( expression ) );
-		} else if ( expression.GTE() != null ) {
+		} else if ( expression.GTE() != null || ( expression.GREATER() != null && expression.THAN() != null ) && expression.OR() != null ) {
 			BoxExpr	left	= toAst( file, expression.expression( 0 ) );
 			BoxExpr	right	= toAst( file, expression.expression( 1 ) );
 			return new BoxComparisonOperation( left, BoxComparisonOperator.GreaterThanEquals, right, getPosition( expression ), getSourceText( expression ) );
-		} else if ( expression.LT() != null || ( expression.LESS() != null && expression.THAN() != null ) ) {
+		} else if ( expression.LT() != null || ( expression.LESS() != null && expression.THAN() != null && expression.OR() == null ) ) {
 			BoxExpr	left	= toAst( file, expression.expression( 0 ) );
 			BoxExpr	right	= toAst( file, expression.expression( 1 ) );
 			return new BoxComparisonOperation( left, BoxComparisonOperator.LessThan, right, getPosition( expression ), getSourceText( expression ) );
-		} else if ( expression.LTE() != null ) {
+		} else if ( expression.LTE() != null || ( expression.LESS() != null && expression.THAN() != null && expression.OR() != null ) ) {
 			BoxExpr	left	= toAst( file, expression.expression( 0 ) );
 			BoxExpr	right	= toAst( file, expression.expression( 1 ) );
 			return new BoxComparisonOperation( left, BoxComparisonOperator.LesslThanEqual, right, getPosition( expression ), getSourceText( expression ) );
@@ -964,8 +965,18 @@ public class BoxCFParser extends BoxAbstractParser {
 	 * @see BoxUnaryOperator
 	 */
 	private BoxExpr toAst( File file, CFParser.UnaryContext node ) {
+
 		BoxExpr				expr	= toAst( file, node.expression() );
 		BoxUnaryOperator	op		= node.MINUS() != null ? BoxUnaryOperator.Minus : BoxUnaryOperator.Plus;
+		if ( expr instanceof BoxBinaryOperation bop ) {
+			return new BoxBinaryOperation(
+			    new BoxUnaryOperation( bop.getLeft(), op, getPosition( node ), getSourceText( node ) ),
+			    bop.getOperator(),
+			    bop.getRight(),
+			    bop.getPosition(),
+			    bop.getSourceText()
+			);
+		}
 		return new BoxUnaryOperation( expr, op, getPosition( node ), getSourceText( node ) );
 	}
 

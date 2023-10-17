@@ -338,7 +338,7 @@ reservedKeyword
     |   VAR
     |   WHEN
     | 	DOES
-    | 	NOT
+//    | 	NOT
     | 	CONTAIN
     | 	JAVA
     | 	MESSAGE
@@ -447,13 +447,15 @@ expression
     |   methodInvokation
     |   anonymousFunction
     |   expression QM expression COLON expression // Ternary
-    |	expression (STAR | SLASH | PERCENT | BACKSLASH | POWER) expression
+    |	expression ( POWER ) expression
+    |	expression (STAR | SLASH | PERCENT | BACKSLASH ) expression
     |   expression (PLUS | MINUS | MOD ) expression
     |   expression ( AMPERSAND |  XOR | INSTANCEOF) expression // Math
-    |   expression (EQ | GT | GTE | (LT | LESS THAN) | LTE | NEQ | CONTAINS | NOT CONTAINS | TEQ) expression // Comparision
+    |   expression (EQ | (GT | GREATER THAN) | (GTE | GREATER THAN OR EQUAL TO) | (LT | LESS THAN) | (LTE | LESS THAN OR EQUAL TO) | NEQ | CONTAINS | NOT CONTAINS | TEQ) expression // Comparision
     |   expression ELVIS expression // Elvis operator
     |   expression IS expression // IS operator
-    |   expression CASTAS expression // IS operator
+    |   expression CASTAS expression // CastAs operator
+    |   expression INSTANCEOF expression // InstanceOf operator
     |	expression DOES NOT CONTAIN expression
     |   NOT expression
     |   expression (AND | OR) expression // Logical

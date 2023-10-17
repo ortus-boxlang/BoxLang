@@ -79,7 +79,7 @@ public class BoxBinaryOperationTransformer extends AbstractTransformer {
 		} else if ( operation.getOperator() == BoxBinaryOperator.Power ) {
 			template = "Power.invoke(${left},${right})";
 		} else if ( operation.getOperator() == BoxBinaryOperator.Xor ) {
-			template = "Xor.invoke(${left},${right})";
+			template = "XOR.invoke(${left},${right})";
 		} else if ( operation.getOperator() == BoxBinaryOperator.Mod ) {
 			template = "Modulus.invoke(${left},${right})";
 		} else if ( operation.getOperator() == BoxBinaryOperator.And ) {
@@ -89,11 +89,11 @@ public class BoxBinaryOperationTransformer extends AbstractTransformer {
 		} else if ( operation.getOperator() == BoxBinaryOperator.Elvis ) {
 			template = "Elvis.invoke(${left},${right})";
 		} else if ( operation.getOperator() == BoxBinaryOperator.InstanceOf ) {
-			template = "InstanceOf.invoke(${left},${right})";
+			template = "InstanceOf.invoke(context,${left},${right})";
 		} else if ( operation.getOperator() == BoxBinaryOperator.Contains ) {
-			template = "Contains.contains(${left},${right})";
+			template = "Contains.invoke(${left},${right})";
 		} else if ( operation.getOperator() == BoxBinaryOperator.NotContains ) {
-			template = "!Contains.contains(${left},${right})";
+			template = "!Contains.invoke(${left},${right})";
 		} else if ( operation.getOperator() == BoxBinaryOperator.CastAs ) {
 			template = "CastAs.invoke(${left},${right})";
 		} else {
