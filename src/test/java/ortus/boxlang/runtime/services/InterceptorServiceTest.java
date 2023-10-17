@@ -61,10 +61,13 @@ public class InterceptorServiceTest {
 	@DisplayName( "Test it can register interception points and filter duplicates" )
 	@Test
 	void testItCanRegisterInterceptionPoints() {
-		InterceptorService service = InterceptorService.getInstance();
-		service.registerInterceptionPoint( Key.of( "onRequestStart", "onRequestStart", "onRequestEnd" ) );
-		assertThat( service.getInterceptionPointsNames() ).containsExactly( "onRequestStart", "onRequestEnd" );
-		assertThat( service.getInterceptionPoints().size() ).isEqualTo( 2 );
+		InterceptorService	service			= InterceptorService.getInstance();
+		int					originalSize	= service.getInterceptionPoints().size();
+
+		service.registerInterceptionPoint( Key.of( "brad", "brad", "luis" ) );
+		assertThat( service.getInterceptionPointsNames() ).contains( "luis" );
+		assertThat( service.getInterceptionPointsNames() ).contains( "brad" );
+		assertThat( service.getInterceptionPoints().size() ).isEqualTo( originalSize + 2 );
 	}
 
 	@DisplayName( "It can remove interception points" )

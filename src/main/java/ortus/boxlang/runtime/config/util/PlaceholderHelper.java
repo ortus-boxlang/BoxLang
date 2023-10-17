@@ -159,6 +159,7 @@ public class PlaceholderHelper {
 	 *
 	 * @return The escaped string
 	 */
+	@SuppressWarnings( "unused" )
 	private static String escapeReplacementMetaChars( String input ) {
 		return input.replaceAll( "([\\\\$])", "\\\\$1" );
 	}
