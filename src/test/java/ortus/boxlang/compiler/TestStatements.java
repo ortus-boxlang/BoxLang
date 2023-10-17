@@ -52,7 +52,7 @@ public class TestStatements extends TestBase {
 		                           Referencer.getAndInvoke(
 		                           	context,
 		                           	Referencer.get(
-		                           		variablesScope.get(Key.of("system")),
+		                           		variablesScope.dereference(Key.of("system"),false),
 		                           		Key.of("out"),
 		                           		false),
 		                           		Key.of("println"),
@@ -84,8 +84,10 @@ public class TestStatements extends TestBase {
 		ParsingResult	result		= parseStatement( statement );
 
 		BlockStmt		javaAST		= ( BlockStmt ) BoxLangTranspiler.transform( result.getRoot() );
-		assertEquals( "context.getScopeNearby(Key.of(LocalScope.name)).assign(Key.of(\"a\"), Divide.invoke(1, 0));", javaAST.getStatements().get( 0 ).toString() );
-		assertEquals( "context.getScopeNearby(Key.of(LocalScope.name)).assign(Key.of(\"b\"), Divide.invoke(1, 0));", javaAST.getStatements().get( 1 ).toString() );
+		assertEquals( "context.getScopeNearby(Key.of(LocalScope.name)).assign(Key.of(\"a\"), Divide.invoke(1, 0));",
+		    javaAST.getStatements().get( 0 ).toString() );
+		assertEquals( "context.getScopeNearby(Key.of(LocalScope.name)).assign(Key.of(\"b\"), Divide.invoke(1, 0));",
+		    javaAST.getStatements().get( 1 ).toString() );
 
 	}
 
@@ -104,7 +106,7 @@ public class TestStatements extends TestBase {
 		Node			javaAST		= BoxLangTranspiler.transform( result.getRoot() );
 		assertEqualsNoWhiteSpaces(
 		    """
-		    if(BooleanCaster.cast(EqualsEquals.invoke(variablesScope.get(Key.of("a")),"0"))){variablesScope.assign(Key.of("a"),Concat.invoke(context.scopeFindNearby(Key.of("a"),variablesScope).value(),"1"));}elseif(Not.invoke(EqualsEquals.invoke(context.scopeFindNearby(Key.of("foo"),variablesScope).scope().get(Key.of("foo")),false))){variablesScope.assign(Key.of("a"),Concat.invoke(context.scopeFindNearby(Key.of("a"),variablesScope).value(),"2"));}
+		    if(BooleanCaster.cast(EqualsEquals.invoke(variablesScope.dereference(Key.of("a"),false),"0"))){variablesScope.assign(Key.of("a"),Concat.invoke(context.scopeFindNearby(Key.of("a"),variablesScope).value(),"1"));}elseif(Not.invoke(EqualsEquals.invoke(context.scopeFindNearby(Key.of("foo"),variablesScope).scope().get(Key.of("foo")),false))){variablesScope.assign(Key.of("a"),Concat.invoke(context.scopeFindNearby(Key.of("a"),variablesScope).value(),"2"));}
 
 		         """,
 		    javaAST.toString() );
@@ -123,7 +125,7 @@ public class TestStatements extends TestBase {
 		Node			javaAST		= BoxLangTranspiler.transform( result.getRoot() );
 		assertEqualsNoWhiteSpaces(
 		    """
-		    while(BooleanCaster.cast(EqualsEquals.invoke(variablesScope.get(Key.of("a")),true))){
+		    while(BooleanCaster.cast(EqualsEquals.invoke(variablesScope.dereference(Key.of("a"),false),true))){
 		    	variablesScope.assign(Key.of("a"),false);
 		    }
 		    """, javaAST.toString() );
@@ -155,11 +157,11 @@ public class TestStatements extends TestBase {
 		assertEqualsNoWhiteSpaces(
 		    """
 		    do {
-		    	if ( BooleanCaster.cast( EqualsEquals.invoke( variablesScope.get( Key.of( "a" ) ), "9" ) ) ) {
+		    	if ( BooleanCaster.cast( EqualsEquals.invoke( variablesScope.dereference( Key.of( "a" ), false ), "9" ) ) ) {
 		    		variablesScope.assign( Key.of( "a" ), "0" );
 		    		break;
 		    	}
-		    	if ( BooleanCaster.cast( EqualsEquals.invoke( variablesScope.get( Key.of( "a" ) ), "1" ) ) ) {
+		    	if ( BooleanCaster.cast( EqualsEquals.invoke( variablesScope.dereference( Key.of( "a" ), false ), "1" ) ) ) {
 		    		variablesScope.assign( Key.of( "a" ), "1" );
 		    		break;
 		    	}
@@ -196,11 +198,11 @@ public class TestStatements extends TestBase {
 		assertEqualsNoWhiteSpaces(
 		    """
 		    do {
-		    			if ( BooleanCaster.cast( GreaterThan.invoke( variablesScope.get( Key.of( "a" ) ), "0" ) ) ) {
+		    			if ( BooleanCaster.cast( GreaterThan.invoke( variablesScope.dereference( Key.of( "a" ), false ), "0" ) ) ) {
 		    				variablesScope.assign( Key.of( "a" ), "0" );
 		    				break;
 		    			}
-		    			if ( BooleanCaster.cast( LessThan.invoke( variablesScope.get( Key.of( "a" ) ), "1" ) ) ) {
+		    			if ( BooleanCaster.cast( LessThan.invoke( variablesScope.dereference( Key.of( "a" ), false ), "1" ) ) ) {
 		    				variablesScope.assign( Key.of( "a" ), "1" );
 		    				break;
 		    			}
@@ -228,7 +230,7 @@ public class TestStatements extends TestBase {
 		    	Iterator keyName = CollectionCaster.cast(variablesScope).iterator();
 		    	while (keyName.hasNext()) {
 		    		variablesScope.put(Key.of("keyName"), keyName.next());
-		    		variablesScope.assign(Key.of("a"), Plus.invoke(variablesScope.get(Key.of("a")), 1));
+		    		variablesScope.assign(Key.of("a"), Plus.invoke(variablesScope.dereference(Key.of("a"), false), 1));
 		    	}
 		    }
 		    """, javaAST.toString() );
@@ -249,7 +251,7 @@ public class TestStatements extends TestBase {
 		    """
 		    {
 		    	variablesScope.assign(Key.of("a"),0);
-		    	while(BooleanCaster.cast(LessThan.invoke(variablesScope.get(Key.of("a")),10))){
+		    	while(BooleanCaster.cast(LessThan.invoke(variablesScope.dereference(Key.of("a"),false),10))){
 		    		Increment.invokePost(variablesScope,Key.of("a"));
 		    	}
 		    }
@@ -268,7 +270,7 @@ public class TestStatements extends TestBase {
 		System.out.println( javaAST );
 		assertEqualsNoWhiteSpaces(
 		    """
-		    Assert.invoke(context,EqualsEquals.invoke(variablesScope.get(Key.of("a")),0));
+		    Assert.invoke(context,EqualsEquals.invoke(variablesScope.dereference(Key.of("a"),false),0));
 		    """, javaAST.toString() );
 	}
 

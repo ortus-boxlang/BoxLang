@@ -45,10 +45,10 @@ public class BoxObjectAccessTransformer extends AbstractTransformer {
 
 				String					template	= switch ( context ) {
 														case LEFT -> """
-														             ${scope}.get( Key.of( ${var0} ) ).get(Key.of( ${var1} ))
+														             ${scope}.dereference( Key.of( ${var0} ) , false ).dereference(Key.of( ${var1} ))
 														             """;
 														default -> """
-														           Referencer.get(${scope}.get(Key.of( ${var0} )) ,Key.of( ${var1}),false)
+														           Referencer.get(${scope}.dereference(Key.of( ${var0}) ,false ) ,Key.of( ${var1}),false)
 														           """;
 													};
 				Node					javaExpr	= parseExpression( template, values );
@@ -70,7 +70,7 @@ public class BoxObjectAccessTransformer extends AbstractTransformer {
 													             ${scope}.assign(Key.of("${variable}"))
 													             """;
 													default -> """
-													           ${scope}.get( Key.of( "${variable}" ) )
+													           ${scope}.dereference( Key.of( "${variable}" ) , false )
 													           """;
 
 												};
@@ -114,7 +114,7 @@ public class BoxObjectAccessTransformer extends AbstractTransformer {
 												             ${scope}.assign(Key.of("${variable}"))
 												             """;
 												default -> """
-												           ${scope}.get( Key.of( "${variable}" ) )
+												           ${scope}.dereference( Key.of( "${variable}" ) , false )
 												           """;
 											};
 			Node				javaExpr	= parseExpression( template, values );

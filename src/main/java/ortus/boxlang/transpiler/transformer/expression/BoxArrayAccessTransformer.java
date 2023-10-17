@@ -76,7 +76,7 @@ public class BoxArrayAccessTransformer extends AbstractTransformer {
 
 			} else if ( expr.getContext() instanceof BoxScope ) {
 				// template = "context.getScopeNearby( Key.of( \"${scope}\" ) ).get( Key.of( ${variable} ) )";
-				template = "${scope}.get( Key.of( ${variable} ) )";
+				template = "${scope}.dereference( Key.of( ${variable}) , false )";
 
 			} else {
 				template = """
