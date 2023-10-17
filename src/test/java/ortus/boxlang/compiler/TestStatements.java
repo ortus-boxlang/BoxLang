@@ -72,7 +72,7 @@ public class TestStatements extends TestBase {
 		ParsingResult	result		= parseStatement( statement );
 		Node			javaAST		= BoxLangTranspiler.transform( result.getRoot() );
 
-		assertEquals( "variablesScope.put(Key.of(\"system\"), \"Hello\");", javaAST.toString() );
+		assertEquals( "variablesScope.assign(Key.of(\"system\"), \"Hello\");", javaAST.toString() );
 	}
 
 	@Test
@@ -84,8 +84,8 @@ public class TestStatements extends TestBase {
 		ParsingResult	result		= parseStatement( statement );
 
 		BlockStmt		javaAST		= ( BlockStmt ) BoxLangTranspiler.transform( result.getRoot() );
-		assertEquals( "context.getScopeNearby(Key.of(LocalScope.name)).put(Key.of(\"a\"), Divide.invoke(1, 0));", javaAST.getStatements().get( 0 ).toString() );
-		assertEquals( "context.getScopeNearby(Key.of(LocalScope.name)).put(Key.of(\"b\"), Divide.invoke(1, 0));", javaAST.getStatements().get( 1 ).toString() );
+		assertEquals( "context.getScopeNearby(Key.of(LocalScope.name)).assign(Key.of(\"a\"), Divide.invoke(1, 0));", javaAST.getStatements().get( 0 ).toString() );
+		assertEquals( "context.getScopeNearby(Key.of(LocalScope.name)).assign(Key.of(\"b\"), Divide.invoke(1, 0));", javaAST.getStatements().get( 1 ).toString() );
 
 	}
 
@@ -104,7 +104,7 @@ public class TestStatements extends TestBase {
 		Node			javaAST		= BoxLangTranspiler.transform( result.getRoot() );
 		assertEqualsNoWhiteSpaces(
 		    """
-		    if(BooleanCaster.cast(EqualsEquals.invoke(variablesScope.get(Key.of("a")),"0"))){variablesScope.put(Key.of("a"),Concat.invoke(context.scopeFindNearby(Key.of("a"),variablesScope).value(),"1"));}elseif(Not.invoke(EqualsEquals.invoke(context.scopeFindNearby(Key.of("foo"),variablesScope).scope().get(Key.of("foo")),false))){variablesScope.put(Key.of("a"),Concat.invoke(context.scopeFindNearby(Key.of("a"),variablesScope).value(),"2"));}
+		    if(BooleanCaster.cast(EqualsEquals.invoke(variablesScope.get(Key.of("a")),"0"))){variablesScope.assign(Key.of("a"),Concat.invoke(context.scopeFindNearby(Key.of("a"),variablesScope).value(),"1"));}elseif(Not.invoke(EqualsEquals.invoke(context.scopeFindNearby(Key.of("foo"),variablesScope).scope().get(Key.of("foo")),false))){variablesScope.assign(Key.of("a"),Concat.invoke(context.scopeFindNearby(Key.of("a"),variablesScope).value(),"2"));}
 
 		         """,
 		    javaAST.toString() );
@@ -124,7 +124,7 @@ public class TestStatements extends TestBase {
 		assertEqualsNoWhiteSpaces(
 		    """
 		    while(BooleanCaster.cast(EqualsEquals.invoke(variablesScope.get(Key.of("a")),true))){
-		    	variablesScope.put(Key.of("a"),false);
+		    	variablesScope.assign(Key.of("a"),false);
 		    }
 		    """, javaAST.toString() );
 	}
@@ -156,14 +156,14 @@ public class TestStatements extends TestBase {
 		    """
 		    do {
 		    	if ( BooleanCaster.cast( EqualsEquals.invoke( variablesScope.get( Key.of( "a" ) ), "9" ) ) ) {
-		    		variablesScope.put( Key.of( "a" ), "0" );
+		    		variablesScope.assign( Key.of( "a" ), "0" );
 		    		break;
 		    	}
 		    	if ( BooleanCaster.cast( EqualsEquals.invoke( variablesScope.get( Key.of( "a" ) ), "1" ) ) ) {
-		    		variablesScope.put( Key.of( "a" ), "1" );
+		    		variablesScope.assign( Key.of( "a" ), "1" );
 		    		break;
 		    	}
-		    	variablesScope.put( Key.of( "a" ), "default" );
+		    	variablesScope.assign( Key.of( "a" ), "default" );
 		    	break;
 		    } while ( false );
 		        		    """,
@@ -197,14 +197,14 @@ public class TestStatements extends TestBase {
 		    """
 		    do {
 		    			if ( BooleanCaster.cast( GreaterThan.invoke( variablesScope.get( Key.of( "a" ) ), "0" ) ) ) {
-		    				variablesScope.put( Key.of( "a" ), "0" );
+		    				variablesScope.assign( Key.of( "a" ), "0" );
 		    				break;
 		    			}
 		    			if ( BooleanCaster.cast( LessThan.invoke( variablesScope.get( Key.of( "a" ) ), "1" ) ) ) {
-		    				variablesScope.put( Key.of( "a" ), "1" );
+		    				variablesScope.assign( Key.of( "a" ), "1" );
 		    				break;
 		    			}
-		    			variablesScope.put( Key.of( "a" ), "default" );
+		    			variablesScope.assign( Key.of( "a" ), "default" );
 		    			break;
 		    		} while ( false );
 		    		      """, javaAST.toString() );
@@ -228,7 +228,7 @@ public class TestStatements extends TestBase {
 		    	Iterator keyName = CollectionCaster.cast(variablesScope).iterator();
 		    	while (keyName.hasNext()) {
 		    		variablesScope.put(Key.of("keyName"), keyName.next());
-		    		variablesScope.put(Key.of("a"), Plus.invoke(variablesScope.get(Key.of("a")), 1));
+		    		variablesScope.assign(Key.of("a"), Plus.invoke(variablesScope.get(Key.of("a")), 1));
 		    	}
 		    }
 		    """, javaAST.toString() );
@@ -248,7 +248,7 @@ public class TestStatements extends TestBase {
 		assertEqualsNoWhiteSpaces(
 		    """
 		    {
-		    	variablesScope.put(Key.of("a"),0);
+		    	variablesScope.assign(Key.of("a"),0);
 		    	while(BooleanCaster.cast(LessThan.invoke(variablesScope.get(Key.of("a")),10))){
 		    		Increment.invokePost(variablesScope,Key.of("a"));
 		    	}
@@ -259,7 +259,7 @@ public class TestStatements extends TestBase {
 	@Test
 	public void assert_() throws IOException {
 		String			statement	= """
-		                              		assert variables['a'] == 0
+		                              		assert variables['a'] == 0;
 		                              """;
 
 		ParsingResult	result		= parseStatement( statement );
@@ -291,7 +291,7 @@ public class TestStatements extends TestBase {
 		assertEqualsNoWhiteSpaces(
 		    """
 		    try{
-		    	context.scopeFindNearby(Key.of("a"),variablesScope).scope().put(Key.of("a"),Divide.invoke(1,0));
+		    	context.scopeFindNearby(Key.of("a"),variablesScope).scope().assign(Key.of("a"),Divide.invoke(1,0));
 		    } catch(Throwablee) {
 		    	catchContext=newCatchBoxContext(context,Key.of("e"),e);
 		    } finally{
@@ -331,7 +331,7 @@ public class TestStatements extends TestBase {
 		assertEqualsNoWhiteSpaces(
 		    """
 		    do{
-		    	context.scopeFindNearby(Key.of("a"),variablesScope).scope().put(Key.of("a"),0);
+		    	context.scopeFindNearby(Key.of("a"),variablesScope).scope().assign(Key.of("a"),0);
 		    } while(BooleanCaster.cast(true));
 		      """, javaAST.toString() );
 	}
@@ -384,7 +384,7 @@ public class TestStatements extends TestBase {
 		System.out.println( javaAST );
 		assertEqualsNoWhiteSpaces(
 		    """
-		    context.scopeFindNearby(Key.of("test4"),variablesScope).scope().put(Key.of("test4"),"Brad\\"the guy\\"Wood");
+		    context.scopeFindNearby(Key.of("test4"),variablesScope).scope().assign(Key.of("test4"),"Brad\\"the guy\\"Wood");
 		    """, javaAST.toString() );
 	}
 
@@ -401,7 +401,7 @@ public class TestStatements extends TestBase {
 		System.out.println( javaAST );
 		assertEqualsNoWhiteSpaces(
 		    """
-		    context.scopeFindNearby(Key.of("test5"),variablesScope).scope().put(Key.of("test5"),"Luis\\"the man\\"Majano");
+		    context.scopeFindNearby(Key.of("test5"),variablesScope).scope().assign(Key.of("test5"),"Luis\\"the man\\"Majano");
 		    """, javaAST.toString() );
 	}
 
@@ -418,7 +418,7 @@ public class TestStatements extends TestBase {
 		System.out.println( javaAST );
 		assertEqualsNoWhiteSpaces(
 		    """
-		    context.scopeFindNearby(Key.of("test5"),variablesScope).scope().put(Key.of("test5"),"I have locker #20");
+		    context.scopeFindNearby(Key.of("test5"),variablesScope).scope().assign(Key.of("test5"),"I have locker #20");
 		    """, javaAST.toString() );
 	}
 
@@ -435,7 +435,7 @@ public class TestStatements extends TestBase {
 		System.out.println( javaAST );
 		assertEqualsNoWhiteSpaces(
 		    """
-		    context.scopeFindNearby(Key.of("result"),variablesScope).scope().put(Key.of("result"),"Box"+Plus.invoke(5,6)+"Lang");
+		    context.scopeFindNearby(Key.of("result"),variablesScope).scope().assign(Key.of("result"),"Box"+Plus.invoke(5,6)+"Lang");
 		    """, javaAST.toString() );
 	}
 }

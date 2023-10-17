@@ -67,7 +67,7 @@ public class BoxObjectAccessTransformer extends AbstractTransformer {
 
 				String				template	= switch ( context ) {
 													case LEFT -> """
-													             ${scope}.put(Key.of("${variable}"))
+													             ${scope}.assign(Key.of("${variable}"))
 													             """;
 													default -> """
 													           ${scope}.get( Key.of( "${variable}" ) )
@@ -111,7 +111,7 @@ public class BoxObjectAccessTransformer extends AbstractTransformer {
 											};
 			String				template	= switch ( context ) {
 												case LEFT -> """
-												             ${scope}.put(Key.of("${variable}"))
+												             ${scope}.assign(Key.of("${variable}"))
 												             """;
 												default -> """
 												           ${scope}.get( Key.of( "${variable}" ) )

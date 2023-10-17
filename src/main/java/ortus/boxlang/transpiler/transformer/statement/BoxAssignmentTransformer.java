@@ -48,7 +48,7 @@ public class BoxAssignmentTransformer extends AbstractTransformer {
 
 		ExpressionStmt		javaExpr	= new ExpressionStmt( left );
 		if ( left instanceof MethodCallExpr method ) {
-			if ( "put".equalsIgnoreCase( method.getName().asString() ) ) {
+			if ( "assign".equalsIgnoreCase( method.getName().asString() ) ) {
 				method.getArguments().add( right );
 			}
 			if ( assigment.getOp() == BoxAssigmentOperator.PlusEqual ) {
@@ -108,7 +108,7 @@ public class BoxAssignmentTransformer extends AbstractTransformer {
 			values.put( "left", left.toString() );
 			values.put( "right", right.toString() );
 			String template = """
-			                  context.scopeFindNearby(Key.of( "${left}" ),variablesScope).scope().put( Key.of( "${left}" ), ${right} )
+			                  context.scopeFindNearby(Key.of( "${left}" ),variablesScope).scope().assign( Key.of( "${left}" ), ${right} )
 			                  """;
 
 			javaExpr = new ExpressionStmt( ( Expression ) parseExpression( template, values ) );

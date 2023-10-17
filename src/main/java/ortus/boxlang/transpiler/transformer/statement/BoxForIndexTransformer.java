@@ -64,7 +64,7 @@ public class BoxForIndexTransformer extends AbstractTransformer {
 										};
 
 		if ( variable instanceof MethodCallExpr method ) {
-			if ( "put".equalsIgnoreCase( method.getName().asString() ) ) {
+			if ( "assign".equalsIgnoreCase( method.getName().asString() ) ) {
 				method.getArguments().add( initial );
 			}
 		}

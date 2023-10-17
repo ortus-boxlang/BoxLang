@@ -71,7 +71,7 @@ public class BoxArrayAccessTransformer extends AbstractTransformer {
 
 			if ( context == TransformerContext.LEFT ) {
 				template = """
-				            			${scope}.put(Key.of(${variable}))
+				            			${scope}.assign(Key.of(${variable}))
 				           """;
 
 			} else if ( expr.getContext() instanceof BoxScope ) {
