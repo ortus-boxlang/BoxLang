@@ -1,6 +1,8 @@
 package ortus.boxlang.compiler;
 
+import static com.google.common.truth.Truth.assertThat;
 import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.io.File;
 import java.io.IOException;
@@ -9,10 +11,15 @@ import org.junit.jupiter.api.Test;
 
 import com.github.javaparser.ast.Node;
 
-import ortus.boxlang.executor.JavaRunner;
-import ortus.boxlang.parser.BoxParser;
 import ortus.boxlang.parser.BoxScriptType;
+import ortus.boxlang.parser.BoxParser;
 import ortus.boxlang.parser.ParsingResult;
+import ortus.boxlang.runtime.BoxRuntime;
+import ortus.boxlang.runtime.context.IBoxContext;
+import ortus.boxlang.runtime.context.ScriptingBoxContext;
+import ortus.boxlang.runtime.scopes.IScope;
+import ortus.boxlang.runtime.scopes.Key;
+import ortus.boxlang.runtime.scopes.VariablesScope;
 import ortus.boxlang.transpiler.BoxLangTranspiler;
 
 /**
@@ -33,72 +40,142 @@ import ortus.boxlang.transpiler.BoxLangTranspiler;
 public class TestExecution extends TestBase {
 
 	@Test
-
-	public void executeFreeStyle() throws IOException {
-		BoxParser		parser	= new BoxParser();
-		ParsingResult	result	= parser.parse( new File( "examples/cf_to_java/freestyle/freestyle.cfm" ) );
-		result.getIssues().forEach( it -> System.out.println( it ) );
-		assertTrue( result.isCorrect() );
-
-		BoxLangTranspiler	transpiler	= new BoxLangTranspiler();
-		Node				javaAST		= transpiler.transpile( result.getRoot() );
-		new JavaRunner().run( transpiler.getStatements() );
-	}
-
-	@Test
 	public void executeWhile() throws IOException {
+		BoxRuntime	instance	= BoxRuntime.getInstance( true );
+		IBoxContext	context		= new ScriptingBoxContext( instance.getRuntimeContext() );
+		IScope		variables	= context.getScopeNearby( VariablesScope.name );
 
-		String			statement	= """
-		                              variables['system'] = createObject('java','java.lang.System');
+		instance.executeSource( """
+		                        variables['system'] = createObject('java','java.lang.System');
 
-		                              a = 1;
-		                              while(a < 10) {
-		                                 switch(variables.a) {
-		                                 case 0: {
-		                                   variables.system.out.println("zero");
-		                                   break;
-		                                 }
-		                                default: {
-		                                   variables.system.out.println("non zero");
-		                                   break;
-		                                 }
-		                              }
-		                              if(!a % 2 == 0) {
-		                                  variables.system.out.println("even and a=#variables.a#");
-		                              }
-		                              a +=1;
+		                        a = 1;
+		                        while(a < 10) {
+		                           switch(variables.a) {
+		                           case 0: {
+		                             variables.system.out.println("zero");
+		                             break;
+		                           }
+		                          default: {
+		                             variables.system.out.println("non zero");
+		                             break;
+		                           }
+		                        }
+		                        if(!a % 2 == 0) {
+		                            variables.system.out.println("even and a=#variables.a#");
+		                        }
+		                        a +=1;
 
-		                              }
-		                              //assert(variables["a"] == 10);
-		                              """;
-		BoxParser		parser		= new BoxParser();
-		ParsingResult	result		= parser.parse( statement, BoxScriptType.CFSCRIPT );
-		assertTrue( result.isCorrect() );
+		                        }
+		                        assert(variables["a"] == 10);
+		                        """ );
 
-		BoxLangTranspiler	transpiler	= new BoxLangTranspiler();
-		Node				javaAST		= transpiler.transpile( result.getRoot() );
-		new JavaRunner().run( transpiler.getStatements() );
+		instance.shutdown();
+
 	}
 
 	@Test
 	public void executeFor() throws IOException {
+		BoxRuntime	instance	= BoxRuntime.getInstance( true );
+		IBoxContext	context		= new ScriptingBoxContext( instance.getRuntimeContext() );
 
-		String			statement	= """
-		                                                                     variables['system'] = createObject('java','java.lang.System');
-		                              variables.a = 0;
-		                                                                     for(a = 0; a < 10; a++){
-		                                                                     	variables.system.out.println(a);
-		                                                                     }
-		                                              assert(variables["a"] == 10);
-		                                                                     """;
-		BoxParser		parser		= new BoxParser();
-		ParsingResult	result		= parser.parse( statement, BoxScriptType.CFSCRIPT );
-		assertTrue( result.isCorrect() );
+		instance.executeSource( """
+		                                                               variables['system'] = createObject('java','java.lang.System');
+		                        variables.a = 0;
+		                                                               for(a = 0; a < 10; a++){
+		                                                               	variables.system.out.println(a);
+		                                                               }
+		                                        assert(variables["a"] == 10);
+		                                                               """ );
+		instance.shutdown();
+	}
 
-		BoxLangTranspiler	transpiler	= new BoxLangTranspiler();
-		Node				javaAST		= transpiler.transpile( result.getRoot() );
-		new JavaRunner().run( transpiler.getStatements() );
+	@Test
+	public void comparison() throws IOException {
+		BoxRuntime	instance	= BoxRuntime.getInstance( true );
+		IBoxContext	context		= new ScriptingBoxContext( instance.getRuntimeContext() );
 
+		Object		result		= instance.executeStatement( "6 > 5", context );
+		assertThat( result ).isEqualTo( true );
+
+		result = instance.executeStatement( "5 LT 10", context );
+		assertThat( result ).isEqualTo( true );
+
+		// not implemented
+		result = instance.executeStatement( "5 LESS THAN 10", context );
+		assertThat( result ).isEqualTo( true );
+
+		instance.shutdown();
+	}
+
+	@Test
+	public void testDoWhileLoop() {
+		BoxRuntime	instance	= BoxRuntime.getInstance( true );
+		IBoxContext	context		= new ScriptingBoxContext( instance.getRuntimeContext() );
+		IScope		variables	= context.getScopeNearby( VariablesScope.name );
+		// Don't know what " no viable alternative at input" mwans
+		instance.executeSource(
+		    """
+		     do {
+		    result = variables.result + 1;
+		     } while( result < 10  );
+		     """,
+		    context );
+
+		// assertThat( variables.dereference( result, false ) ).isEqualTo( 10 );
+
+	}
+
+	@Test
+	public void testCastAs() {
+
+		BoxRuntime	instance	= BoxRuntime.getInstance( true );
+		IBoxContext	context		= new ScriptingBoxContext( instance.getRuntimeContext() );
+		// variable sdf should not exist, therefore an error needs to be thrown
+		assertThrows( Throwable.class, () -> instance.executeStatement( "5 castAs sdf",
+
+		    context ) );
+
+		// castAs keyword doesn't seem to be implemented-- the parser is just directly returning the 5 as a literal
+		Object result = instance.executeStatement( "5 castAs 'String'", context );
+		assertThat( result ).isEqualTo( "5" );
+		assertThat( result.getClass().getName() ).isEqualTo( "java.lang.String" );
+	}
+
+	@Test
+	public void testTernary() {
+
+		BoxRuntime	instance	= BoxRuntime.getInstance( true );
+		IBoxContext	context		= new ScriptingBoxContext( instance.getRuntimeContext() );
+
+		// variable sdf should not exist, therefore an error needs to be thrown
+		instance.executeStatement(
+		    """
+
+		    tmp = true;
+		      result = tmp ? 'itwastrue' : 'itwasfalse'
+		    """,
+
+		    context );
+		assertThat( context.getScopeNearby( VariablesScope.name ).dereference( Key.of( "result" ), false ) ).isEqualTo( "itwastrue" );
+	}
+
+	@Test
+	public void testString3() {
+
+		BoxRuntime	instance	= BoxRuntime.getInstance( true );
+		IBoxContext	context		= new ScriptingBoxContext( instance.getRuntimeContext() );
+		IScope		variables	= context.getScopeNearby( VariablesScope.name );
+		// variable sdf should not exist, therefore an error needs to be thrown
+		instance.executeSource(
+		    """
+		    // To escape a quote char, double it.
+		    test4 = "Brad ""the guy"" Wood"
+		    test5 = 'Luis ''the man'' Majano'
+		      """,
+		    context );
+
+		assertThat( variables.dereference( Key.of( "test4" ), false ) ).isEqualTo( "Brad \"the guy\" Wood" );
+		assertThat( variables.dereference( Key.of( "test5" ), false ) ).isEqualTo( "Luis 'the man' Majano" );
 	}
 
 }

@@ -51,12 +51,13 @@ public class BoxStringLiteralTransformer extends AbstractTransformer {
 	 * Escape a give String to make it safe to be printed or stored.
 	 *
 	 * @param s The input String.
-	 * 
+	 *
 	 * @return The output String.
 	 **/
 	private String escape( String s ) {
 		String temp = s.replace( "\"\"", "\"" );
-		temp	= temp.replace( "''", "\"" );
+		temp	= temp.replace( "''", "'" );
+		temp	= temp.replace( "''", "'" );
 		temp	= temp.replace( "##", "#" );
 		return temp.replace( "\\", "\\\\" )
 		    .replace( "\t", "\\t" )
