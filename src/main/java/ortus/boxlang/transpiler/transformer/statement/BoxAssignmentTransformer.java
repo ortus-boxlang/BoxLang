@@ -137,6 +137,12 @@ public class BoxAssignmentTransformer extends AbstractTransformer {
 				template	= "Divide.invoke(context.scopeFindNearby(Key.of( \"${left}\" ),variablesScope).scope(),Key.of( \"${left}\"),${right})";
 				javaExpr	= new ExpressionStmt( ( Expression ) parseExpression( template, values ) );
 			}
+			if ( assigment.getOp() == BoxAssigmentOperator.ConcatEqual ) {
+				values.put( "left", left.toString() );
+				values.put( "right", right.toString() );
+				template	= "Concat.invoke(context.scopeFindNearby(Key.of( \"${left}\" ),variablesScope).scope(),Key.of( \"${left}\"),${right})";
+				javaExpr	= new ExpressionStmt( ( Expression ) parseExpression( template, values ) );
+			}
 		}
 
 		addIndex( javaExpr, node );
