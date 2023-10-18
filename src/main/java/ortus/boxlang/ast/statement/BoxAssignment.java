@@ -18,12 +18,15 @@ import ortus.boxlang.ast.BoxStatement;
 import ortus.boxlang.ast.Position;
 import ortus.boxlang.ast.BoxExpr;
 
+import java.util.Collections;
+import java.util.List;
+
 /**
  * AST Node representing an assigment statement
  */
 public class BoxAssignment extends BoxStatement {
 
-	private BoxExpr					left;
+	private final List<BoxExpr>		left;
 	private BoxExpr					right;
 	private BoxAssigmentOperator	op;
 
@@ -36,29 +39,21 @@ public class BoxAssignment extends BoxStatement {
 	 * @param position   position of the statement in the source code
 	 * @param sourceText source code that originated the Node
 	 */
-	public BoxAssignment( BoxExpr left, BoxAssigmentOperator op, BoxExpr right, Position position, String sourceText ) {
+	public BoxAssignment( List<BoxExpr> left, BoxAssigmentOperator op, BoxExpr right, Position position, String sourceText ) {
 		super( position, sourceText );
-		this.left	= left;
+		this.left = Collections.unmodifiableList( left );
+		this.left.forEach( arg -> arg.setParent( this ) );
 		this.op		= op;
 		this.right	= right;
-		this.left.setParent( this );
 		this.right.setParent( this );
 	}
 
-	public BoxExpr getLeft() {
+	public List<BoxExpr> getLeft() {
 		return left;
-	}
-
-	public void setLeft( BoxExpr left ) {
-		this.left = left;
 	}
 
 	public BoxExpr getRight() {
 		return right;
-	}
-
-	public void setRight( BoxExpr right ) {
-		this.right = right;
 	}
 
 	public BoxAssigmentOperator getOp() {

@@ -24,7 +24,6 @@ import ortus.boxlang.ast.expression.*;
 import ortus.boxlang.ast.BoxStatement;
 import ortus.boxlang.ast.statement.*;
 
-import java.awt.desktop.SystemSleepEvent;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -629,7 +628,10 @@ public class BoxCFParser extends BoxAbstractParser {
 	 * @see BoxAssignment
 	 */
 	private BoxStatement toAst( File file, CFParser.AssignmentContext node ) {
-		BoxExpr					left	= toAst( file, node.assignmentLeft() );
+		List<BoxExpr>	alc		= new ArrayList<>();
+		BoxExpr			left	= toAst( file, node.assignmentLeft() );
+		alc.add( left );
+		leftBoxExpression( file, node.assignmentLeft(), alc );
 		BoxExpr					right	= toAst( file, node.assignmentRight() );
 		BoxAssigmentOperator	op		= BoxAssigmentOperator.Equal;
 		if ( node.PLUSEQUAL() != null ) {
@@ -646,7 +648,21 @@ public class BoxCFParser extends BoxAbstractParser {
 			op = BoxAssigmentOperator.ConcatEqual;
 
 		}
-		return new BoxAssignment( left, op, right, getPosition( node ), getSourceText( node ) );
+		return new BoxAssignment( alc, op, right, getPosition( node ), getSourceText( node ) );
+	}
+
+	/**
+	 * Extracts all the left expressions
+	 * 
+	 * @param file source file, if any
+	 * @param al   AssignmentLeftContext
+	 * @param alc  collection of the expressions
+	 */
+	private void leftBoxExpression( File file, CFParser.AssignmentLeftContext al, List<BoxExpr> alc ) {
+		if ( al.assignmentLeft() != null ) {
+			alc.add( toAst( file, al.assignmentLeft().accessExpression() ) );
+			leftBoxExpression( file, al.assignmentLeft(), alc );
+		}
 	}
 
 	/**
