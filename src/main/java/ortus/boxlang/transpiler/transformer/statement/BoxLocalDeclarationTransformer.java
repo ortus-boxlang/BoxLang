@@ -33,7 +33,7 @@ import java.util.Map;
 
 public class BoxLocalDeclarationTransformer extends AbstractTransformer {
 
-	Logger logger = LoggerFactory.getLogger( BoxParenthesisTransformer.class );
+	Logger logger = LoggerFactory.getLogger( BoxLocalDeclarationTransformer.class );
 
 	@Override
 	public Node transform( BoxNode node, TransformerContext context ) throws IllegalStateException {

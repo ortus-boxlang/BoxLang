@@ -244,13 +244,29 @@ public class BoxCFParser extends BoxAbstractParser {
 			return toAst( file, node.assert_() );
 		} else if ( node.throw_() != null ) {
 			return toAst( file, node.throw_() );
+		} else if ( node.rethrow() != null ) {
+			return toAst( file, node.rethrow() );
 		} else {
 			throw new IllegalStateException( "not implemented: " + node.getClass().getSimpleName() );
 		}
 	}
 
 	/**
-	 * Converts the do parser rule to the corresponding AST node
+	 * Converts the rethrow parser rule to the corresponding AST node
+	 *
+	 * @param file source file, if any
+	 * @param node ANTLR RethrowContext rule
+	 *
+	 * @return the corresponding AST BoxStatement
+	 *
+	 * @see BoxThrow
+	 */
+	private BoxStatement toAst( File file, CFParser.RethrowContext node ) {
+		return new BoxRethrow( getPosition( node ), getSourceText( node ) );
+	}
+
+	/**
+	 * Converts the throw parser rule to the corresponding AST node
 	 *
 	 * @param file source file, if any
 	 * @param node ANTLR ThrowContext rule

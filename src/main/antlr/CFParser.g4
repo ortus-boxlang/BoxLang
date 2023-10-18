@@ -431,6 +431,7 @@ fqn
     :   (identifier DOT)* identifier
     ;
 
+
 expression
     :   unary
 	|	pre=PLUSPLUS expression
@@ -442,6 +443,7 @@ expression
     |   literalExpression
     |   objectExpression
     |	identifier
+    |   ICHAR expression ICHAR
     |   LPAREN expression RPAREN
     |   accessExpression
     |   methodInvokation

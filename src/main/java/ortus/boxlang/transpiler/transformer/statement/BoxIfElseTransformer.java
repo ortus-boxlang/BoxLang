@@ -34,7 +34,7 @@ import java.util.Map;
 
 public class BoxIfElseTransformer extends AbstractTransformer {
 
-	Logger logger = LoggerFactory.getLogger( BoxParenthesisTransformer.class );
+	Logger logger = LoggerFactory.getLogger( BoxIfElseTransformer.class );
 
 	@Override
 	public Node transform( BoxNode node, TransformerContext context ) throws IllegalStateException {

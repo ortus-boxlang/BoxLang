@@ -156,6 +156,7 @@ public class BoxLangTranspiler {
 																		put( BoxNewOperation.class, new BoxNewOperationTransformer() );
 																		put( BoxFunctionDeclaration.class, new BoxFunctionDeclarationTransformer() );
 																		put( BoxReturn.class, new BoxReturnTransformer() );
+																		put( BoxRethrow.class, new BoxRethrowTransformer() );
 
 																	}
 																};

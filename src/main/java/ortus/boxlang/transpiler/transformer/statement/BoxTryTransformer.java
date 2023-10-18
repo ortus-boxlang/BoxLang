@@ -56,21 +56,22 @@ public class BoxTryTransformer extends AbstractTransformer {
 
 		NodeList<CatchClause> catchClauses = new NodeList<CatchClause>();
 		boxTry.getCatches().stream().forEach( clause -> {
-			BlockStmt catchBody = new BlockStmt();
+			BlockStmt			catchBody	= new BlockStmt();
+			String				name		= computeName( clause );
+			Map<String, String>	values		= new HashMap<>() {
+
+												{
+													put( "expr", name );
+												}
+											};
+
+			Statement			handler		= ( Statement ) parseStatement( "catchContext = new CatchBoxContext( context, Key.of( \"${expr}\" ), ${expr} );",
+			    values );
+
+			catchBody.addStatement( handler );
 			clause.getCatchBody().stream().forEach( stmt -> catchBody.getStatements().add(
 			    ( Statement ) BoxLangTranspiler.transform( stmt )
 			) );
-			String				name	= computeName( clause );
-			Map<String, String>	values	= new HashMap<>() {
-
-											{
-												put( "expr", name );
-											}
-										};
-
-			Statement			handler	= ( Statement ) parseStatement( "catchContext = new CatchBoxContext( context, Key.of( \"${expr}\" ), ${expr} );",
-			    values );
-			catchBody.addStatement( handler );
 
 			catchClauses.add( new CatchClause( new Parameter( new ClassOrInterfaceType( "Throwable" ), name ), catchBody ) );
 		}
