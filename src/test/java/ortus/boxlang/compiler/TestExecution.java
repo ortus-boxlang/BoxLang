@@ -1,26 +1,18 @@
 package ortus.boxlang.compiler;
 
 import static com.google.common.truth.Truth.assertThat;
-import static org.junit.Assert.assertTrue;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-import java.io.File;
 import java.io.IOException;
 
 import org.junit.jupiter.api.Test;
 
-import com.github.javaparser.ast.Node;
-
-import ortus.boxlang.parser.BoxScriptType;
-import ortus.boxlang.parser.BoxParser;
-import ortus.boxlang.parser.ParsingResult;
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.ScriptingBoxContext;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
-import ortus.boxlang.transpiler.BoxLangTranspiler;
 
 /**
  * [BoxLang]
@@ -112,16 +104,17 @@ public class TestExecution extends TestBase {
 		BoxRuntime	instance	= BoxRuntime.getInstance( true );
 		IBoxContext	context		= new ScriptingBoxContext( instance.getRuntimeContext() );
 		IScope		variables	= context.getScopeNearby( VariablesScope.name );
-		// Don't know what " no viable alternative at input" mwans
+
 		instance.executeSource(
 		    """
-		     do {
-		    result = variables.result + 1;
-		     } while( result < 10  );
-		     """,
+		    result = 1;
+		        do {
+		       result = variables.result + 1;
+		        } while( result < 10  );
+		        """,
 		    context );
 
-		// assertThat( variables.dereference( result, false ) ).isEqualTo( 10 );
+		assertThat( variables.dereference( Key.of( "result" ), false ) ).isEqualTo( 10 );
 
 	}
 

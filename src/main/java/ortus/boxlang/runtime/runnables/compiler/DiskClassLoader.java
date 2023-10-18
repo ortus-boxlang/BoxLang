@@ -24,6 +24,7 @@ import java.nio.file.Paths;
 
 import javax.tools.JavaFileObject;
 
+import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.types.exceptions.ApplicationException;
 
 /**
@@ -36,7 +37,7 @@ public class DiskClassLoader extends URLClassLoader {
 
 	/**
 	 * Constructor
-	 * 
+	 *
 	 * @param urls      classpath
 	 * @param parent    parent classloader
 	 * @param diskStore disk store
@@ -51,7 +52,7 @@ public class DiskClassLoader extends URLClassLoader {
 
 	/**
 	 * Find class on disk, if not found, delegate to parent
-	 * 
+	 *
 	 * @param name class name
 	 */
 	@Override
@@ -84,10 +85,14 @@ public class DiskClassLoader extends URLClassLoader {
 	 * Check if a class exists on disk
 	 *
 	 * @param name class name
-	 * 
+	 *
 	 * @return true if class exists on disk
 	 */
 	public boolean hasClass( String name ) {
+		// Don't use disk cache if we are in debug mode
+		if ( BoxRuntime.getInstance().inDebugMode() ) {
+			return false;
+		}
 		return generateDiskPath( name ).toFile().exists();
 	}
 
@@ -96,7 +101,7 @@ public class DiskClassLoader extends URLClassLoader {
 	 *
 	 * @param name         class name
 	 * @param lastModified last modified timestamp of source file
-	 * 
+	 *
 	 * @return true if class exists on disk and is up to date
 	 */
 	public boolean hasClass( String name, long lastModified ) {
@@ -116,7 +121,7 @@ public class DiskClassLoader extends URLClassLoader {
 	 * Check if a class exists on disk
 	 *
 	 * @param name class name
-	 * 
+	 *
 	 * @return true if class exists on disk
 	 */
 	private boolean hasClass( Path name ) {
@@ -127,7 +132,7 @@ public class DiskClassLoader extends URLClassLoader {
 	 * Generate a disk path for a class name
 	 *
 	 * @param name class name
-	 * 
+	 *
 	 * @return path to class file
 	 */
 	private Path generateDiskPath( String name ) {

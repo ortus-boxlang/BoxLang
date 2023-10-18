@@ -20,6 +20,8 @@ import java.net.URLClassLoader;
 import java.nio.file.Paths;
 import java.util.Map;
 
+import ortus.boxlang.runtime.BoxRuntime;
+
 /**
  * Dynamic in Memory classloader
  */
@@ -44,8 +46,11 @@ public class JavaDynamicClassLoader extends URLClassLoader {
 			byte[] bytes = compiledClasses.get( name )
 			    .getBytes();
 
-			// Cache on disk
-			diskClassLoader.writeToDisk( name, bytes );
+			// Don't use disk cache if we are in debug mode
+			if ( !BoxRuntime.getInstance().inDebugMode() ) {
+				// Cache on disk
+				diskClassLoader.writeToDisk( name, bytes );
+			}
 
 			return defineClass( name, bytes, 0, bytes.length );
 		} else {
