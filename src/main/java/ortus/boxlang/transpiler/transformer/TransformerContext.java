@@ -17,5 +17,7 @@ package ortus.boxlang.transpiler.transformer;
 public enum TransformerContext {
 	NONE, LEFT, RIGHT,
 
-	REGISTER, DEREFERENCING
+	REGISTER,
+	DEREFERENCING,
+	INIT
 }
