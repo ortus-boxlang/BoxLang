@@ -14,10 +14,7 @@
  */
 package ortus.boxlang.parser;
 
-import org.antlr.v4.runtime.CharStreams;
-import org.antlr.v4.runtime.CommonTokenStream;
-import org.antlr.v4.runtime.ParserRuleContext;
-import org.antlr.v4.runtime.RuleContext;
+import org.antlr.v4.runtime.*;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.input.BOMInputStream;
 import ortus.boxlang.parser.antlr.CFLexer;
@@ -27,6 +24,7 @@ import ortus.boxlang.ast.expression.*;
 import ortus.boxlang.ast.BoxStatement;
 import ortus.boxlang.ast.statement.*;
 
+import java.awt.desktop.SystemSleepEvent;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -109,9 +107,18 @@ public class BoxCFParser extends BoxAbstractParser {
 		CFLexer		lexer		= new CFLexer( CharStreams.fromStream( inputStream ) );
 		CFParser	parser		= new CFParser( new CommonTokenStream( lexer ) );
 		addErrorListeners( lexer, parser );
-		CFParser.ExpressionContext	parseTree	= parser.expression();
-		BoxExpr						ast			= toAst( null, parseTree );
-		return new ParsingResult( ast, issues );
+		// var t = lexer.nextToken();
+		// while ( t.getType() != Token.EOF ) {
+		//
+		// System.out.println( t + " " + lexer.getVocabulary().getSymbolicName( t.getType() ) + " " + lexer.getModeNames()[ lexer._mode ] );
+		// t = lexer.nextToken();
+		// }
+		CFParser.ExpressionContext parseTree = parser.expression();
+		if ( issues.isEmpty() ) {
+			BoxExpr ast = toAst( null, parseTree );
+			return new ParsingResult( ast, issues );
+		}
+		return new ParsingResult( null, issues );
 	}
 
 	/**
@@ -938,6 +945,10 @@ public class BoxCFParser extends BoxAbstractParser {
 			BoxExpr	left	= toAst( file, expression.expression( 0 ) );
 			BoxExpr	right	= toAst( file, expression.expression( 1 ) );
 			return new BoxBinaryOperation( left, BoxBinaryOperator.CastAs, right, getPosition( expression ), getSourceText( expression ) );
+		} else if ( expression.ICHAR() != null ) {
+			List<BoxExpr> parts = new ArrayList<>();
+			parts.add( toAst( file, expression.expression( 0 ) ) );
+			return new BoxStringInterpolation( parts, getPosition( expression ), getSourceText( expression ) );
 		}
 		// TODO: add other cases
 		throw new IllegalStateException( "not implemented: " + expression.getClass().getSimpleName() );
