@@ -271,15 +271,14 @@ public class CoreLangTest {
 
 		instance.executeSource(
 		    """
-		        do {
-		      	result = 1;
-		        } while( true ) {
-		      	result = variables.result + 1;
-		    if( result > "10" ) {
-		    	break;
-		    }
-		        }
-		        """,
+		       	result = 1;
+		         do {
+		    result = variables.result + 1;
+		     		if( result > "10" ) {
+		     			break;
+		     		}
+		         } while( true )
+		         """,
 		    context );
 		assertThat( variables.dereference( result, false ) ).isEqualTo( 11 );
 
