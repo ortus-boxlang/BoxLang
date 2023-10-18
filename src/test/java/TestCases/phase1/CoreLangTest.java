@@ -20,11 +20,14 @@ package TestCases.phase1;
 import static com.google.common.truth.Truth.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
+import java.util.concurrent.TimeUnit;
+
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.IBoxContext;
@@ -228,18 +231,16 @@ public class CoreLangTest {
 
 	@DisplayName( "do while loop" )
 	@Test
+	@Timeout( value = 5, unit = TimeUnit.SECONDS )
 	public void testDoWhileLoop() {
 
-		// Don't know what " no viable alternative at input" mwans
 		instance.executeSource(
 		    """
-		      do {
-		    result = 1;
-		      } while( result < "10"  ) {
-		      	// while logic
+		     result = 1;
+		     do {
 		    result = variables.result + 1;
-		      }
-		      """,
+		     } while( result < 10 )
+		     """,
 		    context );
 		assertThat( variables.dereference( result, false ) ).isEqualTo( 10 );
 
