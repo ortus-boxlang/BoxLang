@@ -79,7 +79,7 @@ public class BoxRunner {
 		}
 
 		// Get a runtime going
-		BoxRuntime boxRuntime = BoxRuntime.getInstance( options.debug() );
+		BoxRuntime boxRuntime = BoxRuntime.getInstance( options.debug(), options.configFile() );
 
 		if ( options.templatePath() != null ) {
 			// Execute a file

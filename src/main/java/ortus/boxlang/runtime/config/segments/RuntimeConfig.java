@@ -72,7 +72,7 @@ public class RuntimeConfig {
 		if ( config.containsKey( "mappings" ) ) {
 			tempTester = config.get( "mappings" );
 			if ( tempTester instanceof Map ) {
-				this.mappings = new Struct( ( Map<Object, Object> ) tempTester );
+				this.mappings.addAll( new Struct( ( Map<Object, Object> ) tempTester ) );
 			} else {
 				logger.warn( "The [runtime.mappings] configuration is not a JSON Object, ignoring it." );
 			}

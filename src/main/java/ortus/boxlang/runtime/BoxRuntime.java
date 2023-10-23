@@ -73,7 +73,8 @@ public class BoxRuntime {
 	    "preFunctionInvoke",
 	    "postFunctionInvoke",
 	    "onScopeCreation",
-	    "onConfigurationLoad"
+	    "onConfigurationLoad",
+	    "onConfigurationOverrideLoad"
 	);
 
 	/**
@@ -136,9 +137,10 @@ public class BoxRuntime {
 	/**
 	 * Static constructor
 	 *
-	 * @param debugMode true if the runtime should be started in debug mode
+	 * @param debugMode  true if the runtime should be started in debug mode
+	 * @param configPath The path to the configuration file to load as overrides
 	 */
-	private BoxRuntime( Boolean debugMode ) {
+	private BoxRuntime( Boolean debugMode, String configPath ) {
 		// Internal timer
 		timerUtil.start( "startup" );
 
@@ -161,6 +163,12 @@ public class BoxRuntime {
 		this.configuration		= ConfigLoader.getInstance().loadCore();
 		interceptorService.announce( "onConfigurationLoad", Struct.of( "config", this.configuration ) );
 
+		// Config Override?
+		if ( configPath != null ) {
+			this.configuration.process( ConfigLoader.getInstance().deserializeConfig( configPath ) );
+			interceptorService.announce( "onConfigurationOverrideLoad", Struct.of( "config", this.configuration ) );
+		}
+
 		// Create our runtime context that will be the granddaddy of all contexts that execute inside this runtime
 		this.runtimeContext = new RuntimeBoxContext();
 
@@ -181,12 +189,27 @@ public class BoxRuntime {
 	/**
 	 * Get the singleton instance. This can be null if the runtime has not been started yet.
 	 *
+	 * @param debugMode true if the runtime should be started in debug mode
+	 *
 	 * @return BoxRuntime
 	 *
 	 */
 	public static synchronized BoxRuntime getInstance( Boolean debugMode ) {
+		return getInstance( debugMode, null );
+	}
+
+	/**
+	 * Get the singleton instance. This can be null if the runtime has not been started yet.
+	 *
+	 * @param debugMode  true if the runtime should be started in debug mode
+	 * @param configPath The path to the configuration file to load as overrides
+	 *
+	 * @return BoxRuntime
+	 *
+	 */
+	public static synchronized BoxRuntime getInstance( Boolean debugMode, String configPath ) {
 		if ( instance == null ) {
-			instance = new BoxRuntime( debugMode );
+			instance = new BoxRuntime( debugMode, configPath );
 		}
 		return instance;
 	}

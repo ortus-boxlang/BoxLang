@@ -123,14 +123,25 @@ public class ConfigLoader {
 	}
 
 	/**
-	 * Load the config from a Map of settings
+	 * Load the config from a Struct of settings
 	 *
-	 * @param configMap The configuration map to load as a Configuration object
+	 * @param configMap The configuration structure to load as a Configuration object
 	 *
 	 * @return The parsed configuration
 	 */
-	public Configuration loadFromMap( Map<?, ?> configMap ) {
-		return new Configuration().process( new Struct( configMap ) );
+	public Configuration loadFromMap( Struct configMap ) {
+		return new Configuration().process( configMap );
+	}
+
+	/**
+	 * Load the config from a Map of settings
+	 *
+	 * @param configMap The configuration Map to load as a Configuration object
+	 *
+	 * @return The parsed configuration
+	 */
+	public Configuration loadFromMap( Map<Object, Object> configMap ) {
+		return loadFromMap( new Struct( configMap ) );
 	}
 
 	/**
@@ -140,17 +151,10 @@ public class ConfigLoader {
 	 *
 	 * @return The parsed configuration
 	 */
-	@SuppressWarnings( "unchecked" )
 	public Configuration loadFromFile( File source ) {
-		// Parse it natively to Java objects
-		Object rawConfig = JsonUtil.fromJson( source );
-		// Verify it loaded the configuration map
-		if ( rawConfig instanceof Map ) {
-			logger.info( "Loaded custom BoxLang configuration file [{}]", source );
-			return loadFromMap( ( Map<Object, Object> ) rawConfig );
-		} else {
-			throw new ConfigurationException( "The config map is not a JSON object. Can't work with it." );
-		}
+		Struct rawConfig = deserializeConfig( source );
+		logger.info( "Loaded custom BoxLang configuration file [{}]", source );
+		return loadFromMap( rawConfig );
 	}
 
 	/**
@@ -184,6 +188,59 @@ public class ConfigLoader {
 	 */
 	public Configuration loadFromFile( String source ) {
 		return loadFromFile( new File( source ) );
+	}
+
+	/**
+	 * Load the config from a file source and return the raw config map
+	 *
+	 * @param source The source to load the configuration from
+	 *
+	 * @return The raw config map as a Struct
+	 */
+	@SuppressWarnings( "unchecked" )
+	public Struct deserializeConfig( File source ) {
+		// Parse it natively to Java objects
+		Object rawConfig = JsonUtil.fromJson( source );
+
+		// Verify it loaded the configuration map
+		if ( rawConfig instanceof Map ) {
+			return new Struct( ( Map<Object, Object> ) rawConfig );
+		}
+
+		throw new ConfigurationException( "The config map is not a JSON object. Can't work with it." );
+	}
+
+	/**
+	 * Load the config from a String path source and return the raw config map
+	 *
+	 * @param source The source to load the configuration from
+	 *
+	 * @return The raw config map as a Struct
+	 */
+	public Struct deserializeConfig( String source ) {
+		return deserializeConfig( new File( source ) );
+	}
+
+	/**
+	 * Load the config from a URL path source and return the raw config map
+	 *
+	 * @param source The source to load the configuration from
+	 *
+	 * @return The raw config map as a Struct
+	 */
+	public Struct deserializeConfig( URL source ) {
+		return deserializeConfig( new File( source.getFile() ) );
+	}
+
+	/**
+	 * Load the config from a path source and return the raw config map
+	 *
+	 * @param source The source to load the configuration from
+	 *
+	 * @return The raw config map as a Struct
+	 */
+	public Struct deserializeConfig( Path source ) {
+		return deserializeConfig( source.toFile() );
 	}
 
 }
