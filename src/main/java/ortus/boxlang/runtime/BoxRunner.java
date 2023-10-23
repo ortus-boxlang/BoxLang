@@ -38,6 +38,7 @@ import ortus.boxlang.runtime.util.Timer;
  * <ul>
  * <li><code>--debug</code> - Enables debug mode</li>
  * <li><code>-c</code> - Executes the code passed as the next argument. Mutually exclusive with a template execution.</li>
+ * <li><code>-config</code> - Path to the config file to use for overrides.</li>
  * </ul>
  *
  * Here are some examples of how to use the BoxLang runtime:
@@ -53,6 +54,8 @@ import ortus.boxlang.runtime.util.Timer;
  * java -jar ortus-boxlang.jar --debug /path/to/template
  * // Execute code inline
  * java -jar ortus-boxlang.jar -c "2+2"
+ * // Execute with a custom config file
+ * java -jar ortus-boxlang.jar -config /path/to/config.json /path/to/template
  * </pre>
  */
 public class BoxRunner {
