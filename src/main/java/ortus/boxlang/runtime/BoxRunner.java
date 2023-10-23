@@ -22,6 +22,7 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 
 import ortus.boxlang.runtime.types.exceptions.ApplicationException;
 import ortus.boxlang.runtime.util.Timer;
@@ -68,8 +69,8 @@ public class BoxRunner {
 	public static void main( String[] args ) {
 		Timer		timer	= new Timer();
 
-		// Parse CLI options
-		CLIOptions	options	= parseCommandLineOptions( args );
+		// Parse CLI options with Env Overrides
+		CLIOptions	options	= parseEnvironmentVariables( parseCommandLineOptions( args ) );
 
 		// Debug mode?
 		if ( options.debug() ) {
@@ -97,6 +98,26 @@ public class BoxRunner {
 		if ( options.debug() ) {
 			System.out.println( "+++ BoxRunner executed in " + timer.stop( "BoxRunner" ) );
 		}
+	}
+
+	/**
+	 * Helper method to parse environment variables and set options accordingly.
+	 *
+	 * @param options The CLIOptions object with the parsed options
+	 *
+	 * @return A new CLIOptions object with the parsed options + environment overrides
+	 */
+	private static CLIOptions parseEnvironmentVariables( CLIOptions options ) {
+		Map<String, String>	envVars		= System.getenv();
+		Boolean				debug		= envVars.containsKey( "BOXLANG_DEBUG" ) ? Boolean.parseBoolean( envVars.get( "BOXLANG_DEBUG" ) ) : options.debug();
+		String				configFile	= envVars.containsKey( "BOXLANG_CONFIG" ) ? envVars.get( "BOXLANG_CONFIG" ) : options.configFile();
+
+		return new CLIOptions(
+		    options.templatePath(),
+		    debug,
+		    options.code(),
+		    configFile
+		);
 	}
 
 	/**
