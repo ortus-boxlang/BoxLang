@@ -10,7 +10,7 @@ plugins {
 	id 'antlr'
 	// For source code formatting
 	id "com.diffplug.spotless" version "6.20.0"
-    id 'com.github.johnrengelman.shadow' version '7.1.0'
+    id 'com.github.johnrengelman.shadow' version '8.1.1'
 }
 
 /**
@@ -158,13 +158,11 @@ jar {
 }
 
 shadowJar {
-    //baseName = 'ortus-boxlang-all'
 	exclude 'com/ibm/icu/**'
-    version = '1.0.0'
-   // classifier = null
-    manifest {
-        attributes 'Main-Class': 'ortus.boxlang.runtime.BoxRunner'
-    }
+	manifest {
+		attributes 'Description': 'This is the Ortus BoxLang Distribution JAR'
+	}
+	minimize()
 }
 
 /**
