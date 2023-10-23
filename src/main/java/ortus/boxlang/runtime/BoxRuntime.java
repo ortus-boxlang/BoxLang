@@ -157,8 +157,8 @@ public class BoxRuntime {
 		// Create Services
 		this.interceptorService	= InterceptorService.getInstance( RUNTIME_EVENTS );
 
-		// Load Core Configuration
-		this.configuration		= ConfigLoader.getInstance().load();
+		// Load Core Configuration file
+		this.configuration		= ConfigLoader.getInstance().loadCore();
 		interceptorService.announce( "onConfigurationLoad", Struct.of( "config", this.configuration ) );
 
 		// Create our runtime context that will be the granddaddy of all contexts that execute inside this runtime

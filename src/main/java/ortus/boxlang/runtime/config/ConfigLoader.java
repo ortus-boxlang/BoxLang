@@ -17,6 +17,9 @@
  */
 package ortus.boxlang.runtime.config;
 
+import java.nio.file.Path;
+import java.io.File;
+import java.net.URL;
 import java.util.Map;
 
 import org.slf4j.Logger;
@@ -87,36 +90,100 @@ public class ConfigLoader {
 	 */
 
 	/**
-	 * Load the config file into the Configuration class from the `resources` folder
+	 * Load the default internal core config file <code>resources/config/config.json</code>
 	 *
 	 * @return The parsed configuration
 	 */
-	public Configuration load() {
-		return load( DEFAULT_CONFIG_FILE );
+	public Configuration loadCore() {
+		return loadFromResources( DEFAULT_CONFIG_FILE );
 	}
 
 	/**
-	 * Load the config file into the Configuration class from a custom location
+	 * Load a config file from the BoxLang <code>resources</code> folder using the class loader
 	 *
-	 * @param configFile The path to the config file
+	 * @param configFile The path to the config file from the <code>resources</code> folder
 	 *
 	 * @return The parsed configuration
 	 */
 	@SuppressWarnings( "unchecked" )
-	public synchronized Configuration load( String configFile ) {
+	public Configuration loadFromResources( String configFile ) {
 		// Parse it natively to Java objects
 		Object rawConfig = JsonUtil.fromJson(
 		    ClassLoader.getSystemClassLoader().getResourceAsStream( configFile )
 		);
 
-		// Process it to BoxLang
+		// Verify it loaded the configuration map
 		if ( rawConfig instanceof Map ) {
-			Configuration config = new Configuration().process( new Struct( ( Map<Object, Object> ) rawConfig ) );
-			logger.info( "Loaded BoxLang configuration file from [{}]", configFile );
-			return config;
+			logger.info( "Loaded internal BoxLang configuration file [{}]", configFile );
+			return loadFromMap( ( Map<Object, Object> ) rawConfig );
 		} else {
-			throw new ConfigurationException( "The config file is not a JSON object. Can't work with it." );
+			throw new ConfigurationException( "The config map is not a JSON object. Can't work with it." );
 		}
+
+	}
+
+	/**
+	 * Load the config from a Map of settings
+	 *
+	 * @param configMap The configuration map to load as a Configuration object
+	 *
+	 * @return The parsed configuration
+	 */
+	public Configuration loadFromMap( Map<?, ?> configMap ) {
+		return new Configuration().process( new Struct( configMap ) );
+	}
+
+	/**
+	 * Load the config from a file
+	 *
+	 * @param source The source to load the configuration from
+	 *
+	 * @return The parsed configuration
+	 */
+	@SuppressWarnings( "unchecked" )
+	public Configuration loadFromFile( File source ) {
+		// Parse it natively to Java objects
+		Object rawConfig = JsonUtil.fromJson( source );
+		// Verify it loaded the configuration map
+		if ( rawConfig instanceof Map ) {
+			logger.info( "Loaded custom BoxLang configuration file [{}]", source );
+			return loadFromMap( ( Map<Object, Object> ) rawConfig );
+		} else {
+			throw new ConfigurationException( "The config map is not a JSON object. Can't work with it." );
+		}
+	}
+
+	/**
+	 * Load the config from a file Path
+	 *
+	 * @param source The source to load the configuration from
+	 *
+	 * @return The parsed configuration
+	 */
+	public Configuration loadFromFile( Path source ) {
+		return loadFromFile( source.toFile() );
+	}
+
+	/**
+	 * Load the config from a URL file source
+	 *
+	 * @param source The source to load the configuration from
+	 *
+	 * @return The parsed configuration
+	 */
+	public Configuration loadFromFile( URL source ) {
+		return loadFromFile( new File( source.getFile() ) );
+	}
+
+	/**
+	 * Load the config from a String file source
+	 *
+	 * @param source The source to load the configuration from
+	 *
+	 * @return The parsed configuration
+	 */
+	public Configuration loadFromFile( String source ) {
+		return loadFromFile( new File( source ) );
 	}
 
 }
