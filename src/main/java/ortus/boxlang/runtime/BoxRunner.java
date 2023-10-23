@@ -31,22 +31,34 @@ import ortus.boxlang.runtime.util.Timer;
  * BoxLang runtime. There are several CLI options that can be passed
  * to this class to control the runtime and execution.
  *
- * <strong>CLI Options</strong>
+ * <p>
+ * <strong>CLI Flags and Options</strong>
+ * </p>
+ *
  * <ul>
  * <li><code>--debug</code> - Enables debug mode</li>
+ * <li><code>-c</code> - Executes the code passed as the next argument. Mutually exclusive with a template execution.</li>
  * </ul>
  *
- * You will execute this class with the following command:
+ * Here are some examples of how to use the BoxLang runtime:
  *
  * <pre>
- * // The first argument is ALWAYS the template to execute
- * java -jar boxlang-runtime.jar /path/to/template --debug
+ * // Execute a template using an absolute path
+ * java -jar ortus-boxlang.jar /path/to/template
+ * // Execute a template using a relative path from the working directory of the process
+ * // It can be a script or a cfc with a `main()` method
+ * java -jar ortus-boxlang.jar mytemplate.bxs
+ * java -jar ortus-boxlang.jar mycfc.bx
+ * // Execute a template in debug mode
+ * java -jar ortus-boxlang.jar --debug /path/to/template
+ * // Execute code inline
+ * java -jar ortus-boxlang.jar -c "2+2"
  * </pre>
  */
 public class BoxRunner {
 
 	/**
-	 * Main entry point for the BoxLang runtime
+	 * Main entry point for the BoxLang runtime.
 	 *
 	 * @param args The command-line arguments
 	 */
@@ -94,19 +106,34 @@ public class BoxRunner {
 	private static CLIOptions parseCommandLineOptions( String[] args ) {
 		// Initialize options with defaults
 		Boolean			debug		= false;
-		List<String>	argsList	= new ArrayList<String>( Arrays.asList( args ) );
+		List<String>	argsList	= new ArrayList<>( Arrays.asList( args ) );
 		String			current		= null;
 		String			file		= null;
+		String			configFile	= null;
 		String			code		= null;
 
 		// Consume args in order
 		// Example: --debug
-		while ( argsList.size() > 0 ) {
+		while ( argsList.isEmpty() ) {
 			current = argsList.remove( 0 );
+
+			// Debug mode Flag, we find and continue to the next argument
 			if ( current.equalsIgnoreCase( "--debug" ) ) {
 				debug = true;
 				continue;
 			}
+
+			// Config File Flag, we find and continue to the next argument for the path
+			if ( current.equalsIgnoreCase( "-config" ) ) {
+				if ( argsList.isEmpty() ) {
+					throw new ApplicationException( "Missing config file path with -config flag, it must be the next argument. [-config /path/config.json]" );
+				}
+				file = argsList.remove( 0 );
+				continue;
+			}
+
+			// Code to execute?
+			// Mutually exclusive with template
 			if ( current.equalsIgnoreCase( "-c" ) ) {
 				if ( argsList.isEmpty() ) {
 					throw new ApplicationException( "Missing inline code to execute with -c flag." );
@@ -115,16 +142,16 @@ public class BoxRunner {
 				break;
 			}
 
+			// Template to execute?
 			Path templatePath = Path.of( current );
-			// If path is not already absolute, make it absolute relative to the worknig directory of our process
+			// If path is not already absolute, make it absolute relative to the working directory of our process
 			if ( ! ( templatePath.toFile().isAbsolute() ) ) {
 				templatePath = Path.of( System.getProperty( "user.dir" ), templatePath.toString() );
 			}
-
 			file = templatePath.toString();
 		}
 
-		return new CLIOptions( file, debug, code );
+		return new CLIOptions( file, debug, code, configFile );
 	}
 
 	/**
@@ -133,8 +160,13 @@ public class BoxRunner {
 	 * @param templatePath The path to the template to execute. Can be a class or template. Mutally exclusive with code
 	 * @param debug        Whether or not to run in debug mode.
 	 * @param code         The source code to execute, if any
+	 * @param configFile   The path to the config file to use
 	 */
-	public record CLIOptions( String templatePath, boolean debug, String code ) {
+	public record CLIOptions(
+	    String templatePath,
+	    boolean debug,
+	    String code,
+	    String configFile ) {
 		// The record automatically generates the constructor, getters, equals, hashCode, and toString methods.
 	}
 
