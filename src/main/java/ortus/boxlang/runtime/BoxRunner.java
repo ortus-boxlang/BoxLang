@@ -73,7 +73,7 @@ public class BoxRunner {
 		CLIOptions	options	= parseEnvironmentVariables( parseCommandLineOptions( args ) );
 
 		// Debug mode?
-		if ( options.debug() ) {
+		if ( Boolean.TRUE.equals( options.debug() ) ) {
 			System.out.println( "+++ Debug mode enabled!" );
 			timer.start( "BoxRunner" );
 		}
@@ -95,7 +95,7 @@ public class BoxRunner {
 		// Bye bye! Ciao Bella!
 		boxRuntime.shutdown();
 
-		if ( options.debug() ) {
+		if ( Boolean.TRUE.equals( options.debug() ) ) {
 			System.out.println( "+++ BoxRunner executed in " + timer.stop( "BoxRunner" ) );
 		}
 	}
@@ -129,7 +129,7 @@ public class BoxRunner {
 	 */
 	private static CLIOptions parseCommandLineOptions( String[] args ) {
 		// Initialize options with defaults
-		Boolean			debug		= false;
+		Boolean			debug		= null;
 		List<String>	argsList	= new ArrayList<>( Arrays.asList( args ) );
 		String			current		= null;
 		String			file		= null;
@@ -182,13 +182,13 @@ public class BoxRunner {
 	 * Command-line options for the runtime and compiler
 	 *
 	 * @param templatePath The path to the template to execute. Can be a class or template. Mutally exclusive with code
-	 * @param debug        Whether or not to run in debug mode.
+	 * @param debug        Whether or not to run in debug mode. It can be `null` if not specified
 	 * @param code         The source code to execute, if any
 	 * @param configFile   The path to the config file to use
 	 */
 	public record CLIOptions(
 	    String templatePath,
-	    boolean debug,
+	    Boolean debug,
 	    String code,
 	    String configFile ) {
 		// The record automatically generates the constructor, getters, equals, hashCode, and toString methods.

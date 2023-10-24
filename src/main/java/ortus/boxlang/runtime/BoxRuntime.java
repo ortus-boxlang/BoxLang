@@ -150,11 +150,13 @@ public class BoxRuntime {
 		this.logger = LoggerFactory.getLogger( BoxRuntime.class );
 
 		// We can now log the startup
-		this.logger.atInfo().log( "+ Starting up BoxLang Runtime" + ( debugMode ? " in debug mode" : " in production mode" ) );
+		if ( debugMode != null ) {
+			this.debugMode = debugMode;
+		}
+		this.logger.atInfo().log( "+ Starting up BoxLang Runtime" + ( this.debugMode ? " in debug mode" : " in production mode" ) );
 
 		// Seed startup properties
 		this.startTime			= Instant.now();
-		this.debugMode			= debugMode;
 
 		// Create Services
 		this.interceptorService	= InterceptorService.getInstance( RUNTIME_EVENTS );
@@ -177,6 +179,12 @@ public class BoxRuntime {
 		if ( configPath != null ) {
 			this.configuration.process( ConfigLoader.getInstance().deserializeConfig( configPath ) );
 			interceptorService.announce( "onConfigurationOverrideLoad", Struct.of( "config", this.configuration, "configOverride", configPath ) );
+		}
+
+		// Config DebugMode Override if null
+		if ( debugMode == null ) {
+			this.debugMode = this.configuration.debugMode;
+			this.logger.atInfo().log( "+ DebugMode detected in config, overriding to {}", this.debugMode );
 		}
 
 		// Create our runtime context that will be the granddaddy of all contexts that execute inside this runtime
@@ -230,7 +238,7 @@ public class BoxRuntime {
 	 * @return BoxRuntime
 	 */
 	public static BoxRuntime getInstance() {
-		return getInstance( false );
+		return getInstance( null );
 	}
 
 	/**

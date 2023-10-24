@@ -1,4 +1,5 @@
 {
+	"debugMode": false,
 	"compiler" : {
 		"classGenerationDirectory" : "${java-temp}boxlang/classes"
 	},

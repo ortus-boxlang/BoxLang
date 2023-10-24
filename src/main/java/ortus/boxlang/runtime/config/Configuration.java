@@ -32,6 +32,11 @@ import ortus.boxlang.runtime.types.Struct;
 public class Configuration {
 
 	/**
+	 * The debug mode flag, defaulted to false
+	 */
+	public Boolean				debugMode	= false;
+
+	/**
 	 * The compiler configuration, defaulted to the default compiler configuration
 	 */
 	public CompilerConfig		compiler	= new CompilerConfig();
@@ -61,6 +66,11 @@ public class Configuration {
 	 * @return the configuration
 	 */
 	public Configuration process( Struct config ) {
+		// Debug Mode
+		if ( config.containsKey( "debugMode" ) ) {
+			this.debugMode = ( Boolean ) config.get( "debugMode" );
+		}
+
 		// Compiler
 		if ( config.containsKey( "compiler" ) ) {
 			if ( config.get( "compiler" ) instanceof Map<?, ?> castedMap ) {
