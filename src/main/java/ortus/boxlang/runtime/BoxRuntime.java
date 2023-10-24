@@ -163,12 +163,6 @@ public class BoxRuntime {
 		this.configuration		= ConfigLoader.getInstance().loadCore();
 		interceptorService.announce( "onConfigurationLoad", Struct.of( "config", this.configuration ) );
 
-		// CLI or ENV Config Path Override?
-		if ( configPath != null ) {
-			this.configuration.process( ConfigLoader.getInstance().deserializeConfig( configPath ) );
-			interceptorService.announce( "onConfigurationOverrideLoad", Struct.of( "config", this.configuration, "configOverride", configPath ) );
-		}
-
 		// User-HOME Override? Check user home for a ${user.home}/.boxlang/config.json
 		String userHomeConfigPath = Paths.get( System.getProperty( "user.home" ) )
 		    .resolve( ".boxlang" )
@@ -177,6 +171,12 @@ public class BoxRuntime {
 		if ( new File( userHomeConfigPath ).exists() ) {
 			this.configuration.process( ConfigLoader.getInstance().deserializeConfig( userHomeConfigPath ) );
 			interceptorService.announce( "onConfigurationOverrideLoad", Struct.of( "config", this.configuration, "configOverride", userHomeConfigPath ) );
+		}
+
+		// CLI or ENV Config Path Override?
+		if ( configPath != null ) {
+			this.configuration.process( ConfigLoader.getInstance().deserializeConfig( configPath ) );
+			interceptorService.announce( "onConfigurationOverrideLoad", Struct.of( "config", this.configuration, "configOverride", configPath ) );
 		}
 
 		// Create our runtime context that will be the granddaddy of all contexts that execute inside this runtime
