@@ -16,7 +16,7 @@ public class BoxTernaryOperationTransformer extends AbstractTransformer {
 	@Override
 	public Node transform( BoxNode node, TransformerContext context ) throws IllegalStateException {
 		BoxTernaryOperation	operation	= ( BoxTernaryOperation ) node;
-		Expression			condition	= ( Expression ) BoxLangTranspiler.transform( operation.getCondition(), TransformerContext.DEREFERENCING );
+		Expression			condition	= ( Expression ) BoxLangTranspiler.transform( operation.getCondition() /* , TransformerContext.DEREFERENCING */ );
 		Expression			whenTrue	= ( Expression ) BoxLangTranspiler.transform( operation.getWhenTrue() );
 		Expression			whenFalse	= ( Expression ) BoxLangTranspiler.transform( operation.getWhenFalse() );
 

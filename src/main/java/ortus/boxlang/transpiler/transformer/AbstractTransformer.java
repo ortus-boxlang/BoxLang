@@ -62,6 +62,7 @@ public abstract class AbstractTransformer implements Transformer {
 			throw new IllegalStateException( result.toString() );
 		}
 		return result.getResult().get();
+
 	}
 
 	/**

@@ -1,5 +1,13 @@
 package ortus.boxlang.compiler;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+
+import java.io.IOException;
+
+import org.junit.Ignore;
+import org.junit.jupiter.api.Test;
+
 /**
  * [BoxLang]
  *
@@ -16,16 +24,10 @@ package ortus.boxlang.compiler;
  */
 
 import com.github.javaparser.ast.Node;
-import org.junit.Ignore;
-import org.junit.jupiter.api.Test;
+
 import ortus.boxlang.parser.BoxParser;
 import ortus.boxlang.parser.ParsingResult;
 import ortus.boxlang.transpiler.BoxLangTranspiler;
-
-import java.io.IOException;
-
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
 
 public class TestOperators extends TestBase {
 
@@ -137,7 +139,7 @@ public class TestOperators extends TestBase {
 		ParsingResult	result		= parseExpression( expression );
 		Node			javaAST		= BoxLangTranspiler.transform( result.getRoot() );
 
-		assertEquals( "Contains.contains(\"Brad Wood\", \"Wood\")", javaAST.toString() );
+		assertEquals( "Contains.invoke(\"Brad Wood\", \"Wood\")", javaAST.toString() );
 
 	}
 
@@ -150,7 +152,7 @@ public class TestOperators extends TestBase {
 		ParsingResult	result		= parseExpression( expression );
 		Node			javaAST		= BoxLangTranspiler.transform( result.getRoot() );
 
-		assertEquals( "!Contains.contains(\"Brad Wood\", \"Luis\")", javaAST.toString() );
+		assertEquals( "!Contains.invoke(\"Brad Wood\", \"Luis\")", javaAST.toString() );
 
 	}
 
@@ -202,7 +204,7 @@ public class TestOperators extends TestBase {
 		ParsingResult	result		= parseExpression( expression );
 		Node			javaAST		= BoxLangTranspiler.transform( result.getRoot() );
 
-		assertEquals( "Ternary.invoke(isGood, \"eat\", \"toss\")", javaAST.toString() );
+		assertEquals( "Ternary.invoke(context.scopeFindNearby( Key.of( \"isGood\" ) ).value(), \"eat\", \"toss\")", javaAST.toString() );
 
 	}
 
@@ -215,7 +217,7 @@ public class TestOperators extends TestBase {
 		ParsingResult	result		= parseExpression( expression );
 		Node			javaAST		= BoxLangTranspiler.transform( result.getRoot() );
 
-		assertEquals( "variablesScope.get(Key.of(\"system\"))", javaAST.toString() );
+		assertEquals( "variablesScope.dereference(Key.of(\"system\"), false)", javaAST.toString() );
 
 	}
 
@@ -229,7 +231,8 @@ public class TestOperators extends TestBase {
 		ParsingResult	result		= parseExpression( expression );
 		Node			javaAST		= BoxLangTranspiler.transform( result.getRoot() );
 
-		assertEquals( "context.scopeFindNearby(Key.of(\"foo\"))", javaAST.toString() );
+		// TODO: foo is getting returned direclty instead of searching the scopes for it
+		assertEquals( "context.scopeFindNearby(Key.of(\"foo\")).value()", javaAST.toString() );
 
 	}
 
@@ -241,8 +244,8 @@ public class TestOperators extends TestBase {
 
 		ParsingResult	result		= parseExpression( expression );
 		Node			javaAST		= BoxLangTranspiler.transform( result.getRoot() );
-
-		assertEquals( "Elvis.invoke(variablesScope.get(Key.of(\"maybeNull\")), \"use if null\")", javaAST.toString() );
+		// TODO: Since we're dereferencing on the left hand side of the elvis operator, we must pass "true" to the safe param of the dereference method
+		assertEquals( "Elvis.invoke(variablesScope.dereference(Key.of(\"maybeNull\"), true), \"use if null\")", javaAST.toString() );
 
 	}
 
@@ -256,11 +259,12 @@ public class TestOperators extends TestBase {
 		ParsingResult	result		= parseExpression( expression );
 		Node			javaAST		= BoxLangTranspiler.transform( result.getRoot() );
 
+		// TODO: All dereferncing on the left hand side of an elvis operator must be done safely
 		assertEqualsNoWhiteSpaces( """
 		                           Elvis.invoke(
 		                           	Referencer.get(
 		                           		variablesScope
-		                           		  .get(
+		                           		  .dereference(
 		                           		    Key.of( "foo" ),
 		                           		    true
 		                           		  ),
@@ -282,7 +286,7 @@ public class TestOperators extends TestBase {
 
 		Node			javaAST		= BoxLangTranspiler.transform( result.getRoot() );
 
-		assertEquals( "Xor.invoke(2, 3)", javaAST.toString() );
+		assertEquals( "XOR.invoke(2, 3)", javaAST.toString() );
 
 	}
 
@@ -310,7 +314,8 @@ public class TestOperators extends TestBase {
 
 		Node			javaAST		= BoxLangTranspiler.transform( result.getRoot() );
 
-		assertEquals( "InstanceOf.invoke(context.scopeFindNearby(Key.of(\"foo\"), variablesScope).scope().get(Key.of(\"foo\")), \"String\")",
+		// TODO: Per implementation guide, use context.getDefaultAssignmentScope() and don't hard-code variablesScope
+		assertEquals( "InstanceOf.invoke(context, context.scopeFindNearby(Key.of(\"foo\"), context.getDefaultAssignmentScope()).value(), \"String\")",
 		    javaAST.toString() );
 
 	}
@@ -599,9 +604,10 @@ public class TestOperators extends TestBase {
 
 		Node			javaAST		= BoxLangTranspiler.transform( result.getRoot() );
 		System.out.println( javaAST );
+		// TODO: This doesn't seem correct. Shouldn't we be calling the EqualsEquals.invoke operator here
 		assertEqualsNoWhiteSpaces(
 		    """
-		    "a is " + variablesScope.get(Key.of("a")) + " and b is " + variablesScope.get(Key.of("b"))
+		    "a is " + variablesScope.dereference(Key.of("a"),false) + " and b is " + variablesScope.dereference(Key.of("b"),false)
 		      """, javaAST.toString() );
 	}
 

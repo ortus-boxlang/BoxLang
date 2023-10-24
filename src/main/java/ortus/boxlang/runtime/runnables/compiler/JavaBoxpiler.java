@@ -35,6 +35,7 @@ import javax.tools.ToolProvider;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.github.javaparser.ast.CompilationUnit;
 import com.github.javaparser.ast.Node;
 
 import ortus.boxlang.ast.BoxExpr;
@@ -43,9 +44,10 @@ import ortus.boxlang.ast.BoxStatement;
 import ortus.boxlang.ast.Point;
 import ortus.boxlang.ast.Position;
 import ortus.boxlang.ast.statement.BoxExpression;
-import ortus.boxlang.parser.BoxScriptType;
 import ortus.boxlang.parser.BoxParser;
+import ortus.boxlang.parser.BoxScriptType;
 import ortus.boxlang.parser.ParsingResult;
+import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.config.util.PlaceholderHelper;
 import ortus.boxlang.runtime.runnables.IBoxRunnable;
 import ortus.boxlang.runtime.types.exceptions.ApplicationException;
@@ -54,6 +56,7 @@ import ortus.boxlang.transpiler.BoxLangTranspiler;
 /**
  * This class uses the Java compiler to turn a BoxLang script into a Java class
  */
+@SuppressWarnings( "unchecked" )
 public class JavaBoxpiler {
 
 	/**
@@ -92,7 +95,7 @@ public class JavaBoxpiler {
 		this.diskClassLoader	= new DiskClassLoader(
 		    new URL[] {},
 		    this.getClass().getClassLoader(),
-		    Paths.get( System.getProperty( "java.io.tmpdir" ) + File.separator + "boxlang" + File.separator + "cfclasses" ),
+		    Paths.get( BoxRuntime.getInstance().getConfiguration().compiler.classGenerationDirectory ),
 		    manager
 		);
 
@@ -246,13 +249,15 @@ public class JavaBoxpiler {
 					result = parser.parseStatement( source );
 				} catch ( IOException e ) {
 					throw new ApplicationException( "Error compiling source", e );
-				} catch ( IllegalStateException e ) {
-					try {
-						result = parser.parseExpression( source );
-					} catch ( IOException e2 ) {
-						throw new ApplicationException( "Error compiling source", e2 );
-					}
-				}
+				} /*
+				   * catch ( IllegalStateException e ) {
+				   * try {
+				   * result = parser.parseExpression( source );
+				   * } catch ( IOException e2 ) {
+				   * throw new ApplicationException( "Error compiling source", e2 );
+				   * }
+				   * }
+				   */
 				result.getIssues().forEach( it -> System.out.println( it ) );
 				if ( !result.isCorrect() ) {
 					throw new ApplicationException( "Error compiling source. " + result.getIssues().get( 0 ).toString() );
@@ -300,9 +305,22 @@ public class JavaBoxpiler {
 					throw new ApplicationException( "Error compiling source. " + result.getIssues().get( 0 ).toString() );
 				}
 
-				BoxLangTranspiler	transpiler	= new BoxLangTranspiler();
+				BoxLangTranspiler		transpiler	= new BoxLangTranspiler();
 
-				Node				javaAST		= ( Node ) transpiler.transpile( ( BoxScript ) result.getRoot() );
+				List<CompilationUnit>	javaASTs	= transpiler.transpileMany( result.getRoot() );
+				String					test		= "";
+
+				// loop over javaasts, appending to test string
+				for ( int i = 0; i < javaASTs.size(); i++ ) {
+					test += javaASTs.get( i ).toString();
+					if ( i < javaASTs.size() - 1 ) {
+						test += "\n\n\n&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&\n\n\n";
+					}
+				}
+				if ( false )
+					throw new ApplicationException( test );
+
+				Node javaAST = ( Node ) transpiler.transpile( ( BoxScript ) result.getRoot() );
 
 				compileSource( makeClass( transpiler.getStatementsAsString() + "\n return null;", "BoxScript", packageName, className ), fqn );
 			}

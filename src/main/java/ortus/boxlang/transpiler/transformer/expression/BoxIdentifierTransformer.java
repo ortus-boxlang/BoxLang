@@ -45,6 +45,7 @@ public class BoxIdentifierTransformer extends AbstractTransformer {
 
 		String				template	= switch ( context ) {
 											case DEREFERENCING -> "Key.of( \"${identifier}\" )";
+											// default -> "context.scopeFindNearby( Key.of( \"${identifier}\" ) , variablesScope )";
 											default -> "${identifier}";
 										};
 

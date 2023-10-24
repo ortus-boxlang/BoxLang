@@ -24,6 +24,7 @@ import ortus.boxlang.ast.Position;
 public class BoxObjectAccess extends BoxAccess {
 
 	private BoxExpr	context;
+	private boolean	safe;
 	private BoxExpr	access;
 
 	public BoxExpr getContext() {
@@ -42,17 +43,23 @@ public class BoxObjectAccess extends BoxAccess {
 		this.access = access;
 	}
 
+	public Boolean isSafe() {
+		return safe;
+	}
+
 	/**
 	 * Creates the AST node
 	 *
 	 * @param context    expression representing the object
 	 * @param access     expression after the dot
+	 * @param safe       boolean save operation
 	 * @param position   position of the statement in the source code
 	 * @param sourceText source code that originated the Node
 	 */
-	public BoxObjectAccess( BoxExpr context, BoxExpr access, Position position, String sourceText ) {
+	public BoxObjectAccess( BoxExpr context, Boolean safe, BoxExpr access, Position position, String sourceText ) {
 		super( position, sourceText );
 		this.context	= context;
+		this.safe		= safe;
 		this.access		= access;
 		this.context.setParent( this );
 		this.access.setParent( this );

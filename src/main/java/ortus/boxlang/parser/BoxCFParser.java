@@ -653,7 +653,7 @@ public class BoxCFParser extends BoxAbstractParser {
 
 	/**
 	 * Extracts all the left expressions
-	 * 
+	 *
 	 * @param file source file, if any
 	 * @param al   AssignmentLeftContext
 	 * @param alc  collection of the expressions
@@ -714,7 +714,7 @@ public class BoxCFParser extends BoxAbstractParser {
 		if ( node.objectExpression() != null ) {
 			BoxExpr	context	= toAst( file, node.objectExpression() );
 			BoxExpr	target	= toAst( file, node.accessExpression() );
-			return new BoxObjectAccess( context, target, getPosition( node ), getSourceText( node ) );
+			return new BoxObjectAccess( context, node.QM() != null, target, getPosition( node ), getSourceText( node ) );
 		}
 
 		throw new IllegalStateException( "not implemented: " + node.getClass().getSimpleName() );
@@ -768,6 +768,9 @@ public class BoxCFParser extends BoxAbstractParser {
 	private BoxExpr toAst( File file, CFParser.ScopeContext node ) {
 		if ( node.VARIABLES() != null ) {
 			return new BoxScope( node.VARIABLES().getText(), getPosition( node ), getSourceText( node ) );
+		}
+		if ( node.LOCAL() != null ) {
+			return new BoxScope( node.LOCAL().getText(), getPosition( node ), getSourceText( node ) );
 		}
 		throw new IllegalStateException( "not implemented: " + node.getClass().getSimpleName() );
 	}
