@@ -27,7 +27,7 @@ import org.junit.jupiter.api.Test;
 
 import ortus.boxlang.runtime.context.ScriptingBoxContext;
 
-public class FunctionServiceTest {
+class FunctionServiceTest {
 
 	@DisplayName( "It can create the function service" )
 	@Test

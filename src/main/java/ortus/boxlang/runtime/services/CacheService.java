@@ -75,12 +75,15 @@ public class CacheService extends BaseService {
 	/**
 	 * The startup event is fired when the runtime starts up
 	 */
+	@Override
 	public void onStartup() {
+		logger.info( "CacheService.onStartup()" );
 	}
 
 	/**
 	 * The configuration load event is fired when the runtime loads its configuration
 	 */
+	@Override
 	public void onConfigurationLoad() {
 		logger.info( "CacheService.onConfigurationLoad()" );
 	}
@@ -88,6 +91,7 @@ public class CacheService extends BaseService {
 	/**
 	 * The shutdown event is fired when the runtime shuts down
 	 */
+	@Override
 	public void onShutdown() {
 		logger.info( "CacheService.onShutdown()" );
 	}
