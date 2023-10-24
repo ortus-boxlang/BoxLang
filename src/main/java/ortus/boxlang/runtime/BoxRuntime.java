@@ -495,7 +495,6 @@ public class BoxRuntime {
 
 				try {
 
-					// TODO: I think we need an expression runnable that returns the result of the expression
 					BoxScript	scriptRunnable	= RunnableLoader.getInstance().loadStatement( source );
 
 					// Fire!!!

@@ -136,6 +136,7 @@ public class Referencer {
 			Object next = obj.dereference( key, true );
 			// If missing, create as a Struct
 			if ( next == null ) {
+
 				next = new Struct();
 				obj.assign( key, next );
 				// If it's not null, it needs to be a Map

@@ -47,6 +47,7 @@ import ortus.boxlang.ast.statement.BoxExpression;
 import ortus.boxlang.parser.BoxParser;
 import ortus.boxlang.parser.BoxScriptType;
 import ortus.boxlang.parser.ParsingResult;
+import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.config.util.PlaceholderHelper;
 import ortus.boxlang.runtime.runnables.IBoxRunnable;
 import ortus.boxlang.runtime.types.exceptions.ApplicationException;
@@ -94,7 +95,7 @@ public class JavaBoxpiler {
 		this.diskClassLoader	= new DiskClassLoader(
 		    new URL[] {},
 		    this.getClass().getClassLoader(),
-		    Paths.get( System.getProperty( "java.io.tmpdir" ) + File.separator + "boxlang" + File.separator + "cfclasses" ),
+		    Paths.get( BoxRuntime.getInstance().getConfiguration().compiler.classGenerationDirectory ),
 		    manager
 		);
 
