@@ -75,6 +75,36 @@ public class TestObjectReference extends TestBase {
 	}
 
 	@Test
+	public void testDereferenceByPeriod() throws IOException {
+		String			expression	= """
+		                              			foo.bar
+		                              """;
+
+		BoxParser		parser		= new BoxParser();
+		ParsingResult	result		= parser.parseExpression( expression );
+		Node			javaAST		= BoxLangTranspiler.transform( result.getRoot() );
+
+		assertEqualsNoWhiteSpaces(
+		    "Referencer.get( context.scopeFindNearby( Key.of( \"foo\" ), null ).value(), Key.of( \"bar\" ), false )",
+		    javaAST.toString() );
+	}
+
+	@Test
+	public void testSafeDereferenceByPeriod() throws IOException {
+		String			expression	= """
+		                              			foo?.bar
+		                              """;
+
+		BoxParser		parser		= new BoxParser();
+		ParsingResult	result		= parser.parseExpression( expression );
+		Node			javaAST		= BoxLangTranspiler.transform( result.getRoot() );
+
+		assertEqualsNoWhiteSpaces(
+		    "Referencer.get( context.scopeFindNearby( Key.of( \"foo\" ), null ).value(), Key.of( \"bar\" ), true )",
+		    javaAST.toString() );
+	}
+
+	@Test
 	public void testDereferenceByKeyFromKnownScope() throws IOException {
 		String			expression	= """
 		                              			variables.foo
@@ -85,6 +115,20 @@ public class TestObjectReference extends TestBase {
 		Node			javaAST		= BoxLangTranspiler.transform( result.getRoot() );
 
 		assertEqualsNoWhiteSpaces( "variablesScope.dereference( Key.of( \"foo\"), false )",
+		    javaAST.toString() );
+	}
+
+	@Test
+	public void testSafeDereferenceByKeyFromKnownScope() throws IOException {
+		String			expression	= """
+		                              			variables?.foo
+		                              """;
+
+		BoxParser		parser		= new BoxParser();
+		ParsingResult	result		= parser.parseExpression( expression );
+		Node			javaAST		= BoxLangTranspiler.transform( result.getRoot() );
+
+		assertEqualsNoWhiteSpaces( "variablesScope.dereference( Key.of( \"foo\"), true )",
 		    javaAST.toString() );
 	}
 
