@@ -1,5 +1,10 @@
 package ortus.boxlang.compiler;
 
+import java.io.IOException;
+
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
+
 /**
  * [BoxLang]
  *
@@ -16,14 +21,10 @@ package ortus.boxlang.compiler;
  */
 
 import com.github.javaparser.ast.Node;
-import org.junit.Ignore;
-import org.junit.jupiter.api.Disabled;
-import org.junit.jupiter.api.Test;
+
 import ortus.boxlang.parser.BoxParser;
 import ortus.boxlang.parser.ParsingResult;
 import ortus.boxlang.transpiler.BoxLangTranspiler;
-
-import java.io.IOException;
 
 public class TestObjectReference extends TestBase {
 
@@ -99,7 +100,7 @@ public class TestObjectReference extends TestBase {
 
 		assertEqualsNoWhiteSpaces( """
 		                           variablesScope
-		                             .put(
+		                             .assign(
 		                               Key.of( "foo" ),
 		                               bar
 		                             );
