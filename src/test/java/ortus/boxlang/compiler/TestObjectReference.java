@@ -84,7 +84,7 @@ public class TestObjectReference extends TestBase {
 		ParsingResult	result		= parser.parseExpression( expression );
 		Node			javaAST		= BoxLangTranspiler.transform( result.getRoot() );
 
-		assertEqualsNoWhiteSpaces( "variablesScope.get( Key.of( \"foo\" ) )",
+		assertEqualsNoWhiteSpaces( "variablesScope.dereference( Key.of( \"foo\"), false )",
 		    javaAST.toString() );
 	}
 
@@ -98,6 +98,7 @@ public class TestObjectReference extends TestBase {
 		ParsingResult	result		= parser.parseStatement( expression );
 		Node			javaAST		= BoxLangTranspiler.transform( result.getRoot() );
 
+		// TODO: we're generating extra {} braces around the code. Not sure if that is correct.
 		assertEqualsNoWhiteSpaces( """
 		                           variablesScope
 		                             .assign(

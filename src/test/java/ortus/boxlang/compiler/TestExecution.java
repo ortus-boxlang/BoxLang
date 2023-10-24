@@ -92,7 +92,6 @@ public class TestExecution extends TestBase {
 		result = instance.executeStatement( "5 LT 10", context );
 		assertThat( result ).isEqualTo( true );
 
-		// not implemented
 		result = instance.executeStatement( "5 LESS THAN 10", context );
 		assertThat( result ).isEqualTo( true );
 
@@ -123,12 +122,10 @@ public class TestExecution extends TestBase {
 
 		BoxRuntime	instance	= BoxRuntime.getInstance( true );
 		IBoxContext	context		= new ScriptingBoxContext( instance.getRuntimeContext() );
-		// variable sdf should not exist, therefore an error needs to be thrown
 		assertThrows( Throwable.class, () -> instance.executeStatement( "5 castAs sdf",
 
 		    context ) );
 
-		// castAs keyword doesn't seem to be implemented-- the parser is just directly returning the 5 as a literal
 		Object result = instance.executeStatement( "5 castAs 'String'", context );
 		assertThat( result ).isEqualTo( "5" );
 		assertThat( result.getClass().getName() ).isEqualTo( "java.lang.String" );
@@ -140,7 +137,7 @@ public class TestExecution extends TestBase {
 		BoxRuntime	instance	= BoxRuntime.getInstance( true );
 		IBoxContext	context		= new ScriptingBoxContext( instance.getRuntimeContext() );
 
-		// variable sdf should not exist, therefore an error needs to be thrown
+		// TODO: tmp needs to be searched for as an unscooped variable instaed of passing the key
 		instance.executeStatement(
 		    """
 
@@ -158,7 +155,7 @@ public class TestExecution extends TestBase {
 		BoxRuntime	instance	= BoxRuntime.getInstance( true );
 		IBoxContext	context		= new ScriptingBoxContext( instance.getRuntimeContext() );
 		IScope		variables	= context.getScopeNearby( VariablesScope.name );
-		// variable sdf should not exist, therefore an error needs to be thrown
+
 		instance.executeSource(
 		    """
 		    // To escape a quote char, double it.
