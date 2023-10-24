@@ -1,16 +1,18 @@
 package ortus.boxlang.compiler;
 
-import com.github.javaparser.ast.Node;
-import com.github.javaparser.ast.stmt.BlockStmt;
-import org.junit.jupiter.api.Test;
-import ortus.boxlang.parser.BoxParser;
-import ortus.boxlang.parser.ParsingResult;
-import ortus.boxlang.transpiler.BoxLangTranspiler;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 import java.io.IOException;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import org.junit.jupiter.api.Test;
+
+import com.github.javaparser.ast.Node;
+import com.github.javaparser.ast.stmt.BlockStmt;
+
+import ortus.boxlang.parser.BoxParser;
+import ortus.boxlang.parser.ParsingResult;
+import ortus.boxlang.transpiler.BoxLangTranspiler;
 
 public class TestStatements extends TestBase {
 
@@ -72,6 +74,7 @@ public class TestStatements extends TestBase {
 		ParsingResult	result		= parseStatement( statement );
 		Node			javaAST		= BoxLangTranspiler.transform( result.getRoot() );
 
+		// TODO: There are now {} braces around the Java code. Is this correct?
 		assertEquals( "variablesScope.assign(Key.of(\"system\"), \"Hello\");", javaAST.toString() );
 	}
 
@@ -104,6 +107,7 @@ public class TestStatements extends TestBase {
 		ParsingResult	result		= parseStatement( statement );
 
 		Node			javaAST		= BoxLangTranspiler.transform( result.getRoot() );
+		// TODO: There are now {} braces around the Java code for assignments. Is this correct?
 		assertEqualsNoWhiteSpaces(
 		    """
 		    if(BooleanCaster.cast(EqualsEquals.invoke(variablesScope.dereference(Key.of("a"),false),"0"))){variablesScope.assign(Key.of("a"),Concat.invoke(context.scopeFindNearby(Key.of("a"),variablesScope).value(),"1"));}elseif(Not.invoke(EqualsEquals.invoke(context.scopeFindNearby(Key.of("foo"),variablesScope).scope().get(Key.of("foo")),false))){variablesScope.assign(Key.of("a"),Concat.invoke(context.scopeFindNearby(Key.of("a"),variablesScope).value(),"2"));}
@@ -123,6 +127,7 @@ public class TestStatements extends TestBase {
 		ParsingResult	result		= parseStatement( statement );
 
 		Node			javaAST		= BoxLangTranspiler.transform( result.getRoot() );
+		// TODO: There are now {} braces around the Java code for assignments. Is this correct?
 		assertEqualsNoWhiteSpaces(
 		    """
 		    while(BooleanCaster.cast(EqualsEquals.invoke(variablesScope.dereference(Key.of("a"),false),true))){
@@ -154,6 +159,7 @@ public class TestStatements extends TestBase {
 
 		Node			javaAST		= BoxLangTranspiler.transform( result.getRoot() );
 		System.out.println( javaAST );
+		// TODO: There are now {} braces around the Java code for assignments. Is this correct?
 		assertEqualsNoWhiteSpaces(
 		    """
 		    do {
@@ -195,6 +201,7 @@ public class TestStatements extends TestBase {
 
 		Node			javaAST		= BoxLangTranspiler.transform( result.getRoot() );
 
+		// TODO: There are now {} braces around the Java code for assignments. Is this correct?
 		assertEqualsNoWhiteSpaces(
 		    """
 		    do {
@@ -224,6 +231,7 @@ public class TestStatements extends TestBase {
 
 		Node			javaAST		= BoxLangTranspiler.transform( result.getRoot() );
 		System.out.println( javaAST );
+		// TODO: There are now {} braces around the Java code for assignments. Is this correct?
 		assertEqualsNoWhiteSpaces(
 		    """
 		    {
@@ -290,6 +298,7 @@ public class TestStatements extends TestBase {
 
 		Node			javaAST		= BoxLangTranspiler.transform( result.getRoot() );
 		System.out.println( javaAST );
+		// TODO: There are now {} braces around the Java code for assignments. Is this correct?
 		assertEqualsNoWhiteSpaces(
 		    """
 		    try{
@@ -312,6 +321,7 @@ public class TestStatements extends TestBase {
 
 		Node			javaAST		= BoxLangTranspiler.transform( result.getRoot() );
 		System.out.println( javaAST );
+		// TODO: There are now {} braces around the Java code for assignments. Is this correct?
 		assertEqualsNoWhiteSpaces(
 		    """
 		    Plus.invoke(context.scopeFindNearby(Key.of("a"),variablesScope).scope(),Key.of("a"),1);
@@ -330,6 +340,7 @@ public class TestStatements extends TestBase {
 
 		Node			javaAST		= BoxLangTranspiler.transform( result.getRoot() );
 		System.out.println( javaAST );
+		// TODO: There are now {} braces around the Java code for assignments. Is this correct?
 		assertEqualsNoWhiteSpaces(
 		    """
 		    do{
@@ -367,6 +378,7 @@ public class TestStatements extends TestBase {
 
 		Node			javaAST		= BoxLangTranspiler.transform( result.getRoot() );
 		System.out.println( javaAST );
+		// TODO: This assert doesn't seem correct
 		assertEqualsNoWhiteSpaces(
 		    """
 		    throw(newjava.lang.RuntimeException("MyMessage"));
@@ -384,6 +396,7 @@ public class TestStatements extends TestBase {
 
 		Node			javaAST		= BoxLangTranspiler.transform( result.getRoot() );
 		System.out.println( javaAST );
+		// TODO: There are now {} braces around the Java code for assignments. Is this correct?
 		assertEqualsNoWhiteSpaces(
 		    """
 		    context.scopeFindNearby(Key.of("test4"),variablesScope).scope().assign(Key.of("test4"),"Brad\\"the guy\\"Wood");
@@ -401,9 +414,10 @@ public class TestStatements extends TestBase {
 
 		Node			javaAST		= BoxLangTranspiler.transform( result.getRoot() );
 		System.out.println( javaAST );
+		// TODO: Wrong quotes in the java generated source. Single quotes inside the string must be preserved as-is, not changed to double quotes
 		assertEqualsNoWhiteSpaces(
 		    """
-		    context.scopeFindNearby(Key.of("test5"),variablesScope).scope().assign(Key.of("test5"),"Luis\\"the man\\"Majano");
+		    context.scopeFindNearby(Key.of("test5"),variablesScope).scope().assign(Key.of("test5"),"Luis 'the man' Majano");
 		    """, javaAST.toString() );
 	}
 
@@ -418,6 +432,7 @@ public class TestStatements extends TestBase {
 
 		Node			javaAST		= BoxLangTranspiler.transform( result.getRoot() );
 		System.out.println( javaAST );
+		// TODO: There are now {} braces around the Java code for assignments. Is this correct?
 		assertEqualsNoWhiteSpaces(
 		    """
 		    context.scopeFindNearby(Key.of("test5"),variablesScope).scope().assign(Key.of("test5"),"I have locker #20");
@@ -435,6 +450,7 @@ public class TestStatements extends TestBase {
 
 		Node			javaAST		= BoxLangTranspiler.transform( result.getRoot() );
 		System.out.println( javaAST );
+		// TODO: There are now {} braces around the Java code for assignments. Is this correct?
 		assertEqualsNoWhiteSpaces(
 		    """
 		    context.scopeFindNearby(Key.of("result"),variablesScope).scope().assign(Key.of("result"),"Box"+Plus.invoke(5,6)+"Lang");

@@ -3,7 +3,7 @@ name: BoxLang Snapshots
 on:
   push:
     branches:
-      - development
+      - disabled
 
 jobs:
   #############################################

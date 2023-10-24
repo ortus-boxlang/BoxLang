@@ -138,7 +138,7 @@ public class BoxRunner {
 
 		// Consume args in order
 		// Example: --debug
-		while ( argsList.isEmpty() ) {
+		while ( !argsList.isEmpty() ) {
 			current = argsList.remove( 0 );
 
 			// Debug mode Flag, we find and continue to the next argument
