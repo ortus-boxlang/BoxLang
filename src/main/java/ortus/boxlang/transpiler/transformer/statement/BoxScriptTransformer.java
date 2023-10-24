@@ -59,6 +59,8 @@ public class BoxScriptTransformer extends AbstractTransformer {
 		import ortus.boxlang.runtime.operators.*;
 		import ortus.boxlang.runtime.scopes.Key;
 		import ortus.boxlang.runtime.scopes.IScope;
+		import ortus.boxlang.runtime.scopes.LocalScope;
+		import ortus.boxlang.runtime.scopes.VariablesScope;
 		import ortus.boxlang.runtime.dynamic.casters.*;
 		import ortus.boxlang.runtime.loader.ImportDefinition;
 
@@ -104,7 +106,7 @@ public class BoxScriptTransformer extends AbstractTransformer {
 			public void _invoke( IBoxContext context ) {
 				// Reference to the variables scope
 				IBoxContext			catchContext = null;
-				IScope variablesScope = context.getScopeNearby( Key.of( "variables" ) );
+				IScope variablesScope = context.getScopeNearby( VariablesScope.name );
 				ClassLocator JavaLoader = ClassLocator.getInstance();
 
 			}

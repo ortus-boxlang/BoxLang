@@ -53,7 +53,7 @@ public class BoxLocalDeclarationTransformer extends AbstractTransformer {
 												};
 
 				String				template	= """
-				                                  context.getScopeNearby( Key.of( LocalScope.name ) )
+				                                  context.getScopeNearby( LocalScope.name )
 				                                  	.assign(Key.of( "${variable}" ),
 				                                  	${expr});
 				                                  """;

@@ -55,6 +55,9 @@ public class BoxAssignmentTransformer extends AbstractTransformer {
 				if ( "assign".equalsIgnoreCase( method.getName().asString() ) ) {
 					method.getArguments().add( right );
 				}
+				if ( "setDeep".equalsIgnoreCase( method.getName().asString() ) ) {
+					method.getArguments().add( 1, right );
+				}
 				if ( assigment.getOp() == BoxAssigmentOperator.PlusEqual ) {
 					MethodCallExpr methodCall = ( MethodCallExpr ) left;
 					values.put( "expr", methodCall.getScope().get().toString() );
