@@ -500,7 +500,7 @@ public class BoxRuntime {
 					// Fire!!!
 					Object		result			= scriptRunnable.invoke( scriptingContext );
 					System.out.println( result );
-				} catch ( Throwable e ) {
+				} catch ( Exception e ) {
 					e.printStackTrace();
 				} finally {
 					// Debugging Timer
