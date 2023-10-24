@@ -120,8 +120,8 @@ public class GenericCaster {
 
 			if ( object.getClass().isArray() ) {
 				incomingList = ( Object[] ) object;
-			} else if ( object instanceof List ) {
-				incomingList = ( ( List<?> ) object ).toArray();
+			} else if ( object instanceof List<?> l ) {
+				incomingList = l.toArray();
 			} else {
 				throw new ApplicationException(
 				    String.format( "You asked for type %s, but input %s cannot be cast to an array.", type,

@@ -74,20 +74,19 @@ public class CollectionCaster {
 		}
 		object = DynamicObject.unWrap( object );
 
-		if ( object instanceof IScope ) {
-			IScope scope = ( IScope ) object;
+		if ( object instanceof IScope scope ) {
 			return scope.keySet()
 			    .stream()
 			    .map( k -> k.getName() )
 			    .collect( Collectors.toList() );
 		}
 
-		if ( object instanceof Map ) {
-			return ( ( Map<Object, Object> ) object ).keySet();
+		if ( object instanceof Map map ) {
+			return map.keySet();
 		}
 
-		if ( object instanceof Collection ) {
-			return ( Collection<Object> ) object;
+		if ( object instanceof Collection col ) {
+			return col;
 		}
 
 		if ( object.getClass().isArray() ) {

@@ -68,11 +68,11 @@ public class FloatCaster {
 
 		object = DynamicObject.unWrap( object );
 
-		if ( object instanceof Number ) {
-			return Float.valueOf( ( ( Number ) object ).floatValue() );
+		if ( object instanceof Number num ) {
+			return Float.valueOf( num.floatValue() );
 		}
-		if ( object instanceof Boolean ) {
-			return Float.valueOf( ( Boolean ) object ? 1 : 0 );
+		if ( object instanceof Boolean bool ) {
+			return Float.valueOf( bool ? 1 : 0 );
 		}
 
 		// TODO: Find a way to check if the string can be cast without throwing an exception here

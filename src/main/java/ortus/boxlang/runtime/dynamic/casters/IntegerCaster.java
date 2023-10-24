@@ -68,11 +68,11 @@ public class IntegerCaster {
 
 		object = DynamicObject.unWrap( object );
 
-		if ( object instanceof Number ) {
-			return Integer.valueOf( ( ( Number ) object ).intValue() );
+		if ( object instanceof Number num ) {
+			return Integer.valueOf( num.intValue() );
 		}
-		if ( object instanceof Boolean ) {
-			return Integer.valueOf( ( Boolean ) object ? 1 : 0 );
+		if ( object instanceof Boolean bool ) {
+			return Integer.valueOf( bool ? 1 : 0 );
 		}
 
 		// TODO: Find a way to check if the string can be cast without throwing an exception here

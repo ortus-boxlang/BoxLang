@@ -68,11 +68,10 @@ public class CharacterCaster {
 
 		object = DynamicObject.unWrap( object );
 
-		if ( object instanceof Character ) {
-			return ( Character ) object;
+		if ( object instanceof Character chr ) {
+			return chr;
 		}
-		if ( object instanceof String ) {
-			String str = object.toString();
+		if ( object instanceof String str ) {
 			if ( str.length() > 0 ) {
 				return Character.valueOf( str.charAt( 0 ) );
 			}
@@ -83,11 +82,11 @@ public class CharacterCaster {
 			}
 
 		}
-		if ( object instanceof Boolean ) {
-			return Character.valueOf( ( char ) ( ( Boolean ) object ? 1 : 0 ) );
+		if ( object instanceof Boolean bool ) {
+			return Character.valueOf( ( char ) ( bool ? 1 : 0 ) );
 		}
-		if ( object instanceof Number ) {
-			return Character.valueOf( ( char ) ( ( Number ) object ).doubleValue() );
+		if ( object instanceof Number num ) {
+			return Character.valueOf( ( char ) num.doubleValue() );
 		}
 
 		if ( fail ) {

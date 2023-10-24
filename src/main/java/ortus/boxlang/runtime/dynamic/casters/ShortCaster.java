@@ -68,11 +68,11 @@ public class ShortCaster {
 
 		object = DynamicObject.unWrap( object );
 
-		if ( object instanceof Number ) {
-			return Short.valueOf( ( ( Number ) object ).shortValue() );
+		if ( object instanceof Number num ) {
+			return Short.valueOf( num.shortValue() );
 		}
-		if ( object instanceof Boolean ) {
-			return Short.valueOf( ( short ) ( ( Boolean ) object ? 1 : 0 ) );
+		if ( object instanceof Boolean bool ) {
+			return Short.valueOf( ( short ) ( bool ? 1 : 0 ) );
 		}
 
 		// TODO: Find a way to check if the string can be cast without throwing an exception here

@@ -66,14 +66,14 @@ public class StringCaster {
 		}
 		object = DynamicObject.unWrap( object );
 
-		if ( object instanceof String ) {
-			return ( String ) object;
+		if ( object instanceof String str ) {
+			return str;
 		}
-		if ( object instanceof Boolean ) {
-			return ( ( Boolean ) object ) ? "true" : "false";
+		if ( object instanceof Boolean bool ) {
+			return bool ? "true" : "false";
 		}
-		if ( object instanceof Character ) {
-			return object.toString();
+		if ( object instanceof Character chr ) {
+			return chr.toString();
 		}
 		if ( object instanceof Integer || object instanceof Long || object instanceof Short || object instanceof Byte ) {
 			return object.toString();
@@ -85,8 +85,8 @@ public class StringCaster {
 			}
 			return result;
 		}
-		if ( object instanceof Double ) {
-			double	dObject	= ( Double ) object;
+		if ( object instanceof Double d ) {
+			double	dObject	= d;
 			long	lObject	= ( long ) dObject;
 			if ( dObject == lObject || Math.abs( dObject - lObject ) < 0.000000000001 ) {
 				return new DecimalFormat( "#.############" ).format( object );
@@ -96,8 +96,8 @@ public class StringCaster {
 			return object.toString();
 		}
 
-		if ( object instanceof byte[] ) {
-			return new String( ( byte[] ) object );
+		if ( object instanceof byte[] b ) {
+			return new String( b );
 		}
 
 		if ( fail ) {

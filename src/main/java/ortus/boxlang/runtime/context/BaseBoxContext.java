@@ -230,8 +230,8 @@ public class BaseBoxContext implements IBoxContext {
 			throw new ApplicationException( "Function '" + name.toString() + "' not found" );
 		}
 		Object value = result.value();
-		if ( value instanceof Function ) {
-			return ( ( Function ) value );
+		if ( value instanceof Function fun ) {
+			return fun;
 		} else {
 			throw new ApplicationException(
 			    "Variable '" + name + "' of type  '" + value.getClass().getName() + "'  is not a function." );

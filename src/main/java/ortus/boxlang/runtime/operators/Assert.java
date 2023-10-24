@@ -39,8 +39,8 @@ public class Assert implements IOperator {
 	public static Boolean invoke( IBoxContext context, Object result ) throws AssertionError {
 
 		// if the result is a Function, check it and call it
-		if ( result instanceof Function ) {
-			result = context.invokeFunction( ( Function ) result );
+		if ( result instanceof Function fun ) {
+			result = context.invokeFunction( fun );
 		}
 
 		if ( result != null && BooleanCaster.cast( result ) ) {

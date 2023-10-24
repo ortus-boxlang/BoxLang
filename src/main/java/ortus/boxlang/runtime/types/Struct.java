@@ -354,8 +354,8 @@ public class Struct implements Map<Key, Object>, IType, IReferenceable {
 		    .parallelStream()
 		    .forEach( entry -> {
 			    Key key;
-			    if ( entry.getKey() instanceof Key ) {
-				    key = ( Key ) entry.getKey();
+			    if ( entry.getKey() instanceof Key entryKey ) {
+				    key = entryKey;
 			    } else {
 				    key = Key.of( entry.getKey().toString() );
 			    }
@@ -506,9 +506,8 @@ public class Struct implements Map<Key, Object>, IType, IReferenceable {
 		Object value = dereference( name, true );
 		if ( value != null ) {
 
-			if ( value instanceof Function ) {
-				Function			function	= ( Function ) value;
-				FunctionBoxContext	fContext	= new FunctionBoxContext(
+			if ( value instanceof Function function ) {
+				FunctionBoxContext fContext = new FunctionBoxContext(
 				    context,
 				    function,
 				    name,
@@ -545,9 +544,8 @@ public class Struct implements Map<Key, Object>, IType, IReferenceable {
 		// Member functions here
 
 		Object value = dereference( name, safe );
-		if ( value instanceof Function ) {
-			Function			function	= ( Function ) value;
-			FunctionBoxContext	fContext	= new FunctionBoxContext(
+		if ( value instanceof Function function ) {
+			FunctionBoxContext fContext = new FunctionBoxContext(
 			    context,
 			    function,
 			    name,

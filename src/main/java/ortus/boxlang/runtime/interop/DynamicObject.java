@@ -828,8 +828,7 @@ public class DynamicObject implements IReferenceable {
 	 * @return The target instance or class, depending which one is set
 	 */
 	public static Object unWrap( Object param ) {
-		if ( param instanceof DynamicObject ) {
-			DynamicObject invoker = ( DynamicObject ) param;
+		if ( param instanceof DynamicObject invoker ) {
 			if ( invoker.hasInstance() ) {
 				return invoker.getTargetInstance();
 			} else {
@@ -910,18 +909,18 @@ public class DynamicObject implements IReferenceable {
 	 */
 	public Object dereference( Key name, Boolean safe ) {
 
-		if ( hasInstance() && getTargetInstance() instanceof IReferenceable ) {
-			return ( ( IReferenceable ) getTargetInstance() ).dereference( name, safe );
+		if ( hasInstance() && getTargetInstance() instanceof IReferenceable ref ) {
+			return ref.dereference( name, safe );
 		}
 
 		// If we have the field, return it's value, even if it's null
 		if ( hasField( name.getName() ) ) {
 			return getField( name.getName() ).orElse( null );
 			// Special logic so we can treat exceptions as referencable. Possibly move to helper
-		} else if ( getTargetInstance() instanceof Throwable && exceptionKeys.contains( name ) ) {
+		} else if ( getTargetInstance() instanceof Throwable t && exceptionKeys.contains( name ) ) {
 			// Throwable.message always delegates through to the message field
 			if ( name.equals( BoxLangException.messageKey ) ) {
-				return ( ( Throwable ) getTargetInstance() ).getMessage();
+				return t.getMessage();
 			} else {
 				// CFML returns "" for Throwable.detail, etc
 				return "";
@@ -996,8 +995,8 @@ public class DynamicObject implements IReferenceable {
 	 */
 	public Object dereferenceAndInvoke( IBoxContext context, Key name, Object[] positionalArguments, Boolean safe ) {
 
-		if ( hasInstance() && getTargetInstance() instanceof IReferenceable ) {
-			return ( ( IReferenceable ) getTargetInstance() ).dereferenceAndInvoke( context, name, positionalArguments, safe );
+		if ( hasInstance() && getTargetInstance() instanceof IReferenceable ref ) {
+			return ref.dereferenceAndInvoke( context, name, positionalArguments, safe );
 		}
 
 		if ( safe && !hasMethod( name.getName() ) ) {
@@ -1018,8 +1017,8 @@ public class DynamicObject implements IReferenceable {
 	 */
 	public Object dereferenceAndInvoke( IBoxContext context, Key name, Map<Key, Object> namedArguments, Boolean safe ) {
 
-		if ( hasInstance() && getTargetInstance() instanceof IReferenceable ) {
-			return ( ( IReferenceable ) getTargetInstance() ).dereferenceAndInvoke( context, name, namedArguments, safe );
+		if ( hasInstance() && getTargetInstance() instanceof IReferenceable ref ) {
+			return ref.dereferenceAndInvoke( context, name, namedArguments, safe );
 		}
 
 		throw new ApplicationException( "Java objects cannot be called with named argumments" );
@@ -1034,8 +1033,8 @@ public class DynamicObject implements IReferenceable {
 	@SuppressWarnings( "unchecked" )
 	public Object assign( Key name, Object value ) {
 
-		if ( hasInstance() && getTargetInstance() instanceof IReferenceable ) {
-			( ( IReferenceable ) getTargetInstance() ).assign( name, value );
+		if ( hasInstance() && getTargetInstance() instanceof IReferenceable ref ) {
+			ref.assign( name, value );
 		}
 
 		if ( hasInstance() && getTargetInstance().getClass().isArray() ) {
