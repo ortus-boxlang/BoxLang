@@ -63,24 +63,23 @@ public class DoubleCaster {
 
 		object = DynamicObject.unWrap( object );
 
-		if ( object instanceof Double ) {
-			return ( Double ) object;
+		if ( object instanceof Double d ) {
+			return d;
 		}
-		if ( object instanceof Number ) {
-			return ( ( Number ) object ).doubleValue();
-		}
-
-		if ( object instanceof Boolean ) {
-			return ( Boolean ) object ? 1D : 0D;
+		if ( object instanceof Number num ) {
+			return num.doubleValue();
 		}
 
-		if ( object instanceof String ) {
-			String o = ( String ) object;
+		if ( object instanceof Boolean bool ) {
+			return bool ? 1D : 0D;
+		}
+
+		if ( object instanceof String str ) {
 			// String true and yes are truthy
-			if ( o.equalsIgnoreCase( "true" ) || o.equalsIgnoreCase( "yes" ) ) {
+			if ( str.equalsIgnoreCase( "true" ) || str.equalsIgnoreCase( "yes" ) ) {
 				return 1D;
 				// String false and no are truthy
-			} else if ( o.equalsIgnoreCase( "false" ) || o.equalsIgnoreCase( "no" ) ) {
+			} else if ( str.equalsIgnoreCase( "false" ) || str.equalsIgnoreCase( "no" ) ) {
 				return 0D;
 			}
 		}

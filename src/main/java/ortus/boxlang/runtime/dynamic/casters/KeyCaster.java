@@ -66,10 +66,10 @@ public class KeyCaster {
 			}
 		}
 
-		if ( object instanceof Key ) {
-			return ( Key ) object;
-		} else if ( object instanceof String ) {
-			return Key.of( ( String ) object );
+		if ( object instanceof Key key ) {
+			return key;
+		} else if ( object instanceof String str ) {
+			return Key.of( str );
 		} else {
 			CastAttempt<String> castAttempt = StringCaster.attempt( object );
 			if ( castAttempt.wasSuccessful() ) {

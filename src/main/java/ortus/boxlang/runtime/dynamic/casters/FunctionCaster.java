@@ -69,8 +69,8 @@ public class FunctionCaster {
 
 		object = DynamicObject.unWrap( object );
 
-		if ( object instanceof Function ) {
-			return ( Function ) object;
+		if ( object instanceof Function fun ) {
+			return fun;
 		} else {
 			if ( fail ) {
 				throw new ApplicationException(

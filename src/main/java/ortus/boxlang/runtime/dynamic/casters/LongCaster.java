@@ -68,11 +68,11 @@ public class LongCaster {
 
 		object = DynamicObject.unWrap( object );
 
-		if ( object instanceof Number ) {
-			return Long.valueOf( ( ( Number ) object ).longValue() );
+		if ( object instanceof Number num ) {
+			return Long.valueOf( num.longValue() );
 		}
-		if ( object instanceof Boolean ) {
-			return Long.valueOf( ( Boolean ) object ? 1 : 0 );
+		if ( object instanceof Boolean bool ) {
+			return Long.valueOf( bool ? 1 : 0 );
 		}
 
 		// TODO: Find a way to check if the string can be cast without throwing an exception here

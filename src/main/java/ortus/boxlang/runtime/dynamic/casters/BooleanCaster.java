@@ -64,25 +64,24 @@ public class BooleanCaster {
 
 		object = DynamicObject.unWrap( object );
 
-		if ( object instanceof Boolean ) {
-			return ( Boolean ) object;
+		if ( object instanceof Boolean bool ) {
+			return bool;
 		}
-		if ( object instanceof Number ) {
+		if ( object instanceof Number num ) {
 			// Positive and negative numbers are true, zero is false
-			return ( ( Number ) object ).doubleValue() != 0;
+			return num.doubleValue() != 0;
 		}
-		if ( object instanceof String ) {
-			String o = ( String ) object;
+		if ( object instanceof String str ) {
 			// String true and yes are truthy
-			if ( o.equalsIgnoreCase( "true" ) || o.equalsIgnoreCase( "yes" ) ) {
+			if ( str.equalsIgnoreCase( "true" ) || str.equalsIgnoreCase( "yes" ) ) {
 				return true;
 				// String false and no are falsey
-			} else if ( o.equalsIgnoreCase( "false" ) || o.equalsIgnoreCase( "no" ) ) {
+			} else if ( str.equalsIgnoreCase( "false" ) || str.equalsIgnoreCase( "no" ) ) {
 				return false;
 			}
 			if ( fail ) {
 				throw new ApplicationException(
-				    String.format( "String [%s] cannot be cast to a boolean", o )
+				    String.format( "String [%s] cannot be cast to a boolean", str )
 				);
 			} else {
 				return null;

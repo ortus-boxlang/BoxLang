@@ -198,8 +198,8 @@ public class Phase1TryCatch extends BoxTemplate {
 				);
 			} else {
 				// Because there is no "any" catch block, we rethrow if we didn't match the type above.)
-				if ( e instanceof RuntimeException ) {
-					throw ( RuntimeException ) e;
+				if ( e instanceof RuntimeException re ) {
+					throw re;
 				} else {
 					// Pretty sure this can never be reached, but the compiler won't let me blindly rethrow a Throwable
 					throw new ApplicationException( e.getMessage(), e );

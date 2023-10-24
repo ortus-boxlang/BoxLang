@@ -27,8 +27,7 @@ public class ExceptionUtil {
 
 	public static Boolean exceptionIsOfType( IBoxContext context, Throwable e, String type ) {
 		// BoxLangExceptions check the type
-		if ( e instanceof BoxLangException ) {
-			BoxLangException ble = ( BoxLangException ) e;
+		if ( e instanceof BoxLangException ble ) {
 			// Either direct match to type, or "foo.bar" matches "foo.bar.baz
 			if ( ble.type.equalsIgnoreCase( type ) || ble.type.toLowerCase().startsWith( type + "." ) )
 				return true;

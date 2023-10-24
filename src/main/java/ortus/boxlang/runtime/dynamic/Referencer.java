@@ -153,8 +153,8 @@ public class Referencer {
 	}
 
 	private static IReferenceable getReferenceable( Object object ) {
-		if ( object instanceof IReferenceable ) {
-			return ( IReferenceable ) object;
+		if ( object instanceof IReferenceable ref ) {
+			return ref;
 		} else {
 			return DynamicObject.of( object );
 		}
