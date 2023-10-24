@@ -60,13 +60,11 @@ public class Configuration {
 	 *
 	 * @return the configuration
 	 */
-	@SuppressWarnings( "unchecked" )
 	public Configuration process( Struct config ) {
 		// Compiler
 		if ( config.containsKey( "compiler" ) ) {
-			Object compilerMap = config.get( "compiler" );
-			if ( compilerMap instanceof Map ) {
-				this.compiler.process( new Struct( ( Map<Object, Object> ) compilerMap ) );
+			if ( config.get( "compiler" ) instanceof Map<?, ?> castedMap ) {
+				this.compiler.process( new Struct( castedMap ) );
 			} else {
 				logger.warn( "The [compiler] configuration is not a JSON Object, ignoring it." );
 			}
@@ -74,9 +72,8 @@ public class Configuration {
 
 		// Runtime
 		if ( config.containsKey( "runtime" ) ) {
-			Object runtimeMap = config.get( "runtime" );
-			if ( runtimeMap instanceof Map ) {
-				this.runtime.process( new Struct( ( Map<Object, Object> ) runtimeMap ) );
+			if ( config.get( "runtime" ) instanceof Map<?, ?> castedMap ) {
+				this.runtime.process( new Struct( castedMap ) );
 			} else {
 				logger.warn( "The [runtime] configuration is not a JSON Object, ignoring it." );
 			}

@@ -64,15 +64,12 @@ public class RuntimeConfig {
 	 *
 	 * @return the configuration
 	 */
-	@SuppressWarnings( "unchecked" )
 	public RuntimeConfig process( Struct config ) {
-		Object tempTester = null;
 
 		// Process mappings
 		if ( config.containsKey( "mappings" ) ) {
-			tempTester = config.get( "mappings" );
-			if ( tempTester instanceof Map ) {
-				this.mappings.addAll( new Struct( ( Map<Object, Object> ) tempTester ) );
+			if ( config.get( "mappings" ) instanceof Map<?, ?> castedMap ) {
+				this.mappings.addAll( new Struct( castedMap ) );
 			} else {
 				logger.warn( "The [runtime.mappings] configuration is not a JSON Object, ignoring it." );
 			}
@@ -85,15 +82,13 @@ public class RuntimeConfig {
 
 		// Process cache configurations
 		if ( config.containsKey( "caches" ) ) {
-			tempTester = config.get( "caches" );
-			if ( tempTester instanceof Map ) {
+			if ( config.get( "caches" ) instanceof Map<?, ?> castedCaches ) {
 				// Process each cache configuration
-				( ( Map<String, Object> ) tempTester )
+				castedCaches
 				    .entrySet()
 				    .forEach( entry -> {
-					    Object cacheDefinitionMap = entry.getValue();
-					    if ( cacheDefinitionMap instanceof Map ) {
-						    CacheConfig cacheConfig = new CacheConfig( entry.getKey() ).process( new Struct( ( Map<Object, Object> ) cacheDefinitionMap ) );
+					    if ( entry.getValue() instanceof Map<?, ?> castedMap ) {
+						    CacheConfig cacheConfig = new CacheConfig( ( String ) entry.getKey() ).process( new Struct( castedMap ) );
 						    this.caches.put( cacheConfig.name, cacheConfig );
 					    } else {
 						    logger.warn( "The [runtime.caches.{}] configuration is not a JSON Object, ignoring it.", entry.getKey() );

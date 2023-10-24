@@ -81,7 +81,6 @@ public class CacheConfig {
 	 *
 	 * @return the configuration
 	 */
-	@SuppressWarnings( "unchecked" )
 	public CacheConfig process( Struct config ) {
 		// Name
 		if ( config.containsKey( "name" ) ) {
@@ -95,9 +94,8 @@ public class CacheConfig {
 
 		// Properties
 		if ( config.containsKey( "properties" ) ) {
-			Object props = config.get( "properties" );
-			if ( props instanceof Map ) {
-				this.properties = new Struct( ( Map<Object, Object> ) props );
+			if ( config.get( "properties" ) instanceof Map<?, ?> castedProps ) {
+				this.properties = new Struct( castedProps );
 			} else {
 				logger.warn( "The [runtime.caches.{}.properties] configuration is not a JSON Object, ignoring it.", this.name );
 			}
