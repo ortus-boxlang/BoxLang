@@ -127,6 +127,8 @@ public class AsyncService extends BaseService {
 	 */
 	@Override
 	public void onStartup() {
+		// register the core tasks executor: boxlang-tasks
+		newScheduledExecutor( "boxlang-tasks", DEFAULT_MAX_THREADS );
 		logger.info( "AsyncService.onStartup()" );
 	}
 
