@@ -38,12 +38,41 @@ public class Concat implements IOperator {
 	}
 
 	/**
+	 * @param segments array of segments to concat
+	 *
+	 * @return The sgements conctenated
+	 */
+	public static String invoke( Object... segments ) {
+		StringBuilder sb = new StringBuilder();
+		for ( Object segment : segments ) {
+			sb.append( StringCaster.cast( segment ) );
+		}
+		return sb.toString();
+	}
+
+	/**
 	 * Apply this operator to an object/key and set the new value back in the same object/key
 	 *
 	 * @return The result
 	 */
 	public static String invoke( Object target, Key name, Object right ) {
 		String result = invoke( Referencer.get( target, name, false ), right );
+		Referencer.set( target, name, result );
+		return result;
+	}
+
+	/**
+	 * Apply this operator to an object/key and set the new value back in the same object/key
+	 *
+	 * @return The result
+	 */
+	public static String invoke( Object target, Key name, Object... segments ) {
+		StringBuilder sb = new StringBuilder();
+		sb.append( Referencer.get( target, name, false ) );
+		for ( Object segment : segments ) {
+			sb.append( StringCaster.cast( segment ) );
+		}
+		String result = sb.toString();
 		Referencer.set( target, name, result );
 		return result;
 	}

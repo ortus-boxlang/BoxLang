@@ -34,6 +34,12 @@ public class ConcatTest {
 		assertThat( Concat.invoke( "Brad", "Wood" ) ).isEqualTo( "BradWood" );
 	}
 
+	@DisplayName( "It can concatenate many strings" )
+	@Test
+	void testItCanConcatSManytrings() {
+		assertThat( Concat.invoke( "a", "b", "c", "d", "e", "f", "g", "h", "i" ) ).isEqualTo( "abcdefghi" );
+	}
+
 	@DisplayName( "It can concatenate numbers" )
 	@Test
 	void testItCanConcatNumbers() {
@@ -68,6 +74,15 @@ public class ConcatTest {
 		scope.put( Key.of( "i" ), "brad" );
 		assertThat( Concat.invoke( scope, Key.of( "i" ), "wood" ) ).isEqualTo( "bradwood" );
 		assertThat( scope.get( Key.of( "i" ) ) ).isEqualTo( "bradwood" );
+	}
+
+	@DisplayName( "It can compound concatenate many strings" )
+	@Test
+	void testItCanCompountConcatenateManyStrings() {
+		IScope scope = new VariablesScope();
+		scope.put( Key.of( "i" ), "a" );
+		assertThat( Concat.invoke( scope, Key.of( "i" ), "b", "c", "d", "e", "f", "g", "h", "i" ) ).isEqualTo( "abcdefghi" );
+		assertThat( scope.get( Key.of( "i" ) ) ).isEqualTo( "abcdefghi" );
 	}
 
 }
