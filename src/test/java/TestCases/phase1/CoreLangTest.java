@@ -130,12 +130,10 @@ public class CoreLangTest {
 	@Test
 	public void testThrowSource() {
 
-		assertThrows( NoFieldException.class, () ->
-
-		instance.executeSource(
+		assertThrows( NoFieldException.class, () -> instance.executeSource(
 		    """
 		    throw new java:ortus.boxlang.runtime.types.exceptions.NoFieldException( "My Message" );
-		        """,
+		    	""",
 		    context )
 		);
 	}
