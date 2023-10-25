@@ -22,32 +22,59 @@ import org.slf4j.LoggerFactory;
 
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
-import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.KeyNotFoundException;
 
 /**
+ * The BoxLang Async Service is a service that allows you to create and manage executors.
+ * Every time a new executor is created it will be automatically registered with the service.
+ * You can then use the service to get the executor by name and perform operations on it.
  *
+ * When you get an executor by name, you will get an {@link ExecutorRecord} which contains the executor
+ * and some metadata about it. You can also get a map of all the executors and their metadata.
+ *
+ * The available executor types are:
+ *
+ * <ul>
+ * <li>CACHED</li>
+ * <li>FIXED</li>
+ * <li>SINGLE</li>
+ * <li>SCHEDULED</li>
+ * <li>WORK_STEALING</li>
+ * </ul>
+ *
+ * The default max threads is 20, you can override this by passing in a maxThreads value for some of the executors.
+ * We also use a default timeout of 30 seconds for shutdown and await termination, you can override this as well.
+ *
+ * Please note that we do not use direct forced shutdown of the executors, we use the {@link AsyncService#shutdown()} and
+ * {@link ExecutorRecord#shutdownAndAwaitTermination(Long, TimeUnit)}
+ * methods to allow the tasks to finish gracefully. If you want to force shutdown, you can do so by passing in a {code force = true}
  */
 public class AsyncService extends BaseService {
+
+	/**
+	 * --------------------------------------------------------------------------
+	 * Public Properties
+	 * --------------------------------------------------------------------------
+	 */
 
 	/**
 	 * Executor types we support
 	 */
 	public enum ExecutorType {
-		SINGLE_THREAD,  // Single-threaded executor
-		FIXED_THREAD,   // Fixed-size thread pool executor
-		CACHED_THREAD,  // Cached thread pool executor
-		WORK_STEALING,  // Work-stealing executor
-		FORK_JOIN      // Fork-Join Pool executor
+		CACHED,  // Cached thread pool executor
+		FIXED,   // Fixed-size thread pool executor
+		SINGLE,  // Single-threaded executor
+		SCHEDULED, // Scheduled thread pool
+		WORK_STEALING  // Work-stealing executor
 	}
 
 	/**
@@ -131,6 +158,7 @@ public class AsyncService extends BaseService {
 	@Override
 	public void onShutdown() {
 		logger.info( "AsyncService.onShutdown()" );
+		shutdownAllExecutors( false, DEFAULT_TIMEOUT, TimeUnit.SECONDS );
 	}
 
 	/**
@@ -143,6 +171,18 @@ public class AsyncService extends BaseService {
 	}
 
 	/**
+	 * Create a new executor if it does not exist. We use the default threads
+	 *
+	 * @param name The name of the executor
+	 * @param type The executor type
+	 *
+	 * @return The executor record
+	 */
+	public ExecutorRecord newExecutor( String name, ExecutorType type ) {
+		return newExecutor( name, type, DEFAULT_MAX_THREADS );
+	}
+
+	/**
 	 * Create a new executor if it does not exist.
 	 *
 	 * @param name       The name of the executor
@@ -152,7 +192,8 @@ public class AsyncService extends BaseService {
 	 * @return The executor record
 	 */
 	public ExecutorRecord newExecutor( String name, ExecutorType type, int maxThreads ) {
-		return this.executors.getOrDefault( name, buildExecutor( name, type, maxThreads ) );
+		this.executors.computeIfAbsent( name, key -> buildExecutor( name, type, maxThreads ) );
+		return this.executors.get( name );
 	}
 
 	/**
@@ -217,13 +258,32 @@ public class AsyncService extends BaseService {
 		unit	= unit == null ? TimeUnit.SECONDS : unit;
 
 		if ( hasExecutor( name ) ) {
+
+			logger.atInfo().log( "+ Shutting down executor ({}), with force ({}) and timeout ({})...", name, force, timeout );
+			getTimerUtil().start( "shutdown-executor-" + name );
+
 			if ( Boolean.TRUE.equals( force ) ) {
 				getExecutor( name ).executor().shutdownNow();
 			} else {
 				getExecutor( name ).shutdownAndAwaitTermination( timeout, unit );
 			}
+
+			logger.atInfo().log(
+			    "+ Shutdown executor ({}) in [{}]",
+			    name,
+			    getTimerUtil().stop( "shutdown-executor-" + name )
+			);
 		}
+
 		return this;
+	}
+
+	/**
+	 * Shutdown all executors or force them to shutdown, you can also do this from the Executor themselves.
+	 * This uses a force of false and a default timeout of 30 seconds.
+	 */
+	public AsyncService shutdownAllExecutors() {
+		return shutdownAllExecutors( false, DEFAULT_TIMEOUT, TimeUnit.SECONDS );
 	}
 
 	/**
@@ -239,9 +299,18 @@ public class AsyncService extends BaseService {
 	    Long timeout,
 	    TimeUnit unit ) {
 
+		getTimerUtil().start( "shutdownAllExecutors" );
+
+		logger.atInfo().log( "+ Starting to shutdown all executors..." );
+
 		this.executors.keySet()
 		    .parallelStream()
 		    .forEach( executorName -> shutdownExecutor( executorName, force, timeout, unit ) );
+
+		logger.atInfo().log(
+		    "+ Shutdown all async executor services in [{}]",
+		    getTimerUtil().stop( "shutdownAllExecutors" )
+		);
 
 		return this;
 	}
@@ -276,9 +345,9 @@ public class AsyncService extends BaseService {
 	 * Get a struct map of a specific executor and its stats.
 	 *
 	 * @param name The name of the executor
-	 * 
+	 *
 	 * @throws KeyNotFoundException If the executor does not exist
-	 * 
+	 *
 	 * @return A struct of metadata about the executor or all executors
 	 *
 	 */
@@ -287,10 +356,80 @@ public class AsyncService extends BaseService {
 	}
 
 	/**
+	 * --------------------------------------------------------------------------
+	 * Builder Aliases
+	 * --------------------------------------------------------------------------
+	 */
+
+	/**
+	 * Build a new cached executor
+	 *
+	 * @param name The name of the executor
+	 *
+	 * @return The executor record
+	 */
+	public ExecutorRecord newCachedExecutor( String name ) {
+		return newExecutor( name, ExecutorType.CACHED );
+	}
+
+	/**
+	 * Build a new fixed executor
+	 *
+	 * @param name       The name of the executor
+	 * @param maxThreads The max threads, if null it will use the default
+	 *
+	 * @return The executor record
+	 */
+	public ExecutorRecord newFixedExecutor( String name, Integer maxThreads ) {
+		return newExecutor( name, ExecutorType.FIXED, ( maxThreads == null ? DEFAULT_MAX_THREADS : maxThreads ) );
+	}
+
+	/**
+	 * Build a single executor
+	 *
+	 * @param name The name of the executor
+	 *
+	 * @return The executor record
+	 */
+	public ExecutorRecord newSingleExecutor( String name ) {
+		return newExecutor( name, ExecutorType.SINGLE );
+	}
+
+	/**
+	 * Build a scheduled executor
+	 *
+	 * @param name       The name of the executor
+	 * @param maxThreads The max threads, if null it will use the default
+	 *
+	 * @return The executor record
+	 */
+	public ExecutorRecord newScheduledExecutor( String name, Integer maxThreads ) {
+		return newExecutor( name, ExecutorType.SCHEDULED, ( maxThreads == null ? DEFAULT_MAX_THREADS : maxThreads ) );
+	}
+
+	/**
+	 * Build a work stealing executor
+	 *
+	 * @param name       The name of the executor
+	 * @param maxThreads The max threads, if null it will use the default
+	 *
+	 * @return The executor record
+	 */
+	public ExecutorRecord newWorkStealingExecutor( String name, Integer maxThreads ) {
+		return newExecutor( name, ExecutorType.WORK_STEALING, ( maxThreads == null ? DEFAULT_MAX_THREADS : maxThreads ) );
+	}
+
+	/**
+	 * --------------------------------------------------------------------------
+	 * Private Utilities
+	 * --------------------------------------------------------------------------
+	 */
+
+	/**
 	 * Build an executor
 	 *
 	 * @param name       The name of the executor
-	 * @param type       The executor type
+	 * @param type       The executor type: CACHED, FIXED, SINGLE, SCHEDULED, WORK_STEALING
 	 * @param maxThreads The max threads, if applicable
 	 *
 	 * @return The executor
@@ -298,19 +437,19 @@ public class AsyncService extends BaseService {
 	private ExecutorRecord buildExecutor( String name, ExecutorType type, int maxThreads ) {
 		ExecutorService executor = null;
 		switch ( type ) {
-			case SINGLE_THREAD :
-				executor = Executors.newSingleThreadExecutor();
-				break;
-			case FIXED_THREAD :
-				executor = Executors.newFixedThreadPool( maxThreads );
-				break;
-			case CACHED_THREAD :
+			case CACHED :
 				executor = Executors.newCachedThreadPool();
 				break;
-			case WORK_STEALING :
-				executor = Executors.newWorkStealingPool( maxThreads );
+			case FIXED :
+				executor = Executors.newFixedThreadPool( maxThreads );
 				break;
-			case FORK_JOIN :
+			case SCHEDULED :
+				executor = Executors.newScheduledThreadPool( maxThreads );
+				break;
+			case SINGLE :
+				executor = Executors.newSingleThreadExecutor();
+				break;
+			case WORK_STEALING :
 				executor = Executors.newWorkStealingPool( maxThreads );
 				break;
 		}
@@ -376,22 +515,67 @@ public class AsyncService extends BaseService {
 		 * @return The stats struct
 		 */
 		public Struct getStats() {
-			ThreadPoolExecutor thisExecutor = ( ThreadPoolExecutor ) this.executor;
-			return Struct.of(
-			    "activeCount", thisExecutor.getActiveCount(),
-			    "completedTaskCount", thisExecutor.getCompletedTaskCount(),
-			    "corePoolSize", thisExecutor.getCorePoolSize(),
-			    "isShutdown", thisExecutor.isShutdown(),
-			    "isTerminated", thisExecutor.isTerminated(),
-			    "isTerminating", thisExecutor.isTerminating(),
-			    "largestPoolSize", thisExecutor.getLargestPoolSize(),
-			    "maximumPoolSize", thisExecutor.getMaximumPoolSize(),
-			    "maxThreads", this.maxThreads,
-			    "name", this.name,
-			    "poolSize", thisExecutor.getPoolSize(),
-			    "taskCount", thisExecutor.getTaskCount(),
-			    "type", this.type
-			);
+			switch ( this.type ) {
+				case SINGLE : {
+					return Struct.of(
+					    "activeCount", 0,
+					    "completedTaskCount", 0,
+					    "corePoolSize", 1,
+					    "isShutdown", this.executor.isShutdown(),
+					    "isTerminated", this.executor.isTerminated(),
+					    "isTerminating", this.executor.isTerminated(),
+					    "largestPoolSize", 1,
+					    "maximumPoolSize", 1,
+					    "maxThreads", this.maxThreads,
+					    "name", this.name,
+					    "poolSize", 1,
+					    "taskCount", 1,
+					    "type", this.type
+					);
+				}
+				case CACHED :
+				case FIXED :
+				case SCHEDULED :
+					ThreadPoolExecutor thisExecutor = ( ThreadPoolExecutor ) this.executor;
+					return Struct.of(
+					    "activeCount", thisExecutor.getActiveCount(),
+					    "completedTaskCount", thisExecutor.getCompletedTaskCount(),
+					    "corePoolSize", thisExecutor.getCorePoolSize(),
+					    "isShutdown", thisExecutor.isShutdown(),
+					    "isTerminated", thisExecutor.isTerminated(),
+					    "isTerminating", thisExecutor.isTerminating(),
+					    "largestPoolSize", thisExecutor.getLargestPoolSize(),
+					    "maximumPoolSize", thisExecutor.getMaximumPoolSize(),
+					    "maxThreads", this.maxThreads,
+					    "name", this.name,
+					    "poolSize", thisExecutor.getPoolSize(),
+					    "taskCount", thisExecutor.getTaskCount(),
+					    "type", this.type
+					);
+				case WORK_STEALING :
+					ForkJoinPool pool = ( ForkJoinPool ) this.executor;
+					return Struct.of(
+					    "activeCount", 0,
+					    "completedTaskCount", 0,
+					    "corePoolSize", pool.getPoolSize(),
+					    "isShutdown", pool.isShutdown(),
+					    "isTerminated", pool.isTerminated(),
+					    "isTerminating", pool.isTerminating(),
+					    "largestPoolSize", pool.getPoolSize(),
+					    "maximumPoolSize", pool.getPoolSize(),
+					    "maxThreads", this.maxThreads,
+					    "name", this.name,
+					    "poolSize", pool.getPoolSize(),
+					    "taskCount", pool.getRunningThreadCount(),
+					    "type", this.type,
+					    "queuedTaskCount", pool.getQueuedTaskCount(),
+					    "queuedSubmissionTaskCount", pool.getQueuedSubmissionCount(),
+					    "hasQueuedSubmissions", pool.hasQueuedSubmissions(),
+					    "stealCount", pool.getStealCount()
+					);
+				default :
+					return new Struct();
+			}
 		}
 	}
 
