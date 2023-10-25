@@ -118,28 +118,22 @@ public class ObjectReferenceAssignmentTest {
 	@DisplayName( "dereference key" )
 	@Test
 	public void tesDereferenceKey() {
-		// Honesltly not sure what's wrong here
+		// MT TODO: The new keyword doesn't work, so this test is failing
 		instance.executeSource(
 		    """
-		    variables.var = createObject('java', 'ortus.boxlang.runtime.scopes.VariablesScope');
-		    result = var.name;
-		    """,
+		       str = new java:ortus.boxlang.runtime.types.Struct();
+		    str.name = "Brad"
+		       result = str.name;
+		       """,
 		    context );
-		assertThat( variables.dereference( result, false ) ).isEqualTo( Key.of( "variables" ) );
+		assertThat( variables.dereference( result, false ) ).isEqualTo( "Brad" );
 
-		instance.executeSource(
-		    """
-		    result = variables.var = createObject('java', 'ortus.boxlang.runtime.scopes.VariablesScope').name;
-		    """,
-		    context );
-
-		assertThat( variables.dereference( result, false ) ).isEqualTo( Key.of( "variables" ) );
 	}
 
 	@DisplayName( "dereference headless" )
 	@Test
 	public void tesDereferenceHeadless() {
-		// unscoped foo needs searched for in nearby scopes
+		// MT TODO: unscoped foo needs searched for in nearby scopes
 		instance.executeSource(
 		    """
 		    variables.foo = 5;
@@ -153,7 +147,6 @@ public class ObjectReferenceAssignmentTest {
 	@DisplayName( "safe navigation" )
 	@Test
 	public void testSafeNavigation() {
-		// Not sure why these are failing
 		instance.executeSource(
 		    """
 		    result = variables?.foo?.bar?.baz;
@@ -171,6 +164,7 @@ public class ObjectReferenceAssignmentTest {
 	public void testVarKeywordForLocal() {
 		FunctionBoxContext functionBoxContext = new FunctionBoxContext( context,
 		    new SampleUDF( Access.PUBLIC, Key.of( "func" ), "any", new Argument[] {}, "", false, "" ) );
+		// MT TODO: Java source is trying to access localScope symbol, but it's never defined. Need to track what scopes are used
 		instance.executeSource(
 		    """
 		    // Needs extranous `Key.of( LocalScope.name )` turned into just `LocalScope.name`
@@ -213,7 +207,6 @@ public class ObjectReferenceAssignmentTest {
 		    context );
 
 		assertThat( variables.dereference( Key.of( "foo" ), false ) ).isEqualTo( "wood" );
-		// bar, and brad are never set
 		assertThat( variables.dereference( Key.of( "bar" ), false ) ).isEqualTo( "wood" );
 		assertThat( variables.dereference( Key.of( "brad" ), false ) ).isEqualTo( "wood" );
 	}
@@ -228,7 +221,6 @@ public class ObjectReferenceAssignmentTest {
 		    context );
 
 		assertThat( variables.dereference( Key.of( "foo2" ), false ) ).isEqualTo( "wood2" );
-		// bar2, and brad2 are never set
 		assertThat( variables.dereference( Key.of( "bar2" ), false ) ).isEqualTo( "wood2" );
 		assertThat( variables.dereference( Key.of( "brad2" ), false ) ).isEqualTo( "wood2" );
 	}

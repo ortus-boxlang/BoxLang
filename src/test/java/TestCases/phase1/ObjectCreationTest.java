@@ -80,6 +80,7 @@ public class ObjectCreationTest {
 		assertThat( result instanceof DynamicObject ).isEqualTo( true );
 		assertThat( ( ( DynamicObject ) result ).getTargetInstance() ).isEqualTo( "My String" );
 
+		// MT TODO: Use StringCaster to turn the provided expression (which maybe an Object) into a proper string for the ClassLocator.load() method to work
 		instance.executeSource(
 		    """
 		    classNameToCreate = 'java:java.lang.String';

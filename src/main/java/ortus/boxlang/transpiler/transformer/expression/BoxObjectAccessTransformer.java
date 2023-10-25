@@ -7,6 +7,7 @@ import com.github.javaparser.ast.expr.MethodCallExpr;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import ortus.boxlang.ast.BoxNode;
+import ortus.boxlang.ast.expression.BoxFunctionInvocation;
 import ortus.boxlang.ast.expression.BoxIdentifier;
 import ortus.boxlang.ast.expression.BoxObjectAccess;
 import ortus.boxlang.ast.expression.BoxScope;
@@ -40,16 +41,7 @@ public class BoxObjectAccessTransformer extends AbstractTransformer {
 					return method;
 				}
 
-				// ArrayInitializerExpr vars = ( ArrayInitializerExpr ) variable;
-				// // TODO: Why not use Map.ofEntries() instead?
-				// Map<String, String> values = new HashMap<>() {
-				//
-				// {
-				// put( "scope", scope.toString() );
-				// put( "var0", vars.getValues().get( 0 ).toString() );
-				// put( "var1", vars.getValues().get( 1 ).toString() );
-				// }
-				// };
+				// TODO: Why not use Map.ofEntries() instead?
 				Map<String, String>	values		= new HashMap<>() {
 
 													{
@@ -99,36 +91,6 @@ public class BoxObjectAccessTransformer extends AbstractTransformer {
 				addIndex( javaExpr, node );
 				return javaExpr;
 			}
-
-			// } else if ( objectAccess.getContext() instanceof BoxIdentifier && objectAccess.getAccess() instanceof BoxIdentifier ) {
-			// Expression scope = ( Expression ) BoxLangTranspiler.transform( objectAccess.getContext(), TransformerContext.LEFT );
-			// Expression variable = ( Expression ) BoxLangTranspiler.transform( objectAccess.getAccess(), TransformerContext.RIGHT );
-			//
-			// Map<String, String> values = new HashMap<>() {
-			//
-			// {
-			// put( "scope", scope.toString() );
-			// put( "variable", variable.toString() );
-			// }
-			// };
-			// String template = """
-			// Referencer.dereference( Key.of( "${scope}" ), false)
-			// """;
-			// // dereference( Key.of( "${scope}" ) , false ).dereference( Key.of( "${variable}" ) , false )
-			//
-			// Node javaExpr = parseExpression( template, values );
-			// logger.info( side + node.getSourceText() + " -> " + javaExpr );
-			// addIndex( javaExpr, node );
-			// return javaExpr;
-			//
-			// // ArrayInitializerExpr expr = new ArrayInitializerExpr(
-			// // NodeList.nodeList(
-			// // new StringLiteralExpr( scope.toString() ),
-			// // new StringLiteralExpr( variable.toString() )
-			// //
-			// // )
-			// // );
-			// // return expr;
 		} else if ( objectAccess.getContext() instanceof BoxScope && objectAccess.getAccess() instanceof BoxIdentifier ) {
 			Expression			scope		= ( Expression ) BoxLangTranspiler.transform( objectAccess.getContext(), TransformerContext.LEFT );
 			Expression			variable	= ( Expression ) BoxLangTranspiler.transform( objectAccess.getAccess(), TransformerContext.RIGHT );
@@ -154,6 +116,24 @@ public class BoxObjectAccessTransformer extends AbstractTransformer {
 		} else if ( objectAccess.getContext() instanceof BoxIdentifier ) {
 
 			Node javaExpr = accessWithDeep( objectAccess, context );
+			logger.info( side + node.getSourceText() + " -> " + javaExpr );
+			addIndex( javaExpr, node );
+
+			return javaExpr;
+		} else if ( objectAccess.getContext() instanceof BoxFunctionInvocation && objectAccess.getAccess() instanceof BoxIdentifier ) {
+			Expression			function	= ( Expression ) BoxLangTranspiler.transform( objectAccess.getContext(), TransformerContext.LEFT );
+			Expression			member		= ( Expression ) BoxLangTranspiler.transform( objectAccess.getAccess(), TransformerContext.RIGHT );
+			Map<String, String>	values		= new HashMap<>() {
+
+												{
+													put( "function", function.toString() );
+													put( "member", member.toString() );
+												}
+											};
+			String				template	= """
+			                                  			${function}.getField( "${member}" ).get()
+			                                  """;
+			Node				javaExpr	= parseExpression( template, values );
 			logger.info( side + node.getSourceText() + " -> " + javaExpr );
 			addIndex( javaExpr, node );
 

@@ -23,7 +23,7 @@ package
     ;
 
 importStatement
-    : IMPORT identifier (DOT STAR)? eos
+    : IMPORT (JAVA COLON)? fqn  (DOT STAR)? (AS identifier)? eos
     ;
 
 include
@@ -168,6 +168,7 @@ simpleStatement
         | localDeclaration
         | methodInvokation
         | new
+        | create
         | incrementDecrementStatement
         | paramStatement
         | return
@@ -427,10 +428,14 @@ new
     // TODO add namespace
     ;
 
+create
+    :   CREATE (JAVA COLON)? (fqn | stringLiteral) (LPAREN argumentList? RPAREN)?
+    // TODO add namespace
+    ;
+
 fqn
     :   (identifier DOT)* identifier
     ;
-
 
 expression
     :   unary
@@ -439,6 +444,7 @@ expression
 	|	expression post=PLUSPLUS
 	|	expression post=MINUSMINUS
     |   new
+    |   create
 //    |   incrementDecrementStatement
     |   literalExpression
     |   objectExpression
