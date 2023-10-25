@@ -437,7 +437,6 @@ fqn
     :   (identifier DOT)* identifier
     ;
 
-
 expression
     :   unary
 	|	pre=PLUSPLUS expression
