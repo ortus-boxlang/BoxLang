@@ -114,6 +114,11 @@ public class BoxAssignmentTransformer extends AbstractTransformer {
 			} else if ( left instanceof NameExpr name ) {
 				values.put( "left", left.toString() );
 				values.put( "right", right.toString() );
+				if ( right instanceof NameExpr rname ) {
+					String tmp = "context.scopeFindNearby( Key.of( \"" + rname + "\" ), variablesScope).value()";
+					values.put( "right", tmp );
+				}
+
 				String template = """
 				                  context.scopeFindNearby(Key.of( "${left}" ),variablesScope).scope().assign( Key.of( "${left}" ), ${right} )
 				                  """;

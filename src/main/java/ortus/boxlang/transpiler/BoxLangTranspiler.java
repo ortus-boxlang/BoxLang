@@ -17,15 +17,13 @@ package ortus.boxlang.transpiler;
 import java.io.File;
 import java.io.IOException;
 import java.io.Writer;
+import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLClassLoader;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import javax.tools.DiagnosticCollector;
@@ -34,6 +32,9 @@ import javax.tools.JavaFileObject;
 import javax.tools.StandardJavaFileManager;
 import javax.tools.ToolProvider;
 
+import com.github.javaparser.ast.body.FieldDeclaration;
+import com.github.javaparser.ast.expr.Expression;
+import com.github.javaparser.ast.expr.MethodCallExpr;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -157,6 +158,7 @@ public class BoxLangTranspiler {
 																		put( BoxFunctionDeclaration.class, new BoxFunctionDeclarationTransformer() );
 																		put( BoxReturn.class, new BoxReturnTransformer() );
 																		put( BoxRethrow.class, new BoxRethrowTransformer() );
+																		put( BoxImport.class, new BoxImportTransformer() );
 
 																	}
 																};
@@ -214,13 +216,18 @@ public class BoxLangTranspiler {
 	 * @see CompilationUnit
 	 */
 	public CompilationUnit transpile( BoxNode node ) throws IllegalStateException {
-		BoxScript			source			= ( BoxScript ) node;
-		CompilationUnit		javaClass		= ( CompilationUnit ) transform( source );
+		BoxScript		source		= ( BoxScript ) node;
+		CompilationUnit	javaClass	= ( CompilationUnit ) transform( source );
+
+		statements.clear();
 
 		String				className		= getClassName( source.getPosition().getSource() );
 		MethodDeclaration	invokeMethod	= javaClass.findCompilationUnit().orElseThrow()
 		    .getClassByName( className ).orElseThrow()
 		    .getMethodsByName( "_invoke" ).get( 0 );
+		FieldDeclaration	imports			= javaClass.findCompilationUnit().orElseThrow()
+		    .getClassByName( className ).orElseThrow()
+		    .getFieldByName( "imports" ).get();
 
 		for ( BoxStatement statement : source.getStatements() ) {
 			if ( statement instanceof BoxFunctionDeclaration ) {
@@ -234,6 +241,10 @@ public class BoxLangTranspiler {
 						invokeMethod.getBody().get().addStatement( it );
 						statements.add( it );
 					} );
+				}
+				if ( javaStmt instanceof MethodCallExpr ) {
+					MethodCallExpr imp = ( MethodCallExpr ) imports.getVariable( 0 ).getInitializer().orElseThrow();
+					imp.getArguments().add( ( MethodCallExpr ) javaStmt );
 				} else {
 					invokeMethod.getBody().get().addStatement( ( Statement ) javaStmt );
 					statements.add( ( Statement ) javaStmt );
@@ -257,25 +268,31 @@ public class BoxLangTranspiler {
 		    .getClassByName( className ).orElseThrow()
 		    .getMethodsByName( "_invoke" ).get( 0 );
 
+		FieldDeclaration		imports				= javaClass.findCompilationUnit().orElseThrow()
+		    .getClassByName( className ).orElseThrow()
+		    .getFieldByName( "imports" ).get();
+
 		for ( BoxStatement statement : source.getStatements() ) {
+			Node function = transform( statement );
 			if ( statement instanceof BoxFunctionDeclaration ) {
 				// a function declaration generate
-				Node function = transform( statement );
 				compilationUnits.add( ( CompilationUnit ) function );
 				Node registrer = transform( statement, TransformerContext.REGISTER );
 				invokeMethod.getBody().get().addStatement( 0, ( Statement ) registrer );
 
 			} else {
-				Node javaStmt = transform( statement );
-				if ( javaStmt instanceof BlockStmt ) {
-					BlockStmt stmt = ( BlockStmt ) javaStmt;
+				if ( function instanceof BlockStmt ) {
+					BlockStmt stmt = ( BlockStmt ) function;
 					stmt.getStatements().stream().forEach( it -> {
 						invokeMethod.getBody().get().addStatement( it );
 						statements.add( it );
 					} );
+				} else if ( function instanceof MethodCallExpr ) {
+					MethodCallExpr imp = ( MethodCallExpr ) imports.getVariable( 0 ).getInitializer().orElseThrow();
+					imp.getArguments().add( ( MethodCallExpr ) function );
 				} else {
-					invokeMethod.getBody().get().addStatement( ( Statement ) javaStmt );
-					statements.add( ( Statement ) javaStmt );
+					invokeMethod.getBody().get().addStatement( ( Statement ) function );
+					statements.add( ( Statement ) function );
 				}
 			}
 		}
