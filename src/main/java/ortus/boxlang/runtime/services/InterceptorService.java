@@ -25,6 +25,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.events.InterceptorState;
 import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.scopes.Key;
@@ -55,11 +56,6 @@ public class InterceptorService extends BaseService {
 	private static final Logger			logger				= LoggerFactory.getLogger( InterceptorService.class );
 
 	/**
-	 * Singleton instance
-	 */
-	private static InterceptorService	instance;
-
-	/**
 	 * The list of interception points we can listen for
 	 */
 	private Set<Key>					interceptionPoints	= ConcurrentHashMap.newKeySet( 32 );
@@ -76,27 +72,16 @@ public class InterceptorService extends BaseService {
 	 */
 
 	/**
-	 * Get an instance of the service
-	 *
-	 * @return The singleton instance
-	 */
-	public static synchronized InterceptorService getInstance() {
-		if ( instance == null ) {
-			instance = new InterceptorService();
-		}
-		return instance;
-	}
-
-	/**
 	 * Get an instance of the service but init it with some interception points
 	 *
-	 * @param points The interception points to init the service with
+	 * @param runtime The runtime singleton
+	 * @param points  The interception points to init the service with
 	 *
 	 * @return The singleton instance
 	 */
-	public static synchronized InterceptorService getInstance( Key... points ) {
-		return getInstance()
-		    .registerInterceptionPoint( points );
+	public InterceptorService( BoxRuntime runtime, Key... points ) {
+		super( runtime );
+		registerInterceptionPoint( points );
 	}
 
 	/**
@@ -108,6 +93,7 @@ public class InterceptorService extends BaseService {
 	/**
 	 * The startup event is fired when the runtime starts up
 	 */
+	@Override
 	public void onStartup() {
 		logger.info( "InterceptorService.onStartup()" );
 	}
@@ -115,6 +101,7 @@ public class InterceptorService extends BaseService {
 	/**
 	 * The configuration load event is fired when the runtime loads its configuration
 	 */
+	@Override
 	public void onConfigurationLoad() {
 		logger.info( "InterceptorService.onConfigurationLoad()" );
 	}
@@ -122,6 +109,7 @@ public class InterceptorService extends BaseService {
 	/**
 	 * The shutdown event is fired when the runtime shuts down
 	 */
+	@Override
 	public void onShutdown() {
 		logger.info( "InterceptorService.onShutdown()" );
 	}
@@ -361,7 +349,7 @@ public class InterceptorService extends BaseService {
 
 			try {
 				getState( state ).announce( data );
-			} catch ( Throwable e ) {
+			} catch ( Exception e ) {
 				String errorMessage = String.format( "Errors announcing [%s] interception", state.getName() );
 				logger.error( errorMessage, e );
 				throw new ApplicationException( errorMessage );

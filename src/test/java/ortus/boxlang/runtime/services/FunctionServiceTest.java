@@ -22,37 +22,49 @@ import static com.google.common.truth.Truth.assertThat;
 
 import java.util.Optional;
 
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.mockito.InjectMocks;
+import org.mockito.Spy;
 
+import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.ScriptingBoxContext;
 
 class FunctionServiceTest {
 
+	FunctionService		service;
+
+	@Spy
+	@InjectMocks
+	private BoxRuntime	runtime;
+
+	@BeforeEach
+	public void setupBeforeEach() {
+		service = new FunctionService( runtime );
+	}
+
 	@DisplayName( "It can create the function service" )
 	@Test
 	void testItCanCreateIt() {
-		FunctionService functionService = FunctionService.getInstance();
-		assertThat( functionService ).isNotNull();
+		assertThat( service ).isNotNull();
 	}
 
 	@DisplayName( "It can startup and register global functions" )
 	@Test
 	void testItCanStartup() {
-		FunctionService functionService = FunctionService.getInstance();
 
-		assertThat( functionService.getGlobalFunctionCount() ).isGreaterThan( 0 );
-		assertThat( functionService.hasGlobalFunction( "print" ) ).isTrue();
+		assertThat( service.getGlobalFunctionCount() ).isGreaterThan( 0 );
+		assertThat( service.hasGlobalFunction( "print" ) ).isTrue();
 	}
 
 	@DisplayName( "It can invoke a global function" )
 	@Test
 	void testItCanInvokeAGlobalFunction() {
-		FunctionService functionService = FunctionService.getInstance();
 
-		assertThat( functionService.hasGlobalFunction( "print" ) ).isTrue();
+		assertThat( service.hasGlobalFunction( "print" ) ).isTrue();
 
-		Optional<Object> result = functionService.getGlobalFunction( "print" )
+		Optional<Object> result = service.getGlobalFunction( "print" )
 		    .invoke(
 		        new ScriptingBoxContext(), "Hello Unit Test"
 		    );

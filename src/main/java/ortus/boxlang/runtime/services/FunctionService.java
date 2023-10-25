@@ -27,6 +27,7 @@ import org.apache.commons.lang3.ClassUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.functions.BIF;
 import ortus.boxlang.runtime.functions.FunctionDescriptor;
 import ortus.boxlang.runtime.functions.FunctionNamespace;
@@ -56,11 +57,6 @@ public class FunctionService extends BaseService {
 	private static final Logger				logger				= LoggerFactory.getLogger( FunctionService.class );
 
 	/**
-	 * Singleton instance
-	 */
-	private static FunctionService			instance;
-
-	/**
 	 * The set of global functions registered with the service
 	 */
 	private Map<Key, FunctionDescriptor>	globalFunctions		= new ConcurrentHashMap<>();
@@ -78,27 +74,17 @@ public class FunctionService extends BaseService {
 
 	/**
 	 * Constructor
+	 *
+	 * @param runtime The runtime instance
 	 */
-	private FunctionService() {
-		logger.info( "FunctionService.onStartup()" );
+	public FunctionService( BoxRuntime runtime ) {
+		super( runtime );
 		// Load global functions
 		try {
 			loadGlobalFunctions();
 		} catch ( IOException e ) {
 			throw new ApplicationException( "Cannot load global functions", e );
 		}
-	}
-
-	/**
-	 * Get an instance of the service
-	 *
-	 * @return The singleton instance
-	 */
-	public static synchronized FunctionService getInstance() {
-		if ( instance == null ) {
-			instance = new FunctionService();
-		}
-		return instance;
 	}
 
 	/**
@@ -110,12 +96,15 @@ public class FunctionService extends BaseService {
 	/**
 	 * The startup event is fired when the runtime starts up
 	 */
+	@Override
 	public void onStartup() {
+		logger.info( "FunctionService.onStartup()" );
 	}
 
 	/**
 	 * The configuration load event is fired when the runtime loads its configuration
 	 */
+	@Override
 	public void onConfigurationLoad() {
 		logger.info( "FunctionService.onConfigurationLoad()" );
 	}
@@ -123,6 +112,7 @@ public class FunctionService extends BaseService {
 	/**
 	 * The shutdown event is fired when the runtime shuts down
 	 */
+	@Override
 	public void onShutdown() {
 		logger.info( "FunctionService.onShutdown()" );
 	}

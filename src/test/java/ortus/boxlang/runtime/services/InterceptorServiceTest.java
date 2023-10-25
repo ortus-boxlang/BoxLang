@@ -21,48 +21,58 @@ package ortus.boxlang.runtime.services;
 import static com.google.common.truth.Truth.assertThat;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.mockito.InjectMocks;
+import org.mockito.Spy;
 
+import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Struct;
 
-public class InterceptorServiceTest {
+class InterceptorServiceTest {
+
+	InterceptorService	service;
+
+	@Spy
+	@InjectMocks
+	private BoxRuntime	runtime;
+
+	@BeforeEach
+	public void setupBeforeEach() {
+		service = new InterceptorService( runtime );
+	}
 
 	@DisplayName( "Test it can get an instance of the service" )
 	@Test
 	void testItCanGetInstance() {
-		InterceptorService service = InterceptorService.getInstance();
 		assertThat( service ).isNotNull();
 	}
 
 	@DisplayName( "Test it can run the startup service event" )
 	@Test
 	void testItCanRunStartupEvent() {
-		InterceptorService service = InterceptorService.getInstance();
 		assertDoesNotThrow( () -> service.onStartup() );
 	}
 
 	@DisplayName( "Test it can run the onConfigurationLoad service event" )
 	@Test
 	void testItCanRunOnConfigurationLoadEvent() {
-		InterceptorService service = InterceptorService.getInstance();
 		assertDoesNotThrow( () -> service.onConfigurationLoad() );
 	}
 
 	@DisplayName( "Test it can run the onShutdown service event" )
 	@Test
 	void testItCanRunOnShutdownEvent() {
-		InterceptorService service = InterceptorService.getInstance();
 		assertDoesNotThrow( () -> service.onShutdown() );
 	}
 
 	@DisplayName( "Test it can register interception points and filter duplicates" )
 	@Test
 	void testItCanRegisterInterceptionPoints() {
-		InterceptorService	service			= InterceptorService.getInstance();
-		int					originalSize	= service.getInterceptionPoints().size();
+		int originalSize = service.getInterceptionPoints().size();
 
 		service.registerInterceptionPoint( Key.of( "brad", "brad", "luis" ) );
 		assertThat( service.getInterceptionPointsNames() ).contains( "luis" );
@@ -73,7 +83,6 @@ public class InterceptorServiceTest {
 	@DisplayName( "It can remove interception points" )
 	@Test
 	void testItCanRemoveInterceptionPoints() {
-		InterceptorService service = InterceptorService.getInstance();
 		service.registerInterceptionPoint( Key.of( "onRequestStart" ) );
 		assertThat( service.hasInterceptionPoint( Key.of( "onRequestStart" ) ) ).isTrue();
 
@@ -84,8 +93,7 @@ public class InterceptorServiceTest {
 	@DisplayName( "It can register new interception states with an existing point" )
 	@Test
 	void testItCanRegisterInterceptionStatesWithExistingPoint() {
-		InterceptorService	service		= InterceptorService.getInstance();
-		Key					pointKey	= Key.of( "onRequestStart" );
+		Key pointKey = Key.of( "onRequestStart" );
 
 		service.registerInterceptionPoint( pointKey );
 		service.registerState( pointKey );
@@ -100,8 +108,7 @@ public class InterceptorServiceTest {
 	@DisplayName( "It can register new interception states with a non-existing point" )
 	@Test
 	void testItCanRegisterInterceptionStatesWithNonExistingPoint() {
-		InterceptorService	service		= InterceptorService.getInstance();
-		Key					pointKey	= Key.of( "onRequestStart" );
+		Key pointKey = Key.of( "onRequestStart" );
 
 		service.registerState( pointKey );
 
@@ -115,9 +122,8 @@ public class InterceptorServiceTest {
 	@DisplayName( "it can register new interceptors" )
 	@Test
 	void testItCanRegisterInterceptors() {
-		InterceptorService	service			= InterceptorService.getInstance();
-		DynamicObject		mockInterceptor	= DynamicObject.of( new MockInterceptor() );
-		Key					pointKey		= Key.of( "onRequestStart" );
+		DynamicObject	mockInterceptor	= DynamicObject.of( new MockInterceptor() );
+		Key				pointKey		= Key.of( "onRequestStart" );
 
 		service.register(
 		    mockInterceptor,
@@ -130,9 +136,8 @@ public class InterceptorServiceTest {
 	@DisplayName( "it can unregister interceptors with a specific state" )
 	@Test
 	void testItCanUnregisterInterceptors() {
-		InterceptorService	service			= InterceptorService.getInstance();
-		DynamicObject		mockInterceptor	= DynamicObject.of( new MockInterceptor() );
-		Key					pointKey		= Key.of( "onRequestStart" );
+		DynamicObject	mockInterceptor	= DynamicObject.of( new MockInterceptor() );
+		Key				pointKey		= Key.of( "onRequestStart" );
 
 		service.register(
 		    mockInterceptor,
@@ -152,8 +157,7 @@ public class InterceptorServiceTest {
 	@DisplayName( "it can unregister interceptors with all states" )
 	@Test
 	void testItCanUnregisterInterceptorsWithAllStates() {
-		InterceptorService	service			= InterceptorService.getInstance();
-		DynamicObject		mockInterceptor	= DynamicObject.of( new MockInterceptor() );
+		DynamicObject mockInterceptor = DynamicObject.of( new MockInterceptor() );
 
 		service.register(
 		    mockInterceptor,
@@ -172,10 +176,9 @@ public class InterceptorServiceTest {
 	@DisplayName( "it can announce an event to a specific state" )
 	@Test
 	void testItCanAnnounceEventToSpecificState() {
-		InterceptorService	service				= InterceptorService.getInstance();
-		DynamicObject		mockInterceptor1	= DynamicObject.of( new MockInterceptor() );
-		DynamicObject		mockInterceptor2	= DynamicObject.of( new MockInterceptor() );
-		Key					pointKey			= Key.of( "onRequestStart" );
+		DynamicObject	mockInterceptor1	= DynamicObject.of( new MockInterceptor() );
+		DynamicObject	mockInterceptor2	= DynamicObject.of( new MockInterceptor() );
+		Key				pointKey			= Key.of( "onRequestStart" );
 
 		service.register(
 		    mockInterceptor1,
@@ -202,10 +205,9 @@ public class InterceptorServiceTest {
 	@DisplayName( "it can announce an event to a specific state with case-insensitivity" )
 	@Test
 	void testItCanAnnounceEventToSpecificStateWithNoCase() {
-		InterceptorService	service				= InterceptorService.getInstance();
-		DynamicObject		mockInterceptor1	= DynamicObject.of( new MockInterceptor() );
-		DynamicObject		mockInterceptor2	= DynamicObject.of( new MockInterceptor() );
-		Key					pointKey			= Key.of( "onRequestStart" );
+		DynamicObject	mockInterceptor1	= DynamicObject.of( new MockInterceptor() );
+		DynamicObject	mockInterceptor2	= DynamicObject.of( new MockInterceptor() );
+		Key				pointKey			= Key.of( "onRequestStart" );
 
 		service.register(
 		    mockInterceptor1,

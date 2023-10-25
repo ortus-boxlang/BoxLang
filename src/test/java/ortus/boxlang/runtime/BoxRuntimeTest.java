@@ -38,7 +38,6 @@ public class BoxRuntimeTest {
 	@DisplayName( "It can startup" )
 	@Test
 	public void testItCanStartUp() {
-
 		BoxRuntime instance2 = BoxRuntime.getInstance( true );
 		assertThat( BoxRuntime.getInstance() ).isSameInstanceAs( instance2 );
 		assertThat( instance2.inDebugMode() ).isTrue();
@@ -48,9 +47,10 @@ public class BoxRuntimeTest {
 	@DisplayName( "It can shutdown" )
 	@Test
 	public void testItCanShutdown() {
-		BoxRuntime instance = BoxRuntime.getInstance( true );
+		BoxRuntime runtime = BoxRuntime.getInstance( true );
 		// Ensure shutdown sets instance to null
-		instance.shutdown();
+		runtime.shutdown();
+		assertThat( BoxRuntime.hasInstance() ).isFalse();
 	}
 
 	@DisplayName( "It can execute a template" )

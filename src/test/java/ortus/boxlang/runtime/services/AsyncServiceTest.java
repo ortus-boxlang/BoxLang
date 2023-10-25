@@ -27,16 +27,23 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
+import org.mockito.InjectMocks;
+import org.mockito.Spy;
 
+import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.services.AsyncService.ExecutorRecord;
 
 class AsyncServiceTest {
 
-	static AsyncService asyncService;
+	AsyncService		asyncService;
+
+	@Spy
+	@InjectMocks
+	private BoxRuntime	runtime;
 
 	@BeforeEach
 	public void setupBeforeEach() {
-		asyncService = AsyncService.getInstance();
+		asyncService = new AsyncService( runtime );
 	}
 
 	@DisplayName( "It can create the async service" )

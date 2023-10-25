@@ -30,6 +30,7 @@ import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
+import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.KeyNotFoundException;
 
@@ -101,11 +102,6 @@ public class AsyncService extends BaseService {
 	private static final Logger			logger				= LoggerFactory.getLogger( AsyncService.class );
 
 	/**
-	 * Singleton instance
-	 */
-	private static AsyncService			instance;
-
-	/**
 	 * --------------------------------------------------------------------------
 	 * Constructor(s)
 	 * --------------------------------------------------------------------------
@@ -113,21 +109,11 @@ public class AsyncService extends BaseService {
 
 	/**
 	 * Constructor
-	 */
-	private AsyncService() {
-		logger.info( "AsyncService.onStartup()" );
-	}
-
-	/**
-	 * Get an instance of the service
 	 *
-	 * @return The singleton instance
+	 * @param runtime The runtime singleton
 	 */
-	public static synchronized AsyncService getInstance() {
-		if ( instance == null ) {
-			instance = new AsyncService();
-		}
-		return instance;
+	public AsyncService( BoxRuntime runtime ) {
+		super( runtime );
 	}
 
 	/**

@@ -22,6 +22,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.FunctionBoxContext;
 import ortus.boxlang.runtime.dynamic.casters.CastAttempt;
 import ortus.boxlang.runtime.dynamic.casters.GenericCaster;
@@ -29,7 +30,6 @@ import ortus.boxlang.runtime.runnables.IBoxRunnable;
 import ortus.boxlang.runtime.runnables.IFunctionRunnable;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
-import ortus.boxlang.runtime.services.InterceptorService;
 import ortus.boxlang.runtime.types.exceptions.ApplicationException;
 
 /**
@@ -56,7 +56,7 @@ public abstract class Function implements IType, IFunctionRunnable {
 	/**
 	 * The argument collection key which defaults to : {@code argumentCollection}
 	 */
-	public static Key ARGUMENT_COLLECTION = Key.of( "argumentCollection" );
+	public static final Key ARGUMENT_COLLECTION = Key.of( "argumentCollection" );
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -91,19 +91,18 @@ public abstract class Function implements IType, IFunctionRunnable {
 	 * @return
 	 */
 	public Object invoke( FunctionBoxContext context ) {
-
-		InterceptorService	interceptorService	= InterceptorService.getInstance();
+		BoxRuntime	runtime	= BoxRuntime.getInstance();
 
 		// Announcements
-		Struct				data				= Struct.of(
+		Struct		data	= Struct.of(
 		    "context", context,
 		    "function", this
 		);
-		interceptorService.announce( "preFunctionInvoke", data );
+		runtime.announce( "preFunctionInvoke", data );
 		Object result = ensureReturnType( _invoke( context ) );
 
 		data.put( "result", result );
-		interceptorService.announce( "postFunctionInvoke", data );
+		runtime.announce( "postFunctionInvoke", data );
 
 		return data.get( "result" );
 	}

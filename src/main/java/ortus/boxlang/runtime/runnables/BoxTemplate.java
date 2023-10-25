@@ -20,8 +20,8 @@ package ortus.boxlang.runtime.runnables;
 import java.nio.file.Path;
 import java.time.LocalDateTime;
 
+import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.IBoxContext;
-import ortus.boxlang.runtime.services.InterceptorService;
 import ortus.boxlang.runtime.types.Struct;
 
 public abstract class BoxTemplate implements ITemplateRunnable {
@@ -39,7 +39,7 @@ public abstract class BoxTemplate implements ITemplateRunnable {
 	 *
 	 */
 	public void invoke( IBoxContext context ) {
-		InterceptorService interceptorService = InterceptorService.getInstance();
+		BoxRuntime runtime = BoxRuntime.getInstance();
 
 		context.pushTemplate( this );
 		try {
@@ -49,12 +49,12 @@ public abstract class BoxTemplate implements ITemplateRunnable {
 			    "template", this,
 			    "templatePath", this.getRunnablePath()
 			);
-			interceptorService.announce( "preTemplateInvoke", data );
+			runtime.announce( "preTemplateInvoke", data );
 
 			_invoke( context );
 
 			// Announce
-			interceptorService.announce( "postTemplateInvoke", data );
+			runtime.announce( "postTemplateInvoke", data );
 		} finally {
 			context.popTemplate();
 		}

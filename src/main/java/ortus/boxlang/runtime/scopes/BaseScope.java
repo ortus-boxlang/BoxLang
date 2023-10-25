@@ -17,7 +17,7 @@
  */
 package ortus.boxlang.runtime.scopes;
 
-import ortus.boxlang.runtime.services.InterceptorService;
+import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.types.Struct;
 
 /**
@@ -49,7 +49,7 @@ public class BaseScope extends Struct implements IScope {
 	public BaseScope( Key scopeName, Struct.Type type ) {
 		super( type );
 		this.scopeName = scopeName;
-		InterceptorService.getInstance().announce( "onScopeCreation", Struct.of( "scope", this ) );
+		BoxRuntime.getInstance().announce( "onScopeCreation", Struct.of( "scope", this ) );
 	}
 
 	/**

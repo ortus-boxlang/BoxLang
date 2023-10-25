@@ -20,6 +20,8 @@ package ortus.boxlang.runtime.services;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import ortus.boxlang.runtime.BoxRuntime;
+
 /**
  *
  */
@@ -34,12 +36,7 @@ public class CacheService extends BaseService {
 	/**
 	 * Logger
 	 */
-	private static final Logger	logger	= LoggerFactory.getLogger( CacheService.class );
-
-	/**
-	 * Singleton instance
-	 */
-	private static CacheService	instance;
+	private static final Logger logger = LoggerFactory.getLogger( CacheService.class );
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -49,21 +46,11 @@ public class CacheService extends BaseService {
 
 	/**
 	 * Constructor
-	 */
-	private CacheService() {
-		logger.info( "CacheService.onStartup()" );
-	}
-
-	/**
-	 * Get an instance of the service
 	 *
-	 * @return The singleton instance
+	 * @param runtime The runtime instance
 	 */
-	public static synchronized CacheService getInstance() {
-		if ( instance == null ) {
-			instance = new CacheService();
-		}
-		return instance;
+	public CacheService( BoxRuntime runtime ) {
+		super( runtime );
 	}
 
 	/**

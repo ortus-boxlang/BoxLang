@@ -108,9 +108,14 @@ public class BoxRunner {
 	 * @return A new CLIOptions object with the parsed options + environment overrides
 	 */
 	private static CLIOptions parseEnvironmentVariables( CLIOptions options ) {
-		Map<String, String>	envVars		= System.getenv();
-		Boolean				debug		= envVars.containsKey( "BOXLANG_DEBUG" ) ? Boolean.parseBoolean( envVars.get( "BOXLANG_DEBUG" ) ) : options.debug();
-		String				configFile	= envVars.containsKey( "BOXLANG_CONFIG" ) ? envVars.get( "BOXLANG_CONFIG" ) : options.configFile();
+		Map<String, String>	envVars	= System.getenv();
+
+		Boolean				debug	= options.debug();
+		if ( envVars.containsKey( "BOXLANG_DEBUG" ) ) {
+			debug = Boolean.parseBoolean( envVars.get( "BOXLANG_DEBUG" ) );
+		}
+
+		String configFile = envVars.containsKey( "BOXLANG_CONFIG" ) ? envVars.get( "BOXLANG_CONFIG" ) : options.configFile();
 
 		return new CLIOptions(
 		    options.templatePath(),

@@ -19,8 +19,8 @@ package ortus.boxlang.runtime.runnables;
 
 import java.time.LocalDateTime;
 
+import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.IBoxContext;
-import ortus.boxlang.runtime.services.InterceptorService;
 import ortus.boxlang.runtime.types.Struct;
 
 public abstract class BoxScript implements IScriptRunnable {
@@ -64,18 +64,18 @@ public abstract class BoxScript implements IScriptRunnable {
 	 *
 	 */
 	public Object invoke( IBoxContext context ) {
-		InterceptorService	interceptorService	= InterceptorService.getInstance();
+		BoxRuntime	runtime	= BoxRuntime.getInstance();
 
 		// Announcements
-		Struct				data				= Struct.of(
+		Struct		data	= Struct.of(
 		    "context", context,
 		    "source", this
 		);
-		interceptorService.announce( "preSourceInvoke", data );
+		runtime.announce( "preSourceInvoke", data );
 		try {
 			return _invoke( context );
 		} finally {
-			interceptorService.announce( "postSourceInvoke", data );
+			runtime.announce( "postSourceInvoke", data );
 		}
 
 	}

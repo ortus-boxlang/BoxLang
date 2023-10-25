@@ -17,6 +17,7 @@
  */
 package ortus.boxlang.runtime.services;
 
+import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.types.exceptions.ApplicationException;
 import ortus.boxlang.runtime.util.Timer;
 
@@ -28,7 +29,21 @@ public abstract class BaseService {
 	/**
 	 * The timer utility class
 	 */
-	private static final Timer timerUtil = new Timer();
+	private static final Timer	timerUtil	= new Timer();
+
+	/**
+	 * The runtime singleton link
+	 */
+	protected BoxRuntime		runtime;
+
+	/**
+	 * Runtime Service Constructor
+	 *
+	 * @param runtime The runtime singleton
+	 */
+	protected BaseService( BoxRuntime runtime ) {
+		this.runtime = runtime;
+	}
 
 	/**
 	 * Get the timer utility class
@@ -37,6 +52,15 @@ public abstract class BaseService {
 	 */
 	public Timer getTimerUtil() {
 		return timerUtil;
+	}
+
+	/**
+	 * Get the runtime singleton
+	 *
+	 * @return The runtime
+	 */
+	public BoxRuntime getRuntime() {
+		return runtime;
 	}
 
 	/**
