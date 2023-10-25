@@ -31,6 +31,7 @@ import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.ScriptingBoxContext;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
+import ortus.boxlang.runtime.types.exceptions.KeyNotFoundException;
 
 public class OperatorsTest {
 
@@ -100,7 +101,6 @@ public class OperatorsTest {
 		result = instance.executeStatement( "-(5+5)", context );
 		assertThat( result ).isEqualTo( -10 );
 
-		// Operator precedence is probably wrong
 		result = instance.executeStatement( "-5+5", context );
 		assertThat( result ).isEqualTo( 0 );
 	}
@@ -131,6 +131,90 @@ public class OperatorsTest {
 	public void testMathPower() {
 		Object result = instance.executeStatement( "2^3", context );
 		assertThat( result ).isEqualTo( 8 );
+	}
+
+	@DisplayName( "math plus plus literals" )
+	@Test
+	public void testMathPlusPlusLiterals() {
+		// MT TODO: Parsing error on ++
+		Object result = instance.executeStatement( "5++", context );
+		assertThat( result ).isEqualTo( 5 );
+
+		result = instance.executeStatement( "++5", context );
+		assertThat( result ).isEqualTo( 6 );
+
+		result = instance.executeStatement( "result=5++", context );
+		assertThat( result ).isEqualTo( 5 );
+		assertThat( context.getScopeNearby( VariablesScope.name ).dereference( Key.of( "result" ), false ) ).isEqualTo( 5 );
+
+		result = instance.executeStatement( "result=++5", context );
+		assertThat( result ).isEqualTo( 6 );
+		assertThat( context.getScopeNearby( VariablesScope.name ).dereference( Key.of( "result" ), false ) ).isEqualTo( 6 );
+
+	}
+
+	@DisplayName( "math plus plus compound" )
+	@Test
+	public void testMathPlusPlusCompound() {
+		instance.executeSource(
+		    """
+		    tmp = 5;
+		    result = variables.tmp++;
+		    """,
+		    context );
+		assertThat( context.getScopeNearby( VariablesScope.name ).dereference( Key.of( "result" ), false ) ).isEqualTo( 5 );
+		assertThat( context.getScopeNearby( VariablesScope.name ).dereference( Key.of( "tmp" ), false ) ).isEqualTo( 6 );
+
+		instance.executeSource(
+		    """
+		    tmp = 5;
+		    result = ++variables.tmp;
+		    """,
+		    context );
+		assertThat( context.getScopeNearby( VariablesScope.name ).dereference( Key.of( "result" ), false ) ).isEqualTo( 6 );
+		assertThat( context.getScopeNearby( VariablesScope.name ).dereference( Key.of( "tmp" ), false ) ).isEqualTo( 6 );
+	}
+
+	@DisplayName( "math minus minus literals" )
+	@Test
+	public void testMathMinusMinusLiterals() {
+		// MT TODO: Parsing error on --
+		Object result = instance.executeStatement( "5--", context );
+		assertThat( result ).isEqualTo( 5 );
+
+		result = instance.executeStatement( "--5", context );
+		assertThat( result ).isEqualTo( 4 );
+
+		result = instance.executeStatement( "result=5--", context );
+		assertThat( result ).isEqualTo( 5 );
+		assertThat( context.getScopeNearby( VariablesScope.name ).dereference( Key.of( "result" ), false ) ).isEqualTo( 5 );
+
+		result = instance.executeStatement( "result=--5", context );
+		assertThat( result ).isEqualTo( 4 );
+		assertThat( context.getScopeNearby( VariablesScope.name ).dereference( Key.of( "result" ), false ) ).isEqualTo( 4 );
+
+	}
+
+	@DisplayName( "math minus minus compound" )
+	@Test
+	public void testMathMinusMinusCompound() {
+		instance.executeSource(
+		    """
+		    tmp = 5;
+		    result = variables.tmp--;
+		    """,
+		    context );
+		assertThat( context.getScopeNearby( VariablesScope.name ).dereference( Key.of( "result" ), false ) ).isEqualTo( 5 );
+		assertThat( context.getScopeNearby( VariablesScope.name ).dereference( Key.of( "tmp" ), false ) ).isEqualTo( 4 );
+
+		instance.executeSource(
+		    """
+		    tmp = 5;
+		    result = --variables.tmp;
+		    """,
+		    context );
+		assertThat( context.getScopeNearby( VariablesScope.name ).dereference( Key.of( "result" ), false ) ).isEqualTo( 4 );
+		assertThat( context.getScopeNearby( VariablesScope.name ).dereference( Key.of( "tmp" ), false ) ).isEqualTo( 4 );
 	}
 
 	@DisplayName( "logical and" )
@@ -178,7 +262,6 @@ public class OperatorsTest {
 	@DisplayName( "logical xor" )
 	@Test
 	public void testLogicalXOR() {
-		// Failing due to case of class. Acronyms are always upper case, so it's `XOR.invoke()`
 		Object result = instance.executeStatement( "true xor false", context );
 		assertThat( result ).isEqualTo( true );
 
@@ -206,13 +289,15 @@ public class OperatorsTest {
 
 		result = instance.executeStatement( "foo ?: 'default'", context );
 		assertThat( result ).isEqualTo( "default" );
-
+		// MT TODO: Dereferencing on the left hand side of an Elvis operator needs to done safely
 		result = instance.executeStatement( "foo.bar.baz ?: 'default'", context );
 		assertThat( result ).isEqualTo( "default" );
 
+		// MT TODO: Dereferencing on the left hand side of an Elvis operator needs to done safely
 		result = instance.executeStatement( "foo['bar'] ?: 'default'", context );
 		assertThat( result ).isEqualTo( "default" );
 
+		// MT TODO: Parsing error
 		result = instance.executeStatement( "foo['bar'].baz ?: 'default'", context );
 		assertThat( result ).isEqualTo( "default" );
 
@@ -228,7 +313,7 @@ public class OperatorsTest {
 		result = instance.executeStatement( "FALSE ? 'itwastrue' : 'itwasfalse'", context );
 		assertThat( result ).isEqualTo( "itwasfalse" );
 
-		// scoped tmp lookup is failing, technically no issue with ternary
+		// MT TODO: scoped tmp lookup is missing, technically no issue with ternary
 		instance.executeSource(
 		    """
 		    tmp = true;
@@ -254,11 +339,10 @@ public class OperatorsTest {
 	@DisplayName( "castAs" )
 	@Test
 	public void testCastAs() {
+		// MT TODO: variable sdf should not exist, therefore an error needs to be thrown
+		// The issue is we're using scope.get() instead of an unsafe dereference() to get the sdf variable
+		assertThrows( KeyNotFoundException.class, () -> instance.executeStatement( "5 castAs sdf", context ) );
 
-		// variable sdf should not exist, therefore an error needs to be thrown
-		assertThrows( Throwable.class, () -> instance.executeStatement( "5 castAs sdf", context ) );
-
-		// castAs keyword doesn't seem to be implemented-- the parser is just directly returning the 5 as a literal
 		Object result = instance.executeStatement( "5 castAs 'String'", context );
 		assertThat( result ).isEqualTo( "5" );
 		assertThat( result.getClass().getName() ).isEqualTo( "java.lang.String" );
@@ -268,6 +352,7 @@ public class OperatorsTest {
 	@Test
 	public void testAssert() {
 
+		// MT TODO: Parsing error: Encountered unexpected token: "assert" "assert"
 		Object result = instance.executeStatement( "assert true", context );
 		assertThat( result ).isEqualTo( true );
 
@@ -321,13 +406,11 @@ public class OperatorsTest {
 		Object result = instance.executeStatement( "6 > 5", context );
 		assertThat( result ).isEqualTo( true );
 
-		// not implemented
 		result	= instance.executeStatement( "6 GREATER THAN 5", context );
 
 		result	= instance.executeStatement( "'B' > 'A'", context );
 		assertThat( result ).isEqualTo( true );
 
-		// not implemented
 		result = instance.executeStatement( "'B' greater than 'A'", context );
 		assertThat( result ).isEqualTo( true );
 	}
@@ -342,11 +425,9 @@ public class OperatorsTest {
 		result = instance.executeStatement( "10 GTE 5", context );
 		assertThat( result ).isEqualTo( true );
 
-		// not implemented
 		result = instance.executeStatement( "10 GREATER THAN OR EQUAL TO 5", context );
 		assertThat( result ).isEqualTo( true );
 
-		// not implemented
 		result = instance.executeStatement( "10 GE 5", context );
 		assertThat( result ).isEqualTo( true );
 	}
@@ -361,7 +442,6 @@ public class OperatorsTest {
 		result = instance.executeStatement( "5 LT 10", context );
 		assertThat( result ).isEqualTo( true );
 
-		// not implemented
 		result = instance.executeStatement( "5 LESS THAN 10", context );
 		assertThat( result ).isEqualTo( true );
 
@@ -377,11 +457,9 @@ public class OperatorsTest {
 		result = instance.executeStatement( "5 LTE 10", context );
 		assertThat( result ).isEqualTo( true );
 
-		// not implemented
 		result = instance.executeStatement( "5 LESS THAN OR EQUAL TO 10", context );
 		assertThat( result ).isEqualTo( true );
 
-		// not implemented
 		result = instance.executeStatement( "5 LE 10", context );
 		assertThat( result ).isEqualTo( true );
 
@@ -406,7 +484,6 @@ public class OperatorsTest {
 	@Test
 	public void testOrderOfOps() {
 
-		// ^ comes first
 		Object result = instance.executeStatement( "1+2-3*4^5", context );
 		assertThat( result ).isEqualTo( -3069 );
 
@@ -425,7 +502,7 @@ public class OperatorsTest {
 		result = instance.executeStatement( "2*2%3", context );
 		assertThat( result ).isEqualTo( 1 );
 
-		// ++ -- doesn't work
+		// MT TODO: Parsing eror on ++5
 		result = instance.executeStatement( "++5^--6", context );
 		assertThat( result ).isEqualTo( 7776 );
 

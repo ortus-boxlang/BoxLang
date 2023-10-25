@@ -152,6 +152,10 @@ public class CoreLangTest {
 	@Test
 	public void testTryCatch() {
 
+		// MT TODO: THere are a few problems in this one. We are still hard-coding variablesScope as the default scope instead of
+		// context.getDefaultAssignmentScope()
+		// and secondly, all of the code in the catch block must use catchContext, not context.
+		// Thirdly, e.getMessage() is not looking up "e" in the catchContext via scopeFindNearby, but instead is using Java e variable directly
 		instance.executeSource(
 		    """
 		         try {
@@ -159,15 +163,48 @@ public class CoreLangTest {
 		           } catch (any e) {
 		    message = e.getMessage();
 		    message2 = e.message;
-		    result = "in catch"
+		    result = "in catch";
 		           } finally {
-		         		result &= ' also finally'
+		         		result &= ' also finally';
 		           }
 		             """,
 		    context );
 		assertThat( variables.dereference( result, false ) ).isEqualTo( "in catch also finally" );
 		assertThat( variables.dereference( Key.of( "message" ), false ) ).isEqualTo( "You cannot divide by zero." );
 		assertThat( variables.dereference( Key.of( "message2" ), false ) ).isEqualTo( "You cannot divide by zero." );
+
+	}
+
+	@DisplayName( "nested try catch" )
+	@Test
+	public void testNestedTryCatch() {
+
+		// MT TODO: There are two problems here (including all the issues in the above test). The first is that the Java exception names must be unique.
+		// Instead of using the CFML names, I would generage ex1, ex2, ex3 or similar names dyanamically.
+		// The second issue is that there needs to be a UNIQUE catchContext for each nested catch block. Again, I would generage dynamic names here. The code
+		// in the
+		// outer catch block should use the outer catchContext, and the code in the inner catch block should use the inner catchContext.
+		instance.executeSource(
+		    """
+		    try {
+		    	1/0
+		    } catch (any e) {
+		    	one = e.getMessage()
+
+		    	try {
+		    		foo=variables.bar
+		    	} catch (any e) {
+		    		two = e.getMessage()
+		    	}
+
+		    	three = e.getMessage()
+		    }
+		      """,
+		    context );
+		assertThat( variables.dereference( Key.of( "one" ), false ) ).isEqualTo( "You cannot divide by zero." );
+		assertThat( variables.dereference( Key.of( "two" ), false ) )
+		    .isEqualTo( "The key bar was not found in the struct. Valid keys are ([ONE, TWO, THREE])" );
+		assertThat( variables.dereference( Key.of( "three" ), false ) ).isEqualTo( "You cannot divide by zero." );
 
 	}
 
@@ -197,10 +234,6 @@ public class CoreLangTest {
 	public void testSentinelLoop() {
 
 		instance.executeSource(
-		    // initialization of i isn't correct. It's
-		    // context.scopeFindNearby(Key.of("i"), variablesScope).scope().get(Key.of("i"));
-		    // instead of
-		    // context.scopeFindNearby(Key.of("i"), context.getDefaultAssignmentScope()).scope().assign(Key.of("i"),0);
 		    """
 		    result=0
 		    for( i=0; i<10; variables.i++ ) {
@@ -443,7 +476,7 @@ public class CoreLangTest {
 	@Test
 	public void testStringParsingExpressionInPounds() {
 
-		// Needs to use Concat operator, not Java's `+`
+		// MT TODO: Needs to use Concat operator, not Java's `+`
 		instance.executeSource(
 		    """
 		    result = "Box#5+6#Lang"
@@ -458,6 +491,7 @@ public class CoreLangTest {
 	@Test
 	public void testSwitch() {
 
+		// MT TODO: This code runs on both Adobe and Lucee CF engines
 		instance.executeSource(
 		    """
 		      	result = ""
@@ -495,6 +529,7 @@ public class CoreLangTest {
 	@Test
 	public void testSwitchDefault() {
 
+		// MT TODO: This code runs on both Adobe and Lucee CF engines
 		instance.executeSource(
 		    """
 		      	result = ""
