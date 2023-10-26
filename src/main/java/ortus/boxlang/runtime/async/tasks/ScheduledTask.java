@@ -29,9 +29,12 @@ import org.slf4j.LoggerFactory;
 import com.ibm.icu.impl.duration.TimeUnit;
 
 import ortus.boxlang.runtime.interop.DynamicObject;
-import ortus.boxlang.runtime.services.CacheService;
 import ortus.boxlang.runtime.types.Struct;
 
+/**
+ * The ScheduledTask class is a Runnable that is used by the schedulers to execute tasks
+ * in a more human and fluent approach.
+ */
 public class ScheduledTask implements Runnable {
 
 	/**
@@ -44,6 +47,11 @@ public class ScheduledTask implements Runnable {
 	 * The human name of this task
 	 */
 	private String								name;
+
+	/**
+	 * The human group name of this task
+	 */
+	private String								group;
 
 	/**
 	 * The task dynamic object that will be executed by the task
@@ -283,6 +291,24 @@ public class ScheduledTask implements Runnable {
 	 */
 	public void setName( String name ) {
 		this.name = name;
+	}
+
+	/**
+	 * Set the human group name of this task.
+	 *
+	 * @param group the group to set
+	 */
+	public void setGroup( String group ) {
+		this.group = group;
+	}
+
+	/**
+	 * Get the human group name of this task.
+	 * 
+	 * @return the group
+	 */
+	public String getGroup() {
+		return group;
 	}
 
 	/**
