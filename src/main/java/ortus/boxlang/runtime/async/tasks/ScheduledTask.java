@@ -1498,6 +1498,77 @@ public class ScheduledTask implements Runnable {
 
 	/**
 	 * --------------------------------------------------------------------------
+	 * TimeUnit Methods
+	 * --------------------------------------------------------------------------
+	 * These methods are used to set the time unit of the interval or periods.
+	 * Last one called wins!
+	 */
+
+	/**
+	 * Set the time unit in days
+	 */
+	public ScheduledTask inDays() {
+		debugLog( "inDays" );
+		this.timeUnit = TimeUnit.DAYS;
+		return this;
+	}
+
+	/**
+	 * Set the time unit in hours
+	 */
+	public ScheduledTask inHours() {
+		debugLog( "inHours" );
+		this.timeUnit = TimeUnit.HOURS;
+		return this;
+	}
+
+	/**
+	 * Set the time unit in microseconds
+	 */
+	public ScheduledTask inMicroseconds() {
+		debugLog( "inMicroseconds" );
+		this.timeUnit = TimeUnit.MICROSECONDS;
+		return this;
+	}
+
+	/**
+	 * Set the time unit in milliseconds
+	 */
+	public ScheduledTask inMilliseconds() {
+		debugLog( "inMilliseconds" );
+		this.timeUnit = TimeUnit.MILLISECONDS;
+		return this;
+	}
+
+	/**
+	 * Set the time unit in minutes
+	 */
+	public ScheduledTask inMinutes() {
+		debugLog( "inMinutes" );
+		this.timeUnit = TimeUnit.MINUTES;
+		return this;
+	}
+
+	/**
+	 * Set the time unit in nanoseconds
+	 */
+	public ScheduledTask inNanoseconds() {
+		debugLog( "inNanoseconds" );
+		this.timeUnit = TimeUnit.NANOSECONDS;
+		return this;
+	}
+
+	/**
+	 * Set the time unit in seconds
+	 */
+	public ScheduledTask inSeconds() {
+		debugLog( "inSeconds" );
+		this.timeUnit = TimeUnit.SECONDS;
+		return this;
+	}
+
+	/**
+	 * --------------------------------------------------------------------------
 	 * Helpers
 	 * --------------------------------------------------------------------------
 	 */
