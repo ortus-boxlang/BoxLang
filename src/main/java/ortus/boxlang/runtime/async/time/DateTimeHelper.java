@@ -18,13 +18,18 @@
 package ortus.boxlang.runtime.async.time;
 
 import java.time.DateTimeException;
+import java.time.DayOfWeek;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
+import java.time.temporal.TemporalAdjusters;
 import java.time.zone.ZoneRulesException;
+import java.util.concurrent.TimeUnit;
+
+import javax.management.InvalidAttributeValueException;
 
 /**
  * We represent a static date/time helper class that assists with time units on date/time conversions
@@ -239,6 +244,244 @@ public class DateTimeHelper {
 	 */
 	public static String getIsoTime( LocalDateTime dateTime ) {
 		return getIsoTime( dateTime, true );
+	}
+
+	/**
+	 * Determines the number of days in a month.
+	 *
+	 * @param now The date/time to use to determine the number of days in the month
+	 *
+	 * @return The number of days in the month
+	 */
+	public static int daysInMonth( LocalDateTime now ) {
+		return now.getMonth().maxLength();
+	}
+
+	/**
+	 * Determines the number of days in the current month
+	 *
+	 * @return The number of days in the month
+	 */
+	public static int daysInMonth() {
+		return daysInMonth( now() );
+	}
+
+	/**
+	 * This utility method gives us the first business day of the month in Java format
+	 *
+	 * @param time     The specific time using 24 hour format => HH:mm, defaults to midnight
+	 * @param addMonth Boolean to specify adding a month to today's date
+	 * @param now      The date to use as the starting point, defaults to now()
+	 * @param timezone The timezone to use
+	 *
+	 * @return The first business day of the month
+	 */
+	public static LocalDateTime getFirstBusinessDayOfTheMonth( String time, Boolean addMonth, LocalDateTime now, ZoneId timezone ) {
+		// Get the last day of the month
+		return DateTimeHelper
+		    .toLocalDateTime(
+		        addMonth ? now.plusMonths( 1 ) : now,
+		        timezone
+		    )
+		    // First business day of the month
+		    .with( TemporalAdjusters.firstInMonth( DayOfWeek.MONDAY ) )
+		    // Specific Time
+		    .withHour( Integer.valueOf( time.split( ":" )[ 0 ] ) )
+		    .withMinute( Integer.valueOf( time.split( ":" )[ 1 ] ) )
+		    .withSecond( 0 );
+	}
+
+	/**
+	 * This utility method gives us the first business day of the month in Java format
+	 *
+	 * @param time     The specific time using 24 hour format => HH:mm, defaults to midnight
+	 * @param addMonth Boolean to specify adding a month to today's date
+	 * @param timezone The timezone to use
+	 *
+	 * @return The first business day of the month
+	 */
+	public static LocalDateTime getFirstBusinessDayOfTheMonth( String time, Boolean addMonth, ZoneId timezone ) {
+		return getFirstBusinessDayOfTheMonth( time, addMonth, DateTimeHelper.now( timezone ), timezone );
+	}
+
+	/**
+	 * This utility method gives us the first business day of the month in Java format
+	 *
+	 * @param timezone The timezone to use
+	 *
+	 * @return The first business day of the month
+	 */
+	public static LocalDateTime getFirstBusinessDayOfTheMonth( ZoneId timezone ) {
+		return getFirstBusinessDayOfTheMonth( "00:00", false, DateTimeHelper.now( timezone ), timezone );
+	}
+
+	/**
+	 * This utility method gives us the first business day of the month in Java format
+	 *
+	 * @return The first business day of the month
+	 */
+	public static LocalDateTime getFirstBusinessDayOfTheMonth() {
+		return getFirstBusinessDayOfTheMonth( "00:00", false, DateTimeHelper.now( getSystemTimezone() ), getSystemTimezone() );
+	}
+
+	/**
+	 * This utility method gives us the last business day of the month in Java format
+	 *
+	 * @param time     The specific time using 24 hour format => HH:mm, defaults to midnight
+	 * @param addMonth Boolean to specify adding a month to today's date
+	 * @param now      The date to use as the starting point, defaults to now()
+	 * @param timezone The timezone to use
+	 *
+	 * @return The last business day of the month
+	 */
+	public static LocalDateTime getLastBusinessDayOfTheMonth( String time, Boolean addMonth, LocalDateTime now, ZoneId timezone ) {
+		// Get the last day of the month
+		LocalDateTime lastDay = DateTimeHelper
+		    .toLocalDateTime(
+		        addMonth ? now.plusMonths( 1 ) : now,
+		        timezone
+		    )
+		    // last business day of the month
+		    .with( TemporalAdjusters.lastDayOfMonth() )
+		    // Specific Time
+		    .withHour( Integer.valueOf( time.split( ":" )[ 0 ] ) )
+		    .withMinute( Integer.valueOf( time.split( ":" )[ 1 ] ) )
+		    .withSecond( 0 );
+
+		// Verify if on weekend
+		switch ( lastDay.getDayOfWeek().getValue() ) {
+			// Sunday - 2 days
+			case 7 : {
+				lastDay = lastDay.minusDays( 2 );
+				break;
+			}
+			// Saturday - 1 day
+			case 6 : {
+				lastDay = lastDay.minusDays( 1 );
+				break;
+			}
+		}
+
+		return lastDay;
+	}
+
+	/**
+	 * This utility method gives us the last business day of the month in Java format
+	 *
+	 * @param time     The specific time using 24 hour format => HH:mm, defaults to midnight
+	 * @param addMonth Boolean to specify adding a month to today's date
+	 * @param timezone The timezone to use
+	 *
+	 * @return The last business day of the month
+	 */
+	public static LocalDateTime getLastBusinessDayOfTheMonth( String time, Boolean addMonth, ZoneId timezone ) {
+		return getLastBusinessDayOfTheMonth( time, addMonth, DateTimeHelper.now( timezone ), timezone );
+	}
+
+	/**
+	 * This utility method gives us the last business day of the month in Java format
+	 *
+	 * @param timezone The timezone to use
+	 *
+	 * @return The last business day of the month
+	 */
+	public static LocalDateTime getLastBusinessDayOfTheMonth( ZoneId timezone ) {
+		return getLastBusinessDayOfTheMonth( "00:00", false, DateTimeHelper.now( timezone ), timezone );
+	}
+
+	/**
+	 * This utility method gives us the last business day of the month in Java format
+	 *
+	 * @return The last business day of the month
+	 */
+	public static LocalDateTime getLastBusinessDayOfTheMonth() {
+		return getLastBusinessDayOfTheMonth( "00:00", false, DateTimeHelper.now( getSystemTimezone() ), getSystemTimezone() );
+	}
+
+	/**
+	 * Validates an incoming string to adhere to HH: mm while allowing a user to simply enter an hour value
+	 *
+	 * @param time The time to validate
+	 *
+	 * @return The validated time
+	 *
+	 * @throws InvalidAttributeValueException
+	 */
+	public static String validateTime( String time ) throws InvalidAttributeValueException {
+		if ( !time.matches( "^([0-1][0-9]|[2][0-3]):[0-5][0-9]$" ) ) {
+
+			// Do we have only hours?
+			if ( time.contains( ":" ) ) {
+				throw new InvalidAttributeValueException( "Invalid time representation (" + time + "). Time is represented in 24 hour minute format => HH:mm" );
+			}
+
+			return validateTime( time + ":00" );
+		}
+
+		return time;
+	}
+
+	/**
+	 * Transforms the incoming value in the specified time unit to seconds
+	 *
+	 * @param value  The value to convert to seconds
+	 * @param target The time unit to transform
+	 *
+	 * @return The time unit in seconds
+	 */
+	public static long timeUnitToSeconds( long value, TimeUnit target ) {
+		// transform all to seconds
+		switch ( target ) {
+			case SECONDS :
+				value = value * 60 * 60 * 24;
+				break;
+			case HOURS :
+				value = value * 60 * 60;
+				break;
+			case MINUTES :
+				value = value * 60;
+				break;
+			case MILLISECONDS :
+				value = value / 1000;
+				break;
+			case MICROSECONDS :
+				value = value / 1000000;
+				break;
+			case NANOSECONDS :
+				value = value / 1000000000;
+				break;
+			default :
+				break;
+		}
+		return value;
+	}
+
+	/**
+	 * This method adds a specific amount of a TimeUnit into the incoming target LocalDateTime
+	 *
+	 * @param target   The target to add the amount to
+	 * @param amount   The amount of time to add to the initial next run date time
+	 * @param timeUnit The time unit to use for the period
+	 *
+	 * @return The calculated dateTime
+	 */
+	public static LocalDateTime dateTimeAdd( LocalDateTime target, long amount, TimeUnit timeUnit ) {
+		switch ( timeUnit ) {
+			case DAYS :
+				return target.plusDays( amount );
+			case HOURS :
+				return target.plusHours( amount );
+			case MINUTES :
+				return target.plusMinutes( amount );
+			case MILLISECONDS :
+				return target.plusSeconds( amount / 1000 );
+			case MICROSECONDS :
+				return target.plusNanos( amount * 1000 );
+			case NANOSECONDS :
+				return target.plusNanos( amount );
+			default :
+				return target.plusSeconds( amount );
+		}
 	}
 
 }
