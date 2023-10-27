@@ -31,7 +31,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 import ortus.boxlang.runtime.BoxRuntime;
-import ortus.boxlang.runtime.async.executors.ScheduledExecutor;
+import ortus.boxlang.runtime.async.executors.BoxScheduledExecutor;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.KeyNotFoundException;
 
@@ -433,7 +433,7 @@ public class AsyncService extends BaseService {
 				executor = Executors.newFixedThreadPool( maxThreads );
 				break;
 			case SCHEDULED :
-				executor = new ScheduledExecutor( maxThreads );
+				executor = new BoxScheduledExecutor( maxThreads );
 				break;
 			case SINGLE :
 				executor = Executors.newSingleThreadExecutor();

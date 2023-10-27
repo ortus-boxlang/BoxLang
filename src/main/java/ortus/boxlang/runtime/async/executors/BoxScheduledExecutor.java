@@ -15,27 +15,22 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package ortus.boxlang.runtime.async.executors;
 
-import static com.google.common.truth.Truth.assertThat;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
 
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Test;
+/**
+ * Our own custom scheduled executor service
+ */
+public class BoxScheduledExecutor extends ScheduledThreadPoolExecutor {
 
-class ScheduledExecutorTest {
-
-	ScheduledExecutor scheduler;
-
-	@BeforeEach
-	public void setupBeforeEach() {
-		scheduler = new ScheduledExecutor( 20 );
+	/**
+	 * Creates a new instance of ScheduledExecutor.
+	 *
+	 * @param corePoolSize The number of threads to keep in the pool, even if they are idle, unless {@code allowCoreThreadTimeOut} is set
+	 */
+	public BoxScheduledExecutor( int corePoolSize ) {
+		super( corePoolSize );
 	}
 
-	@DisplayName( "It can create the scheduled executor" )
-	@Test
-	void testItCanCreateIt() {
-		assertThat( scheduler ).isNotNull();
-	}
 }

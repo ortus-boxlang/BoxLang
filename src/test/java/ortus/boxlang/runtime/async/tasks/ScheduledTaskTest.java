@@ -19,13 +19,11 @@ package ortus.boxlang.runtime.async.tasks;
 
 import static com.google.common.truth.Truth.assertThat;
 
-import java.time.LocalDateTime;
-import java.util.HashMap;
-import java.util.Map;
-
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+
+import ortus.boxlang.runtime.async.executors.BoxScheduledExecutor;
 
 class ScheduledTaskTest {
 
@@ -33,20 +31,13 @@ class ScheduledTaskTest {
 
 	@BeforeEach
 	public void setupBeforeEach() {
-
+		task = new ScheduledTask( "test", new BoxScheduledExecutor( 20 ) );
 	}
 
 	@DisplayName( "It can create the scheduled task" )
 	@Test
 	void testItCanCreateIt() {
-		// task = new ScheduledTask();
-		Map map = new HashMap();
-		map.put( "test", DateTime );
-
-		LocalDateTime test = ( LocalDateTime ) map.get( "test" );
-
-		System.out.println( test != null ? test : "null value" );
-		// assertThat( task ).isNotNull();
+		assertThat( task ).isNotNull();
 	}
 
 }
