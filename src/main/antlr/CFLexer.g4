@@ -4,9 +4,10 @@ options {
     caseInsensitive = true;
 }
 
-BEGIN:  -> skip, pushMode(codeMode);
-
-mode codeMode;
+/**
+ * DEFAULT MODE
+ * https://github.com/antlr/antlr4/blob/master/doc/lexer-rules.md#lexical-modes
+ */
 ABSTRACT        :   'ABSTRACT';
 ABORT           :   'ABORT';
 ADMIN           :   'ADMIN';
@@ -183,7 +184,7 @@ SSTRING_LITERAL
     ;
 
 SHASH
-	: '#' -> type(ICHAR),pushMode(hashMode),pushMode(codeMode)
+	: '#' -> type(ICHAR),pushMode(hashMode),pushMode(DEFAULT_MODE)
     ;
 
 
@@ -201,7 +202,7 @@ STRING_LITERAL
 ;
 
 HASH
-	: '#' -> type(ICHAR),pushMode(hashMode),pushMode(codeMode)
+	: '#' -> type(ICHAR),pushMode(hashMode),pushMode(DEFAULT_MODE)
 ;
 
 
