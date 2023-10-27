@@ -208,5 +208,5 @@ HASH
 
 mode hashMode;
 HANY
-    :  -> popMode,skip;
+    : [.]+ -> popMode,skip;
 
