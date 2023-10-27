@@ -173,7 +173,7 @@ SHASHHASH
     ;
 
 SSTRING_LITERAL
-    : (~['#]+ | '\'\'' )* -> type(STRING_LITERAL)
+    : (~['#]+ | '\'\'' )+ -> type(STRING_LITERAL)
     ;
 
 SHASH
@@ -191,7 +191,7 @@ HASHHASH
 	: '##'
 ;
 STRING_LITERAL
-	: (~["#]+ | '""' )*
+	: (~["#]+ | '""' )+
 ;
 
 HASH
