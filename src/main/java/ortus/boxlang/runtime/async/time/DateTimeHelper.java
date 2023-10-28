@@ -277,12 +277,12 @@ public class DateTimeHelper {
 	 * @return The first business day of the month
 	 */
 	public static LocalDateTime getFirstBusinessDayOfTheMonth( String time, Boolean addMonth, LocalDateTime now, ZoneId timezone ) {
+		// Adding a month?
+		if ( addMonth ) {
+			now = now.plusMonths( 1 );
+		}
 		// Get the last day of the month
-		return DateTimeHelper
-		    .toLocalDateTime(
-		        addMonth ? now.plusMonths( 1 ) : now,
-		        timezone
-		    )
+		return now
 		    // First business day of the month
 		    .with( TemporalAdjusters.firstInMonth( DayOfWeek.MONDAY ) )
 		    // Specific Time
@@ -335,12 +335,12 @@ public class DateTimeHelper {
 	 * @return The last business day of the month
 	 */
 	public static LocalDateTime getLastBusinessDayOfTheMonth( String time, Boolean addMonth, LocalDateTime now, ZoneId timezone ) {
+		// Adding a month?
+		if ( addMonth ) {
+			now = now.plusMonths( 1 );
+		}
 		// Get the last day of the month
-		LocalDateTime lastDay = DateTimeHelper
-		    .toLocalDateTime(
-		        addMonth ? now.plusMonths( 1 ) : now,
-		        timezone
-		    )
+		LocalDateTime lastDay = now
 		    // last business day of the month
 		    .with( TemporalAdjusters.lastDayOfMonth() )
 		    // Specific Time
@@ -360,6 +360,8 @@ public class DateTimeHelper {
 				lastDay = lastDay.minusDays( 1 );
 				break;
 			}
+			default :
+				break;
 		}
 
 		return lastDay;

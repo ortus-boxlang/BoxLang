@@ -48,7 +48,9 @@ import ortus.boxlang.runtime.util.Timer;
  * The ScheduledTask class is a {@link Runnable} that is used by the schedulers to execute tasks
  * in a more human and fluent approach.
  *
- * A task can be represented either by a DynamicObject or a Java Lambda.
+ * A task can be represented either by a {@link DynamicObject} or a Java {@Link Callable} Lambda.
+ *
+ * You can use this class to create scheduled tasks in a human and friendly way!
  */
 public class ScheduledTask implements Runnable {
 
@@ -901,8 +903,22 @@ public class ScheduledTask implements Runnable {
 		return this;
 	}
 
+	/**
+	 * Run the task every custom period of execution
+	 * The default time unit is milliseconds
+	 *
+	 * @param period The period of execution
+	 */
 	public ScheduledTask every( long period ) {
 		return every( period, TimeUnit.MILLISECONDS );
+	}
+
+	/**
+	 * Run the task every second from the time it get's scheduled
+	 */
+	public ScheduledTask everySecond() {
+		debugLog( "everySecond" );
+		return every( 1, TimeUnit.SECONDS );
 	}
 
 	/**
@@ -1623,8 +1639,13 @@ public class ScheduledTask implements Runnable {
 	 * This method calculates the next run date according to initial and recurrent scenarios.
 	 */
 	private synchronized void setNextRunTime() {
-		LocalDateTime	initialNextRun	= ( LocalDateTime ) this.stats.get( "nextRun" );
+		// Prep vars
+		LocalDateTime	initialNextRun	= null;
 		LocalDateTime	nextRun			= getNow();
+
+		if ( this.stats.get( "nextRun" ) instanceof LocalDateTime castedNextRun ) {
+			initialNextRun = castedNextRun;
+		}
 
 		// Debug
 		debugLog(
@@ -1667,7 +1688,7 @@ public class ScheduledTask implements Runnable {
 			// Which is what the task operates on, either one.
 			var amount = this.spacedDelay != 0 ? this.spacedDelay : this.period;
 			// if overlaps are allowed task is immediately scheduled
-			if ( this.spacedDelay == 0 && ( ( AtomicInteger ) stats.get( "lastExecutionTime" ) ).get() / 1000 > this.period ) {
+			if ( this.spacedDelay == 0 && ( ( AtomicLong ) stats.get( "lastExecutionTime" ) ).get() / 1000 > this.period ) {
 				amount = 0;
 			}
 			nextRun = DateTimeHelper.dateTimeAdd( nextRun, amount, this.timeUnit );
@@ -1954,14 +1975,23 @@ public class ScheduledTask implements Runnable {
 	}
 
 	/**
-	 * Get a handy boolean that disables the scheduling of this task.
+	 * Is the task disabled
 	 */
 	public Boolean isDisabled() {
 		return disabled;
 	}
 
 	/**
+	 * Is the task enabled
+	 */
+	public Boolean isEnabled() {
+		return !isDisabled();
+	}
+
+	/**
 	 * Set a handy boolean that disables the scheduling of this task.
+	 *
+	 * @param disabled The disabled to set
 	 */
 	public ScheduledTask setDisabled( Boolean disabled ) {
 		this.disabled = disabled;
@@ -2024,7 +2054,7 @@ public class ScheduledTask implements Runnable {
 	 * Get the constraint of what day of the week this runs on: 1-7.
 	 */
 	public int getDayOfTheWeek() {
-		return dayOfTheWeek;
+		return this.dayOfTheWeek;
 	}
 
 	/**
@@ -2038,8 +2068,8 @@ public class ScheduledTask implements Runnable {
 	/**
 	 * Get the constraint to run only on weekends.
 	 */
-	public Boolean isWeekends() {
-		return weekends;
+	public Boolean getWeekends() {
+		return this.weekends;
 	}
 
 	/**
@@ -2053,8 +2083,8 @@ public class ScheduledTask implements Runnable {
 	/**
 	 * Get the constraint to run only on weekdays.
 	 */
-	public Boolean isWeekdays() {
-		return weekdays;
+	public Boolean getWeekdays() {
+		return this.weekdays;
 	}
 
 	/**
@@ -2066,10 +2096,10 @@ public class ScheduledTask implements Runnable {
 	}
 
 	/**
-	 * Get the constraint to run only on the first business day of the month.
+	 * @return the firstBusinessDay
 	 */
-	public Boolean isFirstBusinessDay() {
-		return firstBusinessDay;
+	public Boolean getFirstBusinessDay() {
+		return this.firstBusinessDay;
 	}
 
 	/**
@@ -2083,8 +2113,8 @@ public class ScheduledTask implements Runnable {
 	/**
 	 * Get the constraint to run only on the last business day of the month.
 	 */
-	public Boolean isLastBusinessDay() {
-		return lastBusinessDay;
+	public Boolean getLastBusinessDay() {
+		return this.lastBusinessDay;
 	}
 
 	/**
@@ -2102,7 +2132,16 @@ public class ScheduledTask implements Runnable {
 	 * With this flag turned on, the schedulers don't kick off the intervals until the tasks finish executing, meaning no stacking.
 	 */
 	public Boolean isNoOverlaps() {
-		return noOverlaps;
+		return this.noOverlaps;
+	}
+
+	/**
+	 * Get the NoOverlaps flag
+	 *
+	 * @return the noOverlaps
+	 */
+	public Boolean getNoOverlaps() {
+		return this.noOverlaps;
 	}
 
 	/**
@@ -2120,7 +2159,7 @@ public class ScheduledTask implements Runnable {
 	 * Get the time of day for use in setNextRunTime().
 	 */
 	public String getTaskTime() {
-		return taskTime;
+		return this.taskTime;
 	}
 
 	/**
@@ -2135,7 +2174,7 @@ public class ScheduledTask implements Runnable {
 	 * Get the constraint of when the task can start execution.
 	 */
 	public LocalDateTime getStartOnDateTime() {
-		return startOnDateTime;
+		return this.startOnDateTime;
 	}
 
 	/**
@@ -2150,7 +2189,7 @@ public class ScheduledTask implements Runnable {
 	 * Get the constraint of when the task must not continue to execute.
 	 */
 	public LocalDateTime getEndOnDateTime() {
-		return endOnDateTime;
+		return this.endOnDateTime;
 	}
 
 	/**
@@ -2165,7 +2204,7 @@ public class ScheduledTask implements Runnable {
 	 * Get the constraint to limit the task to run after a specified time of day.
 	 */
 	public String getStartTime() {
-		return startTime;
+		return this.startTime;
 	}
 
 	/**
@@ -2180,7 +2219,7 @@ public class ScheduledTask implements Runnable {
 	 * Get the constraint to limit the task to run before a specified time of day.
 	 */
 	public String getEndTime() {
-		return endTime;
+		return this.endTime;
 	}
 
 	/**
@@ -2195,7 +2234,7 @@ public class ScheduledTask implements Runnable {
 	 * Get a boolean value that lets us know if this task has been scheduled.
 	 */
 	public Boolean isScheduled() {
-		return scheduled;
+		return this.scheduled;
 	}
 
 	/**
@@ -2212,7 +2251,7 @@ public class ScheduledTask implements Runnable {
 	 * @return the meta
 	 */
 	public Struct getMeta() {
-		return meta;
+		return this.meta;
 	}
 
 	/**
@@ -2254,7 +2293,7 @@ public class ScheduledTask implements Runnable {
 	 * Get the timezone this task runs under. By default, we use the timezone defined in the schedulers.
 	 */
 	public ZoneId getTimezone() {
-		return timezone;
+		return this.timezone;
 	}
 
 	/**
@@ -2282,7 +2321,7 @@ public class ScheduledTask implements Runnable {
 	 * @return the scheduler or null if not bound
 	 */
 	public Scheduler getScheduler() {
-		return scheduler;
+		return this.scheduler;
 	}
 
 	/**
@@ -2291,7 +2330,7 @@ public class ScheduledTask implements Runnable {
 	 * @return true if it has a scheduler, false otherwise
 	 */
 	public Boolean hasScheduler() {
-		return scheduler != null;
+		return this.scheduler != null;
 	}
 
 	/**
@@ -2308,7 +2347,7 @@ public class ScheduledTask implements Runnable {
 	 * Get the before task lambda.
 	 */
 	public Consumer<ScheduledTask> getBeforeTask() {
-		return beforeTask;
+		return this.beforeTask;
 	}
 
 	/**
@@ -2323,7 +2362,7 @@ public class ScheduledTask implements Runnable {
 	 * Get the after task lambda.
 	 */
 	public BiConsumer<ScheduledTask, Optional<?>> getAfterTask() {
-		return afterTask;
+		return this.afterTask;
 	}
 
 	/**
@@ -2338,7 +2377,7 @@ public class ScheduledTask implements Runnable {
 	 * Get the task success lambda.
 	 */
 	public BiConsumer<ScheduledTask, Optional<?>> getOnTaskSuccess() {
-		return onTaskSuccess;
+		return this.onTaskSuccess;
 	}
 
 	/**
@@ -2353,7 +2392,7 @@ public class ScheduledTask implements Runnable {
 	 * Get the task failure lambda.
 	 */
 	public BiConsumer<ScheduledTask, Exception> getOnTaskFailure() {
-		return onTaskFailure;
+		return this.onTaskFailure;
 	}
 
 	/**
