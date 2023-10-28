@@ -35,6 +35,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestFactory;
 
 import ortus.boxlang.runtime.async.executors.BoxScheduledExecutor;
+import ortus.boxlang.runtime.interop.DynamicObject;
 
 class ScheduledTaskTest {
 
@@ -253,6 +254,32 @@ class ScheduledTaskTest {
 			assertThat( t.getTimeUnit().toString().toLowerCase() ).isEqualTo( "seconds" );
 			assertThat( t.getWeekends() ).isFalse();
 			assertThat( t.getWeekdays() ).isTrue();
+		}
+
+		@TestFactory
+		@DisplayName( "Can register every day of the week constraint" )
+		Stream<DynamicTest> testEveryDayOfTheWeek() {
+			String[] daysOfTheWeek = {
+			    "mondays",
+			    "tuesdays",
+			    "wednesdays",
+			    "thursdays",
+			    "fridays",
+			    "saturdays",
+			    "sundays"
+			};
+			return Arrays
+			    .stream( daysOfTheWeek )
+			    .map( dayOfTheWeek -> dynamicTest(
+			        "Can register to fire on " + dayOfTheWeek,
+			        () -> {
+				        var t = new DynamicObject( task );
+				        t.invoke( "on" + dayOfTheWeek );
+
+				        assertThat( task.getPeriod() ).isEqualTo( 604800 );
+				        assertThat( task.getTimeUnit().toString().toLowerCase() ).isEqualTo( "seconds" );
+			        }
+			    ) );
 		}
 
 	}
