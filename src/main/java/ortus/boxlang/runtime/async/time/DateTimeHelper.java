@@ -272,11 +272,10 @@ public class DateTimeHelper {
 	 * @param time     The specific time using 24 hour format => HH:mm, defaults to midnight
 	 * @param addMonth Boolean to specify adding a month to today's date
 	 * @param now      The date to use as the starting point, defaults to now()
-	 * @param timezone The timezone to use
 	 *
 	 * @return The first business day of the month
 	 */
-	public static LocalDateTime getFirstBusinessDayOfTheMonth( String time, Boolean addMonth, LocalDateTime now, ZoneId timezone ) {
+	public static LocalDateTime getFirstBusinessDayOfTheMonth( String time, Boolean addMonth, LocalDateTime now ) {
 		// Adding a month?
 		if ( addMonth ) {
 			now = now.plusMonths( 1 );
@@ -301,7 +300,7 @@ public class DateTimeHelper {
 	 * @return The first business day of the month
 	 */
 	public static LocalDateTime getFirstBusinessDayOfTheMonth( String time, Boolean addMonth, ZoneId timezone ) {
-		return getFirstBusinessDayOfTheMonth( time, addMonth, DateTimeHelper.now( timezone ), timezone );
+		return getFirstBusinessDayOfTheMonth( time, addMonth, DateTimeHelper.now( timezone ) );
 	}
 
 	/**
@@ -312,7 +311,7 @@ public class DateTimeHelper {
 	 * @return The first business day of the month
 	 */
 	public static LocalDateTime getFirstBusinessDayOfTheMonth( ZoneId timezone ) {
-		return getFirstBusinessDayOfTheMonth( "00:00", false, DateTimeHelper.now( timezone ), timezone );
+		return getFirstBusinessDayOfTheMonth( "00:00", false, DateTimeHelper.now( timezone ) );
 	}
 
 	/**
@@ -321,7 +320,7 @@ public class DateTimeHelper {
 	 * @return The first business day of the month
 	 */
 	public static LocalDateTime getFirstBusinessDayOfTheMonth() {
-		return getFirstBusinessDayOfTheMonth( "00:00", false, DateTimeHelper.now( getSystemTimezone() ), getSystemTimezone() );
+		return getFirstBusinessDayOfTheMonth( "00:00", false, DateTimeHelper.now( getSystemTimezone() ) );
 	}
 
 	/**
@@ -330,11 +329,10 @@ public class DateTimeHelper {
 	 * @param time     The specific time using 24 hour format => HH:mm, defaults to midnight
 	 * @param addMonth Boolean to specify adding a month to today's date
 	 * @param now      The date to use as the starting point, defaults to now()
-	 * @param timezone The timezone to use
 	 *
 	 * @return The last business day of the month
 	 */
-	public static LocalDateTime getLastBusinessDayOfTheMonth( String time, Boolean addMonth, LocalDateTime now, ZoneId timezone ) {
+	public static LocalDateTime getLastBusinessDayOfTheMonth( String time, Boolean addMonth, LocalDateTime now ) {
 		// Adding a month?
 		if ( addMonth ) {
 			now = now.plusMonths( 1 );
@@ -377,7 +375,7 @@ public class DateTimeHelper {
 	 * @return The last business day of the month
 	 */
 	public static LocalDateTime getLastBusinessDayOfTheMonth( String time, Boolean addMonth, ZoneId timezone ) {
-		return getLastBusinessDayOfTheMonth( time, addMonth, DateTimeHelper.now( timezone ), timezone );
+		return getLastBusinessDayOfTheMonth( time, addMonth, DateTimeHelper.now( timezone ) );
 	}
 
 	/**
@@ -388,7 +386,7 @@ public class DateTimeHelper {
 	 * @return The last business day of the month
 	 */
 	public static LocalDateTime getLastBusinessDayOfTheMonth( ZoneId timezone ) {
-		return getLastBusinessDayOfTheMonth( "00:00", false, DateTimeHelper.now( timezone ), timezone );
+		return getLastBusinessDayOfTheMonth( "00:00", false, DateTimeHelper.now( timezone ) );
 	}
 
 	/**
@@ -397,7 +395,7 @@ public class DateTimeHelper {
 	 * @return The last business day of the month
 	 */
 	public static LocalDateTime getLastBusinessDayOfTheMonth() {
-		return getLastBusinessDayOfTheMonth( "00:00", false, DateTimeHelper.now( getSystemTimezone() ), getSystemTimezone() );
+		return getLastBusinessDayOfTheMonth( "00:00", false, DateTimeHelper.now( getSystemTimezone() ) );
 	}
 
 	/**
