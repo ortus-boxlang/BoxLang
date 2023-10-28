@@ -102,6 +102,16 @@ class ScheduledTaskTest {
 			} );
 			assertThat( task.getOnTaskFailure() ).isNotNull();
 		}
+
+		@DisplayName( "can register tasks with no overlaps" )
+		@Test
+		void testItCanRegisterTasksWithNoOverlaps() {
+			assertThat( task.getNoOverlaps() ).isFalse();
+			var t = task.everyMinute().withNoOverlaps();
+			assertThat( t.getPeriod() ).isEqualTo( 1 );
+			assertThat( t.getNoOverlaps() ).isTrue();
+			assertThat( t.getTimeUnit().toString().toLowerCase() ).isEqualTo( "minutes" );
+		}
 	}
 
 	@Nested
@@ -281,6 +291,34 @@ class ScheduledTaskTest {
 			        }
 			    ) );
 		}
+	}
 
+	@Nested
+	class MultipleConstraints {
+
+		@DisplayName( "can have a truth value constraint" )
+		@Test
+		void testCanHaveATruthValueConstraint() {
+			task.when( ( task ) -> false );
+			assertThat( task.isConstrained() ).isTrue();
+		}
+
+		@DisplayName( "can have a day of the month constraint" )
+		@Test
+		void testCanHaveADayOfTheMonthConstraint() {
+			var target = task
+			    .getNow()
+			    .plusDays( 3 )
+			    .getDayOfMonth();
+
+			task.setDayOfTheMonth( target );
+
+			var jNow = task.getNow();
+			assertThat( task.isConstrained() ).isTrue();
+
+			target = task.getNow().getDayOfMonth();
+			task.setDayOfTheMonth( task.getNow().getDayOfMonth() );
+			assertThat( task.isConstrained() ).isFalse();
+		}
 	}
 }
