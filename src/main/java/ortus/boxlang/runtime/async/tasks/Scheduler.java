@@ -20,9 +20,11 @@ package ortus.boxlang.runtime.async.tasks;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
@@ -30,11 +32,9 @@ import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.google.common.base.Optional;
-
+import ortus.boxlang.runtime.async.executors.ExecutorRecord;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.services.AsyncService;
-import ortus.boxlang.runtime.services.AsyncService.ExecutorRecord;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.ApplicationException;
 
@@ -223,9 +223,7 @@ public class Scheduler {
 			// Iterate over tasks and send them off for scheduling
 			this.tasks.entrySet()
 			    .parallelStream()
-			    .forEachOrdered( entry -> {
-				    startupTask( entry.getKey(), entry.getValue() );
-			    } );
+			    .forEachOrdered( entry -> startupTask( entry.getKey(), entry.getValue() ) );
 
 			// Mark scheduler as started
 			this.started = true;
@@ -282,7 +280,7 @@ public class Scheduler {
 			);
 			taskRecord.error		= true;
 			taskRecord.errorMessage	= e.getMessage();
-			taskRecord.stacktrace	= e.getStackTrace().toString();
+			taskRecord.stacktrace	= Arrays.toString( e.getStackTrace() );
 		}
 	}
 
@@ -425,9 +423,9 @@ public class Scheduler {
 		    .collect(
 		        Collectors.toMap(
 		            // key
-		            ( entry ) -> Key.of( entry.getKey() ),
+		            entry -> Key.of( entry.getKey() ),
 		            // value
-		            ( entry ) -> entry.getValue().task.getStats(),
+		            entry -> entry.getValue().task.getStats(),
 		            // merge function
 		            ( existing, replacement ) -> existing,
 		            // map type

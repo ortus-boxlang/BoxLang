@@ -37,8 +37,10 @@ import org.junit.jupiter.api.TestFactory;
 import org.mockito.Mockito;
 
 import ortus.boxlang.runtime.async.executors.BoxScheduledExecutor;
+import ortus.boxlang.runtime.async.executors.ExecutorRecord;
 import ortus.boxlang.runtime.async.time.DateTimeHelper;
 import ortus.boxlang.runtime.interop.DynamicObject;
+import ortus.boxlang.runtime.services.AsyncService;
 
 class ScheduledTaskTest {
 
@@ -46,8 +48,15 @@ class ScheduledTaskTest {
 
 	@BeforeEach
 	public void setupBeforeEach() {
-		task	= new ScheduledTask( "test", new BoxScheduledExecutor( 20 ) )
-		    .setTimezone( "America/Chicago" );
+
+		ExecutorRecord executor = new ExecutorRecord(
+		    new BoxScheduledExecutor( 20 ),
+		    "test",
+		    AsyncService.ExecutorType.SCHEDULED,
+		    20
+		);
+
+		task	= new ScheduledTask( "test", executor ).setTimezone( "America/Chicago" );
 		task	= Mockito.spy( task );
 	}
 

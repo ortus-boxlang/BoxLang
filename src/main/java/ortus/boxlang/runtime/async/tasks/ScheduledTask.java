@@ -37,10 +37,10 @@ import javax.management.InvalidAttributeValueException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import ortus.boxlang.runtime.async.executors.ExecutorRecord;
 import ortus.boxlang.runtime.async.time.DateTimeHelper;
 import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.scopes.Key;
-import ortus.boxlang.runtime.services.AsyncService.ExecutorRecord;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.util.Timer;
 
@@ -1894,7 +1894,7 @@ public class ScheduledTask implements Runnable {
 
 	/**
 	 * Get the task stats
-	 * 
+	 *
 	 * @return the stats
 	 */
 	public Struct getStats() {
