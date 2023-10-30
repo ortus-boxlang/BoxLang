@@ -464,7 +464,7 @@ public class ScheduledTask implements Runnable {
 	 *
 	 * @return A ScheduledFuture from where you can monitor the task, an empty ScheduledFuture if the task was not registered
 	 */
-	public ScheduledFuture start() {
+	public ScheduledFuture<?> start() {
 		// If we have overlaps and the spaced delay is 0 then grab it from the period
 		if ( noOverlaps && spacedDelay == 0 ) {
 			spacedDelay = period;
