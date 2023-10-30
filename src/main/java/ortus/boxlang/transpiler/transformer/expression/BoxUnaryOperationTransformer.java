@@ -57,17 +57,33 @@ public class BoxUnaryOperationTransformer extends AbstractTransformer {
 			values.put( "expr", methodCall.getScope().get().toString() );
 			if ( methodCall.getArguments().size() > 0 )
 				values.put( "key", methodCall.getArguments().get( 0 ).toString() );
-
 		}
+
 		String template = "";
 		if ( operation.getOperator() == BoxUnaryOperator.PrePlusPlus ) {
-			template = "Increment.invokePre(${expr},${key})";
+			if ( values.containsKey( "key" ) ) {
+				template = "Increment.invokePre(${expr},${key})";
+			} else {
+				template = "Increment.invoke(${expr})";
+			}
 		} else if ( operation.getOperator() == BoxUnaryOperator.PostPlusPlus ) {
-			template = "Increment.invokePost(${expr},${key})";
+			if ( values.containsKey( "key" ) ) {
+				template = "Increment.invokePost(${expr},${key})";
+			} else {
+				template = "Increment.invoke(${expr})";
+			}
 		} else if ( operation.getOperator() == BoxUnaryOperator.PreMinusMinus ) {
-			template = "Decrement.invokePre(${expr},${key})";
+			if ( values.containsKey( "key" ) ) {
+				template = "Decrement.invokePre(${expr},${key})";
+			} else {
+				template = "Decrement.invoke(${expr})";
+			}
 		} else if ( operation.getOperator() == BoxUnaryOperator.PostMinusMinus ) {
-			template = "Decrement.invokePost(${expr},${key})";
+			if ( values.containsKey( "key" ) ) {
+				template = "Decrement.invokePost(${expr},${key})";
+			} else {
+				template = "Decrement.invoke(${expr})";
+			}
 		} else if ( operation.getOperator() == BoxUnaryOperator.Minus ) {
 			values.put( "expr", expr.toString() );
 			template = "Negate.invoke(${expr})";
