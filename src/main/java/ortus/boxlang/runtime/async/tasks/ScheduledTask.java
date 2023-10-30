@@ -354,13 +354,13 @@ public class ScheduledTask implements Runnable {
 
 		// If disabled or paused
 		if ( !force && isDisabled() ) {
-			// setNextRunTime();
+			setNextRunTime();
 			return;
 		}
 
 		// Check for constraints of execution
 		if ( !force && isConstrained() ) {
-			// setNextRunTime();
+			setNextRunTime();
 			return;
 		}
 
@@ -378,14 +378,13 @@ public class ScheduledTask implements Runnable {
 
 			// Target task call callable
 			if ( task instanceof DynamicObject castedTask ) {
-				stats.put( "lastResult", castedTask.invoke( method ) );
+				stats.put( "lastResult", Optional.ofNullable( castedTask.invoke( method ) ) );
 			} else if ( task instanceof Callable<?> castedTask ) {
-				stats.put( "lastResult", castedTask.call() );
+				stats.put( "lastResult", Optional.ofNullable( castedTask.call() ) );
 			}
 
 			// After Interceptors
 			if ( afterTask != null ) {
-				// afterTask( this, stats?.lastResult );
 				afterTask.accept( this, ( Optional<?> ) stats.get( "lastResult" ) );
 			}
 			if ( hasScheduler() ) {
@@ -451,6 +450,15 @@ public class ScheduledTask implements Runnable {
 	}
 
 	/**
+	 * Get the last result of the task
+	 *
+	 * @return The last result of the task as an Optional
+	 */
+	public Optional<?> getLastResult() {
+		return ( Optional<?> ) stats.get( "lastResult" );
+	}
+
+	/**
 	 * This method registers the task into the executor and sends it for execution and scheduling.
 	 * This will not register the task for execution if the disabled flag or the constraints allow it.
 	 *
@@ -473,7 +481,7 @@ public class ScheduledTask implements Runnable {
 			if ( timeUnit != TimeUnit.SECONDS ) {
 				delay = 0;
 				// reset the initial nextRunTime
-				stats.put( "nextRun", "" );
+				stats.put( "nextRun", null );
 			} else {
 				delay = DateTimeHelper.timeUnitToSeconds( delay, delayTimeUnit );
 			}
@@ -1784,9 +1792,11 @@ public class ScheduledTask implements Runnable {
 			    "name: ", getName(),
 			    "caller: ", caller
 			);
+
 			if ( args != null ) {
 				message.add( "args: " + args.toString() );
 			}
+
 			logger.debug( message.toString() );
 		}
 	}
