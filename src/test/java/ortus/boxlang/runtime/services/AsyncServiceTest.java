@@ -31,7 +31,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Spy;
 
 import ortus.boxlang.runtime.BoxRuntime;
-import ortus.boxlang.runtime.services.AsyncService.ExecutorRecord;
+import ortus.boxlang.runtime.async.executors.ExecutorRecord;
 
 class AsyncServiceTest {
 

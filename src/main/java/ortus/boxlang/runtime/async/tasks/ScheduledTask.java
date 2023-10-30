@@ -593,14 +593,37 @@ public class ScheduledTask implements Runnable {
 	 */
 
 	/**
-	 * This method is used to register the callable DynamicObject/Callable lambda on this scheduled task.
+	 * This method is used to register the callable DynamicObject on this scheduled task.
 	 *
-	 * @param task The DynamicObject/Functional Lambda to register
+	 * @param task The DynamicObject to register with a run() method
 	 *
 	 * @return The ScheduledTask instance
 	 */
-	public ScheduledTask call( Object task ) {
+	public ScheduledTask call( DynamicObject task ) {
 		return call( task, "run" );
+	}
+
+	/**
+	 * This method is used to register the callable DynamicObject/Callable lambda on this scheduled task.
+	 *
+	 * @param task   The DynamicObject/Functional Lambda to register
+	 * @param method The method to execute in the DynamicObject/Functional Lambda, by default it is run()
+	 *
+	 * @return The ScheduledTask instance
+	 */
+	public ScheduledTask call( DynamicObject task, String method ) {
+		return call( task, method );
+	}
+
+	/**
+	 * This method is used to register the callable Callable Lambda on this scheduled task.
+	 *
+	 * @param task The Callable Lambda to register
+	 *
+	 * @return The ScheduledTask instance
+	 */
+	public ScheduledTask call( Callable<?> task ) {
+		return call( task, null );
 	}
 
 	/**

@@ -540,11 +540,40 @@ public class Scheduler {
 	}
 
 	/**
+	 * Set the scheduler's timezone
+	 *
 	 * @param timezone the timezone to set
 	 */
 	public Scheduler setTimezone( ZoneId timezone ) {
 		this.timezone = timezone;
 		return this;
+	}
+
+	/**
+	 * Set the scheduler's timezone as a string, we will convert it to a ZoneId object
+	 *
+	 * @param timezone the timezone to set as a string
+	 */
+	public Scheduler setTimezone( String timezone ) {
+		return setTimezone( ZoneId.of( timezone ) );
+	}
+
+	/**
+	 * Get the Aysnc Service
+	 *
+	 * @return the asyncService
+	 */
+	public AsyncService getAsyncService() {
+		return asyncService;
+	}
+
+	/**
+	 * Get the executor record
+	 *
+	 * @return the executor record
+	 */
+	public ExecutorRecord getExecutor() {
+		return executor;
 	}
 
 	/**
