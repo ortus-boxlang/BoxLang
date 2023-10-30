@@ -21,6 +21,7 @@ import static com.google.common.truth.Truth.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.DynamicTest.dynamicTest;
 
+import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Stream;
@@ -33,8 +34,11 @@ import org.junit.jupiter.api.DynamicTest;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestFactory;
+import org.mockito.Mock;
+import org.mockito.Mockito;
 
 import ortus.boxlang.runtime.async.executors.BoxScheduledExecutor;
+import ortus.boxlang.runtime.async.time.DateTimeHelper;
 import ortus.boxlang.runtime.interop.DynamicObject;
 
 class ScheduledTaskTest {
@@ -43,8 +47,9 @@ class ScheduledTaskTest {
 
 	@BeforeEach
 	public void setupBeforeEach() {
-		task = new ScheduledTask( "test", new BoxScheduledExecutor( 20 ) )
+		task	= new ScheduledTask( "test", new BoxScheduledExecutor( 20 ) )
 		    .setTimezone( "America/Chicago" );
+		task	= Mockito.spy( task );
 	}
 
 	@DisplayName( "It can create the scheduled task with the right timezone" )
@@ -313,12 +318,119 @@ class ScheduledTaskTest {
 
 			task.setDayOfTheMonth( target );
 
-			var jNow = task.getNow();
 			assertThat( task.isConstrained() ).isTrue();
 
 			target = task.getNow().getDayOfMonth();
 			task.setDayOfTheMonth( task.getNow().getDayOfMonth() );
 			assertThat( task.isConstrained() ).isFalse();
+		}
+
+		@DisplayName( "can have a last business day of the month constraint" )
+		@Test
+		void testCanHaveLastBusinessDayOfMonthConstraint() {
+			var	mockNow	= DateTimeHelper.now();
+			var	t		= task.setLastBusinessDay( true );
+
+			// If we are at the last day, increase it
+			if ( mockNow.getDayOfMonth() == DateTimeHelper.getLastBusinessDayOfTheMonth().getDayOfMonth() ) {
+				mockNow = mockNow.plusDays( -1 );
+			}
+
+			Mockito.when( task.getNow() ).thenReturn( mockNow );
+			assertThat( t.isConstrained() ).isTrue();
+
+			LocalDateTime lastDayOfTheMonth = DateTimeHelper.getLastBusinessDayOfTheMonth();
+			Mockito.when( task.getNow() ).thenReturn( lastDayOfTheMonth );
+			assertThat( t.isConstrained() ).isFalse();
+		};
+
+		@DisplayName( "can have a day of the week constraint" )
+		@Test
+		void testCanHaveADayOfTheWeekConstraint() {
+			var mockNow = DateTimeHelper.now();
+
+			// Reduce date enough to do computations on it
+			if ( mockNow.getDayOfWeek().getValue() > 6 ) {
+				mockNow = mockNow.minusDays( 3 );
+			}
+
+			// Mock to today + 1 so it constraints it
+			task.setDayOfTheWeek( mockNow.getDayOfWeek().getValue() + 1 );
+			assertThat( task.isConstrained() ).isTrue();
+
+			// Mock to today it it runs
+			task.setDayOfTheWeek( DateTimeHelper.now().getDayOfWeek().getValue() );
+			assertThat( task.isConstrained() ).isFalse();
+		};
+
+		@DisplayName( "can have a weekend constraint" )
+		@Test
+		void testCanHaveAWeekendConstraint() {
+			task.setWeekends( true );
+
+			// build a weekend date
+			var	mockNow		= task.getNow();
+			var	dayOfWeek	= mockNow.getDayOfWeek().getValue();
+
+			if ( dayOfWeek < 6 ) {
+				mockNow = mockNow.plusDays( 6 - dayOfWeek );
+			}
+
+			Mockito.when( task.getNow() ).thenReturn( mockNow );
+			assertThat( task.isConstrained() ).isFalse();
+
+			// Test non weekend
+			mockNow = mockNow.minusDays( 3 );
+			Mockito.when( task.getNow() ).thenReturn( mockNow );
+			assertThat( task.isConstrained() ).isTrue();
+		}
+
+		@DisplayName( "can have a weekday constraint" )
+		@Test
+		void testCanHaveAWeekDayConstraint() {
+			task.setWeekdays( true );
+
+			// build a weekend date
+			var	mockNow		= task.getNow();
+			var	dayOfWeek	= mockNow.getDayOfWeek().getValue();
+
+			if ( dayOfWeek >= 6 ) {
+				mockNow = mockNow.minusDays( 3 );
+			}
+
+			Mockito.when( task.getNow() ).thenReturn( mockNow );
+			assertThat( task.isConstrained() ).isFalse();
+
+			// Test non weekend
+			var weekendDay = mockNow.plusDays( 6 - mockNow.getDayOfWeek().getValue() );
+			Mockito.when( task.getNow() ).thenReturn( weekendDay );
+			assertThat( task.isConstrained() ).isTrue();
+		}
+
+		@DisplayName( "can have a startOn constraints" )
+		@Test
+		void testCanHaveAStartOnConstraint() {
+			var targetDate = "2022-01-01";
+			task.startOn( targetDate, "09:00" );
+			assertThat( task.isConstrained() ).isFalse();
+
+			var mockNow = task.getNow().plusDays( 1 );
+			task.startOn( mockNow.format( DateTimeHelper.ISO_DATE_ONLY ) );
+			assertThat( task.isConstrained() ).isTrue();
+		}
+
+		@DisplayName( "can have an endOn constraints" )
+		@Test
+		void testCanHaveAEndOnConstraint() {
+			// End 5 days from today
+			var targetDate = DateTimeHelper.dateTimeAdd( task.getNow(), 5, TimeUnit.DAYS );
+			task.endOn( targetDate.format( DateTimeHelper.ISO_DATE_ONLY ), "09:00" );
+			assertThat( task.isConstrained() ).isFalse();
+
+			// End 1 day ago
+			var mockNow = task.getNow().plusDays( -1 );
+			task.endOn( mockNow.format( DateTimeHelper.ISO_DATE_ONLY ) );
+			assertThat( task.isConstrained() ).isTrue();
 		}
 	}
 }

@@ -42,7 +42,8 @@ import javax.management.InvalidAttributeValueException;
  */
 public class DateTimeHelper {
 
-	public static final DateTimeFormatter ISO_DATE_FORMATTER = DateTimeFormatter.ISO_LOCAL_DATE_TIME;
+	public static final DateTimeFormatter	ISO_DATE_FORMATTER	= DateTimeFormatter.ISO_LOCAL_DATE_TIME;
+	public static final DateTimeFormatter	ISO_DATE_ONLY		= DateTimeFormatter.ofPattern( "yyyy-MM-dd" );
 
 	/**
 	 * Get the current date/time as a Java LocalDateTime object in the system timezone
