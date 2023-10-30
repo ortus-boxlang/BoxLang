@@ -1,4 +1,4 @@
-parser grammar  CFParser;
+parser grammar CFParser;
 
 options {
     tokenVocab=CFLexer;
