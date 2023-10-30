@@ -397,6 +397,17 @@ public class AsyncService extends BaseService {
 	}
 
 	/**
+	 * Build a scheduled executor
+	 *
+	 * @param name The name of the executor
+	 *
+	 * @return The executor record
+	 */
+	public ExecutorRecord newScheduledExecutor( String name ) {
+		return newExecutor( name, ExecutorType.SCHEDULED, DEFAULT_MAX_THREADS );
+	}
+
+	/**
 	 * Build a work stealing executor
 	 *
 	 * @param name       The name of the executor
@@ -454,6 +465,15 @@ public class AsyncService extends BaseService {
 	 * @param maxThreads The max threads, if applicable
 	 */
 	public record ExecutorRecord( ExecutorService executor, String name, ExecutorType type, int maxThreads ) {
+
+		/**
+		 * Get the executor service casted as a {@link BoxScheduledExecutor}
+		 *
+		 * @return The executor service
+		 */
+		public BoxScheduledExecutor scheduledExecutor() {
+			return ( BoxScheduledExecutor ) this.executor;
+		}
 
 		/**
 		 * Blocks until all tasks have completed execution after a shutdown request, or the timeout occurs, or

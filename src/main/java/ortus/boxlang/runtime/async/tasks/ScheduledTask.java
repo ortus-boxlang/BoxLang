@@ -25,7 +25,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ScheduledFuture;
-import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
@@ -41,6 +40,7 @@ import org.slf4j.LoggerFactory;
 import ortus.boxlang.runtime.async.time.DateTimeHelper;
 import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.scopes.Key;
+import ortus.boxlang.runtime.services.AsyncService.ExecutorRecord;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.util.Timer;
 
@@ -73,7 +73,7 @@ public class ScheduledTask implements Runnable {
 	/**
 	 * The executor to use for this task
 	 */
-	private ScheduledThreadPoolExecutor				executor;
+	private ExecutorRecord							executor;
 
 	/**
 	 * The task as a {@link DynamicObject} or a {@link java.util.concurrent.Callable} Lambda that will be executed by the task
@@ -261,7 +261,7 @@ public class ScheduledTask implements Runnable {
 	 * @param group    The group of the task
 	 * @param executor The executor we are bound to
 	 */
-	public ScheduledTask( String name, String group, ScheduledThreadPoolExecutor executor ) {
+	public ScheduledTask( String name, String group, ExecutorRecord executor ) {
 		debugLog( "init", Struct.of( "name", name, "group", group ) );
 
 		// Seed it
@@ -306,7 +306,7 @@ public class ScheduledTask implements Runnable {
 	 * @param name     The name of the task
 	 * @param executor The executor we are bound to
 	 */
-	public ScheduledTask( String name, ScheduledThreadPoolExecutor executor ) {
+	public ScheduledTask( String name, ExecutorRecord executor ) {
 		this( name, "", executor );
 	}
 
@@ -503,7 +503,7 @@ public class ScheduledTask implements Runnable {
 		try {
 			// Startup a spaced frequency task: no overlaps
 			if ( spacedDelay > 0 ) {
-				return executor.scheduleWithFixedDelay(
+				return executor.scheduledExecutor().scheduleWithFixedDelay(
 				    this,
 				    spacedDelay,
 				    delay,
@@ -513,7 +513,7 @@ public class ScheduledTask implements Runnable {
 
 			// Startup a task with a frequency period
 			if ( period > 0 ) {
-				return executor.scheduleAtFixedRate(
+				return executor.scheduledExecutor().scheduleAtFixedRate(
 				    this,
 				    period,
 				    delay,
@@ -522,7 +522,7 @@ public class ScheduledTask implements Runnable {
 			}
 
 			// Start off a one-off task
-			return executor.schedule(
+			return executor.scheduledExecutor().schedule(
 			    this,
 			    delay,
 			    timeUnit
@@ -1890,6 +1890,15 @@ public class ScheduledTask implements Runnable {
 	public ScheduledTask setMethod( String method ) {
 		this.method = method;
 		return this;
+	}
+
+	/**
+	 * Get the task stats
+	 * 
+	 * @return the stats
+	 */
+	public Struct getStats() {
+		return stats;
 	}
 
 	/**
