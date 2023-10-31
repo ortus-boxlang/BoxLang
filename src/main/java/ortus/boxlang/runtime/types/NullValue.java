@@ -17,12 +17,19 @@
  */
 package ortus.boxlang.runtime.types;
 
+import ortus.boxlang.runtime.types.immutable.IImmutable;
 import ortus.boxlang.runtime.types.meta.BoxMeta;
+import ortus.boxlang.runtime.types.meta.GenericMeta;
 
 /**
  * I represent a null value so we can store it in a ConcurrentHashMap
  */
-public class NullValue implements IType {
+public class NullValue implements IType, IImmutable {
+
+	/**
+	 * Metadata object
+	 */
+	public BoxMeta $bx;
 
 	/**
 	 * Constructor
@@ -40,14 +47,11 @@ public class NullValue implements IType {
 	}
 
 	public BoxMeta getBoxMeta() {
-		return null;
-		/*
-		 * /
-		 * if ( this.$bx == null ) {
-		 * this.$bx = new FunctionMeta( this );
-		 * }
-		 * return this.$bx;
-		 */
+		if ( this.$bx == null ) {
+			this.$bx = new GenericMeta( this );
+		}
+		return this.$bx;
+
 	}
 
 }

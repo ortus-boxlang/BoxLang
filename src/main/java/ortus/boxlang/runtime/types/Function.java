@@ -57,6 +57,9 @@ public abstract class Function implements IType, IFunctionRunnable {
 		REMOTE
 	}
 
+	/**
+	 * Metadata object
+	 */
 	public BoxMeta			$bx;
 
 	/**

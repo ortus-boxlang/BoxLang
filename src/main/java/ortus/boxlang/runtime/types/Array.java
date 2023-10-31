@@ -25,6 +25,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.dynamic.IReferenceable;
@@ -35,16 +36,29 @@ import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.exceptions.ExpressionException;
 import ortus.boxlang.runtime.types.immutable.ImmutableArray;
 import ortus.boxlang.runtime.types.meta.BoxMeta;
+import ortus.boxlang.runtime.types.meta.GenericMeta;
+import ortus.boxlang.runtime.types.meta.IChangeListener;
+import ortus.boxlang.runtime.types.meta.IListenable;
 
-public class Array implements List<Object>, IType, IReferenceable {
+public class Array implements List<Object>, IType, IReferenceable, IListenable {
 
-	public static final Array		EMPTY	= new ImmutableArray();
+	public static final Array			EMPTY	= new ImmutableArray();
 	/**
 	 * --------------------------------------------------------------------------
 	 * Private Properties
 	 * --------------------------------------------------------------------------
 	 */
-	protected final List<Object>	wrapped;
+	protected final List<Object>		wrapped;
+
+	/**
+	 * Metadata object
+	 */
+	public BoxMeta						$bx;
+
+	/**
+	 * Used to track change listeners. Intitialized on-demand
+	 */
+	private Map<Key, IChangeListener>	listeners;
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -152,12 +166,19 @@ public class Array implements List<Object>, IType, IReferenceable {
 	}
 
 	public boolean add( Object e ) {
-		return wrapped.add( e );
+		synchronized ( wrapped ) {
+			return wrapped.add( notifyListeners( wrapped.size(), e ) );
+		}
 	}
 
 	public boolean remove( Object o ) {
 		synchronized ( wrapped ) {
-			return wrapped.remove( o );
+			int indexOf = wrapped.indexOf( o );
+			if ( indexOf > -1 ) {
+				notifyListeners( indexOf, null );
+				return wrapped.remove( o );
+			}
+			return false;
 		}
 	}
 
@@ -168,25 +189,30 @@ public class Array implements List<Object>, IType, IReferenceable {
 	public boolean addAll( Collection<? extends Object> c ) {
 
 		synchronized ( wrapped ) {
+			// TODO: deal with listeners
 			return wrapped.addAll( c );
 		}
 	}
 
 	public boolean addAll( int index, Collection<? extends Object> c ) {
 		synchronized ( wrapped ) {
+			// TODO: deal with listeners
 			return wrapped.addAll( index, c );
 		}
 	}
 
 	public boolean removeAll( Collection<?> c ) {
+		// TODO: deal with listeners
 		return wrapped.removeAll( c );
 	}
 
 	public boolean retainAll( Collection<?> c ) {
+		// TODO: deal with listeners
 		return wrapped.retainAll( c );
 	}
 
 	public void clear() {
+		// TODO: deal with listeners
 		wrapped.clear();
 	}
 
@@ -195,16 +221,20 @@ public class Array implements List<Object>, IType, IReferenceable {
 	}
 
 	public Object set( int index, Object element ) {
-		return wrapped.set( index, element );
+		return wrapped.set(
+		    index,
+		    notifyListeners( index, element )
+		);
 	}
 
 	public void add( int index, Object element ) {
 		synchronized ( wrapped ) {
-			wrapped.add( index, element );
+			wrapped.add( index, notifyListeners( wrapped.size(), element ) );
 		}
 	}
 
 	public Object remove( int index ) {
+		notifyListeners( index, null );
 		return wrapped.remove( index );
 	}
 
@@ -280,14 +310,11 @@ public class Array implements List<Object>, IType, IReferenceable {
 	}
 
 	public BoxMeta getBoxMeta() {
-		return null;
-		/*
-		 * /
-		 * if ( this.$bx == null ) {
-		 * this.$bx = new FunctionMeta( this );
-		 * }
-		 * return this.$bx;
-		 */
+		if ( this.$bx == null ) {
+			this.$bx = new GenericMeta( this );
+		}
+		return this.$bx;
+
 	}
 
 	/**
@@ -346,6 +373,11 @@ public class Array implements List<Object>, IType, IReferenceable {
 	 */
 	@Override
 	public Object dereference( Key key, Boolean safe ) {
+
+		// Special check for $bx
+		if ( key.equals( BoxMeta.key ) ) {
+			return getBoxMeta();
+		}
 
 		CastAttempt<Double> indexAtt = DoubleCaster.attempt( key.getName() );
 		if ( !indexAtt.wasSuccessful() ) {
@@ -434,6 +466,52 @@ public class Array implements List<Object>, IType, IReferenceable {
 		return object.invoke( name.getName(), namedArguments ).orElse( null );
 
 		// Native java methods can't be called with named params so we don't even try
+	}
+
+	/**
+	 * --------------------------------------------------------------------------
+	 * IListenable Interface Methods
+	 * --------------------------------------------------------------------------
+	 */
+
+	@Override
+	public void registerChangeListener( IChangeListener listener ) {
+		initListeners();
+		listeners.put( IListenable.ALL_KEYS, listener );
+	}
+
+	@Override
+	public void registerChangeListener( Key key, IChangeListener listener ) {
+		initListeners();
+		listeners.put( key, listener );
+	}
+
+	@Override
+	public void removeChangeListener( Key key ) {
+		initListeners();
+		listeners.remove( key );
+	}
+
+	private Object notifyListeners( int i, Object value ) {
+		if ( listeners == null ) {
+			return value;
+		}
+		Key				key			= Key.of( String.valueOf( i + 1 ) );
+		IChangeListener	listener	= listeners.get( key );
+		if ( listener == null ) {
+			listener = listeners.get( IListenable.ALL_KEYS );
+		}
+		if ( listener == null ) {
+			return value;
+		}
+		return listener.notify( key, value, i < wrapped.size() ? wrapped.get( i ) : null );
+
+	}
+
+	private void initListeners() {
+		if ( listeners == null ) {
+			listeners = new ConcurrentHashMap<Key, IChangeListener>();
+		}
 	}
 
 }

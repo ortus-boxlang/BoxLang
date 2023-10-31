@@ -37,6 +37,11 @@ import ortus.boxlang.runtime.types.exceptions.UnmodifiableException;
 public class ImmutableStruct extends Struct implements IImmutable {
 
 	/**
+	 * The type of struct
+	 */
+	public final Type type;
+
+	/**
 	 * --------------------------------------------------------------------------
 	 * Constructors
 	 * --------------------------------------------------------------------------
@@ -58,6 +63,7 @@ public class ImmutableStruct extends Struct implements IImmutable {
 		    },
 		    true
 		);
+		this.type = type;
 	}
 
 	/**

@@ -51,6 +51,7 @@ import ortus.boxlang.runtime.types.exceptions.KeyNotFoundException;
 import ortus.boxlang.runtime.types.exceptions.NoFieldException;
 import ortus.boxlang.runtime.types.exceptions.NoMethodException;
 import ortus.boxlang.runtime.types.meta.BoxMeta;
+import ortus.boxlang.runtime.types.meta.GenericMeta;
 
 /**
  * This class is used to represent a BX/Java Class and invoke methods on classes using invoke dynamic.
@@ -912,8 +913,11 @@ public class DynamicObject implements IReferenceable {
 	public Object dereference( Key name, Boolean safe ) {
 
 		// This check allows us to lazy-create meta for BoxLang types the first time it is requested
-		if ( name.equals( BoxMeta.key ) && hasInstance() && getTargetInstance() instanceof IType type ) {
-			return type.getBoxMeta();
+		if ( name.equals( BoxMeta.key ) ) {
+			if ( hasInstance() && getTargetInstance() instanceof IType type ) {
+				return type.getBoxMeta();
+			}
+			return new GenericMeta( getTargetInstance() );
 		}
 
 		// If the object is referencable, allow it to handle the dereference

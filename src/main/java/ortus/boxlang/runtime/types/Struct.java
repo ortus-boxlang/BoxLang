@@ -35,8 +35,11 @@ import ortus.boxlang.runtime.types.exceptions.ApplicationException;
 import ortus.boxlang.runtime.types.exceptions.KeyNotFoundException;
 import ortus.boxlang.runtime.types.immutable.ImmutableStruct;
 import ortus.boxlang.runtime.types.meta.BoxMeta;
+import ortus.boxlang.runtime.types.meta.IChangeListener;
+import ortus.boxlang.runtime.types.meta.IListenable;
+import ortus.boxlang.runtime.types.meta.StructMeta;
 
-public class Struct implements Map<Key, Object>, IType, IReferenceable {
+public class Struct implements Map<Key, Object>, IType, IReferenceable, IListenable {
 
 	public enum Type {
 		LINKED,
@@ -44,6 +47,9 @@ public class Struct implements Map<Key, Object>, IType, IReferenceable {
 		DEFAULT
 	}
 
+	/**
+	 * An immutable singleton empty struct
+	 */
 	public static final Struct			EMPTY				= new ImmutableStruct();
 
 	/**
@@ -52,6 +58,21 @@ public class Struct implements Map<Key, Object>, IType, IReferenceable {
 	 * --------------------------------------------------------------------------
 	 */
 	protected final Map<Key, Object>	wrapped;
+
+	/**
+	 * The type of struct
+	 */
+	public final Type					type;
+
+	/**
+	 * Metadata object
+	 */
+	public BoxMeta						$bx;
+
+	/**
+	 * Used to track change listeners. Intitialized on-demand
+	 */
+	private Map<Key, IChangeListener>	listeners;
 
 	/**
 	 * In general, a common approach is to choose an initial capacity that is a power of two.
@@ -72,6 +93,7 @@ public class Struct implements Map<Key, Object>, IType, IReferenceable {
 	 * @param type The type of struct to create: DEFAULT, LINKED, SORTED
 	 */
 	public Struct( Type type ) {
+		this.type = type;
 		if ( type.equals( Type.DEFAULT ) ) {
 			wrapped = new ConcurrentHashMap<>( INITIAL_CAPACITY );
 			return;
@@ -101,7 +123,8 @@ public class Struct implements Map<Key, Object>, IType, IReferenceable {
 	 * @param map The map to create the struct from
 	 */
 	protected Struct( Map<Key, Object> map, Boolean useMyMap ) {
-		wrapped = map;
+		this.type	= Type.DEFAULT;
+		wrapped		= map;
 	}
 
 	/**
@@ -290,7 +313,10 @@ public class Struct implements Map<Key, Object>, IType, IReferenceable {
 	 */
 	@Override
 	public Object put( Key key, Object value ) {
-		return wrapped.put( key, wrapNull( value ) );
+		return wrapped.put(
+		    key,
+		    notifyListeners( key, wrapNull( value ) )
+		);
 	}
 
 	/**
@@ -315,7 +341,13 @@ public class Struct implements Map<Key, Object>, IType, IReferenceable {
 	 */
 	@Override
 	public Object putIfAbsent( Key key, Object value ) {
-		return wrapped.putIfAbsent( key, wrapNull( value ) );
+		if ( !wrapped.containsKey( key ) ) {
+			return wrapped.putIfAbsent(
+			    key,
+			    notifyListeners( key, wrapNull( value ) )
+			);
+		}
+		return null;
 	}
 
 	/**
@@ -337,6 +369,7 @@ public class Struct implements Map<Key, Object>, IType, IReferenceable {
 	 */
 	@Override
 	public Object remove( Object key ) {
+		notifyListeners( KeyCaster.cast( key ), null );
 		return wrapped.remove( key );
 	}
 
@@ -355,6 +388,7 @@ public class Struct implements Map<Key, Object>, IType, IReferenceable {
 	 */
 	@Override
 	public void putAll( Map<? extends Key, ? extends Object> map ) {
+		// TODO: handle listeners
 		wrapped.putAll( map );
 	}
 
@@ -383,6 +417,7 @@ public class Struct implements Map<Key, Object>, IType, IReferenceable {
 	 */
 	@Override
 	public void clear() {
+		// TODO: handle listeners
 		wrapped.clear();
 	}
 
@@ -468,14 +503,10 @@ public class Struct implements Map<Key, Object>, IType, IReferenceable {
 	}
 
 	public BoxMeta getBoxMeta() {
-		return null;
-		/*
-		 * /
-		 * if ( this.$bx == null ) {
-		 * this.$bx = new FunctionMeta( this );
-		 * }
-		 * return this.$bx;
-		 */
+		if ( this.$bx == null ) {
+			this.$bx = new StructMeta( this );
+		}
+		return this.$bx;
 	}
 
 	/**
@@ -506,6 +537,11 @@ public class Struct implements Map<Key, Object>, IType, IReferenceable {
 	 */
 	@Override
 	public Object dereference( Key key, Boolean safe ) {
+		// Special check for $bx
+		if ( key.equals( BoxMeta.key ) ) {
+			return getBoxMeta();
+		}
+
 		Object value = getRaw( key );
 		if ( value == null && !safe ) {
 			throw new KeyNotFoundException(
@@ -622,6 +658,51 @@ public class Struct implements Map<Key, Object>, IType, IReferenceable {
 			return null;
 		}
 		return value;
+	}
+
+	/**
+	 * --------------------------------------------------------------------------
+	 * IListenable Interface Methods
+	 * --------------------------------------------------------------------------
+	 */
+
+	@Override
+	public void registerChangeListener( IChangeListener listener ) {
+		initListeners();
+		listeners.put( IListenable.ALL_KEYS, listener );
+	}
+
+	@Override
+	public void registerChangeListener( Key key, IChangeListener listener ) {
+		initListeners();
+		listeners.put( key, listener );
+	}
+
+	@Override
+	public void removeChangeListener( Key key ) {
+		initListeners();
+		listeners.remove( key );
+	}
+
+	private Object notifyListeners( Key key, Object value ) {
+		if ( listeners == null ) {
+			return value;
+		}
+		IChangeListener listener = listeners.get( key );
+		if ( listener == null ) {
+			listener = listeners.get( IListenable.ALL_KEYS );
+		}
+		if ( listener == null ) {
+			return value;
+		}
+		return listener.notify( key, value, wrapped.get( key ) );
+
+	}
+
+	private void initListeners() {
+		if ( listeners == null ) {
+			listeners = new ConcurrentHashMap<Key, IChangeListener>();
+		}
 	}
 
 }
