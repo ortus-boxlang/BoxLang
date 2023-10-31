@@ -18,7 +18,6 @@
 package ortus.boxlang.runtime.types;
 
 import java.time.LocalDateTime;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -288,25 +287,18 @@ public abstract class Function implements IType, IFunctionRunnable {
 	public abstract String getReturnType();
 
 	/**
-	 * Get the hint of the function.
-	 *
-	 * @return function hint
-	 */
-	public abstract String getHint();
-
-	/**
-	 * Get the output of the function.
-	 *
-	 * @return function output flag
-	 */
-	public abstract boolean isOutput();
-
-	/**
-	 * Get any ad-hoc metadata keys that were declared for this function, not part of the standard function definition.
+	 * Get any annotations declared for this function, both the @annotation syntax and inline.
 	 *
 	 * @return function metadata
 	 */
-	public abstract Map<Key, Object> getAdditionalMetadata();
+	public abstract Struct getAnnotations();
+
+	/**
+	 * Get the contents of the documentation comment for this function.
+	 *
+	 * @return function metadata
+	 */
+	public abstract Struct getDocumentation();
 
 	/**
 	 * Get access modifier of the function
@@ -353,13 +345,16 @@ public abstract class Function implements IType, IFunctionRunnable {
 	 */
 	public Struct getMetaData() {
 		Struct meta = new Struct();
-		if ( getAdditionalMetadata() != null ) {
-			meta.putAll( getAdditionalMetadata() );
+		if ( getDocumentation() != null ) {
+			meta.putAll( getDocumentation() );
+		}
+		if ( getAnnotations() != null ) {
+			meta.putAll( getAnnotations() );
 		}
 		meta.put( "name", getName() );
 		meta.put( "returnType", getReturnType() );
-		meta.put( "hint", getHint() );
-		meta.put( "output", isOutput() );
+		meta.putIfAbsent( "hint", "" );
+		meta.putIfAbsent( "output", false );
 		meta.put( "access", getAccess().toString().toLowerCase() );
 		Array params = new Array();
 		for ( Argument argument : getArguments() ) {
@@ -368,10 +363,14 @@ public abstract class Function implements IType, IFunctionRunnable {
 			arg.put( "required", argument.required() );
 			arg.put( "type", argument.type() );
 			arg.put( "default", argument.defaultValue() );
-			arg.put( "hint", argument.hint() );
-			if ( argument.metadata() != null ) {
-				arg.putAll( argument.metadata() );
+			if ( argument.documentation() != null ) {
+				arg.putAll( argument.documentation() );
 			}
+			if ( argument.annotations() != null ) {
+				arg.putAll( argument.annotations() );
+			}
+			// Always have this key present?
+			arg.putIfAbsent( "hint", "" );
 			params.add( arg );
 		}
 		meta.put( "parameters", params );
@@ -404,31 +403,31 @@ public abstract class Function implements IType, IFunctionRunnable {
 	 * @param defaultValue The default value of the argument
 	 *
 	 */
-	public record Argument( boolean required, String type, Key name, Object defaultValue, String hint, Map<Key, Object> metadata ) {
+	public record Argument( boolean required, String type, Key name, Object defaultValue, Struct annotations, Struct documentation ) {
 
 		public Argument( Key name ) {
-			this( false, "any", name, null, "", new HashMap<>() );
+			this( false, "any", name );
 		}
 
 		public Argument( boolean required, String type, Key name ) {
-			this( required, type, name, null, "", new HashMap<>() );
+			this( required, type, name, null, Struct.EMPTY, Struct.EMPTY );
 		}
 
 		public Argument( boolean required, String type, Key name, Object defaultValue ) {
-			this( required, type, name, defaultValue, "", new HashMap<>() );
+			this( required, type, name, defaultValue, Struct.EMPTY, Struct.EMPTY );
 		}
 
-		public Argument( boolean required, String type, Key name, Object defaultValue, String hint ) {
-			this( required, type, name, defaultValue, hint, new HashMap<>() );
+		public Argument( boolean required, String type, Key name, Object defaultValue, Struct annotations ) {
+			this( required, type, name, defaultValue, annotations, Struct.EMPTY );
 		}
 
-		public Argument( boolean required, String type, Key name, Object defaultValue, String hint, Map<Key, Object> metadata ) {
+		public Argument( boolean required, String type, Key name, Object defaultValue, Struct annotations, Struct documentation ) {
 			this.required		= required;
 			this.type			= type;
 			this.name			= name;
 			this.defaultValue	= defaultValue;
-			this.hint			= hint;
-			this.metadata		= metadata;
+			this.annotations	= annotations;
+			this.documentation	= documentation;
 		}
 
 	}
