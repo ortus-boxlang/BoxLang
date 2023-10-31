@@ -48,14 +48,14 @@ public class Struct implements Map<Key, Object>, IType, IReferenceable {
 	 * Private Properties
 	 * --------------------------------------------------------------------------
 	 */
-	private final Map<Key, Object>	wrapped;
+	protected final Map<Key, Object>	wrapped;
 
 	/**
 	 * In general, a common approach is to choose an initial capacity that is a power of two.
 	 * For example, 16, 32, 64, etc. This is because ConcurrentHashMap uses power-of-two-sized hash tables,
 	 * and using a power-of-two capacity can lead to better distribution of elements in the table.
 	 */
-	private static final int		INITIAL_CAPACITY	= 32;
+	protected static final int			INITIAL_CAPACITY	= 32;
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -79,7 +79,7 @@ public class Struct implements Map<Key, Object>, IType, IReferenceable {
 			wrapped = Collections.synchronizedMap( new TreeMap<Key, Object>() );
 			return;
 		}
-		throw new ApplicationException( "Invalid struct type" );
+		throw new ApplicationException( "Invalid struct type [" + type.name() + "]" );
 	}
 
 	/**
@@ -90,7 +90,19 @@ public class Struct implements Map<Key, Object>, IType, IReferenceable {
 	}
 
 	/**
-	 * Construct a struct from a map
+	 * Construct a struct from a map. This wraps the original map.
+	 * Use the Struct( Type type, Map<? extends Object, ? extends Object> map ) method and
+	 * supply an explicit type to have this struct created with a copy of all the
+	 * keys/values in your map.
+	 *
+	 * @param map The map to create the struct from
+	 */
+	protected Struct( Map<Key, Object> map, Boolean useMyMap ) {
+		wrapped = map;
+	}
+
+	/**
+	 * Construct a struct from the keys/values in your map.
 	 *
 	 * @param map The map to create the struct from
 	 */

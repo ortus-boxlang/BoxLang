@@ -41,7 +41,7 @@ public class Array implements List<Object>, IType, IReferenceable {
 	 * Private Properties
 	 * --------------------------------------------------------------------------
 	 */
-	private final List<Object> wrapped;
+	protected final List<Object> wrapped;
 
 	/**
 	 * --------------------------------------------------------------------------
