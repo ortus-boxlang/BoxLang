@@ -18,8 +18,6 @@
 package ortus.boxlang.runtime.testing;
 
 import java.time.LocalDateTime;
-import java.util.HashMap;
-import java.util.Map;
 
 import ortus.boxlang.runtime.context.FunctionBoxContext;
 import ortus.boxlang.runtime.operators.Concat;
@@ -27,6 +25,7 @@ import ortus.boxlang.runtime.runnables.IBoxRunnable;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.LocalScope;
 import ortus.boxlang.runtime.types.Lambda;
+import ortus.boxlang.runtime.types.Struct;
 
 /**
  * Phase 2 BoxLang
@@ -34,52 +33,54 @@ import ortus.boxlang.runtime.types.Lambda;
  */
 public class Phase2Lambda$lambda1 extends Lambda {
 
-	private static Phase2Lambda$lambda1		instance;
+	private static Phase2Lambda$lambda1	instance;
 	/**
 	 * The name of the function
 	 */
-	private final static Key				name				= Lambda.defaultName;
+	private final static Key			name				= Lambda.defaultName;
 
 	/**
 	 * The arguments of the function
 	 */
-	private static final Argument[]			arguments			= new Argument[] {
-	    new Argument( true, "String", Key.of( "name" ), "Brad", "" )
+	private static final Argument[]		arguments			= new Argument[] {
+	    new Argument( true, "String", Key.of( "name" ), "Brad" )
 	};
 
 	/**
 	 * The return type of the function
 	 */
-	private static final String				returnType			= "any";
+	private static final String			returnType			= "any";
 
 	/**
 	 * The hint of the function
 	 */
-	private static final String				hint				= "";
+	private static final String			hint				= "";
 
 	/**
 	 * Whether the function outputs
 	 * TODO: Break CFML compat here?
 	 */
-	private static final boolean			output				= true;
+	private static final boolean		output				= true;
 
 	// TODO: cachedwithin, modifier, localmode, return format
 
 	/**
 	 * Additional abitrary metadata about this function.
 	 */
-	private static final Map<Key, Object>	metadata			= new HashMap<Key, Object>();
+	private final static Struct			annotations			= Struct.EMPTY;
+
+	private final static Struct			documentation		= Struct.EMPTY;
 
 	/**
 	 * The access modifier of the function
 	 */
-	private Access							access				= Access.PUBLIC;
+	private Access						access				= Access.PUBLIC;
 
 	/**
 	 * The Box Runnable that declared this function
 	 */
-	private static final IBoxRunnable		declaringRunnable	= Phase2Lambda.getInstance();
-	private static final Object				ast					= null;
+	private static final IBoxRunnable	declaringRunnable	= Phase2Lambda.getInstance();
+	private static final Object			ast					= null;
 
 	public Key getName() {
 		return name;
@@ -93,16 +94,12 @@ public class Phase2Lambda$lambda1 extends Lambda {
 		return returnType;
 	}
 
-	public String getHint() {
-		return hint;
+	public Struct getAnnotations() {
+		return annotations;
 	}
 
-	public boolean isOutput() {
-		return output;
-	}
-
-	public Map<Key, Object> getAdditionalMetadata() {
-		return metadata;
+	public Struct getDocumentation() {
+		return documentation;
 	}
 
 	public Access getAccess() {

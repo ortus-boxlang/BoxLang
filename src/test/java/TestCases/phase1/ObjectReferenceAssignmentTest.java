@@ -163,7 +163,7 @@ public class ObjectReferenceAssignmentTest {
 	@Test
 	public void testVarKeywordForLocal() {
 		FunctionBoxContext functionBoxContext = new FunctionBoxContext( context,
-		    new SampleUDF( Access.PUBLIC, Key.of( "func" ), "any", new Argument[] {}, "", false, "" ) );
+		    new SampleUDF( Access.PUBLIC, Key.of( "func" ), "any", new Argument[] {}, "" ) );
 		// MT TODO: Java source is trying to access localScope symbol, but it's never defined. Need to track what scopes are used
 		instance.executeSource(
 		    """

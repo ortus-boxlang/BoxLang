@@ -41,10 +41,10 @@ public class FunctionTest {
 	@Test
 	void testCanDefineUDF() {
 		Argument[] args = new Argument[] {
-		    new Function.Argument( true, "String", Key.of( "firstName" ), "brad", "First Name" ),
-		    new Function.Argument( true, "String", Key.of( "lastName" ), "wood", "Last Name" )
+		    new Function.Argument( true, "String", Key.of( "firstName" ), "brad" ),
+		    new Function.Argument( true, "String", Key.of( "lastName" ), "wood" )
 		};
-		new SampleUDF( UDF.Access.PUBLIC, Key.of( "foo" ), "any", args, "Cool function", false, null );
+		new SampleUDF( UDF.Access.PUBLIC, Key.of( "foo" ), "any", args, null );
 
 	}
 
@@ -56,11 +56,11 @@ public class FunctionTest {
 		Key			age			= Key.of( "age" );
 
 		Argument[]	args		= new Argument[] {
-		    new Function.Argument( true, "String", firstName, "brad", "First Name" ),
-		    new Function.Argument( true, "String", lastName, "wood", "Last Name" ),
+		    new Function.Argument( true, "String", firstName, "brad" ),
+		    new Function.Argument( true, "String", lastName, "wood" ),
 		    new Function.Argument( false, "String", age, 43 )
 		};
-		UDF			udf			= new SampleUDF( UDF.Access.PUBLIC, Key.of( "foo" ), "any", args, "Cool function", false, null );
+		UDF			udf			= new SampleUDF( UDF.Access.PUBLIC, Key.of( "foo" ), "any", args, null );
 		IScope		argscope	= udf.createArgumentsScope();
 
 		assertThat( argscope.get( firstName ) ).isEqualTo( "brad" );
@@ -75,10 +75,10 @@ public class FunctionTest {
 		Key			firstName	= Key.of( "firstName" );
 		Key			lastName	= Key.of( "lastName" );
 		Argument[]	args		= new Argument[] {
-		    new Function.Argument( true, "String", firstName, "brad", "First Name" ),
-		    new Function.Argument( true, "String", lastName, "wood", "Last Name" )
+		    new Function.Argument( true, "String", firstName, "brad" ),
+		    new Function.Argument( true, "String", lastName, "wood" )
 		};
-		UDF			udf			= new SampleUDF( UDF.Access.PUBLIC, Key.of( "foo" ), "any", args, "Cool function", false, null );
+		UDF			udf			= new SampleUDF( UDF.Access.PUBLIC, Key.of( "foo" ), "any", args, null );
 		IScope		argscope	= udf.createArgumentsScope( new Object[] { "Luis", "Majano", "Extra" } );
 
 		assertThat( argscope.get( firstName ) ).isEqualTo( "Luis" );
@@ -93,10 +93,10 @@ public class FunctionTest {
 		Key			firstName	= Key.of( "firstName" );
 		Key			lastName	= Key.of( "lastName" );
 		Argument[]	args		= new Argument[] {
-		    new Function.Argument( true, "String", firstName, "brad", "First Name" ),
-		    new Function.Argument( true, "String", lastName, "wood", "Last Name" )
+		    new Function.Argument( true, "String", firstName, "brad" ),
+		    new Function.Argument( true, "String", lastName, "wood" )
 		};
-		UDF			udf			= new SampleUDF( UDF.Access.PUBLIC, Key.of( "foo" ), "any", args, "Cool function", false, null );
+		UDF			udf			= new SampleUDF( UDF.Access.PUBLIC, Key.of( "foo" ), "any", args, null );
 		IScope		argscope	= udf.createArgumentsScope( new Object[] { "Luis" } );
 
 		assertThat( argscope.get( firstName ) ).isEqualTo( "Luis" );
@@ -111,10 +111,10 @@ public class FunctionTest {
 		Key			lastName	= Key.of( "lastName" );
 		Key			extra		= Key.of( "extra" );
 		Argument[]	args		= new Argument[] {
-		    new Function.Argument( true, "String", firstName, "brad", "First Name" ),
-		    new Function.Argument( true, "String", lastName, "wood", "Last Name" )
+		    new Function.Argument( true, "String", firstName, "brad" ),
+		    new Function.Argument( true, "String", lastName, "wood" )
 		};
-		UDF			udf			= new SampleUDF( UDF.Access.PUBLIC, Key.of( "foo" ), "any", args, "Cool function", false, null );
+		UDF			udf			= new SampleUDF( UDF.Access.PUBLIC, Key.of( "foo" ), "any", args, null );
 		IScope		argscope	= udf
 		    .createArgumentsScope( Map.of( firstName, "Luis", lastName, "Majano", extra, "Gavin" ) );
 
@@ -129,9 +129,9 @@ public class FunctionTest {
 	void testCanRejectInvalidNamedArgTypes() {
 		Key			age		= Key.of( "age" );
 		Argument[]	args	= new Argument[] {
-		    new Function.Argument( true, "numeric", age, "sdf", "Age" )
+		    new Function.Argument( true, "numeric", age, "sdf" )
 		};
-		UDF			udf		= new SampleUDF( UDF.Access.PUBLIC, Key.of( "foo" ), "any", args, "Cool function", false, null );
+		UDF			udf		= new SampleUDF( UDF.Access.PUBLIC, Key.of( "foo" ), "any", args, null );
 
 		// Explicit named arg
 		assertThrows( Throwable.class, () -> udf.createArgumentsScope( Map.of( age, "sdf" ) ) );
@@ -149,10 +149,10 @@ public class FunctionTest {
 		Key			firstName	= Key.of( "firstName" );
 		Key			lastName	= Key.of( "lastName" );
 		Argument[]	args		= new Argument[] {
-		    new Function.Argument( true, "String", firstName, "brad", "First Name" ),
-		    new Function.Argument( true, "String", lastName, "wood", "Last Name" )
+		    new Function.Argument( true, "String", firstName, "brad" ),
+		    new Function.Argument( true, "String", lastName, "wood" )
 		};
-		UDF			udf			= new SampleUDF( UDF.Access.PUBLIC, Key.of( "foo" ), "any", args, "Cool function", false, null );
+		UDF			udf			= new SampleUDF( UDF.Access.PUBLIC, Key.of( "foo" ), "any", args, null );
 		IScope		argscope	= udf
 		    .createArgumentsScope( Map.of( firstName, "Luis" ) );
 
@@ -169,10 +169,10 @@ public class FunctionTest {
 		Key			extra		= Key.of( "extra" );
 		Key			extraExtra	= Key.of( "extraExtra" );
 		Argument[]	args		= new Argument[] {
-		    new Function.Argument( true, "String", firstName, "brad", "First Name" ),
-		    new Function.Argument( true, "String", lastName, "wood", "Last Name" )
+		    new Function.Argument( true, "String", firstName, "brad" ),
+		    new Function.Argument( true, "String", lastName, "wood" )
 		};
-		UDF			udf			= new SampleUDF( UDF.Access.PUBLIC, Key.of( "foo" ), "any", args, "Cool function", false, null );
+		UDF			udf			= new SampleUDF( UDF.Access.PUBLIC, Key.of( "foo" ), "any", args, null );
 		IScope		argscope	= udf
 		    .createArgumentsScope( new HashMap<Key, Object>( Map.of(
 		        Function.ARGUMENT_COLLECTION, Map.of( firstName, "Luis", lastName, "Majano", extra, "Gavin" ),
@@ -194,10 +194,10 @@ public class FunctionTest {
 		Key			key3		= Key.of( "3" );
 		Key			extraExtra	= Key.of( "extraExtra" );
 		Argument[]	args		= new Argument[] {
-		    new Function.Argument( true, "String", firstName, "brad", "First Name" ),
-		    new Function.Argument( true, "String", lastName, "wood", "Last Name" )
+		    new Function.Argument( true, "String", firstName, "brad" ),
+		    new Function.Argument( true, "String", lastName, "wood" )
 		};
-		UDF			udf			= new SampleUDF( UDF.Access.PUBLIC, Key.of( "foo" ), "any", args, "Cool function", false, null );
+		UDF			udf			= new SampleUDF( UDF.Access.PUBLIC, Key.of( "foo" ), "any", args, null );
 		IScope		argscope	= udf
 		    .createArgumentsScope( new HashMap<Key, Object>( Map.of(
 		        Function.ARGUMENT_COLLECTION, List.of( "Luis", "Majano", "Gavin" ),
@@ -217,9 +217,9 @@ public class FunctionTest {
 		Key			param		= Key.of( "param" );
 		Key			key2		= Key.of( "2" );
 		Argument[]	args		= new Argument[] {
-		    new Function.Argument( true, "String", param, null, "" )
+		    new Function.Argument( true, "String", param, null )
 		};
-		UDF			udf			= new SampleUDF( UDF.Access.PUBLIC, Key.of( "foo" ), "any", args, "Cool function", false, null );
+		UDF			udf			= new SampleUDF( UDF.Access.PUBLIC, Key.of( "foo" ), "any", args, null );
 		IScope		argscope	= udf
 		    .createArgumentsScope( new HashMap<Key, Object>( Map.of(
 		        Function.ARGUMENT_COLLECTION, List.of( "foo", "bar" ),
@@ -236,7 +236,7 @@ public class FunctionTest {
 	void testCanProcessArgumentCollectionStructOverride() {
 		Key			param		= Key.of( "param" );
 		Argument[]	args		= new Argument[] {};
-		UDF			udf			= new SampleUDF( UDF.Access.PUBLIC, Key.of( "foo" ), "any", args, "Cool function", false, null );
+		UDF			udf			= new SampleUDF( UDF.Access.PUBLIC, Key.of( "foo" ), "any", args, null );
 		IScope		argscope	= udf
 		    .createArgumentsScope( new HashMap<Key, Object>( Map.of(
 		        Function.ARGUMENT_COLLECTION, Map.of( param, "foo" ),
@@ -251,7 +251,7 @@ public class FunctionTest {
 	@Test
 	void testCanIgnoreInvalidArgumentCollection() {
 		Argument[]	args		= new Argument[] {};
-		UDF			udf			= new SampleUDF( UDF.Access.PUBLIC, Key.of( "foo" ), "any", args, "Cool function", false, null );
+		UDF			udf			= new SampleUDF( UDF.Access.PUBLIC, Key.of( "foo" ), "any", args, null );
 		IScope		argscope	= udf
 		    .createArgumentsScope( new HashMap<Key, Object>( Map.of(
 		        Function.ARGUMENT_COLLECTION, "sdf"
@@ -266,9 +266,9 @@ public class FunctionTest {
 	void testOverrideArgumentCollectionWithArgs() {
 		Key			firstName	= Key.of( "firstName" );
 		Argument[]	args		= new Argument[] {
-		    new Function.Argument( true, "String", firstName, "brad", "First Name" )
+		    new Function.Argument( true, "String", firstName, "brad" )
 		};
-		UDF			udf			= new SampleUDF( UDF.Access.PUBLIC, Key.of( "foo" ), "any", args, "Cool function", false, null );
+		UDF			udf			= new SampleUDF( UDF.Access.PUBLIC, Key.of( "foo" ), "any", args, null );
 		IScope		argscope	= udf
 		    .createArgumentsScope( new HashMap<Key, Object>( Map.of(
 		        Function.ARGUMENT_COLLECTION, Map.of( firstName, "from collection" ),
@@ -285,10 +285,10 @@ public class FunctionTest {
 		Key			lastName	= Key.of( "lastName" );
 
 		Argument[]	args		= new Argument[] {
-		    new Function.Argument( true, "String", firstName, null, "First Name" ),
-		    new Function.Argument( true, "String", lastName, null, "Last Name" )
+		    new Function.Argument( true, "String", firstName, null ),
+		    new Function.Argument( true, "String", lastName, null )
 		};
-		UDF			udf			= new SampleUDF( UDF.Access.PUBLIC, Key.of( "foo" ), "any", args, "Cool function", false, null );
+		UDF			udf			= new SampleUDF( UDF.Access.PUBLIC, Key.of( "foo" ), "any", args, null );
 
 		assertThrows( Throwable.class, () -> udf.createArgumentsScope() );
 		assertThrows( Throwable.class, () -> udf.createArgumentsScope( new Object[] { "Luis" } ) );
@@ -301,10 +301,10 @@ public class FunctionTest {
 		Key			firstName	= Key.of( "firstName" );
 		Key			lastName	= Key.of( "lastName" );
 		Argument[]	args		= new Argument[] {
-		    new Function.Argument( false, "String", firstName, "brad", "First Name" ),
-		    new Function.Argument( false, "String", lastName, "wood", "Last Name" )
+		    new Function.Argument( false, "String", firstName, "brad" ),
+		    new Function.Argument( false, "String", lastName, "wood" )
 		};
-		UDF			udf			= new SampleUDF( UDF.Access.PUBLIC, Key.of( "foo" ), "any", args, "Cool function", false, null );
+		UDF			udf			= new SampleUDF( UDF.Access.PUBLIC, Key.of( "foo" ), "any", args, null );
 		IScope		argscope	= udf.createArgumentsScope();
 
 		assertThat( argscope.get( firstName ) ).isEqualTo( "brad" );
@@ -315,8 +315,7 @@ public class FunctionTest {
 	@DisplayName( "can verify return types of functions" )
 	@Test
 	void testCanVerifyReturnTypes() {
-		UDF					udf				= new SampleUDF( UDF.Access.PUBLIC, Key.of( "foo" ), "String", new Argument[] {}, "",
-		    false, "Brad" );
+		UDF					udf				= new SampleUDF( UDF.Access.PUBLIC, Key.of( "foo" ), "String", new Argument[] {}, "Brad" );
 		ArgumentsScope		argscope		= udf.createArgumentsScope();
 
 		IBoxContext			parentContext	= new ScriptingBoxContext();
@@ -324,14 +323,12 @@ public class FunctionTest {
 		Object				result			= udf.invoke( context );
 		assertThat( result ).isEqualTo( "Brad" );
 
-		udf		= new SampleUDF( UDF.Access.PUBLIC, Key.of( "foo" ), "integer", new Argument[] {}, "",
-		    false, "42" );
+		udf		= new SampleUDF( UDF.Access.PUBLIC, Key.of( "foo" ), "integer", new Argument[] {}, "42" );
 
 		result	= udf.invoke( context );
 		assertThat( result ).isEqualTo( "42" );
 
-		final UDF badUdf = new SampleUDF( UDF.Access.PUBLIC, Key.of( "foo" ), "numeric", new Argument[] {}, "",
-		    false, "Luis" );
+		final UDF badUdf = new SampleUDF( UDF.Access.PUBLIC, Key.of( "foo" ), "numeric", new Argument[] {}, "Luis" );
 
 		// Can't function return value of string to numeric
 		assertThrows( Throwable.class, () -> badUdf.invoke( context ) );
@@ -345,12 +342,11 @@ public class FunctionTest {
 		    Key.of( "foo" ),
 		    "String",
 		    new Argument[] {
-		        new Function.Argument( true, "String", Key.of( "param1" ), null, "First Name" ),
-		        new Function.Argument( false, "any", Key.of( "param2" ), "wood", null )
+		        new Function.Argument( true, "String", Key.of( "param1" ), null, Struct.of( "hint", "First Name" ) ),
+		        new Function.Argument( false, "any", Key.of( "param2" ), "wood" )
 		    },
-		    "Brad's func",
-		    false,
-		    "42"
+		    "42",
+		    Struct.of( "hint", "Brad's func", "output", false )
 		);
 		Struct	meta	= udf.getMetaData();
 		assertThat( meta.dereference( Key.of( "name" ), false ) ).isEqualTo( Key.of( "foo" ) );
@@ -378,7 +374,7 @@ public class FunctionTest {
 		assertThat( arg2.dereference( Key.of( "required" ), false ) ).isEqualTo( false );
 		assertThat( arg2.dereference( Key.of( "type" ), false ) ).isEqualTo( "any" );
 		assertThat( arg2.dereference( Key.of( "default" ), false ) ).isEqualTo( "wood" );
-		assertThat( arg2.dereference( Key.of( "hint" ), false ) ).isEqualTo( null );
+		assertThat( arg2.dereference( Key.of( "hint" ), false ) ).isEqualTo( "" );
 
 	}
 

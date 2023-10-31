@@ -36,8 +36,8 @@ public class LambdaTest {
 	@Test
 	void testCanDefineLambda() {
 		Argument[] args = new Argument[] {
-		    new Function.Argument( true, "String", Key.of( "firstName" ), "brad", "First Name" ),
-		    new Function.Argument( true, "String", Key.of( "lastName" ), "wood", "Last Name" )
+		    new Function.Argument( true, "String", Key.of( "firstName" ), "brad" ),
+		    new Function.Argument( true, "String", Key.of( "lastName" ), "wood" )
 		};
 		new SampleLambda( args, "Brad" );
 
@@ -51,8 +51,8 @@ public class LambdaTest {
 		Key			age			= Key.of( "age" );
 
 		Argument[]	args		= new Argument[] {
-		    new Function.Argument( true, "String", firstName, "brad", "First Name" ),
-		    new Function.Argument( true, "String", lastName, "wood", "Last Name" ),
+		    new Function.Argument( true, "String", firstName, "brad" ),
+		    new Function.Argument( true, "String", lastName, "wood" ),
 		    new Function.Argument( false, "String", age, 43 )
 		};
 		Lambda		lambda		= new SampleLambda( args, "Brad" );
@@ -70,8 +70,8 @@ public class LambdaTest {
 		Key			firstName	= Key.of( "firstName" );
 		Key			lastName	= Key.of( "lastName" );
 		Argument[]	args		= new Argument[] {
-		    new Function.Argument( true, "String", firstName, "brad", "First Name" ),
-		    new Function.Argument( true, "String", lastName, "wood", "Last Name" )
+		    new Function.Argument( true, "String", firstName, "brad" ),
+		    new Function.Argument( true, "String", lastName, "wood" )
 		};
 		Lambda		lambda		= new SampleLambda( args, "Brad" );
 		IScope		argscope	= lambda.createArgumentsScope( new Object[] { "Luis", "Majano", "Extra" } );
@@ -88,8 +88,8 @@ public class LambdaTest {
 		Key			firstName	= Key.of( "firstName" );
 		Key			lastName	= Key.of( "lastName" );
 		Argument[]	args		= new Argument[] {
-		    new Function.Argument( true, "String", firstName, "brad", "First Name" ),
-		    new Function.Argument( true, "String", lastName, "wood", "Last Name" )
+		    new Function.Argument( true, "String", firstName, "brad" ),
+		    new Function.Argument( true, "String", lastName, "wood" )
 		};
 		Lambda		lambda		= new SampleLambda( args, "Brad" );
 		IScope		argscope	= lambda.createArgumentsScope( new Object[] { "Luis" } );
@@ -106,8 +106,8 @@ public class LambdaTest {
 		Key			lastName	= Key.of( "lastName" );
 		Key			extra		= Key.of( "extra" );
 		Argument[]	args		= new Argument[] {
-		    new Function.Argument( true, "String", firstName, "brad", "First Name" ),
-		    new Function.Argument( true, "String", lastName, "wood", "Last Name" )
+		    new Function.Argument( true, "String", firstName, "brad" ),
+		    new Function.Argument( true, "String", lastName, "wood" )
 		};
 		Lambda		lambda		= new SampleLambda( args, "Brad" );
 		IScope		argscope	= lambda
@@ -124,7 +124,7 @@ public class LambdaTest {
 	void testCanRejectInvalidNamedArgTypes() {
 		Key			age		= Key.of( "age" );
 		Argument[]	args	= new Argument[] {
-		    new Function.Argument( true, "numeric", age, "sdf", "Age" )
+		    new Function.Argument( true, "numeric", age, "sdf" )
 		};
 		Lambda		lambda	= new SampleLambda( args, "Brad" );
 
@@ -144,8 +144,8 @@ public class LambdaTest {
 		Key			firstName	= Key.of( "firstName" );
 		Key			lastName	= Key.of( "lastName" );
 		Argument[]	args		= new Argument[] {
-		    new Function.Argument( true, "String", firstName, "brad", "First Name" ),
-		    new Function.Argument( true, "String", lastName, "wood", "Last Name" )
+		    new Function.Argument( true, "String", firstName, "brad" ),
+		    new Function.Argument( true, "String", lastName, "wood" )
 		};
 		Lambda		lambda		= new SampleLambda( args, "Brad" );
 		IScope		argscope	= lambda
@@ -164,8 +164,8 @@ public class LambdaTest {
 		Key			extra		= Key.of( "extra" );
 		Key			extraExtra	= Key.of( "extraExtra" );
 		Argument[]	args		= new Argument[] {
-		    new Function.Argument( true, "String", firstName, "brad", "First Name" ),
-		    new Function.Argument( true, "String", lastName, "wood", "Last Name" )
+		    new Function.Argument( true, "String", firstName, "brad" ),
+		    new Function.Argument( true, "String", lastName, "wood" )
 		};
 		Lambda		lambda		= new SampleLambda( args, "Brad" );
 		IScope		argscope	= lambda
@@ -186,7 +186,7 @@ public class LambdaTest {
 	void testOverrideArgumentCollectionWithArgs() {
 		Key			firstName	= Key.of( "firstName" );
 		Argument[]	args		= new Argument[] {
-		    new Function.Argument( true, "String", firstName, "brad", "First Name" )
+		    new Function.Argument( true, "String", firstName, "brad" )
 		};
 		Lambda		lambda		= new SampleLambda( args, "Brad" );
 		IScope		argscope	= lambda
@@ -205,8 +205,8 @@ public class LambdaTest {
 		Key			lastName	= Key.of( "lastName" );
 
 		Argument[]	args		= new Argument[] {
-		    new Function.Argument( true, "String", firstName, null, "First Name" ),
-		    new Function.Argument( true, "String", lastName, null, "Last Name" )
+		    new Function.Argument( true, "String", firstName, null ),
+		    new Function.Argument( true, "String", lastName, null )
 		};
 		Lambda		lambda		= new SampleLambda( args, "Brad" );
 
@@ -221,8 +221,8 @@ public class LambdaTest {
 		Key			firstName	= Key.of( "firstName" );
 		Key			lastName	= Key.of( "lastName" );
 		Argument[]	args		= new Argument[] {
-		    new Function.Argument( false, "String", firstName, "brad", "First Name" ),
-		    new Function.Argument( false, "String", lastName, "wood", "Last Name" )
+		    new Function.Argument( false, "String", firstName, "brad" ),
+		    new Function.Argument( false, "String", lastName, "wood" )
 		};
 		Lambda		lambda		= new SampleLambda( args, "Brad" );
 		IScope		argscope	= lambda.createArgumentsScope();
@@ -239,15 +239,15 @@ public class LambdaTest {
 		Key			firstName	= Key.of( "firstName" );
 		Key			lastName	= Key.of( "lastName" );
 		Argument[]	args		= new Argument[] {
-		    new Function.Argument( false, "String", firstName, "brad", "First Name" ),
-		    new Function.Argument( false, "String", lastName, "wood", "Last Name" )
+		    new Function.Argument( false, "String", Key.of( "firstname" ), "brad", Struct.of( "hint", "First Name" ) ),
+		    new Function.Argument( false, "String", lastName, "wood", Struct.of( "hint", "Last Name" ) )
 		};
 		Lambda		lambda		= new SampleLambda( args, "Brad" );
 
 		Struct		meta		= lambda.getMetaData();
 		assertThat( meta.dereference( Key.of( "name" ), false ) ).isEqualTo( Key.of( "lambda" ) );
 		assertThat( meta.dereference( Key.of( "returnType" ), false ) ).isEqualTo( "any" );
-		assertThat( meta.dereference( Key.of( "output" ), false ) ).isEqualTo( true );
+		assertThat( meta.dereference( Key.of( "output" ), false ) ).isEqualTo( false );
 		assertThat( meta.dereference( Key.of( "hint" ), false ) ).isEqualTo( "" );
 		assertThat( meta.dereference( Key.of( "access" ), false ) ).isEqualTo( "public" );
 		assertThat( meta.dereference( Key.of( "closure" ), false ) ).isEqualTo( false );

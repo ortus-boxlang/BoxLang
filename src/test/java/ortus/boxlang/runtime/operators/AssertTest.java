@@ -53,13 +53,13 @@ public class AssertTest {
 	@DisplayName( "It can assert UDF" )
 	@Test
 	void testItCanAssertUDF() {
-		UDF udf = new SampleUDF( UDF.Access.PUBLIC, Key.of( "func" ), "any", new Function.Argument[] {}, "", false, true );
+		UDF udf = new SampleUDF( UDF.Access.PUBLIC, Key.of( "func" ), "any", new Function.Argument[] {}, true );
 		assertThat( Assert.invoke( new ScriptingBoxContext(), udf ) ).isTrue();
 
-		final UDF udf2 = new SampleUDF( UDF.Access.PUBLIC, Key.of( "func" ), "any", new Function.Argument[] {}, "", false, false );
+		final UDF udf2 = new SampleUDF( UDF.Access.PUBLIC, Key.of( "func" ), "any", new Function.Argument[] {}, false );
 		assertThrows( AssertionError.class, () -> Assert.invoke( new ScriptingBoxContext(), udf2 ) );
 
-		final UDF udf3 = new SampleUDF( UDF.Access.PUBLIC, Key.of( "func" ), "any", new Function.Argument[] {}, "", false, "brad" );
+		final UDF udf3 = new SampleUDF( UDF.Access.PUBLIC, Key.of( "func" ), "any", new Function.Argument[] {}, "brad" );
 		assertThrows( BoxLangException.class, () -> Assert.invoke( new ScriptingBoxContext(), udf3 ) );
 	}
 

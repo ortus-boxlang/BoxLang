@@ -18,8 +18,6 @@
 package ortus.boxlang.runtime.types;
 
 import java.time.LocalDateTime;
-import java.util.HashMap;
-import java.util.Map;
 
 import ortus.boxlang.runtime.context.FunctionBoxContext;
 import ortus.boxlang.runtime.runnables.IBoxRunnable;
@@ -27,16 +25,13 @@ import ortus.boxlang.runtime.scopes.Key;
 
 public class SampleLambda extends Lambda {
 
-	Object						returnVal	= null;
+	Object				returnVal	= null;
 
 	// These are not static just because this is a test class that is always transient! Do not copy this implementation.
-	private Key					name		= Lambda.defaultName;
-	private Argument[]			arguments;
-	private String				returnType	= "any";
-	private String				hint		= "";
-	private boolean				output		= true;
-	private Map<Key, Object>	metadata	= new HashMap<Key, Object>();
-	private Access				access		= Access.PUBLIC;
+	private Key			name		= Lambda.defaultName;
+	private Argument[]	arguments;
+	private String		returnType	= "any";
+	private Access		access		= Access.PUBLIC;
 
 	public Key getName() {
 		return name;
@@ -50,16 +45,12 @@ public class SampleLambda extends Lambda {
 		return returnType;
 	}
 
-	public String getHint() {
-		return hint;
+	public Struct getAnnotations() {
+		return Struct.EMPTY;
 	}
 
-	public boolean isOutput() {
-		return output;
-	}
-
-	public Map<Key, Object> getAdditionalMetadata() {
-		return metadata;
+	public Struct getDocumentation() {
+		return Struct.EMPTY;
 	}
 
 	public Access getAccess() {

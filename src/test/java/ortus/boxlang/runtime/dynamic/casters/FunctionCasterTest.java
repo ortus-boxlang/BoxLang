@@ -34,7 +34,7 @@ public class FunctionCasterTest {
 	@DisplayName( "It can cast a Function to a Function" )
 	@Test
 	void testItCanCastAFunction() {
-		Function func = new SampleUDF( null, Key.of( "Func" ), null, null, null, false, "" );
+		Function func = new SampleUDF( null, Key.of( "Func" ), null, null, null );
 		assertThat( FunctionCaster.cast( func ).getName() ).isEqualTo( Key.of( "Func" ) );
 	}
 
@@ -51,7 +51,7 @@ public class FunctionCasterTest {
 	@DisplayName( "It can attempt to cast" )
 	@Test
 	void testItCanAttemptToCast() {
-		Function				func	= new SampleUDF( null, Key.of( "Func" ), null, null, null, false, "" );
+		Function				func	= new SampleUDF( null, Key.of( "Func" ), null, null, null );
 		CastAttempt<Function>	attempt	= FunctionCaster.attempt( func );
 		assertThat( attempt.wasSuccessful() ).isTrue();
 		assertThat( attempt.get().getName() ).isEqualTo( Key.of( "Func" ) );

@@ -18,8 +18,6 @@
 package ortus.boxlang.runtime.types;
 
 import java.time.LocalDateTime;
-import java.util.HashMap;
-import java.util.Map;
 
 import ortus.boxlang.runtime.context.FunctionBoxContext;
 import ortus.boxlang.runtime.runnables.IBoxRunnable;
@@ -27,16 +25,14 @@ import ortus.boxlang.runtime.scopes.Key;
 
 public class SampleUDF extends UDF {
 
-	Object						returnVal	= null;
+	Object				returnVal	= null;
 
 	// These are not static just because this is a test class that is always transient! Do not copy this implementation.
-	private Key					name;
-	private Argument[]			arguments;
-	private String				returnType;
-	private String				hint;
-	private boolean				output;
-	private Access				access;
-	private Map<Key, Object>	metadata	= new HashMap<Key, Object>();
+	private Key			name;
+	private Argument[]	arguments;
+	private String		returnType;
+	private Access		access;
+	private Struct		annotations;
 
 	public Key getName() {
 		return name;
@@ -50,16 +46,12 @@ public class SampleUDF extends UDF {
 		return returnType;
 	}
 
-	public String getHint() {
-		return hint;
+	public Struct getAnnotations() {
+		return annotations;
 	}
 
-	public boolean isOutput() {
-		return output;
-	}
-
-	public Map<Key, Object> getAdditionalMetadata() {
-		return metadata;
+	public Struct getDocumentation() {
+		return Struct.EMPTY;
 	}
 
 	public Access getAccess() {
@@ -85,16 +77,18 @@ public class SampleUDF extends UDF {
 		return null;
 	}
 
-	public SampleUDF( Access access, Key name, String returnType, Argument[] arguments, String hint, boolean output,
-	    Object returnVal ) {
+	public SampleUDF( Access access, Key name, String returnType, Argument[] arguments, Object returnVal ) {
+		this( access, name, returnType, arguments, returnVal, Struct.EMPTY );
+	}
+
+	public SampleUDF( Access access, Key name, String returnType, Argument[] arguments, Object returnVal, Struct annotations ) {
 		super();
-		this.access		= access;
-		this.name		= name;
-		this.returnType	= returnType;
-		this.arguments	= arguments;
-		this.hint		= hint;
-		this.output		= output;
-		this.returnVal	= returnVal;
+		this.access			= access;
+		this.name			= name;
+		this.returnType		= returnType;
+		this.arguments		= arguments;
+		this.returnVal		= returnVal;
+		this.annotations	= annotations;
 	}
 
 	@Override

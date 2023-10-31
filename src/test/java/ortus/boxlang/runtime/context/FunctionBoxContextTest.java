@@ -39,7 +39,7 @@ public class FunctionBoxContextTest {
 	@Test
 	@DisplayName( "Test constructors" )
 	void testConstructor() {
-		UDF udf = new SampleUDF( UDF.Access.PUBLIC, Key.of( "foo" ), "any", new Argument[] {}, "", false, null );
+		UDF udf = new SampleUDF( UDF.Access.PUBLIC, Key.of( "foo" ), "any", new Argument[] {}, null );
 
 		assertThrows( Throwable.class, () -> new FunctionBoxContext( null, null ) );
 		IBoxContext			parentContext	= new ScriptingBoxContext();
@@ -54,7 +54,7 @@ public class FunctionBoxContextTest {
 	@Test
 	@DisplayName( "Test scope lookup" )
 	void testScopeLookup() {
-		UDF				udf				= new SampleUDF( UDF.Access.PUBLIC, Key.of( "foo" ), "any", new Argument[] {}, "", false, null );
+		UDF				udf				= new SampleUDF( UDF.Access.PUBLIC, Key.of( "foo" ), "any", new Argument[] {}, null );
 		IBoxContext		parentContext	= new ScriptingBoxContext();
 		ArgumentsScope	argumentsScope	= new ArgumentsScope();
 		IBoxContext		context			= new FunctionBoxContext( parentContext, udf, argumentsScope );
@@ -100,7 +100,7 @@ public class FunctionBoxContextTest {
 		// We call a function
 		Key					funcName		= Key.of( "MyFunc$" );
 		IBoxContext			parentContext	= new ScriptingBoxContext();
-		UDF					udf				= new SampleUDF( UDF.Access.PUBLIC, funcName, "String", new Argument[] {}, "", false, null );
+		UDF					udf				= new SampleUDF( UDF.Access.PUBLIC, funcName, "String", new Argument[] {}, null );
 		FunctionBoxContext	context			= new FunctionBoxContext( parentContext, udf );
 
 		assertThat( context.findClosestFunctionName() ).isNotNull();
@@ -126,7 +126,7 @@ public class FunctionBoxContextTest {
 
 		// which calls another function
 		Key					funcName2	= Key.of( "another_function_here" );
-		UDF					udf2		= new SampleUDF( UDF.Access.PUBLIC, funcName2, "String", new Argument[] {}, "", false, null );
+		UDF					udf2		= new SampleUDF( UDF.Access.PUBLIC, funcName2, "String", new Argument[] {}, null );
 		FunctionBoxContext	context2	= new FunctionBoxContext( childChildChildContext, udf2 );
 
 		assertThat( context2.findClosestFunctionName() ).isNotNull();
@@ -138,7 +138,7 @@ public class FunctionBoxContextTest {
 	void testDefaultAssignmentScope() {
 		Key					funcName		= Key.of( "MyFunc$" );
 		IBoxContext			parentContext	= new ScriptingBoxContext();
-		UDF					udf				= new SampleUDF( UDF.Access.PUBLIC, funcName, "String", new Argument[] {}, "", false, null );
+		UDF					udf				= new SampleUDF( UDF.Access.PUBLIC, funcName, "String", new Argument[] {}, null );
 		FunctionBoxContext	context			= new FunctionBoxContext( parentContext, udf );
 		assertThat( context.getDefaultAssignmentScope().getName().getName() ).isEqualTo( "local" );
 	}

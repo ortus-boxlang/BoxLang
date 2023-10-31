@@ -18,8 +18,6 @@
 package ortus.boxlang.runtime.testing;
 
 import java.time.LocalDateTime;
-import java.util.HashMap;
-import java.util.Map;
 
 import ortus.boxlang.runtime.context.FunctionBoxContext;
 import ortus.boxlang.runtime.dynamic.Referencer;
@@ -28,6 +26,7 @@ import ortus.boxlang.runtime.runnables.IBoxRunnable;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.LocalScope;
+import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.UDF;
 
 /**
@@ -36,53 +35,44 @@ import ortus.boxlang.runtime.types.UDF;
  */
 public class Phase2UDF$greet extends UDF {
 
-	private static Phase2UDF$greet			instance;
+	private static Phase2UDF$greet		instance;
 
 	/**
 	 * The name of the function
 	 */
-	private final static Key				name				= Key.of( "greet" );
+	private final static Key			name				= Key.of( "greet" );
 
 	/**
 	 * The arguments of the function
 	 */
-	private final static Argument[]			arguments			= new Argument[] {
-	    new Argument( true, "String", Key.of( "name" ), "Brad", "" )
+	private final static Argument[]		arguments			= new Argument[] {
+	    new Argument( true, "String", Key.of( "name" ), "Brad" )
 	};
 
 	/**
 	 * The return type of the function
 	 */
-	private final static String				returnType			= "String";
-
-	/**
-	 * The hint of the function
-	 */
-	private final static String				hint				= "My Function Hint";
-
-	/**
-	 * Whether the function outputs
-	 * TODO: Break CFML compat here?
-	 */
-	private final static boolean			output				= true;
+	private final static String			returnType			= "String";
 
 	/**
 	 * The access modifier of the function
 	 */
-	private Access							access				= Access.PUBLIC;
+	private Access						access				= Access.PUBLIC;
 
 	// TODO: cachedwithin, modifier, localmode, return format
 
 	/**
 	 * Additional abitrary metadata about this function.
 	 */
-	private final static Map<Key, Object>	metadata			= new HashMap<Key, Object>();
+	private final static Struct			annotations			= Struct.of( Key.of( "hint" ), "My Function Hint" );
+
+	private final static Struct			documentation		= Struct.EMPTY;
 
 	/**
 	 * The Box Runnable that declared this function
 	 */
-	private static final IBoxRunnable		declaringRunnable	= Phase2UDF.getInstance();
-	private static final Object				ast					= null;
+	private static final IBoxRunnable	declaringRunnable	= Phase2UDF.getInstance();
+	private static final Object			ast					= null;
 
 	public Key getName() {
 		return name;
@@ -96,16 +86,12 @@ public class Phase2UDF$greet extends UDF {
 		return returnType;
 	}
 
-	public String getHint() {
-		return hint;
+	public Struct getAnnotations() {
+		return annotations;
 	}
 
-	public boolean isOutput() {
-		return output;
-	}
-
-	public Map<Key, Object> getAdditionalMetadata() {
-		return metadata;
+	public Struct getDocumentation() {
+		return documentation;
 	}
 
 	public Access getAccess() {
