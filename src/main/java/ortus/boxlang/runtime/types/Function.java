@@ -33,6 +33,8 @@ import ortus.boxlang.runtime.runnables.IFunctionRunnable;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.exceptions.ApplicationException;
+import ortus.boxlang.runtime.types.meta.BoxMeta;
+import ortus.boxlang.runtime.types.meta.FunctionMeta;
 
 /**
  * A BoxLang Function base class
@@ -55,10 +57,12 @@ public abstract class Function implements IType, IFunctionRunnable {
 		REMOTE
 	}
 
+	public BoxMeta			$bx;
+
 	/**
 	 * The argument collection key which defaults to : {@code argumentCollection}
 	 */
-	public static final Key ARGUMENT_COLLECTION = Key.of( "argumentCollection" );
+	public static final Key	ARGUMENT_COLLECTION	= Key.of( "argumentCollection" );
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -77,6 +81,13 @@ public abstract class Function implements IType, IFunctionRunnable {
 	 */
 	public String asString() {
 		return toString();
+	}
+
+	public BoxMeta getBoxMeta() {
+		if ( this.$bx == null ) {
+			this.$bx = new FunctionMeta( this );
+		}
+		return this.$bx;
 	}
 
 	/**
@@ -343,6 +354,8 @@ public abstract class Function implements IType, IFunctionRunnable {
 
 	/**
 	 * Get the combined metadata for this function and all it's parameters
+	 * This follows the format of Lucee and Adobe's "combined" metadata
+	 * TODO: Move this to compat module
 	 *
 	 * @return The metadata as a struct
 	 */

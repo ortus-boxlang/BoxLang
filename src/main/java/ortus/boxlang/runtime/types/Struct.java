@@ -34,6 +34,7 @@ import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.exceptions.ApplicationException;
 import ortus.boxlang.runtime.types.exceptions.KeyNotFoundException;
 import ortus.boxlang.runtime.types.immutable.ImmutableStruct;
+import ortus.boxlang.runtime.types.meta.BoxMeta;
 
 public class Struct implements Map<Key, Object>, IType, IReferenceable {
 
@@ -464,6 +465,17 @@ public class Struct implements Map<Key, Object>, IType, IReferenceable {
 	@Override
 	public String asString() {
 		return wrapped.toString();
+	}
+
+	public BoxMeta getBoxMeta() {
+		return null;
+		/*
+		 * /
+		 * if ( this.$bx == null ) {
+		 * this.$bx = new FunctionMeta( this );
+		 * }
+		 * return this.$bx;
+		 */
 	}
 
 	/**

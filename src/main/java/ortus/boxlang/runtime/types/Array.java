@@ -34,6 +34,7 @@ import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.exceptions.ExpressionException;
 import ortus.boxlang.runtime.types.immutable.ImmutableArray;
+import ortus.boxlang.runtime.types.meta.BoxMeta;
 
 public class Array implements List<Object>, IType, IReferenceable {
 
@@ -276,6 +277,17 @@ public class Array implements List<Object>, IType, IReferenceable {
 	@Override
 	public String asString() {
 		return wrapped.toString();
+	}
+
+	public BoxMeta getBoxMeta() {
+		return null;
+		/*
+		 * /
+		 * if ( this.$bx == null ) {
+		 * this.$bx = new FunctionMeta( this );
+		 * }
+		 * return this.$bx;
+		 */
 	}
 
 	/**

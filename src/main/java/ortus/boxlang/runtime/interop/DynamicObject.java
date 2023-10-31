@@ -43,12 +43,14 @@ import ortus.boxlang.runtime.dynamic.IReferenceable;
 import ortus.boxlang.runtime.dynamic.casters.CastAttempt;
 import ortus.boxlang.runtime.dynamic.casters.DoubleCaster;
 import ortus.boxlang.runtime.scopes.Key;
+import ortus.boxlang.runtime.types.IType;
 import ortus.boxlang.runtime.types.exceptions.ApplicationException;
 import ortus.boxlang.runtime.types.exceptions.BoxLangException;
 import ortus.boxlang.runtime.types.exceptions.ExpressionException;
 import ortus.boxlang.runtime.types.exceptions.KeyNotFoundException;
 import ortus.boxlang.runtime.types.exceptions.NoFieldException;
 import ortus.boxlang.runtime.types.exceptions.NoMethodException;
+import ortus.boxlang.runtime.types.meta.BoxMeta;
 
 /**
  * This class is used to represent a BX/Java Class and invoke methods on classes using invoke dynamic.
@@ -909,6 +911,12 @@ public class DynamicObject implements IReferenceable {
 	 */
 	public Object dereference( Key name, Boolean safe ) {
 
+		// This check allows us to lazy-create meta for BoxLang types the first time it is requested
+		if ( name.equals( BoxMeta.key ) && hasInstance() && getTargetInstance() instanceof IType type ) {
+			return type.getBoxMeta();
+		}
+
+		// If the object is referencable, allow it to handle the dereference
 		if ( hasInstance() && getTargetInstance() instanceof IReferenceable ref ) {
 			return ref.dereference( name, safe );
 		}

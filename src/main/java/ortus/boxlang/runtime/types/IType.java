@@ -17,6 +17,8 @@
  */
 package ortus.boxlang.runtime.types;
 
+import ortus.boxlang.runtime.types.meta.BoxMeta;
+
 /**
  * Represents a base type
  *
@@ -37,7 +39,7 @@ public interface IType {
 
 	/**
 	 * Represent as string, or throw exception if not possible
-	 * 
+	 *
 	 * @return The string representation
 	 */
 	public String asString();
@@ -49,4 +51,6 @@ public interface IType {
 	// hashcode()
 
 	// equals()
+
+	public BoxMeta getBoxMeta();
 }

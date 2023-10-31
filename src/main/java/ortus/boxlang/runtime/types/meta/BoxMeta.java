@@ -15,39 +15,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package ortus.boxlang.runtime.types;
+package ortus.boxlang.runtime.types.meta;
 
-import ortus.boxlang.runtime.types.meta.BoxMeta;
+import ortus.boxlang.runtime.scopes.Key;
 
 /**
- * I represent a null value so we can store it in a ConcurrentHashMap
+ * This is a base class for all meta types
  */
-public class NullValue implements IType {
+public abstract class BoxMeta {
 
-	/**
-	 * Constructor
-	 */
-	public NullValue() {
-	}
-
-	/**
-	 * Represent as string
-	 *
-	 * @return The string representation
-	 */
-	public String asString() {
-		return "";
-	}
-
-	public BoxMeta getBoxMeta() {
-		return null;
-		/*
-		 * /
-		 * if ( this.$bx == null ) {
-		 * this.$bx = new FunctionMeta( this );
-		 * }
-		 * return this.$bx;
-		 */
-	}
-
+    public static final Key key = Key.of( "bx$" );
 }
