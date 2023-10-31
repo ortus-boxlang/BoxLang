@@ -48,6 +48,7 @@ public class ImmutableStruct extends Struct implements IImmutable {
 	 * @param type The type of struct to create: DEFAULT, LINKED, SORTED
 	 */
 	public ImmutableStruct( Type type ) {
+		// Immutable struct does not use syncronized maps
 		super(
 		    switch ( type ) {
 			    case DEFAULT -> new HashMap<>( INITIAL_CAPACITY );
