@@ -33,15 +33,17 @@ import ortus.boxlang.runtime.dynamic.casters.DoubleCaster;
 import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.exceptions.ExpressionException;
+import ortus.boxlang.runtime.types.immutable.ImmutableArray;
 
 public class Array implements List<Object>, IType, IReferenceable {
 
+	public static final Array		EMPTY	= new ImmutableArray();
 	/**
 	 * --------------------------------------------------------------------------
 	 * Private Properties
 	 * --------------------------------------------------------------------------
 	 */
-	protected final List<Object> wrapped;
+	protected final List<Object>	wrapped;
 
 	/**
 	 * --------------------------------------------------------------------------

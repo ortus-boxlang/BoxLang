@@ -34,6 +34,7 @@ import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.exceptions.ApplicationException;
 import ortus.boxlang.runtime.types.exceptions.KeyNotFoundException;
+import ortus.boxlang.runtime.types.immutable.ImmutableStruct;
 
 public class Struct implements Map<Key, Object>, IType, IReferenceable {
 
@@ -42,6 +43,8 @@ public class Struct implements Map<Key, Object>, IType, IReferenceable {
 		SORTED,
 		DEFAULT
 	}
+
+	public static final Struct			EMPTY				= new ImmutableStruct();
 
 	/**
 	 * --------------------------------------------------------------------------
