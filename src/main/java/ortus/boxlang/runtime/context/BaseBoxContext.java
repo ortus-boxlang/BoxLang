@@ -211,8 +211,7 @@ public class BaseBoxContext implements IBoxContext {
 	 * @return Return value of the function call
 	 */
 	public Object invokeFunction( Function function, Key calledName, ArgumentsScope argumentsScope ) {
-		FunctionBoxContext fContext = new FunctionBoxContext( getFunctionParentContext(), function, calledName, argumentsScope );
-		return function.invoke( fContext );
+		return function.invoke( Function.generateFunctionContext( function, getFunctionParentContext(), calledName, argumentsScope ) );
 	}
 
 	/**

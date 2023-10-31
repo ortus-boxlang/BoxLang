@@ -72,9 +72,10 @@ public class FunctionBoxContext extends BaseBoxContext {
 	/**
 	 * Creates a new execution context with a bounded function instance and parent context and arguments scope
 	 *
-	 * @param parent         The parent context
-	 * @param function       The function being invoked with this context
-	 * @param argumentsScope The arguments scope
+	 * @param parent             The parent context
+	 * @param function           The function being invoked with this context
+	 * @param functionCalledName The name of the function being invoked
+	 * @param argumentsScope     The arguments scope
 	 */
 	public FunctionBoxContext( IBoxContext parent, Function function, Key functionCalledName, ArgumentsScope argumentsScope ) {
 		super( parent );

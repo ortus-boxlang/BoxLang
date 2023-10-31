@@ -22,7 +22,10 @@ import java.util.List;
 import java.util.Map;
 
 import ortus.boxlang.runtime.BoxRuntime;
+import ortus.boxlang.runtime.context.ClosureBoxContext;
 import ortus.boxlang.runtime.context.FunctionBoxContext;
+import ortus.boxlang.runtime.context.IBoxContext;
+import ortus.boxlang.runtime.context.LambdaBoxContext;
 import ortus.boxlang.runtime.dynamic.casters.CastAttempt;
 import ortus.boxlang.runtime.dynamic.casters.GenericCaster;
 import ortus.boxlang.runtime.runnables.IBoxRunnable;
@@ -392,6 +395,24 @@ public abstract class Function implements IType, IFunctionRunnable {
 		meta.put( "ANONYMOUSLAMBDA", isLambda );
 
 		return meta;
+	}
+
+	/**
+	 * This is a helper method to generate the correct context for a function based on type
+	 *
+	 * @param function       The function to generate the context for
+	 * @param parentContext  The parent context
+	 * @param calledName     The name the function was called with
+	 * @param argumentsScope The arguments scope for the function
+	 */
+	public static FunctionBoxContext generateFunctionContext( Function function, IBoxContext parentContext, Key calledName, ArgumentsScope argumentsScope ) {
+		if ( function instanceof Closure clos ) {
+			return new ClosureBoxContext( parentContext, clos, calledName, argumentsScope );
+		} else if ( function instanceof Lambda lam ) {
+			return new LambdaBoxContext( parentContext, lam, calledName, argumentsScope );
+		} else {
+			return new FunctionBoxContext( parentContext, function, calledName, argumentsScope );
+		}
 	}
 
 	/**

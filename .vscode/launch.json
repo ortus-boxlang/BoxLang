@@ -6,6 +6,20 @@
     "configurations": [
         {
             "type": "java",
+            "name": "Phase2Closure",
+            "request": "launch",
+            "mainClass": "ortus.boxlang.runtime.testing.Phase2Closure",
+            "projectName": "boxlang"
+        },
+        {
+            "type": "java",
+            "name": "Phase2UDF",
+            "request": "launch",
+            "mainClass": "ortus.boxlang.runtime.testing.Phase2UDF",
+            "projectName": "boxlang"
+        },
+        {
+            "type": "java",
             "name": "BoxRunner",
             "request": "launch",
             "mainClass": "ortus.boxlang.runtime.BoxRunner",

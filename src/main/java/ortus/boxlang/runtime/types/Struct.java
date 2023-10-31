@@ -26,7 +26,6 @@ import java.util.Set;
 import java.util.TreeMap;
 import java.util.concurrent.ConcurrentHashMap;
 
-import ortus.boxlang.runtime.context.FunctionBoxContext;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.dynamic.IReferenceable;
 import ortus.boxlang.runtime.dynamic.casters.KeyCaster;
@@ -522,13 +521,14 @@ public class Struct implements Map<Key, Object>, IType, IReferenceable {
 		if ( value != null ) {
 
 			if ( value instanceof Function function ) {
-				FunctionBoxContext fContext = new FunctionBoxContext(
-				    context,
-				    function,
-				    name,
-				    function.createArgumentsScope( positionalArguments )
+				return function.invoke(
+				    Function.generateFunctionContext(
+				        function,
+				        context.getFunctionParentContext(),
+				        name,
+				        function.createArgumentsScope( positionalArguments )
+				    )
 				);
-				return function.invoke( fContext );
 			} else {
 				throw new ApplicationException(
 				    "key '" + name.getName() + "' of type  '" + value.getClass().getName() + "'  is not a function " );
@@ -560,13 +560,14 @@ public class Struct implements Map<Key, Object>, IType, IReferenceable {
 
 		Object value = dereference( name, safe );
 		if ( value instanceof Function function ) {
-			FunctionBoxContext fContext = new FunctionBoxContext(
-			    context,
-			    function,
-			    name,
-			    function.createArgumentsScope( namedArguments )
+			return function.invoke(
+			    Function.generateFunctionContext(
+			        function,
+			        context.getFunctionParentContext(),
+			        name,
+			        function.createArgumentsScope( namedArguments )
+			    )
 			);
-			return function.invoke( fContext );
 		} else {
 			throw new ApplicationException(
 			    "key '" + name.getName() + "' of type  '" + value.getClass().getName() + "'  is not a function "

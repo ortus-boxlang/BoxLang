@@ -34,7 +34,19 @@ public class LambdaBoxContext extends FunctionBoxContext {
 	 * @param argumentsScope The arguments scope for this context
 	 */
 	public LambdaBoxContext( IBoxContext parent, Lambda function, ArgumentsScope argumentsScope ) {
-		super( parent, function, argumentsScope );
+		this( parent, function, function.getName(), argumentsScope );
+	}
+
+	/**
+	 * Creates a new execution context with a bounded function instance and parent context and arguments scope
+	 *
+	 * @param parent             The parent context
+	 * @param function           The Closure being invoked with this context
+	 * @param functionCalledName The name of the function being invoked
+	 * @param argumentsScope     The arguments scope for this context
+	 */
+	public LambdaBoxContext( IBoxContext parent, Lambda function, Key functionCalledName, ArgumentsScope argumentsScope ) {
+		super( parent, function, functionCalledName, argumentsScope );
 		if ( parent == null ) {
 			throw new ApplicationException( "Parent context cannot be null for LambdaBoxContext" );
 		}
