@@ -18,6 +18,7 @@
 package ortus.boxlang.runtime.types.meta;
 
 import static com.google.common.truth.Truth.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -30,12 +31,13 @@ import ortus.boxlang.runtime.types.Function.Argument;
 import ortus.boxlang.runtime.types.SampleUDF;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.UDF;
+import ortus.boxlang.runtime.types.exceptions.ApplicationException;
 
 public class FunctionMetaTest {
 
 	@DisplayName( "Test function meta" )
 	@Test
-	void testFunctionMetda() {
+	void testFunctionMeta() {
 
 		UDF				udf	= new SampleUDF(
 		    UDF.Access.PUBLIC,
@@ -64,7 +66,7 @@ public class FunctionMetaTest {
 		        "returns", "awesomeness"
 		    )
 		);
-		FunctionMeta	$bx	= ( FunctionMeta ) Referencer.get( udf, BoxMeta.key, true );
+		FunctionMeta	$bx	= ( FunctionMeta ) Referencer.get( udf, BoxMeta.key, false );
 
 		assertThat( $bx.$class ).isEqualTo( SampleUDF.class );
 		assertThat( $bx.meta instanceof Struct ).isTrue();
@@ -126,6 +128,26 @@ public class FunctionMetaTest {
 		documentation = ( Struct ) param.get( "documentation" );
 		assertThat( documentation.containsKey( "hint" ) ).isTrue();
 		assertThat( documentation.get( "hint" ) ).isEqualTo( "First Name" );
+	}
+
+	@DisplayName( "Test function listener" )
+	@Test
+	void testFunctionListener() {
+
+		UDF				udf	= new SampleUDF(
+		    UDF.Access.PUBLIC,
+		    Key.of( "foo" ),
+		    "String",
+		    new Argument[] {},
+		    "Brad"
+		);
+		FunctionMeta	$bx	= ( FunctionMeta ) Referencer.get( udf, BoxMeta.key, false );
+
+		// A function is not listenable
+		assertThrows( ApplicationException.class, () -> $bx.registerChangeListener( ( key, newValue, oldValue ) -> {
+			return newValue;
+		} ) );
+
 	}
 
 }

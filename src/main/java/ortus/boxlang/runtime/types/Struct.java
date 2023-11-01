@@ -122,8 +122,8 @@ public class Struct implements Map<Key, Object>, IType, IReferenceable, IListena
 	 *
 	 * @param map The map to create the struct from
 	 */
-	protected Struct( Map<Key, Object> map, Boolean useMyMap ) {
-		this.type	= Type.DEFAULT;
+	protected Struct( Map<Key, Object> map, Type type ) {
+		this.type	= type;
 		wrapped		= map;
 	}
 

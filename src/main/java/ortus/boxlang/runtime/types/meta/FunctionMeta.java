@@ -74,4 +74,11 @@ public class FunctionMeta extends BoxMeta {
 
     }
 
+    /**
+     * Get target object this metadata is for
+     */
+    public Object getTarget() {
+        return target;
+    }
+
 }

@@ -61,7 +61,7 @@ public class ImmutableStruct extends Struct implements IImmutable {
 			    case SORTED -> new TreeMap<Key, Object>();
 			    default -> throw new ApplicationException( "Invalid struct type [" + type.name() + "]" );
 		    },
-		    true
+		    type
 		);
 		this.type = type;
 	}

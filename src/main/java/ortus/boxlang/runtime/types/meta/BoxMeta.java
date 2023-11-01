@@ -18,6 +18,7 @@
 package ortus.boxlang.runtime.types.meta;
 
 import ortus.boxlang.runtime.scopes.Key;
+import ortus.boxlang.runtime.types.exceptions.ApplicationException;
 
 /**
  * This is a base class for all meta types
@@ -25,4 +26,29 @@ import ortus.boxlang.runtime.scopes.Key;
 public abstract class BoxMeta {
 
     public static final Key key = Key.of( "bx$" );
+
+    public abstract Object getTarget();
+
+    public void registerChangeListener( IChangeListener listener ) {
+        ensureTargetListenable().registerChangeListener( listener );
+    }
+
+    public void registerChangeListener( Key key, IChangeListener listener ) {
+        ensureTargetListenable().registerChangeListener( key, listener );
+
+    }
+
+    public void removeChangeListener( Key key ) {
+        ensureTargetListenable().removeChangeListener( key );
+
+    }
+
+    private IListenable ensureTargetListenable() {
+        if ( getTarget() instanceof IListenable listenable ) {
+            return listenable;
+        } else {
+            throw new ApplicationException( "Target [" + getTarget().getClass().getName() + "] does not support change listeners." );
+        }
+    }
+
 }
