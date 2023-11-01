@@ -59,8 +59,9 @@ public class StructMetaTest {
 	@Test
 	void testStructListener() {
 
-		Struct		str	= new Struct();
-		StructMeta	$bx	= ( StructMeta ) Referencer.get( str, BoxMeta.key, false );
+		Key			bradKey	= Key.of( "brad" );
+		Struct		str		= new Struct();
+		StructMeta	$bx		= ( StructMeta ) Referencer.get( str, BoxMeta.key, false );
 
 		// Listens to all keys
 		$bx.registerChangeListener( ( key, newValue, oldValue ) -> {
@@ -71,8 +72,8 @@ public class StructMetaTest {
 		} );
 
 		// Listens for key "brad" only
-		$bx.registerChangeListener( Key.of( "brad" ), ( key, newValue, oldValue ) -> {
-			assertThat( key ).isEqualTo( Key.of( "brad" ) );
+		$bx.registerChangeListener( bradKey, ( key, newValue, oldValue ) -> {
+			assertThat( key ).isEqualTo( bradKey );
 			assertThat( newValue ).isEqualTo( "wood" );
 
 			// Override the value that's set
@@ -86,6 +87,12 @@ public class StructMetaTest {
 		// Check overridden value
 		assertThat( str.get( "brad" ) ).isEqualTo( "woods" );
 
+		$bx.removeChangeListener( bradKey );
+		$bx.removeChangeListener( IListenable.ALL_KEYS );
+
+		str.put( "luis", "majano" );
+		str.put( "jorge", "reyes" );
+		str.put( "brad", "pitt" );
 	}
 
 }

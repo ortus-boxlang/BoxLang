@@ -45,8 +45,9 @@ public class ArrayMetaTest {
 	@Test
 	void testArrayListener() {
 
-		Array		arr	= new Array();
-		GenericMeta	$bx	= ( GenericMeta ) Referencer.get( arr, BoxMeta.key, false );
+		Key			three	= Key.of( "3" );
+		Array		arr		= new Array();
+		GenericMeta	$bx		= ( GenericMeta ) Referencer.get( arr, BoxMeta.key, false );
 
 		// Listens to all keys
 		$bx.registerChangeListener( ( key, newValue, oldValue ) -> {
@@ -57,8 +58,8 @@ public class ArrayMetaTest {
 		} );
 
 		// Listens for key 3 only
-		$bx.registerChangeListener( Key.of( "3" ), ( key, newValue, oldValue ) -> {
-			assertThat( key ).isEqualTo( Key.of( "3" ) );
+		$bx.registerChangeListener( three, ( key, newValue, oldValue ) -> {
+			assertThat( key ).isEqualTo( three );
 			assertThat( newValue ).isEqualTo( "baz" );
 
 			// Override the value that's set
@@ -71,6 +72,13 @@ public class ArrayMetaTest {
 
 		// Check overridden value
 		assertThat( arr.get( 2 ) ).isEqualTo( "bum" );
+
+		$bx.removeChangeListener( three );
+		$bx.removeChangeListener( IListenable.ALL_KEYS );
+
+		arr.add( "luis" );
+		arr.add( "gavin" );
+		arr.assign( three, "jorge" );
 
 	}
 
