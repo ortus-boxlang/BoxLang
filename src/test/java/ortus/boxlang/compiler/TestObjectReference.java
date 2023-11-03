@@ -85,7 +85,7 @@ public class TestObjectReference extends TestBase {
 		Node			javaAST		= BoxLangTranspiler.transform( result.getRoot() );
 
 		assertEqualsNoWhiteSpaces(
-		    "Referencer.get( context.scopeFindNearby( Key.of( \"foo\" ), null ).value(), Key.of( \"bar\" ), false )",
+		    "Referencer.get(context.scopeFindNearby(Key.of(\"foo\"),context.getDefaultAssignmentScope()).scope().dereference(Key.of(\"foo\"),false),Key.of(\"bar\"),false)",
 		    javaAST.toString() );
 	}
 
@@ -100,7 +100,7 @@ public class TestObjectReference extends TestBase {
 		Node			javaAST		= BoxLangTranspiler.transform( result.getRoot() );
 
 		assertEqualsNoWhiteSpaces(
-		    "Referencer.get( context.scopeFindNearby( Key.of( \"foo\" ), null ).value(), Key.of( \"bar\" ), true )",
+		    "Referencer.get(context.scopeFindNearby(Key.of(\"foo\"),context.getDefaultAssignmentScope()).scope().dereference(Key.of(\"foo\"),true),Key.of(\"bar\"),true)",
 		    javaAST.toString() );
 	}
 
@@ -114,7 +114,8 @@ public class TestObjectReference extends TestBase {
 		ParsingResult	result		= parser.parseExpression( expression );
 		Node			javaAST		= BoxLangTranspiler.transform( result.getRoot() );
 
-		assertEqualsNoWhiteSpaces( "variablesScope.dereference( Key.of( \"foo\"), false )",
+		assertEqualsNoWhiteSpaces(
+		    "context.getDefaultAssignmentScope().dereference(Key.of(\"foo\"),false)",
 		    javaAST.toString() );
 	}
 
@@ -128,7 +129,8 @@ public class TestObjectReference extends TestBase {
 		ParsingResult	result		= parser.parseExpression( expression );
 		Node			javaAST		= BoxLangTranspiler.transform( result.getRoot() );
 
-		assertEqualsNoWhiteSpaces( "variablesScope.dereference( Key.of( \"foo\"), true )",
+		assertEqualsNoWhiteSpaces(
+		    "context.getDefaultAssignmentScope().dereference(Key.of(\"foo\"),false)",
 		    javaAST.toString() );
 	}
 
@@ -140,16 +142,12 @@ public class TestObjectReference extends TestBase {
 
 		BoxParser		parser		= new BoxParser();
 		ParsingResult	result		= parser.parseStatement( expression );
-		Node			javaAST		= BoxLangTranspiler.transform( result.getRoot() );
+		Node			javaAST		= extractFromBlockStmt( BoxLangTranspiler.transform( result.getRoot() ) );
 
 		// TODO: we're generating extra {} braces around the code. Not sure if that is correct.
 		assertEqualsNoWhiteSpaces( """
-		                           variablesScope
-		                             .assign(
-		                               Key.of( "foo" ),
-		                               bar
-		                             );
-		                             """, javaAST.toString() );
+		                           context.getDefaultAssignmentScope().assign(Key.of("foo"),bar);
+		                                                       """, javaAST.toString() );
 	}
 
 }

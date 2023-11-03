@@ -14,6 +14,9 @@ package ortus.boxlang.compiler;
  * BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language
  * governing permissions and limitations under the License.
  */
+import com.github.javaparser.ast.Node;
+import com.github.javaparser.ast.stmt.BlockStmt;
+
 import java.io.IOException;
 import java.nio.file.*;
 import java.nio.file.attribute.BasicFileAttributes;
@@ -75,5 +78,13 @@ public class TestBase {
 
 	protected void assertEqualsNoWhiteSpaces( String expected, String actual ) {
 		assertEquals( expected.replaceAll( "[ \\t\\r\\n]", "" ), actual.replaceAll( "[ \\t\\r\\n]", "" ) );
+	}
+
+	protected Node extractFromBlockStmt( Node stmt ) {
+		if ( stmt instanceof BlockStmt s ) {
+			return s.getStatements().get( 0 );
+		}
+		return stmt;
+
 	}
 }
