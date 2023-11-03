@@ -203,11 +203,15 @@ public class BoxCFParser extends BoxAbstractParser {
 	 * @see BoxImport
 	 */
 	private BoxStatement toAst( File file, CFParser.ImportStatementContext rule ) {
-		BoxExpr expr = null;
+		BoxExpr	expr	= null;
+		BoxExpr	alias	= null;
 		if ( rule.fqn() != null ) {
 			expr = toAst( file, rule.fqn() );
 		}
-		return new BoxImport( expr, getPosition( rule ), getSourceText( rule ) );
+		if ( rule.identifier() != null ) {
+			alias = toAst( file, rule.identifier() );
+		}
+		return new BoxImport( expr, alias, getPosition( rule ), getSourceText( rule ) );
 	}
 
 	/**
@@ -1068,6 +1072,32 @@ public class BoxCFParser extends BoxAbstractParser {
 			BoxExpr	left	= toAst( file, expression.expression( 0 ) );
 			BoxExpr	right	= toAst( file, expression.expression( 1 ) );
 			return new BoxBinaryOperation( left, BoxBinaryOperator.CastAs, right, getPosition( expression ), getSourceText( expression ) );
+		} else if ( expression.create() != null ) {
+			BoxExpr				expr	= null;
+			List<BoxArgument>	args	= new ArrayList<>();
+			if ( expression.create().argumentList() != null ) {
+				for ( CFParser.ArgumentContext arg : expression.create().argumentList().argument() ) {
+					args.add( toAst( file, arg ) );
+				}
+			}
+			if ( expression.create().fqn() != null ) {
+				expr = toAst( file, expression.create().fqn() );
+			}
+			if ( expression.create().stringLiteral() != null ) {
+				List<BoxExpr> parts = new ArrayList<>();
+				expression.create().stringLiteral().children.forEach( it -> {
+					if ( it != null && it instanceof CFParser.StringLiteralPartContext ) {
+						parts.add( new BoxStringLiteral( "\"" + getSourceText( ( ParserRuleContext ) it ) + "\"", getPosition( ( ParserRuleContext ) it ),
+						    getSourceText( ( ParserRuleContext ) it ) ) );
+					}
+					if ( it != null && it instanceof CFParser.ExpressionContext ) {
+						parts.add( toAst( file, ( CFParser.ExpressionContext ) it ) );
+					}
+				} );
+				expr = new BoxStringInterpolation( parts, getPosition( expression.create().stringLiteral() ),
+				    getSourceText( expression.create().stringLiteral() ) );
+			}
+			return new BoxNewOperation( expr, args, getPosition( expression ), getSourceText( expression ) );
 		} else if ( expression.ICHAR() != null ) {
 			List<BoxExpr> parts = new ArrayList<>();
 			parts.add( toAst( file, expression.expression( 0 ) ) );
