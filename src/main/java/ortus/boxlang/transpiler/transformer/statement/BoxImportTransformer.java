@@ -34,10 +34,14 @@ public class BoxImportTransformer extends AbstractTransformer {
 	public Node transform( BoxNode node, TransformerContext context ) throws IllegalStateException {
 		BoxImport			boxImport	= ( BoxImport ) node;
 		Expression			namespace	= ( Expression ) BoxLangTranspiler.transform( boxImport.getExpression(), TransformerContext.RIGHT );
+		String				alias		= boxImport.getAlias() != null
+		    ? " as " + BoxLangTranspiler.transform( boxImport.getAlias(), TransformerContext.RIGHT ).toString()
+		    : "";
+
 		Map<String, String>	values		= new HashMap<>() {
 
 											{
-												put( "namespace", namespace.toString() );
+												put( "namespace", namespace.toString() + alias );
 
 											}
 										};
