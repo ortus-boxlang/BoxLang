@@ -39,7 +39,9 @@ public class BoxNewOperation extends BoxExpr {
 	public BoxNewOperation( BoxExpr expression, List<BoxArgument> arguments, Position position, String sourceText ) {
 		super( position, sourceText );
 		this.expression = expression;
-		this.expression.setParent( this );
+		if ( expression != null ) {
+			this.expression.setParent( this );
+		}
 		this.arguments = Collections.unmodifiableList( arguments );
 		this.arguments.forEach( arg -> arg.setParent( this ) );
 	}
