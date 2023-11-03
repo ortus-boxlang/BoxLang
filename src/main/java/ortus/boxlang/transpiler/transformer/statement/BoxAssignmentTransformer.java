@@ -115,12 +115,12 @@ public class BoxAssignmentTransformer extends AbstractTransformer {
 				values.put( "left", left.toString() );
 				values.put( "right", right.toString() );
 				if ( right instanceof NameExpr rname ) {
-					String tmp = "context.scopeFindNearby( Key.of( \"" + rname + "\" ), variablesScope).value()";
+					String tmp = "context.scopeFindNearby( Key.of( \"" + rname + "\" ), context.getDefaultAssignmentScope()).value()";
 					values.put( "right", tmp );
 				}
 
 				String template = """
-				                  context.scopeFindNearby(Key.of( "${left}" ),variablesScope).scope().assign( Key.of( "${left}" ), ${right} )
+				                  context.scopeFindNearby(Key.of( "${left}" ),context.getDefaultAssignmentScope()).scope().assign( Key.of( "${left}" ), ${right} )
 				                  """;
 
 				javaExpr = new ExpressionStmt( ( Expression ) parseExpression( template, values ) );
@@ -128,31 +128,31 @@ public class BoxAssignmentTransformer extends AbstractTransformer {
 				if ( assigment.getOp() == BoxAssigmentOperator.PlusEqual ) {
 					values.put( "left", left.toString() );
 					values.put( "right", right.toString() );
-					template	= "Plus.invoke(context.scopeFindNearby(Key.of( \"${left}\" ),variablesScope).scope(),Key.of( \"${left}\"),${right})";
+					template	= "Plus.invoke(context.scopeFindNearby(Key.of( \"${left}\" ),context.getDefaultAssignmentScope()).scope(),Key.of( \"${left}\"),${right})";
 					javaExpr	= new ExpressionStmt( ( Expression ) parseExpression( template, values ) );
 				}
 				if ( assigment.getOp() == BoxAssigmentOperator.MinusEqual ) {
 					values.put( "left", left.toString() );
 					values.put( "right", right.toString() );
-					template	= "Minus.invoke(context.scopeFindNearby(Key.of( \"${left}\" ),variablesScope).scope(),Key.of( \"${left}\"),${right})";
+					template	= "Minus.invoke(context.scopeFindNearby(Key.of( \"${left}\" ),context.getDefaultAssignmentScope()).scope(),Key.of( \"${left}\"),${right})";
 					javaExpr	= new ExpressionStmt( ( Expression ) parseExpression( template, values ) );
 				}
 				if ( assigment.getOp() == BoxAssigmentOperator.StarEqual ) {
 					values.put( "left", left.toString() );
 					values.put( "right", right.toString() );
-					template	= "Multiply.invoke(context.scopeFindNearby(Key.of( \"${left}\" ),variablesScope).scope(),Key.of( \"${left}\"),${right})";
+					template	= "Multiply.invoke(context.scopeFindNearby(Key.of( \"${left}\" ),context.getDefaultAssignmentScope()).scope(),Key.of( \"${left}\"),${right})";
 					javaExpr	= new ExpressionStmt( ( Expression ) parseExpression( template, values ) );
 				}
 				if ( assigment.getOp() == BoxAssigmentOperator.SlashEqual ) {
 					values.put( "left", left.toString() );
 					values.put( "right", right.toString() );
-					template	= "Divide.invoke(context.scopeFindNearby(Key.of( \"${left}\" ),variablesScope).scope(),Key.of( \"${left}\"),${right})";
+					template	= "Divide.invoke(context.scopeFindNearby(Key.of( \"${left}\" ),context.getDefaultAssignmentScope()).scope(),Key.of( \"${left}\"),${right})";
 					javaExpr	= new ExpressionStmt( ( Expression ) parseExpression( template, values ) );
 				}
 				if ( assigment.getOp() == BoxAssigmentOperator.ConcatEqual ) {
 					values.put( "left", left.toString() );
 					values.put( "right", right.toString() );
-					template	= "Concat.invoke(context.scopeFindNearby(Key.of( \"${left}\" ),variablesScope).scope(),Key.of( \"${left}\"),${right})";
+					template	= "Concat.invoke(context.scopeFindNearby(Key.of( \"${left}\" ),context.getDefaultAssignmentScope()).scope(),Key.of( \"${left}\"),${right})";
 					javaExpr	= new ExpressionStmt( ( Expression ) parseExpression( template, values ) );
 				}
 			}

@@ -462,11 +462,14 @@ public class BoxCFParser extends BoxAbstractParser {
 		List<BoxStatement> statements = new ArrayList<>();
 		if ( node.statement() != null ) {
 			statements.add( toAst( file, node.statement() ) );
+
 		}
 		if ( node.statementBlock() != null ) {
 			statements.addAll( toAst( file, node.statementBlock() ) );
 		}
-
+		if ( node.break_() != null ) {
+			statements.add( toAst( file, node.break_() ) );
+		}
 		return new BoxSwitchCase( expr, statements, getPosition( node ), getSourceText( node ) );
 	}
 

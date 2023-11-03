@@ -310,7 +310,7 @@ switch
   ;
 
 case
-	: CASE (expression) COLON (statement | statementBlock)?
+	: CASE (expression) COLON (statement | statementBlock)? break?
 	| DEFAULT COLON (statement | statementBlock)?
   ;
 

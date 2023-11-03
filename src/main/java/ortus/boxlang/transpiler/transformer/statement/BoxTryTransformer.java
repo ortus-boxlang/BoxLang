@@ -38,8 +38,16 @@ import ortus.boxlang.transpiler.transformer.TransformerContext;
 import ortus.boxlang.transpiler.transformer.expression.BoxParenthesisTransformer;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
+/***
+ * catchContext = new CatchBoxContext(context, Key.of("e"), e1); //
+ * {
+ * context.scopeFindNearby(Key.of("one"), context.getDefaultAssignmentScope()).scope().assign(Key.of("one"),
+ * Referencer.getAndInvoke(context, e /*** Do not use , Key.of("getMessage"), new Object[] {}, false));
+ * }
+ */
 public class BoxTryTransformer extends AbstractTransformer {
 
 	Logger logger = LoggerFactory.getLogger( BoxParenthesisTransformer.class );
@@ -89,11 +97,13 @@ public class BoxTryTransformer extends AbstractTransformer {
 	}
 
 	private String computeName( BoxTryCatch clause ) throws IllegalStateException {
+		List<ortus.boxlang.ast.Node> ancestors = clause.walkAncestors().stream().filter( it -> it instanceof BoxTry ).toList();
+
 		if ( clause.getException() instanceof BoxStringLiteral literal ) {
 			return literal.getValue();
 		}
 		if ( clause.getException() instanceof BoxIdentifier identifier ) {
-			return identifier.getName();
+			return identifier.getName(); // + ancestors.size();
 		}
 		throw new IllegalStateException( "invalid name" );
 	}

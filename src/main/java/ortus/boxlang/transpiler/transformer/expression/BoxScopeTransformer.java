@@ -29,7 +29,8 @@ public class BoxScopeTransformer extends AbstractTransformer {
 		if ( "local".equalsIgnoreCase( scope.getName() ) ) {
 			template = "context.getScopeNearby(  LocalScope.name )";
 		} else {
-			template = "${scope}Scope";
+			// template = "${scope}Scope";
+			template = "context.getDefaultAssignmentScope()";
 		}
 
 		Node javaExpr = parseExpression( template, values );

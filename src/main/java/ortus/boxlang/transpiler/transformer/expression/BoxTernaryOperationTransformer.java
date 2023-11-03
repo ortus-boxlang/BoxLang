@@ -29,7 +29,7 @@ public class BoxTernaryOperationTransformer extends AbstractTransformer {
 											}
 										};
 		if ( condition instanceof NameExpr name ) {
-			String tmp = "context.scopeFindNearby( Key.of( \"" + name + "\" ), variablesScope).value()";
+			String tmp = "context.scopeFindNearby( Key.of( \"" + name + "\" ), context.getDefaultAssignmentScope()).value()";
 			values.put( "condition", tmp );
 		}
 

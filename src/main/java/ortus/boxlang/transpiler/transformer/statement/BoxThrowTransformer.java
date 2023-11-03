@@ -40,7 +40,7 @@ public class BoxThrowTransformer extends AbstractTransformer {
 
 											}
 										};
-		String				template	= "throw (${expr});";
+		String				template	= "throw (RuntimeException)DynamicObject.unWrap(${expr});";
 		Node				javaStmt	= parseStatement( template, values );
 		logger.info( node.getSourceText() + " -> " + javaStmt );
 		addIndex( javaStmt, node );
