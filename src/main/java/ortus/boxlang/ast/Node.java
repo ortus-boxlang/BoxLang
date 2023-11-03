@@ -14,6 +14,8 @@
  */
 package ortus.boxlang.ast;
 
+import ortus.boxlang.ast.statement.BoxTry;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -105,6 +107,21 @@ public class Node {
 		result.add( this );
 		for ( Node node : this.children ) {
 			result.addAll( node.walk() );
+		}
+		return result;
+	}
+
+	/**
+	 * Walk the ancestors of a node
+	 *
+	 * @return a list of ancestor nodes
+	 */
+	public List<Node> walkAncestors() {
+		List<Node>	result	= new ArrayList<>();
+		Node		node	= this.parent;
+		while ( node != null ) {
+			result.add( node );
+			node = node.parent;
 		}
 		return result;
 	}
