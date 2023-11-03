@@ -55,7 +55,7 @@ public class BoxNewOperationTransformer extends AbstractTransformer {
 										};
 		String				template	= """
 		                                  	JavaLoader.load(	context,
-		                                  		${expr},
+		                                  		(String)${expr},
 		                                  	  imports
 		                                  	).invokeConstructor( new Object[] { ${args} } )
 		                                  """;
