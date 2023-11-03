@@ -2,6 +2,7 @@ package ortus.boxlang.transpiler.transformer.expression;
 
 import com.github.javaparser.ast.Node;
 import com.github.javaparser.ast.expr.Expression;
+import com.github.javaparser.ast.expr.NameExpr;
 import ortus.boxlang.ast.BoxNode;
 import ortus.boxlang.ast.expression.BoxTernaryOperation;
 import ortus.boxlang.transpiler.BoxLangTranspiler;
@@ -19,7 +20,6 @@ public class BoxTernaryOperationTransformer extends AbstractTransformer {
 		Expression			condition	= ( Expression ) BoxLangTranspiler.transform( operation.getCondition() /* , TransformerContext.DEREFERENCING */ );
 		Expression			whenTrue	= ( Expression ) BoxLangTranspiler.transform( operation.getWhenTrue() );
 		Expression			whenFalse	= ( Expression ) BoxLangTranspiler.transform( operation.getWhenFalse() );
-
 		Map<String, String>	values		= new HashMap<>() {
 
 											{
@@ -28,8 +28,12 @@ public class BoxTernaryOperationTransformer extends AbstractTransformer {
 												put( "whenFalse", whenFalse.toString() );
 											}
 										};
-		String				template	= "Ternary.invoke(${condition},${whenTrue},${whenFalse})";
-		;
+		if ( condition instanceof NameExpr name ) {
+			String tmp = "context.scopeFindNearby( Key.of( \"" + name + "\" ), variablesScope).value()";
+			values.put( "condition", tmp );
+		}
+
+		String template = "Ternary.invoke(${condition},${whenTrue},${whenFalse})";
 
 		return parseExpression( template, values );
 	}
