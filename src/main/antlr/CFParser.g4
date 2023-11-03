@@ -429,7 +429,7 @@ new
     ;
 
 create
-    :   CREATE (JAVA COLON)? (fqn | stringLiteral) (LPAREN argumentList? RPAREN)?
+    :   CREATE (JAVA COLON)? (fqn | stringLiteral)? (LPAREN argumentList? RPAREN)?
     // TODO add namespace
     ;
 
