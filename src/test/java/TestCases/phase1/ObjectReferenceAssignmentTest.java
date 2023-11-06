@@ -117,8 +117,7 @@ public class ObjectReferenceAssignmentTest {
 
 	@DisplayName( "dereference key" )
 	@Test
-	public void tesDereferenceKey() {
-		// MT TODO: The new keyword doesn't work, so this test is failing
+	public void testDereferenceKey() {
 		instance.executeSource(
 		    """
 		       str = new java:ortus.boxlang.runtime.types.Struct();
@@ -132,8 +131,7 @@ public class ObjectReferenceAssignmentTest {
 
 	@DisplayName( "dereference headless" )
 	@Test
-	public void tesDereferenceHeadless() {
-		// MT TODO: unscoped foo needs searched for in nearby scopes
+	public void testDereferenceHeadless() {
 		instance.executeSource(
 		    """
 		    variables.foo = 5;
@@ -164,18 +162,15 @@ public class ObjectReferenceAssignmentTest {
 	public void testVarKeywordForLocal() {
 		FunctionBoxContext functionBoxContext = new FunctionBoxContext( context,
 		    new SampleUDF( Access.PUBLIC, Key.of( "func" ), "any", new Argument[] {}, "" ) );
-		// MT TODO: Java source is trying to access localScope symbol, but it's never defined. Need to track what scopes are used
 		instance.executeSource(
 		    """
-		    // Needs extranous `Key.of( LocalScope.name )` turned into just `LocalScope.name`
 		    var foo = 5;
-		    // Don't know why this fails
 		    local.bar = 6;
 		    """,
 		    functionBoxContext );
 		IScope localScope = functionBoxContext.getScopeNearby( LocalScope.name );
 		assertThat( localScope.dereference( Key.of( "foo" ), false ) ).isEqualTo( 5 );
-		assertThat( localScope.dereference( Key.of( "bar" ), false ) ).isEqualTo( 5 );
+		assertThat( localScope.dereference( Key.of( "bar" ), false ) ).isEqualTo( 6 );
 
 	}
 

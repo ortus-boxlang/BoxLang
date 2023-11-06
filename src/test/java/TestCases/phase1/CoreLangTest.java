@@ -435,6 +435,23 @@ public class CoreLangTest {
 
 	}
 
+	@DisplayName( "String parsing unclosed quotes" )
+	@Test
+	public void testStringParsingUnclosedQuotes() {
+
+		assertThrows( ApplicationException.class, () -> instance.executeSource(
+		    """
+		    foo = "unfinished
+		     """,
+		    context ) );
+
+		assertThrows( ApplicationException.class, () -> instance.executeSource(
+		    """
+		    foo = 'unfinished
+		     """,
+		    context ) );
+	}
+
 	@DisplayName( "String parsing unclosed pound" )
 	@Test
 	public void testStringParsingUnclosedPount() {
@@ -474,7 +491,6 @@ public class CoreLangTest {
 	@Test
 	public void testStringParsingExpressionInPounds() {
 
-		// MT TODO: Needs to use Concat operator, not Java's `+`
 		instance.executeSource(
 		    """
 		    result = "Box#5+6#Lang"
@@ -489,7 +505,6 @@ public class CoreLangTest {
 	@Test
 	public void testSwitch() {
 
-		// MT TODO: This code runs on both Adobe and Lucee CF engines
 		instance.executeSource(
 		    """
 		      	result = ""
@@ -527,7 +542,6 @@ public class CoreLangTest {
 	@Test
 	public void testSwitchDefault() {
 
-		// MT TODO: This code runs on both Adobe and Lucee CF engines
 		instance.executeSource(
 		    """
 		      	result = ""

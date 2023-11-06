@@ -136,7 +136,6 @@ public class OperatorsTest {
 	@DisplayName( "math plus plus literals" )
 	@Test
 	public void testMathPlusPlusLiterals() {
-		// MT TODO: Parsing error on ++
 		Object result = instance.executeStatement( "5++", context );
 		assertThat( result ).isEqualTo( 5 );
 
@@ -178,7 +177,6 @@ public class OperatorsTest {
 	@DisplayName( "math minus minus literals" )
 	@Test
 	public void testMathMinusMinusLiterals() {
-		// MT TODO: Parsing error on --
 		Object result = instance.executeStatement( "5--", context );
 		assertThat( result ).isEqualTo( 5 );
 
@@ -290,7 +288,7 @@ public class OperatorsTest {
 		result = instance.executeStatement( "foo ?: 'default'", context );
 		assertThat( result ).isEqualTo( "default" );
 		// MT TODO: Dereferencing on the left hand side of an Elvis operator needs to done safely
-		result = instance.executeStatement( "foo.bar.baz ?: 'default'", context );
+		result = instance.executeStatement( "foo.bar ?: 'default'", context );
 		assertThat( result ).isEqualTo( "default" );
 
 		// MT TODO: Dereferencing on the left hand side of an Elvis operator needs to done safely
@@ -313,7 +311,6 @@ public class OperatorsTest {
 		result = instance.executeStatement( "FALSE ? 'itwastrue' : 'itwasfalse'", context );
 		assertThat( result ).isEqualTo( "itwasfalse" );
 
-		// MT TODO: scoped tmp lookup is missing, technically no issue with ternary
 		instance.executeSource(
 		    """
 		    tmp = true;
@@ -341,6 +338,7 @@ public class OperatorsTest {
 	public void testCastAs() {
 		// MT TODO: variable sdf should not exist, therefore an error needs to be thrown
 		// The issue is we're using scope.get() instead of an unsafe dereference() to get the sdf variable
+		instance.executeStatement( "5 castAs sdf", context );
 		assertThrows( KeyNotFoundException.class, () -> instance.executeStatement( "5 castAs sdf", context ) );
 
 		Object result = instance.executeStatement( "5 castAs 'String'", context );
@@ -502,7 +500,6 @@ public class OperatorsTest {
 		result = instance.executeStatement( "2*2%3", context );
 		assertThat( result ).isEqualTo( 1 );
 
-		// MT TODO: Parsing eror on ++5
 		result = instance.executeStatement( "++5^--6", context );
 		assertThat( result ).isEqualTo( 7776 );
 

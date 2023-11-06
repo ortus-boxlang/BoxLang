@@ -267,14 +267,16 @@ public class JavaBoxpiler {
 
 				Position			position	= new Position( new Point( 1, 1 ), new Point( 1, source.length() ) );
 
-				Node				javaAST		= ( Node ) transpiler.transpile(
-				    new BoxScript(
+				List<CompilationUnit>	javaASTs	= transpiler.transpileMany( new BoxScript(
 				        List.of( result.getRoot() instanceof BoxStatement ? ( BoxStatement ) result.getRoot()
 				            : new BoxExpression( ( BoxExpr ) result.getRoot(), position, source ) ),
 				        position,
 				        source
-				    )
-				);
+				    ) );
+				//Node				javaAST		= ( Node ) transpiler.transpile(			);
+				
+				if ( false )
+					throw new ApplicationException( "&&&&&&&\n\n\n\n" + getStatementsAsStringReturnLast( transpiler ) + "\n\n\n\n&&&&&&" );
 
 				compileSource( makeClass( getStatementsAsStringReturnLast( transpiler ), "BoxScript", packageName, className ), fqn );
 			}
@@ -314,13 +316,13 @@ public class JavaBoxpiler {
 				for ( int i = 0; i < javaASTs.size(); i++ ) {
 					test += javaASTs.get( i ).toString();
 					if ( i < javaASTs.size() - 1 ) {
-						test += "\n\n\n&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&\n\n\n";
+						test += "\n\n\n	&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&\n\n\n";
 					}
 				}
 				if ( false )
 					throw new ApplicationException( test );
 
-				Node javaAST = ( Node ) transpiler.transpile( ( BoxScript ) result.getRoot() );
+				//Node javaAST = ( Node ) transpiler.transpile( ( BoxScript ) result.getRoot() );
 
 				compileSource( makeClass( transpiler.getStatementsAsString() + "\n return null;", "BoxScript", packageName, className ), fqn );
 			}
@@ -350,7 +352,7 @@ public class JavaBoxpiler {
 				assert result.isCorrect();
 
 				BoxLangTranspiler	transpiler	= new BoxLangTranspiler();
-				Node				javaAST		= ( Node ) transpiler.transpile( result.getRoot() );
+				List<CompilationUnit>	javaASTs		= transpiler.transpileMany( result.getRoot() );
 
 				compileSource( makeClass( transpiler.getStatementsAsString(), "BoxTemplate", packageName, className ), fqn );
 			}

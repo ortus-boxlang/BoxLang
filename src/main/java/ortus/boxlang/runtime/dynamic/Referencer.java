@@ -133,7 +133,7 @@ public class Referencer {
 			}
 
 			// For all intermediate keys, check if they exist and are a Struct
-			Object next = obj.dereference( key, true );
+			Object next = DynamicObject.unWrap( obj.dereference( key, true ) );
 			// If missing, create as a Struct
 			if ( next == null ) {
 
@@ -142,7 +142,7 @@ public class Referencer {
 				// If it's not null, it needs to be a Map
 			} else if ( ! ( next instanceof Map ) ) {
 				throw new ApplicationException(
-				    String.format( "Cannot assign to key [%s] because it is a [%s] and not a Struct", key,
+				    String.format( "Cannot assign to key [%s] because it is a [%s] and not a Struct", key.getName(),
 				        next.getClass().getName() )
 				);
 			}
