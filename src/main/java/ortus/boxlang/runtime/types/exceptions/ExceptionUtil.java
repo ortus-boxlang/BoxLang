@@ -18,6 +18,7 @@
 package ortus.boxlang.runtime.types.exceptions;
 
 import ortus.boxlang.runtime.context.IBoxContext;
+import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.operators.InstanceOf;
 
 /**
@@ -38,5 +39,18 @@ public class ExceptionUtil {
 			return true;
 		}
 		return false;
+	}
+
+	public static void throwException( Object exception ) {
+		Object ex = DynamicObject.unWrap(exception);
+		if( ex instanceof RuntimeException runtimeException ) {
+			throw runtimeException;
+		} else if( ex instanceof Throwable throwable ) {
+			throw new ApplicationException(throwable.getMessage(), throwable );
+		} if( ex instanceof String string ) {
+			throw new ApplicationException( string );			
+		} else {
+			throw new ApplicationException( "Cannot throw object of type [" + ex.getClass().getName() + "].  Must be a Throwable." );
+		}
 	}
 }
