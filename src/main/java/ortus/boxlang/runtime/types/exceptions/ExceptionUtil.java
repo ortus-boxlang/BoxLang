@@ -26,6 +26,15 @@ import ortus.boxlang.runtime.operators.InstanceOf;
  */
 public class ExceptionUtil {
 
+	/**
+	 * Checks if an exception is of a given type
+	 *
+	 * @param context The context
+	 * @param e       The exception
+	 * @param type    The type
+	 *
+	 * @return True if the exception is of the given type
+	 */
 	public static Boolean exceptionIsOfType( IBoxContext context, Throwable e, String type ) {
 		// BoxLangExceptions check the type
 		if ( e instanceof BoxLangException ble ) {
@@ -41,14 +50,21 @@ public class ExceptionUtil {
 		return false;
 	}
 
+	/**
+	 * Throws a BoxLang exception or a passed in exception
+	 *
+	 * @param exception The exception to throw
+	 */
 	public static void throwException( Object exception ) {
-		Object ex = DynamicObject.unWrap(exception);
-		if( ex instanceof RuntimeException runtimeException ) {
+		Object ex = DynamicObject.unWrap( exception );
+
+		if ( ex instanceof RuntimeException runtimeException ) {
 			throw runtimeException;
-		} else if( ex instanceof Throwable throwable ) {
-			throw new ApplicationException(throwable.getMessage(), throwable );
-		} if( ex instanceof String string ) {
-			throw new ApplicationException( string );			
+		} else if ( ex instanceof Throwable throwable ) {
+			throw new ApplicationException( throwable.getMessage(), throwable );
+		}
+		if ( ex instanceof String string ) {
+			throw new ApplicationException( string );
 		} else {
 			throw new ApplicationException( "Cannot throw object of type [" + ex.getClass().getName() + "].  Must be a Throwable." );
 		}
