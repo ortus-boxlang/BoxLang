@@ -112,13 +112,11 @@ public class BoxRuntimeTest {
 		IBoxContext	context		= new ScriptingBoxContext();
 
 		Object		result		= instance.executeStatement( "foo=2+2", context );
-		// TODO: failing, needs to use assing instead of put
-		// assertThat( result ).isEqualTo( 4 );
+		assertThat( result ).isEqualTo( 4 );
 		assertThat( context.getScopeNearby( VariablesScope.name ).get( Key.of( "foo" ) ) ).isEqualTo( 4 );
 
-		instance.executeStatement( "variables.bar=2+3", context );
-		// TODO: failing, needs to use assing instead of put
-		// assertThat( result ).isEqualTo( 5 );
+		result		= instance.executeStatement( "variables.bar=2+3", context );
+		assertThat( result ).isEqualTo( 5 );
 		assertThat( context.getScopeNearby( VariablesScope.name ).get( Key.of( "bar" ) ) ).isEqualTo( 5 );
 
 		instance.shutdown();
