@@ -36,15 +36,13 @@ import ortus.boxlang.runtime.scopes.VariablesScope;
 public class ObjectCreationTest {
 
 	static BoxRuntime	instance;
-	static IBoxContext	context;
-	static IScope		variables;
+	IBoxContext	context;
+	IScope		variables;
 	static Key			resultKey	= new Key( "result" );
 
 	@BeforeAll
 	public static void setUp() {
 		instance	= BoxRuntime.getInstance( true );
-		context		= new ScriptingBoxContext( instance.getRuntimeContext() );
-		variables	= context.getScopeNearby( VariablesScope.name );
 	}
 
 	@AfterAll
@@ -54,7 +52,8 @@ public class ObjectCreationTest {
 
 	@BeforeEach
 	public void setupEach() {
-		context.getScopeNearby( VariablesScope.name ).clear();
+		context		= new ScriptingBoxContext( instance.getRuntimeContext() );
+		variables	= context.getScopeNearby( VariablesScope.name );
 	}
 
 	@DisplayName( "new keyword prefix" )

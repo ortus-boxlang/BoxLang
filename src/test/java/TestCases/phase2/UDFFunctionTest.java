@@ -43,16 +43,14 @@ import ortus.boxlang.runtime.types.UDF;
 public class UDFFunctionTest {
 
 	static BoxRuntime	instance;
-	static IBoxContext	context;
-	static IScope		variables;
+	IBoxContext	context;
+	IScope		variables;
 	static Key			result	= new Key( "result" );
 	static Key			foo		= new Key( "foo" );
 
 	@BeforeAll
 	public static void setUp() {
 		instance	= BoxRuntime.getInstance( true );
-		context		= new ScriptingBoxContext( instance.getRuntimeContext() );
-		variables	= context.getScopeNearby( VariablesScope.name );
 	}
 
 	@AfterAll
@@ -62,7 +60,8 @@ public class UDFFunctionTest {
 
 	@BeforeEach
 	public void setupEach() {
-		context.getScopeNearby( VariablesScope.name ).clear();
+		context		= new ScriptingBoxContext( instance.getRuntimeContext() );
+		variables	= context.getScopeNearby( VariablesScope.name );
 	}
 
 	@DisplayName( "basic UDF" )

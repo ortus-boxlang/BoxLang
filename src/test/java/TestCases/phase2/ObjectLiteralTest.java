@@ -41,8 +41,8 @@ import ortus.boxlang.runtime.types.Struct;
 public class ObjectLiteralTest {
 
 	static BoxRuntime	instance;
-	static IBoxContext	context;
-	static IScope		variables;
+	IBoxContext	context;
+	IScope		variables;
 	static Key			result	= new Key( "result" );
 	static Key			one		= new Key( "1" );
 	static Key			two		= new Key( "2" );
@@ -51,8 +51,6 @@ public class ObjectLiteralTest {
 	@BeforeAll
 	public static void setUp() {
 		instance	= BoxRuntime.getInstance( true );
-		context		= new ScriptingBoxContext( instance.getRuntimeContext() );
-		variables	= context.getScopeNearby( VariablesScope.name );
 	}
 
 	@AfterAll
@@ -62,7 +60,8 @@ public class ObjectLiteralTest {
 
 	@BeforeEach
 	public void setupEach() {
-		context.getScopeNearby( VariablesScope.name ).clear();
+		context		= new ScriptingBoxContext( instance.getRuntimeContext() );
+		variables	= context.getScopeNearby( VariablesScope.name );
 	}
 
 	@DisplayName( "array" )

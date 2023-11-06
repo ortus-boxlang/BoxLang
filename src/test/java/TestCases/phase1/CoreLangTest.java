@@ -41,15 +41,13 @@ import ortus.boxlang.runtime.types.exceptions.NoFieldException;
 public class CoreLangTest {
 
 	static BoxRuntime	instance;
-	static IBoxContext	context;
-	static IScope		variables;
+	IBoxContext	context;
+	IScope		variables;
 	static Key			result	= new Key( "result" );
 
 	@BeforeAll
 	public static void setUp() {
 		instance	= BoxRuntime.getInstance( true );
-		context		= new ScriptingBoxContext( instance.getRuntimeContext() );
-		variables	= context.getScopeNearby( VariablesScope.name );
 	}
 
 	@AfterAll
@@ -59,7 +57,8 @@ public class CoreLangTest {
 
 	@BeforeEach
 	public void setupEach() {
-		context.getScopeNearby( VariablesScope.name ).clear();
+		context		= new ScriptingBoxContext( instance.getRuntimeContext() );
+		variables	= context.getScopeNearby( VariablesScope.name );
 	}
 
 	@DisplayName( "if" )
@@ -435,6 +434,23 @@ public class CoreLangTest {
 
 	}
 
+	@DisplayName( "String parsing concat" )
+	@Test
+	public void testStringParsingConcat() {
+
+		instance.executeSource(
+		    """
+			variables.a = "brad"
+			variables.b = "luis"
+		    variables.result = "a is #variables.a# and b is #variables.b#"
+	
+		     """,
+		    context );
+		assertThat( variables.dereference( Key.of( "result" ), false ) ).isEqualTo( "a is brad and b is luis" );
+
+	}
+
+	
 	@DisplayName( "String parsing unclosed quotes" )
 	@Test
 	public void testStringParsingUnclosedQuotes() {
