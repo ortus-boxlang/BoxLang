@@ -55,10 +55,10 @@ public class HelloWorld$cfm extends BoxTemplate {
 		// Reference to the variables scope
 		IScope variablesScope = context.getScopeNearby( Key.of( "variables" ) );
 
-		ClassLocator JavaLoader = ClassLocator.getInstance();
+		ClassLocator classLocator = ClassLocator.getInstance();
 
 		// Case sensitive set
-		variablesScope.put( Key.of( "system" ), JavaLoader.load( context, "java.lang.System" ) );
+		variablesScope.put( Key.of( "system" ), classLocator.load( context, "java.lang.System" ) );
 
 		variablesScope.put(
 			// Case insensitive set

@@ -205,7 +205,8 @@ public class TestOperators extends TestBase {
 		ParsingResult	result		= parseExpression( expression );
 		Node			javaAST		= BoxLangTranspiler.transform( result.getRoot() );
 
-		assertEquals( "Ternary.invoke(context.scopeFindNearby(Key.of(\"isGood\"), context.getDefaultAssignmentScope()).value(), \"eat\", \"toss\")",
+		// isGood is not on the left hand side of an elvis or save navigation operator, so it should not be providing a default scope.  We want it to error if not found.
+		assertEquals( "Ternary.invoke(context.scopeFindNearby(Key.of(\"isGood\"), null	).value(), \"eat\", \"toss\")",
 		    javaAST.toString() );
 
 	}
@@ -219,12 +220,12 @@ public class TestOperators extends TestBase {
 		ParsingResult	result		= parseExpression( expression );
 		Node			javaAST		= BoxLangTranspiler.transform( result.getRoot() );
 
-		assertEquals( "context.getDefaultAssignmentScope().dereference(Key.of(\"system\"), false)", javaAST.toString() );
+		// Explicit use of variables scope should be direcfty referencing the variables scope.  No need to search for it.
+		assertEquals( "variablesScope.dereference(Key.of(\"system\"), false)", javaAST.toString() );
 
 	}
 
 	@Test
-	@Disabled( "Failing due to change in specs" )
 	public void referenceToIdentifier() throws IOException {
 		String			expression	= """
 		                              			foo
@@ -234,7 +235,7 @@ public class TestOperators extends TestBase {
 		Node			javaAST		= BoxLangTranspiler.transform( result.getRoot() );
 
 		// TODO: foo is getting returned direclty instead of searching the scopes for it
-		assertEqualsNoWhiteSpaces( "context.scopeFindNearby(Key.of(\"foo\")).value()", javaAST.toString() );
+		assertEqualsNoWhiteSpaces( "context.scopeFindNearby(Key.of(\"foo\"),null).value()", javaAST.toString() );
 
 	}
 
@@ -248,12 +249,11 @@ public class TestOperators extends TestBase {
 		Node			javaAST		= BoxLangTranspiler.transform( result.getRoot() );
 		// TODO: Since we're dereferencing on the left hand side of the elvis operator, we must pass "true" to the safe param of the dereference method
 		assertEqualsNoWhiteSpaces(
-		    "Elvis.invoke(context.getDefaultAssignmentScope().dereference(Key.of(\"maybeNull\"),false),\"useifnull\")", javaAST.toString() );
+		    "Elvis.invoke(variablesScope.dereference(Key.of(\"maybeNull\"),true),\"useifnull\")", javaAST.toString() );
 
 	}
 
 	@Test
-	@Ignore
 	public void testElvisLeftDereferencing() throws IOException {
 		String			expression	= """
 		                              			variables.foo.bar ?: "brad"
@@ -265,7 +265,7 @@ public class TestOperators extends TestBase {
 		// TODO: All dereferncing on the left hand side of an elvis operator must be done safely
 		assertEqualsNoWhiteSpaces(
 		    """
-		    Elvis.invoke(Referencer.get(context.scopeFindNearby(Key.of("foo"),context.getDefaultAssignmentScope()).scope().dereference(Key.of("foo"),false),Key.of("bar"),false),"brad")
+		    Elvis.invoke(Referencer.get(variablesScope.dereference(Key.of("foo"),true),Key.of("bar"),true),"brad")
 		                              """,
 		    javaAST.toString()
 		);
@@ -310,10 +310,10 @@ public class TestOperators extends TestBase {
 
 		Node			javaAST		= BoxLangTranspiler.transform( result.getRoot() );
 
-		// TODO: Per implementation guide, use context.getDefaultAssignmentScope() and don't hard-code variablesScope
+		// We pass null as the default scope since we are not on the left hand side of an elvis or safe navigation operator.  We also use .value() directly.
 		assertEqualsNoWhiteSpaces(
 		    """
-		          InstanceOf.invoke(context, context.scopeFindNearby(Key.of("foo"), context.getDefaultAssignmentScope()).scope().get(Key.of("foo")), "String")
+		          InstanceOf.invoke(context, context.scopeFindNearby(Key.of("foo"), null).value(), "String")
 		    """,
 		    javaAST.toString() );
 
@@ -539,9 +539,10 @@ public class TestOperators extends TestBase {
 
 		Node			javaAST		= BoxLangTranspiler.transform( result.getRoot() );
 		System.out.println( javaAST );
+		// Explicit reference to variables scope should directly reference it
 		assertEqualsNoWhiteSpaces(
 		    """
-		    	Increment.invokePost(context.getDefaultAssignmentScope(),Key.of("a"))
+		    	Increment.invokePost(variablesScope,Key.of("a"))
 		    """, javaAST.toString() );
 	}
 
@@ -555,9 +556,10 @@ public class TestOperators extends TestBase {
 
 		Node			javaAST		= BoxLangTranspiler.transform( result.getRoot() );
 		System.out.println( javaAST );
+		// Explicit reference to variables scope should directly reference it
 		assertEqualsNoWhiteSpaces(
 		    """
-		    	Increment.invokePre(context.getDefaultAssignmentScope(),Key.of("a"))
+		    	Increment.invokePre(variablesScope,Key.of("a"))
 		    """, javaAST.toString() );
 	}
 
@@ -571,9 +573,10 @@ public class TestOperators extends TestBase {
 
 		Node			javaAST		= BoxLangTranspiler.transform( result.getRoot() );
 		System.out.println( javaAST );
+		// Explicit reference to variables scope should directly reference it
 		assertEqualsNoWhiteSpaces(
 		    """
-		    	Decrement.invokePost(context.getDefaultAssignmentScope(),Key.of("a"))
+		    	Decrement.invokePost(variablesScope,Key.of("a"))
 		    """, javaAST.toString() );
 	}
 
@@ -587,9 +590,10 @@ public class TestOperators extends TestBase {
 
 		Node			javaAST		= BoxLangTranspiler.transform( result.getRoot() );
 		System.out.println( javaAST );
+		// Explicit reference to variables scope should directly reference it
 		assertEqualsNoWhiteSpaces(
 		    """
-		    	Decrement.invokePre(context.getDefaultAssignmentScope(),Key.of("a"))
+		    	Decrement.invokePre(variablesScope,Key.of("a"))
 		    """, javaAST.toString() );
 	}
 
@@ -603,10 +607,18 @@ public class TestOperators extends TestBase {
 
 		Node			javaAST		= BoxLangTranspiler.transform( result.getRoot() );
 		System.out.println( javaAST );
-		// TODO: This doesn't seem correct. Shouldn't we be calling the EqualsEquals.invoke operator here
 		assertEqualsNoWhiteSpaces(
 		    """
-		    Concat.invoke("ais",Concat.invoke(context.getDefaultAssignmentScope().dereference(Key.of("a"),false),Concat.invoke(context.getDefaultAssignmentScope().dereference(Key.of("a"),false),context.getDefaultAssignmentScope().dereference(Key.of("b"),false))))
+		    Concat.invoke(
+				"ais",
+				Concat.invoke(
+					variablesScope.dereference(Key.of("a"),false),
+					Concat.invoke(
+						"andbis",
+						variablesScope.dereference(Key.of("b"),false)
+					)
+				)
+			)
 		       """,
 		    javaAST.toString() );
 	}
@@ -621,9 +633,10 @@ public class TestOperators extends TestBase {
 
 		Node			javaAST		= BoxLangTranspiler.transform( result.getRoot() );
 		System.out.println( javaAST );
+		// Need to pass the full class name and resolver prefix
 		assertEqualsNoWhiteSpaces(
 		    """
-		    JavaLoader.load(context,(String)"java.lang.RuntimeException",imports).invokeConstructor(newObject[]{"MyMessage"})
+				classLocator.load(context,(String)"java:java.lang.RuntimeException",imports).invokeConstructor(newObject[]{"MyMessage"})
 		    	""", javaAST.toString() );
 	}
 
@@ -636,7 +649,8 @@ public class TestOperators extends TestBase {
 		ParsingResult	result		= parseExpression( expression );
 		Node			javaAST		= BoxLangTranspiler.transform( result.getRoot() );
 
-		assertEquals( "CastAs.invoke(5, context.scopeFindNearby(Key.of(\"sdf\"), context.getDefaultAssignmentScope()).scope().get(Key.of(\"sdf\")))",
+		// We're not assigning sdf, so we don't need to pass a default scope.  Also, we can use value() directly
+		assertEquals( "CastAs.invoke(5, context.scopeFindNearby(Key.of(\"sdf\"), null).value())",
 		    javaAST.toString() );
 	}
 
@@ -649,8 +663,9 @@ public class TestOperators extends TestBase {
 		ParsingResult	result		= parseExpression( expression );
 		Node			javaAST		= BoxLangTranspiler.transform( result.getRoot() );
 
+		// We're not assigning a or aaa, so we don't need to pass a default scope.  Also, we can use value() directly
 		assertEqualsNoWhiteSpaces(
-		    "Concat.invoke(context.scopeFindNearby(Key.of(\"a\"), context.getDefaultAssignmentScope()).scope().get(Key.of(\"a\")), context.scopeFindNearby(Key.of(\"aaa\"), context.getDefaultAssignmentScope()).scope().get(Key.of(\"aaa\")))",
+		    "Concat.invoke(context.scopeFindNearby(Key.of(\"a\"), null).value(), context.scopeFindNearby(Key.of(\"aaa\"), null).value())",
 		    javaAST.toString() );
 	}
 }

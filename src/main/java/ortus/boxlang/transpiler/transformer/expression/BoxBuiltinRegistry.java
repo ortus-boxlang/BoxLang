@@ -13,7 +13,7 @@ public class BoxBuiltinRegistry {
 
 			{
 				put( "init", "invokeConstructor( new Object[] { ${args} }  )" );
-				put( "createobject", "JavaLoader.load( context, ${arg1} )" );
+				put( "createobject", "classLocator.load( context, ${arg1} )" );
 			}
 		};
 	}

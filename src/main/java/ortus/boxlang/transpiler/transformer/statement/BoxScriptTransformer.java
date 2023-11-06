@@ -107,7 +107,7 @@ public class BoxScriptTransformer extends AbstractTransformer {
 				// Reference to the variables scope
 				IBoxContext			catchContext = null;
 				IScope variablesScope = context.getScopeNearby( VariablesScope.name );
-				ClassLocator JavaLoader = ClassLocator.getInstance();
+				ClassLocator classLocator = ClassLocator.getInstance();
 
 			}
 

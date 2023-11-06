@@ -2,6 +2,7 @@ package ortus.boxlang.compiler;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import java.io.IOException;
 
@@ -33,9 +34,20 @@ public class TestStatements extends TestBase {
 		ParsingResult	result		= parseStatement( statement );
 		Node			javaAST		= BoxLangTranspiler.transform( result.getRoot() );
 
+		// myObject must be looked up in the scopes.  Also, we aren't assigning obj1 so we don't need to provide a default scope and we can use .value() directly
 		assertEqualsNoWhiteSpaces(
 		    """
-		    Referencer.getAndInvoke(context,myObject,Key.of("myMethod"),newObject[]{context.scopeFindNearby(Key.of("obj1"),context.getDefaultAssignmentScope()).scope().get(Key.of("obj1")),"foo",42},false);
+		    Referencer.getAndInvoke(
+				context,
+				context.scopeFindNearby(Key.of("myObject"), null).value(),
+				Key.of("myMethod"),
+				newObject[]{
+					context.scopeFindNearby(Key.of("obj1"), null).value(),
+					"foo",
+					42
+				},
+				false
+			);
 		    		                                                  """,
 		    javaAST.toString() );
 	}
@@ -51,9 +63,20 @@ public class TestStatements extends TestBase {
 		ParsingResult	result		= parseStatement( statement );
 		Node			javaAST		= BoxLangTranspiler.transform( result.getRoot() );
 
+		// system is explicitly scoped to variables, so we refernce that directly.
 		assertEqualsNoWhiteSpaces(
 		    """
-		    Referencer.getAndInvoke(context,Referencer.get(context.scopeFindNearby(Key.of("system"),context.getDefaultAssignmentScope()).scope().dereference(Key.of("system"),false),Key.of("out"),false),Key.of("println"),newObject[]{"helloworld"},false);
+		    Referencer.getAndInvoke(
+				context,
+				Referencer.get(
+					variablesScope.dereference(Key.of("system"),false ),
+					Key.of("out"),
+					false
+				),
+				Key.of("println"),
+				newObject[]{"helloworld"},
+				false
+			);
 		                                                    """,
 		    javaAST.toString() );
 	}
@@ -70,22 +93,27 @@ public class TestStatements extends TestBase {
 		ParsingResult	result		= parseStatement( statement );
 		Node			javaAST		= extractFromBlockStmt( BoxLangTranspiler.transform( result.getRoot() ) );
 
-		// TODO: There are now {} braces around the Java code. Is this correct?
-		assertEquals( "context.getDefaultAssignmentScope().assign(Key.of(\"system\"), \"Hello\");", javaAST.toString() );
+		// explicit variables scope access is referenced directly
+		assertEquals( "variablesScope.assign(Key.of(\"system\"), \"Hello\");", javaAST.toString() );
 	}
 
 	@Test
 	public void var() throws IOException {
 		String			statement	= """
-		                              			var a = b = 1/0;
+		                              			var a = b = "value";
 		                              """;
 
 		ParsingResult	result		= parseStatement( statement );
 
 		BlockStmt		javaAST		= ( BlockStmt ) BoxLangTranspiler.transform( result.getRoot() );
-		assertEqualsNoWhiteSpaces( "context.getScopeNearby(LocalScope.name).assign(Key.of(\"a\"), Divide.invoke(1, 0));",
+
+		fail("I'm not sure what the proper fix is, but this solution is evaluating the right hand side once for each assignment.  It should only be evaluated once.  I assume the second assignment should simply reference a or an intermediate Java variable.");
+		
+		assertEqualsNoWhiteSpaces( "context.getScopeNearby(LocalScope.name).assign(Key.of(\"a\"), \"value\");",
 		    javaAST.getStatements().get( 0 ).toString() );
-		assertEqualsNoWhiteSpaces( "context.getScopeNearby(LocalScope.name).assign(Key.of(\"b\"), Divide.invoke(1, 0));",
+		// The var keyword only applies to the a.  For both variables to go in the local scope, the code would have needed to have been
+		// var a = var b = 1/0;
+		assertEqualsNoWhiteSpaces( "context.scopeFindNearby(Key.of(\"foo\"),context.getDefaultAssignmentScope()).scope().assign(Key.of(\"b\"), \"value\");",
 		    javaAST.getStatements().get( 1 ).toString() );
 
 	}
@@ -103,16 +131,18 @@ public class TestStatements extends TestBase {
 		ParsingResult	result		= parseStatement( statement );
 
 		Node			javaAST		= BoxLangTranspiler.transform( result.getRoot() );
-		// TODO: There are now {} braces around the Java code for assignments. Is this correct?
+		// Explicit variables scope access is referenced directly
+		// Do not pass a default scope when simply retreiving a variable's value
+		// Use .value() directly to get the value of a searched-variable
 		assertEqualsNoWhiteSpaces(
 		    """
-		    if(BooleanCaster.cast(EqualsEquals.invoke(context.getDefaultAssignmentScope().dereference(Key.of("a"),false),"0"))){
+		    if(BooleanCaster.cast(EqualsEquals.invoke(variablesScope.dereference(Key.of("a"),false),"0"))){
 		    	{
-		    		context.getDefaultAssignmentScope().assign(Key.of("a"),Concat.invoke(context.scopeFindNearby(Key.of("a"),context.getDefaultAssignmentScope()).value(),"1"));
+		    		variablesScope.assign(Key.of("a"),Concat.invoke(context.scopeFindNearby(Key.of("a"),null).value(),"1"));
 		    	}
-		    } else if(Not.invoke(EqualsEquals.invoke(context.scopeFindNearby(Key.of("foo"),context.getDefaultAssignmentScope()).scope().get(Key.of("foo")),false))){
+		    } else if(Not.invoke(EqualsEquals.invoke(context.scopeFindNearby(Key.of("foo"),null).value(),false))){
 		    	{
-		    		context.getDefaultAssignmentScope().assign(Key.of("a"),Concat.invoke(context.scopeFindNearby(Key.of("a"),context.getDefaultAssignmentScope()).value(),"2"));
+		    		variablesScope.assign(Key.of("a"),Concat.invoke(context.scopeFindNearby(Key.of("a"),null).value(),"2"));
 		    	}
 		    }
 
@@ -132,9 +162,10 @@ public class TestStatements extends TestBase {
 
 		Node			javaAST		= BoxLangTranspiler.transform( result.getRoot() );
 		// TODO: There are now {} braces around the Java code for assignments. Is this correct?
+		// Explicit variables scope access is referenced directly
 		assertEqualsNoWhiteSpaces(
 		    """
-		    while(BooleanCaster.cast(EqualsEquals.invoke(context.getDefaultAssignmentScope().dereference(Key.of("a"),false),true))){{context.getDefaultAssignmentScope().assign(Key.of("a"),false);}}
+		    while(EqualsEquals.invoke(variablesScope.dereference(Key.of("a"),false),true)){{variablesScope.assign(Key.of("a"),false);}}
 		     """,
 		    javaAST.toString() );
 	}
@@ -163,21 +194,27 @@ public class TestStatements extends TestBase {
 		Node			javaAST		= BoxLangTranspiler.transform( result.getRoot() );
 		System.out.println( javaAST );
 		// TODO: There are now {} braces around the Java code for assignments. Is this correct?
+		// Explicit variables scope access is referenced directly
 		assertEqualsNoWhiteSpaces(
 		    """
 		    do{
-		    	if(BooleanCaster.cast(EqualsEquals.invoke(context.getDefaultAssignmentScope().dereference(Key.of("a"),false),"9"))){{
-		    		context.getDefaultAssignmentScope().assign(Key.of("a"),"0");
+		    	if(EqualsEquals.invoke(variablesScope.dereference(Key.of("a"),false),"9")){{
+		    		variablesScope.assign(Key.of("a"),"0");
 		    		}
 		    		break;
 		    	}
 
-		    	if(BooleanCaster.cast(EqualsEquals.invoke(context.getDefaultAssignmentScope().dereference(Key.of("a"),false),"1"))){
+		    	if(EqualsEquals.invoke(variablesScope.dereference(Key.of("a"),false),"1")){
 		    		{
-		    			context.getDefaultAssignmentScope().assign(Key.of("a"),"1");}break;}{context.getDefaultAssignmentScope().assign(Key.of("a"),"default");}
-		    			break;
-		    		}
-		    	while(false);
+		    			variablesScope.assign(Key.of("a"),"1");
+					}
+					break;
+				}
+				{
+					variablesScope.assign(Key.of("a"),"default");
+				}
+					break;
+			} while(false);
 		    	      		    """,
 		    javaAST.toString() );
 	}
@@ -206,19 +243,26 @@ public class TestStatements extends TestBase {
 		Node			javaAST		= BoxLangTranspiler.transform( result.getRoot() );
 
 		// TODO: There are now {} braces around the Java code for assignments. Is this correct?
+		// Explicit variables scope access is referenced directly
 		assertEqualsNoWhiteSpaces(
 		    """
 		    do{
-		    	if(BooleanCaster.cast(GreaterThan.invoke(context.getDefaultAssignmentScope().dereference(Key.of("a"),false),"0"))){
+		    	if(GreaterThan.invoke(variablesScope.dereference(Key.of("a"),false),"0")){
 		    		{
-		    			context.getDefaultAssignmentScope().assign(Key.of("a"),"0");}break;}if(BooleanCaster.cast(LessThan.invoke(context.getDefaultAssignmentScope().dereference(Key.of("a"),false),"1"))) {
-		    				{
-		    					context.getDefaultAssignmentScope().assign(Key.of("a"),"1");}
-		    					break;
-		    					}
-		    					{
-		    						context.getDefaultAssignmentScope().assign(Key.of("a"),"default");}
-		    						break;
+		    			variablesScope.assign(Key.of("a"),"0");
+					}
+					break;
+				}
+				if(LessThan.invoke(variablesScope.dereference(Key.of("a"),false),"1")) {
+					{
+						variablesScope.assign(Key.of("a"),"1");
+					}
+					break;
+				}
+				{
+					variablesScope.assign(Key.of("a"),"default");
+				}
+				break;
 		    } while(false);
 		     		      """,
 		    javaAST.toString() );
@@ -237,14 +281,15 @@ public class TestStatements extends TestBase {
 		Node			javaAST		= BoxLangTranspiler.transform( result.getRoot() );
 		System.out.println( javaAST );
 		// TODO: There are now {} braces around the Java code for assignments. Is this correct?
+		// Explicit variables scope access is referenced directly
 		assertEqualsNoWhiteSpaces(
 		    """
 		    {
-		    	IteratorkeyName=CollectionCaster.cast(context.getDefaultAssignmentScope()).iterator();
+		    	IteratorkeyName=CollectionCaster.cast(variablesScope).iterator();
 		    	while(keyName.hasNext()) {
-		    		context.getDefaultAssignmentScope().put(Key.of("keyName"),keyName.next());
+		    		variablesScope.put(Key.of("keyName"),keyName.next());
 		    		{
-		    			context.getDefaultAssignmentScope().assign(Key.of("a"),Plus.invoke(context.getDefaultAssignmentScope().dereference(Key.of("a"),false),1));
+		    			variablesScope.assign(Key.of("a"),Plus.invoke(variablesScope.dereference(Key.of("a"),false),1));
 		    		}
 		    	}
 		    }
@@ -263,12 +308,13 @@ public class TestStatements extends TestBase {
 
 		Node			javaAST		= BoxLangTranspiler.transform( result.getRoot() );
 		System.out.println( javaAST );
+		// Explicit variables scope access is referenced directly
 		assertEqualsNoWhiteSpaces(
 		    """
 		    {
-		    	context.getDefaultAssignmentScope().assign(Key.of("a"),0);
-		    	while(BooleanCaster.cast(LessThan.invoke(context.getDefaultAssignmentScope().dereference(Key.of("a"),false),10))){
-		    		Increment.invokePost(context.getDefaultAssignmentScope(),Key.of("a"));
+		    	variablesScope.assign(Key.of("a"),0);
+		    	while(LessThan.invoke(variablesScope.dereference(Key.of("a"),false),10)){
+		    		Increment.invokePost(variablesScope,Key.of("a"));
 		    	}
 		    }
 		         """, javaAST.toString() );
@@ -284,9 +330,10 @@ public class TestStatements extends TestBase {
 
 		Node			javaAST		= BoxLangTranspiler.transform( result.getRoot() );
 		System.out.println( javaAST );
+		// Explicit variables scope access is referenced directly
 		assertEqualsNoWhiteSpaces(
 		    """
-		    Assert.invoke(context,EqualsEquals.invoke(context.getDefaultAssignmentScope().dereference(Key.of("a"),false),0));
+		    Assert.invoke(context,EqualsEquals.invoke(variablesScope.dereference(Key.of("a"),false),0));
 		    """, javaAST.toString() );
 	}
 
@@ -332,10 +379,10 @@ public class TestStatements extends TestBase {
 
 		Node			javaAST		= extractFromBlockStmt( BoxLangTranspiler.transform( result.getRoot() ) );
 		System.out.println( javaAST );
-		// TODO: There are now {} braces around the Java code for assignments. Is this correct?
+		// We are assigning a, but first it must be looked up, so therefore we don't provide a default scope to scopefindnearby. We want an exception thrown if it doesn't exist already
 		assertEqualsNoWhiteSpaces(
 		    """
-		    Plus.invoke(context.scopeFindNearby(Key.of("a"),context.getDefaultAssignmentScope()).scope(),Key.of("a"),1);
+		    Plus.invoke(context.scopeFindNearby(Key.of("a"),null).scope(),Key.of("a"),1);
 		    """, javaAST.toString() );
 	}
 
@@ -373,9 +420,16 @@ public class TestStatements extends TestBase {
 
 		Node			javaAST		= BoxLangTranspiler.transform( result.getRoot() );
 		System.out.println( javaAST );
+		// use new ExceptionUtil to throw
 		assertEqualsNoWhiteSpaces(
 		    """
-		    throw(RuntimeException)DynamicObject.unWrap(JavaLoader.load(context,(String)"java.lang.RuntimeException",imports).invokeConstructor(newObject[]{"MyMessage"}));
+		    ExceptionUtil.throwException( 
+				classLocator.load(
+					context,
+					(String)"java.lang.RuntimeException",
+					imports
+				).invokeConstructor(newObject[]{"MyMessage"})
+			);
 		      """,
 		    javaAST.toString() );
 	}
@@ -413,7 +467,6 @@ public class TestStatements extends TestBase {
 
 		Node			javaAST		= extractFromBlockStmt( BoxLangTranspiler.transform( result.getRoot() ) );
 		System.out.println( javaAST );
-		// TODO: There are now {} braces around the Java code for assignments. Is this correct?
 		assertEqualsNoWhiteSpaces(
 		    """
 		    context.scopeFindNearby(Key.of("test4"),context.getDefaultAssignmentScope()).scope().assign(Key.of("test4"),"Brad\\"the guy\\"Wood");
@@ -431,7 +484,6 @@ public class TestStatements extends TestBase {
 
 		Node			javaAST		= extractFromBlockStmt( BoxLangTranspiler.transform( result.getRoot() ) );
 		System.out.println( javaAST );
-		// TODO: Wrong quotes in the java generated source. Single quotes inside the string must be preserved as-is, not changed to double quotes
 		assertEqualsNoWhiteSpaces(
 		    """
 		    context.scopeFindNearby(Key.of("test5"),context.getDefaultAssignmentScope()).scope().assign(Key.of("test5"),"Luis 'the man' Majano");
@@ -449,7 +501,6 @@ public class TestStatements extends TestBase {
 
 		Node			javaAST		= extractFromBlockStmt( BoxLangTranspiler.transform( result.getRoot() ) );
 		System.out.println( javaAST );
-		// TODO: There are now {} braces around the Java code for assignments. Is this correct?
 		assertEqualsNoWhiteSpaces(
 		    """
 		    context.scopeFindNearby(Key.of("test5"),context.getDefaultAssignmentScope()).scope().assign(Key.of("test5"),"I have locker #20");
@@ -467,7 +518,6 @@ public class TestStatements extends TestBase {
 
 		Node			javaAST		= extractFromBlockStmt( BoxLangTranspiler.transform( result.getRoot() ) );
 		System.out.println( javaAST );
-		// TODO: There are now {} braces around the Java code for assignments. Is this correct?
 		assertEqualsNoWhiteSpaces(
 		    """
 		    context.scopeFindNearby(Key.of("result"),context.getDefaultAssignmentScope()).scope().assign(Key.of("result"),Concat.invoke("Box",Concat.invoke(Plus.invoke(5,6),"Lang")));

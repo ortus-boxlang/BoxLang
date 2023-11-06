@@ -179,7 +179,7 @@ public class JavaBoxpiler {
 			public ${returnType} _invoke( IBoxContext context ) {
 				// Reference to the variables scope
 				IScope variablesScope = context.getScopeNearby( Key.of( "variables" ) );
-				ClassLocator JavaLoader = ClassLocator.getInstance();
+				ClassLocator classLocator = ClassLocator.getInstance();
 				IBoxContext			catchContext = null;
 				${javaCode}
 			}
