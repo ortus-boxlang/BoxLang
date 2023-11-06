@@ -262,8 +262,6 @@ public class ScheduledTask implements Runnable {
 	 * @param executor The executor we are bound to
 	 */
 	public ScheduledTask( String name, String group, ExecutorRecord executor ) {
-		debugLog( "init", Struct.of( "name", name, "group", group ) );
-
 		// Seed it
 		this.name		= name;
 		this.group		= group;
@@ -298,6 +296,8 @@ public class ScheduledTask implements Runnable {
 		// Server IP
 		// "localIp", variables.util.getServerIp()
 		);
+
+		debugLog( "constructor", Struct.of( "name", name, "group", group ) );
 	}
 
 	/**
@@ -1813,12 +1813,9 @@ public class ScheduledTask implements Runnable {
 			    "+ ScheduledTask",
 			    "group: ", getGroup(),
 			    "name: ", getName(),
-			    "caller: ", caller
+			    "caller: ", caller,
+			    "args", args == null ? "<no args>" : args.toString()
 			);
-
-			if ( args != null ) {
-				message.add( "args: " + args.toString() );
-			}
 
 			logger.debug( message.toString() );
 		}
