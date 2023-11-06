@@ -54,7 +54,7 @@ public abstract class AbstractTransformer implements Transformer {
 	 *
 	 * @return the Java Parser AST representation of the expression
 	 */
-	protected Node parseExpression( String template, Map<String, String> values ) {
+	protected Node 	parseExpression( String template, Map<String, String> values ) {
 		String					code	= PlaceholderHelper.resolve( template, values );
 		ParseResult<Expression>	result	= javaParser.parseExpression( code );
 		if ( !result.isSuccessful() ) {
@@ -122,17 +122,26 @@ public abstract class AbstractTransformer implements Transformer {
 	 * @return true if the BooleanCaster is required
 	 */
 	protected boolean requiresBooleanCaster( BoxExpr condition ) {
-		if ( condition instanceof BoxBinaryOperation ) {
-			BoxBinaryOperation op = ( BoxBinaryOperation ) condition;
+		if ( condition instanceof BoxBinaryOperation op ) {
 			if ( op.getOperator() == BoxBinaryOperator.Or )
 				return false;
 			if ( op.getOperator() == BoxBinaryOperator.And )
 				return false;
+			if ( op.getOperator() == BoxBinaryOperator.Contains )
+				return false;
+			if ( op.getOperator() == BoxBinaryOperator.InstanceOf )
+				return false;
+			if ( op.getOperator() == BoxBinaryOperator.NotContains )
+				return false;
+			if ( op.getOperator() == BoxBinaryOperator.Xor )
+				return false;
 		}
-		if ( condition instanceof BoxUnaryOperation ) {
-			BoxUnaryOperation op = ( BoxUnaryOperation ) condition;
+		if ( condition instanceof BoxUnaryOperation op ) {
 			if ( op.getOperator() == BoxUnaryOperator.Not )
 				return false;
+		}
+		if( condition instanceof BoxComparisonOperation op ) {
+			return false;
 		}
 		return true;
 	}
