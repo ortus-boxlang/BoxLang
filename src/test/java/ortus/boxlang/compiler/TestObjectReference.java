@@ -29,7 +29,6 @@ import ortus.boxlang.transpiler.BoxLangTranspiler;
 public class TestObjectReference extends TestBase {
 
 	@Test
-	@Disabled( "Failing due to change in specs" )
 	public void testDereferenceByKey() throws IOException {
 		String			expression	= """
 		                              			a
@@ -40,7 +39,7 @@ public class TestObjectReference extends TestBase {
 		Node			javaAST		= BoxLangTranspiler.transform( result.getRoot() );
 
 		assertEqualsNoWhiteSpaces(
-		    "Referencer.get( context.scopeFindNearby( Key.of( \"foo\" ), null ).value(), Key.of( \"bar\" ), false )",
+		    "context.scopeFindNearby( Key.of( \"a\" ), null ).value()",
 		    javaAST.toString() );
 	}
 
@@ -84,8 +83,13 @@ public class TestObjectReference extends TestBase {
 		ParsingResult	result		= parser.parseExpression( expression );
 		Node			javaAST		= BoxLangTranspiler.transform( result.getRoot() );
 
+		/**
+		 * Note, it is not necessary to use .scope().dereference(Key.of(\"foo\"),false) since the scope fine result already contains the value.
+		 * Also, null should be passed as the default scope since we are not on the left hand side of an elvis operator or save navigation operator.
+		 * This code should be the exact same as the two tests above it.  There is no difference between the two except FOO should actually be upper case here but we can deal with that part later.
+		 */
 		assertEqualsNoWhiteSpaces(
-		    "Referencer.get(context.scopeFindNearby(Key.of(\"foo\"),context.getDefaultAssignmentScope()).scope().dereference(Key.of(\"foo\"),false),Key.of(\"bar\"),false)",
+		    "Referencer.get(context.scopeFindNearby(Key.of(\"foo\"),null).value(),Key.of(\"bar\"),false)",
 		    javaAST.toString() );
 	}
 
@@ -99,8 +103,15 @@ public class TestObjectReference extends TestBase {
 		ParsingResult	result		= parser.parseExpression( expression );
 		Node			javaAST		= BoxLangTranspiler.transform( result.getRoot() );
 
+		/**
+		 * Note, the previosu expected value of 
+		 * 
+		 *    "Referencer.get(context.scopeFindNearby(Key.of(\"foo\"),context.getDefaultAssignmentScope()).scope().dereference(Key.of(\"foo\"),true),Key.of(\"bar\"),true)"
+		 *
+		 * will run correctly, but is unneccessary as the value of foo already comes back from the scopp lookup and can be used directly (will be null if not found)
+		 */
 		assertEqualsNoWhiteSpaces(
-		    "Referencer.get(context.scopeFindNearby(Key.of(\"foo\"),context.getDefaultAssignmentScope()).scope().dereference(Key.of(\"foo\"),true),Key.of(\"bar\"),true)",
+		    "Referencer.get(context.scopeFindNearby(Key.of(\"foo\"),context.getDefaultAssignmentScope()).value(),Key.of(\"bar\"),true)",
 		    javaAST.toString() );
 	}
 
@@ -115,7 +126,7 @@ public class TestObjectReference extends TestBase {
 		Node			javaAST		= BoxLangTranspiler.transform( result.getRoot() );
 
 		assertEqualsNoWhiteSpaces(
-		    "context.getDefaultAssignmentScope().dereference(Key.of(\"foo\"),false)",
+		    "variablesScope.dereference(Key.of(\"foo\"),false)",
 		    javaAST.toString() );
 	}
 
@@ -130,7 +141,7 @@ public class TestObjectReference extends TestBase {
 		Node			javaAST		= BoxLangTranspiler.transform( result.getRoot() );
 
 		assertEqualsNoWhiteSpaces(
-		    "context.getDefaultAssignmentScope().dereference(Key.of(\"foo\"),false)",
+		    "variablesScope.dereference(Key.of(\"foo\"),false)",
 		    javaAST.toString() );
 	}
 
@@ -146,7 +157,7 @@ public class TestObjectReference extends TestBase {
 
 		// TODO: we're generating extra {} braces around the code. Not sure if that is correct.
 		assertEqualsNoWhiteSpaces( """
-		                           context.getDefaultAssignmentScope().assign(Key.of("foo"),bar);
+		                           variablesScope.assign(Key.of("foo"),bar);
 		                                                       """, javaAST.toString() );
 	}
 
