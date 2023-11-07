@@ -37,6 +37,7 @@ import org.slf4j.LoggerFactory;
 
 import com.github.javaparser.ast.CompilationUnit;
 import com.github.javaparser.ast.Node;
+import com.github.javaparser.ast.stmt.ThrowStmt;
 
 import ortus.boxlang.ast.BoxExpr;
 import ortus.boxlang.ast.BoxScript;
@@ -146,6 +147,7 @@ public class JavaBoxpiler {
 		import ortus.boxlang.runtime.scopes.Key;
 		import ortus.boxlang.runtime.scopes.*;
 		import ortus.boxlang.runtime.dynamic.casters.*;
+		import ortus.boxlang.runtime.types.exceptions.ExceptionUtil;
 
 		import java.nio.file.Path;
 		import java.nio.file.Paths;
@@ -413,16 +415,21 @@ public class JavaBoxpiler {
 
 	public String getStatementsAsStringReturnLast( BoxLangTranspiler transpiler ) {
 		StringBuilder result = new StringBuilder();
+		boolean returned = false;
 		// loop over statements
 		for ( int i = 0; i < transpiler.getStatements().size(); i++ ) {
 			// if last statement, return it
-			if ( i == transpiler.getStatements().size() - 1 ) {
+			if ( ( i == transpiler.getStatements().size() -1 ) && !(transpiler.getStatements().get( i ).toString().contains( "ExceptionUtil.throwException(" )  ) ) {
 				result.append( "return " );
+				returned = true;
 			}
 			result.append( transpiler.getStatements().get( i ).toString() );
 			if ( i < transpiler.getStatements().size() - 1 ) {
 				result.append( ";\n" );
 			}
+		}
+		if( !returned ) {
+			result.append( "\nreturn null;" );
 		}
 		return result.toString();
 	}

@@ -63,6 +63,7 @@ public class BoxScriptTransformer extends AbstractTransformer {
 		import ortus.boxlang.runtime.scopes.VariablesScope;
 		import ortus.boxlang.runtime.dynamic.casters.*;
 		import ortus.boxlang.runtime.loader.ImportDefinition;
+		import ortus.boxlang.runtime.types.exceptions.ExceptionUtil;
 
 
 		// Classes Auto-Imported on all Templates and Classes by BoxLang

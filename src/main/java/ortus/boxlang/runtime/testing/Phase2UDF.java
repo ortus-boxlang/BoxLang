@@ -31,6 +31,7 @@ import ortus.boxlang.runtime.loader.ImportDefinition;
 import ortus.boxlang.runtime.runnables.BoxTemplate;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
+import ortus.boxlang.runtime.types.exceptions.ExceptionUtil;
 
 /**
  * Phase 2 BoxLang

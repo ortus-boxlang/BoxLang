@@ -140,6 +140,7 @@ public class CoreLangTest {
 	@DisplayName( "throw in statement" )
 	@Test
 	public void testThrowStatement() {
+
 		assertThrows( NoFieldException.class,
 		    () -> instance.executeStatement( "throw new java:ortus.boxlang.runtime.types.exceptions.NoFieldException( 'My Message' );", context )
 		);
