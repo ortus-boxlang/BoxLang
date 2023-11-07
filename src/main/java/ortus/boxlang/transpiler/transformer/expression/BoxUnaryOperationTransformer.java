@@ -69,6 +69,9 @@ public class BoxUnaryOperationTransformer extends AbstractTransformer {
 		} else if ( operation.getOperator() == BoxUnaryOperator.PostPlusPlus ) {
 			if ( values.containsKey( "key" ) ) {
 				template = "Increment.invokePost(${expr},${key})";
+			// post increment is ignored if the expression is a literal like 5++
+			} else if ( operation.getExpr().isLiteral() ) {
+				template = "${expr}";
 			} else {
 				template = "Increment.invoke(${expr})";
 			}
@@ -81,6 +84,9 @@ public class BoxUnaryOperationTransformer extends AbstractTransformer {
 		} else if ( operation.getOperator() == BoxUnaryOperator.PostMinusMinus ) {
 			if ( values.containsKey( "key" ) ) {
 				template = "Decrement.invokePost(${expr},${key})";
+			// post increment is ignored if the expression is a literal like 5++
+			} else if ( operation.getExpr().isLiteral() ) {
+				template = "${expr}";
 			} else {
 				template = "Decrement.invoke(${expr})";
 			}
