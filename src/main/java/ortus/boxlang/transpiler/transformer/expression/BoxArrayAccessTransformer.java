@@ -23,7 +23,7 @@ import ortus.boxlang.ast.BoxNode;
 import ortus.boxlang.ast.expression.BoxArrayAccess;
 import ortus.boxlang.ast.expression.BoxScope;
 import ortus.boxlang.ast.expression.BoxStringLiteral;
-import ortus.boxlang.transpiler.BoxLangTranspiler;
+import ortus.boxlang.transpiler.JavaTranspiler;
 import ortus.boxlang.transpiler.transformer.AbstractTransformer;
 import ortus.boxlang.transpiler.transformer.TransformerContext;
 
@@ -56,8 +56,8 @@ public class BoxArrayAccessTransformer extends AbstractTransformer {
 		logger.info( side + node.getSourceText() );
 		/* Case variables['x'] */
 		if ( expr.getIndex() instanceof BoxStringLiteral ) {
-			Expression			scope		= ( Expression ) BoxLangTranspiler.transform( expr.getContext(), context );
-			StringLiteralExpr	variable	= ( StringLiteralExpr ) BoxLangTranspiler.transform( expr.getIndex() );
+			Expression			scope		= ( Expression ) JavaTranspiler.transform( expr.getContext(), context );
+			StringLiteralExpr	variable	= ( StringLiteralExpr ) JavaTranspiler.transform( expr.getIndex() );
 
 			Map<String, String>	values		= new HashMap<>() {
 

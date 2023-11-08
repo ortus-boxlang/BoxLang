@@ -115,7 +115,7 @@ public class BoxRuntimeTest {
 		assertThat( result ).isEqualTo( 4 );
 		assertThat( context.getScopeNearby( VariablesScope.name ).get( Key.of( "foo" ) ) ).isEqualTo( 4 );
 
-		result		= instance.executeStatement( "variables.bar=2+3", context );
+		result = instance.executeStatement( "variables.bar=2+3", context );
 		assertThat( result ).isEqualTo( 5 );
 		assertThat( context.getScopeNearby( VariablesScope.name ).get( Key.of( "bar" ) ) ).isEqualTo( 5 );
 

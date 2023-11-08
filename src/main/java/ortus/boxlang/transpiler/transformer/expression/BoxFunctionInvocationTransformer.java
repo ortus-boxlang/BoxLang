@@ -20,7 +20,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import ortus.boxlang.ast.BoxNode;
 import ortus.boxlang.ast.expression.BoxFunctionInvocation;
-import ortus.boxlang.transpiler.BoxLangTranspiler;
+import ortus.boxlang.transpiler.JavaTranspiler;
 import ortus.boxlang.transpiler.transformer.AbstractTransformer;
 import ortus.boxlang.transpiler.transformer.TransformerContext;
 
@@ -49,7 +49,7 @@ public class BoxFunctionInvocationTransformer extends AbstractTransformer {
 			}
 		};
 		for ( int i = 0; i < function.getArguments().size(); i++ ) {
-			Expression expr = ( Expression ) BoxLangTranspiler.transform( function.getArguments().get( i ) );
+			Expression expr = ( Expression ) JavaTranspiler.transform( function.getArguments().get( i ) );
 			values.put( "arg" + i, expr.toString() );
 		}
 		String	template	= getTemplate( function );

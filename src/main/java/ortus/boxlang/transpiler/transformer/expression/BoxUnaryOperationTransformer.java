@@ -21,7 +21,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import ortus.boxlang.ast.BoxNode;
 import ortus.boxlang.ast.expression.*;
-import ortus.boxlang.transpiler.BoxLangTranspiler;
+import ortus.boxlang.transpiler.JavaTranspiler;
 import ortus.boxlang.transpiler.transformer.AbstractTransformer;
 import ortus.boxlang.transpiler.transformer.TransformerContext;
 
@@ -50,7 +50,7 @@ public class BoxUnaryOperationTransformer extends AbstractTransformer {
 		BoxUnaryOperation	operation	= ( BoxUnaryOperation ) node;
 		Map<String, String>	values		= new HashMap<>();
 
-		Expression			expr		= ( Expression ) resolveScope( BoxLangTranspiler.transform( operation.getExpr() ), context );
+		Expression			expr		= ( Expression ) resolveScope( JavaTranspiler.transform( operation.getExpr() ), context );
 		values.put( "expr", expr.toString() );
 
 		if ( expr instanceof MethodCallExpr methodCall ) {
@@ -69,7 +69,7 @@ public class BoxUnaryOperationTransformer extends AbstractTransformer {
 		} else if ( operation.getOperator() == BoxUnaryOperator.PostPlusPlus ) {
 			if ( values.containsKey( "key" ) ) {
 				template = "Increment.invokePost(${expr},${key})";
-			// post increment is ignored if the expression is a literal like 5++
+				// post increment is ignored if the expression is a literal like 5++
 			} else if ( operation.getExpr().isLiteral() ) {
 				template = "${expr}";
 			} else {
@@ -84,7 +84,7 @@ public class BoxUnaryOperationTransformer extends AbstractTransformer {
 		} else if ( operation.getOperator() == BoxUnaryOperator.PostMinusMinus ) {
 			if ( values.containsKey( "key" ) ) {
 				template = "Decrement.invokePost(${expr},${key})";
-			// post increment is ignored if the expression is a literal like 5++
+				// post increment is ignored if the expression is a literal like 5++
 			} else if ( operation.getExpr().isLiteral() ) {
 				template = "${expr}";
 			} else {

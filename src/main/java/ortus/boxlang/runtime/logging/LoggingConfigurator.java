@@ -68,7 +68,7 @@ public class LoggingConfigurator {
 	 */
 	public static void configure( Boolean debugMode ) {
 		try {
-			LogManager.getLogManager().readConfiguration( debugMode
+			LogManager.getLogManager().readConfiguration( true
 			    ? loadDynamicConfig( java.util.logging.Level.FINE )
 			    : loadFromPropertiesFile()
 			);

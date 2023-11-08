@@ -19,7 +19,7 @@ import com.github.javaparser.ast.expr.Expression;
 import ortus.boxlang.ast.BoxNode;
 import ortus.boxlang.ast.expression.BoxBooleanLiteral;
 import ortus.boxlang.ast.expression.BoxNegateOperation;
-import ortus.boxlang.transpiler.BoxLangTranspiler;
+import ortus.boxlang.transpiler.JavaTranspiler;
 import ortus.boxlang.transpiler.transformer.AbstractTransformer;
 import ortus.boxlang.transpiler.transformer.TransformerContext;
 
@@ -38,7 +38,7 @@ public class BoxNegateOperationTransformer extends AbstractTransformer {
 			BoxBooleanLiteral	value	= ( BoxBooleanLiteral ) operation.getExpr();
 			values.put( "expr", sb.append( '"' ).append( value.getValue() ).append( '"' ).toString() );
 		} else {
-			Expression expr = ( Expression ) BoxLangTranspiler.transform( operation.getExpr() );
+			Expression expr = ( Expression ) JavaTranspiler.transform( operation.getExpr() );
 			values.put( "expr", expr.toString() );
 		}
 		String template = "Negate.invoke(${expr})";

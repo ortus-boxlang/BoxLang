@@ -11,7 +11,7 @@ import com.github.javaparser.ast.Node;
 
 import ortus.boxlang.ast.BoxNode;
 import ortus.boxlang.ast.expression.BoxStringInterpolation;
-import ortus.boxlang.transpiler.BoxLangTranspiler;
+import ortus.boxlang.transpiler.JavaTranspiler;
 import ortus.boxlang.transpiler.transformer.AbstractTransformer;
 import ortus.boxlang.transpiler.transformer.TransformerContext;
 
@@ -24,12 +24,12 @@ public class BoxStringInterpolationTransformer extends AbstractTransformer {
 
 	/**
 	 * Transform a String interpolation expression
-	 * 
+	 *
 	 * @param node    a BoxStringInterpolation
 	 * @param context transformation context
-	 * 
+	 *
 	 * @return a Java Parser Expression
-	 * 
+	 *
 	 * @throws IllegalStateException
 	 */
 	@Override
@@ -37,7 +37,7 @@ public class BoxStringInterpolationTransformer extends AbstractTransformer {
 		BoxStringInterpolation	interpolation	= ( BoxStringInterpolation ) node;
 		List<Node>				operands		= interpolation.getValues()
 		    .stream()
-		    .map( it -> resolveScope( BoxLangTranspiler.transform( it, TransformerContext.RIGHT ), context ) )
+		    .map( it -> resolveScope( JavaTranspiler.transform( it, TransformerContext.RIGHT ), context ) )
 		    .toList();
 		// .collect( Collectors.joining( "+" ) );
 		String					expr			= operands.get( operands.size() - 1 ).toString();

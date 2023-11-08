@@ -9,7 +9,7 @@ import com.github.javaparser.ast.expr.NameExpr;
 
 import ortus.boxlang.ast.BoxNode;
 import ortus.boxlang.ast.expression.BoxTernaryOperation;
-import ortus.boxlang.transpiler.BoxLangTranspiler;
+import ortus.boxlang.transpiler.JavaTranspiler;
 import ortus.boxlang.transpiler.transformer.AbstractTransformer;
 import ortus.boxlang.transpiler.transformer.TransformerContext;
 
@@ -18,9 +18,9 @@ public class BoxTernaryOperationTransformer extends AbstractTransformer {
 	@Override
 	public Node transform( BoxNode node, TransformerContext context ) throws IllegalStateException {
 		BoxTernaryOperation	operation	= ( BoxTernaryOperation ) node;
-		Expression			condition	= ( Expression ) BoxLangTranspiler.transform( operation.getCondition() /* , TransformerContext.DEREFERENCING */ );
-		Expression			whenTrue	= ( Expression ) BoxLangTranspiler.transform( operation.getWhenTrue() );
-		Expression			whenFalse	= ( Expression ) BoxLangTranspiler.transform( operation.getWhenFalse() );
+		Expression			condition	= ( Expression ) JavaTranspiler.transform( operation.getCondition() /* , TransformerContext.DEREFERENCING */ );
+		Expression			whenTrue	= ( Expression ) JavaTranspiler.transform( operation.getWhenTrue() );
+		Expression			whenFalse	= ( Expression ) JavaTranspiler.transform( operation.getWhenFalse() );
 		Map<String, String>	values		= new HashMap<>() {
 
 											{

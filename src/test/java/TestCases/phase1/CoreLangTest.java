@@ -41,13 +41,13 @@ import ortus.boxlang.runtime.types.exceptions.NoFieldException;
 public class CoreLangTest {
 
 	static BoxRuntime	instance;
-	IBoxContext	context;
-	IScope		variables;
+	IBoxContext			context;
+	IScope				variables;
 	static Key			result	= new Key( "result" );
 
 	@BeforeAll
 	public static void setUp() {
-		instance	= BoxRuntime.getInstance( true );
+		instance = BoxRuntime.getInstance( true );
 	}
 
 	@AfterAll
@@ -441,17 +441,16 @@ public class CoreLangTest {
 
 		instance.executeSource(
 		    """
-			variables.a = "brad"
-			variables.b = "luis"
-		    variables.result = "a is #variables.a# and b is #variables.b#"
-	
-		     """,
+		    variables.a = "brad"
+		    variables.b = "luis"
+		       variables.result = "a is #variables.a# and b is #variables.b#"
+
+		        """,
 		    context );
 		assertThat( variables.dereference( Key.of( "result" ), false ) ).isEqualTo( "a is brad and b is luis" );
 
 	}
 
-	
 	@DisplayName( "String parsing unclosed quotes" )
 	@Test
 	public void testStringParsingUnclosedQuotes() {

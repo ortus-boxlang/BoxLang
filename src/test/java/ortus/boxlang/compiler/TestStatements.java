@@ -13,7 +13,7 @@ import com.github.javaparser.ast.stmt.BlockStmt;
 
 import ortus.boxlang.parser.BoxParser;
 import ortus.boxlang.parser.ParsingResult;
-import ortus.boxlang.transpiler.BoxLangTranspiler;
+import ortus.boxlang.transpiler.JavaTranspiler;
 
 public class TestStatements extends TestBase {
 
@@ -31,7 +31,7 @@ public class TestStatements extends TestBase {
 		                              """;
 
 		ParsingResult	result		= parseStatement( statement );
-		Node			javaAST		= BoxLangTranspiler.transform( result.getRoot() );
+		Node			javaAST		= JavaTranspiler.transform( result.getRoot() );
 
 		// myObject must be looked up in the scopes.
 		assertEqualsNoWhiteSpaces(
@@ -60,7 +60,7 @@ public class TestStatements extends TestBase {
 		                              """;
 
 		ParsingResult	result		= parseStatement( statement );
-		Node			javaAST		= BoxLangTranspiler.transform( result.getRoot() );
+		Node			javaAST		= JavaTranspiler.transform( result.getRoot() );
 
 		// system is explicitly scoped to variables, so we reference that directly.
 		assertEqualsNoWhiteSpaces(
@@ -90,7 +90,7 @@ public class TestStatements extends TestBase {
 		                              """;
 
 		ParsingResult	result		= parseStatement( statement );
-		Node			javaAST		= extractFromBlockStmt( BoxLangTranspiler.transform( result.getRoot() ) );
+		Node			javaAST		= extractFromBlockStmt( JavaTranspiler.transform( result.getRoot() ) );
 
 		// explicit variables scope access is referenced directly
 		assertEquals( "variablesScope.assign(Key.of(\"system\"), \"Hello\");", javaAST.toString() );
@@ -104,7 +104,7 @@ public class TestStatements extends TestBase {
 
 		ParsingResult	result		= parseStatement( statement );
 
-		BlockStmt		javaAST		= ( BlockStmt ) BoxLangTranspiler.transform( result.getRoot() );
+		BlockStmt		javaAST		= ( BlockStmt ) JavaTranspiler.transform( result.getRoot() );
 
 		fail(
 		    "I'm not sure what the proper fix is, but this solution is evaluating the right hand side once for each assignment.  It should only be evaluated once.  I assume the second assignment should simply reference a or an intermediate Java variable." );
@@ -130,7 +130,7 @@ public class TestStatements extends TestBase {
 
 		ParsingResult	result		= parseStatement( statement );
 
-		Node			javaAST		= BoxLangTranspiler.transform( result.getRoot() );
+		Node			javaAST		= JavaTranspiler.transform( result.getRoot() );
 		// Explicit variables scope access is referenced directly
 		// Do not pass a default scope when simply retreiving a variable's value
 		// Use .value() directly to get the value of a searched-variable
@@ -160,7 +160,7 @@ public class TestStatements extends TestBase {
 
 		ParsingResult	result		= parseStatement( statement );
 
-		Node			javaAST		= BoxLangTranspiler.transform( result.getRoot() );
+		Node			javaAST		= JavaTranspiler.transform( result.getRoot() );
 		// TODO: There are now {} braces around the Java code for assignments. Is this correct?
 		// Explicit variables scope access is referenced directly
 		assertEqualsNoWhiteSpaces(
@@ -191,7 +191,7 @@ public class TestStatements extends TestBase {
 
 		ParsingResult	result		= parseStatement( statement );
 
-		Node			javaAST		= BoxLangTranspiler.transform( result.getRoot() );
+		Node			javaAST		= JavaTranspiler.transform( result.getRoot() );
 		System.out.println( javaAST );
 		// TODO: There are now {} braces around the Java code for assignments. Is this correct?
 		// Explicit variables scope access is referenced directly
@@ -240,7 +240,7 @@ public class TestStatements extends TestBase {
 
 		ParsingResult	result		= parseStatement( statement );
 
-		Node			javaAST		= BoxLangTranspiler.transform( result.getRoot() );
+		Node			javaAST		= JavaTranspiler.transform( result.getRoot() );
 
 		// TODO: There are now {} braces around the Java code for assignments. Is this correct?
 		// Explicit variables scope access is referenced directly
@@ -278,7 +278,7 @@ public class TestStatements extends TestBase {
 
 		ParsingResult	result		= parseStatement( statement );
 
-		Node			javaAST		= BoxLangTranspiler.transform( result.getRoot() );
+		Node			javaAST		= JavaTranspiler.transform( result.getRoot() );
 		System.out.println( javaAST );
 		// TODO: There are now {} braces around the Java code for assignments. Is this correct?
 		// Explicit variables scope access is referenced directly
@@ -306,7 +306,7 @@ public class TestStatements extends TestBase {
 
 		ParsingResult	result		= parseStatement( statement );
 
-		Node			javaAST		= BoxLangTranspiler.transform( result.getRoot() );
+		Node			javaAST		= JavaTranspiler.transform( result.getRoot() );
 		System.out.println( javaAST );
 		// Explicit variables scope access is referenced directly
 		assertEqualsNoWhiteSpaces(
@@ -328,7 +328,7 @@ public class TestStatements extends TestBase {
 
 		ParsingResult	result		= parseStatement( statement );
 
-		Node			javaAST		= BoxLangTranspiler.transform( result.getRoot() );
+		Node			javaAST		= JavaTranspiler.transform( result.getRoot() );
 		System.out.println( javaAST );
 		// Explicit variables scope access is referenced directly
 		assertEqualsNoWhiteSpaces(
@@ -351,7 +351,7 @@ public class TestStatements extends TestBase {
 
 		ParsingResult	result		= parseStatement( statement );
 
-		Node			javaAST		= BoxLangTranspiler.transform( result.getRoot() );
+		Node			javaAST		= JavaTranspiler.transform( result.getRoot() );
 		System.out.println( javaAST );
 		// TODO: There are now {} braces around the Java code for assignments. Is this correct?
 		assertEqualsNoWhiteSpaces(
@@ -377,7 +377,7 @@ public class TestStatements extends TestBase {
 
 		ParsingResult	result		= parseStatement( statement );
 
-		Node			javaAST		= extractFromBlockStmt( BoxLangTranspiler.transform( result.getRoot() ) );
+		Node			javaAST		= extractFromBlockStmt( JavaTranspiler.transform( result.getRoot() ) );
 		System.out.println( javaAST );
 		// We are assigning a, but first it must be looked up, so therefore we don't provide a default scope to scopefindnearby. We want an exception thrown
 		// if it doesn't exist already
@@ -397,7 +397,7 @@ public class TestStatements extends TestBase {
 
 		ParsingResult	result		= parseStatement( statement );
 
-		Node			javaAST		= BoxLangTranspiler.transform( result.getRoot() );
+		Node			javaAST		= JavaTranspiler.transform( result.getRoot() );
 		System.out.println( javaAST );
 		// TODO: There are now {} braces around the Java code for assignments. Is this correct?
 		assertEqualsNoWhiteSpaces(
@@ -419,7 +419,7 @@ public class TestStatements extends TestBase {
 
 		ParsingResult	result		= parseStatement( statement );
 
-		Node			javaAST		= BoxLangTranspiler.transform( result.getRoot() );
+		Node			javaAST		= JavaTranspiler.transform( result.getRoot() );
 		System.out.println( javaAST );
 		// use new ExceptionUtil to throw
 		assertEqualsNoWhiteSpaces(
@@ -448,7 +448,7 @@ public class TestStatements extends TestBase {
 
 		ParsingResult	result		= parseStatement( statement );
 
-		Node			javaAST		= BoxLangTranspiler.transform( result.getRoot() );
+		Node			javaAST		= JavaTranspiler.transform( result.getRoot() );
 		System.out.println( javaAST );
 		// TODO: This assert doesn't seem correct
 		assertEqualsNoWhiteSpaces(
@@ -466,7 +466,7 @@ public class TestStatements extends TestBase {
 
 		ParsingResult	result		= parseStatement( statement );
 
-		Node			javaAST		= extractFromBlockStmt( BoxLangTranspiler.transform( result.getRoot() ) );
+		Node			javaAST		= extractFromBlockStmt( JavaTranspiler.transform( result.getRoot() ) );
 		System.out.println( javaAST );
 		assertEqualsNoWhiteSpaces(
 		    """
@@ -483,7 +483,7 @@ public class TestStatements extends TestBase {
 
 		ParsingResult	result		= parseStatement( statement );
 
-		Node			javaAST		= extractFromBlockStmt( BoxLangTranspiler.transform( result.getRoot() ) );
+		Node			javaAST		= extractFromBlockStmt( JavaTranspiler.transform( result.getRoot() ) );
 		System.out.println( javaAST );
 		assertEqualsNoWhiteSpaces(
 		    """
@@ -500,7 +500,7 @@ public class TestStatements extends TestBase {
 
 		ParsingResult	result		= parseStatement( statement );
 
-		Node			javaAST		= extractFromBlockStmt( BoxLangTranspiler.transform( result.getRoot() ) );
+		Node			javaAST		= extractFromBlockStmt( JavaTranspiler.transform( result.getRoot() ) );
 		System.out.println( javaAST );
 		assertEqualsNoWhiteSpaces(
 		    """
@@ -517,7 +517,7 @@ public class TestStatements extends TestBase {
 
 		ParsingResult	result		= parseStatement( statement );
 
-		Node			javaAST		= extractFromBlockStmt( BoxLangTranspiler.transform( result.getRoot() ) );
+		Node			javaAST		= extractFromBlockStmt( JavaTranspiler.transform( result.getRoot() ) );
 		System.out.println( javaAST );
 		assertEqualsNoWhiteSpaces(
 		    """

@@ -12,7 +12,7 @@ import com.github.javaparser.ast.expr.Expression;
 import ortus.boxlang.ast.BoxNode;
 import ortus.boxlang.ast.expression.BoxComparisonOperation;
 import ortus.boxlang.ast.expression.BoxComparisonOperator;
-import ortus.boxlang.transpiler.BoxLangTranspiler;
+import ortus.boxlang.transpiler.JavaTranspiler;
 import ortus.boxlang.transpiler.transformer.AbstractTransformer;
 import ortus.boxlang.transpiler.transformer.TransformerContext;
 
@@ -39,8 +39,8 @@ public class BoxComparisonOperationTransformer extends AbstractTransformer {
 	@Override
 	public Node transform( BoxNode node, TransformerContext context ) throws IllegalStateException {
 		BoxComparisonOperation	operation	= ( BoxComparisonOperation ) node;
-		Expression				left		= ( Expression ) resolveScope( BoxLangTranspiler.transform( operation.getLeft() ), context );
-		Expression				right		= ( Expression ) resolveScope( BoxLangTranspiler.transform( operation.getRight() ), context );
+		Expression				left		= ( Expression ) resolveScope( JavaTranspiler.transform( operation.getLeft() ), context );
+		Expression				right		= ( Expression ) resolveScope( JavaTranspiler.transform( operation.getRight() ), context );
 
 		Map<String, String>		values		= new HashMap<>() {
 

@@ -24,10 +24,9 @@ import org.slf4j.LoggerFactory;
 import ortus.boxlang.ast.BoxNode;
 import ortus.boxlang.ast.BoxStatement;
 import ortus.boxlang.ast.statement.BoxIfElse;
-import ortus.boxlang.transpiler.BoxLangTranspiler;
+import ortus.boxlang.transpiler.JavaTranspiler;
 import ortus.boxlang.transpiler.transformer.AbstractTransformer;
 import ortus.boxlang.transpiler.transformer.TransformerContext;
-import ortus.boxlang.transpiler.transformer.expression.BoxParenthesisTransformer;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -39,7 +38,7 @@ public class BoxIfElseTransformer extends AbstractTransformer {
 	@Override
 	public Node transform( BoxNode node, TransformerContext context ) throws IllegalStateException {
 		BoxIfElse	ifElse		= ( BoxIfElse ) node;
-		Expression	condition	= ( Expression ) BoxLangTranspiler.transform( ifElse.getCondition(), TransformerContext.RIGHT );
+		Expression	condition	= ( Expression ) JavaTranspiler.transform( ifElse.getCondition(), TransformerContext.RIGHT );
 
 		String		template	= "if(  ${condition}  ) {}";
 		if ( requiresBooleanCaster( ifElse.getCondition() ) ) {
@@ -56,10 +55,10 @@ public class BoxIfElseTransformer extends AbstractTransformer {
 		BlockStmt			thenBlock	= new BlockStmt();
 		BlockStmt			elseBlock	= new BlockStmt();
 		for ( BoxStatement statement : ifElse.getThenBody() ) {
-			thenBlock.getStatements().add( ( Statement ) BoxLangTranspiler.transform( statement ) );
+			thenBlock.getStatements().add( ( Statement ) JavaTranspiler.transform( statement ) );
 		}
 		for ( BoxStatement statement : ifElse.getElseBody() ) {
-			elseBlock.getStatements().add( ( Statement ) BoxLangTranspiler.transform( statement ) );
+			elseBlock.getStatements().add( ( Statement ) JavaTranspiler.transform( statement ) );
 		}
 
 		javaIfStmt.setThenStmt( thenBlock );

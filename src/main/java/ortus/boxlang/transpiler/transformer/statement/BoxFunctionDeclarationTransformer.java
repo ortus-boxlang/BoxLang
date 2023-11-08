@@ -32,7 +32,7 @@ import ortus.boxlang.ast.Source;
 import ortus.boxlang.ast.statement.BoxFunctionDeclaration;
 import ortus.boxlang.runtime.config.util.PlaceholderHelper;
 import ortus.boxlang.runtime.types.exceptions.ApplicationException;
-import ortus.boxlang.transpiler.BoxLangTranspiler;
+import ortus.boxlang.transpiler.JavaTranspiler;
 import ortus.boxlang.transpiler.transformer.AbstractTransformer;
 import ortus.boxlang.transpiler.transformer.TransformerContext;
 
@@ -144,8 +144,8 @@ public class BoxFunctionDeclarationTransformer extends AbstractTransformer {
 	public Node transform( BoxNode node, TransformerContext context ) throws IllegalStateException {
 		BoxFunctionDeclaration	function	= ( BoxFunctionDeclaration ) node;
 		Source					source		= function.getPosition().getSource();
-		String					packageName	= BoxLangTranspiler.getPackageName( source );
-		String					className	= BoxLangTranspiler.getClassName( source ) + "$" + function.getName();
+		String					packageName	= JavaTranspiler.getPackageName( source );
+		String					className	= JavaTranspiler.getClassName( source ) + "$" + function.getName();
 		String					arguments	= "";
 
 		if ( context == TransformerContext.REGISTER ) {
@@ -184,7 +184,7 @@ public class BoxFunctionDeclarationTransformer extends AbstractTransformer {
 			    .getMethodsByName( "_invoke" ).get( 0 );
 
 			for ( BoxStatement statement : function.getBody() ) {
-				Node javaStmt = BoxLangTranspiler.transform( statement );
+				Node javaStmt = JavaTranspiler.transform( statement );
 				if ( javaStmt instanceof BlockStmt ) {
 					BlockStmt stmt = ( BlockStmt ) javaStmt;
 					stmt.getStatements().stream().forEach( it -> {

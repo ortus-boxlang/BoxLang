@@ -23,7 +23,7 @@ import com.github.javaparser.ast.Node;
 
 import ortus.boxlang.parser.BoxParser;
 import ortus.boxlang.parser.ParsingResult;
-import ortus.boxlang.transpiler.BoxLangTranspiler;
+import ortus.boxlang.transpiler.JavaTranspiler;
 
 public class TestObjectReference extends TestBase {
 
@@ -35,7 +35,7 @@ public class TestObjectReference extends TestBase {
 
 		BoxParser		parser		= new BoxParser();
 		ParsingResult	result		= parser.parseExpression( expression );
-		Node			javaAST		= BoxLangTranspiler.transform( result.getRoot() );
+		Node			javaAST		= JavaTranspiler.transform( result.getRoot() );
 
 		assertEqualsNoWhiteSpaces(
 		    "context.scopeFindNearby( Key.of( \"a\" ), null ).value()",
@@ -50,7 +50,7 @@ public class TestObjectReference extends TestBase {
 
 		BoxParser		parser		= new BoxParser();
 		ParsingResult	result		= parser.parseExpression( expression );
-		Node			javaAST		= BoxLangTranspiler.transform( result.getRoot() );
+		Node			javaAST		= JavaTranspiler.transform( result.getRoot() );
 
 		assertEqualsNoWhiteSpaces(
 		    "Referencer.get( context.scopeFindNearby( Key.of( \"foo\" ), null ).value(), Key.of( \"bar\" ), false )",
@@ -65,7 +65,7 @@ public class TestObjectReference extends TestBase {
 
 		BoxParser		parser		= new BoxParser();
 		ParsingResult	result		= parser.parseExpression( expression );
-		Node			javaAST		= BoxLangTranspiler.transform( result.getRoot() );
+		Node			javaAST		= JavaTranspiler.transform( result.getRoot() );
 
 		assertEqualsNoWhiteSpaces(
 		    "Referencer.get( context.scopeFindNearby( Key.of( \"foo\" ), null ).value(), Key.of( \"bar\" ), false )",
@@ -80,7 +80,7 @@ public class TestObjectReference extends TestBase {
 
 		BoxParser		parser		= new BoxParser();
 		ParsingResult	result		= parser.parseExpression( expression );
-		Node			javaAST		= BoxLangTranspiler.transform( result.getRoot() );
+		Node			javaAST		= JavaTranspiler.transform( result.getRoot() );
 
 		/**
 		 * Note, it is not necessary to use .scope().dereference(Key.of(\"foo\"),false) since the scope fine result already contains the value.
@@ -101,7 +101,7 @@ public class TestObjectReference extends TestBase {
 
 		BoxParser		parser		= new BoxParser();
 		ParsingResult	result		= parser.parseExpression( expression );
-		Node			javaAST		= BoxLangTranspiler.transform( result.getRoot() );
+		Node			javaAST		= JavaTranspiler.transform( result.getRoot() );
 
 		assertEqualsNoWhiteSpaces(
 		    "Referencer.get(context.scopeFindNearby(Key.of(\"foo\"),context.getDefaultAssignmentScope()).value(),Key.of(\"bar\"),true)",
@@ -116,7 +116,7 @@ public class TestObjectReference extends TestBase {
 
 		BoxParser		parser		= new BoxParser();
 		ParsingResult	result		= parser.parseExpression( expression );
-		Node			javaAST		= BoxLangTranspiler.transform( result.getRoot() );
+		Node			javaAST		= JavaTranspiler.transform( result.getRoot() );
 
 		assertEqualsNoWhiteSpaces(
 		    "variablesScope.dereference(Key.of(\"foo\"),false)",
@@ -131,7 +131,7 @@ public class TestObjectReference extends TestBase {
 
 		BoxParser		parser		= new BoxParser();
 		ParsingResult	result		= parser.parseExpression( expression );
-		Node			javaAST		= BoxLangTranspiler.transform( result.getRoot() );
+		Node			javaAST		= JavaTranspiler.transform( result.getRoot() );
 
 		assertEqualsNoWhiteSpaces(
 		    "variablesScope.dereference(Key.of(\"foo\"),false)",
@@ -146,7 +146,7 @@ public class TestObjectReference extends TestBase {
 
 		BoxParser		parser		= new BoxParser();
 		ParsingResult	result		= parser.parseStatement( expression );
-		Node			javaAST		= extractFromBlockStmt( BoxLangTranspiler.transform( result.getRoot() ) );
+		Node			javaAST		= extractFromBlockStmt( JavaTranspiler.transform( result.getRoot() ) );
 
 		// TODO: we're generating extra {} braces around the code. Not sure if that is correct.
 		assertEqualsNoWhiteSpaces( """

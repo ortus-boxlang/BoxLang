@@ -21,7 +21,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import ortus.boxlang.ast.BoxNode;
 import ortus.boxlang.ast.statement.BoxReturn;
-import ortus.boxlang.transpiler.BoxLangTranspiler;
+import ortus.boxlang.transpiler.JavaTranspiler;
 import ortus.boxlang.transpiler.transformer.AbstractTransformer;
 import ortus.boxlang.transpiler.transformer.TransformerContext;
 
@@ -42,7 +42,7 @@ public class BoxReturnTransformer extends AbstractTransformer {
 		String				template	= "return;";
 		Map<String, String>	values		= new HashMap<>();
 		if ( boxReturn.getExpression() != null ) {
-			Expression expr = ( Expression ) BoxLangTranspiler.transform( boxReturn.getExpression(), TransformerContext.RIGHT );
+			Expression expr = ( Expression ) JavaTranspiler.transform( boxReturn.getExpression(), TransformerContext.RIGHT );
 			values.put( "expr", expr.toString() );
 			template = "return ${expr};";
 		}

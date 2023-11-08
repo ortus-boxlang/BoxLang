@@ -25,27 +25,27 @@ import ortus.boxlang.runtime.types.immutable.ImmutableStruct;
  */
 public class GenericMeta extends BoxMeta {
 
-    @SuppressWarnings( "unused" )
-    private Object  target;
-    public Class<?> $class;
-    public Struct   meta;
+	@SuppressWarnings( "unused" )
+	private Object	target;
+	public Class<?>	$class;
+	public Struct	meta;
 
-    /**
-     * Constructor
-     */
-    public GenericMeta( Object target ) {
-        super();
-        this.target = target;
-        this.$class = target.getClass();
-        this.meta   = ImmutableStruct.EMPTY;
+	/**
+	 * Constructor
+	 */
+	public GenericMeta( Object target ) {
+		super();
+		this.target	= target;
+		this.$class	= target.getClass();
+		this.meta	= ImmutableStruct.EMPTY;
 
-    }
+	}
 
-    /**
-     * Get target object this metadata is for
-     */
-    public Object getTarget() {
-        return target;
-    }
+	/**
+	 * Get target object this metadata is for
+	 */
+	public Object getTarget() {
+		return target;
+	}
 
 }

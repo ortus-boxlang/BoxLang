@@ -37,7 +37,6 @@ import org.slf4j.LoggerFactory;
 
 import com.github.javaparser.ast.CompilationUnit;
 import com.github.javaparser.ast.Node;
-import com.github.javaparser.ast.stmt.ThrowStmt;
 
 import ortus.boxlang.ast.BoxExpr;
 import ortus.boxlang.ast.BoxScript;
@@ -52,7 +51,9 @@ import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.config.util.PlaceholderHelper;
 import ortus.boxlang.runtime.runnables.IBoxRunnable;
 import ortus.boxlang.runtime.types.exceptions.ApplicationException;
-import ortus.boxlang.transpiler.BoxLangTranspiler;
+import ortus.boxlang.transpiler.JavaTranspiler;
+import ortus.boxlang.transpiler.TranspiledCode;
+import ortus.boxlang.transpiler.Transpiler;
 
 /**
  * This class uses the Java compiler to turn a BoxLang script into a Java class
@@ -265,18 +266,18 @@ public class JavaBoxpiler {
 					throw new ApplicationException( "Error compiling source. " + result.getIssues().get( 0 ).toString() );
 				}
 
-				BoxLangTranspiler	transpiler	= new BoxLangTranspiler();
+				JavaTranspiler			transpiler	= new JavaTranspiler();
 
-				Position			position	= new Position( new Point( 1, 1 ), new Point( 1, source.length() ) );
+				Position				position	= new Position( new Point( 1, 1 ), new Point( 1, source.length() ) );
 
 				List<CompilationUnit>	javaASTs	= transpiler.transpileMany( new BoxScript(
-				        List.of( result.getRoot() instanceof BoxStatement ? ( BoxStatement ) result.getRoot()
-				            : new BoxExpression( ( BoxExpr ) result.getRoot(), position, source ) ),
-				        position,
-				        source
-				    ) );
-				//Node				javaAST		= ( Node ) transpiler.transpile(			);
-				
+				    List.of( result.getRoot() instanceof BoxStatement ? ( BoxStatement ) result.getRoot()
+				        : new BoxExpression( ( BoxExpr ) result.getRoot(), position, source ) ),
+				    position,
+				    source
+				) );
+				// Node javaAST = ( Node ) transpiler.transpile( );
+
 				if ( false )
 					throw new ApplicationException( "&&&&&&&\n\n\n\n" + getStatementsAsStringReturnLast( transpiler ) + "\n\n\n\n&&&&&&" );
 
@@ -309,24 +310,19 @@ public class JavaBoxpiler {
 					throw new ApplicationException( "Error compiling source. " + result.getIssues().get( 0 ).toString() );
 				}
 
-				BoxLangTranspiler		transpiler	= new BoxLangTranspiler();
+				Transpiler transpiler = Transpiler.getTranspiler( null /* Config ? */ );
+				transpiler.setProperty( "classname", className );
+				transpiler.setProperty( "packageName", packageName );
+				transpiler.setProperty( "baseclass", "BoxScript" );
+				transpiler.setProperty( "returnType", "Object" );
+				TranspiledCode javaASTs = transpiler.transpile( result.getRoot() );
+				compileSource( javaASTs.getEntryPoint().toString(), fqn );
 
-				List<CompilationUnit>	javaASTs	= transpiler.transpileMany( result.getRoot() );
-				String					test		= "";
-
-				// loop over javaasts, appending to test string
-				for ( int i = 0; i < javaASTs.size(); i++ ) {
-					test += javaASTs.get( i ).toString();
-					if ( i < javaASTs.size() - 1 ) {
-						test += "\n\n\n	&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&\n\n\n";
-					}
+				// Process functions ad lamdas
+				for ( CompilationUnit callable : javaASTs.getCallables() ) {
+					compileSource( callable.toString(), fqn );
 				}
-				if ( false )
-					throw new ApplicationException( test );
 
-				//Node javaAST = ( Node ) transpiler.transpile( ( BoxScript ) result.getRoot() );
-
-				compileSource( makeClass( transpiler.getStatementsAsString() + "\n return null;", "BoxScript", packageName, className ), fqn );
 			}
 		}
 		return getClass( fqn );
@@ -353,8 +349,8 @@ public class JavaBoxpiler {
 				result.getIssues().forEach( it -> System.out.println( it ) );
 				assert result.isCorrect();
 
-				BoxLangTranspiler	transpiler	= new BoxLangTranspiler();
-				List<CompilationUnit>	javaASTs		= transpiler.transpileMany( result.getRoot() );
+				JavaTranspiler			transpiler	= new JavaTranspiler();
+				List<CompilationUnit>	javaASTs	= transpiler.transpileMany( result.getRoot() );
 
 				compileSource( makeClass( transpiler.getStatementsAsString(), "BoxTemplate", packageName, className ), fqn );
 			}
@@ -413,13 +409,14 @@ public class JavaBoxpiler {
 		}
 	}
 
-	public String getStatementsAsStringReturnLast( BoxLangTranspiler transpiler ) {
-		StringBuilder result = new StringBuilder();
-		boolean returned = false;
+	public String getStatementsAsStringReturnLast( JavaTranspiler transpiler ) {
+		StringBuilder	result		= new StringBuilder();
+		boolean			returned	= false;
 		// loop over statements
 		for ( int i = 0; i < transpiler.getStatements().size(); i++ ) {
 			// if last statement, return it
-			if ( ( i == transpiler.getStatements().size() -1 ) && !(transpiler.getStatements().get( i ).toString().contains( "ExceptionUtil.throwException(" )  ) ) {
+			if ( ( i == transpiler.getStatements().size() - 1 )
+			    && ! ( transpiler.getStatements().get( i ).toString().contains( "ExceptionUtil.throwException(" ) ) ) {
 				result.append( "return " );
 				returned = true;
 			}
@@ -428,7 +425,7 @@ public class JavaBoxpiler {
 				result.append( ";\n" );
 			}
 		}
-		if( !returned ) {
+		if ( !returned ) {
 			result.append( "\nreturn null;" );
 		}
 		return result.toString();

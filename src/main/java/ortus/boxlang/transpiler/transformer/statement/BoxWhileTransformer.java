@@ -17,16 +17,14 @@ package ortus.boxlang.transpiler.transformer.statement;
 import com.github.javaparser.ast.Node;
 import com.github.javaparser.ast.expr.Expression;
 import com.github.javaparser.ast.stmt.BlockStmt;
-import com.github.javaparser.ast.stmt.IfStmt;
 import com.github.javaparser.ast.stmt.Statement;
 import com.github.javaparser.ast.stmt.WhileStmt;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import ortus.boxlang.ast.BoxNode;
 import ortus.boxlang.ast.BoxStatement;
-import ortus.boxlang.ast.statement.BoxIfElse;
 import ortus.boxlang.ast.statement.BoxWhile;
-import ortus.boxlang.transpiler.BoxLangTranspiler;
+import ortus.boxlang.transpiler.JavaTranspiler;
 import ortus.boxlang.transpiler.transformer.AbstractTransformer;
 import ortus.boxlang.transpiler.transformer.TransformerContext;
 import ortus.boxlang.transpiler.transformer.expression.BoxParenthesisTransformer;
@@ -41,7 +39,7 @@ public class BoxWhileTransformer extends AbstractTransformer {
 	@Override
 	public Node transform( BoxNode node, TransformerContext context ) throws IllegalStateException {
 		BoxWhile	boxWhile	= ( BoxWhile ) node;
-		Expression	condition	= ( Expression ) BoxLangTranspiler.transform( boxWhile.getCondition(), TransformerContext.RIGHT );
+		Expression	condition	= ( Expression ) JavaTranspiler.transform( boxWhile.getCondition(), TransformerContext.RIGHT );
 
 		String		template	= "while(  ${condition}  ) {}";
 		if ( requiresBooleanCaster( boxWhile.getCondition() ) ) {
@@ -56,7 +54,7 @@ public class BoxWhileTransformer extends AbstractTransformer {
 		WhileStmt			javaWhile	= ( WhileStmt ) parseStatement( template, values );
 		BlockStmt			body		= new BlockStmt();
 		for ( BoxStatement statement : boxWhile.getBody() ) {
-			body.getStatements().add( ( Statement ) BoxLangTranspiler.transform( statement ) );
+			body.getStatements().add( ( Statement ) JavaTranspiler.transform( statement ) );
 		}
 		javaWhile.setBody( body );
 		return javaWhile;

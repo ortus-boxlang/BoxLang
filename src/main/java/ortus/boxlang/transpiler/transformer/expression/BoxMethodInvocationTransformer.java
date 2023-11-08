@@ -12,7 +12,7 @@ import com.github.javaparser.ast.expr.Expression;
 
 import ortus.boxlang.ast.BoxNode;
 import ortus.boxlang.ast.expression.BoxMethodInvocation;
-import ortus.boxlang.transpiler.BoxLangTranspiler;
+import ortus.boxlang.transpiler.JavaTranspiler;
 import ortus.boxlang.transpiler.transformer.AbstractTransformer;
 import ortus.boxlang.transpiler.transformer.TransformerContext;
 
@@ -25,11 +25,11 @@ public class BoxMethodInvocationTransformer extends AbstractTransformer {
 		BoxMethodInvocation	invocation	= ( BoxMethodInvocation ) node;
 		String				side		= context == TransformerContext.NONE ? "" : "(" + context.toString() + ") ";
 
-		Expression			expr		= ( Expression ) BoxLangTranspiler.transform( invocation.getObj(),
+		Expression			expr		= ( Expression ) JavaTranspiler.transform( invocation.getObj(),
 		    TransformerContext.RIGHT );
 
 		String				args		= invocation.getArguments().stream()
-		    .map( it -> resolveScope( BoxLangTranspiler.transform( it ), context ).toString() )
+		    .map( it -> resolveScope( JavaTranspiler.transform( it ), context ).toString() )
 		    .collect( Collectors.joining( ", " ) );
 
 		Map<String, String>	values		= new HashMap<>();

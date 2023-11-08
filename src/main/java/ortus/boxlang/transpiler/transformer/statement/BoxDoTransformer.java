@@ -5,14 +5,12 @@ import com.github.javaparser.ast.expr.Expression;
 import com.github.javaparser.ast.stmt.BlockStmt;
 import com.github.javaparser.ast.stmt.DoStmt;
 import com.github.javaparser.ast.stmt.Statement;
-import com.github.javaparser.ast.stmt.WhileStmt;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import ortus.boxlang.ast.BoxNode;
 import ortus.boxlang.ast.BoxStatement;
 import ortus.boxlang.ast.statement.BoxDo;
-import ortus.boxlang.ast.statement.BoxWhile;
-import ortus.boxlang.transpiler.BoxLangTranspiler;
+import ortus.boxlang.transpiler.JavaTranspiler;
 import ortus.boxlang.transpiler.transformer.AbstractTransformer;
 import ortus.boxlang.transpiler.transformer.TransformerContext;
 import ortus.boxlang.transpiler.transformer.expression.BoxParenthesisTransformer;
@@ -27,7 +25,7 @@ public class BoxDoTransformer extends AbstractTransformer {
 	@Override
 	public Node transform( BoxNode node, TransformerContext context ) throws IllegalStateException {
 		BoxDo		boxDo		= ( BoxDo ) node;
-		Expression	condition	= ( Expression ) BoxLangTranspiler.transform( boxDo.getCondition(), TransformerContext.RIGHT );
+		Expression	condition	= ( Expression ) JavaTranspiler.transform( boxDo.getCondition(), TransformerContext.RIGHT );
 
 		String		template	= "do  {} while(  ${condition}  );";
 		if ( requiresBooleanCaster( boxDo.getCondition() ) ) {
@@ -42,7 +40,7 @@ public class BoxDoTransformer extends AbstractTransformer {
 		DoStmt				javaDo	= ( DoStmt ) parseStatement( template, values );
 		BlockStmt			body	= new BlockStmt();
 		for ( BoxStatement statement : boxDo.getBody() ) {
-			body.getStatements().add( ( Statement ) BoxLangTranspiler.transform( statement ) );
+			body.getStatements().add( ( Statement ) JavaTranspiler.transform( statement ) );
 		}
 		javaDo.setBody( body );
 		return javaDo;

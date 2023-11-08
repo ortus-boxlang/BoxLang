@@ -33,7 +33,8 @@ import ortus.boxlang.ast.Source;
 import ortus.boxlang.ast.SourceFile;
 import ortus.boxlang.runtime.config.util.PlaceholderHelper;
 import ortus.boxlang.runtime.types.exceptions.ApplicationException;
-import ortus.boxlang.transpiler.BoxLangTranspiler;
+import ortus.boxlang.transpiler.JavaTranspiler;
+import ortus.boxlang.transpiler.Transpiler;
 import ortus.boxlang.transpiler.transformer.AbstractTransformer;
 import ortus.boxlang.transpiler.transformer.TransformerContext;
 
@@ -41,52 +42,37 @@ public class BoxScriptTransformer extends AbstractTransformer {
 
 	// @formatter:off
 	private final String template = """
-		// Auto package creation according to file path on disk
 		package ${packageName};
 
 		import ortus.boxlang.runtime.BoxRuntime;
 		import ortus.boxlang.runtime.context.*;
 
 		// BoxLang Auto Imports
-		import ortus.boxlang.runtime.BoxRuntime;
-		import ortus.boxlang.runtime.context.*;
-
-		// BoxLang Auto Imports
 		import ortus.boxlang.runtime.runnables.BoxTemplate;
+		import ortus.boxlang.runtime.runnables.BoxScript;
 		import ortus.boxlang.runtime.dynamic.Referencer;
 		import ortus.boxlang.runtime.interop.DynamicObject;
 		import ortus.boxlang.runtime.loader.ClassLocator;
+		import ortus.boxlang.runtime.loader.ImportDefinition;
 		import ortus.boxlang.runtime.operators.*;
 		import ortus.boxlang.runtime.scopes.Key;
-		import ortus.boxlang.runtime.scopes.IScope;
-		import ortus.boxlang.runtime.scopes.LocalScope;
-		import ortus.boxlang.runtime.scopes.VariablesScope;
+		import ortus.boxlang.runtime.scopes.*;
 		import ortus.boxlang.runtime.dynamic.casters.*;
-		import ortus.boxlang.runtime.loader.ImportDefinition;
 		import ortus.boxlang.runtime.types.exceptions.ExceptionUtil;
 
-
-		// Classes Auto-Imported on all Templates and Classes by BoxLang
+		import java.nio.file.Path;
+		import java.nio.file.Paths;
 		import java.time.LocalDateTime;
-		import java.time.Instant;
-		import java.lang.System;
-		import java.lang.String;
-		import java.lang.Character;
-		import java.lang.Boolean;
-		import java.lang.Double;
-		import java.lang.Integer;
-		import java.util.*;
-		import java.nio.file.*;
+		import java.util.List;
 
-		public class ${className} extends BoxTemplate {
+		public class ${className} extends ${baseclass} {
 
-			// Auto-Generated Singleton Helpers
 			private static ${className} instance;
 
 			private static final List<ImportDefinition>	imports			= List.of();
 			private static final Path					path			= Paths.get( "${fileFolderPath}" );
-			private static final long					compileVersion	= ${compileVersion};
-			private static final LocalDateTime			compiledOn		= ${compiledOnTimestamp};
+			private static final long					compileVersion	= 1L;
+			private static final LocalDateTime			compiledOn		= LocalDateTime.parse( "2023-09-27T10:15:30" );
 			private static final Object					ast				= null;
 
 			public ${className}() {
@@ -98,76 +84,68 @@ public class BoxScriptTransformer extends AbstractTransformer {
 				}
 				return instance;
 			}
-
 			/**
-			* Each template must implement the invoke() method which executes the template
-			*
-			* @param context The execution context requesting the execution
-			*/
-			public void _invoke( IBoxContext context ) {
+				* Each template must implement the invoke() method which executes the template
+				*
+				* @param context The execution context requesting the execution
+				*/
+			public ${returnType} _invoke( IBoxContext context ) {
 				// Reference to the variables scope
-				IBoxContext			catchContext = null;
-				IScope variablesScope = context.getScopeNearby( VariablesScope.name );
+				IScope variablesScope = context.getScopeNearby( Key.of( "variables" ) );
 				ClassLocator classLocator = ClassLocator.getInstance();
-
+				IBoxContext			catchContext = null;
 			}
 
 			// ITemplateRunnable implementation methods
+
 			/**
-			* The version of the BoxLang runtime
+				* The version of the BoxLang runtime
 			*/
 			public long getRunnableCompileVersion() {
-			return ${className}.compileVersion;
+				return ${className}.compileVersion;
 			}
 
 			/**
-			* The date the template was compiled
+				* The date the template was compiled
 			*/
 			public LocalDateTime getRunnableCompiledOn() {
-			return ${className}.compiledOn;
+				return ${className}.compiledOn;
 			}
 
 			/**
-			* The AST (abstract syntax tree) of the runnable
+				* The AST (abstract syntax tree) of the runnable
 			*/
 			public Object getRunnableAST() {
 			return ${className}.ast;
 			}
 
 			/**
-			* The path to the template
+				* The path to the template
 			*/
 			public Path getRunnablePath() {
 			return ${className}.path;
 			}
 
-
-			public static void main(String[] args) {
-				BoxRuntime rt = BoxRuntime.getInstance();
-
-				try {
-					rt.executeTemplate( ${className}.getInstance() );
-				} catch ( Throwable e ) {
-					e.printStackTrace();
-					System.exit( 1 );
-				}
-
-				// Bye bye! Ciao Bella!
-				rt.shutdown();
-
-
-			}
 		}
 	""";
 	// @formatter:on
+
+	/**
+	 * Constructor
+	 *
+	 * @param transpiler parent transpiler
+	 */
+	public BoxScriptTransformer( JavaTranspiler transpiler ) {
+		this.transpiler = transpiler;
+	}
 
 	@Override
 	public Node transform( BoxNode node, TransformerContext context ) throws IllegalStateException {
 
 		BoxScript	script			= ( BoxScript ) node;
 		Source		source			= script.getPosition().getSource();
-		String		packageName		= BoxLangTranspiler.getPackageName( source );
-		String		className		= BoxLangTranspiler.getClassName( source );
+		String		packageName		= JavaTranspiler.getPackageName( source );
+		String		className		= JavaTranspiler.getClassName( source );
 		String		fileName		= source instanceof SourceFile file && file.getFile() != null ? file.getFile().getName() : "unknown";
 		String		fileExt			= fileName.substring( fileName.lastIndexOf( "." ) + 1 );
 		String		filePath		= source instanceof SourceFile file && file.getFile() != null ? file.getFile().getAbsolutePath() : "unknown";
@@ -188,14 +166,23 @@ public class BoxScriptTransformer extends AbstractTransformer {
 			throw new IllegalStateException();
 		}
 
+		//
+		className	= transpiler.getProperty( "classname" ) != null ? transpiler.getProperty( "classname" ) : className;
+		packageName	= transpiler.getProperty( "packageName" ) != null ? transpiler.getProperty( "packageName" ) : packageName;
+		String	baseClass	= transpiler.getProperty( "baseclass" ) != null ? transpiler.getProperty( "baseclass" ) : "BoxScript";
+		String	returnType	= baseClass.equals( "BoxScript" ) ? "Object" : "void";
+		returnType = transpiler.getProperty( "return" ) != null ? transpiler.getProperty( "return" ) : returnType;
+
 		String							finalFilePath		= filePath;
 		String							finalLastModified	= lastModified;
 		Map<String, String>				values				= Map.ofEntries(
-		    Map.entry( "packageName", packageName ),
+		    Map.entry( "packagename", packageName ),
 		    Map.entry( "className", className ),
 		    Map.entry( "fileName", fileName ),
+		    Map.entry( "baseclass", baseClass ),
+		    Map.entry( "returnType", returnType ),
 		    Map.entry( "fileExtension", fileExt ),
-		    Map.entry( "fileFolderPath", finalFilePath.replaceAll( "\\\\", "\\\\\\\\" ) ),
+		    Map.entry( "fileFolderPath", "" /* finalFilePath.replaceAll( "\\\\", "\\\\\\\\" ) */ ),
 		    Map.entry( "lastModifiedTimestamp", finalLastModified ),
 		    Map.entry( "compiledOnTimestamp", compiledOn ),
 		    Map.entry( "compileVersion", "1L" )

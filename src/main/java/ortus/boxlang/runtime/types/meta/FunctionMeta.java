@@ -31,54 +31,54 @@ import ortus.boxlang.runtime.types.immutable.ImmutableStruct;
  */
 public class FunctionMeta extends BoxMeta {
 
-    @SuppressWarnings( "unused" )
-    private Function target;
-    public Object    AST;
-    public Class<?>  $class;
-    // TODO: Make this into an actual class to allow modification on the fly of metadata
-    public Struct    meta;
+	@SuppressWarnings( "unused" )
+	private Function	target;
+	public Object		AST;
+	public Class<?>		$class;
+	// TODO: Make this into an actual class to allow modification on the fly of metadata
+	public Struct		meta;
 
-    /**
-     * Constructor
-     */
-    public FunctionMeta( Function target ) {
-        super();
-        this.target = target;
-        this.$class = target.getClass();
-        this.AST    = target.getRunnableAST();
+	/**
+	 * Constructor
+	 */
+	public FunctionMeta( Function target ) {
+		super();
+		this.target	= target;
+		this.$class	= target.getClass();
+		this.AST	= target.getRunnableAST();
 
-        // prepare args first
-        Object[] params = new Object[ target.getArguments().length ];
-        int      i      = 0;
-        for ( Argument argument : target.getArguments() ) {
-            params[ i++ ] = ImmutableStruct.of(
-                "name", argument.name().getName(),
-                "required", argument.required(),
-                "type", argument.type(),
-                "default", argument.defaultValue(),
-                "documentation", argument.documentation(),
-                "annotations", argument.annotations()
-            );
-        }
-        // Assemble the metadata
-        this.meta = ImmutableStruct.of(
-            "name", target.getName().getName(),
-            "returnType", target.getReturnType(),
-            "access", target.getAccess().toString().toLowerCase(),
-            "documentation", target.getDocumentation(),
-            "annotations", target.getAnnotations(),
-            "parameters", new ImmutableArray( params ),
-            "closure", target instanceof Closure,
-            "lambda", target instanceof Lambda
-        );
+		// prepare args first
+		Object[]	params	= new Object[ target.getArguments().length ];
+		int			i		= 0;
+		for ( Argument argument : target.getArguments() ) {
+			params[ i++ ] = ImmutableStruct.of(
+			    "name", argument.name().getName(),
+			    "required", argument.required(),
+			    "type", argument.type(),
+			    "default", argument.defaultValue(),
+			    "documentation", argument.documentation(),
+			    "annotations", argument.annotations()
+			);
+		}
+		// Assemble the metadata
+		this.meta = ImmutableStruct.of(
+		    "name", target.getName().getName(),
+		    "returnType", target.getReturnType(),
+		    "access", target.getAccess().toString().toLowerCase(),
+		    "documentation", target.getDocumentation(),
+		    "annotations", target.getAnnotations(),
+		    "parameters", new ImmutableArray( params ),
+		    "closure", target instanceof Closure,
+		    "lambda", target instanceof Lambda
+		);
 
-    }
+	}
 
-    /**
-     * Get target object this metadata is for
-     */
-    public Object getTarget() {
-        return target;
-    }
+	/**
+	 * Get target object this metadata is for
+	 */
+	public Object getTarget() {
+		return target;
+	}
 
 }

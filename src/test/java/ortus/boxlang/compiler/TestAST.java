@@ -20,7 +20,7 @@ import org.junit.jupiter.api.Test;
 import ortus.boxlang.ast.expression.BoxBinaryOperation;
 import ortus.boxlang.parser.BoxParser;
 import ortus.boxlang.parser.ParsingResult;
-import ortus.boxlang.transpiler.BoxLangTranspiler;
+import ortus.boxlang.transpiler.JavaTranspiler;
 
 import java.io.IOException;
 import java.nio.file.Path;
@@ -92,13 +92,13 @@ public class TestAST extends TestBase {
 	@Test
 	public void testTranspiler() throws Exception {
 
-		BoxLangTranspiler	transpiler	= new BoxLangTranspiler();
+		JavaTranspiler	transpiler	= new JavaTranspiler();
 
-		List<Path>			files		= scanForFiles( "../examples/cf_to_java/HelloWorld", Set.of( "cfc" ) );
+		List<Path>		files		= scanForFiles( "../examples/cf_to_java/HelloWorld", Set.of( "cfc" ) );
 		for ( Path file : files ) {
 			System.out.println( file );
 			ParsingResult	result	= parser.parse( file.toFile() );
-			CompilationUnit	javaAST	= transpiler.transpile( result.getRoot() );
+			CompilationUnit	javaAST	= transpiler.transpileToJava( result.getRoot() );
 			System.out.println( javaAST );
 		}
 

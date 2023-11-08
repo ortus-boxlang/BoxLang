@@ -1,10 +1,11 @@
 package ortus.boxlang.transpiler;
 
 import com.github.javaparser.ast.CompilationUnit;
+import com.github.javaparser.ast.NodeList;
+import com.github.javaparser.ast.body.MethodDeclaration;
+import com.github.javaparser.ast.stmt.Statement;
 import org.apache.commons.cli.*;
-import ortus.boxlang.ast.BoxExpr;
 import ortus.boxlang.ast.BoxNode;
-import ortus.boxlang.ast.BoxStatement;
 import ortus.boxlang.parser.BoxParser;
 import ortus.boxlang.parser.ParsingResult;
 
@@ -102,9 +103,9 @@ public class Main {
 
 		options().forEach( options::addOption );
 
-		List<Path>			files		= new ArrayList<>();
-		BoxParser			parser		= new BoxParser();
-		BoxLangTranspiler	transpiler	= new BoxLangTranspiler();
+		List<Path>	files	= new ArrayList<>();
+		BoxParser	parser	= new BoxParser();
+
 		try {
 			CommandLine cmd = new DefaultParser().parse( options, args );
 			if ( cmd.hasOption( "input" ) ) {
@@ -120,34 +121,40 @@ public class Main {
 				    )
 				);
 			}
-			if ( cmd.hasOption( "output" ) ) {
 
-			}
 			for ( Path file : files ) {
 				System.out.println( file );
 				ParsingResult result = parser.parse( file.toFile() );
 
 				if ( result.isCorrect() ) {
-					// CompilationUnit javaAST = transpiler.transpileMany( result.getRoot() );
-					List<CompilationUnit>	javaASTs	= transpiler.transpileMany( result.getRoot() );
-					String					output		= cmd.getOptionValue( "output" );
-					String					classpath	= cmd.getOptionValue( "classpath" );
-					String					fqn			= "";
+
+					String	output		= cmd.getOptionValue( "output" );
+					String	classpath	= cmd.getOptionValue( "classpath" );
+					String	fqn			= "";
 					try {
-						for ( CompilationUnit javaAST : javaASTs ) {
+
+						Transpiler transpiler = Transpiler.getTranspiler( null /* Config ? */ );
+						transpiler.setProperty( "baseclass", "BoxScript" );
+						transpiler.setProperty( "returnType", "Object" );
+						TranspiledCode code = transpiler.transpile( result.getRoot() );
+
+						fqn = transpiler.compileJava( code.getEntryPoint(), output, List.of( classpath ) );
+
+						for ( CompilationUnit javaAST : code.getCallables() ) {
 							fqn = transpiler.compileJava( javaAST, output, List.of( classpath ) );
 						}
-						transpiler.runJavaClass( fqn, List.of( classpath, output ) );
+
+						transpiler.run( fqn, List.of( classpath, output ) );
 					} catch ( Throwable e ) {
 						e.printStackTrace();
 						for ( StackTraceElement s : Arrays.stream( e.getStackTrace() ).toList() ) {
 							if ( fqn.equalsIgnoreCase( s.getClassName() ) ) {
-								BoxNode node = transpiler.resloveReference( s.getLineNumber() );
-								if ( node != null ) {
-									String	uri		= node.getPosition().getSource().toString();
-									int		line	= node.getPosition().getStart().getLine();
-									System.err.println( uri + ":" + line + "  " + node.getSourceText() );
-								}
+								// BoxNode node = transpiler.resloveReference( s.getLineNumber() );
+								// if ( node != null ) {
+								// String uri = node.getPosition().getSource().toString();
+								// int line = node.getPosition().getStart().getLine();
+								// System.err.println( uri + ":" + line + " " + node.getSourceText() );
+								// }
 							}
 						}
 
@@ -162,6 +169,23 @@ public class Main {
 			new HelpFormatter().printHelp( "Usage:", options );
 			System.exit( 0 );
 		}
+	}
+
+	private static void showLastStatement( CompilationUnit javaClass ) {
+		MethodDeclaration	method	= javaClass.findCompilationUnit().orElseThrow()
+		    .getType( 0 )
+		    .getMethodsByName( "_invoke" ).get( 0 );
+
+		NodeList<Statement>	body	= method.getBody().get().getStatements();
+		Optional<Statement>	last	= body.getLast();
+
+		System.out.println( "I am the last: " + last.get() );
+		for ( Statement stmt : body ) {
+			if ( body.indexOf( stmt ) == body.size() - 1 ) {
+				System.out.println( "I am the last: " + stmt );
+			}
+		}
+
 	}
 
 }

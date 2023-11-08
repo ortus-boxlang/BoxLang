@@ -6,7 +6,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import ortus.boxlang.ast.BoxNode;
 import ortus.boxlang.ast.expression.BoxParenthesis;
-import ortus.boxlang.transpiler.BoxLangTranspiler;
+import ortus.boxlang.transpiler.JavaTranspiler;
 import ortus.boxlang.transpiler.transformer.AbstractTransformer;
 import ortus.boxlang.transpiler.transformer.TransformerContext;
 
@@ -20,7 +20,7 @@ public class BoxParenthesisTransformer extends AbstractTransformer {
 	@Override
 	public Node transform( BoxNode node, TransformerContext context ) throws IllegalStateException {
 		BoxParenthesis		parenthesis	= ( BoxParenthesis ) node;
-		Expression			expr		= ( Expression ) BoxLangTranspiler.transform( parenthesis.getExpression() );
+		Expression			expr		= ( Expression ) JavaTranspiler.transform( parenthesis.getExpression() );
 		String				side		= context == TransformerContext.NONE ? "" : "(" + context.toString() + ") ";
 		Map<String, String>	values		= new HashMap<>() {
 

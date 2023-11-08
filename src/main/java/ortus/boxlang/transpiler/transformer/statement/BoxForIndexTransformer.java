@@ -25,7 +25,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import ortus.boxlang.ast.BoxNode;
 import ortus.boxlang.ast.statement.BoxForIndex;
-import ortus.boxlang.transpiler.BoxLangTranspiler;
+import ortus.boxlang.transpiler.JavaTranspiler;
 import ortus.boxlang.transpiler.transformer.AbstractTransformer;
 import ortus.boxlang.transpiler.transformer.TransformerContext;
 
@@ -52,11 +52,11 @@ public class BoxForIndexTransformer extends AbstractTransformer {
 	@Override
 	public Node transform( BoxNode node, TransformerContext context ) throws IllegalStateException {
 		BoxForIndex			boxFor		= ( BoxForIndex ) node;
-		Expression			variable	= ( Expression ) resolveScope( BoxLangTranspiler.transform( boxFor.getVariable(), TransformerContext.LEFT ),
+		Expression			variable	= ( Expression ) resolveScope( JavaTranspiler.transform( boxFor.getVariable(), TransformerContext.LEFT ),
 		    TransformerContext.INIT );
-		Expression			initial		= ( Expression ) BoxLangTranspiler.transform( boxFor.getInitial(), TransformerContext.RIGHT );
-		Expression			condition	= ( Expression ) BoxLangTranspiler.transform( boxFor.getCondition() );
-		Expression			step		= ( Expression ) BoxLangTranspiler.transform( boxFor.getStep() );
+		Expression			initial		= ( Expression ) JavaTranspiler.transform( boxFor.getInitial(), TransformerContext.RIGHT );
+		Expression			condition	= ( Expression ) JavaTranspiler.transform( boxFor.getCondition() );
+		Expression			step		= ( Expression ) JavaTranspiler.transform( boxFor.getStep() );
 		Map<String, String>	values		= new HashMap<>() {
 
 											{
@@ -79,7 +79,7 @@ public class BoxForIndexTransformer extends AbstractTransformer {
 		stmt.addStatement( init );
 		WhileStmt whileStmt = ( WhileStmt ) parseStatement( template2, values );
 		boxFor.getBody().forEach( it -> {
-			whileStmt.getBody().asBlockStmt().addStatement( ( Statement ) BoxLangTranspiler.transform( it ) );
+			whileStmt.getBody().asBlockStmt().addStatement( ( Statement ) JavaTranspiler.transform( it ) );
 		} );
 		ExpressionStmt stepStmt = new ExpressionStmt( step );
 		whileStmt.getBody().asBlockStmt().addStatement( stepStmt );

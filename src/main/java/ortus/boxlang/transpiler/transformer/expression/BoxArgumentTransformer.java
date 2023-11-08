@@ -6,7 +6,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import ortus.boxlang.ast.BoxNode;
 import ortus.boxlang.ast.expression.BoxArgument;
-import ortus.boxlang.transpiler.BoxLangTranspiler;
+import ortus.boxlang.transpiler.JavaTranspiler;
 import ortus.boxlang.transpiler.transformer.AbstractTransformer;
 import ortus.boxlang.transpiler.transformer.TransformerContext;
 
@@ -36,7 +36,7 @@ public class BoxArgumentTransformer extends AbstractTransformer {
 	public Node transform( BoxNode node, TransformerContext context ) throws IllegalStateException {
 		BoxArgument			arg			= ( BoxArgument ) node;
 		String				side		= context == TransformerContext.NONE ? "" : "(" + context.toString() + ") ";
-		Expression			expr		= ( Expression ) BoxLangTranspiler.transform( arg.getValue() );
+		Expression			expr		= ( Expression ) JavaTranspiler.transform( arg.getValue() );
 		// TODO handle named parameters
 		Map<String, String>	values		= new HashMap<>() {
 

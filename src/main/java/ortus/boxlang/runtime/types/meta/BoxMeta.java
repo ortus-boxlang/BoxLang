@@ -25,30 +25,30 @@ import ortus.boxlang.runtime.types.exceptions.ApplicationException;
  */
 public abstract class BoxMeta {
 
-    public static final Key key = Key.of( "bx$" );
+	public static final Key key = Key.of( "bx$" );
 
-    public abstract Object getTarget();
+	public abstract Object getTarget();
 
-    public void registerChangeListener( IChangeListener listener ) {
-        ensureTargetListenable().registerChangeListener( listener );
-    }
+	public void registerChangeListener( IChangeListener listener ) {
+		ensureTargetListenable().registerChangeListener( listener );
+	}
 
-    public void registerChangeListener( Key key, IChangeListener listener ) {
-        ensureTargetListenable().registerChangeListener( key, listener );
+	public void registerChangeListener( Key key, IChangeListener listener ) {
+		ensureTargetListenable().registerChangeListener( key, listener );
 
-    }
+	}
 
-    public void removeChangeListener( Key key ) {
-        ensureTargetListenable().removeChangeListener( key );
+	public void removeChangeListener( Key key ) {
+		ensureTargetListenable().removeChangeListener( key );
 
-    }
+	}
 
-    private IListenable ensureTargetListenable() {
-        if ( getTarget() instanceof IListenable listenable ) {
-            return listenable;
-        } else {
-            throw new ApplicationException( "Target [" + getTarget().getClass().getName() + "] does not support change listeners." );
-        }
-    }
+	private IListenable ensureTargetListenable() {
+		if ( getTarget() instanceof IListenable listenable ) {
+			return listenable;
+		} else {
+			throw new ApplicationException( "Target [" + getTarget().getClass().getName() + "] does not support change listeners." );
+		}
+	}
 
 }

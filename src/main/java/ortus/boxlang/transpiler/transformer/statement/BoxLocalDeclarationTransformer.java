@@ -23,10 +23,9 @@ import org.slf4j.LoggerFactory;
 import ortus.boxlang.ast.BoxNode;
 import ortus.boxlang.ast.expression.BoxIdentifier;
 import ortus.boxlang.ast.statement.BoxLocalDeclaration;
-import ortus.boxlang.transpiler.BoxLangTranspiler;
+import ortus.boxlang.transpiler.JavaTranspiler;
 import ortus.boxlang.transpiler.transformer.AbstractTransformer;
 import ortus.boxlang.transpiler.transformer.TransformerContext;
-import ortus.boxlang.transpiler.transformer.expression.BoxParenthesisTransformer;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -40,7 +39,7 @@ public class BoxLocalDeclarationTransformer extends AbstractTransformer {
 		BoxLocalDeclaration	declaration	= ( BoxLocalDeclaration ) node;
 		BlockStmt			stmt		= new BlockStmt();
 		if ( declaration.getExpression() != null ) {
-			Expression expr = ( Expression ) BoxLangTranspiler.transform( declaration.getExpression(), TransformerContext.RIGHT );
+			Expression expr = ( Expression ) JavaTranspiler.transform( declaration.getExpression(), TransformerContext.RIGHT );
 			;
 			declaration.getIdentifiers().stream().forEach( it -> {
 				BoxIdentifier		variable	= ( BoxIdentifier ) it;

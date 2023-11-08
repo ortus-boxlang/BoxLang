@@ -19,7 +19,7 @@ import com.github.javaparser.ast.expr.Expression;
 import com.github.javaparser.ast.stmt.ExpressionStmt;
 import ortus.boxlang.ast.BoxNode;
 import ortus.boxlang.ast.statement.BoxExpression;
-import ortus.boxlang.transpiler.BoxLangTranspiler;
+import ortus.boxlang.transpiler.JavaTranspiler;
 import ortus.boxlang.transpiler.transformer.AbstractTransformer;
 import ortus.boxlang.transpiler.transformer.TransformerContext;
 
@@ -28,7 +28,7 @@ public class BoxExpressionTransformer extends AbstractTransformer {
 	@Override
 	public Node transform( BoxNode node, TransformerContext context ) throws IllegalStateException {
 		BoxExpression	exprStmt	= ( BoxExpression ) node;
-		Expression		expr		= ( Expression ) BoxLangTranspiler.transform( exprStmt.getExpression() );
+		Expression		expr		= ( Expression ) JavaTranspiler.transform( exprStmt.getExpression() );
 		return addIndex( new ExpressionStmt( expr ), node );
 	}
 }

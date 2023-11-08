@@ -18,13 +18,11 @@ package ortus.boxlang.transpiler.transformer.statement;
 import com.github.javaparser.ast.Node;
 import com.github.javaparser.ast.NodeList;
 import com.github.javaparser.ast.body.Parameter;
-import com.github.javaparser.ast.expr.SimpleName;
 import com.github.javaparser.ast.stmt.BlockStmt;
 import com.github.javaparser.ast.stmt.CatchClause;
 import com.github.javaparser.ast.stmt.Statement;
 import com.github.javaparser.ast.stmt.TryStmt;
 import com.github.javaparser.ast.type.ClassOrInterfaceType;
-import com.github.javaparser.ast.type.Type;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import ortus.boxlang.ast.BoxNode;
@@ -32,7 +30,7 @@ import ortus.boxlang.ast.expression.BoxIdentifier;
 import ortus.boxlang.ast.expression.BoxStringLiteral;
 import ortus.boxlang.ast.statement.BoxTry;
 import ortus.boxlang.ast.statement.BoxTryCatch;
-import ortus.boxlang.transpiler.BoxLangTranspiler;
+import ortus.boxlang.transpiler.JavaTranspiler;
 import ortus.boxlang.transpiler.transformer.AbstractTransformer;
 import ortus.boxlang.transpiler.transformer.TransformerContext;
 import ortus.boxlang.transpiler.transformer.expression.BoxParenthesisTransformer;
@@ -59,7 +57,7 @@ public class BoxTryTransformer extends AbstractTransformer {
 
 		BlockStmt	tryBody	= new BlockStmt();
 		boxTry.getTryBody().stream().forEach( stmt -> tryBody.getStatements().add(
-		    ( Statement ) BoxLangTranspiler.transform( stmt )
+		    ( Statement ) JavaTranspiler.transform( stmt )
 		) );
 
 		NodeList<CatchClause> catchClauses = new NodeList<CatchClause>();
@@ -78,7 +76,7 @@ public class BoxTryTransformer extends AbstractTransformer {
 
 			catchBody.addStatement( handler );
 			clause.getCatchBody().stream().forEach( stmt -> catchBody.getStatements().add(
-			    ( Statement ) BoxLangTranspiler.transform( stmt )
+			    ( Statement ) JavaTranspiler.transform( stmt )
 			) );
 
 			catchClauses.add( new CatchClause( new Parameter( new ClassOrInterfaceType( "Throwable" ), name ), catchBody ) );
@@ -87,7 +85,7 @@ public class BoxTryTransformer extends AbstractTransformer {
 
 		BlockStmt finallyBody = new BlockStmt();
 		boxTry.getFinallyBody().stream().forEach( stmt -> finallyBody.getStatements().add(
-		    ( Statement ) BoxLangTranspiler.transform( stmt )
+		    ( Statement ) JavaTranspiler.transform( stmt )
 		) );
 
 		javaTry.setTryBlock( tryBody );

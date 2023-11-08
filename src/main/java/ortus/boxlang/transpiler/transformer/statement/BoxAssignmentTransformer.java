@@ -31,7 +31,7 @@ import ortus.boxlang.ast.BoxExpr;
 import ortus.boxlang.ast.BoxNode;
 import ortus.boxlang.ast.statement.BoxAssigmentOperator;
 import ortus.boxlang.ast.statement.BoxAssignment;
-import ortus.boxlang.transpiler.BoxLangTranspiler;
+import ortus.boxlang.transpiler.JavaTranspiler;
 import ortus.boxlang.transpiler.transformer.AbstractTransformer;
 import ortus.boxlang.transpiler.transformer.TransformerContext;
 
@@ -46,11 +46,11 @@ public class BoxAssignmentTransformer extends AbstractTransformer {
 	public Node transform( BoxNode node, TransformerContext context ) throws IllegalStateException {
 		logger.info( node.getSourceText() );
 		BoxAssignment	assigment	= ( BoxAssignment ) node;
-		Expression		right		= ( Expression ) BoxLangTranspiler.transform( assigment.getRight(), TransformerContext.RIGHT );
+		Expression		right		= ( Expression ) JavaTranspiler.transform( assigment.getRight(), TransformerContext.RIGHT );
 		BlockStmt		blockStmt	= new BlockStmt();
 		for ( BoxExpr expr : assigment.getLeft() ) {
 
-			Expression			left		= ( Expression ) BoxLangTranspiler.transform( expr, TransformerContext.LEFT );
+			Expression			left		= ( Expression ) JavaTranspiler.transform( expr, TransformerContext.LEFT );
 			Map<String, String>	values		= new HashMap<>();
 			ExpressionStmt		javaExpr	= new ExpressionStmt( left );
 			if ( left instanceof MethodCallExpr method ) {

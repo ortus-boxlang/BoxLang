@@ -26,32 +26,32 @@ import ortus.boxlang.runtime.types.immutable.ImmutableStruct;
  */
 public class StructMeta extends BoxMeta {
 
-    @SuppressWarnings( "unused" )
-    private Struct  target;
-    public Class<?> $class;
-    public Struct   meta;
+	@SuppressWarnings( "unused" )
+	private Struct	target;
+	public Class<?>	$class;
+	public Struct	meta;
 
-    /**
-     * Constructor
-     */
-    public StructMeta( Struct target ) {
-        super();
-        this.target = target;
-        this.$class = target.getClass();
+	/**
+	 * Constructor
+	 */
+	public StructMeta( Struct target ) {
+		super();
+		this.target	= target;
+		this.$class	= target.getClass();
 
-        // Assemble the metadata
-        this.meta   = ImmutableStruct.of(
-            "type", this.target.type.name(),
-            "immutable", this.target instanceof IImmutable
-        );
+		// Assemble the metadata
+		this.meta	= ImmutableStruct.of(
+		    "type", this.target.type.name(),
+		    "immutable", this.target instanceof IImmutable
+		);
 
-    }
+	}
 
-    /**
-     * Get target object this metadata is for
-     */
-    public Object getTarget() {
-        return target;
-    }
+	/**
+	 * Get target object this metadata is for
+	 */
+	public Object getTarget() {
+		return target;
+	}
 
 }

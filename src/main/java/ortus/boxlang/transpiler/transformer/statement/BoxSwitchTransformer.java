@@ -20,11 +20,8 @@ import com.github.javaparser.ast.stmt.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import ortus.boxlang.ast.BoxNode;
-import ortus.boxlang.ast.BoxStatement;
-import ortus.boxlang.ast.expression.BoxStringLiteral;
 import ortus.boxlang.ast.statement.BoxSwitch;
-import ortus.boxlang.ast.statement.BoxWhile;
-import ortus.boxlang.transpiler.BoxLangTranspiler;
+import ortus.boxlang.transpiler.JavaTranspiler;
 import ortus.boxlang.transpiler.transformer.AbstractTransformer;
 import ortus.boxlang.transpiler.transformer.TransformerContext;
 import ortus.boxlang.transpiler.transformer.expression.BoxParenthesisTransformer;
@@ -52,7 +49,7 @@ public class BoxSwitchTransformer extends AbstractTransformer {
 	@Override
 	public Node transform( BoxNode node, TransformerContext context ) throws IllegalStateException {
 		BoxSwitch	boxSwitch	= ( BoxSwitch ) node;
-		Expression	condition	= ( Expression ) resolveScope( BoxLangTranspiler.transform( boxSwitch.getCondition(), TransformerContext.RIGHT ), context );
+		Expression	condition	= ( Expression ) resolveScope( JavaTranspiler.transform( boxSwitch.getCondition(), TransformerContext.RIGHT ), context );
 
 		String		template	= """
 		                          do {
@@ -67,7 +64,7 @@ public class BoxSwitchTransformer extends AbstractTransformer {
 				if ( requiresBooleanCaster( c.getCondition() ) ) {
 					caseTemplate = "if( BooleanCaster.cast( ${condition} ) ) {}";
 				}
-				Expression			switchExpr	= ( Expression ) BoxLangTranspiler.transform( c.getCondition(), TransformerContext.RIGHT );
+				Expression			switchExpr	= ( Expression ) JavaTranspiler.transform( c.getCondition(), TransformerContext.RIGHT );
 				Map<String, String>	values		= new HashMap<>() {
 
 													{
@@ -77,7 +74,7 @@ public class BoxSwitchTransformer extends AbstractTransformer {
 				IfStmt				javaIfStmt	= ( IfStmt ) parseStatement( caseTemplate, values );
 				BlockStmt			thenBlock	= new BlockStmt();
 				c.getBody().forEach( stmt -> {
-					thenBlock.addStatement( ( Statement ) BoxLangTranspiler.transform( stmt ) );
+					thenBlock.addStatement( ( Statement ) JavaTranspiler.transform( stmt ) );
 				} );
 				javaIfStmt.setThenStmt( thenBlock );
 				body.addStatement( javaIfStmt );
@@ -87,7 +84,7 @@ public class BoxSwitchTransformer extends AbstractTransformer {
 		boxSwitch.getCases().forEach( c -> {
 			if ( c.getCondition() == null ) {
 				c.getBody().forEach( stmt -> {
-					body.addStatement( ( Statement ) BoxLangTranspiler.transform( stmt ) );
+					body.addStatement( ( Statement ) JavaTranspiler.transform( stmt ) );
 				} );
 			}
 		} );

@@ -5,16 +5,13 @@ import com.github.javaparser.ast.expr.Expression;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import ortus.boxlang.ast.BoxNode;
-import ortus.boxlang.ast.statement.BoxAssert;
 import ortus.boxlang.ast.statement.BoxImport;
-import ortus.boxlang.transpiler.BoxLangTranspiler;
+import ortus.boxlang.transpiler.JavaTranspiler;
 import ortus.boxlang.transpiler.transformer.AbstractTransformer;
 import ortus.boxlang.transpiler.transformer.TransformerContext;
 
 import java.util.HashMap;
 import java.util.Map;
-
-import static java.util.Map.*;
 
 public class BoxImportTransformer extends AbstractTransformer {
 
@@ -33,9 +30,9 @@ public class BoxImportTransformer extends AbstractTransformer {
 	@Override
 	public Node transform( BoxNode node, TransformerContext context ) throws IllegalStateException {
 		BoxImport			boxImport	= ( BoxImport ) node;
-		Expression			namespace	= ( Expression ) BoxLangTranspiler.transform( boxImport.getExpression(), TransformerContext.RIGHT );
+		Expression			namespace	= ( Expression ) JavaTranspiler.transform( boxImport.getExpression(), TransformerContext.RIGHT );
 		String				alias		= boxImport.getAlias() != null
-		    ? " as " + BoxLangTranspiler.transform( boxImport.getAlias(), TransformerContext.RIGHT ).toString()
+		    ? " as " + JavaTranspiler.transform( boxImport.getAlias(), TransformerContext.RIGHT ).toString()
 		    : "";
 
 		Map<String, String>	values		= new HashMap<>() {

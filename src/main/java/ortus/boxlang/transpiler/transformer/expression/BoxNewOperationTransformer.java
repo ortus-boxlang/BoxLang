@@ -13,7 +13,7 @@ import com.github.javaparser.ast.expr.NameExpr;
 
 import ortus.boxlang.ast.BoxNode;
 import ortus.boxlang.ast.expression.BoxNewOperation;
-import ortus.boxlang.transpiler.BoxLangTranspiler;
+import ortus.boxlang.transpiler.JavaTranspiler;
 import ortus.boxlang.transpiler.transformer.AbstractTransformer;
 import ortus.boxlang.transpiler.transformer.TransformerContext;
 import ortus.boxlang.transpiler.transformer.statement.BoxThrowTransformer;
@@ -35,10 +35,10 @@ public class BoxNewOperationTransformer extends AbstractTransformer {
 	@Override
 	public Node transform( BoxNode node, TransformerContext context ) throws IllegalStateException {
 		BoxNewOperation	boxNew	= ( BoxNewOperation ) node;
-		Expression		expr	= ( Expression ) BoxLangTranspiler.transform( boxNew.getExpression(), TransformerContext.RIGHT );
+		Expression		expr	= ( Expression ) JavaTranspiler.transform( boxNew.getExpression(), TransformerContext.RIGHT );
 
 		String			args	= boxNew.getArguments().stream()
-		    .map( it -> resolveScope( BoxLangTranspiler.transform( it ), context ).toString() )
+		    .map( it -> resolveScope( JavaTranspiler.transform( it ), context ).toString() )
 		    .collect( Collectors.joining( ", " ) );
 
 		String			fqn		= expr.toString();
