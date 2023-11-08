@@ -1,16 +1,17 @@
 package ortus.boxlang.transpiler.transformer.expression;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import com.github.javaparser.ast.Node;
 import com.github.javaparser.ast.expr.Expression;
 import com.github.javaparser.ast.expr.NameExpr;
+
 import ortus.boxlang.ast.BoxNode;
 import ortus.boxlang.ast.expression.BoxTernaryOperation;
 import ortus.boxlang.transpiler.BoxLangTranspiler;
 import ortus.boxlang.transpiler.transformer.AbstractTransformer;
 import ortus.boxlang.transpiler.transformer.TransformerContext;
-
-import java.util.HashMap;
-import java.util.Map;
 
 public class BoxTernaryOperationTransformer extends AbstractTransformer {
 
@@ -29,7 +30,7 @@ public class BoxTernaryOperationTransformer extends AbstractTransformer {
 											}
 										};
 		if ( condition instanceof NameExpr name ) {
-			String tmp = "context.scopeFindNearby( Key.of( \"" + name + "\" ), context.getDefaultAssignmentScope()).value()";
+			String tmp = "context.scopeFindNearby( Key.of( \"" + name + "\" ), null).value()";
 			values.put( "condition", tmp );
 		}
 

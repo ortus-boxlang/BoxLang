@@ -1,11 +1,18 @@
 package ortus.boxlang.transpiler.transformer.expression;
 
-import com.github.javaparser.ast.Node;
-import com.github.javaparser.ast.expr.ArrayInitializerExpr;
-import com.github.javaparser.ast.expr.Expression;
-import com.github.javaparser.ast.expr.MethodCallExpr;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import com.github.javaparser.ast.Node;
+import com.github.javaparser.ast.expr.Expression;
+import com.github.javaparser.ast.expr.MethodCallExpr;
+
 import ortus.boxlang.ast.BoxNode;
 import ortus.boxlang.ast.expression.BoxFunctionInvocation;
 import ortus.boxlang.ast.expression.BoxIdentifier;
@@ -14,12 +21,6 @@ import ortus.boxlang.ast.expression.BoxScope;
 import ortus.boxlang.transpiler.BoxLangTranspiler;
 import ortus.boxlang.transpiler.transformer.AbstractTransformer;
 import ortus.boxlang.transpiler.transformer.TransformerContext;
-
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
 
 public class BoxObjectAccessTransformer extends AbstractTransformer {
 
@@ -99,6 +100,7 @@ public class BoxObjectAccessTransformer extends AbstractTransformer {
 												{
 													put( "scope", scope.toString() );
 													put( "variable", variable.toString() );
+													put( "safe", objectAccess.isSafe().toString() );
 												}
 											};
 			String				template	= switch ( context ) {
@@ -106,7 +108,7 @@ public class BoxObjectAccessTransformer extends AbstractTransformer {
 												             ${scope}.assign(Key.of("${variable}"))
 												             """;
 												default -> """
-												           ${scope}.dereference( Key.of( "${variable}" ) , false )
+												           ${scope}.dereference( Key.of( "${variable}" ) , ${safe} )
 												           """;
 											};
 			Node				javaExpr	= parseExpression( template, values );
@@ -207,8 +209,8 @@ public class BoxObjectAccessTransformer extends AbstractTransformer {
 					              Referencer.get(
 					              	context.scopeFindNearby(
 					              		${ctx},
-					              		context.getDefaultAssignmentScope()
-					              	).scope().dereference( ${ctx} , ${safe1} ),
+					              		null
+					              	).value(),
 					              	${key},
 					              	${safe2}
 					              )

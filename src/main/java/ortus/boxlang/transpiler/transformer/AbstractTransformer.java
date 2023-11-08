@@ -14,21 +14,26 @@
  */
 package ortus.boxlang.transpiler.transformer;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import com.github.javaparser.JavaParser;
 import com.github.javaparser.ParseResult;
 import com.github.javaparser.ast.Node;
 import com.github.javaparser.ast.expr.Expression;
 import com.github.javaparser.ast.expr.NameExpr;
 import com.github.javaparser.ast.stmt.Statement;
+
 import ortus.boxlang.ast.BoxExpr;
 import ortus.boxlang.ast.BoxNode;
-import ortus.boxlang.ast.expression.*;
+import ortus.boxlang.ast.expression.BoxBinaryOperation;
+import ortus.boxlang.ast.expression.BoxBinaryOperator;
+import ortus.boxlang.ast.expression.BoxComparisonOperation;
+import ortus.boxlang.ast.expression.BoxUnaryOperation;
+import ortus.boxlang.ast.expression.BoxUnaryOperator;
 import ortus.boxlang.runtime.config.util.PlaceholderHelper;
 import ortus.boxlang.transpiler.transformer.indexer.BoxLangCrossReferencer;
 import ortus.boxlang.transpiler.transformer.indexer.BoxLangCrossReferencerDefault;
-
-import java.util.HashMap;
-import java.util.Map;
 
 /**
  * Abstract Transformer class
@@ -54,7 +59,7 @@ public abstract class AbstractTransformer implements Transformer {
 	 *
 	 * @return the Java Parser AST representation of the expression
 	 */
-	protected Node 	parseExpression( String template, Map<String, String> values ) {
+	protected Node parseExpression( String template, Map<String, String> values ) {
 		String					code	= PlaceholderHelper.resolve( template, values );
 		ParseResult<Expression>	result	= javaParser.parseExpression( code );
 		if ( !result.isSuccessful() ) {
@@ -94,11 +99,9 @@ public abstract class AbstractTransformer implements Transformer {
 		if ( expr instanceof NameExpr ) {
 			String				id			= expr.toString();
 			String				template	= switch ( context ) {
-												case INIT ->
-												    "context.scopeFindNearby(Key.of(\"${id}\"), context.getDefaultAssignmentScope()).scope().assign(Key.of(\"${id}\"))";
-												case RIGHT -> "context.scopeFindNearby(Key.of(\"${id}\"),context.getDefaultAssignmentScope()).value()";
-												default ->
-												    "context.scopeFindNearby(Key.of(\"${id}\"),context.getDefaultAssignmentScope()).scope().get(Key.of(\"${id}\"))";
+												case INIT -> "context.scopeFindNearby(Key.of(\"${id}\"), context.getDefaultAssignmentScope()).scope().assign(Key.of(\"${id}\"))";
+												case RIGHT -> "context.scopeFindNearby(Key.of(\"${id}\"),null).value()";
+												default -> "context.scopeFindNearby(Key.of(\"${id}\"),null).value()";
 											}
 
 			;
@@ -140,7 +143,7 @@ public abstract class AbstractTransformer implements Transformer {
 			if ( op.getOperator() == BoxUnaryOperator.Not )
 				return false;
 		}
-		if( condition instanceof BoxComparisonOperation op ) {
+		if ( condition instanceof BoxComparisonOperation op ) {
 			return false;
 		}
 		return true;

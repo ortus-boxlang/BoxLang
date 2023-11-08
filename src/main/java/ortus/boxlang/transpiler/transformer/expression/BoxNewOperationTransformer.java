@@ -1,21 +1,22 @@
 package ortus.boxlang.transpiler.transformer.expression;
 
+import java.util.HashMap;
+import java.util.Map;
+import java.util.stream.Collectors;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.github.javaparser.ast.Node;
 import com.github.javaparser.ast.expr.Expression;
 import com.github.javaparser.ast.expr.NameExpr;
-import com.github.javaparser.ast.expr.StringLiteralExpr;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+
 import ortus.boxlang.ast.BoxNode;
 import ortus.boxlang.ast.expression.BoxNewOperation;
 import ortus.boxlang.transpiler.BoxLangTranspiler;
 import ortus.boxlang.transpiler.transformer.AbstractTransformer;
 import ortus.boxlang.transpiler.transformer.TransformerContext;
 import ortus.boxlang.transpiler.transformer.statement.BoxThrowTransformer;
-
-import java.util.HashMap;
-import java.util.Map;
-import java.util.stream.Collectors;
 
 public class BoxNewOperationTransformer extends AbstractTransformer {
 
@@ -40,7 +41,7 @@ public class BoxNewOperationTransformer extends AbstractTransformer {
 		    .map( it -> resolveScope( BoxLangTranspiler.transform( it ), context ).toString() )
 		    .collect( Collectors.joining( ", " ) );
 
-		String			fqn		= expr.toString().startsWith( "\"java:" ) ? expr.toString().replace( "\"java:", "\"" ) : expr.toString();
+		String			fqn		= expr.toString();
 		if ( expr instanceof NameExpr ) {
 			fqn = fqn.startsWith( "\"" ) ? fqn : "\"" + fqn + "\"";
 		}
@@ -54,11 +55,11 @@ public class BoxNewOperationTransformer extends AbstractTransformer {
 											}
 										};
 		String				template	= """
-											classLocator.load(	context,
-		                                  		(String)${expr},
-		                                  	  imports
-		                                  	).invokeConstructor( new Object[] { ${args} } )
-		                                  """;
+		                                  classLocator.load(	context,
+		                                                           		(String)${expr},
+		                                                           	  imports
+		                                                           	).invokeConstructor( new Object[] { ${args} } )
+		                                                           """;
 		Node				javaStmt	= parseExpression( template, values );
 		logger.info( node.getSourceText() + " -> " + javaStmt );
 		addIndex( javaStmt, node );

@@ -1,15 +1,17 @@
 package ortus.boxlang.transpiler.transformer.expression;
 
-import com.github.javaparser.ast.Node;
+import java.util.HashMap;
+import java.util.Map;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import com.github.javaparser.ast.Node;
+
 import ortus.boxlang.ast.BoxNode;
 import ortus.boxlang.ast.expression.BoxScope;
 import ortus.boxlang.transpiler.transformer.AbstractTransformer;
 import ortus.boxlang.transpiler.transformer.TransformerContext;
-
-import java.util.HashMap;
-import java.util.Map;
 
 public class BoxScopeTransformer extends AbstractTransformer {
 
@@ -27,10 +29,20 @@ public class BoxScopeTransformer extends AbstractTransformer {
 										};
 		String				template	= "";
 		if ( "local".equalsIgnoreCase( scope.getName() ) ) {
-			template = "context.getScopeNearby(  LocalScope.name )";
+			template = "context.getScopeNearby( LocalScope.name )";
+		} else if ( "variables".equalsIgnoreCase( scope.getName() ) ) {
+			// This is assuming all class templates' invoke method gets the varaiblesScope reference first
+			template = "variablesScope";
+		} else if ( "request".equalsIgnoreCase( scope.getName() ) ) {
+			template = "context.getScopeNearby( RequestScope.name )";
+		} else if ( "server".equalsIgnoreCase( scope.getName() ) ) {
+			template = "context.getScopeNearby( ServerScope.name )";
+		} else if ( "arguments".equalsIgnoreCase( scope.getName() ) ) {
+			template = "context.getScopeNearby( ArgumentsScope.name )";
+		} else if ( "this".equalsIgnoreCase( scope.getName() ) ) {
+			template = "context.getScopeNearby( ThisScope.name )";
 		} else {
-			// template = "${scope}Scope";
-			template = "context.getDefaultAssignmentScope()";
+			throw new IllegalStateException( "Scope transformation not implemented: " + scope.getName() );
 		}
 
 		Node javaExpr = parseExpression( template, values );

@@ -5,8 +5,6 @@ import static org.junit.Assert.assertTrue;
 
 import java.io.IOException;
 
-import org.junit.Ignore;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 /**
@@ -205,7 +203,8 @@ public class TestOperators extends TestBase {
 		ParsingResult	result		= parseExpression( expression );
 		Node			javaAST		= BoxLangTranspiler.transform( result.getRoot() );
 
-		// isGood is not on the left hand side of an elvis or save navigation operator, so it should not be providing a default scope.  We want it to error if not found.
+		// isGood is not on the left hand side of an elvis or save navigation operator, so it should not be providing a default scope. We want it to error if
+		// not found.
 		assertEquals( "Ternary.invoke(context.scopeFindNearby(Key.of(\"isGood\"), null	).value(), \"eat\", \"toss\")",
 		    javaAST.toString() );
 
@@ -220,7 +219,7 @@ public class TestOperators extends TestBase {
 		ParsingResult	result		= parseExpression( expression );
 		Node			javaAST		= BoxLangTranspiler.transform( result.getRoot() );
 
-		// Explicit use of variables scope should be direcfty referencing the variables scope.  No need to search for it.
+		// Explicit use of variables scope should be direcfty referencing the variables scope. No need to search for it.
 		assertEquals( "variablesScope.dereference(Key.of(\"system\"), false)", javaAST.toString() );
 
 	}
@@ -248,6 +247,7 @@ public class TestOperators extends TestBase {
 		ParsingResult	result		= parseExpression( expression );
 		Node			javaAST		= BoxLangTranspiler.transform( result.getRoot() );
 		// TODO: Since we're dereferencing on the left hand side of the elvis operator, we must pass "true" to the safe param of the dereference method
+		// I am using objectAccess.isSafe(), but it's returning false instaed of true!
 		assertEqualsNoWhiteSpaces(
 		    "Elvis.invoke(variablesScope.dereference(Key.of(\"maybeNull\"),true),\"useifnull\")", javaAST.toString() );
 
@@ -262,7 +262,8 @@ public class TestOperators extends TestBase {
 		ParsingResult	result		= parseExpression( expression );
 		Node			javaAST		= BoxLangTranspiler.transform( result.getRoot() );
 
-		// TODO: All dereferncing on the left hand side of an elvis operator must be done safely
+		// TODO: Explicit variables scope access should not be using scopeFindNearby().
+		// Also, All dereferencing on the left hand side of an elvis operator must be done safely
 		assertEqualsNoWhiteSpaces(
 		    """
 		    Elvis.invoke(Referencer.get(variablesScope.dereference(Key.of("foo"),true),Key.of("bar"),true),"brad")
@@ -310,7 +311,7 @@ public class TestOperators extends TestBase {
 
 		Node			javaAST		= BoxLangTranspiler.transform( result.getRoot() );
 
-		// We pass null as the default scope since we are not on the left hand side of an elvis or safe navigation operator.  We also use .value() directly.
+		// We pass null as the default scope since we are not on the left hand side of an elvis or safe navigation operator. We also use .value() directly.
 		assertEqualsNoWhiteSpaces(
 		    """
 		          InstanceOf.invoke(context, context.scopeFindNearby(Key.of("foo"), null).value(), "String")
@@ -609,17 +610,17 @@ public class TestOperators extends TestBase {
 		System.out.println( javaAST );
 		assertEqualsNoWhiteSpaces(
 		    """
-		    Concat.invoke(
-				"ais",
-				Concat.invoke(
-					variablesScope.dereference(Key.of("a"),false),
-					Concat.invoke(
-						"andbis",
-						variablesScope.dereference(Key.of("b"),false)
-					)
-				)
-			)
-		       """,
+		       Concat.invoke(
+		    	"ais",
+		    	Concat.invoke(
+		    		variablesScope.dereference(Key.of("a"),false),
+		    		Concat.invoke(
+		    			"andbis",
+		    			variablesScope.dereference(Key.of("b"),false)
+		    		)
+		    	)
+		    )
+		          """,
 		    javaAST.toString() );
 	}
 
@@ -636,8 +637,8 @@ public class TestOperators extends TestBase {
 		// Need to pass the full class name and resolver prefix
 		assertEqualsNoWhiteSpaces(
 		    """
-				classLocator.load(context,(String)"java:java.lang.RuntimeException",imports).invokeConstructor(newObject[]{"MyMessage"})
-		    	""", javaAST.toString() );
+		    classLocator.load(context,(String)"java:java.lang.RuntimeException",imports).invokeConstructor(newObject[]{"MyMessage"})
+		      	""", javaAST.toString() );
 	}
 
 	@Test
@@ -649,7 +650,7 @@ public class TestOperators extends TestBase {
 		ParsingResult	result		= parseExpression( expression );
 		Node			javaAST		= BoxLangTranspiler.transform( result.getRoot() );
 
-		// We're not assigning sdf, so we don't need to pass a default scope.  Also, we can use value() directly
+		// We're not assigning sdf, so we don't need to pass a default scope. Also, we can use value() directly
 		assertEquals( "CastAs.invoke(5, context.scopeFindNearby(Key.of(\"sdf\"), null).value())",
 		    javaAST.toString() );
 	}
@@ -663,7 +664,7 @@ public class TestOperators extends TestBase {
 		ParsingResult	result		= parseExpression( expression );
 		Node			javaAST		= BoxLangTranspiler.transform( result.getRoot() );
 
-		// We're not assigning a or aaa, so we don't need to pass a default scope.  Also, we can use value() directly
+		// We're not assigning a or aaa, so we don't need to pass a default scope. Also, we can use value() directly
 		assertEqualsNoWhiteSpaces(
 		    "Concat.invoke(context.scopeFindNearby(Key.of(\"a\"), null).value(), context.scopeFindNearby(Key.of(\"aaa\"), null).value())",
 		    javaAST.toString() );

@@ -14,19 +14,21 @@
  */
 package ortus.boxlang.transpiler.transformer.expression;
 
-import com.github.javaparser.ast.Node;
-import com.github.javaparser.ast.expr.Expression;
+import java.util.HashMap;
+import java.util.Map;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import com.github.javaparser.ast.Node;
+import com.github.javaparser.ast.expr.Expression;
+
 import ortus.boxlang.ast.BoxNode;
 import ortus.boxlang.ast.expression.BoxBinaryOperation;
 import ortus.boxlang.ast.expression.BoxBinaryOperator;
 import ortus.boxlang.transpiler.BoxLangTranspiler;
 import ortus.boxlang.transpiler.transformer.AbstractTransformer;
 import ortus.boxlang.transpiler.transformer.TransformerContext;
-
-import java.util.HashMap;
-import java.util.Map;
 
 /**
  * Transform a BoxBinaryOperation Node the equivalent Java Parser AST nodes
@@ -100,7 +102,7 @@ public class BoxBinaryOperationTransformer extends AbstractTransformer {
 			throw new IllegalStateException( "not implemented" );
 		}
 		Node javaExpr = parseExpression( template, values );
-		logger.info( node.getSourceText() + " -> " + javaExpr );
+		logger.info( node.getSourceText() + " (" + context.name() + ") -> " + javaExpr );
 		// addIndex( javaExpr, node );
 		return javaExpr;
 	}

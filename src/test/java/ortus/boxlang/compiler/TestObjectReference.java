@@ -2,7 +2,6 @@ package ortus.boxlang.compiler;
 
 import java.io.IOException;
 
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 /**
@@ -86,7 +85,8 @@ public class TestObjectReference extends TestBase {
 		/**
 		 * Note, it is not necessary to use .scope().dereference(Key.of(\"foo\"),false) since the scope fine result already contains the value.
 		 * Also, null should be passed as the default scope since we are not on the left hand side of an elvis operator or save navigation operator.
-		 * This code should be the exact same as the two tests above it.  There is no difference between the two except FOO should actually be upper case here but we can deal with that part later.
+		 * This code should be the exact same as the two tests above it. There is no difference between the two except FOO should actually be upper case here
+		 * but we can deal with that part later.
 		 */
 		assertEqualsNoWhiteSpaces(
 		    "Referencer.get(context.scopeFindNearby(Key.of(\"foo\"),null).value(),Key.of(\"bar\"),false)",
@@ -103,13 +103,6 @@ public class TestObjectReference extends TestBase {
 		ParsingResult	result		= parser.parseExpression( expression );
 		Node			javaAST		= BoxLangTranspiler.transform( result.getRoot() );
 
-		/**
-		 * Note, the previosu expected value of 
-		 * 
-		 *    "Referencer.get(context.scopeFindNearby(Key.of(\"foo\"),context.getDefaultAssignmentScope()).scope().dereference(Key.of(\"foo\"),true),Key.of(\"bar\"),true)"
-		 *
-		 * will run correctly, but is unneccessary as the value of foo already comes back from the scopp lookup and can be used directly (will be null if not found)
-		 */
 		assertEqualsNoWhiteSpaces(
 		    "Referencer.get(context.scopeFindNearby(Key.of(\"foo\"),context.getDefaultAssignmentScope()).value(),Key.of(\"bar\"),true)",
 		    javaAST.toString() );

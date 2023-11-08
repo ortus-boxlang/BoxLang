@@ -6,7 +6,6 @@ import static org.junit.Assert.fail;
 
 import java.io.IOException;
 
-import org.junit.Ignore;
 import org.junit.jupiter.api.Test;
 
 import com.github.javaparser.ast.Node;
@@ -34,21 +33,21 @@ public class TestStatements extends TestBase {
 		ParsingResult	result		= parseStatement( statement );
 		Node			javaAST		= BoxLangTranspiler.transform( result.getRoot() );
 
-		// myObject must be looked up in the scopes.  Also, we aren't assigning obj1 so we don't need to provide a default scope and we can use .value() directly
+		// myObject must be looked up in the scopes.
 		assertEqualsNoWhiteSpaces(
 		    """
-		    Referencer.getAndInvoke(
-				context,
-				context.scopeFindNearby(Key.of("myObject"), null).value(),
-				Key.of("myMethod"),
-				newObject[]{
-					context.scopeFindNearby(Key.of("obj1"), null).value(),
-					"foo",
-					42
-				},
-				false
-			);
-		    		                                                  """,
+		       Referencer.getAndInvoke(
+		    	context,
+		    	context.scopeFindNearby(Key.of("myObject"), null).value(),
+		    	Key.of("myMethod"),
+		    	newObject[]{
+		    		context.scopeFindNearby(Key.of("obj1"), null).value(),
+		    		"foo",
+		    		42
+		    	},
+		    	false
+		    );
+		       		                                                  """,
 		    javaAST.toString() );
 	}
 
@@ -63,21 +62,21 @@ public class TestStatements extends TestBase {
 		ParsingResult	result		= parseStatement( statement );
 		Node			javaAST		= BoxLangTranspiler.transform( result.getRoot() );
 
-		// system is explicitly scoped to variables, so we refernce that directly.
+		// system is explicitly scoped to variables, so we reference that directly.
 		assertEqualsNoWhiteSpaces(
 		    """
-		    Referencer.getAndInvoke(
-				context,
-				Referencer.get(
-					variablesScope.dereference(Key.of("system"),false ),
-					Key.of("out"),
-					false
-				),
-				Key.of("println"),
-				newObject[]{"helloworld"},
-				false
-			);
-		                                                    """,
+		       Referencer.getAndInvoke(
+		    	context,
+		    	Referencer.get(
+		    		variablesScope.dereference(Key.of("system"),false ),
+		    		Key.of("out"),
+		    		false
+		    	),
+		    	Key.of("println"),
+		    	newObject[]{"helloworld"},
+		    	false
+		    );
+		                                                       """,
 		    javaAST.toString() );
 	}
 
@@ -107,11 +106,12 @@ public class TestStatements extends TestBase {
 
 		BlockStmt		javaAST		= ( BlockStmt ) BoxLangTranspiler.transform( result.getRoot() );
 
-		fail("I'm not sure what the proper fix is, but this solution is evaluating the right hand side once for each assignment.  It should only be evaluated once.  I assume the second assignment should simply reference a or an intermediate Java variable.");
-		
+		fail(
+		    "I'm not sure what the proper fix is, but this solution is evaluating the right hand side once for each assignment.  It should only be evaluated once.  I assume the second assignment should simply reference a or an intermediate Java variable." );
+
 		assertEqualsNoWhiteSpaces( "context.getScopeNearby(LocalScope.name).assign(Key.of(\"a\"), \"value\");",
 		    javaAST.getStatements().get( 0 ).toString() );
-		// The var keyword only applies to the a.  For both variables to go in the local scope, the code would have needed to have been
+		// The var keyword only applies to the a. For both variables to go in the local scope, the code would have needed to have been
 		// var a = var b = 1/0;
 		assertEqualsNoWhiteSpaces( "context.scopeFindNearby(Key.of(\"foo\"),context.getDefaultAssignmentScope()).scope().assign(Key.of(\"b\"), \"value\");",
 		    javaAST.getStatements().get( 1 ).toString() );
@@ -136,7 +136,7 @@ public class TestStatements extends TestBase {
 		// Use .value() directly to get the value of a searched-variable
 		assertEqualsNoWhiteSpaces(
 		    """
-		    if(BooleanCaster.cast(EqualsEquals.invoke(variablesScope.dereference(Key.of("a"),false),"0"))){
+		    if(EqualsEquals.invoke(variablesScope.dereference(Key.of("a"),false),"0")){
 		    	{
 		    		variablesScope.assign(Key.of("a"),Concat.invoke(context.scopeFindNearby(Key.of("a"),null).value(),"1"));
 		    	}
@@ -197,25 +197,25 @@ public class TestStatements extends TestBase {
 		// Explicit variables scope access is referenced directly
 		assertEqualsNoWhiteSpaces(
 		    """
-		    do{
-		    	if(EqualsEquals.invoke(variablesScope.dereference(Key.of("a"),false),"9")){{
-		    		variablesScope.assign(Key.of("a"),"0");
+		       do{
+		       	if(EqualsEquals.invoke(variablesScope.dereference(Key.of("a"),false),"9")){{
+		       		variablesScope.assign(Key.of("a"),"0");
+		       		}
+		       		break;
+		       	}
+
+		       	if(EqualsEquals.invoke(variablesScope.dereference(Key.of("a"),false),"1")){
+		       		{
+		       			variablesScope.assign(Key.of("a"),"1");
 		    		}
 		    		break;
 		    	}
-
-		    	if(EqualsEquals.invoke(variablesScope.dereference(Key.of("a"),false),"1")){
-		    		{
-		    			variablesScope.assign(Key.of("a"),"1");
-					}
-					break;
-				}
-				{
-					variablesScope.assign(Key.of("a"),"default");
-				}
-					break;
-			} while(false);
-		    	      		    """,
+		    	{
+		    		variablesScope.assign(Key.of("a"),"default");
+		    	}
+		    		break;
+		    } while(false);
+		       	      		    """,
 		    javaAST.toString() );
 	}
 
@@ -246,25 +246,25 @@ public class TestStatements extends TestBase {
 		// Explicit variables scope access is referenced directly
 		assertEqualsNoWhiteSpaces(
 		    """
-		    do{
-		    	if(GreaterThan.invoke(variablesScope.dereference(Key.of("a"),false),"0")){
-		    		{
-		    			variablesScope.assign(Key.of("a"),"0");
-					}
-					break;
-				}
-				if(LessThan.invoke(variablesScope.dereference(Key.of("a"),false),"1")) {
-					{
-						variablesScope.assign(Key.of("a"),"1");
-					}
-					break;
-				}
-				{
-					variablesScope.assign(Key.of("a"),"default");
-				}
-				break;
-		    } while(false);
-		     		      """,
+		      do{
+		      	if(GreaterThan.invoke(variablesScope.dereference(Key.of("a"),false),"0")){
+		      		{
+		      			variablesScope.assign(Key.of("a"),"0");
+		    	}
+		    	break;
+		    }
+		    if(LessThan.invoke(variablesScope.dereference(Key.of("a"),false),"1")) {
+		    	{
+		    		variablesScope.assign(Key.of("a"),"1");
+		    	}
+		    	break;
+		    }
+		    {
+		    	variablesScope.assign(Key.of("a"),"default");
+		    }
+		    break;
+		      } while(false);
+		       		      """,
 		    javaAST.toString() );
 	}
 
@@ -379,7 +379,8 @@ public class TestStatements extends TestBase {
 
 		Node			javaAST		= extractFromBlockStmt( BoxLangTranspiler.transform( result.getRoot() ) );
 		System.out.println( javaAST );
-		// We are assigning a, but first it must be looked up, so therefore we don't provide a default scope to scopefindnearby. We want an exception thrown if it doesn't exist already
+		// We are assigning a, but first it must be looked up, so therefore we don't provide a default scope to scopefindnearby. We want an exception thrown
+		// if it doesn't exist already
 		assertEqualsNoWhiteSpaces(
 		    """
 		    Plus.invoke(context.scopeFindNearby(Key.of("a"),null).scope(),Key.of("a"),1);
@@ -423,14 +424,14 @@ public class TestStatements extends TestBase {
 		// use new ExceptionUtil to throw
 		assertEqualsNoWhiteSpaces(
 		    """
-		    ExceptionUtil.throwException( 
-				classLocator.load(
-					context,
-					(String)"java.lang.RuntimeException",
-					imports
-				).invokeConstructor(newObject[]{"MyMessage"})
-			);
-		      """,
+		       ExceptionUtil.throwException(
+		    	classLocator.load(
+		    		context,
+		    		(String)"java.lang.RuntimeException",
+		    		imports
+		    	).invokeConstructor(newObject[]{"MyMessage"})
+		    );
+		         """,
 		    javaAST.toString() );
 	}
 

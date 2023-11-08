@@ -1,19 +1,19 @@
 
 package ortus.boxlang.transpiler.transformer.expression;
 
-import com.github.javaparser.ast.Node;
-import com.github.javaparser.ast.expr.Expression;
+import java.util.HashMap;
+import java.util.List;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import com.github.javaparser.ast.Node;
+
 import ortus.boxlang.ast.BoxNode;
 import ortus.boxlang.ast.expression.BoxStringInterpolation;
 import ortus.boxlang.transpiler.BoxLangTranspiler;
 import ortus.boxlang.transpiler.transformer.AbstractTransformer;
 import ortus.boxlang.transpiler.transformer.TransformerContext;
-
-import java.util.HashMap;
-import java.util.List;
-import java.util.stream.Collectors;
 
 /**
  * Transform a String Interpolatiion the equivalent Java Parser AST nodes
@@ -42,11 +42,7 @@ public class BoxStringInterpolationTransformer extends AbstractTransformer {
 		// .collect( Collectors.joining( "+" ) );
 		String					expr			= operands.get( operands.size() - 1 ).toString();
 		for ( int i = operands.size() - 1; i-- > 0; ) {
-			if ( i > 1 ) {
-				expr = "Concat.invoke(" + operands.get( i - 1 ) + "," + expr + ")";
-			} else {
-				expr = "Concat.invoke(" + operands.get( i ) + "," + expr + ")";
-			}
+			expr = "Concat.invoke(" + operands.get( i ) + "," + expr + ")";
 		}
 
 		Node javaExpr = parseExpression( expr.toString(), new HashMap<>() );
