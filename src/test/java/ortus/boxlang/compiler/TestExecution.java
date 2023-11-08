@@ -5,7 +5,6 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.io.IOException;
 
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import ortus.boxlang.runtime.BoxRuntime;
@@ -133,18 +132,15 @@ public class TestExecution extends TestBase {
 	}
 
 	@Test
-	@Disabled( "Failing due to change in specs" )
 	public void testTernary() {
 
 		BoxRuntime	instance	= BoxRuntime.getInstance( true );
 		IBoxContext	context		= new ScriptingBoxContext( instance.getRuntimeContext() );
 
-		// MT TODO: tmp needs to be searched for as an unscooped variable instaed of passing the key
-		instance.executeStatement(
+		instance.executeSource(
 		    """
-
 		    tmp = true;
-		      result = tmp ? 'itwastrue' : 'itwasfalse'
+		      result = tmp ? 'itwastrue' : 'itwasfalse';
 		    """,
 
 		    context );

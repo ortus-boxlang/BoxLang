@@ -36,13 +36,13 @@ import ortus.boxlang.runtime.scopes.VariablesScope;
 public class ObjectCreationTest {
 
 	static BoxRuntime	instance;
-	IBoxContext	context;
-	IScope		variables;
+	IBoxContext			context;
+	IScope				variables;
 	static Key			resultKey	= new Key( "result" );
 
 	@BeforeAll
 	public static void setUp() {
-		instance	= BoxRuntime.getInstance( true );
+		instance = BoxRuntime.getInstance( true );
 	}
 
 	@AfterAll
@@ -79,7 +79,6 @@ public class ObjectCreationTest {
 		assertThat( result instanceof DynamicObject ).isEqualTo( true );
 		assertThat( ( ( DynamicObject ) result ).getTargetInstance() ).isEqualTo( "My String" );
 
-		// MT TODO: Use StringCaster to turn the provided expression (which maybe an Object) into a proper string for the ClassLocator.load() method to work
 		instance.executeSource(
 		    """
 		    classNameToCreate = 'java:java.lang.String';

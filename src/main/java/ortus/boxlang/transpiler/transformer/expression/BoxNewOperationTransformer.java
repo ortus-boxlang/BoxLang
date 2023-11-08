@@ -56,7 +56,7 @@ public class BoxNewOperationTransformer extends AbstractTransformer {
 										};
 		String				template	= """
 		                                  classLocator.load(	context,
-		                                                           		(String)${expr},
+		                                                           		StringCaster.cast(${expr}),
 		                                                           	  imports
 		                                                           	).invokeConstructor( new Object[] { ${args} } )
 		                                                           """;

@@ -36,11 +36,11 @@ import ortus.boxlang.runtime.types.exceptions.KeyNotFoundException;
 public class OperatorsTest {
 
 	static BoxRuntime	instance;
-	IBoxContext	context;
+	IBoxContext			context;
 
 	@BeforeAll
 	public static void setUp() {
-		instance	= BoxRuntime.getInstance( true );
+		instance = BoxRuntime.getInstance( true );
 	}
 
 	@AfterAll
@@ -50,7 +50,7 @@ public class OperatorsTest {
 
 	@BeforeEach
 	public void setupEach() {
-		context		= new ScriptingBoxContext( instance.getRuntimeContext() );
+		context = new ScriptingBoxContext( instance.getRuntimeContext() );
 	}
 
 	@DisplayName( "string concat" )
