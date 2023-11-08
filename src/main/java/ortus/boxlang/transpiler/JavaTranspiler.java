@@ -17,7 +17,6 @@ package ortus.boxlang.transpiler;
 import java.io.File;
 import java.io.IOException;
 import java.io.Writer;
-import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.net.MalformedURLException;
@@ -33,8 +32,9 @@ import javax.tools.StandardJavaFileManager;
 import javax.tools.ToolProvider;
 
 import com.github.javaparser.ast.body.FieldDeclaration;
-import com.github.javaparser.ast.expr.Expression;
 import com.github.javaparser.ast.expr.MethodCallExpr;
+import com.github.javaparser.ast.expr.NullLiteralExpr;
+import com.github.javaparser.ast.stmt.ReturnStmt;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -74,6 +74,7 @@ import ortus.boxlang.ast.statement.*;
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.runnables.BoxTemplate;
 import ortus.boxlang.runtime.runnables.compiler.JavaSourceString;
+import ortus.boxlang.runtime.types.exceptions.ApplicationException;
 import ortus.boxlang.transpiler.transformer.Transformer;
 import ortus.boxlang.transpiler.transformer.TransformerContext;
 import ortus.boxlang.transpiler.transformer.expression.BoxArgumentTransformer;
@@ -107,66 +108,60 @@ import ortus.boxlang.transpiler.transformer.statement.*;
  * AST nodes.
  *
  */
-public class BoxLangTranspiler {
+public class JavaTranspiler extends Transpiler {
 
-	static Logger								logger			= LoggerFactory.getLogger( BoxLangTranspiler.class );
+	static Logger								logger			= LoggerFactory.getLogger( JavaTranspiler.class );
 
-	private static HashMap<Class, Transformer>	registry		= new HashMap<>() {
-
-																	{
-
-																		put( BoxScript.class, new BoxScriptTransformer() );
-																		put( BoxAssignment.class, new BoxAssignmentTransformer() );
-																		put( BoxArrayAccess.class, new BoxArrayAccessTransformer() );
-																		put( BoxExpression.class, new BoxExpressionTransformer() );
-
-																		// Expressions
-																		put( BoxIdentifier.class, new BoxIdentifierTransformer() );
-																		put( BoxScope.class, new BoxScopeTransformer() );
-																		// Literals
-																		put( BoxStringLiteral.class, new BoxStringLiteralTransformer() );
-																		put( BoxIntegerLiteral.class, new BoxIntegerLiteralTransformer() );
-																		put( BoxBooleanLiteral.class, new BoxBooleanLiteralTransformer() );
-																		put( BoxDecimalLiteral.class, new BoxDecimalLiteralTransformer() );
-																		put( BoxStringInterpolation.class, new BoxStringInterpolationTransformer() );
-																		put( BoxArgument.class, new BoxArgumentTransformer() );
-																		put( BoxFQN.class, new BoxFQNTransformer() );
-
-																		put( BoxParenthesis.class, new BoxParenthesisTransformer() );
-																		put( BoxBinaryOperation.class, new BoxBinaryOperationTransformer() );
-																		put( BoxTernaryOperation.class, new BoxTernaryOperationTransformer() );
-																		put( BoxNegateOperation.class, new BoxNegateOperationTransformer() );
-																		put( BoxComparisonOperation.class, new BoxComparisonOperationTransformer() );
-																		put( BoxUnaryOperation.class, new BoxUnaryOperationTransformer() );
-																		put( BoxObjectAccess.class, new BoxObjectAccessTransformer() );
-
-																		put( BoxMethodInvocation.class, new BoxMethodInvocationTransformer() );
-																		put( BoxFunctionInvocation.class, new BoxFunctionInvocationTransformer() );
-																		put( BoxLocalDeclaration.class, new BoxLocalDeclarationTransformer() );
-																		put( BoxIfElse.class, new BoxIfElseTransformer() );
-																		put( BoxWhile.class, new BoxWhileTransformer() );
-																		put( BoxDo.class, new BoxDoTransformer() );
-																		put( BoxSwitch.class, new BoxSwitchTransformer() );
-																		put( BoxBreak.class, new BoxBreakTransformer() );
-																		put( BoxContinue.class, new BoxContinueTransformer() );
-																		put( BoxForIn.class, new BoxForInTransformer() );
-																		put( BoxForIndex.class, new BoxForIndexTransformer() );
-																		put( BoxAssert.class, new BoxAssertTransformer() );
-																		put( BoxTry.class, new BoxTryTransformer() );
-																		put( BoxThrow.class, new BoxThrowTransformer() );
-																		put( BoxNewOperation.class, new BoxNewOperationTransformer() );
-																		put( BoxFunctionDeclaration.class, new BoxFunctionDeclarationTransformer() );
-																		put( BoxReturn.class, new BoxReturnTransformer() );
-																		put( BoxRethrow.class, new BoxRethrowTransformer() );
-																		put( BoxImport.class, new BoxImportTransformer() );
-
-																	}
-																};
-
+	private static HashMap<Class, Transformer>	registry		= new HashMap<>();
 	private List<Statement>						statements		= new ArrayList<>();
 	private List<CrossReference>				crossReferences	= new ArrayList<>();
 
-	public BoxLangTranspiler() {
+	public JavaTranspiler() {
+		registry.put( BoxScript.class, new BoxScriptTransformer( this ) );
+		registry.put( BoxAssignment.class, new BoxAssignmentTransformer() );
+		registry.put( BoxArrayAccess.class, new BoxArrayAccessTransformer() );
+		registry.put( BoxExpression.class, new BoxExpressionTransformer() );
+
+		// Expressions
+		registry.put( BoxIdentifier.class, new BoxIdentifierTransformer() );
+		registry.put( BoxScope.class, new BoxScopeTransformer() );
+		// Literals
+		registry.put( BoxStringLiteral.class, new BoxStringLiteralTransformer() );
+		registry.put( BoxIntegerLiteral.class, new BoxIntegerLiteralTransformer() );
+		registry.put( BoxBooleanLiteral.class, new BoxBooleanLiteralTransformer() );
+		registry.put( BoxDecimalLiteral.class, new BoxDecimalLiteralTransformer() );
+		registry.put( BoxStringInterpolation.class, new BoxStringInterpolationTransformer() );
+		registry.put( BoxArgument.class, new BoxArgumentTransformer() );
+		registry.put( BoxFQN.class, new BoxFQNTransformer() );
+
+		registry.put( BoxParenthesis.class, new BoxParenthesisTransformer() );
+		registry.put( BoxBinaryOperation.class, new BoxBinaryOperationTransformer() );
+		registry.put( BoxTernaryOperation.class, new BoxTernaryOperationTransformer() );
+		registry.put( BoxNegateOperation.class, new BoxNegateOperationTransformer() );
+		registry.put( BoxComparisonOperation.class, new BoxComparisonOperationTransformer() );
+		registry.put( BoxUnaryOperation.class, new BoxUnaryOperationTransformer() );
+		registry.put( BoxObjectAccess.class, new BoxObjectAccessTransformer() );
+
+		registry.put( BoxMethodInvocation.class, new BoxMethodInvocationTransformer() );
+		registry.put( BoxFunctionInvocation.class, new BoxFunctionInvocationTransformer() );
+		registry.put( BoxLocalDeclaration.class, new BoxLocalDeclarationTransformer() );
+		registry.put( BoxIfElse.class, new BoxIfElseTransformer() );
+		registry.put( BoxWhile.class, new BoxWhileTransformer() );
+		registry.put( BoxDo.class, new BoxDoTransformer() );
+		registry.put( BoxSwitch.class, new BoxSwitchTransformer() );
+		registry.put( BoxBreak.class, new BoxBreakTransformer() );
+		registry.put( BoxContinue.class, new BoxContinueTransformer() );
+		registry.put( BoxForIn.class, new BoxForInTransformer() );
+		registry.put( BoxForIndex.class, new BoxForIndexTransformer() );
+		registry.put( BoxAssert.class, new BoxAssertTransformer() );
+		registry.put( BoxTry.class, new BoxTryTransformer() );
+		registry.put( BoxThrow.class, new BoxThrowTransformer() );
+		registry.put( BoxNewOperation.class, new BoxNewOperationTransformer() );
+		registry.put( BoxFunctionDeclaration.class, new BoxFunctionDeclarationTransformer() );
+		registry.put( BoxReturn.class, new BoxReturnTransformer() );
+		registry.put( BoxRethrow.class, new BoxRethrowTransformer() );
+		registry.put( BoxImport.class, new BoxImportTransformer() );
+
 	}
 
 	/**
@@ -179,7 +174,7 @@ public class BoxLangTranspiler {
 	 * @throws IllegalStateException
 	 */
 	public static Node transform( BoxNode node ) throws IllegalStateException {
-		return BoxLangTranspiler.transform( node, TransformerContext.NONE );
+		return JavaTranspiler.transform( node, TransformerContext.NONE );
 	}
 
 	/**
@@ -215,7 +210,7 @@ public class BoxLangTranspiler {
 	 *
 	 * @see CompilationUnit
 	 */
-	public CompilationUnit transpile( BoxNode node ) throws IllegalStateException {
+	public CompilationUnit transpileToJava( BoxNode node ) throws IllegalStateException {
 		BoxScript		source		= ( BoxScript ) node;
 		CompilationUnit	javaClass	= ( CompilationUnit ) transform( source );
 
@@ -258,6 +253,17 @@ public class BoxLangTranspiler {
 		return javaClass;
 	}
 
+	/**
+	 * Deprecated
+	 *
+	 * @param node
+	 *
+	 * @return
+	 *
+	 * @throws IllegalStateException
+	 *
+	 * @deprecated will be replaced by transpileMany
+	 */
 	public List<CompilationUnit> transpileMany( BoxNode node ) throws IllegalStateException {
 		List<CompilationUnit>	compilationUnits	= new ArrayList<>();
 		BoxScript				source				= ( BoxScript ) node;
@@ -481,5 +487,58 @@ public class BoxLangTranspiler {
 			}
 		}
 		return null;
+	}
+
+	@Override
+	public TranspiledCode transpile( BoxNode node ) throws ApplicationException {
+		BoxScript				source			= ( BoxScript ) node;
+		CompilationUnit			entryPoint		= ( CompilationUnit ) transform( source );
+		List<CompilationUnit>	callables		= new ArrayList<>();
+
+		String					className		= getProperty( "classname" ) != null ? getProperty( "classname" )
+		    : getClassName( source.getPosition().getSource() );
+
+		MethodDeclaration		invokeMethod	= entryPoint.findCompilationUnit().orElseThrow()
+		    .getClassByName( className ).orElseThrow()
+		    .getMethodsByName( "_invoke" ).get( 0 );
+
+		FieldDeclaration		imports			= entryPoint.findCompilationUnit().orElseThrow()
+		    .getClassByName( className ).orElseThrow()
+		    .getFieldByName( "imports" ).get();
+
+		for ( BoxStatement statement : source.getStatements() ) {
+			Node function = transform( statement );
+			if ( statement instanceof BoxFunctionDeclaration ) {
+				// a function declaration generate
+				callables.add( ( CompilationUnit ) function );
+				Node registrer = transform( statement, TransformerContext.REGISTER );
+				invokeMethod.getBody().get().addStatement( 0, ( Statement ) registrer );
+
+			} else {
+				if ( function instanceof BlockStmt ) {
+					BlockStmt stmt = ( BlockStmt ) function;
+					stmt.getStatements().stream().forEach( it -> {
+						invokeMethod.getBody().get().addStatement( it );
+						statements.add( it );
+					} );
+				} else if ( function instanceof MethodCallExpr ) {
+					MethodCallExpr imp = ( MethodCallExpr ) imports.getVariable( 0 ).getInitializer().orElseThrow();
+					imp.getArguments().add( ( MethodCallExpr ) function );
+				} else {
+					invokeMethod.getBody().get().addStatement( ( Statement ) function );
+					statements.add( ( Statement ) function );
+				}
+			}
+		}
+		/* if has a return type add the return statement, replace with the Box AST nodes suggested */
+		if ( ! ( invokeMethod.getType() instanceof com.github.javaparser.ast.type.VoidType ) ) {
+			invokeMethod.getBody().get().addStatement( new ReturnStmt( new NullLiteralExpr() ) );
+		}
+
+		IndexPrettyPrinterVisitor visitor = new IndexPrettyPrinterVisitor( new DefaultPrinterConfiguration() );
+		entryPoint.accept( visitor, null );
+		this.crossReferences.addAll( visitor.getCrossReferences() );
+
+		return new TranspiledCode( entryPoint, callables );
 	}
 }
