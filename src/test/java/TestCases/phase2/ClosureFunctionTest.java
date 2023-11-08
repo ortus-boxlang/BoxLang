@@ -31,6 +31,7 @@ import org.junit.jupiter.api.Test;
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.ScriptingBoxContext;
+import ortus.boxlang.runtime.dynamic.Referencer;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
@@ -38,19 +39,21 @@ import ortus.boxlang.runtime.scopes.VariablesScope;
 import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.Closure;
 import ortus.boxlang.runtime.types.Struct;
+import ortus.boxlang.runtime.types.meta.BoxMeta;
+import ortus.boxlang.runtime.types.meta.FunctionMeta;
 
 @Disabled
 public class ClosureFunctionTest {
 
 	static BoxRuntime	instance;
-	IBoxContext	context;
-	IScope		variables;
+	IBoxContext			context;
+	IScope				variables;
 	static Key			result	= new Key( "result" );
 	static Key			foo		= new Key( "foo" );
 
 	@BeforeAll
 	public static void setUp() {
-		instance	= BoxRuntime.getInstance( true );
+		instance = BoxRuntime.getInstance( true );
 	}
 
 	@AfterAll
@@ -233,12 +236,14 @@ public class ClosureFunctionTest {
 		          """,
 		    context );
 		assertThat( variables.dereference( result, false ) ).isEqualTo( "value" );
-		Struct meta = ( ( Closure ) variables.dereference( foo, false ) ).getMetaData();
+		Closure	UDFfoo	= ( ( Closure ) variables.dereference( foo, false ) );
+		Struct	meta	= UDFfoo.getMetaData();
 
-		assertThat( meta.dereference( Key.of( "name" ), false ) ).isEqualTo( "closure" );
+		assertThat( meta.dereference( Key.of( "name" ), false ) ).isEqualTo( "foo" );
 		assertThat( meta.dereference( Key.of( "hint" ), false ) ).isEqualTo( "my Closure" );
 		assertThat( meta.dereference( Key.of( "output" ), false ) ).isEqualTo( false );
 		assertThat( meta.dereference( Key.of( "brad" ), false ) ).isEqualTo( "wood" );
+		assertThat( meta.dereference( Key.of( "returnType" ), false ) ).isEqualTo( "any" );
 		assertThat( meta.dereference( Key.of( "access" ), false ) ).isEqualTo( "public" );
 
 		Array args = ( ( Array ) meta.dereference( Key.of( "parameters" ), false ) );
@@ -256,6 +261,20 @@ public class ClosureFunctionTest {
 		assertThat( param2.dereference( Key.of( "hint" ), false ) ).isEqualTo( "" );
 		assertThat( param2.dereference( Key.of( "required" ), false ) ).isEqualTo( false );
 		assertThat( param2.dereference( Key.of( "type" ), false ) ).isEqualTo( "numeric" );
+
+		FunctionMeta	$bx			= ( ( FunctionMeta ) Referencer.get( UDFfoo, BoxMeta.key, false ) );
+		Struct			annotations	= ( Struct ) $bx.meta.dereference( Key.of( "annotations" ), false );
+		assertThat( annotations.dereference( Key.of( "hint" ), false ) ).isEqualTo( "my Closure" );
+		assertThat( annotations.dereference( Key.of( "output" ), false ) ).isEqualTo( false );
+		assertThat( annotations.dereference( Key.of( "brad" ), false ) ).isEqualTo( "wood" );
+
+		Array	params				= ( Array ) $bx.meta.dereference( Key.of( "parameters" ), false );
+
+		Struct	param1Annotations	= ( Struct ) Referencer.get( params.get( 0 ), Key.of( "annotations" ), false );
+		assertThat( param1Annotations.dereference( Key.of( "hint" ), false ) ).isEqualTo( "My param" );
+
+		Struct param2Annotations = ( Struct ) Referencer.get( params.get( 1 ), Key.of( "annotations" ), false );
+		assertThat( param2Annotations.dereference( Key.of( "luis" ), false ) ).isEqualTo( "majano" );
 
 	}
 
@@ -275,7 +294,8 @@ public class ClosureFunctionTest {
 		          """,
 		    context );
 		assertThat( variables.dereference( result, false ) ).isEqualTo( "value" );
-		Struct meta = ( ( Closure ) variables.dereference( foo, false ) ).getMetaData();
+		Closure	UDFfoo	= ( ( Closure ) variables.dereference( foo, false ) );
+		Struct	meta	= UDFfoo.getMetaData();
 
 		assertThat( meta.dereference( Key.of( "name" ), false ) ).isEqualTo( "closure" );
 		assertThat( meta.dereference( Key.of( "access" ), false ) ).isEqualTo( "public" );
@@ -296,199 +316,14 @@ public class ClosureFunctionTest {
 		assertThat( param2.dereference( Key.of( "required" ), false ) ).isEqualTo( false );
 		assertThat( param2.dereference( Key.of( "type" ), false ) ).isEqualTo( "numeric" );
 
-	}
+		FunctionMeta	$bx					= ( ( FunctionMeta ) Referencer.get( UDFfoo, BoxMeta.key, false ) );
+		Array			params				= ( Array ) $bx.meta.dereference( Key.of( "parameters" ), false );
 
-	@DisplayName( "closure metadata javadoc" )
-	@Test
-	public void testClosureMetadataJavadoc() {
+		Struct			param1Annotations	= ( Struct ) Referencer.get( params.get( 0 ), Key.of( "annotations" ), false );
+		assertThat( param1Annotations.dereference( Key.of( "hint" ), false ) ).isEqualTo( "My param" );
 
-		instance.executeSource(
-		    """
-		      /**
-		      * my Closure
-		      *
-		      * @param1.hint My param				*
-		      * @param1.required true
-		      *
-		      * @param1.type string
-		      * @param2.default 42
-		      * @param2.type numeric
-		      * @param2.luis majano
-		      */
-		      foo = function( param1, param2 ) output=false brad="wood" {
-		      	return "value";
-		      }
-		    result = foo();
-		        """,
-		    context );
-		assertThat( variables.dereference( result, false ) ).isEqualTo( "value" );
-		Struct meta = ( ( Closure ) variables.dereference( foo, false ) ).getMetaData();
-
-		assertThat( meta.dereference( Key.of( "name" ), false ) ).isEqualTo( "foo" );
-		assertThat( meta.dereference( Key.of( "hint" ), false ) ).isEqualTo( "my Closure" );
-		assertThat( meta.dereference( Key.of( "output" ), false ) ).isEqualTo( false );
-		assertThat( meta.dereference( Key.of( "brad" ), false ) ).isEqualTo( "wood" );
-		assertThat( meta.dereference( Key.of( "access" ), false ) ).isEqualTo( "public" );
-
-		Array args = ( ( Array ) meta.dereference( Key.of( "parameters" ), false ) );
-		assertThat( args.size() ).isEqualTo( 2 );
-
-		Struct param1 = ( Struct ) args.get( 0 );
-		assertThat( param1.dereference( Key.of( "name" ), false ) ).isEqualTo( "param1" );
-		assertThat( param1.dereference( Key.of( "hint" ), false ) ).isEqualTo( "My param" );
-		assertThat( param1.dereference( Key.of( "required" ), false ) ).isEqualTo( true );
-		assertThat( param1.dereference( Key.of( "type" ), false ) ).isEqualTo( "any" );
-
-		Struct param2 = ( Struct ) args.get( 1 );
-		assertThat( param2.dereference( Key.of( "name" ), false ) ).isEqualTo( "param2" );
-		assertThat( param2.dereference( Key.of( "luis" ), false ) ).isEqualTo( "majano" );
-		assertThat( param2.dereference( Key.of( "hint" ), false ) ).isEqualTo( "" );
-		assertThat( param2.dereference( Key.of( "required" ), false ) ).isEqualTo( false );
-		assertThat( param2.dereference( Key.of( "type" ), false ) ).isEqualTo( "numeric" );
-
-	}
-
-	@DisplayName( "closure metadata javadoc arrow" )
-	@Test
-	public void testClosureMetadataJavadocArrow() {
-
-		instance.executeSource(
-		    """
-		      /**
-		      * my Closure
-		      *
-		      * @param1.hint My param				*
-		      * @param1.required true
-		      *
-		      * @param1.type string
-		      * @param2.default 42
-		      * @param2.type numeric
-		      * @param2.luis majano
-		      */
-		      foo = ( param1, param2 ) => "value";
-
-		    result = foo();
-		        """,
-		    context );
-		assertThat( variables.dereference( result, false ) ).isEqualTo( "value" );
-		Struct meta = ( ( Closure ) variables.dereference( foo, false ) ).getMetaData();
-
-		assertThat( meta.dereference( Key.of( "name" ), false ) ).isEqualTo( "closure" );
-		assertThat( meta.dereference( Key.of( "access" ), false ) ).isEqualTo( "public" );
-
-		Array args = ( ( Array ) meta.dereference( Key.of( "parameters" ), false ) );
-		assertThat( args.size() ).isEqualTo( 2 );
-
-		Struct param1 = ( Struct ) args.get( 0 );
-		assertThat( param1.dereference( Key.of( "name" ), false ) ).isEqualTo( "param1" );
-		assertThat( param1.dereference( Key.of( "hint" ), false ) ).isEqualTo( "My param" );
-		assertThat( param1.dereference( Key.of( "required" ), false ) ).isEqualTo( true );
-		assertThat( param1.dereference( Key.of( "type" ), false ) ).isEqualTo( "any" );
-
-		Struct param2 = ( Struct ) args.get( 1 );
-		assertThat( param2.dereference( Key.of( "name" ), false ) ).isEqualTo( "param2" );
-		assertThat( param2.dereference( Key.of( "luis" ), false ) ).isEqualTo( "majano" );
-		assertThat( param2.dereference( Key.of( "hint" ), false ) ).isEqualTo( "" );
-		assertThat( param2.dereference( Key.of( "required" ), false ) ).isEqualTo( false );
-		assertThat( param2.dereference( Key.of( "type" ), false ) ).isEqualTo( "numeric" );
-
-	}
-
-	@DisplayName( "Closure metadata javadoc alt" )
-	@Test
-	public void testClosureMetadataJavadocAlt() {
-
-		instance.executeSource(
-		    """
-		      /**
-		       * my Closure
-		       *
-		       * @param1 My param
-		       *
-		       * @param1.required
-		       *
-		       * @param1.type string
-		       * @param2.default 42
-		       * @param2.type numeric
-		       * @param2.luis majano
-		       */
-		       foo = function( param1, param2 ) output=false brad="wood" {
-		         return "value";
-		       }
-		    result = foo();
-		          """,
-		    context );
-		assertThat( variables.dereference( result, false ) ).isEqualTo( "value" );
-		Struct meta = ( ( Closure ) variables.dereference( foo, false ) ).getMetaData();
-
-		assertThat( meta.dereference( Key.of( "name" ), false ) ).isEqualTo( "closure" );
-		assertThat( meta.dereference( Key.of( "hint" ), false ) ).isEqualTo( "my Closure" );
-		assertThat( meta.dereference( Key.of( "output" ), false ) ).isEqualTo( false );
-		assertThat( meta.dereference( Key.of( "brad" ), false ) ).isEqualTo( "wood" );
-
-		Array args = ( ( Array ) meta.dereference( Key.of( "parameters" ), false ) );
-		assertThat( args.size() ).isEqualTo( 2 );
-
-		Struct param1 = ( Struct ) args.get( 0 );
-		assertThat( param1.dereference( Key.of( "name" ), false ) ).isEqualTo( "param1" );
-		assertThat( param1.dereference( Key.of( "hint" ), false ) ).isEqualTo( "My param" );
-		assertThat( param1.dereference( Key.of( "required" ), false ) ).isEqualTo( true );
-		assertThat( param1.dereference( Key.of( "type" ), false ) ).isEqualTo( "any" );
-
-		Struct param2 = ( Struct ) args.get( 1 );
-		assertThat( param2.dereference( Key.of( "name" ), false ) ).isEqualTo( "param2" );
-		assertThat( param2.dereference( Key.of( "luis" ), false ) ).isEqualTo( "majano" );
-		assertThat( param2.dereference( Key.of( "hint" ), false ) ).isEqualTo( "" );
-		assertThat( param2.dereference( Key.of( "required" ), false ) ).isEqualTo( false );
-		assertThat( param2.dereference( Key.of( "type" ), false ) ).isEqualTo( "numeric" );
-
-	}
-
-	@DisplayName( "Closure metadata javadoc alt arrow" )
-	@Test
-	public void testClosureMetadataJavadocAltArrow() {
-
-		instance.executeSource(
-		    """
-		      /**
-		       * my Closure
-		       *
-		       * @param1 My param
-		       *
-		       * @param1.required
-		       *
-		       * @param1.type string
-		       * @param2.default 42
-		       * @param2.type numeric
-		       * @param2.luis majano
-		       */
-		       foo = ( param1, param2 ) => {
-		         return "value";
-		       }
-		    result = foo();
-		          """,
-		    context );
-		assertThat( variables.dereference( result, false ) ).isEqualTo( "value" );
-		Struct meta = ( ( Closure ) variables.dereference( foo, false ) ).getMetaData();
-
-		assertThat( meta.dereference( Key.of( "name" ), false ) ).isEqualTo( "closure" );
-		assertThat( meta.dereference( Key.of( "hint" ), false ) ).isEqualTo( "my Closure" );
-
-		Array args = ( ( Array ) meta.dereference( Key.of( "parameters" ), false ) );
-		assertThat( args.size() ).isEqualTo( 2 );
-
-		Struct param1 = ( Struct ) args.get( 0 );
-		assertThat( param1.dereference( Key.of( "name" ), false ) ).isEqualTo( "param1" );
-		assertThat( param1.dereference( Key.of( "hint" ), false ) ).isEqualTo( "My param" );
-		assertThat( param1.dereference( Key.of( "required" ), false ) ).isEqualTo( true );
-		assertThat( param1.dereference( Key.of( "type" ), false ) ).isEqualTo( "any" );
-
-		Struct param2 = ( Struct ) args.get( 1 );
-		assertThat( param2.dereference( Key.of( "name" ), false ) ).isEqualTo( "param2" );
-		assertThat( param2.dereference( Key.of( "luis" ), false ) ).isEqualTo( "majano" );
-		assertThat( param2.dereference( Key.of( "hint" ), false ) ).isEqualTo( "" );
-		assertThat( param2.dereference( Key.of( "required" ), false ) ).isEqualTo( false );
-		assertThat( param2.dereference( Key.of( "type" ), false ) ).isEqualTo( "numeric" );
+		Struct param2Annotations = ( Struct ) Referencer.get( params.get( 1 ), Key.of( "annotations" ), false );
+		assertThat( param2Annotations.dereference( Key.of( "luis" ), false ) ).isEqualTo( "majano" );
 
 	}
 
@@ -667,7 +502,7 @@ public class ClosureFunctionTest {
 		    """
 		      result = originalClosure();
 		    """,
-		    context );
+		    newContext );
 
 		assertThat( newVariables.dereference( result, false ) ).isEqualTo( "foobar" );
 

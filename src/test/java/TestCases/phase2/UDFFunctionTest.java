@@ -31,6 +31,7 @@ import org.junit.jupiter.api.Test;
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.ScriptingBoxContext;
+import ortus.boxlang.runtime.dynamic.Referencer;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
@@ -38,19 +39,21 @@ import ortus.boxlang.runtime.scopes.VariablesScope;
 import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.UDF;
+import ortus.boxlang.runtime.types.meta.BoxMeta;
+import ortus.boxlang.runtime.types.meta.FunctionMeta;
 
 @Disabled
 public class UDFFunctionTest {
 
 	static BoxRuntime	instance;
-	IBoxContext	context;
-	IScope		variables;
+	IBoxContext			context;
+	IScope				variables;
 	static Key			result	= new Key( "result" );
 	static Key			foo		= new Key( "foo" );
 
 	@BeforeAll
 	public static void setUp() {
-		instance	= BoxRuntime.getInstance( true );
+		instance = BoxRuntime.getInstance( true );
 	}
 
 	@AfterAll
@@ -151,7 +154,8 @@ public class UDFFunctionTest {
 		        """,
 		    context );
 		assertThat( variables.dereference( result, false ) ).isEqualTo( "value" );
-		Struct meta = ( ( UDF ) variables.dereference( foo, false ) ).getMetaData();
+		UDF		UDFfoo	= ( ( UDF ) variables.dereference( foo, false ) );
+		Struct	meta	= UDFfoo.getMetaData();
 
 		assertThat( meta.dereference( Key.of( "name" ), false ) ).isEqualTo( "foo" );
 		assertThat( meta.dereference( Key.of( "hint" ), false ) ).isEqualTo( "my UDF" );
@@ -176,6 +180,17 @@ public class UDFFunctionTest {
 		assertThat( param2.dereference( Key.of( "required" ), false ) ).isEqualTo( false );
 		assertThat( param2.dereference( Key.of( "type" ), false ) ).isEqualTo( "numeric" );
 
+		FunctionMeta	$bx			= ( ( FunctionMeta ) Referencer.get( UDFfoo, BoxMeta.key, false ) );
+		Struct			annotations	= ( Struct ) $bx.meta.dereference( Key.of( "annotations" ), false );
+		assertThat( annotations.dereference( Key.of( "hint" ), false ) ).isEqualTo( "my UDF" );
+		assertThat( annotations.dereference( Key.of( "output" ), false ) ).isEqualTo( false );
+		assertThat( annotations.dereference( Key.of( "brad" ), false ) ).isEqualTo( "wood" );
+
+		Array	params				= ( Array ) $bx.meta.dereference( Key.of( "parameters" ), false );
+		Struct	param1Annotations	= ( Struct ) Referencer.get( params.get( 0 ), Key.of( "annotations" ), false );
+		assertThat( param1Annotations.dereference( Key.of( "hint" ), false ) ).isEqualTo( "My param" );
+		Struct param2Annotations = ( Struct ) Referencer.get( params.get( 1 ), Key.of( "annotations" ), false );
+		assertThat( param2Annotations.dereference( Key.of( "luis" ), false ) ).isEqualTo( "majano" );
 	}
 
 	@DisplayName( "UDF metadata javadoc" )
@@ -188,12 +203,11 @@ public class UDFFunctionTest {
 		       * my UDF
 		       *
 		       * @param1.hint My param
-		       * @param1.required true
 		       *
-		       * @param1.type string
-		       * @param2.default 42
-		       * @param2.type numeric
 		       * @param2.luis majano
+		       * @param2 param2 hint
+		    *
+		    * @returns Pure Gold
 		       */
 		       public String function foo( param1, param2 ) output=false brad="wood" {
 		       	return "value";
@@ -202,10 +216,10 @@ public class UDFFunctionTest {
 		         """,
 		    context );
 		assertThat( variables.dereference( result, false ) ).isEqualTo( "value" );
-		Struct meta = ( ( UDF ) variables.dereference( foo, false ) ).getMetaData();
+		UDF		UDFfoo	= ( ( UDF ) variables.dereference( foo, false ) );
+		Struct	meta	= UDFfoo.getMetaData();
 
 		assertThat( meta.dereference( Key.of( "name" ), false ) ).isEqualTo( "foo" );
-		assertThat( meta.dereference( Key.of( "hint" ), false ) ).isEqualTo( "my UDF" );
 		assertThat( meta.dereference( Key.of( "output" ), false ) ).isEqualTo( false );
 		assertThat( meta.dereference( Key.of( "brad" ), false ) ).isEqualTo( "wood" );
 		assertThat( meta.dereference( Key.of( "returnType" ), false ) ).isEqualTo( "String" );
@@ -216,67 +230,27 @@ public class UDFFunctionTest {
 
 		Struct param1 = ( Struct ) args.get( 0 );
 		assertThat( param1.dereference( Key.of( "name" ), false ) ).isEqualTo( "param1" );
-		assertThat( param1.dereference( Key.of( "hint" ), false ) ).isEqualTo( "My param" );
-		assertThat( param1.dereference( Key.of( "required" ), false ) ).isEqualTo( true );
+		assertThat( param1.dereference( Key.of( "required" ), false ) ).isEqualTo( false );
 		assertThat( param1.dereference( Key.of( "type" ), false ) ).isEqualTo( "any" );
 
 		Struct param2 = ( Struct ) args.get( 1 );
 		assertThat( param2.dereference( Key.of( "name" ), false ) ).isEqualTo( "param2" );
-		assertThat( param2.dereference( Key.of( "luis" ), false ) ).isEqualTo( "majano" );
 		assertThat( param2.dereference( Key.of( "hint" ), false ) ).isEqualTo( "" );
 		assertThat( param2.dereference( Key.of( "required" ), false ) ).isEqualTo( false );
-		assertThat( param2.dereference( Key.of( "type" ), false ) ).isEqualTo( "numeric" );
 
-	}
+		FunctionMeta	$bx				= ( ( FunctionMeta ) Referencer.get( UDFfoo, BoxMeta.key, false ) );
+		Struct			documentation	= ( Struct ) $bx.meta.dereference( Key.of( "documentation" ), false );
+		assertThat( documentation.dereference( Key.of( "hint" ), false ) ).isEqualTo( "my UDF" );
+		assertThat( documentation.dereference( Key.of( "returns" ), false ) ).isEqualTo( "Pure Gold" );
 
-	@DisplayName( "UDF metadata javadoc alt" )
-	@Test
-	public void testUDFMetadataJavadocAlt() {
+		Array	params				= ( Array ) $bx.meta.dereference( Key.of( "parameters" ), false );
 
-		instance.executeSource(
-		    """
-		      /**
-		       * my UDF
-		       *
-		       * @param1 My param
-		       * @param1.required
-		       *
-		       * @param1.type string
-		       * @param2.default 42
-		       * @param2.type numeric
-		       * @param2.luis majano
-		       */
-		       public String function foo( param1, param2 ) output=false brad="wood" {
-		         return "value";
-		       }
-		    result = foo();
-		          """,
-		    context );
-		assertThat( variables.dereference( result, false ) ).isEqualTo( "value" );
-		Struct meta = ( ( UDF ) variables.dereference( foo, false ) ).getMetaData();
+		Struct	param1Documentation	= ( Struct ) Referencer.get( params.get( 0 ), Key.of( "documentation" ), false );
+		assertThat( param1Documentation.dereference( Key.of( "hint" ), false ) ).isEqualTo( "My param" );
 
-		assertThat( meta.dereference( Key.of( "name" ), false ) ).isEqualTo( "foo" );
-		assertThat( meta.dereference( Key.of( "hint" ), false ) ).isEqualTo( "my UDF" );
-		assertThat( meta.dereference( Key.of( "output" ), false ) ).isEqualTo( false );
-		assertThat( meta.dereference( Key.of( "brad" ), false ) ).isEqualTo( "wood" );
-		assertThat( meta.dereference( Key.of( "returnType" ), false ) ).isEqualTo( "String" );
-		assertThat( meta.dereference( Key.of( "access" ), false ) ).isEqualTo( "public" );
-
-		Array args = ( ( Array ) meta.dereference( Key.of( "parameters" ), false ) );
-		assertThat( args.size() ).isEqualTo( 2 );
-
-		Struct param1 = ( Struct ) args.get( 0 );
-		assertThat( param1.dereference( Key.of( "name" ), false ) ).isEqualTo( "param1" );
-		assertThat( param1.dereference( Key.of( "hint" ), false ) ).isEqualTo( "My param" );
-		assertThat( param1.dereference( Key.of( "required" ), false ) ).isEqualTo( true );
-		assertThat( param1.dereference( Key.of( "type" ), false ) ).isEqualTo( "any" );
-
-		Struct param2 = ( Struct ) args.get( 1 );
-		assertThat( param2.dereference( Key.of( "name" ), false ) ).isEqualTo( "param2" );
-		assertThat( param2.dereference( Key.of( "luis" ), false ) ).isEqualTo( "majano" );
-		assertThat( param2.dereference( Key.of( "hint" ), false ) ).isEqualTo( "" );
-		assertThat( param2.dereference( Key.of( "required" ), false ) ).isEqualTo( false );
-		assertThat( param2.dereference( Key.of( "type" ), false ) ).isEqualTo( "numeric" );
+		Struct param2Documentation = ( Struct ) Referencer.get( params.get( 1 ), Key.of( "documentation" ), false );
+		assertThat( param2Documentation.dereference( Key.of( "hint" ), false ) ).isEqualTo( "param2 hint" );
+		assertThat( param2Documentation.dereference( Key.of( "luis" ), false ) ).isEqualTo( "majano" );
 
 	}
 

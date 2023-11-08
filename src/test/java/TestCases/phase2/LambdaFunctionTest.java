@@ -31,6 +31,7 @@ import org.junit.jupiter.api.Test;
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.ScriptingBoxContext;
+import ortus.boxlang.runtime.dynamic.Referencer;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
@@ -38,19 +39,21 @@ import ortus.boxlang.runtime.scopes.VariablesScope;
 import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.Lambda;
 import ortus.boxlang.runtime.types.Struct;
+import ortus.boxlang.runtime.types.meta.BoxMeta;
+import ortus.boxlang.runtime.types.meta.FunctionMeta;
 
 @Disabled
 public class LambdaFunctionTest {
 
 	static BoxRuntime	instance;
-	IBoxContext	context;
-	IScope		variables;
+	IBoxContext			context;
+	IScope				variables;
 	static Key			result	= new Key( "result" );
 	static Key			foo		= new Key( "foo" );
 
 	@BeforeAll
 	public static void setUp() {
-		instance	= BoxRuntime.getInstance( true );
+		instance = BoxRuntime.getInstance( true );
 	}
 
 	@AfterAll
@@ -179,7 +182,8 @@ public class LambdaFunctionTest {
 		          """,
 		    context );
 		assertThat( variables.dereference( result, false ) ).isEqualTo( "value" );
-		Struct meta = ( ( Lambda ) variables.dereference( foo, false ) ).getMetaData();
+		Lambda	UDFfoo	= ( ( Lambda ) variables.dereference( foo, false ) );
+		Struct	meta	= UDFfoo.getMetaData();
 
 		assertThat( meta.dereference( Key.of( "name" ), false ) ).isEqualTo( "lambda" );
 		assertThat( meta.dereference( Key.of( "access" ), false ) ).isEqualTo( "public" );
@@ -200,99 +204,19 @@ public class LambdaFunctionTest {
 		assertThat( param2.dereference( Key.of( "required" ), false ) ).isEqualTo( false );
 		assertThat( param2.dereference( Key.of( "type" ), false ) ).isEqualTo( "numeric" );
 
-	}
+		FunctionMeta	$bx			= ( ( FunctionMeta ) Referencer.get( UDFfoo, BoxMeta.key, false ) );
+		Struct			annotations	= ( Struct ) $bx.meta.dereference( Key.of( "annotations" ), false );
+		assertThat( annotations.dereference( Key.of( "hint" ), false ) ).isEqualTo( "my Closure" );
+		assertThat( annotations.dereference( Key.of( "output" ), false ) ).isEqualTo( false );
+		assertThat( annotations.dereference( Key.of( "brad" ), false ) ).isEqualTo( "wood" );
 
-	@DisplayName( "lambda metadata javadoc" )
-	@Test
-	public void testLambdaMetadataJavadoc() {
+		Array	params				= ( Array ) $bx.meta.dereference( Key.of( "parameters" ), false );
 
-		instance.executeSource(
-		    """
-		      /**
-		      * my Lambda
-		      *
-		      * @param1.hint My param				*
-		      * @param1.required true
-		      *
-		      * @param1.type string
-		      * @param2.default 42
-		      * @param2.type numeric
-		      * @param2.luis majano
-		      */
-		      foo = ( param1, param2 ) -> "value";
+		Struct	param1Annotations	= ( Struct ) Referencer.get( params.get( 0 ), Key.of( "annotations" ), false );
+		assertThat( param1Annotations.dereference( Key.of( "hint" ), false ) ).isEqualTo( "My param" );
 
-		    result = foo();
-		        """,
-		    context );
-		assertThat( variables.dereference( result, false ) ).isEqualTo( "value" );
-		Struct meta = ( ( Lambda ) variables.dereference( foo, false ) ).getMetaData();
-
-		assertThat( meta.dereference( Key.of( "name" ), false ) ).isEqualTo( "lambda" );
-		assertThat( meta.dereference( Key.of( "access" ), false ) ).isEqualTo( "public" );
-
-		Array args = ( ( Array ) meta.dereference( Key.of( "parameters" ), false ) );
-		assertThat( args.size() ).isEqualTo( 2 );
-
-		Struct param1 = ( Struct ) args.get( 0 );
-		assertThat( param1.dereference( Key.of( "name" ), false ) ).isEqualTo( "param1" );
-		assertThat( param1.dereference( Key.of( "hint" ), false ) ).isEqualTo( "My param" );
-		assertThat( param1.dereference( Key.of( "required" ), false ) ).isEqualTo( true );
-		assertThat( param1.dereference( Key.of( "type" ), false ) ).isEqualTo( "any" );
-
-		Struct param2 = ( Struct ) args.get( 1 );
-		assertThat( param2.dereference( Key.of( "name" ), false ) ).isEqualTo( "param2" );
-		assertThat( param2.dereference( Key.of( "luis" ), false ) ).isEqualTo( "majano" );
-		assertThat( param2.dereference( Key.of( "hint" ), false ) ).isEqualTo( "" );
-		assertThat( param2.dereference( Key.of( "required" ), false ) ).isEqualTo( false );
-		assertThat( param2.dereference( Key.of( "type" ), false ) ).isEqualTo( "numeric" );
-
-	}
-
-	@DisplayName( "metadata javadoc alt" )
-	@Test
-	public void testMetadataJavadocAlt() {
-
-		instance.executeSource(
-		    """
-		      /**
-		       * my Lambda
-		       *
-		       * @param1 My param
-		       *
-		       * @param1.required
-		       *
-		       * @param1.type string
-		       * @param2.default 42
-		       * @param2.type numeric
-		       * @param2.luis majano
-		       */
-		       foo = ( param1, param2 ) -> {
-		         return "value";
-		       }
-		    result = foo();
-		          """,
-		    context );
-		assertThat( variables.dereference( result, false ) ).isEqualTo( "value" );
-		Struct meta = ( ( Lambda ) variables.dereference( foo, false ) ).getMetaData();
-
-		assertThat( meta.dereference( Key.of( "name" ), false ) ).isEqualTo( "lambda" );
-		assertThat( meta.dereference( Key.of( "hint" ), false ) ).isEqualTo( "my Lambda" );
-
-		Array args = ( ( Array ) meta.dereference( Key.of( "parameters" ), false ) );
-		assertThat( args.size() ).isEqualTo( 2 );
-
-		Struct param1 = ( Struct ) args.get( 0 );
-		assertThat( param1.dereference( Key.of( "name" ), false ) ).isEqualTo( "param1" );
-		assertThat( param1.dereference( Key.of( "hint" ), false ) ).isEqualTo( "My param" );
-		assertThat( param1.dereference( Key.of( "required" ), false ) ).isEqualTo( true );
-		assertThat( param1.dereference( Key.of( "type" ), false ) ).isEqualTo( "any" );
-
-		Struct param2 = ( Struct ) args.get( 1 );
-		assertThat( param2.dereference( Key.of( "name" ), false ) ).isEqualTo( "param2" );
-		assertThat( param2.dereference( Key.of( "luis" ), false ) ).isEqualTo( "majano" );
-		assertThat( param2.dereference( Key.of( "hint" ), false ) ).isEqualTo( "" );
-		assertThat( param2.dereference( Key.of( "required" ), false ) ).isEqualTo( false );
-		assertThat( param2.dereference( Key.of( "type" ), false ) ).isEqualTo( "numeric" );
+		Struct param2Annotations = ( Struct ) Referencer.get( params.get( 1 ), Key.of( "annotations" ), false );
+		assertThat( param2Annotations.dereference( Key.of( "luis" ), false ) ).isEqualTo( "majano" );
 
 	}
 
