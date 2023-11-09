@@ -76,15 +76,13 @@ public class TestAST extends TestBase {
 
 	@Test
 	public void testParser() throws IOException {
-		// List<Path> files = scanForFiles( testboxDirectory, Set.of( "cfc", "cfm", "cfml" ) );
-		// List<Path> files = scanForFiles( "../boxlang/examples/cf_to_java/HelloWorld",
-		List<Path> files = scanForFiles( "/home/madytyoo/IdeaProjects/TestBox1",
-		    Set.of( "cfc", "cfm", "cfml" ) );
+		List<Path> files = scanForFiles( "../boxlang/examples/cf_to_java/HelloWorld", Set.of( "cfc", "cfm", "cfml" ) );
+		System.out.printf("Testing parser against %s file(s)%n", files.size() );
 		for ( Path file : files ) {
-			System.out.println( file );
+			System.out.println( "Testing " + file );
 			ParsingResult result = parser.parse( file.toFile() );
 			if ( !result.isCorrect() ) {
-				result.getIssues().forEach( error -> System.out.println( error ) );
+				result.getIssues().forEach(System.out::println);
 			}
 		}
 	}
