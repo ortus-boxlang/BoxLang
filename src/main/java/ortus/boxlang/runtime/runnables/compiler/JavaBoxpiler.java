@@ -36,7 +36,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.github.javaparser.ast.CompilationUnit;
-import com.github.javaparser.ast.Node;
 
 import ortus.boxlang.ast.BoxExpr;
 import ortus.boxlang.ast.BoxScript;

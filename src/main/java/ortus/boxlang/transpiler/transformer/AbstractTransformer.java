@@ -62,13 +62,17 @@ public abstract class AbstractTransformer implements Transformer {
 	 * @return the Java Parser AST representation of the expression
 	 */
 	protected Node parseExpression( String template, Map<String, String> values ) {
-		String					code	= PlaceholderHelper.resolve( template, values );
-		ParseResult<Expression>	result	= javaParser.parseExpression( code );
-		if ( !result.isSuccessful() ) {
-			// System.out.println( code );
-			throw new IllegalStateException( result.toString() );
+		String code = PlaceholderHelper.resolve( template, values );
+		try {
+			ParseResult<Expression> result = javaParser.parseExpression( code );
+			if ( !result.isSuccessful() ) {
+				// System.out.println( code );
+				throw new IllegalStateException( result.toString() );
+			}
+			return result.getResult().get();
+		} catch ( Throwable e ) {
+			throw new RuntimeException( "Error parsing expression: " + code, e );
 		}
-		return result.getResult().get();
 
 	}
 
@@ -101,8 +105,7 @@ public abstract class AbstractTransformer implements Transformer {
 		if ( expr instanceof NameExpr ) {
 			String				id			= expr.toString();
 			String				template	= switch ( context ) {
-												case INIT ->
-												    "context.scopeFindNearby(Key.of(\"${id}\"), context.getDefaultAssignmentScope()).scope().assign(Key.of(\"${id}\"))";
+												case INIT -> "context.scopeFindNearby(Key.of(\"${id}\"), context.getDefaultAssignmentScope()).scope().assign(Key.of(\"${id}\"))";
 												case RIGHT -> "context.scopeFindNearby(Key.of(\"${id}\"),null).value()";
 												default -> "context.scopeFindNearby(Key.of(\"${id}\"),null).value()";
 											}

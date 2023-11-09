@@ -17,21 +17,20 @@
  */
 package ortus.boxlang.parser;
 
-import org.antlr.v4.runtime.CharStreams;
-import org.antlr.v4.runtime.CommonTokenStream;
-import org.antlr.v4.runtime.ParserRuleContext;
-import ortus.boxlang.ast.BoxScript;
-import ortus.boxlang.ast.BoxStatement;
-import ortus.boxlang.parser.antlr.BoxScriptLexer;
-import ortus.boxlang.parser.antlr.BoxScriptParser;
-import ortus.boxlang.parser.antlr.CFLexer;
-import ortus.boxlang.parser.antlr.CFParser;
-
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
+
+import org.antlr.v4.runtime.CharStreams;
+import org.antlr.v4.runtime.CommonTokenStream;
+import org.antlr.v4.runtime.ParserRuleContext;
+
+import ortus.boxlang.ast.BoxScript;
+import ortus.boxlang.ast.BoxStatement;
+import ortus.boxlang.parser.antlr.BoxScriptLexer;
+import ortus.boxlang.parser.antlr.BoxScriptParser;
 
 /**
  * Parser for box scripts
