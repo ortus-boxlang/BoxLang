@@ -305,7 +305,7 @@ public class JavaBoxpiler {
 					throw new ApplicationException( "Error compiling source", e );
 				}
 
-				result.getIssues().forEach( it -> System.out.println( it ) );
+				result.getIssues().forEach(System.out::println);
 				if ( !result.isCorrect() ) {
 					throw new ApplicationException( "Error compiling source. " + result.getIssues().get( 0 ).toString() );
 				}
@@ -346,7 +346,7 @@ public class JavaBoxpiler {
 				} catch ( IOException e ) {
 					throw new ApplicationException( "Error compiling source", e );
 				}
-				result.getIssues().forEach( it -> System.out.println( it ) );
+				result.getIssues().forEach(System.out::println);
 				assert result.isCorrect();
 
 				JavaTranspiler			transpiler	= new JavaTranspiler();
@@ -448,7 +448,7 @@ public class JavaBoxpiler {
 	/**
 	 * Transforms the filename into the class name
 	 *
-	 * @param source
+	 * @param file File object to grab the class name for.
 	 *
 	 * @return returns the class name according the name conventions Test.ext - Test$ext
 	 */
@@ -461,7 +461,7 @@ public class JavaBoxpiler {
 	/**
 	 * Transforms the path into the package name
 	 *
-	 * @param source
+	 * @param file File object to grab the package name for.
 	 *
 	 * @return returns the class name according the name conventions Test.ext - Test$ext
 	 */
