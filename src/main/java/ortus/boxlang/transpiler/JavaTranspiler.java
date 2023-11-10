@@ -190,6 +190,10 @@ public class JavaTranspiler extends Transpiler {
 	 * @see TransformerContext
 	 */
 	public static Node transform( BoxNode node, TransformerContext context ) throws IllegalStateException {
+		// Workaround for regressin where static calls to this class to not initialize the registry
+		if ( registry.size() == 0 ) {
+			new JavaTranspiler();
+		}
 		Transformer transformer = registry.get( node.getClass() );
 		if ( transformer != null ) {
 			Node javaNode = transformer.transform( node, context );
