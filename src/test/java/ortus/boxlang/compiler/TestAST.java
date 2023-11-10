@@ -96,8 +96,8 @@ public class TestAST extends TestBase {
 		for ( Path file : files ) {
 			System.out.println( file );
 			ParsingResult	result	= parser.parse( file.toFile() );
-			CompilationUnit	javaAST	= transpiler.transpileToJava( result.getRoot() );
-			System.out.println( javaAST );
+			transpiler.transpileMany( result.getRoot() )
+					.forEach(System.out::println);
 		}
 
 	}
