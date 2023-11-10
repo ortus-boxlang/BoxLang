@@ -23,6 +23,8 @@ import static com.google.common.truth.Truth.assertThat;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
+import ortus.boxlang.runtime.types.Array;
+
 public class KeyTest {
 
 	@Test
@@ -85,5 +87,16 @@ public class KeyTest {
 		assertThat( keys[ 0 ].getName() ).isEqualTo( "Test" );
 		assertThat( keys[ 1 ].getName() ).isEqualTo( "Test2" );
 		assertThat( keys[ 2 ].getName() ).isEqualTo( "Test3" );
+	}
+
+	@DisplayName( "Test the original value" )
+	@Test
+	public void testTheOriginalValue() {
+		Array	arr	= Array.of( 1, 2, 3 );
+		Key		key	= Key.of( arr );
+		System.out.println( key );
+		assertThat( key.getOriginalValue() instanceof Array ).isTrue();
+		assertThat( key.getOriginalValue() ).isEqualTo( arr );
+
 	}
 }

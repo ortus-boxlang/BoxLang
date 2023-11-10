@@ -64,9 +64,11 @@ public class ArrayTest {
 	void testReferencing() {
 		Array array = new Array();
 		array.assign( Key.of( "1" ), "foo" );
+		array.assign( Key.of( 1 ), "foo" );
 		assertThat( array.size() ).isEqualTo( 1 );
 		assertThat( array.get( 0 ) ).isEqualTo( "foo" );
 		assertThat( array.dereference( Key.of( "1" ), false ) ).isEqualTo( "foo" );
+		assertThat( array.dereference( Key.of( 1 ), false ) ).isEqualTo( "foo" );
 		assertThat( array.dereferenceAndInvoke( new ScriptingBoxContext(), Key.of( "get" ), new Object[] { 0 }, false ) ).isEqualTo( "foo" );
 
 		// Can't reference negative, string, non-int, or out-of-bounds indexes
@@ -86,9 +88,12 @@ public class ArrayTest {
 
 		// Auto-expand the array with nulls
 		array.assign( Key.of( "100" ), "foo100" );
+		array.assign( Key.of( 100 ), "foo100" );
 		assertThat( array.size() ).isEqualTo( 100 );
 		assertThat( array.dereference( Key.of( "100" ), false ) ).isEqualTo( "foo100" );
+		assertThat( array.dereference( Key.of( 100 ), false ) ).isEqualTo( "foo100" );
 		assertThat( array.dereference( Key.of( "99" ), false ) ).isEqualTo( null );
+		assertThat( array.dereference( Key.of( 99 ), false ) ).isEqualTo( null );
 
 	}
 

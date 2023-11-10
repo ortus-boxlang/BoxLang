@@ -421,13 +421,13 @@ public class TestStatements extends TestBase {
 
 		Node			javaAST		= JavaTranspiler.transform( result.getRoot() );
 		System.out.println( javaAST );
-		// use new ExceptionUtil to throw
+
 		assertEqualsNoWhiteSpaces(
 		    """
 		       ExceptionUtil.throwException(
 		    	classLocator.load(
 		    		context,
-		    		(String)"java.lang.RuntimeException",
+		    		StringCaster.cast( "java.lang.RuntimeException" ),
 		    		imports
 		    	).invokeConstructor(newObject[]{"MyMessage"})
 		    );
