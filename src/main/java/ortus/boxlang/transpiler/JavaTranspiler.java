@@ -230,8 +230,7 @@ public class JavaTranspiler extends Transpiler {
 
 			} else {
 				Node javaStmt = transform( statement );
-				if ( javaStmt instanceof BlockStmt ) {
-					BlockStmt stmt = ( BlockStmt ) javaStmt;
+				if (javaStmt instanceof BlockStmt stmt) {
 					stmt.getStatements().forEach(it -> {
 						invokeMethod.getBody().get().addStatement( it );
 						statements.add( it );
@@ -262,7 +261,6 @@ public class JavaTranspiler extends Transpiler {
 	 *
 	 * @throws IllegalStateException
 	 *
-	 * @deprecated will be replaced by transpileMany
 	 */
 	public List<CompilationUnit> transpileMany( BoxNode node ) throws IllegalStateException {
 		List<CompilationUnit>	compilationUnits	= new ArrayList<>();
@@ -315,7 +313,7 @@ public class JavaTranspiler extends Transpiler {
 	}
 
 	public String getStatementsAsString() {
-		return getStatements().stream().map( it -> it.toString() )
+		return getStatements().stream().map(Node::toString)
 		    .collect( Collectors.joining( "\n" ) );
 	}
 

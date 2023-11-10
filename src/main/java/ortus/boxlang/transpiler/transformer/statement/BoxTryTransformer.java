@@ -60,7 +60,7 @@ public class BoxTryTransformer extends AbstractTransformer {
 		    ( Statement ) JavaTranspiler.transform( stmt )
 		) );
 
-		NodeList<CatchClause> catchClauses = new NodeList<CatchClause>();
+		NodeList<CatchClause> catchClauses = new NodeList<>();
 		boxTry.getCatches().forEach(clause -> {
 			BlockStmt			catchBody	= new BlockStmt();
 			String				name		= computeName( clause );
