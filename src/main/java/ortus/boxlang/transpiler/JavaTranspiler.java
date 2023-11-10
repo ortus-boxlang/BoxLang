@@ -232,7 +232,7 @@ public class JavaTranspiler extends Transpiler {
 				Node javaStmt = transform( statement );
 				if ( javaStmt instanceof BlockStmt ) {
 					BlockStmt stmt = ( BlockStmt ) javaStmt;
-					stmt.getStatements().stream().forEach( it -> {
+					stmt.getStatements().forEach(it -> {
 						invokeMethod.getBody().get().addStatement( it );
 						statements.add( it );
 					} );
@@ -254,7 +254,7 @@ public class JavaTranspiler extends Transpiler {
 	}
 
 	/**
-	 * Deprecated
+	 * Transpile a BoxLang AST into many Java CompilationUnits.
 	 *
 	 * @param node
 	 *
@@ -289,7 +289,7 @@ public class JavaTranspiler extends Transpiler {
 			} else {
 				if ( function instanceof BlockStmt ) {
 					BlockStmt stmt = ( BlockStmt ) function;
-					stmt.getStatements().stream().forEach( it -> {
+					stmt.getStatements().forEach(it -> {
 						invokeMethod.getBody().get().addStatement( it );
 						statements.add( it );
 					} );
@@ -517,7 +517,7 @@ public class JavaTranspiler extends Transpiler {
 			} else {
 				if ( function instanceof BlockStmt ) {
 					BlockStmt stmt = ( BlockStmt ) function;
-					stmt.getStatements().stream().forEach( it -> {
+					stmt.getStatements().forEach( it -> {
 						invokeMethod.getBody().get().addStatement( it );
 						statements.add( it );
 					} );

@@ -187,7 +187,7 @@ public class BoxFunctionDeclarationTransformer extends AbstractTransformer {
 				Node javaStmt = JavaTranspiler.transform( statement );
 				if ( javaStmt instanceof BlockStmt ) {
 					BlockStmt stmt = ( BlockStmt ) javaStmt;
-					stmt.getStatements().stream().forEach( it -> {
+					stmt.getStatements().forEach( it -> {
 						invokeMethod.getBody().get().addStatement( it );
 					} );
 				} else {
