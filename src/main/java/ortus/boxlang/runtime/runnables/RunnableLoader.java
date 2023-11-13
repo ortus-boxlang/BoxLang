@@ -87,7 +87,7 @@ public class RunnableLoader {
 		}
 		// TODO: enforce valid include extensions (.cfm, .cfs, .bxs, .bxm, .bx)
 		Class<IBoxRunnable> clazz = JavaBoxpiler.getInstance().compileTemplate( path, packagePath );
-		return ( BoxTemplate ) DynamicObject.of( clazz ).invokeStatic( "getInstance" ).get();
+		return ( BoxTemplate ) DynamicObject.of( clazz ).invokeStatic( "getInstance" ).orElseThrow();
 	}
 
 	/**
@@ -136,7 +136,7 @@ public class RunnableLoader {
 	 */
 	public BoxScript loadSource( String source, BoxScriptType type ) {
 		Class<IBoxRunnable> clazz = JavaBoxpiler.getInstance().compileScript( source, type );
-		return ( BoxScript ) DynamicObject.of( clazz ).invokeStatic( "getInstance" ).get();
+		return ( BoxScript ) DynamicObject.of( clazz ).invokeStatic( "getInstance" ).orElseThrow();
 	}
 
 	/**
@@ -160,6 +160,6 @@ public class RunnableLoader {
 	 */
 	public BoxScript loadStatement( String source ) {
 		Class<IBoxRunnable> clazz = JavaBoxpiler.getInstance().compileStatement( source, BoxScriptType.CFSCRIPT );
-		return ( BoxScript ) DynamicObject.of( clazz ).invokeStatic( "getInstance" ).get();
+		return ( BoxScript ) DynamicObject.of( clazz ).invokeStatic( "getInstance" ).orElseThrow();
 	}
 }

@@ -226,7 +226,7 @@ public class JavaTranspiler extends Transpiler {
 		    .getMethodsByName( "_invoke" ).get( 0 );
 		FieldDeclaration	imports			= javaClass.findCompilationUnit().orElseThrow()
 		    .getClassByName( className ).orElseThrow()
-		    .getFieldByName( "imports" ).get();
+		    .getFieldByName( "imports" ).orElseThrow();
 
 		for ( BoxStatement statement : source.getStatements() ) {
 			if ( statement instanceof BoxFunctionDeclaration ) {
@@ -245,7 +245,7 @@ public class JavaTranspiler extends Transpiler {
 					MethodCallExpr imp = ( MethodCallExpr ) imports.getVariable( 0 ).getInitializer().orElseThrow();
 					imp.getArguments().add( ( MethodCallExpr ) javaStmt );
 				} else {
-					invokeMethod.getBody().get().addStatement( ( Statement ) javaStmt );
+					invokeMethod.getBody().orElseThrow().addStatement( ( Statement ) javaStmt );
 					statements.add( ( Statement ) javaStmt );
 				}
 			}
@@ -280,7 +280,7 @@ public class JavaTranspiler extends Transpiler {
 
 		FieldDeclaration		imports				= javaClass.findCompilationUnit().orElseThrow()
 		    .getClassByName( className ).orElseThrow()
-		    .getFieldByName( "imports" ).get();
+		    .getFieldByName( "imports" ).orElseThrow();
 
 		for ( BoxStatement statement : source.getStatements() ) {
 			Node function = transform( statement );
@@ -288,7 +288,7 @@ public class JavaTranspiler extends Transpiler {
 				// a function declaration generate
 				compilationUnits.add( ( CompilationUnit ) function );
 				Node registrer = transform( statement, TransformerContext.REGISTER );
-				invokeMethod.getBody().get().addStatement( 0, ( Statement ) registrer );
+				invokeMethod.getBody().orElseThrow().addStatement( 0, ( Statement ) registrer );
 
 			} else {
 				if ( function instanceof BlockStmt ) {
@@ -301,7 +301,7 @@ public class JavaTranspiler extends Transpiler {
 					MethodCallExpr imp = ( MethodCallExpr ) imports.getVariable( 0 ).getInitializer().orElseThrow();
 					imp.getArguments().add( ( MethodCallExpr ) function );
 				} else {
-					invokeMethod.getBody().get().addStatement( ( Statement ) function );
+					invokeMethod.getBody().orElseThrow().addStatement( ( Statement ) function );
 					statements.add( ( Statement ) function );
 				}
 			}
@@ -392,7 +392,7 @@ public class JavaTranspiler extends Transpiler {
 	public String compileJava( CompilationUnit cu, String outputPath, List<String> classPath ) throws IllegalStateException {
 		JavaCompiler						compiler		= ToolProvider.getSystemJavaCompiler();
 		DiagnosticCollector<JavaFileObject>	diagnostics		= new DiagnosticCollector<>();
-		String								pkg				= cu.getPackageDeclaration().get().getName().toString();
+		String								pkg				= cu.getPackageDeclaration().orElseThrow().getName().toString();
 		String								name			= cu.getType( 0 ).getName().asString();
 		String								fqn				= pkg + "." + name;
 		List<JavaFileObject>				sourceFiles		= Collections.singletonList( new JavaSourceString( fqn, cu.toString() ) );
@@ -508,7 +508,7 @@ public class JavaTranspiler extends Transpiler {
 
 		FieldDeclaration		imports			= entryPoint.findCompilationUnit().orElseThrow()
 		    .getClassByName( className ).orElseThrow()
-		    .getFieldByName( "imports" ).get();
+		    .getFieldByName( "imports" ).orElseThrow();
 
 		for ( BoxStatement statement : source.getStatements() ) {
 			Node function = transform( statement );
@@ -516,7 +516,7 @@ public class JavaTranspiler extends Transpiler {
 				// a function declaration generate
 				callables.add( ( CompilationUnit ) function );
 				Node registrer = transform( statement, TransformerContext.REGISTER );
-				invokeMethod.getBody().get().addStatement( 0, ( Statement ) registrer );
+				invokeMethod.getBody().orElseThrow().addStatement( 0, ( Statement ) registrer );
 
 			} else {
 				if ( function instanceof BlockStmt ) {
@@ -529,14 +529,14 @@ public class JavaTranspiler extends Transpiler {
 					MethodCallExpr imp = ( MethodCallExpr ) imports.getVariable( 0 ).getInitializer().orElseThrow();
 					imp.getArguments().add( ( MethodCallExpr ) function );
 				} else {
-					invokeMethod.getBody().get().addStatement( ( Statement ) function );
+					invokeMethod.getBody().orElseThrow().addStatement( ( Statement ) function );
 					statements.add( ( Statement ) function );
 				}
 			}
 		}
 		/* if has a return type add the return statement, replace with the Box AST nodes suggested */
 		if ( ! ( invokeMethod.getType() instanceof com.github.javaparser.ast.type.VoidType ) ) {
-			invokeMethod.getBody().get().addStatement( new ReturnStmt( new NullLiteralExpr() ) );
+			invokeMethod.getBody().orElseThrow().addStatement( new ReturnStmt( new NullLiteralExpr() ) );
 		}
 
 		IndexPrettyPrinterVisitor visitor = new IndexPrettyPrinterVisitor( new DefaultPrinterConfiguration() );
