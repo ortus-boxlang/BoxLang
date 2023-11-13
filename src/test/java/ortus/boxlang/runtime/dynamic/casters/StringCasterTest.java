@@ -47,7 +47,11 @@ public class StringCasterTest {
 	@DisplayName( "It can cast an int to a string" )
 	@Test
 	void testItCanCastAnInt() {
+	assertThat( StringCaster.cast( 0 ) ).isEqualTo( "0" );
 		assertThat( StringCaster.cast( 5 ) ).isEqualTo( "5" );
+		assertThat( StringCaster.cast( -5 ) ).isEqualTo( "-5" );
+		assertThat( StringCaster.cast( 9999999 ) ).isEqualTo( "9999999" );
+		assertThat( StringCaster.cast( -9999999 ) ).isEqualTo( "-9999999" );
 	}
 
 	@DisplayName( "It can cast a Double to a string" )

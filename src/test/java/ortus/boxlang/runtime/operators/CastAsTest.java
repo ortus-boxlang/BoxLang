@@ -90,7 +90,9 @@ public class CastAsTest {
 	@DisplayName( "It can cast to int" )
 	@Test
 	void testItCanCastToInt() {
+		assertThat( CastAs.invoke( 0, "int" ).getClass().getName() ).isEqualTo( "java.lang.Integer" );
 		assertThat( CastAs.invoke( 5, "int" ).getClass().getName() ).isEqualTo( "java.lang.Integer" );
+		assertThat( CastAs.invoke( -5, "int" ).getClass().getName() ).isEqualTo( "java.lang.Integer" );
 		assertThat( CastAs.invoke( true, "int" ).getClass().getName() ).isEqualTo( "java.lang.Integer" );
 		assertThat(
 		    EqualsEquals.invoke(
