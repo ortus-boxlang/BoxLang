@@ -18,11 +18,13 @@
 package ortus.boxlang.runtime.operators;
 
 import static com.google.common.truth.Truth.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.util.Arrays;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import ortus.boxlang.runtime.types.exceptions.ApplicationException;
 
 public class CastAsTest {
 
@@ -100,6 +102,13 @@ public class CastAsTest {
 		        5
 		    )
 		).isTrue();
+
+
+		assertThrows( ApplicationException.class, () -> { CastAs.invoke( "xy", "int" ); } );
+		assertThrows( ApplicationException.class, () -> { CastAs.invoke( "1.2.3.4", "int" ); } );
+		assertThrows( ApplicationException.class, () -> { CastAs.invoke( "false", "int" ); } );
+		assertThrows( ApplicationException.class, () -> { CastAs.invoke( "-", "int" ); } );
+		assertThrows( ApplicationException.class, () -> { CastAs.invoke( "1-1", "int" ); } );
 	}
 
 	@DisplayName( "It can cast to long" )
