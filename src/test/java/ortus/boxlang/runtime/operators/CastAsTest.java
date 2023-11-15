@@ -94,7 +94,12 @@ public class CastAsTest {
 	void testItCanCastToInt() {
 		assertThat( CastAs.invoke( 0, "int" ).getClass().getName() ).isEqualTo( "java.lang.Integer" );
 		assertThat( CastAs.invoke( 5, "int" ).getClass().getName() ).isEqualTo( "java.lang.Integer" );
-		assertThat( CastAs.invoke( -5, "int" ).getClass().getName() ).isEqualTo( "java.lang.Integer" );
+		assertThat( CastAs.invoke( "5", "int" ).getClass().getName() ).isEqualTo( "java.lang.Integer" );
+		assertThat( CastAs.invoke( "-5", "int" ).getClass().getName() ).isEqualTo( "java.lang.Integer" );
+		assertThat( CastAs.invoke( "+5", "int" ).getClass().getName() ).isEqualTo( "java.lang.Integer" );
+		assertThat( CastAs.invoke( "-0", "int" ).getClass().getName() ).isEqualTo( "java.lang.Integer" );
+		assertThat( CastAs.invoke( "-2147483647", "int" ).getClass().getName() ).isEqualTo( "java.lang.Integer" );
+		assertThat( CastAs.invoke( "+2147483647", "int" ).getClass().getName() ).isEqualTo( "java.lang.Integer" );
 		assertThat( CastAs.invoke( true, "int" ).getClass().getName() ).isEqualTo( "java.lang.Integer" );
 		assertThat(
 		    EqualsEquals.invoke(
