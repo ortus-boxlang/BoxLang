@@ -436,6 +436,9 @@ create
 fqn
     :   (identifier DOT)* identifier
     ;
+assigmentExpression
+	:	accessExpression EQUAL expression
+	;
 
 expression
     :   unary
@@ -443,6 +446,7 @@ expression
     |	pre=MINUSMINUS expression
 	|	expression post=PLUSPLUS
 	|	expression post=MINUSMINUS
+	| 	assigmentExpression
     |   new
     |   create
 //    |   incrementDecrementStatement

@@ -1101,10 +1101,14 @@ public class BoxCFParser extends BoxAbstractParser {
 				    getSourceText( expression.create().stringLiteral() ) );
 			}
 			return new BoxNewOperation( expr, args, getPosition( expression ), getSourceText( expression ) );
-		} else if ( expression.ICHAR() != null ) {
+		} else if ( !expression.ICHAR().isEmpty() ) {
 			List<BoxExpr> parts = new ArrayList<>();
 			parts.add( toAst( file, expression.expression( 0 ) ) );
 			return new BoxStringInterpolation( parts, getPosition( expression ), getSourceText( expression ) );
+		} else if( expression.assigmentExpression() != null) {
+			BoxExpr left = toAst(file,expression.assigmentExpression().accessExpression());
+			BoxExpr right = toAst(file,expression.assigmentExpression().expression());
+			return new BoxAssignmentExpression(left,right,getPosition(expression),getSourceText(expression));
 		}
 		// TODO: add other cases
 		throw new IllegalStateException( "not implemented: " + expression.getClass().getSimpleName() );
