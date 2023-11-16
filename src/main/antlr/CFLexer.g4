@@ -159,14 +159,17 @@ OPEN_QUOTE      :   '"' -> pushMode(quotesMode);
 
 OPEN_SINGLE     :   '\''-> type(OPEN_QUOTE),pushMode(squotesMode);
 
+fragment DIGIT : [0-9];
+fragment E_SIGN : [eE];
+fragment E_NOTATION : E_SIGN [+-]? DIGIT+;
 FLOAT_LITERAL
-  : [0-9]+ DOT [0-9]* ([eE] [+-]? [0-9]+)?
-  | DOT [0-9]+ ([eE] [+-]? [0-9]+)?
-  | [0-9]+ [eE] [+-]? [0-9]+
+  : DIGIT+ DOT DIGIT* (E_NOTATION)?
+  | DOT DIGIT+ (E_NOTATION)?
+  | DIGIT+ E_NOTATION
   ;
 
-INTEGER_LITERAL :   [0-9]+;
-IDENTIFIER      :	[a-z_$]+ ( [_]+ | [a-z]+ | [0-9])*;
+INTEGER_LITERAL :   DIGIT+;
+IDENTIFIER      :	[a-z_$]+ ( [_]+ | [a-z]+ | DIGIT)*;
 
 
 

@@ -41,7 +41,7 @@ public class BoxLocalDeclarationTransformer extends AbstractTransformer {
 		if ( declaration.getExpression() != null ) {
 			Expression expr = ( Expression ) JavaTranspiler.transform( declaration.getExpression(), TransformerContext.RIGHT );
 			;
-			declaration.getIdentifiers().stream().forEach( it -> {
+			declaration.getIdentifiers().forEach( it -> {
 				BoxIdentifier		variable	= ( BoxIdentifier ) it;
 				Map<String, String>	values		= new HashMap<>() {
 

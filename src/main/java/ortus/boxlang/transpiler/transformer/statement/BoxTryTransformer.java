@@ -56,12 +56,12 @@ public class BoxTryTransformer extends AbstractTransformer {
 		TryStmt		javaTry	= new TryStmt();
 
 		BlockStmt	tryBody	= new BlockStmt();
-		boxTry.getTryBody().stream().forEach( stmt -> tryBody.getStatements().add(
+		boxTry.getTryBody().forEach(stmt -> tryBody.getStatements().add(
 		    ( Statement ) JavaTranspiler.transform( stmt )
 		) );
 
-		NodeList<CatchClause> catchClauses = new NodeList<CatchClause>();
-		boxTry.getCatches().stream().forEach( clause -> {
+		NodeList<CatchClause> catchClauses = new NodeList<>();
+		boxTry.getCatches().forEach(clause -> {
 			BlockStmt			catchBody	= new BlockStmt();
 			String				name		= computeName( clause );
 			Map<String, String>	values		= new HashMap<>() {
@@ -75,7 +75,7 @@ public class BoxTryTransformer extends AbstractTransformer {
 			    values );
 
 			catchBody.addStatement( handler );
-			clause.getCatchBody().stream().forEach( stmt -> catchBody.getStatements().add(
+			clause.getCatchBody().forEach(stmt -> catchBody.getStatements().add(
 			    ( Statement ) JavaTranspiler.transform( stmt )
 			) );
 
@@ -84,7 +84,7 @@ public class BoxTryTransformer extends AbstractTransformer {
 		);
 
 		BlockStmt finallyBody = new BlockStmt();
-		boxTry.getFinallyBody().stream().forEach( stmt -> finallyBody.getStatements().add(
+		boxTry.getFinallyBody().forEach(stmt -> finallyBody.getStatements().add(
 		    ( Statement ) JavaTranspiler.transform( stmt )
 		) );
 

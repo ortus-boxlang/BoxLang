@@ -176,7 +176,7 @@ public class BoxFunctionDeclarationTransformer extends AbstractTransformer {
 			}
 			if ( !result.isSuccessful() ) {
 				// Temp debugging to see generated Java code
-				throw new ApplicationException( result.toString() + "\n" + code );
+				throw new ApplicationException( result + "\n" + code );
 			}
 			CompilationUnit		javaClass		= result.getResult().get();
 			MethodDeclaration	invokeMethod	= javaClass.findCompilationUnit().orElseThrow()
@@ -185,11 +185,8 @@ public class BoxFunctionDeclarationTransformer extends AbstractTransformer {
 
 			for ( BoxStatement statement : function.getBody() ) {
 				Node javaStmt = JavaTranspiler.transform( statement );
-				if ( javaStmt instanceof BlockStmt ) {
-					BlockStmt stmt = ( BlockStmt ) javaStmt;
-					stmt.getStatements().stream().forEach( it -> {
-						invokeMethod.getBody().get().addStatement( it );
-					} );
+				if (javaStmt instanceof BlockStmt stmt) {
+					stmt.getStatements().forEach( it -> invokeMethod.getBody().get().addStatement( it ));
 				} else {
 					invokeMethod.getBody().get().addStatement( ( Statement ) javaStmt );
 				}

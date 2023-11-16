@@ -209,7 +209,8 @@ public class JavaTranspiler extends Transpiler {
 	 *
 	 * @return the list of references between the source and the generated code
 	 */
-	public List<CrossReference> getCrossReferences() {
+
+  public List<CrossReference> getCrossReferences() {
 		return crossReferences;
 	}
 
@@ -409,7 +410,7 @@ public class JavaTranspiler extends Transpiler {
 			} else {
 				if ( function instanceof BlockStmt ) {
 					BlockStmt stmt = ( BlockStmt ) function;
-					stmt.getStatements().stream().forEach( it -> {
+					stmt.getStatements().forEach( it -> {
 						invokeMethod.getBody().get().addStatement( it );
 						statements.add( it );
 					} );

@@ -1,6 +1,5 @@
 package ortus.boxlang.ast.statement;
 
-import ortus.boxlang.ast.BoxExpr;
 import ortus.boxlang.ast.BoxStatement;
 import ortus.boxlang.ast.Position;
 import ortus.boxlang.ast.expression.BoxArgument;
@@ -29,7 +28,7 @@ public class BoxNew extends BoxStatement {
 		this.fqn = fqn;
 		this.fqn.setParent( this );
 		this.arguments = Collections.unmodifiableList( arguments );
-		this.arguments.stream().forEach( arg -> arg.setParent( this ) );
+		this.arguments.forEach(arg -> arg.setParent( this ) );
 	}
 
 	public BoxFQN getFqn() {
