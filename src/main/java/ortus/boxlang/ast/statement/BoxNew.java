@@ -28,7 +28,7 @@ public class BoxNew extends BoxStatement {
 		this.fqn = fqn;
 		this.fqn.setParent( this );
 		this.arguments = Collections.unmodifiableList( arguments );
-		this.arguments.forEach(arg -> arg.setParent( this ) );
+		this.arguments.forEach( arg -> arg.setParent( this ) );
 	}
 
 	public BoxFQN getFqn() {

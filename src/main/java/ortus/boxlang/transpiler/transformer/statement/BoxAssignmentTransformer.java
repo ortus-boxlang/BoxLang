@@ -39,18 +39,19 @@ public class BoxAssignmentTransformer extends AbstractTransformer {
 
 	Logger logger = LoggerFactory.getLogger( BoxAssignmentTransformer.class );
 
-	public BoxAssignmentTransformer() {
+	public BoxAssignmentTransformer( JavaTranspiler transpiler ) {
+		super( transpiler );
 	}
 
 	@Override
 	public Node transform( BoxNode node, TransformerContext context ) throws IllegalStateException {
 		logger.info( node.getSourceText() );
 		BoxAssignment	assigment	= ( BoxAssignment ) node;
-		Expression		right		= ( Expression ) JavaTranspiler.transform( assigment.getRight(), TransformerContext.RIGHT );
+		Expression		right		= ( Expression ) transpiler.transform( assigment.getRight(), TransformerContext.RIGHT );
 		BlockStmt		blockStmt	= new BlockStmt();
 		for ( BoxExpr expr : assigment.getLeft() ) {
 
-			Expression			left		= ( Expression ) JavaTranspiler.transform( expr, TransformerContext.LEFT );
+			Expression			left		= ( Expression ) transpiler.transform( expr, TransformerContext.LEFT );
 			Map<String, String>	values		= new HashMap<>();
 			ExpressionStmt		javaExpr	= new ExpressionStmt( left );
 			if ( left instanceof MethodCallExpr method ) {

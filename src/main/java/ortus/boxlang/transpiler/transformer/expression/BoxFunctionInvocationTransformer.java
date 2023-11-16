@@ -31,8 +31,8 @@ public class BoxFunctionInvocationTransformer extends AbstractTransformer {
 
 	Logger logger = LoggerFactory.getLogger( BoxFunctionInvocationTransformer.class );
 
-	public BoxFunctionInvocationTransformer() {
-
+	public BoxFunctionInvocationTransformer( JavaTranspiler transpiler ) {
+		super( transpiler );
 	}
 
 	@Override
@@ -49,7 +49,7 @@ public class BoxFunctionInvocationTransformer extends AbstractTransformer {
 			}
 		};
 		for ( int i = 0; i < function.getArguments().size(); i++ ) {
-			Expression expr = ( Expression ) JavaTranspiler.transform( function.getArguments().get( i ) );
+			Expression expr = ( Expression ) transpiler.transform( function.getArguments().get( i ) );
 			values.put( "arg" + i, expr.toString() );
 		}
 		String	template	= getTemplate( function );

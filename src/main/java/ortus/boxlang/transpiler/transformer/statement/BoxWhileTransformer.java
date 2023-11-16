@@ -36,10 +36,14 @@ public class BoxWhileTransformer extends AbstractTransformer {
 
 	Logger logger = LoggerFactory.getLogger( BoxParenthesisTransformer.class );
 
+	public BoxWhileTransformer( JavaTranspiler transpiler ) {
+		super( transpiler );
+	}
+
 	@Override
 	public Node transform( BoxNode node, TransformerContext context ) throws IllegalStateException {
 		BoxWhile	boxWhile	= ( BoxWhile ) node;
-		Expression	condition	= ( Expression ) JavaTranspiler.transform( boxWhile.getCondition(), TransformerContext.RIGHT );
+		Expression	condition	= ( Expression ) transpiler.transform( boxWhile.getCondition(), TransformerContext.RIGHT );
 
 		String		template	= "while(  ${condition}  ) {}";
 		if ( requiresBooleanCaster( boxWhile.getCondition() ) ) {
@@ -54,7 +58,7 @@ public class BoxWhileTransformer extends AbstractTransformer {
 		WhileStmt			javaWhile	= ( WhileStmt ) parseStatement( template, values );
 		BlockStmt			body		= new BlockStmt();
 		for ( BoxStatement statement : boxWhile.getBody() ) {
-			body.getStatements().add( ( Statement ) JavaTranspiler.transform( statement ) );
+			body.getStatements().add( ( Statement ) transpiler.transform( statement ) );
 		}
 		javaWhile.setBody( body );
 		return javaWhile;

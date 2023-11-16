@@ -39,6 +39,10 @@ public class BoxForIndexTransformer extends AbstractTransformer {
 
 	Logger logger = LoggerFactory.getLogger( BoxForIndexTransformer.class );
 
+	public BoxForIndexTransformer( JavaTranspiler transpiler ) {
+		super( transpiler );
+	}
+
 	/**
 	 * Transform an BoxForIndex for statement
 	 *
@@ -52,11 +56,11 @@ public class BoxForIndexTransformer extends AbstractTransformer {
 	@Override
 	public Node transform( BoxNode node, TransformerContext context ) throws IllegalStateException {
 		BoxForIndex			boxFor		= ( BoxForIndex ) node;
-		Expression			variable	= ( Expression ) resolveScope( JavaTranspiler.transform( boxFor.getVariable(), TransformerContext.LEFT ),
+		Expression			variable	= ( Expression ) resolveScope( transpiler.transform( boxFor.getVariable(), TransformerContext.LEFT ),
 		    TransformerContext.INIT );
-		Expression			initial		= ( Expression ) JavaTranspiler.transform( boxFor.getInitial(), TransformerContext.RIGHT );
-		Expression			condition	= ( Expression ) JavaTranspiler.transform( boxFor.getCondition() );
-		Expression			step		= ( Expression ) JavaTranspiler.transform( boxFor.getStep() );
+		Expression			initial		= ( Expression ) transpiler.transform( boxFor.getInitial(), TransformerContext.RIGHT );
+		Expression			condition	= ( Expression ) transpiler.transform( boxFor.getCondition() );
+		Expression			step		= ( Expression ) transpiler.transform( boxFor.getStep() );
 		Map<String, String>	values		= new HashMap<>() {
 
 											{
@@ -79,7 +83,7 @@ public class BoxForIndexTransformer extends AbstractTransformer {
 		stmt.addStatement( init );
 		WhileStmt whileStmt = ( WhileStmt ) parseStatement( template2, values );
 		boxFor.getBody().forEach( it -> {
-			whileStmt.getBody().asBlockStmt().addStatement( ( Statement ) JavaTranspiler.transform( it ) );
+			whileStmt.getBody().asBlockStmt().addStatement( ( Statement ) transpiler.transform( it ) );
 		} );
 		ExpressionStmt stepStmt = new ExpressionStmt( step );
 		whileStmt.getBody().asBlockStmt().addStatement( stepStmt );

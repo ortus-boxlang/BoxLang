@@ -26,6 +26,7 @@ import com.github.javaparser.ast.expr.Expression;
 import ortus.boxlang.ast.BoxNode;
 import ortus.boxlang.ast.expression.BoxBinaryOperation;
 import ortus.boxlang.ast.expression.BoxBinaryOperator;
+import ortus.boxlang.runtime.operators.Elvis;
 import ortus.boxlang.transpiler.JavaTranspiler;
 import ortus.boxlang.transpiler.transformer.AbstractTransformer;
 import ortus.boxlang.transpiler.transformer.TransformerContext;
@@ -36,6 +37,10 @@ import ortus.boxlang.transpiler.transformer.TransformerContext;
 public class BoxBinaryOperationTransformer extends AbstractTransformer {
 
 	Logger logger = LoggerFactory.getLogger( BoxBinaryOperationTransformer.class );
+
+	public BoxBinaryOperationTransformer( JavaTranspiler transpiler ) {
+		super( transpiler );
+	}
 
 	/**
 	 * Transform BoxBinaryOperation argument
@@ -53,8 +58,9 @@ public class BoxBinaryOperationTransformer extends AbstractTransformer {
 	@Override
 	public Node transform( BoxNode node, TransformerContext context ) throws IllegalStateException {
 		BoxBinaryOperation	operation	= ( BoxBinaryOperation ) node;
-		Expression			left		= ( Expression ) resolveScope( JavaTranspiler.transform( operation.getLeft(), context ), context );
-		Expression			right		= ( Expression ) resolveScope( JavaTranspiler.transform( operation.getRight(), context ), context );
+		TransformerContext	safe		= operation.getOperator() == BoxBinaryOperator.Elvis ? TransformerContext.SAFE : context;
+		Expression			left		= ( Expression ) resolveScope( transpiler.transform( operation.getLeft(), safe ), context );
+		Expression			right		= ( Expression ) resolveScope( transpiler.transform( operation.getRight(), context ), context );
 
 		Map<String, String>	values		= new HashMap<>() {
 

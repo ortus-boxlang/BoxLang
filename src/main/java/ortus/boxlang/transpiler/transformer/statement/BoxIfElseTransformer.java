@@ -35,10 +35,14 @@ public class BoxIfElseTransformer extends AbstractTransformer {
 
 	Logger logger = LoggerFactory.getLogger( BoxIfElseTransformer.class );
 
+	public BoxIfElseTransformer( JavaTranspiler transpiler ) {
+		super( transpiler );
+	}
+
 	@Override
 	public Node transform( BoxNode node, TransformerContext context ) throws IllegalStateException {
 		BoxIfElse	ifElse		= ( BoxIfElse ) node;
-		Expression	condition	= ( Expression ) JavaTranspiler.transform( ifElse.getCondition(), TransformerContext.RIGHT );
+		Expression	condition	= ( Expression ) transpiler.transform( ifElse.getCondition(), TransformerContext.RIGHT );
 
 		String		template	= "if(  ${condition}  ) {}";
 		if ( requiresBooleanCaster( ifElse.getCondition() ) ) {
@@ -55,10 +59,10 @@ public class BoxIfElseTransformer extends AbstractTransformer {
 		BlockStmt			thenBlock	= new BlockStmt();
 		BlockStmt			elseBlock	= new BlockStmt();
 		for ( BoxStatement statement : ifElse.getThenBody() ) {
-			thenBlock.getStatements().add( ( Statement ) JavaTranspiler.transform( statement ) );
+			thenBlock.getStatements().add( ( Statement ) transpiler.transform( statement ) );
 		}
 		for ( BoxStatement statement : ifElse.getElseBody() ) {
-			elseBlock.getStatements().add( ( Statement ) JavaTranspiler.transform( statement ) );
+			elseBlock.getStatements().add( ( Statement ) transpiler.transform( statement ) );
 		}
 
 		javaIfStmt.setThenStmt( thenBlock );

@@ -6,6 +6,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import ortus.boxlang.ast.BoxNode;
 import ortus.boxlang.ast.expression.BoxFQN;
+import ortus.boxlang.transpiler.JavaTranspiler;
 import ortus.boxlang.transpiler.transformer.AbstractTransformer;
 import ortus.boxlang.transpiler.transformer.TransformerContext;
 import ortus.boxlang.transpiler.transformer.statement.BoxThrowTransformer;
@@ -13,6 +14,10 @@ import ortus.boxlang.transpiler.transformer.statement.BoxThrowTransformer;
 public class BoxFQNTransformer extends AbstractTransformer {
 
 	Logger logger = LoggerFactory.getLogger( BoxThrowTransformer.class );
+
+	public BoxFQNTransformer( JavaTranspiler transpiler ) {
+		super( transpiler );
+	}
 
 	/**
 	 * Transform a fully qualified name

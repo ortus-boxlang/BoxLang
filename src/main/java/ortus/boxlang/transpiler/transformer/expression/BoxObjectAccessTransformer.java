@@ -26,14 +26,18 @@ public class BoxObjectAccessTransformer extends AbstractTransformer {
 
 	Logger logger = LoggerFactory.getLogger( BoxObjectAccessTransformer.class );
 
+	public BoxObjectAccessTransformer( JavaTranspiler transpiler ) {
+		super( transpiler );
+	}
+
 	@Override
 	public Node transform( BoxNode node, TransformerContext context ) throws IllegalStateException {
 		BoxObjectAccess	objectAccess	= ( BoxObjectAccess ) node;
 		String			side			= context == TransformerContext.NONE ? "" : "(" + context.toString() + ") ";
 
 		if ( objectAccess.getContext() instanceof BoxScope && objectAccess.getAccess() instanceof BoxObjectAccess ) {
-			Expression	scope		= ( Expression ) JavaTranspiler.transform( objectAccess.getContext(), TransformerContext.LEFT );
-			Node		variable	= JavaTranspiler.transform( objectAccess.getAccess(), context );
+			Expression	scope		= ( Expression ) transpiler.transform( objectAccess.getContext(), TransformerContext.LEFT );
+			Node		variable	= transpiler.transform( objectAccess.getAccess(), context );
 
 			if ( variable instanceof MethodCallExpr method ) {
 				if ( "setDeep".equalsIgnoreCase( method.getName().asString() ) ) {
@@ -93,8 +97,8 @@ public class BoxObjectAccessTransformer extends AbstractTransformer {
 				return javaExpr;
 			}
 		} else if ( objectAccess.getContext() instanceof BoxScope && objectAccess.getAccess() instanceof BoxIdentifier ) {
-			Expression			scope		= ( Expression ) JavaTranspiler.transform( objectAccess.getContext(), TransformerContext.LEFT );
-			Expression			variable	= ( Expression ) JavaTranspiler.transform( objectAccess.getAccess(), TransformerContext.RIGHT );
+			Expression			scope		= ( Expression ) transpiler.transform( objectAccess.getContext(), TransformerContext.LEFT );
+			Expression			variable	= ( Expression ) transpiler.transform( objectAccess.getAccess(), TransformerContext.RIGHT );
 			Map<String, String>	values		= new HashMap<>() {
 
 												{
@@ -123,8 +127,8 @@ public class BoxObjectAccessTransformer extends AbstractTransformer {
 
 			return javaExpr;
 		} else if ( objectAccess.getContext() instanceof BoxFunctionInvocation && objectAccess.getAccess() instanceof BoxIdentifier ) {
-			Expression			function	= ( Expression ) JavaTranspiler.transform( objectAccess.getContext(), TransformerContext.LEFT );
-			Expression			member		= ( Expression ) JavaTranspiler.transform( objectAccess.getAccess(), TransformerContext.RIGHT );
+			Expression			function	= ( Expression ) transpiler.transform( objectAccess.getContext(), TransformerContext.LEFT );
+			Expression			member		= ( Expression ) transpiler.transform( objectAccess.getAccess(), TransformerContext.RIGHT );
 			Map<String, String>	values		= new HashMap<>() {
 
 												{
@@ -152,12 +156,12 @@ public class BoxObjectAccessTransformer extends AbstractTransformer {
 
 			for ( ortus.boxlang.ast.Node id : objectAccess.getAccess().walk() ) {
 				if ( id instanceof BoxIdentifier boxId ) {
-					keys.add( JavaTranspiler.transform( boxId, TransformerContext.DEREFERENCING ) );
+					keys.add( transpiler.transform( boxId, TransformerContext.DEREFERENCING ) );
 				}
 			}
 
 			String				args		= keys.stream().map( Node::toString ).collect( Collectors.joining( ", " ) );
-			Expression			ctx			= ( Expression ) JavaTranspiler.transform( objectAccess.getContext(), TransformerContext.DEREFERENCING );
+			Expression			ctx			= ( Expression ) transpiler.transform( objectAccess.getContext(), TransformerContext.DEREFERENCING );
 
 			String				template	= """
 			                                  Referencer.setDeep(
@@ -180,11 +184,11 @@ public class BoxObjectAccessTransformer extends AbstractTransformer {
 			return javaExpr;
 
 		} else {
-			Expression ctx = ( Expression ) JavaTranspiler.transform( objectAccess.getContext(), TransformerContext.DEREFERENCING );
+			Expression ctx = ( Expression ) transpiler.transform( objectAccess.getContext(), TransformerContext.DEREFERENCING );
 
 			for ( ortus.boxlang.ast.Node id : objectAccess.getAccess().walk() ) {
 				if ( id instanceof BoxIdentifier boxId ) {
-					keys.add( JavaTranspiler.transform( boxId, TransformerContext.DEREFERENCING ) );
+					keys.add( transpiler.transform( boxId, TransformerContext.DEREFERENCING ) );
 					if ( id.getParent() != null && id.getParent() instanceof BoxObjectAccess access ) {
 						safe.add( access.isSafe() );
 					}

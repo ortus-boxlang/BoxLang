@@ -28,6 +28,10 @@ import java.util.Map;
 
 public class BoxNegateOperationTransformer extends AbstractTransformer {
 
+	public BoxNegateOperationTransformer( JavaTranspiler transpiler ) {
+		super( transpiler );
+	}
+
 	@Override
 	public Node transform( BoxNode node, TransformerContext context ) throws IllegalStateException {
 		BoxNegateOperation	operation	= ( BoxNegateOperation ) node;
@@ -38,7 +42,7 @@ public class BoxNegateOperationTransformer extends AbstractTransformer {
 			BoxBooleanLiteral	value	= ( BoxBooleanLiteral ) operation.getExpr();
 			values.put( "expr", sb.append( '"' ).append( value.getValue() ).append( '"' ).toString() );
 		} else {
-			Expression expr = ( Expression ) JavaTranspiler.transform( operation.getExpr() );
+			Expression expr = ( Expression ) transpiler.transform( operation.getExpr() );
 			values.put( "expr", expr.toString() );
 		}
 		String template = "Negate.invoke(${expr})";

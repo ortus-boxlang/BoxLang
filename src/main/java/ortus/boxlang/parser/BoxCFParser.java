@@ -918,6 +918,16 @@ public class BoxCFParser extends BoxAbstractParser {
 				    getPosition( node ),
 				    getSourceText( node ) );
 			}
+			if ( expression.literalExpression().arrayExpression() != null ) {
+				CFParser.ArrayExpressionContext node = expression.literalExpression().arrayExpression();
+				return toAst( file, node );
+			}
+
+			if ( expression.literalExpression().structExpression() != null ) {
+				CFParser.StructExpressionContext node = expression.literalExpression().structExpression();
+				return toAst( file, node );
+			}
+
 		} else if ( expression.identifier() != null ) {
 			return toAst( file, expression.identifier() );
 		} else if ( expression.accessExpression() != null ) {
@@ -1007,6 +1017,7 @@ public class BoxCFParser extends BoxAbstractParser {
 			return new BoxBinaryOperation( left, BoxBinaryOperator.Concat, right, getPosition( expression ), getSourceText( expression ) );
 		} else if ( expression.ELVIS() != null ) {
 			BoxExpr	left	= toAst( file, expression.expression( 0 ) );
+
 			BoxExpr	right	= toAst( file, expression.expression( 1 ) );
 			return new BoxBinaryOperation( left, BoxBinaryOperator.Elvis, right, getPosition( expression ), getSourceText( expression ) );
 		} else if ( expression.QM() != null ) {
@@ -1208,13 +1219,75 @@ public class BoxCFParser extends BoxAbstractParser {
 			return toAst( file, node.functionInvokation() );
 		else if ( node.identifier() != null )
 			return toAst( file, node.identifier() );
+		else if ( node.arrayExpression() != null )
+			return toAst( file, node.arrayExpression() );
+		else if ( node.structExpression() != null )
+			return toAst( file, node.structExpression() );
 		// TODO: add other cases
 
 		throw new IllegalStateException( "not implemented: " + node.getClass().getSimpleName() );
 	}
 
 	/**
-	 * Converts the Function Invocation parser rule to the corresponding AST node. * @param file
+	 * Converts the Struct Expression parser rule to the corresponding AST node.
+	 *
+	 * @param file source file, if any
+	 * @param node ANTLR ArrayExpressionContext rule
+	 *
+	 * @return corresponding AST BoxArray
+	 *
+	 * @see BoxArrayLiteral subclasses
+	 */
+	private BoxExpr toAst( File file, CFParser.StructExpressionContext node ) {
+		List<BoxExpr>	values	= new ArrayList<>();
+		BoxStructType	type	= node.RBRACKET() != null ? BoxStructType.Unordered : BoxStructType.Ordered;
+		if ( node.structMembers() != null ) {
+			for ( CFParser.StructMemberContext pair : node.structMembers().structMember() ) {
+				if ( pair.stringLiteral() != null ) {
+					List<BoxExpr> parts = new ArrayList<>();
+					pair.stringLiteral().children.forEach( it -> {
+						if ( it != null && it instanceof CFParser.StringLiteralPartContext ) {
+							parts.add(
+							    new BoxStringLiteral( "\"" + getSourceText( ( ParserRuleContext ) it ) + "\"", getPosition( ( ParserRuleContext ) it ),
+							        getSourceText( ( ParserRuleContext ) it ) ) );
+						}
+						if ( it != null && it instanceof CFParser.ExpressionContext ) {
+							parts.add( toAst( file, ( CFParser.ExpressionContext ) it ) );
+						}
+					} );
+					values.add(
+					    new BoxStringInterpolation( parts, getPosition( node ), getSourceText( node ) ) );
+				} else if ( pair.identifier() != null ) {
+					values.add( toAst( file, pair.identifier() ) );
+				}
+				values.add( toAst( file, pair.expression() ) );
+			}
+		}
+		return new BoxStructLiteral( type, values, getPosition( node ), getSourceText( node ) );
+	}
+
+	/**
+	 * Converts the Array Expression parser rule to the corresponding AST node.
+	 *
+	 * @param file source file, if any
+	 * @param node ANTLR ArrayExpressionContext rule
+	 *
+	 * @return corresponding AST BoxArray
+	 *
+	 * @see BoxArrayLiteral subclasses
+	 */
+	private BoxExpr toAst( File file, CFParser.ArrayExpressionContext node ) {
+		List<BoxExpr> values = new ArrayList<>();
+		if ( node.arrayValues() != null ) {
+			for ( CFParser.ExpressionContext value : node.arrayValues().expression() ) {
+				values.add( toAst( file, value ) );
+			}
+		}
+		return new BoxArrayLiteral( values, getPosition( node ), getSourceText( node ) );
+	}
+
+	/**
+	 * Converts the Function Invocation parser rule to the corresponding AST node
 	 *
 	 * @param file source file, if any
 	 * @param node ANTLR FunctionInvokationContext rule

@@ -50,18 +50,22 @@ public class BoxTryTransformer extends AbstractTransformer {
 
 	Logger logger = LoggerFactory.getLogger( BoxParenthesisTransformer.class );
 
+	public BoxTryTransformer( JavaTranspiler transpiler ) {
+		super( transpiler );
+	}
+
 	@Override
 	public Node transform( BoxNode node, TransformerContext context ) throws IllegalStateException {
 		BoxTry		boxTry	= ( BoxTry ) node;
 		TryStmt		javaTry	= new TryStmt();
 
 		BlockStmt	tryBody	= new BlockStmt();
-		boxTry.getTryBody().forEach(stmt -> tryBody.getStatements().add(
-		    ( Statement ) JavaTranspiler.transform( stmt )
+		boxTry.getTryBody().forEach( stmt -> tryBody.getStatements().add(
+		    ( Statement ) transpiler.transform( stmt )
 		) );
 
 		NodeList<CatchClause> catchClauses = new NodeList<>();
-		boxTry.getCatches().forEach(clause -> {
+		boxTry.getCatches().forEach( clause -> {
 			BlockStmt			catchBody	= new BlockStmt();
 			String				name		= computeName( clause );
 			Map<String, String>	values		= new HashMap<>() {
@@ -75,8 +79,8 @@ public class BoxTryTransformer extends AbstractTransformer {
 			    values );
 
 			catchBody.addStatement( handler );
-			clause.getCatchBody().forEach(stmt -> catchBody.getStatements().add(
-			    ( Statement ) JavaTranspiler.transform( stmt )
+			clause.getCatchBody().forEach( stmt -> catchBody.getStatements().add(
+			    ( Statement ) transpiler.transform( stmt )
 			) );
 
 			catchClauses.add( new CatchClause( new Parameter( new ClassOrInterfaceType( "Throwable" ), name ), catchBody ) );
@@ -84,8 +88,8 @@ public class BoxTryTransformer extends AbstractTransformer {
 		);
 
 		BlockStmt finallyBody = new BlockStmt();
-		boxTry.getFinallyBody().forEach(stmt -> finallyBody.getStatements().add(
-		    ( Statement ) JavaTranspiler.transform( stmt )
+		boxTry.getFinallyBody().forEach( stmt -> finallyBody.getStatements().add(
+		    ( Statement ) transpiler.transform( stmt )
 		) );
 
 		javaTry.setTryBlock( tryBody );

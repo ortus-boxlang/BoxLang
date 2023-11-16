@@ -17,6 +17,10 @@ public class BoxThrowTransformer extends AbstractTransformer {
 
 	Logger logger = LoggerFactory.getLogger( BoxThrowTransformer.class );
 
+	public BoxThrowTransformer( JavaTranspiler transpiler ) {
+		super( transpiler );
+	}
+
 	/**
 	 * Transform a throw statement
 	 *
@@ -30,7 +34,7 @@ public class BoxThrowTransformer extends AbstractTransformer {
 	@Override
 	public Node transform( BoxNode node, TransformerContext context ) throws IllegalStateException {
 		BoxThrow			boxAssert	= ( BoxThrow ) node;
-		Expression			expr		= ( Expression ) resolveScope( JavaTranspiler.transform( boxAssert.getExpression(), TransformerContext.RIGHT ),
+		Expression			expr		= ( Expression ) resolveScope( transpiler.transform( boxAssert.getExpression(), TransformerContext.RIGHT ),
 		    context );
 		Map<String, String>	values		= new HashMap<>() {
 

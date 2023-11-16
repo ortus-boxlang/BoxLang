@@ -20,6 +20,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import ortus.boxlang.ast.BoxNode;
 import ortus.boxlang.ast.expression.BoxBooleanLiteral;
+import ortus.boxlang.transpiler.JavaTranspiler;
 import ortus.boxlang.transpiler.transformer.AbstractTransformer;
 import ortus.boxlang.transpiler.transformer.TransformerContext;
 
@@ -29,6 +30,10 @@ import ortus.boxlang.transpiler.transformer.TransformerContext;
 public class BoxBooleanLiteralTransformer extends AbstractTransformer {
 
 	Logger logger = LoggerFactory.getLogger( BoxBinaryOperationTransformer.class );
+
+	public BoxBooleanLiteralTransformer( JavaTranspiler transpiler ) {
+		super( transpiler );
+	}
 
 	/**
 	 * Transform BoxBooleanLiteral argument

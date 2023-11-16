@@ -17,6 +17,7 @@ package ortus.boxlang.ast.statement;
 import ortus.boxlang.ast.BoxStatement;
 import ortus.boxlang.ast.Position;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
@@ -30,6 +31,7 @@ public class BoxFunctionDeclaration extends BoxStatement {
 	private final List<BoxArgumentDeclaration>	args;
 	private final BoxReturnType					type;
 	private final List<BoxStatement>			body;
+	private final List<BoxStatement>			annotations;
 
 	/**
 	 * Creates the AST node
@@ -54,8 +56,10 @@ public class BoxFunctionDeclaration extends BoxStatement {
 		this.name			= name;
 		this.type			= type;
 		this.type.setParent( this );
-		this.args	= Collections.unmodifiableList( args );
-		this.body	= Collections.unmodifiableList( body );
+		// TODO populate
+		this.annotations	= new ArrayList<>();
+		this.args			= Collections.unmodifiableList( args );
+		this.body			= Collections.unmodifiableList( body );
 		this.args.forEach( arg -> arg.setParent( this ) );
 		this.body.forEach( stmt -> stmt.setParent( this ) );
 	}

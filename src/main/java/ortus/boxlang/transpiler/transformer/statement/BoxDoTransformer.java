@@ -22,10 +22,14 @@ public class BoxDoTransformer extends AbstractTransformer {
 
 	Logger logger = LoggerFactory.getLogger( BoxParenthesisTransformer.class );
 
+	public BoxDoTransformer( JavaTranspiler transpiler ) {
+		super( transpiler );
+	}
+
 	@Override
 	public Node transform( BoxNode node, TransformerContext context ) throws IllegalStateException {
 		BoxDo		boxDo		= ( BoxDo ) node;
-		Expression	condition	= ( Expression ) JavaTranspiler.transform( boxDo.getCondition(), TransformerContext.RIGHT );
+		Expression	condition	= ( Expression ) transpiler.transform( boxDo.getCondition(), TransformerContext.RIGHT );
 
 		String		template	= "do  {} while(  ${condition}  );";
 		if ( requiresBooleanCaster( boxDo.getCondition() ) ) {
@@ -40,7 +44,7 @@ public class BoxDoTransformer extends AbstractTransformer {
 		DoStmt				javaDo	= ( DoStmt ) parseStatement( template, values );
 		BlockStmt			body	= new BlockStmt();
 		for ( BoxStatement statement : boxDo.getBody() ) {
-			body.getStatements().add( ( Statement ) JavaTranspiler.transform( statement ) );
+			body.getStatements().add( ( Statement ) transpiler.transform( statement ) );
 		}
 		javaDo.setBody( body );
 		return javaDo;

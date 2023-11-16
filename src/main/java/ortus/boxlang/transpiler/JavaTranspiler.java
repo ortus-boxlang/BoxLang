@@ -47,26 +47,7 @@ import com.github.javaparser.ast.stmt.Statement;
 import com.github.javaparser.printer.configuration.DefaultPrinterConfiguration;
 
 import ortus.boxlang.ast.*;
-import ortus.boxlang.ast.expression.BoxArgument;
-import ortus.boxlang.ast.expression.BoxArrayAccess;
-import ortus.boxlang.ast.expression.BoxBinaryOperation;
-import ortus.boxlang.ast.expression.BoxBooleanLiteral;
-import ortus.boxlang.ast.expression.BoxComparisonOperation;
-import ortus.boxlang.ast.expression.BoxDecimalLiteral;
-import ortus.boxlang.ast.expression.BoxFQN;
-import ortus.boxlang.ast.expression.BoxFunctionInvocation;
-import ortus.boxlang.ast.expression.BoxIdentifier;
-import ortus.boxlang.ast.expression.BoxIntegerLiteral;
-import ortus.boxlang.ast.expression.BoxMethodInvocation;
-import ortus.boxlang.ast.expression.BoxNegateOperation;
-import ortus.boxlang.ast.expression.BoxNewOperation;
-import ortus.boxlang.ast.expression.BoxObjectAccess;
-import ortus.boxlang.ast.expression.BoxParenthesis;
-import ortus.boxlang.ast.expression.BoxScope;
-import ortus.boxlang.ast.expression.BoxStringInterpolation;
-import ortus.boxlang.ast.expression.BoxStringLiteral;
-import ortus.boxlang.ast.expression.BoxTernaryOperation;
-import ortus.boxlang.ast.expression.BoxUnaryOperation;
+import ortus.boxlang.ast.expression.*;
 import ortus.boxlang.ast.statement.*;
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.runnables.BoxTemplate;
@@ -74,26 +55,7 @@ import ortus.boxlang.runtime.runnables.compiler.JavaSourceString;
 import ortus.boxlang.runtime.types.exceptions.ApplicationException;
 import ortus.boxlang.transpiler.transformer.Transformer;
 import ortus.boxlang.transpiler.transformer.TransformerContext;
-import ortus.boxlang.transpiler.transformer.expression.BoxArgumentTransformer;
-import ortus.boxlang.transpiler.transformer.expression.BoxArrayAccessTransformer;
-import ortus.boxlang.transpiler.transformer.expression.BoxBinaryOperationTransformer;
-import ortus.boxlang.transpiler.transformer.expression.BoxBooleanLiteralTransformer;
-import ortus.boxlang.transpiler.transformer.expression.BoxComparisonOperationTransformer;
-import ortus.boxlang.transpiler.transformer.expression.BoxDecimalLiteralTransformer;
-import ortus.boxlang.transpiler.transformer.expression.BoxFQNTransformer;
-import ortus.boxlang.transpiler.transformer.expression.BoxFunctionInvocationTransformer;
-import ortus.boxlang.transpiler.transformer.expression.BoxIdentifierTransformer;
-import ortus.boxlang.transpiler.transformer.expression.BoxIntegerLiteralTransformer;
-import ortus.boxlang.transpiler.transformer.expression.BoxMethodInvocationTransformer;
-import ortus.boxlang.transpiler.transformer.expression.BoxNegateOperationTransformer;
-import ortus.boxlang.transpiler.transformer.expression.BoxNewOperationTransformer;
-import ortus.boxlang.transpiler.transformer.expression.BoxObjectAccessTransformer;
-import ortus.boxlang.transpiler.transformer.expression.BoxParenthesisTransformer;
-import ortus.boxlang.transpiler.transformer.expression.BoxScopeTransformer;
-import ortus.boxlang.transpiler.transformer.expression.BoxStringInterpolationTransformer;
-import ortus.boxlang.transpiler.transformer.expression.BoxStringLiteralTransformer;
-import ortus.boxlang.transpiler.transformer.expression.BoxTernaryOperationTransformer;
-import ortus.boxlang.transpiler.transformer.expression.BoxUnaryOperationTransformer;
+import ortus.boxlang.transpiler.transformer.expression.*;
 import ortus.boxlang.transpiler.transformer.indexer.CrossReference;
 import ortus.boxlang.transpiler.transformer.indexer.IndexPrettyPrinterVisitor;
 import ortus.boxlang.transpiler.transformer.statement.*;
@@ -115,50 +77,51 @@ public class JavaTranspiler extends Transpiler {
 
 	public JavaTranspiler() {
 		registry.put( BoxScript.class, new BoxScriptTransformer( this ) );
-		registry.put( BoxAssignment.class, new BoxAssignmentTransformer() );
-		registry.put( BoxArrayAccess.class, new BoxArrayAccessTransformer() );
-		registry.put( BoxExpression.class, new BoxExpressionTransformer() );
+		registry.put( BoxAssignment.class, new BoxAssignmentTransformer( this ) );
+		registry.put( BoxArrayAccess.class, new BoxArrayAccessTransformer( this ) );
+		registry.put( BoxExpression.class, new BoxExpressionTransformer( this ) );
 
 		// Expressions
-		registry.put( BoxIdentifier.class, new BoxIdentifierTransformer() );
-		registry.put( BoxScope.class, new BoxScopeTransformer() );
+		registry.put( BoxIdentifier.class, new BoxIdentifierTransformer( this ) );
+		registry.put( BoxScope.class, new BoxScopeTransformer( this ) );
 		// Literals
-		registry.put( BoxStringLiteral.class, new BoxStringLiteralTransformer() );
-		registry.put( BoxIntegerLiteral.class, new BoxIntegerLiteralTransformer() );
-		registry.put( BoxBooleanLiteral.class, new BoxBooleanLiteralTransformer() );
-		registry.put( BoxDecimalLiteral.class, new BoxDecimalLiteralTransformer() );
-		registry.put( BoxStringInterpolation.class, new BoxStringInterpolationTransformer() );
-		registry.put( BoxArgument.class, new BoxArgumentTransformer() );
-		registry.put( BoxFQN.class, new BoxFQNTransformer() );
+		registry.put( BoxStringLiteral.class, new BoxStringLiteralTransformer( this ) );
+		registry.put( BoxIntegerLiteral.class, new BoxIntegerLiteralTransformer( this ) );
+		registry.put( BoxBooleanLiteral.class, new BoxBooleanLiteralTransformer( this ) );
+		registry.put( BoxDecimalLiteral.class, new BoxDecimalLiteralTransformer( this ) );
+		registry.put( BoxStringInterpolation.class, new BoxStringInterpolationTransformer( this ) );
+		registry.put( BoxArgument.class, new BoxArgumentTransformer( this ) );
+		registry.put( BoxFQN.class, new BoxFQNTransformer( this ) );
 
-		registry.put( BoxParenthesis.class, new BoxParenthesisTransformer() );
-		registry.put( BoxBinaryOperation.class, new BoxBinaryOperationTransformer() );
-		registry.put( BoxTernaryOperation.class, new BoxTernaryOperationTransformer() );
-		registry.put( BoxNegateOperation.class, new BoxNegateOperationTransformer() );
-		registry.put( BoxComparisonOperation.class, new BoxComparisonOperationTransformer() );
-		registry.put( BoxUnaryOperation.class, new BoxUnaryOperationTransformer() );
-		registry.put( BoxObjectAccess.class, new BoxObjectAccessTransformer() );
+		registry.put( BoxParenthesis.class, new BoxParenthesisTransformer( this ) );
+		registry.put( BoxBinaryOperation.class, new BoxBinaryOperationTransformer( this ) );
+		registry.put( BoxTernaryOperation.class, new BoxTernaryOperationTransformer( this ) );
+		registry.put( BoxNegateOperation.class, new BoxNegateOperationTransformer( this ) );
+		registry.put( BoxComparisonOperation.class, new BoxComparisonOperationTransformer( this ) );
+		registry.put( BoxUnaryOperation.class, new BoxUnaryOperationTransformer( this ) );
+		registry.put( BoxObjectAccess.class, new BoxObjectAccessTransformer( this ) );
 
-		registry.put( BoxMethodInvocation.class, new BoxMethodInvocationTransformer() );
-		registry.put( BoxFunctionInvocation.class, new BoxFunctionInvocationTransformer() );
-		registry.put( BoxLocalDeclaration.class, new BoxLocalDeclarationTransformer() );
-		registry.put( BoxIfElse.class, new BoxIfElseTransformer() );
-		registry.put( BoxWhile.class, new BoxWhileTransformer() );
-		registry.put( BoxDo.class, new BoxDoTransformer() );
-		registry.put( BoxSwitch.class, new BoxSwitchTransformer() );
-		registry.put( BoxBreak.class, new BoxBreakTransformer() );
-		registry.put( BoxContinue.class, new BoxContinueTransformer() );
-		registry.put( BoxForIn.class, new BoxForInTransformer() );
-		registry.put( BoxForIndex.class, new BoxForIndexTransformer() );
-		registry.put( BoxAssert.class, new BoxAssertTransformer() );
-		registry.put( BoxTry.class, new BoxTryTransformer() );
-		registry.put( BoxThrow.class, new BoxThrowTransformer() );
-		registry.put( BoxNewOperation.class, new BoxNewOperationTransformer() );
-		registry.put( BoxFunctionDeclaration.class, new BoxFunctionDeclarationTransformer() );
-		registry.put( BoxReturn.class, new BoxReturnTransformer() );
-		registry.put( BoxRethrow.class, new BoxRethrowTransformer() );
-		registry.put( BoxImport.class, new BoxImportTransformer() );
-
+		registry.put( BoxMethodInvocation.class, new BoxMethodInvocationTransformer( this ) );
+		registry.put( BoxFunctionInvocation.class, new BoxFunctionInvocationTransformer( this ) );
+		registry.put( BoxLocalDeclaration.class, new BoxLocalDeclarationTransformer( this ) );
+		registry.put( BoxIfElse.class, new BoxIfElseTransformer( this ) );
+		registry.put( BoxWhile.class, new BoxWhileTransformer( this ) );
+		registry.put( BoxDo.class, new BoxDoTransformer( this ) );
+		registry.put( BoxSwitch.class, new BoxSwitchTransformer( this ) );
+		registry.put( BoxBreak.class, new BoxBreakTransformer( this ) );
+		registry.put( BoxContinue.class, new BoxContinueTransformer( this ) );
+		registry.put( BoxForIn.class, new BoxForInTransformer( this ) );
+		registry.put( BoxForIndex.class, new BoxForIndexTransformer( this ) );
+		registry.put( BoxAssert.class, new BoxAssertTransformer( this ) );
+		registry.put( BoxTry.class, new BoxTryTransformer( this ) );
+		registry.put( BoxThrow.class, new BoxThrowTransformer( this ) );
+		registry.put( BoxNewOperation.class, new BoxNewOperationTransformer( this ) );
+		registry.put( BoxFunctionDeclaration.class, new BoxFunctionDeclarationTransformer( this ) );
+		registry.put( BoxReturn.class, new BoxReturnTransformer( this ) );
+		registry.put( BoxRethrow.class, new BoxRethrowTransformer( this ) );
+		registry.put( BoxImport.class, new BoxImportTransformer( this ) );
+		registry.put( BoxArrayLiteral.class, new BoxArrayLiteralTransformer( this ) );
+		registry.put( BoxStructLiteral.class, new BoxStructLiteralTransformer( this ) );
 	}
 
 	/**
@@ -170,8 +133,8 @@ public class JavaTranspiler extends Transpiler {
 	 *
 	 * @throws IllegalStateException
 	 */
-	public static Node transform( BoxNode node ) throws IllegalStateException {
-		return JavaTranspiler.transform( node, TransformerContext.NONE );
+	public Node transform( BoxNode node ) throws IllegalStateException {
+		return this.transform( node, TransformerContext.NONE );
 	}
 
 	/**
@@ -186,7 +149,7 @@ public class JavaTranspiler extends Transpiler {
 	 *
 	 * @see TransformerContext
 	 */
-	public static Node transform( BoxNode node, TransformerContext context ) throws IllegalStateException {
+	public Node transform( BoxNode node, TransformerContext context ) throws IllegalStateException {
 		// Workaround for regressin where static calls to this class to not initialize the registry
 		if ( registry.size() == 0 ) {
 			new JavaTranspiler();
@@ -210,7 +173,7 @@ public class JavaTranspiler extends Transpiler {
 	 * @return the list of references between the source and the generated code
 	 */
 
-  public List<CrossReference> getCrossReferences() {
+	public List<CrossReference> getCrossReferences() {
 		return crossReferences;
 	}
 
@@ -425,9 +388,9 @@ public class JavaTranspiler extends Transpiler {
 		}
 
 		if ( ! ( invokeMethod.getType() instanceof com.github.javaparser.ast.type.VoidType ) ) {
-			Optional<Statement> last = invokeMethod.getBody().get().getStatements().getLast();
-			if ( last.get() instanceof ExpressionStmt stmt ) {
-				invokeMethod.getBody().orElseThrow().addStatement( new ReturnStmt( stmt.getExpression() ) );
+			Statement last = invokeMethod.getBody().get().getStatements().getLast().get();
+			if ( last instanceof ExpressionStmt stmt ) {
+				invokeMethod.getBody().get().getStatements().replace( last, new ReturnStmt( stmt.getExpression() ) );
 			} else {
 				invokeMethod.getBody().orElseThrow().addStatement( new ReturnStmt( new NullLiteralExpr() ) );
 			}

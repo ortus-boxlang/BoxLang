@@ -20,16 +20,20 @@ public class BoxMethodInvocationTransformer extends AbstractTransformer {
 
 	Logger logger = LoggerFactory.getLogger( BoxScopeTransformer.class );
 
+	public BoxMethodInvocationTransformer( JavaTranspiler transpiler ) {
+		super( transpiler );
+	}
+
 	@Override
 	public Node transform( BoxNode node, TransformerContext context ) throws IllegalStateException {
 		BoxMethodInvocation	invocation	= ( BoxMethodInvocation ) node;
 		String				side		= context == TransformerContext.NONE ? "" : "(" + context.toString() + ") ";
 
-		Expression			expr		= ( Expression ) JavaTranspiler.transform( invocation.getObj(),
+		Expression			expr		= ( Expression ) transpiler.transform( invocation.getObj(),
 		    TransformerContext.RIGHT );
 
 		String				args		= invocation.getArguments().stream()
-		    .map( it -> resolveScope( JavaTranspiler.transform( it ), context ).toString() )
+		    .map( it -> resolveScope( transpiler.transform( it ), context ).toString() )
 		    .collect( Collectors.joining( ", " ) );
 
 		Map<String, String>	values		= new HashMap<>();

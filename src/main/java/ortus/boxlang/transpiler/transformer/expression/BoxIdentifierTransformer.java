@@ -19,6 +19,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import ortus.boxlang.ast.BoxNode;
 import ortus.boxlang.ast.expression.BoxIdentifier;
+import ortus.boxlang.transpiler.JavaTranspiler;
 import ortus.boxlang.transpiler.transformer.AbstractTransformer;
 import ortus.boxlang.transpiler.transformer.TransformerContext;
 
@@ -31,6 +32,10 @@ import java.util.Map;
 public class BoxIdentifierTransformer extends AbstractTransformer {
 
 	Logger logger = LoggerFactory.getLogger( BoxScopeTransformer.class );
+
+	public BoxIdentifierTransformer( JavaTranspiler transpiler ) {
+		super( transpiler );
+	}
 
 	@Override
 	public Node transform( BoxNode node, TransformerContext context ) throws IllegalStateException {

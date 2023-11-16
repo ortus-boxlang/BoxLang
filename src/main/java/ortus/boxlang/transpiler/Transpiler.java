@@ -1,5 +1,6 @@
 package ortus.boxlang.transpiler;
 
+import com.github.javaparser.ast.Node;
 import ortus.boxlang.ast.BoxExpr;
 import ortus.boxlang.ast.BoxNode;
 import ortus.boxlang.ast.statement.BoxExpression;
@@ -13,6 +14,7 @@ import ortus.boxlang.runtime.runnables.RunnableLoader;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.VariablesScope;
 import ortus.boxlang.runtime.types.exceptions.ApplicationException;
+import ortus.boxlang.transpiler.transformer.TransformerContext;
 
 import java.io.File;
 import java.lang.reflect.InvocationTargetException;
@@ -65,6 +67,10 @@ public abstract class Transpiler implements ITranspiler {
 
 	@Override
 	public abstract TranspiledCode transpile( BoxNode node ) throws ApplicationException;
+
+	public abstract Node transform( BoxNode node );
+
+	public abstract Node transform( BoxNode node, TransformerContext context );
 
 	@Override
 	public void run( String fqn, List<String> classPath ) throws Throwable {

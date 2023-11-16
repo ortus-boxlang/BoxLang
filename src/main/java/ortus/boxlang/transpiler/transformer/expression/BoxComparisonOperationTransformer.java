@@ -23,6 +23,10 @@ public class BoxComparisonOperationTransformer extends AbstractTransformer {
 
 	Logger logger = LoggerFactory.getLogger( BoxComparisonOperationTransformer.class );
 
+	public BoxComparisonOperationTransformer( JavaTranspiler transpiler ) {
+		super( transpiler );
+	}
+
 	/**
 	 * Transform BoxComparisonOperation operator
 	 *
@@ -39,8 +43,8 @@ public class BoxComparisonOperationTransformer extends AbstractTransformer {
 	@Override
 	public Node transform( BoxNode node, TransformerContext context ) throws IllegalStateException {
 		BoxComparisonOperation	operation	= ( BoxComparisonOperation ) node;
-		Expression				left		= ( Expression ) resolveScope( JavaTranspiler.transform( operation.getLeft() ), context );
-		Expression				right		= ( Expression ) resolveScope( JavaTranspiler.transform( operation.getRight() ), context );
+		Expression				left		= ( Expression ) resolveScope( transpiler.transform( operation.getLeft() ), context );
+		Expression				right		= ( Expression ) resolveScope( transpiler.transform( operation.getRight() ), context );
 
 		Map<String, String>		values		= new HashMap<>() {
 
