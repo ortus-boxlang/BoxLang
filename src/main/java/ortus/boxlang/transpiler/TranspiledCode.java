@@ -5,7 +5,9 @@ import com.github.javaparser.ast.CompilationUnit;
 import java.util.List;
 
 /**
- * Results of the Java conversion
+ * Results of the Java transformation
+ * Contains a Java AST for the entry point and a collection of
+ * AST for each class such as UDF other callables
  */
 public class TranspiledCode {
 

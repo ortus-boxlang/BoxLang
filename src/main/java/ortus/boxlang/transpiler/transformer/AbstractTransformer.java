@@ -62,13 +62,17 @@ public abstract class AbstractTransformer implements Transformer {
 	 * @return the Java Parser AST representation of the expression
 	 */
 	protected Node parseExpression( String template, Map<String, String> values ) {
-		String					code	= PlaceholderHelper.resolve( template, values );
-		ParseResult<Expression>	result	= javaParser.parseExpression( code );
-		if ( !result.isSuccessful() ) {
-			// System.out.println( code );
-			throw new IllegalStateException( result.toString() );
+		String code = PlaceholderHelper.resolve( template, values );
+		try {
+			ParseResult<Expression> result = javaParser.parseExpression( code );
+			if ( !result.isSuccessful() ) {
+				// System.out.println( code );
+				throw new IllegalStateException( result.toString() );
+			}
+			return result.getResult().get();
+		} catch ( Throwable e ) {
+			throw new RuntimeException( "Error parsing expression: " + code, e );
 		}
-		return result.getResult().get();
 
 	}
 

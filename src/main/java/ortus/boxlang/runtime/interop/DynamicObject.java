@@ -40,13 +40,11 @@ import org.apache.commons.lang3.ClassUtils;
 
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.dynamic.IReferenceable;
-import ortus.boxlang.runtime.dynamic.casters.CastAttempt;
-import ortus.boxlang.runtime.dynamic.casters.DoubleCaster;
 import ortus.boxlang.runtime.scopes.Key;
+import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.IType;
 import ortus.boxlang.runtime.types.exceptions.ApplicationException;
 import ortus.boxlang.runtime.types.exceptions.BoxLangException;
-import ortus.boxlang.runtime.types.exceptions.ExpressionException;
 import ortus.boxlang.runtime.types.exceptions.KeyNotFoundException;
 import ortus.boxlang.runtime.types.exceptions.NoFieldException;
 import ortus.boxlang.runtime.types.exceptions.NoMethodException;
@@ -134,6 +132,11 @@ public class DynamicObject implements IReferenceable {
 	 * This enables or disables the method handles cache
 	 */
 	private Boolean											handlesCacheEnabled	= true;
+
+	/**
+	 * Name of key to get length of native arrays
+	 */
+	private Key												lengthKey			= Key.of( "length" );
 
 	/**
 	 * Static Initializer
@@ -910,6 +913,7 @@ public class DynamicObject implements IReferenceable {
 	 *
 	 * @return The requested object
 	 */
+	@SuppressWarnings( "unchecked" )
 	public Object dereference( Key name, Boolean safe ) {
 
 		// This check allows us to lazy-create meta for BoxLang types the first time it is requested
@@ -925,10 +929,29 @@ public class DynamicObject implements IReferenceable {
 			return ref.dereference( name, safe );
 		}
 
-		// If we have the field, return it's value, even if it's null
-		if ( hasField( name.getName() ) ) {
-			return getField( name.getName() ).orElse( null );
+		if ( getTargetInstance() instanceof Map ) {
+			// If it's a raw Map, then we use the original value as the key
+			return ( ( Map<Object, Object> ) getTargetInstance() ).get( name.getOriginalValue() );
 			// Special logic so we can treat exceptions as referencable. Possibly move to helper
+		} else if ( getTargetInstance() instanceof List list ) {
+			Integer index = Array.validateAndGetIntForDerefernce( name, list.size(), safe );
+			// non-existant indexes return null when dereferncing safely
+			if ( safe && ( index < 1 || index > list.size() ) ) {
+				return null;
+			}
+			return list.get( index - 1 );
+		} else if ( hasInstance() && getTargetInstance().getClass().isArray() ) {
+			Object[] arr = ( ( Object[] ) getTargetInstance() );
+			if ( name.equals( lengthKey ) ) {
+				return arr.length;
+			}
+
+			Integer index = Array.validateAndGetIntForDerefernce( name, arr.length, safe );
+			// non-existant indexes return null when dereferncing safely
+			if ( safe && ( index < 1 || index > arr.length ) ) {
+				return null;
+			}
+			return arr[ index - 1 ];
 		} else if ( getTargetInstance() instanceof Throwable t && exceptionKeys.contains( name ) ) {
 			// Throwable.message always delegates through to the message field
 			if ( name.equals( BoxLangException.messageKey ) ) {
@@ -938,38 +961,9 @@ public class DynamicObject implements IReferenceable {
 				return "";
 			}
 			// Special logic for native arrays. Possibly move to helper
-		} else if ( hasInstance() && getTargetInstance().getClass().isArray() ) {
-			Object[] arr = ( ( Object[] ) getTargetInstance() );
-			if ( name.equals( Key.of( "length" ) ) ) {
-				return arr.length;
-			}
-			CastAttempt<Double> indexAtt = DoubleCaster.attempt( name.getName() );
-			if ( !indexAtt.wasSuccessful() ) {
-				throw new ExpressionException( String.format(
-				    "Array cannot be deferenced by key %s", name.getName()
-				) );
-			}
-			Double	dIndex	= indexAtt.get();
-			Integer	index	= dIndex.intValue();
-			// Dissallow non-integer indexes foo[1.5]
-			if ( index.doubleValue() != dIndex ) {
-				throw new ExpressionException( String.format(
-				    "Array index [%s] is invalid.  Index must be an integer.", dIndex
-				) );
-			}
-			// Dissallow negative indexes foo[-1]
-			if ( index < 1 ) {
-				throw new ExpressionException( String.format(
-				    "Array cannot be indexed by a number smaller than 1"
-				) );
-			}
-			// Disallow out of bounds indexes foo[5]
-			if ( index > arr.length ) {
-				throw new ExpressionException( String.format(
-				    "Array index [%s] is out of bounds for an array of length [%s]", index, arr.length
-				) );
-			}
-			return arr[ index - 1 ];
+		} else if ( hasField( name.getName() ) ) {
+			// If we have the field, return it's value, even if it's null
+			return getField( name.getName() ).orElse( null );
 		}
 
 		if ( safe ) {
@@ -1047,43 +1041,24 @@ public class DynamicObject implements IReferenceable {
 
 		if ( hasInstance() && getTargetInstance() instanceof IReferenceable ref ) {
 			ref.assign( name, value );
-		}
-
-		if ( hasInstance() && getTargetInstance().getClass().isArray() ) {
-			CastAttempt<Double> indexAtt = DoubleCaster.attempt( name.getName() );
-			if ( !indexAtt.wasSuccessful() ) {
-				throw new ExpressionException( String.format(
-				    "Array cannot be assigned with key %s", name.getName()
-				) );
-			}
-			Double	dIndex	= indexAtt.get();
-			Integer	index	= dIndex.intValue();
-			// Dissallow non-integer indexes foo[1.5]
-			if ( index.doubleValue() != dIndex ) {
-				throw new ExpressionException( String.format(
-				    "Array index [%s] is invalid.  Index must be an integer.", dIndex
-				) );
-			}
-			// Dissallow negative indexes foo[-1]
-			if ( index < 1 ) {
-				throw new ExpressionException( String.format(
-				    "Array cannot be assigned by a number smaller than 1"
-				) );
-			}
-			Object[] arr = ( ( Object[] ) getTargetInstance() );
-			// Disallow out of bounds indexes foo[5]
-			if ( index > arr.length ) {
-				throw new ExpressionException( String.format(
-				    "Invalid index [%s] for Native Array, can't expand Native Arrays.  Current array length is [%s]", index,
-				    arr.length
-				) );
-			}
+		} else if ( hasInstance() && getTargetInstance().getClass().isArray() ) {
+			Object[]	arr		= ( ( Object[] ) getTargetInstance() );
+			Integer		index	= Array.validateAndGetIntForAssign( name, arr.length, true );
 			arr[ index - 1 ] = value;
 			return value;
-		}
-		if ( getTargetInstance() instanceof Map ) {
-			// If it's a raw Map, then we use a string key
-			( ( Map<Object, Object> ) getTargetInstance() ).put( name.getName(), value );
+		} else if ( getTargetInstance() instanceof List list ) {
+			Integer index = Array.validateAndGetIntForAssign( name, list.size(), false );
+			if ( index > list.size() ) {
+				// If the index is larger than the array, pad the array with nulls
+				for ( int i = list.size(); i < index; i++ ) {
+					list.add( null );
+				}
+			}
+			list.set( index - 1, value );
+			return value;
+		} else if ( getTargetInstance() instanceof Map ) {
+			// If it's a raw Map, then we use the original value as the key
+			( ( Map<Object, Object> ) getTargetInstance() ).put( name.getOriginalValue(), value );
 			return value;
 		}
 

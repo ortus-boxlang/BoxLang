@@ -23,9 +23,11 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -34,6 +36,8 @@ import TestCases.interop.InvokeDynamicFields;
 import TestCases.interop.PrivateConstructors;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.IType;
+import ortus.boxlang.runtime.types.Struct;
+import ortus.boxlang.runtime.types.exceptions.BoxLangException;
 import ortus.boxlang.runtime.types.exceptions.NoFieldException;
 import ortus.boxlang.runtime.types.exceptions.NoMethodException;
 
@@ -343,25 +347,108 @@ public class DynamicObjectTest {
 
 	}
 
+	@DisplayName( "It use native maps" )
+	@Test
+	@SuppressWarnings( "unchecked" )
+	void testItCanUseNativeMaps() {
+		Map<Object, Object> map = new HashMap<Object, Object>();
+		map.put( "key", "value" );
+		DynamicObject myInvoker = DynamicObject.of( map );
+		assertThat(
+		    myInvoker.dereference(
+		        Key.of( "key" ),
+		        false
+		    )
+		).isEqualTo( "value" );
+
+		myInvoker.assign(
+		    Key.of( "key2" ),
+		    "value2"
+		);
+
+		assertThat(
+		    myInvoker.dereference(
+		        Key.of( "key2" ),
+		        false
+		    )
+		).isEqualTo( "value2" );
+
+		assertThat(
+		    ( ( Map<Object, Object> ) myInvoker.getTargetInstance() ).get( "key2" )
+		).isEqualTo( "value2" );
+
+	}
+
+	@DisplayName( "It use native maps with complex keys" )
+	@Test
+	void testItCanUseNativeMapsWithComplexKeys() {
+		Struct				str		= Struct.of( "brad", "wood" );
+		Struct				str2	= Struct.of( "luis", "majano" );
+		Map<Struct, Object>	map		= new HashMap<Struct, Object>();
+		map.put( Struct.EMPTY, "empty" );
+		map.put( str, "bradwood" );
+		DynamicObject myInvoker = DynamicObject.of( map );
+
+		assertThat(
+		    myInvoker.dereference(
+		        Key.of( Struct.EMPTY ),
+		        false
+		    )
+		).isEqualTo( "empty" );
+
+		assertThat(
+		    myInvoker.dereference(
+		        Key.of( str ),
+		        false
+		    )
+		).isEqualTo( "bradwood" );
+
+		myInvoker.assign(
+		    Key.of( str2 ),
+		    "luismajano"
+		);
+
+		assertThat(
+		    myInvoker.dereference(
+		        Key.of( str2 ),
+		        false
+		    )
+		).isEqualTo( "luismajano" );
+
+		assertThat(
+		    map.get( str2 )
+		).isEqualTo( "luismajano" );
+
+	}
+
 	@DisplayName( "It use native arrays" )
 	@Test
 	void testItCanUseNativeArrays() {
 		DynamicObject myInvoker = DynamicObject.of( new String[] { "Brad", "Wood" } );
 		assertThat(
 		    myInvoker.dereference(
+		        // Use IntKey
+		        Key.of( 1 ),
+		        false
+		    )
+		).isEqualTo( "Brad" );
+
+		assertThat(
+		    myInvoker.dereference(
+		        // Use Key
 		        Key.of( "1" ),
 		        false
 		    )
 		).isEqualTo( "Brad" );
 
 		myInvoker.assign(
-		    Key.of( "2" ),
+		    Key.of( 2 ),
 		    "Ortus Solutions"
 		);
 
 		assertThat(
 		    myInvoker.dereference(
-		        Key.of( "2" ),
+		        Key.of( 2 ),
 		        false
 		    )
 		).isEqualTo( "Ortus Solutions" );
@@ -373,33 +460,108 @@ public class DynamicObjectTest {
 		    )
 		).isEqualTo( 2 );
 
-		assertThrows( Throwable.class, () -> {
+		assertThrows( BoxLangException.class, () -> {
 			myInvoker.dereference(
 			    Key.of( "test" ),
 			    false
 			);
 		} );
 
-		assertThrows( Throwable.class, () -> {
+		assertThrows( BoxLangException.class, () -> {
 			myInvoker.dereference(
-			    Key.of( "0" ),
+			    Key.of( 0 ),
 			    false
 			);
 		} );
 
-		assertThrows( Throwable.class, () -> {
+		assertThrows( BoxLangException.class, () -> {
 			myInvoker.dereference(
-			    Key.of( "1.5" ),
+			    Key.of( 1.5 ),
 			    false
 			);
 		} );
 
-		assertThrows( Throwable.class, () -> {
+		assertThrows( BoxLangException.class, () -> {
 			myInvoker.dereference(
-			    Key.of( "50" ),
+			    Key.of( 50 ),
 			    false
 			);
 		} );
+
+		assertThat( myInvoker.dereference( Key.of( "test" ), true ) ).isEqualTo( null );
+		assertThat( myInvoker.dereference( Key.of( 0 ), true ) ).isEqualTo( null );
+		assertThat( myInvoker.dereference( Key.of( 1.5 ), true ) ).isEqualTo( null );
+		assertThat( myInvoker.dereference( Key.of( 50 ), true ) ).isEqualTo( null );
+	}
+
+	@DisplayName( "It use Lists" )
+	@Test
+	void testItCanUseLists() {
+		ArrayList<Object> list = new ArrayList<Object>();
+		list.add( "Brad" );
+		list.add( "Wood" );
+		DynamicObject myInvoker = DynamicObject.of( list );
+		assertThat(
+		    myInvoker.dereference(
+		        // Use IntKey
+		        Key.of( 1 ),
+		        false
+		    )
+		).isEqualTo( "Brad" );
+
+		assertThat(
+		    myInvoker.dereference(
+		        // Use Key
+		        Key.of( "1" ),
+		        false
+		    )
+		).isEqualTo( "Brad" );
+
+		myInvoker.assign(
+		    Key.of( 2 ),
+		    "Ortus Solutions"
+		);
+
+		assertThat(
+		    myInvoker.dereference(
+		        Key.of( 2 ),
+		        false
+		    )
+		).isEqualTo( "Ortus Solutions" );
+
+		assertThrows( BoxLangException.class, () -> {
+			myInvoker.dereference(
+			    Key.of( "test" ),
+			    false
+			);
+		} );
+
+		assertThrows( BoxLangException.class, () -> {
+			myInvoker.dereference(
+			    Key.of( 0 ),
+			    false
+			);
+		} );
+
+		assertThrows( BoxLangException.class, () -> {
+			myInvoker.dereference(
+			    Key.of( 1.5 ),
+			    false
+			);
+		} );
+
+		assertThrows( BoxLangException.class, () -> {
+			myInvoker.dereference(
+			    Key.of( 50 ),
+			    false
+			);
+		} );
+
+		assertThat( myInvoker.dereference( Key.of( "test" ), true ) ).isEqualTo( null );
+		assertThat( myInvoker.dereference( Key.of( 0 ), true ) ).isEqualTo( null );
+		assertThat( myInvoker.dereference( Key.of( 1.5 ), true ) ).isEqualTo( null );
+		assertThat( myInvoker.dereference( Key.of( 50 ), true ) ).isEqualTo( null );
+
 	}
 
 }

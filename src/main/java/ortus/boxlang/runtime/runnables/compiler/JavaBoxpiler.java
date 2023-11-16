@@ -36,7 +36,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.github.javaparser.ast.CompilationUnit;
-import com.github.javaparser.ast.Node;
 
 import ortus.boxlang.ast.BoxExpr;
 import ortus.boxlang.ast.BoxScript;
@@ -249,7 +248,7 @@ public class JavaBoxpiler {
 				BoxParser		parser	= new BoxParser();
 				ParsingResult	result;
 				try {
-					result = parser.parseStatement( source );
+					result = parser.parse( source, BoxScriptType.CFSCRIPT );
 				} catch ( IOException e ) {
 					throw new ApplicationException( "Error compiling source", e );
 				} /*
@@ -266,22 +265,30 @@ public class JavaBoxpiler {
 					throw new ApplicationException( "Error compiling source. " + result.getIssues().get( 0 ).toString() );
 				}
 
-				JavaTranspiler			transpiler	= new JavaTranspiler();
+				// JavaTranspiler transpiler = new JavaTranspiler();
 
-				Position				position	= new Position( new Point( 1, 1 ), new Point( 1, source.length() ) );
+				Position	position	= new Position( new Point( 1, 1 ), new Point( 1, source.length() ) );
 
-				List<CompilationUnit>	javaASTs	= transpiler.transpileMany( new BoxScript(
-				    List.of( result.getRoot() instanceof BoxStatement ? ( BoxStatement ) result.getRoot()
-				        : new BoxExpression( ( BoxExpr ) result.getRoot(), position, source ) ),
-				    position,
-				    source
-				) );
-				// Node javaAST = ( Node ) transpiler.transpile( );
+				// List<CompilationUnit> javaASTs = transpiler.transpileMany( new BoxScript(
+				// List.of( result.getRoot() instanceof BoxStatement ? ( BoxStatement ) result.getRoot()
+				// : new BoxExpression( ( BoxExpr ) result.getRoot(), position, source ) ),
+				// position,
+				// source
+				// ) );
 
-				if ( false )
-					throw new ApplicationException( "&&&&&&&\n\n\n\n" + getStatementsAsStringReturnLast( transpiler ) + "\n\n\n\n&&&&&&" );
+				Transpiler	transpiler	= Transpiler.getTranspiler( null /* Config ? */ );
+				transpiler.setProperty( "classname", className );
+				transpiler.setProperty( "packageName", packageName );
+				transpiler.setProperty( "baseclass", "BoxScript" );
+				transpiler.setProperty( "returnType", "Object" );
+				TranspiledCode javaASTs = transpiler.transpile( result.getRoot() );
+				compileSource( javaASTs.getEntryPoint().toString(), fqn );
 
-				compileSource( makeClass( getStatementsAsStringReturnLast( transpiler ), "BoxScript", packageName, className ), fqn );
+				// Process functions ad lamdas
+				for ( CompilationUnit callable : javaASTs.getCallables() ) {
+					compileSource( callable.toString(), fqn );
+				}
+				compileSource( javaASTs.getEntryPoint().toString(), fqn );
 			}
 		}
 		return getClass( fqn );
@@ -349,19 +356,25 @@ public class JavaBoxpiler {
 				result.getIssues().forEach(System.out::println);
 				assert result.isCorrect();
 
-				JavaTranspiler			transpiler	= new JavaTranspiler();
-				List<CompilationUnit>	javaASTs	= transpiler.transpileMany( result.getRoot() );
+				Transpiler transpiler = Transpiler.getTranspiler( null /* Config ? */ );
+				transpiler.setProperty( "classname", className );
+				transpiler.setProperty( "packageName", packageName );
+				transpiler.setProperty( "baseclass", "BoxTemplate" );
+				transpiler.setProperty( "returnType", "Object" );
+				TranspiledCode javaASTs = transpiler.transpile( result.getRoot() );
+				compileSource( javaASTs.getEntryPoint().toString(), fqn );
 
-				compileSource( makeClass( transpiler.getStatementsAsString(), "BoxTemplate", packageName, className ), fqn );
+				// Process functions ad lamdas
+				for ( CompilationUnit callable : javaASTs.getCallables() ) {
+					compileSource( callable.toString(), fqn );
+				}
+
 			}
 		}
 		return getClass( fqn );
 	}
 
 	public void compileSource( String javaSource, String fqn ) {
-
-		// if ( true )
-		// throw new ApplicationException( javaSource );
 
 		DiagnosticCollector<JavaFileObject>	diagnostics		= new DiagnosticCollector<>();
 

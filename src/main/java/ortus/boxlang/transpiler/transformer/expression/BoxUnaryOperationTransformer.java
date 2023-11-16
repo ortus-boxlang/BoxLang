@@ -71,7 +71,7 @@ public class BoxUnaryOperationTransformer extends AbstractTransformer {
 				template = "Increment.invokePost(${expr},${key})";
 				// post increment is ignored if the expression is a literal like 5++
 			} else if ( operation.getExpr().isLiteral() ) {
-				template = "${expr}";
+				template = "Increment.invoke(${expr})";
 			} else {
 				template = "Increment.invoke(${expr})";
 			}
@@ -86,7 +86,7 @@ public class BoxUnaryOperationTransformer extends AbstractTransformer {
 				template = "Decrement.invokePost(${expr},${key})";
 				// post increment is ignored if the expression is a literal like 5++
 			} else if ( operation.getExpr().isLiteral() ) {
-				template = "${expr}";
+				template = "Decrement.invoke(${expr})";
 			} else {
 				template = "Decrement.invoke(${expr})";
 			}

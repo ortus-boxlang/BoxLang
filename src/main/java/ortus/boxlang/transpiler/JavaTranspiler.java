@@ -34,6 +34,7 @@ import javax.tools.ToolProvider;
 import com.github.javaparser.ast.body.FieldDeclaration;
 import com.github.javaparser.ast.expr.MethodCallExpr;
 import com.github.javaparser.ast.expr.NullLiteralExpr;
+import com.github.javaparser.ast.stmt.ExpressionStmt;
 import com.github.javaparser.ast.stmt.ReturnStmt;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -45,11 +46,7 @@ import com.github.javaparser.ast.stmt.BlockStmt;
 import com.github.javaparser.ast.stmt.Statement;
 import com.github.javaparser.printer.configuration.DefaultPrinterConfiguration;
 
-import ortus.boxlang.ast.BoxNode;
-import ortus.boxlang.ast.BoxScript;
-import ortus.boxlang.ast.BoxStatement;
-import ortus.boxlang.ast.Source;
-import ortus.boxlang.ast.SourceFile;
+import ortus.boxlang.ast.*;
 import ortus.boxlang.ast.expression.BoxArgument;
 import ortus.boxlang.ast.expression.BoxArrayAccess;
 import ortus.boxlang.ast.expression.BoxBinaryOperation;
@@ -190,6 +187,10 @@ public class JavaTranspiler extends Transpiler {
 	 * @see TransformerContext
 	 */
 	public static Node transform( BoxNode node, TransformerContext context ) throws IllegalStateException {
+		// Workaround for regressin where static calls to this class to not initialize the registry
+		if ( registry.size() == 0 ) {
+			new JavaTranspiler();
+		}
 		Transformer transformer = registry.get( node.getClass() );
 		if ( transformer != null ) {
 			Node javaNode = transformer.transform( node, context );
@@ -199,125 +200,17 @@ public class JavaTranspiler extends Transpiler {
 		throw new IllegalStateException( "unsupported: " + node.getClass().getSimpleName() + " : " + node.getSourceText() );
 	}
 
-	/**
-	 * Transpile a BoxLang AST into a Java Parser AST
-	 *
-	 * @return a Java Parser CompilationUnit representing the equivalent Java code
-	 *
-	 * @throws IllegalStateException
-	 *
-	 * @deprecated will be replaced by transpileMany
-	 *
-	 * @see CompilationUnit
-	 */
-	public CompilationUnit transpileToJava( BoxNode node ) throws IllegalStateException {
-		BoxScript		source		= ( BoxScript ) node;
-		CompilationUnit	javaClass	= ( CompilationUnit ) transform( source );
-
-		statements.clear();
-
-		String				className		= getClassName( source.getPosition().getSource() );
-		MethodDeclaration	invokeMethod	= javaClass.findCompilationUnit().orElseThrow()
-		    .getClassByName( className ).orElseThrow()
-		    .getMethodsByName( "_invoke" ).get( 0 );
-		FieldDeclaration	imports			= javaClass.findCompilationUnit().orElseThrow()
-		    .getClassByName( className ).orElseThrow()
-		    .getFieldByName( "imports" ).get();
-
-		for ( BoxStatement statement : source.getStatements() ) {
-			if ( statement instanceof BoxFunctionDeclaration ) {
-				// a function declaration generate
-
-			} else {
-				Node javaStmt = transform( statement );
-				if (javaStmt instanceof BlockStmt stmt) {
-					stmt.getStatements().forEach(it -> {
-						invokeMethod.getBody().get().addStatement( it );
-						statements.add( it );
-					} );
-				}
-				if ( javaStmt instanceof MethodCallExpr ) {
-					MethodCallExpr imp = ( MethodCallExpr ) imports.getVariable( 0 ).getInitializer().orElseThrow();
-					imp.getArguments().add( ( MethodCallExpr ) javaStmt );
-				} else {
-					invokeMethod.getBody().get().addStatement( ( Statement ) javaStmt );
-					statements.add( ( Statement ) javaStmt );
-				}
-			}
-		}
-
-		IndexPrettyPrinterVisitor visitor = new IndexPrettyPrinterVisitor( new DefaultPrinterConfiguration() );
-		javaClass.accept( visitor, null );
-		this.crossReferences.addAll( visitor.getCrossReferences() );
-		return javaClass;
-	}
-
-	/**
-	 * Transpile a BoxLang AST into many Java CompilationUnits.
-	 *
-	 * @param node
-	 *
-	 * @return
-	 *
-	 * @throws IllegalStateException
-	 *
-	 */
-	public List<CompilationUnit> transpileMany( BoxNode node ) throws IllegalStateException {
-		List<CompilationUnit>	compilationUnits	= new ArrayList<>();
-		BoxScript				source				= ( BoxScript ) node;
-		CompilationUnit			javaClass			= ( CompilationUnit ) transform( source );
-
-		String					className			= getClassName( source.getPosition().getSource() );
-		MethodDeclaration		invokeMethod		= javaClass.findCompilationUnit().orElseThrow()
-		    .getClassByName( className ).orElseThrow()
-		    .getMethodsByName( "_invoke" ).get( 0 );
-
-		FieldDeclaration		imports				= javaClass.findCompilationUnit().orElseThrow()
-		    .getClassByName( className ).orElseThrow()
-		    .getFieldByName( "imports" ).get();
-
-		for ( BoxStatement statement : source.getStatements() ) {
-			Node function = transform( statement );
-			if ( statement instanceof BoxFunctionDeclaration ) {
-				// a function declaration generate
-				compilationUnits.add( ( CompilationUnit ) function );
-				Node registrer = transform( statement, TransformerContext.REGISTER );
-				invokeMethod.getBody().get().addStatement( 0, ( Statement ) registrer );
-
-			} else {
-				if ( function instanceof BlockStmt ) {
-					BlockStmt stmt = ( BlockStmt ) function;
-					stmt.getStatements().forEach(it -> {
-						invokeMethod.getBody().get().addStatement( it );
-						statements.add( it );
-					} );
-				} else if ( function instanceof MethodCallExpr ) {
-					MethodCallExpr imp = ( MethodCallExpr ) imports.getVariable( 0 ).getInitializer().orElseThrow();
-					imp.getArguments().add( ( MethodCallExpr ) function );
-				} else {
-					invokeMethod.getBody().get().addStatement( ( Statement ) function );
-					statements.add( ( Statement ) function );
-				}
-			}
-		}
-
-		IndexPrettyPrinterVisitor visitor = new IndexPrettyPrinterVisitor( new DefaultPrinterConfiguration() );
-		javaClass.accept( visitor, null );
-		this.crossReferences.addAll( visitor.getCrossReferences() );
-		compilationUnits.add( javaClass );
-		return compilationUnits;
-	}
-
 	public List<Statement> getStatements() {
 		return statements;
 	}
 
-	public String getStatementsAsString() {
-		return getStatements().stream().map(Node::toString)
-		    .collect( Collectors.joining( "\n" ) );
-	}
+	/**
+	 * Cross reference
+	 *
+	 * @return the list of references between the source and the generated code
+	 */
 
-	public List<CrossReference> getCrossReferences() {
+  public List<CrossReference> getCrossReferences() {
 		return crossReferences;
 	}
 
@@ -386,7 +279,7 @@ public class JavaTranspiler extends Transpiler {
 	public String compileJava( CompilationUnit cu, String outputPath, List<String> classPath ) throws IllegalStateException {
 		JavaCompiler						compiler		= ToolProvider.getSystemJavaCompiler();
 		DiagnosticCollector<JavaFileObject>	diagnostics		= new DiagnosticCollector<>();
-		String								pkg				= cu.getPackageDeclaration().get().getName().toString();
+		String								pkg				= cu.getPackageDeclaration().orElseThrow().getName().toString();
 		String								name			= cu.getType( 0 ).getName().asString();
 		String								fqn				= pkg + "." + name;
 		List<JavaFileObject>				sourceFiles		= Collections.singletonList( new JavaSourceString( fqn, cu.toString() ) );
@@ -478,17 +371,19 @@ public class JavaTranspiler extends Transpiler {
 
 	}
 
-	public BoxNode resloveReference( int lineNumber ) {
-		for ( var entry : crossReferences ) {
-			if ( entry.destination.begin.line == lineNumber ) {
-				return entry.origin;
-			}
-		}
-		return null;
-	}
-
+	/**
+	 * Transpile a BoxLang AST into a Java Parser AST
+	 *
+	 * @return a Java Parser TranspiledCode representing the equivalent Java code
+	 *
+	 * @throws IllegalStateException
+	 *
+	 *
+	 * @see TranspiledCode
+	 */
 	@Override
 	public TranspiledCode transpile( BoxNode node ) throws ApplicationException {
+
 		BoxScript				source			= ( BoxScript ) node;
 		CompilationUnit			entryPoint		= ( CompilationUnit ) transform( source );
 		List<CompilationUnit>	callables		= new ArrayList<>();
@@ -502,7 +397,7 @@ public class JavaTranspiler extends Transpiler {
 
 		FieldDeclaration		imports			= entryPoint.findCompilationUnit().orElseThrow()
 		    .getClassByName( className ).orElseThrow()
-		    .getFieldByName( "imports" ).get();
+		    .getFieldByName( "imports" ).orElseThrow();
 
 		for ( BoxStatement statement : source.getStatements() ) {
 			Node function = transform( statement );
@@ -510,7 +405,7 @@ public class JavaTranspiler extends Transpiler {
 				// a function declaration generate
 				callables.add( ( CompilationUnit ) function );
 				Node registrer = transform( statement, TransformerContext.REGISTER );
-				invokeMethod.getBody().get().addStatement( 0, ( Statement ) registrer );
+				invokeMethod.getBody().orElseThrow().addStatement( 0, ( Statement ) registrer );
 
 			} else {
 				if ( function instanceof BlockStmt ) {
@@ -523,14 +418,20 @@ public class JavaTranspiler extends Transpiler {
 					MethodCallExpr imp = ( MethodCallExpr ) imports.getVariable( 0 ).getInitializer().orElseThrow();
 					imp.getArguments().add( ( MethodCallExpr ) function );
 				} else {
-					invokeMethod.getBody().get().addStatement( ( Statement ) function );
+					invokeMethod.getBody().orElseThrow().addStatement( ( Statement ) function );
 					statements.add( ( Statement ) function );
 				}
 			}
 		}
-		/* if has a return type add the return statement, replace with the Box AST nodes suggested */
+
 		if ( ! ( invokeMethod.getType() instanceof com.github.javaparser.ast.type.VoidType ) ) {
-			invokeMethod.getBody().get().addStatement( new ReturnStmt( new NullLiteralExpr() ) );
+			Optional<Statement> last = invokeMethod.getBody().get().getStatements().getLast();
+			if ( last.get() instanceof ExpressionStmt stmt ) {
+				invokeMethod.getBody().orElseThrow().addStatement( new ReturnStmt( stmt.getExpression() ) );
+			} else {
+				invokeMethod.getBody().orElseThrow().addStatement( new ReturnStmt( new NullLiteralExpr() ) );
+			}
+
 		}
 
 		IndexPrettyPrinterVisitor visitor = new IndexPrettyPrinterVisitor( new DefaultPrinterConfiguration() );

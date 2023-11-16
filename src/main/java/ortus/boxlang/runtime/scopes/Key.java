@@ -33,12 +33,18 @@ public class Key {
 	/**
 	 * The original key name
 	 */
-	private String	name;
+	protected String	name;
 
 	/**
 	 * The key name in upper case
 	 */
-	private String	nameNoCase;
+	protected String	nameNoCase;
+
+	/**
+	 * The original value of the key, which could be a complex object
+	 * if this key was being used to derefernce a native Map.
+	 */
+	protected Object	originalValue;
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -52,8 +58,20 @@ public class Key {
 	 * @param name The target key to use, which is the original case.
 	 */
 	public Key( String name ) {
-		this.name		= name;
-		this.nameNoCase	= name.toUpperCase();
+		this.name			= name;
+		this.originalValue	= name;
+		this.nameNoCase		= name.toUpperCase();
+	}
+
+	/**
+	 * Constructor for a key that is not a string
+	 *
+	 * @param name The target key to use, which is the original case.
+	 */
+	public Key( String name, Object originalValue ) {
+		this.name			= name;
+		this.originalValue	= originalValue;
+		this.nameNoCase		= name.toUpperCase();
 	}
 
 	/**
@@ -77,6 +95,13 @@ public class Key {
 	}
 
 	/**
+	 * @return The original value of the key, which could be a complex object
+	 */
+	public Object getOriginalValue() {
+		return this.originalValue;
+	}
+
+	/**
 	 * Verifies equality with the following rules:
 	 * - Same object
 	 * - Same key name (case-insensitive)
@@ -90,7 +115,7 @@ public class Key {
 			return true;
 		}
 		// Null and class checks
-		if ( obj == null || getClass() != obj.getClass() ) {
+		if ( obj == null || ! ( obj instanceof Key ) ) {
 			return false;
 		}
 		// Same key name
@@ -111,7 +136,7 @@ public class Key {
 		if ( this == obj )
 			return true;
 		// Null and class checks
-		if ( obj == null || getClass() != obj.getClass() ) {
+		if ( obj == null || ! ( obj instanceof Key ) ) {
 			return false;
 		}
 		// Same key name
@@ -135,6 +160,65 @@ public class Key {
 	 */
 	public static Key of( String name ) {
 		return new Key( name );
+	}
+
+	/**
+	 * Static builder of a case-insensitive key using the incoming key name
+	 *
+	 * @param name The key name to use.
+	 *
+	 * @return A case-insensitive key class
+	 */
+	public static Key of( Object obj ) {
+		return new Key( obj.toString(), obj );
+	}
+
+	/**
+	 * Static builder of an Integer key
+	 *
+	 * @param name The key name to use.
+	 *
+	 * @return A case-insensitive key class
+	 */
+	public static IntKey of( Integer obj ) {
+		return new IntKey( obj );
+	}
+
+	/**
+	 * Static builder of an int key
+	 *
+	 * @param name The key name to use.
+	 *
+	 * @return A case-insensitive key class
+	 */
+	public static IntKey of( int obj ) {
+		return new IntKey( obj );
+	}
+
+	/**
+	 * Static builder of a Double key
+	 *
+	 * @param name The key name to use.
+	 *
+	 * @return An IntKey instance if the Double was an integer, otherwise a Key instance.
+	 */
+	public static Key of( Double obj ) {
+		return Key.of( obj.doubleValue() );
+	}
+
+	/**
+	 * Static builder of an int key
+	 *
+	 * @param name The key name to use.
+	 *
+	 * @return An IntKey instance if the Double was an integer, otherwise a Key instance.
+	 */
+	public static Key of( double obj ) {
+		if ( obj == ( int ) obj ) {
+			return new IntKey( ( int ) obj );
+		} else {
+			return new Key( String.valueOf( obj ), obj );
+		}
 	}
 
 	/**

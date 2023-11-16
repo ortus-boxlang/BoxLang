@@ -32,6 +32,7 @@ import ortus.boxlang.runtime.dynamic.IReferenceable;
 import ortus.boxlang.runtime.dynamic.casters.CastAttempt;
 import ortus.boxlang.runtime.dynamic.casters.DoubleCaster;
 import ortus.boxlang.runtime.interop.DynamicObject;
+import ortus.boxlang.runtime.scopes.IntKey;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.exceptions.ExpressionException;
 import ortus.boxlang.runtime.types.immutable.ImmutableArray;
@@ -331,26 +332,8 @@ public class Array implements List<Object>, IType, IReferenceable, IListenable {
 	 */
 	@Override
 	public Object assign( Key key, Object value ) {
-		CastAttempt<Double> indexAtt = DoubleCaster.attempt( key.getName() );
-		if ( !indexAtt.wasSuccessful() ) {
-			throw new ExpressionException( String.format(
-			    "Array cannot be assigned with key %s", key.getName()
-			) );
-		}
-		Double	dIndex	= indexAtt.get();
-		Integer	index	= dIndex.intValue();
-		// Dissallow non-integer indexes foo[1.5]
-		if ( index.doubleValue() != dIndex ) {
-			throw new ExpressionException( String.format(
-			    "Array index [%s] is invalid.  Index must be an integer.", dIndex
-			) );
-		}
-		// Dissallow negative indexes foo[-1]
-		if ( index < 1 ) {
-			throw new ExpressionException( String.format(
-			    "Array cannot be assigned by a number smaller than 1"
-			) );
-		}
+
+		Integer index = Array.validateAndGetIntForAssign( key, wrapped.size(), false );
 		if ( index > wrapped.size() ) {
 			synchronized ( wrapped ) {
 				// If the index is larger than the array, pad the array with nulls
@@ -379,43 +362,10 @@ public class Array implements List<Object>, IType, IReferenceable, IListenable {
 			return getBoxMeta();
 		}
 
-		CastAttempt<Double> indexAtt = DoubleCaster.attempt( key.getName() );
-		if ( !indexAtt.wasSuccessful() ) {
-			if ( safe ) {
-				return null;
-			}
-			throw new ExpressionException( String.format(
-			    "Array cannot be deferenced by key %s", key.getName()
-			) );
-		}
-		Double	dIndex	= indexAtt.get();
-		Integer	index	= dIndex.intValue();
-		// Dissallow non-integer indexes foo[1.5]
-		if ( index.doubleValue() != dIndex ) {
-			if ( safe ) {
-				return null;
-			}
-			throw new ExpressionException( String.format(
-			    "Array index [%s] is invalid.  Index must be an integer.", dIndex
-			) );
-		}
-		// Dissallow negative indexes foo[-1]
-		if ( index < 1 ) {
-			if ( safe ) {
-				return null;
-			}
-			throw new ExpressionException( String.format(
-			    "Array cannot be indexed by a number smaller than 1"
-			) );
-		}
-		// Disallow out of bounds indexes foo[5]
-		if ( index > wrapped.size() ) {
-			if ( safe ) {
-				return null;
-			}
-			throw new ExpressionException( String.format(
-			    "Array index [%s] is out of bounds for an array of length [%s]", index, wrapped.size()
-			) );
+		Integer index = Array.validateAndGetIntForDerefernce( key, wrapped.size(), safe );
+		// non-existant indexes return null when dereferncing safely
+		if ( safe && ( index < 1 || index > wrapped.size() ) ) {
+			return null;
 		}
 		return wrapped.get( index - 1 );
 	}
@@ -512,6 +462,81 @@ public class Array implements List<Object>, IType, IReferenceable, IListenable {
 		if ( listeners == null ) {
 			listeners = new ConcurrentHashMap<Key, IChangeListener>();
 		}
+	}
+
+	public static int validateAndGetIntForDerefernce( Key key, int size, boolean safe ) {
+		Integer index = getIntFromKey( key, safe );
+		// If we're dereferencing safely, anything goes.
+		if ( safe ) {
+			return index;
+		}
+		// Dissallow negative indexes foo[-1]
+		if ( index < 1 ) {
+			throw new ExpressionException( String.format(
+			    "Array cannot be indexed by a number smaller than 1"
+			) );
+		}
+		// Disallow out of bounds indexes foo[5]
+		if ( index > size ) {
+			throw new ExpressionException( String.format(
+			    "Array index [%s] is out of bounds for an array of length [%s]", index, size
+			) );
+		}
+		return index;
+	}
+
+	public static int validateAndGetIntForAssign( Key key, int size, boolean isNative ) {
+		Integer index = getIntFromKey( key, false );
+
+		// Dissallow negative indexes foo[-1]
+		if ( index < 1 ) {
+			throw new ExpressionException( String.format(
+			    "Array cannot be assigned by a number smaller than 1"
+			) );
+		}
+
+		if ( isNative ) {
+			// Disallow out of bounds indexes foo[5]
+			if ( index > size ) {
+				throw new ExpressionException( String.format(
+				    "Invalid index [%s] for Native Array, can't expand Native Arrays.  Current array length is [%s]", index,
+				    size
+				) );
+			}
+		}
+		return index;
+	}
+
+	public static int getIntFromKey( Key key, boolean safe ) {
+		Integer index;
+
+		// If key is int, use it directly
+		if ( key instanceof IntKey intKey ) {
+			index = intKey.getIntValue();
+		} else {
+			// If key is not an int, we must attempt to cast it
+			CastAttempt<Double> indexAtt = DoubleCaster.attempt( key.getName() );
+			if ( !indexAtt.wasSuccessful() ) {
+				if ( safe ) {
+					return -1;
+				}
+				throw new ExpressionException( String.format(
+				    "Array cannot be assigned with key %s", key.getName()
+				) );
+			}
+			Double dIndex = indexAtt.get();
+			index = dIndex.intValue();
+			// Dissallow non-integer indexes foo[1.5]
+			if ( index.doubleValue() != dIndex ) {
+				if ( safe ) {
+					return -1;
+				}
+				throw new ExpressionException( String.format(
+				    "Array index [%s] is invalid.  Index must be an integer.", dIndex
+				) );
+			}
+		}
+		return index;
 	}
 
 }
