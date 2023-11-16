@@ -714,19 +714,19 @@ public class BoxCFParser extends BoxAbstractParser {
 		alc.add( left );
 		leftBoxExpression( file, node.assignmentLeft(), alc );
 		BoxExpr					right	= toAst( file, node.assignmentRight() );
-		BoxAssigmentOperator	op		= BoxAssigmentOperator.Equal;
+		BoxAssignmentOperator op		= BoxAssignmentOperator.Equal;
 		if ( node.PLUSEQUAL() != null ) {
-			op = BoxAssigmentOperator.PlusEqual;
+			op = BoxAssignmentOperator.PlusEqual;
 		} else if ( node.MINUSEQUAL() != null ) {
-			op = BoxAssigmentOperator.MinusEqual;
+			op = BoxAssignmentOperator.MinusEqual;
 		} else if ( node.STAREQUAL() != null ) {
-			op = BoxAssigmentOperator.StarEqual;
+			op = BoxAssignmentOperator.StarEqual;
 		} else if ( node.SLASHEQUAL() != null ) {
-			op = BoxAssigmentOperator.SlashEqual;
+			op = BoxAssignmentOperator.SlashEqual;
 		} else if ( node.MODEQUAL() != null ) {
-			op = BoxAssigmentOperator.ModEqual;
+			op = BoxAssignmentOperator.ModEqual;
 		} else if ( node.CONCATEQUAL() != null ) {
-			op = BoxAssigmentOperator.ConcatEqual;
+			op = BoxAssignmentOperator.ConcatEqual;
 
 		}
 		return new BoxAssignment( alc, op, right, getPosition( node ), getSourceText( node ) );

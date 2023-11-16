@@ -30,7 +30,7 @@ import com.github.javaparser.ast.stmt.ExpressionStmt;
 import ortus.boxlang.ast.BoxExpr;
 import ortus.boxlang.ast.BoxNode;
 import ortus.boxlang.ast.statement.BoxAssignment;
-import ortus.boxlang.ast.statement.BoxAssigmentOperator;
+import ortus.boxlang.ast.statement.BoxAssignmentOperator;
 import ortus.boxlang.runtime.types.exceptions.ApplicationException;
 import ortus.boxlang.transpiler.JavaTranspiler;
 import ortus.boxlang.transpiler.transformer.AbstractTransformer;
@@ -88,7 +88,7 @@ public class BoxAssignmentTransformer extends AbstractTransformer {
 		return blockStmt;
 	}
 
-	private String getNameExpressionTemplate(BoxAssigmentOperator operator ){
+	private String getNameExpressionTemplate(BoxAssignmentOperator operator ){
 		return switch( operator ){
 			case PlusEqual -> "Plus.invoke(context.scopeFindNearby(Key.of( \"${left}\" ),null).scope(),Key.of( \"${left}\"),${right})";
 			case MinusEqual -> "Minus.invoke(context.scopeFindNearby(Key.of( \"${left}\" ),null).scope(),Key.of( \"${left}\"),${right})";
@@ -100,7 +100,7 @@ public class BoxAssignmentTransformer extends AbstractTransformer {
 						  """;
 		};
 	}
-	private String getMethodCallTemplate(BoxAssigmentOperator operator ){
+	private String getMethodCallTemplate(BoxAssignmentOperator operator ){
 		return switch( operator ) {
 			case PlusEqual -> "Plus.invoke(${expr},${key},${right})";
 			case MinusEqual -> "Minus.invoke(${expr},${key},${right})";

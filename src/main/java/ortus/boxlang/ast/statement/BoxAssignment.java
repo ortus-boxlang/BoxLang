@@ -28,7 +28,7 @@ public class BoxAssignment extends BoxStatement {
 
 	private final List<BoxExpr>		left;
 	private BoxExpr					right;
-	private BoxAssigmentOperator	op;
+	private BoxAssignmentOperator op;
 
 	/**
 	 * Creates the AST node
@@ -39,7 +39,7 @@ public class BoxAssignment extends BoxStatement {
 	 * @param position   position of the statement in the source code
 	 * @param sourceText source code that originated the Node
 	 */
-	public BoxAssignment( List<BoxExpr> left, BoxAssigmentOperator op, BoxExpr right, Position position, String sourceText ) {
+	public BoxAssignment(List<BoxExpr> left, BoxAssignmentOperator op, BoxExpr right, Position position, String sourceText ) {
 		super( position, sourceText );
 		this.left = Collections.unmodifiableList( left );
 		this.left.forEach( arg -> arg.setParent( this ) );
@@ -56,7 +56,7 @@ public class BoxAssignment extends BoxStatement {
 		return right;
 	}
 
-	public BoxAssigmentOperator getOp() {
+	public BoxAssignmentOperator getOp() {
 		return op;
 	}
 }
