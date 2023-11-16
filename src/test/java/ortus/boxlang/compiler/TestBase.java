@@ -16,6 +16,9 @@ package ortus.boxlang.compiler;
  */
 import com.github.javaparser.ast.Node;
 import com.github.javaparser.ast.stmt.BlockStmt;
+import ortus.boxlang.parser.BoxParser;
+import ortus.boxlang.parser.ParsingResult;
+import ortus.boxlang.transpiler.JavaTranspiler;
 
 import java.io.IOException;
 import java.nio.file.*;
@@ -26,6 +29,7 @@ import java.util.List;
 import java.util.Set;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 public class TestBase {
 
@@ -86,5 +90,20 @@ public class TestBase {
 		}
 		return stmt;
 
+	}
+
+	public ParsingResult parseExpression( String statement ) throws IOException {
+		BoxParser		parser	= new BoxParser();
+		ParsingResult	result	= parser.parseExpression( statement );
+		assertTrue( result.isCorrect() );
+		return result;
+	}
+
+	public String transformExpression( String statement ) throws IOException {
+		BoxParser		parser	= new BoxParser();
+		ParsingResult	result	= parser.parseExpression( statement );
+		assertTrue( result.isCorrect() );
+
+		return new JavaTranspiler().transform( result.getRoot() ).toString();
 	}
 }

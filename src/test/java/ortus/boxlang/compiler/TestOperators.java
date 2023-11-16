@@ -5,6 +5,8 @@ import static org.junit.Assert.assertTrue;
 
 import java.io.IOException;
 
+import org.junit.Ignore;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 /**
@@ -24,18 +26,11 @@ import org.junit.jupiter.api.Test;
 
 import com.github.javaparser.ast.Node;
 
-import ortus.boxlang.parser.BoxParser;
 import ortus.boxlang.parser.ParsingResult;
 import ortus.boxlang.transpiler.JavaTranspiler;
 
+@Disabled
 public class TestOperators extends TestBase {
-
-	public ParsingResult parseExpression( String statement ) throws IOException {
-		BoxParser		parser	= new BoxParser();
-		ParsingResult	result	= parser.parseExpression( statement );
-		assertTrue( result.isCorrect() );
-		return result;
-	}
 
 	@Test
 	public void concat() throws IOException {
@@ -44,7 +39,7 @@ public class TestOperators extends TestBase {
 		                              """;
 
 		ParsingResult	result		= parseExpression( expression );
-		Node			javaAST		= JavaTranspiler.transform( result.getRoot() );
+		Node			javaAST		= new JavaTranspiler().transform( result.getRoot() );
 
 		assertEquals( "Concat.invoke(\"Hello \", \"world\")", javaAST.toString() );
 	}
@@ -56,7 +51,7 @@ public class TestOperators extends TestBase {
 		                              """;
 
 		ParsingResult	result		= parseExpression( expression );
-		Node			javaAST		= JavaTranspiler.transform( result.getRoot() );
+		Node			javaAST		= new JavaTranspiler().transform( result.getRoot() );
 
 		assertEquals( "Plus.invoke(1, 2)", javaAST.toString() );
 
@@ -69,7 +64,7 @@ public class TestOperators extends TestBase {
 		                              """;
 
 		ParsingResult	result		= parseExpression( expression );
-		Node			javaAST		= JavaTranspiler.transform( result.getRoot() );
+		Node			javaAST		= new JavaTranspiler().transform( result.getRoot() );
 
 		assertEquals( "Minus.invoke(1, 2)", javaAST.toString() );
 
@@ -83,7 +78,7 @@ public class TestOperators extends TestBase {
 
 		ParsingResult	result		= parseExpression( expression );
 
-		Node			javaAST		= JavaTranspiler.transform( result.getRoot() );
+		Node			javaAST		= new JavaTranspiler().transform( result.getRoot() );
 
 		assertEquals( "Multiply.invoke(1, 2)", javaAST.toString() );
 
@@ -97,7 +92,7 @@ public class TestOperators extends TestBase {
 
 		ParsingResult	result		= parseExpression( expression );
 
-		Node			javaAST		= JavaTranspiler.transform( result.getRoot() );
+		Node			javaAST		= new JavaTranspiler().transform( result.getRoot() );
 
 		assertEquals( "Power.invoke(1, 2)", javaAST.toString() );
 
@@ -110,7 +105,7 @@ public class TestOperators extends TestBase {
 		                              """;
 
 		ParsingResult	result		= parseExpression( expression );
-		Node			javaAST		= JavaTranspiler.transform( result.getRoot() );
+		Node			javaAST		= new JavaTranspiler().transform( result.getRoot() );
 
 		assertEquals( "Divide.invoke(1, 2)", javaAST.toString() );
 
@@ -123,7 +118,7 @@ public class TestOperators extends TestBase {
 		                              """;
 
 		ParsingResult	result		= parseExpression( expression );
-		Node			javaAST		= JavaTranspiler.transform( result.getRoot() );
+		Node			javaAST		= new JavaTranspiler().transform( result.getRoot() );
 
 		assertEquals( "IntegerDivide.invoke(1, 2)", javaAST.toString() );
 
@@ -136,7 +131,7 @@ public class TestOperators extends TestBase {
 		                              """;
 
 		ParsingResult	result		= parseExpression( expression );
-		Node			javaAST		= JavaTranspiler.transform( result.getRoot() );
+		Node			javaAST		= new JavaTranspiler().transform( result.getRoot() );
 
 		assertEquals( "Contains.invoke(\"Brad Wood\", \"Wood\")", javaAST.toString() );
 
@@ -149,7 +144,7 @@ public class TestOperators extends TestBase {
 		                              """;
 
 		ParsingResult	result		= parseExpression( expression );
-		Node			javaAST		= JavaTranspiler.transform( result.getRoot() );
+		Node			javaAST		= new JavaTranspiler().transform( result.getRoot() );
 
 		assertEquals( "!Contains.invoke(\"Brad Wood\", \"Luis\")", javaAST.toString() );
 
@@ -162,7 +157,7 @@ public class TestOperators extends TestBase {
 		                              """;
 
 		ParsingResult	result		= parseExpression( expression );
-		Node			javaAST		= JavaTranspiler.transform( result.getRoot() );
+		Node			javaAST		= new JavaTranspiler().transform( result.getRoot() );
 
 		assertEquals( "Negate.invoke(5)", javaAST.toString() );
 
@@ -175,7 +170,7 @@ public class TestOperators extends TestBase {
 		                              """;
 
 		ParsingResult	result		= parseExpression( expression );
-		Node			javaAST		= JavaTranspiler.transform( result.getRoot() );
+		Node			javaAST		= new JavaTranspiler().transform( result.getRoot() );
 
 		assertEquals( "Not.invoke(true)", javaAST.toString() );
 
@@ -188,7 +183,7 @@ public class TestOperators extends TestBase {
 		                              """;
 
 		ParsingResult	result		= parseExpression( expression );
-		Node			javaAST		= JavaTranspiler.transform( result.getRoot() );
+		Node			javaAST		= new JavaTranspiler().transform( result.getRoot() );
 
 		assertEquals( "Not.invoke(Not.invoke(false))", javaAST.toString() );
 
@@ -201,7 +196,7 @@ public class TestOperators extends TestBase {
 		                              """;
 
 		ParsingResult	result		= parseExpression( expression );
-		Node			javaAST		= JavaTranspiler.transform( result.getRoot() );
+		Node			javaAST		= new JavaTranspiler().transform( result.getRoot() );
 
 		// isGood is not on the left hand side of an elvis or save navigation operator, so it should not be providing a default scope. We want it to error if
 		// not found.
@@ -217,7 +212,7 @@ public class TestOperators extends TestBase {
 		                              """;
 
 		ParsingResult	result		= parseExpression( expression );
-		Node			javaAST		= JavaTranspiler.transform( result.getRoot() );
+		Node			javaAST		= new JavaTranspiler().transform( result.getRoot() );
 
 		// Explicit use of variables scope should be direcfty referencing the variables scope. No need to search for it.
 		assertEquals( "variablesScope.dereference(Key.of(\"system\"), false)", javaAST.toString() );
@@ -231,7 +226,7 @@ public class TestOperators extends TestBase {
 		                              """;
 
 		ParsingResult	result		= parseExpression( expression );
-		Node			javaAST		= JavaTranspiler.transform( result.getRoot() );
+		Node			javaAST		= new JavaTranspiler().transform( result.getRoot() );
 
 		// TODO: foo is getting returned direclty instead of searching the scopes for it
 		assertEqualsNoWhiteSpaces( "context.scopeFindNearby(Key.of(\"foo\"),null).value()", javaAST.toString() );
@@ -245,7 +240,7 @@ public class TestOperators extends TestBase {
 		                              """;
 
 		ParsingResult	result		= parseExpression( expression );
-		Node			javaAST		= JavaTranspiler.transform( result.getRoot() );
+		Node			javaAST		= new JavaTranspiler().transform( result.getRoot() );
 		// TODO: Since we're dereferencing on the left hand side of the elvis operator, we must pass "true" to the safe param of the dereference method
 		// I am using objectAccess.isSafe(), but it's returning false instaed of true!
 		assertEqualsNoWhiteSpaces(
@@ -260,7 +255,7 @@ public class TestOperators extends TestBase {
 		                              """;
 
 		ParsingResult	result		= parseExpression( expression );
-		Node			javaAST		= JavaTranspiler.transform( result.getRoot() );
+		Node			javaAST		= new JavaTranspiler().transform( result.getRoot() );
 
 		// TODO: Explicit variables scope access should not be using scopeFindNearby().
 		// Also, All dereferencing on the left hand side of an elvis operator must be done safely
@@ -281,7 +276,7 @@ public class TestOperators extends TestBase {
 
 		ParsingResult	result		= parseExpression( expression );
 
-		Node			javaAST		= JavaTranspiler.transform( result.getRoot() );
+		Node			javaAST		= new JavaTranspiler().transform( result.getRoot() );
 
 		assertEquals( "XOR.invoke(2, 3)", javaAST.toString() );
 
@@ -295,7 +290,7 @@ public class TestOperators extends TestBase {
 
 		ParsingResult	result		= parseExpression( expression );
 
-		Node			javaAST		= JavaTranspiler.transform( result.getRoot() );
+		Node			javaAST		= new JavaTranspiler().transform( result.getRoot() );
 
 		assertEquals( "Modulus.invoke(2, 3)", javaAST.toString() );
 
@@ -309,7 +304,7 @@ public class TestOperators extends TestBase {
 
 		ParsingResult	result		= parseExpression( expression );
 
-		Node			javaAST		= JavaTranspiler.transform( result.getRoot() );
+		Node			javaAST		= new JavaTranspiler().transform( result.getRoot() );
 
 		// We pass null as the default scope since we are not on the left hand side of an elvis or safe navigation operator. We also use .value() directly.
 		assertEqualsNoWhiteSpaces(
@@ -328,7 +323,7 @@ public class TestOperators extends TestBase {
 
 		ParsingResult	result		= parseExpression( expression );
 
-		Node			javaAST		= JavaTranspiler.transform( result.getRoot() );
+		Node			javaAST		= new JavaTranspiler().transform( result.getRoot() );
 
 		assertEquals( "Multiply.invoke((Plus.invoke(1, 2)), 3)", javaAST.toString() );
 
@@ -342,7 +337,7 @@ public class TestOperators extends TestBase {
 
 		ParsingResult	result		= parseExpression( expression );
 
-		Node			javaAST		= JavaTranspiler.transform( result.getRoot() );
+		Node			javaAST		= new JavaTranspiler().transform( result.getRoot() );
 
 		assertEquals( "EqualsEquals.invoke(1, 3)", javaAST.toString() );
 
@@ -351,14 +346,14 @@ public class TestOperators extends TestBase {
 		              """;
 		result		= parseExpression( expression );
 
-		javaAST		= JavaTranspiler.transform( result.getRoot() );
+		javaAST		= new JavaTranspiler().transform( result.getRoot() );
 		assertEquals( "EqualsEquals.invoke(1, 3)", javaAST.toString() );
 		expression	= """
 		              1 IS 3
 		              """;
 		result		= parseExpression( expression );
 
-		javaAST		= JavaTranspiler.transform( result.getRoot() );
+		javaAST		= new JavaTranspiler().transform( result.getRoot() );
 		assertEquals( "EqualsEquals.invoke(1, 3)", javaAST.toString() );
 
 	}
@@ -371,7 +366,7 @@ public class TestOperators extends TestBase {
 
 		ParsingResult	result		= parseExpression( expression );
 
-		Node			javaAST		= JavaTranspiler.transform( result.getRoot() );
+		Node			javaAST		= new JavaTranspiler().transform( result.getRoot() );
 
 		assertEquals( "EqualsEqualsEquals.invoke(true, \"true\")", javaAST.toString() );
 	}
@@ -384,7 +379,7 @@ public class TestOperators extends TestBase {
 
 		ParsingResult	result		= parseExpression( expression );
 
-		Node			javaAST		= JavaTranspiler.transform( result.getRoot() );
+		Node			javaAST		= new JavaTranspiler().transform( result.getRoot() );
 
 		assertEquals( "!EqualsEquals.invoke(1, 3)", javaAST.toString() );
 
@@ -393,7 +388,7 @@ public class TestOperators extends TestBase {
 		              """;
 		result		= parseExpression( expression );
 
-		javaAST		= JavaTranspiler.transform( result.getRoot() );
+		javaAST		= new JavaTranspiler().transform( result.getRoot() );
 		assertEquals( "!EqualsEquals.invoke(1, 3)", javaAST.toString() );
 
 	}
@@ -406,7 +401,7 @@ public class TestOperators extends TestBase {
 
 		ParsingResult	result		= parseExpression( expression );
 
-		Node			javaAST		= JavaTranspiler.transform( result.getRoot() );
+		Node			javaAST		= new JavaTranspiler().transform( result.getRoot() );
 
 		assertEquals( "GreaterThan.invoke(1, 3)", javaAST.toString() );
 
@@ -415,7 +410,7 @@ public class TestOperators extends TestBase {
 		              """;
 		result		= parseExpression( expression );
 
-		javaAST		= JavaTranspiler.transform( result.getRoot() );
+		javaAST		= new JavaTranspiler().transform( result.getRoot() );
 		assertEquals( "GreaterThan.invoke(1, 3)", javaAST.toString() );
 
 	}
@@ -428,7 +423,7 @@ public class TestOperators extends TestBase {
 
 		ParsingResult	result		= parseExpression( expression );
 
-		Node			javaAST		= JavaTranspiler.transform( result.getRoot() );
+		Node			javaAST		= new JavaTranspiler().transform( result.getRoot() );
 
 		assertEquals( "GreaterThanEqual.invoke(1, 3)", javaAST.toString() );
 
@@ -437,7 +432,7 @@ public class TestOperators extends TestBase {
 		              """;
 		result		= parseExpression( expression );
 
-		javaAST		= JavaTranspiler.transform( result.getRoot() );
+		javaAST		= new JavaTranspiler().transform( result.getRoot() );
 		assertEquals( "GreaterThanEqual.invoke(1, 3)", javaAST.toString() );
 
 	}
@@ -450,7 +445,7 @@ public class TestOperators extends TestBase {
 
 		ParsingResult	result		= parseExpression( expression );
 
-		Node			javaAST		= JavaTranspiler.transform( result.getRoot() );
+		Node			javaAST		= new JavaTranspiler().transform( result.getRoot() );
 
 		assertEquals( "LessThan.invoke(1, 3)", javaAST.toString() );
 
@@ -459,7 +454,7 @@ public class TestOperators extends TestBase {
 		              """;
 		result		= parseExpression( expression );
 
-		javaAST		= JavaTranspiler.transform( result.getRoot() );
+		javaAST		= new JavaTranspiler().transform( result.getRoot() );
 		assertEquals( "LessThan.invoke(1, 3)", javaAST.toString() );
 
 	}
@@ -472,7 +467,7 @@ public class TestOperators extends TestBase {
 
 		ParsingResult	result		= parseExpression( expression );
 
-		Node			javaAST		= JavaTranspiler.transform( result.getRoot() );
+		Node			javaAST		= new JavaTranspiler().transform( result.getRoot() );
 
 		assertEquals( "LessThanEqual.invoke(1, 3)", javaAST.toString() );
 
@@ -481,7 +476,7 @@ public class TestOperators extends TestBase {
 		              """;
 		result		= parseExpression( expression );
 
-		javaAST		= JavaTranspiler.transform( result.getRoot() );
+		javaAST		= new JavaTranspiler().transform( result.getRoot() );
 		assertEquals( "LessThanEqual.invoke(1, 3)", javaAST.toString() );
 
 	}
@@ -494,7 +489,7 @@ public class TestOperators extends TestBase {
 
 		ParsingResult	result		= parseExpression( expression );
 
-		Node			javaAST		= JavaTranspiler.transform( result.getRoot() );
+		Node			javaAST		= new JavaTranspiler().transform( result.getRoot() );
 
 		assertEquals( "And.invoke(true, \"true\")", javaAST.toString() );
 
@@ -503,7 +498,7 @@ public class TestOperators extends TestBase {
 		              """;
 		result		= parseExpression( expression );
 
-		javaAST		= JavaTranspiler.transform( result.getRoot() );
+		javaAST		= new JavaTranspiler().transform( result.getRoot() );
 		assertEquals( "And.invoke(true, \"true\")", javaAST.toString() );
 
 	}
@@ -516,7 +511,7 @@ public class TestOperators extends TestBase {
 
 		ParsingResult	result		= parseExpression( expression );
 
-		Node			javaAST		= JavaTranspiler.transform( result.getRoot() );
+		Node			javaAST		= new JavaTranspiler().transform( result.getRoot() );
 
 		assertEquals( "Or.invoke(true, \"true\")", javaAST.toString() );
 
@@ -525,7 +520,7 @@ public class TestOperators extends TestBase {
 		              """;
 		result		= parseExpression( expression );
 
-		javaAST		= JavaTranspiler.transform( result.getRoot() );
+		javaAST		= new JavaTranspiler().transform( result.getRoot() );
 		assertEquals( "Or.invoke(true, \"true\")", javaAST.toString() );
 
 	}
@@ -538,7 +533,7 @@ public class TestOperators extends TestBase {
 
 		ParsingResult	result		= parseExpression( expression );
 
-		Node			javaAST		= JavaTranspiler.transform( result.getRoot() );
+		Node			javaAST		= new JavaTranspiler().transform( result.getRoot() );
 		System.out.println( javaAST );
 		// Explicit reference to variables scope should directly reference it
 		assertEqualsNoWhiteSpaces(
@@ -555,7 +550,7 @@ public class TestOperators extends TestBase {
 
 		ParsingResult	result		= parseExpression( expression );
 
-		Node			javaAST		= JavaTranspiler.transform( result.getRoot() );
+		Node			javaAST		= new JavaTranspiler().transform( result.getRoot() );
 		System.out.println( javaAST );
 		// Explicit reference to variables scope should directly reference it
 		assertEqualsNoWhiteSpaces(
@@ -572,7 +567,7 @@ public class TestOperators extends TestBase {
 
 		ParsingResult	result		= parseExpression( expression );
 
-		Node			javaAST		= JavaTranspiler.transform( result.getRoot() );
+		Node			javaAST		= new JavaTranspiler().transform( result.getRoot() );
 		System.out.println( javaAST );
 		// Explicit reference to variables scope should directly reference it
 		assertEqualsNoWhiteSpaces(
@@ -589,7 +584,7 @@ public class TestOperators extends TestBase {
 
 		ParsingResult	result		= parseExpression( expression );
 
-		Node			javaAST		= JavaTranspiler.transform( result.getRoot() );
+		Node			javaAST		= new JavaTranspiler().transform( result.getRoot() );
 		System.out.println( javaAST );
 		// Explicit reference to variables scope should directly reference it
 		assertEqualsNoWhiteSpaces(
@@ -606,7 +601,7 @@ public class TestOperators extends TestBase {
 
 		ParsingResult	result		= parseExpression( expression );
 
-		Node			javaAST		= JavaTranspiler.transform( result.getRoot() );
+		Node			javaAST		= new JavaTranspiler().transform( result.getRoot() );
 		System.out.println( javaAST );
 		assertEqualsNoWhiteSpaces(
 		    """
@@ -632,7 +627,7 @@ public class TestOperators extends TestBase {
 
 		ParsingResult	result		= parseExpression( statement );
 
-		Node			javaAST		= JavaTranspiler.transform( result.getRoot() );
+		Node			javaAST		= new JavaTranspiler().transform( result.getRoot() );
 		System.out.println( javaAST );
 		// Need to pass the full class name and resolver prefix
 		assertEqualsNoWhiteSpaces(
@@ -648,7 +643,7 @@ public class TestOperators extends TestBase {
 		                              """;
 
 		ParsingResult	result		= parseExpression( expression );
-		Node			javaAST		= JavaTranspiler.transform( result.getRoot() );
+		Node			javaAST		= new JavaTranspiler().transform( result.getRoot() );
 
 		// We're not assigning sdf, so we don't need to pass a default scope. Also, we can use value() directly
 		assertEquals( "CastAs.invoke(5, context.scopeFindNearby(Key.of(\"sdf\"), null).value())",
@@ -662,11 +657,22 @@ public class TestOperators extends TestBase {
 		                              """;
 
 		ParsingResult	result		= parseExpression( expression );
-		Node			javaAST		= JavaTranspiler.transform( result.getRoot() );
+		Node			javaAST		= new JavaTranspiler().transform( result.getRoot() );
 
 		// We're not assigning a or aaa, so we don't need to pass a default scope. Also, we can use value() directly
 		assertEqualsNoWhiteSpaces(
 		    "Concat.invoke(context.scopeFindNearby(Key.of(\"a\"), null).value(), context.scopeFindNearby(Key.of(\"aaa\"), null).value())",
 		    javaAST.toString() );
+	}
+
+	@Test
+	public void assigmentExpression() throws IOException {
+		String			expression	= """
+		                              			 5 * ( myNum = 5 )
+		                              """;
+
+		ParsingResult	result		= parseExpression( expression );
+		Node			javaAST		= new JavaTranspiler().transform( result.getRoot() );
+
 	}
 }

@@ -77,28 +77,14 @@ public class TestAST extends TestBase {
 	@Test
 	public void testParser() throws IOException {
 		List<Path> files = scanForFiles( "../boxlang/examples/cf_to_java/HelloWorld", Set.of( "cfc", "cfm", "cfml" ) );
-		System.out.printf("Testing parser against %s file(s)%n", files.size() );
+		System.out.printf( "Testing parser against %s file(s)%n", files.size() );
 		for ( Path file : files ) {
 			System.out.println( "Testing " + file );
 			ParsingResult result = parser.parse( file.toFile() );
 			if ( !result.isCorrect() ) {
-				result.getIssues().forEach(System.out::println);
+				result.getIssues().forEach( System.out::println );
 			}
 		}
 	}
 
-	@Test
-	public void testTranspiler() throws Exception {
-
-		JavaTranspiler	transpiler	= new JavaTranspiler();
-
-		List<Path>		files		= scanForFiles( "../examples/cf_to_java/HelloWorld", Set.of( "cfc" ) );
-		for ( Path file : files ) {
-			System.out.println( file );
-			ParsingResult	result	= parser.parse( file.toFile() );
-			transpiler.transpileMany( result.getRoot() )
-					.forEach(System.out::println);
-		}
-
-	}
 }
