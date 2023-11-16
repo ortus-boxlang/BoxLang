@@ -14,7 +14,7 @@
  */
 package ortus.boxlang.ast.statement;
 
-public enum BoxAssigmentOperator {
+public enum BoxAssignmentOperator {
 	Equal,
 	PlusEqual,
 	MinusEqual,

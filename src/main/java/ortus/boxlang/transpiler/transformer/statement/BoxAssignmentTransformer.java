@@ -29,8 +29,9 @@ import com.github.javaparser.ast.stmt.ExpressionStmt;
 
 import ortus.boxlang.ast.BoxExpr;
 import ortus.boxlang.ast.BoxNode;
-import ortus.boxlang.ast.statement.BoxAssigmentOperator;
 import ortus.boxlang.ast.statement.BoxAssignment;
+import ortus.boxlang.ast.statement.BoxAssignmentOperator;
+import ortus.boxlang.runtime.types.exceptions.ApplicationException;
 import ortus.boxlang.transpiler.JavaTranspiler;
 import ortus.boxlang.transpiler.transformer.AbstractTransformer;
 import ortus.boxlang.transpiler.transformer.TransformerContext;
@@ -53,7 +54,9 @@ public class BoxAssignmentTransformer extends AbstractTransformer {
 
 			Expression			left		= ( Expression ) transpiler.transform( expr, TransformerContext.LEFT );
 			Map<String, String>	values		= new HashMap<>();
-			ExpressionStmt		javaExpr	= new ExpressionStmt( left );
+			ExpressionStmt		javaExpr;
+			String template;
+
 			if ( left instanceof MethodCallExpr method ) {
 				if ( "assign".equalsIgnoreCase( method.getName().asString() ) ) {
 					method.getArguments().add( right );
@@ -61,109 +64,53 @@ public class BoxAssignmentTransformer extends AbstractTransformer {
 				if ( "setDeep".equalsIgnoreCase( method.getName().asString() ) ) {
 					method.getArguments().add( 1, right );
 				}
-				if ( assigment.getOp() == BoxAssigmentOperator.PlusEqual ) {
-					MethodCallExpr methodCall = ( MethodCallExpr ) left;
-					values.put( "expr", methodCall.getScope().get().toString() );
-					values.put( "key", methodCall.getArguments().get( 0 ).toString() );
-					values.put( "right", right.toString() );
-					String template = "Plus.invoke(${expr},${key},${right})";
-					javaExpr = new ExpressionStmt( ( Expression ) parseExpression( template, values ) );
-				}
-
-				if ( assigment.getOp() == BoxAssigmentOperator.MinusEqual ) {
-					MethodCallExpr methodCall = ( MethodCallExpr ) left;
-					values.put( "expr", methodCall.getScope().get().toString() );
-					values.put( "key", methodCall.getArguments().get( 0 ).toString() );
-					values.put( "right", right.toString() );
-					String template = "Minus.invoke(${expr},${key},${right})";
-					javaExpr = new ExpressionStmt( ( Expression ) parseExpression( template, values ) );
-				}
-
-				if ( assigment.getOp() == BoxAssigmentOperator.StarEqual ) {
-					MethodCallExpr methodCall = ( MethodCallExpr ) left;
-					values.put( "expr", methodCall.getScope().get().toString() );
-					values.put( "key", methodCall.getArguments().get( 0 ).toString() );
-					values.put( "right", right.toString() );
-					String template = "Multiply.invoke(${expr},${key},${right})";
-					javaExpr = new ExpressionStmt( ( Expression ) parseExpression( template, values ) );
-				}
-
-				if ( assigment.getOp() == BoxAssigmentOperator.SlashEqual ) {
-					MethodCallExpr methodCall = ( MethodCallExpr ) left;
-					values.put( "expr", methodCall.getScope().get().toString() );
-					values.put( "key", methodCall.getArguments().get( 0 ).toString() );
-					values.put( "right", right.toString() );
-					String template = "Divide.invoke(${expr},${key},${right})";
-					javaExpr = new ExpressionStmt( ( Expression ) parseExpression( template, values ) );
-				}
-
-				if ( assigment.getOp() == BoxAssigmentOperator.ModEqual ) {
-					MethodCallExpr methodCall = ( MethodCallExpr ) left;
-					values.put( "expr", methodCall.getScope().get().toString() );
-					values.put( "key", methodCall.getArguments().get( 0 ).toString() );
-					values.put( "right", right.toString() );
-					String template = "Modulus.invoke(${expr},${key},${right})";
-					javaExpr = new ExpressionStmt( ( Expression ) parseExpression( template, values ) );
-				}
-				if ( assigment.getOp() == BoxAssigmentOperator.ConcatEqual ) {
-					MethodCallExpr methodCall = ( MethodCallExpr ) left;
-					values.put( "expr", methodCall.getScope().get().toString() );
-					values.put( "key", methodCall.getArguments().get( 0 ).toString() );
-					values.put( "right", right.toString() );
-					String template = "Concat.invoke(${expr},${key},${right})";
-					javaExpr = new ExpressionStmt( ( Expression ) parseExpression( template, values ) );
-				}
+				values.put("expr", method.getScope().orElseThrow().toString());
+				values.put("key", method.getArguments().get(0).toString());
+				values.put("right", right.toString());
+				template = getMethodCallTemplate(assigment.getOp());
 
 			} else if ( left instanceof NameExpr name ) {
-				values.put( "left", left.toString() );
-				values.put( "right", right.toString() );
-				if ( right instanceof NameExpr rname ) {
+				values.put("left", left.toString());
+				values.put("right", right.toString());
+				if (right instanceof NameExpr rname) {
 					String tmp = "context.scopeFindNearby( Key.of( \"" + rname + "\" ), null).value()";
-					values.put( "right", tmp );
+					values.put("right", tmp);
 				}
 
-				String template = """
-				                  context.scopeFindNearby(Key.of( "${left}" ),context.getDefaultAssignmentScope()).scope().assign( Key.of( "${left}" ), ${right} )
-				                  """;
-
-				javaExpr = new ExpressionStmt( ( Expression ) parseExpression( template, values ) );
-
-				if ( assigment.getOp() == BoxAssigmentOperator.PlusEqual ) {
-					values.put( "left", left.toString() );
-					values.put( "right", right.toString() );
-					template	= "Plus.invoke(context.scopeFindNearby(Key.of( \"${left}\" ),null).scope(),Key.of( \"${left}\"),${right})";
-					javaExpr	= new ExpressionStmt( ( Expression ) parseExpression( template, values ) );
-				}
-				if ( assigment.getOp() == BoxAssigmentOperator.MinusEqual ) {
-					values.put( "left", left.toString() );
-					values.put( "right", right.toString() );
-					template	= "Minus.invoke(context.scopeFindNearby(Key.of( \"${left}\" ),null).scope(),Key.of( \"${left}\"),${right})";
-					javaExpr	= new ExpressionStmt( ( Expression ) parseExpression( template, values ) );
-				}
-				if ( assigment.getOp() == BoxAssigmentOperator.StarEqual ) {
-					values.put( "left", left.toString() );
-					values.put( "right", right.toString() );
-					template	= "Multiply.invoke(context.scopeFindNearby(Key.of( \"${left}\" ),null).scope(),Key.of( \"${left}\"),${right})";
-					javaExpr	= new ExpressionStmt( ( Expression ) parseExpression( template, values ) );
-				}
-				if ( assigment.getOp() == BoxAssigmentOperator.SlashEqual ) {
-					values.put( "left", left.toString() );
-					values.put( "right", right.toString() );
-					template	= "Divide.invoke(context.scopeFindNearby(Key.of( \"${left}\" ),null).scope(),Key.of( \"${left}\"),${right})";
-					javaExpr	= new ExpressionStmt( ( Expression ) parseExpression( template, values ) );
-				}
-				if ( assigment.getOp() == BoxAssigmentOperator.ConcatEqual ) {
-					values.put( "left", left.toString() );
-					values.put( "right", right.toString() );
-					template	= "Concat.invoke(context.scopeFindNearby(Key.of( \"${left}\" ),null).scope(),Key.of( \"${left}\"),${right})";
-					javaExpr	= new ExpressionStmt( ( Expression ) parseExpression( template, values ) );
-				}
+				template = getNameExpressionTemplate(assigment.getOp());
+			} else {
+				throw new ApplicationException( "Unimplemented assignment operator type assignment operator type", expr.toString() );
 			}
+			javaExpr = new ExpressionStmt((Expression) parseExpression(template, values));
 			blockStmt.addStatement( javaExpr );
 			addIndex( javaExpr, node );
 		}
 
 		return blockStmt;
+	}
+
+	private String getNameExpressionTemplate(BoxAssignmentOperator operator ){
+		return switch( operator ){
+			case PlusEqual -> "Plus.invoke(context.scopeFindNearby(Key.of( \"${left}\" ),null).scope(),Key.of( \"${left}\"),${right})";
+			case MinusEqual -> "Minus.invoke(context.scopeFindNearby(Key.of( \"${left}\" ),null).scope(),Key.of( \"${left}\"),${right})";
+			case StarEqual -> "Multiply.invoke(context.scopeFindNearby(Key.of( \"${left}\" ),null).scope(),Key.of( \"${left}\"),${right})";
+			case SlashEqual -> "Divide.invoke(context.scopeFindNearby(Key.of( \"${left}\" ),null).scope(),Key.of( \"${left}\"),${right})";
+			case ConcatEqual -> "Concat.invoke(context.scopeFindNearby(Key.of( \"${left}\" ),null).scope(),Key.of( \"${left}\"),${right})";
+			default -> """
+						  context.scopeFindNearby(Key.of( "${left}" ),context.getDefaultAssignmentScope()).scope().assign( Key.of( "${left}" ), ${right} )
+						  """;
+		};
+	}
+	private String getMethodCallTemplate(BoxAssignmentOperator operator ){
+		return switch( operator ) {
+			case PlusEqual -> "Plus.invoke(${expr},${key},${right})";
+			case MinusEqual -> "Minus.invoke(${expr},${key},${right})";
+			case StarEqual -> "Multiply.invoke(${expr},${key},${right})";
+			case SlashEqual -> "Divide.invoke(${expr},${key},${right})";
+			case ModEqual -> "Modulus.invoke(${expr},${key},${right})";
+			case ConcatEqual -> "Concat.invoke(${expr},${key},${right})";
+			default -> throw new ApplicationException( "Unimplemented assignment operator method call", operator.toString());
+		};
 	}
 
 }
