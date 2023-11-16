@@ -46,6 +46,10 @@ public abstract class AbstractTransformer implements Transformer {
 	protected static JavaParser				javaParser		= new JavaParser();
 	protected static BoxLangCrossReferencer	crossReferencer	= new BoxLangCrossReferencerDefault();
 
+	public AbstractTransformer( Transpiler transpiler ) {
+		this.transpiler = transpiler;
+	}
+
 	@Override
 	public abstract Node transform( BoxNode node, TransformerContext context ) throws IllegalStateException;
 

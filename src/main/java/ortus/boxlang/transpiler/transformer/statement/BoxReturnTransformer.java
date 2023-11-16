@@ -35,6 +35,10 @@ public class BoxReturnTransformer extends AbstractTransformer {
 
 	Logger logger = LoggerFactory.getLogger( BoxFunctionDeclarationTransformer.class );
 
+	public BoxReturnTransformer( JavaTranspiler transpiler ) {
+		super( transpiler );
+	}
+
 	@Override
 	public Node transform( BoxNode node, TransformerContext context ) throws IllegalStateException {
 		BoxReturn			boxReturn	= ( BoxReturn ) node;
@@ -42,7 +46,7 @@ public class BoxReturnTransformer extends AbstractTransformer {
 		String				template	= "return;";
 		Map<String, String>	values		= new HashMap<>();
 		if ( boxReturn.getExpression() != null ) {
-			Expression expr = ( Expression ) JavaTranspiler.transform( boxReturn.getExpression(), TransformerContext.RIGHT );
+			Expression expr = ( Expression ) transpiler.transform( boxReturn.getExpression(), TransformerContext.RIGHT );
 			values.put( "expr", expr.toString() );
 			template = "return ${expr};";
 		}

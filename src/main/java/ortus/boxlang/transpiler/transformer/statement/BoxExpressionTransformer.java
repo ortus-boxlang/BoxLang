@@ -25,10 +25,14 @@ import ortus.boxlang.transpiler.transformer.TransformerContext;
 
 public class BoxExpressionTransformer extends AbstractTransformer {
 
+	public BoxExpressionTransformer( JavaTranspiler transpiler ) {
+		super( transpiler );
+	}
+
 	@Override
 	public Node transform( BoxNode node, TransformerContext context ) throws IllegalStateException {
 		BoxExpression	exprStmt	= ( BoxExpression ) node;
-		Expression		expr		= ( Expression ) JavaTranspiler.transform( exprStmt.getExpression() );
+		Expression		expr		= ( Expression ) transpiler.transform( exprStmt.getExpression() );
 		return addIndex( new ExpressionStmt( expr ), node );
 	}
 }

@@ -35,6 +35,10 @@ public class BoxUnaryOperationTransformer extends AbstractTransformer {
 
 	Logger logger = LoggerFactory.getLogger( BoxUnaryOperationTransformer.class );
 
+	public BoxUnaryOperationTransformer( JavaTranspiler transpiler ) {
+		super( transpiler );
+	}
+
 	/**
 	 * Transform a unary operator
 	 *
@@ -50,7 +54,7 @@ public class BoxUnaryOperationTransformer extends AbstractTransformer {
 		BoxUnaryOperation	operation	= ( BoxUnaryOperation ) node;
 		Map<String, String>	values		= new HashMap<>();
 
-		Expression			expr		= ( Expression ) resolveScope( JavaTranspiler.transform( operation.getExpr() ), context );
+		Expression			expr		= ( Expression ) resolveScope( transpiler.transform( operation.getExpr() ), context );
 		values.put( "expr", expr.toString() );
 
 		if ( expr instanceof MethodCallExpr methodCall ) {

@@ -15,12 +15,16 @@ import ortus.boxlang.transpiler.transformer.TransformerContext;
 
 public class BoxTernaryOperationTransformer extends AbstractTransformer {
 
+	public BoxTernaryOperationTransformer( JavaTranspiler transpiler ) {
+		super( transpiler );
+	}
+
 	@Override
 	public Node transform( BoxNode node, TransformerContext context ) throws IllegalStateException {
 		BoxTernaryOperation	operation	= ( BoxTernaryOperation ) node;
-		Expression			condition	= ( Expression ) JavaTranspiler.transform( operation.getCondition() /* , TransformerContext.DEREFERENCING */ );
-		Expression			whenTrue	= ( Expression ) JavaTranspiler.transform( operation.getWhenTrue() );
-		Expression			whenFalse	= ( Expression ) JavaTranspiler.transform( operation.getWhenFalse() );
+		Expression			condition	= ( Expression ) transpiler.transform( operation.getCondition() /* , TransformerContext.DEREFERENCING */ );
+		Expression			whenTrue	= ( Expression ) transpiler.transform( operation.getWhenTrue() );
+		Expression			whenFalse	= ( Expression ) transpiler.transform( operation.getWhenFalse() );
 		Map<String, String>	values		= new HashMap<>() {
 
 											{

@@ -36,6 +36,10 @@ public class BoxSwitchTransformer extends AbstractTransformer {
 
 	Logger logger = LoggerFactory.getLogger( BoxParenthesisTransformer.class );
 
+	public BoxSwitchTransformer( JavaTranspiler transpiler ) {
+		super( transpiler );
+	}
+
 	/**
 	 * Transform a collection for statement
 	 *
@@ -49,7 +53,7 @@ public class BoxSwitchTransformer extends AbstractTransformer {
 	@Override
 	public Node transform( BoxNode node, TransformerContext context ) throws IllegalStateException {
 		BoxSwitch	boxSwitch	= ( BoxSwitch ) node;
-		Expression	condition	= ( Expression ) resolveScope( JavaTranspiler.transform( boxSwitch.getCondition(), TransformerContext.RIGHT ), context );
+		Expression	condition	= ( Expression ) resolveScope( transpiler.transform( boxSwitch.getCondition(), TransformerContext.RIGHT ), context );
 
 		String		template	= """
 		                          do {
@@ -64,7 +68,7 @@ public class BoxSwitchTransformer extends AbstractTransformer {
 				if ( requiresBooleanCaster( c.getCondition() ) ) {
 					caseTemplate = "if( BooleanCaster.cast( ${condition} ) ) {}";
 				}
-				Expression			switchExpr	= ( Expression ) JavaTranspiler.transform( c.getCondition(), TransformerContext.RIGHT );
+				Expression			switchExpr	= ( Expression ) transpiler.transform( c.getCondition(), TransformerContext.RIGHT );
 				Map<String, String>	values		= new HashMap<>() {
 
 													{
@@ -74,7 +78,7 @@ public class BoxSwitchTransformer extends AbstractTransformer {
 				IfStmt				javaIfStmt	= ( IfStmt ) parseStatement( caseTemplate, values );
 				BlockStmt			thenBlock	= new BlockStmt();
 				c.getBody().forEach( stmt -> {
-					thenBlock.addStatement( ( Statement ) JavaTranspiler.transform( stmt ) );
+					thenBlock.addStatement( ( Statement ) transpiler.transform( stmt ) );
 				} );
 				javaIfStmt.setThenStmt( thenBlock );
 				body.addStatement( javaIfStmt );
@@ -84,7 +88,7 @@ public class BoxSwitchTransformer extends AbstractTransformer {
 		boxSwitch.getCases().forEach( c -> {
 			if ( c.getCondition() == null ) {
 				c.getBody().forEach( stmt -> {
-					body.addStatement( ( Statement ) JavaTranspiler.transform( stmt ) );
+					body.addStatement( ( Statement ) transpiler.transform( stmt ) );
 				} );
 			}
 		} );

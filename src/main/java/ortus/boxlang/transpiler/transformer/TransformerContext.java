@@ -19,5 +19,5 @@ public enum TransformerContext {
 
 	REGISTER,
 	DEREFERENCING,
-	INIT
+	SAFE, INIT
 }

@@ -34,12 +34,16 @@ public class BoxLocalDeclarationTransformer extends AbstractTransformer {
 
 	Logger logger = LoggerFactory.getLogger( BoxLocalDeclarationTransformer.class );
 
+	public BoxLocalDeclarationTransformer( JavaTranspiler transpiler ) {
+		super( transpiler );
+	}
+
 	@Override
 	public Node transform( BoxNode node, TransformerContext context ) throws IllegalStateException {
 		BoxLocalDeclaration	declaration	= ( BoxLocalDeclaration ) node;
 		BlockStmt			stmt		= new BlockStmt();
 		if ( declaration.getExpression() != null ) {
-			Expression expr = ( Expression ) JavaTranspiler.transform( declaration.getExpression(), TransformerContext.RIGHT );
+			Expression expr = ( Expression ) transpiler.transform( declaration.getExpression(), TransformerContext.RIGHT );
 			;
 			declaration.getIdentifiers().forEach( it -> {
 				BoxIdentifier		variable	= ( BoxIdentifier ) it;

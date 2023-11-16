@@ -17,6 +17,10 @@ public class BoxImportTransformer extends AbstractTransformer {
 
 	Logger logger = LoggerFactory.getLogger( BoxImportTransformer.class );
 
+	public BoxImportTransformer( JavaTranspiler transpiler ) {
+		super( transpiler );
+	}
+
 	/**
 	 * Transform an import statement
 	 *
@@ -30,9 +34,9 @@ public class BoxImportTransformer extends AbstractTransformer {
 	@Override
 	public Node transform( BoxNode node, TransformerContext context ) throws IllegalStateException {
 		BoxImport			boxImport	= ( BoxImport ) node;
-		Expression			namespace	= ( Expression ) JavaTranspiler.transform( boxImport.getExpression(), TransformerContext.RIGHT );
+		Expression			namespace	= ( Expression ) transpiler.transform( boxImport.getExpression(), TransformerContext.RIGHT );
 		String				alias		= boxImport.getAlias() != null
-		    ? " as " + JavaTranspiler.transform( boxImport.getAlias(), TransformerContext.RIGHT ).toString()
+		    ? " as " + transpiler.transform( boxImport.getAlias(), TransformerContext.RIGHT ).toString()
 		    : "";
 
 		Map<String, String>	values		= new HashMap<>() {

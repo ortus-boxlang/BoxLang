@@ -12,6 +12,7 @@ import com.github.javaparser.ast.Node;
 import ortus.boxlang.ast.BoxNode;
 import ortus.boxlang.ast.expression.BoxStringInterpolation;
 import ortus.boxlang.transpiler.JavaTranspiler;
+import ortus.boxlang.transpiler.Transpiler;
 import ortus.boxlang.transpiler.transformer.AbstractTransformer;
 import ortus.boxlang.transpiler.transformer.TransformerContext;
 
@@ -21,6 +22,10 @@ import ortus.boxlang.transpiler.transformer.TransformerContext;
 public class BoxStringInterpolationTransformer extends AbstractTransformer {
 
 	Logger logger = LoggerFactory.getLogger( BoxStringInterpolationTransformer.class );
+
+	public BoxStringInterpolationTransformer( Transpiler transpiler ) {
+		super( transpiler );
+	}
 
 	/**
 	 * Transform a String interpolation expression
@@ -37,7 +42,7 @@ public class BoxStringInterpolationTransformer extends AbstractTransformer {
 		BoxStringInterpolation	interpolation	= ( BoxStringInterpolation ) node;
 		List<Node>				operands		= interpolation.getValues()
 		    .stream()
-		    .map( it -> resolveScope( JavaTranspiler.transform( it, TransformerContext.RIGHT ), context ) )
+		    .map( it -> resolveScope( transpiler.transform( it, TransformerContext.RIGHT ), context ) )
 		    .toList();
 		// .collect( Collectors.joining( "+" ) );
 		String					expr			= operands.get( operands.size() - 1 ).toString();

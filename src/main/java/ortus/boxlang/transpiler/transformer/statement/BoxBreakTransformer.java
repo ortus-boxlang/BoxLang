@@ -17,10 +17,15 @@ package ortus.boxlang.transpiler.transformer.statement;
 import com.github.javaparser.ast.Node;
 import com.github.javaparser.ast.stmt.BreakStmt;
 import ortus.boxlang.ast.BoxNode;
+import ortus.boxlang.transpiler.JavaTranspiler;
 import ortus.boxlang.transpiler.transformer.AbstractTransformer;
 import ortus.boxlang.transpiler.transformer.TransformerContext;
 
 public class BoxBreakTransformer extends AbstractTransformer {
+
+	public BoxBreakTransformer( JavaTranspiler transpiler ) {
+		super( transpiler );
+	}
 
 	@Override
 	public Node transform( BoxNode node, TransformerContext context ) throws IllegalStateException {

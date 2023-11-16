@@ -22,6 +22,7 @@ import org.slf4j.LoggerFactory;
 import ortus.boxlang.ast.BoxNode;
 import ortus.boxlang.ast.expression.BoxDecimalLiteral;
 import ortus.boxlang.ast.expression.BoxIntegerLiteral;
+import ortus.boxlang.transpiler.JavaTranspiler;
 import ortus.boxlang.transpiler.transformer.AbstractTransformer;
 import ortus.boxlang.transpiler.transformer.TransformerContext;
 
@@ -31,6 +32,10 @@ import ortus.boxlang.transpiler.transformer.TransformerContext;
 public class BoxDecimalLiteralTransformer extends AbstractTransformer {
 
 	Logger logger = LoggerFactory.getLogger( BoxDecimalLiteralTransformer.class );
+
+	public BoxDecimalLiteralTransformer( JavaTranspiler transpiler ) {
+		super( transpiler );
+	}
 
 	/**
 	 * Transform BoxDecimalLiteral argument

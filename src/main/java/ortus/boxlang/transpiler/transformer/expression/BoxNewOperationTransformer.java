@@ -22,6 +22,10 @@ public class BoxNewOperationTransformer extends AbstractTransformer {
 
 	Logger logger = LoggerFactory.getLogger( BoxThrowTransformer.class );
 
+	public BoxNewOperationTransformer( JavaTranspiler transpiler ) {
+		super( transpiler );
+	}
+
 	/**
 	 * Transform a new expression
 	 *
@@ -35,17 +39,17 @@ public class BoxNewOperationTransformer extends AbstractTransformer {
 	@Override
 	public Node transform( BoxNode node, TransformerContext context ) throws IllegalStateException {
 		BoxNewOperation	boxNew	= ( BoxNewOperation ) node;
-		Expression		expr	= ( Expression ) JavaTranspiler.transform( boxNew.getExpression(), TransformerContext.RIGHT );
+		Expression		expr	= ( Expression ) transpiler.transform( boxNew.getExpression(), TransformerContext.RIGHT );
 
 		String			args	= boxNew.getArguments().stream()
-		    .map( it -> resolveScope( JavaTranspiler.transform( it ), context ).toString() )
+		    .map( it -> resolveScope( transpiler.transform( it ), context ).toString() )
 		    .collect( Collectors.joining( ", " ) );
 
 		String			fqn		= expr.toString();
 		if ( expr instanceof NameExpr ) {
 			fqn = fqn.startsWith( "\"" ) ? fqn : "\"" + fqn + "\"";
 		}
-		String				finalFqn	= fqn;
+		String				finalFqn	= fqn.replace( "java:", "" );
 		Map<String, String>	values		= new HashMap<>() {
 
 											{

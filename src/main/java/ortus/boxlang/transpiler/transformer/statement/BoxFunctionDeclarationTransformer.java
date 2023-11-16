@@ -139,6 +139,9 @@ public class BoxFunctionDeclarationTransformer extends AbstractTransformer {
 			}
 		}
  	""";
+	public BoxFunctionDeclarationTransformer(JavaTranspiler transpiler) {
+    	super(transpiler);
+    }
 	// @formatter:on
 	@Override
 	public Node transform( BoxNode node, TransformerContext context ) throws IllegalStateException {
@@ -184,9 +187,9 @@ public class BoxFunctionDeclarationTransformer extends AbstractTransformer {
 			    .getMethodsByName( "_invoke" ).get( 0 );
 
 			for ( BoxStatement statement : function.getBody() ) {
-				Node javaStmt = JavaTranspiler.transform( statement );
-				if (javaStmt instanceof BlockStmt stmt) {
-					stmt.getStatements().forEach( it -> invokeMethod.getBody().get().addStatement( it ));
+				Node javaStmt = transpiler.transform( statement );
+				if ( javaStmt instanceof BlockStmt stmt ) {
+					stmt.getStatements().forEach( it -> invokeMethod.getBody().get().addStatement( it ) );
 				} else {
 					invokeMethod.getBody().get().addStatement( ( Statement ) javaStmt );
 				}

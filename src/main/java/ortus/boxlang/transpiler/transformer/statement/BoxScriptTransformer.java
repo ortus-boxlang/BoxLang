@@ -136,7 +136,7 @@ public class BoxScriptTransformer extends AbstractTransformer {
 	 * @param transpiler parent transpiler
 	 */
 	public BoxScriptTransformer( JavaTranspiler transpiler ) {
-		this.transpiler = transpiler;
+		super( transpiler );
 	}
 
 	@Override

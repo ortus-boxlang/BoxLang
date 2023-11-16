@@ -10,12 +10,17 @@ import com.github.javaparser.ast.Node;
 
 import ortus.boxlang.ast.BoxNode;
 import ortus.boxlang.ast.expression.BoxScope;
+import ortus.boxlang.transpiler.JavaTranspiler;
 import ortus.boxlang.transpiler.transformer.AbstractTransformer;
 import ortus.boxlang.transpiler.transformer.TransformerContext;
 
 public class BoxScopeTransformer extends AbstractTransformer {
 
 	Logger logger = LoggerFactory.getLogger( BoxScopeTransformer.class );
+
+	public BoxScopeTransformer( JavaTranspiler transpiler ) {
+		super( transpiler );
+	}
 
 	@Override
 	public Node transform( BoxNode node, TransformerContext context ) throws IllegalStateException {

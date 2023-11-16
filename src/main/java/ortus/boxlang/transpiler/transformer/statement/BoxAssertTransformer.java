@@ -34,6 +34,10 @@ public class BoxAssertTransformer extends AbstractTransformer {
 
 	Logger logger = LoggerFactory.getLogger( BoxAssertTransformer.class );
 
+	public BoxAssertTransformer( JavaTranspiler transpiler ) {
+		super( transpiler );
+	}
+
 	/**
 	 * Transform an assert statement
 	 *
@@ -47,7 +51,7 @@ public class BoxAssertTransformer extends AbstractTransformer {
 	@Override
 	public Node transform( BoxNode node, TransformerContext context ) throws IllegalStateException {
 		BoxAssert			boxAssert	= ( BoxAssert ) node;
-		Expression			expr		= ( Expression ) JavaTranspiler.transform( boxAssert.getExpression(), TransformerContext.RIGHT );
+		Expression			expr		= ( Expression ) transpiler.transform( boxAssert.getExpression(), TransformerContext.RIGHT );
 		Map<String, String>	values		= new HashMap<>() {
 
 											{

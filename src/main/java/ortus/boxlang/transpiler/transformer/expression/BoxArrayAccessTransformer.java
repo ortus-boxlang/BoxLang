@@ -37,6 +37,10 @@ public class BoxArrayAccessTransformer extends AbstractTransformer {
 
 	Logger logger = LoggerFactory.getLogger( BoxArrayAccessTransformer.class );
 
+	public BoxArrayAccessTransformer( JavaTranspiler transpiler ) {
+		super( transpiler );
+	}
+
 	/**
 	 * Transform BoxArrayAccess argument
 	 *
@@ -56,8 +60,8 @@ public class BoxArrayAccessTransformer extends AbstractTransformer {
 		logger.info( side + node.getSourceText() );
 		/* Case variables['x'] */
 		if ( expr.getIndex() instanceof BoxStringLiteral ) {
-			Expression			scope		= ( Expression ) JavaTranspiler.transform( expr.getContext(), context );
-			StringLiteralExpr	variable	= ( StringLiteralExpr ) JavaTranspiler.transform( expr.getIndex() );
+			Expression			scope		= ( Expression ) transpiler.transform( expr.getContext(), context );
+			StringLiteralExpr	variable	= ( StringLiteralExpr ) transpiler.transform( expr.getIndex() );
 
 			Map<String, String>	values		= new HashMap<>() {
 

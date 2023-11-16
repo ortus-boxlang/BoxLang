@@ -20,6 +20,10 @@ public class BoxArgumentTransformer extends AbstractTransformer {
 
 	Logger logger = LoggerFactory.getLogger( BoxArrayAccessTransformer.class );
 
+	public BoxArgumentTransformer( JavaTranspiler transpiler ) {
+		super( transpiler );
+	}
+
 	/**
 	 * Transform a function/method argument
 	 *
@@ -36,7 +40,7 @@ public class BoxArgumentTransformer extends AbstractTransformer {
 	public Node transform( BoxNode node, TransformerContext context ) throws IllegalStateException {
 		BoxArgument			arg			= ( BoxArgument ) node;
 		String				side		= context == TransformerContext.NONE ? "" : "(" + context.toString() + ") ";
-		Expression			expr		= ( Expression ) JavaTranspiler.transform( arg.getValue() );
+		Expression			expr		= ( Expression ) transpiler.transform( arg.getValue() );
 		// TODO handle named parameters
 		Map<String, String>	values		= new HashMap<>() {
 

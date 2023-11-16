@@ -18,10 +18,15 @@ import com.github.javaparser.ast.Node;
 import com.github.javaparser.ast.stmt.BreakStmt;
 import com.github.javaparser.ast.stmt.ContinueStmt;
 import ortus.boxlang.ast.BoxNode;
+import ortus.boxlang.transpiler.JavaTranspiler;
 import ortus.boxlang.transpiler.transformer.AbstractTransformer;
 import ortus.boxlang.transpiler.transformer.TransformerContext;
 
 public class BoxContinueTransformer extends AbstractTransformer {
+
+	public BoxContinueTransformer( JavaTranspiler transpiler ) {
+		super( transpiler );
+	}
 
 	@Override
 	public Node transform( BoxNode node, TransformerContext context ) throws IllegalStateException {

@@ -36,6 +36,10 @@ public class BoxForInTransformer extends AbstractTransformer {
 
 	Logger logger = LoggerFactory.getLogger( BoxForIndexTransformer.class );
 
+	public BoxForInTransformer( JavaTranspiler transpiler ) {
+		super( transpiler );
+	}
+
 	/**
 	 * Transform a collection for statement
 	 *
@@ -49,8 +53,8 @@ public class BoxForInTransformer extends AbstractTransformer {
 	@Override
 	public Node transform( BoxNode node, TransformerContext context ) throws IllegalStateException {
 		BoxForIn			boxFor		= ( BoxForIn ) node;
-		Node				variable	= JavaTranspiler.transform( boxFor.getVariable() );
-		Node				collection	= JavaTranspiler.transform( boxFor.getExpression() );
+		Node				variable	= transpiler.transform( boxFor.getVariable() );
+		Node				collection	= transpiler.transform( boxFor.getExpression() );
 
 		BlockStmt			stmt		= new BlockStmt();
 		Map<String, String>	values		= new HashMap<>() {
@@ -72,7 +76,7 @@ public class BoxForInTransformer extends AbstractTransformer {
 		WhileStmt			whileStmt	= ( WhileStmt ) parseStatement( template2, values );
 		stmt.addStatement( ( Statement ) parseStatement( template1, values ) );
 		boxFor.getBody().forEach( it -> {
-			whileStmt.getBody().asBlockStmt().addStatement( ( Statement ) JavaTranspiler.transform( it ) );
+			whileStmt.getBody().asBlockStmt().addStatement( ( Statement ) transpiler.transform( it ) );
 		} );
 		stmt.addStatement( whileStmt );
 		logger.info( node.getSourceText() + " -> " + stmt );
