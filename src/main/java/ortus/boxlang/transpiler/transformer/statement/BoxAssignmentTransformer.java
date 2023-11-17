@@ -109,7 +109,7 @@ public class BoxAssignmentTransformer extends AbstractTransformer {
 			case SlashEqual -> "Divide.invoke(${expr},${key},${right})";
 			case ModEqual -> "Modulus.invoke(${expr},${key},${right})";
 			case ConcatEqual -> "Concat.invoke(${expr},${key},${right})";
-			default -> throw new ApplicationException( "Unimplemented assignment operator method call", operator.toString());
+			case Equal -> "${expr}.assign(${key}, ${right} )";
 		};
 	}
 
