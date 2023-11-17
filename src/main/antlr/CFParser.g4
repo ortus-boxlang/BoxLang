@@ -66,12 +66,12 @@ functionOptions
     :   (parameters+=identifier (EQUAL values+=literalExpression)?)+
     ;
 functionSignature
-    :   accessModifier? STATIC?  returnType?
+    :   (preannotation)* accessModifier? STATIC?  returnType?
         FUNCTION identifier LPAREN paramList? RPAREN
     ;
 function
     :   functionSignature
-        functionOptions?
+		postannotation
         statementBlock
     ;
 
@@ -80,9 +80,17 @@ paramList
     ;
 
 param
-  : (REQUIRED)? (type)? identifier ( EQUAL expression )?
+  : (REQUIRED)? (type)? identifier ( EQUAL expression )? postannotation*
   | (REQUIRED)? (type)? identifier ( EQUAL statementBlock )?
   ;
+
+
+preannotation
+  : AT fqn literalExpression?
+  ;
+postannotation
+    :   (parameters+=identifier (EQUAL values+=literalExpression)?)+
+    ;
 
 returnType
     :   type
@@ -204,9 +212,12 @@ assignmentRight
     ;
 
 functionInvokation
-    :   identifier LPAREN argumentList? RPAREN
+    :   identifier LPAREN argumentList? RPAREN  (invokable)*
     ;
-
+invokable
+	:	LPAREN RPAREN
+	|	ARROW LPAREN RPAREN
+	;
 methodInvokation
     :   objectExpression DOT functionInvokation
     |   accessExpression DOT functionInvokation
@@ -280,7 +291,7 @@ while
     ;
 
 assert
-	:	ASSERT expression eos
+	:	ASSERT expression
 	;
 break
     :   BREAK eos
@@ -320,6 +331,7 @@ identifier
     ;
 reservedKeyword
     :   scope
+    |	ARRAY
     |	CONTAINS
     |   DEFAULT
     |   EXTENDS
@@ -343,7 +355,7 @@ reservedKeyword
     | 	CONTAIN
     | 	JAVA
     | 	MESSAGE
-    | 	ASSERT
+//    | 	ASSERT
     ;
 scope
     :   APPLICATION
@@ -410,13 +422,15 @@ arrayAccessIndex
 
 structExpression
     :   LBRACE structMembers? RBRACE
+    |   LBRACKET structMembers RBRACKET
+    |   LBRACKET COLON RBRACKET
     ;
 structMembers
     :   structMember (COMMA structMember)* COMMA?
     ;
 structMember
-    :   identifier  (COLON | EQUAL) expression
-    |   stringLiteral  (COLON | EQUAL) expression
+    :   identifier  (COLON ) expression
+    |   stringLiteral  (COLON ) expression
     ;
 
 unary
@@ -440,6 +454,7 @@ assigmentExpression
 	:	accessExpression EQUAL expression
 	;
 
+
 expression
     :   unary
 	|	pre=PLUSPLUS expression
@@ -454,7 +469,8 @@ expression
     |   objectExpression
     |	identifier
     |   ICHAR expression ICHAR
-    |   LPAREN expression RPAREN
+    |   LPAREN expression RPAREN (invokable)*
+    |   structExpression
     |   accessExpression
     |   methodInvokation
     |   anonymousFunction
@@ -478,13 +494,15 @@ literalExpression
     |   floatLiteral
     |   stringLiteral
     |   booleanLiteral
+    |	structExpression
+    |	arrayExpression
     ;
 
 objectExpression
     :   anonymousFunction
+	|   structExpression
     |   arrayExpression
     |   arrayAccess
-//    |   structExpression
     |   functionInvokation
     |   identifier
     |   new

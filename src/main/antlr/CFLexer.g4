@@ -90,6 +90,7 @@ XOR				:	'XOR';
 AMPERSAND       :   '&';
 AND             :   '&&' | 'AND';
 ARROW           :   '->';
+AT           	:   '@';
 BACKSLASH		:	'\\';
 COMMA           :   ',';
 COLON           :   ':';
