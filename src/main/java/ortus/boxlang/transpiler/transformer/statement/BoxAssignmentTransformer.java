@@ -70,10 +70,10 @@ public class BoxAssignmentTransformer extends AbstractTransformer {
 				template = getMethodCallTemplate(assigment.getOp());
 
 			} else if ( left instanceof NameExpr name ) {
-				values.put("left", left.toString());
+				values.put("key", left.toString());
 				values.put("right", right.toString());
 				if (right instanceof NameExpr rname) {
-					String tmp = "context.scopeFindNearby( Key.of( \"" + rname + "\" ), null).value()";
+					String tmp = "context.scopeFindNearby( Key.of( \"" + rname + "\" ), null ).value()";
 					values.put("right", tmp);
 				}
 
@@ -89,26 +89,26 @@ public class BoxAssignmentTransformer extends AbstractTransformer {
 		return blockStmt;
 	}
 
-	private String getNameExpressionTemplate(BoxAssignmentOperator operator ){
+	private String getNameExpressionTemplate( BoxAssignmentOperator operator ){
 		return switch( operator ){
-			case PlusEqual -> "Plus.invoke(context.scopeFindNearby(Key.of( \"${left}\" ),null).scope(),Key.of( \"${left}\"),${right})";
-			case MinusEqual -> "Minus.invoke(context.scopeFindNearby(Key.of( \"${left}\" ),null).scope(),Key.of( \"${left}\"),${right})";
-			case StarEqual -> "Multiply.invoke(context.scopeFindNearby(Key.of( \"${left}\" ),null).scope(),Key.of( \"${left}\"),${right})";
-			case SlashEqual -> "Divide.invoke(context.scopeFindNearby(Key.of( \"${left}\" ),null).scope(),Key.of( \"${left}\"),${right})";
-			case ConcatEqual -> "Concat.invoke(context.scopeFindNearby(Key.of( \"${left}\" ),null).scope(),Key.of( \"${left}\"),${right})";
+			case PlusEqual -> "Plus.invoke( context.scopeFindNearby( Key.of( \"${key}\" ),null).scope(),Key.of( \"${key}\"), ${right} )";
+			case MinusEqual -> "Minus.invoke( context.scopeFindNearby( Key.of( \"${key}\" ),null).scope(),Key.of( \"${key}\"), ${right} )";
+			case StarEqual -> "Multiply.invoke( context.scopeFindNearby( Key.of( \"${key}\" ),null).scope(),Key.of( \"${key}\"), ${right} )";
+			case SlashEqual -> "Divide.invoke( context.scopeFindNearby( Key.of( \"${key}\" ),null).scope(),Key.of( \"${key}\"), ${right} )";
+			case ConcatEqual -> "Concat.invoke( context.scopeFindNearby( Key.of( \"${key}\" ),null).scope(),Key.of( \"${key}\"), ${right} )";
 			default -> """
-						  context.scopeFindNearby(Key.of( "${left}" ),context.getDefaultAssignmentScope()).scope().assign( Key.of( "${left}" ), ${right} )
+						  context.scopeFindNearby( Key.of( "${key}" ), context.getDefaultAssignmentScope() ).scope().assign( Key.of( "${key}" ), ${right} )
 						  """;
 		};
 	}
 	private String getMethodCallTemplate(BoxAssignmentOperator operator ){
 		return switch( operator ) {
-			case PlusEqual -> "Plus.invoke(${expr},${key},${right})";
-			case MinusEqual -> "Minus.invoke(${expr},${key},${right})";
-			case StarEqual -> "Multiply.invoke(${expr},${key},${right})";
-			case SlashEqual -> "Divide.invoke(${expr},${key},${right})";
-			case ModEqual -> "Modulus.invoke(${expr},${key},${right})";
-			case ConcatEqual -> "Concat.invoke(${expr},${key},${right})";
+			case PlusEqual -> "Plus.invoke( ${expr}, ${key}, ${right} )";
+			case MinusEqual -> "Minus.invoke( ${expr}, ${key}, ${right} )";
+			case StarEqual -> "Multiply.invoke( ${expr}, ${key}, ${right} )";
+			case SlashEqual -> "Divide.invoke( ${expr}, ${key}, ${right} )";
+			case ModEqual -> "Modulus.invoke( ${expr}, ${key}, ${right} )";
+			case ConcatEqual -> "Concat.invoke( ${expr}, ${key}, ${right} )";
 			case Equal -> "${expr}.assign(${key}, ${right} )";
 		};
 	}
