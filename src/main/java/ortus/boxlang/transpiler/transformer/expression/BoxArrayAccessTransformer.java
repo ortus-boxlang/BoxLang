@@ -85,7 +85,7 @@ public class BoxArrayAccessTransformer extends AbstractTransformer {
 			} else {
 				template = """
 				           Referencer.get(
-				             context.scopeFindNearby( Key.of( "${scope}" ), null ).value(),
+				             context.scopeFindNearby( Key.of( "${scope}" ), context.getDefaultAssignmentScope() ).value(),
 				             Key.of( ${variable} ),
 				             false
 				           )

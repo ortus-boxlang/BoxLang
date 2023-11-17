@@ -709,12 +709,12 @@ public class BoxCFParser extends BoxAbstractParser {
 	 * @see BoxAssignment
 	 */
 	private BoxStatement toAst( File file, CFParser.AssignmentContext node ) {
-		List<BoxExpr>	alc		= new ArrayList<>();
-		BoxExpr			left	= toAst( file, node.assignmentLeft() );
-		alc.add( left );
-		leftBoxExpression( file, node.assignmentLeft(), alc );
+		// List<BoxExpr> alc = new ArrayList<>();
+		BoxExpr					left	= toAst( file, node.assignmentLeft() );
+		// alc.add( left );
+		// leftBoxExpression( file, node.assignmentLeft(), alc );
 		BoxExpr					right	= toAst( file, node.assignmentRight() );
-		BoxAssignmentOperator op		= BoxAssignmentOperator.Equal;
+		BoxAssignmentOperator	op		= BoxAssignmentOperator.Equal;
 		if ( node.PLUSEQUAL() != null ) {
 			op = BoxAssignmentOperator.PlusEqual;
 		} else if ( node.MINUSEQUAL() != null ) {
@@ -729,7 +729,7 @@ public class BoxCFParser extends BoxAbstractParser {
 			op = BoxAssignmentOperator.ConcatEqual;
 
 		}
-		return new BoxAssignment( alc, op, right, getPosition( node ), getSourceText( node ) );
+		return new BoxAssignment( left, op, right, getPosition( node ), getSourceText( node ) );
 	}
 
 	/**

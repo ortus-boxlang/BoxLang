@@ -108,12 +108,21 @@ public class CastAsTest {
 		    )
 		).isTrue();
 
-
-		assertThrows( ApplicationException.class, () -> { CastAs.invoke( "xy", "int" ); } );
-		assertThrows( ApplicationException.class, () -> { CastAs.invoke( "1.2.3.4", "int" ); } );
-		assertThrows( ApplicationException.class, () -> { CastAs.invoke( "false", "int" ); } );
-		assertThrows( ApplicationException.class, () -> { CastAs.invoke( "-", "int" ); } );
-		assertThrows( ApplicationException.class, () -> { CastAs.invoke( "1-1", "int" ); } );
+		assertThrows( ApplicationException.class, () -> {
+			CastAs.invoke( "xy", "int" );
+		} );
+		assertThrows( ApplicationException.class, () -> {
+			CastAs.invoke( "1.2.3.4", "int" );
+		} );
+		assertThrows( ApplicationException.class, () -> {
+			CastAs.invoke( "false", "int" );
+		} );
+		assertThrows( ApplicationException.class, () -> {
+			CastAs.invoke( "-", "int" );
+		} );
+		assertThrows( ApplicationException.class, () -> {
+			CastAs.invoke( "1-1", "int" );
+		} );
 	}
 
 	@DisplayName( "It can cast to long" )

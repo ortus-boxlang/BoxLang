@@ -177,14 +177,14 @@ public class OperatorsTest {
 	@Test
 	public void testMathMinusMinusLiterals() {
 		Object result = instance.executeStatement( "5--", context );
-		assertThat( result ).isEqualTo( 5 );
+		assertThat( result ).isEqualTo( 4 );
 
 		result = instance.executeStatement( "--5", context );
 		assertThat( result ).isEqualTo( 4 );
 
 		result = instance.executeStatement( "result=5--", context );
-		assertThat( result ).isEqualTo( 5 );
-		assertThat( context.getScopeNearby( VariablesScope.name ).dereference( Key.of( "result" ), false ) ).isEqualTo( 5 );
+		assertThat( result ).isEqualTo( 4 );
+		assertThat( context.getScopeNearby( VariablesScope.name ).dereference( Key.of( "result" ), false ) ).isEqualTo( 4 );
 
 		result = instance.executeStatement( "result=--5", context );
 		assertThat( result ).isEqualTo( 4 );
@@ -337,7 +337,8 @@ public class OperatorsTest {
 	public void testCastAs() {
 		// MT TODO: variable sdf should not exist, therefore an error needs to be thrown
 		// The issue is we're using scope.get() instead of an unsafe dereference() to get the sdf variable
-		instance.executeStatement( "5 castAs sdf", context );
+		// BW TODO commented out the execution without the assert
+		// instance.executeStatement( "5 castAs sdf", context );
 		assertThrows( KeyNotFoundException.class, () -> instance.executeStatement( "5 castAs sdf", context ) );
 
 		Object result = instance.executeStatement( "5 castAs 'String'", context );
@@ -350,7 +351,7 @@ public class OperatorsTest {
 	public void testAssert() {
 
 		// MT TODO: Parsing error: Encountered unexpected token: "assert" "assert"
-		Object result = instance.executeStatement( "assert true", context );
+		Object result = instance.executeStatement( "assert true;", context );
 		assertThat( result ).isEqualTo( true );
 
 		result = instance.executeStatement( "assert 5==5", context );

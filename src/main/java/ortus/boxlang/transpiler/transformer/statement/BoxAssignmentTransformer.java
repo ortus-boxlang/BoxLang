@@ -47,62 +47,58 @@ public class BoxAssignmentTransformer extends AbstractTransformer {
 	@Override
 	public Node transform( BoxNode node, TransformerContext context ) throws IllegalStateException {
 		logger.info( node.getSourceText() );
-		BoxAssignment	assigment	= ( BoxAssignment ) node;
-		Expression		right		= ( Expression ) transpiler.transform( assigment.getRight(), TransformerContext.RIGHT );
-		BlockStmt		blockStmt	= new BlockStmt();
-		for ( BoxExpr expr : assigment.getLeft() ) {
+		BoxAssignment		assigment	= ( BoxAssignment ) node;
+		Expression			left		= ( Expression ) transpiler.transform( assigment.getLeft(), TransformerContext.RIGHT );
+		Expression			right		= ( Expression ) transpiler.transform( assigment.getRight(), TransformerContext.RIGHT );
 
-			Expression			left		= ( Expression ) transpiler.transform( expr, TransformerContext.LEFT );
-			Map<String, String>	values		= new HashMap<>();
-			ExpressionStmt		javaExpr;
-			String template;
+		Map<String, String>	values		= new HashMap<>();
+		ExpressionStmt		javaExpr;
+		String				template;
 
-			if ( left instanceof MethodCallExpr method ) {
-				if ( "assign".equalsIgnoreCase( method.getName().asString() ) ) {
-					method.getArguments().add( right );
-				}
-				if ( "setDeep".equalsIgnoreCase( method.getName().asString() ) ) {
-					method.getArguments().add( 1, right );
-				}
-				values.put("expr", method.getScope().orElseThrow().toString());
-				values.put("key", method.getArguments().get(0).toString());
-				values.put("right", right.toString());
-				template = getMethodCallTemplate(assigment.getOp());
-
-			} else if ( left instanceof NameExpr name ) {
-				values.put("key", left.toString());
-				values.put("right", right.toString());
-				if (right instanceof NameExpr rname) {
-					String tmp = "context.scopeFindNearby( Key.of( \"" + rname + "\" ), null ).value()";
-					values.put("right", tmp);
-				}
-
-				template = getNameExpressionTemplate(assigment.getOp());
-			} else {
-				throw new ApplicationException( "Unimplemented assignment operator type assignment operator type", expr.toString() );
+		if ( left instanceof MethodCallExpr method ) {
+			if ( "assign".equalsIgnoreCase( method.getName().asString() ) ) {
+				method.getArguments().add( right );
 			}
-			javaExpr = new ExpressionStmt((Expression) parseExpression(template, values));
-			blockStmt.addStatement( javaExpr );
-			addIndex( javaExpr, node );
-		}
+			if ( "setDeep".equalsIgnoreCase( method.getName().asString() ) ) {
+				method.getArguments().add( 1, right );
+			}
+			values.put( "expr", method.getScope().orElseThrow().toString() );
+			values.put( "key", method.getArguments().get( 0 ).toString() );
+			values.put( "right", right.toString() );
+			template = getMethodCallTemplate( assigment.getOp() );
 
-		return blockStmt;
+		} else if ( left instanceof NameExpr name ) {
+			values.put( "key", left.toString() );
+			values.put( "right", right.toString() );
+			if ( right instanceof NameExpr rname ) {
+				String tmp = "context.scopeFindNearby( Key.of( \"" + rname + "\" ), null ).value()";
+				values.put( "right", tmp );
+			}
+
+			template = getNameExpressionTemplate( assigment.getOp() );
+		} else {
+			throw new ApplicationException( "Unimplemented assignment operator type assignment operator type", left.toString() );
+		}
+		javaExpr = new ExpressionStmt( ( Expression ) parseExpression( template, values ) );
+
+		return javaExpr;
 	}
 
-	private String getNameExpressionTemplate( BoxAssignmentOperator operator ){
-		return switch( operator ){
+	private String getNameExpressionTemplate( BoxAssignmentOperator operator ) {
+		return switch ( operator ) {
 			case PlusEqual -> "Plus.invoke( context.scopeFindNearby( Key.of( \"${key}\" ),null).scope(),Key.of( \"${key}\"), ${right} )";
 			case MinusEqual -> "Minus.invoke( context.scopeFindNearby( Key.of( \"${key}\" ),null).scope(),Key.of( \"${key}\"), ${right} )";
 			case StarEqual -> "Multiply.invoke( context.scopeFindNearby( Key.of( \"${key}\" ),null).scope(),Key.of( \"${key}\"), ${right} )";
 			case SlashEqual -> "Divide.invoke( context.scopeFindNearby( Key.of( \"${key}\" ),null).scope(),Key.of( \"${key}\"), ${right} )";
 			case ConcatEqual -> "Concat.invoke( context.scopeFindNearby( Key.of( \"${key}\" ),null).scope(),Key.of( \"${key}\"), ${right} )";
 			default -> """
-						  context.scopeFindNearby( Key.of( "${key}" ), context.getDefaultAssignmentScope() ).scope().assign( Key.of( "${key}" ), ${right} )
-						  """;
+			           context.scopeFindNearby( Key.of( "${key}" ), context.getDefaultAssignmentScope() ).scope().assign( Key.of( "${key}" ), ${right} )
+			           """;
 		};
 	}
-	private String getMethodCallTemplate(BoxAssignmentOperator operator ){
-		return switch( operator ) {
+
+	private String getMethodCallTemplate( BoxAssignmentOperator operator ) {
+		return switch ( operator ) {
 			case PlusEqual -> "Plus.invoke( ${expr}, ${key}, ${right} )";
 			case MinusEqual -> "Minus.invoke( ${expr}, ${key}, ${right} )";
 			case StarEqual -> "Multiply.invoke( ${expr}, ${key}, ${right} )";

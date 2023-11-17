@@ -135,7 +135,7 @@ public class Main {
 
 						Transpiler transpiler = Transpiler.getTranspiler( null /* Config ? */ );
 						transpiler.setProperty( "baseclass", "BoxScript" );
-						transpiler.setProperty( "returnType", "Object" );
+						transpiler.setProperty( "returnType", "void" );
 						TranspiledCode code = transpiler.transpile( result.getRoot() );
 
 						fqn = transpiler.compileJava( code.getEntryPoint(), output, List.of( classpath ) );

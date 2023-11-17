@@ -122,6 +122,7 @@ public class JavaTranspiler extends Transpiler {
 		registry.put( BoxImport.class, new BoxImportTransformer( this ) );
 		registry.put( BoxArrayLiteral.class, new BoxArrayLiteralTransformer( this ) );
 		registry.put( BoxStructLiteral.class, new BoxStructLiteralTransformer( this ) );
+		registry.put( BoxAssignmentExpression.class, new BoxAssignmentExpressionTransformer( this ) );
 	}
 
 	/**
@@ -150,10 +151,6 @@ public class JavaTranspiler extends Transpiler {
 	 * @see TransformerContext
 	 */
 	public Node transform( BoxNode node, TransformerContext context ) throws IllegalStateException {
-		// Workaround for regressin where static calls to this class to not initialize the registry
-		if ( registry.size() == 0 ) {
-			new JavaTranspiler();
-		}
 		Transformer transformer = registry.get( node.getClass() );
 		if ( transformer != null ) {
 			Node javaNode = transformer.transform( node, context );
@@ -388,9 +385,12 @@ public class JavaTranspiler extends Transpiler {
 		}
 
 		if ( ! ( invokeMethod.getType() instanceof com.github.javaparser.ast.type.VoidType ) ) {
-			Statement last = invokeMethod.getBody().get().getStatements().getLast().get();
+			int			lastIndex	= invokeMethod.getBody().get().getStatements().size() - 1;
+			Statement	last		= invokeMethod.getBody().get().getStatements().get( lastIndex );
 			if ( last instanceof ExpressionStmt stmt ) {
-				invokeMethod.getBody().get().getStatements().replace( last, new ReturnStmt( stmt.getExpression() ) );
+				// invokeMethod.getBody().get().getStatements().indexOf(last)
+				invokeMethod.getBody().get().getStatements().remove( lastIndex );
+				invokeMethod.getBody().get().getStatements().add( new ReturnStmt( stmt.getExpression() ) );
 			} else {
 				invokeMethod.getBody().orElseThrow().addStatement( new ReturnStmt( new NullLiteralExpr() ) );
 			}

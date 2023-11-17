@@ -98,7 +98,8 @@ public abstract class Transpiler implements ITranspiler {
 			IBoxContext		context					= new ScriptingBoxContext( instance.getRuntimeContext() );
 			IScope			variables				= context.getScopeNearby( VariablesScope.name );
 
-			scriptRunnable.invoke( context );
+			Object			result					= scriptRunnable.invoke( context );
+			System.out.println( result );
 
 		} catch ( Throwable e ) {
 			throw e;
