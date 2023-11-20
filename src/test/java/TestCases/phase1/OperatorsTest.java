@@ -31,6 +31,7 @@ import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.ScriptingBoxContext;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
+import ortus.boxlang.runtime.types.exceptions.ApplicationException;
 import ortus.boxlang.runtime.types.exceptions.KeyNotFoundException;
 
 public class OperatorsTest {
@@ -446,14 +447,14 @@ public class OperatorsTest {
 	@Test
 	public void testAssert() {
 
-		// MT TODO: Parsing error: Encountered unexpected token: "assert" "assert"
-		Object result = instance.executeStatement( "assert true;", context );
-		assertThat( result ).isEqualTo( true );
+		instance.executeStatement( "assert true", context );
+		instance.executeStatement( "assert true;", context );
 
-		result = instance.executeStatement( "assert 5==5", context );
-		assertThat( result ).isEqualTo( true );
+		instance.executeStatement( "assert 5==5", context );
+		instance.executeStatement( "assert 5==5;", context );
 
-		assertThrows( Throwable.class, () -> instance.executeStatement( "assert 5==6", context ) );
+		assertThrows( AssertionError.class, () -> instance.executeStatement( "assert 5==6", context ) );
+		assertThrows( AssertionError.class, () -> instance.executeStatement( "assert false", context ) );
 
 	}
 
