@@ -151,9 +151,9 @@ public class OperatorsTest {
 
 	}
 
-	@DisplayName( "math plus plus compound" )
+	@DisplayName( "math plus plus scoped" )
 	@Test
-	public void testMathPlusPlusCompound() {
+	public void testMathPlusPlusScoped() {
 		instance.executeSource(
 		    """
 		    tmp = 5;
@@ -167,6 +167,28 @@ public class OperatorsTest {
 		    """
 		    tmp = 5;
 		    result = ++variables.tmp;
+		    """,
+		    context );
+		assertThat( context.getScopeNearby( VariablesScope.name ).dereference( Key.of( "result" ), false ) ).isEqualTo( 6 );
+		assertThat( context.getScopeNearby( VariablesScope.name ).dereference( Key.of( "tmp" ), false ) ).isEqualTo( 6 );
+	}
+
+	@DisplayName( "math plus plus unscoped" )
+	@Test
+	public void testMathPlusPlusUnScoped() {
+		instance.executeSource(
+		    """
+		    tmp = 5;
+		    result = tmp++;
+		    """,
+		    context );
+		assertThat( context.getScopeNearby( VariablesScope.name ).dereference( Key.of( "result" ), false ) ).isEqualTo( 5 );
+		assertThat( context.getScopeNearby( VariablesScope.name ).dereference( Key.of( "tmp" ), false ) ).isEqualTo( 6 );
+
+		instance.executeSource(
+		    """
+		    tmp = 5;
+		    result = ++tmp;
 		    """,
 		    context );
 		assertThat( context.getScopeNearby( VariablesScope.name ).dereference( Key.of( "result" ), false ) ).isEqualTo( 6 );
@@ -192,9 +214,9 @@ public class OperatorsTest {
 
 	}
 
-	@DisplayName( "math minus minus compound" )
+	@DisplayName( "math minus minus scoped" )
 	@Test
-	public void testMathMinusMinusCompound() {
+	public void testMathMinusMinusScoped() {
 		instance.executeSource(
 		    """
 		    tmp = 5;
@@ -212,6 +234,80 @@ public class OperatorsTest {
 		    context );
 		assertThat( context.getScopeNearby( VariablesScope.name ).dereference( Key.of( "result" ), false ) ).isEqualTo( 4 );
 		assertThat( context.getScopeNearby( VariablesScope.name ).dereference( Key.of( "tmp" ), false ) ).isEqualTo( 4 );
+	}
+
+	@DisplayName( "math minus minus unscoped" )
+	@Test
+	public void testMathMinusMinusUnScoped() {
+		instance.executeSource(
+		    """
+		    tmp = 5;
+		    result = tmp--;
+		    """,
+		    context );
+		assertThat( context.getScopeNearby( VariablesScope.name ).dereference( Key.of( "result" ), false ) ).isEqualTo( 5 );
+		assertThat( context.getScopeNearby( VariablesScope.name ).dereference( Key.of( "tmp" ), false ) ).isEqualTo( 4 );
+
+		instance.executeSource(
+		    """
+		    tmp = 5;
+		    result = --tmp;
+		    """,
+		    context );
+		assertThat( context.getScopeNearby( VariablesScope.name ).dereference( Key.of( "result" ), false ) ).isEqualTo( 4 );
+		assertThat( context.getScopeNearby( VariablesScope.name ).dereference( Key.of( "tmp" ), false ) ).isEqualTo( 4 );
+	}
+
+	@DisplayName( "compound operators" )
+	@Test
+	public void compountOperators() {
+		instance.executeSource(
+		    """
+		    result = 5;
+		    result += 5;
+		    """,
+		    context );
+		assertThat( context.getScopeNearby( VariablesScope.name ).dereference( Key.of( "result" ), false ) ).isEqualTo( 10 );
+
+		instance.executeSource(
+		    """
+		    result = 5;
+		    result -= 4;
+		    """,
+		    context );
+		assertThat( context.getScopeNearby( VariablesScope.name ).dereference( Key.of( "result" ), false ) ).isEqualTo( 1 );
+
+		instance.executeSource(
+		    """
+		    result = 5;
+		    result *= 5;
+		    """,
+		    context );
+		assertThat( context.getScopeNearby( VariablesScope.name ).dereference( Key.of( "result" ), false ) ).isEqualTo( 25 );
+
+		instance.executeSource(
+		    """
+		    result = 20;
+		    result /= 5;
+		    """,
+		    context );
+		assertThat( context.getScopeNearby( VariablesScope.name ).dereference( Key.of( "result" ), false ) ).isEqualTo( 4 );
+
+		instance.executeSource(
+		    """
+		    result = 5;
+		    result %= 4;
+		    """,
+		    context );
+		assertThat( context.getScopeNearby( VariablesScope.name ).dereference( Key.of( "result" ), false ) ).isEqualTo( 1 );
+
+		instance.executeSource(
+		    """
+		    result = "brad";
+		    result &= "wood";
+		    """,
+		    context );
+		assertThat( context.getScopeNearby( VariablesScope.name ).dereference( Key.of( "result" ), false ) ).isEqualTo( "bradwood" );
 	}
 
 	@DisplayName( "logical and" )
