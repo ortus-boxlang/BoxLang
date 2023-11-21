@@ -67,6 +67,7 @@ public class BoxBinaryOperationTransformer extends AbstractTransformer {
 											{
 												put( "left", left.toString() );
 												put( "right", right.toString() );
+												put( "contextName", transpiler.peekContextName() );
 
 											}
 										};

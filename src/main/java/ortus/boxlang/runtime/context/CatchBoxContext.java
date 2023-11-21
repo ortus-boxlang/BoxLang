@@ -25,6 +25,7 @@ import ortus.boxlang.runtime.scopes.ScopeWrapper;
 import ortus.boxlang.runtime.scopes.VariablesScope;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.ApplicationException;
+import ortus.boxlang.runtime.types.exceptions.ExceptionUtil;
 import ortus.boxlang.runtime.types.exceptions.KeyNotFoundException;
 import ortus.boxlang.runtime.types.exceptions.ScopeNotFoundException;
 
@@ -36,7 +37,8 @@ public class CatchBoxContext extends BaseBoxContext {
 	/**
 	 * The variables scope
 	 */
-	private IScope variablesScope;
+	private IScope		variablesScope;
+	private Throwable	exception;
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -56,7 +58,8 @@ public class CatchBoxContext extends BaseBoxContext {
 		if ( parent == null ) {
 			throw new ApplicationException( "Parent context cannot be null for CatchBoxContext" );
 		}
-		this.variablesScope = new ScopeWrapper(
+		this.exception		= exception;
+		this.variablesScope	= new ScopeWrapper(
 		    parent.getScopeNearby( VariablesScope.name ),
 		    Map.of( exceptionKey, exception )
 		);
@@ -178,6 +181,13 @@ public class CatchBoxContext extends BaseBoxContext {
 	public IScope getDefaultAssignmentScope() {
 		// parent is never null
 		return getParent().getDefaultAssignmentScope();
+	}
+
+	/**
+	 * rethrows the closest exception
+	 */
+	public void rethrow() {
+		ExceptionUtil.throwException( exception );
 	}
 
 }

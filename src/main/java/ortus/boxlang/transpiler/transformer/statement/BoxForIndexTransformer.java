@@ -65,6 +65,7 @@ public class BoxForIndexTransformer extends AbstractTransformer {
 
 											{
 												put( "condition", condition.toString() );
+												put( "contextName", transpiler.peekContextName() );
 											}
 										};
 

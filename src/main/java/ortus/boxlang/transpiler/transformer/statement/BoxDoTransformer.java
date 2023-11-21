@@ -39,6 +39,7 @@ public class BoxDoTransformer extends AbstractTransformer {
 
 										{
 											put( "condition", condition.toString() );
+											put( "contextName", transpiler.peekContextName() );
 										}
 									};
 		DoStmt				javaDo	= ( DoStmt ) parseStatement( template, values );

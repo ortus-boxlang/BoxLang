@@ -52,6 +52,7 @@ public class BoxIfElseTransformer extends AbstractTransformer {
 
 											{
 												put( "condition", condition.toString() );
+												put( "contextName", transpiler.peekContextName() );
 											}
 										};
 

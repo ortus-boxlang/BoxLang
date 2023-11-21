@@ -49,9 +49,9 @@ public class DoubleCasterTest {
 		assertThat( DoubleCaster.cast( "4.2" ) ).isEqualTo( 4.2 );
 		assertThat( DoubleCaster.cast( "42." ) ).isEqualTo( 42 );
 		assertThrows(
-			ApplicationException.class, () -> {
-				DoubleCaster.cast( "42.brad" );
-			}
+		    ApplicationException.class, () -> {
+			    DoubleCaster.cast( "42.brad" );
+		    }
 		);
 
 		// @TODO: 0.4 + 0.02 returns 0.42000000000000004. How to fix these rounding errors?
@@ -87,14 +87,14 @@ public class DoubleCasterTest {
 		CastAttempt<Double> attempt = DoubleCaster.attempt( 5 );
 		assertThat( attempt.wasSuccessful() ).isTrue();
 		assertThat( attempt.get() ).isEqualTo( 5 );
-		assertThat( attempt.ifSuccessful(System.out::println) );
+		assertThat( attempt.ifSuccessful( System.out::println ) );
 
 		final CastAttempt<Double> attempt2 = DoubleCaster.attempt( "Brad" );
-		attempt2.ifSuccessful(System.out::println);
+		attempt2.ifSuccessful( System.out::println );
 		assertThat( attempt2.wasSuccessful() ).isFalse();
 
-		assertThrows( BoxLangException.class, attempt2::get);
-		assertThat( attempt2.ifSuccessful(System.out::println) );
+		assertThrows( BoxLangException.class, attempt2::get );
+		assertThat( attempt2.ifSuccessful( System.out::println ) );
 		assertThat( attempt2.getOrDefault( 42D ) ).isEqualTo( 42 );
 		assertThat( attempt2.getOrSupply( () -> 40D + 2D ) ).isEqualTo( 42 );
 

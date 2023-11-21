@@ -45,6 +45,7 @@ public class BoxIdentifierTransformer extends AbstractTransformer {
 
 											{
 												put( "identifier", identifier.getName() );
+												put( "contextName", transpiler.peekContextName() );
 											}
 										};
 

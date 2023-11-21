@@ -243,4 +243,9 @@ public interface IBoxContext {
 	public record ScopeSearchResult( IScope scope, Object value ) {
 		// The record automatically generates the constructor, getters, equals, hashCode, and toString methods.
 	}
+
+	/**
+	 * rethrows the closest exception
+	 */
+	public void rethrow();
 }

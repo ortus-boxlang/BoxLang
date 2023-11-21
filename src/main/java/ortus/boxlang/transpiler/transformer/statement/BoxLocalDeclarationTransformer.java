@@ -52,14 +52,15 @@ public class BoxLocalDeclarationTransformer extends AbstractTransformer {
 													{
 														put( "variable", variable.getName() );
 														put( "expr", expr.toString() );
+														put( "contextName", transpiler.peekContextName() );
 													}
 												};
 
 				String				template	= """
-				                                  context.getScopeNearby( LocalScope.name )
-				                                  	.assign(Key.of( "${variable}" ),
-				                                  	${expr});
-				                                  """;
+				                                  ${contextName}.getScopeNearby( LocalScope.name )
+				                                                                   	.assign(Key.of( "${variable}" ),
+				                                                                   	${expr});
+				                                                                   """;
 
 				Node				javaStmt	= parseStatement( template, values );
 				logger.info( node.getSourceText() + " -> " + javaStmt );

@@ -52,7 +52,12 @@ public class BoxArrayLiteralTransformer extends AbstractTransformer {
 	@Override
 	public Node transform( BoxNode node, TransformerContext context ) throws IllegalStateException {
 		BoxArrayLiteral		arrayLiteral	= ( BoxArrayLiteral ) node;
-		Map<String, String>	values			= new HashMap<>();
+		Map<String, String>	values			= new HashMap<>() {
+
+												{
+													put( "contextName", transpiler.peekContextName() );
+												}
+											};
 
 		if ( arrayLiteral.getValues().isEmpty() ) {
 			Node javaExpr = parseExpression( "new Array()", values );

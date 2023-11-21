@@ -115,13 +115,26 @@ public class BaseBoxContext implements IBoxContext {
 			return this.templates.peek();
 		}
 
-		// Otherwise, if we have a parent, as them
+		// Otherwise, if we have a parent, ask them
 		if ( hasParent() ) {
 			return getParent().findClosestTemplate();
 		}
 
 		// There are none to be found!
 		return null;
+	}
+
+	/**
+	 * rethrows the closest exception
+	 */
+	public void rethrow() {
+
+		// If we have a parent, ask them
+		if ( hasParent() ) {
+			getParent().rethrow();
+		}
+
+		throw new ApplicationException( "No exception to rethrow.  YOu can only rethrow inside of a catch block." );
 	}
 
 	/**

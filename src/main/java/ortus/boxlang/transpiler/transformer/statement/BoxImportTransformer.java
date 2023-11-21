@@ -43,6 +43,7 @@ public class BoxImportTransformer extends AbstractTransformer {
 
 											{
 												put( "namespace", namespace.toString() + alias );
+												put( "contextName", transpiler.peekContextName() );
 
 											}
 										};

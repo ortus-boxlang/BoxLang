@@ -44,7 +44,13 @@ public class BoxStructLiteralTransformer extends AbstractTransformer {
 	@Override
 	public Node transform( BoxNode node, TransformerContext context ) throws IllegalStateException {
 		BoxStructLiteral	structLiteral	= ( BoxStructLiteral ) node;
-		Map<String, String>	values			= new HashMap<>();
+		Map<String, String>	values			= new HashMap<>() {
+
+												{
+													put( "contextName", transpiler.peekContextName() );
+													put( "contextName", transpiler.peekContextName() );
+												}
+											};
 		boolean				empty			= structLiteral.getValues().isEmpty();
 
 		if ( structLiteral.getType() == BoxStructType.Unordered ) {

@@ -52,7 +52,12 @@ public class BoxUnaryOperationTransformer extends AbstractTransformer {
 	@Override
 	public Node transform( BoxNode node, TransformerContext context ) throws IllegalStateException {
 		BoxUnaryOperation	operation	= ( BoxUnaryOperation ) node;
-		Map<String, String>	values		= new HashMap<>();
+		Map<String, String>	values		= new HashMap<>() {
+
+											{
+												put( "contextName", transpiler.peekContextName() );
+											}
+										};
 
 		Expression			expr		= ( Expression ) resolveScope( transpiler.transform( operation.getExpr() ), context );
 		values.put( "expr", expr.toString() );

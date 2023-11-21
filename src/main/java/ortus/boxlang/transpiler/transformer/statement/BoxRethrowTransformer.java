@@ -27,8 +27,13 @@ public class BoxRethrowTransformer extends AbstractTransformer {
 	public Node transform( BoxNode node, TransformerContext context ) throws IllegalStateException {
 		BoxRethrow			boxRethrow	= ( BoxRethrow ) node;
 
-		String				template	= "throw e;";
-		Map<String, String>	values		= new HashMap<>();
+		String				template	= "${contextName}.rethrow();";
+		Map<String, String>	values		= new HashMap<>() {
+
+											{
+												put( "contextName", transpiler.peekContextName() );
+											}
+										};
 		Node				javaStmt	= parseStatement( template, values );
 		logger.info( node.getSourceText() + " -> " + javaStmt );
 		addIndex( javaStmt, node );

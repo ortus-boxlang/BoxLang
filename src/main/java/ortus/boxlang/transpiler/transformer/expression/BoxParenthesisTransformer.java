@@ -30,6 +30,7 @@ public class BoxParenthesisTransformer extends AbstractTransformer {
 
 											{
 												put( "expr", expr.toString() );
+												put( "contextName", transpiler.peekContextName() );
 											}
 										};
 		String				template	= "(${expr})";

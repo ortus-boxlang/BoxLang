@@ -251,15 +251,7 @@ public class JavaBoxpiler {
 					result = parser.parse( source, BoxScriptType.CFSCRIPT );
 				} catch ( IOException e ) {
 					throw new ApplicationException( "Error compiling source", e );
-				} /*
-				   * catch ( IllegalStateException e ) {
-				   * try {
-				   * result = parser.parseExpression( source );
-				   * } catch ( IOException e2 ) {
-				   * throw new ApplicationException( "Error compiling source", e2 );
-				   * }
-				   * }
-				   */
+				}
 				result.getIssues().forEach( it -> System.out.println( it ) );
 				if ( !result.isCorrect() ) {
 					throw new ApplicationException( "Error compiling source. " + result.getIssues().get( 0 ).toString() );
@@ -323,6 +315,8 @@ public class JavaBoxpiler {
 				transpiler.setProperty( "baseclass", "BoxScript" );
 				transpiler.setProperty( "returnType", "Object" );
 				TranspiledCode javaASTs = transpiler.transpile( result.getRoot() );
+				if ( false )
+					throw new ApplicationException( javaASTs.getEntryPoint().toString() );
 				compileSource( javaASTs.getEntryPoint().toString(), fqn );
 
 				// Process functions ad lamdas
@@ -360,7 +354,7 @@ public class JavaBoxpiler {
 				transpiler.setProperty( "classname", className );
 				transpiler.setProperty( "packageName", packageName );
 				transpiler.setProperty( "baseclass", "BoxTemplate" );
-				transpiler.setProperty( "returnType", "Object" );
+				transpiler.setProperty( "returnType", "void" );
 				TranspiledCode javaASTs = transpiler.transpile( result.getRoot() );
 				compileSource( javaASTs.getEntryPoint().toString(), fqn );
 

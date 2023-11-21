@@ -35,7 +35,12 @@ public class BoxNegateOperationTransformer extends AbstractTransformer {
 	@Override
 	public Node transform( BoxNode node, TransformerContext context ) throws IllegalStateException {
 		BoxNegateOperation	operation	= ( BoxNegateOperation ) node;
-		Map<String, String>	values		= new HashMap<>();
+		Map<String, String>	values		= new HashMap<>() {
+
+											{
+												put( "contextName", transpiler.peekContextName() );
+											}
+										};
 
 		if ( operation.getExpr() instanceof BoxBooleanLiteral ) {
 			StringBuilder		sb		= new StringBuilder();

@@ -40,6 +40,7 @@ public class BoxThrowTransformer extends AbstractTransformer {
 
 											{
 												put( "expr", expr.toString() );
+												put( "contextName", transpiler.peekContextName() );
 
 											}
 										};

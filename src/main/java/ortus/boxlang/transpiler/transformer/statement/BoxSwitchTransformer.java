@@ -73,6 +73,7 @@ public class BoxSwitchTransformer extends AbstractTransformer {
 
 													{
 														put( "condition", switchExpr.toString() );
+														put( "contextName", transpiler.peekContextName() );
 													}
 												};
 				IfStmt				javaIfStmt	= ( IfStmt ) parseStatement( caseTemplate, values );

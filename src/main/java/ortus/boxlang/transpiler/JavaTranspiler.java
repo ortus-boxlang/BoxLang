@@ -359,36 +359,42 @@ public class JavaTranspiler extends Transpiler {
 		    .getClassByName( className ).orElseThrow()
 		    .getFieldByName( "imports" ).orElseThrow();
 
+		pushContextName( "context" );
+		boolean lastStatementIsReturnable = false;
 		for ( BoxStatement statement : source.getStatements() ) {
-			Node function = transform( statement );
+			lastStatementIsReturnable = statement instanceof BoxExpression;
+
+			Node javaASTNode = transform( statement );
 			if ( statement instanceof BoxFunctionDeclaration ) {
 				// a function declaration generate
-				callables.add( ( CompilationUnit ) function );
+				callables.add( ( CompilationUnit ) javaASTNode );
 				Node registrer = transform( statement, TransformerContext.REGISTER );
 				invokeMethod.getBody().orElseThrow().addStatement( 0, ( Statement ) registrer );
 
 			} else {
-				if ( function instanceof BlockStmt ) {
-					BlockStmt stmt = ( BlockStmt ) function;
+				if ( javaASTNode instanceof BlockStmt ) {
+					BlockStmt stmt = ( BlockStmt ) javaASTNode;
 					stmt.getStatements().forEach( it -> {
 						invokeMethod.getBody().get().addStatement( it );
 						statements.add( it );
 					} );
-				} else if ( function instanceof MethodCallExpr ) {
+				} else if ( statement instanceof BoxImport ) {
 					MethodCallExpr imp = ( MethodCallExpr ) imports.getVariable( 0 ).getInitializer().orElseThrow();
-					imp.getArguments().add( ( MethodCallExpr ) function );
+					imp.getArguments().add( ( MethodCallExpr ) javaASTNode );
 				} else {
-					invokeMethod.getBody().orElseThrow().addStatement( ( Statement ) function );
-					statements.add( ( Statement ) function );
+					invokeMethod.getBody().orElseThrow().addStatement( ( Statement ) javaASTNode );
+					statements.add( ( Statement ) javaASTNode );
 				}
 			}
 		}
+		popContextName();
 
 		if ( ! ( invokeMethod.getType() instanceof com.github.javaparser.ast.type.VoidType ) ) {
 			int			lastIndex	= invokeMethod.getBody().get().getStatements().size() - 1;
 			Statement	last		= invokeMethod.getBody().get().getStatements().get( lastIndex );
-			if ( last instanceof ExpressionStmt stmt ) {
-				// invokeMethod.getBody().get().getStatements().indexOf(last)
+			System.out.println( last.toString() );
+			System.out.println( last.getClass().getName() );
+			if ( lastStatementIsReturnable && last instanceof ExpressionStmt stmt ) {
 				invokeMethod.getBody().get().getStatements().remove( lastIndex );
 				invokeMethod.getBody().get().getStatements().add( new ReturnStmt( stmt.getExpression() ) );
 			} else {
@@ -403,4 +409,5 @@ public class JavaTranspiler extends Transpiler {
 
 		return new TranspiledCode( entryPoint, callables );
 	}
+
 }

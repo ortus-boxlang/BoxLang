@@ -53,6 +53,7 @@ public class BoxWhileTransformer extends AbstractTransformer {
 
 											{
 												put( "condition", condition.toString() );
+												put( "contextName", transpiler.peekContextName() );
 											}
 										};
 		WhileStmt			javaWhile	= ( WhileStmt ) parseStatement( template, values );

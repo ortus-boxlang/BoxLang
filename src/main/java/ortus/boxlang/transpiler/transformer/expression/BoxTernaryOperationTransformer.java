@@ -31,10 +31,11 @@ public class BoxTernaryOperationTransformer extends AbstractTransformer {
 												put( "condition", condition.toString() );
 												put( "whenTrue", whenTrue.toString() );
 												put( "whenFalse", whenFalse.toString() );
+												put( "contextName", transpiler.peekContextName() );
 											}
 										};
 		if ( condition instanceof NameExpr name ) {
-			String tmp = "context.scopeFindNearby( Key.of( \"" + name + "\" ), context.getDefaultAssignmentScope()).value()";
+			String tmp = "${contextName}.scopeFindNearby( Key.of( \"" + name + "\" ), ${contextName}.getDefaultAssignmentScope()).value()";
 			values.put( "condition", tmp );
 		}
 

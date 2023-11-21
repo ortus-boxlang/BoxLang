@@ -25,13 +25,16 @@ import java.net.URLClassLoader;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.ArrayDeque;
 
 /**
  * Transpiler Base class
  */
 public abstract class Transpiler implements ITranspiler {
 
-	private final HashMap properties = new HashMap<String, String>();
+	private final HashMap<String, String>	properties			= new HashMap<String, String>();
+	private int								tryCatchCounter		= 0;
+	private ArrayDeque<String>				currentContextName	= new ArrayDeque<>();
 
 	/**
 	 * Set a property
@@ -105,6 +108,22 @@ public abstract class Transpiler implements ITranspiler {
 			throw e;
 		}
 
+	}
+
+	public int incrementAndGetTryCatchCounter() {
+		return ++tryCatchCounter;
+	}
+
+	public void pushContextName( String name ) {
+		currentContextName.push( name );
+	}
+
+	public String popContextName() {
+		return currentContextName.pop();
+	}
+
+	public String peekContextName() {
+		return currentContextName.peek();
 	}
 
 }

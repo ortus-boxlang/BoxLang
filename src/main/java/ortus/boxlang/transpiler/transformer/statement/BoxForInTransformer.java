@@ -62,6 +62,7 @@ public class BoxForInTransformer extends AbstractTransformer {
 											{
 												put( "variable", variable.toString() );
 												put( "collection", collection.toString() );
+												put( "contextName", transpiler.peekContextName() );
 											}
 										};
 

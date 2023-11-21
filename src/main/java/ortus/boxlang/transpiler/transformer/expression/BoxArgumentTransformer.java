@@ -46,6 +46,7 @@ public class BoxArgumentTransformer extends AbstractTransformer {
 
 											{
 												put( "expr", expr.toString() );
+												put( "contextName", transpiler.peekContextName() );
 											}
 										};
 

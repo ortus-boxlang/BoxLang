@@ -51,7 +51,12 @@ public class BoxAssignmentTransformer extends AbstractTransformer {
 		Expression			left		= ( Expression ) transpiler.transform( assigment.getLeft(), TransformerContext.RIGHT );
 		Expression			right		= ( Expression ) transpiler.transform( assigment.getRight(), TransformerContext.RIGHT );
 
-		Map<String, String>	values		= new HashMap<>();
+		Map<String, String>	values		= new HashMap<>() {
+
+											{
+												put( "contextName", transpiler.peekContextName() );
+											}
+										};
 		ExpressionStmt		javaExpr;
 		String				template;
 
@@ -71,7 +76,7 @@ public class BoxAssignmentTransformer extends AbstractTransformer {
 			values.put( "key", left.toString() );
 			values.put( "right", right.toString() );
 			if ( right instanceof NameExpr rname ) {
-				String tmp = "context.scopeFindNearby( Key.of( \"" + rname + "\" ), null ).value()";
+				String tmp = "${contextName}.scopeFindNearby( Key.of( \"" + rname + "\" ), null ).value()";
 				values.put( "right", tmp );
 			}
 
@@ -86,14 +91,14 @@ public class BoxAssignmentTransformer extends AbstractTransformer {
 
 	private String getNameExpressionTemplate( BoxAssignmentOperator operator ) {
 		return switch ( operator ) {
-			case PlusEqual -> "Plus.invoke( context.scopeFindNearby( Key.of( \"${key}\" ),null).scope(),Key.of( \"${key}\"), ${right} )";
-			case MinusEqual -> "Minus.invoke( context.scopeFindNearby( Key.of( \"${key}\" ),null).scope(),Key.of( \"${key}\"), ${right} )";
-			case StarEqual -> "Multiply.invoke( context.scopeFindNearby( Key.of( \"${key}\" ),null).scope(),Key.of( \"${key}\"), ${right} )";
-			case SlashEqual -> "Divide.invoke( context.scopeFindNearby( Key.of( \"${key}\" ),null).scope(),Key.of( \"${key}\"), ${right} )";
-			case ConcatEqual -> "Concat.invoke( context.scopeFindNearby( Key.of( \"${key}\" ),null).scope(),Key.of( \"${key}\"), ${right} )";
+			case PlusEqual -> "Plus.invoke( ${contextName}.scopeFindNearby( Key.of( \"${key}\" ),null).scope(),Key.of( \"${key}\"), ${right} )";
+			case MinusEqual -> "Minus.invoke( ${contextName}.scopeFindNearby( Key.of( \"${key}\" ),null).scope(),Key.of( \"${key}\"), ${right} )";
+			case StarEqual -> "Multiply.invoke( ${contextName}.scopeFindNearby( Key.of( \"${key}\" ),null).scope(),Key.of( \"${key}\"), ${right} )";
+			case SlashEqual -> "Divide.invoke( ${contextName}.scopeFindNearby( Key.of( \"${key}\" ),null).scope(),Key.of( \"${key}\"), ${right} )";
+			case ConcatEqual -> "Concat.invoke( ${contextName}.scopeFindNearby( Key.of( \"${key}\" ),null).scope(),Key.of( \"${key}\"), ${right} )";
 			default -> """
-			           context.scopeFindNearby( Key.of( "${key}" ), context.getDefaultAssignmentScope() ).scope().assign( Key.of( "${key}" ), ${right} )
-			           """;
+			           ${contextName}.scopeFindNearby( Key.of( "${key}" ), ${contextName}.getDefaultAssignmentScope() ).scope().assign( Key.of( "${key}" ), ${right} )
+			                     """;
 		};
 	}
 

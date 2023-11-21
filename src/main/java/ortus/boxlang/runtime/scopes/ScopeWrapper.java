@@ -18,6 +18,7 @@
 package ortus.boxlang.runtime.scopes;
 
 import java.util.Map;
+import java.util.List;
 
 import ortus.boxlang.runtime.types.Struct;
 
@@ -103,6 +104,13 @@ public class ScopeWrapper extends BaseScope {
 			return super.put( name, value );
 		}
 		return wrapped.put( name, value );
+	}
+
+	@Override
+	public List<String> getKeys() {
+		List<String> result = keySet().stream().map( Key::getName ).collect( java.util.stream.Collectors.toList() );
+		result.addAll( wrapped.keySet().stream().map( Key::getName ).collect( java.util.stream.Collectors.toList() ) );
+		return result;
 	}
 
 }

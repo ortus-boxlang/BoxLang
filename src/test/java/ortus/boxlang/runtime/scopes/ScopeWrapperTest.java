@@ -21,6 +21,7 @@ import static com.google.common.truth.Truth.assertThat;
 import static org.junit.Assert.assertThrows;
 
 import java.util.Map;
+import java.util.List;
 
 import org.junit.jupiter.api.Test;
 
@@ -34,7 +35,7 @@ public class ScopeWrapperTest {
 		Key		spoofed			= Key.of( "spoofed" );
 		IScope	variablesScope	= new VariablesScope();
 		variablesScope.put( inVar, "value" );
-		IScope scopeWrapper = new ScopeWrapper( variablesScope, Map.of( spoofed, "foo" ) );
+		ScopeWrapper scopeWrapper = new ScopeWrapper( variablesScope, Map.of( spoofed, "foo" ) );
 
 		// The var from variables is found
 		assertThat( scopeWrapper.containsKey( inVar ) ).isTrue();
@@ -47,6 +48,10 @@ public class ScopeWrapperTest {
 		// But the spoofed var doesn't actually exist in the variables scope
 		assertThat( variablesScope.containsKey( spoofed ) ).isFalse();
 		assertThrows( KeyNotFoundException.class, () -> variablesScope.dereference( spoofed, false ) );
+
+		List<String> keys = scopeWrapper.getKeys();
+		assertThat( keys.contains( "InVar" ) ).isTrue();
+		assertThat( keys.contains( "spoofed" ) ).isTrue();
 	}
 
 }

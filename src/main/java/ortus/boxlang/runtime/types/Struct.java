@@ -643,7 +643,7 @@ public class Struct implements Map<Key, Object>, IType, IReferenceable, IListena
 	 * @return An array list of all the keys in the struct
 	 */
 	public List<String> getKeys() {
-		return keySet().stream().map( Key::getNameNoCase ).collect( java.util.stream.Collectors.toList() );
+		return keySet().stream().map( Key::getName ).collect( java.util.stream.Collectors.toList() );
 	}
 
 	/**

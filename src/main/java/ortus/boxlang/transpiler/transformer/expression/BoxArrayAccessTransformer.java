@@ -69,6 +69,7 @@ public class BoxArrayAccessTransformer extends AbstractTransformer {
 												{
 													put( "scope", scope.toString() );
 													put( "variable", variable.toString() );
+													put( "contextName", transpiler.peekContextName() );
 												}
 											};
 
@@ -80,17 +81,17 @@ public class BoxArrayAccessTransformer extends AbstractTransformer {
 				           """;
 
 			} else if ( expr.getContext() instanceof BoxScope ) {
-				// template = "context.getScopeNearby( Key.of( \"${scope}\" ) ).get( Key.of( ${variable} ) )";
+				// template = "${contextName}.getScopeNearby( Key.of( \"${scope}\" ) ).get( Key.of( ${variable} ) )";
 				template = "${scope}.dereference( Key.of( ${variable}) , false )";
 
 			} else {
 				template = """
-				           Referencer.get(
-				             context.scopeFindNearby( Key.of( "${scope}" ), context.getDefaultAssignmentScope() ).value(),
-				             Key.of( ${variable} ),
-				             false
-				           )
-				           """;
+				                   Referencer.get(
+				           ${contextName}.scopeFindNearby( Key.of( "${scope}" ), ${contextName}.getDefaultAssignmentScope() ).value(),
+				                     Key.of( ${variable} ),
+				                     false
+				                   )
+				                   """;
 			}
 
 			Node javaNode = parseExpression( template, values );

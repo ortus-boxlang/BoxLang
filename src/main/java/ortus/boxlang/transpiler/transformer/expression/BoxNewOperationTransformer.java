@@ -55,6 +55,7 @@ public class BoxNewOperationTransformer extends AbstractTransformer {
 											{
 												put( "expr", finalFqn );
 												put( "args", args );
+												put( "contextName", transpiler.peekContextName() );
 
 											}
 										};

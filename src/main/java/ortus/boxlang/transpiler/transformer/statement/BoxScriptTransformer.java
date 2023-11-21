@@ -91,9 +91,9 @@ public class BoxScriptTransformer extends AbstractTransformer {
 				*/
 			public ${returnType} _invoke( IBoxContext context ) {
 				// Reference to the variables scope
-				IScope variablesScope = context.getScopeNearby( Key.of( "variables" ) );
+				// Removed for now because this can be a moving target inside of a catch block
+				//IScope variablesScope = context.getScopeNearby( Key.of( "variables" ) );
 				ClassLocator classLocator = ClassLocator.getInstance();
-				IBoxContext			catchContext = null;
 			}
 
 			// ITemplateRunnable implementation methods
@@ -171,7 +171,7 @@ public class BoxScriptTransformer extends AbstractTransformer {
 		packageName	= transpiler.getProperty( "packageName" ) != null ? transpiler.getProperty( "packageName" ) : packageName;
 		String	baseClass	= transpiler.getProperty( "baseclass" ) != null ? transpiler.getProperty( "baseclass" ) : "BoxScript";
 		String	returnType	= baseClass.equals( "BoxScript" ) ? "Object" : "void";
-		returnType = transpiler.getProperty( "return" ) != null ? transpiler.getProperty( "return" ) : returnType;
+		returnType = transpiler.getProperty( "returnType" ) != null ? transpiler.getProperty( "returnType" ) : returnType;
 
 		String							finalFilePath		= filePath;
 		String							finalLastModified	= lastModified;

@@ -30,22 +30,25 @@ public class BoxScopeTransformer extends AbstractTransformer {
 
 											{
 												put( "scope", scope.getName() );
+												put( "contextName", transpiler.peekContextName() );
 											}
 										};
 		String				template	= "";
 		if ( "local".equalsIgnoreCase( scope.getName() ) ) {
-			template = "context.getScopeNearby( LocalScope.name )";
+			template = "${contextName}.getScopeNearby( LocalScope.name )";
 		} else if ( "variables".equalsIgnoreCase( scope.getName() ) ) {
+			template = "${contextName}.getScopeNearby( VariablesScope.name )";
 			// This is assuming all class templates' invoke method gets the varaiblesScope reference first
-			template = "variablesScope";
+			// Nevermind-- this doens't work in a catch block where I need the variables scope to come from the CATCHBOXCONTEXT instead
+			// template = "variablesScope";
 		} else if ( "request".equalsIgnoreCase( scope.getName() ) ) {
-			template = "context.getScopeNearby( RequestScope.name )";
+			template = "${contextName}.getScopeNearby( RequestScope.name )";
 		} else if ( "server".equalsIgnoreCase( scope.getName() ) ) {
-			template = "context.getScopeNearby( ServerScope.name )";
+			template = "${contextName}.getScopeNearby( ServerScope.name )";
 		} else if ( "arguments".equalsIgnoreCase( scope.getName() ) ) {
-			template = "context.getScopeNearby( ArgumentsScope.name )";
+			template = "${contextName}.getScopeNearby( ArgumentsScope.name )";
 		} else if ( "this".equalsIgnoreCase( scope.getName() ) ) {
-			template = "context.getScopeNearby( ThisScope.name )";
+			template = "${contextName}.getScopeNearby( ThisScope.name )";
 		} else {
 			throw new IllegalStateException( "Scope transformation not implemented: " + scope.getName() );
 		}

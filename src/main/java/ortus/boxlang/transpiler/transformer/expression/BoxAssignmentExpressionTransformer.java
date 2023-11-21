@@ -39,12 +39,12 @@ public class BoxAssignmentExpressionTransformer extends AbstractTransformer {
 		}
 
 		if ( left instanceof NameExpr ) {
-			Map<String, String>	values		= Map.of( "id", left.toString() );
+			Map<String, String>	values		= Map.of( "id", left.toString(), "contextName", transpiler.peekContextName() );
 			String				template	= """
-			                                  context.scopeFindNearby(
-			                                  	Key.of( ${id} ),
-			                                  	context.getDefaultAssignmentScope()).scope().assign()
-			                                  """;
+			                                  ${contextName}.scopeFindNearby(
+			                                                                   	Key.of( ${id} ),
+			                                                                   	${contextName}.getDefaultAssignmentScope()).scope().assign()
+			                                                                   """;
 
 			MethodCallExpr		javaExpr	= ( MethodCallExpr ) parseExpression( template, values );
 			javaExpr.getArguments().add( right );

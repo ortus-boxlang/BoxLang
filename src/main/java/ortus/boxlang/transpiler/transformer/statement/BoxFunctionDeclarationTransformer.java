@@ -134,7 +134,7 @@ public class BoxFunctionDeclarationTransformer extends AbstractTransformer {
 
 			@Override
 			public Object _invoke( FunctionBoxContext context ) {
-				IScope variablesScope = context.getScopeNearby( Key.of( "variables" ));
+				IScope variablesScope = ${contextName}.getScopeNearby( Key.of( "variables" ));
 
 			}
 		}
@@ -155,7 +155,7 @@ public class BoxFunctionDeclarationTransformer extends AbstractTransformer {
 			Map<String, String> values = Map.ofEntries(
 			    Map.entry( "className", className )
 			);
-			template = "context.registerUDF( ${className}.getInstance() );";
+			template = "${contextName}.registerUDF( ${className}.getInstance() );";
 			Node javaStmt = parseStatement( template, values );
 			logger.info( node.getSourceText() + " -> " + javaStmt );
 			addIndex( javaStmt, node );

@@ -109,10 +109,9 @@ public abstract class AbstractTransformer implements Transformer {
 		if ( expr instanceof NameExpr ) {
 			String				id			= expr.toString();
 			String				template	= switch ( context ) {
-												case INIT ->
-												    "context.scopeFindNearby(Key.of(\"${id}\"), context.getDefaultAssignmentScope()).scope().assign(Key.of(\"${id}\"))";
-												case RIGHT -> "context.scopeFindNearby(Key.of(\"${id}\"),null).value()";
-												default -> "context.scopeFindNearby(Key.of(\"${id}\"),null).value()";
+												case INIT -> "${contextName}.scopeFindNearby(Key.of(\"${id}\"), ${contextName}.getDefaultAssignmentScope()).scope().assign(Key.of(\"${id}\"))";
+												case RIGHT -> "${contextName}.scopeFindNearby(Key.of(\"${id}\"),null).value()";
+												default -> "${contextName}.scopeFindNearby(Key.of(\"${id}\"),null).value()";
 											}
 
 			;
@@ -120,6 +119,7 @@ public abstract class AbstractTransformer implements Transformer {
 
 												{
 													put( "id", id.toString() );
+													put( "contextName", transpiler.peekContextName() );
 												}
 											};
 			return parseExpression( template, values );

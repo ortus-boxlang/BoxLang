@@ -44,7 +44,12 @@ public class BoxReturnTransformer extends AbstractTransformer {
 		BoxReturn			boxReturn	= ( BoxReturn ) node;
 
 		String				template	= "return;";
-		Map<String, String>	values		= new HashMap<>();
+		Map<String, String>	values		= new HashMap<>() {
+
+											{
+												put( "contextName", transpiler.peekContextName() );
+											}
+										};
 		if ( boxReturn.getExpression() != null ) {
 			Expression expr = ( Expression ) transpiler.transform( boxReturn.getExpression(), TransformerContext.RIGHT );
 			values.put( "expr", expr.toString() );

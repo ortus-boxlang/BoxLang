@@ -15,6 +15,12 @@
 
 package ortus.boxlang.transpiler.transformer.statement;
 
+import java.util.HashMap;
+import java.util.Map;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.github.javaparser.ast.Node;
 import com.github.javaparser.ast.NodeList;
 import com.github.javaparser.ast.body.Parameter;
@@ -23,21 +29,13 @@ import com.github.javaparser.ast.stmt.CatchClause;
 import com.github.javaparser.ast.stmt.Statement;
 import com.github.javaparser.ast.stmt.TryStmt;
 import com.github.javaparser.ast.type.ClassOrInterfaceType;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+
 import ortus.boxlang.ast.BoxNode;
-import ortus.boxlang.ast.expression.BoxIdentifier;
-import ortus.boxlang.ast.expression.BoxStringLiteral;
 import ortus.boxlang.ast.statement.BoxTry;
-import ortus.boxlang.ast.statement.BoxTryCatch;
 import ortus.boxlang.transpiler.JavaTranspiler;
 import ortus.boxlang.transpiler.transformer.AbstractTransformer;
 import ortus.boxlang.transpiler.transformer.TransformerContext;
 import ortus.boxlang.transpiler.transformer.expression.BoxParenthesisTransformer;
-
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 
 /***
  * catchContext = new CatchBoxContext(context, Key.of("e"), e1); //
@@ -66,24 +64,36 @@ public class BoxTryTransformer extends AbstractTransformer {
 
 		NodeList<CatchClause> catchClauses = new NodeList<>();
 		boxTry.getCatches().forEach( clause -> {
-			BlockStmt			catchBody	= new BlockStmt();
-			String				name		= computeName( clause );
-			Map<String, String>	values		= new HashMap<>() {
+			int					catchCounter		= transpiler.incrementAndGetTryCatchCounter();
+			String				catchContextName	= "catchContext" + catchCounter;
+			String				throwableName		= "e" + catchCounter;
 
-												{
-													put( "expr", name );
-												}
-											};
+			BlockStmt			catchBody			= new BlockStmt();
+			String				catchName			= clause.getException().getName();
+			Map<String, String>	values				= new HashMap<>() {
 
-			Statement			handler		= ( Statement ) parseStatement( "catchContext = new CatchBoxContext( context, Key.of( \"${expr}\" ), ${expr} );",
-			    values );
+														{
+															put( "catchName", catchName );
+															put( "catchContextName", catchContextName );
+															put( "contextName", transpiler.peekContextName() );
+															put( "throwableName", throwableName );
+														}
+													};
+
+			Statement			handler				= ( Statement ) parseStatement(
+			    "CatchBoxContext ${catchContextName} = new CatchBoxContext( ${contextName}, Key.of( \"${catchName}\" ), ${throwableName} );",
+			    values
+			);
 
 			catchBody.addStatement( handler );
+
+			transpiler.pushContextName( catchContextName );
 			clause.getCatchBody().forEach( stmt -> catchBody.getStatements().add(
 			    ( Statement ) transpiler.transform( stmt )
 			) );
+			transpiler.popContextName();
 
-			catchClauses.add( new CatchClause( new Parameter( new ClassOrInterfaceType( "Throwable" ), name ), catchBody ) );
+			catchClauses.add( new CatchClause( new Parameter( new ClassOrInterfaceType( "Throwable" ), throwableName ), catchBody ) );
 		}
 		);
 
@@ -98,15 +108,4 @@ public class BoxTryTransformer extends AbstractTransformer {
 		return javaTry;
 	}
 
-	private String computeName( BoxTryCatch clause ) throws IllegalStateException {
-		List<ortus.boxlang.ast.Node> ancestors = clause.walkAncestors().stream().filter( it -> it instanceof BoxTry ).toList();
-
-		if ( clause.getException() instanceof BoxStringLiteral literal ) {
-			return literal.getValue();
-		}
-		if ( clause.getException() instanceof BoxIdentifier identifier ) {
-			return identifier.getName(); // + ancestors.size();
-		}
-		throw new IllegalStateException( "invalid name" );
-	}
 }

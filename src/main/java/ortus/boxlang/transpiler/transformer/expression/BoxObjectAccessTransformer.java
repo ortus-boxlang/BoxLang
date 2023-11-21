@@ -52,6 +52,7 @@ public class BoxObjectAccessTransformer extends AbstractTransformer {
 													{
 														put( "scope", scope.toString() );
 														put( "variable", variable.toString() );
+														put( "contextName", transpiler.peekContextName() );
 														// put( "var1", vars.getValues().get( 1 ).toString() );
 													}
 												};
@@ -79,6 +80,7 @@ public class BoxObjectAccessTransformer extends AbstractTransformer {
 													{
 														put( "scope", scope.toString() );
 														put( "variable", variable.toString() );
+														put( "contextName", transpiler.peekContextName() );
 													}
 												};
 
@@ -105,6 +107,7 @@ public class BoxObjectAccessTransformer extends AbstractTransformer {
 													put( "scope", scope.toString() );
 													put( "variable", variable.toString() );
 													put( "safe", objectAccess.isSafe().toString() );
+													put( "contextName", transpiler.peekContextName() );
 												}
 											};
 			String				template	= switch ( context ) {
@@ -134,6 +137,7 @@ public class BoxObjectAccessTransformer extends AbstractTransformer {
 												{
 													put( "function", function.toString() );
 													put( "member", member.toString() );
+													put( "contextName", transpiler.peekContextName() );
 												}
 											};
 			String				template	= """
@@ -164,20 +168,21 @@ public class BoxObjectAccessTransformer extends AbstractTransformer {
 			Expression			ctx			= ( Expression ) transpiler.transform( objectAccess.getContext(), TransformerContext.DEREFERENCING );
 
 			String				template	= """
-			                                  Referencer.setDeep(
-			                                  	context.scopeFindNearby(
-			                                  		${ctx},
-			                                  		context.getDefaultAssignmentScope()
-			                                  	  ).scope(),
-			                                  	${ctx},
-			                                  	${acs}
-			                                  )
-			                                  """;
+			                                                           Referencer.setDeep(
+			                                  ${contextName}.scopeFindNearby(
+			                                                           		${ctx},
+			                                                           		${contextName}.getDefaultAssignmentScope()
+			                                                           	  ).scope(),
+			                                                           	${ctx},
+			                                                           	${acs}
+			                                                           )
+			                                                           """;
 			Map<String, String>	values		= new HashMap<>() {
 
 												{
 													put( "ctx", ctx.toString() );
 													put( "acs", args );
+													put( "contextName", transpiler.peekContextName() );
 												}
 											};
 			Node				javaExpr	= parseExpression( template, values );
@@ -207,18 +212,19 @@ public class BoxObjectAccessTransformer extends AbstractTransformer {
 							put( "safe1", objectAccess.isSafe().toString() );
 							put( "safe2", isSafe.toString() );
 							put( "key", key.toString() );
+							put( "contextName", transpiler.peekContextName() );
 						}
 					};
 					template	= """
-					              Referencer.get(
-					              	context.scopeFindNearby(
-					              		${ctx},
-					              		null
-					              	).value(),
-					              	${key},
-					              	${safe2}
-					              )
-					              """;
+					                        Referencer.get(
+					              ${contextName}.scopeFindNearby(
+					                        		${ctx},
+					                        		null
+					                        	).value(),
+					                        	${key},
+					                        	${safe2}
+					                        )
+					                        """;
 					javaExpr	= parseExpression( template, values );
 				} else {
 					Node				finalJavaExpr	= javaExpr;
@@ -228,6 +234,7 @@ public class BoxObjectAccessTransformer extends AbstractTransformer {
 																put( "ctx", finalJavaExpr.toString() );
 																put( "safe", isSafe.toString() );
 																put( "key", key.toString() );
+																put( "contextName", transpiler.peekContextName() );
 															}
 														};
 					template	= """

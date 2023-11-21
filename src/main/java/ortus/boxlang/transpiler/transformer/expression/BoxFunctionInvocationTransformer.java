@@ -65,7 +65,7 @@ public class BoxFunctionInvocationTransformer extends AbstractTransformer {
 		;
 		if ( target != null )
 			return target;
-		StringBuilder sb = new StringBuilder( "context.invokeFunction( Key.of( \"${name}\" )" );
+		StringBuilder sb = new StringBuilder( "${contextName}.invokeFunction( Key.of( \"${name}\" )" );
 
 		sb.append( ", new Object[] { " );
 		for ( int i = 0; i < function.getArguments().size(); i++ ) {

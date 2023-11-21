@@ -73,6 +73,9 @@ public class PlaceholderHelper {
 			String	placeholder		= matchResult.group( 1 );
 			String	defaultValue	= matchResult.group( 2 );
 			String	replacement		= ( String ) map.getOrDefault( placeholder, defaultValue != null ? defaultValue : matchResult.group() );
+			if ( replacement == null ) {
+				throw new ApplicationException( "Placeholder '" + placeholder + "' has no replacement value" );
+			}
 
 			return Matcher.quoteReplacement( replacement );
 		} );

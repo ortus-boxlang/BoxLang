@@ -36,7 +36,12 @@ public class BoxMethodInvocationTransformer extends AbstractTransformer {
 		    .map( it -> resolveScope( transpiler.transform( it ), context ).toString() )
 		    .collect( Collectors.joining( ", " ) );
 
-		Map<String, String>	values		= new HashMap<>();
+		Map<String, String>	values		= new HashMap<>() {
+
+											{
+												put( "contextName", transpiler.peekContextName() );
+											}
+										};
 
 		String				target		= BoxBuiltinRegistry.getInstance().getRegistry().get( invocation.getName().getName() );
 
