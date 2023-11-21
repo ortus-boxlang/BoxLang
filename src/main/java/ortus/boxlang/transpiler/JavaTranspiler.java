@@ -360,11 +360,15 @@ public class JavaTranspiler extends Transpiler {
 		    .getFieldByName( "imports" ).orElseThrow();
 
 		pushContextName( "context" );
+		// Track if the latest BL AST node we encountered was a returnable expression
 		boolean lastStatementIsReturnable = false;
 		for ( BoxStatement statement : source.getStatements() ) {
+			// Expressions are returnable
 			lastStatementIsReturnable = statement instanceof BoxExpression;
 
 			Node javaASTNode = transform( statement );
+			// For Function declarations, we add the transformed function itself as a compilation unit
+			// and also hoist the declaration itself to the top of the _invoke() method.
 			if ( statement instanceof BoxFunctionDeclaration ) {
 				// a function declaration generate
 				callables.add( ( CompilationUnit ) javaASTNode );
@@ -372,6 +376,7 @@ public class JavaTranspiler extends Transpiler {
 				invokeMethod.getBody().orElseThrow().addStatement( 0, ( Statement ) registrer );
 
 			} else {
+				// Java block get each statement in their block added
 				if ( javaASTNode instanceof BlockStmt ) {
 					BlockStmt stmt = ( BlockStmt ) javaASTNode;
 					stmt.getStatements().forEach( it -> {
@@ -379,9 +384,11 @@ public class JavaTranspiler extends Transpiler {
 						statements.add( it );
 					} );
 				} else if ( statement instanceof BoxImport ) {
+					// For import statements, we add an argument to the constructor of the static List of imports
 					MethodCallExpr imp = ( MethodCallExpr ) imports.getVariable( 0 ).getInitializer().orElseThrow();
 					imp.getArguments().add( ( MethodCallExpr ) javaASTNode );
 				} else {
+					// All other statements are added to the _invoke() method
 					invokeMethod.getBody().orElseThrow().addStatement( ( Statement ) javaASTNode );
 					statements.add( ( Statement ) javaASTNode );
 				}
@@ -389,15 +396,16 @@ public class JavaTranspiler extends Transpiler {
 		}
 		popContextName();
 
+		// Only try to return a value if the class has a return type for the _invoke() method...
 		if ( ! ( invokeMethod.getType() instanceof com.github.javaparser.ast.type.VoidType ) ) {
 			int			lastIndex	= invokeMethod.getBody().get().getStatements().size() - 1;
 			Statement	last		= invokeMethod.getBody().get().getStatements().get( lastIndex );
-			System.out.println( last.toString() );
-			System.out.println( last.getClass().getName() );
+			// ... and the last BL AST node was a returnable expression and the last Java AST node is an expression statement
 			if ( lastStatementIsReturnable && last instanceof ExpressionStmt stmt ) {
 				invokeMethod.getBody().get().getStatements().remove( lastIndex );
 				invokeMethod.getBody().get().getStatements().add( new ReturnStmt( stmt.getExpression() ) );
 			} else {
+				// If our base class requires a return value and we have none, then add a statement to return null.
 				invokeMethod.getBody().orElseThrow().addStatement( new ReturnStmt( new NullLiteralExpr() ) );
 			}
 
