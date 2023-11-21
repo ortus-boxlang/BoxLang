@@ -23,6 +23,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
+import ortus.boxlang.runtime.types.exceptions.ApplicationException;
 import ortus.boxlang.runtime.types.exceptions.BoxLangException;
 
 public class DoubleCasterTest {
@@ -42,7 +43,19 @@ public class DoubleCasterTest {
 	@DisplayName( "It can cast a string to a Double" )
 	@Test
 	void testItCanCastAString() {
-		assertThat( DoubleCaster.cast( "42" ) ).isEqualTo( 42 );
+		assertThat( DoubleCaster.cast( "421" ) ).isEqualTo( 421 );
+		assertThat( DoubleCaster.cast( "-42" ) ).isEqualTo( -42 );
+		assertThat( DoubleCaster.cast( "+42" ) ).isEqualTo( 42 );
+		assertThat( DoubleCaster.cast( "4.2" ) ).isEqualTo( 4.2 );
+		assertThat( DoubleCaster.cast( "42." ) ).isEqualTo( 42 );
+		assertThrows(
+			ApplicationException.class, () -> {
+				DoubleCaster.cast( "42.brad" );
+			}
+		);
+
+		// @TODO: 0.4 + 0.02 returns 0.42000000000000004. How to fix these rounding errors?
+		assertThat( DoubleCaster.cast( ".42" ) ).isEqualTo( 0.42 );
 	}
 
 	@DisplayName( "It can cast a char to a Double" )
@@ -74,13 +87,14 @@ public class DoubleCasterTest {
 		CastAttempt<Double> attempt = DoubleCaster.attempt( 5 );
 		assertThat( attempt.wasSuccessful() ).isTrue();
 		assertThat( attempt.get() ).isEqualTo( 5 );
-		assertThat( attempt.ifSuccessful( ( v ) -> System.out.println( v ) ) );
+		assertThat( attempt.ifSuccessful(System.out::println) );
 
 		final CastAttempt<Double> attempt2 = DoubleCaster.attempt( "Brad" );
+		attempt2.ifSuccessful(System.out::println);
 		assertThat( attempt2.wasSuccessful() ).isFalse();
 
-		assertThrows( BoxLangException.class, () -> attempt2.get() );
-		assertThat( attempt2.ifSuccessful( ( v ) -> System.out.println( v ) ) );
+		assertThrows( BoxLangException.class, attempt2::get);
+		assertThat( attempt2.ifSuccessful(System.out::println) );
 		assertThat( attempt2.getOrDefault( 42D ) ).isEqualTo( 42 );
 		assertThat( attempt2.getOrSupply( () -> 40D + 2D ) ).isEqualTo( 42 );
 
