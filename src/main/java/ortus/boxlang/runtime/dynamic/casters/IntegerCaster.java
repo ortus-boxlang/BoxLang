@@ -76,7 +76,7 @@ public class IntegerCaster {
 		}
 
 		String theValue = StringCaster.cast( object );
-		if( isInteger( theValue ) ){
+		if ( isInteger( theValue ) ) {
 			return Integer.valueOf( theValue );
 		}
 		if ( fail ) {
@@ -91,16 +91,18 @@ public class IntegerCaster {
 	 * Determine whether the provided string is castable to an integer.
 	 *
 	 * @param value A probably-hopefully integer string, with an optional plus/minus sign.
+	 * 
 	 * @return true if all string characters are digits. False for empty string, null, floats, alpha characters, etc.
 	 */
-	private static boolean isInteger( String value ){
-		if ( value == null ) return false;
+	private static boolean isInteger( String value ) {
+		if ( value == null )
+			return false;
 
 		String toParse = value;
-		if ( value.startsWith("-") || value.startsWith("+" ) ){
-			toParse = toParse.substring(1);
+		if ( value.startsWith( "-" ) || value.startsWith( "+" ) ) {
+			toParse = toParse.substring( 1 );
 		}
-		return !toParse.isEmpty() && toParse.chars().allMatch(Character::isDigit);
+		return !toParse.isEmpty() && toParse.chars().allMatch( Character::isDigit );
 	}
 
 }

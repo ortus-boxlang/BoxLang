@@ -21,6 +21,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import ortus.boxlang.ast.BoxNode;
 import ortus.boxlang.ast.expression.BoxArrayAccess;
+import ortus.boxlang.ast.expression.BoxIntegerLiteral;
 import ortus.boxlang.ast.expression.BoxScope;
 import ortus.boxlang.ast.expression.BoxStringLiteral;
 import ortus.boxlang.transpiler.JavaTranspiler;
@@ -59,9 +60,9 @@ public class BoxArrayAccessTransformer extends AbstractTransformer {
 		String			side	= context == TransformerContext.NONE ? "" : "(" + context.toString() + ") ";
 		logger.info( side + node.getSourceText() );
 		/* Case variables['x'] */
-		if ( expr.getIndex() instanceof BoxStringLiteral ) {
+		if ( expr.getIndex() instanceof BoxStringLiteral || expr.getIndex() instanceof BoxIntegerLiteral ) {
 			Expression			scope		= ( Expression ) transpiler.transform( expr.getContext(), context );
-			StringLiteralExpr	variable	= ( StringLiteralExpr ) transpiler.transform( expr.getIndex() );
+			Node				variable	= ( Node ) transpiler.transform( expr.getIndex() );
 
 			Map<String, String>	values		= new HashMap<>() {
 
@@ -97,6 +98,6 @@ public class BoxArrayAccessTransformer extends AbstractTransformer {
 			addIndex( javaNode, node );
 			return javaNode;
 		}
-		throw new IllegalStateException( "Not implemented" );
+		throw new IllegalStateException( "Not implemented expression index of type " + expr.getIndex().getClass().getSimpleName() );
 	}
 }
