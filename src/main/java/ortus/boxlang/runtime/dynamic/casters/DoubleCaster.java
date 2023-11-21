@@ -88,9 +88,9 @@ public class DoubleCaster {
 		}
 
 		String stringValue = StringCaster.cast( object );
-		Optional<Double> result = parseDouble( stringValue );
-		if( result.isPresent() ){
-			return result.get();
+		Double result = parseDouble( stringValue );
+		if( result != null ){
+			return result;
 		}
 		if ( fail ) {
 			throw new ApplicationException( String.format( "Can't cast %s to a double.", stringValue ) );
@@ -106,19 +106,19 @@ public class DoubleCaster {
 	 * @param value A probably-hopefully double string value, with an optional plus/minus sign.
 	 * @return Optional - parsed Double if all string characters are digits, with an optional sign and decimal point. Empty optional for empty string, null, floats, alpha characters, etc.
 	 */
-	private static Optional<Double> parseDouble( String value ){
-		if ( value == null ) return Optional.empty();
+	private static Double parseDouble( String value ){
+		if ( value == null ) return null;
 
 		int signMultiplier = value.startsWith("-" ) ? -1 : 1;
 		value = value.trim();
 		if ( value.startsWith( "-" ) || value.startsWith( "+" ) ){
 			value = value.substring(1);
 		}
-		if ( value.isBlank() ) return Optional.empty();
+		if ( value.isBlank() ) return null;
 
 		char[] charArray = value.toCharArray();
-		Double intValue = 0.0;
-		Double fractionValue = 0.0;
+		double intValue = 0.0;
+		double fractionValue = 0.0;
 
 		/**
 		 * @TODO: Support 'NAN' and 'INFINITY' strings?
@@ -132,14 +132,14 @@ public class DoubleCaster {
 			if (charArray[i] == '.') {
 				if ( hasDecimal ){
 					// Multiple decimal points; throw or return null!
-					return Optional.empty();
+					return null;
 				}
 				decimalIndex = i;
 				hasDecimal = true;
 				continue;
 			}
 			if ( !Character.isDigit(charArray[i]) ){
-				return Optional.empty();
+				return null;
 			}
 		}
 
@@ -160,7 +160,7 @@ public class DoubleCaster {
 				fractionValue += digit * Math.pow(10, -j);
 			}
 		}
-		return Optional.of( signMultiplier * ( intValue + fractionValue ) );
+		return signMultiplier * ( intValue + fractionValue );
 	}
 
 }
