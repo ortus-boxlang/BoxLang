@@ -326,7 +326,7 @@ case
   ;
 
 identifier
-    :   IDENTIFIER
+    :   IDENTIFIER QM?
     |	reservedKeyword
     ;
 reservedKeyword

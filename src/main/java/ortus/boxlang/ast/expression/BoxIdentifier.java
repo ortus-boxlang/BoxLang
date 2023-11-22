@@ -24,7 +24,7 @@ import ortus.boxlang.ast.Position;
 public class BoxIdentifier extends BoxExpr implements Named {
 
 	private final String name;
-
+	private boolean	safe;
 	@Override
 	public String getName() {
 		return name;
@@ -37,9 +37,13 @@ public class BoxIdentifier extends BoxExpr implements Named {
 	 * @param position   position of the statement in the source code
 	 * @param sourceText source code that originated the Node
 	 */
-	public BoxIdentifier( String name, Position position, String sourceText ) {
+	public BoxIdentifier( String name, Boolean safe, Position position, String sourceText ) {
 		super( position, sourceText );
 		this.name = name;
+		this.safe = safe;
 	}
 
+	public boolean isSafe() {
+		return safe;
+	}
 }
