@@ -355,6 +355,7 @@ reservedKeyword
     | 	CONTAIN
     | 	JAVA
     | 	MESSAGE
+    | 	NULL
 //    | 	ASSERT
     ;
 scope

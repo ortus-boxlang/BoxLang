@@ -55,6 +55,7 @@ LOCK            :   'LOCK';
 MOD				:	'MOD';
 MESSAGE			:	'MESSAGE';
 NEW             :   'NEW';
+NULL         	:   'NULL';
 NUMERIC         :   'NUMERIC';
 PACKAGE         :   'PACKAGE';
 PARAM           :   'PARAM';

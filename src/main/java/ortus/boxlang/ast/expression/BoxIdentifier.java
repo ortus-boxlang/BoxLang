@@ -23,8 +23,9 @@ import ortus.boxlang.ast.Position;
  */
 public class BoxIdentifier extends BoxExpr implements Named {
 
-	private final String name;
-	private boolean	safe;
+	private final String	name;
+	private boolean			safe;
+
 	@Override
 	public String getName() {
 		return name;
@@ -39,8 +40,8 @@ public class BoxIdentifier extends BoxExpr implements Named {
 	 */
 	public BoxIdentifier( String name, Boolean safe, Position position, String sourceText ) {
 		super( position, sourceText );
-		this.name = name;
-		this.safe = safe;
+		this.name	= name;
+		this.safe	= safe;
 	}
 
 	public boolean isSafe() {

@@ -833,7 +833,13 @@ public class BoxCFParser extends BoxAbstractParser {
 		if ( keyword != null && keyword.scope() != null ) {
 			return toAst( file, keyword.scope() );
 		}
-		return new BoxIdentifier( node.IDENTIFIER().getText(), node.QM() != null, getPosition( node ), getSourceText( node ) );
+		String name = "";
+		if(node.IDENTIFIER()!= null) {
+			name = node.IDENTIFIER().getText();
+		} else if(node.reservedKeyword() != null) {
+			name = node.reservedKeyword().getText();
+		}
+		return new BoxIdentifier( name, node.QM() != null, getPosition( node ), getSourceText( node ) );
 	}
 
 	/**
