@@ -153,7 +153,8 @@ public class BoxFunctionDeclarationTransformer extends AbstractTransformer {
 
 		if ( context == TransformerContext.REGISTER ) {
 			Map<String, String> values = Map.ofEntries(
-			    Map.entry( "className", className )
+			    Map.entry( "className", className ),
+			    Map.entry( "contextName", transpiler.peekContextName() )
 			);
 			template = "${contextName}.registerUDF( ${className}.getInstance() );";
 			Node javaStmt = parseStatement( template, values );

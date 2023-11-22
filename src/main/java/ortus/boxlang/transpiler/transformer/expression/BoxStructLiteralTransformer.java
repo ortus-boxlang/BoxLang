@@ -48,7 +48,6 @@ public class BoxStructLiteralTransformer extends AbstractTransformer {
 
 												{
 													put( "contextName", transpiler.peekContextName() );
-													put( "contextName", transpiler.peekContextName() );
 												}
 											};
 		boolean				empty			= structLiteral.getValues().isEmpty();

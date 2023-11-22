@@ -46,6 +46,7 @@ public class BoxFunctionInvocationTransformer extends AbstractTransformer {
 
 			{
 				put( "name", function.getName().getName() );
+				put( "contextName", transpiler.peekContextName() );
 			}
 		};
 		for ( int i = 0; i < function.getArguments().size(); i++ ) {

@@ -51,6 +51,7 @@ public class BoxComparisonOperationTransformer extends AbstractTransformer {
 												{
 													put( "left", left.toString() );
 													put( "right", right.toString() );
+													put( "contextName", transpiler.peekContextName() );
 
 												}
 											};

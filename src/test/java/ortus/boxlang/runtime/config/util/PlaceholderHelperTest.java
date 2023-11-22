@@ -95,4 +95,16 @@ public class PlaceholderHelperTest {
 		assertThat( resolved ).isEqualTo( expected );
 	}
 
+	@DisplayName( "Placeholder can replace more than one placeholder of the same name" )
+	@Test
+	public void testResolveMultiple() {
+		String				input		= "foo ${brad} bar ${brad} baz ${brad} bum";
+		String				expected	= "foo wood bar wood baz wood bum";
+		Map<String, String>	map			= Map.of( "brad", "wood" );
+
+		String				resolved	= PlaceholderHelper.resolve( input, map );
+
+		assertThat( resolved ).isEqualTo( expected );
+	}
+
 }

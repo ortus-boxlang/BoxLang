@@ -142,6 +142,31 @@ public class ObjectReferenceAssignmentTest {
 
 	}
 
+	@DisplayName( "dereference invoke key" )
+	@Test
+	public void testDereferenceInvokeKey() {
+		instance.executeSource(
+		    """
+		      ctx = new java:ortus.boxlang.runtime.context.ScriptingBoxContext();
+		    result = variables.ctx.getDefaultAssignmentScope()
+		      """,
+		    context );
+		assertThat( variables.dereference( result, false ) instanceof IScope ).isTrue();
+
+	}
+
+	@DisplayName( "dereference invoke headless" )
+	@Test
+	public void testDereferenceInvokeHeadless() {
+		instance.executeSource(
+		    """
+		      ctx = new java:ortus.boxlang.runtime.context.ScriptingBoxContext();
+		    result = ctx.getDefaultAssignmentScope()
+		      """,
+		    context );
+		assertThat( variables.dereference( result, false ) instanceof IScope ).isTrue();
+	}
+
 	@DisplayName( "safe navigation" )
 	@Test
 	public void testSafeNavigation() {

@@ -3,6 +3,7 @@ package ortus.boxlang.transpiler.transformer.expression;
 
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -49,8 +50,13 @@ public class BoxStringInterpolationTransformer extends AbstractTransformer {
 		for ( int i = operands.size() - 1; i-- > 0; ) {
 			expr = "Concat.invoke(" + operands.get( i ) + "," + expr + ")";
 		}
+		Map<String, String>	values		= new HashMap<>() {
 
-		Node javaExpr = parseExpression( expr.toString(), new HashMap<>() );
+											{
+												put( "contextName", transpiler.peekContextName() );
+											}
+										};
+		Node				javaExpr	= parseExpression( expr.toString(), values );
 		logger.info( "{} -> {}", node.getSourceText(), javaExpr );
 		addIndex( javaExpr, node );
 		return javaExpr;

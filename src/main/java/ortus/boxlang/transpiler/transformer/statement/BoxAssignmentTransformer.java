@@ -31,6 +31,7 @@ import ortus.boxlang.ast.BoxExpr;
 import ortus.boxlang.ast.BoxNode;
 import ortus.boxlang.ast.statement.BoxAssignment;
 import ortus.boxlang.ast.statement.BoxAssignmentOperator;
+import ortus.boxlang.runtime.config.util.PlaceholderHelper;
 import ortus.boxlang.runtime.types.exceptions.ApplicationException;
 import ortus.boxlang.transpiler.JavaTranspiler;
 import ortus.boxlang.transpiler.transformer.AbstractTransformer;
@@ -76,7 +77,7 @@ public class BoxAssignmentTransformer extends AbstractTransformer {
 			values.put( "key", left.toString() );
 			values.put( "right", right.toString() );
 			if ( right instanceof NameExpr rname ) {
-				String tmp = "${contextName}.scopeFindNearby( Key.of( \"" + rname + "\" ), null ).value()";
+				String tmp = PlaceholderHelper.resolve( "${contextName}.scopeFindNearby( Key.of( \"" + rname + "\" ), null ).value()", values );
 				values.put( "right", tmp );
 			}
 
