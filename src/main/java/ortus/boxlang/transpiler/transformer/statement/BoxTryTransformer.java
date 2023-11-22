@@ -26,12 +26,17 @@ import com.github.javaparser.ast.NodeList;
 import com.github.javaparser.ast.body.Parameter;
 import com.github.javaparser.ast.stmt.BlockStmt;
 import com.github.javaparser.ast.stmt.CatchClause;
+import com.github.javaparser.ast.stmt.IfStmt;
 import com.github.javaparser.ast.stmt.Statement;
 import com.github.javaparser.ast.stmt.TryStmt;
 import com.github.javaparser.ast.type.ClassOrInterfaceType;
+import com.github.javaparser.ast.expr.Expression;
+import com.github.javaparser.ast.expr.BooleanLiteralExpr;
 
 import ortus.boxlang.ast.BoxNode;
 import ortus.boxlang.ast.statement.BoxTry;
+import ortus.boxlang.ast.statement.BoxTryCatch;
+import ortus.boxlang.ast.statement.BoxTryCatchType;
 import ortus.boxlang.transpiler.JavaTranspiler;
 import ortus.boxlang.transpiler.transformer.AbstractTransformer;
 import ortus.boxlang.transpiler.transformer.TransformerContext;
@@ -62,40 +67,73 @@ public class BoxTryTransformer extends AbstractTransformer {
 		    ( Statement ) transpiler.transform( stmt )
 		) );
 
-		NodeList<CatchClause> catchClauses = new NodeList<>();
-		boxTry.getCatches().forEach( clause -> {
-			int					catchCounter		= transpiler.incrementAndGetTryCatchCounter();
-			String				catchContextName	= "catchContext" + catchCounter;
-			String				throwableName		= "e" + catchCounter;
+		// Skip all catch logic if there are no catch clauses
+		if ( boxTry.getCatches().size() > 0 ) {
+			int			catchCounter	= transpiler.incrementAndGetTryCatchCounter();
+			String		throwableName	= "e" + catchCounter;
+			BlockStmt	catchBody		= new BlockStmt();
+			// This top-level if statment is used to implement the runtime checks for multiple catch clauses
+			IfStmt		javaIfStmt		= new IfStmt();
+			// This is used to keep track of the last if statement so we can add the else statement
+			IfStmt		javaLastIf		= javaIfStmt;
+			// Add our empty top-level if statement to the catch body, we'll flesh out the conditions and then/else blocks as we go
+			catchBody.addStatement( javaIfStmt );
+			int typeCounter = 0;
+			for ( BoxTryCatch clause : boxTry.getCatches() ) {
+				String				catchContextName	= "catchContext" + catchCounter + ++typeCounter;
+				String				catchName			= clause.getException().getName();
+				Map<String, String>	values				= new HashMap<>() {
 
-			BlockStmt			catchBody			= new BlockStmt();
-			String				catchName			= clause.getException().getName();
-			Map<String, String>	values				= new HashMap<>() {
+															{
+																put( "catchName", catchName );
+																put( "catchContextName", catchContextName );
+																put( "contextName", transpiler.peekContextName() );
+																put( "throwableName", throwableName );
+																put( "type", clause.getName() );
+															}
+														};
+				if ( typeCounter > 1 ) {
+					IfStmt tmp = new IfStmt();
+					javaLastIf.setElseStmt( tmp );
+					javaLastIf = tmp;
+				}
+				if ( clause.getType() == BoxTryCatchType.Any ) {
+					javaLastIf.setCondition( new BooleanLiteralExpr( true ) );
+				} else {
+					javaLastIf.setCondition( ( Expression ) parseExpression(
+					    "ExceptionUtil.exceptionIsOfType( ${contextName}, ${throwableName}, ${type} )",
+					    values
+					) );
+				}
 
-														{
-															put( "catchName", catchName );
-															put( "catchContextName", catchContextName );
-															put( "contextName", transpiler.peekContextName() );
-															put( "throwableName", throwableName );
-														}
-													};
+				BlockStmt	ifhBody	= new BlockStmt();
+				Statement	handler	= ( Statement ) parseStatement(
+				    "CatchBoxContext ${catchContextName} = new CatchBoxContext( ${contextName}, Key.of( \"${catchName}\" ), ${throwableName} );",
+				    values
+				);
 
-			Statement			handler				= ( Statement ) parseStatement(
-			    "CatchBoxContext ${catchContextName} = new CatchBoxContext( ${contextName}, Key.of( \"${catchName}\" ), ${throwableName} );",
-			    values
-			);
+				ifhBody.addStatement( handler );
 
-			catchBody.addStatement( handler );
+				transpiler.pushContextName( catchContextName );
+				clause.getCatchBody().forEach( stmt -> ifhBody.getStatements().add(
+				    ( Statement ) transpiler.transform( stmt )
+				) );
+				transpiler.popContextName();
+				javaLastIf.setThenStmt( ifhBody );
+			} // end for loop
 
-			transpiler.pushContextName( catchContextName );
-			clause.getCatchBody().forEach( stmt -> catchBody.getStatements().add(
-			    ( Statement ) transpiler.transform( stmt )
-			) );
-			transpiler.popContextName();
+			Map<String, String> values = new HashMap<>() {
 
+				{
+					put( "contextName", transpiler.peekContextName() );
+				}
+			};
+			javaLastIf.setElseStmt( new BlockStmt( new NodeList<Statement>( ( Statement ) parseStatement( "${contextName}.rethrow();", values ) ) ) );
+
+			NodeList<CatchClause> catchClauses = new NodeList<>();
 			catchClauses.add( new CatchClause( new Parameter( new ClassOrInterfaceType( "Throwable" ), throwableName ), catchBody ) );
+			javaTry.setCatchClauses( catchClauses );
 		}
-		);
 
 		BlockStmt finallyBody = new BlockStmt();
 		boxTry.getFinallyBody().forEach( stmt -> finallyBody.getStatements().add(
@@ -103,7 +141,6 @@ public class BoxTryTransformer extends AbstractTransformer {
 		) );
 
 		javaTry.setTryBlock( tryBody );
-		javaTry.setCatchClauses( catchClauses );
 		javaTry.setFinallyBlock( finallyBody );
 		return javaTry;
 	}

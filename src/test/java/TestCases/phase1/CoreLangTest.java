@@ -156,7 +156,7 @@ public class CoreLangTest {
 		         	1/0
 		           } catch (any e) {
 		    message = variables.e.getMessage();
-		    //message2 = variables.e.message;
+		    message2 = variables.e.message;
 		    result = "in catch";
 		           } finally {
 		         		result &= ' also finally';
@@ -165,7 +165,7 @@ public class CoreLangTest {
 		    context );
 		assertThat( variables.dereference( result, false ) ).isEqualTo( "in catch also finally" );
 		assertThat( variables.dereference( Key.of( "message" ), false ) ).isEqualTo( "You cannot divide by zero." );
-		// assertThat( variables.dereference( Key.of( "message2" ), false ) ).isEqualTo( "You cannot divide by zero." );
+		assertThat( variables.dereference( Key.of( "message2" ), false ) ).isEqualTo( "You cannot divide by zero." );
 
 	}
 
@@ -197,6 +197,69 @@ public class CoreLangTest {
 
 	}
 
+	@DisplayName( "try multiple catches" )
+	@Test
+	public void testTryMultipleCatches() {
+
+		instance.executeSource(
+		    """
+		    result = "default"
+		       try {
+		       	1/0
+		       } catch (com.foo.bar e) {
+		       	result = "catch1"
+		       } catch ("com.foo.bar2" e) {
+		       	result = "catch2"
+		       } catch ( any myErr ) {
+		       	result = "catchany"
+		       }
+		         """,
+		    context );
+		assertThat( variables.dereference( result, false ) ).isEqualTo( "catchany" );
+
+	}
+
+	@DisplayName( "try multiple catche types" )
+	@Test
+	public void testTryMultipleCatchTypes() {
+
+		instance.executeSource(
+		    """
+		     result = "default"
+		        try {
+		        	1/0
+		       } catch ( "com.foo.type" | java.lang.RuntimeException | "foo.bar" myErr ) {
+		        	result = "catch3"
+		    }
+		          """,
+		    context );
+		// assertThat( variables.dereference( result, false ) ).isEqualTo( "catchany" );
+
+	}
+
+	@DisplayName( "try finally" )
+	@Test
+	public void testTryFinally() {
+
+		assertThrows( ApplicationException.class,
+		    () -> instance.executeSource(
+		        """
+		          result = "default"
+		             try {
+		             	1/0
+		            } finally {
+		        result = "finally"
+		         }
+		               """,
+		        context )
+		);
+		assertThat( variables.dereference( result, false ) ).isEqualTo( "finally" );
+
+	}
+
+	// TODO: try/catch types
+	// TODO: try/finally with no catch
+
 	@DisplayName( "rethrow" )
 	@Test
 	public void testRethrow() {
@@ -214,8 +277,6 @@ public class CoreLangTest {
 		);
 		assertThat( t.getMessage() ).isEqualTo( "You cannot divide by zero." );
 	}
-
-	// TODO: try/catch types
 
 	// TODO: for/in loop. Need struct/array literals
 
