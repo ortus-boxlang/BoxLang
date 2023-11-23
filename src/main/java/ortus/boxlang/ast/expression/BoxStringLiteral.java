@@ -14,6 +14,8 @@
  */
 package ortus.boxlang.ast.expression;
 
+import java.util.Map;
+
 import ortus.boxlang.ast.BoxExpr;
 import ortus.boxlang.ast.Position;
 
@@ -46,6 +48,14 @@ public class BoxStringLiteral extends BoxExpr {
 		sb.deleteCharAt( value.length() - 1 );
 		sb.deleteCharAt( 0 );
 		this.value = sb.toString();
+	}
+
+	@Override
+	public Map<String, Object> toMap() {
+		Map<String, Object> map = super.toMap();
+
+		map.put( "value", value );
+		return map;
 	}
 
 }

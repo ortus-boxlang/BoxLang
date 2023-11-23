@@ -15,6 +15,8 @@
 package ortus.boxlang.ast;
 
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * Root node for a script (program) cf/cfm/box
@@ -40,5 +42,13 @@ public class BoxScript extends BoxNode {
 
 	public List<BoxStatement> getStatements() {
 		return statements;
+	}
+
+	@Override
+	public Map<String, Object> toMap() {
+		Map<String, Object> map = super.toMap();
+
+		map.put( "statements", statements.stream().map( s -> s.toMap() ).collect( Collectors.toList() ) );
+		return map;
 	}
 }

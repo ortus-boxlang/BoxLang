@@ -14,6 +14,8 @@
  */
 package ortus.boxlang.ast.expression;
 
+import java.util.Map;
+
 import ortus.boxlang.ast.BoxExpr;
 import ortus.boxlang.ast.Position;
 
@@ -43,5 +45,14 @@ public class BoxNegateOperation extends BoxExpr {
 
 	public BoxNegateOperator getOperator() {
 		return operator;
+	}
+
+	@Override
+	public Map<String, Object> toMap() {
+		Map<String, Object> map = super.toMap();
+
+		map.put( "expr", expr.toMap() );
+		map.put( "operator", operator.name() );
+		return map;
 	}
 }

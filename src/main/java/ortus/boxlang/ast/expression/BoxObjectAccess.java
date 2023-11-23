@@ -14,6 +14,8 @@
  */
 package ortus.boxlang.ast.expression;
 
+import java.util.Map;
+
 import ortus.boxlang.ast.BoxExpr;
 import ortus.boxlang.ast.Position;
 
@@ -63,6 +65,16 @@ public class BoxObjectAccess extends BoxAccess {
 		this.access		= access;
 		this.context.setParent( this );
 		this.access.setParent( this );
+	}
+
+	@Override
+	public Map<String, Object> toMap() {
+		Map<String, Object> map = super.toMap();
+
+		map.put( "context", context.toMap() );
+		map.put( "access", access.toMap() );
+		map.put( "safe", safe );
+		return map;
 	}
 
 }

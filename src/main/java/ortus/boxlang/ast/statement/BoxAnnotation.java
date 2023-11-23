@@ -1,5 +1,7 @@
 package ortus.boxlang.ast.statement;
 
+import java.util.Map;
+
 import ortus.boxlang.ast.BoxExpr;
 import ortus.boxlang.ast.BoxNode;
 import ortus.boxlang.ast.Position;
@@ -35,5 +37,14 @@ public class BoxAnnotation extends BoxNode {
 
 	public BoxExpr getValue() {
 		return value;
+	}
+
+	@Override
+	public Map<String, Object> toMap() {
+		Map<String, Object> map = super.toMap();
+
+		map.put( "key", key.toMap() );
+		map.put( "value", value.toMap() );
+		return map;
 	}
 }

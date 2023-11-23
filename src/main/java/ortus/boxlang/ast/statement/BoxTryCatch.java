@@ -14,13 +14,15 @@
  */
 package ortus.boxlang.ast.statement;
 
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
+
 import ortus.boxlang.ast.BoxExpr;
 import ortus.boxlang.ast.BoxStatement;
 import ortus.boxlang.ast.Position;
 import ortus.boxlang.ast.expression.BoxIdentifier;
-
-import java.util.Collections;
-import java.util.List;
 
 /**
  * AST Node representing a if statement
@@ -68,5 +70,16 @@ public class BoxTryCatch extends BoxStatement {
 
 	public String getName() {
 		return name;
+	}
+
+	@Override
+	public Map<String, Object> toMap() {
+		Map<String, Object> map = super.toMap();
+
+		map.put( "exception", exception.toMap() );
+		map.put( "catchBody", catchBody.stream().map( BoxStatement::toMap ).collect( Collectors.toList() ) );
+		map.put( "type", type.toString() );
+		map.put( "name", name );
+		return map;
 	}
 }

@@ -14,12 +14,14 @@
  */
 package ortus.boxlang.ast.expression;
 
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
+
 import ortus.boxlang.ast.BoxExpr;
 import ortus.boxlang.ast.Position;
 import ortus.boxlang.ast.ReferenceByName;
-
-import java.util.Collections;
-import java.util.List;
 
 /**
  * AST Node representing a fully qualified name
@@ -51,5 +53,14 @@ public class BoxFunctionInvocation extends BoxExpr {
 		this.name		= new ReferenceByName( name );
 		this.arguments	= Collections.unmodifiableList( arguments );
 		this.arguments.forEach( arg -> arg.setParent( this ) );
+	}
+
+	@Override
+	public Map<String, Object> toMap() {
+		Map<String, Object> map = super.toMap();
+
+		map.put( "name", name );
+		map.put( "arguments", arguments.stream().map( BoxExpr::toMap ).collect( Collectors.toList() ) );
+		return map;
 	}
 }

@@ -1,10 +1,12 @@
 package ortus.boxlang.ast.expression;
 
-import ortus.boxlang.ast.BoxExpr;
-import ortus.boxlang.ast.Position;
-
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
+
+import ortus.boxlang.ast.BoxExpr;
+import ortus.boxlang.ast.Position;
 
 /**
  * A struct literal comes in two forms, ordered and unordered (default).
@@ -40,5 +42,14 @@ public class BoxStructLiteral extends BoxExpr {
 
 	public BoxStructType getType() {
 		return type;
+	}
+
+	@Override
+	public Map<String, Object> toMap() {
+		Map<String, Object> map = super.toMap();
+
+		map.put( "values", values.stream().map( BoxExpr::toMap ).collect( Collectors.toList() ) );
+		map.put( "type", type.toString() );
+		return map;
 	}
 }

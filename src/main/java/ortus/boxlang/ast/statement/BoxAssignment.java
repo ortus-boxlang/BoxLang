@@ -14,12 +14,11 @@
  */
 package ortus.boxlang.ast.statement;
 
+import java.util.Map;
+
+import ortus.boxlang.ast.BoxExpr;
 import ortus.boxlang.ast.BoxStatement;
 import ortus.boxlang.ast.Position;
-import ortus.boxlang.ast.BoxExpr;
-
-import java.util.Collections;
-import java.util.List;
 
 /**
  * AST Node representing an assigment statement
@@ -57,5 +56,15 @@ public class BoxAssignment extends BoxStatement {
 
 	public BoxAssignmentOperator getOp() {
 		return op;
+	}
+
+	@Override
+	public Map<String, Object> toMap() {
+		Map<String, Object> map = super.toMap();
+
+		map.put( "left", left.toMap() );
+		map.put( "right", right.toMap() );
+		map.put( "op", op.toString() );
+		return map;
 	}
 }

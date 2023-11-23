@@ -14,12 +14,14 @@
  */
 package ortus.boxlang.ast.statement;
 
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
+
 import ortus.boxlang.ast.BoxExpr;
 import ortus.boxlang.ast.BoxStatement;
 import ortus.boxlang.ast.Position;
-
-import java.util.Collections;
-import java.util.List;
 
 /**
  * AST Node representing a local declaration statement like:
@@ -56,5 +58,14 @@ public class BoxLocalDeclaration extends BoxStatement {
 
 	public void setExpression( BoxExpr expression ) {
 		this.expression = expression;
+	}
+
+	@Override
+	public Map<String, Object> toMap() {
+		Map<String, Object> map = super.toMap();
+
+		map.put( "identifiers", identifiers.stream().map( BoxExpr::toMap ).collect( Collectors.toList() ) );
+		map.put( "expression", expression.toMap() );
+		return map;
 	}
 }

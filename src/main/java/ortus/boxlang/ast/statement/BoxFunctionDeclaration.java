@@ -14,12 +14,13 @@
  */
 package ortus.boxlang.ast.statement;
 
-import ortus.boxlang.ast.BoxStatement;
-import ortus.boxlang.ast.Position;
-
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
+
+import ortus.boxlang.ast.BoxStatement;
+import ortus.boxlang.ast.Position;
 
 /**
  * AST Node representing a function definition
@@ -82,5 +83,17 @@ public class BoxFunctionDeclaration extends BoxStatement {
 
 	public List<BoxStatement> getBody() {
 		return body;
+	}
+
+	@Override
+	public Map<String, Object> toMap() {
+		Map<String, Object> map = super.toMap();
+
+		map.put( "accessModifier", accessModifier.toString() );
+		map.put( "name", name );
+		map.put( "type", type.toMap() );
+		map.put( "args", args.stream().map( BoxArgumentDeclaration::toMap ).collect( java.util.stream.Collectors.toList() ) );
+		map.put( "body", body.stream().map( BoxStatement::toMap ).collect( java.util.stream.Collectors.toList() ) );
+		return map;
 	}
 }

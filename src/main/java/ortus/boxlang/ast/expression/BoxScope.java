@@ -14,6 +14,8 @@
  */
 package ortus.boxlang.ast.expression;
 
+import java.util.Map;
+
 import ortus.boxlang.ast.BoxExpr;
 import ortus.boxlang.ast.Position;
 
@@ -45,6 +47,14 @@ public class BoxScope extends BoxExpr {
 	public BoxScope( String name, Position position, String sourceText ) {
 		super( position, sourceText );
 		this.name = name;
+	}
+
+	@Override
+	public Map<String, Object> toMap() {
+		Map<String, Object> map = super.toMap();
+
+		map.put( "name", name );
+		return map;
 	}
 
 }

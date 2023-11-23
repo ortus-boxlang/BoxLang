@@ -14,6 +14,8 @@
  */
 package ortus.boxlang.ast.expression;
 
+import java.util.Map;
+
 import ortus.boxlang.ast.BoxExpr;
 import ortus.boxlang.ast.Position;
 
@@ -38,6 +40,14 @@ public class BoxFQN extends BoxExpr {
 	public BoxFQN( String value, Position position, String sourceText ) {
 		super( position, sourceText );
 		this.value = value;
+	}
+
+	@Override
+	public Map<String, Object> toMap() {
+		Map<String, Object> map = super.toMap();
+
+		map.put( "value", value );
+		return map;
 	}
 
 }

@@ -14,6 +14,8 @@
  */
 package ortus.boxlang.ast.statement;
 
+import java.util.Map;
+
 import ortus.boxlang.ast.BoxNode;
 import ortus.boxlang.ast.Position;
 
@@ -45,5 +47,14 @@ public class BoxReturnType extends BoxNode {
 
 	public String getFqn() {
 		return fqn;
+	}
+
+	@Override
+	public Map<String, Object> toMap() {
+		Map<String, Object> map = super.toMap();
+
+		map.put( "type", type.name() );
+		map.put( "fqn", fqn );
+		return map;
 	}
 }

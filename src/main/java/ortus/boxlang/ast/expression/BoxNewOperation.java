@@ -14,11 +14,12 @@
  */
 package ortus.boxlang.ast.expression;
 
-import ortus.boxlang.ast.BoxExpr;
-import ortus.boxlang.ast.Position;
-
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
+
+import ortus.boxlang.ast.BoxExpr;
+import ortus.boxlang.ast.Position;
 
 /**
  * AST Node representing new statement
@@ -52,5 +53,14 @@ public class BoxNewOperation extends BoxExpr {
 
 	public List<BoxArgument> getArguments() {
 		return arguments;
+	}
+
+	@Override
+	public Map<String, Object> toMap() {
+		Map<String, Object> map = super.toMap();
+
+		map.put( "expression", expression );
+		map.put( "arguments", arguments.stream() );
+		return map;
 	}
 }

@@ -14,6 +14,8 @@
  */
 package ortus.boxlang.ast.expression;
 
+import java.util.Map;
+
 import ortus.boxlang.ast.BoxExpr;
 import ortus.boxlang.ast.Position;
 
@@ -39,5 +41,13 @@ public class BoxParenthesis extends BoxExpr {
 		super( position, sourceText );
 		this.expression = expression;
 		this.expression.setParent( this );
+	}
+
+	@Override
+	public Map<String, Object> toMap() {
+		Map<String, Object> map = super.toMap();
+
+		map.put( "expression", expression.toMap() );
+		return map;
 	}
 }

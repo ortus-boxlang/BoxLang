@@ -14,12 +14,14 @@
  */
 package ortus.boxlang.ast.statement;
 
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
+
 import ortus.boxlang.ast.BoxExpr;
 import ortus.boxlang.ast.BoxStatement;
 import ortus.boxlang.ast.Position;
-
-import java.util.Collections;
-import java.util.List;
 
 /**
  * AST Node representing a for statement
@@ -59,5 +61,15 @@ public class BoxForIn extends BoxStatement {
 
 	public List<BoxStatement> getBody() {
 		return body;
+	}
+
+	@Override
+	public Map<String, Object> toMap() {
+		Map<String, Object> map = super.toMap();
+
+		map.put( "variable", variable.toMap() );
+		map.put( "expression", expression.toMap() );
+		map.put( "body", body.stream().map( BoxStatement::toMap ).collect( Collectors.toList() ) );
+		return map;
 	}
 }

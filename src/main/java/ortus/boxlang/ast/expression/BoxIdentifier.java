@@ -14,6 +14,8 @@
  */
 package ortus.boxlang.ast.expression;
 
+import java.util.Map;
+
 import ortus.boxlang.ast.BoxExpr;
 import ortus.boxlang.ast.Named;
 import ortus.boxlang.ast.Position;
@@ -46,5 +48,14 @@ public class BoxIdentifier extends BoxExpr implements Named {
 
 	public boolean isSafe() {
 		return safe;
+	}
+
+	@Override
+	public Map<String, Object> toMap() {
+		Map<String, Object> map = super.toMap();
+
+		map.put( "name", name );
+		map.put( "safe", safe );
+		return map;
 	}
 }

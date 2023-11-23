@@ -314,6 +314,9 @@ public class JavaBoxpiler {
 				transpiler.setProperty( "packageName", packageName );
 				transpiler.setProperty( "baseclass", "BoxScript" );
 				transpiler.setProperty( "returnType", "Object" );
+
+				System.out.println( result.getRoot().toJSON().toString() );
+
 				TranspiledCode javaASTs = transpiler.transpile( result.getRoot() );
 				if ( false )
 					throw new ApplicationException( javaASTs.getEntryPoint().toString() );

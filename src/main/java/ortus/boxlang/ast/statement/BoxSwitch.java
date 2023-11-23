@@ -14,12 +14,14 @@
  */
 package ortus.boxlang.ast.statement;
 
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
+
 import ortus.boxlang.ast.BoxExpr;
 import ortus.boxlang.ast.BoxStatement;
 import ortus.boxlang.ast.Position;
-
-import java.util.Collections;
-import java.util.List;
 
 /**
  * AST Node representing a switch statement
@@ -51,5 +53,14 @@ public class BoxSwitch extends BoxStatement {
 
 	public List<BoxSwitchCase> getCases() {
 		return cases;
+	}
+
+	@Override
+	public Map<String, Object> toMap() {
+		Map<String, Object> map = super.toMap();
+
+		map.put( "condition", condition.toMap() );
+		map.put( "cases", cases.stream().map( BoxSwitchCase::toMap ).collect( Collectors.toList() ) );
+		return map;
 	}
 }

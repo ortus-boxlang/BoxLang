@@ -14,10 +14,14 @@
  */
 package ortus.boxlang.ast;
 
-import ortus.boxlang.ast.statement.BoxTry;
-
+import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+
+import com.fasterxml.jackson.jr.ob.JSON;
+import com.fasterxml.jackson.jr.ob.JSONObjectException;
 
 /**
  * Represent a Node in the AST
@@ -126,4 +130,27 @@ public class Node {
 		return result;
 	}
 
+	public Map<String, Object> toMap() {
+		Map<String, Object> map = new HashMap<String, Object>();
+
+		map.put( "position", position.toString() );
+		map.put( "sourceText", sourceText );
+		// I'm not sure if children is used at all right now
+		map.put( "children", children.stream().map( Node::toMap ).toList() );
+		map.put( "name", getClass().getSimpleName() );
+		return map;
+	}
+
+	public String toJSON() {
+		try {
+			return JSON.std.asString( toMap() );
+		} catch ( JSONObjectException e ) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch ( IOException e ) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		throw new RuntimeException( "Failed to convert to JSON" );
+	}
 }
