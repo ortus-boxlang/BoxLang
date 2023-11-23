@@ -30,6 +30,9 @@ import java.time.Instant;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import ortus.boxlang.parser.BoxParser;
+import ortus.boxlang.parser.BoxScriptType;
+import ortus.boxlang.parser.ParsingResult;
 import ortus.boxlang.runtime.config.ConfigLoader;
 import ortus.boxlang.runtime.config.Configuration;
 import ortus.boxlang.runtime.context.IBoxContext;
@@ -566,6 +569,29 @@ public class BoxRuntime {
 		    timerUtil.stopAndGetMillis( "execute-" + source.hashCode() )
 		);
 
+	}
+
+	/**
+	 * Parse source string and print AST as JSON
+	 *
+	 * @param source A string of source to parse and print AST for
+	 *
+	 */
+	public void printSourceAST( String source ) {
+		BoxParser		parser	= new BoxParser();
+		ParsingResult	result;
+		try {
+			result = parser.parse( source, BoxScriptType.CFSCRIPT );
+		} catch ( IOException e ) {
+			throw new ApplicationException( "Error compiling source", e );
+		}
+
+		result.getIssues().forEach( System.out::println );
+		if ( !result.isCorrect() ) {
+			throw new ApplicationException( "Error compiling source. " + result.getIssues().get( 0 ).toString() );
+		}
+
+		System.out.println( result.getRoot().toJSON().toString() );
 	}
 
 	/**

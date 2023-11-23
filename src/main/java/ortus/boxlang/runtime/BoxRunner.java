@@ -81,7 +81,9 @@ public class BoxRunner {
 		// Get a runtime going
 		BoxRuntime boxRuntime = BoxRuntime.getInstance( options.debug(), options.configFile() );
 
-		if ( options.templatePath() != null ) {
+		if ( options.printAST() && options.code() != null ) {
+			boxRuntime.printSourceAST( options.code() );
+		} else if ( options.templatePath() != null ) {
 			// Execute a file
 			boxRuntime.executeTemplate( options.templatePath() );
 		} else if ( options.code() != null ) {
@@ -121,7 +123,8 @@ public class BoxRunner {
 		    options.templatePath(),
 		    debug,
 		    options.code(),
-		    configFile
+		    configFile,
+		    options.printAST()
 		);
 	}
 
@@ -135,6 +138,7 @@ public class BoxRunner {
 	private static CLIOptions parseCommandLineOptions( String[] args ) {
 		// Initialize options with defaults
 		Boolean			debug		= null;
+		Boolean			printAST	= false;
 		List<String>	argsList	= new ArrayList<>( Arrays.asList( args ) );
 		String			current		= null;
 		String			file		= null;
@@ -149,6 +153,12 @@ public class BoxRunner {
 			// Debug mode Flag, we find and continue to the next argument
 			if ( current.equalsIgnoreCase( "--debug" ) ) {
 				debug = true;
+				continue;
+			}
+
+			// Debug mode Flag, we find and continue to the next argument
+			if ( current.equalsIgnoreCase( "--printAST" ) ) {
+				printAST = true;
 				continue;
 			}
 
@@ -180,7 +190,7 @@ public class BoxRunner {
 			file = templatePath.toString();
 		}
 
-		return new CLIOptions( file, debug, code, configFile );
+		return new CLIOptions( file, debug, code, configFile, printAST );
 	}
 
 	/**
@@ -195,7 +205,8 @@ public class BoxRunner {
 	    String templatePath,
 	    Boolean debug,
 	    String code,
-	    String configFile ) {
+	    String configFile,
+	    Boolean printAST ) {
 		// The record automatically generates the constructor, getters, equals, hashCode, and toString methods.
 	}
 

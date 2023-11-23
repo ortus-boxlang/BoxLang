@@ -21,6 +21,7 @@ import java.util.List;
 import java.util.Map;
 
 import com.fasterxml.jackson.jr.ob.JSON;
+import com.fasterxml.jackson.jr.ob.JSON.Feature;
 import com.fasterxml.jackson.jr.ob.JSONObjectException;
 
 /**
@@ -143,7 +144,7 @@ public class Node {
 
 	public String toJSON() {
 		try {
-			return JSON.std.asString( toMap() );
+			return JSON.std.with( Feature.PRETTY_PRINT_OUTPUT ).asString( toMap() );
 		} catch ( JSONObjectException e ) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
