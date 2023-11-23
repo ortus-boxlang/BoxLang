@@ -133,10 +133,10 @@ public class Node {
 	public Map<String, Object> toMap() {
 		Map<String, Object> map = new HashMap<String, Object>();
 
-		map.put( "position", position.toString() );
+		map.put( "position", position.toMap() );
 		map.put( "sourceText", sourceText );
 		// I'm not sure if children is used at all right now
-		map.put( "children", children.stream().map( Node::toMap ).toList() );
+		// map.put( "children", children.stream().map( Node::toMap ).toList() );
 		map.put( "name", getClass().getSimpleName() );
 		return map;
 	}

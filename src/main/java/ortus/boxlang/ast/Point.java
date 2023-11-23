@@ -17,6 +17,9 @@
  */
 package ortus.boxlang.ast;
 
+import java.util.HashMap;
+import java.util.Map;
+
 /**
  * Represents a position in the source code with line and column
  */
@@ -52,5 +55,13 @@ public class Point {
 	 */
 	public int getColumn() {
 		return column;
+	}
+
+	public Map<String, Object> toMap() {
+		Map<String, Object> map = new HashMap<String, Object>();
+
+		map.put( "line", line );
+		map.put( "column", column );
+		return map;
 	}
 }

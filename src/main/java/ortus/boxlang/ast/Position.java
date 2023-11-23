@@ -17,6 +17,9 @@
  */
 package ortus.boxlang.ast;
 
+import java.util.HashMap;
+import java.util.Map;
+
 /**
  * Represents a region of code within a text
  */
@@ -113,4 +116,13 @@ public class Position {
 
 		return sb.toString();
 	}
+
+	public Map<String, Object> toMap() {
+		Map<String, Object> map = new HashMap<String, Object>();
+
+		map.put( "start", start.toMap() );
+		map.put( "end", end.toMap() );
+		return map;
+	}
+
 }
