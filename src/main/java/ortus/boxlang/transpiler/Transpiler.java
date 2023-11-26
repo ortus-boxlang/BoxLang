@@ -1,31 +1,27 @@
 package ortus.boxlang.transpiler;
 
+import java.io.File;
+import java.lang.reflect.Method;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.net.URLClassLoader;
+import java.util.ArrayDeque;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+
 import com.github.javaparser.ast.Node;
-import ortus.boxlang.ast.BoxExpr;
+
 import ortus.boxlang.ast.BoxNode;
-import ortus.boxlang.ast.statement.BoxExpression;
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.config.Configuration;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.ScriptingBoxContext;
 import ortus.boxlang.runtime.runnables.BoxScript;
-import ortus.boxlang.runtime.runnables.BoxTemplate;
-import ortus.boxlang.runtime.runnables.RunnableLoader;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.VariablesScope;
 import ortus.boxlang.runtime.types.exceptions.ApplicationException;
 import ortus.boxlang.transpiler.transformer.TransformerContext;
-
-import java.io.File;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
-import java.net.MalformedURLException;
-import java.net.URL;
-import java.net.URLClassLoader;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.ArrayDeque;
 
 /**
  * Transpiler Base class
@@ -34,6 +30,7 @@ public abstract class Transpiler implements ITranspiler {
 
 	private final HashMap<String, String>	properties			= new HashMap<String, String>();
 	private int								tryCatchCounter		= 0;
+	private int								switchCounter		= 0;
 	private ArrayDeque<String>				currentContextName	= new ArrayDeque<>();
 
 	/**
@@ -112,6 +109,10 @@ public abstract class Transpiler implements ITranspiler {
 
 	public int incrementAndGetTryCatchCounter() {
 		return ++tryCatchCounter;
+	}
+
+	public int incrementAndGetSwitchCounter() {
+		return ++switchCounter;
 	}
 
 	public void pushContextName( String name ) {

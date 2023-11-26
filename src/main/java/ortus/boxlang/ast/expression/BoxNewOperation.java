@@ -17,6 +17,7 @@ package ortus.boxlang.ast.expression;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import ortus.boxlang.ast.BoxExpr;
 import ortus.boxlang.ast.Position;
@@ -59,8 +60,8 @@ public class BoxNewOperation extends BoxExpr {
 	public Map<String, Object> toMap() {
 		Map<String, Object> map = super.toMap();
 
-		map.put( "expression", expression );
-		map.put( "arguments", arguments.stream() );
+		map.put( "expression", expression.toMap() );
+		map.put( "arguments", arguments.stream().map( BoxExpr::toMap ).collect( Collectors.toList() ) );
 		return map;
 	}
 }

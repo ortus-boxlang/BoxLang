@@ -14,22 +14,77 @@
  */
 package ortus.boxlang.parser;
 
-import org.antlr.v4.runtime.*;
-import org.apache.commons.io.IOUtils;
-import org.apache.commons.io.input.BOMInputStream;
-import ortus.boxlang.parser.antlr.CFLexer;
-import ortus.boxlang.parser.antlr.CFParser;
-import ortus.boxlang.ast.*;
-import ortus.boxlang.ast.expression.*;
-import ortus.boxlang.ast.BoxStatement;
-import ortus.boxlang.ast.statement.*;
-
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
+
+import org.antlr.v4.runtime.CharStreams;
+import org.antlr.v4.runtime.CommonTokenStream;
+import org.antlr.v4.runtime.ParserRuleContext;
+import org.apache.commons.io.IOUtils;
+import org.apache.commons.io.input.BOMInputStream;
+
+import ortus.boxlang.ast.BoxExpr;
+import ortus.boxlang.ast.BoxScript;
+import ortus.boxlang.ast.BoxStatement;
+import ortus.boxlang.ast.expression.BoxAccess;
+import ortus.boxlang.ast.expression.BoxArgument;
+import ortus.boxlang.ast.expression.BoxArrayAccess;
+import ortus.boxlang.ast.expression.BoxArrayLiteral;
+import ortus.boxlang.ast.expression.BoxAssignmentExpression;
+import ortus.boxlang.ast.expression.BoxBinaryOperation;
+import ortus.boxlang.ast.expression.BoxBinaryOperator;
+import ortus.boxlang.ast.expression.BoxBooleanLiteral;
+import ortus.boxlang.ast.expression.BoxComparisonOperation;
+import ortus.boxlang.ast.expression.BoxComparisonOperator;
+import ortus.boxlang.ast.expression.BoxDecimalLiteral;
+import ortus.boxlang.ast.expression.BoxFQN;
+import ortus.boxlang.ast.expression.BoxFunctionInvocation;
+import ortus.boxlang.ast.expression.BoxIdentifier;
+import ortus.boxlang.ast.expression.BoxIntegerLiteral;
+import ortus.boxlang.ast.expression.BoxMethodInvocation;
+import ortus.boxlang.ast.expression.BoxNewOperation;
+import ortus.boxlang.ast.expression.BoxObjectAccess;
+import ortus.boxlang.ast.expression.BoxParenthesis;
+import ortus.boxlang.ast.expression.BoxScope;
+import ortus.boxlang.ast.expression.BoxStringInterpolation;
+import ortus.boxlang.ast.expression.BoxStringLiteral;
+import ortus.boxlang.ast.expression.BoxStructLiteral;
+import ortus.boxlang.ast.expression.BoxStructType;
+import ortus.boxlang.ast.expression.BoxTernaryOperation;
+import ortus.boxlang.ast.expression.BoxUnaryOperation;
+import ortus.boxlang.ast.expression.BoxUnaryOperator;
+import ortus.boxlang.ast.statement.BoxAccessModifier;
+import ortus.boxlang.ast.statement.BoxArgumentDeclaration;
+import ortus.boxlang.ast.statement.BoxAssert;
+import ortus.boxlang.ast.statement.BoxAssignment;
+import ortus.boxlang.ast.statement.BoxAssignmentOperator;
+import ortus.boxlang.ast.statement.BoxBreak;
+import ortus.boxlang.ast.statement.BoxContinue;
+import ortus.boxlang.ast.statement.BoxDo;
+import ortus.boxlang.ast.statement.BoxExpression;
+import ortus.boxlang.ast.statement.BoxForIn;
+import ortus.boxlang.ast.statement.BoxForIndex;
+import ortus.boxlang.ast.statement.BoxFunctionDeclaration;
+import ortus.boxlang.ast.statement.BoxIfElse;
+import ortus.boxlang.ast.statement.BoxImport;
+import ortus.boxlang.ast.statement.BoxLocalDeclaration;
+import ortus.boxlang.ast.statement.BoxRethrow;
+import ortus.boxlang.ast.statement.BoxReturn;
+import ortus.boxlang.ast.statement.BoxReturnType;
+import ortus.boxlang.ast.statement.BoxSwitch;
+import ortus.boxlang.ast.statement.BoxSwitchCase;
+import ortus.boxlang.ast.statement.BoxThrow;
+import ortus.boxlang.ast.statement.BoxTry;
+import ortus.boxlang.ast.statement.BoxTryCatch;
+import ortus.boxlang.ast.statement.BoxTryCatchType;
+import ortus.boxlang.ast.statement.BoxType;
+import ortus.boxlang.ast.statement.BoxWhile;
+import ortus.boxlang.parser.antlr.CFLexer;
+import ortus.boxlang.parser.antlr.CFParser;
 
 /**
  * Parser for CF scripts
@@ -449,14 +504,7 @@ public class BoxCFParser extends BoxAbstractParser {
 	private BoxSwitchCase toAst( File file, CFParser.CaseContext node, BoxExpr condition ) {
 		BoxExpr expr = null;
 		if ( node.expression() != null ) {
-			BoxExpr temp = toAst( file, node.expression() );
-			if ( !temp.isLiteral() ) {
-				expr = temp;
-			} else {
-				expr = new BoxComparisonOperation( condition, BoxComparisonOperator.Equal, temp, getPosition( node.expression() ),
-				    getSourceText( node.expression() ) );
-			}
-
+			expr = toAst( file, node.expression() );
 		}
 
 		List<BoxStatement> statements = new ArrayList<>();
@@ -834,9 +882,9 @@ public class BoxCFParser extends BoxAbstractParser {
 			return toAst( file, keyword.scope() );
 		}
 		String name = "";
-		if(node.IDENTIFIER()!= null) {
+		if ( node.IDENTIFIER() != null ) {
 			name = node.IDENTIFIER().getText();
-		} else if(node.reservedKeyword() != null) {
+		} else if ( node.reservedKeyword() != null ) {
 			name = node.reservedKeyword().getText();
 		}
 		return new BoxIdentifier( name, node.QM() != null, getPosition( node ), getSourceText( node ) );

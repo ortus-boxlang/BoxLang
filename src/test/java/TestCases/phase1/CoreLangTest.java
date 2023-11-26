@@ -128,7 +128,6 @@ public class CoreLangTest {
 	@DisplayName( "throw in source" )
 	@Test
 	public void testThrowSource() {
-
 		assertThrows( NoFieldException.class, () -> instance.executeSource(
 		    """
 		    throw new java:ortus.boxlang.runtime.types.exceptions.NoFieldException( "My Message" );
@@ -572,7 +571,7 @@ public class CoreLangTest {
 
 	@DisplayName( "switch" )
 	@Test
-	public void testSwitch() {
+	public void testSwtich() {
 
 		instance.executeSource(
 		    """
@@ -592,6 +591,7 @@ public class CoreLangTest {
 		      case 5+7:
 		      	// case 3 logic
 		      	result = "case3"
+		      	break;
 		      case variables.foo:
 		      	// case 4 logic
 		      	result = "case4"
@@ -603,8 +603,46 @@ public class CoreLangTest {
 		          """,
 		    context );
 
-		assertThat( variables.dereference( result, false ) ).isEqualTo( "case4" );
+		assertThat( variables.dereference( result, false ) ).isEqualTo( "case3" );
 
+	}
+
+	@DisplayName( "switch fall through case" )
+	@Test
+	public void testSwtichFallThroughCase() {
+
+		instance.executeSource(
+		    """
+		       bradRan = false
+		       luisRan = false
+		       gavinRan = false
+		       jorgeRan = false
+
+		       switch( "luis" ) {
+		       case "brad":
+		         bradRan = true
+		         break;
+		    // This case will be entered
+		       case "luis": {
+		         luisRan = true
+		       }
+		    // Because there is no break, this case will also be entered
+		       case "gavin":
+		         gavinRan = true
+		         break;
+		    // But we'll never reach this one
+		       case "jorge":
+		       jorgeRan = true
+		         break;
+		       }
+
+		             """,
+		    context );
+
+		assertThat( variables.dereference( Key.of( "bradRan" ), false ) ).isEqualTo( false );
+		assertThat( variables.dereference( Key.of( "luisRan" ), false ) ).isEqualTo( true );
+		assertThat( variables.dereference( Key.of( "gavinRan" ), false ) ).isEqualTo( true );
+		assertThat( variables.dereference( Key.of( "jorgeRan" ), false ) ).isEqualTo( false );
 	}
 
 	@DisplayName( "switch default" )
@@ -617,7 +655,7 @@ public class CoreLangTest {
 		      	// must be boolean
 		      variables.foo = false;
 
-		      switch( "sdfsdfsdf" ) {
+		      switch( "sdfsd"&"fsdf" & (5+4) ) {
 		      case "brad":
 		      	// case 1 logic
 		      	result = "case1"

@@ -14,20 +14,25 @@
  */
 package ortus.boxlang.transpiler.transformer.statement;
 
-import com.github.javaparser.ast.Node;
-import com.github.javaparser.ast.expr.Expression;
-import com.github.javaparser.ast.stmt.*;
+import java.util.HashMap;
+import java.util.Map;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import com.github.javaparser.ast.Node;
+import com.github.javaparser.ast.expr.Expression;
+import com.github.javaparser.ast.stmt.BlockStmt;
+import com.github.javaparser.ast.stmt.DoStmt;
+import com.github.javaparser.ast.stmt.IfStmt;
+import com.github.javaparser.ast.stmt.Statement;
+
 import ortus.boxlang.ast.BoxNode;
 import ortus.boxlang.ast.statement.BoxSwitch;
 import ortus.boxlang.transpiler.JavaTranspiler;
 import ortus.boxlang.transpiler.transformer.AbstractTransformer;
 import ortus.boxlang.transpiler.transformer.TransformerContext;
 import ortus.boxlang.transpiler.transformer.expression.BoxParenthesisTransformer;
-
-import java.util.HashMap;
-import java.util.Map;
 
 /**
  * Transform a SwitchStatement Node the equivalent Java Parser AST nodes
@@ -52,40 +57,48 @@ public class BoxSwitchTransformer extends AbstractTransformer {
 	 */
 	@Override
 	public Node transform( BoxNode node, TransformerContext context ) throws IllegalStateException {
-		BoxSwitch	boxSwitch	= ( BoxSwitch ) node;
-		Expression	condition	= ( Expression ) resolveScope( transpiler.transform( boxSwitch.getCondition(), TransformerContext.RIGHT ), context );
+		int					swtichCount	= transpiler.incrementAndGetSwitchCounter();
+		BoxSwitch			boxSwitch	= ( BoxSwitch ) node;
+		Expression			condition	= ( Expression ) resolveScope( transpiler.transform( boxSwitch.getCondition(), TransformerContext.RIGHT ), context );
 
-		String		template	= """
-		                          do {
+		Map<String, String>	values		= new HashMap<>() {
 
-		                          } while(false);
-		                          """;
-		BlockStmt	body		= new BlockStmt();
-		DoStmt		javaSwitch	= ( DoStmt ) parseStatement( template, new HashMap<>() );
+											{
+												put( "contextName", transpiler.peekContextName() );
+												put( "switchValue", condition.toString() );
+												put( "switchValueName", "switchValue" + swtichCount );
+												put( "caseEnteredName", "caseEntered" + swtichCount );
+											}
+										};
+		String				template	= """
+		                                  do {
+
+		                                  } while(false);
+		                                  """;
+		BlockStmt			body		= new BlockStmt();
+		DoStmt				javaSwitch	= ( DoStmt ) parseStatement( template, values );
+		// Create if statements for each case
 		boxSwitch.getCases().forEach( c -> {
 			if ( c.getCondition() != null ) {
-				String caseTemplate = "if(  ${condition}  ) {}";
-				if ( requiresBooleanCaster( c.getCondition() ) ) {
-					caseTemplate = "if( BooleanCaster.cast( ${condition} ) ) {}";
-				}
-				Expression			switchExpr	= ( Expression ) transpiler.transform( c.getCondition(), TransformerContext.RIGHT );
-				Map<String, String>	values		= new HashMap<>() {
+				String		caseTemplate	= """
+				                              	if( ${caseEnteredName} || ( EqualsEquals.invoke( ${condition}, ${switchValueName} ) ) ) {
+				                              		${caseEnteredName} = true;
+				                              }
+				                              """;
+				Expression	switchExpr		= ( Expression ) transpiler.transform( c.getCondition(), TransformerContext.RIGHT );
 
-													{
-														put( "condition", switchExpr.toString() );
-														put( "contextName", transpiler.peekContextName() );
-													}
-												};
-				IfStmt				javaIfStmt	= ( IfStmt ) parseStatement( caseTemplate, values );
-				BlockStmt			thenBlock	= new BlockStmt();
+				values.put( "condition", switchExpr.toString() );
+				IfStmt		javaIfStmt	= ( IfStmt ) parseStatement( caseTemplate, values );
+				BlockStmt	thenBlock	= javaIfStmt.getThenStmt().asBlockStmt();
 				c.getBody().forEach( stmt -> {
 					thenBlock.addStatement( ( Statement ) transpiler.transform( stmt ) );
 				} );
-				javaIfStmt.setThenStmt( thenBlock );
 				body.addStatement( javaIfStmt );
 				addIndex( javaIfStmt, c );
 			}
 		} );
+		// Add any default cases to the end
+		// TODO: Can there be more than one default case?
 		boxSwitch.getCases().forEach( c -> {
 			if ( c.getCondition() == null ) {
 				c.getBody().forEach( stmt -> {
@@ -94,8 +107,14 @@ public class BoxSwitchTransformer extends AbstractTransformer {
 			}
 		} );
 		javaSwitch.setBody( body );
-		logger.info( node.getSourceText() + " -> " + javaSwitch );
 		addIndex( javaSwitch, node );
-		return javaSwitch;
+
+		BlockStmt switchHolder = new BlockStmt();
+		switchHolder.addStatement( ( Statement ) parseStatement( "Object ${switchValueName} = ${switchValue};", values ) );
+		switchHolder.addStatement( ( Statement ) parseStatement( "boolean ${caseEnteredName} = false;", values ) );
+		switchHolder.addStatement( javaSwitch );
+
+		logger.info( node.getSourceText() + " -> " + switchHolder );
+		return switchHolder;
 	}
 }
