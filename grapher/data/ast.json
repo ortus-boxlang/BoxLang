@@ -1,0 +1,243 @@
+{
+    "sourceText": "result = 1;\nwhile( true ) {\n    result = result + 1;\n\tif( result > \"10\" ) {\n\t\tbreak;\n\t}\n}",
+    "name": "BoxScript",
+    "statements": [
+      {
+        "op": "Equal",
+        "left": {
+          "sourceText": "result",
+          "name": "result",
+          "safe": false,
+          "position": {
+            "start": {
+              "line": 1,
+              "column": 0
+            },
+            "end": {
+              "line": 1,
+              "column": 0
+            }
+          }
+        },
+        "sourceText": "result = 1",
+        "name": "BoxAssignment",
+        "position": {
+          "start": {
+            "line": 1,
+            "column": 0
+          },
+          "end": {
+            "line": 1,
+            "column": 9
+          }
+        },
+        "right": {
+          "sourceText": "1",
+          "name": "BoxIntegerLiteral",
+          "position": {
+            "start": {
+              "line": 1,
+              "column": 9
+            },
+            "end": {
+              "line": 1,
+              "column": 9
+            }
+          },
+          "value": "1"
+        }
+      },
+      {
+        "condition": {
+          "sourceText": "true",
+          "name": "BoxBooleanLiteral",
+          "position": {
+            "start": {
+              "line": 2,
+              "column": 7
+            },
+            "end": {
+              "line": 2,
+              "column": 7
+            }
+          },
+          "value": "true"
+        },
+        "sourceText": "while( true ) {\n    result = result + 1;\n\tif( result > \"10\" ) {\n\t\tbreak;\n\t}\n}",
+        "name": "BoxWhile",
+        "position": {
+          "start": {
+            "line": 2,
+            "column": 0
+          },
+          "end": {
+            "line": 7,
+            "column": 0
+          }
+        },
+        "body": [
+          {
+            "op": "Equal",
+            "left": {
+              "sourceText": "result",
+              "name": "result",
+              "safe": false,
+              "position": {
+                "start": {
+                  "line": 3,
+                  "column": 4
+                },
+                "end": {
+                  "line": 3,
+                  "column": 4
+                }
+              }
+            },
+            "sourceText": "result = result + 1",
+            "name": "BoxAssignment",
+            "position": {
+              "start": {
+                "line": 3,
+                "column": 4
+              },
+              "end": {
+                "line": 3,
+                "column": 22
+              }
+            },
+            "right": {
+              "left": {
+                "sourceText": "result",
+                "name": "result",
+                "safe": false,
+                "position": {
+                  "start": {
+                    "line": 3,
+                    "column": 13
+                  },
+                  "end": {
+                    "line": 3,
+                    "column": 13
+                  }
+                }
+              },
+              "sourceText": "result + 1",
+              "name": "BoxBinaryOperation",
+              "position": {
+                "start": {
+                  "line": 3,
+                  "column": 13
+                },
+                "end": {
+                  "line": 3,
+                  "column": 22
+                }
+              },
+              "right": {
+                "sourceText": "1",
+                "name": "BoxIntegerLiteral",
+                "position": {
+                  "start": {
+                    "line": 3,
+                    "column": 22
+                  },
+                  "end": {
+                    "line": 3,
+                    "column": 22
+                  }
+                },
+                "value": "1"
+              },
+              "operator": "Plus"
+            }
+          },
+          {
+            "condition": {
+              "left": {
+                "sourceText": "result",
+                "name": "result",
+                "safe": false,
+                "position": {
+                  "start": {
+                    "line": 4,
+                    "column": 5
+                  },
+                  "end": {
+                    "line": 4,
+                    "column": 5
+                  }
+                }
+              },
+              "sourceText": "result > \"10\"",
+              "name": "BoxComparisonOperation",
+              "position": {
+                "start": {
+                  "line": 4,
+                  "column": 5
+                },
+                "end": {
+                  "line": 4,
+                  "column": 17
+                }
+              },
+              "right": {
+                "sourceText": "\"10\"",
+                "name": "BoxStringLiteral",
+                "position": {
+                  "start": {
+                    "line": 4,
+                    "column": 14
+                  },
+                  "end": {
+                    "line": 4,
+                    "column": 17
+                  }
+                },
+                "value": "10"
+              },
+              "operator": "GreaterThan"
+            },
+            "sourceText": "if( result > \"10\" ) {\n\t\tbreak;\n\t}",
+            "name": "BoxIfElse",
+            "thenBody": [
+              {
+                "sourceText": "break;",
+                "name": "BoxBreak",
+                "position": {
+                  "start": {
+                    "line": 5,
+                    "column": 2
+                  },
+                  "end": {
+                    "line": 5,
+                    "column": 7
+                  }
+                }
+              }
+            ],
+            "elseBody": [],
+            "position": {
+              "start": {
+                "line": 4,
+                "column": 1
+              },
+              "end": {
+                "line": 6,
+                "column": 1
+              }
+            }
+          }
+        ]
+      }
+    ],
+    "position": {
+      "start": {
+        "line": 1,
+        "column": 0
+      },
+      "end": {
+        "line": 7,
+        "column": 0
+      }
+    }
+  }
