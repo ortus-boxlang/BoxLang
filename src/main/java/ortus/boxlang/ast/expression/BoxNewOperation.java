@@ -60,7 +60,12 @@ public class BoxNewOperation extends BoxExpr {
 	public Map<String, Object> toMap() {
 		Map<String, Object> map = super.toMap();
 
-		map.put( "expression", expression.toMap() );
+		// handle null
+		if ( expression == null ) {
+			map.put( "expression", null );
+		} else {
+			map.put( "expression", expression.toMap() );
+		}
 		map.put( "arguments", arguments.stream().map( BoxExpr::toMap ).collect( Collectors.toList() ) );
 		return map;
 	}

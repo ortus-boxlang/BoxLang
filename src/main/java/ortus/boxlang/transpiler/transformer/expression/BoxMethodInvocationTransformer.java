@@ -29,8 +29,8 @@ public class BoxMethodInvocationTransformer extends AbstractTransformer {
 		BoxMethodInvocation	invocation	= ( BoxMethodInvocation ) node;
 		String				side		= context == TransformerContext.NONE ? "" : "(" + context.toString() + ") ";
 
-		Expression			expr		= ( Expression ) transpiler.transform( invocation.getObj(),
-		    TransformerContext.RIGHT );
+		Expression			expr		= ( Expression ) resolveScope( transpiler.transform( invocation.getObj(),
+		    TransformerContext.RIGHT ), TransformerContext.RIGHT );
 
 		String				args		= invocation.getArguments().stream()
 		    .map( it -> resolveScope( transpiler.transform( it ), context ).toString() )

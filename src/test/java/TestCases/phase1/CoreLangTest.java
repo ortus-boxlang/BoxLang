@@ -154,8 +154,8 @@ public class CoreLangTest {
 		         try {
 		         	1/0
 		           } catch (any e) {
-		    message = variables.e.getMessage();
-		    message2 = variables.e.message;
+		    message = e.getMessage();
+		    message2 = e.message;
 		    result = "in catch";
 		           } finally {
 		         		result &= ' also finally';
@@ -177,15 +177,15 @@ public class CoreLangTest {
 		    try {
 		    	1/0
 		    } catch (any e) {
-		    	one = variables.e.getMessage()
+		    	one = e.getMessage()
 
 		    	try {
 		    		foo=variables.bar
 		    	} catch (any e) {
-		    		two = variables.e.getMessage()
+		    		two = e.getMessage()
 		    	}
 
-		    	three = variables.e.getMessage()
+		    	three = e.getMessage()
 		    }
 		      """,
 		    context );
