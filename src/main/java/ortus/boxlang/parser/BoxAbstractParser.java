@@ -14,17 +14,29 @@
  */
 package ortus.boxlang.parser;
 
-import org.antlr.v4.runtime.*;
-import org.antlr.v4.runtime.misc.Interval;
-import org.apache.commons.io.ByteOrderMark;
-import org.apache.commons.io.input.BOMInputStream;
-import ortus.boxlang.ast.*;
-
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
+
+import org.antlr.v4.runtime.BaseErrorListener;
+import org.antlr.v4.runtime.CharStream;
+import org.antlr.v4.runtime.Lexer;
+import org.antlr.v4.runtime.Parser;
+import org.antlr.v4.runtime.ParserRuleContext;
+import org.antlr.v4.runtime.RecognitionException;
+import org.antlr.v4.runtime.Recognizer;
+import org.antlr.v4.runtime.misc.Interval;
+import org.apache.commons.io.ByteOrderMark;
+import org.apache.commons.io.input.BOMInputStream;
+
+import ortus.boxlang.ast.BoxExpr;
+import ortus.boxlang.ast.BoxScript;
+import ortus.boxlang.ast.Issue;
+import ortus.boxlang.ast.Point;
+import ortus.boxlang.ast.Position;
+import ortus.boxlang.ast.SourceFile;
 
 /**
  * Parser abstract class
@@ -74,6 +86,34 @@ public abstract class BoxAbstractParser {
 		return BOMInputStream.builder().setFile( file ).setByteOrderMarks( ByteOrderMark.UTF_8 ).setInclude( false ).get();
 
 	}
+
+	/**
+	 * Parse a file
+	 *
+	 * @param file source file to parse
+	 *
+	 * @return a ParsingResult containing the AST with a BoxScript as root and the list of errors (if any)
+	 *
+	 * @throws IOException
+	 *
+	 * @see BoxScript
+	 * @see ParsingResult
+	 */
+	public abstract ParsingResult parse( File file ) throws IOException;
+
+	/**
+	 * Parse a cf script string expression
+	 *
+	 * @param code source of the expression to parse
+	 *
+	 * @return a ParsingResult containing the AST with a BoxExpr as root and the list of errors (if any)
+	 *
+	 * @throws IOException
+	 *
+	 * @see ParsingResult
+	 * @see BoxExpr
+	 */
+	public abstract ParsingResult parse( String code ) throws IOException;
 
 	/**
 	 * Add the parser error listener to the ANTLR parser

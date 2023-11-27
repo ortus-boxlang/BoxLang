@@ -82,4 +82,8 @@ public class BoxLangScriptParser extends BoxAbstractParser {
 	public ParsingResult parse( File file ) {
 		return null;
 	}
+
+	public ParsingResult parse( String code ) {
+		return null;
+	}
 }

@@ -37,12 +37,8 @@ import org.slf4j.LoggerFactory;
 
 import com.github.javaparser.ast.CompilationUnit;
 
-import ortus.boxlang.ast.BoxExpr;
-import ortus.boxlang.ast.BoxScript;
-import ortus.boxlang.ast.BoxStatement;
 import ortus.boxlang.ast.Point;
 import ortus.boxlang.ast.Position;
-import ortus.boxlang.ast.statement.BoxExpression;
 import ortus.boxlang.parser.BoxParser;
 import ortus.boxlang.parser.BoxScriptType;
 import ortus.boxlang.parser.ParsingResult;
@@ -314,8 +310,6 @@ public class JavaBoxpiler {
 				transpiler.setProperty( "packageName", packageName );
 				transpiler.setProperty( "baseclass", "BoxScript" );
 				transpiler.setProperty( "returnType", "Object" );
-
-				System.out.println( result.getRoot().toJSON().toString() );
 
 				TranspiledCode javaASTs = transpiler.transpile( result.getRoot() );
 				if ( false )

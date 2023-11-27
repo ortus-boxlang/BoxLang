@@ -113,22 +113,26 @@ public class BoxParser {
 	 */
 
 	public ParsingResult parse( File file ) throws IOException {
-		BoxScriptType fileType = detectFile( file );
+		BoxScriptType		fileType	= detectFile( file );
+		BoxAbstractParser	parser;
 		switch ( fileType ) {
 			case CFSCRIPT -> {
-				return new BoxCFParser().parse( file );
+				parser = new BoxCFParser();
 			}
 			case CFMARKUP -> {
-				return new BoxCFMLParser().parse( file );
+				parser = new BoxCFMLParser();
 			}
 			case BOXSCRIPT -> {
-				return new BoxLangScriptParser().parse( file );
+				parser = new BoxLangScriptParser();
 			}
 			default -> {
 				throw new RuntimeException( "Unsupported file: " + file.getAbsolutePath() );
 			}
 		}
-
+		ParsingResult result = parser.parse( file );
+		// TODO: convert go interceptor announcement
+		System.out.println( result.getRoot().toJSON().toString() );
+		return result;
 	}
 
 	/**
@@ -144,17 +148,22 @@ public class BoxParser {
 	 * @see BoxExpr
 	 */
 	public ParsingResult parse( String code, BoxScriptType fileType ) throws IOException {
+		BoxAbstractParser parser;
 		switch ( fileType ) {
 			case CFSCRIPT -> {
-				return new BoxCFParser().parse( code );
+				parser = new BoxCFParser();
 			}
 			case CFMARKUP -> {
-				return new BoxCFMLParser().parse( code );
+				parser = new BoxCFMLParser();
 			}
 			default -> {
 				throw new RuntimeException( "Unsupported language" );
 			}
 		}
+		ParsingResult result = parser.parse( code );
+		// TODO: convert go interceptor announcement
+		System.out.println( result.getRoot().toJSON().toString() );
+		return result;
 
 	}
 
@@ -171,11 +180,17 @@ public class BoxParser {
 	 * @see BoxStatement
 	 */
 	public ParsingResult parseExpression( String code ) throws IOException {
-		return new BoxCFParser().parseExpression( code );
+		ParsingResult result = new BoxCFParser().parseExpression( code );
+		// TODO: convert go interceptor announcement
+		System.out.println( result.getRoot().toJSON().toString() );
+		return result;
 	}
 
 	public ParsingResult parseStatement( String code ) throws IOException {
-		return new BoxCFParser().parseStatement( code );
+		ParsingResult result = new BoxCFParser().parseStatement( code );
+		// TODO: convert go interceptor announcement
+		System.out.println( result.getRoot().toJSON().toString() );
+		return result;
 	}
 
 }
