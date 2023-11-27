@@ -134,7 +134,7 @@ public class Node {
 	public Map<String, Object> toMap() {
 		Map<String, Object> map = new LinkedHashMap<String, Object>();
 
-		map.put( "name", getClass().getSimpleName() );
+		map.put( "ASTType", getClass().getSimpleName() );
 		map.put( "position", position.toMap() );
 		map.put( "sourceText", sourceText );
 

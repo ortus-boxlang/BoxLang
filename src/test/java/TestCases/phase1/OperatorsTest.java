@@ -31,7 +31,6 @@ import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.ScriptingBoxContext;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
-import ortus.boxlang.runtime.types.exceptions.ApplicationException;
 import ortus.boxlang.runtime.types.exceptions.KeyNotFoundException;
 
 public class OperatorsTest {
@@ -259,9 +258,9 @@ public class OperatorsTest {
 		assertThat( context.getScopeNearby( VariablesScope.name ).dereference( Key.of( "tmp" ), false ) ).isEqualTo( 4 );
 	}
 
-	@DisplayName( "compound operators" )
+	@DisplayName( "compound operator plus" )
 	@Test
-	public void compountOperators() {
+	public void compoundOperatorPlus() {
 		instance.executeSource(
 		    """
 		    result = 5;
@@ -269,7 +268,11 @@ public class OperatorsTest {
 		    """,
 		    context );
 		assertThat( context.getScopeNearby( VariablesScope.name ).dereference( Key.of( "result" ), false ) ).isEqualTo( 10 );
+	}
 
+	@DisplayName( "compound operators minus" )
+	@Test
+	public void compoundOperatorMinus() {
 		instance.executeSource(
 		    """
 		    result = 5;
@@ -277,7 +280,11 @@ public class OperatorsTest {
 		    """,
 		    context );
 		assertThat( context.getScopeNearby( VariablesScope.name ).dereference( Key.of( "result" ), false ) ).isEqualTo( 1 );
+	}
 
+	@DisplayName( "compound operator multiply" )
+	@Test
+	public void compoundOperatorMultiply() {
 		instance.executeSource(
 		    """
 		    result = 5;
@@ -285,7 +292,11 @@ public class OperatorsTest {
 		    """,
 		    context );
 		assertThat( context.getScopeNearby( VariablesScope.name ).dereference( Key.of( "result" ), false ) ).isEqualTo( 25 );
+	}
 
+	@DisplayName( "compound operator divide" )
+	@Test
+	public void compoundOperatorDivide() {
 		instance.executeSource(
 		    """
 		    result = 20;
@@ -293,7 +304,11 @@ public class OperatorsTest {
 		    """,
 		    context );
 		assertThat( context.getScopeNearby( VariablesScope.name ).dereference( Key.of( "result" ), false ) ).isEqualTo( 4 );
+	}
 
+	@DisplayName( "compound operator modulus" )
+	@Test
+	public void compoundOperatorModulus() {
 		instance.executeSource(
 		    """
 		    result = 5;
@@ -301,7 +316,11 @@ public class OperatorsTest {
 		    """,
 		    context );
 		assertThat( context.getScopeNearby( VariablesScope.name ).dereference( Key.of( "result" ), false ) ).isEqualTo( 1 );
+	}
 
+	@DisplayName( "compound operator concat" )
+	@Test
+	public void compoundOperatorConcat() {
 		instance.executeSource(
 		    """
 		    result = "brad";
