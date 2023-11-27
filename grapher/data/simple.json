@@ -1,12 +1,12 @@
 {
     "sourceText": "result = 1;\nwhile( true ) {\n    result = result + 1;\n\tif( result > \"10\" ) {\n\t\tbreak;\n\t}\n}",
-    "name": "BoxScript",
+    "ASTType": "BoxScript",
     "statements": [
       {
         "op": "Equal",
         "left": {
           "sourceText": "result",
-          "name": "result",
+          "ASTType": "result",
           "safe": false,
           "position": {
             "start": {
@@ -20,7 +20,7 @@
           }
         },
         "sourceText": "result = 1",
-        "name": "BoxAssignment",
+        "ASTType": "BoxAssignment",
         "position": {
           "start": {
             "line": 1,
@@ -33,7 +33,7 @@
         },
         "right": {
           "sourceText": "1",
-          "name": "BoxIntegerLiteral",
+          "ASTType": "BoxIntegerLiteral",
           "position": {
             "start": {
               "line": 1,

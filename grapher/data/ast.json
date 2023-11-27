@@ -1,12 +1,12 @@
 {
     "sourceText": "result = 1;\nwhile( true ) {\n    result = result + 1;\n\tif( result > \"10\" ) {\n\t\tbreak;\n\t}\n}",
-    "name": "BoxScript",
+    "ASTType": "BoxScript",
     "statements": [
       {
         "op": "Equal",
         "left": {
           "sourceText": "result",
-          "name": "result",
+          "ASTType": "result",
           "safe": false,
           "position": {
             "start": {
@@ -20,7 +20,7 @@
           }
         },
         "sourceText": "result = 1",
-        "name": "BoxAssignment",
+        "ASTType": "BoxAssignment",
         "position": {
           "start": {
             "line": 1,
@@ -33,7 +33,7 @@
         },
         "right": {
           "sourceText": "1",
-          "name": "BoxIntegerLiteral",
+          "ASTType": "BoxIntegerLiteral",
           "position": {
             "start": {
               "line": 1,
@@ -50,7 +50,7 @@
       {
         "condition": {
           "sourceText": "true",
-          "name": "BoxBooleanLiteral",
+          "ASTType": "BoxBooleanLiteral",
           "position": {
             "start": {
               "line": 2,
@@ -64,7 +64,7 @@
           "value": "true"
         },
         "sourceText": "while( true ) {\n    result = result + 1;\n\tif( result > \"10\" ) {\n\t\tbreak;\n\t}\n}",
-        "name": "BoxWhile",
+        "ASTType": "BoxWhile",
         "position": {
           "start": {
             "line": 2,
@@ -80,7 +80,7 @@
             "op": "Equal",
             "left": {
               "sourceText": "result",
-              "name": "result",
+              "ASTType": "result",
               "safe": false,
               "position": {
                 "start": {
@@ -94,7 +94,7 @@
               }
             },
             "sourceText": "result = result + 1",
-            "name": "BoxAssignment",
+            "ASTType": "BoxAssignment",
             "position": {
               "start": {
                 "line": 3,
@@ -108,7 +108,7 @@
             "right": {
               "left": {
                 "sourceText": "result",
-                "name": "result",
+                "ASTType": "result",
                 "safe": false,
                 "position": {
                   "start": {
@@ -122,7 +122,7 @@
                 }
               },
               "sourceText": "result + 1",
-              "name": "BoxBinaryOperation",
+              "ASTType": "BoxBinaryOperation",
               "position": {
                 "start": {
                   "line": 3,
@@ -135,7 +135,7 @@
               },
               "right": {
                 "sourceText": "1",
-                "name": "BoxIntegerLiteral",
+                "ASTType": "BoxIntegerLiteral",
                 "position": {
                   "start": {
                     "line": 3,
@@ -155,7 +155,7 @@
             "condition": {
               "left": {
                 "sourceText": "result",
-                "name": "result",
+                "ASTType": "result",
                 "safe": false,
                 "position": {
                   "start": {
@@ -169,7 +169,7 @@
                 }
               },
               "sourceText": "result > \"10\"",
-              "name": "BoxComparisonOperation",
+              "ASTType": "BoxComparisonOperation",
               "position": {
                 "start": {
                   "line": 4,
@@ -182,7 +182,7 @@
               },
               "right": {
                 "sourceText": "\"10\"",
-                "name": "BoxStringLiteral",
+                "ASTType": "BoxStringLiteral",
                 "position": {
                   "start": {
                     "line": 4,
@@ -198,11 +198,11 @@
               "operator": "GreaterThan"
             },
             "sourceText": "if( result > \"10\" ) {\n\t\tbreak;\n\t}",
-            "name": "BoxIfElse",
+            "ASTType": "BoxIfElse",
             "thenBody": [
               {
                 "sourceText": "break;",
-                "name": "BoxBreak",
+                "ASTType": "BoxBreak",
                 "position": {
                   "start": {
                     "line": 5,

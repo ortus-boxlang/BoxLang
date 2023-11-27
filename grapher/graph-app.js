@@ -6,14 +6,21 @@ function setup(){
   inputs.forEach( a => {
     a.addEventListener( "click", async (e) => {
       e.preventDefault();
-      const data = await fetchFile( a );
-      redrawGraph( data );
+      loadSelection( a );
     } );
   }); 
 
   if( inputs.length ){
-    fetchFile( inputs[ 0 ] ).then( redrawGraph );
+    loadSelection( inputs[ 0 ] )
   }
+}
+
+function loadSelection( aTag ){
+  fetchFile( aTag ).then( redrawGraph );
+
+  Array.from(document.querySelectorAll( "a.file--selected" )).forEach( a => a.classList.remove( "file--selected" ) );
+
+  aTag.classList.add( "file--selected" );
 }
 
 
@@ -44,13 +51,13 @@ function convertRawASTNode( rawNode ){
     }
     else if( typeof rawNode === 'object' ){
         return Object.keys( rawNode ).reduce( ( acc, key ) => {
-            if( key.match( /name|sourceText|position|safe/i ) ){
+            if( key.match( /ASTType|sourceText|position|safe/i ) ){
                 acc[ key ] = rawNode[ key ];
             }
             else if( typeof rawNode[ key ] === 'object' ){
                 const val = convertRawASTNode( rawNode[ key ] );
                 acc.children.push({
-                    name: key,
+                    ASTType: key,
                     children: Array.isArray( val ) ? val : [ val ]
                 });
             }
@@ -84,7 +91,7 @@ function setupChart( data ){
     });
     
     // Sort the tree and apply the layout.
-    root.sort((a, b) => d3.ascending(a.data.name, b.data.name));
+    root.sort((a, b) => d3.ascending(a.data.ASTType, b.data.ASTType));
     tree(root);
     
     // Compute the extent of the tree. Note that x and y are swapped here
@@ -151,7 +158,7 @@ function setupChart( data ){
         .attr("x", d =>  6)
         .attr("text-anchor", d => "start" )
         .attr( "class", d => d.data.sourceText ? 'node-hasSourceText' : '' )
-        .text(d => `${d.data.name}`)
+        .text(d => `${d.data.ASTType}`)
         .clone(true).lower()
         .attr("stroke", "white");
 

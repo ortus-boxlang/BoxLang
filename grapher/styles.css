@@ -45,3 +45,7 @@ html, body {
     margin: 0;
     padding: 0px;
 }
+
+.file--selected {
+    color: white;
+}
