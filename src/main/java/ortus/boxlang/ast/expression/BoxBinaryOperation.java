@@ -65,8 +65,8 @@ public class BoxBinaryOperation extends BoxExpr {
 		Map<String, Object> map = super.toMap();
 
 		map.put( "left", left.toMap() );
-		map.put( "right", right.toMap() );
 		map.put( "operator", operator.toString() );
+		map.put( "right", right.toMap() );
 		return map;
 	}
 

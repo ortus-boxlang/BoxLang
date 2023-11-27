@@ -70,8 +70,8 @@ public class BoxMethodInvocation extends BoxExpr {
 	public Map<String, Object> toMap() {
 		Map<String, Object> map = super.toMap();
 
-		map.put( "name", name );
 		map.put( "obj", obj.toMap() );
+		map.put( "name", name );
 		map.put( "arguments", arguments.stream().map( BoxExpr::toMap ).collect( Collectors.toList() ) );
 		return map;
 	}

@@ -59,8 +59,8 @@ public class BoxDo extends BoxStatement {
 	public Map<String, Object> toMap() {
 		Map<String, Object> map = super.toMap();
 
-		map.put( "condition", condition.toMap() );
 		map.put( "body", body.stream().map( BoxStatement::toMap ).collect( Collectors.toList() ) );
+		map.put( "condition", condition.toMap() );
 		return map;
 	}
 }

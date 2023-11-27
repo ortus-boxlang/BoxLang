@@ -90,8 +90,8 @@ public class BoxFunctionDeclaration extends BoxStatement {
 		Map<String, Object> map = super.toMap();
 
 		map.put( "accessModifier", accessModifier.toString() );
-		map.put( "name", name );
 		map.put( "type", type.toMap() );
+		map.put( "name", name );
 		map.put( "args", args.stream().map( BoxArgumentDeclaration::toMap ).collect( java.util.stream.Collectors.toList() ) );
 		map.put( "body", body.stream().map( BoxStatement::toMap ).collect( java.util.stream.Collectors.toList() ) );
 		return map;

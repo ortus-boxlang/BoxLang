@@ -16,7 +16,7 @@ package ortus.boxlang.ast;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -132,13 +132,15 @@ public class Node {
 	}
 
 	public Map<String, Object> toMap() {
-		Map<String, Object> map = new HashMap<String, Object>();
+		Map<String, Object> map = new LinkedHashMap<String, Object>();
 
+		map.put( "name", getClass().getSimpleName() );
 		map.put( "position", position.toMap() );
 		map.put( "sourceText", sourceText );
+
 		// I'm not sure if children is used at all right now
 		// map.put( "children", children.stream().map( Node::toMap ).toList() );
-		map.put( "name", getClass().getSimpleName() );
+
 		return map;
 	}
 
@@ -146,10 +148,8 @@ public class Node {
 		try {
 			return JSON.std.with( Feature.PRETTY_PRINT_OUTPUT ).asString( toMap() );
 		} catch ( JSONObjectException e ) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		} catch ( IOException e ) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 		throw new RuntimeException( "Failed to convert to JSON" );
