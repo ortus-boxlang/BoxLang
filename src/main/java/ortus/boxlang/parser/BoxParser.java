@@ -131,7 +131,8 @@ public class BoxParser {
 		}
 		ParsingResult result = parser.parse( file );
 		// TODO: convert go interceptor announcement
-		System.out.println( result.getRoot().toJSON().toString() );
+		if ( result.getRoot() != null )
+			System.out.println( result.getRoot().toJSON().toString() );
 		return result;
 	}
 
@@ -162,7 +163,8 @@ public class BoxParser {
 		}
 		ParsingResult result = parser.parse( code );
 		// TODO: convert go interceptor announcement
-		System.out.println( result.getRoot().toJSON().toString() );
+		if ( result.getRoot() != null )
+			System.out.println( result.getRoot().toJSON().toString() );
 		return result;
 
 	}
@@ -182,14 +184,16 @@ public class BoxParser {
 	public ParsingResult parseExpression( String code ) throws IOException {
 		ParsingResult result = new BoxCFParser().parseExpression( code );
 		// TODO: convert go interceptor announcement
-		System.out.println( result.getRoot().toJSON().toString() );
+		if ( result.getRoot() != null )
+			System.out.println( result.getRoot().toJSON().toString() );
 		return result;
 	}
 
 	public ParsingResult parseStatement( String code ) throws IOException {
 		ParsingResult result = new BoxCFParser().parseStatement( code );
 		// TODO: convert go interceptor announcement
-		System.out.println( result.getRoot().toJSON().toString() );
+		if ( result.getRoot() != null )
+			System.out.println( result.getRoot().toJSON().toString() );
 		return result;
 	}
 

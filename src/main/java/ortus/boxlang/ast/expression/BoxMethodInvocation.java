@@ -51,6 +51,7 @@ public class BoxMethodInvocation extends BoxExpr {
 	 */
 	public BoxMethodInvocation( String name, BoxExpr obj, List<BoxArgument> arguments, Position position, String sourceText ) {
 		super( position, sourceText );
+		// MT TODO: Why isn't this just an identifier or string?
 		this.name	= new ReferenceByName( name );
 		this.obj	= obj;
 		this.obj.setParent( this );
@@ -71,7 +72,7 @@ public class BoxMethodInvocation extends BoxExpr {
 		Map<String, Object> map = super.toMap();
 
 		map.put( "obj", obj.toMap() );
-		map.put( "name", name );
+		map.put( "name", name.getName() );
 		map.put( "arguments", arguments.stream().map( BoxExpr::toMap ).collect( Collectors.toList() ) );
 		return map;
 	}
