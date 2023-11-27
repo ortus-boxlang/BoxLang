@@ -24,10 +24,8 @@ import com.github.javaparser.ast.Node;
 import com.github.javaparser.ast.expr.Expression;
 import com.github.javaparser.ast.expr.MethodCallExpr;
 import com.github.javaparser.ast.expr.NameExpr;
-import com.github.javaparser.ast.stmt.BlockStmt;
 import com.github.javaparser.ast.stmt.ExpressionStmt;
 
-import ortus.boxlang.ast.BoxExpr;
 import ortus.boxlang.ast.BoxNode;
 import ortus.boxlang.ast.statement.BoxAssignment;
 import ortus.boxlang.ast.statement.BoxAssignmentOperator;
@@ -97,6 +95,7 @@ public class BoxAssignmentTransformer extends AbstractTransformer {
 			case StarEqual -> "Multiply.invoke( ${contextName}.scopeFindNearby( Key.of( \"${key}\" ),null).scope(),Key.of( \"${key}\"), ${right} )";
 			case SlashEqual -> "Divide.invoke( ${contextName}.scopeFindNearby( Key.of( \"${key}\" ),null).scope(),Key.of( \"${key}\"), ${right} )";
 			case ConcatEqual -> "Concat.invoke( ${contextName}.scopeFindNearby( Key.of( \"${key}\" ),null).scope(),Key.of( \"${key}\"), ${right} )";
+			case ModEqual -> "Modulus.invoke( ${contextName}.scopeFindNearby( Key.of( \"${key}\" ),null).scope(),Key.of( \"${key}\"), ${right} )";
 			default -> """
 			           ${contextName}.scopeFindNearby( Key.of( "${key}" ), ${contextName}.getDefaultAssignmentScope() ).scope().assign( Key.of( "${key}" ), ${right} )
 			                     """;
