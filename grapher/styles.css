@@ -1,0 +1,50 @@
+html, body {
+    width: 100vw;
+    height: 100vh;
+    background: #555;
+    margin: 0;
+    color: #ddd;
+    padding: 0;
+}
+
+* {
+    box-sizing: border-box;
+}
+
+#app {
+    display: flex;
+    height: 100%;
+    margin: 0;
+}
+
+#code-panel {
+    height: 100%;
+    width: 400px;
+    margin: 0px;
+}
+
+textarea {
+    background: #666;
+    height: calc( 100% - 20px );
+    padding: 10px;
+    margin: 0px;
+    color: white;
+    outline: none;
+    border: none;
+}
+
+#display-panel{
+    overflow: scroll;
+    flex: 1;
+}
+
+.node-hidden {
+    display: none;
+}
+
+.node-hasSourceText {
+    position: relative;
+    text-decoration: underline;
+    color: #00f;
+    cursor: help;
+  }
