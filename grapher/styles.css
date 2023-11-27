@@ -5,6 +5,7 @@ html, body {
     margin: 0;
     color: #ddd;
     padding: 0;
+    overflow: hidden;
 }
 
 * {
@@ -17,24 +18,14 @@ html, body {
     margin: 0;
 }
 
-#code-panel {
+#side-panel {
     height: 100%;
-    width: 400px;
-    margin: 0px;
-}
-
-textarea {
-    background: #666;
-    height: calc( 100% - 20px );
-    padding: 10px;
-    margin: 0px;
-    color: white;
-    outline: none;
-    border: none;
+    width: 200px;
+    margin: 20px;
 }
 
 #display-panel{
-    overflow: scroll;
+    /* overflow: scroll; */
     flex: 1;
 }
 
@@ -48,3 +39,9 @@ textarea {
     color: #00f;
     cursor: help;
   }
+
+.file-list {
+    list-style: none;
+    margin: 0;
+    padding: 0px;
+}

@@ -1,291 +1,42 @@
-const inputArea = document.querySelector( '#code-panel textarea' );
 
-// inputArea.addEventListener( 'change', () => {
-//     console.log( inputArea.value );
-// });
 
-const data = {
-    name: "script",
-    children: [
-        {
-            name: 'assignment',
-            text: 'result = 1',
-            children: [
-                {
-                    name: "identifier",
-                    text: "result",
-                    children: [
-                        {
-                            name: "literal",
-                            text: "1"
-                        },
-                        {
-                            name: "literal",
-                            text: "1"
-                        },
-                        // {
-                        //     name: "literal",
-                        //     text: "1"
-                        // }
-                    ]
-                },
-                {
-                    name: "literal",
-                    text: "1"
-                }
-            ]
-        }
-    ]
+function setup(){
+  const inputs = Array.from( document.querySelectorAll( "a.fileName" ) )
+  
+  inputs.forEach( a => {
+    a.addEventListener( "click", async (e) => {
+      e.preventDefault();
+      const data = await fetchFile( a );
+      redrawGraph( data );
+    } );
+  }); 
+
+  if( inputs.length ){
+    fetchFile( inputs[ 0 ] ).then( redrawGraph );
+  }
+}
+
+
+
+const fetchFile = async ( aTag ) => {
+  const res = await fetch( "/data/" + aTag.innerText );
+  const data = await res.json();
+
+  return data;
 };
 
-const rawAST = {
-    "sourceText": "result = 1;\nwhile( true ) {\n    result = result + 1;\n\tif( result > \"10\" ) {\n\t\tbreak;\n\t}\n}",
-    "name": "BoxScript",
-    "statements": [
-      {
-        "op": "Equal",
-        "left": {
-          "sourceText": "result",
-          "name": "result",
-          "safe": false,
-          "position": {
-            "start": {
-              "line": 1,
-              "column": 0
-            },
-            "end": {
-              "line": 1,
-              "column": 0
-            }
-          }
-        },
-        "sourceText": "result = 1",
-        "name": "BoxAssignment",
-        "position": {
-          "start": {
-            "line": 1,
-            "column": 0
-          },
-          "end": {
-            "line": 1,
-            "column": 9
-          }
-        },
-        "right": {
-          "sourceText": "1",
-          "name": "BoxIntegerLiteral",
-          "position": {
-            "start": {
-              "line": 1,
-              "column": 9
-            },
-            "end": {
-              "line": 1,
-              "column": 9
-            }
-          },
-          "value": "1"
-        }
-      },
-      {
-        "condition": {
-          "sourceText": "true",
-          "name": "BoxBooleanLiteral",
-          "position": {
-            "start": {
-              "line": 2,
-              "column": 7
-            },
-            "end": {
-              "line": 2,
-              "column": 7
-            }
-          },
-          "value": "true"
-        },
-        "sourceText": "while( true ) {\n    result = result + 1;\n\tif( result > \"10\" ) {\n\t\tbreak;\n\t}\n}",
-        "name": "BoxWhile",
-        "position": {
-          "start": {
-            "line": 2,
-            "column": 0
-          },
-          "end": {
-            "line": 7,
-            "column": 0
-          }
-        },
-        "body": [
-          {
-            "op": "Equal",
-            "left": {
-              "sourceText": "result",
-              "name": "result",
-              "safe": false,
-              "position": {
-                "start": {
-                  "line": 3,
-                  "column": 4
-                },
-                "end": {
-                  "line": 3,
-                  "column": 4
-                }
-              }
-            },
-            "sourceText": "result = result + 1",
-            "name": "BoxAssignment",
-            "position": {
-              "start": {
-                "line": 3,
-                "column": 4
-              },
-              "end": {
-                "line": 3,
-                "column": 22
-              }
-            },
-            "right": {
-              "left": {
-                "sourceText": "result",
-                "name": "result",
-                "safe": false,
-                "position": {
-                  "start": {
-                    "line": 3,
-                    "column": 13
-                  },
-                  "end": {
-                    "line": 3,
-                    "column": 13
-                  }
-                }
-              },
-              "sourceText": "result + 1",
-              "name": "BoxBinaryOperation",
-              "position": {
-                "start": {
-                  "line": 3,
-                  "column": 13
-                },
-                "end": {
-                  "line": 3,
-                  "column": 22
-                }
-              },
-              "right": {
-                "sourceText": "1",
-                "name": "BoxIntegerLiteral",
-                "position": {
-                  "start": {
-                    "line": 3,
-                    "column": 22
-                  },
-                  "end": {
-                    "line": 3,
-                    "column": 22
-                  }
-                },
-                "value": "1"
-              },
-              "operator": "Plus"
-            }
-          },
-          {
-            "condition": {
-              "left": {
-                "sourceText": "result",
-                "name": "result",
-                "safe": false,
-                "position": {
-                  "start": {
-                    "line": 4,
-                    "column": 5
-                  },
-                  "end": {
-                    "line": 4,
-                    "column": 5
-                  }
-                }
-              },
-              "sourceText": "result > \"10\"",
-              "name": "BoxComparisonOperation",
-              "position": {
-                "start": {
-                  "line": 4,
-                  "column": 5
-                },
-                "end": {
-                  "line": 4,
-                  "column": 17
-                }
-              },
-              "right": {
-                "sourceText": "\"10\"",
-                "name": "BoxStringLiteral",
-                "position": {
-                  "start": {
-                    "line": 4,
-                    "column": 14
-                  },
-                  "end": {
-                    "line": 4,
-                    "column": 17
-                  }
-                },
-                "value": "10"
-              },
-              "operator": "GreaterThan"
-            },
-            "sourceText": "if( result > \"10\" ) {\n\t\tbreak;\n\t}",
-            "name": "BoxIfElse",
-            "thenBody": [
-              {
-                "sourceText": "break;",
-                "name": "BoxBreak",
-                "position": {
-                  "start": {
-                    "line": 5,
-                    "column": 2
-                  },
-                  "end": {
-                    "line": 5,
-                    "column": 7
-                  }
-                }
-              }
-            ],
-            "elseBody": [],
-            "position": {
-              "start": {
-                "line": 4,
-                "column": 1
-              },
-              "end": {
-                "line": 6,
-                "column": 1
-              }
-            }
-          }
-        ]
-      }
-    ],
-    "position": {
-      "start": {
-        "line": 1,
-        "column": 0
-      },
-      "end": {
-        "line": 7,
-        "column": 0
-      }
-    }
-  };
+function redrawGraph( rawAST ){
+  const oldGraph = document.querySelector( "svg#astGraph" );
 
-// const chartNode = setupChart( data );
-const chartNode = setupChart( convertRawASTNode(rawAST) );
+  if( oldGraph ){
+    oldGraph.remove();
+  }
 
-document.querySelector( '#display-panel' ).appendChild( chartNode );
+  const graphNode = setupChart( convertRawASTNode(rawAST) );
+
+  document.querySelector( '#display-panel' ).appendChild( graphNode );
+}
+
 
 function convertRawASTNode( rawNode ){
     if( Array.isArray( rawNode ) ){
@@ -355,9 +106,11 @@ function setupChart( data ){
     
     // Compute the adjusted height of the tree.
     const height = y1 - y0 + dy * 2;
-    const width = (x1 - x0 + dx * 2) + 200;
+    const width = (x1 - x0 + dx * 2) + 300;
     
     const svg = d3.create("svg")
+        .attr("overflow", "scroll")
+        .attr( "id", "astGraph" )
         .attr("width", width)
         .attr("height", height)
         .attr("viewBox", [ 0 - ( width / 2 ) , y0 - dy, width, height])
@@ -414,3 +167,5 @@ function setupChart( data ){
     
     return svg.node();
 }
+
+setup();
