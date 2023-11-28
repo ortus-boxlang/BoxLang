@@ -26,8 +26,12 @@ import java.util.Optional;
 import ortus.boxlang.ast.BoxExpr;
 import ortus.boxlang.ast.BoxScript;
 import ortus.boxlang.ast.BoxStatement;
+import ortus.boxlang.runtime.BoxRuntime;
+import ortus.boxlang.runtime.types.Struct;
 
 public class BoxParser {
+
+	private static BoxRuntime runtime = BoxRuntime.getInstance();
 
 	/**
 	 * Attempt to detect the type of source code based on the contents
@@ -129,11 +133,14 @@ public class BoxParser {
 				throw new RuntimeException( "Unsupported file: " + file.getAbsolutePath() );
 			}
 		}
-		ParsingResult result = parser.parse( file );
-		// TODO: convert go interceptor announcement
-		if ( result.getRoot() != null )
-			System.out.println( result.getRoot().toJSON().toString() );
-		return result;
+		ParsingResult	result	= parser.parse( file );
+
+		Struct			data	= Struct.of(
+		    "file", file,
+		    "result", result
+		);
+		runtime.announce( "onParse", data );
+		return ( ParsingResult ) data.get( "result" );
 	}
 
 	/**
@@ -161,11 +168,14 @@ public class BoxParser {
 				throw new RuntimeException( "Unsupported language" );
 			}
 		}
-		ParsingResult result = parser.parse( code );
-		// TODO: convert go interceptor announcement
-		if ( result.getRoot() != null )
-			System.out.println( result.getRoot().toJSON().toString() );
-		return result;
+		ParsingResult	result	= parser.parse( code );
+
+		Struct			data	= Struct.of(
+		    "code", code,
+		    "result", result
+		);
+		runtime.announce( "onParse", data );
+		return ( ParsingResult ) data.get( "result" );
 
 	}
 
@@ -182,19 +192,25 @@ public class BoxParser {
 	 * @see BoxStatement
 	 */
 	public ParsingResult parseExpression( String code ) throws IOException {
-		ParsingResult result = new BoxCFParser().parseExpression( code );
-		// TODO: convert go interceptor announcement
-		if ( result.getRoot() != null )
-			System.out.println( result.getRoot().toJSON().toString() );
-		return result;
+		ParsingResult	result	= new BoxCFParser().parseExpression( code );
+
+		Struct			data	= Struct.of(
+		    "code", code,
+		    "result", result
+		);
+		runtime.announce( "onParse", data );
+		return ( ParsingResult ) data.get( "result" );
 	}
 
 	public ParsingResult parseStatement( String code ) throws IOException {
-		ParsingResult result = new BoxCFParser().parseStatement( code );
-		// TODO: convert go interceptor announcement
-		if ( result.getRoot() != null )
-			System.out.println( result.getRoot().toJSON().toString() );
-		return result;
+		ParsingResult	result	= new BoxCFParser().parseStatement( code );
+
+		Struct			data	= Struct.of(
+		    "code", code,
+		    "result", result
+		);
+		runtime.announce( "onParse", data );
+		return ( ParsingResult ) data.get( "result" );
 	}
 
 }

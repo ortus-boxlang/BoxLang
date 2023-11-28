@@ -134,10 +134,10 @@ public class Node {
 	public Map<String, Object> toMap() {
 		Map<String, Object> map = new LinkedHashMap<String, Object>();
 
-		map.put( "ASTType", getClass().getSimpleName() );
-		map.put( "position", position.toMap() );
+		map.put( "ASTType", getClass().getSimpleName() );	
 		map.put( "ASTPackage", getClass().getPackageName() );
 		map.put( "sourceText", sourceText );
+		map.put( "position", position.toMap() );
 
 		// I'm not sure if children is used at all right now
 		// map.put( "children", children.stream().map( Node::toMap ).toList() );

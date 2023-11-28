@@ -38,6 +38,8 @@ import ortus.boxlang.runtime.config.Configuration;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.RuntimeBoxContext;
 import ortus.boxlang.runtime.context.ScriptingBoxContext;
+import ortus.boxlang.runtime.interceptors.ASTCapture;
+import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.logging.LoggingConfigurator;
 import ortus.boxlang.runtime.runnables.BoxScript;
 import ortus.boxlang.runtime.runnables.BoxTemplate;
@@ -79,7 +81,8 @@ public class BoxRuntime {
 	    "postFunctionInvoke",
 	    "onScopeCreation",
 	    "onConfigurationLoad",
-	    "onConfigurationOverrideLoad"
+	    "onConfigurationOverrideLoad",
+	    "onParse"
 	);
 
 	/**
@@ -228,6 +231,12 @@ public class BoxRuntime {
 				LoggingConfigurator.configure( debugMode );
 			}
 			this.logger.atInfo().log( "+ DebugMode detected in config, overriding to {}", this.debugMode );
+		}
+		if ( this.debugMode ) {
+			this.interceptorService.register(
+			    DynamicObject.of( new ASTCapture( true, true ) ),
+			    Key.of( "onParse" )
+			);
 		}
 	}
 
