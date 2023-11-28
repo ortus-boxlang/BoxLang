@@ -48,7 +48,7 @@ public class BoxStructLiteral extends BoxExpr {
 	public Map<String, Object> toMap() {
 		Map<String, Object> map = super.toMap();
 
-		map.put( "type", type.toString() );
+		map.put( "type", enumToMap( type ) );
 		map.put( "values", values.stream().map( BoxExpr::toMap ).collect( Collectors.toList() ) );
 		return map;
 	}

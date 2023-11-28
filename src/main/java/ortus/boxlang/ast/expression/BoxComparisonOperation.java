@@ -60,7 +60,7 @@ public class BoxComparisonOperation extends BoxExpr {
 		Map<String, Object> map = super.toMap();
 
 		map.put( "left", left.toMap() );
-		map.put( "operator", operator.toString() );
+		map.put( "operator", enumToMap( operator ) );
 		map.put( "right", right.toMap() );
 		return map;
 	}

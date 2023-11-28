@@ -54,7 +54,7 @@ public class BoxUnaryOperation extends BoxExpr {
 		Map<String, Object> map = super.toMap();
 
 		map.put( "expr", expr.toMap() );
-		map.put( "operator", operator.toString() );
+		map.put( "operator", enumToMap( operator ) );
 		return map;
 	}
 

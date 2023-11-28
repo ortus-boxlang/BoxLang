@@ -63,7 +63,7 @@ public class BoxAssignment extends BoxStatement {
 		Map<String, Object> map = super.toMap();
 
 		map.put( "left", left.toMap() );
-		map.put( "op", op.toString() );
+		map.put( "op", enumToMap( op ) );
 		map.put( "right", right.toMap() );
 		return map;
 	}

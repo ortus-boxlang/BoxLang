@@ -53,7 +53,7 @@ public class BoxReturnType extends BoxNode {
 	public Map<String, Object> toMap() {
 		Map<String, Object> map = super.toMap();
 
-		map.put( "type", type.name() );
+		map.put( "type", enumToMap( type ) );
 		map.put( "fqn", fqn );
 		return map;
 	}

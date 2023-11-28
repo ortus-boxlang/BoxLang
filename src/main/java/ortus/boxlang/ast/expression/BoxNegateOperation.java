@@ -51,7 +51,7 @@ public class BoxNegateOperation extends BoxExpr {
 	public Map<String, Object> toMap() {
 		Map<String, Object> map = super.toMap();
 
-		map.put( "operator", operator.name() );
+		map.put( "operator", enumToMap( operator ) );
 		map.put( "expr", expr.toMap() );
 		return map;
 	}

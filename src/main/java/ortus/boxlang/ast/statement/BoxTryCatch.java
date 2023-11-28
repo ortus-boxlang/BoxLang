@@ -78,7 +78,7 @@ public class BoxTryCatch extends BoxStatement {
 
 		map.put( "exception", exception.toMap() );
 		map.put( "catchBody", catchBody.stream().map( BoxStatement::toMap ).collect( Collectors.toList() ) );
-		map.put( "type", type.toString() );
+		map.put( "type", enumToMap( type ) );
 		map.put( "name", name );
 		return map;
 	}
