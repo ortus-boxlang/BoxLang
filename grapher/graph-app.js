@@ -89,52 +89,51 @@ function convertRawASTNode( rawNode ){
     return rawNode;
 }
 
-
-function setupChart( data ){
-    const root = d3.hierarchy(data);
-    const dx = 10;
-    const dy = 50;
-    
-    // Create a tree layout.
-    const tree = d3.tree().nodeSize([dx, dy]);
-    
-    tree.separation( (a,b) => {
-        let sep = b.data.ASTType.length;
-        
-        sep /= 2;
-        
-        sep += a.parent == b.parent ? 5 : 10;
-        
-        
-        return sep
-    });
-    
-    tree(root);
-    
-    // Compute the extent of the tree. Note that x and y are swapped here
-    // because in the tree layout, x is the breadth, but when displayed, the
-    // tree extends right rather than down.
+function calculateBounds( root, dx, dy ){
     let y0 = Infinity;
     let y1 = -y0;
     let x0 = Infinity;
     let x1 = -y0;
+
     root.each(d => {
         if (d.y > y1) y1 = d.y;
         if (d.y < y0) y0 = d.y;
         if (d.x > x1) x1 = d.x;
         if (d.x < x0) x0 = d.x;
     });
-    
-    // Compute the adjusted height of the tree.
+
     const height = y1 - y0 + dy * 2;
     const width = x1 + ( 0 - x0 ) + 200;
+
+    return { x0, y0, x1, y1, width, height };
+}
+
+// adapted from https://observablehq.com/@d3/tree/2?intent=fork
+function setupChart( data ){
+    const root = d3.hierarchy(data);
+    const nodeWidth = 10;
+    const nodeHeight = 50;
+    
+    const tree = d3.tree().nodeSize([nodeWidth, nodeHeight]);
+    
+    tree.separation( (a,b) => {
+        let sep = b.data.ASTType.length / 2;
+        
+        sep += a.parent == b.parent ? 2 : 5;
+                
+        return sep
+    });
+    
+    tree(root);
+
+    const { x0, y0, width, height } = calculateBounds( root, nodeWidth, nodeHeight );    
     
     const svg = d3.create("svg")
     .attr("overflow", "scroll")
     .attr( "id", "astGraph" )
     .attr("width", width)
     .attr("height", height)
-    .attr("viewBox", [ x0 - 100 , y0 - dy, width, height])
+    .attr("viewBox", [ x0 - (nodeWidth * 4) , y0 - nodeHeight, width, height])
     .attr("style", "max-width: 100%; height: auto; font: 10px sans-serif; background: white;");
     
     const link = svg.append("g")

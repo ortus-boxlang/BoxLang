@@ -11,6 +11,9 @@
                 <h2>AST Files</h2>
                 <ul class="file-list">
                     <cfloop array="#directoryList( "./data" )#" index="file">
+                        <cfif !file.reFind( 'json$' )>
+                            <cfcontinue/>
+                        </cfif>
                         <li><a class="fileName" href="##">#listLast( file, '\' )#</a></li>
                     </cfloop>
                 </ul>
