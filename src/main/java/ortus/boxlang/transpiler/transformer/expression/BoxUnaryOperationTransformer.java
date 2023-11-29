@@ -14,19 +14,22 @@
  */
 package ortus.boxlang.transpiler.transformer.expression;
 
+import java.util.HashMap;
+import java.util.Map;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.github.javaparser.ast.Node;
 import com.github.javaparser.ast.expr.Expression;
 import com.github.javaparser.ast.expr.MethodCallExpr;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+
 import ortus.boxlang.ast.BoxNode;
-import ortus.boxlang.ast.expression.*;
+import ortus.boxlang.ast.expression.BoxUnaryOperation;
+import ortus.boxlang.ast.expression.BoxUnaryOperator;
 import ortus.boxlang.transpiler.JavaTranspiler;
 import ortus.boxlang.transpiler.transformer.AbstractTransformer;
 import ortus.boxlang.transpiler.transformer.TransformerContext;
-
-import java.util.HashMap;
-import java.util.Map;
 
 /**
  * Transform a BoxUnaryOperatorTransformer Node the equivalent Java Parser AST node
@@ -80,7 +83,7 @@ public class BoxUnaryOperationTransformer extends AbstractTransformer {
 				template = "Increment.invokePost(${expr},${key})";
 				// post increment is ignored if the expression is a literal like 5++
 			} else if ( operation.getExpr().isLiteral() ) {
-				template = "Increment.invoke(${expr})";
+				template = "${expr}";
 			} else {
 				template = "Increment.invoke(${expr})";
 			}
@@ -95,7 +98,7 @@ public class BoxUnaryOperationTransformer extends AbstractTransformer {
 				template = "Decrement.invokePost(${expr},${key})";
 				// post increment is ignored if the expression is a literal like 5++
 			} else if ( operation.getExpr().isLiteral() ) {
-				template = "Decrement.invoke(${expr})";
+				template = "${expr}";
 			} else {
 				template = "Decrement.invoke(${expr})";
 			}

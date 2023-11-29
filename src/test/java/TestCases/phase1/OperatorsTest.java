@@ -199,14 +199,14 @@ public class OperatorsTest {
 	@Test
 	public void testMathMinusMinusLiterals() {
 		Object result = instance.executeStatement( "5--", context );
-		assertThat( result ).isEqualTo( 4 );
+		assertThat( result ).isEqualTo( 5 );
 
 		result = instance.executeStatement( "--5", context );
 		assertThat( result ).isEqualTo( 4 );
 
 		result = instance.executeStatement( "result=5--", context );
 		assertThat( result ).isEqualTo( 4 );
-		assertThat( context.getScopeNearby( VariablesScope.name ).dereference( Key.of( "result" ), false ) ).isEqualTo( 4 );
+		assertThat( context.getScopeNearby( VariablesScope.name ).dereference( Key.of( "result" ), false ) ).isEqualTo( 5 );
 
 		result = instance.executeStatement( "result=--5", context );
 		assertThat( result ).isEqualTo( 4 );
