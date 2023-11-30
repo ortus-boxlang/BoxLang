@@ -40,20 +40,26 @@ public class BoxStringInterpolationTransformer extends AbstractTransformer {
 	@Override
 	public Node transform( BoxNode node, TransformerContext context ) throws IllegalStateException {
 		BoxStringInterpolation	interpolation	= ( BoxStringInterpolation ) node;
-		String					operands		= interpolation.getValues()
-		    .stream()
-		    .map( it -> resolveScope( transpiler.transform( it, TransformerContext.RIGHT ), context ).toString() )
-		    .collect( Collectors.joining( "," ) );
+		Node					javaExpr;
+		if ( interpolation.getValues().size() == 1 ) {
+			javaExpr = resolveScope( transpiler.transform( interpolation.getValues().get( 0 ), TransformerContext.RIGHT ), context );
+		} else {
 
-		String					expr			= "Concat.invoke(" + operands + ")";
+			String				operands	= interpolation.getValues()
+			    .stream()
+			    .map( it -> resolveScope( transpiler.transform( it, TransformerContext.RIGHT ), context ).toString() )
+			    .collect( Collectors.joining( "," ) );
 
-		Map<String, String>		values			= new HashMap<>() {
+			String				expr		= "Concat.invoke(" + operands + ")";
 
-													{
-														put( "contextName", transpiler.peekContextName() );
-													}
-												};
-		Node					javaExpr		= parseExpression( expr.toString(), values );
+			Map<String, String>	values		= new HashMap<>() {
+
+												{
+													put( "contextName", transpiler.peekContextName() );
+												}
+											};
+			javaExpr = parseExpression( expr.toString(), values );
+		}
 		logger.info( "{} -> {}", node.getSourceText(), javaExpr );
 		addIndex( javaExpr, node );
 		return javaExpr;
