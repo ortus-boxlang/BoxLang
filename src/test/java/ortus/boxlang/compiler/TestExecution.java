@@ -145,6 +145,15 @@ public class TestExecution extends TestBase {
 
 		    context );
 		assertThat( context.getScopeNearby( VariablesScope.name ).dereference( Key.of( "result" ), false ) ).isEqualTo( "itwastrue" );
+
+		instance.executeSource(
+		    """
+		    tmp = "false";
+		      result = tmp ? 'itwastrue' : 'itwasfalse';
+		    """,
+
+		    context );
+		assertThat( context.getScopeNearby( VariablesScope.name ).dereference( Key.of( "result" ), false ) ).isEqualTo( "itwasfalse" );
 	}
 
 	@Test

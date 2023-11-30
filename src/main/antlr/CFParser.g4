@@ -129,6 +129,7 @@ statement:
 	| throw
 	| try
 	| while;
+
 simpleStatement: (
 		assignment
 		| applicationStatement
@@ -195,8 +196,8 @@ argumentList: argument (COMMA argument)*;
 argument: expression ( (EQUAL | COLON) expression)?;
 
 if:
-	IF LPAREN expression RPAREN ifStmt = statement (
-		ELSE elseStmt = statement
+	IF LPAREN expression RPAREN ifStmtBlock = statementBlock (
+		ELSE elseStmtBlock = statementBlock
 	)?
 	| IF LPAREN expression RPAREN ifStmtBlock = statementBlock (
 		ELSE elseStmt = statement
@@ -204,17 +205,15 @@ if:
 	| IF LPAREN expression RPAREN ifStmt = statement (
 		ELSE elseStmtBlock = statementBlock
 	)?
-	| IF LPAREN expression RPAREN ifStmtBlock = statementBlock (
-		ELSE elseStmtBlock = statementBlock
+	| IF LPAREN expression RPAREN ifStmt = statement (
+		ELSE elseStmt = statement
 	)?;
 for:
 	FOR LPAREN VAR? identifier IN expression RPAREN statementBlock
 	| FOR LPAREN forAssignment eos forCondition eos forIncrement RPAREN statementBlock;
 forAssignment: VAR? expression EQUAL expression;
 forCondition: expression;
-forIncrement:
-	expression
-	| assignment ; // ??
+forIncrement: expression | assignment; // ??
 
 do: DO statementBlock WHILE LPAREN expression RPAREN;
 
@@ -235,8 +234,8 @@ throw:
 switch: SWITCH LPAREN expression RPAREN LBRACE ( case)* RBRACE;
 
 case:
-	CASE (expression) COLON (statement | statementBlock)? break?
-	| DEFAULT COLON (statement | statementBlock)?;
+	CASE (expression) COLON (statementBlock | statement)? break?
+	| DEFAULT COLON (statementBlock | statement)?;
 
 identifier: IDENTIFIER QM? | reservedKeyword;
 reservedKeyword:
@@ -265,8 +264,7 @@ reservedKeyword:
 	| CONTAIN
 	| JAVA
 	| MESSAGE
-	| NULL
-	; //    | 	ASSERT
+	| NULL; //    | 	ASSERT
 scope:
 	APPLICATION
 	| ARGUMENTS
@@ -274,8 +272,7 @@ scope:
 	| REQUEST
 	| VARIABLES
 	| THIS
-	| THREAD
-	; //  TODO add additional known scopes
+	| THREAD; //  TODO add additional known scopes
 
 try: TRY statementBlock ( catch_)* finally_?;
 
@@ -296,8 +293,7 @@ floatLiteral: FLOAT_LITERAL;
 booleanLiteral: TRUE | FALSE;
 
 arrayExpression:
-	LBRACKET arrayValues? RBRACKET
-	; //    |   identifier LBRACKET arrayValues? RBRACKET
+	LBRACKET arrayValues? RBRACKET; //    |   identifier LBRACKET arrayValues? RBRACKET
 
 arrayValues: expression (COMMA expression)*;
 
@@ -310,22 +306,22 @@ structExpression:
 	LBRACE structMembers? RBRACE
 	| LBRACKET structMembers RBRACKET
 	| LBRACKET COLON RBRACKET;
+
 structMembers: structMember (COMMA structMember)* COMMA?;
+
 structMember:
-	identifier (COLON) expression
-	| stringLiteral (COLON) expression;
+	identifier (COLON | EQUAL) expression
+	| stringLiteral (COLON | EQUAL) expression;
 
 unary: (MINUS | PLUS) expression;
 
 new:
-	NEW (JAVA COLON)? (fqn | stringLiteral) LPAREN argumentList? RPAREN
-	; // TODO add namespace
+	NEW (JAVA COLON)? (fqn | stringLiteral) LPAREN argumentList? RPAREN; // TODO add namespace
 
 create:
 	CREATE (JAVA COLON)? (fqn | stringLiteral)? (
 		LPAREN argumentList? RPAREN
-	)?
-	; // TODO add namespace
+	)?; // TODO add namespace
 
 fqn: (identifier DOT)* identifier;
 assigmentExpression: accessExpression EQUAL expression;
@@ -353,7 +349,8 @@ expression:
 	| expression ( POWER) expression
 	| expression (STAR | SLASH | PERCENT | BACKSLASH) expression
 	| expression (PLUS | MINUS | MOD) expression
-	| expression (AMPERSAND | XOR | INSTANCEOF) expression // Math
+	| expression ( XOR | INSTANCEOF) expression
+	| expression (AMPERSAND expression)+
 	| expression (
 		EQ
 		| (GT | GREATER THAN)
@@ -371,7 +368,7 @@ expression:
 	| expression INSTANCEOF expression // InstanceOf operator
 	| expression DOES NOT CONTAIN expression
 	| NOT expression
-	| expression (AND | OR) expression ; // Logical
+	| expression (AND | OR) expression; // Logical
 
 literalExpression:
 	integerLiteral

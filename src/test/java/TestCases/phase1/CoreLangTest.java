@@ -507,6 +507,14 @@ public class CoreLangTest {
 		    context );
 		assertThat( variables.dereference( Key.of( "test8" ), false ) ).isEqualTo( "I have locker #20" );
 
+		instance.executeSource(
+		    """
+		    variables.test8 = 'I have locker ##20'
+
+		     """,
+		    context );
+		assertThat( variables.dereference( Key.of( "test8" ), false ) ).isEqualTo( "I have locker #20" );
+
 	}
 
 	@DisplayName( "String parsing concat" )

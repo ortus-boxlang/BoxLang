@@ -5,7 +5,6 @@ import java.util.Map;
 
 import com.github.javaparser.ast.Node;
 import com.github.javaparser.ast.expr.Expression;
-import com.github.javaparser.ast.expr.NameExpr;
 
 import ortus.boxlang.ast.BoxNode;
 import ortus.boxlang.ast.expression.BoxTernaryOperation;
@@ -22,7 +21,7 @@ public class BoxTernaryOperationTransformer extends AbstractTransformer {
 	@Override
 	public Node transform( BoxNode node, TransformerContext context ) throws IllegalStateException {
 		BoxTernaryOperation	operation	= ( BoxTernaryOperation ) node;
-		Expression			condition	= ( Expression ) transpiler.transform( operation.getCondition() /* , TransformerContext.DEREFERENCING */ );
+		Expression			condition	= ( Expression ) resolveScope( transpiler.transform( operation.getCondition() ), TransformerContext.RIGHT );
 		Expression			whenTrue	= ( Expression ) transpiler.transform( operation.getWhenTrue() );
 		Expression			whenFalse	= ( Expression ) transpiler.transform( operation.getWhenFalse() );
 		Map<String, String>	values		= new HashMap<>() {
@@ -34,12 +33,8 @@ public class BoxTernaryOperationTransformer extends AbstractTransformer {
 												put( "contextName", transpiler.peekContextName() );
 											}
 										};
-		if ( condition instanceof NameExpr name ) {
-			String tmp = "${contextName}.scopeFindNearby( Key.of( \"" + name + "\" ), ${contextName}.getDefaultAssignmentScope()).value()";
-			values.put( "condition", tmp );
-		}
 
-		String template = "Ternary.invoke(${condition},${whenTrue},${whenFalse})";
+		String				template	= "Ternary.invoke(${condition},${whenTrue},${whenFalse})";
 
 		return parseExpression( template, values );
 	}

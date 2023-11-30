@@ -26,7 +26,6 @@ import com.github.javaparser.ast.expr.Expression;
 import ortus.boxlang.ast.BoxNode;
 import ortus.boxlang.ast.expression.BoxBinaryOperation;
 import ortus.boxlang.ast.expression.BoxBinaryOperator;
-import ortus.boxlang.runtime.operators.Elvis;
 import ortus.boxlang.transpiler.JavaTranspiler;
 import ortus.boxlang.transpiler.transformer.AbstractTransformer;
 import ortus.boxlang.transpiler.transformer.TransformerContext;
@@ -73,9 +72,7 @@ public class BoxBinaryOperationTransformer extends AbstractTransformer {
 										};
 
 		String				template	= "";
-		if ( operation.getOperator() == BoxBinaryOperator.Concat ) {
-			template = "Concat.invoke(${left},${right})";
-		} else if ( operation.getOperator() == BoxBinaryOperator.Plus ) {
+		if ( operation.getOperator() == BoxBinaryOperator.Plus ) {
 			template = "Plus.invoke(${left},${right})";
 		} else if ( operation.getOperator() == BoxBinaryOperator.Minus ) {
 			template = "Minus.invoke(${left},${right})";

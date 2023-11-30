@@ -50,6 +50,7 @@ import ortus.boxlang.ast.expression.BoxNewOperation;
 import ortus.boxlang.ast.expression.BoxObjectAccess;
 import ortus.boxlang.ast.expression.BoxParenthesis;
 import ortus.boxlang.ast.expression.BoxScope;
+import ortus.boxlang.ast.expression.BoxStringConcat;
 import ortus.boxlang.ast.expression.BoxStringInterpolation;
 import ortus.boxlang.ast.expression.BoxStringLiteral;
 import ortus.boxlang.ast.expression.BoxStructLiteral;
@@ -659,17 +660,7 @@ public class BoxCFParser extends BoxAbstractParser {
 				expr = toAst( file, node.new_().fqn() );
 			}
 			if ( node.new_().stringLiteral() != null ) {
-				List<BoxExpr> parts = new ArrayList<>();
-				node.new_().stringLiteral().children.forEach( it -> {
-					if ( it != null && it instanceof CFParser.StringLiteralPartContext ) {
-						parts.add( new BoxStringLiteral( "\"" + getSourceText( ( ParserRuleContext ) it ) + "\"", getPosition( ( ParserRuleContext ) it ),
-						    getSourceText( ( ParserRuleContext ) it ) ) );
-					}
-					if ( it != null && it instanceof CFParser.ExpressionContext ) {
-						parts.add( toAst( file, ( CFParser.ExpressionContext ) it ) );
-					}
-				} );
-				expr = new BoxStringInterpolation( parts, getPosition( node.new_().stringLiteral() ), getSourceText( node.new_().stringLiteral() ) );
+				expr = toAst( file, node.new_().stringLiteral() );
 			}
 			BoxNewOperation newExpr = new BoxNewOperation( expr, args, getPosition( node ), getSourceText( node ) );
 			return new BoxExpression( newExpr, getPosition( node ), getSourceText( node ) );
@@ -685,17 +676,7 @@ public class BoxCFParser extends BoxAbstractParser {
 				expr = toAst( file, node.create().fqn() );
 			}
 			if ( node.create().stringLiteral() != null ) {
-				List<BoxExpr> parts = new ArrayList<>();
-				node.create().stringLiteral().children.forEach( it -> {
-					if ( it != null && it instanceof CFParser.StringLiteralPartContext ) {
-						parts.add( new BoxStringLiteral( "\"" + getSourceText( ( ParserRuleContext ) it ) + "\"", getPosition( ( ParserRuleContext ) it ),
-						    getSourceText( ( ParserRuleContext ) it ) ) );
-					}
-					if ( it != null && it instanceof CFParser.ExpressionContext ) {
-						parts.add( toAst( file, ( CFParser.ExpressionContext ) it ) );
-					}
-				} );
-				expr = new BoxStringInterpolation( parts, getPosition( node.create().stringLiteral() ), getSourceText( node.create().stringLiteral() ) );
+				expr = toAst( file, node.create().stringLiteral() );
 			}
 			BoxNewOperation newExpr = new BoxNewOperation( expr, args, getPosition( node ), getSourceText( node ) );
 			return new BoxExpression( newExpr, getPosition( node ), getSourceText( node ) );
@@ -911,6 +892,40 @@ public class BoxCFParser extends BoxAbstractParser {
 	}
 
 	/**
+	 * Converts the string literal into a BoxStringLiteral or BoxStringInterpolation
+	 *
+	 * @param file       source file, if any
+	 * @param expression ANTLR ArrayAccessContext rule
+	 *
+	 * @return corresponding AST BoxExpr subclass
+	 *
+	 * @see BoxExpr subclasses
+	 */
+	private BoxExpr toAst( File file, CFParser.StringLiteralContext expression ) {
+
+		if ( expression.expression().isEmpty() ) {
+			return new BoxStringLiteral(
+			    expression.getText(),
+			    getPosition( expression ),
+			    getSourceText( expression )
+			);
+
+		} else {
+			List<BoxExpr> parts = new ArrayList<>();
+			expression.children.forEach( it -> {
+				if ( it != null && it instanceof CFParser.StringLiteralPartContext ) {
+					parts.add( new BoxStringLiteral( "\"" + getSourceText( ( ParserRuleContext ) it ) + "\"", getPosition( ( ParserRuleContext ) it ),
+					    getSourceText( ( ParserRuleContext ) it ) ) );
+				}
+				if ( it != null && it instanceof CFParser.ExpressionContext ) {
+					parts.add( toAst( file, ( CFParser.ExpressionContext ) it ) );
+				}
+			} );
+			return new BoxStringInterpolation( parts, getPosition( expression ), getSourceText( expression ) );
+		}
+	}
+
+	/**
 	 * Converts the Expression parser rule to the corresponding AST node.
 	 * The operator precedence resolved in the ANTLR grammar
 	 *
@@ -925,29 +940,7 @@ public class BoxCFParser extends BoxAbstractParser {
 	private BoxExpr toAst( File file, CFParser.ExpressionContext expression ) {
 		if ( expression.literalExpression() != null ) {
 			if ( expression.literalExpression().stringLiteral() != null ) {
-				if ( expression.literalExpression().stringLiteral()
-				    .expression().isEmpty() ) {
-					CFParser.StringLiteralContext node = expression.literalExpression().stringLiteral();
-					return new BoxStringLiteral(
-					    node.getText(),
-					    getPosition( node ),
-					    getSourceText( node )
-					);
-
-				} else {
-					List<BoxExpr> parts = new ArrayList<>();
-					expression.literalExpression().stringLiteral().children.forEach( it -> {
-						if ( it != null && it instanceof CFParser.StringLiteralPartContext ) {
-							parts.add( new BoxStringLiteral( "\"" + getSourceText( ( ParserRuleContext ) it ) + "\"", getPosition( ( ParserRuleContext ) it ),
-							    getSourceText( ( ParserRuleContext ) it ) ) );
-						}
-						if ( it != null && it instanceof CFParser.ExpressionContext ) {
-							parts.add( toAst( file, ( CFParser.ExpressionContext ) it ) );
-						}
-					} );
-					return new BoxStringInterpolation( parts, getPosition( expression ), getSourceText( expression ) );
-				}
-
+				return toAst( file, expression.literalExpression().stringLiteral() );
 			}
 			if ( expression.literalExpression().integerLiteral() != null ) {
 				CFParser.IntegerLiteralContext node = expression.literalExpression().integerLiteral();
@@ -1065,10 +1058,17 @@ public class BoxCFParser extends BoxAbstractParser {
 			BoxExpr	left	= toAst( file, expression.expression( 0 ) );
 			BoxExpr	right	= toAst( file, expression.expression( 1 ) );
 			return new BoxComparisonOperation( left, BoxComparisonOperator.LesslThanEqual, right, getPosition( expression ), getSourceText( expression ) );
-		} else if ( expression.AMPERSAND() != null ) {
-			BoxExpr	left	= toAst( file, expression.expression( 0 ) );
-			BoxExpr	right	= toAst( file, expression.expression( 1 ) );
-			return new BoxBinaryOperation( left, BoxBinaryOperator.Concat, right, getPosition( expression ), getSourceText( expression ) );
+		} else if ( expression.AMPERSAND().size() > 0 ) {
+			List<BoxExpr>				parts	= new ArrayList<>();
+			CFParser.ExpressionContext	current	= expression;
+			do {
+				parts.add( toAst( file, ( CFParser.ExpressionContext ) current.expression().get( 0 ) ) );
+				current = current.expression().get( 1 );
+			} while ( current.AMPERSAND() != null && current.AMPERSAND().size() > 0 );
+			parts.add( toAst( file, ( CFParser.ExpressionContext ) current ) );
+
+			return new BoxStringConcat( parts, getPosition( expression ), getSourceText( expression ) );
+
 		} else if ( expression.ELVIS() != null ) {
 			BoxExpr	left	= toAst( file, expression.expression( 0 ) );
 
@@ -1122,18 +1122,7 @@ public class BoxCFParser extends BoxAbstractParser {
 				expr = toAst( file, expression.new_().fqn() );
 			}
 			if ( expression.new_().stringLiteral() != null ) {
-				List<BoxExpr> parts = new ArrayList<>();
-				expression.new_().stringLiteral().children.forEach( it -> {
-					if ( it != null && it instanceof CFParser.StringLiteralPartContext ) {
-						parts.add( new BoxStringLiteral( "\"" + getSourceText( ( ParserRuleContext ) it ) + "\"", getPosition( ( ParserRuleContext ) it ),
-						    getSourceText( ( ParserRuleContext ) it ) ) );
-					}
-					if ( it != null && it instanceof CFParser.ExpressionContext ) {
-						parts.add( toAst( file, ( CFParser.ExpressionContext ) it ) );
-					}
-				} );
-				expr = new BoxStringInterpolation( parts, getPosition( expression.new_().stringLiteral() ),
-				    getSourceText( expression.new_().stringLiteral() ) );
+				expr = toAst( file, expression.new_().stringLiteral() );
 			}
 			return new BoxNewOperation( expr, args, getPosition( expression ), getSourceText( expression ) );
 		} else if ( expression.CASTAS() != null ) {
@@ -1152,24 +1141,11 @@ public class BoxCFParser extends BoxAbstractParser {
 				expr = toAst( file, expression.create().fqn() );
 			}
 			if ( expression.create().stringLiteral() != null ) {
-				List<BoxExpr> parts = new ArrayList<>();
-				expression.create().stringLiteral().children.forEach( it -> {
-					if ( it != null && it instanceof CFParser.StringLiteralPartContext ) {
-						parts.add( new BoxStringLiteral( "\"" + getSourceText( ( ParserRuleContext ) it ) + "\"", getPosition( ( ParserRuleContext ) it ),
-						    getSourceText( ( ParserRuleContext ) it ) ) );
-					}
-					if ( it != null && it instanceof CFParser.ExpressionContext ) {
-						parts.add( toAst( file, ( CFParser.ExpressionContext ) it ) );
-					}
-				} );
-				expr = new BoxStringInterpolation( parts, getPosition( expression.create().stringLiteral() ),
-				    getSourceText( expression.create().stringLiteral() ) );
+				expr = toAst( file, expression.create().stringLiteral() );
 			}
 			return new BoxNewOperation( expr, args, getPosition( expression ), getSourceText( expression ) );
 		} else if ( !expression.ICHAR().isEmpty() ) {
-			List<BoxExpr> parts = new ArrayList<>();
-			parts.add( toAst( file, expression.expression( 0 ) ) );
-			return new BoxStringInterpolation( parts, getPosition( expression ), getSourceText( expression ) );
+			return toAst( file, expression.expression( 0 ) );
 		} else if ( expression.assigmentExpression() != null ) {
 			BoxExpr	left	= toAst( file, expression.assigmentExpression().accessExpression() );
 			BoxExpr	right	= toAst( file, expression.assigmentExpression().expression() );
@@ -1298,26 +1274,7 @@ public class BoxCFParser extends BoxAbstractParser {
 		if ( node.structMembers() != null ) {
 			for ( CFParser.StructMemberContext pair : node.structMembers().structMember() ) {
 				if ( pair.stringLiteral() != null ) {
-					System.out.println( pair.stringLiteral().children.size() );
-					// TODO: figure out how to use label in grammar to name the content and instead of using children
-					if ( pair.stringLiteral().children.size() == 3 && pair.stringLiteral().children.get( 1 ) instanceof CFParser.StringLiteralPartContext ) {
-						values.add( new BoxStringLiteral( "\"" + getSourceText( ( ParserRuleContext ) pair.stringLiteral().children.get( 1 ) ) + "\"",
-						    getPosition( ( ParserRuleContext ) pair.stringLiteral().children.get( 1 ) ),
-						    getSourceText( ( ParserRuleContext ) pair.stringLiteral().children.get( 1 ) ) ) );
-					} else {
-						List<BoxExpr> parts = new ArrayList<>();
-						pair.stringLiteral().children.forEach( it -> {
-							if ( it != null && it instanceof CFParser.StringLiteralPartContext ) {
-								parts.add(
-								    new BoxStringLiteral( "\"" + getSourceText( ( ParserRuleContext ) it ) + "\"", getPosition( ( ParserRuleContext ) it ),
-								        getSourceText( ( ParserRuleContext ) it ) ) );
-							}
-							if ( it != null && it instanceof CFParser.ExpressionContext ) {
-								parts.add( toAst( file, ( CFParser.ExpressionContext ) it ) );
-							}
-						} );
-						values.add( new BoxStringInterpolation( parts, getPosition( node ), getSourceText( node ) ) );
-					}
+					values.add( toAst( file, pair.stringLiteral() ) );
 				} else if ( pair.identifier() != null ) {
 					values.add( toAst( file, pair.identifier() ) );
 				}

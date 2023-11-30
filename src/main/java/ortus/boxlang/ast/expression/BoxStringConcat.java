@@ -14,7 +14,10 @@
  */
 package ortus.boxlang.ast.expression;
 
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 import ortus.boxlang.ast.BoxExpr;
 import ortus.boxlang.ast.Position;
@@ -22,7 +25,13 @@ import ortus.boxlang.ast.Position;
 /**
  * AST Node representing a string literal value
  */
-public class BoxStringInterpolation extends BoxStringConcat {
+public class BoxStringConcat extends BoxExpr {
+
+	private final List<BoxExpr> values;
+
+	public List<BoxExpr> getValues() {
+		return values;
+	}
 
 	/**
 	 * Creates the AST node
@@ -31,8 +40,18 @@ public class BoxStringInterpolation extends BoxStringConcat {
 	 * @param position   position of the statement in the source code
 	 * @param sourceText source code that originated the Node
 	 */
-	public BoxStringInterpolation( List<BoxExpr> parts, Position position, String sourceText ) {
-		super( parts, position, sourceText );
+	public BoxStringConcat( List<BoxExpr> parts, Position position, String sourceText ) {
+		super( position, sourceText );
+		this.values = Collections.unmodifiableList( parts );
+		this.values.forEach( arg -> arg.setParent( this ) );
+	}
+
+	@Override
+	public Map<String, Object> toMap() {
+		Map<String, Object> map = super.toMap();
+
+		map.put( "values", values.stream().map( BoxExpr::toMap ).collect( Collectors.toList() ) );
+		return map;
 	}
 
 }

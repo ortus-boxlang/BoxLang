@@ -61,6 +61,13 @@ public class OperatorsTest {
 
 	}
 
+	@DisplayName( "multi string concat" )
+	@Test
+	public void testMutliStringConcat() {
+		Object result = instance.executeStatement( "'foo' & 'bar' & 'baz' & 'bum'", context );
+		assertThat( result ).isEqualTo( "foobarbazbum" );
+	}
+
 	@DisplayName( "string contains" )
 	@Test
 	public void testStringContains() {
