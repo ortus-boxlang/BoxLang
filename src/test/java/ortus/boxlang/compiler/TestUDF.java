@@ -1,13 +1,13 @@
 package ortus.boxlang.compiler;
 
-import org.junit.jupiter.api.Test;
-import ortus.boxlang.parser.BoxParser;
-import ortus.boxlang.parser.ParsingResult;
-import ortus.boxlang.transpiler.JavaTranspiler;
+import static org.junit.Assert.assertTrue;
 
 import java.io.IOException;
 
-import static org.junit.Assert.assertTrue;
+import org.junit.jupiter.api.Test;
+
+import ortus.boxlang.parser.BoxParser;
+import ortus.boxlang.parser.ParsingResult;
 
 public class TestUDF extends TestBase {
 
@@ -37,7 +37,7 @@ public class TestUDF extends TestBase {
 	public void orderedStructLiterals() throws IOException {
 
 		assertEqualsNoWhiteSpaces(
-		    "new Struct(Struct.LINKED)",
+		    "new Struct(Struct.Type.LINKED)",
 		    transformExpression( "[:]" )
 		);
 		assertEqualsNoWhiteSpaces(

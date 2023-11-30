@@ -1,8 +1,8 @@
 package ortus.boxlang.compiler;
 
-import org.junit.jupiter.api.Test;
-
 import java.io.IOException;
+
+import org.junit.jupiter.api.Test;
 
 public class TestStruct extends TestBase {
 
@@ -35,7 +35,7 @@ public class TestStruct extends TestBase {
 	public void orderedStructLiterals() throws IOException {
 
 		assertEqualsNoWhiteSpaces(
-		    "new Struct(Struct.LINKED)",
+		    "new Struct(Struct.Type.LINKED)",
 		    transformExpression( "[:]" )
 		);
 		assertEqualsNoWhiteSpaces(

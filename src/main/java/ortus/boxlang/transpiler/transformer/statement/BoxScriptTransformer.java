@@ -34,7 +34,6 @@ import ortus.boxlang.ast.SourceFile;
 import ortus.boxlang.runtime.config.util.PlaceholderHelper;
 import ortus.boxlang.runtime.types.exceptions.ApplicationException;
 import ortus.boxlang.transpiler.JavaTranspiler;
-import ortus.boxlang.transpiler.Transpiler;
 import ortus.boxlang.transpiler.transformer.AbstractTransformer;
 import ortus.boxlang.transpiler.transformer.TransformerContext;
 
@@ -59,6 +58,7 @@ public class BoxScriptTransformer extends AbstractTransformer {
 		import ortus.boxlang.runtime.scopes.*;
 		import ortus.boxlang.runtime.dynamic.casters.*;
 		import ortus.boxlang.runtime.types.exceptions.ExceptionUtil;
+		import ortus.boxlang.runtime.types.*;
 
 		import java.nio.file.Path;
 		import java.nio.file.Paths;
