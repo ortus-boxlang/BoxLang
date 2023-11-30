@@ -471,6 +471,28 @@ public class CoreLangTest {
 
 	}
 
+	@DisplayName( "String parsing interpolation" )
+	@Test
+	public void testStringParsingInterpolation() {
+
+		instance.executeSource(
+		    """
+		    variables.var = "brad"
+		    variables.result1 = "#var#foo"
+		    variables.result2 = "foo#var#"
+		    variables.result3 = "foo#var#bar"
+		    variables.result4 = "foo#var#bar#var#baz#var#bum"
+		    variables.result5 = "foo"
+		     """,
+		    context );
+		assertThat( variables.dereference( Key.of( "result1" ), false ) ).isEqualTo( "bradfoo" );
+		assertThat( variables.dereference( Key.of( "result2" ), false ) ).isEqualTo( "foobrad" );
+		assertThat( variables.dereference( Key.of( "result3" ), false ) ).isEqualTo( "foobradbar" );
+		assertThat( variables.dereference( Key.of( "result4" ), false ) ).isEqualTo( "foobradbarbradbazbradbum" );
+		assertThat( variables.dereference( Key.of( "result5" ), false ) ).isEqualTo( "foo" );
+
+	}
+
 	@DisplayName( "String parsing 5" )
 	@Test
 	public void testStringParsing5() {

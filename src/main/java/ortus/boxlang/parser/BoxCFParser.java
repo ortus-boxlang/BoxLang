@@ -1298,19 +1298,26 @@ public class BoxCFParser extends BoxAbstractParser {
 		if ( node.structMembers() != null ) {
 			for ( CFParser.StructMemberContext pair : node.structMembers().structMember() ) {
 				if ( pair.stringLiteral() != null ) {
-					List<BoxExpr> parts = new ArrayList<>();
-					pair.stringLiteral().children.forEach( it -> {
-						if ( it != null && it instanceof CFParser.StringLiteralPartContext ) {
-							parts.add(
-							    new BoxStringLiteral( "\"" + getSourceText( ( ParserRuleContext ) it ) + "\"", getPosition( ( ParserRuleContext ) it ),
-							        getSourceText( ( ParserRuleContext ) it ) ) );
-						}
-						if ( it != null && it instanceof CFParser.ExpressionContext ) {
-							parts.add( toAst( file, ( CFParser.ExpressionContext ) it ) );
-						}
-					} );
-					values.add(
-					    new BoxStringInterpolation( parts, getPosition( node ), getSourceText( node ) ) );
+					System.out.println( pair.stringLiteral().children.size() );
+					// TODO: figure out how to use label in grammar to name the content and instead of using children
+					if ( pair.stringLiteral().children.size() == 3 && pair.stringLiteral().children.get( 1 ) instanceof CFParser.StringLiteralPartContext ) {
+						values.add( new BoxStringLiteral( "\"" + getSourceText( ( ParserRuleContext ) pair.stringLiteral().children.get( 1 ) ) + "\"",
+						    getPosition( ( ParserRuleContext ) pair.stringLiteral().children.get( 1 ) ),
+						    getSourceText( ( ParserRuleContext ) pair.stringLiteral().children.get( 1 ) ) ) );
+					} else {
+						List<BoxExpr> parts = new ArrayList<>();
+						pair.stringLiteral().children.forEach( it -> {
+							if ( it != null && it instanceof CFParser.StringLiteralPartContext ) {
+								parts.add(
+								    new BoxStringLiteral( "\"" + getSourceText( ( ParserRuleContext ) it ) + "\"", getPosition( ( ParserRuleContext ) it ),
+								        getSourceText( ( ParserRuleContext ) it ) ) );
+							}
+							if ( it != null && it instanceof CFParser.ExpressionContext ) {
+								parts.add( toAst( file, ( CFParser.ExpressionContext ) it ) );
+							}
+						} );
+						values.add( new BoxStringInterpolation( parts, getPosition( node ), getSourceText( node ) ) );
+					}
 				} else if ( pair.identifier() != null ) {
 					values.add( toAst( file, pair.identifier() ) );
 				}
