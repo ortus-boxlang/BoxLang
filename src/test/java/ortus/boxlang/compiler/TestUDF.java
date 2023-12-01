@@ -42,7 +42,7 @@ public class TestUDF extends TestBase {
 		);
 		assertEqualsNoWhiteSpaces(
 		    """
-		    Struct.of("brad","wood","luis","majano")
+		    Struct.linkedOf("brad","wood","luis","majano")
 		    """,
 		    transformExpression(
 		        """
@@ -52,7 +52,7 @@ public class TestUDF extends TestBase {
 
 		assertEqualsNoWhiteSpaces(
 		    """
-		    Struct.of(something, Array.fromList(List.of("foo", "bar", Struct.of("luis", true))), "else", 42)
+		    Struct.linkedOf("something", Array.of("foo", "bar", Struct.linkedOf("luis", true)), "else", 42)
 		     """,
 		    transformExpression(
 		        """

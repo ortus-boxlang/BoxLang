@@ -1,19 +1,21 @@
 package ortus.boxlang.transpiler.transformer.expression;
 
+import java.util.HashMap;
+import java.util.Map;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.github.javaparser.ast.Node;
 import com.github.javaparser.ast.expr.Expression;
 import com.github.javaparser.ast.expr.MethodCallExpr;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+
 import ortus.boxlang.ast.BoxExpr;
 import ortus.boxlang.ast.BoxNode;
 import ortus.boxlang.ast.expression.BoxArrayLiteral;
 import ortus.boxlang.transpiler.JavaTranspiler;
 import ortus.boxlang.transpiler.transformer.AbstractTransformer;
 import ortus.boxlang.transpiler.transformer.TransformerContext;
-
-import java.util.HashMap;
-import java.util.Map;
 
 /**
  * Transform a BoxArrayLiteral Node the equivalent Java Parser AST nodes
@@ -65,15 +67,13 @@ public class BoxArrayLiteralTransformer extends AbstractTransformer {
 			addIndex( javaExpr, node );
 			return javaExpr;
 		}
-		MethodCallExpr listOf = ( MethodCallExpr ) parseExpression( "List.of()", values );
+		MethodCallExpr javaExpr = ( MethodCallExpr ) parseExpression( "Array.of()", values );
 		for ( BoxExpr expr : arrayLiteral.getValues() ) {
 			Expression value = ( Expression ) transpiler.transform( expr, context );
-			listOf.getArguments().add( value );
+			javaExpr.getArguments().add( value );
 		}
-		MethodCallExpr javaExpr = ( MethodCallExpr ) parseExpression( "Array.fromList()", values );
-		javaExpr.getArguments().add( listOf );
-		logger.info( "{} -> {}", node.getSourceText(), listOf );
-		addIndex( listOf, node );
+		logger.info( "{} -> {}", node.getSourceText(), javaExpr );
+		addIndex( javaExpr, node );
 		return javaExpr;
 
 	}
