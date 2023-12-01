@@ -14,24 +14,26 @@
  */
 package ortus.boxlang.transpiler.transformer.expression;
 
-import com.github.javaparser.ast.Node;
+import java.util.HashMap;
+import java.util.Map;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import com.github.javaparser.ast.Node;
+
 import ortus.boxlang.ast.BoxNode;
 import ortus.boxlang.ast.expression.BoxIdentifier;
 import ortus.boxlang.transpiler.JavaTranspiler;
 import ortus.boxlang.transpiler.transformer.AbstractTransformer;
 import ortus.boxlang.transpiler.transformer.TransformerContext;
 
-import java.util.HashMap;
-import java.util.Map;
-
 /**
  * Transform a BoxIdentifier Node the equivalent Java Parser AST nodes
  */
 public class BoxIdentifierTransformer extends AbstractTransformer {
 
-	Logger logger = LoggerFactory.getLogger( BoxScopeTransformer.class );
+	Logger logger = LoggerFactory.getLogger( BoxIdentifierTransformer.class );
 
 	public BoxIdentifierTransformer( JavaTranspiler transpiler ) {
 		super( transpiler );
@@ -54,7 +56,12 @@ public class BoxIdentifierTransformer extends AbstractTransformer {
 											default -> "${identifier}";
 										};
 
-		Node				javaExpr	= parseExpression( template, values );
+		Node				javaExpr;
+		if ( context == TransformerContext.NONE ) {
+			javaExpr = resolveScope( parseExpression( template, values ), context );
+		} else {
+			javaExpr = parseExpression( template, values );
+		}
 		logger.info( side + node.getSourceText() + " -> " + javaExpr );
 		return javaExpr;
 

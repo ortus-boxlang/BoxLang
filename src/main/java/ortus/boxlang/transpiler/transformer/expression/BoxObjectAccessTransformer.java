@@ -215,17 +215,31 @@ public class BoxObjectAccessTransformer extends AbstractTransformer {
 							put( "contextName", transpiler.peekContextName() );
 						}
 					};
-					template	= """
-					                        Referencer.get(
-					              ${contextName}.scopeFindNearby(
-					                        		${ctx},
-					                        		null
-					                        	).value(),
-					                        	${key},
-					                        	${safe2}
-					                        )
-					                        """;
-					javaExpr	= parseExpression( template, values );
+					if ( objectAccess.getContext() instanceof BoxIdentifier idt && transpiler.matchesImport( idt.getName() ) ) {
+
+						values.put( "ctx", idt.getName() );
+						template = """
+						                     Referencer.get(
+						           classLocator.load( ${contextName}, \"${ctx}\", imports ),
+						                     	${key},
+						                     	${safe2}
+						                     )
+
+						                                  """;
+					} else {
+						template = """
+						                     Referencer.get(
+						           ${contextName}.scopeFindNearby(
+						                     		${ctx},
+						                     		null
+						                     	).value(),
+						                     	${key},
+						                     	${safe2}
+						                     )
+						                     """;
+
+					}
+					javaExpr = parseExpression( template, values );
 				} else {
 					Node				finalJavaExpr	= javaExpr;
 					Map<String, String>	values			= new HashMap<>() {

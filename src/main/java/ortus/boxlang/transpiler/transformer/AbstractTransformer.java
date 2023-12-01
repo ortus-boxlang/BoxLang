@@ -112,9 +112,9 @@ public abstract class AbstractTransformer implements Transformer {
 			String	template;
 			if ( transpiler.matchesImport( id ) ) {
 				template = switch ( context ) {
-					case INIT -> throw new ApplicationException( "You cannot assign a variable with the sa me name as an import: [" + id + "]" );
+					case INIT -> throw new ApplicationException( "You cannot assign a variable with the same name as an import: [" + id + "]" );
 					case RIGHT -> "classLocator.load( ${contextName}, \"${id}\", imports )";
-					default -> "classLocator.load( ${contextName}, \\\"${id}\\\", imports )";
+					default -> "classLocator.load( ${contextName}, \"${id}\", imports )";
 				};
 			} else {
 				template = switch ( context ) {
