@@ -9,9 +9,11 @@ import org.slf4j.LoggerFactory;
 import com.github.javaparser.ast.Node;
 import com.github.javaparser.ast.expr.Expression;
 import com.github.javaparser.ast.expr.MethodCallExpr;
+import com.github.javaparser.ast.expr.StringLiteralExpr;
 
 import ortus.boxlang.ast.BoxExpr;
 import ortus.boxlang.ast.BoxNode;
+import ortus.boxlang.ast.expression.BoxIdentifier;
 import ortus.boxlang.ast.expression.BoxStructLiteral;
 import ortus.boxlang.ast.expression.BoxStructType;
 import ortus.boxlang.transpiler.JavaTranspiler;
@@ -55,22 +57,6 @@ public class BoxStructLiteralTransformer extends AbstractTransformer {
 
 		if ( structLiteral.getType() == BoxStructType.Unordered ) {
 			if ( empty ) {
-				Node javaExpr = parseExpression( "new Struct( Struct.Type.LINKED )", values );
-				logger.info( "{} -> {}", node.getSourceText(), javaExpr );
-				addIndex( javaExpr, node );
-				return javaExpr;
-			}
-
-			MethodCallExpr javaExpr = ( MethodCallExpr ) parseExpression( "Struct.of()", values );
-			for ( BoxExpr expr : structLiteral.getValues() ) {
-				Expression value = ( Expression ) transpiler.transform( expr, context );
-				javaExpr.getArguments().add( value );
-			}
-			logger.info( "{} -> {}", node.getSourceText(), javaExpr );
-			addIndex( javaExpr, node );
-			return javaExpr;
-		} else {
-			if ( empty ) {
 				Node javaExpr = parseExpression( "new Struct()", values );
 				logger.info( "{} -> {}", node.getSourceText(), javaExpr );
 				addIndex( javaExpr, node );
@@ -79,7 +65,33 @@ public class BoxStructLiteralTransformer extends AbstractTransformer {
 
 			MethodCallExpr javaExpr = ( MethodCallExpr ) parseExpression( "Struct.of()", values );
 			for ( BoxExpr expr : structLiteral.getValues() ) {
-				Expression value = ( Expression ) transpiler.transform( expr, context );
+				Expression value;
+				if ( expr instanceof BoxIdentifier ) {
+					value = new StringLiteralExpr( expr.getSourceText() );
+				} else {
+					value = ( Expression ) transpiler.transform( expr, context );
+				}
+				javaExpr.getArguments().add( value );
+			}
+			logger.info( "{} -> {}", node.getSourceText(), javaExpr );
+			addIndex( javaExpr, node );
+			return javaExpr;
+		} else {
+			if ( empty ) {
+				Node javaExpr = parseExpression( "new Struct( Struct.Type.LINKED )", values );
+				logger.info( "{} -> {}", node.getSourceText(), javaExpr );
+				addIndex( javaExpr, node );
+				return javaExpr;
+			}
+
+			MethodCallExpr javaExpr = ( MethodCallExpr ) parseExpression( "Struct.linkedOf()", values );
+			for ( BoxExpr expr : structLiteral.getValues() ) {
+				Expression value;
+				if ( expr instanceof BoxIdentifier ) {
+					value = new StringLiteralExpr( expr.getSourceText() );
+				} else {
+					value = ( Expression ) transpiler.transform( expr, context );
+				}
 				javaExpr.getArguments().add( value );
 			}
 			logger.info( "{} -> {}", node.getSourceText(), javaExpr );

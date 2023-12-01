@@ -185,6 +185,24 @@ public class Struct implements Map<Key, Object>, IType, IReferenceable, IListena
 	}
 
 	/**
+	 * Create a linked struct from a list of values. The values must be in pairs, key, value, key, value, etc.
+	 *
+	 * @param values The values to create the struct from
+	 *
+	 * @return The linked struct
+	 */
+	public static Struct linkedOf( Object... values ) {
+		if ( values.length % 2 != 0 ) {
+			throw new ApplicationException( "Invalid number of arguments.  Must be an even number." );
+		}
+		Struct struct = new Struct( Type.LINKED );
+		for ( int i = 0; i < values.length; i += 2 ) {
+			struct.put( KeyCaster.cast( values[ i ] ), values[ i + 1 ] );
+		}
+		return struct;
+	}
+
+	/**
 	 * --------------------------------------------------------------------------
 	 * Map Interface Methods
 	 * --------------------------------------------------------------------------
@@ -564,6 +582,10 @@ public class Struct implements Map<Key, Object>, IType, IReferenceable, IListena
 	public Object dereferenceAndInvoke( IBoxContext context, Key name, Object[] positionalArguments, Boolean safe ) {
 
 		// Member functions here
+		// temp workaround for unit test src\test\java\TestCases\phase2\ObjectLiteralTest.java
+		if ( name.equals( Key.of( "keyArray" ) ) ) {
+			return Array.fromList( keySet().stream().map( Key::getName ).collect( java.util.stream.Collectors.toList() ) );
+		}
 
 		Object value = dereference( name, true );
 		if ( value != null ) {
@@ -605,6 +627,10 @@ public class Struct implements Map<Key, Object>, IType, IReferenceable, IListena
 	public Object dereferenceAndInvoke( IBoxContext context, Key name, Map<Key, Object> namedArguments, Boolean safe ) {
 
 		// Member functions here
+		// temp workaround for unit test src\test\java\TestCases\phase2\ObjectLiteralTest.java
+		if ( name.equals( Key.of( "keyArray" ) ) ) {
+			return Array.fromList( keySet().stream().map( Key::getName ).collect( java.util.stream.Collectors.toList() ) );
+		}
 
 		Object value = dereference( name, safe );
 		if ( value instanceof Function function ) {

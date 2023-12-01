@@ -123,7 +123,7 @@ public class ObjectLiteralTest {
 		assertThat( arrSub2.dereference( one, false ) ).isEqualTo( 3 );
 		assertThat( arrSub2.dereference( two, false ) ).isEqualTo( 4 );
 
-		assertThat( arr.dereference( two, false ) ).isEqualTo( "brad" );
+		assertThat( arr.dereference( three, false ) ).isEqualTo( "brad" );
 
 	}
 
@@ -198,7 +198,7 @@ public class ObjectLiteralTest {
 		assertThat( ( ( Struct ) variables.dereference( result, false ) ).size() ).isEqualTo( 1 );
 		str = ( Struct ) variables.dereference( result, false );
 		assertThat( str.dereference( Key.of( "brad" ), false ) ).isEqualTo( "wood" );
-		assertThat( str.keySet().toArray( new Key[ 0 ] )[ 0 ].getName() ).isEqualTo( "BRAD" );
+		assertThat( str.keySet().toArray( new Key[ 0 ] )[ 0 ].getName() ).isEqualTo( "brad" );
 
 		instance.executeSource(
 		    """
@@ -210,7 +210,13 @@ public class ObjectLiteralTest {
 		assertThat( ( ( Struct ) variables.dereference( result, false ) ).size() ).isEqualTo( 1 );
 		str = ( Struct ) variables.dereference( result, false );
 		assertThat( str.dereference( Key.of( "brad" ), false ) ).isEqualTo( "wood" );
-		assertThat( str.keySet().toArray( new Key[ 0 ] )[ 0 ].getName() ).isEqualTo( "BRAD" );
+		assertThat( str.keySet().toArray( new Key[ 0 ] )[ 0 ].getName() ).isEqualTo( "brad" );
+
+	}
+
+	@DisplayName( "unordered struct complex" )
+	@Test
+	public void testUnorderedStructComplex() {
 
 		instance.executeSource(
 		    """
@@ -219,7 +225,7 @@ public class ObjectLiteralTest {
 		    	"foo",
 		    	"bar",
 		    	{ 'luis': true }
-		      ]
+		      ],
 		      "else" : 42
 		    };
 		       """,
@@ -227,7 +233,7 @@ public class ObjectLiteralTest {
 
 		assertThat( variables.dereference( result, false ) instanceof Struct ).isEqualTo( true );
 		assertThat( ( ( Struct ) variables.dereference( result, false ) ).type ).isEqualTo( Struct.Type.DEFAULT );
-		str = ( Struct ) variables.dereference( result, false );
+		Struct str = ( Struct ) variables.dereference( result, false );
 		assertThat( str.size() ).isEqualTo( 2 );
 
 		assertThat( str.dereference( Key.of( "something" ), false ) instanceof Array ).isEqualTo( true );
@@ -245,9 +251,9 @@ public class ObjectLiteralTest {
 
 		// These may be in any order
 		Key[]			keys			= str.keySet().toArray( new Key[ 0 ] );
-		List<String>	possibleKeys	= List.of( "SOMETHING", "else" );
-		assertThat( possibleKeys.contains( keys[ 0 ].getName() ) ).isEqualTo( "SOMETHING" );
-		assertThat( possibleKeys.contains( keys[ 1 ].getName() ) ).isEqualTo( "else" );
+		List<String>	possibleKeys	= List.of( "something", "else" );
+		assertThat( possibleKeys.contains( keys[ 0 ].getName() ) ).isTrue();
+		assertThat( possibleKeys.contains( keys[ 1 ].getName() ) ).isTrue();
 
 	}
 
@@ -322,7 +328,7 @@ public class ObjectLiteralTest {
 		assertThat( ( ( Struct ) variables.dereference( result, false ) ).size() ).isEqualTo( 1 );
 		str = ( Struct ) variables.dereference( result, false );
 		assertThat( str.dereference( Key.of( "brad" ), false ) ).isEqualTo( "wood" );
-		assertThat( str.keySet().toArray( new Key[ 0 ] )[ 0 ].getName() ).isEqualTo( "BRAD" );
+		assertThat( str.keySet().toArray( new Key[ 0 ] )[ 0 ].getName() ).isEqualTo( "brad" );
 
 		instance.executeSource(
 		    """
@@ -334,7 +340,7 @@ public class ObjectLiteralTest {
 		assertThat( ( ( Struct ) variables.dereference( result, false ) ).size() ).isEqualTo( 1 );
 		str = ( Struct ) variables.dereference( result, false );
 		assertThat( str.dereference( Key.of( "brad" ), false ) ).isEqualTo( "wood" );
-		assertThat( str.keySet().toArray( new Key[ 0 ] )[ 0 ].getName() ).isEqualTo( "BRAD" );
+		assertThat( str.keySet().toArray( new Key[ 0 ] )[ 0 ].getName() ).isEqualTo( "brad" );
 
 		instance.executeSource(
 		    """
@@ -343,7 +349,7 @@ public class ObjectLiteralTest {
 		    	"foo",
 		    	"bar",
 		    	[ 'luis': true ]
-		      ]
+		      ],
 		      "else" : 42
 		    ];
 		       """,
@@ -369,7 +375,7 @@ public class ObjectLiteralTest {
 
 		// Must be in this order
 		Key[] keys = str.keySet().toArray( new Key[ 0 ] );
-		assertThat( keys[ 0 ].getName() ).isEqualTo( "SOMETHING" );
+		assertThat( keys[ 0 ].getName() ).isEqualTo( "something" );
 		assertThat( keys[ 1 ].getName() ).isEqualTo( "else" );
 
 	}
@@ -433,7 +439,7 @@ public class ObjectLiteralTest {
 		Array arr = ( Array ) variables.dereference( result, false );
 		assertThat( variables.dereference( result, false ) instanceof Array ).isEqualTo( true );
 		// These must both exist, but in any order
-		List<String> expectedValues = List.of( "BRAD", "LUIS" );
+		List<String> expectedValues = List.of( "brad", "luis" );
 		assertThat( expectedValues.contains( arr.toArray()[ 0 ] ) ).isEqualTo( true );
 		assertThat( expectedValues.contains( arr.toArray()[ 1 ] ) ).isEqualTo( true );
 

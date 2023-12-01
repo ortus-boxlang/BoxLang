@@ -382,6 +382,14 @@ public class Array implements List<Object>, IType, IReferenceable, IListenable {
 	public Object dereferenceAndInvoke( IBoxContext context, Key name, Object[] positionalArguments, Boolean safe ) {
 
 		// Member functions here
+		// temp workaround for unit test src\test\java\TestCases\phase2\ObjectLiteralTest.java
+		if ( name.equals( Key.of( "avg" ) ) ) {
+			Double result = 0D;
+			for ( Object o : wrapped ) {
+				result += DoubleCaster.cast( o );
+			}
+			return result / wrapped.size();
+		}
 
 		// If there is no member funtion, look for a native Java method of that name
 		DynamicObject object = DynamicObject.of( this );
@@ -405,6 +413,14 @@ public class Array implements List<Object>, IType, IReferenceable, IListenable {
 	public Object dereferenceAndInvoke( IBoxContext context, Key name, Map<Key, Object> namedArguments, Boolean safe ) {
 
 		// Member functions here
+		// temp workaround for unit test src\test\java\TestCases\phase2\ObjectLiteralTest.java
+		if ( name.equals( Key.of( "avg" ) ) ) {
+			Double result = 0D;
+			for ( Object o : wrapped ) {
+				result += DoubleCaster.cast( o );
+			}
+			return result / wrapped.size();
+		}
 
 		// If there is no member funtion, look for a native Java method of that name
 		DynamicObject object = DynamicObject.of( this );

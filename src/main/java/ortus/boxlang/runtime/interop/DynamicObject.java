@@ -344,7 +344,7 @@ public class DynamicObject implements IReferenceable {
 		try {
 			methodRecord = getMethodHandle( methodName, argumentsToClasses( arguments ) );
 		} catch ( RuntimeException e ) {
-			throw new ApplicationException( "Error getting constructor for class " + this.targetClass.getName(), e );
+			throw new ApplicationException( "Error getting method for class " + this.targetClass.getName(), e );
 		}
 
 		// If it's not static, we need a target instance

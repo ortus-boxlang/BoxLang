@@ -1270,7 +1270,7 @@ public class BoxCFParser extends BoxAbstractParser {
 	 */
 	private BoxExpr toAst( File file, CFParser.StructExpressionContext node ) {
 		List<BoxExpr>	values	= new ArrayList<>();
-		BoxStructType	type	= node.RBRACKET() != null ? BoxStructType.Unordered : BoxStructType.Ordered;
+		BoxStructType	type	= node.RBRACKET() != null ? BoxStructType.Ordered : BoxStructType.Unordered;
 		if ( node.structMembers() != null ) {
 			for ( CFParser.StructMemberContext pair : node.structMembers().structMember() ) {
 				if ( pair.stringLiteral() != null ) {
