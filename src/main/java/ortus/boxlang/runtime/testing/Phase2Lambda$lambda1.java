@@ -18,8 +18,10 @@
 package ortus.boxlang.runtime.testing;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 import ortus.boxlang.runtime.context.FunctionBoxContext;
+import ortus.boxlang.runtime.loader.ImportDefinition;
 import ortus.boxlang.runtime.operators.Concat;
 import ortus.boxlang.runtime.runnables.IBoxRunnable;
 import ortus.boxlang.runtime.scopes.Key;
@@ -104,6 +106,13 @@ public class Phase2Lambda$lambda1 extends Lambda {
 
 	public Access getAccess() {
 		return access;
+	}
+
+	/**
+	 * The imports for this runnable
+	 */
+	public List<ImportDefinition> getImports() {
+		return declaringRunnable.getImports();
 	}
 
 	private Phase2Lambda$lambda1() {

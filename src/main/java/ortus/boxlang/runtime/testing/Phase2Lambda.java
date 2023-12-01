@@ -156,6 +156,13 @@ public class Phase2Lambda extends BoxTemplate {
     }
 
     /**
+     * The imports for this runnable
+     */
+    public List<ImportDefinition> getImports() {
+        return imports;
+    }
+
+    /**
      * Main method
      *
      * @param args

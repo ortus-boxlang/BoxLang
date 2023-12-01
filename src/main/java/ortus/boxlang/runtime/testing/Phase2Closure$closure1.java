@@ -18,10 +18,12 @@
 package ortus.boxlang.runtime.testing;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 import ortus.boxlang.runtime.context.FunctionBoxContext;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.dynamic.Referencer;
+import ortus.boxlang.runtime.loader.ImportDefinition;
 import ortus.boxlang.runtime.operators.Concat;
 import ortus.boxlang.runtime.runnables.IBoxRunnable;
 import ortus.boxlang.runtime.scopes.Key;
@@ -128,6 +130,13 @@ public class Phase2Closure$closure1 extends Closure {
 	 */
 	public IBoxRunnable getDeclaringRunnable() {
 		return Phase2Closure$closure1.declaringRunnable;
+	}
+
+	/**
+	 * The imports for this runnable
+	 */
+	public List<ImportDefinition> getImports() {
+		return declaringRunnable.getImports();
 	}
 
 	/*

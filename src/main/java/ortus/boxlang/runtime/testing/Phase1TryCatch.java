@@ -240,6 +240,13 @@ public class Phase1TryCatch extends BoxTemplate {
 	}
 
 	/**
+	 * The imports for this runnable
+	 */
+	public List<ImportDefinition> getImports() {
+		return imports;
+	}
+
+	/**
 	 * Main method
 	 *
 	 * @param args

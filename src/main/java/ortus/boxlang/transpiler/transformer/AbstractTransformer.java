@@ -32,6 +32,7 @@ import ortus.boxlang.ast.expression.BoxComparisonOperation;
 import ortus.boxlang.ast.expression.BoxUnaryOperation;
 import ortus.boxlang.ast.expression.BoxUnaryOperator;
 import ortus.boxlang.runtime.config.util.PlaceholderHelper;
+import ortus.boxlang.runtime.types.exceptions.ApplicationException;
 import ortus.boxlang.transpiler.Transpiler;
 import ortus.boxlang.transpiler.transformer.indexer.BoxLangCrossReferencer;
 import ortus.boxlang.transpiler.transformer.indexer.BoxLangCrossReferencerDefault;
@@ -107,21 +108,29 @@ public abstract class AbstractTransformer implements Transformer {
 	 */
 	protected Node resolveScope( Node expr, TransformerContext context ) {
 		if ( expr instanceof NameExpr ) {
-			String				id			= expr.toString();
-			String				template	= switch ( context ) {
-												case INIT -> "${contextName}.scopeFindNearby(Key.of(\"${id}\"), ${contextName}.getDefaultAssignmentScope()).scope().assign(Key.of(\"${id}\"))";
-												case RIGHT -> "${contextName}.scopeFindNearby(Key.of(\"${id}\"),null).value()";
-												default -> "${contextName}.scopeFindNearby(Key.of(\"${id}\"),null).value()";
-											}
+			String	id	= expr.toString();
+			String	template;
+			if ( transpiler.matchesImport( id ) ) {
+				template = switch ( context ) {
+					case INIT -> throw new ApplicationException( "You cannot assign a variable with the sa me name as an import: [" + id + "]" );
+					case RIGHT -> "classLocator.load( ${contextName}, \"${id}\", imports )";
+					default -> "classLocator.load( ${contextName}, \\\"${id}\\\", imports )";
+				};
+			} else {
+				template = switch ( context ) {
+					case INIT -> "${contextName}.scopeFindNearby(Key.of(\"${id}\"), ${contextName}.getDefaultAssignmentScope()).scope().assign(Key.of(\"${id}\"))";
+					case RIGHT -> "${contextName}.scopeFindNearby(Key.of(\"${id}\"),null).value()";
+					default -> "${contextName}.scopeFindNearby(Key.of(\"${id}\"),null).value()";
+				};
+			}
 
-			;
-			Map<String, String>	values		= new HashMap<>() {
+			Map<String, String> values = new HashMap<>() {
 
-												{
-													put( "id", id.toString() );
-													put( "contextName", transpiler.peekContextName() );
-												}
-											};
+				{
+					put( "id", id.toString() );
+					put( "contextName", transpiler.peekContextName() );
+				}
+			};
 			return parseExpression( template, values );
 
 		}
