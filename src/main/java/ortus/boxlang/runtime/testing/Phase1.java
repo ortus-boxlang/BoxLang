@@ -34,7 +34,6 @@ import ortus.boxlang.runtime.operators.Increment;
 import ortus.boxlang.runtime.runnables.BoxTemplate;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
-import ortus.boxlang.runtime.types.exceptions.ExceptionUtil;
 
 public class Phase1 extends BoxTemplate {
 
@@ -170,6 +169,13 @@ public class Phase1 extends BoxTemplate {
 	 */
 	public Path getRunnablePath() {
 		return Phase1.path;
+	}
+
+	/**
+	 * The imports for this runnable
+	 */
+	public List<ImportDefinition> getImports() {
+		return imports;
 	}
 
 	/**

@@ -18,9 +18,11 @@
 package ortus.boxlang.runtime.context;
 
 import java.util.ArrayDeque;
+import java.util.List;
 import java.util.Map;
 
 import ortus.boxlang.runtime.dynamic.casters.FunctionCaster;
+import ortus.boxlang.runtime.loader.ImportDefinition;
 import ortus.boxlang.runtime.runnables.BoxTemplate;
 import ortus.boxlang.runtime.runnables.RunnableLoader;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
@@ -390,6 +392,23 @@ public class BaseBoxContext implements IBoxContext {
 	 */
 	public IScope getScopeNearby( Key name ) throws ScopeNotFoundException {
 		return getScopeNearby( name, false );
+	}
+
+	/**
+	 * Look for a class in the imports of the current template.
+	 *
+	 * @param name The name of the class to look for
+	 *
+	 * @return The laoded class, null if not found
+	 *
+	 */
+	public List<ImportDefinition> getCurrentImports() {
+		BoxTemplate template = findClosestTemplate();
+		if ( template == null ) {
+			return null;
+		}
+
+		return template.getImports();
 	}
 
 }
