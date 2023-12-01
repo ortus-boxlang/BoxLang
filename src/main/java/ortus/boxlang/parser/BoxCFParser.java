@@ -414,16 +414,20 @@ public class BoxCFParser extends BoxAbstractParser {
 	private BoxTryCatch toAst( File file, CFParser.Catch_Context node ) {
 		BoxExpr				expr		= toAst( file, node.expression() );
 		List<BoxStatement>	catchBody	= toAst( file, node.statementBlock() );
-		String				name		= "";
+		BoxExpr				name		= null;
 		BoxTryCatchType		type		= BoxTryCatchType.Any;
 		if ( node.catchType() != null ) {
 			if ( node.catchType().stringLiteral() != null ) {
 				type	= BoxTryCatchType.String;
-				name	= node.catchType().stringLiteral().getText();
+				name	= toAst( file, node.catchType().stringLiteral() );
 			} else if ( node.catchType().type() != null ) {
 				// TODO: Why this double if?
 				if ( node.catchType().type().ANY() != null ) {
 					type = BoxTryCatchType.Any;
+				}
+				if ( node.catchType().type().fqn() != null ) {
+					type	= BoxTryCatchType.Fqn;
+					name	= toAst( file, node.catchType().type().fqn() );
 				}
 			}
 		}

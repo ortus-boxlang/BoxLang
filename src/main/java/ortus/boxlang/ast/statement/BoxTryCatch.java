@@ -32,7 +32,7 @@ public class BoxTryCatch extends BoxStatement {
 	private final BoxIdentifier			exception;
 	private final List<BoxStatement>	catchBody;
 	private final BoxTryCatchType		type;
-	private final String				name;
+	private final BoxExpr				name;
 
 	/**
 	 *
@@ -41,7 +41,7 @@ public class BoxTryCatch extends BoxStatement {
 	 * @param position
 	 * @param sourceText
 	 */
-	public BoxTryCatch( BoxTryCatchType type, String name, BoxExpr exception, List<BoxStatement> catchBody, Position position, String sourceText ) {
+	public BoxTryCatch( BoxTryCatchType type, BoxExpr name, BoxExpr exception, List<BoxStatement> catchBody, Position position, String sourceText ) {
 		super( position, sourceText );
 		this.type	= type;
 		this.name	= name;
@@ -68,7 +68,7 @@ public class BoxTryCatch extends BoxStatement {
 		return type;
 	}
 
-	public String getName() {
+	public BoxExpr getName() {
 		return name;
 	}
 

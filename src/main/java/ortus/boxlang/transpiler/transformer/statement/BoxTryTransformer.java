@@ -24,14 +24,14 @@ import org.slf4j.LoggerFactory;
 import com.github.javaparser.ast.Node;
 import com.github.javaparser.ast.NodeList;
 import com.github.javaparser.ast.body.Parameter;
+import com.github.javaparser.ast.expr.BooleanLiteralExpr;
+import com.github.javaparser.ast.expr.Expression;
 import com.github.javaparser.ast.stmt.BlockStmt;
 import com.github.javaparser.ast.stmt.CatchClause;
 import com.github.javaparser.ast.stmt.IfStmt;
 import com.github.javaparser.ast.stmt.Statement;
 import com.github.javaparser.ast.stmt.TryStmt;
 import com.github.javaparser.ast.type.ClassOrInterfaceType;
-import com.github.javaparser.ast.expr.Expression;
-import com.github.javaparser.ast.expr.BooleanLiteralExpr;
 
 import ortus.boxlang.ast.BoxNode;
 import ortus.boxlang.ast.statement.BoxTry;
@@ -89,7 +89,6 @@ public class BoxTryTransformer extends AbstractTransformer {
 																put( "catchContextName", catchContextName );
 																put( "contextName", transpiler.peekContextName() );
 																put( "throwableName", throwableName );
-																put( "type", clause.getName() );
 															}
 														};
 				if ( typeCounter > 1 ) {
@@ -100,6 +99,11 @@ public class BoxTryTransformer extends AbstractTransformer {
 				if ( clause.getType() == BoxTryCatchType.Any ) {
 					javaLastIf.setCondition( new BooleanLiteralExpr( true ) );
 				} else {
+					if ( clause.getType() == BoxTryCatchType.Fqn ) {
+						values.put( "type", "\"" + transpiler.transform( clause.getName(), context ).toString() + "\"" );
+					} else if ( clause.getType() == BoxTryCatchType.String ) {
+						values.put( "type", transpiler.transform( clause.getName(), context ).toString() );
+					}
 					javaLastIf.setCondition( ( Expression ) parseExpression(
 					    "ExceptionUtil.exceptionIsOfType( ${contextName}, ${throwableName}, ${type} )",
 					    values

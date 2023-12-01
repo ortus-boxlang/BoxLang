@@ -76,11 +76,11 @@ type:
 	| BOOLEAN
 	| COMPONENT
 	| INTERFACE
-	| ANY
 	| ARRAY
 	| STRUCT
 	| QUERY
-	| fqn;
+	| fqn
+	| ANY;
 
 functionOrStatement: constructor | function | statement;
 
