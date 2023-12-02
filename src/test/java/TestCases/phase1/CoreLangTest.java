@@ -168,6 +168,29 @@ public class CoreLangTest {
 
 	}
 
+	@DisplayName( "try catch with empty type" )
+	@Test
+	public void testTryCatchEmptyType() {
+
+		instance.executeSource(
+		    """
+		         try {
+		         	1/0
+		           } catch ( e) {
+		    message = e.getMessage();
+		    message2 = e.message;
+		    result = "in catch";
+		           } finally {
+		         		result &= ' also finally';
+		           }
+		             """,
+		    context );
+		assertThat( variables.dereference( result, false ) ).isEqualTo( "in catch also finally" );
+		assertThat( variables.dereference( Key.of( "message" ), false ) ).isEqualTo( "You cannot divide by zero." );
+		assertThat( variables.dereference( Key.of( "message2" ), false ) ).isEqualTo( "You cannot divide by zero." );
+
+	}
+
 	@DisplayName( "nested try catch" )
 	@Test
 	public void testNestedTryCatch() {
@@ -228,6 +251,24 @@ public class CoreLangTest {
 		        try {
 		        	1/0
 		       } catch ( "com.foo.type" | java.lang.RuntimeException | "foo.bar" myErr ) {
+		        	result = "catch3"
+		    }
+		          """,
+		    context );
+		// assertThat( variables.dereference( result, false ) ).isEqualTo( "catchany" );
+
+	}
+
+	@DisplayName( "try multiple catche types with any" )
+	@Test
+	public void testTryMultipleCatchTypesWithAny() {
+
+		instance.executeSource(
+		    """
+		     result = "default"
+		        try {
+		        	1/0
+		       } catch ( "com.foo.type" | java.lang.RuntimeException | any | "foo.bar" myErr ) {
 		        	result = "catch3"
 		    }
 		          """,

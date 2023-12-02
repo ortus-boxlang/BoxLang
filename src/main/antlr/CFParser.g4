@@ -282,7 +282,7 @@ catch_:
 
 finally_: FINALLY statementBlock;
 
-catchType: type | stringLiteral;
+catchType: ANY | stringLiteral | fqn;
 stringLiteral:
 	OPEN_QUOTE (stringLiteralPart | ICHAR (expression) ICHAR)* CLOSE_QUOTE;
 
