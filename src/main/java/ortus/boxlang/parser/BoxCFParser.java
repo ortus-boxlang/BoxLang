@@ -432,7 +432,7 @@ public class BoxCFParser extends BoxAbstractParser {
 
 	private BoxCatchExceptionType toAst( File file, CatchTypeContext node ) {
 		if ( node.fqn() != null ) {
-			return new BoxCatchExceptionType( new BoxStringLiteral( "\"" + node.fqn().getText() + "\"", getPosition( node ),
+			return new BoxCatchExceptionType( new BoxStringLiteral( node.fqn().getText(), getPosition( node ),
 			    getSourceText( node ) ), getPosition( node ),
 			    getSourceText( node ) );
 		}
@@ -914,7 +914,7 @@ public class BoxCFParser extends BoxAbstractParser {
 	private BoxExpr toAst( File file, CFParser.StringLiteralContext expression ) {
 
 		if ( expression.expression().isEmpty() ) {
-			return new BoxStringLiteral(
+			return BoxStringLiteral.fromQuotedString(
 			    expression.getText(),
 			    getPosition( expression ),
 			    getSourceText( expression )
@@ -924,7 +924,7 @@ public class BoxCFParser extends BoxAbstractParser {
 			List<BoxExpr> parts = new ArrayList<>();
 			expression.children.forEach( it -> {
 				if ( it != null && it instanceof CFParser.StringLiteralPartContext ) {
-					parts.add( new BoxStringLiteral( "\"" + getSourceText( ( ParserRuleContext ) it ) + "\"", getPosition( ( ParserRuleContext ) it ),
+					parts.add( new BoxStringLiteral( getSourceText( ( ParserRuleContext ) it ), getPosition( ( ParserRuleContext ) it ),
 					    getSourceText( ( ParserRuleContext ) it ) ) );
 				}
 				if ( it != null && it instanceof CFParser.ExpressionContext ) {

@@ -44,10 +44,15 @@ public class BoxStringLiteral extends BoxExpr {
 	 */
 	public BoxStringLiteral( String value, Position position, String sourceText ) {
 		super( position, sourceText );
+		this.value = value;
+	}
+
+	public static BoxStringLiteral fromQuotedString( String value, Position position, String sourceText ) {
 		StringBuilder sb = new StringBuilder( value );
 		sb.deleteCharAt( value.length() - 1 );
 		sb.deleteCharAt( 0 );
-		this.value = sb.toString();
+
+		return new BoxStringLiteral( sb.toString(), position, sourceText );
 	}
 
 	@Override
