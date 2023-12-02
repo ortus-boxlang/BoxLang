@@ -14,7 +14,6 @@
  */
 package ortus.boxlang.ast.statement;
 
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -33,30 +32,6 @@ public class BoxTryCatch extends BoxStatement {
 	private final BoxIdentifier					exception;
 	private final List<BoxStatement>			catchBody;
 	private final List<BoxCatchExceptionType>	catchTypes;
-
-	/**
-	 *
-	 * @param exception
-	 * @param catchBody
-	 * @param position
-	 * @param sourceText
-	 */
-	public BoxTryCatch( BoxCatchExceptionType.CatchType type, BoxExpr name, BoxExpr exception, List<BoxStatement> catchBody, Position position,
-	    String sourceText ) {
-		super( position, sourceText );
-		if ( exception instanceof BoxIdentifier exp ) {
-			this.exception = exp;
-		} else {
-			throw new IllegalStateException( "Exception must be a BoxIdentifier" );
-		}
-		this.exception.setParent( this );
-		this.catchBody = Collections.unmodifiableList( catchBody );
-		this.catchBody.forEach( arg -> arg.setParent( this ) );
-
-		this.catchTypes = new ArrayList<BoxCatchExceptionType>();
-		this.catchTypes.add( new BoxCatchExceptionType( name, type, position, sourceText ) );
-
-	}
 
 	public BoxTryCatch( List<BoxCatchExceptionType> catchTypes, BoxExpr exception, List<BoxStatement> catchBody, Position position, String sourceText ) {
 		super( position, sourceText );
