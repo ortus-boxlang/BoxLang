@@ -15,7 +15,7 @@ public class TestStruct extends TestBase {
 		);
 		assertEqualsNoWhiteSpaces(
 		    """
-		    Struct.of("something", Array.fromList(List.of("foo", "bar", Struct.of("luis", true))), "else", 42)
+		    Struct.of("something", Array.of("foo", "bar", Struct.of("luis", true)), "else", 42)
 		    """,
 		    transformExpression(
 		        """

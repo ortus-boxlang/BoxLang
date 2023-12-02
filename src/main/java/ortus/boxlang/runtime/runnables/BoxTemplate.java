@@ -19,9 +19,11 @@ package ortus.boxlang.runtime.runnables;
 
 import java.nio.file.Path;
 import java.time.LocalDateTime;
+import java.util.List;
 
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.IBoxContext;
+import ortus.boxlang.runtime.loader.ImportDefinition;
 import ortus.boxlang.runtime.types.Struct;
 
 public abstract class BoxTemplate implements ITemplateRunnable {
@@ -60,6 +62,11 @@ public abstract class BoxTemplate implements ITemplateRunnable {
 		}
 
 	}
+
+	/**
+	 * The imports for this runnable
+	 */
+	public abstract List<ImportDefinition> getImports();
 
 	/**
 	 * This method is called by the invoke method, it is the actual implementation of the template

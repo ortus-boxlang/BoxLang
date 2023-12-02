@@ -17,8 +17,10 @@
  */
 package ortus.boxlang.runtime.context;
 
+import java.util.List;
 import java.util.Map;
 
+import ortus.boxlang.runtime.loader.ImportDefinition;
 import ortus.boxlang.runtime.runnables.BoxTemplate;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
@@ -248,4 +250,14 @@ public interface IBoxContext {
 	 * rethrows the closest exception
 	 */
 	public void rethrow();
+
+	/**
+	 * Look for a class in the imports of the current template.
+	 *
+	 * @param name The name of the class to look for
+	 *
+	 * @return The laoded class, null if not found
+	 *
+	 */
+	public List<ImportDefinition> getCurrentImports();
 }

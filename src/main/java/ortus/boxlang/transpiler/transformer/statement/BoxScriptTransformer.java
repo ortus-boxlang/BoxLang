@@ -126,6 +126,13 @@ public class BoxScriptTransformer extends AbstractTransformer {
 			return ${className}.path;
 			}
 
+			/**
+			 * The imports for this runnable
+			 */
+			public List<ImportDefinition> getImports() {
+				return imports;
+			}
+
 		}
 	""";
 	// @formatter:on

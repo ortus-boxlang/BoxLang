@@ -23,11 +23,13 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.nio.file.Path;
 import java.time.LocalDateTime;
+import java.util.List;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import ortus.boxlang.runtime.context.IBoxContext.ScopeSearchResult;
+import ortus.boxlang.runtime.loader.ImportDefinition;
 import ortus.boxlang.runtime.runnables.BoxTemplate;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
@@ -74,6 +76,11 @@ public class ScriptingBoxContextTest {
 			public Path getRunnablePath() {
 				return null;
 			}
+
+			public List<ImportDefinition> getImports() {
+				return null;
+			}
+
 		} );
 		assertThat( context.findClosestTemplate() ).isNotNull();
 		assertThat( context.hasTemplates() ).isTrue();

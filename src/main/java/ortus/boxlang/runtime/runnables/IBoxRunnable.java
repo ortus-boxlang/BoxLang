@@ -18,6 +18,9 @@
 package ortus.boxlang.runtime.runnables;
 
 import java.time.LocalDateTime;
+import java.util.List;
+
+import ortus.boxlang.runtime.loader.ImportDefinition;
 
 public interface IBoxRunnable {
 
@@ -26,6 +29,11 @@ public interface IBoxRunnable {
 	 * Methods
 	 * --------------------------------------------------------------------------
 	 */
+
+	/**
+	 * The imports for this runnable
+	 */
+	public List<ImportDefinition> getImports();
 
 	/**
 	 * The version of the BoxLang runtime

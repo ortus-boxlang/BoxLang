@@ -28,7 +28,7 @@ import ortus.boxlang.transpiler.transformer.TransformerContext;
  */
 public class BoxStructLiteralTransformer extends AbstractTransformer {
 
-	Logger logger = LoggerFactory.getLogger( BoxArrayLiteralTransformer.class );
+	Logger logger = LoggerFactory.getLogger( BoxStructLiteralTransformer.class );
 
 	public BoxStructLiteralTransformer( JavaTranspiler transpiler ) {
 		super( transpiler );

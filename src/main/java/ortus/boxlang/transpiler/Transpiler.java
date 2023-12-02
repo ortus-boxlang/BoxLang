@@ -17,6 +17,7 @@ import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.config.Configuration;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.ScriptingBoxContext;
+import ortus.boxlang.runtime.loader.ImportDefinition;
 import ortus.boxlang.runtime.runnables.BoxScript;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.VariablesScope;
@@ -32,6 +33,7 @@ public abstract class Transpiler implements ITranspiler {
 	private int								tryCatchCounter		= 0;
 	private int								switchCounter		= 0;
 	private ArrayDeque<String>				currentContextName	= new ArrayDeque<>();
+	private List<ImportDefinition>			imports				= new ArrayList<ImportDefinition>();
 
 	/**
 	 * Set a property
@@ -125,6 +127,42 @@ public abstract class Transpiler implements ITranspiler {
 
 	public String peekContextName() {
 		return currentContextName.peek();
+	}
+
+	public void addImport( String importString ) {
+		imports.add( ImportDefinition.parse( importString ) );
+	}
+
+	public boolean matchesImport( String token ) {
+		/*
+		 * Not supporting
+		 * - java:System
+		 * - java:java.lang.System
+		 * - java.lang.System
+		 * 
+		 * right now, just
+		 * 
+		 * - System
+		 * 
+		 * as all the other options require grammar changes or are more complicated to recognize
+		 */
+		return imports.stream().anyMatch( i -> {
+			if ( token.equalsIgnoreCase( i.alias() ) ) {
+				return true;
+			}
+
+			String	className		= i.className();
+			int		lastDotIndex	= className.lastIndexOf( "." );
+			if ( lastDotIndex != -1 ) {
+				className = className.substring( lastDotIndex + 1 );
+			}
+
+			if ( token.equalsIgnoreCase( className ) ) {
+				return true;
+			}
+
+			return false;
+		} );
 	}
 
 }

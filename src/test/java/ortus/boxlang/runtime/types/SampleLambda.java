@@ -18,8 +18,10 @@
 package ortus.boxlang.runtime.types;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 import ortus.boxlang.runtime.context.FunctionBoxContext;
+import ortus.boxlang.runtime.loader.ImportDefinition;
 import ortus.boxlang.runtime.runnables.IBoxRunnable;
 import ortus.boxlang.runtime.scopes.Key;
 
@@ -73,6 +75,10 @@ public class SampleLambda extends Lambda {
 	}
 
 	public IBoxRunnable getDeclaringRunnable() {
+		return null;
+	}
+
+	public List<ImportDefinition> getImports() {
 		return null;
 	}
 

@@ -234,7 +234,7 @@ public class BoxRuntime {
 		}
 		if ( this.debugMode ) {
 			this.interceptorService.register(
-			    DynamicObject.of( new ASTCapture( true, true ) ),
+			    DynamicObject.of( new ASTCapture( false, true ) ),
 			    Key.of( "onParse" )
 			);
 		}

@@ -166,6 +166,13 @@ public class Phase2Closure extends BoxTemplate {
     }
 
     /**
+     * The imports for this runnable
+     */
+    public List<ImportDefinition> getImports() {
+        return imports;
+    }
+
+    /**
      * Main method
      *
      * @param args

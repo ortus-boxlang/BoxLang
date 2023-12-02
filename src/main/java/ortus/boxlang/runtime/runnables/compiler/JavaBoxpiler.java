@@ -211,6 +211,13 @@ public class JavaBoxpiler {
 			public Path getRunnablePath() {
 			return ${className}.path;
 			}
+			
+			/**
+			 * The imports for this runnable
+			 */
+			public List<ImportDefinition> getImports() {
+				return imports;
+			}
 
 		}
 	""";
