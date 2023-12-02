@@ -20,6 +20,7 @@ import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
@@ -64,6 +65,7 @@ import ortus.boxlang.ast.statement.BoxAssert;
 import ortus.boxlang.ast.statement.BoxAssignment;
 import ortus.boxlang.ast.statement.BoxAssignmentOperator;
 import ortus.boxlang.ast.statement.BoxBreak;
+import ortus.boxlang.ast.statement.BoxCatchExceptionType;
 import ortus.boxlang.ast.statement.BoxContinue;
 import ortus.boxlang.ast.statement.BoxDo;
 import ortus.boxlang.ast.statement.BoxExpression;
@@ -81,11 +83,11 @@ import ortus.boxlang.ast.statement.BoxSwitchCase;
 import ortus.boxlang.ast.statement.BoxThrow;
 import ortus.boxlang.ast.statement.BoxTry;
 import ortus.boxlang.ast.statement.BoxTryCatch;
-import ortus.boxlang.ast.statement.BoxTryCatchType;
 import ortus.boxlang.ast.statement.BoxType;
 import ortus.boxlang.ast.statement.BoxWhile;
 import ortus.boxlang.parser.antlr.CFLexer;
 import ortus.boxlang.parser.antlr.CFParser;
+import ortus.boxlang.parser.antlr.CFParser.CatchTypeContext;
 
 /**
  * Parser for CF scripts
@@ -412,27 +414,31 @@ public class BoxCFParser extends BoxAbstractParser {
 	 * @see BoxTryCatch
 	 */
 	private BoxTryCatch toAst( File file, CFParser.Catch_Context node ) {
-		BoxExpr				expr		= toAst( file, node.expression() );
+		BoxExpr				exception	= toAst( file, node.expression() );
 		List<BoxStatement>	catchBody	= toAst( file, node.statementBlock() );
-		BoxExpr				name		= null;
-		BoxTryCatchType		type		= BoxTryCatchType.Any;
-		if ( node.catchType() != null ) {
-			if ( node.catchType().stringLiteral() != null ) {
-				type	= BoxTryCatchType.String;
-				name	= toAst( file, node.catchType().stringLiteral() );
-			} else if ( node.catchType().type() != null ) {
-				// TODO: Why this double if?
-				if ( node.catchType().type().ANY() != null ) {
-					type = BoxTryCatchType.Any;
-				}
-				if ( node.catchType().type().fqn() != null ) {
-					type	= BoxTryCatchType.Fqn;
-					name	= toAst( file, node.catchType().type().fqn() );
-				}
-			}
+
+		if ( node.catchType().size() == 0 ) {
+			List<BoxCatchExceptionType> types = new ArrayList<BoxCatchExceptionType>();
+			types.add( new BoxCatchExceptionType( null, BoxCatchExceptionType.CatchType.Any, getPosition( node ), getSourceText( node ) ) );
+
+			return new BoxTryCatch( types, exception, catchBody, getPosition( node ), getSourceText( node ) );
 		}
 
-		return new BoxTryCatch( type, name, expr, catchBody, getPosition( node ), getSourceText( node ) );
+		List<BoxCatchExceptionType> catchTypes = node.catchType().stream().map( ct -> toAst( file, ct ) ).collect( Collectors.toList() );
+
+		return new BoxTryCatch( catchTypes, exception, catchBody, getPosition( node ), getSourceText( node ) );
+	}
+
+	private BoxCatchExceptionType toAst( File file, CatchTypeContext node ) {
+		if ( node.stringLiteral() != null ) {
+			return new BoxCatchExceptionType( toAst( file, node.stringLiteral() ), BoxCatchExceptionType.CatchType.String, getPosition( node ),
+			    getSourceText( node ) );
+		} else if ( node.type().fqn() != null ) {
+			return new BoxCatchExceptionType( toAst( file, node.type().fqn() ), BoxCatchExceptionType.CatchType.Fqn, getPosition( node ),
+			    getSourceText( node ) );
+		}
+
+		return new BoxCatchExceptionType( null, BoxCatchExceptionType.CatchType.Any, getPosition( node ), getSourceText( node ) );
 	}
 
 	/**

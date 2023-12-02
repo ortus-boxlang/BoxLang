@@ -277,7 +277,8 @@ scope:
 try: TRY statementBlock ( catch_)* finally_?;
 
 catch_:
-	CATCH LPAREN catchType? expression RPAREN statementBlock;
+	CATCH LPAREN catchType? ( PIPE catchType )* expression RPAREN statementBlock
+	;
 
 finally_: FINALLY statementBlock;
 

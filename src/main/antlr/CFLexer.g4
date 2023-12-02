@@ -116,6 +116,7 @@ MINUSMINUS      :   '--';
 NEQ             :   '!=' | 'NEQ' | '<>';
 NOT             :   '!'  | 'NOT';
 OR              :   '||' | 'OR';
+PIPE            :   '|';
 PERCENT         :   '%';
 POWER         	:   '^';
 QM              :   '?';
@@ -131,6 +132,7 @@ MODEQUAL        :   '%=';
 PLUS            :   '+';
 PLUSPLUS        :   '++';
 TEQ				:   '===';
+
 
 
 

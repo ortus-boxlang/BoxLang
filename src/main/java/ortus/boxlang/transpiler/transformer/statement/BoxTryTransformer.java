@@ -16,7 +16,9 @@
 package ortus.boxlang.transpiler.transformer.statement;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -24,6 +26,8 @@ import org.slf4j.LoggerFactory;
 import com.github.javaparser.ast.Node;
 import com.github.javaparser.ast.NodeList;
 import com.github.javaparser.ast.body.Parameter;
+import com.github.javaparser.ast.expr.BinaryExpr;
+import com.github.javaparser.ast.expr.BinaryExpr.Operator;
 import com.github.javaparser.ast.expr.BooleanLiteralExpr;
 import com.github.javaparser.ast.expr.Expression;
 import com.github.javaparser.ast.stmt.BlockStmt;
@@ -34,9 +38,9 @@ import com.github.javaparser.ast.stmt.TryStmt;
 import com.github.javaparser.ast.type.ClassOrInterfaceType;
 
 import ortus.boxlang.ast.BoxNode;
+import ortus.boxlang.ast.statement.BoxCatchExceptionType;
 import ortus.boxlang.ast.statement.BoxTry;
 import ortus.boxlang.ast.statement.BoxTryCatch;
-import ortus.boxlang.ast.statement.BoxTryCatchType;
 import ortus.boxlang.transpiler.JavaTranspiler;
 import ortus.boxlang.transpiler.transformer.AbstractTransformer;
 import ortus.boxlang.transpiler.transformer.TransformerContext;
@@ -78,6 +82,7 @@ public class BoxTryTransformer extends AbstractTransformer {
 			IfStmt		javaLastIf		= javaIfStmt;
 			// Add our empty top-level if statement to the catch body, we'll flesh out the conditions and then/else blocks as we go
 			catchBody.addStatement( javaIfStmt );
+
 			int typeCounter = 0;
 			for ( BoxTryCatch clause : boxTry.getCatches() ) {
 				String				catchContextName	= "catchContext" + catchCounter + ++typeCounter;
@@ -96,19 +101,8 @@ public class BoxTryTransformer extends AbstractTransformer {
 					javaLastIf.setElseStmt( tmp );
 					javaLastIf = tmp;
 				}
-				if ( clause.getType() == BoxTryCatchType.Any ) {
-					javaLastIf.setCondition( new BooleanLiteralExpr( true ) );
-				} else {
-					if ( clause.getType() == BoxTryCatchType.Fqn ) {
-						values.put( "type", "\"" + transpiler.transform( clause.getName(), context ).toString() + "\"" );
-					} else if ( clause.getType() == BoxTryCatchType.String ) {
-						values.put( "type", transpiler.transform( clause.getName(), context ).toString() );
-					}
-					javaLastIf.setCondition( ( Expression ) parseExpression(
-					    "ExceptionUtil.exceptionIsOfType( ${contextName}, ${throwableName}, ${type} )",
-					    values
-					) );
-				}
+
+				javaLastIf.setCondition( getIfCondition( clause.getCatchTypes(), context, values.get( "contextName" ), values.get( "throwableName" ) ) );
 
 				BlockStmt	ifhBody	= new BlockStmt();
 				Statement	handler	= ( Statement ) parseStatement(
@@ -147,6 +141,58 @@ public class BoxTryTransformer extends AbstractTransformer {
 		javaTry.setTryBlock( tryBody );
 		javaTry.setFinallyBlock( finallyBody );
 		return javaTry;
+	}
+
+	private Expression getIfCondition( List<BoxCatchExceptionType> boxCatchTypes, TransformerContext context, String contextName, String throwableName ) {
+
+		if ( boxCatchTypes.stream().anyMatch( BoxCatchExceptionType::isAny ) ) {
+			return new BooleanLiteralExpr( true );
+		} else if ( boxCatchTypes.size() == 1 ) {
+			return transformCatchType( boxCatchTypes.get( 0 ), context, contextName, throwableName );
+		}
+
+		List<Expression>	catchTypesIfs	= boxCatchTypes.stream().map( bct -> transformCatchType( bct, context, contextName, throwableName ) )
+		    .collect( Collectors.toList() );
+
+		BinaryExpr			o				= new BinaryExpr();
+		o.setLeft( catchTypesIfs.get( 0 ) );
+		o.setOperator( Operator.OR );
+
+		catchTypesIfs.stream().skip( 1 ).reduce( o, ( acc, ex ) -> {
+			BinaryExpr	x		= ( BinaryExpr ) acc;
+
+			BinaryExpr	right	= new BinaryExpr();
+			right.setLeft( ( Expression ) ex );
+			right.setOperator( Operator.OR );
+
+			x.setRight( right );
+
+			return right;
+		} );
+
+		return o;
+	}
+
+	private Expression transformCatchType( BoxCatchExceptionType catchType, TransformerContext context, String contextName, String throwableName ) {
+
+		if ( catchType.getCatchType() == BoxCatchExceptionType.CatchType.Any ) {
+			return new BooleanLiteralExpr( true );
+		}
+
+		Map<String, String> values = new HashMap<>();
+		values.put( "contextName", transpiler.peekContextName() );
+		values.put( "throwableName", throwableName );
+
+		if ( catchType.getCatchType() == BoxCatchExceptionType.CatchType.String ) {
+			values.put( "type", transpiler.transform( catchType.getName(), context ).toString() );
+		} else if ( catchType.getCatchType() == BoxCatchExceptionType.CatchType.Fqn ) {
+			values.put( "type", "\"" + transpiler.transform( catchType.getName(), context ).toString() + "\"" );
+		}
+
+		return ( Expression ) parseExpression(
+		    "ExceptionUtil.exceptionIsOfType( ${contextName}, ${throwableName}, ${type} )",
+		    values
+		);
 	}
 
 }
