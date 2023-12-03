@@ -14,20 +14,22 @@
  */
 package ortus.boxlang.transpiler.transformer.statement;
 
+import java.util.HashMap;
+import java.util.Map;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.github.javaparser.ast.Node;
 import com.github.javaparser.ast.stmt.BlockStmt;
 import com.github.javaparser.ast.stmt.Statement;
 import com.github.javaparser.ast.stmt.WhileStmt;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+
 import ortus.boxlang.ast.BoxNode;
 import ortus.boxlang.ast.statement.BoxForIn;
 import ortus.boxlang.transpiler.JavaTranspiler;
 import ortus.boxlang.transpiler.transformer.AbstractTransformer;
 import ortus.boxlang.transpiler.transformer.TransformerContext;
-
-import java.util.HashMap;
-import java.util.Map;
 
 /**
  * Transform a BoxForIn Node the equivalent Java Parser AST nodes
@@ -69,6 +71,7 @@ public class BoxForInTransformer extends AbstractTransformer {
 		String				template1	= """
 		                                  	Iterator ${variable} = CollectionCaster.cast( ${collection} ).iterator();
 		                                  """;
+		// TODO: This isn't correct and needs reworked. Also, support "for( var x in y )"too
 		String				template2	= """
 		                                  	while( ${variable}.hasNext() ) {
 		                                  		${collection}.put( Key.of( "${variable}" ), ${variable}.next() );

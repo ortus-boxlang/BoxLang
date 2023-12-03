@@ -14,18 +14,20 @@
  */
 package ortus.boxlang.transpiler.transformer.expression;
 
-import com.github.javaparser.ast.Node;
-import com.github.javaparser.ast.expr.Expression;
+import java.util.HashMap;
+import java.util.Map;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import com.github.javaparser.ast.Node;
+import com.github.javaparser.ast.expr.Expression;
+
 import ortus.boxlang.ast.BoxNode;
 import ortus.boxlang.ast.expression.BoxFunctionInvocation;
 import ortus.boxlang.transpiler.JavaTranspiler;
 import ortus.boxlang.transpiler.transformer.AbstractTransformer;
 import ortus.boxlang.transpiler.transformer.TransformerContext;
-
-import java.util.HashMap;
-import java.util.Map;
 
 public class BoxFunctionInvocationTransformer extends AbstractTransformer {
 
@@ -45,7 +47,7 @@ public class BoxFunctionInvocationTransformer extends AbstractTransformer {
 		Map<String, String> values = new HashMap<>() {
 
 			{
-				put( "name", function.getName().getName() );
+				put( "functionName", createKey( function.getName().getName() ).toString() );
 				put( "contextName", transpiler.peekContextName() );
 			}
 		};
@@ -63,10 +65,10 @@ public class BoxFunctionInvocationTransformer extends AbstractTransformer {
 	private String getTemplate( BoxFunctionInvocation function ) {
 
 		String target = BoxBuiltinRegistry.getInstance().getRegistry().get( function.getName().getName().toLowerCase() );
-		;
+
 		if ( target != null )
 			return target;
-		StringBuilder sb = new StringBuilder( "${contextName}.invokeFunction( Key.of( \"${name}\" )" );
+		StringBuilder sb = new StringBuilder( "${contextName}.invokeFunction( ${functionName}" );
 
 		sb.append( ", new Object[] { " );
 		for ( int i = 0; i < function.getArguments().size(); i++ ) {

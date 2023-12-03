@@ -14,21 +14,23 @@
  */
 package ortus.boxlang.transpiler.transformer.statement;
 
+import java.util.HashMap;
+import java.util.Map;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.github.javaparser.ast.Node;
 import com.github.javaparser.ast.expr.Expression;
 import com.github.javaparser.ast.stmt.BlockStmt;
 import com.github.javaparser.ast.stmt.Statement;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+
 import ortus.boxlang.ast.BoxNode;
 import ortus.boxlang.ast.expression.BoxIdentifier;
 import ortus.boxlang.ast.statement.BoxLocalDeclaration;
 import ortus.boxlang.transpiler.JavaTranspiler;
 import ortus.boxlang.transpiler.transformer.AbstractTransformer;
 import ortus.boxlang.transpiler.transformer.TransformerContext;
-
-import java.util.HashMap;
-import java.util.Map;
 
 public class BoxLocalDeclarationTransformer extends AbstractTransformer {
 
@@ -42,6 +44,8 @@ public class BoxLocalDeclarationTransformer extends AbstractTransformer {
 	public Node transform( BoxNode node, TransformerContext context ) throws IllegalStateException {
 		BoxLocalDeclaration	declaration	= ( BoxLocalDeclaration ) node;
 		BlockStmt			stmt		= new BlockStmt();
+		// TODO: Roll this class into the BoxAssignmentTransformer and add modifiers to the assignment node such as "var" but also leaving room for additions
+		// in the future
 		if ( declaration.getExpression() != null ) {
 			Expression expr = ( Expression ) transpiler.transform( declaration.getExpression(), TransformerContext.RIGHT );
 			;
@@ -50,7 +54,7 @@ public class BoxLocalDeclarationTransformer extends AbstractTransformer {
 				Map<String, String>	values		= new HashMap<>() {
 
 													{
-														put( "variable", variable.getName() );
+														put( "variableKey", createKey( variable.getName().toString() ).toString() );
 														put( "expr", expr.toString() );
 														put( "contextName", transpiler.peekContextName() );
 													}
@@ -58,7 +62,7 @@ public class BoxLocalDeclarationTransformer extends AbstractTransformer {
 
 				String				template	= """
 				                                  ${contextName}.getScopeNearby( LocalScope.name )
-				                                                                   	.assign(Key.of( "${variable}" ),
+				                                                                   	.assign(${variableKey},
 				                                                                   	${expr});
 				                                                                   """;
 
