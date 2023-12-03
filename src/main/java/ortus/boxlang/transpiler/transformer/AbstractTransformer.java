@@ -21,6 +21,7 @@ import com.github.javaparser.JavaParser;
 import com.github.javaparser.ParseResult;
 import com.github.javaparser.ast.Node;
 import com.github.javaparser.ast.expr.Expression;
+import com.github.javaparser.ast.expr.MethodCallExpr;
 import com.github.javaparser.ast.expr.NameExpr;
 import com.github.javaparser.ast.stmt.Statement;
 
@@ -29,6 +30,7 @@ import ortus.boxlang.ast.BoxNode;
 import ortus.boxlang.ast.expression.BoxBinaryOperation;
 import ortus.boxlang.ast.expression.BoxBinaryOperator;
 import ortus.boxlang.ast.expression.BoxComparisonOperation;
+import ortus.boxlang.ast.expression.BoxStringLiteral;
 import ortus.boxlang.ast.expression.BoxUnaryOperation;
 import ortus.boxlang.ast.expression.BoxUnaryOperator;
 import ortus.boxlang.runtime.config.util.PlaceholderHelper;
@@ -135,6 +137,33 @@ public abstract class AbstractTransformer implements Transformer {
 
 		}
 		return expr;
+	}
+
+	/**
+	 * Create a Key instance out of any expression. May optimize requests for the same key more than once in a template
+	 *
+	 * @param expr expression to be turned into a Key. May be a literal, or expression
+	 *
+	 * @return
+	 */
+	protected Node createKey( BoxExpr expr ) {
+		// TODO: optimize for the same key more than once in a template
+		NameExpr		nameExpr		= new NameExpr( "Key" );
+		MethodCallExpr	methodCallExpr	= new MethodCallExpr( nameExpr, "of" );
+		methodCallExpr.addArgument( ( Expression ) transpiler.transform( expr ) );
+
+		return methodCallExpr;
+	}
+
+	/**
+	 * Create a Key instance from a string literal. May optimize requests for the same key more than once in a template
+	 *
+	 * @param expr expression to be turned into a Key. May be a literal, or expression
+	 *
+	 * @return
+	 */
+	protected Node createKey( String expr ) {
+		return createKey( new BoxStringLiteral( expr, null, expr ) );
 	}
 
 	/**

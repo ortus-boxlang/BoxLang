@@ -146,23 +146,7 @@ public abstract class Transpiler implements ITranspiler {
 		 * 
 		 * as all the other options require grammar changes or are more complicated to recognize
 		 */
-		return imports.stream().anyMatch( i -> {
-			if ( token.equalsIgnoreCase( i.alias() ) ) {
-				return true;
-			}
-
-			String	className		= i.className();
-			int		lastDotIndex	= className.lastIndexOf( "." );
-			if ( lastDotIndex != -1 ) {
-				className = className.substring( lastDotIndex + 1 );
-			}
-
-			if ( token.equalsIgnoreCase( className ) ) {
-				return true;
-			}
-
-			return false;
-		} );
+		return imports.stream().anyMatch( i -> token.equalsIgnoreCase( i.alias() ) || token.equalsIgnoreCase( i.className() ) );
 	}
 
 }
