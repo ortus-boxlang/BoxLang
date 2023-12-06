@@ -1,10 +1,8 @@
 package ortus.boxlang.compiler;
 
-import org.junit.jupiter.api.Test;
-
 import java.io.IOException;
 
-import static org.junit.Assert.assertTrue;
+import org.junit.jupiter.api.Test;
 
 public class TestArray extends TestBase {
 
@@ -16,12 +14,12 @@ public class TestArray extends TestBase {
 		    transformExpression( "[]" )
 		);
 		assertEqualsNoWhiteSpaces(
-		    "Array.fromList(List.of(1,2,3))",
+		    "Array.of(1,2,3)",
 		    transformExpression( "[1,2,3]" )
 		);
 		assertEqualsNoWhiteSpaces(
 		    """
-		    Array.fromList(List.of("foo","bar"))
+		    Array.of("foo","bar")
 		    """,
 		    transformExpression(
 		        """
@@ -31,10 +29,10 @@ public class TestArray extends TestBase {
 
 		assertEqualsNoWhiteSpaces(
 		    """
-		    Array.fromList(List.of(
-		    Array.fromList(List.of(1,2)),
-		    Array.fromList(List.of(3,4)),
-		    "brad"))
+		    Array.of(
+		    Array.of(1,2),
+		    Array.of(3,4),
+		    "brad")
 		      """,
 		    transformExpression(
 		        """

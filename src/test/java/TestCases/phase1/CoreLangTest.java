@@ -151,6 +151,7 @@ public class CoreLangTest {
 
 		instance.executeSource(
 		    """
+		    result = "default";
 		         try {
 		         	1/0
 		           } catch (any e) {

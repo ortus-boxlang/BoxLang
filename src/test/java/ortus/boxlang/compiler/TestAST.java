@@ -44,7 +44,7 @@ public class TestAST extends TestBase {
 			System.out.println( epressions[ i ] );
 			ParsingResult result = parser.parseExpression( epressions[ i ] );
 			assertTrue( result.isCorrect() );
-			assertTrue( result.getRoot() instanceof BoxBinaryOperation );
+			assertTrue( "Root is " + result.getRoot().getClass().getName(), result.getRoot() instanceof BoxBinaryOperation );
 
 			BoxBinaryOperation operation = ( BoxBinaryOperation ) result.getRoot();
 			assertEquals( 2, operation.getChildren().size() );

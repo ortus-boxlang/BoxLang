@@ -21,7 +21,6 @@ import java.util.stream.Collectors;
 
 import ortus.boxlang.ast.BoxExpr;
 import ortus.boxlang.ast.Position;
-import ortus.boxlang.ast.ReferenceByName;
 
 /**
  * AST Node representing a method invocation like:
@@ -29,7 +28,7 @@ import ortus.boxlang.ast.ReferenceByName;
  */
 public class BoxMethodInvocation extends BoxExpr {
 
-	private final ReferenceByName	name;
+	private final BoxExpr			name;
 
 	private final List<BoxArgument>	arguments;
 	private final BoxExpr			obj;
@@ -49,17 +48,16 @@ public class BoxMethodInvocation extends BoxExpr {
 	 *
 	 * @see BoxArgument
 	 */
-	public BoxMethodInvocation( String name, BoxExpr obj, List<BoxArgument> arguments, Position position, String sourceText ) {
+	public BoxMethodInvocation( BoxExpr name, BoxExpr obj, List<BoxArgument> arguments, Position position, String sourceText ) {
 		super( position, sourceText );
-		// MT TODO: Why isn't this just an identifier or string?
-		this.name	= new ReferenceByName( name );
+		this.name	= name;
 		this.obj	= obj;
 		this.obj.setParent( this );
 		this.arguments = Collections.unmodifiableList( arguments );
 		this.arguments.forEach( arg -> arg.setParent( this ) );
 	}
 
-	public ReferenceByName getName() {
+	public BoxExpr getName() {
 		return name;
 	}
 
@@ -72,7 +70,7 @@ public class BoxMethodInvocation extends BoxExpr {
 		Map<String, Object> map = super.toMap();
 
 		map.put( "obj", obj.toMap() );
-		map.put( "name", name.getName() );
+		map.put( "name", name.toMap() );
 		map.put( "arguments", arguments.stream().map( BoxExpr::toMap ).collect( Collectors.toList() ) );
 		return map;
 	}

@@ -131,13 +131,8 @@ statement:
 	| while;
 
 simpleStatement: (
-		assignment
-		| applicationStatement
-		| functionInvokation
+		applicationStatement
 		| localDeclaration
-		| methodInvokation
-		| new
-		| create
 		| incrementDecrementStatement
 		| paramStatement
 		| return
@@ -152,7 +147,7 @@ incrementDecrementStatement:
 	| accessExpression MINUSMINUS	# postDecrement;
 
 assignment:
-	assignmentLeft (
+	VAR? assignmentLeft (
 		EQUAL
 		| PLUSEQUAL
 		| MINUSEQUAL
@@ -161,20 +156,12 @@ assignment:
 		| MODEQUAL
 		| CONCATEQUAL
 	) assignmentRight;
-assignmentLeft:
-	accessExpression
-	| accessExpression (EQUAL | PLUSEQUAL) assignmentLeft;
+assignmentLeft: accessExpression;
 assignmentRight: expression;
 
-functionInvokation:
-	identifier LPAREN argumentList? RPAREN (invokable)*;
 invokable: LPAREN RPAREN | ARROW LPAREN RPAREN;
-methodInvokation:
-	objectExpression DOT functionInvokation
-	| accessExpression DOT functionInvokation
-	| methodInvokation DOT functionInvokation
-	| arrayExpression DOT functionInvokation;
 
+// TODO: replace with assignment expression
 localDeclaration:
 	VAR identifier ((EQUAL identifier)* EQUAL expression) eos;
 
@@ -237,7 +224,7 @@ case:
 	CASE (expression) COLON (statementBlock | statement)? break?
 	| DEFAULT COLON (statementBlock | statement)?;
 
-identifier: IDENTIFIER QM? | reservedKeyword;
+identifier: IDENTIFIER | reservedKeyword;
 reservedKeyword:
 	scope
 	| ARRAY
@@ -278,8 +265,7 @@ scope:
 try: TRY statementBlock ( catch_)* finally_?;
 
 catch_:
-	CATCH LPAREN catchType? ( PIPE catchType )* expression RPAREN statementBlock
-	;
+	CATCH LPAREN catchType? (PIPE catchType)* expression RPAREN statementBlock;
 
 finally_: FINALLY statementBlock;
 
@@ -294,15 +280,9 @@ floatLiteral: FLOAT_LITERAL;
 
 booleanLiteral: TRUE | FALSE;
 
-arrayExpression:
-	LBRACKET arrayValues? RBRACKET; //    |   identifier LBRACKET arrayValues? RBRACKET
+arrayExpression: LBRACKET arrayValues? RBRACKET;
 
 arrayValues: expression (COMMA expression)*;
-
-arrayAccess:
-	identifier arrayAccessIndex
-	| arrayAccess arrayAccessIndex;
-arrayAccessIndex: LBRACKET expression RBRACKET;
 
 structExpression:
 	LBRACE structMembers? RBRACE
@@ -317,35 +297,21 @@ structMember:
 
 unary: (MINUS | PLUS) expression;
 
+// TODO: remove hard-coded Java
 new:
 	NEW (JAVA COLON)? (fqn | stringLiteral) LPAREN argumentList? RPAREN; // TODO add namespace
 
-create:
-	CREATE (JAVA COLON)? (fqn | stringLiteral)? (
-		LPAREN argumentList? RPAREN
-	)?; // TODO add namespace
-
 fqn: (identifier DOT)* identifier;
-assigmentExpression: accessExpression EQUAL expression;
 
 expression:
-	unary
+	assignment
+	| accessExpression
+	| unary
 	| pre = PLUSPLUS expression
 	| pre = MINUSMINUS expression
 	| expression post = PLUSPLUS
 	| expression post = MINUSMINUS
-	| assigmentExpression
-	| new
-	| create
-	//    |   incrementDecrementStatement
-	| literalExpression
-	| objectExpression
-	| identifier
-	| ICHAR expression ICHAR
-	| LPAREN expression RPAREN (invokable)*
-	| structExpression
-	| accessExpression
-	| methodInvokation
+	| ICHAR expression ICHAR // #expression# outside of a string
 	| anonymousFunction
 	| expression QM expression COLON expression // Ternary
 	| expression ( POWER) expression
@@ -370,8 +336,9 @@ expression:
 	| expression INSTANCEOF expression // InstanceOf operator
 	| expression DOES NOT CONTAIN expression
 	| NOT expression
-	| expression (AND | OR) expression; // Logical
+	| expression (AND | OR) expression; // Logical	
 
+// All literal expressions
 literalExpression:
 	integerLiteral
 	| floatLiteral
@@ -380,18 +347,41 @@ literalExpression:
 	| structExpression
 	| arrayExpression;
 
+// These can be the "start" an access expression. Basically, you need one of these in order to chain
+// dotAccess, arrayAccess, methodInvokation, etc. Note some expressions can't have access slapped
+// onto them unless they are contained in parens. i.e. (1 + 2).toString() since 1 + 2.toString()
+// would mean something totally different.
 objectExpression:
-	anonymousFunction
-	| structExpression
-	| arrayExpression
-	| arrayAccess
+	LPAREN expression RPAREN
 	| functionInvokation
-	| identifier
-	| new;
+	| literalExpression
+	| new
+	| identifier;
 
+// "access" an expression with array notation (doesn't mean the object is an array per se)
+arrayAccess: LBRACKET expression RBRACKET;
+
+// "access" an expression with dot notation
+dotAccess: QM? DOT identifier;
+
+// invoke a method on an expression as obj.foo() or obj["foo"]()
+methodInvokation:
+	QM? DOT functionInvokation
+	| arrayAccess invokationExpression;
+
+// a top level function which must be an identifier
+functionInvokation: identifier invokationExpression;
+
+// Used to invoke an expression as a function
+invokationExpression: LPAREN argumentList? RPAREN;
+
+// Access expressions represent any expression which can be "accessed" in some way by directly
+// chaining method invokation, dot access, array access, etc. This rule is recusive, matching any
+// number of chained access expressions. This is important to avoid recsion in the grammar.
 accessExpression:
-	identifier QM?
-	//    |   functionInvokation
-	| arrayAccess QM?
-	| objectExpression QM? DOT accessExpression
-	| stringLiteral;
+	objectExpression (
+		methodInvokation
+		| dotAccess
+		| arrayAccess
+		| invokationExpression
+	)*;
