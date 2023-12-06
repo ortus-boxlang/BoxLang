@@ -32,7 +32,7 @@ public class BoxFunctionDeclaration extends BoxStatement {
 	private final List<BoxArgumentDeclaration>	args;
 	private final BoxReturnType					type;
 	private final List<BoxStatement>			body;
-	private final List<BoxStatement>			annotations;
+	private final List<BoxAnnotation>			annotations;
 
 	/**
 	 * Creates the AST node
@@ -50,6 +50,7 @@ public class BoxFunctionDeclaration extends BoxStatement {
 	 */
 
 	public BoxFunctionDeclaration( BoxAccessModifier accessModifier, String name, BoxReturnType type, List<BoxArgumentDeclaration> args,
+	    List<BoxAnnotation> annotations,
 	    List<BoxStatement> body, Position position,
 	    String sourceText ) {
 		super( position, sourceText );
@@ -57,11 +58,11 @@ public class BoxFunctionDeclaration extends BoxStatement {
 		this.name			= name;
 		this.type			= type;
 		this.type.setParent( this );
-		// TODO populate
-		this.annotations	= new ArrayList<>();
-		this.args			= Collections.unmodifiableList( args );
-		this.body			= Collections.unmodifiableList( body );
+		this.annotations = Collections.unmodifiableList( annotations );
+		this.annotations.forEach( arg -> arg.setParent( this ) );
+		this.args = Collections.unmodifiableList( args );
 		this.args.forEach( arg -> arg.setParent( this ) );
+		this.body = Collections.unmodifiableList( body );
 		this.body.forEach( stmt -> stmt.setParent( this ) );
 	}
 
