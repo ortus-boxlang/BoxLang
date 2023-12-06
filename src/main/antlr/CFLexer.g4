@@ -165,7 +165,7 @@ OPEN_QUOTE      :   '"' -> pushMode(quotesMode);
 OPEN_SINGLE     :   '\''-> type(OPEN_QUOTE),pushMode(squotesMode);
 
 fragment DIGIT : [0-9];
-fragment E_SIGN : [eE];
+fragment E_SIGN : [e];
 fragment E_NOTATION : E_SIGN [+-]? DIGIT+;
 FLOAT_LITERAL
   : DIGIT+ DOT DIGIT* (E_NOTATION)?
