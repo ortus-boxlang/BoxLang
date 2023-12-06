@@ -37,8 +37,10 @@ import com.github.javaparser.ast.stmt.Statement;
 import com.github.javaparser.ast.stmt.TryStmt;
 import com.github.javaparser.ast.type.ClassOrInterfaceType;
 
+import ortus.boxlang.ast.BoxExpr;
 import ortus.boxlang.ast.BoxNode;
-import ortus.boxlang.ast.statement.BoxCatchExceptionType;
+import ortus.boxlang.ast.expression.BoxFQN;
+import ortus.boxlang.ast.expression.BoxStringLiteral;
 import ortus.boxlang.ast.statement.BoxTry;
 import ortus.boxlang.ast.statement.BoxTryCatch;
 import ortus.boxlang.transpiler.JavaTranspiler;
@@ -143,9 +145,21 @@ public class BoxTryTransformer extends AbstractTransformer {
 		return javaTry;
 	}
 
-	private Expression getIfCondition( List<BoxCatchExceptionType> boxCatchTypes, TransformerContext context, String contextName, String throwableName ) {
+	private static boolean isAny( BoxExpr expr ) {
+		if ( expr instanceof BoxStringLiteral str ) {
+			return str.getValue().compareToIgnoreCase( "any" ) == 0;
+		} else if ( expr instanceof BoxFQN fqn ) {
+			return fqn.getValue().compareToIgnoreCase( "any" ) == 0;
+		}
 
-		if ( boxCatchTypes.size() == 1 ) {
+		return false;
+	}
+
+	private Expression getIfCondition( List<BoxExpr> boxCatchTypes, TransformerContext context, String contextName, String throwableName ) {
+
+		if ( boxCatchTypes.size() == 0 || boxCatchTypes.stream().anyMatch( BoxTryTransformer::isAny ) ) {
+			return new BooleanLiteralExpr( true );
+		} else if ( boxCatchTypes.size() == 1 ) {
 			return transformCatchType( boxCatchTypes.get( 0 ), context, contextName, throwableName );
 		}
 
@@ -171,21 +185,26 @@ public class BoxTryTransformer extends AbstractTransformer {
 		return firstOrExpression;
 	}
 
-	private Expression transformCatchType( BoxCatchExceptionType catchType, TransformerContext context, String contextName, String throwableName ) {
-
-		if ( catchType.getName() == null ) {
-			return new BooleanLiteralExpr( true );
-		}
-
+	private Expression transformCatchType( BoxExpr catchType, TransformerContext context, String contextName, String throwableName ) {
 		Map<String, String> values = new HashMap<>();
 		values.put( "contextName", transpiler.peekContextName() );
 		values.put( "throwableName", throwableName );
-		values.put( "type", transpiler.transform( catchType.getName(), context ).toString() );
+		values.put( "type", getTypeValue( catchType, context ) );
 
 		return ( Expression ) parseExpression(
 		    "ExceptionUtil.exceptionIsOfType( ${contextName}, ${throwableName}, ${type} )",
 		    values
 		);
+	}
+
+	private String getTypeValue( BoxExpr catchType, TransformerContext context ) {
+		if ( catchType instanceof BoxStringLiteral str ) {
+			return transpiler.transform( str, context ).toString();
+		} else if ( catchType instanceof BoxFQN fqn ) {
+			return "\"" + fqn.getValue() + "\"";
+		}
+
+		return null;
 	}
 
 }

@@ -65,7 +65,6 @@ import ortus.boxlang.ast.statement.BoxAssert;
 import ortus.boxlang.ast.statement.BoxAssignment;
 import ortus.boxlang.ast.statement.BoxAssignmentOperator;
 import ortus.boxlang.ast.statement.BoxBreak;
-import ortus.boxlang.ast.statement.BoxCatchExceptionType;
 import ortus.boxlang.ast.statement.BoxContinue;
 import ortus.boxlang.ast.statement.BoxDo;
 import ortus.boxlang.ast.statement.BoxExpression;
@@ -87,7 +86,6 @@ import ortus.boxlang.ast.statement.BoxType;
 import ortus.boxlang.ast.statement.BoxWhile;
 import ortus.boxlang.parser.antlr.CFLexer;
 import ortus.boxlang.parser.antlr.CFParser;
-import ortus.boxlang.parser.antlr.CFParser.CatchTypeContext;
 
 /**
  * Parser for CF scripts
@@ -416,29 +414,18 @@ public class BoxCFParser extends BoxAbstractParser {
 	private BoxTryCatch toAst( File file, CFParser.Catch_Context node ) {
 		BoxExpr				exception	= toAst( file, node.expression() );
 		List<BoxStatement>	catchBody	= toAst( file, node.statementBlock() );
-		boolean				hasAny		= node.catchType().stream().anyMatch( ct -> ct.ANY() != null );
 
-		if ( node.catchType().size() == 0 || hasAny ) {
-			List<BoxCatchExceptionType> types = new ArrayList<BoxCatchExceptionType>();
-			types.add( new BoxCatchExceptionType( getPosition( node ), getSourceText( node ) ) );
+		List<BoxExpr>		catchTypes	= node.catchType().stream().map( ctNode -> {
+											if ( ctNode.fqn() != null ) {
+												return new BoxFQN( ctNode.fqn().getText(), getPosition( ctNode ),
+												    getSourceText( ctNode ) );
+											}
 
-			return new BoxTryCatch( types, exception, catchBody, getPosition( node ), getSourceText( node ) );
-		}
-
-		List<BoxCatchExceptionType> catchTypes = node.catchType().stream().map( ct -> toAst( file, ct ) ).collect( Collectors.toList() );
+											return toAst( file, ctNode.stringLiteral() );
+										} )
+		    .collect( Collectors.toList() );
 
 		return new BoxTryCatch( catchTypes, exception, catchBody, getPosition( node ), getSourceText( node ) );
-	}
-
-	private BoxCatchExceptionType toAst( File file, CatchTypeContext node ) {
-		if ( node.fqn() != null ) {
-			return new BoxCatchExceptionType( new BoxStringLiteral( node.fqn().getText(), getPosition( node ),
-			    getSourceText( node ) ), getPosition( node ),
-			    getSourceText( node ) );
-		}
-
-		return new BoxCatchExceptionType( toAst( file, node.stringLiteral() ), getPosition( node ),
-		    getSourceText( node ) );
 	}
 
 	/**

@@ -260,6 +260,7 @@ reservedKeyword:
 	| VAR
 	| WHEN
 	| DOES
+	| ANY
 	//    | 	NOT
 	| CONTAIN
 	| JAVA
@@ -282,7 +283,7 @@ catch_:
 
 finally_: FINALLY statementBlock;
 
-catchType: ANY | stringLiteral | fqn;
+catchType: stringLiteral | fqn;
 stringLiteral:
 	OPEN_QUOTE (stringLiteralPart | ICHAR (expression) ICHAR)* CLOSE_QUOTE;
 

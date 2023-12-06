@@ -29,11 +29,11 @@ import ortus.boxlang.ast.expression.BoxIdentifier;
  */
 public class BoxTryCatch extends BoxStatement {
 
-	private final BoxIdentifier					exception;
-	private final List<BoxStatement>			catchBody;
-	private final List<BoxCatchExceptionType>	catchTypes;
+	private final BoxIdentifier			exception;
+	private final List<BoxStatement>	catchBody;
+	private final List<BoxExpr>			catchTypes;
 
-	public BoxTryCatch( List<BoxCatchExceptionType> catchTypes, BoxExpr exception, List<BoxStatement> catchBody, Position position, String sourceText ) {
+	public BoxTryCatch( List<BoxExpr> catchTypes, BoxExpr exception, List<BoxStatement> catchBody, Position position, String sourceText ) {
 		super( position, sourceText );
 		if ( exception instanceof BoxIdentifier exp ) {
 			this.exception = exp;
@@ -56,17 +56,13 @@ public class BoxTryCatch extends BoxStatement {
 		return exception;
 	}
 
-	public List<BoxCatchExceptionType> getCatchTypes() {
+	public List<BoxExpr> getCatchTypes() {
 		return this.catchTypes;
 	}
 
-	public BoxCatchExceptionType getType() {
-		return catchTypes.get( 0 );
-	}
-
-	public BoxExpr getName() {
-		return catchTypes.get( 0 ).getName();
-	}
+	// public BoxExpr getName() {
+	// // return catchTypes.get( 0 ).getName();
+	// }
 
 	@Override
 	public Map<String, Object> toMap() {
@@ -74,7 +70,7 @@ public class BoxTryCatch extends BoxStatement {
 
 		map.put( "exception", exception.toMap() );
 		map.put( "catchBody", catchBody.stream().map( BoxStatement::toMap ).collect( Collectors.toList() ) );
-		map.put( "catchTypes", catchTypes.stream().map( BoxStatement::toMap ).collect( Collectors.toList() ) );
+		map.put( "catchTypes", catchTypes.stream().map( BoxExpr::toMap ).collect( Collectors.toList() ) );
 
 		return map;
 	}
