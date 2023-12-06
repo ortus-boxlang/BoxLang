@@ -50,16 +50,18 @@ functionOptions: (
 			EQUAL values += literalExpression
 		)?
 	)+;
-functionSignature: (preannotation)* accessModifier? STATIC? returnType? FUNCTION identifier LPAREN
+
+
+functionSignature:  javadoc? (preannotation)* accessModifier? STATIC? returnType? FUNCTION identifier LPAREN
 		paramList? RPAREN;
-function: functionSignature postannotation statementBlock;
+function: functionSignature (postannotation)* statementBlock;
 
 paramList: param (COMMA param)*;
 
 param: (REQUIRED)? (type)? identifier (EQUAL expression)? postannotation*
 	| (REQUIRED)? (type)? identifier (EQUAL statementBlock)?;
 
-preannotation: AT fqn literalExpression?;
+preannotation: AT fqn (literalExpression)*;
 postannotation: (
 		parameters += identifier (
 			EQUAL values += literalExpression
@@ -83,6 +85,8 @@ type:
 	| ANY;
 
 functionOrStatement: constructor | function | statement;
+
+javadoc:	JAVADOC_COMMENT;
 
 constructor:
 	FUNCTION INIT LPAREN paramList? RPAREN statementBlock;
