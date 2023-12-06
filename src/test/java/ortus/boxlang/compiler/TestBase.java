@@ -106,4 +106,11 @@ public class TestBase {
 
 		return new JavaTranspiler().transform( result.getRoot() ).toString();
 	}
+
+    public ParsingResult parseStatement( String statement ) throws IOException {
+        BoxParser		parser	= new BoxParser();
+        ParsingResult	result	= parser.parseStatement( statement );
+        assertTrue( result.isCorrect() );
+        return result;
+    }
 }
