@@ -250,7 +250,6 @@ reservedKeyword:
 	| EXTENDS
 	| FUNCTION
 	| IMPLEMENTS
-	| INCLUDE
 	| INIT
 	| MOD
 	| NEW

@@ -149,15 +149,17 @@ ICHAR           :   '#';
 WS              :   (' ' | '\t' | '\f' )+ -> skip;
 NEWLINE         :   ('\n' | '\r' )+
                     (' ' | '\t' | '\f' | '\n' | '\r' )* -> channel(HIDDEN);
-MULTILINE_COMMENT
-    :   '/*' (.)*? '*/' -> channel(HIDDEN)
+JAVADOC_COMMENT
+    :   '/**' .*? '*/'
     ;
 
-LINE_COMMENT :
-            '//'
-            ( ~('\n'|'\r') )*
-            ( '\n'|'\r'('\n')? )?
-      -> channel(HIDDEN) ;
+COMMENT
+    :   '/*' .*? '*/' -> skip
+    ;
+
+LINE_COMMENT
+    :   '//' ~[\r\n]* -> skip
+    ;
 
 OPEN_QUOTE      :   '"' -> pushMode(quotesMode);
 
