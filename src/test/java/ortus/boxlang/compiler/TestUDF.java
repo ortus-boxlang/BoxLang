@@ -6,6 +6,11 @@ import java.io.IOException;
 
 import org.junit.jupiter.api.Test;
 
+import ortus.boxlang.ast.BoxDocumentation;
+import ortus.boxlang.ast.expression.BoxStringLiteral;
+import ortus.boxlang.ast.statement.BoxAnnotation;
+import ortus.boxlang.parser.BoxCFParser;
+import ortus.boxlang.parser.BoxDOCParser;
 import ortus.boxlang.parser.BoxParser;
 import ortus.boxlang.parser.ParsingResult;
 
@@ -34,40 +39,53 @@ public class TestUDF extends TestBase {
 	}
 
 	@Test
-	public void orderedStructLiterals() throws IOException {
+	public void functionDocumentation() throws IOException {
 
-		assertEqualsNoWhiteSpaces(
-		    "new Struct(Struct.Type.LINKED)",
-		    transformExpression( "[:]" )
-		);
-		assertEqualsNoWhiteSpaces(
-		    """
-		    Struct.linkedOf("brad","wood","luis","majano")
-		    """,
-		    transformExpression(
-		        """
-		        			[ "brad" : "wood", "luis" : "majano" ]
-		        """ )
-		);
+		String			documentation	= """
+/**
+* This function does cool stuff
+*
+* @name Pass the name here that you want
+* @name.isCool yes
+*
+* @author Brad Wood
+* @returns Only the coolest value ever
+*/
+		                                  """;
+		BoxDOCParser	parser			= new BoxDOCParser();
+		ParsingResult	result			= parser.parse( null, documentation );
+		assertTrue( result.isCorrect() );
+		BoxDocumentation docs = (BoxDocumentation) result.getRoot();
 
-		assertEqualsNoWhiteSpaces(
-		    """
-		    Struct.linkedOf("something", Array.of("foo", "bar", Struct.linkedOf("luis", true)), "else", 42)
-		     """,
-		    transformExpression(
-		        """
-		        [
-		        	// This is still an array literal
-		          something : [
-		        	"foo",
-		        	"bar",
-		        	// But this is a nested ordered struct literal
-		        	[ 'luis': true ]
-		          ],
-		          "else" : 42
-		        ]
-		              """ )
-		);
+		assertTrue(((BoxAnnotation) docs.getAnnotations().get(0)).getKey().getValue().equals("name") );
+		assertTrue(((BoxStringLiteral) ((BoxAnnotation) docs.getAnnotations().get(0)).getValue()).getValue().equals("Pass the name here that you want"));
+	}
+
+	@Test
+	public void userDefinedFunctionAnnotations() throws IOException {
+
+		BoxCFParser		parser			= new BoxCFParser();
+		ParsingResult	result			= parser.parse(
+
+			"""
+				/**
+				* This function does cool stuff
+				*
+				* @name Pass the name here that you want
+				* @name.isCool yes
+				*
+				* @author Brad Wood
+				* @returns Only the coolest value ever
+				*/
+				@myAnnotation "value" "another value"
+				@name.foo "bar"
+				string function greet( required string name='Brad' inject="myService" ) key="value" keyOnly {
+				  return "Brad";
+				}
+"""
+		 );
+		assertTrue( result.isCorrect() );
+
 	}
 
 }
