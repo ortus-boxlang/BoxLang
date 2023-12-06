@@ -96,51 +96,56 @@ public class ObjectCreationTest {
 		assertThat( ( ( DynamicObject ) result ).getTargetInstance() ).isEqualTo( "My String" );
 
 	}
-
-	@DisplayName( "create keyword prefix" )
-	@Test
-	public void testCreateKeywordPrefix() {
-		Object result = instance.executeStatement( "create java:java.lang.System", context );
-		assertThat( result instanceof DynamicObject ).isEqualTo( true );
-		assertThat( ( ( DynamicObject ) result ).getTargetClass().getName() ).isEqualTo( "java.lang.System" );
-	}
-
-	@DisplayName( "create keyword no prefix" )
-	@Test
-	public void testCreateKeywordNoPrefix() {
-		Object result = instance.executeStatement( "create java.lang.System", context );
-		assertThat( result instanceof DynamicObject ).isEqualTo( true );
-		assertThat( ( ( DynamicObject ) result ).getTargetClass().getName() ).isEqualTo( "java.lang.System" );
-	}
-
-	@DisplayName( "create keyword quoted" )
-	@Test
-	public void testCreateKeywordQuoted() {
-		Object result = instance.executeStatement( "create 'java:java.lang.System';", context );
-		assertThat( result instanceof DynamicObject ).isEqualTo( true );
-		assertThat( ( ( DynamicObject ) result ).getTargetClass().getName() ).isEqualTo( "java.lang.System" );
-
-		instance.executeSource(
-		    """
-		    classNameToCreate = 'java:java.lang.System';
-		    result = create "#classNameToCreate#";
-		    """,
-		    context );
-		assertThat( variables.dereference( resultKey, false ) instanceof DynamicObject ).isEqualTo( true );
-		assertThat( ( ( DynamicObject ) variables.dereference( resultKey, false ) ).getTargetClass().getName() ).isEqualTo( "java.lang.System" );
-	}
-
-	@DisplayName( "create keyword static method call one-liner" )
-	@Test
-	public void testCreateKeywordstaticMethodCallOneLiner() {
-		instance.executeStatement( "(create java.lang.System).out.println( 2+3 )", context );
-		instance.executeSource(
-		    """
-		    (create java.lang.System).out.println( 2+3 )
-		    """,
-		    context );
-
-	}
+	/*
+	 * @DisplayName( "create keyword prefix" )
+	 * 
+	 * @Test
+	 * public void testCreateKeywordPrefix() {
+	 * Object result = instance.executeStatement( "create java:java.lang.System", context );
+	 * assertThat( result instanceof DynamicObject ).isEqualTo( true );
+	 * assertThat( ( ( DynamicObject ) result ).getTargetClass().getName() ).isEqualTo( "java.lang.System" );
+	 * }
+	 * 
+	 * @DisplayName( "create keyword no prefix" )
+	 * 
+	 * @Test
+	 * public void testCreateKeywordNoPrefix() {
+	 * Object result = instance.executeStatement( "create java.lang.System", context );
+	 * assertThat( result instanceof DynamicObject ).isEqualTo( true );
+	 * assertThat( ( ( DynamicObject ) result ).getTargetClass().getName() ).isEqualTo( "java.lang.System" );
+	 * }
+	 * 
+	 * @DisplayName( "create keyword quoted" )
+	 * 
+	 * @Test
+	 * public void testCreateKeywordQuoted() {
+	 * Object result = instance.executeStatement( "create 'java:java.lang.System';", context );
+	 * assertThat( result instanceof DynamicObject ).isEqualTo( true );
+	 * assertThat( ( ( DynamicObject ) result ).getTargetClass().getName() ).isEqualTo( "java.lang.System" );
+	 * 
+	 * instance.executeSource(
+	 * """
+	 * classNameToCreate = 'java:java.lang.System';
+	 * result = create "#classNameToCreate#";
+	 * """,
+	 * context );
+	 * assertThat( variables.dereference( resultKey, false ) instanceof DynamicObject ).isEqualTo( true );
+	 * assertThat( ( ( DynamicObject ) variables.dereference( resultKey, false ) ).getTargetClass().getName() ).isEqualTo( "java.lang.System" );
+	 * }
+	 * 
+	 * @DisplayName( "create keyword static method call one-liner" )
+	 * 
+	 * @Test
+	 * public void testCreateKeywordstaticMethodCallOneLiner() {
+	 * instance.executeStatement( "(create java.lang.System).out.println( 2+3 )", context );
+	 * instance.executeSource(
+	 * """
+	 * (create java.lang.System).out.println( 2+3 )
+	 * """,
+	 * context );
+	 * 
+	 * }
+	 */
 
 	@DisplayName( "imports prefix" )
 	@Test

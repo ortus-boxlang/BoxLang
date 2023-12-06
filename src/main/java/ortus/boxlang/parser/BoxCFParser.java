@@ -17,7 +17,6 @@ package ortus.boxlang.parser;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.lang.annotation.Annotation;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
@@ -29,7 +28,9 @@ import org.antlr.v4.runtime.ParserRuleContext;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.input.BOMInputStream;
 
-import ortus.boxlang.ast.*;
+import ortus.boxlang.ast.BoxExpr;
+import ortus.boxlang.ast.BoxScript;
+import ortus.boxlang.ast.BoxStatement;
 import ortus.boxlang.ast.expression.BoxAccess;
 import ortus.boxlang.ast.expression.BoxArgument;
 import ortus.boxlang.ast.expression.BoxArrayAccess;
@@ -58,7 +59,31 @@ import ortus.boxlang.ast.expression.BoxStructType;
 import ortus.boxlang.ast.expression.BoxTernaryOperation;
 import ortus.boxlang.ast.expression.BoxUnaryOperation;
 import ortus.boxlang.ast.expression.BoxUnaryOperator;
-import ortus.boxlang.ast.statement.*;
+import ortus.boxlang.ast.statement.BoxAccessModifier;
+import ortus.boxlang.ast.statement.BoxArgumentDeclaration;
+import ortus.boxlang.ast.statement.BoxAssert;
+import ortus.boxlang.ast.statement.BoxAssignment;
+import ortus.boxlang.ast.statement.BoxAssignmentOperator;
+import ortus.boxlang.ast.statement.BoxBreak;
+import ortus.boxlang.ast.statement.BoxContinue;
+import ortus.boxlang.ast.statement.BoxDo;
+import ortus.boxlang.ast.statement.BoxExpression;
+import ortus.boxlang.ast.statement.BoxForIn;
+import ortus.boxlang.ast.statement.BoxForIndex;
+import ortus.boxlang.ast.statement.BoxFunctionDeclaration;
+import ortus.boxlang.ast.statement.BoxIfElse;
+import ortus.boxlang.ast.statement.BoxImport;
+import ortus.boxlang.ast.statement.BoxLocalDeclaration;
+import ortus.boxlang.ast.statement.BoxRethrow;
+import ortus.boxlang.ast.statement.BoxReturn;
+import ortus.boxlang.ast.statement.BoxReturnType;
+import ortus.boxlang.ast.statement.BoxSwitch;
+import ortus.boxlang.ast.statement.BoxSwitchCase;
+import ortus.boxlang.ast.statement.BoxThrow;
+import ortus.boxlang.ast.statement.BoxTry;
+import ortus.boxlang.ast.statement.BoxTryCatch;
+import ortus.boxlang.ast.statement.BoxType;
+import ortus.boxlang.ast.statement.BoxWhile;
 import ortus.boxlang.parser.antlr.CFLexer;
 import ortus.boxlang.parser.antlr.CFParser;
 
@@ -1221,11 +1246,40 @@ public class BoxCFParser extends BoxAbstractParser {
 			return toAst( file, node.functionInvokation() );
 		else if ( node.identifier() != null )
 			return toAst( file, node.identifier() );
-		else if ( node.arrayExpression() != null )
-			return toAst( file, node.arrayExpression() );
-		else if ( node.structExpression() != null )
-			return toAst( file, node.structExpression() );
-		// TODO: add other cases
+		else if ( node.literalExpression() != null ) {
+			if ( node.literalExpression().stringLiteral() != null ) {
+				return toAst( file, node.literalExpression().stringLiteral() );
+			}
+			if ( node.literalExpression().integerLiteral() != null ) {
+				CFParser.IntegerLiteralContext inode = node.literalExpression().integerLiteral();
+				return new BoxIntegerLiteral(
+				    inode.getText(),
+				    getPosition( inode ),
+				    getSourceText( inode )
+				);
+			}
+			if ( node.literalExpression().floatLiteral() != null ) {
+				CFParser.FloatLiteralContext fnode = node.literalExpression().floatLiteral();
+				return new BoxDecimalLiteral(
+				    fnode.getText(),
+				    getPosition( fnode ),
+				    getSourceText( fnode )
+				);
+			}
+			if ( node.literalExpression().booleanLiteral() != null ) {
+				CFParser.BooleanLiteralContext bnode = node.literalExpression().booleanLiteral();
+				return new BoxBooleanLiteral(
+				    bnode.getText(),
+				    getPosition( bnode ),
+				    getSourceText( bnode ) );
+			}
+			if ( node.literalExpression().arrayExpression() != null ) {
+				return toAst( file, node.literalExpression().arrayExpression() );
+			}
+
+			if ( node.literalExpression().structExpression() != null ) {
+				return toAst( file, node.literalExpression().structExpression() );
+			}
 
 		throw new IllegalStateException( "not implemented: " + node.getClass().getSimpleName() );
 	}
@@ -1288,15 +1342,29 @@ public class BoxCFParser extends BoxAbstractParser {
 	 * @see BoxArgument subclasses
 	 */
 	private BoxExpr toAst( File file, CFParser.FunctionInvokationContext node ) {
-		List<BoxArgument> args = new ArrayList<>();
-		if ( node.argumentList() != null ) {
-			for ( CFParser.ArgumentContext arg : node.argumentList().argument() ) {
-				args.add( toAst( file, arg ) );
-			}
-		}
+		List<BoxArgument> args = toAst( file, node.invokationExpression().argumentList() );
 		return new BoxFunctionInvocation( node.identifier().getText(),
 		    args,
 		    getPosition( node ), getSourceText( node ) );
+	}
+
+	/**
+	 * Converts the argument list to the corresponding List of AST nodes
+	 *
+	 * @param file source file, if any
+	 * @param node ANTLR ArgumentListContext rule
+	 *
+	 * @return corresponding List of AST nodes
+	 *
+	 */
+	private List<BoxArgument> toAst( File file, CFParser.ArgumentListContext node ) {
+		List<BoxArgument> args = new ArrayList<>();
+		if ( node != null ) {
+			for ( CFParser.ArgumentContext arg : node.argument() ) {
+				args.add( toAst( file, arg ) );
+			}
+		}
+		return args;
 	}
 
 	/**
@@ -1337,41 +1405,8 @@ public class BoxCFParser extends BoxAbstractParser {
 		String							name		= "undefined";
 		List<BoxStatement>				body		= new ArrayList<>();
 		List<BoxArgumentDeclaration>	args		= new ArrayList<>();
-		List<BoxAnnotation>				annotations	= new ArrayList<>();
 		BoxAccessModifier				modifier	= BoxAccessModifier.Public;
 
-		if( node.functionSignature().javadoc() != null) {
-			try {
-				BoxDOCParser	parser			= new BoxDOCParser();
-				ParsingResult	result			= parser.parse( null, node.functionSignature().javadoc().getText() );
-				BoxDocumentation docs = (BoxDocumentation) result.getRoot();
-				for(BoxNode n : docs.getAnnotations()) {
-					annotations.add((BoxAnnotation) n);
-				}
-			} catch (IOException e) {
-				throw new RuntimeException(e);
-			}
-		}
-		for(CFParser.PreannotationContext annotation : node.functionSignature().preannotation()) {
-			BoxExpr avalue = null;
-			BoxExpr aname = toAst(file,annotation.fqn());
-			if( annotation.literalExpression(0).stringLiteral() != null) {
-				avalue = toAst(file,annotation.literalExpression(0).stringLiteral());
-			} else if( annotation.literalExpression(0).integerLiteral() != null) {
-				avalue = new BoxIntegerLiteral(
-						annotation.literalExpression(0).integerLiteral().getText(),
-						getPosition(annotation),
-						getSourceText(annotation));
-			} else if( annotation.literalExpression(0).arrayExpression() != null) {
-				avalue = toAst(file,annotation.literalExpression(0).arrayExpression());
-			} else if( annotation.literalExpression(0).structExpression() != null) {
-				avalue = toAst(file, annotation.literalExpression(0).structExpression());
-			}
-			annotations.add( new BoxAnnotation((BoxFQN)aname,avalue,getPosition(annotation),getSourceText(annotation)));
-		}
-		for(CFParser.PostannotationContext annotation : node.postannotation()) {
-			annotations.add(toAst(file,annotation));
-		}
 		if ( node.functionSignature().identifier() != null ) {
 			name = node.functionSignature().identifier().getText();
 		}

@@ -11,6 +11,7 @@ import com.github.javaparser.ast.Node;
 import com.github.javaparser.ast.expr.Expression;
 
 import ortus.boxlang.ast.BoxNode;
+import ortus.boxlang.ast.expression.BoxIdentifier;
 import ortus.boxlang.ast.expression.BoxMethodInvocation;
 import ortus.boxlang.transpiler.JavaTranspiler;
 import ortus.boxlang.transpiler.transformer.AbstractTransformer;
@@ -43,7 +44,10 @@ public class BoxMethodInvocationTransformer extends AbstractTransformer {
 											}
 										};
 
-		String				target		= BoxBuiltinRegistry.getInstance().getRegistry().get( invocation.getName().getName() );
+		String				target		= null;
+		if ( invocation.getName() instanceof BoxIdentifier id ) {
+			target = BoxBuiltinRegistry.getInstance().getRegistry().get( id.getName() );
+		}
 
 		values.put( "expr", expr.toString() );
 		values.put( "args", args );
@@ -53,7 +57,7 @@ public class BoxMethodInvocationTransformer extends AbstractTransformer {
 		if ( target != null ) {
 			template = "${expr}." + target;
 		} else {
-			values.put( "methodKey", createKey( invocation.getName().getName().toString() ).toString() );
+			values.put( "methodKey", createKey( invocation.getName() ).toString() );
 			template = """
 			           Referencer.getAndInvoke(
 			             context,

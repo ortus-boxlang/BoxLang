@@ -12,60 +12,54 @@
  * BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language
  * governing permissions and limitations under the License.
  */
-package ortus.boxlang.ast.statement;
+package ortus.boxlang.ast.expression;
 
+import java.util.Collections;
+import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import ortus.boxlang.ast.BoxExpr;
-import ortus.boxlang.ast.BoxStatement;
 import ortus.boxlang.ast.Position;
 
 /**
- * AST Node representing an assigment statement
+ * AST Node representing an invoked expression
  */
-public class BoxAssignment extends BoxStatement {
+public class BoxExpressionInvocation extends BoxExpr {
 
-	private final BoxExpr			left;
-	private final BoxExpr			right;
-	private BoxAssignmentOperator	op;
+	private final BoxExpr expr;
+
+	public BoxExpr getExpr() {
+		return expr;
+	}
+
+	private final List<BoxArgument> arguments;
+
+	public List<BoxArgument> getArguments() {
+		return arguments;
+	}
 
 	/**
-	 * Creates the AST node
+	 * Function invocation i.e. create(x)
 	 *
-	 * @param left       expression on the left of the assigment
-	 * @param op
-	 * @param right      expression on the right of the assigment
+	 * @param expr       expression to invoke
+	 * @param arguments  list of arguments
 	 * @param position   position of the statement in the source code
 	 * @param sourceText source code that originated the Node
 	 */
-	public BoxAssignment( BoxExpr left, BoxAssignmentOperator op, BoxExpr right, Position position, String sourceText ) {
+	public BoxExpressionInvocation( BoxExpr expr, List<BoxArgument> arguments, Position position, String sourceText ) {
 		super( position, sourceText );
-		this.left	= left;
-		this.op		= op;
-		this.right	= right;
-		this.right.setParent( this );
-		throw new RuntimeException( "BoxAssignment deprecated" );
-	}
-
-	public BoxExpr getLeft() {
-		return left;
-	}
-
-	public BoxExpr getRight() {
-		return right;
-	}
-
-	public BoxAssignmentOperator getOp() {
-		return op;
+		this.expr		= expr;
+		this.arguments	= Collections.unmodifiableList( arguments );
+		this.arguments.forEach( arg -> arg.setParent( this ) );
 	}
 
 	@Override
 	public Map<String, Object> toMap() {
 		Map<String, Object> map = super.toMap();
 
-		map.put( "left", left.toMap() );
-		map.put( "op", enumToMap( op ) );
-		map.put( "right", right.toMap() );
+		map.put( "expr", expr.toMap() );
+		map.put( "arguments", arguments.stream().map( BoxExpr::toMap ).collect( Collectors.toList() ) );
 		return map;
 	}
 }

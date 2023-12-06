@@ -23,6 +23,7 @@ import com.github.javaparser.ast.Node;
 import com.github.javaparser.ast.expr.Expression;
 import com.github.javaparser.ast.expr.MethodCallExpr;
 import com.github.javaparser.ast.expr.NameExpr;
+import com.github.javaparser.ast.expr.StringLiteralExpr;
 import com.github.javaparser.ast.stmt.Statement;
 
 import ortus.boxlang.ast.BoxExpr;
@@ -30,6 +31,7 @@ import ortus.boxlang.ast.BoxNode;
 import ortus.boxlang.ast.expression.BoxBinaryOperation;
 import ortus.boxlang.ast.expression.BoxBinaryOperator;
 import ortus.boxlang.ast.expression.BoxComparisonOperation;
+import ortus.boxlang.ast.expression.BoxIdentifier;
 import ortus.boxlang.ast.expression.BoxStringLiteral;
 import ortus.boxlang.ast.expression.BoxUnaryOperation;
 import ortus.boxlang.ast.expression.BoxUnaryOperator;
@@ -150,7 +152,11 @@ public abstract class AbstractTransformer implements Transformer {
 		// TODO: optimize for the same key more than once in a template
 		NameExpr		nameExpr		= new NameExpr( "Key" );
 		MethodCallExpr	methodCallExpr	= new MethodCallExpr( nameExpr, "of" );
-		methodCallExpr.addArgument( ( Expression ) transpiler.transform( expr ) );
+		if ( expr instanceof BoxIdentifier id ) {
+			methodCallExpr.addArgument( ( Expression ) new StringLiteralExpr( id.getName() ) );
+		} else {
+			methodCallExpr.addArgument( ( Expression ) transpiler.transform( expr ) );
+		}
 
 		return methodCallExpr;
 	}

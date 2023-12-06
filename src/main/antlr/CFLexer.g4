@@ -27,7 +27,6 @@ COMPONENT       :   'COMPONENT';
 CONTAIN			:	'CONTAIN';
 CONTAINS        :    'CONTAINS';
 CONTINUE        :   'CONTINUE';
-CREATE        	:   'CREATE';
 DEFAULT         :   'DEFAULT';
 DOES			: 	'DOES';
 DO				: 	'DO';

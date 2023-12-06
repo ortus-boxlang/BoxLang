@@ -149,7 +149,7 @@ public class BoxObjectAccessTransformer extends AbstractTransformer {
 
 			return javaExpr;
 		}
-		throw new IllegalStateException( "" );
+		throw new IllegalStateException( "Unsupported object access: " + node.getSourceText() );
 	}
 
 	private Node accessWithDeep( BoxObjectAccess objectAccess, TransformerContext context ) {
