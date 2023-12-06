@@ -30,6 +30,8 @@ import com.github.javaparser.ast.expr.BinaryExpr;
 import com.github.javaparser.ast.expr.BinaryExpr.Operator;
 import com.github.javaparser.ast.expr.BooleanLiteralExpr;
 import com.github.javaparser.ast.expr.Expression;
+import com.github.javaparser.ast.expr.MethodCallExpr;
+import com.github.javaparser.ast.expr.NameExpr;
 import com.github.javaparser.ast.stmt.BlockStmt;
 import com.github.javaparser.ast.stmt.CatchClause;
 import com.github.javaparser.ast.stmt.IfStmt;
@@ -186,25 +188,18 @@ public class BoxTryTransformer extends AbstractTransformer {
 	}
 
 	private Expression transformCatchType( BoxExpr catchType, TransformerContext context, String contextName, String throwableName ) {
-		Map<String, String> values = new HashMap<>();
-		values.put( "contextName", transpiler.peekContextName() );
-		values.put( "throwableName", throwableName );
-		values.put( "type", getTypeValue( catchType, context ) );
+		NameExpr		nameExpr		= new NameExpr( "ExceptionUtil" );
+		MethodCallExpr	methodCallExpr	= new MethodCallExpr( nameExpr, "exceptionIsOfType" );
+		methodCallExpr.addArgument( contextName );
+		methodCallExpr.addArgument( throwableName );
 
-		return ( Expression ) parseExpression(
-		    "ExceptionUtil.exceptionIsOfType( ${contextName}, ${throwableName}, ${type} )",
-		    values
-		);
-	}
-
-	private String getTypeValue( BoxExpr catchType, TransformerContext context ) {
-		if ( catchType instanceof BoxStringLiteral str ) {
-			return transpiler.transform( str, context ).toString();
-		} else if ( catchType instanceof BoxFQN fqn ) {
-			return "\"" + fqn.getValue() + "\"";
+		if ( catchType instanceof BoxFQN fqn ) {
+			methodCallExpr.addArgument( "\"" + fqn.getValue() + "\"" );
+		} else {
+			methodCallExpr.addArgument( ( Expression ) transpiler.transform( catchType, context ) );
 		}
 
-		return null;
+		return methodCallExpr;
 	}
 
 }
