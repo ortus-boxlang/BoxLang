@@ -357,7 +357,7 @@ public class CoreLangTest {
 		    """
 		    result=0
 		    for( i=0; i<10; variables.i++ ) {
-		    	result++
+		    	result=result+1
 		    }
 		        """,
 		    context );
@@ -374,7 +374,7 @@ public class CoreLangTest {
 		       keepGoing = true
 		    age = 25
 		       while( keepGoing == true && age > 21 ) {
-		    	age --
+		    	age = age - 1
 		    }
 		           """,
 		    context );
@@ -445,8 +445,8 @@ public class CoreLangTest {
 		    """
 		       result=0
 		    i=0
-		       for( i=0; i==i; i++ ) {
-		       	result++
+		       for( i=0; i==i; i=i+1 ) {
+		       	result=result+1
 		     if( i > 10 ) {
 		     	break;
 		     }
@@ -465,7 +465,7 @@ public class CoreLangTest {
 		    """
 		          result=0
 		       while( true ) {
-		    	result++
+		    	result=result+1
 		    	if( result < 10 ) {
 		    		continue;
 		    	}

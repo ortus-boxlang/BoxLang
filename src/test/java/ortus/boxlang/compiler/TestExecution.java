@@ -73,7 +73,7 @@ public class TestExecution extends TestBase {
 		instance.executeSource( """
 		                                                               variables['system'] = createObject('java','java.lang.System');
 		                        variables.a = 0;
-		                                                               for(a = 0; a < 10; a++){
+		                                                               for(a = 0; a < 10; a=a+1){
 		                                                               	variables.system.out.println(a);
 		                                                               }
 		                                        assert(variables["a"] == 10);
