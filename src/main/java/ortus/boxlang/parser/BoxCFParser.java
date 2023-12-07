@@ -709,7 +709,15 @@ public class BoxCFParser extends BoxAbstractParser {
 		for ( int i = 0; i < node.getChildCount(); i++ ) {
 			ParseTree child = node.getChild( i );
 			if ( child instanceof CFParser.DotAccessContext dotAccess ) {
-				expr = new BoxDotAccess( expr, dotAccess.QM() != null, toAst( file, dotAccess.identifier() ), getPosition( dotAccess ),
+				BoxExpr access;
+				// Any reserved keywords like scopes on the accessed after a dot is just a keyword.
+				if ( dotAccess.identifier().reservedKeyword() != null ) {
+					CFParser.ReservedKeywordContext keyword = dotAccess.identifier().reservedKeyword();
+					access = new BoxIdentifier( keyword.getText(), getPosition( keyword ), getSourceText( keyword ) );
+				} else {
+					access = toAst( file, dotAccess.identifier() );
+				}
+				expr = new BoxDotAccess( expr, dotAccess.QM() != null, access, getPosition( dotAccess ),
 				    getSourceText( dotAccess ) );
 			}
 			if ( child instanceof CFParser.ArrayAccessContext arrayAccess ) {
@@ -719,14 +727,14 @@ public class BoxCFParser extends BoxAbstractParser {
 				if ( methodInvokation.functionInvokation() != null ) {
 					List<BoxArgument>			args	= toAst( file, methodInvokation.functionInvokation().invokationExpression().argumentList() );
 					CFParser.IdentifierContext	id		= methodInvokation.functionInvokation().identifier();
-					BoxExpr						name	= new BoxIdentifier( id.getText(), false, getPosition( id ), getSourceText( id ) );
+					BoxExpr						name	= new BoxIdentifier( id.getText(), getPosition( id ), getSourceText( id ) );
 
-					expr = new BoxMethodInvocation( name, expr, args, methodInvokation.QM() != null, getPosition( methodInvokation ),
+					expr = new BoxMethodInvocation( name, expr, args, methodInvokation.QM() != null, true, getPosition( methodInvokation ),
 					    getSourceText( methodInvokation ) );
 				} else if ( methodInvokation.arrayAccess() != null ) {
-					List<BoxArgument>	args	= toAst( file, methodInvokation.functionInvokation().invokationExpression().argumentList() );
+					List<BoxArgument>	args	= toAst( file, methodInvokation.invokationExpression().argumentList() );
 					BoxExpr				name	= toAst( file, methodInvokation.arrayAccess().expression() );
-					expr = new BoxMethodInvocation( name, expr, args, false, getPosition( methodInvokation ), getSourceText( methodInvokation ) );
+					expr = new BoxMethodInvocation( name, expr, args, false, false, getPosition( methodInvokation ), getSourceText( methodInvokation ) );
 				} else {
 					throw new IllegalStateException(
 					    "unimplemented method invocation does not use function invocation or array access rules: " + getSourceText( methodInvokation ) );
@@ -762,8 +770,7 @@ public class BoxCFParser extends BoxAbstractParser {
 		} else if ( node.reservedKeyword() != null ) {
 			name = node.reservedKeyword().getText();
 		}
-		// TODO: I don't think safe should exist on the identifer class, it's in the access classe
-		return new BoxIdentifier( name, false, getPosition( node ), getSourceText( node ) );
+		return new BoxIdentifier( name, getPosition( node ), getSourceText( node ) );
 	}
 
 	/**

@@ -32,7 +32,11 @@ public class BoxMethodInvocation extends BoxExpr {
 
 	private final List<BoxArgument>	arguments;
 	private final BoxExpr			obj;
-	private Boolean					safe;
+	private final Boolean			safe;
+	// The reason for this flag is so we know how to treat the name expression.
+	// For foo.bar() it's ALWAYS just a raw string, but for foo[ bar ]() it's a variable lookup
+	// We could use different nodes for each, but that would be a lot of duplication
+	private final Boolean			usedDotAccess;
 
 	public final List<BoxArgument> getArguments() {
 		return arguments;
@@ -41,15 +45,18 @@ public class BoxMethodInvocation extends BoxExpr {
 	/**
 	 * Creates the AST node
 	 *
-	 * @param name       name of the method
-	 * @param obj        object
-	 * @param arguments  list of BoxArgument representing the arguments
-	 * @param position   position of the statement in the source code
-	 * @param sourceText source code that originated the Node
+	 * @param name          name of the method
+	 * @param obj           object
+	 * @param arguments     list of BoxArgument representing the arguments
+	 * @param safe          true if the method is safe
+	 * @param usedDotAccess true if the method was accessed using the dot operator
+	 * @param position      position of the statement in the source code
+	 * @param sourceText    source code that originated the Node
 	 *
 	 * @see BoxArgument
 	 */
-	public BoxMethodInvocation( BoxExpr name, BoxExpr obj, List<BoxArgument> arguments, Boolean safe, Position position, String sourceText ) {
+	public BoxMethodInvocation( BoxExpr name, BoxExpr obj, List<BoxArgument> arguments, Boolean safe, Boolean usedDotAccess, Position position,
+	    String sourceText ) {
 		super( position, sourceText );
 		this.name	= name;
 		this.obj	= obj;
@@ -57,6 +64,7 @@ public class BoxMethodInvocation extends BoxExpr {
 		this.safe		= safe;
 		this.arguments	= Collections.unmodifiableList( arguments );
 		this.arguments.forEach( arg -> arg.setParent( this ) );
+		this.usedDotAccess = usedDotAccess;
 	}
 
 	public BoxExpr getName() {
@@ -69,6 +77,10 @@ public class BoxMethodInvocation extends BoxExpr {
 
 	public Boolean getSafe() {
 		return safe;
+	}
+
+	public Boolean getUsedDotAccess() {
+		return usedDotAccess;
 	}
 
 	@Override

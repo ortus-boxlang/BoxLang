@@ -57,7 +57,14 @@ public class BoxMethodInvocationTransformer extends AbstractTransformer {
 		if ( target != null ) {
 			template = "${expr}." + target;
 		} else {
-			values.put( "methodKey", createKey( invocation.getName() ).toString() );
+			Node accessKey;
+			// DotAccess just uses the string directly, array access allows any expression
+			if ( invocation.getUsedDotAccess() ) {
+				accessKey = createKey( ( ( BoxIdentifier ) invocation.getName() ).getName() );
+			} else {
+				accessKey = createKey( invocation.getName() );
+			}
+			values.put( "methodKey", accessKey.toString() );
 			template = """
 			           Referencer.getAndInvoke(
 			             context,

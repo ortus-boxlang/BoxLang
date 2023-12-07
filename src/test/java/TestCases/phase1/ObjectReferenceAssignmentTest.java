@@ -121,7 +121,7 @@ public class ObjectReferenceAssignmentTest {
 		instance.executeSource(
 		    """
 		       str = new java:ortus.boxlang.runtime.types.Struct();
-		    str.name = "Brad"
+		    str.put( "name", "Brad" );
 		       result = str.name;
 		       """,
 		    context );
@@ -136,7 +136,7 @@ public class ObjectReferenceAssignmentTest {
 		    """
 		    variables.foo = 5;
 		    result = foo;
-		    """,
+		     """,
 		    context );
 		assertThat( variables.dereference( result, false ) ).isEqualTo( 5 );
 
@@ -252,7 +252,21 @@ public class ObjectReferenceAssignmentTest {
 		    """
 		    system = createObject('java', 'java.lang.System');
 		    system.out.println("Hello World");
+		    system["out"]["println"]("Hello World");
 		    """,
+		    context );
+
+	}
+
+	@DisplayName( "static method call on imported class" )
+	@Test
+	public void testStaticMethodCallOnImportedClass() {
+		instance.executeSource(
+		    """
+		    import java:java.lang.System;
+
+		    system.out.println( 2+3 )
+		      """,
 		    context );
 
 	}

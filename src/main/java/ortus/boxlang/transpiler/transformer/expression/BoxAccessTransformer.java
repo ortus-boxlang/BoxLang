@@ -1,23 +1,17 @@
 package ortus.boxlang.transpiler.transformer.expression;
 
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.github.javaparser.ast.Node;
 import com.github.javaparser.ast.expr.Expression;
-import com.github.javaparser.ast.expr.MethodCallExpr;
-import com.github.javaparser.ast.expr.StringLiteralExpr;
 
 import ortus.boxlang.ast.BoxNode;
 import ortus.boxlang.ast.expression.BoxAccess;
 import ortus.boxlang.ast.expression.BoxDotAccess;
-import ortus.boxlang.ast.expression.BoxFunctionInvocation;
 import ortus.boxlang.ast.expression.BoxIdentifier;
 import ortus.boxlang.ast.expression.BoxScope;
 import ortus.boxlang.transpiler.JavaTranspiler;
@@ -35,243 +29,56 @@ public class BoxAccessTransformer extends AbstractTransformer {
 	@Override
 	public Node transform( BoxNode node, TransformerContext context ) throws IllegalStateException {
 		BoxAccess	objectAccess	= ( BoxAccess ) node;
-		String		side			= context == TransformerContext.NONE ? "" : "(" + context.toString() + ") ";
-
-		if ( objectAccess.getContext() instanceof BoxScope && objectAccess.getAccess() instanceof BoxAccess ) {
-			Expression	scope		= ( Expression ) transpiler.transform( objectAccess.getContext(), TransformerContext.LEFT );
-			Node		variable	= transpiler.transform( objectAccess.getAccess(), context );
-
-			if ( variable instanceof MethodCallExpr method ) {
-				if ( "setDeep".equalsIgnoreCase( method.getName().asString() ) ) {
-					method.getArguments().remove( 0 );
-					method.getArguments().add( 0, scope );
-					return method;
-				}
-
-				// TODO: Why not use Map.ofEntries() instead?
-				Map<String, String>	values		= new HashMap<>() {
-
-													{
-														put( "scope", scope.toString() );
-														put( "variable", variable.toString() );
-														put( "contextName", transpiler.peekContextName() );
-														// put( "var1", vars.getValues().get( 1 ).toString() );
-													}
-												};
-
-				String				template	= switch ( context ) {
-													case LEFT -> """
-													             ${scope}.dereference( ${variable} )
-													             """;
-													default -> """
-													           ${scope}.dereference( ${variable} , false )
-													           """;
-													// default -> """
-													// Referencer.get(${scope}.dereference(${variable},false)
-													// """;
-												};
-				Node				javaExpr	= parseExpression( template, values );
-
-				logger.info( "{} -> {}", side + node.getSourceText(), javaExpr );
-				addIndex( javaExpr, node );
-				return method;
-
-			} else {
-				Map<String, String>	values		= new HashMap<>() {
-
-													{
-														put( "scope", scope.toString() );
-														put( "variable", variable.toString() );
-														put( "contextName", transpiler.peekContextName() );
-													}
-												};
-
-				String				template	= switch ( context ) {
-													case LEFT -> """
-													             ${scope}.assign(Key.of("${variable}"))
-													             """;
-													default -> """
-													           ${scope}.dereference( Key.of( "${variable}" ) , false )
-													           """;
-
-												};
-				Node				javaExpr	= parseExpression( template, values );
-				logger.info( side + node.getSourceText() + " -> " + javaExpr );
-				addIndex( javaExpr, node );
-				return javaExpr;
-			}
-		} else if ( objectAccess.getContext() instanceof BoxScope ) {
-			Expression	scope	= ( Expression ) transpiler.transform( objectAccess.getContext(), TransformerContext.LEFT );
-			Expression	variable;
-			if ( objectAccess instanceof BoxDotAccess && objectAccess.getAccess() instanceof BoxIdentifier id ) {
-				variable = new StringLiteralExpr( id.getName() );
-			} else {
-				variable = ( Expression ) transpiler.transform( objectAccess.getAccess(), TransformerContext.RIGHT );
-			}
-			Map<String, String>	values		= new HashMap<>() {
-
-												{
-													put( "scope", scope.toString() );
-													put( "variable", variable.toString() );
-													put( "safe", objectAccess.isSafe().toString() );
-													put( "contextName", transpiler.peekContextName() );
-												}
-											};
-			String				template	= switch ( context ) {
-												case LEFT -> """
-												             ${scope}.assign(Key.of(${variable}))
-												             """;
-												default -> """
-												           ${scope}.dereference( Key.of( ${variable} ) , ${safe} )
-												           """;
-											};
-			Node				javaExpr	= parseExpression( template, values );
-			logger.info( side + node.getSourceText() + " -> " + javaExpr );
-			addIndex( javaExpr, node );
-			return javaExpr;
-		} else if ( objectAccess.getContext() instanceof BoxIdentifier ) {
-
-			Node javaExpr = accessWithDeep( objectAccess, context );
-			logger.info( side + node.getSourceText() + " -> " + javaExpr );
-			addIndex( javaExpr, node );
-
-			return javaExpr;
-		} else if ( objectAccess.getContext() instanceof BoxFunctionInvocation && objectAccess.getAccess() instanceof BoxIdentifier ) {
-			Expression			function	= ( Expression ) transpiler.transform( objectAccess.getContext(), TransformerContext.LEFT );
-			Expression			member		= ( Expression ) transpiler.transform( objectAccess.getAccess(), TransformerContext.RIGHT );
-			Map<String, String>	values		= new HashMap<>() {
-
-												{
-													put( "function", function.toString() );
-													put( "member", member.toString() );
-													put( "contextName", transpiler.peekContextName() );
-												}
-											};
-			String				template	= """
-			                                  			${function}.getField( "${member}" ).get()
-			                                  """;
-			Node				javaExpr	= parseExpression( template, values );
-			logger.info( side + node.getSourceText() + " -> " + javaExpr );
-			addIndex( javaExpr, node );
-
-			return javaExpr;
+		Node		accessKey;
+		// DotAccess just uses the string directly, array access allows any expression
+		if ( objectAccess instanceof BoxDotAccess dotAccess ) {
+			accessKey = createKey( ( ( BoxIdentifier ) dotAccess.getAccess() ).getName() );
+		} else {
+			accessKey = createKey( objectAccess.getAccess() );
 		}
-		throw new IllegalStateException( "Unsupported object access: " + node.getSourceText() );
-	}
 
-	private Node accessWithDeep( BoxAccess objectAccess, TransformerContext context ) {
-		List<Node>		keys	= new ArrayList<>();
-		List<Boolean>	safe	= new ArrayList<>();
+		Map<String, String> values = new HashMap<>() {
 
-		if ( context == TransformerContext.LEFT ) {
-
-			for ( ortus.boxlang.ast.Node id : objectAccess.getAccess().walk() ) {
-				if ( id instanceof BoxIdentifier boxId ) {
-					keys.add( transpiler.transform( boxId, TransformerContext.DEREFERENCING ) );
-				}
+			{
+				put( "contextName", transpiler.peekContextName() );
+				put( "safe", objectAccess.isSafe().toString() );
+				put( "accessKey", accessKey.toString() );
 			}
+		};
 
-			String				args		= keys.stream().map( Node::toString ).collect( Collectors.joining( ", " ) );
-			Expression			ctx			= ( Expression ) transpiler.transform( objectAccess.getContext(), TransformerContext.DEREFERENCING );
+		// An access expression starting a scope can be optimized
+		if ( objectAccess.getContext() instanceof BoxScope ) {
+			Expression jContext = ( Expression ) transpiler.transform( objectAccess.getContext(), TransformerContext.NONE );
+			values.put( "scopeReference", jContext.toString() );
 
-			String				template	= """
-			                                                           Referencer.setDeep(
-			                                  ${contextName}.scopeFindNearby(
-			                                                           		${ctx},
-			                                                           		${contextName}.getDefaultAssignmentScope()
-			                                                           	  ).scope(),
-			                                                           	${ctx},
-			                                                           	${acs}
-			                                                           )
-			                                                           """;
-			Map<String, String>	values		= new HashMap<>() {
-
-												{
-													put( "ctx", ctx.toString() );
-													put( "acs", args );
-													put( "contextName", transpiler.peekContextName() );
-												}
-											};
-			Node				javaExpr	= parseExpression( template, values );
+			String	template	= """
+			                      ${scopeReference}.dereference(
+			                        ${accessKey},
+			                        ${safe}
+			                        )
+			                                      """;
+			Node	javaExpr	= parseExpression( template, values );
+			logger.info( node.getSourceText() + " -> " + javaExpr );
 			return javaExpr;
 
 		} else {
-			Expression ctx = ( Expression ) transpiler.transform( objectAccess.getContext(), TransformerContext.DEREFERENCING );
+			// All other non-scoped vars we just lookup
+			Expression jContext = ( Expression ) transpiler.transform( objectAccess.getContext(), TransformerContext.NONE );
+			// "scope" here isn't a BoxLang proper scope, it's just whatever Java source represents the context of the access expression
+			values.put( "scopeReference", jContext.toString() );
 
-			for ( ortus.boxlang.ast.Node id : objectAccess.getAccess().walk() ) {
-				if ( id instanceof BoxIdentifier boxId ) {
-					keys.add( transpiler.transform( boxId, TransformerContext.DEREFERENCING ) );
-					if ( id.getParent() != null && id.getParent() instanceof BoxAccess access ) {
-						safe.add( access.isSafe() );
-					}
-				}
-			}
-			String	template	= "";
-			Node	javaExpr	= null;
-			for ( int i = 0; i < keys.size(); i++ ) {
-				Node	key		= keys.get( i );
-				Boolean	isSafe	= safe.get( i );
-				if ( i == 0 ) {
-					Map<String, String> values = new HashMap<>() {
+			String	template	= """
+			                      Referencer.get(
+			                      	  ${scopeReference},
+			                            ${accessKey},
+			                            ${safe}
+			                                  )
+			                            """;
 
-						{
-							put( "ctx", ctx.toString() );
-							put( "safe1", objectAccess.isSafe().toString() );
-							put( "safe2", isSafe.toString() );
-							put( "key", key.toString() );
-							put( "contextName", transpiler.peekContextName() );
-						}
-					};
-					if ( objectAccess.getContext() instanceof BoxIdentifier idt && transpiler.matchesImport( idt.getName() ) ) {
-
-						values.put( "ctx", idt.getName() );
-						template = """
-						                     Referencer.get(
-						           classLocator.load( ${contextName}, \"${ctx}\", imports ),
-						                     	${key},
-						                     	${safe2}
-						                     )
-
-						                                  """;
-					} else {
-						template = """
-						                     Referencer.get(
-						           ${contextName}.scopeFindNearby(
-						                     		${ctx},
-						                     		null
-						                     	).value(),
-						                     	${key},
-						                     	${safe2}
-						                     )
-						                     """;
-
-					}
-					javaExpr = parseExpression( template, values );
-				} else {
-					Node				finalJavaExpr	= javaExpr;
-					Map<String, String>	values			= new HashMap<>() {
-
-															{
-																put( "ctx", finalJavaExpr.toString() );
-																put( "safe", isSafe.toString() );
-																put( "key", key.toString() );
-																put( "contextName", transpiler.peekContextName() );
-															}
-														};
-					template	= """
-					              Referencer.get(
-					              	${ctx},
-					              	${key},
-					              	${safe}
-					              )
-					              """;
-					javaExpr	= parseExpression( template, values );
-				}
-
-			}
-
+			Node	javaExpr	= parseExpression( template, values );
+			logger.info( node.getSourceText() + " -> " + javaExpr );
 			return javaExpr;
-
 		}
 	}
+
 }

@@ -32,7 +32,7 @@ public class BoxAssignmentExpressionTransformer extends AbstractTransformer {
 	public Node transform( BoxNode node, TransformerContext context ) throws IllegalStateException {
 		logger.info( node.getSourceText() );
 		BoxAssignmentExpression	assigment	= ( BoxAssignmentExpression ) node;
-		Expression				left		= ( Expression ) transpiler.transform( assigment.getLeft(), TransformerContext.RIGHT );
+		Expression				left		= ( Expression ) transpiler.transform( assigment.getLeft(), TransformerContext.LEFT );
 		Expression				right		= ( Expression ) transpiler.transform( assigment.getRight(), TransformerContext.RIGHT );
 
 		Map<String, String>		values		= new HashMap<>() {
@@ -59,7 +59,8 @@ public class BoxAssignmentExpressionTransformer extends AbstractTransformer {
 			values.put( "key", left.toString() );
 			values.put( "right", right.toString() );
 			if ( right instanceof NameExpr rname ) {
-				String tmp = PlaceholderHelper.resolve( "${contextName}.scopeFindNearby( Key.of( \"" + rname + "\" ), null ).value()", values );
+				String tmp = PlaceholderHelper
+				    .resolve( "${contextName}.scopeFindNearby( Key.of( \"" + rname + "\" ), ${contextName}.getDefaultAssignmentScope() ).value()", values );
 				values.put( "right", tmp );
 			}
 
