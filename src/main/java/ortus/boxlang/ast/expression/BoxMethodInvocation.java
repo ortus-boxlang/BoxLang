@@ -32,6 +32,7 @@ public class BoxMethodInvocation extends BoxExpr {
 
 	private final List<BoxArgument>	arguments;
 	private final BoxExpr			obj;
+	private Boolean					safe;
 
 	public final List<BoxArgument> getArguments() {
 		return arguments;
@@ -48,12 +49,13 @@ public class BoxMethodInvocation extends BoxExpr {
 	 *
 	 * @see BoxArgument
 	 */
-	public BoxMethodInvocation( BoxExpr name, BoxExpr obj, List<BoxArgument> arguments, Position position, String sourceText ) {
+	public BoxMethodInvocation( BoxExpr name, BoxExpr obj, List<BoxArgument> arguments, Boolean safe, Position position, String sourceText ) {
 		super( position, sourceText );
 		this.name	= name;
 		this.obj	= obj;
 		this.obj.setParent( this );
-		this.arguments = Collections.unmodifiableList( arguments );
+		this.safe		= safe;
+		this.arguments	= Collections.unmodifiableList( arguments );
 		this.arguments.forEach( arg -> arg.setParent( this ) );
 	}
 
@@ -65,6 +67,10 @@ public class BoxMethodInvocation extends BoxExpr {
 		return obj;
 	}
 
+	public Boolean getSafe() {
+		return safe;
+	}
+
 	@Override
 	public Map<String, Object> toMap() {
 		Map<String, Object> map = super.toMap();
@@ -72,6 +78,7 @@ public class BoxMethodInvocation extends BoxExpr {
 		map.put( "obj", obj.toMap() );
 		map.put( "name", name.toMap() );
 		map.put( "arguments", arguments.stream().map( BoxExpr::toMap ).collect( Collectors.toList() ) );
+		map.put( "safe", safe );
 		return map;
 	}
 }
