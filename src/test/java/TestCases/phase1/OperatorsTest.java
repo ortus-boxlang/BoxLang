@@ -345,6 +345,23 @@ public class OperatorsTest {
 		assertThat( context.getScopeNearby( VariablesScope.name ).dereference( Key.of( "result" ), false ) ).isEqualTo( "bradwood" );
 	}
 
+	@DisplayName( "compound operator with var" )
+	@Test
+	public void compoundOperatorWithVar() {
+		/*
+		 * I personally think this should be invalid code, but Adobe and Lucee both allow it. Adobe turns all access to the variable into the local scope
+		 * somehow, presumably some sort of variable hoisting. Lucee just straight up ignores the "var" keyword and modifies the variable in whatever scope
+		 * it's already in. I've chosen Lucee's behavior for now because it's the least amount of work and this is an edge case.
+		 */
+		instance.executeSource(
+		    """
+		    result = "brad";
+		    var result &= "wood";
+		    """,
+		    context );
+		assertThat( context.getScopeNearby( VariablesScope.name ).dereference( Key.of( "result" ), false ) ).isEqualTo( "bradwood" );
+	}
+
 	@DisplayName( "logical and" )
 	@Test
 	public void testLogicalAnd() {

@@ -51,8 +51,8 @@ functionOptions: (
 		)?
 	)+;
 
-
-functionSignature:  javadoc? (preannotation)* accessModifier? STATIC? returnType? FUNCTION identifier LPAREN
+functionSignature:
+	javadoc? (preannotation)* accessModifier? STATIC? returnType? FUNCTION identifier LPAREN
 		paramList? RPAREN;
 function: functionSignature (postannotation)* statementBlock;
 
@@ -86,7 +86,7 @@ type:
 
 functionOrStatement: constructor | function | statement;
 
-javadoc:	JAVADOC_COMMENT;
+javadoc: JAVADOC_COMMENT;
 
 constructor:
 	FUNCTION INIT LPAREN paramList? RPAREN statementBlock;
@@ -136,7 +136,6 @@ statement:
 
 simpleStatement: (
 		applicationStatement
-		| localDeclaration
 		| incrementDecrementStatement
 		| paramStatement
 		| return
@@ -164,10 +163,6 @@ assignmentLeft: accessExpression;
 assignmentRight: expression;
 
 invokable: LPAREN RPAREN | ARROW LPAREN RPAREN;
-
-// TODO: replace with assignment expression
-localDeclaration:
-	VAR identifier ((EQUAL identifier)* EQUAL expression) eos;
 
 settingStatement: SETTING assignment;
 

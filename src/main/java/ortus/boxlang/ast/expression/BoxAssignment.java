@@ -1,5 +1,6 @@
 package ortus.boxlang.ast.expression;
 
+import java.util.List;
 import java.util.Map;
 
 import ortus.boxlang.ast.BoxExpr;
@@ -11,9 +12,10 @@ import ortus.boxlang.ast.statement.BoxAssignmentOperator;
  */
 public class BoxAssignment extends BoxExpr {
 
-	private final BoxExpr			left;
-	private final BoxExpr			right;
-	private BoxAssignmentOperator	op;
+	private final BoxExpr						left;
+	private final BoxExpr						right;
+	private final BoxAssignmentOperator			op;
+	private final List<BoxAssignmentModifier>	modifiers;
 
 	/**
 	 * Constructor
@@ -23,14 +25,14 @@ public class BoxAssignment extends BoxExpr {
 	 * @param position   position of the expression in the source code
 	 * @param sourceText source code of the expression
 	 */
-	public BoxAssignment( BoxExpr left, BoxAssignmentOperator op, BoxExpr right, Position position, String sourceText ) {
+	public BoxAssignment( BoxExpr left, BoxAssignmentOperator op, BoxExpr right, List<BoxAssignmentModifier> modifiers, Position position, String sourceText ) {
 		super( position, sourceText );
 		this.left = left;
 		this.left.setParent( this );
 		this.op		= op;
 		this.right	= right;
 		this.right.setParent( this );
-
+		this.modifiers = modifiers;
 	}
 
 	public BoxExpr getLeft() {
@@ -45,10 +47,15 @@ public class BoxAssignment extends BoxExpr {
 		return op;
 	}
 
+	public List<BoxAssignmentModifier> getModifiers() {
+		return modifiers;
+	}
+
 	@Override
 	public Map<String, Object> toMap() {
 		Map<String, Object> map = super.toMap();
 
+		map.put( "modifiers", modifiers.stream().map( op -> enumToMap( op ) ).toList() );
 		map.put( "left", left.toMap() );
 		map.put( "op", enumToMap( op ) );
 		map.put( "right", right.toMap() );

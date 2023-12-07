@@ -16,8 +16,10 @@ import ortus.boxlang.ast.BoxExpr;
 import ortus.boxlang.ast.BoxNode;
 import ortus.boxlang.ast.expression.BoxAccess;
 import ortus.boxlang.ast.expression.BoxAssignment;
+import ortus.boxlang.ast.expression.BoxAssignmentModifier;
 import ortus.boxlang.ast.expression.BoxDotAccess;
 import ortus.boxlang.ast.expression.BoxIdentifier;
+import ortus.boxlang.ast.expression.BoxScope;
 import ortus.boxlang.ast.statement.BoxAssignmentOperator;
 import ortus.boxlang.runtime.config.util.PlaceholderHelper;
 import ortus.boxlang.runtime.types.exceptions.ExpressionException;
@@ -45,48 +47,74 @@ public class BoxAssignmentTransformer extends AbstractTransformer {
 	}
 
 	private Node transformEquals( BoxAssignment assigment, TransformerContext context ) throws IllegalStateException {
-		Expression			right	= ( Expression ) transpiler.transform( assigment.getRight(), TransformerContext.NONE );
+		Expression			right			= ( Expression ) transpiler.transform( assigment.getRight(), TransformerContext.NONE );
 		String				template;
+		boolean				hasVar			= hasVar( assigment );
 
-		Map<String, String>	values	= new HashMap<>() {
+		Map<String, String>	values			= new HashMap<>() {
 
-										{
-											put( "contextName", transpiler.peekContextName() );
-											put( "right", right.toString() );
-										}
-									};
+												{
+													put( "contextName", transpiler.peekContextName() );
+													put( "right", right.toString() );
+												}
+											};
 
-		if ( assigment.getLeft() instanceof BoxIdentifier id ) {
-			Node accessKey = createKey( id.getName() );
-			values.put( "accessKey", accessKey.toString() );
-			template = """
-			                     ${contextName}.scopeFindNearby( ${accessKey}, ${contextName}.getDefaultAssignmentScope() ).scope().assign( ${accessKey}, ${right} )
-			           """;
-		} else if ( assigment.getLeft() instanceof BoxAccess objectAccess ) {
-			List<Node>	accessKeys	= new ArrayList<Node>();
-			BoxExpr		current		= objectAccess;
+		List<Node>			accessKeys		= new ArrayList<Node>();
+		BoxExpr				furthestLeft	= assigment.getLeft();
 
-			while ( current instanceof BoxAccess currentObjectAccess ) {
-				// DotAccess just uses the string directly, array access allows any expression
-				if ( currentObjectAccess instanceof BoxDotAccess dotAccess ) {
-					accessKeys.add( 0, createKey( ( ( BoxIdentifier ) dotAccess.getAccess() ).getName() ) );
-				} else {
-					accessKeys.add( 0, createKey( currentObjectAccess.getAccess() ) );
-				}
-				current = currentObjectAccess.getContext();
+		while ( furthestLeft instanceof BoxAccess currentObjectAccess ) {
+			// DotAccess just uses the string directly, array access allows any expression
+			if ( currentObjectAccess instanceof BoxDotAccess dotAccess ) {
+				accessKeys.add( 0, createKey( ( ( BoxIdentifier ) dotAccess.getAccess() ).getName() ) );
+			} else {
+				accessKeys.add( 0, createKey( currentObjectAccess.getAccess() ) );
 			}
-			values.put( "accessKeys", accessKeys.stream().map( it -> it.toString() ).collect( Collectors.joining( "," ) ) );
-			values.put( "furthestLeft", transpiler.transform( current, TransformerContext.NONE ).toString() );
-			template = """
-			                          Referencer.setDeep(
-			           ${furthestLeft},
-			           ${right},
-			           ${accessKeys}
-			           )
-			                """;
-		} else {
-			throw new ExpressionException( "You cannot assign a value to " + assigment.getLeft().getClass().getSimpleName() );
+			furthestLeft = currentObjectAccess.getContext();
 		}
+
+		// If this assignment was var foo = 1, then we need into insert the scope as the furthest left and shift the key
+		if ( hasVar ) {
+			// This is for the edge case of
+			// var variables = 5
+			// or
+			// var variables.foo = 5
+			// in which case it's not really a scope but just an identifier
+			// I'd rather do this check when building the AST but the parse tree is more of a pain to deal with
+			if ( furthestLeft instanceof BoxScope scope ) {
+				accessKeys.add( 0, createKey( scope.getName() ) );
+			} else if ( furthestLeft instanceof BoxIdentifier id ) {
+				accessKeys.add( 0, createKey( id.getName() ) );
+			} else {
+				throw new ExpressionException( "You cannot use the [var] keyword before " + furthestLeft.getClass().getSimpleName() );
+			}
+			furthestLeft = new BoxScope( "local", null, null );
+		}
+
+		if ( furthestLeft instanceof BoxIdentifier id ) {
+			Node	keyNode	= createKey( id.getName() );
+			String	thisKey	= keyNode.toString();
+			accessKeys.add( 0, keyNode );
+			values.put( "accessKey", thisKey );
+			values.put( "furthestLeft",
+			    PlaceholderHelper.resolve( "${contextName}.scopeFindNearby( ${accessKey}, ${contextName}.getDefaultAssignmentScope() ).scope()",
+			        values ) );
+
+		} else {
+			if ( accessKeys.size() == 0 ) {
+				throw new ExpressionException( "You cannot assign a value to " + assigment.getLeft().getClass().getSimpleName() );
+			}
+			values.put( "furthestLeft", transpiler.transform( furthestLeft, TransformerContext.NONE ).toString() );
+
+		}
+
+		values.put( "accessKeys", accessKeys.stream().map( it -> it.toString() ).collect( Collectors.joining( "," ) ) );
+		template = """
+		                          Referencer.setDeep(
+		           ${furthestLeft},
+		           ${right},
+		           ${accessKeys}
+		           )
+		                """;
 
 		Node javaExpr = parseExpression( template, values );
 		logger.info( assigment.getSourceText() + " -> " + javaExpr.toString() );
@@ -94,6 +122,8 @@ public class BoxAssignmentTransformer extends AbstractTransformer {
 	}
 
 	private Node transformCompoundEquals( BoxAssignment assigment, TransformerContext context ) throws IllegalStateException {
+		// Note any var keyword is completley ignored in this code path!
+
 		Expression			right	= ( Expression ) transpiler.transform( assigment.getRight(), TransformerContext.NONE );
 		String				template;
 		Node				accessKey;
@@ -131,6 +161,10 @@ public class BoxAssignmentTransformer extends AbstractTransformer {
 		Node javaExpr = parseExpression( template, values );
 		logger.info( assigment.getSourceText() + " -> " + javaExpr.toString() );
 		return javaExpr;
+	}
+
+	private boolean hasVar( BoxAssignment assigment ) {
+		return assigment.getModifiers().stream().anyMatch( it -> it == BoxAssignmentModifier.VAR );
 	}
 
 	private String getMethodCallTemplate( BoxAssignmentOperator operator ) {

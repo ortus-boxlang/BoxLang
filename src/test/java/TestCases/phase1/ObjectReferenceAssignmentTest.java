@@ -18,6 +18,7 @@
 package TestCases.phase1;
 
 import static com.google.common.truth.Truth.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.util.Map;
 
@@ -38,6 +39,8 @@ import ortus.boxlang.runtime.scopes.VariablesScope;
 import ortus.boxlang.runtime.types.Function.Access;
 import ortus.boxlang.runtime.types.Function.Argument;
 import ortus.boxlang.runtime.types.SampleUDF;
+import ortus.boxlang.runtime.types.Struct;
+import ortus.boxlang.runtime.types.exceptions.BoxLangException;
 
 public class ObjectReferenceAssignmentTest {
 
@@ -94,7 +97,7 @@ public class ObjectReferenceAssignmentTest {
 
 	@DisplayName( "unscoped assignment" )
 	@Test
-	public void tesUnscopedAssignment() {
+	public void testUnscopedAssignment() {
 		instance.executeSource(
 		    """
 		    result = "brad";
@@ -104,9 +107,53 @@ public class ObjectReferenceAssignmentTest {
 
 	}
 
+	@DisplayName( "invaid assignment" )
+	@Test
+	public void testInvalidAssignment() {
+
+		// These are invalid because they are trying to assign directly to an expression that can't be assigned
+		assertThrows( BoxLangException.class, () -> instance.executeSource(
+		    """
+		    foo() = "brad";
+		    """,
+		    context ) );
+
+		assertThrows( BoxLangException.class, () -> instance.executeSource(
+		    """
+		    obj.foo() = "brad";
+		    """,
+		    context ) );
+
+		assertThrows( BoxLangException.class, () -> instance.executeSource(
+		    """
+		    "foo" = "brad";
+		    """,
+		    context ) );
+
+		// These are all a BoxAccess, but the "var" keyword can only come before an INITIAL identifier or BoxAccess
+		assertThrows( BoxLangException.class, () -> instance.executeSource(
+		    """
+		    var foo().key = "brad";
+		    """,
+		    context ) );
+
+		assertThrows( BoxLangException.class, () -> instance.executeSource(
+		    """
+		    var obj.foo().key = "brad";
+		    """,
+		    context ) );
+
+		assertThrows( BoxLangException.class, () -> instance.executeSource(
+		    """
+		    var "foo".key = "brad";
+		    """,
+		    context ) );
+
+	}
+
 	@DisplayName( "dereference scope key" )
 	@Test
-	public void tesDereferenceScopeKey() {
+	public void testDereferenceScopeKey() {
 		instance.executeSource(
 		    """
 		    variables.foo = "luis";
@@ -204,9 +251,59 @@ public class ObjectReferenceAssignmentTest {
 		    local.bar = 6;
 		    """,
 		    functionBoxContext );
+
 		IScope localScope = functionBoxContext.getScopeNearby( LocalScope.name );
 		assertThat( localScope.dereference( Key.of( "foo" ), false ) ).isEqualTo( 5 );
 		assertThat( localScope.dereference( Key.of( "bar" ), false ) ).isEqualTo( 6 );
+
+	}
+
+	@DisplayName( "var keyword for local Deep" )
+	@Test
+	public void testVarKeywordForLocalDeep() {
+		FunctionBoxContext	functionBoxContext	= new FunctionBoxContext( context,
+		    new SampleUDF( Access.PUBLIC, Key.of( "func" ), "any", new Argument[] {}, "" ) );
+		IScope				localScope			= functionBoxContext.getScopeNearby( LocalScope.name );
+		instance.executeSource(
+		    """
+		    var foo.bar = 5;
+		    """,
+		    functionBoxContext );
+		assertThat( localScope.dereference( Key.of( "foo" ), false ) instanceof Struct ).isTrue();
+		Struct foo = ( Struct ) localScope.dereference( Key.of( "foo" ), false );
+		assertThat( foo.dereference( Key.of( "bar" ), false ) ).isEqualTo( 5 );
+
+	}
+
+	@DisplayName( "var keyword for scope" )
+	@Test
+	public void testVarKeywordForLocalForScope() {
+		FunctionBoxContext	functionBoxContext	= new FunctionBoxContext( context,
+		    new SampleUDF( Access.PUBLIC, Key.of( "func" ), "any", new Argument[] {}, "" ) );
+		IScope				localScope			= functionBoxContext.getScopeNearby( LocalScope.name );
+		instance.executeSource(
+		    """
+		    var variables = 5;
+		    """,
+		    functionBoxContext );
+		assertThat( localScope.dereference( Key.of( "variables" ), false ) ).isEqualTo( 5 );
+
+	}
+
+	@DisplayName( "var keyword for scope deep" )
+	@Test
+	public void testVarKeywordForLocalForScopeDeep() {
+		FunctionBoxContext	functionBoxContext	= new FunctionBoxContext( context,
+		    new SampleUDF( Access.PUBLIC, Key.of( "func" ), "any", new Argument[] {}, "" ) );
+		IScope				localScope			= functionBoxContext.getScopeNearby( LocalScope.name );
+		instance.executeSource(
+		    """
+		    var variables.bar = 5;
+		    """,
+		    functionBoxContext );
+		assertThat( localScope.dereference( Key.of( "variables" ), false ) instanceof Struct ).isTrue();
+		Struct variables = ( Struct ) localScope.dereference( Key.of( "variables" ), false );
+		assertThat( variables.dereference( Key.of( "bar" ), false ) ).isEqualTo( 5 );
 
 	}
 

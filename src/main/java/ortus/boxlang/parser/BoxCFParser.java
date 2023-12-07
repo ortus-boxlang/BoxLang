@@ -39,6 +39,7 @@ import ortus.boxlang.ast.expression.BoxArgument;
 import ortus.boxlang.ast.expression.BoxArrayAccess;
 import ortus.boxlang.ast.expression.BoxArrayLiteral;
 import ortus.boxlang.ast.expression.BoxAssignment;
+import ortus.boxlang.ast.expression.BoxAssignmentModifier;
 import ortus.boxlang.ast.expression.BoxBinaryOperation;
 import ortus.boxlang.ast.expression.BoxBinaryOperator;
 import ortus.boxlang.ast.expression.BoxBooleanLiteral;
@@ -77,7 +78,6 @@ import ortus.boxlang.ast.statement.BoxForIndex;
 import ortus.boxlang.ast.statement.BoxFunctionDeclaration;
 import ortus.boxlang.ast.statement.BoxIfElse;
 import ortus.boxlang.ast.statement.BoxImport;
-import ortus.boxlang.ast.statement.BoxLocalDeclaration;
 import ortus.boxlang.ast.statement.BoxRethrow;
 import ortus.boxlang.ast.statement.BoxReturn;
 import ortus.boxlang.ast.statement.BoxReturnType;
@@ -626,14 +626,7 @@ public class BoxCFParser extends BoxAbstractParser {
 	 * @see BoxStatement
 	 */
 	private BoxStatement toAst( File file, CFParser.SimpleStatementContext node ) {
-		if ( node.localDeclaration() != null ) {
-			List<BoxExpr>	identifiers	= node.localDeclaration().identifier().stream().map( it -> toAst( file, it ) ).toList();
-			BoxExpr			expr		= null;
-			if ( node.localDeclaration().expression() != null ) {
-				expr = toAst( file, node.localDeclaration().expression() );
-			}
-			return new BoxLocalDeclaration( identifiers, expr, getPosition( node ), getSourceText( node ) );
-		} else if ( node.return_() != null ) {
+		if ( node.return_() != null ) {
 			BoxExpr expr = null;
 			if ( node.return_().expression() != null ) {
 				expr = toAst( file, node.return_().expression() );
@@ -988,10 +981,14 @@ public class BoxCFParser extends BoxAbstractParser {
 				op = BoxAssignmentOperator.ModEqual;
 			} else if ( node.CONCATEQUAL() != null ) {
 				op = BoxAssignmentOperator.ConcatEqual;
-
 			}
-			// capture var modifier
-			return new BoxAssignment( left, op, right, getPosition( expression ), getSourceText( expression ) );
+			// In the future, we expect there to be more than just var here, thus the list.
+			List<BoxAssignmentModifier> modifiers = new ArrayList<BoxAssignmentModifier>();
+			if ( node.VAR() != null ) {
+				modifiers.add( BoxAssignmentModifier.VAR );
+			}
+
+			return new BoxAssignment( left, op, right, modifiers, getPosition( expression ), getSourceText( expression ) );
 		}
 		// TODO: add other cases
 		throw new IllegalStateException( "expression not implemented: " + getSourceText( expression ) );
