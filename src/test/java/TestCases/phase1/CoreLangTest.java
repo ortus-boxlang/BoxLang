@@ -627,7 +627,7 @@ public class CoreLangTest {
 		Throwable t = assertThrows( ApplicationException.class, () -> instance.executeSource(
 		    """
 		    	// should throw a parsing syntax exception.
-		    resut = "I have locker #20";
+		    result = "I have locker #20";
 		    	""",
 		    context
 		)

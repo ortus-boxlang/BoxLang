@@ -275,6 +275,14 @@ public class OperatorsTest {
 		    """,
 		    context );
 		assertThat( context.getScopeNearby( VariablesScope.name ).dereference( Key.of( "result" ), false ) ).isEqualTo( 10 );
+
+		instance.executeSource(
+		    """
+		    result = 5;
+		    variables.result += 5;
+		    """,
+		    context );
+		assertThat( context.getScopeNearby( VariablesScope.name ).dereference( Key.of( "result" ), false ) ).isEqualTo( 10 );
 	}
 
 	@DisplayName( "compound operators minus" )

@@ -1,21 +1,26 @@
 package ortus.boxlang.transpiler.transformer.expression;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.github.javaparser.ast.Node;
 import com.github.javaparser.ast.expr.Expression;
-import com.github.javaparser.ast.expr.MethodCallExpr;
-import com.github.javaparser.ast.expr.NameExpr;
 
+import ortus.boxlang.ast.BoxExpr;
 import ortus.boxlang.ast.BoxNode;
+import ortus.boxlang.ast.expression.BoxAccess;
 import ortus.boxlang.ast.expression.BoxAssignment;
+import ortus.boxlang.ast.expression.BoxDotAccess;
+import ortus.boxlang.ast.expression.BoxIdentifier;
 import ortus.boxlang.ast.statement.BoxAssignmentOperator;
 import ortus.boxlang.runtime.config.util.PlaceholderHelper;
-import ortus.boxlang.runtime.types.exceptions.ApplicationException;
+import ortus.boxlang.runtime.types.exceptions.ExpressionException;
 import ortus.boxlang.transpiler.JavaTranspiler;
 import ortus.boxlang.transpiler.transformer.AbstractTransformer;
 import ortus.boxlang.transpiler.transformer.TransformerContext;
@@ -30,70 +35,113 @@ public class BoxAssignmentTransformer extends AbstractTransformer {
 
 	@Override
 	public Node transform( BoxNode node, TransformerContext context ) throws IllegalStateException {
-		logger.info( node.getSourceText() );
-		BoxAssignment		assigment	= ( BoxAssignment ) node;
-		Expression			left		= ( Expression ) transpiler.transform( assigment.getLeft(), TransformerContext.LEFT );
-		Expression			right		= ( Expression ) transpiler.transform( assigment.getRight(), TransformerContext.RIGHT );
-
-		Map<String, String>	values		= new HashMap<>() {
-
-											{
-												put( "contextName", transpiler.peekContextName() );
-											}
-										};
-		String				template;
-
-		if ( left instanceof MethodCallExpr method ) {
-			if ( "assign".equalsIgnoreCase( method.getName().asString() ) ) {
-				method.getArguments().add( right );
-			}
-			if ( "setDeep".equalsIgnoreCase( method.getName().asString() ) ) {
-				method.getArguments().add( 1, right );
-			}
-			values.put( "expr", method.getScope().orElseThrow().toString() );
-			values.put( "key", method.getArguments().get( 0 ).toString() );
-			values.put( "right", right.toString() );
-			template = getMethodCallTemplate( assigment.getOp() );
-
-		} else if ( left instanceof NameExpr name ) {
-			values.put( "key", left.toString() );
-			values.put( "right", right.toString() );
-			if ( right instanceof NameExpr rname ) {
-				String tmp = PlaceholderHelper
-				    .resolve( "${contextName}.scopeFindNearby( Key.of( \"" + rname + "\" ), ${contextName}.getDefaultAssignmentScope() ).value()", values );
-				values.put( "right", tmp );
-			}
-
-			template = getNameExpressionTemplate( assigment.getOp() );
+		BoxAssignment assigment = ( BoxAssignment ) node;
+		if ( assigment.getOp() == BoxAssignmentOperator.Equal ) {
+			return transformEquals( assigment, context );
 		} else {
-			throw new ApplicationException( "Unimplemented assignment operator type assignment operator type", left.toString() );
+			return transformCompoundEquals( assigment, context );
 		}
-		return parseExpression( template, values );
+
 	}
 
-	private String getNameExpressionTemplate( BoxAssignmentOperator operator ) {
-		return switch ( operator ) {
-			case PlusEqual -> "Plus.invoke( ${contextName}.scopeFindNearby( Key.of( \"${key}\" ),null).scope(),Key.of( \"${key}\"), ${right} )";
-			case MinusEqual -> "Minus.invoke( ${contextName}.scopeFindNearby( Key.of( \"${key}\" ),null).scope(),Key.of( \"${key}\"), ${right} )";
-			case StarEqual -> "Multiply.invoke( ${contextName}.scopeFindNearby( Key.of( \"${key}\" ),null).scope(),Key.of( \"${key}\"), ${right} )";
-			case SlashEqual -> "Divide.invoke( ${contextName}.scopeFindNearby( Key.of( \"${key}\" ),null).scope(),Key.of( \"${key}\"), ${right} )";
-			case ConcatEqual -> "Concat.invoke( ${contextName}.scopeFindNearby( Key.of( \"${key}\" ),null).scope(),Key.of( \"${key}\"), ${right} )";
-			case ModEqual -> "Modulus.invoke( ${contextName}.scopeFindNearby( Key.of( \"${key}\" ),null).scope(),Key.of( \"${key}\"), ${right} )";
-			default -> """
-			           ${contextName}.scopeFindNearby( Key.of( "${key}" ), ${contextName}.getDefaultAssignmentScope() ).scope().assign( Key.of( "${key}" ), ${right} )
-			                     """;
-		};
+	private Node transformEquals( BoxAssignment assigment, TransformerContext context ) throws IllegalStateException {
+		Expression			right	= ( Expression ) transpiler.transform( assigment.getRight(), TransformerContext.NONE );
+		String				template;
+
+		Map<String, String>	values	= new HashMap<>() {
+
+										{
+											put( "contextName", transpiler.peekContextName() );
+											put( "right", right.toString() );
+										}
+									};
+
+		if ( assigment.getLeft() instanceof BoxIdentifier id ) {
+			Node accessKey = createKey( id.getName() );
+			values.put( "accessKey", accessKey.toString() );
+			template = """
+			                     ${contextName}.scopeFindNearby( ${accessKey}, ${contextName}.getDefaultAssignmentScope() ).scope().assign( ${accessKey}, ${right} )
+			           """;
+		} else if ( assigment.getLeft() instanceof BoxAccess objectAccess ) {
+			List<Node>	accessKeys	= new ArrayList<Node>();
+			BoxExpr		current		= objectAccess;
+
+			while ( current instanceof BoxAccess currentObjectAccess ) {
+				// DotAccess just uses the string directly, array access allows any expression
+				if ( currentObjectAccess instanceof BoxDotAccess dotAccess ) {
+					accessKeys.add( 0, createKey( ( ( BoxIdentifier ) dotAccess.getAccess() ).getName() ) );
+				} else {
+					accessKeys.add( 0, createKey( currentObjectAccess.getAccess() ) );
+				}
+				current = currentObjectAccess.getContext();
+			}
+			values.put( "accessKeys", accessKeys.stream().map( it -> it.toString() ).collect( Collectors.joining( "," ) ) );
+			values.put( "furthestLeft", transpiler.transform( current, TransformerContext.NONE ).toString() );
+			template = """
+			                          Referencer.setDeep(
+			           ${furthestLeft},
+			           ${right},
+			           ${accessKeys}
+			           )
+			                """;
+		} else {
+			throw new ExpressionException( "You cannot assign a value to " + assigment.getLeft().getClass().getSimpleName() );
+		}
+
+		Node javaExpr = parseExpression( template, values );
+		logger.info( assigment.getSourceText() + " -> " + javaExpr.toString() );
+		return javaExpr;
+	}
+
+	private Node transformCompoundEquals( BoxAssignment assigment, TransformerContext context ) throws IllegalStateException {
+		Expression			right	= ( Expression ) transpiler.transform( assigment.getRight(), TransformerContext.NONE );
+		String				template;
+		Node				accessKey;
+
+		Map<String, String>	values	= new HashMap<>() {
+
+										{
+											put( "contextName", transpiler.peekContextName() );
+											put( "right", right.toString() );
+										}
+									};
+
+		if ( assigment.getLeft() instanceof BoxIdentifier id ) {
+			accessKey = createKey( id.getName() );
+			values.put( "accessKey", accessKey.toString() );
+			String obj = PlaceholderHelper.resolve(
+			    "${contextName}.scopeFindNearby( ${accessKey}, ${contextName}.getDefaultAssignmentScope() ).scope()",
+			    values );
+			values.put( "obj", obj );
+
+		} else if ( assigment.getLeft() instanceof BoxAccess objectAccess ) {
+			values.put( "obj", transpiler.transform( objectAccess.getContext() ).toString() );
+			// DotAccess just uses the string directly, array access allows any expression
+			if ( objectAccess instanceof BoxDotAccess dotAccess ) {
+				accessKey = createKey( ( ( BoxIdentifier ) dotAccess.getAccess() ).getName() );
+			} else {
+				accessKey = createKey( objectAccess.getAccess() );
+			}
+			values.put( "accessKey", accessKey.toString() );
+		} else {
+			throw new ExpressionException( "You cannot assign a value to " + assigment.getLeft().getClass().getSimpleName() );
+		}
+
+		template = getMethodCallTemplate( assigment.getOp() );
+		Node javaExpr = parseExpression( template, values );
+		logger.info( assigment.getSourceText() + " -> " + javaExpr.toString() );
+		return javaExpr;
 	}
 
 	private String getMethodCallTemplate( BoxAssignmentOperator operator ) {
 		return switch ( operator ) {
-			case PlusEqual -> "Plus.invoke( ${expr}, ${key}, ${right} )";
-			case MinusEqual -> "Minus.invoke( ${expr}, ${key}, ${right} )";
-			case StarEqual -> "Multiply.invoke( ${expr}, ${key}, ${right} )";
-			case SlashEqual -> "Divide.invoke( ${expr}, ${key}, ${right} )";
-			case ModEqual -> "Modulus.invoke( ${expr}, ${key}, ${right} )";
-			case ConcatEqual -> "Concat.invoke( ${expr}, ${key}, ${right} )";
-			case Equal -> "${expr}.assign(${key}, ${right} )";
+			case PlusEqual -> "Plus.invoke( ${obj}, ${accessKey}, ${right} )";
+			case MinusEqual -> "Minus.invoke( ${obj}, ${accessKey}, ${right} )";
+			case StarEqual -> "Multiply.invoke( ${obj}, ${accessKey}, ${right} )";
+			case SlashEqual -> "Divide.invoke( ${obj}, ${accessKey}, ${right} )";
+			case ModEqual -> "Modulus.invoke( ${obj}, ${accessKey}, ${right} )";
+			case ConcatEqual -> "Concat.invoke( ${obj}, ${accessKey}, ${right} )";
+			default -> throw new ExpressionException( "Unknown assingment operator " + operator.toString() );
 		};
 	}
 

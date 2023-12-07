@@ -75,10 +75,20 @@ public class ObjectReferenceAssignmentTest {
 
 		instance.executeSource(
 		    """
-		    variables['result'] = "wood";
-		    """,
+		    keyName = "result";
+		    variables[keyName] = "wood";
+
+		       """,
 		    context );
 		assertThat( variables.dereference( result, false ) ).isEqualTo( "wood" );
+
+		instance.executeSource(
+		    """
+		    variables['result'] = "luis";
+
+		    """,
+		    context );
+		assertThat( variables.dereference( result, false ) ).isEqualTo( "luis" );
 
 	}
 
