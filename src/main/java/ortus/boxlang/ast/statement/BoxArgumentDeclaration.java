@@ -14,6 +14,7 @@
  */
 package ortus.boxlang.ast.statement;
 
+import java.util.List;
 import java.util.Map;
 
 import ortus.boxlang.ast.BoxExpr;
@@ -43,7 +44,7 @@ public class BoxArgumentDeclaration extends BoxStatement {
 	 * @param sourceText   source code that originated the Node
 	 */
 
-	public BoxArgumentDeclaration( String name, BoxExpr defaultValue, Position position, String sourceText ) {
+	public BoxArgumentDeclaration( String name, BoxExpr defaultValue, List<BoxAnnotation> annotations, Position position, String sourceText ) {
 		super( position, sourceText );
 		this.name	= name;
 		this.value	= defaultValue;

@@ -12,30 +12,32 @@ import org.slf4j.LoggerFactory;
 import com.github.javaparser.ast.Node;
 import com.github.javaparser.ast.expr.Expression;
 import com.github.javaparser.ast.expr.MethodCallExpr;
+import com.github.javaparser.ast.expr.StringLiteralExpr;
 
 import ortus.boxlang.ast.BoxNode;
+import ortus.boxlang.ast.expression.BoxAccess;
+import ortus.boxlang.ast.expression.BoxDotAccess;
 import ortus.boxlang.ast.expression.BoxFunctionInvocation;
 import ortus.boxlang.ast.expression.BoxIdentifier;
-import ortus.boxlang.ast.expression.BoxObjectAccess;
 import ortus.boxlang.ast.expression.BoxScope;
 import ortus.boxlang.transpiler.JavaTranspiler;
 import ortus.boxlang.transpiler.transformer.AbstractTransformer;
 import ortus.boxlang.transpiler.transformer.TransformerContext;
 
-public class BoxObjectAccessTransformer extends AbstractTransformer {
+public class BoxAccessTransformer extends AbstractTransformer {
 
-	Logger logger = LoggerFactory.getLogger( BoxObjectAccessTransformer.class );
+	Logger logger = LoggerFactory.getLogger( BoxAccessTransformer.class );
 
-	public BoxObjectAccessTransformer( JavaTranspiler transpiler ) {
+	public BoxAccessTransformer( JavaTranspiler transpiler ) {
 		super( transpiler );
 	}
 
 	@Override
 	public Node transform( BoxNode node, TransformerContext context ) throws IllegalStateException {
-		BoxObjectAccess	objectAccess	= ( BoxObjectAccess ) node;
-		String			side			= context == TransformerContext.NONE ? "" : "(" + context.toString() + ") ";
+		BoxAccess	objectAccess	= ( BoxAccess ) node;
+		String		side			= context == TransformerContext.NONE ? "" : "(" + context.toString() + ") ";
 
-		if ( objectAccess.getContext() instanceof BoxScope && objectAccess.getAccess() instanceof BoxObjectAccess ) {
+		if ( objectAccess.getContext() instanceof BoxScope && objectAccess.getAccess() instanceof BoxAccess ) {
 			Expression	scope		= ( Expression ) transpiler.transform( objectAccess.getContext(), TransformerContext.LEFT );
 			Node		variable	= transpiler.transform( objectAccess.getAccess(), context );
 
@@ -98,9 +100,14 @@ public class BoxObjectAccessTransformer extends AbstractTransformer {
 				addIndex( javaExpr, node );
 				return javaExpr;
 			}
-		} else if ( objectAccess.getContext() instanceof BoxScope && objectAccess.getAccess() instanceof BoxIdentifier ) {
-			Expression			scope		= ( Expression ) transpiler.transform( objectAccess.getContext(), TransformerContext.LEFT );
-			Expression			variable	= ( Expression ) transpiler.transform( objectAccess.getAccess(), TransformerContext.RIGHT );
+		} else if ( objectAccess.getContext() instanceof BoxScope ) {
+			Expression	scope	= ( Expression ) transpiler.transform( objectAccess.getContext(), TransformerContext.LEFT );
+			Expression	variable;
+			if ( objectAccess instanceof BoxDotAccess && objectAccess.getAccess() instanceof BoxIdentifier id ) {
+				variable = new StringLiteralExpr( id.getName() );
+			} else {
+				variable = ( Expression ) transpiler.transform( objectAccess.getAccess(), TransformerContext.RIGHT );
+			}
 			Map<String, String>	values		= new HashMap<>() {
 
 												{
@@ -112,10 +119,10 @@ public class BoxObjectAccessTransformer extends AbstractTransformer {
 											};
 			String				template	= switch ( context ) {
 												case LEFT -> """
-												             ${scope}.assign(Key.of("${variable}"))
+												             ${scope}.assign(Key.of(${variable}))
 												             """;
 												default -> """
-												           ${scope}.dereference( Key.of( "${variable}" ) , ${safe} )
+												           ${scope}.dereference( Key.of( ${variable} ) , ${safe} )
 												           """;
 											};
 			Node				javaExpr	= parseExpression( template, values );
@@ -152,7 +159,7 @@ public class BoxObjectAccessTransformer extends AbstractTransformer {
 		throw new IllegalStateException( "Unsupported object access: " + node.getSourceText() );
 	}
 
-	private Node accessWithDeep( BoxObjectAccess objectAccess, TransformerContext context ) {
+	private Node accessWithDeep( BoxAccess objectAccess, TransformerContext context ) {
 		List<Node>		keys	= new ArrayList<>();
 		List<Boolean>	safe	= new ArrayList<>();
 
@@ -194,7 +201,7 @@ public class BoxObjectAccessTransformer extends AbstractTransformer {
 			for ( ortus.boxlang.ast.Node id : objectAccess.getAccess().walk() ) {
 				if ( id instanceof BoxIdentifier boxId ) {
 					keys.add( transpiler.transform( boxId, TransformerContext.DEREFERENCING ) );
-					if ( id.getParent() != null && id.getParent() instanceof BoxObjectAccess access ) {
+					if ( id.getParent() != null && id.getParent() instanceof BoxAccess access ) {
 						safe.add( access.isSafe() );
 					}
 				}

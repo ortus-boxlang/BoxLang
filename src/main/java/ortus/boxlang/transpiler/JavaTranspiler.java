@@ -62,6 +62,7 @@ import ortus.boxlang.ast.expression.BoxBinaryOperation;
 import ortus.boxlang.ast.expression.BoxBooleanLiteral;
 import ortus.boxlang.ast.expression.BoxComparisonOperation;
 import ortus.boxlang.ast.expression.BoxDecimalLiteral;
+import ortus.boxlang.ast.expression.BoxDotAccess;
 import ortus.boxlang.ast.expression.BoxFQN;
 import ortus.boxlang.ast.expression.BoxFunctionInvocation;
 import ortus.boxlang.ast.expression.BoxIdentifier;
@@ -69,7 +70,6 @@ import ortus.boxlang.ast.expression.BoxIntegerLiteral;
 import ortus.boxlang.ast.expression.BoxMethodInvocation;
 import ortus.boxlang.ast.expression.BoxNegateOperation;
 import ortus.boxlang.ast.expression.BoxNewOperation;
-import ortus.boxlang.ast.expression.BoxObjectAccess;
 import ortus.boxlang.ast.expression.BoxParenthesis;
 import ortus.boxlang.ast.expression.BoxScope;
 import ortus.boxlang.ast.expression.BoxStringConcat;
@@ -102,8 +102,8 @@ import ortus.boxlang.runtime.runnables.compiler.JavaSourceString;
 import ortus.boxlang.runtime.types.exceptions.ApplicationException;
 import ortus.boxlang.transpiler.transformer.Transformer;
 import ortus.boxlang.transpiler.transformer.TransformerContext;
+import ortus.boxlang.transpiler.transformer.expression.BoxAccessTransformer;
 import ortus.boxlang.transpiler.transformer.expression.BoxArgumentTransformer;
-import ortus.boxlang.transpiler.transformer.expression.BoxArrayAccessTransformer;
 import ortus.boxlang.transpiler.transformer.expression.BoxArrayLiteralTransformer;
 import ortus.boxlang.transpiler.transformer.expression.BoxAssignmentExpressionTransformer;
 import ortus.boxlang.transpiler.transformer.expression.BoxBinaryOperationTransformer;
@@ -117,7 +117,6 @@ import ortus.boxlang.transpiler.transformer.expression.BoxIntegerLiteralTransfor
 import ortus.boxlang.transpiler.transformer.expression.BoxMethodInvocationTransformer;
 import ortus.boxlang.transpiler.transformer.expression.BoxNegateOperationTransformer;
 import ortus.boxlang.transpiler.transformer.expression.BoxNewOperationTransformer;
-import ortus.boxlang.transpiler.transformer.expression.BoxObjectAccessTransformer;
 import ortus.boxlang.transpiler.transformer.expression.BoxParenthesisTransformer;
 import ortus.boxlang.transpiler.transformer.expression.BoxScopeTransformer;
 import ortus.boxlang.transpiler.transformer.expression.BoxStringConcatTransformer;
@@ -166,7 +165,6 @@ public class JavaTranspiler extends Transpiler {
 	public JavaTranspiler() {
 		registry.put( BoxScript.class, new BoxScriptTransformer( this ) );
 		registry.put( BoxAssignment.class, new BoxAssignmentTransformer( this ) );
-		registry.put( BoxArrayAccess.class, new BoxArrayAccessTransformer( this ) );
 		registry.put( BoxExpression.class, new BoxExpressionTransformer( this ) );
 
 		// Expressions
@@ -188,7 +186,10 @@ public class JavaTranspiler extends Transpiler {
 		registry.put( BoxNegateOperation.class, new BoxNegateOperationTransformer( this ) );
 		registry.put( BoxComparisonOperation.class, new BoxComparisonOperationTransformer( this ) );
 		registry.put( BoxUnaryOperation.class, new BoxUnaryOperationTransformer( this ) );
-		registry.put( BoxObjectAccess.class, new BoxObjectAccessTransformer( this ) );
+
+		// All access nodes use the same base transformer
+		registry.put( BoxDotAccess.class, new BoxAccessTransformer( this ) );
+		registry.put( BoxArrayAccess.class, new BoxAccessTransformer( this ) );
 
 		registry.put( BoxMethodInvocation.class, new BoxMethodInvocationTransformer( this ) );
 		registry.put( BoxFunctionInvocation.class, new BoxFunctionInvocationTransformer( this ) );

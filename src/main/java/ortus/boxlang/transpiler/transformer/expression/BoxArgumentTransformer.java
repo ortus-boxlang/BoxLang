@@ -1,24 +1,26 @@
 package ortus.boxlang.transpiler.transformer.expression;
 
-import com.github.javaparser.ast.Node;
-import com.github.javaparser.ast.expr.Expression;
+import java.util.HashMap;
+import java.util.Map;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import com.github.javaparser.ast.Node;
+import com.github.javaparser.ast.expr.Expression;
+
 import ortus.boxlang.ast.BoxNode;
 import ortus.boxlang.ast.expression.BoxArgument;
 import ortus.boxlang.transpiler.JavaTranspiler;
 import ortus.boxlang.transpiler.transformer.AbstractTransformer;
 import ortus.boxlang.transpiler.transformer.TransformerContext;
 
-import java.util.HashMap;
-import java.util.Map;
-
 /**
  * Transform a BoxArgument Node the equivalent Java Parser AST nodes
  */
 public class BoxArgumentTransformer extends AbstractTransformer {
 
-	Logger logger = LoggerFactory.getLogger( BoxArrayAccessTransformer.class );
+	Logger logger = LoggerFactory.getLogger( BoxArgumentTransformer.class );
 
 	public BoxArgumentTransformer( JavaTranspiler transpiler ) {
 		super( transpiler );

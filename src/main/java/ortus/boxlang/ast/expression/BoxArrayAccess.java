@@ -14,8 +14,6 @@
  */
 package ortus.boxlang.ast.expression;
 
-import java.util.Map;
-
 import ortus.boxlang.ast.BoxExpr;
 import ortus.boxlang.ast.Position;
 
@@ -25,48 +23,15 @@ import ortus.boxlang.ast.Position;
  */
 public class BoxArrayAccess extends BoxAccess {
 
-	private BoxExpr	context;
-	private BoxExpr	index;
-
-	public BoxExpr getContext() {
-		return context;
-	}
-
-	public void setContext( BoxExpr context ) {
-		this.context = context;
-	}
-
-	public BoxExpr getIndex() {
-		return index;
-	}
-
-	public void setIndex( BoxExpr index ) {
-		this.index = index;
-	}
-
 	/**
 	 * Creates the AST node
 	 *
 	 * @param context    expression representing the variable or a scope
-	 * @param index      expression within the brackets
+	 * @param access     expression within the brackets
 	 * @param position   position of the statement in the source code
 	 * @param sourceText source code that originated the Node
 	 */
-	public BoxArrayAccess( BoxExpr context, BoxExpr index, Position position, String sourceText ) {
-		super( position, sourceText );
-		this.context	= context;
-		this.index		= index;
-		context.setParent( this );
-		context.setParent( this );
+	public BoxArrayAccess( BoxExpr context, Boolean safe, BoxExpr access, Position position, String sourceText ) {
+		super( context, safe, access, position, sourceText );
 	}
-
-	@Override
-	public Map<String, Object> toMap() {
-		Map<String, Object> map = super.toMap();
-
-		map.put( "context", context.toMap() );
-		map.put( "index", index.toMap() );
-		return map;
-	}
-
 }

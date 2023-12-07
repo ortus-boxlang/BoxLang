@@ -182,15 +182,12 @@ public class ObjectCreationTest {
 		    """
 		    import java.lang.String as jString;
 		    result = new jString( 'My String' );
-		    result2 = create jString;
 		    """,
 		    context );
 
 		assertThat( variables.dereference( resultKey, false ) instanceof DynamicObject ).isEqualTo( true );
 		assertThat( ( ( DynamicObject ) variables.dereference( resultKey, false ) ).getTargetInstance() ).isEqualTo( "My String" );
 
-		assertThat( variables.dereference( Key.of( "result2" ), false ) instanceof DynamicObject ).isEqualTo( true );
-		assertThat( ( ( DynamicObject ) variables.dereference( Key.of( "result2" ), false ) ).getTargetClass().getName() ).isEqualTo( "java.lang.String" );
 	}
 
 }

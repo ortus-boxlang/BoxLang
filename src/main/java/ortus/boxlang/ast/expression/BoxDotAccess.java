@@ -14,8 +14,6 @@
  */
 package ortus.boxlang.ast.expression;
 
-import java.util.Map;
-
 import ortus.boxlang.ast.BoxExpr;
 import ortus.boxlang.ast.Position;
 
@@ -23,31 +21,7 @@ import ortus.boxlang.ast.Position;
  * AST Node representing access with a dot like:
  * <code>object.property</code> or <code>object.method()</code>
  */
-public class BoxObjectAccess extends BoxAccess {
-
-	private BoxExpr	context;
-	private boolean	safe;
-	private BoxExpr	access;
-
-	public BoxExpr getContext() {
-		return context;
-	}
-
-	public void setContext( BoxExpr context ) {
-		this.context = context;
-	}
-
-	public BoxExpr getAccess() {
-		return access;
-	}
-
-	public void setAccess( BoxExpr access ) {
-		this.access = access;
-	}
-
-	public Boolean isSafe() {
-		return safe;
-	}
+public class BoxDotAccess extends BoxAccess {
 
 	/**
 	 * Creates the AST node
@@ -58,23 +32,8 @@ public class BoxObjectAccess extends BoxAccess {
 	 * @param position   position of the statement in the source code
 	 * @param sourceText source code that originated the Node
 	 */
-	public BoxObjectAccess( BoxExpr context, Boolean safe, BoxExpr access, Position position, String sourceText ) {
-		super( position, sourceText );
-		this.context	= context;
-		this.safe		= safe;
-		this.access		= access;
-		this.context.setParent( this );
-		this.access.setParent( this );
-	}
-
-	@Override
-	public Map<String, Object> toMap() {
-		Map<String, Object> map = super.toMap();
-
-		map.put( "context", context.toMap() );
-		map.put( "access", access.toMap() );
-		map.put( "safe", safe );
-		return map;
+	public BoxDotAccess( BoxExpr context, Boolean safe, BoxExpr access, Position position, String sourceText ) {
+		super( context, safe, access, position, sourceText );
 	}
 
 }
