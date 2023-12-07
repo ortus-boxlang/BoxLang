@@ -9,7 +9,7 @@ import ortus.boxlang.ast.statement.BoxAssignmentOperator;
 /**
  * Assigment as expression
  */
-public class BoxAssignmentExpression extends BoxExpr {
+public class BoxAssignment extends BoxExpr {
 
 	private final BoxExpr			left;
 	private final BoxExpr			right;
@@ -23,7 +23,7 @@ public class BoxAssignmentExpression extends BoxExpr {
 	 * @param position   position of the expression in the source code
 	 * @param sourceText source code of the expression
 	 */
-	public BoxAssignmentExpression( BoxExpr left, BoxAssignmentOperator op, BoxExpr right, Position position, String sourceText ) {
+	public BoxAssignment( BoxExpr left, BoxAssignmentOperator op, BoxExpr right, Position position, String sourceText ) {
 		super( position, sourceText );
 		this.left = left;
 		this.left.setParent( this );

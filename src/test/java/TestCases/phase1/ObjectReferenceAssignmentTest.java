@@ -120,10 +120,11 @@ public class ObjectReferenceAssignmentTest {
 	public void testDereferenceKey() {
 		instance.executeSource(
 		    """
-		       str = new java:ortus.boxlang.runtime.types.Struct();
-		    str.put( "name", "Brad" );
-		       result = str.name;
-		       """,
+		    import java:ortus.boxlang.runtime.scopes.Key;
+		         str = new java:ortus.boxlang.runtime.types.Struct();
+		      str.assign( Key.of("name"), "Brad" );
+		         result = str.name;
+		         """,
 		    context );
 		assertThat( variables.dereference( result, false ) ).isEqualTo( "Brad" );
 

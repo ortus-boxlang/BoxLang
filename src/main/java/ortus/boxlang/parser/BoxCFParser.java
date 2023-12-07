@@ -38,7 +38,7 @@ import ortus.boxlang.ast.expression.BoxAccess;
 import ortus.boxlang.ast.expression.BoxArgument;
 import ortus.boxlang.ast.expression.BoxArrayAccess;
 import ortus.boxlang.ast.expression.BoxArrayLiteral;
-import ortus.boxlang.ast.expression.BoxAssignmentExpression;
+import ortus.boxlang.ast.expression.BoxAssignment;
 import ortus.boxlang.ast.expression.BoxBinaryOperation;
 import ortus.boxlang.ast.expression.BoxBinaryOperator;
 import ortus.boxlang.ast.expression.BoxBooleanLiteral;
@@ -991,7 +991,7 @@ public class BoxCFParser extends BoxAbstractParser {
 
 			}
 			// capture var modifier
-			return new BoxAssignmentExpression( left, op, right, getPosition( expression ), getSourceText( expression ) );
+			return new BoxAssignment( left, op, right, getPosition( expression ), getSourceText( expression ) );
 		}
 		// TODO: add other cases
 		throw new IllegalStateException( "expression not implemented: " + getSourceText( expression ) );

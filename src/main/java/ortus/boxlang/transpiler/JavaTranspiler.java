@@ -57,7 +57,7 @@ import ortus.boxlang.ast.SourceFile;
 import ortus.boxlang.ast.expression.BoxArgument;
 import ortus.boxlang.ast.expression.BoxArrayAccess;
 import ortus.boxlang.ast.expression.BoxArrayLiteral;
-import ortus.boxlang.ast.expression.BoxAssignmentExpression;
+import ortus.boxlang.ast.expression.BoxAssignment;
 import ortus.boxlang.ast.expression.BoxBinaryOperation;
 import ortus.boxlang.ast.expression.BoxBooleanLiteral;
 import ortus.boxlang.ast.expression.BoxComparisonOperation;
@@ -79,7 +79,6 @@ import ortus.boxlang.ast.expression.BoxStructLiteral;
 import ortus.boxlang.ast.expression.BoxTernaryOperation;
 import ortus.boxlang.ast.expression.BoxUnaryOperation;
 import ortus.boxlang.ast.statement.BoxAssert;
-import ortus.boxlang.ast.statement.BoxAssignment;
 import ortus.boxlang.ast.statement.BoxBreak;
 import ortus.boxlang.ast.statement.BoxContinue;
 import ortus.boxlang.ast.statement.BoxDo;
@@ -105,7 +104,7 @@ import ortus.boxlang.transpiler.transformer.TransformerContext;
 import ortus.boxlang.transpiler.transformer.expression.BoxAccessTransformer;
 import ortus.boxlang.transpiler.transformer.expression.BoxArgumentTransformer;
 import ortus.boxlang.transpiler.transformer.expression.BoxArrayLiteralTransformer;
-import ortus.boxlang.transpiler.transformer.expression.BoxAssignmentExpressionTransformer;
+import ortus.boxlang.transpiler.transformer.expression.BoxAssignmentTransformer;
 import ortus.boxlang.transpiler.transformer.expression.BoxBinaryOperationTransformer;
 import ortus.boxlang.transpiler.transformer.expression.BoxBooleanLiteralTransformer;
 import ortus.boxlang.transpiler.transformer.expression.BoxComparisonOperationTransformer;
@@ -128,7 +127,6 @@ import ortus.boxlang.transpiler.transformer.expression.BoxUnaryOperationTransfor
 import ortus.boxlang.transpiler.transformer.indexer.CrossReference;
 import ortus.boxlang.transpiler.transformer.indexer.IndexPrettyPrinterVisitor;
 import ortus.boxlang.transpiler.transformer.statement.BoxAssertTransformer;
-import ortus.boxlang.transpiler.transformer.statement.BoxAssignmentTransformer;
 import ortus.boxlang.transpiler.transformer.statement.BoxBreakTransformer;
 import ortus.boxlang.transpiler.transformer.statement.BoxContinueTransformer;
 import ortus.boxlang.transpiler.transformer.statement.BoxDoTransformer;
@@ -164,7 +162,6 @@ public class JavaTranspiler extends Transpiler {
 
 	public JavaTranspiler() {
 		registry.put( BoxScript.class, new BoxScriptTransformer( this ) );
-		registry.put( BoxAssignment.class, new BoxAssignmentTransformer( this ) );
 		registry.put( BoxExpression.class, new BoxExpressionTransformer( this ) );
 
 		// Expressions
@@ -212,7 +209,7 @@ public class JavaTranspiler extends Transpiler {
 		registry.put( BoxImport.class, new BoxImportTransformer( this ) );
 		registry.put( BoxArrayLiteral.class, new BoxArrayLiteralTransformer( this ) );
 		registry.put( BoxStructLiteral.class, new BoxStructLiteralTransformer( this ) );
-		registry.put( BoxAssignmentExpression.class, new BoxAssignmentExpressionTransformer( this ) );
+		registry.put( BoxAssignment.class, new BoxAssignmentTransformer( this ) );
 	}
 
 	/**
