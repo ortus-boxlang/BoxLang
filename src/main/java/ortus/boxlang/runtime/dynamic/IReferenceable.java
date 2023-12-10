@@ -33,6 +33,14 @@ public interface IReferenceable {
 	 * --------------------------------------------------------------------------
 	 */
 
+	default Object dereference( String name ) {
+		return this.dereference( new Key( name ), false );
+	}
+
+	default Object dereference( String name, Boolean safe ) {
+		return this.dereference( new Key( name ), safe );
+	}
+
 	/**
 	 * Dereference this object by a key and return the value, or throw exception
 	 *
