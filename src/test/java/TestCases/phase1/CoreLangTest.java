@@ -666,7 +666,7 @@ public class CoreLangTest {
 
 	@DisplayName( "String parsing unclosed pound" )
 	@Test
-	public void testStringParsingUnclosedPount() {
+	public void testStringParsingUnclosedPound() {
 
 		Throwable t = assertThrows( ApplicationException.class, () -> instance.executeSource(
 		    """
