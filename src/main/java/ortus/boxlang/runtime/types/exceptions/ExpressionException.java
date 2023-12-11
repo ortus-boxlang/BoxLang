@@ -69,7 +69,7 @@ public class ExpressionException extends BoxLangException {
 	 * @param cause     The cause
 	 */
 	public ExpressionException( String message, String detail, String errNumber, Throwable cause ) {
-		super( message, detail, "missingInclude", cause );
+		super( message, detail, "expression", cause );
 		this.errNumber = errNumber;
 	}
 

@@ -547,19 +547,63 @@ public class CoreLangTest {
 
 		instance.executeSource(
 		    """
-		    variables.var = "brad"
-		    variables.result1 = "#var#foo"
-		    variables.result2 = "foo#var#"
-		    variables.result3 = "foo#var#bar"
-		    variables.result4 = "foo#var#bar#var#baz#var#bum"
-		    variables.result5 = "foo"
-		     """,
+		       variables.var = "brad"
+		    varname = "var"
+		       variables.result1 = "#var#foo"
+		       variables.result2 = "foo#var#"
+		       variables.result3 = "foo#var#bar"
+		       variables.result4 = "foo#var#bar#var#baz#var#bum"
+		       variables.result5 = "foo"
+		       variables.result6 = "#var#"
+		       variables.result7 = "foo #variables[ "var" ]# bar"
+		       variables.result8 = "foo #variables[ "#varname#" ]# bar"
+		       variables.result9 = "foo #variables[ 'var' ]# bar"
+		       variables.result10 = "foo #variables[ '#varname#' ]# bar"
+		        """,
 		    context );
 		assertThat( variables.dereference( Key.of( "result1" ), false ) ).isEqualTo( "bradfoo" );
 		assertThat( variables.dereference( Key.of( "result2" ), false ) ).isEqualTo( "foobrad" );
 		assertThat( variables.dereference( Key.of( "result3" ), false ) ).isEqualTo( "foobradbar" );
 		assertThat( variables.dereference( Key.of( "result4" ), false ) ).isEqualTo( "foobradbarbradbazbradbum" );
 		assertThat( variables.dereference( Key.of( "result5" ), false ) ).isEqualTo( "foo" );
+		assertThat( variables.dereference( Key.of( "result6" ), false ) ).isEqualTo( "brad" );
+		assertThat( variables.dereference( Key.of( "result7" ), false ) ).isEqualTo( "foo brad bar" );
+		assertThat( variables.dereference( Key.of( "result8" ), false ) ).isEqualTo( "foo brad bar" );
+		assertThat( variables.dereference( Key.of( "result9" ), false ) ).isEqualTo( "foo brad bar" );
+		assertThat( variables.dereference( Key.of( "result10" ), false ) ).isEqualTo( "foo brad bar" );
+
+	}
+
+	@DisplayName( "String parsing interpolation single" )
+	@Test
+	public void testStringParsingInterpolationSingle() {
+
+		instance.executeSource(
+		    """
+		       variables.var = "brad"
+		    varname = "var"
+		       variables.result1 = '#var#foo'
+		       variables.result2 = 'foo#var#'
+		       variables.result3 = 'foo#var#bar'
+		       variables.result4 = 'foo#var#bar#var#baz#var#bum'
+		       variables.result5 = 'foo'
+		       variables.result6 = '#var#'
+		       variables.result7 = 'foo #variables[ 'var' ]# bar'
+		       variables.result8 = 'foo #variables[ '#varname#' ]# bar'
+		       variables.result9 = 'foo #variables[ "var" ]# bar'
+		       variables.result10 = 'foo #variables[ "#varname#" ]# bar'
+		        """,
+		    context );
+		assertThat( variables.dereference( Key.of( "result1" ), false ) ).isEqualTo( "bradfoo" );
+		assertThat( variables.dereference( Key.of( "result2" ), false ) ).isEqualTo( "foobrad" );
+		assertThat( variables.dereference( Key.of( "result3" ), false ) ).isEqualTo( "foobradbar" );
+		assertThat( variables.dereference( Key.of( "result4" ), false ) ).isEqualTo( "foobradbarbradbazbradbum" );
+		assertThat( variables.dereference( Key.of( "result5" ), false ) ).isEqualTo( "foo" );
+		assertThat( variables.dereference( Key.of( "result6" ), false ) ).isEqualTo( "brad" );
+		assertThat( variables.dereference( Key.of( "result7" ), false ) ).isEqualTo( "foo brad bar" );
+		assertThat( variables.dereference( Key.of( "result8" ), false ) ).isEqualTo( "foo brad bar" );
+		assertThat( variables.dereference( Key.of( "result9" ), false ) ).isEqualTo( "foo brad bar" );
+		assertThat( variables.dereference( Key.of( "result10" ), false ) ).isEqualTo( "foo brad bar" );
 
 	}
 
