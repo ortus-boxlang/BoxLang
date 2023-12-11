@@ -48,7 +48,7 @@ public class AssignmentTest {
             foo = "test";
             """,
             context );
-        assertThat( variables.dereference( "foo" ) ).isEqualTo( "test" );
+        assertThat( variables.dereference( Key.of( "foo" ), false ) ).isEqualTo( "test" );
     }
 
     @DisplayName( "Nested dot assignment" )
@@ -59,7 +59,7 @@ public class AssignmentTest {
             foo.bar = "test";
             """,
             context );
-        assertThat( ( ( Struct ) variables.dereference( "foo" ) ).dereference( "bar" ) ).isEqualTo( "test" );
+        assertThat( ( ( Struct ) variables.dereference( Key.of( "foo" ), false ) ).dereference( Key.of( "bar" ), false ) ).isEqualTo( "test" );
     }
 
     @DisplayName( "Multi multi identifier dot assignment" )
@@ -71,7 +71,8 @@ public class AssignmentTest {
             """,
             context );
 
-        assertThat( ( ( Struct ) ( ( Struct ) variables.dereference( "foo" ) ).dereference( "bar" ) ).dereference( "baz" ) ).isEqualTo( "test" );
+        assertThat( ( ( Struct ) ( ( Struct ) variables.dereference( Key.of( "foo" ), false ) ).dereference( Key.of( "bar" ), false ) )
+            .dereference( Key.of( "baz" ), false ) ).isEqualTo( "test" );
     }
 
     @DisplayName( "Bracket string assignment" )
@@ -82,7 +83,7 @@ public class AssignmentTest {
             foo["bar"] = "test";
             """,
             context );
-        assertThat( ( ( Struct ) variables.dereference( "foo" ) ).dereference( "bar" ) ).isEqualTo( "test" );
+        assertThat( ( ( Struct ) variables.dereference( Key.of( "foo" ), false ) ).dereference( Key.of( "bar" ), false ) ).isEqualTo( "test" );
     }
 
     @DisplayName( "Bracket string concat assignment" )
@@ -93,7 +94,7 @@ public class AssignmentTest {
             foo["b" & "ar"] = "test";
             """,
             context );
-        assertThat( ( ( Struct ) variables.dereference( "foo" ) ).dereference( "bar" ) ).isEqualTo( "test" );
+        assertThat( ( ( Struct ) variables.dereference( Key.of( "foo" ), false ) ).dereference( Key.of( "bar" ), false ) ).isEqualTo( "test" );
     }
 
     @DisplayName( "Bracket number assignment" )
@@ -104,7 +105,7 @@ public class AssignmentTest {
             foo[ 7 ] = "test";
             """,
             context );
-        assertThat( ( ( Struct ) variables.dereference( "foo" ) ).dereference( "7" ) ).isEqualTo( "test" );
+        assertThat( ( ( Struct ) variables.dereference( Key.of( "foo" ), false ) ).dereference( Key.of( "7" ), false ) ).isEqualTo( "test" );
     }
 
     @DisplayName( "Bracket number expression assignment" )
@@ -115,7 +116,7 @@ public class AssignmentTest {
             foo[ 7 + 5 ] = "test";
             """,
             context );
-        assertThat( ( ( Struct ) variables.dereference( "foo" ) ).dereference( "12" ) ).isEqualTo( "test" );
+        assertThat( ( ( Struct ) variables.dereference( Key.of( "foo" ), false ) ).dereference( Key.of( "12" ), false ) ).isEqualTo( "test" );
     }
 
     @DisplayName( "Bracket object assignment" )
@@ -128,7 +129,7 @@ public class AssignmentTest {
             foo[ { bar : "baz" } ] = "test";
             """,
             context );
-        assertThat( ( ( Struct ) variables.dereference( "foo" ) ).dereference( Key.of( x ), false ) ).isEqualTo( "test" );
+        assertThat( ( ( Struct ) variables.dereference( Key.of( "foo" ), false ) ).dereference( Key.of( x ), false ) ).isEqualTo( "test" );
     }
 
     @DisplayName( "Mixed assignment" )
@@ -140,12 +141,12 @@ public class AssignmentTest {
             """,
             context );
 
-        Struct foo    = ( Struct ) variables.dereference( "foo" );
-        Struct aaa    = ( Struct ) foo.dereference( "aaa" );
-        Struct twelve = ( Struct ) aaa.dereference( "12" );
-        Struct other  = ( Struct ) twelve.dereference( "other" );
+        Struct foo    = ( Struct ) variables.dereference( Key.of( "foo" ), false );
+        Struct aaa    = ( Struct ) foo.dereference( Key.of( "aaa" ), false );
+        Struct twelve = ( Struct ) aaa.dereference( Key.of( "12" ), false );
+        Struct other  = ( Struct ) twelve.dereference( Key.of( "other" ), false );
 
-        assertThat( other.dereference( "7" ) ).isEqualTo( "test" );
+        assertThat( other.dereference( Key.of( "7" ), false ) ).isEqualTo( "test" );
     }
 
 }
