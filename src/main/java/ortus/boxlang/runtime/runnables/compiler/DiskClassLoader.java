@@ -149,7 +149,7 @@ public class DiskClassLoader extends URLClassLoader {
 		Path diskPath = generateDiskPath( name );
 		diskPath.toFile().getParentFile().mkdirs();
 		try {
-			Files.write( generateDiskPath( name ), bytes );
+			Files.write( diskPath, bytes );
 		} catch ( IOException e ) {
 			throw new ApplicationException( "Unable to write class file to disk", e );
 		}
