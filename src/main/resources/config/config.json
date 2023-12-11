@@ -1,7 +1,7 @@
 {
 	"debugMode": false,
 	"compiler" : {
-		"classGenerationDirectory" : "${java-temp}boxlang/classes"
+		"classGenerationDirectory" : "${java-temp}/boxlang/classes"
 	},
 	"runtime" : {
 		"mappings" : {},
