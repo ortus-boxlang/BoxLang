@@ -184,7 +184,7 @@ CLOSE_SQUOTE
     ;
 
 SHASHHASH
-	: '##'
+	: '##' -> type(HASHHASH)
     ;
 
 SSTRING_LITERAL
