@@ -31,6 +31,7 @@ import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.ScriptingBoxContext;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
+import ortus.boxlang.runtime.types.exceptions.ExpressionException;
 import ortus.boxlang.runtime.types.exceptions.KeyNotFoundException;
 
 public class OperatorsTest {
@@ -84,7 +85,10 @@ public class OperatorsTest {
 	@DisplayName( "math addition" )
 	@Test
 	public void testMathAddition() {
-		Object result = instance.executeStatement( "5+5", context );
+		Object result = instance.executeStatement( "+5", context );
+		assertThat( result ).isEqualTo( 5 );
+
+		result = instance.executeStatement( "5+5", context );
 		assertThat( result ).isEqualTo( 10 );
 
 		result = instance.executeStatement( "'5'+'2'", context );
@@ -180,6 +184,16 @@ public class OperatorsTest {
 		assertThat( context.getScopeNearby( VariablesScope.name ).dereference( Key.of( "tmp" ), false ) ).isEqualTo( 6 );
 	}
 
+	@DisplayName( "math plus plus invalid" )
+	@Test
+	public void testMathPlusPlusInvalid() {
+
+		assertThrows( ExpressionException.class, () -> instance.executeSource( "variables++", context ) );
+		assertThrows( ExpressionException.class, () -> instance.executeSource( "(2+3)++", context ) );
+		assertThrows( ExpressionException.class, () -> instance.executeSource( "foo.bar()++", context ) );
+
+	}
+
 	@DisplayName( "math plus plus unscoped" )
 	@Test
 	public void testMathPlusPlusUnScoped() {
@@ -197,6 +211,26 @@ public class OperatorsTest {
 		    tmp = 5;
 		    result = ++tmp;
 		    """,
+		    context );
+		assertThat( context.getScopeNearby( VariablesScope.name ).dereference( Key.of( "result" ), false ) ).isEqualTo( 6 );
+		assertThat( context.getScopeNearby( VariablesScope.name ).dereference( Key.of( "tmp" ), false ) ).isEqualTo( 6 );
+
+		instance.executeSource(
+		    """
+		       foo.bar.baz = 5;
+		       result = foo.bar.baz++;
+		    tmp = foo.bar.baz;
+		       """,
+		    context );
+		assertThat( context.getScopeNearby( VariablesScope.name ).dereference( Key.of( "result" ), false ) ).isEqualTo( 5 );
+		assertThat( context.getScopeNearby( VariablesScope.name ).dereference( Key.of( "tmp" ), false ) ).isEqualTo( 6 );
+
+		instance.executeSource(
+		    """
+		       foo.bar.baz = 5;
+		       result = ++foo.bar.baz;
+		    tmp = foo.bar.baz;
+		       """,
 		    context );
 		assertThat( context.getScopeNearby( VariablesScope.name ).dereference( Key.of( "result" ), false ) ).isEqualTo( 6 );
 		assertThat( context.getScopeNearby( VariablesScope.name ).dereference( Key.of( "tmp" ), false ) ).isEqualTo( 6 );
@@ -260,6 +294,26 @@ public class OperatorsTest {
 		    tmp = 5;
 		    result = --tmp;
 		    """,
+		    context );
+		assertThat( context.getScopeNearby( VariablesScope.name ).dereference( Key.of( "result" ), false ) ).isEqualTo( 4 );
+		assertThat( context.getScopeNearby( VariablesScope.name ).dereference( Key.of( "tmp" ), false ) ).isEqualTo( 4 );
+
+		instance.executeSource(
+		    """
+		       foo.bar.baz = 5;
+		       result = foo.bar.baz--;
+		    tmp = foo.bar.baz;
+		       """,
+		    context );
+		assertThat( context.getScopeNearby( VariablesScope.name ).dereference( Key.of( "result" ), false ) ).isEqualTo( 5 );
+		assertThat( context.getScopeNearby( VariablesScope.name ).dereference( Key.of( "tmp" ), false ) ).isEqualTo( 4 );
+
+		instance.executeSource(
+		    """
+		       foo.bar.baz= 5;
+		       result = --foo.bar.baz;
+		    tmp = foo.bar.baz;
+		       """,
 		    context );
 		assertThat( context.getScopeNearby( VariablesScope.name ).dereference( Key.of( "result" ), false ) ).isEqualTo( 4 );
 		assertThat( context.getScopeNearby( VariablesScope.name ).dereference( Key.of( "tmp" ), false ) ).isEqualTo( 4 );
