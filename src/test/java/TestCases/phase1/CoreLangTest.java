@@ -124,6 +124,33 @@ public class CoreLangTest {
 		assertThat( variables.dereference( result, false ) ).isEqualTo( "default" );
 
 	}
+	@DisplayName( "If blocks with no-body else statements" )
+	@Test
+	public void testElseNoBody() {
+
+		instance.executeSource(
+		    """
+		    result = "default"
+
+		    if( 2 == 1 ) {
+		    	result = "done"
+			} else result = "else"
+
+		      """,
+		    context );
+		assertThat( variables.dereference( result, false ) ).isEqualTo( "else" );
+
+		instance.executeSource(
+		    """
+		    if( 2 == 1 ) {
+		    	result = "done"
+			} else result = "else"
+			result = "afterif"
+		      """,
+		    context );
+		assertThat( variables.dereference( result, false ) ).isEqualTo( "afterif" );
+
+	}
 
 	@DisplayName( "throw in source" )
 	@Test

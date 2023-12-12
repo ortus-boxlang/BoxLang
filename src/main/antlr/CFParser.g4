@@ -181,19 +181,14 @@ argumentList: argument (COMMA argument)*;
 
 argument: expression ( (EQUAL | COLON) expression)?;
 
+// We support if blocks with or without else blocks, and if statements without else blocks.
+// That's it - no other valid if constructs.
 if:
 	IF LPAREN expression RPAREN ifStmtBlock = statementBlock (
-		ELSE elseStmtBlock = statementBlock
+		ELSE ( elseStmtBlock = statementBlock | elseStmt = statement)
 	)?
-	| IF LPAREN expression RPAREN ifStmtBlock = statementBlock (
-		ELSE elseStmt = statement
-	)?
-	| IF LPAREN expression RPAREN ifStmt = statement (
-		ELSE elseStmtBlock = statementBlock
-	)?
-	| IF LPAREN expression RPAREN ifStmt = statement (
-		ELSE elseStmt = statement
-	)?;
+	| IF LPAREN expression RPAREN ifStmt = statement
+	;
 for:
 	FOR LPAREN VAR? identifier IN expression RPAREN statementBlock
 	| FOR LPAREN forAssignment eos forCondition eos forIncrement RPAREN statementBlock;
@@ -335,7 +330,7 @@ expression:
 	| expression INSTANCEOF expression // InstanceOf operator
 	| expression DOES NOT CONTAIN expression
 	| NOT expression
-	| expression (AND | OR) expression; // Logical	
+	| expression (AND | OR) expression; // Logical
 
 // All literal expressions
 literalExpression:
