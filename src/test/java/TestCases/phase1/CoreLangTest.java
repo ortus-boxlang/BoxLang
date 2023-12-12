@@ -508,9 +508,9 @@ public class CoreLangTest {
 
 	}
 
-	@DisplayName( "String parsing 3" )
+	@DisplayName( "String parsing quotation escaping" )
 	@Test
-	public void testStringParsing3() {
+	public void testStringParsingQuoteEscapes() {
 
 		instance.executeSource(
 		    """
@@ -524,16 +524,18 @@ public class CoreLangTest {
 		assertThat( variables.dereference( Key.of( "test5" ), false ) ).isEqualTo( "Luis 'the man' Majano" );
 	}
 
-	@DisplayName( "String parsing 4" )
+	@DisplayName( "String parsing concatenation" )
 	@Test
-	public void testStringParsing4() {
+	public void testStringParsingConcatenation() {
 
 		instance.executeSource(
 		    """
 		    // Expressions are always interpolated inside string literals in CFScript by using a hash/pound sign (`#`) such as
 		    variables.timeVar = "12:00 PM"
 		    variables.test6 = "Time is: #timeVar#"
-		    variables.test7 ="Time is: " & timeVar
+		    variables.test7 = "Time is: " & timeVar
+		    variables.test8 = 'Time is: #timeVar#'
+		    variables.test9 = 'Time is: ' & timeVar
 		     """,
 		    context );
 		assertThat( variables.dereference( Key.of( "test6" ), false ) ).isEqualTo( "Time is: 12:00 PM" );
@@ -541,14 +543,14 @@ public class CoreLangTest {
 
 	}
 
-	@DisplayName( "String parsing interpolation" )
+	@DisplayName( "String parsing expression interpolation" )
 	@Test
-	public void testStringParsingInterpolation() {
+	public void testStringParsingExpressionInterpolation() {
 
 		instance.executeSource(
 		    """
 		       variables.var = "brad"
-		    varname = "var"
+		       varname = "var"
 		       variables.result1 = "#var#foo"
 		       variables.result2 = "foo#var#"
 		       variables.result3 = "foo#var#bar"
@@ -581,7 +583,7 @@ public class CoreLangTest {
 		instance.executeSource(
 		    """
 		       variables.var = "brad"
-		    varname = "var"
+		       varname = "var"
 		       variables.result1 = '#var#foo'
 		       variables.result2 = 'foo#var#'
 		       variables.result3 = 'foo#var#bar'
@@ -607,16 +609,15 @@ public class CoreLangTest {
 
 	}
 
-	@DisplayName( "String parsing 5" )
+	@DisplayName( "String parsing - escaped pound sign" )
 	@Test
-	public void testStringParsing5() {
+	public void testStringParsingEscapedPoundSign() {
 
 		instance.executeSource(
 		    """
 		    // Pound signs in a string are escaped by doubling them
 		    variables.test8 = "I have locker ##20"
 		    // Also "I have locker #20" should throw a parsing syntax exception.
-
 		     """,
 		    context );
 		assertThat( variables.dereference( Key.of( "test8" ), false ) ).isEqualTo( "I have locker #20" );
@@ -624,7 +625,6 @@ public class CoreLangTest {
 		instance.executeSource(
 		    """
 		    variables.test8 = 'I have locker ##20'
-
 		     """,
 		    context );
 		assertThat( variables.dereference( Key.of( "test8" ), false ) ).isEqualTo( "I have locker #20" );
