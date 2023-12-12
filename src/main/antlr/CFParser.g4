@@ -16,12 +16,15 @@ script:
 tag: LCFTAG script RCFTAG;
 
 eos: SEMICOLON;
-package: PACKAGE identifier eos;
 
+// Wouldn't this be a BoxLang-only construct? We should probably move this to the BL grammar.
+package: PACKAGE identifier eos?;
+
+// We should probably move this to the BL grammar.
 importStatement:
-	IMPORT (JAVA COLON)? fqn (DOT STAR)? (AS identifier)? eos;
+	IMPORT (JAVA COLON)? fqn (DOT STAR)? (AS identifier)? eos?;
 
-include: INCLUDE expression eos;
+include: INCLUDE expression eos?;
 
 component:
 	ABSTRACT? COMPONENT identifier? componentAttribute* LBRACE functionOrStatement* RBRACE;
@@ -94,7 +97,7 @@ constructor:
 property:
 	PROPERTY (identifier EQUAL expression)+ (
 		TYPE EQUAL stringLiteral
-	)? (DEFAULT EQUAL stringLiteral)? eos;
+	)? (DEFAULT EQUAL stringLiteral)? eos?;
 
 anonymousFunction:
 	FUNCTION LPAREN paramList? RPAREN statementBlock
@@ -201,16 +204,16 @@ do: DO statementBlock WHILE LPAREN expression RPAREN;
 while: WHILE LPAREN expression RPAREN statementBlock;
 
 assert: ASSERT expression;
-break: BREAK eos;
-continue: CONTINUE eos;
+break: BREAK eos?;
+continue: CONTINUE eos?;
 return: RETURN expression?;
 
-rethrow: RETHROW eos;
+rethrow: RETHROW eos?;
 throw:
 	THROW LPAREN (TYPE EQUAL)? expression (
 		COMMA (MESSAGE EQUAL)? stringLiteral
-	)? RPAREN eos
-	| THROW expression eos;
+	)? RPAREN eos?
+	| THROW expression eos?;
 
 switch: SWITCH LPAREN expression RPAREN LBRACE ( case)* RBRACE;
 
