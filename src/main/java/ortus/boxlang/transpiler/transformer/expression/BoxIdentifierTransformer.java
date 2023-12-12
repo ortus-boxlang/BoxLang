@@ -43,25 +43,27 @@ public class BoxIdentifierTransformer extends AbstractTransformer {
 	public Node transform( BoxNode node, TransformerContext context ) throws IllegalStateException {
 		BoxIdentifier		identifier	= ( BoxIdentifier ) node;
 		String				side		= context == TransformerContext.NONE ? "" : "(" + context.toString() + ") ";
+		Node				accessKey	= createKey( identifier.getName() );
+		String				template;
 		Map<String, String>	values		= new HashMap<>() {
 
 											{
-												put( "identifier", identifier.getName() );
+												put( "accessKey", accessKey.toString() );
+												put( "id", identifier.getName() );
 												put( "contextName", transpiler.peekContextName() );
 											}
 										};
-
-		String				template	= switch ( context ) {
-											case DEREFERENCING -> "Key.of( \"${identifier}\" )";
-											default -> "${identifier}";
-										};
-
-		Node				javaExpr;
-		if ( context == TransformerContext.NONE ) {
-			javaExpr = resolveScope( parseExpression( template, values ), context );
+		if ( transpiler.matchesImport( identifier.getName() ) ) {
+			template = "classLocator.load( ${contextName}, \"${id}\", imports )";
 		} else {
-			javaExpr = parseExpression( template, values );
+			template = switch ( context ) {
+				case SAFE -> "${contextName}.scopeFindNearby( ${accessKey}, ${contextName}.getDefaultAssignmentScope()).value()";
+				default -> "${contextName}.scopeFindNearby( ${accessKey}, null).value()";
+			};
 		}
+
+		Node javaExpr;
+		javaExpr = parseExpression( template, values );
 		logger.info( side + node.getSourceText() + " -> " + javaExpr );
 		return javaExpr;
 

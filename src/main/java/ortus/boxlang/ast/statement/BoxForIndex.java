@@ -29,8 +29,7 @@ import ortus.boxlang.ast.Position;
  */
 public class BoxForIndex extends BoxStatement {
 
-	private final BoxExpr				variable;
-	private final BoxExpr				initial;
+	private final BoxExpr				initializer;
 	private final BoxExpr				condition;
 	private final BoxExpr				step;
 	private final List<BoxStatement>	body;
@@ -43,12 +42,10 @@ public class BoxForIndex extends BoxStatement {
 	 * @param position
 	 * @param sourceText
 	 */
-	public BoxForIndex( BoxExpr variable, BoxExpr initial, BoxExpr condition, BoxExpr step, List<BoxStatement> body, Position position, String sourceText ) {
+	public BoxForIndex( BoxExpr initializer, BoxExpr condition, BoxExpr step, List<BoxStatement> body, Position position, String sourceText ) {
 		super( position, sourceText );
-		this.variable = variable;
-		this.variable.setParent( this );
-		this.initial = initial;
-		this.initial.setParent( this );
+		this.initializer = initializer;
+		this.initializer.setParent( this );
 		this.condition = condition;
 		this.condition.setParent( this );
 		this.step = step;
@@ -58,8 +55,8 @@ public class BoxForIndex extends BoxStatement {
 		this.body.forEach( arg -> arg.setParent( this ) );
 	}
 
-	public BoxExpr getVariable() {
-		return variable;
+	public BoxExpr getInitializer() {
+		return initializer;
 	}
 
 	public BoxExpr getCondition() {
@@ -70,10 +67,6 @@ public class BoxForIndex extends BoxStatement {
 		return step;
 	}
 
-	public BoxExpr getInitial() {
-		return initial;
-	}
-
 	public List<BoxStatement> getBody() {
 		return body;
 	}
@@ -82,8 +75,7 @@ public class BoxForIndex extends BoxStatement {
 	public Map<String, Object> toMap() {
 		Map<String, Object> map = super.toMap();
 
-		map.put( "variable", variable.toMap() );
-		map.put( "initial", initial.toMap() );
+		map.put( "initializer", initializer.toMap() );
 		map.put( "condition", condition.toMap() );
 		map.put( "step", step.toMap() );
 		map.put( "body", body.stream().map( BoxStatement::toMap ).collect( Collectors.toList() ) );

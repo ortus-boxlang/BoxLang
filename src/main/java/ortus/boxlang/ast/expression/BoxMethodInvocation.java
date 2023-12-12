@@ -75,7 +75,7 @@ public class BoxMethodInvocation extends BoxExpr {
 		return obj;
 	}
 
-	public Boolean getSafe() {
+	public Boolean isSafe() {
 		return safe;
 	}
 

@@ -488,16 +488,17 @@ public class OperatorsTest {
 
 		result = instance.executeStatement( "foo ?: 'default'", context );
 		assertThat( result ).isEqualTo( "default" );
-		// MT TODO: Dereferencing on the left hand side of an Elvis operator needs to done safely
+
 		result = instance.executeStatement( "foo.bar ?: 'default'", context );
 		assertThat( result ).isEqualTo( "default" );
 
-		// MT TODO: Dereferencing on the left hand side of an Elvis operator needs to done safely
 		result = instance.executeStatement( "foo['bar'] ?: 'default'", context );
 		assertThat( result ).isEqualTo( "default" );
 
-		// MT TODO: Parsing error
 		result = instance.executeStatement( "foo['bar'].baz ?: 'default'", context );
+		assertThat( result ).isEqualTo( "default" );
+
+		result = instance.executeStatement( "foo.bar() ?: 'default'", context );
 		assertThat( result ).isEqualTo( "default" );
 
 	}
@@ -537,10 +538,6 @@ public class OperatorsTest {
 	@DisplayName( "castAs" )
 	@Test
 	public void testCastAs() {
-		// MT TODO: variable sdf should not exist, therefore an error needs to be thrown
-		// The issue is we're using scope.get() instead of an unsafe dereference() to get the sdf variable
-		// BW TODO commented out the execution without the assert
-		// instance.executeStatement( "5 castAs sdf", context );
 		assertThrows( KeyNotFoundException.class, () -> instance.executeStatement( "5 castAs sdf", context ) );
 
 		Object result = instance.executeStatement( "5 castAs 'String'", context );

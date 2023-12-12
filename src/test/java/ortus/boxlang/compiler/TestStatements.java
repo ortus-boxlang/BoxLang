@@ -6,7 +6,6 @@ import static org.junit.Assert.fail;
 
 import java.io.IOException;
 
-import org.junit.Ignore;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
@@ -164,8 +163,7 @@ public class TestStatements extends TestBase {
 		ParsingResult	result		= parseStatement( statement );
 
 		Node			javaAST		= new JavaTranspiler().transform( result.getRoot() );
-		// TODO: There are now {} braces around the Java code for assignments. Is this correct?
-		// Explicit variables scope access is referenced directly
+
 		assertEqualsNoWhiteSpaces(
 		    """
 		    while(EqualsEquals.invoke(variablesScope.dereference(Key.of("a"),false),true)){{variablesScope.assign(Key.of("a"),false);}}
@@ -196,8 +194,6 @@ public class TestStatements extends TestBase {
 
 		Node			javaAST		= new JavaTranspiler().transform( result.getRoot() );
 		System.out.println( javaAST );
-		// TODO: There are now {} braces around the Java code for assignments. Is this correct?
-		// Explicit variables scope access is referenced directly
 		assertEqualsNoWhiteSpaces(
 		    """
 		       do{
@@ -245,8 +241,6 @@ public class TestStatements extends TestBase {
 
 		Node			javaAST		= new JavaTranspiler().transform( result.getRoot() );
 
-		// TODO: There are now {} braces around the Java code for assignments. Is this correct?
-		// Explicit variables scope access is referenced directly
 		assertEqualsNoWhiteSpaces(
 		    """
 		      do{
@@ -283,8 +277,6 @@ public class TestStatements extends TestBase {
 
 		Node			javaAST		= new JavaTranspiler().transform( result.getRoot() );
 		System.out.println( javaAST );
-		// TODO: There are now {} braces around the Java code for assignments. Is this correct?
-		// Explicit variables scope access is referenced directly
 		assertEqualsNoWhiteSpaces(
 		    """
 		    {
@@ -356,7 +348,6 @@ public class TestStatements extends TestBase {
 
 		Node			javaAST		= new JavaTranspiler().transform( result.getRoot() );
 		System.out.println( javaAST );
-		// TODO: There are now {} braces around the Java code for assignments. Is this correct?
 		assertEqualsNoWhiteSpaces(
 		    """
 		    try{
@@ -402,7 +393,6 @@ public class TestStatements extends TestBase {
 
 		Node			javaAST		= new JavaTranspiler().transform( result.getRoot() );
 		System.out.println( javaAST );
-		// TODO: There are now {} braces around the Java code for assignments. Is this correct?
 		assertEqualsNoWhiteSpaces(
 		    """
 		    do{
@@ -453,7 +443,6 @@ public class TestStatements extends TestBase {
 
 		Node			javaAST		= new JavaTranspiler().transform( result.getRoot() );
 		System.out.println( javaAST );
-		// TODO: This assert doesn't seem correct
 		assertEqualsNoWhiteSpaces(
 		    """
 		    throw(newjava.lang.RuntimeException("MyMessage"));

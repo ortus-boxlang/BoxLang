@@ -70,6 +70,7 @@ import ortus.boxlang.ast.expression.BoxIntegerLiteral;
 import ortus.boxlang.ast.expression.BoxMethodInvocation;
 import ortus.boxlang.ast.expression.BoxNegateOperation;
 import ortus.boxlang.ast.expression.BoxNewOperation;
+import ortus.boxlang.ast.expression.BoxNull;
 import ortus.boxlang.ast.expression.BoxParenthesis;
 import ortus.boxlang.ast.expression.BoxScope;
 import ortus.boxlang.ast.expression.BoxStringConcat;
@@ -88,7 +89,6 @@ import ortus.boxlang.ast.statement.BoxForIndex;
 import ortus.boxlang.ast.statement.BoxFunctionDeclaration;
 import ortus.boxlang.ast.statement.BoxIfElse;
 import ortus.boxlang.ast.statement.BoxImport;
-import ortus.boxlang.ast.statement.BoxLocalDeclaration;
 import ortus.boxlang.ast.statement.BoxRethrow;
 import ortus.boxlang.ast.statement.BoxReturn;
 import ortus.boxlang.ast.statement.BoxSwitch;
@@ -116,6 +116,7 @@ import ortus.boxlang.transpiler.transformer.expression.BoxIntegerLiteralTransfor
 import ortus.boxlang.transpiler.transformer.expression.BoxMethodInvocationTransformer;
 import ortus.boxlang.transpiler.transformer.expression.BoxNegateOperationTransformer;
 import ortus.boxlang.transpiler.transformer.expression.BoxNewOperationTransformer;
+import ortus.boxlang.transpiler.transformer.expression.BoxNullTransformer;
 import ortus.boxlang.transpiler.transformer.expression.BoxParenthesisTransformer;
 import ortus.boxlang.transpiler.transformer.expression.BoxScopeTransformer;
 import ortus.boxlang.transpiler.transformer.expression.BoxStringConcatTransformer;
@@ -136,7 +137,6 @@ import ortus.boxlang.transpiler.transformer.statement.BoxForIndexTransformer;
 import ortus.boxlang.transpiler.transformer.statement.BoxFunctionDeclarationTransformer;
 import ortus.boxlang.transpiler.transformer.statement.BoxIfElseTransformer;
 import ortus.boxlang.transpiler.transformer.statement.BoxImportTransformer;
-import ortus.boxlang.transpiler.transformer.statement.BoxLocalDeclarationTransformer;
 import ortus.boxlang.transpiler.transformer.statement.BoxRethrowTransformer;
 import ortus.boxlang.transpiler.transformer.statement.BoxReturnTransformer;
 import ortus.boxlang.transpiler.transformer.statement.BoxScriptTransformer;
@@ -190,7 +190,6 @@ public class JavaTranspiler extends Transpiler {
 
 		registry.put( BoxMethodInvocation.class, new BoxMethodInvocationTransformer( this ) );
 		registry.put( BoxFunctionInvocation.class, new BoxFunctionInvocationTransformer( this ) );
-		registry.put( BoxLocalDeclaration.class, new BoxLocalDeclarationTransformer( this ) );
 		registry.put( BoxIfElse.class, new BoxIfElseTransformer( this ) );
 		registry.put( BoxWhile.class, new BoxWhileTransformer( this ) );
 		registry.put( BoxDo.class, new BoxDoTransformer( this ) );
@@ -210,6 +209,7 @@ public class JavaTranspiler extends Transpiler {
 		registry.put( BoxArrayLiteral.class, new BoxArrayLiteralTransformer( this ) );
 		registry.put( BoxStructLiteral.class, new BoxStructLiteralTransformer( this ) );
 		registry.put( BoxAssignment.class, new BoxAssignmentTransformer( this ) );
+		registry.put( BoxNull.class, new BoxNullTransformer( this ) );
 	}
 
 	/**

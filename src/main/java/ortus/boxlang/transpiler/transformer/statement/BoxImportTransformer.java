@@ -38,7 +38,7 @@ public class BoxImportTransformer extends AbstractTransformer {
 		BoxImport			boxImport	= ( BoxImport ) node;
 		Expression			namespace	= ( Expression ) transpiler.transform( boxImport.getExpression(), TransformerContext.RIGHT );
 		String				alias		= boxImport.getAlias() != null
-		    ? " as " + transpiler.transform( boxImport.getAlias(), TransformerContext.RIGHT ).toString()
+		    ? " as " + boxImport.getAlias().getName()
 		    : "";
 
 		Map<String, String>	values		= new HashMap<>() {

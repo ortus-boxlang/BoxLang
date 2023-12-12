@@ -651,17 +651,19 @@ public class CoreLangTest {
 	@Test
 	public void testStringParsingUnclosedQuotes() {
 
-		assertThrows( ApplicationException.class, () -> instance.executeSource(
+		Throwable t = assertThrows( ApplicationException.class, () -> instance.executeSource(
 		    """
 		    foo = "unfinished
 		     """,
 		    context ) );
+		assertThat( t.getMessage() ).contains( "Untermimated" );
 
-		assertThrows( ApplicationException.class, () -> instance.executeSource(
+		t = assertThrows( ApplicationException.class, () -> instance.executeSource(
 		    """
-		    foo = 'unfinished
+		    foo = 'unfinishedx
 		     """,
 		    context ) );
+		assertThat( t.getMessage() ).contains( "Untermimated" );
 	}
 
 	@DisplayName( "String parsing unclosed pound" )
@@ -676,7 +678,7 @@ public class CoreLangTest {
 		    context
 		)
 		);
-		assertThat( t.getMessage() ).contains( "#" );
+		assertThat( t.getMessage() ).contains( "Untermimated hash" );
 
 	}
 

@@ -28,10 +28,11 @@ public class BoxMethodInvocationTransformer extends AbstractTransformer {
 	@Override
 	public Node transform( BoxNode node, TransformerContext context ) throws IllegalStateException {
 		BoxMethodInvocation	invocation	= ( BoxMethodInvocation ) node;
+		Boolean				safe		= invocation.isSafe() || context == TransformerContext.SAFE;
 		String				side		= context == TransformerContext.NONE ? "" : "(" + context.toString() + ") ";
 
 		Expression			expr		= ( Expression ) resolveScope( transpiler.transform( invocation.getObj(),
-		    TransformerContext.RIGHT ), TransformerContext.RIGHT );
+		    context ), context );
 
 		String				args		= invocation.getArguments().stream()
 		    .map( it -> resolveScope( transpiler.transform( it ), context ).toString() )
@@ -41,6 +42,7 @@ public class BoxMethodInvocationTransformer extends AbstractTransformer {
 
 											{
 												put( "contextName", transpiler.peekContextName() );
+												put( "safe", safe.toString() );
 											}
 										};
 
@@ -71,7 +73,7 @@ public class BoxMethodInvocationTransformer extends AbstractTransformer {
 			             ${expr},
 			             ${methodKey},
 			             new Object[] { ${args} },
-			             false
+			             ${safe}
 			           )
 			           """;
 		}

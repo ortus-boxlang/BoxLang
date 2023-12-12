@@ -14,23 +14,24 @@
  */
 package ortus.boxlang.transpiler.transformer.statement;
 
+import java.util.HashMap;
+import java.util.Map;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.github.javaparser.ast.Node;
 import com.github.javaparser.ast.expr.Expression;
-import com.github.javaparser.ast.expr.MethodCallExpr;
 import com.github.javaparser.ast.stmt.BlockStmt;
 import com.github.javaparser.ast.stmt.ExpressionStmt;
 import com.github.javaparser.ast.stmt.Statement;
 import com.github.javaparser.ast.stmt.WhileStmt;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+
 import ortus.boxlang.ast.BoxNode;
 import ortus.boxlang.ast.statement.BoxForIndex;
 import ortus.boxlang.transpiler.JavaTranspiler;
 import ortus.boxlang.transpiler.transformer.AbstractTransformer;
 import ortus.boxlang.transpiler.transformer.TransformerContext;
-
-import java.util.HashMap;
-import java.util.Map;
 
 /**
  * Transform a BoxForIndex Node the equivalent Java Parser AST nodes
@@ -56,9 +57,8 @@ public class BoxForIndexTransformer extends AbstractTransformer {
 	@Override
 	public Node transform( BoxNode node, TransformerContext context ) throws IllegalStateException {
 		BoxForIndex			boxFor		= ( BoxForIndex ) node;
-		Expression			variable	= ( Expression ) resolveScope( transpiler.transform( boxFor.getVariable(), TransformerContext.LEFT ),
+		Expression			initializer	= ( Expression ) resolveScope( transpiler.transform( boxFor.getInitializer(), TransformerContext.LEFT ),
 		    TransformerContext.INIT );
-		Expression			initial		= ( Expression ) transpiler.transform( boxFor.getInitial(), TransformerContext.RIGHT );
 		Expression			condition	= ( Expression ) transpiler.transform( boxFor.getCondition() );
 		Expression			step		= ( Expression ) transpiler.transform( boxFor.getStep() );
 		Map<String, String>	values		= new HashMap<>() {
@@ -69,18 +69,12 @@ public class BoxForIndexTransformer extends AbstractTransformer {
 											}
 										};
 
-		if ( variable instanceof MethodCallExpr method ) {
-			if ( "assign".equalsIgnoreCase( method.getName().asString() ) ) {
-				method.getArguments().add( initial );
-			}
-		}
-
-		String template2 = "while( ${condition} ) {}";
+		String				template2	= "while( ${condition} ) {}";
 		if ( requiresBooleanCaster( boxFor.getCondition() ) ) {
 			template2 = "while( BooleanCaster.cast( ${condition} ) ) {}";
 		}
 		BlockStmt		stmt	= new BlockStmt();
-		ExpressionStmt	init	= new ExpressionStmt( variable );
+		ExpressionStmt	init	= new ExpressionStmt( initializer );
 		stmt.addStatement( init );
 		WhileStmt whileStmt = ( WhileStmt ) parseStatement( template2, values );
 		boxFor.getBody().forEach( it -> {

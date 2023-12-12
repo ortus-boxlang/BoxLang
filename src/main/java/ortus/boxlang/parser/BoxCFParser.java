@@ -34,6 +34,9 @@ import ortus.boxlang.ast.BoxExpr;
 import ortus.boxlang.ast.BoxNode;
 import ortus.boxlang.ast.BoxScript;
 import ortus.boxlang.ast.BoxStatement;
+import ortus.boxlang.ast.Issue;
+import ortus.boxlang.ast.Point;
+import ortus.boxlang.ast.Position;
 import ortus.boxlang.ast.expression.BoxAccess;
 import ortus.boxlang.ast.expression.BoxArgument;
 import ortus.boxlang.ast.expression.BoxArrayAccess;
@@ -54,6 +57,7 @@ import ortus.boxlang.ast.expression.BoxIdentifier;
 import ortus.boxlang.ast.expression.BoxIntegerLiteral;
 import ortus.boxlang.ast.expression.BoxMethodInvocation;
 import ortus.boxlang.ast.expression.BoxNewOperation;
+import ortus.boxlang.ast.expression.BoxNull;
 import ortus.boxlang.ast.expression.BoxParenthesis;
 import ortus.boxlang.ast.expression.BoxScope;
 import ortus.boxlang.ast.expression.BoxStringConcat;
@@ -215,11 +219,30 @@ public class BoxCFParser extends BoxAbstractParser {
 	 */
 	@Override
 	protected ParserRuleContext parserFirstStage( InputStream stream ) throws IOException {
-		CFLexer		lexer	= new CFLexer( CharStreams.fromStream( stream ) );
-		CFParser	parser	= new CFParser( new CommonTokenStream( lexer ) );
+		CFLexerCustom	lexer	= new CFLexerCustom( CharStreams.fromStream( stream ) );
+		CFParser		parser	= new CFParser( new CommonTokenStream( lexer ) );
 		addErrorListeners( lexer, parser );
+		ParserRuleContext parseTree = parser.script();
+		if ( lexer.hasUnpoppedModes() ) {
+			List<String>	modes		= lexer.getUnpoppedModes();
 
-		return parser.script();
+			/*
+			 * modes.forEach( mode -> {
+			 * System.out.println( "Unpopped mode: " + mode );
+			 * } );
+			 */
+			// TODO: get position
+			Position		position	= new Position( new Point( 0, 0 ),
+			    new Point( 0, 0 ) );
+			if ( modes.contains( "hashMode" ) ) {
+				issues.add( new Issue( "Untermimated hash expression inside of string literal.", position ) );
+			} else {
+				// Not sure this is always the case
+				issues.add( new Issue( "Untermimated string literal.", position ) );
+			}
+		}
+
+		return parseTree;
 	}
 
 	/**
@@ -263,13 +286,19 @@ public class BoxCFParser extends BoxAbstractParser {
 	 * @see BoxImport
 	 */
 	private BoxStatement toAst( File file, CFParser.ImportStatementContext rule ) {
-		BoxExpr	expr	= null;
-		BoxExpr	alias	= null;
+		BoxExpr			expr	= null;
+		BoxIdentifier	alias	= null;
 		if ( rule.fqn() != null ) {
 			expr = toAst( file, rule.fqn() );
 		}
 		if ( rule.identifier() != null ) {
-			alias = toAst( file, rule.identifier() );
+			BoxExpr tmp = toAst( file, rule.identifier() );
+			if ( tmp instanceof BoxScope ) {
+				throw new IllegalStateException( "Cannot use a scope as an alias" );
+			} else {
+				alias = ( BoxIdentifier ) tmp;
+			}
+
 		}
 		return new BoxImport( expr, alias, getPosition( rule ), getSourceText( rule ) );
 	}
@@ -466,12 +495,11 @@ public class BoxCFParser extends BoxAbstractParser {
 
 			return new BoxForIn( variable, collection, body, getPosition( node ), getSourceText( node ) );
 		}
-		BoxExpr	variable	= toAst( file, node.forAssignment().expression( 0 ) );
-		BoxExpr	initial		= toAst( file, node.forAssignment().expression( 1 ) );
+		BoxExpr	initializer	= toAst( file, node.forAssignment().expression() );
 		BoxExpr	condition	= toAst( file, node.forCondition().expression() );
 		BoxExpr	step		= toAst( file, node.forIncrement().expression() );
 
-		return new BoxForIndex( variable, initial, condition, step, body, getPosition( node ), getSourceText( node ) );
+		return new BoxForIndex( initializer, condition, step, body, getPosition( node ), getSourceText( node ) );
 	}
 
 	/**
@@ -989,6 +1017,8 @@ public class BoxCFParser extends BoxAbstractParser {
 			}
 
 			return new BoxAssignment( left, op, right, modifiers, getPosition( expression ), getSourceText( expression ) );
+		} else if ( expression.NULL() != null ) {
+			return new BoxNull( getPosition( expression ), getSourceText( expression ) );
 		}
 		// TODO: add other cases
 		throw new IllegalStateException( "expression not implemented: " + getSourceText( expression ) );

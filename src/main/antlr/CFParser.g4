@@ -197,9 +197,9 @@ if:
 for:
 	FOR LPAREN VAR? identifier IN expression RPAREN statementBlock
 	| FOR LPAREN forAssignment eos forCondition eos forIncrement RPAREN statementBlock;
-forAssignment: VAR? expression EQUAL expression;
+forAssignment: expression;
 forCondition: expression;
-forIncrement: expression | assignment; // ??
+forIncrement: expression;
 
 do: DO statementBlock WHILE LPAREN expression RPAREN;
 
@@ -303,6 +303,7 @@ fqn: (identifier DOT)* identifier;
 
 expression:
 	assignment
+	| NULL
 	| accessExpression
 	| unary
 	| pre = PLUSPLUS expression

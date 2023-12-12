@@ -29,6 +29,8 @@ public class BoxAccessTransformer extends AbstractTransformer {
 	@Override
 	public Node transform( BoxNode node, TransformerContext context ) throws IllegalStateException {
 		BoxAccess	objectAccess	= ( BoxAccess ) node;
+		Boolean		safe			= objectAccess.isSafe() || context == TransformerContext.SAFE;
+
 		Node		accessKey;
 		// DotAccess just uses the string directly, array access allows any expression
 		if ( objectAccess instanceof BoxDotAccess dotAccess ) {
@@ -41,7 +43,7 @@ public class BoxAccessTransformer extends AbstractTransformer {
 
 			{
 				put( "contextName", transpiler.peekContextName() );
-				put( "safe", objectAccess.isSafe().toString() );
+				put( "safe", safe.toString() );
 				put( "accessKey", accessKey.toString() );
 			}
 		};
@@ -63,7 +65,7 @@ public class BoxAccessTransformer extends AbstractTransformer {
 
 		} else {
 			// All other non-scoped vars we just lookup
-			Expression jContext = ( Expression ) transpiler.transform( objectAccess.getContext(), TransformerContext.NONE );
+			Expression jContext = ( Expression ) transpiler.transform( objectAccess.getContext(), context );
 			// "scope" here isn't a BoxLang proper scope, it's just whatever Java source represents the context of the access expression
 			values.put( "scopeReference", jContext.toString() );
 

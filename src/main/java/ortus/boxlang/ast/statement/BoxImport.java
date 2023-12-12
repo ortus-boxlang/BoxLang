@@ -5,14 +5,15 @@ import java.util.Map;
 import ortus.boxlang.ast.BoxExpr;
 import ortus.boxlang.ast.BoxStatement;
 import ortus.boxlang.ast.Position;
+import ortus.boxlang.ast.expression.BoxIdentifier;
 
 /**
  * AST Node representing an import statement
  */
 public class BoxImport extends BoxStatement {
 
-	private final BoxExpr	expression;
-	private final BoxExpr	alias;
+	private final BoxExpr		expression;
+	private final BoxIdentifier	alias;
 
 	/**
 	 * Creates the AST node
@@ -21,7 +22,7 @@ public class BoxImport extends BoxStatement {
 	 * @param position   position of the statement in the source code
 	 * @param sourceText source code that originated the Node
 	 */
-	public BoxImport( BoxExpr expression, BoxExpr alias, Position position, String sourceText ) {
+	public BoxImport( BoxExpr expression, BoxIdentifier alias, Position position, String sourceText ) {
 		super( position, sourceText );
 		this.expression = expression;
 		this.expression.setParent( this );
@@ -35,7 +36,7 @@ public class BoxImport extends BoxStatement {
 		return expression;
 	}
 
-	public BoxExpr getAlias() {
+	public BoxIdentifier getAlias() {
 		return alias;
 	}
 
