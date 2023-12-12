@@ -22,6 +22,7 @@ import java.util.Map;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.scopes.Key;
+import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.ApplicationException;
 
@@ -132,7 +133,7 @@ public class Referencer {
 				return value;
 			}
 
-			// For all intermediate keys, check if they exist and are a Struct
+			// For all intermediate keys, check if they exist and are a Struct or Array
 			Object next = DynamicObject.unWrap( obj.dereference( key, true ) );
 			// If missing, create as a Struct
 			if ( next == null ) {
@@ -140,9 +141,9 @@ public class Referencer {
 				next = new Struct();
 				obj.assign( key, next );
 				// If it's not null, it needs to be a Map
-			} else if ( ! ( next instanceof Map ) ) {
+			} else if ( ! ( next instanceof Map || next instanceof Array ) ) {
 				throw new ApplicationException(
-				    String.format( "Cannot assign to key [%s] because it is a [%s] and not a Struct", key.getName(),
+				    String.format( "Cannot assign to key [%s] because it is a [%s] and not a Struct or Array", key.getName(),
 				        next.getClass().getName() )
 				);
 			}

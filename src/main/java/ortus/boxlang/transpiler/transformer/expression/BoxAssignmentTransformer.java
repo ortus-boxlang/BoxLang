@@ -22,6 +22,7 @@ import ortus.boxlang.ast.expression.BoxIdentifier;
 import ortus.boxlang.ast.expression.BoxScope;
 import ortus.boxlang.ast.statement.BoxAssignmentOperator;
 import ortus.boxlang.runtime.config.util.PlaceholderHelper;
+import ortus.boxlang.runtime.types.exceptions.ApplicationException;
 import ortus.boxlang.runtime.types.exceptions.ExpressionException;
 import ortus.boxlang.transpiler.JavaTranspiler;
 import ortus.boxlang.transpiler.transformer.AbstractTransformer;
@@ -91,6 +92,10 @@ public class BoxAssignmentTransformer extends AbstractTransformer {
 		}
 
 		if ( furthestLeft instanceof BoxIdentifier id ) {
+			if ( transpiler.matchesImport( id.getName() ) ) {
+				throw new ApplicationException( "You cannot assign a variable with the same name as an import: [" + id.getName() + "]" );
+			}
+
 			Node	keyNode	= createKey( id.getName() );
 			String	thisKey	= keyNode.toString();
 			accessKeys.add( 0, keyNode );

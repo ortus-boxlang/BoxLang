@@ -26,6 +26,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import javax.tools.DiagnosticCollector;
 import javax.tools.JavaCompiler;
@@ -37,6 +38,7 @@ import org.slf4j.LoggerFactory;
 
 import com.github.javaparser.ast.CompilationUnit;
 
+import ortus.boxlang.ast.Issue;
 import ortus.boxlang.ast.Point;
 import ortus.boxlang.ast.Position;
 import ortus.boxlang.parser.BoxParser;
@@ -149,6 +151,7 @@ public class JavaBoxpiler {
 		import java.nio.file.Paths;
 		import java.time.LocalDateTime;
 		import java.util.List;
+import org.jbox2d.util.Issue;
 
 		public class ${className} extends ${baseclass} {
 
@@ -255,9 +258,14 @@ public class JavaBoxpiler {
 				} catch ( IOException e ) {
 					throw new ApplicationException( "Error compiling source", e );
 				}
-				result.getIssues().forEach( it -> System.out.println( it ) );
+
 				if ( !result.isCorrect() ) {
-					throw new ApplicationException( "Error compiling source. " + result.getIssues().get( 0 ).toString() );
+					// Convert the issues to a comma-separated string
+					String issuesString = result.getIssues().stream()
+					    .map( Issue::toString )
+					    .collect( Collectors.joining( ", " ) );
+
+					throw new ApplicationException( "Error compiling source. " + issuesString );
 				}
 
 				// JavaTranspiler transpiler = new JavaTranspiler();
@@ -307,9 +315,13 @@ public class JavaBoxpiler {
 					throw new ApplicationException( "Error compiling source", e );
 				}
 
-				result.getIssues().forEach( System.out::println );
 				if ( !result.isCorrect() ) {
-					throw new ApplicationException( "Error compiling source. " + result.getIssues().get( 0 ).toString() );
+					// Convert the issues to a comma-separated string
+					String issuesString = result.getIssues().stream()
+					    .map( Issue::toString )
+					    .collect( Collectors.joining( ", " ) );
+
+					throw new ApplicationException( "Error compiling source. " + issuesString );
 				}
 
 				Transpiler transpiler = Transpiler.getTranspiler( null /* Config ? */ );
@@ -351,8 +363,15 @@ public class JavaBoxpiler {
 				} catch ( IOException e ) {
 					throw new ApplicationException( "Error compiling source", e );
 				}
-				result.getIssues().forEach( System.out::println );
-				assert result.isCorrect();
+
+				if ( !result.isCorrect() ) {
+					// Convert the issues to a comma-separated string
+					String issuesString = result.getIssues().stream()
+					    .map( Issue::toString )
+					    .collect( Collectors.joining( ", " ) );
+
+					throw new ApplicationException( "Error compiling source. " + issuesString );
+				}
 
 				Transpiler transpiler = Transpiler.getTranspiler( null /* Config ? */ );
 				transpiler.setProperty( "classname", className );

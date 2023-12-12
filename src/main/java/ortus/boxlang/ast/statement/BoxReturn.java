@@ -23,7 +23,8 @@ public class BoxReturn extends BoxStatement {
 	public BoxReturn( BoxExpr expression, Position position, String sourceText ) {
 		super( position, sourceText );
 		this.expression = expression;
-		this.expression.setParent( this );
+		if ( this.expression != null )
+			this.expression.setParent( this );
 	}
 
 	public BoxExpr getExpression() {

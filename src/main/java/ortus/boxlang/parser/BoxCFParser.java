@@ -122,6 +122,7 @@ public class BoxCFParser extends BoxAbstractParser {
 	public ParsingResult parse( File file ) throws IOException {
 		BOMInputStream			inputStream	= getInputStream( file );
 		CFParser.ScriptContext	parseTree	= ( CFParser.ScriptContext ) parserFirstStage( inputStream );
+
 		if ( issues.isEmpty() ) {
 			BoxScript ast = parseTreeToAst( file, parseTree );
 			return new ParsingResult( ast, issues );

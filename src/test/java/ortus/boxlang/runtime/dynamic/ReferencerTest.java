@@ -28,6 +28,7 @@ import org.junit.jupiter.api.Test;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
+import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.KeyNotFoundException;
 
@@ -89,7 +90,26 @@ public class ReferencerTest {
 		assertThat( ( ( Struct ) scope.dereference( foo, false ) ).dereference( bar, false ) instanceof Map ).isTrue();
 		assertThat(
 		    ( ( Struct ) ( ( Struct ) scope.dereference( foo, false ) ).dereference( bar, false ) ).dereference( baz, false ) )
-		    .isEqualTo( true );
+		        .isEqualTo( true );
+	}
+
+	@DisplayName( "It can assign deeply array" )
+	@Test
+	@SuppressWarnings( "unchecked" )
+	void testItCanAssignDeeplyArray() {
+		IScope	scope	= new VariablesScope();
+		Key		foo		= Key.of( "foo" );
+		Key		bar		= Key.of( "1" );
+		Key		baz		= Key.of( "baz" );
+		scope.assign( foo, new Array() );
+
+		Referencer.setDeep( scope, true, foo, bar, baz );
+
+		assertThat( scope.get( foo ) instanceof Array ).isTrue();
+		assertThat( ( ( Array ) scope.dereference( foo, false ) ).dereference( bar, false ) instanceof Map ).isTrue();
+		assertThat(
+		    ( ( Struct ) ( ( Array ) scope.dereference( foo, false ) ).dereference( bar, false ) ).dereference( baz, false ) )
+		        .isEqualTo( true );
 	}
 
 	@DisplayName( "It can dereference from a struct" )
