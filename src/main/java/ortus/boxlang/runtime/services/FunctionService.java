@@ -243,15 +243,15 @@ public class FunctionService extends BaseService {
 	 *
 	 * @throws IllegalArgumentException If the global function already exists
 	 */
-	public void registerGlobalFunction( String name, BIF function, String module ) throws IllegalArgumentException {
+	public void registerGlobalFunction( Key name, BIF function, String module ) throws IllegalArgumentException {
 		if ( hasGlobalFunction( name ) ) {
-			throw new ApplicationException( "Global function " + name + " already exists" );
+			throw new ApplicationException( "Global function " + name.getName() + " already exists" );
 		}
 
 		this.globalFunctions.put(
-		    Key.of( name ),
+		    name,
 		    new BIFDescriptor(
-		        name,
+		        name.getName(),
 		        ClassUtils.getCanonicalName( function.getClass() ),
 		        module,
 		        null,
@@ -261,8 +261,13 @@ public class FunctionService extends BaseService {
 		);
 	}
 
-	public void unregisterGlobalFunction( String name ) {
-		this.globalFunctions.remove( Key.of( name ) );
+	/**
+	 * Unregisters a global function with the service
+	 *
+	 * @param name The name of the global function
+	 */
+	public void unregisterGlobalFunction( Key name ) {
+		this.globalFunctions.remove( name );
 	}
 
 	/**
