@@ -1278,7 +1278,7 @@ public class BoxCFParser extends BoxAbstractParser {
 			annotations.add( new BoxAnnotation( ( BoxFQN ) aname, avalue, getPosition( annotation ), getSourceText( annotation ) ) );
 		}
 		for ( CFParser.PostannotationContext annotation : node.postannotation() ) {
-			annotations.add( toAst( file, annotation ) );
+			annotations.addAll( toAst( file, annotation ) );
 		}
 		if ( node.functionSignature().identifier() != null ) {
 			name = node.functionSignature().identifier().getText();
@@ -1405,7 +1405,7 @@ public class BoxCFParser extends BoxAbstractParser {
 			type = node.type().getText();
 		}
 		for ( CFParser.PostannotationContext annotation : node.postannotation() ) {
-			annotations.add( toAst( file, annotation ) );
+			annotations.addAll( toAst( file, annotation ) );
 		}
 
 		return new BoxArgumentDeclaration( required, type, name, expr, annotations, documentation, getPosition( node ), getSourceText( node ) );
@@ -1421,22 +1421,37 @@ public class BoxCFParser extends BoxAbstractParser {
 	 *
 	 * @see BoxAnnotation
 	 */
-	private BoxAnnotation toAst( File file, CFParser.PostannotationContext node ) {
-		BoxFQN	name	= new BoxFQN( node.identifier.getText(), getPosition( node.identifier ), getSourceText( node.identifier ) );
-		BoxExpr	value	= null;
-		if ( node.literalExpression( 0 ).stringLiteral() != null ) {
-			value = toAst( file, node.literalExpression( 0 ).stringLiteral() );
-		} else if ( node.literalExpression( 0 ).integerLiteral() != null ) {
+	private List<BoxAnnotation> toAst( File file, CFParser.PostannotationContext node ) {
+		List<BoxAnnotation> annotations = new ArrayList<>();
+		for ( CFParser.IdentifierContext id : node.parameters ) {
+			BoxFQN								name	= new BoxFQN( id.getText(), getPosition( id ), getSourceText( id ) );
+			int									index	= node.parameters.indexOf( id );
+			BoxExpr								value	= new BoxStringLiteral("", getPosition(id),getSourceText(id));
+
+			if( index < node.values.size() ) {
+				CFParser.LiteralExpressionContext	literal	= node.values.get( index );
+				if ( literal.stringLiteral() != null ) {
+					value = toAst( file, literal.stringLiteral() );
+				} else if ( literal.booleanLiteral() != null ) {
+					value = new BoxBooleanLiteral(
+						literal.booleanLiteral().getText(),
+						getPosition( node ),
+						getSourceText( node ) );
+				} else if ( literal.integerLiteral() != null ) {
 			value = new BoxIntegerLiteral(
-			    node.literalExpression( 0 ).integerLiteral().getText(),
+						literal.integerLiteral().getText(),
 			    getPosition( node ),
 			    getSourceText( node ) );
-		} else if ( node.literalExpression( 0 ).arrayExpression() != null ) {
-			value = toAst( file, node.literalExpression( 0 ).arrayExpression() );
-		} else if ( node.literalExpression( 0 ).structExpression() != null ) {
-			value = toAst( file, node.literalExpression( 0 ).structExpression() );
+				} else if ( literal.arrayExpression() != null ) {
+					value = toAst( file, literal.arrayExpression() );
+				} else if ( literal.structExpression() != null ) {
+					value = toAst( file, literal.structExpression() );
+				}
 		}
-		return new BoxAnnotation( name, value, getPosition( node ), getSourceText( node ) );
+			annotations.add( new BoxAnnotation( name, value, getPosition( node ), getSourceText( node ) ) );
+		}
+
+		return annotations;
 	}
 
 	private BoxStatement toAst( File file, CFParser.ConstructorContext node ) {
