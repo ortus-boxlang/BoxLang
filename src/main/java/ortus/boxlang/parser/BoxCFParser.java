@@ -68,30 +68,7 @@ import ortus.boxlang.ast.expression.BoxStructType;
 import ortus.boxlang.ast.expression.BoxTernaryOperation;
 import ortus.boxlang.ast.expression.BoxUnaryOperation;
 import ortus.boxlang.ast.expression.BoxUnaryOperator;
-import ortus.boxlang.ast.statement.BoxAccessModifier;
-import ortus.boxlang.ast.statement.BoxAnnotation;
-import ortus.boxlang.ast.statement.BoxArgumentDeclaration;
-import ortus.boxlang.ast.statement.BoxAssert;
-import ortus.boxlang.ast.statement.BoxAssignmentOperator;
-import ortus.boxlang.ast.statement.BoxBreak;
-import ortus.boxlang.ast.statement.BoxContinue;
-import ortus.boxlang.ast.statement.BoxDo;
-import ortus.boxlang.ast.statement.BoxExpression;
-import ortus.boxlang.ast.statement.BoxForIn;
-import ortus.boxlang.ast.statement.BoxForIndex;
-import ortus.boxlang.ast.statement.BoxFunctionDeclaration;
-import ortus.boxlang.ast.statement.BoxIfElse;
-import ortus.boxlang.ast.statement.BoxImport;
-import ortus.boxlang.ast.statement.BoxRethrow;
-import ortus.boxlang.ast.statement.BoxReturn;
-import ortus.boxlang.ast.statement.BoxReturnType;
-import ortus.boxlang.ast.statement.BoxSwitch;
-import ortus.boxlang.ast.statement.BoxSwitchCase;
-import ortus.boxlang.ast.statement.BoxThrow;
-import ortus.boxlang.ast.statement.BoxTry;
-import ortus.boxlang.ast.statement.BoxTryCatch;
-import ortus.boxlang.ast.statement.BoxType;
-import ortus.boxlang.ast.statement.BoxWhile;
+import ortus.boxlang.ast.statement.*;
 import ortus.boxlang.parser.antlr.CFLexer;
 import ortus.boxlang.parser.antlr.CFParser;
 
@@ -1248,13 +1225,16 @@ public class BoxCFParser extends BoxAbstractParser {
 	 * @see BoxFunctionDeclaration
 	 */
 	private BoxStatement toAst( File file, CFParser.FunctionContext node ) {
-		CFParser.IdentifierContext		temp		= node.functionSignature().identifier();
-		BoxReturnType					returnType	= new BoxReturnType( BoxType.Any, null, getPosition( temp ), getSourceText( temp ) );
-		String							name		= "undefined";
-		List<BoxStatement>				body		= new ArrayList<>();
-		List<BoxArgumentDeclaration>	args		= new ArrayList<>();
-		List<BoxAnnotation>				annotations	= new ArrayList<>();
-		BoxAccessModifier				modifier	= BoxAccessModifier.Public;
+		CFParser.IdentifierContext			temp			= node.functionSignature().identifier();
+		BoxReturnType						returnType		= new BoxReturnType( BoxType.Any, null, getPosition( temp ), getSourceText( temp ) );
+		String								name			= "undefined";
+		List<BoxStatement>					body			= new ArrayList<>();
+		List<BoxArgumentDeclaration>		args			= new ArrayList<>();
+		List<BoxAnnotation>					annotations		= new ArrayList<>();
+		List<BoxAnnotation>					annToRemove		= new ArrayList<>();
+		List<BoxDocumentationAnnotation>	documentation	= new ArrayList<>();
+		List<BoxDocumentationAnnotation>	docToRemove		= new ArrayList<>();
+		BoxAccessModifier					modifier		= BoxAccessModifier.Public;
 
 		if ( node.functionSignature().javadoc() != null ) {
 			try {
@@ -1262,7 +1242,7 @@ public class BoxCFParser extends BoxAbstractParser {
 				ParsingResult		result	= parser.parse( null, node.functionSignature().javadoc().getText() );
 				BoxDocumentation	docs	= ( BoxDocumentation ) result.getRoot();
 				for ( BoxNode n : docs.getAnnotations() ) {
-					annotations.add( ( BoxAnnotation ) n );
+					documentation.add( ( BoxDocumentationAnnotation ) n );
 				}
 			} catch ( IOException e ) {
 				throw new RuntimeException( e );
@@ -1292,8 +1272,59 @@ public class BoxCFParser extends BoxAbstractParser {
 			name = node.functionSignature().identifier().getText();
 		}
 
-		for ( CFParser.ParamContext arg : node.functionSignature().paramList().param() ) {
-			args.add( toAst( file, arg ) );
+		if ( node.functionSignature().paramList() != null ) {
+			for ( CFParser.ParamContext arg : node.functionSignature().paramList().param() ) {
+				BoxArgumentDeclaration argDeclaration = toAst( file, arg );
+				/* Resolve annotations @name.key "value" */
+				for ( BoxAnnotation pre : annotations ) {
+					String prename = pre.getKey().getValue();
+					if ( prename.indexOf( '.' ) > -1 ) {
+						prename = pre.getKey().getValue().substring( 0, pre.getKey().getValue().indexOf( "." ) );
+						if ( argDeclaration.getName().equalsIgnoreCase( prename ) ) {
+							BoxFQN key = new BoxFQN(
+							    pre.getKey().getValue().substring( pre.getKey().getValue().indexOf( "." ) + 1 ), pre.getPosition(),
+							    pre.getSourceText()
+							);
+							argDeclaration.getAnnotations().add(
+							    new BoxAnnotation( key, pre.getValue(), pre.getPosition(), pre.getSourceText() )
+							);
+							annToRemove.add( pre );
+						}
+					}
+				}
+				/* Resolve documentation @name.key "value" */
+				for ( BoxDocumentationAnnotation doc : documentation ) {
+					String docname = doc.getKey().getValue();
+					if ( docname.indexOf( '.' ) > -1 ) {
+						docname = doc.getKey().getValue().substring( 0, doc.getKey().getValue().indexOf( "." ) );
+						if ( argDeclaration.getName().equalsIgnoreCase( docname ) ) {
+							BoxFQN key = new BoxFQN(
+							    doc.getKey().getValue().substring( doc.getKey().getValue().indexOf( "." ) + 1 ), doc.getPosition(),
+							    doc.getSourceText()
+							);
+							argDeclaration.getDocumentation().add(
+							    new BoxDocumentationAnnotation( key, doc.getValue(), doc.getPosition(), doc.getSourceText() )
+							);
+							docToRemove.add( doc );
+						}
+					} else {
+						/* Case @name add hint */
+						if ( argDeclaration.getName().equalsIgnoreCase( docname ) ) {
+							BoxFQN hint = new BoxFQN(
+							    "hint",
+							    doc.getPosition(),
+							    doc.getSourceText()
+							);
+							argDeclaration.getDocumentation().add(
+							    new BoxDocumentationAnnotation( hint,
+							        doc.getValue(), doc.getPosition(), doc.getSourceText() )
+							);
+							docToRemove.add( doc );
+						}
+					}
+				}
+				args.add( argDeclaration );
+			}
 		}
 
 		if ( node.functionSignature().accessModifier() != null ) {
@@ -1326,8 +1357,10 @@ public class BoxCFParser extends BoxAbstractParser {
 		if ( node.statementBlock() != null ) {
 			body.addAll( toAst( file, node.statementBlock() ) );
 		}
+		annotations.removeAll( annToRemove );
+		documentation.removeAll( docToRemove );
 
-		return new BoxFunctionDeclaration( modifier, name, returnType, args, annotations, body, getPosition( node ), getSourceText( node ) );
+		return new BoxFunctionDeclaration( modifier, name, returnType, args, annotations, documentation, body, getPosition( node ), getSourceText( node ) );
 	}
 
 	/**
@@ -1341,11 +1374,17 @@ public class BoxCFParser extends BoxAbstractParser {
 	 * @see BoxArgumentDeclaration
 	 */
 	private BoxArgumentDeclaration toAst( File file, CFParser.ParamContext node ) {
-		String				name		= "undefined";
-		BoxExpr				expr		= null;
-		List<BoxAnnotation>	annotations	= new ArrayList<>();
+		Boolean								required		= false;
+		String								name			= "undefined";
+		BoxExpr								expr			= null;
+		List<BoxAnnotation>					annotations		= new ArrayList<>();
+		List<BoxDocumentationAnnotation>	documentation	= new ArrayList<>();
 
 		name = node.identifier().getText();
+		if ( node.REQUIRED() != null ) {
+			required = true;
+		}
+
 		if ( node.expression() != null ) {
 			expr = toAst( file, node.expression() );
 		}
@@ -1353,7 +1392,7 @@ public class BoxCFParser extends BoxAbstractParser {
 			annotations.add( toAst( file, annotation ) );
 		}
 
-		return new BoxArgumentDeclaration( name, expr, annotations, getPosition( node ), getSourceText( node ) );
+		return new BoxArgumentDeclaration( required, name, expr, annotations, documentation, getPosition( node ), getSourceText( node ) );
 	}
 
 	/**
