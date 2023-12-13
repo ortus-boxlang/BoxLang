@@ -89,7 +89,7 @@ public class Array implements List<Object>, IType, IReferenceable, IListenable {
 	 * @param arr The array to create the Array from
 	 */
 	public Array( Object[] arr ) {
-		wrapped = Collections.synchronizedList( Arrays.asList( arr ) );
+		wrapped = Collections.synchronizedList( new ArrayList<Object>( Arrays.asList( arr ) ) );
 	}
 
 	/**
@@ -137,6 +137,22 @@ public class Array implements List<Object>, IType, IReferenceable, IListenable {
 	}
 
 	/**
+	 * Create a new Array from a list of values.
+	 *
+	 * @param values The values to create the Array from
+	 *
+	 * @return The Array
+	 */
+	public static Array copyOf( List<Object> arr ) {
+		Array newArr = new Array();
+		// loop over list and add all elements
+		for ( Object o : arr ) {
+			newArr.add( o );
+		}
+		return newArr;
+	}
+
+	/**
 	 * --------------------------------------------------------------------------
 	 * List Interface Methods
 	 * --------------------------------------------------------------------------
@@ -174,10 +190,13 @@ public class Array implements List<Object>, IType, IReferenceable, IListenable {
 
 	public boolean remove( Object o ) {
 		synchronized ( wrapped ) {
-			int indexOf = wrapped.indexOf( o );
-			if ( indexOf > -1 ) {
-				notifyListeners( indexOf, null );
-				return wrapped.remove( o );
+			ListIterator<Object> iterator = wrapped.listIterator();
+			while ( iterator.hasNext() ) {
+				Object element = iterator.next();
+				if ( element.equals( o ) ) {
+					iterator.remove();
+					return true;
+				}
 			}
 			return false;
 		}
@@ -235,8 +254,23 @@ public class Array implements List<Object>, IType, IReferenceable, IListenable {
 	}
 
 	public Object remove( int index ) {
-		notifyListeners( index, null );
-		return wrapped.remove( index );
+		synchronized ( wrapped ) {
+			ListIterator<Object>	iterator	= wrapped.listIterator();
+			int						i			= 0;
+			while ( iterator.hasNext() ) {
+				Object element = iterator.next();
+				if ( i == index ) {
+					iterator.remove();
+					return element;
+				}
+				i++;
+			}
+			return null;
+		}
+	}
+
+	public Object removeAt( Number index ) {
+		return remove( index.intValue() );
 	}
 
 	public int indexOf( Object o ) {
