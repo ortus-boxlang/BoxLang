@@ -1,0 +1,67 @@
+import java.lang.System;
+import ortus.boxlang.runtime.types.Array;
+import java.util.Date;
+
+start = new Date().getTime()
+
+// Get primes up to num
+num = 1000
+
+p = 1; // Counter for outer loop over array
+i = 0; // Counter inner loop finding multiples of each array index
+m = 0; // holds multiples
+candidates = []; // main array that holds values 1 through num
+primes = []; // final array that primes are copied to to return 
+// populate candidate array with every number between 1 and num
+while (++i <= num) {candidates[i] = i;}
+
+// Loop over every index in our candidate array
+while(++p<candidates.size())
+    {
+        // Reset inner counter for each outer loop
+        i = 1;
+        // If the number at this index has already been marked as "0" (not prime) skip it.
+        if(!candidates[p])
+            {
+                continue;
+            }
+        // Loop from 1 to num to find all multiples of the current index
+        // represented by the outer-loop value of p
+        while (++i <= num)
+            {
+                // m is the product of p and i and is therefore not prime
+                m = p*i;
+                // As long as m is in the array
+                if(m<=num)
+                    {
+                        // Mark it as not prime
+                        candidates[m] = 0;
+                    }
+                else
+                    {
+                        // if the product of p and i were greater than num, 
+                        // then break out of the loop.
+                        break;
+                    }
+            } // end inner loop
+    } // end candidate array loop
+
+// Re-use i for this final loop
+i = 0;
+while (++i <= candidates.size())
+    {
+        // Every number left in the candidate array greater than 1 
+        // and less than num is a prime we care about.
+        if(candidates[i] > 1 && candidates[i] <= num)
+            {
+                // Add it into the primes array
+                primes[primes.size()+1] = candidates[i];
+            }
+    } // End while
+
+// Return our list of primes
+
+
+System.out.println( primes.size() );
+
+System.out.println( new Date().getTime()-start & "ms" )

@@ -1,0 +1,34 @@
+import java.lang.System;
+import ortus.boxlang.runtime.types.Array;
+import java.util.Date;
+
+start = new Date().getTime()
+
+// Get primes up to num
+num = 1000
+
+i = 1;
+p = 1;
+m = 0;
+t = 0;
+l = 0;
+arr = [];
+arr2 = [];
+while (++i <= num) { arr[i-1] = i; }
+
+while(p<arr.size()) {
+    i = 0;
+    arr2 = Array.copyOf( arr );
+    
+    while (++i <= arr2.size()) {        
+        m = arr[p]*arr2[i];
+        t = arr.indexOf(m);
+        if(t>-1) arr.removeAt(t);
+        if(m>=num) break;
+    }
+    p++;
+}
+
+System.out.println( arr.size() );
+
+System.out.println( new Date().getTime()-start & "ms" )
