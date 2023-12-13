@@ -202,9 +202,7 @@ forIncrement: expression;
 
 do: DO statementBlock WHILE LPAREN expression RPAREN;
 
-while:
-	WHILE LPAREN condition=expression RPAREN statementBlock
-	| WHILE LPAREN condition=expression RPAREN statement;
+while:	WHILE LPAREN condition=expression RPAREN ( statementBlock | statement);
 
 assert: ASSERT expression;
 break: BREAK eos?;
@@ -303,8 +301,7 @@ new:
 fqn: (identifier DOT)* identifier;
 
 expression:
-	LPAREN expression RPAREN
-	| assignment
+	assignment
 	| NULL
 	| accessExpression
 	| unary

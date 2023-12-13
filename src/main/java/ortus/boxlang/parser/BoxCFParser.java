@@ -864,9 +864,7 @@ public class BoxCFParser extends BoxAbstractParser {
 	 * @see BoxBinaryOperator
 	 */
 	private BoxExpr toAst( File file, CFParser.ExpressionContext expression ) {
-		if ( expression.LPAREN() != null ) {
-			return toAst( file, expression.expression( 0 ) );
-		} else if ( expression.accessExpression() != null ) {
+		if ( expression.accessExpression() != null ) {
 			return toAst( file, expression.accessExpression() );
 		} else if ( expression.AND() != null ) {
 			BoxExpr	left	= toAst( file, expression.expression( 0 ) );

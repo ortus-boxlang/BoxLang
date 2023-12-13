@@ -581,6 +581,31 @@ public class CoreLangTest {
 
 	}
 
+	@DisplayName( "Multiple parnetheitcal statements" )
+	@Test
+	public void testMultipleParnetheticalStatements() {
+
+		instance.executeSource(
+		    """
+		    (1+2);
+		    (1+2);
+		           """,
+		    context );
+
+	}
+
+	@DisplayName( "Multiple parnetheitcal statements with over-nested parenthesis" )
+	@Test
+	public void testMultipleParnetheticalStatementsWithOverNestedParenthesis() {
+
+		instance.executeSource(
+		    """
+		    ((((1+2))));
+		    (1+2);
+		           """,
+		    context );
+	}
+
 	@DisplayName( "String parsing 1" )
 	@Test
 	public void testStringParsing1() {
