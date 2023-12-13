@@ -1424,30 +1424,30 @@ public class BoxCFParser extends BoxAbstractParser {
 	private List<BoxAnnotation> toAst( File file, CFParser.PostannotationContext node ) {
 		List<BoxAnnotation> annotations = new ArrayList<>();
 		for ( CFParser.IdentifierContext id : node.parameters ) {
-			BoxFQN								name	= new BoxFQN( id.getText(), getPosition( id ), getSourceText( id ) );
-			int									index	= node.parameters.indexOf( id );
-			BoxExpr								value	= new BoxStringLiteral("", getPosition(id),getSourceText(id));
+			BoxFQN	name	= new BoxFQN( id.getText(), getPosition( id ), getSourceText( id ) );
+			int		index	= node.parameters.indexOf( id );
+			BoxExpr	value	= new BoxStringLiteral( "", getPosition( id ), getSourceText( id ) );
 
-			if( index < node.values.size() ) {
-				CFParser.LiteralExpressionContext	literal	= node.values.get( index );
+			if ( index < node.values.size() ) {
+				CFParser.LiteralExpressionContext literal = node.values.get( index );
 				if ( literal.stringLiteral() != null ) {
 					value = toAst( file, literal.stringLiteral() );
 				} else if ( literal.booleanLiteral() != null ) {
 					value = new BoxBooleanLiteral(
-						literal.booleanLiteral().getText(),
-						getPosition( node ),
-						getSourceText( node ) );
+					    literal.booleanLiteral().getText(),
+					    getPosition( node ),
+					    getSourceText( node ) );
 				} else if ( literal.integerLiteral() != null ) {
-			value = new BoxIntegerLiteral(
-						literal.integerLiteral().getText(),
-			    getPosition( node ),
-			    getSourceText( node ) );
+					value = new BoxIntegerLiteral(
+					    literal.integerLiteral().getText(),
+					    getPosition( node ),
+					    getSourceText( node ) );
 				} else if ( literal.arrayExpression() != null ) {
 					value = toAst( file, literal.arrayExpression() );
 				} else if ( literal.structExpression() != null ) {
 					value = toAst( file, literal.structExpression() );
 				}
-		}
+			}
 			annotations.add( new BoxAnnotation( name, value, getPosition( node ), getSourceText( node ) ) );
 		}
 
