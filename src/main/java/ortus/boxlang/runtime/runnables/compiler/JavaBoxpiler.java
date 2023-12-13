@@ -380,7 +380,6 @@ import org.jbox2d.util.Issue;
 				transpiler.setProperty( "returnType", "void" );
 				TranspiledCode javaASTs = transpiler.transpile( result.getRoot() );
 				compileSource( javaASTs.getEntryPoint().toString(), fqn );
-
 				// Process functions ad lamdas
 				for ( CompilationUnit callable : javaASTs.getCallables() ) {
 					compileSource( callable.toString(), fqn );
@@ -514,7 +513,7 @@ import org.jbox2d.util.Issue;
 		packg	= packg.replaceAll( "\\\\", "." );
 		// Remove any non alpha-numeric chars.
 		packg	= packg.replaceAll( "[^a-zA-Z0-9\\\\.]", "" );
-		return packg;
+		return packg.toLowerCase();
 
 	}
 
