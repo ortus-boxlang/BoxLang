@@ -789,6 +789,18 @@ public class BoxCFParser extends BoxAbstractParser {
 		if ( node.LOCAL() != null ) {
 			return new BoxScope( node.LOCAL().getText(), getPosition( node ), getSourceText( node ) );
 		}
+		if ( node.APPLICATION() != null ) {
+			return new BoxScope( node.APPLICATION().getText(), getPosition( node ), getSourceText( node ) );
+		}
+		if ( node.ARGUMENTS() != null ) {
+			return new BoxScope( node.ARGUMENTS().getText(), getPosition( node ), getSourceText( node ) );
+		}
+		if ( node.REQUEST() != null ) {
+			return new BoxScope( node.REQUEST().getText(), getPosition( node ), getSourceText( node ) );
+		}
+		if ( node.THIS() != null ) {
+			return new BoxScope( node.THIS().getText(), getPosition( node ), getSourceText( node ) );
+		}
 		throw new IllegalStateException( "not implemented: " + node.getClass().getSimpleName() );
 	}
 
