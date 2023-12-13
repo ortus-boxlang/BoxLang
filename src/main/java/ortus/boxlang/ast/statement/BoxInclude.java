@@ -19,10 +19,11 @@ public class BoxInclude extends BoxStatement {
 	 * @param position   position of the statement in the source code
 	 * @param sourceText source code that originated the Node
 	 */
-	public BoxInclude(BoxExpr expression, Position position, String sourceText ) {
+	public BoxInclude( BoxExpr expression, Position position, String sourceText ) {
 		super( position, sourceText );
 		this.file = expression;
-		this.file.setParent( this );}
+		this.file.setParent( this );
+	}
 
 	public BoxExpr getFile() {
 		return file;

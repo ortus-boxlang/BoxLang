@@ -87,9 +87,9 @@ public class DoubleCaster {
 			}
 		}
 
-		String stringValue = StringCaster.cast( object );
-		Double result = parseDouble( stringValue );
-		if( result != null ){
+		String	stringValue	= StringCaster.cast( object );
+		Double	result		= parseDouble( stringValue );
+		if ( result != null ) {
 			return result;
 		}
 		if ( fail ) {
@@ -104,60 +104,66 @@ public class DoubleCaster {
 	 * Determine whether the provided string is castable to a Double.
 	 *
 	 * @param value A probably-hopefully double string value, with an optional plus/minus sign.
-	 * @return Optional - parsed Double if all string characters are digits, with an optional sign and decimal point. Empty optional for empty string, null, floats, alpha characters, etc.
+	 * 
+	 * @return Optional - parsed Double if all string characters are digits, with an optional sign and decimal point. Empty optional for empty string,
+	 *         null, floats, alpha characters, etc.
 	 */
-	private static Double parseDouble( String value ){
-		if ( value == null ) return null;
+	private static Double parseDouble( String value ) {
+		if ( value == null )
+			return null;
 
-		int signMultiplier = value.startsWith("-" ) ? -1 : 1;
+		int signMultiplier = value.startsWith( "-" ) ? -1 : 1;
 		value = value.trim();
-		if ( value.startsWith( "-" ) || value.startsWith( "+" ) ){
-			value = value.substring(1);
+		if ( value.startsWith( "-" ) || value.startsWith( "+" ) ) {
+			value = value.substring( 1 );
 		}
-		if ( value.isBlank() ) return null;
+		if ( value.isBlank() )
+			return null;
 
-		char[] charArray = value.toCharArray();
-		double intValue = 0.0;
-		double fractionValue = 0.0;
+		char[]	charArray		= value.toCharArray();
+		double	intValue		= 0.0;
+		double	fractionValue	= 0.0;
 
 		/**
 		 * @TODO: Support 'NAN' and 'INFINITY' strings?
-		 * https://github.com/openjdk/jdk17/blob/master/src/java.base/share/classes/jdk/internal/math/FloatingDecimal.java#L1854-L1865
+		 *        https://github.com/openjdk/jdk17/blob/master/src/java.base/share/classes/jdk/internal/math/FloatingDecimal.java#L1854-L1865
 		 */
 
 		// Get decimal point and validate characters are numeric
-		int decimalIndex = -1;
-		boolean hasDecimal = false;
-		for (int i = 0; i < charArray.length; i++) {
-			if (charArray[i] == '.') {
-				if ( hasDecimal ){
+		int		decimalIndex	= -1;
+		boolean	hasDecimal		= false;
+		for ( int i = 0; i < charArray.length; i++ ) {
+			if ( charArray[ i ] == '.' ) {
+				if ( hasDecimal ) {
 					// Multiple decimal points; throw or return null!
 					return null;
 				}
-				decimalIndex = i;
-				hasDecimal = true;
+				decimalIndex	= i;
+				hasDecimal		= true;
 				continue;
 			}
-			if ( !Character.isDigit(charArray[i]) ){
+			if ( !Character.isDigit( charArray[ i ] ) ) {
 				return null;
 			}
 		}
 
 		// Process the integer part
 		int integerEnd = charArray.length - 1;
-		if ( hasDecimal ){ integerEnd = decimalIndex - 1; }
-		for (int i = 0; i <= integerEnd; i++) {
-			int digit = charArray[i] - '0';
-			intValue += ( digit * Math.pow(10, (integerEnd-i)) );
+		if ( hasDecimal ) {
+			integerEnd = decimalIndex - 1;
+		}
+		for ( int i = 0; i <= integerEnd; i++ ) {
+			int digit = charArray[ i ] - '0';
+			intValue += ( digit * Math.pow( 10, ( integerEnd - i ) ) );
 		}
 
 		// Process the fractional part
-		if (hasDecimal) {
-			var decimalStart = decimalIndex + 1;
-			var decimalEnd = charArray.length;
-			for (int i = decimalStart, j = 1; i < decimalEnd; i++, j++) {
-				int digit = charArray[i] - '0';
-				fractionValue += digit * Math.pow(10, -j);
+		if ( hasDecimal ) {
+			var	decimalStart	= decimalIndex + 1;
+			var	decimalEnd		= charArray.length;
+			for ( int i = decimalStart, j = 1; i < decimalEnd; i++, j++ ) {
+				int digit = charArray[ i ] - '0';
+				fractionValue += digit * Math.pow( 10, -j );
 			}
 		}
 		return signMultiplier * ( intValue + fractionValue );

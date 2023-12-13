@@ -42,48 +42,49 @@ public class TestUDF extends TestBase {
 	public void functionDocumentation() throws IOException {
 
 		String			documentation	= """
-/**
-* This function does cool stuff
-*
-* @name Pass the name here that you want
-* @name.isCool yes
-*
-* @author Brad Wood
-* @returns Only the coolest value ever
-*/
-		                                  """;
+		                                  /**
+		                                  * This function does cool stuff
+		                                  *
+		                                  * @name Pass the name here that you want
+		                                  * @name.isCool yes
+		                                  *
+		                                  * @author Brad Wood
+		                                  * @returns Only the coolest value ever
+		                                  */
+		                                  		                                  """;
 		BoxDOCParser	parser			= new BoxDOCParser();
 		ParsingResult	result			= parser.parse( null, documentation );
 		assertTrue( result.isCorrect() );
-		BoxDocumentation docs = (BoxDocumentation) result.getRoot();
+		BoxDocumentation docs = ( BoxDocumentation ) result.getRoot();
 
-		assertTrue(((BoxAnnotation) docs.getAnnotations().get(0)).getKey().getValue().equals("name") );
-		assertTrue(((BoxStringLiteral) ((BoxAnnotation) docs.getAnnotations().get(0)).getValue()).getValue().equals("Pass the name here that you want"));
+		assertTrue( ( ( BoxAnnotation ) docs.getAnnotations().get( 0 ) ).getKey().getValue().equals( "name" ) );
+		assertTrue(
+		    ( ( BoxStringLiteral ) ( ( BoxAnnotation ) docs.getAnnotations().get( 0 ) ).getValue() ).getValue().equals( "Pass the name here that you want" ) );
 	}
 
 	@Test
 	public void userDefinedFunctionAnnotations() throws IOException {
 
-		BoxCFParser		parser			= new BoxCFParser();
-		ParsingResult	result			= parser.parse(
+		BoxCFParser		parser	= new BoxCFParser();
+		ParsingResult	result	= parser.parse(
 
-			"""
-				/**
-				* This function does cool stuff
-				*
-				* @name Pass the name here that you want
-				* @name.isCool yes
-				*
-				* @author Brad Wood
-				* @returns Only the coolest value ever
-				*/
-				@myAnnotation "value" "another value"
-				@name.foo "bar"
-				string function greet( required string name='Brad' inject="myService" ) key="value" keyOnly {
-				  return "Brad";
-				}
-"""
-		 );
+		    """
+		    				/**
+		    				* This function does cool stuff
+		    				*
+		    				* @name Pass the name here that you want
+		    				* @name.isCool yes
+		    				*
+		    				* @author Brad Wood
+		    				* @returns Only the coolest value ever
+		    				*/
+		    				@myAnnotation "value" "another value"
+		    				@name.foo "bar"
+		    				string function greet( required string name='Brad' inject="myService" ) key="value" keyOnly {
+		    				  return "Brad";
+		    				}
+		    """
+		);
 		assertTrue( result.isCorrect() );
 
 	}

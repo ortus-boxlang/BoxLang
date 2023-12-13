@@ -120,7 +120,8 @@ public abstract class AbstractTransformer implements Transformer {
 				};
 			} else {
 				template = switch ( context ) {
-					case INIT -> "${contextName}.scopeFindNearby(Key.of(\"${id}\"), ${contextName}.getDefaultAssignmentScope()).scope().assign(Key.of(\"${id}\"))";
+					case INIT ->
+					    "${contextName}.scopeFindNearby(Key.of(\"${id}\"), ${contextName}.getDefaultAssignmentScope()).scope().assign(Key.of(\"${id}\"))";
 					case SAFE -> "${contextName}.scopeFindNearby(Key.of(\"${id}\"), ${contextName}.getDefaultAssignmentScope()).value()";
 					case RIGHT -> "${contextName}.scopeFindNearby(Key.of(\"${id}\"),null).value()";
 					default -> "${contextName}.scopeFindNearby(Key.of(\"${id}\"),null).value()";

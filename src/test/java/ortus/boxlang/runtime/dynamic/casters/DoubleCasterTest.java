@@ -58,7 +58,7 @@ public class DoubleCasterTest {
 
 	@Test
 	@Disabled( "Double casting can screw up the precision" )
-	void testItCanHandleFloatingPointMath(){
+	void testItCanHandleFloatingPointMath() {
 		// @TODO: 0.4 + 0.02 returns 0.42000000000000004. How to fix these rounding errors?
 		assertThat( DoubleCaster.cast( ".42" ) ).isEqualTo( 0.42 );
 	}
