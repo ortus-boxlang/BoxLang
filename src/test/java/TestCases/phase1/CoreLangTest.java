@@ -857,4 +857,33 @@ public class CoreLangTest {
 
 	}
 
+	@DisplayName( "BIF Call" )
+	@Test
+	public void testBIFCall() {
+
+		instance.executeSource(
+		    """
+		    print( "Hello from BIF-land" );
+		      """,
+		    context );
+
+		instance.executeSource(
+		    """
+		    arr = [1,2,3]
+		       result = arrayLen( arr );
+		    print( result )
+		         """,
+		    context );
+		assertThat( variables.dereference( result, false ) ).isEqualTo( 3 );
+
+		instance.executeSource(
+		    """
+		    arr = [1,2,3]
+		       result = arrayAppend( arr, 4 );
+		    print( result )
+		         """,
+		    context );
+
+	}
+
 }

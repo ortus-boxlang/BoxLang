@@ -182,7 +182,7 @@ public class FunctionService extends BaseService {
 
 	public void loadGlobalFunctions() throws IOException {
 		globalFunctions = ClassDiscovery
-		    .getClassFilesAsStream( FUNCTIONS_PACKAGE + ".global", false )
+		    .getClassFilesAsStream( FUNCTIONS_PACKAGE + ".global", true )
 		    .collect(
 		        Collectors.toConcurrentMap(
 		            value -> Key.of( ClassUtils.getShortClassName( value ) ),
