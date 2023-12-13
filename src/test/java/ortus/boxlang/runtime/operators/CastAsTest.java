@@ -143,10 +143,11 @@ public class CastAsTest {
 	void testItCanCastToFloat() {
 		assertThat( CastAs.invoke( 5, "float" ).getClass().getName() ).isEqualTo( "java.lang.Float" );
 		assertThat( CastAs.invoke( true, "float" ).getClass().getName() ).isEqualTo( "java.lang.Float" );
+		Float comparison = 5.7f;
 		assertThat(
 		    EqualsEquals.invoke(
 		        CastAs.invoke( 5.7, "float" ),
-		        5.7
+				comparison
 		    )
 		).isTrue();
 	}
