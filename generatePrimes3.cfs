@@ -1,10 +1,9 @@
-import java.lang.System;
 import java.lang.Math;
 import java.util.Date;
 
-start = new Date().getTime()
+start = new Date().getTime();
 // Get primes up to num
-num = 1000
+num = 10000000
 
 p = 1; // Counter for outer loop over array
 i = 1; // Counter inner loop finding multiples of each array index
@@ -19,16 +18,16 @@ pLimit = Math.sqrt(num); // Only
 // times "i < num" is evaluated by 90%
 while (i <= num)
     {
-        candidates.add(i);
-        candidates.add(i+2);
-        candidates.add(i+4);
-        candidates.add(i+6);
-        candidates.add(i+8);
-        candidates.add(i+10);
-        candidates.add(i+12);
-        candidates.add(i+14);
-        candidates.add(i+16);
-        candidates.add(i+18);
+        arrayAppend( candidates, i);
+        arrayAppend( candidates, i+2);
+        arrayAppend( candidates, i+4);
+        arrayAppend( candidates, i+6);
+        arrayAppend( candidates, i+8);
+        arrayAppend( candidates, i+10);
+        arrayAppend( candidates, i+12);
+        arrayAppend( candidates, i+14);
+        arrayAppend( candidates, i+16);
+        arrayAppend( candidates, i+18);
         i = i+20;
     }
 // Short circuit this scenario
@@ -54,7 +53,7 @@ if(num >= 2)   {
             _p = candidates[p];
             // Since we know _p is prime, add it ot the primes array 
             // now while we're thinking about it
-            primes.add(_p);
+            arrayAppend( primes, _p);
             // Start calculating multiples with a product we haven't multipied yet.  Namely _P^2
             i = _p;
             // Start loop over every odd number from -P
@@ -87,19 +86,19 @@ if(num >= 2)   {
     // Note, the primes array is already partially populated at this point.
     // Begin looping at the current value of p to pick up where we left off.
     // For every remaining index in our candidate array...
-    while (++p <= candidates.size())
+    while (++p <= arrayLen(candidates) )
         {
             // ... that is not been marked prime and is less than our limit ...
             if(candidates[p] > 1 && candidates[p] <= num)
                 {
                     // Place it in the final array of primes.
-                    primes.add(candidates[p]);
+                    arrayAppend(primes,candidates[p]);
                 }
         }
     // Return our list of primes
 
 }
 
-System.out.println( primes.size() );
+println( arrayLen( primes ) );
 
-System.out.println( new Date().getTime()-start & "ms" )
+println( new Date().getTime()-start & "ms" )
