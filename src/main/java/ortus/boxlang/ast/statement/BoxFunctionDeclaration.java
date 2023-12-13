@@ -27,12 +27,13 @@ import ortus.boxlang.ast.Position;
  */
 public class BoxFunctionDeclaration extends BoxStatement {
 
-	private final BoxAccessModifier				accessModifier;
-	private final String						name;
-	private final List<BoxArgumentDeclaration>	args;
-	private final BoxReturnType					type;
-	private final List<BoxStatement>			body;
-	private final List<BoxAnnotation>			annotations;
+	private final BoxAccessModifier					accessModifier;
+	private final String							name;
+	private final List<BoxArgumentDeclaration>		args;
+	private final BoxReturnType						type;
+	private final List<BoxStatement>				body;
+	private final List<BoxAnnotation>				annotations;
+	private final List<BoxDocumentationAnnotation>	documentation;
 
 	/**
 	 * Creates the AST node
@@ -41,6 +42,8 @@ public class BoxFunctionDeclaration extends BoxStatement {
 	 * @param name           name of the function
 	 * @param type           return type
 	 * @param args           List of arguments
+	 * @param annotations    annotations
+	 * @param documentation  documentation
 	 * @param body           body of the function
 	 * @param position       position of the statement in the source code
 	 * @param sourceText     source code that originated the Node
@@ -51,6 +54,7 @@ public class BoxFunctionDeclaration extends BoxStatement {
 
 	public BoxFunctionDeclaration( BoxAccessModifier accessModifier, String name, BoxReturnType type, List<BoxArgumentDeclaration> args,
 	    List<BoxAnnotation> annotations,
+	    List<BoxDocumentationAnnotation> documentation,
 	    List<BoxStatement> body, Position position,
 	    String sourceText ) {
 		super( position, sourceText );
@@ -58,8 +62,10 @@ public class BoxFunctionDeclaration extends BoxStatement {
 		this.name			= name;
 		this.type			= type;
 		this.type.setParent( this );
-		this.annotations = Collections.unmodifiableList( annotations );
+		this.annotations = annotations;
 		this.annotations.forEach( arg -> arg.setParent( this ) );
+		this.documentation = documentation;
+		this.documentation.forEach( arg -> arg.setParent( this ) );
 		this.args = Collections.unmodifiableList( args );
 		this.args.forEach( arg -> arg.setParent( this ) );
 		this.body = Collections.unmodifiableList( body );
@@ -84,6 +90,14 @@ public class BoxFunctionDeclaration extends BoxStatement {
 
 	public List<BoxStatement> getBody() {
 		return body;
+	}
+
+	public List<BoxAnnotation> getAnnotations() {
+		return annotations;
+	}
+
+	public List<BoxDocumentationAnnotation> getDocumentation() {
+		return documentation;
 	}
 
 	@Override
