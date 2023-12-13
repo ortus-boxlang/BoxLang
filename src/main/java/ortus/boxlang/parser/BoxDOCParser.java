@@ -7,6 +7,7 @@ import ortus.boxlang.ast.*;
 import ortus.boxlang.ast.expression.BoxFQN;
 import ortus.boxlang.ast.expression.BoxStringLiteral;
 import ortus.boxlang.ast.statement.BoxAnnotation;
+import ortus.boxlang.ast.statement.BoxDocumentationAnnotation;
 import ortus.boxlang.parser.antlr.CFParser;
 import ortus.boxlang.parser.antlr.DOCLexer;
 import ortus.boxlang.parser.antlr.DOCParser;
@@ -71,7 +72,7 @@ public class BoxDOCParser {
 	private BoxNode toAst( File file, DOCParser.BlockTagContext node ) {
 		BoxFQN				name	= new BoxFQN( node.blockTagName().NAME().getText(), null, null );
 		BoxStringLiteral	value	= new BoxStringLiteral( node.blockTagContent( 0 ).getText(), null, null );
-		return new BoxAnnotation( name, value, null, null );
+		return new BoxDocumentationAnnotation( name, value, null, null );
 	}
 
 	protected ParserRuleContext parserFirstStage( File file, InputStream stream ) throws IOException {
