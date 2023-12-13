@@ -4,6 +4,9 @@ import static org.junit.Assert.assertTrue;
 
 import java.io.IOException;
 
+import com.github.javaparser.ast.CompilationUnit;
+import com.github.javaparser.ast.Node;
+import com.github.javaparser.ast.body.VariableDeclarator;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
@@ -18,6 +21,7 @@ import ortus.boxlang.parser.BoxCFParser;
 import ortus.boxlang.parser.BoxDOCParser;
 import ortus.boxlang.parser.BoxParser;
 import ortus.boxlang.parser.ParsingResult;
+import ortus.boxlang.transpiler.JavaTranspiler;
 
 public class TestUDF extends TestBase {
 
@@ -25,6 +29,14 @@ public class TestUDF extends TestBase {
 		BoxParser		parser	= new BoxParser();
 		ParsingResult	result	= parser.parseStatement( statement );
 		return result.isCorrect();
+	}
+
+	public Node transformUDF( String statement ) throws IOException {
+		BoxParser		parser	= new BoxParser();
+		ParsingResult	result	= parser.parseStatement( statement );
+		assertTrue( result.isCorrect() );
+
+		return new JavaTranspiler().transform( result.getRoot() );
 	}
 
 	@Test
@@ -72,25 +84,25 @@ public class TestUDF extends TestBase {
 	public void userDefinedFunctionDocumentation() throws IOException {
 
 		BoxCFParser		parser	= new BoxCFParser();
-		ParsingResult	result	= parser.parse(
+		String			code	= """
+		                          				/**
+		                          				* This function does cool stuff
+		                          				*
+		                          				* @name Pass the name here that you want
+		                          				* @name.isCool yes
+		                          				*
+		                          				* @author Brad Wood
+		                          				* @returns Only the coolest value ever
+		                          				*/
+		                          				@myAnnotation "value" "another value"
+		                          				@name.foo "bar"
+		                          				string function greet( required string name='Brad' inject="myService" ) key="value" keyOnly {
+		                          				  return "Brad";
+		                          				}
+		                          """;
 
-		    """
-		    				/**
-		    				* This function does cool stuff
-		    				*
-		    				* @name Pass the name here that you want
-		    				* @name.isCool yes
-		    				*
-		    				* @author Brad Wood
-		    				* @returns Only the coolest value ever
-		    				*/
-		    				@myAnnotation "value" "another value"
-		    				@name.foo "bar"
-		    				string function greet( required string name='Brad' inject="myService" ) key="value" keyOnly {
-		    				  return "Brad";
-		    				}
-		    """
-		);
+		ParsingResult	result	= parser.parse( code );
+
 		assertTrue( result.isCorrect() );
 		BoxScript script = ( BoxScript ) result.getRoot();
 		script.getStatements().forEach( stmt -> {
@@ -117,6 +129,17 @@ public class TestUDF extends TestBase {
 			} );
 		} );
 
+		CompilationUnit javaAST = (CompilationUnit) transformUDF( code );
+		VariableDeclarator arguments = javaAST.getType(0).getFieldByName("arguments").get().getVariable(0);
+		Assertions.assertEquals( 1, arguments.getInitializer().get().asArrayInitializerExpr().getValues().size() );
+		VariableDeclarator annotations = javaAST.getType(0).getFieldByName("annotations").get().getVariable(0);
+		assertEqualsNoWhiteSpaces("""
+			Struct.of(Key.of("myAnnotation"), "value", Key.of("keyOnly"), "value")
+			""", annotations.getInitializer().get().toString() );
+		VariableDeclarator documentation = javaAST.getType(0).getFieldByName("documentation").get().getVariable(0);
+		assertEqualsNoWhiteSpaces("""
+			Struct.of(Key.of("author"),"BradWood",Key.of("returns"),"Only the coolest value ever")
+			""", documentation.getInitializer().get().toString() );
 	}
 
 	@Test
