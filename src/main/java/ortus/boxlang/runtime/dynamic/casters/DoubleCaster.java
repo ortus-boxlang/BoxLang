@@ -87,13 +87,18 @@ public class DoubleCaster {
 			}
 		}
 
-		String	stringValue	= StringCaster.cast( object );
-		Double	result		= parseDouble( stringValue );
-		if ( result != null ) {
-			return result;
+		// Try to parse the string as a double
+		CastAttempt<String> attempt = StringCaster.attempt( object );
+		if ( attempt.wasSuccessful() ) {
+			Double result = parseDouble( attempt.get() );
+			if ( result != null ) {
+				return result;
+			}
 		}
+
+		// Verify if we can throw an exception
 		if ( fail ) {
-			throw new ApplicationException( String.format( "Can't cast %s to a double.", stringValue ) );
+			throw new ApplicationException( String.format( "Can't cast %s to a double.", object.toString() ) );
 		} else {
 			return null;
 		}
@@ -104,7 +109,7 @@ public class DoubleCaster {
 	 * Determine whether the provided string is castable to a Double.
 	 *
 	 * @param value A probably-hopefully double string value, with an optional plus/minus sign.
-	 * 
+	 *
 	 * @return Optional - parsed Double if all string characters are digits, with an optional sign and decimal point. Empty optional for empty string,
 	 *         null, floats, alpha characters, etc.
 	 */
