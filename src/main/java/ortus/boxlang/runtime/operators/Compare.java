@@ -17,6 +17,8 @@
  */
 package ortus.boxlang.runtime.operators;
 
+import ortus.boxlang.runtime.dynamic.casters.CastAttempt;
+import ortus.boxlang.runtime.dynamic.casters.DoubleCaster;
 import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.types.exceptions.ApplicationException;
 
@@ -65,11 +67,13 @@ public class Compare implements IOperator {
 		left	= DynamicObject.unWrap( left );
 		right	= DynamicObject.unWrap( right );
 
-		// TODO: actually if inputs are numeric, don't just cast and catch.
-		try {
-			return Double.valueOf( left.toString() ).compareTo( Double.valueOf( right.toString() ) );
-		} catch ( NumberFormatException e ) {
-			// If the operands are not numbers, ignore
+		CastAttempt<Double> leftAttempt = DoubleCaster.attempt( left );
+		if ( leftAttempt.wasSuccessful() ) {
+			CastAttempt<Double> rightAttempt = DoubleCaster.attempt( right );
+
+			if ( rightAttempt.wasSuccessful() ) {
+				return leftAttempt.get().compareTo( rightAttempt.get() );
+			}
 		}
 
 		// TODO: This is too simplistic
