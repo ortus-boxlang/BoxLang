@@ -12,45 +12,45 @@ import ortus.boxlang.transpiler.transformer.TransformerContext;
 
 import java.util.Map;
 
-
 /**
  * Transform a BoxArgumentDeclarationTransformer Node the equivalent Java Parser AST nodes
  */
-public class BoxArgumentDeclarationTransformer  extends AbstractTransformer {
+public class BoxArgumentDeclarationTransformer extends AbstractTransformer {
 
-	Logger logger		= LoggerFactory.getLogger( BoxArgumentDeclarationTransformer.class );
-	public BoxArgumentDeclarationTransformer(JavaTranspiler transpiler) {
+	Logger logger = LoggerFactory.getLogger( BoxArgumentDeclarationTransformer.class );
+
+	public BoxArgumentDeclarationTransformer( JavaTranspiler transpiler ) {
 		super( transpiler );
 	}
 
 	@Override
-	public Node transform(BoxNode node, TransformerContext context) throws IllegalStateException {
-		BoxArgumentDeclaration boxArgument = (BoxArgumentDeclaration) node;
+	public Node transform( BoxNode node, TransformerContext context ) throws IllegalStateException {
+		BoxArgumentDeclaration	boxArgument	= ( BoxArgumentDeclaration ) node;
 
 		/* Process initialization value */
-		String init = "";
-		if(boxArgument.getValue() != null) {
-			Node initExpr = transpiler.transform(boxArgument.getValue());
+		String					init		= "";
+		if ( boxArgument.getValue() != null ) {
+			Node initExpr = transpiler.transform( boxArgument.getValue() );
 			init = initExpr.toString();
 		}
 
 		/* Process annotations */
-		Expression annotationStruct = transformAnnotations(boxArgument.getAnnotations());
+		Expression			annotationStruct	= transformAnnotations( boxArgument.getAnnotations() );
 		/* Process documentation */
-		Expression documentationStruct = transformDocumentation(boxArgument.getDocumentation());
+		Expression			documentationStruct	= transformDocumentation( boxArgument.getDocumentation() );
 
-		Map<String, String> values	= Map.of(
-			 "required", String.valueOf(boxArgument.getRequired()),
-			 "type", boxArgument.getType(),
-			 "name", boxArgument.getName(),
-			 "init", init,
-			 "annotations", annotationStruct.toString(),
-			 "documentation", documentationStruct.toString()
-			);
-		String template = """
-   				new Argument( ${required}, "${type}" , Key.of("${name}"), ${init}, ${annotations} ,${documentation} )
-			""";
-		Expression javaExpr = (Expression) parseExpression(template,values);
+		Map<String, String>	values				= Map.of(
+		    "required", String.valueOf( boxArgument.getRequired() ),
+		    "type", boxArgument.getType(),
+		    "name", boxArgument.getName(),
+		    "init", init,
+		    "annotations", annotationStruct.toString(),
+		    "documentation", documentationStruct.toString()
+		);
+		String				template			= """
+		                                          				new Argument( ${required}, "${type}" , Key.of("${name}"), ${init}, ${annotations} ,${documentation} )
+		                                          """;
+		Expression			javaExpr			= ( Expression ) parseExpression( template, values );
 		logger.info( "{} -> {}", node.getSourceText(), javaExpr );
 		return javaExpr;
 	}

@@ -221,46 +221,51 @@ public abstract class AbstractTransformer implements Transformer {
 
 	/**
 	 * Transforms a collection of documentation annotations in a BoxLang Struct
+	 * 
 	 * @param documentation list of documentation annotation
+	 * 
 	 * @return an Expression node
 	 */
-	protected Expression transformDocumentation(List<BoxDocumentationAnnotation> documentation) {
+	protected Expression transformDocumentation( List<BoxDocumentationAnnotation> documentation ) {
 		List<Expression> members = new ArrayList<>();
 		documentation.forEach( doc -> {
-			Map<String, String> values	= Map.ofEntries( Map.entry( "key", doc.getKey().getValue() ) );
-			MethodCallExpr annotationKey = (MethodCallExpr) parseExpression("Key.of( \"${key}\" )",values);
-			members.add(annotationKey);
-			Expression value = (Expression) transpiler.transform(doc.getValue());
-			members.add(value);
-		});
-		if(members.isEmpty()) {
-			return  (Expression) parseExpression("Struct.EMPTY",new HashMap<>());
+			Map<String, String>	values			= Map.ofEntries( Map.entry( "key", doc.getKey().getValue() ) );
+			MethodCallExpr		annotationKey	= ( MethodCallExpr ) parseExpression( "Key.of( \"${key}\" )", values );
+			members.add( annotationKey );
+			Expression value = ( Expression ) transpiler.transform( doc.getValue() );
+			members.add( value );
+		} );
+		if ( members.isEmpty() ) {
+			return ( Expression ) parseExpression( "Struct.EMPTY", new HashMap<>() );
 		} else {
-			MethodCallExpr documentationStruct = (MethodCallExpr) parseExpression("Struct.of()",new HashMap<>());
-			documentationStruct.getArguments().addAll(members);
+			MethodCallExpr documentationStruct = ( MethodCallExpr ) parseExpression( "Struct.of()", new HashMap<>() );
+			documentationStruct.getArguments().addAll( members );
 			return documentationStruct;
 		}
 	}
 
 	/**
 	 * Transforms a collection of annotations in a BoxLang Struct
+	 * 
 	 * @param annotations list of annotation
+	 * 
 	 * @return an Expression node
 	 */
-	protected Expression transformAnnotations(List<BoxAnnotation> annotations) {
+	protected Expression transformAnnotations( List<BoxAnnotation> annotations ) {
 		List<Expression> members = new ArrayList<>();
 		annotations.forEach( annotation -> {
-			Map<String, String> values	= Map.ofEntries( Map.entry( "key", annotation.getKey().getValue() ) );
-			MethodCallExpr annotationKey = (MethodCallExpr) parseExpression("Key.of( \"${key}\" )",values);;
-			members.add(annotationKey);
-			Expression value = (Expression) transpiler.transform(annotation.getValue());
-			members.add(value);
-		});
-		if(annotations.isEmpty()) {
-			return (Expression) parseExpression("Struct.EMPTY",new HashMap<>());
+			Map<String, String>	values			= Map.ofEntries( Map.entry( "key", annotation.getKey().getValue() ) );
+			MethodCallExpr		annotationKey	= ( MethodCallExpr ) parseExpression( "Key.of( \"${key}\" )", values );
+			;
+			members.add( annotationKey );
+			Expression value = ( Expression ) transpiler.transform( annotation.getValue() );
+			members.add( value );
+		} );
+		if ( annotations.isEmpty() ) {
+			return ( Expression ) parseExpression( "Struct.EMPTY", new HashMap<>() );
 		} else {
-			MethodCallExpr annotationStruct = (MethodCallExpr)parseExpression("Struct.of()",new HashMap<>());
-			annotationStruct.getArguments().addAll(members);
+			MethodCallExpr annotationStruct = ( MethodCallExpr ) parseExpression( "Struct.of()", new HashMap<>() );
+			annotationStruct.getArguments().addAll( members );
 			return annotationStruct;
 		}
 	}

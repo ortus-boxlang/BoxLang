@@ -124,29 +124,30 @@ public class CoreLangTest {
 		assertThat( variables.dereference( result, false ) ).isEqualTo( "default" );
 
 	}
+
 	@DisplayName( "If blocks with no-body else statements" )
 	@Test
 	public void testElseNoBody() {
 
 		instance.executeSource(
 		    """
-		    result = "default"
+		       result = "default"
 
-		    if( 2 == 1 ) {
-		    	result = "done"
-			} else result = "else"
+		       if( 2 == 1 ) {
+		       	result = "done"
+		    } else result = "else"
 
-		      """,
+		         """,
 		    context );
 		assertThat( variables.dereference( result, false ) ).isEqualTo( "else" );
 
 		instance.executeSource(
 		    """
-		    if( 2 == 1 ) {
-		    	result = "done"
-			} else result = "else"
-			result = "afterif"
-		      """,
+		       if( 2 == 1 ) {
+		       	result = "done"
+		    } else result = "else"
+		    result = "afterif"
+		         """,
 		    context );
 		assertThat( variables.dereference( result, false ) ).isEqualTo( "afterif" );
 
@@ -576,19 +577,19 @@ public class CoreLangTest {
 
 		instance.executeSource(
 		    """
-		       variables.var = "brad"
-		       varname = "var"
-		       variables.result1 = "#var#foo"
-		       variables.result2 = "foo#var#"
-		       variables.result3 = "foo#var#bar"
-		       variables.result4 = "foo#var#bar#var#baz#var#bum"
-		       variables.result5 = "foo"
-		       variables.result6 = "#var#"
-		       variables.result7 = "foo #variables[ "var" ]# bar"
-		       variables.result8 = "foo #variables[ "#varname#" ]# bar"
-		       variables.result9 = "foo #variables[ 'var' ]# bar"
-		       variables.result10 = "foo #variables[ '#varname#' ]# bar"
-		        """,
+		    variables.var = "brad"
+		    varname = "var"
+		    variables.result1 = "#var#foo"
+		    variables.result2 = "foo#var#"
+		    variables.result3 = "foo#var#bar"
+		    variables.result4 = "foo#var#bar#var#baz#var#bum"
+		    variables.result5 = "foo"
+		    variables.result6 = "#var#"
+		    variables.result7 = "foo #variables[ "var" ]# bar"
+		    variables.result8 = "foo #variables[ "#varname#" ]# bar"
+		    variables.result9 = "foo #variables[ 'var' ]# bar"
+		    variables.result10 = "foo #variables[ '#varname#' ]# bar"
+		     """,
 		    context );
 		assertThat( variables.dereference( Key.of( "result1" ), false ) ).isEqualTo( "bradfoo" );
 		assertThat( variables.dereference( Key.of( "result2" ), false ) ).isEqualTo( "foobrad" );
@@ -609,19 +610,19 @@ public class CoreLangTest {
 
 		instance.executeSource(
 		    """
-		       variables.var = "brad"
-		       varname = "var"
-		       variables.result1 = '#var#foo'
-		       variables.result2 = 'foo#var#'
-		       variables.result3 = 'foo#var#bar'
-		       variables.result4 = 'foo#var#bar#var#baz#var#bum'
-		       variables.result5 = 'foo'
-		       variables.result6 = '#var#'
-		       variables.result7 = 'foo #variables[ 'var' ]# bar'
-		       variables.result8 = 'foo #variables[ '#varname#' ]# bar'
-		       variables.result9 = 'foo #variables[ "var" ]# bar'
-		       variables.result10 = 'foo #variables[ "#varname#" ]# bar'
-		        """,
+		    variables.var = "brad"
+		    varname = "var"
+		    variables.result1 = '#var#foo'
+		    variables.result2 = 'foo#var#'
+		    variables.result3 = 'foo#var#bar'
+		    variables.result4 = 'foo#var#bar#var#baz#var#bum'
+		    variables.result5 = 'foo'
+		    variables.result6 = '#var#'
+		    variables.result7 = 'foo #variables[ 'var' ]# bar'
+		    variables.result8 = 'foo #variables[ '#varname#' ]# bar'
+		    variables.result9 = 'foo #variables[ "var" ]# bar'
+		    variables.result10 = 'foo #variables[ "#varname#" ]# bar'
+		     """,
 		    context );
 		assertThat( variables.dereference( Key.of( "result1" ), false ) ).isEqualTo( "bradfoo" );
 		assertThat( variables.dereference( Key.of( "result2" ), false ) ).isEqualTo( "foobrad" );

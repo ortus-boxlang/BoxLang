@@ -191,7 +191,6 @@ public class BoxFunctionDeclarationTransformer extends AbstractTransformer {
 			    Map.entry( "returnType", function.getType().getType().name() )
 			);
 
-
 			String							code	= PlaceholderHelper.resolve( template, values );
 			ParseResult<CompilationUnit>	result;
 			try {
@@ -208,18 +207,19 @@ public class BoxFunctionDeclarationTransformer extends AbstractTransformer {
 			/* Transform the arguments creating the initialization values */
 			ArrayInitializerExpr argInitializer = new ArrayInitializerExpr();
 			function.getArgs().forEach( arg -> {
-				Expression argument = (Expression) transpiler.transform(arg);
-				argInitializer.getValues().add(argument);
-			});
-			result.getResult().orElseThrow().getType(0).getFieldByName("arguments").orElseThrow().getVariable(0).setInitializer(argInitializer);
+				Expression argument = ( Expression ) transpiler.transform( arg );
+				argInitializer.getValues().add( argument );
+			} );
+			result.getResult().orElseThrow().getType( 0 ).getFieldByName( "arguments" ).orElseThrow().getVariable( 0 ).setInitializer( argInitializer );
 
 			/* Transform the annotations creating the initialization value */
-			Expression annotationStruct = transformAnnotations(function.getAnnotations());
-			result.getResult().orElseThrow().getType(0).getFieldByName("annotations").orElseThrow().getVariable(0).setInitializer(annotationStruct);
+			Expression annotationStruct = transformAnnotations( function.getAnnotations() );
+			result.getResult().orElseThrow().getType( 0 ).getFieldByName( "annotations" ).orElseThrow().getVariable( 0 ).setInitializer( annotationStruct );
 
 			/* Transform the documentation creating the initialization value */
-			Expression documentationStruct = transformDocumentation(function.getDocumentation());
-			result.getResult().orElseThrow().getType(0).getFieldByName("documentation").orElseThrow().getVariable(0).setInitializer(documentationStruct);
+			Expression documentationStruct = transformDocumentation( function.getDocumentation() );
+			result.getResult().orElseThrow().getType( 0 ).getFieldByName( "documentation" ).orElseThrow().getVariable( 0 )
+			    .setInitializer( documentationStruct );
 
 			CompilationUnit		javaClass		= result.getResult().get();
 			MethodDeclaration	invokeMethod	= javaClass.findCompilationUnit().orElseThrow()

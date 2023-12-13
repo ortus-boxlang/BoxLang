@@ -44,7 +44,7 @@ public class BoxArgumentDeclaration extends BoxStatement {
 	 * Creates the AST node
 	 *
 	 * @param required      required parameter
-	 * @param type      	type  parameter
+	 * @param type          type parameter
 	 * @param name          parameter name
 	 * @param defaultValue  optional default value
 	 * @param annotations   list of annotation
@@ -69,13 +69,14 @@ public class BoxArgumentDeclaration extends BoxStatement {
 		this.documentation.forEach( arg -> arg.setParent( this ) );
 	}
 
-
 	public String getName() {
 		return name;
 	}
+
 	public String getType() {
 		return type;
 	}
+
 	public BoxExpr getValue() {
 		return value;
 	}

@@ -129,17 +129,17 @@ public class TestUDF extends TestBase {
 			} );
 		} );
 
-		CompilationUnit javaAST = (CompilationUnit) transformUDF( code );
-		VariableDeclarator arguments = javaAST.getType(0).getFieldByName("arguments").get().getVariable(0);
+		CompilationUnit		javaAST		= ( CompilationUnit ) transformUDF( code );
+		VariableDeclarator	arguments	= javaAST.getType( 0 ).getFieldByName( "arguments" ).get().getVariable( 0 );
 		Assertions.assertEquals( 1, arguments.getInitializer().get().asArrayInitializerExpr().getValues().size() );
-		VariableDeclarator annotations = javaAST.getType(0).getFieldByName("annotations").get().getVariable(0);
-		assertEqualsNoWhiteSpaces("""
-			Struct.of(Key.of("myAnnotation"), "value", Key.of("keyOnly"), "value")
-			""", annotations.getInitializer().get().toString() );
-		VariableDeclarator documentation = javaAST.getType(0).getFieldByName("documentation").get().getVariable(0);
-		assertEqualsNoWhiteSpaces("""
-			Struct.of(Key.of("author"),"BradWood",Key.of("returns"),"Only the coolest value ever")
-			""", documentation.getInitializer().get().toString() );
+		VariableDeclarator annotations = javaAST.getType( 0 ).getFieldByName( "annotations" ).get().getVariable( 0 );
+		assertEqualsNoWhiteSpaces( """
+		                           Struct.of(Key.of("myAnnotation"), "value", Key.of("keyOnly"), "value")
+		                           """, annotations.getInitializer().get().toString() );
+		VariableDeclarator documentation = javaAST.getType( 0 ).getFieldByName( "documentation" ).get().getVariable( 0 );
+		assertEqualsNoWhiteSpaces( """
+		                           Struct.of(Key.of("author"),"BradWood",Key.of("returns"),"Only the coolest value ever")
+		                           """, documentation.getInitializer().get().toString() );
 	}
 
 	@Test

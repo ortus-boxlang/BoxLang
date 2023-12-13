@@ -1396,7 +1396,6 @@ public class BoxCFParser extends BoxAbstractParser {
 			annotations.add( toAst( file, annotation ) );
 		}
 
-
 		return new BoxArgumentDeclaration( required, type, name, expr, annotations, documentation, getPosition( node ), getSourceText( node ) );
 	}
 
