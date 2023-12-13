@@ -47,6 +47,11 @@ public class Key {
 	protected Object	originalValue;
 
 	/**
+	 * Keys are immutable, so we can cache the hash code
+	 */
+	protected int		hashCode;
+
+	/**
 	 * --------------------------------------------------------------------------
 	 * Constructors
 	 * --------------------------------------------------------------------------
@@ -61,6 +66,7 @@ public class Key {
 		this.name			= name;
 		this.originalValue	= name;
 		this.nameNoCase		= name.toUpperCase();
+		this.hashCode		= this.nameNoCase.hashCode();
 	}
 
 	/**
@@ -72,6 +78,7 @@ public class Key {
 		this.name			= name;
 		this.originalValue	= originalValue;
 		this.nameNoCase		= name.toUpperCase();
+		this.hashCode		= this.nameNoCase.hashCode();
 	}
 
 	/**
@@ -114,12 +121,13 @@ public class Key {
 		if ( this == obj ) {
 			return true;
 		}
-		// Null and class checks
-		if ( obj == null || ! ( obj instanceof Key ) ) {
-			return false;
+
+		if ( obj != null && obj instanceof Key key ) {
+			// Same key name
+			return hashCode() == key.hashCode();
 		}
-		// Same key name
-		return getNameNoCase().equals( ( ( Key ) obj ).getNameNoCase() );
+
+		return false;
 	}
 
 	/**
@@ -148,7 +156,7 @@ public class Key {
 	 */
 	@Override
 	public int hashCode() {
-		return nameNoCase.hashCode();
+		return this.hashCode;
 	}
 
 	/**
