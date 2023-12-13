@@ -1375,6 +1375,7 @@ public class BoxCFParser extends BoxAbstractParser {
 	 */
 	private BoxArgumentDeclaration toAst( File file, CFParser.ParamContext node ) {
 		Boolean								required		= false;
+		String								type			= "Any";
 		String								name			= "undefined";
 		BoxExpr								expr			= null;
 		List<BoxAnnotation>					annotations		= new ArrayList<>();
@@ -1388,11 +1389,15 @@ public class BoxCFParser extends BoxAbstractParser {
 		if ( node.expression() != null ) {
 			expr = toAst( file, node.expression() );
 		}
+		if ( node.type() != null ) {
+			type = node.type().getText();
+		}
 		for ( CFParser.PostannotationContext annotation : node.postannotation() ) {
 			annotations.add( toAst( file, annotation ) );
 		}
 
-		return new BoxArgumentDeclaration( required, name, expr, annotations, documentation, getPosition( node ), getSourceText( node ) );
+
+		return new BoxArgumentDeclaration( required, type, name, expr, annotations, documentation, getPosition( node ), getSourceText( node ) );
 	}
 
 	/**

@@ -29,6 +29,7 @@ public class BoxArgumentDeclaration extends BoxStatement {
 
 	private final Boolean							required;
 	private final String							name;
+	private final String							type;
 	private final BoxExpr							value;
 	private final List<BoxAnnotation>				annotations;
 	private final List<BoxDocumentationAnnotation>	documentation;
@@ -43,6 +44,7 @@ public class BoxArgumentDeclaration extends BoxStatement {
 	 * Creates the AST node
 	 *
 	 * @param required      required parameter
+	 * @param type      	type  parameter
 	 * @param name          parameter name
 	 * @param defaultValue  optional default value
 	 * @param annotations   list of annotation
@@ -51,10 +53,11 @@ public class BoxArgumentDeclaration extends BoxStatement {
 	 * @param sourceText    source code that originated the Node
 	 */
 
-	public BoxArgumentDeclaration( Boolean required, String name, BoxExpr defaultValue, List<BoxAnnotation> annotations,
+	public BoxArgumentDeclaration( Boolean required, String type, String name, BoxExpr defaultValue, List<BoxAnnotation> annotations,
 	    List<BoxDocumentationAnnotation> documentation, Position position, String sourceText ) {
 		super( position, sourceText );
 		this.required	= required;
+		this.type		= type;
 		this.name		= name;
 		this.value		= defaultValue;
 		if ( this.value != null ) {
@@ -66,10 +69,13 @@ public class BoxArgumentDeclaration extends BoxStatement {
 		this.documentation.forEach( arg -> arg.setParent( this ) );
 	}
 
+
 	public String getName() {
 		return name;
 	}
-
+	public String getType() {
+		return type;
+	}
 	public BoxExpr getValue() {
 		return value;
 	}
