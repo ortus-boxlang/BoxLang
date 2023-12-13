@@ -591,13 +591,13 @@ public class BoxCFParser extends BoxAbstractParser {
 	 * @see BoxWhile
 	 */
 	private BoxStatement toAst( File file, CFParser.WhileContext node ) {
-		BoxExpr			condition	= toAst( file, node.condition );
-		List<BoxNode>	body		= new ArrayList<>();
+		BoxExpr				condition	= toAst( file, node.condition );
+		List<BoxStatement>	body		= new ArrayList<>();
 
 		if ( node.statementBlock() != null ) {
 			body.addAll( toAst( file, node.statementBlock() ) );
-		} else if ( node.body != null ) {
-			body.add( toAst( file, node.body ) );
+		} else if ( node.statement() != null ) {
+			body.add( toAst( file, node.statement() ) );
 		}
 		return new BoxWhile( condition, body, getPosition( node ), getSourceText( node ) );
 	}
@@ -864,7 +864,9 @@ public class BoxCFParser extends BoxAbstractParser {
 	 * @see BoxBinaryOperator
 	 */
 	private BoxExpr toAst( File file, CFParser.ExpressionContext expression ) {
-		if ( expression.accessExpression() != null ) {
+		if ( expression.LPAREN() != null ) {
+			return toAst( file, expression.expression( 0 ) );
+		} else if ( expression.accessExpression() != null ) {
 			return toAst( file, expression.accessExpression() );
 		} else if ( expression.AND() != null ) {
 			BoxExpr	left	= toAst( file, expression.expression( 0 ) );

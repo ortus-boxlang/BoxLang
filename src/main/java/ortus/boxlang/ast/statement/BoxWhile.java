@@ -29,8 +29,8 @@ import ortus.boxlang.ast.Position;
  */
 public class BoxWhile extends BoxStatement {
 
-	private final BoxExpr		condition;
-	private final List<BoxNode>	body;
+	private final BoxExpr				condition;
+	private final List<BoxStatement>	body;
 
 	/**
 	 * Creates the AST node
@@ -40,7 +40,7 @@ public class BoxWhile extends BoxStatement {
 	 * @param position   position of the statement in the source code
 	 * @param sourceText source code that originated the Node
 	 */
-	public BoxWhile( BoxExpr condition, List<BoxNode> body, Position position, String sourceText ) {
+	public BoxWhile( BoxExpr condition, List<BoxStatement> body, Position position, String sourceText ) {
 		super( position, sourceText );
 		this.condition = condition;
 		this.condition.setParent( this );
@@ -52,7 +52,7 @@ public class BoxWhile extends BoxStatement {
 		return condition;
 	}
 
-	public List<BoxNode> getBody() {
+	public List<BoxStatement> getBody() {
 		return body;
 	}
 

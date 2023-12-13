@@ -507,7 +507,7 @@ public class CoreLangTest {
 
 	@DisplayName( "Single inline while" )
 	@Test
-	public void testSingleInlineWhileContinue() {
+	public void testSingleInlineWhile() {
 
 		instance.executeSource(
 		    """
@@ -519,9 +519,23 @@ public class CoreLangTest {
 
 	}
 
+	@DisplayName( "Single inline while with parenthesis" )
+	@Test
+	public void testSingleInlineWhileWithParenthesis() {
+
+		instance.executeSource(
+		    """
+		    	result = 0;
+		        while (true && result < 1) (result=1);
+		    """,
+		    context );
+		assertThat( variables.dereference( result, false ) ).isEqualTo( 1 );
+
+	}
+
 	@DisplayName( "Single next line while" )
 	@Test
-	public void testSingleNextLineWhileContinue() {
+	public void testSingleNextLineWhile() {
 
 		instance.executeSource(
 		    """
@@ -531,6 +545,39 @@ public class CoreLangTest {
 		      """,
 		    context );
 		assertThat( variables.dereference( result, false ) ).isEqualTo( 1 );
+
+	}
+
+	@DisplayName( "Single next line while with parenthesis" )
+	@Test
+	public void testSingleNextLineWhileWithParenthesis() {
+
+		instance.executeSource(
+		    """
+		      	result = 0;
+		    while (true && result < 1)
+		       	(result=1);
+		      """,
+		    context );
+		assertThat( variables.dereference( result, false ) ).isEqualTo( 1 );
+
+	}
+
+	@DisplayName( "Single next line while only loop body" )
+	@Test
+	public void testSingleNextLineWhileOnlyLoopBody() {
+
+		instance.executeSource(
+		    """
+		    result = 0;
+		       other = 0;
+		         while (true && result < 5)
+		            	(result = result + 1);
+		       other = other + 1;
+		           """,
+		    context );
+		assertThat( variables.dereference( result, false ) ).isEqualTo( 5 );
+		assertThat( variables.dereference( Key.of( "other" ), false ) ).isEqualTo( 1 );
 
 	}
 

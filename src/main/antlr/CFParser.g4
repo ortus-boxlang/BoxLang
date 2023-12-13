@@ -117,6 +117,7 @@ statementParameters: (
 			| expressions += expression
 		)
 	)+;
+
 statement:
 	assert
 	| break
@@ -203,7 +204,7 @@ do: DO statementBlock WHILE LPAREN expression RPAREN;
 
 while:
 	WHILE LPAREN condition=expression RPAREN statementBlock
-	| WHILE LPAREN condition=expression RPAREN body=expression;
+	| WHILE LPAREN condition=expression RPAREN statement;
 
 assert: ASSERT expression;
 break: BREAK eos?;
@@ -302,7 +303,8 @@ new:
 fqn: (identifier DOT)* identifier;
 
 expression:
-	assignment
+	LPAREN expression RPAREN
+	| assignment
 	| NULL
 	| accessExpression
 	| unary
