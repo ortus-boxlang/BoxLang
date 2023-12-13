@@ -53,10 +53,12 @@ public class BoxFunctionDeclarationTransformer extends AbstractTransformer {
 		import ortus.boxlang.runtime.scopes.IScope;
 		import ortus.boxlang.runtime.scopes.Key;
 		import ortus.boxlang.runtime.types.Function.Argument;
+		import ortus.boxlang.runtime.types.Struct;
 		import ortus.boxlang.runtime.types.UDF;
 		import ortus.boxlang.runtime.runnables.IBoxRunnable;
 		import ortus.boxlang.runtime.operators.*;
 		import ortus.boxlang.runtime.dynamic.casters.*;
+		import ortus.boxlang.runtime.loader.ImportDefinition;
 
 		// Classes Auto-Imported on all Templates and Classes by BoxLang
 		import java.time.LocalDateTime;
@@ -133,9 +135,23 @@ public class BoxFunctionDeclarationTransformer extends AbstractTransformer {
 			}
 
 			@Override
-			public Object _invoke( FunctionBoxContext context ) {
-				IScope variablesScope = ${contextName}.getScopeNearby( Key.of( "variables" ));
+			public List<ImportDefinition> getImports() {
+				return null;
+			}
 
+			@Override
+			public Struct getAnnotations() {
+				return null;
+			}
+
+			@Override
+			public Struct getDocumentation() {
+				return null;
+			}
+			@Override
+			public Object _invoke( FunctionBoxContext context ) {
+				IScope variablesScope = context.getScopeNearby( Key.of( "variables" ));
+				return null;
 			}
 		}
  	""";
