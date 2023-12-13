@@ -1,4 +1,4 @@
-package ortus.boxlang.runtime.functions;
+package ortus.boxlang.runtime.bifs;
 
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.types.exceptions.ApplicationException;

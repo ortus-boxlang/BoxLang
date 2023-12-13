@@ -28,9 +28,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import ortus.boxlang.runtime.BoxRuntime;
-import ortus.boxlang.runtime.functions.BIF;
-import ortus.boxlang.runtime.functions.FunctionDescriptor;
-import ortus.boxlang.runtime.functions.FunctionNamespace;
+import ortus.boxlang.runtime.bifs.BIF;
+import ortus.boxlang.runtime.bifs.BIFDescriptor;
+import ortus.boxlang.runtime.bifs.BIFNamespace;
 import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.loader.util.ClassDiscovery;
 import ortus.boxlang.runtime.scopes.Key;
@@ -49,22 +49,22 @@ public class FunctionService extends BaseService {
 	 * --------------------------------------------------------------------------
 	 */
 
-	private static final String				FUNCTIONS_PACKAGE	= "ortus.boxlang.runtime.functions";
+	private static final String		FUNCTIONS_PACKAGE	= "ortus.boxlang.runtime.bifs";
 
 	/**
 	 * Logger
 	 */
-	private static final Logger				logger				= LoggerFactory.getLogger( FunctionService.class );
+	private static final Logger		logger				= LoggerFactory.getLogger( FunctionService.class );
 
 	/**
 	 * The set of global functions registered with the service
 	 */
-	private Map<Key, FunctionDescriptor>	globalFunctions		= new ConcurrentHashMap<>();
+	private Map<Key, BIFDescriptor>	globalFunctions		= new ConcurrentHashMap<>();
 
 	/**
 	 * The set of namespaced functions registered with the service
 	 */
-	private Map<Key, FunctionNamespace>		namespaces			= new ConcurrentHashMap<>();
+	private Map<Key, BIFNamespace>	namespaces			= new ConcurrentHashMap<>();
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -135,8 +135,8 @@ public class FunctionService extends BaseService {
 		return globalFunctions.containsKey( Key.of( name ) );
 	}
 
-	public FunctionDescriptor getGlobalFunction( String name ) {
-		FunctionDescriptor target = globalFunctions.get( Key.of( name ) );
+	public BIFDescriptor getGlobalFunction( String name ) {
+		BIFDescriptor target = globalFunctions.get( Key.of( name ) );
 		if ( target == null ) {
 			throw new KeyNotFoundException(
 			    String.format(
@@ -147,11 +147,11 @@ public class FunctionService extends BaseService {
 		return target;
 	}
 
-	public FunctionDescriptor getGlobalFunctionDescriptor( String name ) {
+	public BIFDescriptor getGlobalBIFDescriptor( String name ) {
 		return globalFunctions.get( Key.of( name ) );
 	}
 
-	public void registerGlobalFunction( FunctionDescriptor descriptor ) throws IllegalArgumentException {
+	public void registerGlobalFunction( BIFDescriptor descriptor ) throws IllegalArgumentException {
 		if ( hasGlobalFunction( descriptor.name ) ) {
 			throw new ApplicationException( "Global function " + descriptor.name + " already exists" );
 		}
@@ -165,7 +165,7 @@ public class FunctionService extends BaseService {
 
 		globalFunctions.put(
 		    Key.of( name ),
-		    new FunctionDescriptor(
+		    new BIFDescriptor(
 		        name,
 		        ClassUtils.getCanonicalName( function.getClass() ),
 		        module,
@@ -186,7 +186,7 @@ public class FunctionService extends BaseService {
 		    .collect(
 		        Collectors.toConcurrentMap(
 		            value -> Key.of( ClassUtils.getShortClassName( value ) ),
-		            value -> new FunctionDescriptor(
+		            value -> new BIFDescriptor(
 		                ClassUtils.getShortClassName( value ),
 		                value,
 		                null,

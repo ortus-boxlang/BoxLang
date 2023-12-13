@@ -15,13 +15,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package ortus.boxlang.runtime.functions;
+package ortus.boxlang.runtime.bifs;
 
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.types.exceptions.ApplicationException;
 
-public class FunctionDescriptor {
+public class BIFDescriptor {
 
 	public String			name;
 	public String			className;
@@ -30,7 +30,7 @@ public class FunctionDescriptor {
 	public DynamicObject	BIF;
 	public Boolean			isGlobal;
 
-	public FunctionDescriptor(
+	public BIFDescriptor(
 	    String name,
 	    String className,
 	    String module,

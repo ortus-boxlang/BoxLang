@@ -1,7 +1,7 @@
-package ortus.boxlang.runtime.functions.namespaces.system;
+package ortus.boxlang.runtime.bifs.namespaces.system;
 
+import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.context.IBoxContext;
-import ortus.boxlang.runtime.functions.BIF;
 
 public class Test extends BIF {
 

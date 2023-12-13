@@ -22,8 +22,8 @@ import java.util.List;
 import java.util.Map;
 
 import ortus.boxlang.runtime.BoxRuntime;
+import ortus.boxlang.runtime.bifs.BIFDescriptor;
 import ortus.boxlang.runtime.dynamic.casters.FunctionCaster;
-import ortus.boxlang.runtime.functions.FunctionDescriptor;
 import ortus.boxlang.runtime.loader.ImportDefinition;
 import ortus.boxlang.runtime.runnables.BoxTemplate;
 import ortus.boxlang.runtime.runnables.RunnableLoader;
@@ -166,7 +166,7 @@ public class BaseBoxContext implements IBoxContext {
 	 * @return Return value of the function call
 	 */
 	public Object invokeFunction( Key name, Object[] positionalArguments ) {
-		FunctionDescriptor bif = findBIF( name );
+		BIFDescriptor bif = findBIF( name );
 		if ( bif != null ) {
 			return bif.invoke( this, positionalArguments );
 		}
@@ -193,7 +193,7 @@ public class BaseBoxContext implements IBoxContext {
 	 * @return Return value of the function call
 	 */
 	public Object invokeFunction( Key name ) {
-		FunctionDescriptor bif = findBIF( name );
+		BIFDescriptor bif = findBIF( name );
 		if ( bif != null ) {
 			return bif.invoke( this );
 		}
@@ -213,7 +213,7 @@ public class BaseBoxContext implements IBoxContext {
 		return invokeFunction( func, func.getName(), func.createArgumentsScope( positionalArguments ) );
 	}
 
-	private FunctionDescriptor findBIF( Key name ) {
+	private BIFDescriptor findBIF( Key name ) {
 		FunctionService functionService = BoxRuntime.getInstance().getFunctionService();
 		if ( functionService.hasGlobalFunction( name.getName() ) ) {
 			return functionService.getGlobalFunction( name.getName() );

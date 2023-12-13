@@ -1,7 +1,7 @@
-package ortus.boxlang.runtime.functions.global;
+package ortus.boxlang.runtime.bifs.global;
 
+import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.context.IBoxContext;
-import ortus.boxlang.runtime.functions.BIF;
 
 public class Println extends BIF {
 
