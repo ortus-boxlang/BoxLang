@@ -28,7 +28,7 @@ public class BoxArgumentDeclarationTransformer extends AbstractTransformer {
 		BoxArgumentDeclaration	boxArgument	= ( BoxArgumentDeclaration ) node;
 
 		/* Process initialization value */
-		String					init		= "";
+		String					init		= "\"\"";
 		if ( boxArgument.getValue() != null ) {
 			Node initExpr = transpiler.transform( boxArgument.getValue() );
 			init = initExpr.toString();
