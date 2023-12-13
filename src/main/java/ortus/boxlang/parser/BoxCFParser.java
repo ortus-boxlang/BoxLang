@@ -591,11 +591,13 @@ public class BoxCFParser extends BoxAbstractParser {
 	 * @see BoxWhile
 	 */
 	private BoxStatement toAst( File file, CFParser.WhileContext node ) {
-		BoxExpr				condition	= toAst( file, node.expression() );
-		List<BoxStatement>	body		= new ArrayList<>();
+		BoxExpr			condition	= toAst( file, node.condition );
+		List<BoxNode>	body		= new ArrayList<>();
 
 		if ( node.statementBlock() != null ) {
 			body.addAll( toAst( file, node.statementBlock() ) );
+		} else if ( node.body != null ) {
+			body.add( toAst( file, node.body ) );
 		}
 		return new BoxWhile( condition, body, getPosition( node ), getSourceText( node ) );
 	}

@@ -201,7 +201,9 @@ forIncrement: expression;
 
 do: DO statementBlock WHILE LPAREN expression RPAREN;
 
-while: WHILE LPAREN expression RPAREN statementBlock;
+while:
+	WHILE LPAREN condition=expression RPAREN statementBlock
+	| WHILE LPAREN condition=expression RPAREN body=expression;
 
 assert: ASSERT expression;
 break: BREAK eos?;

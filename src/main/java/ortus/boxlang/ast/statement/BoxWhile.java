@@ -20,6 +20,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 import ortus.boxlang.ast.BoxExpr;
+import ortus.boxlang.ast.BoxNode;
 import ortus.boxlang.ast.BoxStatement;
 import ortus.boxlang.ast.Position;
 
@@ -28,8 +29,8 @@ import ortus.boxlang.ast.Position;
  */
 public class BoxWhile extends BoxStatement {
 
-	private final BoxExpr				condition;
-	private final List<BoxStatement>	body;
+	private final BoxExpr		condition;
+	private final List<BoxNode>	body;
 
 	/**
 	 * Creates the AST node
@@ -39,7 +40,7 @@ public class BoxWhile extends BoxStatement {
 	 * @param position   position of the statement in the source code
 	 * @param sourceText source code that originated the Node
 	 */
-	public BoxWhile( BoxExpr condition, List<BoxStatement> body, Position position, String sourceText ) {
+	public BoxWhile( BoxExpr condition, List<BoxNode> body, Position position, String sourceText ) {
 		super( position, sourceText );
 		this.condition = condition;
 		this.condition.setParent( this );
@@ -51,7 +52,7 @@ public class BoxWhile extends BoxStatement {
 		return condition;
 	}
 
-	public List<BoxStatement> getBody() {
+	public List<BoxNode> getBody() {
 		return body;
 	}
 
@@ -60,7 +61,7 @@ public class BoxWhile extends BoxStatement {
 		Map<String, Object> map = super.toMap();
 
 		map.put( "condition", condition.toMap() );
-		map.put( "body", body.stream().map( BoxStatement::toMap ).collect( Collectors.toList() ) );
+		map.put( "body", body.stream().map( BoxNode::toMap ).collect( Collectors.toList() ) );
 		return map;
 	}
 }

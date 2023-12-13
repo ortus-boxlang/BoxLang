@@ -505,6 +505,35 @@ public class CoreLangTest {
 
 	}
 
+	@DisplayName( "Single inline while" )
+	@Test
+	public void testSingleInlineWhileContinue() {
+
+		instance.executeSource(
+		    """
+		    	result = 0;
+		        while (true && result < 1) result=1;
+		    """,
+		    context );
+		assertThat( variables.dereference( result, false ) ).isEqualTo( 1 );
+
+	}
+
+	@DisplayName( "Single next line while" )
+	@Test
+	public void testSingleNextLineWhileContinue() {
+
+		instance.executeSource(
+		    """
+		      	result = 0;
+		    while (true && result < 1)
+		       	result=1;
+		      """,
+		    context );
+		assertThat( variables.dereference( result, false ) ).isEqualTo( 1 );
+
+	}
+
 	@DisplayName( "String parsing 1" )
 	@Test
 	public void testStringParsing1() {
