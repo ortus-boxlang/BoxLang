@@ -20,8 +20,6 @@ package ortus.boxlang.runtime.dynamic.casters;
 import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.types.exceptions.ApplicationException;
 
-import java.util.Optional;
-
 /**
  * I handle casting anything to a Double
  */
@@ -88,12 +86,10 @@ public class DoubleCaster {
 		}
 
 		// Try to parse the string as a double
-		CastAttempt<String> attempt = StringCaster.attempt( object );
-		if ( attempt.wasSuccessful() ) {
-			Double result = parseDouble( attempt.get() );
-			if ( result != null ) {
-				return result;
-			}
+		String	stringValue	= StringCaster.cast( object, false );
+		Double	result		= parseDouble( stringValue );
+		if ( result != null ) {
+			return result;
 		}
 
 		// Verify if we can throw an exception
