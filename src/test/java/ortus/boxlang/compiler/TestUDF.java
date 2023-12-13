@@ -109,7 +109,7 @@ public class TestUDF extends TestBase {
 			stmt.walk().forEach( it -> {
 				BoxStringLiteral value;
 				if ( it instanceof BoxFunctionDeclaration func ) {
-					Assertions.assertEquals( 2, func.getAnnotations().size() );
+					Assertions.assertEquals( 3, func.getAnnotations().size() );
 
 				}
 				if ( it instanceof BoxArgumentDeclaration arg ) {
@@ -134,7 +134,7 @@ public class TestUDF extends TestBase {
 		Assertions.assertEquals( 1, arguments.getInitializer().get().asArrayInitializerExpr().getValues().size() );
 		VariableDeclarator annotations = javaAST.getType( 0 ).getFieldByName( "annotations" ).get().getVariable( 0 );
 		assertEqualsNoWhiteSpaces( """
-		                           Struct.of(Key.of("myAnnotation"), "value", Key.of("keyOnly"), "value")
+		                           Struct.of(Key.of("myAnnotation"),"value",Key.of("key"),"value",Key.of("keyOnly"),"")
 		                           """, annotations.getInitializer().get().toString() );
 		VariableDeclarator documentation = javaAST.getType( 0 ).getFieldByName( "documentation" ).get().getVariable( 0 );
 		assertEqualsNoWhiteSpaces( """
@@ -162,7 +162,7 @@ public class TestUDF extends TestBase {
 			stmt.walk().forEach( it -> {
 				BoxStringLiteral value;
 				if ( it instanceof BoxFunctionDeclaration func ) {
-					Assertions.assertEquals( 2, func.getAnnotations().size() );
+					Assertions.assertEquals( 3, func.getAnnotations().size() );
 
 				}
 				if ( it instanceof BoxArgumentDeclaration arg ) {
