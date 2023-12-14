@@ -50,13 +50,6 @@ import ortus.boxlang.transpiler.transformer.AbstractTransformer;
 import ortus.boxlang.transpiler.transformer.TransformerContext;
 import ortus.boxlang.transpiler.transformer.expression.BoxParenthesisTransformer;
 
-/***
- * catchContext = new CatchBoxContext(context, Key.of("e"), e1); //
- * {
- * context.scopeFindNearby(Key.of("one"), context.getDefaultAssignmentScope()).scope().assign(Key.of("one"),
- * Referencer.getAndInvoke(context, e /*** Do not use , Key.of("getMessage"), new Object[] {}, false));
- * }
- */
 public class BoxTryTransformer extends AbstractTransformer {
 
 	Logger logger = LoggerFactory.getLogger( BoxParenthesisTransformer.class );
@@ -94,7 +87,7 @@ public class BoxTryTransformer extends AbstractTransformer {
 				Map<String, String>	values				= new HashMap<>() {
 
 															{
-																put( "catchName", catchName );
+																put( "catchNameKey", createKey( catchName ).toString() );
 																put( "catchContextName", catchContextName );
 																put( "contextName", transpiler.peekContextName() );
 																put( "throwableName", throwableName );
@@ -110,7 +103,7 @@ public class BoxTryTransformer extends AbstractTransformer {
 
 				BlockStmt	ifhBody	= new BlockStmt();
 				Statement	handler	= ( Statement ) parseStatement(
-				    "CatchBoxContext ${catchContextName} = new CatchBoxContext( ${contextName}, Key.of( \"${catchName}\" ), ${throwableName} );",
+				    "CatchBoxContext ${catchContextName} = new CatchBoxContext( ${contextName}, ${catchNameKey}, ${throwableName} );",
 				    values
 				);
 

@@ -30,11 +30,15 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
 
 import ortus.boxlang.runtime.BoxRuntime;
+import ortus.boxlang.runtime.context.FunctionBoxContext;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.ScriptingBoxContext;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
+import ortus.boxlang.runtime.types.Function.Access;
+import ortus.boxlang.runtime.types.Function.Argument;
+import ortus.boxlang.runtime.types.SampleUDF;
 import ortus.boxlang.runtime.types.exceptions.ApplicationException;
 import ortus.boxlang.runtime.types.exceptions.NoFieldException;
 
@@ -375,7 +379,54 @@ public class CoreLangTest {
 		assertThat( t.getMessage() ).isEqualTo( "You cannot divide by zero." );
 	}
 
-	// TODO: for/in loop. Need struct/array literals
+	@DisplayName( "for in loop" )
+	@Test
+	public void testForInLoop() {
+
+		instance.executeSource(
+		    """
+		       result=""
+		    arr = [ "brad", "wood", "luis", "majano" ]
+		       for( name in arr ) {
+		       	result &= name;
+		       }
+
+		       result2=""
+		    arr = [ "jorge", "reyes", "edgardo", "cabezas" ]
+		       for( name in arr ) {
+		       	result2 &= name;
+		       }
+		           """,
+		    context );
+		assertThat( variables.dereference( result, false ) ).isEqualTo( "bradwoodluismajano" );
+		assertThat( variables.dereference( Key.of( "result2" ), false ) ).isEqualTo( "jorgereyesedgardocabezas" );
+
+		instance.executeSource(
+		    """
+		       result=""
+		    arr = []
+		       for( name in arr ) {
+		       	result &= name;
+		       }
+		           """,
+		    context );
+		assertThat( variables.dereference( result, false ) ).isEqualTo( "" );
+
+		FunctionBoxContext functionBoxContext = new FunctionBoxContext( context,
+		    new SampleUDF( Access.PUBLIC, Key.of( "func" ), "any", new Argument[] {}, "" ) );
+		instance.executeSource(
+		    """
+		       result=""
+		    arr = [ "brad", "wood", "luis", "majano" ]
+		       for( var foo["bar"].name in arr ) {
+		       	result &= foo["bar"].name;
+		       }
+		       }
+		           """,
+		    functionBoxContext );
+		assertThat( variables.dereference( result, false ) ).isEqualTo( "bradwoodluismajano" );
+
+	}
 
 	@DisplayName( "sentinel loop" )
 	@Test
@@ -503,6 +554,107 @@ public class CoreLangTest {
 		    context );
 		assertThat( variables.dereference( result, false ) ).isEqualTo( 10 );
 
+	}
+
+	@DisplayName( "Single inline while" )
+	@Test
+	public void testSingleInlineWhile() {
+
+		instance.executeSource(
+		    """
+		    	result = 0;
+		        while (true && result < 1) result=1;
+		    """,
+		    context );
+		assertThat( variables.dereference( result, false ) ).isEqualTo( 1 );
+
+	}
+
+	@DisplayName( "Single inline while with parenthesis" )
+	@Test
+	public void testSingleInlineWhileWithParenthesis() {
+
+		instance.executeSource(
+		    """
+		    	result = 0;
+		        while (true && result < 1) (result=1);
+		    """,
+		    context );
+		assertThat( variables.dereference( result, false ) ).isEqualTo( 1 );
+
+	}
+
+	@DisplayName( "Single next line while" )
+	@Test
+	public void testSingleNextLineWhile() {
+
+		instance.executeSource(
+		    """
+		      	result = 0;
+		    while (true && result < 1)
+		       	result=1;
+		      """,
+		    context );
+		assertThat( variables.dereference( result, false ) ).isEqualTo( 1 );
+
+	}
+
+	@DisplayName( "Single next line while with parenthesis" )
+	@Test
+	public void testSingleNextLineWhileWithParenthesis() {
+
+		instance.executeSource(
+		    """
+		      	result = 0;
+		    while (true && result < 1)
+		       	(result=1);
+		      """,
+		    context );
+		assertThat( variables.dereference( result, false ) ).isEqualTo( 1 );
+
+	}
+
+	@DisplayName( "Single next line while only loop body" )
+	@Test
+	public void testSingleNextLineWhileOnlyLoopBody() {
+
+		instance.executeSource(
+		    """
+		    result = 0;
+		       other = 0;
+		         while (true && result < 5)
+		            	(result = result + 1);
+		       other = other + 1;
+		           """,
+		    context );
+		assertThat( variables.dereference( result, false ) ).isEqualTo( 5 );
+		assertThat( variables.dereference( Key.of( "other" ), false ) ).isEqualTo( 1 );
+
+	}
+
+	@DisplayName( "Multiple parnetheitcal statements" )
+	@Test
+	public void testMultipleParnetheticalStatements() {
+
+		instance.executeSource(
+		    """
+		    (1+2);
+		    (1+2);
+		           """,
+		    context );
+
+	}
+
+	@DisplayName( "Multiple parnetheitcal statements with over-nested parenthesis" )
+	@Test
+	public void testMultipleParnetheticalStatementsWithOverNestedParenthesis() {
+
+		instance.executeSource(
+		    """
+		    ((((1+2))));
+		    (1+2);
+		           """,
+		    context );
 	}
 
 	@DisplayName( "String parsing 1" )
@@ -854,6 +1006,35 @@ public class CoreLangTest {
 		    context );
 
 		assertThat( variables.dereference( result, false ) ).isEqualTo( "case default" );
+
+	}
+
+	@DisplayName( "BIF Call" )
+	@Test
+	public void testBIFCall() {
+
+		instance.executeSource(
+		    """
+		    print( "Hello from BIF-land" );
+		      """,
+		    context );
+
+		instance.executeSource(
+		    """
+		    arr = [1,2,3]
+		       result = arrayLen( arr );
+		    print( result )
+		         """,
+		    context );
+		assertThat( variables.dereference( result, false ) ).isEqualTo( 3 );
+
+		instance.executeSource(
+		    """
+		    arr = [1,2,3]
+		       result = arrayAppend( arr, 4 );
+		    print( result )
+		         """,
+		    context );
 
 	}
 

@@ -612,7 +612,7 @@ public class Struct implements Map<Key, Object>, IType, IReferenceable, IListena
 			return null;
 		}
 
-		return object.invoke( name.getName(), positionalArguments ).orElse( null );
+		return object.invoke( name.getName(), positionalArguments );
 	}
 
 	/**

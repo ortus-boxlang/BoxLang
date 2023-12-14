@@ -117,8 +117,8 @@ public class DynamicObjectTest {
 	void testItCanCallMethodsWithNoArguments() {
 		DynamicObject myMapInvoker = new DynamicObject( HashMap.class );
 		myMapInvoker.invokeConstructor();
-		assertThat( myMapInvoker.invoke( "size" ).get() ).isEqualTo( 0 );
-		assertThat( ( Boolean ) myMapInvoker.invoke( "isEmpty" ).get() ).isTrue();
+		assertThat( myMapInvoker.invoke( "size" ) ).isEqualTo( 0 );
+		assertThat( ( Boolean ) myMapInvoker.invoke( "isEmpty" ) ).isTrue();
 	}
 
 	@DisplayName( "It can call instance methods with many arguments" )
@@ -127,8 +127,8 @@ public class DynamicObjectTest {
 		DynamicObject myMapInvoker = new DynamicObject( HashMap.class );
 		myMapInvoker.invokeConstructor();
 		myMapInvoker.invoke( "put", "name", "luis" );
-		assertThat( myMapInvoker.invoke( "size" ).get() ).isEqualTo( 1 );
-		assertThat( myMapInvoker.invoke( "get", "name" ).get() ).isEqualTo( "luis" );
+		assertThat( myMapInvoker.invoke( "size" ) ).isEqualTo( 1 );
+		assertThat( myMapInvoker.invoke( "get", "name" ) ).isEqualTo( "luis" );
 	}
 
 	@DisplayName( "It can call static methods on classes" )
@@ -138,11 +138,11 @@ public class DynamicObjectTest {
 		Duration		results		= null;
 
 		// Use int to long promotion
-		results = ( Duration ) myInvoker.invoke( "ofSeconds", new Object[] { 120 } ).get();
+		results = ( Duration ) myInvoker.invoke( "ofSeconds", new Object[] { 120 } );
 		assertThat( results.toString() ).isEqualTo( "PT2M" );
 
 		// Normal Long
-		results = ( Duration ) myInvoker.invoke( "ofSeconds", new Object[] { 200L } ).get();
+		results = ( Duration ) myInvoker.invoke( "ofSeconds", new Object[] { 200L } );
 		assertThat( results.toString() ).isEqualTo( "PT3M20S" );
 	}
 
@@ -151,7 +151,7 @@ public class DynamicObjectTest {
 	@SuppressWarnings( "unchecked" )
 	void testItCanCallMethodsOnInterfaces() {
 		DynamicObject	myInvoker	= DynamicObject.of( List.class );
-		List<Object>	results		= ( List<Object> ) myInvoker.invoke( "of", new Object[] { "Hello" } ).get();
+		List<Object>	results		= ( List<Object> ) myInvoker.invoke( "of", new Object[] { "Hello" } );
 		assertThat( results.toString() ).isEqualTo( "[Hello]" );
 		assertThat( results ).isNotEmpty();
 	}

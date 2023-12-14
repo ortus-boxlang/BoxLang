@@ -57,8 +57,7 @@ public class BoxForIndexTransformer extends AbstractTransformer {
 	@Override
 	public Node transform( BoxNode node, TransformerContext context ) throws IllegalStateException {
 		BoxForIndex			boxFor		= ( BoxForIndex ) node;
-		Expression			initializer	= ( Expression ) resolveScope( transpiler.transform( boxFor.getInitializer(), TransformerContext.LEFT ),
-		    TransformerContext.INIT );
+		Expression			initializer	= ( Expression ) transpiler.transform( boxFor.getInitializer(), TransformerContext.LEFT );
 		Expression			condition	= ( Expression ) transpiler.transform( boxFor.getCondition() );
 		Expression			step		= ( Expression ) transpiler.transform( boxFor.getStep() );
 		Map<String, String>	values		= new HashMap<>() {

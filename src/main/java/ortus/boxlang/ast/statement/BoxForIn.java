@@ -31,6 +31,7 @@ public class BoxForIn extends BoxStatement {
 	private final BoxExpr				variable;
 	private final BoxExpr				expression;
 	private final List<BoxStatement>	body;
+	private final Boolean				hasVar;
 
 	/**
 	 * Creates the AST node
@@ -41,7 +42,7 @@ public class BoxForIn extends BoxStatement {
 	 * @param position   position of the statement in the source code
 	 * @param sourceText source code that originated the Node
 	 */
-	public BoxForIn( BoxExpr variable, BoxExpr expression, List<BoxStatement> body, Position position, String sourceText ) {
+	public BoxForIn( BoxExpr variable, BoxExpr expression, List<BoxStatement> body, Boolean hasVar, Position position, String sourceText ) {
 		super( position, sourceText );
 		this.variable = variable;
 		this.variable.setParent( this );
@@ -49,6 +50,7 @@ public class BoxForIn extends BoxStatement {
 		this.expression.setParent( this );
 		this.body = Collections.unmodifiableList( body );
 		this.body.forEach( arg -> arg.setParent( this ) );
+		this.hasVar = hasVar;
 	}
 
 	public BoxExpr getVariable() {
@@ -63,10 +65,15 @@ public class BoxForIn extends BoxStatement {
 		return body;
 	}
 
+	public Boolean getHasVar() {
+		return hasVar;
+	}
+
 	@Override
 	public Map<String, Object> toMap() {
 		Map<String, Object> map = super.toMap();
 
+		map.put( "hasVar", hasVar );
 		map.put( "variable", variable.toMap() );
 		map.put( "expression", expression.toMap() );
 		map.put( "body", body.stream().map( BoxStatement::toMap ).collect( Collectors.toList() ) );

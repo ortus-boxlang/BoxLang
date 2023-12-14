@@ -17,7 +17,10 @@ package ortus.boxlang.transpiler.transformer.statement;
 import com.github.javaparser.ast.Node;
 import com.github.javaparser.ast.expr.Expression;
 import com.github.javaparser.ast.stmt.ExpressionStmt;
+
+import ortus.boxlang.ast.BoxExpr;
 import ortus.boxlang.ast.BoxNode;
+import ortus.boxlang.ast.expression.BoxParenthesis;
 import ortus.boxlang.ast.statement.BoxExpression;
 import ortus.boxlang.transpiler.JavaTranspiler;
 import ortus.boxlang.transpiler.transformer.AbstractTransformer;
@@ -32,7 +35,15 @@ public class BoxExpressionTransformer extends AbstractTransformer {
 	@Override
 	public Node transform( BoxNode node, TransformerContext context ) throws IllegalStateException {
 		BoxExpression	exprStmt	= ( BoxExpression ) node;
-		Expression		expr		= ( Expression ) transpiler.transform( exprStmt.getExpression() );
-		return addIndex( new ExpressionStmt( expr ), node );
+		BoxExpr			expr		= exprStmt.getExpression();
+
+		// Java doesn't allow parenthetical statements in places that BoxLang would allow them
+		// as such we need to unnest the parenthesis and just provide the expression itself
+		while ( expr instanceof BoxParenthesis bpExpr ) {
+			expr = bpExpr.getExpression();
+		}
+
+		Expression javaExpr = ( Expression ) transpiler.transform( expr );
+		return addIndex( new ExpressionStmt( javaExpr ), node );
 	}
 }

@@ -43,8 +43,8 @@ public class BoxComparisonOperationTransformer extends AbstractTransformer {
 	@Override
 	public Node transform( BoxNode node, TransformerContext context ) throws IllegalStateException {
 		BoxComparisonOperation	operation	= ( BoxComparisonOperation ) node;
-		Expression				left		= ( Expression ) resolveScope( transpiler.transform( operation.getLeft() ), context );
-		Expression				right		= ( Expression ) resolveScope( transpiler.transform( operation.getRight() ), context );
+		Expression				left		= ( Expression ) transpiler.transform( operation.getLeft() );
+		Expression				right		= ( Expression ) transpiler.transform( operation.getRight() );
 
 		Map<String, String>		values		= new HashMap<>() {
 

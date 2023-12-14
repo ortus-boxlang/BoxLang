@@ -134,7 +134,7 @@ public class InvocationTest {
 		instance.executeSource(
 		    """
 		    foo.bar = () => "test";
-		    foo.["bar"]();
+		    foo["bar"]();
 		    """,
 		    context );
 	}

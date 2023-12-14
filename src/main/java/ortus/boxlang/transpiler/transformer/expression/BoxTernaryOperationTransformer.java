@@ -21,7 +21,7 @@ public class BoxTernaryOperationTransformer extends AbstractTransformer {
 	@Override
 	public Node transform( BoxNode node, TransformerContext context ) throws IllegalStateException {
 		BoxTernaryOperation	operation	= ( BoxTernaryOperation ) node;
-		Expression			condition	= ( Expression ) resolveScope( transpiler.transform( operation.getCondition() ), TransformerContext.RIGHT );
+		Expression			condition	= ( Expression ) transpiler.transform( operation.getCondition() );
 		Expression			whenTrue	= ( Expression ) transpiler.transform( operation.getWhenTrue() );
 		Expression			whenFalse	= ( Expression ) transpiler.transform( operation.getWhenFalse() );
 		Map<String, String>	values		= new HashMap<>() {

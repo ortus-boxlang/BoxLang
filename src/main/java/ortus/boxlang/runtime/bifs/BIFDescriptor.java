@@ -15,15 +15,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package ortus.boxlang.runtime.functions;
-
-import java.util.Optional;
+package ortus.boxlang.runtime.bifs;
 
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.types.exceptions.ApplicationException;
 
-public class FunctionDescriptor {
+public class BIFDescriptor {
 
 	public String			name;
 	public String			className;
@@ -32,7 +30,7 @@ public class FunctionDescriptor {
 	public DynamicObject	BIF;
 	public Boolean			isGlobal;
 
-	public FunctionDescriptor(
+	public BIFDescriptor(
 	    String name,
 	    String className,
 	    String module,
@@ -68,13 +66,13 @@ public class FunctionDescriptor {
 		return this.BIF;
 	}
 
-	public Optional<Object> invoke( Object... arguments ) {
-		// Check first argument, it must be the context
-		if ( arguments.length == 0 || ! ( arguments[ 0 ] instanceof IBoxContext ) ) {
-			throw new ApplicationException( "First argument must be an IBoxContext" );
-		}
+	public Object invoke( IBoxContext context, Object... arguments ) {
+		Object[] combined = new Object[ 1 + arguments.length ];
+		combined[ 0 ] = context;
+		System.arraycopy( arguments, 0, combined, 1, arguments.length );
+
 		// Invoke it baby!
-		return this.getBIF().invoke( "invoke", arguments );
+		return this.getBIF().invoke( "invoke", combined );
 	}
 
 }

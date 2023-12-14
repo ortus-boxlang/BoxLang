@@ -20,6 +20,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 import ortus.boxlang.ast.BoxExpr;
+import ortus.boxlang.ast.BoxNode;
 import ortus.boxlang.ast.BoxStatement;
 import ortus.boxlang.ast.Position;
 
@@ -60,7 +61,7 @@ public class BoxWhile extends BoxStatement {
 		Map<String, Object> map = super.toMap();
 
 		map.put( "condition", condition.toMap() );
-		map.put( "body", body.stream().map( BoxStatement::toMap ).collect( Collectors.toList() ) );
+		map.put( "body", body.stream().map( BoxNode::toMap ).collect( Collectors.toList() ) );
 		return map;
 	}
 }

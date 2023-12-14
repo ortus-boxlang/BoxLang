@@ -28,9 +28,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import ortus.boxlang.runtime.BoxRuntime;
-import ortus.boxlang.runtime.functions.BIF;
-import ortus.boxlang.runtime.functions.FunctionDescriptor;
-import ortus.boxlang.runtime.functions.FunctionNamespace;
+import ortus.boxlang.runtime.bifs.BIF;
+import ortus.boxlang.runtime.bifs.BIFDescriptor;
+import ortus.boxlang.runtime.bifs.BIFNamespace;
 import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.loader.util.ClassDiscovery;
 import ortus.boxlang.runtime.scopes.Key;
@@ -49,22 +49,22 @@ public class FunctionService extends BaseService {
 	 * --------------------------------------------------------------------------
 	 */
 
-	private static final String				FUNCTIONS_PACKAGE	= "ortus.boxlang.runtime.functions";
+	private static final String		FUNCTIONS_PACKAGE	= "ortus.boxlang.runtime.bifs";
 
 	/**
 	 * Logger
 	 */
-	private static final Logger				logger				= LoggerFactory.getLogger( FunctionService.class );
+	private static final Logger		logger				= LoggerFactory.getLogger( FunctionService.class );
 
 	/**
 	 * The set of global functions registered with the service
 	 */
-	private Map<Key, FunctionDescriptor>	globalFunctions		= new ConcurrentHashMap<>();
+	private Map<Key, BIFDescriptor>	globalFunctions		= new ConcurrentHashMap<>();
 
 	/**
 	 * The set of namespaced functions registered with the service
 	 */
-	private Map<Key, FunctionNamespace>		namespaces			= new ConcurrentHashMap<>();
+	private Map<Key, BIFNamespace>	namespaces			= new ConcurrentHashMap<>();
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -123,20 +123,70 @@ public class FunctionService extends BaseService {
 	 * --------------------------------------------------------------------------
 	 */
 
+	/**
+	 * Returns the number of global functions registered with the service
+	 *
+	 * @return The number of global functions registered with the service
+	 */
 	public long getGlobalFunctionCount() {
-		return globalFunctions.size();
+		return this.globalFunctions.size();
 	}
 
+	/**
+	 * Returns the names of the global functions registered with the service
+	 *
+	 * @return A set of global function names
+	 */
 	public Set<String> getGlobalFunctionNames() {
-		return globalFunctions.keySet().stream().map( Key::getName ).collect( Collectors.toSet() );
+		return this.globalFunctions.keySet().stream().map( Key::getName ).collect( Collectors.toSet() );
 	}
 
+	/**
+	 * Returns whether or not the service has a global function with the given name
+	 *
+	 * @param name The name of the global function
+	 *
+	 * @return Whether or not the service has a global function with the given name
+	 */
 	public Boolean hasGlobalFunction( String name ) {
-		return globalFunctions.containsKey( Key.of( name ) );
+		return hasGlobalFunction( Key.of( name ) );
 	}
 
-	public FunctionDescriptor getGlobalFunction( String name ) {
-		FunctionDescriptor target = globalFunctions.get( Key.of( name ) );
+	/**
+	 * Returns whether or not the service has a global function with the given name
+	 *
+	 * @param name The key name of the global function
+	 *
+	 * @return Whether or not the service has a global function with the given name
+	 */
+	public Boolean hasGlobalFunction( Key name ) {
+		return this.globalFunctions.containsKey( name );
+	}
+
+	/**
+	 * Returns the global function with the given name
+	 *
+	 * @param name The name of the global function
+	 *
+	 * @return The global function with the given name
+	 *
+	 * @throws KeyNotFoundException If the global function does not exist
+	 */
+	public BIFDescriptor getGlobalFunction( String name ) {
+		return getGlobalFunction( Key.of( name ) );
+	}
+
+	/**
+	 * Returns the global function with the given name
+	 *
+	 * @param name The name of the global function
+	 *
+	 * @return The global function with the given name
+	 *
+	 * @throws KeyNotFoundException If the global function does not exist
+	 */
+	public BIFDescriptor getGlobalFunction( Key name ) {
+		BIFDescriptor target = this.globalFunctions.get( name );
 		if ( target == null ) {
 			throw new KeyNotFoundException(
 			    String.format(
@@ -147,26 +197,60 @@ public class FunctionService extends BaseService {
 		return target;
 	}
 
-	public FunctionDescriptor getGlobalFunctionDescriptor( String name ) {
-		return globalFunctions.get( Key.of( name ) );
+	/**
+	 * Gets the global function descriptor for the given name
+	 *
+	 * @param name The name of the global function
+	 *
+	 * @return The BIFDescriptor for the global function
+	 */
+	public BIFDescriptor getGlobalBIFDescriptor( String name ) {
+		return getGlobalBIFDescriptor( Key.of( name ) );
 	}
 
-	public void registerGlobalFunction( FunctionDescriptor descriptor ) throws IllegalArgumentException {
+	/**
+	 * Gets the global function descriptor for the given key
+	 *
+	 * @param name The key of the global function
+	 *
+	 * @return The BIFDescriptor for the global function
+	 */
+	public BIFDescriptor getGlobalBIFDescriptor( Key name ) {
+		return this.globalFunctions.get( name );
+	}
+
+	/**
+	 * Registers a global function with the service
+	 *
+	 * @param descriptor The descriptor for the global function
+	 *
+	 * @throws IllegalArgumentException If the global function already exists
+	 */
+	public void registerGlobalFunction( BIFDescriptor descriptor ) throws IllegalArgumentException {
 		if ( hasGlobalFunction( descriptor.name ) ) {
 			throw new ApplicationException( "Global function " + descriptor.name + " already exists" );
 		}
-		globalFunctions.put( Key.of( descriptor.name ), descriptor );
+		this.globalFunctions.put( Key.of( descriptor.name ), descriptor );
 	}
 
-	public void registerGlobalFunction( String name, BIF function, String module ) throws IllegalArgumentException {
+	/**
+	 * Registers a global function with the service
+	 *
+	 * @param name     The name of the global function
+	 * @param function The global function
+	 * @param module   The module the global function belongs to
+	 *
+	 * @throws IllegalArgumentException If the global function already exists
+	 */
+	public void registerGlobalFunction( Key name, BIF function, String module ) throws IllegalArgumentException {
 		if ( hasGlobalFunction( name ) ) {
-			throw new ApplicationException( "Global function " + name + " already exists" );
+			throw new ApplicationException( "Global function " + name.getName() + " already exists" );
 		}
 
-		globalFunctions.put(
-		    Key.of( name ),
-		    new FunctionDescriptor(
-		        name,
+		this.globalFunctions.put(
+		    name,
+		    new BIFDescriptor(
+		        name.getName(),
 		        ClassUtils.getCanonicalName( function.getClass() ),
 		        module,
 		        null,
@@ -176,17 +260,28 @@ public class FunctionService extends BaseService {
 		);
 	}
 
-	public void unregisterGlobalFunction( String name ) {
-		globalFunctions.remove( Key.of( name ) );
+	/**
+	 * Unregisters a global function with the service
+	 *
+	 * @param name The name of the global function
+	 */
+	public void unregisterGlobalFunction( Key name ) {
+		this.globalFunctions.remove( name );
 	}
 
+	/**
+	 * This method loads all of the global functions into the service by scanning the
+	 * {@code ortus.boxlang.runtime.bifs.global} package.
+	 *
+	 * @throws IOException If there is an error loading the global functions
+	 */
 	public void loadGlobalFunctions() throws IOException {
-		globalFunctions = ClassDiscovery
-		    .getClassFilesAsStream( FUNCTIONS_PACKAGE + ".global", false )
+		this.globalFunctions = ClassDiscovery
+		    .getClassFilesAsStream( FUNCTIONS_PACKAGE + ".global", true )
 		    .collect(
 		        Collectors.toConcurrentMap(
 		            value -> Key.of( ClassUtils.getShortClassName( value ) ),
-		            value -> new FunctionDescriptor(
+		            value -> new BIFDescriptor(
 		                ClassUtils.getShortClassName( value ),
 		                value,
 		                null,
@@ -198,7 +293,18 @@ public class FunctionService extends BaseService {
 		    );
 	}
 
+	/**
+	 * --------------------------------------------------------------------------
+	 * Namespace Methods
+	 * --------------------------------------------------------------------------
+	 */
+
+	/**
+	 * The count of registered namespaces
+	 *
+	 * @return The count of registered namespaces
+	 */
 	public long getNamespaceCount() {
-		return namespaces.size();
+		return this.namespaces.size();
 	}
 }

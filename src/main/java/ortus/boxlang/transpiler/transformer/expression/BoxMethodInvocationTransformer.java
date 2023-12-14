@@ -31,11 +31,11 @@ public class BoxMethodInvocationTransformer extends AbstractTransformer {
 		Boolean				safe		= invocation.isSafe() || context == TransformerContext.SAFE;
 		String				side		= context == TransformerContext.NONE ? "" : "(" + context.toString() + ") ";
 
-		Expression			expr		= ( Expression ) resolveScope( transpiler.transform( invocation.getObj(),
-		    context ), context );
+		Expression			expr		= ( Expression ) transpiler.transform( invocation.getObj(),
+		    context );
 
 		String				args		= invocation.getArguments().stream()
-		    .map( it -> resolveScope( transpiler.transform( it ), context ).toString() )
+		    .map( it -> transpiler.transform( it ).toString() )
 		    .collect( Collectors.joining( ", " ) );
 
 		Map<String, String>	values		= new HashMap<>() {

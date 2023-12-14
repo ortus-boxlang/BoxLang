@@ -1,8 +1,8 @@
-package ortus.boxlang.runtime.functions.namespaces.math;
+package ortus.boxlang.runtime.bifs.namespaces.math;
 
+import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.dynamic.casters.DoubleCaster;
-import ortus.boxlang.runtime.functions.BIF;
 
 public class Abs extends BIF {
 

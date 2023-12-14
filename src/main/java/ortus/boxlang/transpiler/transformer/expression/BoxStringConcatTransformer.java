@@ -42,12 +42,12 @@ public class BoxStringConcatTransformer extends AbstractTransformer {
 		BoxStringConcat	interpolation	= ( BoxStringConcat ) node;
 		Node			javaExpr;
 		if ( interpolation.getValues().size() == 1 ) {
-			javaExpr = resolveScope( transpiler.transform( interpolation.getValues().get( 0 ), TransformerContext.RIGHT ), context );
+			javaExpr = transpiler.transform( interpolation.getValues().get( 0 ), TransformerContext.RIGHT );
 		} else {
 
 			String				operands	= interpolation.getValues()
 			    .stream()
-			    .map( it -> resolveScope( transpiler.transform( it, TransformerContext.RIGHT ), context ).toString() )
+			    .map( it -> transpiler.transform( it, TransformerContext.RIGHT ).toString() )
 			    .collect( Collectors.joining( "," ) );
 
 			String				expr		= "Concat.invoke(" + operands + ")";

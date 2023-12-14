@@ -20,8 +20,6 @@ package ortus.boxlang.runtime.services;
 
 import static com.google.common.truth.Truth.assertThat;
 
-import java.util.Optional;
-
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -64,13 +62,12 @@ class FunctionServiceTest {
 
 		assertThat( service.hasGlobalFunction( "print" ) ).isTrue();
 
-		Optional<Object> result = service.getGlobalFunction( "print" )
+		Object result = service.getGlobalFunction( "print" )
 		    .invoke(
 		        new ScriptingBoxContext(), "Hello Unit Test"
 		    );
 
-		assertThat( result.isPresent() ).isTrue();
-		assertThat( ( Boolean ) result.get() ).isTrue();
+		assertThat( ( Boolean ) result ).isTrue();
 	}
 
 }

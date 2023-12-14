@@ -59,7 +59,7 @@ public class BoxSwitchTransformer extends AbstractTransformer {
 	public Node transform( BoxNode node, TransformerContext context ) throws IllegalStateException {
 		int					swtichCount	= transpiler.incrementAndGetSwitchCounter();
 		BoxSwitch			boxSwitch	= ( BoxSwitch ) node;
-		Expression			condition	= ( Expression ) resolveScope( transpiler.transform( boxSwitch.getCondition(), TransformerContext.RIGHT ), context );
+		Expression			condition	= ( Expression ) transpiler.transform( boxSwitch.getCondition(), TransformerContext.RIGHT );
 
 		Map<String, String>	values		= new HashMap<>() {
 

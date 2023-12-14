@@ -20,8 +20,6 @@ package ortus.boxlang.runtime.dynamic.casters;
 import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.types.exceptions.ApplicationException;
 
-import java.util.Optional;
-
 /**
  * I handle casting anything to a Double
  */
@@ -87,13 +85,16 @@ public class DoubleCaster {
 			}
 		}
 
-		String	stringValue	= StringCaster.cast( object );
+		// Try to parse the string as a double
+		String	stringValue	= StringCaster.cast( object, false );
 		Double	result		= parseDouble( stringValue );
 		if ( result != null ) {
 			return result;
 		}
+
+		// Verify if we can throw an exception
 		if ( fail ) {
-			throw new ApplicationException( String.format( "Can't cast %s to a double.", stringValue ) );
+			throw new ApplicationException( String.format( "Can't cast %s to a double.", object.toString() ) );
 		} else {
 			return null;
 		}
@@ -104,7 +105,7 @@ public class DoubleCaster {
 	 * Determine whether the provided string is castable to a Double.
 	 *
 	 * @param value A probably-hopefully double string value, with an optional plus/minus sign.
-	 * 
+	 *
 	 * @return Optional - parsed Double if all string characters are digits, with an optional sign and decimal point. Empty optional for empty string,
 	 *         null, floats, alpha characters, etc.
 	 */

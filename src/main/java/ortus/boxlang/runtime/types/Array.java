@@ -43,7 +43,7 @@ import ortus.boxlang.runtime.types.meta.IListenable;
 
 public class Array implements List<Object>, IType, IReferenceable, IListenable {
 
-	public static final Array			EMPTY	= new ImmutableArray();
+	public static final Array			EMPTY			= new ImmutableArray();
 	/**
 	 * --------------------------------------------------------------------------
 	 * Private Properties
@@ -60,6 +60,8 @@ public class Array implements List<Object>, IType, IReferenceable, IListenable {
 	 * Used to track change listeners. Intitialized on-demand
 	 */
 	private Map<Key, IChangeListener>	listeners;
+
+	DynamicObject						dynamicObject	= null;
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -426,13 +428,15 @@ public class Array implements List<Object>, IType, IReferenceable, IListenable {
 		}
 
 		// If there is no member funtion, look for a native Java method of that name
-		DynamicObject object = DynamicObject.of( this );
+		if ( dynamicObject == null ) {
+			dynamicObject = DynamicObject.of( this );
+		}
 
-		if ( safe && !object.hasMethod( name.getName() ) ) {
+		if ( safe && !dynamicObject.hasMethod( name.getName() ) ) {
 			return null;
 		}
 
-		return object.invoke( name.getName(), positionalArguments ).orElse( null );
+		return dynamicObject.invoke( name.getName(), positionalArguments );
 	}
 
 	/**
@@ -463,7 +467,7 @@ public class Array implements List<Object>, IType, IReferenceable, IListenable {
 			return null;
 		}
 
-		return object.invoke( name.getName(), namedArguments ).orElse( null );
+		return object.invoke( name.getName(), namedArguments );
 
 		// Native java methods can't be called with named params so we don't even try
 	}

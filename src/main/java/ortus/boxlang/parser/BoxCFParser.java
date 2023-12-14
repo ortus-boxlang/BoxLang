@@ -468,10 +468,11 @@ public class BoxCFParser extends BoxAbstractParser {
 	private BoxStatement toAst( File file, CFParser.ForContext node ) {
 		List<BoxStatement> body = toAst( file, node.statementBlock() );
 		if ( node.IN() != null ) {
-			BoxExpr	variable	= toAst( file, node.identifier() );
+			BoxExpr	variable	= toAst( file, node.accessExpression() );
+			Boolean	hasVar		= node.VAR() != null;
 			BoxExpr	collection	= toAst( file, node.expression() );
 
-			return new BoxForIn( variable, collection, body, getPosition( node ), getSourceText( node ) );
+			return new BoxForIn( variable, collection, body, hasVar, getPosition( node ), getSourceText( node ) );
 		}
 		BoxExpr	initializer	= toAst( file, node.forAssignment().expression() );
 		BoxExpr	condition	= toAst( file, node.forCondition().expression() );
@@ -568,11 +569,13 @@ public class BoxCFParser extends BoxAbstractParser {
 	 * @see BoxWhile
 	 */
 	private BoxStatement toAst( File file, CFParser.WhileContext node ) {
-		BoxExpr				condition	= toAst( file, node.expression() );
+		BoxExpr				condition	= toAst( file, node.condition );
 		List<BoxStatement>	body		= new ArrayList<>();
 
 		if ( node.statementBlock() != null ) {
 			body.addAll( toAst( file, node.statementBlock() ) );
+		} else if ( node.statement() != null ) {
+			body.add( toAst( file, node.statement() ) );
 		}
 		return new BoxWhile( condition, body, getPosition( node ), getSourceText( node ) );
 	}

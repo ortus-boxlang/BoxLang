@@ -21,6 +21,8 @@ import java.util.ArrayDeque;
 import java.util.List;
 import java.util.Map;
 
+import ortus.boxlang.runtime.BoxRuntime;
+import ortus.boxlang.runtime.bifs.BIFDescriptor;
 import ortus.boxlang.runtime.dynamic.casters.FunctionCaster;
 import ortus.boxlang.runtime.loader.ImportDefinition;
 import ortus.boxlang.runtime.runnables.BoxTemplate;
@@ -28,6 +30,7 @@ import ortus.boxlang.runtime.runnables.RunnableLoader;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
+import ortus.boxlang.runtime.services.FunctionService;
 import ortus.boxlang.runtime.types.Function;
 import ortus.boxlang.runtime.types.UDF;
 import ortus.boxlang.runtime.types.exceptions.ApplicationException;
@@ -163,6 +166,11 @@ public class BaseBoxContext implements IBoxContext {
 	 * @return Return value of the function call
 	 */
 	public Object invokeFunction( Key name, Object[] positionalArguments ) {
+		BIFDescriptor bif = findBIF( name );
+		if ( bif != null ) {
+			return bif.invoke( this, positionalArguments );
+		}
+
 		Function function = findFunction( name );
 		return invokeFunction( function, name, function.createArgumentsScope( positionalArguments ) );
 	}
@@ -173,6 +181,8 @@ public class BaseBoxContext implements IBoxContext {
 	 * @return Return value of the function call
 	 */
 	public Object invokeFunction( Key name, Map<Key, Object> namedArguments ) {
+		// BIF??
+
 		Function function = findFunction( name );
 		return invokeFunction( function, name, function.createArgumentsScope( namedArguments ) );
 	}
@@ -183,6 +193,11 @@ public class BaseBoxContext implements IBoxContext {
 	 * @return Return value of the function call
 	 */
 	public Object invokeFunction( Key name ) {
+		BIFDescriptor bif = findBIF( name );
+		if ( bif != null ) {
+			return bif.invoke( this );
+		}
+
 		Function function = findFunction( name );
 		return invokeFunction( function, name, function.createArgumentsScope( new Object[] {} ) );
 	}
@@ -196,6 +211,14 @@ public class BaseBoxContext implements IBoxContext {
 	public Object invokeFunction( Object function, Object[] positionalArguments ) {
 		Function func = FunctionCaster.cast( function );
 		return invokeFunction( func, func.getName(), func.createArgumentsScope( positionalArguments ) );
+	}
+
+	private BIFDescriptor findBIF( Key name ) {
+		FunctionService functionService = BoxRuntime.getInstance().getFunctionService();
+		if ( functionService.hasGlobalFunction( name.getName() ) ) {
+			return functionService.getGlobalFunction( name.getName() );
+		}
+		return null;
 	}
 
 	/**
@@ -237,8 +260,6 @@ public class BaseBoxContext implements IBoxContext {
 	 * @return The function instance
 	 */
 	private Function findFunction( Key name ) {
-		// TODO: Check for registered BIF
-
 		ScopeSearchResult result = scopeFindNearby( name, null );
 		if ( result == null ) {
 			throw new ApplicationException( "Function '" + name.toString() + "' not found" );
