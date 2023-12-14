@@ -26,7 +26,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 import javax.tools.DiagnosticCollector;
 import javax.tools.JavaCompiler;
@@ -38,7 +37,6 @@ import org.slf4j.LoggerFactory;
 
 import com.github.javaparser.ast.CompilationUnit;
 
-import ortus.boxlang.ast.Issue;
 import ortus.boxlang.ast.Point;
 import ortus.boxlang.ast.Position;
 import ortus.boxlang.parser.BoxParser;
@@ -261,12 +259,7 @@ import org.jbox2d.util.Issue;
 				}
 
 				if ( !result.isCorrect() ) {
-					// Convert the issues to a comma-separated string
-					String issuesString = result.getIssues().stream()
-					    .map( Issue::toString )
-					    .collect( Collectors.joining( ", " ) );
-
-					throw new BoxRuntimeException( "Error compiling source. " + issuesString );
+					throw new ParseException( result.getIssues() );
 				}
 
 				// JavaTranspiler transpiler = new JavaTranspiler();
@@ -361,12 +354,7 @@ import org.jbox2d.util.Issue;
 				}
 
 				if ( !result.isCorrect() ) {
-					// Convert the issues to a comma-separated string
-					String issuesString = result.getIssues().stream()
-					    .map( Issue::toString )
-					    .collect( Collectors.joining( ", " ) );
-
-					throw new BoxRuntimeException( "Error compiling source. " + issuesString );
+					throw new ParseException( result.getIssues() );
 				}
 
 				Transpiler transpiler = Transpiler.getTranspiler( null /* Config ? */ );
