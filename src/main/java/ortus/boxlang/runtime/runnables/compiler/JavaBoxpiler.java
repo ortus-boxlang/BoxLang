@@ -48,6 +48,7 @@ import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.config.util.PlaceholderHelper;
 import ortus.boxlang.runtime.runnables.IBoxRunnable;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
+import ortus.boxlang.runtime.types.exceptions.ParseException;
 import ortus.boxlang.transpiler.JavaTranspiler;
 import ortus.boxlang.transpiler.TranspiledCode;
 import ortus.boxlang.transpiler.Transpiler;
@@ -316,12 +317,7 @@ import org.jbox2d.util.Issue;
 				}
 
 				if ( !result.isCorrect() ) {
-					// Convert the issues to a comma-separated string
-					String issuesString = result.getIssues().stream()
-					    .map( Issue::toString )
-					    .collect( Collectors.joining( ", " ) );
-
-					throw new BoxRuntimeException( "Error compiling source. " + issuesString );
+					throw new ParseException( result.getIssues() );
 				}
 
 				Transpiler transpiler = Transpiler.getTranspiler( null /* Config ? */ );

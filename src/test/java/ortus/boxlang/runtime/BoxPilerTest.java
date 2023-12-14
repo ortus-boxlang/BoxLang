@@ -17,6 +17,25 @@
  */
 package ortus.boxlang.runtime;
 
+import static org.junit.Assert.assertThrows;
+
+import org.junit.Test;
+import org.junit.jupiter.api.DisplayName;
+
+import ortus.boxlang.runtime.types.exceptions.ParseException;
+
 public class BoxPilerTest {
+
+    @DisplayName( "It will throw a ParseException if the syntax is invalid" )
+    @Test
+    public void testItCanStartUp() {
+        BoxRuntime instance = BoxRuntime.getInstance( true );
+
+        assertThrows( ParseException.class, () -> {
+            instance.executeSource( """
+                                        1 + >;
+                                    """ );
+        } );
+    }
 
 }
