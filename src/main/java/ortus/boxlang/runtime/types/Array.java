@@ -436,7 +436,7 @@ public class Array implements List<Object>, IType, IReferenceable, IListenable {
 			return null;
 		}
 
-		return dynamicObject.invoke( name.getName(), positionalArguments ).orElse( null );
+		return dynamicObject.invoke( name.getName(), positionalArguments );
 	}
 
 	/**
@@ -467,7 +467,7 @@ public class Array implements List<Object>, IType, IReferenceable, IListenable {
 			return null;
 		}
 
-		return object.invoke( name.getName(), namedArguments ).orElse( null );
+		return object.invoke( name.getName(), namedArguments );
 
 		// Native java methods can't be called with named params so we don't even try
 	}

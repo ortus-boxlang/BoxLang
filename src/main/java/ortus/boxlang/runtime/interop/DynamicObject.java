@@ -327,10 +327,10 @@ public class DynamicObject implements IReferenceable {
 	 * @param methodName The name of the method to invoke
 	 * @param arguments  The arguments to pass to the method
 	 *
-	 * @return The result of the method invocation wrapped in an Optional
+	 * @return The result of the method invocation
 	 *
 	 */
-	public Optional<Object> invoke( String methodName, Object... arguments ) {
+	public Object invoke( String methodName, Object... arguments ) {
 		// Verify method name
 		if ( methodName == null || methodName.isEmpty() ) {
 			throw new ApplicationException( "Method name cannot be null or empty." );
@@ -356,11 +356,9 @@ public class DynamicObject implements IReferenceable {
 
 		// Discover and Execute it baby!
 		try {
-			return Optional.ofNullable(
-			    methodRecord.isStatic()
-			        ? methodRecord.methodHandle().invokeWithArguments( arguments )
-			        : methodRecord.methodHandle().bindTo( this.targetInstance ).invokeWithArguments( arguments )
-			);
+			return methodRecord.isStatic()
+			    ? methodRecord.methodHandle().invokeWithArguments( arguments )
+			    : methodRecord.methodHandle().bindTo( this.targetInstance ).invokeWithArguments( arguments );
 		} catch ( Throwable e ) {
 			throw new ApplicationException( "Error invoking method " + methodName + " for class " + this.targetClass.getName(), e );
 		}
@@ -372,10 +370,10 @@ public class DynamicObject implements IReferenceable {
 	 * @param methodName The name of the method to invoke
 	 * @param arguments  The arguments to pass to the method
 	 *
-	 * @return The result of the method invocation wrapped in an Optional
+	 * @return The result of the method invocation
 	 *
 	 */
-	public Optional<Object> invokeStatic( String methodName, Object... arguments ) {
+	public Object invokeStatic( String methodName, Object... arguments ) {
 
 		// Verify method name
 		if ( methodName == null || methodName.isEmpty() ) {
@@ -387,11 +385,9 @@ public class DynamicObject implements IReferenceable {
 
 		// Discover and Execute it baby!
 		try {
-			return Optional.ofNullable(
-			    getMethodHandle( methodName, argumentsToClasses( arguments ) )
-			        .methodHandle()
-			        .invokeWithArguments( arguments )
-			);
+			return getMethodHandle( methodName, argumentsToClasses( arguments ) )
+			    .methodHandle()
+			    .invokeWithArguments( arguments );
 		} catch ( Throwable e ) {
 			throw new ApplicationException( "Error invoking method " + methodName + " for class " + this.targetClass.getName(), e );
 		}
@@ -600,6 +596,7 @@ public class DynamicObject implements IReferenceable {
 	public MethodRecord getMethodHandle( String methodName, Class<?>[] argumentsAsClasses ) {
 
 		// We use the method signature as the cache key
+		// TODO: look at just using string's hashcode directly
 		String			cacheKey		= methodName + Objects.hash( methodName, Arrays.toString( argumentsAsClasses ) );
 		MethodRecord	methodRecord	= methodHandleCache.get( cacheKey );
 
@@ -1019,7 +1016,7 @@ public class DynamicObject implements IReferenceable {
 			return null;
 		}
 
-		return invoke( name.getName(), positionalArguments ).orElse( null );
+		return invoke( name.getName(), positionalArguments );
 	}
 
 	/**

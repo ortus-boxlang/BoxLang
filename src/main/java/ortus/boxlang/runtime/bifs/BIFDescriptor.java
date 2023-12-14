@@ -72,7 +72,7 @@ public class BIFDescriptor {
 		System.arraycopy( arguments, 0, combined, 1, arguments.length );
 
 		// Invoke it baby!
-		return this.getBIF().invoke( "invoke", combined ).get();
+		return this.getBIF().invoke( "invoke", combined );
 	}
 
 }

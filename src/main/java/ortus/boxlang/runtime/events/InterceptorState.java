@@ -19,7 +19,6 @@ package ortus.boxlang.runtime.events;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 
 import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
 import ortus.boxlang.runtime.interop.DynamicObject;
@@ -121,9 +120,9 @@ public class InterceptorState {
 	public void announce( Struct data ) {
 		for ( DynamicObject observer : observers ) {
 			// Announce to the observer
-			Optional<?> stopChain = observer.invoke( getName(), new Object[] { data } );
+			Object stopChain = observer.invoke( getName(), new Object[] { data } );
 			// If the observer returns true, we short circuit the rest of the observers
-			if ( stopChain.isPresent() && BooleanCaster.cast( stopChain.get() ) ) {
+			if ( stopChain != null && BooleanCaster.cast( stopChain ) ) {
 				break;
 			}
 		}
