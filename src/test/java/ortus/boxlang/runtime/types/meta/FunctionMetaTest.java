@@ -25,9 +25,8 @@ import org.junit.jupiter.api.Test;
 
 import ortus.boxlang.runtime.dynamic.Referencer;
 import ortus.boxlang.runtime.scopes.Key;
+import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.Array;
-import ortus.boxlang.runtime.types.Function;
-import ortus.boxlang.runtime.types.Function.Argument;
 import ortus.boxlang.runtime.types.SampleUDF;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.UDF;
@@ -44,7 +43,7 @@ public class FunctionMetaTest {
 		    Key.of( "foo" ),
 		    "String",
 		    new Argument[] {
-		        new Function.Argument(
+		        new Argument(
 		            true,
 		            "String",
 		            Key.of( "param1" ),

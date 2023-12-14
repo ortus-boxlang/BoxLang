@@ -29,7 +29,6 @@ import org.junit.jupiter.api.Test;
 import ortus.boxlang.runtime.context.ScriptingBoxContext;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
-import ortus.boxlang.runtime.types.Function.Argument;
 
 public class ClosureTest {
 
@@ -37,8 +36,8 @@ public class ClosureTest {
 	@Test
 	void testCanDefineClosure() {
 		Argument[] args = new Argument[] {
-		    new Function.Argument( true, "String", Key.of( "firstName" ), "brad" ),
-		    new Function.Argument( true, "String", Key.of( "lastName" ), "wood" )
+		    new Argument( true, "String", Key.of( "firstName" ), "brad" ),
+		    new Argument( true, "String", Key.of( "lastName" ), "wood" )
 		};
 		new SampleClosure( args, new ScriptingBoxContext(), "Brad" );
 
@@ -52,9 +51,9 @@ public class ClosureTest {
 		Key			age			= Key.of( "age" );
 
 		Argument[]	args		= new Argument[] {
-		    new Function.Argument( true, "String", firstName, "brad" ),
-		    new Function.Argument( true, "String", lastName, "wood" ),
-		    new Function.Argument( false, "String", age, 43 )
+		    new Argument( true, "String", firstName, "brad" ),
+		    new Argument( true, "String", lastName, "wood" ),
+		    new Argument( false, "Numeric", age, 43 )
 		};
 		Closure		closure		= new SampleClosure( args, new ScriptingBoxContext(), "Brad" );
 		IScope		argscope	= closure.createArgumentsScope();
@@ -71,8 +70,8 @@ public class ClosureTest {
 		Key			firstName	= Key.of( "firstName" );
 		Key			lastName	= Key.of( "lastName" );
 		Argument[]	args		= new Argument[] {
-		    new Function.Argument( true, "String", firstName, "brad" ),
-		    new Function.Argument( true, "String", lastName, "wood" )
+		    new Argument( true, "String", firstName, "brad" ),
+		    new Argument( true, "String", lastName, "wood" )
 		};
 		Closure		closure		= new SampleClosure( args, new ScriptingBoxContext(), "Brad" );
 		IScope		argscope	= closure.createArgumentsScope( new Object[] { "Luis", "Majano", "Extra" } );
@@ -89,8 +88,8 @@ public class ClosureTest {
 		Key			firstName	= Key.of( "firstName" );
 		Key			lastName	= Key.of( "lastName" );
 		Argument[]	args		= new Argument[] {
-		    new Function.Argument( true, "String", firstName, "brad" ),
-		    new Function.Argument( true, "String", lastName, "wood" )
+		    new Argument( true, "String", firstName, "brad" ),
+		    new Argument( true, "String", lastName, "wood" )
 		};
 		Closure		closure		= new SampleClosure( args, new ScriptingBoxContext(), "Brad" );
 		IScope		argscope	= closure.createArgumentsScope( new Object[] { "Luis" } );
@@ -107,8 +106,8 @@ public class ClosureTest {
 		Key			lastName	= Key.of( "lastName" );
 		Key			extra		= Key.of( "extra" );
 		Argument[]	args		= new Argument[] {
-		    new Function.Argument( true, "String", firstName, "brad" ),
-		    new Function.Argument( true, "String", lastName, "wood" )
+		    new Argument( true, "String", firstName, "brad" ),
+		    new Argument( true, "String", lastName, "wood" )
 		};
 		Closure		closure		= new SampleClosure( args, new ScriptingBoxContext(), "Brad" );
 		IScope		argscope	= closure
@@ -125,7 +124,7 @@ public class ClosureTest {
 	void testCanRejectInvalidNamedArgTypes() {
 		Key			age		= Key.of( "age" );
 		Argument[]	args	= new Argument[] {
-		    new Function.Argument( true, "numeric", age, "sdf" )
+		    new Argument( true, "numeric", age, "sdf" )
 		};
 		Closure		closure	= new SampleClosure( args, new ScriptingBoxContext(), "Brad" );
 
@@ -145,8 +144,8 @@ public class ClosureTest {
 		Key			firstName	= Key.of( "firstName" );
 		Key			lastName	= Key.of( "lastName" );
 		Argument[]	args		= new Argument[] {
-		    new Function.Argument( true, "String", firstName, "brad" ),
-		    new Function.Argument( true, "String", lastName, "wood" )
+		    new Argument( true, "String", firstName, "brad" ),
+		    new Argument( true, "String", lastName, "wood" )
 		};
 		Closure		closure		= new SampleClosure( args, new ScriptingBoxContext(), "Brad" );
 		IScope		argscope	= closure
@@ -165,8 +164,8 @@ public class ClosureTest {
 		Key			extra		= Key.of( "extra" );
 		Key			extraExtra	= Key.of( "extraExtra" );
 		Argument[]	args		= new Argument[] {
-		    new Function.Argument( true, "String", firstName, "brad" ),
-		    new Function.Argument( true, "String", lastName, "wood" )
+		    new Argument( true, "String", firstName, "brad" ),
+		    new Argument( true, "String", lastName, "wood" )
 		};
 		Closure		closure		= new SampleClosure( args, new ScriptingBoxContext(), "Brad" );
 		IScope		argscope	= closure
@@ -187,7 +186,7 @@ public class ClosureTest {
 	void testOverrideArgumentCollectionWithArgs() {
 		Key			firstName	= Key.of( "firstName" );
 		Argument[]	args		= new Argument[] {
-		    new Function.Argument( true, "String", firstName, "brad" )
+		    new Argument( true, "String", firstName, "brad" )
 		};
 		Closure		closure		= new SampleClosure( args, new ScriptingBoxContext(), "Brad" );
 		IScope		argscope	= closure
@@ -206,8 +205,8 @@ public class ClosureTest {
 		Key			lastName	= Key.of( "lastName" );
 
 		Argument[]	args		= new Argument[] {
-		    new Function.Argument( true, "String", firstName, null ),
-		    new Function.Argument( true, "String", lastName, null )
+		    new Argument( true, "String", firstName, null ),
+		    new Argument( true, "String", lastName, null )
 		};
 		Closure		closure		= new SampleClosure( args, new ScriptingBoxContext(), "Brad" );
 
@@ -222,8 +221,8 @@ public class ClosureTest {
 		Key			firstName	= Key.of( "firstName" );
 		Key			lastName	= Key.of( "lastName" );
 		Argument[]	args		= new Argument[] {
-		    new Function.Argument( false, "String", firstName, "brad" ),
-		    new Function.Argument( false, "String", lastName, "wood" )
+		    new Argument( false, "String", firstName, "brad" ),
+		    new Argument( false, "String", lastName, "wood" )
 		};
 		Closure		closure		= new SampleClosure( args, new ScriptingBoxContext(), "Brad" );
 		IScope		argscope	= closure.createArgumentsScope();
@@ -240,8 +239,8 @@ public class ClosureTest {
 		Key			firstName	= Key.of( "firstName" );
 		Key			lastName	= Key.of( "lastName" );
 		Argument[]	args		= new Argument[] {
-		    new Function.Argument( false, "String", Key.of( "firstname" ), "brad", Struct.of( "hint", "First Name" ) ),
-		    new Function.Argument( false, "String", lastName, "wood", Struct.of( "hint", "Last Name" ) )
+		    new Argument( false, "String", Key.of( "firstname" ), "brad", Struct.of( "hint", "First Name" ) ),
+		    new Argument( false, "String", lastName, "wood", Struct.of( "hint", "Last Name" ) )
 		};
 		Closure		closure		= new SampleClosure( args, new ScriptingBoxContext(), "Brad" );
 

@@ -24,6 +24,18 @@ import java.util.Arrays;
  */
 public class Key {
 
+	public static final Key	_0	= Key.of( 0 );
+	public static final Key	_1	= Key.of( 1 );
+	public static final Key	_2	= Key.of( 2 );
+	public static final Key	_3	= Key.of( 3 );
+	public static final Key	_4	= Key.of( 4 );
+	public static final Key	_5	= Key.of( 5 );
+	public static final Key	_6	= Key.of( 6 );
+	public static final Key	_7	= Key.of( 7 );
+	public static final Key	_8	= Key.of( 8 );
+	public static final Key	_9	= Key.of( 9 );
+	public static final Key	_10	= Key.of( 10 );
+
 	/**
 	 * --------------------------------------------------------------------------
 	 * Private Properties
@@ -33,23 +45,23 @@ public class Key {
 	/**
 	 * The original key name
 	 */
-	protected String	name;
+	protected String		name;
 
 	/**
 	 * The key name in upper case
 	 */
-	protected String	nameNoCase;
+	protected String		nameNoCase;
 
 	/**
 	 * The original value of the key, which could be a complex object
 	 * if this key was being used to derefernce a native Map.
 	 */
-	protected Object	originalValue;
+	protected Object		originalValue;
 
 	/**
 	 * Keys are immutable, so we can cache the hash code
 	 */
-	protected int		hashCode;
+	protected int			hashCode;
 
 	/**
 	 * --------------------------------------------------------------------------

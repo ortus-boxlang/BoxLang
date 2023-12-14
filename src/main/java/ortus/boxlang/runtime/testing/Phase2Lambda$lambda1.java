@@ -26,6 +26,7 @@ import ortus.boxlang.runtime.operators.Concat;
 import ortus.boxlang.runtime.runnables.IBoxRunnable;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.LocalScope;
+import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.Lambda;
 import ortus.boxlang.runtime.types.Struct;
 

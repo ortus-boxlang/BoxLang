@@ -33,7 +33,6 @@ import ortus.boxlang.runtime.context.ScriptingBoxContext;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
-import ortus.boxlang.runtime.types.Function.Argument;
 
 public class FunctionTest {
 
@@ -41,8 +40,8 @@ public class FunctionTest {
 	@Test
 	void testCanDefineUDF() {
 		Argument[] args = new Argument[] {
-		    new Function.Argument( true, "String", Key.of( "firstName" ), "brad" ),
-		    new Function.Argument( true, "String", Key.of( "lastName" ), "wood" )
+		    new Argument( true, "String", Key.of( "firstName" ), "brad" ),
+		    new Argument( true, "String", Key.of( "lastName" ), "wood" )
 		};
 		new SampleUDF( UDF.Access.PUBLIC, Key.of( "foo" ), "any", args, null );
 
@@ -56,9 +55,9 @@ public class FunctionTest {
 		Key			age			= Key.of( "age" );
 
 		Argument[]	args		= new Argument[] {
-		    new Function.Argument( true, "String", firstName, "brad" ),
-		    new Function.Argument( true, "String", lastName, "wood" ),
-		    new Function.Argument( false, "String", age, 43 )
+		    new Argument( true, "String", firstName, "brad" ),
+		    new Argument( true, "String", lastName, "wood" ),
+		    new Argument( false, "Numeric", age, 43 )
 		};
 		UDF			udf			= new SampleUDF( UDF.Access.PUBLIC, Key.of( "foo" ), "any", args, null );
 		IScope		argscope	= udf.createArgumentsScope();
@@ -75,8 +74,8 @@ public class FunctionTest {
 		Key			firstName	= Key.of( "firstName" );
 		Key			lastName	= Key.of( "lastName" );
 		Argument[]	args		= new Argument[] {
-		    new Function.Argument( true, "String", firstName, "brad" ),
-		    new Function.Argument( true, "String", lastName, "wood" )
+		    new Argument( true, "String", firstName, "brad" ),
+		    new Argument( true, "String", lastName, "wood" )
 		};
 		UDF			udf			= new SampleUDF( UDF.Access.PUBLIC, Key.of( "foo" ), "any", args, null );
 		IScope		argscope	= udf.createArgumentsScope( new Object[] { "Luis", "Majano", "Extra" } );
@@ -93,8 +92,8 @@ public class FunctionTest {
 		Key			firstName	= Key.of( "firstName" );
 		Key			lastName	= Key.of( "lastName" );
 		Argument[]	args		= new Argument[] {
-		    new Function.Argument( true, "String", firstName, "brad" ),
-		    new Function.Argument( true, "String", lastName, "wood" )
+		    new Argument( true, "String", firstName, "brad" ),
+		    new Argument( true, "String", lastName, "wood" )
 		};
 		UDF			udf			= new SampleUDF( UDF.Access.PUBLIC, Key.of( "foo" ), "any", args, null );
 		IScope		argscope	= udf.createArgumentsScope( new Object[] { "Luis" } );
@@ -111,8 +110,8 @@ public class FunctionTest {
 		Key			lastName	= Key.of( "lastName" );
 		Key			extra		= Key.of( "extra" );
 		Argument[]	args		= new Argument[] {
-		    new Function.Argument( true, "String", firstName, "brad" ),
-		    new Function.Argument( true, "String", lastName, "wood" )
+		    new Argument( true, "String", firstName, "brad" ),
+		    new Argument( true, "String", lastName, "wood" )
 		};
 		UDF			udf			= new SampleUDF( UDF.Access.PUBLIC, Key.of( "foo" ), "any", args, null );
 		IScope		argscope	= udf
@@ -129,7 +128,7 @@ public class FunctionTest {
 	void testCanRejectInvalidNamedArgTypes() {
 		Key			age		= Key.of( "age" );
 		Argument[]	args	= new Argument[] {
-		    new Function.Argument( true, "numeric", age, "sdf" )
+		    new Argument( true, "numeric", age, "sdf" )
 		};
 		UDF			udf		= new SampleUDF( UDF.Access.PUBLIC, Key.of( "foo" ), "any", args, null );
 
@@ -149,8 +148,8 @@ public class FunctionTest {
 		Key			firstName	= Key.of( "firstName" );
 		Key			lastName	= Key.of( "lastName" );
 		Argument[]	args		= new Argument[] {
-		    new Function.Argument( true, "String", firstName, "brad" ),
-		    new Function.Argument( true, "String", lastName, "wood" )
+		    new Argument( true, "String", firstName, "brad" ),
+		    new Argument( true, "String", lastName, "wood" )
 		};
 		UDF			udf			= new SampleUDF( UDF.Access.PUBLIC, Key.of( "foo" ), "any", args, null );
 		IScope		argscope	= udf
@@ -169,8 +168,8 @@ public class FunctionTest {
 		Key			extra		= Key.of( "extra" );
 		Key			extraExtra	= Key.of( "extraExtra" );
 		Argument[]	args		= new Argument[] {
-		    new Function.Argument( true, "String", firstName, "brad" ),
-		    new Function.Argument( true, "String", lastName, "wood" )
+		    new Argument( true, "String", firstName, "brad" ),
+		    new Argument( true, "String", lastName, "wood" )
 		};
 		UDF			udf			= new SampleUDF( UDF.Access.PUBLIC, Key.of( "foo" ), "any", args, null );
 		IScope		argscope	= udf
@@ -194,8 +193,8 @@ public class FunctionTest {
 		Key			key3		= Key.of( "3" );
 		Key			extraExtra	= Key.of( "extraExtra" );
 		Argument[]	args		= new Argument[] {
-		    new Function.Argument( true, "String", firstName, "brad" ),
-		    new Function.Argument( true, "String", lastName, "wood" )
+		    new Argument( true, "String", firstName, "brad" ),
+		    new Argument( true, "String", lastName, "wood" )
 		};
 		UDF			udf			= new SampleUDF( UDF.Access.PUBLIC, Key.of( "foo" ), "any", args, null );
 		IScope		argscope	= udf
@@ -217,7 +216,7 @@ public class FunctionTest {
 		Key			param		= Key.of( "param" );
 		Key			key2		= Key.of( "2" );
 		Argument[]	args		= new Argument[] {
-		    new Function.Argument( true, "String", param, null )
+		    new Argument( true, "String", param, null )
 		};
 		UDF			udf			= new SampleUDF( UDF.Access.PUBLIC, Key.of( "foo" ), "any", args, null );
 		IScope		argscope	= udf
@@ -266,7 +265,7 @@ public class FunctionTest {
 	void testOverrideArgumentCollectionWithArgs() {
 		Key			firstName	= Key.of( "firstName" );
 		Argument[]	args		= new Argument[] {
-		    new Function.Argument( true, "String", firstName, "brad" )
+		    new Argument( true, "String", firstName, "brad" )
 		};
 		UDF			udf			= new SampleUDF( UDF.Access.PUBLIC, Key.of( "foo" ), "any", args, null );
 		IScope		argscope	= udf
@@ -285,8 +284,8 @@ public class FunctionTest {
 		Key			lastName	= Key.of( "lastName" );
 
 		Argument[]	args		= new Argument[] {
-		    new Function.Argument( true, "String", firstName, null ),
-		    new Function.Argument( true, "String", lastName, null )
+		    new Argument( true, "String", firstName, null ),
+		    new Argument( true, "String", lastName, null )
 		};
 		UDF			udf			= new SampleUDF( UDF.Access.PUBLIC, Key.of( "foo" ), "any", args, null );
 
@@ -301,8 +300,8 @@ public class FunctionTest {
 		Key			firstName	= Key.of( "firstName" );
 		Key			lastName	= Key.of( "lastName" );
 		Argument[]	args		= new Argument[] {
-		    new Function.Argument( false, "String", firstName, "brad" ),
-		    new Function.Argument( false, "String", lastName, "wood" )
+		    new Argument( false, "String", firstName, "brad" ),
+		    new Argument( false, "String", lastName, "wood" )
 		};
 		UDF			udf			= new SampleUDF( UDF.Access.PUBLIC, Key.of( "foo" ), "any", args, null );
 		IScope		argscope	= udf.createArgumentsScope();
@@ -342,8 +341,8 @@ public class FunctionTest {
 		    Key.of( "foo" ),
 		    "String",
 		    new Argument[] {
-		        new Function.Argument( true, "String", Key.of( "param1" ), null, Struct.of( "hint", "First Name" ) ),
-		        new Function.Argument( false, "any", Key.of( "param2" ), "wood" )
+		        new Argument( true, "String", Key.of( "param1" ), null, Struct.of( "hint", "First Name" ) ),
+		        new Argument( false, "any", Key.of( "param2" ), "wood" )
 		    },
 		    "42",
 		    Struct.of( "hint", "Brad's func", "output", false )

@@ -25,7 +25,7 @@ import org.junit.jupiter.api.Test;
 
 import ortus.boxlang.runtime.context.ScriptingBoxContext;
 import ortus.boxlang.runtime.scopes.Key;
-import ortus.boxlang.runtime.types.Function;
+import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.SampleUDF;
 import ortus.boxlang.runtime.types.UDF;
 import ortus.boxlang.runtime.types.exceptions.BoxLangException;
@@ -53,13 +53,13 @@ public class AssertTest {
 	@DisplayName( "It can assert UDF" )
 	@Test
 	void testItCanAssertUDF() {
-		UDF udf = new SampleUDF( UDF.Access.PUBLIC, Key.of( "func" ), "any", new Function.Argument[] {}, true );
+		UDF udf = new SampleUDF( UDF.Access.PUBLIC, Key.of( "func" ), "any", new Argument[] {}, true );
 		assertThat( Assert.invoke( new ScriptingBoxContext(), udf ) ).isTrue();
 
-		final UDF udf2 = new SampleUDF( UDF.Access.PUBLIC, Key.of( "func" ), "any", new Function.Argument[] {}, false );
+		final UDF udf2 = new SampleUDF( UDF.Access.PUBLIC, Key.of( "func" ), "any", new Argument[] {}, false );
 		assertThrows( AssertionError.class, () -> Assert.invoke( new ScriptingBoxContext(), udf2 ) );
 
-		final UDF udf3 = new SampleUDF( UDF.Access.PUBLIC, Key.of( "func" ), "any", new Function.Argument[] {}, "brad" );
+		final UDF udf3 = new SampleUDF( UDF.Access.PUBLIC, Key.of( "func" ), "any", new Argument[] {}, "brad" );
 		assertThrows( BoxLangException.class, () -> Assert.invoke( new ScriptingBoxContext(), udf3 ) );
 	}
 

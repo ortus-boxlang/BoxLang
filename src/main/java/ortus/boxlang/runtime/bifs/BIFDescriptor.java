@@ -17,8 +17,14 @@
  */
 package ortus.boxlang.runtime.bifs;
 
+import java.util.Map;
+
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.interop.DynamicObject;
+import ortus.boxlang.runtime.scopes.ArgumentsScope;
+import ortus.boxlang.runtime.scopes.Key;
+import ortus.boxlang.runtime.types.Argument;
+import ortus.boxlang.runtime.types.ArgumentUtil;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
 public class BIFDescriptor {
@@ -66,13 +72,41 @@ public class BIFDescriptor {
 		return this.BIF;
 	}
 
-	public Object invoke( IBoxContext context, Object... arguments ) {
-		Object[] combined = new Object[ 1 + arguments.length ];
-		combined[ 0 ] = context;
-		System.arraycopy( arguments, 0, combined, 1, arguments.length );
+	/**
+	 * Invoke the BIF with no arguments
+	 * 
+	 * @param context
+	 * 
+	 * @return The result of the invocation
+	 */
+	public Object invoke( IBoxContext context ) {
+		return this.getBIF().invoke( "invoke", context, new ArgumentsScope() );
+	}
 
+	/**
+	 * Invoke the BIF with positional arguments
+	 * 
+	 * @param context
+	 * 
+	 * @return The result of the invocation
+	 */
+	public Object invoke( IBoxContext context, Object[] positionalArguments ) {
+		ArgumentsScope scope = ArgumentUtil.createArgumentsScope( positionalArguments, ( Argument[] ) getBIF().getField( "arguments" ).get() );
 		// Invoke it baby!
-		return this.getBIF().invoke( "invoke", combined );
+		return this.getBIF().invoke( "invoke", context, scope );
+	}
+
+	/**
+	 * Invoke the BIF with named arguments
+	 * 
+	 * @param context
+	 * 
+	 * @return The result of the invocation
+	 */
+	public Object invoke( IBoxContext context, Map<Key, Object> namedArguments ) {
+		ArgumentsScope scope = ArgumentUtil.createArgumentsScope( namedArguments, ( Argument[] ) getBIF().getField( "arguments" ).get() );
+		// Invoke it baby!
+		return this.getBIF().invoke( "invoke", context, scope );
 	}
 
 }

@@ -4,11 +4,20 @@ import java.util.Random;
 
 import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.context.IBoxContext;
+import ortus.boxlang.runtime.scopes.ArgumentsScope;
+import ortus.boxlang.runtime.scopes.Key;
+import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
 public class Rand extends BIF {
 
-    static Random rand = new Random();
+    private final static Key algorithm = Key.of( "algorithm" );
+
+    public static Argument[] arguments = new Argument[] {
+        new Argument( algorithm )
+    };
+
+    static Random            rand      = new Random();
 
     /**
      * 
@@ -18,11 +27,11 @@ public class Rand extends BIF {
      * 
      * @return
      */
-    public static Object invoke( IBoxContext context ) {
+    public static double invoke( IBoxContext context, ArgumentsScope arguments ) {
+        if ( arguments.containsKey( algorithm ) && arguments.dereference( algorithm, false ) != null ) {
+            throw new BoxRuntimeException( "The algorithm argument has not yet been implemented" );
+        }
         return rand.nextDouble();
     }
 
-    public static Object invoke( IBoxContext context, String alg ) {
-        throw new BoxRuntimeException( "The algorithm argument has not yet been implemented" );
-    }
 }

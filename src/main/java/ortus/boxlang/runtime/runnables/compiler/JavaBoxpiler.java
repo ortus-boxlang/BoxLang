@@ -45,6 +45,7 @@ import ortus.boxlang.parser.ParsingResult;
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.config.util.PlaceholderHelper;
 import ortus.boxlang.runtime.runnables.IBoxRunnable;
+import ortus.boxlang.runtime.types.exceptions.ApplicationException;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.exceptions.ParseException;
 import ortus.boxlang.transpiler.JavaTranspiler;
@@ -364,6 +365,7 @@ import org.jbox2d.util.Issue;
 				transpiler.setProperty( "returnType", "void" );
 				TranspiledCode javaASTs = transpiler.transpile( result.getRoot() );
 				compileSource( javaASTs.getEntryPoint().toString(), fqn );
+				
 				// Process functions ad lamdas
 				for ( CompilationUnit callable : javaASTs.getCallables() ) {
 					compileSource( callable.toString(), fqn );

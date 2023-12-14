@@ -28,7 +28,6 @@ import org.junit.jupiter.api.Test;
 
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
-import ortus.boxlang.runtime.types.Function.Argument;
 
 public class LambdaTest {
 
@@ -36,8 +35,8 @@ public class LambdaTest {
 	@Test
 	void testCanDefineLambda() {
 		Argument[] args = new Argument[] {
-		    new Function.Argument( true, "String", Key.of( "firstName" ), "brad" ),
-		    new Function.Argument( true, "String", Key.of( "lastName" ), "wood" )
+		    new Argument( true, "String", Key.of( "firstName" ), "brad" ),
+		    new Argument( true, "String", Key.of( "lastName" ), "wood" )
 		};
 		new SampleLambda( args, "Brad" );
 
@@ -51,9 +50,9 @@ public class LambdaTest {
 		Key			age			= Key.of( "age" );
 
 		Argument[]	args		= new Argument[] {
-		    new Function.Argument( true, "String", firstName, "brad" ),
-		    new Function.Argument( true, "String", lastName, "wood" ),
-		    new Function.Argument( false, "String", age, 43 )
+		    new Argument( true, "String", firstName, "brad" ),
+		    new Argument( true, "String", lastName, "wood" ),
+		    new Argument( false, "Numeric", age, 43 )
 		};
 		Lambda		lambda		= new SampleLambda( args, "Brad" );
 		IScope		argscope	= lambda.createArgumentsScope();
@@ -70,8 +69,8 @@ public class LambdaTest {
 		Key			firstName	= Key.of( "firstName" );
 		Key			lastName	= Key.of( "lastName" );
 		Argument[]	args		= new Argument[] {
-		    new Function.Argument( true, "String", firstName, "brad" ),
-		    new Function.Argument( true, "String", lastName, "wood" )
+		    new Argument( true, "String", firstName, "brad" ),
+		    new Argument( true, "String", lastName, "wood" )
 		};
 		Lambda		lambda		= new SampleLambda( args, "Brad" );
 		IScope		argscope	= lambda.createArgumentsScope( new Object[] { "Luis", "Majano", "Extra" } );
@@ -88,8 +87,8 @@ public class LambdaTest {
 		Key			firstName	= Key.of( "firstName" );
 		Key			lastName	= Key.of( "lastName" );
 		Argument[]	args		= new Argument[] {
-		    new Function.Argument( true, "String", firstName, "brad" ),
-		    new Function.Argument( true, "String", lastName, "wood" )
+		    new Argument( true, "String", firstName, "brad" ),
+		    new Argument( true, "String", lastName, "wood" )
 		};
 		Lambda		lambda		= new SampleLambda( args, "Brad" );
 		IScope		argscope	= lambda.createArgumentsScope( new Object[] { "Luis" } );
@@ -106,8 +105,8 @@ public class LambdaTest {
 		Key			lastName	= Key.of( "lastName" );
 		Key			extra		= Key.of( "extra" );
 		Argument[]	args		= new Argument[] {
-		    new Function.Argument( true, "String", firstName, "brad" ),
-		    new Function.Argument( true, "String", lastName, "wood" )
+		    new Argument( true, "String", firstName, "brad" ),
+		    new Argument( true, "String", lastName, "wood" )
 		};
 		Lambda		lambda		= new SampleLambda( args, "Brad" );
 		IScope		argscope	= lambda
@@ -124,7 +123,7 @@ public class LambdaTest {
 	void testCanRejectInvalidNamedArgTypes() {
 		Key			age		= Key.of( "age" );
 		Argument[]	args	= new Argument[] {
-		    new Function.Argument( true, "numeric", age, "sdf" )
+		    new Argument( true, "numeric", age, "sdf" )
 		};
 		Lambda		lambda	= new SampleLambda( args, "Brad" );
 
@@ -144,8 +143,8 @@ public class LambdaTest {
 		Key			firstName	= Key.of( "firstName" );
 		Key			lastName	= Key.of( "lastName" );
 		Argument[]	args		= new Argument[] {
-		    new Function.Argument( true, "String", firstName, "brad" ),
-		    new Function.Argument( true, "String", lastName, "wood" )
+		    new Argument( true, "String", firstName, "brad" ),
+		    new Argument( true, "String", lastName, "wood" )
 		};
 		Lambda		lambda		= new SampleLambda( args, "Brad" );
 		IScope		argscope	= lambda
@@ -164,8 +163,8 @@ public class LambdaTest {
 		Key			extra		= Key.of( "extra" );
 		Key			extraExtra	= Key.of( "extraExtra" );
 		Argument[]	args		= new Argument[] {
-		    new Function.Argument( true, "String", firstName, "brad" ),
-		    new Function.Argument( true, "String", lastName, "wood" )
+		    new Argument( true, "String", firstName, "brad" ),
+		    new Argument( true, "String", lastName, "wood" )
 		};
 		Lambda		lambda		= new SampleLambda( args, "Brad" );
 		IScope		argscope	= lambda
@@ -186,7 +185,7 @@ public class LambdaTest {
 	void testOverrideArgumentCollectionWithArgs() {
 		Key			firstName	= Key.of( "firstName" );
 		Argument[]	args		= new Argument[] {
-		    new Function.Argument( true, "String", firstName, "brad" )
+		    new Argument( true, "String", firstName, "brad" )
 		};
 		Lambda		lambda		= new SampleLambda( args, "Brad" );
 		IScope		argscope	= lambda
@@ -205,8 +204,8 @@ public class LambdaTest {
 		Key			lastName	= Key.of( "lastName" );
 
 		Argument[]	args		= new Argument[] {
-		    new Function.Argument( true, "String", firstName, null ),
-		    new Function.Argument( true, "String", lastName, null )
+		    new Argument( true, "String", firstName, null ),
+		    new Argument( true, "String", lastName, null )
 		};
 		Lambda		lambda		= new SampleLambda( args, "Brad" );
 
@@ -221,8 +220,8 @@ public class LambdaTest {
 		Key			firstName	= Key.of( "firstName" );
 		Key			lastName	= Key.of( "lastName" );
 		Argument[]	args		= new Argument[] {
-		    new Function.Argument( false, "String", firstName, "brad" ),
-		    new Function.Argument( false, "String", lastName, "wood" )
+		    new Argument( false, "String", firstName, "brad" ),
+		    new Argument( false, "String", lastName, "wood" )
 		};
 		Lambda		lambda		= new SampleLambda( args, "Brad" );
 		IScope		argscope	= lambda.createArgumentsScope();
@@ -239,8 +238,8 @@ public class LambdaTest {
 		Key			firstName	= Key.of( "firstName" );
 		Key			lastName	= Key.of( "lastName" );
 		Argument[]	args		= new Argument[] {
-		    new Function.Argument( false, "String", Key.of( "firstname" ), "brad", Struct.of( "hint", "First Name" ) ),
-		    new Function.Argument( false, "String", lastName, "wood", Struct.of( "hint", "Last Name" ) )
+		    new Argument( false, "String", Key.of( "firstname" ), "brad", Struct.of( "hint", "First Name" ) ),
+		    new Argument( false, "String", lastName, "wood", Struct.of( "hint", "Last Name" ) )
 		};
 		Lambda		lambda		= new SampleLambda( args, "Brad" );
 

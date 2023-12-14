@@ -17,9 +17,9 @@
  */
 package ortus.boxlang.runtime.types.meta;
 
+import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.Closure;
 import ortus.boxlang.runtime.types.Function;
-import ortus.boxlang.runtime.types.Function.Argument;
 import ortus.boxlang.runtime.types.Lambda;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.immutable.ImmutableArray;

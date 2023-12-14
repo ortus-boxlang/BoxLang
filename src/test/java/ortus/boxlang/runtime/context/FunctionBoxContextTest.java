@@ -29,7 +29,7 @@ import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.LocalScope;
 import ortus.boxlang.runtime.scopes.VariablesScope;
-import ortus.boxlang.runtime.types.Function.Argument;
+import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.SampleUDF;
 import ortus.boxlang.runtime.types.UDF;
 
