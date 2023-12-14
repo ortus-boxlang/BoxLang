@@ -147,7 +147,7 @@ public class CastAsTest {
 		assertThat(
 		    EqualsEquals.invoke(
 		        CastAs.invoke( 5.7, "float" ),
-				comparison
+		        comparison
 		    )
 		).isTrue();
 	}
