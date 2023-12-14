@@ -58,8 +58,8 @@ public class BoxBinaryOperationTransformer extends AbstractTransformer {
 	public Node transform( BoxNode node, TransformerContext context ) throws IllegalStateException {
 		BoxBinaryOperation	operation	= ( BoxBinaryOperation ) node;
 		TransformerContext	safe		= operation.getOperator() == BoxBinaryOperator.Elvis ? TransformerContext.SAFE : context;
-		Expression			left		= ( Expression ) resolveScope( transpiler.transform( operation.getLeft(), safe ), safe );
-		Expression			right		= ( Expression ) resolveScope( transpiler.transform( operation.getRight(), context ), context );
+		Expression			left		= ( Expression ) transpiler.transform( operation.getLeft(), safe );
+		Expression			right		= ( Expression ) transpiler.transform( operation.getRight(), context );
 
 		Map<String, String>	values		= new HashMap<>() {
 

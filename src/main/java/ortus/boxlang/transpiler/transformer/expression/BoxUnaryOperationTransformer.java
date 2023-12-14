@@ -73,7 +73,7 @@ public class BoxUnaryOperationTransformer extends AbstractTransformer {
 		// +5, -6, or !true are "simple" use cases, same with ++5, --5, 5++, 5--
 		if ( operator == BoxUnaryOperator.Plus || operator == BoxUnaryOperator.Minus || operator == BoxUnaryOperator.Not || operation.getExpr().isLiteral() ) {
 			template = getMethodCallTemplateSimple( operator );
-			values.put( "expr", resolveScope( transpiler.transform( expr ), context ).toString() );
+			values.put( "expr", transpiler.transform( expr ).toString() );
 		} else {
 			Node accessKey;
 			template = getMethodCallTemplateCompound( operator );

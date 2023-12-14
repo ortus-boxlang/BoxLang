@@ -14,7 +14,6 @@
  */
 package ortus.boxlang.transpiler.transformer;
 
-import java.util.HashMap;
 import java.util.Map;
 
 import com.github.javaparser.JavaParser;
@@ -34,7 +33,6 @@ import ortus.boxlang.ast.expression.BoxStringLiteral;
 import ortus.boxlang.ast.expression.BoxUnaryOperation;
 import ortus.boxlang.ast.expression.BoxUnaryOperator;
 import ortus.boxlang.runtime.config.util.PlaceholderHelper;
-import ortus.boxlang.runtime.types.exceptions.ApplicationException;
 import ortus.boxlang.transpiler.Transpiler;
 import ortus.boxlang.transpiler.transformer.indexer.BoxLangCrossReferencer;
 import ortus.boxlang.transpiler.transformer.indexer.BoxLangCrossReferencerDefault;
@@ -98,47 +96,6 @@ public abstract class AbstractTransformer implements Transformer {
 			throw new IllegalStateException( result.toString() );
 		}
 		return result.getResult().get();
-	}
-
-	/**
-	 * Returns the appropriate template code to access the scope
-	 *
-	 * @param expr    expression to be solved
-	 * @param context transformation context LEFT or RIGHT indicating the side of the expression
-	 *
-	 * @return
-	 */
-	protected Node resolveScope( Node expr, TransformerContext context ) {
-		if ( expr instanceof NameExpr ) {
-			String	id	= expr.toString();
-			String	template;
-			if ( transpiler.matchesImport( id ) ) {
-				template = switch ( context ) {
-					case INIT -> throw new ApplicationException( "You cannot assign a variable with the same name as an import: [" + id + "]" );
-					case RIGHT -> "classLocator.load( ${contextName}, \"${id}\", imports )";
-					default -> "classLocator.load( ${contextName}, \"${id}\", imports )";
-				};
-			} else {
-				template = switch ( context ) {
-					case INIT ->
-					    "${contextName}.scopeFindNearby(Key.of(\"${id}\"), ${contextName}.getDefaultAssignmentScope()).scope().assign(Key.of(\"${id}\"))";
-					case SAFE -> "${contextName}.scopeFindNearby(Key.of(\"${id}\"), ${contextName}.getDefaultAssignmentScope()).value()";
-					case RIGHT -> "${contextName}.scopeFindNearby(Key.of(\"${id}\"),null).value()";
-					default -> "${contextName}.scopeFindNearby(Key.of(\"${id}\"),null).value()";
-				};
-			}
-
-			Map<String, String> values = new HashMap<>() {
-
-				{
-					put( "id", id.toString() );
-					put( "contextName", transpiler.peekContextName() );
-				}
-			};
-			return parseExpression( template, values );
-
-		}
-		return expr;
 	}
 
 	/**

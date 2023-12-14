@@ -1,17 +1,19 @@
 package ortus.boxlang.transpiler.transformer.statement;
 
-import com.github.javaparser.ast.Node;
-import com.github.javaparser.ast.expr.Expression;
+import java.util.HashMap;
+import java.util.Map;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import com.github.javaparser.ast.Node;
+import com.github.javaparser.ast.expr.Expression;
+
 import ortus.boxlang.ast.BoxNode;
 import ortus.boxlang.ast.statement.BoxThrow;
 import ortus.boxlang.transpiler.JavaTranspiler;
 import ortus.boxlang.transpiler.transformer.AbstractTransformer;
 import ortus.boxlang.transpiler.transformer.TransformerContext;
-
-import java.util.HashMap;
-import java.util.Map;
 
 public class BoxThrowTransformer extends AbstractTransformer {
 
@@ -34,8 +36,7 @@ public class BoxThrowTransformer extends AbstractTransformer {
 	@Override
 	public Node transform( BoxNode node, TransformerContext context ) throws IllegalStateException {
 		BoxThrow			boxAssert	= ( BoxThrow ) node;
-		Expression			expr		= ( Expression ) resolveScope( transpiler.transform( boxAssert.getExpression(), TransformerContext.RIGHT ),
-		    context );
+		Expression			expr		= ( Expression ) transpiler.transform( boxAssert.getExpression(), TransformerContext.RIGHT );
 		Map<String, String>	values		= new HashMap<>() {
 
 											{

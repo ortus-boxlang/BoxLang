@@ -42,7 +42,7 @@ public class BoxNewOperationTransformer extends AbstractTransformer {
 		Expression		expr	= ( Expression ) transpiler.transform( boxNew.getExpression(), TransformerContext.RIGHT );
 
 		String			args	= boxNew.getArguments().stream()
-		    .map( it -> resolveScope( transpiler.transform( it ), context ).toString() )
+		    .map( it -> transpiler.transform( it ).toString() )
 		    .collect( Collectors.joining( ", " ) );
 
 		String			fqn		= expr.toString();
