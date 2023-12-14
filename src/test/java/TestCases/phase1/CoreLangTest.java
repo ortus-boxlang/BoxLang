@@ -30,11 +30,15 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
 
 import ortus.boxlang.runtime.BoxRuntime;
+import ortus.boxlang.runtime.context.FunctionBoxContext;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.ScriptingBoxContext;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
+import ortus.boxlang.runtime.types.Function.Access;
+import ortus.boxlang.runtime.types.Function.Argument;
+import ortus.boxlang.runtime.types.SampleUDF;
 import ortus.boxlang.runtime.types.exceptions.ApplicationException;
 import ortus.boxlang.runtime.types.exceptions.NoFieldException;
 
@@ -375,7 +379,54 @@ public class CoreLangTest {
 		assertThat( t.getMessage() ).isEqualTo( "You cannot divide by zero." );
 	}
 
-	// TODO: for/in loop. Need struct/array literals
+	@DisplayName( "for in loop" )
+	@Test
+	public void testForInLoop() {
+
+		instance.executeSource(
+		    """
+		       result=""
+		    arr = [ "brad", "wood", "luis", "majano" ]
+		       for( name in arr ) {
+		       	result &= name;
+		       }
+
+		       result2=""
+		    arr = [ "jorge", "reyes", "edgardo", "cabezas" ]
+		       for( name in arr ) {
+		       	result2 &= name;
+		       }
+		           """,
+		    context );
+		assertThat( variables.dereference( result, false ) ).isEqualTo( "bradwoodluismajano" );
+		assertThat( variables.dereference( Key.of( "result2" ), false ) ).isEqualTo( "jorgereyesedgardocabezas" );
+
+		instance.executeSource(
+		    """
+		       result=""
+		    arr = []
+		       for( name in arr ) {
+		       	result &= name;
+		       }
+		           """,
+		    context );
+		assertThat( variables.dereference( result, false ) ).isEqualTo( "" );
+
+		FunctionBoxContext functionBoxContext = new FunctionBoxContext( context,
+		    new SampleUDF( Access.PUBLIC, Key.of( "func" ), "any", new Argument[] {}, "" ) );
+		instance.executeSource(
+		    """
+		       result=""
+		    arr = [ "brad", "wood", "luis", "majano" ]
+		       for( var foo["bar"].name in arr ) {
+		       	result &= foo["bar"].name;
+		       }
+		       }
+		           """,
+		    functionBoxContext );
+		assertThat( variables.dereference( result, false ) ).isEqualTo( "bradwoodluismajano" );
+
+	}
 
 	@DisplayName( "sentinel loop" )
 	@Test

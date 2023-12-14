@@ -40,28 +40,30 @@ public class BoxAssignmentTransformer extends AbstractTransformer {
 	public Node transform( BoxNode node, TransformerContext context ) throws IllegalStateException {
 		BoxAssignment assigment = ( BoxAssignment ) node;
 		if ( assigment.getOp() == BoxAssignmentOperator.Equal ) {
-			return transformEquals( assigment, context );
+			Expression jRight = ( Expression ) transpiler.transform( assigment.getRight(), TransformerContext.NONE );
+			return transformEquals( assigment.getLeft(), jRight, assigment.getOp(), assigment.getModifiers(), assigment.getSourceText(),
+			    context );
 		} else {
 			return transformCompoundEquals( assigment, context );
 		}
 
 	}
 
-	private Node transformEquals( BoxAssignment assigment, TransformerContext context ) throws IllegalStateException {
-		Expression			right			= ( Expression ) transpiler.transform( assigment.getRight(), TransformerContext.NONE );
+	public Node transformEquals( BoxExpr left, Expression jRight, BoxAssignmentOperator op, List<BoxAssignmentModifier> modifiers, String sourceText,
+	    TransformerContext context ) throws IllegalStateException {
 		String				template;
-		boolean				hasVar			= hasVar( assigment );
+		boolean				hasVar			= hasVar( modifiers );
 
 		Map<String, String>	values			= new HashMap<>() {
 
 												{
 													put( "contextName", transpiler.peekContextName() );
-													put( "right", right.toString() );
+													put( "right", jRight.toString() );
 												}
 											};
 
 		List<Node>			accessKeys		= new ArrayList<Node>();
-		BoxExpr				furthestLeft	= assigment.getLeft();
+		BoxExpr				furthestLeft	= left;
 
 		while ( furthestLeft instanceof BoxAccess currentObjectAccess ) {
 			// DotAccess just uses the string directly, array access allows any expression
@@ -106,7 +108,7 @@ public class BoxAssignmentTransformer extends AbstractTransformer {
 
 		} else {
 			if ( accessKeys.size() == 0 ) {
-				throw new ExpressionException( "You cannot assign a value to " + assigment.getLeft().getClass().getSimpleName() );
+				throw new ExpressionException( "You cannot assign a value to " + left.getClass().getSimpleName() );
 			}
 			values.put( "furthestLeft", transpiler.transform( furthestLeft, TransformerContext.NONE ).toString() );
 
@@ -122,7 +124,7 @@ public class BoxAssignmentTransformer extends AbstractTransformer {
 		                """;
 
 		Node javaExpr = parseExpression( template, values );
-		logger.info( assigment.getSourceText() + " -> " + javaExpr.toString() );
+		logger.info( sourceText + " -> " + javaExpr.toString() );
 		return javaExpr;
 	}
 
@@ -168,8 +170,8 @@ public class BoxAssignmentTransformer extends AbstractTransformer {
 		return javaExpr;
 	}
 
-	private boolean hasVar( BoxAssignment assigment ) {
-		return assigment.getModifiers().stream().anyMatch( it -> it == BoxAssignmentModifier.VAR );
+	private boolean hasVar( List<BoxAssignmentModifier> modifiers ) {
+		return modifiers.stream().anyMatch( it -> it == BoxAssignmentModifier.VAR );
 	}
 
 	private String getMethodCallTemplate( BoxAssignmentOperator operator ) {

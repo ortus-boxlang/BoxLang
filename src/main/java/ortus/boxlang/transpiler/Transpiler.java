@@ -32,6 +32,7 @@ public abstract class Transpiler implements ITranspiler {
 	private final HashMap<String, String>	properties			= new HashMap<String, String>();
 	private int								tryCatchCounter		= 0;
 	private int								switchCounter		= 0;
+	private int								forInCounter		= 0;
 	private ArrayDeque<String>				currentContextName	= new ArrayDeque<>();
 	private List<ImportDefinition>			imports				= new ArrayList<ImportDefinition>();
 
@@ -115,6 +116,10 @@ public abstract class Transpiler implements ITranspiler {
 
 	public int incrementAndGetSwitchCounter() {
 		return ++switchCounter;
+	}
+
+	public int incrementAndGetForInCounter() {
+		return ++forInCounter;
 	}
 
 	public void pushContextName( String name ) {

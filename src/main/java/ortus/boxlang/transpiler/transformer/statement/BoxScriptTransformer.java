@@ -64,6 +64,7 @@ public class BoxScriptTransformer extends AbstractTransformer {
 		import java.nio.file.Paths;
 		import java.time.LocalDateTime;
 		import java.util.List;
+		import java.util.Iterator;
 
 		public class ${className} extends ${baseclass} {
 

@@ -185,16 +185,18 @@ argumentList: argument (COMMA argument)*;
 
 argument: expression ( (EQUAL | COLON) expression)?;
 
-// We support if blocks with or without else blocks, and if statements without else blocks.
-// That's it - no other valid if constructs.
+// We support if blocks with or without else blocks, and if statements without else blocks. That's
+// it - no other valid if constructs.
 if:
 	IF LPAREN expression RPAREN ifStmtBlock = statementBlock (
-		ELSE ( elseStmtBlock = statementBlock | elseStmt = statement)
+		ELSE (
+			elseStmtBlock = statementBlock
+			| elseStmt = statement
+		)
 	)?
-	| IF LPAREN expression RPAREN ifStmt = statement
-	;
+	| IF LPAREN expression RPAREN ifStmt = statement;
 for:
-	FOR LPAREN VAR? identifier IN expression RPAREN statementBlock
+	FOR LPAREN VAR? accessExpression IN expression RPAREN statementBlock
 	| FOR LPAREN forAssignment eos forCondition eos forIncrement RPAREN statementBlock;
 forAssignment: expression;
 forCondition: expression;
@@ -202,7 +204,11 @@ forIncrement: expression;
 
 do: DO statementBlock WHILE LPAREN expression RPAREN;
 
-while:	WHILE LPAREN condition=expression RPAREN ( statementBlock | statement);
+while:
+	WHILE LPAREN condition = expression RPAREN (
+		statementBlock
+		| statement
+	);
 
 assert: ASSERT expression;
 break: BREAK eos?;
