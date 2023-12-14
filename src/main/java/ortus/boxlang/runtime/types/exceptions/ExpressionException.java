@@ -17,12 +17,13 @@
  */
 package ortus.boxlang.runtime.types.exceptions;
 
+import ortus.boxlang.ast.Position;
 import ortus.boxlang.runtime.scopes.Key;
 
 /**
  * Base exception for all expression-related errors
  */
-public class ExpressionException extends BoxLangException {
+public class ExpressionException extends BoxRuntimeException {
 
 	public static final Key	ErrNumberKey	= Key.of( "ErrNumber" );
 
@@ -30,34 +31,16 @@ public class ExpressionException extends BoxLangException {
 	 * Internal expression error number.
 	 */
 	public String			errNumber		= null;
+	public Position			position		= null;
+	public String			sourceText		= null;
 
 	/**
 	 * Constructor
 	 *
 	 * @param message The message
 	 */
-	public ExpressionException( String message ) {
-		this( message, null, null, null );
-	}
-
-	/**
-	 * Constructor
-	 *
-	 * @param message The message
-	 * @param cause   The cause
-	 */
-	public ExpressionException( String message, Throwable cause ) {
-		this( message, null, null, cause );
-	}
-
-	/**
-	 * Constructor
-	 *
-	 * @param message   The message
-	 * @param errNumber The errNumber
-	 */
-	public ExpressionException( String message, String errNumber ) {
-		this( message, null, errNumber, null );
+	public ExpressionException( String message, Position position, String sourceText ) {
+		this( message, null, null, null, position, sourceText );
 	}
 
 	/**
@@ -68,9 +51,12 @@ public class ExpressionException extends BoxLangException {
 	 * @param errNumber The errNumber
 	 * @param cause     The cause
 	 */
-	public ExpressionException( String message, String detail, String errNumber, Throwable cause ) {
-		super( message, detail, "expression", cause );
-		this.errNumber = errNumber;
+	public ExpressionException( String message, String detail, String errNumber, Throwable cause, Position position, String sourceText ) {
+		// TODO: may want to change the way we dispaly position and sourcetext in the future
+		super( message + "\n position:" + position + "\n sourceText: " + sourceText, detail, "expression", cause );
+		this.errNumber	= errNumber;
+		this.position	= position;
+		this.sourceText	= sourceText;
 	}
 
 }

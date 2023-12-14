@@ -34,7 +34,7 @@ import ortus.boxlang.runtime.dynamic.casters.DoubleCaster;
 import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.scopes.IntKey;
 import ortus.boxlang.runtime.scopes.Key;
-import ortus.boxlang.runtime.types.exceptions.ExpressionException;
+import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.immutable.ImmutableArray;
 import ortus.boxlang.runtime.types.meta.BoxMeta;
 import ortus.boxlang.runtime.types.meta.GenericMeta;
@@ -526,13 +526,13 @@ public class Array implements List<Object>, IType, IReferenceable, IListenable {
 		}
 		// Dissallow negative indexes foo[-1]
 		if ( index < 1 ) {
-			throw new ExpressionException( String.format(
+			throw new BoxRuntimeException( String.format(
 			    "Array cannot be indexed by a number smaller than 1"
 			) );
 		}
 		// Disallow out of bounds indexes foo[5]
 		if ( index > size ) {
-			throw new ExpressionException( String.format(
+			throw new BoxRuntimeException( String.format(
 			    "Array index [%s] is out of bounds for an array of length [%s]", index, size
 			) );
 		}
@@ -544,7 +544,7 @@ public class Array implements List<Object>, IType, IReferenceable, IListenable {
 
 		// Dissallow negative indexes foo[-1]
 		if ( index < 1 ) {
-			throw new ExpressionException( String.format(
+			throw new BoxRuntimeException( String.format(
 			    "Array cannot be assigned by a number smaller than 1"
 			) );
 		}
@@ -552,7 +552,7 @@ public class Array implements List<Object>, IType, IReferenceable, IListenable {
 		if ( isNative ) {
 			// Disallow out of bounds indexes foo[5]
 			if ( index > size ) {
-				throw new ExpressionException( String.format(
+				throw new BoxRuntimeException( String.format(
 				    "Invalid index [%s] for Native Array, can't expand Native Arrays.  Current array length is [%s]", index,
 				    size
 				) );
@@ -574,7 +574,7 @@ public class Array implements List<Object>, IType, IReferenceable, IListenable {
 				if ( safe ) {
 					return -1;
 				}
-				throw new ExpressionException( String.format(
+				throw new BoxRuntimeException( String.format(
 				    "Array cannot be assigned with key %s", key.getName()
 				) );
 			}
@@ -585,7 +585,7 @@ public class Array implements List<Object>, IType, IReferenceable, IListenable {
 				if ( safe ) {
 					return -1;
 				}
-				throw new ExpressionException( String.format(
+				throw new BoxRuntimeException( String.format(
 				    "Array index [%s] is invalid.  Index must be an integer.", dIndex
 				) );
 			}

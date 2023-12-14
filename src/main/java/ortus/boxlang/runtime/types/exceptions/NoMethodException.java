@@ -3,7 +3,7 @@ package ortus.boxlang.runtime.types.exceptions;
 /**
  * Thrown when a scope is not found
  */
-public class NoMethodException extends ExpressionException {
+public class NoMethodException extends BoxRuntimeException {
 
 	/**
 	 * Constructor

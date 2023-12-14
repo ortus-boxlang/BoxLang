@@ -22,7 +22,6 @@ import ortus.boxlang.ast.expression.BoxIdentifier;
 import ortus.boxlang.ast.expression.BoxScope;
 import ortus.boxlang.ast.statement.BoxAssignmentOperator;
 import ortus.boxlang.runtime.config.util.PlaceholderHelper;
-import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.exceptions.ExpressionException;
 import ortus.boxlang.transpiler.JavaTranspiler;
 import ortus.boxlang.transpiler.transformer.AbstractTransformer;
@@ -88,14 +87,16 @@ public class BoxAssignmentTransformer extends AbstractTransformer {
 			} else if ( furthestLeft instanceof BoxIdentifier id ) {
 				accessKeys.add( 0, createKey( id.getName() ) );
 			} else {
-				throw new ExpressionException( "You cannot use the [var] keyword before " + furthestLeft.getClass().getSimpleName() );
+				throw new ExpressionException( "You cannot use the [var] keyword before " + furthestLeft.getClass().getSimpleName(), furthestLeft.getPosition(),
+				    furthestLeft.getSourceText() );
 			}
 			furthestLeft = new BoxScope( "local", null, null );
 		}
 
 		if ( furthestLeft instanceof BoxIdentifier id ) {
 			if ( transpiler.matchesImport( id.getName() ) ) {
-				throw new BoxRuntimeException( "You cannot assign a variable with the same name as an import: [" + id.getName() + "]" );
+				throw new ExpressionException( "You cannot assign a variable with the same name as an import: [" + id.getName() + "]",
+				    furthestLeft.getPosition(), furthestLeft.getSourceText() );
 			}
 
 			Node	keyNode	= createKey( id.getName() );
@@ -108,7 +109,7 @@ public class BoxAssignmentTransformer extends AbstractTransformer {
 
 		} else {
 			if ( accessKeys.size() == 0 ) {
-				throw new ExpressionException( "You cannot assign a value to " + left.getClass().getSimpleName() );
+				throw new ExpressionException( "You cannot assign a value to " + left.getClass().getSimpleName(), left.getPosition(), left.getSourceText() );
 			}
 			values.put( "furthestLeft", transpiler.transform( furthestLeft, TransformerContext.NONE ).toString() );
 
@@ -161,10 +162,11 @@ public class BoxAssignmentTransformer extends AbstractTransformer {
 			}
 			values.put( "accessKey", accessKey.toString() );
 		} else {
-			throw new ExpressionException( "You cannot assign a value to " + assigment.getLeft().getClass().getSimpleName() );
+			throw new ExpressionException( "You cannot assign a value to " + assigment.getLeft().getClass().getSimpleName(), assigment.getPosition(),
+			    assigment.getSourceText() );
 		}
 
-		template = getMethodCallTemplate( assigment.getOp() );
+		template = getMethodCallTemplate( assigment );
 		Node javaExpr = parseExpression( template, values );
 		logger.info( assigment.getSourceText() + " -> " + javaExpr.toString() );
 		return javaExpr;
@@ -174,7 +176,8 @@ public class BoxAssignmentTransformer extends AbstractTransformer {
 		return modifiers.stream().anyMatch( it -> it == BoxAssignmentModifier.VAR );
 	}
 
-	private String getMethodCallTemplate( BoxAssignmentOperator operator ) {
+	private String getMethodCallTemplate( BoxAssignment assignment ) {
+		BoxAssignmentOperator operator = assignment.getOp();
 		return switch ( operator ) {
 			case PlusEqual -> "Plus.invoke( ${obj}, ${accessKey}, ${right} )";
 			case MinusEqual -> "Minus.invoke( ${obj}, ${accessKey}, ${right} )";
@@ -182,7 +185,8 @@ public class BoxAssignmentTransformer extends AbstractTransformer {
 			case SlashEqual -> "Divide.invoke( ${obj}, ${accessKey}, ${right} )";
 			case ModEqual -> "Modulus.invoke( ${obj}, ${accessKey}, ${right} )";
 			case ConcatEqual -> "Concat.invoke( ${obj}, ${accessKey}, ${right} )";
-			default -> throw new ExpressionException( "Unknown assingment operator " + operator.toString() );
+			default -> throw new ExpressionException( "Unknown assingment operator " + operator.toString(), assignment.getPosition(),
+			    assignment.getSourceText() );
 		};
 	}
 

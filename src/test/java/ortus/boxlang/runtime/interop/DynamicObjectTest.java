@@ -376,7 +376,6 @@ public class DynamicObjectTest {
 		assertThat(
 		    ( ( Map<Object, Object> ) myInvoker.getTargetInstance() ).get( "key2" )
 		).isEqualTo( "value2" );
-
 	}
 
 	@DisplayName( "It use native maps with complex keys" )
@@ -561,7 +560,6 @@ public class DynamicObjectTest {
 		assertThat( myInvoker.dereference( Key.of( 0 ), true ) ).isEqualTo( null );
 		assertThat( myInvoker.dereference( Key.of( 1.5 ), true ) ).isEqualTo( null );
 		assertThat( myInvoker.dereference( Key.of( 50 ), true ) ).isEqualTo( null );
-
 	}
 
 }

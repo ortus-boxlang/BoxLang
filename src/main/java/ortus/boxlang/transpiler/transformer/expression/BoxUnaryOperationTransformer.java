@@ -72,11 +72,11 @@ public class BoxUnaryOperationTransformer extends AbstractTransformer {
 
 		// +5, -6, or !true are "simple" use cases, same with ++5, --5, 5++, 5--
 		if ( operator == BoxUnaryOperator.Plus || operator == BoxUnaryOperator.Minus || operator == BoxUnaryOperator.Not || operation.getExpr().isLiteral() ) {
-			template = getMethodCallTemplateSimple( operator );
+			template = getMethodCallTemplateSimple( operation );
 			values.put( "expr", transpiler.transform( expr ).toString() );
 		} else {
 			Node accessKey;
-			template = getMethodCallTemplateCompound( operator );
+			template = getMethodCallTemplateCompound( operation );
 			// for non literals, we need to identify the key being incremented/decremented and the object it lives in (which may be a scope)
 			if ( expr instanceof BoxIdentifier id ) {
 				accessKey = createKey( id.getName() );
@@ -95,7 +95,8 @@ public class BoxUnaryOperationTransformer extends AbstractTransformer {
 				}
 				values.put( "accessKey", accessKey.toString() );
 			} else {
-				throw new ExpressionException( "You cannot perform an increment/decrement operation on a " + expr.getClass().getSimpleName() + " expression." );
+				throw new ExpressionException( "You cannot perform an increment/decrement operation on a " + expr.getClass().getSimpleName() + " expression.",
+				    expr.getPosition(), expr.getSourceText() );
 			}
 
 		}
@@ -106,7 +107,8 @@ public class BoxUnaryOperationTransformer extends AbstractTransformer {
 		return javaExpr;
 	}
 
-	private String getMethodCallTemplateSimple( BoxUnaryOperator operator ) {
+	private String getMethodCallTemplateSimple( BoxUnaryOperation operation ) {
+		BoxUnaryOperator operator = operation.getOperator();
 		return switch ( operator ) {
 			// +5 or +tmp is the same as just 5 or tmp
 			case Plus -> "${expr}";
@@ -118,18 +120,20 @@ public class BoxUnaryOperationTransformer extends AbstractTransformer {
 			case PreMinusMinus -> "Decrement.invoke( ${expr} )";
 			// 5-- is the same as 5
 			case PostMinusMinus -> "${expr}";
-			default -> throw new ExpressionException( "Unknown unary operator " + operator.toString() );
+			default -> throw new ExpressionException( "Unknown unary operator " + operator.toString(), operation.getPosition(), operation.getSourceText() );
 		};
 	}
 
-	private String getMethodCallTemplateCompound( BoxUnaryOperator operator ) {
+	private String getMethodCallTemplateCompound( BoxUnaryOperation operation ) {
+		BoxUnaryOperator operator = operation.getOperator();
 		// These all refernce variable names which need retrieved, modified, and then re-assigned
 		return switch ( operator ) {
 			case PrePlusPlus -> "Increment.invokePre( ${obj}, ${accessKey} )";
 			case PostPlusPlus -> "Increment.invokePost( ${obj}, ${accessKey} )";
 			case PreMinusMinus -> "Decrement.invokePre( ${obj}, ${accessKey} )";
 			case PostMinusMinus -> "Decrement.invokePost( ${obj}, ${accessKey} )";
-			default -> throw new ExpressionException( "Unknown unary compound operator " + operator.toString() );
+			default -> throw new ExpressionException( "Unknown unary compound operator " + operator.toString(), operation.getPosition(),
+			    operation.getSourceText() );
 		};
 	}
 
