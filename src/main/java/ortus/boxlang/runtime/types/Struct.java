@@ -31,7 +31,7 @@ import ortus.boxlang.runtime.dynamic.IReferenceable;
 import ortus.boxlang.runtime.dynamic.casters.KeyCaster;
 import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.scopes.Key;
-import ortus.boxlang.runtime.types.exceptions.ApplicationException;
+import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.exceptions.KeyNotFoundException;
 import ortus.boxlang.runtime.types.immutable.ImmutableStruct;
 import ortus.boxlang.runtime.types.meta.BoxMeta;
@@ -104,7 +104,7 @@ public class Struct implements Map<Key, Object>, IType, IReferenceable, IListena
 			wrapped = Collections.synchronizedMap( new TreeMap<Key, Object>() );
 			return;
 		}
-		throw new ApplicationException( "Invalid struct type [" + type.name() + "]" );
+		throw new BoxRuntimeException( "Invalid struct type [" + type.name() + "]" );
 	}
 
 	/**
@@ -175,7 +175,7 @@ public class Struct implements Map<Key, Object>, IType, IReferenceable, IListena
 	 */
 	public static Struct of( Object... values ) {
 		if ( values.length % 2 != 0 ) {
-			throw new ApplicationException( "Invalid number of arguments.  Must be an even number." );
+			throw new BoxRuntimeException( "Invalid number of arguments.  Must be an even number." );
 		}
 		Struct struct = new Struct();
 		for ( int i = 0; i < values.length; i += 2 ) {
@@ -193,7 +193,7 @@ public class Struct implements Map<Key, Object>, IType, IReferenceable, IListena
 	 */
 	public static Struct linkedOf( Object... values ) {
 		if ( values.length % 2 != 0 ) {
-			throw new ApplicationException( "Invalid number of arguments.  Must be an even number." );
+			throw new BoxRuntimeException( "Invalid number of arguments.  Must be an even number." );
 		}
 		Struct struct = new Struct( Type.LINKED );
 		for ( int i = 0; i < values.length; i += 2 ) {
@@ -600,7 +600,7 @@ public class Struct implements Map<Key, Object>, IType, IReferenceable, IListena
 				    )
 				);
 			} else {
-				throw new ApplicationException(
+				throw new BoxRuntimeException(
 				    "key '" + name.getName() + "' of type  '" + value.getClass().getName() + "'  is not a function " );
 			}
 		}
@@ -643,7 +643,7 @@ public class Struct implements Map<Key, Object>, IType, IReferenceable, IListena
 			    )
 			);
 		} else {
-			throw new ApplicationException(
+			throw new BoxRuntimeException(
 			    "key '" + name.getName() + "' of type  '" + value.getClass().getName() + "'  is not a function "
 			);
 		}

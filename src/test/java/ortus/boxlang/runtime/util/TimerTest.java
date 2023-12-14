@@ -23,7 +23,7 @@ import org.junit.jupiter.api.Test;
 
 import com.google.common.truth.Truth;
 
-import ortus.boxlang.runtime.types.exceptions.ApplicationException;
+import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
 public class TimerTest {
 
@@ -41,7 +41,7 @@ public class TimerTest {
 			try {
 				Thread.sleep( 100 );
 			} catch ( InterruptedException e ) {
-				throw new ApplicationException( e.getMessage(), e );
+				throw new BoxRuntimeException( e.getMessage(), e );
 			}
 		} );
 
@@ -57,7 +57,7 @@ public class TimerTest {
 		try {
 			Thread.sleep( 100 );
 		} catch ( InterruptedException e ) {
-			throw new ApplicationException( e.getMessage(), e );
+			throw new BoxRuntimeException( e.getMessage(), e );
 		}
 
 		long elapsedSeconds = timer.stopAndGetSeconds( "testTimer" );
@@ -74,7 +74,7 @@ public class TimerTest {
 		try {
 			Thread.sleep( 100 );
 		} catch ( InterruptedException e ) {
-			throw new ApplicationException( e.getMessage(), e );
+			throw new BoxRuntimeException( e.getMessage(), e );
 		}
 
 		long elapsedMillis = timer.stopAndGetMillis( "testTimer" );
@@ -91,7 +91,7 @@ public class TimerTest {
 		try {
 			Thread.sleep( 100 );
 		} catch ( InterruptedException e ) {
-			throw new ApplicationException( e.getMessage(), e );
+			throw new BoxRuntimeException( e.getMessage(), e );
 		}
 
 		long elapsedNanos = timer.stopAndGetNanos( "testTimer" );

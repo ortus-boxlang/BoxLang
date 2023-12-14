@@ -20,7 +20,7 @@ package ortus.boxlang.runtime.operators;
 import ortus.boxlang.runtime.dynamic.casters.CastAttempt;
 import ortus.boxlang.runtime.dynamic.casters.DoubleCaster;
 import ortus.boxlang.runtime.interop.DynamicObject;
-import ortus.boxlang.runtime.types.exceptions.ApplicationException;
+import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
 /**
  * Performs EQ, GT, and LT comparisons
@@ -91,7 +91,7 @@ public class Compare implements IOperator {
 
 		// TODO: Dates
 
-		throw new ApplicationException(
+		throw new BoxRuntimeException(
 		    String.format( "Can't compare [%s] against [%s]", left.getClass().getName(), right.getClass().getName() )
 		);
 	}

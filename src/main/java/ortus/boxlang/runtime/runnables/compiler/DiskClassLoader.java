@@ -25,7 +25,7 @@ import java.nio.file.Paths;
 import javax.tools.JavaFileObject;
 
 import ortus.boxlang.runtime.BoxRuntime;
-import ortus.boxlang.runtime.types.exceptions.ApplicationException;
+import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
 /**
  * Dynamic in Memory classloader
@@ -151,7 +151,7 @@ public class DiskClassLoader extends URLClassLoader {
 		try {
 			Files.write( diskPath, bytes );
 		} catch ( IOException e ) {
-			throw new ApplicationException( "Unable to write class file to disk", e );
+			throw new BoxRuntimeException( "Unable to write class file to disk", e );
 		}
 	}
 
@@ -163,7 +163,7 @@ public class DiskClassLoader extends URLClassLoader {
 		try {
 			Files.walk( diskStore ).filter( Files::isRegularFile ).map( Path::toFile ).forEach( File::delete );
 		} catch ( IOException e ) {
-			throw new ApplicationException( "Unable to clear disk store", e );
+			throw new BoxRuntimeException( "Unable to clear disk store", e );
 		}
 	}
 

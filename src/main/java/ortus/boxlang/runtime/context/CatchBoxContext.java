@@ -24,7 +24,7 @@ import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.ScopeWrapper;
 import ortus.boxlang.runtime.scopes.VariablesScope;
 import ortus.boxlang.runtime.types.Struct;
-import ortus.boxlang.runtime.types.exceptions.ApplicationException;
+import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.exceptions.ExceptionUtil;
 import ortus.boxlang.runtime.types.exceptions.KeyNotFoundException;
 import ortus.boxlang.runtime.types.exceptions.ScopeNotFoundException;
@@ -56,7 +56,7 @@ public class CatchBoxContext extends BaseBoxContext {
 	public CatchBoxContext( IBoxContext parent, Key exceptionKey, Throwable exception ) {
 		super( parent );
 		if ( parent == null ) {
-			throw new ApplicationException( "Parent context cannot be null for CatchBoxContext" );
+			throw new BoxRuntimeException( "Parent context cannot be null for CatchBoxContext" );
 		}
 		this.exception		= exception;
 		this.variablesScope	= new ScopeWrapper(

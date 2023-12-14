@@ -24,8 +24,8 @@ import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-import ortus.boxlang.runtime.types.exceptions.ApplicationException;
 import ortus.boxlang.runtime.types.exceptions.BoxLangException;
+import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
 public class DoubleCasterTest {
 
@@ -50,7 +50,7 @@ public class DoubleCasterTest {
 		assertThat( DoubleCaster.cast( "4.2" ) ).isEqualTo( 4.2 );
 		assertThat( DoubleCaster.cast( "42." ) ).isEqualTo( 42 );
 		assertThrows(
-		    ApplicationException.class, () -> {
+		    BoxRuntimeException.class, () -> {
 			    DoubleCaster.cast( "42.brad" );
 		    }
 		);

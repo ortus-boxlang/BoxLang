@@ -24,7 +24,8 @@ import java.util.Arrays;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import ortus.boxlang.runtime.types.exceptions.ApplicationException;
+
+import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
 public class CastAsTest {
 
@@ -108,19 +109,19 @@ public class CastAsTest {
 		    )
 		).isTrue();
 
-		assertThrows( ApplicationException.class, () -> {
+		assertThrows( BoxRuntimeException.class, () -> {
 			CastAs.invoke( "xy", "int" );
 		} );
-		assertThrows( ApplicationException.class, () -> {
+		assertThrows( BoxRuntimeException.class, () -> {
 			CastAs.invoke( "1.2.3.4", "int" );
 		} );
-		assertThrows( ApplicationException.class, () -> {
+		assertThrows( BoxRuntimeException.class, () -> {
 			CastAs.invoke( "false", "int" );
 		} );
-		assertThrows( ApplicationException.class, () -> {
+		assertThrows( BoxRuntimeException.class, () -> {
 			CastAs.invoke( "-", "int" );
 		} );
-		assertThrows( ApplicationException.class, () -> {
+		assertThrows( BoxRuntimeException.class, () -> {
 			CastAs.invoke( "1-1", "int" );
 		} );
 	}
@@ -147,7 +148,7 @@ public class CastAsTest {
 		assertThat(
 		    EqualsEquals.invoke(
 		        CastAs.invoke( 5.7, "float" ),
-				comparison
+		        comparison
 		    )
 		).isTrue();
 	}

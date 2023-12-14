@@ -21,7 +21,7 @@ import java.math.BigDecimal;
 import java.util.List;
 
 import ortus.boxlang.runtime.types.NullValue;
-import ortus.boxlang.runtime.types.exceptions.ApplicationException;
+import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
 /**
  * I handle casting anything
@@ -47,7 +47,7 @@ public class GenericCaster {
 		// Represent legit null values in a NullValue instance
 		if ( type.equalsIgnoreCase( "null" ) || type.equalsIgnoreCase( "void" ) ) {
 			if ( strict && object != null ) {
-				throw new ApplicationException(
+				throw new BoxRuntimeException(
 				    String.format( "Cannot cast type [%s] to %s.", object.getClass().getName(), type )
 				);
 			}
@@ -123,7 +123,7 @@ public class GenericCaster {
 			} else if ( object instanceof List<?> l ) {
 				incomingList = l.toArray();
 			} else {
-				throw new ApplicationException(
+				throw new BoxRuntimeException(
 				    String.format( "You asked for type %s, but input %s cannot be cast to an array.", type,
 				        object.getClass().getName() )
 				);
@@ -171,7 +171,7 @@ public class GenericCaster {
 			return FloatCaster.cast( object, fail );
 		}
 
-		throw new ApplicationException(
+		throw new BoxRuntimeException(
 		    String.format( "Invalid cast type [%s]", type )
 		);
 	}
@@ -208,7 +208,7 @@ public class GenericCaster {
 		if ( type.equals( "float" ) ) {
 			return Float.class;
 		}
-		throw new ApplicationException(
+		throw new BoxRuntimeException(
 		    String.format( "Invalid cast type [%s]", type )
 		);
 	}

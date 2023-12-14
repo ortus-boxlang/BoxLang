@@ -33,7 +33,7 @@ import ortus.boxlang.runtime.operators.Divide;
 import ortus.boxlang.runtime.runnables.BoxTemplate;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
-import ortus.boxlang.runtime.types.exceptions.ApplicationException;
+import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.exceptions.ExceptionUtil;
 
 public class Phase1TryCatch extends BoxTemplate {
@@ -202,7 +202,7 @@ public class Phase1TryCatch extends BoxTemplate {
 					throw re;
 				} else {
 					// Pretty sure this can never be reached, but the compiler won't let me blindly rethrow a Throwable
-					throw new ApplicationException( e.getMessage(), e );
+					throw new BoxRuntimeException( e.getMessage(), e );
 				}
 			}
 		}

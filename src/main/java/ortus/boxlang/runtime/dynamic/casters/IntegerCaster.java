@@ -18,7 +18,7 @@
 package ortus.boxlang.runtime.dynamic.casters;
 
 import ortus.boxlang.runtime.interop.DynamicObject;
-import ortus.boxlang.runtime.types.exceptions.ApplicationException;
+import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
 /**
  * I handle casting anything
@@ -60,7 +60,7 @@ public class IntegerCaster {
 	public static Integer cast( Object object, Boolean fail ) {
 		if ( object == null ) {
 			if ( fail ) {
-				throw new ApplicationException( "Can't cast null to a int." );
+				throw new BoxRuntimeException( "Can't cast null to a int." );
 			} else {
 				return null;
 			}
@@ -80,7 +80,7 @@ public class IntegerCaster {
 			return Integer.valueOf( theValue );
 		}
 		if ( fail ) {
-			throw new ApplicationException( String.format( "Can't cast %s to a int.", theValue ) );
+			throw new BoxRuntimeException( String.format( "Can't cast %s to a int.", theValue ) );
 		} else {
 			return null;
 		}

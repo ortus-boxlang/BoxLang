@@ -6,7 +6,7 @@ import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.LocalScope;
 import ortus.boxlang.runtime.types.Function;
 import ortus.boxlang.runtime.types.Struct;
-import ortus.boxlang.runtime.types.exceptions.ApplicationException;
+import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.exceptions.ScopeNotFoundException;
 
 /**
@@ -80,10 +80,10 @@ public class FunctionBoxContext extends BaseBoxContext {
 	public FunctionBoxContext( IBoxContext parent, Function function, Key functionCalledName, ArgumentsScope argumentsScope ) {
 		super( parent );
 		if ( parent == null ) {
-			throw new ApplicationException( "Parent context cannot be null for FunctionBoxContext" );
+			throw new BoxRuntimeException( "Parent context cannot be null for FunctionBoxContext" );
 		}
 		if ( function == null ) {
-			throw new ApplicationException( "function cannot be null for FunctionBoxContext" );
+			throw new BoxRuntimeException( "function cannot be null for FunctionBoxContext" );
 		}
 		this.localScope			= new LocalScope();
 		this.argumentsScope		= argumentsScope;

@@ -31,7 +31,7 @@ import ortus.boxlang.runtime.types.Function.Argument;
 import ortus.boxlang.runtime.types.SampleUDF;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.UDF;
-import ortus.boxlang.runtime.types.exceptions.ApplicationException;
+import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
 public class FunctionMetaTest {
 
@@ -144,7 +144,7 @@ public class FunctionMetaTest {
 		FunctionMeta	$bx	= ( FunctionMeta ) Referencer.get( udf, BoxMeta.key, false );
 
 		// A function is not listenable
-		assertThrows( ApplicationException.class, () -> $bx.registerChangeListener( ( key, newValue, oldValue ) -> {
+		assertThrows( BoxRuntimeException.class, () -> $bx.registerChangeListener( ( key, newValue, oldValue ) -> {
 			return newValue;
 		} ) );
 

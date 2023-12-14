@@ -19,7 +19,7 @@ package ortus.boxlang.runtime.bifs;
 
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.interop.DynamicObject;
-import ortus.boxlang.runtime.types.exceptions.ApplicationException;
+import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
 public class BIFDescriptor {
 
@@ -59,7 +59,7 @@ public class BIFDescriptor {
 				try {
 					this.BIF = DynamicObject.of( Class.forName( this.className ) );
 				} catch ( ClassNotFoundException e ) {
-					throw new ApplicationException( "Error loading class for BIF.", e );
+					throw new BoxRuntimeException( "Error loading class for BIF.", e );
 				}
 			}
 		}

@@ -40,6 +40,7 @@ import ortus.boxlang.runtime.types.Function.Access;
 import ortus.boxlang.runtime.types.Function.Argument;
 import ortus.boxlang.runtime.types.SampleUDF;
 import ortus.boxlang.runtime.types.exceptions.ApplicationException;
+import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.exceptions.NoFieldException;
 
 public class CoreLangTest {
@@ -342,7 +343,7 @@ public class CoreLangTest {
 	@Test
 	public void testTryFinally() {
 
-		assertThrows( ApplicationException.class,
+		assertThrows( BoxRuntimeException.class,
 		    () -> instance.executeSource(
 		        """
 		          result = "default"
@@ -365,7 +366,7 @@ public class CoreLangTest {
 	@Test
 	public void testRethrow() {
 
-		Throwable t = assertThrows( ApplicationException.class,
+		Throwable t = assertThrows( BoxRuntimeException.class,
 		    () -> instance.executeSource(
 		        """
 		             try {
@@ -831,14 +832,14 @@ public class CoreLangTest {
 	@Test
 	public void testStringParsingUnclosedQuotes() {
 
-		Throwable t = assertThrows( ApplicationException.class, () -> instance.executeSource(
+		Throwable t = assertThrows( BoxRuntimeException.class, () -> instance.executeSource(
 		    """
 		    foo = "unfinished
 		     """,
 		    context ) );
 		assertThat( t.getMessage() ).contains( "Untermimated" );
 
-		t = assertThrows( ApplicationException.class, () -> instance.executeSource(
+		t = assertThrows( BoxRuntimeException.class, () -> instance.executeSource(
 		    """
 		    foo = 'unfinishedx
 		     """,
@@ -846,11 +847,23 @@ public class CoreLangTest {
 		assertThat( t.getMessage() ).contains( "Untermimated" );
 	}
 
+	@DisplayName( "It should throw ApplicationException" )
+	@Test
+	public void testApplicationException() {
+
+		Throwable t = assertThrows( ApplicationException.class, () -> instance.executeSource(
+		    """
+		    throw "test"
+		     """,
+		    context ) );
+		assertThat( t.getMessage() ).contains( "test" );
+	}
+
 	@DisplayName( "String parsing unclosed pound" )
 	@Test
 	public void testStringParsingUnclosedPound() {
 
-		Throwable t = assertThrows( ApplicationException.class, () -> instance.executeSource(
+		Throwable t = assertThrows( BoxRuntimeException.class, () -> instance.executeSource(
 		    """
 		    	// should throw a parsing syntax exception.
 		    result = "I have locker #20";

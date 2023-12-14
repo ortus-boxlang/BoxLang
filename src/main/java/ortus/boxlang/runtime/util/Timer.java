@@ -22,7 +22,7 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
-import ortus.boxlang.runtime.types.exceptions.ApplicationException;
+import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
 /**
  * This class is a utility for timing operations.
@@ -140,7 +140,7 @@ public class Timer {
 	 */
 	public long stopAndGetNanos( String label ) {
 		if ( !timers.containsKey( label ) ) {
-			throw new ApplicationException( "Timer '" + label + "' not started." );
+			throw new BoxRuntimeException( "Timer '" + label + "' not started." );
 		}
 
 		long	endTime		= System.nanoTime();
@@ -169,7 +169,7 @@ public class Timer {
 				return TIMING_FORMAT.format( stopAndGetNanos( label ) ) + " nanoseconds";
 
 			default :
-				throw new ApplicationException( "Unsupported time unit: " + timeUnit );
+				throw new BoxRuntimeException( "Unsupported time unit: " + timeUnit );
 		}
 	}
 

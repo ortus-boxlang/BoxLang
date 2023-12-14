@@ -21,7 +21,7 @@ import java.util.List;
 import java.util.Map;
 
 import ortus.boxlang.runtime.types.Struct;
-import ortus.boxlang.runtime.types.exceptions.ApplicationException;
+import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
 /**
  * Represents the BoxLang "server" scope container
@@ -83,7 +83,7 @@ public class ServerScope extends BaseScope {
 	@Override
 	public Object put( Key key, Object value ) {
 		if ( intialized && unmodifiableKeys.contains( key ) ) {
-			throw new ApplicationException( "Cannot modify key " + key + " in server scope" );
+			throw new BoxRuntimeException( "Cannot modify key " + key + " in server scope" );
 		}
 		return super.put( key, value );
 	}

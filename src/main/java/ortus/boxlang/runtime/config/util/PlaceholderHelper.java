@@ -24,6 +24,7 @@ import java.util.regex.Pattern;
 import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.ApplicationException;
+import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
 /**
  * A helper class for resolving placeholders in configuration files
@@ -74,7 +75,7 @@ public class PlaceholderHelper {
 			String	defaultValue	= matchResult.group( 2 );
 			String	replacement		= ( String ) map.getOrDefault( placeholder, defaultValue != null ? defaultValue : matchResult.group() );
 			if ( replacement == null ) {
-				throw new ApplicationException( "Placeholder '" + placeholder + "' has no replacement value" );
+				throw new BoxRuntimeException( "Placeholder '" + placeholder + "' has no replacement value" );
 			}
 
 			return Matcher.quoteReplacement( replacement );

@@ -24,7 +24,7 @@ import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.Struct;
-import ortus.boxlang.runtime.types.exceptions.ApplicationException;
+import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
 /**
  * I handle dereferencing of objects
@@ -142,7 +142,7 @@ public class Referencer {
 				obj.assign( key, next );
 				// If it's not null, it needs to be a Map
 			} else if ( ! ( next instanceof Map || next instanceof Array ) ) {
-				throw new ApplicationException(
+				throw new BoxRuntimeException(
 				    String.format( "Cannot assign to key [%s] because it is a [%s] and not a Struct or Array", key.getName(),
 				        next.getClass().getName() )
 				);

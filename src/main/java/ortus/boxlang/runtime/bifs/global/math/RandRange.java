@@ -3,7 +3,7 @@ package ortus.boxlang.runtime.bifs.global.math;
 import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.dynamic.casters.DoubleCaster;
-import ortus.boxlang.runtime.types.exceptions.ApplicationException;
+import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
 public class RandRange extends BIF {
 
@@ -25,7 +25,7 @@ public class RandRange extends BIF {
     }
 
     public static Object invoke( IBoxContext context, Object number1, Object number2, String alg ) {
-        throw new ApplicationException( "The algorithm argument has not yet been implemented" );
+        throw new BoxRuntimeException( "The algorithm argument has not yet been implemented" );
     }
 
 }

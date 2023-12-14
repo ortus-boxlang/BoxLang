@@ -24,7 +24,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
-import ortus.boxlang.runtime.types.exceptions.ApplicationException;
+import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.util.Timer;
 
 /**
@@ -165,7 +165,7 @@ public class BoxRunner {
 			// Config File Flag, we find and continue to the next argument for the path
 			if ( current.equalsIgnoreCase( "-config" ) ) {
 				if ( argsList.isEmpty() ) {
-					throw new ApplicationException( "Missing config file path with -config flag, it must be the next argument. [-config /path/config.json]" );
+					throw new BoxRuntimeException( "Missing config file path with -config flag, it must be the next argument. [-config /path/config.json]" );
 				}
 				file = argsList.remove( 0 );
 				continue;
@@ -175,7 +175,7 @@ public class BoxRunner {
 			// Mutually exclusive with template
 			if ( current.equalsIgnoreCase( "-c" ) ) {
 				if ( argsList.isEmpty() ) {
-					throw new ApplicationException( "Missing inline code to execute with -c flag." );
+					throw new BoxRuntimeException( "Missing inline code to execute with -c flag." );
 				}
 				code = argsList.remove( 0 );
 				break;

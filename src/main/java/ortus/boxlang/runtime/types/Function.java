@@ -32,7 +32,7 @@ import ortus.boxlang.runtime.runnables.IBoxRunnable;
 import ortus.boxlang.runtime.runnables.IFunctionRunnable;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
-import ortus.boxlang.runtime.types.exceptions.ApplicationException;
+import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.meta.BoxMeta;
 import ortus.boxlang.runtime.types.meta.FunctionMeta;
 
@@ -156,7 +156,7 @@ public abstract class Function implements IType, IFunctionRunnable {
 		if ( arguments.length > scope.size() ) {
 			for ( int i = scope.size(); i < arguments.length; i++ ) {
 				if ( arguments[ i ].required() && arguments[ i ].defaultValue() == null ) {
-					throw new ApplicationException( "Required argument " + arguments[ i ].name() + " is missing" );
+					throw new BoxRuntimeException( "Required argument " + arguments[ i ].name() + " is missing" );
 				}
 				scope.put( arguments[ i ].name(),
 				    ensureArgumentType( arguments[ i ].name(), arguments[ i ].defaultValue(), arguments[ i ].type() ) );
@@ -212,7 +212,7 @@ public abstract class Function implements IType, IFunctionRunnable {
 			// If they aren't here, add their default value (if defined)
 			if ( !scope.containsKey( argument.name() ) ) {
 				if ( argument.required() && argument.defaultValue() == null ) {
-					throw new ApplicationException( "Required argument " + argument.name() + " is missing" );
+					throw new BoxRuntimeException( "Required argument " + argument.name() + " is missing" );
 				}
 				// Make sure the default value is valid
 				scope.put( argument.name(), ensureArgumentType( argument.name(), argument.defaultValue(), argument.type() ) );
@@ -247,7 +247,7 @@ public abstract class Function implements IType, IFunctionRunnable {
 	protected Object ensureArgumentType( Key name, Object value, String type ) {
 		CastAttempt<Object> typeCheck = GenericCaster.attempt( value, type, true );
 		if ( !typeCheck.wasSuccessful() ) {
-			throw new ApplicationException(
+			throw new BoxRuntimeException(
 			    String.format( "Argument [%s] with a type of [%s] does not match the declared type of [%s]",
 			        name.getName(), value.getClass().getName(), type )
 			);
@@ -266,7 +266,7 @@ public abstract class Function implements IType, IFunctionRunnable {
 	protected Object ensureReturnType( Object value ) {
 		CastAttempt<Object> typeCheck = GenericCaster.attempt( value, getReturnType(), true );
 		if ( !typeCheck.wasSuccessful() ) {
-			throw new ApplicationException(
+			throw new BoxRuntimeException(
 			    String.format( "The return value of the function [%s] does not match the declared type of [%s]",
 			        value.getClass().getName(), getReturnType() )
 			);

@@ -21,7 +21,7 @@ import java.math.BigDecimal;
 import java.text.DecimalFormat;
 
 import ortus.boxlang.runtime.interop.DynamicObject;
-import ortus.boxlang.runtime.types.exceptions.ApplicationException;
+import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
 /**
  * I handle casting anything to a string
@@ -101,7 +101,7 @@ public class StringCaster {
 		}
 
 		if ( fail ) {
-			throw new ApplicationException( "Can't cast " + object.getClass().getName() + " to a string." );
+			throw new BoxRuntimeException( "Can't cast " + object.getClass().getName() + " to a string." );
 		} else {
 			return null;
 		}

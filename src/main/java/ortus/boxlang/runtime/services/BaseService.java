@@ -18,7 +18,7 @@
 package ortus.boxlang.runtime.services;
 
 import ortus.boxlang.runtime.BoxRuntime;
-import ortus.boxlang.runtime.types.exceptions.ApplicationException;
+import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.util.Timer;
 
 /**
@@ -73,21 +73,21 @@ public abstract class BaseService {
 	 * The startup event is fired when the runtime starts up
 	 */
 	public void onStartup() {
-		throw new ApplicationException( "onStartup() not implemented" );
+		throw new BoxRuntimeException( "onStartup() not implemented" );
 	}
 
 	/**
 	 * The configuration load event is fired when the runtime loads its configuration
 	 */
 	public void onConfigurationLoad() {
-		throw new ApplicationException( "onConfigurationLoad() not implemented" );
+		throw new BoxRuntimeException( "onConfigurationLoad() not implemented" );
 	}
 
 	/**
 	 * The shutdown event is fired when the runtime shuts down
 	 */
 	public void onShutdown() {
-		throw new ApplicationException( "onShutdown() not implemented" );
+		throw new BoxRuntimeException( "onShutdown() not implemented" );
 	}
 
 }

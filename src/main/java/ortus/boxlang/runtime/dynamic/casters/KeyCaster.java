@@ -18,7 +18,7 @@
 package ortus.boxlang.runtime.dynamic.casters;
 
 import ortus.boxlang.runtime.scopes.Key;
-import ortus.boxlang.runtime.types.exceptions.ApplicationException;
+import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
 /**
  * I handle casting anything to a Key
@@ -60,7 +60,7 @@ public class KeyCaster {
 	public static Key cast( Object object, Boolean fail ) {
 		if ( object == null ) {
 			if ( fail ) {
-				throw new ApplicationException( "Can't cast null to a Key." );
+				throw new BoxRuntimeException( "Can't cast null to a Key." );
 			} else {
 				return null;
 			}
@@ -78,7 +78,7 @@ public class KeyCaster {
 		}
 
 		if ( fail ) {
-			throw new ApplicationException( "Can't cast " + object.getClass().getName() + " to a Key." );
+			throw new BoxRuntimeException( "Can't cast " + object.getClass().getName() + " to a Key." );
 		} else {
 			return null;
 		}

@@ -31,7 +31,7 @@ import ortus.boxlang.ast.BoxStatement;
 import ortus.boxlang.ast.Source;
 import ortus.boxlang.ast.statement.BoxFunctionDeclaration;
 import ortus.boxlang.runtime.config.util.PlaceholderHelper;
-import ortus.boxlang.runtime.types.exceptions.ApplicationException;
+import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.transpiler.JavaTranspiler;
 import ortus.boxlang.transpiler.transformer.AbstractTransformer;
 import ortus.boxlang.transpiler.transformer.TransformerContext;
@@ -176,11 +176,11 @@ public class BoxFunctionDeclarationTransformer extends AbstractTransformer {
 				result = javaParser.parse( code );
 			} catch ( Exception e ) {
 				// Temp debugging to see generated Java code
-				throw new ApplicationException( code, e );
+				throw new BoxRuntimeException( code, e );
 			}
 			if ( !result.isSuccessful() ) {
 				// Temp debugging to see generated Java code
-				throw new ApplicationException( result + "\n" + code );
+				throw new BoxRuntimeException( result + "\n" + code );
 			}
 			CompilationUnit		javaClass		= result.getResult().get();
 			MethodDeclaration	invokeMethod	= javaClass.findCompilationUnit().orElseThrow()

@@ -45,6 +45,7 @@ import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.IType;
 import ortus.boxlang.runtime.types.exceptions.ApplicationException;
 import ortus.boxlang.runtime.types.exceptions.BoxLangException;
+import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.exceptions.KeyNotFoundException;
 import ortus.boxlang.runtime.types.exceptions.NoFieldException;
 import ortus.boxlang.runtime.types.exceptions.NoMethodException;
@@ -278,7 +279,7 @@ public class DynamicObject implements IReferenceable {
 
 		// Thou shalt not pass!
 		if ( isInterface() ) {
-			throw new ApplicationException( "Cannot invoke a constructor on an interface" );
+			throw new BoxRuntimeException( "Cannot invoke a constructor on an interface" );
 		}
 
 		// Unwrap any ClassInvoker instances
@@ -290,7 +291,7 @@ public class DynamicObject implements IReferenceable {
 		try {
 			constructorHandle = METHOD_LOOKUP.findConstructor( this.targetClass, constructorType );
 		} catch ( NoSuchMethodException | IllegalAccessException e ) {
-			throw new ApplicationException( "Error getting constructor for class " + this.targetClass.getName(), e );
+			throw new BoxRuntimeException( "Error getting constructor for class " + this.targetClass.getName(), e );
 		}
 		// Create a callsite using the constructor handle
 		CallSite		callSite			= new ConstantCallSite( constructorHandle );
@@ -300,7 +301,7 @@ public class DynamicObject implements IReferenceable {
 		try {
 			this.targetInstance = constructorInvoker.invokeWithArguments( args );
 		} catch ( Throwable e ) {
-			throw new ApplicationException( "Error invoking constructor for class " + this.targetClass.getName(), e );
+			throw new BoxRuntimeException( "Error invoking constructor for class " + this.targetClass.getName(), e );
 		}
 
 		return this;
@@ -333,7 +334,7 @@ public class DynamicObject implements IReferenceable {
 	public Object invoke( String methodName, Object... arguments ) {
 		// Verify method name
 		if ( methodName == null || methodName.isEmpty() ) {
-			throw new ApplicationException( "Method name cannot be null or empty." );
+			throw new BoxRuntimeException( "Method name cannot be null or empty." );
 		}
 
 		// Unwrap any ClassInvoker instances
@@ -344,12 +345,12 @@ public class DynamicObject implements IReferenceable {
 		try {
 			methodRecord = getMethodHandle( methodName, argumentsToClasses( arguments ) );
 		} catch ( RuntimeException e ) {
-			throw new ApplicationException( "Error getting method for class " + this.targetClass.getName(), e );
+			throw new BoxRuntimeException( "Error getting method for class " + this.targetClass.getName(), e );
 		}
 
 		// If it's not static, we need a target instance
 		if ( !methodRecord.isStatic() && !hasInstance() ) {
-			throw new ApplicationException(
+			throw new BoxRuntimeException(
 			    "You can't call invoke on a null target instance. Use [invokeStatic] instead or set the target instance manually or via the constructor."
 			);
 		}
@@ -360,7 +361,7 @@ public class DynamicObject implements IReferenceable {
 			    ? methodRecord.methodHandle().invokeWithArguments( arguments )
 			    : methodRecord.methodHandle().bindTo( this.targetInstance ).invokeWithArguments( arguments );
 		} catch ( Throwable e ) {
-			throw new ApplicationException( "Error invoking method " + methodName + " for class " + this.targetClass.getName(), e );
+			throw new BoxRuntimeException( "Error invoking method " + methodName + " for class " + this.targetClass.getName(), e );
 		}
 	}
 
@@ -377,7 +378,7 @@ public class DynamicObject implements IReferenceable {
 
 		// Verify method name
 		if ( methodName == null || methodName.isEmpty() ) {
-			throw new ApplicationException( "Method name cannot be null or empty." );
+			throw new BoxRuntimeException( "Method name cannot be null or empty." );
 		}
 
 		// Unwrap any ClassInvoker instances
@@ -389,7 +390,7 @@ public class DynamicObject implements IReferenceable {
 			    .methodHandle()
 			    .invokeWithArguments( arguments );
 		} catch ( Throwable e ) {
-			throw new ApplicationException( "Error invoking method " + methodName + " for class " + this.targetClass.getName(), e );
+			throw new BoxRuntimeException( "Error invoking method " + methodName + " for class " + this.targetClass.getName(), e );
 		}
 	}
 
@@ -415,13 +416,13 @@ public class DynamicObject implements IReferenceable {
 		try {
 			fieldHandle = METHOD_LOOKUP.unreflectGetter( field );
 		} catch ( IllegalAccessException e ) {
-			throw new ApplicationException( "Error getting field " + fieldName + " for class " + this.targetClass.getName(), e );
+			throw new BoxRuntimeException( "Error getting field " + fieldName + " for class " + this.targetClass.getName(), e );
 		}
 		Boolean isStatic = Modifier.isStatic( field.getModifiers() );
 
 		// If it's not static, we need a target instance
 		if ( !isStatic && !hasInstance() ) {
-			throw new ApplicationException(
+			throw new BoxRuntimeException(
 			    "You are trying to get a public field but there is not instance set on the invoker, please make sure the [invokeConstructor] has been called."
 			);
 		}
@@ -433,7 +434,7 @@ public class DynamicObject implements IReferenceable {
 			        : fieldHandle.invoke( this.targetInstance )
 			);
 		} catch ( Throwable e ) {
-			throw new ApplicationException( "Error getting field " + fieldName + " for class " + this.targetClass.getName(), e );
+			throw new BoxRuntimeException( "Error getting field " + fieldName + " for class " + this.targetClass.getName(), e );
 		}
 	}
 
@@ -471,13 +472,13 @@ public class DynamicObject implements IReferenceable {
 		try {
 			fieldHandle = METHOD_LOOKUP.unreflectSetter( field );
 		} catch ( IllegalAccessException e ) {
-			throw new ApplicationException( "Error setting field " + fieldName + " for class " + this.targetClass.getName(), e );
+			throw new BoxRuntimeException( "Error setting field " + fieldName + " for class " + this.targetClass.getName(), e );
 		}
 		Boolean isStatic = Modifier.isStatic( field.getModifiers() );
 
 		// If it's not static, we need a target instance, verify it's not null
 		if ( !isStatic && !hasInstance() ) {
-			throw new ApplicationException(
+			throw new BoxRuntimeException(
 			    "You are trying to set a public field but there is not instance set on the invoker, please make sure the [invokeConstructor] has been called."
 			);
 		}
@@ -489,7 +490,7 @@ public class DynamicObject implements IReferenceable {
 				fieldHandle.bindTo( this.targetInstance ).invokeWithArguments( value );
 			}
 		} catch ( Throwable e ) {
-			throw new ApplicationException( "Error setting field " + fieldName + " for class " + this.targetClass.getName(), e );
+			throw new BoxRuntimeException( "Error setting field " + fieldName + " for class " + this.targetClass.getName(), e );
 		}
 
 		return this;
@@ -641,7 +642,7 @@ public class DynamicObject implements IReferenceable {
 			    argumentsAsClasses.length
 			);
 		} catch ( IllegalAccessException e ) {
-			throw new ApplicationException( "Error getting method handle for method " + methodName + " for class " + this.targetClass.getName(), e );
+			throw new BoxRuntimeException( "Error getting method handle for method " + methodName + " for class " + this.targetClass.getName(), e );
 		}
 	}
 
@@ -778,7 +779,7 @@ public class DynamicObject implements IReferenceable {
 		try {
 			return METHOD_LOOKUP.unreflect( method );
 		} catch ( IllegalAccessException e ) {
-			throw new ApplicationException( "Error creating MethodHandle for method [" + method + "]", e );
+			throw new BoxRuntimeException( "Error creating MethodHandle for method [" + method + "]", e );
 		}
 	}
 
@@ -1044,7 +1045,7 @@ public class DynamicObject implements IReferenceable {
 			return str.length();
 		}
 
-		throw new ApplicationException( "Java objects cannot be called with named argumments" );
+		throw new BoxRuntimeException( "Java objects cannot be called with named argumments" );
 	}
 
 	/**

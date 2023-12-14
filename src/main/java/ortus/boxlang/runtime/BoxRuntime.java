@@ -51,7 +51,7 @@ import ortus.boxlang.runtime.services.CacheService;
 import ortus.boxlang.runtime.services.FunctionService;
 import ortus.boxlang.runtime.services.InterceptorService;
 import ortus.boxlang.runtime.types.Struct;
-import ortus.boxlang.runtime.types.exceptions.ApplicationException;
+import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.exceptions.MissingIncludeException;
 import ortus.boxlang.runtime.types.exceptions.ScopeNotFoundException;
 import ortus.boxlang.runtime.util.Timer;
@@ -592,12 +592,12 @@ public class BoxRuntime {
 		try {
 			result = parser.parse( source, BoxScriptType.CFSCRIPT );
 		} catch ( IOException e ) {
-			throw new ApplicationException( "Error compiling source", e );
+			throw new BoxRuntimeException( "Error compiling source", e );
 		}
 
 		result.getIssues().forEach( System.out::println );
 		if ( !result.isCorrect() ) {
-			throw new ApplicationException( "Error compiling source. " + result.getIssues().get( 0 ).toString() );
+			throw new BoxRuntimeException( "Error compiling source. " + result.getIssues().get( 0 ).toString() );
 		}
 
 		System.out.println( result.getRoot().toJSON().toString() );
@@ -665,7 +665,7 @@ public class BoxRuntime {
 				}
 			}
 		} catch ( IOException e ) {
-			throw new ApplicationException( "Error reading source stream", e );
+			throw new BoxRuntimeException( "Error reading source stream", e );
 		}
 
 	}

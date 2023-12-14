@@ -36,7 +36,7 @@ import ortus.boxlang.runtime.async.executors.ExecutorRecord;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.services.AsyncService;
 import ortus.boxlang.runtime.types.Struct;
-import ortus.boxlang.runtime.types.exceptions.ApplicationException;
+import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
 /**
  * The Async Scheduler is in charge of registering scheduled tasks, starting them, monitoring them and shutting them down if needed.
@@ -467,7 +467,7 @@ public class Scheduler {
 		if ( hasTask( name ) ) {
 			return this.tasks.get( name );
 		}
-		throw new ApplicationException(
+		throw new BoxRuntimeException(
 		    String.format(
 		        "No task found with the name: (%s). Registered tasks are (%s)",
 		        name,

@@ -20,7 +20,7 @@ package ortus.boxlang.runtime.util;
 import com.fasterxml.jackson.jr.annotationsupport.JacksonAnnotationExtension;
 import com.fasterxml.jackson.jr.ob.JSON;
 
-import ortus.boxlang.runtime.types.exceptions.ApplicationException;
+import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
 /**
  * Utility class for JSON operations based on our library of choice.
@@ -75,7 +75,7 @@ public class JsonUtil {
 		try {
 			return JSON_BUILDER.anyFrom( json );
 		} catch ( Exception e ) {
-			throw new ApplicationException( "Failed to parse JSON", e );
+			throw new BoxRuntimeException( "Failed to parse JSON", e );
 		}
 	}
 
@@ -105,7 +105,7 @@ public class JsonUtil {
 		try {
 			return JSON_BUILDER.beanFrom( clazz, json );
 		} catch ( Exception e ) {
-			throw new ApplicationException( "Failed to parse JSON into " + clazz.getSimpleName(), e );
+			throw new BoxRuntimeException( "Failed to parse JSON into " + clazz.getSimpleName(), e );
 		}
 	}
 

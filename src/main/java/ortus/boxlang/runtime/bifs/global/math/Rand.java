@@ -4,7 +4,7 @@ import java.util.Random;
 
 import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.context.IBoxContext;
-import ortus.boxlang.runtime.types.exceptions.ApplicationException;
+import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
 public class Rand extends BIF {
 
@@ -23,6 +23,6 @@ public class Rand extends BIF {
     }
 
     public static Object invoke( IBoxContext context, String alg ) {
-        throw new ApplicationException( "The algorithm argument has not yet been implemented" );
+        throw new BoxRuntimeException( "The algorithm argument has not yet been implemented" );
     }
 }

@@ -18,7 +18,7 @@
 package ortus.boxlang.runtime.dynamic.casters;
 
 import ortus.boxlang.runtime.interop.DynamicObject;
-import ortus.boxlang.runtime.types.exceptions.ApplicationException;
+import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
 /**
  * I handle casting anything to a Double
@@ -94,7 +94,7 @@ public class DoubleCaster {
 
 		// Verify if we can throw an exception
 		if ( fail ) {
-			throw new ApplicationException( String.format( "Can't cast %s to a double.", object.toString() ) );
+			throw new BoxRuntimeException( String.format( "Can't cast %s to a double.", object.toString() ) );
 		} else {
 			return null;
 		}

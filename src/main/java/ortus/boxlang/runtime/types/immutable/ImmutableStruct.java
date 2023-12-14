@@ -26,7 +26,7 @@ import ortus.boxlang.runtime.dynamic.casters.KeyCaster;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.NullValue;
 import ortus.boxlang.runtime.types.Struct;
-import ortus.boxlang.runtime.types.exceptions.ApplicationException;
+import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.exceptions.UnmodifiableException;
 
 /**
@@ -59,7 +59,7 @@ public class ImmutableStruct extends Struct implements IImmutable {
 			    case DEFAULT -> new HashMap<>( INITIAL_CAPACITY );
 			    case LINKED -> new LinkedHashMap<Key, Object>( INITIAL_CAPACITY );
 			    case SORTED -> new TreeMap<Key, Object>();
-			    default -> throw new ApplicationException( "Invalid struct type [" + type.name() + "]" );
+			    default -> throw new BoxRuntimeException( "Invalid struct type [" + type.name() + "]" );
 		    },
 		    type
 		);
@@ -121,7 +121,7 @@ public class ImmutableStruct extends Struct implements IImmutable {
 	 */
 	public static ImmutableStruct of( Object... values ) {
 		if ( values.length % 2 != 0 ) {
-			throw new ApplicationException( "Invalid number of arguments.  Must be an even number." );
+			throw new BoxRuntimeException( "Invalid number of arguments.  Must be an even number." );
 		}
 		ImmutableStruct struct = new ImmutableStruct();
 		for ( int i = 0; i < values.length; i += 2 ) {

@@ -47,7 +47,7 @@ import ortus.boxlang.parser.ParsingResult;
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.config.util.PlaceholderHelper;
 import ortus.boxlang.runtime.runnables.IBoxRunnable;
-import ortus.boxlang.runtime.types.exceptions.ApplicationException;
+import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.transpiler.JavaTranspiler;
 import ortus.boxlang.transpiler.TranspiledCode;
 import ortus.boxlang.transpiler.Transpiler;
@@ -256,7 +256,7 @@ import org.jbox2d.util.Issue;
 				try {
 					result = parser.parse( source, BoxScriptType.CFSCRIPT );
 				} catch ( IOException e ) {
-					throw new ApplicationException( "Error compiling source", e );
+					throw new BoxRuntimeException( "Error compiling source", e );
 				}
 
 				if ( !result.isCorrect() ) {
@@ -265,7 +265,7 @@ import org.jbox2d.util.Issue;
 					    .map( Issue::toString )
 					    .collect( Collectors.joining( ", " ) );
 
-					throw new ApplicationException( "Error compiling source. " + issuesString );
+					throw new BoxRuntimeException( "Error compiling source. " + issuesString );
 				}
 
 				// JavaTranspiler transpiler = new JavaTranspiler();
@@ -312,7 +312,7 @@ import org.jbox2d.util.Issue;
 				try {
 					result = parser.parse( source, type );
 				} catch ( IOException e ) {
-					throw new ApplicationException( "Error compiling source", e );
+					throw new BoxRuntimeException( "Error compiling source", e );
 				}
 
 				if ( !result.isCorrect() ) {
@@ -321,7 +321,7 @@ import org.jbox2d.util.Issue;
 					    .map( Issue::toString )
 					    .collect( Collectors.joining( ", " ) );
 
-					throw new ApplicationException( "Error compiling source. " + issuesString );
+					throw new BoxRuntimeException( "Error compiling source. " + issuesString );
 				}
 
 				Transpiler transpiler = Transpiler.getTranspiler( null /* Config ? */ );
@@ -332,7 +332,7 @@ import org.jbox2d.util.Issue;
 
 				TranspiledCode javaASTs = transpiler.transpile( result.getRoot() );
 				if ( false )
-					throw new ApplicationException( javaASTs.getEntryPoint().toString() );
+					throw new BoxRuntimeException( javaASTs.getEntryPoint().toString() );
 				compileSource( javaASTs.getEntryPoint().toString(), fqn );
 
 				// Process functions ad lamdas
@@ -361,7 +361,7 @@ import org.jbox2d.util.Issue;
 				try {
 					result = parser.parse( path.toFile() );
 				} catch ( IOException e ) {
-					throw new ApplicationException( "Error compiling source", e );
+					throw new BoxRuntimeException( "Error compiling source", e );
 				}
 
 				if ( !result.isCorrect() ) {
@@ -370,7 +370,7 @@ import org.jbox2d.util.Issue;
 					    .map( Issue::toString )
 					    .collect( Collectors.joining( ", " ) );
 
-					throw new ApplicationException( "Error compiling source. " + issuesString );
+					throw new BoxRuntimeException( "Error compiling source. " + issuesString );
 				}
 
 				Transpiler transpiler = Transpiler.getTranspiler( null /* Config ? */ );
@@ -426,7 +426,7 @@ import org.jbox2d.util.Issue;
 		try {
 			return ( Class<IBoxRunnable> ) classLoader.loadClass( fqn );
 		} catch ( ClassNotFoundException e ) {
-			throw new ApplicationException( "Error compiling source", e );
+			throw new BoxRuntimeException( "Error compiling source", e );
 		}
 	}
 
@@ -434,7 +434,7 @@ import org.jbox2d.util.Issue;
 		try {
 			return ( Class<IBoxRunnable> ) diskClassLoader.loadClass( fqn );
 		} catch ( ClassNotFoundException e ) {
-			throw new ApplicationException( "Error compiling source", e );
+			throw new BoxRuntimeException( "Error compiling source", e );
 		}
 	}
 
@@ -470,7 +470,7 @@ import org.jbox2d.util.Issue;
 			}
 			return sb.toString();
 		} catch ( java.security.NoSuchAlgorithmException e ) {
-			throw new ApplicationException( "Error compiling source", e );
+			throw new BoxRuntimeException( "Error compiling source", e );
 		}
 	}
 

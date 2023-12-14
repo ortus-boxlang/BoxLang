@@ -18,7 +18,7 @@
 package ortus.boxlang.runtime.dynamic.casters;
 
 import ortus.boxlang.runtime.interop.DynamicObject;
-import ortus.boxlang.runtime.types.exceptions.ApplicationException;
+import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
 /**
  * I handle casting anything
@@ -60,7 +60,7 @@ public class LongCaster {
 	public static Long cast( Object object, Boolean fail ) {
 		if ( object == null ) {
 			if ( fail ) {
-				throw new ApplicationException( "Can't cast null to a long." );
+				throw new BoxRuntimeException( "Can't cast null to a long." );
 			} else {
 				return null;
 			}

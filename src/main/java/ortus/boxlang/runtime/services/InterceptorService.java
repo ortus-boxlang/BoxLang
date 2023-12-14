@@ -30,7 +30,7 @@ import ortus.boxlang.runtime.events.InterceptorState;
 import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Struct;
-import ortus.boxlang.runtime.types.exceptions.ApplicationException;
+import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
 /**
  * The interceptor service is responsible for managing all events in BoxLang.
@@ -352,7 +352,7 @@ public class InterceptorService extends BaseService {
 			} catch ( Exception e ) {
 				String errorMessage = String.format( "Errors announcing [%s] interception", state.getName() );
 				logger.error( errorMessage, e );
-				throw new ApplicationException( errorMessage );
+				throw new BoxRuntimeException( errorMessage );
 			}
 
 			logger.atDebug().log( "Finished announcing {}", state.getName() );
