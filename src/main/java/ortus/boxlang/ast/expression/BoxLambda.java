@@ -12,12 +12,13 @@
  * BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language
  * governing permissions and limitations under the License.
  */
-package ortus.boxlang.ast.statement;
+package ortus.boxlang.ast.expression;
 
 import ortus.boxlang.ast.BoxExpr;
-import ortus.boxlang.ast.BoxNode;
 import ortus.boxlang.ast.BoxStatement;
 import ortus.boxlang.ast.Position;
+import ortus.boxlang.ast.statement.BoxAnnotation;
+import ortus.boxlang.ast.statement.BoxArgumentDeclaration;
 
 import java.util.Collections;
 import java.util.List;
@@ -25,7 +26,7 @@ import java.util.List;
 /**
  * Represent A lambda declaration
  */
-public class BoxLambdaDeclaration extends BoxExpr {
+public class BoxLambda extends BoxExpr {
 
 	private final List<BoxArgumentDeclaration>	args;
 	private final List<BoxAnnotation>			annotations;
@@ -33,14 +34,14 @@ public class BoxLambdaDeclaration extends BoxExpr {
 
 	/**
 	 * Creates a Lambda declaration AST node
-	 * 
+	 *
 	 * @param args        arguments
 	 * @param annotations annotations
 	 * @param body        body of the function
 	 * @param position    position of the statement in the source code
 	 * @param sourceText  source code that originated the Node
 	 */
-	public BoxLambdaDeclaration( List<BoxArgumentDeclaration> args, List<BoxAnnotation> annotations, List<BoxStatement> body, Position position,
+	public BoxLambda( List<BoxArgumentDeclaration> args, List<BoxAnnotation> annotations, List<BoxStatement> body, Position position,
 	    String sourceText ) {
 		super( position, sourceText );
 		this.args = Collections.unmodifiableList( args );
