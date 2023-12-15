@@ -36,52 +36,52 @@ import ortus.boxlang.runtime.types.Array;
 
 public class ArrayAppendTest {
 
-    static BoxRuntime  instance;
-    static IBoxContext context;
-    static IScope      variables;
-    static Key         result = new Key( "result" );
+	static BoxRuntime	instance;
+	static IBoxContext	context;
+	static IScope		variables;
+	static Key			result	= new Key( "result" );
 
-    @BeforeAll
-    public static void setUp() {
-        instance  = BoxRuntime.getInstance( true );
-        context   = new ScriptingBoxContext( instance.getRuntimeContext() );
-        variables = context.getScopeNearby( VariablesScope.name );
-    }
+	@BeforeAll
+	public static void setUp() {
+		instance	= BoxRuntime.getInstance( true );
+		context		= new ScriptingBoxContext( instance.getRuntimeContext() );
+		variables	= context.getScopeNearby( VariablesScope.name );
+	}
 
-    @AfterAll
-    public static void teardown() {
-        instance.shutdown();
-    }
+	@AfterAll
+	public static void teardown() {
+		instance.shutdown();
+	}
 
-    @BeforeEach
-    public void setupEach() {
-        variables.clear();
-    }
+	@BeforeEach
+	public void setupEach() {
+		variables.clear();
+	}
 
-    @DisplayName( "It should increase the size of the array" )
-    @Test
-    public void testInreasesSIze() {
-        instance.executeSource(
-            """
-            arr = [ 1, 2, 3 ];
-            arrayAppend( arr, 4 );
-            result = arrayLen( arr );
-            """,
-            context );
-        assertThat( variables.dereference( result, false ) ).isEqualTo( 4 );
-    }
+	@DisplayName( "It should increase the size of the array" )
+	@Test
+	public void testInreasesSIze() {
+		instance.executeSource(
+		    """
+		    arr = [ 1, 2, 3 ];
+		    arrayAppend( arr, 4 );
+		    result = arrayLen( arr );
+		    """,
+		    context );
+		assertThat( variables.dereference( result, false ) ).isEqualTo( 4 );
+	}
 
-    @DisplayName( "It should place the item at the end of the array" )
-    @Test
-    public void testAtEndOfArray() {
-        instance.executeSource(
-            """
-            arr = [ 1, 2, 3 ];
-            arrayAppend( arr, "test" );
-            result = arrayLen( arr );
-            """,
-            context );
-        assertThat( ( ( Array ) variables.dereference( Key.of( "arr" ), false ) ).get( 3 ) ).isEqualTo( "test" );
-    }
+	@DisplayName( "It should place the item at the end of the array" )
+	@Test
+	public void testAtEndOfArray() {
+		instance.executeSource(
+		    """
+		    arr = [ 1, 2, 3 ];
+		    arrayAppend( arr, "test" );
+		    result = arrayLen( arr );
+		    """,
+		    context );
+		assertThat( ( ( Array ) variables.dereference( Key.of( "arr" ), false ) ).get( 3 ) ).isEqualTo( "test" );
+	}
 
 }

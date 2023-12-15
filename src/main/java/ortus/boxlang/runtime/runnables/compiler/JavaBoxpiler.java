@@ -365,7 +365,7 @@ import org.jbox2d.util.Issue;
 				transpiler.setProperty( "returnType", "void" );
 				TranspiledCode javaASTs = transpiler.transpile( result.getRoot() );
 				compileSource( javaASTs.getEntryPoint().toString(), fqn );
-				
+
 				// Process functions ad lamdas
 				for ( CompilationUnit callable : javaASTs.getCallables() ) {
 					compileSource( callable.toString(), fqn );

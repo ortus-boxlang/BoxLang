@@ -10,34 +10,34 @@ import ortus.boxlang.ast.Issue;
  */
 public class ParseException extends BoxRuntimeException {
 
-    List<Issue> issues;
+	List<Issue> issues;
 
-    /**
-     * Constructor
-     *
-     * @param message The message to display
-     */
-    public ParseException( List<Issue> issues ) {
-        super( "Error compiling source. " + issuesAsString( issues ) );
+	/**
+	 * Constructor
+	 *
+	 * @param message The message to display
+	 */
+	public ParseException( List<Issue> issues ) {
+		super( "Error compiling source. " + issuesAsString( issues ) );
 
-        this.issues       = issues;
-        this.extendedInfo = issuesAsString( issues );
-    }
+		this.issues			= issues;
+		this.extendedInfo	= issuesAsString( issues );
+	}
 
-    /**
-     * Constructor
-     *
-     * @param message The message to display
-     * @param cause   The cause
-     */
-    public ParseException( String message, Throwable cause ) {
-        super( message, cause );
-    }
+	/**
+	 * Constructor
+	 *
+	 * @param message The message to display
+	 * @param cause   The cause
+	 */
+	public ParseException( String message, Throwable cause ) {
+		super( message, cause );
+	}
 
-    public static String issuesAsString( List<Issue> issues ) {
-        return issues.stream()
-            .map( Issue::toString )
-            .collect( Collectors.joining( "\n" ) );
-    }
+	public static String issuesAsString( List<Issue> issues ) {
+		return issues.stream()
+		    .map( Issue::toString )
+		    .collect( Collectors.joining( "\n" ) );
+	}
 
 }

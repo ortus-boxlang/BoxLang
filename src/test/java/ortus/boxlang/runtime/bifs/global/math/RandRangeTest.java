@@ -35,37 +35,37 @@ import ortus.boxlang.runtime.scopes.VariablesScope;
 
 public class RandRangeTest {
 
-    static BoxRuntime  instance;
-    static IBoxContext context;
-    static IScope      variables;
-    static Key         result = new Key( "result" );
+	static BoxRuntime	instance;
+	static IBoxContext	context;
+	static IScope		variables;
+	static Key			result	= new Key( "result" );
 
-    @BeforeAll
-    public static void setUp() {
-        instance  = BoxRuntime.getInstance( true );
-        context   = new ScriptingBoxContext( instance.getRuntimeContext() );
-        variables = context.getScopeNearby( VariablesScope.name );
-    }
+	@BeforeAll
+	public static void setUp() {
+		instance	= BoxRuntime.getInstance( true );
+		context		= new ScriptingBoxContext( instance.getRuntimeContext() );
+		variables	= context.getScopeNearby( VariablesScope.name );
+	}
 
-    @AfterAll
-    public static void teardown() {
-        instance.shutdown();
-    }
+	@AfterAll
+	public static void teardown() {
+		instance.shutdown();
+	}
 
-    @BeforeEach
-    public void setupEach() {
-        variables.clear();
-    }
+	@BeforeEach
+	public void setupEach() {
+		variables.clear();
+	}
 
-    @DisplayName( "It returns an int" )
-    @Test
-    public void testItReturnsADouble() {
-        instance.executeSource(
-            """
-            result = randRange( 0, 12 );
-            """,
-            context );
-        assertThat( variables.dereference( result, false ) instanceof Integer ).isTrue();
-    }
+	@DisplayName( "It returns an int" )
+	@Test
+	public void testItReturnsADouble() {
+		instance.executeSource(
+		    """
+		    result = randRange( 0, 12 );
+		    """,
+		    context );
+		assertThat( variables.dereference( result, false ) instanceof Integer ).isTrue();
+	}
 
 }

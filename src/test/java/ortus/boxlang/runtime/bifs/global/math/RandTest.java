@@ -35,59 +35,59 @@ import ortus.boxlang.runtime.scopes.VariablesScope;
 
 public class RandTest {
 
-    static BoxRuntime  instance;
-    static IBoxContext context;
-    static IScope      variables;
-    static Key         result = new Key( "result" );
+	static BoxRuntime	instance;
+	static IBoxContext	context;
+	static IScope		variables;
+	static Key			result	= new Key( "result" );
 
-    @BeforeAll
-    public static void setUp() {
-        instance  = BoxRuntime.getInstance( true );
-        context   = new ScriptingBoxContext( instance.getRuntimeContext() );
-        variables = context.getScopeNearby( VariablesScope.name );
-    }
+	@BeforeAll
+	public static void setUp() {
+		instance	= BoxRuntime.getInstance( true );
+		context		= new ScriptingBoxContext( instance.getRuntimeContext() );
+		variables	= context.getScopeNearby( VariablesScope.name );
+	}
 
-    @AfterAll
-    public static void teardown() {
-        instance.shutdown();
-    }
+	@AfterAll
+	public static void teardown() {
+		instance.shutdown();
+	}
 
-    @BeforeEach
-    public void setupEach() {
-        variables.clear();
-    }
+	@BeforeEach
+	public void setupEach() {
+		variables.clear();
+	}
 
-    @DisplayName( "It returns a double" )
-    @Test
-    public void testItReturnsADouble() {
-        instance.executeSource(
-            """
-            result = rand();
-            """,
-            context );
-        assertThat( variables.dereference( result, false ) instanceof Double ).isTrue();
-    }
+	@DisplayName( "It returns a double" )
+	@Test
+	public void testItReturnsADouble() {
+		instance.executeSource(
+		    """
+		    result = rand();
+		    """,
+		    context );
+		assertThat( variables.dereference( result, false ) instanceof Double ).isTrue();
+	}
 
-    @DisplayName( "It should return a value equal to or greater than 0" )
-    @Test
-    public void testReturnsGE0() {
-        instance.executeSource(
-            """
-            result = rand();
-            """,
-            context );
-        assertThat( ( Double ) variables.dereference( result, false ) >= 0 ).isTrue();
-    }
+	@DisplayName( "It should return a value equal to or greater than 0" )
+	@Test
+	public void testReturnsGE0() {
+		instance.executeSource(
+		    """
+		    result = rand();
+		    """,
+		    context );
+		assertThat( ( Double ) variables.dereference( result, false ) >= 0 ).isTrue();
+	}
 
-    @DisplayName( "It should return a value less than 1" )
-    @Test
-    public void testReturnsLT1() {
-        instance.executeSource(
-            """
-            result = rand();
-            """,
-            context );
-        assertThat( ( Double ) variables.dereference( result, false ) < 1 ).isTrue();
-    }
+	@DisplayName( "It should return a value less than 1" )
+	@Test
+	public void testReturnsLT1() {
+		instance.executeSource(
+		    """
+		    result = rand();
+		    """,
+		    context );
+		assertThat( ( Double ) variables.dereference( result, false ) < 1 ).isTrue();
+	}
 
 }

@@ -38,7 +38,7 @@ public record Argument( boolean required, String type, Key name, Object defaultV
 		this( required, type, name, null, Struct.EMPTY, Struct.EMPTY );
 	}
 
-	public 	Argument( boolean required, String type, Key name, Object defaultValue ) {
+	public Argument( boolean required, String type, Key name, Object defaultValue ) {
 		this( required, type, name, defaultValue, Struct.EMPTY, Struct.EMPTY );
 	}
 

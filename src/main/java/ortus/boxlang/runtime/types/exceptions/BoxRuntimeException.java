@@ -24,65 +24,65 @@ import ortus.boxlang.runtime.scopes.Key;
  */
 public class BoxRuntimeException extends BoxLangException {
 
-    public static final Key ExtendedInfoKey = Key.of( "extendedInfo" );
+	public static final Key	ExtendedInfoKey	= Key.of( "extendedInfo" );
 
-    /**
-     * Custom error message; information that the default exception handler does not display.
-     */
-    public String           extendedInfo    = "";
+	/**
+	 * Custom error message; information that the default exception handler does not display.
+	 */
+	public String			extendedInfo	= "";
 
-    /**
-     * Constructor
-     *
-     * @param message The message
-     */
-    public BoxRuntimeException( String message ) {
-        this( message, null, null, null );
-    }
+	/**
+	 * Constructor
+	 *
+	 * @param message The message
+	 */
+	public BoxRuntimeException( String message ) {
+		this( message, null, null, null );
+	}
 
-    /**
-     * Constructor
-     *
-     * @param message The message
-     * @param cause   The cause
-     */
-    public BoxRuntimeException( String message, Throwable cause ) {
-        this( message, null, null, cause );
-    }
+	/**
+	 * Constructor
+	 *
+	 * @param message The message
+	 * @param cause   The cause
+	 */
+	public BoxRuntimeException( String message, Throwable cause ) {
+		this( message, null, null, cause );
+	}
 
-    /**
-     * Constructor
-     *
-     * @param message      The message
-     * @param extendedInfo The extendedInfo
-     */
-    public BoxRuntimeException( String message, String extendedInfo ) {
-        this( message, null, extendedInfo, null );
-    }
+	/**
+	 * Constructor
+	 *
+	 * @param message      The message
+	 * @param extendedInfo The extendedInfo
+	 */
+	public BoxRuntimeException( String message, String extendedInfo ) {
+		this( message, null, extendedInfo, null );
+	}
 
-    /**
-     * Constructor
-     *
-     * @param message      The message
-     * @param detail       The detail
-     * @param extendedInfo The extendedInfo
-     * @param cause        The cause
-     */
-    public BoxRuntimeException( String message, String detail, String extendedInfo, Throwable cause ) {
-        this( message, detail, "application", extendedInfo, cause );
-    }
+	/**
+	 * Constructor
+	 *
+	 * @param message      The message
+	 * @param detail       The detail
+	 * @param extendedInfo The extendedInfo
+	 * @param cause        The cause
+	 */
+	public BoxRuntimeException( String message, String detail, String extendedInfo, Throwable cause ) {
+		this( message, detail, "application", extendedInfo, cause );
+	}
 
-    /**
-     * Constructor
-     *
-     * @param message      The message
-     * @param detail       The detail
-     * @param extendedInfo The extendedInfo
-     * @param cause        The cause
-     */
-    public BoxRuntimeException( String message, String detail, String type, String extendedInfo, Throwable cause ) {
-        super( message, detail, type, cause );
-        this.extendedInfo = extendedInfo;
-    }
+	/**
+	 * Constructor
+	 *
+	 * @param message      The message
+	 * @param detail       The detail
+	 * @param extendedInfo The extendedInfo
+	 * @param cause        The cause
+	 */
+	public BoxRuntimeException( String message, String detail, String type, String extendedInfo, Throwable cause ) {
+		super( message, detail, type, cause );
+		this.extendedInfo = extendedInfo;
+	}
 
 }

@@ -26,16 +26,16 @@ import ortus.boxlang.runtime.types.exceptions.ParseException;
 
 public class BoxPilerTest {
 
-    @DisplayName( "It will throw a ParseException if the syntax is invalid" )
-    @Test
-    public void testItCanStartUp() {
-        BoxRuntime instance = BoxRuntime.getInstance( true );
+	@DisplayName( "It will throw a ParseException if the syntax is invalid" )
+	@Test
+	public void testItCanStartUp() {
+		BoxRuntime instance = BoxRuntime.getInstance( true );
 
-        assertThrows( ParseException.class, () -> {
-            instance.executeSource( """
-                                        1 + >;
-                                    """ );
-        } );
-    }
+		assertThrows( ParseException.class, () -> {
+			instance.executeSource( """
+			                            1 + >;
+			                        """ );
+		} );
+	}
 
 }
