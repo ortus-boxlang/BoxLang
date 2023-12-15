@@ -17,7 +17,7 @@
  */
 package ortus.boxlang.runtime.testing;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.DisplayName;
 
 public class ExamplesTest {

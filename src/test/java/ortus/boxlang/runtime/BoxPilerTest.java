@@ -19,7 +19,7 @@ package ortus.boxlang.runtime;
 
 import static org.junit.Assert.assertThrows;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.DisplayName;
 
 import ortus.boxlang.runtime.types.exceptions.ParseException;

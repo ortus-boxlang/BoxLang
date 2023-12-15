@@ -24,7 +24,7 @@ import java.io.File;
 import java.net.URISyntaxException;
 import java.net.URL;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.DisplayName;
 
 import ortus.boxlang.runtime.context.IBoxContext;
