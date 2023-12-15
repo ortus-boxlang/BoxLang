@@ -104,11 +104,11 @@ anonymousFunction:
 	| lambda;
 
 lambda:
-	LPAREN lambdaParameters? RPAREN ARROW_RIGHT (
+	LPAREN paramList? RPAREN (postannotation)* ARROW (
 		expression
 		| statementBlock
 	);
-lambdaParameters: identifier (COMMA identifier)*;
+//lambdaParameters: identifier (COMMA identifier)*;
 
 statementBlock: LBRACE (statement)* RBRACE eos?;
 statementParameters: (

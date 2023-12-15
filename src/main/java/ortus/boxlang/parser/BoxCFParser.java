@@ -37,37 +37,7 @@ import ortus.boxlang.ast.BoxStatement;
 import ortus.boxlang.ast.Issue;
 import ortus.boxlang.ast.Point;
 import ortus.boxlang.ast.Position;
-import ortus.boxlang.ast.expression.BoxAccess;
-import ortus.boxlang.ast.expression.BoxArgument;
-import ortus.boxlang.ast.expression.BoxArrayAccess;
-import ortus.boxlang.ast.expression.BoxArrayLiteral;
-import ortus.boxlang.ast.expression.BoxAssignment;
-import ortus.boxlang.ast.expression.BoxAssignmentModifier;
-import ortus.boxlang.ast.expression.BoxBinaryOperation;
-import ortus.boxlang.ast.expression.BoxBinaryOperator;
-import ortus.boxlang.ast.expression.BoxBooleanLiteral;
-import ortus.boxlang.ast.expression.BoxComparisonOperation;
-import ortus.boxlang.ast.expression.BoxComparisonOperator;
-import ortus.boxlang.ast.expression.BoxDecimalLiteral;
-import ortus.boxlang.ast.expression.BoxDotAccess;
-import ortus.boxlang.ast.expression.BoxExpressionInvocation;
-import ortus.boxlang.ast.expression.BoxFQN;
-import ortus.boxlang.ast.expression.BoxFunctionInvocation;
-import ortus.boxlang.ast.expression.BoxIdentifier;
-import ortus.boxlang.ast.expression.BoxIntegerLiteral;
-import ortus.boxlang.ast.expression.BoxMethodInvocation;
-import ortus.boxlang.ast.expression.BoxNewOperation;
-import ortus.boxlang.ast.expression.BoxNull;
-import ortus.boxlang.ast.expression.BoxParenthesis;
-import ortus.boxlang.ast.expression.BoxScope;
-import ortus.boxlang.ast.expression.BoxStringConcat;
-import ortus.boxlang.ast.expression.BoxStringInterpolation;
-import ortus.boxlang.ast.expression.BoxStringLiteral;
-import ortus.boxlang.ast.expression.BoxStructLiteral;
-import ortus.boxlang.ast.expression.BoxStructType;
-import ortus.boxlang.ast.expression.BoxTernaryOperation;
-import ortus.boxlang.ast.expression.BoxUnaryOperation;
-import ortus.boxlang.ast.expression.BoxUnaryOperator;
+import ortus.boxlang.ast.expression.*;
 import ortus.boxlang.ast.statement.*;
 import ortus.boxlang.parser.antlr.CFLexer;
 import ortus.boxlang.parser.antlr.CFParser;
@@ -1012,6 +982,29 @@ public class BoxCFParser extends BoxAbstractParser {
 			return new BoxAssignment( left, op, right, modifiers, getPosition( expression ), getSourceText( expression ) );
 		} else if ( expression.NULL() != null ) {
 			return new BoxNull( getPosition( expression ), getSourceText( expression ) );
+		} else if ( expression.anonymousFunction() != null ) {
+			if ( expression.anonymousFunction().lambda() != null ) {
+				CFParser.LambdaContext			lambda		= expression.anonymousFunction().lambda();
+				List<BoxArgumentDeclaration>	args		= new ArrayList<>();
+				List<BoxAnnotation>				annotations	= new ArrayList<>();
+				List<BoxStatement>				body		= new ArrayList<>();
+				/* Process the arguments */
+				if ( lambda.paramList() != null ) {
+					for ( CFParser.ParamContext arg : lambda.paramList().param() ) {
+						BoxArgumentDeclaration argDeclaration = toAst( file, arg );
+						args.add( argDeclaration );
+					}
+				}
+				/* Process the annotations */
+				for ( CFParser.PostannotationContext annotation : lambda.postannotation() ) {
+					annotations.addAll( toAst( file, annotation ) );
+				}
+				/* Process the body */
+				if ( lambda.statementBlock() != null ) {
+					body.addAll( toAst( file, lambda.statementBlock() ) );
+				}
+				return new BoxLambda( args, annotations, body, getPosition( expression ), getSourceText( expression ) );
+			}
 		}
 		// TODO: add other cases
 		throw new IllegalStateException( "expression not implemented: " + getSourceText( expression ) );
