@@ -1012,6 +1012,28 @@ public class BoxCFParser extends BoxAbstractParser {
 			return new BoxAssignment( left, op, right, modifiers, getPosition( expression ), getSourceText( expression ) );
 		} else if ( expression.NULL() != null ) {
 			return new BoxNull( getPosition( expression ), getSourceText( expression ) );
+		} else if ( expression.anonymousFunction() != null ) {
+			if ( expression.anonymousFunction().lambda() != null ) {
+				CFParser.LambdaContext			lambda		= expression.anonymousFunction().lambda();
+				List<BoxArgumentDeclaration>	args		= new ArrayList<>();
+				List<BoxAnnotation>				annotations	= new ArrayList<>();
+				List<BoxStatement>				body		= new ArrayList<>();
+				/* Process the arguments */
+				if ( lambda.paramList() != null ) {
+					for ( CFParser.ParamContext arg : lambda.paramList().param() ) {
+						BoxArgumentDeclaration argDeclaration = toAst( file, arg );
+						args.add( argDeclaration );
+					}
+				}
+				/* Process the annotations */
+				for ( CFParser.PostannotationContext annotation : lambda.postannotation() ) {
+					annotations.addAll( toAst( file, annotation ) );
+				}
+				if ( lambda.statementBlock() != null ) {
+					body.addAll( toAst( file, lambda.statementBlock() ) );
+				}
+				return new BoxLambdaDeclaration( args, annotations, body, getPosition( expression ), getSourceText( expression ) );
+			}
 		}
 		// TODO: add other cases
 		throw new IllegalStateException( "expression not implemented: " + getSourceText( expression ) );
