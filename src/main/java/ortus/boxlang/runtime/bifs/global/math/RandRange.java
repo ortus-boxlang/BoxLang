@@ -25,8 +25,7 @@ public class RandRange extends BIF {
 	 * Return a random int between number1 and number 2
 	 * 
 	 * @param context
-	 * @param number1 A numeric value that represents the range minimum
-	 * @param number2 A numeric value that represents the range maximum (not inclusive)
+	 * @param arguments Argument scope defining the minimum and maximum (not inclusive) values for the range.
 	 * 
 	 * @return
 	 */

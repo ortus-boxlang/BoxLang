@@ -31,7 +31,7 @@ import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
  * <p>
  * Placeholders are defined as {@code {placeholder-name}} and can be used in
  * configuration files to reference system properties or other values.
- * <p>
+ * </p>
  */
 public class PlaceholderHelper {
 

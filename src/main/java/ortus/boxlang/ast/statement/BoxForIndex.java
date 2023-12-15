@@ -36,7 +36,7 @@ public class BoxForIndex extends BoxStatement {
 
 	/**
 	 *
-	 * @param variable
+	 * @param initializer
 	 * @param condition
 	 * @param body
 	 * @param position

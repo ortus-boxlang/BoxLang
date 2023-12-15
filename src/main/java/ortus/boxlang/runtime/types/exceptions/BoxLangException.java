@@ -68,6 +68,7 @@ public abstract class BoxLangException extends RuntimeException {
 	 * Constructor
 	 *
 	 * @param message The message
+	 * @param type    The type
 	 * @param cause   The cause
 	 */
 	public BoxLangException( String message, String type, Throwable cause ) {

@@ -35,10 +35,12 @@ import javax.management.InvalidAttributeValueException;
  * We represent a static date/time helper class that assists with time units on date/time conversions
  * It doesn't hold any date/time information.
  *
- * @see https://docs.oracle.com/en/java/javase/17/docs/api/java.base/java/time/temporal/ChronoUnit.html
- * @see https://docs.oracle.com/en/java/javase/17/docs/api/java.base/java/time/ZoneId.html
- * @see https://docs.oracle.com/en/java/javase/17/docs/api/java.base/java/time/ZoneOffset.html
- * @see https://docs.oracle.com/en/java/javase/17/docs/api/java.base/java/time/Instant.html
+ * <ul>
+ * <li><a href="https://docs.oracle.com/en/java/javase/17/docs/api/java.base/java/time/ChronoUnit.html">Java.time.ChronoUnit</a>
+ * <li><a href="https://docs.oracle.com/en/java/javase/17/docs/api/java.base/java/time/ZoneId.html">Java.time.ZoneId</a>
+ * <li><a href="https://docs.oracle.com/en/java/javase/17/docs/api/java.base/java/time/ZoneOffset.html">Java.time.ZoneOffset</a>
+ * <li><a href="https://docs.oracle.com/en/java/javase/17/docs/api/java.base/java/time/Instant.html">Java.time.Instant</a>
+ * </ul>
  */
 public class DateTimeHelper {
 
@@ -201,7 +203,9 @@ public class DateTimeHelper {
 	/**
 	 * Get the Java Zone ID of the passed in timezone identifier string
 	 *
-	 * @see https://docs.oracle.com/en/java/javase/17/docs/api/java.base/java/time/ZoneId.html
+	 * <ul>
+	 * <li><a href="https://docs.oracle.com/en/java/javase/17/docs/api/java.base/java/time/ZoneId.html">Java.time.ZoneId</a></li>
+	 * </ul>
 	 *
 	 * @param timezone The String timezone identifier
 	 *
@@ -218,7 +222,9 @@ public class DateTimeHelper {
 	 * This queries TimeZone.getDefault() to find the default time-zone and converts it to a ZoneId. If the system default time-zone is changed, then the
 	 * result of this method will also change.
 	 *
-	 * @see https://docs.oracle.com/en/java/javase/17/docs/api/java.base/java/time/ZoneId.html
+	 * <ul>
+	 * <li><a href="https://docs.oracle.com/en/java/javase/17/docs/api/java.base/java/time/ZoneId.html">Java.time.ZoneId</a></li>
+	 * </ul>
 	 *
 	 * @return Java Timezone java.time.ZoneId
 	 */

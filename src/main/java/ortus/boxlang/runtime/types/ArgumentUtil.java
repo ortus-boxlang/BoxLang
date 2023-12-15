@@ -28,12 +28,6 @@ import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
 /**
  * Represents an argument to a function or BIF
- *
- * @param required     Whether the argument is required
- * @param type         The type of the argument
- * @param name         The name of the argument
- * @param defaultValue The default value of the argument
- *
  */
 public class ArgumentUtil {
 

@@ -108,7 +108,7 @@ public abstract class AbstractTransformer implements Transformer {
 	 *
 	 * @param expr expression to be turned into a Key. May be a literal, or expression
 	 *
-	 * @return
+	 * @return The method call expression
 	 */
 	protected Node createKey( BoxExpr expr ) {
 		// TODO: optimize for the same key more than once in a template
@@ -124,7 +124,7 @@ public abstract class AbstractTransformer implements Transformer {
 	 *
 	 * @param expr expression to be turned into a Key. May be a literal, or expression
 	 *
-	 * @return
+	 * @return Instance of the Key.of method call expression
 	 */
 	protected Node createKey( String expr ) {
 		return createKey( new BoxStringLiteral( expr, null, expr ) );

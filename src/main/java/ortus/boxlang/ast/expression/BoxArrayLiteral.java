@@ -13,7 +13,8 @@ import ortus.boxlang.ast.Position;
  * An array literal is surrounded by square braces []
  * and contains zero or more comma-delimited expressions.
  * Example
- * {@snippet :
+ * 
+ * <pre>
  * []
  * [1,2,3]
  * ["foo","bar"]
@@ -22,8 +23,7 @@ import ortus.boxlang.ast.Position;
  * [3,4],
  * "brad"
  * ]
- * }
- * </code>
+ * </pre>
  */
 public class BoxArrayLiteral extends BoxExpr {
 

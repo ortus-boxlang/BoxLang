@@ -185,7 +185,7 @@ public class Key {
 	/**
 	 * Static builder of a case-insensitive key using the incoming key name
 	 *
-	 * @param name The key name to use.
+	 * @param obj Object value to use as the key
 	 *
 	 * @return A case-insensitive key class
 	 */
@@ -196,7 +196,7 @@ public class Key {
 	/**
 	 * Static builder of an Integer key
 	 *
-	 * @param name The key name to use.
+	 * @param obj Integer value to use as the key
 	 *
 	 * @return A case-insensitive key class
 	 */
@@ -207,7 +207,7 @@ public class Key {
 	/**
 	 * Static builder of an int key
 	 *
-	 * @param name The key name to use.
+	 * @param obj Int value to use as the key
 	 *
 	 * @return A case-insensitive key class
 	 */
@@ -218,7 +218,7 @@ public class Key {
 	/**
 	 * Static builder of a Double key
 	 *
-	 * @param name The key name to use.
+	 * @param obj Double value to use as the key
 	 *
 	 * @return An IntKey instance if the Double was an integer, otherwise a Key instance.
 	 */
@@ -229,7 +229,7 @@ public class Key {
 	/**
 	 * Static builder of an int key
 	 *
-	 * @param name The key name to use.
+	 * @param obj double value to use as the key
 	 *
 	 * @return An IntKey instance if the Double was an integer, otherwise a Key instance.
 	 */

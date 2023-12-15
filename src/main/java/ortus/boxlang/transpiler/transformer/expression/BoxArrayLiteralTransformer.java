@@ -22,7 +22,8 @@ import ortus.boxlang.transpiler.transformer.TransformerContext;
  * The array type in BoxLang is represented by the ortus.boxlang.runtime.types.Array
  * class, which implements the Java List interface,
  * and provides several methods of construction:
- * {@snippet :
+ * 
+ * <pre>
  * //empty array
  * new Array()
  * // From a native Java array
@@ -31,7 +32,7 @@ import ortus.boxlang.transpiler.transformer.TransformerContext;
  * Array.fromList(List.of("foo","bar","baz"))
  * // Varargs
  * Array.of("foo","bar","baz")
- * }
+ * </pre>
  */
 public class BoxArrayLiteralTransformer extends AbstractTransformer {
 

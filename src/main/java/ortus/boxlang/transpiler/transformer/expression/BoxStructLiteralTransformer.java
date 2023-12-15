@@ -22,9 +22,6 @@ import ortus.boxlang.transpiler.transformer.TransformerContext;
 
 /**
  * Transform a BoxStructUnorderedLiteral Node the equivalent Java Parser AST nodes
- * {@snippet :
- *
- * }
  */
 public class BoxStructLiteralTransformer extends AbstractTransformer {
 

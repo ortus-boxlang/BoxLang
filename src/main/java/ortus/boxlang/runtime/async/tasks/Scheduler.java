@@ -391,9 +391,9 @@ public class Scheduler {
 	/**
 	 * Called after ANY task runs
 	 *
-	 * @task The task that got executed
+	 * @param task   The task that got executed
 	 *
-	 * @result The result (if any) that the task produced
+	 * @param result The result (if any) that the task produced
 	 */
 	public void afterAnyTask( ScheduledTask task, Optional<?> result ) {
 		logger.atDebug().log(
@@ -633,10 +633,9 @@ public class Scheduler {
 		/**
 		 * Construct the record
 		 *
-		 * @param name     The name of the task
-		 * @param group    The group of the task
-		 * @param task     The task object
-		 * @param timezone The timezone for the task
+		 * @param name  The name of the task
+		 * @param group The group of the task
+		 * @param task  The task object
 		 */
 		public TaskRecord( String name, String group, ScheduledTask task ) {
 			this.name			= name;

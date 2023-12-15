@@ -48,7 +48,7 @@ import ortus.boxlang.runtime.util.Timer;
  * The ScheduledTask class is a {@link Runnable} that is used by the schedulers to execute tasks
  * in a more human and fluent approach.
  *
- * A task can be represented either by a {@link DynamicObject} or a Java {@Link Callable} Lambda.
+ * A task can be represented either by a {@link DynamicObject} or a Java {@link Callable} Lambda.
  *
  * You can use this class to create scheduled tasks in a human and friendly way!
  */
@@ -1419,8 +1419,6 @@ public class ScheduledTask implements Runnable {
 
 	/**
 	 * Set the period to be on Tuesdays
-	 *
-	 * @param time The specific time using 24 hour format => HH:mm, defaults to 00:00
 	 */
 	public ScheduledTask onTuesdays() throws InvalidAttributeValueException {
 		return everyWeekOn( 2 );

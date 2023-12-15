@@ -116,7 +116,7 @@ public class Struct implements Map<Key, Object>, IType, IReferenceable, IListena
 
 	/**
 	 * Construct a struct from a map. This wraps the original map.
-	 * Use the Struct( Type type, Map<? extends Object, ? extends Object> map ) method and
+	 * Use the {@code Struct( Type type, Map<? extends Object, ? extends Object> map )} method and
 	 * supply an explicit type to have this struct created with a copy of all the
 	 * keys/values in your map.
 	 *

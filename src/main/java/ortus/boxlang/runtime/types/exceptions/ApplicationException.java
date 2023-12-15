@@ -77,6 +77,7 @@ public class ApplicationException extends BoxLangException {
 	 *
 	 * @param message      The message
 	 * @param detail       The detail
+	 * @param type         The type
 	 * @param extendedInfo The extendedInfo
 	 * @param cause        The cause
 	 */

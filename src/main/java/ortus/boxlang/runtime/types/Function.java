@@ -102,7 +102,6 @@ public abstract class Function implements IType, IFunctionRunnable {
 	 * Create an arguments scope from the positional arguments
 	 *
 	 * @param positionalArguments The positional arguments
-	 * @param arguments           The declared arguments
 	 *
 	 * @return The arguments scope
 	 */
@@ -114,7 +113,6 @@ public abstract class Function implements IType, IFunctionRunnable {
 	 * Create an arguments scope from the named arguments
 	 *
 	 * @param namedArguments The named arguments
-	 * @param arguments      The declared arguments
 	 *
 	 * @return The arguments scope
 	 */
@@ -124,8 +122,6 @@ public abstract class Function implements IType, IFunctionRunnable {
 
 	/**
 	 * Create an arguments scope from no arguments
-	 * 
-	 * @param arguments The declared arguments
 	 *
 	 * @return The arguments scope
 	 */
