@@ -33,6 +33,7 @@ public abstract class Transpiler implements ITranspiler {
 	private int								tryCatchCounter		= 0;
 	private int								switchCounter		= 0;
 	private int								forInCounter		= 0;
+	private int								lambdaCounter		= 0;
 	private ArrayDeque<String>				currentContextName	= new ArrayDeque<>();
 	private List<ImportDefinition>			imports				= new ArrayList<ImportDefinition>();
 
@@ -144,14 +145,17 @@ public abstract class Transpiler implements ITranspiler {
 		 * - java:System
 		 * - java:java.lang.System
 		 * - java.lang.System
-		 * 
+		 *
 		 * right now, just
-		 * 
+		 *
 		 * - System
-		 * 
+		 *
 		 * as all the other options require grammar changes or are more complicated to recognize
 		 */
 		return imports.stream().anyMatch( i -> token.equalsIgnoreCase( i.alias() ) || token.equalsIgnoreCase( i.className() ) );
 	}
 
+	public int incrementAndGetLambdaCounter() {
+		return ++lambdaCounter;
+	}
 }
