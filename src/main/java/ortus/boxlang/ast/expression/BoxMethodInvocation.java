@@ -59,6 +59,7 @@ public class BoxMethodInvocation extends BoxExpr {
 	    String sourceText ) {
 		super( position, sourceText );
 		this.name	= name;
+		this.name.setParent( this );
 		this.obj	= obj;
 		this.obj.setParent( this );
 		this.safe		= safe;

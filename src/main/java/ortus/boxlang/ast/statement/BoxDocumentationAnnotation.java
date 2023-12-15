@@ -27,7 +27,9 @@ public class BoxDocumentationAnnotation extends BoxNode {
 	public BoxDocumentationAnnotation( BoxFQN key, BoxExpr value, Position position, String sourceText ) {
 		super( position, sourceText );
 		this.key	= key;
+		this.key.setParent( this );
 		this.value	= value;
+		this.value.setParent( this );
 	}
 
 	public BoxFQN getKey() {

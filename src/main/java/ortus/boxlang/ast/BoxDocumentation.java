@@ -16,6 +16,7 @@ public class BoxDocumentation extends BoxNode {
 	public BoxDocumentation( List<BoxNode> annotations, Position position, String sourceText ) {
 		super( position, sourceText );
 		this.annotations = annotations;
+		this.annotations.forEach( arg -> arg.setParent( this ) );
 	}
 
 	public List<BoxNode> getAnnotations() {

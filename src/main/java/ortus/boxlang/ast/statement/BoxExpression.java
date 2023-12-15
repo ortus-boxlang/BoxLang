@@ -37,6 +37,7 @@ public class BoxExpression extends BoxStatement {
 	public BoxExpression( BoxExpr expression, Position position, String sourceText ) {
 		super( position, sourceText );
 		this.expression = expression;
+		this.expression.setParent( this );
 	}
 
 	public BoxExpr getExpression() {
