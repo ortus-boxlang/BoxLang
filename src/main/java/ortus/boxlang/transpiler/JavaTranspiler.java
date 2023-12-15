@@ -79,22 +79,7 @@ import ortus.boxlang.ast.expression.BoxStringLiteral;
 import ortus.boxlang.ast.expression.BoxStructLiteral;
 import ortus.boxlang.ast.expression.BoxTernaryOperation;
 import ortus.boxlang.ast.expression.BoxUnaryOperation;
-import ortus.boxlang.ast.statement.BoxAssert;
-import ortus.boxlang.ast.statement.BoxBreak;
-import ortus.boxlang.ast.statement.BoxContinue;
-import ortus.boxlang.ast.statement.BoxDo;
-import ortus.boxlang.ast.statement.BoxExpression;
-import ortus.boxlang.ast.statement.BoxForIn;
-import ortus.boxlang.ast.statement.BoxForIndex;
-import ortus.boxlang.ast.statement.BoxFunctionDeclaration;
-import ortus.boxlang.ast.statement.BoxIfElse;
-import ortus.boxlang.ast.statement.BoxImport;
-import ortus.boxlang.ast.statement.BoxRethrow;
-import ortus.boxlang.ast.statement.BoxReturn;
-import ortus.boxlang.ast.statement.BoxSwitch;
-import ortus.boxlang.ast.statement.BoxThrow;
-import ortus.boxlang.ast.statement.BoxTry;
-import ortus.boxlang.ast.statement.BoxWhile;
+import ortus.boxlang.ast.statement.*;
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.runnables.BoxTemplate;
 import ortus.boxlang.runtime.runnables.compiler.JavaSourceString;
@@ -127,23 +112,7 @@ import ortus.boxlang.transpiler.transformer.expression.BoxTernaryOperationTransf
 import ortus.boxlang.transpiler.transformer.expression.BoxUnaryOperationTransformer;
 import ortus.boxlang.transpiler.transformer.indexer.CrossReference;
 import ortus.boxlang.transpiler.transformer.indexer.IndexPrettyPrinterVisitor;
-import ortus.boxlang.transpiler.transformer.statement.BoxAssertTransformer;
-import ortus.boxlang.transpiler.transformer.statement.BoxBreakTransformer;
-import ortus.boxlang.transpiler.transformer.statement.BoxContinueTransformer;
-import ortus.boxlang.transpiler.transformer.statement.BoxDoTransformer;
-import ortus.boxlang.transpiler.transformer.statement.BoxExpressionTransformer;
-import ortus.boxlang.transpiler.transformer.statement.BoxForInTransformer;
-import ortus.boxlang.transpiler.transformer.statement.BoxForIndexTransformer;
-import ortus.boxlang.transpiler.transformer.statement.BoxFunctionDeclarationTransformer;
-import ortus.boxlang.transpiler.transformer.statement.BoxIfElseTransformer;
-import ortus.boxlang.transpiler.transformer.statement.BoxImportTransformer;
-import ortus.boxlang.transpiler.transformer.statement.BoxRethrowTransformer;
-import ortus.boxlang.transpiler.transformer.statement.BoxReturnTransformer;
-import ortus.boxlang.transpiler.transformer.statement.BoxScriptTransformer;
-import ortus.boxlang.transpiler.transformer.statement.BoxSwitchTransformer;
-import ortus.boxlang.transpiler.transformer.statement.BoxThrowTransformer;
-import ortus.boxlang.transpiler.transformer.statement.BoxTryTransformer;
-import ortus.boxlang.transpiler.transformer.statement.BoxWhileTransformer;
+import ortus.boxlang.transpiler.transformer.statement.*;
 
 /**
  * BoxLang AST to Java AST transpiler
@@ -203,6 +172,7 @@ public class JavaTranspiler extends Transpiler {
 		registry.put( BoxThrow.class, new BoxThrowTransformer( this ) );
 		registry.put( BoxNewOperation.class, new BoxNewOperationTransformer( this ) );
 		registry.put( BoxFunctionDeclaration.class, new BoxFunctionDeclarationTransformer( this ) );
+		registry.put( BoxArgumentDeclaration.class, new BoxArgumentDeclarationTransformer( this ) );
 		registry.put( BoxReturn.class, new BoxReturnTransformer( this ) );
 		registry.put( BoxRethrow.class, new BoxRethrowTransformer( this ) );
 		registry.put( BoxImport.class, new BoxImportTransformer( this ) );

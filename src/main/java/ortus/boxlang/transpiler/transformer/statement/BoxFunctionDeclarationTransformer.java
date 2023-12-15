@@ -14,8 +14,15 @@
  */
 package ortus.boxlang.transpiler.transformer.statement;
 
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
+import com.github.javaparser.ast.body.VariableDeclarator;
+import com.github.javaparser.ast.expr.ArrayInitializerExpr;
+import com.github.javaparser.ast.expr.Expression;
+import com.github.javaparser.ast.expr.MethodCallExpr;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -53,10 +60,12 @@ public class BoxFunctionDeclarationTransformer extends AbstractTransformer {
 		import ortus.boxlang.runtime.scopes.IScope;
 		import ortus.boxlang.runtime.scopes.Key;
 		import ortus.boxlang.runtime.types.Function.Argument;
+		import ortus.boxlang.runtime.types.Struct;
 		import ortus.boxlang.runtime.types.UDF;
 		import ortus.boxlang.runtime.runnables.IBoxRunnable;
 		import ortus.boxlang.runtime.operators.*;
 		import ortus.boxlang.runtime.dynamic.casters.*;
+		import ortus.boxlang.runtime.loader.ImportDefinition;
 
 		// Classes Auto-Imported on all Templates and Classes by BoxLang
 		import java.time.LocalDateTime;
@@ -73,11 +82,13 @@ public class BoxFunctionDeclarationTransformer extends AbstractTransformer {
 		public class ${classname} extends UDF {
 			private static ${classname}				instance;
 			private final static Key				name		= Key.of( "${functionName}" );
-			private final static Argument[]			arguments	= new Argument[] {
-				${arguments}
-			};
-			private final static String				returnType	= "string";
-			private              Access		    access		= Access.PUBLIC;
+			private final static Argument[]			arguments	= new Argument[] {};
+			private final static String				returnType	= "${returnType}";
+			private              Access		    access		= Access.${access};
+
+			private final static Struct	annotations;
+
+			private final static Struct	documentation;
 
 			public Key getName() {
 				return name;
@@ -133,8 +144,17 @@ public class BoxFunctionDeclarationTransformer extends AbstractTransformer {
 			}
 
 			@Override
+			public Struct getAnnotations() {
+				return annotations;
+			}
+
+			@Override
+			public Struct getDocumentation() {
+				return documentation;
+			}
+			@Override
 			public Object _invoke( FunctionBoxContext context ) {
-				IScope variablesScope = ${contextName}.getScopeNearby( Key.of( "variables" ));
+				IScope variablesScope = context.getScopeNearby( Key.of( "variables" ));
 
 			}
 		}
@@ -149,7 +169,6 @@ public class BoxFunctionDeclarationTransformer extends AbstractTransformer {
 		Source					source		= function.getPosition().getSource();
 		String					packageName	= JavaTranspiler.getPackageName( source );
 		String					className	= JavaTranspiler.getClassName( source ) + "$" + function.getName();
-		String					arguments	= "";
 
 		if ( context == TransformerContext.REGISTER ) {
 			Map<String, String> values = Map.ofEntries(
@@ -167,9 +186,11 @@ public class BoxFunctionDeclarationTransformer extends AbstractTransformer {
 			Map<String, String>				values	= Map.ofEntries(
 			    Map.entry( "packageName", packageName ),
 			    Map.entry( "className", className ),
+			    Map.entry( "access", function.getAccessModifier().toString().toUpperCase() ),
 			    Map.entry( "functionName", function.getName() ),
-			    Map.entry( "arguments", arguments )
+			    Map.entry( "returnType", function.getType().getType().name() )
 			);
+
 			String							code	= PlaceholderHelper.resolve( template, values );
 			ParseResult<CompilationUnit>	result;
 			try {
@@ -182,6 +203,24 @@ public class BoxFunctionDeclarationTransformer extends AbstractTransformer {
 				// Temp debugging to see generated Java code
 				throw new BoxRuntimeException( result + "\n" + code );
 			}
+
+			/* Transform the arguments creating the initialization values */
+			ArrayInitializerExpr argInitializer = new ArrayInitializerExpr();
+			function.getArgs().forEach( arg -> {
+				Expression argument = ( Expression ) transpiler.transform( arg );
+				argInitializer.getValues().add( argument );
+			} );
+			result.getResult().orElseThrow().getType( 0 ).getFieldByName( "arguments" ).orElseThrow().getVariable( 0 ).setInitializer( argInitializer );
+
+			/* Transform the annotations creating the initialization value */
+			Expression annotationStruct = transformAnnotations( function.getAnnotations() );
+			result.getResult().orElseThrow().getType( 0 ).getFieldByName( "annotations" ).orElseThrow().getVariable( 0 ).setInitializer( annotationStruct );
+
+			/* Transform the documentation creating the initialization value */
+			Expression documentationStruct = transformDocumentation( function.getDocumentation() );
+			result.getResult().orElseThrow().getType( 0 ).getFieldByName( "documentation" ).orElseThrow().getVariable( 0 )
+			    .setInitializer( documentationStruct );
+
 			CompilationUnit		javaClass		= result.getResult().get();
 			MethodDeclaration	invokeMethod	= javaClass.findCompilationUnit().orElseThrow()
 			    .getClassByName( className ).orElseThrow()
