@@ -58,9 +58,9 @@ public class BoxMethodInvocation extends BoxExpr {
 	public BoxMethodInvocation( BoxExpr name, BoxExpr obj, List<BoxArgument> arguments, Boolean safe, Boolean usedDotAccess, Position position,
 	    String sourceText ) {
 		super( position, sourceText );
-		this.name	= name;
+		this.name = name;
 		this.name.setParent( this );
-		this.obj	= obj;
+		this.obj = obj;
 		this.obj.setParent( this );
 		this.safe		= safe;
 		this.arguments	= Collections.unmodifiableList( arguments );

@@ -49,9 +49,9 @@ public class BoxExpressionInvocation extends BoxExpr {
 	 */
 	public BoxExpressionInvocation( BoxExpr expr, List<BoxArgument> arguments, Position position, String sourceText ) {
 		super( position, sourceText );
-		this.expr		= expr;
+		this.expr = expr;
 		this.expr.setParent( this );
-		this.arguments	= Collections.unmodifiableList( arguments );
+		this.arguments = Collections.unmodifiableList( arguments );
 		this.arguments.forEach( arg -> arg.setParent( this ) );
 	}
 
