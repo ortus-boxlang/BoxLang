@@ -55,7 +55,8 @@ import ortus.boxlang.runtime.types.exceptions.KeyNotFoundException;
  * The default max threads is 20, you can override this by passing in a maxThreads value for some of the executors.
  * We also use a default timeout of 30 seconds for shutdown and await termination, you can override this as well.
  *
- * Please note that we do not use direct forced shutdown of the executors, we use the {@link AsyncService#shutdown()} and
+ * Please note that we do not use direct forced shutdown of the executors, we use the {@link ortus.boxlang.runtime.async.tasks.Scheduler#shutdown()}
+ * and
  * {@link ExecutorRecord#shutdownAndAwaitTermination(Long, TimeUnit)}
  * methods to allow the tasks to finish gracefully. If you want to force shutdown, you can do so by passing in a {code force = true}
  */

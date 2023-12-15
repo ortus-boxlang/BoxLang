@@ -15,7 +15,7 @@ public class ParseException extends BoxRuntimeException {
 	/**
 	 * Constructor
 	 *
-	 * @param message The message to display
+	 * @param issues List of issues encountered during parsing.
 	 */
 	public ParseException( List<Issue> issues ) {
 		super( "Error compiling source. " + issuesAsString( issues ) );

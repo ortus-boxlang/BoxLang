@@ -141,7 +141,7 @@ public class Array implements List<Object>, IType, IReferenceable, IListenable {
 	/**
 	 * Create a new Array from a list of values.
 	 *
-	 * @param values The values to create the Array from
+	 * @param arr List of values to copy into a new Array
 	 *
 	 * @return The Array
 	 */

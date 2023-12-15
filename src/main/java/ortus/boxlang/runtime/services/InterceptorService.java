@@ -76,8 +76,6 @@ public class InterceptorService extends BaseService {
 	 *
 	 * @param runtime The runtime singleton
 	 * @param points  The interception points to init the service with
-	 *
-	 * @return The singleton instance
 	 */
 	public InterceptorService( BoxRuntime runtime, Key... points ) {
 		super( runtime );

@@ -419,12 +419,9 @@ public class BaseBoxContext implements IBoxContext {
 	}
 
 	/**
-	 * Look for a class in the imports of the current template.
+	 * Retrieve all known imports for the current template
 	 *
-	 * @param name The name of the class to look for
-	 *
-	 * @return The laoded class, null if not found
-	 *
+	 * @return List of import definitions
 	 */
 	public List<ImportDefinition> getCurrentImports() {
 		BoxTemplate template = findClosestTemplate();
