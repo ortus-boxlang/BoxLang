@@ -235,7 +235,17 @@ public class Struct implements Map<Key, Object>, IType, IReferenceable, IListena
 	 *
 	 * @return {@code true} if this map contains a mapping for the specified
 	 */
-	@Override
+	public boolean containsKey( Key key ) {
+		return wrapped.containsKey( key );
+	}
+
+	/**
+	 * Returns {@code true} if this map contains a mapping for the specified {@code Key}
+	 *
+	 * @param key key whose presence in this map is to be tested
+	 *
+	 * @return {@code true} if this map contains a mapping for the specified
+	 */
 	public boolean containsKey( Object key ) {
 		return wrapped.containsKey( key );
 	}
@@ -283,7 +293,7 @@ public class Struct implements Map<Key, Object>, IType, IReferenceable, IListena
 	 * @return The value of the key or null if not found
 	 */
 	public Object get( String key ) {
-		return wrapped.get( Key.of( key ) );
+		return get( Key.of( key ) );
 	}
 
 	/**
@@ -359,7 +369,7 @@ public class Struct implements Map<Key, Object>, IType, IReferenceable, IListena
 	 */
 	@Override
 	public Object putIfAbsent( Key key, Object value ) {
-		if ( !wrapped.containsKey( key ) ) {
+		if ( !containsKey( key ) ) {
 			return wrapped.putIfAbsent(
 			    key,
 			    notifyListeners( key, wrapNull( value ) )
@@ -398,6 +408,15 @@ public class Struct implements Map<Key, Object>, IType, IReferenceable, IListena
 	 */
 	public Object remove( String key ) {
 		return remove( Key.of( key ) );
+	}
+
+	/**
+	 * Remove a value from the struct by a Key object
+	 *
+	 * @param key The String key to remove
+	 */
+	public Object remove( Key key ) {
+		return wrapped.remove( key );
 	}
 
 	/**

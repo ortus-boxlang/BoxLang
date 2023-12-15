@@ -58,11 +58,13 @@ public class ArgumentsScopeTest {
 		scope.assign( first, "gavin" );
 		assertThat( scope.dereference( first, false ) ).isEqualTo( "gavin" );
 		assertThat( scope.dereference( Key._1, false ) ).isEqualTo( "gavin" );
+		assertThat( scope.dereference( Key.of( "1" ), false ) ).isEqualTo( "gavin" );
 
 		// override key by number
 		scope.assign( Key._2, "edgardo" );
 		assertThat( scope.dereference( second, false ) ).isEqualTo( "edgardo" );
 		assertThat( scope.dereference( Key._2, false ) ).isEqualTo( "edgardo" );
+		assertThat( scope.dereference( Key.of( "2" ), false ) ).isEqualTo( "edgardo" );
 
 		// add
 		scope.assign( Key._4, "eric" );

@@ -179,7 +179,29 @@ public class Key {
 	 * @return A case-insensitive key class
 	 */
 	public static Key of( String name ) {
+		int len = name.length();
+		if ( len <= 3 ) {
+			byte[] bytes = name.getBytes();
+			// optimization for common cases where incoming string is actually an int up to 3 digits
+			if ( ( len == 1 && isDigit( bytes[ 0 ] ) )
+			    || ( len == 2 && isDigit( bytes[ 0 ] ) && isDigit( bytes[ 1 ] ) )
+			    || ( len == 3 && isDigit( bytes[ 0 ] ) && isDigit( bytes[ 1 ] ) && isDigit( bytes[ 2 ] ) ) ) {
+				return new IntKey( Integer.parseInt( name ) );
+
+			}
+		}
 		return new Key( name );
+	}
+
+	/**
+	 * A little helper to decide if a byte represents a digit 0-9
+	 * 
+	 * @param b The byte to check
+	 * 
+	 * @return True if the byte is a digit
+	 */
+	private static boolean isDigit( byte b ) {
+		return b >= 48 && b <= 57;
 	}
 
 	/**

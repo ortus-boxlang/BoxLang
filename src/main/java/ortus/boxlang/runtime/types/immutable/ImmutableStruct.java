@@ -218,6 +218,15 @@ public class ImmutableStruct extends Struct implements IImmutable {
 	}
 
 	/**
+	 * Remove a value from the struct by a Key object
+	 *
+	 * @param key The String key to remove
+	 */
+	public Object remove( Key key ) {
+		throw new UnmodifiableException( "Cannot modify immutable Struct" );
+	}
+
+	/**
 	 * Copies all of the mappings from the specified map to this map
 	 * (optional operation). It expects the specific key and object generics.
 	 */

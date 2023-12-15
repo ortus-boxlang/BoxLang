@@ -59,4 +59,21 @@ public class IntKeyTest {
 		assertFalse( key4 instanceof IntKey );
 		assertTrue( key1.equals( key5 ) );
 	}
+
+	@Test
+	public void testStaticConstructorsStringOptimizations() {
+		Key	key1	= Key.of( "1" );
+		Key	key2	= Key.of( "2" );
+		Key	key3	= Key.of( "10" );
+		Key	key4	= Key.of( "999" );
+		Key	key5	= Key.of( "5234324234" );
+		Key	key6	= Key.of( "5d" );
+
+		assertTrue( key1 instanceof IntKey );
+		assertTrue( key2 instanceof IntKey );
+		assertTrue( key3 instanceof IntKey );
+		assertTrue( key4 instanceof IntKey );
+		assertFalse( key5 instanceof IntKey );
+		assertFalse( key6 instanceof IntKey );
+	}
 }
