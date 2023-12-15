@@ -38,10 +38,14 @@ public class BoxRuntimeTest {
 	@DisplayName( "It can startup" )
 	@Test
 	public void testItCanStartUp() {
-		BoxRuntime instance2 = BoxRuntime.getInstance( true );
-		assertThat( BoxRuntime.getInstance() ).isSameInstanceAs( instance2 );
-		assertThat( instance2.inDebugMode() ).isTrue();
-		assertThat( instance2.getStartTime() ).isNotNull();
+		BoxRuntime runtime = BoxRuntime.getInstance( true );
+		assertThat( BoxRuntime.getInstance() ).isSameInstanceAs( runtime );
+		assertThat( runtime.getStartTime() ).isNotNull();
+
+		// Shutdown and restart to ensure we're in debug mode - just in case the runtime was already running from another test.
+		runtime.shutdown();
+		BoxRuntime runtime2 = BoxRuntime.getInstance( true );
+		assertThat( runtime2.inDebugMode() ).isTrue();
 	}
 
 	@DisplayName( "It can shutdown" )
