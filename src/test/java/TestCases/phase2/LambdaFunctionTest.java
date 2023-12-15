@@ -234,7 +234,7 @@ public class LambdaFunctionTest {
 
 		ArgumentsScope argsScope = ( ArgumentsScope ) variables.dereference( Key.of( "result" ), false );
 		assertThat( argsScope.size() ).isEqualTo( 4 );
-		Object[] args = argsScope.asArray();
+		Object[] args = argsScope.asNativeArray();
 		assertThat( args[ 0 ] ).isEqualTo( "value1" );
 		assertThat( args[ 1 ] ).isEqualTo( "value2" );
 		assertThat( args[ 2 ] ).isEqualTo( "value3" );
@@ -264,7 +264,7 @@ public class LambdaFunctionTest {
 
 		ArgumentsScope argsScope = ( ArgumentsScope ) variables.dereference( Key.of( "result" ), false );
 		assertThat( argsScope.size() ).isEqualTo( 4 );
-		Object[] args = argsScope.asArray();
+		Object[] args = argsScope.asNativeArray();
 		assertThat( args[ 0 ] ).isEqualTo( "value1" );
 		assertThat( args[ 1 ] ).isEqualTo( "value2" );
 		assertThat( args[ 2 ] ).isEqualTo( "value3" );
@@ -301,7 +301,7 @@ public class LambdaFunctionTest {
 
 		ArgumentsScope argsScope = ( ArgumentsScope ) variables.dereference( Key.of( "result" ), false );
 		assertThat( argsScope.size() ).isEqualTo( 4 );
-		Object[] args = argsScope.asArray();
+		Object[] args = argsScope.asNativeArray();
 		assertThat( args[ 0 ] ).isEqualTo( "value1" );
 		assertThat( args[ 1 ] ).isEqualTo( "value2" );
 		assertThat( args[ 2 ] ).isEqualTo( "value3" );

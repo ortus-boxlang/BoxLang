@@ -20,6 +20,7 @@ package ortus.boxlang.runtime.dynamic.casters;
 import java.util.List;
 
 import ortus.boxlang.runtime.interop.DynamicObject;
+import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
@@ -82,6 +83,10 @@ public class ArrayCaster {
 
 		if ( object instanceof List ) {
 			return Array.of( ( List<Object> ) object );
+		}
+
+		if ( object instanceof ArgumentsScope args ) {
+			return args.asArray();
 		}
 
 		if ( fail ) {
