@@ -77,6 +77,7 @@ public class BoxScriptTransformer extends AbstractTransformer {
 			private static final long					compileVersion	= 1L;
 			private static final LocalDateTime			compiledOn		= LocalDateTime.parse( "2023-09-27T10:15:30" );
 			private static final Object					ast				= null;
+			public static final Key[]					keys			= new Key[] {};
 
 			public ${className}() {
 			}

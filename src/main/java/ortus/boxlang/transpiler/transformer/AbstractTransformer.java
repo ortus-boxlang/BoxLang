@@ -32,6 +32,7 @@ import ortus.boxlang.ast.BoxNode;
 import ortus.boxlang.ast.expression.BoxBinaryOperation;
 import ortus.boxlang.ast.expression.BoxBinaryOperator;
 import ortus.boxlang.ast.expression.BoxComparisonOperation;
+import ortus.boxlang.ast.expression.BoxIntegerLiteral;
 import ortus.boxlang.ast.expression.BoxStringLiteral;
 import ortus.boxlang.ast.expression.BoxUnaryOperation;
 import ortus.boxlang.ast.expression.BoxUnaryOperator;
@@ -111,12 +112,19 @@ public abstract class AbstractTransformer implements Transformer {
 	 * @return The method call expression
 	 */
 	protected Node createKey( BoxExpr expr ) {
-		// TODO: optimize for the same key more than once in a template
-		NameExpr		nameExpr		= new NameExpr( "Key" );
-		MethodCallExpr	methodCallExpr	= new MethodCallExpr( nameExpr, "of" );
-		methodCallExpr.addArgument( ( Expression ) transpiler.transform( expr ) );
+		// If this key is a literal, we can optimize it
+		if ( expr instanceof BoxStringLiteral || expr instanceof BoxIntegerLiteral ) {
+			int pos = transpiler.registerKey( expr );
+			// Instead of Key.of(), we'll reference a static array of pre-created keys on the class
+			return parseExpression( transpiler.getProperty( "classname" ) + ".keys[" + pos + "]", new HashMap<>() );
+		} else {
+			// Dynamic values will be created at runtime
+			NameExpr		nameExpr		= new NameExpr( "Key" );
+			MethodCallExpr	methodCallExpr	= new MethodCallExpr( nameExpr, "of" );
+			methodCallExpr.addArgument( ( Expression ) transpiler.transform( expr ) );
 
-		return methodCallExpr;
+			return methodCallExpr;
+		}
 	}
 
 	/**

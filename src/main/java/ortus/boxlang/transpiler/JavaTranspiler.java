@@ -25,6 +25,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 import javax.tools.DiagnosticCollector;
@@ -40,14 +41,19 @@ import com.github.javaparser.ast.CompilationUnit;
 import com.github.javaparser.ast.Node;
 import com.github.javaparser.ast.body.FieldDeclaration;
 import com.github.javaparser.ast.body.MethodDeclaration;
+import com.github.javaparser.ast.expr.ArrayCreationExpr;
+import com.github.javaparser.ast.expr.IntegerLiteralExpr;
 import com.github.javaparser.ast.expr.MethodCallExpr;
+import com.github.javaparser.ast.expr.NameExpr;
 import com.github.javaparser.ast.expr.NullLiteralExpr;
+import com.github.javaparser.ast.expr.StringLiteralExpr;
 import com.github.javaparser.ast.stmt.BlockStmt;
 import com.github.javaparser.ast.stmt.ExpressionStmt;
 import com.github.javaparser.ast.stmt.ReturnStmt;
 import com.github.javaparser.ast.stmt.Statement;
 import com.github.javaparser.printer.configuration.DefaultPrinterConfiguration;
 
+import ortus.boxlang.ast.BoxExpr;
 import ortus.boxlang.ast.BoxNode;
 import ortus.boxlang.ast.BoxScript;
 import ortus.boxlang.ast.BoxStatement;
@@ -398,6 +404,10 @@ public class JavaTranspiler extends Transpiler {
 		    .getClassByName( className ).orElseThrow()
 		    .getFieldByName( "imports" ).orElseThrow();
 
+		FieldDeclaration		keys			= entryPoint.findCompilationUnit().orElseThrow()
+		    .getClassByName( className ).orElseThrow()
+		    .getFieldByName( "keys" ).orElseThrow();
+
 		pushContextName( "context" );
 		// Track if the latest BL AST node we encountered was a returnable expression
 		boolean lastStatementIsReturnable = false;
@@ -433,6 +443,21 @@ public class JavaTranspiler extends Transpiler {
 				}
 			}
 		}
+
+		// Add the keys to the static keys array
+		ArrayCreationExpr keysImp = ( ArrayCreationExpr ) keys.getVariable( 0 ).getInitializer().orElseThrow();
+		for ( Map.Entry<String, BoxExpr> entry : getKeys().entrySet() ) {
+			MethodCallExpr methodCallExpr = new MethodCallExpr( new NameExpr( "Key" ), "of" );
+			if ( entry.getValue() instanceof BoxStringLiteral str ) {
+				methodCallExpr.addArgument( new StringLiteralExpr( str.getValue() ) );
+			} else if ( entry.getValue() instanceof BoxIntegerLiteral id ) {
+				methodCallExpr.addArgument( new IntegerLiteralExpr( id.getValue() ) );
+			} else {
+				throw new IllegalStateException( "Unsupported key type: " + entry.getValue().getClass().getSimpleName() );
+			}
+			keysImp.getInitializer().get().getValues().add( methodCallExpr );
+		}
+
 		popContextName();
 
 		// Only try to return a value if the class has a return type for the _invoke() method...

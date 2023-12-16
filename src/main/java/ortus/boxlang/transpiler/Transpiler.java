@@ -8,11 +8,16 @@ import java.net.URLClassLoader;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 import com.github.javaparser.ast.Node;
 
+import ortus.boxlang.ast.BoxExpr;
 import ortus.boxlang.ast.BoxNode;
+import ortus.boxlang.ast.expression.BoxIntegerLiteral;
+import ortus.boxlang.ast.expression.BoxStringLiteral;
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.config.Configuration;
 import ortus.boxlang.runtime.context.IBoxContext;
@@ -36,6 +41,7 @@ public abstract class Transpiler implements ITranspiler {
 	private int								lambdaCounter		= 0;
 	private ArrayDeque<String>				currentContextName	= new ArrayDeque<>();
 	private List<ImportDefinition>			imports				= new ArrayList<ImportDefinition>();
+	private Map<String, BoxExpr>			keys				= new LinkedHashMap<String, BoxExpr>();
 
 	/**
 	 * Set a property
@@ -157,5 +163,26 @@ public abstract class Transpiler implements ITranspiler {
 
 	public int incrementAndGetLambdaCounter() {
 		return ++lambdaCounter;
+	}
+
+	public int registerKey( BoxExpr key ) {
+		String name;
+		if ( key instanceof BoxStringLiteral str ) {
+			name = str.getValue();
+		} else if ( key instanceof BoxIntegerLiteral intr ) {
+			name = intr.getValue();
+		} else {
+			throw new IllegalStateException( "Key must be a string or integer literal" );
+		}
+		// check if exists
+		if ( keys.keySet().contains( name ) ) {
+			return new ArrayList<>( keys.keySet() ).indexOf( name );
+		}
+		keys.put( name, key );
+		return keys.size() - 1;
+	}
+
+	public Map<String, BoxExpr> getKeys() {
+		return keys;
 	}
 }
