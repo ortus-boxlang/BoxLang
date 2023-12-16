@@ -25,7 +25,10 @@ import com.github.javaparser.ast.Node;
 import com.github.javaparser.ast.body.MethodDeclaration;
 import com.github.javaparser.ast.expr.ArrayInitializerExpr;
 import com.github.javaparser.ast.expr.Expression;
+import com.github.javaparser.ast.expr.NullLiteralExpr;
 import com.github.javaparser.ast.stmt.BlockStmt;
+import com.github.javaparser.ast.stmt.ExpressionStmt;
+import com.github.javaparser.ast.stmt.ReturnStmt;
 import com.github.javaparser.ast.stmt.Statement;
 
 import ortus.boxlang.ast.BoxNode;
@@ -71,7 +74,7 @@ public class BoxLambdaTransformer extends AbstractTransformer {
 
   		public class ${classname} extends Lambda {
 			private static ${classname}				instance;
-			private final static Key				name		= Key.of( "${lambdaName}" );
+			private final static Key				name		= Key.of( "Lambda" );
 			private final static Argument[]			arguments	= new Argument[] {};
 			private final static String				returnType	= "any";
 
@@ -166,15 +169,17 @@ public class BoxLambdaTransformer extends AbstractTransformer {
 	 */
 	@Override
 	public Node transform( BoxNode node, TransformerContext context ) throws IllegalStateException {
-		BoxLambda			boxLambda	= ( BoxLambda ) node;
-		String				packageName	= transpiler.getProperty( "packageName" );
-		String				lambdaName	= "$lambda" + transpiler.incrementAndGetLambdaCounter();
-		String				className	= transpiler.getProperty( "classname" ) + lambdaName;
+		BoxLambda			boxLambda			= ( BoxLambda ) node;
+		String				packageName			= transpiler.getProperty( "packageName" );
+		String				lambdaName			= "Lambda_" + transpiler.incrementAndGetLambdaCounter();
+		String				enclosingClassName	= transpiler.getProperty( "classname" );
+		String				className			= lambdaName;
 
-		Map<String, String>	values		= Map.ofEntries(
+		Map<String, String>	values				= Map.ofEntries(
 		    Map.entry( "packageName", packageName ),
 		    Map.entry( "className", className ),
-		    Map.entry( "lambdaName", lambdaName )
+		    Map.entry( "lambdaName", lambdaName ),
+		    Map.entry( "enclosingClassName", enclosingClassName )
 		);
 		transpiler.pushContextName( "context" );
 		String							code	= PlaceholderHelper.resolve( template, values );
@@ -202,19 +207,36 @@ public class BoxLambdaTransformer extends AbstractTransformer {
 		Expression annotationStruct = transformAnnotations( boxLambda.getAnnotations() );
 		result.getResult().orElseThrow().getType( 0 ).getFieldByName( "annotations" ).orElseThrow().getVariable( 0 ).setInitializer( annotationStruct );
 
-		MethodDeclaration invokeMethod = javaClass.findCompilationUnit().orElseThrow()
+		MethodDeclaration	invokeMethod	= javaClass.findCompilationUnit().orElseThrow()
 		    .getClassByName( className ).orElseThrow()
 		    .getMethodsByName( "_invoke" ).get( 0 );
 
+		BlockStmt			body			= invokeMethod.getBody().get();
 		for ( BoxStatement statement : boxLambda.getBody() ) {
 			Node javaStmt = transpiler.transform( statement );
 			if ( javaStmt instanceof BlockStmt stmt ) {
-				stmt.getStatements().forEach( it -> invokeMethod.getBody().get().addStatement( it ) );
+				stmt.getStatements().forEach( it -> body.addStatement( it ) );
 			} else {
-				invokeMethod.getBody().get().addStatement( ( Statement ) javaStmt );
+				body.addStatement( ( Statement ) javaStmt );
 			}
 		}
+		boolean needReturn = true;
+		// ensure last statemtent in body is wrapped in a return statement if it was an expression
+		if ( body.getStatements().size() > 0 ) {
+			Statement lastStatement = body.getStatement( body.getStatements().size() - 1 );
+			if ( lastStatement instanceof ExpressionStmt expr ) {
+				body.getStatements().remove( lastStatement );
+				body.addStatement( new ReturnStmt( expr.getExpression() ) );
+				needReturn = false;
+			}
+		}
+		// Ensure we have a return statement
+		if ( needReturn ) {
+			invokeMethod.getBody().get().addStatement( new ReturnStmt( new NullLiteralExpr() ) );
+		}
 		transpiler.popContextName();
-		return javaClass;
+
+		( ( JavaTranspiler ) transpiler ).getCallables().add( ( CompilationUnit ) javaClass );
+		return parseExpression( "${enclosingClassName}.${lambdaName}.getInstance()", values );
 	}
 }

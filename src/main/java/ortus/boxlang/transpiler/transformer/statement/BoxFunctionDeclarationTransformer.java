@@ -158,7 +158,7 @@ public class BoxFunctionDeclarationTransformer extends AbstractTransformer {
 
 		} else {
 
-			Map<String, String>				values	= Map.ofEntries(
+			Map<String, String> values = Map.ofEntries(
 			    Map.entry( "packageName", packageName ),
 			    Map.entry( "className", className ),
 			    Map.entry( "access", function.getAccessModifier().toString().toUpperCase() ),
@@ -166,6 +166,7 @@ public class BoxFunctionDeclarationTransformer extends AbstractTransformer {
 			    Map.entry( "returnType", function.getType().getType().name() ),
 			    Map.entry( "enclosingClassName", enclosingClassName )
 			);
+			transpiler.pushContextName( "context" );
 
 			String							code	= PlaceholderHelper.resolve( template, values );
 			ParseResult<CompilationUnit>	result;
@@ -212,6 +213,7 @@ public class BoxFunctionDeclarationTransformer extends AbstractTransformer {
 			}
 			// Ensure we have a return statement
 			invokeMethod.getBody().get().addStatement( new ReturnStmt( new NullLiteralExpr() ) );
+			transpiler.popContextName();
 			return javaClass;
 		}
 	}

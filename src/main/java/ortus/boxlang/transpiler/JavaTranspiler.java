@@ -66,6 +66,7 @@ import ortus.boxlang.ast.expression.BoxBooleanLiteral;
 import ortus.boxlang.ast.expression.BoxComparisonOperation;
 import ortus.boxlang.ast.expression.BoxDecimalLiteral;
 import ortus.boxlang.ast.expression.BoxDotAccess;
+import ortus.boxlang.ast.expression.BoxExpressionInvocation;
 import ortus.boxlang.ast.expression.BoxFQN;
 import ortus.boxlang.ast.expression.BoxFunctionInvocation;
 import ortus.boxlang.ast.expression.BoxIdentifier;
@@ -115,6 +116,7 @@ import ortus.boxlang.transpiler.transformer.expression.BoxBinaryOperationTransfo
 import ortus.boxlang.transpiler.transformer.expression.BoxBooleanLiteralTransformer;
 import ortus.boxlang.transpiler.transformer.expression.BoxComparisonOperationTransformer;
 import ortus.boxlang.transpiler.transformer.expression.BoxDecimalLiteralTransformer;
+import ortus.boxlang.transpiler.transformer.expression.BoxExpressionInvocationTransformer;
 import ortus.boxlang.transpiler.transformer.expression.BoxFQNTransformer;
 import ortus.boxlang.transpiler.transformer.expression.BoxFunctionInvocationTransformer;
 import ortus.boxlang.transpiler.transformer.expression.BoxIdentifierTransformer;
@@ -168,6 +170,7 @@ public class JavaTranspiler extends Transpiler {
 	private static HashMap<Class, Transformer>	registry		= new HashMap<>();
 	private List<Statement>						statements		= new ArrayList<>();
 	private List<CrossReference>				crossReferences	= new ArrayList<>();
+	private List<CompilationUnit>				callables		= new ArrayList<>();
 
 	public JavaTranspiler() {
 		registry.put( BoxScript.class, new BoxScriptTransformer( this ) );
@@ -222,6 +225,7 @@ public class JavaTranspiler extends Transpiler {
 		registry.put( BoxNull.class, new BoxNullTransformer( this ) );
 		registry.put( BoxLambda.class, new BoxLambdaTransformer( this ) );
 		registry.put( BoxInclude.class, new BoxIncludeTransformer( this ) );
+		registry.put( BoxExpressionInvocation.class, new BoxExpressionInvocationTransformer( this ) );
 	}
 
 	/**
@@ -390,21 +394,20 @@ public class JavaTranspiler extends Transpiler {
 	@Override
 	public TranspiledCode transpile( BoxNode node ) throws ApplicationException {
 
-		BoxScript				source			= ( BoxScript ) node;
-		CompilationUnit			entryPoint		= ( CompilationUnit ) transform( source );
-		List<CompilationUnit>	callables		= new ArrayList<>();
+		BoxScript			source			= ( BoxScript ) node;
+		CompilationUnit		entryPoint		= ( CompilationUnit ) transform( source );
 
-		String					className		= getProperty( "classname" );
+		String				className		= getProperty( "classname" );
 
-		MethodDeclaration		invokeMethod	= entryPoint.findCompilationUnit().orElseThrow()
+		MethodDeclaration	invokeMethod	= entryPoint.findCompilationUnit().orElseThrow()
 		    .getClassByName( className ).orElseThrow()
 		    .getMethodsByName( "_invoke" ).get( 0 );
 
-		FieldDeclaration		imports			= entryPoint.findCompilationUnit().orElseThrow()
+		FieldDeclaration	imports			= entryPoint.findCompilationUnit().orElseThrow()
 		    .getClassByName( className ).orElseThrow()
 		    .getFieldByName( "imports" ).orElseThrow();
 
-		FieldDeclaration		keys			= entryPoint.findCompilationUnit().orElseThrow()
+		FieldDeclaration	keys			= entryPoint.findCompilationUnit().orElseThrow()
 		    .getClassByName( className ).orElseThrow()
 		    .getFieldByName( "keys" ).orElseThrow();
 
@@ -420,7 +423,7 @@ public class JavaTranspiler extends Transpiler {
 			// and also hoist the declaration itself to the top of the _invoke() method.
 			if ( statement instanceof BoxFunctionDeclaration ) {
 				// a function declaration generate
-				callables.add( ( CompilationUnit ) javaASTNode );
+				getCallables().add( ( CompilationUnit ) javaASTNode );
 				Node registrer = transform( statement, TransformerContext.REGISTER );
 				invokeMethod.getBody().orElseThrow().addStatement( 0, ( Statement ) registrer );
 
@@ -479,7 +482,16 @@ public class JavaTranspiler extends Transpiler {
 		entryPoint.accept( visitor, null );
 		this.crossReferences.addAll( visitor.getCrossReferences() );
 
-		return new TranspiledCode( entryPoint, callables );
+		return new TranspiledCode( entryPoint, getCallables() );
+	}
+
+	/**
+	 * Get the list of compilation units that represent the callable functions
+	 * 
+	 * @return the list of compilation units
+	 */
+	public List<CompilationUnit> getCallables() {
+		return callables;
 	}
 
 }

@@ -14,14 +14,15 @@
  */
 package ortus.boxlang.ast.expression;
 
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+
 import ortus.boxlang.ast.BoxExpr;
 import ortus.boxlang.ast.BoxStatement;
 import ortus.boxlang.ast.Position;
 import ortus.boxlang.ast.statement.BoxAnnotation;
 import ortus.boxlang.ast.statement.BoxArgumentDeclaration;
-
-import java.util.Collections;
-import java.util.List;
 
 /**
  * Represent A lambda declaration
@@ -63,4 +64,15 @@ public class BoxLambda extends BoxExpr {
 	public List<BoxStatement> getBody() {
 		return body;
 	}
+
+	@Override
+	public Map<String, Object> toMap() {
+		Map<String, Object> map = super.toMap();
+
+		map.put( "annotations", annotations.stream().map( BoxAnnotation::toMap ).collect( java.util.stream.Collectors.toList() ) );
+		map.put( "args", args.stream().map( BoxArgumentDeclaration::toMap ).collect( java.util.stream.Collectors.toList() ) );
+		map.put( "body", body.stream().map( BoxStatement::toMap ).collect( java.util.stream.Collectors.toList() ) );
+		return map;
+	}
+
 }

@@ -1067,6 +1067,11 @@ public class BoxCFParser extends BoxAbstractParser {
 						args.add( argDeclaration );
 					}
 				}
+				if ( lambda.identifier() != null ) {
+					BoxArgumentDeclaration argDeclaration = new BoxArgumentDeclaration( false, "Any", lambda.identifier().getText(), null, new ArrayList<>(),
+					    new ArrayList<>(), getPosition( lambda.identifier() ), getSourceText( lambda.identifier() ) );
+					args.add( argDeclaration );
+				}
 				/* Process the annotations */
 				for ( CFParser.PostannotationContext annotation : lambda.postannotation() ) {
 					annotations.addAll( toAst( file, annotation ) );
@@ -1074,6 +1079,8 @@ public class BoxCFParser extends BoxAbstractParser {
 				/* Process the body */
 				if ( lambda.statementBlock() != null ) {
 					body.addAll( toAst( file, lambda.statementBlock() ) );
+				} else if ( lambda.simpleStatement() != null ) {
+					body.add( toAst( file, lambda.simpleStatement() ) );
 				}
 				return new BoxLambda( args, annotations, body, getPosition( expression ), getSourceText( expression ) );
 			}

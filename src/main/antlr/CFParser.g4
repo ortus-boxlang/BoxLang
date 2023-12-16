@@ -105,9 +105,10 @@ anonymousFunction:
 
 lambda:
 	LPAREN paramList? RPAREN (postannotation)* ARROW (
-		expression
+		simpleStatement
 		| statementBlock
-	);
+	)
+	| identifier ARROW (simpleStatement | statementBlock);
 //lambdaParameters: identifier (COMMA identifier)*;
 
 statementBlock: LBRACE (statement)* RBRACE eos?;
@@ -310,6 +311,7 @@ fqn: (identifier DOT)* identifier;
 expression:
 	assignment
 	| NULL
+	| anonymousFunction
 	| accessExpression
 	| unary
 	| pre = PLUSPLUS expression
@@ -317,7 +319,6 @@ expression:
 	| expression post = PLUSPLUS
 	| expression post = MINUSMINUS
 	| ICHAR expression ICHAR // #expression# outside of a string
-	| anonymousFunction
 	| expression QM expression COLON expression // Ternary
 	| expression ( POWER) expression
 	| expression (STAR | SLASH | PERCENT | BACKSLASH) expression

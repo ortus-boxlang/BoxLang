@@ -31,7 +31,8 @@ public class TestLambda extends TestBase {
 		JavaTranspiler transpiler = new JavaTranspiler();
 		transpiler.setProperty( "packageName", "ortus.test" );
 		transpiler.setProperty( "classname", "MyUDF" );
-		return transpiler.transform( result.getRoot() );
+		transpiler.transform( result.getRoot() );
+		return transpiler.getCallables().get( 0 );
 	}
 
 	@Test

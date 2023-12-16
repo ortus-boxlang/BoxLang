@@ -42,7 +42,6 @@ import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.meta.BoxMeta;
 import ortus.boxlang.runtime.types.meta.FunctionMeta;
 
-@Disabled
 public class LambdaFunctionTest {
 
 	static BoxRuntime	instance;
@@ -84,10 +83,10 @@ public class LambdaFunctionTest {
 
 		Struct meta = ( ( Lambda ) variables.dereference( foo, false ) ).getMetaData();
 
-		assertThat( meta.dereference( Key.of( "name" ), false ) ).isEqualTo( "lambda" );
+		assertThat( meta.dereference( Key.of( "name" ), false ) ).isEqualTo( "Lambda" );
 		// Defaults
 		assertThat( meta.dereference( Key.of( "hint" ), false ) ).isEqualTo( "" );
-		assertThat( meta.dereference( Key.of( "output" ), false ) ).isEqualTo( true );
+		assertThat( meta.dereference( Key.of( "output" ), false ) ).isEqualTo( false );
 		assertThat( meta.dereference( Key.of( "returnType" ), false ) ).isEqualTo( "any" );
 		assertThat( meta.dereference( Key.of( "access" ), false ) ).isEqualTo( "public" );
 
@@ -108,10 +107,10 @@ public class LambdaFunctionTest {
 
 		Struct meta = ( ( Lambda ) variables.dereference( foo, false ) ).getMetaData();
 
-		assertThat( meta.dereference( Key.of( "name" ), false ) ).isEqualTo( "lambda" );
+		assertThat( meta.dereference( Key.of( "name" ), false ) ).isEqualTo( "Lambda" );
 		// Defaults
 		assertThat( meta.dereference( Key.of( "hint" ), false ) ).isEqualTo( "" );
-		assertThat( meta.dereference( Key.of( "output" ), false ) ).isEqualTo( true );
+		assertThat( meta.dereference( Key.of( "output" ), false ) ).isEqualTo( false );
 		assertThat( meta.dereference( Key.of( "returnType" ), false ) ).isEqualTo( "any" );
 		assertThat( meta.dereference( Key.of( "access" ), false ) ).isEqualTo( "public" );
 
@@ -132,10 +131,10 @@ public class LambdaFunctionTest {
 
 		Struct meta = ( ( Lambda ) variables.dereference( foo, false ) ).getMetaData();
 
-		assertThat( meta.dereference( Key.of( "name" ), false ) ).isEqualTo( "lambda" );
+		assertThat( meta.dereference( Key.of( "name" ), false ) ).isEqualTo( "Lambda" );
 		// Defaults
 		assertThat( meta.dereference( Key.of( "hint" ), false ) ).isEqualTo( "" );
-		assertThat( meta.dereference( Key.of( "output" ), false ) ).isEqualTo( true );
+		assertThat( meta.dereference( Key.of( "output" ), false ) ).isEqualTo( false );
 		assertThat( meta.dereference( Key.of( "returnType" ), false ) ).isEqualTo( "any" );
 		assertThat( meta.dereference( Key.of( "access" ), false ) ).isEqualTo( "public" );
 
@@ -154,12 +153,12 @@ public class LambdaFunctionTest {
 		assertThat( variables.dereference( result, false ) instanceof ArgumentsScope ).isEqualTo( true );
 		ArgumentsScope args = ( ArgumentsScope ) variables.dereference( result, false );
 
-		assertThat( args.dereference( Key.of( "param1" ), false ) ).isEqualTo( null );
+		assertThat( args.dereference( Key.of( "param1" ), false ) ).isEqualTo( "Brad" );
 		assertThat( args.dereference( Key.of( "param2" ), false ) ).isEqualTo( "param2 default" );
 		assertThat( args.dereference( Key.of( "param3" ), false ) ).isEqualTo( null );
 		assertThat( args.dereference( Key.of( "param4" ), false ) ).isEqualTo( "param4 default" );
 
-		assertThat( args.dereference( Key.of( "1" ), false ) ).isEqualTo( null );
+		assertThat( args.dereference( Key.of( "1" ), false ) ).isEqualTo( "Brad" );
 		assertThat( args.dereference( Key.of( "2" ), false ) ).isEqualTo( "param2 default" );
 		assertThat( args.dereference( Key.of( "3" ), false ) ).isEqualTo( null );
 		assertThat( args.dereference( Key.of( "4" ), false ) ).isEqualTo( "param4 default" );
@@ -168,6 +167,7 @@ public class LambdaFunctionTest {
 
 	@DisplayName( "lambda metadata" )
 	@Test
+	@Disabled
 	public void testLambdaMetadata() {
 
 		instance.executeSource(
@@ -178,14 +178,14 @@ public class LambdaFunctionTest {
 		      ) -> {
 		        return "value";
 		      }
-		      result = foo();
+		      result = foo(4);
 		          """,
 		    context );
 		assertThat( variables.dereference( result, false ) ).isEqualTo( "value" );
 		Lambda	UDFfoo	= ( ( Lambda ) variables.dereference( foo, false ) );
 		Struct	meta	= UDFfoo.getMetaData();
 
-		assertThat( meta.dereference( Key.of( "name" ), false ) ).isEqualTo( "lambda" );
+		assertThat( meta.dereference( Key.of( "name" ), false ) ).isEqualTo( "Lambda" );
 		assertThat( meta.dereference( Key.of( "access" ), false ) ).isEqualTo( "public" );
 
 		Array args = ( ( Array ) meta.dereference( Key.of( "parameters" ), false ) );
@@ -195,7 +195,7 @@ public class LambdaFunctionTest {
 		assertThat( param1.dereference( Key.of( "name" ), false ) ).isEqualTo( "param1" );
 		assertThat( param1.dereference( Key.of( "hint" ), false ) ).isEqualTo( "My param" );
 		assertThat( param1.dereference( Key.of( "required" ), false ) ).isEqualTo( true );
-		assertThat( param1.dereference( Key.of( "type" ), false ) ).isEqualTo( "any" );
+		assertThat( param1.dereference( Key.of( "type" ), false ) ).isEqualTo( "string" );
 
 		Struct param2 = ( Struct ) args.get( 1 );
 		assertThat( param2.dereference( Key.of( "name" ), false ) ).isEqualTo( "param2" );
@@ -226,10 +226,9 @@ public class LambdaFunctionTest {
 
 		instance.executeSource(
 		    """
-		    result = {};
-		       foo = ( param1, param2 ) -> result = arguments;
-		       foo( 'value1', 'value2', "value3", "value4" );
-		       """,
+		    foo = ( param1, param2 ) -> arguments;
+		    result=foo( 'value1', 'value2', "value3", "value4" );
+		    """,
 		    context );
 
 		ArgumentsScope argsScope = ( ArgumentsScope ) variables.dereference( Key.of( "result" ), false );
@@ -250,16 +249,16 @@ public class LambdaFunctionTest {
 
 	@DisplayName( "named arguments" )
 	@Test
+	@Disabled
 	public void testNamedArguments() {
 
 		instance.executeSource(
 		    """
-		    result = {};
-		       foo = ( param1, param2 ) -> {
-		       	result = arguments;
-		       }
-		       foo( param1='value1', param2='value2', param3="value3", param4="value4" );
-		       """,
+		     foo = ( param1, param2 ) -> {
+		     	return arguments;
+		     }
+		    result =  foo( param1='value1', param2='value2', param3="value3", param4="value4" );
+		     """,
 		    context );
 
 		ArgumentsScope argsScope = ( ArgumentsScope ) variables.dereference( Key.of( "result" ), false );
@@ -280,15 +279,15 @@ public class LambdaFunctionTest {
 
 	@DisplayName( "argument collection" )
 	@Test
+	@Disabled
 	public void testArgumentCollection() {
 
 		instance.executeSource(
 		    """
-		        result = {};
 		        	foo = ( param1, param2 ) -> {
-		           	result = arguments;
+		           	return arguments;
 		           }
-		           foo(
+		        result =    foo(
 		    	argumentCollection={
 		    		param1:'value1',
 		    		param2 : 'value2',
@@ -391,7 +390,7 @@ public class LambdaFunctionTest {
 		           """,
 		    context );
 
-		assertThat( variables.dereference( result, false ) ).isEqualTo( "Brad" );
+		assertThat( variables.dereference( result, false ) ).isEqualTo( "Gavin" );
 
 	}
 
