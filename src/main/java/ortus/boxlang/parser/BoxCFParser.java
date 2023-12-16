@@ -84,6 +84,7 @@ import ortus.boxlang.ast.statement.BoxForIndex;
 import ortus.boxlang.ast.statement.BoxFunctionDeclaration;
 import ortus.boxlang.ast.statement.BoxIfElse;
 import ortus.boxlang.ast.statement.BoxImport;
+import ortus.boxlang.ast.statement.BoxInclude;
 import ortus.boxlang.ast.statement.BoxRethrow;
 import ortus.boxlang.ast.statement.BoxReturn;
 import ortus.boxlang.ast.statement.BoxReturnType;
@@ -363,9 +364,25 @@ public class BoxCFParser extends BoxAbstractParser {
 			return toAst( file, node.throw_() );
 		} else if ( node.rethrow() != null ) {
 			return toAst( file, node.rethrow() );
+		} else if ( node.include() != null ) {
+			return toAst( file, node.include() );
 		} else {
-			throw new IllegalStateException( "not implemented: " + node.getClass().getSimpleName() );
+			throw new IllegalStateException( "not implemented: " + getSourceText( node ) );
 		}
+	}
+
+	/**
+	 * Converts the include parser rule to the corresponding AST node
+	 *
+	 * @param file source file, if any
+	 * @param node ANTLR IncludeContext rule
+	 *
+	 * @return the corresponding AST BoxStatement
+	 *
+	 * @see BoxThrow
+	 */
+	private BoxStatement toAst( File file, CFParser.IncludeContext node ) {
+		return new BoxInclude( toAst( file, node.expression() ), getPosition( node ), getSourceText( node ) );
 	}
 
 	/**

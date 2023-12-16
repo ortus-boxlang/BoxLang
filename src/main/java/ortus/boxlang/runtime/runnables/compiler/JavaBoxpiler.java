@@ -251,6 +251,8 @@ public class JavaBoxpiler {
 					outerClass.addMember( innerClass.setPublic( true ).setStatic( true ) );
 				}
 
+				if ( false )
+					throw new BoxRuntimeException( javaASTs.getEntryPoint().toString() );
 				compileSource( javaASTs.getEntryPoint().toString(), fqn );
 
 			}

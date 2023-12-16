@@ -14,7 +14,6 @@
  */
 package ortus.boxlang.transpiler.transformer.statement;
 
-import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.attribute.FileTime;
@@ -167,8 +166,6 @@ public class BoxScriptTransformer extends AbstractTransformer {
 				FileTime		fileTime	= Files.getLastModifiedTime( file.getFile().toPath() );
 				LocalDateTime	ldt			= LocalDateTime.ofInstant( fileTime.toInstant(), ZoneId.systemDefault() );
 				lastModified = getDateTime( ldt );
-				File path = file.getFile().getCanonicalFile();
-				filePath = path.toString().replace( File.separatorChar + path.getName(), "" );
 			}
 		} catch ( IOException e ) {
 			throw new IllegalStateException();
@@ -181,7 +178,6 @@ public class BoxScriptTransformer extends AbstractTransformer {
 		String	returnType	= baseClass.equals( "BoxScript" ) ? "Object" : "void";
 		returnType = transpiler.getProperty( "returnType" ) != null ? transpiler.getProperty( "returnType" ) : returnType;
 
-		String							finalFilePath		= filePath;
 		String							finalLastModified	= lastModified;
 		Map<String, String>				values				= Map.ofEntries(
 		    Map.entry( "packagename", packageName ),
@@ -190,7 +186,7 @@ public class BoxScriptTransformer extends AbstractTransformer {
 		    Map.entry( "baseclass", baseClass ),
 		    Map.entry( "returnType", returnType ),
 		    Map.entry( "fileExtension", fileExt ),
-		    Map.entry( "fileFolderPath", "" /* finalFilePath.replaceAll( "\\\\", "\\\\\\\\" ) */ ),
+		    Map.entry( "fileFolderPath", filePath.replaceAll( "\\\\", "\\\\\\\\" ) ),
 		    Map.entry( "lastModifiedTimestamp", finalLastModified ),
 		    Map.entry( "compiledOnTimestamp", compiledOn ),
 		    Map.entry( "compileVersion", "1L" )

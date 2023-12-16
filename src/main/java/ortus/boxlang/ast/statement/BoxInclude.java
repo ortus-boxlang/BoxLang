@@ -1,10 +1,10 @@
 package ortus.boxlang.ast.statement;
 
+import java.util.Map;
+
 import ortus.boxlang.ast.BoxExpr;
 import ortus.boxlang.ast.BoxStatement;
 import ortus.boxlang.ast.Position;
-
-import java.util.Map;
 
 /**
  * AST Node representing an import statement
@@ -33,6 +33,7 @@ public class BoxInclude extends BoxStatement {
 	public Map<String, Object> toMap() {
 		Map<String, Object> map = super.toMap();
 
+		map.put( "file", file.toMap() );
 		return map;
 	}
 }

@@ -1,0 +1,4 @@
+
+myVar = "before"
+include "myInclude.cfs";
+result = fromInclude & " " & brad();

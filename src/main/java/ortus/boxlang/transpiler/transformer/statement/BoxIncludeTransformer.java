@@ -25,7 +25,7 @@ import com.github.javaparser.ast.Node;
 import com.github.javaparser.ast.expr.Expression;
 
 import ortus.boxlang.ast.BoxNode;
-import ortus.boxlang.ast.statement.BoxReturn;
+import ortus.boxlang.ast.statement.BoxInclude;
 import ortus.boxlang.transpiler.JavaTranspiler;
 import ortus.boxlang.transpiler.transformer.AbstractTransformer;
 import ortus.boxlang.transpiler.transformer.TransformerContext;
@@ -33,33 +33,29 @@ import ortus.boxlang.transpiler.transformer.TransformerContext;
 /**
  * Transform a Return Statement in the equivalent Java Parser AST nodes
  */
-public class BoxReturnTransformer extends AbstractTransformer {
+public class BoxIncludeTransformer extends AbstractTransformer {
 
-	Logger logger = LoggerFactory.getLogger( BoxReturnTransformer.class );
+	Logger logger = LoggerFactory.getLogger( BoxIncludeTransformer.class );
 
-	public BoxReturnTransformer( JavaTranspiler transpiler ) {
+	public BoxIncludeTransformer( JavaTranspiler transpiler ) {
 		super( transpiler );
 	}
 
 	@Override
 	public Node transform( BoxNode node, TransformerContext context ) throws IllegalStateException {
-		BoxReturn			boxReturn	= ( BoxReturn ) node;
+		BoxInclude			boxInclude	= ( BoxInclude ) node;
 
-		String				template	= "return;";
+		String				template	= "${contextName}.includeTemplate( StringCaster.cast( ${expr} ) );";
+		Expression			expr		= ( Expression ) transpiler.transform( boxInclude.getFile(), TransformerContext.RIGHT );
 		Map<String, String>	values		= new HashMap<>() {
 
 											{
 												put( "contextName", transpiler.peekContextName() );
+												put( "expr", expr.toString() );
 											}
 										};
-		if ( boxReturn.getExpression() != null ) {
-			Expression expr = ( Expression ) transpiler.transform( boxReturn.getExpression(), TransformerContext.RIGHT );
-			values.put( "expr", expr.toString() );
-			template = "return ${expr};";
-		}
-		// Avoid unreachable statement error
-		template = "if( true ) " + template;
-		Node javaStmt = parseStatement( template, values );
+
+		Node				javaStmt	= parseStatement( template, values );
 		logger.info( node.getSourceText() + " -> " + javaStmt );
 		addIndex( javaStmt, node );
 		return javaStmt;

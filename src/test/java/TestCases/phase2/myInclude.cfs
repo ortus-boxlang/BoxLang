@@ -1,0 +1,5 @@
+fromInclude = "found the value #myVar#";
+
+function brad() {
+    return "wood";
+}
