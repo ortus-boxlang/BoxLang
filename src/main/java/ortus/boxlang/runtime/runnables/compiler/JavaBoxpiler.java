@@ -367,6 +367,14 @@ public class JavaBoxpiler {
 		if ( packg.startsWith( "/" ) ) {
 			packg = packg.substring( 1 );
 		}
+		// trim trailing period
+		if ( packg.endsWith( "." ) ) {
+			packg = packg.substring( 0, packg.length() - 1 );
+		}
+		// trim trailing \ or /
+		if ( packg.endsWith( "\\" ) || packg.endsWith( "/" ) ) {
+			packg = packg.substring( 0, packg.length() - 1 );
+		}
 		// TODO: This needs a lot more work. There are tons of disallowed edge cases such as a folder that is a number.
 		// We probably need to iterate each path segment and clean or remove as neccessary to make it a valid package name.
 		// Also, I'd like cfincluded files to use the relative path as the package name, which will require some refactoring.
@@ -379,6 +387,8 @@ public class JavaBoxpiler {
 		packg	= packg.replaceAll( ":", "" );
 		// Replace \ with .
 		packg	= packg.replaceAll( "\\\\", "." );
+		// Replace .. with .
+		packg	= packg.replaceAll( "\\.\\.", "." );
 		// Remove any non alpha-numeric chars.
 		packg	= packg.replaceAll( "[^a-zA-Z0-9\\\\.]", "" );
 		return packg.toLowerCase();

@@ -343,7 +343,7 @@ public class InterceptorService extends BaseService {
 	 */
 	public void announce( Key state, Struct data ) {
 		if ( hasState( state ) ) {
-			logger.atDebug().log( "InterceptorService.announce() - announcing {}", state.getName() );
+			// logger.atDebug().log( "InterceptorService.announce() - announcing {}", state.getName() );
 
 			try {
 				getState( state ).announce( data );
@@ -353,9 +353,9 @@ public class InterceptorService extends BaseService {
 				throw new BoxRuntimeException( errorMessage );
 			}
 
-			logger.atDebug().log( "Finished announcing {}", state.getName() );
+			// logger.atDebug().log( "Finished announcing {}", state.getName() );
 		} else {
-			logger.atDebug().log( "InterceptorService.announce() - No state found for: {}", state.getName() );
+			// logger.atDebug().log( "InterceptorService.announce() - No state found for: {}", state.getName() );
 		}
 	}
 

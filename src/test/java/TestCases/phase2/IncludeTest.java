@@ -5,6 +5,7 @@ import static com.google.common.truth.Truth.assertThat;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -61,6 +62,20 @@ public class IncludeTest {
 		    context );
 
 		assertThat( variables.dereference( result, false ) ).isEqualTo( "found the value before wood" );
+	}
+
+	@DisplayName( "can include file again" )
+	@Test
+	@Disabled
+	public void testCanIncludeFileAgain() {
+		instance.executeSource(
+		    """
+		    include "generatePrimes3.cfs";
+		    include "generatePrimes3.cfs";
+		    include "generatePrimes3.cfs";
+		    """,
+		    context );
+
 	}
 
 }

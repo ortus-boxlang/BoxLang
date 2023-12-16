@@ -212,6 +212,9 @@ public class Key {
 	 * @return A case-insensitive key class
 	 */
 	public static Key of( Object obj ) {
+		if ( obj instanceof Double d ) {
+			return Key.of( d );
+		}
 		return new Key( obj.toString(), obj );
 	}
 
