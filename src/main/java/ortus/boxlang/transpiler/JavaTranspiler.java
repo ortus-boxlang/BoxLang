@@ -15,7 +15,6 @@
 package ortus.boxlang.transpiler;
 
 import java.io.File;
-import java.io.IOException;
 import java.io.Writer;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -52,20 +51,100 @@ import com.github.javaparser.printer.configuration.DefaultPrinterConfiguration;
 import ortus.boxlang.ast.BoxNode;
 import ortus.boxlang.ast.BoxScript;
 import ortus.boxlang.ast.BoxStatement;
-import ortus.boxlang.ast.Source;
-import ortus.boxlang.ast.SourceFile;
-import ortus.boxlang.ast.expression.*;
-import ortus.boxlang.ast.statement.*;
+import ortus.boxlang.ast.expression.BoxArgument;
+import ortus.boxlang.ast.expression.BoxArrayAccess;
+import ortus.boxlang.ast.expression.BoxArrayLiteral;
+import ortus.boxlang.ast.expression.BoxAssignment;
+import ortus.boxlang.ast.expression.BoxBinaryOperation;
+import ortus.boxlang.ast.expression.BoxBooleanLiteral;
+import ortus.boxlang.ast.expression.BoxComparisonOperation;
+import ortus.boxlang.ast.expression.BoxDecimalLiteral;
+import ortus.boxlang.ast.expression.BoxDotAccess;
+import ortus.boxlang.ast.expression.BoxFQN;
+import ortus.boxlang.ast.expression.BoxFunctionInvocation;
+import ortus.boxlang.ast.expression.BoxIdentifier;
+import ortus.boxlang.ast.expression.BoxIntegerLiteral;
+import ortus.boxlang.ast.expression.BoxLambda;
+import ortus.boxlang.ast.expression.BoxMethodInvocation;
+import ortus.boxlang.ast.expression.BoxNegateOperation;
+import ortus.boxlang.ast.expression.BoxNewOperation;
+import ortus.boxlang.ast.expression.BoxNull;
+import ortus.boxlang.ast.expression.BoxParenthesis;
+import ortus.boxlang.ast.expression.BoxScope;
+import ortus.boxlang.ast.expression.BoxStringConcat;
+import ortus.boxlang.ast.expression.BoxStringInterpolation;
+import ortus.boxlang.ast.expression.BoxStringLiteral;
+import ortus.boxlang.ast.expression.BoxStructLiteral;
+import ortus.boxlang.ast.expression.BoxTernaryOperation;
+import ortus.boxlang.ast.expression.BoxUnaryOperation;
+import ortus.boxlang.ast.statement.BoxArgumentDeclaration;
+import ortus.boxlang.ast.statement.BoxAssert;
+import ortus.boxlang.ast.statement.BoxBreak;
+import ortus.boxlang.ast.statement.BoxContinue;
+import ortus.boxlang.ast.statement.BoxDo;
+import ortus.boxlang.ast.statement.BoxExpression;
+import ortus.boxlang.ast.statement.BoxForIn;
+import ortus.boxlang.ast.statement.BoxForIndex;
+import ortus.boxlang.ast.statement.BoxFunctionDeclaration;
+import ortus.boxlang.ast.statement.BoxIfElse;
+import ortus.boxlang.ast.statement.BoxImport;
+import ortus.boxlang.ast.statement.BoxRethrow;
+import ortus.boxlang.ast.statement.BoxReturn;
+import ortus.boxlang.ast.statement.BoxSwitch;
+import ortus.boxlang.ast.statement.BoxThrow;
+import ortus.boxlang.ast.statement.BoxTry;
+import ortus.boxlang.ast.statement.BoxWhile;
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.runnables.BoxTemplate;
 import ortus.boxlang.runtime.runnables.compiler.JavaSourceString;
 import ortus.boxlang.runtime.types.exceptions.ApplicationException;
 import ortus.boxlang.transpiler.transformer.Transformer;
 import ortus.boxlang.transpiler.transformer.TransformerContext;
-import ortus.boxlang.transpiler.transformer.expression.*;
+import ortus.boxlang.transpiler.transformer.expression.BoxAccessTransformer;
+import ortus.boxlang.transpiler.transformer.expression.BoxArgumentTransformer;
+import ortus.boxlang.transpiler.transformer.expression.BoxArrayLiteralTransformer;
+import ortus.boxlang.transpiler.transformer.expression.BoxAssignmentTransformer;
+import ortus.boxlang.transpiler.transformer.expression.BoxBinaryOperationTransformer;
+import ortus.boxlang.transpiler.transformer.expression.BoxBooleanLiteralTransformer;
+import ortus.boxlang.transpiler.transformer.expression.BoxComparisonOperationTransformer;
+import ortus.boxlang.transpiler.transformer.expression.BoxDecimalLiteralTransformer;
+import ortus.boxlang.transpiler.transformer.expression.BoxFQNTransformer;
+import ortus.boxlang.transpiler.transformer.expression.BoxFunctionInvocationTransformer;
+import ortus.boxlang.transpiler.transformer.expression.BoxIdentifierTransformer;
+import ortus.boxlang.transpiler.transformer.expression.BoxIntegerLiteralTransformer;
+import ortus.boxlang.transpiler.transformer.expression.BoxLambdaTransformer;
+import ortus.boxlang.transpiler.transformer.expression.BoxMethodInvocationTransformer;
+import ortus.boxlang.transpiler.transformer.expression.BoxNegateOperationTransformer;
+import ortus.boxlang.transpiler.transformer.expression.BoxNewOperationTransformer;
+import ortus.boxlang.transpiler.transformer.expression.BoxNullTransformer;
+import ortus.boxlang.transpiler.transformer.expression.BoxParenthesisTransformer;
+import ortus.boxlang.transpiler.transformer.expression.BoxScopeTransformer;
+import ortus.boxlang.transpiler.transformer.expression.BoxStringConcatTransformer;
+import ortus.boxlang.transpiler.transformer.expression.BoxStringInterpolationTransformer;
+import ortus.boxlang.transpiler.transformer.expression.BoxStringLiteralTransformer;
+import ortus.boxlang.transpiler.transformer.expression.BoxStructLiteralTransformer;
+import ortus.boxlang.transpiler.transformer.expression.BoxTernaryOperationTransformer;
+import ortus.boxlang.transpiler.transformer.expression.BoxUnaryOperationTransformer;
 import ortus.boxlang.transpiler.transformer.indexer.CrossReference;
 import ortus.boxlang.transpiler.transformer.indexer.IndexPrettyPrinterVisitor;
-import ortus.boxlang.transpiler.transformer.statement.*;
+import ortus.boxlang.transpiler.transformer.statement.BoxArgumentDeclarationTransformer;
+import ortus.boxlang.transpiler.transformer.statement.BoxAssertTransformer;
+import ortus.boxlang.transpiler.transformer.statement.BoxBreakTransformer;
+import ortus.boxlang.transpiler.transformer.statement.BoxContinueTransformer;
+import ortus.boxlang.transpiler.transformer.statement.BoxDoTransformer;
+import ortus.boxlang.transpiler.transformer.statement.BoxExpressionTransformer;
+import ortus.boxlang.transpiler.transformer.statement.BoxForInTransformer;
+import ortus.boxlang.transpiler.transformer.statement.BoxForIndexTransformer;
+import ortus.boxlang.transpiler.transformer.statement.BoxFunctionDeclarationTransformer;
+import ortus.boxlang.transpiler.transformer.statement.BoxIfElseTransformer;
+import ortus.boxlang.transpiler.transformer.statement.BoxImportTransformer;
+import ortus.boxlang.transpiler.transformer.statement.BoxRethrowTransformer;
+import ortus.boxlang.transpiler.transformer.statement.BoxReturnTransformer;
+import ortus.boxlang.transpiler.transformer.statement.BoxScriptTransformer;
+import ortus.boxlang.transpiler.transformer.statement.BoxSwitchTransformer;
+import ortus.boxlang.transpiler.transformer.statement.BoxThrowTransformer;
+import ortus.boxlang.transpiler.transformer.statement.BoxTryTransformer;
+import ortus.boxlang.transpiler.transformer.statement.BoxWhileTransformer;
 
 /**
  * BoxLang AST to Java AST transpiler
@@ -183,59 +262,6 @@ public class JavaTranspiler extends Transpiler {
 
 	public List<CrossReference> getCrossReferences() {
 		return crossReferences;
-	}
-
-	/**
-	 * Transforms the filename into the class name
-	 *
-	 * @param source
-	 *
-	 * @return returns the class name according the name conventions Test.ext - Test$ext
-	 */
-	public static String getClassName( Source source ) {
-		if ( source instanceof SourceFile file && file.getFile() != null ) {
-			String name = file.getFile().getName().replace( ".", "$" );
-			name = name.substring( 0, 1 ).toUpperCase() + name.substring( 1 );
-			return name;
-		}
-		return "TestClass";
-	}
-
-	/**
-	 * Transforms the path into the package name
-	 *
-	 * @param source
-	 *
-	 * @return returns the class name according the name conventions Test.ext - Test$ext
-	 */
-	public static String getPackageName( Source source ) throws IllegalStateException {
-		if ( source instanceof SourceFile file && file.getFile() != null ) {
-			try {
-				File	path	= file.getFile().getCanonicalFile();
-				String	packg	= path.toString().replace( File.separatorChar + path.getName(), "" );
-				if ( packg.startsWith( "/" ) ) {
-					packg = packg.substring( 1 );
-				}
-				// TODO: This needs a lot more work. There are tons of disallowed edge cases such as a folder that is a number.
-				// We probably need to iterate each path segment and clean or remove as neccessary to make it a valid package name.
-				// Also, I'd like cfincluded files to use the relative path as the package name, which will require some refactoring.
-
-				// Take out periods in folder names
-				packg	= packg.replaceAll( "\\.", "" );
-				// Replace / with .
-				packg	= packg.replaceAll( "/", "." );
-				// Remove any : from Windows drives
-				packg	= packg.replaceAll( ":", "" );
-				// Replace \ with .
-				packg	= packg.replaceAll( "\\\\", "." );
-				// Remove any non alpha-numeric chars.
-				packg	= packg.replaceAll( "[^a-zA-Z0-9\\\\.]", "" );
-				return packg;
-			} catch ( IOException e ) {
-				throw new IllegalStateException( e );
-			}
-		}
-		return "ortus.test";
 	}
 
 	/**
@@ -359,8 +385,7 @@ public class JavaTranspiler extends Transpiler {
 		CompilationUnit			entryPoint		= ( CompilationUnit ) transform( source );
 		List<CompilationUnit>	callables		= new ArrayList<>();
 
-		String					className		= getProperty( "classname" ) != null ? getProperty( "classname" )
-		    : getClassName( source.getPosition().getSource() );
+		String					className		= getProperty( "classname" );
 
 		MethodDeclaration		invokeMethod	= entryPoint.findCompilationUnit().orElseThrow()
 		    .getClassByName( className ).orElseThrow()

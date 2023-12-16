@@ -14,15 +14,8 @@
  */
 package ortus.boxlang.transpiler.transformer.statement;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
-import com.github.javaparser.ast.body.VariableDeclarator;
-import com.github.javaparser.ast.expr.ArrayInitializerExpr;
-import com.github.javaparser.ast.expr.Expression;
-import com.github.javaparser.ast.expr.MethodCallExpr;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -30,12 +23,15 @@ import com.github.javaparser.ParseResult;
 import com.github.javaparser.ast.CompilationUnit;
 import com.github.javaparser.ast.Node;
 import com.github.javaparser.ast.body.MethodDeclaration;
+import com.github.javaparser.ast.expr.ArrayInitializerExpr;
+import com.github.javaparser.ast.expr.Expression;
+import com.github.javaparser.ast.expr.NullLiteralExpr;
 import com.github.javaparser.ast.stmt.BlockStmt;
+import com.github.javaparser.ast.stmt.ReturnStmt;
 import com.github.javaparser.ast.stmt.Statement;
 
 import ortus.boxlang.ast.BoxNode;
 import ortus.boxlang.ast.BoxStatement;
-import ortus.boxlang.ast.Source;
 import ortus.boxlang.ast.statement.BoxFunctionDeclaration;
 import ortus.boxlang.runtime.config.util.PlaceholderHelper;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
@@ -52,32 +48,6 @@ public class BoxFunctionDeclarationTransformer extends AbstractTransformer {
 	// @formatter:off
 	private String template = """
 		package ${packageName};
-
-		import ortus.boxlang.runtime.context.FunctionBoxContext;
-		import ortus.boxlang.runtime.context.IBoxContext;
-		import ortus.boxlang.runtime.context.ScriptingBoxContext;
-		import ortus.boxlang.runtime.scopes.ArgumentsScope;
-		import ortus.boxlang.runtime.scopes.IScope;
-		import ortus.boxlang.runtime.scopes.Key;
-		import ortus.boxlang.runtime.types.Function.Argument;
-		import ortus.boxlang.runtime.types.Struct;
-		import ortus.boxlang.runtime.types.UDF;
-		import ortus.boxlang.runtime.runnables.IBoxRunnable;
-		import ortus.boxlang.runtime.operators.*;
-		import ortus.boxlang.runtime.dynamic.casters.*;
-		import ortus.boxlang.runtime.loader.ImportDefinition;
-
-		// Classes Auto-Imported on all Templates and Classes by BoxLang
-		import java.time.LocalDateTime;
-		import java.time.Instant;
-		import java.lang.System;
-		import java.lang.String;
-		import java.lang.Character;
-		import java.lang.Boolean;
-		import java.lang.Double;
-		import java.lang.Integer;
-		import java.util.*;
-		import java.nio.file.*;
 
 		public class ${classname} extends UDF {
 			private static ${classname}				instance;
@@ -152,9 +122,13 @@ public class BoxFunctionDeclarationTransformer extends AbstractTransformer {
 			public Struct getDocumentation() {
 				return documentation;
 			}
+			
+			public List<ImportDefinition> getImports() {
+				return null;
+			}
+
 			@Override
 			public Object _invoke( FunctionBoxContext context ) {
-				IScope variablesScope = context.getScopeNearby( Key.of( "variables" ));
 
 			}
 		}
@@ -165,17 +139,18 @@ public class BoxFunctionDeclarationTransformer extends AbstractTransformer {
 	// @formatter:on
 	@Override
 	public Node transform( BoxNode node, TransformerContext context ) throws IllegalStateException {
-		BoxFunctionDeclaration	function	= ( BoxFunctionDeclaration ) node;
-		Source					source		= function.getPosition().getSource();
-		String					packageName	= JavaTranspiler.getPackageName( source );
-		String					className	= JavaTranspiler.getClassName( source ) + "$" + function.getName();
+		BoxFunctionDeclaration	function			= ( BoxFunctionDeclaration ) node;
+		String					packageName			= transpiler.getProperty( "packageName" );
+		String					enclosingClassName	= transpiler.getProperty( "classname" );
+		String					className			= "Func_" + function.getName();
 
 		if ( context == TransformerContext.REGISTER ) {
 			Map<String, String> values = Map.ofEntries(
 			    Map.entry( "className", className ),
-			    Map.entry( "contextName", transpiler.peekContextName() )
+			    Map.entry( "contextName", transpiler.peekContextName() ),
+			    Map.entry( "enclosingClassName", enclosingClassName )
 			);
-			template = "${contextName}.registerUDF( ${className}.getInstance() );";
+			template = "${contextName}.registerUDF( ${enclosingClassName}.${className}.getInstance() );";
 			Node javaStmt = parseStatement( template, values );
 			logger.info( node.getSourceText() + " -> " + javaStmt );
 			addIndex( javaStmt, node );
@@ -188,7 +163,8 @@ public class BoxFunctionDeclarationTransformer extends AbstractTransformer {
 			    Map.entry( "className", className ),
 			    Map.entry( "access", function.getAccessModifier().toString().toUpperCase() ),
 			    Map.entry( "functionName", function.getName() ),
-			    Map.entry( "returnType", function.getType().getType().name() )
+			    Map.entry( "returnType", function.getType().getType().name() ),
+			    Map.entry( "enclosingClassName", enclosingClassName )
 			);
 
 			String							code	= PlaceholderHelper.resolve( template, values );
@@ -234,6 +210,8 @@ public class BoxFunctionDeclarationTransformer extends AbstractTransformer {
 					invokeMethod.getBody().get().addStatement( ( Statement ) javaStmt );
 				}
 			}
+			// Ensure we have a return statement
+			invokeMethod.getBody().get().addStatement( new ReturnStmt( new NullLiteralExpr() ) );
 			return javaClass;
 		}
 	}

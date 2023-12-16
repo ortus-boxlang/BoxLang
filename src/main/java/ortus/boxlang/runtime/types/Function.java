@@ -267,7 +267,7 @@ public abstract class Function implements IType, IFunctionRunnable {
 		if ( getAnnotations() != null ) {
 			meta.putAll( getAnnotations() );
 		}
-		meta.put( "name", getName() );
+		meta.put( "name", getName().getName() );
 		meta.put( "returnType", getReturnType() );
 		meta.putIfAbsent( "hint", "" );
 		meta.putIfAbsent( "output", false );
@@ -275,7 +275,7 @@ public abstract class Function implements IType, IFunctionRunnable {
 		Array params = new Array();
 		for ( Argument argument : getArguments() ) {
 			Struct arg = new Struct();
-			arg.put( "name", argument.name() );
+			arg.put( "name", argument.name().getName() );
 			arg.put( "required", argument.required() );
 			arg.put( "type", argument.type() );
 			arg.put( "default", argument.defaultValue() );

@@ -251,6 +251,7 @@ reservedKeyword:
 	| WHEN
 	| DOES
 	| ANY
+	| PARAM
 	//    | 	NOT
 	| CONTAIN
 	| JAVA

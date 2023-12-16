@@ -59,12 +59,15 @@ public class BoxScriptTransformer extends AbstractTransformer {
 		import ortus.boxlang.runtime.dynamic.casters.*;
 		import ortus.boxlang.runtime.types.exceptions.ExceptionUtil;
 		import ortus.boxlang.runtime.types.*;
+		import ortus.boxlang.runtime.runnables.IBoxRunnable;
 
 		import java.nio.file.Path;
 		import java.nio.file.Paths;
 		import java.time.LocalDateTime;
 		import java.util.List;
 		import java.util.Iterator;
+		import java.util.Map;
+		import java.util.HashMap;
 
 		public class ${className} extends ${baseclass} {
 
@@ -149,8 +152,8 @@ public class BoxScriptTransformer extends AbstractTransformer {
 
 		BoxScript	script			= ( BoxScript ) node;
 		Source		source			= script.getPosition().getSource();
-		String		packageName		= JavaTranspiler.getPackageName( source );
-		String		className		= JavaTranspiler.getClassName( source );
+		String		packageName		= transpiler.getProperty( "packageName" );
+		String		className		= transpiler.getProperty( "classname" );
 		String		fileName		= source instanceof SourceFile file && file.getFile() != null ? file.getFile().getName() : "unknown";
 		String		fileExt			= fileName.substring( fileName.lastIndexOf( "." ) + 1 );
 		String		filePath		= source instanceof SourceFile file && file.getFile() != null ? file.getFile().getAbsolutePath() : "unknown";

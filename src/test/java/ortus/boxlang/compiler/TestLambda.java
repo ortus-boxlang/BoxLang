@@ -1,24 +1,25 @@
 package ortus.boxlang.compiler;
 
+import static org.junit.Assert.assertTrue;
+
+import java.io.IOException;
+
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
+
 import com.github.javaparser.ast.CompilationUnit;
 import com.github.javaparser.ast.Node;
 import com.github.javaparser.ast.body.VariableDeclarator;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Test;
+
 import ortus.boxlang.ast.BoxScript;
 import ortus.boxlang.ast.expression.BoxLambda;
 import ortus.boxlang.ast.expression.BoxStringLiteral;
 import ortus.boxlang.ast.statement.BoxArgumentDeclaration;
 import ortus.boxlang.ast.statement.BoxExpression;
-import ortus.boxlang.ast.statement.BoxFunctionDeclaration;
 import ortus.boxlang.parser.BoxCFParser;
 import ortus.boxlang.parser.BoxParser;
 import ortus.boxlang.parser.ParsingResult;
 import ortus.boxlang.transpiler.JavaTranspiler;
-
-import java.io.IOException;
-
-import static org.junit.Assert.assertTrue;
 
 public class TestLambda extends TestBase {
 
@@ -27,7 +28,10 @@ public class TestLambda extends TestBase {
 		ParsingResult	result	= parser.parseExpression( expression );
 		assertTrue( result.isCorrect() );
 
-		return new JavaTranspiler().transform( result.getRoot() );
+		JavaTranspiler transpiler = new JavaTranspiler();
+		transpiler.setProperty( "packageName", "ortus.test" );
+		transpiler.setProperty( "classname", "MyUDF" );
+		return transpiler.transform( result.getRoot() );
 	}
 
 	@Test
@@ -48,14 +52,12 @@ public class TestLambda extends TestBase {
 					Assertions.assertEquals( 1, lambda.getAnnotations().size() );
 
 					BoxArgumentDeclaration arg;
-					Assertions.assertEquals( 1, lambda.getArgs().get(0).getAnnotations().size()  );
-					Assertions.assertEquals( 1, lambda.getArgs().get(1).getAnnotations().size()  );
+					Assertions.assertEquals( 1, lambda.getArgs().get( 0 ).getAnnotations().size() );
+					Assertions.assertEquals( 1, lambda.getArgs().get( 1 ).getAnnotations().size() );
 
 				}
 			} );
 		} );
-
-
 
 		CompilationUnit javaAST = ( CompilationUnit ) transformLambda( code );
 		System.out.println( javaAST.toString() );

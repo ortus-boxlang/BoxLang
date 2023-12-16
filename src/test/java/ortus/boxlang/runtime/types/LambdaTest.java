@@ -244,7 +244,7 @@ public class LambdaTest {
 		Lambda		lambda		= new SampleLambda( args, "Brad" );
 
 		Struct		meta		= lambda.getMetaData();
-		assertThat( meta.dereference( Key.of( "name" ), false ) ).isEqualTo( Key.of( "lambda" ) );
+		assertThat( meta.dereference( Key.of( "name" ), false ) ).isEqualTo( "Lambda" );
 		assertThat( meta.dereference( Key.of( "returnType" ), false ) ).isEqualTo( "any" );
 		assertThat( meta.dereference( Key.of( "output" ), false ) ).isEqualTo( false );
 		assertThat( meta.dereference( Key.of( "hint" ), false ) ).isEqualTo( "" );
@@ -258,14 +258,14 @@ public class LambdaTest {
 		assertThat( arguments.size() ).isEqualTo( 2 );
 
 		Struct arg1 = ( Struct ) arguments.dereference( Key.of( "1" ), false );
-		assertThat( arg1.dereference( Key.of( "name" ), false ) ).isEqualTo( firstName );
+		assertThat( arg1.dereference( Key.of( "name" ), false ) ).isEqualTo( "firstname" );
 		assertThat( arg1.dereference( Key.of( "required" ), false ) ).isEqualTo( false );
 		assertThat( arg1.dereference( Key.of( "type" ), false ) ).isEqualTo( "String" );
 		assertThat( arg1.dereference( Key.of( "default" ), false ) ).isEqualTo( "brad" );
 		assertThat( arg1.dereference( Key.of( "hint" ), false ) ).isEqualTo( "First Name" );
 
 		Struct arg2 = ( Struct ) arguments.dereference( Key.of( "2" ), false );
-		assertThat( arg2.dereference( Key.of( "name" ), false ) ).isEqualTo( lastName );
+		assertThat( arg2.dereference( Key.of( "name" ), false ) ).isEqualTo( "lastName" );
 		assertThat( arg2.dereference( Key.of( "required" ), false ) ).isEqualTo( false );
 		assertThat( arg2.dereference( Key.of( "type" ), false ) ).isEqualTo( "String" );
 		assertThat( arg2.dereference( Key.of( "default" ), false ) ).isEqualTo( "wood" );

@@ -14,6 +14,11 @@
  */
 package ortus.boxlang.transpiler.transformer.expression;
 
+import java.util.Map;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.github.javaparser.ParseResult;
 import com.github.javaparser.ast.CompilationUnit;
 import com.github.javaparser.ast.Node;
@@ -22,22 +27,15 @@ import com.github.javaparser.ast.expr.ArrayInitializerExpr;
 import com.github.javaparser.ast.expr.Expression;
 import com.github.javaparser.ast.stmt.BlockStmt;
 import com.github.javaparser.ast.stmt.Statement;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+
 import ortus.boxlang.ast.BoxNode;
 import ortus.boxlang.ast.BoxStatement;
-import ortus.boxlang.ast.Source;
 import ortus.boxlang.ast.expression.BoxLambda;
-import ortus.boxlang.ast.statement.BoxFunctionDeclaration;
 import ortus.boxlang.runtime.config.util.PlaceholderHelper;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.transpiler.JavaTranspiler;
 import ortus.boxlang.transpiler.transformer.AbstractTransformer;
-import ortus.boxlang.transpiler.transformer.Transformer;
 import ortus.boxlang.transpiler.transformer.TransformerContext;
-import ortus.boxlang.transpiler.transformer.statement.BoxFunctionDeclarationTransformer;
-
-import java.util.Map;
 
 /**
  * Transform a Lambda in the equivalent Java Class
@@ -169,10 +167,9 @@ public class BoxLambdaTransformer extends AbstractTransformer {
 	@Override
 	public Node transform( BoxNode node, TransformerContext context ) throws IllegalStateException {
 		BoxLambda			boxLambda	= ( BoxLambda ) node;
-		Source				source		= boxLambda.getPosition().getSource();
-		String				packageName	= JavaTranspiler.getPackageName( source );
+		String				packageName	= transpiler.getProperty( "packageName" );
 		String				lambdaName	= "$lambda" + transpiler.incrementAndGetLambdaCounter();
-		String				className	= JavaTranspiler.getClassName( source ) + lambdaName;
+		String				className	= transpiler.getProperty( "classname" ) + lambdaName;
 
 		Map<String, String>	values		= Map.ofEntries(
 		    Map.entry( "packageName", packageName ),

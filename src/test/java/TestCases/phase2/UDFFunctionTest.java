@@ -42,7 +42,6 @@ import ortus.boxlang.runtime.types.UDF;
 import ortus.boxlang.runtime.types.meta.BoxMeta;
 import ortus.boxlang.runtime.types.meta.FunctionMeta;
 
-@Disabled
 public class UDFFunctionTest {
 
 	static BoxRuntime	instance;
@@ -87,8 +86,8 @@ public class UDFFunctionTest {
 		assertThat( meta.dereference( Key.of( "name" ), false ) ).isEqualTo( "foo" );
 		// Defaults
 		assertThat( meta.dereference( Key.of( "hint" ), false ) ).isEqualTo( "" );
-		assertThat( meta.dereference( Key.of( "output" ), false ) ).isEqualTo( true );
-		assertThat( meta.dereference( Key.of( "returnType" ), false ) ).isEqualTo( "any" );
+		assertThat( meta.dereference( Key.of( "output" ), false ) ).isEqualTo( false );
+		assertThat( meta.dereference( Key.of( "returnType" ), false ) ).isEqualTo( "Any" );
 		assertThat( meta.dereference( Key.of( "access" ), false ) ).isEqualTo( "public" );
 
 	}
@@ -109,12 +108,12 @@ public class UDFFunctionTest {
 		assertThat( variables.dereference( result, false ) instanceof ArgumentsScope ).isEqualTo( true );
 		ArgumentsScope args = ( ArgumentsScope ) variables.dereference( result, false );
 
-		assertThat( args.dereference( Key.of( "param1" ), false ) ).isEqualTo( null );
+		assertThat( args.dereference( Key.of( "param1" ), false ) ).isEqualTo( "Brad" );
 		assertThat( args.dereference( Key.of( "param2" ), false ) ).isEqualTo( "param2 default" );
 		assertThat( args.dereference( Key.of( "param3" ), false ) ).isEqualTo( null );
 		assertThat( args.dereference( Key.of( "param4" ), false ) ).isEqualTo( "param4 default" );
 
-		assertThat( args.dereference( Key.of( "1" ), false ) ).isEqualTo( null );
+		assertThat( args.dereference( Key.of( "1" ), false ) ).isEqualTo( "Brad" );
 		assertThat( args.dereference( Key.of( "2" ), false ) ).isEqualTo( "param2 default" );
 		assertThat( args.dereference( Key.of( "3" ), false ) ).isEqualTo( null );
 		assertThat( args.dereference( Key.of( "4" ), false ) ).isEqualTo( "param4 default" );
@@ -147,10 +146,10 @@ public class UDFFunctionTest {
 		    public String function foo(
 		    	required string param1 hint="My param",
 		    	numeric param2=42 luis="majano"
-		    ) hint="my UDF" output=false brad="wood" {
+		    ) hint="my UDF" output=true brad="wood" {
 		      return "value";
 		    }
-		    result = foo();
+		    result = foo(5);
 		        """,
 		    context );
 		assertThat( variables.dereference( result, false ) ).isEqualTo( "value" );
@@ -159,7 +158,7 @@ public class UDFFunctionTest {
 
 		assertThat( meta.dereference( Key.of( "name" ), false ) ).isEqualTo( "foo" );
 		assertThat( meta.dereference( Key.of( "hint" ), false ) ).isEqualTo( "my UDF" );
-		assertThat( meta.dereference( Key.of( "output" ), false ) ).isEqualTo( false );
+		assertThat( meta.dereference( Key.of( "output" ), false ) ).isEqualTo( true );
 		assertThat( meta.dereference( Key.of( "brad" ), false ) ).isEqualTo( "wood" );
 		assertThat( meta.dereference( Key.of( "returnType" ), false ) ).isEqualTo( "String" );
 		assertThat( meta.dereference( Key.of( "access" ), false ) ).isEqualTo( "public" );
@@ -171,7 +170,7 @@ public class UDFFunctionTest {
 		assertThat( param1.dereference( Key.of( "name" ), false ) ).isEqualTo( "param1" );
 		assertThat( param1.dereference( Key.of( "hint" ), false ) ).isEqualTo( "My param" );
 		assertThat( param1.dereference( Key.of( "required" ), false ) ).isEqualTo( true );
-		assertThat( param1.dereference( Key.of( "type" ), false ) ).isEqualTo( "any" );
+		assertThat( param1.dereference( Key.of( "type" ), false ) ).isEqualTo( "string" );
 
 		Struct param2 = ( Struct ) args.get( 1 );
 		assertThat( param2.dereference( Key.of( "name" ), false ) ).isEqualTo( "param2" );
@@ -183,7 +182,7 @@ public class UDFFunctionTest {
 		FunctionMeta	$bx			= ( ( FunctionMeta ) Referencer.get( UDFfoo, BoxMeta.key, false ) );
 		Struct			annotations	= ( Struct ) $bx.meta.dereference( Key.of( "annotations" ), false );
 		assertThat( annotations.dereference( Key.of( "hint" ), false ) ).isEqualTo( "my UDF" );
-		assertThat( annotations.dereference( Key.of( "output" ), false ) ).isEqualTo( false );
+		assertThat( annotations.dereference( Key.of( "output" ), false ) ).isEqualTo( true );
 		assertThat( annotations.dereference( Key.of( "brad" ), false ) ).isEqualTo( "wood" );
 
 		Array	params				= ( Array ) $bx.meta.dereference( Key.of( "parameters" ), false );
@@ -195,6 +194,7 @@ public class UDFFunctionTest {
 
 	@DisplayName( "UDF metadata javadoc" )
 	@Test
+	@Disabled
 	public void testUDFMetadataJavadoc() {
 
 		instance.executeSource(
@@ -209,7 +209,7 @@ public class UDFFunctionTest {
 		    *
 		    * @returns Pure Gold
 		       */
-		       public String function foo( param1, param2 ) output=false brad="wood" {
+		       public String function foo( param1, param2 ) output=true brad="wood" {
 		       	return "value";
 		       }
 		    result = foo();
@@ -220,7 +220,7 @@ public class UDFFunctionTest {
 		Struct	meta	= UDFfoo.getMetaData();
 
 		assertThat( meta.dereference( Key.of( "name" ), false ) ).isEqualTo( "foo" );
-		assertThat( meta.dereference( Key.of( "output" ), false ) ).isEqualTo( false );
+		assertThat( meta.dereference( Key.of( "output" ), false ) ).isEqualTo( true );
 		assertThat( meta.dereference( Key.of( "brad" ), false ) ).isEqualTo( "wood" );
 		assertThat( meta.dereference( Key.of( "returnType" ), false ) ).isEqualTo( "String" );
 		assertThat( meta.dereference( Key.of( "access" ), false ) ).isEqualTo( "public" );
@@ -231,7 +231,7 @@ public class UDFFunctionTest {
 		Struct param1 = ( Struct ) args.get( 0 );
 		assertThat( param1.dereference( Key.of( "name" ), false ) ).isEqualTo( "param1" );
 		assertThat( param1.dereference( Key.of( "required" ), false ) ).isEqualTo( false );
-		assertThat( param1.dereference( Key.of( "type" ), false ) ).isEqualTo( "any" );
+		assertThat( param1.dereference( Key.of( "type" ), false ) ).isEqualTo( "Any" );
 
 		Struct param2 = ( Struct ) args.get( 1 );
 		assertThat( param2.dereference( Key.of( "name" ), false ) ).isEqualTo( "param2" );
@@ -286,6 +286,7 @@ public class UDFFunctionTest {
 
 	@DisplayName( "named arguments equals" )
 	@Test
+	@Disabled
 	public void testNamedArgumentsEquals() {
 
 		instance.executeSource(
@@ -307,6 +308,7 @@ public class UDFFunctionTest {
 		assertThat( args[ 3 ] ).isEqualTo( "value4" );
 
 		List<String> keys = argsScope.getKeys();
+		System.out.println( keys );
 		assertThat( keys.get( 0 ) ).isEqualTo( "param1" );
 		assertThat( keys.get( 1 ) ).isEqualTo( "param2" );
 		assertThat( keys.get( 2 ) ).isEqualTo( "param3" );
@@ -316,6 +318,7 @@ public class UDFFunctionTest {
 
 	@DisplayName( "named arguments colon" )
 	@Test
+	@Disabled
 	public void testNamedArgumentsColon() {
 
 		instance.executeSource(
@@ -346,6 +349,7 @@ public class UDFFunctionTest {
 
 	@DisplayName( "argument collection" )
 	@Test
+	@Disabled
 	public void testArgumentCollection() {
 
 		instance.executeSource(

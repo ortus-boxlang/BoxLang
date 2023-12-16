@@ -4,16 +4,16 @@ import static org.junit.Assert.assertTrue;
 
 import java.io.IOException;
 
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
+
 import com.github.javaparser.ast.CompilationUnit;
 import com.github.javaparser.ast.Node;
 import com.github.javaparser.ast.body.VariableDeclarator;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Test;
 
 import ortus.boxlang.ast.BoxDocumentation;
 import ortus.boxlang.ast.BoxScript;
 import ortus.boxlang.ast.expression.BoxStringLiteral;
-import ortus.boxlang.ast.statement.BoxAnnotation;
 import ortus.boxlang.ast.statement.BoxArgumentDeclaration;
 import ortus.boxlang.ast.statement.BoxDocumentationAnnotation;
 import ortus.boxlang.ast.statement.BoxFunctionDeclaration;
@@ -36,7 +36,10 @@ public class TestUDF extends TestBase {
 		ParsingResult	result	= parser.parseStatement( statement );
 		assertTrue( result.isCorrect() );
 
-		return new JavaTranspiler().transform( result.getRoot() );
+		JavaTranspiler transpiler = new JavaTranspiler();
+		transpiler.setProperty( "packageName", "ortus.test" );
+		transpiler.setProperty( "classname", "MyUDF" );
+		return transpiler.transform( result.getRoot() );
 	}
 
 	@Test

@@ -37,8 +37,63 @@ import ortus.boxlang.ast.BoxStatement;
 import ortus.boxlang.ast.Issue;
 import ortus.boxlang.ast.Point;
 import ortus.boxlang.ast.Position;
-import ortus.boxlang.ast.expression.*;
-import ortus.boxlang.ast.statement.*;
+import ortus.boxlang.ast.expression.BoxAccess;
+import ortus.boxlang.ast.expression.BoxArgument;
+import ortus.boxlang.ast.expression.BoxArrayAccess;
+import ortus.boxlang.ast.expression.BoxArrayLiteral;
+import ortus.boxlang.ast.expression.BoxAssignment;
+import ortus.boxlang.ast.expression.BoxAssignmentModifier;
+import ortus.boxlang.ast.expression.BoxBinaryOperation;
+import ortus.boxlang.ast.expression.BoxBinaryOperator;
+import ortus.boxlang.ast.expression.BoxBooleanLiteral;
+import ortus.boxlang.ast.expression.BoxComparisonOperation;
+import ortus.boxlang.ast.expression.BoxComparisonOperator;
+import ortus.boxlang.ast.expression.BoxDecimalLiteral;
+import ortus.boxlang.ast.expression.BoxDotAccess;
+import ortus.boxlang.ast.expression.BoxExpressionInvocation;
+import ortus.boxlang.ast.expression.BoxFQN;
+import ortus.boxlang.ast.expression.BoxFunctionInvocation;
+import ortus.boxlang.ast.expression.BoxIdentifier;
+import ortus.boxlang.ast.expression.BoxIntegerLiteral;
+import ortus.boxlang.ast.expression.BoxLambda;
+import ortus.boxlang.ast.expression.BoxMethodInvocation;
+import ortus.boxlang.ast.expression.BoxNewOperation;
+import ortus.boxlang.ast.expression.BoxNull;
+import ortus.boxlang.ast.expression.BoxParenthesis;
+import ortus.boxlang.ast.expression.BoxScope;
+import ortus.boxlang.ast.expression.BoxStringConcat;
+import ortus.boxlang.ast.expression.BoxStringInterpolation;
+import ortus.boxlang.ast.expression.BoxStringLiteral;
+import ortus.boxlang.ast.expression.BoxStructLiteral;
+import ortus.boxlang.ast.expression.BoxStructType;
+import ortus.boxlang.ast.expression.BoxTernaryOperation;
+import ortus.boxlang.ast.expression.BoxUnaryOperation;
+import ortus.boxlang.ast.expression.BoxUnaryOperator;
+import ortus.boxlang.ast.statement.BoxAccessModifier;
+import ortus.boxlang.ast.statement.BoxAnnotation;
+import ortus.boxlang.ast.statement.BoxArgumentDeclaration;
+import ortus.boxlang.ast.statement.BoxAssert;
+import ortus.boxlang.ast.statement.BoxAssignmentOperator;
+import ortus.boxlang.ast.statement.BoxBreak;
+import ortus.boxlang.ast.statement.BoxContinue;
+import ortus.boxlang.ast.statement.BoxDo;
+import ortus.boxlang.ast.statement.BoxDocumentationAnnotation;
+import ortus.boxlang.ast.statement.BoxExpression;
+import ortus.boxlang.ast.statement.BoxForIn;
+import ortus.boxlang.ast.statement.BoxForIndex;
+import ortus.boxlang.ast.statement.BoxFunctionDeclaration;
+import ortus.boxlang.ast.statement.BoxIfElse;
+import ortus.boxlang.ast.statement.BoxImport;
+import ortus.boxlang.ast.statement.BoxRethrow;
+import ortus.boxlang.ast.statement.BoxReturn;
+import ortus.boxlang.ast.statement.BoxReturnType;
+import ortus.boxlang.ast.statement.BoxSwitch;
+import ortus.boxlang.ast.statement.BoxSwitchCase;
+import ortus.boxlang.ast.statement.BoxThrow;
+import ortus.boxlang.ast.statement.BoxTry;
+import ortus.boxlang.ast.statement.BoxTryCatch;
+import ortus.boxlang.ast.statement.BoxType;
+import ortus.boxlang.ast.statement.BoxWhile;
 import ortus.boxlang.parser.antlr.CFLexer;
 import ortus.boxlang.parser.antlr.CFParser;
 
@@ -1336,9 +1391,9 @@ public class BoxCFParser extends BoxAbstractParser {
 		}
 
 		if ( node.functionSignature().accessModifier() != null ) {
-			if ( node.functionSignature().accessModifier().PUBLIC() == null ) {
+			if ( node.functionSignature().accessModifier().PUBLIC() != null ) {
 				modifier = BoxAccessModifier.Public;
-			} else if ( node.functionSignature().accessModifier().PRIVATE() == null ) {
+			} else if ( node.functionSignature().accessModifier().PRIVATE() != null ) {
 				modifier = BoxAccessModifier.Private;
 			} else if ( node.functionSignature().accessModifier().REMOTE() != null ) {
 				modifier = BoxAccessModifier.Remote;
@@ -1350,13 +1405,13 @@ public class BoxCFParser extends BoxAbstractParser {
 			var targetType = node.functionSignature().returnType().type();
 			if ( targetType != null ) {
 				if ( targetType.BOOLEAN() != null ) {
-					new BoxReturnType( BoxType.Boolean, null, getPosition( targetType ), getSourceText( targetType ) );
+					returnType = new BoxReturnType( BoxType.Boolean, null, getPosition( targetType ), getSourceText( targetType ) );
 				}
 				if ( targetType.NUMERIC() != null ) {
-					new BoxReturnType( BoxType.Numeric, null, getPosition( targetType ), getSourceText( targetType ) );
+					returnType = new BoxReturnType( BoxType.Numeric, null, getPosition( targetType ), getSourceText( targetType ) );
 				}
 				if ( targetType.STRING() != null ) {
-					new BoxReturnType( BoxType.String, null, getPosition( targetType ), getSourceText( targetType ) );
+					returnType = new BoxReturnType( BoxType.String, null, getPosition( targetType ), getSourceText( targetType ) );
 				}
 			}
 			// TODO

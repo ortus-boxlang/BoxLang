@@ -25,7 +25,7 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.Map;
+import java.util.stream.Collectors;
 
 import javax.tools.DiagnosticCollector;
 import javax.tools.JavaCompiler;
@@ -36,16 +36,13 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.github.javaparser.ast.CompilationUnit;
+import com.github.javaparser.ast.body.ClassOrInterfaceDeclaration;
 
-import ortus.boxlang.ast.Point;
-import ortus.boxlang.ast.Position;
 import ortus.boxlang.parser.BoxParser;
 import ortus.boxlang.parser.BoxScriptType;
 import ortus.boxlang.parser.ParsingResult;
 import ortus.boxlang.runtime.BoxRuntime;
-import ortus.boxlang.runtime.config.util.PlaceholderHelper;
 import ortus.boxlang.runtime.runnables.IBoxRunnable;
-import ortus.boxlang.runtime.types.exceptions.ApplicationException;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.exceptions.ParseException;
 import ortus.boxlang.transpiler.JavaTranspiler;
@@ -127,119 +124,7 @@ public class JavaBoxpiler {
 	 * --------------------------------------------------------------------------
 	 */
 
-	// @formatter:off
-	String				template	= """
-		package ${packageName};
-
-		import ortus.boxlang.runtime.BoxRuntime;
-		import ortus.boxlang.runtime.context.*;
-
-		// BoxLang Auto Imports
-		import ortus.boxlang.runtime.runnables.BoxTemplate;
-		import ortus.boxlang.runtime.runnables.BoxScript;
-		import ortus.boxlang.runtime.dynamic.Referencer;
-		import ortus.boxlang.runtime.interop.DynamicObject;
-		import ortus.boxlang.runtime.loader.ClassLocator;
-		import ortus.boxlang.runtime.loader.ImportDefinition;
-		import ortus.boxlang.runtime.operators.*;
-		import ortus.boxlang.runtime.scopes.Key;
-		import ortus.boxlang.runtime.scopes.*;
-		import ortus.boxlang.runtime.dynamic.casters.*;
-		import ortus.boxlang.runtime.types.exceptions.ExceptionUtil;
-
-		import java.nio.file.Path;
-		import java.nio.file.Paths;
-		import java.time.LocalDateTime;
-		import java.util.List;
-import org.jbox2d.util.Issue;
-
-		public class ${className} extends ${baseclass} {
-
-			private static ${className} instance;
-
-			private static final List<ImportDefinition>	imports			= List.of();
-			private static final Path					path			= Paths.get( "${fileFolderPath}" );
-			private static final long					compileVersion	= 1L;
-			private static final LocalDateTime			compiledOn		= LocalDateTime.parse( "2023-09-27T10:15:30" );
-			private static final Object					ast				= null;
-
-			public ${className}() {
-			}
-
-			public static synchronized ${className} getInstance() {
-				if ( instance == null ) {
-					instance = new ${className}();
-				}
-				return instance;
-			}
-			/**
-				* Each template must implement the invoke() method which executes the template
-				*
-				* @param context The execution context requesting the execution
-				*/
-			public ${returnType} _invoke( IBoxContext context ) {
-				// Reference to the variables scope
-				IScope variablesScope = context.getScopeNearby( Key.of( "variables" ) );
-				ClassLocator classLocator = ClassLocator.getInstance();
-				IBoxContext			catchContext = null;
-				${javaCode}
-			}
-
-			// ITemplateRunnable implementation methods
-
-			/**
-				* The version of the BoxLang runtime
-			*/
-			public long getRunnableCompileVersion() {
-				return ${className}.compileVersion;
-			}
-
-			/**
-				* The date the template was compiled
-			*/
-			public LocalDateTime getRunnableCompiledOn() {
-				return ${className}.compiledOn;
-			}
-
-			/**
-				* The AST (abstract syntax tree) of the runnable
-			*/
-			public Object getRunnableAST() {
-			return ${className}.ast;
-			}
-
-			/**
-				* The path to the template
-			*/
-			public Path getRunnablePath() {
-			return ${className}.path;
-			}
-			
-			/**
-			 * The imports for this runnable
-			 */
-			public List<ImportDefinition> getImports() {
-				return imports;
-			}
-
-		}
-	""";
-	// @formatter:on
-
-	Logger	logger		= LoggerFactory.getLogger( JavaBoxpiler.class );
-
-	private String makeClass( String javaCode, String baseclass, String packageName, String className ) {
-		Map<String, String> values = Map.ofEntries(
-		    Map.entry( "javaCode", javaCode ),
-		    Map.entry( "baseclass", baseclass ),
-		    Map.entry( "fileFolderPath", "" ),
-		    Map.entry( "returnType", baseclass.equals( "BoxScript" ) ? "Object" : "void" ),
-		    Map.entry( "packageName", packageName ),
-		    Map.entry( "className", className )
-		);
-		System.out.println( javaCode );
-		return PlaceholderHelper.resolve( template, values );
-	}
+	Logger logger = LoggerFactory.getLogger( JavaBoxpiler.class );
 
 	public Class<IBoxRunnable> compileStatement( String source, BoxScriptType type ) {
 		String	packageName	= "generated";
@@ -263,28 +148,19 @@ import org.jbox2d.util.Issue;
 					throw new ParseException( result.getIssues() );
 				}
 
-				// JavaTranspiler transpiler = new JavaTranspiler();
-
-				Position	position	= new Position( new Point( 1, 1 ), new Point( 1, source.length() ) );
-
-				// List<CompilationUnit> javaASTs = transpiler.transpileMany( new BoxScript(
-				// List.of( result.getRoot() instanceof BoxStatement ? ( BoxStatement ) result.getRoot()
-				// : new BoxExpression( ( BoxExpr ) result.getRoot(), position, source ) ),
-				// position,
-				// source
-				// ) );
-
-				Transpiler	transpiler	= Transpiler.getTranspiler( null /* Config ? */ );
+				Transpiler transpiler = Transpiler.getTranspiler( null /* Config ? */ );
 				transpiler.setProperty( "classname", className );
 				transpiler.setProperty( "packageName", packageName );
 				transpiler.setProperty( "baseclass", "BoxScript" );
 				transpiler.setProperty( "returnType", "Object" );
-				TranspiledCode javaASTs = transpiler.transpile( result.getRoot() );
-				compileSource( javaASTs.getEntryPoint().toString(), fqn );
 
-				// Process functions ad lamdas
+				TranspiledCode				javaASTs	= transpiler.transpile( result.getRoot() );
+				ClassOrInterfaceDeclaration	outerClass	= javaASTs.getEntryPoint().getClassByName( className ).get();
+
+				// Process functions and lamdas
 				for ( CompilationUnit callable : javaASTs.getCallables() ) {
-					compileSource( callable.toString(), fqn );
+					ClassOrInterfaceDeclaration innerClass = callable.findFirst( ClassOrInterfaceDeclaration.class ).get();
+					outerClass.addMember( innerClass.setPublic( true ).setStatic( true ) );
 				}
 				compileSource( javaASTs.getEntryPoint().toString(), fqn );
 			}
@@ -320,15 +196,18 @@ import org.jbox2d.util.Issue;
 				transpiler.setProperty( "baseclass", "BoxScript" );
 				transpiler.setProperty( "returnType", "Object" );
 
-				TranspiledCode javaASTs = transpiler.transpile( result.getRoot() );
+				TranspiledCode				javaASTs	= transpiler.transpile( result.getRoot() );
+				ClassOrInterfaceDeclaration	outerClass	= javaASTs.getEntryPoint().getClassByName( className ).get();
+
+				// Process functions and lamdas
+				for ( CompilationUnit callable : javaASTs.getCallables() ) {
+					ClassOrInterfaceDeclaration innerClass = callable.findFirst( ClassOrInterfaceDeclaration.class ).get();
+					outerClass.addMember( innerClass.setPublic( true ).setStatic( true ) );
+				}
 				if ( false )
 					throw new BoxRuntimeException( javaASTs.getEntryPoint().toString() );
-				compileSource( javaASTs.getEntryPoint().toString(), fqn );
 
-				// Process functions ad lamdas
-				for ( CompilationUnit callable : javaASTs.getCallables() ) {
-					compileSource( callable.toString(), fqn );
-				}
+				compileSource( javaASTs.getEntryPoint().toString(), fqn );
 
 			}
 		}
@@ -363,13 +242,16 @@ import org.jbox2d.util.Issue;
 				transpiler.setProperty( "packageName", packageName );
 				transpiler.setProperty( "baseclass", "BoxTemplate" );
 				transpiler.setProperty( "returnType", "void" );
-				TranspiledCode javaASTs = transpiler.transpile( result.getRoot() );
-				compileSource( javaASTs.getEntryPoint().toString(), fqn );
+				TranspiledCode				javaASTs	= transpiler.transpile( result.getRoot() );
+				ClassOrInterfaceDeclaration	outerClass	= javaASTs.getEntryPoint().getClassByName( className ).get();
 
-				// Process functions ad lamdas
+				// Process functions and lamdas
 				for ( CompilationUnit callable : javaASTs.getCallables() ) {
-					compileSource( callable.toString(), fqn );
+					ClassOrInterfaceDeclaration innerClass = callable.findFirst( ClassOrInterfaceDeclaration.class ).get();
+					outerClass.addMember( innerClass.setPublic( true ).setStatic( true ) );
 				}
+
+				compileSource( javaASTs.getEntryPoint().toString(), fqn );
 
 			}
 		}
@@ -399,10 +281,8 @@ import org.jbox2d.util.Issue;
 		boolean								compilerResult	= task.call();
 
 		if ( !compilerResult ) {
-			diagnostics.getDiagnostics()
-			    .forEach( d -> {
-				    throw new RuntimeException( String.valueOf( d ) );
-			    } );
+			String errors = diagnostics.getDiagnostics().stream().map( d -> d.toString() ).collect( Collectors.joining( "\n" ) );
+			throw new BoxRuntimeException( errors + "\n" + javaSource );
 		}
 
 	}
