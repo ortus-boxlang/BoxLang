@@ -10,17 +10,30 @@ import ortus.boxlang.runtime.types.Array;
 
 public class ArrayAppend extends BIF {
 
-	private final static Key	arr			= Key.of( "arr" );
-	private final static Key	value		= Key.of( "value" );
+	private final static Key	arr		= Key.of( "arr" );
+	private final static Key	value	= Key.of( "value" );
 
-	public static Argument[]	arguments	= new Argument[] {
-	    new Argument( true, "any", arr ),
-	    new Argument( true, "any", value )
-	};
+	/**
+	 * Constructor
+	 */
+	public ArrayAppend() {
+		super();
+		arguments = new Argument[] {
+		    new Argument( true, "any", arr ),
+		    new Argument( true, "any", value )
+		};
+	}
 
-	public static Object invoke( IBoxContext context, ArgumentsScope arguments ) {
+	/**
+	 * Append a value to an array
+	 *
+	 * @param context
+	 * @param arguments Argument scope defining the array and value to append.
+	 */
+	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
 		Array actualArray = ArrayCaster.cast( arguments.dereference( arr, false ) );
 		actualArray.add( arguments.dereference( value, false ) );
 		return actualArray;
 	}
+
 }

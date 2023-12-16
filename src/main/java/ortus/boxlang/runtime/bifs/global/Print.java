@@ -8,13 +8,22 @@ import ortus.boxlang.runtime.types.Argument;
 
 public class Print extends BIF {
 
-	private final static Key	message		= Key.of( "message" );
+	private final static Key message = Key.of( "message" );
 
-	public static Argument[]	arguments	= new Argument[] {
-	    new Argument( true, "any", message )
-	};
+	/**
+	 * Constructor
+	 */
+	public Print() {
+		super();
+		arguments = new Argument[] {
+		    new Argument( true, "any", message )
+		};
+	}
 
-	public static Object invoke( IBoxContext context, ArgumentsScope arguments ) {
+	/**
+	 * Print a message with line break to the console
+	 */
+	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
 		System.out.print( arguments.dereference( message, false ) );
 		return true;
 	}

@@ -3,7 +3,7 @@ import java.util.Date;
 
 start = new Date().getTime();
 // Get primes up to num
-num = 10000000
+num = 1000000
 
 p = 1; // Counter for outer loop over array
 i = 1; // Counter inner loop finding multiples of each array index

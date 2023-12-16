@@ -31,7 +31,6 @@ import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BIFDescriptor;
 import ortus.boxlang.runtime.bifs.BIFNamespace;
-import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.loader.util.ClassDiscovery;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
@@ -255,7 +254,7 @@ public class FunctionService extends BaseService {
 		        module,
 		        null,
 		        true,
-		        DynamicObject.of( function )
+		        function
 		    )
 		);
 	}

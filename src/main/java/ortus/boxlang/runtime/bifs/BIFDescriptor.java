@@ -23,18 +23,17 @@ import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
-import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.ArgumentUtil;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
 public class BIFDescriptor {
 
-	public String			name;
-	public String			className;
-	public String			module;
-	public String			namespace;
-	public DynamicObject	BIF;
-	public Boolean			isGlobal;
+	public String	name;
+	public String	className;
+	public String	module;
+	public String	namespace;
+	public BIF		BIFInstance;
+	public Boolean	isGlobal;
 
 	public BIFDescriptor(
 	    String name,
@@ -42,13 +41,13 @@ public class BIFDescriptor {
 	    String module,
 	    String namespace,
 	    Boolean isGlobal,
-	    DynamicObject BIF ) {
-		this.name		= name;
-		this.className	= className;
-		this.module		= module;
-		this.namespace	= namespace;
-		this.isGlobal	= isGlobal;
-		this.BIF		= BIF;
+	    BIF BIFInstance ) {
+		this.name			= name;
+		this.className		= className;
+		this.module			= module;
+		this.namespace		= namespace;
+		this.isGlobal		= isGlobal;
+		this.BIFInstance	= BIFInstance;
 	}
 
 	public Boolean hasModule() {
@@ -59,17 +58,21 @@ public class BIFDescriptor {
 		return namespace != null;
 	}
 
-	public DynamicObject getBIF() {
-		if ( this.BIF == null ) {
+	public BIF getBIF() {
+		if ( this.BIFInstance == null ) {
 			synchronized ( this ) {
+				// Double check inside lock
+				if ( this.BIFInstance != null ) {
+					return this.BIFInstance;
+				}
 				try {
-					this.BIF = DynamicObject.of( Class.forName( this.className ) );
+					this.BIFInstance = ( BIF ) DynamicObject.of( Class.forName( this.className ) ).invokeConstructor().getTargetInstance();
 				} catch ( ClassNotFoundException e ) {
 					throw new BoxRuntimeException( "Error loading class for BIF.", e );
 				}
 			}
 		}
-		return this.BIF;
+		return this.BIFInstance;
 	}
 
 	/**
@@ -80,7 +83,7 @@ public class BIFDescriptor {
 	 * @return The result of the invocation
 	 */
 	public Object invoke( IBoxContext context ) {
-		return this.getBIF().invoke( "invoke", context, new ArgumentsScope() );
+		return this.getBIF().invoke( context, new ArgumentsScope() );
 	}
 
 	/**
@@ -91,9 +94,9 @@ public class BIFDescriptor {
 	 * @return The result of the invocation
 	 */
 	public Object invoke( IBoxContext context, Object[] positionalArguments ) {
-		ArgumentsScope scope = ArgumentUtil.createArgumentsScope( positionalArguments, ( Argument[] ) getBIF().getField( "arguments" ).get() );
+		ArgumentsScope scope = ArgumentUtil.createArgumentsScope( positionalArguments, getBIF().getArguments() );
 		// Invoke it baby!
-		return this.getBIF().invoke( "invoke", context, scope );
+		return this.getBIF().invoke( context, scope );
 	}
 
 	/**
@@ -104,9 +107,9 @@ public class BIFDescriptor {
 	 * @return The result of the invocation
 	 */
 	public Object invoke( IBoxContext context, Map<Key, Object> namedArguments ) {
-		ArgumentsScope scope = ArgumentUtil.createArgumentsScope( namedArguments, ( Argument[] ) getBIF().getField( "arguments" ).get() );
+		ArgumentsScope scope = ArgumentUtil.createArgumentsScope( namedArguments, getBIF().getArguments() );
 		// Invoke it baby!
-		return this.getBIF().invoke( "invoke", context, scope );
+		return this.getBIF().invoke( context, scope );
 	}
 
 }
