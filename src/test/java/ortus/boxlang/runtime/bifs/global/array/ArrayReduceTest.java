@@ -33,6 +33,7 @@ import ortus.boxlang.runtime.context.ScriptingBoxContext;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
+import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.Struct;
 
 public class ArrayReduceTest {
@@ -90,7 +91,7 @@ public class ArrayReduceTest {
         assertThat( variables.dereference( result, false ) ).isEqualTo( 15 );
     }
 
-    @Disabled
+    // @Disabled
     @DisplayName( "It should handle complex objects being used as the accumulator" )
     @Test
     public void testComplexAccumulator() {
@@ -98,21 +99,27 @@ public class ArrayReduceTest {
             """
                 people = [ "bob", "alice", "alice", "bob", "bob" ];
 
-                function nameReduce( acc, name ){
-                    if( !acc.containsKey( name ) ){
+                function nameReduce( acc, name, i ){
+                    arrayAppend( acc.indexes, i );
+                    if( ! acc.containsKey( name ) ){
                         acc[ name ] = 0;
                     }
-
-                    acc[ name ] += 1;
-
+                    acc[ name ]++;
                     return acc;
                 };
 
-                result = arrayReduce( people, nameReduce, {} );
+                result = arrayReduce( people, nameReduce, {indexes:[]} );
             """,
             context );
         assertThat( ( ( Struct ) variables.dereference( result, false ) ).get( "bob" ) ).isEqualTo( 3 );
         assertThat( ( ( Struct ) variables.dereference( result, false ) ).get( "alice" ) ).isEqualTo( 2 );
+        Array indexes = ( ( Array ) ( ( Struct ) variables.dereference( result, false ) ).get( "indexes" ) );
+        assertThat( indexes.size() ).isEqualTo( 5 );
+        assertThat( indexes.get( 0 ) ).isEqualTo( 1 );
+        assertThat( indexes.get( 1 ) ).isEqualTo( 2 );
+        assertThat( indexes.get( 2 ) ).isEqualTo( 3 );
+        assertThat( indexes.get( 3 ) ).isEqualTo( 4 );
+        assertThat( indexes.get( 4 ) ).isEqualTo( 5 );
     }
 
 }

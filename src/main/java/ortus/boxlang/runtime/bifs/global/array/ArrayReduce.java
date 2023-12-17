@@ -43,7 +43,7 @@ public class ArrayReduce extends BIF {
         for ( int i = 0; i < actualArray.size(); i++ ) {
             closureArgScope.put( Key._1, accumulator );
             closureArgScope.put( Key._2, actualArray.get( i ) );
-            closureArgScope.put( Key._3, i );
+            closureArgScope.put( Key._3, i + 1 );
 
             FunctionBoxContext fbc = Function.generateFunctionContext( func, context, callback, closureArgScope );
 

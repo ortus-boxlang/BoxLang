@@ -300,6 +300,8 @@ public class DynamicObject implements IReferenceable {
 		MethodHandle	constructorInvoker	= callSite.dynamicInvoker();
 		try {
 			this.targetInstance = constructorInvoker.invokeWithArguments( args );
+		} catch ( RuntimeException e ) {
+			throw e;
 		} catch ( Throwable e ) {
 			throw new BoxRuntimeException( "Error invoking constructor for class " + this.targetClass.getName(), e );
 		}
@@ -360,6 +362,8 @@ public class DynamicObject implements IReferenceable {
 			return methodRecord.isStatic()
 			    ? methodRecord.methodHandle().invokeWithArguments( arguments )
 			    : methodRecord.methodHandle().bindTo( this.targetInstance ).invokeWithArguments( arguments );
+		} catch ( RuntimeException e ) {
+			throw e;
 		} catch ( Throwable e ) {
 			throw new BoxRuntimeException( "Error invoking method " + methodName + " for class " + this.targetClass.getName(), e );
 		}
@@ -389,6 +393,8 @@ public class DynamicObject implements IReferenceable {
 			return getMethodHandle( methodName, argumentsToClasses( arguments ) )
 			    .methodHandle()
 			    .invokeWithArguments( arguments );
+		} catch ( RuntimeException e ) {
+			throw e;
 		} catch ( Throwable e ) {
 			throw new BoxRuntimeException( "Error invoking method " + methodName + " for class " + this.targetClass.getName(), e );
 		}
@@ -433,6 +439,8 @@ public class DynamicObject implements IReferenceable {
 			        ? fieldHandle.invoke()
 			        : fieldHandle.invoke( this.targetInstance )
 			);
+		} catch ( RuntimeException e ) {
+			throw e;
 		} catch ( Throwable e ) {
 			throw new BoxRuntimeException( "Error getting field " + fieldName + " for class " + this.targetClass.getName(), e );
 		}
@@ -489,6 +497,8 @@ public class DynamicObject implements IReferenceable {
 			} else {
 				fieldHandle.bindTo( this.targetInstance ).invokeWithArguments( value );
 			}
+		} catch ( RuntimeException e ) {
+			throw e;
 		} catch ( Throwable e ) {
 			throw new BoxRuntimeException( "Error setting field " + fieldName + " for class " + this.targetClass.getName(), e );
 		}

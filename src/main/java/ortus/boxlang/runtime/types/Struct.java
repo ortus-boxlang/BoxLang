@@ -29,6 +29,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.dynamic.IReferenceable;
 import ortus.boxlang.runtime.dynamic.casters.KeyCaster;
+import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
@@ -247,7 +248,13 @@ public class Struct implements Map<Key, Object>, IType, IReferenceable, IListena
 	 * @return {@code true} if this map contains a mapping for the specified
 	 */
 	public boolean containsKey( Object key ) {
-		return wrapped.containsKey( key );
+		if ( key instanceof Key keyKey ) {
+			return containsKey( keyKey );
+		}
+		if ( key instanceof String stringKey ) {
+			return containsKey( stringKey );
+		}
+		return wrapped.containsKey( Key.of( StringCaster.cast( key ) ) );
 	}
 
 	/**
@@ -282,18 +289,13 @@ public class Struct implements Map<Key, Object>, IType, IReferenceable, IListena
 	 */
 	@Override
 	public Object get( Object key ) {
-		return unWrapNull( wrapped.get( key ) );
-	}
-
-	/**
-	 * Returns the value to which the specified String key is mapped.
-	 *
-	 * @param key The string key to look for. Automatically converted to Key object
-	 *
-	 * @return The value of the key or null if not found
-	 */
-	public Object get( String key ) {
-		return get( Key.of( key ) );
+		if ( key instanceof Key keyKey ) {
+			return unWrapNull( wrapped.get( keyKey ) );
+		}
+		if ( key instanceof String stringKey ) {
+			return unWrapNull( wrapped.get( Key.of( stringKey ) ) );
+		}
+		return unWrapNull( wrapped.get( Key.of( StringCaster.cast( key ) ) ) );
 	}
 
 	/**
@@ -397,8 +399,13 @@ public class Struct implements Map<Key, Object>, IType, IReferenceable, IListena
 	 */
 	@Override
 	public Object remove( Object key ) {
-		notifyListeners( KeyCaster.cast( key ), null );
-		return wrapped.remove( key );
+		if ( key instanceof Key keyKey ) {
+			return remove( keyKey );
+		}
+		if ( key instanceof String stringKey ) {
+			return remove( stringKey );
+		}
+		return wrapped.remove( Key.of( StringCaster.cast( key ) ) );
 	}
 
 	/**
@@ -416,6 +423,7 @@ public class Struct implements Map<Key, Object>, IType, IReferenceable, IListena
 	 * @param key The String key to remove
 	 */
 	public Object remove( Key key ) {
+		notifyListeners( key, null );
 		return wrapped.remove( key );
 	}
 
