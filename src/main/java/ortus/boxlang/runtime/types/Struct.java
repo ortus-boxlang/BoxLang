@@ -299,6 +299,17 @@ public class Struct implements Map<Key, Object>, IType, IReferenceable, IListena
 	}
 
 	/**
+	 * Returns the value to which the specified Key is mapped
+	 *
+	 * @param key the key whose associated value is to be returned
+	 *
+	 * @return the value to which the specified key is mapped or null if not found
+	 */
+	public Object get( String key ) {
+		return unWrapNull( wrapped.get( Key.of( key ) ) );
+	}
+
+	/**
 	 * Get key, with default value if not found
 	 *
 	 * @param key          The key to look for
