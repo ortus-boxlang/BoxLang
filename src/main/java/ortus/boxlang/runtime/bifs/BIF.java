@@ -8,13 +8,13 @@ import ortus.boxlang.runtime.types.Argument;
 
 public abstract class BIF {
 
-    protected Argument[]      arguments       = new Argument[] {};
-    protected FunctionService functionService = BoxRuntime.getInstance().getFunctionService();
+	protected Argument[]		arguments		= new Argument[] {};
+	protected FunctionService	functionService	= BoxRuntime.getInstance().getFunctionService();
 
-    public abstract Object invoke( IBoxContext context, ArgumentsScope arguments );
+	public abstract Object invoke( IBoxContext context, ArgumentsScope arguments );
 
-    public Argument[] getArguments() {
-        return arguments;
-    }
+	public Argument[] getArguments() {
+		return arguments;
+	}
 
 }
