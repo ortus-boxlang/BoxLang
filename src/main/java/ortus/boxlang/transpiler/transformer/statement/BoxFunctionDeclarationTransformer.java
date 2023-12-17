@@ -44,9 +44,10 @@ import ortus.boxlang.transpiler.transformer.TransformerContext;
  */
 public class BoxFunctionDeclarationTransformer extends AbstractTransformer {
 
-	Logger			logger		= LoggerFactory.getLogger( BoxFunctionDeclarationTransformer.class );
+	Logger			logger					= LoggerFactory.getLogger( BoxFunctionDeclarationTransformer.class );
 	// @formatter:off
-	private String template = """
+	private String registrationTemplate = "${contextName}.registerUDF( ${enclosingClassName}.${className}.getInstance() );";
+	private String classTemplate = """
 		package ${packageName};
 
 		public class ${classname} extends UDF {
@@ -145,13 +146,12 @@ public class BoxFunctionDeclarationTransformer extends AbstractTransformer {
 		String					className			= "Func_" + function.getName();
 
 		if ( context == TransformerContext.REGISTER ) {
-			Map<String, String> values = Map.ofEntries(
+			Map<String, String>	values		= Map.ofEntries(
 			    Map.entry( "className", className ),
 			    Map.entry( "contextName", transpiler.peekContextName() ),
 			    Map.entry( "enclosingClassName", enclosingClassName )
 			);
-			template = "${contextName}.registerUDF( ${enclosingClassName}.${className}.getInstance() );";
-			Node javaStmt = parseStatement( template, values );
+			Node				javaStmt	= parseStatement( registrationTemplate, values );
 			logger.info( node.getSourceText() + " -> " + javaStmt );
 			addIndex( javaStmt, node );
 			return javaStmt;
@@ -168,7 +168,7 @@ public class BoxFunctionDeclarationTransformer extends AbstractTransformer {
 			);
 			transpiler.pushContextName( "context" );
 
-			String							code	= PlaceholderHelper.resolve( template, values );
+			String							code	= PlaceholderHelper.resolve( classTemplate, values );
 			ParseResult<CompilationUnit>	result;
 			try {
 				result = javaParser.parse( code );

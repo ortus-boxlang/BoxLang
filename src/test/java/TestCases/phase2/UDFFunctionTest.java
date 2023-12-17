@@ -137,6 +137,26 @@ public class UDFFunctionTest {
 
 	}
 
+	@DisplayName( "It should allow you to declare multiple functions" )
+	@Test
+	public void testMultipleFunctionDeclarations() {
+
+		instance.executeSource(
+		    """
+		          function foo( param ) {
+		       	return param;
+		       }
+		    function bar( param ) {
+		       	return param;
+		       }
+		       result = foo( 'Brad' );
+		       """,
+		    context );
+		assertThat( variables.dereference( result, false ) ).isEqualTo( "Brad" );
+		assertThat( variables.dereference( foo, false ) instanceof UDF ).isEqualTo( true );
+
+	}
+
 	@DisplayName( "UDF metadata" )
 	@Test
 	public void testUDFMetadata() {
