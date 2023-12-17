@@ -29,7 +29,7 @@ import ortus.boxlang.transpiler.transformer.TransformerContext;
  */
 public class BoxBooleanLiteralTransformer extends AbstractTransformer {
 
-	Logger logger = LoggerFactory.getLogger( BoxBinaryOperationTransformer.class );
+	Logger logger = LoggerFactory.getLogger( BoxBooleanLiteralTransformer.class );
 
 	public BoxBooleanLiteralTransformer( JavaTranspiler transpiler ) {
 		super( transpiler );

@@ -42,7 +42,7 @@ import ortus.boxlang.transpiler.transformer.expression.BoxAssignmentTransformer;
  */
 public class BoxForInTransformer extends AbstractTransformer {
 
-	Logger logger = LoggerFactory.getLogger( BoxForIndexTransformer.class );
+	Logger logger = LoggerFactory.getLogger( BoxForInTransformer.class );
 
 	public BoxForInTransformer( JavaTranspiler transpiler ) {
 		super( transpiler );

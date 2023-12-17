@@ -19,7 +19,7 @@ import ortus.boxlang.transpiler.transformer.TransformerContext;
 
 public class BoxMethodInvocationTransformer extends AbstractTransformer {
 
-	Logger logger = LoggerFactory.getLogger( BoxScopeTransformer.class );
+	Logger logger = LoggerFactory.getLogger( BoxMethodInvocationTransformer.class );
 
 	public BoxMethodInvocationTransformer( JavaTranspiler transpiler ) {
 		super( transpiler );
