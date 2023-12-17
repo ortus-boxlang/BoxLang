@@ -19,9 +19,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import com.github.javaparser.ast.Node;
 import com.github.javaparser.ast.expr.Expression;
 import com.github.javaparser.ast.stmt.BlockStmt;
@@ -41,8 +38,6 @@ import ortus.boxlang.transpiler.transformer.expression.BoxAssignmentTransformer;
  * Transform a BoxForIn Node the equivalent Java Parser AST nodes
  */
 public class BoxForInTransformer extends AbstractTransformer {
-
-	Logger logger = LoggerFactory.getLogger( BoxForInTransformer.class );
 
 	public BoxForInTransformer( JavaTranspiler transpiler ) {
 		super( transpiler );

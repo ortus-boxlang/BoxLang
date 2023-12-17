@@ -6,9 +6,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import com.github.javaparser.ast.Node;
 import com.github.javaparser.ast.expr.Expression;
 
@@ -28,8 +25,6 @@ import ortus.boxlang.transpiler.transformer.AbstractTransformer;
 import ortus.boxlang.transpiler.transformer.TransformerContext;
 
 public class BoxAssignmentTransformer extends AbstractTransformer {
-
-	Logger logger = LoggerFactory.getLogger( BoxAssignmentTransformer.class );
 
 	public BoxAssignmentTransformer( JavaTranspiler transpiler ) {
 		super( transpiler );

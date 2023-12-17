@@ -5,8 +5,6 @@ import com.github.javaparser.ast.expr.Expression;
 import com.github.javaparser.ast.stmt.BlockStmt;
 import com.github.javaparser.ast.stmt.DoStmt;
 import com.github.javaparser.ast.stmt.Statement;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import ortus.boxlang.ast.BoxNode;
 import ortus.boxlang.ast.BoxStatement;
 import ortus.boxlang.ast.statement.BoxDo;
@@ -18,8 +16,6 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class BoxDoTransformer extends AbstractTransformer {
-
-	Logger logger = LoggerFactory.getLogger( BoxDoTransformer.class );
 
 	public BoxDoTransformer( JavaTranspiler transpiler ) {
 		super( transpiler );

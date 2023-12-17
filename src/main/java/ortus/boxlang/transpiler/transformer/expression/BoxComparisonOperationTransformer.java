@@ -3,9 +3,6 @@ package ortus.boxlang.transpiler.transformer.expression;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import com.github.javaparser.ast.Node;
 import com.github.javaparser.ast.expr.Expression;
 
@@ -20,8 +17,6 @@ import ortus.boxlang.transpiler.transformer.TransformerContext;
  * Transform a BoxComparisonOperation Node the equivalent Java Parser AST nodes
  */
 public class BoxComparisonOperationTransformer extends AbstractTransformer {
-
-	Logger logger = LoggerFactory.getLogger( BoxComparisonOperationTransformer.class );
 
 	public BoxComparisonOperationTransformer( JavaTranspiler transpiler ) {
 		super( transpiler );

@@ -14,9 +14,6 @@
  */
 package ortus.boxlang.transpiler.transformer.expression;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import com.github.javaparser.ast.Node;
 import com.github.javaparser.ast.expr.NullLiteralExpr;
 
@@ -29,8 +26,6 @@ import ortus.boxlang.transpiler.transformer.TransformerContext;
  * Transform a BoxIntegerLiteral Node the equivalent Java Parser AST nodes
  */
 public class BoxNullTransformer extends AbstractTransformer {
-
-	Logger logger = LoggerFactory.getLogger( BoxNullTransformer.class );
 
 	public BoxNullTransformer( JavaTranspiler transpiler ) {
 		super( transpiler );

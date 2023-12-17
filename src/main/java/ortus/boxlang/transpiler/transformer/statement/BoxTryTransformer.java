@@ -20,9 +20,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import com.github.javaparser.ast.Node;
 import com.github.javaparser.ast.NodeList;
 import com.github.javaparser.ast.body.Parameter;
@@ -50,8 +47,6 @@ import ortus.boxlang.transpiler.transformer.AbstractTransformer;
 import ortus.boxlang.transpiler.transformer.TransformerContext;
 
 public class BoxTryTransformer extends AbstractTransformer {
-
-	Logger logger = LoggerFactory.getLogger( BoxTryTransformer.class );
 
 	public BoxTryTransformer( JavaTranspiler transpiler ) {
 		super( transpiler );
