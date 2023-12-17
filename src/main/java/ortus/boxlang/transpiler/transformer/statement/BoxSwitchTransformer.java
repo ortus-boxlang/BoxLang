@@ -32,14 +32,13 @@ import ortus.boxlang.ast.statement.BoxSwitch;
 import ortus.boxlang.transpiler.JavaTranspiler;
 import ortus.boxlang.transpiler.transformer.AbstractTransformer;
 import ortus.boxlang.transpiler.transformer.TransformerContext;
-import ortus.boxlang.transpiler.transformer.expression.BoxParenthesisTransformer;
 
 /**
  * Transform a SwitchStatement Node the equivalent Java Parser AST nodes
  */
 public class BoxSwitchTransformer extends AbstractTransformer {
 
-	Logger logger = LoggerFactory.getLogger( BoxParenthesisTransformer.class );
+	Logger logger = LoggerFactory.getLogger( BoxSwitchTransformer.class );
 
 	public BoxSwitchTransformer( JavaTranspiler transpiler ) {
 		super( transpiler );

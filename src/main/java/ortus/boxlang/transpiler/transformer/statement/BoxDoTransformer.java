@@ -13,14 +13,13 @@ import ortus.boxlang.ast.statement.BoxDo;
 import ortus.boxlang.transpiler.JavaTranspiler;
 import ortus.boxlang.transpiler.transformer.AbstractTransformer;
 import ortus.boxlang.transpiler.transformer.TransformerContext;
-import ortus.boxlang.transpiler.transformer.expression.BoxParenthesisTransformer;
 
 import java.util.HashMap;
 import java.util.Map;
 
 public class BoxDoTransformer extends AbstractTransformer {
 
-	Logger logger = LoggerFactory.getLogger( BoxParenthesisTransformer.class );
+	Logger logger = LoggerFactory.getLogger( BoxDoTransformer.class );
 
 	public BoxDoTransformer( JavaTranspiler transpiler ) {
 		super( transpiler );

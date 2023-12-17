@@ -9,11 +9,10 @@ import ortus.boxlang.ast.expression.BoxFQN;
 import ortus.boxlang.transpiler.JavaTranspiler;
 import ortus.boxlang.transpiler.transformer.AbstractTransformer;
 import ortus.boxlang.transpiler.transformer.TransformerContext;
-import ortus.boxlang.transpiler.transformer.statement.BoxThrowTransformer;
 
 public class BoxFQNTransformer extends AbstractTransformer {
 
-	Logger logger = LoggerFactory.getLogger( BoxThrowTransformer.class );
+	Logger logger = LoggerFactory.getLogger( BoxFQNTransformer.class );
 
 	public BoxFQNTransformer( JavaTranspiler transpiler ) {
 		super( transpiler );

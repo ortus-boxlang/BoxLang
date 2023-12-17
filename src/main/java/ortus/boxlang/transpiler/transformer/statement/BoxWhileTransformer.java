@@ -31,11 +31,10 @@ import ortus.boxlang.ast.statement.BoxWhile;
 import ortus.boxlang.transpiler.JavaTranspiler;
 import ortus.boxlang.transpiler.transformer.AbstractTransformer;
 import ortus.boxlang.transpiler.transformer.TransformerContext;
-import ortus.boxlang.transpiler.transformer.expression.BoxParenthesisTransformer;
 
 public class BoxWhileTransformer extends AbstractTransformer {
 
-	Logger logger = LoggerFactory.getLogger( BoxParenthesisTransformer.class );
+	Logger logger = LoggerFactory.getLogger( BoxWhileTransformer.class );
 
 	public BoxWhileTransformer( JavaTranspiler transpiler ) {
 		super( transpiler );

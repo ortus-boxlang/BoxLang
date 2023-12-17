@@ -48,11 +48,10 @@ import ortus.boxlang.ast.statement.BoxTryCatch;
 import ortus.boxlang.transpiler.JavaTranspiler;
 import ortus.boxlang.transpiler.transformer.AbstractTransformer;
 import ortus.boxlang.transpiler.transformer.TransformerContext;
-import ortus.boxlang.transpiler.transformer.expression.BoxParenthesisTransformer;
 
 public class BoxTryTransformer extends AbstractTransformer {
 
-	Logger logger = LoggerFactory.getLogger( BoxParenthesisTransformer.class );
+	Logger logger = LoggerFactory.getLogger( BoxTryTransformer.class );
 
 	public BoxTryTransformer( JavaTranspiler transpiler ) {
 		super( transpiler );

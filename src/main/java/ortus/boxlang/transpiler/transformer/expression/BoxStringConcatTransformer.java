@@ -21,7 +21,7 @@ import ortus.boxlang.transpiler.transformer.TransformerContext;
  */
 public class BoxStringConcatTransformer extends AbstractTransformer {
 
-	Logger logger = LoggerFactory.getLogger( BoxStringInterpolationTransformer.class );
+	Logger logger = LoggerFactory.getLogger( BoxStringConcatTransformer.class );
 
 	public BoxStringConcatTransformer( Transpiler transpiler ) {
 		super( transpiler );

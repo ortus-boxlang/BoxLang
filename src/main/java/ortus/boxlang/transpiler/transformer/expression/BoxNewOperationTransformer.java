@@ -16,11 +16,10 @@ import ortus.boxlang.ast.expression.BoxNewOperation;
 import ortus.boxlang.transpiler.JavaTranspiler;
 import ortus.boxlang.transpiler.transformer.AbstractTransformer;
 import ortus.boxlang.transpiler.transformer.TransformerContext;
-import ortus.boxlang.transpiler.transformer.statement.BoxThrowTransformer;
 
 public class BoxNewOperationTransformer extends AbstractTransformer {
 
-	Logger logger = LoggerFactory.getLogger( BoxThrowTransformer.class );
+	Logger logger = LoggerFactory.getLogger( BoxNewOperationTransformer.class );
 
 	public BoxNewOperationTransformer( JavaTranspiler transpiler ) {
 		super( transpiler );
