@@ -38,6 +38,7 @@ public class BoxScript extends BoxNode {
 	public BoxScript( List<BoxStatement> statements, Position position, String sourceText ) {
 		super( position, sourceText );
 		this.statements = statements;
+		this.statements.forEach( arg -> arg.setParent( this ) );
 	}
 
 	public List<BoxStatement> getStatements() {

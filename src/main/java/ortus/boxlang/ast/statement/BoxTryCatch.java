@@ -45,6 +45,7 @@ public class BoxTryCatch extends BoxStatement {
 		this.catchBody.forEach( arg -> arg.setParent( this ) );
 
 		this.catchTypes = catchTypes;
+		this.catchTypes.forEach( arg -> arg.setParent( this ) );
 
 	}
 
