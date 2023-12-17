@@ -105,6 +105,7 @@ import ortus.boxlang.ast.statement.BoxWhile;
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.runnables.BoxTemplate;
 import ortus.boxlang.runtime.runnables.compiler.JavaSourceString;
+import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.exceptions.ApplicationException;
 import ortus.boxlang.transpiler.transformer.Transformer;
 import ortus.boxlang.transpiler.transformer.TransformerContext;
@@ -170,6 +171,7 @@ public class JavaTranspiler extends Transpiler {
 	private static HashMap<Class, Transformer>	registry		= new HashMap<>();
 	private List<Statement>						statements		= new ArrayList<>();
 	private List<CrossReference>				crossReferences	= new ArrayList<>();
+	private Map<Key, CompilationUnit>			UDFcallables	= new HashMap<Key, CompilationUnit>();
 	private List<CompilationUnit>				callables		= new ArrayList<>();
 
 	public JavaTranspiler() {
@@ -421,9 +423,9 @@ public class JavaTranspiler extends Transpiler {
 			Node javaASTNode = transform( statement );
 			// For Function declarations, we add the transformed function itself as a compilation unit
 			// and also hoist the declaration itself to the top of the _invoke() method.
-			if ( statement instanceof BoxFunctionDeclaration ) {
+			if ( statement instanceof BoxFunctionDeclaration BoxFunc ) {
 				// a function declaration generate
-				getCallables().add( ( CompilationUnit ) javaASTNode );
+				getUDFcallables().put( Key.of( BoxFunc.getName() ), ( CompilationUnit ) javaASTNode );
 				Node registrer = transform( statement, TransformerContext.REGISTER );
 				invokeMethod.getBody().orElseThrow().addStatement( 0, ( Statement ) registrer );
 
@@ -482,7 +484,9 @@ public class JavaTranspiler extends Transpiler {
 		entryPoint.accept( visitor, null );
 		this.crossReferences.addAll( visitor.getCrossReferences() );
 
-		return new TranspiledCode( entryPoint, getCallables() );
+		List<CompilationUnit> allCallables = getCallables();
+		allCallables.addAll( getUDFcallables().values() );
+		return new TranspiledCode( entryPoint, allCallables );
 	}
 
 	/**
@@ -492,6 +496,15 @@ public class JavaTranspiler extends Transpiler {
 	 */
 	public List<CompilationUnit> getCallables() {
 		return callables;
+	}
+
+	/**
+	 * Get the list of compilation units that represent the callable functions
+	 * 
+	 * @return the list of compilation units
+	 */
+	public Map<Key, CompilationUnit> getUDFcallables() {
+		return UDFcallables;
 	}
 
 }
