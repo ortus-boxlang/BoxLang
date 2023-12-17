@@ -19,8 +19,6 @@ import com.github.javaparser.ast.expr.Expression;
 import com.github.javaparser.ast.stmt.BlockStmt;
 import com.github.javaparser.ast.stmt.IfStmt;
 import com.github.javaparser.ast.stmt.Statement;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import ortus.boxlang.ast.BoxNode;
 import ortus.boxlang.ast.BoxStatement;
 import ortus.boxlang.ast.statement.BoxIfElse;
@@ -32,8 +30,6 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class BoxIfElseTransformer extends AbstractTransformer {
-
-	Logger logger = LoggerFactory.getLogger( BoxIfElseTransformer.class );
 
 	public BoxIfElseTransformer( JavaTranspiler transpiler ) {
 		super( transpiler );

@@ -19,6 +19,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.github.javaparser.JavaParser;
 import com.github.javaparser.ParseResult;
 import com.github.javaparser.ast.Node;
@@ -53,8 +56,14 @@ public abstract class AbstractTransformer implements Transformer {
 	protected static JavaParser				javaParser		= new JavaParser();
 	protected static BoxLangCrossReferencer	crossReferencer	= new BoxLangCrossReferencerDefault();
 
+	/**
+	 * Logger
+	 */
+	protected Logger						logger;
+
 	public AbstractTransformer( Transpiler transpiler ) {
-		this.transpiler = transpiler;
+		this.transpiler	= transpiler;
+		this.logger		= LoggerFactory.getLogger( this.getClass() );
 	}
 
 	@Override

@@ -16,8 +16,6 @@ package ortus.boxlang.transpiler.transformer.statement;
 
 import com.github.javaparser.ast.Node;
 import com.github.javaparser.ast.expr.Expression;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import ortus.boxlang.ast.BoxNode;
 import ortus.boxlang.transpiler.JavaTranspiler;
 import ortus.boxlang.transpiler.transformer.AbstractTransformer;
@@ -31,8 +29,6 @@ import java.util.Map;
  * Transform a BoxAssert Node the equivalent Java Parser AST nodes
  */
 public class BoxAssertTransformer extends AbstractTransformer {
-
-	Logger logger = LoggerFactory.getLogger( BoxAssertTransformer.class );
 
 	public BoxAssertTransformer( JavaTranspiler transpiler ) {
 		super( transpiler );

@@ -16,8 +16,6 @@ package ortus.boxlang.transpiler.transformer.expression;
 
 import com.github.javaparser.ast.Node;
 import com.github.javaparser.ast.expr.BooleanLiteralExpr;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import ortus.boxlang.ast.BoxNode;
 import ortus.boxlang.ast.expression.BoxBooleanLiteral;
 import ortus.boxlang.transpiler.JavaTranspiler;
@@ -28,8 +26,6 @@ import ortus.boxlang.transpiler.transformer.TransformerContext;
  * Transform a BoxBooleanLiteral Node the equivalent Java Parser AST nodes
  */
 public class BoxBooleanLiteralTransformer extends AbstractTransformer {
-
-	Logger logger = LoggerFactory.getLogger( BoxBooleanLiteralTransformer.class );
 
 	public BoxBooleanLiteralTransformer( JavaTranspiler transpiler ) {
 		super( transpiler );

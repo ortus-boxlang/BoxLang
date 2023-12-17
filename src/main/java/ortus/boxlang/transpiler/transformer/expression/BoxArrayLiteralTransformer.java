@@ -3,9 +3,6 @@ package ortus.boxlang.transpiler.transformer.expression;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import com.github.javaparser.ast.Node;
 import com.github.javaparser.ast.expr.Expression;
 import com.github.javaparser.ast.expr.MethodCallExpr;
@@ -35,8 +32,6 @@ import ortus.boxlang.transpiler.transformer.TransformerContext;
  * </pre>
  */
 public class BoxArrayLiteralTransformer extends AbstractTransformer {
-
-	Logger logger = LoggerFactory.getLogger( BoxArrayLiteralTransformer.class );
 
 	public BoxArrayLiteralTransformer( JavaTranspiler transpiler ) {
 		super( transpiler );

@@ -2,8 +2,6 @@ package ortus.boxlang.transpiler.transformer.expression;
 
 import com.github.javaparser.ast.Node;
 import com.github.javaparser.ast.expr.Expression;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import ortus.boxlang.ast.BoxNode;
 import ortus.boxlang.ast.expression.BoxParenthesis;
 import ortus.boxlang.transpiler.JavaTranspiler;
@@ -14,8 +12,6 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class BoxParenthesisTransformer extends AbstractTransformer {
-
-	Logger logger = LoggerFactory.getLogger( BoxParenthesisTransformer.class );
 
 	public BoxParenthesisTransformer( JavaTranspiler transpiler ) {
 		super( transpiler );

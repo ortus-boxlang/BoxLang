@@ -16,9 +16,6 @@ package ortus.boxlang.transpiler.transformer.statement;
 
 import java.util.Map;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import com.github.javaparser.ParseResult;
 import com.github.javaparser.ast.CompilationUnit;
 import com.github.javaparser.ast.Node;
@@ -44,7 +41,6 @@ import ortus.boxlang.transpiler.transformer.TransformerContext;
  */
 public class BoxFunctionDeclarationTransformer extends AbstractTransformer {
 
-	Logger			logger					= LoggerFactory.getLogger( BoxFunctionDeclarationTransformer.class );
 	// @formatter:off
 	private String registrationTemplate = "${contextName}.registerUDF( ${enclosingClassName}.${className}.getInstance() );";
 	private String classTemplate = """

@@ -17,9 +17,6 @@ package ortus.boxlang.transpiler.transformer.expression;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import com.github.javaparser.ast.Node;
 import com.github.javaparser.ast.expr.Expression;
 
@@ -34,8 +31,6 @@ import ortus.boxlang.transpiler.transformer.TransformerContext;
  * Transform a BoxBinaryOperation Node the equivalent Java Parser AST nodes
  */
 public class BoxBinaryOperationTransformer extends AbstractTransformer {
-
-	Logger logger = LoggerFactory.getLogger( BoxBinaryOperationTransformer.class );
 
 	public BoxBinaryOperationTransformer( JavaTranspiler transpiler ) {
 		super( transpiler );

@@ -5,9 +5,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import com.github.javaparser.ast.Node;
 
 import ortus.boxlang.ast.BoxNode;
@@ -20,8 +17,6 @@ import ortus.boxlang.transpiler.transformer.TransformerContext;
  * Transform a String Interpolatiion the equivalent Java Parser AST nodes
  */
 public class BoxStringConcatTransformer extends AbstractTransformer {
-
-	Logger logger = LoggerFactory.getLogger( BoxStringConcatTransformer.class );
 
 	public BoxStringConcatTransformer( Transpiler transpiler ) {
 		super( transpiler );
