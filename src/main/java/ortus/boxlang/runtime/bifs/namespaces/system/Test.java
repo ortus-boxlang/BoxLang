@@ -8,20 +8,18 @@ import ortus.boxlang.runtime.types.Argument;
 
 public class Test extends BIF {
 
-	private final static Key message = Key.of( "message" );
-
 	/**
 	 * Constructor
 	 */
 	public Test() {
 		super();
 		arguments = new Argument[] {
-		    new Argument( true, "any", message )
+		    new Argument( true, "any", Key.message )
 		};
 	}
 
 	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
-		System.out.println( arguments.dereference( message, false ) );
+		System.out.println( arguments.get( Key.message ) );
 		return true;
 	}
 

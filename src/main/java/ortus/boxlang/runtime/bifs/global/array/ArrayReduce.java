@@ -3,7 +3,6 @@ package ortus.boxlang.runtime.bifs.global.array;
 import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.context.FunctionBoxContext;
 import ortus.boxlang.runtime.context.IBoxContext;
-import ortus.boxlang.runtime.dynamic.casters.ArrayCaster;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
@@ -12,19 +11,15 @@ import ortus.boxlang.runtime.types.Function;
 
 public class ArrayReduce extends BIF {
 
-    private final static Key array        = Key.of( "array" );
-    private final static Key callback     = Key.of( "callback" );
-    private final static Key initialValue = Key.of( "initialValue" );
-
     /**
      * Constructor
      */
     public ArrayReduce() {
         super();
         arguments = new Argument[] {
-            new Argument( true, "any", array ),
-            new Argument( true, "any", callback ),
-            new Argument( initialValue )
+            new Argument( true, "array", Key.array ),
+            new Argument( true, "function", Key.callback ),
+            new Argument( Key.initialValue )
         };
     }
 
@@ -35,9 +30,9 @@ public class ArrayReduce extends BIF {
      * @param arguments Argument scope defining the array and value to append.
      */
     public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
-        Array          actualArray     = ArrayCaster.cast( arguments.dereference( array, false ) );
-        Object         accumulator     = arguments.get( initialValue );
-        Function       func            = ( Function ) arguments.get( callback );
+        Array          actualArray     = arguments.getAsArray( Key.array );
+        Object         accumulator     = arguments.get( Key.initialValue );
+        Function       func            = arguments.getAsFunction( Key.callback );
         ArgumentsScope closureArgScope = func.createArgumentsScope( new Object[] { accumulator, null, null, actualArray } );
 
         for ( int i = 0; i < actualArray.size(); i++ ) {
@@ -45,7 +40,7 @@ public class ArrayReduce extends BIF {
             closureArgScope.put( Key._2, actualArray.get( i ) );
             closureArgScope.put( Key._3, i + 1 );
 
-            FunctionBoxContext fbc = Function.generateFunctionContext( func, context, callback, closureArgScope );
+            FunctionBoxContext fbc = Function.generateFunctionContext( func, context, Key.callback, closureArgScope );
 
             accumulator = func.invoke( fbc );
         }

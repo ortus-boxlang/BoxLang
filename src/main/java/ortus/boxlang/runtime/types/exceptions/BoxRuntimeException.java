@@ -64,12 +64,23 @@ public class BoxRuntimeException extends BoxLangException {
 	 * Constructor
 	 *
 	 * @param message      The message
+	 * @param type         The type
+	 * @param extendedInfo The extendedInfo
+	 */
+	public BoxRuntimeException( String message, String type, Throwable cause ) {
+		this( message, null, type, null, cause );
+	}
+
+	/**
+	 * Constructor
+	 *
+	 * @param message      The message
 	 * @param detail       The detail
 	 * @param extendedInfo The extendedInfo
 	 * @param cause        The cause
 	 */
 	public BoxRuntimeException( String message, String detail, String extendedInfo, Throwable cause ) {
-		this( message, detail, "application", extendedInfo, cause );
+		this( message, detail, "BoxRuntimeException", extendedInfo, cause );
 	}
 
 	/**

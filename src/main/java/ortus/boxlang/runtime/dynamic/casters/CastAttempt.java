@@ -21,7 +21,7 @@ import java.util.Objects;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
-import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
+import ortus.boxlang.runtime.types.exceptions.BoxCastException;
 
 /**
  * A container object which may or may not contain the result of a cast attempt
@@ -105,7 +105,7 @@ public final class CastAttempt<T> {
 	 */
 	public T get() {
 		if ( value == null ) {
-			throw new BoxRuntimeException( "The cast was not successful.  You cannot get the value." );
+			throw new BoxCastException( "The cast was not successful.  You cannot get the value." );
 		}
 		return value;
 	}
@@ -172,7 +172,7 @@ public final class CastAttempt<T> {
 		if ( value != null ) {
 			return value;
 		} else {
-			throw new BoxRuntimeException( "Value could not be cast." );
+			throw new BoxCastException( "Value could not be cast." );
 		}
 	}
 

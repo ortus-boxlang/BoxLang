@@ -18,11 +18,14 @@
 package ortus.boxlang.runtime.dynamic.casters;
 
 import static com.google.common.truth.Truth.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.math.BigDecimal;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+
+import ortus.boxlang.runtime.types.exceptions.BoxCastException;
 
 public class StringCasterTest {
 
@@ -32,10 +35,10 @@ public class StringCasterTest {
 		assertThat( StringCaster.cast( "Brad" ) ).isEqualTo( "Brad" );
 	}
 
-	@DisplayName( "It can cast a null to a string" )
+	@DisplayName( "It cannot cast a null to a string" )
 	@Test
-	void testItCanCastANull() {
-		assertThat( StringCaster.cast( null ) ).isEqualTo( "" );
+	void testItCanNotCastANull() {
+		assertThrows( BoxCastException.class, () -> StringCaster.cast( null ) );
 	}
 
 	@DisplayName( "It can cast a Boolean to a string" )

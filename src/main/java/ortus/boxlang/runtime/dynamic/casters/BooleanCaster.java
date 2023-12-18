@@ -18,7 +18,7 @@
 package ortus.boxlang.runtime.dynamic.casters;
 
 import ortus.boxlang.runtime.interop.DynamicObject;
-import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
+import ortus.boxlang.runtime.types.exceptions.BoxCastException;
 
 /**
  * I handle casting anything to a boolean
@@ -80,7 +80,7 @@ public class BooleanCaster {
 				return false;
 			}
 			if ( fail ) {
-				throw new BoxRuntimeException(
+				throw new BoxCastException(
 				    String.format( "String [%s] cannot be cast to a boolean", str )
 				);
 			} else {
@@ -88,7 +88,7 @@ public class BooleanCaster {
 			}
 		}
 		if ( fail ) {
-			throw new BoxRuntimeException(
+			throw new BoxCastException(
 			    String.format( "Value [%s] cannot be cast to a boolean", object.getClass().getName() )
 			);
 		} else {

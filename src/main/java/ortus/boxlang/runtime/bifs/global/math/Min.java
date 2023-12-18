@@ -2,15 +2,11 @@ package ortus.boxlang.runtime.bifs.global.math;
 
 import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.context.IBoxContext;
-import ortus.boxlang.runtime.dynamic.casters.DoubleCaster;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
 
 public class Min extends BIF {
-
-	private final static Key	number1	= Key.of( "number1" );
-	private final static Key	number2	= Key.of( "number2" );
 
 	/**
 	 * Constructor
@@ -18,8 +14,8 @@ public class Min extends BIF {
 	public Min() {
 		super();
 		arguments = new Argument[] {
-		    new Argument( true, "any", number1 ),
-		    new Argument( true, "any", number2 )
+		    new Argument( true, "numeric", Key.number1 ),
+		    new Argument( true, "numeric", Key.number2 )
 		};
 	}
 
@@ -30,8 +26,8 @@ public class Min extends BIF {
 	 * @param context
 	 */
 	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
-		double	number1	= DoubleCaster.cast( arguments.dereference( this.number1, false ) );
-		double	number2	= DoubleCaster.cast( arguments.dereference( this.number2, false ) );
+		double	number1	= arguments.getAsDouble( Key.number1 );
+		double	number2	= arguments.getAsDouble( Key.number2 );
 		return Min._invoke( number1, number2 );
 	}
 

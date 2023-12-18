@@ -769,4 +769,54 @@ public class Struct implements Map<Key, Object>, IType, IReferenceable, IListena
 		}
 	}
 
+	/**
+	 * Convenience method for getting cast as Array
+	 * Does NOT perform BoxLang casting, only Java cast so the object needs to actually be castable
+	 */
+	public Array getAsArray( Key key ) {
+		return ( Array ) get( key );
+	}
+
+	/**
+	 * Convenience method for getting cast as Struct
+	 * Does NOT perform BoxLang casting, only Java cast so the object needs to actually be castable
+	 */
+	public Struct getAsStruct( Key key ) {
+		return ( Struct ) get( key );
+	}
+
+	/**
+	 * Convenience method for getting cast as String
+	 * Does NOT perform BoxLang casting, only Java cast so the object needs to actually be castable
+	 */
+	public String getAsString( Key key ) {
+		return ( String ) get( key );
+	}
+
+	/**
+	 * Convenience method for getting cast as Double
+	 * Does NOT perform BoxLang casting, only Java cast so the object needs to actually be castable
+	 */
+	public Double getAsDouble( Key key ) {
+		return ( Double ) get( key );
+	}
+
+	/**
+	 * Convenience method for getting cast as Integer
+	 * Does NOT perform BoxLang casting, only Java cast so the object needs to actually be castable
+	 */
+	public Integer getAsInteger( Key key ) {
+		return ( Integer ) get( key );
+	}
+
+	/**
+	 * Convenience method for getting cast as Function
+	 * Does NOT perform BoxLang casting, only Java cast so the object needs to actually be castable
+	 */
+	public Function getAsFunction( Key key ) {
+		return ( Function ) get( key );
+	}
+
+	// Add more as needed...
+
 }

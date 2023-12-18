@@ -24,7 +24,7 @@ import java.util.stream.Collectors;
 
 import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.scopes.IScope;
-import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
+import ortus.boxlang.runtime.types.exceptions.BoxCastException;
 
 /**
  * I handle casting anything to a collection
@@ -67,7 +67,7 @@ public class CollectionCaster {
 	public static Collection<Object> cast( Object object, Boolean fail ) {
 		if ( object == null ) {
 			if ( fail ) {
-				throw new BoxRuntimeException( "Can't cast null to a Collection." );
+				throw new BoxCastException( "Can't cast null to a Collection." );
 			} else {
 				return null;
 			}
@@ -95,7 +95,7 @@ public class CollectionCaster {
 		}
 
 		if ( fail ) {
-			throw new BoxRuntimeException(
+			throw new BoxCastException(
 			    String.format( "Can't cast [%s] to a Collection.", object.getClass().getName() )
 			);
 		} else {
