@@ -39,7 +39,20 @@ public class ArrayContains extends BIF {
 
 		if ( value instanceof Function callback ) {
 			for ( int i = 0; i < actualArray.size(); i++ ) {
-				if ( BooleanCaster.cast( context.invokeFunction( actualArray.get( i ), new Object[] { actualArray.get( i ), i + 1, actualArray } ) ) ) {
+				if ( BooleanCaster.cast(
+				    // Invoke Function
+				    context.invokeFunction(
+				        // Function object
+				        actualArray.get( i ),
+				        new Object[] {
+				            // Pass this array value
+				            actualArray.get( i ),
+				            // current loop index
+				            i + 1,
+				            // full original array
+				            actualArray }
+				    )
+				) ) {
 					return i + 1;
 				}
 			}
