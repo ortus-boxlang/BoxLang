@@ -3,37 +3,39 @@ package ortus.boxlang.runtime.bifs.global.array;
 import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.dynamic.casters.ArrayCaster;
+import ortus.boxlang.runtime.dynamic.casters.DoubleCaster;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.Array;
 
-public class ArrayAppend extends BIF {
+public class ArrayMax extends BIF {
 
-	private final static Key	array	= Key.of( "array" );
-	private final static Key	value	= Key.of( "value" );
+	private final static Key array = Key.of( "array" );
 
 	/**
 	 * Constructor
 	 */
-	public ArrayAppend() {
+	public ArrayMax() {
 		super();
 		arguments = new Argument[] {
-		    new Argument( true, "any", array ),
-		    new Argument( true, "any", value )
+		    new Argument( true, "any", array )
 		};
 	}
 
 	/**
-	 * Append a value to an array
-	 *
+	 * Return length of array
+	 * 
 	 * @param context
-	 * @param arguments Argument scope defining the array and value to append.
+	 * @param arguments Argument scope defining the array.
 	 */
 	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
-		Array actualArray = ArrayCaster.cast( arguments.dereference( array, false ) );
-		actualArray.add( arguments.dereference( value, false ) );
-		return actualArray;
+		Array	actualArray	= ArrayCaster.cast( arguments.dereference( array, false ) );
+		double	max			= 0;
+		for ( int i = 0; i < actualArray.size(); i++ ) {
+			max = Math.max( max, DoubleCaster.cast( actualArray.get( i ) ) );
+		}
+		return max;
 	}
 
 }

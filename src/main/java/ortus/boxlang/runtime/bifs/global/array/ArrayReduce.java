@@ -12,7 +12,7 @@ import ortus.boxlang.runtime.types.Function;
 
 public class ArrayReduce extends BIF {
 
-    private final static Key arr          = Key.of( "arr" );
+    private final static Key array        = Key.of( "array" );
     private final static Key callback     = Key.of( "callback" );
     private final static Key initialValue = Key.of( "initialValue" );
 
@@ -22,7 +22,7 @@ public class ArrayReduce extends BIF {
     public ArrayReduce() {
         super();
         arguments = new Argument[] {
-            new Argument( true, "any", arr ),
+            new Argument( true, "any", array ),
             new Argument( true, "any", callback ),
             new Argument( initialValue )
         };
@@ -35,7 +35,7 @@ public class ArrayReduce extends BIF {
      * @param arguments Argument scope defining the array and value to append.
      */
     public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
-        Array          actualArray     = ArrayCaster.cast( arguments.dereference( arr, false ) );
+        Array          actualArray     = ArrayCaster.cast( arguments.dereference( array, false ) );
         Object         accumulator     = arguments.get( initialValue );
         Function       func            = ( Function ) arguments.get( callback );
         ArgumentsScope closureArgScope = func.createArgumentsScope( new Object[] { accumulator, null, null, actualArray } );

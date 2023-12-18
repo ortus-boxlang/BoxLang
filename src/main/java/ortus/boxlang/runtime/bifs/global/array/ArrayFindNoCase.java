@@ -8,15 +8,15 @@ import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.Array;
 
-public class ArrayAppend extends BIF {
+public class ArrayFindNoCase extends BIF {
 
 	private final static Key	array	= Key.of( "array" );
-	private final static Key	value	= Key.of( "value" );
+	private final static Key	value	= Key.of( "value " );
 
 	/**
 	 * Constructor
 	 */
-	public ArrayAppend() {
+	public ArrayFindNoCase() {
 		super();
 		arguments = new Argument[] {
 		    new Argument( true, "any", array ),
@@ -25,15 +25,16 @@ public class ArrayAppend extends BIF {
 	}
 
 	/**
-	 * Append a value to an array
-	 *
+	 * Return int position of value in array, case sensitive
+	 * 
 	 * @param context
-	 * @param arguments Argument scope defining the array and value to append.
+	 * @param arguments Argument scope defining the array.
 	 */
 	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
-		Array actualArray = ArrayCaster.cast( arguments.dereference( array, false ) );
-		actualArray.add( arguments.dereference( value, false ) );
-		return actualArray;
+		Array	actualArray	= ArrayCaster.cast( arguments.dereference( array, false ) );
+		Object	value		= arguments.dereference( this.value, false );
+
+		return ArrayContainsNoCase._invoke( actualArray, value );
 	}
 
 }

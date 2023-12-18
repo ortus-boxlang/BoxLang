@@ -8,15 +8,15 @@ import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.Array;
 
-public class ArrayAppend extends BIF {
+public class ArrayDeleteNoCase extends BIF {
 
 	private final static Key	array	= Key.of( "array" );
-	private final static Key	value	= Key.of( "value" );
+	private final static Key	value	= Key.of( "value " );
 
 	/**
 	 * Constructor
 	 */
-	public ArrayAppend() {
+	public ArrayDeleteNoCase() {
 		super();
 		arguments = new Argument[] {
 		    new Argument( true, "any", array ),
@@ -25,15 +25,21 @@ public class ArrayAppend extends BIF {
 	}
 
 	/**
-	 * Append a value to an array
-	 *
+	 * Delete first occurance of item in array case insensitive
+	 * 
 	 * @param context
-	 * @param arguments Argument scope defining the array and value to append.
+	 * @param arguments Argument scope defining the array.
 	 */
 	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
-		Array actualArray = ArrayCaster.cast( arguments.dereference( array, false ) );
-		actualArray.add( arguments.dereference( value, false ) );
-		return actualArray;
+		Array	actualArray	= ArrayCaster.cast( arguments.dereference( array, false ) );
+		Object	value		= arguments.dereference( this.value, false );
+		int		index		= ArrayContainsNoCase._invoke( actualArray, value );
+		if ( index > 0 ) {
+			actualArray.remove( index - 1 );
+			return true;
+		} else {
+			return false;
+		}
 	}
 
 }

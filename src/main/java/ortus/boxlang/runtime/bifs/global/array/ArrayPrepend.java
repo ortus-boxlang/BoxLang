@@ -8,7 +8,7 @@ import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.Array;
 
-public class ArrayAppend extends BIF {
+public class ArrayPrepend extends BIF {
 
 	private final static Key	array	= Key.of( "array" );
 	private final static Key	value	= Key.of( "value" );
@@ -16,7 +16,7 @@ public class ArrayAppend extends BIF {
 	/**
 	 * Constructor
 	 */
-	public ArrayAppend() {
+	public ArrayPrepend() {
 		super();
 		arguments = new Argument[] {
 		    new Argument( true, "any", array ),
@@ -32,7 +32,7 @@ public class ArrayAppend extends BIF {
 	 */
 	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
 		Array actualArray = ArrayCaster.cast( arguments.dereference( array, false ) );
-		actualArray.add( arguments.dereference( value, false ) );
+		actualArray.add( 0, arguments.dereference( value, false ) );
 		return actualArray;
 	}
 

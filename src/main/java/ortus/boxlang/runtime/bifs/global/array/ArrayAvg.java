@@ -8,32 +8,29 @@ import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.Array;
 
-public class ArrayAppend extends BIF {
+public class ArrayAvg extends BIF {
 
-	private final static Key	array	= Key.of( "array" );
-	private final static Key	value	= Key.of( "value" );
+	private final static Key array = Key.of( "array" );
 
 	/**
 	 * Constructor
 	 */
-	public ArrayAppend() {
+	public ArrayAvg() {
 		super();
 		arguments = new Argument[] {
-		    new Argument( true, "any", array ),
-		    new Argument( true, "any", value )
+		    new Argument( true, "any", array )
 		};
 	}
 
 	/**
-	 * Append a value to an array
-	 *
+	 * Return length of array
+	 * 
 	 * @param context
-	 * @param arguments Argument scope defining the array and value to append.
+	 * @param arguments Argument scope defining the array.
 	 */
 	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
 		Array actualArray = ArrayCaster.cast( arguments.dereference( array, false ) );
-		actualArray.add( arguments.dereference( value, false ) );
-		return actualArray;
+		return ArraySum._invoke( actualArray ) / actualArray.size();
 	}
 
 }

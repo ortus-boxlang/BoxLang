@@ -7,33 +7,35 @@ import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.Array;
+import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
-public class ArrayAppend extends BIF {
+public class ArrayFirst extends BIF {
 
-	private final static Key	array	= Key.of( "array" );
-	private final static Key	value	= Key.of( "value" );
+	private final static Key array = Key.of( "array" );
 
 	/**
 	 * Constructor
 	 */
-	public ArrayAppend() {
+	public ArrayFirst() {
 		super();
 		arguments = new Argument[] {
-		    new Argument( true, "any", array ),
-		    new Argument( true, "any", value )
+		    new Argument( true, "any", array )
 		};
 	}
 
 	/**
-	 * Append a value to an array
-	 *
+	 * Return first item in array
+	 * 
 	 * @param context
-	 * @param arguments Argument scope defining the array and value to append.
+	 * @param arguments Argument scope defining the array.
 	 */
 	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
 		Array actualArray = ArrayCaster.cast( arguments.dereference( array, false ) );
-		actualArray.add( arguments.dereference( value, false ) );
-		return actualArray;
+		if ( actualArray.size() > 0 ) {
+			return actualArray.get( 0 );
+		} else {
+			throw new BoxRuntimeException( "Cannot return first element of array; array is empty " );
+		}
 	}
 
 }
