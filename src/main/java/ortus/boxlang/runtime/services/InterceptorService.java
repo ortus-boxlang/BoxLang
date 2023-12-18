@@ -53,17 +53,22 @@ public class InterceptorService extends BaseService {
 	/**
 	 * Logger
 	 */
-	private static final Logger			logger				= LoggerFactory.getLogger( InterceptorService.class );
+	private static final Logger				logger				= LoggerFactory.getLogger( InterceptorService.class );
 
 	/**
 	 * The list of interception points we can listen for
 	 */
-	private Set<Key>					interceptionPoints	= ConcurrentHashMap.newKeySet( 32 );
+	private Set<Key>						interceptionPoints	= ConcurrentHashMap.newKeySet( 32 );
 
 	/**
 	 * The collection of interception states registered with the service
 	 */
-	private Map<Key, InterceptorState>	interceptionStates	= new ConcurrentHashMap<>();
+	private Map<Key, InterceptorState>		interceptionStates	= new ConcurrentHashMap<>();
+
+	/**
+	 * Key registry of announced states, to avoid key creation
+	 */
+	private ConcurrentHashMap<String, Key>	keyRegistry			= new ConcurrentHashMap<>();
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -332,7 +337,7 @@ public class InterceptorService extends BaseService {
 	 * @param data  The data to announce
 	 */
 	public void announce( String state, Struct data ) {
-		announce( Key.of( state ), data );
+		announce( keyRegistry.computeIfAbsent( state, Key::of ), data );
 	}
 
 	/**
