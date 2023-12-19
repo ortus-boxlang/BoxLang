@@ -118,9 +118,17 @@ public class InterceptorState {
 	 *
 	 */
 	public void announce( Struct data ) {
+
+		// Quick short ciruit
+		if ( observers.isEmpty() ) {
+			return;
+		}
+
+		// Process the state
+		Object[] args = new Object[] { data };
 		for ( DynamicObject observer : observers ) {
 			// Announce to the observer
-			Object stopChain = observer.invoke( getName(), new Object[] { data } );
+			Object stopChain = observer.invoke( getName(), args );
 			// If the observer returns true, we short circuit the rest of the observers
 			if ( stopChain != null && BooleanCaster.cast( stopChain ) ) {
 				break;
