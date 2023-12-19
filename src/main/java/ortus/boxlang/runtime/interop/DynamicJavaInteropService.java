@@ -53,7 +53,7 @@ import ortus.boxlang.runtime.types.meta.BoxMeta;
 import ortus.boxlang.runtime.types.meta.GenericMeta;
 
 /**
- * This class is used to represent a BX/Java Class and invoke methods on classes using invoke dynamic.
+ * This class is used to provide a way to dynamically and efficiently interact with the java layer from the within a BoxLang environment.
  *
  * This class is not in charge of casting the results. That is up to the caller to determine.
  * We basically just invoke and return the results!
@@ -205,10 +205,38 @@ public class DynamicJavaInteropService {
         return invokeConstructor( targetClass, new Object[] {} );
     }
 
+    /**
+     * Invoke can be used to invoke public methods on instances, or static methods on classes/interfaces.
+     *
+     * If it's determined that the method handle is static, then the target instance is ignored.
+     * If it's determined that the method handle is not static, then the target instance is used.
+     *
+     * @param targetClass The Class that you want to invoke a method on
+     * @param methodName  The name of the method to invoke
+     * @param safe        Whether the method should throw an error or return null
+     * @param arguments   The arguments to pass to the method
+     *
+     * @return The result of the method invocation
+     *
+     */
     public static Object invoke( Class<?> targetClass, String methodName, boolean safe, Object... arguments ) {
         return invoke( targetClass, null, methodName, safe, arguments );
     }
 
+    /**
+     * Invoke can be used to invoke public methods on instances, or static methods on classes/interfaces.
+     *
+     * If it's determined that the method handle is static, then the target instance is ignored.
+     * If it's determined that the method handle is not static, then the target instance is used.
+     *
+     * @param targetInstance The instance to call the method on
+     * @param methodName     The name of the method to invoke
+     * @param safe           Whether the method should throw an error or return null
+     * @param arguments      The arguments to pass to the method
+     *
+     * @return The result of the method invocation
+     *
+     */
     public static Object invoke( Object targetInstance, String methodName, boolean safe, Object... arguments ) {
         return invoke( targetInstance.getClass(), targetInstance, methodName, safe, arguments );
     }
@@ -298,10 +326,28 @@ public class DynamicJavaInteropService {
      * --------------------------------------------------------------------------
      */
 
+    /**
+     * Get the value of a public or public static field on a class or instance
+     *
+     * @param targetClass The class you want to look for a field on
+     * @param fieldName   The name of the field to get
+     *
+     * @return The value of the field wrapped in an Optional
+     *
+     */
     public static Optional<Object> getField( Class<?> targetClass, String fieldName ) {
         return getField( targetClass, ( Object ) null, fieldName );
     }
 
+    /**
+     * Get the value of a public or public static field on a class or instance
+     *
+     * @param targetInstance The instance you want to look for a field on
+     * @param fieldName      The name of the field to get
+     *
+     * @return The value of the field wrapped in an Optional
+     *
+     */
     public static Optional<Object> getField( Object targetInstance, String fieldName ) {
         return getField( targetInstance.getClass(), targetInstance, fieldName );
     }
@@ -309,7 +355,9 @@ public class DynamicJavaInteropService {
     /**
      * Get the value of a public or public static field on a class or instance
      *
-     * @param fieldName The name of the field to get
+     * @param targetClass    The class you want to look for a field on
+     * @param targetInstance The instance you want to look for a field on
+     * @param fieldName      The name of the field to get
      *
      * @return The value of the field wrapped in an Optional
      *
@@ -864,11 +912,33 @@ public class DynamicJavaInteropService {
         }
     }
 
+    /**
+     * Dereference this object by a key and invoke the result as an invokable (UDF, java method)
+     *
+     * @param targetClass         The class to dereference and look for the invocable on
+     * @param context             The IBoxContext in which the function will be executed
+     * @param name                The name of the key to dereference, which becomes the method name
+     * @param positionalArguments The arguments to pass to the invokable
+     * @param safe                If true, return null if the method is not found, otherwise throw an exception
+     *
+     * @return The requested return value or null
+     */
     public static Object dereferenceAndInvoke( Class<?> targetClass, IBoxContext context, Key name, Object[] positionalArguments,
         Boolean safe ) {
         return dereferenceAndInvoke( targetClass, null, context, name, positionalArguments, safe );
     }
 
+    /**
+     * Dereference this object by a key and invoke the result as an invokable (UDF, java method)
+     *
+     * @param targetInstance      The instance to dereference and look for the invocable on
+     * @param context             The IBoxContext in which the function will be executed
+     * @param name                The name of the key to dereference, which becomes the method name
+     * @param positionalArguments The arguments to pass to the invokable
+     * @param safe                If true, return null if the method is not found, otherwise throw an exception
+     *
+     * @return The requested return value or null
+     */
     public static Object dereferenceAndInvoke( Object targetInstance, IBoxContext context, Key name, Object[] positionalArguments,
         Boolean safe ) {
         return dereferenceAndInvoke( targetInstance.getClass(), targetInstance, context, name, positionalArguments, safe );
@@ -877,6 +947,9 @@ public class DynamicJavaInteropService {
     /**
      * Dereference this object by a key and invoke the result as an invokable (UDF, java method)
      *
+     * @param targetClass         The class to dereference and look for the invocable on
+     * @param targetInstance      The instance to dereference and look for the invocable on
+     * @param context             The IBoxContext in which the function will be executed
      * @param name                The name of the key to dereference, which becomes the method name
      * @param positionalArguments The arguments to pass to the invokable
      * @param safe                If true, return null if the method is not found, otherwise throw an exception
