@@ -347,39 +347,7 @@ public class DynamicObject implements IReferenceable {
 	 *
 	 */
 	public Object invoke( String methodName, Object... arguments ) {
-		// Verify method name
-		if ( methodName == null || methodName.isEmpty() ) {
-			throw new BoxRuntimeException( "Method name cannot be null or empty." );
-		}
-
-		// Unwrap any ClassInvoker instances
-		unWrapArguments( arguments );
-
-		// Get the invoke dynamic method handle from our cache and discovery techniques
-		MethodRecord methodRecord;
-		try {
-			methodRecord = getMethodHandle( methodName, argumentsToClasses( arguments ) );
-		} catch ( RuntimeException e ) {
-			throw new BoxRuntimeException( "Error getting method for class " + this.targetClass.getName(), e );
-		}
-
-		// If it's not static, we need a target instance
-		if ( !methodRecord.isStatic() && !hasInstance() ) {
-			throw new BoxRuntimeException(
-			    "You can't call invoke on a null target instance. Use [invokeStatic] instead or set the target instance manually or via the constructor."
-			);
-		}
-
-		// Discover and Execute it baby!
-		try {
-			return methodRecord.isStatic()
-			    ? methodRecord.methodHandle().invokeWithArguments( arguments )
-			    : methodRecord.methodHandle().bindTo( this.targetInstance ).invokeWithArguments( arguments );
-		} catch ( RuntimeException e ) {
-			throw e;
-		} catch ( Throwable e ) {
-			throw new BoxRuntimeException( "Error invoking method " + methodName + " for class " + this.targetClass.getName(), e );
-		}
+		return JavaInvocationService.invoke( this.getTargetClass(), this.getTargetInstance(), methodName, false, arguments );
 	}
 
 	/**
