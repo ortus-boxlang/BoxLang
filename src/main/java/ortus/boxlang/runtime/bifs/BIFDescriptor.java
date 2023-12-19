@@ -25,15 +25,53 @@ import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.ArgumentUtil;
 
+/**
+ * This class is used to describe a BIF
+ * as it can be a global BIF or a member BIF or both or coming from a module
+ * It also lazily creates the BIF instance and caches it upon first use
+ */
 public class BIFDescriptor {
 
-	public Key		name;
-	public Class<?>	BIFClass;
-	public String	module;
-	public String	namespace;
-	public BIF		BIFInstance;
-	public Boolean	isGlobal;
+	/**
+	 * BIF name
+	 */
+	public Key			name;
 
+	/**
+	 * BIF class
+	 */
+	public Class<?>		BIFClass;
+
+	/**
+	 * Module name, or null if global
+	 */
+	public String		module;
+
+	/**
+	 * Namespace name, or null if global
+	 */
+	public String		namespace;
+
+	/**
+	 * BIF instance, lazily created
+	 */
+	public volatile BIF	BIFInstance;
+
+	/**
+	 * Is this a global BIF?
+	 */
+	public Boolean		isGlobal;
+
+	/**
+	 * Constructor for a global BIF
+	 *
+	 * @param name        The name of the BIF
+	 * @param BIFClass    The class of the BIF
+	 * @param module      The module name, or null if global
+	 * @param namespace   The namespace name, or null if global
+	 * @param isGlobal    Is this a global BIF?
+	 * @param BIFInstance The BIF instance or null by default
+	 */
 	public BIFDescriptor(
 	    Key name,
 	    Class<?> BIFClass,
@@ -49,22 +87,36 @@ public class BIFDescriptor {
 		this.BIFInstance	= BIFInstance;
 	}
 
+	/**
+	 * Descriptor belongs to a modules or not
+	 *
+	 * @return True if the descriptor belongs to a module, false otherwise
+	 */
 	public Boolean hasModule() {
 		return module != null;
 	}
 
+	/**
+	 * Descriptor belongs to a namespace or not
+	 *
+	 * @return True if the descriptor belongs to a namespace, false otherwise
+	 */
 	public Boolean hasNamespace() {
 		return namespace != null;
 	}
 
+	/**
+	 * Get the BIF instance for this descriptor and lazily create it if needed
+	 *
+	 * @return The BIF instance
+	 */
 	public BIF getBIF() {
 		if ( this.BIFInstance == null ) {
 			synchronized ( this ) {
 				// Double check inside lock
-				if ( this.BIFInstance != null ) {
-					return this.BIFInstance;
+				if ( this.BIFInstance == null ) {
+					this.BIFInstance = ( BIF ) DynamicObject.of( this.BIFClass ).invokeConstructor().getTargetInstance();
 				}
-				this.BIFInstance = ( BIF ) DynamicObject.of( this.BIFClass ).invokeConstructor().getTargetInstance();
 			}
 		}
 		return this.BIFInstance;
@@ -72,41 +124,46 @@ public class BIFDescriptor {
 
 	/**
 	 * Invoke the BIF with no arguments
-	 * 
-	 * @param context
-	 * 
+	 *
+	 * @param context  The context
+	 * @param isMember Is this a member BIF?
+	 *
 	 * @return The result of the invocation
 	 */
 	public Object invoke( IBoxContext context, boolean isMember ) {
 		ArgumentsScope scope = new ArgumentsScope();
-		scope.put( BIF.__isMemberExectution, isMember );
+		scope.put( BIF.__isMemberExecution, isMember );
 		return this.getBIF().invoke( context, scope );
 	}
 
 	/**
 	 * Invoke the BIF with positional arguments
-	 * 
-	 * @param context
-	 * 
+	 *
+	 * @param context             The context
+	 * @param positionalArguments The positional arguments
+	 * @param isMember            Is this a member BIF?
+	 *
 	 * @return The result of the invocation
 	 */
 	public Object invoke( IBoxContext context, Object[] positionalArguments, boolean isMember ) {
 		ArgumentsScope scope = ArgumentUtil.createArgumentsScope( positionalArguments, getBIF().getArguments() );
-		scope.put( BIF.__isMemberExectution, isMember );
+		scope.put( BIF.__isMemberExecution, isMember );
 		// Invoke it baby!
 		return this.getBIF().invoke( context, scope );
 	}
 
 	/**
 	 * Invoke the BIF with named arguments
-	 * 
-	 * @param context
-	 * 
+	 *
+	 * @param context        The context
+	 * @param namedArguments The named arguments
+	 * @param isMember       Is this a member BIF?
+	 *
 	 * @return The result of the invocation
 	 */
 	public Object invoke( IBoxContext context, Map<Key, Object> namedArguments, boolean isMember ) {
 		ArgumentsScope scope = ArgumentUtil.createArgumentsScope( namedArguments, getBIF().getArguments() );
-		scope.put( BIF.__isMemberExectution, isMember );
+		scope.put( BIF.__isMemberExecution, isMember );
 		// Invoke it baby!
 		return this.getBIF().invoke( context, scope );
 	}
