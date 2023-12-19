@@ -24,17 +24,34 @@ import java.util.Arrays;
  */
 public class Key {
 
-	public static final Key	_0	= Key.of( 0 );
-	public static final Key	_1	= Key.of( 1 );
-	public static final Key	_2	= Key.of( 2 );
-	public static final Key	_3	= Key.of( 3 );
-	public static final Key	_4	= Key.of( 4 );
-	public static final Key	_5	= Key.of( 5 );
-	public static final Key	_6	= Key.of( 6 );
-	public static final Key	_7	= Key.of( 7 );
-	public static final Key	_8	= Key.of( 8 );
-	public static final Key	_9	= Key.of( 9 );
-	public static final Key	_10	= Key.of( 10 );
+	// Static instances of common keys
+	public static final Key	_0				= Key.of( 0 );
+	public static final Key	_1				= Key.of( 1 );
+	public static final Key	_2				= Key.of( 2 );
+	public static final Key	_3				= Key.of( 3 );
+	public static final Key	_4				= Key.of( 4 );
+	public static final Key	_5				= Key.of( 5 );
+	public static final Key	_6				= Key.of( 6 );
+	public static final Key	_7				= Key.of( 7 );
+	public static final Key	_8				= Key.of( 8 );
+	public static final Key	_9				= Key.of( 9 );
+	public static final Key	_10				= Key.of( 10 );
+
+	public static final Key	array			= Key.of( "array" );
+	public static final Key	value			= Key.of( "value" );
+	public static final Key	position		= Key.of( "position" );
+	public static final Key	callback		= Key.of( "callback" );
+	public static final Key	initialValue	= Key.of( "initialValue" );
+	public static final Key	index			= Key.of( "index" );
+	public static final Key	number1			= Key.of( "number1" );
+	public static final Key	number2			= Key.of( "number2" );
+	public static final Key	algorithm		= Key.of( "algorithm" );
+	public static final Key	message			= Key.of( "message" );
+	public static final Key	merge			= Key.of( "merge" );
+	public static final Key	string			= Key.of( "string" );
+
+	public static final Key	contains		= Key.of( "contains" );
+	public static final Key	find			= Key.of( "find" );
 
 	/**
 	 * --------------------------------------------------------------------------

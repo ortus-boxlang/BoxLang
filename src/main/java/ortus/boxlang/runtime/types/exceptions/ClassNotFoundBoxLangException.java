@@ -3,7 +3,7 @@ package ortus.boxlang.runtime.types.exceptions;
 /**
  * Thrown when a key is not found in a struct
  */
-public class ClassNotFoundBoxLangException extends ApplicationException {
+public class ClassNotFoundBoxLangException extends BoxRuntimeException {
 
 	/**
 	 * Constructor when we don't know the actual struct that was being searched

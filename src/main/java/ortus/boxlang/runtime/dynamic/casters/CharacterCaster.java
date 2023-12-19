@@ -18,7 +18,7 @@
 package ortus.boxlang.runtime.dynamic.casters;
 
 import ortus.boxlang.runtime.interop.DynamicObject;
-import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
+import ortus.boxlang.runtime.types.exceptions.BoxCastException;
 
 /**
  * I handle casting anything
@@ -60,7 +60,7 @@ public class CharacterCaster {
 	public static Character cast( Object object, Boolean fail ) {
 		if ( object == null ) {
 			if ( fail ) {
-				throw new BoxRuntimeException( "Can't cast null to a char." );
+				throw new BoxCastException( "Can't cast null to a char." );
 			} else {
 				return null;
 			}
@@ -76,7 +76,7 @@ public class CharacterCaster {
 				return Character.valueOf( str.charAt( 0 ) );
 			}
 			if ( fail ) {
-				throw new BoxRuntimeException( "Can't cast empty string to a char." );
+				throw new BoxCastException( "Can't cast empty string to a char." );
 			} else {
 				return null;
 			}
@@ -90,7 +90,7 @@ public class CharacterCaster {
 		}
 
 		if ( fail ) {
-			throw new BoxRuntimeException(
+			throw new BoxCastException(
 			    String.format( "Can't cast [%s] to a char.", object.getClass().getName() )
 			);
 		} else {

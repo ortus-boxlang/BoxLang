@@ -1,18 +1,19 @@
 package ortus.boxlang.runtime.bifs.global.array;
 
 import ortus.boxlang.runtime.bifs.BIF;
+import ortus.boxlang.runtime.bifs.BoxBIF;
+import ortus.boxlang.runtime.bifs.BoxMember;
 import ortus.boxlang.runtime.context.IBoxContext;
-import ortus.boxlang.runtime.dynamic.casters.ArrayCaster;
 import ortus.boxlang.runtime.dynamic.casters.IntegerCaster;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.Array;
+import ortus.boxlang.runtime.types.BoxLangType;
 
+@BoxBIF
+@BoxMember( type = BoxLangType.ARRAY )
 public class ArrayDeleteAt extends BIF {
-
-	private final static Key	array	= Key.of( "array" );
-	private final static Key	index	= Key.of( "index " );
 
 	/**
 	 * Constructor
@@ -20,20 +21,24 @@ public class ArrayDeleteAt extends BIF {
 	public ArrayDeleteAt() {
 		super();
 		arguments = new Argument[] {
-		    new Argument( true, "any", array ),
-		    new Argument( true, "any", index )
+		    new Argument( true, "modifiableArray", Key.array ),
+		    new Argument( true, "any", Key.index )
 		};
 	}
 
 	/**
 	 * Delete item at specified index in array
 	 * 
-	 * @param context
-	 * @param arguments Argument scope defining the array.
+	 * @param context   The context in which the BIF is being invoked.
+	 * @param arguments Argument scope for the BIF.
+	 * 
+	 * @argument.array The array to be deleted from.
+	 * 
+	 * @argument.index The index to deleted.
 	 */
 	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
-		Array	actualArray	= ArrayCaster.cast( arguments.dereference( array, false ) );
-		int		index		= IntegerCaster.cast( arguments.dereference( this.index, false ) );
+		Array	actualArray	= arguments.getAsArray( Key.array );
+		int		index		= IntegerCaster.cast( arguments.get( Key.index ) );
 		actualArray.remove( index - 1 );
 		return true;
 

@@ -1,17 +1,18 @@
 package ortus.boxlang.runtime.bifs.global.array;
 
 import ortus.boxlang.runtime.bifs.BIF;
+import ortus.boxlang.runtime.bifs.BoxBIF;
+import ortus.boxlang.runtime.bifs.BoxMember;
 import ortus.boxlang.runtime.context.IBoxContext;
-import ortus.boxlang.runtime.dynamic.casters.ArrayCaster;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.Array;
-import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
+import ortus.boxlang.runtime.types.BoxLangType;
 
+@BoxBIF
+@BoxMember( type = BoxLangType.ARRAY )
 public class ArrayClear extends BIF {
-
-	private final static Key array = Key.of( "array" );
 
 	/**
 	 * Constructor
@@ -19,23 +20,20 @@ public class ArrayClear extends BIF {
 	public ArrayClear() {
 		super();
 		arguments = new Argument[] {
-		    new Argument( true, "array", array )
+		    new Argument( true, "modifiableArray", Key.array )
 		};
 	}
 
 	/**
 	 * Clear all items from array
 	 * 
-	 * @param context
-	 * @param arguments Argument scope defining the array.
+	 * @param context   The context in which the BIF is being invoked.
+	 * @param arguments Argument scope for the BIF.
+	 * 
+	 * @argument.array The array to clear.
 	 */
 	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
-		Object incoming = arguments.dereference( array, false );
-
-		if ( incoming.getClass().isArray() ) {
-			throw new BoxRuntimeException( "ArrayClear does not support Java arrays" );
-		}
-		Array actualArray = ArrayCaster.cast( incoming );
+		Array actualArray = arguments.getAsArray( Key.array );
 		actualArray.clear();
 		// CF Compat, but dumb
 		return true;

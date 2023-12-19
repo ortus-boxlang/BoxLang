@@ -1,16 +1,18 @@
 package ortus.boxlang.runtime.bifs.global.array;
 
 import ortus.boxlang.runtime.bifs.BIF;
+import ortus.boxlang.runtime.bifs.BoxBIF;
+import ortus.boxlang.runtime.bifs.BoxMember;
 import ortus.boxlang.runtime.context.IBoxContext;
-import ortus.boxlang.runtime.dynamic.casters.ArrayCaster;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.Array;
+import ortus.boxlang.runtime.types.BoxLangType;
 
+@BoxBIF
+@BoxMember( type = BoxLangType.ARRAY )
 public class ArrayAvg extends BIF {
-
-	private final static Key array = Key.of( "array" );
 
 	/**
 	 * Constructor
@@ -18,18 +20,20 @@ public class ArrayAvg extends BIF {
 	public ArrayAvg() {
 		super();
 		arguments = new Argument[] {
-		    new Argument( true, "any", array )
+		    new Argument( true, "Array", Key.array )
 		};
 	}
 
 	/**
 	 * Return length of array
 	 * 
-	 * @param context
-	 * @param arguments Argument scope defining the array.
+	 * @param context   The context in which the BIF is being invoked.
+	 * @param arguments Argument scope for the BIF.
+	 * 
+	 * @argument.array The array whose elements will be averaged.
 	 */
 	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
-		Array actualArray = ArrayCaster.cast( arguments.dereference( array, false ) );
+		Array actualArray = arguments.getAsArray( Key.array );
 		return ArraySum._invoke( actualArray ) / actualArray.size();
 	}
 

@@ -1,16 +1,18 @@
 package ortus.boxlang.runtime.bifs.global.array;
 
 import ortus.boxlang.runtime.bifs.BIF;
+import ortus.boxlang.runtime.bifs.BoxBIF;
+import ortus.boxlang.runtime.bifs.BoxMember;
 import ortus.boxlang.runtime.context.IBoxContext;
-import ortus.boxlang.runtime.dynamic.casters.ArrayCaster;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.Array;
+import ortus.boxlang.runtime.types.BoxLangType;
 
+@BoxBIF
+@BoxMember( type = BoxLangType.ARRAY )
 public class ArrayLen extends BIF {
-
-	private final static Key obj = Key.of( "obj" );
 
 	/**
 	 * Constructor
@@ -18,18 +20,20 @@ public class ArrayLen extends BIF {
 	public ArrayLen() {
 		super();
 		arguments = new Argument[] {
-		    new Argument( true, "any", obj )
+		    new Argument( true, "array", Key.array )
 		};
 	}
 
 	/**
 	 * Return length of array
 	 * 
-	 * @param context
-	 * @param arguments Argument scope defining the array.
+	 * @param context   The context in which the BIF is being invoked.
+	 * @param arguments Argument scope for the BIF.
+	 * 
+	 * @argument.array The array to return length of
 	 */
 	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
-		Array actualArray = ArrayCaster.cast( arguments.dereference( obj, false ) );
+		Array actualArray = arguments.getAsArray( Key.array );
 		return actualArray.size();
 	}
 

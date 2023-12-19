@@ -20,8 +20,10 @@ package ortus.boxlang.runtime.dynamic.casters;
 import java.math.BigDecimal;
 import java.util.List;
 
+import ortus.boxlang.runtime.types.BoxLangType;
+import ortus.boxlang.runtime.types.Function;
 import ortus.boxlang.runtime.types.NullValue;
-import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
+import ortus.boxlang.runtime.types.exceptions.BoxCastException;
 
 /**
  * I handle casting anything
@@ -42,12 +44,17 @@ public class GenericCaster {
 	 * @return A CastAttempt, which contains the casted value, if successful
 	 */
 	public static CastAttempt<Object> attempt( Object object, Object oType, boolean strict ) {
-		String type = StringCaster.cast( oType ).toLowerCase();
+		String type;
+		if ( oType instanceof BoxLangType boxType ) {
+			type = boxType.name().toLowerCase();
+		} else {
+			type = StringCaster.cast( oType ).toLowerCase();
+		}
 
 		// Represent legit null values in a NullValue instance
 		if ( type.equalsIgnoreCase( "null" ) || type.equalsIgnoreCase( "void" ) ) {
 			if ( strict && object != null ) {
-				throw new BoxRuntimeException(
+				throw new BoxCastException(
 				    String.format( "Cannot cast type [%s] to %s.", object.getClass().getName(), type )
 				);
 			}
@@ -123,7 +130,7 @@ public class GenericCaster {
 			} else if ( object instanceof List<?> l ) {
 				incomingList = l.toArray();
 			} else {
-				throw new BoxRuntimeException(
+				throw new BoxCastException(
 				    String.format( "You asked for type %s, but input %s cannot be cast to an array.", type,
 				        object.getClass().getName() )
 				);
@@ -170,8 +177,25 @@ public class GenericCaster {
 		if ( type.equals( "float" ) ) {
 			return FloatCaster.cast( object, fail );
 		}
+		if ( type.equals( "array" ) ) {
+			return ArrayCaster.cast( object, fail );
+		}
+		if ( type.equals( "modifiablearray" ) ) {
+			return ModifiableArrayCaster.cast( object, fail );
+		}
+		// TODO: Struct and modifaiblestruct
 
-		throw new BoxRuntimeException(
+		if ( type.equals( "function" ) ) {
+			// No real "casting" to do, just return it if it is one
+			if ( object instanceof Function ) {
+				return object;
+			}
+			throw new BoxCastException(
+			    String.format( "Cannot cast %s, to a Function.", object.getClass().getName() )
+			);
+		}
+
+		throw new BoxCastException(
 		    String.format( "Invalid cast type [%s]", type )
 		);
 	}
@@ -208,7 +232,7 @@ public class GenericCaster {
 		if ( type.equals( "float" ) ) {
 			return Float.class;
 		}
-		throw new BoxRuntimeException(
+		throw new BoxCastException(
 		    String.format( "Invalid cast type [%s]", type )
 		);
 	}

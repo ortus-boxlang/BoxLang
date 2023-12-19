@@ -91,6 +91,19 @@ public class ArrayReduceTest {
         assertThat( variables.dereference( result, false ) ).isEqualTo( 15 );
     }
 
+    @DisplayName( "It should use the provided arrow function over the array" )
+    @Test
+    public void testArrowLambda() {
+        instance.executeSource(
+            """
+                      nums = [ 1, 2, 3, 4, 5 ];
+
+                      result = arrayReduce( nums, ( acc, num ) -> acc + num, 0 );
+            """,
+            context );
+        assertThat( variables.dereference( result, false ) ).isEqualTo( 15 );
+    }
+
     // @Disabled
     @DisplayName( "It should handle complex objects being used as the accumulator" )
     @Test

@@ -149,6 +149,9 @@ public class ArgumentUtil {
 	 *
 	 */
 	public static Object ensureArgumentType( Key name, Object value, String type ) {
+		if ( value == null ) {
+			return null;
+		}
 		CastAttempt<Object> typeCheck = GenericCaster.attempt( value, type, true );
 		if ( !typeCheck.wasSuccessful() ) {
 			throw new BoxRuntimeException(
@@ -157,7 +160,11 @@ public class ArgumentUtil {
 			);
 		}
 		// Should we actually return the casted value??? Not CFML Compat! If so, return typeCheck.get() with check for NullValue instances.
-		return typeCheck.get();
+		Object result = typeCheck.get();
+		if ( result instanceof NullValue ) {
+			return null;
+		}
+		return result;
 	}
 
 }

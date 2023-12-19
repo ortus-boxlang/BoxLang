@@ -1,34 +1,40 @@
-package ortus.boxlang.runtime.bifs.namespaces.system;
+package ortus.boxlang.runtime.bifs.global.string;
 
 import ortus.boxlang.runtime.bifs.BIF;
+import ortus.boxlang.runtime.bifs.BoxBIF;
+import ortus.boxlang.runtime.bifs.BoxMember;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
+import ortus.boxlang.runtime.types.BoxLangType;
 
-public class Test extends BIF {
+@BoxBIF
+@BoxMember( type = BoxLangType.STRING, name = "UCase" )
+public class UCase extends BIF {
 
 	/**
 	 * Constructor
 	 */
-	public Test() {
+	public UCase() {
 		super();
 		arguments = new Argument[] {
-		    new Argument( true, "any", Key.message )
+		    new Argument( true, "string", Key.string ),
 		};
 	}
 
 	/**
-	 * Print a message with line break to the console
+	 * 
+	 * Uppercase a string
 	 * 
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 * 
-	 * @argument.message The message to print
+	 * @argument.string The string to uppercase
+	 * 
 	 */
 	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
-		System.out.println( arguments.get( Key.message ) );
-		return true;
+		return arguments.getAsString( Key.string ).toUpperCase();
 	}
 
 }

@@ -19,15 +19,21 @@ package ortus.boxlang.runtime.dynamic.casters;
 
 import java.util.List;
 
+import com.google.common.collect.ImmutableList;
+
 import ortus.boxlang.runtime.interop.DynamicObject;
-import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.exceptions.BoxCastException;
+import ortus.boxlang.runtime.types.immutable.ImmutableArray;
 
 /**
- * I handle casting anything to a Array
+ * I handle casting anything to a Array that needs to be modifiable
+ * This means I reject
+ * - Native Java arrays
+ * - ImmutableLists
+ * - UmmodifiableLists
  */
-public class ArrayCaster {
+public class ModifiableArrayCaster {
 
 	/**
 	 * Tests to see if the value can be cast to a Array.
@@ -54,14 +60,13 @@ public class ArrayCaster {
 	}
 
 	/**
-	 * Used to cast anything to a Array
+	 * Used to cast anything to a Array that needs to be modifiable
 	 *
 	 * @param object The value to cast to a Array
 	 * @param fail   True to throw exception when failing.
 	 *
 	 * @return The Array value
 	 */
-	@SuppressWarnings( "unchecked" )
 	public static Array cast( Object object, Boolean fail ) {
 		if ( object == null ) {
 			if ( fail ) {
@@ -72,42 +77,25 @@ public class ArrayCaster {
 		}
 		object = DynamicObject.unWrap( object );
 
-		if ( object instanceof Array col ) {
-			return col;
+		if ( object instanceof ImmutableArray col ) {
+			throw new BoxCastException( "Can't cast ImmutableArray to a modifiable Array." );
 		}
 
 		if ( object.getClass().isArray() ) {
-			// Arrays of Object are easier to cast
-			if ( object instanceof Object[] ) {
-				Object[] array = ( Object[] ) object;
-				return Array.of( array );
-			}
-
-			// for primitive arrays, we must copy like so
-			int		length	= java.lang.reflect.Array.getLength( object );
-			Array	arr		= new Array();
-
-			for ( int i = 0; i < length; i++ ) {
-				arr.add( java.lang.reflect.Array.get( object, i ) );
-			}
-			return arr;
+			throw new BoxCastException( "Can't cast a Java Array to a modifiable Array." );
 		}
 
-		if ( object instanceof List ) {
-			return Array.of( ( List<Object> ) object );
+		if ( object instanceof ImmutableList ) {
+			throw new BoxCastException( "Can't cast ImmutableList to a modifiable Array." );
 		}
 
-		if ( object instanceof ArgumentsScope args ) {
-			return args.asArray();
+		// Unmodifiable list is not a specific calss, so we have to get clever
+		if ( object instanceof List && object.getClass().getName().contains( "Unmodifiable" ) ) {
+			throw new BoxCastException( "Can't cast Unmodifiable List to a modifiable Array." );
 		}
 
-		if ( fail ) {
-			throw new BoxCastException(
-			    String.format( "Can't cast [%s] to a Array.", object.getClass().getName() )
-			);
-		} else {
-			return null;
-		}
+		// delegate to ArrayCaster
+		return ArrayCaster.cast( object, fail );
 	}
 
 }
