@@ -17,8 +17,11 @@
  */
 package ortus.boxlang.runtime.interop;
 
+import java.lang.invoke.CallSite;
+import java.lang.invoke.ConstantCallSite;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
+import java.lang.invoke.MethodType;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
@@ -66,7 +69,7 @@ import ortus.boxlang.runtime.types.exceptions.NoMethodException;
  * - {@code invokeStaticMethod( String methodName, Object... args )} - Invoke a static method on the class
  * - {@code invoke( String methodName, Object... args )} - Invoke a method on the instance of the class
  */
-public class JavaInvocationService {
+public class DynamicJavaInteropService {
 
     /**
      * --------------------------------------------------------------------------
@@ -163,39 +166,37 @@ public class JavaInvocationService {
      * @return The instance of the class
      *
      */
-    // public DynamicObject invokeConstructor( Object... args ) {
+    public static <T> T invokeConstructor( Class<T> targetClass, Object... args ) {
 
-    // // Thou shalt not pass!
-    // if ( isInterface() ) {
-    // throw new BoxRuntimeException( "Cannot invoke a constructor on an interface" );
-    // }
+        // Thou shalt not pass!
+        if ( isInterface( targetClass ) ) {
+            throw new BoxRuntimeException( "Cannot invoke a constructor on an interface" );
+        }
 
-    // // Unwrap any ClassInvoker instances
-    // unWrapArguments( args );
-    // // Method signature for a constructor is void (Object...)
-    // MethodType constructorType = MethodType.methodType( void.class, argumentsToClasses( args ) );
-    // // Define the bootstrap method
-    // MethodHandle constructorHandle;
-    // try {
-    // constructorHandle = METHOD_LOOKUP.findConstructor( this.targetClass, constructorType );
-    // } catch ( NoSuchMethodException | IllegalAccessException e ) {
-    // throw new BoxRuntimeException( "Error getting constructor for class " + this.targetClass.getName(), e );
-    // }
-    // // Create a callsite using the constructor handle
-    // CallSite callSite = new ConstantCallSite( constructorHandle );
-    // // Bind the CallSite and invoke the constructor with the provided arguments
-    // // Invoke Dynamic tries to do argument coercion, so we need to convert the arguments to the right types
-    // MethodHandle constructorInvoker = callSite.dynamicInvoker();
-    // try {
-    // this.targetInstance = constructorInvoker.invokeWithArguments( args );
-    // } catch ( RuntimeException e ) {
-    // throw e;
-    // } catch ( Throwable e ) {
-    // throw new BoxRuntimeException( "Error invoking constructor for class " + this.targetClass.getName(), e );
-    // }
-
-    // return this;
-    // }
+        // Unwrap any ClassInvoker instances
+        unWrapArguments( args );
+        // Method signature for a constructor is void (Object...)
+        MethodType   constructorType = MethodType.methodType( void.class, argumentsToClasses( args ) );
+        // Define the bootstrap method
+        MethodHandle constructorHandle;
+        try {
+            constructorHandle = METHOD_LOOKUP.findConstructor( targetClass, constructorType );
+        } catch ( NoSuchMethodException | IllegalAccessException e ) {
+            throw new BoxRuntimeException( "Error getting constructor for class " + targetClass.getName(), e );
+        }
+        // Create a callsite using the constructor handle
+        CallSite     callSite           = new ConstantCallSite( constructorHandle );
+        // Bind the CallSite and invoke the constructor with the provided arguments
+        // Invoke Dynamic tries to do argument coercion, so we need to convert the arguments to the right types
+        MethodHandle constructorInvoker = callSite.dynamicInvoker();
+        try {
+            return ( T ) constructorInvoker.invokeWithArguments( args );
+        } catch ( RuntimeException e ) {
+            throw e;
+        } catch ( Throwable e ) {
+            throw new BoxRuntimeException( "Error invoking constructor for class " + targetClass.getName(), e );
+        }
+    }
 
     /**
      * Invokes the no-arg constructor for the class with the given arguments and stores the instance of the object
@@ -205,9 +206,9 @@ public class JavaInvocationService {
      * @return The instance of the class
      *
      */
-    // public DynamicObject invokeConstructor() {
-    // return invokeConstructor( new Object[] {} );
-    // }
+    public static <T> T invokeConstructor( Class<T> targetClass ) {
+        return invokeConstructor( targetClass, new Object[] {} );
+    }
 
     public static Object invoke( Class<?> targetClass, String methodName, boolean safe, Object... arguments ) {
         return invoke( targetClass, null, methodName, safe, arguments );
@@ -504,7 +505,7 @@ public class JavaInvocationService {
 
         // We use the method signature as the cache key
         // TODO: look at just using string's hashcode directly
-        String       cacheKey     = methodName + Objects.hash( methodName, Arrays.toString( argumentsAsClasses ) );
+        String       cacheKey     = Objects.hash( targetClass ) + methodName + Objects.hash( methodName, Arrays.toString( argumentsAsClasses ) );
         MethodRecord methodRecord = methodHandleCache.get( cacheKey );
 
         // Double lock to avoid race-conditions
@@ -694,8 +695,8 @@ public class JavaInvocationService {
      *
      * @return
      */
-    boolean isInterface() {
-        return this.targetClass.isInterface();
+    private static boolean isInterface( Class<?> targetClass ) {
+        return targetClass.isInterface();
     }
 
     /**

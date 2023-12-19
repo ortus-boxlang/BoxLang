@@ -32,7 +32,7 @@ import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.dynamic.IReferenceable;
 import ortus.boxlang.runtime.dynamic.casters.KeyCaster;
 import ortus.boxlang.runtime.dynamic.casters.StringCaster;
-import ortus.boxlang.runtime.interop.JavaInvocationService;
+import ortus.boxlang.runtime.interop.DynamicJavaInteropService;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.services.FunctionService;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
@@ -657,7 +657,7 @@ public class Struct implements Map<Key, Object>, IType, IReferenceable, IListena
 			}
 		}
 
-		return JavaInvocationService.invoke( this, name.getName(), safe, positionalArguments );
+		return DynamicJavaInteropService.invoke( this, name.getName(), safe, positionalArguments );
 	}
 
 	/**
@@ -700,7 +700,7 @@ public class Struct implements Map<Key, Object>, IType, IReferenceable, IListena
 			}
 		}
 
-		return JavaInvocationService.invoke( this, name.getName(), safe, namedArguments );
+		return DynamicJavaInteropService.invoke( this, name.getName(), safe, namedArguments );
 	}
 
 	/**
