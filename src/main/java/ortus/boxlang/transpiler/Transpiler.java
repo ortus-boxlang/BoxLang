@@ -1,3 +1,20 @@
+/**
+ * [BoxLang]
+ *
+ * Copyright [2023] [Ortus Solutions, Corp]
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package ortus.boxlang.transpiler;
 
 import java.io.File;
@@ -24,8 +41,6 @@ import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.ScriptingBoxContext;
 import ortus.boxlang.runtime.loader.ImportDefinition;
 import ortus.boxlang.runtime.runnables.BoxScript;
-import ortus.boxlang.runtime.scopes.IScope;
-import ortus.boxlang.runtime.scopes.VariablesScope;
 import ortus.boxlang.runtime.types.exceptions.ApplicationException;
 import ortus.boxlang.transpiler.transformer.TransformerContext;
 
@@ -100,13 +115,12 @@ public abstract class Transpiler implements ITranspiler {
 			    classLoaderClassPath,
 			    this.getClass().getClassLoader()
 			);
-			Class			boxClass				= Class.forName( fqn, true, classLoader );
+			Class<?>		boxClass				= Class.forName( fqn, true, classLoader );
 			Method			method					= boxClass.getDeclaredMethod( "getInstance" );
 			BoxScript		scriptRunnable			= ( BoxScript ) method.invoke( boxClass );
 
 			BoxRuntime		instance				= BoxRuntime.getInstance( true );
 			IBoxContext		context					= new ScriptingBoxContext( instance.getRuntimeContext() );
-			IScope			variables				= context.getScopeNearby( VariablesScope.name );
 
 			Object			result					= scriptRunnable.invoke( context );
 			System.out.println( result );

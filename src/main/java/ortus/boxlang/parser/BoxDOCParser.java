@@ -1,16 +1,21 @@
+/**
+ * [BoxLang]
+ *
+ * Copyright [2023] [Ortus Solutions, Corp]
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package ortus.boxlang.parser;
-
-import com.github.javaparser.ast.expr.StringLiteralExpr;
-import org.antlr.v4.runtime.*;
-import org.apache.commons.io.IOUtils;
-import ortus.boxlang.ast.*;
-import ortus.boxlang.ast.expression.BoxFQN;
-import ortus.boxlang.ast.expression.BoxStringLiteral;
-import ortus.boxlang.ast.statement.BoxAnnotation;
-import ortus.boxlang.ast.statement.BoxDocumentationAnnotation;
-import ortus.boxlang.parser.antlr.CFParser;
-import ortus.boxlang.parser.antlr.DOCLexer;
-import ortus.boxlang.parser.antlr.DOCParser;
 
 import java.io.File;
 import java.io.IOException;
@@ -18,6 +23,28 @@ import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
+
+import org.antlr.v4.runtime.BaseErrorListener;
+import org.antlr.v4.runtime.CharStreams;
+import org.antlr.v4.runtime.CommonTokenStream;
+import org.antlr.v4.runtime.Lexer;
+import org.antlr.v4.runtime.Parser;
+import org.antlr.v4.runtime.ParserRuleContext;
+import org.antlr.v4.runtime.RecognitionException;
+import org.antlr.v4.runtime.Recognizer;
+import org.apache.commons.io.IOUtils;
+
+import ortus.boxlang.ast.BoxDocumentation;
+import ortus.boxlang.ast.BoxNode;
+import ortus.boxlang.ast.Issue;
+import ortus.boxlang.ast.Point;
+import ortus.boxlang.ast.Position;
+import ortus.boxlang.ast.SourceFile;
+import ortus.boxlang.ast.expression.BoxFQN;
+import ortus.boxlang.ast.expression.BoxStringLiteral;
+import ortus.boxlang.ast.statement.BoxDocumentationAnnotation;
+import ortus.boxlang.parser.antlr.DOCLexer;
+import ortus.boxlang.parser.antlr.DOCParser;
 
 /**
  * Parser a javadoc style documentation
