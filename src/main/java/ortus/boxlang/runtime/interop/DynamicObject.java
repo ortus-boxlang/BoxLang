@@ -88,6 +88,11 @@ public class DynamicObject implements IReferenceable {
 	public static final Class<ClassUtils>					CLASS_UTILS			= ClassUtils.class;
 
 	/**
+	 * Empty arguments array
+	 */
+	public static final Object[]							EMPTY_ARGS			= new Object[] {};
+
+	/**
 	 * --------------------------------------------------------------------------
 	 * Private Properties
 	 * --------------------------------------------------------------------------
@@ -318,7 +323,7 @@ public class DynamicObject implements IReferenceable {
 	 *
 	 */
 	public DynamicObject invokeConstructor() {
-		return invokeConstructor( new Object[] {} );
+		return invokeConstructor( EMPTY_ARGS );
 	}
 
 	/**
