@@ -22,8 +22,10 @@ public class ArrayClear extends BIF {
 	/**
 	 * Clear all items from array
 	 * 
-	 * @param context
-	 * @param arguments Argument scope defining the array.
+	 * @param context   The context in which the BIF is being invoked.
+	 * @param arguments Argument scope for the BIF.
+	 * 
+	 * @argument.array The array to clear.
 	 */
 	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
 		Array actualArray = arguments.getAsArray( Key.array );

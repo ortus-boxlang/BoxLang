@@ -26,8 +26,12 @@ public class ArrayContainsNoCase extends BIF {
 	/**
 	 * Return int position of value in array, case insensitive
 	 * 
-	 * @param context
-	 * @param arguments Argument scope defining the array.
+	 * @param context   The context in which the BIF is being invoked.
+	 * @param arguments Argument scope for the BIF.
+	 * 
+	 * @argument.array The array to be searched.
+	 * 
+	 * @argument.value The value to search for, or a Function to invoke that returns true/false.
 	 */
 	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
 		Array	actualArray	= arguments.getAsArray( Key.array );

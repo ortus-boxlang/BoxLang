@@ -25,10 +25,8 @@ public class RandRange extends BIF {
 	 * 
 	 * Return a random int between number1 and number 2
 	 * 
-	 * @param context
-	 * @param arguments Argument scope defining the minimum and maximum (not inclusive) values for the range.
-	 * 
-	 * @return
+	 * @param context   The context in which the BIF is being invoked.
+	 * @param arguments Argument scope for the BIF.
 	 */
 	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
 		if ( arguments.get( Key.algorithm ) != null ) {

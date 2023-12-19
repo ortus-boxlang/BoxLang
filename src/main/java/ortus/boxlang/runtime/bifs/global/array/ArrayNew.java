@@ -17,8 +17,9 @@ public class ArrayNew extends BIF {
 	/**
 	 * Return new array
 	 * 
-	 * @param context
-	 * @param arguments Argument scope defining the array.
+	 * @param context   The context in which the BIF is being invoked.
+	 * @param arguments Argument scope for the BIF.
+	 * 
 	 */
 	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
 		return new Array();

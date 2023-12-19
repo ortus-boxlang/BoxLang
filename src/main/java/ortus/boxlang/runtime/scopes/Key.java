@@ -47,6 +47,7 @@ public class Key {
 	public static final Key	number2			= Key.of( "number2" );
 	public static final Key	algorithm		= Key.of( "algorithm" );
 	public static final Key	message			= Key.of( "message" );
+	public static final Key	merge			= Key.of( "merge" );
 
 	/**
 	 * --------------------------------------------------------------------------

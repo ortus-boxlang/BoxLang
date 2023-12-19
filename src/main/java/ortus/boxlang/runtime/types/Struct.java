@@ -810,6 +810,14 @@ public class Struct implements Map<Key, Object>, IType, IReferenceable, IListena
 	}
 
 	/**
+	 * Convenience method for getting cast as Boolean
+	 * Does NOT perform BoxLang casting, only Java cast so the object needs to actually be castable
+	 */
+	public Boolean getAsBoolean( Key key ) {
+		return ( Boolean ) get( key );
+	}
+
+	/**
 	 * Convenience method for getting cast as Function
 	 * Does NOT perform BoxLang casting, only Java cast so the object needs to actually be castable
 	 */

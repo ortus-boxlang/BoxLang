@@ -18,6 +18,14 @@ public class Test extends BIF {
 		};
 	}
 
+	/**
+	 * Print a message with line break to the console
+	 * 
+	 * @param context   The context in which the BIF is being invoked.
+	 * @param arguments Argument scope for the BIF.
+	 * 
+	 * @argument.message The message to print
+	 */
 	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
 		System.out.println( arguments.get( Key.message ) );
 		return true;

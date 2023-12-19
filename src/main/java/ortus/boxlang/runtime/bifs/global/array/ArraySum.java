@@ -34,8 +34,10 @@ public class ArraySum extends BIF {
 	/**
 	 * Return length of array
 	 * 
-	 * @param context
-	 * @param arguments Argument scope defining the array.
+	 * @param context   The context in which the BIF is being invoked.
+	 * @param arguments Argument scope for the BIF.
+	 * 
+	 * @argument.array The array to sum the elements of.
 	 */
 	public static double _invoke( Array array ) {
 		double accumulator = 0;

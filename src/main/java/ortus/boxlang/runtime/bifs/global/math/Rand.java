@@ -27,7 +27,10 @@ public class Rand extends BIF {
 	 * 
 	 * Return a random double between 0 and 1
 	 * 
-	 * @param context
+	 * @param context   The context in which the BIF is being invoked.
+	 * @param arguments Argument scope for the BIF.
+	 * 
+	 * @argument.algorithm The algorithm to use to generate the random number.
 	 */
 	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
 		if ( arguments.get( Key.algorithm ) != null ) {

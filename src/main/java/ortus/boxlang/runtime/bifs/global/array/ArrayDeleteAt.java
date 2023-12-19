@@ -24,8 +24,12 @@ public class ArrayDeleteAt extends BIF {
 	/**
 	 * Delete item at specified index in array
 	 * 
-	 * @param context
-	 * @param arguments Argument scope defining the array.
+	 * @param context   The context in which the BIF is being invoked.
+	 * @param arguments Argument scope for the BIF.
+	 * 
+	 * @argument.array The array to be deleted from.
+	 * 
+	 * @argument.index The index to deleted.
 	 */
 	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
 		Array	actualArray	= arguments.getAsArray( Key.array );

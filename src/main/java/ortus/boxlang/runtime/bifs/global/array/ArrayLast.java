@@ -23,8 +23,12 @@ public class ArrayLast extends BIF {
 	/**
 	 * Return first item in array
 	 * 
-	 * @param context
-	 * @param arguments Argument scope defining the array.
+	 * @param context   The context in which the BIF is being invoked.
+	 * @param arguments Argument scope for the BIF.
+	 * 
+	 * @argument.array The array to be searched.
+	 * 
+	 * @argument.array The array to get the last item from.
 	 */
 	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
 		Array actualArray = arguments.getAsArray( Key.array );

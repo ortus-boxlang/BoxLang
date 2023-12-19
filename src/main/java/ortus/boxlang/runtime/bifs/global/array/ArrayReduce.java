@@ -26,8 +26,15 @@ public class ArrayReduce extends BIF {
     /**
      * Run the provided udf over the array to reduce the values to a single output
      *
-     * @param context
-     * @param arguments Argument scope defining the array and value to append.
+     * @param context   The context in which the BIF is being invoked.
+     * @param arguments Argument scope for the BIF.
+     * 
+     * @argument.array The array to reduce
+     * 
+     * @argument.callback The function to invoke for each item. The function will be passed 3 arguments: the accumulator, the current item, and the
+     *                    current index. The function should return the new accumulator value.
+     * 
+     * @argument.initialValue The initial value of the accumulator
      */
     public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
         Array          actualArray     = arguments.getAsArray( Key.array );

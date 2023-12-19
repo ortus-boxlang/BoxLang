@@ -23,7 +23,12 @@ public class Min extends BIF {
 	 * 
 	 * Return larger of two numbers
 	 * 
-	 * @param context
+	 * @param context   The context in which the BIF is being invoked.
+	 * @param arguments Argument scope for the BIF.
+	 * 
+	 * @argument.number1 The first number
+	 * 
+	 * @argument.number2 The second number
 	 */
 	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
 		double	number1	= arguments.getAsDouble( Key.number1 );
