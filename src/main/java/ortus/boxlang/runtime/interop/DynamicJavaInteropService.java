@@ -41,11 +41,16 @@ import org.apache.commons.lang3.ClassUtils;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.dynamic.IReferenceable;
 import ortus.boxlang.runtime.scopes.Key;
+import ortus.boxlang.runtime.types.Array;
+import ortus.boxlang.runtime.types.IType;
 import ortus.boxlang.runtime.types.exceptions.ApplicationException;
 import ortus.boxlang.runtime.types.exceptions.BoxLangException;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
+import ortus.boxlang.runtime.types.exceptions.KeyNotFoundException;
 import ortus.boxlang.runtime.types.exceptions.NoFieldException;
 import ortus.boxlang.runtime.types.exceptions.NoMethodException;
+import ortus.boxlang.runtime.types.meta.BoxMeta;
+import ortus.boxlang.runtime.types.meta.GenericMeta;
 
 /**
  * This class is used to represent a BX/Java Class and invoke methods on classes using invoke dynamic.
@@ -80,7 +85,7 @@ public class DynamicJavaInteropService {
     /**
      * Helper for all class utility methods from apache commons lang 3
      */
-    public static final Class<ClassUtils>                        CLASS_UTILS         = ClassUtils.class;
+    public static final Class<ClassUtils>                        CLASS_UTILS       = ClassUtils.class;
 
     /**
      * --------------------------------------------------------------------------
@@ -88,7 +93,7 @@ public class DynamicJavaInteropService {
      * --------------------------------------------------------------------------
      */
 
-    Set<Key>                                                     exceptionKeys       = new HashSet<Key>( Arrays.asList(
+    private static Set<Key>                                      exceptionKeys     = new HashSet<Key>( Arrays.asList(
         BoxLangException.messageKey,
         BoxLangException.detailKey,
         BoxLangException.typeKey,
@@ -109,30 +114,20 @@ public class DynamicJavaInteropService {
     private static final MethodHandles.Lookup                    METHOD_LOOKUP;
 
     /**
-     * The bound class for this invoker
-     */
-    private Class<?>                                             targetClass;
-
-    /**
      * The bound instance for this invoker (if any)
      * If this is null, then we are invoking static methods or a constructor has not been called on it yet.
      */
-    private Object                                               targetInstance      = null;
+    private Object                                               targetInstance    = null;
 
     /**
      * This caches the method handles for the class so we don't have to look them up every time
      */
-    private static final ConcurrentHashMap<String, MethodRecord> methodHandleCache   = new ConcurrentHashMap<>( 32 );
-
-    /**
-     * This enables or disables the method handles cache
-     */
-    private Boolean                                              handlesCacheEnabled = true;
+    private static final ConcurrentHashMap<String, MethodRecord> methodHandleCache = new ConcurrentHashMap<>( 32 );
 
     /**
      * Name of key to get length of native arrays
      */
-    private Key                                                  lengthKey           = Key.of( "length" );
+    private static Key                                           lengthKey         = Key.of( "length" );
 
     /**
      * Static Initializer
@@ -275,33 +270,41 @@ public class DynamicJavaInteropService {
      * @return The result of the method invocation
      *
      */
-    // public Object invokeStatic( String methodName, Object... arguments ) {
+    public static Object invokeStatic( Class<?> targetClass, String methodName, Object... arguments ) {
 
-    // // Verify method name
-    // if ( methodName == null || methodName.isEmpty() ) {
-    // throw new BoxRuntimeException( "Method name cannot be null or empty." );
-    // }
+        // Verify method name
+        if ( methodName == null || methodName.isEmpty() ) {
+            throw new BoxRuntimeException( "Method name cannot be null or empty." );
+        }
 
-    // // Unwrap any ClassInvoker instances
-    // unWrapArguments( arguments );
+        // Unwrap any ClassInvoker instances
+        unWrapArguments( arguments );
 
-    // // Discover and Execute it baby!
-    // try {
-    // return getMethodHandle( methodName, argumentsToClasses( arguments ) )
-    // .methodHandle()
-    // .invokeWithArguments( arguments );
-    // } catch ( RuntimeException e ) {
-    // throw e;
-    // } catch ( Throwable e ) {
-    // throw new BoxRuntimeException( "Error invoking method " + methodName + " for class " + this.targetClass.getName(), e );
-    // }
-    // }
+        // Discover and Execute it baby!
+        try {
+            return getMethodHandle( targetClass, methodName, argumentsToClasses( arguments ) )
+                .methodHandle()
+                .invokeWithArguments( arguments );
+        } catch ( RuntimeException e ) {
+            throw e;
+        } catch ( Throwable e ) {
+            throw new BoxRuntimeException( "Error invoking method " + methodName + " for class " + targetClass.getName(), e );
+        }
+    }
 
     /**
      * --------------------------------------------------------------------------
      * Field Methods
      * --------------------------------------------------------------------------
      */
+
+    public static Optional<Object> getField( Class<?> targetClass, String fieldName ) {
+        return getField( targetClass, ( Object ) null, fieldName );
+    }
+
+    public static Optional<Object> getField( Object targetInstance, String fieldName ) {
+        return getField( targetInstance.getClass(), targetInstance, fieldName );
+    }
 
     /**
      * Get the value of a public or public static field on a class or instance
@@ -311,20 +314,20 @@ public class DynamicJavaInteropService {
      * @return The value of the field wrapped in an Optional
      *
      */
-    public Optional<Object> getField( String fieldName ) {
+    public static Optional<Object> getField( Class<?> targetClass, Object targetInstance, String fieldName ) {
         // Discover the field with no case sensitivity
-        Field        field = findField( fieldName );
+        Field        field = findField( targetClass, fieldName );
         // Now get the method handle for the field to execute
         MethodHandle fieldHandle;
         try {
             fieldHandle = METHOD_LOOKUP.unreflectGetter( field );
         } catch ( IllegalAccessException e ) {
-            throw new BoxRuntimeException( "Error getting field " + fieldName + " for class " + this.targetClass.getName(), e );
+            throw new BoxRuntimeException( "Error getting field " + fieldName + " for class " + targetClass.getName(), e );
         }
         Boolean isStatic = Modifier.isStatic( field.getModifiers() );
 
         // If it's not static, we need a target instance
-        if ( !isStatic && !hasInstance() ) {
+        if ( !isStatic && targetInstance == null ) {
             throw new BoxRuntimeException(
                 "You are trying to get a public field but there is not instance set on the invoker, please make sure the [invokeConstructor] has been called."
             );
@@ -334,12 +337,12 @@ public class DynamicJavaInteropService {
             return Optional.ofNullable(
                 isStatic
                     ? fieldHandle.invoke()
-                    : fieldHandle.invoke( this.targetInstance )
+                    : fieldHandle.invoke( targetInstance )
             );
         } catch ( RuntimeException e ) {
             throw e;
         } catch ( Throwable e ) {
-            throw new BoxRuntimeException( "Error getting field " + fieldName + " for class " + this.targetClass.getName(), e );
+            throw new BoxRuntimeException( "Error getting field " + fieldName + " for class " + targetClass.getName(), e );
         }
     }
 
@@ -353,9 +356,9 @@ public class DynamicJavaInteropService {
      *
      * @return The value of the field or the default value wrapped in an Optional
      */
-    public Optional<Object> getField( String fieldName, Object defaultValue ) {
+    public static Optional<Object> getField( Class<?> targetClass, Object targetInstance, String fieldName, Object defaultValue ) {
         try {
-            return getField( fieldName );
+            return getField( targetClass, targetInstance, fieldName );
         } catch ( BoxLangException e ) {
             return Optional.ofNullable( defaultValue );
         }
@@ -370,38 +373,36 @@ public class DynamicJavaInteropService {
      * @return The class invoker
      *
      */
-    // public DynamicObject setField( String fieldName, Object value ) {
-    // // Discover the field with no case sensitivity
-    // Field field = findField( fieldName );
-    // MethodHandle fieldHandle;
-    // try {
-    // fieldHandle = METHOD_LOOKUP.unreflectSetter( field );
-    // } catch ( IllegalAccessException e ) {
-    // throw new BoxRuntimeException( "Error setting field " + fieldName + " for class " + this.targetClass.getName(), e );
-    // }
-    // Boolean isStatic = Modifier.isStatic( field.getModifiers() );
+    public static void setField( Class<?> targetClass, Object targetInstance, String fieldName, Object value ) {
+        // Discover the field with no case sensitivity
+        Field        field = findField( targetClass, fieldName );
+        MethodHandle fieldHandle;
+        try {
+            fieldHandle = METHOD_LOOKUP.unreflectSetter( field );
+        } catch ( IllegalAccessException e ) {
+            throw new BoxRuntimeException( "Error setting field " + fieldName + " for class " + targetClass.getName(), e );
+        }
+        Boolean isStatic = Modifier.isStatic( field.getModifiers() );
 
-    // // If it's not static, we need a target instance, verify it's not null
-    // if ( !isStatic && !hasInstance() ) {
-    // throw new BoxRuntimeException(
-    // "You are trying to set a public field but there is not instance set on the invoker, please make sure the [invokeConstructor] has been called."
-    // );
-    // }
+        // If it's not static, we need a target instance, verify it's not null
+        if ( !isStatic && targetInstance == null ) {
+            throw new BoxRuntimeException(
+                "You are trying to set a public field but there is not instance set on the invoker, please make sure the [invokeConstructor] has been called."
+            );
+        }
 
-    // try {
-    // if ( isStatic ) {
-    // fieldHandle.invokeWithArguments( value );
-    // } else {
-    // fieldHandle.bindTo( this.targetInstance ).invokeWithArguments( value );
-    // }
-    // } catch ( RuntimeException e ) {
-    // throw e;
-    // } catch ( Throwable e ) {
-    // throw new BoxRuntimeException( "Error setting field " + fieldName + " for class " + this.targetClass.getName(), e );
-    // }
-
-    // return this;
-    // }
+        try {
+            if ( isStatic ) {
+                fieldHandle.invokeWithArguments( value );
+            } else {
+                fieldHandle.bindTo( targetInstance ).invokeWithArguments( value );
+            }
+        } catch ( RuntimeException e ) {
+            throw e;
+        } catch ( Throwable e ) {
+            throw new BoxRuntimeException( "Error setting field " + fieldName + " for class " + targetClass.getName(), e );
+        }
+    }
 
     /**
      * Find a field by name with no case-sensitivity (upper case) in the class
@@ -411,12 +412,12 @@ public class DynamicJavaInteropService {
      * @return The field if discovered
      *
      */
-    public Field findField( String fieldName ) {
-        return getFieldsAsStream()
+    public static Field findField( Class<?> targetClass, String fieldName ) {
+        return getFieldsAsStream( targetClass )
             .filter( target -> target.getName().equalsIgnoreCase( fieldName ) )
             .findFirst()
             .orElseThrow( () -> new NoFieldException(
-                String.format( "No such field [%s] found in the class [%s].", fieldName, this.targetClass.getName() )
+                String.format( "No such field [%s] found in the class [%s].", fieldName, targetClass.getName() )
             ) );
     }
 
@@ -427,8 +428,8 @@ public class DynamicJavaInteropService {
      *
      * @return True if the field exists, false otherwise
      */
-    public Boolean hasField( String fieldName ) {
-        return getFieldNames().contains( fieldName );
+    public static Boolean hasField( Class<?> targetClass, String fieldName ) {
+        return getFieldNames( targetClass ).contains( fieldName );
     }
 
     /**
@@ -438,8 +439,8 @@ public class DynamicJavaInteropService {
      *
      * @return True if the field exists, false otherwise
      */
-    public Boolean hasFieldNoCase( String fieldName ) {
-        return getFieldNamesNoCase().contains( fieldName.toUpperCase() );
+    public static Boolean hasFieldNoCase( Class<?> targetClass, String fieldName ) {
+        return getFieldNamesNoCase( targetClass ).contains( fieldName.toUpperCase() );
     }
 
     /**
@@ -447,8 +448,8 @@ public class DynamicJavaInteropService {
      *
      * @return The fields in the class
      */
-    public Field[] getFields() {
-        return this.targetClass.getFields();
+    public static Field[] getFields( Class<?> targetClass ) {
+        return targetClass.getFields();
     }
 
     /**
@@ -456,8 +457,8 @@ public class DynamicJavaInteropService {
      *
      * @return The stream of fields in the class
      */
-    public Stream<Field> getFieldsAsStream() {
-        return Stream.of( getFields() );
+    public static Stream<Field> getFieldsAsStream( Class<?> targetClass ) {
+        return Stream.of( getFields( targetClass ) );
     }
 
     /**
@@ -465,8 +466,8 @@ public class DynamicJavaInteropService {
      *
      * @return A list of field names
      */
-    public List<String> getFieldNames() {
-        return getFieldsAsStream()
+    public static List<String> getFieldNames( Class<?> targetClass ) {
+        return getFieldsAsStream( targetClass )
             .map( Field::getName )
             .toList();
 
@@ -477,8 +478,8 @@ public class DynamicJavaInteropService {
      *
      * @return A list of field names
      */
-    public List<String> getFieldNamesNoCase() {
-        return getFieldsAsStream()
+    public static List<String> getFieldNamesNoCase( Class<?> targetClass ) {
+        return getFieldsAsStream( targetClass )
             .map( Field::getName )
             .map( String::toUpperCase )
             .toList();
@@ -501,7 +502,7 @@ public class DynamicJavaInteropService {
      * @return The method handle representing the method signature
      *
      */
-    private static MethodRecord getMethodHandle( Class<?> targetClass, String methodName, Class<?>[] argumentsAsClasses ) {
+    public static MethodRecord getMethodHandle( Class<?> targetClass, String methodName, Class<?>[] argumentsAsClasses ) {
 
         // We use the method signature as the cache key
         // TODO: look at just using string's hashcode directly
@@ -591,13 +592,13 @@ public class DynamicJavaInteropService {
      *
      * @return A list of method names with no case
      */
-    // public List<String> getMethodNamesNoCase() {
-    // return getMethodsAsStream()
-    // .parallel()
-    // .map( Method::getName )
-    // .map( String::toUpperCase )
-    // .toList();
-    // }
+    public static List<String> getMethodNamesNoCase( Class<?> targetClass ) {
+        return getMethodsAsStream( targetClass )
+            .parallel()
+            .map( Method::getName )
+            .map( String::toUpperCase )
+            .toList();
+    }
 
     /**
      * Verifies if the class has a public or public static method with the given name
@@ -617,9 +618,9 @@ public class DynamicJavaInteropService {
      *
      * @return True if the method exists, false otherwise
      */
-    // public Boolean hasMethodNoCase( String methodName ) {
-    // return getMethodNamesNoCase().contains( methodName.toUpperCase() );
-    // }
+    public static Boolean hasMethodNoCase( Class<?> targetClass, String methodName ) {
+        return getMethodNamesNoCase( targetClass ).contains( methodName.toUpperCase() );
+    }
 
     /**
      * This method is used to verify if the class has the same method signature as the incoming one with no case-sensitivity (upper case)
@@ -751,19 +752,6 @@ public class DynamicJavaInteropService {
     }
 
     /**
-     * Instance method to unwrap itself
-     *
-     * @return The target instance or class, depending which one is set
-     */
-    // public Object unWrap() {
-    // if ( hasInstance() ) {
-    // return getTargetInstance();
-    // } else {
-    // return getTargetClass();
-    // }
-    // }
-
-    /**
      * Unwrap any ClassInvoker instances in the arguments
      *
      * @param arguments The arguments to unwrap
@@ -786,25 +774,6 @@ public class DynamicJavaInteropService {
     }
 
     /**
-     * This immutable record represents an executable method handle and it's metadata.
-     * This record is the one that is cached in the {@link DynamicObject#methodCache} map.
-     *
-     * @param methodName    The name of the method
-     * @param method        The method representation
-     * @param methodHandle  The method handle to use for invocation
-     * @param isStatic      Whether the method is static or not
-     * @param argumentCount The number of arguments the method takes
-     */
-    private record MethodRecord(
-        String methodName,
-        Method method,
-        MethodHandle methodHandle,
-        boolean isStatic,
-        int argumentCount ) {
-        // A beautiful java record of our method handle
-    }
-
-    /**
      * --------------------------------------------------------------------------
      * Implementation of IReferencable
      * --------------------------------------------------------------------------
@@ -818,82 +787,82 @@ public class DynamicJavaInteropService {
      *
      * @return The requested object
      */
-    // @SuppressWarnings( "unchecked" )
-    // public Object dereference( Key name, Boolean safe ) {
+    @SuppressWarnings( "unchecked" )
+    public static Object dereference( Class<?> targetClass, Object targetInstance, Key name, Boolean safe ) {
 
-    // // This check allows us to lazy-create meta for BoxLang types the first time it is requested
-    // if ( name.equals( BoxMeta.key ) ) {
-    // if ( hasInstance() && getTargetInstance() instanceof IType type ) {
-    // return type.getBoxMeta();
-    // }
-    // return new GenericMeta( getTargetInstance() );
-    // }
+        // This check allows us to lazy-create meta for BoxLang types the first time it is requested
+        if ( name.equals( BoxMeta.key ) ) {
+            if ( targetInstance != null && targetInstance instanceof IType type ) {
+                return type.getBoxMeta();
+            }
+            return new GenericMeta( targetInstance );
+        }
 
-    // // If the object is referencable, allow it to handle the dereference
-    // if ( hasInstance() && getTargetInstance() instanceof IReferenceable ref ) {
-    // return ref.dereference( name, safe );
-    // }
+        // If the object is referencable, allow it to handle the dereference
+        if ( targetInstance != null && targetInstance instanceof IReferenceable ref ) {
+            return ref.dereference( name, safe );
+        }
 
-    // if ( getTargetInstance() instanceof Map ) {
-    // // If it's a raw Map, then we use the original value as the key
-    // return ( ( Map<Object, Object> ) getTargetInstance() ).get( name.getOriginalValue() );
-    // // Special logic so we can treat exceptions as referencable. Possibly move to helper
-    // } else if ( getTargetInstance() instanceof List list ) {
-    // Integer index = Array.validateAndGetIntForDerefernce( name, list.size(), safe );
-    // // non-existant indexes return null when dereferncing safely
-    // if ( safe && ( index < 1 || index > list.size() ) ) {
-    // return null;
-    // }
-    // return list.get( index - 1 );
-    // } else if ( hasInstance() && getTargetInstance().getClass().isArray() ) {
-    // Object[] arr = ( ( Object[] ) getTargetInstance() );
-    // if ( name.equals( lengthKey ) ) {
-    // return arr.length;
-    // }
+        if ( targetInstance instanceof Map ) {
+            // If it's a raw Map, then we use the original value as the key
+            return ( ( Map<Object, Object> ) targetInstance ).get( name.getOriginalValue() );
+            // Special logic so we can treat exceptions as referencable. Possibly move to helper
+        } else if ( targetInstance instanceof List list ) {
+            Integer index = Array.validateAndGetIntForDerefernce( name, list.size(), safe );
+            // non-existant indexes return null when dereferncing safely
+            if ( safe && ( index < 1 || index > list.size() ) ) {
+                return null;
+            }
+            return list.get( index - 1 );
+        } else if ( targetInstance != null && targetInstance.getClass().isArray() ) {
+            Object[] arr = ( ( Object[] ) targetInstance );
+            if ( name.equals( lengthKey ) ) {
+                return arr.length;
+            }
 
-    // Integer index = Array.validateAndGetIntForDerefernce( name, arr.length, safe );
-    // // non-existant indexes return null when dereferncing safely
-    // if ( safe && ( index < 1 || index > arr.length ) ) {
-    // return null;
-    // }
-    // return arr[ index - 1 ];
-    // } else if ( getTargetInstance() instanceof Throwable t && exceptionKeys.contains( name ) ) {
-    // // Throwable.message always delegates through to the message field
-    // if ( name.equals( BoxLangException.messageKey ) ) {
-    // return t.getMessage();
-    // } else {
-    // // CFML returns "" for Throwable.detail, etc
-    // return "";
-    // }
-    // // Special logic for native arrays. Possibly move to helper
-    // } else if ( hasField( name.getName() ) ) {
-    // // If we have the field, return it's value, even if it's null
-    // return getField( name.getName() ).orElse( null );
-    // }
+            Integer index = Array.validateAndGetIntForDerefernce( name, arr.length, safe );
+            // non-existant indexes return null when dereferncing safely
+            if ( safe && ( index < 1 || index > arr.length ) ) {
+                return null;
+            }
+            return arr[ index - 1 ];
+        } else if ( targetInstance instanceof Throwable t && exceptionKeys.contains( name ) ) {
+            // Throwable.message always delegates through to the message field
+            if ( name.equals( BoxLangException.messageKey ) ) {
+                return t.getMessage();
+            } else {
+                // CFML returns "" for Throwable.detail, etc
+                return "";
+            }
+            // Special logic for native arrays. Possibly move to helper
+        } else if ( hasField( targetClass, name.getName() ) ) {
+            // If we have the field, return it's value, even if it's null
+            return getField( targetClass, name.getName() ).orElse( null );
+        }
 
-    // if ( safe ) {
-    // return null;
-    // }
+        if ( safe ) {
+            return null;
+        }
 
-    // // Field not found anywhere
-    // if ( hasInstance() ) {
-    // throw new KeyNotFoundException(
-    // String.format( "The instance [%s] has no public field [%s]. The allowed fields are [%s]",
-    // ClassUtils.getCanonicalName( getTargetClass() ),
-    // name.getName(),
-    // getFieldNames()
-    // )
-    // );
-    // } else {
-    // throw new KeyNotFoundException(
-    // String.format( "The instance [%s] has no static field [%s]. The allowed fields are [%s]",
-    // ClassUtils.getCanonicalName( getTargetClass() ),
-    // name.getName(),
-    // getFieldNames()
-    // )
-    // );
-    // }
-    // }
+        // Field not found anywhere
+        if ( targetInstance != null ) {
+            throw new KeyNotFoundException(
+                String.format( "The instance [%s] has no public field [%s]. The allowed fields are [%s]",
+                    ClassUtils.getCanonicalName( targetClass ),
+                    name.getName(),
+                    getFieldNames( targetClass )
+                )
+            );
+        } else {
+            throw new KeyNotFoundException(
+                String.format( "The instance [%s] has no static field [%s]. The allowed fields are [%s]",
+                    ClassUtils.getCanonicalName( targetClass ),
+                    name.getName(),
+                    getFieldNames( targetClass )
+                )
+            );
+        }
+    }
 
     public static Object dereferenceAndInvoke( Class<?> targetClass, IBoxContext context, Key name, Object[] positionalArguments,
         Boolean safe ) {
@@ -983,41 +952,41 @@ public class DynamicJavaInteropService {
      * @param name  The name of the field to assign
      * @param value The value to assign
      */
-    // @SuppressWarnings( "unchecked" )
-    // public Object assign( Key name, Object value ) {
+    @SuppressWarnings( "unchecked" )
+    public static Object assign( Class<?> targetClass, Object targetInstance, Key name, Object value ) {
 
-    // if ( hasInstance() && getTargetInstance() instanceof IReferenceable ref ) {
-    // ref.assign( name, value );
-    // } else if ( hasInstance() && getTargetInstance().getClass().isArray() ) {
-    // Object[] arr = ( ( Object[] ) getTargetInstance() );
-    // Integer index = Array.validateAndGetIntForAssign( name, arr.length, true );
-    // arr[ index - 1 ] = value;
-    // return value;
-    // } else if ( getTargetInstance() instanceof List list ) {
-    // Integer index = Array.validateAndGetIntForAssign( name, list.size(), false );
-    // if ( index > list.size() ) {
-    // // If the index is larger than the array, pad the array with nulls
-    // for ( int i = list.size(); i < index; i++ ) {
-    // list.add( null );
-    // }
-    // }
-    // list.set( index - 1, value );
-    // return value;
-    // } else if ( getTargetInstance() instanceof Map ) {
-    // // If it's a raw Map, then we use the original value as the key
-    // ( ( Map<Object, Object> ) getTargetInstance() ).put( name.getOriginalValue(), value );
-    // return value;
-    // }
+        if ( targetInstance != null && targetInstance instanceof IReferenceable ref ) {
+            ref.assign( name, value );
+        } else if ( targetInstance != null && targetInstance.getClass().isArray() ) {
+            Object[] arr   = ( ( Object[] ) targetInstance );
+            Integer  index = Array.validateAndGetIntForAssign( name, arr.length, true );
+            arr[ index - 1 ] = value;
+            return value;
+        } else if ( targetInstance instanceof List list ) {
+            Integer index = Array.validateAndGetIntForAssign( name, list.size(), false );
+            if ( index > list.size() ) {
+                // If the index is larger than the array, pad the array with nulls
+                for ( int i = list.size(); i < index; i++ ) {
+                    list.add( null );
+                }
+            }
+            list.set( index - 1, value );
+            return value;
+        } else if ( targetInstance instanceof Map ) {
+            // If it's a raw Map, then we use the original value as the key
+            ( ( Map<Object, Object> ) targetInstance ).put( name.getOriginalValue(), value );
+            return value;
+        }
 
-    // try {
-    // setField( name.getName(), value );
-    // } catch ( Throwable e ) {
-    // // CFML ignores Throwable.foo = "bar"
-    // if ( getTargetInstance() instanceof Throwable ) {
-    // return value;
-    // }
-    // throw e;
-    // }
-    // return value;
-    // }
+        try {
+            setField( targetClass, targetInstance, name.getName(), value );
+        } catch ( Throwable e ) {
+            // CFML ignores Throwable.foo = "bar"
+            if ( targetInstance instanceof Throwable ) {
+                return value;
+            }
+            throw e;
+        }
+        return value;
+    }
 }
