@@ -19,7 +19,7 @@ public class ArrayAvg extends BIF {
 	 */
 	public ArrayAvg() {
 		super();
-		arguments = new Argument[] {
+		declaredArguments = new Argument[] {
 		    new Argument( true, "Array", Key.array )
 		};
 	}

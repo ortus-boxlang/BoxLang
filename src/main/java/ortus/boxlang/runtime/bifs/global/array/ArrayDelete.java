@@ -19,7 +19,7 @@ public class ArrayDelete extends BIF {
 	 */
 	public ArrayDelete() {
 		super();
-		arguments = new Argument[] {
+		declaredArguments = new Argument[] {
 		    new Argument( true, "modifiableArray", Key.array ),
 		    new Argument( true, "any", Key.value )
 		};

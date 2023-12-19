@@ -19,7 +19,7 @@ public class ArrayInsertAt extends BIF {
 	 */
 	public ArrayInsertAt() {
 		super();
-		arguments = new Argument[] {
+		declaredArguments = new Argument[] {
 		    new Argument( true, "modifiableArray", Key.array ),
 		    new Argument( true, "integer", Key.position ),
 		    new Argument( true, "any", Key.value )

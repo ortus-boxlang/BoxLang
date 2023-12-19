@@ -20,7 +20,7 @@ public class Rand extends BIF {
 	 */
 	public Rand() {
 		super();
-		arguments = new Argument[] {
+		declaredArguments = new Argument[] {
 		    new Argument( false, "string", Key.algorithm )
 		};
 	}

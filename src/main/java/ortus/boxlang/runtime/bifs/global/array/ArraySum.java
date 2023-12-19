@@ -20,7 +20,7 @@ public class ArraySum extends BIF {
 	 */
 	public ArraySum() {
 		super();
-		arguments = new Argument[] {
+		declaredArguments = new Argument[] {
 		    new Argument( true, "array", Key.array )
 		};
 	}

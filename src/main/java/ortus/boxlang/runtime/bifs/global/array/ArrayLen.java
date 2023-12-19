@@ -19,7 +19,7 @@ public class ArrayLen extends BIF {
 	 */
 	public ArrayLen() {
 		super();
-		arguments = new Argument[] {
+		declaredArguments = new Argument[] {
 		    new Argument( true, "array", Key.array )
 		};
 	}

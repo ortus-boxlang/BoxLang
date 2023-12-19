@@ -20,7 +20,7 @@ public class ArrayMax extends BIF {
 	 */
 	public ArrayMax() {
 		super();
-		arguments = new Argument[] {
+		declaredArguments = new Argument[] {
 		    new Argument( true, "array", Key.array )
 		};
 	}

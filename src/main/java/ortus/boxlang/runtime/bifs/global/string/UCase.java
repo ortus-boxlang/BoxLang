@@ -18,7 +18,7 @@ public class UCase extends BIF {
 	 */
 	public UCase() {
 		super();
-		arguments = new Argument[] {
+		declaredArguments = new Argument[] {
 		    new Argument( true, "string", Key.string ),
 		};
 	}

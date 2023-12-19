@@ -13,7 +13,7 @@ public class Test extends BIF {
 	 */
 	public Test() {
 		super();
-		arguments = new Argument[] {
+		declaredArguments = new Argument[] {
 		    new Argument( true, "any", Key.message )
 		};
 	}

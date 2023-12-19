@@ -32,7 +32,7 @@ public class Println extends BIF {
 	 */
 	public Println() {
 		super();
-		arguments = new Argument[] {
+		declaredArguments = new Argument[] {
 		    new Argument( true, "any", Key.message )
 		};
 	}

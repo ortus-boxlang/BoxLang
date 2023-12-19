@@ -22,7 +22,7 @@ public class ArrayContains extends BIF {
 	 */
 	public ArrayContains() {
 		super();
-		arguments = new Argument[] {
+		declaredArguments = new Argument[] {
 		    new Argument( true, "array", Key.array ),
 		    new Argument( true, "any", Key.value )
 		};

@@ -20,7 +20,7 @@ public class ArrayLast extends BIF {
 	 */
 	public ArrayLast() {
 		super();
-		arguments = new Argument[] {
+		declaredArguments = new Argument[] {
 		    new Argument( true, "array", Key.array )
 		};
 	}

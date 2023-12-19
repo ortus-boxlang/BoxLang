@@ -20,7 +20,7 @@ public class ArrayMin extends BIF {
 	 */
 	public ArrayMin() {
 		super();
-		arguments = new Argument[] {
+		declaredArguments = new Argument[] {
 		    new Argument( true, "any", Key.array )
 		};
 	}

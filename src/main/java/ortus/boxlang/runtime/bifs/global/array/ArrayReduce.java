@@ -21,7 +21,7 @@ public class ArrayReduce extends BIF {
      */
     public ArrayReduce() {
         super();
-        arguments = new Argument[] {
+        declaredArguments = new Argument[] {
             new Argument( true, "array", Key.array ),
             new Argument( true, "function", Key.callback ),
             new Argument( Key.initialValue )

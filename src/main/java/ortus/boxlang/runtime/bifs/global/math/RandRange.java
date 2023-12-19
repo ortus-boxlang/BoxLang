@@ -16,7 +16,7 @@ public class RandRange extends BIF {
 	 */
 	public RandRange() {
 		super();
-		arguments = new Argument[] {
+		declaredArguments = new Argument[] {
 		    new Argument( true, "numeric", Key.number1 ),
 		    new Argument( true, "numeric", Key.number2 ),
 		    new Argument( Key.algorithm )

@@ -13,7 +13,7 @@ public class Abs extends BIF {
 	 */
 	public Abs() {
 		super();
-		arguments = new Argument[] {
+		declaredArguments = new Argument[] {
 		    new Argument( true, "numeric", Key.value )
 		};
 	}

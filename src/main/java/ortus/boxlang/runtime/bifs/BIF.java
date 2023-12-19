@@ -38,7 +38,7 @@ public abstract class BIF {
 	/**
 	 * BIF Arguments
 	 */
-	protected Argument[]		arguments			= new Argument[] {};
+	protected Argument[]		declaredArguments	= new Argument[] {};
 
 	/**
 	 * The function service helper
@@ -60,8 +60,8 @@ public abstract class BIF {
 	 *
 	 * @return The arguments for this BIF
 	 */
-	public Argument[] getArguments() {
-		return arguments;
+	public Argument[] getDeclaredArguments() {
+		return declaredArguments;
 	}
 
 }

@@ -81,7 +81,7 @@ public class MemberDescriptor {
 		if ( objectArgument != null ) {
 			namedArguments.put( objectArgument, object );
 		} else {
-			Argument[] args = BIFDescriptor.getBIF().getArguments();
+			Argument[] args = BIFDescriptor.getBIF().getDeclaredArguments();
 			if ( args.length == 0 ) {
 				throw new BoxRuntimeException(
 				    "Function " + BIFDescriptor.name.getName() + " does not accept any arguments and can't be used as a member method." );

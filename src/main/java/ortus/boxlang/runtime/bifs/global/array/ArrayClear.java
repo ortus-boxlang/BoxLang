@@ -19,7 +19,7 @@ public class ArrayClear extends BIF {
 	 */
 	public ArrayClear() {
 		super();
-		arguments = new Argument[] {
+		declaredArguments = new Argument[] {
 		    new Argument( true, "modifiableArray", Key.array )
 		};
 	}
