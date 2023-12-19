@@ -33,8 +33,8 @@ import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.dynamic.IReferenceable;
 import ortus.boxlang.runtime.dynamic.casters.CastAttempt;
 import ortus.boxlang.runtime.dynamic.casters.DoubleCaster;
+import ortus.boxlang.runtime.interop.DynamicJavaInteropService;
 import ortus.boxlang.runtime.interop.DynamicObject;
-import ortus.boxlang.runtime.interop.JavaInvocationService;
 import ortus.boxlang.runtime.scopes.IntKey;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.services.FunctionService;
@@ -441,7 +441,7 @@ public class Array implements List<Object>, IType, IReferenceable, IListenable {
 			return result / wrapped.size();
 		}
 
-		return JavaInvocationService.invoke( this, name.getName(), safe, positionalArguments );
+		return DynamicJavaInteropService.invoke( this, name.getName(), safe, positionalArguments );
 	}
 
 	/**
@@ -470,7 +470,7 @@ public class Array implements List<Object>, IType, IReferenceable, IListenable {
 			return result / wrapped.size();
 		}
 
-		return JavaInvocationService.invoke( this, name.getName(), safe, namedArguments );
+		return DynamicJavaInteropService.invoke( this, name.getName(), safe, namedArguments );
 	}
 
 	/**
