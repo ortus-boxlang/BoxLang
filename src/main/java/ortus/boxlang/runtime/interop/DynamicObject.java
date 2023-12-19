@@ -618,10 +618,8 @@ public class DynamicObject implements IReferenceable {
 	 *
 	 */
 	public MethodRecord getMethodHandle( String methodName, Class<?>[] argumentsAsClasses ) {
-
 		// We use the method signature as the cache key
-		// TODO: look at just using string's hashcode directly
-		String			cacheKey		= methodName + Objects.hash( methodName, Arrays.toString( argumentsAsClasses ) );
+		String			cacheKey		= methodName + Arrays.hashCode( argumentsAsClasses );
 		MethodRecord	methodRecord	= methodHandleCache.get( cacheKey );
 
 		// Double lock to avoid race-conditions
