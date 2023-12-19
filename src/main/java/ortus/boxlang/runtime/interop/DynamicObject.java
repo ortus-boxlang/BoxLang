@@ -17,11 +17,8 @@
  */
 package ortus.boxlang.runtime.interop;
 
-import java.lang.invoke.CallSite;
-import java.lang.invoke.ConstantCallSite;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
-import java.lang.invoke.MethodType;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
@@ -284,35 +281,7 @@ public class DynamicObject implements IReferenceable {
 	 *
 	 */
 	public DynamicObject invokeConstructor( Object... args ) {
-
-		// Thou shalt not pass!
-		if ( isInterface() ) {
-			throw new BoxRuntimeException( "Cannot invoke a constructor on an interface" );
-		}
-
-		// Unwrap any ClassInvoker instances
-		unWrapArguments( args );
-		// Method signature for a constructor is void (Object...)
-		MethodType		constructorType	= MethodType.methodType( void.class, argumentsToClasses( args ) );
-		// Define the bootstrap method
-		MethodHandle	constructorHandle;
-		try {
-			constructorHandle = METHOD_LOOKUP.findConstructor( this.targetClass, constructorType );
-		} catch ( NoSuchMethodException | IllegalAccessException e ) {
-			throw new BoxRuntimeException( "Error getting constructor for class " + this.targetClass.getName(), e );
-		}
-		// Create a callsite using the constructor handle
-		CallSite		callSite			= new ConstantCallSite( constructorHandle );
-		// Bind the CallSite and invoke the constructor with the provided arguments
-		// Invoke Dynamic tries to do argument coercion, so we need to convert the arguments to the right types
-		MethodHandle	constructorInvoker	= callSite.dynamicInvoker();
-		try {
-			this.targetInstance = constructorInvoker.invokeWithArguments( args );
-		} catch ( RuntimeException e ) {
-			throw e;
-		} catch ( Throwable e ) {
-			throw new BoxRuntimeException( "Error invoking constructor for class " + this.targetClass.getName(), e );
-		}
+		this.targetInstance = DynamicJavaInteropService.invokeConstructor( this.targetClass, args );
 
 		return this;
 	}
@@ -342,7 +311,7 @@ public class DynamicObject implements IReferenceable {
 	 *
 	 */
 	public Object invoke( String methodName, Object... arguments ) {
-		return JavaInvocationService.invoke( this.getTargetClass(), this.getTargetInstance(), methodName, false, arguments );
+		return DynamicJavaInteropService.invoke( this.getTargetClass(), this.getTargetInstance(), methodName, false, arguments );
 	}
 
 	/**
@@ -355,25 +324,26 @@ public class DynamicObject implements IReferenceable {
 	 *
 	 */
 	public Object invokeStatic( String methodName, Object... arguments ) {
+		return DynamicJavaInteropService.invoke( this.targetClass, methodName, false, arguments );
 
-		// Verify method name
-		if ( methodName == null || methodName.isEmpty() ) {
-			throw new BoxRuntimeException( "Method name cannot be null or empty." );
-		}
+		// // Verify method name
+		// if ( methodName == null || methodName.isEmpty() ) {
+		// throw new BoxRuntimeException( "Method name cannot be null or empty." );
+		// }
 
-		// Unwrap any ClassInvoker instances
-		unWrapArguments( arguments );
+		// // Unwrap any ClassInvoker instances
+		// unWrapArguments( arguments );
 
-		// Discover and Execute it baby!
-		try {
-			return getMethodHandle( methodName, argumentsToClasses( arguments ) )
-			    .methodHandle()
-			    .invokeWithArguments( arguments );
-		} catch ( RuntimeException e ) {
-			throw e;
-		} catch ( Throwable e ) {
-			throw new BoxRuntimeException( "Error invoking method " + methodName + " for class " + this.targetClass.getName(), e );
-		}
+		// // Discover and Execute it baby!
+		// try {
+		// return getMethodHandle( methodName, argumentsToClasses( arguments ) )
+		// .methodHandle()
+		// .invokeWithArguments( arguments );
+		// } catch ( RuntimeException e ) {
+		// throw e;
+		// } catch ( Throwable e ) {
+		// throw new BoxRuntimeException( "Error invoking method " + methodName + " for class " + this.targetClass.getName(), e );
+		// }
 	}
 
 	/**
