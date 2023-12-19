@@ -19,8 +19,6 @@ package ortus.boxlang.runtime.dynamic.casters;
 
 import java.util.List;
 
-import com.google.common.collect.ImmutableList;
-
 import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.exceptions.BoxCastException;
@@ -85,13 +83,9 @@ public class ModifiableArrayCaster {
 			throw new BoxCastException( "Can't cast a Java Array to a modifiable Array." );
 		}
 
-		if ( object instanceof ImmutableList ) {
-			throw new BoxCastException( "Can't cast ImmutableList to a modifiable Array." );
-		}
-
-		// Unmodifiable list is not a specific calss, so we have to get clever
-		if ( object instanceof List && object.getClass().getName().contains( "Unmodifiable" ) ) {
-			throw new BoxCastException( "Can't cast Unmodifiable List to a modifiable Array." );
+		// Immutable list is not a specific class, so we have to get clever
+		if ( object instanceof List && object.getClass().getName().contains( "Immutable" ) ) {
+			throw new BoxCastException( "Can't cast Immutable List to a modifiable Array." );
 		}
 
 		// delegate to ArrayCaster

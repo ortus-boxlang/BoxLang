@@ -183,7 +183,12 @@ public class GenericCaster {
 		if ( type.equals( "modifiablearray" ) ) {
 			return ModifiableArrayCaster.cast( object, fail );
 		}
-		// TODO: Struct and modifaiblestruct
+		if ( type.equals( "struct" ) ) {
+			return StructCaster.cast( object, fail );
+		}
+		if ( type.equals( "modifiablestruct" ) ) {
+			return ModifiableStructCaster.cast( object, fail );
+		}
 
 		if ( type.equals( "function" ) ) {
 			// No real "casting" to do, just return it if it is one
