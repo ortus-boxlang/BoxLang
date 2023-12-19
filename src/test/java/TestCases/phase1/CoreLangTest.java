@@ -1022,32 +1022,26 @@ public class CoreLangTest {
 
 	}
 
-	@DisplayName( "BIF Call" )
+	@DisplayName( "String as array" )
 	@Test
-	public void testBIFCall() {
+	public void testStringAsArray() {
 
 		instance.executeSource(
 		    """
-		    print( "Hello from BIF-land" );
-		      """,
-		    context );
-
-		instance.executeSource(
-		    """
-		    arr = [1,2,3]
-		       result = arrayLen( arr );
-		    print( result )
+		       name = "brad"
+		    result = name[3]
 		         """,
 		    context );
-		assertThat( variables.dereference( result, false ) ).isEqualTo( 3 );
+
+		assertThat( variables.dereference( result, false ) ).isEqualTo( "a" );
 
 		instance.executeSource(
 		    """
-		    arr = [1,2,3]
-		       result = arrayAppend( arr, 4 );
-		    print( result )
+		    result = "brad"[3]
 		         """,
 		    context );
+
+		assertThat( variables.dereference( result, false ) ).isEqualTo( "a" );
 
 	}
 

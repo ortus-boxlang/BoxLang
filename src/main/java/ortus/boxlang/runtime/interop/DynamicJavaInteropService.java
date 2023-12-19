@@ -42,6 +42,7 @@ import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.bifs.MemberDescriptor;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.dynamic.IReferenceable;
+import ortus.boxlang.runtime.scopes.IntKey;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.IType;
@@ -875,6 +876,14 @@ public class DynamicJavaInteropService {
                 // CFML returns "" for Throwable.detail, etc
                 return "";
             }
+            // Special logic for accessing strings as array. Possibly move to helper
+        } else if ( targetInstance instanceof String s && name instanceof IntKey intKey ) {
+            Integer index = Array.validateAndGetIntForDerefernce( intKey, s.length(), safe );
+            // non-existant indexes return null when dereferncing safely
+            if ( safe && ( index < 1 || index > s.length() ) ) {
+                return null;
+            }
+            return s.substring( index - 1, index );
             // Special logic for native arrays. Possibly move to helper
         } else if ( hasField( targetClass, name.getName() ) ) {
             // If we have the field, return it's value, even if it's null
