@@ -38,6 +38,8 @@ import java.util.stream.Stream;
 
 import org.apache.commons.lang3.ClassUtils;
 
+import ortus.boxlang.runtime.BoxRuntime;
+import ortus.boxlang.runtime.bifs.MemberDescriptor;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.dynamic.IReferenceable;
 import ortus.boxlang.runtime.scopes.Key;
@@ -100,6 +102,7 @@ public class DynamicJavaInteropService {
         BoxLangException.tagContextKey,
         ApplicationException.ExtendedInfoKey
     ) );
+
     /**
      * This is a map of primitive types to their native Java counterparts
      * so we can do the right casting for primitives
@@ -114,12 +117,6 @@ public class DynamicJavaInteropService {
     private static final MethodHandles.Lookup                    METHOD_LOOKUP;
 
     /**
-     * The bound instance for this invoker (if any)
-     * If this is null, then we are invoking static methods or a constructor has not been called on it yet.
-     */
-    private Object                                               targetInstance    = null;
-
-    /**
      * This caches the method handles for the class so we don't have to look them up every time
      */
     private static final ConcurrentHashMap<String, MethodRecord> methodHandleCache = new ConcurrentHashMap<>( 32 );
@@ -128,6 +125,11 @@ public class DynamicJavaInteropService {
      * Name of key to get length of native arrays
      */
     private static Key                                           lengthKey         = Key.of( "length" );
+
+    /**
+     * Empty arguments array
+     */
+    public static final Object[]                                 EMPTY_ARGS        = new Object[] {};
 
     /**
      * Static Initializer
@@ -202,7 +204,7 @@ public class DynamicJavaInteropService {
      *
      */
     public static <T> T invokeConstructor( Class<T> targetClass ) {
-        return invokeConstructor( targetClass, new Object[] {} );
+        return invokeConstructor( targetClass, EMPTY_ARGS );
     }
 
     /**
@@ -813,15 +815,6 @@ public class DynamicJavaInteropService {
     }
 
     /**
-     * Verifies if the class invoker has an instance or not
-     *
-     * @return True if it has an instance, false otherwise
-     */
-    public Boolean hasInstance() {
-        return this.targetInstance != null;
-    }
-
-    /**
      * --------------------------------------------------------------------------
      * Implementation of IReferencable
      * --------------------------------------------------------------------------
@@ -963,6 +956,13 @@ public class DynamicJavaInteropService {
             return ref.dereferenceAndInvoke( context, name, positionalArguments, safe );
         }
 
+        if ( targetInstance != null ) {
+            MemberDescriptor memberDescriptor = BoxRuntime.getInstance().getFunctionService().getMemberMethod( name, targetInstance );
+            if ( memberDescriptor != null ) {
+                return memberDescriptor.invoke( context, targetInstance, positionalArguments );
+            }
+        }
+
         // member functions on java objects
         // temp workaround for test src\test\java\TestCases\phase2\ObjectLiteralTest.java
         if ( targetInstance instanceof Boolean bool && name.equals( Key.of( "yesNoFormat" ) ) ) {
@@ -1004,6 +1004,13 @@ public class DynamicJavaInteropService {
 
         if ( targetInstance != null && targetInstance instanceof IReferenceable ref ) {
             return ref.dereferenceAndInvoke( context, name, namedArguments, safe );
+        }
+
+        if ( targetInstance != null ) {
+            MemberDescriptor memberDescriptor = BoxRuntime.getInstance().getFunctionService().getMemberMethod( name, targetInstance );
+            if ( memberDescriptor != null ) {
+                return memberDescriptor.invoke( context, targetInstance, namedArguments );
+            }
         }
 
         // member functions on java objects
