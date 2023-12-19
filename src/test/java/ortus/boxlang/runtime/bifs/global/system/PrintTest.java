@@ -63,6 +63,7 @@ public class PrintTest {
 	@BeforeEach
 	public void setupEach() {
 		variables.clear();
+		outContent.reset();
 	}
 
 	@DisplayName( "It can print to the console" )

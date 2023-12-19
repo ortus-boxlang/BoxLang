@@ -270,30 +270,99 @@ public class FunctionService extends BaseService {
 	}
 
 	/**
-	 * Registers a global function with the service
+	 * Registers a global function with the service. The BIF class needs to be annotated with {@link BoxBIF} or {@link BoxMember}
 	 *
-	 * @param name     The name of the global function
+	 * @param BIFClass The BIF class
+	 * @param module   The module the global function belongs to
+	 *
+	 * @throws IllegalArgumentException If the global function already exists
+	 */
+	public void registerGlobalFunction( Class<?> BIFClass, String module ) throws IllegalArgumentException {
+		registerGlobalFunction( BIFClass, null, module );
+	}
+
+	/**
+	 * Registers a global function with the service. The BIF class needs to be annotated with {@link BoxBIF} or {@link BoxMember}
+	 *
+	 * @param BIFClass The BIF class
+	 * @param function The global function
+	 *
+	 * @throws IllegalArgumentException If the global function already exists
+	 */
+	public void registerGlobalFunction( BIF function, String module ) throws IllegalArgumentException {
+		registerGlobalFunction( null, function, module );
+	}
+
+	/**
+	 * Registers a global function with the service. The BIF class needs to be annotated with {@link BoxBIF} or {@link BoxMember}
+	 *
+	 * @param BIFClass The BIF class
 	 * @param function The global function
 	 * @param module   The module the global function belongs to
 	 *
 	 * @throws IllegalArgumentException If the global function already exists
 	 */
-	public void registerGlobalFunction( Key name, BIF function, String module ) throws IllegalArgumentException {
-		if ( hasGlobalFunction( name ) ) {
-			throw new BoxRuntimeException( "Global function " + name.getName() + " already exists" );
+	private void registerGlobalFunction( Class<?> BIFClass, BIF function, String module ) throws IllegalArgumentException {
+		// If no BIFClass is provided, get it from the function instance
+		if ( BIFClass == null && function != null ) {
+			BIFClass = function.getClass();
+			// if neither was provided, holler at the user
+		} else if ( BIFClass == null ) {
+			throw new BoxRuntimeException( "Cannot register global function because no BIF class or function was provided" );
 		}
 
-		this.globalFunctions.put(
-		    name,
-		    new BIFDescriptor(
-		        name,
-		        function.getClass(),
-		        module,
-		        null,
-		        true,
-		        function
-		    )
+		// We'll re-use this same BIFDescriptor for each annotation to ensure there's onlky ever one actual BIF instance.
+		String			className			= BIFClass.getSimpleName();
+		BIFDescriptor	descriptor			= new BIFDescriptor(
+		    Key.of( className ),
+		    BIFClass,
+		    module,
+		    null,
+		    true,
+		    function
 		);
+
+		// Register BIF with default name or alias
+		BoxBIF[]		BoxBIFAnnotations	= BIFClass.getAnnotationsByType( BoxBIF.class );
+		for ( BoxBIF bif : BoxBIFAnnotations ) {
+			globalFunctions.put(
+			    // Use the annotation's alias, if present, if not, the name of the class.
+			    bif.alias().equals( "" ) ? Key.of( className ) : Key.of( bif.alias() ),
+			    descriptor
+			);
+		}
+
+		// Register member methods
+		BoxMember[] BoxMemberAnnotations = BIFClass.getAnnotationsByType( BoxMember.class );
+		for ( BoxMember member : BoxMemberAnnotations ) {
+			Key memberKey;
+			if ( member.name().equals( "" ) ) {
+				// Default member name for class ArrayFoo with BoxType of Array is just foo()
+				memberKey = Key.of( className.toLowerCase().replaceAll( member.type().name().toLowerCase(), "" ) );
+			} else {
+				memberKey = Key.of( member.name() );
+			}
+			// Since we're processing in parallel, syncronize the addition of new member method keys to our map
+			synchronized ( memberMethods ) {
+				if ( !memberMethods.containsKey( memberKey ) ) {
+					memberMethods.put( memberKey, new ConcurrentHashMap<BoxLangType, MemberDescriptor>() );
+				}
+			}
+			Map<BoxLangType, MemberDescriptor> memberMethods = this.memberMethods.get( memberKey );
+			// member method map is in format memberMethods[ "nameOfMethod" ][ BoxLangType.ARRAY ] = MemberDesccriptor
+			// Whih optimizes lookup for matching member methods at runtime.
+			memberMethods.put(
+			    member.type(),
+			    new MemberDescriptor(
+			        memberKey,
+			        member.type(),
+			        // Pass null if objectArgument is empty
+			        member.objectArgument().equals( "" ) ? null : Key.of( member.objectArgument() ),
+			        descriptor
+			    )
+			);
+		}
+
 	}
 
 	/**
@@ -316,57 +385,11 @@ public class FunctionService extends BaseService {
 		    .of( ClassDiscovery.loadClassFiles( FUNCTIONS_PACKAGE + ".global", true ) )
 		    .parallel()
 		    // Filter to subclasses of BIF
-		    .filter( BIFClass -> !BIF.class.isAssignableFrom( BIFClass.getClass() ) )
+		    .filter( BIFClass -> BIF.class.isAssignableFrom( BIFClass ) )
 		    // Process each class
 		    .forEach( BIFClass -> {
-			    String		className			= BIFClass.getSimpleName();
-			    BIFDescriptor descriptor		= new BIFDescriptor(
-			        Key.of( className ),
-			        BIFClass,
-			        null,
-			        null,
-			        true,
-			        null
-			    );
-
-			    // Register BIF with default name or alias
-			    BoxBIF[]	BoxBIFAnnotations	= BIFClass.getAnnotationsByType( BoxBIF.class );
-			    for ( BoxBIF bif : BoxBIFAnnotations ) {
-				    globalFunctions.put(
-				        bif.alias().equals( "" ) ? Key.of( className ) : Key.of( bif.alias() ),
-				        descriptor
-				    );
-			    }
-
-			    // Register member methods
-			    BoxMember[] BoxMemberAnnotations = BIFClass.getAnnotationsByType( BoxMember.class );
-			    for ( BoxMember member : BoxMemberAnnotations ) {
-				    Key memberKey;
-				    if ( member.name().equals( "" ) ) {
-					    // Default member name for class ArrayFoo with BoxType of Array is just foo()
-					    memberKey = Key.of( className.toLowerCase().replaceAll( member.type().name().toLowerCase(), "" ) );
-				    } else {
-					    memberKey = Key.of( member.name() );
-				    }
-				    synchronized ( memberMethods ) {
-					    if ( !memberMethods.containsKey( memberKey ) ) {
-						    memberMethods.put( memberKey, new ConcurrentHashMap<BoxLangType, MemberDescriptor>() );
-					    }
-				    }
-				    Map<BoxLangType, MemberDescriptor> memberMethods = this.memberMethods.get( memberKey );
-				    // System.out.println( "adding member method " + memberKey.getName() + " to " + member.type() + " with object argument " +
-				    // member.objectArgument() );
-				    memberMethods.put(
-				        member.type(),
-				        new MemberDescriptor(
-				            memberKey,
-				            member.type(),
-				            // Pass null if objectArgument is empty
-				            member.objectArgument().equals( "" ) ? null : Key.of( member.objectArgument() ),
-				            descriptor
-				        )
-				    );
-			    }
+			    // This method will handle the BIF and any member method annotations
+			    registerGlobalFunction( BIFClass, null, null );
 		    } );
 
 	}

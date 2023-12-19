@@ -63,6 +63,7 @@ public class PrintlnTest {
 	@BeforeEach
 	public void setupEach() {
 		variables.clear();
+		outContent.reset();
 	}
 
 	@DisplayName( "It can print to the console" )
@@ -73,7 +74,7 @@ public class PrintlnTest {
 		    println( "Hello World" )
 		    """,
 		    context );
-		assertThat( new String( outContent.toByteArray() ) ).isEqualTo( "Hello World\n" );
+		assertThat( new String( outContent.toByteArray() ) ).isEqualTo( "Hello World" + System.lineSeparator() );
 	}
 
 	@DisplayName( "It can print an array to the console" )
@@ -85,7 +86,7 @@ public class PrintlnTest {
 		       println( a )
 		       """,
 		    context );
-		assertThat( new String( outContent.toByteArray() ) ).isEqualTo( "[1, 2, 3]\n" );
+		assertThat( new String( outContent.toByteArray() ) ).isEqualTo( "[1, 2, 3]" + System.lineSeparator() );
 	}
 
 	@DisplayName( "It can print a struct to the console" )
@@ -97,7 +98,7 @@ public class PrintlnTest {
 		       println( s )
 		       """,
 		    context );
-		assertThat( new String( outContent.toByteArray() ) ).isEqualTo( "{A=1, B=2, C=3}\n" );
+		assertThat( new String( outContent.toByteArray() ) ).isEqualTo( "{A=1, B=2, C=3}" + System.lineSeparator() );
 	}
 
 }
