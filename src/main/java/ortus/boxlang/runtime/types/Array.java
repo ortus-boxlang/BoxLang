@@ -34,6 +34,7 @@ import ortus.boxlang.runtime.dynamic.IReferenceable;
 import ortus.boxlang.runtime.dynamic.casters.CastAttempt;
 import ortus.boxlang.runtime.dynamic.casters.DoubleCaster;
 import ortus.boxlang.runtime.interop.DynamicObject;
+import ortus.boxlang.runtime.interop.JavaInvocationService;
 import ortus.boxlang.runtime.scopes.IntKey;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.services.FunctionService;
@@ -440,16 +441,7 @@ public class Array implements List<Object>, IType, IReferenceable, IListenable {
 			return result / wrapped.size();
 		}
 
-		// If there is no member funtion, look for a native Java method of that name
-		if ( dynamicObject == null ) {
-			dynamicObject = DynamicObject.of( this );
-		}
-
-		if ( safe && !dynamicObject.hasMethod( name.getName() ) ) {
-			return null;
-		}
-
-		return dynamicObject.invoke( name.getName(), positionalArguments );
+		return JavaInvocationService.invoke( this, name.getName(), safe, positionalArguments );
 	}
 
 	/**
@@ -478,16 +470,7 @@ public class Array implements List<Object>, IType, IReferenceable, IListenable {
 			return result / wrapped.size();
 		}
 
-		// If there is no member funtion, look for a native Java method of that name
-		DynamicObject object = DynamicObject.of( this );
-
-		if ( safe && !object.hasMethod( name.getName() ) ) {
-			return null;
-		}
-
-		return object.invoke( name.getName(), namedArguments );
-
-		// Native java methods can't be called with named params so we don't even try
+		return JavaInvocationService.invoke( this, name.getName(), safe, namedArguments );
 	}
 
 	/**
