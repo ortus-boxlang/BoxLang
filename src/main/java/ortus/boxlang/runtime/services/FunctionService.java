@@ -312,9 +312,12 @@ public class FunctionService extends BaseService {
 	 * @throws IOException If there is an error loading the global functions
 	 */
 	public void loadGlobalFunctions() throws IOException {
-		Stream.of( ClassDiscovery.loadClassFiles( FUNCTIONS_PACKAGE + ".global", true ) )
+		Stream
+		    .of( ClassDiscovery.loadClassFiles( FUNCTIONS_PACKAGE + ".global", true ) )
+		    .parallel()
 		    // Filter to subclasses of BIF
 		    .filter( BIFClass -> !BIF.class.isAssignableFrom( BIFClass.getClass() ) )
+		    // Process each class
 		    .forEach( BIFClass -> {
 			    String		className			= BIFClass.getSimpleName();
 			    BIFDescriptor descriptor		= new BIFDescriptor(
