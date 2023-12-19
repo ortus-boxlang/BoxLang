@@ -32,7 +32,7 @@ import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.dynamic.IReferenceable;
 import ortus.boxlang.runtime.dynamic.casters.KeyCaster;
 import ortus.boxlang.runtime.dynamic.casters.StringCaster;
-import ortus.boxlang.runtime.interop.DynamicObject;
+import ortus.boxlang.runtime.interop.DynamicJavaInteropService;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.services.FunctionService;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
@@ -657,14 +657,7 @@ public class Struct implements Map<Key, Object>, IType, IReferenceable, IListena
 			}
 		}
 
-		// If there is no member funtion, look for a native Java method of that name
-		DynamicObject object = DynamicObject.of( this );
-
-		if ( safe && !object.hasMethod( name.getName() ) ) {
-			return null;
-		}
-
-		return object.invoke( name.getName(), positionalArguments );
+		return DynamicJavaInteropService.invoke( this, name.getName(), safe, positionalArguments );
 	}
 
 	/**
@@ -690,20 +683,24 @@ public class Struct implements Map<Key, Object>, IType, IReferenceable, IListena
 		}
 
 		Object value = dereference( name, safe );
-		if ( value instanceof Function function ) {
-			return function.invoke(
-			    Function.generateFunctionContext(
-			        function,
-			        context.getFunctionParentContext(),
-			        name,
-			        function.createArgumentsScope( namedArguments )
-			    )
-			);
-		} else {
-			throw new BoxRuntimeException(
-			    "key '" + name.getName() + "' of type  '" + value.getClass().getName() + "'  is not a function "
-			);
+		if ( value != null ) {
+			if ( value instanceof Function function ) {
+				return function.invoke(
+				    Function.generateFunctionContext(
+				        function,
+				        context.getFunctionParentContext(),
+				        name,
+				        function.createArgumentsScope( namedArguments )
+				    )
+				);
+			} else {
+				throw new BoxRuntimeException(
+				    "key '" + name.getName() + "' of type  '" + value.getClass().getName() + "'  is not a function "
+				);
+			}
 		}
+
+		return DynamicJavaInteropService.invoke( this, name.getName(), safe, namedArguments );
 	}
 
 	/**
