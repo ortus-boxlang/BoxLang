@@ -3,8 +3,8 @@ package ortus.boxlang.runtime.bifs.global.array;
 import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
 import ortus.boxlang.runtime.bifs.BoxMember;
-import ortus.boxlang.runtime.context.FunctionBoxContext;
 import ortus.boxlang.runtime.context.IBoxContext;
+import ortus.boxlang.runtime.dynamic.casters.ArrayCaster;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
@@ -42,19 +42,12 @@ public class ArrayReduce extends BIF {
      * @argument.initialValue The initial value of the accumulator
      */
     public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
-        Array          actualArray     = arguments.getAsArray( Key.array );
-        Object         accumulator     = arguments.get( Key.initialValue );
-        Function       func            = arguments.getAsFunction( Key.callback );
-        ArgumentsScope closureArgScope = func.createArgumentsScope( new Object[] { accumulator, null, null, actualArray } );
+        Array    actualArray = ArrayCaster.cast( arguments.dereference( Key.array, false ) );
+        Object   accumulator = arguments.get( Key.initialValue );
+        Function func        = ( Function ) arguments.get( Key.callback );
 
         for ( int i = 0; i < actualArray.size(); i++ ) {
-            closureArgScope.put( Key._1, accumulator );
-            closureArgScope.put( Key._2, actualArray.get( i ) );
-            closureArgScope.put( Key._3, i + 1 );
-
-            FunctionBoxContext fbc = Function.generateFunctionContext( func, context, Key.callback, closureArgScope );
-
-            accumulator = func.invoke( fbc );
+            accumulator = context.invokeFunction( func, new Object[] { accumulator, actualArray.get( i ), i + 1, actualArray } );
         }
 
         return accumulator;
