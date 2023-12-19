@@ -74,6 +74,20 @@ public class ArrayClearTest {
         assertThat( ( ( Array ) variables.dereference( Key.of( "nums" ), false ) ).size() ).isEqualTo( 0 );
     }
 
+    @DisplayName( "It can clear the array member" )
+    @Test
+    public void testCanClearMember() {
+        instance.executeSource(
+            """
+                      nums = [ 1, 2, 3, 4, 5 ];
+
+                      result = nums.clear();
+            """,
+            context );
+        assertThat( variables.dereference( result, false ) ).isEqualTo( true );
+        assertThat( ( ( Array ) variables.dereference( Key.of( "nums" ), false ) ).size() ).isEqualTo( 0 );
+    }
+
     @DisplayName( "It can clear native array" )
     @Test
     public void testCanClearNative() {

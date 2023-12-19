@@ -1,13 +1,18 @@
 package ortus.boxlang.runtime.bifs.global.array;
 
 import ortus.boxlang.runtime.bifs.BIF;
+import ortus.boxlang.runtime.bifs.BoxBIF;
+import ortus.boxlang.runtime.bifs.BoxMember;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.dynamic.casters.ArrayCaster;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.Array;
+import ortus.boxlang.runtime.types.BoxLangType;
 
+@BoxBIF
+@BoxMember( type = BoxLangType.ARRAY )
 public class ArrayAppend extends BIF {
 
 	/**
@@ -24,7 +29,6 @@ public class ArrayAppend extends BIF {
 
 	/**
 	 * Append a value to an array
-	 *
 	 * 
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
@@ -48,7 +52,10 @@ public class ArrayAppend extends BIF {
 		} else {
 			actualArray.add( value );
 		}
-		return actualArray;
+		if ( arguments.getAsBoolean( BIF.__isMemberExectution ) ) {
+			return actualArray;
+		}
+		return true;
 	}
 
 }

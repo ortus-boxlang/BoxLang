@@ -22,8 +22,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
-import org.apache.commons.lang3.ClassUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -31,8 +31,14 @@ import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BIFDescriptor;
 import ortus.boxlang.runtime.bifs.BIFNamespace;
+import ortus.boxlang.runtime.bifs.BoxBIF;
+import ortus.boxlang.runtime.bifs.BoxMember;
+import ortus.boxlang.runtime.bifs.MemberDescriptor;
+import ortus.boxlang.runtime.dynamic.casters.CastAttempt;
+import ortus.boxlang.runtime.dynamic.casters.GenericCaster;
 import ortus.boxlang.runtime.loader.util.ClassDiscovery;
 import ortus.boxlang.runtime.scopes.Key;
+import ortus.boxlang.runtime.types.BoxLangType;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.exceptions.KeyNotFoundException;
 
@@ -48,22 +54,27 @@ public class FunctionService extends BaseService {
 	 * --------------------------------------------------------------------------
 	 */
 
-	private static final String		FUNCTIONS_PACKAGE	= "ortus.boxlang.runtime.bifs";
+	private static final String								FUNCTIONS_PACKAGE	= "ortus.boxlang.runtime.bifs";
 
 	/**
 	 * Logger
 	 */
-	private static final Logger		logger				= LoggerFactory.getLogger( FunctionService.class );
+	private static final Logger								logger				= LoggerFactory.getLogger( FunctionService.class );
 
 	/**
 	 * The set of global functions registered with the service
 	 */
-	private Map<Key, BIFDescriptor>	globalFunctions		= new ConcurrentHashMap<>();
+	private Map<Key, BIFDescriptor>							globalFunctions		= new ConcurrentHashMap<Key, BIFDescriptor>();
 
 	/**
 	 * The set of namespaced functions registered with the service
 	 */
-	private Map<Key, BIFNamespace>	namespaces			= new ConcurrentHashMap<>();
+	private Map<Key, BIFNamespace>							namespaces			= new ConcurrentHashMap<Key, BIFNamespace>();
+
+	/**
+	 * The set of registered member methods
+	 */
+	private Map<Key, Map<BoxLangType, MemberDescriptor>>	memberMethods		= new ConcurrentHashMap<Key, Map<BoxLangType, MemberDescriptor>>();
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -78,6 +89,7 @@ public class FunctionService extends BaseService {
 	 */
 	public FunctionService( BoxRuntime runtime ) {
 		super( runtime );
+
 		// Load global functions
 		try {
 			loadGlobalFunctions();
@@ -196,6 +208,31 @@ public class FunctionService extends BaseService {
 		return target;
 	}
 
+	public MemberDescriptor getMemberMethod( Key name, Object object ) {
+		// For obj.method() we first look for a registered member method of this name
+		Map<BoxLangType, MemberDescriptor> memberMethods = this.memberMethods.get( name );
+		if ( memberMethods != null ) {
+			// Then we see if our object is castable to any of the possible types for that method
+			for ( BoxLangType type : memberMethods.keySet() ) {
+				CastAttempt<?> castAttempt = GenericCaster.attempt( object, type );
+				if ( castAttempt.wasSuccessful() ) {
+					return memberMethods.get( type );
+				}
+			}
+		}
+		return null;
+	}
+
+	public MemberDescriptor getMemberMethod( Key name, BoxLangType type ) {
+		// For obj.method() we first look for a registered member method of this name
+		Map<BoxLangType, MemberDescriptor> memberMethods = this.memberMethods.get( name );
+		if ( memberMethods != null ) {
+			// Then we see if this type is applicable
+			return memberMethods.get( type );
+		}
+		return null;
+	}
+
 	/**
 	 * Gets the global function descriptor for the given name
 	 *
@@ -249,8 +286,8 @@ public class FunctionService extends BaseService {
 		this.globalFunctions.put(
 		    name,
 		    new BIFDescriptor(
-		        name.getName(),
-		        ClassUtils.getCanonicalName( function.getClass() ),
+		        name,
+		        function.getClass(),
 		        module,
 		        null,
 		        true,
@@ -275,21 +312,60 @@ public class FunctionService extends BaseService {
 	 * @throws IOException If there is an error loading the global functions
 	 */
 	public void loadGlobalFunctions() throws IOException {
-		this.globalFunctions = ClassDiscovery
-		    .getClassFilesAsStream( FUNCTIONS_PACKAGE + ".global", true )
-		    .collect(
-		        Collectors.toConcurrentMap(
-		            value -> Key.of( ClassUtils.getShortClassName( value ) ),
-		            value -> new BIFDescriptor(
-		                ClassUtils.getShortClassName( value ),
-		                value,
-		                null,
-		                null,
-		                true,
-		                null
-		            )
-		        )
-		    );
+		Stream.of( ClassDiscovery.loadClassFiles( FUNCTIONS_PACKAGE + ".global", true ) )
+		    // Filter to subclasses of BIF
+		    .filter( BIFClass -> !BIF.class.isAssignableFrom( BIFClass.getClass() ) )
+		    .forEach( BIFClass -> {
+			    String		className			= BIFClass.getSimpleName();
+			    BIFDescriptor descriptor		= new BIFDescriptor(
+			        Key.of( className ),
+			        BIFClass,
+			        null,
+			        null,
+			        true,
+			        null
+			    );
+
+			    // Register BIF with default name or alias
+			    BoxBIF[]	BoxBIFAnnotations	= BIFClass.getAnnotationsByType( BoxBIF.class );
+			    for ( BoxBIF bif : BoxBIFAnnotations ) {
+				    globalFunctions.put(
+				        bif.alias().equals( "" ) ? Key.of( className ) : Key.of( bif.alias() ),
+				        descriptor
+				    );
+			    }
+
+			    // Register member methods
+			    BoxMember[] BoxMemberAnnotations = BIFClass.getAnnotationsByType( BoxMember.class );
+			    for ( BoxMember member : BoxMemberAnnotations ) {
+				    Key memberKey;
+				    if ( member.name().equals( "" ) ) {
+					    // Default member name for class ArrayFoo with BoxType of Array is just foo()
+					    memberKey = Key.of( className.toLowerCase().replaceAll( member.type().name().toLowerCase(), "" ) );
+				    } else {
+					    memberKey = Key.of( member.name() );
+				    }
+				    synchronized ( memberMethods ) {
+					    if ( !memberMethods.containsKey( memberKey ) ) {
+						    memberMethods.put( memberKey, new ConcurrentHashMap<BoxLangType, MemberDescriptor>() );
+					    }
+				    }
+				    Map<BoxLangType, MemberDescriptor> memberMethods = this.memberMethods.get( memberKey );
+				    // System.out.println( "adding member method " + memberKey.getName() + " to " + member.type() + " with object argument " +
+				    // member.objectArgument() );
+				    memberMethods.put(
+				        member.type(),
+				        new MemberDescriptor(
+				            memberKey,
+				            member.type(),
+				            // Pass null if objectArgument is empty
+				            member.objectArgument().equals( "" ) ? null : Key.of( member.objectArgument() ),
+				            descriptor
+				        )
+				    );
+			    }
+		    } );
+
 	}
 
 	/**

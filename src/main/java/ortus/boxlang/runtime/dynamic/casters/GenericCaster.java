@@ -20,6 +20,7 @@ package ortus.boxlang.runtime.dynamic.casters;
 import java.math.BigDecimal;
 import java.util.List;
 
+import ortus.boxlang.runtime.types.BoxLangType;
 import ortus.boxlang.runtime.types.Function;
 import ortus.boxlang.runtime.types.NullValue;
 import ortus.boxlang.runtime.types.exceptions.BoxCastException;
@@ -43,7 +44,12 @@ public class GenericCaster {
 	 * @return A CastAttempt, which contains the casted value, if successful
 	 */
 	public static CastAttempt<Object> attempt( Object object, Object oType, boolean strict ) {
-		String type = StringCaster.cast( oType ).toLowerCase();
+		String type;
+		if ( oType instanceof BoxLangType boxType ) {
+			type = boxType.name().toLowerCase();
+		} else {
+			type = StringCaster.cast( oType ).toLowerCase();
+		}
 
 		// Represent legit null values in a NullValue instance
 		if ( type.equalsIgnoreCase( "null" ) || type.equalsIgnoreCase( "void" ) ) {

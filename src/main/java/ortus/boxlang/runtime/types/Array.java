@@ -27,6 +27,8 @@ import java.util.ListIterator;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+import ortus.boxlang.runtime.BoxRuntime;
+import ortus.boxlang.runtime.bifs.MemberDescriptor;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.dynamic.IReferenceable;
 import ortus.boxlang.runtime.dynamic.casters.CastAttempt;
@@ -34,6 +36,7 @@ import ortus.boxlang.runtime.dynamic.casters.DoubleCaster;
 import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.scopes.IntKey;
 import ortus.boxlang.runtime.scopes.Key;
+import ortus.boxlang.runtime.services.FunctionService;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.immutable.ImmutableArray;
 import ortus.boxlang.runtime.types.meta.BoxMeta;
@@ -60,6 +63,7 @@ public class Array implements List<Object>, IType, IReferenceable, IListenable {
 	 * Used to track change listeners. Intitialized on-demand
 	 */
 	private Map<Key, IChangeListener>	listeners;
+	private FunctionService				functionService	= BoxRuntime.getInstance().getFunctionService();
 
 	DynamicObject						dynamicObject	= null;
 
@@ -417,6 +421,11 @@ public class Array implements List<Object>, IType, IReferenceable, IListenable {
 	 */
 	public Object dereferenceAndInvoke( IBoxContext context, Key name, Object[] positionalArguments, Boolean safe ) {
 
+		MemberDescriptor memberDescriptor = functionService.getMemberMethod( name, BoxLangType.ARRAY );
+		if ( memberDescriptor != null ) {
+			return memberDescriptor.invoke( context, this, positionalArguments );
+		}
+
 		// Member functions here
 		// temp workaround for unit test src\test\java\TestCases\phase2\ObjectLiteralTest.java
 		if ( name.equals( Key.of( "avg" ) ) ) {
@@ -449,6 +458,11 @@ public class Array implements List<Object>, IType, IReferenceable, IListenable {
 	 * @return The requested return value or null
 	 */
 	public Object dereferenceAndInvoke( IBoxContext context, Key name, Map<Key, Object> namedArguments, Boolean safe ) {
+
+		MemberDescriptor memberDescriptor = functionService.getMemberMethod( name, BoxLangType.ARRAY );
+		if ( memberDescriptor != null ) {
+			return memberDescriptor.invoke( context, this, namedArguments );
+		}
 
 		// Member functions here
 		// temp workaround for unit test src\test\java\TestCases\phase2\ObjectLiteralTest.java

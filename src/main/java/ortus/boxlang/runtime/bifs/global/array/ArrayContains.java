@@ -1,6 +1,8 @@
 package ortus.boxlang.runtime.bifs.global.array;
 
 import ortus.boxlang.runtime.bifs.BIF;
+import ortus.boxlang.runtime.bifs.BoxBIF;
+import ortus.boxlang.runtime.bifs.BoxMember;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
 import ortus.boxlang.runtime.operators.Compare;
@@ -8,11 +10,11 @@ import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.Array;
+import ortus.boxlang.runtime.types.BoxLangType;
 import ortus.boxlang.runtime.types.Function;
 
-// @BoxMember( "Array", "contains", "array" )
-// @BoxMember( "Array", "find", "array" )
-// @BoxIgnoreBIF()
+@BoxBIF
+@BoxMember( type = BoxLangType.ARRAY )
 public class ArrayContains extends BIF {
 
 	/**

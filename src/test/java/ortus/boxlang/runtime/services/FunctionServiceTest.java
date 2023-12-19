@@ -64,7 +64,7 @@ class FunctionServiceTest {
 
 		Object result = service.getGlobalFunction( "print" )
 		    .invoke(
-		        new ScriptingBoxContext(), new String[] { "Hello Unit Test" }
+		        new ScriptingBoxContext(), new String[] { "Hello Unit Test" }, false
 		    );
 
 		assertThat( ( Boolean ) result ).isTrue();

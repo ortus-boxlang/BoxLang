@@ -168,7 +168,7 @@ public class BaseBoxContext implements IBoxContext {
 	public Object invokeFunction( Key name, Object[] positionalArguments ) {
 		BIFDescriptor bif = findBIF( name );
 		if ( bif != null ) {
-			return bif.invoke( this, positionalArguments );
+			return bif.invoke( this, positionalArguments, false );
 		}
 
 		Function function = findFunction( name );
@@ -183,7 +183,7 @@ public class BaseBoxContext implements IBoxContext {
 	public Object invokeFunction( Key name, Map<Key, Object> namedArguments ) {
 		BIFDescriptor bif = findBIF( name );
 		if ( bif != null ) {
-			return bif.invoke( this, namedArguments );
+			return bif.invoke( this, namedArguments, false );
 		}
 
 		Function function = findFunction( name );
@@ -198,7 +198,7 @@ public class BaseBoxContext implements IBoxContext {
 	public Object invokeFunction( Key name ) {
 		BIFDescriptor bif = findBIF( name );
 		if ( bif != null ) {
-			return bif.invoke( this );
+			return bif.invoke( this, false );
 		}
 
 		Function function = findFunction( name );
@@ -218,8 +218,8 @@ public class BaseBoxContext implements IBoxContext {
 
 	private BIFDescriptor findBIF( Key name ) {
 		FunctionService functionService = BoxRuntime.getInstance().getFunctionService();
-		if ( functionService.hasGlobalFunction( name.getName() ) ) {
-			return functionService.getGlobalFunction( name.getName() );
+		if ( functionService.hasGlobalFunction( name ) ) {
+			return functionService.getGlobalFunction( name );
 		}
 		return null;
 	}
