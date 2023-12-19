@@ -276,6 +276,7 @@ public class DynamicObject implements IReferenceable {
 	 *
 	 */
 	public Object invokeStatic( String methodName, Object... arguments ) {
+		// return DynamicJavaInteropService.invokeStatic( this.targetClass, methodName, false, arguments );
 		return DynamicJavaInteropService.invoke( this.targetClass, methodName, false, arguments );
 	}
 
