@@ -38,9 +38,12 @@ import java.util.stream.Stream;
 
 import org.apache.commons.lang3.ClassUtils;
 
+import ortus.boxlang.runtime.BoxRuntime;
+import ortus.boxlang.runtime.bifs.MemberDescriptor;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.dynamic.IReferenceable;
 import ortus.boxlang.runtime.scopes.Key;
+import ortus.boxlang.runtime.services.FunctionService;
 import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.IType;
 import ortus.boxlang.runtime.types.exceptions.ApplicationException;
@@ -138,6 +141,11 @@ public class DynamicObject implements IReferenceable {
 	 * Name of key to get length of native arrays
 	 */
 	private Key												lengthKey			= Key.of( "length" );
+
+	/**
+	 * Function service
+	 */
+	private FunctionService									functionService		= BoxRuntime.getInstance().getFunctionService();
 
 	/**
 	 * Static Initializer
@@ -1013,6 +1021,13 @@ public class DynamicObject implements IReferenceable {
 			return ref.dereferenceAndInvoke( context, name, positionalArguments, safe );
 		}
 
+		if ( hasInstance() ) {
+			MemberDescriptor memberDescriptor = functionService.getMemberMethod( name, getTargetInstance() );
+			if ( memberDescriptor != null ) {
+				return memberDescriptor.invoke( context, getTargetInstance(), positionalArguments );
+			}
+		}
+
 		// member functions on java objects
 		// temp workaround for test src\test\java\TestCases\phase2\ObjectLiteralTest.java
 		if ( getTargetInstance() instanceof Boolean bool && name.equals( Key.of( "yesNoFormat" ) ) ) {
@@ -1043,6 +1058,13 @@ public class DynamicObject implements IReferenceable {
 
 		if ( hasInstance() && getTargetInstance() instanceof IReferenceable ref ) {
 			return ref.dereferenceAndInvoke( context, name, namedArguments, safe );
+		}
+
+		if ( hasInstance() ) {
+			MemberDescriptor memberDescriptor = functionService.getMemberMethod( name, getTargetInstance() );
+			if ( memberDescriptor != null ) {
+				return memberDescriptor.invoke( context, getTargetInstance(), namedArguments );
+			}
 		}
 
 		// member functions on java objects

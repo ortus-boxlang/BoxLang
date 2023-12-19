@@ -26,12 +26,15 @@ import java.util.Set;
 import java.util.TreeMap;
 import java.util.concurrent.ConcurrentHashMap;
 
+import ortus.boxlang.runtime.BoxRuntime;
+import ortus.boxlang.runtime.bifs.MemberDescriptor;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.dynamic.IReferenceable;
 import ortus.boxlang.runtime.dynamic.casters.KeyCaster;
 import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.scopes.Key;
+import ortus.boxlang.runtime.services.FunctionService;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.exceptions.KeyNotFoundException;
 import ortus.boxlang.runtime.types.immutable.ImmutableStruct;
@@ -76,6 +79,11 @@ public class Struct implements Map<Key, Object>, IType, IReferenceable, IListena
 	private Map<Key, IChangeListener>	listeners;
 
 	/**
+	 * Function service
+	 */
+	private FunctionService				functionService;
+
+	/**
 	 * In general, a common approach is to choose an initial capacity that is a power of two.
 	 * For example, 16, 32, 64, etc. This is because ConcurrentHashMap uses power-of-two-sized hash tables,
 	 * and using a power-of-two capacity can lead to better distribution of elements in the table.
@@ -94,7 +102,8 @@ public class Struct implements Map<Key, Object>, IType, IReferenceable, IListena
 	 * @param type The type of struct to create: DEFAULT, LINKED, SORTED
 	 */
 	public Struct( Type type ) {
-		this.type = type;
+		functionService	= BoxRuntime.getInstance().getFunctionService();
+		this.type		= type;
 		if ( type.equals( Type.DEFAULT ) ) {
 			wrapped = new ConcurrentHashMap<>( INITIAL_CAPACITY );
 			return;
@@ -619,6 +628,11 @@ public class Struct implements Map<Key, Object>, IType, IReferenceable, IListena
 	 */
 	public Object dereferenceAndInvoke( IBoxContext context, Key name, Object[] positionalArguments, Boolean safe ) {
 
+		MemberDescriptor memberDescriptor = functionService.getMemberMethod( name, BoxLangType.STRUCT );
+		if ( memberDescriptor != null ) {
+			return memberDescriptor.invoke( context, this, positionalArguments );
+		}
+
 		// Member functions here
 		// temp workaround for unit test src\test\java\TestCases\phase2\ObjectLiteralTest.java
 		if ( name.equals( Key.of( "keyArray" ) ) ) {
@@ -663,6 +677,11 @@ public class Struct implements Map<Key, Object>, IType, IReferenceable, IListena
 	 * @return The requested return value or null
 	 */
 	public Object dereferenceAndInvoke( IBoxContext context, Key name, Map<Key, Object> namedArguments, Boolean safe ) {
+
+		MemberDescriptor memberDescriptor = functionService.getMemberMethod( name, BoxLangType.STRUCT );
+		if ( memberDescriptor != null ) {
+			return memberDescriptor.invoke( context, this, namedArguments );
+		}
 
 		// Member functions here
 		// temp workaround for unit test src\test\java\TestCases\phase2\ObjectLiteralTest.java

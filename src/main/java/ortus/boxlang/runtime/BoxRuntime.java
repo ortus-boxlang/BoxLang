@@ -116,6 +116,11 @@ public class BoxRuntime {
 	private Configuration		configuration;
 
 	/**
+	 * The path to the configuration file to load as overrides
+	 */
+	private String				configPath;
+
+	/**
 	 * --------------------------------------------------------------------------
 	 * Services
 	 * --------------------------------------------------------------------------
@@ -192,9 +197,8 @@ public class BoxRuntime {
 		this.asyncService		= new AsyncService( this );
 		this.cacheService		= new CacheService( this );
 		this.functionService	= new FunctionService( this );
+		this.configPath			= configPath;
 
-		// Load the configurations and overrides
-		loadConfiguration( debugMode, configPath );
 	}
 
 	/**
@@ -247,6 +251,9 @@ public class BoxRuntime {
 	 * Any logic that requires any services or operations to be seeded first, then go here.
 	 */
 	private void startup() {
+		// Load the configurations and overrides
+		loadConfiguration( debugMode, configPath );
+
 		// Announce Startup to Services only
 		this.interceptorService.onStartup();
 		this.asyncService.onStartup();

@@ -63,6 +63,10 @@ public class Array implements List<Object>, IType, IReferenceable, IListenable {
 	 * Used to track change listeners. Intitialized on-demand
 	 */
 	private Map<Key, IChangeListener>	listeners;
+
+	/**
+	 * Function service
+	 */
 	private FunctionService				functionService	= BoxRuntime.getInstance().getFunctionService();
 
 	DynamicObject						dynamicObject	= null;
