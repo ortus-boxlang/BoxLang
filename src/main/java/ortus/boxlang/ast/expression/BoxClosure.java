@@ -42,8 +42,8 @@ public class BoxClosure extends BoxExpr {
 	 * @param position    position of the statement in the source code
 	 * @param sourceText  source code that originated the Node
 	 */
-	public BoxClosure(List<BoxArgumentDeclaration> args, List<BoxAnnotation> annotations, List<BoxStatement> body, Position position,
-                      String sourceText ) {
+	public BoxClosure( List<BoxArgumentDeclaration> args, List<BoxAnnotation> annotations, List<BoxStatement> body, Position position,
+	    String sourceText ) {
 		super( position, sourceText );
 		this.args = Collections.unmodifiableList( args );
 		this.args.forEach( arg -> arg.setParent( this ) );
