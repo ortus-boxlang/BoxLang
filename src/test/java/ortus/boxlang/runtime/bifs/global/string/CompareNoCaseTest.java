@@ -33,7 +33,7 @@ import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
 
-public class CompareTest {
+public class CompareNoCaseTest {
 
 	static BoxRuntime	instance;
 	static IBoxContext	context;
@@ -62,21 +62,21 @@ public class CompareTest {
 	public void testCompareEqual() {
 		instance.executeSource(
 		    """
-		    result = compare( 'a', 'a' );
+		    result = compareNoCase( 'a', 'a' );
 		    """,
 		    context );
 		assertThat( variables.dereference( result, false ) ).isEqualTo( 0 );
 	}
 
-	@DisplayName( "It performs a case sensitive compare" )
+	@DisplayName( "It performs a case insensitive compare" )
 	@Test
 	public void testCompareCaseSensitive() {
 		instance.executeSource(
 		    """
-		    result = compare( 'a', 'A' );
+		    result = compareNoCase( 'a', 'A' );
 		    """,
 		    context );
-		assertThat( variables.dereference( result, false ) ).isEqualTo( 1 );
+		assertThat( variables.dereference( result, false ) ).isEqualTo( 0 );
 	}
 
 	@DisplayName( "It returns -1 if the first string precedes the second string lexicographically" )
@@ -84,7 +84,7 @@ public class CompareTest {
 	public void testCompareFirst() {
 		instance.executeSource(
 		    """
-		    result = compare( 'a', 'c' );
+		    result = compareNoCase( 'a', 'C' );
 		    """,
 		    context );
 		assertThat( variables.dereference( result, false ) ).isEqualTo( -1 );
@@ -95,20 +95,20 @@ public class CompareTest {
 	public void testCompareSecond() {
 		instance.executeSource(
 		    """
-		    result = compare( 'b', 'a' );
+		    result = compareNoCase( 'B', 'a' );
 		    """,
 		    context );
 		assertThat( variables.dereference( result, false ) ).isEqualTo( 1 );
 	}
 
-	@DisplayName( "It compares as a member function" )
+	@DisplayName( "It comparse as a member function" )
 	@Test
 	public void testCompareMember() {
 		instance.executeSource(
 		    """
 		    value = 'a';
-		    result = value.compare( "b" );
-		    result2 = "b".compare( "a" );
+		    result = value.compareNoCase( "b" );
+		    result2 = "b".compareNoCase( "a" );
 		       """,
 		    context );
 		assertThat( variables.dereference( result, false ) ).isEqualTo( -1 );
