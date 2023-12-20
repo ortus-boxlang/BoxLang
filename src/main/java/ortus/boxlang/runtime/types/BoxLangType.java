@@ -18,12 +18,12 @@
 package ortus.boxlang.runtime.types;
 
 public enum BoxLangType {
-    STRUCT,
-    ARRAY,
-    NUMERIC,
-    LIST,
-    DATE,
-    STRING,
-    QUERY,
-    BOOLEAN
+	STRUCT,
+	ARRAY,
+	NUMERIC,
+	LIST,
+	DATE,
+	STRING,
+	QUERY,
+	BOOLEAN
 }

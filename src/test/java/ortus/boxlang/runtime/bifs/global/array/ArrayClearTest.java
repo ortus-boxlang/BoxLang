@@ -38,66 +38,66 @@ import ortus.boxlang.runtime.types.exceptions.BoxCastException;
 
 public class ArrayClearTest {
 
-    static BoxRuntime  instance;
-    static IBoxContext context;
-    static IScope      variables;
-    static Key         result = new Key( "result" );
+	static BoxRuntime	instance;
+	static IBoxContext	context;
+	static IScope		variables;
+	static Key			result	= new Key( "result" );
 
-    @BeforeAll
-    public static void setUp() {
-        instance  = BoxRuntime.getInstance( true );
-        context   = new ScriptingBoxContext( instance.getRuntimeContext() );
-        variables = context.getScopeNearby( VariablesScope.name );
-    }
+	@BeforeAll
+	public static void setUp() {
+		instance	= BoxRuntime.getInstance( true );
+		context		= new ScriptingBoxContext( instance.getRuntimeContext() );
+		variables	= context.getScopeNearby( VariablesScope.name );
+	}
 
-    @AfterAll
-    public static void teardown() {
-        instance.shutdown();
-    }
+	@AfterAll
+	public static void teardown() {
+		instance.shutdown();
+	}
 
-    @BeforeEach
-    public void setupEach() {
-        variables.clear();
-    }
+	@BeforeEach
+	public void setupEach() {
+		variables.clear();
+	}
 
-    @DisplayName( "It can clear the array" )
-    @Test
-    public void testCanClear() {
-        instance.executeSource(
-            """
-                      nums = [ 1, 2, 3, 4, 5 ];
+	@DisplayName( "It can clear the array" )
+	@Test
+	public void testCanClear() {
+		instance.executeSource(
+		    """
+		              nums = [ 1, 2, 3, 4, 5 ];
 
-                      result = arrayClear( nums );
-            """,
-            context );
-        assertThat( variables.dereference( result, false ) ).isEqualTo( true );
-        assertThat( ( ( Array ) variables.dereference( Key.of( "nums" ), false ) ).size() ).isEqualTo( 0 );
-    }
+		              result = arrayClear( nums );
+		    """,
+		    context );
+		assertThat( variables.dereference( result, false ) ).isEqualTo( true );
+		assertThat( ( ( Array ) variables.dereference( Key.of( "nums" ), false ) ).size() ).isEqualTo( 0 );
+	}
 
-    @DisplayName( "It can clear the array member" )
-    @Test
-    public void testCanClearMember() {
-        instance.executeSource(
-            """
-                      nums = [ 1, 2, 3, 4, 5 ];
+	@DisplayName( "It can clear the array member" )
+	@Test
+	public void testCanClearMember() {
+		instance.executeSource(
+		    """
+		              nums = [ 1, 2, 3, 4, 5 ];
 
-                      result = nums.clear();
-            """,
-            context );
-        assertThat( variables.dereference( result, false ) ).isEqualTo( true );
-        assertThat( ( ( Array ) variables.dereference( Key.of( "nums" ), false ) ).size() ).isEqualTo( 0 );
-    }
+		              result = nums.clear();
+		    """,
+		    context );
+		assertThat( variables.dereference( result, false ) ).isEqualTo( true );
+		assertThat( ( ( Array ) variables.dereference( Key.of( "nums" ), false ) ).size() ).isEqualTo( 0 );
+	}
 
-    @DisplayName( "It can clear native array" )
-    @Test
-    public void testCanClearNative() {
-        assertThrows( BoxCastException.class, () -> instance.executeSource(
-            """
-                      nums = "brad".getBytes();
+	@DisplayName( "It can clear native array" )
+	@Test
+	public void testCanClearNative() {
+		assertThrows( BoxCastException.class, () -> instance.executeSource(
+		    """
+		              nums = "brad".getBytes();
 
-                      result = arrayClear( nums );
-            """,
-            context ) );
-    }
+		              result = arrayClear( nums );
+		    """,
+		    context ) );
+	}
 
 }
