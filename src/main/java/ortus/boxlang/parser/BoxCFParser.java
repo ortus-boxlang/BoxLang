@@ -1189,7 +1189,7 @@ public class BoxCFParser extends BoxAbstractParser {
 	 * @param file source file, if any
 	 * @param node ANTLR ObjectExpressionContext rule
 	 *
-	 * @return corresponding AST BoxAccess or an BoxIdentifier
+	 * @return corresponding AST
 	 *
 	 * @see BoxAccess subclasses
 	 * @see BoxIdentifier subclasses
@@ -1203,40 +1203,7 @@ public class BoxCFParser extends BoxAbstractParser {
 		else if ( node.identifier() != null )
 			return toAst( file, node.identifier() );
 		else if ( node.literalExpression() != null ) {
-			if ( node.literalExpression().stringLiteral() != null ) {
-				return toAst( file, node.literalExpression().stringLiteral() );
-			}
-			if ( node.literalExpression().integerLiteral() != null ) {
-				CFParser.IntegerLiteralContext inode = node.literalExpression().integerLiteral();
-				return new BoxIntegerLiteral(
-				    inode.getText(),
-				    getPosition( inode ),
-				    getSourceText( inode )
-				);
-			}
-			if ( node.literalExpression().floatLiteral() != null ) {
-				CFParser.FloatLiteralContext fnode = node.literalExpression().floatLiteral();
-				return new BoxDecimalLiteral(
-				    fnode.getText(),
-				    getPosition( fnode ),
-				    getSourceText( fnode )
-				);
-			}
-			if ( node.literalExpression().booleanLiteral() != null ) {
-				CFParser.BooleanLiteralContext bnode = node.literalExpression().booleanLiteral();
-				return new BoxBooleanLiteral(
-				    bnode.getText(),
-				    getPosition( bnode ),
-				    getSourceText( bnode ) );
-			}
-			if ( node.literalExpression().arrayExpression() != null ) {
-				return toAst( file, node.literalExpression().arrayExpression() );
-			}
-
-			if ( node.literalExpression().structExpression() != null ) {
-				return toAst( file, node.literalExpression().structExpression() );
-			}
-
+			return toAst( file, node.literalExpression() );
 		} else if ( node.new_() != null ) {
 			BoxExpr				expr	= null;
 			List<BoxArgument>	args	= toAst( file, node.new_().argumentList() );
@@ -1249,7 +1216,57 @@ public class BoxCFParser extends BoxAbstractParser {
 			return new BoxNewOperation( expr, args, getPosition( node ), getSourceText( node ) );
 		}
 
-		throw new IllegalStateException( "ObjectExpression not implemented: " + node.getClass().getSimpleName() );
+		throw new IllegalStateException( "ObjectExpression not implemented: " + getSourceText( node ) );
+
+	}
+
+	/**
+	 * Converts the ObjectExpression parser rule to the corresponding AST node. * @param file
+	 *
+	 * @param file source file, if any
+	 * @param node ANTLR LiteralExpressionContext rule
+	 *
+	 * @return corresponding AST BoxAccess or an LiteralExpressionContext
+	 *
+	 * @see BoxAccess subclasses
+	 * @see BoxIdentifier subclasses
+	 */
+	private BoxExpr toAst( File file, CFParser.LiteralExpressionContext node ) {
+		if ( node.stringLiteral() != null ) {
+			return toAst( file, node.stringLiteral() );
+		}
+		if ( node.integerLiteral() != null ) {
+			CFParser.IntegerLiteralContext inode = node.integerLiteral();
+			return new BoxIntegerLiteral(
+			    inode.getText(),
+			    getPosition( inode ),
+			    getSourceText( inode )
+			);
+		}
+		if ( node.floatLiteral() != null ) {
+			CFParser.FloatLiteralContext fnode = node.floatLiteral();
+			return new BoxDecimalLiteral(
+			    fnode.getText(),
+			    getPosition( fnode ),
+			    getSourceText( fnode )
+			);
+		}
+		if ( node.booleanLiteral() != null ) {
+			CFParser.BooleanLiteralContext bnode = node.booleanLiteral();
+			return new BoxBooleanLiteral(
+			    bnode.getText(),
+			    getPosition( bnode ),
+			    getSourceText( bnode ) );
+		}
+		if ( node.arrayExpression() != null ) {
+			return toAst( file, node.arrayExpression() );
+		}
+
+		if ( node.structExpression() != null ) {
+			return toAst( file, node.structExpression() );
+		}
+
+		throw new IllegalStateException( "LiteralExpression not implemented: " + getSourceText( node ) );
 
 	}
 
@@ -1396,17 +1413,16 @@ public class BoxCFParser extends BoxAbstractParser {
 		for ( CFParser.PreannotationContext annotation : node.functionSignature().preannotation() ) {
 			BoxExpr	avalue	= null;
 			BoxExpr	aname	= toAst( file, annotation.fqn() );
-			if ( annotation.literalExpression( 0 ).stringLiteral() != null ) {
-				avalue = toAst( file, annotation.literalExpression( 0 ).stringLiteral() );
-			} else if ( annotation.literalExpression( 0 ).integerLiteral() != null ) {
-				avalue = new BoxIntegerLiteral(
-				    annotation.literalExpression( 0 ).integerLiteral().getText(),
-				    getPosition( annotation ),
-				    getSourceText( annotation ) );
-			} else if ( annotation.literalExpression( 0 ).arrayExpression() != null ) {
-				avalue = toAst( file, annotation.literalExpression( 0 ).arrayExpression() );
-			} else if ( annotation.literalExpression( 0 ).structExpression() != null ) {
-				avalue = toAst( file, annotation.literalExpression( 0 ).structExpression() );
+			if ( annotation.literalExpression().size() == 1 ) {
+				avalue = toAst( file, annotation.literalExpression( 0 ) );
+			} else if ( annotation.literalExpression().size() > 1 ) {
+				List<BoxExpr> values = new ArrayList<>();
+				for ( CFParser.LiteralExpressionContext value : annotation.literalExpression() ) {
+					values.add( toAst( file, value ) );
+				}
+				avalue = new BoxArrayLiteral( values, getPosition( annotation ), getSourceText( annotation ) );
+			} else {
+				avalue = new BoxStringLiteral( "", getPosition( annotation ), getSourceText( annotation ) );
 			}
 			annotations.add( new BoxAnnotation( ( BoxFQN ) aname, avalue, getPosition( annotation ), getSourceText( annotation ) ) );
 		}
@@ -1566,23 +1582,7 @@ public class BoxCFParser extends BoxAbstractParser {
 
 			if ( index < node.values.size() ) {
 				CFParser.LiteralExpressionContext literal = node.values.get( index );
-				if ( literal.stringLiteral() != null ) {
-					value = toAst( file, literal.stringLiteral() );
-				} else if ( literal.booleanLiteral() != null ) {
-					value = new BoxBooleanLiteral(
-					    literal.booleanLiteral().getText(),
-					    getPosition( node ),
-					    getSourceText( node ) );
-				} else if ( literal.integerLiteral() != null ) {
-					value = new BoxIntegerLiteral(
-					    literal.integerLiteral().getText(),
-					    getPosition( node ),
-					    getSourceText( node ) );
-				} else if ( literal.arrayExpression() != null ) {
-					value = toAst( file, literal.arrayExpression() );
-				} else if ( literal.structExpression() != null ) {
-					value = toAst( file, literal.structExpression() );
-				}
+				value = toAst( file, literal );
 			}
 			annotations.add( new BoxAnnotation( name, value, getPosition( node ), getSourceText( node ) ) );
 		}

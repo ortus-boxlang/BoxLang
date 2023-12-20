@@ -183,25 +183,47 @@ public class UDFFunctionTest {
 
 		instance.executeSource(
 		    """
-		    public String function foo(
-		    	required string param1 hint="My param",
-		    	numeric param2=42 luis="majano"
-		    ) hint="my UDF" output=true brad="wood" {
-		      return "value";
-		    }
-		    result = foo(5);
-		        """,
+		      @myRealAnnotation
+		      @anotherAnnotation "brad"
+		      @anotherAnnotation2 42
+		      @anotherAnnotation3 true
+		      @anotherAnnotation4 [1,2,3]
+		      @anotherAnnotation5 { foo : 'bar' }
+		    @letsGetFunky "brad" 42 true [1,2,3] { foo : 'bar' }
+		         public String function foo(
+		         	required string param1 hint="My param",
+		         	numeric param2=42 luis="majano"
+		         ) hint="my UDF" output=true brad="wood" {
+		           return "value";
+		         }
+		         result = foo(5);
+		             """,
 		    context );
 		assertThat( variables.dereference( result, false ) ).isEqualTo( "value" );
 		UDF		UDFfoo	= ( ( UDF ) variables.dereference( foo, false ) );
 		Struct	meta	= UDFfoo.getMetaData();
 
+		// "Legacy" meta view just crams all the annotations into a struct with the "real" UDF metadata
 		assertThat( meta.dereference( Key.of( "name" ), false ) ).isEqualTo( "foo" );
 		assertThat( meta.dereference( Key.of( "hint" ), false ) ).isEqualTo( "my UDF" );
 		assertThat( meta.dereference( Key.of( "output" ), false ) ).isEqualTo( true );
 		assertThat( meta.dereference( Key.of( "brad" ), false ) ).isEqualTo( "wood" );
 		assertThat( meta.dereference( Key.of( "returnType" ), false ) ).isEqualTo( "String" );
 		assertThat( meta.dereference( Key.of( "access" ), false ) ).isEqualTo( "public" );
+		assertThat( meta.dereference( Key.of( "myRealAnnotation" ), false ) ).isEqualTo( "" );
+		assertThat( meta.dereference( Key.of( "anotherAnnotation" ), false ) ).isEqualTo( "brad" );
+		assertThat( meta.dereference( Key.of( "anotherAnnotation2" ), false ) ).isEqualTo( 42 );
+		assertThat( meta.dereference( Key.of( "anotherAnnotation3" ), false ) ).isEqualTo( true );
+		assertThat( meta.dereference( Key.of( "anotherAnnotation4" ), false ) instanceof Array ).isTrue();
+		assertThat( meta.dereference( Key.of( "anotherAnnotation5" ), false ) instanceof Struct ).isTrue();
+		assertThat( meta.dereference( Key.of( "letsGetFunky" ), false ) instanceof Array ).isTrue();
+		Array funkyAnnoationMeta = meta.getAsArray( Key.of( "letsGetFunky" ) );
+		assertThat( funkyAnnoationMeta.size() ).isEqualTo( 5 );
+		assertThat( funkyAnnoationMeta.get( 0 ) ).isEqualTo( "brad" );
+		assertThat( funkyAnnoationMeta.get( 1 ) ).isEqualTo( 42 );
+		assertThat( funkyAnnoationMeta.get( 2 ) ).isEqualTo( true );
+		assertThat( funkyAnnoationMeta.get( 3 ) instanceof Array ).isTrue();
+		assertThat( funkyAnnoationMeta.get( 4 ) instanceof Struct ).isTrue();
 
 		Array args = ( ( Array ) meta.dereference( Key.of( "parameters" ), false ) );
 		assertThat( args.size() ).isEqualTo( 2 );
@@ -219,11 +241,26 @@ public class UDFFunctionTest {
 		assertThat( param2.dereference( Key.of( "required" ), false ) ).isEqualTo( false );
 		assertThat( param2.dereference( Key.of( "type" ), false ) ).isEqualTo( "numeric" );
 
+		// Now we test our "new" meta view which breaks out actual UDF meta, javaadoc, and annotations (inline and @)
 		FunctionMeta	$bx			= ( ( FunctionMeta ) Referencer.get( UDFfoo, BoxMeta.key, false ) );
 		Struct			annotations	= ( Struct ) $bx.meta.dereference( Key.of( "annotations" ), false );
 		assertThat( annotations.dereference( Key.of( "hint" ), false ) ).isEqualTo( "my UDF" );
 		assertThat( annotations.dereference( Key.of( "output" ), false ) ).isEqualTo( true );
 		assertThat( annotations.dereference( Key.of( "brad" ), false ) ).isEqualTo( "wood" );
+		assertThat( annotations.dereference( Key.of( "myRealAnnotation" ), false ) ).isEqualTo( "" );
+		assertThat( annotations.dereference( Key.of( "anotherAnnotation" ), false ) ).isEqualTo( "brad" );
+		assertThat( annotations.dereference( Key.of( "anotherAnnotation2" ), false ) ).isEqualTo( 42 );
+		assertThat( annotations.dereference( Key.of( "anotherAnnotation3" ), false ) ).isEqualTo( true );
+		assertThat( annotations.dereference( Key.of( "anotherAnnotation4" ), false ) instanceof Array ).isTrue();
+		assertThat( annotations.dereference( Key.of( "anotherAnnotation5" ), false ) instanceof Struct ).isTrue();
+		assertThat( annotations.dereference( Key.of( "letsGetFunky" ), false ) instanceof Array ).isTrue();
+		Array funkyAnnoation = annotations.getAsArray( Key.of( "letsGetFunky" ) );
+		assertThat( funkyAnnoation.size() ).isEqualTo( 5 );
+		assertThat( funkyAnnoation.get( 0 ) ).isEqualTo( "brad" );
+		assertThat( funkyAnnoation.get( 1 ) ).isEqualTo( 42 );
+		assertThat( funkyAnnoation.get( 2 ) ).isEqualTo( true );
+		assertThat( funkyAnnoation.get( 3 ) instanceof Array ).isTrue();
+		assertThat( funkyAnnoation.get( 4 ) instanceof Struct ).isTrue();
 
 		Array	params				= ( Array ) $bx.meta.dereference( Key.of( "parameters" ), false );
 		Struct	param1Annotations	= ( Struct ) Referencer.get( params.get( 0 ), Key.of( "annotations" ), false );
@@ -250,7 +287,7 @@ public class UDFFunctionTest {
 		    *
 		    * @returns Pure Gold
 		       */
-		      public String function foo( param1, param2 ) output=true brad="wood" {
+		      public String function foo( param1, param2 ) output=true brad="wood" inject {
 		       	return "value";
 		       }
 		    result = foo();
@@ -263,6 +300,7 @@ public class UDFFunctionTest {
 		assertThat( meta.dereference( Key.of( "name" ), false ) ).isEqualTo( "foo" );
 		assertThat( meta.dereference( Key.of( "output" ), false ) ).isEqualTo( true );
 		assertThat( meta.dereference( Key.of( "brad" ), false ) ).isEqualTo( "wood" );
+		assertThat( meta.dereference( Key.of( "inject" ), false ) ).isEqualTo( "" );
 		assertThat( meta.dereference( Key.of( "returnType" ), false ) ).isEqualTo( "String" );
 		assertThat( meta.dereference( Key.of( "access" ), false ) ).isEqualTo( "public" );
 
@@ -292,6 +330,11 @@ public class UDFFunctionTest {
 		Struct param2Documentation = ( Struct ) Referencer.get( params.get( 1 ), Key.of( "documentation" ), false );
 		assertThat( param2Documentation.getAsString( Key.of( "hint" ) ).trim() ).isEqualTo( "param2 hint" );
 		assertThat( param2Documentation.getAsString( Key.of( "luis" ) ).trim() ).isEqualTo( "majano is spread across two lines" );
+
+		Struct annotations = $bx.meta.getAsStruct( Key.of( "annotations" ) );
+		assertThat( annotations.getAsBoolean( Key.of( "output" ) ) ).isEqualTo( true );
+		assertThat( annotations.getAsString( Key.of( "brad" ) ) ).isEqualTo( "wood" );
+		assertThat( annotations.getAsString( Key.of( "inject" ) ) ).isEqualTo( "" );
 
 	}
 

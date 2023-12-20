@@ -17,6 +17,7 @@
  */
 package ortus.boxlang.compiler;
 
+import static com.google.common.truth.Truth.assertThat;
 import static org.junit.Assert.assertTrue;
 
 import java.io.IOException;
@@ -95,9 +96,9 @@ public class TestUDF extends TestBase {
 		BoxDocumentation docs = ( BoxDocumentation ) result.getRoot();
 
 		assertTrue( ( ( BoxDocumentationAnnotation ) docs.getAnnotations().get( 0 ) ).getKey().getValue().equals( "name" ) );
-		assertTrue(
-		    ( ( BoxStringLiteral ) ( ( BoxDocumentationAnnotation ) docs.getAnnotations().get( 0 ) ).getValue() ).getValue()
-		        .equals( "Pass the name here that you want" ) );
+		assertThat(
+		    ( ( BoxStringLiteral ) ( ( BoxDocumentationAnnotation ) docs.getAnnotations().get( 0 ) ).getValue() ).getValue().trim()
+		).isEqualTo( "Pass the name here that you want" );
 	}
 
 	@Test
@@ -138,11 +139,11 @@ public class TestUDF extends TestBase {
 						Assertions.assertEquals( 2, arg.getDocumentation().size() );
 						Assertions.assertEquals( "hint", arg.getDocumentation().get( 0 ).getKey().getValue() );
 						value = ( BoxStringLiteral ) arg.getDocumentation().get( 0 ).getValue();
-						Assertions.assertEquals( "Pass the name here that you want", value.getValue() );
+						Assertions.assertEquals( "Pass the name here that you want", value.getValue().trim() );
 
 						Assertions.assertEquals( "isCool", arg.getDocumentation().get( 1 ).getKey().getValue() );
 						value = ( BoxStringLiteral ) arg.getDocumentation().get( 1 ).getValue();
-						Assertions.assertEquals( "yes", value.getValue() );
+						Assertions.assertEquals( "yes", value.getValue().trim() );
 					}
 				}
 
@@ -154,12 +155,12 @@ public class TestUDF extends TestBase {
 		Assertions.assertEquals( 1, arguments.getInitializer().get().asArrayInitializerExpr().getValues().size() );
 		VariableDeclarator annotations = javaAST.getType( 0 ).getFieldByName( "annotations" ).get().getVariable( 0 );
 		assertEqualsNoWhiteSpaces( """
-		                           Struct.of(Key.of("myAnnotation"),"value",Key.of("key"),"value",Key.of("keyOnly"),"")
-		                           """, annotations.getInitializer().get().toString() );
+		                           Struct.of(Key.of("myAnnotation"),Array.of("value","anothervalue"),Key.of("key"),"value",Key.of("keyOnly"),"")
+		                                                     """, annotations.getInitializer().get().toString() );
 		VariableDeclarator documentation = javaAST.getType( 0 ).getFieldByName( "documentation" ).get().getVariable( 0 );
 		assertEqualsNoWhiteSpaces( """
-		                           Struct.of(Key.of("author"),"BradWood",Key.of("returns"),"Only the coolest value ever")
-		                           """, documentation.getInitializer().get().toString() );
+		                           Struct.of(Key.of("author"),"BradWood",Key.of("returns"),"Onlythecoolestvalueever",Key.of("hint"),"Thisfunctiondoescoolstuff")
+		                                                 """, documentation.getInitializer().get().toString() );
 	}
 
 	@Test
