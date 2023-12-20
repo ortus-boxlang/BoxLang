@@ -57,33 +57,7 @@ import ortus.boxlang.ast.BoxExpr;
 import ortus.boxlang.ast.BoxNode;
 import ortus.boxlang.ast.BoxScript;
 import ortus.boxlang.ast.BoxStatement;
-import ortus.boxlang.ast.expression.BoxArgument;
-import ortus.boxlang.ast.expression.BoxArrayAccess;
-import ortus.boxlang.ast.expression.BoxArrayLiteral;
-import ortus.boxlang.ast.expression.BoxAssignment;
-import ortus.boxlang.ast.expression.BoxBinaryOperation;
-import ortus.boxlang.ast.expression.BoxBooleanLiteral;
-import ortus.boxlang.ast.expression.BoxComparisonOperation;
-import ortus.boxlang.ast.expression.BoxDecimalLiteral;
-import ortus.boxlang.ast.expression.BoxDotAccess;
-import ortus.boxlang.ast.expression.BoxExpressionInvocation;
-import ortus.boxlang.ast.expression.BoxFQN;
-import ortus.boxlang.ast.expression.BoxFunctionInvocation;
-import ortus.boxlang.ast.expression.BoxIdentifier;
-import ortus.boxlang.ast.expression.BoxIntegerLiteral;
-import ortus.boxlang.ast.expression.BoxLambda;
-import ortus.boxlang.ast.expression.BoxMethodInvocation;
-import ortus.boxlang.ast.expression.BoxNegateOperation;
-import ortus.boxlang.ast.expression.BoxNewOperation;
-import ortus.boxlang.ast.expression.BoxNull;
-import ortus.boxlang.ast.expression.BoxParenthesis;
-import ortus.boxlang.ast.expression.BoxScope;
-import ortus.boxlang.ast.expression.BoxStringConcat;
-import ortus.boxlang.ast.expression.BoxStringInterpolation;
-import ortus.boxlang.ast.expression.BoxStringLiteral;
-import ortus.boxlang.ast.expression.BoxStructLiteral;
-import ortus.boxlang.ast.expression.BoxTernaryOperation;
-import ortus.boxlang.ast.expression.BoxUnaryOperation;
+import ortus.boxlang.ast.expression.*;
 import ortus.boxlang.ast.statement.BoxArgumentDeclaration;
 import ortus.boxlang.ast.statement.BoxAssert;
 import ortus.boxlang.ast.statement.BoxBreak;
@@ -109,32 +83,7 @@ import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.exceptions.ApplicationException;
 import ortus.boxlang.transpiler.transformer.Transformer;
 import ortus.boxlang.transpiler.transformer.TransformerContext;
-import ortus.boxlang.transpiler.transformer.expression.BoxAccessTransformer;
-import ortus.boxlang.transpiler.transformer.expression.BoxArgumentTransformer;
-import ortus.boxlang.transpiler.transformer.expression.BoxArrayLiteralTransformer;
-import ortus.boxlang.transpiler.transformer.expression.BoxAssignmentTransformer;
-import ortus.boxlang.transpiler.transformer.expression.BoxBinaryOperationTransformer;
-import ortus.boxlang.transpiler.transformer.expression.BoxBooleanLiteralTransformer;
-import ortus.boxlang.transpiler.transformer.expression.BoxComparisonOperationTransformer;
-import ortus.boxlang.transpiler.transformer.expression.BoxDecimalLiteralTransformer;
-import ortus.boxlang.transpiler.transformer.expression.BoxExpressionInvocationTransformer;
-import ortus.boxlang.transpiler.transformer.expression.BoxFQNTransformer;
-import ortus.boxlang.transpiler.transformer.expression.BoxFunctionInvocationTransformer;
-import ortus.boxlang.transpiler.transformer.expression.BoxIdentifierTransformer;
-import ortus.boxlang.transpiler.transformer.expression.BoxIntegerLiteralTransformer;
-import ortus.boxlang.transpiler.transformer.expression.BoxLambdaTransformer;
-import ortus.boxlang.transpiler.transformer.expression.BoxMethodInvocationTransformer;
-import ortus.boxlang.transpiler.transformer.expression.BoxNegateOperationTransformer;
-import ortus.boxlang.transpiler.transformer.expression.BoxNewOperationTransformer;
-import ortus.boxlang.transpiler.transformer.expression.BoxNullTransformer;
-import ortus.boxlang.transpiler.transformer.expression.BoxParenthesisTransformer;
-import ortus.boxlang.transpiler.transformer.expression.BoxScopeTransformer;
-import ortus.boxlang.transpiler.transformer.expression.BoxStringConcatTransformer;
-import ortus.boxlang.transpiler.transformer.expression.BoxStringInterpolationTransformer;
-import ortus.boxlang.transpiler.transformer.expression.BoxStringLiteralTransformer;
-import ortus.boxlang.transpiler.transformer.expression.BoxStructLiteralTransformer;
-import ortus.boxlang.transpiler.transformer.expression.BoxTernaryOperationTransformer;
-import ortus.boxlang.transpiler.transformer.expression.BoxUnaryOperationTransformer;
+import ortus.boxlang.transpiler.transformer.expression.*;
 import ortus.boxlang.transpiler.transformer.indexer.CrossReference;
 import ortus.boxlang.transpiler.transformer.indexer.IndexPrettyPrinterVisitor;
 import ortus.boxlang.transpiler.transformer.statement.BoxArgumentDeclarationTransformer;
@@ -228,6 +177,7 @@ public class JavaTranspiler extends Transpiler {
 		registry.put( BoxLambda.class, new BoxLambdaTransformer( this ) );
 		registry.put( BoxInclude.class, new BoxIncludeTransformer( this ) );
 		registry.put( BoxExpressionInvocation.class, new BoxExpressionInvocationTransformer( this ) );
+		registry.put( BoxClosure.class, new BoxClosureTransformer( this ) );
 	}
 
 	/**
@@ -491,7 +441,7 @@ public class JavaTranspiler extends Transpiler {
 
 	/**
 	 * Get the list of compilation units that represent the callable functions
-	 * 
+	 *
 	 * @return the list of compilation units
 	 */
 	public List<CompilationUnit> getCallables() {
@@ -500,7 +450,7 @@ public class JavaTranspiler extends Transpiler {
 
 	/**
 	 * Get the list of compilation units that represent the callable functions
-	 * 
+	 *
 	 * @return the list of compilation units
 	 */
 	public Map<Key, CompilationUnit> getUDFcallables() {
