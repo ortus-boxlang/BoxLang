@@ -20,6 +20,7 @@ package TestCases.phase1;
 import static com.google.common.truth.Truth.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
+import java.util.Comparator;
 import java.util.concurrent.TimeUnit;
 
 import org.junit.jupiter.api.AfterAll;
@@ -1042,6 +1043,14 @@ public class CoreLangTest {
 		    context );
 
 		assertThat( variables.dereference( result, false ) ).isEqualTo( "a" );
+
+		instance.executeSource(
+		    """
+		    result = "brad".CASE_INSENSITIVE_ORDER
+		         """,
+		    context );
+
+		assertThat( variables.dereference( result, false ) instanceof Comparator ).isTrue();
 
 	}
 

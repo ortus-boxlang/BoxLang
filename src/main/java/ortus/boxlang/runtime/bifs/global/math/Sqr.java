@@ -12,7 +12,7 @@
  * BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language
  * governing permissions and limitations under the License.
  */
-package ortus.boxlang.runtime.bifs.namespaces.system;
+package ortus.boxlang.runtime.bifs.global.math;
 
 import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
@@ -22,29 +22,28 @@ import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
 
 @BoxBIF
-public class Test extends BIF {
+public class Sqr extends BIF {
 
 	/**
 	 * Constructor
 	 */
-	public Test() {
+	public Sqr() {
 		super();
 		declaredArguments = new Argument[] {
-		    new Argument( true, "any", Key.message )
+		    new Argument( true, "numeric", Key.value )
 		};
 	}
 
 	/**
-	 * Print a message with line break to the console
+	 * Returns the square root of a number
 	 * 
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 * 
-	 * @argument.message The message to print
+	 * @argument.value The number to return the square root of
 	 */
 	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
-		System.out.println( arguments.get( Key.message ) );
-		return true;
+		return Math.sqrt( arguments.getAsDouble( Key.value ) );
 	}
 
 }

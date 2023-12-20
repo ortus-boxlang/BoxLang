@@ -22,7 +22,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -381,17 +380,17 @@ public class FunctionService extends BaseService {
 	 * @throws IOException If there is an error loading the global functions
 	 */
 	public void loadGlobalFunctions() throws IOException {
-		Stream
-		    .of( ClassDiscovery.loadClassFiles( FUNCTIONS_PACKAGE + ".global", true ) )
+		ClassDiscovery
+		    .findAnnotatedClasses( ( FUNCTIONS_PACKAGE + ".global" ).replace( '.', '/' ) )
 		    .parallel()
 		    // Filter to subclasses of BIF
 		    .filter( BIFClass -> BIF.class.isAssignableFrom( BIFClass ) )
 		    // Process each class
 		    .forEach( BIFClass -> {
+			    System.out.println( "Loading global function " + BIFClass.getSimpleName() );
 			    // This method will handle the BIF and any member method annotations
 			    registerGlobalFunction( BIFClass, null, null );
 		    } );
-
 	}
 
 	/**
