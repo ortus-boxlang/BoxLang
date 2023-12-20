@@ -52,7 +52,14 @@ public class Compare extends BIF {
 	 *
 	 */
 	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
-		return arguments.getAsString( Key.string1 ).compareTo( arguments.getAsString( Key.string2 ) );
+		int result = arguments.getAsString( Key.string1 ).compareTo( arguments.getAsString( Key.string2 ) );
+		if ( result == 0 ) {
+			return 0;
+		} else if ( result < 0 ) {
+			return -1;
+		} else {
+			return 1;
+		}
 	}
 
 }

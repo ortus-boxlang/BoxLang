@@ -68,12 +68,23 @@ public class CompareTest {
 		assertThat( variables.dereference( result, false ) ).isEqualTo( 0 );
 	}
 
+	@DisplayName( "It performs a case sensitive compare" )
+	@Test
+	public void testCompareCaseSensitive() {
+		instance.executeSource(
+		    """
+		    result = compare( 'a', 'A' );
+		    """,
+		    context );
+		assertThat( variables.dereference( result, false ) ).isEqualTo( 1 );
+	}
+
 	@DisplayName( "It returns -1 if the first string precedes the second string lexicographically" )
 	@Test
 	public void testCompareFirst() {
 		instance.executeSource(
 		    """
-		    result = compare( 'a', 'b' );
+		    result = compare( 'a', 'c' );
 		    """,
 		    context );
 		assertThat( variables.dereference( result, false ) ).isEqualTo( -1 );
