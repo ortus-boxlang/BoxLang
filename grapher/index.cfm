@@ -5,7 +5,11 @@
         <link rel="stylesheet" href="./styles.css"/>
     </head>
     <body>
-        <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/d3@7"></script>
+        <script
+      type="text/javascript"
+      src="https://unpkg.com/vis-network/standalone/umd/vis-network.min.js"
+    ></script>
+        <!--- <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/d3@7"></script> --->
         <div id="app">
             <div id="side-panel">
                 <h2>AST Files</h2>
