@@ -52,6 +52,8 @@ public class Key {
 
 	public static final Key	contains		= Key.of( "contains" );
 	public static final Key	find			= Key.of( "find" );
+	public static final Key	parallel		= Key.of( "parallel" );
+	public static final Key	maxThreads		= Key.of( "maxThreads" );
 
 	/**
 	 * --------------------------------------------------------------------------
