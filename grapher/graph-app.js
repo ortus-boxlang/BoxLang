@@ -1,6 +1,44 @@
 
 
+const HIDE_TITLE = {
+    "BoxScript": true,
+    "BoxFunctionDeclaration": true
+}
+
+function setupModeControls() {
+    const mode = localStorage.getItem("mode") || "WIDE";
+
+    setMode(mode);
+
+    document.querySelector("#layoutButtonPacked").addEventListener("click", e => setMode("PACKED"));
+    document.querySelector("#layoutButtonWide").addEventListener("click", e => setMode("WIDE"));
+}
+
 let id = 0;
+let lastAST = null;
+
+let vizOptions = {
+    nodes: {
+        shadow: true,
+        color: "#FFFFFF",
+        shape: "box"
+    },
+    physics: {
+        enabled: true,
+        hierarchicalRepulsion: {
+            avoidOverlap: 1
+        }
+    },
+    layout: {
+
+        hierarchical: {
+            edgeMinimization: false,
+            nodeSpacing: 25,
+            parentCentralization: false
+        },
+
+    }
+};
 
 function getNextId() {
     return id++;
@@ -19,6 +57,8 @@ function setup() {
     if (inputs.length) {
         loadSelection(inputs[0])
     }
+
+    setupModeControls();
 }
 
 function loadSelection(aTag) {
@@ -39,6 +79,7 @@ const fetchFile = async (aTag) => {
 };
 
 function redrawGraph(rawAST) {
+    lastAST = rawAST;
     const transformedAST = convertRawASTNode(rawAST);
     const dataSetTree = astToVizDataSetTree(transformedAST);
     const nodes = extractNodes([], dataSetTree);
@@ -51,16 +92,7 @@ function redrawGraph(rawAST) {
         edges: new vis.DataSet(edges),
     };
 
-    var options = {
-        layout: {
-            hierarchical: {
-                // sortMethod: "directed",
-                nodeSpacing: 200
-            },
-
-        }
-    };
-    var network = new vis.Network(container, data, options);
+    var network = new vis.Network(container, data, vizOptions);
 }
 
 function extractNodes(array, transformedASTNode) {
@@ -74,13 +106,11 @@ function extractNodes(array, transformedASTNode) {
 }
 
 function extractEdges(array, transformedASTNode) {
-    // debugger;
     if (!transformedASTNode.children) {
         return array;
     }
 
     for (let child of transformedASTNode.children) {
-        // debugger;
         array.push({ from: transformedASTNode.id, to: child.id });
         extractEdges(array, child);
     }
@@ -99,7 +129,7 @@ function astToVizDataSetTree(transformedAST) {
         title: transformedAST.sourceText || transformedAST.value
     };
 
-    if (converted.title) {
+    if (converted.title && !HIDE_TITLE[transformedAST.ASTType]) {
         converted.label += String.fromCharCode(10) + (converted.title.length <= 10 ? converted.title : converted.title.slice(0, 10) + "...");
     }
 
@@ -257,6 +287,63 @@ function setupChart(data) {
 
 
     return svg.node();
+}
+
+function setMode(mode) {
+    if (mode === "WIDE") {
+        vizOptions = {
+            nodes: {
+                shadow: true,
+                color: "#FFFFFF",
+                shape: "box"
+            },
+            physics: {
+                enabled: false
+            },
+            layout: {
+                hierarchical: {
+                    nodeSpacing: 150
+                },
+
+            }
+        };
+        document.querySelector("#layoutButtonPacked").classList.remove("layout-control-button--selected");
+        document.querySelector("#layoutButtonWide").classList.add("layout-control-button--selected");
+        localStorage.setItem("mode", "WIDE");
+
+        if (lastAST) {
+            redrawGraph(lastAST);
+        }
+    }
+    else if (mode === "PACKED") {
+        vizOptions = {
+            nodes: {
+                shadow: true,
+                color: "#FFFFFF",
+                shape: "box"
+            },
+            physics: {
+                enabled: true,
+                hierarchicalRepulsion: {
+                    avoidOverlap: 1
+                }
+            },
+            layout: {
+
+                hierarchical: {
+                    nodeSpacing: 25
+                }
+
+            }
+        };
+        document.querySelector("#layoutButtonPacked").classList.add("layout-control-button--selected");
+        document.querySelector("#layoutButtonWide").classList.remove("layout-control-button--selected");
+        localStorage.setItem("mode", "PACKED");
+
+        if (lastAST) {
+            redrawGraph(lastAST);
+        }
+    }
 }
 
 setup();

@@ -1,4 +1,5 @@
-html, body {
+html,
+body {
     width: 100vw;
     height: 100vh;
     background: #555;
@@ -19,13 +20,15 @@ html, body {
 }
 
 #side-panel {
-    height: 100%;
+    height: calc(100% - 40px);
     width: 200px;
     margin: 20px;
+    display: flex;
+    flex-direction: column;
 }
 
-#display-panel{
-    /* overflow: scroll; */
+#display-panel {
+    background: #4b5359;
     flex: 1;
 }
 
@@ -38,14 +41,23 @@ html, body {
     text-decoration: underline;
     color: #00f;
     cursor: help;
-  }
+}
 
 .file-list {
     list-style: none;
     margin: 0;
     padding: 0px;
+    flex: 1;
 }
 
 .file--selected {
     color: white;
+}
+
+.layout-control-button {
+    background-color: #555;
+}
+
+.layout-control-button.layout-control-button--selected {
+    background-color: white;
 }

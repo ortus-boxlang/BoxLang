@@ -21,6 +21,10 @@
                         <li><a class="fileName" href="##">#listLast( file, '\' )#</a></li>
                     </cfloop>
                 </ul>
+                <div>
+                    <button id="layoutButtonPacked" class="layout-control-button">Packed</button>
+                    <button id="layoutButtonWide" class="layout-control-button">Wide</button>
+                </div>
             </div>
             <div id="display-panel">
             </div>
