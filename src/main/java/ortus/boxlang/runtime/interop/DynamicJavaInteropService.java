@@ -30,7 +30,6 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -429,6 +428,36 @@ public class DynamicJavaInteropService {
 	 * Get the value of a public or public static field on a class or instance but if it doesn't exist
 	 * return the default value passed in.
 	 *
+	 * @param targetInstance The instance you want to look for a field on
+	 * @param fieldName      The name of the field to get
+	 * @param defaultValue   The default value to return if the field doesn't exist
+	 *
+	 *
+	 * @return The value of the field or the default value wrapped in an Optional
+	 */
+	public static Optional<Object> getField( Object targetInstance, String fieldName, Object defaultValue ) {
+		return getField( targetInstance.getClass(), fieldName, defaultValue );
+	}
+
+	/**
+	 * Get the value of a public or public static field on a class or instance but if it doesn't exist
+	 * return the default value passed in.
+	 *
+	 * @param targetClass  The class you want to look for a field on
+	 * @param fieldName    The name of the field to get
+	 * @param defaultValue The default value to return if the field doesn't exist
+	 *
+	 *
+	 * @return The value of the field or the default value wrapped in an Optional
+	 */
+	public static Optional<Object> getField( Class<?> targetClass, String fieldName, Object defaultValue ) {
+		return getField( targetClass, null, fieldName, defaultValue );
+	}
+
+	/**
+	 * Get the value of a public or public static field on a class or instance but if it doesn't exist
+	 * return the default value passed in.
+	 *
 	 * @param targetClass    The class you want to look for a field on
 	 * @param targetInstance The instance you want to look for a field on
 	 * @param fieldName      The name of the field to get
@@ -443,6 +472,32 @@ public class DynamicJavaInteropService {
 		} catch ( BoxLangException e ) {
 			return Optional.ofNullable( defaultValue );
 		}
+	}
+
+	/**
+	 * Set the value of a public or public static field on a class or instance
+	 *
+	 * @param targetClass The class you want to look for a field on
+	 * @param fieldName   The name of the field to set
+	 * @param value       The value to set the field to
+	 *
+	 * @return The class invoker
+	 */
+	public static void setField( Class<?> targetClass, String fieldName, Object value ) {
+		setField( targetClass, null, fieldName, value );
+	}
+
+	/**
+	 * Set the value of a public or public static field on a class or instance
+	 *
+	 * @param targetInstance The instance you want to look for a field on
+	 * @param fieldName      The name of the field to set
+	 * @param value          The value to set the field to
+	 *
+	 * @return The class invoker
+	 */
+	public static void setField( Object targetInstance, String fieldName, Object value ) {
+		setField( targetInstance.getClass(), targetInstance, fieldName, value );
 	}
 
 	/**
@@ -878,6 +933,34 @@ public class DynamicJavaInteropService {
 	/**
 	 * Dereference this object by a key and return the value, or throw exception
 	 *
+	 * @param targetClass The class to dereference and look for the value on
+	 * @param name        The name of the key to dereference
+	 * @param safe        If true, return null if the method is not found, otherwise throw an exception
+	 *
+	 * @return The requested object
+	 */
+	@SuppressWarnings( "unchecked" )
+	public static Object dereference( Class<?> targetClass, Key name, Boolean safe ) {
+		return dereference( targetClass, null, name, safe );
+	}
+
+	/**
+	 * Dereference this object by a key and return the value, or throw exception
+	 *
+	 * @param targetInstance The instance to dereference and look for the value on
+	 * @param name           The name of the key to dereference
+	 * @param safe           If true, return null if the method is not found, otherwise throw an exception
+	 *
+	 * @return The requested object
+	 */
+	@SuppressWarnings( "unchecked" )
+	public static Object dereference( Object targetInstance, Key name, Boolean safe ) {
+		return dereference( targetInstance.getClass(), targetInstance, name, safe );
+	}
+
+	/**
+	 * Dereference this object by a key and return the value, or throw exception
+	 *
 	 * @param targetClass    The class to dereference and look for the value on
 	 * @param targetInstance The instance to dereference and look for the value on
 	 * @param name           The name of the key to dereference
@@ -1091,6 +1174,30 @@ public class DynamicJavaInteropService {
 		}
 
 		throw new BoxRuntimeException( "Java objects cannot be called with named argumments" );
+	}
+
+	/**
+	 * Assign a value to a field
+	 *
+	 * @param targetClass The class to assign the field on
+	 * @param name        The name of the field to assign
+	 * @param value       The value to assign
+	 */
+	@SuppressWarnings( "unchecked" )
+	public static Object assign( Class<?> targetClass, Key name, Object value ) {
+		return assign( targetClass, null, name, value );
+	}
+
+	/**
+	 * Assign a value to a field
+	 *
+	 * @param targetInstance The instance to assign the field on
+	 * @param name           The name of the field to assign
+	 * @param value          The value to assign
+	 */
+	@SuppressWarnings( "unchecked" )
+	public static Object assign( Object targetInstance, Key name, Object value ) {
+		return assign( targetInstance.getClass(), targetInstance, name, value );
 	}
 
 	/**
