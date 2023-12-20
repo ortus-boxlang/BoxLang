@@ -30,11 +30,9 @@ import java.util.stream.Stream;
 
 import org.apache.commons.lang3.ClassUtils;
 
-import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.dynamic.IReferenceable;
 import ortus.boxlang.runtime.scopes.Key;
-import ortus.boxlang.runtime.services.FunctionService;
 import ortus.boxlang.runtime.types.exceptions.ApplicationException;
 import ortus.boxlang.runtime.types.exceptions.BoxLangException;
 
@@ -71,12 +69,12 @@ public class DynamicObject implements IReferenceable {
 	/**
 	 * Helper for all class utility methods from apache commons lang 3
 	 */
-	public static final Class<ClassUtils>	CLASS_UTILS			= ClassUtils.class;
+	public static final Class<ClassUtils>	CLASS_UTILS		= ClassUtils.class;
 
 	/**
 	 * Empty arguments array
 	 */
-	public static final Object[]			EMPTY_ARGS			= new Object[] {};
+	public static final Object[]			EMPTY_ARGS		= new Object[] {};
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -84,7 +82,7 @@ public class DynamicObject implements IReferenceable {
 	 * --------------------------------------------------------------------------
 	 */
 
-	Set<Key>								exceptionKeys		= new HashSet<Key>( Arrays.asList(
+	Set<Key>								exceptionKeys	= new HashSet<Key>( Arrays.asList(
 	    BoxLangException.messageKey,
 	    BoxLangException.detailKey,
 	    BoxLangException.typeKey,
@@ -101,17 +99,7 @@ public class DynamicObject implements IReferenceable {
 	 * The bound instance for this invoker (if any)
 	 * If this is null, then we are invoking static methods or a constructor has not been called on it yet.
 	 */
-	private Object							targetInstance		= null;
-
-	/**
-	 * This enables or disables the method handles cache
-	 */
-	private Boolean							handlesCacheEnabled	= true;
-
-	/**
-	 * Function service
-	 */
-	private FunctionService					functionService		= BoxRuntime.getInstance().getFunctionService();
+	private Object							targetInstance	= null;
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -161,29 +149,6 @@ public class DynamicObject implements IReferenceable {
 	}
 
 	/**
-	 * --------------------------------------------------------------------------
-	 * Setters & Getters
-	 * --------------------------------------------------------------------------
-	 */
-
-	/**
-	 * @return the handlesCacheEnabled flag
-	 */
-	public Boolean isHandlesCacheEnabled() {
-		return handlesCacheEnabled;
-	}
-
-	/**
-	 * @param handlesCacheEnabled Enable or not the handles cache
-	 *
-	 * @return The Dynamic Object
-	 */
-	public DynamicObject setHandlesCacheEnabled( Boolean handlesCacheEnabled ) {
-		this.handlesCacheEnabled = handlesCacheEnabled;
-		return this;
-	}
-
-	/**
 	 * @return the targetClass
 	 */
 	public Class<?> getTargetClass() {
@@ -230,21 +195,17 @@ public class DynamicObject implements IReferenceable {
 	 * @param args The arguments to pass to the constructor
 	 *
 	 * @return The instance of the class
-	 *
 	 */
 	public DynamicObject invokeConstructor( Object... args ) {
 		this.targetInstance = DynamicJavaInteropService.invokeConstructor( this.targetClass, args );
-
 		return this;
 	}
 
 	/**
 	 * Invokes the no-arg constructor for the class with the given arguments and stores the instance of the object
 	 * into the {@code targetInstance} property for future method calls.
-	 * *
 	 *
 	 * @return The instance of the class
-	 *
 	 */
 	public DynamicObject invokeConstructor() {
 		return invokeConstructor( EMPTY_ARGS );
@@ -260,7 +221,6 @@ public class DynamicObject implements IReferenceable {
 	 * @param arguments  The arguments to pass to the method
 	 *
 	 * @return The result of the method invocation
-	 *
 	 */
 	public Object invoke( String methodName, Object... arguments ) {
 		return DynamicJavaInteropService.invoke( this.getTargetClass(), this.getTargetInstance(), methodName, false, arguments );
@@ -276,7 +236,6 @@ public class DynamicObject implements IReferenceable {
 	 *
 	 */
 	public Object invokeStatic( String methodName, Object... arguments ) {
-		// return DynamicJavaInteropService.invokeStatic( this.targetClass, methodName, false, arguments );
 		return DynamicJavaInteropService.invoke( this.targetClass, methodName, false, arguments );
 	}
 
@@ -404,36 +363,6 @@ public class DynamicObject implements IReferenceable {
 	 * Helpers
 	 * --------------------------------------------------------------------------
 	 */
-
-	/**
-	 * Gets the method handle for the given method name and arguments, from the cache if possible
-	 * or creates a new one if not found or throws an exception if the method signature doesn't exist
-	 *
-	 * @param methodName         The name of the method to get the handle for
-	 * @param argumentsAsClasses The array of arguments as classes to map
-	 *
-	 * @return The method handle representing the method signature
-	 *
-	 */
-	public MethodRecord getMethodHandle( String methodName, Class<?>[] argumentsAsClasses ) {
-		return DynamicJavaInteropService.getMethodHandle( this.targetClass, methodName, argumentsAsClasses );
-	}
-
-	/**
-	 * Discovers the method to invoke for the given method name and arguments according to two algorithms:
-	 *
-	 * 1. Exact Match : Matches the incoming argument class types to the method signature
-	 * 2. Discovery : Matches the incoming argument class types to the method signature by discovery of matching method names and argument counts
-	 *
-	 * @param methodName         The name of the method to discover
-	 * @param argumentsAsClasses The array of arguments as classes to map
-	 *
-	 * @return The method record representing the method signature and metadata
-	 *
-	 */
-	public MethodRecord discoverMethodHandle( String methodName, Class<?>[] argumentsAsClasses ) {
-		return DynamicJavaInteropService.discoverMethodHandle( this.targetClass, methodName, argumentsAsClasses );
-	}
 
 	/**
 	 * Get a HashSet of methods of all the unique callable method signatures for the given class

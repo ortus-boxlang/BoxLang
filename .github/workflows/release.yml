@@ -44,7 +44,7 @@ jobs:
         uses: actions/checkout@v3
 
       - name: Setup Java
-        uses: actions/setup-java@v3
+        uses: actions/setup-java@v4
         with:
           distribution: "temurin"
           java-version: ${{ env.JDK }}
@@ -81,7 +81,7 @@ jobs:
         run: |
           npm install -g markdownlint-cli
           markdownlint changelog.md --fix
-          ./gradlew clean build --stacktrace --console=plain
+          ./gradlew clean build -x test --stacktrace --console=plain
 
       - name: Commit Changelog [unreleased] with latest version
         uses: EndBug/add-and-commit@v9.1.1

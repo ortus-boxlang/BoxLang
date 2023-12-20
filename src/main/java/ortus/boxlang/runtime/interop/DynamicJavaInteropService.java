@@ -30,7 +30,6 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -96,7 +95,7 @@ public class DynamicJavaInteropService {
 	 * --------------------------------------------------------------------------
 	 */
 
-	private static Set<Key>											exceptionKeys		= new HashSet<Key>( Arrays.asList(
+	private static Set<Key>											exceptionKeys		= new HashSet<>( Arrays.asList(
 	    BoxLangException.messageKey,
 	    BoxLangException.detailKey,
 	    BoxLangException.typeKey,
@@ -133,6 +132,11 @@ public class DynamicJavaInteropService {
 	public static final Object[]									EMPTY_ARGS			= new Object[] {};
 
 	/**
+	 * This enables or disables the method handles cache
+	 */
+	private static Boolean											handlesCacheEnabled	= true;
+
+	/**
 	 * Static Initializer
 	 */
 	static {
@@ -151,18 +155,41 @@ public class DynamicJavaInteropService {
 
 	/**
 	 * --------------------------------------------------------------------------
+	 * Setters & Getters
+	 * --------------------------------------------------------------------------
+	 */
+
+	/**
+	 * Verify if the handles cache is enabled or not
+	 *
+	 * @return the handlesCacheEnabled flag
+	 */
+	public static Boolean isHandlesCacheEnabled() {
+		return handlesCacheEnabled;
+	}
+
+	/**
+	 * @param enabled Enable or not the handles cache
+	 *
+	 * @return The Dynamic Object
+	 */
+	public static void setHandlesCacheEnabled( Boolean enabled ) {
+		handlesCacheEnabled = enabled;
+	}
+
+	/**
+	 * --------------------------------------------------------------------------
 	 * Invokers
 	 * --------------------------------------------------------------------------
 	 */
 
 	/**
-	 * Invokes the constructor for the class with the given arguments and stores the instance of the object
-	 * into the {@code targetInstance} property for future method calls.
+	 * Invokes the constructor for the class with the given arguments and returns the instance of the object
 	 *
-	 * @param args The arguments to pass to the constructor
+	 * @param targetClass The Class that you want to invoke a constructor on
+	 * @param args        The arguments to pass to the constructor
 	 *
 	 * @return The instance of the class
-	 *
 	 */
 	public static <T> T invokeConstructor( Class<T> targetClass, Object... args ) {
 
@@ -197,12 +224,11 @@ public class DynamicJavaInteropService {
 	}
 
 	/**
-	 * Invokes the no-arg constructor for the class with the given arguments and stores the instance of the object
-	 * into the {@code targetInstance} property for future method calls.
-	 * *
+	 * Invokes the no-arg constructor for the class with the given arguments and returns the instance of the object
+	 *
+	 * @param targetClass The Class that you want to invoke a constructor on
 	 *
 	 * @return The instance of the class
-	 *
 	 */
 	public static <T> T invokeConstructor( Class<T> targetClass ) {
 		return invokeConstructor( targetClass, EMPTY_ARGS );
@@ -216,13 +242,12 @@ public class DynamicJavaInteropService {
 	 *
 	 * @param targetClass The Class that you want to invoke a method on
 	 * @param methodName  The name of the method to invoke
-	 * @param safe        Whether the method should throw an error or return null
+	 * @param safe        Whether the method should throw an error or return null if it doesn't exist
 	 * @param arguments   The arguments to pass to the method
 	 *
 	 * @return The result of the method invocation
-	 *
 	 */
-	public static Object invoke( Class<?> targetClass, String methodName, boolean safe, Object... arguments ) {
+	public static Object invoke( Class<?> targetClass, String methodName, Boolean safe, Object... arguments ) {
 		return invoke( targetClass, null, methodName, safe, arguments );
 	}
 
@@ -234,13 +259,12 @@ public class DynamicJavaInteropService {
 	 *
 	 * @param targetInstance The instance to call the method on
 	 * @param methodName     The name of the method to invoke
-	 * @param safe           Whether the method should throw an error or return null
+	 * @param safe           Whether the method should throw an error or return null if it doesn't exist
 	 * @param arguments      The arguments to pass to the method
 	 *
 	 * @return The result of the method invocation
-	 *
 	 */
-	public static Object invoke( Object targetInstance, String methodName, boolean safe, Object... arguments ) {
+	public static Object invoke( Object targetInstance, String methodName, Boolean safe, Object... arguments ) {
 		return invoke( targetInstance.getClass(), targetInstance, methodName, safe, arguments );
 	}
 
@@ -250,13 +274,15 @@ public class DynamicJavaInteropService {
 	 * If it's determined that the method handle is static, then the target instance is ignored.
 	 * If it's determined that the method handle is not static, then the target instance is used.
 	 *
-	 * @param methodName The name of the method to invoke
-	 * @param arguments  The arguments to pass to the method
+	 * @param targetClass    The Class that you want to invoke a method on
+	 * @param targetInstance The instance to call the method on, or null if it's static
+	 * @param safe           Whether the method should throw an error or return null if it doesn't exist
+	 * @param methodName     The name of the method to invoke
+	 * @param arguments      The arguments to pass to the method
 	 *
 	 * @return The result of the method invocation
-	 *
 	 */
-	public static Object invoke( Class<?> targetClass, Object targetInstance, String methodName, boolean safe, Object... arguments ) {
+	public static Object invoke( Class<?> targetClass, Object targetInstance, String methodName, Boolean safe, Object... arguments ) {
 		// Verify method name
 		if ( methodName == null || methodName.isEmpty() ) {
 			throw new BoxRuntimeException( "Method name cannot be null or empty." );
@@ -270,7 +296,11 @@ public class DynamicJavaInteropService {
 		try {
 			methodRecord = getMethodHandle( targetClass, methodName, argumentsToClasses( arguments ) );
 		} catch ( RuntimeException e ) {
-			throw new BoxRuntimeException( "Error getting method for class " + targetClass.getName(), e );
+			if ( safe ) {
+				return null;
+			} else {
+				throw new BoxRuntimeException( "Error getting method for class " + targetClass.getName(), e );
+			}
 		}
 
 		// If it's not static, we need a target instance
@@ -295,11 +325,11 @@ public class DynamicJavaInteropService {
 	/**
 	 * Invokes a static method with the given name and arguments on a class or an interface
 	 *
-	 * @param methodName The name of the method to invoke
-	 * @param arguments  The arguments to pass to the method
+	 * @param targetClass The class you want to invoke a method on
+	 * @param methodName  The name of the method to invoke
+	 * @param arguments   The arguments to pass to the method
 	 *
 	 * @return The result of the method invocation
-	 *
 	 */
 	public static Object invokeStatic( Class<?> targetClass, String methodName, Object... arguments ) {
 
@@ -336,7 +366,6 @@ public class DynamicJavaInteropService {
 	 * @param fieldName   The name of the field to get
 	 *
 	 * @return The value of the field wrapped in an Optional
-	 *
 	 */
 	public static Optional<Object> getField( Class<?> targetClass, String fieldName ) {
 		return getField( targetClass, ( Object ) null, fieldName );
@@ -349,7 +378,6 @@ public class DynamicJavaInteropService {
 	 * @param fieldName      The name of the field to get
 	 *
 	 * @return The value of the field wrapped in an Optional
-	 *
 	 */
 	public static Optional<Object> getField( Object targetInstance, String fieldName ) {
 		return getField( targetInstance.getClass(), targetInstance, fieldName );
@@ -363,7 +391,6 @@ public class DynamicJavaInteropService {
 	 * @param fieldName      The name of the field to get
 	 *
 	 * @return The value of the field wrapped in an Optional
-	 *
 	 */
 	public static Optional<Object> getField( Class<?> targetClass, Object targetInstance, String fieldName ) {
 		// Discover the field with no case sensitivity
@@ -401,8 +428,40 @@ public class DynamicJavaInteropService {
 	 * Get the value of a public or public static field on a class or instance but if it doesn't exist
 	 * return the default value passed in.
 	 *
+	 * @param targetInstance The instance you want to look for a field on
+	 * @param fieldName      The name of the field to get
+	 * @param defaultValue   The default value to return if the field doesn't exist
+	 *
+	 *
+	 * @return The value of the field or the default value wrapped in an Optional
+	 */
+	public static Optional<Object> getField( Object targetInstance, String fieldName, Object defaultValue ) {
+		return getField( targetInstance.getClass(), fieldName, defaultValue );
+	}
+
+	/**
+	 * Get the value of a public or public static field on a class or instance but if it doesn't exist
+	 * return the default value passed in.
+	 *
+	 * @param targetClass  The class you want to look for a field on
 	 * @param fieldName    The name of the field to get
 	 * @param defaultValue The default value to return if the field doesn't exist
+	 *
+	 *
+	 * @return The value of the field or the default value wrapped in an Optional
+	 */
+	public static Optional<Object> getField( Class<?> targetClass, String fieldName, Object defaultValue ) {
+		return getField( targetClass, null, fieldName, defaultValue );
+	}
+
+	/**
+	 * Get the value of a public or public static field on a class or instance but if it doesn't exist
+	 * return the default value passed in.
+	 *
+	 * @param targetClass    The class you want to look for a field on
+	 * @param targetInstance The instance you want to look for a field on
+	 * @param fieldName      The name of the field to get
+	 * @param defaultValue   The default value to return if the field doesn't exist
 	 *
 	 *
 	 * @return The value of the field or the default value wrapped in an Optional
@@ -418,11 +477,38 @@ public class DynamicJavaInteropService {
 	/**
 	 * Set the value of a public or public static field on a class or instance
 	 *
-	 * @param fieldName The name of the field to set
-	 * @param value     The value to set the field to
+	 * @param targetClass The class you want to look for a field on
+	 * @param fieldName   The name of the field to set
+	 * @param value       The value to set the field to
 	 *
 	 * @return The class invoker
+	 */
+	public static void setField( Class<?> targetClass, String fieldName, Object value ) {
+		setField( targetClass, null, fieldName, value );
+	}
+
+	/**
+	 * Set the value of a public or public static field on a class or instance
 	 *
+	 * @param targetInstance The instance you want to look for a field on
+	 * @param fieldName      The name of the field to set
+	 * @param value          The value to set the field to
+	 *
+	 * @return The class invoker
+	 */
+	public static void setField( Object targetInstance, String fieldName, Object value ) {
+		setField( targetInstance.getClass(), targetInstance, fieldName, value );
+	}
+
+	/**
+	 * Set the value of a public or public static field on a class or instance
+	 *
+	 * @param targetClass    The class you want to look for a field on
+	 * @param targetInstance The instance you want to look for a field on
+	 * @param fieldName      The name of the field to set
+	 * @param value          The value to set the field to
+	 *
+	 * @return The class invoker
 	 */
 	public static void setField( Class<?> targetClass, Object targetInstance, String fieldName, Object value ) {
 		// Discover the field with no case sensitivity
@@ -458,10 +544,10 @@ public class DynamicJavaInteropService {
 	/**
 	 * Find a field by name with no case-sensitivity (upper case) in the class
 	 *
-	 * @param fieldName The name of the field to find
+	 * @param targetClass The class to find the field in
+	 * @param fieldName   The name of the field to find
 	 *
 	 * @return The field if discovered
-	 *
 	 */
 	public static Field findField( Class<?> targetClass, String fieldName ) {
 		return getFieldsAsStream( targetClass )
@@ -475,7 +561,8 @@ public class DynamicJavaInteropService {
 	/**
 	 * Verifies if the class has a public or public static field with the given name
 	 *
-	 * @param fieldName The name of the field to check
+	 * @param targetClass The class to check
+	 * @param fieldName   The name of the field to check
 	 *
 	 * @return True if the field exists, false otherwise
 	 */
@@ -486,7 +573,8 @@ public class DynamicJavaInteropService {
 	/**
 	 * Verifies if the class has a public or public static field with the given name and no case-sensitivity (upper case)
 	 *
-	 * @param fieldName The name of the field to check
+	 * @param targetClass The class to check
+	 * @param fieldName   The name of the field to check
 	 *
 	 * @return True if the field exists, false otherwise
 	 */
@@ -497,6 +585,8 @@ public class DynamicJavaInteropService {
 	/**
 	 * Get an array of fields of all the public fields for the given class
 	 *
+	 * @param targetClass The class to get the fields for
+	 *
 	 * @return The fields in the class
 	 */
 	public static Field[] getFields( Class<?> targetClass ) {
@@ -506,6 +596,8 @@ public class DynamicJavaInteropService {
 	/**
 	 * Get a stream of fields of all the public fields for the given class
 	 *
+	 * @param targetClass The class to get the fields for
+	 *
 	 * @return The stream of fields in the class
 	 */
 	public static Stream<Field> getFieldsAsStream( Class<?> targetClass ) {
@@ -514,6 +606,8 @@ public class DynamicJavaInteropService {
 
 	/**
 	 * Get a list of field names for the given class with case-sensitivity
+	 *
+	 * @param targetClass The class to get the fields for
 	 *
 	 * @return A list of field names
 	 */
@@ -526,6 +620,8 @@ public class DynamicJavaInteropService {
 
 	/**
 	 * Get a list of field names for the given class with no case-sensitivity (upper case)
+	 *
+	 * @param targetClass The class to get the fields for
 	 *
 	 * @return A list of field names
 	 */
@@ -547,6 +643,7 @@ public class DynamicJavaInteropService {
 	 * Gets the method handle for the given method name and arguments, from the cache if possible
 	 * or creates a new one if not found or throws an exception if the method signature doesn't exist
 	 *
+	 * @param targetClass        The class to get the method handle for
 	 * @param methodName         The name of the method to get the handle for
 	 * @param argumentsAsClasses The array of arguments as classes to map
 	 *
@@ -554,16 +651,14 @@ public class DynamicJavaInteropService {
 	 *
 	 */
 	public static MethodRecord getMethodHandle( Class<?> targetClass, String methodName, Class<?>[] argumentsAsClasses ) {
-
 		// We use the method signature as the cache key
-		// TODO: look at just using string's hashcode directly
-		String			cacheKey		= Objects.hash( targetClass ) + methodName + Arrays.hashCode( argumentsAsClasses );
+		String			cacheKey		= targetClass.hashCode() + methodName + Arrays.hashCode( argumentsAsClasses );
 		MethodRecord	methodRecord	= methodHandleCache.get( cacheKey );
 
 		// Double lock to avoid race-conditions
-		if ( methodRecord == null ) {
+		if ( methodRecord == null || !handlesCacheEnabled ) {
 			synchronized ( methodHandleCache ) {
-				if ( methodRecord == null ) {
+				if ( methodRecord == null || !handlesCacheEnabled ) {
 					methodRecord = discoverMethodHandle( targetClass, methodName, argumentsAsClasses );
 					methodHandleCache.put( cacheKey, methodRecord );
 				}
@@ -579,6 +674,7 @@ public class DynamicJavaInteropService {
 	 * 1. Exact Match : Matches the incoming argument class types to the method signature
 	 * 2. Discovery : Matches the incoming argument class types to the method signature by discovery of matching method names and argument counts
 	 *
+	 * @param targetClass        The class to discover the method for
 	 * @param methodName         The name of the method to discover
 	 * @param argumentsAsClasses The array of arguments as classes to map
 	 *
@@ -608,6 +704,8 @@ public class DynamicJavaInteropService {
 	/**
 	 * Get a HashSet of methods of all the unique callable method signatures for the given class
 	 *
+	 * @param targetClass The class to get the methods for
+	 *
 	 * @return A unique set of callable methods
 	 */
 	public static Set<Method> getMethods( Class<?> targetClass ) {
@@ -620,6 +718,8 @@ public class DynamicJavaInteropService {
 	/**
 	 * Get a stream of methods of all the unique callable method signatures for the given class
 	 *
+	 * @param targetClass The class to get the methods for
+	 *
 	 * @return A stream of unique callable methods
 	 */
 	public static Stream<Method> getMethodsAsStream( Class<?> targetClass ) {
@@ -628,6 +728,8 @@ public class DynamicJavaInteropService {
 
 	/**
 	 * Get a list of method names for the given class
+	 *
+	 * @param targetClass The class to get the methods for
 	 *
 	 * @return A list of method names
 	 */
@@ -640,6 +742,8 @@ public class DynamicJavaInteropService {
 
 	/**
 	 * Get a list of method names for the given class with no case-sensitivity (upper case)
+	 *
+	 * @param targetClass The class to get the methods for
 	 *
 	 * @return A list of method names with no case
 	 */
@@ -654,7 +758,8 @@ public class DynamicJavaInteropService {
 	/**
 	 * Verifies if the class has a public or public static method with the given name
 	 *
-	 * @param methodName The name of the method to check
+	 * @param targetClass The class to check
+	 * @param methodName  The name of the method to check
 	 *
 	 * @return True if the method exists, false otherwise
 	 */
@@ -665,7 +770,8 @@ public class DynamicJavaInteropService {
 	/**
 	 * Verifies if the class has a public or public static method with the given name and no case-sensitivity (upper case)
 	 *
-	 * @param methodName The name of the method to check
+	 * @param targetClass The class to check
+	 * @param methodName  The name of the method to check
 	 *
 	 * @return True if the method exists, false otherwise
 	 */
@@ -676,6 +782,7 @@ public class DynamicJavaInteropService {
 	/**
 	 * This method is used to verify if the class has the same method signature as the incoming one with no case-sensitivity (upper case)
 	 *
+	 * @param targetClass        The class to check
 	 * @param methodName         The name of the method to check
 	 * @param argumentsAsClasses The parameter types of the method to check
 	 *
@@ -745,7 +852,9 @@ public class DynamicJavaInteropService {
 	/**
 	 * Verifies if the target calss is an interface or not
 	 *
-	 * @return
+	 * @param targetClass The class to check
+	 *
+	 * @return True if the class is an interface, false otherwise
 	 */
 	private static boolean isInterface( Class<?> targetClass ) {
 		return targetClass.isInterface();
@@ -824,8 +933,38 @@ public class DynamicJavaInteropService {
 	/**
 	 * Dereference this object by a key and return the value, or throw exception
 	 *
-	 * @param name The name of the key to dereference
-	 * @param safe If true, return null if the method is not found, otherwise throw an exception
+	 * @param targetClass The class to dereference and look for the value on
+	 * @param name        The name of the key to dereference
+	 * @param safe        If true, return null if the method is not found, otherwise throw an exception
+	 *
+	 * @return The requested object
+	 */
+	@SuppressWarnings( "unchecked" )
+	public static Object dereference( Class<?> targetClass, Key name, Boolean safe ) {
+		return dereference( targetClass, null, name, safe );
+	}
+
+	/**
+	 * Dereference this object by a key and return the value, or throw exception
+	 *
+	 * @param targetInstance The instance to dereference and look for the value on
+	 * @param name           The name of the key to dereference
+	 * @param safe           If true, return null if the method is not found, otherwise throw an exception
+	 *
+	 * @return The requested object
+	 */
+	@SuppressWarnings( "unchecked" )
+	public static Object dereference( Object targetInstance, Key name, Boolean safe ) {
+		return dereference( targetInstance.getClass(), targetInstance, name, safe );
+	}
+
+	/**
+	 * Dereference this object by a key and return the value, or throw exception
+	 *
+	 * @param targetClass    The class to dereference and look for the value on
+	 * @param targetInstance The instance to dereference and look for the value on
+	 * @param name           The name of the key to dereference
+	 * @param safe           If true, return null if the method is not found, otherwise throw an exception
 	 *
 	 * @return The requested object
 	 */
@@ -1002,6 +1141,8 @@ public class DynamicJavaInteropService {
 	/**
 	 * Dereference this object by a key and invoke the result as an invokable (UDF, java method)
 	 *
+	 * @param targetClass    The class to assign the field on
+	 * @param targetInstance The instance to assign the field on
 	 * @param name           The name of the key to dereference, which becomes the method name
 	 * @param namedArguments The arguments to pass to the invokable
 	 * @param safe           If true, return null if the method is not found, otherwise throw an exception
@@ -1038,8 +1179,34 @@ public class DynamicJavaInteropService {
 	/**
 	 * Assign a value to a field
 	 *
-	 * @param name  The name of the field to assign
-	 * @param value The value to assign
+	 * @param targetClass The class to assign the field on
+	 * @param name        The name of the field to assign
+	 * @param value       The value to assign
+	 */
+	@SuppressWarnings( "unchecked" )
+	public static Object assign( Class<?> targetClass, Key name, Object value ) {
+		return assign( targetClass, null, name, value );
+	}
+
+	/**
+	 * Assign a value to a field
+	 *
+	 * @param targetInstance The instance to assign the field on
+	 * @param name           The name of the field to assign
+	 * @param value          The value to assign
+	 */
+	@SuppressWarnings( "unchecked" )
+	public static Object assign( Object targetInstance, Key name, Object value ) {
+		return assign( targetInstance.getClass(), targetInstance, name, value );
+	}
+
+	/**
+	 * Assign a value to a field
+	 *
+	 * @param targetClass    The class to assign the field on
+	 * @param targetInstance The instance to assign the field on
+	 * @param name           The name of the field to assign
+	 * @param value          The value to assign
 	 */
 	@SuppressWarnings( "unchecked" )
 	public static Object assign( Class<?> targetClass, Object targetInstance, Key name, Object value ) {
