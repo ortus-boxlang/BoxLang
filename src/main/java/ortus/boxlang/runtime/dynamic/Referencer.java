@@ -20,6 +20,7 @@ package ortus.boxlang.runtime.dynamic;
 import java.util.Map;
 
 import ortus.boxlang.runtime.context.IBoxContext;
+import ortus.boxlang.runtime.interop.DynamicJavaInteropService;
 import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Array;
@@ -44,7 +45,7 @@ public class Referencer {
 		if ( safe && object == null ) {
 			return null;
 		}
-		return getReferenceable( object ).dereference( key, safe );
+		return DynamicJavaInteropService.dereference( object.getClass(), object, key, safe );
 	}
 
 	/**
@@ -53,15 +54,17 @@ public class Referencer {
 	 * @param object              The object to dereference
 	 * @param key                 The key to dereference
 	 * @param positionalArguments The arguments to pass to the method
-	 * @param safe                Whether to throw an exception if the key is not found
+	 * @param safe                Whether to throw an exception if the key is not
+	 *                            found
 	 *
 	 * @return The value that was assigned
 	 */
-	public static Object getAndInvoke( IBoxContext context, Object object, Key key, Object[] positionalArguments, Boolean safe ) {
+	public static Object getAndInvoke( IBoxContext context, Object object, Key key, Object[] positionalArguments,
+	    Boolean safe ) {
 		if ( safe && object == null ) {
 			return null;
 		}
-		return getReferenceable( object ).dereferenceAndInvoke( context, key, positionalArguments, safe );
+		return DynamicJavaInteropService.dereferenceAndInvoke( object, context, key, positionalArguments, safe );
 	}
 
 	/**
@@ -77,7 +80,7 @@ public class Referencer {
 		if ( safe && object == null ) {
 			return null;
 		}
-		return getReferenceable( object ).dereferenceAndInvoke( context, key, new Object[] {}, safe );
+		return DynamicJavaInteropService.dereferenceAndInvoke( object, context, key, new Object[] {}, safe );
 	}
 
 	/**
@@ -95,7 +98,7 @@ public class Referencer {
 		if ( safe && object == null ) {
 			return null;
 		}
-		return getReferenceable( object ).dereferenceAndInvoke( context, key, namedArguments, safe );
+		return DynamicJavaInteropService.dereferenceAndInvoke( object, context, key, namedArguments, safe );
 	}
 
 	/**
@@ -108,13 +111,15 @@ public class Referencer {
 	 * @return The value that was assigned
 	 */
 	public static Object set( Object object, Key key, Object value ) {
-		return getReferenceable( object ).assign( key, value );
+		return DynamicJavaInteropService.assign( object.getClass(), object, key, value );
 	}
 
 	/**
-	 * Used to implement any time an object is assigned via deep keys like foo.bar.baz=1
+	 * Used to implement any time an object is assigned via deep keys like
+	 * foo.bar.baz=1
 	 * Missing keys will be created as needed as HashMaps
-	 * An exception will be thrown if any intermediate keys exists, but are not a Map.
+	 * An exception will be thrown if any intermediate keys exists, but are not a
+	 * Map.
 	 *
 	 * @param object The object to dereference
 	 * @param value  The value to assign
@@ -123,41 +128,34 @@ public class Referencer {
 	 * @return The value that was assigned
 	 */
 	public static Object setDeep( Object object, Object value, Key... keys ) {
-		IReferenceable obj = getReferenceable( object );
 
 		for ( int i = 0; i <= keys.length - 1; i++ ) {
 			Key key = keys[ i ];
 			// At the final key, just assign our value and we're done
 			if ( i == keys.length - 1 ) {
-				obj.assign( key, value );
+
+				set( object, key, value );
 				return value;
 			}
 
 			// For all intermediate keys, check if they exist and are a Struct or Array
-			Object next = DynamicObject.unWrap( obj.dereference( key, true ) );
+			Object next = DynamicObject.unWrap( get( object, key, true ) );
 			// If missing, create as a Struct
 			if ( next == null ) {
 
 				next = new Struct();
-				obj.assign( key, next );
+				set( object, key, next );
 				// If it's not null, it needs to be a Map
 			} else if ( ! ( next instanceof Map || next instanceof Array ) ) {
 				throw new BoxRuntimeException(
-				    String.format( "Cannot assign to key [%s] because it is a [%s] and not a Struct or Array", key.getName(),
-				        next.getClass().getName() )
-				);
+				    String.format( "Cannot assign to key [%s] because it is a [%s] and not a Struct or Array",
+				        key.getName(),
+				        next.getClass().getName() ) );
 			}
-			obj = getReferenceable( next );
+			object = next;
 		}
 
 		return value;
 	}
 
-	private static IReferenceable getReferenceable( Object object ) {
-		if ( object instanceof IReferenceable ref ) {
-			return ref;
-		} else {
-			return DynamicObject.of( object );
-		}
-	}
 }

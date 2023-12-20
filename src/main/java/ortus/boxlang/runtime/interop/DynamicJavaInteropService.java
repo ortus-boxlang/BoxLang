@@ -1045,7 +1045,7 @@ public class DynamicJavaInteropService {
     public static Object assign( Class<?> targetClass, Object targetInstance, Key name, Object value ) {
 
         if ( targetInstance != null && targetInstance instanceof IReferenceable ref ) {
-            ref.assign( name, value );
+            return ref.assign( name, value );
         } else if ( targetInstance != null && targetInstance.getClass().isArray() ) {
             Object[] arr   = ( ( Object[] ) targetInstance );
             Integer  index = Array.validateAndGetIntForAssign( name, arr.length, true );
