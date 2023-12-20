@@ -54,6 +54,7 @@ public abstract class Transpiler implements ITranspiler {
 	private int								switchCounter		= 0;
 	private int								forInCounter		= 0;
 	private int								lambdaCounter		= 0;
+	private int								closureCounter		= 0;
 	private ArrayDeque<String>				currentContextName	= new ArrayDeque<>();
 	private List<ImportDefinition>			imports				= new ArrayList<ImportDefinition>();
 	private Map<String, BoxExpr>			keys				= new LinkedHashMap<String, BoxExpr>();
@@ -177,6 +178,10 @@ public abstract class Transpiler implements ITranspiler {
 
 	public int incrementAndGetLambdaCounter() {
 		return ++lambdaCounter;
+	}
+
+	public int incrementAndGetClosureCounter() {
+		return ++closureCounter;
 	}
 
 	public int registerKey( BoxExpr key ) {
