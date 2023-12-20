@@ -355,7 +355,7 @@ public class InterceptorService extends BaseService {
 			} catch ( Exception e ) {
 				String errorMessage = String.format( "Errors announcing [%s] interception", state.getName() );
 				logger.error( errorMessage, e );
-				throw new BoxRuntimeException( errorMessage );
+				throw new BoxRuntimeException( errorMessage, e );
 			}
 
 			// logger.atDebug().log( "Finished announcing {}", state.getName() );

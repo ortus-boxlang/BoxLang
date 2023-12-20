@@ -100,10 +100,12 @@ property:
 	)? (DEFAULT EQUAL stringLiteral)? eos?;
 
 anonymousFunction:
-	FUNCTION LPAREN paramList? RPAREN (postannotation)* (simpleStatement | statementBlock)
+	FUNCTION LPAREN paramList? RPAREN (postannotation)* (
+		simpleStatement
+		| statementBlock
+	)
 	| lambda
-	| closure
-	;
+	| closure;
 
 lambda:
 	LPAREN paramList? RPAREN (postannotation)* ARROW (
@@ -113,8 +115,11 @@ lambda:
 	| identifier ARROW (simpleStatement | statementBlock);
 
 closure:
-	LPAREN paramList? RPAREN (postannotation)* ARROW_RIGHT (simpleStatement | statementBlock)
-	;
+	LPAREN paramList? RPAREN (postannotation)* ARROW_RIGHT (
+		simpleStatement
+		| statementBlock
+	)
+	| identifier ARROW_RIGHT (simpleStatement | statementBlock);
 
 statementBlock: LBRACE (statement)* RBRACE eos?;
 statementParameters: (

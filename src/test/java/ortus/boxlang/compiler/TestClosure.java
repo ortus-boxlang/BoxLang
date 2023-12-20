@@ -17,25 +17,24 @@
  */
 package ortus.boxlang.compiler;
 
-import com.github.javaparser.ast.CompilationUnit;
-import com.github.javaparser.ast.Node;
-import com.github.javaparser.ast.body.VariableDeclarator;
+import static org.junit.Assert.assertTrue;
+
+import java.io.IOException;
+
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+
+import com.github.javaparser.ast.CompilationUnit;
+import com.github.javaparser.ast.Node;
+
 import ortus.boxlang.ast.BoxScript;
 import ortus.boxlang.ast.expression.BoxClosure;
-import ortus.boxlang.ast.expression.BoxLambda;
-import ortus.boxlang.ast.expression.BoxStringLiteral;
 import ortus.boxlang.ast.statement.BoxArgumentDeclaration;
 import ortus.boxlang.ast.statement.BoxExpression;
 import ortus.boxlang.parser.BoxCFParser;
 import ortus.boxlang.parser.BoxParser;
 import ortus.boxlang.parser.ParsingResult;
 import ortus.boxlang.transpiler.JavaTranspiler;
-
-import java.io.IOException;
-
-import static org.junit.Assert.assertTrue;
 
 public class TestClosure extends TestBase {
 
@@ -47,6 +46,7 @@ public class TestClosure extends TestBase {
 		JavaTranspiler transpiler = new JavaTranspiler();
 		transpiler.setProperty( "packageName", "ortus.test" );
 		transpiler.setProperty( "classname", "MyClosure" );
+		transpiler.pushContextName( "context" );
 		transpiler.transform( result.getRoot() );
 		return transpiler.getCallables().get( 0 );
 	}
@@ -76,11 +76,12 @@ public class TestClosure extends TestBase {
 		CompilationUnit javaAST = ( CompilationUnit ) transformClosure( code );
 		System.out.println( javaAST.toString() );
 	}
+
 	@Test
 	public void testClosureAsAnonymous() throws IOException {
 		String			code	= """
-			function( required string param1='default' key='value' ) key='value' { return param1; }
-		""";
+		                          	function( required string param1='default' key='value' ) key='value' { return param1; }
+		                          """;
 		BoxCFParser		parser	= new BoxCFParser();
 		ParsingResult	result	= parser.parse( code );
 		assertTrue( result.isCorrect() );
@@ -101,11 +102,12 @@ public class TestClosure extends TestBase {
 		CompilationUnit javaAST = ( CompilationUnit ) transformClosure( code );
 		System.out.println( javaAST.toString() );
 	}
+
 	@Test
 	public void testClosureReturn() throws IOException {
 		String			code	= """
-			() => "my func";
-		""";
+		                          	() => "my func";
+		                          """;
 		BoxCFParser		parser	= new BoxCFParser();
 		ParsingResult	result	= parser.parse( code );
 		assertTrue( result.isCorrect() );

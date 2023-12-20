@@ -37,7 +37,39 @@ import ortus.boxlang.ast.BoxStatement;
 import ortus.boxlang.ast.Issue;
 import ortus.boxlang.ast.Point;
 import ortus.boxlang.ast.Position;
-import ortus.boxlang.ast.expression.*;
+import ortus.boxlang.ast.expression.BoxAccess;
+import ortus.boxlang.ast.expression.BoxArgument;
+import ortus.boxlang.ast.expression.BoxArrayAccess;
+import ortus.boxlang.ast.expression.BoxArrayLiteral;
+import ortus.boxlang.ast.expression.BoxAssignment;
+import ortus.boxlang.ast.expression.BoxAssignmentModifier;
+import ortus.boxlang.ast.expression.BoxBinaryOperation;
+import ortus.boxlang.ast.expression.BoxBinaryOperator;
+import ortus.boxlang.ast.expression.BoxBooleanLiteral;
+import ortus.boxlang.ast.expression.BoxClosure;
+import ortus.boxlang.ast.expression.BoxComparisonOperation;
+import ortus.boxlang.ast.expression.BoxComparisonOperator;
+import ortus.boxlang.ast.expression.BoxDecimalLiteral;
+import ortus.boxlang.ast.expression.BoxDotAccess;
+import ortus.boxlang.ast.expression.BoxExpressionInvocation;
+import ortus.boxlang.ast.expression.BoxFQN;
+import ortus.boxlang.ast.expression.BoxFunctionInvocation;
+import ortus.boxlang.ast.expression.BoxIdentifier;
+import ortus.boxlang.ast.expression.BoxIntegerLiteral;
+import ortus.boxlang.ast.expression.BoxLambda;
+import ortus.boxlang.ast.expression.BoxMethodInvocation;
+import ortus.boxlang.ast.expression.BoxNewOperation;
+import ortus.boxlang.ast.expression.BoxNull;
+import ortus.boxlang.ast.expression.BoxParenthesis;
+import ortus.boxlang.ast.expression.BoxScope;
+import ortus.boxlang.ast.expression.BoxStringConcat;
+import ortus.boxlang.ast.expression.BoxStringInterpolation;
+import ortus.boxlang.ast.expression.BoxStringLiteral;
+import ortus.boxlang.ast.expression.BoxStructLiteral;
+import ortus.boxlang.ast.expression.BoxStructType;
+import ortus.boxlang.ast.expression.BoxTernaryOperation;
+import ortus.boxlang.ast.expression.BoxUnaryOperation;
+import ortus.boxlang.ast.expression.BoxUnaryOperator;
 import ortus.boxlang.ast.statement.BoxAccessModifier;
 import ortus.boxlang.ast.statement.BoxAnnotation;
 import ortus.boxlang.ast.statement.BoxArgumentDeclaration;
@@ -1053,7 +1085,7 @@ public class BoxCFParser extends BoxAbstractParser {
 					body.add( toAst( file, lambda.simpleStatement() ) );
 				}
 				return new BoxLambda( args, annotations, body, getPosition( expression ), getSourceText( expression ) );
-			} else if(expression.anonymousFunction().closure() != null) {
+			} else if ( expression.anonymousFunction().closure() != null ) {
 				/* Closure declaration */
 				CFParser.ClosureContext			closure		= expression.anonymousFunction().closure();
 				List<BoxArgumentDeclaration>	args		= new ArrayList<>();
@@ -1065,6 +1097,11 @@ public class BoxCFParser extends BoxAbstractParser {
 						BoxArgumentDeclaration argDeclaration = toAst( file, arg );
 						args.add( argDeclaration );
 					}
+				}
+				if ( closure.identifier() != null ) {
+					BoxArgumentDeclaration argDeclaration = new BoxArgumentDeclaration( false, "Any", closure.identifier().getText(), null, new ArrayList<>(),
+					    new ArrayList<>(), getPosition( closure.identifier() ), getSourceText( closure.identifier() ) );
+					args.add( argDeclaration );
 				}
 				/* Process the annotations */
 				for ( CFParser.PostannotationContext annotation : closure.postannotation() ) {
@@ -1080,10 +1117,10 @@ public class BoxCFParser extends BoxAbstractParser {
 				return new BoxClosure( args, annotations, body, getPosition( expression ), getSourceText( expression ) );
 			} else {
 				/* Anonymous declaration */
-				List<BoxArgumentDeclaration>	args		= new ArrayList<>();
-				List<BoxAnnotation>				annotations	= new ArrayList<>();
-				List<BoxStatement>				body		= new ArrayList<>();
-				CFParser.AnonymousFunctionContext			closure		= expression.anonymousFunction();
+				List<BoxArgumentDeclaration>		args		= new ArrayList<>();
+				List<BoxAnnotation>					annotations	= new ArrayList<>();
+				List<BoxStatement>					body		= new ArrayList<>();
+				CFParser.AnonymousFunctionContext	closure		= expression.anonymousFunction();
 
 				if ( closure.paramList() != null ) {
 					for ( CFParser.ParamContext arg : closure.paramList().param() ) {
@@ -1349,6 +1386,7 @@ public class BoxCFParser extends BoxAbstractParser {
 				ParsingResult		result	= parser.parse( null, node.functionSignature().javadoc().getText() );
 				BoxDocumentation	docs	= ( BoxDocumentation ) result.getRoot();
 				for ( BoxNode n : docs.getAnnotations() ) {
+
 					documentation.add( ( BoxDocumentationAnnotation ) n );
 				}
 			} catch ( IOException e ) {

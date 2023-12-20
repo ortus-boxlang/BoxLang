@@ -387,7 +387,6 @@ public class FunctionService extends BaseService {
 		    .filter( BIFClass -> BIF.class.isAssignableFrom( BIFClass ) )
 		    // Process each class
 		    .forEach( BIFClass -> {
-			    System.out.println( "Loading global function " + BIFClass.getSimpleName() );
 			    // This method will handle the BIF and any member method annotations
 			    registerGlobalFunction( BIFClass, null, null );
 		    } );

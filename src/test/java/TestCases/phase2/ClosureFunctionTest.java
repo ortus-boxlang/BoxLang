@@ -42,7 +42,6 @@ import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.meta.BoxMeta;
 import ortus.boxlang.runtime.types.meta.FunctionMeta;
 
-@Disabled
 public class ClosureFunctionTest {
 
 	static BoxRuntime	instance;
@@ -84,10 +83,10 @@ public class ClosureFunctionTest {
 
 		Struct meta = ( ( Closure ) variables.dereference( foo, false ) ).getMetaData();
 
-		assertThat( meta.dereference( Key.of( "name" ), false ) ).isEqualTo( "closure" );
+		assertThat( meta.dereference( Key.of( "name" ), false ) ).isEqualTo( "Closure" );
 		// Defaults
 		assertThat( meta.dereference( Key.of( "hint" ), false ) ).isEqualTo( "" );
-		assertThat( meta.dereference( Key.of( "output" ), false ) ).isEqualTo( true );
+		assertThat( meta.dereference( Key.of( "output" ), false ) ).isEqualTo( false );
 		assertThat( meta.dereference( Key.of( "returnType" ), false ) ).isEqualTo( "any" );
 		assertThat( meta.dereference( Key.of( "access" ), false ) ).isEqualTo( "public" );
 
@@ -110,10 +109,10 @@ public class ClosureFunctionTest {
 
 		Struct meta = ( ( Closure ) variables.dereference( foo, false ) ).getMetaData();
 
-		assertThat( meta.dereference( Key.of( "name" ), false ) ).isEqualTo( "closure" );
+		assertThat( meta.dereference( Key.of( "name" ), false ) ).isEqualTo( "Closure" );
 		// Defaults
 		assertThat( meta.dereference( Key.of( "hint" ), false ) ).isEqualTo( "" );
-		assertThat( meta.dereference( Key.of( "output" ), false ) ).isEqualTo( true );
+		assertThat( meta.dereference( Key.of( "output" ), false ) ).isEqualTo( false );
 		assertThat( meta.dereference( Key.of( "returnType" ), false ) ).isEqualTo( "any" );
 		assertThat( meta.dereference( Key.of( "access" ), false ) ).isEqualTo( "public" );
 
@@ -134,10 +133,10 @@ public class ClosureFunctionTest {
 
 		Struct meta = ( ( Closure ) variables.dereference( foo, false ) ).getMetaData();
 
-		assertThat( meta.dereference( Key.of( "name" ), false ) ).isEqualTo( "closure" );
+		assertThat( meta.dereference( Key.of( "name" ), false ) ).isEqualTo( "Closure" );
 		// Defaults
 		assertThat( meta.dereference( Key.of( "hint" ), false ) ).isEqualTo( "" );
-		assertThat( meta.dereference( Key.of( "output" ), false ) ).isEqualTo( true );
+		assertThat( meta.dereference( Key.of( "output" ), false ) ).isEqualTo( false );
 		assertThat( meta.dereference( Key.of( "returnType" ), false ) ).isEqualTo( "any" );
 		assertThat( meta.dereference( Key.of( "access" ), false ) ).isEqualTo( "public" );
 
@@ -158,10 +157,10 @@ public class ClosureFunctionTest {
 
 		Struct meta = ( ( Closure ) variables.dereference( foo, false ) ).getMetaData();
 
-		assertThat( meta.dereference( Key.of( "name" ), false ) ).isEqualTo( "closure" );
+		assertThat( meta.dereference( Key.of( "name" ), false ) ).isEqualTo( "Closure" );
 		// Defaults
 		assertThat( meta.dereference( Key.of( "hint" ), false ) ).isEqualTo( "" );
-		assertThat( meta.dereference( Key.of( "output" ), false ) ).isEqualTo( true );
+		assertThat( meta.dereference( Key.of( "output" ), false ) ).isEqualTo( false );
 		assertThat( meta.dereference( Key.of( "returnType" ), false ) ).isEqualTo( "any" );
 		assertThat( meta.dereference( Key.of( "access" ), false ) ).isEqualTo( "public" );
 
@@ -183,12 +182,12 @@ public class ClosureFunctionTest {
 		assertThat( variables.dereference( result, false ) instanceof ArgumentsScope ).isEqualTo( true );
 		ArgumentsScope args = ( ArgumentsScope ) variables.dereference( result, false );
 
-		assertThat( args.dereference( Key.of( "param1" ), false ) ).isEqualTo( null );
+		assertThat( args.dereference( Key.of( "param1" ), false ) ).isEqualTo( "Brad" );
 		assertThat( args.dereference( Key.of( "param2" ), false ) ).isEqualTo( "param2 default" );
 		assertThat( args.dereference( Key.of( "param3" ), false ) ).isEqualTo( null );
 		assertThat( args.dereference( Key.of( "param4" ), false ) ).isEqualTo( "param4 default" );
 
-		assertThat( args.dereference( Key.of( "1" ), false ) ).isEqualTo( null );
+		assertThat( args.dereference( Key.of( "1" ), false ) ).isEqualTo( "Brad" );
 		assertThat( args.dereference( Key.of( "2" ), false ) ).isEqualTo( "param2 default" );
 		assertThat( args.dereference( Key.of( "3" ), false ) ).isEqualTo( null );
 		assertThat( args.dereference( Key.of( "4" ), false ) ).isEqualTo( "param4 default" );
@@ -208,12 +207,12 @@ public class ClosureFunctionTest {
 		assertThat( variables.dereference( result, false ) instanceof ArgumentsScope ).isEqualTo( true );
 		ArgumentsScope args = ( ArgumentsScope ) variables.dereference( result, false );
 
-		assertThat( args.dereference( Key.of( "param1" ), false ) ).isEqualTo( null );
+		assertThat( args.dereference( Key.of( "param1" ), false ) ).isEqualTo( "Brad" );
 		assertThat( args.dereference( Key.of( "param2" ), false ) ).isEqualTo( "param2 default" );
 		assertThat( args.dereference( Key.of( "param3" ), false ) ).isEqualTo( null );
 		assertThat( args.dereference( Key.of( "param4" ), false ) ).isEqualTo( "param4 default" );
 
-		assertThat( args.dereference( Key.of( "1" ), false ) ).isEqualTo( null );
+		assertThat( args.dereference( Key.of( "1" ), false ) ).isEqualTo( "Brad" );
 		assertThat( args.dereference( Key.of( "2" ), false ) ).isEqualTo( "param2 default" );
 		assertThat( args.dereference( Key.of( "3" ), false ) ).isEqualTo( null );
 		assertThat( args.dereference( Key.of( "4" ), false ) ).isEqualTo( "param4 default" );
@@ -229,19 +228,19 @@ public class ClosureFunctionTest {
 		    foo = function(
 		      	required string param1 hint="My param",
 		      	numeric param2=42 luis="majano"
-		      ) hint="my Closure" output=false brad="wood" {
+		      ) hint="my Closure" output=true brad="wood" {
 		        return "value";
 		      }
-		      result = foo();
+		      result = foo(5);
 		          """,
 		    context );
 		assertThat( variables.dereference( result, false ) ).isEqualTo( "value" );
 		Closure	UDFfoo	= ( ( Closure ) variables.dereference( foo, false ) );
 		Struct	meta	= UDFfoo.getMetaData();
 
-		assertThat( meta.dereference( Key.of( "name" ), false ) ).isEqualTo( "foo" );
+		assertThat( meta.dereference( Key.of( "name" ), false ) ).isEqualTo( "Closure" );
 		assertThat( meta.dereference( Key.of( "hint" ), false ) ).isEqualTo( "my Closure" );
-		assertThat( meta.dereference( Key.of( "output" ), false ) ).isEqualTo( false );
+		assertThat( meta.dereference( Key.of( "output" ), false ) ).isEqualTo( true );
 		assertThat( meta.dereference( Key.of( "brad" ), false ) ).isEqualTo( "wood" );
 		assertThat( meta.dereference( Key.of( "returnType" ), false ) ).isEqualTo( "any" );
 		assertThat( meta.dereference( Key.of( "access" ), false ) ).isEqualTo( "public" );
@@ -253,7 +252,7 @@ public class ClosureFunctionTest {
 		assertThat( param1.dereference( Key.of( "name" ), false ) ).isEqualTo( "param1" );
 		assertThat( param1.dereference( Key.of( "hint" ), false ) ).isEqualTo( "My param" );
 		assertThat( param1.dereference( Key.of( "required" ), false ) ).isEqualTo( true );
-		assertThat( param1.dereference( Key.of( "type" ), false ) ).isEqualTo( "any" );
+		assertThat( param1.dereference( Key.of( "type" ), false ) ).isEqualTo( "string" );
 
 		Struct param2 = ( Struct ) args.get( 1 );
 		assertThat( param2.dereference( Key.of( "name" ), false ) ).isEqualTo( "param2" );
@@ -265,7 +264,7 @@ public class ClosureFunctionTest {
 		FunctionMeta	$bx			= ( ( FunctionMeta ) Referencer.get( UDFfoo, BoxMeta.key, false ) );
 		Struct			annotations	= ( Struct ) $bx.meta.dereference( Key.of( "annotations" ), false );
 		assertThat( annotations.dereference( Key.of( "hint" ), false ) ).isEqualTo( "my Closure" );
-		assertThat( annotations.dereference( Key.of( "output" ), false ) ).isEqualTo( false );
+		assertThat( annotations.dereference( Key.of( "output" ), false ) ).isEqualTo( true );
 		assertThat( annotations.dereference( Key.of( "brad" ), false ) ).isEqualTo( "wood" );
 
 		Array	params				= ( Array ) $bx.meta.dereference( Key.of( "parameters" ), false );
@@ -290,14 +289,14 @@ public class ClosureFunctionTest {
 		      ) => {
 		        return "value";
 		      }
-		      result = foo();
+		      result = foo(5);
 		          """,
 		    context );
 		assertThat( variables.dereference( result, false ) ).isEqualTo( "value" );
 		Closure	UDFfoo	= ( ( Closure ) variables.dereference( foo, false ) );
 		Struct	meta	= UDFfoo.getMetaData();
 
-		assertThat( meta.dereference( Key.of( "name" ), false ) ).isEqualTo( "closure" );
+		assertThat( meta.dereference( Key.of( "name" ), false ) ).isEqualTo( "Closure" );
 		assertThat( meta.dereference( Key.of( "access" ), false ) ).isEqualTo( "public" );
 
 		Array args = ( ( Array ) meta.dereference( Key.of( "parameters" ), false ) );
@@ -307,7 +306,7 @@ public class ClosureFunctionTest {
 		assertThat( param1.dereference( Key.of( "name" ), false ) ).isEqualTo( "param1" );
 		assertThat( param1.dereference( Key.of( "hint" ), false ) ).isEqualTo( "My param" );
 		assertThat( param1.dereference( Key.of( "required" ), false ) ).isEqualTo( true );
-		assertThat( param1.dereference( Key.of( "type" ), false ) ).isEqualTo( "any" );
+		assertThat( param1.dereference( Key.of( "type" ), false ) ).isEqualTo( "string" );
 
 		Struct param2 = ( Struct ) args.get( 1 );
 		assertThat( param2.dereference( Key.of( "name" ), false ) ).isEqualTo( "param2" );
@@ -387,6 +386,7 @@ public class ClosureFunctionTest {
 
 	@DisplayName( "named arguments" )
 	@Test
+	@Disabled
 	public void testNamedArguments() {
 
 		instance.executeSource(
@@ -417,6 +417,7 @@ public class ClosureFunctionTest {
 
 	@DisplayName( "argument collection" )
 	@Test
+	@Disabled
 	public void testArgumentCollection() {
 
 		instance.executeSource(
@@ -570,7 +571,7 @@ public class ClosureFunctionTest {
 		           """,
 		    context );
 
-		assertThat( variables.dereference( result, false ) ).isEqualTo( "Brad" );
+		assertThat( variables.dereference( result, false ) ).isEqualTo( "Gavin" );
 
 	}
 

@@ -14,6 +14,8 @@
  */
 package ortus.boxlang.transpiler.transformer.expression;
 
+import java.util.Map;
+
 import com.github.javaparser.ParseResult;
 import com.github.javaparser.ast.CompilationUnit;
 import com.github.javaparser.ast.Node;
@@ -25,18 +27,15 @@ import com.github.javaparser.ast.stmt.BlockStmt;
 import com.github.javaparser.ast.stmt.ExpressionStmt;
 import com.github.javaparser.ast.stmt.ReturnStmt;
 import com.github.javaparser.ast.stmt.Statement;
+
 import ortus.boxlang.ast.BoxNode;
 import ortus.boxlang.ast.BoxStatement;
 import ortus.boxlang.ast.expression.BoxClosure;
-import ortus.boxlang.ast.expression.BoxLambda;
 import ortus.boxlang.runtime.config.util.PlaceholderHelper;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.transpiler.JavaTranspiler;
 import ortus.boxlang.transpiler.transformer.AbstractTransformer;
-import ortus.boxlang.transpiler.transformer.Transformer;
 import ortus.boxlang.transpiler.transformer.TransformerContext;
-
-import java.util.Map;
 
 public class BoxClosureTransformer extends AbstractTransformer {
 
@@ -114,15 +113,8 @@ public class BoxClosureTransformer extends AbstractTransformer {
 				return null;
 			}
 
-			private ${classname}() {
-				super(null);
-			}
-
-			public static synchronized ${classname} getInstance() {
-				if ( instance == null ) {
-					instance = new ${classname}();
-				}
-				return instance;
+			public ${classname}( IBoxContext declaringContext  ) {
+				super( declaringContext );
 			}
 
 			@Override
@@ -150,10 +142,11 @@ public class BoxClosureTransformer extends AbstractTransformer {
 	public BoxClosureTransformer( JavaTranspiler transpiler ) {
 		super( transpiler );
 	}
+
 	/**
 	 * Transform a closure declaration into a Java Class
 	 *
-	 * @param node	a BoxClosure AST node
+	 * @param node    a BoxClosure AST node
 	 * @param context transpiler context
 	 *
 	 * @return an instance of the closure subclass
@@ -161,22 +154,23 @@ public class BoxClosureTransformer extends AbstractTransformer {
 	 * @throws IllegalStateException
 	 */
 	@Override
-	public Node transform(BoxNode node, TransformerContext context ) throws IllegalStateException {
-		BoxClosure boxClosure			= ( BoxClosure ) node;
+	public Node transform( BoxNode node, TransformerContext context ) throws IllegalStateException {
+		BoxClosure			boxClosure			= ( BoxClosure ) node;
 		String				packageName			= transpiler.getProperty( "packageName" );
-		String				closureName			= "Closure_" + transpiler.incrementAndGetLambdaCounter();
+		String				closureName			= "Closure_" + transpiler.incrementAndGetClosureCounter();
 		String				enclosingClassName	= transpiler.getProperty( "classname" );
 		String				className			= closureName;
 
-		Map<String, String> values				= Map.ofEntries(
-			Map.entry( "packageName", packageName ),
-			Map.entry( "className", className ),
-			Map.entry( "closureName", closureName ),
-			Map.entry( "enclosingClassName", enclosingClassName )
+		Map<String, String>	values				= Map.ofEntries(
+		    Map.entry( "packageName", packageName ),
+		    Map.entry( "className", className ),
+		    Map.entry( "closureName", closureName ),
+		    Map.entry( "enclosingClassName", enclosingClassName ),
+		    Map.entry( "contextName", transpiler.peekContextName() )
 		);
 		transpiler.pushContextName( "context" );
 		String							code	= PlaceholderHelper.resolve( template, values );
-		ParseResult<CompilationUnit> result;
+		ParseResult<CompilationUnit>	result;
 		try {
 			result = javaParser.parse( code );
 		} catch ( Exception e ) {
@@ -189,7 +183,7 @@ public class BoxClosureTransformer extends AbstractTransformer {
 		}
 		CompilationUnit			javaClass		= result.getResult().get();
 		/* Transform the arguments creating the initialization values */
-		ArrayInitializerExpr argInitializer	= new ArrayInitializerExpr();
+		ArrayInitializerExpr	argInitializer	= new ArrayInitializerExpr();
 		boxClosure.getArgs().forEach( arg -> {
 			Expression argument = ( Expression ) transpiler.transform( arg );
 			argInitializer.getValues().add( argument );
@@ -200,17 +194,17 @@ public class BoxClosureTransformer extends AbstractTransformer {
 		Expression annotationStruct = transformAnnotations( boxClosure.getAnnotations() );
 		result.getResult().orElseThrow().getType( 0 ).getFieldByName( "annotations" ).orElseThrow().getVariable( 0 ).setInitializer( annotationStruct );
 
-		MethodDeclaration invokeMethod	= javaClass.findCompilationUnit().orElseThrow()
-			.getClassByName( className ).orElseThrow()
-			.getMethodsByName( "_invoke" ).get( 0 );
+		MethodDeclaration	invokeMethod	= javaClass.findCompilationUnit().orElseThrow()
+		    .getClassByName( className ).orElseThrow()
+		    .getMethodsByName( "_invoke" ).get( 0 );
 
-		BlockStmt body			= invokeMethod.getBody().get();
+		BlockStmt			body			= invokeMethod.getBody().get();
 		for ( BoxStatement statement : boxClosure.getBody() ) {
 			Node javaStmt = transpiler.transform( statement );
 			if ( javaStmt instanceof BlockStmt stmt ) {
 				stmt.getStatements().forEach( it -> body.addStatement( it ) );
 			} else {
-				body.addStatement( (Statement) javaStmt );
+				body.addStatement( ( Statement ) javaStmt );
 			}
 		}
 		boolean needReturn = true;
@@ -230,7 +224,7 @@ public class BoxClosureTransformer extends AbstractTransformer {
 		transpiler.popContextName();
 
 		( ( JavaTranspiler ) transpiler ).getCallables().add( ( CompilationUnit ) javaClass );
-		return parseExpression( "${enclosingClassName}.${closureName}.getInstance()", values );
+		return parseExpression( "new ${enclosingClassName}.${closureName}( ${contextName} )", values );
 	}
 
 }

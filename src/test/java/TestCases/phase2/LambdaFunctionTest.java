@@ -167,7 +167,6 @@ public class LambdaFunctionTest {
 
 	@DisplayName( "lambda metadata" )
 	@Test
-	@Disabled
 	public void testLambdaMetadata() {
 
 		instance.executeSource(
@@ -175,7 +174,7 @@ public class LambdaFunctionTest {
 		    foo = (
 		      	required string param1 hint="My param",
 		      	numeric param2=42 luis="majano"
-		      ) -> {
+		      ) hint="my Closure" output=false brad='wood' -> {
 		        return "value";
 		      }
 		      result = foo(4);

@@ -137,7 +137,8 @@ public class Node {
 		map.put( "ASTType", getClass().getSimpleName() );
 		map.put( "ASTPackage", getClass().getPackageName() );
 		map.put( "sourceText", sourceText );
-		map.put( "position", position.toMap() );
+		if ( position != null )
+			map.put( "position", position.toMap() );
 
 		// I'm not sure if children is used at all right now
 		// map.put( "children", children.stream().map( Node::toMap ).toList() );
