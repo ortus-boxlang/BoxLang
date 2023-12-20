@@ -178,6 +178,7 @@ task getDependencies( type: Copy ) {
  * Javadoc Task
  */
 javadoc {
+	options.addBooleanOption("Xdoclint:none", true)
 	exclude '**/boxlang/parser/**'
 }
 
