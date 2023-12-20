@@ -1,121 +1,76 @@
-
-
 parser grammar DOCParser;
 
 options {
-    tokenVocab = DOCLexer;
+	tokenVocab = DOCLexer;
 }
 
-documentation
-    : EOF
-    | JAVADOC_START skipWhitespace* documentationContent JAVADOC_END? NEWLINE? EOF
-    | skipWhitespace* documentationContent EOF
-    ;
+documentation:
+	EOF
+	| skipWhitespace* JAVADOC_START skipWhitespace* documentationContent JAVADOC_END? NEWLINE? EOF;
 
-documentationContent
-    : description skipWhitespace*
-    | skipWhitespace* tagSection
-    | description NEWLINE+ skipWhitespace* tagSection
-    ;
+documentationContent:
+	description skipWhitespace*
+	| skipWhitespace* tagSection
+	| description NEWLINE+ skipWhitespace* tagSection;
 
-skipWhitespace
-    : SPACE
-    | NEWLINE
-    ;
+skipWhitespace: SPACE | NEWLINE;
 
-description
-    : descriptionLine (descriptionNewline+ descriptionLine)*
-    ;
+description:
+	descriptionLine (descriptionNewline+ descriptionLine)*;
 
-descriptionLine
-    : descriptionLineStart descriptionLineElement*
-    | inlineTag descriptionLineElement*
-    ;
+descriptionLine:
+	descriptionLineStart descriptionLineElement*
+	| inlineTag descriptionLineElement*;
 
-descriptionLineStart
-    : SPACE? descriptionLineNoSpaceNoAt+ (descriptionLineNoSpaceNoAt | SPACE | AT)*
-    ;
+descriptionLineStart:
+	SPACE? descriptionLineNoSpaceNoAt+ (
+		descriptionLineNoSpaceNoAt
+		| SPACE
+		| AT
+	)*;
 
-descriptionLineNoSpaceNoAt
-    : TEXT_CONTENT
-    | NAME
-    | STAR
-    | SLASH
-    | BRACE_OPEN
-    | BRACE_CLOSE
-    ;
+descriptionLineNoSpaceNoAt:
+	TEXT_CONTENT
+	| NAME
+	| STAR
+	| SLASH
+	| BRACE_OPEN
+	| BRACE_CLOSE;
 
-descriptionLineElement
-    : inlineTag
-    | descriptionLineText
-    ;
+descriptionLineElement: inlineTag | descriptionLineText;
 
-descriptionLineText
-    : (descriptionLineNoSpaceNoAt | SPACE | AT)+
-    ;
+descriptionLineText: (descriptionLineNoSpaceNoAt | SPACE | AT)+;
 
-descriptionNewline
-    : NEWLINE
-    ;
+descriptionNewline: NEWLINE;
 
-tagSection
-    : blockTag+
-    ;
+tagSection: blockTag+;
 
-blockTag
-    : SPACE? AT blockTagName SPACE? blockTagContent*
-    ;
+blockTag: SPACE? AT blockTagName SPACE? blockTagContent*;
 
-blockTagName
-    : NAME
-    ;
+blockTagName: NAME;
 
-blockTagContent
-    : blockTagText
-    | inlineTag
-    | NEWLINE
-    ;
+blockTagContent: blockTagText | inlineTag | NEWLINE;
 
-blockTagText
-    : blockTagTextElement+
-    ;
+blockTagText: blockTagTextElement+;
 
-blockTagTextElement
-    : TEXT_CONTENT
-    | NAME
-    | SPACE
-    | STAR
-    | SLASH
-    | BRACE_OPEN
-    | BRACE_CLOSE
-    ;
+blockTagTextElement:
+	TEXT_CONTENT
+	| NAME
+	| SPACE
+	| STAR
+	| SLASH
+	| BRACE_OPEN
+	| BRACE_CLOSE;
 
-inlineTag
-    : INLINE_TAG_START inlineTagName SPACE* inlineTagContent? BRACE_CLOSE
-    ;
+inlineTag:
+	INLINE_TAG_START inlineTagName SPACE* inlineTagContent? BRACE_CLOSE;
 
-inlineTagName
-    : NAME
-    ;
+inlineTagName: NAME;
 
-inlineTagContent
-    : braceContent+
-    ;
+inlineTagContent: braceContent+;
 
-braceExpression
-    : BRACE_OPEN braceContent* BRACE_CLOSE
-    ;
+braceExpression: BRACE_OPEN braceContent* BRACE_CLOSE;
 
-braceContent
-    : braceExpression
-    | braceText (NEWLINE* braceText)*
-    ;
+braceContent: braceExpression | braceText (NEWLINE* braceText)*;
 
-braceText
-    : TEXT_CONTENT
-    | NAME
-    | SPACE
-    | STAR
-    | SLASH
-    | NEWLINE
-    ;
+braceText: TEXT_CONTENT | NAME | SPACE | STAR | SLASH | NEWLINE;

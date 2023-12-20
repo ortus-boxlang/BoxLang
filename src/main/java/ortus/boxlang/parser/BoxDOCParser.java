@@ -93,12 +93,35 @@ public class BoxDOCParser {
 		parseTree.documentationContent().tagSection().blockTag().forEach( it -> {
 			annotations.add( toAst( file, it ) );
 		} );
+		if ( parseTree.documentationContent().description() != null ) {
+			annotations.add( toAst( file, parseTree.documentationContent().description() ) );
+		}
 		return new BoxDocumentation( annotations, null, null );
 	}
 
+	private BoxNode toAst( File file, DOCParser.DescriptionContext node ) {
+		BoxFQN			name	= new BoxFQN( "hint", null, null );
+		// use string builder to get text from child nodes that are NOT descriptionNewLIne
+		StringBuilder	valueSB	= new StringBuilder();
+		node.children.forEach( it -> {
+			if ( ! ( it instanceof DOCParser.DescriptionNewlineContext ) ) {
+				valueSB.append( it.getText() );
+			}
+		} );
+		BoxStringLiteral value = new BoxStringLiteral( valueSB.toString(), null, null );
+		return new BoxDocumentationAnnotation( name, value, null, null );
+	}
+
 	private BoxNode toAst( File file, DOCParser.BlockTagContext node ) {
-		BoxFQN				name	= new BoxFQN( node.blockTagName().NAME().getText(), null, null );
-		BoxStringLiteral	value	= new BoxStringLiteral( node.blockTagContent( 0 ).getText(), null, null );
+		BoxFQN			name	= new BoxFQN( node.blockTagName().NAME().getText(), null, null );
+		// use string builder to get text from child nodes that are NOT a new line
+		StringBuilder	valueSB	= new StringBuilder();
+		node.blockTagContent().forEach( it -> {
+			if ( it.NEWLINE() == null ) {
+				valueSB.append( it.getText() );
+			}
+		} );
+		BoxStringLiteral value = new BoxStringLiteral( valueSB.toString(), null, null );
 		return new BoxDocumentationAnnotation( name, value, null, null );
 	}
 

@@ -14,7 +14,6 @@
  */
 package ortus.boxlang.ast.statement;
 
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
@@ -103,6 +102,10 @@ public class BoxArgumentDeclaration extends BoxStatement {
 		} else {
 			map.put( "value", null );
 		}
+		map.put( "required", required );
+		map.put( "type", type );
+		map.put( "annotations", annotations.stream().map( BoxAnnotation::toMap ).collect( java.util.stream.Collectors.toList() ) );
+		map.put( "documentation", documentation.stream().map( BoxDocumentationAnnotation::toMap ).collect( java.util.stream.Collectors.toList() ) );
 
 		return map;
 	}

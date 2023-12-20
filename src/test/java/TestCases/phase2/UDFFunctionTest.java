@@ -234,22 +234,23 @@ public class UDFFunctionTest {
 
 	@DisplayName( "UDF metadata javadoc" )
 	@Test
-	@Disabled
 	public void testUDFMetadataJavadoc() {
 
 		instance.executeSource(
 		    """
 		       /**
 		       * my UDF
+		    * also more hint here
 		       *
 		       * @param1.hint My param
-		       *
-		       * @param2.luis majano
+		    *
 		       * @param2 param2 hint
+		       * @param2.luis majano
+		    * is spread across two lines
 		    *
 		    * @returns Pure Gold
 		       */
-		       public String function foo( param1, param2 ) output=true brad="wood" {
+		      public String function foo( param1, param2 ) output=true brad="wood" {
 		       	return "value";
 		       }
 		    result = foo();
@@ -275,22 +276,22 @@ public class UDFFunctionTest {
 
 		Struct param2 = ( Struct ) args.get( 1 );
 		assertThat( param2.dereference( Key.of( "name" ), false ) ).isEqualTo( "param2" );
-		assertThat( param2.dereference( Key.of( "hint" ), false ) ).isEqualTo( "" );
+		assertThat( param2.getAsString( Key.of( "hint" ) ).trim() ).isEqualTo( "param2 hint" );
 		assertThat( param2.dereference( Key.of( "required" ), false ) ).isEqualTo( false );
 
 		FunctionMeta	$bx				= ( ( FunctionMeta ) Referencer.get( UDFfoo, BoxMeta.key, false ) );
 		Struct			documentation	= ( Struct ) $bx.meta.dereference( Key.of( "documentation" ), false );
-		assertThat( documentation.dereference( Key.of( "hint" ), false ) ).isEqualTo( "my UDF" );
+		assertThat( documentation.dereference( Key.of( "hint" ), false ) ).isEqualTo( "my UDF also more hint here" );
 		assertThat( documentation.dereference( Key.of( "returns" ), false ) ).isEqualTo( "Pure Gold" );
 
 		Array	params				= ( Array ) $bx.meta.dereference( Key.of( "parameters" ), false );
 
 		Struct	param1Documentation	= ( Struct ) Referencer.get( params.get( 0 ), Key.of( "documentation" ), false );
-		assertThat( param1Documentation.dereference( Key.of( "hint" ), false ) ).isEqualTo( "My param" );
+		assertThat( param1Documentation.getAsString( Key.of( "hint" ) ).trim() ).isEqualTo( "My param" );
 
 		Struct param2Documentation = ( Struct ) Referencer.get( params.get( 1 ), Key.of( "documentation" ), false );
-		assertThat( param2Documentation.dereference( Key.of( "hint" ), false ) ).isEqualTo( "param2 hint" );
-		assertThat( param2Documentation.dereference( Key.of( "luis" ), false ) ).isEqualTo( "majano" );
+		assertThat( param2Documentation.getAsString( Key.of( "hint" ) ).trim() ).isEqualTo( "param2 hint" );
+		assertThat( param2Documentation.getAsString( Key.of( "luis" ) ).trim() ).isEqualTo( "majano is spread across two lines" );
 
 	}
 

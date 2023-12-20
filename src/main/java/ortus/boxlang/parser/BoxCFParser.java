@@ -1423,18 +1423,21 @@ public class BoxCFParser extends BoxAbstractParser {
 				/* Resolve annotations @name.key "value" */
 				for ( BoxAnnotation pre : annotations ) {
 					String prename = pre.getKey().getValue();
-					if ( prename.indexOf( '.' ) > -1 ) {
-						prename = pre.getKey().getValue().substring( 0, pre.getKey().getValue().indexOf( "." ) );
-						if ( argDeclaration.getName().equalsIgnoreCase( prename ) ) {
-							BoxFQN key = new BoxFQN(
-							    pre.getKey().getValue().substring( pre.getKey().getValue().indexOf( "." ) + 1 ), pre.getPosition(),
-							    pre.getSourceText()
-							);
-							argDeclaration.getAnnotations().add(
-							    new BoxAnnotation( key, pre.getValue(), pre.getPosition(), pre.getSourceText() )
-							);
-							annToRemove.add( pre );
+					if ( prename.toLowerCase().startsWith( argDeclaration.getName().toLowerCase() ) ) {
+						if ( prename.indexOf( '.' ) > -1 ) {
+							prename = pre.getKey().getValue().substring( 0, pre.getKey().getValue().indexOf( "." ) );
+
+						} else {
+							prename = "hint";
 						}
+						BoxFQN key = new BoxFQN(
+						    pre.getKey().getValue().substring( pre.getKey().getValue().indexOf( "." ) + 1 ), pre.getPosition(),
+						    pre.getSourceText()
+						);
+						argDeclaration.getAnnotations().add(
+						    new BoxAnnotation( key, pre.getValue(), pre.getPosition(), pre.getSourceText() )
+						);
+						annToRemove.add( pre );
 					}
 				}
 				/* Resolve documentation @name.key "value" */
