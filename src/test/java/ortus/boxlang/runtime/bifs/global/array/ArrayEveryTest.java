@@ -127,9 +127,10 @@ public class ArrayEveryTest {
                     return true;
                 };
 
-                result = nums.each( eachFn );
+                result = nums.every( eachFn );
             """,
             context );
+        assertThat( variables.dereference( result, false ) ).isEqualTo( true );
         Array indexes = ( Array ) variables.dereference( Key.of( "indexes" ), false );
         assertThat( indexes.size() ).isEqualTo( 5 );
         assertThat( indexes.get( 0 ) ).isEqualTo( 1 );
