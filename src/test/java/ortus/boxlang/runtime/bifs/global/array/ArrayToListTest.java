@@ -35,81 +35,81 @@ import ortus.boxlang.runtime.scopes.VariablesScope;
 
 public class ArrayToListTest {
 
-    static BoxRuntime  instance;
-    static IBoxContext context;
-    static IScope      variables;
-    static Key         result = new Key( "result" );
+	static BoxRuntime	instance;
+	static IBoxContext	context;
+	static IScope		variables;
+	static Key			result	= new Key( "result" );
 
-    @BeforeAll
-    public static void setUp() {
-        instance  = BoxRuntime.getInstance( true );
-        context   = new ScriptingBoxContext( instance.getRuntimeContext() );
-        variables = context.getScopeNearby( VariablesScope.name );
-    }
+	@BeforeAll
+	public static void setUp() {
+		instance	= BoxRuntime.getInstance( true );
+		context		= new ScriptingBoxContext( instance.getRuntimeContext() );
+		variables	= context.getScopeNearby( VariablesScope.name );
+	}
 
-    @AfterAll
-    public static void teardown() {
-        instance.shutdown();
-    }
+	@AfterAll
+	public static void teardown() {
+		instance.shutdown();
+	}
 
-    @BeforeEach
-    public void setupEach() {
-        variables.clear();
-    }
+	@BeforeEach
+	public void setupEach() {
+		variables.clear();
+	}
 
-    @DisplayName( "It should concat the values as a string" )
-    @Test
-    public void testUseProvidedUDF() {
-        instance.executeSource(
-            """
-                nums = [ 1, 2, 3, 4, 5 ];
+	@DisplayName( "It should concat the values as a string" )
+	@Test
+	public void testUseProvidedUDF() {
+		instance.executeSource(
+		    """
+		        nums = [ 1, 2, 3, 4, 5 ];
 
-                result = ArrayToList( nums );
-            """,
-            context );
-        String joined = ( String ) variables.dereference( result, false );
-        assertThat( joined ).isEqualTo( "1,2,3,4,5" );
-    }
+		        result = ArrayToList( nums );
+		    """,
+		    context );
+		String joined = ( String ) variables.dereference( result, false );
+		assertThat( joined ).isEqualTo( "1,2,3,4,5" );
+	}
 
-    @DisplayName( "It should let you set the delimiter" )
-    @Test
-    public void testCustomDelimiter() {
-        instance.executeSource(
-            """
-                nums = [ 1, 2, 3, 4, 5 ];
+	@DisplayName( "It should let you set the delimiter" )
+	@Test
+	public void testCustomDelimiter() {
+		instance.executeSource(
+		    """
+		        nums = [ 1, 2, 3, 4, 5 ];
 
-                result = ArrayToList( nums, "|" );
-            """,
-            context );
-        String joined = ( String ) variables.dereference( result, false );
-        assertThat( joined ).isEqualTo( "1|2|3|4|5" );
-    }
+		        result = ArrayToList( nums, "|" );
+		    """,
+		    context );
+		String joined = ( String ) variables.dereference( result, false );
+		assertThat( joined ).isEqualTo( "1|2|3|4|5" );
+	}
 
-    @DisplayName( "It should allow you to call it as a member function" )
-    @Test
-    public void testMemberFunction() {
-        instance.executeSource(
-            """
-                nums = [ 1, 2, 3, 4, 5 ];
+	@DisplayName( "It should allow you to call it as a member function" )
+	@Test
+	public void testMemberFunction() {
+		instance.executeSource(
+		    """
+		        nums = [ 1, 2, 3, 4, 5 ];
 
-                result = nums.toList( "|" );
-            """,
-            context );
-        String joined = ( String ) variables.dereference( result, false );
-        assertThat( joined ).isEqualTo( "1|2|3|4|5" );
-    }
+		        result = nums.toList( "|" );
+		    """,
+		    context );
+		String joined = ( String ) variables.dereference( result, false );
+		assertThat( joined ).isEqualTo( "1|2|3|4|5" );
+	}
 
-    @DisplayName( "It should allow you to call it as a member function using the name join" )
-    @Test
-    public void testJoinMemberFunction() {
-        instance.executeSource(
-            """
-                nums = [ 1, 2, 3, 4, 5 ];
+	@DisplayName( "It should allow you to call it as a member function using the name join" )
+	@Test
+	public void testJoinMemberFunction() {
+		instance.executeSource(
+		    """
+		        nums = [ 1, 2, 3, 4, 5 ];
 
-                result = nums.join( "|" );
-            """,
-            context );
-        String joined = ( String ) variables.dereference( result, false );
-        assertThat( joined ).isEqualTo( "1|2|3|4|5" );
-    }
+		        result = nums.join( "|" );
+		    """,
+		    context );
+		String joined = ( String ) variables.dereference( result, false );
+		assertThat( joined ).isEqualTo( "1|2|3|4|5" );
+	}
 }
