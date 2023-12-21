@@ -40,7 +40,6 @@ public class IsBinaryTest {
 	static BoxRuntime	instance;
 	static IBoxContext	context;
 	static IScope		variables;
-	static Key			result	= new Key( "result" );
 
 	@BeforeAll
 	public static void setUp() {
@@ -73,6 +72,22 @@ public class IsBinaryTest {
 	@DisplayName( "It returns false for non-binary values" )
 	@Test
 	public void testFalseConditions() {
+		instance.executeSource(
+		    """
+		    aFloat    = isBinary( 1.1 );
+		    anArray   = isBinary( [ true, false ] );
+		    aString   = isBinary( "randomstring" );
+		    aStruct   = isBinary( {} );
+		    anInteger = isBinary( 0 );
+		    aTrue     = isBinary( true );
+		    """,
+		    context );
+		assertThat( ( Boolean ) variables.dereference( Key.of( "aFloat" ), false ) ).isFalse();
+		assertThat( ( Boolean ) variables.dereference( Key.of( "anArray" ), false ) ).isFalse();
+		assertThat( ( Boolean ) variables.dereference( Key.of( "aString" ), false ) ).isFalse();
+		assertThat( ( Boolean ) variables.dereference( Key.of( "aStruct" ), false ) ).isFalse();
+		assertThat( ( Boolean ) variables.dereference( Key.of( "anInteger" ), false ) ).isFalse();
+		assertThat( ( Boolean ) variables.dereference( Key.of( "aTrue" ), false ) ).isFalse();
 	}
 
 }

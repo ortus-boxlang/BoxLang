@@ -35,7 +35,7 @@ import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
 
 @Disabled( "Unimplemented" )
-public class IsClosureTest {
+public class IsEmptyTest {
 
 	static BoxRuntime	instance;
 	static IBoxContext	context;
@@ -59,34 +59,42 @@ public class IsClosureTest {
 	}
 
 
-	@DisplayName( "It detects closures" )
+	@DisplayName( "It detects empty values" )
 	@Test
 	public void testTrueConditions() {
 		instance.executeSource(
 		    """
-			closure = isClosure( function(){} ) );
-			arrowFunction = isClosure( () => {} ) );
-
-			myFunc = function() {};
-			functionReference = isClosure( myFunc );
+				emptyString = isEmpty( "" );
+				emptyArray  = isEmpty( [] );
+				emptyStruct = isEmpty( {} );
 		    """,
-		    context
-		);
-		assertThat( ( Boolean ) variables.dereference( Key.of( "closure" ), false ) ).isTrue();
-		assertThat( ( Boolean ) variables.dereference( Key.of( "arrowFunction" ), false ) ).isTrue();
-		assertThat( ( Boolean ) variables.dereference( Key.of( "functionReference" ), false ) ).isTrue();
+		    context );
+		assertThat( ( Boolean ) variables.dereference( Key.of( "emptyString" ), false ) ).isTrue();
+		assertThat( ( Boolean ) variables.dereference( Key.of( "emptyArray" ), false ) ).isTrue();
+		assertThat( ( Boolean ) variables.dereference( Key.of( "emptyStruct" ), false ) ).isTrue();
 	}
-	@DisplayName( "It returns false for non-closure values" )
+
+	@DisplayName( "It returns false for non-empty values" )
 	@Test
 	public void testFalseConditions() {
 		instance.executeSource(
 		    """
-			anInteger = isClosure( 123 );
-			aString = isClosure( "abc" );
+				boolValue    = isEmpty( true );
+				stringValue  = isEmpty( "2" );
+				nestedArray  = isEmpty( [[[],[]]] );
+				nestedStruct = isEmpty( { a : {}, b : {}} );
+				stringArray = isEmpty( [ "abc" ] );
+				structWithValues = isEmpty( { a : "b" } );
+				nestedStructValues = isEmpty( { a : { "name" : "brad" }} );
 		    """,
 		    context );
-		assertThat( ( Boolean ) variables.dereference( Key.of( "anInteger" ), false ) ).isFalse();
-		assertThat( ( Boolean ) variables.dereference( Key.of( "aString" ), false ) ).isFalse();
+		assertThat( ( Boolean ) variables.dereference( Key.of( "boolValue" ), false ) ).isFalse();
+		assertThat( ( Boolean ) variables.dereference( Key.of( "stringValue" ), false ) ).isFalse();
+		assertThat( ( Boolean ) variables.dereference( Key.of( "nestedArray" ), false ) ).isFalse();
+		assertThat( ( Boolean ) variables.dereference( Key.of( "nestedStruct" ), false ) ).isFalse();
+		assertThat( ( Boolean ) variables.dereference( Key.of( "stringArray" ), false ) ).isFalse();
+		assertThat( ( Boolean ) variables.dereference( Key.of( "structWithValues" ), false ) ).isFalse();
+		assertThat( ( Boolean ) variables.dereference( Key.of( "nestedStructValues" ), false ) ).isFalse();
 	}
 
 }

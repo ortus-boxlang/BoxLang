@@ -35,7 +35,7 @@ import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
 
 @Disabled( "Unimplemented" )
-public class IsClosureTest {
+public class IsCustomFunctionTest {
 
 	static BoxRuntime	instance;
 	static IBoxContext	context;
@@ -58,17 +58,16 @@ public class IsClosureTest {
 		variables.clear();
 	}
 
-
-	@DisplayName( "It detects closures" )
+	@DisplayName( "It detects custom functions" )
 	@Test
 	public void testTrueConditions() {
 		instance.executeSource(
 		    """
-			closure = isClosure( function(){} ) );
-			arrowFunction = isClosure( () => {} ) );
+			closure = isCustomFunction( function(){} ) );
+			arrowFunction = isCustomFunction( () => {} ) );
 
 			myFunc = function() {};
-			functionReference = isClosure( myFunc );
+			functionReference = isCustomFunction( myFunc );
 		    """,
 		    context
 		);
@@ -76,13 +75,13 @@ public class IsClosureTest {
 		assertThat( ( Boolean ) variables.dereference( Key.of( "arrowFunction" ), false ) ).isTrue();
 		assertThat( ( Boolean ) variables.dereference( Key.of( "functionReference" ), false ) ).isTrue();
 	}
-	@DisplayName( "It returns false for non-closure values" )
+	@DisplayName( "It returns false for non-custom functions" )
 	@Test
 	public void testFalseConditions() {
 		instance.executeSource(
 		    """
-			anInteger = isClosure( 123 );
-			aString = isClosure( "abc" );
+			anInteger = isCustomFunction( 123 );
+			aString = isCustomFunction( "abc" );
 		    """,
 		    context );
 		assertThat( ( Boolean ) variables.dereference( Key.of( "anInteger" ), false ) ).isFalse();

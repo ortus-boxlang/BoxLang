@@ -40,7 +40,6 @@ public class IsBooleanTest {
 	static BoxRuntime	instance;
 	static IBoxContext	context;
 	static IScope		variables;
-	static Key			result	= new Key( "result" );
 
 	@BeforeAll
 	public static void setUp() {

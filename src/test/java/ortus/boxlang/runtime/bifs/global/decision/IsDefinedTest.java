@@ -35,7 +35,7 @@ import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
 
 @Disabled( "Unimplemented" )
-public class IsClosureTest {
+public class IsDefinedTest {
 
 	static BoxRuntime	instance;
 	static IBoxContext	context;
@@ -59,34 +59,44 @@ public class IsClosureTest {
 	}
 
 
-	@DisplayName( "It detects closures" )
+	@DisplayName( "It detects binary values" )
 	@Test
 	public void testTrueConditions() {
 		instance.executeSource(
 		    """
-			closure = isClosure( function(){} ) );
-			arrowFunction = isClosure( () => {} ) );
+		    var result = true;
+			variableName = "result";
+			variables.foo = "bar";
 
-			myFunc = function() {};
-			functionReference = isClosure( myFunc );
+			stringVarName     = isDefined( "result" );
+			variableReference = isDefined( variableName );
+			localReference    = isDefined( "local.result" );
+			variableScope     = isDefined( "variables.foo" );
 		    """,
-		    context
-		);
-		assertThat( ( Boolean ) variables.dereference( Key.of( "closure" ), false ) ).isTrue();
-		assertThat( ( Boolean ) variables.dereference( Key.of( "arrowFunction" ), false ) ).isTrue();
-		assertThat( ( Boolean ) variables.dereference( Key.of( "functionReference" ), false ) ).isTrue();
+		    context );
+		assertThat( ( Boolean ) variables.dereference( Key.of( "stringVarName" ), false ) ).isTrue();
+		assertThat( ( Boolean ) variables.dereference( Key.of( "variableReference" ), false ) ).isTrue();
+		assertThat( ( Boolean ) variables.dereference( Key.of( "localReference" ), false ) ).isTrue();
+		assertThat( ( Boolean ) variables.dereference( Key.of( "variableScope" ), false ) ).isTrue();
 	}
-	@DisplayName( "It returns false for non-closure values" )
+	@DisplayName( "It returns false for non-binary values" )
 	@Test
 	public void testFalseConditions() {
 		instance.executeSource(
 		    """
-			anInteger = isClosure( 123 );
-			aString = isClosure( "abc" );
+			variableName = "result";
+			variables.foo = "bar";
+
+			stringVarName     = isDefined( "doesntexist" );
+			variableReference = isDefined( variableName );
+			localReference    = isDefined( "local.result" );
+			variableScope     = isDefined( "variables.foo" );
 		    """,
 		    context );
-		assertThat( ( Boolean ) variables.dereference( Key.of( "anInteger" ), false ) ).isFalse();
-		assertThat( ( Boolean ) variables.dereference( Key.of( "aString" ), false ) ).isFalse();
+		assertThat( ( Boolean ) variables.dereference( Key.of( "stringVarName" ), false ) ).isFalse();
+		assertThat( ( Boolean ) variables.dereference( Key.of( "variableReference" ), false ) ).isFalse();
+		assertThat( ( Boolean ) variables.dereference( Key.of( "localReference" ), false ) ).isFalse();
+		assertThat( ( Boolean ) variables.dereference( Key.of( "variableScope" ), false ) ).isFalse();
 	}
 
 }
