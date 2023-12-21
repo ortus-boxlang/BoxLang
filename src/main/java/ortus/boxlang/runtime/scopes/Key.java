@@ -49,6 +49,8 @@ public class Key {
 	public static final Key	message			= Key.of( "message" );
 	public static final Key	merge			= Key.of( "merge" );
 	public static final Key	string			= Key.of( "string" );
+	public static final Key	string1			= Key.of( "string1" );
+	public static final Key	string2			= Key.of( "string2" );
 
 	public static final Key	contains		= Key.of( "contains" );
 	public static final Key	find			= Key.of( "find" );
@@ -214,9 +216,9 @@ public class Key {
 
 	/**
 	 * A little helper to decide if a byte represents a digit 0-9
-	 * 
+	 *
 	 * @param b The byte to check
-	 * 
+	 *
 	 * @return True if the byte is a digit
 	 */
 	private static boolean isDigit( byte b ) {
