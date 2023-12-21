@@ -64,14 +64,18 @@ public class IsEmptyTest {
 	public void testTrueConditions() {
 		instance.executeSource(
 		    """
-				emptyString = isEmpty( "" );
-				emptyArray  = isEmpty( [] );
-				emptyStruct = isEmpty( {} );
+				emptyString           = isEmpty( "" );
+				emptyArray            = isEmpty( [] );
+				emptyStruct           = isEmpty( {} );
+				emptyQueryNoColumns   = isEmpty( queryNew( "" ) );
+				emptyQueryWithColumns = isEmpty( queryNew( "name,age,dateModified" ) );
 		    """,
 		    context );
 		assertThat( ( Boolean ) variables.dereference( Key.of( "emptyString" ), false ) ).isTrue();
 		assertThat( ( Boolean ) variables.dereference( Key.of( "emptyArray" ), false ) ).isTrue();
 		assertThat( ( Boolean ) variables.dereference( Key.of( "emptyStruct" ), false ) ).isTrue();
+		assertThat( ( Boolean ) variables.dereference( Key.of( "emptyQueryNoColumns" ), false ) ).isTrue();
+		assertThat( ( Boolean ) variables.dereference( Key.of( "emptyQueryWithColumns" ), false ) ).isTrue();
 	}
 
 	@DisplayName( "It returns false for non-empty values" )
