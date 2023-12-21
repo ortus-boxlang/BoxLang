@@ -12,7 +12,7 @@
  * BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language
  * governing permissions and limitations under the License.
  */
-package ortus.boxlang.runtime.bifs.global.array;
+package ortus.boxlang.runtime.bifs.global.math;
 
 import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
@@ -21,34 +21,32 @@ import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
-import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.BoxLangType;
 
 @BoxBIF
-@BoxMember( type = BoxLangType.ARRAY )
-public class ArrayLen extends BIF {
+@BoxMember( type = BoxLangType.NUMERIC, name = "Floor" )
+public class Floor extends BIF {
 
 	/**
 	 * Constructor
 	 */
-	public ArrayLen() {
+	public Floor() {
 		super();
 		declaredArguments = new Argument[] {
-		    new Argument( true, "array", Key.array )
+		    new Argument( true, "numeric", Key.number )
 		};
 	}
 
 	/**
-	 * Return length of array
+	 * Returns the absolute value of a number
 	 * 
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 * 
-	 * @argument.array The array to return length of
+	 * @argument.value The number to return the absolute value of
 	 */
 	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
-		Array actualArray = arguments.getAsArray( Key.array );
-		return actualArray.size();
+		return Math.floor( arguments.getAsDouble( Key.number ) );
 	}
 
 }
