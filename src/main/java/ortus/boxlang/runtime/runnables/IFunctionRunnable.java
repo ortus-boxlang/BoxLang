@@ -25,9 +25,4 @@ public interface IFunctionRunnable extends IBoxRunnable {
 	 * --------------------------------------------------------------------------
 	 */
 
-	/**
-	 * An instance of the runnable class that declared this function
-	 */
-	public IBoxRunnable getDeclaringRunnable();
-
 }

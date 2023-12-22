@@ -14,12 +14,7 @@
  */
 package ortus.boxlang.transpiler.transformer.statement;
 
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.attribute.FileTime;
 import java.time.LocalDateTime;
-import java.time.ZoneId;
-import java.time.format.DateTimeFormatter;
 import java.util.Map;
 
 import com.github.javaparser.ParseResult;
@@ -74,8 +69,8 @@ public class BoxScriptTransformer extends AbstractTransformer {
 
 			private static final List<ImportDefinition>	imports			= List.of();
 			private static final Path					path			= Paths.get( "${fileFolderPath}" );
-			private static final long					compileVersion	= 1L;
-			private static final LocalDateTime			compiledOn		= LocalDateTime.parse( "2023-09-27T10:15:30" );
+			private static final long					compileVersion	= ${compileVersion};
+			private static final LocalDateTime			compiledOn		= ${compiledOnTimestamp};
 			private static final Object					ast				= null;
 			public static final Key[]					keys			= new Key[] {};
 
@@ -117,7 +112,7 @@ public class BoxScriptTransformer extends AbstractTransformer {
 				* The AST (abstract syntax tree) of the runnable
 			*/
 			public Object getRunnableAST() {
-			return ${className}.ast;
+				return ${className}.ast;
 			}
 
 			/**
@@ -150,27 +145,13 @@ public class BoxScriptTransformer extends AbstractTransformer {
 	@Override
 	public Node transform( BoxNode node, TransformerContext context ) throws IllegalStateException {
 
-		BoxScript	script			= ( BoxScript ) node;
-		Source		source			= script.getPosition().getSource();
-		String		packageName		= transpiler.getProperty( "packageName" );
-		String		className		= transpiler.getProperty( "classname" );
-		String		fileName		= source instanceof SourceFile file && file.getFile() != null ? file.getFile().getName() : "unknown";
-		String		fileExt			= fileName.substring( fileName.lastIndexOf( "." ) + 1 );
-		String		filePath		= source instanceof SourceFile file && file.getFile() != null ? file.getFile().getAbsolutePath() : "unknown";
-		// LocalDateTime lastModified = LocalDateTime.now();
-		// LocalDateTime lastCompiled = LocalDateTime.now();
-		String		lastModified	= getDateTime( LocalDateTime.now() );
-		String		compiledOn		= getDateTime( LocalDateTime.now() );
-
-		try {
-			if ( source instanceof SourceFile file && file.getFile() != null ) {
-				FileTime		fileTime	= Files.getLastModifiedTime( file.getFile().toPath() );
-				LocalDateTime	ldt			= LocalDateTime.ofInstant( fileTime.toInstant(), ZoneId.systemDefault() );
-				lastModified = getDateTime( ldt );
-			}
-		} catch ( IOException e ) {
-			throw new IllegalStateException();
-		}
+		BoxScript	script		= ( BoxScript ) node;
+		Source		source		= script.getPosition().getSource();
+		String		packageName	= transpiler.getProperty( "packageName" );
+		String		className	= transpiler.getProperty( "classname" );
+		String		fileName	= source instanceof SourceFile file && file.getFile() != null ? file.getFile().getName() : "unknown";
+		String		fileExt		= fileName.substring( fileName.lastIndexOf( "." ) + 1 );
+		String		filePath	= source instanceof SourceFile file && file.getFile() != null ? file.getFile().getAbsolutePath() : "unknown";
 
 		//
 		className	= transpiler.getProperty( "classname" ) != null ? transpiler.getProperty( "classname" ) : className;
@@ -179,8 +160,7 @@ public class BoxScriptTransformer extends AbstractTransformer {
 		String	returnType	= baseClass.equals( "BoxScript" ) ? "Object" : "void";
 		returnType = transpiler.getProperty( "returnType" ) != null ? transpiler.getProperty( "returnType" ) : returnType;
 
-		String							finalLastModified	= lastModified;
-		Map<String, String>				values				= Map.ofEntries(
+		Map<String, String>				values	= Map.ofEntries(
 		    Map.entry( "packagename", packageName ),
 		    Map.entry( "className", className ),
 		    Map.entry( "fileName", fileName ),
@@ -188,11 +168,10 @@ public class BoxScriptTransformer extends AbstractTransformer {
 		    Map.entry( "returnType", returnType ),
 		    Map.entry( "fileExtension", fileExt ),
 		    Map.entry( "fileFolderPath", filePath.replaceAll( "\\\\", "\\\\\\\\" ) ),
-		    Map.entry( "lastModifiedTimestamp", finalLastModified ),
-		    Map.entry( "compiledOnTimestamp", compiledOn ),
+		    Map.entry( "compiledOnTimestamp", transpiler.getDateTime( LocalDateTime.now() ) ),
 		    Map.entry( "compileVersion", "1L" )
 		);
-		String							code				= PlaceholderHelper.resolve( template, values );
+		String							code	= PlaceholderHelper.resolve( template, values );
 		ParseResult<CompilationUnit>	result;
 
 		try {
@@ -209,9 +188,4 @@ public class BoxScriptTransformer extends AbstractTransformer {
 		return result.getResult().get();
 	}
 
-	private String getDateTime( LocalDateTime locaTime ) {
-		DateTimeFormatter formatter = DateTimeFormatter.ofPattern( "yyyy-MM-dd'T'hh:mm:ss" );
-
-		return "LocalDateTime.parse(\"" + formatter.format( locaTime ) + "\")";
-	}
 }

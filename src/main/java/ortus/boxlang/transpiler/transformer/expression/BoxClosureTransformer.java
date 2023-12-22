@@ -14,6 +14,7 @@
  */
 package ortus.boxlang.transpiler.transformer.expression;
 
+import java.time.LocalDateTime;
 import java.util.Map;
 
 import com.github.javaparser.ParseResult;
@@ -67,12 +68,16 @@ public class BoxClosureTransformer extends AbstractTransformer {
 
   		public class ${classname} extends Closure {
 			private static ${classname}				instance;
-			private final static Key				name		= Closure.defaultName;;
+			private final static Key				name		= Closure.defaultName;
 			private final static Argument[]			arguments	= new Argument[] {};
 			private final static String				returnType	= "any";
 
 		    private final static Struct			annotations			= Struct.EMPTY;
 			private final static Struct			documentation		= Struct.EMPTY;
+			
+			private static final long					compileVersion	= ${compileVersion};
+			private static final LocalDateTime			compiledOn		= ${compiledOnTimestamp};
+			private static final Object					ast				= null;
 
 
 			public Key getName() {
@@ -89,28 +94,16 @@ public class BoxClosureTransformer extends AbstractTransformer {
    				return Access.PUBLIC;
    			}
 
-			public String getHint() {
-				return "";
-			}
-
-   			public  Map<Key, Object> getAdditionalMetadata() {
-   				return null;
-   			}
-
 			public  long getRunnableCompileVersion() {
-				return 0L;
+				return ${className}.compileVersion;
 			}
 
 			public LocalDateTime getRunnableCompiledOn() {
-				return null;
-			}
-
-			public IBoxRunnable getDeclaringRunnable() {
-				return null;
+				return ${className}.compiledOn;
 			}
 
 			public Object getRunnableAST() {
-				return null;
+				return ${className}.ast;
 			}
 
 			public ${classname}( IBoxContext declaringContext  ) {
@@ -118,8 +111,8 @@ public class BoxClosureTransformer extends AbstractTransformer {
 			}
 
 			@Override
-      			public List<ImportDefinition> getImports() {
-      			return null;
+			public List<ImportDefinition> getImports() {
+				return imports;
       		}
 
 			@Override
@@ -166,7 +159,9 @@ public class BoxClosureTransformer extends AbstractTransformer {
 		    Map.entry( "className", className ),
 		    Map.entry( "closureName", closureName ),
 		    Map.entry( "enclosingClassName", enclosingClassName ),
-		    Map.entry( "contextName", transpiler.peekContextName() )
+		    Map.entry( "contextName", transpiler.peekContextName() ),
+		    Map.entry( "compiledOnTimestamp", transpiler.getDateTime( LocalDateTime.now() ) ),
+		    Map.entry( "compileVersion", "1L" )
 		);
 		transpiler.pushContextName( "context" );
 		String							code	= PlaceholderHelper.resolve( template, values );

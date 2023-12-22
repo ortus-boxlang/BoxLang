@@ -27,7 +27,6 @@ import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.LambdaBoxContext;
 import ortus.boxlang.runtime.dynamic.casters.CastAttempt;
 import ortus.boxlang.runtime.dynamic.casters.GenericCaster;
-import ortus.boxlang.runtime.runnables.IBoxRunnable;
 import ortus.boxlang.runtime.runnables.IFunctionRunnable;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
@@ -246,11 +245,6 @@ public abstract class Function implements IType, IFunctionRunnable {
 	 * The AST (abstract syntax tree) of the runnable
 	 */
 	public abstract Object getRunnableAST();
-
-	/**
-	 * Get the instance of the runnable class that declared this function
-	 */
-	public abstract IBoxRunnable getDeclaringRunnable();
 
 	/**
 	 * Get the combined metadata for this function and all it's parameters

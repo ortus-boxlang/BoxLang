@@ -22,6 +22,8 @@ import java.lang.reflect.Method;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLClassLoader;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -203,5 +205,11 @@ public abstract class Transpiler implements ITranspiler {
 
 	public Map<String, BoxExpr> getKeys() {
 		return keys;
+	}
+
+	public String getDateTime( LocalDateTime locaTime ) {
+		DateTimeFormatter formatter = DateTimeFormatter.ofPattern( "yyyy-MM-dd'T'hh:mm:ss" );
+
+		return "LocalDateTime.parse(\"" + formatter.format( locaTime ) + "\")";
 	}
 }

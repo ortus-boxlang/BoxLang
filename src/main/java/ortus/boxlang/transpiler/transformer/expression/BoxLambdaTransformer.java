@@ -14,6 +14,7 @@
  */
 package ortus.boxlang.transpiler.transformer.expression;
 
+import java.time.LocalDateTime;
 import java.util.Map;
 
 import com.github.javaparser.ParseResult;
@@ -70,12 +71,16 @@ public class BoxLambdaTransformer extends AbstractTransformer {
 
   		public class ${classname} extends Lambda {
 			private static ${classname}				instance;
-			private final static Key				name		= Key.of( "Lambda" );
+			private final static Key				name		= Lambda.defaultName;
 			private final static Argument[]			arguments	= new Argument[] {};
 			private final static String				returnType	= "any";
 
-		    private final static Struct			annotations			= Struct.EMPTY;
-			private final static Struct			documentation		= Struct.EMPTY;
+		    private final static Struct				annotations			= Struct.EMPTY;
+			private final static Struct				documentation		= Struct.EMPTY;
+			
+			private static final long					compileVersion	= ${compileVersion};
+			private static final LocalDateTime			compiledOn		= ${compiledOnTimestamp};
+			private static final Object					ast				= null;
 
 
 			public Key getName() {
@@ -92,28 +97,16 @@ public class BoxLambdaTransformer extends AbstractTransformer {
    				return Access.PUBLIC;
    			}
 
-			public String getHint() {
-				return "";
-			}
-
-   			public  Map<Key, Object> getAdditionalMetadata() {
-   				return null;
-   			}
-
 			public  long getRunnableCompileVersion() {
-				return 0L;
+				return ${className}.compileVersion;
 			}
 
 			public LocalDateTime getRunnableCompiledOn() {
 				return null;
 			}
-
-			public IBoxRunnable getDeclaringRunnable() {
-				return null;
-			}
-
+			
 			public Object getRunnableAST() {
-				return null;
+				return ${className}.ast;
 			}
 
 			private ${classname}() {
@@ -128,8 +121,8 @@ public class BoxLambdaTransformer extends AbstractTransformer {
 			}
 
 			@Override
-      			public List<ImportDefinition> getImports() {
-      			return null;
+			public List<ImportDefinition> getImports() {
+				return imports;
       		}
 
 			@Override
@@ -175,7 +168,9 @@ public class BoxLambdaTransformer extends AbstractTransformer {
 		    Map.entry( "packageName", packageName ),
 		    Map.entry( "className", className ),
 		    Map.entry( "lambdaName", lambdaName ),
-		    Map.entry( "enclosingClassName", enclosingClassName )
+		    Map.entry( "enclosingClassName", enclosingClassName ),
+		    Map.entry( "compiledOnTimestamp", transpiler.getDateTime( LocalDateTime.now() ) ),
+		    Map.entry( "compileVersion", "1L" )
 		);
 		transpiler.pushContextName( "context" );
 		String							code	= PlaceholderHelper.resolve( template, values );

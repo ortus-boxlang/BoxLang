@@ -14,6 +14,7 @@
  */
 package ortus.boxlang.transpiler.transformer.statement;
 
+import java.time.LocalDateTime;
 import java.util.Map;
 
 import com.github.javaparser.ParseResult;
@@ -51,11 +52,14 @@ public class BoxFunctionDeclarationTransformer extends AbstractTransformer {
 			private final static Key				name		= Key.of( "${functionName}" );
 			private final static Argument[]			arguments	= new Argument[] {};
 			private final static String				returnType	= "${returnType}";
-			private              Access		    access		= Access.${access};
+			private              Access		   		access		= Access.${access};
 
 			private final static Struct	annotations;
-
 			private final static Struct	documentation;
+			
+			private static final long					compileVersion	= ${compileVersion};
+			private static final LocalDateTime			compiledOn		= ${compiledOnTimestamp};
+			private static final Object					ast				= null;
 
 			public Key getName() {
 				return name;
@@ -71,32 +75,16 @@ public class BoxFunctionDeclarationTransformer extends AbstractTransformer {
    				return access;
    			}
 
-			public  boolean isOutput() {
-				return false;
-			}
-
-			public String getHint() {
-				return "";
-			}
-
-   			public  Map<Key, Object> getAdditionalMetadata() {
-   				return null;
-   			}
-
 			public  long getRunnableCompileVersion() {
-				return 0L;
+				return ${className}.compileVersion;
 			}
 
 			public LocalDateTime getRunnableCompiledOn() {
-				return null;
-			}
-
-			public IBoxRunnable getDeclaringRunnable() {
-				return null;
+				return ${className}.compiledOn;
 			}
 
 			public Object getRunnableAST() {
-				return null;
+				return ${className}.ast;
 			}
 
 			private ${classname}() {
@@ -121,7 +109,7 @@ public class BoxFunctionDeclarationTransformer extends AbstractTransformer {
 			}
 			
 			public List<ImportDefinition> getImports() {
-				return null;
+				return imports;
 			}
 
 			@Override
@@ -160,7 +148,9 @@ public class BoxFunctionDeclarationTransformer extends AbstractTransformer {
 			    Map.entry( "access", function.getAccessModifier().toString().toUpperCase() ),
 			    Map.entry( "functionName", function.getName() ),
 			    Map.entry( "returnType", function.getType().getType().name() ),
-			    Map.entry( "enclosingClassName", enclosingClassName )
+			    Map.entry( "enclosingClassName", enclosingClassName ),
+			    Map.entry( "compiledOnTimestamp", transpiler.getDateTime( LocalDateTime.now() ) ),
+			    Map.entry( "compileVersion", "1L" )
 			);
 			transpiler.pushContextName( "context" );
 

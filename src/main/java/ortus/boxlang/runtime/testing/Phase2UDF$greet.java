@@ -196,11 +196,4 @@ public class Phase2UDF$greet extends UDF {
 		return Phase2UDF$greet.ast;
 	}
 
-	/**
-	 * An instance of the runnable class that declared this function
-	 */
-	public IBoxRunnable getDeclaringRunnable() {
-		return Phase2UDF$greet.declaringRunnable;
-	}
-
 }

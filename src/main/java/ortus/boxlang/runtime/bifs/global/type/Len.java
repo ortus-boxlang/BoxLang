@@ -46,6 +46,9 @@ public class Len extends BIF {
 	public Len() {
 		super();
 		declaredArguments = new Argument[] {
+			// TODO: structCount calls the arg "struct" so we need to support that
+			// Basically add a second param and check both. This really only matters
+			// if someone calls the BIF with named args, which is quite rare.
 		    new Argument( true, "any", Key.value )
 		};
 	}

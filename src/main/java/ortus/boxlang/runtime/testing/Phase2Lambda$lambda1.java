@@ -171,12 +171,4 @@ public class Phase2Lambda$lambda1 extends Lambda {
 	public Object getRunnableAST() {
 		return Phase2Lambda$lambda1.ast;
 	}
-
-	/**
-	 * An instance of the runnable class that declared this function
-	 */
-	public IBoxRunnable getDeclaringRunnable() {
-		return Phase2Lambda$lambda1.declaringRunnable;
-	}
-
 }
