@@ -71,6 +71,8 @@ public class BoxClassTransformer extends AbstractTransformer {
 		import ortus.boxlang.runtime.types.exceptions.*;
 		import ortus.boxlang.runtime.runnables.IClassRunnable;
 		import ortus.boxlang.runtime.dynamic.IReferenceable;
+		import ortus.boxlang.runtime.context.FunctionBoxContext;
+		import ortus.boxlang.runtime.context.ClassBoxContext;
 
 		import java.nio.file.Path;
 		import java.nio.file.Paths;
@@ -175,10 +177,9 @@ public class BoxClassTransformer extends AbstractTransformer {
 			 * @param key   The key to assign
 			 * @param value The value to assign
 			 */
-			@Override
 			public Object assign( Key key, Object value ) {
-				// TODO: properties, implicit setters
-				// put( key, value );
+				// TODO: implicit setters
+				thisScope.assign( key, value );
 				return value;
 			}
 
@@ -190,10 +191,9 @@ public class BoxClassTransformer extends AbstractTransformer {
 			 *
 			 * @return The requested object
 			 */
-			@Override
 			public Object dereference( Key key, Boolean safe ) {
-				// TODO: properties, implicit getters
-				return null;
+				// TODO: implicit getters
+				return thisScope.dereference( key, safe );
 			}
 
 			/**
@@ -207,19 +207,25 @@ public class BoxClassTransformer extends AbstractTransformer {
 			 */
 			public Object dereferenceAndInvoke( IBoxContext context, Key name, Object[] positionalArguments, Boolean safe ) {
 				// TODO: component member methods?
-
-				Object value = variablesScope.get( name );
+				
+				Object value = thisScope.get( name );
 				if ( value != null ) {
 
 					if ( value instanceof Function function ) {
-						return function.invoke(
-							Function.generateFunctionContext(
+						FunctionBoxContext functionContext = Function.generateFunctionContext(
 								function,
-								context.getFunctionParentContext(),
+								// Function contexts' parent is the caller.  The function will "know" about the CFC it's executing in 
+								// because we've pushed the CFC onto the template stack in the function context.
+								context,
 								name,
 								function.createArgumentsScope( positionalArguments )
-							)
-						);
+							);
+							functionContext.pushTemplate( this );
+						try {
+							return function.invoke( functionContext );
+						} finally{
+							functionContext.popTemplate();
+						}
 					} else {
 						throw new BoxRuntimeException(
 							"key '" + name.getName() + "' of type  '" + value.getClass().getName() + "'  is not a function " );
@@ -240,17 +246,23 @@ public class BoxClassTransformer extends AbstractTransformer {
 			 */
 			public Object dereferenceAndInvoke( IBoxContext context, Key name, Map<Key, Object> namedArguments, Boolean safe ) {
 
-				Object value = variablesScope.get( name );
+				Object value = thisScope.get( name );
 				if ( value != null ) {
 					if ( value instanceof Function function ) {
-						return function.invoke(
-							Function.generateFunctionContext(
+						FunctionBoxContext functionContext = Function.generateFunctionContext(
 								function,
-								context.getFunctionParentContext(),
+								// Function contexts' parent is the caller.  The function will "know" about the CFC it's executing in 
+								// because we've pushed the CFC onto the template stack in the function context.
+								context,
 								name,
 								function.createArgumentsScope( namedArguments )
-							)
-						);
+							);
+							functionContext.pushTemplate( this );
+						try {
+							return function.invoke( functionContext );
+						} finally{
+							functionContext.popTemplate();
+						}
 					} else {
 						throw new BoxRuntimeException(
 							"key '" + name.getName() + "' of type  '" + value.getClass().getName() + "'  is not a function "

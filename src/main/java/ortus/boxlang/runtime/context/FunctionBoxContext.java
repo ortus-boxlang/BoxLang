@@ -17,10 +17,12 @@
  */
 package ortus.boxlang.runtime.context;
 
+import ortus.boxlang.runtime.runnables.IClassRunnable;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.LocalScope;
+import ortus.boxlang.runtime.scopes.VariablesScope;
 import ortus.boxlang.runtime.types.Function;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
@@ -145,8 +147,23 @@ public class FunctionBoxContext extends BaseBoxContext {
 			return null;
 		}
 
-		// A UDF is "transparent" and can see everything in the parent scope as a "local" observer
-		return parent.scopeFindNearby( key, defaultScope );
+		if ( isInClass() ) {
+			// A function executing in a class can see the class variables
+			IScope classVariablesScope = ( ( IClassRunnable ) templates.peek() ).getVariablesScope();
+
+			result = classVariablesScope.getRaw( key );
+			// Null means not found
+			if ( result != null ) {
+				// Unwrap the value now in case it was really actually null for real
+				return new ScopeSearchResult( classVariablesScope, Struct.unWrapNull( result ) );
+			}
+
+			// A component cannot see nearby scopes above it
+			return parent.scopeFind( key, defaultScope );
+		} else {
+			// A UDF is "transparent" and can see everything in the parent scope as a "local" observer
+			return parent.scopeFindNearby( key, defaultScope );
+		}
 
 	}
 
@@ -198,8 +215,16 @@ public class FunctionBoxContext extends BaseBoxContext {
 			return null;
 		}
 
-		// The FunctionBoxContext has no "global" scopes, so just defer to parent
-		return parent.getScopeNearby( name );
+		if ( isInClass() ) {
+			if ( name.equals( VariablesScope.name ) ) {
+				return ( ( IClassRunnable ) templates.peek() ).getVariablesScope();
+			}
+			// A component cannot see nearby scopes above it
+			return parent.getScope( name );
+		} else {
+			// The FunctionBoxContext has no "global" scopes, so just defer to parent
+			return parent.getScopeNearby( name );
+		}
 	}
 
 	/**
@@ -232,6 +257,24 @@ public class FunctionBoxContext extends BaseBoxContext {
 	public IBoxContext getFunctionParentContext() {
 		// If a function is executed inside another function, it uses the parent since there is nothing a function can "see" from inside it's calling function
 		return getParent();
+	}
+
+	/**
+	 * Detects of this Function is executing in the context of a class
+	 * 
+	 * @return true if there is an IClassRunnable at the top of the template stack
+	 */
+	public boolean isInClass() {
+		return templates.peek() instanceof IClassRunnable;
+	}
+
+	/**
+	 * Detects of this Function is executing in the context of a class
+	 * 
+	 * @return true if there is an IClassRunnable at the top of the template stack
+	 */
+	public IClassRunnable getThisClass() {
+		return ( IClassRunnable ) templates.peek();
 	}
 
 }

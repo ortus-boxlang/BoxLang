@@ -17,6 +17,7 @@
  */
 package ortus.boxlang.runtime.context;
 
+import ortus.boxlang.runtime.runnables.IClassRunnable;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Struct;
@@ -34,12 +35,17 @@ public class ClassBoxContext extends BaseBoxContext {
 	/**
 	 * The arguments scope
 	 */
-	protected IScope	variablesScope;
+	protected IScope			variablesScope;
 
 	/**
 	 * The local scope
 	 */
-	protected IScope	thisScope;
+	protected IScope			thisScope;
+
+	/**
+	 * The local scope
+	 */
+	protected IClassRunnable	thisClass;
 
 	/**
 	 * Creates a new execution context with a bounded function instance and parent context
@@ -47,10 +53,10 @@ public class ClassBoxContext extends BaseBoxContext {
 	 * @param parent   The parent context
 	 * @param function The function being invoked with this context
 	 */
-	public ClassBoxContext( IBoxContext parent, IScope variablesScope, IScope thisScope ) {
+	public ClassBoxContext( IBoxContext parent, IClassRunnable thisClass ) {
 		super( parent );
-		this.variablesScope	= variablesScope;
-		this.thisScope		= thisScope;
+		this.variablesScope	= thisClass.getVariablesScope();
+		this.thisScope		= thisClass.getThisScope();
 
 		if ( parent == null ) {
 			throw new BoxRuntimeException( "Parent context cannot be null for ClassBoxContext" );
@@ -160,5 +166,9 @@ public class ClassBoxContext extends BaseBoxContext {
 		if ( udf.getAccess() == UDF.Access.PUBLIC ) {
 			thisScope.put( udf.getName(), udf );
 		}
+	}
+
+	public IClassRunnable getThisClass() {
+		return thisClass;
 	}
 }

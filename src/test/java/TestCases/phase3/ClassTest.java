@@ -18,6 +18,7 @@
 package TestCases.phase3;
 
 import static com.google.common.truth.Truth.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -33,7 +34,9 @@ import ortus.boxlang.runtime.runnables.IClassRunnable;
 import ortus.boxlang.runtime.runnables.RunnableLoader;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
+import ortus.boxlang.runtime.scopes.RequestScope;
 import ortus.boxlang.runtime.scopes.VariablesScope;
+import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
 public class ClassTest {
 
@@ -63,34 +66,72 @@ public class ClassTest {
 	@Test
 	public void testBasicClass() {
 
-		IClassRunnable	cfc		= RunnableLoader.getInstance().loadClass(
+		IClassRunnable	cfc				= RunnableLoader.getInstance().loadClass(
 		    """
-		         import foo;
+		               import foo;
+		      import java.lang.System;
 
-		      /**
-		       * This is my class description
-		       *
-		       * @brad wood
-		       * @luis
-		       */
-		         @foo "bar"
-		         component extends="com.brad.Wood" implements="Luis,Jorge" singleton gavin="pickin" inject {
-		         	variables.setup=true;
-		         		function init() {}
-		            function foo() {
-		    		return "I work!";
-		    	}
-		    }
-		      }
+		            /**
+		             * This is my class description
+		             *
+		             * @brad wood
+		             * @luis
+		             */
+		               @foo "bar"
+		               component extends="com.brad.Wood" implements="Luis,Jorge" singleton gavin="pickin" inject {
+		               	variables.setup=true;
+		     System.out.println( "word" );
+		       request.foo="bar";
+		    isInitted = false;
+		       printLn( foo() )
+		               		function init() {
+		    				isInitted = true;
+		    		}
+		                  function foo() {
+		          		return "I work! #bar()# #variables.setup# #setup# #request.foo# #isInitted#";
+		          	}
+		        private function bar() {
+		        	return "whee";
+		        }
+		     function getThis() {
+		     return this;
+		     }
+		     function runThisFoo() {
+		     return this.foo();
+		     }
+		          }
+		            }
 
-		         }
+		               }
 
 
-		           """ );
-		IBoxContext		context	= new ClassBoxContext( instance.getRuntimeContext(), cfc.getVariablesScope(), cfc.getThisScope() );
-		cfc.pseudoConstructor( context );
-		Object funcResult = cfc.dereferenceAndInvoke( context, Key.of( "foo" ), new Object[] {}, false );
-		assertThat( funcResult ).isEqualTo( "I work!" );
+		                 """ );
+		IBoxContext		classContext	= new ClassBoxContext( context, cfc );
+		cfc.pseudoConstructor( classContext );
+		// Call constructor
+		if ( cfc.dereference( Key.init, true ) != null ) {
+			cfc.dereferenceAndInvoke( classContext, Key.init, new Object[] {}, false );
+		}
+
+		// execute public method
+		Object		funcResult	= cfc.dereferenceAndInvoke( classContext, Key.of( "foo" ), new Object[] {}, false );
+
+		// private methods error
+		Throwable	t			= assertThrows( BoxRuntimeException.class,
+		    () -> cfc.dereferenceAndInvoke( classContext, Key.of( "bar" ), new Object[] {}, false ) );
+		assertThat( t.getMessage().contains( "bar" ) ).isTrue();
+
+		// Can call public method that accesses private method, and variables, and request scope
+		assertThat( funcResult ).isEqualTo( "I work! whee true true bar true" );
+		assertThat( context.getScope( RequestScope.name ).get( Key.of( "foo" ) ) ).isEqualTo( "bar" );
+
+		// This scope is refernce to actual CFC instance
+		funcResult = cfc.dereferenceAndInvoke( classContext, Key.of( "getThis" ), new Object[] {}, false );
+		assertThat( funcResult ).isEqualTo( cfc );
+
+		// Can call public methods on this
+		funcResult = cfc.dereferenceAndInvoke( classContext, Key.of( "runThisFoo" ), new Object[] {}, false );
+		assertThat( funcResult ).isEqualTo( "I work! whee true true bar true" );
 	}
 
 }

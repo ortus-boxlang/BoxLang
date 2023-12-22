@@ -53,6 +53,7 @@ public class BoxLambdaTransformer extends AbstractTransformer {
 		import ortus.boxlang.runtime.scopes.IScope;
 		import ortus.boxlang.runtime.scopes.Key;
 		import ortus.boxlang.runtime.context.FunctionBoxContext;
+		import ortus.boxlang.runtime.context.ClassBoxContext;
 		import ortus.boxlang.runtime.runnables.IBoxRunnable;
 		import ortus.boxlang.runtime.context.IBoxContext;
 		import ortus.boxlang.runtime.loader.ImportDefinition;
@@ -104,7 +105,7 @@ public class BoxLambdaTransformer extends AbstractTransformer {
 			public LocalDateTime getRunnableCompiledOn() {
 				return null;
 			}
-			
+
 			public Object getRunnableAST() {
 				return ${className}.ast;
 			}
