@@ -108,7 +108,7 @@ public class Phase1 extends BoxTemplate {
 		    // Every class (box|java) is represented as a DynamicObject
 		    classLocator
 		        .load( context, "java:java.lang.String", imports )
-		        .invokeConstructor( new Object[] { "Hello" } ) );
+		        .invokeConstructor( context, new Object[] { "Hello" } ) );
 
 		if ( EqualsEquals.invoke( variablesScope.dereference( Key.of( "GREETING" ), false ), "Hello" ) ) {
 

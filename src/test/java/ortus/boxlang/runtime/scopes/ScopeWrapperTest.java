@@ -20,8 +20,8 @@ package ortus.boxlang.runtime.scopes;
 import static com.google.common.truth.Truth.assertThat;
 import static org.junit.Assert.assertThrows;
 
-import java.util.Map;
 import java.util.List;
+import java.util.Map;
 
 import org.junit.jupiter.api.Test;
 
@@ -49,7 +49,7 @@ public class ScopeWrapperTest {
 		assertThat( variablesScope.containsKey( spoofed ) ).isFalse();
 		assertThrows( KeyNotFoundException.class, () -> variablesScope.dereference( spoofed, false ) );
 
-		List<String> keys = scopeWrapper.getKeys();
+		List<String> keys = scopeWrapper.getKeysAsStrings();
 		assertThat( keys.contains( "InVar" ) ).isTrue();
 		assertThat( keys.contains( "spoofed" ) ).isTrue();
 	}

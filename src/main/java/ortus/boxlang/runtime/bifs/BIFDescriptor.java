@@ -115,7 +115,7 @@ public class BIFDescriptor {
 			synchronized ( this ) {
 				// Double check inside lock
 				if ( this.BIFInstance == null ) {
-					this.BIFInstance = ( BIF ) DynamicObject.of( this.BIFClass ).invokeConstructor().getTargetInstance();
+					this.BIFInstance = ( BIF ) DynamicObject.of( this.BIFClass ).invokeConstructor( ( IBoxContext ) null ).getTargetInstance();
 				}
 			}
 		}

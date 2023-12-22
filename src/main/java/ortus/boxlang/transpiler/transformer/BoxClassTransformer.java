@@ -73,6 +73,8 @@ public class BoxClassTransformer extends AbstractTransformer {
 		import ortus.boxlang.runtime.dynamic.IReferenceable;
 		import ortus.boxlang.runtime.context.FunctionBoxContext;
 		import ortus.boxlang.runtime.context.ClassBoxContext;
+		import ortus.boxlang.runtime.types.meta.BoxMeta;
+		import ortus.boxlang.runtime.types.meta.ClassMeta;
 
 		import java.nio.file.Path;
 		import java.nio.file.Paths;
@@ -82,7 +84,7 @@ public class BoxClassTransformer extends AbstractTransformer {
 		import java.util.Map;
 		import java.util.HashMap;
 
-		public class ${className} implements IClassRunnable, IReferenceable {
+		public class ${className} implements IClassRunnable, IReferenceable, IType {
 
 			private static final List<ImportDefinition>	imports			= List.of();
 			private static final Path					path			= Paths.get( "${fileFolderPath}" );
@@ -90,6 +92,11 @@ public class BoxClassTransformer extends AbstractTransformer {
 			private static final LocalDateTime			compiledOn		= ${compiledOnTimestamp};
 			private static final Object					ast				= null;
 			public static final Key[]					keys			= new Key[] {};
+
+			/**
+			 * Metadata object
+			 */
+			public BoxMeta						$bx;
 
 			private final static Struct	annotations;
 			private final static Struct	documentation;
@@ -101,6 +108,16 @@ public class BoxClassTransformer extends AbstractTransformer {
 			}
 
 			public void pseudoConstructor( IBoxContext context ) {
+				context.pushTemplate( this );
+				try {
+					// TODO: pre/post interceptor announcements here
+					_pseudoConstructor( context );
+				} finally {
+					context.popTemplate();
+				}
+			}
+
+			public void _pseudoConstructor( IBoxContext context ) {
 				ClassLocator classLocator = ClassLocator.getInstance();
 			}
 
@@ -163,7 +180,22 @@ public class BoxClassTransformer extends AbstractTransformer {
 				return documentation;
 			}
 
+			public BoxMeta getBoxMeta() {
+				if ( this.$bx == null ) {
+					this.$bx = new ClassMeta( this );
+				}
+				return this.$bx;
+			}
 			
+			/**
+			 * Represent as string, or throw exception if not possible
+			 *
+			 * @return The string representation
+			 */
+			public String asString() {
+				// TODO return something from metas
+				return this.toString();
+			}
 
 			/**
 			 * --------------------------------------------------------------------------
@@ -192,6 +224,12 @@ public class BoxClassTransformer extends AbstractTransformer {
 			 * @return The requested object
 			 */
 			public Object dereference( Key key, Boolean safe ) {
+				
+				// Special check for $bx
+				if ( key.equals( BoxMeta.key ) ) {
+					return getBoxMeta();
+				}
+				
 				// TODO: implicit getters
 				return thisScope.dereference( key, safe );
 			}
@@ -329,7 +367,7 @@ public class BoxClassTransformer extends AbstractTransformer {
 
 		MethodDeclaration	pseudoConstructorMethod	= entryPoint.findCompilationUnit().orElseThrow()
 		    .getClassByName( className ).orElseThrow()
-		    .getMethodsByName( "pseudoConstructor" ).get( 0 );
+		    .getMethodsByName( "_pseudoConstructor" ).get( 0 );
 
 		FieldDeclaration	imports					= entryPoint.findCompilationUnit().orElseThrow()
 		    .getClassByName( className ).orElseThrow()

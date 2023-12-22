@@ -44,7 +44,7 @@ public class DynamicJavaInteropServiceTest {
 	@DisplayName( "It can call a constructor with one argument" )
 	@Test
 	void testItCanCallConstructorsWithOneArgument() {
-		Object target = DynamicJavaInteropService.invokeConstructor( String.class, "Hello World" );
+		Object target = DynamicJavaInteropService.invokeConstructor( null, String.class, "Hello World" );
 		assertThat( target.getClass() ).isEqualTo( String.class );
 		assertThat( target ).isEqualTo( "Hello World" );
 	}
@@ -52,14 +52,14 @@ public class DynamicJavaInteropServiceTest {
 	@DisplayName( "It can call a constructor with many arguments" )
 	@Test
 	void testItCanCallConstructorsWithManyArguments() {
-		Object target = DynamicJavaInteropService.invokeConstructor( LinkedHashMap.class, 16, 0.75f, true );
+		Object target = DynamicJavaInteropService.invokeConstructor( null, LinkedHashMap.class, 16, 0.75f, true );
 		assertThat( target.getClass() ).isEqualTo( LinkedHashMap.class );
 	}
 
 	@DisplayName( "It can call a constructor with no arguments" )
 	@Test
 	void testItCanCallConstructorsWithNoArguments() {
-		Object target = DynamicJavaInteropService.invokeConstructor( String.class );
+		Object target = DynamicJavaInteropService.invokeConstructor( null, String.class );
 		assertThat( target.getClass() ).isEqualTo( String.class );
 		assertThat( target ).isEqualTo( "" );
 	}
@@ -67,7 +67,7 @@ public class DynamicJavaInteropServiceTest {
 	@DisplayName( "It can call instance methods with no arguments" )
 	@Test
 	void testItCanCallMethodsWithNoArguments() {
-		HashMap map = DynamicJavaInteropService.invokeConstructor( HashMap.class );
+		HashMap map = DynamicJavaInteropService.invokeConstructor( null, HashMap.class );
 		assertThat( DynamicJavaInteropService.invoke( map, "size", false ) ).isEqualTo( 0 );
 		assertThat( ( Boolean ) DynamicJavaInteropService.invoke( map, "isEmpty", false ) ).isTrue();
 	}
@@ -75,7 +75,7 @@ public class DynamicJavaInteropServiceTest {
 	@DisplayName( "It can call instance methods with many arguments" )
 	@Test
 	void testItCanCallMethodsWithManyArguments() {
-		HashMap map = DynamicJavaInteropService.invokeConstructor( HashMap.class );
+		HashMap map = DynamicJavaInteropService.invokeConstructor( null, HashMap.class );
 		DynamicJavaInteropService.invoke( map, "put", false, "name", "luis" );
 		assertThat( DynamicJavaInteropService.invoke( map, "size", false ) ).isEqualTo( 1 );
 		assertThat( DynamicJavaInteropService.invoke( map, "get", false, "name" ) ).isEqualTo( "luis" );

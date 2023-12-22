@@ -611,7 +611,7 @@ public class Struct implements Map<Key, Object>, IType, IReferenceable, IListena
 		if ( value == null && !safe ) {
 			throw new KeyNotFoundException(
 			    // TODO: Limit the number of keys. There could be thousands!
-			    String.format( "The key %s was not found in the struct. Valid keys are (%s)", key.getName(), getKeys() ), this
+			    String.format( "The key %s was not found in the struct. Valid keys are (%s)", key.getName(), getKeysAsStrings() ), this
 			);
 		}
 		return unWrapNull( value );
@@ -722,7 +722,16 @@ public class Struct implements Map<Key, Object>, IType, IReferenceable, IListena
 	 *
 	 * @return An array list of all the keys in the struct
 	 */
-	public List<String> getKeys() {
+	public List<Key> getKeys() {
+		return keySet().stream().collect( java.util.stream.Collectors.toList() );
+	}
+
+	/**
+	 * Get an array list of all the keys in the struct
+	 *
+	 * @return An array list of all the keys in the struct
+	 */
+	public List<String> getKeysAsStrings() {
 		return keySet().stream().map( Key::getName ).collect( java.util.stream.Collectors.toList() );
 	}
 

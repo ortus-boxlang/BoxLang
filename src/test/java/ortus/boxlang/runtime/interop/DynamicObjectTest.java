@@ -89,7 +89,7 @@ public class DynamicObjectTest {
 	@Test
 	void testItCanCallConstructorsWithOneArgument() {
 		DynamicObject target = new DynamicObject( String.class );
-		target.invokeConstructor( "Hello World" );
+		target.invokeConstructor( null, "Hello World" );
 		assertThat( target.getTargetClass() ).isEqualTo( String.class );
 		assertThat( target.getTargetInstance() ).isEqualTo( "Hello World" );
 	}
@@ -99,7 +99,7 @@ public class DynamicObjectTest {
 	void testItCanCallConstructorsWithManyArguments() {
 		DynamicObject target = new DynamicObject( LinkedHashMap.class );
 		System.out.println( int.class );
-		target.invokeConstructor( 16, 0.75f, true );
+		target.invokeConstructor( null, 16, 0.75f, true );
 		assertThat( target.getTargetClass() ).isEqualTo( LinkedHashMap.class );
 	}
 
@@ -107,7 +107,7 @@ public class DynamicObjectTest {
 	@Test
 	void testItCanCallConstructorsWithNoArguments() {
 		DynamicObject target = new DynamicObject( String.class );
-		target.invokeConstructor();
+		target.invokeConstructor( null );
 		assertThat( target.getTargetClass() ).isEqualTo( String.class );
 		assertThat( target.getTargetInstance() ).isEqualTo( "" );
 	}
@@ -116,7 +116,7 @@ public class DynamicObjectTest {
 	@Test
 	void testItCanCallMethodsWithNoArguments() {
 		DynamicObject myMapInvoker = new DynamicObject( HashMap.class );
-		myMapInvoker.invokeConstructor();
+		myMapInvoker.invokeConstructor( null );
 		assertThat( myMapInvoker.invoke( "size" ) ).isEqualTo( 0 );
 		assertThat( ( Boolean ) myMapInvoker.invoke( "isEmpty" ) ).isTrue();
 	}
@@ -125,7 +125,7 @@ public class DynamicObjectTest {
 	@Test
 	void testItCanCallMethodsWithManyArguments() {
 		DynamicObject myMapInvoker = new DynamicObject( HashMap.class );
-		myMapInvoker.invokeConstructor();
+		myMapInvoker.invokeConstructor( null );
 		myMapInvoker.invoke( "put", "name", "luis" );
 		assertThat( myMapInvoker.invoke( "size" ) ).isEqualTo( 1 );
 		assertThat( myMapInvoker.invoke( "get", "name" ) ).isEqualTo( "luis" );
@@ -169,7 +169,7 @@ public class DynamicObjectTest {
 	@Test
 	void testItCanGetPublicFields() {
 		DynamicObject myInvoker = DynamicObject.of( InvokeDynamicFields.class );
-		myInvoker.invokeConstructor();
+		myInvoker.invokeConstructor( null );
 		assertThat( myInvoker.getField( "name" ).get() ).isEqualTo( "luis" );
 	}
 
@@ -177,7 +177,7 @@ public class DynamicObjectTest {
 	@Test
 	void testItCanGetPublicFieldsInAnyCase() {
 		DynamicObject myInvoker = DynamicObject.of( InvokeDynamicFields.class );
-		myInvoker.invokeConstructor();
+		myInvoker.invokeConstructor( null );
 		assertThat( myInvoker.getField( "NaMe" ).get() ).isEqualTo( "luis" );
 	}
 
@@ -185,7 +185,7 @@ public class DynamicObjectTest {
 	@Test
 	void testItCanGetPublicFieldsWithADefaultValue() {
 		DynamicObject myInvoker = DynamicObject.of( InvokeDynamicFields.class );
-		myInvoker.invokeConstructor();
+		myInvoker.invokeConstructor( null );
 		assertThat( myInvoker.getField( "InvalidFieldBaby", "sorry" ).get() ).isEqualTo( "sorry" );
 	}
 
@@ -202,7 +202,7 @@ public class DynamicObjectTest {
 	void testItCanThrowExceptionForInvalidFields() {
 		NoFieldException exception = assertThrows( NoFieldException.class, () -> {
 			DynamicObject myInvoker = DynamicObject.of( InvokeDynamicFields.class );
-			myInvoker.invokeConstructor();
+			myInvoker.invokeConstructor( null );
 			myInvoker.getField( "InvalidField" );
 		} );
 		assertThat( exception.getMessage() ).contains( "InvalidField" );
@@ -212,7 +212,7 @@ public class DynamicObjectTest {
 	@Test
 	void testItCanSetPublicFields() {
 		DynamicObject myInvoker = DynamicObject.of( InvokeDynamicFields.class );
-		myInvoker.invokeConstructor();
+		myInvoker.invokeConstructor( null );
 
 		myInvoker.setField( "name", "Hola Tests" );
 

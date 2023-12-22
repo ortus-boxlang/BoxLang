@@ -18,6 +18,7 @@
 package ortus.boxlang.runtime.dynamic.casters;
 
 import java.math.BigDecimal;
+import java.nio.file.Path;
 import java.text.DecimalFormat;
 
 import ortus.boxlang.runtime.interop.DynamicObject;
@@ -78,6 +79,9 @@ public class StringCaster {
 		}
 		if ( object instanceof Character chr ) {
 			return chr.toString();
+		}
+		if ( object instanceof Path path ) {
+			return path.toString();
 		}
 		if ( object instanceof Integer || object instanceof Long || object instanceof Short || object instanceof Byte ) {
 			return object.toString();

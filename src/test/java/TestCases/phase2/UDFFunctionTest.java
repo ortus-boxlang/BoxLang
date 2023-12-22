@@ -384,7 +384,7 @@ public class UDFFunctionTest {
 		assertThat( args[ 2 ] ).isEqualTo( "value3" );
 		assertThat( args[ 3 ] ).isEqualTo( "value4" );
 
-		List<String> keys = argsScope.getKeys();
+		List<String> keys = argsScope.getKeysAsStrings();
 		assertThat( keys.get( 0 ) ).isEqualTo( "param1" );
 		assertThat( keys.get( 1 ) ).isEqualTo( "param2" );
 		assertThat( keys.get( 2 ) ).isEqualTo( "3" );
@@ -415,7 +415,7 @@ public class UDFFunctionTest {
 		assertThat( args[ 2 ] ).isEqualTo( "value3" );
 		assertThat( args[ 3 ] ).isEqualTo( "value4" );
 
-		List<String> keys = argsScope.getKeys();
+		List<String> keys = argsScope.getKeysAsStrings();
 		System.out.println( keys );
 		assertThat( keys.get( 0 ) ).isEqualTo( "param1" );
 		assertThat( keys.get( 1 ) ).isEqualTo( "param2" );
@@ -447,7 +447,7 @@ public class UDFFunctionTest {
 		assertThat( args[ 2 ] ).isEqualTo( "value3" );
 		assertThat( args[ 3 ] ).isEqualTo( "value4" );
 
-		List<String> keys = argsScope.getKeys();
+		List<String> keys = argsScope.getKeysAsStrings();
 		assertThat( keys.get( 0 ) ).isEqualTo( "param1" );
 		assertThat( keys.get( 1 ) ).isEqualTo( "param2" );
 		assertThat( keys.get( 2 ) ).isEqualTo( "param3" );
@@ -485,7 +485,7 @@ public class UDFFunctionTest {
 		assertThat( args[ 2 ] ).isEqualTo( "value3" );
 		assertThat( args[ 3 ] ).isEqualTo( "value4" );
 
-		List<String> keys = argsScope.getKeys();
+		List<String> keys = argsScope.getKeysAsStrings();
 		assertThat( keys.get( 0 ) ).isEqualTo( "param1" );
 		assertThat( keys.get( 1 ) ).isEqualTo( "param2" );
 		assertThat( keys.get( 2 ) ).isEqualTo( "param3" );

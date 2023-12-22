@@ -304,6 +304,51 @@ public class JavaBoxpiler {
 		return getClassClass( fqn );
 	}
 
+	public Class<IClassRunnable> compileClass( Path path, String packagePath ) {
+		File	lcaseFile		= new File( packagePath.toString().toLowerCase() );
+		String	packageName		= getPackageName( lcaseFile );
+		String	className		= getClassName( lcaseFile );
+		String	fqn				= packageName + "." + className;
+		long	lastModified	= path.toFile().lastModified();
+
+		if ( !classLoader.hasClass( fqn ) ) {
+			if ( diskClassLoader.hasClass( fqn ) ) {
+				return getDiskClassClass( fqn );
+			} else {
+				BoxParser		parser	= new BoxParser();
+				ParsingResult	result;
+				try {
+					result = parser.parse( path.toFile() );
+				} catch ( IOException e ) {
+					throw new BoxRuntimeException( "Error compiling source", e );
+				}
+
+				if ( !result.isCorrect() ) {
+					throw new ParseException( result.getIssues() );
+				}
+
+				Transpiler transpiler = Transpiler.getTranspiler( null );
+				transpiler.setProperty( "classname", className );
+				transpiler.setProperty( "packageName", packageName );
+
+				TranspiledCode				javaASTs	= transpiler.transpile( result.getRoot() );
+				ClassOrInterfaceDeclaration	outerClass	= javaASTs.getEntryPoint().getClassByName( className ).get();
+
+				// Process functions and lamdas
+				for ( CompilationUnit callable : javaASTs.getCallables() ) {
+					ClassOrInterfaceDeclaration innerClass = callable.findFirst( ClassOrInterfaceDeclaration.class ).get();
+					outerClass.addMember( innerClass.setPublic( true ).setStatic( true ) );
+				}
+				if ( false )
+					throw new BoxRuntimeException( javaASTs.getEntryPoint().toString() );
+
+				compileSource( javaASTs.getEntryPoint().toString(), fqn );
+
+			}
+		}
+		return getClassClass( fqn );
+	}
+
 	public void compileSource( String javaSource, String fqn ) {
 
 		DiagnosticCollector<JavaFileObject>	diagnostics		= new DiagnosticCollector<>();

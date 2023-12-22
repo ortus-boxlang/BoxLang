@@ -104,8 +104,7 @@ statementParameters: (
 	)+;
 
 statement:
-	assert
-	| break
+	break
 	| continue
 	| do
 	| for
@@ -124,7 +123,8 @@ statement:
 	| while;
 
 simpleStatement: (
-		applicationStatement
+		assert
+		| applicationStatement
 		| incrementDecrementStatement
 		| paramStatement
 		| return

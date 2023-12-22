@@ -382,8 +382,6 @@ public class BoxCFParser extends BoxAbstractParser {
 			return toAst( file, node.for_() );
 		} else if ( node.try_() != null ) {
 			return toAst( file, node.try_() );
-		} else if ( node.assert_() != null ) {
-			return toAst( file, node.assert_() );
 		} else if ( node.throw_() != null ) {
 			return toAst( file, node.throw_() );
 		} else if ( node.rethrow() != null ) {
@@ -701,7 +699,10 @@ public class BoxCFParser extends BoxAbstractParser {
 	 * @see BoxStatement
 	 */
 	private BoxStatement toAst( File file, CFParser.SimpleStatementContext node ) {
-		if ( node.return_() != null ) {
+
+		if ( node.assert_() != null ) {
+			return toAst( file, node.assert_() );
+		} else if ( node.return_() != null ) {
 			BoxExpr expr = null;
 			if ( node.return_().expression() != null ) {
 				expr = toAst( file, node.return_().expression() );

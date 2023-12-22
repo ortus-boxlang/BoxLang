@@ -1,22 +1,24 @@
 {
 	"debugMode": false,
-	"compiler" : {
-		"classGenerationDirectory" : "${java-temp}/boxlang/classes"
+	"compiler": {
+		"classGenerationDirectory": "${java-temp}/boxlang/classes"
 	},
-	"runtime" : {
-		"mappings" : {},
-		"modulesDirectory" : "${user-home}/.boxlang/modules",
-		"caches" : {
-			"imports" : {
-				"type" : "Caffeine",
-				"properties" : {
-					"maximumSize" : 1000
+	"runtime": {
+		"mappings": {
+			"/": "${user-dir}"
+		},
+		"modulesDirectory": "${user-home}/.boxlang/modules",
+		"caches": {
+			"imports": {
+				"type": "Caffeine",
+				"properties": {
+					"maximumSize": 1000
 				}
 			},
-			"default" : {
-				"type" : "Caffeine",
-				"properties" : {
-					"maximumSize" : 1000
+			"default": {
+				"type": "Caffeine",
+				"properties": {
+					"maximumSize": 1000
 				}
 			}
 		}

@@ -168,13 +168,26 @@ public class RunnableLoader {
 
 	/**
 	 * Load the class for a BL class, JIT compiling if needed
+	 * Returns the class instantiated and the init() method run
 	 *
 	 * @param source The source to load
 	 *
 	 * @return
 	 */
-	public IClassRunnable loadClass( String source ) {
-		Class<IClassRunnable> clazz = JavaBoxpiler.getInstance().compileClass( source );
-		return ( IClassRunnable ) DynamicObject.of( clazz ).invokeConstructor().getTargetInstance();
+	public Class<IClassRunnable> loadClass( String source, IBoxContext context ) {
+		return JavaBoxpiler.getInstance().compileClass( source );
 	}
+
+	/**
+	 * Load the class for a BL class, JIT compiling if needed
+	 * Returns the class instantiated and the init() method run
+	 *
+	 * @param source The source to load
+	 *
+	 * @return
+	 */
+	public Class<IClassRunnable> loadClass( Path path, String packagePath, IBoxContext context ) {
+		return JavaBoxpiler.getInstance().compileClass( path.toAbsolutePath(), packagePath );
+	}
+
 }

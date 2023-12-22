@@ -35,6 +35,7 @@ import ortus.boxlang.runtime.services.FunctionService;
 import ortus.boxlang.runtime.types.Function;
 import ortus.boxlang.runtime.types.UDF;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
+import ortus.boxlang.runtime.types.exceptions.KeyNotFoundException;
 import ortus.boxlang.runtime.types.exceptions.ScopeNotFoundException;
 
 /**
@@ -287,9 +288,14 @@ public class BaseBoxContext implements IBoxContext {
 	 * @return The function instance
 	 */
 	private Function findFunction( Key name ) {
-		ScopeSearchResult result = scopeFindNearby( name, null );
+		ScopeSearchResult result = null;
+		try {
+			result = scopeFindNearby( name, null );
+		} catch ( KeyNotFoundException e ) {
+			throw new BoxRuntimeException( "Function '" + name.getName() + "' not found" );
+		}
 		if ( result == null ) {
-			throw new BoxRuntimeException( "Function '" + name.toString() + "' not found" );
+			throw new BoxRuntimeException( "Function '" + name.getName() + "' not found" );
 		}
 		Object value = result.value();
 		if ( value instanceof Function fun ) {

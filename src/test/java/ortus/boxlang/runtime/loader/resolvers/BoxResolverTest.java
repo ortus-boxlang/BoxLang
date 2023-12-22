@@ -43,7 +43,7 @@ public class BoxResolverTest {
 	public void testFindFromModules() {
 		BoxResolver	boxResolver	= BoxResolver.getInstance();
 		String		className	= "apppath.models.User"; // Example class name
-		assertThat( boxResolver.findFromModules( className, new ArrayList<>() ).isPresent() ).isFalse();
+		assertThat( boxResolver.findFromModules( null, className, new ArrayList<>() ).isPresent() ).isFalse();
 	}
 
 	@DisplayName( "It can find classes from local disk" )
@@ -51,7 +51,7 @@ public class BoxResolverTest {
 	public void testFindFromLocal() {
 		BoxResolver	boxResolver	= BoxResolver.getInstance();
 		String		className	= "apppath.models.User"; // Example class name
-		assertThat( boxResolver.findFromLocal( className, new ArrayList<>() ).isPresent() ).isFalse();
+		assertThat( boxResolver.findFromLocal( null, className, new ArrayList<>() ).isPresent() ).isFalse();
 	}
 
 	@DisplayName( "It can resolve classes" )
