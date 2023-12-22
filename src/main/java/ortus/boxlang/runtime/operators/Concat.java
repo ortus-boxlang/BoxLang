@@ -34,6 +34,8 @@ public class Concat implements IOperator {
 	 * @return The two strings conctenated
 	 */
 	public static String invoke( Object left, Object right ) {
+		left	= ( left == null ) ? "" : left;
+		right	= ( right == null ) ? "" : right;
 		return ( StringCaster.cast( left ) ).concat( StringCaster.cast( right ) );
 	}
 

@@ -110,8 +110,8 @@ public class RunnableLoader {
 	 */
 	public BoxTemplate loadTemplateRelative( IBoxContext context, String path ) {
 		// Determine what this path is relative to
-		BoxTemplate	template	= context.findClosestTemplate();
-		String		relativeBase;
+		ITemplateRunnable	template	= context.findClosestTemplate();
+		String				relativeBase;
 		// We our current context is executing a template, then we are relative to that template
 		if ( template != null ) {
 			relativeBase = template.getRunnablePath().getParent().toString();
