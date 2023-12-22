@@ -32,6 +32,7 @@ import org.apache.commons.io.ByteOrderMark;
 import org.apache.commons.io.input.BOMInputStream;
 
 import ortus.boxlang.ast.BoxExpr;
+import ortus.boxlang.ast.BoxNode;
 import ortus.boxlang.ast.BoxScript;
 import ortus.boxlang.ast.Issue;
 import ortus.boxlang.ast.Point;
@@ -146,11 +147,11 @@ public abstract class BoxAbstractParser {
 	 * @param file source file, if any
 	 * @param rule ANTLR parser rule to transform
 	 *
-	 * @return a BoxScript Node
+	 * @return a BoxNode
 	 *
-	 * @see BoxScript
+	 * @see BoxNode
 	 */
-	protected abstract BoxScript parseTreeToAst( File file, ParserRuleContext rule ) throws IOException;
+	protected abstract BoxNode parseTreeToAst( File file, ParserRuleContext rule ) throws IOException;
 
 	/**
 	 * Extracts the position from the ANTLR node

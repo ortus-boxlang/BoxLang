@@ -12,7 +12,7 @@
  * BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language
  * governing permissions and limitations under the License.
  */
-package ortus.boxlang.transpiler.transformer.statement;
+package ortus.boxlang.transpiler.transformer;
 
 import java.time.LocalDateTime;
 import java.util.Map;
@@ -23,35 +23,30 @@ import com.github.javaparser.ast.Node;
 import com.github.javaparser.ast.body.FieldDeclaration;
 import com.github.javaparser.ast.body.MethodDeclaration;
 import com.github.javaparser.ast.expr.ArrayCreationExpr;
+import com.github.javaparser.ast.expr.Expression;
 import com.github.javaparser.ast.expr.IntegerLiteralExpr;
 import com.github.javaparser.ast.expr.MethodCallExpr;
 import com.github.javaparser.ast.expr.NameExpr;
-import com.github.javaparser.ast.expr.NullLiteralExpr;
 import com.github.javaparser.ast.expr.StringLiteralExpr;
 import com.github.javaparser.ast.stmt.BlockStmt;
-import com.github.javaparser.ast.stmt.ExpressionStmt;
-import com.github.javaparser.ast.stmt.ReturnStmt;
 import com.github.javaparser.ast.stmt.Statement;
 
+import ortus.boxlang.ast.BoxClass;
 import ortus.boxlang.ast.BoxExpr;
 import ortus.boxlang.ast.BoxNode;
-import ortus.boxlang.ast.BoxScript;
 import ortus.boxlang.ast.BoxStatement;
 import ortus.boxlang.ast.Source;
 import ortus.boxlang.ast.SourceFile;
 import ortus.boxlang.ast.expression.BoxIntegerLiteral;
 import ortus.boxlang.ast.expression.BoxStringLiteral;
-import ortus.boxlang.ast.statement.BoxExpression;
 import ortus.boxlang.ast.statement.BoxFunctionDeclaration;
 import ortus.boxlang.ast.statement.BoxImport;
 import ortus.boxlang.runtime.config.util.PlaceholderHelper;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.transpiler.JavaTranspiler;
-import ortus.boxlang.transpiler.transformer.AbstractTransformer;
-import ortus.boxlang.transpiler.transformer.TransformerContext;
 
-public class BoxScriptTransformer extends AbstractTransformer {
+public class BoxClassTransformer extends AbstractTransformer {
 
 	// @formatter:off
 	private final String template = """
@@ -73,7 +68,9 @@ public class BoxScriptTransformer extends AbstractTransformer {
 		import ortus.boxlang.runtime.dynamic.casters.*;
 		import ortus.boxlang.runtime.types.exceptions.ExceptionUtil;
 		import ortus.boxlang.runtime.types.*;
-		import ortus.boxlang.runtime.runnables.IBoxRunnable;
+		import ortus.boxlang.runtime.types.exceptions.*;
+		import ortus.boxlang.runtime.runnables.IClassRunnable;
+		import ortus.boxlang.runtime.dynamic.IReferenceable;
 
 		import java.nio.file.Path;
 		import java.nio.file.Paths;
@@ -83,9 +80,7 @@ public class BoxScriptTransformer extends AbstractTransformer {
 		import java.util.Map;
 		import java.util.HashMap;
 
-		public class ${className} extends ${baseclass} {
-
-			private static ${className} instance;
+		public class ${className} implements IClassRunnable, IReferenceable {
 
 			private static final List<ImportDefinition>	imports			= List.of();
 			private static final Path					path			= Paths.get( "${fileFolderPath}" );
@@ -94,21 +89,16 @@ public class BoxScriptTransformer extends AbstractTransformer {
 			private static final Object					ast				= null;
 			public static final Key[]					keys			= new Key[] {};
 
+			private final static Struct	annotations;
+			private final static Struct	documentation;
+
+			private IScope variablesScope = new VariablesScope();
+			private IScope thisScope = new ThisScope();
+
 			public ${className}() {
 			}
 
-			public static synchronized ${className} getInstance() {
-				if ( instance == null ) {
-					instance = new ${className}();
-				}
-				return instance;
-			}
-			/**
-				* Each template must implement the invoke() method which executes the template
-				*
-				* @param context The execution context requesting the execution
-				*/
-			public ${returnType} _invoke( IBoxContext context ) {
+			public void pseudoConstructor( IBoxContext context ) {
 				ClassLocator classLocator = ClassLocator.getInstance();
 			}
 
@@ -149,6 +139,129 @@ public class BoxScriptTransformer extends AbstractTransformer {
 				return imports;
 			}
 
+			/**
+			 * Get the variables scope
+			 */
+			public IScope getVariablesScope() {
+				return variablesScope;
+			}
+
+			/**
+			 * Get the this scope
+			 */
+			public IScope getThisScope() {
+				return thisScope;
+			}			
+
+			public Struct getAnnotations() {
+				return annotations;
+			}
+
+			public Struct getDocumentation() {
+				return documentation;
+			}
+
+			
+
+			/**
+			 * --------------------------------------------------------------------------
+			 * IReferenceable Interface Methods
+			 * --------------------------------------------------------------------------
+			 */
+
+			/**
+			 * Assign a value to a key
+			 *
+			 * @param key   The key to assign
+			 * @param value The value to assign
+			 */
+			@Override
+			public Object assign( Key key, Object value ) {
+				// TODO: properties, implicit setters
+				// put( key, value );
+				return value;
+			}
+
+			/**
+			 * Dereference this object by a key and return the value, or throw exception
+			 *
+			 * @param key  The key to dereference
+			 * @param safe Whether to throw an exception if the key is not found
+			 *
+			 * @return The requested object
+			 */
+			@Override
+			public Object dereference( Key key, Boolean safe ) {
+				// TODO: properties, implicit getters
+				return null;
+			}
+
+			/**
+			 * Dereference this object by a key and invoke the result as an invokable (UDF, java method) using positional arguments
+			 *
+			 * @param name                The key to dereference
+			 * @param positionalArguments The positional arguments to pass to the invokable
+			 * @param safe                Whether to throw an exception if the key is not found
+			 *
+			 * @return The requested object
+			 */
+			public Object dereferenceAndInvoke( IBoxContext context, Key name, Object[] positionalArguments, Boolean safe ) {
+				// TODO: component member methods?
+
+				Object value = variablesScope.get( name );
+				if ( value != null ) {
+
+					if ( value instanceof Function function ) {
+						return function.invoke(
+							Function.generateFunctionContext(
+								function,
+								context.getFunctionParentContext(),
+								name,
+								function.createArgumentsScope( positionalArguments )
+							)
+						);
+					} else {
+						throw new BoxRuntimeException(
+							"key '" + name.getName() + "' of type  '" + value.getClass().getName() + "'  is not a function " );
+					}
+				}
+
+				throw new BoxRuntimeException( "Method '" + name.getName() + "' not found" );
+			}
+
+			/**
+			 * Dereference this object by a key and invoke the result as an invokable (UDF, java method)
+			 *
+			 * @param name           The name of the key to dereference, which becomes the method name
+			 * @param namedArguments The arguments to pass to the invokable
+			 * @param safe           If true, return null if the method is not found, otherwise throw an exception
+			 *
+			 * @return The requested return value or null
+			 */
+			public Object dereferenceAndInvoke( IBoxContext context, Key name, Map<Key, Object> namedArguments, Boolean safe ) {
+
+				Object value = variablesScope.get( name );
+				if ( value != null ) {
+					if ( value instanceof Function function ) {
+						return function.invoke(
+							Function.generateFunctionContext(
+								function,
+								context.getFunctionParentContext(),
+								name,
+								function.createArgumentsScope( namedArguments )
+							)
+						);
+					} else {
+						throw new BoxRuntimeException(
+							"key '" + name.getName() + "' of type  '" + value.getClass().getName() + "'  is not a function "
+						);
+					}
+				}
+
+				throw new BoxRuntimeException( "Method '" + name.getName() + "' not found" );
+			}
+
+
 		}
 	""";
 	// @formatter:on
@@ -158,15 +271,15 @@ public class BoxScriptTransformer extends AbstractTransformer {
 	 *
 	 * @param transpiler parent transpiler
 	 */
-	public BoxScriptTransformer( JavaTranspiler transpiler ) {
+	public BoxClassTransformer( JavaTranspiler transpiler ) {
 		super( transpiler );
 	}
 
 	@Override
 	public Node transform( BoxNode node, TransformerContext context ) throws IllegalStateException {
 
-		BoxScript	script		= ( BoxScript ) node;
-		Source		source		= script.getPosition().getSource();
+		BoxClass	boxClass	= ( BoxClass ) node;
+		Source		source		= boxClass.getPosition().getSource();
 		String		packageName	= transpiler.getProperty( "packageName" );
 		String		className	= transpiler.getProperty( "classname" );
 		String		fileName	= source instanceof SourceFile file && file.getFile() != null ? file.getFile().getName() : "unknown";
@@ -176,16 +289,11 @@ public class BoxScriptTransformer extends AbstractTransformer {
 		//
 		className	= transpiler.getProperty( "classname" ) != null ? transpiler.getProperty( "classname" ) : className;
 		packageName	= transpiler.getProperty( "packageName" ) != null ? transpiler.getProperty( "packageName" ) : packageName;
-		String	baseClass	= transpiler.getProperty( "baseclass" ) != null ? transpiler.getProperty( "baseclass" ) : "BoxScript";
-		String	returnType	= baseClass.equals( "BoxScript" ) ? "Object" : "void";
-		returnType = transpiler.getProperty( "returnType" ) != null ? transpiler.getProperty( "returnType" ) : returnType;
 
 		Map<String, String>				values	= Map.ofEntries(
 		    Map.entry( "packagename", packageName ),
 		    Map.entry( "className", className ),
 		    Map.entry( "fileName", fileName ),
-		    Map.entry( "baseclass", baseClass ),
-		    Map.entry( "returnType", returnType ),
 		    Map.entry( "fileExtension", fileExt ),
 		    Map.entry( "fileFolderPath", filePath.replaceAll( "\\\\", "\\\\\\\\" ) ),
 		    Map.entry( "compiledOnTimestamp", transpiler.getDateTime( LocalDateTime.now() ) ),
@@ -205,26 +313,39 @@ public class BoxScriptTransformer extends AbstractTransformer {
 			throw new BoxRuntimeException( result.toString() + "\n" + code );
 		}
 
-		CompilationUnit		entryPoint		= result.getResult().get();
+		CompilationUnit		entryPoint				= result.getResult().get();
 
-		MethodDeclaration	invokeMethod	= entryPoint.findCompilationUnit().orElseThrow()
+		MethodDeclaration	pseudoConstructorMethod	= entryPoint.findCompilationUnit().orElseThrow()
 		    .getClassByName( className ).orElseThrow()
-		    .getMethodsByName( "_invoke" ).get( 0 );
+		    .getMethodsByName( "pseudoConstructor" ).get( 0 );
 
-		FieldDeclaration	imports			= entryPoint.findCompilationUnit().orElseThrow()
+		FieldDeclaration	imports					= entryPoint.findCompilationUnit().orElseThrow()
 		    .getClassByName( className ).orElseThrow()
 		    .getFieldByName( "imports" ).orElseThrow();
 
-		FieldDeclaration	keys			= entryPoint.findCompilationUnit().orElseThrow()
+		FieldDeclaration	keys					= entryPoint.findCompilationUnit().orElseThrow()
 		    .getClassByName( className ).orElseThrow()
 		    .getFieldByName( "keys" ).orElseThrow();
 
+		/* Transform the annotations creating the initialization value */
+		Expression			annotationStruct		= transformAnnotations( boxClass.getAnnotations() );
+		result.getResult().orElseThrow().getType( 0 ).getFieldByName( "annotations" ).orElseThrow().getVariable( 0 ).setInitializer( annotationStruct );
+
+		/* Transform the documentation creating the initialization value */
+		Expression documentationStruct = transformDocumentation( boxClass.getDocumentation() );
+		result.getResult().orElseThrow().getType( 0 ).getFieldByName( "documentation" ).orElseThrow().getVariable( 0 )
+		    .setInitializer( documentationStruct );
+
 		transpiler.pushContextName( "context" );
-		// Track if the latest BL AST node we encountered was a returnable expression
-		boolean lastStatementIsReturnable = false;
-		for ( BoxStatement statement : script.getStatements() ) {
-			// Expressions are returnable
-			lastStatementIsReturnable = statement instanceof BoxExpression;
+		// Add imports
+		for ( BoxImport statement : boxClass.getImports() ) {
+			Node			javaASTNode	= transpiler.transform( statement );
+			// For import statements, we add an argument to the constructor of the static List of imports
+			MethodCallExpr	imp			= ( MethodCallExpr ) imports.getVariable( 0 ).getInitializer().orElseThrow();
+			imp.getArguments().add( ( MethodCallExpr ) javaASTNode );
+		}
+		// Add body
+		for ( BoxStatement statement : boxClass.getBody() ) {
 
 			Node javaASTNode = transpiler.transform( statement );
 			// For Function declarations, we add the transformed function itself as a compilation unit
@@ -233,14 +354,14 @@ public class BoxScriptTransformer extends AbstractTransformer {
 				// a function declaration generate
 				( ( JavaTranspiler ) transpiler ).getUDFcallables().put( Key.of( BoxFunc.getName() ), ( CompilationUnit ) javaASTNode );
 				Node registrer = transpiler.transform( statement, TransformerContext.REGISTER );
-				invokeMethod.getBody().orElseThrow().addStatement( 0, ( Statement ) registrer );
+				pseudoConstructorMethod.getBody().orElseThrow().addStatement( 0, ( Statement ) registrer );
 
 			} else {
 				// Java block get each statement in their block added
 				if ( javaASTNode instanceof BlockStmt ) {
 					BlockStmt stmt = ( BlockStmt ) javaASTNode;
 					stmt.getStatements().forEach( it -> {
-						invokeMethod.getBody().get().addStatement( it );
+						pseudoConstructorMethod.getBody().get().addStatement( it );
 						// statements.add( it );
 					} );
 				} else if ( statement instanceof BoxImport ) {
@@ -249,7 +370,7 @@ public class BoxScriptTransformer extends AbstractTransformer {
 					imp.getArguments().add( ( MethodCallExpr ) javaASTNode );
 				} else {
 					// All other statements are added to the _invoke() method
-					invokeMethod.getBody().orElseThrow().addStatement( ( Statement ) javaASTNode );
+					pseudoConstructorMethod.getBody().orElseThrow().addStatement( ( Statement ) javaASTNode );
 					// statements.add( ( Statement ) javaASTNode );
 				}
 			}
@@ -270,22 +391,6 @@ public class BoxScriptTransformer extends AbstractTransformer {
 		}
 
 		transpiler.popContextName();
-
-		// Only try to return a value if the class has a return type for the _invoke() method...
-		if ( ! ( invokeMethod.getType() instanceof com.github.javaparser.ast.type.VoidType ) ) {
-			int			lastIndex	= invokeMethod.getBody().get().getStatements().size() - 1;
-			Statement	last		= invokeMethod.getBody().get().getStatements().get( lastIndex );
-			// ... and the last BL AST node was a returnable expression and the last Java AST node is an expression statement
-			if ( lastStatementIsReturnable && last instanceof ExpressionStmt stmt ) {
-				invokeMethod.getBody().get().getStatements().remove( lastIndex );
-				invokeMethod.getBody().get().getStatements().add( new ReturnStmt( stmt.getExpression() ) );
-			} else {
-				// If our base class requires a return value and we have none, then add a statement to return null.
-				invokeMethod.getBody().orElseThrow().addStatement( new ReturnStmt( new NullLiteralExpr() ) );
-			}
-
-		}
-
 		return entryPoint;
 	}
 

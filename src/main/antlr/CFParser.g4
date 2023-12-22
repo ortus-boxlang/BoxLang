@@ -21,6 +21,7 @@ importStatement:
 include: INCLUDE expression eos?;
 
 component:
+	// TODO Properties
 	javadoc? (preannotation)* ABSTRACT? COMPONENT identifier? postannotation* LBRACE
 		functionOrStatement* RBRACE;
 

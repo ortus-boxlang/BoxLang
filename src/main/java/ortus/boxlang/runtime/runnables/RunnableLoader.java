@@ -136,6 +136,9 @@ public class RunnableLoader {
 	 */
 	public BoxScript loadSource( String source, BoxScriptType type ) {
 		Class<IBoxRunnable> clazz = JavaBoxpiler.getInstance().compileScript( source, type );
+		if ( IClassRunnable.class.isAssignableFrom( clazz ) ) {
+			throw new RuntimeException( "Cannot define class in an ad-hoc script." );
+		}
 		return ( BoxScript ) DynamicObject.of( clazz ).invokeStatic( "getInstance" );
 	}
 
@@ -161,5 +164,17 @@ public class RunnableLoader {
 	public BoxScript loadStatement( String source ) {
 		Class<IBoxRunnable> clazz = JavaBoxpiler.getInstance().compileStatement( source, BoxScriptType.CFSCRIPT );
 		return ( BoxScript ) DynamicObject.of( clazz ).invokeStatic( "getInstance" );
+	}
+
+	/**
+	 * Load the class for a BL class, JIT compiling if needed
+	 *
+	 * @param source The source to load
+	 *
+	 * @return
+	 */
+	public IClassRunnable loadClass( String source ) {
+		Class<IClassRunnable> clazz = JavaBoxpiler.getInstance().compileClass( source );
+		return ( IClassRunnable ) DynamicObject.of( clazz ).invokeConstructor().getTargetInstance();
 	}
 }

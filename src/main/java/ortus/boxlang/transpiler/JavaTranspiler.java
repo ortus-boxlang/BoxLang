@@ -39,25 +39,40 @@ import org.slf4j.LoggerFactory;
 
 import com.github.javaparser.ast.CompilationUnit;
 import com.github.javaparser.ast.Node;
-import com.github.javaparser.ast.body.FieldDeclaration;
-import com.github.javaparser.ast.body.MethodDeclaration;
-import com.github.javaparser.ast.expr.ArrayCreationExpr;
-import com.github.javaparser.ast.expr.IntegerLiteralExpr;
-import com.github.javaparser.ast.expr.MethodCallExpr;
-import com.github.javaparser.ast.expr.NameExpr;
-import com.github.javaparser.ast.expr.NullLiteralExpr;
-import com.github.javaparser.ast.expr.StringLiteralExpr;
-import com.github.javaparser.ast.stmt.BlockStmt;
-import com.github.javaparser.ast.stmt.ExpressionStmt;
-import com.github.javaparser.ast.stmt.ReturnStmt;
 import com.github.javaparser.ast.stmt.Statement;
 import com.github.javaparser.printer.configuration.DefaultPrinterConfiguration;
 
-import ortus.boxlang.ast.BoxExpr;
+import ortus.boxlang.ast.BoxClass;
 import ortus.boxlang.ast.BoxNode;
 import ortus.boxlang.ast.BoxScript;
-import ortus.boxlang.ast.BoxStatement;
-import ortus.boxlang.ast.expression.*;
+import ortus.boxlang.ast.expression.BoxArgument;
+import ortus.boxlang.ast.expression.BoxArrayAccess;
+import ortus.boxlang.ast.expression.BoxArrayLiteral;
+import ortus.boxlang.ast.expression.BoxAssignment;
+import ortus.boxlang.ast.expression.BoxBinaryOperation;
+import ortus.boxlang.ast.expression.BoxBooleanLiteral;
+import ortus.boxlang.ast.expression.BoxClosure;
+import ortus.boxlang.ast.expression.BoxComparisonOperation;
+import ortus.boxlang.ast.expression.BoxDecimalLiteral;
+import ortus.boxlang.ast.expression.BoxDotAccess;
+import ortus.boxlang.ast.expression.BoxExpressionInvocation;
+import ortus.boxlang.ast.expression.BoxFQN;
+import ortus.boxlang.ast.expression.BoxFunctionInvocation;
+import ortus.boxlang.ast.expression.BoxIdentifier;
+import ortus.boxlang.ast.expression.BoxIntegerLiteral;
+import ortus.boxlang.ast.expression.BoxLambda;
+import ortus.boxlang.ast.expression.BoxMethodInvocation;
+import ortus.boxlang.ast.expression.BoxNegateOperation;
+import ortus.boxlang.ast.expression.BoxNewOperation;
+import ortus.boxlang.ast.expression.BoxNull;
+import ortus.boxlang.ast.expression.BoxParenthesis;
+import ortus.boxlang.ast.expression.BoxScope;
+import ortus.boxlang.ast.expression.BoxStringConcat;
+import ortus.boxlang.ast.expression.BoxStringInterpolation;
+import ortus.boxlang.ast.expression.BoxStringLiteral;
+import ortus.boxlang.ast.expression.BoxStructLiteral;
+import ortus.boxlang.ast.expression.BoxTernaryOperation;
+import ortus.boxlang.ast.expression.BoxUnaryOperation;
 import ortus.boxlang.ast.statement.BoxArgumentDeclaration;
 import ortus.boxlang.ast.statement.BoxAssert;
 import ortus.boxlang.ast.statement.BoxBreak;
@@ -81,9 +96,36 @@ import ortus.boxlang.runtime.runnables.BoxTemplate;
 import ortus.boxlang.runtime.runnables.compiler.JavaSourceString;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.exceptions.ApplicationException;
+import ortus.boxlang.transpiler.transformer.BoxClassTransformer;
 import ortus.boxlang.transpiler.transformer.Transformer;
 import ortus.boxlang.transpiler.transformer.TransformerContext;
-import ortus.boxlang.transpiler.transformer.expression.*;
+import ortus.boxlang.transpiler.transformer.expression.BoxAccessTransformer;
+import ortus.boxlang.transpiler.transformer.expression.BoxArgumentTransformer;
+import ortus.boxlang.transpiler.transformer.expression.BoxArrayLiteralTransformer;
+import ortus.boxlang.transpiler.transformer.expression.BoxAssignmentTransformer;
+import ortus.boxlang.transpiler.transformer.expression.BoxBinaryOperationTransformer;
+import ortus.boxlang.transpiler.transformer.expression.BoxBooleanLiteralTransformer;
+import ortus.boxlang.transpiler.transformer.expression.BoxClosureTransformer;
+import ortus.boxlang.transpiler.transformer.expression.BoxComparisonOperationTransformer;
+import ortus.boxlang.transpiler.transformer.expression.BoxDecimalLiteralTransformer;
+import ortus.boxlang.transpiler.transformer.expression.BoxExpressionInvocationTransformer;
+import ortus.boxlang.transpiler.transformer.expression.BoxFQNTransformer;
+import ortus.boxlang.transpiler.transformer.expression.BoxFunctionInvocationTransformer;
+import ortus.boxlang.transpiler.transformer.expression.BoxIdentifierTransformer;
+import ortus.boxlang.transpiler.transformer.expression.BoxIntegerLiteralTransformer;
+import ortus.boxlang.transpiler.transformer.expression.BoxLambdaTransformer;
+import ortus.boxlang.transpiler.transformer.expression.BoxMethodInvocationTransformer;
+import ortus.boxlang.transpiler.transformer.expression.BoxNegateOperationTransformer;
+import ortus.boxlang.transpiler.transformer.expression.BoxNewOperationTransformer;
+import ortus.boxlang.transpiler.transformer.expression.BoxNullTransformer;
+import ortus.boxlang.transpiler.transformer.expression.BoxParenthesisTransformer;
+import ortus.boxlang.transpiler.transformer.expression.BoxScopeTransformer;
+import ortus.boxlang.transpiler.transformer.expression.BoxStringConcatTransformer;
+import ortus.boxlang.transpiler.transformer.expression.BoxStringInterpolationTransformer;
+import ortus.boxlang.transpiler.transformer.expression.BoxStringLiteralTransformer;
+import ortus.boxlang.transpiler.transformer.expression.BoxStructLiteralTransformer;
+import ortus.boxlang.transpiler.transformer.expression.BoxTernaryOperationTransformer;
+import ortus.boxlang.transpiler.transformer.expression.BoxUnaryOperationTransformer;
 import ortus.boxlang.transpiler.transformer.indexer.CrossReference;
 import ortus.boxlang.transpiler.transformer.indexer.IndexPrettyPrinterVisitor;
 import ortus.boxlang.transpiler.transformer.statement.BoxArgumentDeclarationTransformer;
@@ -178,6 +220,7 @@ public class JavaTranspiler extends Transpiler {
 		registry.put( BoxInclude.class, new BoxIncludeTransformer( this ) );
 		registry.put( BoxExpressionInvocation.class, new BoxExpressionInvocationTransformer( this ) );
 		registry.put( BoxClosure.class, new BoxClosureTransformer( this ) );
+		registry.put( BoxClass.class, new BoxClassTransformer( this ) );
 	}
 
 	/**
@@ -346,91 +389,9 @@ public class JavaTranspiler extends Transpiler {
 	@Override
 	public TranspiledCode transpile( BoxNode node ) throws ApplicationException {
 
-		BoxScript			source			= ( BoxScript ) node;
-		CompilationUnit		entryPoint		= ( CompilationUnit ) transform( source );
+		CompilationUnit				entryPoint	= ( CompilationUnit ) transform( node );
 
-		String				className		= getProperty( "classname" );
-
-		MethodDeclaration	invokeMethod	= entryPoint.findCompilationUnit().orElseThrow()
-		    .getClassByName( className ).orElseThrow()
-		    .getMethodsByName( "_invoke" ).get( 0 );
-
-		FieldDeclaration	imports			= entryPoint.findCompilationUnit().orElseThrow()
-		    .getClassByName( className ).orElseThrow()
-		    .getFieldByName( "imports" ).orElseThrow();
-
-		FieldDeclaration	keys			= entryPoint.findCompilationUnit().orElseThrow()
-		    .getClassByName( className ).orElseThrow()
-		    .getFieldByName( "keys" ).orElseThrow();
-
-		pushContextName( "context" );
-		// Track if the latest BL AST node we encountered was a returnable expression
-		boolean lastStatementIsReturnable = false;
-		for ( BoxStatement statement : source.getStatements() ) {
-			// Expressions are returnable
-			lastStatementIsReturnable = statement instanceof BoxExpression;
-
-			Node javaASTNode = transform( statement );
-			// For Function declarations, we add the transformed function itself as a compilation unit
-			// and also hoist the declaration itself to the top of the _invoke() method.
-			if ( statement instanceof BoxFunctionDeclaration BoxFunc ) {
-				// a function declaration generate
-				getUDFcallables().put( Key.of( BoxFunc.getName() ), ( CompilationUnit ) javaASTNode );
-				Node registrer = transform( statement, TransformerContext.REGISTER );
-				invokeMethod.getBody().orElseThrow().addStatement( 0, ( Statement ) registrer );
-
-			} else {
-				// Java block get each statement in their block added
-				if ( javaASTNode instanceof BlockStmt ) {
-					BlockStmt stmt = ( BlockStmt ) javaASTNode;
-					stmt.getStatements().forEach( it -> {
-						invokeMethod.getBody().get().addStatement( it );
-						statements.add( it );
-					} );
-				} else if ( statement instanceof BoxImport ) {
-					// For import statements, we add an argument to the constructor of the static List of imports
-					MethodCallExpr imp = ( MethodCallExpr ) imports.getVariable( 0 ).getInitializer().orElseThrow();
-					imp.getArguments().add( ( MethodCallExpr ) javaASTNode );
-				} else {
-					// All other statements are added to the _invoke() method
-					invokeMethod.getBody().orElseThrow().addStatement( ( Statement ) javaASTNode );
-					statements.add( ( Statement ) javaASTNode );
-				}
-			}
-		}
-
-		// Add the keys to the static keys array
-		ArrayCreationExpr keysImp = ( ArrayCreationExpr ) keys.getVariable( 0 ).getInitializer().orElseThrow();
-		for ( Map.Entry<String, BoxExpr> entry : getKeys().entrySet() ) {
-			MethodCallExpr methodCallExpr = new MethodCallExpr( new NameExpr( "Key" ), "of" );
-			if ( entry.getValue() instanceof BoxStringLiteral str ) {
-				methodCallExpr.addArgument( new StringLiteralExpr( str.getValue() ) );
-			} else if ( entry.getValue() instanceof BoxIntegerLiteral id ) {
-				methodCallExpr.addArgument( new IntegerLiteralExpr( id.getValue() ) );
-			} else {
-				throw new IllegalStateException( "Unsupported key type: " + entry.getValue().getClass().getSimpleName() );
-			}
-			keysImp.getInitializer().get().getValues().add( methodCallExpr );
-		}
-
-		popContextName();
-
-		// Only try to return a value if the class has a return type for the _invoke() method...
-		if ( ! ( invokeMethod.getType() instanceof com.github.javaparser.ast.type.VoidType ) ) {
-			int			lastIndex	= invokeMethod.getBody().get().getStatements().size() - 1;
-			Statement	last		= invokeMethod.getBody().get().getStatements().get( lastIndex );
-			// ... and the last BL AST node was a returnable expression and the last Java AST node is an expression statement
-			if ( lastStatementIsReturnable && last instanceof ExpressionStmt stmt ) {
-				invokeMethod.getBody().get().getStatements().remove( lastIndex );
-				invokeMethod.getBody().get().getStatements().add( new ReturnStmt( stmt.getExpression() ) );
-			} else {
-				// If our base class requires a return value and we have none, then add a statement to return null.
-				invokeMethod.getBody().orElseThrow().addStatement( new ReturnStmt( new NullLiteralExpr() ) );
-			}
-
-		}
-
-		IndexPrettyPrinterVisitor visitor = new IndexPrettyPrinterVisitor( new DefaultPrinterConfiguration() );
+		IndexPrettyPrinterVisitor	visitor		= new IndexPrettyPrinterVisitor( new DefaultPrinterConfiguration() );
 		entryPoint.accept( visitor, null );
 		this.crossReferences.addAll( visitor.getCrossReferences() );
 
