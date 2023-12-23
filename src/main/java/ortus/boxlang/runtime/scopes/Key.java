@@ -53,6 +53,7 @@ public class Key {
 	public static final Key	string1			= Key.of( "string1" );
 	public static final Key	string2			= Key.of( "string2" );
 	public static final Key	number			= Key.of( "number" );
+	public static final Key	object			= Key.of( "object" );
 
 	public static final Key	contains		= Key.of( "contains" );
 	public static final Key	find			= Key.of( "find" );
