@@ -17,7 +17,13 @@
  */
 package ortus.boxlang.runtime.types.meta;
 
+import java.util.ArrayList;
+
+import ortus.boxlang.runtime.runnables.IClassRunnable;
+import ortus.boxlang.runtime.types.Array;
+import ortus.boxlang.runtime.types.Function;
 import ortus.boxlang.runtime.types.Struct;
+import ortus.boxlang.runtime.types.immutable.ImmutableArray;
 import ortus.boxlang.runtime.types.immutable.ImmutableStruct;
 
 /**
@@ -33,11 +39,39 @@ public class ClassMeta extends BoxMeta {
 	/**
 	 * Constructor
 	 */
-	public ClassMeta( Object target ) {
+	public ClassMeta( IClassRunnable target ) {
 		super();
 		this.target	= target;
 		this.$class	= target.getClass();
-		this.meta	= ImmutableStruct.EMPTY;
+		// Assemble the metadata
+		var functions = new ArrayList<Object>();
+		// loop over target's variables scope and add metadata for each function
+		for ( var entry : target.getVariablesScope().keySet() ) {
+			var value = target.getVariablesScope().get( entry );
+			if ( value instanceof Function fun ) {
+				functions.add( ( ( FunctionMeta ) fun.getBoxMeta() ).meta );
+			}
+		}
+
+		this.meta = ImmutableStruct.of(
+		    "name", target.getName().getName(),
+		    "documentation", target.getDocumentation(),
+		    "annotations", target.getAnnotations(),
+		    "accessors", false,
+		    // TODO: add extends
+		    "extends", Struct.EMPTY,
+		    "functions", ImmutableArray.fromList( functions ),
+		    "hashCode", target.hashCode(),
+		    // TODO: add properties
+		    "properties", Array.EMPTY,
+		    "type", "Component",
+		    "name", target.getName().getName(),
+		    "fullname", target.getName().getName(),
+		    "path", target.getRunnablePath(),
+		    // move to annotations and only keep here in legacy metadata view
+		    "persisent", false,
+		    "output", false
+		);
 
 	}
 
