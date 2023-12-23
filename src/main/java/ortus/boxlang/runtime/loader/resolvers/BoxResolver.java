@@ -155,6 +155,7 @@ public class BoxResolver extends BaseResolver {
 			// See if path exists in this parent directory
 			File file;
 			// System.out.println( "this template's parent: " + template.getRunnablePath().getParent().resolve( slashName + ".cfc" ).toFile() );
+			// TODO: Make case insensitive
 			if ( template.getRunnablePath().getParent() != null
 			    && ( file = template.getRunnablePath().getParent().resolve( slashName + ".cfc" ).toFile() ).exists() ) {
 				String	className	= file.getName().replace( ".cfc", "" );
@@ -184,6 +185,7 @@ public class BoxResolver extends BaseResolver {
 			if ( slashName.startsWith( key.getName() ) ) {
 				// See if path exists in this parent directory
 				File file;
+				// TODO: Make case insensitive
 				if ( ( file = new File( mapping + slashName + ".cfc" ) ).exists() ) {
 					String	className	= file.getName().replace( ".cfc", "" );
 					String	packageName	= name.replace( className, "" );

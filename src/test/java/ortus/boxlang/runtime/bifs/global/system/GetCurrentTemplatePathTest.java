@@ -120,10 +120,10 @@ public class GetCurrentTemplatePathTest {
 
 		instance.executeSource(
 		    """
-		    include "src/test/java/ortus/boxlang/runtime/bifs/global/system/includeTest.cfs";
+		    include "src/test/java/ortus/boxlang/runtime/bifs/global/system/IncludeTest.cfs";
 		     """,
 		    context );
-		assertThat( variables.get( result ).toString().contains( "includeTest.cfs" ) ).isTrue();
+		assertThat( variables.get( result ).toString().contains( "IncludeTest.cfs" ) ).isTrue();
 
 	}
 
