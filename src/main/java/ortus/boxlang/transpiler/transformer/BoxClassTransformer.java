@@ -103,6 +103,7 @@ public class BoxClassTransformer extends AbstractTransformer {
 
 			private IScope variablesScope = new VariablesScope();
 			private IScope thisScope = new ThisScope();
+			private Key name = Key.of( "${boxClassName}" );
 
 			public ${className}() {
 			}
@@ -178,6 +179,13 @@ public class BoxClassTransformer extends AbstractTransformer {
 
 			public Struct getDocumentation() {
 				return documentation;
+			}
+
+			/**
+			 * Get the name
+			 */
+			public Key getName() {
+				return this.name;
 			}
 
 			public BoxMeta getBoxMeta() {
@@ -328,28 +336,26 @@ public class BoxClassTransformer extends AbstractTransformer {
 	@Override
 	public Node transform( BoxNode node, TransformerContext context ) throws IllegalStateException {
 
-		BoxClass	boxClass	= ( BoxClass ) node;
-		Source		source		= boxClass.getPosition().getSource();
-		String		packageName	= transpiler.getProperty( "packageName" );
-		String		className	= transpiler.getProperty( "classname" );
-		String		fileName	= source instanceof SourceFile file && file.getFile() != null ? file.getFile().getName() : "unknown";
-		String		fileExt		= fileName.substring( fileName.lastIndexOf( "." ) + 1 );
-		String		filePath	= source instanceof SourceFile file && file.getFile() != null ? file.getFile().getAbsolutePath() : "unknown";
+		BoxClass						boxClass	= ( BoxClass ) node;
+		Source							source		= boxClass.getPosition().getSource();
+		String							packageName	= transpiler.getProperty( "packageName" );
+		String							className	= transpiler.getProperty( "classname" );
+		String							fileName	= source instanceof SourceFile file && file.getFile() != null ? file.getFile().getName() : "unknown";
+		String							fileExt		= fileName.substring( fileName.lastIndexOf( "." ) + 1 );
+		String							filePath	= source instanceof SourceFile file && file.getFile() != null ? file.getFile().getAbsolutePath()
+		    : "unknown";
 
-		//
-		className	= transpiler.getProperty( "classname" ) != null ? transpiler.getProperty( "classname" ) : className;
-		packageName	= transpiler.getProperty( "packageName" ) != null ? transpiler.getProperty( "packageName" ) : packageName;
-
-		Map<String, String>				values	= Map.ofEntries(
+		Map<String, String>				values		= Map.ofEntries(
 		    Map.entry( "packagename", packageName ),
 		    Map.entry( "className", className ),
 		    Map.entry( "fileName", fileName ),
 		    Map.entry( "fileExtension", fileExt ),
 		    Map.entry( "fileFolderPath", filePath.replaceAll( "\\\\", "\\\\\\\\" ) ),
 		    Map.entry( "compiledOnTimestamp", transpiler.getDateTime( LocalDateTime.now() ) ),
-		    Map.entry( "compileVersion", "1L" )
+		    Map.entry( "compileVersion", "1L" ),
+		    Map.entry( "boxClassName", packageName + "." + fileName.replace( ".bx", "" ).replace( ".cfc", "" ) )
 		);
-		String							code	= PlaceholderHelper.resolve( template, values );
+		String							code		= PlaceholderHelper.resolve( template, values );
 		ParseResult<CompilationUnit>	result;
 
 		try {

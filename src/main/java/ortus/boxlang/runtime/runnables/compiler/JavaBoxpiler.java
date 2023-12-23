@@ -305,11 +305,13 @@ public class JavaBoxpiler {
 	}
 
 	public Class<IClassRunnable> compileClass( Path path, String packagePath ) {
-		File	lcaseFile		= new File( packagePath.toString().toLowerCase() );
-		String	packageName		= getPackageName( lcaseFile );
-		String	className		= getClassName( lcaseFile );
-		String	fqn				= packageName + "." + className;
-		long	lastModified	= path.toFile().lastModified();
+		// trim trailing period
+		if ( packagePath.endsWith( "." ) ) {
+			packagePath = packagePath.substring( 0, packagePath.length() - 1 );
+		}
+		String	packageName	= packagePath;
+		String	className	= getClassName( path.toFile() );
+		String	fqn			= packageName + "." + className;
 
 		if ( !classLoader.hasClass( fqn ) ) {
 			if ( diskClassLoader.hasClass( fqn ) ) {
@@ -495,7 +497,7 @@ public class JavaBoxpiler {
 		// Replace .. with .
 		packg	= packg.replaceAll( "\\.\\.", "." );
 		// Remove any non alpha-numeric chars.
-		packg	= packg.replaceAll( "[^a-zA-Z0-9\\\\.]", "" );
+		packg	= packg.replaceAll( "[^a-zA-Z0-9\\.]", "" );
 		return packg.toLowerCase();
 
 	}

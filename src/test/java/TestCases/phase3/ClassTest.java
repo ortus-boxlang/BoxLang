@@ -130,7 +130,7 @@ public class ClassTest {
 	@Test
 	public void testBasicClassFile() {
 
-		IClassRunnable cfc = ( IClassRunnable ) instance.executeStatement(
+		instance.executeStatement(
 		    """
 		                    		    cfc = new src.test.java.TestCases.phase3.MyClass();
 		                    // execute public method
@@ -153,7 +153,6 @@ public class ClassTest {
 
 		    // Can call public methods on this
 		    assert cfc.runThisFoo() == "I work! whee true true bar true";
-
 		                    		                  """, context );
 
 	}

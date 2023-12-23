@@ -20,6 +20,7 @@ package ortus.boxlang.runtime.runnables;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.dynamic.IReferenceable;
 import ortus.boxlang.runtime.scopes.IScope;
+import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Struct;
 
 public interface IClassRunnable extends ITemplateRunnable, IReferenceable {
@@ -29,6 +30,11 @@ public interface IClassRunnable extends ITemplateRunnable, IReferenceable {
 	 * Methods
 	 * --------------------------------------------------------------------------
 	 */
+
+	/**
+	 * Get the name
+	 */
+	public Key getName();
 
 	/**
 	 * Get the variables scope
