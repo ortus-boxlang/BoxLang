@@ -32,71 +32,233 @@ import ortus.boxlang.runtime.context.ScriptingBoxContext;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
+import ortus.boxlang.runtime.types.Array;
 
 public class ArrayFindTest {
 
-	static BoxRuntime	instance;
-	static IBoxContext	context;
-	static IScope		variables;
-	static Key			result	= new Key( "result" );
+    static BoxRuntime  instance;
+    static IBoxContext context;
+    static IScope      variables;
+    static Key         result = new Key( "result" );
 
-	@BeforeAll
-	public static void setUp() {
-		instance	= BoxRuntime.getInstance( true );
-		context		= new ScriptingBoxContext( instance.getRuntimeContext() );
-		variables	= context.getScopeNearby( VariablesScope.name );
-	}
+    @BeforeAll
+    public static void setUp() {
+        instance  = BoxRuntime.getInstance( true );
+        context   = new ScriptingBoxContext( instance.getRuntimeContext() );
+        variables = context.getScopeNearby( VariablesScope.name );
+    }
 
-	@AfterAll
-	public static void teardown() {
-		instance.shutdown();
-	}
+    @AfterAll
+    public static void teardown() {
+        instance.shutdown();
+    }
 
-	@BeforeEach
-	public void setupEach() {
-		variables.clear();
-	}
+    @BeforeEach
+    public void setupEach() {
+        variables.clear();
+    }
 
-	@DisplayName( "It can search" )
-	@Test
-	public void testCanSearch() {
+    @DisplayName( "It should match numbers" )
+    @Test
+    public void testMatchNumber() {
+        instance.executeSource(
+            """
+                nums = [ 1, 2, 3, 4, 5 ];
+                result = nums.find( 3 );
+            """,
+            context );
+        int found = ( int ) variables.dereference( result, false );
+        assertThat( found ).isEqualTo( 3 );
+    }
 
-		instance.executeSource(
-		    """
-		    arr = [ 'a', 'b', 'c' ];
-		    result = arrayFind( arr, 'b' );
-		    """,
-		    context );
-		assertThat( variables.get( result ) ).isEqualTo( 2 );
+    @DisplayName( "It should match doubles" )
+    @Test
+    public void testMatchDoubles() {
+        instance.executeSource(
+            """
+                nums = [ 1, 2, 3, 4, 5 ];
+                result = nums.find( 3.0 );
+            """,
+            context );
+        int found = ( int ) variables.dereference( result, false );
+        assertThat( found ).isEqualTo( 3 );
+    }
 
-		instance.executeSource(
-		    """
-		    arr = [ 'a', 'b', 'c' ];
-		    result = arrayFind( arr, 'B' );
-		    """,
-		    context );
-		assertThat( variables.get( result ) ).isEqualTo( 0 );
-	}
+    @DisplayName( "It should match numbers and strings" )
+    @Test
+    public void testMatchNumberAndString() {
+        instance.executeSource(
+            """
+                nums = [ 1, 2, 4, 5, "3" ];
+                result = nums.find( 3 );
+            """,
+            context );
+        int found = ( int ) variables.dereference( result, false );
+        assertThat( found ).isEqualTo( 5 );
+    }
 
-	@DisplayName( "It can search member" )
-	@Test
-	public void testCanSearchMember() {
+    @DisplayName( "It should find strings in a case sensitive manner" )
+    @Test
+    public void testMatchStringCaseSensitive() {
+        instance.executeSource(
+            """
+                nums = [ "red", "blue", "orange" ];
+                result = nums.find( "bluE" );
+            """,
+            context );
+        int found = ( int ) variables.dereference( result, false );
+        assertThat( found ).isEqualTo( 0 );
+    }
 
-		instance.executeSource(
-		    """
-		    arr = [ 'a', 'b', 'c' ];
-		    result = arr.find( 'b' );
-		    """,
-		    context );
-		assertThat( variables.dereference( result, false ) ).isEqualTo( 2 );
+    @DisplayName( "It should match arrays" )
+    @Test
+    public void testMatchArrays() {
+        instance.executeSource(
+            """
+                nums = [ 1, [3] ];
+                result = nums.findAll( [3] );
+            """,
+            context );
+        Array found = ( Array ) variables.dereference( result, false );
+        assertThat( found.size() ).isEqualTo( 1 );
+        assertThat( found.get( 0 ) ).isEqualTo( 2 );
+    }
 
-		instance.executeSource(
-		    """
-		    arr = [ 'a', 'b', 'c' ];
-		    result = arr.find( 'B' );
-		    """,
-		    context );
-		assertThat( variables.dereference( result, false ) ).isEqualTo( 0 );
-	}
+    @DisplayName( "It should match structs" )
+    @Test
+    public void testMatchStructs() {
+        instance.executeSource(
+            """
+                nums = [ 1, [3], { test: true } ];
+                result = nums.findAll( { test: true } );
+            """,
+            context );
+        Array found = ( Array ) variables.dereference( result, false );
+        assertThat( found.size() ).isEqualTo( 1 );
+        assertThat( found.get( 0 ) ).isEqualTo( 3 );
+    }
 
+    @DisplayName( "It should find all matches" )
+    @Test
+    public void testMatchAll() {
+        instance.executeSource(
+            """
+                nums = [ 1, [3], true, { test: true }, "1", 1.0, 4, "1.0" ];
+                result = nums.findAll( 1 );
+            """,
+            context );
+        Array found = ( Array ) variables.dereference( result, false );
+        assertThat( found.size() ).isEqualTo( 5 );
+        assertThat( found.get( 0 ) ).isEqualTo( 1 );
+        assertThat( found.get( 1 ) ).isEqualTo( 3 );
+        assertThat( found.get( 2 ) ).isEqualTo( 5 );
+        assertThat( found.get( 3 ) ).isEqualTo( 6 );
+        assertThat( found.get( 4 ) ).isEqualTo( 8 );
+    }
+
+    @DisplayName( "It should match every number variation when compared with an int" )
+    @Test
+    public void testMatchNumberVariationsInt() {
+        instance.executeSource(
+            """
+                nums = [ 1, "1", 1.0, "1.0", true, "true", "yes" ];
+                result = nums.findAll( 1 );
+            """,
+            context );
+        Array found = ( Array ) variables.dereference( result, false );
+        assertThat( found.size() ).isEqualTo( 7 );
+    }
+
+    @DisplayName( "It should match every number variation when compared with a string int" )
+    @Test
+    public void testMatchNumberVariationsStringInt() {
+        instance.executeSource(
+            """
+                nums = [ 1, "1", 1.0, "1.0", true, "true", "yes" ];
+                result = nums.findAll( "1" );
+            """,
+            context );
+        Array found = ( Array ) variables.dereference( result, false );
+        assertThat( found.size() ).isEqualTo( 7 );
+    }
+
+    @DisplayName( "It should match every number variation when compared with a double" )
+    @Test
+    public void testMatchNumberVariationsDouble() {
+        instance.executeSource(
+            """
+                nums = [ 1, "1", 1.0, "1.0", true, "true", "yes" ];
+                result = nums.findAll( 1.0 );
+            """,
+            context );
+        Array found = ( Array ) variables.dereference( result, false );
+        assertThat( found.size() ).isEqualTo( 7 );
+    }
+
+    @DisplayName( "It should match every number variation when compared with a string double" )
+    @Test
+    public void testMatchNumberVariationsStringDouble() {
+        instance.executeSource(
+            """
+                nums = [ 1, "1", 1.0, "1.0", true, "true", "yes" ];
+                result = nums.findAll( "1.0" );
+            """,
+            context );
+        Array found = ( Array ) variables.dereference( result, false );
+        assertThat( found.size() ).isEqualTo( 7 );
+    }
+
+    @DisplayName( "It should match every number variation when compared with a boolean" )
+    @Test
+    public void testMatchNumberVariationsBoolean() {
+        instance.executeSource(
+            """
+                nums = [ 1, "1", 1.0, "1.0", true, "true", "yes" ];
+                result = nums.findAll( true );
+            """,
+            context );
+        Array found = ( Array ) variables.dereference( result, false );
+        assertThat( found.size() ).isEqualTo( 7 );
+    }
+
+    @DisplayName( "It should match every number variation when compared with a string boolean" )
+    @Test
+    public void testMatchNumberVariationsStringBoolean() {
+        instance.executeSource(
+            """
+                nums = [ 1, "1", 1.0, "1.0", true, "true", "yes" ];
+                result = nums.findAll( "true" );
+            """,
+            context );
+        Array found = ( Array ) variables.dereference( result, false );
+        assertThat( found.size() ).isEqualTo( 7 );
+    }
+
+    @DisplayName( "It should match every number variation when compared with yes" )
+    @Test
+    public void testMatchNumberVariationsYes() {
+        instance.executeSource(
+            """
+                nums = [ 1, "1", 1.0, "1.0", true, "true", "yes" ];
+                result = nums.findAll( "yes" );
+            """,
+            context );
+        Array found = ( Array ) variables.dereference( result, false );
+        assertThat( found.size() ).isEqualTo( 7 );
+    }
+
+    @DisplayName( "It should match using a provided UDF" )
+    @Test
+    public void testMatchUsingUDF() {
+        instance.executeSource(
+            """
+                nums = [ 1, "1", 1.0, "1.0", "red", "red", true, "true", "yes" ];
+                result = nums.findAll( value -> value == "red" );
+            """,
+            context );
+        Array found = ( Array ) variables.dereference( result, false );
+        assertThat( found.size() ).isEqualTo( 2 );
+        assertThat( found.get( 0 ) ).isEqualTo( 5 );
+        assertThat( found.get( 1 ) ).isEqualTo( 6 );
+    }
 }
