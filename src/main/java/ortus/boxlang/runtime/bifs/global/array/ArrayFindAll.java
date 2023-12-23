@@ -58,20 +58,28 @@ public class ArrayFindAll extends BIF {
 		Object	value		= arguments.get( Key.value );
 
 		if ( value instanceof Function functionValue ) {
-			return findAll( context, actualArray, value, functionValue );
+			return findAll( context, actualArray, functionValue );
 		}
 
-		return findAll( context, actualArray, value );
+		return findAll( context, actualArray, value, true );
 	}
 
-	private Array findAll( IBoxContext context, Array actualArray, Object value ) {
+	public static Array _invoke( IBoxContext context, Array actualArray, Object value, boolean caseSensitive ) {
+		if ( value instanceof Function functionValue ) {
+			return findAll( context, actualArray, functionValue );
+		}
+
+		return findAll( context, actualArray, value, caseSensitive );
+	}
+
+	private static Array findAll( IBoxContext context, Array actualArray, Object value, boolean caseSensitive ) {
 		Array				values		= new Array();
 		CastAttempt<String>	valueString	= StringCaster.attempt( value );
 
 		for ( int i = 0; i < actualArray.size(); i++ ) {
 			CastAttempt<String> aValue = StringCaster.attempt( actualArray.get( i ) );
 
-			if ( aValue.wasSuccessful() && valueString.wasSuccessful() && Compare.invoke( aValue.get(), valueString.get(), true ) == 0 ) {
+			if ( aValue.wasSuccessful() && valueString.wasSuccessful() && Compare.invoke( aValue.get(), valueString.get(), caseSensitive ) == 0 ) {
 				values.add( i + 1 );
 			} else if ( actualArray.get( i ).equals( value ) ) {
 				values.add( i + 1 );
@@ -81,7 +89,7 @@ public class ArrayFindAll extends BIF {
 		return values;
 	}
 
-	private Array findAll( IBoxContext context, Array actualArray, Object value, Function functionValue ) {
+	private static Array findAll( IBoxContext context, Array actualArray, Function functionValue ) {
 		Array values = new Array();
 
 		for ( int i = 0; i < actualArray.size(); i++ ) {
