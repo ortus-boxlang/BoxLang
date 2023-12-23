@@ -62,7 +62,7 @@ public class ArrayContains extends BIF {
 				    // Invoke Function
 				    context.invokeFunction(
 				        // Function object
-				        actualArray.get( i ),
+				        callback,
 				        new Object[] {
 				            // Pass this array value
 				            actualArray.get( i ),

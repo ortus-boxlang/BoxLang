@@ -33,6 +33,7 @@ import ortus.boxlang.runtime.dynamic.IReferenceable;
 import ortus.boxlang.runtime.dynamic.casters.KeyCaster;
 import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 import ortus.boxlang.runtime.interop.DynamicJavaInteropService;
+import ortus.boxlang.runtime.runnables.IClassRunnable;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.services.FunctionService;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
@@ -848,6 +849,14 @@ public class Struct implements Map<Key, Object>, IType, IReferenceable, IListena
 	 */
 	public Function getAsFunction( Key key ) {
 		return ( Function ) get( key );
+	}
+
+	/**
+	 * Convenience method for getting cast as BoxRunnable
+	 * Does NOT perform BoxLang casting, only Java cast so the object needs to actually be castable
+	 */
+	public IClassRunnable getClassRunnable( Key key ) {
+		return ( IClassRunnable ) get( key );
 	}
 
 	// Add more as needed...

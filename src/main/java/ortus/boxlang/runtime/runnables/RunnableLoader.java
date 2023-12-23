@@ -82,6 +82,7 @@ public class RunnableLoader {
 	 * @return
 	 */
 	public BoxTemplate loadTemplateAbsolute( IBoxContext context, Path path, String packagePath ) {
+		// TODO: Make case insensitive
 		if ( !path.toFile().exists() ) {
 			throw new MissingIncludeException( "The template path [" + path.toString() + "] could not be found.", path.toString() );
 		}

@@ -58,7 +58,7 @@ public class ArrayContainsNoCase extends BIF {
 
 		if ( value instanceof Function callback ) {
 			for ( int i = 0; i < actualArray.size(); i++ ) {
-				if ( BooleanCaster.cast( context.invokeFunction( actualArray.get( i ), new Object[] { actualArray.get( i ), i + 1, actualArray } ) ) ) {
+				if ( BooleanCaster.cast( context.invokeFunction( callback, new Object[] { actualArray.get( i ), i + 1, actualArray } ) ) ) {
 					return i + 1;
 				}
 			}

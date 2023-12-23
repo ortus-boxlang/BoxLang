@@ -12,51 +12,57 @@
  * BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language
  * governing permissions and limitations under the License.
  */
-package ortus.boxlang.runtime.bifs.global.array;
+package ortus.boxlang.runtime.bifs.global.type;
 
 import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
-import ortus.boxlang.runtime.bifs.BoxMember;
 import ortus.boxlang.runtime.context.IBoxContext;
-import ortus.boxlang.runtime.dynamic.casters.DoubleCaster;
+import ortus.boxlang.runtime.runnables.IClassRunnable;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
-import ortus.boxlang.runtime.types.Array;
-import ortus.boxlang.runtime.types.BoxLangType;
+import ortus.boxlang.runtime.types.Function;
 
 @BoxBIF
-@BoxMember( type = BoxLangType.ARRAY )
-public class ArrayMin extends BIF {
+public class GetMetaData extends BIF {
 
 	/**
 	 * Constructor
 	 */
-	public ArrayMin() {
+	public GetMetaData() {
 		super();
 		declaredArguments = new Argument[] {
-		    new Argument( true, "any", Key.array )
+		    new Argument( true, "any", Key.object )
 		};
 	}
 
 	/**
-	 * Return length of array
+	 * Gets metadata (the methods, properties, and parameters of a component) associated with an object.
+	 * This only exists for backwards compat with Adobe and Lucee and this BIF should be moved to a compat module
+	 * at a later date. In BoxLang, use the obj.bx$.meta object instead.
 	 * 
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 * 
-	 * @argument.array The array to get min value from
+	 * @argument.object The object to get metadata for.
 	 */
 	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
-		Array	actualArray	= arguments.getAsArray( Key.array );
-		double	min			= 0;
-		if ( actualArray.size() > 0 ) {
-			min = DoubleCaster.cast( actualArray.get( 0 ) );
+		Object object = arguments.get( Key.object );
+
+		// Functions have a legacy metadata view that matches CF engines
+		if ( object instanceof Function fun ) {
+			return fun.getMetaData();
 		}
-		for ( int i = 1; i < actualArray.size(); i++ ) {
-			min = Math.min( min, DoubleCaster.cast( actualArray.get( i ) ) );
+
+		// Classes have a legacy metadata view that matches CF engines
+		if ( object instanceof IClassRunnable cfc ) {
+			return cfc.getMetaData();
 		}
-		return min;
+
+		// TODO: add any other custom types that CF engines return a specific metadata for.
+
+		// All other types return the class of the object to match CF engines
+		return object.getClass();
 	}
 
 }

@@ -28,32 +28,32 @@ import ortus.boxlang.runtime.types.BoxLangType;
 @BoxMember( type = BoxLangType.ARRAY )
 public class ArrayFindAllNoCase extends BIF {
 
-    /**
-     * Constructor
-     */
-    public ArrayFindAllNoCase() {
-        super();
-        declaredArguments = new Argument[] {
-            new Argument( true, "array", Key.array ),
-            new Argument( true, "any", Key.value )
-        };
-    }
+	/**
+	 * Constructor
+	 */
+	public ArrayFindAllNoCase() {
+		super();
+		declaredArguments = new Argument[] {
+		    new Argument( true, "array", Key.array ),
+		    new Argument( true, "any", Key.value )
+		};
+	}
 
-    /**
-     * Return an array of indexes that represent matching values in the array. Case insensitive.
-     * 
-     * @param context   The context in which the BIF is being invoked.
-     * @param arguments Argument scope for the BIF.
-     * 
-     * @argument.array The array to be searched.
-     * 
-     * @argument.value The value to found or a function to test each item
-     */
-    public Array invoke( IBoxContext context, ArgumentsScope arguments ) {
-        Array  actualArray = arguments.getAsArray( Key.array );
-        Object value       = arguments.get( Key.value );
+	/**
+	 * Return an array of indexes that represent matching values in the array. Case insensitive.
+	 * 
+	 * @param context   The context in which the BIF is being invoked.
+	 * @param arguments Argument scope for the BIF.
+	 * 
+	 * @argument.array The array to be searched.
+	 * 
+	 * @argument.value The value to found or a function to test each item
+	 */
+	public Array invoke( IBoxContext context, ArgumentsScope arguments ) {
+		Array	actualArray	= arguments.getAsArray( Key.array );
+		Object	value		= arguments.get( Key.value );
 
-        return ArrayFindAll._invoke( context, actualArray, value, false );
-    }
+		return ArrayFindAll._invoke( context, actualArray, value, false );
+	}
 
 }

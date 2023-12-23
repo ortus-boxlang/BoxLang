@@ -46,8 +46,8 @@ public class ClassMeta extends BoxMeta {
 		// Assemble the metadata
 		var functions = new ArrayList<Object>();
 		// loop over target's variables scope and add metadata for each function
-		for ( var entry : target.getVariablesScope().keySet() ) {
-			var value = target.getVariablesScope().get( entry );
+		for ( var entry : target.getThisScope().keySet() ) {
+			var value = target.getThisScope().get( entry );
 			if ( value instanceof Function fun ) {
 				functions.add( ( ( FunctionMeta ) fun.getBoxMeta() ).meta );
 			}
@@ -57,7 +57,6 @@ public class ClassMeta extends BoxMeta {
 		    "name", target.getName().getName(),
 		    "documentation", target.getDocumentation(),
 		    "annotations", target.getAnnotations(),
-		    "accessors", false,
 		    // TODO: add extends
 		    "extends", Struct.EMPTY,
 		    "functions", ImmutableArray.fromList( functions ),
@@ -65,12 +64,8 @@ public class ClassMeta extends BoxMeta {
 		    // TODO: add properties
 		    "properties", Array.EMPTY,
 		    "type", "Component",
-		    "name", target.getName().getName(),
 		    "fullname", target.getName().getName(),
-		    "path", target.getRunnablePath(),
-		    // move to annotations and only keep here in legacy metadata view
-		    "persisent", false,
-		    "output", false
+		    "path", target.getRunnablePath().toString()
 		);
 
 	}

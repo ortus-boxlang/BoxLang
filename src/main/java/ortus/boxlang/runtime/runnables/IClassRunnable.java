@@ -22,6 +22,7 @@ import ortus.boxlang.runtime.dynamic.IReferenceable;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Struct;
+import ortus.boxlang.runtime.types.meta.BoxMeta;
 
 public interface IClassRunnable extends ITemplateRunnable, IReferenceable {
 
@@ -60,5 +61,17 @@ public interface IClassRunnable extends ITemplateRunnable, IReferenceable {
 	 * Run the pseudo constructor
 	 */
 	public void pseudoConstructor( IBoxContext context );
+
+	/**
+	 * Get the combined metadata for this class and all it's functions
+	 * This follows the format of Lucee and Adobe's "combined" metadata
+	 * TODO: Move this to compat module
+	 *
+	 * @return The metadata as a struct
+	 */
+	public Struct getMetaData();
+
+	// Duplicate from IType
+	public BoxMeta getBoxMeta();
 
 }

@@ -32,17 +32,19 @@ import ortus.boxlang.runtime.context.ScriptingBoxContext;
 import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.runnables.IClassRunnable;
 import ortus.boxlang.runtime.runnables.RunnableLoader;
-import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.RequestScope;
 import ortus.boxlang.runtime.scopes.VariablesScope;
+import ortus.boxlang.runtime.types.Array;
+import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
+import ortus.boxlang.runtime.types.meta.ClassMeta;
 
 public class ClassTest {
 
 	static BoxRuntime	instance;
 	IBoxContext			context;
-	IScope				variables;
+	VariablesScope		variables;
 	static Key			result	= new Key( "result" );
 	static Key			foo		= new Key( "foo" );
 
@@ -59,7 +61,7 @@ public class ClassTest {
 	@BeforeEach
 	public void setupEach() {
 		context		= new ScriptingBoxContext( instance.getRuntimeContext() );
-		variables	= context.getScopeNearby( VariablesScope.name );
+		variables	= ( VariablesScope ) context.getScopeNearby( VariablesScope.name );
 	}
 
 	@DisplayName( "basic class" )
@@ -154,6 +156,76 @@ public class ClassTest {
 		    // Can call public methods on this
 		    assert cfc.runThisFoo() == "I work! whee true true bar true";
 		                    		                  """, context );
+
+	}
+
+	@DisplayName( "legacy meta" )
+	@Test
+	public void testlegacyMeta() {
+
+		instance.executeStatement(
+		    """
+		    	cfc = new src.test.java.TestCases.phase3.MyClass();
+		    """, context );
+
+		var	cfc		= variables.getClassRunnable( Key.of( "cfc" ) );
+		var	meta	= cfc.getMetaData();
+		assertThat( meta.get( Key.of( "name" ) ) ).isEqualTo( "src.test.java.TestCases.phase3.MyClass" );
+		// assertThat( meta.get( Key.of( "extends" ) ) ).isEqualTo( "" );
+		assertThat( meta.get( Key.of( "type" ) ) ).isEqualTo( "Component" );
+		assertThat( meta.get( Key.of( "fullname" ) ) ).isEqualTo( "src.test.java.TestCases.phase3.MyClass" );
+		assertThat( meta.getAsString( Key.of( "path" ) ).contains( "MyClass.cfc" ) ).isTrue();
+		assertThat( meta.get( Key.of( "hashcode" ) ) ).isEqualTo( cfc.hashCode() );
+		assertThat( meta.get( Key.of( "properties" ) ) instanceof Array ).isTrue();
+		assertThat( meta.get( Key.of( "functions" ) ) instanceof Array ).isTrue();
+		assertThat( meta.getAsArray( Key.of( "functions" ) ).size() ).isEqualTo( 4 );
+		assertThat( meta.get( Key.of( "extends" ) ) instanceof Struct ).isTrue();
+		assertThat( meta.get( Key.of( "output" ) ) ).isEqualTo( false );
+		assertThat( meta.get( Key.of( "persisent" ) ) ).isEqualTo( false );
+		assertThat( meta.get( Key.of( "accessors" ) ) ).isEqualTo( false );
+	}
+
+	@DisplayName( "box meta" )
+	@Test
+	public void testBoxMeta() {
+
+		instance.executeStatement(
+		    """
+		    	cfc = new src.test.java.TestCases.phase3.MyClass();
+		    """, context );
+
+		var	cfc		= variables.getClassRunnable( Key.of( "cfc" ) );
+		var	boxMeta	= ( ClassMeta ) cfc.getBoxMeta();
+		var	meta	= boxMeta.meta;
+		assertThat( meta.get( Key.of( "name" ) ) ).isEqualTo( "src.test.java.TestCases.phase3.MyClass" );
+		assertThat( meta.get( Key.of( "type" ) ) ).isEqualTo( "Component" );
+		assertThat( meta.get( Key.of( "fullname" ) ) ).isEqualTo( "src.test.java.TestCases.phase3.MyClass" );
+		assertThat( meta.getAsString( Key.of( "path" ) ).contains( "MyClass.cfc" ) ).isTrue();
+		assertThat( meta.get( Key.of( "hashcode" ) ) ).isEqualTo( cfc.hashCode() );
+		assertThat( meta.get( Key.of( "properties" ) ) instanceof Array ).isTrue();
+		assertThat( meta.get( Key.of( "functions" ) ) instanceof Array ).isTrue();
+
+		assertThat( meta.get( Key.of( "extends" ) ) instanceof Struct ).isTrue();
+
+		assertThat( meta.getAsArray( Key.of( "functions" ) ).size() ).isEqualTo( 4 );
+		var fun1 = meta.getAsArray( Key.of( "functions" ) ).get( 0 );
+		assertThat( fun1 ).isInstanceOf( Struct.class );
+		assertThat( ( ( Struct ) fun1 ).containsKey( Key.of( "name" ) ) ).isTrue();
+
+		assertThat( meta.get( Key.of( "documentation" ) ) instanceof Struct ).isTrue();
+		var docs = meta.getAsStruct( Key.of( "documentation" ) );
+		assertThat( docs.getAsString( Key.of( "brad" ) ).trim() ).isEqualTo( "wood" );
+		assertThat( docs.get( Key.of( "luis" ) ) ).isEqualTo( "" );
+		assertThat( docs.getAsString( Key.of( "hint" ) ).trim() ).isEqualTo( "This is my class description" );
+
+		assertThat( meta.get( Key.of( "annotations" ) ) instanceof Struct ).isTrue();
+		var annos = meta.getAsStruct( Key.of( "annotations" ) );
+		assertThat( annos.getAsString( Key.of( "foo" ) ).trim() ).isEqualTo( "bar" );
+		assertThat( annos.getAsString( Key.of( "extends" ) ).trim() ).isEqualTo( "com.brad.Wood" );
+		assertThat( annos.getAsString( Key.of( "implements" ) ).trim() ).isEqualTo( "Luis,Jorge" );
+		assertThat( annos.getAsString( Key.of( "singleton" ) ).trim() ).isEqualTo( "" );
+		assertThat( annos.getAsString( Key.of( "gavin" ) ).trim() ).isEqualTo( "pickin" );
+		assertThat( annos.getAsString( Key.of( "inject" ) ).trim() ).isEqualTo( "" );
 
 	}
 
