@@ -28,6 +28,7 @@ import org.mockito.Spy;
 
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.ScriptingBoxContext;
+import ortus.boxlang.runtime.scopes.Key;
 
 class FunctionServiceTest {
 
@@ -64,7 +65,7 @@ class FunctionServiceTest {
 
 		Object result = service.getGlobalFunction( "print" )
 		    .invoke(
-		        new ScriptingBoxContext(), new String[] { "Hello Unit Test" }, false
+		        new ScriptingBoxContext(), new String[] { "Hello Unit Test" }, false, Key.of( "print" )
 		    );
 
 		assertThat( ( Boolean ) result ).isTrue();

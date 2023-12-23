@@ -18,14 +18,24 @@ import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
 import ortus.boxlang.runtime.bifs.BoxMember;
 import ortus.boxlang.runtime.context.IBoxContext;
+import ortus.boxlang.runtime.dynamic.casters.CastAttempt;
+import ortus.boxlang.runtime.dynamic.casters.StringCaster;
+import ortus.boxlang.runtime.operators.Compare;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.BoxLangType;
+import ortus.boxlang.runtime.types.Function;
 
 @BoxBIF
+@BoxBIF( alias = "ArrayFindNoCase" )
+@BoxBIF( alias = "ArrayFindAll" )
+@BoxBIF( alias = "ArrayFindAllNoCase" )
 @BoxMember( type = BoxLangType.ARRAY )
+@BoxMember( type = BoxLangType.ARRAY, name = "findNoCase" )
+@BoxMember( type = BoxLangType.ARRAY, name = "findAll" )
+@BoxMember( type = BoxLangType.ARRAY, name = "findAllNoCase" )
 public class ArrayFind extends BIF {
 
 	/**
@@ -52,8 +62,76 @@ public class ArrayFind extends BIF {
 	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
 		Array	actualArray	= arguments.getAsArray( Key.array );
 		Object	value		= arguments.get( Key.value );
+		String	invokedName	= ( ( Key ) arguments.get( BIF.__executionName ) ).getNameNoCase();
 
-		return ArrayContains._invoke( actualArray, value );
+		if ( !invokedName.contains( "ALL" ) ) {
+			if ( value instanceof Function functionValue ) {
+				return findOne( context, actualArray, functionValue );
+			}
+
+			return findOne( actualArray, value, !invokedName.contains( "NOCASE" ) );
+		}
+
+		if ( value instanceof Function functionValue ) {
+			return findAll( context, actualArray, functionValue );
+		}
+
+		return findAll( actualArray, value, !invokedName.contains( "NOCASE" ) );
+	}
+
+	private int findOne( Array actualArray, Object value, boolean caseSensitive ) {
+		CastAttempt<String> valueString = StringCaster.attempt( value );
+
+		for ( int i = 0; i < actualArray.size(); i++ ) {
+			CastAttempt<String> aValue = StringCaster.attempt( actualArray.get( i ) );
+
+			if ( aValue.wasSuccessful() && valueString.wasSuccessful() && Compare.invoke( aValue.get(), valueString.get(), caseSensitive ) == 0 ) {
+				return i + 1;
+			} else if ( actualArray.get( i ).equals( value ) ) {
+				return i + 1;
+			}
+		}
+
+		return 0;
+	}
+
+	private int findOne( IBoxContext context, Array actualArray, Function functionValue ) {
+		for ( int i = 0; i < actualArray.size(); i++ ) {
+			if ( ( boolean ) context.invokeFunction( functionValue, new Object[] { actualArray.get( i ) } ) ) {
+				return i + 1;
+			}
+		}
+
+		return 0;
+	}
+
+	private Array findAll( Array actualArray, Object value, boolean caseSensitive ) {
+		Array				values		= new Array();
+		CastAttempt<String>	valueString	= StringCaster.attempt( value );
+
+		for ( int i = 0; i < actualArray.size(); i++ ) {
+			CastAttempt<String> aValue = StringCaster.attempt( actualArray.get( i ) );
+
+			if ( aValue.wasSuccessful() && valueString.wasSuccessful() && Compare.invoke( aValue.get(), valueString.get(), caseSensitive ) == 0 ) {
+				values.add( i + 1 );
+			} else if ( actualArray.get( i ).equals( value ) ) {
+				values.add( i + 1 );
+			}
+		}
+
+		return values;
+	}
+
+	private Array findAll( IBoxContext context, Array actualArray, Function functionValue ) {
+		Array values = new Array();
+
+		for ( int i = 0; i < actualArray.size(); i++ ) {
+			if ( ( boolean ) context.invokeFunction( functionValue, new Object[] { actualArray.get( i ) } ) ) {
+				values.add( i + 1 );
+			}
+		}
+
+		return values;
 	}
 
 }
