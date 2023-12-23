@@ -83,6 +83,7 @@ public class BoxClassTransformer extends AbstractTransformer {
 		import java.util.Iterator;
 		import java.util.Map;
 		import java.util.HashMap;
+		import java.util.ArrayList;
 
 		public class ${className} implements IClassRunnable, IReferenceable, IType {
 
@@ -201,8 +202,7 @@ public class BoxClassTransformer extends AbstractTransformer {
 			 * @return The string representation
 			 */
 			public String asString() {
-				// TODO return something from metas
-				return this.toString();
+				return name.getName();
 			}
 
 			/**
@@ -319,6 +319,52 @@ public class BoxClassTransformer extends AbstractTransformer {
 				throw new BoxRuntimeException( "Method '" + name.getName() + "' not found" );
 			}
 
+
+			/**
+			 * Get the combined metadata for this function and all it's parameters
+			 * This follows the format of Lucee and Adobe's "combined" metadata
+			 * TODO: Move this to compat module
+			 *
+			 * @return The metadata as a struct
+			 */
+			public Struct getMetaData() {
+				Struct meta = new Struct();
+				if ( getDocumentation() != null ) {
+					meta.putAll( getDocumentation() );
+				}
+				if ( getAnnotations() != null ) {
+					meta.putAll( getAnnotations() );
+				}
+				meta.putIfAbsent( "hint", "" );
+				meta.putIfAbsent( "output", false );
+				
+				// Assemble the metadata
+				var functions = new ArrayList<Object>();
+				// loop over target's variables scope and add metadata for each function
+				for ( var entry : thisScope.keySet() ) {
+					var value = thisScope.get( entry );
+					if ( value instanceof Function fun ) {
+						functions.add( fun.getMetaData() );
+					}
+				}
+
+				meta.put( "name", getName().getName() );
+				meta.put( "accessors", false );
+				// TODO: add extends
+				meta.put( "extends", Struct.EMPTY );
+				meta.put( "functions", Array.fromList( functions ) );
+				meta.put( "hashCode", hashCode() );
+				// TODO: add properties
+				meta.put( "properties", Array.EMPTY );
+				meta.put( "type", "Component" );
+				meta.put( "name", getName().getName() );
+				meta.put( "fullname", getName().getName() );
+				meta.put( "path", getRunnablePath().toString() );
+				meta.put( "persisent", false );
+				meta.put( "output", false );
+				
+				return meta;
+			}
 
 		}
 	""";
