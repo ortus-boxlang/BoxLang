@@ -19,54 +19,42 @@ import ortus.boxlang.runtime.bifs.BoxBIF;
 import ortus.boxlang.runtime.bifs.BoxMember;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.dynamic.casters.ArrayCaster;
+import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
 import ortus.boxlang.runtime.dynamic.casters.CastAttempt;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
-import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.BoxLangType;
 
 @BoxBIF
 @BoxMember( type = BoxLangType.BOOLEAN )
-public class IsArray extends BIF {
+public class IsBoolean extends BIF {
 
 	/**
 	 * Constructor
 	 */
-	public IsArray() {
+	public IsBoolean() {
 		super();
 		declaredArguments = new Argument[] {
 		    new Argument( true, "any", Key.value ),
-		    new Argument( false, "numeric", Key.number ),
 		};
 	}
 
 	/**
-	 * Determine whether a value is an array
+	 * Determine whether a value is a boolean
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.value The value to test for array-ness.
-	 *
-	 * @argument.number If passed, the array dimension to test.
+	 * @argument.value The value to test for boolean-ness.
 	 *
 	 * @param context
 	 * @param arguments Argument scope defining the array and value to append.
 	 */
 	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
-		Boolean				matchesDimension	= true;
-		CastAttempt<Array>	attempt				= ArrayCaster.attempt( arguments.get( Key.value ) );
+		CastAttempt<Boolean> attempt = BooleanCaster.attempt( arguments.get( Key.value ) );
 
-		if ( !attempt.wasSuccessful() ) {
-			return false;
-		}
-
-		// @TODO: Implement dimension check.
-		// if( arguments.containsKey( arguments.get( Key.number) ) ){
-		// matchesDimension = attempt.get().getDimension() == arguments.get( Key.number );
-		// }
-		return matchesDimension;
+		return attempt.wasSuccessful();
 	}
 
 }

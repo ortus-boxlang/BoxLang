@@ -23,7 +23,6 @@ import static com.google.common.truth.Truth.assertThat;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -34,7 +33,6 @@ import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
 
-@Disabled( "Unimplemented" )
 public class IsBooleanTest {
 
 	static BoxRuntime	instance;
@@ -58,7 +56,6 @@ public class IsBooleanTest {
 		variables.clear();
 	}
 
-
 	@DisplayName( "It detects boolean values" )
 	@Test
 	public void testTrueConditions() {
@@ -73,6 +70,7 @@ public class IsBooleanTest {
 		    yes         = isBoolean( "yes" );
 		    no          = isBoolean( "no" );
 
+		    float       = isBoolean( 1.1 );
 		    zero        = isBoolean( 0 );
 		    twentythree = isBoolean( 23 );
 		    """,
@@ -86,25 +84,22 @@ public class IsBooleanTest {
 		assertThat( ( Boolean ) variables.dereference( Key.of( "yes" ), false ) ).isTrue();
 		assertThat( ( Boolean ) variables.dereference( Key.of( "no" ), false ) ).isTrue();
 
+		assertThat( ( Boolean ) variables.dereference( Key.of( "float" ), false ) ).isTrue();
 		assertThat( ( Boolean ) variables.dereference( Key.of( "zero" ), false ) ).isTrue();
 		assertThat( ( Boolean ) variables.dereference( Key.of( "twentythree" ), false ) ).isTrue();
 	}
+
 	@DisplayName( "It returns false for non-boolean values" )
 	@Test
 	public void testFalseConditions() {
 		instance.executeSource(
 		    """
-		    float       = isBoolean( 1.1 );
 		    array       = isBoolean( [ true, false ] );
 
 		    string      = isBoolean( "randomstring" );
 		    struct      = isBoolean( {} );
-
-		    zero        = isBoolean( 0 );
-		    twentythree = isBoolean( 23 );
 		    """,
 		    context );
-		assertThat( ( Boolean ) variables.dereference( Key.of( "float" ), false ) ).isFalse();
 		assertThat( ( Boolean ) variables.dereference( Key.of( "array" ), false ) ).isFalse();
 		assertThat( ( Boolean ) variables.dereference( Key.of( "string" ), false ) ).isFalse();
 		assertThat( ( Boolean ) variables.dereference( Key.of( "struct" ), false ) ).isFalse();
