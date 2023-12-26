@@ -94,10 +94,10 @@ public class IsArrayTest {
 	public void testDimensionArgument() {
 		instance.executeSource(
 		    """
-		    isSingleDimensionArray = isArray( [], 1 );
-		    isTwoDimensionArray = isArray( arrayNew( 2 ), 2 );
-			isThreeDimensionArray = isArray( [ 1, 2 ], 3 );
-		    """,
+		       isSingleDimensionArray = isArray( [], 1 );
+		       isTwoDimensionArray = isArray( arrayNew( 2 ), 2 );
+		    isThreeDimensionArray = isArray( [ 1, 2 ], 3 );
+		       """,
 		    context );
 		assertThat( ( Boolean ) variables.dereference( Key.of( "isSingleDimensionArray" ), false ) ).isTrue();
 		assertThat( ( Boolean ) variables.dereference( Key.of( "isTwoDimensionArray" ), false ) ).isTrue();

@@ -18,7 +18,6 @@ import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
 import ortus.boxlang.runtime.bifs.BoxMember;
 import ortus.boxlang.runtime.context.IBoxContext;
-import ortus.boxlang.runtime.dynamic.casters.ArrayCaster;
 import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
 import ortus.boxlang.runtime.dynamic.casters.CastAttempt;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
@@ -36,23 +35,23 @@ public class IsBoolean extends BIF {
 	public IsBoolean() {
 		super();
 		declaredArguments = new Argument[] {
-		    new Argument( true, "any", Key.value ),
+		    new Argument( true, "any", Key.object ),
 		};
 	}
 
 	/**
-	 * Determine whether a value is a boolean
+	 * Determine whether a given object is a boolean
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.value The value to test for boolean-ness.
+	 * @argument.object The value to test for boolean-ness.
 	 *
 	 * @param context
-	 * @param arguments Argument scope defining the array and value to append.
+	 * @param arguments Argument scope defining the value to test.
 	 */
 	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
-		CastAttempt<Boolean> attempt = BooleanCaster.attempt( arguments.get( Key.value ) );
+		CastAttempt<Boolean> attempt = BooleanCaster.attempt( arguments.get( Key.object ) );
 
 		return attempt.wasSuccessful();
 	}

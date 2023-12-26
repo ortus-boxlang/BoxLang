@@ -58,21 +58,20 @@ public class IsLeapYearTest {
 		variables.clear();
 	}
 
-
 	@DisplayName( "It detects leap years" )
 	@Test
 	public void testTrueConditions() {
 		instance.executeSource(
 		    """
-			// returns true in both engines
-			anInteger          = isLeapYear( 2024 );
-			aFloat             = isLeapYear( .2024 );
-			anotherFloat       = isLeapYear( 20.24 );
-			aTwoDigitInteger   = isLeapYear( 20 );
-			aStringInteger     = isLeapYear( "2024" );
-			aStringFloat       = isLeapYear( "20.24" );
-			anotherStringFloat = isLeapYear( ".01" );
-		    """,
+		    // returns true in both engines
+		    anInteger          = isLeapYear( 2024 );
+		    aFloat             = isLeapYear( .2024 );
+		    anotherFloat       = isLeapYear( 20.24 );
+		    aTwoDigitInteger   = isLeapYear( 20 );
+		    aStringInteger     = isLeapYear( "2024" );
+		    aStringFloat       = isLeapYear( "20.24" );
+		    anotherStringFloat = isLeapYear( ".01" );
+		       """,
 		    context );
 		assertThat( ( Boolean ) variables.dereference( Key.of( "anInteger" ), false ) ).isTrue();
 		assertThat( ( Boolean ) variables.dereference( Key.of( "aFloat" ), false ) ).isTrue();
@@ -82,15 +81,16 @@ public class IsLeapYearTest {
 		assertThat( ( Boolean ) variables.dereference( Key.of( "aStringFloat" ), false ) ).isTrue();
 		assertThat( ( Boolean ) variables.dereference( Key.of( "anotherStringFloat" ), false ) ).isTrue();
 	}
+
 	@DisplayName( "It returns false for non-leap years" )
 	@Test
 	public void testFalseConditions() {
 		instance.executeSource(
 		    """
-			// returns false in both engines
-			anIntegerNonLeapYear = isLeapYear( 2023 );
-			aStringNonLeapYear   = isLeapYear( "2021" );
-		    """,
+		    // returns false in both engines
+		    anIntegerNonLeapYear = isLeapYear( 2023 );
+		    aStringNonLeapYear   = isLeapYear( "2021" );
+		       """,
 		    context );
 		assertThat( ( Boolean ) variables.dereference( Key.of( "anIntegerNonLeapYear" ), false ) ).isTrue();
 		assertThat( ( Boolean ) variables.dereference( Key.of( "aStringNonLeapYear" ), false ) ).isTrue();

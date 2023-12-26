@@ -52,7 +52,7 @@ public class IsArray extends BIF {
 	 * @argument.number If passed, the array dimension to test.
 	 *
 	 * @param context
-	 * @param arguments Argument scope defining the array and value to append.
+	 * @param arguments Argument scope defining the value to test.
 	 */
 	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
 		Boolean				matchesDimension	= true;

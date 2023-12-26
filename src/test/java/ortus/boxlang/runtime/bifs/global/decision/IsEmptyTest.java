@@ -58,18 +58,17 @@ public class IsEmptyTest {
 		variables.clear();
 	}
 
-
 	@DisplayName( "It detects empty values" )
 	@Test
 	public void testTrueConditions() {
 		instance.executeSource(
 		    """
-				emptyString           = isEmpty( "" );
-				emptyArray            = isEmpty( [] );
-				emptyStruct           = isEmpty( {} );
-				emptyQueryNoColumns   = isEmpty( queryNew( "" ) );
-				emptyQueryWithColumns = isEmpty( queryNew( "name,age,dateModified" ) );
-		    """,
+		    emptyString           = isEmpty( "" );
+		    emptyArray            = isEmpty( [] );
+		    emptyStruct           = isEmpty( {} );
+		    emptyQueryNoColumns   = isEmpty( queryNew( "" ) );
+		    emptyQueryWithColumns = isEmpty( queryNew( "name,age,dateModified" ) );
+		      """,
 		    context );
 		assertThat( ( Boolean ) variables.dereference( Key.of( "emptyString" ), false ) ).isTrue();
 		assertThat( ( Boolean ) variables.dereference( Key.of( "emptyArray" ), false ) ).isTrue();
@@ -83,14 +82,14 @@ public class IsEmptyTest {
 	public void testFalseConditions() {
 		instance.executeSource(
 		    """
-				boolValue    = isEmpty( true );
-				stringValue  = isEmpty( "2" );
-				nestedArray  = isEmpty( [[[],[]]] );
-				nestedStruct = isEmpty( { a : {}, b : {}} );
-				stringArray = isEmpty( [ "abc" ] );
-				structWithValues = isEmpty( { a : "b" } );
-				nestedStructValues = isEmpty( { a : { "name" : "brad" }} );
-		    """,
+		    boolValue    = isEmpty( true );
+		    stringValue  = isEmpty( "2" );
+		    nestedArray  = isEmpty( [[[],[]]] );
+		    nestedStruct = isEmpty( { a : {}, b : {}} );
+		    stringArray = isEmpty( [ "abc" ] );
+		    structWithValues = isEmpty( { a : "b" } );
+		    nestedStructValues = isEmpty( { a : { "name" : "brad" }} );
+		      """,
 		    context );
 		assertThat( ( Boolean ) variables.dereference( Key.of( "boolValue" ), false ) ).isFalse();
 		assertThat( ( Boolean ) variables.dereference( Key.of( "stringValue" ), false ) ).isFalse();

@@ -58,23 +58,22 @@ public class IsDateTest {
 		variables.clear();
 	}
 
-
 	@DisplayName( "It detects date parseable values" )
 	@Test
 	public void testTrueConditions() {
 		instance.executeSource(
 		    """
-				aNowCall               = isDate( now() );
-				aCreateTimeCall        = isDate( createTime( 3, 2, 1 ) );
-				aCreateDateCall        = isDate( createDate( 2023, 12, 21 ) );
-				aDateStringWithDashes  = isDate( "2023-12-21" );
-				aDateStringWithPeriods = isDate( "2024.01.01" );
-				earlyDate              = isDate( "1100-12-21" );
-				leapDay                = isDate( "2024-02-29" );
+		    aNowCall               = isDate( now() );
+		    aCreateTimeCall        = isDate( createTime( 3, 2, 1 ) );
+		    aCreateDateCall        = isDate( createDate( 2023, 12, 21 ) );
+		    aDateStringWithDashes  = isDate( "2023-12-21" );
+		    aDateStringWithPeriods = isDate( "2024.01.01" );
+		    earlyDate              = isDate( "1100-12-21" );
+		    leapDay                = isDate( "2024-02-29" );
 
-				// FYI: ACF 23 returns false, Lucee returns true.
-				anISO8601String        = isDate( '2023-12-21T14:22:32Z' );
-		    """,
+		    // FYI: ACF 23 returns false, Lucee returns true.
+		    anISO8601String        = isDate( '2023-12-21T14:22:32Z' );
+		      """,
 		    context );
 		assertThat( ( Boolean ) variables.dereference( Key.of( "aNowCall" ), false ) ).isTrue();
 		assertThat( ( Boolean ) variables.dereference( Key.of( "aCreateTimeCall" ), false ) ).isTrue();
@@ -85,23 +84,24 @@ public class IsDateTest {
 		assertThat( ( Boolean ) variables.dereference( Key.of( "leapDay" ), false ) ).isTrue();
 		assertThat( ( Boolean ) variables.dereference( Key.of( "anISO8601String" ), false ) ).isTrue();
 	}
+
 	@DisplayName( "It returns false for non-date values" )
 	@Test
 	public void testFalseConditions() {
 		instance.executeSource(
 		    """
-				aString = isDate( "abc" );
-				aNumericString = isDate( "2023" );
-				anInteger = isDate( 2024 );
-				aFloat = isDate( 2024.01 );
+		    aString = isDate( "abc" );
+		    aNumericString = isDate( "2023" );
+		    anInteger = isDate( 2024 );
+		    aFloat = isDate( 2024.01 );
 
-				// FYI: ACF 23 returns false, Lucee returns true.
-				aTimespan = isDate( createTimespan( 0, 24, 0, 0 ) );
+		    // FYI: ACF 23 returns false, Lucee returns true.
+		    aTimespan = isDate( createTimespan( 0, 24, 0, 0 ) );
 
-				invalidLeapDay = isDate( "2023-02-29" );
-				invalidDayNumber = isDate( "2023-12-2100" );
-				gibberishAfterValidDate = isDate( "2023-12-21xyz" );
-		    """,
+		    invalidLeapDay = isDate( "2023-02-29" );
+		    invalidDayNumber = isDate( "2023-12-2100" );
+		    gibberishAfterValidDate = isDate( "2023-12-21xyz" );
+		      """,
 		    context );
 		assertThat( ( Boolean ) variables.dereference( Key.of( "aString" ), false ) ).isFalse();
 		assertThat( ( Boolean ) variables.dereference( Key.of( "aNumericString" ), false ) ).isFalse();

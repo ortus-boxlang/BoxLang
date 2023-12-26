@@ -58,19 +58,18 @@ public class IsInstanceOfTest {
 		variables.clear();
 	}
 
-
 	@DisplayName( "True conditions" )
 	@Test
 	public void testTrueConditions() {
 		instance.executeSource(
 		    """
-		    aJavaString           = isInstanceOf( "boxlang", "java.lang.String" );
-		    aDateObject           = isInstanceOf( now(), "java.util.Date" );
-		    aStruct               = isInstanceOf( {}, "java.util.Map" );
-		    anArray               = isInstanceOf( [], "Array" );
-			aBoxLangClass         = isInstanceOf( new tests.resources.BoxLang.KitchenSink(), "KitchenSink" );
-			aBoxLangClassFullPath = isInstanceOf( new tests.resources.BoxLang.KitchenSink(), "tests.resources.BoxLang.KitchenSink" );
-		    """,
+		       aJavaString           = isInstanceOf( "boxlang", "java.lang.String" );
+		       aDateObject           = isInstanceOf( now(), "java.util.Date" );
+		       aStruct               = isInstanceOf( {}, "java.util.Map" );
+		       anArray               = isInstanceOf( [], "Array" );
+		    aBoxLangClass         = isInstanceOf( new tests.resources.BoxLang.KitchenSink(), "KitchenSink" );
+		    aBoxLangClassFullPath = isInstanceOf( new tests.resources.BoxLang.KitchenSink(), "tests.resources.BoxLang.KitchenSink" );
+		       """,
 		    context );
 		assertThat( ( Boolean ) variables.dereference( Key.of( "aJavaString" ), false ) ).isTrue();
 		assertThat( ( Boolean ) variables.dereference( Key.of( "aDateObject" ), false ) ).isTrue();
@@ -80,17 +79,18 @@ public class IsInstanceOfTest {
 		assertThat( ( Boolean ) variables.dereference( Key.of( "aBoxLangClass" ), false ) ).isTrue();
 		assertThat( ( Boolean ) variables.dereference( Key.of( "aBoxLangClassFullPath" ), false ) ).isTrue();
 	}
+
 	@DisplayName( "False conditions" )
 	@Test
 	public void testFalseConditions() {
 		instance.executeSource(
 		    """
-		    aJavaString           = isInstanceOf( "gibberish", "aJavaString" );
-		    aDateObject           = isInstanceOf( now(), "java.bad.path.to.Date" );
-		    anArray               = isInstanceOf( {}, "java.util.Map" );
-			aBoxLangClass         = isInstanceOf( new tests.resources.BoxLang.Auto(), "KitchenSink" );
-			aBoxLangClassFullPath = isInstanceOf( new tests.resources.BoxLang.KitchenSink(), "tests.nowhere.BoxLang.KitchenSink" );
-		    """,
+		       aJavaString           = isInstanceOf( "gibberish", "aJavaString" );
+		       aDateObject           = isInstanceOf( now(), "java.bad.path.to.Date" );
+		       anArray               = isInstanceOf( {}, "java.util.Map" );
+		    aBoxLangClass         = isInstanceOf( new tests.resources.BoxLang.Auto(), "KitchenSink" );
+		    aBoxLangClassFullPath = isInstanceOf( new tests.resources.BoxLang.KitchenSink(), "tests.nowhere.BoxLang.KitchenSink" );
+		       """,
 		    context );
 		assertThat( ( Boolean ) variables.dereference( Key.of( "aJavaString" ), false ) ).isFalse();
 		assertThat( ( Boolean ) variables.dereference( Key.of( "aDateObject" ), false ) ).isFalse();

@@ -58,16 +58,15 @@ public class IsDateObjectTest {
 		variables.clear();
 	}
 
-
 	@DisplayName( "It detects date objects" )
 	@Test
 	public void testTrueConditions() {
 		instance.executeSource(
 		    """
-				aNowCall        = isDateObject( now() );
-				aCreateTimeCall = isDateObject( createTime( 3, 2, 1 ) );
-				aCreateDateCall = isDateObject( createDate( 2023, 12, 21 ) );
-		    """,
+		    aNowCall        = isDateObject( now() );
+		    aCreateTimeCall = isDateObject( createTime( 3, 2, 1 ) );
+		    aCreateDateCall = isDateObject( createDate( 2023, 12, 21 ) );
+		      """,
 		    context );
 		assertThat( ( Boolean ) variables.dereference( Key.of( "aNowCall" ), false ) ).isTrue();
 		assertThat( ( Boolean ) variables.dereference( Key.of( "aCreateTimeCall" ), false ) ).isTrue();
@@ -79,11 +78,11 @@ public class IsDateObjectTest {
 	public void testFalseConditions() {
 		instance.executeSource(
 		    """
-				aTimespan      = isDateObject( createTimespan( 0, 24, 0, 0 ) );
-				aDateString    = isDateObject( "2023-12-21" );
-				aFormattedDate = isDateObject( dateTimeFormat( now(), "iso8601" ) );
-				aRandomString  = isDateObject( "abc" );
-		    """,
+		    aTimespan      = isDateObject( createTimespan( 0, 24, 0, 0 ) );
+		    aDateString    = isDateObject( "2023-12-21" );
+		    aFormattedDate = isDateObject( dateTimeFormat( now(), "iso8601" ) );
+		    aRandomString  = isDateObject( "abc" );
+		      """,
 		    context );
 		assertThat( ( Boolean ) variables.dereference( Key.of( "aTimespan" ), false ) ).isTrue();
 		assertThat( ( Boolean ) variables.dereference( Key.of( "aDateString" ), false ) ).isTrue();

@@ -63,26 +63,27 @@ public class IsCustomFunctionTest {
 	public void testTrueConditions() {
 		instance.executeSource(
 		    """
-			closure = isCustomFunction( function(){} ) );
-			arrowFunction = isCustomFunction( () => {} ) );
+		    closure = isCustomFunction( function(){} ) );
+		    arrowFunction = isCustomFunction( () => {} ) );
 
-			myFunc = function() {};
-			functionReference = isCustomFunction( myFunc );
-		    """,
+		    myFunc = function() {};
+		    functionReference = isCustomFunction( myFunc );
+		       """,
 		    context
 		);
 		assertThat( ( Boolean ) variables.dereference( Key.of( "closure" ), false ) ).isTrue();
 		assertThat( ( Boolean ) variables.dereference( Key.of( "arrowFunction" ), false ) ).isTrue();
 		assertThat( ( Boolean ) variables.dereference( Key.of( "functionReference" ), false ) ).isTrue();
 	}
+
 	@DisplayName( "It returns false for non-custom functions" )
 	@Test
 	public void testFalseConditions() {
 		instance.executeSource(
 		    """
-			anInteger = isCustomFunction( 123 );
-			aString = isCustomFunction( "abc" );
-		    """,
+		    anInteger = isCustomFunction( 123 );
+		    aString = isCustomFunction( "abc" );
+		       """,
 		    context );
 		assertThat( ( Boolean ) variables.dereference( Key.of( "anInteger" ), false ) ).isFalse();
 		assertThat( ( Boolean ) variables.dereference( Key.of( "aString" ), false ) ).isFalse();

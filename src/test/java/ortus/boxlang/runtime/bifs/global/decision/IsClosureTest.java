@@ -58,32 +58,32 @@ public class IsClosureTest {
 		variables.clear();
 	}
 
-
 	@DisplayName( "It detects closures" )
 	@Test
 	public void testTrueConditions() {
 		instance.executeSource(
 		    """
-			closure = isClosure( function(){} ) );
-			arrowFunction = isClosure( () => {} ) );
+		    closure = isClosure( function(){} ) );
+		    arrowFunction = isClosure( () => {} ) );
 
-			myFunc = function() {};
-			functionReference = isClosure( myFunc );
-		    """,
+		    myFunc = function() {};
+		    functionReference = isClosure( myFunc );
+		       """,
 		    context
 		);
 		assertThat( ( Boolean ) variables.dereference( Key.of( "closure" ), false ) ).isTrue();
 		assertThat( ( Boolean ) variables.dereference( Key.of( "arrowFunction" ), false ) ).isTrue();
 		assertThat( ( Boolean ) variables.dereference( Key.of( "functionReference" ), false ) ).isTrue();
 	}
+
 	@DisplayName( "It returns false for non-closure values" )
 	@Test
 	public void testFalseConditions() {
 		instance.executeSource(
 		    """
-			anInteger = isClosure( 123 );
-			aString = isClosure( "abc" );
-		    """,
+		    anInteger = isClosure( 123 );
+		    aString = isClosure( "abc" );
+		       """,
 		    context );
 		assertThat( ( Boolean ) variables.dereference( Key.of( "anInteger" ), false ) ).isFalse();
 		assertThat( ( Boolean ) variables.dereference( Key.of( "aString" ), false ) ).isFalse();

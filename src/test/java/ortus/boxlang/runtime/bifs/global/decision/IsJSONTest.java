@@ -58,20 +58,19 @@ public class IsJSONTest {
 		variables.clear();
 	}
 
-
 	@DisplayName( "It detects JSON values" )
 	@Test
 	public void testTrueConditions() {
 		instance.executeSource(
-			"""
-				// both engines return true for these cases
-				anEmptyStruct          = isJSON( '{}' );
-				anEmptyArray           = isJSON( '[]' );
-				anArrayWithMixedValues = isJSON( '["a","b",123]' );
-				aPopulatedStruct       = isJSON( '{ "a" : 123, "b" : 456 }' );
-				anInteger              = isJSON( '123' );
-				aQuotedInteger         = isJSON( '"456"' );
-		    """,
+		    """
+		    // both engines return true for these cases
+		    anEmptyStruct          = isJSON( '{}' );
+		    anEmptyArray           = isJSON( '[]' );
+		    anArrayWithMixedValues = isJSON( '["a","b",123]' );
+		    aPopulatedStruct       = isJSON( '{ "a" : 123, "b" : 456 }' );
+		    anInteger              = isJSON( '123' );
+		    aQuotedInteger         = isJSON( '"456"' );
+		      """,
 		    context );
 		assertThat( ( Boolean ) variables.dereference( Key.of( "anEmptyStruct" ), false ) ).isTrue();
 		assertThat( ( Boolean ) variables.dereference( Key.of( "anEmptyArray" ), false ) ).isTrue();
@@ -80,21 +79,22 @@ public class IsJSONTest {
 		assertThat( ( Boolean ) variables.dereference( Key.of( "anInteger" ), false ) ).isTrue();
 		assertThat( ( Boolean ) variables.dereference( Key.of( "aQuotedInteger" ), false ) ).isTrue();
 	}
+
 	@DisplayName( "It returns false for non-JSON values" )
 	@Test
 	public void testFalseConditions() {
 		instance.executeSource(
 		    """
-				// both engines return false for these cases
-				anEmptyString         = isJSON( '' );
-				anUnquotedStringValue = isJSON( 'gibberish' );
+		    // both engines return false for these cases
+		    anEmptyString         = isJSON( '' );
+		    anUnquotedStringValue = isJSON( 'gibberish' );
 
-				// ACF23 returns false, Lucee5 returns true
-				aStructWithUnquotedKeys     = isJSON( '[ { a : "" } ]' );
-				anArrayWithTrailingComma    = isJSON( '["a","b",123,]' );
-				anArrayWithAFloat           = isJSON( '[123456789,.11]' );
-				aStructWithSingleQuotedKeys = isJSON( '[ { ''a'' : ''123'' } ]' );
-		    """,
+		    // ACF23 returns false, Lucee5 returns true
+		    aStructWithUnquotedKeys     = isJSON( '[ { a : "" } ]' );
+		    anArrayWithTrailingComma    = isJSON( '["a","b",123,]' );
+		    anArrayWithAFloat           = isJSON( '[123456789,.11]' );
+		    aStructWithSingleQuotedKeys = isJSON( '[ { ''a'' : ''123'' } ]' );
+		      """,
 		    context );
 		assertThat( ( Boolean ) variables.dereference( Key.of( "anEmptyString" ), false ) ).isFalse();
 		assertThat( ( Boolean ) variables.dereference( Key.of( "anUnquotedStringValue" ), false ) ).isFalse();

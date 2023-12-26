@@ -58,40 +58,40 @@ public class IsDefinedTest {
 		variables.clear();
 	}
 
-
 	@DisplayName( "It detects binary values" )
 	@Test
 	public void testTrueConditions() {
 		instance.executeSource(
 		    """
-		    var result = true;
-			variableName = "result";
-			variables.foo = "bar";
+		       var result = true;
+		    variableName = "result";
+		    variables.foo = "bar";
 
-			stringVarName     = isDefined( "result" );
-			variableReference = isDefined( variableName );
-			localReference    = isDefined( "local.result" );
-			variableScope     = isDefined( "variables.foo" );
-		    """,
+		    stringVarName     = isDefined( "result" );
+		    variableReference = isDefined( variableName );
+		    localReference    = isDefined( "local.result" );
+		    variableScope     = isDefined( "variables.foo" );
+		       """,
 		    context );
 		assertThat( ( Boolean ) variables.dereference( Key.of( "stringVarName" ), false ) ).isTrue();
 		assertThat( ( Boolean ) variables.dereference( Key.of( "variableReference" ), false ) ).isTrue();
 		assertThat( ( Boolean ) variables.dereference( Key.of( "localReference" ), false ) ).isTrue();
 		assertThat( ( Boolean ) variables.dereference( Key.of( "variableScope" ), false ) ).isTrue();
 	}
+
 	@DisplayName( "It returns false for non-binary values" )
 	@Test
 	public void testFalseConditions() {
 		instance.executeSource(
 		    """
-			variableName = "result";
-			variables.foo = "bar";
+		    variableName = "result";
+		    variables.foo = "bar";
 
-			stringVarName     = isDefined( "doesntexist" );
-			variableReference = isDefined( variableName );
-			localReference    = isDefined( "local.result" );
-			variableScope     = isDefined( "variables.foo" );
-		    """,
+		    stringVarName     = isDefined( "doesntexist" );
+		    variableReference = isDefined( variableName );
+		    localReference    = isDefined( "local.result" );
+		    variableScope     = isDefined( "variables.foo" );
+		       """,
 		    context );
 		assertThat( ( Boolean ) variables.dereference( Key.of( "stringVarName" ), false ) ).isFalse();
 		assertThat( ( Boolean ) variables.dereference( Key.of( "variableReference" ), false ) ).isFalse();
