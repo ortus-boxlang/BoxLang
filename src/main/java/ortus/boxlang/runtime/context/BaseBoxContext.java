@@ -26,6 +26,7 @@ import ortus.boxlang.runtime.bifs.BIFDescriptor;
 import ortus.boxlang.runtime.dynamic.casters.FunctionCaster;
 import ortus.boxlang.runtime.loader.ImportDefinition;
 import ortus.boxlang.runtime.runnables.BoxTemplate;
+import ortus.boxlang.runtime.runnables.ITemplateRunnable;
 import ortus.boxlang.runtime.runnables.RunnableLoader;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.IScope;
@@ -34,6 +35,7 @@ import ortus.boxlang.runtime.services.FunctionService;
 import ortus.boxlang.runtime.types.Function;
 import ortus.boxlang.runtime.types.UDF;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
+import ortus.boxlang.runtime.types.exceptions.KeyNotFoundException;
 import ortus.boxlang.runtime.types.exceptions.ScopeNotFoundException;
 
 /**
@@ -50,12 +52,12 @@ public class BaseBoxContext implements IBoxContext {
 	/**
 	 * Any context can have a parent it can delegate to
 	 */
-	protected IBoxContext				parent;
+	protected IBoxContext					parent;
 
 	/**
 	 * A way to discover the current executing template
 	 */
-	protected ArrayDeque<BoxTemplate>	templates	= new ArrayDeque<>();
+	protected ArrayDeque<ITemplateRunnable>	templates	= new ArrayDeque<>();
 
 	/**
 	 * Creates a new execution context with a bounded execution template and parent context
@@ -86,7 +88,7 @@ public class BaseBoxContext implements IBoxContext {
 	 *
 	 * @return IBoxContext
 	 */
-	public IBoxContext pushTemplate( BoxTemplate template ) {
+	public IBoxContext pushTemplate( ITemplateRunnable template ) {
 		this.templates.push( template );
 		return this;
 	}
@@ -96,7 +98,7 @@ public class BaseBoxContext implements IBoxContext {
 	 *
 	 * @return The template that this execution context is bound to
 	 */
-	public BoxTemplate popTemplate() {
+	public ITemplateRunnable popTemplate() {
 		return this.templates.pop();
 	}
 
@@ -114,7 +116,7 @@ public class BaseBoxContext implements IBoxContext {
 	 *
 	 * @return The template instance if found, null if this code is not called from a template
 	 */
-	public BoxTemplate findClosestTemplate() {
+	public ITemplateRunnable findClosestTemplate() {
 		// If this context has templates, grab the first
 		if ( hasTemplates() ) {
 			return this.templates.peek();
@@ -123,6 +125,29 @@ public class BaseBoxContext implements IBoxContext {
 		// Otherwise, if we have a parent, ask them
 		if ( hasParent() ) {
 			return getParent().findClosestTemplate();
+		}
+
+		// There are none to be found!
+		return null;
+	}
+
+	/**
+	 * Finds the base (first) template in this request
+	 *
+	 * @return The template instance if found, null if this code is not called from a template
+	 */
+	public ITemplateRunnable findBaseTemplate() {
+		ITemplateRunnable result = null;
+		// If we have a parent, ask them
+		if ( hasParent() ) {
+			result = getParent().findBaseTemplate();
+			if ( result != null ) {
+				return result;
+			}
+		}
+		// Otherwise, If this context has templates, grab the last
+		if ( hasTemplates() ) {
+			return this.templates.peekLast();
 		}
 
 		// There are none to be found!
@@ -263,9 +288,14 @@ public class BaseBoxContext implements IBoxContext {
 	 * @return The function instance
 	 */
 	private Function findFunction( Key name ) {
-		ScopeSearchResult result = scopeFindNearby( name, null );
+		ScopeSearchResult result = null;
+		try {
+			result = scopeFindNearby( name, null );
+		} catch ( KeyNotFoundException e ) {
+			throw new BoxRuntimeException( "Function '" + name.getName() + "' not found" );
+		}
 		if ( result == null ) {
-			throw new BoxRuntimeException( "Function '" + name.toString() + "' not found" );
+			throw new BoxRuntimeException( "Function '" + name.getName() + "' not found" );
 		}
 		Object value = result.value();
 		if ( value instanceof Function fun ) {
@@ -424,7 +454,7 @@ public class BaseBoxContext implements IBoxContext {
 	 * @return List of import definitions
 	 */
 	public List<ImportDefinition> getCurrentImports() {
-		BoxTemplate template = findClosestTemplate();
+		ITemplateRunnable template = findClosestTemplate();
 		if ( template == null ) {
 			return null;
 		}

@@ -40,7 +40,7 @@ public class ConfigLoaderTest {
 		assertThat( config.compiler.classGenerationDirectory ).doesNotContainMatch( "(ignorecase)\\{java-temp\\}" );
 
 		// Runtime Checks
-		assertThat( config.runtime.mappings ).isEmpty();
+		assertThat( config.runtime.mappings ).isNotEmpty();
 		assertThat( config.runtime.modulesDirectory ).doesNotContainMatch( "(ignorecase)\\{user-home\\}" );
 
 		// Cache Checks

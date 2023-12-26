@@ -64,7 +64,7 @@ public class ClassLocatorTest {
 		String			targetClass	= "java:java.lang.String";
 
 		DynamicObject	target		= locator.load( new ScriptingBoxContext(), targetClass );
-		target.invokeConstructor( "Hola ClassLoader" );
+		target.invokeConstructor( null, "Hola ClassLoader" );
 		assertThat( target.getTargetInstance() ).isEqualTo( "Hola ClassLoader" );
 
 	}
@@ -76,7 +76,7 @@ public class ClassLocatorTest {
 		String			targetClass	= "java.lang.String";
 
 		DynamicObject	target		= locator.load( new ScriptingBoxContext(), targetClass );
-		target.invokeConstructor( "Hola ClassLoader" );
+		target.invokeConstructor( null, "Hola ClassLoader" );
 		assertThat( target.getTargetInstance() ).isEqualTo( "Hola ClassLoader" );
 
 	}
@@ -93,7 +93,7 @@ public class ClassLocatorTest {
 		    targetClass,
 		    imports
 		);
-		target.invokeConstructor( "Hola ClassLoader" );
+		target.invokeConstructor( null, "Hola ClassLoader" );
 		assertThat( target.getTargetInstance() ).isEqualTo( "Hola ClassLoader" );
 
 	}
@@ -108,7 +108,7 @@ public class ClassLocatorTest {
 		assertThat( locator.size() ).isEqualTo( 0 );
 
 		DynamicObject target = locator.load( new ScriptingBoxContext(), targetClass, "java", true );
-		target.invokeConstructor( "Hola ClassLoader" );
+		target.invokeConstructor( null, "Hola ClassLoader" );
 		assertThat( target.getTargetInstance() ).isEqualTo( "Hola ClassLoader" );
 
 		assertThat( target ).isNotNull();

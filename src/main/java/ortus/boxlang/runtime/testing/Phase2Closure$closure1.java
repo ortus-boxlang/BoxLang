@@ -127,13 +127,6 @@ public class Phase2Closure$closure1 extends Closure {
 	}
 
 	/**
-	 * An instance of the runnable class that declared this function
-	 */
-	public IBoxRunnable getDeclaringRunnable() {
-		return Phase2Closure$closure1.declaringRunnable;
-	}
-
-	/**
 	 * The imports for this runnable
 	 */
 	public List<ImportDefinition> getImports() {

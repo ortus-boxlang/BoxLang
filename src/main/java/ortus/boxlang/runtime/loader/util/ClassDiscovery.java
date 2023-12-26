@@ -31,6 +31,9 @@ import java.util.jar.JarFile;
 import java.util.stream.Stream;
 
 import ortus.boxlang.runtime.bifs.BoxBIF;
+import ortus.boxlang.runtime.bifs.BoxBIFs;
+import ortus.boxlang.runtime.bifs.BoxMember;
+import ortus.boxlang.runtime.bifs.BoxMembers;
 
 /**
  * The {@code ClassDiscovery} class is used to discover classes in a given package at runtime
@@ -137,17 +140,14 @@ public class ClassDiscovery {
 	public static Stream<Class<?>> findAnnotatedClasses( String startDir ) {
 		List<Class<?>> classes = new ArrayList<>();
 		try {
-			System.out.println( "startDir: " + startDir );
 			ClassLoader			classLoader	= ClassDiscovery.class.getClassLoader();
 			Enumeration<URL>	resources	= classLoader.getResources( startDir );
 			while ( resources.hasMoreElements() ) {
 				URL resource = resources.nextElement();
 				if ( resource.getProtocol().equals( "jar" ) ) {
-					System.out.println( "Loading BIFs from JAR: " + resource.toString() );
 					classes.addAll( findClassesInJar( resource, startDir, classLoader ) );
 				} else {
 					File directory = new File( resource.getFile() );
-					System.out.println( "Loading BIFs from directory: " + directory.toString() );
 					classes.addAll( findClassesInDirectory( directory, startDir.replace( '/', '.' ), classLoader ) );
 				}
 			}
@@ -158,10 +158,9 @@ public class ClassDiscovery {
 	}
 
 	private static List<Class<?>> findClassesInJar( URL jarURL, String startDir, ClassLoader classLoader ) throws IOException {
-		List<Class<?>>	classes	= new ArrayList<>();
-		String			jarPath	= jarURL.getPath().substring( 5, jarURL.getPath().indexOf( "!" ) );
+		List<Class<?>>			classes	= new ArrayList<>();
+		String					jarPath	= jarURL.getPath().substring( 5, jarURL.getPath().indexOf( "!" ) );
 
-		System.out.println( "jarPath: " + jarPath );
 		JarFile					jar		= new JarFile( URLDecoder.decode( jarPath, "UTF-8" ) );
 		Enumeration<JarEntry>	entries	= jar.entries();
 		while ( entries.hasMoreElements() ) {
@@ -169,7 +168,6 @@ public class ClassDiscovery {
 			String		name	= entry.getName();
 			if ( name.startsWith( startDir ) && name.endsWith( ".class" ) ) {
 				String className = name.replace( '/', '.' ).substring( 0, name.length() - 6 );
-				System.out.println( "jar entry: " + name );
 				try {
 					Class<?> clazz = Class.forName( className, true, classLoader );
 					if ( clazz.isAnnotationPresent( BoxBIF.class ) || clazz.isAnnotationPresent( BoxBIF.class ) ) {
@@ -195,7 +193,8 @@ public class ClassDiscovery {
 					String className = packageName + '.' + name.substring( 0, name.length() - 6 );
 					try {
 						Class<?> clazz = Class.forName( className, true, classLoader );
-						if ( clazz.isAnnotationPresent( BoxBIF.class ) || clazz.isAnnotationPresent( BoxBIF.class ) ) {
+						if ( clazz.isAnnotationPresent( BoxBIF.class ) || clazz.isAnnotationPresent( BoxMember.class )
+						    || clazz.isAnnotationPresent( BoxBIFs.class ) || clazz.isAnnotationPresent( BoxMembers.class ) ) {
 							classes.add( clazz );
 						}
 					} catch ( ClassNotFoundException e ) {

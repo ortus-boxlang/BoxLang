@@ -23,7 +23,6 @@ import static com.google.common.truth.Truth.assertThat;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -77,7 +76,6 @@ public class ArrayReduceTest {
 		assertThat( variables.dereference( result, false ) ).isEqualTo( 15 );
 	}
 
-	@Disabled
 	@DisplayName( "It should use the provided arrow function over the array" )
 	@Test
 	public void testArrowFunction() {

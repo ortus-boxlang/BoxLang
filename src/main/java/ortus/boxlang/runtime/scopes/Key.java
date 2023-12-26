@@ -37,6 +37,7 @@ public class Key {
 	public static final Key	_9				= Key.of( 9 );
 	public static final Key	_10				= Key.of( 10 );
 
+	public static final Key	init			= Key.of( "init" );
 	public static final Key	array			= Key.of( "array" );
 	public static final Key	value			= Key.of( "value" );
 	public static final Key	position		= Key.of( "position" );
@@ -51,11 +52,14 @@ public class Key {
 	public static final Key	string			= Key.of( "string" );
 	public static final Key	string1			= Key.of( "string1" );
 	public static final Key	string2			= Key.of( "string2" );
+	public static final Key	number			= Key.of( "number" );
+	public static final Key	object			= Key.of( "object" );
 
 	public static final Key	contains		= Key.of( "contains" );
 	public static final Key	find			= Key.of( "find" );
 	public static final Key	parallel		= Key.of( "parallel" );
 	public static final Key	maxThreads		= Key.of( "maxThreads" );
+	public static final Key	delimiter		= Key.of( "delimiter" );
 
 	/**
 	 * --------------------------------------------------------------------------

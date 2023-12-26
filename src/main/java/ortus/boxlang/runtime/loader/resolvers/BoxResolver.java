@@ -17,13 +17,19 @@
  */
 package ortus.boxlang.runtime.loader.resolvers;
 
+import java.io.File;
 import java.util.List;
 import java.util.Optional;
 
+import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.loader.ClassLocator;
-import ortus.boxlang.runtime.loader.ImportDefinition;
 import ortus.boxlang.runtime.loader.ClassLocator.ClassLocation;
+import ortus.boxlang.runtime.loader.ImportDefinition;
+import ortus.boxlang.runtime.runnables.ITemplateRunnable;
+import ortus.boxlang.runtime.runnables.RunnableLoader;
+import ortus.boxlang.runtime.scopes.Key;
+import ortus.boxlang.runtime.types.Struct;
 
 /**
  * This resolver deals with BoxLang classes only.
@@ -113,8 +119,8 @@ public class BoxResolver extends BaseResolver {
 	 */
 	@Override
 	public Optional<ClassLocation> resolve( IBoxContext context, String name, List<ImportDefinition> imports ) {
-		return findFromModules( name, imports )
-		    .or( () -> findFromLocal( name, imports ) );
+		return findFromModules( context, name, imports )
+		    .or( () -> findFromLocal( context, name, imports ) );
 	}
 
 	/**
@@ -125,7 +131,7 @@ public class BoxResolver extends BaseResolver {
 	 *
 	 * @return The loaded class or null if not found
 	 */
-	public Optional<ClassLocation> findFromModules( String name, List<ImportDefinition> imports ) {
+	public Optional<ClassLocation> findFromModules( IBoxContext context, String name, List<ImportDefinition> imports ) {
 		return Optional.ofNullable( null );
 	}
 
@@ -137,7 +143,63 @@ public class BoxResolver extends BaseResolver {
 	 *
 	 * @return The loaded class or null if not found
 	 */
-	public Optional<ClassLocation> findFromLocal( String name, List<ImportDefinition> imports ) {
+	public Optional<ClassLocation> findFromLocal( IBoxContext context, String name, List<ImportDefinition> imports ) {
+		// TODO: How do we deal with .bx vs .cfc extensions?
+
+		String				slashName	= "/" + name.replace( ".", "/" );
+		// System.out.println( "resolving: " + slashName );
+
+		// First look and see if the CFC lives in the directory of the currently-executing template
+		ITemplateRunnable	template	= context != null ? context.findClosestTemplate() : null;
+		if ( template != null ) {
+			// See if path exists in this parent directory
+			File file;
+			// System.out.println( "this template's parent: " + template.getRunnablePath().getParent().resolve( slashName + ".cfc" ).toFile() );
+			// TODO: Make case insensitive
+			if ( template.getRunnablePath().getParent() != null
+			    && ( file = template.getRunnablePath().getParent().resolve( slashName + ".cfc" ).toFile() ).exists() ) {
+				String	className	= file.getName().replace( ".cfc", "" );
+				String	packageName	= name.replace( className, "" );
+				return Optional.of( new ClassLocation(
+				    className,
+				    file.toURI().toString(),
+				    packageName,
+				    ClassLocator.TYPE_BX,
+				    RunnableLoader.getInstance().loadClass( file.toPath(), packageName, context ),
+				    ""
+				) );
+			}
+
+		}
+
+		// Next look for a mapping that matches the start of the path
+		// TODO: Get config via the context, not directly from the runtime to allow overrides
+		Struct		mappings	= BoxRuntime.getInstance().getConfiguration().runtime.mappings;
+		List<Key>	keys		= mappings.getKeys();
+		// System.out.println( "Mappings: " + mappings );
+		// Longest to shortest
+		keys.sort( ( s1, s2 ) -> Integer.compare( s2.getName().length(), s1.getName().length() ) );
+		for ( Key key : keys ) {
+			String mapping = ( String ) mappings.get( key );
+			// System.out.println( "Looking in mapping: " + key.getName() + " -> " + mapping );
+			if ( slashName.startsWith( key.getName() ) ) {
+				// See if path exists in this parent directory
+				File file;
+				// TODO: Make case insensitive
+				if ( ( file = new File( mapping + slashName + ".cfc" ) ).exists() ) {
+					String	className	= file.getName().replace( ".cfc", "" );
+					String	packageName	= name.replace( className, "" );
+					return Optional.of( new ClassLocation(
+					    className,
+					    file.toURI().toString(),
+					    packageName,
+					    ClassLocator.TYPE_BX,
+					    RunnableLoader.getInstance().loadClass( file.toPath(), packageName, context ),
+					    ""
+					) );
+				}
+			}
+		}
 		return Optional.ofNullable( null );
 	}
 

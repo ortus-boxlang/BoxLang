@@ -20,7 +20,6 @@ package TestCases.phase2;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -31,7 +30,6 @@ import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
 
-@Disabled
 public class InvocationTest {
 
 	static BoxRuntime	instance;
@@ -214,7 +212,7 @@ public class InvocationTest {
 	public void testNumericLiteralMethodDotInvocation() {
 		instance.executeSource(
 		    """
-		    5.floor();
+		    (5).floor();
 		    """,
 		    context );
 	}
@@ -254,8 +252,9 @@ public class InvocationTest {
 	public void testStructLiteralMethodDotInvocation() {
 		instance.executeSource(
 		    """
-		    {}.len();
-		    """,
+		    structCount({})
+		      {}.len();
+		      """,
 		    context );
 	}
 

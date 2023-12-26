@@ -29,6 +29,7 @@ import org.antlr.v4.runtime.tree.ParseTree;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.input.BOMInputStream;
 
+import ortus.boxlang.ast.BoxClass;
 import ortus.boxlang.ast.BoxDocumentation;
 import ortus.boxlang.ast.BoxExpr;
 import ortus.boxlang.ast.BoxNode;
@@ -98,6 +99,8 @@ import ortus.boxlang.ast.statement.BoxType;
 import ortus.boxlang.ast.statement.BoxWhile;
 import ortus.boxlang.parser.antlr.CFLexer;
 import ortus.boxlang.parser.antlr.CFParser;
+import ortus.boxlang.parser.antlr.CFParser.ComponentContext;
+import ortus.boxlang.parser.antlr.CFParser.PreannotationContext;
 
 /**
  * Parser for CF scripts
@@ -128,7 +131,7 @@ public class BoxCFParser extends BoxAbstractParser {
 		CFParser.ScriptContext	parseTree	= ( CFParser.ScriptContext ) parserFirstStage( inputStream );
 
 		if ( issues.isEmpty() ) {
-			BoxScript ast = parseTreeToAst( file, parseTree );
+			BoxNode ast = parseTreeToAst( file, parseTree );
 			return new ParsingResult( ast, issues );
 		}
 		return new ParsingResult( null, issues );
@@ -151,7 +154,7 @@ public class BoxCFParser extends BoxAbstractParser {
 
 		CFParser.ScriptContext	parseTree	= ( CFParser.ScriptContext ) parserFirstStage( inputStream );
 		if ( issues.isEmpty() ) {
-			BoxScript ast = parseTreeToAst( file, parseTree );
+			BoxNode ast = parseTreeToAst( file, parseTree );
 			return new ParsingResult( ast, issues );
 		}
 		return new ParsingResult( null, issues );
@@ -262,22 +265,44 @@ public class BoxCFParser extends BoxAbstractParser {
 	 * @see BoxScript
 	 */
 	@Override
-	protected BoxScript parseTreeToAst( File file, ParserRuleContext rule ) {
+	protected BoxNode parseTreeToAst( File file, ParserRuleContext rule ) {
 		CFParser.ScriptContext	parseTree	= ( CFParser.ScriptContext ) rule;
 		List<BoxStatement>		statements	= new ArrayList<>();
-
-		if ( parseTree.tag() != null ) {
-			parseTree = parseTree.tag().script();
-		}
+		List<BoxImport>			imports		= new ArrayList<>();
 
 		parseTree.importStatement().forEach( stmt -> {
-			statements.add( toAst( file, stmt ) );
+			imports.add( toAst( file, stmt ) );
 		} );
 
-		parseTree.functionOrStatement().forEach( stmt -> {
-			statements.add( toAst( file, stmt ) );
+		if ( parseTree.component() != null ) {
+			return toAst( file, parseTree.component(), imports );
+		} else {
+			statements.addAll( imports );
+			parseTree.functionOrStatement().forEach( stmt -> {
+				statements.add( toAst( file, stmt ) );
+			} );
+			return new BoxScript( statements, getPosition( rule ), getSourceText( rule ) );
+		}
+	}
+
+	private BoxNode toAst( File file, ComponentContext component, List<BoxImport> imports ) {
+		List<BoxStatement>					body			= new ArrayList<>();
+		List<BoxAnnotation>					annotations		= new ArrayList<>();
+		List<BoxDocumentationAnnotation>	documentation	= new ArrayList<>();
+
+		component.functionOrStatement().forEach( stmt -> {
+			body.add( toAst( file, stmt ) );
 		} );
-		return new BoxScript( statements, getPosition( rule ), getSourceText( rule ) );
+		if ( component.javadoc() != null ) {
+			documentation.addAll( toAst( file, component.javadoc() ) );
+		}
+		for ( CFParser.PreannotationContext annotation : component.preannotation() ) {
+			annotations.add( toAst( file, annotation ) );
+		}
+		for ( CFParser.PostannotationContext annotation : component.postannotation() ) {
+			annotations.add( toAst( file, annotation ) );
+		}
+		return new BoxClass( imports, body, annotations, documentation, getPosition( component ), getSourceText( component ) );
 	}
 
 	/**
@@ -290,7 +315,7 @@ public class BoxCFParser extends BoxAbstractParser {
 	 *
 	 * @see BoxImport
 	 */
-	private BoxStatement toAst( File file, CFParser.ImportStatementContext rule ) {
+	private BoxImport toAst( File file, CFParser.ImportStatementContext rule ) {
 		BoxExpr			expr	= null;
 		BoxIdentifier	alias	= null;
 		if ( rule.fqn() != null ) {
@@ -319,9 +344,7 @@ public class BoxCFParser extends BoxAbstractParser {
 	 * @see BoxStatement
 	 */
 	private BoxStatement toAst( File file, CFParser.FunctionOrStatementContext node ) {
-		if ( node.constructor() != null ) {
-			return toAst( file, node.constructor() );
-		} else if ( node.function() != null ) {
+		if ( node.function() != null ) {
 			return toAst( file, node.function() );
 		} else if ( node.statement() != null ) {
 			return toAst( file, node.statement() );
@@ -359,8 +382,6 @@ public class BoxCFParser extends BoxAbstractParser {
 			return toAst( file, node.for_() );
 		} else if ( node.try_() != null ) {
 			return toAst( file, node.try_() );
-		} else if ( node.assert_() != null ) {
-			return toAst( file, node.assert_() );
 		} else if ( node.throw_() != null ) {
 			return toAst( file, node.throw_() );
 		} else if ( node.rethrow() != null ) {
@@ -678,7 +699,10 @@ public class BoxCFParser extends BoxAbstractParser {
 	 * @see BoxStatement
 	 */
 	private BoxStatement toAst( File file, CFParser.SimpleStatementContext node ) {
-		if ( node.return_() != null ) {
+
+		if ( node.assert_() != null ) {
+			return toAst( file, node.assert_() );
+		} else if ( node.return_() != null ) {
 			BoxExpr expr = null;
 			if ( node.return_().expression() != null ) {
 				expr = toAst( file, node.return_().expression() );
@@ -1076,7 +1100,7 @@ public class BoxCFParser extends BoxAbstractParser {
 				}
 				/* Process the annotations */
 				for ( CFParser.PostannotationContext annotation : lambda.postannotation() ) {
-					annotations.addAll( toAst( file, annotation ) );
+					annotations.add( toAst( file, annotation ) );
 				}
 				/* Process the body */
 				if ( lambda.statementBlock() != null ) {
@@ -1105,7 +1129,7 @@ public class BoxCFParser extends BoxAbstractParser {
 				}
 				/* Process the annotations */
 				for ( CFParser.PostannotationContext annotation : closure.postannotation() ) {
-					annotations.addAll( toAst( file, annotation ) );
+					annotations.add( toAst( file, annotation ) );
 				}
 				/* Process the body */
 				if ( closure.statementBlock() != null ) {
@@ -1130,7 +1154,7 @@ public class BoxCFParser extends BoxAbstractParser {
 				}
 				/* Process the annotations */
 				for ( CFParser.PostannotationContext annotation : closure.postannotation() ) {
-					annotations.addAll( toAst( file, annotation ) );
+					annotations.add( toAst( file, annotation ) );
 				}
 				/* Process the body */
 				if ( closure.statementBlock() != null ) {
@@ -1398,36 +1422,13 @@ public class BoxCFParser extends BoxAbstractParser {
 		BoxAccessModifier					modifier		= BoxAccessModifier.Public;
 
 		if ( node.functionSignature().javadoc() != null ) {
-			try {
-				BoxDOCParser		parser	= new BoxDOCParser();
-				ParsingResult		result	= parser.parse( null, node.functionSignature().javadoc().getText() );
-				BoxDocumentation	docs	= ( BoxDocumentation ) result.getRoot();
-				for ( BoxNode n : docs.getAnnotations() ) {
-
-					documentation.add( ( BoxDocumentationAnnotation ) n );
-				}
-			} catch ( IOException e ) {
-				throw new RuntimeException( e );
-			}
+			documentation.addAll( toAst( file, node.functionSignature().javadoc() ) );
 		}
 		for ( CFParser.PreannotationContext annotation : node.functionSignature().preannotation() ) {
-			BoxExpr	avalue	= null;
-			BoxExpr	aname	= toAst( file, annotation.fqn() );
-			if ( annotation.literalExpression().size() == 1 ) {
-				avalue = toAst( file, annotation.literalExpression( 0 ) );
-			} else if ( annotation.literalExpression().size() > 1 ) {
-				List<BoxExpr> values = new ArrayList<>();
-				for ( CFParser.LiteralExpressionContext value : annotation.literalExpression() ) {
-					values.add( toAst( file, value ) );
-				}
-				avalue = new BoxArrayLiteral( values, getPosition( annotation ), getSourceText( annotation ) );
-			} else {
-				avalue = new BoxStringLiteral( "", getPosition( annotation ), getSourceText( annotation ) );
-			}
-			annotations.add( new BoxAnnotation( ( BoxFQN ) aname, avalue, getPosition( annotation ), getSourceText( annotation ) ) );
+			annotations.add( toAst( file, annotation ) );
 		}
 		for ( CFParser.PostannotationContext annotation : node.postannotation() ) {
-			annotations.addAll( toAst( file, annotation ) );
+			annotations.add( toAst( file, annotation ) );
 		}
 		if ( node.functionSignature().identifier() != null ) {
 			name = node.functionSignature().identifier().getText();
@@ -1527,6 +1528,48 @@ public class BoxCFParser extends BoxAbstractParser {
 		return new BoxFunctionDeclaration( modifier, name, returnType, args, annotations, documentation, body, getPosition( node ), getSourceText( node ) );
 	}
 
+	private List<BoxDocumentationAnnotation> toAst( File file, CFParser.JavadocContext node ) {
+		List<BoxDocumentationAnnotation> documentation = new ArrayList<>();
+		try {
+			BoxDOCParser		parser	= new BoxDOCParser();
+			ParsingResult		result	= parser.parse( null, node.getText() );
+			BoxDocumentation	docs	= ( BoxDocumentation ) result.getRoot();
+			for ( BoxNode n : docs.getAnnotations() ) {
+				documentation.add( ( BoxDocumentationAnnotation ) n );
+			}
+		} catch ( IOException e ) {
+			throw new RuntimeException( e );
+		}
+		return documentation;
+	}
+
+	/**
+	 * Converts the pre annotation parser rule to the corresponding AST node.
+	 *
+	 * @param file source file, if any
+	 * @param node ANTLR PreannotationContext rule
+	 *
+	 * @return corresponding AST PreannotationContext
+	 *
+	 * @see PreannotationContext
+	 */
+	private BoxAnnotation toAst( File file, CFParser.PreannotationContext annotation ) {
+		BoxExpr	avalue	= null;
+		BoxExpr	aname	= toAst( file, annotation.fqn() );
+		if ( annotation.literalExpression().size() == 1 ) {
+			avalue = toAst( file, annotation.literalExpression( 0 ) );
+		} else if ( annotation.literalExpression().size() > 1 ) {
+			List<BoxExpr> values = new ArrayList<>();
+			for ( CFParser.LiteralExpressionContext value : annotation.literalExpression() ) {
+				values.add( toAst( file, value ) );
+			}
+			avalue = new BoxArrayLiteral( values, getPosition( annotation ), getSourceText( annotation ) );
+		} else {
+			avalue = new BoxStringLiteral( "", getPosition( annotation ), getSourceText( annotation ) );
+		}
+		return new BoxAnnotation( ( BoxFQN ) aname, avalue, getPosition( annotation ), getSourceText( annotation ) );
+	}
+
 	/**
 	 * Converts the Function argument parser rule to the corresponding AST node.
 	 *
@@ -1557,7 +1600,7 @@ public class BoxCFParser extends BoxAbstractParser {
 			type = node.type().getText();
 		}
 		for ( CFParser.PostannotationContext annotation : node.postannotation() ) {
-			annotations.addAll( toAst( file, annotation ) );
+			annotations.add( toAst( file, annotation ) );
 		}
 
 		return new BoxArgumentDeclaration( required, type, name, expr, annotations, documentation, getPosition( node ), getSourceText( node ) );
@@ -1573,26 +1616,16 @@ public class BoxCFParser extends BoxAbstractParser {
 	 *
 	 * @see BoxAnnotation
 	 */
-	private List<BoxAnnotation> toAst( File file, CFParser.PostannotationContext node ) {
-		List<BoxAnnotation> annotations = new ArrayList<>();
-		for ( CFParser.IdentifierContext id : node.parameters ) {
-			BoxFQN	name	= new BoxFQN( id.getText(), getPosition( id ), getSourceText( id ) );
-			int		index	= node.parameters.indexOf( id );
-			BoxExpr	value	= new BoxStringLiteral( "", getPosition( id ), getSourceText( id ) );
+	private BoxAnnotation toAst( File file, CFParser.PostannotationContext node ) {
 
-			if ( index < node.values.size() ) {
-				CFParser.LiteralExpressionContext literal = node.values.get( index );
-				value = toAst( file, literal );
-			}
-			annotations.add( new BoxAnnotation( name, value, getPosition( node ), getSourceText( node ) ) );
+		BoxFQN	name	= new BoxFQN( node.key.IDENTIFIER().getText(), getPosition( node.key ), getSourceText( node.key ) );
+		BoxExpr	value;
+		if ( node.value != null ) {
+			value = toAst( file, node.value );
+		} else {
+			value = new BoxStringLiteral( "", getPosition( node.key ), getSourceText( node.key ) );
 		}
-
-		return annotations;
-	}
-
-	private BoxStatement toAst( File file, CFParser.ConstructorContext node ) {
-		// TODO
-		throw new IllegalStateException( "not implemented: " + node.getClass().getSimpleName() );
+		return new BoxAnnotation( name, value, getPosition( node ), getSourceText( node ) );
 	}
 
 }

@@ -33,6 +33,7 @@ import ortus.boxlang.runtime.dynamic.IReferenceable;
 import ortus.boxlang.runtime.dynamic.casters.KeyCaster;
 import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 import ortus.boxlang.runtime.interop.DynamicJavaInteropService;
+import ortus.boxlang.runtime.runnables.IClassRunnable;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.services.FunctionService;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
@@ -611,7 +612,7 @@ public class Struct implements Map<Key, Object>, IType, IReferenceable, IListena
 		if ( value == null && !safe ) {
 			throw new KeyNotFoundException(
 			    // TODO: Limit the number of keys. There could be thousands!
-			    String.format( "The key %s was not found in the struct. Valid keys are (%s)", key.getName(), getKeys() ), this
+			    String.format( "The key %s was not found in the struct. Valid keys are (%s)", key.getName(), getKeysAsStrings() ), this
 			);
 		}
 		return unWrapNull( value );
@@ -722,7 +723,16 @@ public class Struct implements Map<Key, Object>, IType, IReferenceable, IListena
 	 *
 	 * @return An array list of all the keys in the struct
 	 */
-	public List<String> getKeys() {
+	public List<Key> getKeys() {
+		return keySet().stream().collect( java.util.stream.Collectors.toList() );
+	}
+
+	/**
+	 * Get an array list of all the keys in the struct
+	 *
+	 * @return An array list of all the keys in the struct
+	 */
+	public List<String> getKeysAsStrings() {
 		return keySet().stream().map( Key::getName ).collect( java.util.stream.Collectors.toList() );
 	}
 
@@ -839,6 +849,14 @@ public class Struct implements Map<Key, Object>, IType, IReferenceable, IListena
 	 */
 	public Function getAsFunction( Key key ) {
 		return ( Function ) get( key );
+	}
+
+	/**
+	 * Convenience method for getting cast as BoxRunnable
+	 * Does NOT perform BoxLang casting, only Java cast so the object needs to actually be castable
+	 */
+	public IClassRunnable getClassRunnable( Key key ) {
+		return ( IClassRunnable ) get( key );
 	}
 
 	// Add more as needed...

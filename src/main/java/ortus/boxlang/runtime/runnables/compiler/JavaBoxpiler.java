@@ -43,6 +43,7 @@ import ortus.boxlang.parser.BoxScriptType;
 import ortus.boxlang.parser.ParsingResult;
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.runnables.IBoxRunnable;
+import ortus.boxlang.runtime.runnables.IClassRunnable;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.exceptions.ParseException;
 import ortus.boxlang.transpiler.JavaTranspiler;
@@ -260,6 +261,96 @@ public class JavaBoxpiler {
 		return getClass( fqn );
 	}
 
+	public Class<IClassRunnable> compileClass( String source ) {
+		String	packageName	= "generated";
+		String	className	= "Class_" + MD5( source );
+		String	fqn			= packageName + "." + className;
+
+		if ( !classLoader.hasClass( fqn ) ) {
+			if ( diskClassLoader.hasClass( fqn ) ) {
+				return getDiskClassClass( fqn );
+			} else {
+				BoxParser		parser	= new BoxParser();
+				ParsingResult	result;
+				try {
+					result = parser.parse( source, BoxScriptType.CFSCRIPT );
+				} catch ( IOException e ) {
+					throw new BoxRuntimeException( "Error compiling source", e );
+				}
+
+				if ( !result.isCorrect() ) {
+					throw new ParseException( result.getIssues() );
+				}
+
+				Transpiler transpiler = Transpiler.getTranspiler( null );
+				transpiler.setProperty( "classname", className );
+				transpiler.setProperty( "packageName", packageName );
+
+				TranspiledCode				javaASTs	= transpiler.transpile( result.getRoot() );
+				ClassOrInterfaceDeclaration	outerClass	= javaASTs.getEntryPoint().getClassByName( className ).get();
+
+				// Process functions and lamdas
+				for ( CompilationUnit callable : javaASTs.getCallables() ) {
+					ClassOrInterfaceDeclaration innerClass = callable.findFirst( ClassOrInterfaceDeclaration.class ).get();
+					outerClass.addMember( innerClass.setPublic( true ).setStatic( true ) );
+				}
+				if ( false )
+					throw new BoxRuntimeException( javaASTs.getEntryPoint().toString() );
+
+				compileSource( javaASTs.getEntryPoint().toString(), fqn );
+
+			}
+		}
+		return getClassClass( fqn );
+	}
+
+	public Class<IClassRunnable> compileClass( Path path, String packagePath ) {
+		// trim trailing period
+		if ( packagePath.endsWith( "." ) ) {
+			packagePath = packagePath.substring( 0, packagePath.length() - 1 );
+		}
+		String	packageName	= packagePath;
+		String	className	= getClassName( path.toFile() );
+		String	fqn			= packageName + "." + className;
+
+		if ( !classLoader.hasClass( fqn ) ) {
+			if ( diskClassLoader.hasClass( fqn ) ) {
+				return getDiskClassClass( fqn );
+			} else {
+				BoxParser		parser	= new BoxParser();
+				ParsingResult	result;
+				try {
+					result = parser.parse( path.toFile() );
+				} catch ( IOException e ) {
+					throw new BoxRuntimeException( "Error compiling source", e );
+				}
+
+				if ( !result.isCorrect() ) {
+					throw new ParseException( result.getIssues() );
+				}
+
+				Transpiler transpiler = Transpiler.getTranspiler( null );
+				transpiler.setProperty( "classname", className );
+				transpiler.setProperty( "packageName", packageName );
+
+				TranspiledCode				javaASTs	= transpiler.transpile( result.getRoot() );
+				ClassOrInterfaceDeclaration	outerClass	= javaASTs.getEntryPoint().getClassByName( className ).get();
+
+				// Process functions and lamdas
+				for ( CompilationUnit callable : javaASTs.getCallables() ) {
+					ClassOrInterfaceDeclaration innerClass = callable.findFirst( ClassOrInterfaceDeclaration.class ).get();
+					outerClass.addMember( innerClass.setPublic( true ).setStatic( true ) );
+				}
+				if ( false )
+					throw new BoxRuntimeException( javaASTs.getEntryPoint().toString() );
+
+				compileSource( javaASTs.getEntryPoint().toString(), fqn );
+
+			}
+		}
+		return getClassClass( fqn );
+	}
+
 	public void compileSource( String javaSource, String fqn ) {
 
 		DiagnosticCollector<JavaFileObject>	diagnostics		= new DiagnosticCollector<>();
@@ -301,6 +392,22 @@ public class JavaBoxpiler {
 	public Class<IBoxRunnable> getDiskClass( String fqn ) {
 		try {
 			return ( Class<IBoxRunnable> ) diskClassLoader.loadClass( fqn );
+		} catch ( ClassNotFoundException e ) {
+			throw new BoxRuntimeException( "Error compiling source", e );
+		}
+	}
+
+	public Class<IClassRunnable> getClassClass( String fqn ) {
+		try {
+			return ( Class<IClassRunnable> ) classLoader.loadClass( fqn );
+		} catch ( ClassNotFoundException e ) {
+			throw new BoxRuntimeException( "Error compiling source", e );
+		}
+	}
+
+	public Class<IClassRunnable> getDiskClassClass( String fqn ) {
+		try {
+			return ( Class<IClassRunnable> ) diskClassLoader.loadClass( fqn );
 		} catch ( ClassNotFoundException e ) {
 			throw new BoxRuntimeException( "Error compiling source", e );
 		}
@@ -390,7 +497,7 @@ public class JavaBoxpiler {
 		// Replace .. with .
 		packg	= packg.replaceAll( "\\.\\.", "." );
 		// Remove any non alpha-numeric chars.
-		packg	= packg.replaceAll( "[^a-zA-Z0-9\\\\.]", "" );
+		packg	= packg.replaceAll( "[^a-zA-Z0-9\\.]", "" );
 		return packg.toLowerCase();
 
 	}

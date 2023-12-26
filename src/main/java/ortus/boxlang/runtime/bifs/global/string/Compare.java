@@ -49,6 +49,7 @@ public class Compare extends BIF {
 	 * @param arguments Argument scope for the BIF.
 	 *
 	 * @argument.string1 The first string to compare
+	 * 
 	 * @argument.string2 The second string to compare
 	 *
 	 */

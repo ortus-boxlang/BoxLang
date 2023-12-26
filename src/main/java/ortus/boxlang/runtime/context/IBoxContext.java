@@ -21,7 +21,7 @@ import java.util.List;
 import java.util.Map;
 
 import ortus.boxlang.runtime.loader.ImportDefinition;
-import ortus.boxlang.runtime.runnables.BoxTemplate;
+import ortus.boxlang.runtime.runnables.ITemplateRunnable;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.UDF;
@@ -199,14 +199,14 @@ public interface IBoxContext {
 	 *
 	 * @return IBoxContext
 	 */
-	public IBoxContext pushTemplate( BoxTemplate template );
+	public IBoxContext pushTemplate( ITemplateRunnable template );
 
 	/**
 	 * Pop a template from the stack
 	 *
 	 * @return The template that this execution context is bound to
 	 */
-	public BoxTemplate popTemplate();
+	public ITemplateRunnable popTemplate();
 
 	/**
 	 * Has the execution context been bound to a template?
@@ -220,7 +220,14 @@ public interface IBoxContext {
 	 *
 	 * @return The template instance if found, null if this code is not called from a template
 	 */
-	public BoxTemplate findClosestTemplate();
+	public ITemplateRunnable findClosestTemplate();
+
+	/**
+	 * Finds the base (first) template in this request
+	 *
+	 * @return The template instance if found, null if this code is not called from a template
+	 */
+	public ITemplateRunnable findBaseTemplate();
 
 	/**
 	 * Get the default variable assignment scope for this context

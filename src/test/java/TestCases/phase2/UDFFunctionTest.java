@@ -177,6 +177,30 @@ public class UDFFunctionTest {
 
 	}
 
+	@DisplayName( "UDF metadata optional values" )
+	@Test
+	public void testUDFMetadataOptionalValues() {
+
+		instance.executeSource(
+		    """
+		    function foo() k1 k2="v2" k3 k4:"v4" k5  {
+		      }
+		          """,
+		    context );
+		UDF				UDFfoo		= ( ( UDF ) variables.dereference( foo, false ) );
+
+		// Now we test our "new" meta view which breaks out actual UDF meta, javaadoc, and annotations (inline and @)
+		FunctionMeta	$bx			= ( ( FunctionMeta ) Referencer.get( UDFfoo, BoxMeta.key, false ) );
+		Struct			annotations	= ( Struct ) $bx.meta.dereference( Key.of( "annotations" ), false );
+		System.out.println( annotations );
+		assertThat( annotations.dereference( Key.of( "k1" ), false ) ).isEqualTo( "" );
+		assertThat( annotations.dereference( Key.of( "k2" ), false ) ).isEqualTo( "v2" );
+		assertThat( annotations.dereference( Key.of( "k3" ), false ) ).isEqualTo( "" );
+		assertThat( annotations.dereference( Key.of( "k4" ), false ) ).isEqualTo( "v4" );
+		assertThat( annotations.dereference( Key.of( "k5" ), false ) ).isEqualTo( "" );
+
+	}
+
 	@DisplayName( "UDF metadata" )
 	@Test
 	public void testUDFMetadata() {
@@ -360,7 +384,7 @@ public class UDFFunctionTest {
 		assertThat( args[ 2 ] ).isEqualTo( "value3" );
 		assertThat( args[ 3 ] ).isEqualTo( "value4" );
 
-		List<String> keys = argsScope.getKeys();
+		List<String> keys = argsScope.getKeysAsStrings();
 		assertThat( keys.get( 0 ) ).isEqualTo( "param1" );
 		assertThat( keys.get( 1 ) ).isEqualTo( "param2" );
 		assertThat( keys.get( 2 ) ).isEqualTo( "3" );
@@ -391,7 +415,7 @@ public class UDFFunctionTest {
 		assertThat( args[ 2 ] ).isEqualTo( "value3" );
 		assertThat( args[ 3 ] ).isEqualTo( "value4" );
 
-		List<String> keys = argsScope.getKeys();
+		List<String> keys = argsScope.getKeysAsStrings();
 		System.out.println( keys );
 		assertThat( keys.get( 0 ) ).isEqualTo( "param1" );
 		assertThat( keys.get( 1 ) ).isEqualTo( "param2" );
@@ -423,7 +447,7 @@ public class UDFFunctionTest {
 		assertThat( args[ 2 ] ).isEqualTo( "value3" );
 		assertThat( args[ 3 ] ).isEqualTo( "value4" );
 
-		List<String> keys = argsScope.getKeys();
+		List<String> keys = argsScope.getKeysAsStrings();
 		assertThat( keys.get( 0 ) ).isEqualTo( "param1" );
 		assertThat( keys.get( 1 ) ).isEqualTo( "param2" );
 		assertThat( keys.get( 2 ) ).isEqualTo( "param3" );
@@ -461,7 +485,7 @@ public class UDFFunctionTest {
 		assertThat( args[ 2 ] ).isEqualTo( "value3" );
 		assertThat( args[ 3 ] ).isEqualTo( "value4" );
 
-		List<String> keys = argsScope.getKeys();
+		List<String> keys = argsScope.getKeysAsStrings();
 		assertThat( keys.get( 0 ) ).isEqualTo( "param1" );
 		assertThat( keys.get( 1 ) ).isEqualTo( "param2" );
 		assertThat( keys.get( 2 ) ).isEqualTo( "param3" );

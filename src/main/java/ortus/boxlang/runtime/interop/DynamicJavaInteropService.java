@@ -39,8 +39,10 @@ import org.apache.commons.lang3.ClassUtils;
 
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.bifs.MemberDescriptor;
+import ortus.boxlang.runtime.context.ClassBoxContext;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.dynamic.IReferenceable;
+import ortus.boxlang.runtime.runnables.IClassRunnable;
 import ortus.boxlang.runtime.scopes.IntKey;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Array;
@@ -191,7 +193,7 @@ public class DynamicJavaInteropService {
 	 *
 	 * @return The instance of the class
 	 */
-	public static <T> T invokeConstructor( Class<T> targetClass, Object... args ) {
+	public static <T> T invokeConstructor( IBoxContext context, Class<T> targetClass, Object... args ) {
 
 		// Thou shalt not pass!
 		if ( isInterface( targetClass ) ) {
@@ -215,7 +217,32 @@ public class DynamicJavaInteropService {
 		// Invoke Dynamic tries to do argument coercion, so we need to convert the arguments to the right types
 		MethodHandle	constructorInvoker	= callSite.dynamicInvoker();
 		try {
-			return ( T ) constructorInvoker.invokeWithArguments( args );
+			T thisInstance = ( T ) constructorInvoker.invokeWithArguments( args );
+
+			// If this is a Box Class, some additional initialization is needed
+			if ( thisInstance instanceof IClassRunnable cfc ) {
+
+				// This class context is really only used while boostrapping the pseudoConstructor. It will NOT be used as a parent
+				// context once the CFC is initialized. Methods called on this CFC will have access to the variables/this scope via their
+				// FunctionBoxContext, but their parent context will be whatever context they are called from.
+				IBoxContext classContext = new ClassBoxContext( context, cfc );
+
+				// Bootstrap the pseudoConstructor
+				cfc.pseudoConstructor( classContext );
+
+				// Call constructor
+				// TODO: look for initMethod annotation
+				if ( cfc.dereference( Key.init, true ) != null ) {
+					Object result = cfc.dereferenceAndInvoke( classContext, Key.init, new Object[] {}, false );
+					// CF returns the actual result of the constructor, but I'm not sure it makes sense or if people actually ever
+					// return anything other than "this".
+					if ( result != null ) {
+						// This cast will fail if the init returns something like a string
+						return ( T ) result;
+					}
+				}
+			}
+			return thisInstance;
 		} catch ( RuntimeException e ) {
 			throw e;
 		} catch ( Throwable e ) {
@@ -230,8 +257,8 @@ public class DynamicJavaInteropService {
 	 *
 	 * @return The instance of the class
 	 */
-	public static <T> T invokeConstructor( Class<T> targetClass ) {
-		return invokeConstructor( targetClass, EMPTY_ARGS );
+	public static <T> T invokeConstructor( IBoxContext context, Class<T> targetClass ) {
+		return invokeConstructor( context, targetClass, EMPTY_ARGS );
 	}
 
 	/**
@@ -971,17 +998,17 @@ public class DynamicJavaInteropService {
 	@SuppressWarnings( "unchecked" )
 	public static Object dereference( Class<?> targetClass, Object targetInstance, Key name, Boolean safe ) {
 
+		// If the object is referencable, allow it to handle the dereference
+		if ( targetInstance != null && targetInstance instanceof IReferenceable ref ) {
+			return ref.dereference( name, safe );
+		}
+
 		// This check allows us to lazy-create meta for BoxLang types the first time it is requested
 		if ( name.equals( BoxMeta.key ) ) {
 			if ( targetInstance != null && targetInstance instanceof IType type ) {
 				return type.getBoxMeta();
 			}
 			return new GenericMeta( targetInstance );
-		}
-
-		// If the object is referencable, allow it to handle the dereference
-		if ( targetInstance != null && targetInstance instanceof IReferenceable ref ) {
-			return ref.dereference( name, safe );
 		}
 
 		if ( targetInstance instanceof Map ) {
@@ -1026,7 +1053,7 @@ public class DynamicJavaInteropService {
 			// Special logic for native arrays. Possibly move to helper
 		} else if ( hasField( targetClass, name.getName() ) ) {
 			// If we have the field, return it's value, even if it's null
-			return getField( targetClass, name.getName() ).orElse( null );
+			return getField( targetClass, targetInstance, name.getName() ).orElse( null );
 		}
 
 		if ( safe ) {

@@ -149,7 +149,7 @@ public class Phase1TryCatch extends BoxTemplate {
 		try {
 			throw ( Throwable ) classLocator
 			    .load( context, "java:ortus.boxlang.runtime.types.exceptions.ApplicationException", imports )
-			    .invokeConstructor( new Object[] { "My Message", "My detail", "com.foo.type" } ).getTargetInstance();
+			    .invokeConstructor( context, new Object[] { "My Message", "My detail", "com.foo.type" } ).getTargetInstance();
 		} catch ( Throwable e ) {
 			// This this context for all code in the catch block
 			catchContext = new CatchBoxContext( context, Key.of( "e" ), e );

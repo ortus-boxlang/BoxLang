@@ -24,6 +24,7 @@ import org.slf4j.LoggerFactory;
 
 import com.github.javaparser.JavaParser;
 import com.github.javaparser.ParseResult;
+import com.github.javaparser.ParserConfiguration;
 import com.github.javaparser.ast.Node;
 import com.github.javaparser.ast.expr.Expression;
 import com.github.javaparser.ast.expr.MethodCallExpr;
@@ -53,7 +54,8 @@ import ortus.boxlang.transpiler.transformer.indexer.BoxLangCrossReferencerDefaul
 public abstract class AbstractTransformer implements Transformer {
 
 	protected Transpiler					transpiler;
-	protected static JavaParser				javaParser		= new JavaParser();
+	protected static JavaParser				javaParser		= new JavaParser(
+	    new ParserConfiguration().setLanguageLevel( ParserConfiguration.LanguageLevel.JAVA_17_PREVIEW ) );
 	protected static BoxLangCrossReferencer	crossReferencer	= new BoxLangCrossReferencerDefault();
 
 	/**

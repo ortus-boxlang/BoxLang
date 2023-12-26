@@ -50,7 +50,10 @@ public class ArrayMin extends BIF {
 	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
 		Array	actualArray	= arguments.getAsArray( Key.array );
 		double	min			= 0;
-		for ( int i = 0; i < actualArray.size(); i++ ) {
+		if ( actualArray.size() > 0 ) {
+			min = DoubleCaster.cast( actualArray.get( 0 ) );
+		}
+		for ( int i = 1; i < actualArray.size(); i++ ) {
 			min = Math.min( min, DoubleCaster.cast( actualArray.get( i ) ) );
 		}
 		return min;

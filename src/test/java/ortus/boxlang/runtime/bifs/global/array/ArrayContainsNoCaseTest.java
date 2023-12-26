@@ -33,7 +33,7 @@ import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
 
-public class ArrayLenTest {
+public class ArrayContainsNoCaseTest {
 
 	static BoxRuntime	instance;
 	static IBoxContext	context;
@@ -57,16 +57,71 @@ public class ArrayLenTest {
 		variables.clear();
 	}
 
-	@DisplayName( "It returns the length of the array" )
+	@DisplayName( "It can search" )
 	@Test
-	public void testItReturnsLength() {
+	public void testCanSearch() {
+
 		instance.executeSource(
 		    """
-		    arr = [ 1, 2, 3 ];
-		    result = arrayLen( arr );
+		    arr = [ 'a', 'b', 'c' ];
+		    result = arrayContainsNoCase( arr, 'b' );
 		    """,
 		    context );
-		assertThat( variables.dereference( result, false ) ).isEqualTo( 3 );
+		assertThat( variables.get( result ) ).isEqualTo( 2 );
+
+		instance.executeSource(
+		    """
+		    arr = [ 'a', 'b', 'c' ];
+		    result = arrayContainsNoCase( arr, 'B' );
+		    """,
+		    context );
+		assertThat( variables.get( result ) ).isEqualTo( 2 );
+	}
+
+	@DisplayName( "It can search UDF" )
+	@Test
+	public void testCanSearchUDF() {
+		instance.executeSource(
+		    """
+		    arr = [ 'a', 'b', 'c' ];
+		    result = arrayContainsNoCase( arr, i->i=="b" );
+		    """,
+		    context );
+		assertThat( variables.get( result ) ).isEqualTo( 2 );
+
+	}
+
+	@DisplayName( "It can search member" )
+	@Test
+	public void testCanSearchMember() {
+
+		instance.executeSource(
+		    """
+		    arr = [ 'a', 'b', 'c' ];
+		    result = arr.containsNoCase( 'b' );
+		    """,
+		    context );
+		assertThat( variables.dereference( result, false ) ).isEqualTo( 2 );
+
+		instance.executeSource(
+		    """
+		    arr = [ 'a', 'b', 'c' ];
+		    result = arr.containsNoCase( 'B' );
+		    """,
+		    context );
+		assertThat( variables.dereference( result, false ) ).isEqualTo( 2 );
+	}
+
+	@DisplayName( "It can search UDF Member" )
+	@Test
+	public void testCanSearchUDFMember() {
+		instance.executeSource(
+		    """
+		    arr = [ 'a', 'b', 'c' ];
+		    result =  arr.containsNoCase( i->i=="b" );
+		    """,
+		    context );
+		assertThat( variables.get( result ) ).isEqualTo( 2 );
 	}
 
 }

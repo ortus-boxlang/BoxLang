@@ -48,6 +48,7 @@ public class PlaceholderHelper {
 		// Add default core replacements
 		PLACEHOLDER_MAP.put( "user-home", System.getProperty( "user.home" ) );
 		PLACEHOLDER_MAP.put( "java-temp", System.getProperty( "java.io.tmpdir" ) );
+		PLACEHOLDER_MAP.put( "user-dir", System.getProperty( "user.dir" ) );
 		// Add additional replacements here
 		// placeholderMap.put("your-placeholder", "replacement-value");
 	}

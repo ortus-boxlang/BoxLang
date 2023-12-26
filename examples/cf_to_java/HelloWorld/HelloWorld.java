@@ -30,11 +30,11 @@ public class HelloWorld$cfm extends BoxTemplate {
 	private static HelloWorld$cfm instance;
 
 	private HelloWorld$cfm() {
-		this.name         = "HelloWorld";
-		this.extension    = "cfm";
-		this.path         = "c:/projects/examples";
-		this.lastModified = "2023-07-26T17:45:16.669276";
-		this.compiledOn   = "2023-07-26T17:45:16.669276";
+		this.name			= "HelloWorld";
+		this.extension		= "cfm";
+		this.path			= "c:/projects/examples";
+		this.lastModified	= "2023-07-26T17:45:16.669276";
+		this.compiledOn		= "2023-07-26T17:45:16.669276";
 		// this.ast = ???
 	}
 
@@ -53,36 +53,37 @@ public class HelloWorld$cfm extends BoxTemplate {
 	public void invoke( ExecutionContext context ) {
 
 		// Reference to the variables scope
-		IScope variablesScope = context.getScopeNearby( Key.of( "variables" ) );
+		IScope			variablesScope	= context.getScopeNearby( Key.of( "variables" ) );
 
-		ClassLocator classLocator = ClassLocator.getInstance();
+		ClassLocator	classLocator	= ClassLocator.getInstance();
 
 		// Case sensitive set
 		variablesScope.put( Key.of( "system" ), classLocator.load( context, "java.lang.System" ) );
 
 		variablesScope.put(
-			// Case insensitive set
-			Key.of( "GREETING" ),
+		    // Case insensitive set
+		    Key.of( "GREETING" ),
 
-			// Invoke callsite
-			ClassLoader.load( context, "java.lang.String" ).invokeConstructor(
-				// Argument Values
-				new Object[] { "Hello" } ) );
+		    // Invoke callsite
+		    ClassLoader.load( context, "java.lang.String" ).invokeConstructor(
+		        context,
+		        // Argument Values
+		        new Object[] { "Hello" } ) );
 
 		if ( EqualsEquals.invoke( context, variablesScope.get( Key.of( "GREETING" ) ), "Hello" ) ) {
 
 			Referencer.getAndInvoke(
-				context,
-				// Object
-				Referencer.get( variablesScope.get( Key.of( "SYSTEM" ) ), Key.of( "OUT" ) ),
+			    context,
+			    // Object
+			    Referencer.get( variablesScope.get( Key.of( "SYSTEM" ) ), Key.of( "OUT" ) ),
 
-				// Method
-				"println",
+			    // Method
+			    "println",
 
-				// Arguments
-				new Object[] {
+			    // Arguments
+			    new Object[] {
 
-					Concat.invoke( context, context.scopeFindNearby( Key.of( "GREETING" ), null ).value(), " world" )
+			        Concat.invoke( context, context.scopeFindNearby( Key.of( "GREETING" ), null ).value(), " world" )
 
 				}
 

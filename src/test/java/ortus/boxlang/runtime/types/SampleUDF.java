@@ -22,7 +22,6 @@ import java.util.List;
 
 import ortus.boxlang.runtime.context.FunctionBoxContext;
 import ortus.boxlang.runtime.loader.ImportDefinition;
-import ortus.boxlang.runtime.runnables.IBoxRunnable;
 import ortus.boxlang.runtime.scopes.Key;
 
 public class SampleUDF extends UDF {
@@ -73,10 +72,6 @@ public class SampleUDF extends UDF {
 
 	@Override
 	public Object getRunnableAST() {
-		return null;
-	}
-
-	public IBoxRunnable getDeclaringRunnable() {
 		return null;
 	}
 

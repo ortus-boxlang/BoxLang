@@ -9,50 +9,28 @@ script:
 		component
 		| interface
 		| functionOrStatement*
-		| tag
 	)
 	| EOF;
 
-tag: LCFTAG script RCFTAG;
-
 eos: SEMICOLON;
 
-// Wouldn't this be a BoxLang-only construct? We should probably move this to the BL grammar.
-package: PACKAGE identifier eos?;
-
-// We should probably move this to the BL grammar.
+// We should probably move this to the BL grammar. TODO: remove hard-coded java.
 importStatement:
 	IMPORT (JAVA COLON)? fqn (DOT STAR)? (AS identifier)? eos?;
 
 include: INCLUDE expression eos?;
 
 component:
-	ABSTRACT? COMPONENT identifier? componentAttribute* LBRACE functionOrStatement* RBRACE;
+	// TODO Properties
+	javadoc? (preannotation)* ABSTRACT? COMPONENT identifier? postannotation* LBRACE
+		functionOrStatement* RBRACE;
 
 interface:
-	INTERFACE identifier? interfaceAttribute* LBRACE interfaceFunction* RBRACE;
+	javadoc? (preannotation)* INTERFACE identifier? postannotation* LBRACE interfaceFunction* RBRACE
+		;
 
-interfaceAttribute:
-	extendAttribute
-	| identifier EQUAL expression;
-
+// TODO: default method implementations
 interfaceFunction: functionSignature eos;
-
-componentAttribute:
-	extendAttribute
-	| implementsAttribute
-	| identifier EQUAL expression;
-
-extendAttribute: EXTENDS EQUAL expression;
-
-implementsAttribute:
-	IMPLEMENTS EQUAL stringLiteral (COMMA stringLiteral)*;
-
-functionOptions: (
-		parameters += identifier (
-			EQUAL values += literalExpression
-		)?
-	)+;
 
 functionSignature:
 	javadoc? (preannotation)* accessModifier? STATIC? returnType? FUNCTION identifier LPAREN
@@ -65,11 +43,10 @@ param: (REQUIRED)? (type)? identifier (EQUAL expression)? postannotation*
 	| (REQUIRED)? (type)? identifier (EQUAL statementBlock)?;
 
 preannotation: AT fqn (literalExpression)*;
-postannotation: (
-		parameters += identifier (
-			EQUAL values += literalExpression
-		)?
-	)+;
+
+// TODO: check if keys can be quoted here and values can be expressions
+postannotation:
+	key = identifier ((EQUAL | COLON) value = literalExpression)?;
 
 returnType: type | identifier;
 
@@ -87,12 +64,9 @@ type:
 	| fqn
 	| ANY;
 
-functionOrStatement: constructor | function | statement;
+functionOrStatement: function | statement;
 
 javadoc: JAVADOC_COMMENT;
-
-constructor:
-	FUNCTION INIT LPAREN paramList? RPAREN statementBlock;
 
 property:
 	PROPERTY (identifier EQUAL expression)+ (
@@ -130,8 +104,7 @@ statementParameters: (
 	)+;
 
 statement:
-	assert
-	| break
+	break
 	| continue
 	| do
 	| for
@@ -150,7 +123,8 @@ statement:
 	| while;
 
 simpleStatement: (
-		applicationStatement
+		assert
+		| applicationStatement
 		| incrementDecrementStatement
 		| paramStatement
 		| return
@@ -233,7 +207,7 @@ throw:
 	)? RPAREN eos?
 	| THROW expression eos?;
 
-switch: SWITCH LPAREN expression RPAREN LBRACE ( case)* RBRACE;
+switch: SWITCH LPAREN expression RPAREN LBRACE (case)* RBRACE;
 
 case:
 	CASE (expression) COLON (statementBlock | statement)? break?
@@ -245,9 +219,7 @@ reservedKeyword:
 	| ARRAY
 	| CONTAINS
 	| DEFAULT
-	| EXTENDS
 	| FUNCTION
-	| IMPLEMENTS
 	| INIT
 	| MOD
 	| NEW
@@ -267,7 +239,8 @@ reservedKeyword:
 	| CONTAIN
 	| JAVA
 	| MESSAGE
-	| NULL; //    | 	ASSERT
+	| NULL;
+//    | 	ASSERT
 scope:
 	APPLICATION
 	| ARGUMENTS
@@ -275,7 +248,8 @@ scope:
 	| REQUEST
 	| VARIABLES
 	| THIS
-	| THREAD; //  TODO add additional known scopes
+	| THREAD;
+//  TODO add additional known scopes
 
 try: TRY statementBlock ( catch_)* finally_?;
 
@@ -314,7 +288,8 @@ unary: (MINUS | PLUS) expression;
 
 // TODO: remove hard-coded Java
 new:
-	NEW (JAVA COLON)? (fqn | stringLiteral) LPAREN argumentList? RPAREN; // TODO add namespace
+	NEW (JAVA COLON)? (fqn | stringLiteral) LPAREN argumentList? RPAREN;
+// TODO add namespace
 
 fqn: (identifier DOT)* identifier;
 
@@ -352,7 +327,8 @@ expression:
 	| expression INSTANCEOF expression // InstanceOf operator
 	| expression DOES NOT CONTAIN expression
 	| NOT expression
-	| expression (AND | OR) expression; // Logical
+	| expression (AND | OR) expression;
+// Logical
 
 // All literal expressions
 literalExpression:

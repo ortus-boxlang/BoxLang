@@ -82,6 +82,7 @@ public class RunnableLoader {
 	 * @return
 	 */
 	public BoxTemplate loadTemplateAbsolute( IBoxContext context, Path path, String packagePath ) {
+		// TODO: Make case insensitive
 		if ( !path.toFile().exists() ) {
 			throw new MissingIncludeException( "The template path [" + path.toString() + "] could not be found.", path.toString() );
 		}
@@ -110,8 +111,8 @@ public class RunnableLoader {
 	 */
 	public BoxTemplate loadTemplateRelative( IBoxContext context, String path ) {
 		// Determine what this path is relative to
-		BoxTemplate	template	= context.findClosestTemplate();
-		String		relativeBase;
+		ITemplateRunnable	template	= context.findClosestTemplate();
+		String				relativeBase;
 		// We our current context is executing a template, then we are relative to that template
 		if ( template != null ) {
 			relativeBase = template.getRunnablePath().getParent().toString();
@@ -136,6 +137,9 @@ public class RunnableLoader {
 	 */
 	public BoxScript loadSource( String source, BoxScriptType type ) {
 		Class<IBoxRunnable> clazz = JavaBoxpiler.getInstance().compileScript( source, type );
+		if ( IClassRunnable.class.isAssignableFrom( clazz ) ) {
+			throw new RuntimeException( "Cannot define class in an ad-hoc script." );
+		}
 		return ( BoxScript ) DynamicObject.of( clazz ).invokeStatic( "getInstance" );
 	}
 
@@ -162,4 +166,29 @@ public class RunnableLoader {
 		Class<IBoxRunnable> clazz = JavaBoxpiler.getInstance().compileStatement( source, BoxScriptType.CFSCRIPT );
 		return ( BoxScript ) DynamicObject.of( clazz ).invokeStatic( "getInstance" );
 	}
+
+	/**
+	 * Load the class for a BL class, JIT compiling if needed
+	 * Returns the class instantiated and the init() method run
+	 *
+	 * @param source The source to load
+	 *
+	 * @return
+	 */
+	public Class<IClassRunnable> loadClass( String source, IBoxContext context ) {
+		return JavaBoxpiler.getInstance().compileClass( source );
+	}
+
+	/**
+	 * Load the class for a BL class, JIT compiling if needed
+	 * Returns the class instantiated and the init() method run
+	 *
+	 * @param source The source to load
+	 *
+	 * @return
+	 */
+	public Class<IClassRunnable> loadClass( Path path, String packagePath, IBoxContext context ) {
+		return JavaBoxpiler.getInstance().compileClass( path.toAbsolutePath(), packagePath );
+	}
+
 }
