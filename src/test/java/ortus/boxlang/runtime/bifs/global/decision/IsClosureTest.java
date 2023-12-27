@@ -34,7 +34,6 @@ import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
 
-@Disabled( "Unimplemented" )
 public class IsClosureTest {
 
 	static BoxRuntime	instance;
@@ -63,8 +62,8 @@ public class IsClosureTest {
 	public void testTrueConditions() {
 		instance.executeSource(
 		    """
-		    closure = isClosure( function(){} ) );
-		    arrowFunction = isClosure( () => {} ) );
+		    closure = isClosure( function(){} );
+		    arrowFunction = isClosure( () => {} );
 
 		    myFunc = function() {};
 		    functionReference = isClosure( myFunc );
