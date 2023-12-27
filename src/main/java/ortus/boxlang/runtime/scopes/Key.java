@@ -62,6 +62,9 @@ public class Key {
 	public static final Key	parallel		= Key.of( "parallel" );
 	public static final Key	maxThreads		= Key.of( "maxThreads" );
 	public static final Key	delimiter		= Key.of( "delimiter" );
+	public static final Key	datatype		= Key.of( "datatype" );
+	public static final Key	dimensions		= Key.of( "dimensions" );
+	public static final Key	type			= Key.of( "type" );
 
 	/**
 	 * --------------------------------------------------------------------------

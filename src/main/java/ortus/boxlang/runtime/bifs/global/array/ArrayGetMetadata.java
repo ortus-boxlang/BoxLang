@@ -16,30 +16,48 @@ package ortus.boxlang.runtime.bifs.global.array;
 
 import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
+import ortus.boxlang.runtime.bifs.BoxMember;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
-import ortus.boxlang.runtime.types.Array;
+import ortus.boxlang.runtime.scopes.Key;
+import ortus.boxlang.runtime.types.Argument;
+import ortus.boxlang.runtime.types.BoxLangType;
+import ortus.boxlang.runtime.types.Struct;
 
 @BoxBIF
-public class ArrayNew extends BIF {
+@BoxMember( type = BoxLangType.ARRAY )
+public class ArrayGetMetadata extends BIF {
 
 	/**
 	 * Constructor
 	 */
-	public ArrayNew() {
+	public ArrayGetMetadata() {
 		super();
+		declaredArguments = new Argument[] {
+		    new Argument( true, "array", Key.array )
+		};
 	}
 
 	/**
-	 * Return new array
-	 * 
+	 * Gets metadata for items of an array and indicates the array type.
+	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 * 
+	 * @argument.array The array to be inserted into
 	 */
-	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
-		// TODO: accept dimension and isSynchronized params - need to update ArrayGetMetaData
-		return new Array();
+	public Struct invoke( IBoxContext context, ArgumentsScope arguments ) {
+		// Array actualArray = ( Array ) arguments.get( Key.array );
+		Struct meta = new Struct();
+
+		// this value never seems to change
+		meta.put( Key.datatype, "any" );
+
+		// these values are determined by how the array is created when using ArrayNew
+		meta.put( Key.type, "unsynchronized" );
+		meta.put( Key.dimensions, 1 );
+
+		return meta;
 	}
 
 }
