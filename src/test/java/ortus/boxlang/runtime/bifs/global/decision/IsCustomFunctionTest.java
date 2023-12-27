@@ -89,25 +89,25 @@ public class IsCustomFunctionTest {
 		assertThat( ( Boolean ) variables.dereference( Key.of( "aString" ), false ) ).isFalse();
 	}
 
-	@Disabled( "Lucee's results do not match our own; determine the proper behavior")
+	@Disabled( "Lucee's results do not match our own; determine the proper behavior" )
 	@DisplayName( "It supports Lucee's type parameter" )
 	@Test
 	public void testTypeParameter() {
 		instance.executeSource(
 		    """
-		       isLambdaAUDFType = isCustomFunction( () => {}, "udf" );
-		       isLambdaAClosureType = isCustomFunction( () => {}, "closure" );
-		       isLambdaALambdaType = isCustomFunction( () => {}, "lambda" );
+		    isLambdaAUDFType = isCustomFunction( () => {}, "udf" );
+		    isLambdaAClosureType = isCustomFunction( () => {}, "closure" );
+		    isLambdaALambdaType = isCustomFunction( () => {}, "lambda" );
 
-		       function myUDF(){};
-		       isUDFaLambdaType = isCustomFunction( myUDF, "lambda" );
-		       isUDFaClosureType = isCustomFunction( myUDF, "closure" );
-		       isUDFaUDFType = isCustomFunction( myUDF, "udf" );
+		    function myUDF(){};
+		    isUDFaLambdaType = isCustomFunction( myUDF, "lambda" );
+		    isUDFaClosureType = isCustomFunction( myUDF, "closure" );
+		    isUDFaUDFType = isCustomFunction( myUDF, "udf" );
 
-		       isClosureaLambdaType = isCustomFunction( function(){}, "lambda" );
-		       isClosureaUDFType = isCustomFunction( function(){}, "udf" );
-		       isClosureaClosureType = isCustomFunction( function(){}, "closure" );
-		          """,
+		    isClosureaLambdaType = isCustomFunction( function(){}, "lambda" );
+		    isClosureaUDFType = isCustomFunction( function(){}, "udf" );
+		    isClosureaClosureType = isCustomFunction( function(){}, "closure" );
+		       """,
 		    context );
 		assertThat( ( Boolean ) variables.dereference( Key.of( "isLambdaAUDFType" ), false ) ).isFalse();
 		assertThat( ( Boolean ) variables.dereference( Key.of( "isLambdaAClosureType" ), false ) ).isFalse();

@@ -58,7 +58,7 @@ public class IsDefinedTest {
 		variables.clear();
 	}
 
-	@DisplayName( "It detects binary values" )
+	@DisplayName( "It returns true for existing variables" )
 	@Test
 	public void testTrueConditions() {
 		instance.executeSource(
@@ -79,7 +79,7 @@ public class IsDefinedTest {
 		assertThat( ( Boolean ) variables.dereference( Key.of( "variableScope" ), false ) ).isTrue();
 	}
 
-	@DisplayName( "It returns false for non-binary values" )
+	@DisplayName( "It returns false for non-existing variables" )
 	@Test
 	public void testFalseConditions() {
 		instance.executeSource(

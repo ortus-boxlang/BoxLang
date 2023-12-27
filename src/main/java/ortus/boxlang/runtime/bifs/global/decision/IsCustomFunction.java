@@ -44,12 +44,14 @@ public class IsCustomFunction extends BIF {
 	}
 
 	/**
-	 * Determine whether a given object is a closure
+	 * Determine whether a given object is a custom function.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
 	 * @argument.object The value to test for closure-ness.
+	 * 
+	 * @argument.type Check for a specific type of custom function - `UDF`, `Lambda`, or `Closure`.
 	 *
 	 * @param context
 	 * @param arguments Argument scope defining the value to test.
@@ -79,11 +81,11 @@ public class IsCustomFunction extends BIF {
 		LAMBDA;
 
 		public static CustomFunctionType fromString( String type ) {
-			try{
+			try {
 				return CustomFunctionType.valueOf( type.trim().toUpperCase() );
-			} catch( IllegalArgumentException e ) {
+			} catch ( IllegalArgumentException e ) {
 				throw new IllegalArgumentException(
-					String.format( "Invalid type [%s], must be one of %s", type, Arrays.toString( CustomFunctionType.values() ) )
+				    String.format( "Invalid type [%s], must be one of %s", type, Arrays.toString( CustomFunctionType.values() ) )
 				);
 			}
 		}
