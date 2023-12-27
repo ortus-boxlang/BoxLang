@@ -26,6 +26,7 @@ import ortus.boxlang.runtime.types.Closure;
 
 @BoxBIF
 @BoxMember( type = BoxLangType.BOOLEAN )
+@BoxBIF( alias = "isCustomFunction" )
 public class IsClosure extends BIF {
 
 	/**
