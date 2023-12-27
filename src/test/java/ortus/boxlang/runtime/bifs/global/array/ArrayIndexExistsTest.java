@@ -116,4 +116,30 @@ public class ArrayIndexExistsTest {
         Boolean res = ( Boolean ) variables.dereference( result, false );
         assertThat( res ).isEqualTo( true );
     }
+
+    @DisplayName( "It should be aliased as ArrayIsDefined" )
+    @Test
+    public void testArrayIsDefinedAlias() {
+        instance.executeSource(
+            """
+            arr = [ 1, 2, 3 ];
+            result = ArrayIsDefined( arr, 3 )
+            """,
+            context );
+        Boolean res = ( Boolean ) variables.dereference( result, false );
+        assertThat( res ).isEqualTo( true );
+    }
+
+    @DisplayName( "It should be invocable as a member function using the isDefined alias" )
+    @Test
+    public void testIsDefindAliasMemberInvocation() {
+        instance.executeSource(
+            """
+            arr = [ 1, 2, 3 ];
+            result = arr.isDefined( 3 );
+            """,
+            context );
+        Boolean res = ( Boolean ) variables.dereference( result, false );
+        assertThat( res ).isEqualTo( true );
+    }
 }

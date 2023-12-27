@@ -26,7 +26,9 @@ import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.BoxLangType;
 
 @BoxBIF
+@BoxBIF( alias = "ArrayIsDefined" )
 @BoxMember( type = BoxLangType.ARRAY )
+@BoxMember( type = BoxLangType.ARRAY, name = "isDefined" )
 public class ArrayIndexExists extends BIF {
 
     /**
