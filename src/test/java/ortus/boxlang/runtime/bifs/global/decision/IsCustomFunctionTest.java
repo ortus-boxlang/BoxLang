@@ -19,10 +19,12 @@
 package ortus.boxlang.runtime.bifs.global.decision;
 
 import static com.google.common.truth.Truth.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -87,4 +89,48 @@ public class IsCustomFunctionTest {
 		assertThat( ( Boolean ) variables.dereference( Key.of( "aString" ), false ) ).isFalse();
 	}
 
+	@Disabled( "Lucee's results do not match our own; determine the proper behavior")
+	@DisplayName( "It supports Lucee's type parameter" )
+	@Test
+	public void testTypeParameter() {
+		instance.executeSource(
+		    """
+		       isLambdaAUDFType = isCustomFunction( () => {}, "udf" );
+		       isLambdaAClosureType = isCustomFunction( () => {}, "closure" );
+		       isLambdaALambdaType = isCustomFunction( () => {}, "lambda" );
+
+		       function myUDF(){};
+		       isUDFaLambdaType = isCustomFunction( myUDF, "lambda" );
+		       isUDFaClosureType = isCustomFunction( myUDF, "closure" );
+		       isUDFaUDFType = isCustomFunction( myUDF, "udf" );
+
+		       isClosureaLambdaType = isCustomFunction( function(){}, "lambda" );
+		       isClosureaUDFType = isCustomFunction( function(){}, "udf" );
+		       isClosureaClosureType = isCustomFunction( function(){}, "closure" );
+		          """,
+		    context );
+		assertThat( ( Boolean ) variables.dereference( Key.of( "isLambdaAUDFType" ), false ) ).isFalse();
+		assertThat( ( Boolean ) variables.dereference( Key.of( "isLambdaAClosureType" ), false ) ).isFalse();
+		assertThat( ( Boolean ) variables.dereference( Key.of( "isLambdaALambdaType" ), false ) ).isTrue();
+
+		assertThat( ( Boolean ) variables.dereference( Key.of( "isUDFaLambdaType" ), false ) ).isFalse();
+		assertThat( ( Boolean ) variables.dereference( Key.of( "isUDFaClosureType" ), false ) ).isFalse();
+		assertThat( ( Boolean ) variables.dereference( Key.of( "isUDFaUDFType" ), false ) ).isTrue();
+
+		assertThat( ( Boolean ) variables.dereference( Key.of( "isClosureaLambdaType" ), false ) ).isFalse();
+		assertThat( ( Boolean ) variables.dereference( Key.of( "isClosureaUDFType" ), false ) ).isFalse();
+		assertThat( ( Boolean ) variables.dereference( Key.of( "isClosureaClosureType" ), false ) ).isTrue();
+	}
+
+	@DisplayName( "It validates the type parameter" )
+	@Test
+	public void testTypeParameterValidation() {
+		assertThrows( Throwable.class, () -> {
+			instance.executeSource(
+			    """
+			    result = isCustomFunction( () => {}, "brad" );
+			    """,
+			    context );
+		} );
+	}
 }

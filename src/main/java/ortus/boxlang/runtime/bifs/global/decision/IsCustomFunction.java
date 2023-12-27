@@ -14,6 +14,8 @@
  */
 package ortus.boxlang.runtime.bifs.global.decision;
 
+import java.util.Arrays;
+
 import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
 import ortus.boxlang.runtime.bifs.BoxMember;
@@ -23,18 +25,21 @@ import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.BoxLangType;
 import ortus.boxlang.runtime.types.Closure;
+import ortus.boxlang.runtime.types.Lambda;
+import ortus.boxlang.runtime.types.UDF;
 
 @BoxBIF
 @BoxMember( type = BoxLangType.BOOLEAN )
-public class IsClosure extends BIF {
+public class IsCustomFunction extends BIF {
 
 	/**
 	 * Constructor
 	 */
-	public IsClosure() {
+	public IsCustomFunction() {
 		super();
 		declaredArguments = new Argument[] {
 		    new Argument( true, "any", Key.object ),
+		    new Argument( false, "string", Key.type ),
 		};
 	}
 
@@ -50,7 +55,37 @@ public class IsClosure extends BIF {
 	 * @param arguments Argument scope defining the value to test.
 	 */
 	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
-		return arguments.get( Key.object ) instanceof Closure;
+		String type = arguments.getAsString( Key.type );
+		if ( type == null || type.isEmpty() ) {
+			return arguments.get( Key.object ) instanceof Closure;
+		}
+		Object value = arguments.get( Key.object );
+		switch ( CustomFunctionType.fromString( type ) ) {
+			case UDF :
+				return value instanceof UDF;
+			case LAMBDA :
+				return value instanceof Lambda;
+			case CLOSURE :
+				return value instanceof Closure;
+			default :
+				return value instanceof Closure;
+		}
 	}
 
+	enum CustomFunctionType {
+
+		UDF,
+		CLOSURE,
+		LAMBDA;
+
+		public static CustomFunctionType fromString( String type ) {
+			try{
+				return CustomFunctionType.valueOf( type.trim().toUpperCase() );
+			} catch( IllegalArgumentException e ) {
+				throw new IllegalArgumentException(
+					String.format( "Invalid type [%s], must be one of %s", type, Arrays.toString( CustomFunctionType.values() ) )
+				);
+			}
+		}
+	};
 }
