@@ -265,4 +265,18 @@ public class ArrayFindAllTest {
 		assertThat( found.get( 0 ) ).isEqualTo( 5 );
 		assertThat( found.get( 1 ) ).isEqualTo( 6 );
 	}
+
+	@DisplayName( "It should find strings in a case insensitive manner when using nocase" )
+	@Test
+	public void testMatchStringCaseInSensitive() {
+		instance.executeSource(
+		    """
+		        nums = [ "red", "blue", "orange" ];
+		        result = nums.findAllNoCase( "bluE" );
+		    """,
+		    context );
+		Array found = ( Array ) variables.dereference( result, false );
+		assertThat( found.size() ).isEqualTo( 1 );
+		assertThat( found.get( 0 ) ).isEqualTo( 2 );
+	}
 }

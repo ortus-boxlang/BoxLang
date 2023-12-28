@@ -65,6 +65,9 @@ public class Key {
 	public static final Key	datatype		= Key.of( "datatype" );
 	public static final Key	dimensions		= Key.of( "dimensions" );
 	public static final Key	type			= Key.of( "type" );
+	public static Key		arrayFind		= Key.of( "arrayFind" );
+	public static Key		findAll			= Key.of( "findAll" );
+	public static Key		arrayFindAll	= Key.of( "arrayFindAll" );
 
 	public static final Key	file			= Key.of( "file" );
 	/**

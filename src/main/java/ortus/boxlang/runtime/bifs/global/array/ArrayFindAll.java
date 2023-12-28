@@ -27,15 +27,15 @@ import ortus.boxlang.runtime.types.BoxLangType;
 import ortus.boxlang.runtime.types.Function;
 
 @BoxBIF
-@BoxBIF( alias = "ArrayFindNoCase" )
+@BoxBIF( alias = "ArrayFindAllNoCase" )
 @BoxMember( type = BoxLangType.ARRAY )
-@BoxMember( type = BoxLangType.ARRAY, name = "findNoCase" )
-public class ArrayFind extends BIF {
+@BoxMember( type = BoxLangType.ARRAY, name = "findAllNoCase" )
+public class ArrayFindAll extends BIF {
 
 	/**
 	 * Constructor
 	 */
-	public ArrayFind() {
+	public ArrayFindAll() {
 		super();
 		declaredArguments = new Argument[] {
 		    new Argument( true, "array", Key.array ),
@@ -44,7 +44,7 @@ public class ArrayFind extends BIF {
 	}
 
 	/**
-	 * Return int position of value in array, case sensitive
+	 * Return an array containing the indexes of matched values
 	 * 
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
@@ -58,36 +58,40 @@ public class ArrayFind extends BIF {
 		Object	value		= arguments.get( Key.value );
 
 		if ( value instanceof Function functionValue ) {
-			return findOne( context, actualArray, functionValue );
+			return findAll( context, actualArray, functionValue );
 		}
 
-		return findOne( actualArray, value, isCaseSensitive( arguments.getAsKey( BIF.__functionName ) ) );
+		return findAll( actualArray, value, isCaseSensitive( arguments.getAsKey( BIF.__functionName ) ) );
 	}
 
-	private int findOne( Array actualArray, Object value, boolean caseSensitive ) {
-		for ( int i = 0; i < actualArray.size(); i++ ) {
+	private Array findAll( Array actualArray, Object value, boolean caseSensitive ) {
+		Array values = new Array();
 
+		for ( int i = 0; i < actualArray.size(); i++ ) {
 			if ( EqualsEquals.invoke( actualArray.get( i ), value, caseSensitive ) ) {
-				return i + 1;
+				values.add( i + 1 );
 			} else if ( actualArray.get( i ).equals( value ) ) {
-				return i + 1;
+				values.add( i + 1 );
 			}
 		}
 
-		return 0;
+		return values;
 	}
 
-	private int findOne( IBoxContext context, Array actualArray, Function functionValue ) {
+	private Array findAll( IBoxContext context, Array actualArray, Function functionValue ) {
+		Array values = new Array();
+
 		for ( int i = 0; i < actualArray.size(); i++ ) {
 			if ( ( boolean ) context.invokeFunction( functionValue, new Object[] { actualArray.get( i ) } ) ) {
-				return i + 1;
+				values.add( i + 1 );
 			}
 		}
 
-		return 0;
+		return values;
 	}
 
 	private boolean isCaseSensitive( Key functionName ) {
-		return functionName.equals( Key.find ) || functionName.equals( Key.arrayFind );
+		return functionName.equals( Key.findAll ) || functionName.equals( Key.arrayFindAll );
 	}
+
 }
