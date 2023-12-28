@@ -18,18 +18,15 @@ import java.util.Arrays;
 
 import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
-import ortus.boxlang.runtime.bifs.BoxMember;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
-import ortus.boxlang.runtime.types.BoxLangType;
 import ortus.boxlang.runtime.types.Closure;
 import ortus.boxlang.runtime.types.Lambda;
 import ortus.boxlang.runtime.types.UDF;
 
 @BoxBIF
-@BoxMember( type = BoxLangType.BOOLEAN )
 public class IsCustomFunction extends BIF {
 
 	/**
@@ -50,7 +47,7 @@ public class IsCustomFunction extends BIF {
 	 * @param arguments Argument scope for the BIF.
 	 *
 	 * @argument.object The value to test for closure-ness.
-	 * 
+	 *
 	 * @argument.type Check for a specific type of custom function - `UDF`, `Lambda`, or `Closure`.
 	 *
 	 * @param context
