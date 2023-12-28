@@ -34,7 +34,7 @@ public class ArrayIsEmpty extends BIF {
     public ArrayIsEmpty() {
         super();
         declaredArguments = new Argument[] {
-            new Argument( true, "modifiableArray", Key.array )
+            new Argument( true, "array", Key.array )
         };
     }
 

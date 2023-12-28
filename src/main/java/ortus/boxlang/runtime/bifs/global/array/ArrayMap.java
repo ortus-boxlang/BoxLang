@@ -18,7 +18,6 @@ import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
 import ortus.boxlang.runtime.bifs.BoxMember;
 import ortus.boxlang.runtime.context.IBoxContext;
-import ortus.boxlang.runtime.dynamic.casters.ArrayCaster;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
@@ -56,12 +55,10 @@ public class ArrayMap extends BIF {
 	 *
 	 */
 	public Array invoke( IBoxContext context, ArgumentsScope arguments ) {
-		Array		actualArray	= ArrayCaster.cast( arguments.dereference( Key.array, false ) );
-		Array		newArray	= new Array();
+		Array		actualArray	= arguments.getAsArray( Key.array );
+		Array		newArray	= new Array( actualArray.size() );
 		Function	func		= ( Function ) arguments.get( Key.callback );
 
-		// TODO: do we want to preset the size of the new array?
-		// newArray.grow( actualArray.size() )?
 		for ( int i = 0; i < actualArray.size(); i++ ) {
 			newArray.add( i, context.invokeFunction( func, new Object[] { actualArray.get( i ), i + 1, actualArray } ) );
 		}

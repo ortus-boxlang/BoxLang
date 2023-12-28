@@ -113,4 +113,24 @@ public class ArrayMapTest {
         assertThat( res.get( 2 ) ).isEqualTo( 3 );
     }
 
+    @DisplayName( "It should not skip null indexes" )
+    @Test
+    public void testNullIndexes() {
+        instance.executeSource(
+            """
+                      nums = [ "red", "blue", "green" ];
+                      nums[ 25 ] = "orange";
+
+                      result = nums.map(function( item, i ){
+                        return i;
+                      });
+            """,
+            context );
+        Array res = ( Array ) variables.dereference( result, null );
+        assertThat( res.size() ).isEqualTo( 25 );
+        assertThat( res.get( 0 ) ).isEqualTo( 1 );
+        assertThat( res.get( 1 ) ).isEqualTo( 2 );
+        assertThat( res.get( 2 ) ).isEqualTo( 3 );
+    }
+
 }
