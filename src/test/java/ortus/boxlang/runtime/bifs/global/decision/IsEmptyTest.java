@@ -34,7 +34,6 @@ import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
 
-@Disabled( "Unimplemented" )
 public class IsEmptyTest {
 
 	static BoxRuntime	instance;
@@ -66,13 +65,24 @@ public class IsEmptyTest {
 		    emptyString           = isEmpty( "" );
 		    emptyArray            = isEmpty( [] );
 		    emptyStruct           = isEmpty( {} );
-		    emptyQueryNoColumns   = isEmpty( queryNew( "" ) );
-		    emptyQueryWithColumns = isEmpty( queryNew( "name,age,dateModified" ) );
 		      """,
 		    context );
 		assertThat( ( Boolean ) variables.dereference( Key.of( "emptyString" ), false ) ).isTrue();
 		assertThat( ( Boolean ) variables.dereference( Key.of( "emptyArray" ), false ) ).isTrue();
 		assertThat( ( Boolean ) variables.dereference( Key.of( "emptyStruct" ), false ) ).isTrue();
+	}
+
+	// @TODO: Re-enable when query support is added
+	@Disabled( "No query support yet" )
+	@Test
+	public void testOnQueryObjects() {
+
+		instance.executeSource(
+		    """
+		    // emptyQueryNoColumns   = isEmpty( queryNew( "" ) );
+		    // emptyQueryWithColumns = isEmpty( queryNew( "name,age,dateModified" ) );
+		      """,
+		    context );
 		assertThat( ( Boolean ) variables.dereference( Key.of( "emptyQueryNoColumns" ), false ) ).isTrue();
 		assertThat( ( Boolean ) variables.dereference( Key.of( "emptyQueryWithColumns" ), false ) ).isTrue();
 	}
@@ -82,17 +92,23 @@ public class IsEmptyTest {
 	public void testFalseConditions() {
 		instance.executeSource(
 		    """
-		    boolValue    = isEmpty( true );
-		    stringValue  = isEmpty( "2" );
-		    nestedArray  = isEmpty( [[[],[]]] );
-		    nestedStruct = isEmpty( { a : {}, b : {}} );
-		    stringArray = isEmpty( [ "abc" ] );
-		    structWithValues = isEmpty( { a : "b" } );
-		    nestedStructValues = isEmpty( { a : { "name" : "brad" }} );
+		    boolValue             = isEmpty( true );
+		    zero                  = isEmpty( 0 );
+		    one                   = isEmpty( 1 );
+		    stringValue           = isEmpty( "2" );
+		    stringWithSpaces      = isEmpty( "   " );
+		    nestedArray           = isEmpty( [[[],[]]] );
+		    nestedStruct          = isEmpty( { a : {}, b : {}} );
+		    stringArray           = isEmpty( [ "abc" ] );
+		    structWithValues      = isEmpty( { a : "b" } );
+		    nestedStructValues    = isEmpty( { a : { "name" : "brad" }} );
 		      """,
 		    context );
 		assertThat( ( Boolean ) variables.dereference( Key.of( "boolValue" ), false ) ).isFalse();
+		assertThat( ( Boolean ) variables.dereference( Key.of( "zero" ), false ) ).isFalse();
+		assertThat( ( Boolean ) variables.dereference( Key.of( "one" ), false ) ).isFalse();
 		assertThat( ( Boolean ) variables.dereference( Key.of( "stringValue" ), false ) ).isFalse();
+		assertThat( ( Boolean ) variables.dereference( Key.of( "stringWithSpaces" ), false ) ).isFalse();
 		assertThat( ( Boolean ) variables.dereference( Key.of( "nestedArray" ), false ) ).isFalse();
 		assertThat( ( Boolean ) variables.dereference( Key.of( "nestedStruct" ), false ) ).isFalse();
 		assertThat( ( Boolean ) variables.dereference( Key.of( "stringArray" ), false ) ).isFalse();
