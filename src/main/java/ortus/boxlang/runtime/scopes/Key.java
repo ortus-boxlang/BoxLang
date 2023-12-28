@@ -59,6 +59,9 @@ public class Key {
 	public static final Key	parallel		= Key.of( "parallel" );
 	public static final Key	maxThreads		= Key.of( "maxThreads" );
 	public static final Key	delimiter		= Key.of( "delimiter" );
+	public static Key		arrayFind		= Key.of( "arrayFind" );
+	public static Key		findAll			= Key.of( "findAll" );
+	public static Key		arrayFindAll	= Key.of( "arrayFindAll" );
 
 	/**
 	 * --------------------------------------------------------------------------
