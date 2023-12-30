@@ -42,6 +42,7 @@ public class IsArray extends BIF {
 	 * Determine whether a value is an array
 	 *
 	 * @argument.value The value to test for array-ness.
+	 * 
 	 * @argument.number If passed, the array dimension to test.
 	 *
 	 * @param context   The context in which the BIF is being invoked.

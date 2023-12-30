@@ -56,7 +56,6 @@ public class Key {
 	public static final Key	start			= Key.of( "start" );
 	public static final Key	length			= Key.of( "length" );
 	public static final Key	object			= Key.of( "object" );
-	public static final Key	type			= Key.of( "type" );
 
 	public static final Key	contains		= Key.of( "contains" );
 	public static final Key	find			= Key.of( "find" );
