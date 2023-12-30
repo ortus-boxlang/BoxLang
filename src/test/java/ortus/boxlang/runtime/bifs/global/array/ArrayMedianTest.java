@@ -37,105 +37,105 @@ import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
 public class ArrayMedianTest {
 
-    static BoxRuntime  instance;
-    static IBoxContext context;
-    static IScope      variables;
-    static Key         result = new Key( "result" );
+	static BoxRuntime	instance;
+	static IBoxContext	context;
+	static IScope		variables;
+	static Key			result	= new Key( "result" );
 
-    @BeforeAll
-    public static void setUp() {
-        instance  = BoxRuntime.getInstance( true );
-        context   = new ScriptingBoxContext( instance.getRuntimeContext() );
-        variables = context.getScopeNearby( VariablesScope.name );
-    }
+	@BeforeAll
+	public static void setUp() {
+		instance	= BoxRuntime.getInstance( true );
+		context		= new ScriptingBoxContext( instance.getRuntimeContext() );
+		variables	= context.getScopeNearby( VariablesScope.name );
+	}
 
-    @AfterAll
-    public static void teardown() {
-        instance.shutdown();
-    }
+	@AfterAll
+	public static void teardown() {
+		instance.shutdown();
+	}
 
-    @BeforeEach
-    public void setupEach() {
-        variables.clear();
-    }
+	@BeforeEach
+	public void setupEach() {
+		variables.clear();
+	}
 
-    @DisplayName( "It can get the median" )
-    @Test
-    public void testMedian() {
+	@DisplayName( "It can get the median" )
+	@Test
+	public void testMedian() {
 
-        instance.executeSource(
-            """
-            arr = [ 1, 2, 3 ];
-            result = arrayMedian(arr);
-            """,
-            context );
-        assertThat( variables.get( result ) ).isEqualTo( 2 );
-    }
+		instance.executeSource(
+		    """
+		    arr = [ 1, 2, 3 ];
+		    result = arrayMedian(arr);
+		    """,
+		    context );
+		assertThat( variables.get( result ) ).isEqualTo( 2 );
+	}
 
-    @DisplayName( "It should get the median of an odd length array" )
-    @Test
-    public void testOddLength() {
+	@DisplayName( "It should get the median of an odd length array" )
+	@Test
+	public void testOddLength() {
 
-        instance.executeSource(
-            """
-            arr = [ 1, 2, 3 ];
-            result = arrayMedian(arr);
-            """,
-            context );
-        assertThat( variables.get( result ) ).isEqualTo( 2 );
-    }
+		instance.executeSource(
+		    """
+		    arr = [ 1, 2, 3 ];
+		    result = arrayMedian(arr);
+		    """,
+		    context );
+		assertThat( variables.get( result ) ).isEqualTo( 2 );
+	}
 
-    @DisplayName( "It should get the median of an even length array" )
-    @Test
-    public void testEvenLength() {
+	@DisplayName( "It should get the median of an even length array" )
+	@Test
+	public void testEvenLength() {
 
-        instance.executeSource(
-            """
-            arr = [ 1, 2, 3, 4 ];
-            result = arrayMedian(arr);
-            """,
-            context );
-        assertThat( variables.get( result ) ).isEqualTo( 2.5 );
-    }
+		instance.executeSource(
+		    """
+		    arr = [ 1, 2, 3, 4 ];
+		    result = arrayMedian(arr);
+		    """,
+		    context );
+		assertThat( variables.get( result ) ).isEqualTo( 2.5 );
+	}
 
-    @DisplayName( "It should allow member invocation" )
-    @Test
-    public void testMemberInvocation() {
+	@DisplayName( "It should allow member invocation" )
+	@Test
+	public void testMemberInvocation() {
 
-        instance.executeSource(
-            """
-            arr = [ 1, 2, 3, 4 ];
-            result = arr.median();
-            """,
-            context );
-        assertThat( variables.get( result ) ).isEqualTo( 2.5 );
-    }
+		instance.executeSource(
+		    """
+		    arr = [ 1, 2, 3, 4 ];
+		    result = arr.median();
+		    """,
+		    context );
+		assertThat( variables.get( result ) ).isEqualTo( 2.5 );
+	}
 
-    @DisplayName( "It should handle unsorted arrays" )
-    @Test
-    public void testUnsorted() {
+	@DisplayName( "It should handle unsorted arrays" )
+	@Test
+	public void testUnsorted() {
 
-        instance.executeSource(
-            """
-            arr = [ 1, 4, 3, 2 ];
-            result = arr.median();
-            """,
-            context );
-        assertThat( variables.get( result ) ).isEqualTo( 2.5 );
-    }
+		instance.executeSource(
+		    """
+		    arr = [ 1, 4, 3, 2 ];
+		    result = arr.median();
+		    """,
+		    context );
+		assertThat( variables.get( result ) ).isEqualTo( 2.5 );
+	}
 
-    @DisplayName( "It should throw an error for non-numeric values" )
-    @Test
-    public void testThrows() {
+	@DisplayName( "It should throw an error for non-numeric values" )
+	@Test
+	public void testThrows() {
 
-        assertThrows( BoxRuntimeException.class, () -> {
-            instance.executeSource(
-                """
-                arr = [ 1, 2, 3, 4, "orange" ];
-                result = arrayMedian(arr);
-                """,
-                context );
-        } );
-    }
+		assertThrows( BoxRuntimeException.class, () -> {
+			instance.executeSource(
+			    """
+			    arr = [ 1, 2, 3, 4, "orange" ];
+			    result = arrayMedian(arr);
+			    """,
+			    context );
+		} );
+	}
 
 }

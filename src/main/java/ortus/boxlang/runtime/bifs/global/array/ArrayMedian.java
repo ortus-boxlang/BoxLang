@@ -33,39 +33,39 @@ import ortus.boxlang.runtime.types.BoxLangType;
 @BoxMember( type = BoxLangType.ARRAY )
 public class ArrayMedian extends BIF {
 
-    /**
-     * Constructor
-     */
-    public ArrayMedian() {
-        super();
-        declaredArguments = new Argument[] {
-            new Argument( true, "array", Key.array )
-        };
-    }
+	/**
+	 * Constructor
+	 */
+	public ArrayMedian() {
+		super();
+		declaredArguments = new Argument[] {
+		    new Argument( true, "array", Key.array )
+		};
+	}
 
-    /**
-     * Return the median value of an array. Will only work on arrays that contain only numeric values.
-     * 
-     * @param context   The context in which the BIF is being invoked.
-     * @param arguments Argument scope for the BIF.
-     * 
-     * @argument.array The array to get median value from
-     */
-    public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
-        Array        actualArray = arguments.getAsArray( Key.array );
-        List<Double> vals        = actualArray.stream().map( ( x ) -> DoubleCaster.cast( x ) ).collect( Collectors.toList() );
-        int          size        = actualArray.size();
+	/**
+	 * Return the median value of an array. Will only work on arrays that contain only numeric values.
+	 * 
+	 * @param context   The context in which the BIF is being invoked.
+	 * @param arguments Argument scope for the BIF.
+	 * 
+	 * @argument.array The array to get median value from
+	 */
+	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
+		Array			actualArray	= arguments.getAsArray( Key.array );
+		List<Double>	vals		= actualArray.stream().map( ( x ) -> DoubleCaster.cast( x ) ).collect( Collectors.toList() );
+		int				size		= actualArray.size();
 
-        vals.sort( Compare::invoke );
+		vals.sort( Compare::invoke );
 
-        // length is odd
-        if ( size % 2 == 1 ) {
-            return vals.get( size / 2 );
-        }
+		// length is odd
+		if ( size % 2 == 1 ) {
+			return vals.get( size / 2 );
+		}
 
-        int median = size / 2;
+		int median = size / 2;
 
-        return ( vals.get( median - 1 ) + vals.get( median ) ) / 2;
-    }
+		return ( vals.get( median - 1 ) + vals.get( median ) ) / 2;
+	}
 
 }

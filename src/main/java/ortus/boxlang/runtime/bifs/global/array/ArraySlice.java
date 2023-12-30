@@ -30,45 +30,45 @@ import ortus.boxlang.runtime.types.BoxLangType;
 @BoxMember( type = BoxLangType.ARRAY, name = "mid" )
 public class ArraySlice extends BIF {
 
-    /**
-     * Constructor
-     */
-    public ArraySlice() {
-        super();
-        declaredArguments = new Argument[] {
-            new Argument( true, "array", Key.array ),
-            new Argument( true, "integer", Key.start, 1 ),
-            new Argument( false, "integer", Key.length, 0 )
-        };
-    }
+	/**
+	 * Constructor
+	 */
+	public ArraySlice() {
+		super();
+		declaredArguments = new Argument[] {
+		    new Argument( true, "array", Key.array ),
+		    new Argument( true, "integer", Key.start, 1 ),
+		    new Argument( false, "integer", Key.length, 0 )
+		};
+	}
 
-    /**
-     * Extracts a sub array from an existing array.
-     * 
-     * @param context
-     * @param arguments Argument scope defining the array.
-     */
-    public Array invoke( IBoxContext context, ArgumentsScope arguments ) {
-        Array actualArray = arguments.getAsArray( Key.array );
-        int   start       = arguments.getAsInteger( Key.start ) - 1;
-        int   length      = arguments.getAsInteger( Key.length );
-        Array outputArray = new Array();
+	/**
+	 * Extracts a sub array from an existing array.
+	 * 
+	 * @param context
+	 * @param arguments Argument scope defining the array.
+	 */
+	public Array invoke( IBoxContext context, ArgumentsScope arguments ) {
+		Array	actualArray	= arguments.getAsArray( Key.array );
+		int		start		= arguments.getAsInteger( Key.start ) - 1;
+		int		length		= arguments.getAsInteger( Key.length );
+		Array	outputArray	= new Array();
 
-        if ( start < 0 ) {
-            start = actualArray.size() + start;
-        }
+		if ( start < 0 ) {
+			start = actualArray.size() + start;
+		}
 
-        if ( length < 0 ) {
-            length = actualArray.size() + length - 1;
-        } else if ( length == 0 ) {
-            length = actualArray.size() - start;
-        }
+		if ( length < 0 ) {
+			length = actualArray.size() + length - 1;
+		} else if ( length == 0 ) {
+			length = actualArray.size() - start;
+		}
 
-        for ( int i = start; i < start + length; i++ ) {
-            outputArray.add( actualArray.get( i ) );
-        }
+		for ( int i = start; i < start + length; i++ ) {
+			outputArray.add( actualArray.get( i ) );
+		}
 
-        return outputArray;
-    }
+		return outputArray;
+	}
 
 }

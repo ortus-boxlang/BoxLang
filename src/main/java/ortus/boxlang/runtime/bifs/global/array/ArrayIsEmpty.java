@@ -28,28 +28,28 @@ import ortus.boxlang.runtime.types.BoxLangType;
 @BoxMember( type = BoxLangType.ARRAY )
 public class ArrayIsEmpty extends BIF {
 
-    /**
-     * Constructor
-     */
-    public ArrayIsEmpty() {
-        super();
-        declaredArguments = new Argument[] {
-            new Argument( true, "array", Key.array )
-        };
-    }
+	/**
+	 * Constructor
+	 */
+	public ArrayIsEmpty() {
+		super();
+		declaredArguments = new Argument[] {
+		    new Argument( true, "array", Key.array )
+		};
+	}
 
-    /**
-     * Determines whether an array contains data.
-     *
-     * @param context   The context in which the BIF is being invoked.
-     * @param arguments Argument scope for the BIF.
-     *
-     * @argument.array The array to test.
-     */
-    public Boolean invoke( IBoxContext context, ArgumentsScope arguments ) {
-        Array actualArray = arguments.getAsArray( Key.array );
+	/**
+	 * Determines whether an array contains data.
+	 *
+	 * @param context   The context in which the BIF is being invoked.
+	 * @param arguments Argument scope for the BIF.
+	 *
+	 * @argument.array The array to test.
+	 */
+	public Boolean invoke( IBoxContext context, ArgumentsScope arguments ) {
+		Array actualArray = arguments.getAsArray( Key.array );
 
-        return actualArray.size() == 0;
-    }
+		return actualArray.size() == 0;
+	}
 
 }

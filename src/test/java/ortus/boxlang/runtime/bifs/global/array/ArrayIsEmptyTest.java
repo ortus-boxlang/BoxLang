@@ -35,65 +35,65 @@ import ortus.boxlang.runtime.scopes.VariablesScope;
 
 public class ArrayIsEmptyTest {
 
-    static BoxRuntime  instance;
-    static IBoxContext context;
-    static IScope      variables;
-    static Key         result = new Key( "result" );
+	static BoxRuntime	instance;
+	static IBoxContext	context;
+	static IScope		variables;
+	static Key			result	= new Key( "result" );
 
-    @BeforeAll
-    public static void setUp() {
-        instance  = BoxRuntime.getInstance( true );
-        context   = new ScriptingBoxContext( instance.getRuntimeContext() );
-        variables = context.getScopeNearby( VariablesScope.name );
-    }
+	@BeforeAll
+	public static void setUp() {
+		instance	= BoxRuntime.getInstance( true );
+		context		= new ScriptingBoxContext( instance.getRuntimeContext() );
+		variables	= context.getScopeNearby( VariablesScope.name );
+	}
 
-    @AfterAll
-    public static void teardown() {
-        instance.shutdown();
-    }
+	@AfterAll
+	public static void teardown() {
+		instance.shutdown();
+	}
 
-    @BeforeEach
-    public void setupEach() {
-        variables.clear();
-    }
+	@BeforeEach
+	public void setupEach() {
+		variables.clear();
+	}
 
-    @DisplayName( "It should return true if the array has no elements" )
-    @Test
-    public void testCanSearch() {
+	@DisplayName( "It should return true if the array has no elements" )
+	@Test
+	public void testCanSearch() {
 
-        instance.executeSource(
-            """
-            arr = [];
-            result = ArrayIsEmpty(arr);
-            """,
-            context );
-        assertThat( ( Boolean ) variables.get( result ) ).isEqualTo( true );
-    }
+		instance.executeSource(
+		    """
+		    arr = [];
+		    result = ArrayIsEmpty(arr);
+		    """,
+		    context );
+		assertThat( ( Boolean ) variables.get( result ) ).isEqualTo( true );
+	}
 
-    @DisplayName( "It should return false if the array has at least one element" )
-    @Test
-    public void testCanSearchMember() {
+	@DisplayName( "It should return false if the array has at least one element" )
+	@Test
+	public void testCanSearchMember() {
 
-        instance.executeSource(
-            """
-            arr = [ 1 ];
-            result = ArrayIsEmpty(arr);
-            """,
-            context );
-        assertThat( ( Boolean ) variables.get( result ) ).isEqualTo( false );
-    }
+		instance.executeSource(
+		    """
+		    arr = [ 1 ];
+		    result = ArrayIsEmpty(arr);
+		    """,
+		    context );
+		assertThat( ( Boolean ) variables.get( result ) ).isEqualTo( false );
+	}
 
-    @DisplayName( "It should be invocable as a member function" )
-    @Test
-    public void testMemberInvocation() {
+	@DisplayName( "It should be invocable as a member function" )
+	@Test
+	public void testMemberInvocation() {
 
-        instance.executeSource(
-            """
-            arr = [ 'a', 'b', 'c' ];
-            result = arr.isEmpty();
-            """,
-            context );
-        assertThat( ( Boolean ) variables.get( result ) ).isEqualTo( false );
-    }
+		instance.executeSource(
+		    """
+		    arr = [ 'a', 'b', 'c' ];
+		    result = arr.isEmpty();
+		    """,
+		    context );
+		assertThat( ( Boolean ) variables.get( result ) ).isEqualTo( false );
+	}
 
 }
