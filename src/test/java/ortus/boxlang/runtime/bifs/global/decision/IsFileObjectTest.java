@@ -34,7 +34,6 @@ import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
 
-@Disabled( "Unimplemented" )
 public class IsFileObjectTest {
 
 	static BoxRuntime	instance;
@@ -58,23 +57,35 @@ public class IsFileObjectTest {
 		variables.clear();
 	}
 
+	@Disabled( "fileOpen() not implemented, and File.createTempFile throws a ClassNotFoundBoxLangException" )
 	@DisplayName( "It detects file objects" )
 	@Test
 	public void testTrueConditions() {
 		instance.executeSource(
 		    """
-		    result = isBinary( toBinary( toBase64( "boxlang" ) ) );
+			import Java.io.File;
+
+		    fromFileOpen = isFileObject( fileOpen( "./brad.txt" ) );
+			fromJavaFile = isFileObject( File.createTempFile( "brad", ".txt" ) );
 		    """,
 		    context );
-		assertThat( ( Boolean ) variables.dereference( Key.of( "result" ), false ) ).isTrue();
+		assertThat( ( Boolean ) variables.dereference( Key.of( "fromFileOpen" ), false ) ).isTrue();
+		assertThat( ( Boolean ) variables.dereference( Key.of( "fromJavaFile" ), false ) ).isTrue();
 	}
 
 	@DisplayName( "It returns false for non-file objects" )
 	@Test
 	public void testFalseConditions() {
-		// writeDump( isFileObject( true ) );
-		// writeDump( isFileObject( "" ) );
-		// writeDump( isFileObject( "./test.csv" ) );
+		instance.executeSource(
+		    """
+		    aBool = isFileObject( true );
+		    aString = isFileObject( "" );
+		    aFilePath = isFileObject( "./test.csv" );
+		      """,
+		    context );
+		assertThat( ( Boolean ) variables.dereference( Key.of( "aBool" ), false ) ).isFalse();
+		assertThat( ( Boolean ) variables.dereference( Key.of( "aString" ), false ) ).isFalse();
+		assertThat( ( Boolean ) variables.dereference( Key.of( "aFilePath" ), false ) ).isFalse();
 	}
 
 }

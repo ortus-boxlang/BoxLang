@@ -62,6 +62,7 @@ public class Key {
 	public static final Key	maxThreads		= Key.of( "maxThreads" );
 	public static final Key	delimiter		= Key.of( "delimiter" );
 
+	public static final Key	file			= Key.of( "file" );
 	/**
 	 * --------------------------------------------------------------------------
 	 * Private Properties
