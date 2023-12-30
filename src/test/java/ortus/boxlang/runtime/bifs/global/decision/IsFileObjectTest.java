@@ -63,11 +63,11 @@ public class IsFileObjectTest {
 	public void testTrueConditions() {
 		instance.executeSource(
 		    """
-			import Java.io.File;
+		    import Java.io.File;
 
-		    fromFileOpen = isFileObject( fileOpen( "./brad.txt" ) );
-			fromJavaFile = isFileObject( File.createTempFile( "brad", ".txt" ) );
-		    """,
+		       fromFileOpen = isFileObject( fileOpen( "./brad.txt" ) );
+		    fromJavaFile = isFileObject( File.createTempFile( "brad", ".txt" ) );
+		       """,
 		    context );
 		assertThat( ( Boolean ) variables.dereference( Key.of( "fromFileOpen" ), false ) ).isTrue();
 		assertThat( ( Boolean ) variables.dereference( Key.of( "fromJavaFile" ), false ) ).isTrue();

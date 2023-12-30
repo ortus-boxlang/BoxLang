@@ -26,6 +26,8 @@ import ortus.boxlang.runtime.types.BoxLangType;
 import ortus.boxlang.runtime.types.Struct;
 
 @BoxBIF
+@BoxBIF( alias = "structIsEmpty" )
+@BoxBIF( alias = "arrayIsEmpty" )
 @BoxMember( type = BoxLangType.ARRAY )
 @BoxMember( type = BoxLangType.STRUCT )
 @BoxMember( type = BoxLangType.STRING )
@@ -48,9 +50,6 @@ public class IsEmpty extends BIF {
 	 * @param arguments Argument scope for the BIF.
 	 *
 	 * @argument.value The value to test for emptiness.
-	 *
-	 * @param context
-	 * @param arguments Argument scope defining the value to test.
 	 */
 	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
 		Object value = arguments.get( Key.value );

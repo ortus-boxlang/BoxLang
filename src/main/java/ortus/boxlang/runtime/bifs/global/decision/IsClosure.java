@@ -42,9 +42,6 @@ public class IsClosure extends BIF {
 	 * @param arguments Argument scope for the BIF.
 	 *
 	 * @argument.object The value to test for closure-ness.
-	 *
-	 * @param context
-	 * @param arguments Argument scope defining the value to test.
 	 */
 	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
 		return arguments.get( Key.object ) instanceof Closure;

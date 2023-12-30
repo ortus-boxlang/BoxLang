@@ -42,12 +42,9 @@ public class IsFileObject extends BIF {
 	/**
 	 * Determine whether a given value is a file object
 	 *
-	 * @param context   The context in which the BIF is being invoked.
-	 * @param arguments Argument scope for the BIF.
-	 *
 	 * @argument.file The value to test for file-ness.
 	 *
-	 * @param context
+	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope defining the value to test.
 	 */
 	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {

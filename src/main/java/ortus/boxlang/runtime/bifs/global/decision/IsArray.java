@@ -41,14 +41,10 @@ public class IsArray extends BIF {
 	/**
 	 * Determine whether a value is an array
 	 *
-	 * @param context   The context in which the BIF is being invoked.
-	 * @param arguments Argument scope for the BIF.
-	 *
 	 * @argument.value The value to test for array-ness.
-	 *
 	 * @argument.number If passed, the array dimension to test.
 	 *
-	 * @param context
+	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope defining the value to test.
 	 */
 	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {

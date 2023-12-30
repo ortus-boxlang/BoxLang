@@ -49,9 +49,6 @@ public class IsCustomFunction extends BIF {
 	 * @argument.object The value to test for closure-ness.
 	 *
 	 * @argument.type Check for a specific type of custom function - `UDF`, `Lambda`, or `Closure`.
-	 *
-	 * @param context
-	 * @param arguments Argument scope defining the value to test.
 	 */
 	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
 		String type = arguments.getAsString( Key.type );
