@@ -18,6 +18,10 @@ import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
 import ortus.boxlang.runtime.bifs.BoxMember;
 import ortus.boxlang.runtime.context.IBoxContext;
+import ortus.boxlang.runtime.dynamic.casters.ArrayCaster;
+import ortus.boxlang.runtime.dynamic.casters.CastAttempt;
+import ortus.boxlang.runtime.dynamic.casters.StringCaster;
+import ortus.boxlang.runtime.dynamic.casters.StructCaster;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
@@ -52,18 +56,21 @@ public class IsEmpty extends BIF {
 	 * @argument.value The value to test for emptiness.
 	 */
 	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
-		Object value = arguments.get( Key.value );
-		if ( value == null ) {
+		Object object = arguments.get( Key.value );
+		if ( object == null ) {
 			return true;
 		}
-		if ( value instanceof String stringValue ) {
-			return stringValue.isEmpty();
+		CastAttempt<Array> arrayAttempt = ArrayCaster.attempt( object );
+		if ( arrayAttempt.wasSuccessful() ) {
+			return arrayAttempt.get().isEmpty();
 		}
-		if ( value instanceof Struct structValue ) {
-			return structValue.isEmpty();
+		CastAttempt<Struct> structAttempt = StructCaster.attempt( object );
+		if ( structAttempt.wasSuccessful() ) {
+			return structAttempt.get().isEmpty();
 		}
-		if ( value instanceof Array arrayValue ) {
-			return arrayValue.isEmpty();
+		CastAttempt<String> stringAttempt = StringCaster.attempt( object );
+		if ( stringAttempt.wasSuccessful() ) {
+			return stringAttempt.get().isEmpty();
 		}
 		return false;
 	}
