@@ -25,6 +25,8 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
+import java.util.stream.Stream;
+import java.util.stream.IntStream;
 import java.util.concurrent.ConcurrentHashMap;
 
 import ortus.boxlang.runtime.BoxRuntime;
@@ -309,6 +311,20 @@ public class Array implements List<Object>, IType, IReferenceable, IListenable {
 			add( e );
 			return wrapped.size();
 		}
+	}
+
+	/*
+	 * Returns a stream of the array
+	 */
+	public Stream<Object> stream() {
+		return wrapped.stream();
+	}
+
+	/*
+	 * Returns a IntStream of the indexes
+	 */
+	public IntStream intStream() {
+		return IntStream.range( 0, size() );
 	}
 
 	/**
