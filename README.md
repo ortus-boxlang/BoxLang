@@ -64,6 +64,12 @@ You will find a `.vscode` folder in the root. This contains our custom shortcuts
 | `tasks`			| Show all the available tasks in the project																			|
 | `test`            | Executes the unit tests in your project and produces the reports in the `build/reports/tests` folder					|
 
+### Example Testing Commands
+
+- Run a single test: `gradle test --tests FooTest`
+- Run several tests and then watch them for changes `gradle test --tests FooTest --tests BarTest --continuous`
+- Run Tests with a pattern match and watch for changes `gradle test --tests "Array*" --continuous`
+
 
 ## Dependencies
 
