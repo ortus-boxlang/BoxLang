@@ -355,7 +355,7 @@ class ScheduledTaskTest {
 		@DisplayName( "can have a day of the week constraint" )
 		@Test
 		void testCanHaveADayOfTheWeekConstraint() {
-			var mockNow = DateTimeHelper.now();
+			var mockNow = DateTimeHelper.now( task.getTimezone() );
 
 			// Reduce date enough to do computations on it
 			if ( mockNow.getDayOfWeek().getValue() > 6 ) {
@@ -367,7 +367,7 @@ class ScheduledTaskTest {
 			assertThat( task.isConstrained() ).isTrue();
 
 			// Mock to today it it runs
-			task.setDayOfTheWeek( DateTimeHelper.now().getDayOfWeek().getValue() );
+			task.setDayOfTheWeek( DateTimeHelper.now( task.getTimezone() ).getDayOfWeek().getValue() );
 			assertThat( task.isConstrained() ).isFalse();
 		};
 
