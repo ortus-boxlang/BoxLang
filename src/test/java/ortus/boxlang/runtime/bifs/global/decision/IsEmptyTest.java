@@ -72,6 +72,54 @@ public class IsEmptyTest {
 		assertThat( ( Boolean ) variables.dereference( Key.of( "emptyStruct" ), false ) ).isTrue();
 	}
 
+	@Test
+	public void structMemberFunction() {
+		instance.executeSource(
+		    """
+		    myStruct = { a : "b" };
+		    myEmptyStruct = {};
+
+		       onPopulated   = myStruct.isEmpty();
+		       onEmpty = myEmptyStruct.isEmpty();
+		         """,
+		    context );
+
+		assertThat( ( Boolean ) variables.dereference( Key.of( "onPopulated" ), false ) ).isFalse();
+		assertThat( ( Boolean ) variables.dereference( Key.of( "onEmpty" ), false ) ).isTrue();
+	}
+
+	@Test
+	public void arrayMemberFunction() {
+		instance.executeSource(
+		    """
+		    myArray 	 = { a : "b" };
+		    myEmptyArray = {};
+
+		       onPopulated   = myArray.isEmpty();
+		       onEmpty 	  = myEmptyArray.isEmpty();
+		         """,
+		    context );
+
+		assertThat( ( Boolean ) variables.dereference( Key.of( "onPopulated" ), false ) ).isFalse();
+		assertThat( ( Boolean ) variables.dereference( Key.of( "onEmpty" ), false ) ).isTrue();
+	}
+
+	@Test
+	public void stringMemberFunction() {
+		instance.executeSource(
+		    """
+		    myString 	  = "brad";
+		    myEmptyString = "";
+
+		       onPopulated   = myString.isEmpty();
+		       onEmpty 	  = myEmptyString.isEmpty();
+		         """,
+		    context );
+
+		assertThat( ( Boolean ) variables.dereference( Key.of( "onPopulated" ), false ) ).isFalse();
+		assertThat( ( Boolean ) variables.dereference( Key.of( "onEmpty" ), false ) ).isTrue();
+	}
+
 	// @TODO: Re-enable when query support is added
 	@Disabled( "No query support yet" )
 	@Test

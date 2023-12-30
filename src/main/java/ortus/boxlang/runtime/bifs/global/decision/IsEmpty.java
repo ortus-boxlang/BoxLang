@@ -26,7 +26,9 @@ import ortus.boxlang.runtime.types.BoxLangType;
 import ortus.boxlang.runtime.types.Struct;
 
 @BoxBIF
-@BoxMember( type = BoxLangType.BOOLEAN )
+@BoxMember( type = BoxLangType.ARRAY )
+@BoxMember( type = BoxLangType.STRUCT )
+@BoxMember( type = BoxLangType.STRING )
 public class IsEmpty extends BIF {
 
 	/**
