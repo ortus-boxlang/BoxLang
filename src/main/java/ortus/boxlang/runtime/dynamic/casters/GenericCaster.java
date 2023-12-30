@@ -195,11 +195,13 @@ public class GenericCaster {
 			if ( object instanceof Function ) {
 				return object;
 			}
-			throw new BoxCastException(
-			    String.format( "Cannot cast %s, to a Function.", object.getClass().getName() )
-			);
+			if ( fail ) {
+				throw new BoxCastException( String.format( "Cannot cast %s, to a Function.", object.getClass().getName() ) );
+			} else {
+				return null;
+			}
 		}
-
+		// Throwing even if fail is false because this is a programming error
 		throw new BoxCastException(
 		    String.format( "Invalid cast type [%s]", type )
 		);
