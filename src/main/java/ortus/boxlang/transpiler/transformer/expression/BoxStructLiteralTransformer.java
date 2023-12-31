@@ -72,15 +72,17 @@ public class BoxStructLiteralTransformer extends AbstractTransformer {
 				return javaExpr;
 			}
 
-			MethodCallExpr javaExpr = ( MethodCallExpr ) parseExpression( "Struct.of()", values );
+			MethodCallExpr	javaExpr	= ( MethodCallExpr ) parseExpression( "Struct.of()", values );
+			int				i			= 1;
 			for ( BoxExpr expr : structLiteral.getValues() ) {
 				Expression value;
-				if ( expr instanceof BoxIdentifier ) {
+				if ( expr instanceof BoxIdentifier && i % 2 != 0 ) {
 					value = new StringLiteralExpr( expr.getSourceText() );
 				} else {
 					value = ( Expression ) transpiler.transform( expr, context );
 				}
 				javaExpr.getArguments().add( value );
+				i++;
 			}
 			logger.info( "{} -> {}", node.getSourceText(), javaExpr );
 			addIndex( javaExpr, node );
@@ -93,15 +95,17 @@ public class BoxStructLiteralTransformer extends AbstractTransformer {
 				return javaExpr;
 			}
 
-			MethodCallExpr javaExpr = ( MethodCallExpr ) parseExpression( "Struct.linkedOf()", values );
+			MethodCallExpr	javaExpr	= ( MethodCallExpr ) parseExpression( "Struct.linkedOf()", values );
+			int				i			= 1;
 			for ( BoxExpr expr : structLiteral.getValues() ) {
 				Expression value;
-				if ( expr instanceof BoxIdentifier ) {
+				if ( expr instanceof BoxIdentifier && i % 2 != 0 ) {
 					value = new StringLiteralExpr( expr.getSourceText() );
 				} else {
 					value = ( Expression ) transpiler.transform( expr, context );
 				}
 				javaExpr.getArguments().add( value );
+				i++;
 			}
 			logger.info( "{} -> {}", node.getSourceText(), javaExpr );
 			addIndex( javaExpr, node );

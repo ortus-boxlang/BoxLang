@@ -14,18 +14,24 @@
  */
 package ortus.boxlang.runtime.bifs.global.array;
 
+import java.util.function.IntPredicate;
+
 import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
 import ortus.boxlang.runtime.bifs.BoxMember;
 import ortus.boxlang.runtime.context.IBoxContext;
+import ortus.boxlang.runtime.operators.EqualsEquals;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.BoxLangType;
+import ortus.boxlang.runtime.types.Function;
 
 @BoxBIF
+@BoxBIF( alias = "ArrayFindNoCase" )
 @BoxMember( type = BoxLangType.ARRAY )
+@BoxMember( type = BoxLangType.ARRAY, name = "findNoCase" )
 public class ArrayFind extends BIF {
 
 	/**
@@ -50,10 +56,26 @@ public class ArrayFind extends BIF {
 	 * @argument.value The value to found.
 	 */
 	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
-		Array	actualArray	= arguments.getAsArray( Key.array );
-		Object	value		= arguments.get( Key.value );
+		Array			actualArray	= arguments.getAsArray( Key.array );
+		Object			value		= arguments.get( Key.value );
+		IntPredicate	test		= getPredicate( context, actualArray, value, isCaseSensitive( arguments.getAsKey( BIF.__functionName ) ) );
 
-		return ArrayContains._invoke( actualArray, value );
+		return actualArray.intStream()
+		    .filter( test )
+		    .findFirst()
+		    .orElse( -1 ) + 1;
 	}
 
+	private IntPredicate getPredicate( IBoxContext context, Array actualArray, Object value, boolean caseSensitive ) {
+
+		if ( value instanceof Function functionValue ) {
+			return i -> ( boolean ) context.invokeFunction( functionValue, new Object[] { actualArray.get( i ) } );
+		}
+
+		return i -> EqualsEquals.invoke( actualArray.get( i ), value, caseSensitive ) || actualArray.get( i ).equals( value );
+	}
+
+	private boolean isCaseSensitive( Key functionName ) {
+		return functionName.equals( Key.find ) || functionName.equals( Key.arrayFind );
+	}
 }

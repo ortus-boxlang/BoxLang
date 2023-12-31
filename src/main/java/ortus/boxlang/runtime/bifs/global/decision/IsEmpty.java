@@ -12,48 +12,67 @@
  * BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language
  * governing permissions and limitations under the License.
  */
-package ortus.boxlang.runtime.bifs.global.array;
+package ortus.boxlang.runtime.bifs.global.decision;
 
 import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
 import ortus.boxlang.runtime.bifs.BoxMember;
 import ortus.boxlang.runtime.context.IBoxContext;
+import ortus.boxlang.runtime.dynamic.casters.ArrayCaster;
+import ortus.boxlang.runtime.dynamic.casters.CastAttempt;
+import ortus.boxlang.runtime.dynamic.casters.StringCaster;
+import ortus.boxlang.runtime.dynamic.casters.StructCaster;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.BoxLangType;
+import ortus.boxlang.runtime.types.Struct;
 
 @BoxBIF
+@BoxBIF( alias = "structIsEmpty" )
+@BoxBIF( alias = "arrayIsEmpty" )
 @BoxMember( type = BoxLangType.ARRAY )
-public class ArrayFindNoCase extends BIF {
+@BoxMember( type = BoxLangType.STRUCT )
+@BoxMember( type = BoxLangType.STRING )
+public class IsEmpty extends BIF {
 
 	/**
 	 * Constructor
 	 */
-	public ArrayFindNoCase() {
+	public IsEmpty() {
 		super();
 		declaredArguments = new Argument[] {
-		    new Argument( true, "array", Key.array ),
-		    new Argument( true, "any", Key.value )
+		    new Argument( true, "any", Key.value ),
 		};
 	}
 
 	/**
-	 * Return int position of value in array, case sensitive
-	 * 
+	 * Determine whether a given value is empty
+	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
-	 * 
-	 * @argument.array The array to be searched.
-	 * 
-	 * @argument.value The value to found.
+	 *
+	 * @argument.value The value to test for emptiness.
 	 */
 	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
-		Array	actualArray	= arguments.getAsArray( Key.array );
-		Object	value		= arguments.get( Key.value );
-
-		return ArrayContainsNoCase._invoke( actualArray, value );
+		Object object = arguments.get( Key.value );
+		if ( object == null ) {
+			return true;
+		}
+		CastAttempt<Array> arrayAttempt = ArrayCaster.attempt( object );
+		if ( arrayAttempt.wasSuccessful() ) {
+			return arrayAttempt.get().isEmpty();
+		}
+		CastAttempt<Struct> structAttempt = StructCaster.attempt( object );
+		if ( structAttempt.wasSuccessful() ) {
+			return structAttempt.get().isEmpty();
+		}
+		CastAttempt<String> stringAttempt = StringCaster.attempt( object );
+		if ( stringAttempt.wasSuccessful() ) {
+			return stringAttempt.get().isEmpty();
+		}
+		return false;
 	}
 
 }

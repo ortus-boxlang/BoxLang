@@ -16,13 +16,14 @@
  * limitations under the License.
  */
 
-package ortus.boxlang.runtime.bifs.global.array;
+package ortus.boxlang.runtime.bifs.global.decision;
 
 import static com.google.common.truth.Truth.assertThat;
 
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -33,12 +34,12 @@ import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
 
-public class ArrayFindTest {
+@Disabled( "Unimplemented" )
+public class IsBinaryTest {
 
 	static BoxRuntime	instance;
 	static IBoxContext	context;
 	static IScope		variables;
-	static Key			result	= new Key( "result" );
 
 	@BeforeAll
 	public static void setUp() {
@@ -57,68 +58,36 @@ public class ArrayFindTest {
 		variables.clear();
 	}
 
-	@DisplayName( "It should match numbers" )
+	@DisplayName( "It detects binary values" )
 	@Test
-	public void testMatchNumber() {
+	public void testTrueConditions() {
 		instance.executeSource(
 		    """
-		        nums = [ 1, 2, 3, 4, 5 ];
-		        result = nums.find( 3 );
+		    result = isBinary( toBinary( toBase64( "boxlang" ) ) );
 		    """,
 		    context );
-		int found = ( int ) variables.dereference( result, false );
-		assertThat( found ).isEqualTo( 3 );
+		assertThat( ( Boolean ) variables.dereference( Key.of( "result" ), false ) ).isTrue();
 	}
 
-	@DisplayName( "It should match doubles" )
+	@DisplayName( "It returns false for non-binary values" )
 	@Test
-	public void testMatchDoubles() {
+	public void testFalseConditions() {
 		instance.executeSource(
 		    """
-		        nums = [ 1, 2, 3, 4, 5 ];
-		        result = nums.find( 3.0 );
+		    aFloat    = isBinary( 1.1 );
+		    anArray   = isBinary( [ true, false ] );
+		    aString   = isBinary( "randomstring" );
+		    aStruct   = isBinary( {} );
+		    anInteger = isBinary( 0 );
+		    aTrue     = isBinary( true );
 		    """,
 		    context );
-		int found = ( int ) variables.dereference( result, false );
-		assertThat( found ).isEqualTo( 3 );
+		assertThat( ( Boolean ) variables.dereference( Key.of( "aFloat" ), false ) ).isFalse();
+		assertThat( ( Boolean ) variables.dereference( Key.of( "anArray" ), false ) ).isFalse();
+		assertThat( ( Boolean ) variables.dereference( Key.of( "aString" ), false ) ).isFalse();
+		assertThat( ( Boolean ) variables.dereference( Key.of( "aStruct" ), false ) ).isFalse();
+		assertThat( ( Boolean ) variables.dereference( Key.of( "anInteger" ), false ) ).isFalse();
+		assertThat( ( Boolean ) variables.dereference( Key.of( "aTrue" ), false ) ).isFalse();
 	}
 
-	@DisplayName( "It should match numbers and strings" )
-	@Test
-	public void testMatchNumberAndString() {
-		instance.executeSource(
-		    """
-		        nums = [ 1, 2, 4, 5, "3" ];
-		        result = nums.find( 3 );
-		    """,
-		    context );
-		int found = ( int ) variables.dereference( result, false );
-		assertThat( found ).isEqualTo( 5 );
-	}
-
-	@DisplayName( "It should find strings in a case sensitive manner" )
-	@Test
-	public void testMatchStringCaseSensitive() {
-		instance.executeSource(
-		    """
-		        nums = [ "red", "blue", "orange" ];
-		        result = nums.find( "bluE" );
-		    """,
-		    context );
-		int found = ( int ) variables.dereference( result, false );
-		assertThat( found ).isEqualTo( 0 );
-	}
-
-	@DisplayName( "It should find strings in a case insensitive manner when using nocase" )
-	@Test
-	public void testMatchStringCaseInSensitive() {
-		instance.executeSource(
-		    """
-		        nums = [ "red", "blue", "orange" ];
-		        result = nums.findNoCase( "bluE" );
-		    """,
-		    context );
-		int found = ( int ) variables.dereference( result, false );
-		assertThat( found ).isEqualTo( 2 );
-	}
 }

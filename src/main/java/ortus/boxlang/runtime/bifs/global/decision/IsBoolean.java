@@ -12,48 +12,42 @@
  * BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language
  * governing permissions and limitations under the License.
  */
-package ortus.boxlang.runtime.bifs.global.array;
+package ortus.boxlang.runtime.bifs.global.decision;
 
 import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
-import ortus.boxlang.runtime.bifs.BoxMember;
 import ortus.boxlang.runtime.context.IBoxContext;
+import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
+import ortus.boxlang.runtime.dynamic.casters.CastAttempt;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
-import ortus.boxlang.runtime.types.Array;
-import ortus.boxlang.runtime.types.BoxLangType;
 
 @BoxBIF
-@BoxMember( type = BoxLangType.ARRAY )
-public class ArrayFindAllNoCase extends BIF {
+public class IsBoolean extends BIF {
 
 	/**
 	 * Constructor
 	 */
-	public ArrayFindAllNoCase() {
+	public IsBoolean() {
 		super();
 		declaredArguments = new Argument[] {
-		    new Argument( true, "array", Key.array ),
-		    new Argument( true, "any", Key.value )
+		    new Argument( true, "any", Key.object ),
 		};
 	}
 
 	/**
-	 * Return an array of indexes that represent matching values in the array. Case insensitive.
-	 * 
+	 * Determine whether a given object is a boolean
+	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
-	 * 
-	 * @argument.array The array to be searched.
-	 * 
-	 * @argument.value The value to found or a function to test each item
+	 *
+	 * @argument.object The value to test for boolean-ness.
 	 */
-	public Array invoke( IBoxContext context, ArgumentsScope arguments ) {
-		Array	actualArray	= arguments.getAsArray( Key.array );
-		Object	value		= arguments.get( Key.value );
+	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
+		CastAttempt<Boolean> attempt = BooleanCaster.attempt( arguments.get( Key.object ) );
 
-		return ArrayFindAll._invoke( context, actualArray, value, false );
+		return attempt.wasSuccessful();
 	}
 
 }

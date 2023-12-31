@@ -34,6 +34,7 @@ public abstract class BIF {
 	 * and it will replace the first argument with the object on which it is being invoked
 	 */
 	public static final Key		__isMemberExecution	= new Key( "__isMemberExecution" );
+	public static final Key		__functionName		= new Key( "__functionName" );
 
 	/**
 	 * BIF Arguments

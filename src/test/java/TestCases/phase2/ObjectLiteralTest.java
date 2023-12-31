@@ -212,6 +212,40 @@ public class ObjectLiteralTest {
 		assertThat( str.dereference( Key.of( "brad" ), false ) ).isEqualTo( "wood" );
 		assertThat( str.keySet().toArray( new Key[ 0 ] )[ 0 ].getName() ).isEqualTo( "brad" );
 
+		instance.executeSource(
+		    """
+		    someValue = "wood"
+		      result = { brad = someValue }
+		      """,
+		    context );
+		assertThat( variables.dereference( result, false ) instanceof Struct ).isEqualTo( true );
+		assertThat( ( ( Struct ) variables.dereference( result, false ) ).type ).isEqualTo( Struct.Type.DEFAULT );
+		assertThat( ( ( Struct ) variables.dereference( result, false ) ).size() ).isEqualTo( 1 );
+		str = ( Struct ) variables.dereference( result, false );
+		assertThat( str.dereference( Key.of( "brad" ), false ) ).isEqualTo( "wood" );
+		assertThat( str.keySet().toArray( new Key[ 0 ] )[ 0 ].getName() ).isEqualTo( "brad" );
+
+	}
+
+	@DisplayName( "Fuynction in struct" )
+	@Test
+	public void testFunctionInStruct() {
+
+		instance.executeSource(
+		    """
+		    function fooFunction( returnStatement = "not my func" ){
+		    	return arguments.returnStatement;
+		    }
+		    function invokeFoo( returnStatement ){
+		         return foo.execute( arguments.returnStatement );
+		    }
+		    foo = {
+		    	execute : fooFunction
+		    };
+		    result = invokeFoo( "my func" );
+		    """,
+		    context );
+		assertThat( variables.dereference( result, false ) ).isEqualTo( "my func" );
 	}
 
 	@DisplayName( "unordered struct complex" )

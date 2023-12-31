@@ -145,9 +145,10 @@ public class BIFDescriptor {
 	 *
 	 * @return The result of the invocation
 	 */
-	public Object invoke( IBoxContext context, Object[] positionalArguments, boolean isMember ) {
+	public Object invoke( IBoxContext context, Object[] positionalArguments, boolean isMember, Key name ) {
 		ArgumentsScope scope = ArgumentUtil.createArgumentsScope( positionalArguments, getBIF().getDeclaredArguments() );
 		scope.put( BIF.__isMemberExecution, isMember );
+		scope.put( BIF.__functionName, name );
 		// Invoke it baby!
 		return this.getBIF().invoke( context, scope );
 	}
