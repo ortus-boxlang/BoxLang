@@ -17,8 +17,6 @@
  */
 package ortus.boxlang.runtime.operators;
 
-import java.util.Optional;
-
 /**
  * Performs {@code EQ or ==} comparison
  * Compares numbers as numbers, compares strings case insensitive
@@ -32,29 +30,30 @@ public class EqualsEquals implements IOperator {
 	 * @return True if operands are the equal
 	 */
 	public static Boolean invoke( Object left, Object right ) {
-		Optional<Integer> comparison = Compare.attempt( left, right, false );
+		Integer comparison = Compare.attempt( left, right, false, false );
 
-		if ( comparison.isEmpty() ) {
+		if ( comparison == null ) {
 			return left.equals( right );
 		}
 
-		return comparison.get() == 0;
+		return comparison == 0;
 	}
 
 	/**
-	 * @param left  The left operand
-	 * @param right The right operand
+	 * @param left          The left operand
+	 * @param right         The right operand
+	 * @param caseSensitive Flag to control whether to consider case
 	 *
 	 * @return True if operands are the equal
 	 */
 	public static Boolean invoke( Object left, Object right, boolean caseSensitive ) {
-		Optional<Integer> comparison = Compare.attempt( left, right, caseSensitive );
+		Integer comparison = Compare.attempt( left, right, caseSensitive, false );
 
-		if ( comparison.isEmpty() ) {
+		if ( comparison == null ) {
 			return left.equals( right );
 		}
 
-		return comparison.get() == 0;
+		return comparison == 0;
 	}
 
 }

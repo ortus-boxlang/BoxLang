@@ -14,6 +14,9 @@
  */
 package ortus.boxlang.runtime.bifs.global.array;
 
+import java.util.function.IntPredicate;
+import java.util.stream.Collectors;
+
 import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
 import ortus.boxlang.runtime.bifs.BoxMember;
@@ -54,40 +57,24 @@ public class ArrayFindAll extends BIF {
 	 * @argument.value The value to found.
 	 */
 	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
-		Array	actualArray	= arguments.getAsArray( Key.array );
-		Object	value		= arguments.get( Key.value );
+		Array			actualArray	= arguments.getAsArray( Key.array );
+		Object			value		= arguments.get( Key.value );
+		IntPredicate	test		= getPredicate( context, actualArray, value, isCaseSensitive( arguments.getAsKey( BIF.__functionName ) ) );
+
+		return Array.fromList( actualArray.intStream()
+		    .filter( test )
+		    .map( i -> i + 1 )
+		    .boxed()
+		    .collect( Collectors.toList() ) );
+	}
+
+	private IntPredicate getPredicate( IBoxContext context, Array actualArray, Object value, boolean caseSensitive ) {
 
 		if ( value instanceof Function functionValue ) {
-			return findAll( context, actualArray, functionValue );
+			return i -> ( boolean ) context.invokeFunction( functionValue, new Object[] { actualArray.get( i ) } );
 		}
 
-		return findAll( actualArray, value, isCaseSensitive( arguments.getAsKey( BIF.__functionName ) ) );
-	}
-
-	private Array findAll( Array actualArray, Object value, boolean caseSensitive ) {
-		Array values = new Array();
-
-		for ( int i = 0; i < actualArray.size(); i++ ) {
-			if ( EqualsEquals.invoke( actualArray.get( i ), value, caseSensitive ) ) {
-				values.add( i + 1 );
-			} else if ( actualArray.get( i ).equals( value ) ) {
-				values.add( i + 1 );
-			}
-		}
-
-		return values;
-	}
-
-	private Array findAll( IBoxContext context, Array actualArray, Function functionValue ) {
-		Array values = new Array();
-
-		for ( int i = 0; i < actualArray.size(); i++ ) {
-			if ( ( boolean ) context.invokeFunction( functionValue, new Object[] { actualArray.get( i ) } ) ) {
-				values.add( i + 1 );
-			}
-		}
-
-		return values;
+		return i -> EqualsEquals.invoke( actualArray.get( i ), value, caseSensitive ) || actualArray.get( i ).equals( value );
 	}
 
 	private boolean isCaseSensitive( Key functionName ) {

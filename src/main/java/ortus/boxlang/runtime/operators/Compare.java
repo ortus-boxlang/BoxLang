@@ -17,8 +17,6 @@
  */
 package ortus.boxlang.runtime.operators;
 
-import java.util.Optional;
-
 import ortus.boxlang.runtime.dynamic.casters.CastAttempt;
 import ortus.boxlang.runtime.dynamic.casters.DoubleCaster;
 import ortus.boxlang.runtime.interop.DynamicObject;
@@ -45,13 +43,14 @@ public class Compare implements IOperator {
 	/**
 	 * Invokes the comparison
 	 *
-	 * @param left  The left operand
-	 * @param right The right operand
+	 * @param left          The left operand
+	 * @param right         The right operand
+	 * @param caseSensitive Whether to compare strings case sensitive
 	 *
 	 * @return 1 if greater than, -1 if less than, = if equal
 	 */
-	public static Optional<Integer> attempt( Object left, Object right ) {
-		return attempt( left, right, false );
+	public static int invoke( Object left, Object right, Boolean caseSensitive ) {
+		return attempt( left, right, caseSensitive, true );
 	}
 
 	/**
@@ -60,43 +59,23 @@ public class Compare implements IOperator {
 	 * @param left          The left operand
 	 * @param right         The right operand
 	 * @param caseSensitive Whether to compare strings case sensitive
+	 * @param fail          True to throw an exception if the left and right arguments cannot be compared
 	 *
 	 * @return 1 if greater than, -1 if less than, = if equal
 	 */
 	@SuppressWarnings( "unchecked" )
-	public static int invoke( Object left, Object right, Boolean caseSensitive ) {
-		Optional<Integer> comparison = attempt( left, right, caseSensitive );
-
-		if ( comparison.isEmpty() ) {
-			throw new BoxRuntimeException(
-			    String.format( "Can't compare [%s] against [%s]", left.getClass().getName(), right.getClass().getName() )
-			);
-		}
-
-		return comparison.get();
-	}
-
-	/**
-	 * Invokes the comparison
-	 *
-	 * @param left          The left operand
-	 * @param right         The right operand
-	 * @param caseSensitive Whether to compare strings case sensitive
-	 *
-	 * @return 1 if greater than, -1 if less than, = if equal
-	 */
-	public static Optional<Integer> attempt( Object left, Object right, Boolean caseSensitive ) {
+	public static Integer attempt( Object left, Object right, Boolean caseSensitive, boolean fail ) {
 		// Two nulls are equal
 		if ( left == null && right == null ) {
-			return Optional.of( 0 );
+			return 0;
 		}
 		// null is less than than non null
 		if ( left == null && right != null ) {
-			return Optional.of( -1 );
+			return -1;
 		}
 		// Non null is greater than null
 		if ( left != null && right == null ) {
-			return Optional.of( 1 );
+			return 1;
 		}
 
 		left	= DynamicObject.unWrap( left );
@@ -107,26 +86,32 @@ public class Compare implements IOperator {
 			CastAttempt<Double> rightAttempt = DoubleCaster.attempt( right );
 
 			if ( rightAttempt.wasSuccessful() ) {
-				return Optional.of( leftAttempt.get().compareTo( rightAttempt.get() ) );
+				return leftAttempt.get().compareTo( rightAttempt.get() );
 			}
 		}
 
 		// TODO: This is too simplistic
 		if ( left instanceof String || right instanceof String ) {
 			if ( caseSensitive ) {
-				return Optional.of( left.toString().compareTo( right.toString() ) );
+				return left.toString().compareTo( right.toString() );
 			} else {
-				return Optional.of( left.toString().compareToIgnoreCase( right.toString() ) );
+				return left.toString().compareToIgnoreCase( right.toString() );
 			}
 		}
 
 		if ( left instanceof Comparable && right instanceof Comparable ) {
-			return Optional.of( ( ( Comparable<Object> ) left ).compareTo( ( Comparable<Object> ) right ) );
+			return ( ( Comparable<Object> ) left ).compareTo( ( Comparable<Object> ) right );
 		}
 
 		// TODO: Dates
 
-		return Optional.empty();
+		if ( fail ) {
+			throw new BoxRuntimeException(
+			    String.format( "Can't compare [%s] against [%s]", left.getClass().getName(), right.getClass().getName() )
+			);
+		}
+
+		return null;
 	}
 
 }

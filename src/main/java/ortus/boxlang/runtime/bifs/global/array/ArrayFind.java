@@ -14,6 +14,8 @@
  */
 package ortus.boxlang.runtime.bifs.global.array;
 
+import java.util.function.IntPredicate;
+
 import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
 import ortus.boxlang.runtime.bifs.BoxMember;
@@ -54,37 +56,23 @@ public class ArrayFind extends BIF {
 	 * @argument.value The value to found.
 	 */
 	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
-		Array	actualArray	= arguments.getAsArray( Key.array );
-		Object	value		= arguments.get( Key.value );
+		Array			actualArray	= arguments.getAsArray( Key.array );
+		Object			value		= arguments.get( Key.value );
+		IntPredicate	test		= getPredicate( context, actualArray, value, isCaseSensitive( arguments.getAsKey( BIF.__functionName ) ) );
+
+		return actualArray.intStream()
+		    .filter( test )
+		    .findFirst()
+		    .orElse( -1 ) + 1;
+	}
+
+	private IntPredicate getPredicate( IBoxContext context, Array actualArray, Object value, boolean caseSensitive ) {
 
 		if ( value instanceof Function functionValue ) {
-			return findOne( context, actualArray, functionValue );
+			return i -> ( boolean ) context.invokeFunction( functionValue, new Object[] { actualArray.get( i ) } );
 		}
 
-		return findOne( actualArray, value, isCaseSensitive( arguments.getAsKey( BIF.__functionName ) ) );
-	}
-
-	private int findOne( Array actualArray, Object value, boolean caseSensitive ) {
-		for ( int i = 0; i < actualArray.size(); i++ ) {
-
-			if ( EqualsEquals.invoke( actualArray.get( i ), value, caseSensitive ) ) {
-				return i + 1;
-			} else if ( actualArray.get( i ).equals( value ) ) {
-				return i + 1;
-			}
-		}
-
-		return 0;
-	}
-
-	private int findOne( IBoxContext context, Array actualArray, Function functionValue ) {
-		for ( int i = 0; i < actualArray.size(); i++ ) {
-			if ( ( boolean ) context.invokeFunction( functionValue, new Object[] { actualArray.get( i ) } ) ) {
-				return i + 1;
-			}
-		}
-
-		return 0;
+		return i -> EqualsEquals.invoke( actualArray.get( i ), value, caseSensitive ) || actualArray.get( i ).equals( value );
 	}
 
 	private boolean isCaseSensitive( Key functionName ) {
