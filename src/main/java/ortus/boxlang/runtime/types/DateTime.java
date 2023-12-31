@@ -223,11 +223,11 @@ public class DateTime implements IType {
 				break;
 			case "w" :
 				Integer dayOfWeek = wrapped.getDayOfWeek().getValue();
-				switch ( dayOfWeek ){
-					case 5:
+				switch ( dayOfWeek ) {
+					case 5 :
 						quantity = quantity + 2l;
 						break;
-					case 6:
+					case 6 :
 						quantity = quantity + 1l;
 				}
 				wrapped = Long.signum( quantity ) == 1 ? wrapped.plusDays( quantity ) : wrapped.minusDays( Math.abs( quantity ) );
