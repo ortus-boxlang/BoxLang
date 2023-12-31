@@ -56,7 +56,7 @@ public class DateTimeTest {
 	@DisplayName( "Tests the setTimezone method" )
 	@Test
 	void testTimezoneMods() {
-		DateTime	defaultDateTime	= new DateTime();
+		DateTime	defaultDateTime	= new DateTime( "2023-12-31T00:00:00-06:00", "yyyy-MM-dd'T'HH:mm:ssXXX" );
 		String		dateValue		= defaultDateTime.withFormat( "yyyy-MM-dd HH:mm:ss" ).toString();
 		String		zonedValue		= defaultDateTime.toISOString();
 		defaultDateTime.setTimezone( "UTC" );

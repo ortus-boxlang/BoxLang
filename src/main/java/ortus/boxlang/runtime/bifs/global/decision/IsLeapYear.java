@@ -45,8 +45,8 @@ public class IsLeapYear extends BIF {
 	 * @argument.year Number representing the year to test.
 	 */
 	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
-		Object value = arguments.get( Key.year );
-		CastAttempt<Integer> attempt = IntegerCaster.attempt( value );
+		Object					value	= arguments.get( Key.year );
+		CastAttempt<Integer>	attempt	= IntegerCaster.attempt( value );
 		if ( !attempt.wasSuccessful() ) {
 			throw new IllegalArgumentException( "Argument must be an integer." );
 		}
