@@ -25,5 +25,6 @@ public enum BoxLangType {
 	DATE,
 	STRING,
 	QUERY,
-	BOOLEAN
+	BOOLEAN,
+	DATETIME
 }
