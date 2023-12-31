@@ -795,6 +795,10 @@ public class Struct implements Map<Key, Object>, IType, IReferenceable, IListena
 		}
 	}
 
+	public Key getAsKey( Key key ) {
+		return ( Key ) get( key );
+	}
+
 	/**
 	 * Convenience method for getting cast as Array
 	 * Does NOT perform BoxLang casting, only Java cast so the object needs to actually be castable

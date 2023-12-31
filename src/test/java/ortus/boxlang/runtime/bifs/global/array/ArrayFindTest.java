@@ -35,68 +35,90 @@ import ortus.boxlang.runtime.scopes.VariablesScope;
 
 public class ArrayFindTest {
 
-	static BoxRuntime	instance;
-	static IBoxContext	context;
-	static IScope		variables;
-	static Key			result	= new Key( "result" );
+    static BoxRuntime  instance;
+    static IBoxContext context;
+    static IScope      variables;
+    static Key         result = new Key( "result" );
 
-	@BeforeAll
-	public static void setUp() {
-		instance	= BoxRuntime.getInstance( true );
-		context		= new ScriptingBoxContext( instance.getRuntimeContext() );
-		variables	= context.getScopeNearby( VariablesScope.name );
-	}
+    @BeforeAll
+    public static void setUp() {
+        instance  = BoxRuntime.getInstance( true );
+        context   = new ScriptingBoxContext( instance.getRuntimeContext() );
+        variables = context.getScopeNearby( VariablesScope.name );
+    }
 
-	@AfterAll
-	public static void teardown() {
-		instance.shutdown();
-	}
+    @AfterAll
+    public static void teardown() {
+        instance.shutdown();
+    }
 
-	@BeforeEach
-	public void setupEach() {
-		variables.clear();
-	}
+    @BeforeEach
+    public void setupEach() {
+        variables.clear();
+    }
 
-	@DisplayName( "It can search" )
-	@Test
-	public void testCanSearch() {
+    @DisplayName( "It should match numbers" )
+    @Test
+    public void testMatchNumber() {
+        instance.executeSource(
+            """
+                nums = [ 1, 2, 3, 4, 5 ];
+                result = nums.find( 3 );
+            """,
+            context );
+        int found = ( int ) variables.dereference( result, false );
+        assertThat( found ).isEqualTo( 3 );
+    }
 
-		instance.executeSource(
-		    """
-		    arr = [ 'a', 'b', 'c' ];
-		    result = arrayFind( arr, 'b' );
-		    """,
-		    context );
-		assertThat( variables.get( result ) ).isEqualTo( 2 );
+    @DisplayName( "It should match doubles" )
+    @Test
+    public void testMatchDoubles() {
+        instance.executeSource(
+            """
+                nums = [ 1, 2, 3, 4, 5 ];
+                result = nums.find( 3.0 );
+            """,
+            context );
+        int found = ( int ) variables.dereference( result, false );
+        assertThat( found ).isEqualTo( 3 );
+    }
 
-		instance.executeSource(
-		    """
-		    arr = [ 'a', 'b', 'c' ];
-		    result = arrayFind( arr, 'B' );
-		    """,
-		    context );
-		assertThat( variables.get( result ) ).isEqualTo( 0 );
-	}
+    @DisplayName( "It should match numbers and strings" )
+    @Test
+    public void testMatchNumberAndString() {
+        instance.executeSource(
+            """
+                nums = [ 1, 2, 4, 5, "3" ];
+                result = nums.find( 3 );
+            """,
+            context );
+        int found = ( int ) variables.dereference( result, false );
+        assertThat( found ).isEqualTo( 5 );
+    }
 
-	@DisplayName( "It can search member" )
-	@Test
-	public void testCanSearchMember() {
+    @DisplayName( "It should find strings in a case sensitive manner" )
+    @Test
+    public void testMatchStringCaseSensitive() {
+        instance.executeSource(
+            """
+                nums = [ "red", "blue", "orange" ];
+                result = nums.find( "bluE" );
+            """,
+            context );
+        int found = ( int ) variables.dereference( result, false );
+        assertThat( found ).isEqualTo( 0 );
+    }
 
-		instance.executeSource(
-		    """
-		    arr = [ 'a', 'b', 'c' ];
-		    result = arr.find( 'b' );
-		    """,
-		    context );
-		assertThat( variables.dereference( result, false ) ).isEqualTo( 2 );
-
-		instance.executeSource(
-		    """
-		    arr = [ 'a', 'b', 'c' ];
-		    result = arr.find( 'B' );
-		    """,
-		    context );
-		assertThat( variables.dereference( result, false ) ).isEqualTo( 0 );
-	}
-
+    @DisplayName( "It should find strings in a case insensitive manner when using nocase" )
+    @Test
+    public void testMatchStringCaseInSensitive() {
+        instance.executeSource(
+            """
+                nums = [ "red", "blue", "orange" ];
+                result = nums.findNoCase( "bluE" );
+            """,
+            context );
+        int found = ( int ) variables.dereference( result, false );
+        assertThat( found ).isEqualTo( 2 );
+    }
 }

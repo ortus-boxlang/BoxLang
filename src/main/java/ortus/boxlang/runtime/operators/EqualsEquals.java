@@ -30,7 +30,30 @@ public class EqualsEquals implements IOperator {
 	 * @return True if operands are the equal
 	 */
 	public static Boolean invoke( Object left, Object right ) {
-		return Compare.invoke( left, right ) == 0;
+		Integer comparison = Compare.attempt( left, right, false, false );
+
+		if ( comparison == null ) {
+			return left.equals( right );
+		}
+
+		return comparison == 0;
+	}
+
+	/**
+	 * @param left          The left operand
+	 * @param right         The right operand
+	 * @param caseSensitive Flag to control whether to consider case
+	 *
+	 * @return True if operands are the equal
+	 */
+	public static Boolean invoke( Object left, Object right, boolean caseSensitive ) {
+		Integer comparison = Compare.attempt( left, right, caseSensitive, false );
+
+		if ( comparison == null ) {
+			return left.equals( right );
+		}
+
+		return comparison == 0;
 	}
 
 }

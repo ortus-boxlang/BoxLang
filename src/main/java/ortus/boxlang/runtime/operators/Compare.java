@@ -49,8 +49,22 @@ public class Compare implements IOperator {
 	 *
 	 * @return 1 if greater than, -1 if less than, = if equal
 	 */
-	@SuppressWarnings( "unchecked" )
 	public static int invoke( Object left, Object right, Boolean caseSensitive ) {
+		return attempt( left, right, caseSensitive, true );
+	}
+
+	/**
+	 * Invokes the comparison
+	 *
+	 * @param left          The left operand
+	 * @param right         The right operand
+	 * @param caseSensitive Whether to compare strings case sensitive
+	 * @param fail          True to throw an exception if the left and right arguments cannot be compared
+	 *
+	 * @return 1 if greater than, -1 if less than, = if equal
+	 */
+	@SuppressWarnings( "unchecked" )
+	public static Integer attempt( Object left, Object right, Boolean caseSensitive, boolean fail ) {
 		// Two nulls are equal
 		if ( left == null && right == null ) {
 			return 0;
@@ -91,9 +105,13 @@ public class Compare implements IOperator {
 
 		// TODO: Dates
 
-		throw new BoxRuntimeException(
-		    String.format( "Can't compare [%s] against [%s]", left.getClass().getName(), right.getClass().getName() )
-		);
+		if ( fail ) {
+			throw new BoxRuntimeException(
+			    String.format( "Can't compare [%s] against [%s]", left.getClass().getName(), right.getClass().getName() )
+			);
+		}
+
+		return null;
 	}
 
 }

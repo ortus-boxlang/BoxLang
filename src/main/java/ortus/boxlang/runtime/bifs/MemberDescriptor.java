@@ -51,7 +51,7 @@ public class MemberDescriptor {
 	 * @return The result of the invocation
 	 */
 	public Object invoke( IBoxContext context, Object object ) {
-		return BIFDescriptor.invoke( context, new Object[] { object }, true );
+		return BIFDescriptor.invoke( context, new Object[] { object }, true, name );
 	}
 
 	/**
@@ -67,7 +67,7 @@ public class MemberDescriptor {
 		Object[] args = new Object[ positionalArguments.length + 1 ];
 		args[ 0 ] = object;
 		System.arraycopy( positionalArguments, 0, args, 1, positionalArguments.length );
-		return BIFDescriptor.invoke( context, args, true );
+		return BIFDescriptor.invoke( context, args, true, name );
 	}
 
 	/**
