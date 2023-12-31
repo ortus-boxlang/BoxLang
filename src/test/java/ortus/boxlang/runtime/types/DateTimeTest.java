@@ -43,6 +43,10 @@ public class DateTimeTest {
 		assertThat( referenceZoned.withFormat( "yyyy-MM-dd" ).toString() ).isEqualTo( referenceFormatter.format( referenceNow ) );
 		DateTime parsedDateTime = new DateTime( "2023-12-31 23:59:59", "yyyy-MM-dd HH:mm:ss" );
 		assertThat( parsedDateTime.withFormat( "yyyy-MM-dd HH:mm:ss" ).toString() ).isEqualTo( "2023-12-31 23:59:59" );
+		DateTime dateTimeFromParts = new DateTime( 2023, 12, 31, 12, 30, 30, 0 );
+		assertThat( dateTimeFromParts.withFormat( "yyyy-MM-dd HH:mm:ss" ).toString() ).isEqualTo( "2023-12-31 12:30:30" );
+		DateTime dateFromParts = new DateTime( 2023, 12, 31 );
+		assertThat( dateFromParts.withFormat( "yyyy-MM-dd HH:mm:ss" ).toString() ).isEqualTo( "2023-12-31 00:00:00" );
 	}
 
 	@DisplayName( "Tests the default format method" )

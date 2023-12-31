@@ -50,14 +50,14 @@ public class DateTime implements IType {
 	 */
 
 	/**
-	 * Constructor to create default DateTime
+	 * Constructor to create default DateTime representing the current instance
 	 */
 	public DateTime() {
 		this( ZonedDateTime.of( LocalDateTime.now(), ZoneId.systemDefault() ) );
 	}
 
 	/**
-	 * Constructor to create DateTime with an initial capacity
+	 * Constructor to create DateTime from a ZonedDateTime object
 	 *
 	 * @param dateTime A zoned date time object
 	 */
@@ -68,7 +68,7 @@ public class DateTime implements IType {
 	}
 
 	/**
-	 * Constructor to create DateTime with an initial capacity
+	 * Constructor to create DateTime from a time string and a mask
 	 *
 	 * @param dateTime - a string representing the date and time
 	 * @param mask     - a string representing the mask
@@ -91,7 +91,7 @@ public class DateTime implements IType {
 	}
 
 	/**
-	 * Constructor to create DateTime with an initial capacity
+	 * Constructor to create DateTime from a string
 	 *
 	 * @param dateTime - a string representing the date and time
 	 */
@@ -100,6 +100,64 @@ public class DateTime implements IType {
 		setFormat( "'{ts '''yyyy-MM-dd HH:mm:ss'''}'" );
 		ZonedDateTime parsed = ZonedDateTime.parse( dateTime, formatter );
 		wrapped = parsed;
+	}
+
+	/**
+	 * Constructor to create DateTime from a numerics through millisecond
+	 *
+	 * @param year
+	 * @param month
+	 * @param day
+	 * @param hour
+	 * @param minute
+	 * @param second
+	 * @param milliseconds
+	 */
+	public DateTime(
+	    Integer year,
+	    Integer month,
+	    Integer day,
+	    Integer hour,
+	    Integer minute,
+	    Integer second,
+	    Integer milliseconds ) {
+		this(
+		    ZonedDateTime.of(
+		        year,
+		        month,
+		        day,
+		        hour,
+		        minute,
+		        second,
+		        milliseconds * 1000000,
+		        ZoneId.systemDefault()
+		    )
+		);
+	}
+
+	/**
+	 * Constructor to create DateTime from a numerics through day
+	 *
+	 * @param year
+	 * @param month
+	 * @param day
+	 */
+	public DateTime(
+	    Integer year,
+	    Integer month,
+	    Integer day ) {
+		this(
+		    ZonedDateTime.of(
+		        year,
+		        month,
+		        day,
+		        0,
+		        0,
+		        0,
+		        0,
+		        ZoneId.systemDefault()
+		    )
+		);
 	}
 
 	/**
