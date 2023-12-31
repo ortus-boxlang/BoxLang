@@ -1,5 +1,5 @@
 
-package ortus.boxlang.runtime.bifs.global.date;
+package ortus.boxlang.runtime.bifs.global.temporal;
 
 import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
