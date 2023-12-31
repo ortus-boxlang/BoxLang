@@ -70,6 +70,7 @@ public class Key {
 	public static Key		arrayFindAll	= Key.of( "arrayFindAll" );
 
 	public static final Key	file			= Key.of( "file" );
+	public static final Key	year			= Key.of( "year" );
 	/**
 	 * --------------------------------------------------------------------------
 	 * Private Properties
