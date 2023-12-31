@@ -19,11 +19,11 @@
 package ortus.boxlang.runtime.bifs.global.decision;
 
 import static com.google.common.truth.Truth.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -34,7 +34,6 @@ import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
 
-@Disabled( "Unimplemented" )
 public class IsLeapYearTest {
 
 	static BoxRuntime	instance;
@@ -89,11 +88,18 @@ public class IsLeapYearTest {
 		    """
 		    // returns false in both engines
 		    anIntegerNonLeapYear = isLeapYear( 2023 );
-		    aStringNonLeapYear   = isLeapYear( "2021" );
+		    aStringNonLeapYear = isLeapYear( "2021" );
 		       """,
 		    context );
-		assertThat( ( Boolean ) variables.dereference( Key.of( "anIntegerNonLeapYear" ), false ) ).isTrue();
-		assertThat( ( Boolean ) variables.dereference( Key.of( "aStringNonLeapYear" ), false ) ).isTrue();
+		assertThat( ( Boolean ) variables.dereference( Key.of( "anIntegerNonLeapYear" ), false ) ).isFalse();
+		assertThat( ( Boolean ) variables.dereference( Key.of( "aStringNonLeapYear" ), false ) ).isFalse();
+	}
+
+	@DisplayName( "It throws on non-numeric values" )
+	@Test
+	public void testException() {
+		// throws in ACF and Lucee
+		assertThrows( Throwable.class, () -> instance.executeSource( "isLeapYear( 'brad2024' );", context ) );
 	}
 
 }
