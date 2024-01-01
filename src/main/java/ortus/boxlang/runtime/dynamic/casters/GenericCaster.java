@@ -180,6 +180,9 @@ public class GenericCaster {
 		if ( type.equals( "array" ) ) {
 			return ArrayCaster.cast( object, fail );
 		}
+		if ( type.equals( "datetime" ) ) {
+			return DateTimeCaster.cast( object, fail );
+		}
 		if ( type.equals( "modifiablearray" ) ) {
 			return ModifiableArrayCaster.cast( object, fail );
 		}
