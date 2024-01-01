@@ -18,7 +18,9 @@
 package ortus.boxlang.runtime.types;
 
 import java.time.format.DateTimeFormatter;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.time.ZonedDateTime;
 import java.time.ZoneId;
 import java.time.temporal.ChronoUnit;
@@ -98,7 +100,23 @@ public class DateTime implements IType {
 	public DateTime( String dateTime ) {
 		// Set our default formatter to match Lucee's ODBC pattern
 		setFormat( "'{ts '''yyyy-MM-dd HH:mm:ss'''}'" );
-		ZonedDateTime parsed = ZonedDateTime.parse( dateTime, formatter );
+		ZonedDateTime parsed = null;
+		try{
+			parsed = ZonedDateTime.parse( dateTime, formatter );
+		} catch ( java.time.format.DateTimeParseException e ) {
+			// First fallback - it has a time without a zone
+			try{
+				parsed = ZonedDateTime.of( LocalDateTime.parse( dateTime ), ZoneId.systemDefault() );
+			// Second fallback - it is only a date and we need to supply a time
+			} catch( java.time.format.DateTimeParseException x ){
+				parsed = ZonedDateTime.of( LocalDateTime.of( LocalDate.parse( dateTime ), LocalTime.MIN ), ZoneId.systemDefault() );
+			} catch( Exception x ){
+				throw new BoxRuntimeException( String.format(
+					"The the date time value of [" + dateTime + "] could not be parsed as a valid date or datetime"
+				) );
+			}
+		}
+
 		wrapped = parsed;
 	}
 
