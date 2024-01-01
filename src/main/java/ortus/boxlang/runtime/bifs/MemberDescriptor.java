@@ -17,6 +17,7 @@
  */
 package ortus.boxlang.runtime.bifs;
 
+import java.util.HashMap;
 import java.util.Map;
 
 import ortus.boxlang.runtime.context.IBoxContext;
@@ -45,9 +46,9 @@ public class MemberDescriptor {
 
 	/**
 	 * Invoke the BIF with no arguments
-	 * 
+	 *
 	 * @param context
-	 * 
+	 *
 	 * @return The result of the invocation
 	 */
 	public Object invoke( IBoxContext context, Object object ) {
@@ -56,25 +57,34 @@ public class MemberDescriptor {
 
 	/**
 	 * Invoke the BIF with positional arguments
-	 * 
+	 *
 	 * @param context
-	 * 
+	 *
 	 * @return The result of the invocation
 	 */
 	public Object invoke( IBoxContext context, Object object, Object[] positionalArguments ) {
-		// insert object as first arg
-		// TODO: handle objectArgument in a positin OTHER than the first
-		Object[] args = new Object[ positionalArguments.length + 1 ];
-		args[ 0 ] = object;
-		System.arraycopy( positionalArguments, 0, args, 1, positionalArguments.length );
-		return BIFDescriptor.invoke( context, args, true, name );
+	    if( objectArgument != null ){
+			Argument[] bifArgs = BIFDescriptor.getBIF().getDeclaredArguments();
+			Map<Key, Object> namedArgs = new HashMap<Key, Object>();
+			for ( int i = 0; i < bifArgs.length; i++ ) {
+				if( positionalArguments.length >= i+1 && bifArgs[ i ].name() != Key.of( objectArgument ) ){
+					namedArgs.put( bifArgs[ i ].name(), positionalArguments[ i ] );
+				}
+			}
+			return invoke( context, object, namedArgs );
+		} else {
+			Object[] args = new Object[ positionalArguments.length + 1 ];
+			args[ 0 ] = object;
+			System.arraycopy( positionalArguments, 0, args, 1, positionalArguments.length );
+			return BIFDescriptor.invoke( context, args, true, name );
+		}
 	}
 
 	/**
 	 * Invoke the BIF with named arguments
-	 * 
+	 *
 	 * @param context
-	 * 
+	 *
 	 * @return The result of the invocation
 	 */
 	public Object invoke( IBoxContext context, Object object, Map<Key, Object> namedArguments ) {
