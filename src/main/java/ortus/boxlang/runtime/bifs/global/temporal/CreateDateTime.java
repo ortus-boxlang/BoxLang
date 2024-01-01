@@ -28,7 +28,8 @@ public class CreateDateTime extends BIF {
 		    new Argument( true, "integer", Key.of( "hour" ) ),
 		    new Argument( true, "integer", Key.of( "minute" ) ),
 		    new Argument( true, "integer", Key.of( "second" ) ),
-		    new Argument( true, "integer", Key.of( "millisecond" ) )
+		    new Argument( true, "integer", Key.of( "millisecond" ) ),
+		    new Argument( false, "string", Key.of( "timezone" ) )
 		};
 	}
 
@@ -48,7 +49,8 @@ public class CreateDateTime extends BIF {
 		    ( int ) arguments.get( Key.of( "hour" ) ),
 		    ( int ) arguments.get( Key.of( "minute" ) ),
 		    ( int ) arguments.get( Key.of( "second" ) ),
-		    ( int ) arguments.get( Key.of( "millisecond" ) )
+		    ( int ) arguments.get( Key.of( "millisecond" ) ),
+		    ( String ) arguments.get( Key.of( "timezone" ) )
 		);
 	}
 

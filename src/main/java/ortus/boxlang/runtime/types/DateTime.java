@@ -138,7 +138,8 @@ public class DateTime implements IType {
 	    Integer hour,
 	    Integer minute,
 	    Integer second,
-	    Integer milliseconds ) {
+	    Integer milliseconds,
+	    String timezone ) {
 		this(
 		    ZonedDateTime.of(
 		        year,
@@ -151,6 +152,9 @@ public class DateTime implements IType {
 		        ZoneId.systemDefault()
 		    )
 		);
+		if ( timezone != null ) {
+			setTimezone( timezone );
+		}
 	}
 
 	/**
