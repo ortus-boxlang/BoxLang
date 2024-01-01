@@ -99,9 +99,9 @@ public class DateAddTest {
 	public void testMemberFunction() {
 		instance.executeSource(
 		    """
-			ref = createDate( 2023, 12, 31 )
-		    result = ref.add( datepart="d", number=1 );
-		    """,
+		    ref = createDate( 2023, 12, 31 )
+		       result = ref.add( datepart="d", number=1 );
+		       """,
 		    context );
 		DateTime result = ( DateTime ) variables.dereference( Key.of( "result" ), false );
 		assertThat( result ).isInstanceOf( DateTime.class );

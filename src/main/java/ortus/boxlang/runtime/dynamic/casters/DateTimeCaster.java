@@ -70,9 +70,8 @@ public class DateTimeCaster {
 		object = DynamicObject.unWrap( object );
 
 		return object instanceof DateTime
-					? ( DateTime ) object
-					: new DateTime( ( String ) object );
-
+		    ? ( DateTime ) object
+		    : new DateTime( ( String ) object );
 
 	}
 

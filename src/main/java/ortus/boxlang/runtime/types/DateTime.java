@@ -101,18 +101,18 @@ public class DateTime implements IType {
 		// Set our default formatter to match Lucee's ODBC pattern
 		setFormat( "'{ts '''yyyy-MM-dd HH:mm:ss'''}'" );
 		ZonedDateTime parsed = null;
-		try{
+		try {
 			parsed = ZonedDateTime.parse( dateTime, formatter );
 		} catch ( java.time.format.DateTimeParseException e ) {
 			// First fallback - it has a time without a zone
-			try{
+			try {
 				parsed = ZonedDateTime.of( LocalDateTime.parse( dateTime ), ZoneId.systemDefault() );
-			// Second fallback - it is only a date and we need to supply a time
-			} catch( java.time.format.DateTimeParseException x ){
+				// Second fallback - it is only a date and we need to supply a time
+			} catch ( java.time.format.DateTimeParseException x ) {
 				parsed = ZonedDateTime.of( LocalDateTime.of( LocalDate.parse( dateTime ), LocalTime.MIN ), ZoneId.systemDefault() );
-			} catch( Exception x ){
+			} catch ( Exception x ) {
 				throw new BoxRuntimeException( String.format(
-					"The the date time value of [" + dateTime + "] could not be parsed as a valid date or datetime"
+				    "The the date time value of [" + dateTime + "] could not be parsed as a valid date or datetime"
 				) );
 			}
 		}

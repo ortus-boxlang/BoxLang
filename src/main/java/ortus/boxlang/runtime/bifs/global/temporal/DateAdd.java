@@ -22,9 +22,9 @@ public class DateAdd extends BIF {
 	public DateAdd() {
 		super();
 		declaredArguments = new Argument[] {
-			new Argument( true, "string", Key.of( "datepart" ) ),
-			new Argument( true, "long", Key.of( "number" ) ),
-			new Argument( true, "any", Key.of( "date" ) )
+		    new Argument( true, "string", Key.of( "datepart" ) ),
+		    new Argument( true, "long", Key.of( "number" ) ),
+		    new Argument( true, "any", Key.of( "date" ) )
 		};
 	}
 
@@ -40,14 +40,14 @@ public class DateAdd extends BIF {
 		DateTime ref = null;
 		try {
 			ref = ( DateTime ) arguments.get( Key.of( "date" ) );
-		} catch( java.lang.ClassCastException e ){
+		} catch ( java.lang.ClassCastException e ) {
 			ref = new DateTime( ( String ) arguments.get( Key.of( "date" ) ) );
-		} catch( Exception e ){
+		} catch ( Exception e ) {
 			throw new RuntimeException( e );
 		}
 		return ref.modify(
-			( String ) arguments.get( Key.of( "datepart" ) ),
-			( Long ) arguments.get( Key.of( "number" ) )
+		    ( String ) arguments.get( Key.of( "datepart" ) ),
+		    ( Long ) arguments.get( Key.of( "number" ) )
 		);
 	}
 

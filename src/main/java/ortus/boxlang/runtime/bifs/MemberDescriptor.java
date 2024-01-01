@@ -63,11 +63,11 @@ public class MemberDescriptor {
 	 * @return The result of the invocation
 	 */
 	public Object invoke( IBoxContext context, Object object, Object[] positionalArguments ) {
-	    if( objectArgument != null ){
-			Argument[] bifArgs = BIFDescriptor.getBIF().getDeclaredArguments();
-			Map<Key, Object> namedArgs = new HashMap<Key, Object>();
+		if ( objectArgument != null ) {
+			Argument[]			bifArgs		= BIFDescriptor.getBIF().getDeclaredArguments();
+			Map<Key, Object>	namedArgs	= new HashMap<Key, Object>();
 			for ( int i = 0; i < bifArgs.length; i++ ) {
-				if( positionalArguments.length >= i+1 && bifArgs[ i ].name() != Key.of( objectArgument ) ){
+				if ( positionalArguments.length >= i + 1 && bifArgs[ i ].name() != Key.of( objectArgument ) ) {
 					namedArgs.put( bifArgs[ i ].name(), positionalArguments[ i ] );
 				}
 			}
