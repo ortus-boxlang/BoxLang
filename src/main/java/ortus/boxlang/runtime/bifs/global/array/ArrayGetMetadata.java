@@ -43,11 +43,11 @@ public class ArrayGetMetadata extends BIF {
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
-	 * 
+	 *
 	 * @argument.array The array to be inserted into
 	 */
 	public Struct invoke( IBoxContext context, ArgumentsScope arguments ) {
-		// Array actualArray = ( Array ) arguments.get( Key.array );
+		// Array actualArray = arguments.getAsArray( Key.array );
 		Struct meta = new Struct();
 
 		// this value never seems to change

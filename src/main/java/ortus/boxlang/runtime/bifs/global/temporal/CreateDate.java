@@ -35,9 +35,9 @@ public class CreateDate extends BIF {
 	 */
 	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
 		return new DateTime(
-		    ( int ) arguments.get( Key.year ),
-		    ( int ) arguments.get( Key.month ),
-		    ( int ) arguments.get( Key.day )
+		    arguments.getAsInteger( Key.year ),
+		    arguments.getAsInteger( Key.month ),
+		    arguments.getAsInteger( Key.day )
 		);
 	}
 

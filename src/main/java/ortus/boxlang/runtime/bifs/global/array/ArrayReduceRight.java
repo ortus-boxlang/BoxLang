@@ -59,7 +59,7 @@ public class ArrayReduceRight extends BIF {
 	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
 		Array		actualArray	= ArrayCaster.cast( arguments.dereference( Key.array, false ) );
 		Object		accumulator	= arguments.get( Key.initialValue );
-		Function	func		= ( Function ) arguments.get( Key.callback );
+		Function	func		= arguments.getAsFunction( Key.callback );
 
 		for ( int i = actualArray.size() - 1; i >= 0; i-- ) {
 			accumulator = context.invokeFunction( func, new Object[] { accumulator, actualArray.get( i ), i + 1, actualArray } );

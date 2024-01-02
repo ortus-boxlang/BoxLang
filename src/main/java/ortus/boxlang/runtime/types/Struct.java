@@ -832,6 +832,14 @@ public class Struct implements Map<Key, Object>, IType, IReferenceable, IListena
 	}
 
 	/**
+	 * Convenience method for getting cast as Long
+	 * Does NOT perform BoxLang casting, only Java cast so the object needs to actually be castable
+	 */
+	public Long getAsLong( Key key ) {
+		return ( Long ) get( key );
+	}
+
+	/**
 	 * Convenience method for getting cast as Integer
 	 * Does NOT perform BoxLang casting, only Java cast so the object needs to actually be castable
 	 */

@@ -41,8 +41,8 @@ public class DateTimeFormat extends BIF {
 	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
 		DateTime ref = DateTimeCaster.cast( arguments.get( Key.date ) );
 
-		Key		bifMethodKey	= ( Key ) arguments.get( __functionName );
-		String	format			= ( String ) arguments.get( Key.mask );
+		Key		bifMethodKey	= arguments.getAsKey( __functionName );
+		String	format			= arguments.getAsString( Key.mask  );
 
 		if ( format == null && bifMethodKey.equals( Key.dateFormat ) ) {
 			format = DateTime.DEFAULT_DATE_FORMAT_MASK;
@@ -52,7 +52,7 @@ public class DateTimeFormat extends BIF {
 			format = DateTime.DEFAULT_DATETIME_FORMAT_MASK;
 		}
 
-		String timezone = ( String ) arguments.get( Key.timezone );
+		String timezone = arguments.getAsString( Key.timezone  );
 		if ( timezone != null ) {
 			ref.setTimezone( timezone );
 		}

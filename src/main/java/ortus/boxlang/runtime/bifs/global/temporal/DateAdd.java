@@ -41,13 +41,13 @@ public class DateAdd extends BIF {
 		try {
 			ref = ( DateTime ) arguments.get( Key.date );
 		} catch ( java.lang.ClassCastException e ) {
-			ref = new DateTime( ( String ) arguments.get( Key.date ) );
+			ref = new DateTime( arguments.getAsString( Key.date  ) );
 		} catch ( Exception e ) {
 			throw new RuntimeException( e );
 		}
 		return ref.modify(
-		    ( String ) arguments.get( Key.datepart ),
-		    ( Long ) arguments.get( Key.number )
+		    arguments.getAsString( Key.datepart ),
+		    arguments.getAsLong( Key.number )
 		);
 	}
 

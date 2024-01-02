@@ -57,7 +57,7 @@ public class ArrayMap extends BIF {
 	public Array invoke( IBoxContext context, ArgumentsScope arguments ) {
 		Array		actualArray	= arguments.getAsArray( Key.array );
 		Array		newArray	= new Array( actualArray.size() );
-		Function	func		= ( Function ) arguments.get( Key.callback );
+		Function	func		= arguments.getAsFunction( Key.callback );
 
 		for ( int i = 0; i < actualArray.size(); i++ ) {
 			newArray.add( i, context.invokeFunction( func, new Object[] { actualArray.get( i ), i + 1, actualArray } ) );

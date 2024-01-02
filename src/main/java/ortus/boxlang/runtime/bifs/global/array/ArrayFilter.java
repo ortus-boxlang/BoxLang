@@ -67,7 +67,7 @@ public class ArrayFilter extends BIF {
 	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
 
 		Array			actualArray	= ArrayCaster.cast( arguments.get( "array" ) );
-		Function		func		= ( Function ) arguments.get( Key.callback );
+		Function		func		= arguments.getAsFunction( Key.callback );
 		IntPredicate	test		= idx -> ( boolean ) context.invokeFunction( func, new Object[] { actualArray.get( idx ), idx + 1, actualArray } );
 
 		ForkJoinPool	pool		= null;

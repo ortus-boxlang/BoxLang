@@ -40,14 +40,14 @@ public class CreateDateTime extends BIF {
 	 */
 	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
 		return new DateTime(
-		    ( int ) arguments.get( Key.year ),
-		    ( int ) arguments.get( Key.month ),
-		    ( int ) arguments.get( Key.day ),
-		    ( int ) arguments.get( Key.hour ),
-		    ( int ) arguments.get( Key.minute ),
-		    ( int ) arguments.get( Key.second ),
-		    ( int ) arguments.get( Key.millisecond ),
-		    ( String ) arguments.get( Key.timezone )
+		    arguments.getAsInteger( Key.year ),
+		    arguments.getAsInteger( Key.month ),
+		    arguments.getAsInteger( Key.day ),
+		    arguments.getAsInteger( Key.hour ),
+		    arguments.getAsInteger( Key.minute ),
+		    arguments.getAsInteger( Key.second ),
+		    arguments.getAsInteger( Key.millisecond ),
+		    arguments.getAsString( Key.timezone )
 		);
 	}
 

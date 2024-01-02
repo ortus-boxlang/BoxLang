@@ -55,12 +55,12 @@ public class ArrayEach extends BIF {
 	 * @argument.callback The function to invoke for each item. The function will be passed 3 arguments: the value, the index, the array.
 	 *
 	 * @argument.parallel Specifies whether the items can be executed in parallel
-	 * 
+	 *
 	 * @argument.maxThreads The maximum number of threads to use when parallel = true
 	 */
 	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
 		Array		actualArray	= ArrayCaster.cast( arguments.dereference( Key.array, false ) );
-		Function	func		= ( Function ) arguments.get( Key.callback );
+		Function	func		= arguments.getAsFunction( Key.callback );
 
 		for ( int i = 0; i < actualArray.size(); i++ ) {
 			context.invokeFunction( func, new Object[] { actualArray.get( i ), i + 1, actualArray } );
