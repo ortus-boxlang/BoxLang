@@ -1,15 +1,24 @@
 {
-    "java.format.enabled": true,
-    "java.format.settings.url": "workbench/ortus-java-style.xml",
-    "java.configuration.updateBuildConfiguration": "automatic",
-    "java.dependency.packagePresentation": "hierarchical",
-    "java.project.explorer.showNonJavaResources": false,
+	"java.format.enabled": true,
+	"java.format.settings.url": "workbench/ortus-java-style.xml",
+	"java.configuration.updateBuildConfiguration": "automatic",
+	"java.dependency.packagePresentation": "hierarchical",
+	"java.project.explorer.showNonJavaResources": false,
 	"files.associations": {
-        "*.bx": "cfml",
-        "*.bxm": "cfml"
-    },
-    "java.compile.nullAnalysis.mode": "automatic",
-    "java.debug.settings.onBuildFailureProceed": true,
-    "java.jdt.ls.vmargs": "-XX:+UseParallelGC -XX:GCTimeRatio=4 -XX:AdaptiveSizePolicyWeight=90 -Dsun.zip.disableMemoryMapping=true -Xmx2G -Xms100m -Xlog:disable",
-    "java.dependency.syncWithFolderExplorer": true,
+		"*.bx": "cfml",
+		"*.bxm": "cfml"
+	},
+	"java.compile.nullAnalysis.mode": "automatic",
+	"java.debug.settings.onBuildFailureProceed": true,
+	"java.jdt.ls.vmargs": "-XX:+UseParallelGC -XX:GCTimeRatio=4 -XX:AdaptiveSizePolicyWeight=90 -Dsun.zip.disableMemoryMapping=true -Xmx2G -Xms100m -Xlog:disable",
+	"java.dependency.syncWithFolderExplorer": true,
+	"[java]": {
+		"editor.formatOnSave": true,
+		"editor.insertSpaces": false,
+		"editor.tabSize": 4
+	},
+	"editor.formatOnSave": true,
+	"editor.codeActionsOnSave": {
+		"source.organizeImports": "explicit"
+	}
 }

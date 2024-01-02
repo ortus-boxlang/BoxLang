@@ -1138,16 +1138,6 @@ public class DynamicJavaInteropService {
 			}
 		}
 
-		// member functions on java objects
-		// temp workaround for test src\test\java\TestCases\phase2\ObjectLiteralTest.java
-		if ( targetInstance instanceof Boolean bool && name.equals( Key.of( "yesNoFormat" ) ) ) {
-			return bool ? "Yes" : "No";
-		}
-		// temp workaround for test src\test\java\TestCases\phase2\ObjectLiteralTest.java
-		if ( targetInstance instanceof String str && name.equals( Key.of( "len" ) ) ) {
-			return str.length();
-		}
-
 		if ( safe && !hasMethod( targetClass, name.getName() ) ) {
 			return null;
 		}
@@ -1188,16 +1178,6 @@ public class DynamicJavaInteropService {
 			if ( memberDescriptor != null ) {
 				return memberDescriptor.invoke( context, targetInstance, namedArguments );
 			}
-		}
-
-		// member functions on java objects
-		// temp workaround for test src\test\java\TestCases\phase2\ObjectLiteralTest.java
-		if ( targetInstance instanceof Boolean bool && name.equals( Key.of( "yesNoFormat" ) ) ) {
-			return bool ? "Yes" : "No";
-		}
-		// temp workaround for test src\test\java\TestCases\phase2\ObjectLiteralTest.java
-		if ( targetInstance instanceof String str && name.equals( Key.of( "len" ) ) ) {
-			return str.length();
 		}
 
 		throw new BoxRuntimeException( "Java objects cannot be called with named argumments" );
