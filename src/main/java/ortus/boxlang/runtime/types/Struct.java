@@ -816,6 +816,14 @@ public class Struct implements Map<Key, Object>, IType, IReferenceable, IListena
 	}
 
 	/**
+	 * Convenience method for getting cast as DateTime
+	 * Does NOT perform BoxLang casting, only Java cast so the object needs to actually be castable
+	 */
+	public DateTime getAsDateTime( Key key ) {
+		return ( DateTime ) get( key );
+	}
+
+	/**
 	 * Convenience method for getting cast as String
 	 * Does NOT perform BoxLang casting, only Java cast so the object needs to actually be castable
 	 */
