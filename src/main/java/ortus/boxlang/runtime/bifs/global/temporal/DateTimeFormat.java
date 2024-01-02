@@ -5,6 +5,7 @@ import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
 import ortus.boxlang.runtime.bifs.BoxMember;
 import ortus.boxlang.runtime.context.IBoxContext;
+import ortus.boxlang.runtime.dynamic.casters.DateTimeCaster;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
@@ -38,25 +39,18 @@ public class DateTimeFormat extends BIF {
 	 * @argument.foo Describe any expected arguments
 	 */
 	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
-		DateTime ref = null;
-		try {
-			ref = ( DateTime ) arguments.get( Key.of( "date" ) );
-		} catch ( java.lang.ClassCastException e ) {
-			ref = new DateTime( ( String ) arguments.get( Key.of( "date" ) ) );
-		} catch ( Exception e ) {
-			throw new RuntimeException( e );
-		}
+		DateTime ref = DateTimeCaster.cast( arguments.get( Key.of( "date" ) ) );
 
 		Key		bifMethodKey	= ( Key ) arguments.get( Key.of( "__functionName" ) );
 		String	bifMethod		= ( String ) bifMethodKey.getOriginalValue();
 		String	format			= ( String ) arguments.get( Key.of( "mask" ) );
 
 		if ( format == null && bifMethod.toLowerCase().equals( "dateformat" ) ) {
-			format = "dd-MMM-yy";
+			format = ref.DEFAULT_DATE_FORMAT_MASK;
 		} else if ( format == null && bifMethod.toLowerCase().equals( "timeformat" ) ) {
-			format = "HH:mm a";
+			format = ref.DEFAULT_TIME_FORMAT_MASK;
 		} else if ( format == null ) {
-			format = "dd-MMM-yyyy HH:mm:ss";
+			format = ref.DEFAULT_DATETIME_FORMAT_MASK;
 		}
 
 		String timezone = ( String ) arguments.get( Key.of( "timezone" ) );

@@ -38,12 +38,20 @@ public class DateTime implements IType {
 	 */
 	protected static ZonedDateTime		wrapped;
 
+	private static DateTimeFormatter	formatter;
+
+	/**
+	 * Public properties
+	 */
+
+	public static final String ODBC_FORMAT_MASK = "'{ts '''yyyy-MM-dd HH:mm:ss'''}'";
+	public static final String DEFAULT_DATE_FORMAT_MASK = "dd-MMM-yy";
+	public static final String DEFAULT_TIME_FORMAT_MASK = "HH:mm a";
+	public static final String DEFAULT_DATETIME_FORMAT_MASK = "dd-MMM-yyyy HH:mm:ss";
 	/**
 	 * Metadata object
 	 */
 	public BoxMeta						$bx;
-
-	private static DateTimeFormatter	formatter;
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -65,7 +73,7 @@ public class DateTime implements IType {
 	 */
 	public DateTime( ZonedDateTime dateTime ) {
 		// Set our default formatter to match Lucee's ODBC pattern
-		setFormat( "'{ts '''yyyy-MM-dd HH:mm:ss'''}'" );
+		setFormat( ODBC_FORMAT_MASK );
 		wrapped = dateTime;
 	}
 
@@ -77,7 +85,7 @@ public class DateTime implements IType {
 	 */
 	public DateTime( String dateTime, String mask ) {
 		// Set our default formatter to match Lucee's ODBC pattern
-		setFormat( "'{ts '''yyyy-MM-dd HH:mm:ss'''}'" );
+		setFormat( ODBC_FORMAT_MASK );
 		ZonedDateTime parsed = null;
 		// try parsing if it fails then our time does not contain timezone info so we fall back to a local zoned date
 		try {
@@ -99,7 +107,7 @@ public class DateTime implements IType {
 	 */
 	public DateTime( String dateTime ) {
 		// Set our default formatter to match Lucee's ODBC pattern
-		setFormat( "'{ts '''yyyy-MM-dd HH:mm:ss'''}'" );
+		setFormat( ODBC_FORMAT_MASK );
 		ZonedDateTime parsed = null;
 		try {
 			parsed = ZonedDateTime.parse( dateTime, formatter );
