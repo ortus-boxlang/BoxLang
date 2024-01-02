@@ -44,10 +44,10 @@ public class DateTime implements IType {
 	 * Public properties
 	 */
 
-	public static final String ODBC_FORMAT_MASK = "'{ts '''yyyy-MM-dd HH:mm:ss'''}'";
-	public static final String DEFAULT_DATE_FORMAT_MASK = "dd-MMM-yy";
-	public static final String DEFAULT_TIME_FORMAT_MASK = "HH:mm a";
-	public static final String DEFAULT_DATETIME_FORMAT_MASK = "dd-MMM-yyyy HH:mm:ss";
+	public static final String			ODBC_FORMAT_MASK				= "'{ts '''yyyy-MM-dd HH:mm:ss'''}'";
+	public static final String			DEFAULT_DATE_FORMAT_MASK		= "dd-MMM-yy";
+	public static final String			DEFAULT_TIME_FORMAT_MASK		= "HH:mm a";
+	public static final String			DEFAULT_DATETIME_FORMAT_MASK	= "dd-MMM-yyyy HH:mm:ss";
 	/**
 	 * Metadata object
 	 */
