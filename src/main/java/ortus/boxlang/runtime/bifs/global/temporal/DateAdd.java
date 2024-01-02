@@ -5,6 +5,7 @@ import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
 import ortus.boxlang.runtime.bifs.BoxMember;
 import ortus.boxlang.runtime.context.IBoxContext;
+import ortus.boxlang.runtime.dynamic.casters.DateTimeCaster;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
@@ -37,14 +38,7 @@ public class DateAdd extends BIF {
 	 * @argument.foo Describe any expected arguments
 	 */
 	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
-		DateTime ref = null;
-		try {
-			ref = ( DateTime ) arguments.get( Key.date );
-		} catch ( java.lang.ClassCastException e ) {
-			ref = new DateTime( arguments.getAsString( Key.date  ) );
-		} catch ( Exception e ) {
-			throw new RuntimeException( e );
-		}
+		DateTime ref = DateTimeCaster.cast( arguments.get( Key.date ) );
 		return ref.modify(
 		    arguments.getAsString( Key.datepart ),
 		    arguments.getAsLong( Key.number )
