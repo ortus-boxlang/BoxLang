@@ -19,14 +19,14 @@ public class CreateDateTime extends BIF {
 	public CreateDateTime() {
 		super();
 		declaredArguments = new Argument[] {
-		    new Argument( true, "integer", Key.of( "year" ) ),
-		    new Argument( true, "integer", Key.of( "month" ) ),
-		    new Argument( true, "integer", Key.of( "day" ) ),
-		    new Argument( true, "integer", Key.of( "hour" ) ),
-		    new Argument( true, "integer", Key.of( "minute" ) ),
-		    new Argument( true, "integer", Key.of( "second" ) ),
-		    new Argument( true, "integer", Key.of( "millisecond" ) ),
-		    new Argument( false, "string", Key.of( "timezone" ) )
+		    new Argument( true, "integer", Key.year ),
+		    new Argument( true, "integer", Key.month ),
+		    new Argument( true, "integer", Key.day ),
+		    new Argument( true, "integer", Key.hour ),
+		    new Argument( true, "integer", Key.minute ),
+		    new Argument( true, "integer", Key.second ),
+		    new Argument( true, "integer", Key.millisecond ),
+		    new Argument( false, "string", Key.timezone )
 		};
 	}
 
@@ -40,14 +40,14 @@ public class CreateDateTime extends BIF {
 	 */
 	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
 		return new DateTime(
-		    ( int ) arguments.get( Key.of( "year" ) ),
-		    ( int ) arguments.get( Key.of( "month" ) ),
-		    ( int ) arguments.get( Key.of( "day" ) ),
-		    ( int ) arguments.get( Key.of( "hour" ) ),
-		    ( int ) arguments.get( Key.of( "minute" ) ),
-		    ( int ) arguments.get( Key.of( "second" ) ),
-		    ( int ) arguments.get( Key.of( "millisecond" ) ),
-		    ( String ) arguments.get( Key.of( "timezone" ) )
+		    ( int ) arguments.get( Key.year ),
+		    ( int ) arguments.get( Key.month ),
+		    ( int ) arguments.get( Key.day ),
+		    ( int ) arguments.get( Key.hour ),
+		    ( int ) arguments.get( Key.minute ),
+		    ( int ) arguments.get( Key.second ),
+		    ( int ) arguments.get( Key.millisecond ),
+		    ( String ) arguments.get( Key.timezone )
 		);
 	}
 

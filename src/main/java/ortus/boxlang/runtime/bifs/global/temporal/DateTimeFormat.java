@@ -24,9 +24,9 @@ public class DateTimeFormat extends BIF {
 	public DateTimeFormat() {
 		super();
 		declaredArguments = new Argument[] {
-		    new Argument( true, "any", Key.of( "date" ) ),
-		    new Argument( false, "string", Key.of( "mask" ) ),
-		    new Argument( false, "string", Key.of( "timezone" ) )
+		    new Argument( true, "any", Key.date ),
+		    new Argument( false, "string", Key.mask ),
+		    new Argument( false, "string", Key.timezone )
 		};
 	}
 
@@ -39,21 +39,20 @@ public class DateTimeFormat extends BIF {
 	 * @argument.foo Describe any expected arguments
 	 */
 	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
-		DateTime ref = DateTimeCaster.cast( arguments.get( Key.of( "date" ) ) );
+		DateTime ref = DateTimeCaster.cast( arguments.get( Key.date ) );
 
-		Key		bifMethodKey	= ( Key ) arguments.get( Key.of( "__functionName" ) );
-		String	bifMethod		= ( String ) bifMethodKey.getOriginalValue();
-		String	format			= ( String ) arguments.get( Key.of( "mask" ) );
+		Key		bifMethodKey	= ( Key ) arguments.get( __functionName );
+		String	format			= ( String ) arguments.get( Key.mask );
 
-		if ( format == null && bifMethod.toLowerCase().equals( "dateformat" ) ) {
-			format = ref.DEFAULT_DATE_FORMAT_MASK;
-		} else if ( format == null && bifMethod.toLowerCase().equals( "timeformat" ) ) {
-			format = ref.DEFAULT_TIME_FORMAT_MASK;
+		if ( format == null && bifMethodKey.equals( Key.dateFormat ) ) {
+			format = DateTime.DEFAULT_DATE_FORMAT_MASK;
+		} else if ( format == null && bifMethodKey.equals( Key.timeFormat ) ) {
+			format = DateTime.DEFAULT_TIME_FORMAT_MASK;
 		} else if ( format == null ) {
-			format = ref.DEFAULT_DATETIME_FORMAT_MASK;
+			format = DateTime.DEFAULT_DATETIME_FORMAT_MASK;
 		}
 
-		String timezone = ( String ) arguments.get( Key.of( "timezone" ) );
+		String timezone = ( String ) arguments.get( Key.timezone );
 		if ( timezone != null ) {
 			ref.setTimezone( timezone );
 		}

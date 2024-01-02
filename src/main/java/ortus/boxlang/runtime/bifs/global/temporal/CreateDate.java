@@ -19,9 +19,9 @@ public class CreateDate extends BIF {
 	public CreateDate() {
 		super();
 		declaredArguments = new Argument[] {
-		    new Argument( true, "integer", Key.of( "year" ) ),
-		    new Argument( true, "integer", Key.of( "month" ) ),
-		    new Argument( true, "integer", Key.of( "day" ) )
+		    new Argument( true, "integer", Key.year ),
+		    new Argument( true, "integer", Key.month ),
+		    new Argument( true, "integer", Key.day )
 		};
 	}
 
@@ -35,9 +35,9 @@ public class CreateDate extends BIF {
 	 */
 	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
 		return new DateTime(
-		    ( int ) arguments.get( Key.of( "year" ) ),
-		    ( int ) arguments.get( Key.of( "month" ) ),
-		    ( int ) arguments.get( Key.of( "day" ) )
+		    ( int ) arguments.get( Key.year ),
+		    ( int ) arguments.get( Key.month ),
+		    ( int ) arguments.get( Key.day )
 		);
 	}
 

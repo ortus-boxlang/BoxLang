@@ -22,9 +22,9 @@ public class DateAdd extends BIF {
 	public DateAdd() {
 		super();
 		declaredArguments = new Argument[] {
-		    new Argument( true, "string", Key.of( "datepart" ) ),
-		    new Argument( true, "long", Key.of( "number" ) ),
-		    new Argument( true, "any", Key.of( "date" ) )
+		    new Argument( true, "string", Key.datepart ),
+		    new Argument( true, "long", Key.number ),
+		    new Argument( true, "any", Key.date )
 		};
 	}
 
@@ -39,15 +39,15 @@ public class DateAdd extends BIF {
 	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
 		DateTime ref = null;
 		try {
-			ref = ( DateTime ) arguments.get( Key.of( "date" ) );
+			ref = ( DateTime ) arguments.get( Key.date );
 		} catch ( java.lang.ClassCastException e ) {
-			ref = new DateTime( ( String ) arguments.get( Key.of( "date" ) ) );
+			ref = new DateTime( ( String ) arguments.get( Key.date ) );
 		} catch ( Exception e ) {
 			throw new RuntimeException( e );
 		}
 		return ref.modify(
-		    ( String ) arguments.get( Key.of( "datepart" ) ),
-		    ( Long ) arguments.get( Key.of( "number" ) )
+		    ( String ) arguments.get( Key.datepart ),
+		    ( Long ) arguments.get( Key.number )
 		);
 	}
 

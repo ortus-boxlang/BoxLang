@@ -70,7 +70,20 @@ public class Key {
 	public static Key		arrayFindAll	= Key.of( "arrayFindAll" );
 
 	public static final Key	file			= Key.of( "file" );
+
+	public static final Key	date			= Key.of( "date" );
 	public static final Key	year			= Key.of( "year" );
+	public static final Key	month			= Key.of( "month" );
+	public static final Key	day			= Key.of( "day" );
+	public static final Key	hour			= Key.of( "hour" );
+	public static final Key	minute			= Key.of( "minute" );
+	public static final Key	second			= Key.of( "second" );
+	public static final Key	millisecond			= Key.of( "millisecond" );
+	public static final Key	timezone			= Key.of( "timezone" );
+	public static final Key	datepart			= Key.of( "datepart" );
+	public static final Key	mask			= Key.of( "mask" );
+	public static final Key	dateFormat			= Key.of( "dateFormat" );
+	public static final Key	timeFormat			= Key.of( "timeFormat" );
 	/**
 	 * --------------------------------------------------------------------------
 	 * Private Properties
