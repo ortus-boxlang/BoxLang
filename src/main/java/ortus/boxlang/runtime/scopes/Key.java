@@ -71,6 +71,7 @@ public class Key {
 	public static Key		array1			= Key.of( "array1" );
 	public static Key		array2			= Key.of( "array2" );
 	public static Key		leaveIndex		= Key.of( "leaveIndex" );
+	public static Key		defaultValue	= Key.of( "defaultValue" );
 
 	public static final Key	file			= Key.of( "file" );
 
