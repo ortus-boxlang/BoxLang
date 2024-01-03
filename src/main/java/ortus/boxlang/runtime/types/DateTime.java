@@ -17,12 +17,12 @@
  */
 package ortus.boxlang.runtime.types;
 
-import java.time.format.DateTimeFormatter;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
-import java.time.ZonedDateTime;
 import java.time.ZoneId;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
 
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
@@ -236,7 +236,6 @@ public class DateTime implements IType {
 			this.$bx = new GenericMeta( this );
 		}
 		return this.$bx;
-
 	}
 
 	/**

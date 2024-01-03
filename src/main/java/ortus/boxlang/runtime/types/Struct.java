@@ -565,7 +565,13 @@ public class Struct implements Map<Key, Object>, IType, IReferenceable, IListena
 	 */
 	@Override
 	public String asString() {
-		return wrapped.toString();
+		StringBuilder sb = new StringBuilder();
+		sb.append( "{\n  " );
+		sb.append( wrapped.entrySet().stream()
+		    .map( entry -> entry.getKey().getName() + "=" + ( entry.getValue() instanceof IType t ? t.asString() : entry.getValue().toString() ) )
+		    .collect( java.util.stream.Collectors.joining( ",\n  " ) ) );
+		sb.append( "\n}" );
+		return sb.toString();
 	}
 
 	public BoxMeta getBoxMeta() {
