@@ -78,6 +78,8 @@ public class Key {
 
 	public static final Key	file				= Key.of( "file" );
 	public static final Key	filepath			= Key.of( "filepath" );
+	public static final Key	path				= Key.of( "path" );
+	public static final Key	recursive			= Key.of( "recursive" );
 	public static final Key	charset				= Key.of( "charset" );
 	public static final Key	buffersize			= Key.of( "buffersize" );
 	public static final Key	charsetOrBufferSize	= Key.of( "charsetOrBufferSize" );

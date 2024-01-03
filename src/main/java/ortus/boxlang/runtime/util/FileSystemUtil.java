@@ -169,7 +169,7 @@ public final class FileSystemUtil {
 		Path fileTarget = Path.of( filePath );
 
 		if ( ensureDirectory && !Files.exists( fileTarget.getParent() ) ) {
-			Files.createDirectory( fileTarget.getParent() );
+			Files.createDirectories( fileTarget.getParent() );
 		}
 
 		Files.write( fileTarget, contents, StandardOpenOption.CREATE );
