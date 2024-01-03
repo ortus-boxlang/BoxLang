@@ -68,6 +68,9 @@ public class Key {
 	public static Key		arrayFind		= Key.of( "arrayFind" );
 	public static Key		findAll			= Key.of( "findAll" );
 	public static Key		arrayFindAll	= Key.of( "arrayFindAll" );
+	public static Key		array1			= Key.of( "array1" );
+	public static Key		array2			= Key.of( "array2" );
+	public static Key		leaveIndex		= Key.of( "leaveIndex" );
 
 	public static final Key	file			= Key.of( "file" );
 
