@@ -23,6 +23,7 @@ import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
+import ortus.boxlang.runtime.types.IType;
 
 @BoxBIF
 public class Print extends BIF {
@@ -46,7 +47,11 @@ public class Print extends BIF {
 	 * @argument.message The message to print
 	 */
 	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
-		System.out.print( arguments.get( Key.message ) );
+		Object obj = arguments.get( Key.message );
+		if ( obj instanceof IType t ) {
+			obj = t.asString();
+		}
+		System.out.print( obj );
 		return true;
 	}
 }

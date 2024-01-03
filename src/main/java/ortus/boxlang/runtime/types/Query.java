@@ -64,7 +64,7 @@ public class Query implements IType, IReferenceable, Collection<Struct> {
 	/**
 	 * Create a new query
 	 */
-	Query() {
+	public Query() {
 		functionService = BoxRuntime.getInstance().getFunctionService();
 	}
 
@@ -234,6 +234,17 @@ public class Query implements IType, IReferenceable, Collection<Struct> {
 			newRow = data.size();
 		}
 		return newRow;
+	}
+
+	/**
+	 * Add a row to the query
+	 * 
+	 * @param row row data as a BoxLang array
+	 * 
+	 * @return this query
+	 */
+	public int addRow( Array row ) {
+		return addRow( row.toArray() );
 	}
 
 	/**
