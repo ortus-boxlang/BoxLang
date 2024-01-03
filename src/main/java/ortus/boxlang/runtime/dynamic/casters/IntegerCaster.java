@@ -91,10 +91,10 @@ public class IntegerCaster {
 	 * Determine whether the provided string is castable to an integer.
 	 *
 	 * @param value A probably-hopefully integer string, with an optional plus/minus sign.
-	 * 
+	 *
 	 * @return true if all string characters are digits. False for empty string, null, floats, alpha characters, etc.
 	 */
-	private static boolean isInteger( String value ) {
+	public static boolean isInteger( String value ) {
 		if ( value == null )
 			return false;
 
