@@ -410,6 +410,12 @@ public class Query implements IType, IReferenceable, Collection<Struct> {
 
 	@Override
 	public Object dereference( Key name, Boolean safe ) {
+
+		// Special check for $bx
+		if ( name.equals( BoxMeta.key ) ) {
+			return getBoxMeta();
+		}
+
 		if ( name.equals( Key.recordCount ) ) {
 			return size();
 		}
@@ -477,6 +483,7 @@ public class Query implements IType, IReferenceable, Collection<Struct> {
 	public BoxMeta getBoxMeta() {
 		if ( this.$bx == null ) {
 			// TODO: Create query metadata class
+			// getMetaData() in CF returns array of query column metadata objects
 			this.$bx = new GenericMeta( this );
 		}
 		return this.$bx;

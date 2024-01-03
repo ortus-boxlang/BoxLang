@@ -27,6 +27,8 @@ import ortus.boxlang.runtime.interop.DynamicJavaInteropService;
 import ortus.boxlang.runtime.scopes.IntKey;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
+import ortus.boxlang.runtime.types.meta.BoxMeta;
+import ortus.boxlang.runtime.types.meta.GenericMeta;
 
 public class QueryColumn implements IReferenceable {
 
@@ -35,12 +37,30 @@ public class QueryColumn implements IReferenceable {
 	private Query			query;
 	// Keep in sync if columns are added or removed
 	private int				index;
+	/**
+	 * Metadata object
+	 */
+	public BoxMeta			$bx;
 
 	public QueryColumn( Key name, QueryColumnType type, Query query, int index ) {
 		this.name	= name;
 		this.type	= type;
 		this.query	= query;
 		this.index	= index;
+	}
+
+	public BoxMeta getBoxMeta() {
+		if ( this.$bx == null ) {
+			// TODO: create query column meta object.
+			// getMetaData() in CF returns struct of
+			/*
+			 * IsCaseSensitive NO
+			 * Name colName
+			 * TypeName OBJECT
+			 */
+			this.$bx = new GenericMeta( this );
+		}
+		return this.$bx;
 	}
 
 	public Key getName() {
@@ -150,6 +170,12 @@ public class QueryColumn implements IReferenceable {
 
 	@Override
 	public Object dereference( Key name, Boolean safe ) {
+
+		// Special check for $bx
+		if ( name.equals( BoxMeta.key ) ) {
+			return getBoxMeta();
+		}
+
 		int index = getIntFromKey( name, safe );
 		return getCell( index );
 	}
