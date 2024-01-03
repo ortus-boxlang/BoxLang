@@ -33,6 +33,7 @@ import ortus.boxlang.runtime.dynamic.IReferenceable;
 import ortus.boxlang.runtime.dynamic.casters.KeyCaster;
 import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 import ortus.boxlang.runtime.interop.DynamicJavaInteropService;
+import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.runnables.IClassRunnable;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.services.FunctionService;
@@ -565,7 +566,13 @@ public class Struct implements Map<Key, Object>, IType, IReferenceable, IListena
 	 */
 	@Override
 	public String asString() {
-		return wrapped.toString();
+		StringBuilder sb = new StringBuilder();
+		sb.append( "{\n  " );
+		sb.append( wrapped.entrySet().stream()
+		    .map( entry -> entry.getKey().getName() + " : " + ( entry.getValue() instanceof IType t ? t.asString() : entry.getValue().toString() ) )
+		    .collect( java.util.stream.Collectors.joining( ",\n  " ) ) );
+		sb.append( "\n}" );
+		return sb.toString();
 	}
 
 	public BoxMeta getBoxMeta() {
@@ -796,7 +803,7 @@ public class Struct implements Map<Key, Object>, IType, IReferenceable, IListena
 	}
 
 	public Key getAsKey( Key key ) {
-		return ( Key ) get( key );
+		return ( Key ) DynamicObject.unWrap( get( key ) );
 	}
 
 	/**
@@ -804,7 +811,7 @@ public class Struct implements Map<Key, Object>, IType, IReferenceable, IListena
 	 * Does NOT perform BoxLang casting, only Java cast so the object needs to actually be castable
 	 */
 	public Array getAsArray( Key key ) {
-		return ( Array ) get( key );
+		return ( Array ) DynamicObject.unWrap( get( key ) );
 	}
 
 	/**
@@ -812,7 +819,7 @@ public class Struct implements Map<Key, Object>, IType, IReferenceable, IListena
 	 * Does NOT perform BoxLang casting, only Java cast so the object needs to actually be castable
 	 */
 	public Struct getAsStruct( Key key ) {
-		return ( Struct ) get( key );
+		return ( Struct ) DynamicObject.unWrap( get( key ) );
 	}
 
 	/**
@@ -820,7 +827,7 @@ public class Struct implements Map<Key, Object>, IType, IReferenceable, IListena
 	 * Does NOT perform BoxLang casting, only Java cast so the object needs to actually be castable
 	 */
 	public DateTime getAsDateTime( Key key ) {
-		return ( DateTime ) get( key );
+		return ( DateTime ) DynamicObject.unWrap( get( key ) );
 	}
 
 	/**
@@ -828,7 +835,7 @@ public class Struct implements Map<Key, Object>, IType, IReferenceable, IListena
 	 * Does NOT perform BoxLang casting, only Java cast so the object needs to actually be castable
 	 */
 	public String getAsString( Key key ) {
-		return ( String ) get( key );
+		return ( String ) DynamicObject.unWrap( get( key ) );
 	}
 
 	/**
@@ -836,7 +843,7 @@ public class Struct implements Map<Key, Object>, IType, IReferenceable, IListena
 	 * Does NOT perform BoxLang casting, only Java cast so the object needs to actually be castable
 	 */
 	public Double getAsDouble( Key key ) {
-		return ( Double ) get( key );
+		return ( Double ) DynamicObject.unWrap( get( key ) );
 	}
 
 	/**
@@ -844,7 +851,7 @@ public class Struct implements Map<Key, Object>, IType, IReferenceable, IListena
 	 * Does NOT perform BoxLang casting, only Java cast so the object needs to actually be castable
 	 */
 	public Long getAsLong( Key key ) {
-		return ( Long ) get( key );
+		return ( Long ) DynamicObject.unWrap( get( key ) );
 	}
 
 	/**
@@ -852,7 +859,7 @@ public class Struct implements Map<Key, Object>, IType, IReferenceable, IListena
 	 * Does NOT perform BoxLang casting, only Java cast so the object needs to actually be castable
 	 */
 	public Integer getAsInteger( Key key ) {
-		return ( Integer ) get( key );
+		return ( Integer ) DynamicObject.unWrap( get( key ) );
 	}
 
 	/**
@@ -860,7 +867,7 @@ public class Struct implements Map<Key, Object>, IType, IReferenceable, IListena
 	 * Does NOT perform BoxLang casting, only Java cast so the object needs to actually be castable
 	 */
 	public Boolean getAsBoolean( Key key ) {
-		return ( Boolean ) get( key );
+		return ( Boolean ) DynamicObject.unWrap( get( key ) );
 	}
 
 	/**
@@ -868,7 +875,15 @@ public class Struct implements Map<Key, Object>, IType, IReferenceable, IListena
 	 * Does NOT perform BoxLang casting, only Java cast so the object needs to actually be castable
 	 */
 	public Function getAsFunction( Key key ) {
-		return ( Function ) get( key );
+		return ( Function ) DynamicObject.unWrap( get( key ) );
+	}
+
+	/**
+	 * Convenience method for getting cast as Query
+	 * Does NOT perform BoxLang casting, only Java cast so the object needs to actually be castable
+	 */
+	public Query getAsQuery( Key key ) {
+		return ( Query ) DynamicObject.unWrap( get( key ) );
 	}
 
 	/**
@@ -876,7 +891,7 @@ public class Struct implements Map<Key, Object>, IType, IReferenceable, IListena
 	 * Does NOT perform BoxLang casting, only Java cast so the object needs to actually be castable
 	 */
 	public IClassRunnable getClassRunnable( Key key ) {
-		return ( IClassRunnable ) get( key );
+		return ( IClassRunnable ) DynamicObject.unWrap( get( key ) );
 	}
 
 	// Add more as needed...

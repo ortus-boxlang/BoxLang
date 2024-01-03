@@ -1180,7 +1180,7 @@ public class DynamicJavaInteropService {
 			}
 		}
 
-		throw new BoxRuntimeException( "Java objects cannot be called with named argumments" );
+		throw new BoxRuntimeException( "Methods on Java objects cannot be called with named arguments" );
 	}
 
 	/**

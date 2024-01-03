@@ -38,6 +38,9 @@ public class Key {
 	public static final Key	_10					= Key.of( 10 );
 
 	public static final Key	init				= Key.of( "init" );
+	public static final Key	recordCount			= Key.of( "recordCount" );
+	public static final Key	columnList			= Key.of( "columnList" );
+	public static final Key	currentRow			= Key.of( "currentRow" );
 	public static final Key	array				= Key.of( "array" );
 	public static final Key	value				= Key.of( "value" );
 	public static final Key	position			= Key.of( "position" );
@@ -68,6 +71,10 @@ public class Key {
 	public static Key		arrayFind			= Key.of( "arrayFind" );
 	public static Key		findAll				= Key.of( "findAll" );
 	public static Key		arrayFindAll		= Key.of( "arrayFindAll" );
+	public static Key		array1				= Key.of( "array1" );
+	public static Key		array2				= Key.of( "array2" );
+	public static Key		leaveIndex			= Key.of( "leaveIndex" );
+	public static Key		defaultValue		= Key.of( "defaultValue" );
 
 	public static final Key	file				= Key.of( "file" );
 	public static final Key	filepath			= Key.of( "filepath" );

@@ -33,6 +33,7 @@ import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.services.FunctionService;
 import ortus.boxlang.runtime.types.Function;
+import ortus.boxlang.runtime.types.QueryColumn;
 import ortus.boxlang.runtime.types.UDF;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.exceptions.KeyNotFoundException;
@@ -460,6 +461,22 @@ public class BaseBoxContext implements IBoxContext {
 		}
 
 		return template.getImports();
+	}
+
+	/**
+	 * If input is a QueryColumn, unwrap it to the underlying value
+	 * If input is not a QueryColumn, return it as-is
+	 * 
+	 * @param value The value to unwrap
+	 * 
+	 * @return The unwrapped value
+	 */
+	public Object unwrapQueryColumn( Object value ) {
+		if ( value instanceof QueryColumn col ) {
+			// TODO: get row index from context based on if in cfloop/cfoutput query="..."
+			return col.getCell( 0 );
+		}
+		return value;
 	}
 
 }

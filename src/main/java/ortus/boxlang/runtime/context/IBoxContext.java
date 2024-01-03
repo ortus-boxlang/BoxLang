@@ -264,4 +264,14 @@ public interface IBoxContext {
 	 * @return List of import definitions
 	 */
 	public List<ImportDefinition> getCurrentImports();
+
+	/**
+	 * If input is a QueryColumn, unwrap it to the underlying value
+	 * If input is not a QueryColumn, return it as-is
+	 * 
+	 * @param value The value to unwrap
+	 * 
+	 * @return The unwrapped value
+	 */
+	public Object unwrapQueryColumn( Object value );
 }

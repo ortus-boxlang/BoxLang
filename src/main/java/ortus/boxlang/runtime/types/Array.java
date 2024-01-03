@@ -25,9 +25,9 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
-import java.util.stream.Stream;
-import java.util.stream.IntStream;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.IntStream;
+import java.util.stream.Stream;
 
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.bifs.MemberDescriptor;
@@ -368,7 +368,13 @@ public class Array implements List<Object>, IType, IReferenceable, IListenable {
 	 */
 	@Override
 	public String asString() {
-		return wrapped.toString();
+		StringBuilder sb = new StringBuilder();
+		sb.append( "[\n  " );
+		sb.append( wrapped.stream()
+		    .map( value -> ( value instanceof IType t ? t.asString() : ( value == null ? "[null]" : value.toString() ) ) )
+		    .collect( java.util.stream.Collectors.joining( ",\n  " ) ) );
+		sb.append( "\n]" );
+		return sb.toString();
 	}
 
 	public BoxMeta getBoxMeta() {
