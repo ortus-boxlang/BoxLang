@@ -57,7 +57,7 @@ component {
 			arguments.aliases = listToArray( arguments.aliases );
 		}
 
-		fileWrite( bifTargetDirectory & "/#name#.java", getBIFBody( name, package, memberClass, aliases ) );
+		fileWrite( bifTargetDirectory & "/#name#.java", getBIFBody( name, package, memberClass ?: nullValue(), aliases ) );
 
 		if( arguments.withTests ){
 			fileWrite( testTargetDirectory & "/#name#Test.java", getBIFTestBody( name, package ) );
