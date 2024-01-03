@@ -17,6 +17,9 @@ runtime/bin/
 src/main/gen
 *.tokens
 
+# Temporary test files
+src/test/resources/tmp/*
+
 # CFML Parser test packages coming from CommandBox
 cfml-parser-tests/**
 /src/main/antlr/.antlr/*
