@@ -25,7 +25,6 @@ import static org.junit.Assert.assertTrue;
 import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.net.URL;
-import java.nio.file.Files;
 import java.nio.file.Path;
 
 import org.junit.jupiter.api.AfterAll;
@@ -71,11 +70,9 @@ public class FileReadTest {
 
 	@AfterAll
 	public static void teardown() throws IOException {
-		if ( !FileSystemUtil.exists( testBinaryFile ) ) {
-			Files.delete( Path.of( testBinaryFile ) );
-		}
-		if ( FileSystemUtil.exists( testTextFile ) ) {
-			Files.delete( Path.of( testTextFile ) );
+
+		if ( FileSystemUtil.exists( tmpDirectory ) ) {
+			FileSystemUtil.deleteDirectory( tmpDirectory, true );
 		}
 
 		instance.shutdown();

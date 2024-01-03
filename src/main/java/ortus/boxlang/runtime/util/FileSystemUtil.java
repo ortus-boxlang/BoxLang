@@ -20,13 +20,16 @@ package ortus.boxlang.runtime.util;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.nio.charset.Charset;
+import java.nio.file.DirectoryNotEmptyException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
+import java.util.Iterator;
 import java.util.stream.Collectors;
 
 import ortus.boxlang.runtime.types.Array;
+import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
 public final class FileSystemUtil {
 
@@ -87,6 +90,44 @@ public final class FileSystemUtil {
 	 */
 	public static void createDirectory( String directoryPath ) throws IOException {
 		Files.createDirectory( Path.of( directoryPath ) );
+	}
+
+	/**
+	 * Deletes a file from a string path.
+	 *
+	 * @param directoryPath the path to create. This can be root-relative or absolute.
+	 *
+	 * @throws IOException
+	 */
+	public static void deleteDirectory( String directoryPath, Boolean recursive ) throws IOException {
+		Path targetDirectory = Path.of( directoryPath );
+		if ( recursive ) {
+			Iterator<Path> fileIterator = Files.newDirectoryStream( targetDirectory ).iterator();
+			while ( fileIterator.hasNext() ) {
+				Path filePath = fileIterator.next();
+				if ( Files.isDirectory( filePath ) ) {
+					deleteDirectory( filePath.toString(), true );
+				} else {
+					Files.delete( filePath );
+				}
+			}
+		}
+		try {
+			Files.delete( Path.of( directoryPath ) );
+		} catch ( DirectoryNotEmptyException e ) {
+			throw new BoxRuntimeException( "The directory " + directoryPath + " is not empty and may not be deleted without the recursive option." );
+		}
+	}
+
+	/**
+	 * Deletes a file from a string path.
+	 *
+	 * @param filePath the path to create. This can be root-relative or absolute.
+	 *
+	 * @throws IOException
+	 */
+	public static void deleteFile( String filePath ) throws IOException {
+		Files.delete( Path.of( filePath ) );
 	}
 
 	/**
