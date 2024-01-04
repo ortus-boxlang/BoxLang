@@ -169,15 +169,23 @@ public class QueryColumn implements IReferenceable {
 	 ****************************/
 
 	@Override
-	public Object dereference( Key name, Boolean safe ) {
+	public Object dereference( IBoxContext context, Key name, Boolean safe ) {
 
 		// Special check for $bx
 		if ( name.equals( BoxMeta.key ) ) {
 			return getBoxMeta();
 		}
 
-		int index = getIntFromKey( name, safe );
-		return getCell( index );
+		// Check if the key is numeric
+		int index = getIntFromKey( name, true );
+		// If dereferncing a query column with a number like qry.col[1], then we ALWAYS get the value from that row
+		if ( index < 0 ) {
+			return getCell( index );
+		}
+
+		// If dereferncing a query column with a NON number like qry.col["key"], then we get the value at the "current" row and dererence it
+		return null;
+
 	}
 
 	@Override
@@ -191,8 +199,18 @@ public class QueryColumn implements IReferenceable {
 	}
 
 	@Override
-	public Object assign( Key name, Object value ) {
-		throw new BoxRuntimeException( "You cannot assign a field on a QueryColumn." );
+	public Object assign( IBoxContext context, Key name, Object value ) {
+
+		// Check if the key is numeric
+		int index = getIntFromKey( name, true );
+		// If assign a query column with a number like qry.col[1]='new value', then we ALWAYS get the value from that row
+		if ( index < 0 ) {
+			return setCell( index, value );
+		}
+
+		// If dereferncing a query column with a NON number like qry.col["key"]="new value", then we get the value at the "current" row and assign it (perhaps
+		// it's struct etc)
+		return value;
 	}
 
 }
