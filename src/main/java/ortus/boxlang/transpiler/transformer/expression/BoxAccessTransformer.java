@@ -25,7 +25,9 @@ import com.github.javaparser.ast.expr.Expression;
 
 import ortus.boxlang.ast.BoxNode;
 import ortus.boxlang.ast.expression.BoxAccess;
+import ortus.boxlang.ast.expression.BoxArgument;
 import ortus.boxlang.ast.expression.BoxDotAccess;
+import ortus.boxlang.ast.expression.BoxFunctionInvocation;
 import ortus.boxlang.ast.expression.BoxIdentifier;
 import ortus.boxlang.ast.expression.BoxScope;
 import ortus.boxlang.transpiler.JavaTranspiler;
@@ -90,8 +92,15 @@ public class BoxAccessTransformer extends AbstractTransformer {
 			                                            ${safe}
 			                                                  )
 			                                            """;
-
-			Node	javaExpr	= parseExpression( template, values );
+			BoxNode	parent		= ( BoxNode ) objectAccess.getParent();
+			if ( ! ( parent instanceof BoxAccess )
+			    // I don't know if this will work, but I'm trying to make an exception for query columns being passed to array BIFs
+			    // This prolly won't work if a query column is passed as a second param that isn't the array
+			    && ! ( parent instanceof BoxArgument barg && barg.getParent() instanceof BoxFunctionInvocation bfun
+			        && bfun.getName().getName().toLowerCase().contains( "array" ) ) ) {
+				template = "${contextName}.unwrapQueryColumn( " + template + " )";
+			}
+			Node javaExpr = parseExpression( template, values );
 			logger.info( node.getSourceText() + " -> " + javaExpr );
 			return javaExpr;
 		}

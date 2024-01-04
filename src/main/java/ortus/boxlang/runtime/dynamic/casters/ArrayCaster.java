@@ -22,6 +22,7 @@ import java.util.List;
 import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.types.Array;
+import ortus.boxlang.runtime.types.QueryColumn;
 import ortus.boxlang.runtime.types.exceptions.BoxCastException;
 
 /**
@@ -99,6 +100,10 @@ public class ArrayCaster {
 
 		if ( object instanceof ArgumentsScope args ) {
 			return args.asArray();
+		}
+
+		if ( object instanceof QueryColumn col ) {
+			return col.getColumnDataAsArray();
 		}
 
 		if ( fail ) {

@@ -22,6 +22,7 @@ import java.util.Map;
 import com.github.javaparser.ast.Node;
 import com.github.javaparser.ast.expr.Expression;
 import com.github.javaparser.ast.stmt.BlockStmt;
+import com.github.javaparser.ast.stmt.IfStmt;
 import com.github.javaparser.ast.stmt.Statement;
 import com.github.javaparser.ast.stmt.WhileStmt;
 
@@ -55,23 +56,27 @@ public class BoxForInTransformer extends AbstractTransformer {
 	 */
 	@Override
 	public Node transform( BoxNode node, TransformerContext context ) throws IllegalStateException {
-		BoxForIn					boxFor		= ( BoxForIn ) node;
-		Node						collection	= transpiler.transform( boxFor.getExpression() );
-		int							forInCount	= transpiler.incrementAndGetForInCounter();
-		String						jVarName	= "forInIterator" + forInCount;
+		BoxForIn					boxFor			= ( BoxForIn ) node;
+		Node						collection		= transpiler.transform( boxFor.getExpression() );
+		int							forInCount		= transpiler.incrementAndGetForInCounter();
+		String						jVarName		= "forInIterator" + forInCount;
+		String						jisQueryName	= "isQuery" + forInCount;
+		String						jCollectionName	= "collection" + forInCount;
 
-		BlockStmt					stmt		= new BlockStmt();
+		BlockStmt					stmt			= new BlockStmt();
 
-		Map<String, String>			values		= new HashMap<>() {
+		Map<String, String>			values			= new HashMap<>() {
 
-													{
-														put( "variable", jVarName );
-														put( "collection", collection.toString() );
-														put( "contextName", transpiler.peekContextName() );
-													}
-												};
+														{
+															put( "variable", jVarName );
+															put( "isQueryName", jisQueryName );
+															put( "collectionName", jCollectionName );
+															put( "collection", collection.toString() );
+															put( "contextName", transpiler.peekContextName() );
+														}
+													};
 
-		List<BoxAssignmentModifier>	modifiers	= new ArrayList<BoxAssignmentModifier>();
+		List<BoxAssignmentModifier>	modifiers		= new ArrayList<BoxAssignmentModifier>();
 		if ( boxFor.getHasVar() ) {
 			modifiers.add( BoxAssignmentModifier.VAR );
 		}
@@ -85,20 +90,49 @@ public class BoxForInTransformer extends AbstractTransformer {
 
 		values.put( "loopAssignment", loopAssignment.toString() );
 
-		String		template1	= """
-		                          	Iterator ${variable} = CollectionCaster.cast( ${collection} ).iterator();
-		                          """;
-		String		template2	= """
-		                                                  	while( ${variable}.hasNext() ) {
-		                          ${loopAssignment};
-		                                                  	}
-		                                                  """;
-		WhileStmt	whileStmt	= ( WhileStmt ) parseStatement( template2, values );
+		String		template1			= """
+		                                  Object ${collectionName} = DynamicObject.unWrap( ${collection} );
+		                                                     """;
+		String		template1a			= """
+		                                  Boolean ${isQueryName} = ${collectionName} instanceof Query;
+		                                                     """;
+		String		template1b			= """
+		                                  if( ${isQueryName} ) {
+		                                  	${contextName}.registerQueryLoop( (Query) ${collectionName} );
+		                                  }
+		                                                     """;
+		String		template1c			= """
+		                                  	Iterator ${variable} = CollectionCaster.cast( ${collectionName} ).iterator();
+		                                  """;
+		String		template2a			= """
+		                                                                           	while( ${variable}.hasNext() ) {
+		                                  ${loopAssignment};
+
+		                                                                           	}
+
+		                                                                           """;
+		String		template2b			= """
+		                                  if( ${isQueryName} ) {
+		                                                    				${contextName}.incrementQueryLoop( (Query) ${collectionName} );
+		                                                    			}
+		                                  """;
+		String		template3			= """
+		                                  if( ${isQueryName} ) {
+		                                  	${contextName}.unregisterQueryLoop( (Query) ${collectionName} );
+		                                  }
+		                                                                             """;
+		WhileStmt	whileStmt			= ( WhileStmt ) parseStatement( template2a, values );
+		IfStmt		incrementQueryStmt	= ( IfStmt ) parseStatement( template2b, values );
 		stmt.addStatement( ( Statement ) parseStatement( template1, values ) );
+		stmt.addStatement( ( Statement ) parseStatement( template1a, values ) );
+		stmt.addStatement( ( Statement ) parseStatement( template1b, values ) );
+		stmt.addStatement( ( Statement ) parseStatement( template1c, values ) );
 		boxFor.getBody().forEach( it -> {
 			whileStmt.getBody().asBlockStmt().addStatement( ( Statement ) transpiler.transform( it ) );
 		} );
+		whileStmt.getBody().asBlockStmt().addStatement( incrementQueryStmt );
 		stmt.addStatement( whileStmt );
+		stmt.addStatement( ( Statement ) parseStatement( template3, values ) );
 		logger.info( node.getSourceText() + " -> " + stmt );
 		addIndex( stmt, node );
 		return stmt;

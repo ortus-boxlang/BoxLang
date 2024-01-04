@@ -75,6 +75,7 @@ public class BoxClassTransformer extends AbstractTransformer {
 		import ortus.boxlang.runtime.context.ClassBoxContext;
 		import ortus.boxlang.runtime.types.meta.BoxMeta;
 		import ortus.boxlang.runtime.types.meta.ClassMeta;
+		import ortus.boxlang.runtime.interop.DynamicObject;
 
 		import java.nio.file.Path;
 		import java.nio.file.Paths;

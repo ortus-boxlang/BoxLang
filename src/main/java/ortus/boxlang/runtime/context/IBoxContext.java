@@ -24,6 +24,7 @@ import ortus.boxlang.runtime.loader.ImportDefinition;
 import ortus.boxlang.runtime.runnables.ITemplateRunnable;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
+import ortus.boxlang.runtime.types.Query;
 import ortus.boxlang.runtime.types.UDF;
 import ortus.boxlang.runtime.types.exceptions.ScopeNotFoundException;
 
@@ -274,4 +275,34 @@ public interface IBoxContext {
 	 * @return The unwrapped value
 	 */
 	public Object unwrapQueryColumn( Object value );
+
+	/**
+	 * Get the current query row
+	 * 
+	 * @param query The query to get the row from
+	 * 
+	 * @return The current row
+	 */
+	public int getQueryRow( Query query );
+
+	/**
+	 * Register a query loop
+	 * 
+	 * @param query The query to register
+	 */
+	public void registerQueryLoop( Query query );
+
+	/**
+	 * Unregister a query loop
+	 * 
+	 * @param query The query to unregister
+	 */
+	public void unregisterQueryLoop( Query query );
+
+	/**
+	 * Increment the query loop
+	 * 
+	 * @param query The query to increment
+	 */
+	public void incrementQueryLoop( Query query );
 }
