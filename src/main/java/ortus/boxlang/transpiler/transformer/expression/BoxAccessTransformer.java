@@ -25,7 +25,9 @@ import com.github.javaparser.ast.expr.Expression;
 
 import ortus.boxlang.ast.BoxNode;
 import ortus.boxlang.ast.expression.BoxAccess;
+import ortus.boxlang.ast.expression.BoxArgument;
 import ortus.boxlang.ast.expression.BoxDotAccess;
+import ortus.boxlang.ast.expression.BoxFunctionInvocation;
 import ortus.boxlang.ast.expression.BoxIdentifier;
 import ortus.boxlang.ast.expression.BoxScope;
 import ortus.boxlang.transpiler.JavaTranspiler;
@@ -66,11 +68,12 @@ public class BoxAccessTransformer extends AbstractTransformer {
 			values.put( "scopeReference", jContext.toString() );
 
 			String	template	= """
-			                      ${scopeReference}.dereference(
-			                        ${accessKey},
-			                        ${safe}
-			                        )
-			                                      """;
+			                                      ${scopeReference}.dereference(
+			                      ${contextName},
+			                                        ${accessKey},
+			                                        ${safe}
+			                                        )
+			                                                      """;
 			Node	javaExpr	= parseExpression( template, values );
 			logger.info( node.getSourceText() + " -> " + javaExpr );
 			return javaExpr;
@@ -82,14 +85,22 @@ public class BoxAccessTransformer extends AbstractTransformer {
 			values.put( "scopeReference", jContext.toString() );
 
 			String	template	= """
-			                      Referencer.get(
-			                      	  ${scopeReference},
-			                            ${accessKey},
-			                            ${safe}
-			                                  )
-			                            """;
-
-			Node	javaExpr	= parseExpression( template, values );
+			                                      Referencer.get(
+			                      ${contextName},
+			                                      	  ${scopeReference},
+			                                            ${accessKey},
+			                                            ${safe}
+			                                                  )
+			                                            """;
+			BoxNode	parent		= ( BoxNode ) objectAccess.getParent();
+			if ( ! ( parent instanceof BoxAccess )
+			    // I don't know if this will work, but I'm trying to make an exception for query columns being passed to array BIFs
+			    // This prolly won't work if a query column is passed as a second param that isn't the array
+			    && ! ( parent instanceof BoxArgument barg && barg.getParent() instanceof BoxFunctionInvocation bfun
+			        && bfun.getName().getName().toLowerCase().contains( "array" ) ) ) {
+				template = "${contextName}.unwrapQueryColumn( " + template + " )";
+			}
+			Node javaExpr = parseExpression( template, values );
 			logger.info( node.getSourceText() + " -> " + javaExpr );
 			return javaExpr;
 		}

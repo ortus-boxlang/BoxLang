@@ -75,18 +75,18 @@ public class IsBooleanTest {
 		    twentythree = isBoolean( 23 );
 		    """,
 		    context );
-		assertThat( ( Boolean ) variables.dereference( Key.of( "trueValue" ), false ) ).isTrue();
-		assertThat( ( Boolean ) variables.dereference( Key.of( "falseValue" ), false ) ).isTrue();
+		assertThat( ( Boolean ) variables.get( Key.of( "trueValue" ) ) ).isTrue();
+		assertThat( ( Boolean ) variables.get( Key.of( "falseValue" ) ) ).isTrue();
 
-		assertThat( ( Boolean ) variables.dereference( Key.of( "stringTrue" ), false ) ).isTrue();
-		assertThat( ( Boolean ) variables.dereference( Key.of( "stringFalse" ), false ) ).isTrue();
+		assertThat( ( Boolean ) variables.get( Key.of( "stringTrue" ) ) ).isTrue();
+		assertThat( ( Boolean ) variables.get( Key.of( "stringFalse" ) ) ).isTrue();
 
-		assertThat( ( Boolean ) variables.dereference( Key.of( "yes" ), false ) ).isTrue();
-		assertThat( ( Boolean ) variables.dereference( Key.of( "no" ), false ) ).isTrue();
+		assertThat( ( Boolean ) variables.get( Key.of( "yes" ) ) ).isTrue();
+		assertThat( ( Boolean ) variables.get( Key.of( "no" ) ) ).isTrue();
 
-		assertThat( ( Boolean ) variables.dereference( Key.of( "float" ), false ) ).isTrue();
-		assertThat( ( Boolean ) variables.dereference( Key.of( "zero" ), false ) ).isTrue();
-		assertThat( ( Boolean ) variables.dereference( Key.of( "twentythree" ), false ) ).isTrue();
+		assertThat( ( Boolean ) variables.get( Key.of( "float" ) ) ).isTrue();
+		assertThat( ( Boolean ) variables.get( Key.of( "zero" ) ) ).isTrue();
+		assertThat( ( Boolean ) variables.get( Key.of( "twentythree" ) ) ).isTrue();
 	}
 
 	@DisplayName( "It returns false for non-boolean values" )
@@ -100,9 +100,9 @@ public class IsBooleanTest {
 		    struct      = isBoolean( {} );
 		    """,
 		    context );
-		assertThat( ( Boolean ) variables.dereference( Key.of( "array" ), false ) ).isFalse();
-		assertThat( ( Boolean ) variables.dereference( Key.of( "string" ), false ) ).isFalse();
-		assertThat( ( Boolean ) variables.dereference( Key.of( "struct" ), false ) ).isFalse();
+		assertThat( ( Boolean ) variables.get( Key.of( "array" ) ) ).isFalse();
+		assertThat( ( Boolean ) variables.get( Key.of( "string" ) ) ).isFalse();
+		assertThat( ( Boolean ) variables.get( Key.of( "struct" ) ) ).isFalse();
 	}
 
 }

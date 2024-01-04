@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-package ortus.boxlang.runtime.bifs.global.decision;
+package ortus.boxlang.runtime.bifs.global.system;
 
 import static com.google.common.truth.Truth.assertThat;
 
@@ -33,11 +33,12 @@ import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
 
-public class IsClosureTest {
+public class GetBoxContextTest {
 
 	static BoxRuntime	instance;
 	static IBoxContext	context;
 	static IScope		variables;
+	static Key			result	= new Key( "result" );
 
 	@BeforeAll
 	public static void setUp() {
@@ -56,35 +57,15 @@ public class IsClosureTest {
 		variables.clear();
 	}
 
-	@DisplayName( "It detects closures" )
+	@DisplayName( "It can get the current context" )
 	@Test
-	public void testTrueConditions() {
+	public void testPrint() {
 		instance.executeSource(
 		    """
-		    closure = isClosure( function(){} );
-		    arrowFunction = isClosure( () => {} );
-
-		    myFunc = function() {};
-		    functionReference = isClosure( myFunc );
-		       """,
-		    context
-		);
-		assertThat( ( Boolean ) variables.get( Key.of( "closure" ) ) ).isTrue();
-		assertThat( ( Boolean ) variables.get( Key.of( "arrowFunction" ) ) ).isTrue();
-		assertThat( ( Boolean ) variables.get( Key.of( "functionReference" ) ) ).isTrue();
-	}
-
-	@DisplayName( "It returns false for non-closure values" )
-	@Test
-	public void testFalseConditions() {
-		instance.executeSource(
-		    """
-		    anInteger = isClosure( 123 );
-		    aString = isClosure( "abc" );
-		       """,
+		    result = getBoxContext()
+		    """,
 		    context );
-		assertThat( ( Boolean ) variables.get( Key.of( "anInteger" ) ) ).isFalse();
-		assertThat( ( Boolean ) variables.get( Key.of( "aString" ) ) ).isFalse();
+		assertThat( variables.get( result ) ).isEqualTo( context );
 	}
 
 }

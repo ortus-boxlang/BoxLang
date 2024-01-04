@@ -96,6 +96,7 @@ public class Phase1TryCatch extends BoxTemplate {
 		    context.getDefaultAssignmentScope()
 		);
 		result.scope().assign(
+		    context,
 		    Key.of( "system" ),
 		    classLocator.load( context, "java:java.lang.System", imports )
 		);
@@ -109,7 +110,8 @@ public class Phase1TryCatch extends BoxTemplate {
 			    context,
 			    // Object
 			    Referencer.get(
-			        variablesScope.dereference( Key.of( "system" ), false ),
+			        context,
+			        variablesScope.get( Key.of( "system" ) ),
 			        Key.of( "out" ),
 			        false
 			    ),
@@ -118,6 +120,7 @@ public class Phase1TryCatch extends BoxTemplate {
 			    // Arguments
 			    new Object[] {
 			        Referencer.get(
+			            context,
 			            catchContext.scopeFindNearby( Key.of( "e" ), null ).value(),
 			            Key.of( "message" ),
 			            false
@@ -134,7 +137,8 @@ public class Phase1TryCatch extends BoxTemplate {
 			    context,
 			    // Object
 			    Referencer.get(
-			        variablesScope.dereference( Key.of( "system" ), false ),
+			        context,
+			        variablesScope.get( Key.of( "system" ) ),
 			        Key.of( "out" ),
 			        false
 			    ),
@@ -159,7 +163,8 @@ public class Phase1TryCatch extends BoxTemplate {
 				    context,
 				    // Object
 				    Referencer.get(
-				        variablesScope.dereference( Key.of( "system" ), false ),
+				        context,
+				        variablesScope.get( Key.of( "system" ) ),
 				        Key.of( "out" ),
 				        false
 				    ),
@@ -168,6 +173,7 @@ public class Phase1TryCatch extends BoxTemplate {
 				    // Arguments
 				    new Object[] {
 				        Referencer.get(
+				            context,
 				            catchContext.scopeFindNearby( Key.of( "e" ), null ).value(),
 				            Key.of( "message" ),
 				            false
@@ -180,7 +186,8 @@ public class Phase1TryCatch extends BoxTemplate {
 				    context,
 				    // Object
 				    Referencer.get(
-				        variablesScope.dereference( Key.of( "system" ), false ),
+				        context,
+				        variablesScope.get( Key.of( "system" ) ),
 				        Key.of( "out" ),
 				        false
 				    ),
@@ -189,6 +196,7 @@ public class Phase1TryCatch extends BoxTemplate {
 				    // Arguments
 				    new Object[] {
 				        Referencer.get(
+				            context,
 				            catchContext.scopeFindNearby( Key.of( "e" ), null ).value(),
 				            Key.of( "message" ),
 				            false

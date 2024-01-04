@@ -73,10 +73,10 @@ public class IsDefinedTest {
 		    variableScope     = isDefined( "variables.foo" );
 		       """,
 		    context );
-		assertThat( ( Boolean ) variables.dereference( Key.of( "stringVarName" ), false ) ).isTrue();
-		assertThat( ( Boolean ) variables.dereference( Key.of( "variableReference" ), false ) ).isTrue();
-		assertThat( ( Boolean ) variables.dereference( Key.of( "localReference" ), false ) ).isTrue();
-		assertThat( ( Boolean ) variables.dereference( Key.of( "variableScope" ), false ) ).isTrue();
+		assertThat( ( Boolean ) variables.get( Key.of( "stringVarName" ) ) ).isTrue();
+		assertThat( ( Boolean ) variables.get( Key.of( "variableReference" ) ) ).isTrue();
+		assertThat( ( Boolean ) variables.get( Key.of( "localReference" ) ) ).isTrue();
+		assertThat( ( Boolean ) variables.get( Key.of( "variableScope" ) ) ).isTrue();
 	}
 
 	@DisplayName( "It returns false for non-existing variables" )
@@ -93,10 +93,10 @@ public class IsDefinedTest {
 		    variableScope     = isDefined( "variables.foo" );
 		       """,
 		    context );
-		assertThat( ( Boolean ) variables.dereference( Key.of( "stringVarName" ), false ) ).isFalse();
-		assertThat( ( Boolean ) variables.dereference( Key.of( "variableReference" ), false ) ).isFalse();
-		assertThat( ( Boolean ) variables.dereference( Key.of( "localReference" ), false ) ).isFalse();
-		assertThat( ( Boolean ) variables.dereference( Key.of( "variableScope" ), false ) ).isFalse();
+		assertThat( ( Boolean ) variables.get( Key.of( "stringVarName" ) ) ).isFalse();
+		assertThat( ( Boolean ) variables.get( Key.of( "variableReference" ) ) ).isFalse();
+		assertThat( ( Boolean ) variables.get( Key.of( "localReference" ) ) ).isFalse();
+		assertThat( ( Boolean ) variables.get( Key.of( "variableScope" ) ) ).isFalse();
 	}
 
 }

@@ -74,8 +74,8 @@ public class ArrayReduceRightTest {
 		              result = arrayReduceRight( nums, sumReduce, 0 );
 		    """,
 		    context );
-		assertThat( variables.dereference( result, false ) ).isEqualTo( 15 );
-		Array indexes = ( Array ) variables.dereference( Key.of( "indexes" ), false );
+		assertThat( variables.get( result ) ).isEqualTo( 15 );
+		Array indexes = ( Array ) variables.get( Key.of( "indexes" ) );
 		assertThat( indexes.size() ).isEqualTo( 5 );
 		assertThat( indexes.get( 0 ) ).isEqualTo( 5 );
 		assertThat( indexes.get( 1 ) ).isEqualTo( 4 );
@@ -100,8 +100,8 @@ public class ArrayReduceRightTest {
 		              result = nums.reduceRight( sumReduce, 0 );
 		    """,
 		    context );
-		assertThat( variables.dereference( result, false ) ).isEqualTo( 15 );
-		Array indexes = ( Array ) variables.dereference( Key.of( "indexes" ), false );
+		assertThat( variables.get( result ) ).isEqualTo( 15 );
+		Array indexes = ( Array ) variables.get( Key.of( "indexes" ) );
 		assertThat( indexes.size() ).isEqualTo( 5 );
 		assertThat( indexes.get( 0 ) ).isEqualTo( 5 );
 		assertThat( indexes.get( 1 ) ).isEqualTo( 4 );

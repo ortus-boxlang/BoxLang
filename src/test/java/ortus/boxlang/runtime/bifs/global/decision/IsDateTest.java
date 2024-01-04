@@ -72,11 +72,11 @@ public class IsDateTest {
 		    anISO8601String        = isDate( '2023-12-21T14:22:32Z' );
 		      """,
 		    context );
-		assertThat( ( Boolean ) variables.dereference( Key.of( "aDateStringWithDashes" ), false ) ).isTrue();
-		assertThat( ( Boolean ) variables.dereference( Key.of( "aDateStringWithPeriods" ), false ) ).isTrue();
-		assertThat( ( Boolean ) variables.dereference( Key.of( "earlyDate" ), false ) ).isTrue();
-		assertThat( ( Boolean ) variables.dereference( Key.of( "leapDay" ), false ) ).isTrue();
-		assertThat( ( Boolean ) variables.dereference( Key.of( "anISO8601String" ), false ) ).isTrue();
+		assertThat( ( Boolean ) variables.get( Key.of( "aDateStringWithDashes" ) ) ).isTrue();
+		assertThat( ( Boolean ) variables.get( Key.of( "aDateStringWithPeriods" ) ) ).isTrue();
+		assertThat( ( Boolean ) variables.get( Key.of( "earlyDate" ) ) ).isTrue();
+		assertThat( ( Boolean ) variables.get( Key.of( "leapDay" ) ) ).isTrue();
+		assertThat( ( Boolean ) variables.get( Key.of( "anISO8601String" ) ) ).isTrue();
 	}
 
 	@Disabled( "Now(), createTime(), and createDate() are not implemented" )
@@ -90,9 +90,9 @@ public class IsDateTest {
 		    aCreateDateCall        = isDate( createDate( 2023, 12, 21 ) );
 		      """,
 		    context );
-		assertThat( ( Boolean ) variables.dereference( Key.of( "aNowCall" ), false ) ).isTrue();
-		assertThat( ( Boolean ) variables.dereference( Key.of( "aCreateTimeCall" ), false ) ).isTrue();
-		assertThat( ( Boolean ) variables.dereference( Key.of( "aCreateDateCall" ), false ) ).isTrue();
+		assertThat( ( Boolean ) variables.get( Key.of( "aNowCall" ) ) ).isTrue();
+		assertThat( ( Boolean ) variables.get( Key.of( "aCreateTimeCall" ) ) ).isTrue();
+		assertThat( ( Boolean ) variables.get( Key.of( "aCreateDateCall" ) ) ).isTrue();
 	}
 
 	@DisplayName( "It returns false for non-date values" )
@@ -113,14 +113,14 @@ public class IsDateTest {
 		    gibberishAfterValidDate = isDate( "2023-12-21xyz" );
 		      """,
 		    context );
-		assertThat( ( Boolean ) variables.dereference( Key.of( "aString" ), false ) ).isFalse();
-		assertThat( ( Boolean ) variables.dereference( Key.of( "aNumericString" ), false ) ).isFalse();
-		assertThat( ( Boolean ) variables.dereference( Key.of( "anInteger" ), false ) ).isFalse();
-		assertThat( ( Boolean ) variables.dereference( Key.of( "aFloat" ), false ) ).isFalse();
-		assertThat( ( Boolean ) variables.dereference( Key.of( "aTimespan" ), false ) ).isFalse();
-		assertThat( ( Boolean ) variables.dereference( Key.of( "invalidLeapDay" ), false ) ).isFalse();
-		assertThat( ( Boolean ) variables.dereference( Key.of( "invalidDayNumber" ), false ) ).isFalse();
-		assertThat( ( Boolean ) variables.dereference( Key.of( "gibberishAfterValidDate" ), false ) ).isFalse();
+		assertThat( ( Boolean ) variables.get( Key.of( "aString" ) ) ).isFalse();
+		assertThat( ( Boolean ) variables.get( Key.of( "aNumericString" ) ) ).isFalse();
+		assertThat( ( Boolean ) variables.get( Key.of( "anInteger" ) ) ).isFalse();
+		assertThat( ( Boolean ) variables.get( Key.of( "aFloat" ) ) ).isFalse();
+		assertThat( ( Boolean ) variables.get( Key.of( "aTimespan" ) ) ).isFalse();
+		assertThat( ( Boolean ) variables.get( Key.of( "invalidLeapDay" ) ) ).isFalse();
+		assertThat( ( Boolean ) variables.get( Key.of( "invalidDayNumber" ) ) ).isFalse();
+		assertThat( ( Boolean ) variables.get( Key.of( "gibberishAfterValidDate" ) ) ).isFalse();
 	}
 
 }

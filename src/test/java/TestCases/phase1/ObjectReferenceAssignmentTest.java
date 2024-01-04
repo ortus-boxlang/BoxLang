@@ -74,7 +74,7 @@ public class ObjectReferenceAssignmentTest {
 		    variables.result = "brad";
 		    """,
 		    context );
-		assertThat( variables.dereference( result, false ) ).isEqualTo( "brad" );
+		assertThat( variables.get( result ) ).isEqualTo( "brad" );
 
 		instance.executeSource(
 		    """
@@ -83,7 +83,7 @@ public class ObjectReferenceAssignmentTest {
 
 		       """,
 		    context );
-		assertThat( variables.dereference( result, false ) ).isEqualTo( "wood" );
+		assertThat( variables.get( result ) ).isEqualTo( "wood" );
 
 		instance.executeSource(
 		    """
@@ -91,7 +91,7 @@ public class ObjectReferenceAssignmentTest {
 
 		    """,
 		    context );
-		assertThat( variables.dereference( result, false ) ).isEqualTo( "luis" );
+		assertThat( variables.get( result ) ).isEqualTo( "luis" );
 
 	}
 
@@ -103,7 +103,7 @@ public class ObjectReferenceAssignmentTest {
 		    result = "brad";
 		    """,
 		    context );
-		assertThat( variables.dereference( result, false ) ).isEqualTo( "brad" );
+		assertThat( variables.get( result ) ).isEqualTo( "brad" );
 
 	}
 
@@ -160,7 +160,7 @@ public class ObjectReferenceAssignmentTest {
 		    result = variables.foo;
 		    """,
 		    context );
-		assertThat( variables.dereference( result, false ) ).isEqualTo( "luis" );
+		assertThat( variables.get( result ) ).isEqualTo( "luis" );
 
 		instance.executeSource(
 		    """
@@ -168,7 +168,7 @@ public class ObjectReferenceAssignmentTest {
 		    result = variables['foo'];
 		    """,
 		    context );
-		assertThat( variables.dereference( result, false ) ).isEqualTo( "gavin" );
+		assertThat( variables.get( result ) ).isEqualTo( "gavin" );
 
 	}
 
@@ -179,11 +179,11 @@ public class ObjectReferenceAssignmentTest {
 		    """
 		    import java:ortus.boxlang.runtime.scopes.Key;
 		         str = new java:ortus.boxlang.runtime.types.Struct();
-		      str.assign( Key.of("name"), "Brad" );
+		      str.assign( GetBoxContext(), Key.of("name"), "Brad" );
 		         result = str.name;
 		         """,
 		    context );
-		assertThat( variables.dereference( result, false ) ).isEqualTo( "Brad" );
+		assertThat( variables.get( result ) ).isEqualTo( "Brad" );
 
 	}
 
@@ -196,7 +196,7 @@ public class ObjectReferenceAssignmentTest {
 		    result = foo;
 		     """,
 		    context );
-		assertThat( variables.dereference( result, false ) ).isEqualTo( 5 );
+		assertThat( variables.get( result ) ).isEqualTo( 5 );
 
 	}
 
@@ -209,7 +209,7 @@ public class ObjectReferenceAssignmentTest {
 		    result = variables.ctx.getDefaultAssignmentScope()
 		      """,
 		    context );
-		assertThat( variables.dereference( result, false ) instanceof IScope ).isTrue();
+		assertThat( variables.get( result ) instanceof IScope ).isTrue();
 
 	}
 
@@ -222,7 +222,7 @@ public class ObjectReferenceAssignmentTest {
 		    result = ctx.getDefaultAssignmentScope()
 		      """,
 		    context );
-		assertThat( variables.dereference( result, false ) instanceof IScope ).isTrue();
+		assertThat( variables.get( result ) instanceof IScope ).isTrue();
 	}
 
 	@DisplayName( "safe navigation" )
@@ -233,7 +233,7 @@ public class ObjectReferenceAssignmentTest {
 		    result = variables?.foo?.bar?.baz;
 		    """,
 		    context );
-		assertThat( variables.dereference( result, false ) ).isEqualTo( null );
+		assertThat( variables.get( result ) ).isEqualTo( null );
 
 		Object theResult = instance.executeStatement( "variables?.foo?.bar?.baz", context );
 		assertThat( theResult ).isEqualTo( null );
@@ -253,8 +253,8 @@ public class ObjectReferenceAssignmentTest {
 		    functionBoxContext );
 
 		IScope localScope = functionBoxContext.getScopeNearby( LocalScope.name );
-		assertThat( localScope.dereference( Key.of( "foo" ), false ) ).isEqualTo( 5 );
-		assertThat( localScope.dereference( Key.of( "bar" ), false ) ).isEqualTo( 6 );
+		assertThat( localScope.get( Key.of( "foo" ) ) ).isEqualTo( 5 );
+		assertThat( localScope.get( Key.of( "bar" ) ) ).isEqualTo( 6 );
 
 	}
 
@@ -269,9 +269,9 @@ public class ObjectReferenceAssignmentTest {
 		    var foo.bar = 5;
 		    """,
 		    functionBoxContext );
-		assertThat( localScope.dereference( Key.of( "foo" ), false ) instanceof Struct ).isTrue();
-		Struct foo = ( Struct ) localScope.dereference( Key.of( "foo" ), false );
-		assertThat( foo.dereference( Key.of( "bar" ), false ) ).isEqualTo( 5 );
+		assertThat( localScope.get( Key.of( "foo" ) ) instanceof Struct ).isTrue();
+		Struct foo = ( Struct ) localScope.get( Key.of( "foo" ) );
+		assertThat( foo.get( Key.of( "bar" ) ) ).isEqualTo( 5 );
 
 	}
 
@@ -286,7 +286,7 @@ public class ObjectReferenceAssignmentTest {
 		    var variables = 5;
 		    """,
 		    functionBoxContext );
-		assertThat( localScope.dereference( Key.of( "variables" ), false ) ).isEqualTo( 5 );
+		assertThat( localScope.get( Key.of( "variables" ) ) ).isEqualTo( 5 );
 
 	}
 
@@ -301,9 +301,9 @@ public class ObjectReferenceAssignmentTest {
 		    var variables.bar = 5;
 		    """,
 		    functionBoxContext );
-		assertThat( localScope.dereference( Key.of( "variables" ), false ) instanceof Struct ).isTrue();
-		Struct variables = ( Struct ) localScope.dereference( Key.of( "variables" ), false );
-		assertThat( variables.dereference( Key.of( "bar" ), false ) ).isEqualTo( 5 );
+		assertThat( localScope.get( Key.of( "variables" ) ) instanceof Struct ).isTrue();
+		Struct variables = ( Struct ) localScope.get( Key.of( "variables" ) );
+		assertThat( variables.get( Key.of( "bar" ) ) ).isEqualTo( 5 );
 
 	}
 
@@ -334,9 +334,9 @@ public class ObjectReferenceAssignmentTest {
 		       """,
 		    context );
 
-		assertThat( variables.dereference( Key.of( "foo" ), false ) ).isEqualTo( "wood" );
-		assertThat( variables.dereference( Key.of( "bar" ), false ) ).isEqualTo( "wood" );
-		assertThat( variables.dereference( Key.of( "brad" ), false ) ).isEqualTo( "wood" );
+		assertThat( variables.get( Key.of( "foo" ) ) ).isEqualTo( "wood" );
+		assertThat( variables.get( Key.of( "bar" ) ) ).isEqualTo( "wood" );
+		assertThat( variables.get( Key.of( "brad" ) ) ).isEqualTo( "wood" );
 	}
 
 	@DisplayName( "scoped assignment returns value" )
@@ -348,9 +348,9 @@ public class ObjectReferenceAssignmentTest {
 		       """,
 		    context );
 
-		assertThat( variables.dereference( Key.of( "foo2" ), false ) ).isEqualTo( "wood2" );
-		assertThat( variables.dereference( Key.of( "bar2" ), false ) ).isEqualTo( "wood2" );
-		assertThat( variables.dereference( Key.of( "brad2" ), false ) ).isEqualTo( "wood2" );
+		assertThat( variables.get( Key.of( "foo2" ) ) ).isEqualTo( "wood2" );
+		assertThat( variables.get( Key.of( "bar2" ) ) ).isEqualTo( "wood2" );
+		assertThat( variables.get( Key.of( "brad2" ) ) ).isEqualTo( "wood2" );
 	}
 
 	@DisplayName( "call method on object" )
@@ -388,7 +388,7 @@ public class ObjectReferenceAssignmentTest {
 		    result = nothing == null;
 		    """,
 		    context );
-		assertThat( variables.dereference( result, false ) ).isEqualTo( true );
+		assertThat( variables.get( result ) ).isEqualTo( true );
 
 	}
 

@@ -66,7 +66,7 @@ public class ArrayFindTest {
 		        result = nums.find( 3 );
 		    """,
 		    context );
-		int found = ( int ) variables.dereference( result, false );
+		int found = ( int ) variables.get( result );
 		assertThat( found ).isEqualTo( 3 );
 	}
 
@@ -79,7 +79,7 @@ public class ArrayFindTest {
 		        result = nums.find( 3.0 );
 		    """,
 		    context );
-		int found = ( int ) variables.dereference( result, false );
+		int found = ( int ) variables.get( result );
 		assertThat( found ).isEqualTo( 3 );
 	}
 
@@ -92,7 +92,7 @@ public class ArrayFindTest {
 		        result = nums.find( 3 );
 		    """,
 		    context );
-		int found = ( int ) variables.dereference( result, false );
+		int found = ( int ) variables.get( result );
 		assertThat( found ).isEqualTo( 5 );
 	}
 
@@ -105,7 +105,7 @@ public class ArrayFindTest {
 		        result = nums.find( "bluE" );
 		    """,
 		    context );
-		int found = ( int ) variables.dereference( result, false );
+		int found = ( int ) variables.get( result );
 		assertThat( found ).isEqualTo( 0 );
 	}
 
@@ -118,7 +118,7 @@ public class ArrayFindTest {
 		        result = nums.findNoCase( "bluE" );
 		    """,
 		    context );
-		int found = ( int ) variables.dereference( result, false );
+		int found = ( int ) variables.get( result );
 		assertThat( found ).isEqualTo( 2 );
 	}
 }

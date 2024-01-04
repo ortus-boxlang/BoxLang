@@ -66,7 +66,7 @@ public class IsLocalhostTest {
 		    result = isBinary( toBinary( toBase64( "boxlang" ) ) );
 		    """,
 		    context );
-		assertThat( ( Boolean ) variables.dereference( Key.of( "result" ), false ) ).isTrue();
+		assertThat( ( Boolean ) variables.get( Key.of( "result" ) ) ).isTrue();
 	}
 
 	@DisplayName( "It returns false for non-binary values" )

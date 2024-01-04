@@ -90,7 +90,7 @@ public class BoxBinaryOperationTransformer extends AbstractTransformer {
 		} else if ( operation.getOperator() == BoxBinaryOperator.Elvis ) {
 			template = "Elvis.invoke(${left},${right})";
 		} else if ( operation.getOperator() == BoxBinaryOperator.InstanceOf ) {
-			template = "InstanceOf.invoke(context,${left},${right})";
+			template = "InstanceOf.invoke(${contextName},${left},${right})";
 		} else if ( operation.getOperator() == BoxBinaryOperator.Contains ) {
 			template = "Contains.invoke(${left},${right})";
 		} else if ( operation.getOperator() == BoxBinaryOperator.NotContains ) {

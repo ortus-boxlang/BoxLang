@@ -66,7 +66,7 @@ public class IsBinaryTest {
 		    result = isBinary( toBinary( toBase64( "boxlang" ) ) );
 		    """,
 		    context );
-		assertThat( ( Boolean ) variables.dereference( Key.of( "result" ), false ) ).isTrue();
+		assertThat( ( Boolean ) variables.get( Key.of( "result" ) ) ).isTrue();
 	}
 
 	@DisplayName( "It returns false for non-binary values" )
@@ -82,12 +82,12 @@ public class IsBinaryTest {
 		    aTrue     = isBinary( true );
 		    """,
 		    context );
-		assertThat( ( Boolean ) variables.dereference( Key.of( "aFloat" ), false ) ).isFalse();
-		assertThat( ( Boolean ) variables.dereference( Key.of( "anArray" ), false ) ).isFalse();
-		assertThat( ( Boolean ) variables.dereference( Key.of( "aString" ), false ) ).isFalse();
-		assertThat( ( Boolean ) variables.dereference( Key.of( "aStruct" ), false ) ).isFalse();
-		assertThat( ( Boolean ) variables.dereference( Key.of( "anInteger" ), false ) ).isFalse();
-		assertThat( ( Boolean ) variables.dereference( Key.of( "aTrue" ), false ) ).isFalse();
+		assertThat( ( Boolean ) variables.get( Key.of( "aFloat" ) ) ).isFalse();
+		assertThat( ( Boolean ) variables.get( Key.of( "anArray" ) ) ).isFalse();
+		assertThat( ( Boolean ) variables.get( Key.of( "aString" ) ) ).isFalse();
+		assertThat( ( Boolean ) variables.get( Key.of( "aStruct" ) ) ).isFalse();
+		assertThat( ( Boolean ) variables.get( Key.of( "anInteger" ) ) ).isFalse();
+		assertThat( ( Boolean ) variables.get( Key.of( "aTrue" ) ) ).isFalse();
 	}
 
 }

@@ -87,19 +87,23 @@ public class Phase2Closure extends BoxTemplate {
         IScope       variablesScope = context.getScopeNearby( Key.of( "variables" ) );
 
         variablesScope.assign(
+            context,
             Key.of( "outside" ),
             "Outside scope value"
         );
 
         // Create instance of Closure and set in the variables scope
         variablesScope.assign(
+            context,
             Key.of( "greet" ),
             new Phase2Closure$closure1( context )
         );
 
         variablesScope.assign(
+            context,
             Key.of( "out" ),
             Referencer.get(
+                context,
                 classLocator.load( context, "java:java.lang.System", imports ),
                 Key.of( "out" ),
                 false )
@@ -109,7 +113,7 @@ public class Phase2Closure extends BoxTemplate {
         Referencer.getAndInvoke(
             context,
             // Object
-            variablesScope.dereference( Key.of( "out" ), false ),
+            variablesScope.get( Key.of( "out" ) ),
             // Method
             Key.of( "println" ),
             // Arguments
@@ -123,7 +127,7 @@ public class Phase2Closure extends BoxTemplate {
         Referencer.getAndInvoke(
             context,
             // Object
-            variablesScope.dereference( Key.of( "out" ), false ),
+            variablesScope.get( Key.of( "out" ) ),
             // Method
             Key.of( "println" ),
             // Arguments

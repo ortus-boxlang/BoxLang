@@ -87,13 +87,16 @@ public class Phase1Switch extends BoxTemplate {
 		IScope			variablesScope	= context.getScopeNearby( Key.of( "variables" ) );
 
 		variablesScope.assign(
+		    context,
 		    Key.of( "foo" ),
 		    "bar"
 		);
 
 		variablesScope.assign(
+		    context,
 		    Key.of( "systemOut" ),
 		    Referencer.get(
+		        context,
 		        classLocator.load( context, "java:java.lang.System", imports ),
 		        Key.of( "out" ),
 		        false
@@ -107,7 +110,7 @@ public class Phase1Switch extends BoxTemplate {
 				caseMatched = true;
 				Referencer.getAndInvoke(
 				    context,
-				    variablesScope.dereference( Key.of( "systemOut" ), false ),
+				    variablesScope.get( Key.of( "systemOut" ) ),
 				    Key.of( "println" ),
 				    new Object[] { "case 1" },
 				    false
@@ -118,7 +121,7 @@ public class Phase1Switch extends BoxTemplate {
 				caseMatched = true;
 				Referencer.getAndInvoke(
 				    context,
-				    variablesScope.dereference( Key.of( "systemOut" ), false ),
+				    variablesScope.get( Key.of( "systemOut" ) ),
 				    Key.of( "println" ),
 				    new Object[] { "case 2" },
 				    false
@@ -130,17 +133,17 @@ public class Phase1Switch extends BoxTemplate {
 				caseMatched = true;
 				Referencer.getAndInvoke(
 				    context,
-				    variablesScope.dereference( Key.of( "systemOut" ), false ),
+				    variablesScope.get( Key.of( "systemOut" ) ),
 				    Key.of( "println" ),
 				    new Object[] { "case 3" },
 				    false
 				);
 			}
-			if ( caseMatched || EqualsEquals.invoke( switchValue, variablesScope.dereference( Key.of( "foo" ), false ) ) ) {
+			if ( caseMatched || EqualsEquals.invoke( switchValue, variablesScope.get( Key.of( "foo" ) ) ) ) {
 				caseMatched = true;
 				Referencer.getAndInvoke(
 				    context,
-				    variablesScope.dereference( Key.of( "systemOut" ), false ),
+				    variablesScope.get( Key.of( "systemOut" ) ),
 				    Key.of( "println" ),
 				    new Object[] { "case 4" },
 				    false
@@ -150,7 +153,7 @@ public class Phase1Switch extends BoxTemplate {
 
 			Referencer.getAndInvoke(
 			    context,
-			    variablesScope.dereference( Key.of( "systemOut" ), false ),
+			    variablesScope.get( Key.of( "systemOut" ) ),
 			    Key.of( "println" ),
 			    new Object[] { "default case" },
 			    false

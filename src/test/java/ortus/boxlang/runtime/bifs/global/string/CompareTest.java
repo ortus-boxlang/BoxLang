@@ -65,7 +65,7 @@ public class CompareTest {
 		    result = compare( 'a', 'a' );
 		    """,
 		    context );
-		assertThat( variables.dereference( result, false ) ).isEqualTo( 0 );
+		assertThat( variables.get( result ) ).isEqualTo( 0 );
 	}
 
 	@DisplayName( "It performs a case sensitive compare" )
@@ -76,7 +76,7 @@ public class CompareTest {
 		    result = compare( 'a', 'A' );
 		    """,
 		    context );
-		assertThat( variables.dereference( result, false ) ).isEqualTo( 1 );
+		assertThat( variables.get( result ) ).isEqualTo( 1 );
 	}
 
 	@DisplayName( "It returns -1 if the first string precedes the second string lexicographically" )
@@ -87,7 +87,7 @@ public class CompareTest {
 		    result = compare( 'a', 'c' );
 		    """,
 		    context );
-		assertThat( variables.dereference( result, false ) ).isEqualTo( -1 );
+		assertThat( variables.get( result ) ).isEqualTo( -1 );
 	}
 
 	@DisplayName( "It returns 1 if the second string precedes the first string lexicographically" )
@@ -98,7 +98,7 @@ public class CompareTest {
 		    result = compare( 'b', 'a' );
 		    """,
 		    context );
-		assertThat( variables.dereference( result, false ) ).isEqualTo( 1 );
+		assertThat( variables.get( result ) ).isEqualTo( 1 );
 	}
 
 	@DisplayName( "It compares as a member function" )
@@ -111,8 +111,8 @@ public class CompareTest {
 		    result2 = "b".compare( "a" );
 		       """,
 		    context );
-		assertThat( variables.dereference( result, false ) ).isEqualTo( -1 );
-		assertThat( variables.dereference( Key.of( "result2" ), false ) ).isEqualTo( 1 );
+		assertThat( variables.get( result ) ).isEqualTo( -1 );
+		assertThat( variables.get( Key.of( "result2" ) ) ).isEqualTo( 1 );
 	}
 
 }

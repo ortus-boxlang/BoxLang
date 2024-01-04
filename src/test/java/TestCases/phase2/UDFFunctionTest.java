@@ -78,17 +78,17 @@ public class UDFFunctionTest {
 		    result = foo();
 		    """,
 		    context );
-		assertThat( variables.dereference( result, false ) ).isEqualTo( "my func" );
-		assertThat( variables.dereference( foo, false ) instanceof UDF ).isEqualTo( true );
+		assertThat( variables.get( result ) ).isEqualTo( "my func" );
+		assertThat( variables.get( foo ) instanceof UDF ).isEqualTo( true );
 
-		Struct meta = ( ( UDF ) variables.dereference( foo, false ) ).getMetaData();
+		Struct meta = ( ( UDF ) variables.get( foo ) ).getMetaData();
 
-		assertThat( meta.dereference( Key.of( "name" ), false ) ).isEqualTo( "foo" );
+		assertThat( meta.get( Key.of( "name" ) ) ).isEqualTo( "foo" );
 		// Defaults
-		assertThat( meta.dereference( Key.of( "hint" ), false ) ).isEqualTo( "" );
-		assertThat( meta.dereference( Key.of( "output" ), false ) ).isEqualTo( false );
-		assertThat( meta.dereference( Key.of( "returnType" ), false ) ).isEqualTo( "Any" );
-		assertThat( meta.dereference( Key.of( "access" ), false ) ).isEqualTo( "public" );
+		assertThat( meta.get( Key.of( "hint" ) ) ).isEqualTo( "" );
+		assertThat( meta.get( Key.of( "output" ) ) ).isEqualTo( false );
+		assertThat( meta.get( Key.of( "returnType" ) ) ).isEqualTo( "Any" );
+		assertThat( meta.get( Key.of( "access" ) ) ).isEqualTo( "public" );
 
 	}
 
@@ -105,18 +105,18 @@ public class UDFFunctionTest {
 		      result = foo( 'Brad' );
 		      """,
 		    context );
-		assertThat( variables.dereference( result, false ) instanceof ArgumentsScope ).isEqualTo( true );
-		ArgumentsScope args = ( ArgumentsScope ) variables.dereference( result, false );
+		assertThat( variables.get( result ) instanceof ArgumentsScope ).isEqualTo( true );
+		ArgumentsScope args = ( ArgumentsScope ) variables.get( result );
 
-		assertThat( args.dereference( Key.of( "param1" ), false ) ).isEqualTo( "Brad" );
-		assertThat( args.dereference( Key.of( "param2" ), false ) ).isEqualTo( "param2 default" );
-		assertThat( args.dereference( Key.of( "param3" ), false ) ).isEqualTo( null );
-		assertThat( args.dereference( Key.of( "param4" ), false ) ).isEqualTo( "param4 default" );
+		assertThat( args.get( Key.of( "param1" ) ) ).isEqualTo( "Brad" );
+		assertThat( args.get( Key.of( "param2" ) ) ).isEqualTo( "param2 default" );
+		assertThat( args.get( Key.of( "param3" ) ) ).isEqualTo( null );
+		assertThat( args.get( Key.of( "param4" ) ) ).isEqualTo( "param4 default" );
 
-		assertThat( args.dereference( Key.of( "1" ), false ) ).isEqualTo( "Brad" );
-		assertThat( args.dereference( Key.of( "2" ), false ) ).isEqualTo( "param2 default" );
-		assertThat( args.dereference( Key.of( "3" ), false ) ).isEqualTo( null );
-		assertThat( args.dereference( Key.of( "4" ), false ) ).isEqualTo( "param4 default" );
+		assertThat( args.get( Key.of( "1" ) ) ).isEqualTo( "Brad" );
+		assertThat( args.get( Key.of( "2" ) ) ).isEqualTo( "param2 default" );
+		assertThat( args.get( Key.of( "3" ) ) ).isEqualTo( null );
+		assertThat( args.get( Key.of( "4" ) ) ).isEqualTo( "param4 default" );
 
 	}
 
@@ -132,8 +132,8 @@ public class UDFFunctionTest {
 		    result = foo( 'Brad' );
 		    """,
 		    context );
-		assertThat( variables.dereference( result, false ) ).isEqualTo( "Brad" );
-		assertThat( variables.dereference( foo, false ) instanceof UDF ).isEqualTo( true );
+		assertThat( variables.get( result ) ).isEqualTo( "Brad" );
+		assertThat( variables.get( foo ) instanceof UDF ).isEqualTo( true );
 
 	}
 
@@ -152,8 +152,8 @@ public class UDFFunctionTest {
 		       result = foo( 'Brad' );
 		       """,
 		    context );
-		assertThat( variables.dereference( result, false ) ).isEqualTo( "Brad" );
-		assertThat( variables.dereference( foo, false ) instanceof UDF ).isEqualTo( true );
+		assertThat( variables.get( result ) ).isEqualTo( "Brad" );
+		assertThat( variables.get( foo ) instanceof UDF ).isEqualTo( true );
 
 	}
 
@@ -172,8 +172,8 @@ public class UDFFunctionTest {
 		       result = foo();
 		       """,
 		    context );
-		assertThat( variables.dereference( result, false ) ).isEqualTo( "second" );
-		assertThat( variables.dereference( foo, false ) instanceof UDF ).isEqualTo( true );
+		assertThat( variables.get( result ) ).isEqualTo( "second" );
+		assertThat( variables.get( foo ) instanceof UDF ).isEqualTo( true );
 
 	}
 
@@ -187,17 +187,17 @@ public class UDFFunctionTest {
 		      }
 		          """,
 		    context );
-		UDF				UDFfoo		= ( ( UDF ) variables.dereference( foo, false ) );
+		UDF				UDFfoo		= ( ( UDF ) variables.get( foo ) );
 
 		// Now we test our "new" meta view which breaks out actual UDF meta, javaadoc, and annotations (inline and @)
-		FunctionMeta	$bx			= ( ( FunctionMeta ) Referencer.get( UDFfoo, BoxMeta.key, false ) );
-		Struct			annotations	= ( Struct ) $bx.meta.dereference( Key.of( "annotations" ), false );
+		FunctionMeta	$bx			= ( ( FunctionMeta ) Referencer.get( context, UDFfoo, BoxMeta.key, false ) );
+		Struct			annotations	= ( Struct ) $bx.meta.get( Key.of( "annotations" ) );
 		System.out.println( annotations );
-		assertThat( annotations.dereference( Key.of( "k1" ), false ) ).isEqualTo( "" );
-		assertThat( annotations.dereference( Key.of( "k2" ), false ) ).isEqualTo( "v2" );
-		assertThat( annotations.dereference( Key.of( "k3" ), false ) ).isEqualTo( "" );
-		assertThat( annotations.dereference( Key.of( "k4" ), false ) ).isEqualTo( "v4" );
-		assertThat( annotations.dereference( Key.of( "k5" ), false ) ).isEqualTo( "" );
+		assertThat( annotations.get( Key.of( "k1" ) ) ).isEqualTo( "" );
+		assertThat( annotations.get( Key.of( "k2" ) ) ).isEqualTo( "v2" );
+		assertThat( annotations.get( Key.of( "k3" ) ) ).isEqualTo( "" );
+		assertThat( annotations.get( Key.of( "k4" ) ) ).isEqualTo( "v4" );
+		assertThat( annotations.get( Key.of( "k5" ) ) ).isEqualTo( "" );
 
 	}
 
@@ -223,24 +223,24 @@ public class UDFFunctionTest {
 		         result = foo(5);
 		             """,
 		    context );
-		assertThat( variables.dereference( result, false ) ).isEqualTo( "value" );
-		UDF		UDFfoo	= ( ( UDF ) variables.dereference( foo, false ) );
+		assertThat( variables.get( result ) ).isEqualTo( "value" );
+		UDF		UDFfoo	= ( ( UDF ) variables.get( foo ) );
 		Struct	meta	= UDFfoo.getMetaData();
 
 		// "Legacy" meta view just crams all the annotations into a struct with the "real" UDF metadata
-		assertThat( meta.dereference( Key.of( "name" ), false ) ).isEqualTo( "foo" );
-		assertThat( meta.dereference( Key.of( "hint" ), false ) ).isEqualTo( "my UDF" );
-		assertThat( meta.dereference( Key.of( "output" ), false ) ).isEqualTo( true );
-		assertThat( meta.dereference( Key.of( "brad" ), false ) ).isEqualTo( "wood" );
-		assertThat( meta.dereference( Key.of( "returnType" ), false ) ).isEqualTo( "String" );
-		assertThat( meta.dereference( Key.of( "access" ), false ) ).isEqualTo( "public" );
-		assertThat( meta.dereference( Key.of( "myRealAnnotation" ), false ) ).isEqualTo( "" );
-		assertThat( meta.dereference( Key.of( "anotherAnnotation" ), false ) ).isEqualTo( "brad" );
-		assertThat( meta.dereference( Key.of( "anotherAnnotation2" ), false ) ).isEqualTo( 42 );
-		assertThat( meta.dereference( Key.of( "anotherAnnotation3" ), false ) ).isEqualTo( true );
-		assertThat( meta.dereference( Key.of( "anotherAnnotation4" ), false ) instanceof Array ).isTrue();
-		assertThat( meta.dereference( Key.of( "anotherAnnotation5" ), false ) instanceof Struct ).isTrue();
-		assertThat( meta.dereference( Key.of( "letsGetFunky" ), false ) instanceof Array ).isTrue();
+		assertThat( meta.get( Key.of( "name" ) ) ).isEqualTo( "foo" );
+		assertThat( meta.get( Key.of( "hint" ) ) ).isEqualTo( "my UDF" );
+		assertThat( meta.get( Key.of( "output" ) ) ).isEqualTo( true );
+		assertThat( meta.get( Key.of( "brad" ) ) ).isEqualTo( "wood" );
+		assertThat( meta.get( Key.of( "returnType" ) ) ).isEqualTo( "String" );
+		assertThat( meta.get( Key.of( "access" ) ) ).isEqualTo( "public" );
+		assertThat( meta.get( Key.of( "myRealAnnotation" ) ) ).isEqualTo( "" );
+		assertThat( meta.get( Key.of( "anotherAnnotation" ) ) ).isEqualTo( "brad" );
+		assertThat( meta.get( Key.of( "anotherAnnotation2" ) ) ).isEqualTo( 42 );
+		assertThat( meta.get( Key.of( "anotherAnnotation3" ) ) ).isEqualTo( true );
+		assertThat( meta.get( Key.of( "anotherAnnotation4" ) ) instanceof Array ).isTrue();
+		assertThat( meta.get( Key.of( "anotherAnnotation5" ) ) instanceof Struct ).isTrue();
+		assertThat( meta.get( Key.of( "letsGetFunky" ) ) instanceof Array ).isTrue();
 		Array funkyAnnoationMeta = meta.getAsArray( Key.of( "letsGetFunky" ) );
 		assertThat( funkyAnnoationMeta.size() ).isEqualTo( 5 );
 		assertThat( funkyAnnoationMeta.get( 0 ) ).isEqualTo( "brad" );
@@ -249,35 +249,35 @@ public class UDFFunctionTest {
 		assertThat( funkyAnnoationMeta.get( 3 ) instanceof Array ).isTrue();
 		assertThat( funkyAnnoationMeta.get( 4 ) instanceof Struct ).isTrue();
 
-		Array args = ( ( Array ) meta.dereference( Key.of( "parameters" ), false ) );
+		Array args = ( ( Array ) meta.get( Key.of( "parameters" ) ) );
 		assertThat( args.size() ).isEqualTo( 2 );
 
 		Struct param1 = ( Struct ) args.get( 0 );
-		assertThat( param1.dereference( Key.of( "name" ), false ) ).isEqualTo( "param1" );
-		assertThat( param1.dereference( Key.of( "hint" ), false ) ).isEqualTo( "My param" );
-		assertThat( param1.dereference( Key.of( "required" ), false ) ).isEqualTo( true );
-		assertThat( param1.dereference( Key.of( "type" ), false ) ).isEqualTo( "string" );
+		assertThat( param1.get( Key.of( "name" ) ) ).isEqualTo( "param1" );
+		assertThat( param1.get( Key.of( "hint" ) ) ).isEqualTo( "My param" );
+		assertThat( param1.get( Key.of( "required" ) ) ).isEqualTo( true );
+		assertThat( param1.get( Key.of( "type" ) ) ).isEqualTo( "string" );
 
 		Struct param2 = ( Struct ) args.get( 1 );
-		assertThat( param2.dereference( Key.of( "name" ), false ) ).isEqualTo( "param2" );
-		assertThat( param2.dereference( Key.of( "luis" ), false ) ).isEqualTo( "majano" );
-		assertThat( param2.dereference( Key.of( "hint" ), false ) ).isEqualTo( "" );
-		assertThat( param2.dereference( Key.of( "required" ), false ) ).isEqualTo( false );
-		assertThat( param2.dereference( Key.of( "type" ), false ) ).isEqualTo( "numeric" );
+		assertThat( param2.get( Key.of( "name" ) ) ).isEqualTo( "param2" );
+		assertThat( param2.get( Key.of( "luis" ) ) ).isEqualTo( "majano" );
+		assertThat( param2.get( Key.of( "hint" ) ) ).isEqualTo( "" );
+		assertThat( param2.get( Key.of( "required" ) ) ).isEqualTo( false );
+		assertThat( param2.get( Key.of( "type" ) ) ).isEqualTo( "numeric" );
 
 		// Now we test our "new" meta view which breaks out actual UDF meta, javaadoc, and annotations (inline and @)
-		FunctionMeta	$bx			= ( ( FunctionMeta ) Referencer.get( UDFfoo, BoxMeta.key, false ) );
-		Struct			annotations	= ( Struct ) $bx.meta.dereference( Key.of( "annotations" ), false );
-		assertThat( annotations.dereference( Key.of( "hint" ), false ) ).isEqualTo( "my UDF" );
-		assertThat( annotations.dereference( Key.of( "output" ), false ) ).isEqualTo( true );
-		assertThat( annotations.dereference( Key.of( "brad" ), false ) ).isEqualTo( "wood" );
-		assertThat( annotations.dereference( Key.of( "myRealAnnotation" ), false ) ).isEqualTo( "" );
-		assertThat( annotations.dereference( Key.of( "anotherAnnotation" ), false ) ).isEqualTo( "brad" );
-		assertThat( annotations.dereference( Key.of( "anotherAnnotation2" ), false ) ).isEqualTo( 42 );
-		assertThat( annotations.dereference( Key.of( "anotherAnnotation3" ), false ) ).isEqualTo( true );
-		assertThat( annotations.dereference( Key.of( "anotherAnnotation4" ), false ) instanceof Array ).isTrue();
-		assertThat( annotations.dereference( Key.of( "anotherAnnotation5" ), false ) instanceof Struct ).isTrue();
-		assertThat( annotations.dereference( Key.of( "letsGetFunky" ), false ) instanceof Array ).isTrue();
+		FunctionMeta	$bx			= ( ( FunctionMeta ) Referencer.get( context, UDFfoo, BoxMeta.key, false ) );
+		Struct			annotations	= ( Struct ) $bx.meta.get( Key.of( "annotations" ) );
+		assertThat( annotations.get( Key.of( "hint" ) ) ).isEqualTo( "my UDF" );
+		assertThat( annotations.get( Key.of( "output" ) ) ).isEqualTo( true );
+		assertThat( annotations.get( Key.of( "brad" ) ) ).isEqualTo( "wood" );
+		assertThat( annotations.get( Key.of( "myRealAnnotation" ) ) ).isEqualTo( "" );
+		assertThat( annotations.get( Key.of( "anotherAnnotation" ) ) ).isEqualTo( "brad" );
+		assertThat( annotations.get( Key.of( "anotherAnnotation2" ) ) ).isEqualTo( 42 );
+		assertThat( annotations.get( Key.of( "anotherAnnotation3" ) ) ).isEqualTo( true );
+		assertThat( annotations.get( Key.of( "anotherAnnotation4" ) ) instanceof Array ).isTrue();
+		assertThat( annotations.get( Key.of( "anotherAnnotation5" ) ) instanceof Struct ).isTrue();
+		assertThat( annotations.get( Key.of( "letsGetFunky" ) ) instanceof Array ).isTrue();
 		Array funkyAnnoation = annotations.getAsArray( Key.of( "letsGetFunky" ) );
 		assertThat( funkyAnnoation.size() ).isEqualTo( 5 );
 		assertThat( funkyAnnoation.get( 0 ) ).isEqualTo( "brad" );
@@ -286,11 +286,11 @@ public class UDFFunctionTest {
 		assertThat( funkyAnnoation.get( 3 ) instanceof Array ).isTrue();
 		assertThat( funkyAnnoation.get( 4 ) instanceof Struct ).isTrue();
 
-		Array	params				= ( Array ) $bx.meta.dereference( Key.of( "parameters" ), false );
-		Struct	param1Annotations	= ( Struct ) Referencer.get( params.get( 0 ), Key.of( "annotations" ), false );
-		assertThat( param1Annotations.dereference( Key.of( "hint" ), false ) ).isEqualTo( "My param" );
-		Struct param2Annotations = ( Struct ) Referencer.get( params.get( 1 ), Key.of( "annotations" ), false );
-		assertThat( param2Annotations.dereference( Key.of( "luis" ), false ) ).isEqualTo( "majano" );
+		Array	params				= ( Array ) $bx.meta.get( Key.of( "parameters" ) );
+		Struct	param1Annotations	= ( Struct ) Referencer.get( context, params.get( 0 ), Key.of( "annotations" ), false );
+		assertThat( param1Annotations.get( Key.of( "hint" ) ) ).isEqualTo( "My param" );
+		Struct param2Annotations = ( Struct ) Referencer.get( context, params.get( 1 ), Key.of( "annotations" ), false );
+		assertThat( param2Annotations.get( Key.of( "luis" ) ) ).isEqualTo( "majano" );
 	}
 
 	@DisplayName( "UDF metadata javadoc" )
@@ -317,41 +317,41 @@ public class UDFFunctionTest {
 		    result = foo();
 		         """,
 		    context );
-		assertThat( variables.dereference( result, false ) ).isEqualTo( "value" );
-		UDF		UDFfoo	= ( ( UDF ) variables.dereference( foo, false ) );
+		assertThat( variables.get( result ) ).isEqualTo( "value" );
+		UDF		UDFfoo	= ( ( UDF ) variables.get( foo ) );
 		Struct	meta	= UDFfoo.getMetaData();
 
-		assertThat( meta.dereference( Key.of( "name" ), false ) ).isEqualTo( "foo" );
-		assertThat( meta.dereference( Key.of( "output" ), false ) ).isEqualTo( true );
-		assertThat( meta.dereference( Key.of( "brad" ), false ) ).isEqualTo( "wood" );
-		assertThat( meta.dereference( Key.of( "inject" ), false ) ).isEqualTo( "" );
-		assertThat( meta.dereference( Key.of( "returnType" ), false ) ).isEqualTo( "String" );
-		assertThat( meta.dereference( Key.of( "access" ), false ) ).isEqualTo( "public" );
+		assertThat( meta.get( Key.of( "name" ) ) ).isEqualTo( "foo" );
+		assertThat( meta.get( Key.of( "output" ) ) ).isEqualTo( true );
+		assertThat( meta.get( Key.of( "brad" ) ) ).isEqualTo( "wood" );
+		assertThat( meta.get( Key.of( "inject" ) ) ).isEqualTo( "" );
+		assertThat( meta.get( Key.of( "returnType" ) ) ).isEqualTo( "String" );
+		assertThat( meta.get( Key.of( "access" ) ) ).isEqualTo( "public" );
 
-		Array args = ( ( Array ) meta.dereference( Key.of( "parameters" ), false ) );
+		Array args = ( ( Array ) meta.get( Key.of( "parameters" ) ) );
 		assertThat( args.size() ).isEqualTo( 2 );
 
 		Struct param1 = ( Struct ) args.get( 0 );
-		assertThat( param1.dereference( Key.of( "name" ), false ) ).isEqualTo( "param1" );
-		assertThat( param1.dereference( Key.of( "required" ), false ) ).isEqualTo( false );
-		assertThat( param1.dereference( Key.of( "type" ), false ) ).isEqualTo( "Any" );
+		assertThat( param1.get( Key.of( "name" ) ) ).isEqualTo( "param1" );
+		assertThat( param1.get( Key.of( "required" ) ) ).isEqualTo( false );
+		assertThat( param1.get( Key.of( "type" ) ) ).isEqualTo( "Any" );
 
 		Struct param2 = ( Struct ) args.get( 1 );
-		assertThat( param2.dereference( Key.of( "name" ), false ) ).isEqualTo( "param2" );
+		assertThat( param2.get( Key.of( "name" ) ) ).isEqualTo( "param2" );
 		assertThat( param2.getAsString( Key.of( "hint" ) ).trim() ).isEqualTo( "param2 hint" );
-		assertThat( param2.dereference( Key.of( "required" ), false ) ).isEqualTo( false );
+		assertThat( param2.get( Key.of( "required" ) ) ).isEqualTo( false );
 
-		FunctionMeta	$bx				= ( ( FunctionMeta ) Referencer.get( UDFfoo, BoxMeta.key, false ) );
-		Struct			documentation	= ( Struct ) $bx.meta.dereference( Key.of( "documentation" ), false );
-		assertThat( documentation.dereference( Key.of( "hint" ), false ) ).isEqualTo( "my UDF also more hint here" );
-		assertThat( documentation.dereference( Key.of( "returns" ), false ) ).isEqualTo( "Pure Gold" );
+		FunctionMeta	$bx				= ( ( FunctionMeta ) Referencer.get( context, UDFfoo, BoxMeta.key, false ) );
+		Struct			documentation	= ( Struct ) $bx.meta.get( Key.of( "documentation" ) );
+		assertThat( documentation.get( Key.of( "hint" ) ) ).isEqualTo( "my UDF also more hint here" );
+		assertThat( documentation.get( Key.of( "returns" ) ) ).isEqualTo( "Pure Gold" );
 
-		Array	params				= ( Array ) $bx.meta.dereference( Key.of( "parameters" ), false );
+		Array	params				= ( Array ) $bx.meta.get( Key.of( "parameters" ) );
 
-		Struct	param1Documentation	= ( Struct ) Referencer.get( params.get( 0 ), Key.of( "documentation" ), false );
+		Struct	param1Documentation	= ( Struct ) Referencer.get( context, params.get( 0 ), Key.of( "documentation" ), false );
 		assertThat( param1Documentation.getAsString( Key.of( "hint" ) ).trim() ).isEqualTo( "My param" );
 
-		Struct param2Documentation = ( Struct ) Referencer.get( params.get( 1 ), Key.of( "documentation" ), false );
+		Struct param2Documentation = ( Struct ) Referencer.get( context, params.get( 1 ), Key.of( "documentation" ), false );
 		assertThat( param2Documentation.getAsString( Key.of( "hint" ) ).trim() ).isEqualTo( "param2 hint" );
 		assertThat( param2Documentation.getAsString( Key.of( "luis" ) ).trim() ).isEqualTo( "majano is spread across two lines" );
 
@@ -376,7 +376,7 @@ public class UDFFunctionTest {
 		       """,
 		    context );
 
-		ArgumentsScope argsScope = ( ArgumentsScope ) variables.dereference( Key.of( "result" ), false );
+		ArgumentsScope argsScope = ( ArgumentsScope ) variables.get( Key.of( "result" ) );
 		assertThat( argsScope.size() ).isEqualTo( 4 );
 		Object[] args = argsScope.asNativeArray();
 		assertThat( args[ 0 ] ).isEqualTo( "value1" );
@@ -407,7 +407,7 @@ public class UDFFunctionTest {
 		       """,
 		    context );
 
-		ArgumentsScope argsScope = ( ArgumentsScope ) variables.dereference( Key.of( "result" ), false );
+		ArgumentsScope argsScope = ( ArgumentsScope ) variables.get( Key.of( "result" ) );
 		assertThat( argsScope.size() ).isEqualTo( 4 );
 		Object[] args = argsScope.asNativeArray();
 		assertThat( args[ 0 ] ).isEqualTo( "value1" );
@@ -439,7 +439,7 @@ public class UDFFunctionTest {
 		       """,
 		    context );
 
-		ArgumentsScope argsScope = ( ArgumentsScope ) variables.dereference( Key.of( "result" ), false );
+		ArgumentsScope argsScope = ( ArgumentsScope ) variables.get( Key.of( "result" ) );
 		assertThat( argsScope.size() ).isEqualTo( 4 );
 		Object[] args = argsScope.asNativeArray();
 		assertThat( args[ 0 ] ).isEqualTo( "value1" );
@@ -477,7 +477,7 @@ public class UDFFunctionTest {
 		      """,
 		    context );
 
-		ArgumentsScope argsScope = ( ArgumentsScope ) variables.dereference( Key.of( "result" ), false );
+		ArgumentsScope argsScope = ( ArgumentsScope ) variables.get( Key.of( "result" ) );
 		assertThat( argsScope.size() ).isEqualTo( 4 );
 		Object[] args = argsScope.asNativeArray();
 		assertThat( args[ 0 ] ).isEqualTo( "value1" );

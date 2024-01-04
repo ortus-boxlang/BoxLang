@@ -148,6 +148,7 @@ public class Phase2Closure$closure1 extends Closure {
 	public Object _invoke( FunctionBoxContext context ) {
 
 		context.getScopeNearby( LocalScope.name ).assign(
+		    context,
 		    Key.of( "Greeting" ),
 		    Concat.invoke(
 		        "Hello ",

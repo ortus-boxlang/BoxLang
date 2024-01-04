@@ -56,10 +56,10 @@ public class ArrayToList extends BIF {
 	 * @argument.delimiter The character to use as a separator
 	 */
 	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
-		Array actualArray = ArrayCaster.cast( arguments.dereference( Key.array, false ) );
+		Array actualArray = ArrayCaster.cast( arguments.get( Key.array ) );
 
 		return actualArray.stream()
 		    .map( StringCaster::cast )
-		    .collect( Collectors.joining( ( ( String ) arguments.dereference( Key.delimiter, false ) ) ) );
+		    .collect( Collectors.joining( ( arguments.getAsString( Key.delimiter ) ) ) );
 	}
 }

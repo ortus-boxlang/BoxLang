@@ -25,6 +25,8 @@ import java.util.Map;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
+import ortus.boxlang.runtime.context.IBoxContext;
+import ortus.boxlang.runtime.context.ScriptingBoxContext;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
@@ -34,12 +36,14 @@ import ortus.boxlang.runtime.types.exceptions.KeyNotFoundException;
 
 public class ReferencerTest {
 
+	private IBoxContext context = new ScriptingBoxContext();
+
 	@DisplayName( "It can assign to a scope" )
 	@Test
 	void testItCanAssignToAScope() {
 		Key		key				= Key.of( "brad" );
 		IScope	variablesScope	= new VariablesScope();
-		Referencer.set( variablesScope, key, "Wood" );
+		Referencer.set( context, variablesScope, key, "Wood" );
 		assertThat( variablesScope.get( key ) ).isEqualTo( "Wood" );
 		assertThat( variablesScope.get( Key.of( "BRAD" ) ) ).isEqualTo( "Wood" );
 	}
@@ -50,8 +54,8 @@ public class ReferencerTest {
 		Key		key				= Key.of( "brad" );
 		IScope	variablesScope	= new VariablesScope();
 		variablesScope.put( key, "Wood" );
-		assertThat( Referencer.get( variablesScope, key, false ) ).isEqualTo( "Wood" );
-		assertThrows( KeyNotFoundException.class, () -> Referencer.get( variablesScope, Key.of( "nonExistent" ), false ) );
+		assertThat( Referencer.get( context, variablesScope, key, false ) ).isEqualTo( "Wood" );
+		assertThrows( KeyNotFoundException.class, () -> Referencer.get( context, variablesScope, Key.of( "nonExistent" ), false ) );
 	}
 
 	@DisplayName( "It can safely dereference from a scope" )
@@ -60,9 +64,9 @@ public class ReferencerTest {
 		Key		key				= Key.of( "brad" );
 		IScope	variablesScope	= new VariablesScope();
 		variablesScope.put( key, "Wood" );
-		assertThat( Referencer.get( variablesScope, key, true ) ).isEqualTo( "Wood" );
-		assertThat( Referencer.get( variablesScope, Key.of( "nonExistent" ), true ) ).isNull();
-		assertThat( Referencer.get( null, Key.of( "doesn't matter" ), true ) ).isNull();
+		assertThat( Referencer.get( context, variablesScope, key, true ) ).isEqualTo( "Wood" );
+		assertThat( Referencer.get( context, variablesScope, Key.of( "nonExistent" ), true ) ).isNull();
+		assertThat( Referencer.get( context, null, Key.of( "doesn't matter" ), true ) ).isNull();
 	}
 
 	@DisplayName( "It can assign to a struct" )
@@ -70,7 +74,7 @@ public class ReferencerTest {
 	void testItCanAssignToAStruct() {
 		Key		key		= Key.of( "brad" );
 		Struct	struct	= new Struct();
-		Referencer.set( struct, key, "Wood" );
+		Referencer.set( context, struct, key, "Wood" );
 		assertThat( struct.get( key ) ).isEqualTo( "Wood" );
 		assertThat( struct.get( Key.of( "BRAD" ) ) ).isEqualTo( "Wood" );
 	}
@@ -84,12 +88,12 @@ public class ReferencerTest {
 		Key		bar		= Key.of( "bar" );
 		Key		baz		= Key.of( "baz" );
 
-		Referencer.setDeep( scope, true, foo, bar, baz );
+		Referencer.setDeep( context, scope, true, foo, bar, baz );
 
 		assertThat( scope.get( foo ) instanceof Map ).isTrue();
-		assertThat( ( ( Struct ) scope.dereference( foo, false ) ).dereference( bar, false ) instanceof Map ).isTrue();
+		assertThat( ( ( Struct ) scope.get( foo ) ).get( bar ) instanceof Map ).isTrue();
 		assertThat(
-		    ( ( Struct ) ( ( Struct ) scope.dereference( foo, false ) ).dereference( bar, false ) ).dereference( baz, false ) )
+		    ( ( Struct ) ( ( Struct ) scope.get( foo ) ).get( bar ) ).get( baz ) )
 		    .isEqualTo( true );
 	}
 
@@ -101,14 +105,14 @@ public class ReferencerTest {
 		Key		foo		= Key.of( "foo" );
 		Key		bar		= Key.of( "1" );
 		Key		baz		= Key.of( "baz" );
-		scope.assign( foo, new Array() );
+		scope.assign( context, foo, new Array() );
 
-		Referencer.setDeep( scope, true, foo, bar, baz );
+		Referencer.setDeep( context, scope, true, foo, bar, baz );
 
 		assertThat( scope.get( foo ) instanceof Array ).isTrue();
-		assertThat( ( ( Array ) scope.dereference( foo, false ) ).dereference( bar, false ) instanceof Map ).isTrue();
+		assertThat( ( ( Array ) scope.get( foo ) ).dereference( context, bar, false ) instanceof Map ).isTrue();
 		assertThat(
-		    ( ( Struct ) ( ( Array ) scope.dereference( foo, false ) ).dereference( bar, false ) ).dereference( baz, false ) )
+		    ( ( Struct ) ( ( Array ) scope.get( foo ) ).dereference( context, bar, false ) ).get( baz ) )
 		    .isEqualTo( true );
 	}
 
@@ -118,8 +122,8 @@ public class ReferencerTest {
 		Key		key		= Key.of( "brad" );
 		Struct	struct	= new Struct();
 		struct.put( key, "Wood" );
-		assertThat( Referencer.get( struct, key, false ) ).isEqualTo( "Wood" );
-		assertThrows( KeyNotFoundException.class, () -> Referencer.get( struct, Key.of( "nonExistent" ), false ) );
+		assertThat( Referencer.get( context, struct, key, false ) ).isEqualTo( "Wood" );
+		assertThrows( KeyNotFoundException.class, () -> Referencer.get( context, struct, Key.of( "nonExistent" ), false ) );
 	}
 
 	@DisplayName( "It can safely dereference from a struct" )
@@ -128,9 +132,9 @@ public class ReferencerTest {
 		Key		key		= Key.of( "brad" );
 		Struct	struct	= new Struct();
 		struct.put( key, "Wood" );
-		assertThat( Referencer.get( struct, key, true ) ).isEqualTo( "Wood" );
-		assertThat( Referencer.get( struct, Key.of( "nonExistent" ), true ) ).isNull();
-		assertThat( Referencer.get( null, Key.of( "doesn't matter" ), true ) ).isNull();
+		assertThat( Referencer.get( context, struct, key, true ) ).isEqualTo( "Wood" );
+		assertThat( Referencer.get( context, struct, Key.of( "nonExistent" ), true ) ).isNull();
+		assertThat( Referencer.get( context, null, Key.of( "doesn't matter" ), true ) ).isNull();
 	}
 
 }

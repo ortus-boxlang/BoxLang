@@ -22,6 +22,7 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.TreeMap;
 
+import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.dynamic.casters.KeyCaster;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.NullValue;
@@ -286,7 +287,7 @@ public class ImmutableStruct extends Struct implements IImmutable {
 	 * @param value The value to assign
 	 */
 	@Override
-	public Object assign( Key key, Object value ) {
+	public Object assign( IBoxContext context, Key key, Object value ) {
 		throw new UnmodifiableException( "Cannot modify immutable Struct" );
 	}
 

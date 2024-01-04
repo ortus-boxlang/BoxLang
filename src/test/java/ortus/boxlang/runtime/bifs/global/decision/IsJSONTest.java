@@ -72,12 +72,12 @@ public class IsJSONTest {
 		    aQuotedInteger         = isJSON( '"456"' );
 		      """,
 		    context );
-		assertThat( ( Boolean ) variables.dereference( Key.of( "anEmptyStruct" ), false ) ).isTrue();
-		assertThat( ( Boolean ) variables.dereference( Key.of( "anEmptyArray" ), false ) ).isTrue();
-		assertThat( ( Boolean ) variables.dereference( Key.of( "anArrayWithMixedValues" ), false ) ).isTrue();
-		assertThat( ( Boolean ) variables.dereference( Key.of( "aPopulatedStruct" ), false ) ).isTrue();
-		assertThat( ( Boolean ) variables.dereference( Key.of( "anInteger" ), false ) ).isTrue();
-		assertThat( ( Boolean ) variables.dereference( Key.of( "aQuotedInteger" ), false ) ).isTrue();
+		assertThat( ( Boolean ) variables.get( Key.of( "anEmptyStruct" ) ) ).isTrue();
+		assertThat( ( Boolean ) variables.get( Key.of( "anEmptyArray" ) ) ).isTrue();
+		assertThat( ( Boolean ) variables.get( Key.of( "anArrayWithMixedValues" ) ) ).isTrue();
+		assertThat( ( Boolean ) variables.get( Key.of( "aPopulatedStruct" ) ) ).isTrue();
+		assertThat( ( Boolean ) variables.get( Key.of( "anInteger" ) ) ).isTrue();
+		assertThat( ( Boolean ) variables.get( Key.of( "aQuotedInteger" ) ) ).isTrue();
 	}
 
 	@DisplayName( "It returns false for non-JSON values" )
@@ -96,12 +96,12 @@ public class IsJSONTest {
 		    aStructWithSingleQuotedKeys = isJSON( '[ { ''a'' : ''123'' } ]' );
 		      """,
 		    context );
-		assertThat( ( Boolean ) variables.dereference( Key.of( "anEmptyString" ), false ) ).isFalse();
-		assertThat( ( Boolean ) variables.dereference( Key.of( "anUnquotedStringValue" ), false ) ).isFalse();
-		assertThat( ( Boolean ) variables.dereference( Key.of( "aStructWithUnquotedKeys" ), false ) ).isFalse();
-		assertThat( ( Boolean ) variables.dereference( Key.of( "anArrayWithTrailingComma" ), false ) ).isFalse();
-		assertThat( ( Boolean ) variables.dereference( Key.of( "anArrayWithAFloat" ), false ) ).isFalse();
-		assertThat( ( Boolean ) variables.dereference( Key.of( "aStructWithSingleQuotedKeys" ), false ) ).isFalse();
+		assertThat( ( Boolean ) variables.get( Key.of( "anEmptyString" ) ) ).isFalse();
+		assertThat( ( Boolean ) variables.get( Key.of( "anUnquotedStringValue" ) ) ).isFalse();
+		assertThat( ( Boolean ) variables.get( Key.of( "aStructWithUnquotedKeys" ) ) ).isFalse();
+		assertThat( ( Boolean ) variables.get( Key.of( "anArrayWithTrailingComma" ) ) ).isFalse();
+		assertThat( ( Boolean ) variables.get( Key.of( "anArrayWithAFloat" ) ) ).isFalse();
+		assertThat( ( Boolean ) variables.get( Key.of( "aStructWithSingleQuotedKeys" ) ) ).isFalse();
 	}
 
 	// For future reference when building deserializeJSON():

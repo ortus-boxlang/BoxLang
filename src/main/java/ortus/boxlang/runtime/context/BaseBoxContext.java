@@ -18,6 +18,7 @@
 package ortus.boxlang.runtime.context;
 
 import java.util.ArrayDeque;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -33,6 +34,7 @@ import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.services.FunctionService;
 import ortus.boxlang.runtime.types.Function;
+import ortus.boxlang.runtime.types.Query;
 import ortus.boxlang.runtime.types.QueryColumn;
 import ortus.boxlang.runtime.types.UDF;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
@@ -59,6 +61,8 @@ public class BaseBoxContext implements IBoxContext {
 	 * A way to discover the current executing template
 	 */
 	protected ArrayDeque<ITemplateRunnable>	templates	= new ArrayDeque<>();
+
+	protected LinkedHashMap<Query, Integer>	queryLoops	= new LinkedHashMap<Query, Integer>();
 
 	/**
 	 * Creates a new execution context with a bounded execution template and parent context
@@ -473,10 +477,52 @@ public class BaseBoxContext implements IBoxContext {
 	 */
 	public Object unwrapQueryColumn( Object value ) {
 		if ( value instanceof QueryColumn col ) {
-			// TODO: get row index from context based on if in cfloop/cfoutput query="..."
-			return col.getCell( 0 );
+			return col.getCell( getQueryRow( col.getQuery() ) );
 		}
 		return value;
+	}
+
+	/**
+	 * Get the current query row
+	 * 
+	 * @param query The query to get the row from
+	 * 
+	 * @return The current row
+	 */
+	public int getQueryRow( Query query ) {
+		// If we're not looping over this query, then we're on the first row
+		if ( !queryLoops.containsKey( query ) ) {
+			return 0;
+		}
+		return queryLoops.get( query );
+
+	}
+
+	/**
+	 * Register a query loop
+	 * 
+	 * @param query The query to register
+	 */
+	public void registerQueryLoop( Query query ) {
+		queryLoops.put( query, 0 );
+	}
+
+	/**
+	 * Unregister a query loop
+	 * 
+	 * @param query The query to unregister
+	 */
+	public void unregisterQueryLoop( Query query ) {
+		queryLoops.remove( query );
+	}
+
+	/**
+	 * Increment the query loop
+	 * 
+	 * @param query The query to increment
+	 */
+	public void incrementQueryLoop( Query query ) {
+		queryLoops.put( query, queryLoops.get( query ) + 1 );
 	}
 
 }

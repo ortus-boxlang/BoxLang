@@ -68,8 +68,8 @@ public class IsArrayTest {
 		    isTwoDimensionArray = isArray( [ [ 1, 2, "3" ], [ "abc" ] ] );
 		    """,
 		    context );
-		assertThat( ( Boolean ) variables.dereference( Key.of( "isEmptyArray" ), false ) ).isTrue();
-		assertThat( ( Boolean ) variables.dereference( Key.of( "isSingleDimensionArray" ), false ) ).isTrue();
+		assertThat( ( Boolean ) variables.get( Key.of( "isEmptyArray" ) ) ).isTrue();
+		assertThat( ( Boolean ) variables.get( Key.of( "isSingleDimensionArray" ) ) ).isTrue();
 	}
 
 	@DisplayName( "It returns false for non-arrays" )
@@ -83,10 +83,10 @@ public class IsArrayTest {
 		    anInteger = isArray( 123 );
 		    """,
 		    context );
-		assertThat( ( Boolean ) variables.dereference( Key.of( "aString" ), false ) ).isFalse();
-		assertThat( ( Boolean ) variables.dereference( Key.of( "aStruct" ), false ) ).isFalse();
-		assertThat( ( Boolean ) variables.dereference( Key.of( "anOrderedStruct" ), false ) ).isFalse();
-		assertThat( ( Boolean ) variables.dereference( Key.of( "anInteger" ), false ) ).isFalse();
+		assertThat( ( Boolean ) variables.get( Key.of( "aString" ) ) ).isFalse();
+		assertThat( ( Boolean ) variables.get( Key.of( "aStruct" ) ) ).isFalse();
+		assertThat( ( Boolean ) variables.get( Key.of( "anOrderedStruct" ) ) ).isFalse();
+		assertThat( ( Boolean ) variables.get( Key.of( "anInteger" ) ) ).isFalse();
 	}
 
 	@DisplayName( "It supports the dimension argument" )
@@ -99,9 +99,9 @@ public class IsArrayTest {
 		    isThreeDimensionArray = isArray( [ 1, 2 ], 3 );
 		       """,
 		    context );
-		assertThat( ( Boolean ) variables.dereference( Key.of( "isSingleDimensionArray" ), false ) ).isTrue();
-		assertThat( ( Boolean ) variables.dereference( Key.of( "isTwoDimensionArray" ), false ) ).isTrue();
-		assertThat( ( Boolean ) variables.dereference( Key.of( "isThreeDimensionArray" ), false ) ).isFalse();
+		assertThat( ( Boolean ) variables.get( Key.of( "isSingleDimensionArray" ) ) ).isTrue();
+		assertThat( ( Boolean ) variables.get( Key.of( "isTwoDimensionArray" ) ) ).isTrue();
+		assertThat( ( Boolean ) variables.get( Key.of( "isThreeDimensionArray" ) ) ).isFalse();
 	}
 
 }

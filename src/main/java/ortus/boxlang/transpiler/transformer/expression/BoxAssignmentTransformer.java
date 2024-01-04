@@ -129,12 +129,13 @@ public class BoxAssignmentTransformer extends AbstractTransformer {
 
 		values.put( "accessKeys", accessKeys.stream().map( it -> it.toString() ).collect( Collectors.joining( "," ) ) );
 		template = """
-		                          Referencer.setDeep(
+		                              Referencer.setDeep(
+		           ${contextName},
 		           ${furthestLeft},
 		           ${right},
 		           ${accessKeys}
 		           )
-		                """;
+		                    """;
 
 		Node javaExpr = parseExpression( template, values );
 		logger.info( sourceText + " -> " + javaExpr.toString() );
@@ -191,12 +192,12 @@ public class BoxAssignmentTransformer extends AbstractTransformer {
 	private String getMethodCallTemplate( BoxAssignment assignment ) {
 		BoxAssignmentOperator operator = assignment.getOp();
 		return switch ( operator ) {
-			case PlusEqual -> "Plus.invoke( ${obj}, ${accessKey}, ${right} )";
-			case MinusEqual -> "Minus.invoke( ${obj}, ${accessKey}, ${right} )";
-			case StarEqual -> "Multiply.invoke( ${obj}, ${accessKey}, ${right} )";
-			case SlashEqual -> "Divide.invoke( ${obj}, ${accessKey}, ${right} )";
-			case ModEqual -> "Modulus.invoke( ${obj}, ${accessKey}, ${right} )";
-			case ConcatEqual -> "Concat.invoke( ${obj}, ${accessKey}, ${right} )";
+			case PlusEqual -> "Plus.invoke( ${contextName}, ${obj}, ${accessKey}, ${right} )";
+			case MinusEqual -> "Minus.invoke( ${contextName}, ${obj}, ${accessKey}, ${right} )";
+			case StarEqual -> "Multiply.invoke( ${contextName}, ${obj}, ${accessKey}, ${right} )";
+			case SlashEqual -> "Divide.invoke( ${contextName}, ${obj}, ${accessKey}, ${right} )";
+			case ModEqual -> "Modulus.invoke( ${contextName}, ${obj}, ${accessKey}, ${right} )";
+			case ConcatEqual -> "Concat.invoke( ${contextName}, ${obj}, ${accessKey}, ${right} )";
 			default -> throw new ExpressionException( "Unknown assingment operator " + operator.toString(), assignment.getPosition(),
 			    assignment.getSourceText() );
 		};

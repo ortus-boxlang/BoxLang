@@ -22,11 +22,15 @@ import static com.google.common.truth.Truth.assertThat;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
+import ortus.boxlang.runtime.context.IBoxContext;
+import ortus.boxlang.runtime.context.ScriptingBoxContext;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
 
 public class PlusTest {
+
+	private IBoxContext context = new ScriptingBoxContext();
 
 	@DisplayName( "It can add numbers" )
 	@Test
@@ -47,7 +51,7 @@ public class PlusTest {
 	void testItCanCompountAdd() {
 		IScope scope = new VariablesScope();
 		scope.put( Key.of( "i" ), 4 );
-		assertThat( Plus.invoke( scope, Key.of( "i" ), 2 ) ).isEqualTo( 6 );
+		assertThat( Plus.invoke( context, scope, Key.of( "i" ), 2 ) ).isEqualTo( 6 );
 		assertThat( scope.get( Key.of( "i" ) ) ).isEqualTo( 6 );
 	}
 

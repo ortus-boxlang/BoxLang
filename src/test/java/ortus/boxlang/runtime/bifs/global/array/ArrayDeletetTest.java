@@ -90,7 +90,7 @@ public class ArrayDeletetTest {
 		    result = arr.Delete( 'b' );
 		    """,
 		    context );
-		assertThat( variables.dereference( result, false ) ).isEqualTo( true );
+		assertThat( variables.get( result ) ).isEqualTo( true );
 		assertThat( variables.getAsArray( arr ) ).hasSize( 2 );
 
 		instance.executeSource(
@@ -99,7 +99,7 @@ public class ArrayDeletetTest {
 		    result = arr.Delete( 'B' );
 		    """,
 		    context );
-		assertThat( variables.dereference( result, false ) ).isEqualTo( false );
+		assertThat( variables.get( result ) ).isEqualTo( false );
 		assertThat( variables.getAsArray( arr ) ).hasSize( 3 );
 	}
 }

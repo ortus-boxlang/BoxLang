@@ -329,6 +329,16 @@ public class Query implements IType, IReferenceable, Collection<Struct> {
 		}
 	}
 
+	/**
+	 * Validate that a row index is within bounds
+	 * Throw exception if not
+	 * 
+	 * @param index row index, 0-based
+	 */
+	public int getRowFromContext( IBoxContext context ) {
+		return context.getQueryRow( this );
+	}
+
 	/***************************
 	 * Collection implementation
 	 ****************************/
@@ -420,7 +430,7 @@ public class Query implements IType, IReferenceable, Collection<Struct> {
 	 ****************************/
 
 	@Override
-	public Object dereference( Key name, Boolean safe ) {
+	public Object dereference( IBoxContext context, Key name, Boolean safe ) {
 
 		// Special check for $bx
 		if ( name.equals( BoxMeta.key ) ) {
@@ -433,9 +443,8 @@ public class Query implements IType, IReferenceable, Collection<Struct> {
 		if ( name.equals( Key.columnList ) ) {
 			return getColumns().keySet().stream().map( Key::getName ).collect( Collectors.joining( "," ) );
 		}
-		// TODO: Get this from context based on if in cfloop/cfoutput query="..."
 		if ( name.equals( Key.currentRow ) ) {
-			return 1;
+			return getRowFromContext( context ) + 1;
 		}
 		if ( !hasColumn( name ) && safe ) {
 			return null;
@@ -465,7 +474,7 @@ public class Query implements IType, IReferenceable, Collection<Struct> {
 	}
 
 	@Override
-	public Object assign( Key name, Object value ) {
+	public Object assign( IBoxContext context, Key name, Object value ) {
 		// TODO: get row index from context based on if in cfloop/cfoutput query="..."
 		getColumn( name ).setCell( 0, value );
 		return value;

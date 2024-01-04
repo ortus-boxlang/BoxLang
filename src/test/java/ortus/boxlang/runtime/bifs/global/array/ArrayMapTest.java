@@ -71,7 +71,7 @@ public class ArrayMapTest {
 		    """,
 		    context );
 
-		Array res = ( Array ) variables.dereference( result, null );
+		Array res = ( Array ) variables.get( result );
 		assertThat( res.size() ).isEqualTo( 3 );
 	}
 
@@ -87,7 +87,7 @@ public class ArrayMapTest {
 		              });
 		    """,
 		    context );
-		Array res = ( Array ) variables.dereference( result, null );
+		Array res = ( Array ) variables.get( result );
 		assertThat( res.size() ).isEqualTo( 3 );
 		assertThat( res.get( 0 ) ).isEqualTo( 1 );
 		assertThat( res.get( 1 ) ).isEqualTo( 2 );
@@ -106,7 +106,7 @@ public class ArrayMapTest {
 		              });
 		    """,
 		    context );
-		Array res = ( Array ) variables.dereference( result, null );
+		Array res = ( Array ) variables.get( result );
 		assertThat( res.size() ).isEqualTo( 3 );
 		assertThat( res.get( 0 ) ).isEqualTo( 1 );
 		assertThat( res.get( 1 ) ).isEqualTo( 2 );
@@ -126,7 +126,7 @@ public class ArrayMapTest {
 		              });
 		    """,
 		    context );
-		Array res = ( Array ) variables.dereference( result, null );
+		Array res = ( Array ) variables.get( result );
 		assertThat( res.size() ).isEqualTo( 25 );
 		assertThat( res.get( 0 ) ).isEqualTo( 1 );
 		assertThat( res.get( 1 ) ).isEqualTo( 2 );

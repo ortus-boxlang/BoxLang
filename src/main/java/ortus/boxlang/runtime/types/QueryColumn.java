@@ -21,6 +21,7 @@ import java.util.Map;
 
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.dynamic.IReferenceable;
+import ortus.boxlang.runtime.dynamic.Referencer;
 import ortus.boxlang.runtime.dynamic.casters.CastAttempt;
 import ortus.boxlang.runtime.dynamic.casters.DoubleCaster;
 import ortus.boxlang.runtime.interop.DynamicJavaInteropService;
@@ -98,12 +99,27 @@ public class QueryColumn implements IReferenceable {
 	/**
 	 * Get the value of a cell in this column
 	 * 
+	 * @param row  The row to get, 0-based index
+	 * @param safe If true, return empty string if query is empty
+	 * 
+	 * @return The value of the cell
+	 */
+	public Object getCell( int row, boolean safe ) {
+		if ( safe && query.isEmpty() ) {
+			return "";
+		}
+		return this.query.getData().get( row )[ index ];
+	}
+
+	/**
+	 * Get the value of a cell in this column
+	 * 
 	 * @param row The row to get, 0-based index
 	 * 
 	 * @return The value of the cell
 	 */
 	public Object getCell( int row ) {
-		return this.query.getData().get( row )[ index ];
+		return getCell( row, false );
 	}
 
 	/**
@@ -115,7 +131,7 @@ public class QueryColumn implements IReferenceable {
 	 * 
 	 * @return array of column data
 	 */
-	public Object[] getColumnData( Key name ) {
+	public Object[] getColumnData() {
 		return query.getColumnData( name );
 	}
 
@@ -128,7 +144,7 @@ public class QueryColumn implements IReferenceable {
 	 * 
 	 * @return array of column data
 	 */
-	public Array getColumnDataAsArray( Key name ) {
+	public Array getColumnDataAsArray() {
 		return query.getColumnDataAsArray( name );
 	}
 
@@ -169,30 +185,54 @@ public class QueryColumn implements IReferenceable {
 	 ****************************/
 
 	@Override
-	public Object dereference( Key name, Boolean safe ) {
+	public Object dereference( IBoxContext context, Key name, Boolean safe ) {
 
 		// Special check for $bx
 		if ( name.equals( BoxMeta.key ) ) {
 			return getBoxMeta();
 		}
 
-		int index = getIntFromKey( name, safe );
-		return getCell( index );
+		// Check if the key is numeric
+		int index = getIntFromKey( name, true );
+		// If dereferncing a query column with a number like qry.col[1], then we ALWAYS get the value from that row
+		if ( index < 0 ) {
+			return getCell( index );
+		}
+
+		// If dereferncing a query column with a NON number like qry.col["key"], then we get the value at the "current" row and dererence it
+		return Referencer.get( context, getCell( query.getRowFromContext( context ), true ), name, safe );
+
 	}
 
 	@Override
 	public Object dereferenceAndInvoke( IBoxContext context, Key name, Object[] positionalArguments, Boolean safe ) {
-		return DynamicJavaInteropService.invoke( this, name.getName(), safe, positionalArguments );
+		// qry.col.method() will ALWAYS get the value from the current row and call the method on that cell value
+		// Unlike Lucee/Adobe, we'll never call the method on the query column itself
+		return DynamicJavaInteropService.invoke( getCell( query.getRowFromContext( context ), true ), name.getName(), safe, positionalArguments );
 	}
 
 	@Override
 	public Object dereferenceAndInvoke( IBoxContext context, Key name, Map<Key, Object> namedArguments, Boolean safe ) {
-		return DynamicJavaInteropService.invoke( this, name.getName(), safe, namedArguments );
+		// qry.col.method() will ALWAYS get the value from the current row and call the method on that cell value
+		// Unlike Lucee/Adobe, we'll never call the method on the query column itself
+		return DynamicJavaInteropService.invoke( getCell( query.getRowFromContext( context ), true ), name.getName(), safe, namedArguments );
 	}
 
 	@Override
-	public Object assign( Key name, Object value ) {
-		throw new BoxRuntimeException( "You cannot assign a field on a QueryColumn." );
+	public Object assign( IBoxContext context, Key name, Object value ) {
+
+		// Check if the key is numeric
+		int index = getIntFromKey( name, true );
+		// If assign a query column with a number like qry.col[1]='new value', then we ALWAYS get the value from that row
+		if ( index < 0 ) {
+			setCell( index, value );
+			return value;
+		}
+
+		// If dereferencing a query column with a NON number like qry.col["key"]="new value",
+		// then we get the value at the "current" row and assign it (perhaps it's struct etc)
+		Referencer.set( context, getCell( query.getRowFromContext( context ), true ), name, value );
+		return value;
 	}
 
 }

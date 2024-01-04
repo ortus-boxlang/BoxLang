@@ -65,7 +65,7 @@ public class CompareNoCaseTest {
 		    result = compareNoCase( 'a', 'a' );
 		    """,
 		    context );
-		assertThat( variables.dereference( result, false ) ).isEqualTo( 0 );
+		assertThat( variables.get( result ) ).isEqualTo( 0 );
 	}
 
 	@DisplayName( "It performs a case insensitive compare" )
@@ -76,7 +76,7 @@ public class CompareNoCaseTest {
 		    result = compareNoCase( 'a', 'A' );
 		    """,
 		    context );
-		assertThat( variables.dereference( result, false ) ).isEqualTo( 0 );
+		assertThat( variables.get( result ) ).isEqualTo( 0 );
 	}
 
 	@DisplayName( "It returns -1 if the first string precedes the second string lexicographically" )
@@ -87,7 +87,7 @@ public class CompareNoCaseTest {
 		    result = compareNoCase( 'a', 'C' );
 		    """,
 		    context );
-		assertThat( variables.dereference( result, false ) ).isEqualTo( -1 );
+		assertThat( variables.get( result ) ).isEqualTo( -1 );
 	}
 
 	@DisplayName( "It returns 1 if the second string precedes the first string lexicographically" )
@@ -98,7 +98,7 @@ public class CompareNoCaseTest {
 		    result = compareNoCase( 'B', 'a' );
 		    """,
 		    context );
-		assertThat( variables.dereference( result, false ) ).isEqualTo( 1 );
+		assertThat( variables.get( result ) ).isEqualTo( 1 );
 	}
 
 	@DisplayName( "It comparse as a member function" )
@@ -111,8 +111,8 @@ public class CompareNoCaseTest {
 		    result2 = "b".compareNoCase( "a" );
 		       """,
 		    context );
-		assertThat( variables.dereference( result, false ) ).isEqualTo( -1 );
-		assertThat( variables.dereference( Key.of( "result2" ), false ) ).isEqualTo( 1 );
+		assertThat( variables.get( result ) ).isEqualTo( -1 );
+		assertThat( variables.get( Key.of( "result2" ) ) ).isEqualTo( 1 );
 	}
 
 }
