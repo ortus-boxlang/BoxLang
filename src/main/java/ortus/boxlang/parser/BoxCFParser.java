@@ -231,6 +231,7 @@ public class BoxCFParser extends BoxAbstractParser {
 		CFParser		parser	= new CFParser( new CommonTokenStream( lexer ) );
 		addErrorListeners( lexer, parser );
 		ParserRuleContext parseTree = parser.script();
+
 		if ( lexer.hasUnpoppedModes() ) {
 			List<String>	modes		= lexer.getUnpoppedModes();
 
@@ -1534,8 +1535,10 @@ public class BoxCFParser extends BoxAbstractParser {
 			BoxDOCParser		parser	= new BoxDOCParser();
 			ParsingResult		result	= parser.parse( null, node.getText() );
 			BoxDocumentation	docs	= ( BoxDocumentation ) result.getRoot();
-			for ( BoxNode n : docs.getAnnotations() ) {
-				documentation.add( ( BoxDocumentationAnnotation ) n );
+			if ( docs != null ) {
+				for ( BoxNode n : docs.getAnnotations() ) {
+					documentation.add( ( BoxDocumentationAnnotation ) n );
+				}
 			}
 		} catch ( IOException e ) {
 			throw new RuntimeException( e );
