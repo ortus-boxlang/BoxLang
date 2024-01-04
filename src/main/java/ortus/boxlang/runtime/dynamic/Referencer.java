@@ -24,6 +24,8 @@ import ortus.boxlang.runtime.interop.DynamicJavaInteropService;
 import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Array;
+import ortus.boxlang.runtime.types.Query;
+import ortus.boxlang.runtime.types.QueryColumn;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
@@ -149,7 +151,7 @@ public class Referencer {
 				next = new Struct();
 				set( context, object, key, next );
 				// If it's not null, it needs to be a Map
-			} else if ( ! ( next instanceof Map || next instanceof Array ) ) {
+			} else if ( ! ( next instanceof Map || next instanceof Array || next instanceof Query || next instanceof QueryColumn ) ) {
 				throw new BoxRuntimeException(
 				    String.format( "Cannot assign to key [%s] because it is a [%s] and not a Struct or Array",
 				        key.getName(),

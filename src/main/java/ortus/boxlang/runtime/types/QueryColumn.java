@@ -186,8 +186,8 @@ public class QueryColumn implements IReferenceable {
 		// Check if the key is numeric
 		int index = getIntFromKey( name, true );
 		// If dereferncing a query column with a number like qry.col[1], then we ALWAYS get the value from that row
-		if ( index < 0 ) {
-			return getCell( index );
+		if ( index > 0 ) {
+			return getCell( index - 1 );
 		}
 
 		// If dereferncing a query column with a NON number like qry.col["key"], then we get the value at the "current" row and dererence it
@@ -215,8 +215,8 @@ public class QueryColumn implements IReferenceable {
 		// Check if the key is numeric
 		int index = getIntFromKey( name, true );
 		// If assign a query column with a number like qry.col[1]='new value', then we ALWAYS get the value from that row
-		if ( index < 0 ) {
-			setCell( index, value );
+		if ( index > 0 ) {
+			setCell( index - 1, value );
 			return value;
 		}
 
