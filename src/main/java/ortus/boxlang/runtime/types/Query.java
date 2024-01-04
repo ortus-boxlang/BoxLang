@@ -256,13 +256,15 @@ public class Query implements IType, IReferenceable, Collection<Struct> {
 	 */
 	public int addRow( Struct row ) {
 		Object[]	rowData	= new Object[ columns.size() ];
-		// TODO: Check for missing columns?
 		// TODO: validate types
 		int			i		= 0;
+		Object		o;
 		for ( QueryColumn column : columns.values() ) {
-			rowData[ i ] = row.get( column.getName() );
+			// Missing keys in the struct go in the queyr as an empty string (CF compat)
+			rowData[ i ] = ( o = row.get( column.getName() ) ) == null ? "" : o;
 			i++;
 		}
+		// We're ignoring extra keys in the struct that aren't query columns. Lucee compat, but not CF compat.
 		return addRow( rowData );
 	}
 
@@ -475,8 +477,7 @@ public class Query implements IType, IReferenceable, Collection<Struct> {
 
 	@Override
 	public Object assign( IBoxContext context, Key name, Object value ) {
-		// TODO: get row index from context based on if in cfloop/cfoutput query="..."
-		getColumn( name ).setCell( 0, value );
+		getColumn( name ).setCell( getRowFromContext( context ), value );
 		return value;
 	}
 

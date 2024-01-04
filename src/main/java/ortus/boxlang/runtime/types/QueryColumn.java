@@ -99,27 +99,12 @@ public class QueryColumn implements IReferenceable {
 	/**
 	 * Get the value of a cell in this column
 	 * 
-	 * @param row  The row to get, 0-based index
-	 * @param safe If true, return empty string if query is empty
-	 * 
-	 * @return The value of the cell
-	 */
-	public Object getCell( int row, boolean safe ) {
-		if ( safe && query.isEmpty() ) {
-			return "";
-		}
-		return this.query.getData().get( row )[ index ];
-	}
-
-	/**
-	 * Get the value of a cell in this column
-	 * 
 	 * @param row The row to get, 0-based index
 	 * 
 	 * @return The value of the cell
 	 */
 	public Object getCell( int row ) {
-		return getCell( row, false );
+		return getCell( row );
 	}
 
 	/**
@@ -188,9 +173,11 @@ public class QueryColumn implements IReferenceable {
 	public Object dereference( IBoxContext context, Key name, Boolean safe ) {
 
 		// Special check for $bx
-		if ( name.equals( BoxMeta.key ) ) {
-			return getBoxMeta();
-		}
+		/*
+		 * if ( name.equals( BoxMeta.key ) ) {
+		 * return getBoxMeta();
+		 * }
+		 */
 
 		// Check if the key is numeric
 		int index = getIntFromKey( name, true );
@@ -200,7 +187,7 @@ public class QueryColumn implements IReferenceable {
 		}
 
 		// If dereferncing a query column with a NON number like qry.col["key"], then we get the value at the "current" row and dererence it
-		return Referencer.get( context, getCell( query.getRowFromContext( context ), true ), name, safe );
+		return Referencer.get( context, getCell( query.getRowFromContext( context ) ), name, safe );
 
 	}
 
@@ -208,14 +195,14 @@ public class QueryColumn implements IReferenceable {
 	public Object dereferenceAndInvoke( IBoxContext context, Key name, Object[] positionalArguments, Boolean safe ) {
 		// qry.col.method() will ALWAYS get the value from the current row and call the method on that cell value
 		// Unlike Lucee/Adobe, we'll never call the method on the query column itself
-		return DynamicJavaInteropService.invoke( getCell( query.getRowFromContext( context ), true ), name.getName(), safe, positionalArguments );
+		return DynamicJavaInteropService.invoke( getCell( query.getRowFromContext( context ) ), name.getName(), safe, positionalArguments );
 	}
 
 	@Override
 	public Object dereferenceAndInvoke( IBoxContext context, Key name, Map<Key, Object> namedArguments, Boolean safe ) {
 		// qry.col.method() will ALWAYS get the value from the current row and call the method on that cell value
 		// Unlike Lucee/Adobe, we'll never call the method on the query column itself
-		return DynamicJavaInteropService.invoke( getCell( query.getRowFromContext( context ), true ), name.getName(), safe, namedArguments );
+		return DynamicJavaInteropService.invoke( getCell( query.getRowFromContext( context ) ), name.getName(), safe, namedArguments );
 	}
 
 	@Override
@@ -231,7 +218,7 @@ public class QueryColumn implements IReferenceable {
 
 		// If dereferencing a query column with a NON number like qry.col["key"]="new value",
 		// then we get the value at the "current" row and assign it (perhaps it's struct etc)
-		Referencer.set( context, getCell( query.getRowFromContext( context ), true ), name, value );
+		Referencer.set( context, getCell( query.getRowFromContext( context ) ), name, value );
 		return value;
 	}
 
