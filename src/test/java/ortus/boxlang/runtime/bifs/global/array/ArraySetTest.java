@@ -35,7 +35,7 @@ import ortus.boxlang.runtime.scopes.VariablesScope;
 import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.Struct;
 
-public class ArrayReverseTest {
+public class ArraySetTest {
 
 	static BoxRuntime	instance;
 	static IBoxContext	context;
@@ -59,52 +59,58 @@ public class ArrayReverseTest {
 		variables.clear();
 	}
 
-	@DisplayName( "It should reverse the array" )
+	@DisplayName( "It should set the values in the array" )
 	@Test
 	public void testBif() {
 		instance.executeSource(
 		    """
 		              arr = [ "red", "green", "blue" ];
-		              result = ArrayReverse( arr );
+		              result = ArraySet( arr, 3, 5, 10 );
 		    """,
 		    context );
-		Array reversed = ( Array ) variables.getAsArray( result );
-		assertThat( reversed.size() ).isEqualTo( 3 );
-		assertThat( reversed.get( 0 ) ).isEqualTo( "blue" );
-		assertThat( reversed.get( 1 ) ).isEqualTo( "green" );
-		assertThat( reversed.get( 2 ) ).isEqualTo( "red" );
-	}
-
-	@DisplayName( "It should not mutate the original array" )
-	@Test
-	public void testDoesntMutate() {
-		instance.executeSource(
-		    """
-		              arr = [ "red", "green", "blue" ];
-		              result = ArrayReverse( arr );
-		    """,
-		    context );
-		Array arr = ( Array ) variables.getAsArray( Key.of( "arr" ) );
-		assertThat( arr.size() ).isEqualTo( 3 );
+		Array arr = variables.getAsArray( Key.of( "arr" ) );
+		assertThat( arr.size() ).isEqualTo( 5 );
 		assertThat( arr.get( 0 ) ).isEqualTo( "red" );
 		assertThat( arr.get( 1 ) ).isEqualTo( "green" );
-		assertThat( arr.get( 2 ) ).isEqualTo( "blue" );
+		assertThat( arr.get( 2 ) ).isEqualTo( 10 );
+		assertThat( arr.get( 3 ) ).isEqualTo( 10 );
+		assertThat( arr.get( 4 ) ).isEqualTo( 10 );
 	}
 
-	@DisplayName( "It tests the member function for ArrayReverse" )
+	@DisplayName( "It should allow you to invoke it as a member function" )
 	@Test
-	public void testItReturnsFloorMember() {
+	public void testMemberInvocation() {
 		instance.executeSource(
 		    """
 		              arr = [ "red", "green", "blue" ];
-		              result = ArrayReverse( arr );
+		              result = arr.set( 3, 5, 10 );
 		    """,
 		    context );
-		Array reversed = ( Array ) variables.getAsArray( result );
-		assertThat( reversed.size() ).isEqualTo( 3 );
-		assertThat( reversed.get( 0 ) ).isEqualTo( "blue" );
-		assertThat( reversed.get( 1 ) ).isEqualTo( "green" );
-		assertThat( reversed.get( 2 ) ).isEqualTo( "red" );
+		Array arr = variables.getAsArray( Key.of( "arr" ) );
+		assertThat( arr.size() ).isEqualTo( 5 );
+		assertThat( arr.get( 0 ) ).isEqualTo( "red" );
+		assertThat( arr.get( 1 ) ).isEqualTo( "green" );
+		assertThat( arr.get( 2 ) ).isEqualTo( 10 );
+		assertThat( arr.get( 3 ) ).isEqualTo( 10 );
+		assertThat( arr.get( 4 ) ).isEqualTo( 10 );
+	}
+
+	@DisplayName( "It should work on an empty array" )
+	@Test
+	public void testEmptyArray() {
+		instance.executeSource(
+		    """
+		              arr = [];
+		              result = ArraySet( arr, 3, 5, 10 );
+		    """,
+		    context );
+		Array arr = variables.getAsArray( Key.of( "arr" ) );
+		assertThat( arr.size() ).isEqualTo( 5 );
+		assertThat( arr.get( 0 ) ).isNull();
+		assertThat( arr.get( 1 ) ).isNull();
+		assertThat( arr.get( 2 ) ).isEqualTo( 10 );
+		assertThat( arr.get( 3 ) ).isEqualTo( 10 );
+		assertThat( arr.get( 4 ) ).isEqualTo( 10 );
 	}
 
 }
