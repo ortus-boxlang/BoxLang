@@ -104,7 +104,11 @@ public class QueryColumn implements IReferenceable {
 	 * @return The value of the cell
 	 */
 	public Object getCell( int row ) {
-		return getCell( row );
+		// Does full null support change this?
+		if ( query.isEmpty() ) {
+			return "";
+		}
+		return this.query.getData().get( row )[ index ];
 	}
 
 	/**
