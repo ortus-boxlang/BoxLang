@@ -36,16 +36,18 @@ public interface IReferenceable {
 	/**
 	 * Dereference this object by a key and return the value, or throw exception
 	 *
-	 * @param name The key to dereference
-	 * @param safe Whether to throw an exception if the key is not found
+	 * @param context The context we're executing inside of
+	 * @param name    The key to dereference
+	 * @param safe    Whether to throw an exception if the key is not found
 	 *
 	 * @return The requested object
 	 */
-	public Object dereference( Key name, Boolean safe );
+	public Object dereference( IBoxContext context, Key name, Boolean safe );
 
 	/**
 	 * Dereference this object by a key and invoke the result as an invokable (UDF, java method) using positional arguments
 	 *
+	 * @param context             The context we're executing inside of
 	 * @param name                The key to dereference
 	 * @param positionalArguments The positional arguments to pass to the invokable
 	 * @param safe                Whether to throw an exception if the key is not found
@@ -57,6 +59,7 @@ public interface IReferenceable {
 	/**
 	 * Dereference this object by a key and invoke the result as an invokable (UDF, java method) using named arguments
 	 *
+	 * @param context        The context we're executing inside of
 	 * @param name           The key to dereference
 	 * @param namedArguments The named arguments to pass to the invokable
 	 * @param safe           Whether to throw an exception if the key is not found
@@ -68,11 +71,12 @@ public interface IReferenceable {
 	/**
 	 * Assign a value to a key in this object
 	 *
-	 * @param name  The name of the scope to get
-	 * @param value The value to assign to the scope
+	 * @param context The context we're executing inside of
+	 * @param name    The name of the scope to get
+	 * @param value   The value to assign to the scope
 	 *
 	 * @return The value that was assigned
 	 */
-	public Object assign( Key name, Object value );
+	public Object assign( IBoxContext context, Key name, Object value );
 
 }

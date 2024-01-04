@@ -26,10 +26,14 @@ import java.util.Map;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
+import ortus.boxlang.runtime.context.IBoxContext;
+import ortus.boxlang.runtime.context.ScriptingBoxContext;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.exceptions.UnmodifiableException;
 
 public class ImmutableStructTest {
+
+	private IBoxContext context = new ScriptingBoxContext();
 
 	@DisplayName( "Test equals and hash code with no data" )
 	@Test
@@ -70,7 +74,7 @@ public class ImmutableStructTest {
 		final ImmutableStruct immutablestruct = ImmutableStruct.of();
 
 		assertThat( immutablestruct instanceof IImmutable ).isTrue();
-		assertThrows( UnmodifiableException.class, () -> immutablestruct.assign( Key.of( "brad" ), "" ) );
+		assertThrows( UnmodifiableException.class, () -> immutablestruct.assign( context, Key.of( "brad" ), "" ) );
 		assertThrows( UnmodifiableException.class, () -> immutablestruct.clear() );
 		assertThrows( UnmodifiableException.class, () -> immutablestruct.addAll( Map.of() ) );
 		assertThrows( UnmodifiableException.class, () -> immutablestruct.putAll( Map.of() ) );

@@ -51,7 +51,7 @@ public class ArrayPrepend extends BIF {
 	 */
 	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
 		Array actualArray = arguments.getAsArray( Key.array );
-		actualArray.add( 0, arguments.dereference( Key.value, false ) );
+		actualArray.add( 0, arguments.get( Key.value ) );
 		return actualArray;
 	}
 

@@ -74,14 +74,14 @@ public class ArrayFilterTest {
 		        result = ArrayFilter( nums, filterFn );
 		    """,
 		    context );
-		Array resultArray = ( Array ) variables.dereference( result, false );
+		Array resultArray = ( Array ) variables.get( result );
 		assertThat( resultArray.size() ).isEqualTo( 5 );
 		assertThat( resultArray.get( 0 ) ).isEqualTo( 1 );
 		assertThat( resultArray.get( 1 ) ).isEqualTo( 2 );
 		assertThat( resultArray.get( 2 ) ).isEqualTo( 3 );
 		assertThat( resultArray.get( 3 ) ).isEqualTo( 4 );
 		assertThat( resultArray.get( 4 ) ).isEqualTo( 5 );
-		Array indexes = ( Array ) variables.dereference( Key.of( "indexes" ), false );
+		Array indexes = ( Array ) variables.get( Key.of( "indexes" ) );
 		assertThat( indexes.size() ).isEqualTo( 5 );
 		assertThat( indexes.get( 0 ) ).isEqualTo( 1 );
 		assertThat( indexes.get( 1 ) ).isEqualTo( 2 );
@@ -106,12 +106,12 @@ public class ArrayFilterTest {
 		        result = ArrayFilter( nums, filterFn );
 		    """,
 		    context );
-		Array resultArray = ( Array ) variables.dereference( result, false );
+		Array resultArray = ( Array ) variables.get( result );
 		assertThat( resultArray.size() ).isEqualTo( 3 );
 		assertThat( resultArray.get( 0 ) ).isEqualTo( 1 );
 		assertThat( resultArray.get( 1 ) ).isEqualTo( 2 );
 		assertThat( resultArray.get( 2 ) ).isEqualTo( 4 );
-		Array indexes = ( Array ) variables.dereference( Key.of( "indexes" ), false );
+		Array indexes = ( Array ) variables.get( Key.of( "indexes" ) );
 		assertThat( indexes.size() ).isEqualTo( 5 );
 		assertThat( indexes.get( 0 ) ).isEqualTo( 1 );
 		assertThat( indexes.get( 1 ) ).isEqualTo( 2 );
@@ -136,12 +136,12 @@ public class ArrayFilterTest {
 		        result = nums.filter( filterFn );
 		    """,
 		    context );
-		Array resultArray = ( Array ) variables.dereference( result, false );
+		Array resultArray = ( Array ) variables.get( result );
 		assertThat( resultArray.size() ).isEqualTo( 3 );
 		assertThat( resultArray.get( 0 ) ).isEqualTo( 1 );
 		assertThat( resultArray.get( 1 ) ).isEqualTo( 2 );
 		assertThat( resultArray.get( 2 ) ).isEqualTo( 4 );
-		Array indexes = ( Array ) variables.dereference( Key.of( "indexes" ), false );
+		Array indexes = ( Array ) variables.get( Key.of( "indexes" ) );
 		assertThat( indexes.size() ).isEqualTo( 5 );
 		assertThat( indexes.get( 0 ) ).isEqualTo( 1 );
 		assertThat( indexes.get( 1 ) ).isEqualTo( 2 );
@@ -166,12 +166,12 @@ public class ArrayFilterTest {
 		        result = nums.filter( filterFn, true );
 		    """,
 		    context );
-		Array resultArray = ( Array ) variables.dereference( result, false );
+		Array resultArray = ( Array ) variables.get( result );
 		assertThat( resultArray.size() ).isEqualTo( 3 );
 		assertThat( resultArray.get( 0 ) ).isEqualTo( 1 );
 		assertThat( resultArray.get( 1 ) ).isEqualTo( 2 );
 		assertThat( resultArray.get( 2 ) ).isEqualTo( 4 );
-		Array indexes = ( Array ) variables.dereference( Key.of( "indexes" ), false );
+		Array indexes = ( Array ) variables.get( Key.of( "indexes" ) );
 		assertThat( indexes.size() ).isEqualTo( 5 );
 		assertThat( indexes.get( 0 ) ).isEqualTo( 1 );
 		assertThat( indexes.get( 1 ) ).isEqualTo( 2 );
@@ -196,12 +196,12 @@ public class ArrayFilterTest {
 		        result = nums.filter( filterFn, true, 5 );
 		    """,
 		    context );
-		Array resultArray = ( Array ) variables.dereference( result, false );
+		Array resultArray = ( Array ) variables.get( result );
 		assertThat( resultArray.size() ).isEqualTo( 3 );
 		assertThat( resultArray.get( 0 ) ).isEqualTo( 1 );
 		assertThat( resultArray.get( 1 ) ).isEqualTo( 2 );
 		assertThat( resultArray.get( 2 ) ).isEqualTo( 4 );
-		Array indexes = ( Array ) variables.dereference( Key.of( "indexes" ), false );
+		Array indexes = ( Array ) variables.get( Key.of( "indexes" ) );
 		assertThat( indexes.size() ).isEqualTo( 5 );
 		assertThat( indexes.get( 0 ) ).isEqualTo( 1 );
 		assertThat( indexes.get( 1 ) ).isEqualTo( 2 );

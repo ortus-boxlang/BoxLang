@@ -23,11 +23,15 @@ import static org.junit.Assert.assertThrows;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
+import ortus.boxlang.runtime.context.IBoxContext;
+import ortus.boxlang.runtime.context.ScriptingBoxContext;
 import ortus.boxlang.runtime.types.exceptions.KeyNotFoundException;
 
 public class BaseScopeTest {
 
-	private static BaseScope scope;
+	IBoxContext					context	= new ScriptingBoxContext();
+
+	private static BaseScope	scope;
 
 	@BeforeAll
 	public static void setUp() {
@@ -37,7 +41,7 @@ public class BaseScopeTest {
 	@Test
 	void testBasicGetAndSet() {
 		// Test getValue() and setValue()
-		assertThrows( KeyNotFoundException.class, () -> scope.dereference( Key.of( "InvalidKey" ), false ) );
+		assertThrows( KeyNotFoundException.class, () -> scope.dereference( context, Key.of( "InvalidKey" ), false ) );
 
 		Key		key		= Key.of( "testKey" );
 		Object	value	= "testValue";

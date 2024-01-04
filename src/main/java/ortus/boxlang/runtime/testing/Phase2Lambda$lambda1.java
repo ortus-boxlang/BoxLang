@@ -139,6 +139,7 @@ public class Phase2Lambda$lambda1 extends Lambda {
 	public Object _invoke( FunctionBoxContext context ) {
 
 		context.getScopeNearby( LocalScope.name ).assign(
+		    context,
 		    Key.of( "Greeting" ),
 		    Concat.invoke(
 		        "Hello ",

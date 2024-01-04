@@ -70,8 +70,8 @@ public class ArrayClearTest {
 		              result = arrayClear( nums );
 		    """,
 		    context );
-		assertThat( variables.dereference( result, false ) ).isEqualTo( true );
-		assertThat( ( ( Array ) variables.dereference( Key.of( "nums" ), false ) ).size() ).isEqualTo( 0 );
+		assertThat( variables.get( result ) ).isEqualTo( true );
+		assertThat( ( ( Array ) variables.get( Key.of( "nums" ) ) ).size() ).isEqualTo( 0 );
 	}
 
 	@DisplayName( "It can clear the array member" )
@@ -84,8 +84,8 @@ public class ArrayClearTest {
 		              result = nums.clear();
 		    """,
 		    context );
-		assertThat( variables.dereference( result, false ) ).isEqualTo( true );
-		assertThat( ( ( Array ) variables.dereference( Key.of( "nums" ), false ) ).size() ).isEqualTo( 0 );
+		assertThat( variables.get( result ) ).isEqualTo( true );
+		assertThat( ( ( Array ) variables.get( Key.of( "nums" ) ) ).size() ).isEqualTo( 0 );
 	}
 
 	@DisplayName( "It can clear native array" )

@@ -82,7 +82,7 @@ public class CoreLangTest {
 		    }
 		      """,
 		    context );
-		assertThat( variables.dereference( result, false ) ).isEqualTo( "first" );
+		assertThat( variables.get( result ) ).isEqualTo( "first" );
 
 	}
 
@@ -99,7 +99,7 @@ public class CoreLangTest {
 		    }
 		      """,
 		    context );
-		assertThat( variables.dereference( result, false ) ).isEqualTo( "second" );
+		assertThat( variables.get( result ) ).isEqualTo( "second" );
 
 	}
 
@@ -116,7 +116,7 @@ public class CoreLangTest {
 
 		      """,
 		    context );
-		assertThat( variables.dereference( result, false ) ).isEqualTo( "done" );
+		assertThat( variables.get( result ) ).isEqualTo( "done" );
 
 		instance.executeSource(
 		    """
@@ -127,7 +127,7 @@ public class CoreLangTest {
 
 		      """,
 		    context );
-		assertThat( variables.dereference( result, false ) ).isEqualTo( "default" );
+		assertThat( variables.get( result ) ).isEqualTo( "default" );
 
 	}
 
@@ -145,7 +145,7 @@ public class CoreLangTest {
 
 		         """,
 		    context );
-		assertThat( variables.dereference( result, false ) ).isEqualTo( "else" );
+		assertThat( variables.get( result ) ).isEqualTo( "else" );
 
 		instance.executeSource(
 		    """
@@ -155,7 +155,7 @@ public class CoreLangTest {
 		    result = "afterif"
 		         """,
 		    context );
-		assertThat( variables.dereference( result, false ) ).isEqualTo( "afterif" );
+		assertThat( variables.get( result ) ).isEqualTo( "afterif" );
 
 	}
 
@@ -197,9 +197,9 @@ public class CoreLangTest {
 		           }
 		             """,
 		    context );
-		assertThat( variables.dereference( result, false ) ).isEqualTo( "in catch also finally" );
-		assertThat( variables.dereference( Key.of( "message" ), false ) ).isEqualTo( "You cannot divide by zero." );
-		assertThat( variables.dereference( Key.of( "message2" ), false ) ).isEqualTo( "You cannot divide by zero." );
+		assertThat( variables.get( result ) ).isEqualTo( "in catch also finally" );
+		assertThat( variables.get( Key.of( "message" ) ) ).isEqualTo( "You cannot divide by zero." );
+		assertThat( variables.get( Key.of( "message2" ) ) ).isEqualTo( "You cannot divide by zero." );
 
 	}
 
@@ -220,9 +220,9 @@ public class CoreLangTest {
 		           }
 		             """,
 		    context );
-		assertThat( variables.dereference( result, false ) ).isEqualTo( "in catch also finally" );
-		assertThat( variables.dereference( Key.of( "message" ), false ) ).isEqualTo( "You cannot divide by zero." );
-		assertThat( variables.dereference( Key.of( "message2" ), false ) ).isEqualTo( "You cannot divide by zero." );
+		assertThat( variables.get( result ) ).isEqualTo( "in catch also finally" );
+		assertThat( variables.get( Key.of( "message" ) ) ).isEqualTo( "You cannot divide by zero." );
+		assertThat( variables.get( Key.of( "message2" ) ) ).isEqualTo( "You cannot divide by zero." );
 
 	}
 
@@ -248,9 +248,9 @@ public class CoreLangTest {
 		             }
 		               """,
 		    context );
-		assertThat( variables.dereference( result, false ) ).isEqualTo( "in catch also finally" );
-		assertThat( variables.dereference( Key.of( "message" ), false ) ).isEqualTo( "You cannot divide by zero." );
-		assertThat( variables.dereference( Key.of( "message2" ), false ) ).isEqualTo( "You cannot divide by zero." );
+		assertThat( variables.get( result ) ).isEqualTo( "in catch also finally" );
+		assertThat( variables.get( Key.of( "message" ) ) ).isEqualTo( "You cannot divide by zero." );
+		assertThat( variables.get( Key.of( "message2" ) ) ).isEqualTo( "You cannot divide by zero." );
 
 	}
 
@@ -275,10 +275,10 @@ public class CoreLangTest {
 		    }
 		      """,
 		    context );
-		assertThat( variables.dereference( Key.of( "one" ), false ) ).isEqualTo( "You cannot divide by zero." );
-		assertThat( variables.dereference( Key.of( "two" ), false ) )
+		assertThat( variables.get( Key.of( "one" ) ) ).isEqualTo( "You cannot divide by zero." );
+		assertThat( variables.get( Key.of( "two" ) ) )
 		    .isEqualTo( "The key bar was not found in the struct. Valid keys are ([e, one])" );
-		assertThat( variables.dereference( Key.of( "three" ), false ) ).isEqualTo( "You cannot divide by zero." );
+		assertThat( variables.get( Key.of( "three" ) ) ).isEqualTo( "You cannot divide by zero." );
 
 	}
 
@@ -300,7 +300,7 @@ public class CoreLangTest {
 		       }
 		         """,
 		    context );
-		assertThat( variables.dereference( result, false ) ).isEqualTo( "catchany" );
+		assertThat( variables.get( result ) ).isEqualTo( "catchany" );
 
 	}
 
@@ -318,7 +318,7 @@ public class CoreLangTest {
 		    }
 		          """,
 		    context );
-		// assertThat( variables.dereference( result, false ) ).isEqualTo( "catchany" );
+		// assertThat( variables.get( result ) ).isEqualTo( "catchany" );
 
 	}
 
@@ -336,7 +336,7 @@ public class CoreLangTest {
 		    }
 		          """,
 		    context );
-		// assertThat( variables.dereference( result, false ) ).isEqualTo( "catchany" );
+		// assertThat( variables.get( result ) ).isEqualTo( "catchany" );
 
 	}
 
@@ -356,7 +356,7 @@ public class CoreLangTest {
 		               """,
 		        context )
 		);
-		assertThat( variables.dereference( result, false ) ).isEqualTo( "finally" );
+		assertThat( variables.get( result ) ).isEqualTo( "finally" );
 
 	}
 
@@ -400,8 +400,8 @@ public class CoreLangTest {
 		       }
 		           """,
 		    context );
-		assertThat( variables.dereference( result, false ) ).isEqualTo( "bradwoodluismajano" );
-		assertThat( variables.dereference( Key.of( "result2" ), false ) ).isEqualTo( "jorgereyesedgardocabezas" );
+		assertThat( variables.get( result ) ).isEqualTo( "bradwoodluismajano" );
+		assertThat( variables.get( Key.of( "result2" ) ) ).isEqualTo( "jorgereyesedgardocabezas" );
 
 		instance.executeSource(
 		    """
@@ -412,7 +412,7 @@ public class CoreLangTest {
 		       }
 		           """,
 		    context );
-		assertThat( variables.dereference( result, false ) ).isEqualTo( "" );
+		assertThat( variables.get( result ) ).isEqualTo( "" );
 
 		FunctionBoxContext functionBoxContext = new FunctionBoxContext( context,
 		    new SampleUDF( Access.PUBLIC, Key.of( "func" ), "any", new Argument[] {}, "" ) );
@@ -426,7 +426,7 @@ public class CoreLangTest {
 		       }
 		           """,
 		    functionBoxContext );
-		assertThat( variables.dereference( result, false ) ).isEqualTo( "bradwoodluismajano" );
+		assertThat( variables.get( result ) ).isEqualTo( "bradwoodluismajano" );
 
 	}
 
@@ -442,7 +442,7 @@ public class CoreLangTest {
 		    }
 		        """,
 		    context );
-		assertThat( variables.dereference( result, false ) ).isEqualTo( 10 );
+		assertThat( variables.get( result ) ).isEqualTo( 10 );
 
 	}
 
@@ -459,7 +459,7 @@ public class CoreLangTest {
 		    }
 		           """,
 		    context );
-		assertThat( variables.dereference( Key.of( "age" ), false ) ).isEqualTo( 21 );
+		assertThat( variables.get( Key.of( "age" ) ) ).isEqualTo( 21 );
 
 	}
 
@@ -476,7 +476,7 @@ public class CoreLangTest {
 		     } while( result < 10 )
 		     """,
 		    context );
-		assertThat( variables.dereference( result, false ) ).isEqualTo( 10 );
+		assertThat( variables.get( result ) ).isEqualTo( 10 );
 
 	}
 
@@ -495,7 +495,7 @@ public class CoreLangTest {
 		    }
 		    """,
 		    context );
-		assertThat( variables.dereference( result, false ) ).isEqualTo( 11 );
+		assertThat( variables.get( result ) ).isEqualTo( 11 );
 
 	}
 
@@ -514,7 +514,7 @@ public class CoreLangTest {
 		         } while( true )
 		         """,
 		    context );
-		assertThat( variables.dereference( result, false ) ).isEqualTo( 11 );
+		assertThat( variables.get( result ) ).isEqualTo( 11 );
 
 	}
 
@@ -534,7 +534,7 @@ public class CoreLangTest {
 		       }
 		       """,
 		    context );
-		assertThat( variables.dereference( result, false ) ).isEqualTo( 12 );
+		assertThat( variables.get( result ) ).isEqualTo( 12 );
 
 	}
 
@@ -554,7 +554,7 @@ public class CoreLangTest {
 		    }
 		          """,
 		    context );
-		assertThat( variables.dereference( result, false ) ).isEqualTo( 10 );
+		assertThat( variables.get( result ) ).isEqualTo( 10 );
 
 	}
 
@@ -568,7 +568,7 @@ public class CoreLangTest {
 		        while (true && result < 1) result=1;
 		    """,
 		    context );
-		assertThat( variables.dereference( result, false ) ).isEqualTo( 1 );
+		assertThat( variables.get( result ) ).isEqualTo( 1 );
 
 	}
 
@@ -582,7 +582,7 @@ public class CoreLangTest {
 		        while (true && result < 1) (result=1);
 		    """,
 		    context );
-		assertThat( variables.dereference( result, false ) ).isEqualTo( 1 );
+		assertThat( variables.get( result ) ).isEqualTo( 1 );
 
 	}
 
@@ -597,7 +597,7 @@ public class CoreLangTest {
 		       	result=1;
 		      """,
 		    context );
-		assertThat( variables.dereference( result, false ) ).isEqualTo( 1 );
+		assertThat( variables.get( result ) ).isEqualTo( 1 );
 
 	}
 
@@ -612,7 +612,7 @@ public class CoreLangTest {
 		       	(result=1);
 		      """,
 		    context );
-		assertThat( variables.dereference( result, false ) ).isEqualTo( 1 );
+		assertThat( variables.get( result ) ).isEqualTo( 1 );
 
 	}
 
@@ -629,8 +629,8 @@ public class CoreLangTest {
 		       other = other + 1;
 		           """,
 		    context );
-		assertThat( variables.dereference( result, false ) ).isEqualTo( 5 );
-		assertThat( variables.dereference( Key.of( "other" ), false ) ).isEqualTo( 1 );
+		assertThat( variables.get( result ) ).isEqualTo( 5 );
+		assertThat( variables.get( Key.of( "other" ) ) ).isEqualTo( 1 );
 
 	}
 
@@ -669,7 +669,7 @@ public class CoreLangTest {
 		    test1 = "foo" == 'foo'
 		      """,
 		    context );
-		assertThat( variables.dereference( Key.of( "test1" ), false ) ).isEqualTo( true );
+		assertThat( variables.get( Key.of( "test1" ) ) ).isEqualTo( true );
 
 	}
 
@@ -685,8 +685,8 @@ public class CoreLangTest {
 		      """,
 		    context );
 
-		assertThat( variables.dereference( Key.of( "test2" ), false ) ).isEqualTo( "foo'bar" );
-		assertThat( variables.dereference( Key.of( "test3" ), false ) ).isEqualTo( "foo\"bar" );
+		assertThat( variables.get( Key.of( "test2" ) ) ).isEqualTo( "foo'bar" );
+		assertThat( variables.get( Key.of( "test3" ) ) ).isEqualTo( "foo\"bar" );
 
 	}
 
@@ -702,8 +702,8 @@ public class CoreLangTest {
 		      """,
 		    context );
 
-		assertThat( variables.dereference( Key.of( "test4" ), false ) ).isEqualTo( "Brad \"the guy\" Wood" );
-		assertThat( variables.dereference( Key.of( "test5" ), false ) ).isEqualTo( "Luis 'the man' Majano" );
+		assertThat( variables.get( Key.of( "test4" ) ) ).isEqualTo( "Brad \"the guy\" Wood" );
+		assertThat( variables.get( Key.of( "test5" ) ) ).isEqualTo( "Luis 'the man' Majano" );
 	}
 
 	@DisplayName( "String parsing concatenation" )
@@ -720,8 +720,8 @@ public class CoreLangTest {
 		    variables.test9 = 'Time is: ' & timeVar
 		     """,
 		    context );
-		assertThat( variables.dereference( Key.of( "test6" ), false ) ).isEqualTo( "Time is: 12:00 PM" );
-		assertThat( variables.dereference( Key.of( "test7" ), false ) ).isEqualTo( "Time is: 12:00 PM" );
+		assertThat( variables.get( Key.of( "test6" ) ) ).isEqualTo( "Time is: 12:00 PM" );
+		assertThat( variables.get( Key.of( "test7" ) ) ).isEqualTo( "Time is: 12:00 PM" );
 
 	}
 
@@ -745,16 +745,16 @@ public class CoreLangTest {
 		    variables.result10 = "foo #variables[ '#varname#' ]# bar"
 		     """,
 		    context );
-		assertThat( variables.dereference( Key.of( "result1" ), false ) ).isEqualTo( "bradfoo" );
-		assertThat( variables.dereference( Key.of( "result2" ), false ) ).isEqualTo( "foobrad" );
-		assertThat( variables.dereference( Key.of( "result3" ), false ) ).isEqualTo( "foobradbar" );
-		assertThat( variables.dereference( Key.of( "result4" ), false ) ).isEqualTo( "foobradbarbradbazbradbum" );
-		assertThat( variables.dereference( Key.of( "result5" ), false ) ).isEqualTo( "foo" );
-		assertThat( variables.dereference( Key.of( "result6" ), false ) ).isEqualTo( "brad" );
-		assertThat( variables.dereference( Key.of( "result7" ), false ) ).isEqualTo( "foo brad bar" );
-		assertThat( variables.dereference( Key.of( "result8" ), false ) ).isEqualTo( "foo brad bar" );
-		assertThat( variables.dereference( Key.of( "result9" ), false ) ).isEqualTo( "foo brad bar" );
-		assertThat( variables.dereference( Key.of( "result10" ), false ) ).isEqualTo( "foo brad bar" );
+		assertThat( variables.get( Key.of( "result1" ) ) ).isEqualTo( "bradfoo" );
+		assertThat( variables.get( Key.of( "result2" ) ) ).isEqualTo( "foobrad" );
+		assertThat( variables.get( Key.of( "result3" ) ) ).isEqualTo( "foobradbar" );
+		assertThat( variables.get( Key.of( "result4" ) ) ).isEqualTo( "foobradbarbradbazbradbum" );
+		assertThat( variables.get( Key.of( "result5" ) ) ).isEqualTo( "foo" );
+		assertThat( variables.get( Key.of( "result6" ) ) ).isEqualTo( "brad" );
+		assertThat( variables.get( Key.of( "result7" ) ) ).isEqualTo( "foo brad bar" );
+		assertThat( variables.get( Key.of( "result8" ) ) ).isEqualTo( "foo brad bar" );
+		assertThat( variables.get( Key.of( "result9" ) ) ).isEqualTo( "foo brad bar" );
+		assertThat( variables.get( Key.of( "result10" ) ) ).isEqualTo( "foo brad bar" );
 
 	}
 
@@ -778,16 +778,16 @@ public class CoreLangTest {
 		    variables.result10 = 'foo #variables[ "#varname#" ]# bar'
 		     """,
 		    context );
-		assertThat( variables.dereference( Key.of( "result1" ), false ) ).isEqualTo( "bradfoo" );
-		assertThat( variables.dereference( Key.of( "result2" ), false ) ).isEqualTo( "foobrad" );
-		assertThat( variables.dereference( Key.of( "result3" ), false ) ).isEqualTo( "foobradbar" );
-		assertThat( variables.dereference( Key.of( "result4" ), false ) ).isEqualTo( "foobradbarbradbazbradbum" );
-		assertThat( variables.dereference( Key.of( "result5" ), false ) ).isEqualTo( "foo" );
-		assertThat( variables.dereference( Key.of( "result6" ), false ) ).isEqualTo( "brad" );
-		assertThat( variables.dereference( Key.of( "result7" ), false ) ).isEqualTo( "foo brad bar" );
-		assertThat( variables.dereference( Key.of( "result8" ), false ) ).isEqualTo( "foo brad bar" );
-		assertThat( variables.dereference( Key.of( "result9" ), false ) ).isEqualTo( "foo brad bar" );
-		assertThat( variables.dereference( Key.of( "result10" ), false ) ).isEqualTo( "foo brad bar" );
+		assertThat( variables.get( Key.of( "result1" ) ) ).isEqualTo( "bradfoo" );
+		assertThat( variables.get( Key.of( "result2" ) ) ).isEqualTo( "foobrad" );
+		assertThat( variables.get( Key.of( "result3" ) ) ).isEqualTo( "foobradbar" );
+		assertThat( variables.get( Key.of( "result4" ) ) ).isEqualTo( "foobradbarbradbazbradbum" );
+		assertThat( variables.get( Key.of( "result5" ) ) ).isEqualTo( "foo" );
+		assertThat( variables.get( Key.of( "result6" ) ) ).isEqualTo( "brad" );
+		assertThat( variables.get( Key.of( "result7" ) ) ).isEqualTo( "foo brad bar" );
+		assertThat( variables.get( Key.of( "result8" ) ) ).isEqualTo( "foo brad bar" );
+		assertThat( variables.get( Key.of( "result9" ) ) ).isEqualTo( "foo brad bar" );
+		assertThat( variables.get( Key.of( "result10" ) ) ).isEqualTo( "foo brad bar" );
 
 	}
 
@@ -802,14 +802,14 @@ public class CoreLangTest {
 		    // Also "I have locker #20" should throw a parsing syntax exception.
 		     """,
 		    context );
-		assertThat( variables.dereference( Key.of( "test8" ), false ) ).isEqualTo( "I have locker #20" );
+		assertThat( variables.get( Key.of( "test8" ) ) ).isEqualTo( "I have locker #20" );
 
 		instance.executeSource(
 		    """
 		    variables.test8 = 'I have locker ##20'
 		     """,
 		    context );
-		assertThat( variables.dereference( Key.of( "test8" ), false ) ).isEqualTo( "I have locker #20" );
+		assertThat( variables.get( Key.of( "test8" ) ) ).isEqualTo( "I have locker #20" );
 
 	}
 
@@ -825,7 +825,7 @@ public class CoreLangTest {
 
 		        """,
 		    context );
-		assertThat( variables.dereference( Key.of( "result" ), false ) ).isEqualTo( "a is brad and b is luis" );
+		assertThat( variables.get( Key.of( "result" ) ) ).isEqualTo( "a is brad and b is luis" );
 
 	}
 
@@ -890,8 +890,8 @@ public class CoreLangTest {
 		      """,
 		    context );
 
-		assertThat( variables.dereference( Key.of( "test9" ), false ) ).isEqualTo( "Time is: 12:00 PM" );
-		assertThat( variables.dereference( Key.of( "test10" ), false ) ).isEqualTo( "BoxLang" );
+		assertThat( variables.get( Key.of( "test9" ) ) ).isEqualTo( "Time is: 12:00 PM" );
+		assertThat( variables.get( Key.of( "test10" ) ) ).isEqualTo( "BoxLang" );
 
 	}
 
@@ -905,7 +905,7 @@ public class CoreLangTest {
 		      """,
 		    context );
 
-		assertThat( variables.dereference( result, false ) ).isEqualTo( "Box11Lang" );
+		assertThat( variables.get( result ) ).isEqualTo( "Box11Lang" );
 
 	}
 
@@ -943,7 +943,7 @@ public class CoreLangTest {
 		          """,
 		    context );
 
-		assertThat( variables.dereference( result, false ) ).isEqualTo( "case3" );
+		assertThat( variables.get( result ) ).isEqualTo( "case3" );
 
 	}
 
@@ -979,10 +979,10 @@ public class CoreLangTest {
 		             """,
 		    context );
 
-		assertThat( variables.dereference( Key.of( "bradRan" ), false ) ).isEqualTo( false );
-		assertThat( variables.dereference( Key.of( "luisRan" ), false ) ).isEqualTo( true );
-		assertThat( variables.dereference( Key.of( "gavinRan" ), false ) ).isEqualTo( true );
-		assertThat( variables.dereference( Key.of( "jorgeRan" ), false ) ).isEqualTo( false );
+		assertThat( variables.get( Key.of( "bradRan" ) ) ).isEqualTo( false );
+		assertThat( variables.get( Key.of( "luisRan" ) ) ).isEqualTo( true );
+		assertThat( variables.get( Key.of( "gavinRan" ) ) ).isEqualTo( true );
+		assertThat( variables.get( Key.of( "jorgeRan" ) ) ).isEqualTo( false );
 	}
 
 	@DisplayName( "switch default" )
@@ -1019,7 +1019,7 @@ public class CoreLangTest {
 		          """,
 		    context );
 
-		assertThat( variables.dereference( result, false ) ).isEqualTo( "case default" );
+		assertThat( variables.get( result ) ).isEqualTo( "case default" );
 
 	}
 
@@ -1034,7 +1034,7 @@ public class CoreLangTest {
 		         """,
 		    context );
 
-		assertThat( variables.dereference( result, false ) ).isEqualTo( "a" );
+		assertThat( variables.get( result ) ).isEqualTo( "a" );
 
 		instance.executeSource(
 		    """
@@ -1042,7 +1042,7 @@ public class CoreLangTest {
 		         """,
 		    context );
 
-		assertThat( variables.dereference( result, false ) ).isEqualTo( "a" );
+		assertThat( variables.get( result ) ).isEqualTo( "a" );
 
 		instance.executeSource(
 		    """
@@ -1050,7 +1050,7 @@ public class CoreLangTest {
 		         """,
 		    context );
 
-		assertThat( variables.dereference( result, false ) instanceof Comparator ).isTrue();
+		assertThat( variables.get( result ) instanceof Comparator ).isTrue();
 
 	}
 

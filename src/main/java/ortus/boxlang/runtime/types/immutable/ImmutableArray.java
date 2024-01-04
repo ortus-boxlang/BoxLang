@@ -21,6 +21,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
+import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.exceptions.UnmodifiableException;
@@ -171,7 +172,7 @@ public class ImmutableArray extends Array implements IImmutable {
 	 * @param value The value to assign
 	 */
 	@Override
-	public Object assign( Key key, Object value ) {
+	public Object assign( IBoxContext context, Key key, Object value ) {
 		throw new UnmodifiableException( "Cannot modify immutable Array" );
 	}
 

@@ -17,6 +17,7 @@
  */
 package ortus.boxlang.runtime.operators;
 
+import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.dynamic.Referencer;
 import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 import ortus.boxlang.runtime.scopes.Key;
@@ -57,9 +58,9 @@ public class Concat implements IOperator {
 	 *
 	 * @return The result
 	 */
-	public static String invoke( Object target, Key name, Object right ) {
-		String result = invoke( Referencer.get( target, name, false ), right );
-		Referencer.set( target, name, result );
+	public static String invoke( IBoxContext context, Object target, Key name, Object right ) {
+		String result = invoke( Referencer.get( context, target, name, false ), right );
+		Referencer.set( context, target, name, result );
 		return result;
 	}
 
@@ -68,14 +69,14 @@ public class Concat implements IOperator {
 	 *
 	 * @return The result
 	 */
-	public static String invoke( Object target, Key name, Object... segments ) {
+	public static String invoke( IBoxContext context, Object target, Key name, Object... segments ) {
 		StringBuilder sb = new StringBuilder();
-		sb.append( Referencer.get( target, name, false ) );
+		sb.append( Referencer.get( context, target, name, false ) );
 		for ( Object segment : segments ) {
 			sb.append( StringCaster.cast( segment ) );
 		}
 		String result = sb.toString();
-		Referencer.set( target, name, result );
+		Referencer.set( context, target, name, result );
 		return result;
 	}
 

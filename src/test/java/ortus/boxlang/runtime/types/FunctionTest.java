@@ -36,6 +36,8 @@ import ortus.boxlang.runtime.scopes.Key;
 
 public class FunctionTest {
 
+	private IBoxContext context = new ScriptingBoxContext();
+
 	@DisplayName( "can define UDF" )
 	@Test
 	void testCanDefineUDF() {
@@ -348,32 +350,32 @@ public class FunctionTest {
 		    Struct.of( "hint", "Brad's func", "output", false )
 		);
 		Struct	meta	= udf.getMetaData();
-		assertThat( meta.dereference( Key.of( "name" ), false ) ).isEqualTo( "foo" );
-		assertThat( meta.dereference( Key.of( "returnType" ), false ) ).isEqualTo( "String" );
-		assertThat( meta.dereference( Key.of( "output" ), false ) ).isEqualTo( false );
-		assertThat( meta.dereference( Key.of( "hint" ), false ) ).isEqualTo( "Brad's func" );
-		assertThat( meta.dereference( Key.of( "access" ), false ) ).isEqualTo( "private" );
-		assertThat( meta.dereference( Key.of( "closure" ), false ) ).isEqualTo( false );
-		assertThat( meta.dereference( Key.of( "ANONYMOUSCLOSURE" ), false ) ).isEqualTo( false );
-		assertThat( meta.dereference( Key.of( "lambda" ), false ) ).isEqualTo( false );
-		assertThat( meta.dereference( Key.of( "ANONYMOUSLAMBDA" ), false ) ).isEqualTo( false );
+		assertThat( meta.get( Key.of( "name" ) ) ).isEqualTo( "foo" );
+		assertThat( meta.get( Key.of( "returnType" ) ) ).isEqualTo( "String" );
+		assertThat( meta.get( Key.of( "output" ) ) ).isEqualTo( false );
+		assertThat( meta.get( Key.of( "hint" ) ) ).isEqualTo( "Brad's func" );
+		assertThat( meta.get( Key.of( "access" ) ) ).isEqualTo( "private" );
+		assertThat( meta.get( Key.of( "closure" ) ) ).isEqualTo( false );
+		assertThat( meta.get( Key.of( "ANONYMOUSCLOSURE" ) ) ).isEqualTo( false );
+		assertThat( meta.get( Key.of( "lambda" ) ) ).isEqualTo( false );
+		assertThat( meta.get( Key.of( "ANONYMOUSLAMBDA" ) ) ).isEqualTo( false );
 
-		Array arguments = ( Array ) meta.dereference( Key.of( "parameters" ), false );
+		Array arguments = ( Array ) meta.get( Key.of( "parameters" ) );
 		assertThat( arguments.size() ).isEqualTo( 2 );
 
-		Struct arg1 = ( Struct ) arguments.dereference( Key.of( "1" ), false );
-		assertThat( arg1.dereference( Key.of( "name" ), false ) ).isEqualTo( "param1" );
-		assertThat( arg1.dereference( Key.of( "required" ), false ) ).isEqualTo( true );
-		assertThat( arg1.dereference( Key.of( "type" ), false ) ).isEqualTo( "String" );
-		assertThat( arg1.dereference( Key.of( "default" ), false ) ).isEqualTo( null );
-		assertThat( arg1.dereference( Key.of( "hint" ), false ) ).isEqualTo( "First Name" );
+		Struct arg1 = ( Struct ) arguments.dereference( context, Key.of( "1" ), false );
+		assertThat( arg1.get( Key.of( "name" ) ) ).isEqualTo( "param1" );
+		assertThat( arg1.get( Key.of( "required" ) ) ).isEqualTo( true );
+		assertThat( arg1.get( Key.of( "type" ) ) ).isEqualTo( "String" );
+		assertThat( arg1.get( Key.of( "default" ) ) ).isEqualTo( null );
+		assertThat( arg1.get( Key.of( "hint" ) ) ).isEqualTo( "First Name" );
 
-		Struct arg2 = ( Struct ) arguments.dereference( Key.of( "2" ), false );
-		assertThat( arg2.dereference( Key.of( "name" ), false ) ).isEqualTo( "param2" );
-		assertThat( arg2.dereference( Key.of( "required" ), false ) ).isEqualTo( false );
-		assertThat( arg2.dereference( Key.of( "type" ), false ) ).isEqualTo( "any" );
-		assertThat( arg2.dereference( Key.of( "default" ), false ) ).isEqualTo( "wood" );
-		assertThat( arg2.dereference( Key.of( "hint" ), false ) ).isEqualTo( "" );
+		Struct arg2 = ( Struct ) arguments.dereference( context, Key.of( "2" ), false );
+		assertThat( arg2.get( Key.of( "name" ) ) ).isEqualTo( "param2" );
+		assertThat( arg2.get( Key.of( "required" ) ) ).isEqualTo( false );
+		assertThat( arg2.get( Key.of( "type" ) ) ).isEqualTo( "any" );
+		assertThat( arg2.get( Key.of( "default" ) ) ).isEqualTo( "wood" );
+		assertThat( arg2.get( Key.of( "hint" ) ) ).isEqualTo( "" );
 
 	}
 

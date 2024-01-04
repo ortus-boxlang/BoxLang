@@ -67,7 +67,7 @@ public class ArrayLenTest {
 		    result = arrayLen( arr );
 		    """,
 		    context );
-		assertThat( variables.dereference( result, false ) ).isEqualTo( 3 );
+		assertThat( variables.get( result ) ).isEqualTo( 3 );
 
 		instance.executeSource(
 		    """
@@ -76,8 +76,8 @@ public class ArrayLenTest {
 		    result2 = [ 1, 2, 3 ].len();
 		       """,
 		    context );
-		assertThat( variables.dereference( result, false ) ).isEqualTo( 3 );
-		assertThat( variables.dereference( result2, false ) ).isEqualTo( 3 );
+		assertThat( variables.get( result ) ).isEqualTo( 3 );
+		assertThat( variables.get( result2 ) ).isEqualTo( 3 );
 	}
 
 	@DisplayName( "It returns the length of the struct" )
@@ -89,7 +89,7 @@ public class ArrayLenTest {
 		    result = structCount( str );
 		    """,
 		    context );
-		assertThat( variables.dereference( result, false ) ).isEqualTo( 2 );
+		assertThat( variables.get( result ) ).isEqualTo( 2 );
 
 		instance.executeSource(
 		    """
@@ -98,8 +98,8 @@ public class ArrayLenTest {
 		    result2 = str.count();
 		    """,
 		    context );
-		assertThat( variables.dereference( result, false ) ).isEqualTo( 2 );
-		assertThat( variables.dereference( Key.of( "result2" ), false ) ).isEqualTo( 2 );
+		assertThat( variables.get( result ) ).isEqualTo( 2 );
+		assertThat( variables.get( Key.of( "result2" ) ) ).isEqualTo( 2 );
 
 		instance.executeSource(
 		    """
@@ -107,8 +107,8 @@ public class ArrayLenTest {
 		    result2 = { foo : "bar", brad : "wood" }.count();
 		    """,
 		    context );
-		assertThat( variables.dereference( result, false ) ).isEqualTo( 2 );
-		assertThat( variables.dereference( Key.of( "result2" ), false ) ).isEqualTo( 2 );
+		assertThat( variables.get( result ) ).isEqualTo( 2 );
+		assertThat( variables.get( Key.of( "result2" ) ) ).isEqualTo( 2 );
 	}
 
 	@DisplayName( "It returns the length of the string" )
@@ -120,7 +120,7 @@ public class ArrayLenTest {
 		    result = len( str );
 		    """,
 		    context );
-		assertThat( variables.dereference( result, false ) ).isEqualTo( 7 );
+		assertThat( variables.get( result ) ).isEqualTo( 7 );
 
 		instance.executeSource(
 		    """
@@ -129,8 +129,8 @@ public class ArrayLenTest {
 		    result2 = "BoxLang".len();
 		    """,
 		    context );
-		assertThat( variables.dereference( result, false ) ).isEqualTo( 7 );
-		assertThat( variables.dereference( result2, false ) ).isEqualTo( 7 );
+		assertThat( variables.get( result ) ).isEqualTo( 7 );
+		assertThat( variables.get( result2 ) ).isEqualTo( 7 );
 	}
 
 	@DisplayName( "It returns the length of the number" )
@@ -142,7 +142,7 @@ public class ArrayLenTest {
 		    result = len( num );
 		    """,
 		    context );
-		assertThat( variables.dereference( result, false ) ).isEqualTo( 3 );
+		assertThat( variables.get( result ) ).isEqualTo( 3 );
 
 		instance.executeSource(
 		    """
@@ -151,7 +151,7 @@ public class ArrayLenTest {
 		    result = (123).len();
 		    """,
 		    context );
-		assertThat( variables.dereference( result, false ) ).isEqualTo( 3 );
+		assertThat( variables.get( result ) ).isEqualTo( 3 );
 	}
 
 }

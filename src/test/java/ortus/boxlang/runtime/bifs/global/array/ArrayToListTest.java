@@ -67,7 +67,7 @@ public class ArrayToListTest {
 		        result = ArrayToList( nums );
 		    """,
 		    context );
-		String joined = ( String ) variables.dereference( result, false );
+		String joined = ( String ) variables.get( result );
 		assertThat( joined ).isEqualTo( "1,2,3,4,5" );
 	}
 
@@ -81,7 +81,7 @@ public class ArrayToListTest {
 		        result = ArrayToList( nums, "|" );
 		    """,
 		    context );
-		String joined = ( String ) variables.dereference( result, false );
+		String joined = ( String ) variables.get( result );
 		assertThat( joined ).isEqualTo( "1|2|3|4|5" );
 	}
 
@@ -95,7 +95,7 @@ public class ArrayToListTest {
 		        result = nums.toList( "|" );
 		    """,
 		    context );
-		String joined = ( String ) variables.dereference( result, false );
+		String joined = ( String ) variables.get( result );
 		assertThat( joined ).isEqualTo( "1|2|3|4|5" );
 	}
 
@@ -109,7 +109,7 @@ public class ArrayToListTest {
 		        result = nums.join( "|" );
 		    """,
 		    context );
-		String joined = ( String ) variables.dereference( result, false );
+		String joined = ( String ) variables.get( result );
 		assertThat( joined ).isEqualTo( "1|2|3|4|5" );
 	}
 }

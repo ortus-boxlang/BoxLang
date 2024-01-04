@@ -33,6 +33,8 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import TestCases.interop.InvokeDynamicFields;
+import ortus.boxlang.runtime.context.IBoxContext;
+import ortus.boxlang.runtime.context.ScriptingBoxContext;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.BoxLangException;
@@ -40,6 +42,8 @@ import ortus.boxlang.runtime.types.exceptions.NoFieldException;
 import ortus.boxlang.runtime.types.exceptions.NoMethodException;
 
 public class DynamicJavaInteropServiceTest {
+
+	private IBoxContext context = new ScriptingBoxContext();
 
 	@DisplayName( "It can call a constructor with one argument" )
 	@Test
@@ -283,6 +287,7 @@ public class DynamicJavaInteropServiceTest {
 		map.put( "key", "value" );
 		assertThat(
 		    DynamicJavaInteropService.dereference(
+		        context,
 		        map,
 		        Key.of( "key" ),
 		        false
@@ -290,6 +295,7 @@ public class DynamicJavaInteropServiceTest {
 		).isEqualTo( "value" );
 
 		DynamicJavaInteropService.assign(
+		    context,
 		    map,
 		    Key.of( "key2" ),
 		    "value2"
@@ -297,6 +303,7 @@ public class DynamicJavaInteropServiceTest {
 
 		assertThat(
 		    DynamicJavaInteropService.dereference(
+		        context,
 		        map,
 		        Key.of( "key2" ),
 		        false
@@ -319,6 +326,7 @@ public class DynamicJavaInteropServiceTest {
 
 		assertThat(
 		    DynamicJavaInteropService.dereference(
+		        context,
 		        map,
 		        Key.of( Struct.EMPTY ),
 		        false
@@ -327,6 +335,7 @@ public class DynamicJavaInteropServiceTest {
 
 		assertThat(
 		    DynamicJavaInteropService.dereference(
+		        context,
 		        map,
 		        Key.of( str ),
 		        false
@@ -334,6 +343,7 @@ public class DynamicJavaInteropServiceTest {
 		).isEqualTo( "bradwood" );
 
 		DynamicJavaInteropService.assign(
+		    context,
 		    map,
 		    Key.of( str2 ),
 		    "luismajano"
@@ -341,6 +351,7 @@ public class DynamicJavaInteropServiceTest {
 
 		assertThat(
 		    DynamicJavaInteropService.dereference(
+		        context,
 		        map,
 		        Key.of( str2 ),
 		        false
@@ -359,6 +370,7 @@ public class DynamicJavaInteropServiceTest {
 		String[] array = new String[] { "Brad", "Wood" };
 		assertThat(
 		    DynamicJavaInteropService.dereference(
+		        context,
 		        array,
 		        // Use IntKey
 		        Key.of( 1 ),
@@ -368,6 +380,7 @@ public class DynamicJavaInteropServiceTest {
 
 		assertThat(
 		    DynamicJavaInteropService.dereference(
+		        context,
 		        array,
 		        // Use Key
 		        Key.of( "1" ),
@@ -376,6 +389,7 @@ public class DynamicJavaInteropServiceTest {
 		).isEqualTo( "Brad" );
 
 		DynamicJavaInteropService.assign(
+		    context,
 		    array,
 		    Key.of( 2 ),
 		    "Ortus Solutions"
@@ -383,6 +397,7 @@ public class DynamicJavaInteropServiceTest {
 
 		assertThat(
 		    DynamicJavaInteropService.dereference(
+		        context,
 		        array,
 		        Key.of( 2 ),
 		        false
@@ -391,6 +406,7 @@ public class DynamicJavaInteropServiceTest {
 
 		assertThat(
 		    DynamicJavaInteropService.dereference(
+		        context,
 		        array,
 		        Key.of( "length" ),
 		        false
@@ -399,6 +415,7 @@ public class DynamicJavaInteropServiceTest {
 
 		assertThrows( BoxLangException.class, () -> {
 			DynamicJavaInteropService.dereference(
+			    context,
 			    array,
 			    Key.of( "test" ),
 			    false
@@ -407,6 +424,7 @@ public class DynamicJavaInteropServiceTest {
 
 		assertThrows( BoxLangException.class, () -> {
 			DynamicJavaInteropService.dereference(
+			    context,
 			    array,
 			    Key.of( 0 ),
 			    false
@@ -415,6 +433,7 @@ public class DynamicJavaInteropServiceTest {
 
 		assertThrows( BoxLangException.class, () -> {
 			DynamicJavaInteropService.dereference(
+			    context,
 			    array,
 			    Key.of( 1.5 ),
 			    false
@@ -423,16 +442,17 @@ public class DynamicJavaInteropServiceTest {
 
 		assertThrows( BoxLangException.class, () -> {
 			DynamicJavaInteropService.dereference(
+			    context,
 			    array,
 			    Key.of( 50 ),
 			    false
 			);
 		} );
 
-		assertThat( DynamicJavaInteropService.dereference( array, Key.of( "test" ), true ) ).isEqualTo( null );
-		assertThat( DynamicJavaInteropService.dereference( array, Key.of( 0 ), true ) ).isEqualTo( null );
-		assertThat( DynamicJavaInteropService.dereference( array, Key.of( 1.5 ), true ) ).isEqualTo( null );
-		assertThat( DynamicJavaInteropService.dereference( array, Key.of( 50 ), true ) ).isEqualTo( null );
+		assertThat( DynamicJavaInteropService.dereference( context, array, Key.of( "test" ), true ) ).isEqualTo( null );
+		assertThat( DynamicJavaInteropService.dereference( context, array, Key.of( 0 ), true ) ).isEqualTo( null );
+		assertThat( DynamicJavaInteropService.dereference( context, array, Key.of( 1.5 ), true ) ).isEqualTo( null );
+		assertThat( DynamicJavaInteropService.dereference( context, array, Key.of( 50 ), true ) ).isEqualTo( null );
 	}
 
 	@DisplayName( "It use Lists" )
@@ -444,6 +464,7 @@ public class DynamicJavaInteropServiceTest {
 
 		assertThat(
 		    DynamicJavaInteropService.dereference(
+		        context,
 		        list,
 		        // Use IntKey
 		        Key.of( 1 ),
@@ -453,6 +474,7 @@ public class DynamicJavaInteropServiceTest {
 
 		assertThat(
 		    DynamicJavaInteropService.dereference(
+		        context,
 		        list,
 		        // Use Key
 		        Key.of( "1" ),
@@ -461,6 +483,7 @@ public class DynamicJavaInteropServiceTest {
 		).isEqualTo( "Brad" );
 
 		DynamicJavaInteropService.assign(
+		    context,
 		    list,
 		    Key.of( 2 ),
 		    "Ortus Solutions"
@@ -468,6 +491,7 @@ public class DynamicJavaInteropServiceTest {
 
 		assertThat(
 		    DynamicJavaInteropService.dereference(
+		        context,
 		        list,
 		        Key.of( 2 ),
 		        false
@@ -476,6 +500,7 @@ public class DynamicJavaInteropServiceTest {
 
 		assertThrows( BoxLangException.class, () -> {
 			DynamicJavaInteropService.dereference(
+			    context,
 			    list,
 			    Key.of( "test" ),
 			    false
@@ -484,6 +509,7 @@ public class DynamicJavaInteropServiceTest {
 
 		assertThrows( BoxLangException.class, () -> {
 			DynamicJavaInteropService.dereference(
+			    context,
 			    list,
 			    Key.of( 0 ),
 			    false
@@ -492,6 +518,7 @@ public class DynamicJavaInteropServiceTest {
 
 		assertThrows( BoxLangException.class, () -> {
 			DynamicJavaInteropService.dereference(
+			    context,
 			    list,
 			    Key.of( 1.5 ),
 			    false
@@ -500,16 +527,17 @@ public class DynamicJavaInteropServiceTest {
 
 		assertThrows( BoxLangException.class, () -> {
 			DynamicJavaInteropService.dereference(
+			    context,
 			    list,
 			    Key.of( 50 ),
 			    false
 			);
 		} );
 
-		assertThat( DynamicJavaInteropService.dereference( list, Key.of( "test" ), true ) ).isEqualTo( null );
-		assertThat( DynamicJavaInteropService.dereference( list, Key.of( 0 ), true ) ).isEqualTo( null );
-		assertThat( DynamicJavaInteropService.dereference( list, Key.of( 1.5 ), true ) ).isEqualTo( null );
-		assertThat( DynamicJavaInteropService.dereference( list, Key.of( 50 ), true ) ).isEqualTo( null );
+		assertThat( DynamicJavaInteropService.dereference( context, list, Key.of( "test" ), true ) ).isEqualTo( null );
+		assertThat( DynamicJavaInteropService.dereference( context, list, Key.of( 0 ), true ) ).isEqualTo( null );
+		assertThat( DynamicJavaInteropService.dereference( context, list, Key.of( 1.5 ), true ) ).isEqualTo( null );
+		assertThat( DynamicJavaInteropService.dereference( context, list, Key.of( 50 ), true ) ).isEqualTo( null );
 	}
 
 }

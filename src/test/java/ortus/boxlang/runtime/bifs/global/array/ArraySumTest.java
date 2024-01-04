@@ -66,7 +66,7 @@ public class ArraySumTest {
 		    result = arraySum( arr );
 		    """,
 		    context );
-		assertThat( variables.dereference( result, false ) ).isEqualTo( 6 );
+		assertThat( variables.get( result ) ).isEqualTo( 6 );
 	}
 
 	@DisplayName( "It can average member" )
@@ -78,7 +78,7 @@ public class ArraySumTest {
 		    result = arr.Sum(  );
 		    """,
 		    context );
-		assertThat( variables.dereference( result, false ) ).isEqualTo( 6 );
+		assertThat( variables.get( result ) ).isEqualTo( 6 );
 	}
 
 }

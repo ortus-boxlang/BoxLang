@@ -58,7 +58,7 @@ public class DereferenceTest {
 	@DisplayName( "Single identifier dot access" )
 	@Test
 	public void testSingleIdentifierReference() {
-		variables.assign( new Key( "foo" ), "test" );
+		variables.assign( context, new Key( "foo" ), "test" );
 		instance.executeSource(
 		    """
 		    foo;
@@ -70,8 +70,8 @@ public class DereferenceTest {
 	@Test
 	public void testmultiIdentifierReference() {
 		Struct s = new Struct();
-		s.assign( new Key( "bar" ), "test" );
-		variables.assign( new Key( "foo" ), s );
+		s.assign( context, new Key( "bar" ), "test" );
+		variables.assign( context, new Key( "foo" ), s );
 		instance.executeSource(
 		    """
 		    foo.bar;
@@ -83,10 +83,10 @@ public class DereferenceTest {
 	@Test
 	public void testmultimultiIdentifierReference() {
 		Struct x = new Struct();
-		x.assign( new Key( "baz" ), "test" );
+		x.assign( context, new Key( "baz" ), "test" );
 		Struct s = new Struct();
-		s.assign( new Key( "bar" ), x );
-		variables.assign( new Key( "foo" ), s );
+		s.assign( context, new Key( "bar" ), x );
+		variables.assign( context, new Key( "foo" ), s );
 		instance.executeSource(
 		    """
 		    foo.bar.baz;
@@ -98,8 +98,8 @@ public class DereferenceTest {
 	@Test
 	public void testBracketStringAccess() {
 		Struct s = new Struct();
-		s.assign( new Key( "bar" ), "test" );
-		variables.assign( new Key( "foo" ), s );
+		s.assign( context, new Key( "bar" ), "test" );
+		variables.assign( context, new Key( "foo" ), s );
 		instance.executeSource(
 		    """
 		    foo["bar"];
@@ -111,8 +111,8 @@ public class DereferenceTest {
 	@Test
 	public void testBracketStringConcatAccess() {
 		Struct s = new Struct();
-		s.assign( new Key( "bar" ), "test" );
-		variables.assign( new Key( "foo" ), s );
+		s.assign( context, new Key( "bar" ), "test" );
+		variables.assign( context, new Key( "foo" ), s );
 		instance.executeSource(
 		    """
 		    foo["b" & "ar"]
@@ -124,8 +124,8 @@ public class DereferenceTest {
 	@Test
 	public void testBracketNumberAccess() {
 		Struct s = new Struct();
-		s.assign( new Key( "7" ), "test" );
-		variables.assign( new Key( "foo" ), s );
+		s.assign( context, new Key( "7" ), "test" );
+		variables.assign( context, new Key( "foo" ), s );
 		instance.executeSource(
 		    """
 		    foo[ 7 ]
@@ -137,8 +137,8 @@ public class DereferenceTest {
 	@Test
 	public void testBracketNumberExpressionAccess() {
 		Struct s = new Struct();
-		s.assign( new Key( "12" ), "test" );
-		variables.assign( new Key( "foo" ), s );
+		s.assign( context, new Key( "12" ), "test" );
+		variables.assign( context, new Key( "foo" ), s );
 		instance.executeSource(
 		    """
 		    foo[ 7 + 5 ]
@@ -150,11 +150,11 @@ public class DereferenceTest {
 	@Test
 	public void testBracketObjectExpressionAccess() {
 		Struct x = new Struct();
-		x.assign( new Key( "bar" ), "baz" );
+		x.assign( context, new Key( "bar" ), "baz" );
 		Struct s = new Struct();
-		s.assign( new Key( "12" ), "test" );
-		s.assign( Key.of( x ), "test" );
-		variables.assign( new Key( "foo" ), s );
+		s.assign( context, new Key( "12" ), "test" );
+		s.assign( context, Key.of( x ), "test" );
+		variables.assign( context, new Key( "foo" ), s );
 		instance.executeSource(
 		    """
 		    foo[ { bar : "baz" } ];
@@ -170,12 +170,12 @@ public class DereferenceTest {
 		Struct	other	= new Struct();
 		Struct	foo		= new Struct();
 
-		foo.assign( new Key( "aaa" ), aaa );
-		aaa.assign( Key.of( 12 ), twelve );
-		twelve.assign( Key.of( "other" ), other );
-		other.assign( Key.of( 7 ), "test" );
+		foo.assign( context, new Key( "aaa" ), aaa );
+		aaa.assign( context, Key.of( 12 ), twelve );
+		twelve.assign( context, Key.of( "other" ), other );
+		other.assign( context, Key.of( 7 ), "test" );
 
-		variables.assign( new Key( "foo" ), foo );
+		variables.assign( context, new Key( "foo" ), foo );
 		instance.executeSource(
 		    """
 		    foo[ "a" & "aa" ][ 12 ].other[ 2 + 5 ];

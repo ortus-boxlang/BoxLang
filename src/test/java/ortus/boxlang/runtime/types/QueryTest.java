@@ -28,6 +28,8 @@ import ortus.boxlang.runtime.scopes.Key;
 
 public class QueryTest {
 
+	private IBoxContext context = new ScriptingBoxContext();
+
 	@DisplayName( "Test Constructor" )
 	@Test
 	void testConstructors() {
@@ -76,14 +78,14 @@ public class QueryTest {
 		assertThat( colData.get( 1 ) ).isEqualTo( 101 );
 		assertThat( colData.get( 2 ) ).isEqualTo( 42 );
 
-		assertThat( qry.dereference( Key.recordCount, false ) ).isEqualTo( 3 );
-		assertThat( qry.dereference( Key.columnList, false ) ).isEqualTo( "foo,col2" );
-		assertThat( qry.dereference( Key.currentRow, false ) ).isEqualTo( 1 );
+		assertThat( qry.dereference( context, Key.recordCount, false ) ).isEqualTo( 3 );
+		assertThat( qry.dereference( context, Key.columnList, false ) ).isEqualTo( "foo,col2" );
+		assertThat( qry.dereference( context, Key.currentRow, false ) ).isEqualTo( 1 );
 
-		assertThat( qry.dereference( Key.of( "foo" ), false ) ).isInstanceOf( QueryColumn.class );
-		assertThat( ctx.unwrapQueryColumn( qry.dereference( Key.of( "foo" ), false ) ) ).isEqualTo( "bar" );
-		assertThat( qry.assign( Key.of( "foo" ), "gavin" ) ).isEqualTo( "gavin" );
-		assertThat( ctx.unwrapQueryColumn( qry.dereference( Key.of( "foo" ), false ) ) ).isEqualTo( "gavin" );
+		assertThat( qry.dereference( context, Key.of( "foo" ), false ) ).isInstanceOf( QueryColumn.class );
+		assertThat( ctx.unwrapQueryColumn( qry.dereference( context, Key.of( "foo" ), false ) ) ).isEqualTo( "bar" );
+		assertThat( qry.assign( context, Key.of( "foo" ), "gavin" ) ).isEqualTo( "gavin" );
+		assertThat( ctx.unwrapQueryColumn( qry.dereference( context, Key.of( "foo" ), false ) ) ).isEqualTo( "gavin" );
 	}
 
 }

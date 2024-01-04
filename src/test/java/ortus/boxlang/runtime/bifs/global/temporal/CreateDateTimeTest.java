@@ -70,7 +70,7 @@ public class CreateDateTimeTest {
 		    result = createDateTime( 2023, 12, 31, 12, 30, 30, 0 );
 		    """,
 		    context );
-		DateTime result = ( DateTime ) variables.dereference( Key.of( "result" ), false );
+		DateTime result = ( DateTime ) variables.get( Key.of( "result" ) );
 		assertThat( result ).isInstanceOf( DateTime.class );
 		assertThat( result.toString() ).isInstanceOf( String.class );
 		assertThat( IntegerCaster.cast( result.format( "yyyy" ) ) ).isEqualTo( 2023 );

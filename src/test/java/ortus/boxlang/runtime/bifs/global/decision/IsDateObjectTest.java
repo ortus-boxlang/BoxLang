@@ -68,9 +68,9 @@ public class IsDateObjectTest {
 		    aCreateDateCall = isDateObject( createDate( 2023, 12, 21 ) );
 		      """,
 		    context );
-		assertThat( ( Boolean ) variables.dereference( Key.of( "aNowCall" ), false ) ).isTrue();
-		assertThat( ( Boolean ) variables.dereference( Key.of( "aCreateTimeCall" ), false ) ).isTrue();
-		assertThat( ( Boolean ) variables.dereference( Key.of( "aCreateDateCall" ), false ) ).isTrue();
+		assertThat( ( Boolean ) variables.get( Key.of( "aNowCall" ) ) ).isTrue();
+		assertThat( ( Boolean ) variables.get( Key.of( "aCreateTimeCall" ) ) ).isTrue();
+		assertThat( ( Boolean ) variables.get( Key.of( "aCreateDateCall" ) ) ).isTrue();
 	}
 
 	@DisplayName( "It returns false for non-date objects" )
@@ -84,10 +84,10 @@ public class IsDateObjectTest {
 		    aRandomString  = isDateObject( "abc" );
 		      """,
 		    context );
-		assertThat( ( Boolean ) variables.dereference( Key.of( "aTimespan" ), false ) ).isTrue();
-		assertThat( ( Boolean ) variables.dereference( Key.of( "aDateString" ), false ) ).isTrue();
-		assertThat( ( Boolean ) variables.dereference( Key.of( "aFormattedDate" ), false ) ).isTrue();
-		assertThat( ( Boolean ) variables.dereference( Key.of( "aRandomString" ), false ) ).isTrue();
+		assertThat( ( Boolean ) variables.get( Key.of( "aTimespan" ) ) ).isTrue();
+		assertThat( ( Boolean ) variables.get( Key.of( "aDateString" ) ) ).isTrue();
+		assertThat( ( Boolean ) variables.get( Key.of( "aFormattedDate" ) ) ).isTrue();
+		assertThat( ( Boolean ) variables.get( Key.of( "aRandomString" ) ) ).isTrue();
 	}
 
 }

@@ -75,8 +75,8 @@ public class ArrayEveryTest {
 		    """,
 		    context );
 
-		assertThat( variables.dereference( result, false ) ).isEqualTo( true );
-		Array indexes = ( Array ) variables.dereference( Key.of( "indexes" ), false );
+		assertThat( variables.get( result ) ).isEqualTo( true );
+		Array indexes = ( Array ) variables.get( Key.of( "indexes" ) );
 		assertThat( indexes.size() ).isEqualTo( 5 );
 		assertThat( indexes.get( 0 ) ).isEqualTo( 1 );
 		assertThat( indexes.get( 1 ) ).isEqualTo( 2 );
@@ -106,8 +106,8 @@ public class ArrayEveryTest {
 		    """,
 		    context );
 
-		assertThat( variables.dereference( result, false ) ).isEqualTo( false );
-		Array indexes = ( Array ) variables.dereference( Key.of( "indexes" ), false );
+		assertThat( variables.get( result ) ).isEqualTo( false );
+		Array indexes = ( Array ) variables.get( Key.of( "indexes" ) );
 		assertThat( indexes.size() ).isEqualTo( 3 );
 		assertThat( indexes.get( 0 ) ).isEqualTo( 1 );
 		assertThat( indexes.get( 1 ) ).isEqualTo( 2 );
@@ -130,8 +130,8 @@ public class ArrayEveryTest {
 		        result = nums.every( eachFn );
 		    """,
 		    context );
-		assertThat( variables.dereference( result, false ) ).isEqualTo( true );
-		Array indexes = ( Array ) variables.dereference( Key.of( "indexes" ), false );
+		assertThat( variables.get( result ) ).isEqualTo( true );
+		Array indexes = ( Array ) variables.get( Key.of( "indexes" ) );
 		assertThat( indexes.size() ).isEqualTo( 5 );
 		assertThat( indexes.get( 0 ) ).isEqualTo( 1 );
 		assertThat( indexes.get( 1 ) ).isEqualTo( 2 );

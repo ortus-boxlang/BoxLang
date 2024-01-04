@@ -398,7 +398,7 @@ public class Array implements List<Object>, IType, IReferenceable, IListenable {
 	 * @param value The value to assign
 	 */
 	@Override
-	public Object assign( Key key, Object value ) {
+	public Object assign( IBoxContext context, Key key, Object value ) {
 
 		Integer index = Array.validateAndGetIntForAssign( key, wrapped.size(), false );
 		if ( index > wrapped.size() ) {
@@ -422,7 +422,7 @@ public class Array implements List<Object>, IType, IReferenceable, IListenable {
 	 * @return The requested object
 	 */
 	@Override
-	public Object dereference( Key key, Boolean safe ) {
+	public Object dereference( IBoxContext context, Key key, Boolean safe ) {
 
 		// Special check for $bx
 		if ( key.equals( BoxMeta.key ) ) {

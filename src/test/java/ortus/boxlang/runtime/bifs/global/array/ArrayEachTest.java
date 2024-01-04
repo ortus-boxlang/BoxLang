@@ -73,7 +73,7 @@ public class ArrayEachTest {
 		        ArrayEach( nums, eachFn );
 		    """,
 		    context );
-		Array indexes = ( Array ) variables.dereference( Key.of( "indexes" ), false );
+		Array indexes = ( Array ) variables.get( Key.of( "indexes" ) );
 		assertThat( indexes.size() ).isEqualTo( 5 );
 		assertThat( indexes.get( 0 ) ).isEqualTo( 1 );
 		assertThat( indexes.get( 1 ) ).isEqualTo( 2 );
@@ -97,7 +97,7 @@ public class ArrayEachTest {
 		        nums.each( eachFn );
 		    """,
 		    context );
-		Array indexes = ( Array ) variables.dereference( Key.of( "indexes" ), false );
+		Array indexes = ( Array ) variables.get( Key.of( "indexes" ) );
 		assertThat( indexes.size() ).isEqualTo( 5 );
 		assertThat( indexes.get( 0 ) ).isEqualTo( 1 );
 		assertThat( indexes.get( 1 ) ).isEqualTo( 2 );

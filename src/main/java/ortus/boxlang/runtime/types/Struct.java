@@ -595,7 +595,7 @@ public class Struct implements Map<Key, Object>, IType, IReferenceable, IListena
 	 * @param value The value to assign
 	 */
 	@Override
-	public Object assign( Key key, Object value ) {
+	public Object assign( IBoxContext context, Key key, Object value ) {
 		put( key, value );
 		return value;
 	}
@@ -609,7 +609,7 @@ public class Struct implements Map<Key, Object>, IType, IReferenceable, IListena
 	 * @return The requested object
 	 */
 	@Override
-	public Object dereference( Key key, Boolean safe ) {
+	public Object dereference( IBoxContext context, Key key, Boolean safe ) {
 		// Special check for $bx
 		if ( key.equals( BoxMeta.key ) ) {
 			return getBoxMeta();
@@ -647,7 +647,7 @@ public class Struct implements Map<Key, Object>, IType, IReferenceable, IListena
 			return Array.fromList( keySet().stream().map( Key::getName ).collect( java.util.stream.Collectors.toList() ) );
 		}
 
-		Object value = dereference( name, true );
+		Object value = dereference( context, name, true );
 		if ( value != null ) {
 
 			if ( value instanceof Function function ) {
@@ -690,7 +690,7 @@ public class Struct implements Map<Key, Object>, IType, IReferenceable, IListena
 			return Array.fromList( keySet().stream().map( Key::getName ).collect( java.util.stream.Collectors.toList() ) );
 		}
 
-		Object value = dereference( name, safe );
+		Object value = dereference( context, name, safe );
 		if ( value != null ) {
 			if ( value instanceof Function function ) {
 				return function.invoke(

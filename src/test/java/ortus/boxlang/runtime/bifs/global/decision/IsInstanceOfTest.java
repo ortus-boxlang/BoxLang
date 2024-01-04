@@ -71,13 +71,13 @@ public class IsInstanceOfTest {
 		    aBoxLangClassFullPath = isInstanceOf( new tests.resources.BoxLang.KitchenSink(), "tests.resources.BoxLang.KitchenSink" );
 		       """,
 		    context );
-		assertThat( ( Boolean ) variables.dereference( Key.of( "aJavaString" ), false ) ).isTrue();
-		assertThat( ( Boolean ) variables.dereference( Key.of( "aDateObject" ), false ) ).isTrue();
-		assertThat( ( Boolean ) variables.dereference( Key.of( "aStruct" ), false ) ).isTrue();
-		assertThat( ( Boolean ) variables.dereference( Key.of( "anArray" ), false ) ).isTrue();
-		assertThat( ( Boolean ) variables.dereference( Key.of( "aJavaString" ), false ) ).isTrue();
-		assertThat( ( Boolean ) variables.dereference( Key.of( "aBoxLangClass" ), false ) ).isTrue();
-		assertThat( ( Boolean ) variables.dereference( Key.of( "aBoxLangClassFullPath" ), false ) ).isTrue();
+		assertThat( ( Boolean ) variables.get( Key.of( "aJavaString" ) ) ).isTrue();
+		assertThat( ( Boolean ) variables.get( Key.of( "aDateObject" ) ) ).isTrue();
+		assertThat( ( Boolean ) variables.get( Key.of( "aStruct" ) ) ).isTrue();
+		assertThat( ( Boolean ) variables.get( Key.of( "anArray" ) ) ).isTrue();
+		assertThat( ( Boolean ) variables.get( Key.of( "aJavaString" ) ) ).isTrue();
+		assertThat( ( Boolean ) variables.get( Key.of( "aBoxLangClass" ) ) ).isTrue();
+		assertThat( ( Boolean ) variables.get( Key.of( "aBoxLangClassFullPath" ) ) ).isTrue();
 	}
 
 	@DisplayName( "False conditions" )
@@ -92,11 +92,11 @@ public class IsInstanceOfTest {
 		    aBoxLangClassFullPath = isInstanceOf( new tests.resources.BoxLang.KitchenSink(), "tests.nowhere.BoxLang.KitchenSink" );
 		       """,
 		    context );
-		assertThat( ( Boolean ) variables.dereference( Key.of( "aJavaString" ), false ) ).isFalse();
-		assertThat( ( Boolean ) variables.dereference( Key.of( "aDateObject" ), false ) ).isFalse();
-		assertThat( ( Boolean ) variables.dereference( Key.of( "anArray" ), false ) ).isFalse();
-		assertThat( ( Boolean ) variables.dereference( Key.of( "aBoxLangClass" ), false ) ).isFalse();
-		assertThat( ( Boolean ) variables.dereference( Key.of( "aBoxLangClassFullPath" ), false ) ).isFalse();
+		assertThat( ( Boolean ) variables.get( Key.of( "aJavaString" ) ) ).isFalse();
+		assertThat( ( Boolean ) variables.get( Key.of( "aDateObject" ) ) ).isFalse();
+		assertThat( ( Boolean ) variables.get( Key.of( "anArray" ) ) ).isFalse();
+		assertThat( ( Boolean ) variables.get( Key.of( "aBoxLangClass" ) ) ).isFalse();
+		assertThat( ( Boolean ) variables.get( Key.of( "aBoxLangClassFullPath" ) ) ).isFalse();
 	}
 
 }

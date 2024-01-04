@@ -22,9 +22,13 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import org.junit.jupiter.api.Test;
 
+import ortus.boxlang.runtime.context.IBoxContext;
+import ortus.boxlang.runtime.context.ScriptingBoxContext;
 import ortus.boxlang.runtime.types.Struct;
 
 public class ServerScopeTest {
+
+	private IBoxContext context = new ScriptingBoxContext();
 
 	@Test
 	public void testConstructor() {
@@ -54,10 +58,10 @@ public class ServerScopeTest {
 	void testUnmodifiableKeys() {
 
 		IScope scope = new ServerScope();
-		scope.assign( Key.of( "brad" ), "wood" );
+		scope.assign( context, Key.of( "brad" ), "wood" );
 		scope.put( Key.of( "luis" ), "majano" );
 
-		assertThrows( Throwable.class, () -> scope.assign( Key.of( "java" ), "" ) );
+		assertThrows( Throwable.class, () -> scope.assign( context, Key.of( "java" ), "" ) );
 		assertThrows( Throwable.class, () -> scope.put( Key.of( "os" ), "" ) );
 
 	}

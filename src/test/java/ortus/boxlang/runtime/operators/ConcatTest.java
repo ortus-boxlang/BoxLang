@@ -22,11 +22,15 @@ import static com.google.common.truth.Truth.assertThat;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
+import ortus.boxlang.runtime.context.IBoxContext;
+import ortus.boxlang.runtime.context.ScriptingBoxContext;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
 
 public class ConcatTest {
+
+	private IBoxContext context = new ScriptingBoxContext();
 
 	@DisplayName( "It can concatenate strings" )
 	@Test
@@ -72,7 +76,7 @@ public class ConcatTest {
 	void testItCanCompountConcatenate() {
 		IScope scope = new VariablesScope();
 		scope.put( Key.of( "i" ), "brad" );
-		assertThat( Concat.invoke( scope, Key.of( "i" ), "wood" ) ).isEqualTo( "bradwood" );
+		assertThat( Concat.invoke( context, scope, Key.of( "i" ), "wood" ) ).isEqualTo( "bradwood" );
 		assertThat( scope.get( Key.of( "i" ) ) ).isEqualTo( "bradwood" );
 	}
 
@@ -81,7 +85,7 @@ public class ConcatTest {
 	void testItCanCompountConcatenateManyStrings() {
 		IScope scope = new VariablesScope();
 		scope.put( Key.of( "i" ), "a" );
-		assertThat( Concat.invoke( scope, Key.of( "i" ), "b", "c", "d", "e", "f", "g", "h", "i" ) ).isEqualTo( "abcdefghi" );
+		assertThat( Concat.invoke( context, scope, Key.of( "i" ), "b", "c", "d", "e", "f", "g", "h", "i" ) ).isEqualTo( "abcdefghi" );
 		assertThat( scope.get( Key.of( "i" ) ) ).isEqualTo( "abcdefghi" );
 	}
 

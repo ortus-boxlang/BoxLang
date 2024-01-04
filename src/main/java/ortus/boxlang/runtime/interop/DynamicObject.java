@@ -540,8 +540,8 @@ public class DynamicObject implements IReferenceable {
 	 * @return The requested object
 	 */
 	@SuppressWarnings( "unchecked" )
-	public Object dereference( Key name, Boolean safe ) {
-		return DynamicJavaInteropService.dereference( this.targetClass, this.targetInstance, name, safe );
+	public Object dereference( IBoxContext context, Key name, Boolean safe ) {
+		return DynamicJavaInteropService.dereference( context, this.targetClass, this.targetInstance, name, safe );
 	}
 
 	/**
@@ -577,7 +577,7 @@ public class DynamicObject implements IReferenceable {
 	 * @param value The value to assign
 	 */
 	@SuppressWarnings( "unchecked" )
-	public Object assign( Key name, Object value ) {
-		return DynamicJavaInteropService.assign( this.targetClass, this.targetInstance, name, value );
+	public Object assign( IBoxContext context, Key name, Object value ) {
+		return DynamicJavaInteropService.assign( context, this.targetClass, this.targetInstance, name, value );
 	}
 }

@@ -65,7 +65,7 @@ public class RandTest {
 		    result = rand();
 		    """,
 		    context );
-		assertThat( variables.dereference( result, false ) instanceof Double ).isTrue();
+		assertThat( variables.get( result ) instanceof Double ).isTrue();
 	}
 
 	@DisplayName( "It should return a value equal to or greater than 0" )
@@ -76,7 +76,7 @@ public class RandTest {
 		    result = rand();
 		    """,
 		    context );
-		assertThat( ( Double ) variables.dereference( result, false ) >= 0 ).isTrue();
+		assertThat( ( Double ) variables.get( result ) >= 0 ).isTrue();
 	}
 
 	@DisplayName( "It should return a value less than 1" )
@@ -87,7 +87,7 @@ public class RandTest {
 		    result = rand();
 		    """,
 		    context );
-		assertThat( ( Double ) variables.dereference( result, false ) < 1 ).isTrue();
+		assertThat( ( Double ) variables.get( result ) < 1 ).isTrue();
 	}
 
 }

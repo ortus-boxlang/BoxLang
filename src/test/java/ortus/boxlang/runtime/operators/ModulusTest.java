@@ -23,12 +23,16 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
+import ortus.boxlang.runtime.context.IBoxContext;
+import ortus.boxlang.runtime.context.ScriptingBoxContext;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
 import ortus.boxlang.runtime.types.exceptions.BoxLangException;
 
 public class ModulusTest {
+
+	private IBoxContext context = new ScriptingBoxContext();
 
 	@DisplayName( "It can Modulus numbers" )
 	@Test
@@ -57,7 +61,7 @@ public class ModulusTest {
 	void testItCanCompountModulus() {
 		IScope scope = new VariablesScope();
 		scope.put( Key.of( "i" ), 4 );
-		assertThat( Modulus.invoke( scope, Key.of( "i" ), 2 ) ).isEqualTo( 0 );
+		assertThat( Modulus.invoke( context, scope, Key.of( "i" ), 2 ) ).isEqualTo( 0 );
 		assertThat( scope.get( Key.of( "i" ) ) ).isEqualTo( 0 );
 	}
 

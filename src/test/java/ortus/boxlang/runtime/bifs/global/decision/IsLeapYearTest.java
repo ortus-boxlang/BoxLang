@@ -72,13 +72,13 @@ public class IsLeapYearTest {
 		    anotherStringFloat = isLeapYear( ".01" );
 		       """,
 		    context );
-		assertThat( ( Boolean ) variables.dereference( Key.of( "anInteger" ), false ) ).isTrue();
-		assertThat( ( Boolean ) variables.dereference( Key.of( "aFloat" ), false ) ).isTrue();
-		assertThat( ( Boolean ) variables.dereference( Key.of( "anotherFloat" ), false ) ).isTrue();
-		assertThat( ( Boolean ) variables.dereference( Key.of( "aTwoDigitInteger" ), false ) ).isTrue();
-		assertThat( ( Boolean ) variables.dereference( Key.of( "aStringInteger" ), false ) ).isTrue();
-		assertThat( ( Boolean ) variables.dereference( Key.of( "aStringFloat" ), false ) ).isTrue();
-		assertThat( ( Boolean ) variables.dereference( Key.of( "anotherStringFloat" ), false ) ).isTrue();
+		assertThat( ( Boolean ) variables.get( Key.of( "anInteger" ) ) ).isTrue();
+		assertThat( ( Boolean ) variables.get( Key.of( "aFloat" ) ) ).isTrue();
+		assertThat( ( Boolean ) variables.get( Key.of( "anotherFloat" ) ) ).isTrue();
+		assertThat( ( Boolean ) variables.get( Key.of( "aTwoDigitInteger" ) ) ).isTrue();
+		assertThat( ( Boolean ) variables.get( Key.of( "aStringInteger" ) ) ).isTrue();
+		assertThat( ( Boolean ) variables.get( Key.of( "aStringFloat" ) ) ).isTrue();
+		assertThat( ( Boolean ) variables.get( Key.of( "anotherStringFloat" ) ) ).isTrue();
 	}
 
 	@DisplayName( "It returns false for non-leap years" )
@@ -91,8 +91,8 @@ public class IsLeapYearTest {
 		    aStringNonLeapYear = isLeapYear( "2021" );
 		       """,
 		    context );
-		assertThat( ( Boolean ) variables.dereference( Key.of( "anIntegerNonLeapYear" ), false ) ).isFalse();
-		assertThat( ( Boolean ) variables.dereference( Key.of( "aStringNonLeapYear" ), false ) ).isFalse();
+		assertThat( ( Boolean ) variables.get( Key.of( "anIntegerNonLeapYear" ) ) ).isFalse();
+		assertThat( ( Boolean ) variables.get( Key.of( "aStringNonLeapYear" ) ) ).isFalse();
 	}
 
 	@DisplayName( "It throws on non-numeric values" )

@@ -25,11 +25,15 @@ import java.util.List;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
+import ortus.boxlang.runtime.context.IBoxContext;
+import ortus.boxlang.runtime.context.ScriptingBoxContext;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.exceptions.UnmodifiableException;
 
 public class ImmutableArrayTest {
+
+	private IBoxContext context = new ScriptingBoxContext();
 
 	@DisplayName( "Test Constructors" )
 	@Test
@@ -39,7 +43,7 @@ public class ImmutableArrayTest {
 		assertThat( immutablearray instanceof IImmutable ).isTrue();
 
 		assertThat( immutablearray.size() ).isEqualTo( 0 );
-		assertThrows( UnmodifiableException.class, () -> immutablearray.assign( Key.of( "-1" ), "foo" ) );
+		assertThrows( UnmodifiableException.class, () -> immutablearray.assign( context, Key.of( "-1" ), "foo" ) );
 		assertThrows( UnmodifiableException.class, () -> immutablearray.add( "foo" ) );
 		assertThrows( UnmodifiableException.class, () -> immutablearray.clear() );
 		assertThrows( UnmodifiableException.class, () -> immutablearray.remove( 0 ) );

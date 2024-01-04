@@ -45,7 +45,7 @@ public class ArrayEvery extends BIF {
 	 * @argument.maxThreads The maximum number of threads to use when parallel = true
 	 */
 	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
-		Array		actualArray	= ArrayCaster.cast( arguments.dereference( Key.array, false ) );
+		Array		actualArray	= ArrayCaster.cast( arguments.get( Key.array ) );
 		Function	func		= arguments.getAsFunction( Key.callback );
 
 		for ( int i = 0; i < actualArray.size(); i++ ) {

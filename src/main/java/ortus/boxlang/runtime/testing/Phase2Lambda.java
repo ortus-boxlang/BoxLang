@@ -83,13 +83,16 @@ public class Phase2Lambda extends BoxTemplate {
 
         // Create instance of Lambda and set in the variables scope
         variablesScope.assign(
+            context,
             Key.of( "greet" ),
             Phase2Lambda$lambda1.getInstance()
         );
 
         variablesScope.assign(
+            context,
             Key.of( "out" ),
             Referencer.get(
+                context,
                 classLocator.load( context, "java:java.lang.System", imports ),
                 Key.of( "out" ),
                 false )
@@ -99,7 +102,7 @@ public class Phase2Lambda extends BoxTemplate {
         Referencer.getAndInvoke(
             context,
             // Object
-            variablesScope.dereference( Key.of( "out" ), false ),
+            variablesScope.get( Key.of( "out" ) ),
             // Method
             Key.of( "println" ),
             // Arguments
@@ -113,7 +116,7 @@ public class Phase2Lambda extends BoxTemplate {
         Referencer.getAndInvoke(
             context,
             // Object
-            variablesScope.dereference( Key.of( "out" ), false ),
+            variablesScope.get( Key.of( "out" ) ),
             // Method
             Key.of( "println" ),
             // Arguments

@@ -92,8 +92,10 @@ public class Phase2UDF extends BoxTemplate {
 		context.registerUDF( Phase2UDF$greet.getInstance() );
 
 		variablesScope.assign(
+		    context,
 		    Key.of( "out" ),
 		    Referencer.get(
+		        context,
 		        classLocator.load( context, "java:java.lang.System", imports ),
 		        Key.of( "out" ),
 		        false )
@@ -103,7 +105,7 @@ public class Phase2UDF extends BoxTemplate {
 		Referencer.getAndInvoke(
 		    context,
 		    // Object
-		    variablesScope.dereference( Key.of( "out" ), false ),
+		    variablesScope.get( Key.of( "out" ) ),
 		    // Method
 		    Key.of( "println" ),
 		    // Arguments
@@ -117,7 +119,7 @@ public class Phase2UDF extends BoxTemplate {
 		Referencer.getAndInvoke(
 		    context,
 		    // Object
-		    variablesScope.dereference( Key.of( "out" ), false ),
+		    variablesScope.get( Key.of( "out" ) ),
 		    // Method
 		    Key.of( "println" ),
 		    // Arguments

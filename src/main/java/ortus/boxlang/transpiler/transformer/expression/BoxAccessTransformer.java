@@ -66,11 +66,12 @@ public class BoxAccessTransformer extends AbstractTransformer {
 			values.put( "scopeReference", jContext.toString() );
 
 			String	template	= """
-			                      ${scopeReference}.dereference(
-			                        ${accessKey},
-			                        ${safe}
-			                        )
-			                                      """;
+			                                      ${scopeReference}.dereference(
+			                      ${contextName},
+			                                        ${accessKey},
+			                                        ${safe}
+			                                        )
+			                                                      """;
 			Node	javaExpr	= parseExpression( template, values );
 			logger.info( node.getSourceText() + " -> " + javaExpr );
 			return javaExpr;
@@ -82,12 +83,13 @@ public class BoxAccessTransformer extends AbstractTransformer {
 			values.put( "scopeReference", jContext.toString() );
 
 			String	template	= """
-			                      Referencer.get(
-			                      	  ${scopeReference},
-			                            ${accessKey},
-			                            ${safe}
-			                                  )
-			                            """;
+			                                      Referencer.get(
+			                      ${contextName},
+			                                      	  ${scopeReference},
+			                                            ${accessKey},
+			                                            ${safe}
+			                                                  )
+			                                            """;
 
 			Node	javaExpr	= parseExpression( template, values );
 			logger.info( node.getSourceText() + " -> " + javaExpr );

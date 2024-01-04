@@ -420,7 +420,7 @@ public class Query implements IType, IReferenceable, Collection<Struct> {
 	 ****************************/
 
 	@Override
-	public Object dereference( Key name, Boolean safe ) {
+	public Object dereference( IBoxContext context, Key name, Boolean safe ) {
 
 		// Special check for $bx
 		if ( name.equals( BoxMeta.key ) ) {
@@ -465,7 +465,7 @@ public class Query implements IType, IReferenceable, Collection<Struct> {
 	}
 
 	@Override
-	public Object assign( Key name, Object value ) {
+	public Object assign( IBoxContext context, Key name, Object value ) {
 		// TODO: get row index from context based on if in cfloop/cfoutput query="..."
 		getColumn( name ).setCell( 0, value );
 		return value;

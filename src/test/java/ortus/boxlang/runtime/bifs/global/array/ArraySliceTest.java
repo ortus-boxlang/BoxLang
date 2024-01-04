@@ -67,7 +67,7 @@ public class ArraySliceTest {
 		              result = nums.slice( 2 );
 		    """,
 		    context );
-		Array found = ( Array ) variables.dereference( result, false );
+		Array found = ( Array ) variables.get( result );
 		assertThat( found.size() ).isEqualTo( 4 );
 		assertThat( found.get( 0 ) ).isEqualTo( 2 );
 		assertThat( found.get( 1 ) ).isEqualTo( 3 );
@@ -84,7 +84,7 @@ public class ArraySliceTest {
 		              result = nums.slice( 2, 3 );
 		    """,
 		    context );
-		Array found = ( Array ) variables.dereference( result, false );
+		Array found = ( Array ) variables.get( result );
 		assertThat( found.size() ).isEqualTo( 3 );
 		assertThat( found.get( 0 ) ).isEqualTo( 2 );
 		assertThat( found.get( 1 ) ).isEqualTo( 3 );
@@ -100,7 +100,7 @@ public class ArraySliceTest {
 		              result = nums.slice( 2, -2 );
 		    """,
 		    context );
-		Array found = ( Array ) variables.dereference( result, false );
+		Array found = ( Array ) variables.get( result );
 		assertThat( found.size() ).isEqualTo( 2 );
 		assertThat( found.get( 0 ) ).isEqualTo( 2 );
 		assertThat( found.get( 1 ) ).isEqualTo( 3 );
@@ -115,7 +115,7 @@ public class ArraySliceTest {
 		              result = nums.slice( -3, 1 );
 		    """,
 		    context );
-		Array found = ( Array ) variables.dereference( result, false );
+		Array found = ( Array ) variables.get( result );
 		assertThat( found.size() ).isEqualTo( 1 );
 		assertThat( found.get( 0 ) ).isEqualTo( 2 );
 	}
@@ -129,7 +129,7 @@ public class ArraySliceTest {
 		              result = nums.slice( -3, -2 );
 		    """,
 		    context );
-		Array found = ( Array ) variables.dereference( result, false );
+		Array found = ( Array ) variables.get( result );
 		assertThat( found.size() ).isEqualTo( 2 );
 		assertThat( found.get( 0 ) ).isEqualTo( 2 );
 		assertThat( found.get( 1 ) ).isEqualTo( 3 );

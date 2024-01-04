@@ -92,7 +92,7 @@ public class ObjectCreationTest {
 		    result = new "#classNameToCreate#"( 'My String' );
 		    """,
 		    context );
-		assertThat( variables.dereference( resultKey, false ) instanceof DynamicObject ).isEqualTo( true );
+		assertThat( variables.get( resultKey ) instanceof DynamicObject ).isEqualTo( true );
 		assertThat( ( ( DynamicObject ) result ).getTargetInstance() ).isEqualTo( "My String" );
 
 	}
@@ -129,8 +129,8 @@ public class ObjectCreationTest {
 	 * result = create "#classNameToCreate#";
 	 * """,
 	 * context );
-	 * assertThat( variables.dereference( resultKey, false ) instanceof DynamicObject ).isEqualTo( true );
-	 * assertThat( ( ( DynamicObject ) variables.dereference( resultKey, false ) ).getTargetClass().getName() ).isEqualTo( "java.lang.System" );
+	 * assertThat( variables.get( resultKey ) instanceof DynamicObject ).isEqualTo( true );
+	 * assertThat( ( ( DynamicObject ) variables.get( resultKey ) ).getTargetClass().getName() ).isEqualTo( "java.lang.System" );
 	 * }
 	 * 
 	 * @DisplayName( "create keyword static method call one-liner" )
@@ -157,8 +157,8 @@ public class ObjectCreationTest {
 		    """,
 		    context );
 
-		assertThat( variables.dereference( resultKey, false ) instanceof DynamicObject ).isEqualTo( true );
-		assertThat( ( ( DynamicObject ) variables.dereference( resultKey, false ) ).getTargetInstance() ).isEqualTo( "My String" );
+		assertThat( variables.get( resultKey ) instanceof DynamicObject ).isEqualTo( true );
+		assertThat( ( ( DynamicObject ) variables.get( resultKey ) ).getTargetInstance() ).isEqualTo( "My String" );
 	}
 
 	@DisplayName( "imports no prefix" )
@@ -171,8 +171,8 @@ public class ObjectCreationTest {
 		    """,
 		    context );
 
-		assertThat( variables.dereference( resultKey, false ) instanceof DynamicObject ).isEqualTo( true );
-		assertThat( ( ( DynamicObject ) variables.dereference( resultKey, false ) ).getTargetInstance() ).isEqualTo( "My String" );
+		assertThat( variables.get( resultKey ) instanceof DynamicObject ).isEqualTo( true );
+		assertThat( ( ( DynamicObject ) variables.get( resultKey ) ).getTargetInstance() ).isEqualTo( "My String" );
 	}
 
 	@DisplayName( "imports as" )
@@ -185,8 +185,8 @@ public class ObjectCreationTest {
 		    """,
 		    context );
 
-		assertThat( variables.dereference( resultKey, false ) instanceof DynamicObject ).isEqualTo( true );
-		assertThat( ( ( DynamicObject ) variables.dereference( resultKey, false ) ).getTargetInstance() ).isEqualTo( "My String" );
+		assertThat( variables.get( resultKey ) instanceof DynamicObject ).isEqualTo( true );
+		assertThat( ( ( DynamicObject ) variables.get( resultKey ) ).getTargetInstance() ).isEqualTo( "My String" );
 
 	}
 

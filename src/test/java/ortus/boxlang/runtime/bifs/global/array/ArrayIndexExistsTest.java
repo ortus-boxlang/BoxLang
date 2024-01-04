@@ -48,7 +48,7 @@ public class ArrayIndexExistsTest {
 		    result = ArrayIndexExists( arr, 3 );
 		    """,
 		    context );
-		Boolean res = ( Boolean ) variables.dereference( result, false );
+		Boolean res = ( Boolean ) variables.get( result );
 		assertThat( res ).isEqualTo( true );
 	}
 
@@ -61,7 +61,7 @@ public class ArrayIndexExistsTest {
 		    result = result = ArrayIndexExists( arr, 0 );
 		    """,
 		    context );
-		Boolean res = ( Boolean ) variables.dereference( result, false );
+		Boolean res = ( Boolean ) variables.get( result );
 		assertThat( res ).isEqualTo( false );
 	}
 
@@ -74,7 +74,7 @@ public class ArrayIndexExistsTest {
 		    result = ArrayIndexExists( arr, -3 );
 		    """,
 		    context );
-		Boolean res = ( Boolean ) variables.dereference( result, false );
+		Boolean res = ( Boolean ) variables.get( result );
 		assertThat( res ).isEqualTo( false );
 	}
 
@@ -87,7 +87,7 @@ public class ArrayIndexExistsTest {
 		    result = ArrayIndexExists( arr, 4 );
 		    """,
 		    context );
-		Boolean res = ( Boolean ) variables.dereference( result, false );
+		Boolean res = ( Boolean ) variables.get( result );
 		assertThat( res ).isEqualTo( false );
 	}
 
@@ -100,7 +100,7 @@ public class ArrayIndexExistsTest {
 		    result = ArrayIndexExists( arr, 3 );
 		    """,
 		    context );
-		Boolean res = ( Boolean ) variables.dereference( result, false );
+		Boolean res = ( Boolean ) variables.get( result );
 		assertThat( res ).isEqualTo( false );
 	}
 
@@ -113,7 +113,7 @@ public class ArrayIndexExistsTest {
 		    result = arr.indexExists( 3 );
 		    """,
 		    context );
-		Boolean res = ( Boolean ) variables.dereference( result, false );
+		Boolean res = ( Boolean ) variables.get( result );
 		assertThat( res ).isEqualTo( true );
 	}
 
@@ -126,7 +126,7 @@ public class ArrayIndexExistsTest {
 		    result = ArrayIsDefined( arr, 3 )
 		    """,
 		    context );
-		Boolean res = ( Boolean ) variables.dereference( result, false );
+		Boolean res = ( Boolean ) variables.get( result );
 		assertThat( res ).isEqualTo( true );
 	}
 
@@ -139,7 +139,7 @@ public class ArrayIndexExistsTest {
 		    result = arr.isDefined( 3 );
 		    """,
 		    context );
-		Boolean res = ( Boolean ) variables.dereference( result, false );
+		Boolean res = ( Boolean ) variables.get( result );
 		assertThat( res ).isEqualTo( true );
 	}
 }
