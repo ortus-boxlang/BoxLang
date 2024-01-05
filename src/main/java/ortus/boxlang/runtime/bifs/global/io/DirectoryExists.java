@@ -15,40 +15,39 @@ import ortus.boxlang.runtime.util.FileSystemUtil;
 
 @BoxBIF
 
-public class FileExists extends BIF {
+public class DirectoryExists extends BIF {
 
 	/**
 	 * Constructor
 	 */
-	public FileExists() {
+	public DirectoryExists() {
 		super();
 		declaredArguments = new Argument[] {
-		    new Argument( true, "string", Key.source ),
+		    new Argument( true, "string", Key.path ),
 		    new Argument( true, "boolean", Key.allowRealPath, true )
 		};
 	}
 
 	/**
-	 * Determines whether a file exists
+	 * Determines whether a directory exists
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.source The file path
+	 * @argument.path The directory path
 	 *
 	 * @arguments.allowRealPath Whether to allow an absolute path as the path argument
 	 */
 	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
-		String	filePath		= arguments.getAsString( Key.source );
+		String	directoryPath	= arguments.getAsString( Key.path );
 		Boolean	allowRealPath	= arguments.getAsBoolean( Key.allowRealPath );
-
-		if ( !allowRealPath && Path.of( filePath ).isAbsolute() ) {
+		if ( !allowRealPath && Path.of( directoryPath ).isAbsolute() ) {
 			throw new BoxRuntimeException(
-			    "The file or path argument [" + filePath + "] is an absolute path. This is disallowed when the allowRealPath argument is set to false."
+			    "The file or path argument [" + directoryPath + "] is an absolute path. This is disallowed when the allowRealPath argument is set to false."
 			);
 		}
 
-		return ( Boolean ) FileSystemUtil.exists( filePath ) && !Files.isDirectory( Path.of( filePath ) );
+		return ( Boolean ) FileSystemUtil.exists( directoryPath ) && Files.isDirectory( Path.of( directoryPath ) );
 	}
 
 }

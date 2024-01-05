@@ -39,7 +39,7 @@ import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
 import ortus.boxlang.runtime.util.FileSystemUtil;
 
-public class FileExistsTest {
+public class DirectoryExistsTest {
 
 	static BoxRuntime	instance;
 	static IBoxContext	context;
@@ -64,44 +64,49 @@ public class FileExistsTest {
 		variables.clear();
 	}
 
-	@DisplayName( "It tests the BIF FileExists on an existing file" )
+	@DisplayName( "It tests the BIF DirectoryExists on an existing directory" )
 	@Test
-	public void testFileExists() throws IOException {
-		String testFile = "src/test/resources/tmp/exists.txt";
-		variables.put( Key.of( "testFile" ), Path.of( testFile ).toAbsolutePath().toString() );
-		FileSystemUtil.write( testFile, "file exists test!".getBytes( "UTF-8" ), true );
-		assertTrue( FileSystemUtil.exists( testFile ) );
+	public void testDirectoryExists() throws IOException {
+		String testDirectory = "src/test/resources/tmp/foo";
+		variables.put( Key.of( "testDirectory" ), Path.of( testDirectory ).toAbsolutePath().toString() );
+		FileSystemUtil.createDirectory( testDirectory );
+		assertTrue( FileSystemUtil.exists( testDirectory ) );
 		instance.executeSource(
 		    """
-		    result = fileExists( variables.testFile );
+		    result = DirectoryExists( variables.testDirectory );
 		    """,
 		    context );
 		Boolean result = ( Boolean ) variables.get( Key.of( "result" ) );
 		assertTrue( result );
 	}
 
-	@DisplayName( "It tests the BIF FileExists on a non-existent file" )
+	@DisplayName( "It tests the BIF DirectoryExists on a non-existent directory" )
 	@Test
-	public void testFileNotExists() throws IOException {
-		String testFile = "src/test/resources/tmp/not-exists.txt";
-		variables.put( Key.of( "testFile" ), Path.of( testFile ).toAbsolutePath().toString() );
+	public void testDirectoryNotExists() throws IOException {
+		String testDirectory = "src/test/resources/tmp/blah";
+		if ( FileSystemUtil.exists( testDirectory ) ) {
+			FileSystemUtil.deleteDirectory( testDirectory, true );
+		}
+		variables.put( Key.of( "testDirectory" ), Path.of( testDirectory ).toAbsolutePath().toString() );
 		instance.executeSource(
 		    """
-		    result = fileExists( variables.testFile );
+		    result = DirectoryExists( variables.testDirectory );
 		    """,
 		    context );
 		Boolean result = ( Boolean ) variables.get( Key.of( "result" ) );
 		assertFalse( result );
 	}
 
-	@DisplayName( "It tests the BIF FileExists on a directory" )
+	@DisplayName( "It tests the BIF DirectoryExists on a file" )
 	@Test
-	public void testDirectoryNotExists() throws IOException {
-		String testFile = "src/test/resources/tmp";
+	public void testDirectoryExistsFile() throws IOException {
+		String testFile = "src/test/resources/tmp/a-file.txt";
 		variables.put( Key.of( "testFile" ), Path.of( testFile ).toAbsolutePath().toString() );
+		FileSystemUtil.write( testFile, "test directory!".getBytes( "UTF-8" ), true );
+		assertTrue( FileSystemUtil.exists( testFile ) );
 		instance.executeSource(
 		    """
-		    result = fileExists( variables.testFile );
+		    result = DirectoryExists( variables.testFile );
 		    """,
 		    context );
 		Boolean result = ( Boolean ) variables.get( Key.of( "result" ) );
