@@ -98,6 +98,8 @@ public class Key {
 	public static final Key	mask				= Key.of( "mask" );
 	public static final Key	dateFormat			= Key.of( "dateFormat" );
 	public static final Key	timeFormat			= Key.of( "timeFormat" );
+	public static final Key	size				= Key.of( "size" );
+
 	/**
 	 * --------------------------------------------------------------------------
 	 * Private Properties
