@@ -76,14 +76,25 @@ public class Key {
 	public static Key		leaveIndex			= Key.of( "leaveIndex" );
 	public static Key		defaultValue		= Key.of( "defaultValue" );
 
+	// Directory/File Common Argument Keys
 	public static final Key	file				= Key.of( "file" );
 	public static final Key	filepath			= Key.of( "filepath" );
 	public static final Key	path				= Key.of( "path" );
+	public static final Key	directory			= Key.of( "directory" );
 	public static final Key	recursive			= Key.of( "recursive" );
+	public static final Key	recurse				= Key.of( "recurse" );
+	public static final Key	listInfo			= Key.of( "listInfo" );
+	public static final Key	filter				= Key.of( "filter" );
+	public static final Key	mode				= Key.of( "mode" );
+	public static final Key	size				= Key.of( "size" );
+	public static final Key	dateLastModified	= Key.of( "dateLastModified" );
+	public static final Key	attributes			= Key.of( "attributes" );
+	public static final Key	sort				= Key.of( "sort" );
 	public static final Key	charset				= Key.of( "charset" );
 	public static final Key	buffersize			= Key.of( "buffersize" );
 	public static final Key	charsetOrBufferSize	= Key.of( "charsetOrBufferSize" );
 
+	// DateTime Common Argument Keys
 	public static final Key	date				= Key.of( "date" );
 	public static final Key	year				= Key.of( "year" );
 	public static final Key	month				= Key.of( "month" );
