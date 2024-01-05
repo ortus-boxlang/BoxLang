@@ -185,6 +185,20 @@ public class ClassTest {
 		assertThat( meta.get( Key.of( "accessors" ) ) ).isEqualTo( false );
 	}
 
+	@DisplayName( "It should call onMissingMethod" )
+	@Test
+	public void testOnMissingMethod() {
+
+		instance.executeStatement(
+		    """
+		      	cfc = new src.test.java.TestCases.phase3.OnMissingMethod();
+		    result = cfc.someFunc();
+		      """, context );
+
+		String res = variables.getAsString( result );
+		assertThat( res ).isEqualTo( "someFunc" );
+	}
+
 	@DisplayName( "box meta" )
 	@Test
 	public void testBoxMeta() {
