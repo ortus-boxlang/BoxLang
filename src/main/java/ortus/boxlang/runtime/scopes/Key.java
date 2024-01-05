@@ -94,6 +94,8 @@ public class Key {
 	public static final Key	charset				= Key.of( "charset" );
 	public static final Key	buffersize			= Key.of( "buffersize" );
 	public static final Key	charsetOrBufferSize	= Key.of( "charsetOrBufferSize" );
+	public static final Key	source				= Key.of( "source" );
+	public static final Key	allowRealPath		= Key.of( "allowRealPath" );
 
 	// DateTime Common Argument Keys
 	public static final Key	date				= Key.of( "date" );
