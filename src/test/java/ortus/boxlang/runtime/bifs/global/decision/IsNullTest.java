@@ -18,12 +18,12 @@
 
 package ortus.boxlang.runtime.bifs.global.decision;
 
-import static com.google.common.truth.Truth.assertThat;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -31,10 +31,8 @@ import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.ScriptingBoxContext;
 import ortus.boxlang.runtime.scopes.IScope;
-import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
 
-@Disabled( "Unimplemented" )
 public class IsNullTest {
 
 	static BoxRuntime	instance;
@@ -58,20 +56,16 @@ public class IsNullTest {
 		variables.clear();
 	}
 
-	@DisplayName( "It detects binary values" )
+	@DisplayName( "It detects null values" )
 	@Test
 	public void testTrueConditions() {
-		instance.executeSource(
-		    """
-		    result = isBinary( toBinary( toBase64( "boxlang" ) ) );
-		    """,
-		    context );
-		assertThat( ( Boolean ) variables.get( Key.of( "result" ) ) ).isTrue();
+		assertTrue( ( Boolean ) instance.executeStatement( "isNull( foo )" ) );
 	}
 
-	@DisplayName( "It returns false for non-binary values" )
+	@DisplayName( "It returns false for non-null values" )
 	@Test
 	public void testFalseConditions() {
+		assertFalse( ( Boolean ) instance.executeStatement( "isNull( 'foo' )" ) );
 	}
 
 }
