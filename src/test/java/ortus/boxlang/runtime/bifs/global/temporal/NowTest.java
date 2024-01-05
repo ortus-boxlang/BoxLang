@@ -70,7 +70,7 @@ public class NowTest {
 		    result = now()
 		    """,
 		    context );
-		var result = variables.dereference( Key.of( "result" ), false );
+		var result = variables.get( Key.of( "result" ) );
 		assertThat( result ).isInstanceOf( DateTime.class );
 		ZonedDateTime		referenceNow		= ZonedDateTime.of( LocalDateTime.now(), ZoneId.systemDefault() );
 		DateTimeFormatter	referenceFormatter	= DateTimeFormatter.ofPattern( "'{ts '''yyyy-MM-dd HH:mm:ss'''}'" );

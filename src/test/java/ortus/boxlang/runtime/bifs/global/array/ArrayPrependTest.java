@@ -68,7 +68,7 @@ public class ArrayPrependTest {
 		    result = arrayLen( arr );
 		    """,
 		    context );
-		assertThat( variables.dereference( result, false ) ).isEqualTo( 4 );
+		assertThat( variables.get( result ) ).isEqualTo( 4 );
 	}
 
 	@DisplayName( "It should place the item at the start of the array" )
@@ -81,7 +81,7 @@ public class ArrayPrependTest {
 		    result = arrayLen( arr );
 		    """,
 		    context );
-		assertThat( ( ( Array ) variables.dereference( Key.of( "arr" ), false ) ).get( 0 ) ).isEqualTo( "test" );
+		assertThat( ( ( Array ) variables.get( Key.of( "arr" ) ) ).get( 0 ) ).isEqualTo( "test" );
 	}
 
 }

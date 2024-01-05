@@ -24,6 +24,8 @@ import ortus.boxlang.runtime.interop.DynamicJavaInteropService;
 import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Array;
+import ortus.boxlang.runtime.types.Query;
+import ortus.boxlang.runtime.types.QueryColumn;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
@@ -35,17 +37,18 @@ public class Referencer {
 	/**
 	 * Used to implement any time an object is dereferenced,
 	 *
-	 * @param object The object to dereference
-	 * @param key    The key to dereference
-	 * @param safe   Whether to throw an exception if the key is not found
+	 * @param context The context we're executing inside of
+	 * @param object  The object to dereference
+	 * @param key     The key to dereference
+	 * @param safe    Whether to throw an exception if the key is not found
 	 *
 	 * @return The value that was dereferenced
 	 */
-	public static Object get( Object object, Key key, Boolean safe ) {
+	public static Object get( IBoxContext context, Object object, Key key, Boolean safe ) {
 		if ( safe && object == null ) {
 			return null;
 		}
-		return DynamicJavaInteropService.dereference( object.getClass(), object, key, safe );
+		return DynamicJavaInteropService.dereference( context, object.getClass(), object, key, safe );
 	}
 
 	/**
@@ -104,14 +107,15 @@ public class Referencer {
 	/**
 	 * Used to implement any time an object is assigned to,
 	 *
-	 * @param object The object to dereference
-	 * @param key    The key to dereference
-	 * @param value  The value to assign
+	 * @param context The context we're executing inside of
+	 * @param object  The object to dereference
+	 * @param key     The key to dereference
+	 * @param value   The value to assign
 	 *
 	 * @return The value that was assigned
 	 */
-	public static Object set( Object object, Key key, Object value ) {
-		return DynamicJavaInteropService.assign( object.getClass(), object, key, value );
+	public static Object set( IBoxContext context, Object object, Key key, Object value ) {
+		return DynamicJavaInteropService.assign( context, object.getClass(), object, key, value );
 	}
 
 	/**
@@ -121,32 +125,33 @@ public class Referencer {
 	 * An exception will be thrown if any intermediate keys exists, but are not a
 	 * Map.
 	 *
-	 * @param object The object to dereference
-	 * @param value  The value to assign
-	 * @param keys   The keys to dereference
+	 * @param context The context we're executing inside of
+	 * @param object  The object to dereference
+	 * @param value   The value to assign
+	 * @param keys    The keys to dereference
 	 *
 	 * @return The value that was assigned
 	 */
-	public static Object setDeep( Object object, Object value, Key... keys ) {
+	public static Object setDeep( IBoxContext context, Object object, Object value, Key... keys ) {
 
 		for ( int i = 0; i <= keys.length - 1; i++ ) {
 			Key key = keys[ i ];
 			// At the final key, just assign our value and we're done
 			if ( i == keys.length - 1 ) {
 
-				set( object, key, value );
+				set( context, object, key, value );
 				return value;
 			}
 
 			// For all intermediate keys, check if they exist and are a Struct or Array
-			Object next = DynamicObject.unWrap( get( object, key, true ) );
+			Object next = DynamicObject.unWrap( get( context, object, key, true ) );
 			// If missing, create as a Struct
 			if ( next == null ) {
 
 				next = new Struct();
-				set( object, key, next );
+				set( context, object, key, next );
 				// If it's not null, it needs to be a Map
-			} else if ( ! ( next instanceof Map || next instanceof Array ) ) {
+			} else if ( ! ( next instanceof Map || next instanceof Array || next instanceof Query || next instanceof QueryColumn ) ) {
 				throw new BoxRuntimeException(
 				    String.format( "Cannot assign to key [%s] because it is a [%s] and not a Struct or Array",
 				        key.getName(),

@@ -34,6 +34,8 @@ import org.junit.jupiter.api.Test;
 
 import TestCases.interop.InvokeDynamicFields;
 import TestCases.interop.PrivateConstructors;
+import ortus.boxlang.runtime.context.IBoxContext;
+import ortus.boxlang.runtime.context.ScriptingBoxContext;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.IType;
 import ortus.boxlang.runtime.types.Struct;
@@ -42,6 +44,8 @@ import ortus.boxlang.runtime.types.exceptions.NoFieldException;
 import ortus.boxlang.runtime.types.exceptions.NoMethodException;
 
 public class DynamicObjectTest {
+
+	private IBoxContext context = new ScriptingBoxContext();
 
 	@DisplayName( "It can create class invokers of instances" )
 	@Test
@@ -356,18 +360,21 @@ public class DynamicObjectTest {
 		DynamicObject myInvoker = DynamicObject.of( map );
 		assertThat(
 		    myInvoker.dereference(
+		        context,
 		        Key.of( "key" ),
 		        false
 		    )
 		).isEqualTo( "value" );
 
 		myInvoker.assign(
+		    context,
 		    Key.of( "key2" ),
 		    "value2"
 		);
 
 		assertThat(
 		    myInvoker.dereference(
+		        context,
 		        Key.of( "key2" ),
 		        false
 		    )
@@ -390,6 +397,7 @@ public class DynamicObjectTest {
 
 		assertThat(
 		    myInvoker.dereference(
+		        context,
 		        Key.of( Struct.EMPTY ),
 		        false
 		    )
@@ -397,18 +405,21 @@ public class DynamicObjectTest {
 
 		assertThat(
 		    myInvoker.dereference(
+		        context,
 		        Key.of( str ),
 		        false
 		    )
 		).isEqualTo( "bradwood" );
 
 		myInvoker.assign(
+		    context,
 		    Key.of( str2 ),
 		    "luismajano"
 		);
 
 		assertThat(
 		    myInvoker.dereference(
+		        context,
 		        Key.of( str2 ),
 		        false
 		    )
@@ -426,6 +437,7 @@ public class DynamicObjectTest {
 		DynamicObject myInvoker = DynamicObject.of( new String[] { "Brad", "Wood" } );
 		assertThat(
 		    myInvoker.dereference(
+		        context,
 		        // Use IntKey
 		        Key.of( 1 ),
 		        false
@@ -434,6 +446,7 @@ public class DynamicObjectTest {
 
 		assertThat(
 		    myInvoker.dereference(
+		        context,
 		        // Use Key
 		        Key.of( "1" ),
 		        false
@@ -441,12 +454,14 @@ public class DynamicObjectTest {
 		).isEqualTo( "Brad" );
 
 		myInvoker.assign(
+		    context,
 		    Key.of( 2 ),
 		    "Ortus Solutions"
 		);
 
 		assertThat(
 		    myInvoker.dereference(
+		        context,
 		        Key.of( 2 ),
 		        false
 		    )
@@ -454,6 +469,7 @@ public class DynamicObjectTest {
 
 		assertThat(
 		    myInvoker.dereference(
+		        context,
 		        Key.of( "length" ),
 		        false
 		    )
@@ -461,6 +477,7 @@ public class DynamicObjectTest {
 
 		assertThrows( BoxLangException.class, () -> {
 			myInvoker.dereference(
+			    context,
 			    Key.of( "test" ),
 			    false
 			);
@@ -468,6 +485,7 @@ public class DynamicObjectTest {
 
 		assertThrows( BoxLangException.class, () -> {
 			myInvoker.dereference(
+			    context,
 			    Key.of( 0 ),
 			    false
 			);
@@ -475,6 +493,7 @@ public class DynamicObjectTest {
 
 		assertThrows( BoxLangException.class, () -> {
 			myInvoker.dereference(
+			    context,
 			    Key.of( 1.5 ),
 			    false
 			);
@@ -482,15 +501,16 @@ public class DynamicObjectTest {
 
 		assertThrows( BoxLangException.class, () -> {
 			myInvoker.dereference(
+			    context,
 			    Key.of( 50 ),
 			    false
 			);
 		} );
 
-		assertThat( myInvoker.dereference( Key.of( "test" ), true ) ).isEqualTo( null );
-		assertThat( myInvoker.dereference( Key.of( 0 ), true ) ).isEqualTo( null );
-		assertThat( myInvoker.dereference( Key.of( 1.5 ), true ) ).isEqualTo( null );
-		assertThat( myInvoker.dereference( Key.of( 50 ), true ) ).isEqualTo( null );
+		assertThat( myInvoker.dereference( context, Key.of( "test" ), true ) ).isEqualTo( null );
+		assertThat( myInvoker.dereference( context, Key.of( 0 ), true ) ).isEqualTo( null );
+		assertThat( myInvoker.dereference( context, Key.of( 1.5 ), true ) ).isEqualTo( null );
+		assertThat( myInvoker.dereference( context, Key.of( 50 ), true ) ).isEqualTo( null );
 	}
 
 	@DisplayName( "It use Lists" )
@@ -502,6 +522,7 @@ public class DynamicObjectTest {
 		DynamicObject myInvoker = DynamicObject.of( list );
 		assertThat(
 		    myInvoker.dereference(
+		        context,
 		        // Use IntKey
 		        Key.of( 1 ),
 		        false
@@ -510,6 +531,7 @@ public class DynamicObjectTest {
 
 		assertThat(
 		    myInvoker.dereference(
+		        context,
 		        // Use Key
 		        Key.of( "1" ),
 		        false
@@ -517,12 +539,14 @@ public class DynamicObjectTest {
 		).isEqualTo( "Brad" );
 
 		myInvoker.assign(
+		    context,
 		    Key.of( 2 ),
 		    "Ortus Solutions"
 		);
 
 		assertThat(
 		    myInvoker.dereference(
+		        context,
 		        Key.of( 2 ),
 		        false
 		    )
@@ -530,6 +554,7 @@ public class DynamicObjectTest {
 
 		assertThrows( BoxLangException.class, () -> {
 			myInvoker.dereference(
+			    context,
 			    Key.of( "test" ),
 			    false
 			);
@@ -537,6 +562,7 @@ public class DynamicObjectTest {
 
 		assertThrows( BoxLangException.class, () -> {
 			myInvoker.dereference(
+			    context,
 			    Key.of( 0 ),
 			    false
 			);
@@ -544,6 +570,7 @@ public class DynamicObjectTest {
 
 		assertThrows( BoxLangException.class, () -> {
 			myInvoker.dereference(
+			    context,
 			    Key.of( 1.5 ),
 			    false
 			);
@@ -551,15 +578,16 @@ public class DynamicObjectTest {
 
 		assertThrows( BoxLangException.class, () -> {
 			myInvoker.dereference(
+			    context,
 			    Key.of( 50 ),
 			    false
 			);
 		} );
 
-		assertThat( myInvoker.dereference( Key.of( "test" ), true ) ).isEqualTo( null );
-		assertThat( myInvoker.dereference( Key.of( 0 ), true ) ).isEqualTo( null );
-		assertThat( myInvoker.dereference( Key.of( 1.5 ), true ) ).isEqualTo( null );
-		assertThat( myInvoker.dereference( Key.of( 50 ), true ) ).isEqualTo( null );
+		assertThat( myInvoker.dereference( context, Key.of( "test" ), true ) ).isEqualTo( null );
+		assertThat( myInvoker.dereference( context, Key.of( 0 ), true ) ).isEqualTo( null );
+		assertThat( myInvoker.dereference( context, Key.of( 1.5 ), true ) ).isEqualTo( null );
+		assertThat( myInvoker.dereference( context, Key.of( 50 ), true ) ).isEqualTo( null );
 	}
 
 }

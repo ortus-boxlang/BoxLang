@@ -68,13 +68,14 @@ public class Key {
 	public static final Key	datatype			= Key.of( "datatype" );
 	public static final Key	dimensions			= Key.of( "dimensions" );
 	public static final Key	type				= Key.of( "type" );
-	public static Key		arrayFind			= Key.of( "arrayFind" );
-	public static Key		findAll				= Key.of( "findAll" );
-	public static Key		arrayFindAll		= Key.of( "arrayFindAll" );
-	public static Key		array1				= Key.of( "array1" );
-	public static Key		array2				= Key.of( "array2" );
-	public static Key		leaveIndex			= Key.of( "leaveIndex" );
-	public static Key		defaultValue		= Key.of( "defaultValue" );
+	public static final Key	arrayFind			= Key.of( "arrayFind" );
+	public static final Key	findAll				= Key.of( "findAll" );
+	public static final Key	arrayFindAll		= Key.of( "arrayFindAll" );
+	public static final Key	array1				= Key.of( "array1" );
+	public static final Key	array2				= Key.of( "array2" );
+	public static final Key	leaveIndex			= Key.of( "leaveIndex" );
+	public static final Key	defaultValue		= Key.of( "defaultValue" );
+	public static final Key	end					= Key.of( "end" );
 
 	// Directory/File Common Argument Keys
 	public static final Key	file				= Key.of( "file" );
@@ -108,6 +109,8 @@ public class Key {
 	public static final Key	mask				= Key.of( "mask" );
 	public static final Key	dateFormat			= Key.of( "dateFormat" );
 	public static final Key	timeFormat			= Key.of( "timeFormat" );
+	public static final Key	size				= Key.of( "size" );
+
 	/**
 	 * --------------------------------------------------------------------------
 	 * Private Properties

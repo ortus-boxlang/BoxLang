@@ -101,7 +101,7 @@ public class ArrayContainsTest {
 		    result = arr.contains( 'b' );
 		    """,
 		    context );
-		assertThat( variables.dereference( result, false ) ).isEqualTo( 2 );
+		assertThat( variables.get( result ) ).isEqualTo( 2 );
 
 		instance.executeSource(
 		    """
@@ -109,7 +109,7 @@ public class ArrayContainsTest {
 		    result = arr.contains( 'B' );
 		    """,
 		    context );
-		assertThat( variables.dereference( result, false ) ).isEqualTo( 0 );
+		assertThat( variables.get( result ) ).isEqualTo( 0 );
 	}
 
 	@DisplayName( "It can search UDF Member" )

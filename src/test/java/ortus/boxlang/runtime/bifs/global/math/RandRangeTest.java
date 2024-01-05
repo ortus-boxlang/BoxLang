@@ -65,7 +65,7 @@ public class RandRangeTest {
 		    result = randRange( 0, 12 );
 		    """,
 		    context );
-		assertThat( variables.dereference( result, false ) instanceof Integer ).isTrue();
+		assertThat( variables.get( result ) instanceof Integer ).isTrue();
 	}
 
 }

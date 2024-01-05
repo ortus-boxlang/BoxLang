@@ -17,6 +17,7 @@
  */
 package ortus.boxlang.runtime.operators;
 
+import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.dynamic.Referencer;
 import ortus.boxlang.runtime.dynamic.casters.DoubleCaster;
 import ortus.boxlang.runtime.scopes.Key;
@@ -41,9 +42,9 @@ public class Decrement implements IOperator {
 	 *
 	 * @return The result
 	 */
-	public static Double invokePre( Object target, Key name ) {
-		Double result = invoke( Referencer.get( target, name, false ) );
-		Referencer.set( target, name, result );
+	public static Double invokePre( IBoxContext context, Object target, Key name ) {
+		Double result = invoke( Referencer.get( context, target, name, false ) );
+		Referencer.set( context, target, name, result );
 		return result;
 	}
 
@@ -52,10 +53,10 @@ public class Decrement implements IOperator {
 	 *
 	 * @return The variable PRIOR to the operation
 	 */
-	public static Double invokePost( Object target, Key name ) {
-		Double	original	= DoubleCaster.cast( Referencer.get( target, name, false ) );
+	public static Double invokePost( IBoxContext context, Object target, Key name ) {
+		Double	original	= DoubleCaster.cast( Referencer.get( context, target, name, false ) );
 		Double	result		= invoke( original );
-		Referencer.set( target, name, result );
+		Referencer.set( context, target, name, result );
 		return original;
 	}
 

@@ -256,13 +256,15 @@ public class Query implements IType, IReferenceable, Collection<Struct> {
 	 */
 	public int addRow( Struct row ) {
 		Object[]	rowData	= new Object[ columns.size() ];
-		// TODO: Check for missing columns?
 		// TODO: validate types
 		int			i		= 0;
+		Object		o;
 		for ( QueryColumn column : columns.values() ) {
-			rowData[ i ] = row.get( column.getName() );
+			// Missing keys in the struct go in the queyr as an empty string (CF compat)
+			rowData[ i ] = ( o = row.get( column.getName() ) ) == null ? "" : o;
 			i++;
 		}
+		// We're ignoring extra keys in the struct that aren't query columns. Lucee compat, but not CF compat.
 		return addRow( rowData );
 	}
 
@@ -327,6 +329,16 @@ public class Query implements IType, IReferenceable, Collection<Struct> {
 		if ( index < 0 || index >= data.size() ) {
 			throw new BoxRuntimeException( "Row index " + index + " is out of bounds for query of size " + data.size() );
 		}
+	}
+
+	/**
+	 * Validate that a row index is within bounds
+	 * Throw exception if not
+	 * 
+	 * @param index row index, 0-based
+	 */
+	public int getRowFromContext( IBoxContext context ) {
+		return context.getQueryRow( this );
 	}
 
 	/***************************
@@ -420,7 +432,7 @@ public class Query implements IType, IReferenceable, Collection<Struct> {
 	 ****************************/
 
 	@Override
-	public Object dereference( Key name, Boolean safe ) {
+	public Object dereference( IBoxContext context, Key name, Boolean safe ) {
 
 		// Special check for $bx
 		if ( name.equals( BoxMeta.key ) ) {
@@ -433,9 +445,8 @@ public class Query implements IType, IReferenceable, Collection<Struct> {
 		if ( name.equals( Key.columnList ) ) {
 			return getColumns().keySet().stream().map( Key::getName ).collect( Collectors.joining( "," ) );
 		}
-		// TODO: Get this from context based on if in cfloop/cfoutput query="..."
 		if ( name.equals( Key.currentRow ) ) {
-			return 1;
+			return getRowFromContext( context ) + 1;
 		}
 		if ( !hasColumn( name ) && safe ) {
 			return null;
@@ -465,9 +476,8 @@ public class Query implements IType, IReferenceable, Collection<Struct> {
 	}
 
 	@Override
-	public Object assign( Key name, Object value ) {
-		// TODO: get row index from context based on if in cfloop/cfoutput query="..."
-		getColumn( name ).setCell( 0, value );
+	public Object assign( IBoxContext context, Key name, Object value ) {
+		getColumn( name ).setCell( getRowFromContext( context ), value );
 		return value;
 	}
 

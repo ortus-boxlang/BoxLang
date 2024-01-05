@@ -67,9 +67,9 @@ public class IsEmptyTest {
 		    emptyStruct           = isEmpty( {} );
 		      """,
 		    context );
-		assertThat( ( Boolean ) variables.dereference( Key.of( "emptyString" ), false ) ).isTrue();
-		assertThat( ( Boolean ) variables.dereference( Key.of( "emptyArray" ), false ) ).isTrue();
-		assertThat( ( Boolean ) variables.dereference( Key.of( "emptyStruct" ), false ) ).isTrue();
+		assertThat( ( Boolean ) variables.get( Key.of( "emptyString" ) ) ).isTrue();
+		assertThat( ( Boolean ) variables.get( Key.of( "emptyArray" ) ) ).isTrue();
+		assertThat( ( Boolean ) variables.get( Key.of( "emptyStruct" ) ) ).isTrue();
 	}
 
 	@Test
@@ -84,8 +84,8 @@ public class IsEmptyTest {
 		         """,
 		    context );
 
-		assertThat( ( Boolean ) variables.dereference( Key.of( "onPopulated" ), false ) ).isFalse();
-		assertThat( ( Boolean ) variables.dereference( Key.of( "onEmpty" ), false ) ).isTrue();
+		assertThat( ( Boolean ) variables.get( Key.of( "onPopulated" ) ) ).isFalse();
+		assertThat( ( Boolean ) variables.get( Key.of( "onEmpty" ) ) ).isTrue();
 	}
 
 	@Test
@@ -100,8 +100,8 @@ public class IsEmptyTest {
 		         """,
 		    context );
 
-		assertThat( ( Boolean ) variables.dereference( Key.of( "onPopulated" ), false ) ).isFalse();
-		assertThat( ( Boolean ) variables.dereference( Key.of( "onEmpty" ), false ) ).isTrue();
+		assertThat( ( Boolean ) variables.get( Key.of( "onPopulated" ) ) ).isFalse();
+		assertThat( ( Boolean ) variables.get( Key.of( "onEmpty" ) ) ).isTrue();
 	}
 
 	@Test
@@ -116,8 +116,8 @@ public class IsEmptyTest {
 		         """,
 		    context );
 
-		assertThat( ( Boolean ) variables.dereference( Key.of( "onPopulated" ), false ) ).isFalse();
-		assertThat( ( Boolean ) variables.dereference( Key.of( "onEmpty" ), false ) ).isTrue();
+		assertThat( ( Boolean ) variables.get( Key.of( "onPopulated" ) ) ).isFalse();
+		assertThat( ( Boolean ) variables.get( Key.of( "onEmpty" ) ) ).isTrue();
 	}
 
 	// @TODO: Re-enable when query support is added
@@ -131,8 +131,8 @@ public class IsEmptyTest {
 		    // emptyQueryWithColumns = isEmpty( queryNew( "name,age,dateModified" ) );
 		      """,
 		    context );
-		assertThat( ( Boolean ) variables.dereference( Key.of( "emptyQueryNoColumns" ), false ) ).isTrue();
-		assertThat( ( Boolean ) variables.dereference( Key.of( "emptyQueryWithColumns" ), false ) ).isTrue();
+		assertThat( ( Boolean ) variables.get( Key.of( "emptyQueryNoColumns" ) ) ).isTrue();
+		assertThat( ( Boolean ) variables.get( Key.of( "emptyQueryWithColumns" ) ) ).isTrue();
 	}
 
 	@DisplayName( "It returns false for non-empty values" )
@@ -152,16 +152,16 @@ public class IsEmptyTest {
 		    nestedStructValues    = isEmpty( { a : { "name" : "brad" }} );
 		      """,
 		    context );
-		assertThat( ( Boolean ) variables.dereference( Key.of( "boolValue" ), false ) ).isFalse();
-		assertThat( ( Boolean ) variables.dereference( Key.of( "zero" ), false ) ).isFalse();
-		assertThat( ( Boolean ) variables.dereference( Key.of( "one" ), false ) ).isFalse();
-		assertThat( ( Boolean ) variables.dereference( Key.of( "stringValue" ), false ) ).isFalse();
-		assertThat( ( Boolean ) variables.dereference( Key.of( "stringWithSpaces" ), false ) ).isFalse();
-		assertThat( ( Boolean ) variables.dereference( Key.of( "nestedArray" ), false ) ).isFalse();
-		assertThat( ( Boolean ) variables.dereference( Key.of( "nestedStruct" ), false ) ).isFalse();
-		assertThat( ( Boolean ) variables.dereference( Key.of( "stringArray" ), false ) ).isFalse();
-		assertThat( ( Boolean ) variables.dereference( Key.of( "structWithValues" ), false ) ).isFalse();
-		assertThat( ( Boolean ) variables.dereference( Key.of( "nestedStructValues" ), false ) ).isFalse();
+		assertThat( ( Boolean ) variables.get( Key.of( "boolValue" ) ) ).isFalse();
+		assertThat( ( Boolean ) variables.get( Key.of( "zero" ) ) ).isFalse();
+		assertThat( ( Boolean ) variables.get( Key.of( "one" ) ) ).isFalse();
+		assertThat( ( Boolean ) variables.get( Key.of( "stringValue" ) ) ).isFalse();
+		assertThat( ( Boolean ) variables.get( Key.of( "stringWithSpaces" ) ) ).isFalse();
+		assertThat( ( Boolean ) variables.get( Key.of( "nestedArray" ) ) ).isFalse();
+		assertThat( ( Boolean ) variables.get( Key.of( "nestedStruct" ) ) ).isFalse();
+		assertThat( ( Boolean ) variables.get( Key.of( "stringArray" ) ) ).isFalse();
+		assertThat( ( Boolean ) variables.get( Key.of( "structWithValues" ) ) ).isFalse();
+		assertThat( ( Boolean ) variables.get( Key.of( "nestedStructValues" ) ) ).isFalse();
 	}
 
 }

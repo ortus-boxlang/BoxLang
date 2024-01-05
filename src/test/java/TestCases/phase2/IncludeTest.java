@@ -68,7 +68,7 @@ public class IncludeTest {
 		       """,
 		    context );
 
-		assertThat( variables.dereference( result, false ) ).isEqualTo( "found the value before wood" );
+		assertThat( variables.get( result ) ).isEqualTo( "found the value before wood" );
 	}
 
 	@DisplayName( "can include file relative" )
@@ -78,7 +78,7 @@ public class IncludeTest {
 		    "src/test/java/TestCases/phase2/IncludeTest.cfs",
 		    context );
 
-		assertThat( variables.dereference( result, false ) ).isEqualTo( "found the value before wood" );
+		assertThat( variables.get( result ) ).isEqualTo( "found the value before wood" );
 	}
 
 	@DisplayName( "can include file again" )

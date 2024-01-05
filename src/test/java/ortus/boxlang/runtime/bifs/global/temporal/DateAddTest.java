@@ -68,7 +68,7 @@ public class DateAddTest {
 		    result = dateAdd( "d", 1, createDate( 2023, 12, 31 ) );
 		    """,
 		    context );
-		DateTime result = ( DateTime ) variables.dereference( Key.of( "result" ), false );
+		DateTime result = ( DateTime ) variables.get( Key.of( "result" ) );
 		assertThat( result ).isInstanceOf( DateTime.class );
 		assertThat( result.toString() ).isInstanceOf( String.class );
 		assertThat( IntegerCaster.cast( result.format( "yyyy" ) ) ).isEqualTo( 2024 );
@@ -85,7 +85,7 @@ public class DateAddTest {
 		    result = dateAdd( "d", 1, "2023-12-31" );
 		    """,
 		    context );
-		DateTime result = ( DateTime ) variables.dereference( Key.of( "result" ), false );
+		DateTime result = ( DateTime ) variables.get( Key.of( "result" ) );
 		assertThat( result ).isInstanceOf( DateTime.class );
 		assertThat( result.toString() ).isInstanceOf( String.class );
 		assertThat( IntegerCaster.cast( result.format( "yyyy" ) ) ).isEqualTo( 2024 );
@@ -103,7 +103,7 @@ public class DateAddTest {
 		       result = ref.add( datepart="d", number=1 );
 		       """,
 		    context );
-		DateTime result = ( DateTime ) variables.dereference( Key.of( "result" ), false );
+		DateTime result = ( DateTime ) variables.get( Key.of( "result" ) );
 		assertThat( result ).isInstanceOf( DateTime.class );
 		assertThat( result.toString() ).isInstanceOf( String.class );
 		assertThat( IntegerCaster.cast( result.format( "yyyy" ) ) ).isEqualTo( 2024 );

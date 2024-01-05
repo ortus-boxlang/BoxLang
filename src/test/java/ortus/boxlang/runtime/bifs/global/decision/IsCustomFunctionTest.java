@@ -71,9 +71,9 @@ public class IsCustomFunctionTest {
 		       """,
 		    context
 		);
-		assertThat( ( Boolean ) variables.dereference( Key.of( "closure" ), false ) ).isTrue();
-		assertThat( ( Boolean ) variables.dereference( Key.of( "arrowFunction" ), false ) ).isTrue();
-		assertThat( ( Boolean ) variables.dereference( Key.of( "functionReference" ), false ) ).isTrue();
+		assertThat( ( Boolean ) variables.get( Key.of( "closure" ) ) ).isTrue();
+		assertThat( ( Boolean ) variables.get( Key.of( "arrowFunction" ) ) ).isTrue();
+		assertThat( ( Boolean ) variables.get( Key.of( "functionReference" ) ) ).isTrue();
 	}
 
 	@DisplayName( "It returns false for non-custom functions" )
@@ -85,8 +85,8 @@ public class IsCustomFunctionTest {
 		    aString = isCustomFunction( "abc" );
 		       """,
 		    context );
-		assertThat( ( Boolean ) variables.dereference( Key.of( "anInteger" ), false ) ).isFalse();
-		assertThat( ( Boolean ) variables.dereference( Key.of( "aString" ), false ) ).isFalse();
+		assertThat( ( Boolean ) variables.get( Key.of( "anInteger" ) ) ).isFalse();
+		assertThat( ( Boolean ) variables.get( Key.of( "aString" ) ) ).isFalse();
 	}
 
 	@Disabled( "Lucee's results do not match our own; determine the proper behavior" )
@@ -109,17 +109,17 @@ public class IsCustomFunctionTest {
 		    isClosureaClosureType = isCustomFunction( function(){}, "closure" );
 		       """,
 		    context );
-		assertThat( ( Boolean ) variables.dereference( Key.of( "isLambdaAUDFType" ), false ) ).isFalse();
-		assertThat( ( Boolean ) variables.dereference( Key.of( "isLambdaAClosureType" ), false ) ).isFalse();
-		assertThat( ( Boolean ) variables.dereference( Key.of( "isLambdaALambdaType" ), false ) ).isTrue();
+		assertThat( ( Boolean ) variables.get( Key.of( "isLambdaAUDFType" ) ) ).isFalse();
+		assertThat( ( Boolean ) variables.get( Key.of( "isLambdaAClosureType" ) ) ).isFalse();
+		assertThat( ( Boolean ) variables.get( Key.of( "isLambdaALambdaType" ) ) ).isTrue();
 
-		assertThat( ( Boolean ) variables.dereference( Key.of( "isUDFaLambdaType" ), false ) ).isFalse();
-		assertThat( ( Boolean ) variables.dereference( Key.of( "isUDFaClosureType" ), false ) ).isFalse();
-		assertThat( ( Boolean ) variables.dereference( Key.of( "isUDFaUDFType" ), false ) ).isTrue();
+		assertThat( ( Boolean ) variables.get( Key.of( "isUDFaLambdaType" ) ) ).isFalse();
+		assertThat( ( Boolean ) variables.get( Key.of( "isUDFaClosureType" ) ) ).isFalse();
+		assertThat( ( Boolean ) variables.get( Key.of( "isUDFaUDFType" ) ) ).isTrue();
 
-		assertThat( ( Boolean ) variables.dereference( Key.of( "isClosureaLambdaType" ), false ) ).isFalse();
-		assertThat( ( Boolean ) variables.dereference( Key.of( "isClosureaUDFType" ), false ) ).isFalse();
-		assertThat( ( Boolean ) variables.dereference( Key.of( "isClosureaClosureType" ), false ) ).isTrue();
+		assertThat( ( Boolean ) variables.get( Key.of( "isClosureaLambdaType" ) ) ).isFalse();
+		assertThat( ( Boolean ) variables.get( Key.of( "isClosureaUDFType" ) ) ).isFalse();
+		assertThat( ( Boolean ) variables.get( Key.of( "isClosureaClosureType" ) ) ).isTrue();
 	}
 
 	@DisplayName( "It validates the type parameter" )

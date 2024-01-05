@@ -92,16 +92,18 @@ public class Phase1 extends BoxTemplate {
 		IScope			requestScope	= context.getScopeNearby( Key.of( "server" ) );
 
 		// Case sensitive set
-		variablesScope.assign( Key.of( "system" ), classLocator.load( context, "java:java.lang.System", imports ) );
+		variablesScope.assign( context, Key.of( "system" ), classLocator.load( context, "java:java.lang.System", imports ) );
 
 		serverScope.assign(
+		    context,
 		    Key.of( "counter" ),
-		    Elvis.invoke( serverScope.dereference( Key.of( "counter" ), true ), 0 )
+		    Elvis.invoke( serverScope.dereference( context, Key.of( "counter" ), true ), 0 )
 		);
 
-		requestScope.assign( Key.of( "running" ), true );
+		requestScope.assign( context, Key.of( "running" ), true );
 
 		variablesScope.assign(
+		    context,
 		    // Case insensitive set
 		    Key.of( "GREETING" ),
 
@@ -110,13 +112,14 @@ public class Phase1 extends BoxTemplate {
 		        .load( context, "java:java.lang.String", imports )
 		        .invokeConstructor( context, new Object[] { "Hello" } ) );
 
-		if ( EqualsEquals.invoke( variablesScope.dereference( Key.of( "GREETING" ), false ), "Hello" ) ) {
+		if ( EqualsEquals.invoke( variablesScope.get( Key.of( "GREETING" ) ), "Hello" ) ) {
 
 			Referencer.getAndInvoke(
 			    context,
 			    // Object
 			    Referencer.get(
-			        variablesScope.dereference( Key.of( "SYSTEM" ), false ),
+			        context,
+			        variablesScope.get( Key.of( "SYSTEM" ) ),
 			        Key.of( "out" ),
 			        false ),
 
@@ -128,7 +131,7 @@ public class Phase1 extends BoxTemplate {
 
 			        Concat.invoke(
 			            context.scopeFindNearby( Key.of( "GREETING" ), null ).value(),
-			            Concat.invoke( " world ", serverScope.dereference( Key.of( "counter" ), false ) )
+			            Concat.invoke( " world ", serverScope.get( Key.of( "counter" ) ) )
 			        )
 
 				},
@@ -136,7 +139,7 @@ public class Phase1 extends BoxTemplate {
 
 			);
 
-			Increment.invokePost( serverScope, Key.of( "counter" ) );
+			Increment.invokePost( context, serverScope, Key.of( "counter" ) );
 		}
 
 	}

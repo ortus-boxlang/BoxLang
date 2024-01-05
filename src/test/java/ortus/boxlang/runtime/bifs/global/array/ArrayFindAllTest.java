@@ -67,7 +67,7 @@ public class ArrayFindAllTest {
 		        result = nums.findAll( 3 );
 		    """,
 		    context );
-		Array found = ( Array ) variables.dereference( result, false );
+		Array found = ( Array ) variables.get( result );
 		assertThat( found.size() ).isEqualTo( 1 );
 		assertThat( found.get( 0 ) ).isEqualTo( 3 );
 	}
@@ -81,7 +81,7 @@ public class ArrayFindAllTest {
 		        result = nums.findAll( 3.0 );
 		    """,
 		    context );
-		Array found = ( Array ) variables.dereference( result, false );
+		Array found = ( Array ) variables.get( result );
 		assertThat( found.size() ).isEqualTo( 1 );
 		assertThat( found.get( 0 ) ).isEqualTo( 3 );
 	}
@@ -95,7 +95,7 @@ public class ArrayFindAllTest {
 		        result = nums.findAll( 3 );
 		    """,
 		    context );
-		Array found = ( Array ) variables.dereference( result, false );
+		Array found = ( Array ) variables.get( result );
 		assertThat( found.size() ).isEqualTo( 2 );
 		assertThat( found.get( 0 ) ).isEqualTo( 3 );
 		assertThat( found.get( 1 ) ).isEqualTo( 6 );
@@ -110,7 +110,7 @@ public class ArrayFindAllTest {
 		        result = nums.findAll( "bluE" );
 		    """,
 		    context );
-		Array found = ( Array ) variables.dereference( result, false );
+		Array found = ( Array ) variables.get( result );
 		assertThat( found.size() ).isEqualTo( 0 );
 	}
 
@@ -123,7 +123,7 @@ public class ArrayFindAllTest {
 		        result = nums.findAll( [3] );
 		    """,
 		    context );
-		Array found = ( Array ) variables.dereference( result, false );
+		Array found = ( Array ) variables.get( result );
 		assertThat( found.size() ).isEqualTo( 1 );
 		assertThat( found.get( 0 ) ).isEqualTo( 2 );
 	}
@@ -137,7 +137,7 @@ public class ArrayFindAllTest {
 		        result = nums.findAll( { test: true } );
 		    """,
 		    context );
-		Array found = ( Array ) variables.dereference( result, false );
+		Array found = ( Array ) variables.get( result );
 		assertThat( found.size() ).isEqualTo( 1 );
 		assertThat( found.get( 0 ) ).isEqualTo( 3 );
 	}
@@ -151,7 +151,7 @@ public class ArrayFindAllTest {
 		        result = nums.findAll( 1 );
 		    """,
 		    context );
-		Array found = ( Array ) variables.dereference( result, false );
+		Array found = ( Array ) variables.get( result );
 		assertThat( found.size() ).isEqualTo( 5 );
 		assertThat( found.get( 0 ) ).isEqualTo( 1 );
 		assertThat( found.get( 1 ) ).isEqualTo( 3 );
@@ -169,7 +169,7 @@ public class ArrayFindAllTest {
 		        result = nums.findAll( 1 );
 		    """,
 		    context );
-		Array found = ( Array ) variables.dereference( result, false );
+		Array found = ( Array ) variables.get( result );
 		assertThat( found.size() ).isEqualTo( 7 );
 	}
 
@@ -182,7 +182,7 @@ public class ArrayFindAllTest {
 		        result = nums.findAll( "1" );
 		    """,
 		    context );
-		Array found = ( Array ) variables.dereference( result, false );
+		Array found = ( Array ) variables.get( result );
 		assertThat( found.size() ).isEqualTo( 7 );
 	}
 
@@ -195,7 +195,7 @@ public class ArrayFindAllTest {
 		        result = nums.findAll( 1.0 );
 		    """,
 		    context );
-		Array found = ( Array ) variables.dereference( result, false );
+		Array found = ( Array ) variables.get( result );
 		assertThat( found.size() ).isEqualTo( 7 );
 	}
 
@@ -208,7 +208,7 @@ public class ArrayFindAllTest {
 		        result = nums.findAll( "1.0" );
 		    """,
 		    context );
-		Array found = ( Array ) variables.dereference( result, false );
+		Array found = ( Array ) variables.get( result );
 		assertThat( found.size() ).isEqualTo( 7 );
 	}
 
@@ -221,7 +221,7 @@ public class ArrayFindAllTest {
 		        result = nums.findAll( true );
 		    """,
 		    context );
-		Array found = ( Array ) variables.dereference( result, false );
+		Array found = ( Array ) variables.get( result );
 		assertThat( found.size() ).isEqualTo( 7 );
 	}
 
@@ -234,7 +234,7 @@ public class ArrayFindAllTest {
 		        result = nums.findAll( "true" );
 		    """,
 		    context );
-		Array found = ( Array ) variables.dereference( result, false );
+		Array found = ( Array ) variables.get( result );
 		assertThat( found.size() ).isEqualTo( 7 );
 	}
 
@@ -247,7 +247,7 @@ public class ArrayFindAllTest {
 		        result = nums.findAll( "yes" );
 		    """,
 		    context );
-		Array found = ( Array ) variables.dereference( result, false );
+		Array found = ( Array ) variables.get( result );
 		assertThat( found.size() ).isEqualTo( 7 );
 	}
 
@@ -260,7 +260,7 @@ public class ArrayFindAllTest {
 		        result = nums.findAll( value -> value == "red" );
 		    """,
 		    context );
-		Array found = ( Array ) variables.dereference( result, false );
+		Array found = ( Array ) variables.get( result );
 		assertThat( found.size() ).isEqualTo( 2 );
 		assertThat( found.get( 0 ) ).isEqualTo( 5 );
 		assertThat( found.get( 1 ) ).isEqualTo( 6 );
@@ -275,7 +275,7 @@ public class ArrayFindAllTest {
 		        result = nums.findAllNoCase( "bluE" );
 		    """,
 		    context );
-		Array found = ( Array ) variables.dereference( result, false );
+		Array found = ( Array ) variables.get( result );
 		assertThat( found.size() ).isEqualTo( 1 );
 		assertThat( found.get( 0 ) ).isEqualTo( 2 );
 	}

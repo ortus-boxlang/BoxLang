@@ -123,10 +123,10 @@ public class BoxUnaryOperationTransformer extends AbstractTransformer {
 		BoxUnaryOperator operator = operation.getOperator();
 		// These all refernce variable names which need retrieved, modified, and then re-assigned
 		return switch ( operator ) {
-			case PrePlusPlus -> "Increment.invokePre( ${obj}, ${accessKey} )";
-			case PostPlusPlus -> "Increment.invokePost( ${obj}, ${accessKey} )";
-			case PreMinusMinus -> "Decrement.invokePre( ${obj}, ${accessKey} )";
-			case PostMinusMinus -> "Decrement.invokePost( ${obj}, ${accessKey} )";
+			case PrePlusPlus -> "Increment.invokePre( ${contextName}, ${obj}, ${accessKey} )";
+			case PostPlusPlus -> "Increment.invokePost( ${contextName}, ${obj}, ${accessKey} )";
+			case PreMinusMinus -> "Decrement.invokePre( ${contextName}, ${obj}, ${accessKey} )";
+			case PostMinusMinus -> "Decrement.invokePost( ${contextName}, ${obj}, ${accessKey} )";
 			default -> throw new ExpressionException( "Unknown unary compound operator " + operator.toString(), operation.getPosition(),
 			    operation.getSourceText() );
 		};

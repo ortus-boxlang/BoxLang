@@ -23,7 +23,6 @@ import static com.google.common.truth.Truth.assertThat;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -70,9 +69,9 @@ public class IsClosureTest {
 		       """,
 		    context
 		);
-		assertThat( ( Boolean ) variables.dereference( Key.of( "closure" ), false ) ).isTrue();
-		assertThat( ( Boolean ) variables.dereference( Key.of( "arrowFunction" ), false ) ).isTrue();
-		assertThat( ( Boolean ) variables.dereference( Key.of( "functionReference" ), false ) ).isTrue();
+		assertThat( ( Boolean ) variables.get( Key.of( "closure" ) ) ).isTrue();
+		assertThat( ( Boolean ) variables.get( Key.of( "arrowFunction" ) ) ).isTrue();
+		assertThat( ( Boolean ) variables.get( Key.of( "functionReference" ) ) ).isTrue();
 	}
 
 	@DisplayName( "It returns false for non-closure values" )
@@ -84,8 +83,8 @@ public class IsClosureTest {
 		    aString = isClosure( "abc" );
 		       """,
 		    context );
-		assertThat( ( Boolean ) variables.dereference( Key.of( "anInteger" ), false ) ).isFalse();
-		assertThat( ( Boolean ) variables.dereference( Key.of( "aString" ), false ) ).isFalse();
+		assertThat( ( Boolean ) variables.get( Key.of( "anInteger" ) ) ).isFalse();
+		assertThat( ( Boolean ) variables.get( Key.of( "aString" ) ) ).isFalse();
 	}
 
 }

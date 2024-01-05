@@ -101,7 +101,7 @@ public class ArrayContainsNoCaseTest {
 		    result = arr.containsNoCase( 'b' );
 		    """,
 		    context );
-		assertThat( variables.dereference( result, false ) ).isEqualTo( 2 );
+		assertThat( variables.get( result ) ).isEqualTo( 2 );
 
 		instance.executeSource(
 		    """
@@ -109,7 +109,7 @@ public class ArrayContainsNoCaseTest {
 		    result = arr.containsNoCase( 'B' );
 		    """,
 		    context );
-		assertThat( variables.dereference( result, false ) ).isEqualTo( 2 );
+		assertThat( variables.get( result ) ).isEqualTo( 2 );
 	}
 
 	@DisplayName( "It can search UDF Member" )

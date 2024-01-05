@@ -22,6 +22,8 @@ import static com.google.common.truth.Truth.assertThat;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
+import ortus.boxlang.runtime.context.IBoxContext;
+import ortus.boxlang.runtime.context.ScriptingBoxContext;
 import ortus.boxlang.runtime.dynamic.Referencer;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Array;
@@ -29,12 +31,14 @@ import ortus.boxlang.runtime.types.Struct;
 
 public class ArrayMetaTest {
 
+	private IBoxContext context = new ScriptingBoxContext();
+
 	@DisplayName( "Test array meta" )
 	@Test
 	void testArrayMeta() {
 
 		Array		arr	= new Array();
-		GenericMeta	$bx	= ( GenericMeta ) Referencer.get( arr, BoxMeta.key, false );
+		GenericMeta	$bx	= ( GenericMeta ) Referencer.get( context, arr, BoxMeta.key, false );
 
 		assertThat( $bx.$class ).isEqualTo( Array.class );
 		assertThat( $bx.meta instanceof Struct ).isTrue();
@@ -47,7 +51,7 @@ public class ArrayMetaTest {
 
 		Key			three	= Key.of( "3" );
 		Array		arr		= new Array();
-		GenericMeta	$bx		= ( GenericMeta ) Referencer.get( arr, BoxMeta.key, false );
+		GenericMeta	$bx		= ( GenericMeta ) Referencer.get( context, arr, BoxMeta.key, false );
 
 		// Listens to all keys
 		$bx.registerChangeListener( ( key, newValue, oldValue ) -> {
@@ -78,7 +82,7 @@ public class ArrayMetaTest {
 
 		arr.add( "luis" );
 		arr.add( "gavin" );
-		arr.assign( three, "jorge" );
+		arr.assign( context, three, "jorge" );
 
 	}
 

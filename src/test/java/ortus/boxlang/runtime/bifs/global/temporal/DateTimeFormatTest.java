@@ -69,7 +69,7 @@ public class DateTimeFormatTest {
 		       result = dateFormat( ref );
 		       """,
 		    context );
-		result = ( String ) variables.dereference( Key.of( "result" ), false );
+		result = ( String ) variables.get( Key.of( "result" ) );
 		assertThat( result ).isEqualTo( "31-Dec-23" );
 		// Custom Format
 		instance.executeSource(
@@ -78,7 +78,7 @@ public class DateTimeFormatTest {
 		       result = dateFormat( ref, "yyyy-MM-dd" );
 		       """,
 		    context );
-		result = ( String ) variables.dereference( Key.of( "result" ), false );
+		result = ( String ) variables.get( Key.of( "result" ) );
 		assertThat( result ).isEqualTo( "2023-12-31" );
 
 	}
@@ -94,7 +94,7 @@ public class DateTimeFormatTest {
 		       result = dateTimeFormat( ref );
 		       """,
 		    context );
-		result = ( String ) variables.dereference( Key.of( "result" ), false );
+		result = ( String ) variables.get( Key.of( "result" ) );
 		assertThat( result ).isEqualTo( "31-Dec-2023 12:30:30" );
 		// Custom Format
 		instance.executeSource(
@@ -103,7 +103,7 @@ public class DateTimeFormatTest {
 		    result = dateTimeFormat( ref, "yyyy-MM-dd'T'HH:mm:ssXXX" );
 		    """,
 		    context );
-		result = ( String ) variables.dereference( Key.of( "result" ), false );
+		result = ( String ) variables.get( Key.of( "result" ) );
 		assertThat( result ).isEqualTo( "2023-12-31T12:30:30Z" );
 	}
 
@@ -118,7 +118,7 @@ public class DateTimeFormatTest {
 		       result = timeFormat( ref );
 		       """,
 		    context );
-		result = ( String ) variables.dereference( Key.of( "result" ), false );
+		result = ( String ) variables.get( Key.of( "result" ) );
 		assertThat( result ).isEqualTo( "12:30 PM" );
 		// Custom Format
 		instance.executeSource(
@@ -127,7 +127,7 @@ public class DateTimeFormatTest {
 		       result = timeFormat( ref, "HH:mm:ssXXX" );
 		       """,
 		    context );
-		result = ( String ) variables.dereference( Key.of( "result" ), false );
+		result = ( String ) variables.get( Key.of( "result" ) );
 		assertThat( result ).isEqualTo( "12:30:30Z" );
 
 	}
@@ -143,7 +143,7 @@ public class DateTimeFormatTest {
 		       result = ref.format();
 		       """,
 		    context );
-		result = ( String ) variables.dereference( Key.of( "result" ), false );
+		result = ( String ) variables.get( Key.of( "result" ) );
 		assertThat( result ).isEqualTo( "31-Dec-2023 12:30:30" );
 		// Custom Format
 		instance.executeSource(
@@ -152,7 +152,7 @@ public class DateTimeFormatTest {
 		       result = ref.format( "yyyy-MM-dd'T'HH:mm:ssXXX" );
 		       """,
 		    context );
-		result = ( String ) variables.dereference( Key.of( "result" ), false );
+		result = ( String ) variables.get( Key.of( "result" ) );
 		assertThat( result ).isEqualTo( "2023-12-31T12:30:30Z" );
 
 	}

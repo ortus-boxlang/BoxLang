@@ -232,7 +232,7 @@ public class DynamicJavaInteropService {
 
 				// Call constructor
 				// TODO: look for initMethod annotation
-				if ( cfc.dereference( Key.init, true ) != null ) {
+				if ( cfc.dereference( context, Key.init, true ) != null ) {
 					Object result = cfc.dereferenceAndInvoke( classContext, Key.init, new Object[] {}, false );
 					// CF returns the actual result of the constructor, but I'm not sure it makes sense or if people actually ever
 					// return anything other than "this".
@@ -967,8 +967,8 @@ public class DynamicJavaInteropService {
 	 * @return The requested object
 	 */
 	@SuppressWarnings( "unchecked" )
-	public static Object dereference( Class<?> targetClass, Key name, Boolean safe ) {
-		return dereference( targetClass, null, name, safe );
+	public static Object dereference( IBoxContext context, Class<?> targetClass, Key name, Boolean safe ) {
+		return dereference( context, targetClass, null, name, safe );
 	}
 
 	/**
@@ -981,8 +981,8 @@ public class DynamicJavaInteropService {
 	 * @return The requested object
 	 */
 	@SuppressWarnings( "unchecked" )
-	public static Object dereference( Object targetInstance, Key name, Boolean safe ) {
-		return dereference( targetInstance.getClass(), targetInstance, name, safe );
+	public static Object dereference( IBoxContext context, Object targetInstance, Key name, Boolean safe ) {
+		return dereference( context, targetInstance.getClass(), targetInstance, name, safe );
 	}
 
 	/**
@@ -996,11 +996,11 @@ public class DynamicJavaInteropService {
 	 * @return The requested object
 	 */
 	@SuppressWarnings( "unchecked" )
-	public static Object dereference( Class<?> targetClass, Object targetInstance, Key name, Boolean safe ) {
+	public static Object dereference( IBoxContext context, Class<?> targetClass, Object targetInstance, Key name, Boolean safe ) {
 
 		// If the object is referencable, allow it to handle the dereference
 		if ( targetInstance != null && targetInstance instanceof IReferenceable ref ) {
-			return ref.dereference( name, safe );
+			return ref.dereference( context, name, safe );
 		}
 
 		// This check allows us to lazy-create meta for BoxLang types the first time it is requested
@@ -1191,8 +1191,8 @@ public class DynamicJavaInteropService {
 	 * @param value       The value to assign
 	 */
 	@SuppressWarnings( "unchecked" )
-	public static Object assign( Class<?> targetClass, Key name, Object value ) {
-		return assign( targetClass, null, name, value );
+	public static Object assign( IBoxContext context, Class<?> targetClass, Key name, Object value ) {
+		return assign( context, targetClass, null, name, value );
 	}
 
 	/**
@@ -1203,8 +1203,8 @@ public class DynamicJavaInteropService {
 	 * @param value          The value to assign
 	 */
 	@SuppressWarnings( "unchecked" )
-	public static Object assign( Object targetInstance, Key name, Object value ) {
-		return assign( targetInstance.getClass(), targetInstance, name, value );
+	public static Object assign( IBoxContext context, Object targetInstance, Key name, Object value ) {
+		return assign( context, targetInstance.getClass(), targetInstance, name, value );
 	}
 
 	/**
@@ -1216,10 +1216,10 @@ public class DynamicJavaInteropService {
 	 * @param value          The value to assign
 	 */
 	@SuppressWarnings( "unchecked" )
-	public static Object assign( Class<?> targetClass, Object targetInstance, Key name, Object value ) {
+	public static Object assign( IBoxContext context, Class<?> targetClass, Object targetInstance, Key name, Object value ) {
 
 		if ( targetInstance != null && targetInstance instanceof IReferenceable ref ) {
-			return ref.assign( name, value );
+			return ref.assign( context, name, value );
 		} else if ( targetInstance != null && targetInstance.getClass().isArray() ) {
 			Object[]	arr		= ( ( Object[] ) targetInstance );
 			Integer		index	= Array.validateAndGetIntForAssign( name, arr.length, true );

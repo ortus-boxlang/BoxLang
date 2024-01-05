@@ -23,6 +23,8 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
+import ortus.boxlang.runtime.context.IBoxContext;
+import ortus.boxlang.runtime.context.ScriptingBoxContext;
 import ortus.boxlang.runtime.dynamic.Referencer;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
@@ -33,6 +35,8 @@ import ortus.boxlang.runtime.types.UDF;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
 public class FunctionMetaTest {
+
+	private IBoxContext context = new ScriptingBoxContext();
 
 	@DisplayName( "Test function meta" )
 	@Test
@@ -65,7 +69,7 @@ public class FunctionMetaTest {
 		        "returns", "awesomeness"
 		    )
 		);
-		FunctionMeta	$bx	= ( FunctionMeta ) Referencer.get( udf, BoxMeta.key, false );
+		FunctionMeta	$bx	= ( FunctionMeta ) Referencer.get( context, udf, BoxMeta.key, false );
 
 		assertThat( $bx.$class ).isEqualTo( SampleUDF.class );
 		assertThat( $bx.meta instanceof Struct ).isTrue();
@@ -140,7 +144,7 @@ public class FunctionMetaTest {
 		    new Argument[] {},
 		    "Brad"
 		);
-		FunctionMeta	$bx	= ( FunctionMeta ) Referencer.get( udf, BoxMeta.key, false );
+		FunctionMeta	$bx	= ( FunctionMeta ) Referencer.get( context, udf, BoxMeta.key, false );
 
 		// A function is not listenable
 		assertThrows( BoxRuntimeException.class, () -> $bx.registerChangeListener( ( key, newValue, oldValue ) -> {

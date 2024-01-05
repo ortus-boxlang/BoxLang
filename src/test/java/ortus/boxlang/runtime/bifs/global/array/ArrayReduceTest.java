@@ -73,7 +73,7 @@ public class ArrayReduceTest {
 		              result = arrayReduce( nums, sumReduce, 0 );
 		    """,
 		    context );
-		assertThat( variables.dereference( result, false ) ).isEqualTo( 15 );
+		assertThat( variables.get( result ) ).isEqualTo( 15 );
 	}
 
 	@DisplayName( "It should use the provided arrow function over the array" )
@@ -86,7 +86,7 @@ public class ArrayReduceTest {
 		              result = arrayReduce( nums, ( acc, num ) => acc + num, 0 );
 		    """,
 		    context );
-		assertThat( variables.dereference( result, false ) ).isEqualTo( 15 );
+		assertThat( variables.get( result ) ).isEqualTo( 15 );
 	}
 
 	@DisplayName( "It should use the provided arrow function over the array" )
@@ -99,7 +99,7 @@ public class ArrayReduceTest {
 		              result = arrayReduce( nums, ( acc, num ) -> acc + num, 0 );
 		    """,
 		    context );
-		assertThat( variables.dereference( result, false ) ).isEqualTo( 15 );
+		assertThat( variables.get( result ) ).isEqualTo( 15 );
 	}
 
 	// @Disabled
@@ -122,9 +122,9 @@ public class ArrayReduceTest {
 		        result = arrayReduce( people, nameReduce, {indexes:[]} );
 		    """,
 		    context );
-		assertThat( ( ( Struct ) variables.dereference( result, false ) ).get( "bob" ) ).isEqualTo( 3 );
-		assertThat( ( ( Struct ) variables.dereference( result, false ) ).get( "alice" ) ).isEqualTo( 2 );
-		Array indexes = ( ( Array ) ( ( Struct ) variables.dereference( result, false ) ).get( "indexes" ) );
+		assertThat( ( ( Struct ) variables.get( result ) ).get( "bob" ) ).isEqualTo( 3 );
+		assertThat( ( ( Struct ) variables.get( result ) ).get( "alice" ) ).isEqualTo( 2 );
+		Array indexes = ( ( Array ) ( ( Struct ) variables.get( result ) ).get( "indexes" ) );
 		assertThat( indexes.size() ).isEqualTo( 5 );
 		assertThat( indexes.get( 0 ) ).isEqualTo( 1 );
 		assertThat( indexes.get( 1 ) ).isEqualTo( 2 );

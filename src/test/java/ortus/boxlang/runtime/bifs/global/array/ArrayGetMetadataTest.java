@@ -67,7 +67,7 @@ public class ArrayGetMetadataTest {
 		    result = ArrayGetMetadata( arr );
 		    """,
 		    context );
-		Struct meta = ( Struct ) variables.dereference( result, false );
+		Struct meta = ( Struct ) variables.get( result );
 		assertThat( meta.containsKey( "type" ) ).isEqualTo( true );
 		assertThat( meta.containsKey( "datatype" ) ).isEqualTo( true );
 		assertThat( meta.containsKey( "dimensions" ) ).isEqualTo( true );
@@ -82,7 +82,7 @@ public class ArrayGetMetadataTest {
 		    result = arr.getMetadata();
 		    """,
 		    context );
-		Struct meta = ( Struct ) variables.dereference( result, false );
+		Struct meta = ( Struct ) variables.get( result );
 		assertThat( meta.containsKey( "type" ) ).isEqualTo( true );
 		assertThat( meta.containsKey( "datatype" ) ).isEqualTo( true );
 		assertThat( meta.containsKey( "dimensions" ) ).isEqualTo( true );

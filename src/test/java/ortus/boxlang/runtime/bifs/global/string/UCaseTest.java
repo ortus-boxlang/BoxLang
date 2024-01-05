@@ -65,7 +65,7 @@ public class UCaseTest {
 		    result = ucase( 'brad' );
 		    """,
 		    context );
-		assertThat( variables.dereference( result, false ) ).isEqualTo( "BRAD" );
+		assertThat( variables.get( result ) ).isEqualTo( "BRAD" );
 	}
 
 	@DisplayName( "It uppercases as BIF and casting" )
@@ -76,7 +76,7 @@ public class UCaseTest {
 		    result = ucase( 5 );
 		    """,
 		    context );
-		assertThat( variables.dereference( result, false ) ).isEqualTo( "5" );
+		assertThat( variables.get( result ) ).isEqualTo( "5" );
 	}
 
 	@DisplayName( "It uppercases as member" )
@@ -89,8 +89,8 @@ public class UCaseTest {
 		    result2 = "luis".ucase();
 		       """,
 		    context );
-		assertThat( variables.dereference( result, false ) ).isEqualTo( "BRAD" );
-		assertThat( variables.dereference( Key.of( "result2" ), false ) ).isEqualTo( "LUIS" );
+		assertThat( variables.get( result ) ).isEqualTo( "BRAD" );
+		assertThat( variables.get( Key.of( "result2" ) ) ).isEqualTo( "LUIS" );
 	}
 
 	@DisplayName( "It uppercases as member and casting" )
@@ -103,8 +103,8 @@ public class UCaseTest {
 		    result2 = (6).ucase();
 		       """,
 		    context );
-		assertThat( variables.dereference( result, false ) ).isEqualTo( "5" );
-		assertThat( variables.dereference( Key.of( "result2" ), false ) ).isEqualTo( "6" );
+		assertThat( variables.get( result ) ).isEqualTo( "5" );
+		assertThat( variables.get( Key.of( "result2" ) ) ).isEqualTo( "6" );
 	}
 
 }

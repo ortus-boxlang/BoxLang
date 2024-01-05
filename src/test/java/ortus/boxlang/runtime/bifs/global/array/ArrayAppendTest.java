@@ -68,7 +68,7 @@ public class ArrayAppendTest {
 		    result = arrayLen( arr );
 		    """,
 		    context );
-		assertThat( variables.dereference( result, false ) ).isEqualTo( 4 );
+		assertThat( variables.get( result ) ).isEqualTo( 4 );
 	}
 
 	@DisplayName( "It should place the item at the end of the array" )
@@ -81,7 +81,7 @@ public class ArrayAppendTest {
 		    result = arrayLen( arr );
 		    """,
 		    context );
-		assertThat( ( ( Array ) variables.dereference( Key.of( "arr" ), false ) ).get( 3 ) ).isEqualTo( "test" );
+		assertThat( ( ( Array ) variables.get( Key.of( "arr" ) ) ).get( 3 ) ).isEqualTo( "test" );
 	}
 
 }

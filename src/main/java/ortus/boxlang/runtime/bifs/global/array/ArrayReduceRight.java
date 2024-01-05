@@ -57,7 +57,7 @@ public class ArrayReduceRight extends BIF {
 	 * @argument.initialValue The initial value of the accumulator
 	 */
 	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
-		Array		actualArray	= ArrayCaster.cast( arguments.dereference( Key.array, false ) );
+		Array		actualArray	= ArrayCaster.cast( arguments.get( Key.array ) );
 		Object		accumulator	= arguments.get( Key.initialValue );
 		Function	func		= arguments.getAsFunction( Key.callback );
 

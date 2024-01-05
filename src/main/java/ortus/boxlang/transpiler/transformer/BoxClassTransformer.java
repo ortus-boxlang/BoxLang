@@ -75,6 +75,7 @@ public class BoxClassTransformer extends AbstractTransformer {
 		import ortus.boxlang.runtime.context.ClassBoxContext;
 		import ortus.boxlang.runtime.types.meta.BoxMeta;
 		import ortus.boxlang.runtime.types.meta.ClassMeta;
+		import ortus.boxlang.runtime.interop.DynamicObject;
 
 		import java.nio.file.Path;
 		import java.nio.file.Paths;
@@ -217,9 +218,9 @@ public class BoxClassTransformer extends AbstractTransformer {
 			 * @param key   The key to assign
 			 * @param value The value to assign
 			 */
-			public Object assign( Key key, Object value ) {
+			public Object assign( IBoxContext context, Key key, Object value ) {
 				// TODO: implicit setters
-				thisScope.assign( key, value );
+				thisScope.assign( context, key, value );
 				return value;
 			}
 
@@ -231,7 +232,7 @@ public class BoxClassTransformer extends AbstractTransformer {
 			 *
 			 * @return The requested object
 			 */
-			public Object dereference( Key key, Boolean safe ) {
+			public Object dereference( IBoxContext context, Key key, Boolean safe ) {
 				
 				// Special check for $bx
 				if ( key.equals( BoxMeta.key ) ) {
@@ -239,7 +240,7 @@ public class BoxClassTransformer extends AbstractTransformer {
 				}
 				
 				// TODO: implicit getters
-				return thisScope.dereference( key, safe );
+				return thisScope.dereference( context, key, safe );
 			}
 
 			/**

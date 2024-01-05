@@ -92,7 +92,7 @@ public class FileReadTest {
 		    result = fileRead( variables.testFile );
 		    """,
 		    context );
-		String result = ( String ) variables.dereference( Key.of( "result" ), false );
+		String result = ( String ) variables.get( Key.of( "result" ) );
 		assertThat( result ).isInstanceOf( String.class );
 		assertThat( result ).isEqualTo( "file read test!" );
 	}
@@ -106,7 +106,7 @@ public class FileReadTest {
 		    result = fileRead( variables.testFile, "utf-8" );
 		    """,
 		    context );
-		String result = ( String ) variables.dereference( Key.of( "result" ), false );
+		String result = ( String ) variables.get( Key.of( "result" ) );
 		assertThat( result ).isInstanceOf( String.class );
 		assertThat( result ).isEqualTo( "file read test!" );
 	}
@@ -120,7 +120,7 @@ public class FileReadTest {
 		    result = fileRead( variables.testFile, 10 );
 		    """,
 		    context );
-		String result = ( String ) variables.dereference( Key.of( "result" ), false );
+		String result = ( String ) variables.get( Key.of( "result" ) );
 		assertThat( result ).isInstanceOf( String.class );
 		assertThat( result ).isEqualTo( "file read test!" );
 	}
@@ -134,7 +134,7 @@ public class FileReadTest {
 		    result = fileRead( variables.testFile, "utf-8", 10 );
 		    """,
 		    context );
-		String result = ( String ) variables.dereference( Key.of( "result" ), false );
+		String result = ( String ) variables.get( Key.of( "result" ) );
 		assertThat( result ).isInstanceOf( String.class );
 		assertThat( result ).isEqualTo( "file read test!" );
 	}
@@ -148,7 +148,7 @@ public class FileReadTest {
 		    result = fileRead( variables.testFile );
 		    """,
 		    context );
-		Object result = variables.dereference( Key.of( "result" ), false );
+		Object result = variables.get( Key.of( "result" ) );
 		assertTrue( result instanceof byte[] );
 	}
 

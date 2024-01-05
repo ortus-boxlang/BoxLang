@@ -22,11 +22,14 @@ import static com.google.common.truth.Truth.assertThat;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
+import ortus.boxlang.runtime.context.IBoxContext;
+import ortus.boxlang.runtime.context.ScriptingBoxContext;
 import ortus.boxlang.runtime.types.Struct;
 
 public class ArgumentsScopeTest {
 
-	private static ArgumentsScope scope;
+	private static ArgumentsScope	scope;
+	private IBoxContext				context	= new ScriptingBoxContext();
 
 	@BeforeAll
 	public static void setUp() {
@@ -40,35 +43,35 @@ public class ArgumentsScopeTest {
 		Key	second	= Key.of( "second" );
 		Key	third	= Key.of( "third" );
 		// set string keys in order
-		scope.assign( first, "brad" );
-		scope.assign( second, "luis" );
-		scope.assign( third, "jorge" );
+		scope.assign( context, first, "brad" );
+		scope.assign( context, second, "luis" );
+		scope.assign( context, third, "jorge" );
 
 		// check string keys
-		assertThat( scope.dereference( first, false ) ).isEqualTo( "brad" );
-		assertThat( scope.dereference( second, false ) ).isEqualTo( "luis" );
-		assertThat( scope.dereference( third, false ) ).isEqualTo( "jorge" );
+		assertThat( scope.get( first ) ).isEqualTo( "brad" );
+		assertThat( scope.get( second ) ).isEqualTo( "luis" );
+		assertThat( scope.get( third ) ).isEqualTo( "jorge" );
 
 		// check numeric keys
-		assertThat( scope.dereference( Key._1, false ) ).isEqualTo( "brad" );
-		assertThat( scope.dereference( Key._2, false ) ).isEqualTo( "luis" );
-		assertThat( scope.dereference( Key._3, false ) ).isEqualTo( "jorge" );
+		assertThat( scope.get( Key._1 ) ).isEqualTo( "brad" );
+		assertThat( scope.get( Key._2 ) ).isEqualTo( "luis" );
+		assertThat( scope.get( Key._3 ) ).isEqualTo( "jorge" );
 
 		// override key by name
-		scope.assign( first, "gavin" );
-		assertThat( scope.dereference( first, false ) ).isEqualTo( "gavin" );
-		assertThat( scope.dereference( Key._1, false ) ).isEqualTo( "gavin" );
-		assertThat( scope.dereference( Key.of( "1" ), false ) ).isEqualTo( "gavin" );
+		scope.assign( context, first, "gavin" );
+		assertThat( scope.get( first ) ).isEqualTo( "gavin" );
+		assertThat( scope.get( Key._1 ) ).isEqualTo( "gavin" );
+		assertThat( scope.get( Key.of( "1" ) ) ).isEqualTo( "gavin" );
 
 		// override key by number
-		scope.assign( Key._2, "edgardo" );
-		assertThat( scope.dereference( second, false ) ).isEqualTo( "edgardo" );
-		assertThat( scope.dereference( Key._2, false ) ).isEqualTo( "edgardo" );
-		assertThat( scope.dereference( Key.of( "2" ), false ) ).isEqualTo( "edgardo" );
+		scope.assign( context, Key._2, "edgardo" );
+		assertThat( scope.get( second ) ).isEqualTo( "edgardo" );
+		assertThat( scope.get( Key._2 ) ).isEqualTo( "edgardo" );
+		assertThat( scope.get( Key.of( "2" ) ) ).isEqualTo( "edgardo" );
 
 		// add
-		scope.assign( Key._4, "eric" );
-		assertThat( scope.dereference( Key._4, false ) ).isEqualTo( "eric" );
+		scope.assign( context, Key._4, "eric" );
+		assertThat( scope.get( Key._4 ) ).isEqualTo( "eric" );
 
 		Object[] array = scope.asNativeArray();
 		assertThat( array ).isNotNull();

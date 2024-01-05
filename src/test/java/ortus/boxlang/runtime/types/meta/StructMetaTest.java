@@ -22,6 +22,8 @@ import static com.google.common.truth.Truth.assertThat;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
+import ortus.boxlang.runtime.context.IBoxContext;
+import ortus.boxlang.runtime.context.ScriptingBoxContext;
 import ortus.boxlang.runtime.dynamic.Referencer;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Struct;
@@ -29,12 +31,14 @@ import ortus.boxlang.runtime.types.immutable.ImmutableStruct;
 
 public class StructMetaTest {
 
+	private IBoxContext context = new ScriptingBoxContext();
+
 	@DisplayName( "Test struct meta" )
 	@Test
 	void testStructMeta() {
 
 		Struct		str	= new Struct();
-		StructMeta	$bx	= ( StructMeta ) Referencer.get( str, BoxMeta.key, false );
+		StructMeta	$bx	= ( StructMeta ) Referencer.get( context, str, BoxMeta.key, false );
 
 		assertThat( $bx.$class ).isEqualTo( Struct.class );
 		assertThat( $bx.meta instanceof Struct ).isTrue();
@@ -44,7 +48,7 @@ public class StructMetaTest {
 		assertThat( $bx.meta.get( "immutable" ) ).isEqualTo( false );
 
 		str	= new ImmutableStruct( Struct.Type.SORTED );
-		$bx	= ( StructMeta ) Referencer.get( str, BoxMeta.key, false );
+		$bx	= ( StructMeta ) Referencer.get( context, str, BoxMeta.key, false );
 
 		assertThat( $bx.$class ).isEqualTo( ImmutableStruct.class );
 		assertThat( $bx.meta instanceof Struct ).isTrue();
@@ -61,7 +65,7 @@ public class StructMetaTest {
 
 		Key			bradKey	= Key.of( "brad" );
 		Struct		str		= new Struct();
-		StructMeta	$bx		= ( StructMeta ) Referencer.get( str, BoxMeta.key, false );
+		StructMeta	$bx		= ( StructMeta ) Referencer.get( context, str, BoxMeta.key, false );
 
 		// Listens to all keys
 		$bx.registerChangeListener( ( key, newValue, oldValue ) -> {

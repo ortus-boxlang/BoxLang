@@ -130,7 +130,7 @@ public class TestExecution extends TestBase {
 		        """,
 		    context );
 
-		assertThat( variables.dereference( Key.of( "result" ), false ) ).isEqualTo( 10 );
+		assertThat( variables.get( Key.of( "result" ) ) ).isEqualTo( 10 );
 
 	}
 
@@ -161,7 +161,7 @@ public class TestExecution extends TestBase {
 		    """,
 
 		    context );
-		assertThat( context.getScopeNearby( VariablesScope.name ).dereference( Key.of( "result" ), false ) ).isEqualTo( "itwastrue" );
+		assertThat( context.getScopeNearby( VariablesScope.name ).get( Key.of( "result" ) ) ).isEqualTo( "itwastrue" );
 
 		instance.executeSource(
 		    """
@@ -170,7 +170,7 @@ public class TestExecution extends TestBase {
 		    """,
 
 		    context );
-		assertThat( context.getScopeNearby( VariablesScope.name ).dereference( Key.of( "result" ), false ) ).isEqualTo( "itwasfalse" );
+		assertThat( context.getScopeNearby( VariablesScope.name ).get( Key.of( "result" ) ) ).isEqualTo( "itwasfalse" );
 	}
 
 	@Test
@@ -188,8 +188,8 @@ public class TestExecution extends TestBase {
 		      """,
 		    context );
 
-		assertThat( variables.dereference( Key.of( "test4" ), false ) ).isEqualTo( "Brad \"the guy\" Wood" );
-		assertThat( variables.dereference( Key.of( "test5" ), false ) ).isEqualTo( "Luis 'the man' Majano" );
+		assertThat( variables.get( Key.of( "test4" ) ) ).isEqualTo( "Brad \"the guy\" Wood" );
+		assertThat( variables.get( Key.of( "test5" ) ) ).isEqualTo( "Luis 'the man' Majano" );
 	}
 
 }

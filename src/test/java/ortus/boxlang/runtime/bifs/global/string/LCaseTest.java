@@ -65,7 +65,7 @@ public class LCaseTest {
 		    result = lcase( 'BRAD' );
 		    """,
 		    context );
-		assertThat( variables.dereference( result, false ) ).isEqualTo( "brad" );
+		assertThat( variables.get( result ) ).isEqualTo( "brad" );
 	}
 
 	@DisplayName( "It uppercases as BIF and casting" )
@@ -76,7 +76,7 @@ public class LCaseTest {
 		    result = lcase( 5 );
 		    """,
 		    context );
-		assertThat( variables.dereference( result, false ) ).isEqualTo( "5" );
+		assertThat( variables.get( result ) ).isEqualTo( "5" );
 	}
 
 	@DisplayName( "It uppercases as member" )
@@ -89,8 +89,8 @@ public class LCaseTest {
 		    result2 = "LUIS".lcase();
 		       """,
 		    context );
-		assertThat( variables.dereference( result, false ) ).isEqualTo( "brad" );
-		assertThat( variables.dereference( Key.of( "result2" ), false ) ).isEqualTo( "luis" );
+		assertThat( variables.get( result ) ).isEqualTo( "brad" );
+		assertThat( variables.get( Key.of( "result2" ) ) ).isEqualTo( "luis" );
 	}
 
 	@DisplayName( "It uppercases as member and casting" )
@@ -103,8 +103,8 @@ public class LCaseTest {
 		    result2 = (6).lcase();
 		       """,
 		    context );
-		assertThat( variables.dereference( result, false ) ).isEqualTo( "5" );
-		assertThat( variables.dereference( Key.of( "result2" ), false ) ).isEqualTo( "6" );
+		assertThat( variables.get( result ) ).isEqualTo( "5" );
+		assertThat( variables.get( Key.of( "result2" ) ) ).isEqualTo( "6" );
 	}
 
 }

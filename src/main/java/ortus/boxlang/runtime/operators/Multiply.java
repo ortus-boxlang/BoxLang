@@ -17,6 +17,7 @@
  */
 package ortus.boxlang.runtime.operators;
 
+import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.dynamic.Referencer;
 import ortus.boxlang.runtime.dynamic.casters.DoubleCaster;
 import ortus.boxlang.runtime.scopes.Key;
@@ -42,9 +43,9 @@ public class Multiply implements IOperator {
 	 *
 	 * @return The result
 	 */
-	public static Double invoke( Object target, Key name, Object right ) {
-		Double result = invoke( Referencer.get( target, name, false ), right );
-		Referencer.set( target, name, result );
+	public static Double invoke( IBoxContext context, Object target, Key name, Object right ) {
+		Double result = invoke( Referencer.get( context, target, name, false ), right );
+		Referencer.set( context, target, name, result );
 		return result;
 	}
 
