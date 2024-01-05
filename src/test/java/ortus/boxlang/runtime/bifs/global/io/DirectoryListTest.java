@@ -86,7 +86,7 @@ public class DirectoryListTest {
 		    result = directoryList( variables.testDirectory );
 		    """,
 		    context );
-		var result = variables.dereference( Key.of( "result" ), false );
+		var result = variables.get( Key.of( "result" ) );
 		assertTrue( result instanceof Array );
 		Array listing = ( Array ) result;
 		assertTrue( listing.size() == 3 );
@@ -109,7 +109,7 @@ public class DirectoryListTest {
 		    result = directoryList( variables.testDirectory, true );
 		    """,
 		    context );
-		var result = variables.dereference( Key.of( "result" ), false );
+		var result = variables.get( Key.of( "result" ) );
 		assertTrue( result instanceof Array );
 		Array listing = ( Array ) result;
 		assertTrue( listing.size() == 4 );
@@ -133,7 +133,7 @@ public class DirectoryListTest {
 		    result = directoryList( variables.testDirectory, false, "name" );
 		    """,
 		    context );
-		var result = variables.dereference( Key.of( "result" ), false );
+		var result = variables.get( Key.of( "result" ) );
 		assertTrue( result instanceof Array );
 		Array listing = ( Array ) result;
 		assertTrue( listing.size() == 3 );
@@ -156,7 +156,7 @@ public class DirectoryListTest {
 		    result = directoryList( variables.testDirectory, false, "query" );
 		    """,
 		    context );
-		var result = variables.dereference( Key.of( "result" ), false );
+		var result = variables.get( Key.of( "result" ) );
 		assertTrue( result instanceof Query );
 		Query listing = ( Query ) result;
 		assertTrue( listing.size() == 3 );
@@ -187,7 +187,7 @@ public class DirectoryListTest {
 		    result = directoryList( variables.testDirectory, true, "name", "*.txt" );
 		    """,
 		    context );
-		var result = variables.dereference( Key.of( "result" ), false );
+		var result = variables.get( Key.of( "result" ) );
 		assertTrue( result instanceof Array );
 		Array listing = ( Array ) result;
 		assertTrue( listing.size() == 2 );
@@ -209,7 +209,7 @@ public class DirectoryListTest {
 		    result = directoryList( variables.testDirectory, true, "name", "*.txt", "name desc" );
 		    """,
 		    context );
-		var result = variables.dereference( Key.of( "result" ), false );
+		var result = variables.get( Key.of( "result" ) );
 		assertTrue( result instanceof Array );
 		Array listing = ( Array ) result;
 		assertTrue( listing.size() == 2 );
@@ -227,7 +227,7 @@ public class DirectoryListTest {
 		    result = directoryList( variables.testDirectory, true, "path", "*", "name", "directory" );
 		    """,
 		    context );
-		var result = variables.dereference( Key.of( "result" ), false );
+		var result = variables.get( Key.of( "result" ) );
 		assertTrue( result instanceof Array );
 		Array listing = ( Array ) result;
 		assertTrue( listing.size() == 2 );
