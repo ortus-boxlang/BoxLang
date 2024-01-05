@@ -160,9 +160,9 @@ public final class FileSystemUtil {
 
 		try {
 			if ( recurse ) {
-				directoryStream = Files.walk( Path.of( path ) );
+				directoryStream = Files.walk( Path.of( path ) ).parallel();
 			} else {
-				directoryStream = Files.walk( Path.of( path ), 1 );
+				directoryStream = Files.walk( Path.of( path ), 1 ).parallel();
 			}
 		} catch ( IOException e ) {
 			throw new RuntimeException( e );
