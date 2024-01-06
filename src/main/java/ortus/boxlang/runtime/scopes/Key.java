@@ -101,6 +101,7 @@ public class Key {
 	public static final Key	charsetOrBufferSize		= Key.of( "charsetOrBufferSize" );
 	public static final Key	data					= Key.of( "data" );
 	public static final Key	source					= Key.of( "source" );
+	public static final Key	destination				= Key.of( "destination" );
 	public static final Key	allowRealPath			= Key.of( "allowRealPath" );
 	public static final Key	strict					= Key.of( "strict" );
 

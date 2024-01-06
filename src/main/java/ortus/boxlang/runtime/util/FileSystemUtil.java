@@ -255,6 +255,16 @@ public final class FileSystemUtil {
 
 	}
 
+	public static void move( String source, String destination ) {
+		Path	start	= Path.of( source );
+		Path	end		= Path.of( destination );
+		try {
+			Files.move( start, end );
+		} catch ( IOException e ) {
+			throw new RuntimeException( e );
+		}
+	}
+
 	/**
 	 * Tests whether a file is binary
 	 *
