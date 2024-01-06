@@ -757,7 +757,7 @@ public class Struct implements Map<Key, Object>, IType, IReferenceable, IListena
 		return value;
 	}
 
-	public Map<?, ?> getWrapped() {
+	public Map<Key, Object> getWrapped() {
 		return wrapped;
 	}
 

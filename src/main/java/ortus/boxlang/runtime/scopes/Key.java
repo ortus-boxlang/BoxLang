@@ -38,6 +38,7 @@ public class Key {
 	public static final Key	_10						= Key.of( 10 );
 
 	public static final Key	init					= Key.of( "init" );
+	public static final Key	initMethod				= Key.of( "initMethod" );
 	public static final Key	recordCount				= Key.of( "recordCount" );
 	public static final Key	columnList				= Key.of( "columnList" );
 	public static final Key	currentRow				= Key.of( "currentRow" );
