@@ -217,7 +217,21 @@ public final class FileSystemUtil {
 	 * @throws IOException
 	 */
 	public static void write( String filePath, String contents, String charset ) throws IOException {
-		write( filePath, contents.getBytes( charset ), false );
+		write( filePath, contents.getBytes( Charset.forName( charset ) ), false );
+	}
+
+	/**
+	 * Writes a file given a string and specified charset with ensured directory
+	 *
+	 * @param filePath
+	 * @param contents
+	 * @param charset
+	 * @param ensureDirectory boolean
+	 *
+	 * @throws IOException
+	 */
+	public static void write( String filePath, String contents, String charset, Boolean ensureDirectory ) throws IOException {
+		write( filePath, contents.getBytes( Charset.forName( charset ) ), ensureDirectory );
 	}
 
 	/**
