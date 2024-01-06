@@ -19,6 +19,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 import com.github.javaparser.ParseResult;
 import com.github.javaparser.ast.CompilationUnit;
@@ -49,6 +51,7 @@ import ortus.boxlang.ast.statement.BoxFunctionDeclaration;
 import ortus.boxlang.ast.statement.BoxImport;
 import ortus.boxlang.ast.statement.BoxProperty;
 import ortus.boxlang.runtime.config.util.PlaceholderHelper;
+import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.transpiler.JavaTranspiler;
@@ -591,7 +594,13 @@ public class BoxClassTransformer extends AbstractTransformer {
 		}
 
 		transpiler.popContextName();
-		System.out.println( entryPoint );
+		String	text			= entryPoint.toString();
+		String	numberedText	= IntStream.range( 0, text.split( "\n" ).length )
+		    .mapToObj( index -> ( index + 1 ) + " " + text.split( "\n" )[ index ] )
+		    .collect( Collectors.joining( "\n" ) );
+
+		// System.out.println( numberedText );
+
 		return entryPoint;
 	}
 
@@ -717,11 +726,20 @@ public class BoxClassTransformer extends AbstractTransformer {
 			members.add( jNameKey );
 			members.add( javaExpr );
 
-			getterLookup.add( jGetNameKey );
-			getterLookup.add( ( Expression ) parseExpression( "properties.get( ${name} )", values ) );
-
-			setterLookup.add( jSetNameKey );
-			setterLookup.add( ( Expression ) parseExpression( "properties.get( ${name} )", values ) );
+			// Check if getter key annotation is defined in finalAnnotations and false
+			boolean getter = !finalAnnotations.stream()
+			    .anyMatch( it -> it.getKey().getValue().equalsIgnoreCase( "getter" ) && !BooleanCaster.cast( it.getValue() ) );
+			if ( getter ) {
+				getterLookup.add( jGetNameKey );
+				getterLookup.add( ( Expression ) parseExpression( "properties.get( ${name} )", values ) );
+			}
+			// Check if setter key annotation is defined in finalAnnotations and false
+			boolean setter = !finalAnnotations.stream()
+			    .anyMatch( it -> it.getKey().getValue().equalsIgnoreCase( "setter" ) && !BooleanCaster.cast( it.getValue() ) );
+			if ( setter ) {
+				setterLookup.add( jSetNameKey );
+				setterLookup.add( ( Expression ) parseExpression( "properties.get( ${name} )", values ) );
+			}
 		} );
 		if ( members.isEmpty() ) {
 			Expression emptyMap = ( Expression ) parseExpression( "Collections.emptyMap()", new HashMap<>() );

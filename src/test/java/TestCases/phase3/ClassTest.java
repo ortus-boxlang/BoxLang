@@ -23,6 +23,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -300,6 +301,58 @@ public class ClassTest {
 		assertThat( prop2Docs.getAsString( Key.of( "brad" ) ).trim() ).isEqualTo( "wood" );
 		assertThat( prop2Docs.getAsString( Key.of( "luis" ) ).trim() ).isEqualTo( "" );
 		assertThat( prop2Docs.getAsString( Key.of( "hint" ) ).trim() ).isEqualTo( "This is my property" );
+
+	}
+
+	@DisplayName( "Implicit Constructor named" )
+	@Test
+	@Disabled( "waiting on named arg support" )
+	public void testImplicitConstructorNamed() {
+
+		instance.executeStatement(
+		    """
+		        	cfc = new src.test.java.TestCases.phase3.ImplicitConstructorTest( name="brad", age=43, favoriteColor="blue" );
+		    name = cfc.getName();
+		    age = cfc.getAge();
+		    favoriteColor = cfc.getFavoriteColor();
+		        """, context );
+
+		assertThat( variables.get( Key.of( "name" ) ) ).isEqualTo( "brad" );
+		assertThat( variables.get( Key.of( "age" ) ) ).isEqualTo( 43 );
+		assertThat( variables.get( Key.of( "favoriteColor" ) ) ).isEqualTo( "blue" );
+
+	}
+
+	@DisplayName( "Implicit Constructor positional" )
+	@Test
+	public void testImplicitConstructorPositional() {
+
+		instance.executeStatement(
+		    """
+		        	cfc = new src.test.java.TestCases.phase3.ImplicitConstructorTest( {name="brad", age=43, favoriteColor="blue" });
+		    name = cfc.getName();
+		    age = cfc.getAge();
+		    favoriteColor = cfc.getFavoriteColor();
+		        """, context );
+
+		assertThat( variables.get( Key.of( "name" ) ) ).isEqualTo( "brad" );
+		assertThat( variables.get( Key.of( "age" ) ) ).isEqualTo( 43 );
+		assertThat( variables.get( Key.of( "favoriteColor" ) ) ).isEqualTo( "blue" );
+
+	}
+
+	@DisplayName( "InitMethod Test" )
+	@Test
+	public void testInitMethod() {
+
+		instance.executeStatement(
+		    """
+		         	cfc = new src.test.java.TestCases.phase3.InitMethodTest( );
+
+		    result = cfc.getInittedProperly();
+		         """, context );
+
+		assertThat( variables.get( Key.of( "result" ) ) ).isEqualTo( true );
 
 	}
 

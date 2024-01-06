@@ -42,11 +42,13 @@ import ortus.boxlang.runtime.bifs.MemberDescriptor;
 import ortus.boxlang.runtime.context.ClassBoxContext;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.dynamic.IReferenceable;
+import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 import ortus.boxlang.runtime.runnables.IClassRunnable;
 import ortus.boxlang.runtime.scopes.IntKey;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.IType;
+import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.ApplicationException;
 import ortus.boxlang.runtime.types.exceptions.BoxLangException;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
@@ -186,18 +188,23 @@ public class DynamicJavaInteropService {
 	 */
 
 	/**
-	 * Invokes the constructor for the class with the given arguments and returns the instance of the object
+	 * Invokes the constructor for the class with the given positional arguments and returns the instance of the object
 	 *
 	 * @param targetClass The Class that you want to invoke a constructor on
-	 * @param args        The arguments to pass to the constructor
+	 * @param args        The positional arguments to pass to the constructor
 	 *
 	 * @return The instance of the class
 	 */
 	public static <T> T invokeConstructor( IBoxContext context, Class<T> targetClass, Object... args ) {
-
+		Object[] BLArgs = null;
 		// Thou shalt not pass!
 		if ( isInterface( targetClass ) ) {
 			throw new BoxRuntimeException( "Cannot invoke a constructor on an interface" );
+		}
+		// check if targetClass is an IClassRunnable
+		if ( IClassRunnable.class.isAssignableFrom( targetClass ) ) {
+			BLArgs	= args;
+			args	= EMPTY_ARGS;
 		}
 
 		// Unwrap any ClassInvoker instances
@@ -221,26 +228,7 @@ public class DynamicJavaInteropService {
 
 			// If this is a Box Class, some additional initialization is needed
 			if ( thisInstance instanceof IClassRunnable cfc ) {
-
-				// This class context is really only used while boostrapping the pseudoConstructor. It will NOT be used as a parent
-				// context once the CFC is initialized. Methods called on this CFC will have access to the variables/this scope via their
-				// FunctionBoxContext, but their parent context will be whatever context they are called from.
-				IBoxContext classContext = new ClassBoxContext( context, cfc );
-
-				// Bootstrap the pseudoConstructor
-				cfc.pseudoConstructor( classContext );
-
-				// Call constructor
-				// TODO: look for initMethod annotation
-				if ( cfc.dereference( context, Key.init, true ) != null ) {
-					Object result = cfc.dereferenceAndInvoke( classContext, Key.init, new Object[] {}, false );
-					// CF returns the actual result of the constructor, but I'm not sure it makes sense or if people actually ever
-					// return anything other than "this".
-					if ( result != null ) {
-						// This cast will fail if the init returns something like a string
-						return ( T ) result;
-					}
-				}
+				return bootstrapBLClass( context, cfc, BLArgs, null );
 			}
 			return thisInstance;
 		} catch ( RuntimeException e ) {
@@ -248,6 +236,114 @@ public class DynamicJavaInteropService {
 		} catch ( Throwable e ) {
 			throw new BoxRuntimeException( "Error invoking constructor for class " + targetClass.getName(), e );
 		}
+	}
+
+	/**
+	 * Invokes the constructor for the class with the given named arguments and returns the instance of the object
+	 *
+	 * @param targetClass The Class that you want to invoke a constructor on
+	 * @param args        The named arguments to pass to the constructor
+	 *
+	 * @return The instance of the class
+	 */
+	public static <T> T invokeConstructor( IBoxContext context, Class<T> targetClass, Map<Key, Object> args ) {
+
+		// Thou shalt not pass!
+		if ( isInterface( targetClass ) ) {
+			throw new BoxRuntimeException( "Cannot invoke a constructor on an interface" );
+		}
+		// check if targetClass is an IClassRunnable
+		if ( !IClassRunnable.class.isAssignableFrom( targetClass ) ) {
+			throw new BoxRuntimeException( "Cannot use named arguments on a Java constructor." );
+		}
+		// Unwrap any ClassInvoker instances
+		unWrapArguments( args );
+		// Method signature for a constructor is void (Object...)
+		MethodType		constructorType	= MethodType.methodType( void.class, argumentsToClasses( args ) );
+		// Define the bootstrap method
+		MethodHandle	constructorHandle;
+		try {
+			constructorHandle = METHOD_LOOKUP.findConstructor( targetClass, constructorType );
+		} catch ( NoSuchMethodException | IllegalAccessException e ) {
+			throw new BoxRuntimeException( "Error getting constructor for class " + targetClass.getName(), e );
+		}
+		// Create a callsite using the constructor handle
+		CallSite		callSite			= new ConstantCallSite( constructorHandle );
+		// Bind the CallSite and invoke the constructor with the provided arguments
+		// Invoke Dynamic tries to do argument coercion, so we need to convert the arguments to the right types
+		MethodHandle	constructorInvoker	= callSite.dynamicInvoker();
+		try {
+			T thisInstance = ( T ) constructorInvoker.invokeWithArguments( EMPTY_ARGS );
+
+			// If this is a Box Class, some additional initialization is needed
+			if ( thisInstance instanceof IClassRunnable cfc ) {
+				return bootstrapBLClass( context, cfc, null, args );
+			}
+			return thisInstance;
+		} catch ( RuntimeException e ) {
+			throw e;
+		} catch ( Throwable e ) {
+			throw new BoxRuntimeException( "Error invoking constructor for class " + targetClass.getName(), e );
+		}
+	}
+
+	/**
+	 * Reusable method for bootstrapping IClassRunnables
+	 * 
+	 * @param cfc  The class to bootstrap
+	 * @param args The arguments to pass to the constructor
+	 * 
+	 * @return The instance of the class
+	 */
+	private static <T> T bootstrapBLClass( IBoxContext context, IClassRunnable cfc, Object[] positionalArgs, Map<Key, Object> namedArgs ) {
+
+		// This class context is really only used while boostrapping the pseudoConstructor. It will NOT be used as a parent
+		// context once the CFC is initialized. Methods called on this CFC will have access to the variables/this scope via their
+		// FunctionBoxContext, but their parent context will be whatever context they are called from.
+		IBoxContext classContext = new ClassBoxContext( context, cfc );
+
+		// Bootstrap the pseudoConstructor
+		cfc.pseudoConstructor( classContext );
+
+		// Call constructor
+		// look for initMethod annotation
+		Object	initMethod	= cfc.getAnnotations().get( Key.initMethod );
+		Key		initKey;
+		if ( initMethod != null ) {
+			initKey = Key.of( StringCaster.cast( initMethod ) );
+		} else {
+			initKey = Key.init;
+		}
+		if ( cfc.dereference( context, initKey, true ) != null ) {
+			Object result;
+			if ( positionalArgs != null ) {
+				result = cfc.dereferenceAndInvoke( classContext, initKey, positionalArgs, false );
+			} else {
+				result = cfc.dereferenceAndInvoke( classContext, initKey, namedArgs, false );
+			}
+			// CF returns the actual result of the constructor, but I'm not sure it makes sense or if people actually ever
+			// return anything other than "this".
+			if ( result != null ) {
+				// This cast will fail if the init returns something like a string
+				return ( T ) result;
+			}
+		} else {
+			// implicit constructor
+
+			if ( positionalArgs != null && positionalArgs.length == 1 && positionalArgs[ 0 ] instanceof Struct named ) {
+				namedArgs = named.getWrapped();
+			} else if ( positionalArgs != null && positionalArgs.length > 0 ) {
+				throw new BoxRuntimeException( "Implicit constructor only accepts named args or a single Struct as a positional arg." );
+			}
+
+			if ( namedArgs != null ) {
+				// loop over args and invoke setter methods for each
+				for ( Map.Entry<Key, Object> entry : namedArgs.entrySet() ) {
+					cfc.dereferenceAndInvoke( classContext, Key.of( "set" + entry.getKey().getName() ), new Object[] { entry.getValue() }, false );
+				}
+			}
+		}
+		return ( T ) cfc;
 	}
 
 	/**
@@ -948,6 +1044,19 @@ public class DynamicJavaInteropService {
 	private static void unWrapArguments( Object[] arguments ) {
 		for ( int j = 0; j < arguments.length; j++ ) {
 			arguments[ j ] = unWrap( arguments[ j ] );
+		}
+	}
+
+	/**
+	 * Unwrap any ClassInvoker instances in the arguments
+	 *
+	 * @param arguments The arguments to unwrap
+	 *
+	 * @return The unwrapped arguments
+	 */
+	private static void unWrapArguments( Map<Key, Object> arguments ) {
+		for ( Key key : arguments.keySet() ) {
+			arguments.put( key, unWrap( arguments.get( key ) ) );
 		}
 	}
 
