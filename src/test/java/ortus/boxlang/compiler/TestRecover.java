@@ -13,7 +13,6 @@ import ortus.boxlang.parser.ParsingResult;
 public class TestRecover {
 
 	@Test
-	@Disabled( "No longer works" )
 	public void testRecover() throws IOException {
 		String			code	= """
 		                          /**
@@ -23,6 +22,139 @@ public class TestRecover {
 		                              */
 		                          }
 		                          """;
+
+		BoxCFParser		parser	= new BoxCFParser();
+		ParsingResult	result	= parser.parse( code );
+		System.out.println( result.getIssues() );
+		assertTrue( result.isCorrect() );
+	}
+
+	@Test
+	@Disabled( "Doesn't work" )
+	public void testRecoverInClass() throws IOException {
+		String			code	= """
+		                          component /** */ {
+		                           /**
+		                           */
+		                           }
+		                                             """;
+
+		BoxCFParser		parser	= new BoxCFParser();
+		ParsingResult	result	= parser.parse( code );
+		System.out.println( result.getIssues() );
+		assertTrue( result.isCorrect() );
+	}
+
+	@Test
+	@Disabled( "Doesn't work" )
+	public void testRecoverInClassBeforeStatment() throws IOException {
+		String			code	= """
+		                          component {
+		                           /**
+		                           */
+		                          brad="wood"
+		                           }
+		                                             """;
+
+		BoxCFParser		parser	= new BoxCFParser();
+		ParsingResult	result	= parser.parse( code );
+		System.out.println( result.getIssues() );
+		assertTrue( result.isCorrect() );
+	}
+
+	@Test
+	@Disabled( "Doesn't work" )
+	public void testRecoverInFunction() throws IOException {
+		String			code	= """
+		                                           function f() {
+		                                               /**
+		                                               */
+		                          brad="wood"
+		                                           }
+		                                           """;
+
+		BoxCFParser		parser	= new BoxCFParser();
+		ParsingResult	result	= parser.parse( code );
+		System.out.println( result.getIssues() );
+		assertTrue( result.isCorrect() );
+	}
+
+	@Test
+	@Disabled( "Doesn't work" )
+	public void testRecoverInArgs() throws IOException {
+		String			code	= """
+		                                                          function /** */ f(
+		                          /** */
+		                          param1,
+		                          /** */
+		                          required /** */ string /** */ param2="default" /** */
+		                            ) {
+		                                                          }
+		                                                          """;
+
+		BoxCFParser		parser	= new BoxCFParser();
+		ParsingResult	result	= parser.parse( code );
+		System.out.println( result.getIssues() );
+		assertTrue( result.isCorrect() );
+	}
+
+	@Test
+	@Disabled( "Doesn't work" )
+	public void testRecoverComment() throws IOException {
+		String			code	= """
+		                              /**
+		                              */
+		                          """;
+
+		BoxCFParser		parser	= new BoxCFParser();
+		ParsingResult	result	= parser.parse( code );
+		System.out.println( result.getIssues() );
+		assertTrue( result.isCorrect() );
+	}
+
+	@Test
+	@Disabled( "Doesn't work" )
+	public void testRecoverBeforeStatement() throws IOException {
+		String			code	= """
+		                                               /**
+		                                               */
+		                          brad="wood";
+		                                           """;
+
+		BoxCFParser		parser	= new BoxCFParser();
+		ParsingResult	result	= parser.parse( code );
+		System.out.println( result.getIssues() );
+		assertTrue( result.isCorrect() );
+	}
+
+	@Test
+	@Disabled( "Doesn't work" )
+	public void testRecoverInExpression() throws IOException {
+		String			code	= """
+		                             /** */ foo /** */ = /** */ 1 /** */ + /** */ 2 /** */ ; /** */
+
+		                          """;
+
+		BoxCFParser		parser	= new BoxCFParser();
+		ParsingResult	result	= parser.parse( code );
+		System.out.println( result.getIssues() );
+		assertTrue( result.isCorrect() );
+	}
+
+	@Test
+	@Disabled( "Doesn't work" )
+	public void testRecoverInStatement() throws IOException {
+		String			code	= """
+		                          /** */
+		                                                if(
+		                          	/** */
+		                          	true
+		                          	/** */
+		                            ) /** */ {
+		                          	/** */
+		                            }
+
+		                                             """;
 
 		BoxCFParser		parser	= new BoxCFParser();
 		ParsingResult	result	= parser.parse( code );
