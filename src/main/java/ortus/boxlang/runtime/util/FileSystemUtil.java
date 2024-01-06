@@ -21,12 +21,16 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.nio.charset.Charset;
 import java.nio.file.DirectoryNotEmptyException;
+import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.PathMatcher;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
+import java.util.Comparator;
 import java.util.Iterator;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
@@ -89,7 +93,7 @@ public final class FileSystemUtil {
 	 * @throws IOException
 	 */
 	public static void createDirectory( String directoryPath ) throws IOException {
-		Files.createDirectory( Path.of( directoryPath ) );
+		Files.createDirectories( Path.of( directoryPath ) );
 	}
 
 	/**
@@ -116,6 +120,67 @@ public final class FileSystemUtil {
 			Files.delete( Path.of( directoryPath ) );
 		} catch ( DirectoryNotEmptyException e ) {
 			throw new BoxRuntimeException( "The directory " + directoryPath + " is not empty and may not be deleted without the recursive option." );
+		}
+	}
+
+	public static Stream<Path> listDirectory( String path, Boolean recurse, String filter, String sort, String type ) {
+		final PathMatcher	pathMatcher		= FileSystems.getDefault().getPathMatcher( "glob:" + filter );
+		String[]			sortElements	= sort.split( ( "\\s+" ) );
+		String				sortField		= sortElements[ 0 ];
+		String				sortDirection	= sortElements.length > 1 ? sortElements[ 1 ].toLowerCase() : "asc";
+		Comparator<Path>	pathSort		= null;
+		Stream<Path>		directoryStream	= null;
+
+		switch ( sortField ) {
+			case "size" :
+				pathSort = ( final Path a, final Path b ) -> {
+					try {
+						return sortDirection.equals( "desc" )
+						    ? ( int ) Long.compareUnsigned( Files.size( b ), Files.size( a ) )
+						    : ( int ) Long.compareUnsigned( Files.size( a ), Files.size( b ) );
+					} catch ( IOException e ) {
+						return ( int ) Long.compareUnsigned( 0l, 0l );
+					}
+
+				};
+			case "directory" :
+				pathSort = ( final Path a, final Path b ) -> sortDirection.equals( "desc" )
+				    ? b.getParent().toString().compareTo( a.getParent().toString() )
+				    : a.getParent().toString().compareTo( b.getParent().toString() );
+			case "namenocase" :
+				pathSort = ( final Path a, final Path b ) -> sortDirection.equals( "desc" )
+				    ? b.toString().toLowerCase().compareTo( a.toString().toLowerCase() )
+				    : a.toString().toLowerCase().compareTo( b.toString().toLowerCase() );
+			default :
+				pathSort = ( final Path a, final Path b ) -> sortDirection.equals( "desc" )
+				    ? b.toString().compareTo( a.toString() )
+				    : a.toString().compareTo( b.toString() );
+
+		}
+
+		try {
+			if ( recurse ) {
+				directoryStream = Files.walk( Path.of( path ) ).parallel();
+			} else {
+				directoryStream = Files.walk( Path.of( path ), 1 ).parallel();
+			}
+		} catch ( IOException e ) {
+			throw new RuntimeException( e );
+		}
+
+		return filter.length() > 1
+		    ? directoryStream.filter( item -> matchesType( item, type ) && pathMatcher.matches( item.getFileName() ) ).sorted( pathSort )
+		    : directoryStream.filter( item -> matchesType( item, type ) ).sorted( pathSort );
+	}
+
+	private static Boolean matchesType( Path item, String type ) {
+		switch ( type ) {
+			case "directory" :
+				return Files.isDirectory( item );
+			case "file" :
+				return !Files.isDirectory( item );
+			default :
+				return true;
 		}
 	}
 
