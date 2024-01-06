@@ -85,6 +85,8 @@ public class Key {
 	// Directory/File Common Argument Keys
 	public static final Key	file					= Key.of( "file" );
 	public static final Key	filepath				= Key.of( "filepath" );
+	public static final Key	oldPath					= Key.of( "oldPath" );
+	public static final Key	newPath					= Key.of( "newPath" );
 	public static final Key	path					= Key.of( "path" );
 	public static final Key	directory				= Key.of( "directory" );
 	public static final Key	recursive				= Key.of( "recursive" );
