@@ -88,7 +88,7 @@ public class Key {
 	public static final Key	directory				= Key.of( "directory" );
 	public static final Key	recursive				= Key.of( "recursive" );
 	public static final Key	recurse					= Key.of( "recurse" );
-	public static final Key	ensurePaths			= Key.of( "ensurePaths" );
+	public static final Key	ensurePaths				= Key.of( "ensurePaths" );
 	public static final Key	listInfo				= Key.of( "listInfo" );
 	public static final Key	filter					= Key.of( "filter" );
 	public static final Key	mode					= Key.of( "mode" );
@@ -99,8 +99,8 @@ public class Key {
 	public static final Key	charset					= Key.of( "charset" );
 	public static final Key	buffersize				= Key.of( "buffersize" );
 	public static final Key	charsetOrBufferSize		= Key.of( "charsetOrBufferSize" );
-	public static final Key	data				= Key.of( "data" );
-	public static final Key	source				= Key.of( "source" );
+	public static final Key	data					= Key.of( "data" );
+	public static final Key	source					= Key.of( "source" );
 	public static final Key	allowRealPath			= Key.of( "allowRealPath" );
 	public static final Key	strict					= Key.of( "strict" );
 
