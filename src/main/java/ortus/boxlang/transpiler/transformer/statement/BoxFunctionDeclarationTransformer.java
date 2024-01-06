@@ -49,7 +49,7 @@ public class BoxFunctionDeclarationTransformer extends AbstractTransformer {
 
 		public class ${classname} extends UDF {
 			private static ${classname}				instance;
-			private final static Key				name		= Key.of( "${functionName}" );
+			private final static Key				name		= ${functionName};
 			private final static Argument[]			arguments	= new Argument[] {};
 			private final static String				returnType	= "${returnType}";
 			private              Access		   		access		= Access.${access};
@@ -146,7 +146,7 @@ public class BoxFunctionDeclarationTransformer extends AbstractTransformer {
 			    Map.entry( "packageName", packageName ),
 			    Map.entry( "className", className ),
 			    Map.entry( "access", function.getAccessModifier().toString().toUpperCase() ),
-			    Map.entry( "functionName", function.getName() ),
+			    Map.entry( "functionName", createKey( function.getName() ).toString() ),
 			    Map.entry( "returnType", function.getType().getType().name() ),
 			    Map.entry( "enclosingClassName", enclosingClassName ),
 			    Map.entry( "compiledOnTimestamp", transpiler.getDateTime( LocalDateTime.now() ) ),

@@ -22,10 +22,12 @@ import ortus.boxlang.runtime.scopes.Key;
 /**
  * Represents an argument to a function or BIF
  *
- * @param required     Whether the argument is required
- * @param type         The type of the argument
- * @param name         The name of the argument
- * @param defaultValue The default value of the argument
+ * @param required      Whether the argument is required
+ * @param type          The type of the argument
+ * @param name          The name of the argument
+ * @param defaultValue  The default value of the argument
+ * @param annotations   Annotations for the argument
+ * @param documentation Documentation for the argument
  *
  */
 public record Argument( boolean required, String type, Key name, Object defaultValue, Struct annotations, Struct documentation ) {

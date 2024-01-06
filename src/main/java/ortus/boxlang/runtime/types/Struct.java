@@ -757,6 +757,10 @@ public class Struct implements Map<Key, Object>, IType, IReferenceable, IListena
 		return value;
 	}
 
+	public Map<?, ?> getWrapped() {
+		return wrapped;
+	}
+
 	/**
 	 * --------------------------------------------------------------------------
 	 * IListenable Interface Methods

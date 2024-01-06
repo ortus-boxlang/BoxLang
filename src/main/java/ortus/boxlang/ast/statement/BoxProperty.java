@@ -12,29 +12,25 @@
  * BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language
  * governing permissions and limitations under the License.
  */
-package ortus.boxlang.ast;
+package ortus.boxlang.ast.statement;
 
 import java.util.List;
 import java.util.Map;
 
-import ortus.boxlang.ast.statement.BoxAnnotation;
-import ortus.boxlang.ast.statement.BoxDocumentationAnnotation;
-import ortus.boxlang.ast.statement.BoxImport;
-import ortus.boxlang.ast.statement.BoxProperty;
+import ortus.boxlang.ast.BoxNode;
+import ortus.boxlang.ast.BoxStatement;
+import ortus.boxlang.ast.Position;
 
 /**
- * Root node for a Class
+ * Root node for a property
  */
-public class BoxClass extends BoxNode {
+public class BoxProperty extends BoxNode {
 
-	private final List<BoxStatement>				body;
-	private final List<BoxImport>					imports;
 	private final List<BoxAnnotation>				annotations;
 	private final List<BoxDocumentationAnnotation>	documentation;
-	private final List<BoxProperty>					properties;
 
 	/**
-	 * Creates an AST for a Class
+	 * Creates an AST for a program which is represented by a list of statements
 	 *
 	 * @param statements list of the statements nodes
 	 * @param position   position within the source code
@@ -43,24 +39,12 @@ public class BoxClass extends BoxNode {
 	 * @see Position
 	 * @see BoxStatement
 	 */
-	public BoxClass( List<BoxImport> imports, List<BoxStatement> body, List<BoxAnnotation> annotations,
-	    List<BoxDocumentationAnnotation> documentation, List<BoxProperty> properties, Position position,
-	    String sourceText ) {
+	public BoxProperty( List<BoxAnnotation> annotations, List<BoxDocumentationAnnotation> documentation, Position position, String sourceText ) {
 		super( position, sourceText );
-		this.body = body;
-		this.body.forEach( arg -> arg.setParent( this ) );
 		this.annotations = annotations;
 		this.annotations.forEach( arg -> arg.setParent( this ) );
 		this.documentation = documentation;
 		this.documentation.forEach( arg -> arg.setParent( this ) );
-		this.imports = imports;
-		this.imports.forEach( arg -> arg.setParent( this ) );
-		this.properties = properties;
-		this.properties.forEach( arg -> arg.setParent( this ) );
-	}
-
-	public List<BoxStatement> getBody() {
-		return body;
 	}
 
 	public List<BoxAnnotation> getAnnotations() {
@@ -71,23 +55,12 @@ public class BoxClass extends BoxNode {
 		return documentation;
 	}
 
-	public List<BoxImport> getImports() {
-		return imports;
-	}
-
-	public List<BoxProperty> getProperties() {
-		return properties;
-	}
-
 	@Override
 	public Map<String, Object> toMap() {
 		Map<String, Object> map = super.toMap();
 
-		map.put( "imports", imports.stream().map( BoxImport::toMap ).collect( java.util.stream.Collectors.toList() ) );
-		map.put( "body", body.stream().map( BoxStatement::toMap ).collect( java.util.stream.Collectors.toList() ) );
 		map.put( "annotations", annotations.stream().map( BoxAnnotation::toMap ).collect( java.util.stream.Collectors.toList() ) );
 		map.put( "documentation", documentation.stream().map( BoxDocumentationAnnotation::toMap ).collect( java.util.stream.Collectors.toList() ) );
-		map.put( "properties", properties.stream().map( BoxProperty::toMap ).collect( java.util.stream.Collectors.toList() ) );
 		return map;
 	}
 }

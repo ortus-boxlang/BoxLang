@@ -17,10 +17,13 @@
  */
 package ortus.boxlang.runtime.runnables;
 
+import java.util.Map;
+
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.dynamic.IReferenceable;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
+import ortus.boxlang.runtime.types.Property;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.meta.BoxMeta;
 
@@ -56,6 +59,11 @@ public interface IClassRunnable extends ITemplateRunnable, IReferenceable {
 	 * Get documentation
 	 */
 	public Struct getDocumentation();
+
+	/**
+	 * Get the properties
+	 */
+	public Map<Key, Property> getProperties();
 
 	/**
 	 * Run the pseudo constructor

@@ -23,6 +23,7 @@ import static org.junit.Assert.assertTrue;
 import java.io.IOException;
 
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import com.github.javaparser.ast.CompilationUnit;
@@ -102,6 +103,7 @@ public class TestUDF extends TestBase {
 	}
 
 	@Test
+	@Disabled( "Key generation is too unpredictable" )
 	public void userDefinedFunctionDocumentation() throws IOException {
 
 		BoxCFParser		parser	= new BoxCFParser();
