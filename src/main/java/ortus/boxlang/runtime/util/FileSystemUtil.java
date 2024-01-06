@@ -265,6 +265,47 @@ public final class FileSystemUtil {
 		}
 	}
 
+	public static void copyDirectory( String source, String destination, Boolean recurse, String filter, Boolean createPaths ) {
+		Path	start	= Path.of( source );
+		Path	end		= Path.of( destination );
+		if ( createPaths && !Files.exists( end ) ) {
+			try {
+				Files.createDirectories( end );
+			} catch ( IOException e ) {
+				throw new RuntimeException( e );
+			}
+		}
+		if ( Files.isDirectory( start ) ) {
+			listDirectory( source, recurse, filter, "name", recurse ? "all" : "file" ).forEachOrdered( path -> {
+				Path	targetPath		= Path.of( path.toString().replace( source, destination ) );
+				Path	targetParent	= targetPath.getParent();
+				if ( recurse && !Files.exists( targetParent ) ) {
+					try {
+						Files.createDirectories( targetParent );
+					} catch ( IOException e ) {
+						throw new RuntimeException( e );
+					}
+
+				}
+				try {
+					// our stream is in parallel async so if this is a directory it may already have been created
+					if ( !Files.isDirectory( targetPath ) || ( Files.isDirectory( targetPath ) && !Files.exists( targetPath ) ) ) {
+						Files.copy( path, targetPath );
+					}
+				} catch ( IOException e ) {
+					throw new RuntimeException( e );
+				}
+			} );
+		} else {
+			try {
+				Files.copy( start, end );
+			} catch ( IOException e ) {
+				throw new RuntimeException( e );
+			}
+		}
+
+	}
+
 	/**
 	 * Tests whether a file is binary
 	 *

@@ -89,7 +89,7 @@ public class Key {
 	public static final Key	directory				= Key.of( "directory" );
 	public static final Key	recursive				= Key.of( "recursive" );
 	public static final Key	recurse					= Key.of( "recurse" );
-	public static final Key	ensurePaths				= Key.of( "ensurePaths" );
+	public static final Key	createPath				= Key.of( "createPath" );
 	public static final Key	listInfo				= Key.of( "listInfo" );
 	public static final Key	filter					= Key.of( "filter" );
 	public static final Key	mode					= Key.of( "mode" );

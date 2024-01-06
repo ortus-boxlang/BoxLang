@@ -27,7 +27,7 @@ public class FileWrite extends BIF {
 		    new Argument( true, "string", Key.file ),
 		    new Argument( true, "any", Key.data ),
 		    new Argument( false, "string", Key.charset, "utf-8" ),
-		    new Argument( false, "boolean", Key.ensurePaths, false )
+		    new Argument( false, "boolean", Key.createPath, false )
 		};
 	}
 
@@ -43,18 +43,18 @@ public class FileWrite extends BIF {
 	 *
 	 * @arguments.charset The charset encoding ( ignored for binary data )
 	 *
-	 * @aguments.ensurePaths [false] ( Boxlang only ) When true will ensure all directories to file destination are created
+	 * @aguments.createPath [false] ( Boxlang only ) When true will ensure all directories to file destination are created
 	 */
 	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
 		String	filePath	= arguments.getAsString( Key.file );
 		Object	fileContent	= arguments.get( Key.data );
 		String	charset		= arguments.getAsString( Key.charset );
-		Boolean	ensurePaths	= arguments.getAsBoolean( Key.ensurePaths );
+		Boolean	createPath	= arguments.getAsBoolean( Key.createPath );
 		try {
 			if ( fileContent instanceof String ) {
-				FileSystemUtil.write( filePath, arguments.getAsString( Key.data ), charset, ensurePaths );
+				FileSystemUtil.write( filePath, arguments.getAsString( Key.data ), charset, createPath );
 			} else {
-				FileSystemUtil.write( filePath, ( byte[] ) fileContent, ensurePaths );
+				FileSystemUtil.write( filePath, ( byte[] ) fileContent, createPath );
 			}
 		} catch ( NoSuchFileException e ) {
 			throw new BoxRuntimeException(
