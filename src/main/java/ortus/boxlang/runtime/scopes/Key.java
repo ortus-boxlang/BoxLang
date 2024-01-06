@@ -104,6 +104,7 @@ public class Key {
 	public static final Key	source					= Key.of( "source" );
 	public static final Key	destination				= Key.of( "destination" );
 	public static final Key	allowRealPath			= Key.of( "allowRealPath" );
+	public static final Key	ignoreExists			= Key.of( "ignoreExists" );
 	public static final Key	strict					= Key.of( "strict" );
 
 	// DateTime Common Argument Keys
