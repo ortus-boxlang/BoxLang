@@ -111,7 +111,6 @@ statement:
 	| if
 	| include
 	| lockStatement
-	| property
 	| rethrow
 	| saveContentStatement
 	| simpleStatement
