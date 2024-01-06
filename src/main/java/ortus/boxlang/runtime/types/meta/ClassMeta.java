@@ -20,7 +20,6 @@ package ortus.boxlang.runtime.types.meta;
 import java.util.ArrayList;
 
 import ortus.boxlang.runtime.runnables.IClassRunnable;
-import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.Function;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.immutable.ImmutableArray;
@@ -55,14 +54,19 @@ public class ClassMeta extends BoxMeta {
 
 		this.meta = ImmutableStruct.of(
 		    "name", target.getName().getName(),
-		    "documentation", target.getDocumentation(),
-		    "annotations", target.getAnnotations(),
+		    "documentation", ImmutableStruct.fromStruct( target.getDocumentation() ),
+		    "annotations", ImmutableStruct.fromStruct( target.getAnnotations() ),
 		    // TODO: add extends
 		    "extends", Struct.EMPTY,
 		    "functions", ImmutableArray.fromList( functions ),
 		    "hashCode", target.hashCode(),
-		    // TODO: add properties
-		    "properties", Array.EMPTY,
+		    "properties", ImmutableArray.of( target.getProperties().entrySet().stream().map( entry -> ImmutableStruct.of(
+		        "name", entry.getKey().getName(),
+		        "type", entry.getValue().type(),
+		        "defaultValue", entry.getValue().defaultValue(),
+		        "annotations", ImmutableStruct.fromStruct( entry.getValue().annotations() ),
+		        "documentation", ImmutableStruct.fromStruct( entry.getValue().documentation() )
+		    ) ).toArray() ),
 		    "type", "Component",
 		    "fullname", target.getName().getName(),
 		    "path", target.getRunnablePath().toString()

@@ -84,6 +84,15 @@ public class ImmutableStruct extends Struct implements IImmutable {
 	}
 
 	/**
+	 * Construct a struct from a Struct
+	 *
+	 * @param struct The struct to create the struct from
+	 */
+	public ImmutableStruct( Struct struct ) {
+		this( struct.type, struct.getWrapped() );
+	}
+
+	/**
 	 * Construct a struct of a specific type from a map
 	 *
 	 * @param map  The map to create the struct from
@@ -111,6 +120,15 @@ public class ImmutableStruct extends Struct implements IImmutable {
 	 */
 	public static ImmutableStruct fromMap( Type type, Map<Object, Object> map ) {
 		return new ImmutableStruct( type, map );
+	}
+
+	/**
+	 * Construct a struct of a struct, using the same type
+	 *
+	 * @param struct The struct to create the struct from
+	 */
+	public static ImmutableStruct fromStruct( Struct struct ) {
+		return new ImmutableStruct( struct );
 	}
 
 	/**

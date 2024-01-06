@@ -15,6 +15,9 @@
 package ortus.boxlang.transpiler.transformer;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import com.github.javaparser.ParseResult;
@@ -37,10 +40,14 @@ import ortus.boxlang.ast.BoxNode;
 import ortus.boxlang.ast.BoxStatement;
 import ortus.boxlang.ast.Source;
 import ortus.boxlang.ast.SourceFile;
+import ortus.boxlang.ast.expression.BoxFQN;
 import ortus.boxlang.ast.expression.BoxIntegerLiteral;
+import ortus.boxlang.ast.expression.BoxNull;
 import ortus.boxlang.ast.expression.BoxStringLiteral;
+import ortus.boxlang.ast.statement.BoxAnnotation;
 import ortus.boxlang.ast.statement.BoxFunctionDeclaration;
 import ortus.boxlang.ast.statement.BoxImport;
+import ortus.boxlang.ast.statement.BoxProperty;
 import ortus.boxlang.runtime.config.util.PlaceholderHelper;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
@@ -76,6 +83,8 @@ public class BoxClassTransformer extends AbstractTransformer {
 		import ortus.boxlang.runtime.types.meta.BoxMeta;
 		import ortus.boxlang.runtime.types.meta.ClassMeta;
 		import ortus.boxlang.runtime.interop.DynamicObject;
+		import ortus.boxlang.runtime.types.Property;
+		import ortus.boxlang.runtime.types.MapHelper;
 
 		import java.nio.file.Path;
 		import java.nio.file.Paths;
@@ -85,6 +94,8 @@ public class BoxClassTransformer extends AbstractTransformer {
 		import java.util.Map;
 		import java.util.HashMap;
 		import java.util.ArrayList;
+		import java.util.Collections;
+		import java.util.LinkedHashMap;
 
 		public class ${className} implements IClassRunnable, IReferenceable, IType {
 
@@ -102,10 +113,14 @@ public class BoxClassTransformer extends AbstractTransformer {
 
 			private final static Struct	annotations;
 			private final static Struct	documentation;
+			// replace Object with record/class to represent a property
+			private final static Map<Key,Property>	properties;
+			private final static Map<Key,Property>	getterLookup=null;
+			private final static Map<Key,Property>	setterLookup=null;
 
 			private IScope variablesScope = new VariablesScope();
 			private IScope thisScope = new ThisScope();
-			private Key name = Key.of( "${boxClassName}" );
+			private Key name = ${boxClassName};
 
 			public ${className}() {
 			}
@@ -113,6 +128,12 @@ public class BoxClassTransformer extends AbstractTransformer {
 			public void pseudoConstructor( IBoxContext context ) {
 				context.pushTemplate( this );
 				try {
+					// loop over properties and create variables for those with non-null defult values
+					for ( var property : properties.values()) {
+						if ( property.defaultValue() != null ) {
+							variablesScope.assign( context, property.name(), property.defaultValue() );
+						}
+					}
 					// TODO: pre/post interceptor announcements here
 					_pseudoConstructor( context );
 				} finally {
@@ -190,6 +211,13 @@ public class BoxClassTransformer extends AbstractTransformer {
 				return this.name;
 			}
 
+			/**
+			 * Get the properties
+			 */
+			public Map<Key,Property> getProperties() {
+				return this.properties;
+			}
+
 			public BoxMeta getBoxMeta() {
 				if ( this.$bx == null ) {
 					this.$bx = new ClassMeta( this );
@@ -203,7 +231,7 @@ public class BoxClassTransformer extends AbstractTransformer {
 			 * @return The string representation
 			 */
 			public String asString() {
-				return name.getName();
+				return "Class: " + name.getName();
 			}
 
 			/**
@@ -279,6 +307,24 @@ public class BoxClassTransformer extends AbstractTransformer {
 						"key '" + name.getName() + "' of type  '" + value.getClass().getName() + "'  is not a function " );	
 				}
 
+				// Check for generated accessors
+				Object hasAccessors = getAnnotations().get( Key.accessors );
+				if ( hasAccessors != null && BooleanCaster.cast( hasAccessors ) ) {
+					Property getterProperty = getterLookup.get( name );
+ 					if( getterProperty != null ) {
+						return variablesScope.dereference( context, getterLookup.get( name ).name(), safe );
+					}
+					Property setterProperty = setterLookup.get( name );
+					if( setterProperty != null ) {
+						Key thisName = setterProperty.name();
+						if( positionalArguments.length == 0 ) {
+							throw new BoxRuntimeException( "Missing argument for setter '" + name.getName() + "'" );
+						}
+						variablesScope.assign( context, thisName, positionalArguments[0] );
+						return this;
+					}
+				}
+
 				if( thisScope.get( Key.onMissingMethod ) != null ){
 					return dereferenceAndInvoke( context, Key.onMissingMethod, new Object[]{ name.getName(), positionalArguments }, safe );
 				}
@@ -318,6 +364,24 @@ public class BoxClassTransformer extends AbstractTransformer {
 				if ( value != null ) {
 					throw new BoxRuntimeException(
 						"key '" + name.getName() + "' of type  '" + value.getClass().getName() + "'  is not a function " );	
+				}
+
+				// Check for generated accessors
+				Object hasAccessors = getAnnotations().get( Key.accessors );
+				if ( hasAccessors != null && BooleanCaster.cast( hasAccessors ) ) {
+					Property getterProperty = getterLookup.get( name );
+ 					if( getterProperty != null ) {
+						return variablesScope.dereference( context, getterProperty.name(), safe );
+					}
+					Property setterProperty = setterLookup.get( name );
+					if( setterProperty != null ) {
+						Key thisName = setterProperty.name();
+						if( !namedArguments.containsKey( thisName ) ) {
+							throw new BoxRuntimeException( "Missing argument for setter '" + name.getName() + "'" );
+						}
+						variablesScope.assign( context, thisName, namedArguments.get( thisName ) );
+						return this;
+					}
 				}
 
 				if( thisScope.get( Key.onMissingMethod ) != null ){
@@ -365,8 +429,23 @@ public class BoxClassTransformer extends AbstractTransformer {
 				meta.put( "extends", Struct.EMPTY );
 				meta.put( "functions", Array.fromList( functions ) );
 				meta.put( "hashCode", hashCode() );
-				// TODO: add properties
-				meta.put( "properties", Array.EMPTY );
+				var properties = new Array();
+				// loop over properties list and add struct for each property
+				for ( var entry : this.properties.entrySet() ) {
+					var property = entry.getValue();
+					var propertyStruct = new Struct();
+					propertyStruct.put( "name", property.name().getName() );
+					propertyStruct.put( "type", property.type() );
+					propertyStruct.put( "default", property.defaultValue() );
+					if ( property.documentation() != null ) {
+						meta.putAll( property.documentation() );
+					}
+					if ( property.annotations() != null ) {
+						meta.putAll( property.annotations() );
+					}
+					properties.add( propertyStruct );
+				}
+				meta.put( "properties", properties );
 				meta.put( "type", "Component" );
 				meta.put( "name", getName().getName() );
 				meta.put( "fullname", getName().getName() );
@@ -410,7 +489,7 @@ public class BoxClassTransformer extends AbstractTransformer {
 		    Map.entry( "fileFolderPath", filePath.replaceAll( "\\\\", "\\\\\\\\" ) ),
 		    Map.entry( "compiledOnTimestamp", transpiler.getDateTime( LocalDateTime.now() ) ),
 		    Map.entry( "compileVersion", "1L" ),
-		    Map.entry( "boxClassName", packageName + "." + fileName.replace( ".bx", "" ).replace( ".cfc", "" ) )
+		    Map.entry( "boxClassName", createKey( packageName + "." + fileName.replace( ".bx", "" ).replace( ".cfc", "" ) ).toString() )
 		);
 		String							code		= PlaceholderHelper.resolve( template, values );
 		ParseResult<CompilationUnit>	result;
@@ -448,6 +527,14 @@ public class BoxClassTransformer extends AbstractTransformer {
 		Expression documentationStruct = transformDocumentation( boxClass.getDocumentation() );
 		result.getResult().orElseThrow().getType( 0 ).getFieldByName( "documentation" ).orElseThrow().getVariable( 0 )
 		    .setInitializer( documentationStruct );
+
+		List<Expression> propertyStructs = transformProperties( boxClass.getProperties() );
+		result.getResult().orElseThrow().getType( 0 ).getFieldByName( "properties" ).orElseThrow().getVariable( 0 )
+		    .setInitializer( propertyStructs.get( 0 ) );
+		result.getResult().orElseThrow().getType( 0 ).getFieldByName( "getterLookup" ).orElseThrow().getVariable( 0 )
+		    .setInitializer( propertyStructs.get( 1 ) );
+		result.getResult().orElseThrow().getType( 0 ).getFieldByName( "setterLookup" ).orElseThrow().getVariable( 0 )
+		    .setInitializer( propertyStructs.get( 2 ) );
 
 		transpiler.pushContextName( "context" );
 		// Add imports
@@ -504,7 +591,150 @@ public class BoxClassTransformer extends AbstractTransformer {
 		}
 
 		transpiler.popContextName();
+		System.out.println( entryPoint );
 		return entryPoint;
+	}
+
+	/**
+	 * Transforms a collection of properties into a Map
+	 *
+	 * @param properties list of properties
+	 *
+	 * @return an Expression node
+	 */
+	private List<Expression> transformProperties( List<BoxProperty> properties ) {
+		List<Expression>	members			= new ArrayList<Expression>();
+		List<Expression>	getterLookup	= new ArrayList<Expression>();
+		List<Expression>	setterLookup	= new ArrayList<Expression>();
+		properties.forEach( prop -> {
+			Expression			documentationStruct		= transformDocumentation( prop.getDocumentation() );
+			/*
+			 * normalize annotations to allow for
+			 * property String userName;
+			 */
+			List<BoxAnnotation>	finalAnnotations		= new ArrayList<BoxAnnotation>();
+			var					annotations				= prop.getAnnotations();
+			int					namePosition			= annotations.stream().map( BoxAnnotation::getKey ).map( BoxFQN::getValue ).map( String::toLowerCase )
+			    .collect( java.util.stream.Collectors.toList() ).indexOf( "name" );
+			int					typePosition			= annotations.stream().map( BoxAnnotation::getKey ).map( BoxFQN::getValue ).map( String::toLowerCase )
+			    .collect( java.util.stream.Collectors.toList() ).indexOf( "type" );
+			int					defaultPosition			= annotations.stream().map( BoxAnnotation::getKey ).map( BoxFQN::getValue ).map( String::toLowerCase )
+			    .collect( java.util.stream.Collectors.toList() ).indexOf( "default" );
+			int					numberOfNonValuedKeys	= ( int ) annotations.stream().map( BoxAnnotation::getValue ).filter( it -> it == null ).count();
+			List<BoxAnnotation>	nonValuedKeys			= annotations.stream().filter( it -> it.getValue() == null )
+			    .collect( java.util.stream.Collectors.toList() );
+			BoxAnnotation		nameAnnotation			= null;
+			BoxAnnotation		typeAnnotation			= null;
+			BoxAnnotation		defaultAnnotation		= null;
+
+			if ( namePosition > -1 )
+				nameAnnotation = annotations.get( namePosition );
+			if ( typePosition > -1 )
+				typeAnnotation = annotations.get( typePosition );
+			if ( defaultPosition > -1 )
+				defaultAnnotation = annotations.get( defaultPosition );
+			/*
+			 * If there is no name, if there is more than one nonvalued keys and no type, use the first nonvalued key
+			 * as the type and second nonvalued key as the name. Otherwise, if there are more than one non-valued key, use the first as the name.
+			 */
+			if ( namePosition == -1 ) {
+				if ( numberOfNonValuedKeys > 1 && typePosition == -1 ) {
+					typeAnnotation	= new BoxAnnotation( new BoxFQN( "type", null, null ),
+					    new BoxStringLiteral( nonValuedKeys.get( 0 ).getKey().getValue(), null, null ), null,
+					    null );
+					nameAnnotation	= new BoxAnnotation( new BoxFQN( "name", null, null ),
+					    new BoxStringLiteral( nonValuedKeys.get( 1 ).getKey().getValue(), null, null ), null,
+					    null );
+					finalAnnotations.add( nameAnnotation );
+					finalAnnotations.add( typeAnnotation );
+					annotations.remove( nonValuedKeys.get( 0 ) );
+					annotations.remove( nonValuedKeys.get( 1 ) );
+				} else if ( numberOfNonValuedKeys > 0 ) {
+					nameAnnotation = new BoxAnnotation( new BoxFQN( "name", null, null ),
+					    new BoxStringLiteral( nonValuedKeys.get( 0 ).getKey().getValue(), null, null ), null,
+					    null );
+					finalAnnotations.add( nameAnnotation );
+					annotations.remove( nonValuedKeys.get( 0 ) );
+				} else {
+					throw new BoxRuntimeException( "Property [" + prop.getSourceText() + "] has no name" );
+				}
+			}
+			// add type with value of any if not present
+			if ( typeAnnotation == null ) {
+				typeAnnotation = new BoxAnnotation( new BoxFQN( "type", null, null ), new BoxStringLiteral( "any", null, null ), null,
+				    null );
+				finalAnnotations.add( typeAnnotation );
+			}
+			// add default with value of null if not present
+			if ( defaultPosition == -1 ) {
+				defaultAnnotation = new BoxAnnotation( new BoxFQN( "default", null, null ), new BoxNull( null, null ), null,
+				    null );
+				finalAnnotations.add( defaultAnnotation );
+			}
+			// add remaining annotations
+			finalAnnotations.addAll( annotations );
+
+			Expression	annotationStruct	= transformAnnotations( finalAnnotations );
+			/* Process default value */
+			String		init				= "null";
+			if ( defaultAnnotation.getValue() != null ) {
+				Node initExpr = transpiler.transform( defaultAnnotation.getValue() );
+				init = initExpr.toString();
+			}
+			// name and type must be simple values
+			String	name;
+			String	type;
+			if ( nameAnnotation.getValue() instanceof BoxStringLiteral namelit ) {
+				name = namelit.getValue().trim();
+				if ( name.isEmpty() )
+					throw new BoxRuntimeException( "Property [" + prop.getSourceText() + "] name cannot be empty" );
+			} else {
+				throw new BoxRuntimeException( "Property [" + prop.getSourceText() + "] name must be a simple value" );
+			}
+			if ( typeAnnotation.getValue() instanceof BoxStringLiteral typelit ) {
+				type = typelit.getValue().trim();
+				if ( type.isEmpty() )
+					throw new BoxRuntimeException( "Property [" + prop.getSourceText() + "] type cannot be empty" );
+			} else {
+				throw new BoxRuntimeException( "Property [" + prop.getSourceText() + "] type must be a simple value" );
+			}
+			Expression			jNameKey	= ( Expression ) createKey( name );
+			Expression			jGetNameKey	= ( Expression ) createKey( "get" + name );
+			Expression			jSetNameKey	= ( Expression ) createKey( "set" + name );
+			Map<String, String>	values		= Map.of(
+			    "type", type,
+			    "name", jNameKey.toString(),
+			    "init", init,
+			    "annotations", annotationStruct.toString(),
+			    "documentation", documentationStruct.toString()
+			);
+			String				template	= """
+			                                  				new Property( ${name}, "${type}", ${init}, ${annotations} ,${documentation} )
+			                                  """;
+			Expression			javaExpr	= ( Expression ) parseExpression( template, values );
+			logger.info( "{} -> {}", prop.getSourceText(), javaExpr );
+
+			members.add( jNameKey );
+			members.add( javaExpr );
+
+			getterLookup.add( jGetNameKey );
+			getterLookup.add( ( Expression ) parseExpression( "properties.get( ${name} )", values ) );
+
+			setterLookup.add( jSetNameKey );
+			setterLookup.add( ( Expression ) parseExpression( "properties.get( ${name} )", values ) );
+		} );
+		if ( members.isEmpty() ) {
+			Expression emptyMap = ( Expression ) parseExpression( "Collections.emptyMap()", new HashMap<>() );
+			return List.of( emptyMap, emptyMap, emptyMap );
+		} else {
+			MethodCallExpr	propertiesStruct	= ( MethodCallExpr ) parseExpression( "MapHelper.LinkedHashMapOfProperties()", new HashMap<>() );
+			MethodCallExpr	getterStruct		= ( MethodCallExpr ) parseExpression( "Map.of()", new HashMap<>() );
+			MethodCallExpr	setterStruct		= ( MethodCallExpr ) parseExpression( "Map.of()", new HashMap<>() );
+			propertiesStruct.getArguments().addAll( members );
+			getterStruct.getArguments().addAll( getterLookup );
+			setterStruct.getArguments().addAll( setterLookup );
+			return List.of( propertiesStruct, getterStruct, setterStruct );
+		}
 	}
 
 }

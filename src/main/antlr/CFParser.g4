@@ -21,13 +21,11 @@ importStatement:
 include: INCLUDE expression eos?;
 
 component:
-	// TODO Properties
-	javadoc? (preannotation)* ABSTRACT? COMPONENT identifier? postannotation* LBRACE
+	javadoc? (preannotation)* ABSTRACT? COMPONENT postannotation* LBRACE property*
 		functionOrStatement* RBRACE;
 
 interface:
-	javadoc? (preannotation)* INTERFACE identifier? postannotation* LBRACE interfaceFunction* RBRACE
-		;
+	javadoc? (preannotation)* INTERFACE postannotation* LBRACE interfaceFunction* RBRACE;
 
 // TODO: default method implementations
 interfaceFunction: functionSignature eos;
@@ -44,9 +42,13 @@ param: (REQUIRED)? (type)? identifier (EQUAL expression)? postannotation*
 
 preannotation: AT fqn (literalExpression)*;
 
-// TODO: check if keys can be quoted here and values can be expressions
 postannotation:
-	key = identifier ((EQUAL | COLON) value = literalExpression)?;
+	key = identifier ((EQUAL | COLON) value = attributeSimple)?;
+
+// This allows [1, 2, 3], "foo", or foo Adobe allows more chars than an identifer, Lucee allows darn
+// near anything, but ANTLR is incapable of matching any tokens until the next whitespace. The
+// literalExpression is just a BoxLang flourish to allow for more flexible expressions.
+attributeSimple: literalExpression | identifier;
 
 returnType: type | identifier;
 
@@ -66,12 +68,10 @@ type:
 
 functionOrStatement: function | statement;
 
-javadoc: JAVADOC_COMMENT;
-
 property:
-	PROPERTY (identifier EQUAL expression)+ (
-		TYPE EQUAL stringLiteral
-	)? (DEFAULT EQUAL stringLiteral)? eos?;
+	javadoc? (preannotation)* PROPERTY postannotation* eos;
+
+javadoc: JAVADOC_COMMENT;
 
 anonymousFunction:
 	FUNCTION LPAREN paramList? RPAREN (postannotation)* (
@@ -239,7 +239,8 @@ reservedKeyword:
 	| CONTAIN
 	| JAVA
 	| MESSAGE
-	| NULL;
+	| NULL
+	| PROPERTY;
 //    | 	ASSERT
 scope:
 	APPLICATION

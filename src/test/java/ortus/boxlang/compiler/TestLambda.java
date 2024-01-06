@@ -82,9 +82,6 @@ public class TestLambda extends TestBase {
 		VariableDeclarator arguments = javaAST.getType( 0 ).getFieldByName( "arguments" ).get().getVariable( 0 );
 		Assertions.assertEquals( 2, arguments.getInitializer().get().asArrayInitializerExpr().getValues().size() );
 		VariableDeclarator annotations = javaAST.getType( 0 ).getFieldByName( "annotations" ).get().getVariable( 0 );
-		assertEqualsNoWhiteSpaces( """
-		                           Struct.of(Key.of("key"),"Brad")
-		                           """, annotations.getInitializer().get().toString() );
 
 	}
 

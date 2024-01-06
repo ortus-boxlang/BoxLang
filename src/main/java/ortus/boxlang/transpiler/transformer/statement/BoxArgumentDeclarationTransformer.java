@@ -41,8 +41,9 @@ public class BoxArgumentDeclarationTransformer extends AbstractTransformer {
 	public Node transform( BoxNode node, TransformerContext context ) throws IllegalStateException {
 		BoxArgumentDeclaration	boxArgument	= ( BoxArgumentDeclaration ) node;
 
-		/* Process initialization value */
+		/* Process default value */
 		String					init		= "null";
+		// TODO:, this expression needs to be defered and evaluated at runtime
 		if ( boxArgument.getValue() != null ) {
 			Node initExpr = transpiler.transform( boxArgument.getValue() );
 			init = initExpr.toString();
@@ -56,13 +57,13 @@ public class BoxArgumentDeclarationTransformer extends AbstractTransformer {
 		Map<String, String>	values				= Map.of(
 		    "required", String.valueOf( boxArgument.getRequired() ),
 		    "type", boxArgument.getType(),
-		    "name", boxArgument.getName(),
+		    "name", createKey( boxArgument.getName() ).toString(),
 		    "init", init,
 		    "annotations", annotationStruct.toString(),
 		    "documentation", documentationStruct.toString()
 		);
 		String				template			= """
-		                                          				new Argument( ${required}, "${type}" , Key.of("${name}"), ${init}, ${annotations} ,${documentation} )
+		                                          				new Argument( ${required}, "${type}" , ${name}, ${init}, ${annotations} ,${documentation} )
 		                                          """;
 		Expression			javaExpr			= ( Expression ) parseExpression( template, values );
 		logger.info( "{} -> {}", node.getSourceText(), javaExpr );

@@ -176,7 +176,7 @@ public class ClassTest {
 		assertThat( meta.get( Key.of( "fullname" ) ) ).isEqualTo( "src.test.java.TestCases.phase3.MyClass" );
 		assertThat( meta.getAsString( Key.of( "path" ) ).contains( "MyClass.cfc" ) ).isTrue();
 		assertThat( meta.get( Key.of( "hashcode" ) ) ).isEqualTo( cfc.hashCode() );
-		assertThat( meta.get( Key.of( "properties" ) ) instanceof Array ).isTrue();
+		assertThat( meta.get( Key.of( "properties" ) ) ).isInstanceOf( Array.class );
 		assertThat( meta.get( Key.of( "functions" ) ) instanceof Array ).isTrue();
 		assertThat( meta.getAsArray( Key.of( "functions" ) ).size() ).isEqualTo( 4 );
 		assertThat( meta.get( Key.of( "extends" ) ) instanceof Struct ).isTrue();
@@ -240,6 +240,66 @@ public class ClassTest {
 		assertThat( annos.getAsString( Key.of( "singleton" ) ).trim() ).isEqualTo( "" );
 		assertThat( annos.getAsString( Key.of( "gavin" ) ).trim() ).isEqualTo( "pickin" );
 		assertThat( annos.getAsString( Key.of( "inject" ) ).trim() ).isEqualTo( "" );
+
+	}
+
+	@DisplayName( "properties" )
+	@Test
+	public void testProperties() {
+
+		instance.executeStatement(
+		    """
+		      	cfc = new src.test.java.TestCases.phase3.PropertyTest();
+		    nameGet = cfc.getMyProperty();
+		    setResult = cfc.SetMyProperty( "anotherValue" );
+		    nameGet2 = cfc.getMyProperty();
+		      """, context );
+
+		var cfc = variables.getClassRunnable( Key.of( "cfc" ) );
+
+		assertThat( variables.get( Key.of( "nameGet" ) ) ).isEqualTo( "myDefaultValue" );
+		assertThat( variables.get( Key.of( "nameGet2" ) ) ).isEqualTo( "anotherValue" );
+		assertThat( variables.get( Key.of( "setResult" ) ) ).isEqualTo( cfc );
+
+		var	boxMeta	= ( ClassMeta ) cfc.getBoxMeta();
+		var	meta	= boxMeta.meta;
+		System.out.println( meta );
+		assertThat( meta.getAsArray( Key.of( "properties" ) ).size() ).isEqualTo( 2 );
+
+		var prop1 = ( Struct ) meta.getAsArray( Key.of( "properties" ) ).get( 0 );
+		assertThat( prop1.get( "name" ) ).isEqualTo( "myProperty" );
+		assertThat( prop1.get( "defaultValue" ) ).isEqualTo( "myDefaultValue" );
+		assertThat( prop1.get( "type" ) ).isEqualTo( "string" );
+
+		var prop1Annotations = prop1.getAsStruct( Key.of( "annotations" ) );
+		assertThat( prop1Annotations.size() ).isEqualTo( 5 );
+
+		assertThat( prop1Annotations.containsKey( Key.of( "preAnno" ) ) ).isTrue();
+		assertThat( prop1Annotations.get( Key.of( "preAnno" ) ) ).isEqualTo( "" );
+
+		assertThat( prop1Annotations.containsKey( Key.of( "inject" ) ) ).isTrue();
+		assertThat( prop1Annotations.get( Key.of( "inject" ) ) ).isEqualTo( "" );
+
+		var prop2 = ( Struct ) meta.getAsArray( Key.of( "properties" ) ).get( 1 );
+		assertThat( prop2.get( "name" ) ).isEqualTo( "anotherprop" );
+		assertThat( prop2.get( "defaultValue" ) ).isEqualTo( null );
+		assertThat( prop2.get( "type" ) ).isEqualTo( "string" );
+
+		var prop2Annotations = prop2.getAsStruct( Key.of( "annotations" ) );
+		assertThat( prop2Annotations.size() ).isEqualTo( 4 );
+
+		assertThat( prop2Annotations.containsKey( Key.of( "preAnno" ) ) ).isTrue();
+		assertThat( prop2Annotations.get( Key.of( "preAnno" ) ) instanceof Array ).isTrue();
+		Array preAnno = prop2Annotations.getAsArray( Key.of( "preAnno" ) );
+		assertThat( preAnno.size() ).isEqualTo( 2 );
+		assertThat( preAnno.get( 0 ) ).isEqualTo( "myValue" );
+		assertThat( preAnno.get( 1 ) ).isEqualTo( "anothervalue" );
+
+		var prop2Docs = prop2.getAsStruct( Key.of( "documentation" ) );
+		assertThat( prop2Docs.size() ).isEqualTo( 3 );
+		assertThat( prop2Docs.getAsString( Key.of( "brad" ) ).trim() ).isEqualTo( "wood" );
+		assertThat( prop2Docs.getAsString( Key.of( "luis" ) ).trim() ).isEqualTo( "" );
+		assertThat( prop2Docs.getAsString( Key.of( "hint" ) ).trim() ).isEqualTo( "This is my property" );
 
 	}
 

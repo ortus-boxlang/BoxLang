@@ -29,6 +29,7 @@ import com.github.javaparser.ast.Node;
 import com.github.javaparser.ast.expr.Expression;
 import com.github.javaparser.ast.expr.MethodCallExpr;
 import com.github.javaparser.ast.expr.NameExpr;
+import com.github.javaparser.ast.expr.StringLiteralExpr;
 import com.github.javaparser.ast.stmt.Statement;
 
 import ortus.boxlang.ast.BoxExpr;
@@ -206,8 +207,7 @@ public abstract class AbstractTransformer implements Transformer {
 	protected Expression transformDocumentation( List<BoxDocumentationAnnotation> documentation ) {
 		List<Expression> members = new ArrayList<>();
 		documentation.forEach( doc -> {
-			Map<String, String>	values			= Map.ofEntries( Map.entry( "key", doc.getKey().getValue() ) );
-			MethodCallExpr		annotationKey	= ( MethodCallExpr ) parseExpression( "Key.of( \"${key}\" )", values );
+			Expression annotationKey = ( Expression ) createKey( doc.getKey().getValue() );
 			members.add( annotationKey );
 			Expression value = ( Expression ) transpiler.transform( doc.getValue() );
 			members.add( value );
@@ -231,11 +231,16 @@ public abstract class AbstractTransformer implements Transformer {
 	protected Expression transformAnnotations( List<BoxAnnotation> annotations ) {
 		List<Expression> members = new ArrayList<>();
 		annotations.forEach( annotation -> {
-			Map<String, String>	values			= Map.ofEntries( Map.entry( "key", annotation.getKey().getValue() ) );
-			MethodCallExpr		annotationKey	= ( MethodCallExpr ) parseExpression( "Key.of( \"${key}\" )", values );
-			;
+			Expression annotationKey = ( Expression ) createKey( annotation.getKey().getValue() );
 			members.add( annotationKey );
-			Expression value = ( Expression ) transpiler.transform( annotation.getValue() );
+			BoxExpr		thisValue	= annotation.getValue();
+			Expression	value;
+			if ( thisValue != null ) {
+				value = ( Expression ) transpiler.transform( thisValue );
+			} else {
+				// Annotations with no value default to empty string (CF compat)
+				value = new StringLiteralExpr( "" );
+			}
 			members.add( value );
 		} );
 		if ( annotations.isEmpty() ) {

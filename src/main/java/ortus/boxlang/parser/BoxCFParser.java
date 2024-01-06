@@ -87,6 +87,7 @@ import ortus.boxlang.ast.statement.BoxFunctionDeclaration;
 import ortus.boxlang.ast.statement.BoxIfElse;
 import ortus.boxlang.ast.statement.BoxImport;
 import ortus.boxlang.ast.statement.BoxInclude;
+import ortus.boxlang.ast.statement.BoxProperty;
 import ortus.boxlang.ast.statement.BoxRethrow;
 import ortus.boxlang.ast.statement.BoxReturn;
 import ortus.boxlang.ast.statement.BoxReturnType;
@@ -290,6 +291,7 @@ public class BoxCFParser extends BoxAbstractParser {
 		List<BoxStatement>					body			= new ArrayList<>();
 		List<BoxAnnotation>					annotations		= new ArrayList<>();
 		List<BoxDocumentationAnnotation>	documentation	= new ArrayList<>();
+		List<BoxProperty>					property		= new ArrayList<>();
 
 		component.functionOrStatement().forEach( stmt -> {
 			body.add( toAst( file, stmt ) );
@@ -303,7 +305,11 @@ public class BoxCFParser extends BoxAbstractParser {
 		for ( CFParser.PostannotationContext annotation : component.postannotation() ) {
 			annotations.add( toAst( file, annotation ) );
 		}
-		return new BoxClass( imports, body, annotations, documentation, getPosition( component ), getSourceText( component ) );
+		for ( CFParser.PropertyContext annotation : component.property() ) {
+			property.add( toAst( file, annotation ) );
+		}
+
+		return new BoxClass( imports, body, annotations, documentation, property, getPosition( component ), getSourceText( component ) );
 	}
 
 	/**
@@ -1529,6 +1535,15 @@ public class BoxCFParser extends BoxAbstractParser {
 		return new BoxFunctionDeclaration( modifier, name, returnType, args, annotations, documentation, body, getPosition( node ), getSourceText( node ) );
 	}
 
+	/**
+	 * Converts the JavadocContext parser rule to the corresponding AST nodes.
+	 *
+	 * @param file source file, if any
+	 * @param node ANTLR JavadocContext rule
+	 *
+	 * @return corresponding AST JavadocContext
+	 *
+	 */
 	private List<BoxDocumentationAnnotation> toAst( File file, CFParser.JavadocContext node ) {
 		List<BoxDocumentationAnnotation> documentation = new ArrayList<>();
 		try {
@@ -1544,6 +1559,26 @@ public class BoxCFParser extends BoxAbstractParser {
 			throw new RuntimeException( e );
 		}
 		return documentation;
+	}
+
+	/**
+	 * Converts the AttributeSimple parser rule to the corresponding AST node.
+	 *
+	 * @param file source file, if any
+	 * @param node ANTLR AttributeSimpleContext rule
+	 *
+	 * @return corresponding AST AttributeSimpleContext
+	 *
+	 */
+	private BoxExpr toAst( File file, CFParser.AttributeSimpleContext node ) {
+		if ( node.literalExpression() != null ) {
+			return toAst( file, node.literalExpression() );
+		} else if ( node.identifier() != null ) {
+			// Converting an identifer to a string literal here in the AST removes ambiguity, but also loses the
+			// lexical context of the original source code.
+			return new BoxStringLiteral( node.identifier().getText(), getPosition( node ), getSourceText( node ) );
+		}
+		throw new IllegalStateException( "AttributeSimple not implemented: " + getSourceText( node ) );
 	}
 
 	/**
@@ -1568,7 +1603,7 @@ public class BoxCFParser extends BoxAbstractParser {
 			}
 			avalue = new BoxArrayLiteral( values, getPosition( annotation ), getSourceText( annotation ) );
 		} else {
-			avalue = new BoxStringLiteral( "", getPosition( annotation ), getSourceText( annotation ) );
+			avalue = null;
 		}
 		return new BoxAnnotation( ( BoxFQN ) aname, avalue, getPosition( annotation ), getSourceText( annotation ) );
 	}
@@ -1621,14 +1656,41 @@ public class BoxCFParser extends BoxAbstractParser {
 	 */
 	private BoxAnnotation toAst( File file, CFParser.PostannotationContext node ) {
 
-		BoxFQN	name	= new BoxFQN( node.key.IDENTIFIER().getText(), getPosition( node.key ), getSourceText( node.key ) );
+		BoxFQN	name	= new BoxFQN( node.key.getText(), getPosition( node.key ), getSourceText( node.key ) );
 		BoxExpr	value;
 		if ( node.value != null ) {
 			value = toAst( file, node.value );
 		} else {
-			value = new BoxStringLiteral( "", getPosition( node.key ), getSourceText( node.key ) );
+			value = null;
 		}
 		return new BoxAnnotation( name, value, getPosition( node ), getSourceText( node ) );
+	}
+
+	/**
+	 * Converts a Property into the corresponding AST node
+	 *
+	 * @param file source file, if any
+	 * @param node ANTLR PropertyContext rule
+	 *
+	 * @return corresponding AST PropertyContext
+	 *
+	 */
+	private BoxProperty toAst( File file, CFParser.PropertyContext node ) {
+		List<BoxAnnotation>					annotations		= new ArrayList<>();
+		List<BoxDocumentationAnnotation>	documentation	= new ArrayList<>();
+
+		for ( CFParser.PreannotationContext annotation : node.preannotation() ) {
+			annotations.add( toAst( file, annotation ) );
+		}
+		for ( CFParser.PostannotationContext annotation : node.postannotation() ) {
+			annotations.add( toAst( file, annotation ) );
+		}
+
+		if ( node.javadoc() != null ) {
+			documentation.addAll( toAst( file, node.javadoc() ) );
+		}
+
+		return new BoxProperty( annotations, documentation, getPosition( node ), getSourceText( node ) );
 	}
 
 }

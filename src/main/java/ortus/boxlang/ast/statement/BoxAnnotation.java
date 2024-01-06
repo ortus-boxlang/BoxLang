@@ -47,7 +47,9 @@ public class BoxAnnotation extends BoxNode {
 		this.key = key;
 		this.key.setParent( this );
 		this.value = value;
-		this.value.setParent( this );
+		if ( this.value != null ) {
+			this.value.setParent( this );
+		}
 	}
 
 	public BoxFQN getKey() {
@@ -63,7 +65,11 @@ public class BoxAnnotation extends BoxNode {
 		Map<String, Object> map = super.toMap();
 
 		map.put( "key", key.toMap() );
-		map.put( "value", value.toMap() );
+		if ( value != null ) {
+			map.put( "value", value.toMap() );
+		} else {
+			map.put( "value", null );
+		}
 		return map;
 	}
 }
