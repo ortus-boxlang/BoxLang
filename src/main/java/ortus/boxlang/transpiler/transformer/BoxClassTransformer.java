@@ -256,30 +256,34 @@ public class BoxClassTransformer extends AbstractTransformer {
 				// TODO: component member methods?
 				
 				Object value = thisScope.get( name );
-				if ( value != null ) {
+				if ( value instanceof Function function ) {
+					FunctionBoxContext functionContext = Function.generateFunctionContext(
+						function,
+						// Function contexts' parent is the caller.  The function will "know" about the CFC it's executing in 
+						// because we've pushed the CFC onto the template stack in the function context.
+						context,
+						name,
+						function.createArgumentsScope( positionalArguments )
+					);
+					functionContext.pushTemplate( this );
 
-					if ( value instanceof Function function ) {
-						FunctionBoxContext functionContext = Function.generateFunctionContext(
-								function,
-								// Function contexts' parent is the caller.  The function will "know" about the CFC it's executing in 
-								// because we've pushed the CFC onto the template stack in the function context.
-								context,
-								name,
-								function.createArgumentsScope( positionalArguments )
-							);
-							functionContext.pushTemplate( this );
-						try {
-							return function.invoke( functionContext );
-						} finally{
-							functionContext.popTemplate();
-						}
-					} else {
-						throw new BoxRuntimeException(
-							"key '" + name.getName() + "' of type  '" + value.getClass().getName() + "'  is not a function " );
+					try {
+						return function.invoke( functionContext );
+					} finally{
+						functionContext.popTemplate();
 					}
 				}
 
-				throw new BoxRuntimeException( "Method '" + name.getName() + "' not found" );
+				if ( value != null ) {
+					throw new BoxRuntimeException(
+						"key '" + name.getName() + "' of type  '" + value.getClass().getName() + "'  is not a function " );	
+				}
+
+				if( thisScope.get( Key.onMissingMethod ) != null ){
+					return dereferenceAndInvoke( context, Key.onMissingMethod, new Object[]{ name.getName(), positionalArguments }, safe );
+				}
+				
+				throw new BoxRuntimeException( "Method '" + name.getName() + "' not found" );		
 			}
 
 			/**
@@ -294,30 +298,36 @@ public class BoxClassTransformer extends AbstractTransformer {
 			public Object dereferenceAndInvoke( IBoxContext context, Key name, Map<Key, Object> namedArguments, Boolean safe ) {
 
 				Object value = thisScope.get( name );
-				if ( value != null ) {
-					if ( value instanceof Function function ) {
-						FunctionBoxContext functionContext = Function.generateFunctionContext(
-								function,
-								// Function contexts' parent is the caller.  The function will "know" about the CFC it's executing in 
-								// because we've pushed the CFC onto the template stack in the function context.
-								context,
-								name,
-								function.createArgumentsScope( namedArguments )
-							);
-							functionContext.pushTemplate( this );
-						try {
-							return function.invoke( functionContext );
-						} finally{
-							functionContext.popTemplate();
-						}
-					} else {
-						throw new BoxRuntimeException(
-							"key '" + name.getName() + "' of type  '" + value.getClass().getName() + "'  is not a function "
+				if ( value instanceof Function function ) {
+					FunctionBoxContext functionContext = Function.generateFunctionContext(
+							function,
+							// Function contexts' parent is the caller.  The function will "know" about the CFC it's executing in 
+							// because we've pushed the CFC onto the template stack in the function context.
+							context,
+							name,
+							function.createArgumentsScope( namedArguments )
 						);
+					functionContext.pushTemplate( this );
+					try {
+						return function.invoke( functionContext );
+					} finally{
+						functionContext.popTemplate();
 					}
 				}
 
-				throw new BoxRuntimeException( "Method '" + name.getName() + "' not found" );
+				if ( value != null ) {
+					throw new BoxRuntimeException(
+						"key '" + name.getName() + "' of type  '" + value.getClass().getName() + "'  is not a function " );	
+				}
+
+				if( thisScope.get( Key.onMissingMethod ) != null ){
+					Map<Key, Object> args = new HashMap<Key, Object>();
+					args.put( Key.missingMethodName, name.getName() );
+					args.put( Key.missingMethodArguments, namedArguments );
+					return dereferenceAndInvoke( context, Key.onMissingMethod, args, safe );
+				}
+				
+				throw new BoxRuntimeException( "Method '" + name.getName() + "' not found" );	
 			}
 
 
