@@ -9,6 +9,7 @@ import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
+import ortus.boxlang.runtime.types.exceptions.BoxIOException;
 import ortus.boxlang.runtime.util.FileSystemUtil;
 
 @BoxBIF
@@ -37,7 +38,7 @@ public class FileDelete extends BIF {
 		try {
 			FileSystemUtil.deleteFile( arguments.getAsString( Key.file ) );
 		} catch ( IOException e ) {
-			throw new RuntimeException( e );
+			throw new BoxIOException( e );
 		}
 		return null;
 	}

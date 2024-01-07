@@ -11,6 +11,7 @@ import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
+import ortus.boxlang.runtime.types.exceptions.BoxIOException;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
 @BoxBIF
@@ -58,7 +59,7 @@ public class DirectoryMove extends BIF {
 				Files.createDirectories( destinationPath.getParent() );
 				Files.move( sourcePath, destinationPath );
 			} catch ( IOException e ) {
-				throw new RuntimeException( e );
+				throw new BoxIOException( e );
 			}
 		}
 

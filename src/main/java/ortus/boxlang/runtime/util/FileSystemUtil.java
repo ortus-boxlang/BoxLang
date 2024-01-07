@@ -33,6 +33,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import ortus.boxlang.runtime.types.Array;
+import ortus.boxlang.runtime.types.exceptions.BoxIOException;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
 public final class FileSystemUtil {
@@ -165,7 +166,7 @@ public final class FileSystemUtil {
 				directoryStream = Files.walk( Path.of( path ), 1 ).parallel();
 			}
 		} catch ( IOException e ) {
-			throw new RuntimeException( e );
+			throw new BoxIOException( e );
 		}
 
 		return filter.length() > 1
@@ -261,7 +262,7 @@ public final class FileSystemUtil {
 		try {
 			Files.move( start, end );
 		} catch ( IOException e ) {
-			throw new RuntimeException( e );
+			throw new BoxIOException( e );
 		}
 	}
 
@@ -272,7 +273,7 @@ public final class FileSystemUtil {
 			try {
 				Files.createDirectories( end );
 			} catch ( IOException e ) {
-				throw new RuntimeException( e );
+				throw new BoxIOException( e );
 			}
 		}
 		if ( Files.isDirectory( start ) ) {
@@ -283,7 +284,7 @@ public final class FileSystemUtil {
 					try {
 						Files.createDirectories( targetParent );
 					} catch ( IOException e ) {
-						throw new RuntimeException( e );
+						throw new BoxIOException( e );
 					}
 
 				}
@@ -293,14 +294,14 @@ public final class FileSystemUtil {
 						Files.copy( path, targetPath );
 					}
 				} catch ( IOException e ) {
-					throw new RuntimeException( e );
+					throw new BoxIOException( e );
 				}
 			} );
 		} else {
 			try {
 				Files.copy( start, end );
 			} catch ( IOException e ) {
-				throw new RuntimeException( e );
+				throw new BoxIOException( e );
 			}
 		}
 

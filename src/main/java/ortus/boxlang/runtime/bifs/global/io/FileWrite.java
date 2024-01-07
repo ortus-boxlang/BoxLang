@@ -11,6 +11,7 @@ import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
+import ortus.boxlang.runtime.types.exceptions.BoxIOException;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.util.FileSystemUtil;
 
@@ -60,7 +61,7 @@ public class FileWrite extends BIF {
 			throw new BoxRuntimeException(
 			    "The file [" + filePath + "] could not be writtent. The directory [" + Path.of( filePath ).getParent().toString() + "] does not exist." );
 		} catch ( IOException e ) {
-			throw new RuntimeException( e );
+			throw new BoxIOException( e );
 		}
 
 		return null;

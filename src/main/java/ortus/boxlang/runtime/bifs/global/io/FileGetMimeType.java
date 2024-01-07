@@ -11,6 +11,7 @@ import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
+import ortus.boxlang.runtime.types.exceptions.BoxIOException;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
 @BoxBIF
@@ -58,7 +59,7 @@ public class FileGetMimeType extends BIF {
 					);
 				}
 			} catch ( IOException e ) {
-				throw new RuntimeException( e );
+				throw new BoxIOException( e );
 			}
 
 		}
@@ -69,7 +70,7 @@ public class FileGetMimeType extends BIF {
 				mimeType = "application/octet-stream";
 			}
 		} catch ( IOException e ) {
-			throw new RuntimeException( e );
+			throw new BoxIOException( e );
 		}
 
 		return mimeType;

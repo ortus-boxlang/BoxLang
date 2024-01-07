@@ -11,6 +11,7 @@ import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
+import ortus.boxlang.runtime.types.exceptions.BoxIOException;
 
 @BoxBIF
 
@@ -50,14 +51,14 @@ public class FileCopy extends BIF {
 			try {
 				Files.createDirectories( destinationDirectory );
 			} catch ( IOException e ) {
-				throw new RuntimeException( e );
+				throw new BoxIOException( e );
 			}
 		}
 
 		try {
 			Files.copy( sourcePath, destinationPath );
 		} catch ( IOException e ) {
-			throw new RuntimeException( e );
+			throw new BoxIOException( e );
 		}
 
 		return null;

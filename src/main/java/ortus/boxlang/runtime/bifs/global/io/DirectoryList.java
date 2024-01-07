@@ -17,6 +17,7 @@ import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.DateTime;
 import ortus.boxlang.runtime.types.Query;
 import ortus.boxlang.runtime.types.QueryColumnType;
+import ortus.boxlang.runtime.types.exceptions.BoxIOException;
 import ortus.boxlang.runtime.util.FileSystemUtil;
 
 @BoxBIF
@@ -103,7 +104,7 @@ public class DirectoryList extends BIF {
 				    }
 				);
 			} catch ( IOException e ) {
-				throw new RuntimeException( e );
+				throw new BoxIOException( e );
 			}
 		} );
 
