@@ -52,7 +52,7 @@ public class BoxReturn extends BoxStatement {
 	public Map<String, Object> toMap() {
 		Map<String, Object> map = super.toMap();
 
-		map.put( "expression", expression.toMap() );
+		map.put( "expression", expression != null ? expression.toMap() : null );
 		return map;
 	}
 }

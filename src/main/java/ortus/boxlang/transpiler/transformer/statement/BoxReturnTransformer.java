@@ -47,13 +47,15 @@ public class BoxReturnTransformer extends AbstractTransformer {
 												put( "contextName", transpiler.peekContextName() );
 											}
 										};
-		if ( boxReturn.getExpression() != null ) {
+		if ( boxReturn.getExpression() == null ) {
+			values.put( "expr", "null" );
+		} else {
 			Expression expr = ( Expression ) transpiler.transform( boxReturn.getExpression(), TransformerContext.RIGHT );
 			values.put( "expr", expr.toString() );
-			template = "return ${expr};";
 		}
+		template	= "return ${expr};";
 		// Avoid unreachable statement error
-		template = "if( true ) " + template;
+		template	= "if( true ) " + template;
 		Node javaStmt = parseStatement( template, values );
 		logger.info( node.getSourceText() + " -> " + javaStmt );
 		addIndex( javaStmt, node );
