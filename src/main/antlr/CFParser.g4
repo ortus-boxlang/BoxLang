@@ -75,8 +75,8 @@ javadoc: JAVADOC_COMMENT;
 
 anonymousFunction:
 	FUNCTION LPAREN paramList? RPAREN (postannotation)* (
-		simpleStatement
-		| statementBlock
+		statementBlock
+		| simpleStatement
 	)
 	| lambda
 	| closure;

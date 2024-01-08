@@ -23,7 +23,6 @@ import static com.google.common.truth.Truth.assertThat;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -77,15 +76,13 @@ public class IsNullTest {
 		                		""",
 		    context );
 		assertThat( ( Boolean ) variables.get( Key.of( "variableReference" ) ) ).isTrue();
-		// assertThat( ( Boolean ) variables.get( Key.of( "noFunctionReturn" ) ) ).isTrue();
+		assertThat( ( Boolean ) variables.get( Key.of( "noFunctionReturn" ) ) ).isTrue();
 		assertThat( ( Boolean ) variables.get( Key.of( "emptyFunctionReturn" ) ) ).isTrue();
 		assertThat( ( Boolean ) variables.get( Key.of( "arrayPosition" ) ) ).isTrue();
 		assertThat( ( Boolean ) variables.get( Key.of( "structKey" ) ) ).isTrue();
 	}
 
-	// @TODO: Implement nullValue() and enable this test!
 	@DisplayName( "It works with nullValue()" )
-	@Disabled
 	@Test
 	public void testNullValueMethod() {
 		assertThat( ( Boolean ) instance.executeStatement( "isNull( nullValue() )", context ) ).isTrue();
