@@ -151,12 +151,14 @@ public class File implements IType, IReferenceable {
 
 	public Boolean isEOF() {
 		Boolean isEOF = false;
-		try {
-			this.reader.mark( 2 );
-			isEOF = this.reader.read() == -1l;
-			this.reader.reset();
-		} catch ( IOException e ) {
-			isEOF = true;
+		if ( this.reader != null ) {
+			try {
+				this.reader.mark( 2 );
+				isEOF = this.reader.read() == -1l;
+				this.reader.reset();
+			} catch ( IOException e ) {
+				isEOF = true;
+			}
 		}
 		return isEOF;
 	}
