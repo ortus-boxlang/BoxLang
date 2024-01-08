@@ -77,7 +77,7 @@ public class IsNullTest {
 		                		""",
 		    context );
 		assertThat( ( Boolean ) variables.get( Key.of( "variableReference" ) ) ).isTrue();
-		// assertThat( ( Boolean ) variables.get( Key.of( "noFunctionReturn" ) ) ).isTrue();
+		assertThat( ( Boolean ) variables.get( Key.of( "noFunctionReturn" ) ) ).isTrue();
 		assertThat( ( Boolean ) variables.get( Key.of( "emptyFunctionReturn" ) ) ).isTrue();
 		assertThat( ( Boolean ) variables.get( Key.of( "arrayPosition" ) ) ).isTrue();
 		assertThat( ( Boolean ) variables.get( Key.of( "structKey" ) ) ).isTrue();
