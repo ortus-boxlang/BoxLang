@@ -114,6 +114,11 @@ public class BoxClassTransformer extends AbstractTransformer {
 			 */
 			public BoxMeta						$bx;
 
+			/**
+			 * Cached lookup of the output annotation
+			 */
+			private Boolean			canOutput			= null;
+
 			private final static Struct	annotations;
 			private final static Struct	documentation;
 			// replace Object with record/class to represent a property
@@ -235,6 +240,19 @@ public class BoxClassTransformer extends AbstractTransformer {
 			 */
 			public String asString() {
 				return "Class: " + name.getName();
+			}
+
+			/**
+			 * A helper to look at the "output" annotation, caching the result
+			 * 
+			 * @return Whether the function can output
+			 */
+			public boolean canOutput() {
+				// Initialize if neccessary
+				if ( this.canOutput == null ) {
+					this.canOutput = BooleanCaster.cast( getAnnotations().getOrDefault( Key.output, false ) );
+				}
+				return this.canOutput;
 			}
 
 			/**

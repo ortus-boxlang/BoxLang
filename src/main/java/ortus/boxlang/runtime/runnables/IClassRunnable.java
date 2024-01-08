@@ -82,4 +82,11 @@ public interface IClassRunnable extends ITemplateRunnable, IReferenceable {
 	// Duplicate from IType
 	public BoxMeta getBoxMeta();
 
+	/**
+	 * A helper to look at the "output" annotation, caching the result
+	 * 
+	 * @return Whether the function can output
+	 */
+	public boolean canOutput();
+
 }
