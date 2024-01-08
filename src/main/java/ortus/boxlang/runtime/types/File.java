@@ -245,7 +245,8 @@ public class File implements IType, IReferenceable {
 	 */
 	@Override
 	public Object assign( IBoxContext context, Key key, Object value ) {
-		return null;
+		DynamicJavaInteropService.setField( this, key.getName().toLowerCase(), value );
+		return this;
 	}
 
 	/**
