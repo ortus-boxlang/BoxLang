@@ -35,19 +35,24 @@ public class BoxFunctionInvocationTransformer extends AbstractTransformer {
 	@Override
 	public Node transform( BoxNode node, TransformerContext context ) throws IllegalStateException {
 
-		BoxFunctionInvocation	function	= ( BoxFunctionInvocation ) node;
-		String					side		= context == TransformerContext.NONE ? "" : "(" + context.toString() + ") ";
+		BoxFunctionInvocation	function			= ( BoxFunctionInvocation ) node;
+		String					methodName			= function.getName().getName();
+		boolean					isSafeMethodCall	= methodName.equalsIgnoreCase( "isnull" );
+		TransformerContext		safe				= isSafeMethodCall ? TransformerContext.SAFE : context;
+		String					side				= safe == TransformerContext.NONE ? "" : "(" + safe.toString() + ") ";
+
 		logger.info( side + node.getSourceText() );
 
 		Map<String, String> values = new HashMap<>() {
 
 			{
-				put( "functionName", createKey( function.getName().getName() ).toString() );
+				put( "functionName", createKey( methodName ).toString() );
 				put( "contextName", transpiler.peekContextName() );
 			}
 		};
+
 		for ( int i = 0; i < function.getArguments().size(); i++ ) {
-			Expression expr = ( Expression ) transpiler.transform( function.getArguments().get( i ) );
+			Expression expr = ( Expression ) transpiler.transform( function.getArguments().get( i ), safe );
 			values.put( "arg" + i, expr.toString() );
 		}
 		String	template	= getTemplate( function );
