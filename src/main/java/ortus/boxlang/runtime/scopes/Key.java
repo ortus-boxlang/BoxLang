@@ -101,6 +101,7 @@ public class Key {
 	public static final Key	sort					= Key.of( "sort" );
 	public static final Key	charset					= Key.of( "charset" );
 	public static final Key	buffersize				= Key.of( "buffersize" );
+	public static final Key	seekable				= Key.of( "seekable" );
 	public static final Key	charsetOrBufferSize		= Key.of( "charsetOrBufferSize" );
 	public static final Key	data					= Key.of( "data" );
 	public static final Key	source					= Key.of( "source" );

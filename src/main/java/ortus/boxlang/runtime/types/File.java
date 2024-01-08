@@ -20,10 +20,14 @@ package ortus.boxlang.runtime.types;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.IOException;
+import java.nio.charset.Charset;
+import java.nio.charset.UnsupportedCharsetException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Map;
+import java.util.NoSuchElementException;
 
+import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.bifs.MemberDescriptor;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.dynamic.IReferenceable;
@@ -35,6 +39,7 @@ import ortus.boxlang.runtime.types.exceptions.BoxIOException;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.meta.BoxMeta;
 import ortus.boxlang.runtime.types.meta.GenericMeta;
+import ortus.boxlang.runtime.util.FileSystemUtil;
 
 public class File implements IType, IReferenceable {
 
@@ -47,6 +52,7 @@ public class File implements IType, IReferenceable {
 	private static final String		MODE_READBINARY	= "readbinary";
 	private static final String		MODE_WRITE		= "write";
 	private static final String		MODE_APPEND		= "append";
+	private static final String		CHARSET_UTF8	= "utf-8";
 	/**
 	 * The the reader object when mode is read
 	 */
@@ -83,6 +89,8 @@ public class File implements IType, IReferenceable {
 	public String					directory;
 	public Long						size;
 	public String					status;
+	public String					charset			= CHARSET_UTF8;
+	public Boolean					seekable		= true;
 
 	/**
 	 * Metadata object
@@ -92,7 +100,7 @@ public class File implements IType, IReferenceable {
 	/**
 	 * Function service
 	 */
-	private FunctionService			functionService;
+	private FunctionService			functionService	= BoxRuntime.getInstance().getFunctionService();
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -116,17 +124,39 @@ public class File implements IType, IReferenceable {
 	 * @param mode The mode with which to open the file
 	 */
 	public File( String file, String mode ) {
-		this.mode	= mode;
-		this.path	= Path.of( file );
-		filename	= path.getFileName().toString();
-		filepath	= path.toAbsolutePath().toString();
-		directory	= path.getParent().toAbsolutePath().toString();
+		this( file, mode, CHARSET_UTF8, true );
+	}
+
+	/**
+	 * Constructor
+	 *
+	 * @param file The file to open
+	 * @param mode The mode with which to open the file
+	 */
+	public File( String file, String mode, String charset, Boolean seekable ) {
+		this.mode		= mode;
+		this.path		= Path.of( file );
+		this.charset	= charset;
+		this.seekable	= seekable;
+		filename		= path.getFileName().toString();
+		filepath		= path.toAbsolutePath().toString();
+		directory		= path.getParent().toAbsolutePath().toString();
 		try {
 			switch ( mode ) {
 				case MODE_READ :
+					if ( !Files.isReadable( path ) ) {
+						throw new BoxRuntimeException( "The file [" + path.toAbsolutePath().toString() + "] does not exist or is not readable." );
+					}
+					this.size = Files.size( path );
+					this.writer = null;
+					this.reader = Files.newBufferedReader( path, Charset.forName( charset ) );
+					break;
 				case MODE_READBINARY :
 					if ( !Files.isReadable( path ) ) {
-						throw new BoxRuntimeException( "The file [" + path.toAbsolutePath().toString() + "] is not readable." );
+						throw new BoxRuntimeException( "The file [" + path.toAbsolutePath().toString() + "] does not exist or is not readable." );
+					}
+					if ( !FileSystemUtil.isBinaryFile( file ) ) {
+						throw new BoxRuntimeException( "The file [" + path.toAbsolutePath().toString() + "] is not a binary file." );
 					}
 					this.size = Files.size( path );
 					this.writer = null;
@@ -134,9 +164,6 @@ public class File implements IType, IReferenceable {
 					break;
 				case MODE_WRITE :
 				case MODE_APPEND :
-					if ( !Files.isWritable( path ) ) {
-						throw new BoxRuntimeException( "The file [" + path.toAbsolutePath().toString() + "] is not writable." );
-					}
 					this.reader = null;
 					this.writer = Files.newBufferedWriter( path );
 					break;
@@ -144,6 +171,8 @@ public class File implements IType, IReferenceable {
 					throw new BoxRuntimeException( "The mode provided, [" + mode + "] for this file [" + filepath + "] is not valid" );
 
 			}
+		} catch ( UnsupportedCharsetException e ) {
+			throw new BoxRuntimeException( "The charset [" + charset + "] is invalid" );
 		} catch ( IOException e ) {
 			throw new BoxIOException( e );
 		}
@@ -172,6 +201,10 @@ public class File implements IType, IReferenceable {
 	}
 
 	public File seek( Long offset ) {
+		if ( !this.seekable ) {
+			throw new BoxRuntimeException(
+			    "This file instance was opened with the seekable argument set to false. This operation for file [" + filepath + "] is not allowed" );
+		}
 		if ( this.writer != null ) {
 			this.offset = IntegerCaster.cast( offset );
 		} else {
@@ -261,7 +294,12 @@ public class File implements IType, IReferenceable {
 	 */
 	@Override
 	public Object dereference( IBoxContext context, Key key, Boolean safe ) {
-		return DynamicJavaInteropService.getField( this, key.getName().toLowerCase() );
+		try {
+			return DynamicJavaInteropService.getField( this, key.getName().toLowerCase() ).get();
+		} catch ( NoSuchElementException e ) {
+			throw new BoxRuntimeException(
+			    "The property [" + key.getName() + "] does not exist or is not public in the class [" + this.getClass().getSimpleName() + "]." );
+		}
 	}
 
 	/**
