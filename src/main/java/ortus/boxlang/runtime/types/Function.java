@@ -25,6 +25,7 @@ import ortus.boxlang.runtime.context.ClosureBoxContext;
 import ortus.boxlang.runtime.context.FunctionBoxContext;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.LambdaBoxContext;
+import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
 import ortus.boxlang.runtime.dynamic.casters.CastAttempt;
 import ortus.boxlang.runtime.dynamic.casters.GenericCaster;
 import ortus.boxlang.runtime.runnables.IFunctionRunnable;
@@ -148,6 +149,11 @@ public abstract class Function implements IType, IFunctionRunnable {
 
 		data.put( "result", result );
 		runtime.announce( "postFunctionInvoke", data );
+
+		// If output=true, then flush any content in buffer
+		if ( BooleanCaster.cast( getAnnotations().getOrDefault( Key.output, false ) ) ) {
+			context.flushBuffer();
+		}
 
 		return data.get( "result" );
 	}

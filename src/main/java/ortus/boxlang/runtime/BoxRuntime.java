@@ -504,15 +504,19 @@ public class BoxRuntime {
 
 		IBoxContext scriptingContext = ensureContextWithVariables( context );
 
-		// Fire!!!
-		template.invoke( scriptingContext );
+		try {
+			// Fire!!!
+			template.invoke( scriptingContext );
+		} finally {
+			scriptingContext.flushBuffer();
 
-		// Debugging Timer
-		instance.logger.atDebug().log(
-		    "Executed template [{}] in [{}] ms",
-		    template.getRunnablePath(),
-		    timerUtil.stopAndGetMillis( "execute-" + template.hashCode() )
-		);
+			// Debugging Timer
+			instance.logger.atDebug().log(
+			    "Executed template [{}] in [{}] ms",
+			    template.getRunnablePath(),
+			    timerUtil.stopAndGetMillis( "execute-" + template.hashCode() )
+			);
+		}
 	}
 
 	/**
@@ -543,6 +547,7 @@ public class BoxRuntime {
 			// Fire!!!
 			return scriptRunnable.invoke( scriptingContext );
 		} finally {
+			scriptingContext.flushBuffer();
 			// Debugging Timer
 			instance.logger.atDebug().log(
 			    "Executed source  [{}] ms",
@@ -576,15 +581,18 @@ public class BoxRuntime {
 		instance.logger.atDebug().log( "Executing source " );
 
 		IBoxContext scriptingContext = ensureContextWithVariables( context );
-		// Fire!!!
-		scriptRunnable.invoke( scriptingContext );
+		try {
+			// Fire!!!
+			scriptRunnable.invoke( scriptingContext );
+		} finally {
+			scriptingContext.flushBuffer();
 
-		// Debugging Timer
-		instance.logger.atDebug().log(
-		    "Executed source  [{}] ms",
-		    timerUtil.stopAndGetMillis( "execute-" + source.hashCode() )
-		);
-
+			// Debugging Timer
+			instance.logger.atDebug().log(
+			    "Executed source  [{}] ms",
+			    timerUtil.stopAndGetMillis( "execute-" + source.hashCode() )
+			);
+		}
 	}
 
 	/**

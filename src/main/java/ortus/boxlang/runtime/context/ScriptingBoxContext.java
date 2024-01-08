@@ -207,4 +207,24 @@ public class ScriptingBoxContext extends BaseBoxContext {
 		return variablesScope;
 	}
 
+	/**
+	 * Flush the buffer to the output stream
+	 * 
+	 * @return This context
+	 */
+	public IBoxContext flushBuffer() {
+		if ( hasParent() ) {
+			getParent().writeToBuffer( buffer.toString() );
+		}
+		String output;
+		synchronized ( buffer ) {
+			output = buffer.toString();
+			clearBuffer();
+		}
+		// If a scripting context is our top-level context, we flush to the console.
+		System.out.print( output );
+
+		return this;
+	}
+
 }

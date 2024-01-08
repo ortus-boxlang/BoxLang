@@ -305,4 +305,37 @@ public interface IBoxContext {
 	 * @param query The query to increment
 	 */
 	public void incrementQueryLoop( Query query );
+
+	/**
+	 * Write output to this buffer. Any input object will be converted to a string
+	 * 
+	 * @param o The object to write
+	 * 
+	 * @return This context
+	 */
+	public IBoxContext writeToBuffer( Object o );
+
+	/**
+	 * Flush the buffer to the output stream. The default implementation simply flushes the buffer in this context
+	 * to its parent context. Different "top level" buffers can decide what they want to do with the buffer.
+	 * i.e. Scripting sends to the console, Web sends to HTTP response stream, etc.
+	 * 
+	 * @return This context
+	 */
+	public IBoxContext flushBuffer();
+
+	/**
+	 * Clear the buffer
+	 * 
+	 * @return This context
+	 */
+	public IBoxContext clearBuffer();
+
+	/**
+	 * Get the buffer
+	 * 
+	 * @return
+	 */
+	public StringBuffer getBuffer();
+
 }

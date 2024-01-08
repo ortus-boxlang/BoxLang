@@ -64,6 +64,7 @@ public class Key {
 	public static final Key	missingMethodName		= Key.of( "missingMethodName" );
 	public static final Key	missingMethodArguments	= Key.of( "missingMethodArguments" );
 	public static final Key	accessors				= Key.of( "accessors" );
+	public static final Key	output					= Key.of( "output" );
 
 	public static final Key	contains				= Key.of( "contains" );
 	public static final Key	find					= Key.of( "find" );
