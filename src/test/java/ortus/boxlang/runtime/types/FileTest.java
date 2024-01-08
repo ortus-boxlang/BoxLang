@@ -19,6 +19,7 @@ package ortus.boxlang.runtime.types;
 
 import static com.google.common.truth.Truth.assertThat;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.IOException;
 
@@ -74,17 +75,20 @@ public class FileTest {
 		assertThat( readFile.filename ).isEqualTo( "file-test.txt" );
 		assertFalse( readFile.isEOF() );
 		assertThat( readFile.readLine() ).isEqualTo( "open file test!" );
+		assertTrue( readFile.isEOF() );
 		readFile.close();
 
 		// tests the constructor with the read mode
 		writeFile = new File( testFile, "write" );
 		assertThat( writeFile.filename ).isEqualTo( "file-test.txt" );
 		assertThat( writeFile.mode ).isEqualTo( "write" );
+		writeFile.close();
 
 		// tests the constructor with the append mode
 		writeFile = new File( testFile, "append" );
 		assertThat( writeFile.filename ).isEqualTo( "file-test.txt" );
 		assertThat( writeFile.mode ).isEqualTo( "append" );
+		writeFile.close();
 	}
 
 }
