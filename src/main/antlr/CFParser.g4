@@ -73,29 +73,27 @@ property:
 
 javadoc: JAVADOC_COMMENT;
 
-anonymousFunction:
-	FUNCTION LPAREN paramList? RPAREN (postannotation)* (
-		statementBlock
-		| simpleStatement
-	)
-	| lambda
-	| closure;
+anonymousFunction: lambda | closure;
 
 lambda:
-	LPAREN paramList? RPAREN (postannotation)* ARROW (
-		statementBlock
-		| simpleStatement
-	)
-	| identifier ARROW (simpleStatement | statementBlock);
+	// ( param, param ) -> {}
+	LPAREN paramList? RPAREN (postannotation)* ARROW anonymousFunctionBody
+	// param -> {}
+	| identifier ARROW anonymousFunctionBody;
 
 closure:
-	LPAREN paramList? RPAREN (postannotation)* ARROW_RIGHT (
-		statementBlock
-		| simpleStatement
-	)
-	| identifier ARROW_RIGHT (simpleStatement | statementBlock);
+	// function( param, param ) {}
+	FUNCTION LPAREN paramList? RPAREN (postannotation)* anonymousFunctionBody
+	// ( param, param ) => {}
+	| LPAREN paramList? RPAREN (postannotation)* ARROW_RIGHT anonymousFunctionBody
+	// param => {}
+	| identifier ARROW_RIGHT anonymousFunctionBody;
+
+// Can be a body of statement(s) or a single statement.
+anonymousFunctionBody: statementBlock | simpleStatement;
 
 statementBlock: LBRACE (statement)* RBRACE eos?;
+
 statementParameters: (
 		parameters += accessExpression EQUAL (
 			values += stringLiteral
@@ -115,7 +113,6 @@ statement:
 	| saveContentStatement
 	| simpleStatement
 	| switch
-	//    |   statementBlock
 	| threadStatement
 	| throw
 	| try

@@ -1110,10 +1110,10 @@ public class BoxCFParser extends BoxAbstractParser {
 					annotations.add( toAst( file, annotation ) );
 				}
 				/* Process the body */
-				if ( lambda.statementBlock() != null ) {
-					body.addAll( toAst( file, lambda.statementBlock() ) );
-				} else if ( lambda.simpleStatement() != null ) {
-					body.add( toAst( file, lambda.simpleStatement() ) );
+				if ( lambda.anonymousFunctionBody().statementBlock() != null ) {
+					body.addAll( toAst( file, lambda.anonymousFunctionBody().statementBlock() ) );
+				} else if ( lambda.anonymousFunctionBody().simpleStatement() != null ) {
+					body.add( toAst( file, lambda.anonymousFunctionBody().simpleStatement() ) );
 				}
 				return new BoxLambda( args, annotations, body, getPosition( expression ), getSourceText( expression ) );
 			} else if ( expression.anonymousFunction().closure() != null ) {
@@ -1139,37 +1139,12 @@ public class BoxCFParser extends BoxAbstractParser {
 					annotations.add( toAst( file, annotation ) );
 				}
 				/* Process the body */
-				if ( closure.statementBlock() != null ) {
-					body.addAll( toAst( file, closure.statementBlock() ) );
-				} else if ( closure.simpleStatement() != null ) {
-					body.add( toAst( file, closure.simpleStatement() ) );
+				if ( closure.anonymousFunctionBody().statementBlock() != null ) {
+					body.addAll( toAst( file, closure.anonymousFunctionBody().statementBlock() ) );
+				} else if ( closure.anonymousFunctionBody().simpleStatement() != null ) {
+					body.add( toAst( file, closure.anonymousFunctionBody().simpleStatement() ) );
 				}
 
-				return new BoxClosure( args, annotations, body, getPosition( expression ), getSourceText( expression ) );
-			} else {
-				/* Anonymous declaration */
-				List<BoxArgumentDeclaration>		args		= new ArrayList<>();
-				List<BoxAnnotation>					annotations	= new ArrayList<>();
-				List<BoxStatement>					body		= new ArrayList<>();
-				CFParser.AnonymousFunctionContext	closure		= expression.anonymousFunction();
-
-				if ( closure.paramList() != null ) {
-					for ( CFParser.ParamContext arg : closure.paramList().param() ) {
-						BoxArgumentDeclaration argDeclaration = toAst( file, arg );
-						args.add( argDeclaration );
-					}
-				}
-				/* Process the annotations */
-				for ( CFParser.PostannotationContext annotation : closure.postannotation() ) {
-					annotations.add( toAst( file, annotation ) );
-				}
-				/* Process the body */
-				if ( closure.statementBlock() != null ) {
-					body.addAll( toAst( file, closure.statementBlock() ) );
-				} else if ( closure.simpleStatement() != null ) {
-
-					body.add( toAst( file, closure.simpleStatement() ) );
-				}
 				return new BoxClosure( args, annotations, body, getPosition( expression ), getSourceText( expression ) );
 			}
 		}

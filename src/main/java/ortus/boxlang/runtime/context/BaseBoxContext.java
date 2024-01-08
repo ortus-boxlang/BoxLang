@@ -25,6 +25,7 @@ import java.util.Map;
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.bifs.BIFDescriptor;
 import ortus.boxlang.runtime.dynamic.casters.FunctionCaster;
+import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 import ortus.boxlang.runtime.loader.ImportDefinition;
 import ortus.boxlang.runtime.runnables.BoxTemplate;
 import ortus.boxlang.runtime.runnables.ITemplateRunnable;
@@ -63,6 +64,8 @@ public class BaseBoxContext implements IBoxContext {
 	protected ArrayDeque<ITemplateRunnable>	templates	= new ArrayDeque<>();
 
 	protected LinkedHashMap<Query, Integer>	queryLoops	= new LinkedHashMap<Query, Integer>();
+
+	protected StringBuffer					buffer		= new StringBuffer();
 
 	/**
 	 * Creates a new execution context with a bounded execution template and parent context
@@ -523,6 +526,52 @@ public class BaseBoxContext implements IBoxContext {
 	 */
 	public void incrementQueryLoop( Query query ) {
 		queryLoops.put( query, queryLoops.get( query ) + 1 );
+	}
+
+	/**
+	 * Write output to this buffer. Any input object will be converted to a string
+	 * 
+	 * @param o The object to write
+	 * 
+	 * @return This context
+	 */
+	public IBoxContext writeToBuffer( Object o ) {
+		buffer.append( StringCaster.cast( o ) );
+		return this;
+	}
+
+	/**
+	 * Flush the buffer to the output stream and then clears the local buffers
+	 * 
+	 * @return This context
+	 */
+	public IBoxContext flushBuffer() {
+		if ( hasParent() ) {
+			synchronized ( buffer ) {
+				getParent().writeToBuffer( buffer.toString() );
+				clearBuffer();
+			}
+		}
+		return this;
+	}
+
+	/**
+	 * Clear the buffer
+	 * 
+	 * @return This context
+	 */
+	public IBoxContext clearBuffer() {
+		buffer.setLength( 0 );
+		return this;
+	}
+
+	/**
+	 * Get the buffer
+	 * 
+	 * @return
+	 */
+	public StringBuffer getBuffer() {
+		return buffer;
 	}
 
 }
