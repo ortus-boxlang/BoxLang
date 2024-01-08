@@ -393,4 +393,82 @@ public class LambdaFunctionTest {
 
 	}
 
+	@DisplayName( "empty body" )
+	@Test
+	public void testEmptyBody() {
+
+		instance.executeSource(
+		    """
+		      myLambda = ()->{};
+		    result = myLambda();
+		       """,
+		    context );
+
+		assertThat( variables.get( result ) ).isEqualTo( null );
+
+		instance.executeSource(
+		    """
+		      myLambda = i->{};
+		    result = myLambda(6);
+		       """,
+		    context );
+
+		assertThat( variables.get( result ) ).isEqualTo( null );
+
+	}
+
+	@DisplayName( "no body" )
+	@Test
+	public void testNoBody() {
+
+		instance.executeSource(
+		    """
+		      myLambda = i->i;
+		    result = myLambda(6);
+		       """,
+		    context );
+
+		assertThat( variables.get( result ) ).isEqualTo( 6 );
+
+	}
+
+	@DisplayName( "body with without returns" )
+	@Test
+	public void testBodyWithWithoutReturns() {
+
+		instance.executeSource(
+		    """
+		        myLambda = i=>{
+		    return i
+		     };
+		      result = myLambda(6);
+		         """,
+		    context );
+
+		assertThat( variables.get( result ) ).isEqualTo( 6 );
+
+		instance.executeSource(
+		    """
+		        myLambda = i=>{
+		    return
+		     };
+		      result = myLambda(6);
+		         """,
+		    context );
+
+		assertThat( variables.get( result ) ).isEqualTo( null );
+
+		instance.executeSource(
+		    """
+		        myLambda = i=>{
+		    return null;
+		     };
+		      result = myLambda(6);
+		         """,
+		    context );
+
+		assertThat( variables.get( result ) ).isEqualTo( null );
+
+	}
+
 }

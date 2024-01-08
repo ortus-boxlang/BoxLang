@@ -20,6 +20,7 @@ import java.util.Map;
 
 import com.github.javaparser.ast.Node;
 import com.github.javaparser.ast.expr.Expression;
+import com.github.javaparser.ast.expr.NullLiteralExpr;
 
 import ortus.boxlang.ast.BoxNode;
 import ortus.boxlang.ast.statement.BoxReturn;
@@ -48,7 +49,7 @@ public class BoxReturnTransformer extends AbstractTransformer {
 											}
 										};
 		if ( boxReturn.getExpression() == null ) {
-			values.put( "expr", "null" );
+			values.put( "expr", new NullLiteralExpr().toString() );
 		} else {
 			Expression expr = ( Expression ) transpiler.transform( boxReturn.getExpression(), TransformerContext.RIGHT );
 			values.put( "expr", expr.toString() );

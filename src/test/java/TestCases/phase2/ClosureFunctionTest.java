@@ -588,6 +588,108 @@ public class ClosureFunctionTest {
 
 		assertThat( variables.get( result ) ).isEqualTo( null );
 
+		instance.executeSource(
+		    """
+		      myClosure = i=>{};
+		    result = myClosure(6);
+		       """,
+		    context );
+
+		assertThat( variables.get( result ) ).isEqualTo( null );
+
+	}
+
+	@DisplayName( "no body" )
+	@Test
+	public void testNoBody() {
+
+		instance.executeSource(
+		    """
+		      myClosure = i=>i;
+		    result = myClosure(6);
+		       """,
+		    context );
+
+		assertThat( variables.get( result ) ).isEqualTo( 6 );
+
+	}
+
+	@DisplayName( "body with without returns arrow" )
+	@Test
+	public void testBodyWithWithoutReturnsArrow() {
+
+		instance.executeSource(
+		    """
+		        myClosure = i=>{
+		    return i
+		     };
+		      result = myClosure(6);
+		         """,
+		    context );
+
+		assertThat( variables.get( result ) ).isEqualTo( 6 );
+
+		instance.executeSource(
+		    """
+		        myClosure = i=>{
+		    return
+		     };
+		      result = myClosure(6);
+		         """,
+		    context );
+
+		assertThat( variables.get( result ) ).isEqualTo( null );
+
+		instance.executeSource(
+		    """
+		        myClosure = i=>{
+		    return null;
+		     };
+		      result = myClosure(6);
+		         """,
+		    context );
+
+		assertThat( variables.get( result ) ).isEqualTo( null );
+
+	}
+
+	@DisplayName( "body with without returns" )
+	@Test
+	public void testBodyWithWithoutReturns() {
+
+		instance.executeSource(
+		    """
+		        myClosure = function(i){
+		    return i
+		     };
+		      result = myClosure(6);
+		         """,
+		    context );
+
+		assertThat( variables.get( result ) ).isEqualTo( 6 );
+
+		instance.executeSource(
+		    """
+		        myClosure = function(i){
+		    return;
+		     };
+		      result = myClosure(6);
+		         """,
+		    context );
+
+		assertThat( variables.get( result ) ).isEqualTo( null );
+
+		instance.executeSource(
+		    """
+		        myClosure = function(i){
+		    return null;
+		     };
+		      result = myClosure(6);
+		         """,
+		    context );
+
+		assertThat( variables.get( result ) ).isEqualTo( null );
+
 	}
 
 }
