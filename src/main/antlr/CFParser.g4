@@ -83,15 +83,15 @@ anonymousFunction:
 
 lambda:
 	LPAREN paramList? RPAREN (postannotation)* ARROW (
-		simpleStatement
-		| statementBlock
+		statementBlock
+		| simpleStatement
 	)
 	| identifier ARROW (simpleStatement | statementBlock);
 
 closure:
 	LPAREN paramList? RPAREN (postannotation)* ARROW_RIGHT (
-		simpleStatement
-		| statementBlock
+		statementBlock
+		| simpleStatement
 	)
 	| identifier ARROW_RIGHT (simpleStatement | statementBlock);
 

@@ -575,4 +575,19 @@ public class ClosureFunctionTest {
 
 	}
 
+	@DisplayName( "empty body" )
+	@Test
+	public void testEmptyBody() {
+
+		instance.executeSource(
+		    """
+		      myClosure = ()=>{};
+		    result = myClosure();
+		       """,
+		    context );
+
+		assertThat( variables.get( result ) ).isEqualTo( null );
+
+	}
+
 }
