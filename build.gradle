@@ -11,6 +11,8 @@ plugins {
 	// For source code formatting
 	id "com.diffplug.spotless" version "6.20.0"
     id 'com.github.johnrengelman.shadow' version '8.1.1'
+	// task to check for dependency updates
+	id 'com.github.ben-manes.versions' version '0.50.0'
 }
 
 /**
@@ -67,17 +69,17 @@ dependencies {
 
 	// Implementation Dependencies
 	// https://mvnrepository.com/artifact/commons-io/commons-io
-	implementation "commons-io:commons-io:2.14.0"
+	implementation "commons-io:commons-io:2.15.1"
 	// https://mvnrepository.com/artifact/commons-cli/commons-cli
-	implementation 'commons-cli:commons-cli:1.5.0'
+	implementation 'commons-cli:commons-cli:1.6.0'
 	// https://mvnrepository.com/artifact/com.github.javaparser/javaparser-symbol-solver-core
 	implementation 'com.github.javaparser:javaparser-symbol-solver-core:3.25.4'
 	// https://mvnrepository.com/artifact/org.apache.commons/commons-lang3
-	implementation 'org.apache.commons:commons-lang3:3.13.0'
+	implementation 'org.apache.commons:commons-lang3:3.14.0'
 	// https://mvnrepository.com/artifact/com.fasterxml.jackson.jr/jackson-jr-all
-	implementation 'com.fasterxml.jackson.jr:jackson-jr-all:2.15.2'
+	implementation 'com.fasterxml.jackson.jr:jackson-jr-all:2.16.1'
 	// https://mvnrepository.com/artifact/com.fasterxml.jackson.jr/jackson-jr-annotation-support
-	implementation 'com.fasterxml.jackson.jr:jackson-jr-annotation-support:2.13.3'
+	implementation 'com.fasterxml.jackson.jr:jackson-jr-annotation-support:2.16.1'
 	// https://mvnrepository.com/artifact/com.github.ben-manes.caffeine/caffeine
 	implementation 'com.github.ben-manes.caffeine:caffeine:3.1.8'
 	// https://mvnrepository.com/artifact/org.slf4j/slf4j-api
