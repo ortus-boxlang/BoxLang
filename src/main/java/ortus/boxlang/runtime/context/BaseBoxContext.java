@@ -186,6 +186,32 @@ public class BaseBoxContext implements IBoxContext {
 	}
 
 	/**
+	 * Sets the parent box context.
+	 * 
+	 * @param parentContext The parent context to set
+	 *
+	 * @return This context
+	 */
+	public IBoxContext setParent( IBoxContext parentContext ) {
+		this.parent = parentContext;
+		return this;
+	}
+
+	/**
+	 * Inject a parent context, moving the current parent to the grandparent
+	 * Any existing parent in the passed context will be overwritten with the current parent
+	 * 
+	 * @param parentContext The parent context to inject
+	 * 
+	 * @return This context
+	 */
+	public IBoxContext injectParentContext( IBoxContext parentContext ) {
+		parentContext.setParent( getParent() );
+		setParent( parentContext );
+		return this;
+	}
+
+	/**
 	 * Verifies if a parent context is attached to this context
 	 *
 	 * @return True if a parent context is attached to this context, else false
@@ -590,6 +616,16 @@ public class BaseBoxContext implements IBoxContext {
 			return getParent().getConfig();
 		}
 		return Struct.EMPTY;
+	}
+
+	/**
+	 * Get the BoxLang runtime
+	 * '
+	 * 
+	 * @return The runtime
+	 */
+	public BoxRuntime getRuntime() {
+		return BoxRuntime.getInstance();
 	}
 
 }

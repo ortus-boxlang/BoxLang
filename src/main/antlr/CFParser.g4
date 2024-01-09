@@ -245,7 +245,8 @@ scope:
 	| VARIABLES
 	| THIS
 	| SUPER
-	| THREAD;
+	| THREAD
+	| SESSION;
 //  TODO add additional known scopes
 
 try: TRY statementBlock ( catch_)* finally_?;

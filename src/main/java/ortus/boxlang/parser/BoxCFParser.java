@@ -881,6 +881,9 @@ public class BoxCFParser extends BoxAbstractParser {
 		if ( node.SUPER() != null ) {
 			return new BoxScope( node.SUPER().getText(), getPosition( node ), getSourceText( node ) );
 		}
+		if ( node.SESSION() != null ) {
+			return new BoxScope( node.SESSION().getText(), getPosition( node ), getSourceText( node ) );
+		}
 		throw new IllegalStateException( "not implemented: " + node.getClass().getSimpleName() );
 	}
 

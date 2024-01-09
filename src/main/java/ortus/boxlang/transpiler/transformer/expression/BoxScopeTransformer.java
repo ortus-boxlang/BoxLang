@@ -59,6 +59,10 @@ public class BoxScopeTransformer extends AbstractTransformer {
 			template = "${contextName}.getScopeNearby( ServerScope.name )";
 		} else if ( "arguments".equalsIgnoreCase( scope.getName() ) ) {
 			template = "${contextName}.getScopeNearby( ArgumentsScope.name )";
+		} else if ( "application".equalsIgnoreCase( scope.getName() ) ) {
+			template = "${contextName}.getScopeNearby( ApplicationScope.name )";
+		} else if ( "session".equalsIgnoreCase( scope.getName() ) ) {
+			template = "${contextName}.getScopeNearby( SessionScope.name )";
 		} else if ( "this".equalsIgnoreCase( scope.getName() ) ) {
 
 	// @formatter:off

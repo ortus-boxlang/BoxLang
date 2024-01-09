@@ -20,6 +20,7 @@ package ortus.boxlang.runtime.context;
 import java.util.List;
 import java.util.Map;
 
+import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.loader.ImportDefinition;
 import ortus.boxlang.runtime.runnables.ITemplateRunnable;
 import ortus.boxlang.runtime.scopes.IScope;
@@ -188,6 +189,25 @@ public interface IBoxContext {
 	public IBoxContext getParent();
 
 	/**
+	 * Sets the parent box context.
+	 * 
+	 * @param parentContext The parent context to set
+	 *
+	 * @return This context
+	 */
+	public IBoxContext setParent( IBoxContext parentContext );
+
+	/**
+	 * Inject a parent context, moving the current parent to the grandparent
+	 * Any existing parent in the passed context will be overwritten with the current parent
+	 * 
+	 * @param parentContext The parent context to inject
+	 * 
+	 * @return This context
+	 */
+	public IBoxContext injectParentContext( IBoxContext parentContext );
+
+	/**
 	 * Finds the closest function call name
 	 *
 	 * @return The called name of the function if found, null if this code is not called from a function
@@ -350,5 +370,13 @@ public interface IBoxContext {
 	 * @return A struct of configuration
 	 */
 	public Struct getConfig();
+
+	/**
+	 * Get the BoxLang runtime
+	 * '
+	 * 
+	 * @return The runtime
+	 */
+	public BoxRuntime getRuntime();
 
 }

@@ -46,6 +46,7 @@ import ortus.boxlang.runtime.runnables.BoxTemplate;
 import ortus.boxlang.runtime.runnables.RunnableLoader;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
+import ortus.boxlang.runtime.services.ApplicationService;
 import ortus.boxlang.runtime.services.AsyncService;
 import ortus.boxlang.runtime.services.CacheService;
 import ortus.boxlang.runtime.services.FunctionService;
@@ -136,6 +137,8 @@ public class BoxRuntime {
 	 */
 	private FunctionService		functionService;
 
+	private ApplicationService	applicationService;
+
 	/**
 	 * The async service in charge of all async operations and executors
 	 */
@@ -197,6 +200,7 @@ public class BoxRuntime {
 		this.asyncService		= new AsyncService( this );
 		this.cacheService		= new CacheService( this );
 		this.functionService	= new FunctionService( this );
+		this.applicationService	= new ApplicationService( this );
 		this.configPath			= configPath;
 
 	}
@@ -259,6 +263,7 @@ public class BoxRuntime {
 		this.asyncService.onStartup();
 		this.cacheService.onStartup();
 		this.functionService.onStartup();
+		this.applicationService.onStartup();
 
 		// Create our runtime context that will be the granddaddy of all contexts that execute inside this runtime
 		this.runtimeContext = new RuntimeBoxContext();
@@ -362,6 +367,15 @@ public class BoxRuntime {
 	 */
 	public InterceptorService getInterceptorService() {
 		return interceptorService;
+	}
+
+	/**
+	 * Get the application service
+	 *
+	 * @return {@link ApplicationService} or null if the runtime has not started
+	 */
+	public ApplicationService getApplicationService() {
+		return applicationService;
 	}
 
 	/**
