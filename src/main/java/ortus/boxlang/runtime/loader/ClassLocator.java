@@ -401,13 +401,18 @@ public class ClassLocator extends ClassLoader {
 	    Boolean throwException,
 	    List<ImportDefinition> imports ) {
 
+		if ( imports == null ) {
+			imports = List.of();
+		}
+		// Must be final for the lambda to use it
+		final List<ImportDefinition>	thisImports		= imports;
 		// Unique Cache Key
-		String					cacheKey		= resolverPrefix + ":" + name;
+		String							cacheKey		= resolverPrefix + ":" + name;
 
 		// Try to resolve it
-		Optional<ClassLocation>	resolvedClass	= getClass( cacheKey )
+		Optional<ClassLocation>			resolvedClass	= getClass( cacheKey )
 		    // Resolve it
-		    .or( () -> getResolver( resolverPrefix ).resolve( context, name, imports ) )
+		    .or( () -> getResolver( resolverPrefix ).resolve( context, name, thisImports ) )
 		    // If found, cache it
 		    .map( target -> {
 			    resolverCache.put( cacheKey, target );

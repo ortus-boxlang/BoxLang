@@ -30,7 +30,10 @@ import com.github.javaparser.ast.stmt.Statement;
 
 import ortus.boxlang.ast.BoxNode;
 import ortus.boxlang.ast.BoxStatement;
+import ortus.boxlang.ast.statement.BoxAccessModifier;
 import ortus.boxlang.ast.statement.BoxFunctionDeclaration;
+import ortus.boxlang.ast.statement.BoxReturnType;
+import ortus.boxlang.ast.statement.BoxType;
 import ortus.boxlang.runtime.config.util.PlaceholderHelper;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.transpiler.JavaTranspiler;
@@ -126,8 +129,21 @@ public class BoxFunctionDeclarationTransformer extends AbstractTransformer {
 	public Node transform( BoxNode node, TransformerContext context ) throws IllegalStateException {
 		BoxFunctionDeclaration	function			= ( BoxFunctionDeclaration ) node;
 		String					packageName			= transpiler.getProperty( "packageName" );
+		BoxAccessModifier		access				= function.getAccessModifier();
 		String					enclosingClassName	= transpiler.getProperty( "classname" );
 		String					className			= "Func_" + function.getName();
+		BoxReturnType			boxReturnType		= function.getType();
+		BoxType					returnType			= BoxType.Any;
+		String					fqn					= null;
+		if ( boxReturnType != null ) {
+			returnType = boxReturnType.getType();
+			if ( returnType.equals( BoxType.Fqn ) ) {
+				fqn = boxReturnType.getFqn();
+			}
+		}
+		if ( access == null ) {
+			access = BoxAccessModifier.Public;
+		}
 
 		if ( context == TransformerContext.REGISTER ) {
 			Map<String, String>	values		= Map.ofEntries(
@@ -145,9 +161,9 @@ public class BoxFunctionDeclarationTransformer extends AbstractTransformer {
 			Map<String, String> values = Map.ofEntries(
 			    Map.entry( "packageName", packageName ),
 			    Map.entry( "className", className ),
-			    Map.entry( "access", function.getAccessModifier().toString().toUpperCase() ),
+			    Map.entry( "access", access.toString().toUpperCase() ),
 			    Map.entry( "functionName", createKey( function.getName() ).toString() ),
-			    Map.entry( "returnType", function.getType().getType().name() ),
+			    Map.entry( "returnType", returnType.equals( BoxType.Fqn ) ? fqn : returnType.name() ),
 			    Map.entry( "enclosingClassName", enclosingClassName ),
 			    Map.entry( "compiledOnTimestamp", transpiler.getDateTime( LocalDateTime.now() ) ),
 			    Map.entry( "compileVersion", "1L" )

@@ -9,7 +9,7 @@ import java.lang.System;
  * @luis
  */
 @foo "bar"
-component extends="com.brad.Wood" implements="Luis,Jorge" singleton gavin="pickin" inject {
+component implements="Luis,Jorge" singleton gavin="pickin" inject {
 
     variables.setup=true;
     System.out.println( "word" );

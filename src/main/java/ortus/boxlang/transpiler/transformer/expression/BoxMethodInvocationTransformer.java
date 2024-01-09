@@ -59,36 +59,29 @@ public class BoxMethodInvocationTransformer extends AbstractTransformer {
 										};
 
 		String				target		= null;
-		if ( invocation.getName() instanceof BoxIdentifier id ) {
-			target = BoxBuiltinRegistry.getInstance().getRegistry().get( id.getName() );
-		}
 
 		values.put( "expr", expr.toString() );
 		values.put( "args", args );
 
-		String template;
+		String	template;
 
-		if ( target != null ) {
-			template = "${expr}." + target;
+		Node	accessKey;
+		// DotAccess just uses the string directly, array access allows any expression
+		if ( invocation.getUsedDotAccess() ) {
+			accessKey = createKey( ( ( BoxIdentifier ) invocation.getName() ).getName() );
 		} else {
-			Node accessKey;
-			// DotAccess just uses the string directly, array access allows any expression
-			if ( invocation.getUsedDotAccess() ) {
-				accessKey = createKey( ( ( BoxIdentifier ) invocation.getName() ).getName() );
-			} else {
-				accessKey = createKey( invocation.getName() );
-			}
-			values.put( "methodKey", accessKey.toString() );
-			template = """
-			           Referencer.getAndInvoke(
-			             context,
-			             ${expr},
-			             ${methodKey},
-			             new Object[] { ${args} },
-			             ${safe}
-			           )
-			           """;
+			accessKey = createKey( invocation.getName() );
 		}
+		values.put( "methodKey", accessKey.toString() );
+		template = """
+		           Referencer.getAndInvoke(
+		             context,
+		             ${expr},
+		             ${methodKey},
+		             new Object[] { ${args} },
+		             ${safe}
+		           )
+		           """;
 		Node javaExpr = parseExpression( template, values );
 		logger.info( side + node.getSourceText() + " -> " + javaExpr );
 		addIndex( javaExpr, node );

@@ -63,11 +63,6 @@ public class BoxFunctionInvocationTransformer extends AbstractTransformer {
 	}
 
 	private String getTemplate( BoxFunctionInvocation function ) {
-
-		String target = BoxBuiltinRegistry.getInstance().getRegistry().get( function.getName().getName().toLowerCase() );
-
-		if ( target != null )
-			return target;
 		StringBuilder sb = new StringBuilder( "${contextName}.invokeFunction( ${functionName}" );
 
 		sb.append( ", new Object[] { " );

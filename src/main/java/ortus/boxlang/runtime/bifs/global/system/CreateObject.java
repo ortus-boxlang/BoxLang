@@ -20,37 +20,44 @@ package ortus.boxlang.runtime.bifs.global.system;
 import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
 import ortus.boxlang.runtime.context.IBoxContext;
-import ortus.boxlang.runtime.runnables.IClassRunnable;
-import ortus.boxlang.runtime.runnables.ITemplateRunnable;
+import ortus.boxlang.runtime.loader.ClassLocator;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
+import ortus.boxlang.runtime.scopes.Key;
+import ortus.boxlang.runtime.types.Argument;
+import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
 @BoxBIF
-public class GetCurrentTemplatePath extends BIF {
+public class CreateObject extends BIF {
+
+	ClassLocator classLocator = ClassLocator.getInstance();
 
 	/**
 	 * Constructor
 	 */
-	public GetCurrentTemplatePath() {
+	public CreateObject() {
 		super();
+		declaredArguments = new Argument[] {
+		    new Argument( true, "string", Key.type ),
+		    new Argument( true, "string", Key.className )
+		};
 	}
 
 	/**
-	 * Gets the absolute server file system path of the file that calls this function.
+	 * Extracts a filename from an absolute path.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
+	 * 
+	 * @argument.path The absolute path to extract the filename from
 	 *
 	 */
 	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
-		ITemplateRunnable runnable = context.findClosestTemplate();
-		if ( runnable == null ) {
-			return null;
+		if ( arguments.getAsString( Key.type ).equalsIgnoreCase( "java" ) ) {
+			return classLocator.load( context, "java:" + arguments.getAsString( Key.className ), context.getCurrentImports() );
+		} else if ( arguments.getAsString( Key.type ).equalsIgnoreCase( "component" ) ) {
+			return classLocator.load( context, "bx:" + arguments.getAsString( Key.className ), context.getCurrentImports() ).unWrapBoxLangClass();
 		}
-		// If we're executing inside of a parent class [super.foo()], then the super template is at the
-		// top of the stack, but this BIF needs to return the path to the bottom class.
-		if ( runnable instanceof IClassRunnable classRun ) {
-			runnable = classRun.getBottomClass();
-		}
-		return runnable.getRunnablePath();
+		// TODO: everything else!
+		throw new BoxRuntimeException( "Unsupported type: " + arguments.getAsString( Key.type ) );
 	}
 }

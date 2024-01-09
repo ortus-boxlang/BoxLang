@@ -61,30 +61,67 @@ public class BoxScopeTransformer extends AbstractTransformer {
 			template = "${contextName}.getScopeNearby( ArgumentsScope.name )";
 		} else if ( "this".equalsIgnoreCase( scope.getName() ) ) {
 
+	// @formatter:off
 			template = """
-			           // using a switch so I can wrap up logic that possibly thrown an exception as an expression.
-			                                        ( switch ( 1 ) {
-			                                         case 1 -> {
-			                        Object javaIsStupid = ${contextName};
-			                                         	if( javaIsStupid instanceof ClassBoxContext ) {
-			                            ClassBoxContext bc = (ClassBoxContext) javaIsStupid;
-			                                         		yield bc.getThisClass();
-			                                         	} else if( ${contextName} instanceof FunctionBoxContext ) {
-			                            FunctionBoxContext fc = (FunctionBoxContext) ${contextName};
-			                            if( fc.isInClass() ) {
-			                                          		yield fc.getThisClass();
-			                            } else {
-			                                         			throw new BoxRuntimeException( "Cannot get [this] from the current context because this function is not executing in a class." );
-			                            }
-			                                         	} else {
-			                                         		throw new BoxRuntimeException( "Cannot get [this] from the current context" );
-			                                         	}
-			                                         }
-			                    default -> throw new BoxRuntimeException( "This code can never be run, but Java demands it" );
+					// using a switch so I can wrap up logic that possibly thrown an exception as an expression.
+					( switch ( 1 ) {
+						case 1 -> {
+							Object javaIsStupid = ${contextName};
+							if( javaIsStupid instanceof ClassBoxContext ) {
+								ClassBoxContext bc = (ClassBoxContext) javaIsStupid;
+								yield bc.getThisClass();
+							} else if( ${contextName} instanceof FunctionBoxContext ) {
+								FunctionBoxContext fc = (FunctionBoxContext) ${contextName};
+								if( fc.isInClass() ) {
+									yield fc.getThisClass().getBottomClass();
+								} else {
+									throw new BoxRuntimeException( "Cannot get [this] from the current context because this function is not executing in a class." );
+								}
+							} else {
+								throw new BoxRuntimeException( "Cannot get [this] from the current context" );
+							}
+						}
+						default -> throw new BoxRuntimeException( "This code can never be run, but Java demands it" );
+					} )
+				""";
+			// @formatter:on
 
-			                                } )
-			                                         	""";
-			;
+		} else if ( "super".equalsIgnoreCase( scope.getName() ) ) {
+
+	// @formatter:off
+			template = """
+				// using a switch so I can wrap up logic that possibly thrown an exception as an expression.
+				( switch ( 1 ) {
+					case 1 -> {
+						Object javaIsStupid = ${contextName};
+						if( javaIsStupid instanceof ClassBoxContext ) {
+							ClassBoxContext bc = (ClassBoxContext) javaIsStupid;
+							if( bc.getThisClass().getSuper() != null ) {
+								yield bc.getThisClass().getSuper();
+							} else {
+								throw new BoxRuntimeException( "Cannot get [super] from the current context because this class does not extend another class." );
+							}
+						} else if( ${contextName} instanceof FunctionBoxContext ) {
+							FunctionBoxContext fc = (FunctionBoxContext) ${contextName};
+							if( fc.isInClass() ) {
+								if( fc.getThisClass().getSuper() != null ) {
+									yield fc.getThisClass().getSuper();
+								} else {
+									throw new BoxRuntimeException( "Cannot get [super] from the current context because this class does not extend another class." );
+								}	
+							} else {
+								throw new BoxRuntimeException( "Cannot get [super] from the current context because this function is not executing in a class." );
+							}
+						} else {
+							throw new BoxRuntimeException( "Cannot get [super] from the current context" );
+						}
+					}
+					default -> throw new BoxRuntimeException( "This code can never be run, but Java demands it" );
+
+				} )
+				""";
+				// @formatter:on
+
 		} else {
 			throw new IllegalStateException( "Scope transformation not implemented: " + scope.getName() );
 		}

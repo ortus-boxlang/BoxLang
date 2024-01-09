@@ -38,7 +38,9 @@ public class Key {
 	public static final Key	_10						= Key.of( 10 );
 
 	public static final Key	init					= Key.of( "init" );
+	public static final Key	noInit					= Key.of( "noInit" );
 	public static final Key	initMethod				= Key.of( "initMethod" );
+	public static final Key	_extends				= Key.of( "extends" );
 	public static final Key	recordCount				= Key.of( "recordCount" );
 	public static final Key	columnList				= Key.of( "columnList" );
 	public static final Key	currentRow				= Key.of( "currentRow" );
@@ -65,6 +67,7 @@ public class Key {
 	public static final Key	missingMethodArguments	= Key.of( "missingMethodArguments" );
 	public static final Key	accessors				= Key.of( "accessors" );
 	public static final Key	output					= Key.of( "output" );
+	public static final Key	className				= Key.of( "className" );
 
 	public static final Key	contains				= Key.of( "contains" );
 	public static final Key	find					= Key.of( "find" );
