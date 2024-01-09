@@ -389,29 +389,44 @@ public class ClassTest {
 
 		instance.executeStatement(
 		    """
-		               	cfc = new src.test.java.TestCases.phase3.Chihuahua();
-		             result = cfc.speak()
-		           warm = cfc.isWarmBlooded()
-		           name = cfc.getScientificName()
-		        results = cfc.getResults()
+		    cfc = new src.test.java.TestCases.phase3.Chihuahua();
+		    result = cfc.speak()
+		    warm = cfc.isWarmBlooded()
+		    name = cfc.getScientificName()
+		    results = cfc.getResults()
+		           """, context );
 
-		    println( cfc.$bx.meta );
-		               """, context );
-
+		// Polymorphism invokes overridden method
 		assertThat( variables.get( Key.of( "result" ) ) ).isEqualTo( "Yip Yip!" );
+		// inherited method from base class
 		assertThat( variables.get( Key.of( "warm" ) ) ).isEqualTo( true );
+		// Delegate to super.method() in parent class
 		assertThat( variables.get( Key.of( "name" ) ) ).isEqualTo( "barkus annoyus Canis lupus Animal Kingdom" );
+
+		// This array represents a specific order of operations that occur during the instantiation of our object hierachy
+		// as well as specific values that need to be present to ensure correct behaviors
 		assertThat( variables.getAsArray( Key.of( "results" ) ).toArray() ).isEqualTo( new Object[] {
+		    // top most super class is instantiated first. getCurrentTemplate() shows that file
 		    "animal pseudo Animal.cfc",
+		    // Then the next super class is instantiated. getCurrentTemplate() shows that file
 		    "Dog pseudo Dog.cfc",
+		    // The variables scope in the Doc pseudo constructor is the "same" variables scope as the Animal pseudo constructor that ran before it
 		    "dog sees variables.inAnimal as: true",
+		    // And lastly, the concrete class is instantiated. getCurrentTemplate() shows that file
 		    "Chihuahua pseudo Chihuahua.cfc",
+		    // I'm calling super.init() first, so animal inits first. getCurrentTemplate() shows the concrete class.
 		    "Animal init Chihuahua.cfc",
+		    // Then dog inits as we work backwards. getCurrentTemplate() shows the concrete class.
 		    "Dog init Chihuahua.cfc",
+		    // Then the concrete class inits. getCurrentTemplate() shows the concrete class.
 		    "Chihuahua init Chihuahua.cfc",
+		    // A method inherited from a base class, sees "this" as the concrete class.
 		    "animal this is: src.test.java.TestCases.phase3.Chihuahua",
+		    // A method inherited from a base class, sees the top level "variables" scope.
 		    "animal sees inDog as: true",
+		    // A method delegated to as super.foo() sees "this" as the concrete class.
 		    "super animal sees: src.test.java.TestCases.phase3.Chihuahua",
+		    // A method delegated to as super.foo() sees the top level "variables" scope.
 		    "super sees inDog as: true",
 		} );
 
