@@ -62,6 +62,11 @@ public abstract class Function implements IType, IFunctionRunnable {
 	public BoxMeta			$bx;
 
 	/**
+	 * Cached lookup of the output annotation
+	 */
+	private Boolean			canOutput			= null;
+
+	/**
 	 * The argument collection key which defaults to : {@code argumentCollection}
 	 */
 	public static final Key	ARGUMENT_COLLECTION	= Key.of( "argumentCollection" );
@@ -151,8 +156,8 @@ public abstract class Function implements IType, IFunctionRunnable {
 		runtime.announce( "postFunctionInvoke", data );
 
 		// If output=true, then flush any content in buffer
-		if ( BooleanCaster.cast( getAnnotations().getOrDefault( Key.output, false ) ) ) {
-			context.flushBuffer();
+		if ( canOutput( context ) ) {
+			context.flushBuffer( false );
 		}
 
 		return data.get( "result" );
@@ -328,4 +333,35 @@ public abstract class Function implements IType, IFunctionRunnable {
 		}
 	}
 
+	/**
+	 * A helper to look at the "output" annotation, caching the result
+	 * 
+	 * @param context If not null, will be checked for an output annotation
+	 * 
+	 * @return Whether the function can output
+	 */
+	public boolean canOutput( FunctionBoxContext context ) {
+		// Initialize if neccessary
+		if ( this.canOutput == null ) {
+			this.canOutput = BooleanCaster.cast( getAnnotations().getOrDefault( Key.output, false ) );
+		}
+
+		if ( this.canOutput ) {
+			// We don't cache this because a function can be moved between CFC instances, or have refernces in more than one
+			// at a time. Each class has its own caching later for the output annotation.
+			if ( context != null && context.isInClass() ) {
+				// If we're in a class, we need to check the class output annotation
+				if ( context.getThisClass().canOutput() ) {
+					return true;
+				} else {
+					return false;
+				}
+			}
+			// If not in a class, we're good
+			return true;
+		} else {
+			// We're not outputting, so we didn't even check for a class.
+			return false;
+		}
+	}
 }

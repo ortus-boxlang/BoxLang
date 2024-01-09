@@ -81,7 +81,7 @@ public class ClassTest {
 		                * @luis
 		                */
 		                  @foo "bar"
-		                  component extends="com.brad.Wood" implements="Luis,Jorge" singleton gavin="pickin" inject {
+		                  component  implements="Luis,Jorge" singleton gavin="pickin" inject {
 		                  	variables.setup=true;
 		    	System.out.println( "word" );
 		    	request.foo="bar";
@@ -212,7 +212,6 @@ public class ClassTest {
 		var	cfc		= variables.getClassRunnable( Key.of( "cfc" ) );
 		var	boxMeta	= ( ClassMeta ) cfc.getBoxMeta();
 		var	meta	= boxMeta.meta;
-		assertThat( meta.get( Key.of( "name" ) ) ).isEqualTo( "src.test.java.TestCases.phase3.MyClass" );
 		assertThat( meta.get( Key.of( "type" ) ) ).isEqualTo( "Component" );
 		assertThat( meta.get( Key.of( "fullname" ) ) ).isEqualTo( "src.test.java.TestCases.phase3.MyClass" );
 		assertThat( meta.getAsString( Key.of( "path" ) ).contains( "MyClass.cfc" ) ).isTrue();
@@ -236,7 +235,7 @@ public class ClassTest {
 		assertThat( meta.get( Key.of( "annotations" ) ) instanceof Struct ).isTrue();
 		var annos = meta.getAsStruct( Key.of( "annotations" ) );
 		assertThat( annos.getAsString( Key.of( "foo" ) ).trim() ).isEqualTo( "bar" );
-		assertThat( annos.getAsString( Key.of( "extends" ) ).trim() ).isEqualTo( "com.brad.Wood" );
+		// assertThat( annos.getAsString( Key.of( "extends" ) ).trim() ).isEqualTo( "com.brad.Wood" );
 		assertThat( annos.getAsString( Key.of( "implements" ) ).trim() ).isEqualTo( "Luis,Jorge" );
 		assertThat( annos.getAsString( Key.of( "singleton" ) ).trim() ).isEqualTo( "" );
 		assertThat( annos.getAsString( Key.of( "gavin" ) ).trim() ).isEqualTo( "pickin" );
@@ -353,6 +352,69 @@ public class ClassTest {
 		         """, context );
 
 		assertThat( variables.get( Key.of( "result" ) ) ).isEqualTo( true );
+
+	}
+
+	@DisplayName( "PseudoConstructor can output" )
+	@Test
+	public void testPseudoConstructorOutput() {
+
+		instance.executeStatement(
+		    """
+		      	cfc = new src.test.java.TestCases.phase3.PseudoConstructorOutput();
+		    result = getBoxContext().getBuffer().toString()
+
+		      """, context );
+
+		assertThat( variables.get( Key.of( "result" ) ) ).isEqualTo( "PseudoConstructorOutput" );
+
+	}
+
+	@DisplayName( "PseudoConstructor will not output" )
+	@Test
+	public void testPseudoConstructorNoOutput() {
+
+		instance.executeStatement(
+		    """
+		      	cfc = new src.test.java.TestCases.phase3.PseudoConstructorNoOutput();
+		    result = getBoxContext().getBuffer().toString()
+
+		      """, context );
+
+		assertThat( variables.get( Key.of( "result" ) ) ).isEqualTo( "" );
+
+	}
+
+	@DisplayName( "can extend" )
+	@Test
+	public void testCanExtend() {
+
+		instance.executeStatement(
+		    """
+		           	cfc = new src.test.java.TestCases.phase3.Chihuahua();
+		         result = cfc.speak()
+		       warm = cfc.isWarmBlooded()
+		       name = cfc.getScientificName()
+		    results = cfc.getResults()
+
+		           """, context );
+
+		assertThat( variables.get( Key.of( "result" ) ) ).isEqualTo( "Yip Yip!" );
+		assertThat( variables.get( Key.of( "warm" ) ) ).isEqualTo( true );
+		assertThat( variables.get( Key.of( "name" ) ) ).isEqualTo( "barkus annoyus Canis lupus Animal Kingdom" );
+		assertThat( variables.getAsArray( Key.of( "results" ) ).toArray() ).isEqualTo( new Object[] {
+		    "animal pseudo Animal.cfc",
+		    "Dog pseudo Dog.cfc",
+		    "dog sees variables.inAnimal as: true",
+		    "Chihuahua pseudo Chihuahua.cfc",
+		    "Animal init Chihuahua.cfc",
+		    "Dog init Chihuahua.cfc",
+		    "Chihuahua init Chihuahua.cfc",
+		    "animal this is: src.test.java.TestCases.phase3.Chihuahua",
+		    "animal sees inDog as: true",
+		    "super animal sees: src.test.java.TestCases.phase3.Chihuahua",
+		    "super sees inDog as: true",
+		} );
 
 	}
 

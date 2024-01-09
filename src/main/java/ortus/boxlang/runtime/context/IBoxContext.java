@@ -320,9 +320,11 @@ public interface IBoxContext {
 	 * to its parent context. Different "top level" buffers can decide what they want to do with the buffer.
 	 * i.e. Scripting sends to the console, Web sends to HTTP response stream, etc.
 	 * 
+	 * @param force true, flush even if output is disabled
+	 * 
 	 * @return This context
 	 */
-	public IBoxContext flushBuffer();
+	public IBoxContext flushBuffer( boolean force );
 
 	/**
 	 * Clear the buffer

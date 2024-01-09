@@ -878,6 +878,9 @@ public class BoxCFParser extends BoxAbstractParser {
 		if ( node.THIS() != null ) {
 			return new BoxScope( node.THIS().getText(), getPosition( node ), getSourceText( node ) );
 		}
+		if ( node.SUPER() != null ) {
+			return new BoxScope( node.SUPER().getText(), getPosition( node ), getSourceText( node ) );
+		}
 		throw new IllegalStateException( "not implemented: " + node.getClass().getSimpleName() );
 	}
 
@@ -1392,8 +1395,7 @@ public class BoxCFParser extends BoxAbstractParser {
 	 * @see BoxFunctionDeclaration
 	 */
 	private BoxStatement toAst( File file, CFParser.FunctionContext node ) {
-		CFParser.IdentifierContext			temp			= node.functionSignature().identifier();
-		BoxReturnType						returnType		= new BoxReturnType( BoxType.Any, null, getPosition( temp ), getSourceText( temp ) );
+		BoxReturnType						returnType		= null;
 		String								name			= "undefined";
 		List<BoxStatement>					body			= new ArrayList<>();
 		List<BoxArgumentDeclaration>		args			= new ArrayList<>();
@@ -1401,7 +1403,7 @@ public class BoxCFParser extends BoxAbstractParser {
 		List<BoxAnnotation>					annToRemove		= new ArrayList<>();
 		List<BoxDocumentationAnnotation>	documentation	= new ArrayList<>();
 		List<BoxDocumentationAnnotation>	docToRemove		= new ArrayList<>();
-		BoxAccessModifier					modifier		= BoxAccessModifier.Public;
+		BoxAccessModifier					modifier		= null;
 
 		if ( node.functionSignature().javadoc() != null ) {
 			documentation.addAll( toAst( file, node.functionSignature().javadoc() ) );

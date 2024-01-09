@@ -21,8 +21,9 @@ import java.util.Map;
 
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.dynamic.IReferenceable;
-import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
+import ortus.boxlang.runtime.scopes.ThisScope;
+import ortus.boxlang.runtime.scopes.VariablesScope;
 import ortus.boxlang.runtime.types.Property;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.meta.BoxMeta;
@@ -43,12 +44,12 @@ public interface IClassRunnable extends ITemplateRunnable, IReferenceable {
 	/**
 	 * Get the variables scope
 	 */
-	public IScope getVariablesScope();
+	public VariablesScope getVariablesScope();
 
 	/**
 	 * Get the this scope
 	 */
-	public IScope getThisScope();
+	public ThisScope getThisScope();
 
 	/**
 	 * Get annotations
@@ -81,5 +82,37 @@ public interface IClassRunnable extends ITemplateRunnable, IReferenceable {
 
 	// Duplicate from IType
 	public BoxMeta getBoxMeta();
+
+	/**
+	 * A helper to look at the "output" annotation, caching the result
+	 * 
+	 * @return Whether the function can output
+	 */
+	public boolean canOutput();
+
+	/**
+	 * Get the super class. Null if there is none
+	 */
+	public IClassRunnable getSuper();
+
+	/**
+	 * Set the super class.
+	 */
+	public void setSuper( IClassRunnable _super );
+
+	/**
+	 * Get the child class. Null if there is none
+	 */
+	public IClassRunnable getChild();
+
+	/**
+	 * Set the child class.
+	 */
+	public void setChild( IClassRunnable child );
+
+	/**
+	 * Get the bottom class in the inheritance chain
+	 */
+	public IClassRunnable getBottomClass();
 
 }

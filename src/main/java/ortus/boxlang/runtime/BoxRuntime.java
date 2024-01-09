@@ -508,7 +508,7 @@ public class BoxRuntime {
 			// Fire!!!
 			template.invoke( scriptingContext );
 		} finally {
-			scriptingContext.flushBuffer();
+			scriptingContext.flushBuffer( false );
 
 			// Debugging Timer
 			instance.logger.atDebug().log(
@@ -547,7 +547,7 @@ public class BoxRuntime {
 			// Fire!!!
 			return scriptRunnable.invoke( scriptingContext );
 		} finally {
-			scriptingContext.flushBuffer();
+			scriptingContext.flushBuffer( false );
 			// Debugging Timer
 			instance.logger.atDebug().log(
 			    "Executed source  [{}] ms",
@@ -585,7 +585,7 @@ public class BoxRuntime {
 			// Fire!!!
 			scriptRunnable.invoke( scriptingContext );
 		} finally {
-			scriptingContext.flushBuffer();
+			scriptingContext.flushBuffer( false );
 
 			// Debugging Timer
 			instance.logger.atDebug().log(

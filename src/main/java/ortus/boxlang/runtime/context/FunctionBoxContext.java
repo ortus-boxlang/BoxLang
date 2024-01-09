@@ -149,7 +149,7 @@ public class FunctionBoxContext extends BaseBoxContext {
 
 		if ( isInClass() ) {
 			// A function executing in a class can see the class variables
-			IScope classVariablesScope = ( ( IClassRunnable ) templates.peek() ).getVariablesScope();
+			IScope classVariablesScope = getThisClass().getBottomClass().getVariablesScope();
 
 			result = classVariablesScope.getRaw( key );
 			// Null means not found
@@ -217,8 +217,10 @@ public class FunctionBoxContext extends BaseBoxContext {
 
 		if ( isInClass() ) {
 			if ( name.equals( VariablesScope.name ) ) {
-				return ( ( IClassRunnable ) templates.peek() ).getVariablesScope();
+				return getThisClass().getBottomClass().getVariablesScope();
 			}
+			// We don't have a check for "this" here because this.foo transpiles to a direct reference to the class itself
+
 			// A component cannot see nearby scopes above it
 			return parent.getScope( name );
 		} else {
@@ -277,4 +279,18 @@ public class FunctionBoxContext extends BaseBoxContext {
 		return ( IClassRunnable ) templates.peek();
 	}
 
+	/**
+	 * Flush the buffer to the output stream and then clears the local buffers
+	 * 
+	 * @param force true, flush even if output is disabled
+	 * 
+	 * @return This context
+	 */
+	public IBoxContext flushBuffer( boolean force ) {
+		// direct flushing ignored if we can't output
+		if ( force || getFunction().canOutput( this ) ) {
+			super.flushBuffer( force );
+		}
+		return this;
+	}
 }

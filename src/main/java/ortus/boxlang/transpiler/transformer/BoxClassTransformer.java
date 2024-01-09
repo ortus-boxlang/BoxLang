@@ -114,6 +114,11 @@ public class BoxClassTransformer extends AbstractTransformer {
 			 */
 			public BoxMeta						$bx;
 
+			/**
+			 * Cached lookup of the output annotation
+			 */
+			private Boolean			canOutput			= null;
+
 			private final static Struct	annotations;
 			private final static Struct	documentation;
 			// replace Object with record/class to represent a property
@@ -121,9 +126,11 @@ public class BoxClassTransformer extends AbstractTransformer {
 			private final static Map<Key,Property>	getterLookup=null;
 			private final static Map<Key,Property>	setterLookup=null;
 
-			private IScope variablesScope = new VariablesScope();
-			private IScope thisScope = new ThisScope();
+			private VariablesScope variablesScope = new VariablesScope();
+			private ThisScope thisScope = new ThisScope();
 			private Key name = ${boxClassName};
+			private IClassRunnable _super = null;
+			private IClassRunnable child = null;
 
 			public ${className}() {
 			}
@@ -188,14 +195,14 @@ public class BoxClassTransformer extends AbstractTransformer {
 			/**
 			 * Get the variables scope
 			 */
-			public IScope getVariablesScope() {
+			public VariablesScope getVariablesScope() {
 				return variablesScope;
 			}
 
 			/**
 			 * Get the this scope
 			 */
-			public IScope getThisScope() {
+			public ThisScope getThisScope() {
 				return thisScope;
 			}			
 
@@ -235,6 +242,61 @@ public class BoxClassTransformer extends AbstractTransformer {
 			 */
 			public String asString() {
 				return "Class: " + name.getName();
+			}
+
+			/**
+			 * A helper to look at the "output" annotation, caching the result
+			 * 
+			 * @return Whether the function can output
+			 */
+			public boolean canOutput() {
+				// Initialize if neccessary
+				if ( this.canOutput == null ) {
+					this.canOutput = BooleanCaster.cast( getAnnotations().getOrDefault( Key.output, false ) );
+				}
+				return this.canOutput;
+			}
+
+			/**
+			 * Get the super class.  Null if there is none
+			 */
+			public IClassRunnable getSuper() {
+				return this._super;
+			}
+
+			/**
+			 * Set the super class.
+			 */
+			public void setSuper( IClassRunnable _super ) {
+				this._super = _super;
+				_super.setChild( this );
+				variablesScope.addAll( _super.getVariablesScope().getWrapped() );
+				thisScope.addAll( _super.getThisScope().getWrapped() );
+				// TODO: merge properties
+			}
+
+			/**
+			 * Get the child class.  Null if there is none
+			 */
+			public IClassRunnable getChild() {
+				return this.child;
+			}
+
+			/**
+			 * Set the child class.
+			 */
+			public void setChild( IClassRunnable child ) {
+				this.child = child;
+			}
+
+			/**
+			 * Get the bottom class in the inheritance chain
+			 */
+			public IClassRunnable getBottomClass() {
+				if( getChild() != null ) {
+					return getChild().getBottomClass();
+				}
+				return this;
 			}
 
 			/**
@@ -286,7 +348,14 @@ public class BoxClassTransformer extends AbstractTransformer {
 			public Object dereferenceAndInvoke( IBoxContext context, Key name, Object[] positionalArguments, Boolean safe ) {
 				// TODO: component member methods?
 				
-				Object value = thisScope.get( name );
+				BaseScope scope = thisScope;
+				// we are a super class, so we reached here via super.method()
+				if( getChild() != null ) {
+					scope = variablesScope;
+				}
+
+				// Look for function in this  
+				Object value = scope.get( name );
 				if ( value instanceof Function function ) {
 					FunctionBoxContext functionContext = Function.generateFunctionContext(
 						function,
@@ -332,7 +401,10 @@ public class BoxClassTransformer extends AbstractTransformer {
 					return dereferenceAndInvoke( context, Key.onMissingMethod, new Object[]{ name.getName(), positionalArguments }, safe );
 				}
 				
-				throw new BoxRuntimeException( "Method '" + name.getName() + "' not found" );		
+				if( !safe ) {
+					throw new BoxRuntimeException( "Method '" + name.getName() + "' not found" );
+				}
+				return null;
 			}
 
 			/**
@@ -345,8 +417,14 @@ public class BoxClassTransformer extends AbstractTransformer {
 			 * @return The requested return value or null
 			 */
 			public Object dereferenceAndInvoke( IBoxContext context, Key name, Map<Key, Object> namedArguments, Boolean safe ) {
+				
+				BaseScope scope = thisScope;
+				// we are a super class, so we reached here via super.method()
+				if( getChild() != null ) {
+					scope = variablesScope;
+				}
 
-				Object value = thisScope.get( name );
+				Object value = scope.get( name );
 				if ( value instanceof Function function ) {
 					FunctionBoxContext functionContext = Function.generateFunctionContext(
 							function,
@@ -362,6 +440,10 @@ public class BoxClassTransformer extends AbstractTransformer {
 					} finally{
 						functionContext.popTemplate();
 					}
+				}
+
+				if( getSuper() != null && getSuper().getThisScope().get( name ) != null ) {
+					return getSuper().dereferenceAndInvoke( context, name, namedArguments, safe );
 				}
 
 				if ( value != null ) {
@@ -394,7 +476,10 @@ public class BoxClassTransformer extends AbstractTransformer {
 					return dereferenceAndInvoke( context, Key.onMissingMethod, args, safe );
 				}
 				
-				throw new BoxRuntimeException( "Method '" + name.getName() + "' not found" );	
+				if( !safe ) {
+					throw new BoxRuntimeException( "Method '" + name.getName() + "' not found" );
+				}
+				return null;
 			}
 
 
@@ -475,26 +560,28 @@ public class BoxClassTransformer extends AbstractTransformer {
 	@Override
 	public Node transform( BoxNode node, TransformerContext context ) throws IllegalStateException {
 
-		BoxClass						boxClass	= ( BoxClass ) node;
-		Source							source		= boxClass.getPosition().getSource();
-		String							packageName	= transpiler.getProperty( "packageName" );
-		String							className	= transpiler.getProperty( "classname" );
-		String							fileName	= source instanceof SourceFile file && file.getFile() != null ? file.getFile().getName() : "unknown";
-		String							fileExt		= fileName.substring( fileName.lastIndexOf( "." ) + 1 );
-		String							filePath	= source instanceof SourceFile file && file.getFile() != null ? file.getFile().getAbsolutePath()
+		BoxClass						boxClass		= ( BoxClass ) node;
+		Source							source			= boxClass.getPosition().getSource();
+		String							packageName		= transpiler.getProperty( "packageName" );
+		String							boxPackageName	= transpiler.getProperty( "boxPackageName" );
+		String							className		= transpiler.getProperty( "classname" );
+		String							fileName		= source instanceof SourceFile file && file.getFile() != null ? file.getFile().getName() : "unknown";
+		String							fileExt			= fileName.substring( fileName.lastIndexOf( "." ) + 1 );
+		String							filePath		= source instanceof SourceFile file && file.getFile() != null ? file.getFile().getAbsolutePath()
 		    : "unknown";
 
-		Map<String, String>				values		= Map.ofEntries(
+		Map<String, String>				values			= Map.ofEntries(
 		    Map.entry( "packagename", packageName ),
+		    Map.entry( "boxPackageName", boxPackageName ),
 		    Map.entry( "className", className ),
 		    Map.entry( "fileName", fileName ),
 		    Map.entry( "fileExtension", fileExt ),
 		    Map.entry( "fileFolderPath", filePath.replaceAll( "\\\\", "\\\\\\\\" ) ),
 		    Map.entry( "compiledOnTimestamp", transpiler.getDateTime( LocalDateTime.now() ) ),
 		    Map.entry( "compileVersion", "1L" ),
-		    Map.entry( "boxClassName", createKey( packageName + "." + fileName.replace( ".bx", "" ).replace( ".cfc", "" ) ).toString() )
+		    Map.entry( "boxClassName", createKey( boxPackageName + "." + fileName.replace( ".bx", "" ).replace( ".cfc", "" ) ).toString() )
 		);
-		String							code		= PlaceholderHelper.resolve( template, values );
+		String							code			= PlaceholderHelper.resolve( template, values );
 		ParseResult<CompilationUnit>	result;
 
 		try {

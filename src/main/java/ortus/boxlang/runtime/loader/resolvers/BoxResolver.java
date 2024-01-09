@@ -154,12 +154,15 @@ public class BoxResolver extends BaseResolver {
 		if ( template != null ) {
 			// See if path exists in this parent directory
 			File file;
-			// System.out.println( "this template's parent: " + template.getRunnablePath().getParent().resolve( slashName + ".cfc" ).toFile() );
+			// System.out.println( "this template's parent: " + template.getRunnablePath().getParent().resolve( slashName.substring( 1 ) + ".cfc" ).toFile() );
 			// TODO: Make case insensitive
 			if ( template.getRunnablePath().getParent() != null
-			    && ( file = template.getRunnablePath().getParent().resolve( slashName + ".cfc" ).toFile() ).exists() ) {
+			    && ( file = template.getRunnablePath().getParent().resolve( slashName.substring( 1 ) + ".cfc" ).toFile() ).exists() ) {
 				String	className	= file.getName().replace( ".cfc", "" );
 				String	packageName	= name.replace( className, "" );
+				// System.out.println( "name: " + name );
+				// System.out.println( "packageName: " + packageName );
+				// System.out.println( "className: " + className );
 				return Optional.of( new ClassLocation(
 				    className,
 				    file.toURI().toString(),

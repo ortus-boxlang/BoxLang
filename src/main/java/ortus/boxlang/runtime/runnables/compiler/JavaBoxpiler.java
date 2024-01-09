@@ -285,6 +285,7 @@ public class JavaBoxpiler {
 				Transpiler transpiler = Transpiler.getTranspiler( null );
 				transpiler.setProperty( "classname", className );
 				transpiler.setProperty( "packageName", packageName );
+				transpiler.setProperty( "boxPackageName", packageName );
 
 				TranspiledCode				javaASTs	= transpiler.transpile( result.getRoot() );
 				ClassOrInterfaceDeclaration	outerClass	= javaASTs.getEntryPoint().getClassByName( className ).get();
@@ -305,13 +306,17 @@ public class JavaBoxpiler {
 	}
 
 	public Class<IClassRunnable> compileClass( Path path, String packagePath ) {
+		String boxPackagePath = packagePath;
+		if ( boxPackagePath.endsWith( "." ) ) {
+			boxPackagePath = boxPackagePath.substring( 0, boxPackagePath.length() - 1 );
+		}
+		packagePath = "boxclass." + packagePath;
 		// trim trailing period
 		if ( packagePath.endsWith( "." ) ) {
 			packagePath = packagePath.substring( 0, packagePath.length() - 1 );
 		}
-		String	packageName	= packagePath;
 		String	className	= getClassName( path.toFile() );
-		String	fqn			= packageName + "." + className;
+		String	fqn			= packagePath + "." + className;
 
 		if ( !classLoader.hasClass( fqn ) ) {
 			if ( diskClassLoader.hasClass( fqn ) ) {
@@ -331,7 +336,8 @@ public class JavaBoxpiler {
 
 				Transpiler transpiler = Transpiler.getTranspiler( null );
 				transpiler.setProperty( "classname", className );
-				transpiler.setProperty( "packageName", packageName );
+				transpiler.setProperty( "packageName", packagePath );
+				transpiler.setProperty( "boxPackageName", boxPackagePath );
 
 				TranspiledCode				javaASTs	= transpiler.transpile( result.getRoot() );
 				ClassOrInterfaceDeclaration	outerClass	= javaASTs.getEntryPoint().getClassByName( className ).get();

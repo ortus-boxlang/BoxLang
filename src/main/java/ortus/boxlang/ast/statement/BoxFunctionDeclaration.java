@@ -60,7 +60,9 @@ public class BoxFunctionDeclaration extends BoxStatement {
 		this.accessModifier	= accessModifier;
 		this.name			= name;
 		this.type			= type;
-		this.type.setParent( this );
+		if ( type != null ) {
+			this.type.setParent( this );
+		}
 		this.annotations = annotations;
 		this.annotations.forEach( arg -> arg.setParent( this ) );
 		this.documentation = documentation;
@@ -103,8 +105,8 @@ public class BoxFunctionDeclaration extends BoxStatement {
 	public Map<String, Object> toMap() {
 		Map<String, Object> map = super.toMap();
 
-		map.put( "accessModifier", enumToMap( accessModifier ) );
-		map.put( "type", type.toMap() );
+		map.put( "accessModifier", accessModifier != null ? enumToMap( accessModifier ) : null );
+		map.put( "type", type != null ? type.toMap() : null );
 		map.put( "name", name );
 		map.put( "args", args.stream().map( BoxArgumentDeclaration::toMap ).collect( java.util.stream.Collectors.toList() ) );
 		map.put( "body", body.stream().map( BoxStatement::toMap ).collect( java.util.stream.Collectors.toList() ) );

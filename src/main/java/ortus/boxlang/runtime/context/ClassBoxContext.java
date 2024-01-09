@@ -57,6 +57,7 @@ public class ClassBoxContext extends BaseBoxContext {
 		super( parent );
 		this.variablesScope	= thisClass.getVariablesScope();
 		this.thisScope		= thisClass.getThisScope();
+		this.thisClass		= thisClass;
 
 		if ( parent == null ) {
 			throw new BoxRuntimeException( "Parent context cannot be null for ClassBoxContext" );
@@ -147,7 +148,6 @@ public class ClassBoxContext extends BaseBoxContext {
 	 */
 	@Override
 	public IScope getDefaultAssignmentScope() {
-		// DIFFERENT FROM CFML ENGINES! Same as Lucee's "local mode"
 		return variablesScope;
 	}
 
@@ -170,5 +170,20 @@ public class ClassBoxContext extends BaseBoxContext {
 
 	public IClassRunnable getThisClass() {
 		return thisClass;
+	}
+
+	/**
+	 * Flush the buffer to the output stream and then clears the local buffers
+	 * 
+	 * @param force true, flush even if output is disabled
+	 * 
+	 * @return This context
+	 */
+	public IBoxContext flushBuffer( boolean force ) {
+		// direct flushing ignored if we can't output
+		if ( force || getThisClass().canOutput() ) {
+			super.flushBuffer( force );
+		}
+		return this;
 	}
 }

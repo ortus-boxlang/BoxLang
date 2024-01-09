@@ -216,7 +216,6 @@ reservedKeyword:
 	| CONTAINS
 	| DEFAULT
 	| FUNCTION
-	| INIT
 	| MOD
 	| NEW
 	| NUMERIC
@@ -245,6 +244,7 @@ scope:
 	| REQUEST
 	| VARIABLES
 	| THIS
+	| SUPER
 	| THREAD;
 //  TODO add additional known scopes
 
