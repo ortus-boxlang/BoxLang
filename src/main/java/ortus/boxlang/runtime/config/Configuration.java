@@ -24,6 +24,7 @@ import org.slf4j.LoggerFactory;
 
 import ortus.boxlang.runtime.config.segments.CompilerConfig;
 import ortus.boxlang.runtime.config.segments.RuntimeConfig;
+import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Struct;
 
 /**
@@ -90,5 +91,18 @@ public class Configuration {
 		}
 
 		return this;
+	}
+
+	/**
+	 * Returns the configuration as a struct
+	 * 
+	 * @return Struct
+	 */
+	public Struct asStruct() {
+		return Struct.of(
+		    Key.debugMode, this.debugMode,
+		    Key.compiler, this.compiler.asStruct(),
+		    Key.runtime, this.runtime.asStruct()
+		);
 	}
 }

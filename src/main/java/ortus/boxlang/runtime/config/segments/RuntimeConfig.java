@@ -23,6 +23,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import ortus.boxlang.runtime.config.util.PlaceholderHelper;
+import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Struct;
 
 /**
@@ -102,6 +103,19 @@ public class RuntimeConfig {
 		}
 
 		return this;
+	}
+
+	/**
+	 * Returns the configuration as a struct
+	 * 
+	 * @return Struct
+	 */
+	public Struct asStruct() {
+		return Struct.of(
+		    Key.mappings, this.mappings,
+		    Key.modulesDirectory, this.modulesDirectory,
+		    Key.caches, this.caches
+		);
 	}
 
 }

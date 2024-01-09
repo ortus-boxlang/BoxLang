@@ -1142,10 +1142,16 @@ public class BoxCFParser extends BoxAbstractParser {
 					annotations.add( toAst( file, annotation ) );
 				}
 				/* Process the body */
-				if ( closure.anonymousFunctionBody().statementBlock() != null ) {
-					body.addAll( toAst( file, closure.anonymousFunctionBody().statementBlock() ) );
-				} else if ( closure.anonymousFunctionBody().simpleStatement() != null ) {
-					body.add( toAst( file, closure.anonymousFunctionBody().simpleStatement() ) );
+				// ()=> and ()->{} funnel through anonymousFunctionBody and have statementblock or simplestatement
+				if ( closure.anonymousFunctionBody() != null ) {
+					if ( closure.anonymousFunctionBody().statementBlock() != null ) {
+						body.addAll( toAst( file, closure.anonymousFunctionBody().statementBlock() ) );
+					} else if ( closure.anonymousFunctionBody().simpleStatement() != null ) {
+						body.add( toAst( file, closure.anonymousFunctionBody().simpleStatement() ) );
+					}
+					// function() {} syntax always uses statement block
+				} else if ( closure.statementBlock() != null ) {
+					body.addAll( toAst( file, closure.statementBlock() ) );
 				}
 
 				return new BoxClosure( args, annotations, body, getPosition( expression ), getSourceText( expression ) );

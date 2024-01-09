@@ -21,10 +21,10 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 
 import ortus.boxlang.parser.BoxScriptType;
-import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.runnables.compiler.JavaBoxpiler;
+import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.exceptions.MissingIncludeException;
 
 /**
@@ -118,8 +118,8 @@ public class RunnableLoader {
 			relativeBase = template.getRunnablePath().getParent().toString();
 		} else {
 			// Otherwise we are relative to the root of the runtime (the / mapping, or the working dir of the process)
-			// TODO: Get config via the context, not directly from the runtime to allow overrides
-			Object rootMapping = BoxRuntime.getInstance().getConfiguration().runtime.mappings.getOrDefault( "/", System.getProperty( "user.dir" ) );
+			Object rootMapping = context.getConfig().getAsStruct( Key.runtime ).getAsStruct( Key.mappings )
+			    .getOrDefault( "/", System.getProperty( "user.dir" ) );
 			relativeBase = ( String ) rootMapping;
 		}
 

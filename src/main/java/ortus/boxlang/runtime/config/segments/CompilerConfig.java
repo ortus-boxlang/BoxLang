@@ -18,6 +18,7 @@
 package ortus.boxlang.runtime.config.segments;
 
 import ortus.boxlang.runtime.config.util.PlaceholderHelper;
+import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Struct;
 
 /**
@@ -51,5 +52,16 @@ public class CompilerConfig {
 		}
 
 		return this;
+	}
+
+	/**
+	 * Returns the configuration as a struct
+	 * 
+	 * @return Struct
+	 */
+	public Struct asStruct() {
+		return Struct.of(
+		    Key.classGenerationDirectory, this.classGenerationDirectory
+		);
 	}
 }

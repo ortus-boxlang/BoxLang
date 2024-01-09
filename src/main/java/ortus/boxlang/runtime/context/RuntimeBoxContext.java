@@ -17,9 +17,12 @@
  */
 package ortus.boxlang.runtime.context;
 
+import ortus.boxlang.runtime.BoxRuntime;
+import ortus.boxlang.runtime.config.Configuration;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.ServerScope;
+import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.UDF;
 import ortus.boxlang.runtime.types.exceptions.KeyNotFoundException;
 import ortus.boxlang.runtime.types.exceptions.ScopeNotFoundException;
@@ -40,7 +43,17 @@ public class RuntimeBoxContext extends BaseBoxContext {
 	/**
 	 * The variables scope
 	 */
-	protected IScope serverScope = new ServerScope();
+	protected IScope		serverScope		= new ServerScope();
+
+	/**
+	 * Box Runtime
+	 */
+	private BoxRuntime		runtime			= BoxRuntime.getInstance();
+
+	/**
+	 * Runtime configuration
+	 */
+	private Configuration	runtimeConfig	= runtime.getConfiguration();
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -166,6 +179,19 @@ public class RuntimeBoxContext extends BaseBoxContext {
 	public IScope getDefaultAssignmentScope() {
 		// This will prolly be unreachable since all executing code will be wrapped by another scope
 		return serverScope;
+	}
+
+	/**
+	 * Get the contexual config struct. Each context has a chance to add in config of their
+	 * own to the struct, or override existing config with a new struct of their own design.
+	 * It depends on whether the context wants its changes to exist for the rest of the entire
+	 * request or only for code that executes in the current context and below.
+	 * 
+	 * @return A struct of configuration
+	 */
+	public Struct getConfig() {
+		// Question, should this be the same struct for all requests, or should it be a new struct every time?
+		return runtimeConfig.asStruct();
 	}
 
 }

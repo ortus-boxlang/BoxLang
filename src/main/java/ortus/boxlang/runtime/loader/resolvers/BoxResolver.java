@@ -21,7 +21,6 @@ import java.io.File;
 import java.util.List;
 import java.util.Optional;
 
-import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.loader.ClassLocator;
 import ortus.boxlang.runtime.loader.ClassLocator.ClassLocation;
@@ -150,7 +149,7 @@ public class BoxResolver extends BaseResolver {
 		// System.out.println( "resolving: " + slashName );
 
 		// First look and see if the CFC lives in the directory of the currently-executing template
-		ITemplateRunnable	template	= context != null ? context.findClosestTemplate() : null;
+		ITemplateRunnable	template	= context.findClosestTemplate();
 		if ( template != null ) {
 			// See if path exists in this parent directory
 			File file;
@@ -176,8 +175,7 @@ public class BoxResolver extends BaseResolver {
 		}
 
 		// Next look for a mapping that matches the start of the path
-		// TODO: Get config via the context, not directly from the runtime to allow overrides
-		Struct		mappings	= BoxRuntime.getInstance().getConfiguration().runtime.mappings;
+		Struct		mappings	= context.getConfig().getAsStruct( Key.runtime ).getAsStruct( Key.mappings );
 		List<Key>	keys		= mappings.getKeys();
 		// System.out.println( "Mappings: " + mappings );
 		// Longest to shortest

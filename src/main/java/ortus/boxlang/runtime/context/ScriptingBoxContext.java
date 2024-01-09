@@ -17,6 +17,7 @@
  */
 package ortus.boxlang.runtime.context;
 
+import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.RequestScope;
@@ -38,6 +39,8 @@ import ortus.boxlang.runtime.types.exceptions.ScopeNotFoundException;
  */
 public class ScriptingBoxContext extends BaseBoxContext {
 
+	private static BoxRuntime	runtime			= BoxRuntime.getInstance();
+
 	/**
 	 * --------------------------------------------------------------------------
 	 * Private Properties
@@ -47,12 +50,12 @@ public class ScriptingBoxContext extends BaseBoxContext {
 	/**
 	 * The variables scope
 	 */
-	protected IScope	variablesScope	= new VariablesScope();
+	protected IScope			variablesScope	= new VariablesScope();
 
 	/**
 	 * The request scope
 	 */
-	protected IScope	requestScope	= new RequestScope();
+	protected IScope			requestScope	= new RequestScope();
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -73,7 +76,7 @@ public class ScriptingBoxContext extends BaseBoxContext {
 	 * Creates a new execution context
 	 */
 	public ScriptingBoxContext() {
-		this( null );
+		this( runtime.getRuntimeContext() );
 	}
 
 	/**

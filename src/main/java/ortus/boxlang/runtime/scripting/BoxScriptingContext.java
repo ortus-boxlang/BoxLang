@@ -155,4 +155,5 @@ public class BoxScriptingContext implements ScriptContext {
 	public List<Integer> getScopes() {
 		return Arrays.asList( ENGINE_SCOPE, GLOBAL_SCOPE, REQUEST_SCOPE );
 	}
+
 }

@@ -83,7 +83,7 @@ lambda:
 
 closure:
 	// function( param, param ) {}
-	FUNCTION LPAREN paramList? RPAREN (postannotation)* anonymousFunctionBody
+	FUNCTION LPAREN paramList? RPAREN (postannotation)* statementBlock
 	// ( param, param ) => {}
 	| LPAREN paramList? RPAREN (postannotation)* ARROW_RIGHT anonymousFunctionBody
 	// param => {}

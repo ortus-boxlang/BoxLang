@@ -42,7 +42,6 @@ public class ScriptingBoxContextTest {
 	@DisplayName( "Test default constructor" )
 	void testDefaultConstructor() {
 		ScriptingBoxContext context = new ScriptingBoxContext();
-		assertThat( context.getParent() ).isNull();
 		assertThat( context.hasTemplates() ).isFalse();
 		assertThat( context.findClosestFunctionName() ).isNull();
 	}

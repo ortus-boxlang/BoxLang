@@ -25,6 +25,7 @@ import ortus.boxlang.runtime.runnables.ITemplateRunnable;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Query;
+import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.UDF;
 import ortus.boxlang.runtime.types.exceptions.ScopeNotFoundException;
 
@@ -339,5 +340,15 @@ public interface IBoxContext {
 	 * @return
 	 */
 	public StringBuffer getBuffer();
+
+	/**
+	 * Get the contexual config struct. Each context has a chance to add in config of their
+	 * own to the struct, or override existing config with a new struct of their own design.
+	 * It depends on whether the context wants its changes to exist for the rest of the entire
+	 * request or only for code that executes in the current context and below.
+	 * 
+	 * @return A struct of configuration
+	 */
+	public Struct getConfig();
 
 }
