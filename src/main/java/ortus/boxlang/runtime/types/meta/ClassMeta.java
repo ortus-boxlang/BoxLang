@@ -56,8 +56,7 @@ public class ClassMeta extends BoxMeta {
 		    "name", target.getName().getName(),
 		    "documentation", ImmutableStruct.fromStruct( target.getDocumentation() ),
 		    "annotations", ImmutableStruct.fromStruct( target.getAnnotations() ),
-		    // TODO: add extends
-		    "extends", Struct.EMPTY,
+		    "extends", target.getSuper() != null ? target.getSuper().getBoxMeta().getMeta() : Struct.EMPTY,
 		    "functions", ImmutableArray.fromList( functions ),
 		    "hashCode", target.hashCode(),
 		    "properties", ImmutableArray.of( target.getProperties().entrySet().stream().map( entry -> ImmutableStruct.of(
@@ -79,6 +78,13 @@ public class ClassMeta extends BoxMeta {
 	 */
 	public Object getTarget() {
 		return target;
+	}
+
+	/**
+	 * Get the metadata
+	 */
+	public Struct getMeta() {
+		return meta;
 	}
 
 }

@@ -152,7 +152,7 @@ public class ClassTest {
 		                 assert request.foo == "bar";
 
 		    	// This scope is reference to actual CFC instance
-		    	assert cfc.bx$.$class.getName() == cfc.getThis().bx$.$class.getName();
+		    	assert cfc.$bx.$class.getName() == cfc.getThis().$bx.$class.getName();
 
 		    // Can call public methods on this
 		    assert cfc.runThisFoo() == "I work! whee true true bar true";
@@ -172,7 +172,6 @@ public class ClassTest {
 		var	cfc		= variables.getClassRunnable( Key.of( "cfc" ) );
 		var	meta	= cfc.getMetaData();
 		assertThat( meta.get( Key.of( "name" ) ) ).isEqualTo( "src.test.java.TestCases.phase3.MyClass" );
-		// assertThat( meta.get( Key.of( "extends" ) ) ).isEqualTo( "" );
 		assertThat( meta.get( Key.of( "type" ) ) ).isEqualTo( "Component" );
 		assertThat( meta.get( Key.of( "fullname" ) ) ).isEqualTo( "src.test.java.TestCases.phase3.MyClass" );
 		assertThat( meta.getAsString( Key.of( "path" ) ).contains( "MyClass.cfc" ) ).isTrue();
@@ -235,7 +234,6 @@ public class ClassTest {
 		assertThat( meta.get( Key.of( "annotations" ) ) instanceof Struct ).isTrue();
 		var annos = meta.getAsStruct( Key.of( "annotations" ) );
 		assertThat( annos.getAsString( Key.of( "foo" ) ).trim() ).isEqualTo( "bar" );
-		// assertThat( annos.getAsString( Key.of( "extends" ) ).trim() ).isEqualTo( "com.brad.Wood" );
 		assertThat( annos.getAsString( Key.of( "implements" ) ).trim() ).isEqualTo( "Luis,Jorge" );
 		assertThat( annos.getAsString( Key.of( "singleton" ) ).trim() ).isEqualTo( "" );
 		assertThat( annos.getAsString( Key.of( "gavin" ) ).trim() ).isEqualTo( "pickin" );
@@ -263,7 +261,7 @@ public class ClassTest {
 
 		var	boxMeta	= ( ClassMeta ) cfc.getBoxMeta();
 		var	meta	= boxMeta.meta;
-		System.out.println( meta );
+
 		assertThat( meta.getAsArray( Key.of( "properties" ) ).size() ).isEqualTo( 2 );
 
 		var prop1 = ( Struct ) meta.getAsArray( Key.of( "properties" ) ).get( 0 );
@@ -391,13 +389,14 @@ public class ClassTest {
 
 		instance.executeStatement(
 		    """
-		           	cfc = new src.test.java.TestCases.phase3.Chihuahua();
-		         result = cfc.speak()
-		       warm = cfc.isWarmBlooded()
-		       name = cfc.getScientificName()
-		    results = cfc.getResults()
+		               	cfc = new src.test.java.TestCases.phase3.Chihuahua();
+		             result = cfc.speak()
+		           warm = cfc.isWarmBlooded()
+		           name = cfc.getScientificName()
+		        results = cfc.getResults()
 
-		           """, context );
+		    println( cfc.$bx.meta );
+		               """, context );
 
 		assertThat( variables.get( Key.of( "result" ) ) ).isEqualTo( "Yip Yip!" );
 		assertThat( variables.get( Key.of( "warm" ) ) ).isEqualTo( true );
@@ -415,6 +414,21 @@ public class ClassTest {
 		    "super animal sees: src.test.java.TestCases.phase3.Chihuahua",
 		    "super sees inDog as: true",
 		} );
+
+		var	cfc		= variables.getClassRunnable( Key.of( "cfc" ) );
+		var	boxMeta	= ( ClassMeta ) cfc.getBoxMeta();
+		var	meta	= boxMeta.meta;
+
+		assertThat( meta.get( Key.of( "name" ) ) ).isEqualTo( "src.test.java.TestCases.phase3.Chihuahua" );
+
+		Struct extendsMeta = meta.getAsStruct( Key.of( "extends" ) );
+		assertThat( extendsMeta.get( Key.of( "name" ) ) ).isEqualTo( "Dog" );
+
+		extendsMeta = extendsMeta.getAsStruct( Key.of( "extends" ) );
+		assertThat( extendsMeta.get( Key.of( "name" ) ) ).isEqualTo( "Animal" );
+
+		extendsMeta = extendsMeta.getAsStruct( Key.of( "extends" ) );
+		assertThat( extendsMeta ).hasSize( 0 );
 
 	}
 

@@ -513,8 +513,11 @@ public class BoxClassTransformer extends AbstractTransformer {
 
 				meta.put( "name", getName().getName() );
 				meta.put( "accessors", false );
-				// TODO: add extends
-				meta.put( "extends", Struct.EMPTY );
+				if( getSuper() != null ) {
+					meta.put( "extends", getSuper().getMetaData() );
+				} else {
+					meta.put( "extends", Struct.EMPTY );
+				}
 				meta.put( "functions", Array.fromList( functions ) );
 				meta.put( "hashCode", hashCode() );
 				var properties = new Array();
@@ -560,17 +563,22 @@ public class BoxClassTransformer extends AbstractTransformer {
 	@Override
 	public Node transform( BoxNode node, TransformerContext context ) throws IllegalStateException {
 
-		BoxClass						boxClass		= ( BoxClass ) node;
-		Source							source			= boxClass.getPosition().getSource();
-		String							packageName		= transpiler.getProperty( "packageName" );
-		String							boxPackageName	= transpiler.getProperty( "boxPackageName" );
-		String							className		= transpiler.getProperty( "classname" );
-		String							fileName		= source instanceof SourceFile file && file.getFile() != null ? file.getFile().getName() : "unknown";
-		String							fileExt			= fileName.substring( fileName.lastIndexOf( "." ) + 1 );
-		String							filePath		= source instanceof SourceFile file && file.getFile() != null ? file.getFile().getAbsolutePath()
+		BoxClass	boxClass		= ( BoxClass ) node;
+		Source		source			= boxClass.getPosition().getSource();
+		String		packageName		= transpiler.getProperty( "packageName" );
+		String		boxPackageName	= transpiler.getProperty( "boxPackageName" );
+		String		className		= transpiler.getProperty( "classname" );
+		String		fileName		= source instanceof SourceFile file && file.getFile() != null ? file.getFile().getName() : "unknown";
+		String		fileExt			= fileName.substring( fileName.lastIndexOf( "." ) + 1 );
+		String		filePath		= source instanceof SourceFile file && file.getFile() != null ? file.getFile().getAbsolutePath()
 		    : "unknown";
+		String		boxClassName	= boxPackageName + "." + fileName.replace( ".bx", "" ).replace( ".cfc", "" );
+		// trim leading . if exists
+		if ( boxClassName.startsWith( "." ) ) {
+			boxClassName = boxClassName.substring( 1 );
+		}
 
-		Map<String, String>				values			= Map.ofEntries(
+		Map<String, String>				values	= Map.ofEntries(
 		    Map.entry( "packagename", packageName ),
 		    Map.entry( "boxPackageName", boxPackageName ),
 		    Map.entry( "className", className ),
@@ -579,9 +587,9 @@ public class BoxClassTransformer extends AbstractTransformer {
 		    Map.entry( "fileFolderPath", filePath.replaceAll( "\\\\", "\\\\\\\\" ) ),
 		    Map.entry( "compiledOnTimestamp", transpiler.getDateTime( LocalDateTime.now() ) ),
 		    Map.entry( "compileVersion", "1L" ),
-		    Map.entry( "boxClassName", createKey( boxPackageName + "." + fileName.replace( ".bx", "" ).replace( ".cfc", "" ) ).toString() )
+		    Map.entry( "boxClassName", createKey( boxClassName ).toString() )
 		);
-		String							code			= PlaceholderHelper.resolve( template, values );
+		String							code	= PlaceholderHelper.resolve( template, values );
 		ParseResult<CompilationUnit>	result;
 
 		try {

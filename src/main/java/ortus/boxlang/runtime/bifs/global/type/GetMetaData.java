@@ -39,7 +39,7 @@ public class GetMetaData extends BIF {
 	/**
 	 * Gets metadata (the methods, properties, and parameters of a component) associated with an object.
 	 * This only exists for backwards compat with Adobe and Lucee and this BIF should be moved to a compat module
-	 * at a later date. In BoxLang, use the obj.bx$.meta object instead.
+	 * at a later date. In BoxLang, use the obj.$bx.meta object instead.
 	 * 
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.

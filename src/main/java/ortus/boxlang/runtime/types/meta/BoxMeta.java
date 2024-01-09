@@ -18,6 +18,7 @@
 package ortus.boxlang.runtime.types.meta;
 
 import ortus.boxlang.runtime.scopes.Key;
+import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
 /**
@@ -25,9 +26,11 @@ import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
  */
 public abstract class BoxMeta {
 
-	public static final Key key = Key.of( "bx$" );
+	public static final Key key = Key.of( "$bx" );
 
 	public abstract Object getTarget();
+
+	public abstract Struct getMeta();
 
 	public void registerChangeListener( IChangeListener listener ) {
 		ensureTargetListenable().registerChangeListener( listener );

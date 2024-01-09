@@ -81,4 +81,11 @@ public class FunctionMeta extends BoxMeta {
 		return target;
 	}
 
+	/**
+	 * Get the metadata
+	 */
+	public Struct getMeta() {
+		return meta;
+	}
+
 }
