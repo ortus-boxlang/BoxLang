@@ -17,7 +17,7 @@
  */
 package ortus.boxlang.runtime.bifs.global.system;
 
-import java.io.File;
+import org.apache.commons.io.FilenameUtils;
 
 import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
@@ -44,13 +44,11 @@ public class GetFileFromPath extends BIF {
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
-	 * 
+	 *
 	 * @argument.path The absolute path to extract the filename from
 	 *
 	 */
 	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
-		String path = arguments.getAsString( Key.path );
-		// create path object and get name
-		return new File( path ).getName();
+		return FilenameUtils.getName( arguments.getAsString( Key.path ) );
 	}
 }
