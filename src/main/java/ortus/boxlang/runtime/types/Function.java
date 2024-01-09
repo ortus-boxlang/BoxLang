@@ -157,7 +157,7 @@ public abstract class Function implements IType, IFunctionRunnable {
 
 		// If output=true, then flush any content in buffer
 		if ( canOutput( context ) ) {
-			context.flushBuffer();
+			context.flushBuffer( false );
 		}
 
 		return data.get( "result" );

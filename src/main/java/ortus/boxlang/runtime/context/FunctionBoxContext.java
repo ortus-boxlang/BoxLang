@@ -277,4 +277,18 @@ public class FunctionBoxContext extends BaseBoxContext {
 		return ( IClassRunnable ) templates.peek();
 	}
 
+	/**
+	 * Flush the buffer to the output stream and then clears the local buffers
+	 * 
+	 * @param force true, flush even if output is disabled
+	 * 
+	 * @return This context
+	 */
+	public IBoxContext flushBuffer( boolean force ) {
+		// direct flushing ignored if we can't output
+		if ( force || getFunction().canOutput( this ) ) {
+			super.flushBuffer( force );
+		}
+		return this;
+	}
 }

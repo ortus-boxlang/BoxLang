@@ -303,6 +303,7 @@ public class DynamicJavaInteropService {
 		IBoxContext classContext = new ClassBoxContext( context, cfc );
 
 		// Bootstrap the pseudoConstructor
+		classContext.pushTemplate( cfc );
 		cfc.pseudoConstructor( classContext );
 
 		// Call constructor
@@ -343,6 +344,9 @@ public class DynamicJavaInteropService {
 				}
 			}
 		}
+		// This is for any output written in the pseudoconstructor that needs to be flushed
+		classContext.flushBuffer( false );
+		classContext.popTemplate();
 		return ( T ) cfc;
 	}
 

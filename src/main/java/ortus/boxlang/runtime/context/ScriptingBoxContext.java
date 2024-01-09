@@ -210,9 +210,11 @@ public class ScriptingBoxContext extends BaseBoxContext {
 	/**
 	 * Flush the buffer to the output stream
 	 * 
+	 * @param force true, flush even if output is disabled
+	 * 
 	 * @return This context
 	 */
-	public IBoxContext flushBuffer() {
+	public IBoxContext flushBuffer( boolean force ) {
 		if ( hasParent() ) {
 			getParent().writeToBuffer( buffer.toString() );
 		}

@@ -543,9 +543,11 @@ public class BaseBoxContext implements IBoxContext {
 	/**
 	 * Flush the buffer to the output stream and then clears the local buffers
 	 * 
+	 * @param force true, flush even if output is disabled
+	 * 
 	 * @return This context
 	 */
-	public IBoxContext flushBuffer() {
+	public IBoxContext flushBuffer( boolean force ) {
 		if ( hasParent() ) {
 			synchronized ( buffer ) {
 				getParent().writeToBuffer( buffer.toString() );

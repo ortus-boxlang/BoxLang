@@ -356,4 +356,34 @@ public class ClassTest {
 
 	}
 
+	@DisplayName( "PseudoConstructor can output" )
+	@Test
+	public void testPseudoConstructorOutput() {
+
+		instance.executeStatement(
+		    """
+		      	cfc = new src.test.java.TestCases.phase3.PseudoConstructorOutput();
+		    result = getBoxContext().getBuffer().toString()
+
+		      """, context );
+
+		assertThat( variables.get( Key.of( "result" ) ) ).isEqualTo( "PseudoConstructorOutput" );
+
+	}
+
+	@DisplayName( "PseudoConstructor will not output" )
+	@Test
+	public void testPseudoConstructorNoOutput() {
+
+		instance.executeStatement(
+		    """
+		      	cfc = new src.test.java.TestCases.phase3.PseudoConstructorNoOutput();
+		    result = getBoxContext().getBuffer().toString()
+
+		      """, context );
+
+		assertThat( variables.get( Key.of( "result" ) ) ).isEqualTo( "" );
+
+	}
+
 }
