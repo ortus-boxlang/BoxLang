@@ -23,8 +23,8 @@ public class ArraySplice extends BIF {
 		super();
 		declaredArguments = new Argument[] {
 		    new Argument( true, "modifiablearray", Key.array ),
-		    new Argument( true, "any", Key.index ),
-		    new Argument( false, "any", Key.elementCountForRemoval, 0 ),
+		    new Argument( true, "numeric", Key.index ),
+		    new Argument( false, "numeric", Key.elementCountForRemoval, 0 ),
 		    new Argument( false, "array", Key.replacements )
 		};
 	}
