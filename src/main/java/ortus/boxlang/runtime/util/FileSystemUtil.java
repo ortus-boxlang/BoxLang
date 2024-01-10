@@ -19,6 +19,9 @@ package ortus.boxlang.runtime.util;
 
 import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStreamReader;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.nio.charset.Charset;
 import java.nio.file.DirectoryNotEmptyException;
 import java.nio.file.FileSystems;
@@ -31,6 +34,8 @@ import java.util.Comparator;
 import java.util.Iterator;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+
+import org.apache.commons.io.IOUtils;
 
 import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.exceptions.BoxIOException;
@@ -62,6 +67,11 @@ public final class FileSystemUtil {
 	);
 
 	/**
+	 * The OS line separator
+	 */
+	private static final String	lineSeparator		= System.getProperty( "line.separator" );
+
+	/**
 	 * Returns the contents of a file
 	 *
 	 * @param filePath
@@ -74,16 +84,38 @@ public final class FileSystemUtil {
 	 * @throws IOException
 	 */
 	public static Object read( String filePath, String charset, Integer bufferSize ) throws IOException {
-		Path	path	= Paths.get( filePath );
-		Charset	cs		= Charset.forName( DEFAULT_CHARSET );
+		Path	path	= null;
+		Boolean	isURL	= false;
+		if ( filePath.substring( 0, 4 ).toLowerCase().equals( "http" ) ) {
+			isURL = true;
+		} else {
+			path = Path.of( filePath );
+		}
+		Charset cs = Charset.forName( DEFAULT_CHARSET );
 		if ( charset != null ) {
 			cs = Charset.forName( charset );
 		}
-		return isBinaryFile( filePath )
-		    ? Files.readAllBytes( path )
-		    : ( bufferSize == null
-		        ? Files.readString( path, cs )
-		        : new BufferedReader( Files.newBufferedReader( path, cs ), bufferSize ).lines().collect( Collectors.joining() ) );
+		if ( isURL ) {
+			try {
+				URL fileURL = new URL( filePath );
+				if ( isBinaryFile( filePath ) ) {
+					return IOUtils.toByteArray( fileURL.openStream() );
+				} else {
+					InputStreamReader	inputReader	= new InputStreamReader( fileURL.openStream() );
+					BufferedReader		reader		= new BufferedReader( inputReader );
+					return ( String ) reader.lines().parallel().collect( Collectors.joining( lineSeparator ) );
+				}
+			} catch ( MalformedURLException e ) {
+				throw new BoxRuntimeException( "The url [" + filePath + "] could not be parsed.  The reason was:" + e.getMessage() + "(" + e.getCause() + ")" );
+			}
+
+		} else {
+			return isBinaryFile( filePath )
+			    ? Files.readAllBytes( path )
+			    : ( bufferSize == null
+			        ? Files.readString( path, cs )
+			        : new BufferedReader( Files.newBufferedReader( path, cs ), bufferSize ).lines().parallel().collect( Collectors.joining( lineSeparator ) ) );
+		}
 	}
 
 	/**
@@ -326,8 +358,17 @@ public final class FileSystemUtil {
 	 * @throws IOException
 	 */
 	public static Boolean isBinaryFile( String filePath ) throws IOException {
-		String		mimeType	= Files.probeContentType( Paths.get( filePath ) );
-		Object[]	mimeParts	= mimeType.split( "/" );
+		String mimeType = null;
+		if ( filePath.substring( 0, 4 ).toLowerCase().equals( "http" ) ) {
+			mimeType = Files.probeContentType( Paths.get( new URL( filePath ).getFile() ).getFileName() );
+			// if we can't determin a mimetype from a path we assume the file is text ( e.g. a friendly URL )
+			if ( mimeType == null ) {
+				return false;
+			}
+		} else {
+			mimeType = Files.probeContentType( Paths.get( filePath ).getFileName() );
+		}
+		Object[] mimeParts = mimeType.split( "/" );
 
 		return !TEXT_MIME_PREFIXES.contains( ( String ) mimeParts[ 0 ] ) && !TEXT_MIME_PREFIXES.contains( ( String ) mimeParts[ mimeParts.length - 1 ] );
 	}
