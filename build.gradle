@@ -86,6 +86,10 @@ dependencies {
 	implementation 'org.slf4j:slf4j-api:2.0.7'
 	// https://mvnrepository.com/artifact/org.slf4j/slf4j-jdk14
 	implementation 'org.slf4j:slf4j-jdk14:2.0.7'
+	
+	// MOVE TO BOXLANG WEB PROJECT
+	// https://mvnrepository.com/artifact/io.undertow/undertow-core/2.3.10.Final
+	implementation 'io.undertow:undertow-core:2.3.10.Final'
 }
 
 /**

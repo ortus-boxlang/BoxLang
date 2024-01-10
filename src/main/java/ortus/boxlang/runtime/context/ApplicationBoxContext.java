@@ -21,7 +21,6 @@ import ortus.boxlang.runtime.application.Application;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Struct;
-import ortus.boxlang.runtime.types.UDF;
 import ortus.boxlang.runtime.types.exceptions.ScopeNotFoundException;
 
 /**
@@ -125,21 +124,6 @@ public class ApplicationBoxContext extends BaseBoxContext {
 
 		// The RuntimeBoxContext has no "nearby" scopes
 		return getScope( name );
-	}
-
-	public void registerUDF( UDF udf ) {
-		// This will prolly be unreachable since all executing code will be wrapped by another scope
-		applicationScope.put( udf.getName(), udf );
-	}
-
-	/**
-	 * Get the default variable assignment scope for this context
-	 *
-	 * @return The scope reference to use
-	 */
-	public IScope getDefaultAssignmentScope() {
-		// This will prolly be unreachable since all executing code will be wrapped by another scope
-		return applicationScope;
 	}
 
 	/**

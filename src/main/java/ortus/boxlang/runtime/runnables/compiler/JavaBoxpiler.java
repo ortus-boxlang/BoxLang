@@ -216,8 +216,9 @@ public class JavaBoxpiler {
 	}
 
 	public Class<IBoxRunnable> compileTemplate( Path path, String packagePath ) {
-		File	lcaseFile		= new File( packagePath.toString().toLowerCase() );
-		String	packageName		= getPackageName( lcaseFile );
+		File	lcaseFile	= new File( packagePath.toString().toLowerCase() );
+		String	packageName	= getPackageName( lcaseFile );
+		packageName = "templates" + ( packageName.equals( "" ) ? "" : "." ) + packageName;
 		String	className		= getClassName( lcaseFile );
 		String	fqn				= packageName + "." + className;
 		long	lastModified	= path.toFile().lastModified();
