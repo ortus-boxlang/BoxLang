@@ -52,7 +52,7 @@ public class FileWriteLine extends BIF {
 		if ( arguments.get( Key.file ) instanceof String ) {
 			file.close();
 		}
-		return null;
+		return file;
 	}
 
 }
