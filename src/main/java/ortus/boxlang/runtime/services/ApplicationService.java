@@ -17,8 +17,8 @@
  */
 package ortus.boxlang.runtime.services;
 
-import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.application.Application;
@@ -33,7 +33,7 @@ public class ApplicationService extends BaseService {
 	 * The applications for this runtime
 	 * TODO: timeout applications
 	 */
-	private Map<Key, Application> applications = new HashMap<Key, Application>();
+	private Map<Key, Application> applications = new ConcurrentHashMap<Key, Application>();
 
 	/**
 	 * Constructor
