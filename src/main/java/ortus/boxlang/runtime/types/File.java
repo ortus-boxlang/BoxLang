@@ -24,6 +24,7 @@ import java.nio.charset.Charset;
 import java.nio.charset.UnsupportedCharsetException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardOpenOption;
 import java.util.Map;
 import java.util.NoSuchElementException;
 
@@ -163,9 +164,12 @@ public class File implements IType, IReferenceable {
 					this.reader = Files.newBufferedReader( path );
 					break;
 				case MODE_WRITE :
-				case MODE_APPEND :
 					this.reader = null;
 					this.writer = Files.newBufferedWriter( path );
+					break;
+				case MODE_APPEND :
+					this.reader = null;
+					this.writer = Files.newBufferedWriter( path, Files.exists( path ) ? StandardOpenOption.APPEND : StandardOpenOption.CREATE_NEW );
 					break;
 				default :
 					throw new BoxRuntimeException( "The mode provided, [" + mode + "] for this file [" + filepath + "] is not valid" );
@@ -178,6 +182,11 @@ public class File implements IType, IReferenceable {
 		}
 	}
 
+	/**
+	 * Determines whether the reader is at EOF
+	 *
+	 * @return
+	 */
 	public Boolean isEOF() {
 		Boolean isEOF = false;
 		if ( this.reader != null ) {
@@ -194,6 +203,11 @@ public class File implements IType, IReferenceable {
 		return isEOF;
 	}
 
+	/**
+	 * Reads the next line in a file
+	 *
+	 * @return the result of the line read
+	 */
 	public String readLine() {
 		try {
 			return this.reader.readLine();
@@ -202,6 +216,12 @@ public class File implements IType, IReferenceable {
 		}
 	}
 
+	/**
+	 *
+	 * @param offset The number of characters to offset from the current position in the reader or writer
+	 *
+	 * @return File this object
+	 */
 	public File seek( Long offset ) {
 		if ( !this.seekable ) {
 			throw new BoxRuntimeException(
@@ -219,6 +239,13 @@ public class File implements IType, IReferenceable {
 		return this;
 	}
 
+	/**
+	 * Writes a line to a file. If the file is not empty it will insert a new line prior to the write
+	 *
+	 * @param content The content to be written
+	 *
+	 * @return This file object
+	 */
 	public File writeLine( String content ) {
 		try {
 			if ( offset != null ) {
@@ -236,6 +263,25 @@ public class File implements IType, IReferenceable {
 		return this;
 	}
 
+	/**
+	 * Appends to a file from the current position
+	 *
+	 * @param content The content to be written
+	 *
+	 * @return
+	 */
+	public File append( String content ) {
+		try {
+			this.writer.append( content );
+		} catch ( IOException e ) {
+			throw new BoxIOException( e );
+		}
+		return this;
+	}
+
+	/**
+	 * Closes either the read or write stream
+	 */
 	public void close() {
 		try {
 			if ( this.reader != null ) {

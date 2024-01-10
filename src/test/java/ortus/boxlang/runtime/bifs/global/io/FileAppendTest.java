@@ -19,9 +19,7 @@
 
 package ortus.boxlang.runtime.bifs.global.io;
 
-import static org.junit.Assert.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static com.google.common.truth.Truth.assertThat;
 
 import java.io.IOException;
 import java.nio.file.Path;
@@ -40,10 +38,9 @@ import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
 import ortus.boxlang.runtime.types.File;
-import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.util.FileSystemUtil;
 
-public class FileIsEOFTest {
+public class FileAppendTest {
 
 	static BoxRuntime		instance;
 	static IBoxContext		context;
@@ -51,9 +48,7 @@ public class FileIsEOFTest {
 	static Key				result			= new Key( "result" );
 
 	private static String	tmpDirectory	= "src/test/resources/tmp";
-	private static String	testFile		= "src/test/resources/tmp/file-test.txt";
-	private static String	emptyFile		= "src/test/resources/tmp/file-write-test.txt";
-	private static File		readFile		= null;
+	private static String	emptyFile		= "src/test/resources/tmp/file-append-test.txt";
 	private static File		writeFile		= null;
 
 	@BeforeAll
@@ -68,9 +63,6 @@ public class FileIsEOFTest {
 
 	@AfterAll
 	public static void teardown() throws IOException {
-		if ( readFile != null ) {
-			readFile.close();
-		}
 		if ( writeFile != null ) {
 			writeFile.close();
 		}
@@ -82,55 +74,66 @@ public class FileIsEOFTest {
 
 	@BeforeEach
 	public void setupEach() throws IOException {
-		if ( !FileSystemUtil.exists( testFile ) ) {
-			File testFileObj = new File( testFile, "write", "utf-8", false );
-			for ( var i = 1; i <= 100; i++ ) {
-				testFileObj.writeLine( "Line number " + i + "!" );
-			}
-			testFileObj.close();
-		}
 		if ( FileSystemUtil.exists( emptyFile ) ) {
 			FileSystemUtil.deleteFile( emptyFile );
 		}
 		variables.clear();
 	}
 
-	@DisplayName( "It tests the BIF FileISEOF with a read stream" )
+	@DisplayName( "It tests the BIF FileAppend on a file object" )
 	@Test
 	@Ignore
-	public void testReadFileEOF() {
-		variables.put( Key.of( "testFile" ), Path.of( testFile ).toAbsolutePath().toString() );
+	public void testAppendFile() throws IOException {
+		variables.put( Key.of( "testFile" ), Path.of( emptyFile ).toAbsolutePath().toString() );
 		instance.executeSource(
 		    """
-		        fileObj = fileOpen( testFile, "read", "utf-8", true );
-		       firstTest = fileIsEOF( fileObj );
-		       for( i = 1; i <= 100; i++ ){
-		     fileObj.readLine();
-		       }
-		       lastTest = fileIsEOF( fileObj );
-		    fileObj.close();
-		          """,
+		          fileObj = fileOpen( testFile, "write" );
+		    fileAppend( fileObj, "a" );
+		    fileAppend( fileObj, "b" );
+		    fileAppend( fileObj, "c" );
+		    fileAppend( fileObj, "d" );
+		    fileAppend( fileObj, "e" );
+		      fileObj.close();
+		            """,
 		    context );
-		Boolean	firstTest	= ( Boolean ) variables.get( Key.of( "firstTest" ) );
-		Boolean	lastTest	= ( Boolean ) variables.get( Key.of( "lastTest" ) );
-		assertFalse( firstTest );
-		assertTrue( lastTest );
+		assertThat( FileSystemUtil.read( emptyFile, null, null ) ).isEqualTo( "abcde" );
 	}
 
-	@DisplayName( "It tests the BIF FileISEOF with a write stream" )
+	@DisplayName( "It tests the BIF FileAppend on an existing file object opened in append mode" )
 	@Test
 	@Ignore
-	public void testWriteFileEOF() {
-		writeFile = new File( emptyFile, "write" );
-		variables.put( Key.of( "testFile" ), writeFile );
-		assertThrows(
-		    BoxRuntimeException.class,
-		    () -> instance.executeSource(
-		        """
-		        firstTest = fileIsEOF( testFile );
-		           """,
-		        context )
-		);
+	public void testAppendFileAppendMode() throws IOException {
+		File testFileObj = new File( Path.of( emptyFile ).toAbsolutePath().toString(), "append" );
+		testFileObj.append( "a" );
+		variables.put( Key.of( "testFile" ), testFileObj );
+
+		instance.executeSource(
+		    """
+		    fileAppend( testFile, "b" );
+		    fileAppend( testFile, "c" );
+		    fileAppend( testFile, "d" );
+		    fileAppend( testFile, "e" );
+		            """,
+		    context );
+		testFileObj.close();
+		assertThat( FileSystemUtil.read( emptyFile, null, null ) ).isEqualTo( "abcde" );
+	}
+
+	@DisplayName( "It tests the BIF FileAppend with a string path" )
+	@Test
+	@Ignore
+	public void testAppendString() throws IOException {
+		variables.put( Key.of( "testFile" ), emptyFile );
+		instance.executeSource(
+		    """
+		    fileAppend( testFile, "a" );
+		    fileAppend( testFile, "b" );
+		    fileAppend( testFile, "c" );
+		    fileAppend( testFile, "d" );
+		    fileAppend( testFile, "e" );
+		            """,
+		    context );
+		assertThat( FileSystemUtil.read( emptyFile, null, null ) ).isEqualTo( "abcde" );
 	}
 
 }
