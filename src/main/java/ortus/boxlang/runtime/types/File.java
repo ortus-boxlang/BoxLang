@@ -20,6 +20,8 @@ package ortus.boxlang.runtime.types;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.IOException;
+import java.nio.ByteBuffer;
+import java.nio.channels.SeekableByteChannel;
 import java.nio.charset.Charset;
 import java.nio.charset.UnsupportedCharsetException;
 import java.nio.file.Files;
@@ -32,7 +34,7 @@ import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.bifs.MemberDescriptor;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.dynamic.IReferenceable;
-import ortus.boxlang.runtime.dynamic.casters.IntegerCaster;
+import ortus.boxlang.runtime.dynamic.casters.LongCaster;
 import ortus.boxlang.runtime.interop.DynamicJavaInteropService;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.services.FunctionService;
@@ -57,15 +59,15 @@ public class File implements IType, IReferenceable {
 	/**
 	 * The the reader object when mode is read
 	 */
-	protected final BufferedReader	reader;
+	protected BufferedReader		reader			= null;
 	/**
 	 * The the writer object when mode is read
 	 */
-	protected final BufferedWriter	writer;
+	protected BufferedWriter		writer			= null;
 	/**
-	 * Write position used when fileSeek is invoked
+	 * The the writer object when mode is read
 	 */
-	private Integer					offset;
+	protected SeekableByteChannel	byteChannel		= null;
 	/**
 	 * The file path object
 	 */
@@ -90,8 +92,8 @@ public class File implements IType, IReferenceable {
 	public String					directory;
 	public Long						size;
 	public String					status;
-	public String					charset			= CHARSET_UTF8;
-	public Boolean					seekable		= true;
+	public String					charset;
+	public Boolean					seekable;
 
 	/**
 	 * Metadata object
@@ -125,7 +127,7 @@ public class File implements IType, IReferenceable {
 	 * @param mode The mode with which to open the file
 	 */
 	public File( String file, String mode ) {
-		this( file, mode, CHARSET_UTF8, true );
+		this( file, mode, CHARSET_UTF8, null );
 	}
 
 	/**
@@ -135,13 +137,27 @@ public class File implements IType, IReferenceable {
 	 * @param mode The mode with which to open the file
 	 */
 	public File( String file, String mode, String charset, Boolean seekable ) {
-		this.mode		= mode;
-		this.path		= Path.of( file );
-		this.charset	= charset;
-		this.seekable	= seekable;
-		filename		= path.getFileName().toString();
-		filepath		= path.toAbsolutePath().toString();
-		directory		= path.getParent().toAbsolutePath().toString();
+		this.mode	= mode;
+		this.path	= Path.of( file );
+		if ( charset != null ) {
+			this.charset = charset;
+		} else {
+			this.charset = CHARSET_UTF8;
+		}
+		if ( seekable != null ) {
+			this.seekable = seekable;
+		} else {
+			switch ( mode ) {
+				case MODE_READ :
+					this.seekable = true;
+					break;
+				default :
+					this.seekable = false;
+			}
+		}
+		filename	= path.getFileName().toString();
+		filepath	= path.toAbsolutePath().toString();
+		directory	= path.getParent().toAbsolutePath().toString();
 		try {
 			switch ( mode ) {
 				case MODE_READ :
@@ -149,7 +165,6 @@ public class File implements IType, IReferenceable {
 						throw new BoxRuntimeException( "The file [" + path.toAbsolutePath().toString() + "] does not exist or is not readable." );
 					}
 					this.size = Files.size( path );
-					this.writer = null;
 					this.reader = Files.newBufferedReader( path, Charset.forName( charset ) );
 					break;
 				case MODE_READBINARY :
@@ -160,15 +175,16 @@ public class File implements IType, IReferenceable {
 						throw new BoxRuntimeException( "The file [" + path.toAbsolutePath().toString() + "] is not a binary file." );
 					}
 					this.size = Files.size( path );
-					this.writer = null;
 					this.reader = Files.newBufferedReader( path );
 					break;
 				case MODE_WRITE :
-					this.reader = null;
-					this.writer = Files.newBufferedWriter( path );
+					if ( this.seekable ) {
+						this.byteChannel = Files.newByteChannel( path, Files.exists( path ) ? StandardOpenOption.WRITE : StandardOpenOption.CREATE_NEW );
+					} else {
+						this.writer = Files.newBufferedWriter( path, Files.exists( path ) ? StandardOpenOption.APPEND : StandardOpenOption.CREATE_NEW );
+					}
 					break;
 				case MODE_APPEND :
-					this.reader = null;
 					this.writer = Files.newBufferedWriter( path, Files.exists( path ) ? StandardOpenOption.APPEND : StandardOpenOption.CREATE_NEW );
 					break;
 				default :
@@ -222,13 +238,17 @@ public class File implements IType, IReferenceable {
 	 *
 	 * @return File this object
 	 */
-	public File seek( Long offset ) {
+	public File seek( Integer offset ) {
 		if ( !this.seekable ) {
 			throw new BoxRuntimeException(
 			    "This file instance was opened with the seekable argument set to false. This operation for file [" + filepath + "] is not allowed" );
 		}
-		if ( this.writer != null ) {
-			this.offset = IntegerCaster.cast( offset );
+		if ( this.byteChannel != null ) {
+			try {
+				this.byteChannel.position( LongCaster.cast( offset ) );
+			} catch ( IOException e ) {
+				throw new BoxIOException( e );
+			}
 		} else {
 			try {
 				this.reader.skip( offset );
@@ -248,14 +268,20 @@ public class File implements IType, IReferenceable {
 	 */
 	public File writeLine( String content ) {
 		try {
-			if ( offset != null ) {
-				this.writer.write( lineSeparator + content, offset, lineSeparator.length() + content.length() );
+			Boolean isNewFile = LongCaster.cast( Files.size( this.path ) ).equals( 0l );
+			if ( this.byteChannel != null ) {
+				if ( isNewFile ) {
+					this.byteChannel.write( ByteBuffer.wrap( content.getBytes() ) );
+				} else {
+					this.byteChannel.write( ByteBuffer.wrap( ( lineSeparator + content ).getBytes() ) );
+				}
 			} else {
-				Boolean isNewFile = Files.exists( this.path );
 				if ( !isNewFile ) {
 					this.writer.newLine();
 				}
 				this.writer.append( content );
+				// flush the writer so the file size changes
+				this.writer.flush();
 			}
 		} catch ( IOException e ) {
 			throw new BoxIOException( e );
@@ -272,7 +298,14 @@ public class File implements IType, IReferenceable {
 	 */
 	public File append( String content ) {
 		try {
-			this.writer.append( content );
+			if ( this.byteChannel != null ) {
+				this.byteChannel.write( ByteBuffer.wrap( content.getBytes() ) );
+
+			} else {
+				this.writer.append( content );
+				// flush the writer so the file size changes
+				this.writer.flush();
+			}
 		} catch ( IOException e ) {
 			throw new BoxIOException( e );
 		}
@@ -289,6 +322,9 @@ public class File implements IType, IReferenceable {
 			}
 			if ( this.writer != null ) {
 				writer.close();
+			}
+			if ( this.byteChannel != null ) {
+				this.byteChannel.close();
 			}
 		} catch ( IOException e ) {
 			throw new BoxIOException( e );

@@ -87,6 +87,15 @@ public final class FileSystemUtil {
 	}
 
 	/**
+	 * Returns the contents of a file with the defaults
+	 *
+	 * @param filePath
+	 */
+	public static Object read( String filePath ) throws IOException {
+		return read( filePath, null, null );
+	}
+
+	/**
 	 * Creates a directory from a string path.
 	 *
 	 * @param directoryPath the path to create. This can be root-relative or absolute.

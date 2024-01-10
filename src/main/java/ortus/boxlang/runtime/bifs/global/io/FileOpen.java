@@ -22,7 +22,7 @@ public class FileOpen extends BIF {
 		    new Argument( true, "string", Key.file ),
 		    new Argument( false, "string", Key.mode, "read" ),
 		    new Argument( false, "string", Key.charset, "utf-8" ),
-		    new Argument( false, "boolean", Key.seekable, true )
+		    new Argument( false, "boolean", Key.seekable, null )
 		};
 	}
 
