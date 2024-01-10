@@ -12,15 +12,16 @@ import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
 @BoxBIF
 
-public class FileClose extends BIF {
+public class FileIsEOF extends BIF {
 
 	/**
 	 * Constructor
 	 */
-	public FileClose() {
+	public FileIsEOF() {
 		super();
+		// Uncomment and define declare argument to this BIF
 		declaredArguments = new Argument[] {
-		    new Argument( true, "any", Key.file ),
+		    new Argument( true, "any", Key.file )
 		};
 	}
 
@@ -35,11 +36,10 @@ public class FileClose extends BIF {
 	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
 		if ( arguments.get( Key.file ) instanceof File ) {
 			File file = ( File ) arguments.get( Key.file );
-			file.close();
+			return file.isEOF();
 		} else {
 			throw new BoxRuntimeException( "The file [" + arguments.getAsString( Key.file ) + "] is not an open file stream." );
 		}
-		return null;
 	}
 
 }

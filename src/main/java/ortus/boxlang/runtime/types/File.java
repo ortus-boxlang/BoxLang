@@ -188,6 +188,8 @@ public class File implements IType, IReferenceable {
 			} catch ( IOException e ) {
 				isEOF = true;
 			}
+		} else {
+			throw new BoxRuntimeException( "This file object is in write or append mode.  Unable to determine EOF." );
 		}
 		return isEOF;
 	}
@@ -222,7 +224,10 @@ public class File implements IType, IReferenceable {
 			if ( offset != null ) {
 				this.writer.write( lineSeparator + content, offset, lineSeparator.length() + content.length() );
 			} else {
-				this.writer.newLine();
+				Boolean isNewFile = Files.exists( this.path );
+				if ( !isNewFile ) {
+					this.writer.newLine();
+				}
 				this.writer.append( content );
 			}
 		} catch ( IOException e ) {
