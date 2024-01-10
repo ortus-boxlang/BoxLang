@@ -17,8 +17,8 @@
  */
 package ortus.boxlang.runtime.application;
 
-import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 import ortus.boxlang.runtime.scopes.ApplicationScope;
 import ortus.boxlang.runtime.scopes.Key;
@@ -42,7 +42,7 @@ public class Application {
 	 * The sessions for this application
 	 * TODO: timeout sessions
 	 */
-	private Map<Key, Session>	sessions	= new HashMap<Key, Session>();
+	private Map<Key, Session>	sessions	= new ConcurrentHashMap<Key, Session>();
 
 	/**
 	 * Constructor
