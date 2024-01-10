@@ -248,6 +248,9 @@ public class File implements IType, IReferenceable {
 	 * @return the result of the line read
 	 */
 	public String readLine() {
+		if ( this.reader == null ) {
+			throw new BoxRuntimeException( "This file object was not opened in read mode" );
+		}
 		try {
 			return this.reader.readLine();
 		} catch ( IOException e ) {
@@ -277,6 +280,8 @@ public class File implements IType, IReferenceable {
 				this.reader.skip( offset );
 			} catch ( IOException e ) {
 				throw new BoxIOException( e );
+			} catch ( NullPointerException e ) {
+				throw new BoxRuntimeException( "This file object was not opened in read mode" );
 			}
 		}
 		return this;
