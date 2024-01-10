@@ -20,6 +20,9 @@ package ortus.boxlang.runtime.types;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.IOException;
+import java.net.MalformedURLException;
+import java.net.URISyntaxException;
+import java.net.URL;
 import java.nio.ByteBuffer;
 import java.nio.channels.SeekableByteChannel;
 import java.nio.charset.Charset;
@@ -35,6 +38,7 @@ import ortus.boxlang.runtime.bifs.MemberDescriptor;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.dynamic.IReferenceable;
 import ortus.boxlang.runtime.dynamic.casters.LongCaster;
+import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 import ortus.boxlang.runtime.interop.DynamicJavaInteropService;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.services.FunctionService;
@@ -137,8 +141,20 @@ public class File implements IType, IReferenceable {
 	 * @param mode The mode with which to open the file
 	 */
 	public File( String file, String mode, String charset, Boolean seekable ) {
-		this.mode	= mode;
-		this.path	= Path.of( file );
+		this.mode = mode;
+		System.out.println( "HTTP Index:" + StringCaster.cast( file.toLowerCase().indexOf( "http" ) ) );
+		if ( file.toLowerCase().indexOf( "http" ) == 0 ) {
+			try {
+				URL fileURL = new URL( file );
+				this.path = Path.of( fileURL.toURI() );
+			} catch ( URISyntaxException e ) {
+				throw new BoxRuntimeException( "The url [" + file + "] could not be parsed.  The reason was:" + e.getMessage() + "(" + e.getCause() + ")" );
+			} catch ( MalformedURLException e ) {
+				throw new BoxRuntimeException( "The url [" + file + "] could not be parsed.  The reason was:" + e.getMessage() + "(" + e.getCause() + ")" );
+			}
+		} else {
+			this.path = Path.of( file );
+		}
 		if ( charset != null ) {
 			this.charset = charset;
 		} else {
@@ -205,6 +221,13 @@ public class File implements IType, IReferenceable {
 	 */
 	public Boolean isEOF() {
 		Boolean isEOF = false;
+		if ( this.byteChannel != null ) {
+			try {
+				return this.byteChannel.position() == this.byteChannel.size();
+			} catch ( IOException e ) {
+				throw new BoxIOException( e );
+			}
+		}
 		if ( this.reader != null ) {
 			try {
 				this.reader.mark( 2 );
@@ -275,13 +298,15 @@ public class File implements IType, IReferenceable {
 				} else {
 					this.byteChannel.write( ByteBuffer.wrap( ( lineSeparator + content ).getBytes() ) );
 				}
-			} else {
+			} else if ( this.writer != null ) {
 				if ( !isNewFile ) {
 					this.writer.newLine();
 				}
 				this.writer.append( content );
 				// flush the writer so the file size changes
 				this.writer.flush();
+			} else {
+				throw new BoxRuntimeException( "This file object is not writeable.  Operation disallowed." );
 			}
 		} catch ( IOException e ) {
 			throw new BoxIOException( e );

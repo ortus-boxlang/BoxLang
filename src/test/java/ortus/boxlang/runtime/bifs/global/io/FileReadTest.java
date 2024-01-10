@@ -48,6 +48,8 @@ public class FileReadTest {
 	static IScope		variables;
 	static Key			result			= new Key( "result" );
 	static String		testTextFile	= "src/test/resources/tmp/text.txt";
+	static String		testURLFile		= "https://raw.githubusercontent.com/ColdBox/coldbox-platform/development/license.txt";
+	static String		testURLImage	= "https://source.unsplash.com/random/200x200.jpg";
 	static String		testBinaryFile	= "src/test/resources/tmp/test.jpg";
 	static String		tmpDirectory	= "src/test/resources/tmp";
 
@@ -62,7 +64,7 @@ public class FileReadTest {
 		}
 
 		if ( !FileSystemUtil.exists( testBinaryFile ) ) {
-			BufferedInputStream urlStream = new BufferedInputStream( new URL( "https://source.unsplash.com/random/200x200?sig=1" ).openStream() );
+			BufferedInputStream urlStream = new BufferedInputStream( new URL( testURLImage ).openStream() );
 			FileSystemUtil.write( testBinaryFile, urlStream.readAllBytes(), true );
 		}
 
@@ -95,6 +97,34 @@ public class FileReadTest {
 		String result = ( String ) variables.get( Key.of( "result" ) );
 		assertThat( result ).isInstanceOf( String.class );
 		assertThat( result ).isEqualTo( "file read test!" );
+	}
+
+	@DisplayName( "It tests the ability to read a URL text file" )
+	@Test
+	public void testURLFileRead() {
+		variables.put( Key.of( "testFile" ), testURLFile );
+		instance.executeSource(
+		    """
+		    result = fileRead( variables.testFile );
+		    """,
+		    context );
+		String result = ( String ) variables.get( Key.of( "result" ) );
+		assertThat( result ).isInstanceOf( String.class );
+		assertThat( result ).contains( "ColdBox Framework" );
+		assertThat( result ).contains( System.getProperty( "line.separator" ) );
+	}
+
+	@DisplayName( "It tests the ability to read a URL binary file" )
+	@Test
+	public void testURLBinaryFileRead() {
+		variables.put( Key.of( "testFile" ), testURLImage );
+		instance.executeSource(
+		    """
+		    result = fileRead( variables.testFile );
+		    """,
+		    context );
+		Object result = variables.get( Key.of( "result" ) );
+		assertTrue( result instanceof byte[] );
 	}
 
 	@DisplayName( "It tests the ability to read a text file with a charset arg" )
