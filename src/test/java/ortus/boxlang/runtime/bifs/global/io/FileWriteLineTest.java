@@ -95,9 +95,8 @@ public class FileWriteLineTest {
 		      fileObj.close();
 		            """,
 		    context );
-		String fileContents = ( String ) FileSystemUtil.read( emptyFile );
-		System.out.println( fileContents );
-		Object[] lines = fileContents.split( System.getProperty( "line.separator" ) );
+		String		fileContents	= ( String ) FileSystemUtil.read( emptyFile );
+		Object[]	lines			= fileContents.split( System.getProperty( "line.separator" ) );
 		assertThat( lines.length ).isEqualTo( 4 );
 	}
 
@@ -119,9 +118,8 @@ public class FileWriteLineTest {
 		         fileObj.close();
 		               """,
 		    context );
-		String fileContents = ( String ) FileSystemUtil.read( emptyFile );
-		System.out.println( fileContents );
-		Object[] lines = fileContents.split( System.getProperty( "line.separator" ) );
+		String		fileContents	= ( String ) FileSystemUtil.read( emptyFile );
+		Object[]	lines			= fileContents.split( System.getProperty( "line.separator" ) );
 		assertThat( lines.length ).isEqualTo( 5 );
 	}
 
@@ -140,9 +138,8 @@ public class FileWriteLineTest {
 		      fileObj.close();
 		            """,
 		    context );
-		String fileContents = ( String ) FileSystemUtil.read( emptyFile );
-		System.out.println( fileContents );
-		Object[] lines = fileContents.split( System.getProperty( "line.separator" ) );
+		String		fileContents	= ( String ) FileSystemUtil.read( emptyFile );
+		Object[]	lines			= fileContents.split( System.getProperty( "line.separator" ) );
 		assertThat( lines.length ).isEqualTo( 4 );
 	}
 
@@ -159,9 +156,8 @@ public class FileWriteLineTest {
 		    	    FileWriteLine( testFile, "awesome" );
 		    """,
 		    context );
-		String fileContents = ( String ) FileSystemUtil.read( emptyFile );
-		System.out.println( fileContents );
-		Object[] lines = fileContents.split( System.getProperty( "line.separator" ) );
+		String		fileContents	= ( String ) FileSystemUtil.read( emptyFile );
+		Object[]	lines			= fileContents.split( System.getProperty( "line.separator" ) );
 		assertThat( lines.length ).isEqualTo( 4 );
 	}
 

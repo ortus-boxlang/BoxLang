@@ -110,7 +110,6 @@ public class FileReadTest {
 		    context );
 		String result = ( String ) variables.get( Key.of( "result" ) );
 		assertThat( result ).isInstanceOf( String.class );
-		System.out.println( result );
 		assertThat( result ).contains( "ColdBox Framework" );
 		assertThat( result ).contains( System.getProperty( "line.separator" ) );
 	}
