@@ -88,6 +88,7 @@ public class Key {
 	public static final Key	leaveIndex					= Key.of( "leaveIndex" );
 	public static final Key	length						= Key.of( "length" );
 	public static final Key	listInfo					= Key.of( "listInfo" );
+	public static final Key	localeSensitive				= Key.of( "localeSensitive" );
 	public static final Key	mappings					= Key.of( "mappings" );
 	public static final Key	mask						= Key.of( "mask" );
 	public static final Key	maxThreads					= Key.of( "maxThreads" );
@@ -122,6 +123,8 @@ public class Key {
 	public static final Key	seekable					= Key.of( "seekable" );
 	public static final Key	size						= Key.of( "size" );
 	public static final Key	sort						= Key.of( "sort" );
+	public static final Key	sortOrder					= Key.of( "sortOrder" );
+	public static final Key	sortType					= Key.of( "sortType" );
 	public static final Key	source						= Key.of( "source" );
 	public static final Key	start						= Key.of( "start" );
 	public static final Key	strict						= Key.of( "strict" );

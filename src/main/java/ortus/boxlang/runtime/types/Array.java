@@ -21,6 +21,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.Iterator;
 import java.util.List;
 import java.util.ListIterator;
@@ -311,6 +312,10 @@ public class Array implements List<Object>, IType, IReferenceable, IListenable {
 			add( e );
 			return wrapped.size();
 		}
+	}
+
+	public void sort( Comparator compareFunc ) {
+		wrapped.sort( compareFunc );
 	}
 
 	/*
