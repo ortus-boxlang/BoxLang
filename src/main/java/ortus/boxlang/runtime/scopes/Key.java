@@ -73,6 +73,7 @@ public class Key {
 	public static final Key	destination					= Key.of( "destination" );
 	public static final Key	dimensions					= Key.of( "dimensions" );
 	public static final Key	directory					= Key.of( "directory" );
+	public static final Key	elementCountForRemoval		= Key.of( "elementCountForRemoval" );
 	public static final Key	end							= Key.of( "end" );
 	public static final Key	file						= Key.of( "file" );
 	public static final Key	filepath					= Key.of( "filepath" );
@@ -118,6 +119,7 @@ public class Key {
 	public static final Key	recordCount					= Key.of( "recordCount" );
 	public static final Key	recurse						= Key.of( "recurse" );
 	public static final Key	recursive					= Key.of( "recursive" );
+	public static final Key	replacements				= Key.of( "replacements" );
 	public static final Key	runtime						= Key.of( "runtime" );
 	public static final Key	second						= Key.of( "second" );
 	public static final Key	seekable					= Key.of( "seekable" );
