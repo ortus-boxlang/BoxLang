@@ -17,6 +17,7 @@
  */
 package ortus.boxlang.runtime.types;
 
+import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
@@ -75,6 +76,17 @@ public class DateTime implements IType {
 		// Set our default formatter to match Lucee's ODBC pattern
 		setFormat( ODBC_FORMAT_MASK );
 		wrapped = dateTime;
+	}
+
+	/**
+	 * Constructor to create DateTime from a Instant
+	 *
+	 * @param dateTime A zoned date time object
+	 */
+	public DateTime( Instant instant ) {
+		// Set our default formatter to match Lucee's ODBC pattern
+		setFormat( ODBC_FORMAT_MASK );
+		wrapped = ZonedDateTime.ofInstant( instant, ZoneId.systemDefault() );
 	}
 
 	/**
@@ -272,6 +284,15 @@ public class DateTime implements IType {
 	public String toISOString() {
 		formatter = DateTimeFormatter.ISO_OFFSET_DATE_TIME;
 		return toString();
+	}
+
+	/**
+	 * Returns this date time as an instant
+	 *
+	 * @return
+	 */
+	public Instant toInstant() {
+		return wrapped.toInstant();
 	}
 
 	/**

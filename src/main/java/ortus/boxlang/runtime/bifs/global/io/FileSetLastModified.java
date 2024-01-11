@@ -15,28 +15,28 @@ import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 @BoxBIF
 @BoxMember( type = BoxLangType.FILE )
 
-public class FileWriteLine extends BIF {
+public class FileSetLastModified extends BIF {
 
 	/**
 	 * Constructor
 	 */
-	public FileWriteLine() {
+	public FileSetLastModified() {
 		super();
 		declaredArguments = new Argument[] {
 		    new Argument( true, "any", Key.file ),
-		    new Argument( true, "string", Key.data )
+		    new Argument( true, "any", Key.date )
 		};
 	}
 
 	/**
-	 * Writes a line of data to a file
+	 * Sets the last modified time of a file
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.file An existing file object or a path to a file
+	 * @argument.file A file path or object
 	 *
-	 * @argument.data The line of data to be written
+	 * @argument.date A date time object or string
 	 */
 	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
 		File file = null;
@@ -47,7 +47,7 @@ public class FileWriteLine extends BIF {
 		} else {
 			throw new BoxRuntimeException( "The file argumennt [" + arguments.getAsString( Key.file ) + "] is not an open file stream or string path." );
 		}
-		file.writeLine( arguments.getAsString( Key.data ) );
+		file.setLastModifiedTime( arguments.getAsDateTime( Key.date ) );
 		// For strings file args we need to close the buffer
 		if ( arguments.get( Key.file ) instanceof String ) {
 			file.close();

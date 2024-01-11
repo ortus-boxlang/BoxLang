@@ -30,6 +30,7 @@ import java.nio.charset.UnsupportedCharsetException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
+import java.nio.file.attribute.FileTime;
 import java.util.Map;
 import java.util.NoSuchElementException;
 
@@ -285,6 +286,23 @@ public class File implements IType, IReferenceable {
 			}
 		}
 		return this;
+	}
+
+	public File setLastModifiedTime( DateTime time ) {
+		try {
+			Files.setLastModifiedTime( this.path, FileTime.from( time.toInstant() ) );
+		} catch ( IOException e ) {
+			throw new BoxIOException( e );
+		}
+		return this;
+	}
+
+	public DateTime getLastModifedTime() {
+		try {
+			return new DateTime( Files.getLastModifiedTime( this.path ).toInstant() );
+		} catch ( IOException e ) {
+			throw new BoxIOException( e );
+		}
 	}
 
 	/**
