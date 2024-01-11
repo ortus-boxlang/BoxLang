@@ -15,6 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package ortus.boxlang.runtime.bifs.global.math;
 
 import static com.google.common.truth.Truth.assertThat;
@@ -32,7 +33,7 @@ import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
 
-public class AcosTest2 {
+public class AsinTest {
 
 	static BoxRuntime	instance;
 	static IBoxContext	context;
@@ -56,37 +57,37 @@ public class AcosTest2 {
 		variables.clear();
 	}
 
-	@DisplayName( "It returns arccosine" )
+	@DisplayName( "It returns arcsine" )
 	@Test
-	public void testItReturnsACosine() {
+	public void testItReturnsASine() {
 		instance.executeSource(
 		    """
-		    result = acos(1);
+		    result = asin(0);
 		    """,
 		    context );
 		assertThat( variables.get( result ) ).isEqualTo( 0.0 );
 		instance.executeSource(
 		    """
-		    result = acos(0.5);
+		    result = asin(0.5);
 		    """,
 		    context );
-		assertThat( variables.get( result ) ).isEqualTo( Math.acos( 0.5 ) );
+		assertThat( variables.get( result ) ).isEqualTo( Math.asin( 0.5 ) );
 	}
 
-	@DisplayName( "It returns arccosine member" )
+	@DisplayName( "It returns arcsine member" )
 	@Test
-	public void testItReturnsACosineMember() {
+	public void testItReturnsASineMember() {
 		instance.executeSource(
 		    """
-		    result = (1).acos();
+		    result = (0).asin();
 		    """,
 		    context );
 		assertThat( variables.get( result ) ).isEqualTo( 0.0 );
 		instance.executeSource(
 		    """
-		    result = (0.5).acos();
+		    result = (0.5).asin();
 		    """,
 		    context );
-		assertThat( variables.get( result ) ).isEqualTo( Math.acos( 0.5 ) );
+		assertThat( variables.get( result ) ).isEqualTo( Math.asin( 0.5 ) );
 	}
 }

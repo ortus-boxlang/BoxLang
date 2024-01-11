@@ -25,12 +25,12 @@ import ortus.boxlang.runtime.types.BoxLangType;
 
 @BoxBIF
 @BoxMember( type = BoxLangType.NUMERIC )
-public class Asin2 extends BIF {
+public class Asin extends BIF {
 
 	/**
 	 * Constructor
 	 */
-	public Asin2() {
+	public Asin() {
 		super();
 		declaredArguments = new Argument[] {
 		    new Argument( true, "numeric", Key.number )
