@@ -30,6 +30,7 @@ import ortus.boxlang.runtime.types.UDF;
 import ortus.boxlang.runtime.types.exceptions.KeyNotFoundException;
 import ortus.boxlang.runtime.types.exceptions.ScopeNotFoundException;
 import ortus.boxlang.web.scopes.CGIScope;
+import ortus.boxlang.web.scopes.CookieScope;
 import ortus.boxlang.web.scopes.FormScope;
 import ortus.boxlang.web.scopes.URLScope;
 
@@ -57,16 +58,28 @@ public class WebBoxContext extends BaseBoxContext {
 	 */
 	protected IScope				requestScope	= new RequestScope();
 
+	/**
+	 * The URL scope
+	 */
 	protected IScope				URLScope;
+
+	/**
+	 * The form scope
+	 */
 	protected IScope				FormScope;
+
+	/**
+	 * The CGI scope
+	 */
 	protected IScope				CGIScope;
 
-	/*
-	 * TODO:
-	 * url scope
-	 * form scope
-	 * cgi scope
-	 * cookie scope
+	/**
+	 * The cookie scope
+	 */
+	protected IScope				CookieScope;
+
+	/**
+	 * The Undertow exchange for this request
 	 */
 	protected HttpServerExchange	exchange;
 
@@ -87,6 +100,7 @@ public class WebBoxContext extends BaseBoxContext {
 		URLScope		= new URLScope( exchange );
 		FormScope		= new FormScope( exchange );
 		CGIScope		= new CGIScope( exchange );
+		CookieScope		= new CookieScope( exchange );
 	}
 
 	/**
@@ -195,6 +209,10 @@ public class WebBoxContext extends BaseBoxContext {
 
 		if ( name.equals( CGIScope.getName() ) ) {
 			return CGIScope;
+		}
+
+		if ( name.equals( CookieScope.getName() ) ) {
+			return CookieScope;
 		}
 
 		if ( parent != null ) {

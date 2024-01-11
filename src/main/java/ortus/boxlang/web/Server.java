@@ -17,14 +17,17 @@
  */
 package ortus.boxlang.web;
 
+import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.Arrays;
-import java.util.stream.Collectors;
 
+import io.undertow.Handlers;
 import io.undertow.Undertow;
-import io.undertow.server.HttpHandler;
+import io.undertow.predicate.Predicates;
+import io.undertow.server.handlers.resource.PathResourceManager;
+import io.undertow.server.handlers.resource.ResourceHandler;
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.scopes.Key;
+import ortus.boxlang.web.handlers.BLHandler;
 
 /**
  * I represent a Server
@@ -35,65 +38,23 @@ public class Server {
 
 	public static void main( String[] args ) {
 		System.out.println( "Starting BoxLang Server..." );
+		Path webRoot = Paths.get( "src/main/java/ortus/boxlang/web/www/" ).toAbsolutePath();
 
 		// Setup web root. Should this go in the runtime, or each context?
 		runtime.getConfiguration().runtime.mappings
 		    .put( Key.of( "/" ),
-		        Paths.get( "src/main/java/ortus/boxlang/web/www/" ).toAbsolutePath().toString() );
+		        webRoot.toString() );
 
 		Undertow.Builder	builder		= Undertow.builder();
 		Undertow			BLServer	= builder
 		    .addHttpListener( 8080, "localhost" )
-		    .setHandler( new HttpHandler() {
-
-											    @Override
-											    public void handleRequest( io.undertow.server.HttpServerExchange exchange ) throws Exception {
-												    try {
-													    WebBoxContext context	= new WebBoxContext( BoxRuntime.getInstance().getRuntimeContext(), exchange );
-													    String		requestPath	= exchange.getRequestPath();
-													    if ( requestPath.endsWith( "favicon.ico" ) ) {
-														    return;
-													    }
-													    if ( requestPath.equals( "/" ) ) {
-														    requestPath = "/index.cfm";
-													    }
-
-													    context.includeTemplate( requestPath );
-													    context.flushBuffer( false );
-
-												    } catch ( Throwable e ) {
-													    StringBuilder errorOutput = new StringBuilder();
-													    errorOutput.append( "<h1>BoxLang Error</h1>" )
-													        .append( "<h2>Message</h2>" )
-													        .append( "<pre>" )
-													        .append( e.getMessage() )
-													        .append( "</pre>" )
-													        .append( "<h2>Stack Trace</h2>" )
-													        .append( "<pre>" );
-													    Throwable err	= e;
-													    boolean	first	= true;
-													    while ( err != null ) {
-														    errorOutput.append( "\n" );
-														    if ( !first ) {
-															    errorOutput.append( "CAUSED BY: " );
-														    }
-														    errorOutput.append( err.getClass().getName() + " " + err.getMessage() + ": \n" )
-														        .append( "\t" + Arrays.stream( e.getStackTrace() )
-														            .map( Object::toString )
-														            .collect( Collectors.joining( System.lineSeparator() + "\t" ) ) );
-
-														    err	= err.getCause();
-														    first = false;
-													    }
-													    errorOutput.append( "</pre>" );
-
-													    exchange.getResponseSender().send( errorOutput.toString() );
-
-													    e.printStackTrace();
-													    throw e;
-												    }
-											    }
-										    } )
+		    .setHandler( Handlers.predicate(
+		        // If this predicate evaluates to true, we process via BoxLang, otherwise, we serve a static file
+		        Predicates.parse( "regex( '^/(.+?\\.cf[cms])(/.*)?$' )" ),
+		        new BLHandler(),
+		        new ResourceHandler( new PathResourceManager( webRoot ) )
+		            .setDirectoryListingEnabled( true )
+		            .addWelcomeFiles( "index.cfm", "index.cfs" ) ) )
 		    .build();
 
 		BLServer.start();

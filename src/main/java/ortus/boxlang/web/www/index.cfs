@@ -1,8 +1,14 @@
+echo( '<img src="/images/BLLogo.png" align="right">' )
+
 echo( "<h1>My BoxLang website!</h1>" )
 
 echo( "<p>This page is being rendered BoxLang running inside of a super lightweight Undertow Server</p>" )
 echo( "<p>There is no servlet container, just pure Java web server goodness!</p>" )
+
 echo( "<hr>") 
+
 echo( "<b>now():</b> #now()#<br>" )  
 echo( "<b>url.jacob:</b> " & url.jacob ?: "none" & "<br>" )
-echo( "<b>cgi.SCRIPT_NAME:</b> " & cgi.SCRIPT_NAME  )
+echo( "<b>cgi.SCRIPT_NAME:</b> " & cgi.SCRIPT_NAME & "<br>" )
+echo( cookie.asString() )
+cookie.lastHit = now()

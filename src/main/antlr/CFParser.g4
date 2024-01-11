@@ -248,6 +248,7 @@ scope:
 	| CGI
 	| THREAD
 	| SESSION
+	| COOKIE
 	| URL
 	| FORM;
 //  TODO add additional known scopes
