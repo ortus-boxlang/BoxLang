@@ -121,6 +121,7 @@ public class Key {
 	public static final Key	recursive					= Key.of( "recursive" );
 	public static final Key	replacements				= Key.of( "replacements" );
 	public static final Key	runtime						= Key.of( "runtime" );
+	public static final Key	script_name					= Key.of( "script_name" );
 	public static final Key	second						= Key.of( "second" );
 	public static final Key	seekable					= Key.of( "seekable" );
 	public static final Key	size						= Key.of( "size" );

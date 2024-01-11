@@ -70,6 +70,7 @@ public class BoxScriptTransformer extends AbstractTransformer {
 		import ortus.boxlang.runtime.operators.*;
 		import ortus.boxlang.runtime.scopes.Key;
 		import ortus.boxlang.runtime.scopes.*;
+		import ortus.boxlang.web.scopes.*;
 		import ortus.boxlang.runtime.dynamic.casters.*;
 		import ortus.boxlang.runtime.types.exceptions.ExceptionUtil;
 		import ortus.boxlang.runtime.types.*;

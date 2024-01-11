@@ -245,8 +245,11 @@ scope:
 	| VARIABLES
 	| THIS
 	| SUPER
+	| CGI
 	| THREAD
-	| SESSION;
+	| SESSION
+	| URL
+	| FORM;
 //  TODO add additional known scopes
 
 try: TRY statementBlock ( catch_)* finally_?;

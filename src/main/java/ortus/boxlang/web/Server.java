@@ -50,8 +50,10 @@ public class Server {
 											    public void handleRequest( io.undertow.server.HttpServerExchange exchange ) throws Exception {
 												    try {
 													    WebBoxContext context	= new WebBoxContext( BoxRuntime.getInstance().getRuntimeContext(), exchange );
-
 													    String		requestPath	= exchange.getRequestPath();
+													    if ( requestPath.endsWith( "favicon.ico" ) ) {
+														    return;
+													    }
 													    if ( requestPath.equals( "/" ) ) {
 														    requestPath = "/index.cfm";
 													    }

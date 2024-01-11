@@ -860,31 +860,7 @@ public class BoxCFParser extends BoxAbstractParser {
 	 * @see BoxScope for the reserved keywords used to identify a scope
 	 */
 	private BoxExpr toAst( File file, CFParser.ScopeContext node ) {
-		if ( node.VARIABLES() != null ) {
-			return new BoxScope( node.VARIABLES().getText(), getPosition( node ), getSourceText( node ) );
-		}
-		if ( node.LOCAL() != null ) {
-			return new BoxScope( node.LOCAL().getText(), getPosition( node ), getSourceText( node ) );
-		}
-		if ( node.APPLICATION() != null ) {
-			return new BoxScope( node.APPLICATION().getText(), getPosition( node ), getSourceText( node ) );
-		}
-		if ( node.ARGUMENTS() != null ) {
-			return new BoxScope( node.ARGUMENTS().getText(), getPosition( node ), getSourceText( node ) );
-		}
-		if ( node.REQUEST() != null ) {
-			return new BoxScope( node.REQUEST().getText(), getPosition( node ), getSourceText( node ) );
-		}
-		if ( node.THIS() != null ) {
-			return new BoxScope( node.THIS().getText(), getPosition( node ), getSourceText( node ) );
-		}
-		if ( node.SUPER() != null ) {
-			return new BoxScope( node.SUPER().getText(), getPosition( node ), getSourceText( node ) );
-		}
-		if ( node.SESSION() != null ) {
-			return new BoxScope( node.SESSION().getText(), getPosition( node ), getSourceText( node ) );
-		}
-		throw new IllegalStateException( "not implemented: " + node.getClass().getSimpleName() );
+		return new BoxScope( node.getText(), getPosition( node ), getSourceText( node ) );
 	}
 
 	/**

@@ -24,7 +24,9 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 import javax.tools.DiagnosticCollector;
@@ -74,6 +76,8 @@ public class JavaBoxpiler {
 	private JavaDynamicClassLoader	classLoader;
 
 	private DiskClassLoader			diskClassLoader;
+
+	private Map<String, Integer>	classCounter	= new HashMap<String, Integer>();
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -219,14 +223,25 @@ public class JavaBoxpiler {
 		File	lcaseFile	= new File( packagePath.toString().toLowerCase() );
 		String	packageName	= getPackageName( lcaseFile );
 		packageName = "templates" + ( packageName.equals( "" ) ? "" : "." ) + packageName;
-		String	className		= getClassName( lcaseFile );
-		String	fqn				= packageName + "." + className;
-		long	lastModified	= path.toFile().lastModified();
+		String	className			= getClassName( lcaseFile );
+		String	fqn					= packageName + "." + className;
+		String	originalClassName	= className;
+		String	originalfqn			= fqn;
+		var		compileCount		= classCounter.getOrDefault( fqn, 0 );
+
+		className	= className + compileCount;
+		fqn			= fqn + compileCount;
+		long lastModified = path.toFile().lastModified();
 
 		if ( !classLoader.hasClass( fqn, lastModified ) ) {
 			if ( diskClassLoader.hasClass( fqn, lastModified ) ) {
 				return getDiskClass( fqn );
 			} else {
+				classCounter.put( originalfqn, ++compileCount );
+
+				className	= originalClassName + compileCount;
+				fqn			= originalfqn + compileCount;
+
 				BoxParser		parser	= new BoxParser();
 				ParsingResult	result;
 				try {
@@ -307,7 +322,8 @@ public class JavaBoxpiler {
 	}
 
 	public Class<IClassRunnable> compileClass( Path path, String packagePath ) {
-		String boxPackagePath = packagePath;
+		long	lastModified	= path.toFile().lastModified();
+		String	boxPackagePath	= packagePath;
 		if ( boxPackagePath.endsWith( "." ) ) {
 			boxPackagePath = boxPackagePath.substring( 0, boxPackagePath.length() - 1 );
 		}
@@ -316,13 +332,23 @@ public class JavaBoxpiler {
 		if ( packagePath.endsWith( "." ) ) {
 			packagePath = packagePath.substring( 0, packagePath.length() - 1 );
 		}
-		String	className	= getClassName( path.toFile() );
-		String	fqn			= packagePath + "." + className;
+		String	className			= getClassName( path.toFile() );
+		String	fqn					= packagePath + "." + className;
+		String	originalClassName	= className;
+		String	originalfqn			= fqn;
+		var		compileCount		= classCounter.getOrDefault( fqn, 0 );
+		className	= className + compileCount;
+		fqn			= fqn + compileCount;
 
-		if ( !classLoader.hasClass( fqn ) ) {
-			if ( diskClassLoader.hasClass( fqn ) ) {
+		if ( !classLoader.hasClass( fqn, lastModified ) ) {
+			if ( diskClassLoader.hasClass( fqn, lastModified ) ) {
 				return getDiskClassClass( fqn );
 			} else {
+				classCounter.put( originalfqn, ++compileCount );
+
+				className	= originalClassName + compileCount;
+				fqn			= originalfqn + compileCount;
+
 				BoxParser		parser	= new BoxParser();
 				ParsingResult	result;
 				try {

@@ -29,6 +29,9 @@ import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.UDF;
 import ortus.boxlang.runtime.types.exceptions.KeyNotFoundException;
 import ortus.boxlang.runtime.types.exceptions.ScopeNotFoundException;
+import ortus.boxlang.web.scopes.CGIScope;
+import ortus.boxlang.web.scopes.FormScope;
+import ortus.boxlang.web.scopes.URLScope;
 
 /**
  * This context represents the context of a web/HTTP site in BoxLang
@@ -54,6 +57,17 @@ public class WebBoxContext extends BaseBoxContext {
 	 */
 	protected IScope				requestScope	= new RequestScope();
 
+	protected IScope				URLScope;
+	protected IScope				FormScope;
+	protected IScope				CGIScope;
+
+	/*
+	 * TODO:
+	 * url scope
+	 * form scope
+	 * cgi scope
+	 * cookie scope
+	 */
 	protected HttpServerExchange	exchange;
 
 	/**
@@ -69,7 +83,10 @@ public class WebBoxContext extends BaseBoxContext {
 	 */
 	public WebBoxContext( IBoxContext parent, HttpServerExchange exchange ) {
 		super( parent );
-		this.exchange = exchange;
+		this.exchange	= exchange;
+		URLScope		= new URLScope( exchange );
+		FormScope		= new FormScope( exchange );
+		CGIScope		= new CGIScope( exchange );
 	}
 
 	/**
@@ -121,6 +138,27 @@ public class WebBoxContext extends BaseBoxContext {
 	 */
 	public ScopeSearchResult scopeFind( Key key, IScope defaultScope ) {
 
+		Object result = CGIScope.getRaw( key );
+		// Null means not found
+		if ( result != null ) {
+			// Unwrap the value now in case it was really actually null for real
+			return new ScopeSearchResult( CGIScope, Struct.unWrapNull( result ) );
+		}
+
+		result = URLScope.getRaw( key );
+		// Null means not found
+		if ( result != null ) {
+			// Unwrap the value now in case it was really actually null for real
+			return new ScopeSearchResult( URLScope, Struct.unWrapNull( result ) );
+		}
+
+		result = FormScope.getRaw( key );
+		// Null means not found
+		if ( result != null ) {
+			// Unwrap the value now in case it was really actually null for real
+			return new ScopeSearchResult( FormScope, Struct.unWrapNull( result ) );
+		}
+
 		if ( parent != null ) {
 			return parent.scopeFind( key, defaultScope );
 		}
@@ -145,6 +183,18 @@ public class WebBoxContext extends BaseBoxContext {
 
 		if ( name.equals( requestScope.getName() ) ) {
 			return requestScope;
+		}
+
+		if ( name.equals( URLScope.getName() ) ) {
+			return URLScope;
+		}
+
+		if ( name.equals( FormScope.getName() ) ) {
+			return FormScope;
+		}
+
+		if ( name.equals( CGIScope.getName() ) ) {
+			return CGIScope;
 		}
 
 		if ( parent != null ) {
