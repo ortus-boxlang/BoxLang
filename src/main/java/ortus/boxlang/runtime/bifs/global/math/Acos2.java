@@ -25,12 +25,12 @@ import ortus.boxlang.runtime.types.BoxLangType;
 
 @BoxBIF
 @BoxMember( type = BoxLangType.NUMERIC )
-public class ASin extends BIF {
+public class Acos2 extends BIF {
 
 	/**
 	 * Constructor
 	 */
-	public ASin() {
+	public Acos2() {
 		super();
 		declaredArguments = new Argument[] {
 		    new Argument( true, "numeric", Key.number )
@@ -38,18 +38,18 @@ public class ASin extends BIF {
 	}
 
 	/**
-	 * Returns the arcsine (inverse sine) of a number
+	 * Returns the arccosine (inverse cosine) of a number
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.number The number to calculate the arcsine of
+	 * @argument.value The number to calculate the arccosine of
 	 */
 	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
 		double value = arguments.getAsDouble( Key.number );
 		if ( value < -1.0 || value > 1.0 ) {
-			throw new IllegalArgumentException( "Input value must be in the range [-1, 1] for ASin function." );
+			throw new IllegalArgumentException( "Input value must be in the range [-1, 1] for ACos function." );
 		}
-		return Math.asin( value );
+		return Math.acos( value );
 	}
 }
