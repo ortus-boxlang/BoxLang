@@ -37,6 +37,7 @@ sourceSets {
             srcDirs = ['src/main/resources']
             include '**/*.properties'
             include '**/*.json'
+            include '**/*.cfs'
             include '**/META-INF/services/*'
         }
     }

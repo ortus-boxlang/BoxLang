@@ -1,0 +1,10 @@
+// Struct template
+echo( "<table border='1' cellpadding='5' cellspacing='0'>" )
+echo( '<tr><th colspan="2">Struct: #var.len()# items</th></tr>' )
+for ( key in var ) {
+	echo( "<tr><td>#key#</td><td>" )
+	dump(var[key])
+	echo( "</td></tr>" )
+}
+echo( "</table>" )
+

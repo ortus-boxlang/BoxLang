@@ -1,0 +1,10 @@
+// array template
+echo( "<table border='1' cellpadding='5' cellspacing='0'>" )
+echo( '<tr><th colspan="2">Array: #var.len()# items</th></tr>' )
+for ( i = 1; i <= var.len(); i++ ) {
+	echo( "<tr><td>#i#</td><td>" )
+	dump(var[i])
+	echo( "</td></tr>" )
+}
+echo( "</table>" )
+

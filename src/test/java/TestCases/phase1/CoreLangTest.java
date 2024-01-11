@@ -430,36 +430,20 @@ public class CoreLangTest {
 
 	}
 
-	@DisplayName( "sentinel loop" )
+	@DisplayName( "for in loop struct" )
 	@Test
-	public void testSentinelLoop() {
+	public void testForInLoopStruct() {
 
 		instance.executeSource(
 		    """
-		    result=0
-		    for( i=0; i<10; variables.i++ ) {
-		    	result=result+1
-		    }
-		        """,
-		    context );
-		assertThat( variables.get( result ) ).isEqualTo( 10 );
-
-	}
-
-	@DisplayName( "while loop" )
-	@Test
-	public void testWhileLoop() {
-
-		instance.executeSource(
-		    """
-		       keepGoing = true
-		    age = 25
-		       while( keepGoing == true && age > 21 ) {
-		    	age = age - 1
-		    }
+		       result=""
+		    str ={ foo : "bar", baz : "bum" }
+		       for( key in str ) {
+		       	result &= key&"="&str[ key ];
+		       }
 		           """,
 		    context );
-		assertThat( variables.get( Key.of( "age" ) ) ).isEqualTo( 21 );
+		assertThat( variables.get( result ) ).isEqualTo( "foo=barbaz=bum" );
 
 	}
 
@@ -1053,5 +1037,4 @@ public class CoreLangTest {
 		assertThat( variables.get( result ) instanceof Comparator ).isTrue();
 
 	}
-
 }

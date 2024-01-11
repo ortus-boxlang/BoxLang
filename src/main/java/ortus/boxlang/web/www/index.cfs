@@ -12,3 +12,19 @@ echo( "<b>url.jacob:</b> " & url.jacob ?: "none" & "<br>" )
 echo( "<b>cgi.SCRIPT_NAME:</b> " & cgi.SCRIPT_NAME & "<br>" )
 echo( cookie.asString() )
 cookie.lastHit = now()
+
+dump( {
+	 foo : "bar", 
+	 baz : "bum", 
+	 "nested" : [
+		"brad",
+		"luis",
+		[ 
+			"jacob" , 
+			35, 
+			true 
+		]
+	] 
+} )
+
+dump( new java:java.io.File("") )

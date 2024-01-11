@@ -61,6 +61,7 @@ public class BoxForInTransformer extends AbstractTransformer {
 		int							forInCount		= transpiler.incrementAndGetForInCounter();
 		String						jVarName		= "forInIterator" + forInCount;
 		String						jisQueryName	= "isQuery" + forInCount;
+		String						jisStructName	= "isStruct" + forInCount;
 		String						jCollectionName	= "collection" + forInCount;
 
 		BlockStmt					stmt			= new BlockStmt();
@@ -70,6 +71,8 @@ public class BoxForInTransformer extends AbstractTransformer {
 														{
 															put( "variable", jVarName );
 															put( "isQueryName", jisQueryName );
+															put( "isStructName", jisStructName );
+															put( "jVarName", jVarName );
 															put( "collectionName", jCollectionName );
 															put( "collection", collection.toString() );
 															put( "contextName", transpiler.peekContextName() );
@@ -82,7 +85,7 @@ public class BoxForInTransformer extends AbstractTransformer {
 		}
 		Node loopAssignment = new BoxAssignmentTransformer( ( JavaTranspiler ) transpiler ).transformEquals(
 		    boxFor.getVariable(),
-		    ( Expression ) parseExpression( jVarName + ".next()", values ),
+		    ( Expression ) parseExpression( "${isStructName} ? ((Key)${jVarName}.next()).getName() : ${jVarName}.next()", values ),
 		    BoxAssignmentOperator.Equal,
 		    modifiers,
 		    ( boxFor.getHasVar() ? "var " : "" ) + boxFor.getVariable().getSourceText(),
@@ -96,12 +99,17 @@ public class BoxForInTransformer extends AbstractTransformer {
 		String		template1a			= """
 		                                  Boolean ${isQueryName} = ${collectionName} instanceof Query;
 		                                                     """;
+
 		String		template1b			= """
+		                                  Boolean ${isStructName} = ${collectionName} instanceof Struct;
+		                                                     """;
+
+		String		template1c			= """
 		                                  if( ${isQueryName} ) {
 		                                  	${contextName}.registerQueryLoop( (Query) ${collectionName} );
 		                                  }
 		                                                     """;
-		String		template1c			= """
+		String		template1d			= """
 		                                  	Iterator ${variable} = CollectionCaster.cast( ${collectionName} ).iterator();
 		                                  """;
 		String		template2a			= """
@@ -127,6 +135,7 @@ public class BoxForInTransformer extends AbstractTransformer {
 		stmt.addStatement( ( Statement ) parseStatement( template1a, values ) );
 		stmt.addStatement( ( Statement ) parseStatement( template1b, values ) );
 		stmt.addStatement( ( Statement ) parseStatement( template1c, values ) );
+		stmt.addStatement( ( Statement ) parseStatement( template1d, values ) );
 		boxFor.getBody().forEach( it -> {
 			whileStmt.getBody().asBlockStmt().addStatement( ( Statement ) transpiler.transform( it ) );
 		} );

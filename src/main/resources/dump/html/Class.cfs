@@ -1,0 +1,38 @@
+// table of class data
+echo( "<table border='1' cellpadding='5' cellspacing='0'>" )
+echo( '<tr><th colspan="2"><b>#var.getClass().getSimpleName()#</b></th></tr>' )
+
+echo( "<tr><td>Class</td><td>#var.getClass().getName()#</td></tr>" )
+
+echo( "<tr><td>Fields</td><td>" )
+	fields = var.getClass().getDeclaredFields();
+		echo( "<table border='1' cellpadding='5' cellspacing='0'>" )
+		echo( '<tr><th><b>Name</b></th><th><b>Signature</b></th></tr>' )		
+		for( field in fields ) {
+			echo( "<tr><td>#field.getName()#</td><td>#field.toString()#</td></tr>" )
+		}
+		echo( "</table>" )
+	//...
+echo( "</td></tr>" )
+
+echo( "<tr><td>Constructors</td><td>" )
+	constructors = var.getClass().getDeclaredConstructors();
+	echo( "<table border='1' cellpadding='5' cellspacing='0'>" )
+	echo( '<tr><th><b>Name</b></th><th><b>Signature</b></th></tr>' )	
+	for( constructor in constructors ) {
+		echo( "<tr><td>#constructor.getName()#</td><td>#constructor.toString()#</td></tr>" )
+	}
+	echo( "</table>" )
+echo( "</td></tr>" )
+
+echo( "<tr><td>Methods</td><td>" )
+	methods = var.getClass().getDeclaredMethods();
+	echo( "<table border='1' cellpadding='5' cellspacing='0'>" )
+	echo( '<tr><th><b>Name</b></th><th><b>Signature</b></th></tr>' )	
+	for( method in methods ) {
+		echo( "<tr><td>#method.getName()#</td><td>#method.toString()#</td></tr>" )
+	}
+	echo( "</table>" )
+echo( "</td></tr>" )
+
+echo( "</table>" )

@@ -17,29 +17,18 @@
  */
 package ortus.boxlang.runtime.context;
 
-import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
-import ortus.boxlang.runtime.scopes.RequestScope;
 import ortus.boxlang.runtime.scopes.VariablesScope;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.UDF;
-import ortus.boxlang.runtime.types.exceptions.KeyNotFoundException;
 import ortus.boxlang.runtime.types.exceptions.ScopeNotFoundException;
 
 /**
- * This context represents the context of a scripting execution in BoxLang
- * There a variables and request scope present.
- *
- * The request scope may or may not belong here, but we're sort of using the scripting
- * context as the top level context for an execution request right now, so it make the
- * most sense here currently.
- *
- * There may or may NOT be a template defined.
+ * This context provides a "container" to run some code in where we want to have our own
+ * variables scope, but otherwise want to inherit the rest of the requests' scopes
  */
-public class ScriptingBoxContext extends BaseBoxContext {
-
-	private static BoxRuntime	runtime			= BoxRuntime.getInstance();
+public class ContainerBoxContext extends BaseBoxContext {
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -50,12 +39,7 @@ public class ScriptingBoxContext extends BaseBoxContext {
 	/**
 	 * The variables scope
 	 */
-	protected IScope			variablesScope	= new VariablesScope();
-
-	/**
-	 * The request scope
-	 */
-	protected IScope			requestScope	= new RequestScope();
+	protected IScope variablesScope = new VariablesScope();
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -68,15 +52,8 @@ public class ScriptingBoxContext extends BaseBoxContext {
 	 *
 	 * @param parent The parent context
 	 */
-	public ScriptingBoxContext( IBoxContext parent ) {
+	public ContainerBoxContext( IBoxContext parent ) {
 		super( parent );
-	}
-
-	/**
-	 * Creates a new execution context
-	 */
-	public ScriptingBoxContext() {
-		this( runtime.getRuntimeContext() );
 	}
 
 	/**
@@ -89,20 +66,7 @@ public class ScriptingBoxContext extends BaseBoxContext {
 	 * Try to get the requested key from the unscoped scope
 	 * Meaning it needs to search scopes in order according to it's context.
 	 * A local lookup is used for the closest context to the executing code
-	 *
-	 * Here is the order for bx templates
-	 * (Not all yet implemented and some will be according to platform: WebContext, AndroidContext, IOSContext, etc)
-	 *
-	 * 1. Query (only in query loops)
-	 * 2. Thread
-	 * 3. Variables
-	 * 4. CGI (should it exist in the core runtime?)
-	 * 5. CFFILE
-	 * 6. URL (Only for web runtime)
-	 * 7. FORM (Only for web runtime)
-	 * 8. COOKIE (Only for web runtime)
-	 * 9. CLIENT (Only for web runtime)
-	 *
+	 * 
 	 * @param key The key to search for
 	 *
 	 * @return The value of the key if found
@@ -140,19 +104,7 @@ public class ScriptingBoxContext extends BaseBoxContext {
 	 *
 	 */
 	public ScopeSearchResult scopeFind( Key key, IScope defaultScope ) {
-
-		if ( parent != null ) {
-			return parent.scopeFind( key, defaultScope );
-		}
-
-		// Default scope requested for missing keys
-		if ( defaultScope != null ) {
-			return new ScopeSearchResult( defaultScope, null );
-		}
-		// Not found anywhere
-		throw new KeyNotFoundException(
-		    String.format( "The requested key [%s] was not located in any scope or it's undefined", key.getName() )
-		);
+		return parent.scopeFind( key, defaultScope );
 	}
 
 	/**
@@ -162,20 +114,7 @@ public class ScriptingBoxContext extends BaseBoxContext {
 	 * @return The requested scope
 	 */
 	public IScope getScope( Key name ) throws ScopeNotFoundException {
-
-		if ( name.equals( requestScope.getName() ) ) {
-			return requestScope;
-		}
-
-		if ( parent != null ) {
-			return parent.getScope( name );
-		}
-
-		// Not found anywhere
-		throw new ScopeNotFoundException(
-		    String.format( "The requested scope name [%s] was not located in any context", name.getName() )
-		);
-
+		return parent.getScope( name );
 	}
 
 	/**
@@ -208,25 +147,6 @@ public class ScriptingBoxContext extends BaseBoxContext {
 	 */
 	public IScope getDefaultAssignmentScope() {
 		return variablesScope;
-	}
-
-	/**
-	 * Flush the buffer to the output stream
-	 * 
-	 * @param force true, flush even if output is disabled
-	 * 
-	 * @return This context
-	 */
-	public IBoxContext flushBuffer( boolean force ) {
-		String output;
-		synchronized ( buffer ) {
-			output = buffer.toString();
-			clearBuffer();
-		}
-		// If a scripting context is our top-level context, we flush to the console.
-		System.out.print( output );
-
-		return this;
 	}
 
 }

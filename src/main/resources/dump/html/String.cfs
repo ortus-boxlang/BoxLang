@@ -1,0 +1,3 @@
+// string template
+echo( "String: #var#" )
+

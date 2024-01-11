@@ -48,7 +48,9 @@ public class Concat implements IOperator {
 	public static String invoke( Object... segments ) {
 		StringBuilder sb = new StringBuilder();
 		for ( Object segment : segments ) {
-			sb.append( StringCaster.cast( segment ) );
+			if ( segment != null ) {
+				sb.append( StringCaster.cast( segment ) );
+			}
 		}
 		return sb.toString();
 	}

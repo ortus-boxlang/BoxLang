@@ -117,6 +117,7 @@ public class BoxFunctionDeclarationTransformer extends AbstractTransformer {
 
 			@Override
 			public Object _invoke( FunctionBoxContext context ) {
+				ClassLocator classLocator = ClassLocator.getInstance();
 
 			}
 		}
