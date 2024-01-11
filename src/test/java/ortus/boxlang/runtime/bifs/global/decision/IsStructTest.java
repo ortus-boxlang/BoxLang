@@ -23,7 +23,6 @@ import static com.google.common.truth.Truth.assertThat;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -34,7 +33,6 @@ import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
 
-@Disabled( "Unimplemented" )
 public class IsStructTest {
 
 	static BoxRuntime	instance;
@@ -58,20 +56,29 @@ public class IsStructTest {
 		variables.clear();
 	}
 
-	@DisplayName( "It detects binary values" )
+	@DisplayName( "It detects struct values" )
 	@Test
 	public void testTrueConditions() {
-		instance.executeSource(
-		    """
-		    result = isBinary( toBinary( toBase64( "boxlang" ) ) );
-		    """,
-		    context );
-		assertThat( ( Boolean ) variables.get( Key.of( "result" ) ) ).isTrue();
+		assertThat( ( Boolean ) instance.executeStatement( "isStruct( {} )", context ) ).isTrue();
 	}
 
-	@DisplayName( "It returns false for non-binary values" )
+	@DisplayName( "It detects non-struct values" )
 	@Test
 	public void testFalseConditions() {
+		instance.executeSource(
+		    """
+		     myStruct = {};
+		     resultNumber = isStruct( 0 );
+		     resultBoolean = isStruct( false );
+		     resultDate = isStruct( now() );
+		        resultArray = isStruct( [] );
+		        resultString = isStruct( 'someString' );
+		    """,
+		    context );
+		assertThat( ( Boolean ) variables.get( Key.of( "resultNumber" ) ) ).isFalse();
+		assertThat( ( Boolean ) variables.get( Key.of( "resultBoolean" ) ) ).isFalse();
+		assertThat( ( Boolean ) variables.get( Key.of( "resultDate" ) ) ).isFalse();
+		assertThat( ( Boolean ) variables.get( Key.of( "resultArray" ) ) ).isFalse();
+		assertThat( ( Boolean ) variables.get( Key.of( "resultString" ) ) ).isFalse();
 	}
-
 }

@@ -139,6 +139,7 @@ public class Key {
 	public static final Key	type						= Key.of( "type" );
 	public static final Key	value						= Key.of( "value" );
 	public static final Key	var							= Key.of( "var" );
+	public static final Key	variable					= Key.of( "variable" );
 	public static final Key	year						= Key.of( "year" );
 
 	/**
