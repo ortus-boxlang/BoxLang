@@ -30,13 +30,17 @@ import java.nio.file.Path;
 import java.nio.file.PathMatcher;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
+import java.nio.file.attribute.PosixFilePermission;
+import java.nio.file.attribute.PosixFilePermissions;
 import java.util.Comparator;
 import java.util.Iterator;
+import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.apache.commons.io.IOUtils;
 
+import ortus.boxlang.runtime.dynamic.casters.IntegerCaster;
 import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.exceptions.BoxIOException;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
@@ -371,6 +375,112 @@ public final class FileSystemUtil {
 		Object[] mimeParts = mimeType.split( "/" );
 
 		return !TEXT_MIME_PREFIXES.contains( ( String ) mimeParts[ 0 ] ) && !TEXT_MIME_PREFIXES.contains( ( String ) mimeParts[ mimeParts.length - 1 ] );
+	}
+
+	/**
+	 * gets the posix permission of a file or directory
+	 *
+	 * @param filePath the file path string
+	 *
+	 * @return the permission set
+	 *
+	 * @throws IOException
+	 */
+	public static Set<PosixFilePermission> getPosixPermissions( String filePath ) throws IOException {
+		Path path = Path.of( filePath );
+		if ( !isPosixCompliant( path ) ) {
+			throw new BoxRuntimeException( "The underlying file system for path  [" + filePath + "] is not posix compliant." );
+		} else {
+			return Files.getPosixFilePermissions( Path.of( filePath ) );
+		}
+	}
+
+	/**
+	 * Tests whether the file system requested by the path is posix compliant
+	 *
+	 * @param filePath the file path string
+	 *
+	 * @return A boolean as to whether the the file system is compliant
+	 */
+	public static Boolean isPosixCompliant( Object filePath ) {
+		Path path = null;
+		if ( filePath instanceof String ) {
+			path = Path.of( ( String ) filePath );
+		} else {
+			path = ( Path ) filePath;
+		}
+		return path.getFileSystem().supportedFileAttributeViews().contains( "posix" );
+	}
+
+	/**
+	 * Sets the posix permissions on a file
+	 *
+	 * @param filePath the file path string or File instance
+	 * @param mode     the cast three-digit string noting the permissions
+	 */
+	public static void setPosixPermissions( Object filePath, String mode ) {
+		Path path = null;
+		if ( filePath instanceof String ) {
+			path = Path.of( ( String ) filePath );
+		} else {
+			path = ( Path ) filePath;
+		}
+		if ( !isPosixCompliant( path ) ) {
+			throw new BoxRuntimeException( "The underlying file system for path  [" + filePath + "] is not posix compliant." );
+		} else if ( mode.length() != 3 ) {
+			throw new BoxRuntimeException( "The file or directory mode [" + mode + "] is not a valid permission set." );
+		} else {
+			try {
+				// try an integer cast to make sure it's a valid directive set
+				try {
+					IntegerCaster.cast( mode );
+				} catch ( Exception e ) {
+					throw new BoxRuntimeException( "The file or directory mode [" + mode + "] is not a valid permission set." );
+				}
+				Files.setPosixFilePermissions( path, integerToPosixPermissions( mode ) );
+			} catch ( IOException e ) {
+				throw new BoxIOException( e );
+			}
+		}
+	}
+
+	/**
+	 * Utility method to parse numeric permission mode in to a usable permission set
+	 *
+	 * @param mode The numeric string representation of the mode ( e.g. 755, 644, etc )
+	 *
+	 * @return The PosixFilePermission set
+	 */
+	private static Set<PosixFilePermission> integerToPosixPermissions( String mode ) {
+		final char[]	directiveSet	= mode.toCharArray();
+		final char[]	attributeSet	= { '-', '-', '-', '-', '-', '-', '-', '-', '-' };
+		for ( int i = directiveSet.length - 1; i >= 0; i-- ) {
+			int n = directiveSet[ i ] - '0';
+			if ( i == directiveSet.length - 1 ) {
+				if ( ( n & 1 ) != 0 )
+					attributeSet[ 8 ] = 'x';
+				if ( ( n & 2 ) != 0 )
+					attributeSet[ 7 ] = 'w';
+				if ( ( n & 4 ) != 0 )
+					attributeSet[ 6 ] = 'r';
+			} else if ( i == directiveSet.length - 2 ) {
+				if ( ( n & 1 ) != 0 )
+					attributeSet[ 5 ] = 'x';
+				if ( ( n & 2 ) != 0 )
+					attributeSet[ 4 ] = 'w';
+				if ( ( n & 4 ) != 0 )
+					attributeSet[ 3 ] = 'r';
+			} else if ( i == directiveSet.length - 3 ) {
+				if ( ( n & 1 ) != 0 )
+					attributeSet[ 2 ] = 'x';
+				if ( ( n & 2 ) != 0 )
+					attributeSet[ 1 ] = 'w';
+				if ( ( n & 4 ) != 0 )
+					attributeSet[ 0 ] = 'r';
+			}
+		}
+		String attributes = new String( attributeSet );
+		return PosixFilePermissions.fromString( attributes );
 	}
 
 	/**
