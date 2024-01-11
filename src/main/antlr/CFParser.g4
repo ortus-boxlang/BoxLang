@@ -305,7 +305,6 @@ expression:
 	| expression post = PLUSPLUS
 	| expression post = MINUSMINUS
 	| ICHAR expression ICHAR // #expression# outside of a string
-	| expression QM expression COLON expression // Ternary
 	| expression ( POWER) expression
 	| expression (STAR | SLASH | PERCENT | BACKSLASH) expression
 	| expression (PLUS | MINUS | MOD) expression
@@ -328,7 +327,8 @@ expression:
 	| expression INSTANCEOF expression // InstanceOf operator
 	| expression DOES NOT CONTAIN expression
 	| NOT expression
-	| expression (AND | OR) expression;
+	| expression (AND | OR) expression
+	| expression QM expression COLON expression; // Ternary
 // Logical
 
 // All literal expressions

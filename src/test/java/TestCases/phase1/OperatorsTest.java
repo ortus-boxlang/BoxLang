@@ -523,6 +523,26 @@ public class OperatorsTest {
 
 	}
 
+	@DisplayName( "It should properly handle comparison operators" )
+	@Test
+	public void testTernaryWithComparison() {
+
+		Object result = instance.executeStatement( "4 < 5 ? 'itwastrue' : 'itwasfalse'", context );
+		assertThat( result ).isEqualTo( "itwastrue" );
+
+		result = instance.executeStatement( "4 > 5 ? 'itwastrue' : 'itwasfalse'", context );
+		assertThat( result ).isEqualTo( "itwasfalse" );
+
+		instance.executeSource(
+		    """
+		    tmp = true;
+		    result = tmp == true ? 'itwastrue' : 'itwasfalse'
+		    """,
+		    context );
+		assertThat( context.getScopeNearby( VariablesScope.name ).get( Key.of( "result" ) ) ).isEqualTo( "itwastrue" );
+
+	}
+
 	@DisplayName( "instanceOf" )
 	@Test
 	public void testInstanceOf() {
