@@ -75,10 +75,19 @@ public class DateTime implements IType {
 	 */
 
 	/**
-	 * Constructor to create default DateTime representing the current instance
+	 * Constructor to create default DateTime representing the current instance and the default timezone
 	 */
 	public DateTime() {
-		this( ZonedDateTime.of( LocalDateTime.now(), ZoneId.systemDefault() ) );
+		this( ZoneId.systemDefault() );
+	}
+
+	/**
+	 * Constructor to create DateTime with a timezone
+	 *
+	 * @param zoneId The timezone to use
+	 */
+	public DateTime( ZoneId zoneId ) {
+		this( ZonedDateTime.of( LocalDateTime.now(), zoneId ) );
 	}
 
 	/**
@@ -391,13 +400,33 @@ public class DateTime implements IType {
 	/**
 	 * Sets the timezone of the current wrapped date time
 	 *
-	 * @param timeZone the string representation of the timezone
+	 * @param timeZone The string representation of the timezone; e.g. "America/New_York", "UTC", "Asia/Tokyo" etc.
 	 *
 	 * @return The new DateTime object with the timezone set
 	 */
 	public DateTime setTimezone( String timeZone ) {
-		this.wrapped = wrapped.withZoneSameLocal( ZoneId.of( timeZone ) );
+		return setTimezone( ZoneId.of( timeZone ) );
+	}
+
+	/**
+	 * Sets the timezone of the current wrapped date time using a ZoneId object
+	 *
+	 * @param zoneId The ZoneId object to use
+	 *
+	 * @return The new DateTime object with the timezone set
+	 */
+	public DateTime setTimezone( ZoneId zoneId ) {
+		this.wrapped = wrapped.withZoneSameLocal( zoneId );
 		return this;
+	}
+
+	/**
+	 * Get's the original wrapped ZonedDateTime object
+	 *
+	 * @return The original wrapped ZonedDateTime object
+	 */
+	public ZonedDateTime getWrapped() {
+		return this.wrapped;
 	}
 
 }

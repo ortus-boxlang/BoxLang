@@ -19,15 +19,15 @@ package ortus.boxlang.runtime.types;
 
 import static com.google.common.truth.Truth.assertThat;
 
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
+
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import ortus.boxlang.runtime.dynamic.casters.LongCaster;
-
-import java.time.format.DateTimeFormatter;
-import java.time.LocalDateTime;
-import java.time.ZonedDateTime;
-import java.time.ZoneId;
 
 public class DateTimeTest {
 
@@ -46,6 +46,16 @@ public class DateTimeTest {
 		assertThat( dateTimeFromParts.withFormat( "yyyy-MM-dd HH:mm:ss" ).toString() ).isEqualTo( "2023-12-31 12:30:30" );
 		DateTime dateFromParts = new DateTime( 2023, 12, 31 );
 		assertThat( dateFromParts.withFormat( "yyyy-MM-dd HH:mm:ss" ).toString() ).isEqualTo( "2023-12-31 00:00:00" );
+	}
+
+	@DisplayName( "Can create a DateTime with a specific timezone" )
+	@Test
+	void testTimezone() {
+		DateTime defaultDateTime = new DateTime();
+		assertThat( defaultDateTime.getWrapped().getZone() ).isEqualTo( ZoneId.systemDefault() );
+
+		defaultDateTime = new DateTime( ZoneId.of( "UTC" ) );
+		assertThat( defaultDateTime.getWrapped().getZone() ).isEqualTo( ZoneId.of( "UTC" ) );
 	}
 
 	@DisplayName( "Tests the default format method" )
