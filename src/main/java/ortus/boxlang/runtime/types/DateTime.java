@@ -37,22 +37,36 @@ public class DateTime implements IType {
 	 * Private Properties
 	 * --------------------------------------------------------------------------
 	 */
-	protected static ZonedDateTime		wrapped;
-
-	private static DateTimeFormatter	formatter;
 
 	/**
-	 * Public properties
+	 * Represents the wrapped ZonedDateTime object we enhance
+	 */
+	protected ZonedDateTime		wrapped;
+
+	/**
+	 * The format we use to represent the date time
+	 * which defaults to the ODBC format: {ts '''yyyy-MM-dd HH:mm:ss'''}
+	 */
+	private DateTimeFormatter	formatter						= DateTimeFormatter.ofPattern( ODBC_FORMAT_MASK );
+
+	/**
+	 * --------------------------------------------------------------------------
+	 * Public Properties
+	 * --------------------------------------------------------------------------
 	 */
 
-	public static final String			ODBC_FORMAT_MASK				= "'{ts '''yyyy-MM-dd HH:mm:ss'''}'";
-	public static final String			DEFAULT_DATE_FORMAT_MASK		= "dd-MMM-yy";
-	public static final String			DEFAULT_TIME_FORMAT_MASK		= "HH:mm a";
-	public static final String			DEFAULT_DATETIME_FORMAT_MASK	= "dd-MMM-yyyy HH:mm:ss";
+	/**
+	 * Formatters
+	 */
+	public static final String	ODBC_FORMAT_MASK				= "'{ts '''yyyy-MM-dd HH:mm:ss'''}'";
+	public static final String	DEFAULT_DATE_FORMAT_MASK		= "dd-MMM-yy";
+	public static final String	DEFAULT_TIME_FORMAT_MASK		= "HH:mm a";
+	public static final String	DEFAULT_DATETIME_FORMAT_MASK	= "dd-MMM-yyyy HH:mm:ss";
+
 	/**
 	 * Metadata object
 	 */
-	public BoxMeta						$bx;
+	public BoxMeta				$bx;
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -73,9 +87,7 @@ public class DateTime implements IType {
 	 * @param dateTime A zoned date time object
 	 */
 	public DateTime( ZonedDateTime dateTime ) {
-		// Set our default formatter to match Lucee's ODBC pattern
-		setFormat( ODBC_FORMAT_MASK );
-		wrapped = dateTime;
+		this.wrapped = dateTime;
 	}
 
 	/**
@@ -84,9 +96,7 @@ public class DateTime implements IType {
 	 * @param dateTime A zoned date time object
 	 */
 	public DateTime( Instant instant ) {
-		// Set our default formatter to match Lucee's ODBC pattern
-		setFormat( ODBC_FORMAT_MASK );
-		wrapped = ZonedDateTime.ofInstant( instant, ZoneId.systemDefault() );
+		this.wrapped = ZonedDateTime.ofInstant( instant, ZoneId.systemDefault() );
 	}
 
 	/**
@@ -96,8 +106,6 @@ public class DateTime implements IType {
 	 * @param mask     - a string representing the mask
 	 */
 	public DateTime( String dateTime, String mask ) {
-		// Set our default formatter to match Lucee's ODBC pattern
-		setFormat( ODBC_FORMAT_MASK );
 		ZonedDateTime parsed = null;
 		// try parsing if it fails then our time does not contain timezone info so we fall back to a local zoned date
 		try {
@@ -105,11 +113,14 @@ public class DateTime implements IType {
 		} catch ( java.time.format.DateTimeParseException e ) {
 			parsed = ZonedDateTime.of( LocalDateTime.parse( dateTime, getFormatter( mask ) ), ZoneId.systemDefault() );
 		} catch ( Exception e ) {
-			throw new BoxRuntimeException( String.format(
-			    "The the date time value of [" + dateTime + "] could not be parsed using the mask [" + mask + "]"
-			) );
+			throw new BoxRuntimeException(
+			    String.format(
+			        "The the date time value of [%s] could not be parsed using the mask [%s]",
+			        dateTime,
+			        mask
+			    ) );
 		}
-		wrapped = parsed;
+		this.wrapped = parsed;
 	}
 
 	/**
@@ -118,8 +129,6 @@ public class DateTime implements IType {
 	 * @param dateTime - a string representing the date and time
 	 */
 	public DateTime( String dateTime ) {
-		// Set our default formatter to match Lucee's ODBC pattern
-		setFormat( ODBC_FORMAT_MASK );
 		ZonedDateTime parsed = null;
 		try {
 			parsed = ZonedDateTime.parse( dateTime, formatter );
@@ -131,25 +140,27 @@ public class DateTime implements IType {
 			} catch ( java.time.format.DateTimeParseException x ) {
 				parsed = ZonedDateTime.of( LocalDateTime.of( LocalDate.parse( dateTime ), LocalTime.MIN ), ZoneId.systemDefault() );
 			} catch ( Exception x ) {
-				throw new BoxRuntimeException( String.format(
-				    "The the date time value of [" + dateTime + "] could not be parsed as a valid date or datetime"
-				) );
+				throw new BoxRuntimeException(
+				    String.format(
+				        "The the date time value of [%s] could not be parsed as a valid date or datetime",
+				        dateTime
+				    ) );
 			}
 		}
-
-		wrapped = parsed;
+		this.wrapped = parsed;
 	}
 
 	/**
 	 * Constructor to create DateTime from a numerics through millisecond
 	 *
-	 * @param year
-	 * @param month
-	 * @param day
-	 * @param hour
-	 * @param minute
-	 * @param second
-	 * @param milliseconds
+	 * @param year         The year
+	 * @param month        The month
+	 * @param day          The day
+	 * @param hour         The hour
+	 * @param minute       The minute
+	 * @param second       The second
+	 * @param milliseconds The milliseconds
+	 * @param timezone     The timezone
 	 */
 	public DateTime(
 	    Integer year,
@@ -169,25 +180,38 @@ public class DateTime implements IType {
 		        minute,
 		        second,
 		        milliseconds * 1000000,
-		        ZoneId.systemDefault()
+		        ( timezone != null ) ? ZoneId.of( timezone ) : ZoneId.systemDefault()
 		    )
 		);
-		if ( timezone != null ) {
-			setTimezone( timezone );
-		}
 	}
 
 	/**
-	 * Constructor to create DateTime from a numerics through day
+	 * Constructor to create DateTime from a numerics through day in the default timezone
 	 *
-	 * @param year
-	 * @param month
-	 * @param day
+	 * @param year  The year
+	 * @param month The month
+	 * @param day   The day
 	 */
 	public DateTime(
 	    Integer year,
 	    Integer month,
 	    Integer day ) {
+		this( year, month, day, null );
+	}
+
+	/**
+	 * Constructor to create DateTime from a numerics through day with a timezone
+	 *
+	 * @param year     The year
+	 * @param month    The month
+	 * @param day      The day
+	 * @param timezone The timezone
+	 */
+	public DateTime(
+	    Integer year,
+	    Integer month,
+	    Integer day,
+	    String timezone ) {
 		this(
 		    ZonedDateTime.of(
 		        year,
@@ -197,19 +221,23 @@ public class DateTime implements IType {
 		        0,
 		        0,
 		        0,
-		        ZoneId.systemDefault()
+		        ( timezone != null ) ? ZoneId.of( timezone ) : ZoneId.systemDefault()
 		    )
 		);
 	}
 
 	/**
 	 * --------------------------------------------------------------------------
-	 * Static convenience methods
+	 * Convenience methods
 	 * --------------------------------------------------------------------------
 	 */
 
 	/**
-	 * Returns a DateTime formatter from a pattern
+	 * Returns a DateTime formatter from a pattern passed in
+	 *
+	 * @param pattern the pattern to use
+	 *
+	 * @return the DateTimeFormatter object with the pattern
 	 */
 	private static DateTimeFormatter getFormatter( String pattern ) {
 		return DateTimeFormatter.ofPattern( pattern );
@@ -217,11 +245,12 @@ public class DateTime implements IType {
 
 	/**
 	 * Sets the current formatter with a mask
+	 * TODO: SHouldn't this be public?
 	 *
 	 * @param mask the formatting mask to use
 	 */
-	private static void setFormat( String mask ) {
-		formatter = DateTimeFormatter.ofPattern( mask );
+	private void setFormat( String mask ) {
+		this.formatter = DateTimeFormatter.ofPattern( mask );
 	}
 
 	/**
@@ -242,7 +271,6 @@ public class DateTime implements IType {
 	 *
 	 * @return The string representation
 	 */
-
 	public BoxMeta getBoxMeta() {
 		if ( this.$bx == null ) {
 			this.$bx = new GenericMeta( this );
@@ -257,11 +285,11 @@ public class DateTime implements IType {
 	 */
 
 	/**
-	 * Returns the datetime represntation as a string
+	 * Returns the datetime representation as a string
 	 **/
 	@Override
 	public String toString() {
-		return formatter.format( wrapped );
+		return this.formatter.format( this.wrapped );
 	}
 
 	/**
@@ -269,11 +297,11 @@ public class DateTime implements IType {
 	 *
 	 * @param mask the formatting mask to use
 	 *
-	 * @return
+	 * @return the date time representation as a string in the specified format mask
 	 */
 	public String format( String mask ) {
 		setFormat( mask );
-		return formatter.format( wrapped );
+		return this.formatter.format( wrapped );
 	}
 
 	/**
@@ -282,17 +310,17 @@ public class DateTime implements IType {
 	 * @return
 	 */
 	public String toISOString() {
-		formatter = DateTimeFormatter.ISO_OFFSET_DATE_TIME;
+		this.formatter = DateTimeFormatter.ISO_OFFSET_DATE_TIME;
 		return toString();
 	}
 
 	/**
 	 * Returns this date time as an instant
 	 *
-	 * @return
+	 * @return An instant representing this date time
 	 */
 	public Instant toInstant() {
-		return wrapped.toInstant();
+		return this.wrapped.toInstant();
 	}
 
 	/**
@@ -308,6 +336,7 @@ public class DateTime implements IType {
 	}
 
 	/**
+	 * TODO: What is the point of this method @jclausen?
 	 *
 	 * @param timeZone
 	 *
@@ -360,12 +389,14 @@ public class DateTime implements IType {
 	}
 
 	/**
-	 * Sets the timezone
+	 * Sets the timezone of the current wrapped date time
 	 *
 	 * @param timeZone the string representation of the timezone
+	 *
+	 * @return The new DateTime object with the timezone set
 	 */
 	public DateTime setTimezone( String timeZone ) {
-		wrapped = wrapped.withZoneSameLocal( ZoneId.of( timeZone ) );
+		this.wrapped = wrapped.withZoneSameLocal( ZoneId.of( timeZone ) );
 		return this;
 	}
 
