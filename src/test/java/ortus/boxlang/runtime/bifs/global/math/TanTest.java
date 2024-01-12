@@ -64,13 +64,13 @@ public class TanTest {
 		    result = tan(1);
 		    """,
 		    context );
-		assertThat( variables.get( result ) ).isEqualTo( Math.tan( 1 ) );
+		assertThat( variables.get( result ) ).isEqualTo( StrictMath.tan( 1 ) );
 		instance.executeSource(
 		    """
 		    result = tan(0.5);
 		    """,
 		    context );
-		assertThat( variables.get( result ) ).isEqualTo( Math.tan( 0.5 ) );
+		assertThat( variables.get( result ) ).isEqualTo( StrictMath.tan( 0.5 ) );
 	}
 
 	@DisplayName( "It returns tangent member" )
@@ -81,12 +81,12 @@ public class TanTest {
 		    result = (1).tan();
 		    """,
 		    context );
-		assertThat( variables.get( result ) ).isEqualTo( Math.tan( 1 ) );
+		assertThat( variables.get( result ) ).isEqualTo( StrictMath.tan( 1 ) );
 		instance.executeSource(
 		    """
 		    result = (0.5).tan();
 		    """,
 		    context );
-		assertThat( variables.get( result ) ).isEqualTo( Math.tan( 0.5 ) );
+		assertThat( variables.get( result ) ).isEqualTo( StrictMath.tan( 0.5 ) );
 	}
 }
