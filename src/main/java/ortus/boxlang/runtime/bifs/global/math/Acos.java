@@ -44,7 +44,7 @@ public class Acos extends BIF {
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.value The number to calculate the arccosine of
+	 * @argument.number The number to calculate the arccosine of
 	 */
 	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
 		double value = arguments.getAsDouble( Key.number );
