@@ -47,6 +47,7 @@ public class Key {
 	public static final Key	array2						= Key.of( "array2" );
 	public static final Key	arrayFind					= Key.of( "arrayFind" );
 	public static final Key	arrayFindAll				= Key.of( "arrayFindAll" );
+	public static final Key	attribute					= Key.of( "attribute" );
 	public static final Key	attributes					= Key.of( "attributes" );
 	public static final Key	buffersize					= Key.of( "buffersize" );
 	public static final Key	caches						= Key.of( "caches" );
