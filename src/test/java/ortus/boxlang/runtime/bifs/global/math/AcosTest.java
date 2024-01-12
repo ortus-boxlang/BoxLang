@@ -93,6 +93,7 @@ public class AcosTest {
 	}
 
 	@DisplayName( "It throws an exception when the input is out of range" )
+	@Test
 	public void testItThrowsAnExceptionWhenTheInputIsOutOfRange() {
 		assertThrows(
 		    BoxRuntimeException.class,
