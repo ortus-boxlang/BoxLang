@@ -64,7 +64,7 @@ public class NowTest {
 
 	@DisplayName( "It can retrieve the current date" )
 	@Test
-	public void testTrueConditions() {
+	void testTrueConditions() {
 		instance.executeSource(
 		    """
 		    result = now()
@@ -76,7 +76,22 @@ public class NowTest {
 		DateTimeFormatter	referenceFormatter	= DateTimeFormatter.ofPattern( "'{ts '''yyyy-MM-dd HH:mm:ss'''}'" );
 		assertThat( result.toString() ).isInstanceOf( String.class );
 		assertThat( result.toString() ).isEqualTo( referenceFormatter.format( referenceNow ) );
+	}
 
+	@DisplayName( "It can retrieve the current date with a timezone" )
+	@Test
+	void testTimezone() {
+		instance.executeSource(
+		    """
+		    result = now( "UTC" )
+		    """,
+		    context );
+		var result = variables.get( Key.of( "result" ) );
+		assertThat( result ).isInstanceOf( DateTime.class );
+		ZonedDateTime		referenceNow		= ZonedDateTime.of( LocalDateTime.now(), ZoneId.of( "UTC" ) );
+		DateTimeFormatter	referenceFormatter	= DateTimeFormatter.ofPattern( "'{ts '''yyyy-MM-dd HH:mm:ss'''}'" );
+		assertThat( result.toString() ).isInstanceOf( String.class );
+		assertThat( result.toString() ).isEqualTo( referenceFormatter.format( referenceNow ) );
 	}
 
 }
