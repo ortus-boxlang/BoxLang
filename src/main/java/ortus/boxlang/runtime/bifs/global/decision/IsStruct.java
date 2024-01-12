@@ -46,14 +46,8 @@ public class IsStruct extends BIF {
 	 * @param arguments Argument scope defining the value to test.
 	 */
 	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
-		Boolean				matchesDimension	= true;
-		CastAttempt<Struct>	attempt				= StructCaster.attempt( arguments.get( Key.variable ) );
-
-		if ( !attempt.wasSuccessful() ) {
-			return false;
-		}
-
-		return matchesDimension;
+		CastAttempt<Struct> attempt = StructCaster.attempt( arguments.get( Key.variable ) );
+		return attempt.wasSuccessful();
 	}
 
 }

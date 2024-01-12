@@ -60,6 +60,8 @@ public class IsStructTest {
 	@Test
 	public void testTrueConditions() {
 		assertThat( ( Boolean ) instance.executeStatement( "isStruct( {} )", context ) ).isTrue();
+		assertThat( ( Boolean ) instance.executeStatement( "isStruct( [:] )", context ) ).isTrue();
+		assertThat( ( Boolean ) instance.executeStatement( "isStruct( new java.util.HashMap() )", context ) ).isTrue();
 	}
 
 	@DisplayName( "It detects non-struct values" )
