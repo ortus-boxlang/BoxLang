@@ -58,7 +58,7 @@ public class FixTest {
 
 	@DisplayName( "It returns a fixed integer" )
 	@Test
-	public void testFixFunction() {
+	public void testItReturnsFixedInteger() {
 		instance.executeSource(
 		    """
 		    result = fix(1.8);
@@ -83,7 +83,7 @@ public class FixTest {
 
 	@DisplayName( "It returns a fixed integer member" )
 	@Test
-	public void testFixMember() {
+	public void testItReturnsFixedIntegerMember() {
 		instance.executeSource(
 		    """
 		    result = (1.8).fix();
