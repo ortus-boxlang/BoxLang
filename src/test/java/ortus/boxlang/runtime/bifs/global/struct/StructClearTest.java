@@ -80,10 +80,14 @@ public class StructClearTest {
 		    foods = { 'apples': 'fruit', 'bananas': 'fruit', 'pizza': 'delicious' };
 
 		    result = foods.clear();
+
 		    """,
 		    context );
-		assertThat( variables.get( result ) ).isEqualTo( true );
-		assertThat( ( ( Struct ) variables.get( Key.of( "foods" ) ) ).size() ).isEqualTo( 0 );
+
+		VariablesScope testVariables = ( VariablesScope ) variables;
+		assertThat( testVariables.getAsStruct( result ).size() ).isEqualTo( 0 );
+		assertThat( variables.get( result ) instanceof Struct ).isEqualTo( true );
+		assertThat( variables.get( Key.of( "foods" ) ) ).isEqualTo( variables.get( result ) );
 	}
 
 }

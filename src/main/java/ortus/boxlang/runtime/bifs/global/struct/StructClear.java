@@ -49,7 +49,10 @@ public class StructClear extends BIF {
 	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
 		Struct actualStruct = arguments.getAsStruct( Key.structure );
 		actualStruct.clear();
-		// CF Compat, but dumb
+
+		if ( arguments.getAsBoolean( ( BIF.__isMemberExecution ) ) ) {
+			return actualStruct;
+		}
 		return true;
 	}
 
