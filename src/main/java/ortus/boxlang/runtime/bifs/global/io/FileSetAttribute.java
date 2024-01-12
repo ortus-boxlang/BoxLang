@@ -37,12 +37,14 @@ public class FileSetAttribute extends BIF {
 	}
 
 	/**
-	 * Describe what the invocation of your bif function does
+	 * Sets a file access attribute
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.foo Describe any expected arguments
+	 * @argument.file The file path or File instance
+	 *
+	 * @argument.attribute The attribute to set true
 	 */
 	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
 		String	file	= null;
