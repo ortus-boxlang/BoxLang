@@ -39,6 +39,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang3.SystemUtils;
 
 import ortus.boxlang.runtime.dynamic.casters.IntegerCaster;
 import ortus.boxlang.runtime.types.Array;
@@ -69,6 +70,8 @@ public final class FileSystemUtil {
 	        "text"
 	    }
 	);
+
+	public static final Boolean	isWindows			= SystemUtils.IS_OS_WINDOWS;
 
 	/**
 	 * The OS line separator
