@@ -54,7 +54,7 @@ public class ArrayMin extends BIF {
 			min = DoubleCaster.cast( actualArray.get( 0 ) );
 		}
 		for ( int i = 1; i < actualArray.size(); i++ ) {
-			min = Math.min( min, DoubleCaster.cast( actualArray.get( i ) ) );
+			min = StrictMath.min( min, DoubleCaster.cast( actualArray.get( i ) ) );
 		}
 		return min;
 	}

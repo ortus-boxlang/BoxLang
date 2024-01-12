@@ -33,6 +33,6 @@ public class Sin extends BIF {
 	 */
 	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
 		double value = arguments.getAsDouble( Key.number );
-		return Math.sin( value );
+		return StrictMath.sin( value );
 	}
 }

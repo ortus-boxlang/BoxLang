@@ -46,7 +46,7 @@ public class Abs extends BIF {
 	 * @argument.value The number to return the absolute value of
 	 */
 	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
-		return Math.abs( arguments.getAsDouble( Key.value ) );
+		return StrictMath.abs( arguments.getAsDouble( Key.value ) );
 	}
 
 }

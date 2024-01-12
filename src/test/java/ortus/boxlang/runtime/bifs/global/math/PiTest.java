@@ -76,7 +76,7 @@ public class PiTest {
 		    result = pi() * 16;
 		    """,
 		    context );
-		assertThat( Math.round( ( ( Double ) variables.get( result ) ) * 10000d ) / 10000d ).isEqualTo( 50.2655 );
+		assertThat( StrictMath.round( ( ( Double ) variables.get( result ) ) * 10000d ) / 10000d ).isEqualTo( 50.2655 );
 	}
 
 }

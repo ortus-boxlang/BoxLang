@@ -59,6 +59,6 @@ public class Min extends BIF {
 	 * @param context
 	 */
 	public static Object _invoke( double number1, double number2 ) {
-		return Math.min( number1, number2 );
+		return StrictMath.min( number1, number2 );
 	}
 }

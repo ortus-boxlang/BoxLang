@@ -59,6 +59,6 @@ public class Max extends BIF {
 	 * @param context
 	 */
 	public static Object _invoke( double number1, double number2 ) {
-		return Math.max( number1, number2 );
+		return StrictMath.max( number1, number2 );
 	}
 }

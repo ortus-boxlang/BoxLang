@@ -51,6 +51,6 @@ public class Acos extends BIF {
 		if ( value < -1.0 || value > 1.0 ) {
 			throw new BoxRuntimeException( "Input value must be in the range [-1, 1] for ACos function." );
 		}
-		return Math.acos( value );
+		return StrictMath.acos( value );
 	}
 }

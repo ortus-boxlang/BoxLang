@@ -64,14 +64,14 @@ public class AtnTest {
 		    result = atn(1);
 		    """,
 		    context );
-		assertThat( variables.get( result ) ).isEqualTo( Math.atan( 1.0 ) );
+		assertThat( variables.get( result ) ).isEqualTo( StrictMath.atan( 1.0 ) );
 
 		instance.executeSource(
 		    """
 		    result = atn(0.5);
 		    """,
 		    context );
-		assertThat( variables.get( result ) ).isEqualTo( Math.atan( 0.5 ) );
+		assertThat( variables.get( result ) ).isEqualTo( StrictMath.atan( 0.5 ) );
 	}
 
 	@DisplayName( "It returns arctangent member" )
@@ -82,13 +82,13 @@ public class AtnTest {
 		    result = (1).atn();
 		    """,
 		    context );
-		assertThat( variables.get( result ) ).isEqualTo( Math.atan( 1.0 ) );
+		assertThat( variables.get( result ) ).isEqualTo( StrictMath.atan( 1.0 ) );
 
 		instance.executeSource(
 		    """
 		    result = (0.5).atn();
 		    """,
 		    context );
-		assertThat( variables.get( result ) ).isEqualTo( Math.atan( 0.5 ) );
+		assertThat( variables.get( result ) ).isEqualTo( StrictMath.atan( 0.5 ) );
 	}
 }

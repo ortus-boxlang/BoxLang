@@ -72,7 +72,7 @@ public class AcosTest {
 		    result = acos(0.5);
 		    """,
 		    context );
-		assertThat( variables.get( result ) ).isEqualTo( Math.acos( 0.5 ) );
+		assertThat( variables.get( result ) ).isEqualTo( StrictMath.acos( 0.5 ) );
 	}
 
 	@DisplayName( "It returns arccosine member" )
@@ -89,7 +89,7 @@ public class AcosTest {
 		    result = (0.5).acos();
 		    """,
 		    context );
-		assertThat( variables.get( result ) ).isEqualTo( Math.acos( 0.5 ) );
+		assertThat( variables.get( result ) ).isEqualTo( StrictMath.acos( 0.5 ) );
 	}
 
 	@DisplayName( "It throws an exception when the input is out of range" )

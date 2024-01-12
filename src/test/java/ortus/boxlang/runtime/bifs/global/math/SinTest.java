@@ -53,7 +53,7 @@ public class SinTest {
 		    result = sin(0.5);
 		    """,
 		    context );
-		assertThat( variables.get( result ) ).isEqualTo( Math.sin( 0.5 ) );
+		assertThat( variables.get( result ) ).isEqualTo( StrictMath.sin( 0.5 ) );
 	}
 
 	@DisplayName( "It returns sine member" )
@@ -70,6 +70,6 @@ public class SinTest {
 		    result = (0.5).sin();
 		    """,
 		    context );
-		assertThat( variables.get( result ) ).isEqualTo( Math.sin( 0.5 ) );
+		assertThat( variables.get( result ) ).isEqualTo( StrictMath.sin( 0.5 ) );
 	}
 }

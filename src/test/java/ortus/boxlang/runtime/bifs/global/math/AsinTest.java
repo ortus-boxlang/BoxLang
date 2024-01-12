@@ -73,7 +73,7 @@ public class AsinTest {
 		    result = asin(0.5);
 		    """,
 		    context );
-		assertThat( variables.get( result ) ).isEqualTo( Math.asin( 0.5 ) );
+		assertThat( variables.get( result ) ).isEqualTo( StrictMath.asin( 0.5 ) );
 	}
 
 	@DisplayName( "It returns arcsine member" )
@@ -90,7 +90,7 @@ public class AsinTest {
 		    result = (0.5).asin();
 		    """,
 		    context );
-		assertThat( variables.get( result ) ).isEqualTo( Math.asin( 0.5 ) );
+		assertThat( variables.get( result ) ).isEqualTo( StrictMath.asin( 0.5 ) );
 	}
 
 	@DisplayName( "It throws an exception when the input is out of range" )

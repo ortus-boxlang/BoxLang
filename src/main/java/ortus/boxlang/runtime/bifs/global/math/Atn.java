@@ -50,6 +50,6 @@ public class Atn extends BIF {
 	 */
 	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
 		double value = arguments.getAsDouble( Key.number );
-		return Math.atan( value );
+		return StrictMath.atan( value );
 	}
 }
