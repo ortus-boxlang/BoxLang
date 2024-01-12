@@ -63,7 +63,11 @@ public class FileSetAttribute extends BIF {
 		switch ( attribute.toLowerCase() ) {
 			case "normal" :
 			case "default" : {
-				permissionSet = isPosix ? "rw-rw-r--" : "dos:readonly";
+				// DOS doesn't have a definition for "normal"
+				if ( !isPosix ) {
+					return returnItem;
+				}
+				permissionSet = "rw-rw-r--";
 				break;
 			}
 			case "readonly" : {
