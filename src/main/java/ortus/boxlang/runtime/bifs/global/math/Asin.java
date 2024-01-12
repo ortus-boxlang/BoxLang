@@ -22,6 +22,7 @@ import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.BoxLangType;
+import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
 @BoxBIF
 @BoxMember( type = BoxLangType.NUMERIC )
@@ -48,7 +49,7 @@ public class Asin extends BIF {
 	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
 		double value = arguments.getAsDouble( Key.number );
 		if ( value < -1.0 || value > 1.0 ) {
-			throw new IllegalArgumentException( "Input value must be in the range [-1, 1] for ASin function." );
+			throw new BoxRuntimeException( "Input value must be in the range [-1, 1] for ASin function." );
 		}
 		return Math.asin( value );
 	}

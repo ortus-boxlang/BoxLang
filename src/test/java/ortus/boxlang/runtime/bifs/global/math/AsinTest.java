@@ -19,6 +19,7 @@
 package ortus.boxlang.runtime.bifs.global.math;
 
 import static com.google.common.truth.Truth.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -32,6 +33,7 @@ import ortus.boxlang.runtime.context.ScriptingBoxContext;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
+import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
 public class AsinTest {
 
@@ -89,5 +91,27 @@ public class AsinTest {
 		    """,
 		    context );
 		assertThat( variables.get( result ) ).isEqualTo( Math.asin( 0.5 ) );
+	}
+
+	@DisplayName( "It throws an exception when the input is out of range" )
+	@Test
+	public void testItThrowsAnExceptionWhenTheInputIsOutOfRange() {
+		assertThrows(
+		    BoxRuntimeException.class,
+		    () -> instance.executeSource(
+		        """
+		        result = asin(1.1);
+		        """,
+		        context )
+		);
+
+		assertThrows(
+		    BoxRuntimeException.class,
+		    () -> instance.executeSource(
+		        """
+		        result = asin(-1.1);
+		        """,
+		        context )
+		);
 	}
 }
