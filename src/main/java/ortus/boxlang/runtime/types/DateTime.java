@@ -372,11 +372,21 @@ public class DateTime implements IType {
 	}
 
 	/**
-	 * TODO: What is the point of this method @jclausen?
+	 * Allows the date object to be modified by a convention of unit ( datepart ) and quantity. Supports the DateAdd BIF
 	 *
-	 * @param timeZone
+	 * @param unit     - an abbreviation for a time unit
+	 *                 d/y - day
+	 *                 m - month
+	 *                 yyyy - year
+	 *                 w - weekdays
+	 *                 ww - weeks
+	 *                 h - hours
+	 *                 n - minutes
+	 *                 s - seconds
+	 *                 l - milliseconds
+	 * @param quantity a positive or negative quantity of the unit to modify the DateTime
 	 *
-	 * @return
+	 * @return the DateTime instance
 	 */
 	public DateTime modify( String unit, Long quantity ) {
 		switch ( unit ) {
