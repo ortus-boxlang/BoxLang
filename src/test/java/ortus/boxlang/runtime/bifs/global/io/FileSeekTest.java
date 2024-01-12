@@ -20,8 +20,11 @@
 package ortus.boxlang.runtime.bifs.global.io;
 
 import static com.google.common.truth.Truth.assertThat;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.io.BufferedInputStream;
 import java.io.IOException;
+import java.net.URL;
 import java.nio.file.Path;
 
 import org.junit.Ignore;
@@ -49,6 +52,7 @@ public class FileSeekTest {
 
 	private static String	tmpDirectory	= "src/test/resources/tmp";
 	private static String	testFile		= "src/test/resources/tmp/file-seek-test.txt";
+	static String			testBinaryFile	= "src/test/resources/tmp/test.jpg";
 	private static File		writeFile		= null;
 
 	@BeforeAll
@@ -77,6 +81,12 @@ public class FileSeekTest {
 		if ( FileSystemUtil.exists( testFile ) ) {
 			FileSystemUtil.deleteFile( testFile );
 		}
+
+		if ( !FileSystemUtil.exists( testBinaryFile ) ) {
+			BufferedInputStream urlStream = new BufferedInputStream( new URL( "https://source.unsplash.com/random/200x200?sig=1" ).openStream() );
+			FileSystemUtil.write( testBinaryFile, urlStream.readAllBytes(), true );
+		}
+
 		variables.clear();
 	}
 
@@ -115,6 +125,60 @@ public class FileSeekTest {
 		    context );
 		String result = ( String ) variables.get( Key.of( "result" ) );
 		assertThat( result ).isEqualTo( "efg" );
+	}
+
+	@DisplayName( "It tests the File.seek member function" )
+	@Test
+	@Ignore
+	public void testSeekMember() throws IOException {
+		FileSystemUtil.write( testFile, "abcdefg".getBytes( "UTF-8" ), true );
+		variables.put( Key.of( "testFile" ), Path.of( testFile ).toAbsolutePath().toString() );
+		instance.executeSource(
+		    """
+		          fileObj = fileOpen( testFile, "read" );
+		    fileObj.seek( 2 );
+		    result = fileObj.readLine();
+		    fileObj.close();
+		            """,
+		    context );
+		String result = ( String ) variables.get( Key.of( "result" ) );
+		assertThat( result ).isEqualTo( "cdefg" );
+	}
+
+	@DisplayName( "It tests the BIF FileSkipBytes" )
+	@Test
+	@Ignore
+	public void testSkipBytesFile() throws IOException {
+		variables.put( Key.of( "testFile" ), Path.of( testBinaryFile ).toAbsolutePath().toString() );
+		instance.executeSource(
+		    """
+		          fileObj = fileOpen( testFile, "readbinary" );
+		    fileSkipBytes( fileObj, 2 );
+		    result = fileObj.read( 10 );
+		    fileObj.close();
+		            """,
+		    context );
+		assertTrue( variables.get( Key.of( "result" ) ) instanceof byte[] );
+		byte[] result = ( byte[] ) variables.get( Key.of( "result" ) );
+		assertThat( result.length ).isEqualTo( 10 );
+	}
+
+	@DisplayName( "It tests the BIF File.skipBytes member function" )
+	@Test
+	@Ignore
+	public void testSkipBytesMember() throws IOException {
+		variables.put( Key.of( "testFile" ), Path.of( testBinaryFile ).toAbsolutePath().toString() );
+		instance.executeSource(
+		    """
+		          fileObj = fileOpen( testFile, "readbinary" );
+		    fileObj.skipBytes( 2 );
+		    result = fileObj.read( 10 );
+		    fileObj.close();
+		            """,
+		    context );
+		assertTrue( variables.get( Key.of( "result" ) ) instanceof byte[] );
+		byte[] result = ( byte[] ) variables.get( Key.of( "result" ) );
+		assertThat( result.length ).isEqualTo( 10 );
 	}
 
 }

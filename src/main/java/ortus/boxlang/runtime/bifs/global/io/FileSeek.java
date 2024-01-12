@@ -13,7 +13,9 @@ import ortus.boxlang.runtime.types.File;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
 @BoxBIF
+@BoxBIF( alias = "FileSkipBytes" )
 @BoxMember( type = BoxLangType.FILE )
+@BoxMember( type = BoxLangType.FILE, name = "skipBytes" )
 
 public class FileSeek extends BIF {
 

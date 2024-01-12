@@ -24,6 +24,7 @@ import java.net.MalformedURLException;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.ByteBuffer;
+import java.nio.CharBuffer;
 import java.nio.channels.SeekableByteChannel;
 import java.nio.charset.Charset;
 import java.nio.charset.UnsupportedCharsetException;
@@ -66,11 +67,11 @@ public class File implements IType, IReferenceable {
 	 */
 	protected BufferedReader		reader			= null;
 	/**
-	 * The the writer object when mode is read
+	 * The the writer object when mode is write
 	 */
 	protected BufferedWriter		writer			= null;
 	/**
-	 * The the writer object when mode is read
+	 * The the writer object when mode is write and seekable is set to true
 	 */
 	protected SeekableByteChannel	byteChannel		= null;
 	/**
@@ -132,7 +133,7 @@ public class File implements IType, IReferenceable {
 	 * @param mode The mode with which to open the file
 	 */
 	public File( String file, String mode ) {
-		this( file, mode, CHARSET_UTF8, null );
+		this( file, mode, CHARSET_UTF8, mode.contains( "read" ) ? true : false );
 	}
 
 	/**
@@ -166,6 +167,7 @@ public class File implements IType, IReferenceable {
 		} else {
 			switch ( mode ) {
 				case MODE_READ :
+				case MODE_READBINARY :
 					this.seekable = true;
 					break;
 				default :
@@ -192,7 +194,7 @@ public class File implements IType, IReferenceable {
 						throw new BoxRuntimeException( "The file [" + path.toAbsolutePath().toString() + "] is not a binary file." );
 					}
 					this.size = Files.size( path );
-					this.reader = Files.newBufferedReader( path );
+					this.byteChannel = Files.newByteChannel( path, StandardOpenOption.READ );
 					break;
 				case MODE_WRITE :
 					if ( this.seekable ) {
@@ -254,6 +256,27 @@ public class File implements IType, IReferenceable {
 		}
 		try {
 			return this.reader.readLine();
+		} catch ( IOException e ) {
+			throw new BoxIOException( e );
+		}
+	}
+
+	/*
+	 * Reads a specified number of bytes from a file
+	 */
+	public Object read( Integer len ) {
+		try {
+			if ( this.reader != null ) {
+				CharBuffer buffer = CharBuffer.allocate( len );
+				this.reader.read( buffer );
+				return buffer.toString();
+			} else if ( this.byteChannel != null ) {
+				ByteBuffer buffer = ByteBuffer.allocate( len );
+				this.byteChannel.read( ByteBuffer.allocate( len ) );
+				return ( byte[] ) buffer.array();
+			} else {
+				throw new BoxRuntimeException( "This file object was not opened in read mode" );
+			}
 		} catch ( IOException e ) {
 			throw new BoxIOException( e );
 		}
