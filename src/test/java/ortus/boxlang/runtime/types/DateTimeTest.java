@@ -37,15 +37,15 @@ public class DateTimeTest {
 		DateTime			defaultDateTime		= new DateTime();
 		ZonedDateTime		referenceNow		= ZonedDateTime.of( LocalDateTime.now(), ZoneId.systemDefault() );
 		DateTimeFormatter	referenceFormatter	= DateTimeFormatter.ISO_LOCAL_DATE;
-		assertThat( defaultDateTime.withFormat( "yyyy-MM-dd" ).toString() ).isEqualTo( referenceFormatter.format( referenceNow ) );
+		assertThat( defaultDateTime.setFormat( "yyyy-MM-dd" ).toString() ).isEqualTo( referenceFormatter.format( referenceNow ) );
 		DateTime referenceZoned = new DateTime( referenceNow );
-		assertThat( referenceZoned.withFormat( "yyyy-MM-dd" ).toString() ).isEqualTo( referenceFormatter.format( referenceNow ) );
+		assertThat( referenceZoned.setFormat( "yyyy-MM-dd" ).toString() ).isEqualTo( referenceFormatter.format( referenceNow ) );
 		DateTime parsedDateTime = new DateTime( "2023-12-31 23:59:59", "yyyy-MM-dd HH:mm:ss" );
-		assertThat( parsedDateTime.withFormat( "yyyy-MM-dd HH:mm:ss" ).toString() ).isEqualTo( "2023-12-31 23:59:59" );
+		assertThat( parsedDateTime.setFormat( "yyyy-MM-dd HH:mm:ss" ).toString() ).isEqualTo( "2023-12-31 23:59:59" );
 		DateTime dateTimeFromParts = new DateTime( 2023, 12, 31, 12, 30, 30, 0, null );
-		assertThat( dateTimeFromParts.withFormat( "yyyy-MM-dd HH:mm:ss" ).toString() ).isEqualTo( "2023-12-31 12:30:30" );
+		assertThat( dateTimeFromParts.setFormat( "yyyy-MM-dd HH:mm:ss" ).toString() ).isEqualTo( "2023-12-31 12:30:30" );
 		DateTime dateFromParts = new DateTime( 2023, 12, 31 );
-		assertThat( dateFromParts.withFormat( "yyyy-MM-dd HH:mm:ss" ).toString() ).isEqualTo( "2023-12-31 00:00:00" );
+		assertThat( dateFromParts.setFormat( "yyyy-MM-dd HH:mm:ss" ).toString() ).isEqualTo( "2023-12-31 00:00:00" );
 	}
 
 	@DisplayName( "Can create a DateTime with a specific timezone" )
@@ -63,17 +63,17 @@ public class DateTimeTest {
 	void testDefaultFormat() {
 		DateTime	defaultDateTime	= new DateTime();
 		String		dateValue		= defaultDateTime.toString();
-		assertThat( dateValue ).isEqualTo( defaultDateTime.withFormat( "'{ts '''yyyy-MM-dd HH:mm:ss'''}'" ).toString() );
+		assertThat( dateValue ).isEqualTo( defaultDateTime.setFormat( "'{ts '''yyyy-MM-dd HH:mm:ss'''}'" ).toString() );
 	}
 
 	@DisplayName( "Tests the setTimezone method" )
 	@Test
 	void testTimezoneMods() {
 		DateTime	defaultDateTime	= new DateTime( "2023-12-31T00:00:00-06:00", "yyyy-MM-dd'T'HH:mm:ssXXX" );
-		String		dateValue		= defaultDateTime.withFormat( "yyyy-MM-dd HH:mm:ss" ).toString();
+		String		dateValue		= defaultDateTime.setFormat( "yyyy-MM-dd HH:mm:ss" ).toString();
 		String		zonedValue		= defaultDateTime.toISOString();
 		defaultDateTime.setTimezone( "UTC" );
-		assertThat( dateValue ).isEqualTo( defaultDateTime.withFormat( "yyyy-MM-dd HH:mm:ss" ).toString() );
+		assertThat( dateValue ).isEqualTo( defaultDateTime.setFormat( "yyyy-MM-dd HH:mm:ss" ).toString() );
 		assertThat( zonedValue ).isNotEqualTo( defaultDateTime.toISOString() );
 	}
 

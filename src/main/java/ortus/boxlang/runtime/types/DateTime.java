@@ -254,13 +254,15 @@ public class DateTime implements IType {
 	}
 
 	/**
-	 * Sets the current formatter with a mask
-	 * TODO: SHouldn't this be public?
+	 * Chainable member function to set the format and return the object
 	 *
 	 * @param mask the formatting mask to use
+	 *
+	 * @return
 	 */
-	private void setFormat( String mask ) {
+	public DateTime setFormat( String mask ) {
 		this.formatter = DateTimeFormatter.ofPattern( mask );
+		return this;
 	}
 
 	/**
@@ -337,7 +339,7 @@ public class DateTime implements IType {
 	 */
 	public String format( String mask ) {
 		setFormat( mask );
-		return this.formatter.format( wrapped );
+		return toString();
 	}
 
 	/**
@@ -357,18 +359,6 @@ public class DateTime implements IType {
 	 */
 	public Instant toInstant() {
 		return this.wrapped.toInstant();
-	}
-
-	/**
-	 * Chainable member function to set the format and return the object
-	 *
-	 * @param mask the formatting mask to use
-	 *
-	 * @return
-	 */
-	public DateTime withFormat( String mask ) {
-		setFormat( mask );
-		return this;
 	}
 
 	/**
