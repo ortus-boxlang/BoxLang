@@ -67,7 +67,7 @@ public class FileSetAttribute extends BIF {
 				break;
 			}
 			case "readonly" : {
-				permissionSet = isWindows ? "dos:readonly" : "r--r--r--";
+				permissionSet = isPosix ? "r--r--r--" : "dos:readonly";
 				break;
 			}
 			case "archive" : {
