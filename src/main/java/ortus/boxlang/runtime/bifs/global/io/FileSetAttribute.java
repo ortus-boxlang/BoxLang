@@ -37,12 +37,14 @@ public class FileSetAttribute extends BIF {
 	}
 
 	/**
-	 * Describe what the invocation of your bif function does
+	 * Sets a file access attribute
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.foo Describe any expected arguments
+	 * @argument.file The file path or File instance
+	 *
+	 * @argument.attribute The attribute to set true
 	 */
 	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
 		String	file	= null;
@@ -63,11 +65,15 @@ public class FileSetAttribute extends BIF {
 		switch ( attribute.toLowerCase() ) {
 			case "normal" :
 			case "default" : {
-				permissionSet = isPosix ? "rw-rw-r--" : "dos:readonly";
+				// DOS doesn't have a definition for "normal"
+				if ( !isPosix ) {
+					return returnItem;
+				}
+				permissionSet = "rw-rw-r--";
 				break;
 			}
 			case "readonly" : {
-				permissionSet = isWindows ? "dos:readonly" : "r--r--r--";
+				permissionSet = isPosix ? "r--r--r--" : "dos:readonly";
 				break;
 			}
 			case "archive" : {
