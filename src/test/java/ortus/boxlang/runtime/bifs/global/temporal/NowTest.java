@@ -73,7 +73,7 @@ public class NowTest {
 		var result = variables.get( Key.of( "result" ) );
 		assertThat( result ).isInstanceOf( DateTime.class );
 		ZonedDateTime		referenceNow		= ZonedDateTime.of( LocalDateTime.now(), ZoneId.systemDefault() );
-		DateTimeFormatter	referenceFormatter	= DateTimeFormatter.ofPattern( "'{ts '''yyyy-MM-dd HH:mm:ss'''}'" );
+		DateTimeFormatter	referenceFormatter	= DateTimeFormatter.ofPattern( DateTime.ODBC_FORMAT_MASK );
 		assertThat( result.toString() ).isInstanceOf( String.class );
 		assertThat( result.toString() ).isEqualTo( referenceFormatter.format( referenceNow ) );
 	}
@@ -89,7 +89,7 @@ public class NowTest {
 		var result = variables.get( Key.of( "result" ) );
 		assertThat( result ).isInstanceOf( DateTime.class );
 		ZonedDateTime		referenceNow		= ZonedDateTime.of( LocalDateTime.now(), ZoneId.of( "UTC" ) );
-		DateTimeFormatter	referenceFormatter	= DateTimeFormatter.ofPattern( "'{ts '''yyyy-MM-dd HH:mm:ss'''}'" );
+		DateTimeFormatter	referenceFormatter	= DateTimeFormatter.ofPattern( DateTime.ODBC_FORMAT_MASK );
 		assertThat( result.toString() ).isInstanceOf( String.class );
 		assertThat( result.toString() ).isEqualTo( referenceFormatter.format( referenceNow ) );
 	}
