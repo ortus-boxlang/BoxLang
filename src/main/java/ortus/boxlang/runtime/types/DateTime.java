@@ -25,6 +25,7 @@ import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
+import java.util.Objects;
 
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.meta.BoxMeta;
@@ -289,9 +290,35 @@ public class DateTime implements IType {
 
 	/**
 	 * --------------------------------------------------------------------------
-	 * Member Methods
+	 * Type Helper Methods
 	 * --------------------------------------------------------------------------
 	 */
+
+	/**
+	 * Returns the hashcode of the wrapped object
+	 */
+	@Override
+	public int hashCode() {
+		return Objects.hash( wrapped, formatter );
+	}
+
+	/**
+	 * Indicates whether some other object is "equal to" this one.
+	 *
+	 * @param obj The reference object with which to compare.
+	 *
+	 * @return {@code true} if this object is the same as the obj argument; {@code false} otherwise.
+	 */
+	@Override
+	public boolean equals( Object obj ) {
+		if ( this == obj )
+			return true;
+		if ( obj == null || getClass() != obj.getClass() )
+			return false;
+		DateTime other = ( DateTime ) obj;
+		return Objects.equals( wrapped, other.wrapped ) &&
+		    Objects.equals( formatter, other.formatter );
+	}
 
 	/**
 	 * Returns the datetime representation as a string
