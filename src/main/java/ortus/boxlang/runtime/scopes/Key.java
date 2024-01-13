@@ -75,6 +75,7 @@ public class Key {
 	public static final Key	dimensions					= Key.of( "dimensions" );
 	public static final Key	directory					= Key.of( "directory" );
 	public static final Key	elementCountForRemoval		= Key.of( "elementCountForRemoval" );
+	public static final Key	encoding					= Key.of( "encoding" );
 	public static final Key	end							= Key.of( "end" );
 	public static final Key	file						= Key.of( "file" );
 	public static final Key	filepath					= Key.of( "filepath" );
@@ -88,6 +89,7 @@ public class Key {
 	public static final Key	init						= Key.of( "init" );
 	public static final Key	initialValue				= Key.of( "initialValue" );
 	public static final Key	initMethod					= Key.of( "initMethod" );
+	public static final Key	input						= Key.of( "input" );
 	public static final Key	leaveIndex					= Key.of( "leaveIndex" );
 	public static final Key	length						= Key.of( "length" );
 	public static final Key	listInfo					= Key.of( "listInfo" );
@@ -109,6 +111,7 @@ public class Key {
 	public static final Key	number						= Key.of( "number" );
 	public static final Key	number1						= Key.of( "number1" );
 	public static final Key	number2						= Key.of( "number2" );
+	public static final Key	numIterations				= Key.of( "numIterations" );
 	public static final Key	object						= Key.of( "object" );
 	public static final Key	oldPath						= Key.of( "oldPath" );
 	public static final Key	onMissingMethod				= Key.of( "onMissingMethod" );
