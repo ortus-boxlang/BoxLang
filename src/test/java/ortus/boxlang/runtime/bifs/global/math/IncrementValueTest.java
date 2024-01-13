@@ -72,7 +72,7 @@ public class IncrementValueTest {
 		    result = incrementValue(-2.8);
 		    """,
 		    context );
-		assertThat( variables.getAsDouble( result ) ).isEqualTo( testNumber + 1 );
+		assertThat( variables.getAsDouble( result ) ).isEqualTo( ++testNumber );
 
 		testNumber = 0;
 		instance.executeSource(
@@ -80,7 +80,7 @@ public class IncrementValueTest {
 		    result = incrementValue(0);
 		    """,
 		    context );
-		assertThat( variables.getAsDouble( result ) ).isEqualTo( testNumber + 1 );
+		assertThat( variables.getAsDouble( result ) ).isEqualTo( ++testNumber );
 	}
 
 	@DisplayName( "It increments the integer part member function" )
@@ -102,7 +102,7 @@ public class IncrementValueTest {
 		    result = (-2.8).incrementValue();
 		    """,
 		    context );
-		assertThat( variables.getAsDouble( result ) ).isEqualTo( testNumber + 1 );
+		assertThat( variables.getAsDouble( result ) ).isEqualTo( ++testNumber );
 
 		testNumber = 0;
 		instance.executeSource(
@@ -110,6 +110,6 @@ public class IncrementValueTest {
 		    result = (0).incrementValue();
 		    """,
 		    context );
-		assertThat( variables.getAsDouble( result ) ).isEqualTo( testNumber + 1 );
+		assertThat( variables.getAsDouble( result ) ).isEqualTo( ++testNumber );
 	}
 }
