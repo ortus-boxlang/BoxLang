@@ -77,8 +77,6 @@ dependencies {
 	implementation 'com.github.javaparser:javaparser-symbol-solver-core:3.25.4'
 	// https://mvnrepository.com/artifact/org.apache.commons/commons-lang3
 	implementation 'org.apache.commons:commons-lang3:3.14.0'
-	// https://mvnrepository.com/artifact/commons-codec/commons-codec
-	implementation 'commons-codec:commons-codec:1.16.0'
 	// https://mvnrepository.com/artifact/com.fasterxml.jackson.jr/jackson-jr-all
 	implementation 'com.fasterxml.jackson.jr:jackson-jr-all:2.16.1'
 	// https://mvnrepository.com/artifact/com.fasterxml.jackson.jr/jackson-jr-annotation-support

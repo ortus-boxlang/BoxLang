@@ -38,7 +38,6 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.SystemUtils;
 
@@ -588,7 +587,7 @@ public final class FileSystemUtil {
 				infoStruct.put( "read", Files.isReadable( path ) );
 				infoStruct.put( "write", Files.isWritable( path ) );
 				infoStruct.put( "execute", Files.isExecutable( path ) );
-				infoStruct.put( "checksum", !Files.isDirectory( path ) ? DigestUtils.md5Hex( Files.newInputStream( path ) ) : "" );
+				infoStruct.put( "checksum", !Files.isDirectory( path ) ? EncodingUtil.checksum( path, "md5" ) : "" );
 			} else {
 				// getFileInfo method compatibile keys
 				infoStruct.put( "parent", path.getParent().toAbsolutePath().toString() );
