@@ -17,14 +17,12 @@
  */
 package ortus.boxlang.runtime.scopes;
 
-import java.util.Map;
-
-import ortus.boxlang.runtime.dynamic.IReferenceable;
+import ortus.boxlang.runtime.types.IStruct;
 
 /**
  * All scope implementations must implement this interface
  */
-public interface IScope extends Map<Key, Object>, IReferenceable {
+public interface IScope extends IStruct {
 
 	/**
 	 * Gets the name of the scope
@@ -32,14 +30,5 @@ public interface IScope extends Map<Key, Object>, IReferenceable {
 	 * @return The name of the scope
 	 */
 	public Key getName();
-
-	/**
-	 * Returns the value of the key safely, nulls will be wrapped in a {@code NullValue} still.
-	 *
-	 * @param key The key to look for
-	 *
-	 * @return The value of the key or a {@code NullValue} object, null means the key didn't exist *
-	 */
-	public Object getRaw( Key key );
 
 }

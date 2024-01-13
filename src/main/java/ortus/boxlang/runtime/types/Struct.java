@@ -29,7 +29,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.bifs.MemberDescriptor;
 import ortus.boxlang.runtime.context.IBoxContext;
-import ortus.boxlang.runtime.dynamic.IReferenceable;
 import ortus.boxlang.runtime.dynamic.casters.KeyCaster;
 import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 import ortus.boxlang.runtime.interop.DynamicJavaInteropService;
@@ -45,7 +44,7 @@ import ortus.boxlang.runtime.types.meta.IChangeListener;
 import ortus.boxlang.runtime.types.meta.IListenable;
 import ortus.boxlang.runtime.types.meta.StructMeta;
 
-public class Struct implements Map<Key, Object>, IType, IReferenceable, IListenable {
+public class Struct implements IStruct, IListenable {
 
 	public enum Type {
 		LINKED,

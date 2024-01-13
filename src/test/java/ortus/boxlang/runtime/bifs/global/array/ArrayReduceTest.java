@@ -122,8 +122,8 @@ public class ArrayReduceTest {
 		        result = arrayReduce( people, nameReduce, {indexes:[]} );
 		    """,
 		    context );
-		assertThat( ( ( Struct ) variables.get( result ) ).get( "bob" ) ).isEqualTo( 3 );
-		assertThat( ( ( Struct ) variables.get( result ) ).get( "alice" ) ).isEqualTo( 2 );
+		assertThat( ( variables.getAsStruct( result ) ).get( "bob" ) ).isEqualTo( 3 );
+		assertThat( ( variables.getAsStruct( result ) ).get( "alice" ) ).isEqualTo( 2 );
 		Array indexes = ( ( Array ) ( ( Struct ) variables.get( result ) ).get( "indexes" ) );
 		assertThat( indexes.size() ).isEqualTo( 5 );
 		assertThat( indexes.get( 0 ) ).isEqualTo( 1 );
