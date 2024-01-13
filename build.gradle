@@ -77,6 +77,8 @@ dependencies {
 	implementation 'com.github.javaparser:javaparser-symbol-solver-core:3.25.4'
 	// https://mvnrepository.com/artifact/org.apache.commons/commons-lang3
 	implementation 'org.apache.commons:commons-lang3:3.14.0'
+	// https://mvnrepository.com/artifact/commons-codec/commons-codec
+	implementation 'commons-codec:commons-codec:1.16.0'
 	// https://mvnrepository.com/artifact/com.fasterxml.jackson.jr/jackson-jr-all
 	implementation 'com.fasterxml.jackson.jr:jackson-jr-all:2.16.1'
 	// https://mvnrepository.com/artifact/com.fasterxml.jackson.jr/jackson-jr-annotation-support
@@ -87,7 +89,7 @@ dependencies {
 	implementation 'org.slf4j:slf4j-api:2.0.7'
 	// https://mvnrepository.com/artifact/org.slf4j/slf4j-jdk14
 	implementation 'org.slf4j:slf4j-jdk14:2.0.7'
-	
+
 	// MOVE TO BOXLANG WEB PROJECT
 	// https://mvnrepository.com/artifact/io.undertow/undertow-core/2.3.10.Final
 	implementation 'io.undertow:undertow-core:2.3.10.Final'
