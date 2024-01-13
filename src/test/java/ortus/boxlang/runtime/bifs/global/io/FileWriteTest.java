@@ -36,16 +36,16 @@ import org.junit.jupiter.api.Test;
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.ScriptingBoxContext;
-import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
+import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.util.FileSystemUtil;
 
 public class FileWriteTest {
 
 	static BoxRuntime	instance;
 	static IBoxContext	context;
-	static IScope		variables;
+	static IStruct		variables;
 	static Key			result			= new Key( "result" );
 	static String		testTextFile	= "src/test/resources/tmp/text.txt";
 	static String		testTextFile2	= "src/test/resources/tmp/nested/path/text2.txt";

@@ -36,16 +36,16 @@ import org.junit.jupiter.api.Test;
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.ScriptingBoxContext;
-import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
+import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.util.FileSystemUtil;
 
 public class FileReadTest {
 
 	static BoxRuntime	instance;
 	static IBoxContext	context;
-	static IScope		variables;
+	static IStruct		variables;
 	static Key			result			= new Key( "result" );
 	static String		testTextFile	= "src/test/resources/tmp/text.txt";
 	static String		testURLFile		= "https://raw.githubusercontent.com/ColdBox/coldbox-platform/development/license.txt";
@@ -94,7 +94,7 @@ public class FileReadTest {
 		    result = fileRead( variables.testFile );
 		    """,
 		    context );
-		String result = ( String ) variables.get( Key.of( "result" ) );
+		String result = variables.getAsString( Key.of( "result" ) );
 		assertThat( result ).isInstanceOf( String.class );
 		assertThat( result ).isEqualTo( "file read test!" );
 	}
@@ -108,7 +108,7 @@ public class FileReadTest {
 		    result = fileRead( variables.testFile );
 		    """,
 		    context );
-		String result = ( String ) variables.get( Key.of( "result" ) );
+		String result = variables.getAsString( Key.of( "result" ) );
 		assertThat( result ).isInstanceOf( String.class );
 		assertThat( result ).contains( "ColdBox Framework" );
 		assertThat( result ).contains( System.getProperty( "line.separator" ) );
@@ -136,7 +136,7 @@ public class FileReadTest {
 		    result = fileRead( variables.testFile, "utf-8" );
 		    """,
 		    context );
-		String result = ( String ) variables.get( Key.of( "result" ) );
+		String result = variables.getAsString( Key.of( "result" ) );
 		assertThat( result ).isInstanceOf( String.class );
 		assertThat( result ).isEqualTo( "file read test!" );
 	}
@@ -150,7 +150,7 @@ public class FileReadTest {
 		    result = fileRead( variables.testFile, 10 );
 		    """,
 		    context );
-		String result = ( String ) variables.get( Key.of( "result" ) );
+		String result = variables.getAsString( Key.of( "result" ) );
 		assertThat( result ).isInstanceOf( String.class );
 		assertThat( result ).isEqualTo( "file read test!" );
 	}
@@ -164,7 +164,7 @@ public class FileReadTest {
 		    result = fileRead( variables.testFile, "utf-8", 10 );
 		    """,
 		    context );
-		String result = ( String ) variables.get( Key.of( "result" ) );
+		String result = variables.getAsString( Key.of( "result" ) );
 		assertThat( result ).isInstanceOf( String.class );
 		assertThat( result ).isEqualTo( "file read test!" );
 	}

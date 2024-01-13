@@ -38,9 +38,9 @@ import org.junit.jupiter.api.Test;
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.ScriptingBoxContext;
-import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
+import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.util.FileSystemUtil;
 
@@ -48,7 +48,7 @@ public class FileGetMimeTypeTest {
 
 	static BoxRuntime	instance;
 	static IBoxContext	context;
-	static IScope		variables;
+	static IStruct		variables;
 	static Key			result			= new Key( "result" );
 	static String		testTextFile	= "src/test/resources/tmp/text.txt";
 	static String		testBinaryFile	= "src/test/resources/tmp/test.jpg";
@@ -91,7 +91,7 @@ public class FileGetMimeTypeTest {
 		    result = fileGetMimeType( variables.testFile );
 		    """,
 		    context );
-		String result = ( String ) variables.get( Key.of( "result" ) );
+		String result = variables.getAsString( Key.of( "result" ) );
 		assertThat( result ).isInstanceOf( String.class );
 		assertThat( result ).isEqualTo( "text/plain" );
 	}

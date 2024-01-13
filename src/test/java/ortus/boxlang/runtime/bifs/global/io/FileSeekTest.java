@@ -37,17 +37,17 @@ import org.junit.jupiter.api.Test;
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.ScriptingBoxContext;
-import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
 import ortus.boxlang.runtime.types.File;
+import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.util.FileSystemUtil;
 
 public class FileSeekTest {
 
 	static BoxRuntime		instance;
 	static IBoxContext		context;
-	static IScope			variables;
+	static IStruct			variables;
 	static Key				result			= new Key( "result" );
 
 	private static String	tmpDirectory	= "src/test/resources/tmp";
@@ -104,7 +104,7 @@ public class FileSeekTest {
 		    fileObj.close();
 		            """,
 		    context );
-		String result = ( String ) variables.get( Key.of( "result" ) );
+		String result = variables.getAsString( Key.of( "result" ) );
 		assertThat( result ).isEqualTo( "cdefg" );
 	}
 
@@ -123,7 +123,7 @@ public class FileSeekTest {
 		       fileObj.close();
 		               """,
 		    context );
-		String result = ( String ) variables.get( Key.of( "result" ) );
+		String result = variables.getAsString( Key.of( "result" ) );
 		assertThat( result ).isEqualTo( "efg" );
 	}
 
@@ -141,7 +141,7 @@ public class FileSeekTest {
 		    fileObj.close();
 		            """,
 		    context );
-		String result = ( String ) variables.get( Key.of( "result" ) );
+		String result = variables.getAsString( Key.of( "result" ) );
 		assertThat( result ).isEqualTo( "cdefg" );
 	}
 

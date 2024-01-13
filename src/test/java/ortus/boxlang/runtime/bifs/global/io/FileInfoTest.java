@@ -38,7 +38,6 @@ import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.ScriptingBoxContext;
 import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 import ortus.boxlang.runtime.dynamic.casters.StructCaster;
-import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
 import ortus.boxlang.runtime.types.DateTime;
@@ -49,7 +48,7 @@ public class FileInfoTest {
 
 	static BoxRuntime	instance;
 	static IBoxContext	context;
-	static IScope		variables;
+	static IStruct		variables;
 	static Key			result			= new Key( "result" );
 	static String		testTextFile	= "src/test/resources/tmp/time.txt";
 	static String		tmpDirectory	= "src/test/resources/tmp";

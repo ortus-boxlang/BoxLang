@@ -35,16 +35,16 @@ import org.junit.jupiter.api.Test;
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.ScriptingBoxContext;
-import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
+import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.util.FileSystemUtil;
 
 public class GetCanonicalPathTest {
 
 	static BoxRuntime	instance;
 	static IBoxContext	context;
-	static IScope		variables;
+	static IStruct		variables;
 	static Key			result				= new Key( "result" );
 	static String		testTextFile		= "src/test/resources/tmp/time.txt";
 	static String		relativeTextFile	= "src/test/resources/tmp/../tmp/time.txt";
@@ -85,7 +85,7 @@ public class GetCanonicalPathTest {
 		    """,
 		    context );
 		assertTrue( variables.get( Key.of( "result" ) ) instanceof String );
-		assertEquals( ( String ) variables.get( Key.of( "result" ) ), Path.of( testTextFile ).toAbsolutePath().toString() );
+		assertEquals( variables.getAsString( Key.of( "result" ) ), Path.of( testTextFile ).toAbsolutePath().toString() );
 	}
 
 }

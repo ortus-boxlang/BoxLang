@@ -34,10 +34,10 @@ import org.junit.jupiter.api.Test;
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.ScriptingBoxContext;
-import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
 import ortus.boxlang.runtime.types.File;
+import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.util.FileSystemUtil;
 
@@ -45,7 +45,7 @@ public class FileReadLineTest {
 
 	static BoxRuntime		instance;
 	static IBoxContext		context;
-	static IScope			variables;
+	static IStruct			variables;
 	static Key				result			= new Key( "result" );
 
 	private static String	tmpDirectory	= "src/test/resources/tmp";
@@ -107,9 +107,9 @@ public class FileReadLineTest {
 		    testFileObj.close();
 		               """,
 		    context );
-		String	line1	= ( String ) variables.get( Key.of( "line1" ) );
-		String	line2	= ( String ) variables.get( Key.of( "line2" ) );
-		String	line3	= ( String ) variables.get( Key.of( "line3" ) );
+		String	line1	= variables.getAsString( Key.of( "line1" ) );
+		String	line2	= variables.getAsString( Key.of( "line2" ) );
+		String	line3	= variables.getAsString( Key.of( "line3" ) );
 		assertThat( line1 ).isEqualTo( "box" );
 		assertThat( line2 ).isEqualTo( "lang" );
 		assertThat( line3 ).isEqualTo( "rocks!" );
@@ -129,9 +129,9 @@ public class FileReadLineTest {
 		    testFileObj.close();
 		               """,
 		    context );
-		String	line1	= ( String ) variables.get( Key.of( "line1" ) );
-		String	line2	= ( String ) variables.get( Key.of( "line2" ) );
-		String	line3	= ( String ) variables.get( Key.of( "line3" ) );
+		String	line1	= variables.getAsString( Key.of( "line1" ) );
+		String	line2	= variables.getAsString( Key.of( "line2" ) );
+		String	line3	= variables.getAsString( Key.of( "line3" ) );
 		assertThat( line1 ).isEqualTo( "box" );
 		assertThat( line2 ).isEqualTo( "lang" );
 		assertThat( line3 ).isEqualTo( "rocks!" );
