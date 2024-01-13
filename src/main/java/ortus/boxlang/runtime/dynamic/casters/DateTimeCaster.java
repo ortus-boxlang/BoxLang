@@ -17,6 +17,8 @@
  */
 package ortus.boxlang.runtime.dynamic.casters;
 
+import java.time.format.DateTimeParseException;
+
 import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.types.DateTime;
 import ortus.boxlang.runtime.types.exceptions.BoxCastException;
@@ -69,9 +71,17 @@ public class DateTimeCaster {
 
 		object = DynamicObject.unWrap( object );
 
-		return object instanceof DateTime
-		    ? ( DateTime ) object
-		    : new DateTime( ( String ) object );
+		try {
+			return object instanceof DateTime
+			    ? ( DateTime ) object
+			    : new DateTime( ( String ) object );
+		} catch ( DateTimeParseException e ) {
+			if ( fail ) {
+				throw e;
+			}
+
+			return null;
+		}
 
 	}
 

@@ -21,9 +21,9 @@ import ortus.boxlang.runtime.util.EncodingUtil;
 @BoxBIF( alias = "Hash40" )
 @BoxMember( type = BoxLangType.STRING, name = "hash" )
 // Note: We need to comment these out for now because declaring a member function on more than one seems to confuse the runtime, at times
-// @BoxMember( type = BoxLangType.STRUCT, name = "hash" )
-// @BoxMember( type = BoxLangType.ARRAY, name = "hash" )
-// @BoxMember( type = BoxLangType.DATETIME, name = "hash" )
+@BoxMember( type = BoxLangType.STRUCT, name = "hash" )
+@BoxMember( type = BoxLangType.ARRAY, name = "hash" )
+@BoxMember( type = BoxLangType.DATETIME, name = "hash" )
 
 public class Hash extends BIF {
 
