@@ -37,16 +37,16 @@ import org.junit.jupiter.api.Test;
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.ScriptingBoxContext;
+import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
-import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.util.FileSystemUtil;
 
 public class DirectoryCopyTest {
 
 	static BoxRuntime	instance;
 	static IBoxContext	context;
-	static IStruct		variables;
+	static IScope		variables;
 	static Key			result			= new Key( "result" );
 	static String		tmpDirectory	= "src/test/resources/tmp";
 	static String		source			= "src/test/resources/tmp/start";

@@ -36,16 +36,16 @@ import org.junit.jupiter.api.Test;
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.ScriptingBoxContext;
+import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
-import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.util.FileSystemUtil;
 
 public class FileWriteTest {
 
 	static BoxRuntime	instance;
 	static IBoxContext	context;
-	static IStruct		variables;
+	static IScope		variables;
 	static Key			result			= new Key( "result" );
 	static String		testTextFile	= "src/test/resources/tmp/text.txt";
 	static String		testTextFile2	= "src/test/resources/tmp/nested/path/text2.txt";
@@ -125,7 +125,7 @@ public class FileWriteTest {
 	@Test
 	public void testBinaryFileWrite() throws IOException {
 		variables.put( Key.of( "testFile" ), Path.of( testBinaryFile ).toAbsolutePath().toString() );
-		BufferedInputStream	urlStream		= new BufferedInputStream( new URL( "https://source.unsplash.com/random/200x200?sig=1" ).openStream() );
+		BufferedInputStream	urlStream		= new BufferedInputStream( new URL( "https://ortus-public.s3.amazonaws.com/logos/ortus-medium.jpg" ).openStream() );
 		byte[]				binaryContent	= urlStream.readAllBytes();
 		variables.put( Key.of( "binaryContent" ), binaryContent );
 		instance.executeSource(
