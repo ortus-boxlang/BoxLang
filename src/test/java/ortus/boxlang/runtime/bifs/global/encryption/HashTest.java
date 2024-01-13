@@ -73,6 +73,19 @@ public class HashTest {
 		assertThat( variables.getAsString( Key.of( "result" ) ).length() ).isEqualTo( 32 );
 	}
 
+	@DisplayName( "It tests the BIF Hash40 on a string" )
+	@Test
+	public void testHash40String() {
+		instance.executeSource(
+		    """
+		    result = hash40( "Hash me baby!" );
+		    """,
+		    context );
+		var result = variables.get( Key.of( "result" ) );
+		assertThat( result ).isInstanceOf( String.class );
+		assertThat( variables.getAsString( Key.of( "result" ) ).length() ).isEqualTo( 40 );
+	}
+
 	@DisplayName( "It tests the BIF Hash on a struct" )
 	@Test
 	public void testHashStruct() {

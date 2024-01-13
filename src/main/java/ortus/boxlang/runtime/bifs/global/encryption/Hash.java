@@ -18,6 +18,7 @@ import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.util.EncodingUtil;
 
 @BoxBIF
+@BoxBIF( alias = "Hash40" )
 @BoxMember( type = BoxLangType.STRING, name = "hash" )
 // Note: We need to comment these out for now because declaring a member function on more than one seems to confuse the runtime, at times
 // @BoxMember( type = BoxLangType.STRUCT, name = "hash" )
@@ -62,8 +63,13 @@ public class Hash extends BIF {
 	 */
 	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
 		hashItem = arguments.get( Key.input );
-		Integer	iterations	= arguments.getAsInteger( Key.numIterations );
-		String	algorithm	= arguments.getAsString( Key.algorithm );
+		Integer	iterations		= arguments.getAsInteger( Key.numIterations );
+		String	algorithm		= arguments.getAsString( Key.algorithm );
+
+		Key		bifMethodKey	= arguments.getAsKey( __functionName );
+		if ( bifMethodKey.equals( Key.hash40 ) ) {
+			algorithm = "SHA1";
+		}
 
 		if ( hashItem instanceof String ) {
 			hashItem = arguments
