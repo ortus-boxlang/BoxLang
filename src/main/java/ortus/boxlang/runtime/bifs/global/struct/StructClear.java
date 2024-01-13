@@ -22,7 +22,7 @@ import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.BoxLangType;
-import ortus.boxlang.runtime.types.Struct;
+import ortus.boxlang.runtime.types.IStruct;
 
 @BoxBIF
 @BoxMember( type = BoxLangType.STRUCT )
@@ -47,7 +47,7 @@ public class StructClear extends BIF {
 	 * @argument.structure The struct to clear.
 	 */
 	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
-		Struct actualStruct = arguments.getAsStruct( Key.structure );
+		IStruct actualStruct = arguments.getAsStruct( Key.structure );
 		actualStruct.clear();
 
 		if ( arguments.getAsBoolean( ( BIF.__isMemberExecution ) ) ) {

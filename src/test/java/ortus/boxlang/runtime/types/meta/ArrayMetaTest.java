@@ -27,7 +27,7 @@ import ortus.boxlang.runtime.context.ScriptingBoxContext;
 import ortus.boxlang.runtime.dynamic.Referencer;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Array;
-import ortus.boxlang.runtime.types.Struct;
+import ortus.boxlang.runtime.types.IStruct;
 
 public class ArrayMetaTest {
 
@@ -41,7 +41,7 @@ public class ArrayMetaTest {
 		GenericMeta	$bx	= ( GenericMeta ) Referencer.get( context, arr, BoxMeta.key, false );
 
 		assertThat( $bx.$class ).isEqualTo( Array.class );
-		assertThat( $bx.meta instanceof Struct ).isTrue();
+		assertThat( $bx.meta instanceof IStruct ).isTrue();
 
 	}
 

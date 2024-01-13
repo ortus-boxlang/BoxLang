@@ -32,20 +32,20 @@ import ortus.boxlang.runtime.context.ScriptingBoxContext;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
 import ortus.boxlang.runtime.types.Array;
-import ortus.boxlang.runtime.types.Struct;
+import ortus.boxlang.runtime.types.IStruct;
 
 public class ArraySpliceTest {
 
 	static BoxRuntime	instance;
 	static IBoxContext	context;
-	static Struct		variables;
+	static IStruct		variables;
 	static Key			result	= new Key( "result" );
 
 	@BeforeAll
 	public static void setUp() {
 		instance	= BoxRuntime.getInstance( true );
 		context		= new ScriptingBoxContext( instance.getRuntimeContext() );
-		variables	= ( Struct ) context.getScopeNearby( VariablesScope.name );
+		variables	= ( IStruct ) context.getScopeNearby( VariablesScope.name );
 	}
 
 	@AfterAll

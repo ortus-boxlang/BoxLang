@@ -21,7 +21,7 @@ import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.Closure;
 import ortus.boxlang.runtime.types.Function;
 import ortus.boxlang.runtime.types.Lambda;
-import ortus.boxlang.runtime.types.Struct;
+import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.immutable.ImmutableArray;
 import ortus.boxlang.runtime.types.immutable.ImmutableStruct;
 
@@ -36,7 +36,7 @@ public class FunctionMeta extends BoxMeta {
 	public Object		AST;
 	public Class<?>		$class;
 	// TODO: Make this into an actual class to allow modification on the fly of metadata
-	public Struct		meta;
+	public IStruct		meta;
 
 	/**
 	 * Constructor
@@ -84,7 +84,7 @@ public class FunctionMeta extends BoxMeta {
 	/**
 	 * Get the metadata
 	 */
-	public Struct getMeta() {
+	public IStruct getMeta() {
 		return meta;
 	}
 

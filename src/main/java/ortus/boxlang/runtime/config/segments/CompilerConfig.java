@@ -19,6 +19,7 @@ package ortus.boxlang.runtime.config.segments;
 
 import ortus.boxlang.runtime.config.util.PlaceholderHelper;
 import ortus.boxlang.runtime.scopes.Key;
+import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
 
 /**
@@ -45,7 +46,7 @@ public class CompilerConfig {
 	 *
 	 * @return the configuration
 	 */
-	public CompilerConfig process( Struct config ) {
+	public CompilerConfig process( IStruct config ) {
 		// Process the class generation directory
 		if ( config.containsKey( "classGenerationDirectory" ) ) {
 			this.classGenerationDirectory = PlaceholderHelper.resolve( ( String ) config.get( "classGenerationDirectory" ) );
@@ -59,7 +60,7 @@ public class CompilerConfig {
 	 * 
 	 * @return Struct
 	 */
-	public Struct asStruct() {
+	public IStruct asStruct() {
 		return Struct.of(
 		    Key.classGenerationDirectory, this.classGenerationDirectory
 		);

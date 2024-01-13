@@ -36,6 +36,7 @@ import TestCases.interop.InvokeDynamicFields;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.ScriptingBoxContext;
 import ortus.boxlang.runtime.scopes.Key;
+import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.BoxLangException;
 import ortus.boxlang.runtime.types.exceptions.NoFieldException;
@@ -318,9 +319,9 @@ public class DynamicJavaInteropServiceTest {
 	@DisplayName( "It use native maps with complex keys" )
 	@Test
 	void testItCanUseNativeMapsWithComplexKeys() {
-		Struct				str		= Struct.of( "brad", "wood" );
-		Struct				str2	= Struct.of( "luis", "majano" );
-		Map<Struct, Object>	map		= new HashMap<Struct, Object>();
+		IStruct					str		= Struct.of( "brad", "wood" );
+		IStruct					str2	= Struct.of( "luis", "majano" );
+		Map<IStruct, Object>	map		= new HashMap<IStruct, Object>();
 		map.put( Struct.EMPTY, "empty" );
 		map.put( str, "bradwood" );
 

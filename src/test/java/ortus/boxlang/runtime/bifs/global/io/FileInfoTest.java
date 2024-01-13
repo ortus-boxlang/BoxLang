@@ -23,9 +23,11 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.IOException;
+import java.nio.file.FileSystems;
 import java.nio.file.Path;
 
 import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -40,7 +42,7 @@ import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
 import ortus.boxlang.runtime.types.DateTime;
-import ortus.boxlang.runtime.types.Struct;
+import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.util.FileSystemUtil;
 
 public class FileInfoTest {
@@ -57,6 +59,9 @@ public class FileInfoTest {
 		instance	= BoxRuntime.getInstance( true );
 		context		= new ScriptingBoxContext( instance.getRuntimeContext() );
 		variables	= context.getScopeNearby( VariablesScope.name );
+
+		Assumptions.assumeTrue( FileSystems.getDefault().supportedFileAttributeViews().contains( "posix" ),
+		    "The underlying file system is not posix compliant." );
 
 		if ( !FileSystemUtil.exists( testTextFile ) ) {
 			FileSystemUtil.write( testTextFile, "file modified time test!".getBytes( "UTF-8" ), true );
@@ -86,8 +91,8 @@ public class FileInfoTest {
 		    result = fileInfo( variables.testFile );
 		       """,
 		    context );
-		assertTrue( variables.get( Key.of( "result" ) ) instanceof Struct );
-		Struct result = StructCaster.cast( variables.get( Key.of( "result" ) ) );
+		assertTrue( variables.get( Key.of( "result" ) ) instanceof IStruct );
+		IStruct result = StructCaster.cast( variables.get( Key.of( "result" ) ) );
 		assertTrue( result.containsKey( Key.of( "attributes" ) ) );
 		assertTrue( result.get( "attributes" ) instanceof String );
 		assertTrue( result.containsKey( Key.of( "checksum" ) ) );
@@ -123,8 +128,8 @@ public class FileInfoTest {
 		    result = fileInfo( variables.testFile );
 		       """,
 		    context );
-		assertTrue( variables.get( Key.of( "result" ) ) instanceof Struct );
-		Struct result = StructCaster.cast( variables.get( Key.of( "result" ) ) );
+		assertTrue( variables.get( Key.of( "result" ) ) instanceof IStruct );
+		IStruct result = StructCaster.cast( variables.get( Key.of( "result" ) ) );
 		assertTrue( result.containsKey( Key.of( "attributes" ) ) );
 		assertTrue( result.get( "attributes" ) instanceof String );
 		assertTrue( result.containsKey( Key.of( "checksum" ) ) );
@@ -161,8 +166,8 @@ public class FileInfoTest {
 		       result = file.info( variables.testFile );
 		          """,
 		    context );
-		assertTrue( variables.get( Key.of( "result" ) ) instanceof Struct );
-		Struct result = StructCaster.cast( variables.get( Key.of( "result" ) ) );
+		assertTrue( variables.get( Key.of( "result" ) ) instanceof IStruct );
+		IStruct result = StructCaster.cast( variables.get( Key.of( "result" ) ) );
 		assertTrue( result.containsKey( Key.of( "attributes" ) ) );
 		assertTrue( result.get( "attributes" ) instanceof String );
 		assertTrue( result.containsKey( Key.of( "checksum" ) ) );
@@ -198,8 +203,8 @@ public class FileInfoTest {
 		    result = getFileInfo( variables.testFile );
 		       """,
 		    context );
-		assertTrue( variables.get( Key.of( "result" ) ) instanceof Struct );
-		Struct result = StructCaster.cast( variables.get( Key.of( "result" ) ) );
+		assertTrue( variables.get( Key.of( "result" ) ) instanceof IStruct );
+		IStruct result = StructCaster.cast( variables.get( Key.of( "result" ) ) );
 		assertTrue( result.containsKey( Key.of( "isAttributesSupported" ) ) );
 		assertTrue( result.get( "isAttributesSupported" ) instanceof Boolean );
 		assertTrue( result.containsKey( Key.of( "dateLastModified" ) ) );

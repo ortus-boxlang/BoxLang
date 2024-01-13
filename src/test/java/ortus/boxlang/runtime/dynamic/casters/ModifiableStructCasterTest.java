@@ -28,6 +28,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
+import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.BoxCastException;
 
@@ -36,19 +37,19 @@ public class ModifiableStructCasterTest {
 	@DisplayName( "It can cast a BL Struct to a Struct" )
 	@Test
 	void testItCanCastStruct() {
-		assertThat( ModifiableStructCaster.cast( new Struct() ) instanceof Struct ).isTrue();
+		assertThat( ModifiableStructCaster.cast( new Struct() ) instanceof IStruct ).isTrue();
 	}
 
 	@DisplayName( "It can cast arguments scope to a Struct" )
 	@Test
 	void testItCanCastArgumentsScope() {
-		assertThat( ModifiableStructCaster.cast( new ArgumentsScope() ) instanceof Struct ).isTrue();
+		assertThat( ModifiableStructCaster.cast( new ArgumentsScope() ) instanceof IStruct ).isTrue();
 	}
 
 	@DisplayName( "It can cast a Java Map to a Struct" )
 	@Test
 	void testItCanCastList() {
-		assertThat( ModifiableStructCaster.cast( new HashMap<Object, Object>() ) instanceof Struct ).isTrue();
+		assertThat( ModifiableStructCaster.cast( new HashMap<Object, Object>() ) instanceof IStruct ).isTrue();
 
 		// immutable
 

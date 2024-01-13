@@ -51,6 +51,7 @@ import ortus.boxlang.runtime.services.AsyncService;
 import ortus.boxlang.runtime.services.CacheService;
 import ortus.boxlang.runtime.services.FunctionService;
 import ortus.boxlang.runtime.services.InterceptorService;
+import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.exceptions.MissingIncludeException;
@@ -412,12 +413,12 @@ public class BoxRuntime {
 	}
 
 	/**
-	 * Announce an event with the provided {@link Struct} of data short-hand for {@link #getInterceptorService()}.announce()
+	 * Announce an event with the provided {@link IStruct} of data short-hand for {@link #getInterceptorService()}.announce()
 	 *
 	 * @param state The state to announce
 	 * @param data  The data to announce
 	 */
-	public void announce( String state, Struct data ) {
+	public void announce( String state, IStruct data ) {
 		getInterceptorService().announce( Key.of( state ), data );
 	}
 

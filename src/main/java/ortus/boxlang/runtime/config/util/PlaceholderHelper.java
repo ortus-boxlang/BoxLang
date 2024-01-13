@@ -22,6 +22,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import ortus.boxlang.runtime.dynamic.casters.StringCaster;
+import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.ApplicationException;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
@@ -43,7 +44,7 @@ public class PlaceholderHelper {
 	/**
 	 * Core Replacements
 	 */
-	private static final Struct		PLACEHOLDER_MAP		= new Struct();
+	private static final IStruct	PLACEHOLDER_MAP		= new Struct();
 	static {
 		// Add default core replacements
 		PLACEHOLDER_MAP.put( "user-home", System.getProperty( "user.home" ) );
@@ -66,7 +67,7 @@ public class PlaceholderHelper {
 	 *
 	 * @return The Resolved string
 	 */
-	public static String resolve( String input, Struct map ) {
+	public static String resolve( String input, IStruct map ) {
 		// Create a pattern to match placeholder patterns like "${...}"
 		Matcher matcher = PLACEHOLDER_PATTERN.matcher( input );
 
@@ -124,7 +125,7 @@ public class PlaceholderHelper {
 	 *
 	 * @return The Resolved string
 	 */
-	public static String resolve( Object input, Struct map ) {
+	public static String resolve( Object input, IStruct map ) {
 		return resolve( StringCaster.cast( input ), map );
 	}
 

@@ -17,7 +17,7 @@
  */
 package ortus.boxlang.runtime.types.exceptions;
 
-import ortus.boxlang.runtime.types.Struct;
+import ortus.boxlang.runtime.types.IStruct;
 
 /**
  * Thrown when a key is not found in a struct
@@ -30,7 +30,7 @@ public class KeyNotFoundException extends ApplicationException {
 	 * @param message The message to display
 	 * @param target  The struct that was being searched
 	 */
-	public KeyNotFoundException( String message, Struct target ) {
+	public KeyNotFoundException( String message, IStruct target ) {
 		super( message );
 	}
 

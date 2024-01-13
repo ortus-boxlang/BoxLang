@@ -247,7 +247,7 @@ public class ClosureTest {
 		};
 		Closure		closure		= new SampleClosure( args, new ScriptingBoxContext(), "Brad" );
 
-		Struct		meta		= closure.getMetaData();
+		IStruct		meta		= closure.getMetaData();
 		assertThat( meta.get( Key.of( "name" ) ) ).isEqualTo( "Closure" );
 		assertThat( meta.get( Key.of( "returnType" ) ) ).isEqualTo( "any" );
 		assertThat( meta.get( Key.of( "output" ) ) ).isEqualTo( false );
@@ -261,14 +261,14 @@ public class ClosureTest {
 		Array arguments = ( Array ) meta.get( Key.of( "parameters" ) );
 		assertThat( arguments.size() ).isEqualTo( 2 );
 
-		Struct arg1 = ( Struct ) arguments.dereference( context, Key.of( "1" ), false );
+		IStruct arg1 = ( IStruct ) arguments.dereference( context, Key.of( "1" ), false );
 		assertThat( arg1.get( Key.of( "name" ) ) ).isEqualTo( "firstname" );
 		assertThat( arg1.get( Key.of( "required" ) ) ).isEqualTo( false );
 		assertThat( arg1.get( Key.of( "type" ) ) ).isEqualTo( "String" );
 		assertThat( arg1.get( Key.of( "default" ) ) ).isEqualTo( "brad" );
 		assertThat( arg1.get( Key.of( "hint" ) ) ).isEqualTo( "First Name" );
 
-		Struct arg2 = ( Struct ) arguments.dereference( context, Key.of( "2" ), false );
+		IStruct arg2 = ( IStruct ) arguments.dereference( context, Key.of( "2" ), false );
 		assertThat( arg2.get( Key.of( "name" ) ) ).isEqualTo( "lastName" );
 		assertThat( arg2.get( Key.of( "required" ) ) ).isEqualTo( false );
 		assertThat( arg2.get( Key.of( "type" ) ) ).isEqualTo( "String" );

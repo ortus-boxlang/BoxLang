@@ -32,7 +32,7 @@ import ortus.boxlang.runtime.context.ScriptingBoxContext;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
-import ortus.boxlang.runtime.types.Struct;
+import ortus.boxlang.runtime.types.IStruct;
 
 public class StructClearTest {
 
@@ -69,7 +69,7 @@ public class StructClearTest {
 		         """,
 		    context );
 		assertThat( variables.get( result ) ).isEqualTo( true );
-		assertThat( ( ( Struct ) variables.get( Key.of( "foods" ) ) ).size() ).isEqualTo( 0 );
+		assertThat( ( ( IStruct ) variables.get( Key.of( "foods" ) ) ).size() ).isEqualTo( 0 );
 	}
 
 	@DisplayName( "It can clear the struct member" )
@@ -86,7 +86,7 @@ public class StructClearTest {
 
 		VariablesScope testVariables = ( VariablesScope ) variables;
 		assertThat( testVariables.getAsStruct( result ).size() ).isEqualTo( 0 );
-		assertThat( variables.get( result ) instanceof Struct ).isEqualTo( true );
+		assertThat( variables.get( result ) instanceof IStruct ).isEqualTo( true );
 		assertThat( variables.get( Key.of( "foods" ) ) ).isEqualTo( variables.get( result ) );
 	}
 

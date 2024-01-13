@@ -55,7 +55,7 @@ public class QueryTest {
 
 		qry.setCell( Key.of( "col2" ), 0, 100 );
 		qry.setCell( Key.of( "col2" ), 1, 101 );
-		for ( Struct row : qry ) {
+		for ( IStruct row : qry ) {
 			assertThat( row.get( Key.of( "foo" ) ) ).isNotNull();
 			assertThat( row.get( Key.of( "col2" ) ) ).isNotNull();
 		}

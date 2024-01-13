@@ -349,7 +349,7 @@ public class FunctionTest {
 		    "42",
 		    Struct.of( "hint", "Brad's func", "output", false )
 		);
-		Struct	meta	= udf.getMetaData();
+		IStruct	meta	= udf.getMetaData();
 		assertThat( meta.get( Key.of( "name" ) ) ).isEqualTo( "foo" );
 		assertThat( meta.get( Key.of( "returnType" ) ) ).isEqualTo( "String" );
 		assertThat( meta.get( Key.of( "output" ) ) ).isEqualTo( false );
@@ -363,14 +363,14 @@ public class FunctionTest {
 		Array arguments = ( Array ) meta.get( Key.of( "parameters" ) );
 		assertThat( arguments.size() ).isEqualTo( 2 );
 
-		Struct arg1 = ( Struct ) arguments.dereference( context, Key.of( "1" ), false );
+		IStruct arg1 = ( IStruct ) arguments.dereference( context, Key.of( "1" ), false );
 		assertThat( arg1.get( Key.of( "name" ) ) ).isEqualTo( "param1" );
 		assertThat( arg1.get( Key.of( "required" ) ) ).isEqualTo( true );
 		assertThat( arg1.get( Key.of( "type" ) ) ).isEqualTo( "String" );
 		assertThat( arg1.get( Key.of( "default" ) ) ).isEqualTo( null );
 		assertThat( arg1.get( Key.of( "hint" ) ) ).isEqualTo( "First Name" );
 
-		Struct arg2 = ( Struct ) arguments.dereference( context, Key.of( "2" ), false );
+		IStruct arg2 = ( IStruct ) arguments.dereference( context, Key.of( "2" ), false );
 		assertThat( arg2.get( Key.of( "name" ) ) ).isEqualTo( "param2" );
 		assertThat( arg2.get( Key.of( "required" ) ) ).isEqualTo( false );
 		assertThat( arg2.get( Key.of( "type" ) ) ).isEqualTo( "any" );

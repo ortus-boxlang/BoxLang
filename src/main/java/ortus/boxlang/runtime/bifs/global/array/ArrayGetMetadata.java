@@ -22,6 +22,7 @@ import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.BoxLangType;
+import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
 
 @BoxBIF
@@ -46,9 +47,9 @@ public class ArrayGetMetadata extends BIF {
 	 *
 	 * @argument.array The array to be inserted into
 	 */
-	public Struct invoke( IBoxContext context, ArgumentsScope arguments ) {
+	public IStruct invoke( IBoxContext context, ArgumentsScope arguments ) {
 		// Array actualArray = arguments.getAsArray( Key.array );
-		Struct meta = new Struct();
+		IStruct meta = new Struct();
 
 		// this value never seems to change
 		meta.put( Key.datatype, "any" );

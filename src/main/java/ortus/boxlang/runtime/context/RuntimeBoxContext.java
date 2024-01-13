@@ -22,7 +22,7 @@ import ortus.boxlang.runtime.config.Configuration;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.ServerScope;
-import ortus.boxlang.runtime.types.Struct;
+import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.UDF;
 import ortus.boxlang.runtime.types.exceptions.KeyNotFoundException;
 import ortus.boxlang.runtime.types.exceptions.ScopeNotFoundException;
@@ -189,7 +189,7 @@ public class RuntimeBoxContext extends BaseBoxContext {
 	 * 
 	 * @return A struct of configuration
 	 */
-	public Struct getConfig() {
+	public IStruct getConfig() {
 		// Question, should this be the same struct for all requests, or should it be a new struct every time?
 		return runtimeConfig.asStruct();
 	}

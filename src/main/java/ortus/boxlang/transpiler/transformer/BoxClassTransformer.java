@@ -120,8 +120,8 @@ public class BoxClassTransformer extends AbstractTransformer {
 			 */
 			private Boolean			canOutput			= null;
 
-			private final static Struct	annotations;
-			private final static Struct	documentation;
+			private final static IStruct	annotations;
+			private final static IStruct	documentation;
 			// replace Object with record/class to represent a property
 			private final static Map<Key,Property>	properties;
 			private final static Map<Key,Property>	getterLookup=null;
@@ -207,11 +207,11 @@ public class BoxClassTransformer extends AbstractTransformer {
 				return thisScope;
 			}			
 
-			public Struct getAnnotations() {
+			public IStruct getAnnotations() {
 				return annotations;
 			}
 
-			public Struct getDocumentation() {
+			public IStruct getDocumentation() {
 				return documentation;
 			}
 
@@ -491,8 +491,8 @@ public class BoxClassTransformer extends AbstractTransformer {
 			 *
 			 * @return The metadata as a struct
 			 */
-			public Struct getMetaData() {
-				Struct meta = new Struct();
+			public IStruct getMetaData() {
+				IStruct meta = new Struct();
 				if ( getDocumentation() != null ) {
 					meta.putAll( getDocumentation() );
 				}

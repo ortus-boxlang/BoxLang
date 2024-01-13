@@ -35,7 +35,7 @@ import org.mockito.Spy;
 
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.services.AsyncService;
-import ortus.boxlang.runtime.types.Struct;
+import ortus.boxlang.runtime.types.IStruct;
 
 class SchedulerTest {
 
@@ -194,16 +194,16 @@ class SchedulerTest {
 
 			// Wait for them to execute
 			Thread.sleep( 1000 );
-			Struct stats = scheduler.getTaskStats();
+			IStruct stats = scheduler.getTaskStats();
 
-			assertThat( ( Boolean ) ( ( Struct ) stats.get( "test1" ) ).get( "neverRun" ) ).isFalse();
-			assertThat( ( Boolean ) ( ( Struct ) stats.get( "test3" ) ).get( "neverRun" ) ).isTrue();
+			assertThat( ( Boolean ) ( ( IStruct ) stats.get( "test1" ) ).get( "neverRun" ) ).isFalse();
+			assertThat( ( Boolean ) ( ( IStruct ) stats.get( "test3" ) ).get( "neverRun" ) ).isTrue();
 
 			assertThat(
-			    ( ( AtomicInteger ) ( ( Struct ) stats.get( "test1" ) ).get( "totalRuns" ) ).get()
+			    ( ( AtomicInteger ) ( ( IStruct ) stats.get( "test1" ) ).get( "totalRuns" ) ).get()
 			).isEqualTo( 1 );
 			assertThat(
-			    ( ( AtomicInteger ) ( ( Struct ) stats.get( "test3" ) ).get( "totalRuns" ) ).get()
+			    ( ( AtomicInteger ) ( ( IStruct ) stats.get( "test3" ) ).get( "totalRuns" ) ).get()
 			).isEqualTo( 0 );
 		} finally {
 			// Sleep for 1000 ms to allow the scheduler to run

@@ -37,7 +37,7 @@ import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
 import ortus.boxlang.runtime.types.Array;
-import ortus.boxlang.runtime.types.Struct;
+import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.UDF;
 import ortus.boxlang.runtime.types.meta.BoxMeta;
 import ortus.boxlang.runtime.types.meta.FunctionMeta;
@@ -81,7 +81,7 @@ public class UDFFunctionTest {
 		assertThat( variables.get( result ) ).isEqualTo( "my func" );
 		assertThat( variables.get( foo ) instanceof UDF ).isEqualTo( true );
 
-		Struct meta = ( ( UDF ) variables.get( foo ) ).getMetaData();
+		IStruct meta = ( ( UDF ) variables.get( foo ) ).getMetaData();
 
 		assertThat( meta.get( Key.of( "name" ) ) ).isEqualTo( "foo" );
 		// Defaults
@@ -191,7 +191,7 @@ public class UDFFunctionTest {
 
 		// Now we test our "new" meta view which breaks out actual UDF meta, javaadoc, and annotations (inline and @)
 		FunctionMeta	$bx			= ( ( FunctionMeta ) Referencer.get( context, UDFfoo, BoxMeta.key, false ) );
-		Struct			annotations	= ( Struct ) $bx.meta.get( Key.of( "annotations" ) );
+		IStruct			annotations	= ( IStruct ) $bx.meta.get( Key.of( "annotations" ) );
 		System.out.println( annotations );
 		assertThat( annotations.get( Key.of( "k1" ) ) ).isEqualTo( "" );
 		assertThat( annotations.get( Key.of( "k2" ) ) ).isEqualTo( "v2" );
@@ -225,7 +225,7 @@ public class UDFFunctionTest {
 		    context );
 		assertThat( variables.get( result ) ).isEqualTo( "value" );
 		UDF		UDFfoo	= ( ( UDF ) variables.get( foo ) );
-		Struct	meta	= UDFfoo.getMetaData();
+		IStruct	meta	= UDFfoo.getMetaData();
 
 		// "Legacy" meta view just crams all the annotations into a struct with the "real" UDF metadata
 		assertThat( meta.get( Key.of( "name" ) ) ).isEqualTo( "foo" );
@@ -239,7 +239,7 @@ public class UDFFunctionTest {
 		assertThat( meta.get( Key.of( "anotherAnnotation2" ) ) ).isEqualTo( 42 );
 		assertThat( meta.get( Key.of( "anotherAnnotation3" ) ) ).isEqualTo( true );
 		assertThat( meta.get( Key.of( "anotherAnnotation4" ) ) instanceof Array ).isTrue();
-		assertThat( meta.get( Key.of( "anotherAnnotation5" ) ) instanceof Struct ).isTrue();
+		assertThat( meta.get( Key.of( "anotherAnnotation5" ) ) instanceof IStruct ).isTrue();
 		assertThat( meta.get( Key.of( "letsGetFunky" ) ) instanceof Array ).isTrue();
 		Array funkyAnnoationMeta = meta.getAsArray( Key.of( "letsGetFunky" ) );
 		assertThat( funkyAnnoationMeta.size() ).isEqualTo( 5 );
@@ -247,18 +247,18 @@ public class UDFFunctionTest {
 		assertThat( funkyAnnoationMeta.get( 1 ) ).isEqualTo( 42 );
 		assertThat( funkyAnnoationMeta.get( 2 ) ).isEqualTo( true );
 		assertThat( funkyAnnoationMeta.get( 3 ) instanceof Array ).isTrue();
-		assertThat( funkyAnnoationMeta.get( 4 ) instanceof Struct ).isTrue();
+		assertThat( funkyAnnoationMeta.get( 4 ) instanceof IStruct ).isTrue();
 
 		Array args = ( ( Array ) meta.get( Key.of( "parameters" ) ) );
 		assertThat( args.size() ).isEqualTo( 2 );
 
-		Struct param1 = ( Struct ) args.get( 0 );
+		IStruct param1 = ( IStruct ) args.get( 0 );
 		assertThat( param1.get( Key.of( "name" ) ) ).isEqualTo( "param1" );
 		assertThat( param1.get( Key.of( "hint" ) ) ).isEqualTo( "My param" );
 		assertThat( param1.get( Key.of( "required" ) ) ).isEqualTo( true );
 		assertThat( param1.get( Key.of( "type" ) ) ).isEqualTo( "string" );
 
-		Struct param2 = ( Struct ) args.get( 1 );
+		IStruct param2 = ( IStruct ) args.get( 1 );
 		assertThat( param2.get( Key.of( "name" ) ) ).isEqualTo( "param2" );
 		assertThat( param2.get( Key.of( "luis" ) ) ).isEqualTo( "majano" );
 		assertThat( param2.get( Key.of( "hint" ) ) ).isEqualTo( "" );
@@ -267,7 +267,7 @@ public class UDFFunctionTest {
 
 		// Now we test our "new" meta view which breaks out actual UDF meta, javaadoc, and annotations (inline and @)
 		FunctionMeta	$bx			= ( ( FunctionMeta ) Referencer.get( context, UDFfoo, BoxMeta.key, false ) );
-		Struct			annotations	= ( Struct ) $bx.meta.get( Key.of( "annotations" ) );
+		IStruct			annotations	= ( IStruct ) $bx.meta.get( Key.of( "annotations" ) );
 		assertThat( annotations.get( Key.of( "hint" ) ) ).isEqualTo( "my UDF" );
 		assertThat( annotations.get( Key.of( "output" ) ) ).isEqualTo( true );
 		assertThat( annotations.get( Key.of( "brad" ) ) ).isEqualTo( "wood" );
@@ -276,7 +276,7 @@ public class UDFFunctionTest {
 		assertThat( annotations.get( Key.of( "anotherAnnotation2" ) ) ).isEqualTo( 42 );
 		assertThat( annotations.get( Key.of( "anotherAnnotation3" ) ) ).isEqualTo( true );
 		assertThat( annotations.get( Key.of( "anotherAnnotation4" ) ) instanceof Array ).isTrue();
-		assertThat( annotations.get( Key.of( "anotherAnnotation5" ) ) instanceof Struct ).isTrue();
+		assertThat( annotations.get( Key.of( "anotherAnnotation5" ) ) instanceof IStruct ).isTrue();
 		assertThat( annotations.get( Key.of( "letsGetFunky" ) ) instanceof Array ).isTrue();
 		Array funkyAnnoation = annotations.getAsArray( Key.of( "letsGetFunky" ) );
 		assertThat( funkyAnnoation.size() ).isEqualTo( 5 );
@@ -284,12 +284,12 @@ public class UDFFunctionTest {
 		assertThat( funkyAnnoation.get( 1 ) ).isEqualTo( 42 );
 		assertThat( funkyAnnoation.get( 2 ) ).isEqualTo( true );
 		assertThat( funkyAnnoation.get( 3 ) instanceof Array ).isTrue();
-		assertThat( funkyAnnoation.get( 4 ) instanceof Struct ).isTrue();
+		assertThat( funkyAnnoation.get( 4 ) instanceof IStruct ).isTrue();
 
 		Array	params				= ( Array ) $bx.meta.get( Key.of( "parameters" ) );
-		Struct	param1Annotations	= ( Struct ) Referencer.get( context, params.get( 0 ), Key.of( "annotations" ), false );
+		IStruct	param1Annotations	= ( IStruct ) Referencer.get( context, params.get( 0 ), Key.of( "annotations" ), false );
 		assertThat( param1Annotations.get( Key.of( "hint" ) ) ).isEqualTo( "My param" );
-		Struct param2Annotations = ( Struct ) Referencer.get( context, params.get( 1 ), Key.of( "annotations" ), false );
+		IStruct param2Annotations = ( IStruct ) Referencer.get( context, params.get( 1 ), Key.of( "annotations" ), false );
 		assertThat( param2Annotations.get( Key.of( "luis" ) ) ).isEqualTo( "majano" );
 	}
 
@@ -319,7 +319,7 @@ public class UDFFunctionTest {
 		    context );
 		assertThat( variables.get( result ) ).isEqualTo( "value" );
 		UDF		UDFfoo	= ( ( UDF ) variables.get( foo ) );
-		Struct	meta	= UDFfoo.getMetaData();
+		IStruct	meta	= UDFfoo.getMetaData();
 
 		assertThat( meta.get( Key.of( "name" ) ) ).isEqualTo( "foo" );
 		assertThat( meta.get( Key.of( "output" ) ) ).isEqualTo( true );
@@ -331,31 +331,31 @@ public class UDFFunctionTest {
 		Array args = ( ( Array ) meta.get( Key.of( "parameters" ) ) );
 		assertThat( args.size() ).isEqualTo( 2 );
 
-		Struct param1 = ( Struct ) args.get( 0 );
+		IStruct param1 = ( IStruct ) args.get( 0 );
 		assertThat( param1.get( Key.of( "name" ) ) ).isEqualTo( "param1" );
 		assertThat( param1.get( Key.of( "required" ) ) ).isEqualTo( false );
 		assertThat( param1.get( Key.of( "type" ) ) ).isEqualTo( "Any" );
 
-		Struct param2 = ( Struct ) args.get( 1 );
+		IStruct param2 = ( IStruct ) args.get( 1 );
 		assertThat( param2.get( Key.of( "name" ) ) ).isEqualTo( "param2" );
 		assertThat( param2.getAsString( Key.of( "hint" ) ).trim() ).isEqualTo( "param2 hint" );
 		assertThat( param2.get( Key.of( "required" ) ) ).isEqualTo( false );
 
 		FunctionMeta	$bx				= ( ( FunctionMeta ) Referencer.get( context, UDFfoo, BoxMeta.key, false ) );
-		Struct			documentation	= ( Struct ) $bx.meta.get( Key.of( "documentation" ) );
+		IStruct			documentation	= ( IStruct ) $bx.meta.get( Key.of( "documentation" ) );
 		assertThat( documentation.get( Key.of( "hint" ) ) ).isEqualTo( "my UDF also more hint here" );
 		assertThat( documentation.get( Key.of( "returns" ) ) ).isEqualTo( "Pure Gold" );
 
 		Array	params				= ( Array ) $bx.meta.get( Key.of( "parameters" ) );
 
-		Struct	param1Documentation	= ( Struct ) Referencer.get( context, params.get( 0 ), Key.of( "documentation" ), false );
+		IStruct	param1Documentation	= ( IStruct ) Referencer.get( context, params.get( 0 ), Key.of( "documentation" ), false );
 		assertThat( param1Documentation.getAsString( Key.of( "hint" ) ).trim() ).isEqualTo( "My param" );
 
-		Struct param2Documentation = ( Struct ) Referencer.get( context, params.get( 1 ), Key.of( "documentation" ), false );
+		IStruct param2Documentation = ( IStruct ) Referencer.get( context, params.get( 1 ), Key.of( "documentation" ), false );
 		assertThat( param2Documentation.getAsString( Key.of( "hint" ) ).trim() ).isEqualTo( "param2 hint" );
 		assertThat( param2Documentation.getAsString( Key.of( "luis" ) ).trim() ).isEqualTo( "majano is spread across two lines" );
 
-		Struct annotations = $bx.meta.getAsStruct( Key.of( "annotations" ) );
+		IStruct annotations = $bx.meta.getAsStruct( Key.of( "annotations" ) );
 		assertThat( annotations.getAsBoolean( Key.of( "output" ) ) ).isEqualTo( true );
 		assertThat( annotations.getAsString( Key.of( "brad" ) ) ).isEqualTo( "wood" );
 		assertThat( annotations.getAsString( Key.of( "inject" ) ) ).isEqualTo( "" );

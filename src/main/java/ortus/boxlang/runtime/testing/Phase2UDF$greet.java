@@ -29,6 +29,7 @@ import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.LocalScope;
 import ortus.boxlang.runtime.types.Argument;
+import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.UDF;
 
@@ -67,9 +68,9 @@ public class Phase2UDF$greet extends UDF {
 	/**
 	 * Additional abitrary metadata about this function.
 	 */
-	private final static Struct			annotations			= Struct.of( Key.of( "hint" ), "My Function Hint" );
+	private final static IStruct		annotations			= Struct.of( Key.of( "hint" ), "My Function Hint" );
 
-	private final static Struct			documentation		= Struct.EMPTY;
+	private final static IStruct		documentation		= Struct.EMPTY;
 
 	/**
 	 * The Box Runnable that declared this function
@@ -89,11 +90,11 @@ public class Phase2UDF$greet extends UDF {
 		return returnType;
 	}
 
-	public Struct getAnnotations() {
+	public IStruct getAnnotations() {
 		return annotations;
 	}
 
-	public Struct getDocumentation() {
+	public IStruct getDocumentation() {
 		return documentation;
 	}
 

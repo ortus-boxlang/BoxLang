@@ -49,7 +49,7 @@ import ortus.boxlang.runtime.scopes.IntKey;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.IType;
-import ortus.boxlang.runtime.types.Struct;
+import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.exceptions.ApplicationException;
 import ortus.boxlang.runtime.types.exceptions.BoxLangException;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
@@ -360,7 +360,7 @@ public class DynamicJavaInteropService {
 			} else {
 				// implicit constructor
 
-				if ( positionalArgs != null && positionalArgs.length == 1 && positionalArgs[ 0 ] instanceof Struct named ) {
+				if ( positionalArgs != null && positionalArgs.length == 1 && positionalArgs[ 0 ] instanceof IStruct named ) {
 					namedArgs = named.getWrapped();
 				} else if ( positionalArgs != null && positionalArgs.length > 0 ) {
 					throw new BoxRuntimeException( "Implicit constructor only accepts named args or a single Struct as a positional arg." );

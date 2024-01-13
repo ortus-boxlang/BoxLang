@@ -31,6 +31,7 @@ import ortus.boxlang.runtime.context.ScriptingBoxContext;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
+import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
 
 public class AssignmentTest {
@@ -76,7 +77,7 @@ public class AssignmentTest {
 		    foo.bar = "test";
 		    """,
 		    context );
-		assertThat( ( ( Struct ) variables.get( Key.of( "foo" ) ) ).get( Key.of( "bar" ) ) ).isEqualTo( "test" );
+		assertThat( ( ( IStruct ) variables.get( Key.of( "foo" ) ) ).get( Key.of( "bar" ) ) ).isEqualTo( "test" );
 	}
 
 	@DisplayName( "Multi multi identifier dot assignment" )
@@ -88,7 +89,7 @@ public class AssignmentTest {
 		    """,
 		    context );
 
-		assertThat( ( ( Struct ) ( ( Struct ) variables.get( Key.of( "foo" ) ) ).get( Key.of( "bar" ) ) )
+		assertThat( ( ( IStruct ) ( ( IStruct ) variables.get( Key.of( "foo" ) ) ).get( Key.of( "bar" ) ) )
 		    .get( Key.of( "baz" ) ) ).isEqualTo( "test" );
 	}
 
@@ -100,7 +101,7 @@ public class AssignmentTest {
 		    foo["bar"] = "test";
 		    """,
 		    context );
-		assertThat( ( ( Struct ) variables.get( Key.of( "foo" ) ) ).get( Key.of( "bar" ) ) ).isEqualTo( "test" );
+		assertThat( ( ( IStruct ) variables.get( Key.of( "foo" ) ) ).get( Key.of( "bar" ) ) ).isEqualTo( "test" );
 	}
 
 	@DisplayName( "Bracket string concat assignment" )
@@ -111,7 +112,7 @@ public class AssignmentTest {
 		    foo["b" & "ar"] = "test";
 		    """,
 		    context );
-		assertThat( ( ( Struct ) variables.get( Key.of( "foo" ) ) ).get( Key.of( "bar" ) ) ).isEqualTo( "test" );
+		assertThat( ( ( IStruct ) variables.get( Key.of( "foo" ) ) ).get( Key.of( "bar" ) ) ).isEqualTo( "test" );
 	}
 
 	@DisplayName( "Bracket number assignment" )
@@ -122,7 +123,7 @@ public class AssignmentTest {
 		    foo[ 7 ] = "test";
 		    """,
 		    context );
-		assertThat( ( ( Struct ) variables.get( Key.of( "foo" ) ) ).get( Key.of( "7" ) ) ).isEqualTo( "test" );
+		assertThat( ( ( IStruct ) variables.get( Key.of( "foo" ) ) ).get( Key.of( "7" ) ) ).isEqualTo( "test" );
 	}
 
 	@DisplayName( "Bracket number expression assignment" )
@@ -133,20 +134,20 @@ public class AssignmentTest {
 		    foo[ 7 + 5 ] = "test";
 		    """,
 		    context );
-		assertThat( ( ( Struct ) variables.get( Key.of( "foo" ) ) ).get( Key.of( "12" ) ) ).isEqualTo( "test" );
+		assertThat( ( ( IStruct ) variables.get( Key.of( "foo" ) ) ).get( Key.of( "12" ) ) ).isEqualTo( "test" );
 	}
 
 	@DisplayName( "Bracket object assignment" )
 	@Test
 	public void testBracketObjectExpressionAssignment() {
-		Struct x = new Struct();
+		IStruct x = new Struct();
 		x.assign( context, new Key( "bar" ), "baz" );
 		instance.executeSource(
 		    """
 		    foo[ { bar : "baz" } ] = "test";
 		    """,
 		    context );
-		assertThat( ( ( Struct ) variables.get( Key.of( "foo" ) ) ).get( Key.of( x ) ) ).isEqualTo( "test" );
+		assertThat( ( ( IStruct ) variables.get( Key.of( "foo" ) ) ).get( Key.of( x ) ) ).isEqualTo( "test" );
 	}
 
 	@DisplayName( "Mixed assignment" )
@@ -158,10 +159,10 @@ public class AssignmentTest {
 		    """,
 		    context );
 
-		Struct	foo		= ( Struct ) variables.get( Key.of( "foo" ) );
-		Struct	aaa		= ( Struct ) foo.get( Key.of( "aaa" ) );
-		Struct	twelve	= ( Struct ) aaa.get( Key.of( "12" ) );
-		Struct	other	= ( Struct ) twelve.get( Key.of( "other" ) );
+		IStruct	foo		= ( IStruct ) variables.get( Key.of( "foo" ) );
+		IStruct	aaa		= ( IStruct ) foo.get( Key.of( "aaa" ) );
+		IStruct	twelve	= ( IStruct ) aaa.get( Key.of( "12" ) );
+		IStruct	other	= ( IStruct ) twelve.get( Key.of( "other" ) );
 
 		assertThat( other.get( Key.of( "7" ) ) ).isEqualTo( "test" );
 	}

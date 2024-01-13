@@ -24,7 +24,7 @@ import org.junit.jupiter.api.Test;
 
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.ScriptingBoxContext;
-import ortus.boxlang.runtime.types.Struct;
+import ortus.boxlang.runtime.types.IStruct;
 
 public class ServerScopeTest {
 
@@ -39,7 +39,7 @@ public class ServerScopeTest {
 		assertThat( scope.containsKey( Key.of( "java" ) ) ).isTrue();
 
 		assertThat( scope.containsKey( Key.of( "separator" ) ) ).isTrue();
-		Struct separator = ( Struct ) scope.get( Key.of( "separator" ) );
+		IStruct separator = ( IStruct ) scope.get( Key.of( "separator" ) );
 		assertThat( separator.containsKey( Key.of( "path" ) ) ).isTrue();
 		assertThat( separator.get( Key.of( "path" ) ) ).isEqualTo( System.getProperty( "path.separator", "" ) );
 		assertThat( separator.containsKey( Key.of( "file" ) ) ).isTrue();
@@ -48,7 +48,7 @@ public class ServerScopeTest {
 		assertThat( separator.get( Key.of( "line" ) ) ).isEqualTo( System.getProperty( "line.separator", "" ) );
 
 		assertThat( scope.containsKey( Key.of( "system" ) ) ).isTrue();
-		Struct system = ( Struct ) scope.get( Key.of( "system" ) );
+		IStruct system = ( IStruct ) scope.get( Key.of( "system" ) );
 		assertThat( system.containsKey( Key.of( "environment" ) ) ).isTrue();
 		assertThat( system.containsKey( Key.of( "properties" ) ) ).isTrue();
 

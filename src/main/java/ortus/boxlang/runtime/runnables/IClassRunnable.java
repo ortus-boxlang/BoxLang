@@ -25,7 +25,7 @@ import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.ThisScope;
 import ortus.boxlang.runtime.scopes.VariablesScope;
 import ortus.boxlang.runtime.types.Property;
-import ortus.boxlang.runtime.types.Struct;
+import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.meta.BoxMeta;
 
 public interface IClassRunnable extends ITemplateRunnable, IReferenceable {
@@ -54,12 +54,12 @@ public interface IClassRunnable extends ITemplateRunnable, IReferenceable {
 	/**
 	 * Get annotations
 	 */
-	public Struct getAnnotations();
+	public IStruct getAnnotations();
 
 	/**
 	 * Get documentation
 	 */
-	public Struct getDocumentation();
+	public IStruct getDocumentation();
 
 	/**
 	 * Get the properties
@@ -78,7 +78,7 @@ public interface IClassRunnable extends ITemplateRunnable, IReferenceable {
 	 *
 	 * @return The metadata as a struct
 	 */
-	public Struct getMetaData();
+	public IStruct getMetaData();
 
 	// Duplicate from IType
 	public BoxMeta getBoxMeta();

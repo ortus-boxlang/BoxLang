@@ -41,6 +41,7 @@ import ortus.boxlang.runtime.async.executors.ExecutorRecord;
 import ortus.boxlang.runtime.async.time.DateTimeHelper;
 import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.scopes.Key;
+import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.util.Timer;
 
@@ -205,13 +206,13 @@ public class ScheduledTask implements Runnable {
 	/**
 	 * A struct for the task that can be used to store any metadata
 	 */
-	private Struct									meta				= new Struct();
+	private IStruct									meta				= new Struct();
 
 	/**
 	 * The collection of stats for the task: { name, created, lastRun, nextRun, totalRuns, totalFailures, totalSuccess, lastResult, neverRun,
 	 * lastExecutionTime }
 	 */
-	private Struct									stats;
+	private IStruct									stats;
 
 	/**
 	 * The timezone this task runs under, by default we use the timezone defined in the schedulers
@@ -1805,7 +1806,7 @@ public class ScheduledTask implements Runnable {
 	 * @param caller The name of the method calling this
 	 * @param args   The arguments to output
 	 */
-	private void debugLog( String caller, Struct args ) {
+	private void debugLog( String caller, IStruct args ) {
 		if ( logger.isDebugEnabled() ) {
 			List<String> message = List.of(
 			    "+ ScheduledTask",
@@ -1915,7 +1916,7 @@ public class ScheduledTask implements Runnable {
 	 *
 	 * @return the stats
 	 */
-	public Struct getStats() {
+	public IStruct getStats() {
 		return stats;
 	}
 
@@ -2287,7 +2288,7 @@ public class ScheduledTask implements Runnable {
 	 *
 	 * @return the meta
 	 */
-	public Struct getMeta() {
+	public IStruct getMeta() {
 		return this.meta;
 	}
 
@@ -2296,7 +2297,7 @@ public class ScheduledTask implements Runnable {
 	 *
 	 * @param meta the meta to set
 	 */
-	public ScheduledTask setMeta( Struct meta ) {
+	public ScheduledTask setMeta( IStruct meta ) {
 		this.meta = meta;
 		return this;
 	}

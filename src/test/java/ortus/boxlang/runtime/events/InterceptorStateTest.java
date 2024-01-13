@@ -26,6 +26,7 @@ import org.junit.jupiter.api.Test;
 
 import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.scopes.Key;
+import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
 
 public class InterceptorStateTest {
@@ -58,7 +59,7 @@ public class InterceptorStateTest {
 		interceptorState.register( observer2 );
 
 		Key		counterKey	= Key.of( "counter" );
-		Struct	data		= new Struct();
+		IStruct	data		= new Struct();
 		data.put( counterKey, 0 );
 
 		interceptorState.announce( data );
@@ -66,7 +67,7 @@ public class InterceptorStateTest {
 		assertThat( data.get( counterKey ) ).isEqualTo( 2 );
 	}
 
-	public void onTests( Struct data ) {
+	public void onTests( IStruct data ) {
 		Key	counterKey	= Key.of( "counter" );
 		int	counter		= ( int ) data.get( counterKey );
 		data.put( counterKey, counter + 1 );

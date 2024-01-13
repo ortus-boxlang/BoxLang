@@ -40,7 +40,7 @@ import ortus.boxlang.runtime.types.meta.GenericMeta;
 /**
  * This class represents a query.
  */
-public class Query implements IType, IReferenceable, Collection<Struct> {
+public class Query implements IType, IReferenceable, Collection<IStruct> {
 
 	/**
 	 * Query data as List of arrays
@@ -254,7 +254,7 @@ public class Query implements IType, IReferenceable, Collection<Struct> {
 	 * 
 	 * @return this query
 	 */
-	public int addRow( Struct row ) {
+	public int addRow( IStruct row ) {
 		Object[]	rowData	= new Object[ columns.size() ];
 		// TODO: validate types
 		int			i		= 0;
@@ -277,9 +277,9 @@ public class Query implements IType, IReferenceable, Collection<Struct> {
 	 * 
 	 * @return array of row data
 	 */
-	public Struct getRowAsStruct( int index ) {
+	public IStruct getRowAsStruct( int index ) {
 		validateRow( index );
-		Struct		struct	= new Struct();
+		IStruct		struct	= new Struct();
 		Object[]	row		= data.get( index );
 		int			i		= 0;
 		for ( QueryColumn column : columns.values() ) {
@@ -360,9 +360,9 @@ public class Query implements IType, IReferenceable, Collection<Struct> {
 	}
 
 	@Override
-	public Iterator<Struct> iterator() {
+	public Iterator<IStruct> iterator() {
 		// TODO: Thread safe?
-		return new Iterator<Struct>() {
+		return new Iterator<IStruct>() {
 
 			private int index = 0;
 
@@ -372,7 +372,7 @@ public class Query implements IType, IReferenceable, Collection<Struct> {
 			}
 
 			@Override
-			public Struct next() {
+			public IStruct next() {
 				return getRowAsStruct( index++ );
 			}
 		};
@@ -389,7 +389,7 @@ public class Query implements IType, IReferenceable, Collection<Struct> {
 	}
 
 	@Override
-	public boolean add( Struct row ) {
+	public boolean add( IStruct row ) {
 		addRow( row );
 		return true;
 	}
@@ -405,8 +405,8 @@ public class Query implements IType, IReferenceable, Collection<Struct> {
 	}
 
 	@Override
-	public boolean addAll( Collection<? extends Struct> rows ) {
-		for ( Struct row : rows ) {
+	public boolean addAll( Collection<? extends IStruct> rows ) {
+		for ( IStruct row : rows ) {
 			addRow( row );
 		}
 		return true;

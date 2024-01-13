@@ -77,8 +77,8 @@ public class BoxLambdaTransformer extends AbstractTransformer {
 			private final static Argument[]			arguments	= new Argument[] {};
 			private final static String				returnType	= "any";
 
-		    private final static Struct				annotations			= Struct.EMPTY;
-			private final static Struct				documentation		= Struct.EMPTY;
+		    private final static IStruct				annotations			= Struct.EMPTY;
+			private final static IStruct				documentation		= Struct.EMPTY;
 			
 			private static final long					compileVersion	= ${compileVersion};
 			private static final LocalDateTime			compiledOn		= ${compiledOnTimestamp};
@@ -128,12 +128,12 @@ public class BoxLambdaTransformer extends AbstractTransformer {
       		}
 
 			@Override
-			public Struct getAnnotations() {
+			public IStruct getAnnotations() {
 				return annotations;
 			}
 
 			@Override
-			public Struct getDocumentation() {
+			public IStruct getDocumentation() {
 				return documentation;
 			}
 			@Override

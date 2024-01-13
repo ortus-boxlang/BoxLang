@@ -55,7 +55,7 @@ public class Struct implements IStruct, IListenable {
 	/**
 	 * An immutable singleton empty struct
 	 */
-	public static final Struct			EMPTY				= new ImmutableStruct();
+	public static final IStruct			EMPTY				= new ImmutableStruct();
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -163,7 +163,7 @@ public class Struct implements IStruct, IListenable {
 	 *
 	 * @param map The map to create the struct from
 	 */
-	public static Struct fromMap( Map<Object, Object> map ) {
+	public static IStruct fromMap( Map<Object, Object> map ) {
 		return new Struct( map );
 	}
 
@@ -173,7 +173,7 @@ public class Struct implements IStruct, IListenable {
 	 * @param map  The map to create the struct from
 	 * @param type The type of struct to create: DEFAULT, LINKED, SORTED
 	 */
-	public static Struct fromMap( Type type, Map<Object, Object> map ) {
+	public static IStruct fromMap( Type type, Map<Object, Object> map ) {
 		return new Struct( type, map );
 	}
 
@@ -184,11 +184,11 @@ public class Struct implements IStruct, IListenable {
 	 *
 	 * @return The struct
 	 */
-	public static Struct of( Object... values ) {
+	public static IStruct of( Object... values ) {
 		if ( values.length % 2 != 0 ) {
 			throw new BoxRuntimeException( "Invalid number of arguments.  Must be an even number." );
 		}
-		Struct struct = new Struct();
+		IStruct struct = new Struct();
 		for ( int i = 0; i < values.length; i += 2 ) {
 			struct.put( KeyCaster.cast( values[ i ] ), values[ i + 1 ] );
 		}
@@ -202,11 +202,11 @@ public class Struct implements IStruct, IListenable {
 	 *
 	 * @return The linked struct
 	 */
-	public static Struct linkedOf( Object... values ) {
+	public static IStruct linkedOf( Object... values ) {
 		if ( values.length % 2 != 0 ) {
 			throw new BoxRuntimeException( "Invalid number of arguments.  Must be an even number." );
 		}
-		Struct struct = new Struct( Type.LINKED );
+		IStruct struct = new Struct( Type.LINKED );
 		for ( int i = 0; i < values.length; i += 2 ) {
 			struct.put( KeyCaster.cast( values[ i ] ), values[ i + 1 ] );
 		}
@@ -821,8 +821,8 @@ public class Struct implements IStruct, IListenable {
 	 * Convenience method for getting cast as Struct
 	 * Does NOT perform BoxLang casting, only Java cast so the object needs to actually be castable
 	 */
-	public Struct getAsStruct( Key key ) {
-		return ( Struct ) DynamicObject.unWrap( get( key ) );
+	public IStruct getAsStruct( Key key ) {
+		return ( IStruct ) DynamicObject.unWrap( get( key ) );
 	}
 
 	/**

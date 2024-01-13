@@ -46,6 +46,7 @@ import ortus.boxlang.runtime.dynamic.casters.IntegerCaster;
 import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.DateTime;
+import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.BoxIOException;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
@@ -566,14 +567,14 @@ public final class FileSystemUtil {
 	 *
 	 * @return a Struct containing the info of the file or directory
 	 */
-	public static Struct info( Object filePath, Boolean verbose ) {
+	public static IStruct info( Object filePath, Boolean verbose ) {
 		Path path = null;
 		if ( filePath instanceof String ) {
 			path = Path.of( ( String ) filePath );
 		} else {
 			path = ( Path ) filePath;
 		}
-		Struct infoStruct = new Struct();
+		IStruct infoStruct = new Struct();
 		try {
 			infoStruct.put( "name", path.getFileName().toString() );
 			infoStruct.put( "path", path.toAbsolutePath().toString() );

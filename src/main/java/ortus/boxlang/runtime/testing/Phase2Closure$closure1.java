@@ -30,6 +30,7 @@ import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.LocalScope;
 import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.Closure;
+import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
 
 /**
@@ -60,9 +61,9 @@ public class Phase2Closure$closure1 extends Closure {
 	/**
 	 * Additional abitrary metadata about this function.
 	 */
-	private final static Struct			annotations			= Struct.EMPTY;
+	private final static IStruct		annotations			= Struct.EMPTY;
 
-	private final static Struct			documentation		= Struct.EMPTY;
+	private final static IStruct		documentation		= Struct.EMPTY;
 
 	/**
 	 * The access modifier of the function
@@ -87,11 +88,11 @@ public class Phase2Closure$closure1 extends Closure {
 		return returnType;
 	}
 
-	public Struct getAnnotations() {
+	public IStruct getAnnotations() {
 		return annotations;
 	}
 
-	public Struct getDocumentation() {
+	public IStruct getDocumentation() {
 		return documentation;
 	}
 

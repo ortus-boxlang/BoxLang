@@ -20,7 +20,7 @@ package ortus.boxlang.runtime.context;
 import ortus.boxlang.runtime.application.Application;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
-import ortus.boxlang.runtime.types.Struct;
+import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.exceptions.ScopeNotFoundException;
 
 /**
@@ -134,7 +134,7 @@ public class ApplicationBoxContext extends BaseBoxContext {
 	 * 
 	 * @return A struct of configuration
 	 */
-	public Struct getConfig() {
+	public IStruct getConfig() {
 		// TODO: Add in application config here
 		return parent.getConfig();
 	}

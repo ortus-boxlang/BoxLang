@@ -23,6 +23,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import ortus.boxlang.runtime.scopes.Key;
+import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
 
 /**
@@ -43,7 +44,7 @@ public class CacheConfig {
 	/**
 	 * The properties for the cache engine
 	 */
-	public Struct				properties	= new Struct();
+	public IStruct				properties	= new Struct();
 
 	/**
 	 * Logger
@@ -81,7 +82,7 @@ public class CacheConfig {
 	 *
 	 * @return the configuration
 	 */
-	public CacheConfig process( Struct config ) {
+	public CacheConfig process( IStruct config ) {
 		// Name
 		if ( config.containsKey( "name" ) ) {
 			this.name = Key.of( ( String ) config.get( "name" ) );

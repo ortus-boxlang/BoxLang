@@ -22,7 +22,7 @@ import java.util.List;
 
 import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
 import ortus.boxlang.runtime.interop.DynamicObject;
-import ortus.boxlang.runtime.types.Struct;
+import ortus.boxlang.runtime.types.IStruct;
 
 /**
  * An interceptor state is an event state that is used to hold observers that want to listent
@@ -117,7 +117,7 @@ public class InterceptorState {
 	 * @param data The struct of data to pass to the observers
 	 *
 	 */
-	public void announce( Struct data ) {
+	public void announce( IStruct data ) {
 
 		// Quick short ciruit
 		if ( observers.isEmpty() ) {

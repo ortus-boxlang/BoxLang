@@ -25,6 +25,7 @@ import org.slf4j.LoggerFactory;
 import ortus.boxlang.runtime.config.segments.CompilerConfig;
 import ortus.boxlang.runtime.config.segments.RuntimeConfig;
 import ortus.boxlang.runtime.scopes.Key;
+import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
 
 /**
@@ -66,7 +67,7 @@ public class Configuration {
 	 *
 	 * @return the configuration
 	 */
-	public Configuration process( Struct config ) {
+	public Configuration process( IStruct config ) {
 		// Debug Mode
 		if ( config.containsKey( "debugMode" ) ) {
 			this.debugMode = ( Boolean ) config.get( "debugMode" );
@@ -98,7 +99,7 @@ public class Configuration {
 	 * 
 	 * @return Struct
 	 */
-	public Struct asStruct() {
+	public IStruct asStruct() {
 		return Struct.of(
 		    Key.debugMode, this.debugMode,
 		    Key.compiler, this.compiler.asStruct(),

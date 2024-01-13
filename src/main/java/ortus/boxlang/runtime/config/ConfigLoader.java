@@ -17,14 +17,15 @@
  */
 package ortus.boxlang.runtime.config;
 
-import java.nio.file.Path;
 import java.io.File;
 import java.net.URL;
+import java.nio.file.Path;
 import java.util.Map;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.ConfigurationException;
 import ortus.boxlang.runtime.util.JsonUtil;
@@ -129,7 +130,7 @@ public class ConfigLoader {
 	 *
 	 * @return The parsed configuration
 	 */
-	public Configuration loadFromMap( Struct configMap ) {
+	public Configuration loadFromMap( IStruct configMap ) {
 		return new Configuration().process( configMap );
 	}
 
@@ -152,7 +153,7 @@ public class ConfigLoader {
 	 * @return The parsed configuration
 	 */
 	public Configuration loadFromFile( File source ) {
-		Struct rawConfig = deserializeConfig( source );
+		IStruct rawConfig = deserializeConfig( source );
 		logger.info( "Loaded custom BoxLang configuration file [{}]", source );
 		return loadFromMap( rawConfig );
 	}
@@ -198,7 +199,7 @@ public class ConfigLoader {
 	 * @return The raw config map as a Struct
 	 */
 	@SuppressWarnings( "unchecked" )
-	public Struct deserializeConfig( File source ) {
+	public IStruct deserializeConfig( File source ) {
 		// Parse it natively to Java objects
 		Object rawConfig = JsonUtil.fromJson( source );
 
@@ -217,7 +218,7 @@ public class ConfigLoader {
 	 *
 	 * @return The raw config map as a Struct
 	 */
-	public Struct deserializeConfig( String source ) {
+	public IStruct deserializeConfig( String source ) {
 		return deserializeConfig( new File( source ) );
 	}
 
@@ -228,7 +229,7 @@ public class ConfigLoader {
 	 *
 	 * @return The raw config map as a Struct
 	 */
-	public Struct deserializeConfig( URL source ) {
+	public IStruct deserializeConfig( URL source ) {
 		return deserializeConfig( new File( source.getFile() ) );
 	}
 
@@ -239,7 +240,7 @@ public class ConfigLoader {
 	 *
 	 * @return The raw config map as a Struct
 	 */
-	public Struct deserializeConfig( Path source ) {
+	public IStruct deserializeConfig( Path source ) {
 		return deserializeConfig( source.toFile() );
 	}
 

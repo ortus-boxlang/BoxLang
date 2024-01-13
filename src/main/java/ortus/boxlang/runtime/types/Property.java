@@ -29,6 +29,6 @@ import ortus.boxlang.runtime.scopes.Key;
  * @param documentation Documentation for the property
  *
  */
-public record Property( Key name, String type, Object defaultValue, Struct annotations, Struct documentation ) {
+public record Property( Key name, String type, Object defaultValue, IStruct annotations, IStruct documentation ) {
 
 }

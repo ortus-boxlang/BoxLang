@@ -10,6 +10,7 @@ import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.BoxLangType;
+import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
 
 @BoxBIF
@@ -36,7 +37,7 @@ public class ArrayToStruct extends BIF {
 	 */
 	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
 		Array	array		= arguments.getAsArray( Key.array );
-		Struct	toReturn	= new Struct();
+		IStruct	toReturn	= new Struct();
 
 		for ( int i = 0; i < array.size(); i++ ) {
 			toReturn.put( Key.of( i + 1 ), array.get( i ) );

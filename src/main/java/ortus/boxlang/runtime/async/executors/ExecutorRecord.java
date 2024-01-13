@@ -28,6 +28,7 @@ import org.slf4j.LoggerFactory;
 
 import ortus.boxlang.runtime.services.AsyncService;
 import ortus.boxlang.runtime.services.AsyncService.ExecutorType;
+import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
 
 /**
@@ -102,7 +103,7 @@ public record ExecutorRecord( ExecutorService executor, String name, ExecutorTyp
 	 *
 	 * @return The stats struct
 	 */
-	public Struct getStats() {
+	public IStruct getStats() {
 		switch ( this.type ) {
 			case SINGLE : {
 				return Struct.of(

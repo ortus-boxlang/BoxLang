@@ -30,6 +30,7 @@ import org.mockito.Spy;
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.scopes.Key;
+import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
 
 class InterceptorServiceTest {
@@ -191,7 +192,7 @@ class InterceptorServiceTest {
 
 		assertThat( service.getState( pointKey ).size() ).isEqualTo( 2 );
 
-		Struct data = new Struct();
+		IStruct data = new Struct();
 		data.put( "counter", 0 );
 
 		service.announce(
@@ -220,7 +221,7 @@ class InterceptorServiceTest {
 
 		assertThat( service.getState( pointKey ).size() ).isEqualTo( 2 );
 
-		Struct data = new Struct();
+		IStruct data = new Struct();
 		data.put( "COUNTER", 0 );
 
 		service.announce(

@@ -29,6 +29,7 @@ import ortus.boxlang.runtime.dynamic.Referencer;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.Array;
+import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.SampleUDF;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.UDF;
@@ -72,7 +73,7 @@ public class FunctionMetaTest {
 		FunctionMeta	$bx	= ( FunctionMeta ) Referencer.get( context, udf, BoxMeta.key, false );
 
 		assertThat( $bx.$class ).isEqualTo( SampleUDF.class );
-		assertThat( $bx.meta instanceof Struct ).isTrue();
+		assertThat( $bx.meta instanceof IStruct ).isTrue();
 		assertThat( $bx.meta.containsKey( "name" ) ).isTrue();
 		assertThat( $bx.meta.containsKey( "access" ) ).isTrue();
 		assertThat( $bx.meta.containsKey( "returnType" ) ).isTrue();
@@ -89,16 +90,16 @@ public class FunctionMetaTest {
 		assertThat( $bx.meta.get( "lambda" ) ).isEqualTo( false );
 
 		assertThat( $bx.meta.get( "parameters" ) instanceof Array ).isTrue();
-		assertThat( $bx.meta.get( "annotations" ) instanceof Struct ).isTrue();
-		assertThat( $bx.meta.get( "documentation" ) instanceof Struct ).isTrue();
+		assertThat( $bx.meta.get( "annotations" ) instanceof IStruct ).isTrue();
+		assertThat( $bx.meta.get( "documentation" ) instanceof IStruct ).isTrue();
 
-		Struct annotations = ( Struct ) $bx.meta.get( "annotations" );
+		IStruct annotations = ( IStruct ) $bx.meta.get( "annotations" );
 		assertThat( annotations.containsKey( "foo" ) ).isTrue();
 		assertThat( annotations.containsKey( "output" ) ).isTrue();
 		assertThat( annotations.get( "foo" ) ).isEqualTo( "bar" );
 		assertThat( annotations.get( "output" ) ).isEqualTo( true );
 
-		Struct documentation = ( Struct ) $bx.meta.get( "documentation" );
+		IStruct documentation = ( IStruct ) $bx.meta.get( "documentation" );
 		assertThat( documentation.containsKey( "hint" ) ).isTrue();
 		assertThat( documentation.containsKey( "author" ) ).isTrue();
 		assertThat( documentation.containsKey( "returns" ) ).isTrue();
@@ -108,7 +109,7 @@ public class FunctionMetaTest {
 
 		Array params = ( Array ) $bx.meta.get( "parameters" );
 		assertThat( params.size() ).isEqualTo( 1 );
-		Struct param = ( Struct ) params.get( 0 );
+		IStruct param = ( IStruct ) params.get( 0 );
 
 		assertThat( param.containsKey( "name" ) ).isTrue();
 		assertThat( param.containsKey( "required" ) ).isTrue();
@@ -121,14 +122,14 @@ public class FunctionMetaTest {
 		assertThat( param.get( "required" ) ).isEqualTo( true );
 		assertThat( param.get( "type" ) ).isEqualTo( "String" );
 		assertThat( param.get( "default" ) ).isEqualTo( "my default" );
-		assertThat( param.get( "documentation" ) instanceof Struct ).isTrue();
-		assertThat( param.get( "annotations" ) instanceof Struct ).isTrue();
+		assertThat( param.get( "documentation" ) instanceof IStruct ).isTrue();
+		assertThat( param.get( "annotations" ) instanceof IStruct ).isTrue();
 
-		annotations = ( Struct ) param.get( "annotations" );
+		annotations = ( IStruct ) param.get( "annotations" );
 		assertThat( annotations.containsKey( "inject" ) ).isTrue();
 		assertThat( annotations.get( "inject" ) ).isEqualTo( "myService" );
 
-		documentation = ( Struct ) param.get( "documentation" );
+		documentation = ( IStruct ) param.get( "documentation" );
 		assertThat( documentation.containsKey( "hint" ) ).isTrue();
 		assertThat( documentation.get( "hint" ) ).isEqualTo( "First Name" );
 	}

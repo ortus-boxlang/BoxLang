@@ -33,7 +33,7 @@ import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
 import ortus.boxlang.runtime.types.Array;
-import ortus.boxlang.runtime.types.Struct;
+import ortus.boxlang.runtime.types.IStruct;
 
 public class ArrayReduceTest {
 
@@ -124,7 +124,7 @@ public class ArrayReduceTest {
 		    context );
 		assertThat( ( variables.getAsStruct( result ) ).get( "bob" ) ).isEqualTo( 3 );
 		assertThat( ( variables.getAsStruct( result ) ).get( "alice" ) ).isEqualTo( 2 );
-		Array indexes = ( ( Array ) ( ( Struct ) variables.get( result ) ).get( "indexes" ) );
+		Array indexes = ( ( Array ) ( ( IStruct ) variables.get( result ) ).get( "indexes" ) );
 		assertThat( indexes.size() ).isEqualTo( 5 );
 		assertThat( indexes.get( 0 ) ).isEqualTo( 1 );
 		assertThat( indexes.get( 1 ) ).isEqualTo( 2 );

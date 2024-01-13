@@ -24,7 +24,7 @@ import org.junit.jupiter.api.Test;
 
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.ScriptingBoxContext;
-import ortus.boxlang.runtime.types.Struct;
+import ortus.boxlang.runtime.types.IStruct;
 
 public class ArgumentsScopeTest {
 
@@ -81,7 +81,7 @@ public class ArgumentsScopeTest {
 		assertThat( array[ 2 ] ).isEqualTo( "jorge" );	// third
 		assertThat( array[ 3 ] ).isEqualTo( "eric" );	// _4
 
-		Struct struct = scope.asStruct();
+		IStruct struct = scope.asStruct();
 		assertThat( struct ).isNotNull();
 		assertThat( struct.size() ).isEqualTo( 4 );
 		assertThat( struct.get( first ) ).isEqualTo( "gavin" );	// first

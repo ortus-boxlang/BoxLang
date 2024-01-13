@@ -31,6 +31,7 @@ import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
 import ortus.boxlang.runtime.types.Array;
+import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.KeyNotFoundException;
 
@@ -73,7 +74,7 @@ public class ReferencerTest {
 	@Test
 	void testItCanAssignToAStruct() {
 		Key		key		= Key.of( "brad" );
-		Struct	struct	= new Struct();
+		IStruct	struct	= new Struct();
 		Referencer.set( context, struct, key, "Wood" );
 		assertThat( struct.get( key ) ).isEqualTo( "Wood" );
 		assertThat( struct.get( Key.of( "BRAD" ) ) ).isEqualTo( "Wood" );
@@ -91,10 +92,10 @@ public class ReferencerTest {
 		Referencer.setDeep( context, scope, true, foo, bar, baz );
 
 		assertThat( scope.get( foo ) instanceof Map ).isTrue();
-		assertThat( ( ( Struct ) scope.get( foo ) ).get( bar ) instanceof Map ).isTrue();
+		assertThat( ( ( IStruct ) scope.get( foo ) ).get( bar ) instanceof Map ).isTrue();
 		assertThat(
-		    ( ( Struct ) ( ( Struct ) scope.get( foo ) ).get( bar ) ).get( baz ) )
-		    .isEqualTo( true );
+		    ( ( IStruct ) ( ( IStruct ) scope.get( foo ) ).get( bar ) ).get( baz ) )
+		        .isEqualTo( true );
 	}
 
 	@DisplayName( "It can assign deeply array" )
@@ -112,15 +113,15 @@ public class ReferencerTest {
 		assertThat( scope.get( foo ) instanceof Array ).isTrue();
 		assertThat( ( ( Array ) scope.get( foo ) ).dereference( context, bar, false ) instanceof Map ).isTrue();
 		assertThat(
-		    ( ( Struct ) ( ( Array ) scope.get( foo ) ).dereference( context, bar, false ) ).get( baz ) )
-		    .isEqualTo( true );
+		    ( ( IStruct ) ( ( Array ) scope.get( foo ) ).dereference( context, bar, false ) ).get( baz ) )
+		        .isEqualTo( true );
 	}
 
 	@DisplayName( "It can dereference from a struct" )
 	@Test
 	void testItCanDereferenceFromAStruct() {
 		Key		key		= Key.of( "brad" );
-		Struct	struct	= new Struct();
+		IStruct	struct	= new Struct();
 		struct.put( key, "Wood" );
 		assertThat( Referencer.get( context, struct, key, false ) ).isEqualTo( "Wood" );
 		assertThrows( KeyNotFoundException.class, () -> Referencer.get( context, struct, Key.of( "nonExistent" ), false ) );
@@ -130,7 +131,7 @@ public class ReferencerTest {
 	@Test
 	void testItCanSafelyDereferenceFromAStruct() {
 		Key		key		= Key.of( "brad" );
-		Struct	struct	= new Struct();
+		IStruct	struct	= new Struct();
 		struct.put( key, "Wood" );
 		assertThat( Referencer.get( context, struct, key, true ) ).isEqualTo( "Wood" );
 		assertThat( Referencer.get( context, struct, Key.of( "nonExistent" ), true ) ).isNull();

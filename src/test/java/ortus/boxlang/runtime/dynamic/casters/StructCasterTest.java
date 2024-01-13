@@ -27,6 +27,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
+import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
 
 public class StructCasterTest {
@@ -34,23 +35,23 @@ public class StructCasterTest {
 	@DisplayName( "It can cast a BL Struct to a Struct" )
 	@Test
 	void testItCanCastStruct() {
-		assertThat( StructCaster.cast( new Struct() ) instanceof Struct ).isTrue();
+		assertThat( StructCaster.cast( new Struct() ) instanceof IStruct ).isTrue();
 	}
 
 	@DisplayName( "It can cast arguments scope to a Struct" )
 	@Test
 	void testItCanCastArgumentsScope() {
-		assertThat( StructCaster.cast( new ArgumentsScope() ) instanceof Struct ).isTrue();
+		assertThat( StructCaster.cast( new ArgumentsScope() ) instanceof IStruct ).isTrue();
 	}
 
 	@DisplayName( "It can cast a Java Map to a Struct" )
 	@Test
 	void testItCanCastList() {
-		assertThat( StructCaster.cast( new HashMap<Object, Object>() ) instanceof Struct ).isTrue();
+		assertThat( StructCaster.cast( new HashMap<Object, Object>() ) instanceof IStruct ).isTrue();
 
 		// immutable
-		assertThat( StructCaster.cast( Map.of() ) instanceof Struct ).isTrue();
-		assertThat( StructCaster.cast( Map.copyOf( Map.of() ) ) instanceof Struct ).isTrue();
+		assertThat( StructCaster.cast( Map.of() ) instanceof IStruct ).isTrue();
+		assertThat( StructCaster.cast( Map.copyOf( Map.of() ) ) instanceof IStruct ).isTrue();
 
 		// unmodifable Collection
 		Map<String, String> modifiableMap = new HashMap<>();
@@ -59,7 +60,7 @@ public class StructCasterTest {
 
 		Map<String, String> unmodifiableMap = Collections.unmodifiableMap( modifiableMap );
 
-		assertThat( StructCaster.cast( unmodifiableMap ) instanceof Struct ).isTrue();
+		assertThat( StructCaster.cast( unmodifiableMap ) instanceof IStruct ).isTrue();
 
 	}
 

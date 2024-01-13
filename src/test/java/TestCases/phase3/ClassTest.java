@@ -37,6 +37,7 @@ import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.RequestScope;
 import ortus.boxlang.runtime.scopes.VariablesScope;
 import ortus.boxlang.runtime.types.Array;
+import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.meta.ClassMeta;
@@ -179,7 +180,7 @@ public class ClassTest {
 		assertThat( meta.get( Key.of( "properties" ) ) ).isInstanceOf( Array.class );
 		assertThat( meta.get( Key.of( "functions" ) ) instanceof Array ).isTrue();
 		assertThat( meta.getAsArray( Key.of( "functions" ) ).size() ).isEqualTo( 4 );
-		assertThat( meta.get( Key.of( "extends" ) ) instanceof Struct ).isTrue();
+		assertThat( meta.get( Key.of( "extends" ) ) instanceof IStruct ).isTrue();
 		assertThat( meta.get( Key.of( "output" ) ) ).isEqualTo( false );
 		assertThat( meta.get( Key.of( "persisent" ) ) ).isEqualTo( false );
 		assertThat( meta.get( Key.of( "accessors" ) ) ).isEqualTo( false );
@@ -218,20 +219,20 @@ public class ClassTest {
 		assertThat( meta.get( Key.of( "properties" ) ) instanceof Array ).isTrue();
 		assertThat( meta.get( Key.of( "functions" ) ) instanceof Array ).isTrue();
 
-		assertThat( meta.get( Key.of( "extends" ) ) instanceof Struct ).isTrue();
+		assertThat( meta.get( Key.of( "extends" ) ) instanceof IStruct ).isTrue();
 
 		assertThat( meta.getAsArray( Key.of( "functions" ) ).size() ).isEqualTo( 4 );
 		var fun1 = meta.getAsArray( Key.of( "functions" ) ).get( 0 );
 		assertThat( fun1 ).isInstanceOf( Struct.class );
-		assertThat( ( ( Struct ) fun1 ).containsKey( Key.of( "name" ) ) ).isTrue();
+		assertThat( ( ( IStruct ) fun1 ).containsKey( Key.of( "name" ) ) ).isTrue();
 
-		assertThat( meta.get( Key.of( "documentation" ) ) instanceof Struct ).isTrue();
+		assertThat( meta.get( Key.of( "documentation" ) ) instanceof IStruct ).isTrue();
 		var docs = meta.getAsStruct( Key.of( "documentation" ) );
 		assertThat( docs.getAsString( Key.of( "brad" ) ).trim() ).isEqualTo( "wood" );
 		assertThat( docs.get( Key.of( "luis" ) ) ).isEqualTo( "" );
 		assertThat( docs.getAsString( Key.of( "hint" ) ).trim() ).isEqualTo( "This is my class description" );
 
-		assertThat( meta.get( Key.of( "annotations" ) ) instanceof Struct ).isTrue();
+		assertThat( meta.get( Key.of( "annotations" ) ) instanceof IStruct ).isTrue();
 		var annos = meta.getAsStruct( Key.of( "annotations" ) );
 		assertThat( annos.getAsString( Key.of( "foo" ) ).trim() ).isEqualTo( "bar" );
 		assertThat( annos.getAsString( Key.of( "implements" ) ).trim() ).isEqualTo( "Luis,Jorge" );
@@ -264,7 +265,7 @@ public class ClassTest {
 
 		assertThat( meta.getAsArray( Key.of( "properties" ) ).size() ).isEqualTo( 2 );
 
-		var prop1 = ( Struct ) meta.getAsArray( Key.of( "properties" ) ).get( 0 );
+		var prop1 = ( IStruct ) meta.getAsArray( Key.of( "properties" ) ).get( 0 );
 		assertThat( prop1.get( "name" ) ).isEqualTo( "myProperty" );
 		assertThat( prop1.get( "defaultValue" ) ).isEqualTo( "myDefaultValue" );
 		assertThat( prop1.get( "type" ) ).isEqualTo( "string" );
@@ -278,7 +279,7 @@ public class ClassTest {
 		assertThat( prop1Annotations.containsKey( Key.of( "inject" ) ) ).isTrue();
 		assertThat( prop1Annotations.get( Key.of( "inject" ) ) ).isEqualTo( "" );
 
-		var prop2 = ( Struct ) meta.getAsArray( Key.of( "properties" ) ).get( 1 );
+		var prop2 = ( IStruct ) meta.getAsArray( Key.of( "properties" ) ).get( 1 );
 		assertThat( prop2.get( "name" ) ).isEqualTo( "anotherprop" );
 		assertThat( prop2.get( "defaultValue" ) ).isEqualTo( null );
 		assertThat( prop2.get( "type" ) ).isEqualTo( "string" );
@@ -436,7 +437,7 @@ public class ClassTest {
 
 		assertThat( meta.get( Key.of( "name" ) ) ).isEqualTo( "src.test.java.TestCases.phase3.Chihuahua" );
 
-		Struct extendsMeta = meta.getAsStruct( Key.of( "extends" ) );
+		IStruct extendsMeta = meta.getAsStruct( Key.of( "extends" ) );
 		assertThat( extendsMeta.get( Key.of( "name" ) ) ).isEqualTo( "Dog" );
 
 		extendsMeta = extendsMeta.getAsStruct( Key.of( "extends" ) );

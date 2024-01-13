@@ -26,7 +26,7 @@ import ortus.boxlang.runtime.runnables.ITemplateRunnable;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Query;
-import ortus.boxlang.runtime.types.Struct;
+import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.UDF;
 import ortus.boxlang.runtime.types.exceptions.ScopeNotFoundException;
 
@@ -369,7 +369,7 @@ public interface IBoxContext {
 	 * 
 	 * @return A struct of configuration
 	 */
-	public Struct getConfig();
+	public IStruct getConfig();
 
 	/**
 	 * Get the BoxLang runtime

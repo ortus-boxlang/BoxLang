@@ -18,6 +18,7 @@
 package ortus.boxlang.runtime.scopes;
 
 import ortus.boxlang.runtime.types.Array;
+import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
 
 /**
@@ -56,8 +57,8 @@ public class ArgumentsScope extends BaseScope {
 		return Array.of( asNativeArray() );
 	}
 
-	public Struct asStruct() {
-		return ( Struct ) this;
+	public IStruct asStruct() {
+		return ( IStruct ) this;
 	}
 
 	@Override

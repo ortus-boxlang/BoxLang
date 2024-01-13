@@ -21,6 +21,7 @@ import java.util.Map;
 
 import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
+import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.BoxCastException;
 
@@ -39,7 +40,7 @@ public class StructCaster {
 	 *
 	 * @return The Struct value
 	 */
-	public static CastAttempt<Struct> attempt( Object object ) {
+	public static CastAttempt<IStruct> attempt( Object object ) {
 		return CastAttempt.ofNullable( cast( object, false ) );
 	}
 
@@ -50,7 +51,7 @@ public class StructCaster {
 	 *
 	 * @return The Struct value
 	 */
-	public static Struct cast( Object object ) {
+	public static IStruct cast( Object object ) {
 		return cast( object, true );
 	}
 
@@ -62,7 +63,7 @@ public class StructCaster {
 	 *
 	 * @return The Struct value
 	 */
-	public static Struct cast( Object object, Boolean fail ) {
+	public static IStruct cast( Object object, Boolean fail ) {
 		if ( object == null ) {
 			if ( fail ) {
 				throw new BoxCastException( "Can't cast null to a Struct." );
@@ -72,7 +73,7 @@ public class StructCaster {
 		}
 		object = DynamicObject.unWrap( object );
 
-		if ( object instanceof Struct col ) {
+		if ( object instanceof IStruct col ) {
 			return col;
 		}
 

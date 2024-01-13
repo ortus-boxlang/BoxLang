@@ -145,7 +145,7 @@ public abstract class Function implements IType, IFunctionRunnable {
 		BoxRuntime	runtime	= BoxRuntime.getInstance();
 
 		// Announcements
-		Struct		data	= Struct.of(
+		IStruct		data	= Struct.of(
 		    "context", context,
 		    "function", this
 		);
@@ -215,14 +215,14 @@ public abstract class Function implements IType, IFunctionRunnable {
 	 *
 	 * @return function metadata
 	 */
-	public abstract Struct getAnnotations();
+	public abstract IStruct getAnnotations();
 
 	/**
 	 * Get the contents of the documentation comment for this function.
 	 *
 	 * @return function metadata
 	 */
-	public abstract Struct getDocumentation();
+	public abstract IStruct getDocumentation();
 
 	/**
 	 * Get access modifier of the function
@@ -264,8 +264,8 @@ public abstract class Function implements IType, IFunctionRunnable {
 	 *
 	 * @return The metadata as a struct
 	 */
-	public Struct getMetaData() {
-		Struct meta = new Struct();
+	public IStruct getMetaData() {
+		IStruct meta = new Struct();
 		if ( getDocumentation() != null ) {
 			meta.putAll( getDocumentation() );
 		}
@@ -279,7 +279,7 @@ public abstract class Function implements IType, IFunctionRunnable {
 		meta.put( "access", getAccess().toString().toLowerCase() );
 		Array params = new Array();
 		for ( Argument argument : getArguments() ) {
-			Struct arg = new Struct();
+			IStruct arg = new Struct();
 			arg.put( "name", argument.name().getName() );
 			arg.put( "required", argument.required() );
 			arg.put( "type", argument.type() );

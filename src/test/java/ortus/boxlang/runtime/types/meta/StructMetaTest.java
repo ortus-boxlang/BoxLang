@@ -26,6 +26,7 @@ import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.ScriptingBoxContext;
 import ortus.boxlang.runtime.dynamic.Referencer;
 import ortus.boxlang.runtime.scopes.Key;
+import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.immutable.ImmutableStruct;
 
@@ -37,11 +38,11 @@ public class StructMetaTest {
 	@Test
 	void testStructMeta() {
 
-		Struct		str	= new Struct();
+		IStruct		str	= new Struct();
 		StructMeta	$bx	= ( StructMeta ) Referencer.get( context, str, BoxMeta.key, false );
 
 		assertThat( $bx.$class ).isEqualTo( Struct.class );
-		assertThat( $bx.meta instanceof Struct ).isTrue();
+		assertThat( $bx.meta instanceof IStruct ).isTrue();
 		assertThat( $bx.meta.containsKey( "type" ) ).isTrue();
 		assertThat( $bx.meta.containsKey( "immutable" ) ).isTrue();
 		assertThat( $bx.meta.get( "type" ) ).isEqualTo( "DEFAULT" );
@@ -51,7 +52,7 @@ public class StructMetaTest {
 		$bx	= ( StructMeta ) Referencer.get( context, str, BoxMeta.key, false );
 
 		assertThat( $bx.$class ).isEqualTo( ImmutableStruct.class );
-		assertThat( $bx.meta instanceof Struct ).isTrue();
+		assertThat( $bx.meta instanceof IStruct ).isTrue();
 		assertThat( $bx.meta.containsKey( "type" ) ).isTrue();
 		assertThat( $bx.meta.containsKey( "immutable" ) ).isTrue();
 		assertThat( $bx.meta.get( "type" ) ).isEqualTo( "SORTED" );
@@ -64,7 +65,7 @@ public class StructMetaTest {
 	void testStructListener() {
 
 		Key			bradKey	= Key.of( "brad" );
-		Struct		str		= new Struct();
+		IStruct		str		= new Struct();
 		StructMeta	$bx		= ( StructMeta ) Referencer.get( context, str, BoxMeta.key, false );
 
 		// Listens to all keys

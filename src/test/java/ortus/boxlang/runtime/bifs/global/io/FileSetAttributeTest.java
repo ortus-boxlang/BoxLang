@@ -25,6 +25,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.IOException;
+import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.attribute.PosixFilePermission;
@@ -34,6 +35,7 @@ import java.util.Set;
 
 import org.apache.commons.lang3.SystemUtils;
 import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -63,6 +65,9 @@ public class FileSetAttributeTest {
 		instance	= BoxRuntime.getInstance( true );
 		context		= new ScriptingBoxContext( instance.getRuntimeContext() );
 		variables	= context.getScopeNearby( VariablesScope.name );
+
+		Assumptions.assumeTrue( FileSystems.getDefault().supportedFileAttributeViews().contains( "posix" ),
+		    "The underlying file system is not posix compliant." );
 
 		if ( !FileSystemUtil.exists( testTextFile ) ) {
 			FileSystemUtil.write( testTextFile, "file modified time test!".getBytes( "UTF-8" ), true );

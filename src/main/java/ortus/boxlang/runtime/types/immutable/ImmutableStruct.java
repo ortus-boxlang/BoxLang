@@ -25,6 +25,7 @@ import java.util.TreeMap;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.dynamic.casters.KeyCaster;
 import ortus.boxlang.runtime.scopes.Key;
+import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.NullValue;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
@@ -88,8 +89,8 @@ public class ImmutableStruct extends Struct implements IImmutable {
 	 *
 	 * @param struct The struct to create the struct from
 	 */
-	public ImmutableStruct( Struct struct ) {
-		this( struct.type, struct.getWrapped() );
+	public ImmutableStruct( IStruct struct ) {
+		this( struct instanceof Struct str ? str.type : Struct.Type.DEFAULT, struct.getWrapped() );
 	}
 
 	/**
@@ -127,7 +128,7 @@ public class ImmutableStruct extends Struct implements IImmutable {
 	 *
 	 * @param struct The struct to create the struct from
 	 */
-	public static ImmutableStruct fromStruct( Struct struct ) {
+	public static ImmutableStruct fromStruct( IStruct struct ) {
 		return new ImmutableStruct( struct );
 	}
 

@@ -32,8 +32,8 @@ public class StructTest {
 	@DisplayName( "Test equals and hash code with no data" )
 	@Test
 	void testEqualsAndHashCode() {
-		Struct	struct1	= new Struct();
-		Struct	struct2	= new Struct();
+		IStruct	struct1	= new Struct();
+		IStruct	struct2	= new Struct();
 
 		// Test equals()
 		assertThat( struct1 ).isEqualTo( struct2 );
@@ -45,9 +45,9 @@ public class StructTest {
 	@DisplayName( "Test equals and hash code with data" )
 	@Test
 	void testEqualsAndHashCodeWithData() {
-		Struct struct1 = new Struct();
+		IStruct struct1 = new Struct();
 		struct1.put( Key.of( "name" ), "boxlang" );
-		Struct struct2 = new Struct();
+		IStruct struct2 = new Struct();
 		struct2.put( Key.of( "name" ), "boxlang" );
 
 		// Test equals()
@@ -59,7 +59,7 @@ public class StructTest {
 
 	@Test
 	void testToString() {
-		Struct struct = new Struct();
+		IStruct struct = new Struct();
 		struct.put( Key.of( "name" ), "BoxLang" );
 		struct.put( Key.of( "AgE" ), 1 );
 		struct.put( Key.of( "Location" ), "Spain" );
@@ -74,7 +74,7 @@ public class StructTest {
 
 	@Test
 	void testToStringWithCase() {
-		Struct struct = new Struct();
+		IStruct struct = new Struct();
 		struct.put( Key.of( "name" ), "BoxLang" );
 		struct.put( Key.of( "AgE" ), 1 );
 		struct.put( Key.of( "Location" ), "Spain" );
@@ -89,7 +89,7 @@ public class StructTest {
 
 	@Test
 	void testCanHandleNull() {
-		Struct	struct	= new Struct();
+		IStruct	struct	= new Struct();
 		Key		key		= Key.of( "nully" );
 		struct.put( key, null );
 
@@ -98,7 +98,7 @@ public class StructTest {
 
 	@Test
 	void testCanStructOf() {
-		Struct struct = Struct.of(
+		IStruct struct = Struct.of(
 		    "foo", "bar",
 		    Key.of( "baz" ), "bum",
 		    5D, "Brad"

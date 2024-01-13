@@ -27,7 +27,7 @@ import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.BoxLangType;
-import ortus.boxlang.runtime.types.Struct;
+import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
 @BoxBIF // Len()
@@ -67,7 +67,7 @@ public class Len extends BIF {
 		if ( arrayAttempt.wasSuccessful() ) {
 			return arrayAttempt.get().size();
 		}
-		CastAttempt<Struct> structAttempt = StructCaster.attempt( object );
+		CastAttempt<IStruct> structAttempt = StructCaster.attempt( object );
 		if ( structAttempt.wasSuccessful() ) {
 			return structAttempt.get().size();
 		}

@@ -24,7 +24,7 @@ import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
 
 import ortus.boxlang.parser.ParsingResult;
-import ortus.boxlang.runtime.types.Struct;
+import ortus.boxlang.runtime.types.IStruct;
 
 /**
  * An interceptor state is an event state that is used to hold observers that want to listent
@@ -45,7 +45,7 @@ public class ASTCapture {
 		this.toFile		= toFile;
 	}
 
-	public void onParse( Struct data ) {
+	public void onParse( IStruct data ) {
 		ParsingResult result = ( ParsingResult ) data.get( "result" );
 		if ( result.getRoot() != null && ( toConsole || toFile ) ) {
 			String JSON = result.getRoot().toJSON().toString();

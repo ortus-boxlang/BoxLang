@@ -31,7 +31,7 @@ import ortus.boxlang.runtime.context.ScriptingBoxContext;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
 import ortus.boxlang.runtime.types.Query;
-import ortus.boxlang.runtime.types.Struct;
+import ortus.boxlang.runtime.types.IStruct;
 
 public class QueryTest {
 
@@ -90,8 +90,8 @@ public class QueryTest {
 		    context );
 		assertThat( variables.getAsQuery( result ) instanceof Query ).isEqualTo( true );
 		assertThat( variables.getAsInteger( Key.of( "recordcount" ) ) ).isEqualTo( 2 );
-		assertThat( variables.getAsStruct( Key.of( "row1" ) ) instanceof Struct ).isEqualTo( true );
-		assertThat( variables.getAsStruct( Key.of( "row2" ) ) instanceof Struct ).isEqualTo( true );
+		assertThat( variables.getAsStruct( Key.of( "row1" ) ) instanceof IStruct ).isEqualTo( true );
+		assertThat( variables.getAsStruct( Key.of( "row2" ) ) instanceof IStruct ).isEqualTo( true );
 		assertThat( variables.getAsString( Key.of( "firstCol" ) ) ).isEqualTo( "brad" );
 		assertThat( variables.get( Key.of( "colavg" ) ) ).isEqualTo( 1500 );
 		assertThat( variables.get( Key.of( "collen" ) ) ).isEqualTo( 4 );
@@ -134,8 +134,8 @@ public class QueryTest {
 		    context );
 		assertThat( variables.getAsQuery( result ) instanceof Query ).isEqualTo( true );
 		assertThat( variables.getAsInteger( Key.of( "recordcount" ) ) ).isEqualTo( 2 );
-		assertThat( variables.getAsStruct( Key.of( "row1" ) ) instanceof Struct ).isEqualTo( true );
-		assertThat( variables.getAsStruct( Key.of( "row2" ) ) instanceof Struct ).isEqualTo( true );
+		assertThat( variables.getAsStruct( Key.of( "row1" ) ) instanceof IStruct ).isEqualTo( true );
+		assertThat( variables.getAsStruct( Key.of( "row2" ) ) instanceof IStruct ).isEqualTo( true );
 		assertThat( variables.getAsString( Key.of( "firstCol" ) ) ).isEqualTo( "test" );
 		assertThat( variables.get( Key.of( "colavg" ) ) ).isEqualTo( 1500 );
 		assertThat( variables.get( Key.of( "collen" ) ) ).isEqualTo( 4 );

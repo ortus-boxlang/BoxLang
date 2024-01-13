@@ -30,7 +30,7 @@ import ortus.boxlang.runtime.scopes.Key;
  * @param documentation Documentation for the argument
  *
  */
-public record Argument( boolean required, String type, Key name, Object defaultValue, Struct annotations, Struct documentation ) {
+public record Argument( boolean required, String type, Key name, Object defaultValue, IStruct annotations, IStruct documentation ) {
 
 	public Argument( Key name ) {
 		this( false, "any", name );
@@ -44,11 +44,11 @@ public record Argument( boolean required, String type, Key name, Object defaultV
 		this( required, type, name, defaultValue, Struct.EMPTY, Struct.EMPTY );
 	}
 
-	public Argument( boolean required, String type, Key name, Object defaultValue, Struct annotations ) {
+	public Argument( boolean required, String type, Key name, Object defaultValue, IStruct annotations ) {
 		this( required, type, name, defaultValue, annotations, Struct.EMPTY );
 	}
 
-	public Argument( boolean required, String type, Key name, Object defaultValue, Struct annotations, Struct documentation ) {
+	public Argument( boolean required, String type, Key name, Object defaultValue, IStruct annotations, IStruct documentation ) {
 		this.required		= required;
 		this.type			= type;
 		this.name			= name;

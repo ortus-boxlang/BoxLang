@@ -28,7 +28,7 @@ import ortus.boxlang.runtime.loader.ImportDefinition;
 import ortus.boxlang.runtime.runnables.ITemplateRunnable;
 import ortus.boxlang.runtime.runnables.RunnableLoader;
 import ortus.boxlang.runtime.scopes.Key;
-import ortus.boxlang.runtime.types.Struct;
+import ortus.boxlang.runtime.types.IStruct;
 
 /**
  * This resolver deals with BoxLang classes only.
@@ -175,7 +175,7 @@ public class BoxResolver extends BaseResolver {
 		}
 
 		// Next look for a mapping that matches the start of the path
-		Struct		mappings	= context.getConfig().getAsStruct( Key.runtime ).getAsStruct( Key.mappings );
+		IStruct		mappings	= context.getConfig().getAsStruct( Key.runtime ).getAsStruct( Key.mappings );
 		List<Key>	keys		= mappings.getKeys();
 		// System.out.println( "Mappings: " + mappings );
 		// Longest to shortest

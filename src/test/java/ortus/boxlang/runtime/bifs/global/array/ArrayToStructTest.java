@@ -31,20 +31,20 @@ import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.ScriptingBoxContext;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
-import ortus.boxlang.runtime.types.Struct;
+import ortus.boxlang.runtime.types.IStruct;
 
 public class ArrayToStructTest {
 
 	static BoxRuntime	instance;
 	static IBoxContext	context;
-	static Struct		variables;
+	static IStruct		variables;
 	static Key			result	= new Key( "result" );
 
 	@BeforeAll
 	public static void setUp() {
 		instance	= BoxRuntime.getInstance( true );
 		context		= new ScriptingBoxContext( instance.getRuntimeContext() );
-		variables	= ( Struct ) context.getScopeNearby( VariablesScope.name );
+		variables	= ( IStruct ) context.getScopeNearby( VariablesScope.name );
 	}
 
 	@AfterAll
@@ -67,7 +67,7 @@ public class ArrayToStructTest {
 		        result = ArrayToStruct( arr );
 		    """,
 		    context );
-		Struct res = variables.getAsStruct( result );
+		IStruct res = variables.getAsStruct( result );
 		assertThat( res.size() ).isEqualTo( 3 );
 		assertThat( res.get( Key._1 ) ).isEqualTo( "a" );
 		assertThat( res.get( Key._2 ) ).isEqualTo( "b" );
@@ -84,7 +84,7 @@ public class ArrayToStructTest {
 		        result = arr.toStruct();
 		    """,
 		    context );
-		Struct res = variables.getAsStruct( result );
+		IStruct res = variables.getAsStruct( result );
 		assertThat( res.size() ).isEqualTo( 3 );
 		assertThat( res.get( Key._1 ) ).isEqualTo( "a" );
 		assertThat( res.get( Key._2 ) ).isEqualTo( "b" );

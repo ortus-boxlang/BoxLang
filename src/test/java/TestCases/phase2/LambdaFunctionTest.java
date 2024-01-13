@@ -38,7 +38,7 @@ import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
 import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.Lambda;
-import ortus.boxlang.runtime.types.Struct;
+import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.meta.BoxMeta;
 import ortus.boxlang.runtime.types.meta.FunctionMeta;
 
@@ -81,7 +81,7 @@ public class LambdaFunctionTest {
 		assertThat( variables.get( result ) ).isEqualTo( "my func" );
 		assertThat( variables.get( foo ) instanceof Lambda ).isEqualTo( true );
 
-		Struct meta = ( ( Lambda ) variables.get( foo ) ).getMetaData();
+		IStruct meta = ( ( Lambda ) variables.get( foo ) ).getMetaData();
 
 		assertThat( meta.get( Key.of( "name" ) ) ).isEqualTo( "Lambda" );
 		// Defaults
@@ -105,7 +105,7 @@ public class LambdaFunctionTest {
 		assertThat( variables.get( result ) ).isEqualTo( "my func" );
 		assertThat( variables.get( foo ) instanceof Lambda ).isEqualTo( true );
 
-		Struct meta = ( ( Lambda ) variables.get( foo ) ).getMetaData();
+		IStruct meta = ( ( Lambda ) variables.get( foo ) ).getMetaData();
 
 		assertThat( meta.get( Key.of( "name" ) ) ).isEqualTo( "Lambda" );
 		// Defaults
@@ -129,7 +129,7 @@ public class LambdaFunctionTest {
 		assertThat( variables.get( result ) ).isEqualTo( "my func" );
 		assertThat( variables.get( foo ) instanceof Lambda ).isEqualTo( true );
 
-		Struct meta = ( ( Lambda ) variables.get( foo ) ).getMetaData();
+		IStruct meta = ( ( Lambda ) variables.get( foo ) ).getMetaData();
 
 		assertThat( meta.get( Key.of( "name" ) ) ).isEqualTo( "Lambda" );
 		// Defaults
@@ -182,7 +182,7 @@ public class LambdaFunctionTest {
 		    context );
 		assertThat( variables.get( result ) ).isEqualTo( "value" );
 		Lambda	UDFfoo	= ( ( Lambda ) variables.get( foo ) );
-		Struct	meta	= UDFfoo.getMetaData();
+		IStruct	meta	= UDFfoo.getMetaData();
 
 		assertThat( meta.get( Key.of( "name" ) ) ).isEqualTo( "Lambda" );
 		assertThat( meta.get( Key.of( "access" ) ) ).isEqualTo( "public" );
@@ -190,13 +190,13 @@ public class LambdaFunctionTest {
 		Array args = ( ( Array ) meta.get( Key.of( "parameters" ) ) );
 		assertThat( args.size() ).isEqualTo( 2 );
 
-		Struct param1 = ( Struct ) args.get( 0 );
+		IStruct param1 = ( IStruct ) args.get( 0 );
 		assertThat( param1.get( Key.of( "name" ) ) ).isEqualTo( "param1" );
 		assertThat( param1.get( Key.of( "hint" ) ) ).isEqualTo( "My param" );
 		assertThat( param1.get( Key.of( "required" ) ) ).isEqualTo( true );
 		assertThat( param1.get( Key.of( "type" ) ) ).isEqualTo( "string" );
 
-		Struct param2 = ( Struct ) args.get( 1 );
+		IStruct param2 = ( IStruct ) args.get( 1 );
 		assertThat( param2.get( Key.of( "name" ) ) ).isEqualTo( "param2" );
 		assertThat( param2.get( Key.of( "luis" ) ) ).isEqualTo( "majano" );
 		assertThat( param2.get( Key.of( "hint" ) ) ).isEqualTo( "" );
@@ -204,17 +204,17 @@ public class LambdaFunctionTest {
 		assertThat( param2.get( Key.of( "type" ) ) ).isEqualTo( "numeric" );
 
 		FunctionMeta	$bx			= ( ( FunctionMeta ) Referencer.get( context, UDFfoo, BoxMeta.key, false ) );
-		Struct			annotations	= ( Struct ) $bx.meta.get( Key.of( "annotations" ) );
+		IStruct			annotations	= ( IStruct ) $bx.meta.get( Key.of( "annotations" ) );
 		assertThat( annotations.get( Key.of( "hint" ) ) ).isEqualTo( "my Closure" );
 		assertThat( annotations.get( Key.of( "output" ) ) ).isEqualTo( false );
 		assertThat( annotations.get( Key.of( "brad" ) ) ).isEqualTo( "wood" );
 
 		Array	params				= ( Array ) $bx.meta.get( Key.of( "parameters" ) );
 
-		Struct	param1Annotations	= ( Struct ) Referencer.get( context, params.get( 0 ), Key.of( "annotations" ), false );
+		IStruct	param1Annotations	= ( IStruct ) Referencer.get( context, params.get( 0 ), Key.of( "annotations" ), false );
 		assertThat( param1Annotations.get( Key.of( "hint" ) ) ).isEqualTo( "My param" );
 
-		Struct param2Annotations = ( Struct ) Referencer.get( context, params.get( 1 ), Key.of( "annotations" ), false );
+		IStruct param2Annotations = ( IStruct ) Referencer.get( context, params.get( 1 ), Key.of( "annotations" ), false );
 		assertThat( param2Annotations.get( Key.of( "luis" ) ) ).isEqualTo( "majano" );
 
 	}

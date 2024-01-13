@@ -25,12 +25,14 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.IOException;
+import java.nio.file.FileSystems;
 import java.nio.file.Path;
 import java.nio.file.attribute.PosixFilePermission;
 import java.time.Instant;
 import java.util.Set;
 
 import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -62,6 +64,9 @@ public class FileSetAccessModeTest {
 		context		= new ScriptingBoxContext( instance.getRuntimeContext() );
 		variables	= context.getScopeNearby( VariablesScope.name );
 
+		Assumptions.assumeTrue( FileSystems.getDefault().supportedFileAttributeViews().contains( "posix" ),
+		    "The underlying file system is not posix compliant." );
+
 		if ( !FileSystemUtil.exists( testTextFile ) ) {
 			FileSystemUtil.write( testTextFile, "file modified time test!".getBytes( "UTF-8" ), true );
 		}
@@ -81,6 +86,9 @@ public class FileSetAccessModeTest {
 	@BeforeEach
 	public void setupEach() throws IOException {
 		variables.clear();
+		Assumptions.assumeTrue( FileSystems.getDefault().supportedFileAttributeViews().contains( "posix" ),
+		    "The underlying file system for path [src/test/resources/tmp/time.txt] is not posix compliant." );
+
 		FileSystemUtil.setPosixPermissions( testTextFile, "555" );
 	}
 
@@ -146,6 +154,7 @@ public class FileSetAccessModeTest {
 	@DisplayName( "It tests the ability to set the access mode on a file with a path" )
 	@Test
 	public void testFilePathSetAccessMode() throws IOException {
+
 		variables.put( Key.of( "testFile" ), Path.of( testTextFile ).toAbsolutePath().toString() );
 		Set<PosixFilePermission> initialPermissions = FileSystemUtil.getPosixPermissions( testTextFile );
 

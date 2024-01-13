@@ -35,6 +35,7 @@ import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.services.FunctionService;
 import ortus.boxlang.runtime.types.Function;
+import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Query;
 import ortus.boxlang.runtime.types.QueryColumn;
 import ortus.boxlang.runtime.types.Struct;
@@ -611,7 +612,7 @@ public class BaseBoxContext implements IBoxContext {
 	 * 
 	 * @return A struct of configuration
 	 */
-	public Struct getConfig() {
+	public IStruct getConfig() {
 		if ( hasParent() ) {
 			return getParent().getConfig();
 		}

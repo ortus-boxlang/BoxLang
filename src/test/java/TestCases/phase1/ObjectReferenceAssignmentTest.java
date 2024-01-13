@@ -39,7 +39,7 @@ import ortus.boxlang.runtime.scopes.VariablesScope;
 import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.Function.Access;
 import ortus.boxlang.runtime.types.SampleUDF;
-import ortus.boxlang.runtime.types.Struct;
+import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.exceptions.BoxLangException;
 
 public class ObjectReferenceAssignmentTest {
@@ -269,8 +269,8 @@ public class ObjectReferenceAssignmentTest {
 		    var foo.bar = 5;
 		    """,
 		    functionBoxContext );
-		assertThat( localScope.get( Key.of( "foo" ) ) instanceof Struct ).isTrue();
-		Struct foo = ( Struct ) localScope.get( Key.of( "foo" ) );
+		assertThat( localScope.get( Key.of( "foo" ) ) instanceof IStruct ).isTrue();
+		IStruct foo = ( IStruct ) localScope.get( Key.of( "foo" ) );
 		assertThat( foo.get( Key.of( "bar" ) ) ).isEqualTo( 5 );
 
 	}
@@ -301,8 +301,8 @@ public class ObjectReferenceAssignmentTest {
 		    var variables.bar = 5;
 		    """,
 		    functionBoxContext );
-		assertThat( localScope.get( Key.of( "variables" ) ) instanceof Struct ).isTrue();
-		Struct variables = ( Struct ) localScope.get( Key.of( "variables" ) );
+		assertThat( localScope.get( Key.of( "variables" ) ) instanceof IStruct ).isTrue();
+		IStruct variables = ( IStruct ) localScope.get( Key.of( "variables" ) );
 		assertThat( variables.get( Key.of( "bar" ) ) ).isEqualTo( 5 );
 
 	}

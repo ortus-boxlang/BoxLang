@@ -24,6 +24,7 @@ import java.util.List;
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.loader.ImportDefinition;
+import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
 
 public abstract class BoxTemplate implements ITemplateRunnable {
@@ -46,7 +47,7 @@ public abstract class BoxTemplate implements ITemplateRunnable {
 		context.pushTemplate( this );
 		try {
 			// Announcements
-			Struct data = Struct.of(
+			IStruct data = Struct.of(
 			    "context", context,
 			    "template", this,
 			    "templatePath", this.getRunnablePath()

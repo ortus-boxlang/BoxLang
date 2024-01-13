@@ -33,8 +33,8 @@ public class SampleUDF extends UDF {
 	private Argument[]	arguments;
 	private String		returnType;
 	private Access		access;
-	private Struct		annotations;
-	private Struct		documentation;
+	private IStruct		annotations;
+	private IStruct		documentation;
 
 	public Key getName() {
 		return name;
@@ -48,11 +48,11 @@ public class SampleUDF extends UDF {
 		return returnType;
 	}
 
-	public Struct getAnnotations() {
+	public IStruct getAnnotations() {
 		return annotations;
 	}
 
-	public Struct getDocumentation() {
+	public IStruct getDocumentation() {
 		return documentation;
 	}
 
@@ -83,11 +83,11 @@ public class SampleUDF extends UDF {
 		this( access, name, returnType, arguments, returnVal, Struct.EMPTY, Struct.EMPTY );
 	}
 
-	public SampleUDF( Access access, Key name, String returnType, Argument[] arguments, Object returnVal, Struct annotations ) {
+	public SampleUDF( Access access, Key name, String returnType, Argument[] arguments, Object returnVal, IStruct annotations ) {
 		this( access, name, returnType, arguments, returnVal, annotations, Struct.EMPTY );
 	}
 
-	public SampleUDF( Access access, Key name, String returnType, Argument[] arguments, Object returnVal, Struct annotations, Struct documentation ) {
+	public SampleUDF( Access access, Key name, String returnType, Argument[] arguments, Object returnVal, IStruct annotations, IStruct documentation ) {
 		super();
 		this.access			= access;
 		this.name			= name;

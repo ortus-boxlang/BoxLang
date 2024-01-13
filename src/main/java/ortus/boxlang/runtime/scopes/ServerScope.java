@@ -20,6 +20,7 @@ package ortus.boxlang.runtime.scopes;
 import java.util.List;
 import java.util.Map;
 
+import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
@@ -151,8 +152,8 @@ public class ServerScope extends BaseScope {
 		    "name", ""
 		) );
 
-		Struct	env		= new Struct( ( Map ) System.getenv() );
-		Struct	props	= new Struct( ( Map ) System.getProperties() );
+		IStruct	env		= new Struct( ( Map ) System.getenv() );
+		IStruct	props	= new Struct( ( Map ) System.getProperties() );
 
 		put( Key.of( "system" ), Struct.of(
 		    // TODO: create wrapper struct that gives live view of env vars, not just a copy

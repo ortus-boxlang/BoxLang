@@ -29,6 +29,7 @@ import ortus.boxlang.runtime.context.ScriptingBoxContext;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
+import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
 
 public class DereferenceTest {
@@ -69,7 +70,7 @@ public class DereferenceTest {
 	@DisplayName( "Multi identifier dot access" )
 	@Test
 	public void testmultiIdentifierReference() {
-		Struct s = new Struct();
+		IStruct s = new Struct();
 		s.assign( context, new Key( "bar" ), "test" );
 		variables.assign( context, new Key( "foo" ), s );
 		instance.executeSource(
@@ -82,9 +83,9 @@ public class DereferenceTest {
 	@DisplayName( "Multi multi identifier dot access" )
 	@Test
 	public void testmultimultiIdentifierReference() {
-		Struct x = new Struct();
+		IStruct x = new Struct();
 		x.assign( context, new Key( "baz" ), "test" );
-		Struct s = new Struct();
+		IStruct s = new Struct();
 		s.assign( context, new Key( "bar" ), x );
 		variables.assign( context, new Key( "foo" ), s );
 		instance.executeSource(
@@ -97,7 +98,7 @@ public class DereferenceTest {
 	@DisplayName( "Bracket string access" )
 	@Test
 	public void testBracketStringAccess() {
-		Struct s = new Struct();
+		IStruct s = new Struct();
 		s.assign( context, new Key( "bar" ), "test" );
 		variables.assign( context, new Key( "foo" ), s );
 		instance.executeSource(
@@ -110,7 +111,7 @@ public class DereferenceTest {
 	@DisplayName( "Bracket string concat access" )
 	@Test
 	public void testBracketStringConcatAccess() {
-		Struct s = new Struct();
+		IStruct s = new Struct();
 		s.assign( context, new Key( "bar" ), "test" );
 		variables.assign( context, new Key( "foo" ), s );
 		instance.executeSource(
@@ -123,7 +124,7 @@ public class DereferenceTest {
 	@DisplayName( "Bracket number access" )
 	@Test
 	public void testBracketNumberAccess() {
-		Struct s = new Struct();
+		IStruct s = new Struct();
 		s.assign( context, new Key( "7" ), "test" );
 		variables.assign( context, new Key( "foo" ), s );
 		instance.executeSource(
@@ -136,7 +137,7 @@ public class DereferenceTest {
 	@DisplayName( "Bracket number expression access" )
 	@Test
 	public void testBracketNumberExpressionAccess() {
-		Struct s = new Struct();
+		IStruct s = new Struct();
 		s.assign( context, new Key( "12" ), "test" );
 		variables.assign( context, new Key( "foo" ), s );
 		instance.executeSource(
@@ -149,9 +150,9 @@ public class DereferenceTest {
 	@DisplayName( "Bracket object access" )
 	@Test
 	public void testBracketObjectExpressionAccess() {
-		Struct x = new Struct();
+		IStruct x = new Struct();
 		x.assign( context, new Key( "bar" ), "baz" );
-		Struct s = new Struct();
+		IStruct s = new Struct();
 		s.assign( context, new Key( "12" ), "test" );
 		s.assign( context, Key.of( x ), "test" );
 		variables.assign( context, new Key( "foo" ), s );
@@ -165,10 +166,10 @@ public class DereferenceTest {
 	@DisplayName( "Mixed access" )
 	@Test
 	public void testBracketMixedAccess() {
-		Struct	aaa		= new Struct();
-		Struct	twelve	= new Struct();
-		Struct	other	= new Struct();
-		Struct	foo		= new Struct();
+		IStruct	aaa		= new Struct();
+		IStruct	twelve	= new Struct();
+		IStruct	other	= new Struct();
+		IStruct	foo		= new Struct();
 
 		foo.assign( context, new Key( "aaa" ), aaa );
 		aaa.assign( context, Key.of( 12 ), twelve );

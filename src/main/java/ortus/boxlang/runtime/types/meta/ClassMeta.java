@@ -21,6 +21,7 @@ import java.util.ArrayList;
 
 import ortus.boxlang.runtime.runnables.IClassRunnable;
 import ortus.boxlang.runtime.types.Function;
+import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.immutable.ImmutableArray;
 import ortus.boxlang.runtime.types.immutable.ImmutableStruct;
@@ -33,7 +34,7 @@ public class ClassMeta extends BoxMeta {
 	@SuppressWarnings( "unused" )
 	private Object	target;
 	public Class<?>	$class;
-	public Struct	meta;
+	public IStruct	meta;
 
 	/**
 	 * Constructor
@@ -83,7 +84,7 @@ public class ClassMeta extends BoxMeta {
 	/**
 	 * Get the metadata
 	 */
-	public Struct getMeta() {
+	public IStruct getMeta() {
 		return meta;
 	}
 

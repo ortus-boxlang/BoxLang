@@ -22,7 +22,7 @@ import ortus.boxlang.runtime.dynamic.casters.StructCaster;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
-import ortus.boxlang.runtime.types.Struct;
+import ortus.boxlang.runtime.types.IStruct;
 
 @BoxBIF
 public class IsStruct extends BIF {
@@ -46,7 +46,7 @@ public class IsStruct extends BIF {
 	 * @param arguments Argument scope defining the value to test.
 	 */
 	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
-		CastAttempt<Struct> attempt = StructCaster.attempt( arguments.get( Key.variable ) );
+		CastAttempt<IStruct> attempt = StructCaster.attempt( arguments.get( Key.variable ) );
 		return attempt.wasSuccessful();
 	}
 

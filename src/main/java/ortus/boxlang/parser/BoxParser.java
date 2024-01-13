@@ -27,6 +27,7 @@ import ortus.boxlang.ast.BoxExpr;
 import ortus.boxlang.ast.BoxScript;
 import ortus.boxlang.ast.BoxStatement;
 import ortus.boxlang.runtime.BoxRuntime;
+import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
 
 public class BoxParser {
@@ -135,7 +136,7 @@ public class BoxParser {
 		}
 		ParsingResult	result	= parser.parse( file );
 
-		Struct			data	= Struct.of(
+		IStruct			data	= Struct.of(
 		    "file", file,
 		    "result", result
 		);
@@ -170,7 +171,7 @@ public class BoxParser {
 		}
 		ParsingResult	result	= parser.parse( code );
 
-		Struct			data	= Struct.of(
+		IStruct			data	= Struct.of(
 		    "code", code,
 		    "result", result
 		);
@@ -194,7 +195,7 @@ public class BoxParser {
 	public ParsingResult parseExpression( String code ) throws IOException {
 		ParsingResult	result	= new BoxCFParser().parseExpression( code );
 
-		Struct			data	= Struct.of(
+		IStruct			data	= Struct.of(
 		    "code", code,
 		    "result", result
 		);
@@ -205,7 +206,7 @@ public class BoxParser {
 	public ParsingResult parseStatement( String code ) throws IOException {
 		ParsingResult	result	= new BoxCFParser().parseStatement( code );
 
-		Struct			data	= Struct.of(
+		IStruct			data	= Struct.of(
 		    "code", code,
 		    "result", result
 		);

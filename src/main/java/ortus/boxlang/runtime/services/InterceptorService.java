@@ -29,7 +29,7 @@ import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.events.InterceptorState;
 import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.scopes.Key;
-import ortus.boxlang.runtime.types.Struct;
+import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
 /**
@@ -331,22 +331,22 @@ public class InterceptorService extends BaseService {
 	 */
 
 	/**
-	 * Announce an event with the provided {@link Struct} of data.
+	 * Announce an event with the provided {@link IStruct} of data.
 	 *
 	 * @param state The state to announce
 	 * @param data  The data to announce
 	 */
-	public void announce( String state, Struct data ) {
+	public void announce( String state, IStruct data ) {
 		announce( keyRegistry.computeIfAbsent( state, Key::of ), data );
 	}
 
 	/**
-	 * Announce an event with the provided {@link Struct} of data.
+	 * Announce an event with the provided {@link IStruct} of data.
 	 *
 	 * @param state The state key to announce
 	 * @param data  The data to announce
 	 */
-	public void announce( Key state, Struct data ) {
+	public void announce( Key state, IStruct data ) {
 		if ( hasState( state ) ) {
 			// logger.atDebug().log( "InterceptorService.announce() - announcing {}", state.getName() );
 

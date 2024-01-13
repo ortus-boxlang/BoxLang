@@ -47,11 +47,11 @@ public class SampleClosure extends Closure {
 		return returnType;
 	}
 
-	public Struct getAnnotations() {
+	public IStruct getAnnotations() {
 		return Struct.EMPTY;
 	}
 
-	public Struct getDocumentation() {
+	public IStruct getDocumentation() {
 		return Struct.EMPTY;
 	}
 

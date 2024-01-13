@@ -34,6 +34,7 @@ import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
 import ortus.boxlang.runtime.types.Array;
+import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
 
 public class ObjectLiteralTest {
@@ -136,19 +137,19 @@ public class ObjectLiteralTest {
 		    result = {}
 		    """,
 		    context );
-		assertThat( variables.get( result ) instanceof Struct ).isEqualTo( true );
+		assertThat( variables.get( result ) instanceof IStruct ).isEqualTo( true );
 		assertThat( ( ( Struct ) variables.get( result ) ).type ).isEqualTo( Struct.Type.DEFAULT );
-		assertThat( ( ( Struct ) variables.get( result ) ).size() ).isEqualTo( 0 );
+		assertThat( ( ( IStruct ) variables.get( result ) ).size() ).isEqualTo( 0 );
 
 		instance.executeSource(
 		    """
 		    result = { "brad" : "wood" }
 		    """,
 		    context );
-		assertThat( variables.get( result ) instanceof Struct ).isEqualTo( true );
+		assertThat( variables.get( result ) instanceof IStruct ).isEqualTo( true );
 		assertThat( ( ( Struct ) variables.get( result ) ).type ).isEqualTo( Struct.Type.DEFAULT );
-		assertThat( ( ( Struct ) variables.get( result ) ).size() ).isEqualTo( 1 );
-		Struct str = ( Struct ) variables.get( result );
+		assertThat( ( ( IStruct ) variables.get( result ) ).size() ).isEqualTo( 1 );
+		IStruct str = ( IStruct ) variables.get( result );
 		assertThat( str.get( Key.of( "brad" ) ) ).isEqualTo( "wood" );
 		assertThat( str.keySet().toArray( new Key[ 0 ] )[ 0 ].getName() ).isEqualTo( "brad" );
 
@@ -157,10 +158,10 @@ public class ObjectLiteralTest {
 		    result = { "brad" = "wood" }
 		    """,
 		    context );
-		assertThat( variables.get( result ) instanceof Struct ).isEqualTo( true );
+		assertThat( variables.get( result ) instanceof IStruct ).isEqualTo( true );
 		assertThat( ( ( Struct ) variables.get( result ) ).type ).isEqualTo( Struct.Type.DEFAULT );
-		assertThat( ( ( Struct ) variables.get( result ) ).size() ).isEqualTo( 1 );
-		str = ( Struct ) variables.get( result );
+		assertThat( ( ( IStruct ) variables.get( result ) ).size() ).isEqualTo( 1 );
+		str = ( IStruct ) variables.get( result );
 		assertThat( str.get( Key.of( "brad" ) ) ).isEqualTo( "wood" );
 		assertThat( str.keySet().toArray( new Key[ 0 ] )[ 0 ].getName() ).isEqualTo( "brad" );
 
@@ -169,10 +170,10 @@ public class ObjectLiteralTest {
 		    result = { "brad" : 'wood' }
 		    """,
 		    context );
-		assertThat( variables.get( result ) instanceof Struct ).isEqualTo( true );
+		assertThat( variables.get( result ) instanceof IStruct ).isEqualTo( true );
 		assertThat( ( ( Struct ) variables.get( result ) ).type ).isEqualTo( Struct.Type.DEFAULT );
-		assertThat( ( ( Struct ) variables.get( result ) ).size() ).isEqualTo( 1 );
-		str = ( Struct ) variables.get( result );
+		assertThat( ( ( IStruct ) variables.get( result ) ).size() ).isEqualTo( 1 );
+		str = ( IStruct ) variables.get( result );
 		assertThat( str.get( Key.of( "brad" ) ) ).isEqualTo( "wood" );
 		assertThat( str.keySet().toArray( new Key[ 0 ] )[ 0 ].getName() ).isEqualTo( "brad" );
 
@@ -181,10 +182,10 @@ public class ObjectLiteralTest {
 		    result = { "brad" = 'wood' }
 		    """,
 		    context );
-		assertThat( variables.get( result ) instanceof Struct ).isEqualTo( true );
+		assertThat( variables.get( result ) instanceof IStruct ).isEqualTo( true );
 		assertThat( ( ( Struct ) variables.get( result ) ).type ).isEqualTo( Struct.Type.DEFAULT );
-		assertThat( ( ( Struct ) variables.get( result ) ).size() ).isEqualTo( 1 );
-		str = ( Struct ) variables.get( result );
+		assertThat( ( ( IStruct ) variables.get( result ) ).size() ).isEqualTo( 1 );
+		str = ( IStruct ) variables.get( result );
 		assertThat( str.get( Key.of( "brad" ) ) ).isEqualTo( "wood" );
 		assertThat( str.keySet().toArray( new Key[ 0 ] )[ 0 ].getName() ).isEqualTo( "brad" );
 
@@ -193,10 +194,10 @@ public class ObjectLiteralTest {
 		    result = { brad : "wood" }
 		    """,
 		    context );
-		assertThat( variables.get( result ) instanceof Struct ).isEqualTo( true );
+		assertThat( variables.get( result ) instanceof IStruct ).isEqualTo( true );
 		assertThat( ( ( Struct ) variables.get( result ) ).type ).isEqualTo( Struct.Type.DEFAULT );
-		assertThat( ( ( Struct ) variables.get( result ) ).size() ).isEqualTo( 1 );
-		str = ( Struct ) variables.get( result );
+		assertThat( ( ( IStruct ) variables.get( result ) ).size() ).isEqualTo( 1 );
+		str = ( IStruct ) variables.get( result );
 		assertThat( str.get( Key.of( "brad" ) ) ).isEqualTo( "wood" );
 		assertThat( str.keySet().toArray( new Key[ 0 ] )[ 0 ].getName() ).isEqualTo( "brad" );
 
@@ -205,10 +206,10 @@ public class ObjectLiteralTest {
 		    result = { brad = "wood" }
 		    """,
 		    context );
-		assertThat( variables.get( result ) instanceof Struct ).isEqualTo( true );
+		assertThat( variables.get( result ) instanceof IStruct ).isEqualTo( true );
 		assertThat( ( ( Struct ) variables.get( result ) ).type ).isEqualTo( Struct.Type.DEFAULT );
-		assertThat( ( ( Struct ) variables.get( result ) ).size() ).isEqualTo( 1 );
-		str = ( Struct ) variables.get( result );
+		assertThat( ( ( IStruct ) variables.get( result ) ).size() ).isEqualTo( 1 );
+		str = ( IStruct ) variables.get( result );
 		assertThat( str.get( Key.of( "brad" ) ) ).isEqualTo( "wood" );
 		assertThat( str.keySet().toArray( new Key[ 0 ] )[ 0 ].getName() ).isEqualTo( "brad" );
 
@@ -218,10 +219,10 @@ public class ObjectLiteralTest {
 		      result = { brad = someValue }
 		      """,
 		    context );
-		assertThat( variables.get( result ) instanceof Struct ).isEqualTo( true );
+		assertThat( variables.get( result ) instanceof IStruct ).isEqualTo( true );
 		assertThat( ( ( Struct ) variables.get( result ) ).type ).isEqualTo( Struct.Type.DEFAULT );
-		assertThat( ( ( Struct ) variables.get( result ) ).size() ).isEqualTo( 1 );
-		str = ( Struct ) variables.get( result );
+		assertThat( ( ( IStruct ) variables.get( result ) ).size() ).isEqualTo( 1 );
+		str = ( IStruct ) variables.get( result );
 		assertThat( str.get( Key.of( "brad" ) ) ).isEqualTo( "wood" );
 		assertThat( str.keySet().toArray( new Key[ 0 ] )[ 0 ].getName() ).isEqualTo( "brad" );
 
@@ -265,9 +266,9 @@ public class ObjectLiteralTest {
 		       """,
 		    context );
 
-		assertThat( variables.get( result ) instanceof Struct ).isEqualTo( true );
+		assertThat( variables.get( result ) instanceof IStruct ).isEqualTo( true );
 		assertThat( ( ( Struct ) variables.get( result ) ).type ).isEqualTo( Struct.Type.DEFAULT );
-		Struct str = ( Struct ) variables.get( result );
+		IStruct str = ( IStruct ) variables.get( result );
 		assertThat( str.size() ).isEqualTo( 2 );
 
 		assertThat( str.get( Key.of( "something" ) ) instanceof Array ).isEqualTo( true );
@@ -275,7 +276,7 @@ public class ObjectLiteralTest {
 		assertThat( arr.size() ).isEqualTo( 3 );
 		assertThat( arr.dereference( context, one, false ) ).isEqualTo( "foo" );
 		assertThat( arr.dereference( context, two, false ) ).isEqualTo( "bar" );
-		assertThat( arr.dereference( context, three, false ) instanceof Struct ).isEqualTo( true );
+		assertThat( arr.dereference( context, three, false ) instanceof IStruct ).isEqualTo( true );
 		Struct strSub = ( Struct ) arr.dereference( context, three, false );
 		assertThat( strSub.type ).isEqualTo( Struct.Type.DEFAULT );
 		assertThat( strSub.size() ).isEqualTo( 1 );
@@ -300,8 +301,8 @@ public class ObjectLiteralTest {
 		    result = [:]
 		    """,
 		    context );
-		assertThat( variables.get( result ) instanceof Struct ).isEqualTo( true );
-		assertThat( ( ( Struct ) variables.get( result ) ).size() ).isEqualTo( 0 );
+		assertThat( variables.get( result ) instanceof IStruct ).isEqualTo( true );
+		assertThat( ( ( IStruct ) variables.get( result ) ).size() ).isEqualTo( 0 );
 		assertThat( ( ( Struct ) variables.get( result ) ).type ).isEqualTo( Struct.Type.LINKED );
 
 		instance.executeSource(
@@ -309,10 +310,10 @@ public class ObjectLiteralTest {
 		    result = [ "brad" : "wood" ]
 		    """,
 		    context );
-		assertThat( variables.get( result ) instanceof Struct ).isEqualTo( true );
+		assertThat( variables.get( result ) instanceof IStruct ).isEqualTo( true );
 		assertThat( ( ( Struct ) variables.get( result ) ).type ).isEqualTo( Struct.Type.LINKED );
-		assertThat( ( ( Struct ) variables.get( result ) ).size() ).isEqualTo( 1 );
-		Struct str = ( Struct ) variables.get( result );
+		assertThat( ( ( IStruct ) variables.get( result ) ).size() ).isEqualTo( 1 );
+		IStruct str = ( IStruct ) variables.get( result );
 		assertThat( str.get( Key.of( "brad" ) ) ).isEqualTo( "wood" );
 		assertThat( str.keySet().toArray( new Key[ 0 ] )[ 0 ].getName() ).isEqualTo( "brad" );
 
@@ -321,10 +322,10 @@ public class ObjectLiteralTest {
 		    result = ["brad" = "wood"]
 		    """,
 		    context );
-		assertThat( variables.get( result ) instanceof Struct ).isEqualTo( true );
+		assertThat( variables.get( result ) instanceof IStruct ).isEqualTo( true );
 		assertThat( ( ( Struct ) variables.get( result ) ).type ).isEqualTo( Struct.Type.LINKED );
-		assertThat( ( ( Struct ) variables.get( result ) ).size() ).isEqualTo( 1 );
-		str = ( Struct ) variables.get( result );
+		assertThat( ( ( IStruct ) variables.get( result ) ).size() ).isEqualTo( 1 );
+		str = ( IStruct ) variables.get( result );
 		assertThat( str.get( Key.of( "brad" ) ) ).isEqualTo( "wood" );
 		assertThat( str.keySet().toArray( new Key[ 0 ] )[ 0 ].getName() ).isEqualTo( "brad" );
 
@@ -333,10 +334,10 @@ public class ObjectLiteralTest {
 		    result = [ "brad" : 'wood' ]
 		    """,
 		    context );
-		assertThat( variables.get( result ) instanceof Struct ).isEqualTo( true );
+		assertThat( variables.get( result ) instanceof IStruct ).isEqualTo( true );
 		assertThat( ( ( Struct ) variables.get( result ) ).type ).isEqualTo( Struct.Type.LINKED );
-		assertThat( ( ( Struct ) variables.get( result ) ).size() ).isEqualTo( 1 );
-		str = ( Struct ) variables.get( result );
+		assertThat( ( ( IStruct ) variables.get( result ) ).size() ).isEqualTo( 1 );
+		str = ( IStruct ) variables.get( result );
 		assertThat( str.get( Key.of( "brad" ) ) ).isEqualTo( "wood" );
 		assertThat( str.keySet().toArray( new Key[ 0 ] )[ 0 ].getName() ).isEqualTo( "brad" );
 
@@ -345,10 +346,10 @@ public class ObjectLiteralTest {
 		    result = [ "brad" = 'wood' ]
 		    """,
 		    context );
-		assertThat( variables.get( result ) instanceof Struct ).isEqualTo( true );
+		assertThat( variables.get( result ) instanceof IStruct ).isEqualTo( true );
 		assertThat( ( ( Struct ) variables.get( result ) ).type ).isEqualTo( Struct.Type.LINKED );
-		assertThat( ( ( Struct ) variables.get( result ) ).size() ).isEqualTo( 1 );
-		str = ( Struct ) variables.get( result );
+		assertThat( ( ( IStruct ) variables.get( result ) ).size() ).isEqualTo( 1 );
+		str = ( IStruct ) variables.get( result );
 		assertThat( str.get( Key.of( "brad" ) ) ).isEqualTo( "wood" );
 		assertThat( str.keySet().toArray( new Key[ 0 ] )[ 0 ].getName() ).isEqualTo( "brad" );
 
@@ -357,10 +358,10 @@ public class ObjectLiteralTest {
 		    result = [ brad : "wood" ]
 		    """,
 		    context );
-		assertThat( variables.get( result ) instanceof Struct ).isEqualTo( true );
+		assertThat( variables.get( result ) instanceof IStruct ).isEqualTo( true );
 		assertThat( ( ( Struct ) variables.get( result ) ).type ).isEqualTo( Struct.Type.LINKED );
-		assertThat( ( ( Struct ) variables.get( result ) ).size() ).isEqualTo( 1 );
-		str = ( Struct ) variables.get( result );
+		assertThat( ( ( IStruct ) variables.get( result ) ).size() ).isEqualTo( 1 );
+		str = ( IStruct ) variables.get( result );
 		assertThat( str.get( Key.of( "brad" ) ) ).isEqualTo( "wood" );
 		assertThat( str.keySet().toArray( new Key[ 0 ] )[ 0 ].getName() ).isEqualTo( "brad" );
 
@@ -369,10 +370,10 @@ public class ObjectLiteralTest {
 		    result = [ brad = "wood" ]
 		    """,
 		    context );
-		assertThat( variables.get( result ) instanceof Struct ).isEqualTo( true );
+		assertThat( variables.get( result ) instanceof IStruct ).isEqualTo( true );
 		assertThat( ( ( Struct ) variables.get( result ) ).type ).isEqualTo( Struct.Type.LINKED );
-		assertThat( ( ( Struct ) variables.get( result ) ).size() ).isEqualTo( 1 );
-		str = ( Struct ) variables.get( result );
+		assertThat( ( ( IStruct ) variables.get( result ) ).size() ).isEqualTo( 1 );
+		str = ( IStruct ) variables.get( result );
 		assertThat( str.get( Key.of( "brad" ) ) ).isEqualTo( "wood" );
 		assertThat( str.keySet().toArray( new Key[ 0 ] )[ 0 ].getName() ).isEqualTo( "brad" );
 
@@ -389,9 +390,9 @@ public class ObjectLiteralTest {
 		       """,
 		    context );
 
-		assertThat( variables.get( result ) instanceof Struct ).isEqualTo( true );
+		assertThat( variables.get( result ) instanceof IStruct ).isEqualTo( true );
 		assertThat( ( ( Struct ) variables.get( result ) ).type ).isEqualTo( Struct.Type.LINKED );
-		str = ( Struct ) variables.get( result );
+		str = ( IStruct ) variables.get( result );
 		assertThat( str.size() ).isEqualTo( 2 );
 
 		assertThat( str.get( Key.of( "something" ) ) instanceof Array ).isEqualTo( true );
@@ -399,7 +400,7 @@ public class ObjectLiteralTest {
 		assertThat( arr.size() ).isEqualTo( 3 );
 		assertThat( arr.dereference( context, one, false ) ).isEqualTo( "foo" );
 		assertThat( arr.dereference( context, two, false ) ).isEqualTo( "bar" );
-		assertThat( arr.dereference( context, three, false ) instanceof Struct ).isEqualTo( true );
+		assertThat( arr.dereference( context, three, false ) instanceof IStruct ).isEqualTo( true );
 		Struct strSub = ( Struct ) arr.dereference( context, three, false );
 		assertThat( strSub.type ).isEqualTo( Struct.Type.LINKED );
 		assertThat( strSub.size() ).isEqualTo( 1 );

@@ -21,6 +21,7 @@ import java.time.LocalDateTime;
 
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.IBoxContext;
+import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
 
 public abstract class BoxScript implements IScriptRunnable {
@@ -67,7 +68,7 @@ public abstract class BoxScript implements IScriptRunnable {
 		BoxRuntime	runtime	= BoxRuntime.getInstance();
 
 		// Announcements
-		Struct		data	= Struct.of(
+		IStruct		data	= Struct.of(
 		    "context", context,
 		    "source", this
 		);

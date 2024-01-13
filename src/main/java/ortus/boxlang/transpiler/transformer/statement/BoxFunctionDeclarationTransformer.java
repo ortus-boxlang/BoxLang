@@ -57,8 +57,8 @@ public class BoxFunctionDeclarationTransformer extends AbstractTransformer {
 			private final static String				returnType	= "${returnType}";
 			private              Access		   		access		= Access.${access};
 
-			private final static Struct	annotations;
-			private final static Struct	documentation;
+			private final static IStruct	annotations;
+			private final static IStruct	documentation;
 			
 			private static final long					compileVersion	= ${compileVersion};
 			private static final LocalDateTime			compiledOn		= ${compiledOnTimestamp};
@@ -102,12 +102,12 @@ public class BoxFunctionDeclarationTransformer extends AbstractTransformer {
 			}
 
 			@Override
-			public Struct getAnnotations() {
+			public IStruct getAnnotations() {
 				return annotations;
 			}
 
 			@Override
-			public Struct getDocumentation() {
+			public IStruct getDocumentation() {
 				return documentation;
 			}
 			

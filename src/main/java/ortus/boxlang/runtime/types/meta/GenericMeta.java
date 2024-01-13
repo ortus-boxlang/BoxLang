@@ -17,7 +17,7 @@
  */
 package ortus.boxlang.runtime.types.meta;
 
-import ortus.boxlang.runtime.types.Struct;
+import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.immutable.ImmutableStruct;
 
 /**
@@ -28,7 +28,7 @@ public class GenericMeta extends BoxMeta {
 	@SuppressWarnings( "unused" )
 	private Object	target;
 	public Class<?>	$class;
-	public Struct	meta;
+	public IStruct	meta;
 
 	/**
 	 * Constructor
@@ -51,7 +51,7 @@ public class GenericMeta extends BoxMeta {
 	/**
 	 * Get the metadata
 	 */
-	public Struct getMeta() {
+	public IStruct getMeta() {
 		return meta;
 	}
 

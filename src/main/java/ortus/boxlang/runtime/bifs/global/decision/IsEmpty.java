@@ -27,7 +27,7 @@ import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.BoxLangType;
-import ortus.boxlang.runtime.types.Struct;
+import ortus.boxlang.runtime.types.IStruct;
 
 @BoxBIF
 @BoxBIF( alias = "structIsEmpty" )
@@ -64,7 +64,7 @@ public class IsEmpty extends BIF {
 		if ( arrayAttempt.wasSuccessful() ) {
 			return arrayAttempt.get().isEmpty();
 		}
-		CastAttempt<Struct> structAttempt = StructCaster.attempt( object );
+		CastAttempt<IStruct> structAttempt = StructCaster.attempt( object );
 		if ( structAttempt.wasSuccessful() ) {
 			return structAttempt.get().isEmpty();
 		}

@@ -18,14 +18,14 @@
 package ortus.boxlang.runtime.services;
 
 import ortus.boxlang.runtime.scopes.Key;
-import ortus.boxlang.runtime.types.Struct;
+import ortus.boxlang.runtime.types.IStruct;
 
 public class MockInterceptor {
 
 	public MockInterceptor() {
 	}
 
-	public void onRequestStart( Struct data ) {
+	public void onRequestStart( IStruct data ) {
 		System.out.println( "Executed mock interceptor" );
 
 		// Check incoming counter

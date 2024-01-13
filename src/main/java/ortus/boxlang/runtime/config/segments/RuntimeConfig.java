@@ -24,6 +24,7 @@ import org.slf4j.LoggerFactory;
 
 import ortus.boxlang.runtime.config.util.PlaceholderHelper;
 import ortus.boxlang.runtime.scopes.Key;
+import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
 
 /**
@@ -34,7 +35,7 @@ public class RuntimeConfig {
 	/**
 	 * A struct of mappings for the runtime
 	 */
-	public Struct				mappings			= new Struct();
+	public IStruct				mappings			= new Struct();
 
 	/**
 	 * The directory where the modules are located by default:
@@ -45,7 +46,7 @@ public class RuntimeConfig {
 	/**
 	 * The cache configurations for the runtime
 	 */
-	public Struct				caches				= new Struct();
+	public IStruct				caches				= new Struct();
 
 	/**
 	 * Logger
@@ -65,7 +66,7 @@ public class RuntimeConfig {
 	 *
 	 * @return the configuration
 	 */
-	public RuntimeConfig process( Struct config ) {
+	public RuntimeConfig process( IStruct config ) {
 
 		// Process mappings
 		if ( config.containsKey( "mappings" ) ) {
@@ -110,7 +111,7 @@ public class RuntimeConfig {
 	 * 
 	 * @return Struct
 	 */
-	public Struct asStruct() {
+	public IStruct asStruct() {
 		return Struct.of(
 		    Key.mappings, this.mappings,
 		    Key.modulesDirectory, this.modulesDirectory,
