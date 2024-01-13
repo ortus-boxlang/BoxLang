@@ -91,6 +91,7 @@ public class Key {
 	public static final Key	initialValue				= Key.of( "initialValue" );
 	public static final Key	initMethod					= Key.of( "initMethod" );
 	public static final Key	input						= Key.of( "input" );
+	public static final Key	key							= Key.of( "key" );
 	public static final Key	leaveIndex					= Key.of( "leaveIndex" );
 	public static final Key	length						= Key.of( "length" );
 	public static final Key	listInfo					= Key.of( "listInfo" );

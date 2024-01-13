@@ -587,7 +587,7 @@ public final class FileSystemUtil {
 				infoStruct.put( "read", Files.isReadable( path ) );
 				infoStruct.put( "write", Files.isWritable( path ) );
 				infoStruct.put( "execute", Files.isExecutable( path ) );
-				infoStruct.put( "checksum", !Files.isDirectory( path ) ? EncodingUtil.checksum( path, "md5" ) : "" );
+				infoStruct.put( "checksum", !Files.isDirectory( path ) ? EncryptionUtil.checksum( path, "md5" ) : "" );
 			} else {
 				// getFileInfo method compatibile keys
 				infoStruct.put( "parent", path.getParent().toAbsolutePath().toString() );

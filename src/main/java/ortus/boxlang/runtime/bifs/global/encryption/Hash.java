@@ -15,7 +15,7 @@ import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.BoxLangType;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
-import ortus.boxlang.runtime.util.EncodingUtil;
+import ortus.boxlang.runtime.util.EncryptionUtil;
 
 @BoxBIF
 @BoxBIF( alias = "Hash40" )
@@ -105,7 +105,7 @@ public class Hash extends BIF {
 			}
 		}
 
-		return EncodingUtil.hash( hashItem, algorithm );
+		return EncryptionUtil.hash( hashItem, algorithm );
 
 	}
 
