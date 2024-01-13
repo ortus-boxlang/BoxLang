@@ -403,6 +403,15 @@ public class File implements IType, IReferenceable {
 	}
 
 	/**
+	 * Convenience method to return the protected path object
+	 *
+	 * @return
+	 */
+	public Path getPath() {
+		return this.path;
+	}
+
+	/**
 	 * --------------------------------------------------------------------------
 	 * IType Interface Methods
 	 * --------------------------------------------------------------------------

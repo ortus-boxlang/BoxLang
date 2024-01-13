@@ -81,6 +81,7 @@ public class Key {
 	public static final Key	filter						= Key.of( "filter" );
 	public static final Key	find						= Key.of( "find" );
 	public static final Key	findAll						= Key.of( "findAll" );
+	public static final Key	getFileInfo					= Key.of( "getFileInfo" );
 	public static final Key	hour						= Key.of( "hour" );
 	public static final Key	ignoreExists				= Key.of( "ignoreExists" );
 	public static final Key	index						= Key.of( "index" );

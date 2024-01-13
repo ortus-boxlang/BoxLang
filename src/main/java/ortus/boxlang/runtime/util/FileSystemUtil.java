@@ -38,22 +38,26 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.SystemUtils;
 
 import ortus.boxlang.runtime.dynamic.casters.IntegerCaster;
+import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 import ortus.boxlang.runtime.types.Array;
+import ortus.boxlang.runtime.types.DateTime;
+import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.BoxIOException;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
 public final class FileSystemUtil {
 
-	public static final String	DEFAULT_CHARSET		= "UTF-8";
+	public static final String	DEFAULT_CHARSET			= "UTF-8";
 
 	/**
 	 * MimeType suffixes which denote files which should be treated as text - e.g. application/json, application/xml, etc
 	 */
-	public static final Array	TEXT_MIME_SUFFIXES	= new Array(
+	public static final Array	TEXT_MIME_SUFFIXES		= new Array(
 	    new Object[] {
 	        "json",
 	        "xml",
@@ -65,18 +69,32 @@ public final class FileSystemUtil {
 	/**
 	 * MimeType prefixes which denote text files - e.g. text/plain, text/x-yaml
 	 */
-	public static final Array	TEXT_MIME_PREFIXES	= new Array(
+	public static final Array	TEXT_MIME_PREFIXES		= new Array(
 	    new Object[] {
 	        "text"
 	    }
 	);
 
-	public static final Boolean	isWindows			= SystemUtils.IS_OS_WINDOWS;
+	/**
+	 * Octal representations for Posix strings to octals
+	 * Thanks to http://www.java2s.com/example/java-utility-method/posix/tooctalfilemode-set-posixfilepermission-permissions-64fb4.html
+	 */
+	private static final int	OWNER_READ_FILEMODE		= 0400;
+	private static final int	OWNER_WRITE_FILEMODE	= 0200;
+	private static final int	OWNER_EXEC_FILEMODE		= 0100;
+	private static final int	GROUP_READ_FILEMODE		= 0040;
+	private static final int	GROUP_WRITE_FILEMODE	= 0020;
+	private static final int	GROUP_EXEC_FILEMODE		= 0010;
+	private static final int	OTHERS_READ_FILEMODE	= 0004;
+	private static final int	OTHERS_WRITE_FILEMODE	= 0002;
+	private static final int	OTHERS_EXEC_FILEMODE	= 0001;
+
+	public static final Boolean	isWindows				= SystemUtils.IS_OS_WINDOWS;
 
 	/**
 	 * The OS line separator
 	 */
-	private static final String	lineSeparator		= System.getProperty( "line.separator" );
+	private static final String	lineSeparator			= System.getProperty( "line.separator" );
 
 	/**
 	 * Returns the contents of a file
@@ -440,7 +458,7 @@ public final class FileSystemUtil {
 				} catch ( Exception e ) {
 					throw new BoxRuntimeException( "The file or directory mode [" + mode + "] is not a valid permission set." );
 				}
-				Files.setPosixFilePermissions( path, integerToPosixPermissions( mode ) );
+				Files.setPosixFilePermissions( path, octalToPosixPermissions( mode ) );
 			} catch ( IOException e ) {
 				throw new BoxIOException( e );
 			}
@@ -454,7 +472,7 @@ public final class FileSystemUtil {
 	 *
 	 * @return The PosixFilePermission set
 	 */
-	private static Set<PosixFilePermission> integerToPosixPermissions( String mode ) {
+	private static Set<PosixFilePermission> octalToPosixPermissions( String mode ) {
 		final char[]	directiveSet	= mode.toCharArray();
 		final char[]	attributeSet	= { '-', '-', '-', '-', '-', '-', '-', '-', '-' };
 		for ( int i = directiveSet.length - 1; i >= 0; i-- ) {
@@ -487,6 +505,49 @@ public final class FileSystemUtil {
 	}
 
 	/**
+	 * Converts a set of {@link PosixFilePermission} to chmod-style octal file mode.
+	 *
+	 * @param permissions the posix permissions set
+	 *
+	 * @return the octal integer representing the permission set
+	 */
+	public static int posixSetToOctal( Set<PosixFilePermission> permissions ) {
+		int octal = 0;
+		for ( PosixFilePermission permissionBit : permissions ) {
+			switch ( permissionBit ) {
+				case OWNER_READ :
+					octal |= OWNER_READ_FILEMODE;
+					break;
+				case OWNER_WRITE :
+					octal |= OWNER_WRITE_FILEMODE;
+					break;
+				case OWNER_EXECUTE :
+					octal |= OWNER_EXEC_FILEMODE;
+					break;
+				case GROUP_READ :
+					octal |= GROUP_READ_FILEMODE;
+					break;
+				case GROUP_WRITE :
+					octal |= GROUP_WRITE_FILEMODE;
+					break;
+				case GROUP_EXECUTE :
+					octal |= GROUP_EXEC_FILEMODE;
+					break;
+				case OTHERS_READ :
+					octal |= OTHERS_READ_FILEMODE;
+					break;
+				case OTHERS_WRITE :
+					octal |= OTHERS_WRITE_FILEMODE;
+					break;
+				case OTHERS_EXECUTE :
+					octal |= OTHERS_EXEC_FILEMODE;
+					break;
+			}
+		}
+		return octal;
+	}
+
+	/**
 	 * Tests whether a file or directory exists
 	 *
 	 * @param path Can be a relative or absolute path
@@ -495,6 +556,55 @@ public final class FileSystemUtil {
 	 */
 	public static Boolean exists( String path ) {
 		return Files.exists( Paths.get( path ) );
+	}
+
+	/**
+	 * Returns a struct of information on a file - supports the FileInfo and GetFileInfo BIFs
+	 *
+	 * @param filePath The filepath or File object
+	 * @param verbose  Currently returns the GetFileInfo additional information - this should be either deprecated or expanded at a later date
+	 *
+	 * @return a Struct containing the info of the file or directory
+	 */
+	public static Struct info( Object filePath, Boolean verbose ) {
+		Path path = null;
+		if ( filePath instanceof String ) {
+			path = Path.of( ( String ) filePath );
+		} else {
+			path = ( Path ) filePath;
+		}
+		Struct infoStruct = new Struct();
+		try {
+			infoStruct.put( "name", path.getFileName().toString() );
+			infoStruct.put( "path", path.toAbsolutePath().toString() );
+			infoStruct.put( "size", Files.isDirectory( path ) ? 0l : Files.size( path ) );
+			infoStruct.put( "type", Files.isDirectory( path ) ? "dir" : "file" );
+			infoStruct.put( "dateLastModified", new DateTime( Files.getLastModifiedTime( path ).toInstant() ).setFormat( "MMMM, d, yyyy HH:mm:ss Z" ) );
+			if ( verbose == null || !verbose ) {
+				// fileInfo method compatibile keys
+				infoStruct.put( "attributes", "" );
+				infoStruct.put( "mode", isPosixCompliant( path ) ? StringCaster.cast( posixSetToOctal( Files.getPosixFilePermissions( path ) ) ) : "" );
+				infoStruct.put( "read", Files.isReadable( path ) );
+				infoStruct.put( "write", Files.isWritable( path ) );
+				infoStruct.put( "execute", Files.isExecutable( path ) );
+				infoStruct.put( "checksum", !Files.isDirectory( path ) ? DigestUtils.md5Hex( Files.newInputStream( path ) ) : "" );
+			} else {
+				// getFileInfo method compatibile keys
+				infoStruct.put( "parent", path.getParent().toAbsolutePath().toString() );
+				infoStruct.put( "isHidden", Files.isHidden( path ) );
+				infoStruct.put( "canRead", Files.isReadable( path ) );
+				infoStruct.put( "canWrite", Files.isWritable( path ) );
+				infoStruct.put( "canExecute", Files.isExecutable( path ) );
+				infoStruct.put( "isArchive", isWindows ? Files.getAttribute( path, "dos:archive" ) : false );
+				infoStruct.put( "isSystem", isWindows ? Files.getAttribute( path, "dos:system" ) : false );
+				infoStruct.put( "isAttributesSupported", isWindows );
+				infoStruct.put( "isModeSupported", isPosixCompliant( path ) );
+				infoStruct.put( "isCaseSensitive", !Files.exists( Path.of( path.toAbsolutePath().toString().toUpperCase() ) ) );
+			}
+			return infoStruct;
+		} catch ( IOException e ) {
+			throw new BoxIOException( e );
+		}
 	}
 
 }
