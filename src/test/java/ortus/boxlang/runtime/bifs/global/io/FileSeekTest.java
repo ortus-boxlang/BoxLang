@@ -83,7 +83,7 @@ public class FileSeekTest {
 		}
 
 		if ( !FileSystemUtil.exists( testBinaryFile ) ) {
-			BufferedInputStream urlStream = new BufferedInputStream( new URL( "https://source.unsplash.com/random/200x200?sig=1" ).openStream() );
+			BufferedInputStream urlStream = new BufferedInputStream( new URL( "https://ortus-public.s3.amazonaws.com/logos/ortus-medium.jpg" ).openStream() );
 			FileSystemUtil.write( testBinaryFile, urlStream.readAllBytes(), true );
 		}
 

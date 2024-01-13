@@ -49,7 +49,7 @@ public class FileReadTest {
 	static Key			result			= new Key( "result" );
 	static String		testTextFile	= "src/test/resources/tmp/text.txt";
 	static String		testURLFile		= "https://raw.githubusercontent.com/ColdBox/coldbox-platform/development/license.txt";
-	static String		testURLImage	= "https://source.unsplash.com/random/200x200.jpg";
+	static String		testURLImage	= "https://ortus-public.s3.amazonaws.com/logos/ortus-medium.jpg";
 	static String		testBinaryFile	= "src/test/resources/tmp/test.jpg";
 	static String		tmpDirectory	= "src/test/resources/tmp";
 

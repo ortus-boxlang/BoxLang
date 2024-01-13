@@ -125,7 +125,7 @@ public class FileWriteTest {
 	@Test
 	public void testBinaryFileWrite() throws IOException {
 		variables.put( Key.of( "testFile" ), Path.of( testBinaryFile ).toAbsolutePath().toString() );
-		BufferedInputStream	urlStream		= new BufferedInputStream( new URL( "https://source.unsplash.com/random/200x200?sig=1" ).openStream() );
+		BufferedInputStream	urlStream		= new BufferedInputStream( new URL( "https://ortus-public.s3.amazonaws.com/logos/ortus-medium.jpg" ).openStream() );
 		byte[]				binaryContent	= urlStream.readAllBytes();
 		variables.put( Key.of( "binaryContent" ), binaryContent );
 		instance.executeSource(
