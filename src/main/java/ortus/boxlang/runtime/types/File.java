@@ -57,32 +57,32 @@ public class File implements IType, IReferenceable {
 	 * Private Properties
 	 * --------------------------------------------------------------------------
 	 */
-	private static final String		MODE_READ		= "read";
-	private static final String		MODE_READBINARY	= "readbinary";
-	private static final String		MODE_WRITE		= "write";
-	private static final String		MODE_APPEND		= "append";
-	private static final String		CHARSET_UTF8	= "utf-8";
+	private static final String				MODE_READ		= "read";
+	private static final String				MODE_READBINARY	= "readbinary";
+	private static final String				MODE_WRITE		= "write";
+	private static final String				MODE_APPEND		= "append";
+	private static final String				CHARSET_UTF8	= "utf-8";
 	/**
 	 * The the reader object when mode is read
 	 */
-	protected BufferedReader		reader			= null;
+	protected BufferedReader				reader			= null;
 	/**
 	 * The the writer object when mode is write
 	 */
-	protected BufferedWriter		writer			= null;
+	protected BufferedWriter				writer			= null;
 	/**
 	 * The the writer object when mode is write and seekable is set to true
 	 */
-	protected SeekableByteChannel	byteChannel		= null;
+	protected SeekableByteChannel			byteChannel		= null;
 	/**
 	 * The file path object
 	 */
-	protected final Path			path;
+	protected final Path					path;
 
 	/**
 	 * The OS line separator
 	 */
-	private static final String		lineSeparator	= System.getProperty( "line.separator" );
+	private static final String				lineSeparator	= System.getProperty( "line.separator" );
 
 	/**
 	 * fileOpen implementation public properties
@@ -91,25 +91,25 @@ public class File implements IType, IReferenceable {
 	/**
 	 * The file mode for operations
 	 */
-	public final String				mode;
-	public String					filename;
-	public String					filepath;
-	public DateTime					lastModified;
-	public String					directory;
-	public Long						size;
-	public String					status;
-	public String					charset;
-	public Boolean					seekable;
+	public final String						mode;
+	public String							filename;
+	public String							filepath;
+	public DateTime							lastModified;
+	public String							directory;
+	public Long								size;
+	public String							status;
+	public String							charset;
+	public Boolean							seekable;
 
 	/**
 	 * Metadata object
 	 */
-	public BoxMeta					$bx;
+	public BoxMeta							$bx;
 
 	/**
 	 * Function service
 	 */
-	private FunctionService			functionService	= BoxRuntime.getInstance().getFunctionService();
+	private static final FunctionService	functionService	= BoxRuntime.getInstance().getFunctionService();
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -499,7 +499,7 @@ public class File implements IType, IReferenceable {
 	 */
 	public Object dereferenceAndInvoke( IBoxContext context, Key name, Map<Key, Object> namedArguments, Boolean safe ) {
 
-		MemberDescriptor memberDescriptor = functionService.getMemberMethod( name, BoxLangType.STRUCT );
+		MemberDescriptor memberDescriptor = functionService.getMemberMethod( name, BoxLangType.FILE );
 		if ( memberDescriptor != null ) {
 			return memberDescriptor.invoke( context, this, namedArguments );
 		}
