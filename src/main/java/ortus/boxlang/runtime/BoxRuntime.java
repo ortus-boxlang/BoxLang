@@ -273,7 +273,7 @@ public class BoxRuntime {
 		this.logger.atInfo().log(
 		    "+ BoxLang Runtime Started at [{}] in [{}]",
 		    Instant.now(),
-		    timerUtil.stop( "runtime-startup" )
+		    timerUtil.start( "runtime-startup" )
 		);
 
 		// Announce it baby! Runtime is up
