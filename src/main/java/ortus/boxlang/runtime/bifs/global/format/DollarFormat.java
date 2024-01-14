@@ -47,30 +47,30 @@ public class DollarFormat extends BIF {
 	 * @argument.number The number to format as a U.S. Dollar string.
 	 */
 	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
-		Object	originalValue	= arguments.get( Key.number );
-		double	value			= 0.0;
+		Object originalValue = arguments.get( Key.number );
 
-		if ( originalValue instanceof Double ) {
-			value = ( Double ) originalValue;
-		} else if ( originalValue instanceof String ) {
+		if ( originalValue instanceof String ) {
 			String stringValue = ( String ) originalValue;
 			if ( stringValue.isEmpty() ) {
 				return "$0.00";
 			}
+
 			try {
-				value = Double.parseDouble( stringValue );
+				double value = Double.parseDouble( stringValue );
+				return formatAsDollar( value );
 			} catch ( NumberFormatException e ) {
 				throw new BoxRuntimeException( "Cannot format number as U.S. Dollar string; invalid number: " + stringValue );
 			}
+		} else if ( originalValue instanceof Double ) {
+			return formatAsDollar( ( Double ) originalValue );
 		}
 
+		return "$0.00"; // Handle other types or null values as "$0.00"
+	}
+
+	private String formatAsDollar( double value ) {
 		String formattedValue = String.format( "%,.2f", StrictMath.abs( value ) );
-
-		if ( value < 0 ) {
-			return "($" + formattedValue + ")";
-		} else {
-			return "$" + formattedValue;
-		}
+		return ( value < 0 ) ? "($" + formattedValue + ")" : "$" + formattedValue;
 	}
 
 }
