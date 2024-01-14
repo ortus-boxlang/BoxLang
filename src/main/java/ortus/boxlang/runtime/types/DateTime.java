@@ -25,13 +25,22 @@ import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
+import java.util.Map;
+import java.util.NoSuchElementException;
 import java.util.Objects;
 
+import ortus.boxlang.runtime.BoxRuntime;
+import ortus.boxlang.runtime.bifs.MemberDescriptor;
+import ortus.boxlang.runtime.context.IBoxContext;
+import ortus.boxlang.runtime.dynamic.IReferenceable;
+import ortus.boxlang.runtime.interop.DynamicJavaInteropService;
+import ortus.boxlang.runtime.scopes.Key;
+import ortus.boxlang.runtime.services.FunctionService;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.meta.BoxMeta;
 import ortus.boxlang.runtime.types.meta.GenericMeta;
 
-public class DateTime implements IType {
+public class DateTime implements IType, IReferenceable {
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -42,13 +51,18 @@ public class DateTime implements IType {
 	/**
 	 * Represents the wrapped ZonedDateTime object we enhance
 	 */
-	protected ZonedDateTime		wrapped;
+	protected ZonedDateTime					wrapped;
 
 	/**
 	 * The format we use to represent the date time
 	 * which defaults to the ODBC format: {ts '''yyyy-MM-dd HH:mm:ss'''}
 	 */
-	private DateTimeFormatter	formatter						= DateTimeFormatter.ofPattern( ODBC_FORMAT_MASK );
+	private DateTimeFormatter				formatter						= DateTimeFormatter.ofPattern( ODBC_FORMAT_MASK );
+
+	/**
+	 * Function service
+	 */
+	private static final FunctionService	functionService					= BoxRuntime.getInstance().getFunctionService();
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -59,15 +73,15 @@ public class DateTime implements IType {
 	/**
 	 * Formatters
 	 */
-	public static final String	ODBC_FORMAT_MASK				= "'{ts '''yyyy-MM-dd HH:mm:ss'''}'";
-	public static final String	DEFAULT_DATE_FORMAT_MASK		= "dd-MMM-yy";
-	public static final String	DEFAULT_TIME_FORMAT_MASK		= "HH:mm a";
-	public static final String	DEFAULT_DATETIME_FORMAT_MASK	= "dd-MMM-yyyy HH:mm:ss";
+	public static final String				ODBC_FORMAT_MASK				= "'{ts '''yyyy-MM-dd HH:mm:ss'''}'";
+	public static final String				DEFAULT_DATE_FORMAT_MASK		= "dd-MMM-yy";
+	public static final String				DEFAULT_TIME_FORMAT_MASK		= "HH:mm a";
+	public static final String				DEFAULT_DATETIME_FORMAT_MASK	= "dd-MMM-yyyy HH:mm:ss";
 
 	/**
 	 * Metadata object
 	 */
-	public BoxMeta				$bx;
+	public BoxMeta							$bx;
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -330,6 +344,22 @@ public class DateTime implements IType {
 		return this.formatter.format( this.wrapped );
 	}
 
+	/*
+	 * Clones this object to produce a new object
+	 */
+	public DateTime clone() {
+		return clone( this.wrapped.getZone() );
+	}
+
+	/**
+	 * Clones this object to produce a new object
+	 *
+	 * @param timezone the string timezone to cast the clone to
+	 */
+	public DateTime clone( ZoneId timezone ) {
+		return new DateTime( ZonedDateTime.ofInstant( this.wrapped.toInstant(), timezone ) );
+	}
+
 	/**
 	 * Returns the date time representation as a string in the specified format mask
 	 *
@@ -454,6 +484,112 @@ public class DateTime implements IType {
 	 */
 	public ZonedDateTime getWrapped() {
 		return this.wrapped;
+	}
+
+	/**
+	 * --------------------------------------------------------------------------
+	 * IReferenceable Interface Methods
+	 * --------------------------------------------------------------------------
+	 */
+
+	/**
+	 * Assign a value to a key
+	 *
+	 * @param key   The key to assign
+	 * @param value The value to assign
+	 */
+	@Override
+	public Object assign( IBoxContext context, Key key, Object value ) {
+		DynamicJavaInteropService.setField( this, key.getName().toLowerCase(), value );
+		return this;
+	}
+
+	/**
+	 * Dereference this object by a key and return the value, or throw exception
+	 *
+	 * @param key  The key to dereference
+	 * @param safe Whether to throw an exception if the key is not found
+	 *
+	 * @return The requested object
+	 */
+	@Override
+	public Object dereference( IBoxContext context, Key key, Boolean safe ) {
+		try {
+			return DynamicJavaInteropService.getField( this, key.getName().toLowerCase() ).get();
+		} catch ( NoSuchElementException e ) {
+			throw new BoxRuntimeException(
+			    String.format(
+			        "The property [%s] does not exist or is not public in the class [%s].",
+			        key.getName(),
+			        this.getClass().getSimpleName()
+			    )
+			);
+		}
+	}
+
+	/**
+	 * Dereference this object by a key and invoke the result as an invokable (UDF, java method) using positional arguments
+	 *
+	 * @param name                The key to dereference
+	 * @param positionalArguments The positional arguments to pass to the invokable
+	 * @param safe                Whether to throw an exception if the key is not found
+	 *
+	 * @return The requested object
+	 */
+	public Object dereferenceAndInvoke( IBoxContext context, Key name, Object[] positionalArguments, Boolean safe ) {
+		MemberDescriptor memberDescriptor = functionService.getMemberMethod( name, BoxLangType.DATETIME );
+		if ( memberDescriptor != null ) {
+			return memberDescriptor.invoke( context, this, positionalArguments );
+		}
+
+		if ( DynamicJavaInteropService.hasMethodNoCase( this.getClass(), name.getName() ) ) {
+			return DynamicJavaInteropService.invoke( this, name.getName(), safe, positionalArguments );
+		} else if ( DynamicJavaInteropService.hasMethodNoCase( this.wrapped.getClass(), name.getName() ) ) {
+			return DynamicJavaInteropService.invoke( this.wrapped, name.getName(), safe, positionalArguments );
+		} else if ( DynamicJavaInteropService.hasMethodNoCase( this.getClass(), "get" + name.getName() ) ) {
+			return DynamicJavaInteropService.invoke( this.wrapped, "get" + name.getName(), safe, positionalArguments );
+		} else {
+			throw new BoxRuntimeException(
+			    String.format(
+			        "The method [%s] is not present in the [%s] object",
+			        name.getName(),
+			        this.getClass().getSimpleName()
+			    )
+			);
+		}
+	}
+
+	/**
+	 * Dereference this object by a key and invoke the result as an invokable (UDF, java method)
+	 *
+	 * @param name           The name of the key to dereference, which becomes the method name
+	 * @param namedArguments The arguments to pass to the invokable
+	 * @param safe           If true, return null if the method is not found, otherwise throw an exception
+	 *
+	 * @return The requested return value or null
+	 */
+	public Object dereferenceAndInvoke( IBoxContext context, Key name, Map<Key, Object> namedArguments, Boolean safe ) {
+
+		MemberDescriptor memberDescriptor = functionService.getMemberMethod( name, BoxLangType.DATETIME );
+		if ( memberDescriptor != null ) {
+			return memberDescriptor.invoke( context, this, namedArguments );
+		}
+
+		if ( DynamicJavaInteropService.hasMethodNoCase( this.getClass(), name.getName() ) ) {
+			return DynamicJavaInteropService.invoke( this, name.getName(), safe, namedArguments );
+		} else if ( DynamicJavaInteropService.hasMethodNoCase( this.wrapped.getClass(), name.getName() ) ) {
+			return DynamicJavaInteropService.invoke( this.wrapped, name.getName(), safe, namedArguments );
+		} else if ( DynamicJavaInteropService.hasMethodNoCase( this.getClass(), "get" + name.getName() ) ) {
+			return DynamicJavaInteropService.invoke( this.wrapped, "get" + name.getName(), safe, namedArguments );
+		} else {
+			throw new BoxRuntimeException(
+			    String.format(
+			        "The method [%s] is not present in the [%s] object",
+			        name.getName(),
+			        this.getClass().getSimpleName()
+			    )
+			);
+		}
 	}
 
 }
