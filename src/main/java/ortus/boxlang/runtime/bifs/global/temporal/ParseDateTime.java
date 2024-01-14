@@ -30,12 +30,16 @@ public class ParseDateTime extends BIF {
 	}
 
 	/**
-	 * Describe what the invocation of your bif function does
+	 * Parses a datetime string or object
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.foo Describe any expected arguments
+	 * @argument.date the date, datetime string or an object
+	 * 
+	 * @argument.format the format mask to use in parsing
+	 * 
+	 * @argument.timezone the timezone to apply to the parsed datetime
 	 */
 	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
 		Object	dateRef		= arguments.get( Key.date );
