@@ -136,14 +136,67 @@ public class DateTime implements IType, IReferenceable {
 		try {
 			parsed = ZonedDateTime.parse( dateTime, getFormatter( mask ) );
 		} catch ( java.time.format.DateTimeParseException e ) {
-			parsed = ZonedDateTime.of( LocalDateTime.parse( dateTime, getFormatter( mask ) ), ZoneId.systemDefault() );
+			// First fallback - it has a time without a zone
+			try {
+				parsed = ZonedDateTime.of( LocalDateTime.parse( dateTime, getFormatter( mask ) ), ZoneId.systemDefault() );
+				// Second fallback - it is only a date and we need to supply a time
+			} catch ( java.time.format.DateTimeParseException x ) {
+				parsed = ZonedDateTime.of( LocalDateTime.of( LocalDate.parse( dateTime, getFormatter( mask ) ), LocalTime.MIN ), ZoneId.systemDefault() );
+			} catch ( Exception x ) {
+				throw new BoxRuntimeException(
+				    String.format(
+				        "The the date time value of [%s] could not be parsed as a valid date or datetime",
+				        dateTime
+				    ), x );
+			}
 		} catch ( Exception e ) {
 			throw new BoxRuntimeException(
 			    String.format(
 			        "The the date time value of [%s] could not be parsed using the mask [%s]",
 			        dateTime,
 			        mask
-			    ) );
+			    ), e );
+		}
+		this.wrapped = parsed;
+	}
+
+	/**
+	 * Constructor to create DateTime from a string with a specified timezone
+	 *
+	 * @param dateTime - a string representing the date and time
+	 * @param timezone - the timezone string
+	 */
+	public DateTime( String dateTime, ZoneId timezone ) {
+		ZonedDateTime parsed = null;
+		try {
+			parsed = ZonedDateTime.of( LocalDateTime.parse( dateTime ), timezone );
+			// Second fallback - it is only a date and we need to supply a time
+		} catch ( java.time.format.DateTimeParseException e ) {
+			// First fallback - it has a time without a zone
+			try {
+				parsed = ZonedDateTime.of( LocalDateTime.of( LocalDate.parse( dateTime ), LocalTime.MIN ), timezone );
+				// Second fallback - it is only a date and we need to supply a time
+			} catch ( java.time.format.DateTimeParseException x ) {
+				parsed = dateTime.contains( "/" )
+				    ? ZonedDateTime.of(
+				        LocalDateTime.of( LocalDate.parse( dateTime, getFormatter( dateTime.length() == 10 ? "MM/dd/yyyy" : "MM/dd/yy" ) ), LocalTime.MIN ),
+				        ZoneId.systemDefault() )
+				    : ZonedDateTime.of( LocalDateTime.of( LocalDate.parse( dateTime ), LocalTime.MIN ), ZoneId.systemDefault() );
+			} catch ( Exception x ) {
+				throw new BoxRuntimeException(
+				    String.format(
+				        "The the date time value of [%s] could not be parsed as a valid date or datetime",
+				        dateTime
+				    ),
+				    x
+				);
+			}
+		} catch ( Exception e ) {
+			throw new BoxRuntimeException(
+			    String.format(
+			        "The the date time value of [%s] could not be parsed as a valid date or datetime",
+			        dateTime
+			    ), e );
 		}
 		this.wrapped = parsed;
 	}
@@ -156,14 +209,18 @@ public class DateTime implements IType, IReferenceable {
 	public DateTime( String dateTime ) {
 		ZonedDateTime parsed = null;
 		try {
-			parsed = ZonedDateTime.parse( dateTime, formatter );
+			parsed = ZonedDateTime.parse( dateTime );
 		} catch ( java.time.format.DateTimeParseException e ) {
 			// First fallback - it has a time without a zone
 			try {
 				parsed = ZonedDateTime.of( LocalDateTime.parse( dateTime ), ZoneId.systemDefault() );
 				// Second fallback - it is only a date and we need to supply a time
 			} catch ( java.time.format.DateTimeParseException x ) {
-				parsed = ZonedDateTime.of( LocalDateTime.of( LocalDate.parse( dateTime ), LocalTime.MIN ), ZoneId.systemDefault() );
+				parsed = dateTime.contains( "/" )
+				    ? ZonedDateTime.of(
+				        LocalDateTime.of( LocalDate.parse( dateTime, getFormatter( dateTime.length() == 10 ? "MM/dd/yyyy" : "MM/dd/yy" ) ), LocalTime.MIN ),
+				        ZoneId.systemDefault() )
+				    : ZonedDateTime.of( LocalDateTime.of( LocalDate.parse( dateTime ), LocalTime.MIN ), ZoneId.systemDefault() );
 			} catch ( Exception x ) {
 				throw new BoxRuntimeException(
 				    String.format(
