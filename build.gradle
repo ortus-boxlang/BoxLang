@@ -252,6 +252,7 @@ test {
 	systemProperties.putIfAbsent( "contentboxdir", contentboxDir)
 	systemProperties.putIfAbsent( "coldboxdir", coldboxDir)
 	dependsOn compileJava, compileTestJava
+	exclude '**/resources/**'
 }
 
 /****************************************************************
