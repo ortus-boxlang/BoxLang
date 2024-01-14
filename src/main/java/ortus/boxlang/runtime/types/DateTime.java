@@ -574,13 +574,13 @@ public class DateTime implements IType, IReferenceable {
 		if ( memberDescriptor != null ) {
 			return memberDescriptor.invoke( context, this, namedArguments );
 		}
-
 		if ( DynamicJavaInteropService.hasMethodNoCase( this.getClass(), name.getName() ) ) {
 			return DynamicJavaInteropService.invoke( this, name.getName(), safe, namedArguments );
+			// no args - just pass through to the wrapped methods
 		} else if ( DynamicJavaInteropService.hasMethodNoCase( this.wrapped.getClass(), name.getName() ) ) {
-			return DynamicJavaInteropService.invoke( this.wrapped, name.getName(), safe, namedArguments );
+			return DynamicJavaInteropService.invoke( this.wrapped, name.getName(), safe );
 		} else if ( DynamicJavaInteropService.hasMethodNoCase( this.getClass(), "get" + name.getName() ) ) {
-			return DynamicJavaInteropService.invoke( this.wrapped, "get" + name.getName(), safe, namedArguments );
+			return DynamicJavaInteropService.invoke( this.wrapped, "get" + name.getName(), safe );
 		} else {
 			throw new BoxRuntimeException(
 			    String.format(

@@ -35,6 +35,7 @@ import ortus.boxlang.runtime.context.ScriptingBoxContext;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
+import ortus.boxlang.runtime.types.DateTime;
 
 public class TimeUnitsTest {
 
@@ -60,17 +61,417 @@ public class TimeUnitsTest {
 		variables.clear();
 	}
 
-	@DisplayName( "It tests the BIF TimeUnits" )
+	@DisplayName( "It tests the BIF Year" )
 	@Test
 	public void testBifYear() {
 		Integer refYear = ZonedDateTime.now().getYear();
 		instance.executeSource(
 		    """
-		    result = year( now() );
+		    now = now();
+		       result = year( now );
+		       """,
+		    context );
+		Integer result = ( Integer ) variables.get( Key.of( "result" ) );
+		assertEquals( result, refYear );
+
+	}
+
+	@DisplayName( "It tests the DateTime Member function Year" )
+	@Test
+	public void testMemberYear() {
+		Integer refYear = ZonedDateTime.now().getYear();
+		instance.executeSource(
+		    """
+		    result = now().year();
 		    """,
 		    context );
 		Integer result = ( Integer ) variables.get( Key.of( "result" ) );
 		assertEquals( result, refYear );
+
+	}
+
+	@DisplayName( "It tests the BIF Month" )
+	@Test
+	public void testBifMonth() {
+		Integer ref = ZonedDateTime.now().getMonth().getValue();
+		instance.executeSource(
+		    """
+		    result = month( now() );
+		    """,
+		    context );
+		Integer result = ( Integer ) variables.get( Key.of( "result" ) );
+		assertEquals( result, ref );
+
+	}
+
+	@DisplayName( "It tests the DateTime Member function Month" )
+	@Test
+	public void testMembefMonth() {
+		Integer refMonth = ZonedDateTime.now().getMonth().getValue();
+		instance.executeSource(
+		    """
+		    result = now().month();
+		    """,
+		    context );
+		Integer result = ( Integer ) variables.get( Key.of( "result" ) );
+		assertEquals( result, refMonth );
+
+	}
+
+	@DisplayName( "It tests the BIF Day" )
+	@Test
+	public void testBifDay() {
+		Integer refDay = ZonedDateTime.now().getDayOfMonth();
+		instance.executeSource(
+		    """
+		    now = now();
+		       result = day( now );
+		       """,
+		    context );
+		Integer result = ( Integer ) variables.get( Key.of( "result" ) );
+		assertEquals( result, refDay );
+
+	}
+
+	@DisplayName( "It tests the DateTime Member function Day" )
+	@Test
+	public void testMemberDay() {
+		Integer refDay = ZonedDateTime.now().getDayOfMonth();
+		instance.executeSource(
+		    """
+		    result = now().day();
+		    """,
+		    context );
+		Integer result = ( Integer ) variables.get( Key.of( "result" ) );
+		assertEquals( result, refDay );
+
+	}
+
+	@DisplayName( "It tests the BIF DayOfWeek" )
+	@Test
+	public void testBifDayOfWeek() {
+		Integer refDayOfWeek = ZonedDateTime.now().getDayOfWeek().getValue();
+		instance.executeSource(
+		    """
+		    now = now();
+		       result = dayOfWeek( now );
+		       """,
+		    context );
+		Integer result = ( Integer ) variables.get( Key.of( "result" ) );
+		assertEquals( result, refDayOfWeek );
+
+	}
+
+	@DisplayName( "It tests the DateTime Member function DayOfWeek" )
+	@Test
+	public void testMemberDayOfWeek() {
+		Integer refDayOfWeek = ZonedDateTime.now().getDayOfWeek().getValue();
+		instance.executeSource(
+		    """
+		    result = now().dayOfWeek();
+		    """,
+		    context );
+		Integer result = ( Integer ) variables.get( Key.of( "result" ) );
+		assertEquals( result, refDayOfWeek );
+
+	}
+
+	@DisplayName( "It tests the BIF DayOfWeekAsString" )
+	@Test
+	public void testBifDayOfWeekAsString() {
+		String refDayOfWeekAsString = new DateTime().format( "eeee" );
+		instance.executeSource(
+		    """
+		    now = now();
+		       result = dayOfWeekAsString( now );
+		       """,
+		    context );
+		String result = variables.getAsString( Key.of( "result" ) );
+		assertEquals( result, refDayOfWeekAsString );
+
+	}
+
+	@DisplayName( "It tests the DateTime Member function DayOfWeekAsString" )
+	@Test
+	public void testMemberDayOfWeekAsString() {
+		String refDayOfWeekAsString = new DateTime().format( "eeee" );
+		instance.executeSource(
+		    """
+		    result = now().dayOfWeekAsString();
+		    """,
+		    context );
+		String result = variables.getAsString( Key.of( "result" ) );
+		assertEquals( result, refDayOfWeekAsString );
+
+	}
+
+	@DisplayName( "It tests the BIF DayOfWeekShortAsString" )
+	@Test
+	public void testBifDayOfWeekShortAsString() {
+		String refDayOfWeekShortAsString = new DateTime().format( "eee" );
+		instance.executeSource(
+		    """
+		    now = now();
+		       result = dayOfWeekShortAsString( now );
+		       """,
+		    context );
+		String result = variables.getAsString( Key.of( "result" ) );
+		assertEquals( result, refDayOfWeekShortAsString );
+
+	}
+
+	@DisplayName( "It tests the DateTime Member function DayOfWeekShortAsString" )
+	@Test
+	public void testMemberDayOfWeekShortAsString() {
+		String refDayOfWeekShortAsString = new DateTime().format( "eee" );
+		instance.executeSource(
+		    """
+		    result = now().dayOfWeekShortAsString();
+		    """,
+		    context );
+		String result = variables.getAsString( Key.of( "result" ) );
+		assertEquals( result, refDayOfWeekShortAsString );
+
+	}
+
+	@DisplayName( "It tests the BIF DayOfYear" )
+	@Test
+	public void testBifDayOfYear() {
+		Integer refDayOfYear = ZonedDateTime.now().getDayOfYear();
+		instance.executeSource(
+		    """
+		    now = now();
+		       result = dayOfYear( now );
+		       """,
+		    context );
+		Integer result = ( Integer ) variables.get( Key.of( "result" ) );
+		assertEquals( result, refDayOfYear );
+
+	}
+
+	@DisplayName( "It tests the DateTime Member function DayOfYear" )
+	@Test
+	public void testMemberDayOfYear() {
+		Integer refDayOfYear = ZonedDateTime.now().getDayOfYear();
+		instance.executeSource(
+		    """
+		    result = now().dayOfYear();
+		    """,
+		    context );
+		Integer result = ( Integer ) variables.get( Key.of( "result" ) );
+		assertEquals( result, refDayOfYear );
+
+	}
+
+	@DisplayName( "It tests the BIF Hour" )
+	@Test
+	public void testBifHour() {
+		Integer refHour = ZonedDateTime.now().getHour();
+		instance.executeSource(
+		    """
+		    now = now();
+		       result = hour( now );
+		       """,
+		    context );
+		Integer result = ( Integer ) variables.get( Key.of( "result" ) );
+		assertEquals( result, refHour );
+
+	}
+
+	@DisplayName( "It tests the DateTime Member function Hour" )
+	@Test
+	public void testMemberHour() {
+		Integer refHour = ZonedDateTime.now().getHour();
+		instance.executeSource(
+		    """
+		    result = now().hour();
+		    """,
+		    context );
+		Integer result = ( Integer ) variables.get( Key.of( "result" ) );
+		assertEquals( result, refHour );
+
+	}
+
+	@DisplayName( "It tests the BIF Minute" )
+	@Test
+	public void testBifMinute() {
+		Integer refMinute = ZonedDateTime.now().getMinute();
+		instance.executeSource(
+		    """
+		    now = now();
+		       result = minute( now );
+		       """,
+		    context );
+		Integer result = ( Integer ) variables.get( Key.of( "result" ) );
+		assertEquals( result, refMinute );
+
+	}
+
+	@DisplayName( "It tests the DateTime Member function Minute" )
+	@Test
+	public void testMemberMinute() {
+		Integer refMinute = ZonedDateTime.now().getMinute();
+		instance.executeSource(
+		    """
+		    result = now().minute();
+		    """,
+		    context );
+		Integer result = ( Integer ) variables.get( Key.of( "result" ) );
+		assertEquals( result, refMinute );
+
+	}
+
+	@DisplayName( "It tests the BIF Second" )
+	@Test
+	public void testBifSecond() {
+		DateTime	ref			= new DateTime();
+		Integer		refSecond	= ref.getWrapped().getSecond();
+		variables.put( Key.of( "date" ), ref );
+		instance.executeSource(
+		    """
+		    result = second( date );
+		    """,
+		    context );
+		Integer result = ( Integer ) variables.get( Key.of( "result" ) );
+		assertEquals( result, refSecond );
+
+	}
+
+	@DisplayName( "It tests the DateTime Member function Second" )
+	@Test
+	public void testMemberSecond() {
+		DateTime	ref			= new DateTime();
+		Integer		refSecond	= ref.getWrapped().getSecond();
+		variables.put( Key.of( "date" ), ref );
+		instance.executeSource(
+		    """
+		    result = date.second();
+		    """,
+		    context );
+		Integer result = ( Integer ) variables.get( Key.of( "result" ) );
+		assertEquals( result, refSecond );
+
+	}
+
+	@DisplayName( "It tests the BIF Millisecond" )
+	@Test
+	public void testBifMillisecond() {
+		DateTime	ref				= new DateTime();
+		Integer		refMillisecond	= ref.getWrapped().getNano() / 1000000;
+		variables.put( Key.of( "date" ), ref );
+		instance.executeSource(
+		    """
+		    result = millisecond( date );
+		    """,
+		    context );
+		Integer result = ( Integer ) variables.get( Key.of( "result" ) );
+		assertEquals( result, refMillisecond );
+
+	}
+
+	@DisplayName( "It tests the DateTime Member function Millisecond" )
+	@Test
+	public void testMemberMillisecond() {
+		DateTime	ref				= new DateTime();
+		Integer		refMillisecond	= ref.getWrapped().getNano() / 1000000;
+		variables.put( Key.of( "date" ), ref );
+		instance.executeSource(
+		    """
+		    result = date.millisecond();
+		    """,
+		    context );
+		Integer result = ( Integer ) variables.get( Key.of( "result" ) );
+		assertEquals( result, refMillisecond );
+
+	}
+
+	@DisplayName( "It tests the BIF Nanosecond" )
+	@Test
+	public void testBifNanosecond() {
+		DateTime	ref				= new DateTime();
+		Integer		refNanosecond	= ref.getWrapped().getNano();
+		variables.put( Key.of( "date" ), ref );
+		instance.executeSource(
+		    """
+		    result = Nanosecond( date );
+		    """,
+		    context );
+		Integer result = ( Integer ) variables.get( Key.of( "result" ) );
+		assertEquals( result, refNanosecond );
+
+	}
+
+	@DisplayName( "It tests the DateTime Member function Nanosecond" )
+	@Test
+	public void testMemberNanosecond() {
+		DateTime	ref				= new DateTime();
+		Integer		refNanosecond	= ref.getWrapped().getNano();
+		variables.put( Key.of( "date" ), ref );
+		instance.executeSource(
+		    """
+		    result = date.Nanosecond();
+		    """,
+		    context );
+		Integer result = ( Integer ) variables.get( Key.of( "result" ) );
+		assertEquals( result, refNanosecond );
+
+	}
+
+	@DisplayName( "It tests the BIF Offset" )
+	@Test
+	public void testBifOffset() {
+		String refOffset = new DateTime().format( "xxxx" );
+		instance.executeSource(
+		    """
+		    now = now();
+		       result = offset( now );
+		       """,
+		    context );
+		String result = variables.getAsString( Key.of( "result" ) );
+		assertEquals( result, refOffset );
+
+	}
+
+	@DisplayName( "It tests the DateTime Member function Offset" )
+	@Test
+	public void testMemberOffset() {
+		String refOffset = new DateTime().format( "xxxx" );
+		instance.executeSource(
+		    """
+		    result = now().offset();
+		    """,
+		    context );
+		String result = variables.getAsString( Key.of( "result" ) );
+		assertEquals( result, refOffset );
+
+	}
+
+	@DisplayName( "It tests the BIF GetTimeZone" )
+	@Test
+	public void testBifGetTimeZone() {
+		String refTimeZone = new DateTime().format( "v" );
+		instance.executeSource(
+		    """
+		    now = now();
+		       result = GetTimeZone( now );
+		       """,
+		    context );
+		String result = variables.getAsString( Key.of( "result" ) );
+		assertEquals( result, refTimeZone );
+
+	}
+
+	@DisplayName( "It tests the DateTime Member function DateTime.timeZone" )
+	@Test
+	public void testMemberGetTimeZone() {
+		String refTimeZone = new DateTime().format( "v" );
+		instance.executeSource(
+		    """
+		    result = now().timeZone();
+		    """,
+		    context );
+		String result = variables.getAsString( Key.of( "result" ) );
+		assertEquals( result, refTimeZone );
 
 	}
 
