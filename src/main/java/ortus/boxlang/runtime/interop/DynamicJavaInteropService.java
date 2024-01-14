@@ -48,8 +48,8 @@ import ortus.boxlang.runtime.runnables.IClassRunnable;
 import ortus.boxlang.runtime.scopes.IntKey;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Array;
-import ortus.boxlang.runtime.types.IType;
 import ortus.boxlang.runtime.types.IStruct;
+import ortus.boxlang.runtime.types.IType;
 import ortus.boxlang.runtime.types.exceptions.ApplicationException;
 import ortus.boxlang.runtime.types.exceptions.BoxLangException;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
@@ -298,10 +298,10 @@ public class DynamicJavaInteropService {
 
 	/**
 	 * Reusable method for bootstrapping IClassRunnables
-	 * 
+	 *
 	 * @param cfc  The class to bootstrap
 	 * @param args The arguments to pass to the constructor
-	 * 
+	 *
 	 * @return The instance of the class
 	 */
 	private static <T> T bootstrapBLClass( IBoxContext context, IClassRunnable cfc, Object[] positionalArgs, Map<Key, Object> namedArgs, boolean noInit ) {
@@ -460,7 +460,7 @@ public class DynamicJavaInteropService {
 			if ( safe ) {
 				return null;
 			} else {
-				throw new BoxRuntimeException( "Error getting method for class " + targetClass.getName(), e );
+				throw new BoxRuntimeException( "Error getting method " + methodName + " for class " + targetClass.getName(), e );
 			}
 		}
 
