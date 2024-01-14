@@ -21,6 +21,7 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.time.Year;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
@@ -349,6 +350,15 @@ public class DateTime implements IType, IReferenceable {
 	 */
 	public DateTime clone() {
 		return clone( this.wrapped.getZone() );
+	}
+
+	/**
+	 * Determines whether the year of this object is a leap year
+	 *
+	 * @return boolean
+	 */
+	public Boolean isLeapYear() {
+		return Year.isLeap( this.wrapped.getYear() );
 	}
 
 	/**

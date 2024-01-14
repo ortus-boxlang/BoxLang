@@ -21,6 +21,7 @@ package ortus.boxlang.runtime.bifs.global.temporal;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
+import java.time.Year;
 import java.time.ZonedDateTime;
 
 import org.junit.jupiter.api.AfterAll;
@@ -118,6 +119,66 @@ public class TimeUnitsTest {
 
 	}
 
+	@DisplayName( "It tests the BIF MonthAsString" )
+	@Test
+	public void testBifMonthAsString() {
+		String refMonthAsString = new DateTime().format( "MMMM" );
+		instance.executeSource(
+		    """
+		    now = now();
+		       result = monthAsString( now );
+		       """,
+		    context );
+		String result = variables.getAsString( Key.of( "result" ) );
+		assertEquals( result, refMonthAsString );
+
+	}
+
+	@DisplayName( "It tests the member function DateTime.monthAsString" )
+	@Test
+	public void testMemberMonthAsString() {
+		String refMonthAsString = new DateTime().format( "MMMM" );
+		instance.executeSource(
+		    """
+		    now = now();
+		       result = now.monthAsString();
+		       """,
+		    context );
+		String result = variables.getAsString( Key.of( "result" ) );
+		assertEquals( result, refMonthAsString );
+
+	}
+
+	@DisplayName( "It tests the BIF MonthShortAsString" )
+	@Test
+	public void testBifMonthShortAsString() {
+		String refMonthShortAsString = new DateTime().format( "MMM" );
+		instance.executeSource(
+		    """
+		    now = now();
+		       result = monthShortAsString( now );
+		       """,
+		    context );
+		String result = variables.getAsString( Key.of( "result" ) );
+		assertEquals( result, refMonthShortAsString );
+
+	}
+
+	@DisplayName( "It tests the member function DateTime.monthShortAsString" )
+	@Test
+	public void testMemberMonthShortAsString() {
+		String refMonthShortAsString = new DateTime().format( "MMM" );
+		instance.executeSource(
+		    """
+		    now = now();
+		       result = now.monthShortAsString();
+		       """,
+		    context );
+		String result = variables.getAsString( Key.of( "result" ) );
+		assertEquals( result, refMonthShortAsString );
+
+	}
+
 	@DisplayName( "It tests the BIF Day" )
 	@Test
 	public void testBifDay() {
@@ -144,6 +205,68 @@ public class TimeUnitsTest {
 		    context );
 		Integer result = ( Integer ) variables.get( Key.of( "result" ) );
 		assertEquals( result, refDay );
+
+	}
+
+	@DisplayName( "It tests the BIF DaysInMonth" )
+	@Test
+	public void testBifDaysInMonth() {
+		DateTime	dateRef			= new DateTime();
+		Integer		refDaysInMonth	= dateRef.getWrapped().getMonth().length( dateRef.isLeapYear() );
+		instance.executeSource(
+		    """
+		    now = now();
+		       result = daysInMonth( now );
+		       """,
+		    context );
+		Integer result = ( Integer ) variables.get( Key.of( "result" ) );
+		assertEquals( result, refDaysInMonth );
+
+	}
+
+	@DisplayName( "It tests the DateTime Member function DaysInMonth" )
+	@Test
+	public void testMemberDaysInMonth() {
+		DateTime	dateRef			= new DateTime();
+		Integer		refDaysInMonth	= dateRef.getWrapped().getMonth().length( dateRef.isLeapYear() );
+		instance.executeSource(
+		    """
+		    result = now().DaysInMonth();
+		    """,
+		    context );
+		Integer result = ( Integer ) variables.get( Key.of( "result" ) );
+		assertEquals( result, refDaysInMonth );
+
+	}
+
+	@DisplayName( "It tests the BIF DaysInYear" )
+	@Test
+	public void testBifDaysInYear() {
+		DateTime	dateRef			= new DateTime();
+		Integer		refDaysInYear	= Year.of( dateRef.getWrapped().getYear() ).length();
+		instance.executeSource(
+		    """
+		    now = now();
+		       result = daysInYear( now );
+		       """,
+		    context );
+		Integer result = ( Integer ) variables.get( Key.of( "result" ) );
+		assertEquals( result, refDaysInYear );
+
+	}
+
+	@DisplayName( "It tests the DateTime Member function DaysInYear" )
+	@Test
+	public void testMemberDaysInYear() {
+		DateTime	dateRef			= new DateTime();
+		Integer		refDaysInYear	= Year.of( dateRef.getWrapped().getYear() ).length();
+		instance.executeSource(
+		    """
+		    result = now().DaysInYear();
+		    """,
+		    context );
+		Integer result = ( Integer ) variables.get( Key.of( "result" ) );
+		assertEquals( result, refDaysInYear );
 
 	}
 

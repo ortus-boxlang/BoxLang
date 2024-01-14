@@ -1,6 +1,7 @@
 
 package ortus.boxlang.runtime.bifs.global.temporal;
 
+import java.time.Year;
 import java.time.ZoneId;
 import java.util.HashMap;
 
@@ -19,10 +20,14 @@ import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
 @BoxBIF( alias = "Year" )
 @BoxBIF( alias = "Month" )
+@BoxBIF( alias = "MonthAsString" )
+@BoxBIF( alias = "MonthShortAsString" )
 @BoxBIF( alias = "Day" )
 @BoxBIF( alias = "DayOfWeek" )
 @BoxBIF( alias = "DayOfWeekAsString" )
 @BoxBIF( alias = "DayOfWeekShortAsString" )
+@BoxBIF( alias = "DaysInMonth" )
+@BoxBIF( alias = "DaysInYear" )
 @BoxBIF( alias = "DayOfYear" )
 @BoxBIF( alias = "Hour" )
 @BoxBIF( alias = "Minute" )
@@ -33,10 +38,14 @@ import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 @BoxBIF( alias = "GetTimezone" )
 @BoxMember( type = BoxLangType.DATETIME, name = "year" )
 @BoxMember( type = BoxLangType.DATETIME, name = "month" )
+@BoxMember( type = BoxLangType.DATETIME, name = "monthAsString" )
+@BoxMember( type = BoxLangType.DATETIME, name = "monthShortAsString" )
 @BoxMember( type = BoxLangType.DATETIME, name = "day" )
 @BoxMember( type = BoxLangType.DATETIME, name = "dayOfWeek" )
 @BoxMember( type = BoxLangType.DATETIME, name = "dayOfWeekAsString" )
 @BoxMember( type = BoxLangType.DATETIME, name = "dayOfWeekShortAsString" )
+@BoxMember( type = BoxLangType.DATETIME, name = "daysInMonth" )
+@BoxMember( type = BoxLangType.DATETIME, name = "daysInYear" )
 @BoxMember( type = BoxLangType.DATETIME, name = "dayOfYear" )
 @BoxMember( type = BoxLangType.DATETIME, name = "hour" )
 @BoxMember( type = BoxLangType.DATETIME, name = "minute" )
@@ -84,7 +93,7 @@ public class TimeUnits extends BIF {
 	 * @param arguments Argument scope for the BIF.
 	 *
 	 * @argument.date The DateTime object or datetime string representation
-	 * 
+	 *
 	 * @argument.timezone The timezone with which to cast the result
 	 */
 	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
@@ -103,6 +112,18 @@ public class TimeUnits extends BIF {
 			switch ( bifMethodKey.getName().toLowerCase() ) {
 				case "month" : {
 					return dateRef.getWrapped().getMonth().getValue();
+				}
+				case "monthasstring" : {
+					return dateRef.clone().format( "MMMM" );
+				}
+				case "monthshortasstring" : {
+					return dateRef.clone().format( "MMM" );
+				}
+				case "daysinmonth" : {
+					return dateRef.getWrapped().getMonth().length( dateRef.isLeapYear() );
+				}
+				case "daysinyear" : {
+					return Year.of( dateRef.getWrapped().getYear() ).length();
 				}
 				case "dayofweek" : {
 					return dateRef.clone().getWrapped().getDayOfWeek().getValue();
