@@ -26,7 +26,7 @@ import ortus.boxlang.runtime.types.BoxLangType;
 import ortus.boxlang.runtime.types.IStruct;
 
 @BoxBIF
-@BoxMember( type = BoxLangType.ARRAY, name = "keyArray" )
+@BoxMember( type = BoxLangType.STRUCT, name = "keyArray" )
 public class StructKeyArray extends BIF {
 
 	/**
