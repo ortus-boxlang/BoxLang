@@ -17,6 +17,7 @@
  */
 package ortus.boxlang.runtime.bifs;
 
+import java.lang.annotation.Documented;
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Repeatable;
 import java.lang.annotation.Retention;
@@ -25,6 +26,7 @@ import java.lang.annotation.Target;
 
 import ortus.boxlang.runtime.types.BoxLangType;
 
+@Documented
 @Retention( RetentionPolicy.RUNTIME )
 @Target( ElementType.TYPE )
 @Repeatable( BoxMembers.class )
