@@ -156,9 +156,9 @@ public final class EncryptionUtil {
 		algorithm = ( String ) KEY_ALGORITHMS.getOrDefault( algorithm, algorithm );
 		try {
 			Mac				mac			= Mac.getInstance( algorithm );
-			SecretKeySpec	secret_key	= new SecretKeySpec( key.getBytes( charset ), algorithm );
-			mac.init( secret_key );
-			return hash( mac.doFinal( ( byte[] ) encryptItem ), "MD5" );
+			SecretKeySpec	secretKey	= new SecretKeySpec( key.getBytes( charset ), algorithm );
+			mac.init( secretKey );
+			return hash( mac.doFinal( ( byte[] ) encryptItem ), algorithm.replaceFirst( "Hmac", "" ) );
 		} catch ( NoSuchAlgorithmException e ) {
 			throw new BoxRuntimeException(
 			    String.format(
