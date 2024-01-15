@@ -79,7 +79,7 @@ public class TimeUnits extends BIF {
 	public static final String	DOW_SHORT_FORMAT	= "eee";
 	public static final String	DOW_LONG_FORMAT		= "eeee";
 
-	static final class bifReference {
+	static final class bifMethods {
 
 		public static final Key		month					= Key.month;
 		public static final Key		monthAsString			= Key.of( "monthAsString" );
@@ -98,7 +98,7 @@ public class TimeUnits extends BIF {
 		/**
 		 * Map of method names to BIF names
 		 */
-		public final static Struct	memberMap				= new Struct(
+		public final static Struct	memberMethods			= new Struct(
 		    new HashMap<String, String>() {
 
 			    {
@@ -145,26 +145,29 @@ public class TimeUnits extends BIF {
 
 		Key		bifMethodKey	= arguments.getAsKey( __functionName );
 		String	methodName		= null;
-		if ( bifReference.memberMap.containsKey( bifMethodKey ) ) {
-			methodName = ( String ) bifReference.memberMap.get( ( Object ) bifMethodKey );
+		if ( bifMethods.memberMethods.containsKey( bifMethodKey ) ) {
+			methodName = ( String ) bifMethods.memberMethods.get( ( Object ) bifMethodKey );
 			return dateRef.dereferenceAndInvoke( context, Key.of( methodName ), arguments, false );
 		} else {
 			// @formatter:off
 			// prettier-ignore
 			Object result =
-				bifMethodKey.equals( bifReference.month ) ? dateRef.getWrapped().getMonth().getValue()
-				: bifMethodKey.equals( bifReference.monthAsString ) ? dateRef.clone().format( MONTH_LONG_FORMAT )
-				: bifMethodKey.equals( bifReference.monthShortAsString ) ? dateRef.clone().format( MONTH_SHORT_FORMAT )
-				: bifMethodKey.equals( bifReference.day ) ? dateRef.getWrapped().getDayOfMonth()
-				: bifMethodKey.equals( bifReference.dayOfWeek ) ? dateRef.clone().getWrapped().getDayOfWeek().getValue()
-				: bifMethodKey.equals( bifReference.dayOfWeekAsString ) ? dateRef.clone().format( DOW_LONG_FORMAT )
-				: bifMethodKey.equals( bifReference.dayOfWeekShortAsString ) ? dateRef.clone().format( DOW_SHORT_FORMAT )
-				: bifMethodKey.equals( bifReference.daysInMonth ) ? dateRef.getWrapped().getMonth().length( dateRef.isLeapYear() )
-				: bifMethodKey.equals( bifReference.daysInYear ) ? Year.of( dateRef.getWrapped().getYear() ).length()
-				: bifMethodKey.equals( bifReference.millis ) ? dateRef.getWrapped().getNano() / 1000000
-				: bifMethodKey.equals( bifReference.offset ) ? dateRef.clone().format( OFFSET_FORMAT )
-				: bifMethodKey.equals( bifReference.timeZone ) || bifReference.getTimeZone.equals( bifMethodKey )
-				? dateRef.clone().format( TZ_SHORT_FORMAT )
+				bifMethodKey.equals( bifMethods.month ) ? dateRef.getWrapped().getMonth().getValue()
+				: bifMethodKey.equals( bifMethods.monthAsString ) ? dateRef.clone().format( MONTH_LONG_FORMAT )
+				: bifMethodKey.equals( bifMethods.monthShortAsString ) ? dateRef.clone().format( MONTH_SHORT_FORMAT )
+				: bifMethodKey.equals( bifMethods.day ) ? dateRef.getWrapped().getDayOfMonth()
+				: bifMethodKey.equals( bifMethods.dayOfWeek ) ? dateRef.clone().getWrapped().getDayOfWeek().getValue()
+				: bifMethodKey.equals( bifMethods.dayOfWeekAsString ) ? dateRef.clone().format( DOW_LONG_FORMAT )
+				: bifMethodKey.equals( bifMethods.dayOfWeekShortAsString ) ? dateRef.clone().format( DOW_SHORT_FORMAT )
+				: bifMethodKey.equals( bifMethods.daysInMonth ) ? dateRef.getWrapped().getMonth().length( dateRef.isLeapYear() )
+				: bifMethodKey.equals( bifMethods.daysInYear ) ? Year.of( dateRef.getWrapped().getYear() ).length()
+				: bifMethodKey.equals( bifMethods.millis ) ? dateRef.getWrapped().getNano() / 1000000
+				: bifMethodKey.equals( bifMethods.offset ) ? dateRef.clone().format( OFFSET_FORMAT )
+				: (
+					bifMethodKey.equals( bifMethods.timeZone )
+					||
+					bifMethodKey.equals( bifMethods.getTimeZone )
+				  ) ? dateRef.clone().format( TZ_SHORT_FORMAT )
 				: null;
 			// @formatter:on
 			if ( result == null ) {
