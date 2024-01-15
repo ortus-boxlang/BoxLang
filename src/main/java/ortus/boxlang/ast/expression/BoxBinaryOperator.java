@@ -31,5 +31,6 @@ public enum BoxBinaryOperator {
 	Elvis,
 	And,
 	Or,
+	Equivalence,
 
 }

@@ -724,4 +724,25 @@ public class OperatorsTest {
 
 	}
 
+	@DisplayName( "It should handle equivalence" )
+	@Test
+	public void testEQVOperator() {
+
+		Object result = instance.executeStatement( "true EQV true", context );
+		assertThat( result ).isEqualTo( true );
+
+		result = instance.executeStatement( "false EQV false", context );
+		assertThat( result ).isEqualTo( true );
+
+		result = instance.executeStatement( "false EQV true", context );
+		assertThat( result ).isEqualTo( false );
+
+		result = instance.executeStatement( "true EQV false", context );
+		assertThat( result ).isEqualTo( false );
+
+		result = instance.executeStatement( "1 EQV 0", context );
+		assertThat( result ).isEqualTo( false );
+
+	}
+
 }

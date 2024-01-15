@@ -102,6 +102,7 @@ DOT: '.';
 ELVIS: '?:';
 EQUAL: '=';
 EQ: '==' | 'EQ' | 'EQUAL';
+EQV: 'EQV';
 GT: '>' | 'GT';
 GTE: '>=' | 'GTE' | 'GE';
 LBRACE: '{';

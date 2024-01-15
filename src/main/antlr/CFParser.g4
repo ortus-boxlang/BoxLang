@@ -318,6 +318,7 @@ expression:
 		| (LT | LESS THAN)
 		| (LTE | LESS THAN OR EQ TO)
 		| NEQ
+		| EQV
 		| CONTAINS
 		| NOT CONTAINS
 		| TEQ

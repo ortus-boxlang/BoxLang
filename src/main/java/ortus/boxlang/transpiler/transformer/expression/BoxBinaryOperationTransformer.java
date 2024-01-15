@@ -87,6 +87,8 @@ public class BoxBinaryOperationTransformer extends AbstractTransformer {
 			template = "And.invoke(${left},${right})";
 		} else if ( operation.getOperator() == BoxBinaryOperator.Or ) {
 			template = "Or.invoke(${left},${right})";
+		} else if ( operation.getOperator() == BoxBinaryOperator.Equivalence ) {
+			template = "Equivalence.invoke(${left},${right})";
 		} else if ( operation.getOperator() == BoxBinaryOperator.Elvis ) {
 			template = "Elvis.invoke(${left},${right})";
 		} else if ( operation.getOperator() == BoxBinaryOperator.InstanceOf ) {
