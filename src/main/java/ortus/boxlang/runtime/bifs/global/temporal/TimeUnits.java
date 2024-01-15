@@ -71,23 +71,49 @@ import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
 public class TimeUnits extends BIF {
 
-	/**
-	 * Map of method names to BIF names
-	 */
-	public final static Struct methodMap = new Struct(
-	    new HashMap<String, String>() {
+	public static final String	OFFSET_FORMAT		= "xxxx";
+	public static final String	TZ_SHORT_FORMAT		= "v";
+	public static final String	TZ_LONG_FORMAT		= "z";
+	public static final String	MONTH_SHORT_FORMAT	= "MMM";
+	public static final String	MONTH_LONG_FORMAT	= "MMMM";
+	public static final String	DOW_SHORT_FORMAT	= "eee";
+	public static final String	DOW_LONG_FORMAT		= "eeee";
 
-		    {
-			    put( "Year", "getYear" );
-			    put( "Day", "getDayOfMonth" );
-			    put( "DayOfYear", "getDayOfYear" );
-			    put( "Hour", "getHour" );
-			    put( "Minute", "getMinute" );
-			    put( "Second", "getSecond" );
-			    put( "Nanosecond", "getNano" );
+	static final class bifReference {
+
+		public static final Key		month					= Key.month;
+		public static final Key		monthAsString			= Key.of( "monthAsString" );
+		public static final Key		monthShortAsString		= Key.of( "monthShortAsString" );
+		public static final Key		day						= Key.day;
+		public static final Key		dayOfWeek				= Key.of( "dayOfWeek" );
+		public static final Key		dayOfWeekAsString		= Key.of( "dayOfWeekAsString" );
+		public static final Key		dayOfWeekShortAsString	= Key.of( "dayOfWeekShortAsString" );
+		public static final Key		daysInMonth				= Key.of( "daysInMonth" );
+		public static final Key		daysInYear				= Key.of( "daysInYear" );
+		public static final Key		millis					= Key.millisecond;
+		public static final Key		offset					= Key.of( "offset" );
+		public static final Key		timeZone				= Key.timezone;
+		public static final Key		getTimeZone				= Key.of( "getTimeZone" );
+
+		/**
+		 * Map of method names to BIF names
+		 */
+		public final static Struct	memberMap				= new Struct(
+		    new HashMap<String, String>() {
+
+			    {
+				    put( "Year", "getYear" );
+				    put( "Day", "getDayOfMonth" );
+				    put( "DayOfYear", "getDayOfYear" );
+				    put( "Hour", "getHour" );
+				    put( "Minute", "getMinute" );
+				    put( "Second", "getSecond" );
+				    put( "Nanosecond", "getNano" );
+			    }
 		    }
-	    }
-	);
+		);
+
+	}
 
 	/**
 	 * Constructor
@@ -96,7 +122,7 @@ public class TimeUnits extends BIF {
 		super();
 		declaredArguments = new Argument[] {
 		    new Argument( true, "any", Key.date ),
-		    new Argument( false, "timezone", Key.timezone )
+		    new Argument( false, "string", Key.timezone )
 		};
 	}
 
@@ -119,56 +145,39 @@ public class TimeUnits extends BIF {
 
 		Key		bifMethodKey	= arguments.getAsKey( __functionName );
 		String	methodName		= null;
-		if ( methodMap.containsKey( bifMethodKey ) ) {
-			methodName = ( String ) methodMap.get( ( Object ) bifMethodKey );
+		if ( bifReference.memberMap.containsKey( bifMethodKey ) ) {
+			methodName = ( String ) bifReference.memberMap.get( ( Object ) bifMethodKey );
 			return dateRef.dereferenceAndInvoke( context, Key.of( methodName ), arguments, false );
 		} else {
-			switch ( bifMethodKey.getName().toLowerCase() ) {
-				case "month" : {
-					return dateRef.getWrapped().getMonth().getValue();
-				}
-				case "monthasstring" : {
-					return dateRef.clone().format( "MMMM" );
-				}
-				case "monthshortasstring" : {
-					return dateRef.clone().format( "MMM" );
-				}
-				case "daysinmonth" : {
-					return dateRef.getWrapped().getMonth().length( dateRef.isLeapYear() );
-				}
-				case "daysinyear" : {
-					return Year.of( dateRef.getWrapped().getYear() ).length();
-				}
-				case "dayofweek" : {
-					return dateRef.clone().getWrapped().getDayOfWeek().getValue();
-				}
-				case "dayofweekasstring" : {
-					return dateRef.clone().format( "eeee" );
-				}
-				case "dayofweekshortasstring" : {
-					return dateRef.clone().format( "eee" );
-				}
-				case "millisecond" : {
-					return dateRef.getWrapped().getNano() / 1000000;
-				}
-				case "offset" : {
-					return dateRef.clone().format( "xxxx" );
-				}
-				case "gettimezone" :
-				case "timezone" : {
-					return dateRef.clone().format( "v" );
-				}
-				default : {
-					throw new BoxRuntimeException(
-					    String.format(
-					        "The method [%s] is not present in the [%s] object",
-					        arguments.getAsString( Key.of( __functionName ) ),
-					        dateRef.getClass().getSimpleName()
-					    )
-					);
-				}
-
+			// @formatter:off
+			// prettier-ignore
+			Object result =
+				bifMethodKey.equals( bifReference.month ) ? dateRef.getWrapped().getMonth().getValue()
+				: bifMethodKey.equals( bifReference.monthAsString ) ? dateRef.clone().format( MONTH_LONG_FORMAT )
+				: bifMethodKey.equals( bifReference.monthShortAsString ) ? dateRef.clone().format( MONTH_SHORT_FORMAT )
+				: bifMethodKey.equals( bifReference.day ) ? dateRef.getWrapped().getDayOfMonth()
+				: bifMethodKey.equals( bifReference.dayOfWeek ) ? dateRef.clone().getWrapped().getDayOfWeek().getValue()
+				: bifMethodKey.equals( bifReference.dayOfWeekAsString ) ? dateRef.clone().format( DOW_LONG_FORMAT )
+				: bifMethodKey.equals( bifReference.dayOfWeekShortAsString ) ? dateRef.clone().format( DOW_SHORT_FORMAT )
+				: bifMethodKey.equals( bifReference.daysInMonth ) ? dateRef.getWrapped().getMonth().length( dateRef.isLeapYear() )
+				: bifMethodKey.equals( bifReference.daysInYear ) ? Year.of( dateRef.getWrapped().getYear() ).length()
+				: bifMethodKey.equals( bifReference.millis ) ? dateRef.getWrapped().getNano() / 1000000
+				: bifMethodKey.equals( bifReference.offset ) ? dateRef.clone().format( OFFSET_FORMAT )
+				: bifMethodKey.equals( bifReference.timeZone ) || bifReference.getTimeZone.equals( bifMethodKey )
+				? dateRef.clone().format( TZ_SHORT_FORMAT )
+				: null;
+			// @formatter:on
+			if ( result == null ) {
+				throw new BoxRuntimeException(
+				    String.format(
+				        "The method [%s] is not present in the [%s] object",
+				        arguments.getAsString( Key.of( __functionName ) ),
+				        dateRef.getClass().getSimpleName()
+				    )
+				);
 			}
+
+			return result;
 
 		}
 	}
