@@ -69,6 +69,18 @@ public class AssignmentTest {
 		assertThat( variables.get( Key.of( "foo" ) ) ).isEqualTo( "test" );
 	}
 
+	@DisplayName( "It should not allow assignment via the equal keyword" )
+	@Test
+	public void testDontAssignUsingEqual() {
+		instance.executeSource(
+		    """
+		    foo = 2;
+		       foo equal "test";
+		       """,
+		    context );
+		assertThat( variables.get( Key.of( "foo" ) ) ).isEqualTo( 2 );
+	}
+
 	@DisplayName( "Nested dot assignment" )
 	@Test
 	public void testNestedDotAssignment() {

@@ -314,9 +314,9 @@ expression:
 	| expression (
 		EQ
 		| (GT | GREATER THAN)
-		| (GTE | GREATER THAN OR EQUAL TO)
+		| (GTE | GREATER THAN OR EQ TO)
 		| (LT | LESS THAN)
-		| (LTE | LESS THAN OR EQUAL TO)
+		| (LTE | LESS THAN OR EQ TO)
 		| NEQ
 		| CONTAINS
 		| NOT CONTAINS

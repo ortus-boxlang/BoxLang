@@ -958,10 +958,6 @@ public class BoxCFParser extends BoxAbstractParser {
 			BoxExpr	left	= toAst( file, expression.expression( 0 ) );
 			BoxExpr	right	= toAst( file, expression.expression( 1 ) );
 			return new BoxBinaryOperation( left, BoxBinaryOperator.InstanceOf, right, getPosition( expression ), getSourceText( expression ) );
-		} else if ( expression.EQ() != null || expression.IS() != null ) {
-			BoxExpr	left	= toAst( file, expression.expression( 0 ) );
-			BoxExpr	right	= toAst( file, expression.expression( 1 ) );
-			return new BoxComparisonOperation( left, BoxComparisonOperator.Equal, right, getPosition( expression ), getSourceText( expression ) );
 		} else if ( expression.TEQ() != null ) {
 			BoxExpr	left	= toAst( file, expression.expression( 0 ) );
 			BoxExpr	right	= toAst( file, expression.expression( 1 ) );
@@ -986,6 +982,10 @@ public class BoxCFParser extends BoxAbstractParser {
 			BoxExpr	left	= toAst( file, expression.expression( 0 ) );
 			BoxExpr	right	= toAst( file, expression.expression( 1 ) );
 			return new BoxComparisonOperation( left, BoxComparisonOperator.LesslThanEqual, right, getPosition( expression ), getSourceText( expression ) );
+		} else if ( expression.EQ() != null || expression.IS() != null ) {
+			BoxExpr	left	= toAst( file, expression.expression( 0 ) );
+			BoxExpr	right	= toAst( file, expression.expression( 1 ) );
+			return new BoxComparisonOperation( left, BoxComparisonOperator.Equal, right, getPosition( expression ), getSourceText( expression ) );
 		} else if ( expression.AMPERSAND().size() > 0 ) {
 			List<BoxExpr>				parts	= new ArrayList<>();
 			CFParser.ExpressionContext	current	= expression;
