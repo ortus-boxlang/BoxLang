@@ -133,6 +133,7 @@ spotless {
             exclude "**/build/**", "bin/**", "examples/**", "src/main/java/ortus/boxlang/runtime/testing/**"
         }
         eclipse().configFile( "workbench/ortus-java-style.xml" )
+		toggleOffOn()
     }
 }
 
@@ -252,6 +253,7 @@ test {
 	systemProperties.putIfAbsent( "contentboxdir", contentboxDir)
 	systemProperties.putIfAbsent( "coldboxdir", coldboxDir)
 	dependsOn compileJava, compileTestJava
+	exclude '**/resources/**'
 }
 
 /****************************************************************

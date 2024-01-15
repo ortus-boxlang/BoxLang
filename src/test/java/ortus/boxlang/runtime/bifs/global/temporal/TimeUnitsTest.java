@@ -22,6 +22,7 @@ package ortus.boxlang.runtime.bifs.global.temporal;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.time.Year;
+import java.time.ZoneId;
 import java.time.ZonedDateTime;
 
 import org.junit.jupiter.api.AfterAll;
@@ -555,6 +556,21 @@ public class TimeUnitsTest {
 
 	}
 
+	@DisplayName( "It tests the BIF Offset with a timezone argument" )
+	@Test
+	public void testBifOffsetTZ() {
+		String refOffset = new DateTime( ZoneId.of( "America/Los_Angeles" ) ).format( "xxxx" );
+		instance.executeSource(
+		    """
+		    now = now();
+		       result = offset( now, "America/Los_Angeles" );
+		       """,
+		    context );
+		String result = variables.getAsString( Key.of( "result" ) );
+		assertEquals( result, refOffset );
+
+	}
+
 	@DisplayName( "It tests the DateTime Member function Offset" )
 	@Test
 	public void testMemberOffset() {
@@ -577,6 +593,21 @@ public class TimeUnitsTest {
 		    """
 		    now = now();
 		       result = GetTimeZone( now );
+		       """,
+		    context );
+		String result = variables.getAsString( Key.of( "result" ) );
+		assertEquals( result, refTimeZone );
+
+	}
+
+	@DisplayName( "It tests the BIF GetTimeZone with a specified timezone" )
+	@Test
+	public void testBifGetTimeZoneWithTZ() {
+		String refTimeZone = new DateTime( ZoneId.of( "America/Los_Angeles" ) ).format( "v" );
+		instance.executeSource(
+		    """
+		    now = now();
+		       result = GetTimeZone( now, "America/Los_Angeles" );
 		       """,
 		    context );
 		String result = variables.getAsString( Key.of( "result" ) );
