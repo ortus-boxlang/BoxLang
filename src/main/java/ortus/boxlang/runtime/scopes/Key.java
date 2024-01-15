@@ -97,6 +97,7 @@ public class Key {
 	public static final Key	leaveIndex					= Key.of( "leaveIndex" );
 	public static final Key	length						= Key.of( "length" );
 	public static final Key	listInfo					= Key.of( "listInfo" );
+	public static final Key	locale						= Key.of( "locale" );
 	public static final Key	localeSensitive				= Key.of( "localeSensitive" );
 	public static final Key	mappings					= Key.of( "mappings" );
 	public static final Key	mask						= Key.of( "mask" );

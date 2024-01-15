@@ -25,7 +25,9 @@ import java.time.Year;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeFormatterBuilder;
 import java.time.temporal.ChronoUnit;
+import java.util.Locale;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Objects;
@@ -155,6 +157,48 @@ public class DateTime implements IType, IReferenceable {
 			        "The the date time value of [%s] could not be parsed using the mask [%s]",
 			        dateTime,
 			        mask
+			    ), e );
+		}
+		this.wrapped = parsed;
+	}
+
+	/**
+	 * Constructor to create DateTime from a datetime string from a specific locale
+	 *
+	 * @param dateTime - a string representing the date and time
+	 * @param locale   - a locale object used to assist in parsing the string
+	 */
+	public DateTime( String dateTime, Locale locale, ZoneId timezone ) {
+		ZonedDateTime parsed = null;
+		this.formatter = DateTimeFormatter.ISO_ZONED_DATE_TIME.withLocale( locale );
+		DateTimeFormatter parseFormatter = new DateTimeFormatterBuilder().parseLenient().toFormatter( locale );
+		// try parsing if it fails then our time does not contain timezone info so we fall back to a local zoned date
+		try {
+			parsed = ZonedDateTime.parse( dateTime, this.formatter );
+		} catch ( java.time.format.DateTimeParseException e ) {
+			// First fallback - it has a time without a zone
+			try {
+				parsed = ZonedDateTime.of( LocalDateTime.parse( dateTime, DateTimeFormatter.ISO_LOCAL_DATE_TIME.withLocale( locale ) ),
+				    ZoneId.systemDefault() );
+				// Second fallback - it is only a date and we need to supply a time
+			} catch ( java.time.format.DateTimeParseException x ) {
+				parsed = ZonedDateTime.of(
+				    LocalDateTime.of( LocalDate.parse( dateTime, DateTimeFormatter.ISO_LOCAL_DATE.withLocale( locale ) ), LocalTime.MIN ),
+				    ZoneId.systemDefault() );
+			} catch ( Exception x ) {
+				throw new BoxRuntimeException(
+				    String.format(
+				        "The the date time value of [%s] could not be parsed as a valid date or datetimea locale of [%s]",
+				        dateTime,
+				        locale.getDisplayName()
+				    ), x );
+			}
+		} catch ( Exception e ) {
+			throw new BoxRuntimeException(
+			    String.format(
+			        "The the date time value of [%s] could not be parsed with a locale of [%s]",
+			        dateTime,
+			        locale.getDisplayName()
 			    ), e );
 		}
 		this.wrapped = parsed;
@@ -334,6 +378,18 @@ public class DateTime implements IType, IReferenceable {
 	 */
 	public DateTime setFormat( String mask ) {
 		this.formatter = DateTimeFormatter.ofPattern( mask );
+		return this;
+	}
+
+	/**
+	 * Alternate format setter which accepts a DateTimeFormatter object
+	 *
+	 * @param formatter A DateTimeFormatter instance
+	 *
+	 * @return
+	 */
+	public DateTime setFormat( DateTimeFormatter formatter ) {
+		this.formatter = formatter;
 		return this;
 	}
 
