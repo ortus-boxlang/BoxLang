@@ -449,8 +449,22 @@ public class DateTime implements IType, IReferenceable {
 	 * @return the date time representation as a string in the specified format mask
 	 */
 	public String format( String mask ) {
-		setFormat( mask );
-		return toString();
+		return this.wrapped.format( DateTimeFormatter.ofPattern( mask ) );
+	}
+
+	/**
+	 * Returns the date time representation as a string in the specified locale
+	 *
+	 * @param mask the formatting mask to use
+	 *
+	 * @return the date time representation as a string in the specified format mask
+	 */
+	public String format( Locale locale, String format ) {
+		if ( format == null ) {
+			return this.wrapped.format( DateTimeFormatter.ofLocalizedDateTime( FormatStyle.LONG, FormatStyle.LONG ).withLocale( locale ) );
+		} else {
+			return this.wrapped.format( DateTimeFormatter.ofPattern( format ).withLocale( locale ) );
+		}
 	}
 
 	/**
@@ -565,6 +579,25 @@ public class DateTime implements IType, IReferenceable {
 	 */
 	public ZonedDateTime getWrapped() {
 		return this.wrapped;
+	}
+
+	/**
+	 * Parses a locale from a string
+	 */
+	public static Locale getParsedLocale( String locale ) {
+		Locale localeObj = null;
+		if ( locale != null ) {
+			var		localeParts	= locale.split( "-|_| " );
+			String	ISOLang		= localeParts[ 0 ];
+			String	ISOCountry	= null;
+			if ( localeParts.length > 1 ) {
+				ISOCountry = localeParts[ 1 ];
+			}
+			localeObj = ISOCountry == null ? new Locale( ISOLang ) : new Locale( ISOLang, ISOCountry );
+		} else {
+			localeObj = Locale.getDefault();
+		}
+		return localeObj;
 	}
 
 	/**
@@ -749,9 +782,9 @@ public class DateTime implements IType, IReferenceable {
 
 	/**
 	 * Returns a localized set of Time parsers
-	 * 
+	 *
 	 * @param locale the Locale object which informs the formatters/parsers
-	 * 
+	 *
 	 * @return the localized DateTimeFormatter object
 	 */
 
