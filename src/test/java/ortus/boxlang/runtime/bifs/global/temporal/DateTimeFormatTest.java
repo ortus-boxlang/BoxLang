@@ -21,6 +21,8 @@ package ortus.boxlang.runtime.bifs.global.temporal;
 
 import static com.google.common.truth.Truth.assertThat;
 
+import java.time.format.DateTimeFormatter;
+
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -30,9 +32,11 @@ import org.junit.jupiter.api.Test;
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.ScriptingBoxContext;
+import ortus.boxlang.runtime.dynamic.casters.LongCaster;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
+import ortus.boxlang.runtime.types.DateTime;
 
 public class DateTimeFormatTest {
 
@@ -83,6 +87,54 @@ public class DateTimeFormatTest {
 
 	}
 
+	@DisplayName( "It tests the BIF DateFormat with the common format masks" )
+	@Test
+	public void testDateFormatCommonMasks() {
+		String				result		= null;
+		DateTime			refDate		= new DateTime();
+		DateTimeFormatter	formatter	= ( DateTimeFormatter ) DateTime.commonFormatters.get( "longDate" );
+		String				refResult	= refDate.format( formatter );
+		variables.put( Key.of( "refDate" ), refDate );
+		instance.executeSource(
+		    """
+		    result = dateFormat( refDate, "long" );
+		    """,
+		    context );
+		result = ( String ) variables.get( Key.of( "result" ) );
+		assertThat( result ).isEqualTo( refResult );
+
+		formatter	= ( DateTimeFormatter ) DateTime.commonFormatters.get( "ISODate" );
+		refResult	= refDate.format( formatter );
+		instance.executeSource(
+		    """
+		    result = dateFormat( refDate, "iso" );
+		    """,
+		    context );
+		result = ( String ) variables.get( Key.of( "result" ) );
+		assertThat( result ).isEqualTo( refResult );
+
+		formatter	= ( DateTimeFormatter ) DateTime.commonFormatters.get( "ISO8601Date" );
+		refResult	= refDate.format( formatter );
+		instance.executeSource(
+		    """
+		    result = dateFormat( refDate, "iso8601" );
+		    """,
+		    context );
+		result = ( String ) variables.get( Key.of( "result" ) );
+		assertThat( result ).isEqualTo( refResult );
+
+		formatter	= ( DateTimeFormatter ) DateTime.commonFormatters.get( "shortDate" );
+		refResult	= refDate.format( formatter );
+		instance.executeSource(
+		    """
+		    result = dateFormat( refDate, "short" );
+		    """,
+		    context );
+		result = ( String ) variables.get( Key.of( "result" ) );
+		assertThat( result ).isEqualTo( refResult );
+
+	}
+
 	@DisplayName( "It tests the BIF DateTimeFormat" )
 	@Test
 	public void testDateTimeFormatBif() {
@@ -107,6 +159,79 @@ public class DateTimeFormatTest {
 		assertThat( result ).isEqualTo( "2023-12-31T12:30:30Z" );
 	}
 
+	@DisplayName( "It tests the BIF DateTimeFormat with the common format masks" )
+	@Test
+	public void testDateTimeFormatCommonMasks() {
+		String				result		= null;
+		DateTime			refDate		= new DateTime();
+		DateTimeFormatter	formatter	= ( DateTimeFormatter ) DateTime.commonFormatters.get( "longDateTime" );
+		String				refResult	= refDate.format( formatter );
+		variables.put( Key.of( "refDate" ), refDate );
+		instance.executeSource(
+		    """
+		    result = dateTimeFormat( refDate, "long" );
+		    """,
+		    context );
+		result = ( String ) variables.get( Key.of( "result" ) );
+		assertThat( result ).isEqualTo( refResult );
+
+		formatter	= ( DateTimeFormatter ) DateTime.commonFormatters.get( "ISODateTime" );
+		refResult	= refDate.format( formatter );
+		instance.executeSource(
+		    """
+		    result = dateTimeFormat( refDate, "iso" );
+		    """,
+		    context );
+		result = ( String ) variables.get( Key.of( "result" ) );
+		assertThat( result ).isEqualTo( refResult );
+
+		formatter	= ( DateTimeFormatter ) DateTime.commonFormatters.get( "ISO8601DateTime" );
+		refResult	= refDate.format( formatter );
+		instance.executeSource(
+		    """
+		    result = dateTimeFormat( refDate, "iso8601" );
+		    """,
+		    context );
+		result = ( String ) variables.get( Key.of( "result" ) );
+		assertThat( result ).isEqualTo( refResult );
+
+		formatter	= ( DateTimeFormatter ) DateTime.commonFormatters.get( "shortDateTime" );
+		refResult	= refDate.format( formatter );
+		instance.executeSource(
+		    """
+		    result = dateTimeFormat( refDate, "short" );
+		    """,
+		    context );
+		result = ( String ) variables.get( Key.of( "result" ) );
+		assertThat( result ).isEqualTo( refResult );
+
+		formatter	= ( DateTimeFormatter ) DateTime.commonFormatters.get( "mediumDateTime" );
+		refResult	= refDate.format( formatter );
+		instance.executeSource(
+		    """
+		    result = dateTimeFormat( refDate, "medium" );
+		    """,
+		    context );
+		result = ( String ) variables.get( Key.of( "result" ) );
+		assertThat( result ).isEqualTo( refResult );
+
+		Long refEpoch = refDate.toEpoch();
+		instance.executeSource(
+		    """
+		    result = dateTimeFormat( refDate, "epoch" );
+		    """,
+		    context );
+		assertThat( LongCaster.cast( variables.getAsLong( Key.of( "result" ) ) ) ).isEqualTo( refEpoch );
+
+		refEpoch = refDate.toEpochMillis();
+		instance.executeSource(
+		    """
+		    result = dateTimeFormat( refDate, "epochms" );
+		    """,
+		    context );
+		assertThat( LongCaster.cast( variables.getAsLong( Key.of( "result" ) ) ) ).isEqualTo( refEpoch );
+	}
+
 	@DisplayName( "It tests the BIF TimeFormat" )
 	@Test
 	public void testTimeFormatBif() {
@@ -129,6 +254,54 @@ public class DateTimeFormatTest {
 		    context );
 		result = ( String ) variables.get( Key.of( "result" ) );
 		assertThat( result ).isEqualTo( "12:30:30Z" );
+
+	}
+
+	@DisplayName( "It tests the BIF TimeFormat with the common format masks" )
+	@Test
+	public void testTimeFormatCommonMasks() {
+		String				result		= null;
+		DateTime			refTime		= new DateTime();
+		DateTimeFormatter	formatter	= ( DateTimeFormatter ) DateTime.commonFormatters.get( "longTime" );
+		String				refResult	= refTime.format( formatter );
+		variables.put( Key.of( "refTime" ), refTime );
+		instance.executeSource(
+		    """
+		    result = timeFormat( refTime, "long" );
+		    """,
+		    context );
+		result = ( String ) variables.get( Key.of( "result" ) );
+		assertThat( result ).isEqualTo( refResult );
+
+		formatter	= ( DateTimeFormatter ) DateTime.commonFormatters.get( "ISOTime" );
+		refResult	= refTime.format( formatter );
+		instance.executeSource(
+		    """
+		    result = timeFormat( refTime, "iso" );
+		    """,
+		    context );
+		result = ( String ) variables.get( Key.of( "result" ) );
+		assertThat( result ).isEqualTo( refResult );
+
+		formatter	= ( DateTimeFormatter ) DateTime.commonFormatters.get( "ISO8601Time" );
+		refResult	= refTime.format( formatter );
+		instance.executeSource(
+		    """
+		    result = timeFormat( refTime, "iso8601" );
+		    """,
+		    context );
+		result = ( String ) variables.get( Key.of( "result" ) );
+		assertThat( result ).isEqualTo( refResult );
+
+		formatter	= ( DateTimeFormatter ) DateTime.commonFormatters.get( "shortTime" );
+		refResult	= refTime.format( formatter );
+		instance.executeSource(
+		    """
+		    result = timeFormat( refTime, "short" );
+		    """,
+		    context );
+		result = ( String ) variables.get( Key.of( "result" ) );
+		assertThat( result ).isEqualTo( refResult );
 
 	}
 

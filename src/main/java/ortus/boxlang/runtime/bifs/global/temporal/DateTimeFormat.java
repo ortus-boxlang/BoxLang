@@ -15,6 +15,8 @@
 
 package ortus.boxlang.runtime.bifs.global.temporal;
 
+import java.time.format.DateTimeFormatter;
+
 import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
 import ortus.boxlang.runtime.bifs.BoxMember;
@@ -31,6 +33,12 @@ import ortus.boxlang.runtime.types.DateTime;
 @BoxBIF( alias = "TimeFormat" )
 @BoxMember( type = BoxLangType.DATETIME, name = "format" )
 public class DateTimeFormat extends BIF {
+
+	private static Key		FORMAT_EPOCH	= Key.of( "epoch" );
+	private static Key		FORMAT_EPOCHMS	= Key.of( "epochms" );
+	private static String	MODE_DATE		= "Date";
+	private static String	MODE_TIME		= "Time";
+	private static String	MODE_DATETIME	= "DateTime";
 
 	/**
 	 * Constructor
@@ -59,19 +67,31 @@ public class DateTimeFormat extends BIF {
 		String		format			= arguments.getAsString( Key.mask );
 
 		if ( format == null && bifMethodKey.equals( Key.dateFormat ) ) {
-			format = DateTime.DEFAULT_DATE_FORMAT_MASK;
+			return ref.format( DateTime.DEFAULT_DATE_FORMAT_MASK );
 		} else if ( format == null && bifMethodKey.equals( Key.timeFormat ) ) {
-			format = DateTime.DEFAULT_TIME_FORMAT_MASK;
+			return ref.format( DateTime.DEFAULT_TIME_FORMAT_MASK );
 		} else if ( format == null ) {
-			format = DateTime.DEFAULT_DATETIME_FORMAT_MASK;
-		}
+			return ref.format( DateTime.DEFAULT_DATETIME_FORMAT_MASK );
+		} else {
+			String timezone = arguments.getAsString( Key.timezone );
+			if ( timezone != null ) {
+				ref.setTimezone( timezone );
+			}
 
-		String timezone = arguments.getAsString( Key.timezone );
-		if ( timezone != null ) {
-			ref.setTimezone( timezone );
+			Key		formatKey		= Key.of( format );
+			String	mode			= bifMethodKey.equals( Key.dateFormat ) ? MODE_DATE : bifMethodKey.equals( Key.timeFormat ) ? MODE_TIME : MODE_DATETIME;
+			// Create this key instance here so it doesn't get created twice on lookup and retrieval
+			Key		commonFormatKey	= Key.of( format + mode );
+			if ( formatKey.equals( FORMAT_EPOCH ) ) {
+				return ref.toEpoch();
+			} else if ( formatKey.equals( FORMAT_EPOCHMS ) ) {
+				return ref.toEpochMillis();
+			} else if ( DateTime.commonFormatters.containsKey( commonFormatKey ) ) {
+				return ref.format( ( DateTimeFormatter ) DateTime.commonFormatters.get( commonFormatKey ) );
+			} else {
+				return ref.format( format );
+			}
 		}
-
-		return ref.format( format );
 
 	}
 
