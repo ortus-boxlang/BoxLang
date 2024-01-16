@@ -319,6 +319,7 @@ expression:
 		| (LTE | LESS THAN OR EQ TO)
 		| NEQ
 		| EQV
+		| IMP
 		| CONTAINS
 		| NOT CONTAINS
 		| TEQ

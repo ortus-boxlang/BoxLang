@@ -32,5 +32,6 @@ public enum BoxBinaryOperator {
 	And,
 	Or,
 	Equivalence,
+	Implies
 
 }

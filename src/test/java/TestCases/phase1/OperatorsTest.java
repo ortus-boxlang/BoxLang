@@ -745,4 +745,25 @@ public class OperatorsTest {
 
 	}
 
+	@DisplayName( "It should handle the implies operator" )
+	@Test
+	public void testIMPOperator() {
+
+		Object result = instance.executeStatement( "true IMP false", context );
+		assertThat( result ).isEqualTo( false );
+
+		result = instance.executeStatement( "false IMP false", context );
+		assertThat( result ).isEqualTo( true );
+
+		result = instance.executeStatement( "false IMP true", context );
+		assertThat( result ).isEqualTo( true );
+
+		result = instance.executeStatement( "true IMP true", context );
+		assertThat( result ).isEqualTo( true );
+
+		result = instance.executeStatement( "1 IMP 0", context );
+		assertThat( result ).isEqualTo( false );
+
+	}
+
 }

@@ -1002,6 +1002,11 @@ public class BoxCFParser extends BoxAbstractParser {
 
 			BoxExpr	right	= toAst( file, expression.expression( 1 ) );
 			return new BoxBinaryOperation( left, BoxBinaryOperator.Equivalence, right, getPosition( expression ), getSourceText( expression ) );
+		} else if ( expression.IMP() != null ) {
+			BoxExpr	left	= toAst( file, expression.expression( 0 ) );
+
+			BoxExpr	right	= toAst( file, expression.expression( 1 ) );
+			return new BoxBinaryOperation( left, BoxBinaryOperator.Implies, right, getPosition( expression ), getSourceText( expression ) );
 		} else if ( expression.ELVIS() != null ) {
 			BoxExpr	left	= toAst( file, expression.expression( 0 ) );
 
