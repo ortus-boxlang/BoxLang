@@ -14,11 +14,10 @@
  */
 package ortus.boxlang.runtime.bifs.global.system;
 
-import java.math.BigDecimal;
-
 import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
 import ortus.boxlang.runtime.context.IBoxContext;
+import ortus.boxlang.runtime.dynamic.casters.GenericCaster;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
@@ -58,155 +57,29 @@ public class JavaCast extends BIF {
 
 		switch ( type.toLowerCase() ) {
 			case "boolean" :
-				return convertToBoolean( variable );
+				return GenericCaster.cast( variable, "boolean" );
 			case "double" :
-				return convertToDouble( variable );
+				return GenericCaster.cast( variable, "double" );
 			case "float" :
-				return convertToFloat( variable );
+				return GenericCaster.cast( variable, "float" );
 			case "int" :
-				return convertToInt( variable );
+				return GenericCaster.cast( variable, "int" );
 			case "long" :
-				return convertToLong( variable );
+				return GenericCaster.cast( variable, "long" );
 			case "string" :
-				return variable.toString();
+				return GenericCaster.cast( variable, "string" );
 			case "null" :
-				return null;
+				return GenericCaster.cast( variable, "null" );
 			case "byte" :
-				return convertToByte( variable );
+				return GenericCaster.cast( variable, "byte" );
 			case "bigdecimal" :
-				return convertToBigDecimal( variable );
+				return GenericCaster.cast( variable, "bigdecimal" );
 			case "char" :
-				return convertToChar( variable );
+				return GenericCaster.cast( variable, "char" );
 			case "short" :
-				return convertToShort( variable );
+				return GenericCaster.cast( variable, "short" );
 			default :
 				throw new BoxRuntimeException( "Unsupported Java cast type: " + type );
 		}
-	}
-
-	private boolean convertToBoolean( Object variable ) {
-		if ( variable instanceof String ) {
-			String stringValue = ( ( String ) variable ).toLowerCase();
-			return "yes".equalsIgnoreCase( stringValue ) || "true".equalsIgnoreCase( stringValue );
-		} else if ( variable instanceof Number ) {
-			return ( ( Number ) variable ).doubleValue() != 0;
-		} else {
-			return false;
-		}
-	}
-
-	private double convertToDouble( Object variable ) {
-		if ( variable instanceof Number ) {
-			return ( ( Number ) variable ).doubleValue();
-		} else if ( variable instanceof String ) {
-			return Double.parseDouble( ( String ) variable );
-		} else {
-			return ( double ) variable;
-		}
-	}
-
-	private float convertToFloat( Object variable ) {
-		if ( variable instanceof String ) {
-			try {
-				return Float.parseFloat( ( String ) variable );
-			} catch ( NumberFormatException e ) {
-				throwConversionException( "float", variable );
-			}
-		} else if ( variable instanceof Number ) {
-			return ( ( Number ) variable ).floatValue();
-		} else {
-			throwConversionException( "float", variable );
-		}
-		return 0;
-	}
-
-	private BigDecimal convertToBigDecimal( Object variable ) {
-		if ( variable instanceof String ) {
-			try {
-				return new BigDecimal( ( String ) variable );
-			} catch ( NumberFormatException e ) {
-				throwConversionException( "BigDecimal", variable );
-			}
-		} else if ( variable instanceof Number ) {
-			return new BigDecimal( ( ( Number ) variable ).doubleValue() );
-		} else {
-			throwConversionException( "BigDecimal", variable );
-		}
-		return null;
-	}
-
-	private int convertToInt( Object variable ) {
-		if ( variable instanceof String ) {
-			try {
-				return Integer.parseInt( ( String ) variable );
-			} catch ( NumberFormatException e ) {
-				throwConversionException( "int", variable );
-			}
-		} else if ( variable instanceof Number ) {
-			return ( ( Number ) variable ).intValue();
-		} else {
-			throwConversionException( "int", variable );
-		}
-		return 0;
-	}
-
-	private long convertToLong( Object variable ) {
-		if ( variable instanceof String ) {
-			try {
-				return Long.parseLong( ( String ) variable );
-			} catch ( NumberFormatException e ) {
-				throwConversionException( "long", variable );
-			}
-		} else if ( variable instanceof Number ) {
-			return ( ( Number ) variable ).longValue();
-		} else {
-			throwConversionException( "long", variable );
-		}
-		return 0;
-	}
-
-	private byte convertToByte( Object variable ) {
-		if ( variable instanceof String ) {
-			try {
-				return Byte.parseByte( ( String ) variable );
-			} catch ( NumberFormatException e ) {
-				throwConversionException( "byte", variable );
-			}
-		} else if ( variable instanceof Number ) {
-			return ( ( Number ) variable ).byteValue();
-		} else {
-			throwConversionException( "byte", variable );
-		}
-		return 0;
-	}
-
-	private char convertToChar( Object variable ) {
-		if ( variable instanceof String ) {
-			return ( ( String ) variable ).charAt( 0 );
-		} else if ( variable instanceof Character ) {
-			return ( Character ) variable;
-		} else {
-			throwConversionException( "char", variable );
-		}
-		return 0;
-	}
-
-	private short convertToShort( Object variable ) {
-		if ( variable instanceof String ) {
-			try {
-				return Short.parseShort( ( String ) variable );
-			} catch ( NumberFormatException e ) {
-				throwConversionException( "short", variable );
-			}
-		} else if ( variable instanceof Number ) {
-			return ( ( Number ) variable ).shortValue();
-		} else {
-			throwConversionException( "short", variable );
-		}
-		return 0;
-	}
-
-	private void throwConversionException( String type, Object variable ) {
-		throw new BoxRuntimeException( "Failed to convert " + variable.getClass().getSimpleName() + " to " + type + ": " + variable );
 	}
 }
