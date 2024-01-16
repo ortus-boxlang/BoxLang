@@ -145,7 +145,48 @@ public class LSParseDateTimeTest {
 	public void testLSParseDateTimeRussian() {
 		instance.executeSource(
 		    """
-		    result = lsParseDateTime( "14.01.2024", "ru-RU", "dd.MM.yyyy" );
+		    result = lsParseDateTime( "14.01.2024", "ru_RU" );
+		    """,
+		    context );
+		DateTime result = ( DateTime ) variables.get( Key.of( "result" ) );
+		assertThat( result ).isInstanceOf( DateTime.class );
+		assertThat( result.toString() ).isInstanceOf( String.class );
+		assertThat( IntegerCaster.cast( result.format( "yyyy" ) ) ).isEqualTo( 2024 );
+		assertThat( IntegerCaster.cast( result.format( "M" ) ) ).isEqualTo( 1 );
+		assertThat( IntegerCaster.cast( result.format( "d" ) ) ).isEqualTo( 14 );
+		assertThat( IntegerCaster.cast( result.format( "H" ) ) ).isEqualTo( 0 );
+		assertThat( IntegerCaster.cast( result.format( "m" ) ) ).isEqualTo( 0 );
+		assertThat( IntegerCaster.cast( result.format( "s" ) ) ).isEqualTo( 0 );
+		assertThat( IntegerCaster.cast( result.format( "n" ) ) ).isEqualTo( 0 );
+	}
+
+	@DisplayName( "It tests the BIF LSParseDateTime using a localized, Spanish long-form format" )
+	@Test
+	public void testLSParseDateTimeSpain() {
+
+		instance.executeSource(
+		    """
+		    result = lsParseDateTime( "14 de enero de 2024", "es-ES" );
+		    """,
+		    context );
+		DateTime result = ( DateTime ) variables.get( Key.of( "result" ) );
+		assertThat( result ).isInstanceOf( DateTime.class );
+		assertThat( result.toString() ).isInstanceOf( String.class );
+		assertThat( IntegerCaster.cast( result.format( "yyyy" ) ) ).isEqualTo( 2024 );
+		assertThat( IntegerCaster.cast( result.format( "M" ) ) ).isEqualTo( 1 );
+		assertThat( IntegerCaster.cast( result.format( "d" ) ) ).isEqualTo( 14 );
+		assertThat( IntegerCaster.cast( result.format( "H" ) ) ).isEqualTo( 0 );
+		assertThat( IntegerCaster.cast( result.format( "m" ) ) ).isEqualTo( 0 );
+		assertThat( IntegerCaster.cast( result.format( "s" ) ) ).isEqualTo( 0 );
+		assertThat( IntegerCaster.cast( result.format( "n" ) ) ).isEqualTo( 0 );
+	}
+
+	@DisplayName( "It tests the BIF LSParseDateTime using traditional chinese format" )
+	@Test
+	public void testLSParseDateTimeChinese() {
+		instance.executeSource(
+		    """
+		    result = lsParseDateTime( "2024年1月14日", "zh-Hant" );
 		    """,
 		    context );
 		DateTime result = ( DateTime ) variables.get( Key.of( "result" ) );

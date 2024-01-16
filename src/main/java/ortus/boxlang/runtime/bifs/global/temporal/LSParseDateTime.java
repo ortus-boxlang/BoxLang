@@ -43,6 +43,8 @@ public class LSParseDateTime extends BIF {
 	 *
 	 * @argument.date the date, datetime string or an object
 	 *
+	 * @argument.the ISO locale string ( e.g. en-US, en_US, es-SA, es_ES, ru-RU, etc )
+	 *
 	 * @argument.format the format mask to use in parsing
 	 *
 	 * @argument.timezone the timezone to apply to the parsed datetime
@@ -52,9 +54,20 @@ public class LSParseDateTime extends BIF {
 		String	locale		= arguments.getAsString( Key.locale );
 		String	timezone	= arguments.getAsString( Key.timezone );
 		String	format		= arguments.getAsString( Key.format );
+		Locale	localeObj	= null;
+		if ( locale != null ) {
+			var		localeParts	= locale.split( "-|_| " );
+			String	ISOLang		= localeParts[ 0 ];
+			String	ISOCountry	= null;
+			if ( localeParts.length > 1 ) {
+				ISOCountry = localeParts[ 1 ];
+			}
+			localeObj = ISOCountry == null ? new Locale( ISOLang ) : new Locale( ISOLang, ISOCountry );
+		} else {
+			localeObj = Locale.getDefault();
+		}
 
-		Locale	localeObj	= locale == null ? Locale.getDefault() : new Locale( locale.split( " " )[ 0 ] );
-		ZoneId	zoneId		= null;
+		ZoneId zoneId = null;
 		try {
 			zoneId = timezone != null ? ZoneId.of( timezone ) : ZoneId.systemDefault();
 		} catch ( ZoneRulesException e ) {

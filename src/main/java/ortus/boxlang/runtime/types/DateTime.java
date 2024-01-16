@@ -26,6 +26,7 @@ import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeFormatterBuilder;
+import java.time.format.FormatStyle;
 import java.time.temporal.ChronoUnit;
 import java.util.Locale;
 import java.util.Map;
@@ -143,7 +144,12 @@ public class DateTime implements IType, IReferenceable {
 				parsed = ZonedDateTime.of( LocalDateTime.parse( dateTime, getFormatter( mask ) ), ZoneId.systemDefault() );
 				// Second fallback - it is only a date and we need to supply a time
 			} catch ( java.time.format.DateTimeParseException x ) {
-				parsed = ZonedDateTime.of( LocalDateTime.of( LocalDate.parse( dateTime, getFormatter( mask ) ), LocalTime.MIN ), ZoneId.systemDefault() );
+				try {
+					parsed = ZonedDateTime.of( LocalDateTime.of( LocalDate.parse( dateTime, getFormatter( mask ) ), LocalTime.MIN ), ZoneId.systemDefault() );
+					// last fallback - this is a time only value
+				} catch ( java.time.format.DateTimeParseException z ) {
+					parsed = ZonedDateTime.of( LocalDate.MIN, LocalTime.parse( dateTime, getFormatter( mask ) ), ZoneId.systemDefault() );
+				}
 			} catch ( Exception x ) {
 				throw new BoxRuntimeException(
 				    String.format(
@@ -163,28 +169,52 @@ public class DateTime implements IType, IReferenceable {
 	}
 
 	/**
-	 * Constructor to create DateTime from a datetime string from a specific locale
+	 * Constructor to create DateTime from a string, using the system locale and timezone
+	 *
+	 * @param dateTime - a string representing the date and time
+	 */
+	public DateTime( String dateTime ) {
+		this( dateTime, Locale.getDefault(), ZoneId.systemDefault() );
+	}
+
+	/**
+	 * Constructor to create DateTime from a string with a specified timezone, using the system locale
+	 *
+	 * @param dateTime - a string representing the date and time
+	 * @param timezone - the timezone string
+	 */
+	public DateTime( String dateTime, ZoneId timezone ) {
+		this( dateTime, Locale.getDefault(), timezone );
+	}
+
+	/**
+	 * Constructor to create DateTime from a datetime string from a specific locale and timezone
 	 *
 	 * @param dateTime - a string representing the date and time
 	 * @param locale   - a locale object used to assist in parsing the string
+	 * @param timezone The timezone to assign to the string, if an offset or zone is not provided in the value
 	 */
 	public DateTime( String dateTime, Locale locale, ZoneId timezone ) {
 		ZonedDateTime parsed = null;
 		this.formatter = DateTimeFormatter.ISO_ZONED_DATE_TIME.withLocale( locale );
-		DateTimeFormatter parseFormatter = new DateTimeFormatterBuilder().parseLenient().toFormatter( locale );
 		// try parsing if it fails then our time does not contain timezone info so we fall back to a local zoned date
 		try {
-			parsed = ZonedDateTime.parse( dateTime, this.formatter );
+			parsed = ZonedDateTime.parse( dateTime, getLocaleZonedDateTimeParsers( locale ) );
 		} catch ( java.time.format.DateTimeParseException e ) {
 			// First fallback - it has a time without a zone
 			try {
-				parsed = ZonedDateTime.of( LocalDateTime.parse( dateTime, DateTimeFormatter.ISO_LOCAL_DATE_TIME.withLocale( locale ) ),
-				    ZoneId.systemDefault() );
+				parsed = ZonedDateTime.of( LocalDateTime.parse( dateTime, getLocaleDateTimeParsers( locale ) ),
+				    timezone );
 				// Second fallback - it is only a date and we need to supply a time
 			} catch ( java.time.format.DateTimeParseException x ) {
-				parsed = ZonedDateTime.of(
-				    LocalDateTime.of( LocalDate.parse( dateTime, DateTimeFormatter.ISO_LOCAL_DATE.withLocale( locale ) ), LocalTime.MIN ),
-				    ZoneId.systemDefault() );
+				try {
+					parsed = ZonedDateTime.of(
+					    LocalDateTime.of( LocalDate.parse( dateTime, getLocaleDateParsers( locale ) ), LocalTime.MIN ),
+					    timezone );
+					// last fallback - this is a time only value
+				} catch ( java.time.format.DateTimeParseException z ) {
+					parsed = ZonedDateTime.of( LocalDate.MIN, LocalTime.parse( dateTime, getLocaleTimeParsers( locale ) ), ZoneId.systemDefault() );
+				}
 			} catch ( Exception x ) {
 				throw new BoxRuntimeException(
 				    String.format(
@@ -200,78 +230,6 @@ public class DateTime implements IType, IReferenceable {
 			        dateTime,
 			        locale.getDisplayName()
 			    ), e );
-		}
-		this.wrapped = parsed;
-	}
-
-	/**
-	 * Constructor to create DateTime from a string with a specified timezone
-	 *
-	 * @param dateTime - a string representing the date and time
-	 * @param timezone - the timezone string
-	 */
-	public DateTime( String dateTime, ZoneId timezone ) {
-		ZonedDateTime parsed = null;
-		try {
-			parsed = ZonedDateTime.of( LocalDateTime.parse( dateTime ), timezone );
-			// Second fallback - it is only a date and we need to supply a time
-		} catch ( java.time.format.DateTimeParseException e ) {
-			// First fallback - it has a time without a zone
-			try {
-				parsed = ZonedDateTime.of( LocalDateTime.of( LocalDate.parse( dateTime ), LocalTime.MIN ), timezone );
-				// Second fallback - it is only a date and we need to supply a time
-			} catch ( java.time.format.DateTimeParseException x ) {
-				parsed = dateTime.contains( "/" )
-				    ? ZonedDateTime.of(
-				        LocalDateTime.of( LocalDate.parse( dateTime, getFormatter( dateTime.length() == 10 ? "MM/dd/yyyy" : "MM/dd/yy" ) ), LocalTime.MIN ),
-				        ZoneId.systemDefault() )
-				    : ZonedDateTime.of( LocalDateTime.of( LocalDate.parse( dateTime ), LocalTime.MIN ), ZoneId.systemDefault() );
-			} catch ( Exception x ) {
-				throw new BoxRuntimeException(
-				    String.format(
-				        "The the date time value of [%s] could not be parsed as a valid date or datetime",
-				        dateTime
-				    ),
-				    x
-				);
-			}
-		} catch ( Exception e ) {
-			throw new BoxRuntimeException(
-			    String.format(
-			        "The the date time value of [%s] could not be parsed as a valid date or datetime",
-			        dateTime
-			    ), e );
-		}
-		this.wrapped = parsed;
-	}
-
-	/**
-	 * Constructor to create DateTime from a string
-	 *
-	 * @param dateTime - a string representing the date and time
-	 */
-	public DateTime( String dateTime ) {
-		ZonedDateTime parsed = null;
-		try {
-			parsed = ZonedDateTime.parse( dateTime );
-		} catch ( java.time.format.DateTimeParseException e ) {
-			// First fallback - it has a time without a zone
-			try {
-				parsed = ZonedDateTime.of( LocalDateTime.parse( dateTime ), ZoneId.systemDefault() );
-				// Second fallback - it is only a date and we need to supply a time
-			} catch ( java.time.format.DateTimeParseException x ) {
-				parsed = dateTime.contains( "/" )
-				    ? ZonedDateTime.of(
-				        LocalDateTime.of( LocalDate.parse( dateTime, getFormatter( dateTime.length() == 10 ? "MM/dd/yyyy" : "MM/dd/yy" ) ), LocalTime.MIN ),
-				        ZoneId.systemDefault() )
-				    : ZonedDateTime.of( LocalDateTime.of( LocalDate.parse( dateTime ), LocalTime.MIN ), ZoneId.systemDefault() );
-			} catch ( Exception x ) {
-				throw new BoxRuntimeException(
-				    String.format(
-				        "The the date time value of [%s] could not be parsed as a valid date or datetime",
-				        dateTime
-				    ) );
-			}
 		}
 		this.wrapped = parsed;
 	}
@@ -715,4 +673,97 @@ public class DateTime implements IType, IReferenceable {
 		}
 	}
 
+	/**
+	 * Returns a localized set of ZonedDateTime parsers
+	 *
+	 * @param locale the Locale object which informs the formatters/parsers
+	 *
+	 * @return the localized DateTimeFormatter object
+	 */
+
+	private static DateTimeFormatter getLocaleZonedDateTimeParsers( Locale locale ) {
+		DateTimeFormatterBuilder formatBuilder = new DateTimeFormatterBuilder();
+		return formatBuilder.parseLenient()
+		    // Localized styles
+		    .appendOptional( DateTimeFormatter.ISO_ZONED_DATE_TIME.withLocale( locale ) )
+		    .appendOptional( DateTimeFormatter.ISO_ZONED_DATE_TIME )
+		    .appendOptional( DateTimeFormatter.ISO_OFFSET_DATE_TIME )
+		    .toFormatter( locale );
+	}
+
+	/**
+	 * Returns a localized set of DateTime parsers
+	 *
+	 * @param locale the Locale object which informs the formatters/parsers
+	 *
+	 * @return the localized DateTimeFormatter object
+	 */
+	private static DateTimeFormatter getLocaleDateTimeParsers( Locale locale ) {
+		DateTimeFormatterBuilder formatBuilder = new DateTimeFormatterBuilder();
+		return formatBuilder.parseLenient()
+		    .appendOptional( DateTimeFormatter.ofLocalizedDateTime( FormatStyle.SHORT, FormatStyle.SHORT ).withLocale( locale ) )
+		    .appendOptional( DateTimeFormatter.ofLocalizedDateTime( FormatStyle.MEDIUM, FormatStyle.MEDIUM ).withLocale( locale ) )
+		    .appendOptional( DateTimeFormatter.ofLocalizedDateTime( FormatStyle.LONG, FormatStyle.LONG ).withLocale( locale ) )
+		    .appendOptional( DateTimeFormatter.ofLocalizedDateTime( FormatStyle.FULL, FormatStyle.FULL ).withLocale( locale ) )
+		    .appendOptional( DateTimeFormatter.ofLocalizedDate( FormatStyle.SHORT ).withLocale( locale ) )
+		    .appendOptional( DateTimeFormatter.ofLocalizedDate( FormatStyle.MEDIUM ).withLocale( locale ) )
+		    .appendOptional( DateTimeFormatter.ofLocalizedDate( FormatStyle.LONG ).withLocale( locale ) )
+		    .appendOptional( DateTimeFormatter.ofLocalizedDate( FormatStyle.FULL ).withLocale( locale ) )
+		    .appendOptional( DateTimeFormatter.ofLocalizedTime( FormatStyle.SHORT ).withLocale( locale ) )
+		    .appendOptional( DateTimeFormatter.ofLocalizedTime( FormatStyle.MEDIUM ).withLocale( locale ) )
+		    .appendOptional( DateTimeFormatter.ofLocalizedTime( FormatStyle.LONG ).withLocale( locale ) )
+		    .appendOptional( DateTimeFormatter.ofLocalizedTime( FormatStyle.FULL ).withLocale( locale ) )
+		    // Generic styles
+		    .appendOptional( DateTimeFormatter.ofPattern( "yyyy-MM-dd'T'HH:mm:ss.SSS" ) )
+		    .appendOptional( DateTimeFormatter.ofPattern( DEFAULT_DATETIME_FORMAT_MASK ) )
+		    .appendOptional( DateTimeFormatter.ofPattern( ODBC_FORMAT_MASK ) )
+		    .appendOptional( DateTimeFormatter.ISO_INSTANT )
+		    .appendOptional( DateTimeFormatter.ISO_DATE_TIME )
+		    .appendOptional( DateTimeFormatter.ISO_LOCAL_DATE_TIME )
+		    .toFormatter( locale );
+	}
+
+	/**
+	 * Returns a localized set of Date parsers
+	 *
+	 * @param locale the Locale object which informs the formatters/parsers
+	 *
+	 * @return the localized DateTimeFormatter object
+	 */
+
+	private static DateTimeFormatter getLocaleDateParsers( Locale locale ) {
+		DateTimeFormatterBuilder formatBuilder = new DateTimeFormatterBuilder();
+		return formatBuilder.parseLenient()
+		    .appendOptional( DateTimeFormatter.ofLocalizedDate( FormatStyle.SHORT ).withLocale( locale ) )
+		    .appendOptional( DateTimeFormatter.ofLocalizedDate( FormatStyle.MEDIUM ).withLocale( locale ) )
+		    .appendOptional( DateTimeFormatter.ofLocalizedDate( FormatStyle.LONG ).withLocale( locale ) )
+		    .appendOptional( DateTimeFormatter.ofLocalizedDate( FormatStyle.FULL ).withLocale( locale ) )
+		    // The ISO date methods don't account for leading zeros :(
+		    .appendOptional( DateTimeFormatter.ofPattern( "yyyy-MM-dd" ) )
+		    .appendOptional( DateTimeFormatter.ofPattern( DEFAULT_DATE_FORMAT_MASK ) )
+		    .appendOptional( DateTimeFormatter.ISO_DATE )
+		    .appendOptional( DateTimeFormatter.ISO_LOCAL_DATE )
+		    .appendOptional( DateTimeFormatter.BASIC_ISO_DATE )
+		    .toFormatter( locale );
+	}
+
+	/**
+	 * Returns a localized set of Time parsers
+	 * 
+	 * @param locale the Locale object which informs the formatters/parsers
+	 * 
+	 * @return the localized DateTimeFormatter object
+	 */
+
+	private static DateTimeFormatter getLocaleTimeParsers( Locale locale ) {
+		DateTimeFormatterBuilder formatBuilder = new DateTimeFormatterBuilder();
+		return formatBuilder.parseLenient()
+		    .appendOptional( DateTimeFormatter.ofLocalizedTime( FormatStyle.SHORT ).withLocale( locale ) )
+		    .appendOptional( DateTimeFormatter.ofLocalizedTime( FormatStyle.MEDIUM ).withLocale( locale ) )
+		    .appendOptional( DateTimeFormatter.ofLocalizedTime( FormatStyle.LONG ).withLocale( locale ) )
+		    .appendOptional( DateTimeFormatter.ofLocalizedTime( FormatStyle.FULL ).withLocale( locale ) )
+		    .appendOptional( DateTimeFormatter.ofPattern( DEFAULT_TIME_FORMAT_MASK ) )
+		    .appendOptional( DateTimeFormatter.ISO_TIME )
+		    .toFormatter( locale );
+	}
 }
