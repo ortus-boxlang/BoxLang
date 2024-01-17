@@ -37,8 +37,21 @@ public class Key {
 	public static final Key	_9							= Key.of( 9 );
 	public static final Key	_10							= Key.of( 10 );
 
+	// Reserved Words Dictionary
+	public static final Key	_ANY						= Key.of( "any" );
+	public static final Key	_ARRAY						= Key.of( "array" );
+	public static final Key	_BOOLEAN					= Key.of( "boolean" );
+	public static final Key	_DATE						= Key.of( "date" );
+	public static final Key	_DATETIME					= Key.of( "datetime" );
+	public static final Key	_EXTENDS					= Key.of( "extends" );
+	public static final Key	_FILE						= Key.of( "file" );
+	public static final Key	_LIST						= Key.of( "list" );
+	public static final Key	_NUMERIC					= Key.of( "numeric" );
+	public static final Key	_QUERY						= Key.of( "query" );
+	public static final Key	_STRING						= Key.of( "string" );
+	public static final Key	_STRUCT						= Key.of( "struct" );
+
 	// Global Dictionary
-	public static final Key	_extends					= Key.of( "extends" );
 	public static final Key	accessors					= Key.of( "accessors" );
 	public static final Key	algorithm					= Key.of( "algorithm" );
 	public static final Key	allowRealPath				= Key.of( "allowRealPath" );

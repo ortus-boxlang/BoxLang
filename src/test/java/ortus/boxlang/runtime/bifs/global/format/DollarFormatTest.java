@@ -12,7 +12,7 @@
  * BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language
  * governing permissions and limitations under the License.
  */
-package ortus.boxlang.runtime.bifs.global.math;
+package ortus.boxlang.runtime.bifs.global.format;
 
 import static com.google.common.truth.Truth.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -57,7 +57,7 @@ public class DollarFormatTest {
 
 	@DisplayName( "It formats a positive number as a U.S. Dollar string" )
 	@Test
-	public void testItFormatsPositiveNumberAsDollarString() {
+	void testItFormatsPositiveNumberAsDollarString() {
 		instance.executeSource(
 		    """
 		    result = dollarFormat(12345.67);
@@ -74,7 +74,7 @@ public class DollarFormatTest {
 
 	@DisplayName( "It formats a negative number as a U.S. Dollar string in parentheses" )
 	@Test
-	public void testItFormatsNegativeNumberAsDollarStringInParentheses() {
+	void testItFormatsNegativeNumberAsDollarStringInParentheses() {
 		instance.executeSource(
 		    """
 		    result = dollarFormat(-12345.67);
@@ -91,7 +91,7 @@ public class DollarFormatTest {
 
 	@DisplayName( "It formats zero as $0.00" )
 	@Test
-	public void testItFormatsZeroAsDollarString() {
+	void testItFormatsZeroAsDollarString() {
 		instance.executeSource(
 		    """
 		    result = dollarFormat(0);
@@ -102,7 +102,7 @@ public class DollarFormatTest {
 
 	@DisplayName( "It formats an empty string as $0.00" )
 	@Test
-	public void testItFormatsEmptyStringAsDollarString() {
+	void testItFormatsEmptyStringAsDollarString() {
 		instance.executeSource(
 		    """
 		    result = dollarFormat("");
@@ -113,7 +113,7 @@ public class DollarFormatTest {
 
 	@DisplayName( "It throws an exception when the argument is not a number" )
 	@Test
-	public void testItThrowsExceptionWhenArgumentIsNotANumber() {
+	void testItThrowsExceptionWhenArgumentIsNotANumber() {
 		assertThrows(
 		    BoxRuntimeException.class,
 		    () -> instance.executeSource(
