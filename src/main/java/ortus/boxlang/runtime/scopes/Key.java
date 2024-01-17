@@ -126,6 +126,7 @@ public class Key {
 	public static final Key	position					= Key.of( "position" );
 	public static final Key	position1					= Key.of( "position1" );
 	public static final Key	position2					= Key.of( "position2" );
+	public static final Key	quarter						= Key.of( "quarter" );
 	public static final Key	radix						= Key.of( "radix" );
 	public static final Key	recordCount					= Key.of( "recordCount" );
 	public static final Key	recurse						= Key.of( "recurse" );

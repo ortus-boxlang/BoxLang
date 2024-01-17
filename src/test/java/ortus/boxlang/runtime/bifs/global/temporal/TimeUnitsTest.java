@@ -24,6 +24,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import java.time.Year;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
+import java.time.temporal.IsoFields;
 
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -89,6 +90,20 @@ public class TimeUnitsTest {
 		    context );
 		Integer result = ( Integer ) variables.get( Key.of( "result" ) );
 		assertEquals( result, refYear );
+
+	}
+
+	@DisplayName( "It tests the BIF Quarter" )
+	@Test
+	public void testBifQuarter() {
+		Integer ref = ZonedDateTime.now().get( IsoFields.QUARTER_OF_YEAR );
+		instance.executeSource(
+		    """
+		    result = Quarter( now() );
+		    """,
+		    context );
+		Integer result = ( Integer ) variables.get( Key.of( "result" ) );
+		assertEquals( result, ref );
 
 	}
 
