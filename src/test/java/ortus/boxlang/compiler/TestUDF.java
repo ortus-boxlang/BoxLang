@@ -91,7 +91,7 @@ public class TestUDF extends TestBase {
 		                                  * @returns Only the coolest value ever
 		                                  */
 		                                  		                                  """;
-		BoxDOCParser	parser			= new BoxDOCParser();
+		BoxDOCParser	parser			= new BoxDOCParser(0,0);
 		ParsingResult	result			= parser.parse( null, documentation );
 		assertTrue( result.isCorrect() );
 		BoxDocumentation docs = ( BoxDocumentation ) result.getRoot();
@@ -103,7 +103,6 @@ public class TestUDF extends TestBase {
 	}
 
 	@Test
-	@Disabled( "Key generation is too unpredictable" )
 	public void userDefinedFunctionDocumentation() throws IOException {
 
 		BoxCFParser		parser	= new BoxCFParser();
@@ -157,11 +156,11 @@ public class TestUDF extends TestBase {
 		Assertions.assertEquals( 1, arguments.getInitializer().get().asArrayInitializerExpr().getValues().size() );
 		VariableDeclarator annotations = javaAST.getType( 0 ).getFieldByName( "annotations" ).get().getVariable( 0 );
 		assertEqualsNoWhiteSpaces( """
-		                           Struct.of(Key.of("myAnnotation"),Array.of("value","anothervalue"),Key.of("key"),"value",Key.of("keyOnly"),"")
+		                           Struct.of(MyUDF.keys[6],Array.of("value","anothervalue"),MyUDF.keys[7],"value",MyUDF.keys[8],"")
 		                                                     """, annotations.getInitializer().get().toString() );
 		VariableDeclarator documentation = javaAST.getType( 0 ).getFieldByName( "documentation" ).get().getVariable( 0 );
 		assertEqualsNoWhiteSpaces( """
-		                           Struct.of(Key.of("author"),"BradWood",Key.of("returns"),"Onlythecoolestvalueever",Key.of("hint"),"Thisfunctiondoescoolstuff")
+		                           Struct.of(MyUDF.keys[9],"BradWood",MyUDF.keys[10],"Onlythecoolestvalueever",MyUDF.keys[3],"Thisfunctiondoescoolstuff")
 		                                                 """, documentation.getInitializer().get().toString() );
 	}
 
