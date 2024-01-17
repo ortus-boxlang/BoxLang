@@ -1,260 +1,178 @@
 parser grammar CFMLParser;
 
-options { tokenVocab=CFMLLexer; }
+options {
+	tokenVocab = CFMLLexer;
+}
 
-htmlDocument
-    : (scriptlet | SEA_WS)* xml? (scriptlet | SEA_WS)* cfmlElement* dtd? (scriptlet | SEA_WS)*
-    	( cfmlElement | htmlElements)*
-    	EOF?
-    ;
+template: component | interface | statements EOF?;
 
-cfmlComment:
-    CFML_COMMENT;
+textContent: TAG_OPEN? CONTENT_TEXT | INTERPOLATION;
 
-cfmlCloseTag:
-    TAG_OPEN TAG_SLASH htmlTagName TAG_CLOSE;
+genericOpenTag: TAG_OPEN PREFIX tagName attribute* TAG_CLOSE;
+genericOpenCloseTag:
+	TAG_OPEN PREFIX tagName attribute* TAG_SLASH_CLOSE;
+genericCloseTag: TAG_OPEN SLASH_PREFIX tagName TAG_CLOSE;
 
-htmlElements
-    : htmlMisc* htmlElement htmlMisc*
-    ;
+statements: (statement | textContent)*;
 
-htmlElement
-    : cfmlCloseTag
-    | TAG_OPEN htmlTagName htmlAttribute* TAG_CLOSE htmlContent TAG_OPEN TAG_SLASH htmlTagName TAG_CLOSE
-    | TAG_OPEN htmlTagName htmlAttribute* TAG_SLASH_CLOSE
-    | TAG_OPEN htmlTagName htmlAttribute* TAG_CLOSE
-    | dtd
-    | scriptlet
-    | script
-    | style
-    | HTML_TEXT
-    | INTERPOLATION
-    | htmlComment
-    ;
+statement:
+	function
+	| genericOpenCloseTag
+	| genericOpenTag
+	| genericCloseTag
+	| set
+	| dump
+	| script
+	| argument
+	| return
+	| if
+	| query
+	| throw
+	| loop
+	| param
+	| try
+	| catchBlock
+	| abort
+	| lock
+	| include
+	| invoke
+	| invoke1
+	| invokeargument
+	| file
+	| output;
 
-cfmlElement
-    : cfmlComment
-    | cfset
-    | cfcomponent
-    | cffunction
-    | cfinterface
-    | htmlComment
-    | cfscript
-    | cfmlStatement
-    ;
+component:
+	TAG_OPEN PREFIX COMPONENT attribute* (
+		TAG_SLASH_CLOSE
+		| TAG_CLOSE
+	) statements TAG_OPEN SLASH_PREFIX COMPONENT TAG_CLOSE;
+interface:
+	TAG_OPEN PREFIX INTERFACE attribute* (
+		TAG_SLASH_CLOSE
+		| TAG_CLOSE
+	) statements TAG_OPEN SLASH_PREFIX INTERFACE TAG_CLOSE;
 
-cfmlStatement
-    : cfset
-    | cfdump
-    | htmlComment
-    | htmlElement
-    | cfscript
-    | cfargument
-    | cfreturn
-    | cfif
-    | cfquery
-    | cfthrow
-    | cfloop
-    | cfparam
-    | cftry
-    | cfcatch
-    | cfabort
-    | cflock
-    | cfinclude
-    | cfinvoke
-    | cfinvoke1
-    | cfinvokeargument
-    | cffile
-    | cfoutput
-    ;
+function:
+	TAG_OPEN PREFIX FUNCTION attribute* (
+		TAG_SLASH_CLOSE
+		| TAG_CLOSE
+	) statements TAG_OPEN SLASH_PREFIX FUNCTION TAG_CLOSE;
 
-cfcomponent
-    : TAG_OPEN CFCOMPONENT htmlAttribute* (TAG_SLASH_CLOSE | TAG_CLOSE)
-        cfmlElement*
-      TAG_OPEN TAG_SLASH CFCOMPONENT TAG_CLOSE
-    ;
-cfinterface
-    : TAG_OPEN CFINTERFACE htmlAttribute* (TAG_SLASH_CLOSE | TAG_CLOSE)
-        cfmlElement*
-      TAG_OPEN TAG_SLASH CFINTERFACE TAG_CLOSE
-    ;
+set:
+	TAG_OPEN PREFIX SET expression (TAG_SLASH_CLOSE | TAG_CLOSE);
 
-cffunction
-    :   TAG_OPEN CFFUNCTION htmlAttribute* (TAG_SLASH_CLOSE | TAG_CLOSE)
-        cfmlStatement*
-        TAG_OPEN TAG_SLASH CFFUNCTION TAG_CLOSE
-    ;
+dump:
+	TAG_OPEN PREFIX DUMP attribute* (TAG_SLASH_CLOSE | TAG_CLOSE);
+script: SCRIPT_OPEN SCRIPT_BODY;
+// : TAG_OPEN SCRIPT attribute* (TAG_SLASH_CLOSE | TAG_CLOSE) code TAG_OPEN TAG_SLASH SCRIPT
+// TAG_CLOSE ;
 
-cfset
-	: TAG_OPEN CFSET cfexpression (TAG_SLASH_CLOSE | TAG_CLOSE)
-	;
+code: CONTENT_TEXT;
 
-cfdump
-    : TAG_OPEN CFDUMP htmlAttribute* (TAG_SLASH_CLOSE | TAG_CLOSE)
-    ;
-cfscript
-    :   CFSCRIPT_OPEN CFSCRIPT_BODY
-    ;
-//    : TAG_OPEN CFSCRIPT htmlAttribute* (TAG_SLASH_CLOSE | TAG_CLOSE)
-//      cfcode
-//      TAG_OPEN TAG_SLASH CFSCRIPT TAG_CLOSE
-//    ;
+argument:
+	TAG_OPEN PREFIX ARGUMENT attribute* (
+		TAG_SLASH_CLOSE
+		| TAG_CLOSE
+	);
 
-cfcode
-    : HTML_TEXT
-    ;
+return:
+	TAG_OPEN PREFIX RETURN expression? (
+		TAG_SLASH_CLOSE
+		| TAG_CLOSE
+	);
 
-cfargument
-    : TAG_OPEN CFARGUMENT htmlAttribute* (TAG_SLASH_CLOSE | TAG_CLOSE)
-    ;
+if:
+	TAG_OPEN PREFIX IF expression (TAG_SLASH_CLOSE | TAG_CLOSE) statements (
+		TAG_OPEN PREFIX ELSEIF expression (
+			TAG_SLASH_CLOSE
+			| TAG_CLOSE
+		) statements
+	)* (
+		TAG_OPEN PREFIX ELSE (TAG_SLASH_CLOSE | TAG_CLOSE) statements
+	)* TAG_OPEN SLASH_PREFIX IF TAG_CLOSE;
 
-cfreturn
-    : TAG_OPEN CFRETURN cfexpression? (TAG_SLASH_CLOSE | TAG_CLOSE)
-    ;
+query:
+	TAG_OPEN PREFIX QUERY attribute* (
+		TAG_SLASH_CLOSE
+		| TAG_CLOSE
+	) sqlcode TAG_OPEN SLASH_PREFIX QUERY TAG_CLOSE;
+sqlcode: CONTENT_TEXT;
 
-cfif
-    : TAG_OPEN CFIF cfexpression (TAG_SLASH_CLOSE | TAG_CLOSE)
-      cfmlStatement*
-      (TAG_OPEN CFELSEIF cfexpression  (TAG_SLASH_CLOSE | TAG_CLOSE)
-            cfmlStatement*)*
-      (TAG_OPEN CFELSE  (TAG_SLASH_CLOSE | TAG_CLOSE)
-      cfmlStatement*)*
-     TAG_OPEN TAG_SLASH CFIF TAG_CLOSE
-    ;
+throw:
+	TAG_OPEN PREFIX THROW attribute* (
+		TAG_SLASH_CLOSE
+		| TAG_CLOSE
+	);
 
-cfquery
-    : TAG_OPEN CFQUERY htmlAttribute* (TAG_SLASH_CLOSE | TAG_CLOSE)
-      sqlcode
-      TAG_OPEN TAG_SLASH CFQUERY TAG_CLOSE
-    ;
-sqlcode
-    : HTML_TEXT
-    ;
+loop:
+	TAG_OPEN PREFIX LOOP attribute* (TAG_SLASH_CLOSE | TAG_CLOSE) statements TAG_OPEN TAG_SLASH
+		PREFIX LOOP TAG_CLOSE;
 
-cfthrow
-    : TAG_OPEN CFTHROW htmlAttribute* (TAG_SLASH_CLOSE | TAG_CLOSE)
-    ;
+param:
+	TAG_OPEN PREFIX PARAM attribute* (
+		TAG_SLASH_CLOSE
+		| TAG_CLOSE
+	);
 
-cfloop
-    :   TAG_OPEN CFLOOP htmlAttribute* (TAG_SLASH_CLOSE | TAG_CLOSE)
-        cfmlStatement*
-        TAG_OPEN TAG_SLASH CFLOOP TAG_CLOSE
-    ;
+try:
+	TAG_OPEN PREFIX TRY attribute* (TAG_SLASH_CLOSE | TAG_CLOSE) statements TAG_OPEN TAG_SLASH
+		PREFIX TRY TAG_CLOSE;
 
-cfparam
-    : TAG_OPEN CFPARAM htmlAttribute* (TAG_SLASH_CLOSE | TAG_CLOSE)
-    ;
+catchBlock:
+	TAG_OPEN PREFIX CATCH attribute* (
+		TAG_SLASH_CLOSE
+		| TAG_CLOSE
+	) statements TAG_OPEN SLASH_PREFIX CATCH TAG_CLOSE;
 
-cftry
-    :   TAG_OPEN CFTRY htmlAttribute* (TAG_SLASH_CLOSE | TAG_CLOSE)
-        cfmlStatement*
-        TAG_OPEN TAG_SLASH CFTRY TAG_CLOSE
-    ;
+abort:
+	TAG_OPEN PREFIX ABORT attribute* (
+		TAG_SLASH_CLOSE
+		| TAG_CLOSE
+	);
 
-cfcatch
-    :   TAG_OPEN CFCATCH htmlAttribute* (TAG_SLASH_CLOSE | TAG_CLOSE)
-        cfmlStatement*
-        TAG_OPEN TAG_SLASH CFCATCH TAG_CLOSE
-    ;
+lock:
+	TAG_OPEN PREFIX LOCK attribute* (TAG_SLASH_CLOSE | TAG_CLOSE) statements TAG_OPEN TAG_SLASH
+		PREFIX LOCK TAG_CLOSE;
 
-cfabort
-    : TAG_OPEN CFABORT htmlAttribute* (TAG_SLASH_CLOSE | TAG_CLOSE)
-    ;
+include:
+	TAG_OPEN PREFIX INCLUDE attribute* (
+		TAG_SLASH_CLOSE
+		| TAG_CLOSE
+	);
 
-cflock
-    :   TAG_OPEN CFLOCK htmlAttribute* (TAG_SLASH_CLOSE | TAG_CLOSE)
-        cfmlStatement*
-        TAG_OPEN TAG_SLASH CFLOCK TAG_CLOSE
-    ;
+invoke:
+	TAG_OPEN PREFIX INVOKE attribute* (
+		TAG_SLASH_CLOSE
+		| TAG_CLOSE
+	);
+invoke1:
+	TAG_OPEN PREFIX INVOKE attribute* (
+		TAG_SLASH_CLOSE
+		| TAG_CLOSE
+	) statements TAG_OPEN SLASH_PREFIX INVOKE TAG_CLOSE;
+invokeargument:
+	TAG_OPEN PREFIX INVOKEARGUMENT attribute* (
+		TAG_SLASH_CLOSE
+		| TAG_CLOSE
+	);
 
-cfinclude
-    : TAG_OPEN CFINCLUDE htmlAttribute* (TAG_SLASH_CLOSE | TAG_CLOSE)
-    ;
+file: TAG_OPEN PREFIX FILE attribute* TAG_CLOSE;
 
-cfinvoke
-    : TAG_OPEN CFINVOKE htmlAttribute* (TAG_SLASH_CLOSE | TAG_CLOSE)
-    ;
-cfinvoke1
-    : TAG_OPEN CFINVOKE htmlAttribute* (TAG_SLASH_CLOSE | TAG_CLOSE)
-             cfmlStatement*
-      TAG_OPEN TAG_SLASH CFINVOKE TAG_CLOSE
-    ;
-cfinvokeargument
-    : TAG_OPEN CFINVOKEARGUMENT htmlAttribute* (TAG_SLASH_CLOSE | TAG_CLOSE)
-    ;
+output:
+	TAG_OPEN PREFIX OUTPUT attribute* TAG_SLASH_CLOSE
+	| TAG_OPEN PREFIX OUTPUT attribute* TAG_CLOSE statements TAG_OPEN SLASH_PREFIX OUTPUT TAG_CLOSE;
 
-cffile
-    : TAG_OPEN CFFILE htmlAttribute* TAG_CLOSE
-    ;
+expression: EXPRESSION;
 
-cfoutput
-	: TAG_OPEN CFOUTPUT htmlAttribute* TAG_SLASH_CLOSE
-	| TAG_OPEN CFOUTPUT htmlAttribute* TAG_CLOSE htmlDocument? TAG_OPEN TAG_SLASH CFOUTPUT TAG_CLOSE
-	| TAG_OPEN CFOUTPUT htmlAttribute* TAG_CLOSE (cfmlElement | htmlElement | INTERPOLATION)+ TAG_OPEN TAG_SLASH CFOUTPUT TAG_CLOSE
-	;
+attribute:
+	attributeName TAG_EQUALS attributeValue
+	| attributeName;
 
-cfexpression
-	: EXPRESSION
-	;
+attributeName: TAG_NAME;
 
-htmlContent
-    : htmlChardata? ((htmlElement | xhtmlCDATA | htmlComment) htmlChardata?)*
-    | INTERPOLATION
-    ;
+attributeValue: identifier | quotedString;
 
-htmlAttribute
-    : htmlAttributeName TAG_EQUALS htmlAttributeValue
-    | htmlAttributeName
-//    | cfmlElement
-    ;
+identifier: IDENTIFIER;
+quotedString: DOUBLE_QUOTE_STRING | SINGLE_QUOTE_STRING;
 
-htmlAttributeName
-    : TAG_NAME
-    ;
-
-htmlAttributeValue
-    : ATTVALUE_VALUE
-    ;
-
-htmlTagName
-    : TAG_NAME
-    ;
-
-htmlChardata
-    : HTML_TEXT
-    | SEA_WS
-    ;
-
-htmlMisc
-    : htmlComment
-    | SEA_WS
-    ;
-
-htmlComment
-    : HTML_COMMENT
-    | HTML_CONDITIONAL_COMMENT
-    ;
-
-xhtmlCDATA
-    : CDATA
-    ;
-
-dtd
-    : DTD
-    ;
-
-xml
-    : XML_DECLARATION
-    ;
-
-scriptlet
-    : SCRIPTLET
-    ;
-
-script
-    : SCRIPT_OPEN ( SCRIPT_BODY | SCRIPT_SHORT_BODY)
-    ;
-
-style
-    : STYLE_OPEN ( STYLE_BODY | STYLE_SHORT_BODY)
-    ;
+tagName: TAG_NAME;
