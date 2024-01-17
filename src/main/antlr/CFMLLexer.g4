@@ -1,282 +1,122 @@
 lexer grammar CFMLLexer;
 
 options {
-    caseInsensitive = true;
+	caseInsensitive = true;
 }
 
-HTML_COMMENT
-    : '<!--' .*? '-->'
-    ;
+COMMENT: '<!---' .*? '--->' -> channel(HIDDEN);
 
-CFML_COMMENT
-    : '<!---' .*? '--->'
-    ;
+SEA_WS: (' ' | '\t' | '\r'? '\n')+ -> channel(HIDDEN);
 
-HTML_CONDITIONAL_COMMENT
-    : '<![' .*? ']>'
-    ;
+SCRIPT_OPEN: '<cfscript' .*? '>' -> pushMode(XFSCRIPT);
 
-XML_DECLARATION
-    : '<?xml' .*? '>'
-    ;
+TAG_OPEN: '<' -> pushMode(POSSIBLE_TAG);
 
-CDATA
-    : '<![CDATA[' .*? ']]>'
-    ;
+INTERPOLATION: HASHHASH;
 
-DTD
-    : '<!' .*? '>'
-    ;
+POSSIBLE_INTERPOLATION_START:
+	'#' -> skip, pushMode(POSSIBLE_INTERPOLATION);
 
-SCRIPTLET
-    : '<?' .*? '?>'
-    | '<%' .*? '%>'
-    ;
-
-SEA_WS
-    :  (' '|'\t'|'\r'? '\n')+  -> channel(HIDDEN)
-    ;
-
-SCRIPT_OPEN
-    : '<script' .*? '>' ->pushMode(SCRIPT)
-    ;
-
-CFSCRIPT_OPEN
-    : '<cfscript' .*? '>' ->pushMode(XFSCRIPT)
-    ;
-
-STYLE_OPEN
-    : '<style' .*? '>'  ->pushMode(STYLE)
-    ;
-
-TAG_OPEN
-    : '<' -> pushMode(TAG)
-    ;
-
-INTERPOLATION
-	: HASHHASH
-	;
-
-POSSIBLE_INTERPOLATION_START
-	: '#' -> skip, pushMode(POSSIBLE_INTERPOLATION)
-	;
-
-HTML_TEXT
-    : ~[<#]+
-    ;
+CONTENT_TEXT: ~[<#]+;
 
 mode POSSIBLE_INTERPOLATION;
-INTPR_HTML		: (~[#<]+ '\r'? '\n'
-				| '#')				{ setText("#" + getText()); } 	-> type(HTML_TEXT), popMode;
-INTRP_CONTENT	: ~[#]+ '#' 		{ setText("#" + getText()); } 	-> type(INTERPOLATION), popMode;
+INTPR_CONTENT: (~[#<]+ '\r'? '\n' | '#') { setText("#" + getText()); } -> type(CONTENT_TEXT),
+		popMode;
+INTRP_CONTENT:
+	~[#]+ '#' { setText("#" + getText()); } -> type(INTERPOLATION), popMode;
 
+mode POSSIBLE_TAG;
 
+PREFIX: 'cf' -> pushMode(TAG);
+SLASH_PREFIX: '/cf' -> pushMode(END_TAG);
+ANY: . -> type(CONTENT_TEXT), popMode;
 
-
-//
-// tag declarations
-//
 mode TAG;
 
+COMPONENT: 'component';
+ARGUMENT: 'argument';
+DUMP: 'dump';
+FUNCTION: 'function';
+SCRIPT: 'script' -> pushMode(XFSCRIPT);
 
-CFCOMPONENT     : 'cfcomponent';
-CFARGUMENT      : 'cfargument';
-CFDUMP          : 'cfdump';
-CFFUNCTION      : 'cffunction';
-CFSCRIPT        : 'cfscript' ->  pushMode(XFSCRIPT);
+RETURN: 'return' -> pushMode(EXPRESSION_MODE);
+IF: 'if' -> pushMode(EXPRESSION_MODE);
+ELSE: 'else';
+ELSEIF: 'elseif' -> pushMode(EXPRESSION_MODE);
+QUERY: 'query';
+INTERFACE: 'interface';
+THROW: 'throw';
+LOOP: 'loop';
+PARAM: 'param';
+TRY: 'try';
+CATCH: 'catch';
+ABORT: 'abort';
+LOCK: 'lock';
+INCLUDE: 'include';
+INVOKE: 'invoke';
+SET: 'set ' -> pushMode(EXPRESSION_MODE);
+INVOKEARGUMENT: 'invokeargument';
+FILE: 'file';
+OUTPUT: 'output';
 
-CFRETURN        : 'cfreturn' -> pushMode(CFEXPRESSION_MODE);
-CFIF            : 'cfif' -> pushMode(CFEXPRESSION_MODE);
-CFELSE          : 'cfelse';
-CFELSEIF        :  'cfelseif' -> pushMode(CFEXPRESSION_MODE);
-CFQUERY         : 'cfquery';
-CFINTERFACE     : 'cfinterface';
-CFTHROW         : 'cfthrow';
-CFLOOP          : 'cfloop';
-CFPARAM         : 'cfparam';
-CFTRY           : 'cftry';
-CFCATCH         : 'cfcatch';
-CFABORT         : 'cfabort';
-CFLOCK          : 'cflock';
-CFINCLUDE       : 'cfinclude';
-CFINVOKE        : 'cfinvoke';
-CFSET	        : 'cfset ' -> pushMode(CFEXPRESSION_MODE);
-CFINVOKEARGUMENT: 'cfinvokeargument';
-CFFILE          : 'cffile' ;
-CFOUTPUT		: 'cfoutput' ;
+TAG_CLOSE: '>' -> popMode, popMode;
 
+TAG_SLASH_CLOSE: '/>' -> popMode, popMode;
 
-TAG_CLOSE
-    : '>' -> popMode
-    ;
+TAG_SLASH: '/';
 
-TAG_SLASH_CLOSE
-    : '/>' -> popMode
-    ;
+TAG_EQUALS: '=' -> pushMode(ATTVALUE);
 
-TAG_SLASH
-    : '/'
-    ;
+TAG_NAME: TAG_NameStartChar TAG_NameChar*;
 
-//
-// lexing mode for attribute values
-//
-TAG_EQUALS
-    : '=' -> pushMode(ATTVALUE)
-    ;
+TAG_WHITESPACE: [ \t\r\n] -> skip;
 
-TAG_NAME
-    : TAG_NameStartChar TAG_NameChar*
-    ;
+fragment DIGIT: [0-9];
 
-TAG_WHITESPACE
-    : [ \t\r\n] -> skip
-    ;
+fragment TAG_NameChar: TAG_NameStartChar | '_' | DIGIT;
 
-//INNER_TAG_OPEN
-//	: '<' -> type(TAG_OPEN), pushMode(TAG)
-//	;
+fragment TAG_NameStartChar: [:a-z];
 
-//INNER_INTERPOLATION
-//	: HASHHASH
-//	;
-//
-//INNER_POSSIBLE_INTERPOLATION_START
-//	: '#' -> skip, pushMode(POSSIBLE_INTERPOLATION)
-//	;
-//
-//INNER_HTML_TEXT
-//    : ~[<#]+
-//    ;
+mode END_TAG;
 
-fragment
-HEXDIGIT
-    : [a-fA-F0-9]
-    ;
+IF2: 'if' -> type(IF);
+COMPONENT2: 'component' -> type(COMPONENT);
+DUMP2: 'dump' -> type(DUMP);
+FUNCTION2: 'function' -> type(FUNCTION);
+SCRIPT2: 'script' -> type(SCRIPT);
+QUERY2: 'query' -> type(QUERY);
+INTERFACE2: 'interface' -> type(INTERFACE);
+LOOP2: 'loop' -> type(LOOP);
+TRY2: 'try' -> type(TRY);
+CATCH2: 'catch' -> type(CATCH);
+LOCK2: 'lock' -> type(LOCK);
+INVOKE2: 'invoke' -> type(INVOKE);
+OUTPUT2: 'output' -> type(OUTPUT);
 
-fragment
-DIGIT
-    : [0-9]
-    ;
-
-fragment
-TAG_NameChar
-    : TAG_NameStartChar
-    | '-'
-    | '_'
-    | '.'
-    | DIGIT
-    |   '\u00B7'
-    |   '\u0300'..'\u036F'
-    |   '\u203F'..'\u2040'
-    ;
-
-fragment
-TAG_NameStartChar
-    :   [:a-zA-Z]
-    |   '\u2070'..'\u218F'
-    |   '\u2C00'..'\u2FEF'
-    |   '\u3001'..'\uD7FF'
-    |   '\uF900'..'\uFDCF'
-    |   '\uFDF0'..'\uFFFD'
-    ;
-
-//
-// <scripts>
-//
-mode SCRIPT;
-
-SCRIPT_BODY
-    : .*? '</script>' -> popMode
-    ;
-
-SCRIPT_SHORT_BODY
-    : .*? '</>' -> popMode
-    ;
+TAG_NAME2: TAG_NameStartChar TAG_NameChar* -> type(TAG_NAME);
+TAG_CLOSE2: '>' -> popMode, popMode, type(TAG_CLOSE);
 
 mode XFSCRIPT;
 
-CFSCRIPT_BODY
-    : .*? '</cfscript>' -> popMode
-    ;
+SCRIPT_BODY: .*? '</cfscript>' -> popMode;
 
-//
-// <styles>
-//
-mode STYLE;
-
-STYLE_BODY
-    : .*? '</style>' -> popMode
-    ;
-
-STYLE_SHORT_BODY
-    : .*? '</>' -> popMode
-    ;
-
-//
-// attribute values
-//
 mode ATTVALUE;
 
-// an attribute value may have spaces b/t the '=' and the value
-ATTVALUE_VALUE
-    : [ ]* ATTRIBUTE -> popMode
-    ;
+fragment DIGIT2: [0-9];
+IDENTIFIER: [a-z_$]+ ( [_]+ | [a-z]+ | DIGIT2)* -> popMode;
 
-ATTRIBUTE
-    : DOUBLE_QUOTE_STRING
-    | SINGLE_QUOTE_STRING
-    | ATTCHARS
-    | HEXCHARS
-    | DECCHARS
-    ;
+fragment HASHHASH: '#' ~[#]+ '#';
 
-fragment ATTCHAR
-    : '-'
-    | '_'
-    | '.'
-    | '/'
-    | '+'
-    | ','
-    | '?'
-    | '='
-    | ':'
-    | ';'
-    | '#'
-    | [0-9a-zA-Z]
-    ;
+DOUBLE_QUOTE_STRING:
+	'"' (~["#]+? | '##' | HASHHASH)* '"' -> popMode;
 
-fragment ATTCHARS
-    : ATTCHAR+ ' '?
-    ;
+SINGLE_QUOTE_STRING:
+	'\'' (~['#]+? | '##' | HASHHASH) '\'' -> popMode;
 
-fragment HEXCHARS
-    : '#' [0-9a-fA-F]+
-    ;
+mode EXPRESSION_MODE;
+TAG_CLOSE1: '>' -> type(TAG_CLOSE), popMode, popMode;
 
-fragment DECCHARS
-    : [0-9]+ '%'?
-    ;
+EXPRESSION: (~[/>'"]+ | SQSTR | DQSTR)+ -> popMode;
 
-fragment DOUBLE_QUOTE_STRING
-    : '"' (~["#]+? | '##' | HASHHASH)* '"'
-    ;
-
-fragment SINGLE_QUOTE_STRING
-    : '\'' (~['#]+? | '##' | HASHHASH) '\''
-    ;
-
-fragment HASHHASH
-    : '#' ~[#]+ '#'
-    ;
-
-
-mode CFEXPRESSION_MODE;
-TAG_CLOSE1
-    : '>' -> type(TAG_CLOSE) , popMode,popMode
-    ;
-
-EXPRESSION      : (~[/>'"]+ | SQSTR | DQSTR)+ -> popMode;
-
-fragment SQSTR  : '\'' ~[']*? '\'' ;
-fragment DQSTR  : '"' ~["]*? '"' ;
+fragment SQSTR: '\'' ~[']*? '\'';
+fragment DQSTR: '"' ~["]*? '"';
