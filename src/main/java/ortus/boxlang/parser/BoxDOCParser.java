@@ -75,14 +75,12 @@ public class BoxDOCParser {
 														}
 													};
 
-//	public BoxDOCParser() {
-//		this.issues = new ArrayList<>();
-//	}
-	public BoxDOCParser(int startLine,int startColumn) {
-		this.startLine = startLine;
-		this.startColumn = startColumn;
-		this.issues = new ArrayList<>();
+	public BoxDOCParser( int startLine, int startColumn ) {
+		this.startLine		= startLine;
+		this.startColumn	= startColumn;
+		this.issues			= new ArrayList<>();
 	}
+
 	/**
 	 * Extracts the position from the ANTLR node
 	 *
@@ -93,8 +91,8 @@ public class BoxDOCParser {
 	 * @see Position
 	 */
 	protected Position getPosition( ParserRuleContext node ) {
-		return new Position( new Point( node.start.getLine() + this.startLine, node.start.getCharPositionInLine() + startColumn),
-			new Point( node.stop.getLine() + startLine, node.stop.getCharPositionInLine() + startColumn ), new SourceFile( file ) );
+		return new Position( new Point( node.start.getLine() + this.startLine, node.start.getCharPositionInLine() + startColumn ),
+		    new Point( node.stop.getLine() + startLine, node.stop.getCharPositionInLine() + startColumn ), new SourceFile( file ) );
 	}
 
 	public ParsingResult parse( File file, String code ) throws IOException {
