@@ -20,8 +20,6 @@ POSSIBLE_INTERPOLATION_START:
 CONTENT_TEXT: ~[<#]+;
 
 mode POSSIBLE_INTERPOLATION;
-INTPR_CONTENT: (~[#<]+ '\r'? '\n' | '#') { setText("#" + getText()); } -> type(CONTENT_TEXT),
-		popMode;
 INTRP_CONTENT:
 	~[#]+ '#' { setText("#" + getText()); } -> type(INTERPOLATION), popMode;
 

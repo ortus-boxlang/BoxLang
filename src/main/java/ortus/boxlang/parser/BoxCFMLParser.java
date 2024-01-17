@@ -46,7 +46,7 @@ public class BoxCFMLParser extends BoxAbstractParser {
 		CFMLLexer	lexer	= new CFMLLexer( CharStreams.fromStream( inputStream ) );
 		CFMLParser	parser	= new CFMLParser( new CommonTokenStream( lexer ) );
 		addErrorListeners( lexer, parser );
-		return parser.htmlDocument();
+		return parser.template();
 	}
 
 	@Override
@@ -59,17 +59,17 @@ public class BoxCFMLParser extends BoxAbstractParser {
 	}
 
 	public ParsingResult parse( File file ) throws IOException {
-		BOMInputStream					inputStream	= getInputStream( file );
+		BOMInputStream				inputStream	= getInputStream( file );
 
-		CFMLParser.HtmlDocumentContext	parseTree	= ( CFMLParser.HtmlDocumentContext ) parserFirstStage( inputStream );
-		BoxScript						ast			= parseTreeToAst( file, parseTree );
+		CFMLParser.TemplateContext	parseTree	= ( CFMLParser.TemplateContext ) parserFirstStage( inputStream );
+		BoxScript					ast			= parseTreeToAst( file, parseTree );
 		return new ParsingResult( ast, issues );
 	}
 
 	public ParsingResult parse( String code ) throws IOException {
-		InputStream						inputStream	= IOUtils.toInputStream( code, StandardCharsets.UTF_8 );
-		CFMLParser.HtmlDocumentContext	parseTree	= ( CFMLParser.HtmlDocumentContext ) parserFirstStage( inputStream );
-		BoxScript						ast			= parseTreeToAst( file, parseTree );
+		InputStream					inputStream	= IOUtils.toInputStream( code, StandardCharsets.UTF_8 );
+		CFMLParser.TemplateContext	parseTree	= ( CFMLParser.TemplateContext ) parserFirstStage( inputStream );
+		BoxScript					ast			= parseTreeToAst( file, parseTree );
 		return new ParsingResult( ast, issues );
 	}
 
