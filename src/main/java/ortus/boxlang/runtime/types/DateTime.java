@@ -89,6 +89,10 @@ public class DateTime implements IType, IReferenceable {
 	public static final String				ODBC_DATE_FORMAT_MASK			= "yyyy-MM-dd";
 	public static final String				ODBC_TIME_FORMAT_MASK			= "HH:mm:ss";
 
+	public static final String				MODE_DATE						= "Date";
+	public static final String				MODE_TIME						= "Time";
+	public static final String				MODE_DATETIME					= "DateTime";
+
 	public static final Struct				commonFormatters				= new Struct(
 	    new HashMap<String, DateTimeFormatter>() {
 
@@ -772,8 +776,18 @@ public class DateTime implements IType, IReferenceable {
 		}
 	}
 
+	/**
+	 * Convienience method to create a formatter with a specific pattern - will look up an equivalent known DateTime formatter
+	 *
+	 * @param mask
+	 *             q
+	 * 
+	 * @return
+	 */
 	private static DateTimeFormatter getDateTimeFormatter( String mask ) {
-		return DateTimeFormatter.ofPattern( mask );
-
+		Key formatKey = Key.of( mask + MODE_DATETIME );
+		return DateTime.commonFormatters.containsKey( formatKey )
+		    ? ( DateTimeFormatter ) DateTime.commonFormatters.get( formatKey )
+		    : DateTimeFormatter.ofPattern( mask );
 	}
 }

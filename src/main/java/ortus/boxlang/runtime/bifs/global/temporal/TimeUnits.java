@@ -17,6 +17,7 @@ package ortus.boxlang.runtime.bifs.global.temporal;
 
 import java.time.Year;
 import java.time.ZoneId;
+import java.time.temporal.IsoFields;
 import java.util.HashMap;
 
 import ortus.boxlang.runtime.bifs.BIF;
@@ -33,6 +34,7 @@ import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
 @BoxBIF( alias = "Year" )
+@BoxBIF( alias = "Quarter" )
 @BoxBIF( alias = "Month" )
 @BoxBIF( alias = "MonthAsString" )
 @BoxBIF( alias = "MonthShortAsString" )
@@ -51,6 +53,7 @@ import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 @BoxBIF( alias = "Offset" )
 @BoxBIF( alias = "GetTimezone" )
 @BoxMember( type = BoxLangType.DATETIME, name = "year" )
+@BoxMember( type = BoxLangType.DATETIME, name = "quarter" )
 @BoxMember( type = BoxLangType.DATETIME, name = "month" )
 @BoxMember( type = BoxLangType.DATETIME, name = "monthAsString" )
 @BoxMember( type = BoxLangType.DATETIME, name = "monthShortAsString" )
@@ -81,6 +84,7 @@ public class TimeUnits extends BIF {
 
 	static final class bifMethods {
 
+		public static final Key		quarter					= Key.quarter;
 		public static final Key		month					= Key.month;
 		public static final Key		monthAsString			= Key.of( "monthAsString" );
 		public static final Key		monthShortAsString		= Key.of( "monthShortAsString" );
@@ -152,7 +156,8 @@ public class TimeUnits extends BIF {
 			// @formatter:off
 			// prettier-ignore
 			Object result =
-				bifMethodKey.equals( bifMethods.month ) ? dateRef.getWrapped().getMonth().getValue()
+				bifMethodKey.equals( bifMethods.quarter ) ? dateRef.getWrapped().get( IsoFields.QUARTER_OF_YEAR )
+				: bifMethodKey.equals( bifMethods.month ) ? dateRef.getWrapped().getMonth().getValue()
 				: bifMethodKey.equals( bifMethods.monthAsString ) ? dateRef.clone().format( MONTH_LONG_FORMAT )
 				: bifMethodKey.equals( bifMethods.monthShortAsString ) ? dateRef.clone().format( MONTH_SHORT_FORMAT )
 				: bifMethodKey.equals( bifMethods.day ) ? dateRef.getWrapped().getDayOfMonth()
