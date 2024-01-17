@@ -1,0 +1,10 @@
+component{
+
+	function configure(){
+
+	}
+
+	function onScopeCreation( data ){
+		printLn( "New scope invoked with data: " + data.toString() )
+	}
+}
