@@ -52,7 +52,7 @@ public class Now extends BIF {
 		if ( timezone == null ) {
 			timezone = StringCaster.cast( context.getConfig().getOrDefault( Key.timezone, ZoneId.systemDefault().toString() ) );
 		}
-		return ( timezone.isEmpty() ) ? new DateTime() : new DateTime( ZoneId.of( timezone ) );
+		return new DateTime( ZoneId.of( timezone ) );
 	}
 
 }
