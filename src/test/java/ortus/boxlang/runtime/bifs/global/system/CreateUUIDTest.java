@@ -63,6 +63,6 @@ public class CreateUUIDTest {
 		    context );
 
 		String uuid = ( String ) variables.get( result );
-		assertThat( uuid.matches( "[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}" ) ).isEqualTo( true );
+		assertThat( uuid.matches( "[A-F0-9]{8}-[A-F0-9]{4}-[A-F0-9]{4}-[A-F0-9]{16}" ) ).isEqualTo( true );
 	}
 }

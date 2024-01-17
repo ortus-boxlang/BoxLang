@@ -40,7 +40,7 @@ public class CreateUUID extends BIF {
 	 * @return A UUID as a string.
 	 */
 	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
-		UUID uuid = UUID.randomUUID();
-		return uuid.toString();
+		String uuid = UUID.randomUUID().toString().toUpperCase();
+		return new StringBuilder( uuid.substring( 0, 23 ) ).append( uuid.substring( 24 ) ).toString();
 	}
 }
