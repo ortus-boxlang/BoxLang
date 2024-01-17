@@ -381,15 +381,15 @@ public class FunctionService extends BaseService {
 	 */
 	public void loadGlobalFunctions() throws IOException {
 		ClassDiscovery
-		    .findAnnotatedClasses( ( FUNCTIONS_PACKAGE + ".global" ).replace( '.', '/' ) )
+		    .findAnnotatedClasses(
+		        ( FUNCTIONS_PACKAGE + ".global" ).replace( '.', '/' ),
+		        BoxBIF.class, BoxMember.class
+		    )
 		    .parallel()
 		    // Filter to subclasses of BIF
-		    .filter( BIFClass -> BIF.class.isAssignableFrom( BIFClass ) )
+		    .filter( BIF.class::isAssignableFrom )
 		    // Process each class
-		    .forEach( BIFClass -> {
-			    // This method will handle the BIF and any member method annotations
-			    registerGlobalFunction( BIFClass, null, null );
-		    } );
+		    .forEach( targetClass -> registerGlobalFunction( targetClass, null, null ) );
 	}
 
 	/**

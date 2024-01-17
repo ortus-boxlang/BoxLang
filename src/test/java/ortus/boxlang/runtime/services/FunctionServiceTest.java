@@ -52,7 +52,6 @@ class FunctionServiceTest {
 	@DisplayName( "It can startup and register global functions" )
 	@Test
 	void testItCanStartup() {
-
 		assertThat( service.getGlobalFunctionCount() ).isGreaterThan( 0 );
 		assertThat( service.hasGlobalFunction( "print" ) ).isTrue();
 	}
