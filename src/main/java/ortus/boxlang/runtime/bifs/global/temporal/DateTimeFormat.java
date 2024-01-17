@@ -34,11 +34,8 @@ import ortus.boxlang.runtime.types.DateTime;
 @BoxMember( type = BoxLangType.DATETIME, name = "format" )
 public class DateTimeFormat extends BIF {
 
-	private static Key		FORMAT_EPOCH	= Key.of( "epoch" );
-	private static Key		FORMAT_EPOCHMS	= Key.of( "epochms" );
-	private static String	MODE_DATE		= "Date";
-	private static String	MODE_TIME		= "Time";
-	private static String	MODE_DATETIME	= "DateTime";
+	private final static Key	FORMAT_EPOCH	= Key.of( "epoch" );
+	private final static Key	FORMAT_EPOCHMS	= Key.of( "epochms" );
 
 	/**
 	 * Constructor
@@ -79,7 +76,11 @@ public class DateTimeFormat extends BIF {
 			}
 
 			Key		formatKey		= Key.of( format );
-			String	mode			= bifMethodKey.equals( Key.dateFormat ) ? MODE_DATE : bifMethodKey.equals( Key.timeFormat ) ? MODE_TIME : MODE_DATETIME;
+			String	mode			= bifMethodKey.equals( Key.dateFormat )
+			    ? DateTime.MODE_DATE
+			    : bifMethodKey.equals( Key.timeFormat )
+			        ? DateTime.MODE_TIME
+			        : DateTime.MODE_DATETIME;
 			// Create this key instance here so it doesn't get created twice on lookup and retrieval
 			Key		commonFormatKey	= Key.of( format + mode );
 			if ( formatKey.equals( FORMAT_EPOCH ) ) {
