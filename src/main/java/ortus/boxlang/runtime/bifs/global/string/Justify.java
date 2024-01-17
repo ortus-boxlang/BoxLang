@@ -24,14 +24,17 @@ import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.BoxLangType;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
-@BoxBIF
+@BoxBIF( alias = "LJustify" )
+@BoxBIF( alias = "RJustify" )
 @BoxMember( type = BoxLangType.STRING, name = "LJustify" )
-public class LJustify extends BIF {
+@BoxMember( type = BoxLangType.STRING, name = "RJustify" )
+
+public class Justify extends BIF {
 
 	/**
 	 * Constructor
 	 */
-	public LJustify() {
+	public Justify() {
 		super();
 		declaredArguments = new Argument[] {
 		    new Argument( true, "string", Key.string ),
@@ -40,18 +43,20 @@ public class LJustify extends BIF {
 	}
 
 	/**
-	 * Left justifies characters in a string of a specified length.
+	 * Justifies characters in a string of a specified length, either left or right.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.string The string to left-justify.
+	 * @argument.string The string to justify.
 	 *
 	 * @argument.length The specified length of the resulting string.
 	 */
 	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
-		String	input	= arguments.getAsString( Key.string );
-		int		length	= arguments.getAsInteger( Key.length );
+		Key		bifMethodKey	= arguments.getAsKey( __functionName );
+
+		String	input			= arguments.getAsString( Key.string );
+		int		length			= arguments.getAsInteger( Key.length );
 
 		// Check if the specified length is valid
 		if ( length <= 0 ) {
@@ -65,12 +70,24 @@ public class LJustify extends BIF {
 			// If the input string is longer or equal to the specified length, return the original string
 			return input;
 		} else {
+			StringBuilder justifiedString;
 			// Create a StringBuilder to build the justified string
-			StringBuilder justifiedString = new StringBuilder( input );
+			if ( bifMethodKey.equals( Key.lJustify ) ) {
+				justifiedString = new StringBuilder( input );
+			} else if ( bifMethodKey.equals( Key.rJustify ) ) {
+				justifiedString = new StringBuilder();
+			} else {
+				throw new BoxRuntimeException( "Invalid BIF method key" );
+			}
 
 			// Append spaces to left-justify the string
 			for ( int i = 0; i < paddingCount; i++ ) {
 				justifiedString.append( " " );
+			}
+
+			if ( bifMethodKey.equals( Key.rJustify ) ) {
+				// Append the input string to right-justify the string
+				justifiedString.append( input );
 			}
 
 			return justifiedString.toString();

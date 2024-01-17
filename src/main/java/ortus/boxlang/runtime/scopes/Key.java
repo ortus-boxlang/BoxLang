@@ -110,6 +110,7 @@ public class Key {
 	public static final Key	leaveIndex					= Key.of( "leaveIndex" );
 	public static final Key	length						= Key.of( "length" );
 	public static final Key	listInfo					= Key.of( "listInfo" );
+	public static final Key	lJustify					= Key.of( "lJustify" );
 	public static final Key	locale						= Key.of( "locale" );
 	public static final Key	localeSensitive				= Key.of( "localeSensitive" );
 	public static final Key	mappings					= Key.of( "mappings" );
@@ -145,6 +146,7 @@ public class Key {
 	public static final Key	recurse						= Key.of( "recurse" );
 	public static final Key	recursive					= Key.of( "recursive" );
 	public static final Key	replacements				= Key.of( "replacements" );
+	public static final Key	rJustify					= Key.of( "rJustify" );
 	public static final Key	runtime						= Key.of( "runtime" );
 	public static final Key	script_name					= Key.of( "script_name" );
 	public static final Key	second						= Key.of( "second" );
