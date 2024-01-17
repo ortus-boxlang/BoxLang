@@ -314,7 +314,7 @@ public class DynamicJavaInteropService {
 		classContext.pushTemplate( cfc );
 
 		// First, we load an super class
-		Object superClassObject = cfc.getAnnotations().get( Key._extends );
+		Object superClassObject = cfc.getAnnotations().get( Key._EXTENDS );
 		if ( superClassObject != null ) {
 			String superClassName = StringCaster.cast( superClassObject );
 			if ( superClassName != null && superClassName.length() > 0 ) {

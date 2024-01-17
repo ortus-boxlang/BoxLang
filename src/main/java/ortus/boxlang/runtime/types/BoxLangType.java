@@ -17,15 +17,46 @@
  */
 package ortus.boxlang.runtime.types;
 
+import ortus.boxlang.runtime.scopes.Key;
+
+/**
+ * This enum represents the types that are supported by BoxLang.
+ */
 public enum BoxLangType {
-	STRUCT,
-	ARRAY,
-	NUMERIC,
-	LIST,
-	DATE,
-	STRING,
-	QUERY,
-	BOOLEAN,
-	DATETIME,
-	FILE
+
+	ANY( Key._ANY ),
+	ARRAY( Key._ARRAY ),
+	BOOLEAN( Key._BOOLEAN ),
+	DATE( Key._DATE ),
+	DATETIME( Key._DATETIME ),
+	FILE( Key._FILE ),
+	LIST( Key._LIST ),
+	NUMERIC( Key._NUMERIC ),
+	QUERY( Key._QUERY ),
+	STRING( Key._STRING ),
+	STRUCT( Key._STRUCT );
+
+	/**
+	 * This class is used to store the key of the enum.
+	 */
+	private final Key key;
+
+	/**
+	 * Constructor
+	 *
+	 * @param value The Key value of the enum
+	 */
+	BoxLangType( Key value ) {
+		this.key = value;
+	}
+
+	/**
+	 * Returns the key of the enum.
+	 *
+	 * @return The key of the enum
+	 */
+	public Key getKey() {
+		return this.key;
+	}
+
 }
