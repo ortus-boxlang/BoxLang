@@ -40,13 +40,13 @@ public class ServerScope extends BaseScope {
 	 * These keys cannot be set once the scope is initialized
 	 */
 	private static final List<Key>	unmodifiableKeys	= List.of(
-	    Key.of( "coldfusion" ),
-	    Key.of( "os" ),
-	    Key.of( "lucee" ),
-	    Key.of( "separator" ),
-	    Key.of( "java" ),
-	    Key.of( "servlet" ),
-	    Key.of( "system" )
+	    Key.coldfusion,
+	    Key.java,
+	    Key.lucee,
+	    Key.os,
+	    Key.separator,
+	    Key.servlet,
+	    Key.system
 	);
 
 	/**
@@ -59,7 +59,7 @@ public class ServerScope extends BaseScope {
 	 * Public Properties
 	 * --------------------------------------------------------------------------
 	 */
-	public static final Key			name				= Key.of( "server" );
+	public static final Key			name				= Key.server;
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -84,7 +84,7 @@ public class ServerScope extends BaseScope {
 	@Override
 	public Object put( Key key, Object value ) {
 		if ( intialized && unmodifiableKeys.contains( key ) ) {
-			throw new BoxRuntimeException( "Cannot modify key " + key + " in server scope" );
+			throw new BoxRuntimeException( String.format( "Cannot modify key %s in server scope", key ) );
 		}
 		return super.put( key, value );
 	}
@@ -103,12 +103,12 @@ public class ServerScope extends BaseScope {
 	private void seedScope() {
 
 		// TODO: switch to immutable struct
-		put( Key.of( "coldfusion" ), Struct.of(
+		put( Key.coldfusion, Struct.of(
 		    // TODO: Compat?
 		) );
 
 		// TODO: switch to immutable struct
-		put( Key.of( "os" ), Struct.of(
+		put( Key.os, Struct.of(
 		    "additionalinformation", "",
 		    "arch", System.getProperty( "os.arch", "" ),
 		    "archModel", System.getProperty( "os.arch", "" ),
@@ -122,12 +122,12 @@ public class ServerScope extends BaseScope {
 		) );
 
 		// TODO: switch to immutable struct
-		put( Key.of( "lucee" ), Struct.of(
+		put( Key.lucee, Struct.of(
 		    // TODO: Compat?
 		) );
 
 		// TODO: switch to immutable struct
-		put( Key.of( "separator" ), Struct.of(
+		put( Key.separator, Struct.of(
 		    "path", System.getProperty( "path.separator", "" ),
 		    "file", System.getProperty( "file.separator", "" ),
 		    "line", System.getProperty( "line.separator", "" )
@@ -135,7 +135,7 @@ public class ServerScope extends BaseScope {
 
 		Runtime rt = Runtime.getRuntime();
 		// TODO: switch to immutable struct
-		put( Key.of( "java" ), Struct.of(
+		put( Key.java, Struct.of(
 		    "archModel", System.getProperty( "os.arch", "" ),
 		    "executionPath", System.getProperty( "user.dir", "" ),
 		    "freeMemory", rt.freeMemory(),
@@ -148,14 +148,14 @@ public class ServerScope extends BaseScope {
 
 		// TODO: Move this to web module later
 		// TODO: switch to immutable struct
-		put( Key.of( "servlet" ), Struct.of(
+		put( Key.servlet, Struct.of(
 		    "name", ""
 		) );
 
 		IStruct	env		= new Struct( ( Map ) System.getenv() );
 		IStruct	props	= new Struct( ( Map ) System.getProperties() );
 
-		put( Key.of( "system" ), Struct.of(
+		put( Key.system, Struct.of(
 		    // TODO: create wrapper struct that gives live view of env vars, not just a copy
 		    "environment", env,
 		    // TODO: create wrapper struct that gives live view of system properties, not just a copy

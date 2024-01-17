@@ -69,6 +69,7 @@ public class Key {
 	public static final Key	charsetOrBufferSize			= Key.of( "charsetOrBufferSize" );
 	public static final Key	classGenerationDirectory	= Key.of( "classGenerationDirectory" );
 	public static final Key	className					= Key.of( "className" );
+	public static final Key	coldfusion					= Key.of( "coldfusion" );
 	public static final Key	columnList					= Key.of( "columnList" );
 	public static final Key	compiler					= Key.of( "compiler" );
 	public static final Key	contains					= Key.of( "contains" );
@@ -106,6 +107,7 @@ public class Key {
 	public static final Key	initialValue				= Key.of( "initialValue" );
 	public static final Key	initMethod					= Key.of( "initMethod" );
 	public static final Key	input						= Key.of( "input" );
+	public static final Key	java						= Key.of( "java" );
 	public static final Key	key							= Key.of( "key" );
 	public static final Key	leaveIndex					= Key.of( "leaveIndex" );
 	public static final Key	length						= Key.of( "length" );
@@ -113,6 +115,7 @@ public class Key {
 	public static final Key	lJustify					= Key.of( "lJustify" );
 	public static final Key	locale						= Key.of( "locale" );
 	public static final Key	localeSensitive				= Key.of( "localeSensitive" );
+	public static final Key	lucee						= Key.of( "lucee" );
 	public static final Key	mappings					= Key.of( "mappings" );
 	public static final Key	mask						= Key.of( "mask" );
 	public static final Key	maxThreads					= Key.of( "maxThreads" );
@@ -131,6 +134,7 @@ public class Key {
 	public static final Key	number1						= Key.of( "number1" );
 	public static final Key	number2						= Key.of( "number2" );
 	public static final Key	numIterations				= Key.of( "numIterations" );
+	public static final Key	os							= Key.of( "os" );
 	public static final Key	object						= Key.of( "object" );
 	public static final Key	oldPath						= Key.of( "oldPath" );
 	public static final Key	onMissingMethod				= Key.of( "onMissingMethod" );
@@ -151,6 +155,9 @@ public class Key {
 	public static final Key	script_name					= Key.of( "script_name" );
 	public static final Key	second						= Key.of( "second" );
 	public static final Key	seekable					= Key.of( "seekable" );
+	public static final Key	separator					= Key.of( "separator" );
+	public static final Key	server						= Key.of( "server" );
+	public static final Key	servlet						= Key.of( "servlet" );
 	public static final Key	size						= Key.of( "size" );
 	public static final Key	sort						= Key.of( "sort" );
 	public static final Key	sortOrder					= Key.of( "sortOrder" );
@@ -162,6 +169,7 @@ public class Key {
 	public static final Key	string1						= Key.of( "string1" );
 	public static final Key	string2						= Key.of( "string2" );
 	public static final Key	structure					= Key.of( "structure" );
+	public static final Key	system						= Key.of( "system" );
 	public static final Key	timeFormat					= Key.of( "timeFormat" );
 	public static final Key	timezone					= Key.of( "timezone" );
 	public static final Key	type						= Key.of( "type" );
