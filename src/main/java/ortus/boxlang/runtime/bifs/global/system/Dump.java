@@ -74,16 +74,16 @@ public class Dump extends BIF {
 	 */
 	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
 		String		templateBasePath	= "/dump/html/";
-		Object		var					= arguments.get( Key.var );
+		Object		target				= arguments.get( Key.var );
 		InputStream	dumpTemplate		= null;
 		String		name				= "Class.cfs";
-		if ( var instanceof IType ) {
-			name = var.getClass().getSimpleName() + ".cfs";
-		} else if ( var instanceof String ) {
+		if ( target instanceof IType ) {
+			name = target.getClass().getSimpleName() + ".cfs";
+		} else if ( target instanceof String ) {
 			name = "String.cfs";
-		} else if ( var instanceof Number ) {
+		} else if ( target instanceof Number ) {
 			name = "Number.cfs";
-		} else if ( var instanceof Boolean ) {
+		} else if ( target instanceof Boolean ) {
 			name = "Boolean.cfs";
 		}
 		URL		url					= this.getClass().getResource( "" );
@@ -101,6 +101,7 @@ public class Dump extends BIF {
 				}
 			}
 		}
+
 		if ( dumpTemplate == null ) {
 			dumpTemplatePath = templateBasePath + "Class.cfs";
 			if ( runningFromJar ) {
@@ -115,17 +116,19 @@ public class Dump extends BIF {
 				}
 			}
 		}
+
 		if ( dumpTemplate == null ) {
 			throw new BoxRuntimeException( "Could not load dump template: " + dumpTemplatePath );
 		}
+
 		// Just using this so I can have my own variables scope to use.
 		IBoxContext dumpContext = new ContainerBoxContext( context );
-		dumpContext.getScopeNearby( VariablesScope.name ).put( Key.var, var );
-		Scanner	s				= new Scanner( dumpTemplate ).useDelimiter( "\\A" );
-		String	fileContents	= s.hasNext() ? s.next() : "";
-		s.close();
-		runtime.executeSource( fileContents, dumpContext );
-		dumpContext.flushBuffer( false );
+		dumpContext.getScopeNearby( VariablesScope.name ).put( Key.var, target );
+		try ( Scanner s = new Scanner( dumpTemplate ).useDelimiter( "\\A" ) ) {
+			String fileContents = s.hasNext() ? s.next() : "";
+			runtime.executeSource( fileContents, dumpContext );
+			dumpContext.flushBuffer( false );
+		}
 
 		return null;
 	}
