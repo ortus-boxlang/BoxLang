@@ -31,7 +31,9 @@ import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BIFDescriptor;
 import ortus.boxlang.runtime.bifs.BIFNamespace;
 import ortus.boxlang.runtime.bifs.BoxBIF;
+import ortus.boxlang.runtime.bifs.BoxBIFs;
 import ortus.boxlang.runtime.bifs.BoxMember;
+import ortus.boxlang.runtime.bifs.BoxMembers;
 import ortus.boxlang.runtime.bifs.MemberDescriptor;
 import ortus.boxlang.runtime.dynamic.casters.CastAttempt;
 import ortus.boxlang.runtime.dynamic.casters.GenericCaster;
@@ -311,9 +313,10 @@ public class FunctionService extends BaseService {
 		}
 
 		// We'll re-use this same BIFDescriptor for each annotation to ensure there's onlky ever one actual BIF instance.
-		String			className			= BIFClass.getSimpleName();
-		BIFDescriptor	descriptor			= new BIFDescriptor(
-		    Key.of( className ),
+		String			className		= BIFClass.getSimpleName();
+		Key				classNameKey	= Key.of( className );
+		BIFDescriptor	descriptor		= new BIFDescriptor(
+		    classNameKey,
 		    BIFClass,
 		    module,
 		    null,
@@ -322,18 +325,18 @@ public class FunctionService extends BaseService {
 		);
 
 		// Register BIF with default name or alias
-		BoxBIF[]		BoxBIFAnnotations	= BIFClass.getAnnotationsByType( BoxBIF.class );
-		for ( BoxBIF bif : BoxBIFAnnotations ) {
+		BoxBIF[]		bifAnnotations	= BIFClass.getAnnotationsByType( BoxBIF.class );
+		for ( BoxBIF bif : bifAnnotations ) {
 			globalFunctions.put(
 			    // Use the annotation's alias, if present, if not, the name of the class.
-			    bif.alias().equals( "" ) ? Key.of( className ) : Key.of( bif.alias() ),
+			    bif.alias().equals( "" ) ? classNameKey : Key.of( bif.alias() ),
 			    descriptor
 			);
 		}
 
 		// Register member methods
-		BoxMember[] BoxMemberAnnotations = BIFClass.getAnnotationsByType( BoxMember.class );
-		for ( BoxMember member : BoxMemberAnnotations ) {
+		BoxMember[] boxMemberAnnotations = BIFClass.getAnnotationsByType( BoxMember.class );
+		for ( BoxMember member : boxMemberAnnotations ) {
 			Key memberKey;
 			if ( member.name().equals( "" ) ) {
 				// Default member name for class ArrayFoo with BoxType of Array is just foo()
@@ -383,7 +386,7 @@ public class FunctionService extends BaseService {
 		ClassDiscovery
 		    .findAnnotatedClasses(
 		        ( FUNCTIONS_PACKAGE + ".global" ).replace( '.', '/' ),
-		        BoxBIF.class, BoxMember.class
+		        BoxBIF.class, BoxBIFs.class, BoxMember.class, BoxMembers.class
 		    )
 		    .parallel()
 		    // Filter to subclasses of BIF

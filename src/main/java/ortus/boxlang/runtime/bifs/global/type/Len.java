@@ -55,10 +55,10 @@ public class Len extends BIF {
 
 	/**
 	 * Returns the absolute value of a number
-	 * 
+	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
-	 * 
+	 *
 	 * @argument.value The number to return the absolute value of
 	 */
 	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
