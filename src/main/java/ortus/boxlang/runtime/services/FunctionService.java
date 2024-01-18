@@ -19,9 +19,7 @@ package ortus.boxlang.runtime.services;
 
 import java.io.IOException;
 import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -55,6 +53,9 @@ public class FunctionService extends BaseService {
 	 * --------------------------------------------------------------------------
 	 */
 
+	/**
+	 * The location of the core bifs
+	 */
 	private static final String								FUNCTIONS_PACKAGE	= "ortus.boxlang.runtime.bifs";
 
 	/**
@@ -65,17 +66,23 @@ public class FunctionService extends BaseService {
 	/**
 	 * The set of global functions registered with the service
 	 */
-	private Map<Key, BIFDescriptor>							globalFunctions		= new ConcurrentHashMap<Key, BIFDescriptor>();
+	private Map<Key, BIFDescriptor>							globalFunctions		= new ConcurrentHashMap<>();
 
 	/**
 	 * The set of namespaced functions registered with the service
 	 */
-	private Map<Key, BIFNamespace>							namespaces			= new ConcurrentHashMap<Key, BIFNamespace>();
+	private Map<Key, BIFNamespace>							namespaces			= new ConcurrentHashMap<>();
 
 	/**
-	 * The set of registered member methods
+	 * Represents the set of registered member methods.
+	 * The key is the name of the method, and the value is a map
+	 * where each entry consists of a BoxLangType and its corresponding MemberDescriptor.
+	 *
+	 * (@code
+	 * { "foo" : { BoxLangType.ARRAY : MemberDescriptor, BoxLangType.STRING : MemberDescriptor } }
+	 * )
 	 */
-	private Map<Key, Map<BoxLangType, MemberDescriptor>>	memberMethods		= new ConcurrentHashMap<Key, Map<BoxLangType, MemberDescriptor>>();
+	private Map<Key, Map<BoxLangType, MemberDescriptor>>	memberMethods		= new ConcurrentHashMap<>();
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -91,7 +98,7 @@ public class FunctionService extends BaseService {
 	public FunctionService( BoxRuntime runtime ) {
 		super( runtime );
 
-		// Load global functions
+		// Load global functions immediately
 		try {
 			loadGlobalFunctions();
 		} catch ( IOException e ) {
@@ -149,8 +156,12 @@ public class FunctionService extends BaseService {
 	 *
 	 * @return A set of global function names
 	 */
-	public Set<String> getGlobalFunctionNames() {
-		return this.globalFunctions.keySet().stream().map( Key::getName ).collect( Collectors.toSet() );
+	public String[] getGlobalFunctionNames() {
+		return this.globalFunctions.keySet()
+		    .stream()
+		    .sorted()
+		    .map( Key::getName )
+		    .toArray( String[]::new );
 	}
 
 	/**

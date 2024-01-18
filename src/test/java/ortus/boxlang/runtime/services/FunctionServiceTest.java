@@ -56,6 +56,13 @@ class FunctionServiceTest {
 		assertThat( service.hasGlobalFunction( "print" ) ).isTrue();
 	}
 
+	@DisplayName( "It can get all global function names" )
+	@Test
+	void testItCanGetAllGlobalFunctionNames() {
+		assertThat( service.getGlobalFunctionNames() ).isNotEmpty();
+		assertThat( service.getGlobalFunctionNames() ).asList().contains( "Print" );
+	}
+
 	@DisplayName( "It can invoke a global function" )
 	@Test
 	void testItCanInvokeAGlobalFunction() {
