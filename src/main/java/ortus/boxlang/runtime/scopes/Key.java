@@ -174,6 +174,7 @@ public class Key implements Comparable<Key> {
 	public static final Key	string1						= Key.of( "string1" );
 	public static final Key	string2						= Key.of( "string2" );
 	public static final Key	structure					= Key.of( "structure" );
+	public static final Key	substring					= Key.of( "substring" );
 	public static final Key	system						= Key.of( "system" );
 	public static final Key	timeFormat					= Key.of( "timeFormat" );
 	public static final Key	timezone					= Key.of( "timezone" );
