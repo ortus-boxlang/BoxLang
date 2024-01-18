@@ -39,7 +39,6 @@ import ortus.boxlang.runtime.loader.util.ClassDiscovery;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.BoxLangType;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
-import ortus.boxlang.runtime.types.exceptions.KeyNotFoundException;
 
 /**
  * The {@code FunctionService} is in charge of managing the runtime's built-in functions.
@@ -191,9 +190,7 @@ public class FunctionService extends BaseService {
 	 *
 	 * @param name The name of the global function
 	 *
-	 * @return The global function with the given name
-	 *
-	 * @throws KeyNotFoundException If the global function does not exist
+	 * @return The global function with the given name or null if none exists
 	 */
 	public BIFDescriptor getGlobalFunction( String name ) {
 		return getGlobalFunction( Key.of( name ) );
@@ -204,68 +201,65 @@ public class FunctionService extends BaseService {
 	 *
 	 * @param name The name of the global function
 	 *
-	 * @return The global function with the given name
-	 *
-	 * @throws KeyNotFoundException If the global function does not exist
+	 * @return The global function with the given name or null if none exists
 	 */
 	public BIFDescriptor getGlobalFunction( Key name ) {
-		BIFDescriptor target = this.globalFunctions.get( name );
-		if ( target == null ) {
-			throw new KeyNotFoundException(
-			    String.format(
-			        "The global function [%s] does not exist.",
-			        name
-			    ) );
-		}
-		return target;
+		return this.globalFunctions.get( name );
 	}
 
+	/**
+	 * --------------------------------------------------------------------------
+	 * Member Methods
+	 * --------------------------------------------------------------------------
+	 */
+
+	/**
+	 * Returns the member method with the given name and type by verifying if the passed object can be cast to that type
+	 *
+	 * @param name   The name of the member method
+	 * @param object An object to cast to the type of the member method
+	 *
+	 * @return The member method with the given name and type or null if none exists
+	 */
 	public MemberDescriptor getMemberMethod( Key name, Object object ) {
 		// For obj.method() we first look for a registered member method of this name
-		Map<BoxLangType, MemberDescriptor> memberMethods = this.memberMethods.get( name );
-		if ( memberMethods != null ) {
-			// Then we see if our object is castable to any of the possible types for that method
-			for ( BoxLangType type : memberMethods.keySet() ) {
-				CastAttempt<?> castAttempt = GenericCaster.attempt( object, type );
+		Map<BoxLangType, MemberDescriptor> targetMethodMap = this.memberMethods.get( name );
+		if ( targetMethodMap != null ) {
+			// Then we see if our object is castable to any of the possible types for that method registered
+			// Breaks on first successful cast
+			for ( Map.Entry<BoxLangType, MemberDescriptor> entry : targetMethodMap.entrySet() ) {
+				CastAttempt<?> castAttempt = GenericCaster.attempt( object, entry.getKey() );
 				if ( castAttempt.wasSuccessful() ) {
-					return memberMethods.get( type );
+					return entry.getValue();
 				}
 			}
 		}
 		return null;
 	}
 
+	/**
+	 * Returns the member method with the given name and BoxLangType
+	 *
+	 * @param name The name of the member method
+	 * @param type The BoxLangType of the member method requested
+	 *
+	 * @return The member method with the given name and BoxLangType or null if none exists
+	 */
 	public MemberDescriptor getMemberMethod( Key name, BoxLangType type ) {
 		// For obj.method() we first look for a registered member method of this name
-		Map<BoxLangType, MemberDescriptor> memberMethods = this.memberMethods.get( name );
-		if ( memberMethods != null ) {
-			// Then we see if this type is applicable
-			return memberMethods.get( type );
+		Map<BoxLangType, MemberDescriptor> targetMethodMap = this.memberMethods.get( name );
+		if ( targetMethodMap != null ) {
+			// Then we see if this type is applicable, else returns null for the BoxLangType
+			return targetMethodMap.get( type );
 		}
 		return null;
 	}
 
 	/**
-	 * Gets the global function descriptor for the given name
-	 *
-	 * @param name The name of the global function
-	 *
-	 * @return The BIFDescriptor for the global function
+	 * --------------------------------------------------------------------------
+	 * Registration Methods
+	 * --------------------------------------------------------------------------
 	 */
-	public BIFDescriptor getGlobalBIFDescriptor( String name ) {
-		return getGlobalBIFDescriptor( Key.of( name ) );
-	}
-
-	/**
-	 * Gets the global function descriptor for the given key
-	 *
-	 * @param name The key of the global function
-	 *
-	 * @return The BIFDescriptor for the global function
-	 */
-	public BIFDescriptor getGlobalBIFDescriptor( Key name ) {
-		return this.globalFunctions.get( name );
-	}
 
 	/**
 	 * Registers a global function with the service
@@ -386,6 +380,12 @@ public class FunctionService extends BaseService {
 	public void unregisterGlobalFunction( Key name ) {
 		this.globalFunctions.remove( name );
 	}
+
+	/**
+	 * --------------------------------------------------------------------------
+	 * Global Loading
+	 * --------------------------------------------------------------------------
+	 */
 
 	/**
 	 * This method loads all of the global functions into the service by scanning the

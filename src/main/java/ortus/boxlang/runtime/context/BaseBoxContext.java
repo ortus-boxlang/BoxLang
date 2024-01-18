@@ -65,9 +65,20 @@ public class BaseBoxContext implements IBoxContext {
 	 */
 	protected ArrayDeque<ITemplateRunnable>	templates	= new ArrayDeque<>();
 
-	protected LinkedHashMap<Query, Integer>	queryLoops	= new LinkedHashMap<Query, Integer>();
+	/**
+	 * A way to track query loops
+	 */
+	protected LinkedHashMap<Query, Integer>	queryLoops	= new LinkedHashMap<>();
 
-	protected StringBuffer					buffer		= new StringBuffer();
+	/**
+	 * A buffer to write output to
+	 */
+	protected StringBuilder					buffer		= new StringBuilder();
+
+	/**
+	 * The function service we can use to retrieve BIFS and member methods
+	 */
+	private final FunctionService			functionService;
 
 	/**
 	 * Creates a new execution context with a bounded execution template and parent context
@@ -75,7 +86,8 @@ public class BaseBoxContext implements IBoxContext {
 	 * @param parent The parent context
 	 */
 	public BaseBoxContext( IBoxContext parent ) {
-		this.parent = parent;
+		this.parent				= parent;
+		this.functionService	= BoxRuntime.getInstance().getFunctionService();
 	}
 
 	/**
@@ -277,12 +289,15 @@ public class BaseBoxContext implements IBoxContext {
 		return invokeFunction( func, func.getName(), func.createArgumentsScope( positionalArguments ) );
 	}
 
+	/**
+	 * Find out if the given function name is a BIF in the Function Service
+	 *
+	 * @param name The name of the function to find
+	 *
+	 * @return The BIFDescriptor if found, else null
+	 */
 	private BIFDescriptor findBIF( Key name ) {
-		FunctionService functionService = BoxRuntime.getInstance().getFunctionService();
-		if ( functionService.hasGlobalFunction( name ) ) {
-			return functionService.getGlobalFunction( name );
-		}
-		return null;
+		return this.functionService.getGlobalFunction( name );
 	}
 
 	/**
@@ -598,10 +613,10 @@ public class BaseBoxContext implements IBoxContext {
 	/**
 	 * Get the buffer
 	 *
-	 * @return
+	 * @return The buffer
 	 */
-	public StringBuffer getBuffer() {
-		return buffer;
+	public StringBuilder getBuffer() {
+		return this.buffer;
 	}
 
 	/**
