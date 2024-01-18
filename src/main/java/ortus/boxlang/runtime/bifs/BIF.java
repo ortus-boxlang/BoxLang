@@ -22,7 +22,9 @@ import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.services.FunctionService;
+import ortus.boxlang.runtime.services.InterceptorService;
 import ortus.boxlang.runtime.types.Argument;
+import ortus.boxlang.runtime.types.IStruct;
 
 /**
  * Base class for all BIFs. BIFs are invoked by the runtime when a function is called.
@@ -33,18 +35,28 @@ public abstract class BIF {
 	 * Used to indicate that the BIF is being invoked as a member function
 	 * and it will replace the first argument with the object on which it is being invoked
 	 */
-	public static final Key		__isMemberExecution	= new Key( "__isMemberExecution" );
-	public static final Key		__functionName		= new Key( "__functionName" );
+	public static final Key			__isMemberExecution	= Key.__isMemberExecution;
+	public static final Key			__functionName		= Key.__functionName;
 
 	/**
 	 * BIF Arguments
 	 */
-	protected Argument[]		declaredArguments	= new Argument[] {};
+	protected Argument[]			declaredArguments	= new Argument[] {};
+
+	/**
+	 * The runtime instance
+	 */
+	protected BoxRuntime			runtime				= BoxRuntime.getInstance();
 
 	/**
 	 * The function service helper
 	 */
-	protected FunctionService	functionService		= BoxRuntime.getInstance().getFunctionService();
+	protected FunctionService		functionService		= BoxRuntime.getInstance().getFunctionService();
+
+	/**
+	 * The interceptor service helper
+	 */
+	protected InterceptorService	interceptorService	= BoxRuntime.getInstance().getInterceptorService();
 
 	/**
 	 * Invoke the BIF with the given arguments
@@ -63,6 +75,16 @@ public abstract class BIF {
 	 */
 	public Argument[] getDeclaredArguments() {
 		return declaredArguments;
+	}
+
+	/**
+	 * Announce an event with the provided {@link IStruct} of data.
+	 *
+	 * @param state The state key to announce
+	 * @param data  The data to announce
+	 */
+	public void announce( Key state, IStruct data ) {
+		interceptorService.announce( state, data );
 	}
 
 }

@@ -38,6 +38,8 @@ public class Key implements Comparable<Key> {
 	public static final Key	_10							= Key.of( 10 );
 
 	// Reserved Words Dictionary
+	public static final Key	__isMemberExecution			= Key.of( "__isMemberExecution" );
+	public static final Key	__functionName				= Key.of( "__functionName" );
 	public static final Key	_ANY						= Key.of( "any" );
 	public static final Key	_ARRAY						= Key.of( "array" );
 	public static final Key	_BOOLEAN					= Key.of( "boolean" );
