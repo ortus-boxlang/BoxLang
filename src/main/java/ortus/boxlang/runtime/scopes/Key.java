@@ -89,6 +89,8 @@ public class Key implements Comparable<Key> {
 	public static final Key	defaultValue				= Key.of( "defaultValue" );
 	public static final Key	delimiter					= Key.of( "delimiter" );
 	public static final Key	destination					= Key.of( "destination" );
+	public static final Key	doAll						= Key.of( "doAll" );
+	public static final Key	doLowerIfAllUppercase		= Key.of( "doLowerIfAllUppercase" );
 	public static final Key	dimensions					= Key.of( "dimensions" );
 	public static final Key	directory					= Key.of( "directory" );
 	public static final Key	elementCountForRemoval		= Key.of( "elementCountForRemoval" );
