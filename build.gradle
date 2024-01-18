@@ -84,9 +84,9 @@ dependencies {
 	// https://mvnrepository.com/artifact/com.github.ben-manes.caffeine/caffeine
 	implementation 'com.github.ben-manes.caffeine:caffeine:3.1.8'
 	// https://mvnrepository.com/artifact/org.slf4j/slf4j-api
-	implementation 'org.slf4j:slf4j-api:2.0.7'
+	implementation 'org.slf4j:slf4j-api:2.0.11'
 	// https://mvnrepository.com/artifact/org.slf4j/slf4j-jdk14
-	implementation 'org.slf4j:slf4j-jdk14:2.0.7'
+	implementation 'org.slf4j:slf4j-jdk14:2.0.11'
 
 	// MOVE TO BOXLANG WEB PROJECT
 	// https://mvnrepository.com/artifact/io.undertow/undertow-core/2.3.10.Final
