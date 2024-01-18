@@ -18,15 +18,20 @@
 package ortus.boxlang.runtime.services;
 
 import static com.google.common.truth.Truth.assertThat;
-import static org.junit.Assert.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+
+import java.nio.file.Path;
+import java.nio.file.Paths;
 
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import ortus.boxlang.runtime.BoxRuntime;
+import ortus.boxlang.runtime.loader.util.ClassDiscovery;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
 class ModuleServiceTest {
@@ -63,40 +68,40 @@ class ModuleServiceTest {
 		assertDoesNotThrow( () -> service.onShutdown() );
 	}
 
-	@DisplayName( "Test it can add an absolute path to the module search path" )
-	@Test
-	void testItCanAddAbsolutePathToModuleSearchPath() {
-		String path = "/tmp";
-		assertDoesNotThrow( () -> service.addModulePath( path ) );
-		assertThat( service.getModulePaths() ).contains( path );
-	}
+	@Nested
+	class modulePathTests {
 
-	@DisplayName( "Test it can add a package path to the module search path" )
-	@Test
-	void testItCanAddPackagePathToModuleSearchPath() {
-		String path = "ortus.boxlang.runtime.modules.core";
-		assertDoesNotThrow( () -> service.addModulePath( path ) );
-		assertThat( service.getModulePaths() ).contains( path );
-	}
+		@DisplayName( "Test it can add an absolute path to the module search path" )
+		@Test
+		void testItCanAddAbsolutePathToModuleSearchPath() {
+			String path = "/tmp";
+			assertDoesNotThrow( () -> service.addModulePath( path ) );
+			assertThat( service.getModulePaths() ).contains( Paths.get( path ) );
+		}
 
-	@DisplayName( "Test it can ignore a null or empty path when adding to the module search path" )
-	@Test
-	void testItCanIgnoreNullPathWhenAddingToModuleSearchPath() {
-		var count = service.getModulePaths().size();
+		@DisplayName( "Test it can add a package path to the module search path" )
+		@Test
+		void testItCanAddPackagePathToModuleSearchPath() {
+			Path targetPath = ClassDiscovery.getPathFromResource( "modules" );;
+			assertDoesNotThrow( () -> service.addModulePath( targetPath ) );
+			assertThat( service.getModulePaths() ).contains( targetPath );
+		}
 
-		assertDoesNotThrow( () -> service.addModulePath( null ) );
-		assertThat( service.getModulePaths().size() ).isEqualTo( count );
+		@DisplayName( "Test it can ignore a null or empty path when adding to the module search path" )
+		@Test
+		void testItCanIgnoreNullPathWhenAddingToModuleSearchPath() {
+			var count = service.getModulePaths().size();
+			assertDoesNotThrow( () -> service.addModulePath( "" ) );
+			assertThat( service.getModulePaths().size() ).isEqualTo( count );
+		}
 
-		assertDoesNotThrow( () -> service.addModulePath( "" ) );
-		assertThat( service.getModulePaths().size() ).isEqualTo( count );
-	}
-
-	@DisplayName( "Test it can throw an exception when adding a non-existent path to the module search path" )
-	@Test
-	void testItCanThrowExceptionWhenAddingNonExistentPathToModuleSearchPath() {
-		String path = "/tmp/does-not-exist";
-		assertThrows( BoxRuntimeException.class, () -> service.addModulePath( path ) );
-		assertThat( service.getModulePaths() ).doesNotContain( path );
+		@DisplayName( "Test it can throw an exception when adding a non-existent path to the module search path" )
+		@Test
+		void testItCanThrowExceptionWhenAddingNonExistentPathToModuleSearchPath() {
+			String path = "/tmp/does-not-exist";
+			assertThrows( BoxRuntimeException.class, () -> service.addModulePath( path ) );
+			assertThat( service.getModulePaths() ).doesNotContain( path );
+		}
 	}
 
 }

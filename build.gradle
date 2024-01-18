@@ -38,6 +38,7 @@ sourceSets {
             include '**/*.properties'
             include '**/*.json'
             include '**/*.cfs'
+			include '**/*.bx*'
             include '**/META-INF/services/*'
         }
     }

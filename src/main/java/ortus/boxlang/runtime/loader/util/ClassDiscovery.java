@@ -20,8 +20,11 @@ package ortus.boxlang.runtime.loader.util;
 import java.io.File;
 import java.io.IOException;
 import java.lang.annotation.Annotation;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLDecoder;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -33,6 +36,8 @@ import java.util.stream.Stream;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
 /**
  * The {@code ClassDiscovery} class is used to discover classes in a given package at runtime
@@ -150,6 +155,48 @@ public class ClassDiscovery {
 			logger.error( "Exception finding annotated classes in path [{}]", startDir, e );
 		}
 		return classes.stream();
+	}
+
+	/**
+	 * Get a file from the BoxLang jar resources as a {@code File} object
+	 *
+	 * @param resourceName The path to the resource. Example: {@code "ortus/boxlang/runtime/modules/core"}
+	 *
+	 * @return The file object for the resource
+	 *
+	 * @throws URISyntaxException If the resource URL cannot be converted to a URI
+	 */
+	public static File getFileFromResource( String resourceName ) {
+		return getPathFromResource( resourceName ).toFile();
+	}
+
+	/**
+	 * Get a file from the BoxLang jar resources as a {@code Path} object
+	 *
+	 * @param resourceName The path to the resource. Example: {@code "ortus/boxlang/runtime/modules/core"}
+	 *
+	 * @return The path object for the resource
+	 *
+	 * @throws URISyntaxException If the resource URL cannot be converted to a URI
+	 */
+	public static Path getPathFromResource( String resourceName ) {
+		// Get the URL of the resource
+		URL resourceUrl = ClassDiscovery.class.getClassLoader().getResource( resourceName );
+
+		// Check if the resource exists
+		if ( resourceUrl == null ) {
+			throw new BoxRuntimeException( "Resource not found: " + resourceName );
+		}
+
+		// Convert the URI to a File object
+		try {
+			return Paths.get( resourceUrl.toURI() );
+		} catch ( URISyntaxException e ) {
+			throw new BoxRuntimeException(
+			    String.format( "Cannot build an URI from the discovered resource %s", resourceUrl ),
+			    e
+			);
+		}
 	}
 
 	/**

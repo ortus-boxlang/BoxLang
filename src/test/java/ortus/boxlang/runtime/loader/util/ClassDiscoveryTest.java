@@ -18,14 +18,18 @@
 package ortus.boxlang.runtime.loader.util;
 
 import static com.google.common.truth.Truth.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.Arrays;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-public class ClassDiscoveryTest {
+import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
+
+class ClassDiscoveryTest {
 
 	@DisplayName( "It can get class files by package name" )
 	@Test
@@ -44,4 +48,39 @@ public class ClassDiscoveryTest {
 		assertThat( classes ).isNotEmpty();
 		assertThat( classes ).asList().contains( "ortus.boxlang.runtime.loader.util.ClassDiscovery" );
 	}
+
+	@DisplayName( "Test getFileFromResource returns a valid File object for a directory" )
+	@Test
+	void testGetDirectoryFromResource() {
+		// Given
+		String	resourceName	= "modules";
+		// When
+		File	file			= ClassDiscovery.getFileFromResource( resourceName );
+		// Then
+		assertThat( file ).isNotNull();
+		assertThat( file.exists() ).isTrue();
+		assertThat( file.isDirectory() ).isTrue();
+	}
+
+	@DisplayName( "Test getFileFromResource returns a valid File object for a file" )
+	@Test
+	void testGetFileFromResource() {
+		// Given
+		String	resourceName	= "ortus/boxlang/runtime/modules/ModuleRecord.class";
+		// When
+		File	file			= ClassDiscovery.getFileFromResource( resourceName );
+		// Then
+		assertThat( file ).isNotNull();
+		assertThat( file.exists() ).isTrue();
+		assertThat( file.isDirectory() ).isFalse();
+	}
+
+	@DisplayName( "Test getFileFromResource throws exception for non-existent resource" )
+	@Test
+	void testGetFileFromResourceThrowsException() {
+		// Given
+		String nonExistentResourceName = "nonexistent/resource";
+		assertThrows( BoxRuntimeException.class, () -> ClassDiscovery.getFileFromResource( nonExistentResourceName ) );
+	}
+
 }
