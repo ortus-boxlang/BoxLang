@@ -74,11 +74,6 @@ public abstract class BaseService {
 	public abstract void onStartup();
 
 	/**
-	 * The configuration load event is fired when the runtime loads its configuration
-	 */
-	public abstract void onConfigurationLoad();
-
-	/**
 	 * The shutdown event is fired when the runtime shuts down
 	 */
 	public abstract void onShutdown();

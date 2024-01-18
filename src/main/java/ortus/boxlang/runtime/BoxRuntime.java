@@ -244,7 +244,7 @@ public class BoxRuntime {
 		if ( this.debugMode ) {
 			this.interceptorService.register(
 			    DynamicObject.of( new ASTCapture( false, true ) ),
-			    Key.of( "onParse" )
+			    Key.onParse
 			);
 		}
 	}
@@ -432,9 +432,10 @@ public class BoxRuntime {
 		instance.interceptorService.announce( "onRuntimeShutdown", new Struct() );
 
 		// Shutdown the services
-		instance.asyncService.onShutdown();
+		instance.applicationService.onShutdown();
 		instance.cacheService.onShutdown();
 		instance.functionService.onShutdown();
+		instance.asyncService.onShutdown();
 		instance.interceptorService.onShutdown();
 
 		// Shutdown logging

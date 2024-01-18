@@ -68,14 +68,6 @@ public class CacheService extends BaseService {
 	}
 
 	/**
-	 * The configuration load event is fired when the runtime loads its configuration
-	 */
-	@Override
-	public void onConfigurationLoad() {
-		logger.info( "CacheService.onConfigurationLoad()" );
-	}
-
-	/**
 	 * The shutdown event is fired when the runtime shuts down
 	 */
 	@Override

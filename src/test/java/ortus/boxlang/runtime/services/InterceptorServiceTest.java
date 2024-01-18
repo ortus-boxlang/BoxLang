@@ -58,12 +58,6 @@ class InterceptorServiceTest {
 		assertDoesNotThrow( () -> service.onStartup() );
 	}
 
-	@DisplayName( "Test it can run the onConfigurationLoad service event" )
-	@Test
-	void testItCanRunOnConfigurationLoadEvent() {
-		assertDoesNotThrow( () -> service.onConfigurationLoad() );
-	}
-
 	@DisplayName( "Test it can run the onShutdown service event" )
 	@Test
 	void testItCanRunOnShutdownEvent() {

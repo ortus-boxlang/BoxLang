@@ -140,6 +140,7 @@ public class Key implements Comparable<Key> {
 	public static final Key	object						= Key.of( "object" );
 	public static final Key	oldPath						= Key.of( "oldPath" );
 	public static final Key	onMissingMethod				= Key.of( "onMissingMethod" );
+	public static final Key	onParse						= Key.of( "onParse" );
 	public static final Key	output						= Key.of( "output" );
 	public static final Key	parallel					= Key.of( "parallel" );
 	public static final Key	path						= Key.of( "path" );

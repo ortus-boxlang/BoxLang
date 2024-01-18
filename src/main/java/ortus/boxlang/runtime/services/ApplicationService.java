@@ -44,9 +44,9 @@ public class ApplicationService extends BaseService {
 
 	/**
 	 * Get an application by name, creating if neccessary
-	 * 
+	 *
 	 * @param name The name of the application
-	 * 
+	 *
 	 * @return The application
 	 */
 	public Application getApplication( Key name ) {
@@ -67,10 +67,6 @@ public class ApplicationService extends BaseService {
 
 	@Override
 	public void onStartup() {
-	}
-
-	@Override
-	public void onConfigurationLoad() {
 	}
 
 	@Override

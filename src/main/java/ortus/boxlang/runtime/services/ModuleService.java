@@ -21,6 +21,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import ortus.boxlang.runtime.BoxRuntime;
+import ortus.boxlang.runtime.scopes.Key;
 
 /**
  * This service is in charge of managing BoxLang modules
@@ -33,7 +34,7 @@ public class ModuleService extends BaseService {
 	 * --------------------------------------------------------------------------
 	 */
 
-	private static final String	CORE_MODULES	= "ortus.boxlang.runtime.modules";
+	private static final String	CORE_MODULES	= "ortus.boxlang.runtime.modules.core";
 
 	/**
 	 * Logger
@@ -72,19 +73,25 @@ public class ModuleService extends BaseService {
 	}
 
 	/**
-	 * The configuration load event is fired when the runtime loads its configuration
-	 */
-	@Override
-	public void onConfigurationLoad() {
-		logger.info( "ModuleService.onConfigurationLoad()" );
-	}
-
-	/**
 	 * The shutdown event is fired when the runtime shuts down
 	 */
 	@Override
 	public void onShutdown() {
 		logger.info( "ModuleService.onShutdown()" );
+	}
+
+	/**
+	 * --------------------------------------------------------------------------
+	 * Registrations
+	 * --------------------------------------------------------------------------
+	 */
+
+	void registerAllModules() {
+		// registerCoreModules();
+	}
+
+	void registerModule( Key name ) {
+		// if( !modules.containsKey( name ) ) {
 	}
 
 }
