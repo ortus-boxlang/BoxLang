@@ -22,7 +22,7 @@ import java.util.Arrays;
 /**
  * Represents a case-insenstive key, while retaining the original case too.
  */
-public class Key {
+public class Key implements Comparable<Key> {
 
 	// Static instances of common keys
 	public static final Key	_0							= Key.of( 0 );
@@ -428,6 +428,29 @@ public class Key {
 	@Override
 	public String toString() {
 		return String.format( "Key [name=%s, nameNoCase=%s]", name, nameNoCase );
+	}
+
+	/**
+	 * Compare keys in a case-insensitive manner.
+	 *
+	 * @param otherKey The key to compare to.
+	 *
+	 * @return A negative integer, zero, or a positive integer if this key is less than, equal to, or greater than the specified key.
+	 */
+	@Override
+	public int compareTo( Key otherKey ) {
+		return this.nameNoCase.compareTo( otherKey.nameNoCase );
+	}
+
+	/**
+	 * Compare keys in a case-sensitive manner.
+	 *
+	 * @param otherKey The key to compare to.
+	 *
+	 * @return A negative integer, zero, or a positive integer if this key is less than, equal to, or greater than the specified key.
+	 */
+	public int compareToWithCase( Key otherKey ) {
+		return this.name.compareTo( otherKey.name );
 	}
 
 }
