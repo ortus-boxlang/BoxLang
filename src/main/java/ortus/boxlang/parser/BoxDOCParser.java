@@ -75,6 +75,12 @@ public class BoxDOCParser {
 														}
 													};
 
+	public BoxDOCParser() {
+		this.startLine		= 0;
+		this.startColumn	= 0;
+		this.issues			= new ArrayList<>();
+	}
+
 	public BoxDOCParser( int startLine, int startColumn ) {
 		this.startLine		= startLine;
 		this.startColumn	= startColumn;
@@ -114,7 +120,7 @@ public class BoxDOCParser {
 		if ( parseTree.documentationContent().description() != null ) {
 			annotations.add( toAst( file, parseTree.documentationContent().description() ) );
 		}
-		return new BoxDocumentation( annotations, null, null );
+		return new BoxDocumentation( annotations, getPosition( parseTree ), null );
 	}
 
 	private BoxNode toAst( File file, DOCParser.DescriptionContext node ) {
@@ -127,7 +133,7 @@ public class BoxDOCParser {
 			}
 		} );
 		BoxStringLiteral value = new BoxStringLiteral( valueSB.toString(), null, null );
-		return new BoxDocumentationAnnotation( name, value, null, null );
+		return new BoxDocumentationAnnotation( name, value, getPosition( node ), null );
 	}
 
 	private BoxNode toAst( File file, DOCParser.BlockTagContext node ) {
@@ -140,7 +146,7 @@ public class BoxDOCParser {
 			}
 		} );
 		BoxStringLiteral value = new BoxStringLiteral( valueSB.toString(), null, null );
-		return new BoxDocumentationAnnotation( name, value, null, null );
+		return new BoxDocumentationAnnotation( name, value, getPosition( node ), null );
 	}
 
 	protected ParserRuleContext parserFirstStage( File file, InputStream stream ) throws IOException {
@@ -150,6 +156,22 @@ public class BoxDOCParser {
 		addErrorListeners( lexer, parser );
 
 		return parser.documentation();
+	}
+
+	public int getStartLine() {
+		return startLine;
+	}
+
+	public void setStartLine( int startLine ) {
+		this.startLine = startLine;
+	}
+
+	public int getStartColumn() {
+		return startColumn;
+	}
+
+	public void setStartColumn( int startColumn ) {
+		this.startColumn = startColumn;
 	}
 
 	/**
