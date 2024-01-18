@@ -33,6 +33,7 @@ import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 @BoxBIF // Len()
 @BoxBIF( alias = "StructCount" )
 @BoxBIF( alias = "ArrayLen" )
+@BoxBIF( alias = "StringLen" )
 @BoxMember( type = BoxLangType.STRUCT, name = "count" )
 @BoxMember( type = BoxLangType.STRUCT, name = "len" )
 @BoxMember( type = BoxLangType.ARRAY )
