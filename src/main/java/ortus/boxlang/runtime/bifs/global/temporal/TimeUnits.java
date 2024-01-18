@@ -152,7 +152,7 @@ public class TimeUnits extends BIF {
 			dateRef = dateRef.clone( ZoneId.of( arguments.getAsString( Key.timezone ) ) );
 		}
 
-		Key		bifMethodKey	= arguments.getAsKey( __functionName );
+		Key		bifMethodKey	= arguments.getAsKey( BIF.__functionName );
 		String	methodName		= null;
 		if ( bifMethods.memberMethods.containsKey( bifMethodKey ) ) {
 			methodName = ( String ) bifMethods.memberMethods.get( ( Object ) bifMethodKey );
@@ -184,7 +184,7 @@ public class TimeUnits extends BIF {
 				throw new BoxRuntimeException(
 				    String.format(
 				        "The method [%s] is not present in the [%s] object",
-				        arguments.getAsString( Key.of( __functionName ) ),
+				        arguments.getAsString( BIF.__functionName ),
 				        dateRef.getClass().getSimpleName()
 				    )
 				);

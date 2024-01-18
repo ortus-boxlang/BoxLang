@@ -79,7 +79,7 @@ public class Hash extends BIF {
 		Integer	iterations		= arguments.getAsInteger( Key.numIterations );
 		String	algorithm		= arguments.getAsString( Key.algorithm );
 
-		Key		bifMethodKey	= arguments.getAsKey( __functionName );
+		Key		bifMethodKey	= arguments.getAsKey( BIF.__functionName );
 		if ( bifMethodKey.equals( Key.hash40 ) ) {
 			algorithm = "SHA1";
 		}

@@ -64,7 +64,7 @@ public class FileInfo extends BIF {
 			filePath = Path.of( ( String ) file );
 		}
 
-		Key		bifMethodKey	= arguments.getAsKey( __functionName );
+		Key		bifMethodKey	= arguments.getAsKey( BIF.__functionName );
 		Boolean	verbose			= bifMethodKey.equals( Key.getFileInfo );
 
 		return FileSystemUtil.info( filePath, verbose );

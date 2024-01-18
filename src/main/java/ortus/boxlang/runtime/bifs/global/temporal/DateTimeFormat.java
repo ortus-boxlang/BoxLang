@@ -66,7 +66,7 @@ public class DateTimeFormat extends BIF {
 		}
 
 		DateTime	ref				= DateTimeCaster.cast( arguments.get( Key.date ), true, ZoneId.of( timezone ) );
-		Key			bifMethodKey	= arguments.getAsKey( __functionName );
+		Key			bifMethodKey	= arguments.getAsKey( BIF.__functionName );
 		String		format			= arguments.getAsString( Key.mask );
 
 		if ( format == null && bifMethodKey.equals( Key.dateFormat ) ) {

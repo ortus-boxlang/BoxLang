@@ -40,6 +40,8 @@ public class ModuleService extends BaseService {
 	 */
 	private static final Logger	logger			= LoggerFactory.getLogger( ModuleService.class );
 
+	// private Map<Key, ModuleRecord> modules = new ConcurrentHashMap<>();
+
 	/**
 	 * --------------------------------------------------------------------------
 	 * Constructor(s)

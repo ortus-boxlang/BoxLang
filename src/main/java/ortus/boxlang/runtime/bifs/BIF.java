@@ -36,6 +36,10 @@ public abstract class BIF {
 	 * and it will replace the first argument with the object on which it is being invoked
 	 */
 	public static final Key			__isMemberExecution	= Key.__isMemberExecution;
+
+	/**
+	 * Used to indicate what is the name of the function being invoked just like getCalledFunctionName() but internally
+	 */
 	public static final Key			__functionName		= Key.__functionName;
 
 	/**
