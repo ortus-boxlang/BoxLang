@@ -15,6 +15,7 @@
 
 package ortus.boxlang.runtime.bifs.global.temporal;
 
+import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 
 import ortus.boxlang.runtime.bifs.BIF;
@@ -22,6 +23,7 @@ import ortus.boxlang.runtime.bifs.BoxBIF;
 import ortus.boxlang.runtime.bifs.BoxMember;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.dynamic.casters.DateTimeCaster;
+import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
@@ -58,8 +60,12 @@ public class DateTimeFormat extends BIF {
 	 * @argument.foo Describe any expected arguments
 	 */
 	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
-		DateTime	ref				= DateTimeCaster.cast( arguments.get( Key.date ) );
+		String timezone = arguments.getAsString( Key.timezone );
+		if ( timezone == null ) {
+			timezone = StringCaster.cast( context.getConfigItem( Key.timezone, ZoneId.systemDefault().toString() ) );
+		}
 
+		DateTime	ref				= DateTimeCaster.cast( arguments.get( Key.date ), true, ZoneId.of( timezone ) );
 		Key			bifMethodKey	= arguments.getAsKey( __functionName );
 		String		format			= arguments.getAsString( Key.mask );
 
@@ -70,11 +76,6 @@ public class DateTimeFormat extends BIF {
 		} else if ( format == null ) {
 			return ref.format( DateTime.DEFAULT_DATETIME_FORMAT_MASK );
 		} else {
-			String timezone = arguments.getAsString( Key.timezone );
-			if ( timezone != null ) {
-				ref.setTimezone( timezone );
-			}
-
 			Key		formatKey		= Key.of( format );
 			String	mode			= bifMethodKey.equals( Key.dateFormat )
 			    ? DateTime.MODE_DATE

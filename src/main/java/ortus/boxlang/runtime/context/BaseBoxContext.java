@@ -188,7 +188,7 @@ public class BaseBoxContext implements IBoxContext {
 
 	/**
 	 * Sets the parent box context.
-	 * 
+	 *
 	 * @param parentContext The parent context to set
 	 *
 	 * @return This context
@@ -201,9 +201,9 @@ public class BaseBoxContext implements IBoxContext {
 	/**
 	 * Inject a parent context, moving the current parent to the grandparent
 	 * Any existing parent in the passed context will be overwritten with the current parent
-	 * 
+	 *
 	 * @param parentContext The parent context to inject
-	 * 
+	 *
 	 * @return This context
 	 */
 	public IBoxContext injectParentContext( IBoxContext parentContext ) {
@@ -501,9 +501,9 @@ public class BaseBoxContext implements IBoxContext {
 	/**
 	 * If input is a QueryColumn, unwrap it to the underlying value
 	 * If input is not a QueryColumn, return it as-is
-	 * 
+	 *
 	 * @param value The value to unwrap
-	 * 
+	 *
 	 * @return The unwrapped value
 	 */
 	public Object unwrapQueryColumn( Object value ) {
@@ -515,9 +515,9 @@ public class BaseBoxContext implements IBoxContext {
 
 	/**
 	 * Get the current query row
-	 * 
+	 *
 	 * @param query The query to get the row from
-	 * 
+	 *
 	 * @return The current row
 	 */
 	public int getQueryRow( Query query ) {
@@ -531,7 +531,7 @@ public class BaseBoxContext implements IBoxContext {
 
 	/**
 	 * Register a query loop
-	 * 
+	 *
 	 * @param query The query to register
 	 */
 	public void registerQueryLoop( Query query ) {
@@ -540,7 +540,7 @@ public class BaseBoxContext implements IBoxContext {
 
 	/**
 	 * Unregister a query loop
-	 * 
+	 *
 	 * @param query The query to unregister
 	 */
 	public void unregisterQueryLoop( Query query ) {
@@ -549,7 +549,7 @@ public class BaseBoxContext implements IBoxContext {
 
 	/**
 	 * Increment the query loop
-	 * 
+	 *
 	 * @param query The query to increment
 	 */
 	public void incrementQueryLoop( Query query ) {
@@ -558,9 +558,9 @@ public class BaseBoxContext implements IBoxContext {
 
 	/**
 	 * Write output to this buffer. Any input object will be converted to a string
-	 * 
+	 *
 	 * @param o The object to write
-	 * 
+	 *
 	 * @return This context
 	 */
 	public IBoxContext writeToBuffer( Object o ) {
@@ -570,9 +570,9 @@ public class BaseBoxContext implements IBoxContext {
 
 	/**
 	 * Flush the buffer to the output stream and then clears the local buffers
-	 * 
+	 *
 	 * @param force true, flush even if output is disabled
-	 * 
+	 *
 	 * @return This context
 	 */
 	public IBoxContext flushBuffer( boolean force ) {
@@ -587,7 +587,7 @@ public class BaseBoxContext implements IBoxContext {
 
 	/**
 	 * Clear the buffer
-	 * 
+	 *
 	 * @return This context
 	 */
 	public IBoxContext clearBuffer() {
@@ -597,7 +597,7 @@ public class BaseBoxContext implements IBoxContext {
 
 	/**
 	 * Get the buffer
-	 * 
+	 *
 	 * @return
 	 */
 	public StringBuffer getBuffer() {
@@ -609,7 +609,7 @@ public class BaseBoxContext implements IBoxContext {
 	 * own to the struct, or override existing config with a new struct of their own design.
 	 * It depends on whether the context wants its changes to exist for the rest of the entire
 	 * request or only for code that executes in the current context and below.
-	 * 
+	 *
 	 * @return A struct of configuration
 	 */
 	public IStruct getConfig() {
@@ -620,9 +620,32 @@ public class BaseBoxContext implements IBoxContext {
 	}
 
 	/**
+	 * Convenience method to retrieve a config item
+	 *
+	 * @param itemKey the object key
+	 *
+	 * @return
+	 */
+	public Object getConfigItem( Key itemKey ) {
+		return getConfig().get( itemKey );
+	}
+
+	/**
+	 * Convenience method to retrieve a config item with with an optional default
+	 *
+	 * @param itemKey      the object key
+	 * @param defaultValue a default value to return
+	 *
+	 * @return
+	 */
+	public Object getConfigItem( Key itemKey, Object defaultValue ) {
+		return getConfig().getOrDefault( itemKey, defaultValue );
+	}
+
+	/**
 	 * Get the BoxLang runtime
 	 * '
-	 * 
+	 *
 	 * @return The runtime
 	 */
 	public BoxRuntime getRuntime() {

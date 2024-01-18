@@ -174,6 +174,16 @@ public class DateTime implements IType, IReferenceable {
 	 * @param mask     - a string representing the mask
 	 */
 	public DateTime( String dateTime, String mask ) {
+		this( dateTime, mask, ZoneId.systemDefault() );
+	}
+
+	/**
+	 * Constructor to create DateTime from a time string and a mask
+	 *
+	 * @param dateTime - a string representing the date and time
+	 * @param mask     - a string representing the mask
+	 */
+	public DateTime( String dateTime, String mask, ZoneId timezone ) {
 		ZonedDateTime parsed = null;
 		// try parsing if it fails then our time does not contain timezone info so we fall back to a local zoned date
 		try {
@@ -181,14 +191,14 @@ public class DateTime implements IType, IReferenceable {
 		} catch ( java.time.format.DateTimeParseException e ) {
 			// First fallback - it has a time without a zone
 			try {
-				parsed = ZonedDateTime.of( LocalDateTime.parse( dateTime, getFormatter( mask ) ), ZoneId.systemDefault() );
+				parsed = ZonedDateTime.of( LocalDateTime.parse( dateTime, getFormatter( mask ) ), timezone );
 				// Second fallback - it is only a date and we need to supply a time
 			} catch ( java.time.format.DateTimeParseException x ) {
 				try {
-					parsed = ZonedDateTime.of( LocalDateTime.of( LocalDate.parse( dateTime, getFormatter( mask ) ), LocalTime.MIN ), ZoneId.systemDefault() );
+					parsed = ZonedDateTime.of( LocalDateTime.of( LocalDate.parse( dateTime, getFormatter( mask ) ), LocalTime.MIN ), timezone );
 					// last fallback - this is a time only value
 				} catch ( java.time.format.DateTimeParseException z ) {
-					parsed = ZonedDateTime.of( LocalDate.MIN, LocalTime.parse( dateTime, getFormatter( mask ) ), ZoneId.systemDefault() );
+					parsed = ZonedDateTime.of( LocalDate.MIN, LocalTime.parse( dateTime, getFormatter( mask ) ), timezone );
 				}
 			} catch ( Exception x ) {
 				throw new BoxRuntimeException(
@@ -214,7 +224,7 @@ public class DateTime implements IType, IReferenceable {
 	 * @param dateTime - a string representing the date and time
 	 */
 	public DateTime( String dateTime ) {
-		this( dateTime, Locale.getDefault(), ZoneId.systemDefault() );
+		this( dateTime, ZoneId.systemDefault() );
 	}
 
 	/**
@@ -781,7 +791,7 @@ public class DateTime implements IType, IReferenceable {
 	 *
 	 * @param mask
 	 *             q
-	 * 
+	 *
 	 * @return
 	 */
 	private static DateTimeFormatter getDateTimeFormatter( String mask ) {

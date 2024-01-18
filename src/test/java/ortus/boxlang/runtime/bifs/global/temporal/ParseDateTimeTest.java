@@ -165,10 +165,10 @@ public class ParseDateTimeTest {
 	@DisplayName( "It tests the BIF ParseDateTime with a timezone argument" )
 	@Test
 	public void testParseDateTimeTimezone() {
-		variables.put( Key.of( "format" ), "yyyy-MM-dd'T'HH:mm:ss.SSSSX" );
+		variables.put( Key.of( "format" ), "yyyy-MM-dd HH:mm:ss" );
 		instance.executeSource(
 		    """
-		    result = parseDateTime( "2024-01-14T00:00:01.0001Z", format, "America/Los_Angeles" );
+		    result = parseDateTime( "2024-01-14 00:00:01", format, "America/Los_Angeles" );
 		    """,
 		    context );
 		DateTime result = ( DateTime ) variables.get( Key.of( "result" ) );
@@ -180,7 +180,7 @@ public class ParseDateTimeTest {
 		assertThat( IntegerCaster.cast( result.format( "H" ) ) ).isEqualTo( 0 );
 		assertThat( IntegerCaster.cast( result.format( "m" ) ) ).isEqualTo( 0 );
 		assertThat( IntegerCaster.cast( result.format( "s" ) ) ).isEqualTo( 1 );
-		assertThat( IntegerCaster.cast( result.format( "n" ) ) ).isEqualTo( 100000 );
+		assertThat( IntegerCaster.cast( result.format( "n" ) ) ).isEqualTo( 0 );
 		assertThat( StringCaster.cast( result.format( "z" ) ).charAt( 0 ) ).isEqualTo( "P".charAt( 0 ) );
 		assertThat( StringCaster.cast( result.format( "z" ) ).charAt( 2 ) ).isEqualTo( "T".charAt( 0 ) );
 	}
