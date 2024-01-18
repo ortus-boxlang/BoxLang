@@ -73,7 +73,7 @@ public class BaseBoxContext implements IBoxContext {
 	/**
 	 * A buffer to write output to
 	 */
-	protected StringBuilder					buffer		= new StringBuilder();
+	protected StringBuffer					buffer		= new StringBuffer();
 
 	/**
 	 * The function service we can use to retrieve BIFS and member methods
@@ -615,7 +615,7 @@ public class BaseBoxContext implements IBoxContext {
 	 *
 	 * @return The buffer
 	 */
-	public StringBuilder getBuffer() {
+	public StringBuffer getBuffer() {
 		return this.buffer;
 	}
 

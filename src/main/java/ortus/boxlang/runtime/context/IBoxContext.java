@@ -359,7 +359,7 @@ public interface IBoxContext {
 	 *
 	 * @return The buffer
 	 */
-	public StringBuilder getBuffer();
+	public StringBuffer getBuffer();
 
 	/**
 	 * Get the contexual config struct. Each context has a chance to add in config of their
