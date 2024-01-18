@@ -50,7 +50,7 @@ public class Now extends BIF {
 	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
 		String timezone = arguments.getAsString( Key.timezone );
 		if ( timezone == null ) {
-			timezone = StringCaster.cast( context.getConfig().getOrDefault( Key.timezone, ZoneId.systemDefault().toString() ) );
+			timezone = StringCaster.cast( context.getConfigItem( Key.timezone, ZoneId.systemDefault().toString() ) );
 		}
 		return new DateTime( ZoneId.of( timezone ) );
 	}

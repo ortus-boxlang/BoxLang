@@ -15,11 +15,14 @@
 
 package ortus.boxlang.runtime.bifs.global.temporal;
 
+import java.time.ZoneId;
+
 import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
 import ortus.boxlang.runtime.bifs.BoxMember;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.dynamic.casters.DateTimeCaster;
+import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
@@ -52,7 +55,8 @@ public class DateAdd extends BIF {
 	 * @argument.foo Describe any expected arguments
 	 */
 	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
-		DateTime ref = DateTimeCaster.cast( arguments.get( Key.date ) );
+		String		timezone	= StringCaster.cast( context.getConfigItem( Key.timezone, ZoneId.systemDefault().toString() ) );
+		DateTime	ref			= DateTimeCaster.cast( arguments.get( Key.date ), true, ZoneId.of( timezone ) );
 		return ref.modify(
 		    arguments.getAsString( Key.datepart ),
 		    arguments.getAsLong( Key.number )

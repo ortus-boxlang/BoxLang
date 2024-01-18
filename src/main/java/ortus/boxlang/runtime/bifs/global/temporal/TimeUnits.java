@@ -25,6 +25,7 @@ import ortus.boxlang.runtime.bifs.BoxBIF;
 import ortus.boxlang.runtime.bifs.BoxMember;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.dynamic.casters.DateTimeCaster;
+import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
@@ -141,7 +142,11 @@ public class TimeUnits extends BIF {
 	 * @argument.timezone The timezone with which to cast the result
 	 */
 	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
-		DateTime dateRef = DateTimeCaster.cast( arguments.get( Key.date ) );
+		String timezone = arguments.getAsString( Key.timezone );
+		if ( timezone == null ) {
+			timezone = StringCaster.cast( context.getConfigItem( Key.timezone, ZoneId.systemDefault().toString() ) );
+		}
+		DateTime dateRef = DateTimeCaster.cast( arguments.get( Key.date ), true, ZoneId.of( timezone ) );
 
 		if ( arguments.get( Key.timezone ) != null ) {
 			dateRef = dateRef.clone( ZoneId.of( arguments.getAsString( Key.timezone ) ) );

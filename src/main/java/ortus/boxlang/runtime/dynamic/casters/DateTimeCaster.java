@@ -17,6 +17,7 @@
  */
 package ortus.boxlang.runtime.dynamic.casters;
 
+import java.time.ZoneId;
 import java.time.format.DateTimeParseException;
 
 import ortus.boxlang.runtime.interop.DynamicObject;
@@ -61,6 +62,19 @@ public class DateTimeCaster {
 	 * @return The value, or null when cannot be cast
 	 */
 	public static DateTime cast( Object object, Boolean fail ) {
+		return cast( object, fail, ZoneId.systemDefault() );
+	}
+
+	/**
+	 * Used to cast anything
+	 *
+	 * @param object   The value to cast
+	 * @param fail     True to throw exception when failing.
+	 * @param timezone The ZoneId to ensure a timezone is applied
+	 *
+	 * @return The value, or null when cannot be cast
+	 */
+	public static DateTime cast( Object object, Boolean fail, ZoneId timezone ) {
 		if ( object == null ) {
 			if ( fail ) {
 				throw new BoxCastException( "Can't cast null to a DateTime." );
@@ -74,7 +88,7 @@ public class DateTimeCaster {
 		try {
 			return object instanceof DateTime
 			    ? ( DateTime ) object
-			    : new DateTime( ( String ) object );
+			    : new DateTime( ( String ) object, timezone );
 		} catch ( DateTimeParseException e ) {
 			if ( fail ) {
 				throw e;

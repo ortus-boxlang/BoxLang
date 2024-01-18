@@ -15,9 +15,12 @@
 
 package ortus.boxlang.runtime.bifs.global.temporal;
 
+import java.time.ZoneId;
+
 import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
 import ortus.boxlang.runtime.context.IBoxContext;
+import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
@@ -53,6 +56,10 @@ public class CreateDateTime extends BIF {
 	 * @argument.foo Describe any expected arguments
 	 */
 	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
+		String timezone = arguments.getAsString( Key.timezone );
+		if ( timezone == null ) {
+			timezone = StringCaster.cast( context.getConfigItem( Key.timezone, ZoneId.systemDefault().toString() ) );
+		}
 		return new DateTime(
 		    arguments.getAsInteger( Key.year ),
 		    arguments.getAsInteger( Key.month ),
@@ -61,7 +68,7 @@ public class CreateDateTime extends BIF {
 		    arguments.getAsInteger( Key.minute ),
 		    arguments.getAsInteger( Key.second ),
 		    arguments.getAsInteger( Key.millisecond ),
-		    arguments.getAsString( Key.timezone )
+		    timezone
 		);
 	}
 

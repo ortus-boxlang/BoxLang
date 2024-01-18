@@ -50,32 +50,29 @@ public class ParseDateTime extends BIF {
 	 * @param arguments Argument scope for the BIF.
 	 *
 	 * @argument.date the date, datetime string or an object
-	 * 
+	 *
 	 * @argument.format the format mask to use in parsing
-	 * 
+	 *
 	 * @argument.timezone the timezone to apply to the parsed datetime
 	 */
 	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
 		Object	dateRef		= arguments.get( Key.date );
 		String	format		= arguments.getAsString( Key.format );
 		String	timezone	= arguments.getAsString( Key.timezone );
+		if ( timezone == null ) {
+			timezone = StringCaster.cast( context.getConfigItem( Key.timezone, ZoneId.systemDefault().toString() ) );
+		}
 		if ( dateRef instanceof DateTime ) {
 			DateTime dateObj = DateTimeCaster.cast( dateRef );
 			if ( format != null ) {
 				dateObj.setFormat( format );
 			}
-			if ( timezone != null ) {
-				dateObj.setTimezone( timezone );
-			}
 			return dateObj;
 		}
 		if ( format != null ) {
-			DateTime dateObj = new DateTime( StringCaster.cast( dateRef ), format );
-			return timezone != null ? dateObj.setTimezone( timezone ) : dateObj;
+			return new DateTime( StringCaster.cast( dateRef ), format, ZoneId.of( timezone ) );
 		} else {
-			return timezone != null
-			    ? new DateTime( StringCaster.cast( dateRef ), ZoneId.of( timezone ) )
-			    : new DateTime( StringCaster.cast( dateRef ) );
+			return new DateTime( StringCaster.cast( dateRef ), ZoneId.of( timezone ) );
 		}
 	}
 
