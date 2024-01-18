@@ -51,6 +51,7 @@ import ortus.boxlang.runtime.services.AsyncService;
 import ortus.boxlang.runtime.services.CacheService;
 import ortus.boxlang.runtime.services.FunctionService;
 import ortus.boxlang.runtime.services.InterceptorService;
+import ortus.boxlang.runtime.services.ModuleService;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
@@ -138,6 +139,9 @@ public class BoxRuntime {
 	 */
 	private FunctionService		functionService;
 
+	/**
+	 * The application service in charge of all applications
+	 */
 	private ApplicationService	applicationService;
 
 	/**
@@ -149,6 +153,11 @@ public class BoxRuntime {
 	 * The Cache service in charge of all cache managers and providers
 	 */
 	private CacheService		cacheService;
+
+	/**
+	 * The Module service in charge of all modules
+	 */
+	private ModuleService		moduleService;
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -202,6 +211,7 @@ public class BoxRuntime {
 		this.cacheService		= new CacheService( this );
 		this.functionService	= new FunctionService( this );
 		this.applicationService	= new ApplicationService( this );
+		this.moduleService		= new ModuleService( this );
 		this.configPath			= configPath;
 
 	}
@@ -265,6 +275,7 @@ public class BoxRuntime {
 		this.cacheService.onStartup();
 		this.functionService.onStartup();
 		this.applicationService.onStartup();
+		this.moduleService.onStartup();
 
 		// Create our runtime context that will be the granddaddy of all contexts that execute inside this runtime
 		this.runtimeContext = new RuntimeBoxContext();
@@ -380,6 +391,15 @@ public class BoxRuntime {
 	}
 
 	/**
+	 * Get the module service
+	 *
+	 * @return {@link ModuleService} or null if the runtime has not started
+	 */
+	public ModuleService getModuleService() {
+		return moduleService;
+	}
+
+	/**
 	 * --------------------------------------------------------------------------
 	 * Methods
 	 * --------------------------------------------------------------------------
@@ -433,9 +453,10 @@ public class BoxRuntime {
 
 		// Shutdown the services
 		instance.applicationService.onShutdown();
+		instance.moduleService.onShutdown();
 		instance.cacheService.onShutdown();
-		instance.functionService.onShutdown();
 		instance.asyncService.onShutdown();
+		instance.functionService.onShutdown();
 		instance.interceptorService.onShutdown();
 
 		// Shutdown logging
