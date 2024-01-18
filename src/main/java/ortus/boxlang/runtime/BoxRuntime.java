@@ -275,10 +275,12 @@ public class BoxRuntime {
 		this.cacheService.onStartup();
 		this.functionService.onStartup();
 		this.applicationService.onStartup();
-		this.moduleService.onStartup();
 
 		// Create our runtime context that will be the granddaddy of all contexts that execute inside this runtime
 		this.runtimeContext = new RuntimeBoxContext();
+
+		// Now startup the modules so we can have a runtime context available to them
+		this.moduleService.onStartup();
 
 		// Runtime Started log it
 		this.logger.atInfo().log(
