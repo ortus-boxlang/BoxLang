@@ -7,7 +7,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- * http://www.apache.org/licenses/LICENSE-2.0
+ * http: //www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -213,7 +213,6 @@ public class BoxRuntime {
 		this.applicationService	= new ApplicationService( this );
 		this.moduleService		= new ModuleService( this );
 		this.configPath			= configPath;
-
 	}
 
 	/**
@@ -292,6 +291,13 @@ public class BoxRuntime {
 		// Announce it baby! Runtime is up
 		this.interceptorService.announce( "onRuntimeStart", new Struct() );
 	}
+
+	/**
+	 * --------------------------------------------------------------------------
+	 * getInstance() methods
+	 * --------------------------------------------------------------------------
+	 * The entry point into the runtime
+	 */
 
 	/**
 	 * Get the singleton instance. This can be null if the runtime has not been started yet.
@@ -408,6 +414,15 @@ public class BoxRuntime {
 	 */
 
 	/**
+	 * Get the runtime context
+	 *
+	 * @return The runtime context
+	 */
+	public IBoxContext getRuntimeContext() {
+		return this.runtimeContext;
+	}
+
+	/**
 	 * Get the configuration
 	 *
 	 * @return {@link Configuration} or null if the runtime has not started
@@ -469,13 +484,19 @@ public class BoxRuntime {
 	}
 
 	/**
+	 * --------------------------------------------------------------------------
+	 * Template Execution
+	 * --------------------------------------------------------------------------
+	 */
+
+	/**
 	 * Execute a single template in its own context
 	 *
 	 * @param templatePath The absolute path to the template to execute
 	 *
 	 */
 	public void executeTemplate( String templatePath ) {
-		executeTemplate( templatePath, runtimeContext );
+		executeTemplate( templatePath, this.runtimeContext );
 	}
 
 	/**
@@ -488,7 +509,7 @@ public class BoxRuntime {
 	public void executeTemplate( String templatePath, IBoxContext context ) {
 		// Here is where we presumably boostrap a page or class that we are executing in our new context.
 		// JIT if neccessary
-		BoxTemplate targetTemplate = RunnableLoader.getInstance().loadTemplateAbsolute( runtimeContext, Paths.get( templatePath ) );
+		BoxTemplate targetTemplate = RunnableLoader.getInstance().loadTemplateAbsolute( this.runtimeContext, Paths.get( templatePath ) );
 		executeTemplate( targetTemplate, context );
 	}
 
@@ -516,7 +537,7 @@ public class BoxRuntime {
 	 *
 	 */
 	public void executeTemplate( URL templateURL ) {
-		executeTemplate( templateURL, runtimeContext );
+		executeTemplate( templateURL, this.runtimeContext );
 	}
 
 	/**
@@ -526,7 +547,7 @@ public class BoxRuntime {
 	 *
 	 */
 	public void executeTemplate( BoxTemplate template ) {
-		executeTemplate( template, runtimeContext );
+		executeTemplate( template, this.runtimeContext );
 	}
 
 	/**
@@ -561,13 +582,19 @@ public class BoxRuntime {
 	}
 
 	/**
+	 * --------------------------------------------------------------------------
+	 * Statement + Source Executions
+	 * --------------------------------------------------------------------------
+	 */
+
+	/**
 	 * Execute a single statement
 	 *
 	 * @param source A string of the statement to execute
 	 *
 	 */
 	public Object executeStatement( String source ) {
-		return executeStatement( source, runtimeContext );
+		return executeStatement( source, this.runtimeContext );
 	}
 
 	/**
@@ -607,7 +634,7 @@ public class BoxRuntime {
 	 *
 	 */
 	public void executeSource( String source ) {
-		executeSource( source, runtimeContext );
+		executeSource( source, this.runtimeContext );
 	}
 
 	/**
@@ -641,35 +668,12 @@ public class BoxRuntime {
 	}
 
 	/**
-	 * Parse source string and print AST as JSON
-	 *
-	 * @param source A string of source to parse and print AST for
-	 *
-	 */
-	public void printSourceAST( String source ) {
-		BoxParser		parser	= new BoxParser();
-		ParsingResult	result;
-		try {
-			result = parser.parse( source, BoxScriptType.CFSCRIPT );
-		} catch ( IOException e ) {
-			throw new BoxRuntimeException( "Error compiling source", e );
-		}
-
-		result.getIssues().forEach( System.out::println );
-		if ( !result.isCorrect() ) {
-			throw new BoxRuntimeException( "Error compiling source. " + result.getIssues().get( 0 ).toString() );
-		}
-
-		System.out.println( result.getRoot().toJSON().toString() );
-	}
-
-	/**
 	 * Execute a source strings from an input stream
 	 *
 	 * @param sourceStream An input stream to read
 	 */
 	public void executeSource( InputStream sourceStream ) {
-		executeSource( sourceStream, runtimeContext );
+		executeSource( sourceStream, this.runtimeContext );
 	}
 
 	/**
@@ -734,6 +738,29 @@ public class BoxRuntime {
 	}
 
 	/**
+	 * Parse source string and print AST as JSON
+	 *
+	 * @param source A string of source to parse and print AST for
+	 *
+	 */
+	public void printSourceAST( String source ) {
+		BoxParser		parser	= new BoxParser();
+		ParsingResult	result;
+		try {
+			result = parser.parse( source, BoxScriptType.CFSCRIPT );
+		} catch ( IOException e ) {
+			throw new BoxRuntimeException( "Error compiling source", e );
+		}
+
+		result.getIssues().forEach( System.out::println );
+		if ( !result.isCorrect() ) {
+			throw new BoxRuntimeException( "Error compiling source. " + result.getIssues().get( 0 ).toString() );
+		}
+
+		System.out.println( result.getRoot().toJSON() );
+	}
+
+	/**
 	 * Check the given context to see if it has a variables scope. If not, create a new scripting
 	 * context that has a variables scope and return that with the original context as the parent.
 	 *
@@ -750,7 +777,4 @@ public class BoxRuntime {
 		}
 	}
 
-	public IBoxContext getRuntimeContext() {
-		return runtimeContext;
-	}
 }
