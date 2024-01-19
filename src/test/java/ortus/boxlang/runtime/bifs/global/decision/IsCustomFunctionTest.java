@@ -93,7 +93,7 @@ public class IsCustomFunctionTest {
 	@DisplayName( "It supports Lucee's type parameter" )
 	@Test
 	public void testTypeParameter() {
-		instance.executeSource(/**/
+		instance.executeSource( /**/
 		    """
 		    isLambdaAUDFType = isCustomFunction( () => {}, "udf" );
 		    isLambdaAClosureType = isCustomFunction( () => {}, "closure" );

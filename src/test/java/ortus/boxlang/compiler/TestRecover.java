@@ -30,7 +30,6 @@ public class TestRecover {
 	}
 
 	@Test
-	@Disabled( "Doesn't work" )
 	public void testRecoverInClass() throws IOException {
 		String			code	= """
 		                          component /** */ {
@@ -46,7 +45,7 @@ public class TestRecover {
 	}
 
 	@Test
-	@Disabled( "Doesn't work" )
+
 	public void testRecoverInClassBeforeStatment() throws IOException {
 		String			code	= """
 		                          component {
@@ -63,7 +62,7 @@ public class TestRecover {
 	}
 
 	@Test
-	@Disabled( "Doesn't work" )
+
 	public void testRecoverInFunction() throws IOException {
 		String			code	= """
 		                                           function f() {
@@ -80,7 +79,7 @@ public class TestRecover {
 	}
 
 	@Test
-	@Disabled( "Doesn't work" )
+
 	public void testRecoverInArgs() throws IOException {
 		String			code	= """
 		                                                          function /** */ f(
@@ -99,7 +98,6 @@ public class TestRecover {
 	}
 
 	@Test
-	@Disabled( "Doesn't work" )
 	public void testRecoverComment() throws IOException {
 		String			code	= """
 		                              /**
@@ -113,7 +111,6 @@ public class TestRecover {
 	}
 
 	@Test
-	@Disabled( "Doesn't work" )
 	public void testRecoverBeforeStatement() throws IOException {
 		String			code	= """
 		                                               /**
@@ -128,7 +125,6 @@ public class TestRecover {
 	}
 
 	@Test
-	@Disabled( "Doesn't work" )
 	public void testRecoverInExpression() throws IOException {
 		String			code	= """
 		                             /** */ foo /** */ = /** */ 1 /** */ + /** */ 2 /** */ ; /** */
@@ -142,7 +138,6 @@ public class TestRecover {
 	}
 
 	@Test
-	@Disabled( "Doesn't work" )
 	public void testRecoverInStatement() throws IOException {
 		String			code	= """
 		                          /** */

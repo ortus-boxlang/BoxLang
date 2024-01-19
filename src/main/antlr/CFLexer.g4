@@ -145,9 +145,9 @@ ICHAR_1:
 	'#' {_modeStack.contains(hashMode)}? -> type(ICHAR), popMode, popMode;
 ICHAR: '#';
 
-WS: (' ' | '\t' | '\f')+ -> skip;
+WS: (' ' | '\t' | '\f')+ -> channel(HIDDEN);
 NEWLINE: ('\n' | '\r')+ (' ' | '\t' | '\f' | '\n' | '\r')* -> channel(HIDDEN);
-JAVADOC_COMMENT: '/**' .*? '*/';
+JAVADOC_COMMENT: '/**' .*? '*/' -> channel(HIDDEN);
 
 COMMENT: '/*' .*? '*/' -> skip;
 

@@ -127,7 +127,7 @@ public abstract class BoxAbstractParser {
 		lexer.addErrorListener( errorListener );
 		parser.removeErrorListeners();
 		parser.addErrorListener( errorListener );
-		parser.setErrorHandler( new ParserErrorStrategy() );
+		// parser.setErrorHandler( new ParserErrorStrategy() );
 	}
 
 	/**

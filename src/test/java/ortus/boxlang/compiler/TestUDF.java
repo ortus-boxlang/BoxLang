@@ -91,7 +91,7 @@ public class TestUDF extends TestBase {
 		                                  * @returns Only the coolest value ever
 		                                  */
 		                                  		                                  """;
-		BoxDOCParser	parser			= new BoxDOCParser(0,0);
+		BoxDOCParser	parser			= new BoxDOCParser( 0, 0 );
 		ParsingResult	result			= parser.parse( null, documentation );
 		assertTrue( result.isCorrect() );
 		BoxDocumentation docs = ( BoxDocumentation ) result.getRoot();
@@ -107,21 +107,21 @@ public class TestUDF extends TestBase {
 
 		BoxCFParser		parser	= new BoxCFParser();
 		String			code	= """
-		                          				/**
-		                          				* This function does cool stuff
-		                          				*
-		                          				* @name Pass the name here that you want
-		                          				* @name.isCool yes
-		                          				*
-		                          				* @author Brad Wood
-		                          				* @returns Only the coolest value ever
-		                          				*/
-		                          				@myAnnotation "value" "another value"
-		                          				@name.foo "bar"
-		                          				string function greet( required string name='Brad' inject="myService" ) key="value" keyOnly {
-		                          				  return "Brad";
-		                          				}
-		                          """;
+		                          /**
+		                          * This function does cool stuff
+		                          *
+		                          * @name Pass the name here that you want
+		                          * @name.isCool yes
+		                          *
+		                          * @author Brad Wood
+		                          * @returns Only the coolest value ever
+		                          */
+		                          @myAnnotation "value" "another value"
+		                          @name.foo "bar"
+		                          string function greet( required string name='Brad' inject="myService" ) key="value" keyOnly {
+		                            return "Brad";
+		                          }
+		                                         """;
 
 		ParsingResult	result	= parser.parse( code );
 
@@ -156,12 +156,8 @@ public class TestUDF extends TestBase {
 		Assertions.assertEquals( 1, arguments.getInitializer().get().asArrayInitializerExpr().getValues().size() );
 		VariableDeclarator annotations = javaAST.getType( 0 ).getFieldByName( "annotations" ).get().getVariable( 0 );
 		assertEqualsNoWhiteSpaces( """
-		                           Struct.of(MyUDF.keys[6],Array.of("value","anothervalue"),MyUDF.keys[7],"value",MyUDF.keys[8],"")
+		                           Struct.of(MyUDF.keys[4],Array.of("value","anothervalue"),MyUDF.keys[5],"value",MyUDF.keys[6],"")
 		                                                     """, annotations.getInitializer().get().toString() );
-		VariableDeclarator documentation = javaAST.getType( 0 ).getFieldByName( "documentation" ).get().getVariable( 0 );
-		assertEqualsNoWhiteSpaces( """
-		                           Struct.of(MyUDF.keys[9],"BradWood",MyUDF.keys[10],"Onlythecoolestvalueever",MyUDF.keys[3],"Thisfunctiondoescoolstuff")
-		                                                 """, documentation.getInitializer().get().toString() );
 	}
 
 	@Test

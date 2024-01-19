@@ -21,14 +21,17 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
 import org.antlr.v4.runtime.ParserRuleContext;
+import org.antlr.v4.runtime.Token;
 import org.antlr.v4.runtime.tree.ParseTree;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.input.BOMInputStream;
 
+import org.xnio.channels.SslChannel;
 import ortus.boxlang.ast.BoxClass;
 import ortus.boxlang.ast.BoxDocumentation;
 import ortus.boxlang.ast.BoxExpr;
@@ -102,11 +105,15 @@ import ortus.boxlang.parser.antlr.CFLexer;
 import ortus.boxlang.parser.antlr.CFParser;
 import ortus.boxlang.parser.antlr.CFParser.ComponentContext;
 import ortus.boxlang.parser.antlr.CFParser.PreannotationContext;
+import ortus.boxlang.parser.antlr.DOCParser;
+import ortus.boxlang.transpiler.Transpiler;
 
 /**
  * Parser for CF scripts
  */
 public class BoxCFParser extends BoxAbstractParser {
+
+	private final List<BoxDocumentation> javadocs = new ArrayList<>();
 
 	/**
 	 * Constructor
@@ -232,6 +239,24 @@ public class BoxCFParser extends BoxAbstractParser {
 		CFParser		parser	= new CFParser( new CommonTokenStream( lexer ) );
 		addErrorListeners( lexer, parser );
 		ParserRuleContext parseTree = parser.script();
+
+		lexer.reset();
+		int				column		= 0;
+		Token			token		= lexer.nextToken();
+		Token			lastToken	= null;
+		BoxDOCParser	docParser	= new BoxDOCParser();
+		while ( token.getType() != Token.EOF ) {
+			if ( token.getType() == CFLexer.JAVADOC_COMMENT ) {
+				docParser.setStartLine( token.getLine() );
+				ParsingResult result = docParser.parse( null, token.getText() );
+				if ( docParser.issues.isEmpty() ) {
+					javadocs.add( ( BoxDocumentation ) result.getRoot() );
+				} else {
+					System.err.println( "Warning: invalid documentation at line: " + token.getLine() );
+				}
+			}
+			token = lexer.nextToken();
+		}
 
 		if ( lexer.hasUnpoppedModes() ) {
 			List<String>	modes		= lexer.getUnpoppedModes();
@@ -1400,9 +1425,17 @@ public class BoxCFParser extends BoxAbstractParser {
 		List<BoxDocumentationAnnotation>	docToRemove		= new ArrayList<>();
 		BoxAccessModifier					modifier		= null;
 
-		if ( node.functionSignature().javadoc() != null ) {
-			documentation.addAll( toAst( file, node.functionSignature().javadoc() ) );
+		// if ( node.functionSignature().javadoc() != null ) {
+		// documentation.addAll( toAst( file, node.functionSignature().javadoc() ) );
+		// }
+		int									index			= getDocIndex( node );
+		if ( index > -1 ) {
+			BoxDocumentation docs = this.javadocs.get( index );
+			for ( BoxNode n : docs.getAnnotations() ) {
+				documentation.add( ( BoxDocumentationAnnotation ) n );
+			}
 		}
+
 		for ( CFParser.PreannotationContext annotation : node.functionSignature().preannotation() ) {
 			annotations.add( toAst( file, annotation ) );
 		}
@@ -1507,6 +1540,19 @@ public class BoxCFParser extends BoxAbstractParser {
 		return new BoxFunctionDeclaration( modifier, name, returnType, args, annotations, documentation, body, getPosition( node ), getSourceText( node ) );
 	}
 
+	private int getDocIndex( CFParser.FunctionContext node ) {
+		int	min		= Integer.MAX_VALUE;
+		int	index	= -1;
+		for ( BoxNode doc : this.javadocs ) {
+			int distance = getPosition( node ).getStart().getLine() - doc.getPosition().getEnd().getLine();
+			if ( distance >= 0 && distance < min ) {
+				min		= distance;
+				index	= this.javadocs.indexOf( doc );
+			}
+		}
+		return index;
+	}
+
 	/**
 	 * Converts the JavadocContext parser rule to the corresponding AST nodes.
 	 *
@@ -1519,10 +1565,10 @@ public class BoxCFParser extends BoxAbstractParser {
 	private List<BoxDocumentationAnnotation> toAst( File file, CFParser.JavadocContext node ) {
 		List<BoxDocumentationAnnotation> documentation = new ArrayList<>();
 		try {
-			Position position = getPosition(node);
-			BoxDOCParser		parser	= new BoxDOCParser(position.getStart().getLine(),position.getStart().getColumn());
-			ParsingResult		result	= parser.parse( null, node.getText() );
-			BoxDocumentation	docs	= ( BoxDocumentation ) result.getRoot();
+			Position			position	= getPosition( node );
+			BoxDOCParser		parser		= new BoxDOCParser( position.getStart().getLine(), position.getStart().getColumn() );
+			ParsingResult		result		= parser.parse( null, node.getText() );
+			BoxDocumentation	docs		= ( BoxDocumentation ) result.getRoot();
 			if ( docs != null ) {
 				for ( BoxNode n : docs.getAnnotations() ) {
 					documentation.add( ( BoxDocumentationAnnotation ) n );
