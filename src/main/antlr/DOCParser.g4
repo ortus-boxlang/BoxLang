@@ -6,7 +6,7 @@ options {
 
 documentation:
 	EOF
-	| skipWhitespace* JAVADOC_START skipWhitespace* documentationContent JAVADOC_END? NEWLINE? EOF;
+	| skipWhitespace* JAVADOC_START skipWhitespace* documentationContent? JAVADOC_END? NEWLINE? EOF;
 
 documentationContent:
 	description skipWhitespace*

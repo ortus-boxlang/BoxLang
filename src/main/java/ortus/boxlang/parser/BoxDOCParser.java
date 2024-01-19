@@ -25,6 +25,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.antlr.v4.runtime.BaseErrorListener;
+import org.antlr.v4.runtime.CharStream;
 import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
 import org.antlr.v4.runtime.Lexer;
@@ -32,6 +33,7 @@ import org.antlr.v4.runtime.Parser;
 import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.RecognitionException;
 import org.antlr.v4.runtime.Recognizer;
+import org.antlr.v4.runtime.misc.Interval;
 import org.apache.commons.io.IOUtils;
 
 import ortus.boxlang.ast.BoxDocumentation;
@@ -82,7 +84,7 @@ public class BoxDOCParser {
 	}
 
 	public BoxDOCParser( int startLine, int startColumn ) {
-		this.startLine		= startLine;
+		this.startLine		= startLine - 1;
 		this.startColumn	= startColumn;
 		this.issues			= new ArrayList<>();
 	}
@@ -101,6 +103,18 @@ public class BoxDOCParser {
 		    new Point( node.stop.getLine() + startLine, node.stop.getCharPositionInLine() + startColumn ), new SourceFile( file ) );
 	}
 
+	/**
+	 * Extracts from the ANTLR node
+	 *
+	 * @param node any ANTLR role
+	 *
+	 * @return a string containing the source code
+	 */
+	protected String getSourceText( ParserRuleContext node ) {
+		CharStream s = node.getStart().getTokenSource().getInputStream();
+		return s.getText( new Interval( node.getStart().getStartIndex(), node.getStop().getStopIndex() ) );
+	}
+
 	public ParsingResult parse( File file, String code ) throws IOException {
 		InputStream						inputStream	= IOUtils.toInputStream( code, StandardCharsets.UTF_8 );
 		DOCParser.DocumentationContext	parseTree	= ( DOCParser.DocumentationContext ) parserFirstStage( file, inputStream );
@@ -114,13 +128,17 @@ public class BoxDOCParser {
 
 	private BoxDocumentation toAst( File file, DOCParser.DocumentationContext parseTree ) {
 		List<BoxNode> annotations = new ArrayList<>();
-		parseTree.documentationContent().tagSection().blockTag().forEach( it -> {
-			annotations.add( toAst( file, it ) );
-		} );
-		if ( parseTree.documentationContent().description() != null ) {
-			annotations.add( toAst( file, parseTree.documentationContent().description() ) );
+		if ( parseTree.documentationContent() != null ) {
+			if ( parseTree.documentationContent().tagSection() != null ) {
+				parseTree.documentationContent().tagSection().blockTag().forEach( it -> {
+					annotations.add( toAst( file, it ) );
+				} );
+			}
+			if ( parseTree.documentationContent().description() != null ) {
+				annotations.add( toAst( file, parseTree.documentationContent().description() ) );
+			}
 		}
-		return new BoxDocumentation( annotations, getPosition( parseTree ), null );
+		return new BoxDocumentation( annotations, getPosition( parseTree ), getSourceText( parseTree ) );
 	}
 
 	private BoxNode toAst( File file, DOCParser.DescriptionContext node ) {
@@ -132,12 +150,12 @@ public class BoxDOCParser {
 				valueSB.append( it.getText() );
 			}
 		} );
-		BoxStringLiteral value = new BoxStringLiteral( valueSB.toString(), null, null );
-		return new BoxDocumentationAnnotation( name, value, getPosition( node ), null );
+		BoxStringLiteral value = new BoxStringLiteral( valueSB.toString(), getPosition( node ), getSourceText( node ) );
+		return new BoxDocumentationAnnotation( name, value, getPosition( node ), getSourceText( node ) );
 	}
 
 	private BoxNode toAst( File file, DOCParser.BlockTagContext node ) {
-		BoxFQN			name	= new BoxFQN( node.blockTagName().NAME().getText(), null, null );
+		BoxFQN			name	= new BoxFQN( node.blockTagName().NAME().getText(), getPosition( node.blockTagName() ), getSourceText( node.blockTagName() ) );
 		// use string builder to get text from child nodes that are NOT a new line
 		StringBuilder	valueSB	= new StringBuilder();
 		node.blockTagContent().forEach( it -> {
@@ -145,8 +163,8 @@ public class BoxDOCParser {
 				valueSB.append( it.getText() );
 			}
 		} );
-		BoxStringLiteral value = new BoxStringLiteral( valueSB.toString(), null, null );
-		return new BoxDocumentationAnnotation( name, value, getPosition( node ), null );
+		BoxStringLiteral value = new BoxStringLiteral( valueSB.toString(), getPosition( node ), getSourceText( node ) );
+		return new BoxDocumentationAnnotation( name, value, getPosition( node ), getSourceText( node ) );
 	}
 
 	protected ParserRuleContext parserFirstStage( File file, InputStream stream ) throws IOException {
@@ -163,7 +181,7 @@ public class BoxDOCParser {
 	}
 
 	public void setStartLine( int startLine ) {
-		this.startLine = startLine;
+		this.startLine = startLine - 1;
 	}
 
 	public int getStartColumn() {
