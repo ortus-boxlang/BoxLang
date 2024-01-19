@@ -45,7 +45,7 @@ public class BoxDecimalLiteralTransformer extends AbstractTransformer {
 	public Node transform( BoxNode node, TransformerContext context ) throws IllegalStateException {
 		BoxDecimalLiteral	literal		= ( BoxDecimalLiteral ) node;
 		DoubleLiteralExpr	javaExpr	= new DoubleLiteralExpr( literal.getValue() );
-		logger.info( node.getSourceText() + " -> " + javaExpr );
+		logger.debug( node.getSourceText() + " -> " + javaExpr );
 		addIndex( javaExpr, node );
 		return javaExpr;
 	}

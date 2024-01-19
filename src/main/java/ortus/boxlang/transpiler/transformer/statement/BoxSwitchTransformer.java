@@ -108,7 +108,7 @@ public class BoxSwitchTransformer extends AbstractTransformer {
 		switchHolder.addStatement( ( Statement ) parseStatement( "boolean ${caseEnteredName} = false;", values ) );
 		switchHolder.addStatement( javaSwitch );
 
-		logger.info( node.getSourceText() + " -> " + switchHolder );
+		logger.debug( node.getSourceText() + " -> " + switchHolder );
 		return switchHolder;
 	}
 }

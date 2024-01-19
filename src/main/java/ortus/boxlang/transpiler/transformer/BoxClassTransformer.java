@@ -205,7 +205,7 @@ public class BoxClassTransformer extends AbstractTransformer {
 			 */
 			public ThisScope getThisScope() {
 				return thisScope;
-			}			
+			}
 
 			public IStruct getAnnotations() {
 				return annotations;
@@ -235,7 +235,7 @@ public class BoxClassTransformer extends AbstractTransformer {
 				}
 				return this.$bx;
 			}
-			
+
 			/**
 			 * Represent as string, or throw exception if not possible
 			 *
@@ -247,7 +247,7 @@ public class BoxClassTransformer extends AbstractTransformer {
 
 			/**
 			 * A helper to look at the "output" annotation, caching the result
-			 * 
+			 *
 			 * @return Whether the function can output
 			 */
 			public boolean canOutput() {
@@ -327,12 +327,12 @@ public class BoxClassTransformer extends AbstractTransformer {
 			 * @return The requested object
 			 */
 			public Object dereference( IBoxContext context, Key key, Boolean safe ) {
-				
+
 				// Special check for $bx
 				if ( key.equals( BoxMeta.key ) ) {
 					return getBoxMeta();
 				}
-				
+
 				// TODO: implicit getters
 				return thisScope.dereference( context, key, safe );
 			}
@@ -348,19 +348,19 @@ public class BoxClassTransformer extends AbstractTransformer {
 			 */
 			public Object dereferenceAndInvoke( IBoxContext context, Key name, Object[] positionalArguments, Boolean safe ) {
 				// TODO: component member methods?
-				
+
 				BaseScope scope = thisScope;
 				// we are a super class, so we reached here via super.method()
 				if( getChild() != null ) {
 					scope = variablesScope;
 				}
 
-				// Look for function in this  
+				// Look for function in this
 				Object value = scope.get( name );
 				if ( value instanceof Function function ) {
 					FunctionBoxContext functionContext = Function.generateFunctionContext(
 						function,
-						// Function contexts' parent is the caller.  The function will "know" about the CFC it's executing in 
+						// Function contexts' parent is the caller.  The function will "know" about the CFC it's executing in
 						// because we've pushed the CFC onto the template stack in the function context.
 						context,
 						name,
@@ -377,7 +377,7 @@ public class BoxClassTransformer extends AbstractTransformer {
 
 				if ( value != null ) {
 					throw new BoxRuntimeException(
-						"key '" + name.getName() + "' of type  '" + value.getClass().getName() + "'  is not a function " );	
+						"key '" + name.getName() + "' of type  '" + value.getClass().getName() + "'  is not a function " );
 				}
 
 				// Check for generated accessors
@@ -401,7 +401,7 @@ public class BoxClassTransformer extends AbstractTransformer {
 				if( thisScope.get( Key.onMissingMethod ) != null ){
 					return dereferenceAndInvoke( context, Key.onMissingMethod, new Object[]{ name.getName(), positionalArguments }, safe );
 				}
-				
+
 				if( !safe ) {
 					throw new BoxRuntimeException( "Method '" + name.getName() + "' not found" );
 				}
@@ -418,7 +418,7 @@ public class BoxClassTransformer extends AbstractTransformer {
 			 * @return The requested return value or null
 			 */
 			public Object dereferenceAndInvoke( IBoxContext context, Key name, Map<Key, Object> namedArguments, Boolean safe ) {
-				
+
 				BaseScope scope = thisScope;
 				// we are a super class, so we reached here via super.method()
 				if( getChild() != null ) {
@@ -429,7 +429,7 @@ public class BoxClassTransformer extends AbstractTransformer {
 				if ( value instanceof Function function ) {
 					FunctionBoxContext functionContext = Function.generateFunctionContext(
 							function,
-							// Function contexts' parent is the caller.  The function will "know" about the CFC it's executing in 
+							// Function contexts' parent is the caller.  The function will "know" about the CFC it's executing in
 							// because we've pushed the CFC onto the template stack in the function context.
 							context,
 							name,
@@ -449,7 +449,7 @@ public class BoxClassTransformer extends AbstractTransformer {
 
 				if ( value != null ) {
 					throw new BoxRuntimeException(
-						"key '" + name.getName() + "' of type  '" + value.getClass().getName() + "'  is not a function " );	
+						"key '" + name.getName() + "' of type  '" + value.getClass().getName() + "'  is not a function " );
 				}
 
 				// Check for generated accessors
@@ -476,7 +476,7 @@ public class BoxClassTransformer extends AbstractTransformer {
 					args.put( Key.missingMethodArguments, namedArguments );
 					return dereferenceAndInvoke( context, Key.onMissingMethod, args, safe );
 				}
-				
+
 				if( !safe ) {
 					throw new BoxRuntimeException( "Method '" + name.getName() + "' not found" );
 				}
@@ -501,7 +501,7 @@ public class BoxClassTransformer extends AbstractTransformer {
 				}
 				meta.putIfAbsent( "hint", "" );
 				meta.putIfAbsent( "output", false );
-				
+
 				// Assemble the metadata
 				var functions = new ArrayList<Object>();
 				// loop over target's variables scope and add metadata for each function
@@ -544,7 +544,7 @@ public class BoxClassTransformer extends AbstractTransformer {
 				meta.put( "path", getRunnablePath().toString() );
 				meta.put( "persisent", false );
 				meta.put( "output", false );
-				
+
 				return meta;
 			}
 
@@ -817,7 +817,7 @@ public class BoxClassTransformer extends AbstractTransformer {
 			                                  				new Property( ${name}, "${type}", ${init}, ${annotations} ,${documentation} )
 			                                  """;
 			Expression			javaExpr	= ( Expression ) parseExpression( template, values );
-			logger.info( "{} -> {}", prop.getSourceText(), javaExpr );
+			logger.debug( "{} -> {}", prop.getSourceText(), javaExpr );
 
 			members.add( jNameKey );
 			members.add( javaExpr );

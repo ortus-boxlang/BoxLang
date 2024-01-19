@@ -14,16 +14,17 @@
  */
 package ortus.boxlang.transpiler.transformer.statement;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import com.github.javaparser.ast.Node;
 import com.github.javaparser.ast.expr.Expression;
+
 import ortus.boxlang.ast.BoxNode;
+import ortus.boxlang.ast.statement.BoxAssert;
 import ortus.boxlang.transpiler.JavaTranspiler;
 import ortus.boxlang.transpiler.transformer.AbstractTransformer;
 import ortus.boxlang.transpiler.transformer.TransformerContext;
-import ortus.boxlang.ast.statement.BoxAssert;
-
-import java.util.HashMap;
-import java.util.Map;
 
 /**
  * Transform a BoxAssert Node the equivalent Java Parser AST nodes
@@ -58,7 +59,7 @@ public class BoxAssertTransformer extends AbstractTransformer {
 										};
 		String				template	= "Assert.invoke(context,${expr});";
 		Node				javaStmt	= parseStatement( template, values );
-		logger.info( node.getSourceText() + " -> " + javaStmt );
+		logger.debug( node.getSourceText() + " -> " + javaStmt );
 		addIndex( javaStmt, node );
 		return javaStmt;
 

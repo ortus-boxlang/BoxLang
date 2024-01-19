@@ -59,7 +59,7 @@ public class BoxIdentifierTransformer extends AbstractTransformer {
 
 		Node javaExpr;
 		javaExpr = parseExpression( template, values );
-		logger.info( side + node.getSourceText() + " -> " + javaExpr );
+		logger.debug( side + node.getSourceText() + " -> " + javaExpr );
 		return javaExpr;
 
 	}

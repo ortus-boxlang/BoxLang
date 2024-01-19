@@ -142,7 +142,7 @@ public class BoxForInTransformer extends AbstractTransformer {
 		whileStmt.getBody().asBlockStmt().addStatement( incrementQueryStmt );
 		stmt.addStatement( whileStmt );
 		stmt.addStatement( ( Statement ) parseStatement( template3, values ) );
-		logger.info( node.getSourceText() + " -> " + stmt );
+		logger.debug( node.getSourceText() + " -> " + stmt );
 		addIndex( stmt, node );
 		return stmt;
 	}

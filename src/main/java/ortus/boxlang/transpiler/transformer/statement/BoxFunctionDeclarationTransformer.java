@@ -59,7 +59,7 @@ public class BoxFunctionDeclarationTransformer extends AbstractTransformer {
 
 			private final static IStruct	annotations;
 			private final static IStruct	documentation;
-			
+
 			private static final long					compileVersion	= ${compileVersion};
 			private static final LocalDateTime			compiledOn		= ${compiledOnTimestamp};
 			private static final Object					ast				= null;
@@ -110,7 +110,7 @@ public class BoxFunctionDeclarationTransformer extends AbstractTransformer {
 			public IStruct getDocumentation() {
 				return documentation;
 			}
-			
+
 			public List<ImportDefinition> getImports() {
 				return imports;
 			}
@@ -153,7 +153,7 @@ public class BoxFunctionDeclarationTransformer extends AbstractTransformer {
 			    Map.entry( "enclosingClassName", enclosingClassName )
 			);
 			Node				javaStmt	= parseStatement( registrationTemplate, values );
-			logger.info( node.getSourceText() + " -> " + javaStmt );
+			logger.debug( node.getSourceText() + " -> " + javaStmt );
 			addIndex( javaStmt, node );
 			return javaStmt;
 

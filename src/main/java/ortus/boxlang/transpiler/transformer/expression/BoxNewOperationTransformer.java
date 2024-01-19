@@ -77,7 +77,7 @@ public class BoxNewOperationTransformer extends AbstractTransformer {
 		                                                            	).invokeConstructor( ${contextName}, new Object[] { ${args} } ).unWrapBoxLangClass()
 		                                                            """;
 		Node				javaStmt	= parseExpression( template, values );
-		logger.info( node.getSourceText() + " -> " + javaStmt );
+		logger.debug( node.getSourceText() + " -> " + javaStmt );
 		addIndex( javaStmt, node );
 		return javaStmt;
 

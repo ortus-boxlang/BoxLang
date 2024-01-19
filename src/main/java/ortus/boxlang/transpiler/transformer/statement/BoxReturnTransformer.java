@@ -58,7 +58,7 @@ public class BoxReturnTransformer extends AbstractTransformer {
 		// Avoid unreachable statement error
 		template	= "if( true ) " + template;
 		Node javaStmt = parseStatement( template, values );
-		logger.info( node.getSourceText() + " -> " + javaStmt );
+		logger.debug( node.getSourceText() + " -> " + javaStmt );
 		addIndex( javaStmt, node );
 		return javaStmt;
 	}

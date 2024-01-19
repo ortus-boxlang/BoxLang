@@ -120,7 +120,7 @@ public class BoxScopeTransformer extends AbstractTransformer {
 									yield fc.getThisClass().getSuper();
 								} else {
 									throw new BoxRuntimeException( "Cannot get [super] from the current context because this class does not extend another class." );
-								}	
+								}
 							} else {
 								throw new BoxRuntimeException( "Cannot get [super] from the current context because this function is not executing in a class." );
 							}
@@ -139,7 +139,7 @@ public class BoxScopeTransformer extends AbstractTransformer {
 		}
 
 		Node javaExpr = parseExpression( template, values );
-		logger.info( side + node.getSourceText() + " -> " + javaExpr );
+		logger.debug( side + node.getSourceText() + " -> " + javaExpr );
 		return javaExpr;
 	}
 }

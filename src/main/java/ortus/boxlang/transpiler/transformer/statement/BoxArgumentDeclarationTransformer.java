@@ -66,7 +66,7 @@ public class BoxArgumentDeclarationTransformer extends AbstractTransformer {
 		                                          				new Argument( ${required}, "${type}" , ${name}, ${init}, ${annotations} ,${documentation} )
 		                                          """;
 		Expression			javaExpr			= ( Expression ) parseExpression( template, values );
-		logger.info( "{} -> {}", node.getSourceText(), javaExpr );
+		logger.debug( "{} -> {}", node.getSourceText(), javaExpr );
 		return javaExpr;
 	}
 

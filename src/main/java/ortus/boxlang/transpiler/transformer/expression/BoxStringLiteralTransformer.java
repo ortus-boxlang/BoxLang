@@ -44,7 +44,7 @@ public class BoxStringLiteralTransformer extends AbstractTransformer {
 		BoxStringLiteral	literal	= ( BoxStringLiteral ) node;
 		StringLiteralExpr	expr	= new StringLiteralExpr( escape( literal.getValue() ) );
 		String				side	= context == TransformerContext.NONE ? "" : "(" + context.toString() + ") ";
-		logger.info( side + node.getSourceText() + " -> " + expr );
+		logger.debug( side + node.getSourceText() + " -> " + expr );
 		return expr;
 	}
 

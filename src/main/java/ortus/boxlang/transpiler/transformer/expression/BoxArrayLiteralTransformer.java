@@ -36,7 +36,7 @@ import ortus.boxlang.transpiler.transformer.TransformerContext;
  * The array type in BoxLang is represented by the ortus.boxlang.runtime.types.Array
  * class, which implements the Java List interface,
  * and provides several methods of construction:
- * 
+ *
  * <pre>
  * //empty array
  * new Array()
@@ -76,7 +76,7 @@ public class BoxArrayLiteralTransformer extends AbstractTransformer {
 
 		if ( arrayLiteral.getValues().isEmpty() ) {
 			Node javaExpr = parseExpression( "new Array()", values );
-			logger.info( "{} -> {}", node.getSourceText(), javaExpr );
+			logger.debug( "{} -> {}", node.getSourceText(), javaExpr );
 			addIndex( javaExpr, node );
 			return javaExpr;
 		}
@@ -85,7 +85,7 @@ public class BoxArrayLiteralTransformer extends AbstractTransformer {
 			Expression value = ( Expression ) transpiler.transform( expr, context );
 			javaExpr.getArguments().add( value );
 		}
-		logger.info( "{} -> {}", node.getSourceText(), javaExpr );
+		logger.debug( "{} -> {}", node.getSourceText(), javaExpr );
 		addIndex( javaExpr, node );
 		return javaExpr;
 
