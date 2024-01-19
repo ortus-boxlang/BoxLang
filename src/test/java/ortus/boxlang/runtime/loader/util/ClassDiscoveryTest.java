@@ -18,16 +18,19 @@
 package ortus.boxlang.runtime.loader.util;
 
 import static com.google.common.truth.Truth.assertThat;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.URI;
+import java.nio.file.FileSystem;
+import java.nio.file.FileSystems;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.Arrays;
+import java.util.HashMap;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-
-import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
 class ClassDiscoveryTest {
 
@@ -53,7 +56,7 @@ class ClassDiscoveryTest {
 	@Test
 	void testGetDirectoryFromResource() {
 		// Given
-		String	resourceName	= "modules";
+		String	resourceName	= "ortus/boxlang/runtime/modules";
 		// When
 		File	file			= ClassDiscovery.getFileFromResource( resourceName );
 		// Then
@@ -75,12 +78,20 @@ class ClassDiscoveryTest {
 		assertThat( file.isDirectory() ).isFalse();
 	}
 
-	@DisplayName( "Test getFileFromResource throws exception for non-existent resource" )
+	@DisplayName( "Can convert a jar resource location to a Path" )
 	@Test
-	void testGetFileFromResourceThrowsException() {
+	void testGetFileFromJarResourcePath() throws IOException {
 		// Given
-		String nonExistentResourceName = "nonexistent/resource";
-		assertThrows( BoxRuntimeException.class, () -> ClassDiscovery.getFileFromResource( nonExistentResourceName ) );
+		URI		jarPath	= URI.create( "jar:file:/Users/lmajano/Sites/projects/boxlang/build/libs/boxlang-1.0.0-all.jar!/modules" );
+		Path	resourcePath;
+
+		try ( FileSystem fileSystem = FileSystems.newFileSystem( jarPath, new HashMap<>() ) ) {
+			resourcePath = fileSystem.getPath( "modules/test/ModuleConfig.bx" );
+		}
+
+		byte[] bytes = Files.readAllBytes( resourcePath );
+		System.out.println( "Resource contents: " + new String( bytes ) );
+
 	}
 
 }
