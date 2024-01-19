@@ -46,7 +46,15 @@ public class LTrim extends BIF {
 	 * @argument.string The string to trim
 	 */
 	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
-		String input = arguments.getAsString( Key.string );
-		return input.replaceAll( "^\\s+", "" );
+		String	input		= arguments.getAsString( Key.string );
+		int		startIndex	= 0;
+
+		// Find the index of the first non-whitespace character
+		while ( startIndex < input.length() && Character.isWhitespace( input.charAt( startIndex ) ) ) {
+			startIndex++;
+		}
+
+		// Return the substring starting from the first non-whitespace character
+		return startIndex < input.length() ? input.substring( startIndex ) : "";
 	}
 }
