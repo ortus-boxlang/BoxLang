@@ -450,6 +450,15 @@ public class BoxRuntime {
 	}
 
 	/**
+	 * Check if the runtime is in jar mode or not
+	 *
+	 * @return true if in jar mode, false otherwise
+	 */
+	public boolean inJarMode() {
+		return BoxRuntime.class.getResource( "BoxRuntime.class" ).getProtocol().equals( "jar" );
+	}
+
+	/**
 	 * Announce an event with the provided {@link IStruct} of data short-hand for {@link #getInterceptorService()}.announce()
 	 *
 	 * @param state The state to announce

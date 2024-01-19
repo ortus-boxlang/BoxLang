@@ -41,7 +41,9 @@ public class ConfigLoaderTest {
 
 		// Runtime Checks
 		assertThat( config.runtime.mappings ).isNotEmpty();
-		assertThat( config.runtime.modulesDirectory ).doesNotContainMatch( "(ignorecase)\\{user-home\\}" );
+		assertThat( config.runtime.modulesDirectory.size() ).isGreaterThan( 0 );
+		// First one should be the user home directory
+		assertThat( config.runtime.modulesDirectory.get( 0 ) ).doesNotContainMatch( "(ignorecase)\\{user-home\\}" );
 
 		// Cache Checks
 		assertThat( config.runtime.caches ).isNotEmpty();
@@ -94,7 +96,7 @@ public class ConfigLoaderTest {
 
 		// Runtime Checks
 		assertThat( config.runtime.mappings ).isEmpty();
-		assertThat( config.runtime.modulesDirectory ).doesNotContainMatch( "(ignorecase)\\{user-home\\}" );
+		assertThat( config.runtime.modulesDirectory.size() ).isGreaterThan( 0 );
 
 		// Cache Checks
 		assertThat( config.runtime.caches ).isNotEmpty();

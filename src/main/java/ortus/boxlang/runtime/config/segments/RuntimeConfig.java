@@ -17,7 +17,9 @@
  */
 package ortus.boxlang.runtime.config.segments;
 
+import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -38,10 +40,10 @@ public class RuntimeConfig {
 	public IStruct				mappings			= new Struct();
 
 	/**
-	 * The directory where the modules are located by default:
-	 * {@code /{user-home}/modules}
+	 * An array of directories where modules are located and loaded from.
+	 * {@code [ /{user-home}/modules ]}
 	 */
-	public String				modulesDirectory	= System.getProperty( "user.home" ) + "/modules";
+	public List<String>			modulesDirectory	= List.of( System.getProperty( "user.home" ) + "/modules" );
 
 	/**
 	 * The cache configurations for the runtime
@@ -81,7 +83,13 @@ public class RuntimeConfig {
 
 		// Process Modules
 		if ( config.containsKey( "modulesDirectory" ) ) {
-			this.modulesDirectory = PlaceholderHelper.resolve( ( String ) config.get( "modulesDirectory" ) );
+			if ( config.get( "modulesDirectory" ) instanceof List<?> castedList ) {
+				this.modulesDirectory = ( ( List<?> ) castedList ).stream()
+				    .map( PlaceholderHelper::resolve )
+				    .collect( Collectors.toList() );
+			} else {
+				logger.warn( "The [runtime.modulesDirectory] configuration is not a JSON Array, ignoring it." );
+			}
 		}
 
 		// Process cache configurations
@@ -108,7 +116,7 @@ public class RuntimeConfig {
 
 	/**
 	 * Returns the configuration as a struct
-	 * 
+	 *
 	 * @return Struct
 	 */
 	public IStruct asStruct() {
