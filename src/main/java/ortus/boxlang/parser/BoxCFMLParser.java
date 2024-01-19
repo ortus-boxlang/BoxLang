@@ -53,7 +53,7 @@ public class BoxCFMLParser extends BoxAbstractParser {
 	protected BoxScript parseTreeToAst( File file, ParserRuleContext parseTree ) throws IOException {
 		Position			position	= new Position( new Point( parseTree.start.getLine(), parseTree.start.getCharPositionInLine() ),
 		    new Point( parseTree.stop.getLine(), parseTree.stop.getCharPositionInLine() ), new SourceFile( file ) );
-		String				sourceText	= ""; // TODO: extract from parse tree
+		String				sourceText	= parseTree.getText(); // TODO: extract from parse tree
 		List<BoxStatement>	statements	= new ArrayList<>();
 		return new BoxScript( statements, position, sourceText );
 	}

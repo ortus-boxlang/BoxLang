@@ -6,13 +6,33 @@ options {
 
 template: component | interface | statements EOF?;
 
-textContent: TAG_OPEN? CONTENT_TEXT | INTERPOLATION;
+textContent: (nonInterpolatedText | interpolatedExpression)+;
 
 genericOpenTag: TAG_OPEN PREFIX tagName attribute* TAG_CLOSE;
 genericOpenCloseTag:
 	TAG_OPEN PREFIX tagName attribute* TAG_SLASH_CLOSE;
 genericCloseTag: TAG_OPEN SLASH_PREFIX tagName TAG_CLOSE;
 
+interpolatedExpression: ICHAR expression ICHAR;
+nonInterpolatedText: (TAG_OPEN? CONTENT_TEXT)+;
+expression: (EXPRESSION_PART | quotedString)+;
+
+attribute:
+	attributeName TAG_EQUALS attributeValue
+	| attributeName;
+
+attributeName: TAG_NAME;
+
+attributeValue: identifier | quotedString;
+
+identifier: IDENTIFIER;
+
+quotedString:
+	OPEN_QUOTE (quotedStringPart | interpolatedExpression)* CLOSE_QUOTE;
+
+quotedStringPart: STRING_LITERAL | HASHHASH;
+
+tagName: TAG_NAME;
 statements: (statement | textContent)*;
 
 statement:
@@ -160,19 +180,4 @@ file: TAG_OPEN PREFIX FILE attribute* TAG_CLOSE;
 
 output:
 	TAG_OPEN PREFIX OUTPUT attribute* TAG_SLASH_CLOSE
-	| TAG_OPEN PREFIX OUTPUT attribute* TAG_CLOSE statements TAG_OPEN SLASH_PREFIX OUTPUT TAG_CLOSE;
-
-expression: EXPRESSION;
-
-attribute:
-	attributeName TAG_EQUALS attributeValue
-	| attributeName;
-
-attributeName: TAG_NAME;
-
-attributeValue: identifier | quotedString;
-
-identifier: IDENTIFIER;
-quotedString: DOUBLE_QUOTE_STRING | SINGLE_QUOTE_STRING;
-
-tagName: TAG_NAME;
+	| TAG_OPEN PREFIX OUTPUT attribute* TAG_CLOSE statements TAG_OPEN SLASH_PREFIX OUTPUT;
