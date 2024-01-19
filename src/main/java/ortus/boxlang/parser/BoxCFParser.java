@@ -1519,7 +1519,8 @@ public class BoxCFParser extends BoxAbstractParser {
 	private List<BoxDocumentationAnnotation> toAst( File file, CFParser.JavadocContext node ) {
 		List<BoxDocumentationAnnotation> documentation = new ArrayList<>();
 		try {
-			BoxDOCParser		parser	= new BoxDOCParser();
+			Position position = getPosition(node);
+			BoxDOCParser		parser	= new BoxDOCParser(position.getStart().getLine(),position.getStart().getColumn());
 			ParsingResult		result	= parser.parse( null, node.getText() );
 			BoxDocumentation	docs	= ( BoxDocumentation ) result.getRoot();
 			if ( docs != null ) {
