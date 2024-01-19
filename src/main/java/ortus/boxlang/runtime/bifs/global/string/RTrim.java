@@ -1,17 +1,3 @@
-/**
- * [BoxLang]
- *
- * Copyright [2023] [Ortus Solutions, Corp]
- *
- * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the
- * License. You may obtain a copy of the License at
- *
- * http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS"
- * BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language
- * governing permissions and limitations under the License.
- */
 package ortus.boxlang.runtime.bifs.global.string;
 
 import ortus.boxlang.runtime.bifs.BIF;
@@ -42,11 +28,25 @@ public class RTrim extends BIF {
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
-	 *
+	 * 
 	 * @argument.string The string to trim
 	 */
 	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
-		String input = arguments.getAsString( Key.string );
-		return input.replaceAll( "\\s+$", "" );
+		String	input		= arguments.getAsString( Key.string );
+
+		int		endIndex	= input.length() - 1;
+
+		// Find the index of the last non-whitespace character
+		while ( endIndex >= 0 && Character.isWhitespace( input.charAt( endIndex ) ) ) {
+			endIndex--;
+		}
+
+		// If endIndex is less than the length of the string, there are trailing whitespaces
+		if ( endIndex < input.length() - 1 ) {
+			return input.substring( 0, endIndex + 1 );
+		}
+
+		// No trailing whitespaces, return the original string
+		return input;
 	}
 }
