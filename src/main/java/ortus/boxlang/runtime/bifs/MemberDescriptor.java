@@ -66,9 +66,17 @@ public class MemberDescriptor {
 		if ( objectArgument != null ) {
 			Argument[]			bifArgs		= BIFDescriptor.getBIF().getDeclaredArguments();
 			Map<Key, Object>	namedArgs	= new HashMap<Key, Object>();
+			int					p			= 0;
+			// loop over bif args, and add in any matching positional arguments
 			for ( int i = 0; i < bifArgs.length; i++ ) {
-				if ( positionalArguments.length >= i + 1 && bifArgs[ i ].name() != Key.of( objectArgument ) ) {
-					namedArgs.put( bifArgs[ i ].name(), positionalArguments[ i ] );
+				// break if we have no more positional arguments
+				if ( positionalArguments.length < p + 1 ) {
+					break;
+				}
+				// Skip the object argument
+				if ( !bifArgs[ i ].name().equals( objectArgument ) ) {
+					// Note we're adding the bif arg from the loop position, but we're adding the NEXT positional argument
+					namedArgs.put( bifArgs[ i ].name(), positionalArguments[ p++ ] );
 				}
 			}
 			return invoke( context, object, namedArgs );

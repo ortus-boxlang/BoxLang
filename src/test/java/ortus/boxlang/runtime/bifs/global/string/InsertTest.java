@@ -78,7 +78,7 @@ public class InsertTest {
 	}
 
 	@DisplayName( "It inserts a substring using the member function" )
-	// @Test
+	@Test
 	public void testInsertMember() {
 		instance.executeSource(
 		    """
