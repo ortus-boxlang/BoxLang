@@ -24,7 +24,6 @@ import java.util.List;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -386,7 +385,6 @@ public class ClosureFunctionTest {
 
 	@DisplayName( "named arguments" )
 	@Test
-	@Disabled
 	public void testNamedArguments() {
 
 		instance.executeSource(
@@ -417,7 +415,6 @@ public class ClosureFunctionTest {
 
 	@DisplayName( "argument collection" )
 	@Test
-	@Disabled
 	public void testArgumentCollection() {
 
 		instance.executeSource(
@@ -427,12 +424,12 @@ public class ClosureFunctionTest {
 		           	result = arguments;
 		           }
 		           foo(
-		    	argumentCollection={
+		    	argumentCollection=[
 		    		param1:'value1',
 		    		param2 : 'value2',
 		    		param3 :"value3",
 		    		param4: "value4"
-		    	}
+		    	]
 		    );
 		      """,
 		    context );

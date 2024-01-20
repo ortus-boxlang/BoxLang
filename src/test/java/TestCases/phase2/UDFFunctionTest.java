@@ -24,7 +24,6 @@ import java.util.List;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -394,7 +393,6 @@ public class UDFFunctionTest {
 
 	@DisplayName( "named arguments equals" )
 	@Test
-	@Disabled
 	public void testNamedArgumentsEquals() {
 
 		instance.executeSource(
@@ -408,6 +406,7 @@ public class UDFFunctionTest {
 		    context );
 
 		ArgumentsScope argsScope = ( ArgumentsScope ) variables.get( Key.of( "result" ) );
+		System.out.println( argsScope.asString() );
 		assertThat( argsScope.size() ).isEqualTo( 4 );
 		Object[] args = argsScope.asNativeArray();
 		assertThat( args[ 0 ] ).isEqualTo( "value1" );
@@ -426,7 +425,6 @@ public class UDFFunctionTest {
 
 	@DisplayName( "named arguments colon" )
 	@Test
-	@Disabled
 	public void testNamedArgumentsColon() {
 
 		instance.executeSource(
@@ -457,7 +455,6 @@ public class UDFFunctionTest {
 
 	@DisplayName( "argument collection" )
 	@Test
-	@Disabled
 	public void testArgumentCollection() {
 
 		instance.executeSource(
@@ -467,12 +464,12 @@ public class UDFFunctionTest {
 		           	result = arguments;
 		           }
 		           foo(
-		    	argumentCollection={
+		    	argumentCollection=[
 		    		param1:'value1',
 		    		param2 : 'value2',
 		    		param3 :"value3",
 		    		param4: "value4"
-		    	}
+		    	]
 		    );
 		      """,
 		    context );

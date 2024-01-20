@@ -19,7 +19,6 @@ package ortus.boxlang.transpiler.transformer.expression;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 import com.github.javaparser.ast.Node;
 import com.github.javaparser.ast.expr.Expression;
@@ -46,10 +45,6 @@ public class BoxMethodInvocationTransformer extends AbstractTransformer {
 		Expression			expr		= ( Expression ) transpiler.transform( invocation.getObj(),
 		    context );
 
-		String				args		= invocation.getArguments().stream()
-		    .map( it -> transpiler.transform( it ).toString() )
-		    .collect( Collectors.joining( ", " ) );
-
 		Map<String, String>	values		= new HashMap<>() {
 
 											{
@@ -59,9 +54,12 @@ public class BoxMethodInvocationTransformer extends AbstractTransformer {
 										};
 
 		String				target		= null;
+		for ( int i = 0; i < invocation.getArguments().size(); i++ ) {
+			Expression expr2 = ( Expression ) transpiler.transform( ( BoxNode ) invocation.getArguments().get( i ), context );
+			values.put( "arg" + i, expr2.toString() );
+		}
 
 		values.put( "expr", expr.toString() );
-		values.put( "args", args );
 
 		String	template;
 
@@ -73,18 +71,18 @@ public class BoxMethodInvocationTransformer extends AbstractTransformer {
 			accessKey = createKey( invocation.getName() );
 		}
 		values.put( "methodKey", accessKey.toString() );
-		template = """
-		           Referencer.getAndInvoke(
-		             context,
-		             ${expr},
-		             ${methodKey},
-		             new Object[] { ${args} },
-		             ${safe}
-		           )
-		           """;
+		template = getTemplate( invocation );
 		Node javaExpr = parseExpression( template, values );
-		logger.debug( side + node.getSourceText() + " -> " + javaExpr );
+		logger.info( side + node.getSourceText() + " -> " + javaExpr );
 		addIndex( javaExpr, node );
 		return javaExpr;
+	}
+
+	private String getTemplate( BoxMethodInvocation function ) {
+		StringBuilder sb = new StringBuilder( "Referencer.getAndInvoke(${contextName},${expr},${methodKey}," );
+
+		sb.append( generateArguments( function.getArguments() ) );
+		sb.append( ", ${safe})" );
+		return sb.toString();
 	}
 }

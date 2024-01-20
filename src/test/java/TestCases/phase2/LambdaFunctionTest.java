@@ -24,7 +24,6 @@ import java.util.List;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -37,8 +36,8 @@ import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
 import ortus.boxlang.runtime.types.Array;
-import ortus.boxlang.runtime.types.Lambda;
 import ortus.boxlang.runtime.types.IStruct;
+import ortus.boxlang.runtime.types.Lambda;
 import ortus.boxlang.runtime.types.meta.BoxMeta;
 import ortus.boxlang.runtime.types.meta.FunctionMeta;
 
@@ -248,7 +247,6 @@ public class LambdaFunctionTest {
 
 	@DisplayName( "named arguments" )
 	@Test
-	@Disabled
 	public void testNamedArguments() {
 
 		instance.executeSource(
@@ -278,7 +276,6 @@ public class LambdaFunctionTest {
 
 	@DisplayName( "argument collection" )
 	@Test
-	@Disabled
 	public void testArgumentCollection() {
 
 		instance.executeSource(
@@ -287,12 +284,12 @@ public class LambdaFunctionTest {
 		           	return arguments;
 		           }
 		        result =    foo(
-		    	argumentCollection={
+		    	argumentCollection=[
 		    		param1:'value1',
 		    		param2 : 'value2',
 		    		param3 :"value3",
 		    		param4: "value4"
-		    	}
+		    	]
 		    );
 		      """,
 		    context );

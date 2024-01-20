@@ -1037,4 +1037,27 @@ public class CoreLangTest {
 		assertThat( variables.get( result ) instanceof Comparator ).isTrue();
 
 	}
+
+	@DisplayName( "String as array" )
+	@Test
+	public void testStringAsArray2() {
+		long	start	= TimeUnit.NANOSECONDS.toMillis( System.nanoTime() );
+		long	startn	= System.nanoTime();
+
+		/*
+		 * for ( int i = 0; i < 50_000_000; i++ ) {
+		 * new Struct();
+		 * }
+		 */
+
+		for ( int i = 0; i < 3_000_000; i++ ) {
+			instance.getConfiguration().asStruct();
+		}
+
+		// instance.getConfiguration().asStruct();
+		// new Struct();
+		System.out.println( TimeUnit.NANOSECONDS.toMillis( System.nanoTime() ) - start );
+		System.out.println( System.nanoTime() - startn );
+
+	}
 }

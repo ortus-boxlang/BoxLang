@@ -66,6 +66,7 @@ public class BoxClosureTransformer extends AbstractTransformer {
 		import java.lang.Double;
 		import java.lang.Integer;
 		import java.util.*;
+		import java.util.LinkedHashMap;
 		import java.nio.file.*;
 
   		public class ${classname} extends Closure {

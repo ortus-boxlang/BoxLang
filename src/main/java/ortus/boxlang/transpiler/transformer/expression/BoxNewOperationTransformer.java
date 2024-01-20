@@ -19,7 +19,6 @@ package ortus.boxlang.transpiler.transformer.expression;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 import com.github.javaparser.ast.Node;
 import com.github.javaparser.ast.expr.Expression;
@@ -52,10 +51,6 @@ public class BoxNewOperationTransformer extends AbstractTransformer {
 		BoxNewOperation	boxNew	= ( BoxNewOperation ) node;
 		Expression		expr	= ( Expression ) transpiler.transform( boxNew.getExpression(), TransformerContext.RIGHT );
 
-		String			args	= boxNew.getArguments().stream()
-		    .map( it -> transpiler.transform( it ).toString() )
-		    .collect( Collectors.joining( ", " ) );
-
 		String			fqn		= expr.toString();
 		if ( expr instanceof NameExpr ) {
 			fqn = fqn.startsWith( "\"" ) ? fqn : "\"" + fqn + "\"";
@@ -65,19 +60,18 @@ public class BoxNewOperationTransformer extends AbstractTransformer {
 
 											{
 												put( "expr", finalFqn );
-												put( "args", args );
 												put( "contextName", transpiler.peekContextName() );
 
 											}
 										};
-		String				template	= """
-		                                  classLocator.load(	context,
-		                                                            		StringCaster.cast(${expr}),
-		                                                            	  imports
-		                                                            	).invokeConstructor( ${contextName}, new Object[] { ${args} } ).unWrapBoxLangClass()
-		                                                            """;
-		Node				javaStmt	= parseExpression( template, values );
-		logger.debug( node.getSourceText() + " -> " + javaStmt );
+		for ( int i = 0; i < boxNew.getArguments().size(); i++ ) {
+			Expression expr2 = ( Expression ) transpiler.transform( ( BoxNode ) boxNew.getArguments().get( i ), context );
+			values.put( "arg" + i, expr2.toString() );
+		}
+		String	template	= "classLocator.load(context,StringCaster.cast(${expr}),imports).invokeConstructor( ${contextName}, "
+		    + generateArguments( boxNew.getArguments() ) + " ).unWrapBoxLangClass()";
+		Node	javaStmt	= parseExpression( template, values );
+		logger.info( node.getSourceText() + " -> " + javaStmt );
 		addIndex( javaStmt, node );
 		return javaStmt;
 

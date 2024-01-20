@@ -265,10 +265,8 @@ public class DynamicJavaInteropService {
 		if ( !IClassRunnable.class.isAssignableFrom( targetClass ) ) {
 			throw new BoxRuntimeException( "Cannot use named arguments on a Java constructor." );
 		}
-		// Unwrap any ClassInvoker instances
-		unWrapArguments( args );
 		// Method signature for a constructor is void (Object...)
-		MethodType		constructorType	= MethodType.methodType( void.class, argumentsToClasses( args ) );
+		MethodType		constructorType	= MethodType.methodType( void.class, argumentsToClasses( EMPTY_ARGS ) );
 		// Define the bootstrap method
 		MethodHandle	constructorHandle;
 		try {

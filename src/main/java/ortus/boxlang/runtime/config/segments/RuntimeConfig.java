@@ -121,7 +121,7 @@ public class RuntimeConfig {
 	 */
 	public IStruct asStruct() {
 		return Struct.of(
-		    Key.mappings, this.mappings,
+		    Key.mappings, new Struct( this.mappings.getWrapped() ),
 		    Key.modulesDirectory, this.modulesDirectory,
 		    Key.caches, this.caches
 		);

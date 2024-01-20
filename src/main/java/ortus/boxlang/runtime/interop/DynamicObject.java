@@ -203,6 +203,19 @@ public class DynamicObject implements IReferenceable {
 	}
 
 	/**
+	 * Invokes the constructor for the class with the given arguments and stores the instance of the object
+	 * into the {@code targetInstance} property for future method calls.
+	 *
+	 * @param args The arguments to pass to the constructor
+	 *
+	 * @return The instance of the class
+	 */
+	public DynamicObject invokeConstructor( IBoxContext context, Map<Key, Object> args ) {
+		this.targetInstance = DynamicJavaInteropService.invokeConstructor( context, this.targetClass, args );
+		return this;
+	}
+
+	/**
 	 * Invokes the no-arg constructor for the class with the given arguments and stores the instance of the object
 	 * into the {@code targetInstance} property for future method calls.
 	 *

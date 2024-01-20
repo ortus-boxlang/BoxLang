@@ -23,7 +23,6 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -304,12 +303,11 @@ public class ClassTest {
 
 	@DisplayName( "Implicit Constructor named" )
 	@Test
-	@Disabled( "waiting on named arg support" )
 	public void testImplicitConstructorNamed() {
 
 		instance.executeStatement(
 		    """
-		        	cfc = new src.test.java.TestCases.phase3.ImplicitConstructorTest( name="brad", age=43, favoriteColor="blue" );
+		        	 cfc =  new src.test.java.TestCases.phase3.ImplicitConstructorTest( name="brad", age=43, favoriteColor="blue" );
 		    name = cfc.getName();
 		    age = cfc.getAge();
 		    favoriteColor = cfc.getFavoriteColor();

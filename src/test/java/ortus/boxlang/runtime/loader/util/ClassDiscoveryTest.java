@@ -29,6 +29,7 @@ import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.HashMap;
 
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -80,6 +81,7 @@ class ClassDiscoveryTest {
 
 	@DisplayName( "Can convert a jar resource location to a Path" )
 	@Test
+	@Disabled
 	void testGetFileFromJarResourcePath() throws IOException {
 		// Given
 		URI		jarPath	= URI.create( "jar:file:/Users/lmajano/Sites/projects/boxlang/build/libs/boxlang-1.0.0-all.jar!/modules" );

@@ -57,22 +57,14 @@ public class BoxFunctionInvocationTransformer extends AbstractTransformer {
 		}
 		String	template	= getTemplate( function );
 		Node	javaExpr	= parseExpression( template, values );
-		logger.debug( side + node.getSourceText() + " -> " + javaExpr );
+		logger.info( side + node.getSourceText() + " -> " + javaExpr );
 		addIndex( javaExpr, node );
 		return javaExpr;
 	}
 
 	private String getTemplate( BoxFunctionInvocation function ) {
-		StringBuilder sb = new StringBuilder( "${contextName}.invokeFunction( ${functionName}" );
-
-		sb.append( ", new Object[] { " );
-		for ( int i = 0; i < function.getArguments().size(); i++ ) {
-			sb.append( "${" ).append( "arg" ).append( i ).append( "}" );
-			if ( i < function.getArguments().size() - 1 ) {
-				sb.append( "," );
-			}
-		}
-		sb.append( "}" );
+		StringBuilder sb = new StringBuilder( "${contextName}.invokeFunction( ${functionName}, " );
+		sb.append( generateArguments( function.getArguments() ) );
 		sb.append( ")" );
 		return sb.toString();
 	}

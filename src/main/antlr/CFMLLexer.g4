@@ -101,6 +101,9 @@ fragment TAG_NameStartChar: [:a-z];
 // *********************************************************************************************************************
 mode OUTPUT_MODE;
 
+TAG_CLOSE_OUTPUT:
+	'>' -> pushMode(DEFAULT_MODE), type(TAG_CLOSE);
+
 TAG_SLASH_CLOSE_OUTPUT:
 	'/>' -> popMode, popMode, popMode, type(TAG_SLASH_CLOSE);
 
@@ -111,9 +114,6 @@ TAG_NAME_OUTPUT:
 	TAG_NameStartChar TAG_NameChar* -> type(TAG_NAME);
 
 TAG_WHITESPACE_OUTPUT: [ \t\r\n] -> skip;
-
-TAG_CLOSE_OUTPUT:
-	'>' -> pushMode(DEFAULT_MODE), type(TAG_CLOSE);
 
 // *********************************************************************************************************************
 mode END_TAG;

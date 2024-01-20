@@ -34,6 +34,7 @@ import com.github.javaparser.ast.stmt.Statement;
 
 import ortus.boxlang.ast.BoxExpr;
 import ortus.boxlang.ast.BoxNode;
+import ortus.boxlang.ast.expression.BoxArgument;
 import ortus.boxlang.ast.expression.BoxBinaryOperation;
 import ortus.boxlang.ast.expression.BoxBinaryOperator;
 import ortus.boxlang.ast.expression.BoxComparisonOperation;
@@ -250,5 +251,35 @@ public abstract class AbstractTransformer implements Transformer {
 			annotationStruct.getArguments().addAll( members );
 			return annotationStruct;
 		}
+	}
+
+	protected String generateArguments( List<BoxArgument> arguments ) {
+		StringBuilder sb = new StringBuilder( "" );
+
+		if ( arguments.size() == 0 ) {
+			sb.append( "new Object[]{}" );
+		} else {
+			// Positional args
+			if ( arguments.get( 0 ).getName() == null ) {
+				sb.append( "new Object[] { " );
+				for ( int i = 0; i < arguments.size(); i++ ) {
+					sb.append( "${" ).append( "arg" ).append( i ).append( "}" );
+					if ( i < arguments.size() - 1 ) {
+						sb.append( "," );
+					}
+				}
+				sb.append( "}" );
+			} else {
+				// named args as a map
+				sb.append( "new LinkedHashMap<>(){{" );
+				for ( int i = 0; i < arguments.size(); i++ ) {
+					sb.append( "put( " ).append( createKey( arguments.get( i ).getName() ).toString() ).append( ", ${" ).append( "arg" )
+					    .append( i )
+					    .append( "} );" );
+				}
+				sb.append( "}}" );
+			}
+		}
+		return sb.toString();
 	}
 }

@@ -162,9 +162,21 @@ paramStatement: PARAM statementParameters;
 saveContentStatement:
 	SAVECONTENT statementParameters statementBlock;
 
-argumentList: argument (COMMA argument)*;
+// Arguments are zero or more named args, or zero or more positional args, but not both.
+argumentList:
+	namedArgument (COMMA namedArgument)*
+	| positionalArgument (COMMA positionalArgument)*;
 
-argument: expression ( (EQUAL | COLON) expression)?;
+/* 
+ foo = bar, baz = qux 
+ foo : bar, baz : qux
+ "foo" = bar, "baz" = qux 
+ 'foo' : bar, 'baz' :
+ qux
+ */
+namedArgument: (identifier | stringLiteral) (EQUAL | COLON) expression;
+// foo, bar, baz
+positionalArgument: expression;
 
 // We support if blocks with or without else blocks, and if statements without else blocks. That's
 // it - no other valid if constructs.

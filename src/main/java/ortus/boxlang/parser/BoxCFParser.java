@@ -1374,7 +1374,10 @@ public class BoxCFParser extends BoxAbstractParser {
 	private List<BoxArgument> toAst( File file, CFParser.ArgumentListContext node ) {
 		List<BoxArgument> args = new ArrayList<>();
 		if ( node != null ) {
-			for ( CFParser.ArgumentContext arg : node.argument() ) {
+			for ( CFParser.NamedArgumentContext arg : node.namedArgument() ) {
+				args.add( toAst( file, arg ) );
+			}
+			for ( CFParser.PositionalArgumentContext arg : node.positionalArgument() ) {
 				args.add( toAst( file, arg ) );
 			}
 		}
@@ -1382,25 +1385,39 @@ public class BoxCFParser extends BoxAbstractParser {
 	}
 
 	/**
-	 * Converts the Argument parser rule to the corresponding AST node.
+	 * Converts the PositionalArgumentContext parser rule to the corresponding AST node.
 	 *
 	 * @param file source file, if any
-	 * @param node ANTLR FunctionInvokationContext rule
+	 * @param node ANTLR PositionalArgumentContext rule
 	 *
-	 * @return corresponding AST BoxArgument
+	 * @return corresponding AST PositionalArgumentContext
 	 *
 	 * @see BoxArgument
 	 */
-	private BoxArgument toAst( File file, CFParser.ArgumentContext node ) {
+	private BoxArgument toAst( File file, CFParser.PositionalArgumentContext node ) {
+		BoxExpr value = toAst( file, node.expression() );
+		return new BoxArgument( null, value, getPosition( node ), getSourceText( node ) );
+	}
 
-		if ( node.EQUAL() != null || node.COLON() != null ) {
-			BoxExpr	value	= toAst( file, node.expression().get( 1 ) );
-			BoxExpr	name	= toAst( file, node.expression().get( 0 ) );
-			return new BoxArgument( name, value, getPosition( node ), getSourceText( node ) );
+	/**
+	 * Converts the NamedArgumentContext parser rule to the corresponding AST node.
+	 *
+	 * @param file source file, if any
+	 * @param node ANTLR NamedArgumentContext rule
+	 *
+	 * @return corresponding AST NamedArgumentContext
+	 *
+	 * @see BoxArgument
+	 */
+	private BoxArgument toAst( File file, CFParser.NamedArgumentContext node ) {
+		BoxExpr name;
+		if ( node.identifier() != null ) {
+			name = new BoxStringLiteral( node.identifier().getText(), getPosition( node ), getSourceText( node ) );
 		} else {
-			BoxExpr value = toAst( file, node.expression().get( 0 ) );
-			return new BoxArgument( value, getPosition( node ), getSourceText( node ) );
+			name = toAst( file, node.stringLiteral() );
 		}
+		BoxExpr value = toAst( file, node.expression() );
+		return new BoxArgument( name, value, getPosition( node ), getSourceText( node ) );
 	}
 
 	/**

@@ -65,7 +65,9 @@ public class BoxArgument extends BoxExpr {
 		super( position, sourceText );
 		this.name	= name;
 		this.value	= value;
-		this.name.setParent( this );
+		if ( this.name != null ) {
+			this.name.setParent( this );
+		}
 		this.value.setParent( this );
 	}
 

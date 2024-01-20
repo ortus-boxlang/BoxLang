@@ -86,6 +86,7 @@ public class BoxScriptTransformer extends AbstractTransformer {
 		import java.util.Iterator;
 		import java.util.Map;
 		import java.util.HashMap;
+		import java.util.LinkedHashMap;
 
 		public class ${className} extends ${baseclass} {
 
