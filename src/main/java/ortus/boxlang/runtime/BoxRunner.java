@@ -83,7 +83,13 @@ public class BoxRunner {
 		BoxRuntime boxRuntime = BoxRuntime.getInstance( options.debug(), options.configFile() );
 
 		if ( options.debugger() ) {
-			new BoxLangDebugger( ortus.boxlang.debugger.Debugee.class, new int[] { 9 } );
+			BoxLangDebugger debugger = new BoxLangDebugger( ortus.boxlang.debugger.Debugee.class, new int[] { 9 } );
+			try {
+				debugger.startDebugSession();
+			} catch ( Exception e ) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
 			return;
 		} else if ( options.printAST() && options.code() != null ) {
 			boxRuntime.printSourceAST( options.code() );

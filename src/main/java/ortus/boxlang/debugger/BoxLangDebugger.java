@@ -21,10 +21,10 @@ import com.sun.jdi.event.ClassPrepareEvent;
 import com.sun.jdi.event.Event;
 import com.sun.jdi.event.EventSet;
 import com.sun.jdi.event.LocatableEvent;
+import com.sun.jdi.event.StepEvent;
 import com.sun.jdi.request.BreakpointRequest;
 import com.sun.jdi.request.ClassPrepareRequest;
-
-import javassist.bytecode.SignatureAttribute.ClassType;
+import com.sun.jdi.request.StepRequest;
 
 public class BoxLangDebugger {
 
@@ -32,23 +32,28 @@ public class BoxLangDebugger {
 	private int[]	breakPointLines;
 
 	public BoxLangDebugger( Class debugClass, int[] breakPointLines ) {
-		this.debugClass = debugClass;
+		this.debugClass			= debugClass;
+		this.breakPointLines	= breakPointLines;
 	}
 
-	public void startDebugSession() throws Exception {
+	public void startDebugSession() {
 		VirtualMachine vm = null;
 
 		try {
 			vm = connectAndLaunchVM();
-			enableClassPrepareRequest( vm );
+			vm.setDebugTraceMode( VirtualMachine.TRACE_ALL );
 			EventSet eventSet = null;
 			while ( ( eventSet = vm.eventQueue().remove() ) != null ) {
 				for ( Event event : eventSet ) {
+					System.out.println( "Found event: " + event.toString() );
 					if ( event instanceof ClassPrepareEvent ) {
 						setBreakPoints( vm, ( ClassPrepareEvent ) event );
 					}
 					if ( event instanceof BreakpointEvent ) {
-						displayVariables( ( BreakpointEvent ) event );
+						enableStepRequest( vm, ( BreakpointEvent ) event );
+					}
+					if ( event instanceof StepEvent ) {
+						displayVariables( ( StepEvent ) event );
 					}
 					vm.resume();
 				}
@@ -56,8 +61,11 @@ public class BoxLangDebugger {
 		} catch ( VMDisconnectedException e ) {
 			System.out.println( "Virtual Machine is disconnected." );
 		} catch ( Exception e ) {
+			System.out.println( "eeeeeeeeeee" );
 			e.printStackTrace();
 		}
+
+		System.out.println( "done debugging" );
 	}
 
 	public VirtualMachine connectAndLaunchVM() throws Exception {
@@ -76,9 +84,9 @@ public class BoxLangDebugger {
 	}
 
 	public void setBreakPoints( VirtualMachine vm, ClassPrepareEvent event ) throws AbsentInformationException {
-		ClassType classType = ( ClassType ) event.referenceType();
+		ReferenceType classType = event.referenceType();
 		for ( int lineNumber : breakPointLines ) {
-			Location			location	= ( ( ReferenceType ) classType ).locationsOfLine( lineNumber ).get( 0 );
+			Location			location	= classType.locationsOfLine( lineNumber ).get( 0 );
 			BreakpointRequest	bpReq		= vm.eventRequestManager().createBreakpointRequest( location );
 			bpReq.enable();
 		}
@@ -93,6 +101,15 @@ public class BoxLangDebugger {
 			for ( Map.Entry<LocalVariable, Value> entry : visibleVariables.entrySet() ) {
 				System.out.println( entry.getKey().name() + " = " + entry.getValue() );
 			}
+		}
+	}
+
+	public void enableStepRequest( VirtualMachine vm, BreakpointEvent event ) {
+		// enable step request for last break point
+		if ( event.location().toString().contains( debugClass.getName() + ":" + breakPointLines[ breakPointLines.length - 1 ] ) ) {
+			StepRequest stepRequest = vm.eventRequestManager()
+			    .createStepRequest( event.thread(), StepRequest.STEP_LINE, StepRequest.STEP_OVER );
+			stepRequest.enable();
 		}
 	}
 }
