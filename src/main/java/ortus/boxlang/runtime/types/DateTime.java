@@ -630,6 +630,17 @@ public class DateTime implements IType, IReferenceable {
 	}
 
 	/**
+	 * Converts this date to a specified timezone - this may result in a change to the date and time
+	 *
+	 * @param timezone the ZoneId of the timezone to convert to
+	 *
+	 * @return a new converted DateTime instance
+	 */
+	public DateTime convertToZone( ZoneId timezone ) {
+		return new DateTime( getWrapped().withZoneSameInstant( timezone ) );
+	}
+
+	/**
 	 * Sets the timezone of the current wrapped date time
 	 *
 	 * @param timeZone The string representation of the timezone; e.g. "America/New_York", "UTC", "Asia/Tokyo" etc.

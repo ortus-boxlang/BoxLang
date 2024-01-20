@@ -75,6 +75,7 @@ public class Key implements Comparable<Key> {
 	public static final Key	columnList					= Key.of( "columnList" );
 	public static final Key	compiler					= Key.of( "compiler" );
 	public static final Key	contains					= Key.of( "contains" );
+	public static final Key	conversionType				= Key.of( "conversionType" );
 	public static final Key	count						= Key.of( "count" );
 	public static final Key	createPath					= Key.of( "createPath" );
 	public static final Key	currentRow					= Key.of( "currentRow" );
