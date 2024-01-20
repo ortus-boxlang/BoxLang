@@ -25,6 +25,7 @@ import ortus.boxlang.runtime.bifs.BoxBIF;
 import ortus.boxlang.runtime.bifs.BoxMember;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.dynamic.casters.DateTimeCaster;
+import ortus.boxlang.runtime.dynamic.casters.LongCaster;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
@@ -53,6 +54,7 @@ import ortus.boxlang.runtime.util.LocalizationUtil;
 @BoxBIF( alias = "Nanosecond" )
 @BoxBIF( alias = "Offset" )
 @BoxBIF( alias = "GetTimezone" )
+@BoxBIF( alias = "GetNumericDate" )
 @BoxMember( type = BoxLangType.DATETIME, name = "year" )
 @BoxMember( type = BoxLangType.DATETIME, name = "quarter" )
 @BoxMember( type = BoxLangType.DATETIME, name = "month" )
@@ -99,6 +101,7 @@ public class TimeUnits extends BIF {
 		public static final Key		offset					= Key.of( "offset" );
 		public static final Key		timeZone				= Key.timezone;
 		public static final Key		getTimeZone				= Key.of( "getTimeZone" );
+		public static final Key		getNumericDate			= Key.of( "getNumericDate" );
 
 		/**
 		 * Map of method names to BIF names
@@ -170,6 +173,7 @@ public class TimeUnits extends BIF {
 				: bifMethodKey.equals( bifMethods.daysInYear ) ? Year.of( dateRef.getWrapped().getYear() ).length()
 				: bifMethodKey.equals( bifMethods.millis ) ? dateRef.getWrapped().getNano() / 1000000
 				: bifMethodKey.equals( bifMethods.offset ) ? dateRef.clone().format( OFFSET_FORMAT )
+				: bifMethodKey.equals( bifMethods.getNumericDate ) ? dateRef.toEpochMillis().doubleValue() / LongCaster.cast( 86400000l).doubleValue()
 				: (
 					bifMethodKey.equals( bifMethods.timeZone )
 					||

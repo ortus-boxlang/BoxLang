@@ -35,6 +35,7 @@ import org.junit.jupiter.api.Test;
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.ScriptingBoxContext;
+import ortus.boxlang.runtime.dynamic.casters.LongCaster;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
@@ -641,6 +642,23 @@ public class TimeUnitsTest {
 		    context );
 		String result = variables.getAsString( Key.of( "result" ) );
 		assertEquals( result, refTimeZone );
+
+	}
+
+	@DisplayName( "It tests the BIF GetNumericDate" )
+	@Test
+	public void testBifGetNumericDays() {
+		DateTime	refDate			= new DateTime();
+		Double		refNumericDate	= refDate.toEpochMillis().doubleValue() / LongCaster.cast( 86400000l ).doubleValue();
+		System.out.println( refNumericDate );
+		variables.put( Key.of( "date" ), refDate );
+		instance.executeSource(
+		    """
+		    result = GetNumericDate( date );
+		    """,
+		    context );
+		Double result = variables.getAsDouble( Key.of( "result" ) );
+		assertEquals( result, refNumericDate );
 
 	}
 
