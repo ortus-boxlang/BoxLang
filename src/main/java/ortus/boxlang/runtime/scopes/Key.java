@@ -88,6 +88,7 @@ public class Key implements Comparable<Key> {
 	public static final Key	date1						= Key.of( "date1" );
 	public static final Key	date2						= Key.of( "date2" );
 	public static final Key	day							= Key.of( "day" );
+	public static final Key	days						= Key.of( "days" );
 	public static final Key	debugMode					= Key.of( "debugMode" );
 	public static final Key	defaultValue				= Key.of( "defaultValue" );
 	public static final Key	delimiter					= Key.of( "delimiter" );
@@ -108,6 +109,7 @@ public class Key implements Comparable<Key> {
 	public static final Key	getFileInfo					= Key.of( "getFileInfo" );
 	public static final Key	hash40						= Key.of( "hash40" );
 	public static final Key	hour						= Key.of( "hour" );
+	public static final Key	hours						= Key.of( "hours" );
 	public static final Key	ignoreExists				= Key.of( "ignoreExists" );
 	public static final Key	index						= Key.of( "index" );
 	public static final Key	init						= Key.of( "init" );
@@ -129,7 +131,9 @@ public class Key implements Comparable<Key> {
 	public static final Key	merge						= Key.of( "merge" );
 	public static final Key	message						= Key.of( "message" );
 	public static final Key	millisecond					= Key.of( "millisecond" );
+	public static final Key	milliseconds				= Key.of( "milliseconds" );
 	public static final Key	minute						= Key.of( "minute" );
+	public static final Key	minutes						= Key.of( "minutes" );
 	public static final Key	missingMethodArguments		= Key.of( "missingMethodArguments" );
 	public static final Key	missingMethodName			= Key.of( "missingMethodName" );
 	public static final Key	mode						= Key.of( "mode" );
@@ -162,6 +166,7 @@ public class Key implements Comparable<Key> {
 	public static final Key	runtime						= Key.of( "runtime" );
 	public static final Key	script_name					= Key.of( "script_name" );
 	public static final Key	second						= Key.of( "second" );
+	public static final Key	seconds						= Key.of( "seconds" );
 	public static final Key	seekable					= Key.of( "seekable" );
 	public static final Key	separator					= Key.of( "separator" );
 	public static final Key	server						= Key.of( "server" );
