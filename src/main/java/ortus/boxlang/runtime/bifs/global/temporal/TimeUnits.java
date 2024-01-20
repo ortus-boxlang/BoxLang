@@ -25,7 +25,6 @@ import ortus.boxlang.runtime.bifs.BoxBIF;
 import ortus.boxlang.runtime.bifs.BoxMember;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.dynamic.casters.DateTimeCaster;
-import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
@@ -33,6 +32,7 @@ import ortus.boxlang.runtime.types.BoxLangType;
 import ortus.boxlang.runtime.types.DateTime;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
+import ortus.boxlang.runtime.util.LocalizationUtil;
 
 @BoxBIF( alias = "Year" )
 @BoxBIF( alias = "Quarter" )
@@ -142,11 +142,8 @@ public class TimeUnits extends BIF {
 	 * @argument.timezone The timezone with which to cast the result
 	 */
 	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
-		String timezone = arguments.getAsString( Key.timezone );
-		if ( timezone == null ) {
-			timezone = StringCaster.cast( context.getConfigItem( Key.timezone, ZoneId.systemDefault().toString() ) );
-		}
-		DateTime dateRef = DateTimeCaster.cast( arguments.get( Key.date ), true, ZoneId.of( timezone ) );
+		DateTime dateRef = DateTimeCaster.cast( arguments.get( Key.date ), true,
+		    LocalizationUtil.parseZoneId( arguments.getAsString( Key.timezone ), context ) );
 
 		if ( arguments.get( Key.timezone ) != null ) {
 			dateRef = dateRef.clone( ZoneId.of( arguments.getAsString( Key.timezone ) ) );

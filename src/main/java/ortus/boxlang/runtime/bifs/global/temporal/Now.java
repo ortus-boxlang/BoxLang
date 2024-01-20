@@ -15,16 +15,14 @@
 
 package ortus.boxlang.runtime.bifs.global.temporal;
 
-import java.time.ZoneId;
-
 import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
 import ortus.boxlang.runtime.context.IBoxContext;
-import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.DateTime;
+import ortus.boxlang.runtime.util.LocalizationUtil;
 
 @BoxBIF
 public class Now extends BIF {
@@ -48,11 +46,7 @@ public class Now extends BIF {
 	 * @argument.timezone A timezone to use for the DateTime object, defaults to the system default
 	 */
 	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
-		String timezone = arguments.getAsString( Key.timezone );
-		if ( timezone == null ) {
-			timezone = StringCaster.cast( context.getConfigItem( Key.timezone, ZoneId.systemDefault().toString() ) );
-		}
-		return new DateTime( ZoneId.of( timezone ) );
+		return new DateTime( LocalizationUtil.parseZoneId( arguments.getAsString( Key.timezone ), context ) );
 	}
 
 }

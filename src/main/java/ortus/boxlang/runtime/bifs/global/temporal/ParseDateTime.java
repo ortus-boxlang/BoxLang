@@ -26,6 +26,7 @@ import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.DateTime;
+import ortus.boxlang.runtime.util.LocalizationUtil;
 
 @BoxBIF
 
@@ -58,10 +59,7 @@ public class ParseDateTime extends BIF {
 	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
 		Object	dateRef		= arguments.get( Key.date );
 		String	format		= arguments.getAsString( Key.format );
-		String	timezone	= arguments.getAsString( Key.timezone );
-		if ( timezone == null ) {
-			timezone = StringCaster.cast( context.getConfigItem( Key.timezone, ZoneId.systemDefault().toString() ) );
-		}
+		ZoneId	timezone	= LocalizationUtil.parseZoneId( arguments.getAsString( Key.timezone ), context );
 		if ( dateRef instanceof DateTime ) {
 			DateTime dateObj = DateTimeCaster.cast( dateRef );
 			if ( format != null ) {
@@ -70,9 +68,9 @@ public class ParseDateTime extends BIF {
 			return dateObj;
 		}
 		if ( format != null ) {
-			return new DateTime( StringCaster.cast( dateRef ), format, ZoneId.of( timezone ) );
+			return new DateTime( StringCaster.cast( dateRef ), format, timezone );
 		} else {
-			return new DateTime( StringCaster.cast( dateRef ), ZoneId.of( timezone ) );
+			return new DateTime( StringCaster.cast( dateRef ), timezone );
 		}
 	}
 
