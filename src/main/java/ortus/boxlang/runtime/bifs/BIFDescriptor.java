@@ -165,6 +165,7 @@ public class BIFDescriptor {
 	public Object invoke( IBoxContext context, Map<Key, Object> namedArguments, boolean isMember ) {
 		ArgumentsScope scope = ArgumentUtil.createArgumentsScope( namedArguments, getBIF().getDeclaredArguments() );
 		scope.put( BIF.__isMemberExecution, isMember );
+		scope.put( BIF.__functionName, name );
 		// Invoke it baby!
 		return this.getBIF().invoke( context, scope );
 	}
