@@ -404,6 +404,37 @@ public class TimeUnitsTest {
 
 	}
 
+	@DisplayName( "It tests the BIF FirstDayOfMonth" )
+	@Test
+	public void testBifFirstDayOfMonth() {
+		DateTime	dateRef				= new DateTime();
+		Integer		refFirstDayOfMonth	= dateRef.getWrapped().withDayOfMonth( ( int ) 1 ).getDayOfYear();
+		instance.executeSource(
+		    """
+		    now = now();
+		       result = FirstDayOfMonth( now );
+		       """,
+		    context );
+		Integer result = ( Integer ) variables.get( Key.of( "result" ) );
+		assertEquals( result, refFirstDayOfMonth );
+
+	}
+
+	@DisplayName( "It tests the DateTime Member function FirstDayOfMonth" )
+	@Test
+	public void testMemberFirstDayOfMonth() {
+		DateTime	dateRef				= new DateTime();
+		Integer		refFirstDayOfMonth	= dateRef.getWrapped().withDayOfMonth( ( int ) 1 ).getDayOfYear();
+		instance.executeSource(
+		    """
+		    result = now().FirstDayOfMonth();
+		    """,
+		    context );
+		Integer result = ( Integer ) variables.get( Key.of( "result" ) );
+		assertEquals( result, refFirstDayOfMonth );
+
+	}
+
 	@DisplayName( "It tests the BIF WeekOfYear" )
 	@Test
 	public void testBifWeekOfYear() {

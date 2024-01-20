@@ -48,6 +48,7 @@ import ortus.boxlang.runtime.util.LocalizationUtil;
 @BoxBIF( alias = "DaysInMonth" )
 @BoxBIF( alias = "DaysInYear" )
 @BoxBIF( alias = "DayOfYear" )
+@BoxBIF( alias = "FirstDayOfMonth" )
 @BoxBIF( alias = "WeekOfYear" )
 @BoxBIF( alias = "Hour" )
 @BoxBIF( alias = "Minute" )
@@ -69,6 +70,7 @@ import ortus.boxlang.runtime.util.LocalizationUtil;
 @BoxMember( type = BoxLangType.DATETIME, name = "daysInMonth" )
 @BoxMember( type = BoxLangType.DATETIME, name = "daysInYear" )
 @BoxMember( type = BoxLangType.DATETIME, name = "dayOfYear" )
+@BoxMember( type = BoxLangType.DATETIME, name = "firstDayOfMonth" )
 @BoxMember( type = BoxLangType.DATETIME, name = "weekOfYear" )
 @BoxMember( type = BoxLangType.DATETIME, name = "hour" )
 @BoxMember( type = BoxLangType.DATETIME, name = "minute" )
@@ -100,6 +102,7 @@ public class TimeUnits extends BIF {
 		public static final Key		dayOfWeekShortAsString	= Key.of( "dayOfWeekShortAsString" );
 		public static final Key		daysInMonth				= Key.of( "daysInMonth" );
 		public static final Key		daysInYear				= Key.of( "daysInYear" );
+		public static final Key		firstDayOfMonth			= Key.of( "firstDayOfMonth" );
 		public static final Key		weekOfYear				= Key.of( "weekOfYear" );
 		public static final Key		millis					= Key.millisecond;
 		public static final Key		offset					= Key.of( "offset" );
@@ -175,6 +178,7 @@ public class TimeUnits extends BIF {
 				: bifMethodKey.equals( bifMethods.dayOfWeekShortAsString ) ? dateRef.clone().format( DOW_SHORT_FORMAT )
 				: bifMethodKey.equals( bifMethods.daysInMonth ) ? dateRef.getWrapped().getMonth().length( dateRef.isLeapYear() )
 				: bifMethodKey.equals( bifMethods.daysInYear ) ? Year.of( dateRef.getWrapped().getYear() ).length()
+				: bifMethodKey.equals( bifMethods.firstDayOfMonth ) ? dateRef.getWrapped().withDayOfMonth( (int) 1 ).getDayOfYear()
 				: bifMethodKey.equals( bifMethods.weekOfYear ) ? dateRef.getWrapped().get( ChronoField.ALIGNED_WEEK_OF_YEAR )
 				: bifMethodKey.equals( bifMethods.millis ) ? dateRef.getWrapped().getNano() / 1000000
 				: bifMethodKey.equals( bifMethods.offset ) ? dateRef.clone().format( OFFSET_FORMAT )
