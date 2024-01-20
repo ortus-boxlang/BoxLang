@@ -84,6 +84,8 @@ public class Key implements Comparable<Key> {
 	public static final Key	dateFormat					= Key.of( "dateFormat" );
 	public static final Key	dateLastModified			= Key.of( "dateLastModified" );
 	public static final Key	datepart					= Key.of( "datepart" );
+	public static final Key	date1						= Key.of( "date1" );
+	public static final Key	date2						= Key.of( "date2" );
 	public static final Key	day							= Key.of( "day" );
 	public static final Key	debugMode					= Key.of( "debugMode" );
 	public static final Key	defaultValue				= Key.of( "defaultValue" );
