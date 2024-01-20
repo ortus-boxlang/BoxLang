@@ -24,6 +24,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import java.time.Year;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
+import java.time.temporal.ChronoField;
 import java.time.temporal.IsoFields;
 
 import org.junit.jupiter.api.AfterAll;
@@ -400,6 +401,35 @@ public class TimeUnitsTest {
 		    context );
 		Integer result = ( Integer ) variables.get( Key.of( "result" ) );
 		assertEquals( result, refDayOfYear );
+
+	}
+
+	@DisplayName( "It tests the BIF WeekOfYear" )
+	@Test
+	public void testBifWeekOfYear() {
+		Integer refWeekOfYear = ZonedDateTime.now().get( ChronoField.ALIGNED_WEEK_OF_YEAR );
+		instance.executeSource(
+		    """
+		    now = now();
+		       result = weekOfYear( now );
+		       """,
+		    context );
+		Integer result = ( Integer ) variables.get( Key.of( "result" ) );
+		assertEquals( result, refWeekOfYear );
+
+	}
+
+	@DisplayName( "It tests the DateTime Member function WeekOfYear" )
+	@Test
+	public void testMemberWeekOfYear() {
+		Integer refWeekOfYear = ZonedDateTime.now().get( ChronoField.ALIGNED_WEEK_OF_YEAR );
+		instance.executeSource(
+		    """
+		    result = now().weekOfYear();
+		    """,
+		    context );
+		Integer result = ( Integer ) variables.get( Key.of( "result" ) );
+		assertEquals( result, refWeekOfYear );
 
 	}
 
