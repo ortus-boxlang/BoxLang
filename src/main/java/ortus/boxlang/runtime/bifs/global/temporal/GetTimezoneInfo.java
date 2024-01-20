@@ -32,12 +32,14 @@ public class GetTimezoneInfo extends BIF {
 	}
 
 	/**
-	 * Describe what the invocation of your bif function does
+	 * Retrieves a struct of information about the timezone
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.foo Describe any expected arguments
+	 * @argument.timezone optional, a specific timezone to retrieve information on
+	 * 
+	 * @argument.locale optional, a specific locale for language output of the timezone name fields
 	 */
 	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
 		ZoneId		zone	= LocalizationUtil.parseZoneId( arguments.getAsString( Key.timezone ), context );
