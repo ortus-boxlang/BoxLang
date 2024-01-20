@@ -34,12 +34,14 @@ public class DateCompare extends BIF {
 	}
 
 	/**
-	 * Describe what the invocation of your bif function does
+	 * Compares the difference between two dates - returning 0 if equal, -1 if date2 is less than date1 and 1 if the inverse
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.foo Describe any expected arguments
+	 * @argument.date1 The reference date object
+	 *
+	 * @argument.date2 The date which to compare against date1
 	 */
 	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
 		String		datePart	= arguments.getAsString( Key.datepart );
