@@ -93,6 +93,17 @@
         },
         {
             "type": "java",
+            "name": "debugger",
+            "request": "launch",
+            "mainClass": "ortus.boxlang.runtime.BoxRunner",
+            "projectName": "boxlang",
+            "args": [
+                "--debugger",
+                "Test.cfs"
+            ]
+        },
+        {
+            "type": "java",
             "name": "Current File",
             "request": "launch",
             "mainClass": "${file}"
