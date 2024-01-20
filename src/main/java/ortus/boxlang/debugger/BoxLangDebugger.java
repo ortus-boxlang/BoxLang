@@ -1,5 +1,8 @@
 package ortus.boxlang.debugger;
 
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
 // import java.lang.StackWalker.StackFrame;
 import java.util.Map;
 
@@ -22,6 +25,7 @@ import com.sun.jdi.event.Event;
 import com.sun.jdi.event.EventSet;
 import com.sun.jdi.event.LocatableEvent;
 import com.sun.jdi.event.StepEvent;
+import com.sun.jdi.event.VMDeathEvent;
 import com.sun.jdi.request.BreakpointRequest;
 import com.sun.jdi.request.ClassPrepareRequest;
 import com.sun.jdi.request.StepRequest;
@@ -30,6 +34,11 @@ public class BoxLangDebugger {
 
 	private Class	debugClass;
 	private int[]	breakPointLines;
+
+	public static void main( String[] args ) {
+		BoxLangDebugger bld = new BoxLangDebugger( ortus.boxlang.debugger.Debugee.class, new int[] { 9 } );
+		bld.startDebugSession();
+	}
 
 	public BoxLangDebugger( Class debugClass, int[] breakPointLines ) {
 		this.debugClass			= debugClass;
@@ -41,11 +50,16 @@ public class BoxLangDebugger {
 
 		try {
 			vm = connectAndLaunchVM();
-			vm.setDebugTraceMode( VirtualMachine.TRACE_ALL );
+			enableClassPrepareRequest( vm );
+			// vm.setDebugTraceMode( VirtualMachine.TRACE_ALL );
 			EventSet eventSet = null;
 			while ( ( eventSet = vm.eventQueue().remove() ) != null ) {
+				System.out.println( "as" );
 				for ( Event event : eventSet ) {
 					System.out.println( "Found event: " + event.toString() );
+					if ( event instanceof VMDeathEvent de ) {
+						System.out.println( "Found event: " + event.toString() );
+					}
 					if ( event instanceof ClassPrepareEvent ) {
 						setBreakPoints( vm, ( ClassPrepareEvent ) event );
 					}
@@ -60,9 +74,24 @@ public class BoxLangDebugger {
 			}
 		} catch ( VMDisconnectedException e ) {
 			System.out.println( "Virtual Machine is disconnected." );
+			e.printStackTrace();
 		} catch ( Exception e ) {
 			System.out.println( "eeeeeeeeeee" );
 			e.printStackTrace();
+		} finally {
+			InputStreamReader	reader	= new InputStreamReader( vm.process().getInputStream() );
+			OutputStreamWriter	writer	= new OutputStreamWriter( System.out );
+			char[]				buf		= new char[ 1024 ];
+
+			try {
+				reader.read( buf );
+				writer.write( buf );
+				writer.flush();
+			} catch ( IOException e ) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+
 		}
 
 		System.out.println( "done debugging" );
@@ -73,7 +102,8 @@ public class BoxLangDebugger {
 		LaunchingConnector				launchingConnector	= Bootstrap.virtualMachineManager()
 		    .defaultConnector();
 		Map<String, Connector.Argument>	arguments			= launchingConnector.defaultArguments();
-		arguments.get( "main" ).setValue( debugClass.getName() );
+		// arguments.get( "main" ).setValue( debugClass.getName() );
+		arguments.get( "main" ).setValue( debugClass.getName() + " test" );
 		return launchingConnector.launch( arguments );
 	}
 
