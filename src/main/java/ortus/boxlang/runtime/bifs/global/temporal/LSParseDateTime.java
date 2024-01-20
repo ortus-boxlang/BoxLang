@@ -31,6 +31,7 @@ import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.DateTime;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
+import ortus.boxlang.runtime.util.LocalizationUtil;
 
 @BoxBIF
 
@@ -65,23 +66,11 @@ public class LSParseDateTime extends BIF {
 	 */
 	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
 		Object	dateRef		= arguments.get( Key.date );
-		String	locale		= arguments.getAsString( Key.locale );
 		String	timezone	= arguments.getAsString( Key.timezone );
 		String	format		= arguments.getAsString( Key.format );
-		Locale	localeObj	= null;
-		if ( locale != null ) {
-			var		localeParts	= locale.split( "-|_| " );
-			String	ISOLang		= localeParts[ 0 ];
-			String	ISOCountry	= null;
-			if ( localeParts.length > 1 ) {
-				ISOCountry = localeParts[ 1 ];
-			}
-			localeObj = ISOCountry == null ? new Locale( ISOLang ) : new Locale( ISOLang, ISOCountry );
-		} else {
-			localeObj = Locale.getDefault();
-		}
+		Locale	locale		= LocalizationUtil.parseLocale( arguments.getAsString( Key.locale ) );
 
-		ZoneId zoneId = null;
+		ZoneId	zoneId		= null;
 		try {
 			zoneId = timezone != null ? ZoneId.of( timezone ) : ZoneId.systemDefault();
 		} catch ( ZoneRulesException e ) {
@@ -100,7 +89,7 @@ public class LSParseDateTime extends BIF {
 		DateTime dateObj = null;
 		if ( dateRef instanceof DateTime ) {
 			dateObj = DateTimeCaster.cast( dateRef );
-			dateObj.setFormat( DateTimeFormatter.ISO_LOCAL_DATE_TIME.withLocale( localeObj ) );
+			dateObj.setFormat( DateTimeFormatter.ISO_LOCAL_DATE_TIME.withLocale( locale ) );
 			if ( format != null ) {
 				dateObj.setFormat( format );
 			}
@@ -111,11 +100,11 @@ public class LSParseDateTime extends BIF {
 		if ( format != null ) {
 			// If we have specified format then use that to parse
 			dateObj = new DateTime( StringCaster.cast( dateRef ), format );
-			dateObj.setFormat( DateTimeFormatter.ISO_LOCAL_DATE_TIME.withLocale( localeObj ) );
+			dateObj.setFormat( DateTimeFormatter.ISO_LOCAL_DATE_TIME.withLocale( locale ) );
 			return timezone != null ? dateObj.setTimezone( timezone ) : dateObj;
 		} else {
 			// Otherwise attempt to auto-parse
-			dateObj = new DateTime( StringCaster.cast( dateRef ), localeObj, zoneId );
+			dateObj = new DateTime( StringCaster.cast( dateRef ), locale, zoneId );
 		}
 
 		return dateObj;

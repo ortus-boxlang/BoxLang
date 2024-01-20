@@ -17,17 +17,44 @@
  */
 package ortus.boxlang.runtime.util;
 
+import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeFormatterBuilder;
 import java.time.format.FormatStyle;
 import java.util.Locale;
 
+import ortus.boxlang.runtime.context.IBoxContext;
+import ortus.boxlang.runtime.dynamic.casters.StringCaster;
+import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.DateTime;
 
 /**
  * A Collection of Common Static Properties and Methods to support Localization
  **/
 public final class LocalizationUtil {
+
+	public static Locale parseLocale( String requestedLocale ) {
+		Locale localeObj = null;
+		if ( requestedLocale != null ) {
+			var		localeParts	= requestedLocale.split( "-|_| " );
+			String	ISOLang		= localeParts[ 0 ];
+			String	ISOCountry	= null;
+			if ( localeParts.length > 1 ) {
+				ISOCountry = localeParts[ 1 ];
+			}
+			localeObj = ISOCountry == null ? new Locale( ISOLang ) : new Locale( ISOLang, ISOCountry );
+		} else {
+			localeObj = Locale.getDefault();
+		}
+		return localeObj;
+	}
+
+	public static ZoneId parseZoneId( String timezone, IBoxContext context ) {
+		if ( timezone == null ) {
+			timezone = StringCaster.cast( context.getConfigItem( Key.timezone, ZoneId.systemDefault().toString() ) );
+		}
+		return ZoneId.of( timezone );
+	}
 
 	public static DateTimeFormatter localizedDateFormatter( Locale locale, FormatStyle style ) {
 		return DateTimeFormatter.ofLocalizedDate( style ).withLocale( locale );
