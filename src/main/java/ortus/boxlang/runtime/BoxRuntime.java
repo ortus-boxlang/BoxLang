@@ -656,7 +656,18 @@ public class BoxRuntime {
 	 *
 	 */
 	public void executeSource( String source, IBoxContext context ) {
-		BoxScript scriptRunnable = RunnableLoader.getInstance().loadSource( source );
+		executeSource( source, context, BoxScriptType.CFSCRIPT );
+	}
+
+	/**
+	 * Execute a source string
+	 *
+	 * @param source  A string of source to execute
+	 * @param context The context to execute the source in
+	 *
+	 */
+	public void executeSource( String source, IBoxContext context, BoxScriptType type ) {
+		BoxScript scriptRunnable = RunnableLoader.getInstance().loadSource( source, type );
 		// Debugging Timers
 		/* timerUtil.start( "execute-" + source.hashCode() ); */
 		instance.logger.atDebug().log( "Executing source " );

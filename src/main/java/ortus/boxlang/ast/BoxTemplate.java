@@ -15,15 +15,11 @@
 package ortus.boxlang.ast;
 
 import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
 
 /**
- * Root node for a script (program) cfs/bxs
+ * Root node for a tag/templating (program) cfm/bxm
  */
-public class BoxScript extends BoxNode {
-
-	private final List<BoxStatement> statements;
+public class BoxTemplate extends BoxScript {
 
 	/**
 	 * Creates an AST for a program which is represented by a list of statements
@@ -35,21 +31,8 @@ public class BoxScript extends BoxNode {
 	 * @see Position
 	 * @see BoxStatement
 	 */
-	public BoxScript( List<BoxStatement> statements, Position position, String sourceText ) {
-		super( position, sourceText );
-		this.statements = statements;
-		this.statements.forEach( arg -> arg.setParent( this ) );
+	public BoxTemplate( List<BoxStatement> statements, Position position, String sourceText ) {
+		super( statements, position, sourceText );
 	}
 
-	public List<BoxStatement> getStatements() {
-		return statements;
-	}
-
-	@Override
-	public Map<String, Object> toMap() {
-		Map<String, Object> map = super.toMap();
-
-		map.put( "statements", statements.stream().map( s -> s.toMap() ).collect( Collectors.toList() ) );
-		return map;
-	}
 }

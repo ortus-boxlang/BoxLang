@@ -12,18 +12,22 @@
  * BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language
  * governing permissions and limitations under the License.
  */
-package ortus.boxlang.ast;
+package ortus.boxlang.ast.statement.tag;
 
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-/**
- * Root node for a script (program) cfs/bxs
- */
-public class BoxScript extends BoxNode {
+import ortus.boxlang.ast.BoxNode;
+import ortus.boxlang.ast.BoxStatement;
+import ortus.boxlang.ast.Position;
 
-	private final List<BoxStatement> statements;
+/**
+ * Root node for a tag/templating (program) cfm/bxm
+ */
+public class BoxOutput extends BoxStatement {
+
+	private final List<BoxStatement> body;
 
 	/**
 	 * Creates an AST for a program which is represented by a list of statements
@@ -35,21 +39,22 @@ public class BoxScript extends BoxNode {
 	 * @see Position
 	 * @see BoxStatement
 	 */
-	public BoxScript( List<BoxStatement> statements, Position position, String sourceText ) {
+	public BoxOutput( List<BoxStatement> statements, Position position, String sourceText ) {
 		super( position, sourceText );
-		this.statements = statements;
-		this.statements.forEach( arg -> arg.setParent( this ) );
+		this.body = statements;
+		this.body.forEach( statement -> statement.setParent( this ) );
 	}
 
-	public List<BoxStatement> getStatements() {
-		return statements;
+	public List<BoxStatement> getBody() {
+		return body;
 	}
 
 	@Override
 	public Map<String, Object> toMap() {
 		Map<String, Object> map = super.toMap();
 
-		map.put( "statements", statements.stream().map( s -> s.toMap() ).collect( Collectors.toList() ) );
+		map.put( "body", body.stream().map( BoxNode::toMap ).collect( Collectors.toList() ) );
 		return map;
 	}
+
 }

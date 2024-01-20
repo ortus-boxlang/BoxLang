@@ -42,6 +42,7 @@ import com.github.javaparser.ast.Node;
 import com.github.javaparser.ast.stmt.Statement;
 import com.github.javaparser.printer.configuration.DefaultPrinterConfiguration;
 
+import ortus.boxlang.ast.BoxBufferOutput;
 import ortus.boxlang.ast.BoxClass;
 import ortus.boxlang.ast.BoxNode;
 import ortus.boxlang.ast.BoxScript;
@@ -91,6 +92,7 @@ import ortus.boxlang.ast.statement.BoxSwitch;
 import ortus.boxlang.ast.statement.BoxThrow;
 import ortus.boxlang.ast.statement.BoxTry;
 import ortus.boxlang.ast.statement.BoxWhile;
+import ortus.boxlang.ast.statement.tag.BoxOutput;
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.runnables.BoxTemplate;
 import ortus.boxlang.runtime.runnables.compiler.JavaSourceString;
@@ -131,6 +133,7 @@ import ortus.boxlang.transpiler.transformer.indexer.IndexPrettyPrinterVisitor;
 import ortus.boxlang.transpiler.transformer.statement.BoxArgumentDeclarationTransformer;
 import ortus.boxlang.transpiler.transformer.statement.BoxAssertTransformer;
 import ortus.boxlang.transpiler.transformer.statement.BoxBreakTransformer;
+import ortus.boxlang.transpiler.transformer.statement.BoxBufferOutputTransformer;
 import ortus.boxlang.transpiler.transformer.statement.BoxContinueTransformer;
 import ortus.boxlang.transpiler.transformer.statement.BoxDoTransformer;
 import ortus.boxlang.transpiler.transformer.statement.BoxExpressionTransformer;
@@ -144,9 +147,11 @@ import ortus.boxlang.transpiler.transformer.statement.BoxRethrowTransformer;
 import ortus.boxlang.transpiler.transformer.statement.BoxReturnTransformer;
 import ortus.boxlang.transpiler.transformer.statement.BoxScriptTransformer;
 import ortus.boxlang.transpiler.transformer.statement.BoxSwitchTransformer;
+import ortus.boxlang.transpiler.transformer.statement.BoxTemplateTransformer;
 import ortus.boxlang.transpiler.transformer.statement.BoxThrowTransformer;
 import ortus.boxlang.transpiler.transformer.statement.BoxTryTransformer;
 import ortus.boxlang.transpiler.transformer.statement.BoxWhileTransformer;
+import ortus.boxlang.transpiler.transformer.statement.tag.BoxOutputTransformer;
 
 /**
  * BoxLang AST to Java AST transpiler
@@ -221,6 +226,11 @@ public class JavaTranspiler extends Transpiler {
 		registry.put( BoxExpressionInvocation.class, new BoxExpressionInvocationTransformer( this ) );
 		registry.put( BoxClosure.class, new BoxClosureTransformer( this ) );
 		registry.put( BoxClass.class, new BoxClassTransformer( this ) );
+
+		// Tags
+		registry.put( ortus.boxlang.ast.BoxTemplate.class, new BoxTemplateTransformer( this ) );
+		registry.put( BoxBufferOutput.class, new BoxBufferOutputTransformer( this ) );
+		registry.put( BoxOutput.class, new BoxOutputTransformer( this ) );
 	}
 
 	/**

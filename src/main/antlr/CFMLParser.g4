@@ -41,24 +41,13 @@ statement:
 	| genericOpenTag
 	| genericCloseTag
 	| set
-	| dump
 	| script
 	| argument
 	| return
 	| if
-	| query
-	| throw
-	| loop
 	| param
 	| try
 	| catchBlock
-	| abort
-	| lock
-	| include
-	| invoke
-	| invoke1
-	| invokeargument
-	| file
 	| output;
 
 component:
@@ -81,11 +70,7 @@ function:
 set:
 	TAG_OPEN PREFIX SET expression (TAG_SLASH_CLOSE | TAG_CLOSE);
 
-dump:
-	TAG_OPEN PREFIX DUMP attribute* (TAG_SLASH_CLOSE | TAG_CLOSE);
 script: SCRIPT_OPEN SCRIPT_BODY;
-// : TAG_OPEN SCRIPT attribute* (TAG_SLASH_CLOSE | TAG_CLOSE) code TAG_OPEN TAG_SLASH SCRIPT
-// TAG_CLOSE ;
 
 code: CONTENT_TEXT;
 
@@ -111,23 +96,6 @@ if:
 		TAG_OPEN PREFIX ELSE (TAG_SLASH_CLOSE | TAG_CLOSE) statements
 	)* TAG_OPEN SLASH_PREFIX IF TAG_CLOSE;
 
-query:
-	TAG_OPEN PREFIX QUERY attribute* (
-		TAG_SLASH_CLOSE
-		| TAG_CLOSE
-	) sqlcode TAG_OPEN SLASH_PREFIX QUERY TAG_CLOSE;
-sqlcode: CONTENT_TEXT;
-
-throw:
-	TAG_OPEN PREFIX THROW attribute* (
-		TAG_SLASH_CLOSE
-		| TAG_CLOSE
-	);
-
-loop:
-	TAG_OPEN PREFIX LOOP attribute* (TAG_SLASH_CLOSE | TAG_CLOSE) statements TAG_OPEN TAG_SLASH
-		PREFIX LOOP TAG_CLOSE;
-
 param:
 	TAG_OPEN PREFIX PARAM attribute* (
 		TAG_SLASH_CLOSE
@@ -143,40 +111,6 @@ catchBlock:
 		TAG_SLASH_CLOSE
 		| TAG_CLOSE
 	) statements TAG_OPEN SLASH_PREFIX CATCH TAG_CLOSE;
-
-abort:
-	TAG_OPEN PREFIX ABORT attribute* (
-		TAG_SLASH_CLOSE
-		| TAG_CLOSE
-	);
-
-lock:
-	TAG_OPEN PREFIX LOCK attribute* (TAG_SLASH_CLOSE | TAG_CLOSE) statements TAG_OPEN TAG_SLASH
-		PREFIX LOCK TAG_CLOSE;
-
-include:
-	TAG_OPEN PREFIX INCLUDE attribute* (
-		TAG_SLASH_CLOSE
-		| TAG_CLOSE
-	);
-
-invoke:
-	TAG_OPEN PREFIX INVOKE attribute* (
-		TAG_SLASH_CLOSE
-		| TAG_CLOSE
-	);
-invoke1:
-	TAG_OPEN PREFIX INVOKE attribute* (
-		TAG_SLASH_CLOSE
-		| TAG_CLOSE
-	) statements TAG_OPEN SLASH_PREFIX INVOKE TAG_CLOSE;
-invokeargument:
-	TAG_OPEN PREFIX INVOKEARGUMENT attribute* (
-		TAG_SLASH_CLOSE
-		| TAG_CLOSE
-	);
-
-file: TAG_OPEN PREFIX FILE attribute* TAG_CLOSE;
 
 output:
 	TAG_OPEN PREFIX OUTPUT attribute* TAG_SLASH_CLOSE

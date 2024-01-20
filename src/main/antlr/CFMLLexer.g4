@@ -3,31 +3,32 @@ lexer grammar CFMLLexer;
 options {
 	caseInsensitive = true;
 }
-
-@members {
+/*
+ @members {
  
  
  public int popMode() {
-	System.out.println( "popMode back to "+
-	modeNames[_modeStack.peek()]);
-	return super.popMode();
-	}
+ System.out.println( "popMode back to "+
+ modeNames[_modeStack.peek()]);
+ return super.popMode();
+ }
  
  public void pushMode(int m) {
-	System.out.println( "pushMode "+modeNames[m]);
-	super.pushMode(m);
+ System.out.println( "pushMode "+modeNames[m]);
+ super.pushMode(m);
  }
  
  public Token emit() {
-	Token t = _factory.create(_tokenFactorySourcePair, _type, _text, _channel, _tokenStartCharIndex,
-	getCharIndex()-1,
-	_tokenStartLine, _tokenStartCharPositionInLine);
-	emit(t);
-	System.out.println(
-	t.toString());
-	return t;
-	}
+ Token t = _factory.create(_tokenFactorySourcePair, _type, _text, _channel, _tokenStartCharIndex,
+ getCharIndex()-1,
+ _tokenStartLine, _tokenStartCharPositionInLine);
+ emit(t);
+ System.out.println(
+ t.toString());
+ return t;
  }
+ }
+ */
 
 COMMENT: '<!---' .*? '--->' -> channel(HIDDEN);
 
@@ -56,7 +57,6 @@ mode TAG;
 
 COMPONENT: 'component';
 ARGUMENT: 'argument';
-DUMP: 'dump';
 FUNCTION: 'function';
 SCRIPT: 'script' -> pushMode(XFSCRIPT);
 OUTPUT: 'output' -> pushMode(OUTPUT_MODE);
@@ -65,20 +65,11 @@ RETURN: 'return' -> pushMode(EXPRESSION_MODE_TAG);
 IF: 'if' -> pushMode(EXPRESSION_MODE_TAG);
 ELSE: 'else';
 ELSEIF: 'elseif' -> pushMode(EXPRESSION_MODE_TAG);
-QUERY: 'query';
 INTERFACE: 'interface';
-THROW: 'throw';
-LOOP: 'loop';
 PARAM: 'param';
 TRY: 'try';
 CATCH: 'catch';
-ABORT: 'abort';
-LOCK: 'lock';
-INCLUDE: 'include';
-INVOKE: 'invoke';
 SET: 'set ' -> pushMode(EXPRESSION_MODE_TAG);
-INVOKEARGUMENT: 'invokeargument';
-FILE: 'file';
 
 TAG_CLOSE: '>' -> popMode, popMode;
 
@@ -120,18 +111,13 @@ mode END_TAG;
 
 IF2: 'if' -> type(IF);
 COMPONENT2: 'component' -> type(COMPONENT);
-DUMP2: 'dump' -> type(DUMP);
 FUNCTION2: 'function' -> type(FUNCTION);
 // popping back to: POSSIBLE_TAG -> DEFAULT_MODE -> OUTPUT_MODE -> TAG -> POSSIBLE_TAG -> DEFAULT_MODE
 OUTPUT2:
 	'output>' -> type(OUTPUT), popMode, popMode, popMode, popMode, popMode, popMode;
-QUERY2: 'query' -> type(QUERY);
 INTERFACE2: 'interface' -> type(INTERFACE);
-LOOP2: 'loop' -> type(LOOP);
 TRY2: 'try' -> type(TRY);
 CATCH2: 'catch' -> type(CATCH);
-LOCK2: 'lock' -> type(LOCK);
-INVOKE2: 'invoke' -> type(INVOKE);
 
 TAG_NAME2: TAG_NameStartChar TAG_NameChar* -> type(TAG_NAME);
 TAG_CLOSE2: '>' -> popMode, popMode, type(TAG_CLOSE);

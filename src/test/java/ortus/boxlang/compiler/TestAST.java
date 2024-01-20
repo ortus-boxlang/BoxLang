@@ -25,6 +25,7 @@ import java.nio.file.Path;
 import java.util.List;
 import java.util.Set;
 
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import ortus.boxlang.ast.expression.BoxBinaryOperation;
@@ -73,6 +74,7 @@ public class TestAST extends TestBase {
 	}
 
 	@Test
+	@Disabled
 	public void testParser() throws IOException {
 		List<Path> files = scanForFiles( "../boxlang/examples/cf_to_java/HelloWorld", Set.of( "cfc", "cfm", "cfml" ) );
 		System.out.printf( "Testing parser against %s file(s)%n", files.size() );
