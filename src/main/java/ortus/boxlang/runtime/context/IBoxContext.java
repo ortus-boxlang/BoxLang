@@ -391,6 +391,26 @@ public interface IBoxContext {
 	public Object getConfigItem( Key itemKey, Object defaultValue );
 
 	/**
+	 * Sets a config value
+	 *
+	 * @param itemKey   The Key instance in the config
+	 * @param itemValue The value of the key
+	 *
+	 * @return this context
+	 */
+	public BaseBoxContext setConfigItem( Key itemKey, Object itemValue );
+
+	/**
+	 * Sets a config value
+	 *
+	 * @param itemKey   A string value of which the Key instance will be created
+	 * @param itemValue The value of the key
+	 *
+	 * @return this context
+	 */
+	public BaseBoxContext setConfigItem( String itemKey, Object itemValue );
+
+	/**
 	 * Get the BoxLang runtime
 	 * '
 	 *

@@ -80,14 +80,22 @@ public class BaseBoxContext implements IBoxContext {
 	 */
 	private final FunctionService			functionService;
 
+	protected IStruct						config		= new Struct();
+
 	/**
 	 * Creates a new execution context with a bounded execution template and parent context
 	 *
 	 * @param parent The parent context
 	 */
 	public BaseBoxContext( IBoxContext parent ) {
-		this.parent				= parent;
-		this.functionService	= BoxRuntime.getInstance().getFunctionService();
+		if ( parent != null ) {
+			this.parent = parent;
+			IStruct parentConfig = parent.getConfig();
+			if ( parentConfig != null ) {
+				this.config.putAll( parentConfig );
+			}
+		}
+		this.functionService = BoxRuntime.getInstance().getFunctionService();
 	}
 
 	/**
@@ -628,10 +636,7 @@ public class BaseBoxContext implements IBoxContext {
 	 * @return A struct of configuration
 	 */
 	public IStruct getConfig() {
-		if ( hasParent() ) {
-			return getParent().getConfig();
-		}
-		return Struct.EMPTY;
+		return this.config;
 	}
 
 	/**
@@ -655,6 +660,31 @@ public class BaseBoxContext implements IBoxContext {
 	 */
 	public Object getConfigItem( Key itemKey, Object defaultValue ) {
 		return getConfig().getOrDefault( itemKey, defaultValue );
+	}
+
+	/**
+	 * Sets a config value
+	 *
+	 * @param itemKey   The Key instance in the config
+	 * @param itemValue The value of the key
+	 *
+	 * @return this context
+	 */
+	public BaseBoxContext setConfigItem( Key itemKey, Object itemValue ) {
+		this.config.put( itemKey, itemValue );
+		return this;
+	}
+
+	/**
+	 * Sets a config value
+	 *
+	 * @param itemKey   A string value of which the Key instance will be created
+	 * @param itemValue The value of the key
+	 *
+	 * @return this context
+	 */
+	public BaseBoxContext setConfigItem( String itemKey, Object itemValue ) {
+		return setConfigItem( Key.of( itemKey ), itemValue );
 	}
 
 	/**

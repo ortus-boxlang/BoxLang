@@ -20,7 +20,6 @@ package ortus.boxlang.runtime.context;
 import ortus.boxlang.runtime.application.Application;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
-import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.exceptions.ScopeNotFoundException;
 
 /**
@@ -124,19 +123,6 @@ public class ApplicationBoxContext extends BaseBoxContext {
 
 		// The RuntimeBoxContext has no "nearby" scopes
 		return getScope( name );
-	}
-
-	/**
-	 * Get the contexual config struct. Each context has a chance to add in config of their
-	 * own to the struct, or override existing config with a new struct of their own design.
-	 * It depends on whether the context wants its changes to exist for the rest of the entire
-	 * request or only for code that executes in the current context and below.
-	 * 
-	 * @return A struct of configuration
-	 */
-	public IStruct getConfig() {
-		// TODO: Add in application config here
-		return parent.getConfig();
 	}
 
 }
