@@ -413,6 +413,38 @@ public class JavaBoxpiler {
 
 	}
 
+	public String transpile( Path path ) {
+		ParsingResult result;
+
+		try {
+			result = new BoxParser().parse( path.toFile() );
+		} catch ( IOException e ) {
+			throw new BoxRuntimeException( "Error compiling source", e );
+		}
+
+		if ( !result.isCorrect() ) {
+			throw new ParseException( result.getIssues() );
+		}
+
+		String		className	= getClassName( path.toFile() );
+
+		Transpiler	transpiler	= Transpiler.getTranspiler( null );
+		transpiler.setProperty( "classname", className );
+		transpiler.setProperty( "packageName", "boxclass.generated" );
+		transpiler.setProperty( "boxPackageName", "generated" );
+
+		TranspiledCode				javaASTs	= transpiler.transpile( result.getRoot() );
+		ClassOrInterfaceDeclaration	outerClass	= javaASTs.getEntryPoint().getClassByName( className ).get();
+
+		// Process functions and lamdas
+		for ( CompilationUnit callable : javaASTs.getCallables() ) {
+			ClassOrInterfaceDeclaration innerClass = callable.findFirst( ClassOrInterfaceDeclaration.class ).get();
+			outerClass.addMember( innerClass.setPublic( true ).setStatic( true ) );
+		}
+
+		return javaASTs.getEntryPoint().toString();
+	}
+
 	// get class
 	public Class<IBoxRunnable> getClass( String fqn ) {
 		try {

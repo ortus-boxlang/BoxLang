@@ -24,6 +24,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.URISyntaxException;
 import java.net.URL;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Instant;
 
@@ -44,6 +45,7 @@ import ortus.boxlang.runtime.logging.LoggingConfigurator;
 import ortus.boxlang.runtime.runnables.BoxScript;
 import ortus.boxlang.runtime.runnables.BoxTemplate;
 import ortus.boxlang.runtime.runnables.RunnableLoader;
+import ortus.boxlang.runtime.runnables.compiler.JavaBoxpiler;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
 import ortus.boxlang.runtime.services.ApplicationService;
@@ -744,6 +746,12 @@ public class BoxRuntime {
 			throw new BoxRuntimeException( "Error reading source stream", e );
 		}
 
+	}
+
+	public void printTranspiledJavCode( String filePath ) {
+		String javaCode = JavaBoxpiler.getInstance().transpile( Path.of( filePath ) );
+
+		System.out.print( javaCode );
 	}
 
 	/**
