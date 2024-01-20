@@ -898,10 +898,13 @@ public class BoxCFParser extends BoxAbstractParser {
 	 * @see BoxExpr subclasses
 	 */
 	private BoxExpr toAst( File file, CFParser.StringLiteralContext expression ) {
-
+		String quoteChar = expression.getText().substring( 0, 1 );
 		if ( expression.expression().isEmpty() ) {
-			return BoxStringLiteral.fromQuotedString(
-			    expression.getText(),
+			String s = expression.getText();
+			// trim leading and trailing quote
+			s = s.substring( 1, s.length() - 1 );
+			return new BoxStringLiteral(
+			    escapeStringLiteral( quoteChar, s ),
 			    getPosition( expression ),
 			    getSourceText( expression )
 			);
@@ -910,7 +913,8 @@ public class BoxCFParser extends BoxAbstractParser {
 			List<BoxExpr> parts = new ArrayList<>();
 			expression.children.forEach( it -> {
 				if ( it != null && it instanceof CFParser.StringLiteralPartContext ) {
-					parts.add( new BoxStringLiteral( getSourceText( ( ParserRuleContext ) it ), getPosition( ( ParserRuleContext ) it ),
+					parts.add( new BoxStringLiteral( escapeStringLiteral( quoteChar, getSourceText( ( ParserRuleContext ) it ) ),
+					    getPosition( ( ParserRuleContext ) it ),
 					    getSourceText( ( ParserRuleContext ) it ) ) );
 				}
 				if ( it != null && it instanceof CFParser.ExpressionContext ) {
@@ -919,6 +923,19 @@ public class BoxCFParser extends BoxAbstractParser {
 			} );
 			return new BoxStringInterpolation( parts, getPosition( expression ), getSourceText( expression ) );
 		}
+	}
+
+	/**
+	 * Escape double up quotes and pounds in a string literal
+	 * 
+	 * @param quoteChar the quote character used to surround the string
+	 * @param string    the string to escape
+	 * 
+	 * @return the escaped string
+	 */
+	private String escapeStringLiteral( String quoteChar, String string ) {
+		String escaped = string.replace( "##", "#" );
+		return escaped.replace( quoteChar + quoteChar, quoteChar );
 	}
 
 	/**

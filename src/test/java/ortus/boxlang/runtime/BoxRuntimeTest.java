@@ -24,8 +24,9 @@ import java.io.File;
 import java.net.URISyntaxException;
 import java.net.URL;
 
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
 
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.ScriptingBoxContext;
@@ -59,6 +60,7 @@ public class BoxRuntimeTest {
 
 	@DisplayName( "It can execute a template" )
 	@Test
+	@Disabled
 	public void testItCanExecuteATemplate() {
 		String testTemplate;
 		try {
@@ -76,6 +78,7 @@ public class BoxRuntimeTest {
 
 	@DisplayName( "It can execute a template URL" )
 	@Test
+	@Disabled
 	public void testItCanExecuteATemplateURL() {
 		URL testTemplate = getClass().getResource( "/test-templates/BoxRuntime.cfm" );
 

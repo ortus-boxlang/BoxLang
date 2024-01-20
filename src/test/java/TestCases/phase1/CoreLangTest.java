@@ -797,6 +797,78 @@ public class CoreLangTest {
 
 	}
 
+	@DisplayName( "String parsing - escaped Java chars" )
+	@Test
+	public void testStringParsingEscapedJavaChars() {
+
+		instance.executeSource(
+		    """
+		    result = "this is not \\t a tab"
+		     """,
+		    context );
+		assertThat( variables.get( result ) ).isEqualTo( "this is not \\t a tab" );
+
+		instance.executeSource(
+		    """
+		    result = "foo "" bar '' baz"
+		     """,
+		    context );
+		assertThat( variables.get( result ) ).isEqualTo( "foo \" bar '' baz" );
+
+		instance.executeSource(
+		    """
+		    result = 'foo "" bar '' baz'
+		     """,
+		    context );
+		assertThat( variables.get( result ) ).isEqualTo( "foo \"\" bar ' baz" );
+
+		instance.executeSource(
+		    """
+		    result = 'foo 	 bar'
+		     """,
+		    context );
+		assertThat( variables.get( result ) ).isEqualTo( "foo \t bar" );
+
+	}
+
+	@DisplayName( "String parsing - escaped Java chars with interpolation" )
+	@Test
+	public void testStringParsingEscapedJavaCharsInter() {
+
+		instance.executeSource(
+		    """
+		    brad="wood"
+		       result = "this is not \\t a tab#brad#"
+		        """,
+		    context );
+		assertThat( variables.get( result ) ).isEqualTo( "this is not \\t a tabwood" );
+
+		instance.executeSource(
+		    """
+		    brad="wood"
+		      result = "foo "" bar '' baz#brad#"
+		       """,
+		    context );
+		assertThat( variables.get( result ) ).isEqualTo( "foo \" bar '' bazwood" );
+
+		instance.executeSource(
+		    """
+		    brad="wood"
+		      result = 'foo "" bar '' baz#brad#'
+		       """,
+		    context );
+		assertThat( variables.get( result ) ).isEqualTo( "foo \"\" bar ' bazwood" );
+
+		instance.executeSource(
+		    """
+		    brad="wood"
+		      result = 'foo 	 bar#brad#'
+		       """,
+		    context );
+		assertThat( variables.get( result ) ).isEqualTo( "foo \t barwood" );
+
+	}
+
 	@DisplayName( "String parsing concat" )
 	@Test
 	public void testStringParsingConcat() {

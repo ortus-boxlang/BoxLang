@@ -47,14 +47,6 @@ public class BoxStringLiteral extends BoxExpr {
 		this.value = value;
 	}
 
-	public static BoxStringLiteral fromQuotedString( String value, Position position, String sourceText ) {
-		StringBuilder sb = new StringBuilder( value );
-		sb.deleteCharAt( value.length() - 1 );
-		sb.deleteCharAt( 0 );
-
-		return new BoxStringLiteral( sb.toString(), position, sourceText );
-	}
-
 	@Override
 	public Map<String, Object> toMap() {
 		Map<String, Object> map = super.toMap();

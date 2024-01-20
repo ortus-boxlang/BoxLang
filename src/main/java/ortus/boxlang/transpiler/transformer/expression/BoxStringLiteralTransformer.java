@@ -16,6 +16,7 @@ package ortus.boxlang.transpiler.transformer.expression;
 
 import com.github.javaparser.ast.Node;
 import com.github.javaparser.ast.expr.StringLiteralExpr;
+
 import ortus.boxlang.ast.BoxNode;
 import ortus.boxlang.ast.expression.BoxStringLiteral;
 import ortus.boxlang.transpiler.JavaTranspiler;
@@ -56,11 +57,7 @@ public class BoxStringLiteralTransformer extends AbstractTransformer {
 	 * @return The output String.
 	 **/
 	private String escape( String s ) {
-		String temp = s.replace( "\"\"", "\"" );
-		temp	= temp.replace( "''", "'" );
-		temp	= temp.replace( "''", "'" );
-		temp	= temp.replace( "##", "#" );
-		return temp.replace( "\\", "\\\\" )
+		return s.replace( "\\", "\\\\" )
 		    .replace( "\t", "\\t" )
 		    .replace( "\b", "\\b" )
 		    .replace( "\n", "\\n" )
