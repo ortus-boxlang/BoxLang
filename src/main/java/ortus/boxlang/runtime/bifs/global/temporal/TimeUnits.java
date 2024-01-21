@@ -19,7 +19,9 @@ import java.time.Year;
 import java.time.ZoneId;
 import java.time.temporal.ChronoField;
 import java.time.temporal.IsoFields;
+import java.time.temporal.WeekFields;
 import java.util.HashMap;
+import java.util.Locale;
 
 import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
@@ -159,6 +161,9 @@ public class TimeUnits extends BIF {
 			dateRef = dateRef.clone( ZoneId.of( arguments.getAsString( Key.timezone ) ) );
 		}
 
+		// LS Subclass locales
+		Locale	locale			= LocalizationUtil.parseLocale( arguments.getAsString( Key.locale ) );
+
 		Key		bifMethodKey	= arguments.getAsKey( BIF.__functionName );
 		String	methodName		= null;
 		if ( bifMethods.memberMethods.containsKey( bifMethodKey ) ) {
@@ -167,19 +172,27 @@ public class TimeUnits extends BIF {
 		} else {
 			// @formatter:off
 			// prettier-ignore
+			// @TODO - make the non LS string methods more locale aware
 			Object result =
 				bifMethodKey.equals( bifMethods.quarter ) ? dateRef.getWrapped().get( IsoFields.QUARTER_OF_YEAR )
 				: bifMethodKey.equals( bifMethods.month ) ? dateRef.getWrapped().getMonth().getValue()
 				: bifMethodKey.equals( bifMethods.monthAsString ) ? dateRef.clone().format( MONTH_LONG_FORMAT )
 				: bifMethodKey.equals( bifMethods.monthShortAsString ) ? dateRef.clone().format( MONTH_SHORT_FORMAT )
 				: bifMethodKey.equals( bifMethods.day ) ? dateRef.getWrapped().getDayOfMonth()
-				: bifMethodKey.equals( bifMethods.dayOfWeek ) ? dateRef.clone().getWrapped().getDayOfWeek().getValue()
+				: bifMethodKey.equals( bifMethods.dayOfWeek ) ? (
+																locale == null
+																? dateRef.clone().getWrapped().getDayOfWeek().getValue()
+																: dateRef.getWrapped().get( WeekFields.of( locale ).dayOfWeek() )
+																)
 				: bifMethodKey.equals( bifMethods.dayOfWeekAsString ) ? dateRef.clone().format( DOW_LONG_FORMAT )
 				: bifMethodKey.equals( bifMethods.dayOfWeekShortAsString ) ? dateRef.clone().format( DOW_SHORT_FORMAT )
 				: bifMethodKey.equals( bifMethods.daysInMonth ) ? dateRef.getWrapped().getMonth().length( dateRef.isLeapYear() )
 				: bifMethodKey.equals( bifMethods.daysInYear ) ? Year.of( dateRef.getWrapped().getYear() ).length()
 				: bifMethodKey.equals( bifMethods.firstDayOfMonth ) ? dateRef.getWrapped().withDayOfMonth( (int) 1 ).getDayOfYear()
-				: bifMethodKey.equals( bifMethods.weekOfYear ) ? dateRef.getWrapped().get( ChronoField.ALIGNED_WEEK_OF_YEAR )
+				: bifMethodKey.equals( bifMethods.weekOfYear ) ? (
+																locale == null
+																? dateRef.getWrapped().get( ChronoField.ALIGNED_WEEK_OF_YEAR )
+																: dateRef.getWrapped().get( WeekFields.of( locale ).weekOfWeekBasedYear() ) )
 				: bifMethodKey.equals( bifMethods.millis ) ? dateRef.getWrapped().getNano() / 1000000
 				: bifMethodKey.equals( bifMethods.offset ) ? dateRef.clone().format( OFFSET_FORMAT )
 				: bifMethodKey.equals( bifMethods.getNumericDate ) ? dateRef.toEpochMillis().doubleValue() / LongCaster.cast( 86400000l).doubleValue()

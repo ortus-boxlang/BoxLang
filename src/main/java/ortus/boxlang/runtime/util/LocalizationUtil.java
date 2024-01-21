@@ -43,8 +43,6 @@ public final class LocalizationUtil {
 				ISOCountry = localeParts[ 1 ];
 			}
 			localeObj = ISOCountry == null ? new Locale( ISOLang ) : new Locale( ISOLang, ISOCountry );
-		} else {
-			localeObj = Locale.getDefault();
 		}
 		return localeObj;
 	}

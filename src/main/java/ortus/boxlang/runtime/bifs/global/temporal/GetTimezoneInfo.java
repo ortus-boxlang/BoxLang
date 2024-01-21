@@ -38,13 +38,17 @@ public class GetTimezoneInfo extends BIF {
 	 * @param arguments Argument scope for the BIF.
 	 *
 	 * @argument.timezone optional, a specific timezone to retrieve information on
-	 * 
+	 *
 	 * @argument.locale optional, a specific locale for language output of the timezone name fields
 	 */
 	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
 		ZoneId		zone	= LocalizationUtil.parseZoneId( arguments.getAsString( Key.timezone ), context );
 		TimeZone	tz		= TimeZone.getTimeZone( zone );
 		Locale		locale	= LocalizationUtil.parseLocale( arguments.getAsString( Key.locale ) );
+		if ( locale == null ) {
+			locale = Locale.getDefault();
+		}
+		final Locale assignedLocale = locale;
 		return new Struct(
 		    new HashMap<String, Object>() {
 
@@ -52,11 +56,11 @@ public class GetTimezoneInfo extends BIF {
 				    put( "DSTOffset", tz.getDSTSavings() );
 				    put( "id", tz.getID() );
 				    put( "isDSTon", tz.inDaylightTime( new Date() ) );
-				    put( "name", tz.getDisplayName( false, TimeZone.LONG, locale ) );
-				    put( "nameDST", tz.getDisplayName( true, TimeZone.LONG, locale ) );
+				    put( "name", tz.getDisplayName( false, TimeZone.LONG, assignedLocale ) );
+				    put( "nameDST", tz.getDisplayName( true, TimeZone.LONG, assignedLocale ) );
 				    put( "offset", tz.getRawOffset() / 6000 );
-				    put( "shortName", tz.getDisplayName( false, TimeZone.SHORT, locale ) );
-				    put( "shortNameDST", tz.getDisplayName( false, TimeZone.SHORT, locale ) );
+				    put( "shortName", tz.getDisplayName( false, TimeZone.SHORT, assignedLocale ) );
+				    put( "shortNameDST", tz.getDisplayName( false, TimeZone.SHORT, assignedLocale ) );
 				    put( "timezone", tz.getID() );
 				    put( "utcHourOffset", tz.getRawOffset() / 3600000 );
 				    put( "utcMinuteOffset", tz.getRawOffset() / 60000 );

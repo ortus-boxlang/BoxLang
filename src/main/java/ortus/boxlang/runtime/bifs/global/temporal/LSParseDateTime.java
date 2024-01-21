@@ -69,19 +69,22 @@ public class LSParseDateTime extends BIF {
 		String	timezone	= arguments.getAsString( Key.timezone );
 		String	format		= arguments.getAsString( Key.format );
 		Locale	locale		= LocalizationUtil.parseLocale( arguments.getAsString( Key.locale ) );
+		if ( locale == null ) {
+			locale = Locale.getDefault();
+		}
 
-		ZoneId	zoneId		= null;
+		ZoneId zoneId = null;
 		try {
 			zoneId = timezone != null ? ZoneId.of( timezone ) : ZoneId.systemDefault();
 		} catch ( ZoneRulesException e ) {
 			// determine whether this is a format argument
-			if ( IntegerCaster.attempt( timezone.substring( 0, 1 ) ) != null ) {
+			if ( timezone != null && IntegerCaster.attempt( timezone.substring( 0, 1 ) ) != null ) {
 				format		= timezone;
 				zoneId		= ZoneId.systemDefault();
 				timezone	= null;
 			} else {
 				throw new BoxRuntimeException(
-				    "The value [%s] is not a valid locale.",
+				    String.format( "The value [%s] is not a valid timezone.", timezone ),
 				    e
 				);
 			}
