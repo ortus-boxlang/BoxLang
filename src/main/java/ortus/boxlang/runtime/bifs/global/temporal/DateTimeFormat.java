@@ -17,6 +17,7 @@ package ortus.boxlang.runtime.bifs.global.temporal;
 
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
+import java.util.Locale;
 
 import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
@@ -52,26 +53,31 @@ public class DateTimeFormat extends BIF {
 	}
 
 	/**
-	 * Describe what the invocation of your bif function does
+	 * Formats a datetime, date or time
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.foo Describe any expected arguments
+	 * @argument.date The date string or object
+	 *
+	 * @argument.mask Optional format mask, or common mask
+	 *
+	 * @argument.timezone Optional specific timezone to apply to the date ( if not present in the date string )
 	 */
 	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
 		ZoneId		timezone		= LocalizationUtil.parseZoneId( arguments.getAsString( Key.timezone ), context );
-
 		DateTime	ref				= DateTimeCaster.cast( arguments.get( Key.date ), true, timezone );
 		Key			bifMethodKey	= arguments.getAsKey( BIF.__functionName );
 		String		format			= arguments.getAsString( Key.mask );
+		// LS Subclass locales
+		Locale		locale			= LocalizationUtil.parseLocale( arguments.getAsString( Key.locale ) );
 
 		if ( format == null && bifMethodKey.equals( Key.dateFormat ) ) {
-			return ref.format( DateTime.DEFAULT_DATE_FORMAT_MASK );
+			return locale == null ? ref.format( DateTime.DEFAULT_DATE_FORMAT_MASK ) : ref.format( locale, DateTime.DEFAULT_DATE_FORMAT_MASK );
 		} else if ( format == null && bifMethodKey.equals( Key.timeFormat ) ) {
-			return ref.format( DateTime.DEFAULT_TIME_FORMAT_MASK );
+			return locale == null ? ref.format( DateTime.DEFAULT_TIME_FORMAT_MASK ) : ref.format( locale, DateTime.DEFAULT_TIME_FORMAT_MASK );
 		} else if ( format == null ) {
-			return ref.format( DateTime.DEFAULT_DATETIME_FORMAT_MASK );
+			return locale == null ? ref.format( DateTime.DEFAULT_DATETIME_FORMAT_MASK ) : ref.format( locale, DateTime.DEFAULT_DATETIME_FORMAT_MASK );
 		} else {
 			Key		formatKey		= Key.of( format );
 			String	mode			= bifMethodKey.equals( Key.dateFormat )
@@ -86,9 +92,14 @@ public class DateTimeFormat extends BIF {
 			} else if ( formatKey.equals( FORMAT_EPOCHMS ) ) {
 				return ref.toEpochMillis();
 			} else if ( DateTime.commonFormatters.containsKey( commonFormatKey ) ) {
-				return ref.format( ( DateTimeFormatter ) DateTime.commonFormatters.get( commonFormatKey ) );
+				DateTimeFormatter formatter = ( DateTimeFormatter ) DateTime.commonFormatters.get( commonFormatKey );
+				return locale == null
+				    ? ref.format( formatter )
+				    : ref.format( formatter.withLocale( locale ) );
 			} else {
-				return ref.format( format );
+				return locale == null
+				    ? ref.format( format )
+				    : ref.format( locale, format );
 			}
 		}
 
