@@ -39,6 +39,9 @@ public class DateDiff extends BIF {
 		private static final Key	milliseconds	= Key.of( "l" );
 	}
 
+	// Allows us to use a primitive for our return value, which is much faster
+	private static final long IMPROBABLE_RESULT = -999999999999l;
+
 	/**
 	 * Constructor
 	 */
@@ -67,8 +70,7 @@ public class DateDiff extends BIF {
 		DateTime	date1		= DateTimeCaster.cast( arguments.get( Key.date1 ), true, timezone );
 		DateTime	date2		= DateTimeCaster.cast( arguments.get( Key.date2 ), true, timezone );
 
-		Long		result		= null;
-		try {
+		long		result		= IMPROBABLE_RESULT;
 		// @formatter:off
 		// prettier-ignore
 		result =
@@ -82,27 +84,18 @@ public class DateDiff extends BIF {
 			: datePart.equals( parts.minutes ) ? ChronoUnit.MINUTES.between( date1.getWrapped(), date2.getWrapped() )
 			: datePart.equals( parts.seconds ) ? ChronoUnit.SECONDS.between( date1.getWrapped(), date2.getWrapped() )
 			: datePart.equals( parts.milliseconds ) ? ChronoUnit.MILLIS.between( date1.getWrapped(), date2.getWrapped() )
-			: null;
+			: result;
 
 			//  A standard null equality check will not work here so we have to let the Long throw the null pointer, if necessary
-			if( result.equals( null ) ){
+			if( result == IMPROBABLE_RESULT ){
 				throw new BoxRuntimeException(
 					String.format(
 						"The datepart [%s] is not supported for the method DateDiff or the member function Date.diff",
-						datePart
+						datePart.getName()
 					)
 				);
 			}
 
-		// @formatter:on
-		} catch ( NullPointerException e ) {
-			throw new BoxRuntimeException(
-			    String.format(
-			        "The datepart [%s] is not supported for the method DateDiff or the member function Date.diff",
-			        datePart
-			    )
-			);
-		}
 		return result;
 	}
 
