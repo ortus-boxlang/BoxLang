@@ -49,12 +49,14 @@ public class CreateODBCDateTime extends BIF {
 	}
 
 	/**
-	 * Describe what the invocation of your bif function does
+	 * Creates a DateTime object with the format set to ODBC Implicit format
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.foo Describe any expected arguments
+	 * @argument.date The date string or object
+	 * 
+	 * @argument.timezone An optional timezone to apply
 	 */
 	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
 		DateTime dateRef = DateTimeCaster.cast(
