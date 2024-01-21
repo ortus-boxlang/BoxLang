@@ -84,10 +84,10 @@ public class DateTime implements IType, IReferenceable {
 	public static final String				DEFAULT_TIME_FORMAT_MASK		= "HH:mm a";
 	public static final String				DEFAULT_DATETIME_FORMAT_MASK	= "dd-MMM-yyyy HH:mm:ss";
 	public static final String				ISO_DATE_TIME_MILIS_FORMAT_MASK	= "yyyy-MM-dd'T'HH:mm:ss.SSS";
-	// The ODBC default format masks - no millis
-	public static final String				ODBC_DATE_TIME_FORMAT_MASK		= "yyyy-MM-dd HH:mm:ss";
-	public static final String				ODBC_DATE_FORMAT_MASK			= "yyyy-MM-dd";
-	public static final String				ODBC_TIME_FORMAT_MASK			= "HH:mm:ss";
+	// <a href="https://learn.microsoft.com/en-us/sql/odbc/reference/develop-app/date-time-and-timestamp-literals">The ODBC default format masks</a>
+	public static final String				ODBC_DATE_TIME_FORMAT_MASK		= TS_FORMAT_MASK;
+	public static final String				ODBC_DATE_FORMAT_MASK			= "'{d '''yyyy-MM-dd'''}'";
+	public static final String				ODBC_TIME_FORMAT_MASK			= "'{t '''HH:mm:ss'''}'";
 
 	public static final String				MODE_DATE						= "Date";
 	public static final String				MODE_TIME						= "Time";
