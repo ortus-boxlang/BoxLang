@@ -13,7 +13,7 @@ import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
-import ortus.boxlang.runtime.types.Struct;
+import ortus.boxlang.runtime.types.immutable.ImmutableStruct;
 import ortus.boxlang.runtime.util.LocalizationUtil;
 
 @BoxBIF
@@ -49,7 +49,7 @@ public class GetTimezoneInfo extends BIF {
 			locale = Locale.getDefault();
 		}
 		final Locale assignedLocale = locale;
-		return new Struct(
+		return new ImmutableStruct(
 		    new HashMap<String, Object>() {
 
 			    {

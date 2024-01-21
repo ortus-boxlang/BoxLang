@@ -77,6 +77,7 @@ public class Key implements Comparable<Key> {
 	public static final Key	contains					= Key.of( "contains" );
 	public static final Key	conversionType				= Key.of( "conversionType" );
 	public static final Key	count						= Key.of( "count" );
+	public static final Key	country						= Key.of( "country" );
 	public static final Key	createPath					= Key.of( "createPath" );
 	public static final Key	currentRow					= Key.of( "currentRow" );
 	public static final Key	data						= Key.of( "data" );
@@ -97,6 +98,8 @@ public class Key implements Comparable<Key> {
 	public static final Key	doLowerIfAllUppercase		= Key.of( "doLowerIfAllUppercase" );
 	public static final Key	dimensions					= Key.of( "dimensions" );
 	public static final Key	directory					= Key.of( "directory" );
+	public static final Key	display						= Key.of( "display" );
+	public static final Key	dspLocale					= Key.of( "dspLocale" );
 	public static final Key	elementCountForRemoval		= Key.of( "elementCountForRemoval" );
 	public static final Key	encoding					= Key.of( "encoding" );
 	public static final Key	end							= Key.of( "end" );
@@ -116,8 +119,10 @@ public class Key implements Comparable<Key> {
 	public static final Key	initialValue				= Key.of( "initialValue" );
 	public static final Key	initMethod					= Key.of( "initMethod" );
 	public static final Key	input						= Key.of( "input" );
+	public static final Key	iso							= Key.of( "iso" );
 	public static final Key	java						= Key.of( "java" );
 	public static final Key	key							= Key.of( "key" );
+	public static final Key	language					= Key.of( "language" );
 	public static final Key	leaveIndex					= Key.of( "leaveIndex" );
 	public static final Key	length						= Key.of( "length" );
 	public static final Key	listInfo					= Key.of( "listInfo" );
@@ -190,6 +195,7 @@ public class Key implements Comparable<Key> {
 	public static final Key	value						= Key.of( "value" );
 	public static final Key	var							= Key.of( "var" );
 	public static final Key	variable					= Key.of( "variable" );
+	public static final Key	variant						= Key.of( "variant" );
 	public static final Key	year						= Key.of( "year" );
 
 	/**
