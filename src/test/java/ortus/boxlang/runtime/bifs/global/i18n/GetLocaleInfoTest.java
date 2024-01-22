@@ -68,7 +68,7 @@ public class GetLocaleInfoTest {
 	@DisplayName( "It tests the BIF GetLocaleInfo with no args" )
 	@Test
 	public void testGetLocaleInfoNoArgs() {
-		context.setConfigItem( Key.locale, Locale.US );
+		context.setConfigItem( Key.locale, new Locale( "en", "US" ) );
 		instance.executeSource(
 		    """
 		    result = getLocaleInfo();

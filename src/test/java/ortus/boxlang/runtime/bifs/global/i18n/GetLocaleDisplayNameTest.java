@@ -58,7 +58,7 @@ public class GetLocaleDisplayNameTest {
 	@BeforeEach
 	public void setupEach() {
 		variables.clear();
-		context.setConfigItem( Key.locale, Locale.US );
+		context.setConfigItem( Key.locale, new Locale( "en", "US" ) );
 	}
 
 	@DisplayName( "It tests the BIF GetLocaleDisplayName with no arguments" )
