@@ -27,7 +27,6 @@ import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.FormatStyle;
 import java.time.temporal.ChronoUnit;
-import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
 import java.util.NoSuchElementException;
@@ -93,33 +92,28 @@ public class DateTime implements IType, IReferenceable {
 	public static final String				MODE_TIME						= "Time";
 	public static final String				MODE_DATETIME					= "DateTime";
 
-	public static final Struct				commonFormatters				= new Struct(
-	    new HashMap<String, DateTimeFormatter>() {
-
-		    {
-			    put( "fullDateTime", DateTimeFormatter.ofLocalizedDateTime( FormatStyle.FULL, FormatStyle.FULL ) );
-			    put( "longDateTime", DateTimeFormatter.ofLocalizedDateTime( FormatStyle.LONG, FormatStyle.LONG ) );
-			    put( "mediumDateTime", DateTimeFormatter.ofLocalizedDateTime( FormatStyle.MEDIUM, FormatStyle.MEDIUM ) );
-			    put( "shortDateTime", DateTimeFormatter.ofLocalizedDateTime( FormatStyle.MEDIUM, FormatStyle.MEDIUM ) );
-			    put( "ISODateTime", DateTimeFormatter.ISO_DATE_TIME );
-			    put( "ISO8601DateTime", DateTimeFormatter.ISO_OFFSET_DATE_TIME );
-			    put( "ODBCDateTime", DateTimeFormatter.ofPattern( ODBC_DATE_TIME_FORMAT_MASK ) );
-			    put( "fullDate", DateTimeFormatter.ofLocalizedDate( FormatStyle.FULL ) );
-			    put( "longDate", DateTimeFormatter.ofLocalizedDate( FormatStyle.LONG ) );
-			    put( "mediumDate", DateTimeFormatter.ofLocalizedDate( FormatStyle.MEDIUM ) );
-			    put( "shortDate", DateTimeFormatter.ofLocalizedDate( FormatStyle.SHORT ) );
-			    put( "ISODate", DateTimeFormatter.ISO_DATE );
-			    put( "ISO8601Date", DateTimeFormatter.ISO_DATE );
-			    put( "ODBCDate", DateTimeFormatter.ofPattern( ODBC_DATE_FORMAT_MASK ) );
-			    put( "fullTime", DateTimeFormatter.ofLocalizedTime( FormatStyle.FULL ) );
-			    put( "longTime", DateTimeFormatter.ofLocalizedTime( FormatStyle.LONG ) );
-			    put( "mediumTime", DateTimeFormatter.ofLocalizedTime( FormatStyle.MEDIUM ) );
-			    put( "shortTime", DateTimeFormatter.ofLocalizedTime( FormatStyle.SHORT ) );
-			    put( "ISOTime", DateTimeFormatter.ISO_TIME );
-			    put( "ISO8601Time", DateTimeFormatter.ISO_TIME );
-			    put( "ODBCTime", DateTimeFormatter.ofPattern( ODBC_TIME_FORMAT_MASK ) );
-		    }
-	    }
+	public static final IStruct				COMMON_FORMATTERS				= Struct.of(
+	    "fullDateTime", DateTimeFormatter.ofLocalizedDateTime( FormatStyle.FULL, FormatStyle.FULL ),
+	    "longDateTime", DateTimeFormatter.ofLocalizedDateTime( FormatStyle.LONG, FormatStyle.LONG ),
+	    "mediumDateTime", DateTimeFormatter.ofLocalizedDateTime( FormatStyle.MEDIUM, FormatStyle.MEDIUM ),
+	    "shortDateTime", DateTimeFormatter.ofLocalizedDateTime( FormatStyle.MEDIUM, FormatStyle.MEDIUM ),
+	    "ISODateTime", DateTimeFormatter.ISO_DATE_TIME,
+	    "ISO8601DateTime", DateTimeFormatter.ISO_OFFSET_DATE_TIME,
+	    "ODBCDateTime", DateTimeFormatter.ofPattern( ODBC_DATE_TIME_FORMAT_MASK ),
+	    "fullDate", DateTimeFormatter.ofLocalizedDate( FormatStyle.FULL ),
+	    "longDate", DateTimeFormatter.ofLocalizedDate( FormatStyle.LONG ),
+	    "mediumDate", DateTimeFormatter.ofLocalizedDate( FormatStyle.MEDIUM ),
+	    "shortDate", DateTimeFormatter.ofLocalizedDate( FormatStyle.SHORT ),
+	    "ISODate", DateTimeFormatter.ISO_DATE,
+	    "ISO8601Date", DateTimeFormatter.ISO_DATE,
+	    "ODBCDate", DateTimeFormatter.ofPattern( ODBC_DATE_FORMAT_MASK ),
+	    "fullTime", DateTimeFormatter.ofLocalizedTime( FormatStyle.FULL ),
+	    "longTime", DateTimeFormatter.ofLocalizedTime( FormatStyle.LONG ),
+	    "mediumTime", DateTimeFormatter.ofLocalizedTime( FormatStyle.MEDIUM ),
+	    "shortTime", DateTimeFormatter.ofLocalizedTime( FormatStyle.SHORT ),
+	    "ISOTime", DateTimeFormatter.ISO_TIME,
+	    "ISO8601Time", DateTimeFormatter.ISO_TIME,
+	    "ODBCTime", DateTimeFormatter.ofPattern( ODBC_TIME_FORMAT_MASK )
 	);
 
 	/**
@@ -475,21 +469,21 @@ public class DateTime implements IType, IReferenceable {
 	}
 
 	/**
-	 * Determines whether the year of this object is a leap year
-	 *
-	 * @return boolean
-	 */
-	public Boolean isLeapYear() {
-		return Year.isLeap( this.wrapped.getYear() );
-	}
-
-	/**
 	 * Clones this object to produce a new object
 	 *
 	 * @param timezone the string timezone to cast the clone to
 	 */
 	public DateTime clone( ZoneId timezone ) {
 		return new DateTime( ZonedDateTime.ofInstant( this.wrapped.toInstant(), timezone != null ? timezone : this.wrapped.getZone() ) );
+	}
+
+	/**
+	 * Determines whether the year of this object is a leap year
+	 *
+	 * @return boolean
+	 */
+	public Boolean isLeapYear() {
+		return Year.isLeap( this.wrapped.getYear() );
 	}
 
 	/**
@@ -800,15 +794,14 @@ public class DateTime implements IType, IReferenceable {
 	/**
 	 * Convienience method to create a formatter with a specific pattern - will look up an equivalent known DateTime formatter
 	 *
-	 * @param mask
-	 *             q
+	 * @param mask The mask to use
 	 *
-	 * @return
+	 * @return The DateTimeFormatter
 	 */
 	private static DateTimeFormatter getDateTimeFormatter( String mask ) {
 		Key formatKey = Key.of( mask + MODE_DATETIME );
-		return DateTime.commonFormatters.containsKey( formatKey )
-		    ? ( DateTimeFormatter ) DateTime.commonFormatters.get( formatKey )
+		return DateTime.COMMON_FORMATTERS.containsKey( formatKey )
+		    ? ( DateTimeFormatter ) DateTime.COMMON_FORMATTERS.get( formatKey )
 		    : DateTimeFormatter.ofPattern( mask );
 	}
 }
