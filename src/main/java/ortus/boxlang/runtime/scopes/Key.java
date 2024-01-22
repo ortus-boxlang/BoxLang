@@ -182,6 +182,7 @@ public class Key implements Comparable<Key> {
 	public static final Key	sortType					= Key.of( "sortType" );
 	public static final Key	source						= Key.of( "source" );
 	public static final Key	start						= Key.of( "start" );
+	public static final Key	state						= Key.of( "state" );
 	public static final Key	strict						= Key.of( "strict" );
 	public static final Key	string						= Key.of( "string" );
 	public static final Key	string1						= Key.of( "string1" );
