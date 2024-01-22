@@ -91,8 +91,8 @@ public class DateTimeFormat extends BIF {
 				return ref.toEpoch();
 			} else if ( formatKey.equals( FORMAT_EPOCHMS ) ) {
 				return ref.toEpochMillis();
-			} else if ( DateTime.commonFormatters.containsKey( commonFormatKey ) ) {
-				DateTimeFormatter formatter = ( DateTimeFormatter ) DateTime.commonFormatters.get( commonFormatKey );
+			} else if ( DateTime.COMMON_FORMATTERS.containsKey( commonFormatKey ) ) {
+				DateTimeFormatter formatter = ( DateTimeFormatter ) DateTime.COMMON_FORMATTERS.get( commonFormatKey );
 				return locale == null
 				    ? ref.format( formatter )
 				    : ref.format( formatter.withLocale( locale ) );

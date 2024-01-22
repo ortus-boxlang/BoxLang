@@ -20,17 +20,17 @@ public class DatePart extends TimeUnits {
 	    new HashMap<String, Object>() {
 
 		    {
-			    put( "d", bifMethods.day );
+			    put( "d", BIFMethods.day );
 			    put( "yyyy", Key.of( "Year" ) );
-			    put( "q", bifMethods.quarter );
-			    put( "m", bifMethods.month );
+			    put( "q", BIFMethods.quarter );
+			    put( "m", BIFMethods.month );
 			    put( "y", Key.of( "DayOfYear" ) );
-			    put( "w", bifMethods.dayOfWeek );
-			    put( "ww", bifMethods.weekOfYear );
+			    put( "w", BIFMethods.dayOfWeek );
+			    put( "ww", BIFMethods.weekOfYear );
 			    put( "h", Key.of( "Hour" ) );
 			    put( "n", Key.of( "Minute" ) );
 			    put( "s", Key.of( "Second" ) );
-			    put( "l", bifMethods.millis );
+			    put( "l", BIFMethods.millis );
 		    }
 	    }
 	);

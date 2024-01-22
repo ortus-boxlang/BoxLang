@@ -73,7 +73,7 @@ public class LSDateTimeFormatTest {
 		    """,
 		    context );
 		String				result		= variables.getAsString( Key.of( "result" ) );
-		DateTimeFormatter	formatter	= ( DateTimeFormatter ) DateTime.commonFormatters.get( "longDateTime" );
+		DateTimeFormatter	formatter	= ( DateTimeFormatter ) DateTime.COMMON_FORMATTERS.get( "longDateTime" );
 		assertEquals( result, dateRef.format( formatter.withLocale( LocalizationUtil.parseLocale( "es-ES" ) ) ) );
 	}
 
@@ -88,7 +88,7 @@ public class LSDateTimeFormatTest {
 		    """,
 		    context );
 		String				result		= variables.getAsString( Key.of( "result" ) );
-		DateTimeFormatter	formatter	= ( DateTimeFormatter ) DateTime.commonFormatters.get( "longDateTime" );
+		DateTimeFormatter	formatter	= ( DateTimeFormatter ) DateTime.COMMON_FORMATTERS.get( "longDateTime" );
 		assertEquals( result, dateRef.format( formatter.withLocale( LocalizationUtil.parseLocale( "es-ES" ) ) ) );
 	}
 
@@ -103,7 +103,7 @@ public class LSDateTimeFormatTest {
 		    """,
 		    context );
 		String				result		= variables.getAsString( Key.of( "result" ) );
-		DateTimeFormatter	formatter	= ( DateTimeFormatter ) DateTime.commonFormatters.get( "longDateTime" );
+		DateTimeFormatter	formatter	= ( DateTimeFormatter ) DateTime.COMMON_FORMATTERS.get( "longDateTime" );
 		assertEquals( result, dateRef.format( formatter.withLocale( LocalizationUtil.parseLocale( "zh-Hant" ) ) ) );
 	}
 
@@ -118,7 +118,7 @@ public class LSDateTimeFormatTest {
 		    """,
 		    context );
 		String				result		= variables.getAsString( Key.of( "result" ) );
-		DateTimeFormatter	formatter	= ( DateTimeFormatter ) DateTime.commonFormatters.get( "longDate" );
+		DateTimeFormatter	formatter	= ( DateTimeFormatter ) DateTime.COMMON_FORMATTERS.get( "longDate" );
 		assertEquals( result, dateRef.format( formatter.withLocale( LocalizationUtil.parseLocale( "es-ES" ) ) ) );
 	}
 
@@ -133,7 +133,7 @@ public class LSDateTimeFormatTest {
 		    """,
 		    context );
 		String				result		= variables.getAsString( Key.of( "result" ) );
-		DateTimeFormatter	formatter	= ( DateTimeFormatter ) DateTime.commonFormatters.get( "longDate" );
+		DateTimeFormatter	formatter	= ( DateTimeFormatter ) DateTime.COMMON_FORMATTERS.get( "longDate" );
 		assertEquals( result, dateRef.format( formatter.withLocale( LocalizationUtil.parseLocale( "es-ES" ) ) ) );
 	}
 
@@ -148,7 +148,7 @@ public class LSDateTimeFormatTest {
 		    """,
 		    context );
 		String				result		= variables.getAsString( Key.of( "result" ) );
-		DateTimeFormatter	formatter	= ( DateTimeFormatter ) DateTime.commonFormatters.get( "longDate" );
+		DateTimeFormatter	formatter	= ( DateTimeFormatter ) DateTime.COMMON_FORMATTERS.get( "longDate" );
 		assertEquals( result, dateRef.format( formatter.withLocale( LocalizationUtil.parseLocale( "zh-Hant" ) ) ) );
 	}
 
@@ -164,7 +164,7 @@ public class LSDateTimeFormatTest {
 		    context );
 		String				result		= variables.getAsString( Key.of( "result" ) );
 
-		DateTimeFormatter	formatter	= ( DateTimeFormatter ) DateTime.commonFormatters.get( "longTime" );
+		DateTimeFormatter	formatter	= ( DateTimeFormatter ) DateTime.COMMON_FORMATTERS.get( "longTime" );
 		assertEquals( result, timeRef.format( formatter.withLocale( LocalizationUtil.parseLocale( "es-ES" ) ) ) );
 	}
 
@@ -180,7 +180,7 @@ public class LSDateTimeFormatTest {
 		    context );
 		String				result		= variables.getAsString( Key.of( "result" ) );
 
-		DateTimeFormatter	formatter	= ( DateTimeFormatter ) DateTime.commonFormatters.get( "longTime" );
+		DateTimeFormatter	formatter	= ( DateTimeFormatter ) DateTime.COMMON_FORMATTERS.get( "longTime" );
 		assertEquals( result, timeRef.format( formatter.withLocale( LocalizationUtil.parseLocale( "es-ES" ) ) ) );
 	}
 
@@ -195,7 +195,7 @@ public class LSDateTimeFormatTest {
 		    """,
 		    context );
 		String				result		= variables.getAsString( Key.of( "result" ) );
-		DateTimeFormatter	formatter	= ( DateTimeFormatter ) DateTime.commonFormatters.get( "longTime" );
+		DateTimeFormatter	formatter	= ( DateTimeFormatter ) DateTime.COMMON_FORMATTERS.get( "longTime" );
 		assertEquals( result, timeRef.format( formatter.withLocale( LocalizationUtil.parseLocale( "zh-Hant" ) ) ) );
 	}
 

@@ -20,7 +20,6 @@ import java.time.ZoneId;
 import java.time.temporal.ChronoField;
 import java.time.temporal.IsoFields;
 import java.time.temporal.WeekFields;
-import java.util.HashMap;
 import java.util.Locale;
 
 import ortus.boxlang.runtime.bifs.BIF;
@@ -34,6 +33,7 @@ import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.BoxLangType;
 import ortus.boxlang.runtime.types.DateTime;
+import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.util.LocalizationUtil;
@@ -92,7 +92,7 @@ public class TimeUnits extends BIF {
 	public static final String	DOW_SHORT_FORMAT	= "eee";
 	public static final String	DOW_LONG_FORMAT		= "eeee";
 
-	static final class bifMethods {
+	static final class BIFMethods {
 
 		public static final Key		quarter					= Key.quarter;
 		public static final Key		month					= Key.month;
@@ -115,19 +115,14 @@ public class TimeUnits extends BIF {
 		/**
 		 * Map of method names to BIF names
 		 */
-		public final static Struct	memberMethods			= new Struct(
-		    new HashMap<String, String>() {
-
-			    {
-				    put( "Year", "getYear" );
-				    put( "Day", "getDayOfMonth" );
-				    put( "DayOfYear", "getDayOfYear" );
-				    put( "Hour", "getHour" );
-				    put( "Minute", "getMinute" );
-				    put( "Second", "getSecond" );
-				    put( "Nanosecond", "getNano" );
-			    }
-		    }
+		public static final IStruct	MEMBER_METHODS			= Struct.of(
+		    "Year", "getYear",
+		    "Day", "getDayOfMonth",
+		    "DayOfYear", "getDayOfYear",
+		    "Hour", "getHour",
+		    "Minute", "getMinute",
+		    "Second", "getSecond",
+		    "Nanosecond", "getNano"
 		);
 
 	}
@@ -166,40 +161,40 @@ public class TimeUnits extends BIF {
 
 		Key		bifMethodKey	= arguments.getAsKey( BIF.__functionName );
 		String	methodName		= null;
-		if ( bifMethods.memberMethods.containsKey( bifMethodKey ) ) {
-			methodName = ( String ) bifMethods.memberMethods.get( ( Object ) bifMethodKey );
+		if ( BIFMethods.MEMBER_METHODS.containsKey( bifMethodKey ) ) {
+			methodName = ( String ) BIFMethods.MEMBER_METHODS.get( bifMethodKey );
 			return dateRef.dereferenceAndInvoke( context, Key.of( methodName ), arguments, false );
 		} else {
 			// @formatter:off
 			// prettier-ignore
 			// @TODO - make the non LS string methods more locale aware
 			Object result =
-				bifMethodKey.equals( bifMethods.quarter ) ? dateRef.getWrapped().get( IsoFields.QUARTER_OF_YEAR )
-				: bifMethodKey.equals( bifMethods.month ) ? dateRef.getWrapped().getMonth().getValue()
-				: bifMethodKey.equals( bifMethods.monthAsString ) ? dateRef.clone().format( MONTH_LONG_FORMAT )
-				: bifMethodKey.equals( bifMethods.monthShortAsString ) ? dateRef.clone().format( MONTH_SHORT_FORMAT )
-				: bifMethodKey.equals( bifMethods.day ) ? dateRef.getWrapped().getDayOfMonth()
-				: bifMethodKey.equals( bifMethods.dayOfWeek ) ? (
+				bifMethodKey.equals( BIFMethods.quarter ) ? dateRef.getWrapped().get( IsoFields.QUARTER_OF_YEAR )
+				: bifMethodKey.equals( BIFMethods.month ) ? dateRef.getWrapped().getMonth().getValue()
+				: bifMethodKey.equals( BIFMethods.monthAsString ) ? dateRef.clone().format( MONTH_LONG_FORMAT )
+				: bifMethodKey.equals( BIFMethods.monthShortAsString ) ? dateRef.clone().format( MONTH_SHORT_FORMAT )
+				: bifMethodKey.equals( BIFMethods.day ) ? dateRef.getWrapped().getDayOfMonth()
+				: bifMethodKey.equals( BIFMethods.dayOfWeek ) ? (
 																locale == null
 																? dateRef.clone().getWrapped().getDayOfWeek().getValue()
 																: dateRef.getWrapped().get( WeekFields.of( locale ).dayOfWeek() )
 																)
-				: bifMethodKey.equals( bifMethods.dayOfWeekAsString ) ? dateRef.clone().format( DOW_LONG_FORMAT )
-				: bifMethodKey.equals( bifMethods.dayOfWeekShortAsString ) ? dateRef.clone().format( DOW_SHORT_FORMAT )
-				: bifMethodKey.equals( bifMethods.daysInMonth ) ? dateRef.getWrapped().getMonth().length( dateRef.isLeapYear() )
-				: bifMethodKey.equals( bifMethods.daysInYear ) ? Year.of( dateRef.getWrapped().getYear() ).length()
-				: bifMethodKey.equals( bifMethods.firstDayOfMonth ) ? dateRef.getWrapped().withDayOfMonth( (int) 1 ).getDayOfYear()
-				: bifMethodKey.equals( bifMethods.weekOfYear ) ? (
+				: bifMethodKey.equals( BIFMethods.dayOfWeekAsString ) ? dateRef.clone().format( DOW_LONG_FORMAT )
+				: bifMethodKey.equals( BIFMethods.dayOfWeekShortAsString ) ? dateRef.clone().format( DOW_SHORT_FORMAT )
+				: bifMethodKey.equals( BIFMethods.daysInMonth ) ? dateRef.getWrapped().getMonth().length( dateRef.isLeapYear() )
+				: bifMethodKey.equals( BIFMethods.daysInYear ) ? Year.of( dateRef.getWrapped().getYear() ).length()
+				: bifMethodKey.equals( BIFMethods.firstDayOfMonth ) ? dateRef.getWrapped().withDayOfMonth( (int) 1 ).getDayOfYear()
+				: bifMethodKey.equals( BIFMethods.weekOfYear ) ? (
 																locale == null
 																? dateRef.getWrapped().get( ChronoField.ALIGNED_WEEK_OF_YEAR )
 																: dateRef.getWrapped().get( WeekFields.of( locale ).weekOfWeekBasedYear() ) )
-				: bifMethodKey.equals( bifMethods.millis ) ? dateRef.getWrapped().getNano() / 1000000
-				: bifMethodKey.equals( bifMethods.offset ) ? dateRef.clone().format( OFFSET_FORMAT )
-				: bifMethodKey.equals( bifMethods.getNumericDate ) ? dateRef.toEpochMillis().doubleValue() / LongCaster.cast( 86400000l).doubleValue()
+				: bifMethodKey.equals( BIFMethods.millis ) ? dateRef.getWrapped().getNano() / 1000000
+				: bifMethodKey.equals( BIFMethods.offset ) ? dateRef.clone().format( OFFSET_FORMAT )
+				: bifMethodKey.equals( BIFMethods.getNumericDate ) ? dateRef.toEpochMillis().doubleValue() / LongCaster.cast( 86400000l).doubleValue()
 				: (
-					bifMethodKey.equals( bifMethods.timeZone )
+					bifMethodKey.equals( BIFMethods.timeZone )
 					||
-					bifMethodKey.equals( bifMethods.getTimeZone )
+					bifMethodKey.equals( BIFMethods.getTimeZone )
 				  ) ? dateRef.clone().format( TZ_SHORT_FORMAT )
 				: null;
 			// @formatter:on
