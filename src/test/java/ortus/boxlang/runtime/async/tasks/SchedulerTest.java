@@ -19,10 +19,8 @@ package ortus.boxlang.runtime.async.tasks;
 
 import static com.google.common.truth.Truth.assertThat;
 import static org.junit.Assert.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.time.LocalDateTime;
-import java.util.concurrent.Callable;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -64,6 +62,7 @@ class SchedulerTest {
 	@DisplayName( "It can set a new timezone" )
 	@Test
 	void testItCanSetANewTimezone() {
+		scheduler.setTimezone( "America/Los_Angeles" );
 		assertThat( scheduler.getTimezone().getId() ).isNotEqualTo( "America/New_York" );
 		scheduler.setTimezone( "America/New_York" );
 		assertThat( scheduler.getTimezone().getId() ).isEqualTo( "America/New_York" );
