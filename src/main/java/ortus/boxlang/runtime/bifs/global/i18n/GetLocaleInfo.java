@@ -23,8 +23,8 @@ public class GetLocaleInfo extends BIF {
 	public GetLocaleInfo() {
 		super();
 		declaredArguments = new Argument[] {
-		    new Argument( true, "string", Key.locale ),
-		    new Argument( true, "string", Key.dspLocale )
+		    new Argument( false, "string", Key.locale ),
+		    new Argument( false, "string", Key.dspLocale )
 		};
 	}
 
@@ -34,9 +34,9 @@ public class GetLocaleInfo extends BIF {
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.locale The locale to retrieve information on - either a common format ( "German" ), or an ISO Directive
-	 * 
-	 * @argument.dspLocale The display language locale
+	 * @argument.locale Optional locale to retrieve information on - either a common format ( "German" ), or an ISO Directive
+	 *
+	 * @argument.dspLocale Optional display language locale
 	 *
 	 */
 	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {

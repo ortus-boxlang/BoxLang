@@ -23,6 +23,8 @@ import static com.google.common.truth.Truth.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.util.Locale;
+
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -61,6 +63,33 @@ public class GetLocaleInfoTest {
 	@BeforeEach
 	public void setupEach() {
 		variables.clear();
+	}
+
+	@DisplayName( "It tests the BIF GetLocaleInfo with no args" )
+	@Test
+	public void testGetLocaleInfoNoArgs() {
+		context.setConfigItem( Key.locale, Locale.US );
+		instance.executeSource(
+		    """
+		    result = getLocaleInfo();
+		    """,
+		    context );
+		var result = variables.get( Key.of( "result" ) );
+		assertThat( result ).isInstanceOf( ImmutableStruct.class );
+		IStruct infoStruct = StructCaster.cast( result );
+		assertTrue( infoStruct.containsKey( "country" ) );
+		assertThat( infoStruct.get( "country" ) ).isInstanceOf( String.class );
+		assertTrue( infoStruct.containsKey( "display" ) );
+		assertThat( infoStruct.get( "display" ) ).isInstanceOf( ImmutableStruct.class );
+		assertTrue( infoStruct.containsKey( "iso" ) );
+		assertThat( infoStruct.get( "iso" ) ).isInstanceOf( ImmutableStruct.class );
+		assertTrue( infoStruct.containsKey( "language" ) );
+		assertTrue( infoStruct.containsKey( "name" ) );
+		assertTrue( infoStruct.containsKey( "variant" ) );
+		assertEquals( infoStruct.getAsString( Key.country ), "US" );
+		assertEquals( infoStruct.getAsString( Key.language ), "eng" );
+		assertEquals( infoStruct.getAsString( Key.of( "name" ) ), "English (United States)" );
+		assertEquals( infoStruct.getAsString( Key.variant ), "" );
 	}
 
 	@DisplayName( "It tests the BIF GetLocaleInfo" )
