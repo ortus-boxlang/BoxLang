@@ -29,12 +29,15 @@ public class GetLocaleInfo extends BIF {
 	}
 
 	/**
-	 * Describe what the invocation of your bif function does
+	 * Retrieves a struct containin info on a locale, with an optional display locale
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.foo Describe any expected arguments
+	 * @argument.locale The locale to retrieve information on - either a common format ( "German" ), or an ISO Directive
+	 * 
+	 * @argument.dspLocale The display language locale
+	 *
 	 */
 	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
 		String	localeArg		= arguments.getAsString( Key.locale );

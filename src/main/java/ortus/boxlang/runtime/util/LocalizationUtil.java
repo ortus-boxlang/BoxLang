@@ -169,6 +169,8 @@ public final class LocalizationUtil {
 		    .appendOptional( DateTimeFormatter.ofLocalizedDate( FormatStyle.FULL ).withLocale( locale ) )
 		    // The ISO date methods don't account for leading zeros :(
 		    .appendOptional( DateTimeFormatter.ofPattern( "yyyy-MM-dd" ) )
+		    .appendOptional( DateTimeFormatter.ofPattern( "yyyy.MM.dd" ) )
+		    .appendOptional( DateTimeFormatter.ofPattern( "MM/dd/yyyy" ) )
 		    .appendOptional( DateTimeFormatter.ofPattern( DateTime.DEFAULT_DATE_FORMAT_MASK ) )
 		    .appendOptional( DateTimeFormatter.ISO_DATE )
 		    .appendOptional( DateTimeFormatter.ISO_LOCAL_DATE )

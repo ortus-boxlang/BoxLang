@@ -121,6 +121,26 @@ public class ParseDateTimeTest {
 		assertThat( IntegerCaster.cast( result.format( "n" ) ) ).isEqualTo( 0 );
 	}
 
+	@DisplayName( "It tests the BIF ParseDateTime with a dot-delimited date" )
+	@Test
+	public void testParseDateTimeDateDot() {
+		instance.executeSource(
+		    """
+		    result = parseDateTime( "2024.01.14" );
+		    """,
+		    context );
+		DateTime result = ( DateTime ) variables.get( Key.of( "result" ) );
+		assertThat( result ).isInstanceOf( DateTime.class );
+		assertThat( result.toString() ).isInstanceOf( String.class );
+		assertThat( IntegerCaster.cast( result.format( "yyyy" ) ) ).isEqualTo( 2024 );
+		assertThat( IntegerCaster.cast( result.format( "M" ) ) ).isEqualTo( 1 );
+		assertThat( IntegerCaster.cast( result.format( "d" ) ) ).isEqualTo( 14 );
+		assertThat( IntegerCaster.cast( result.format( "H" ) ) ).isEqualTo( 0 );
+		assertThat( IntegerCaster.cast( result.format( "m" ) ) ).isEqualTo( 0 );
+		assertThat( IntegerCaster.cast( result.format( "s" ) ) ).isEqualTo( 0 );
+		assertThat( IntegerCaster.cast( result.format( "n" ) ) ).isEqualTo( 0 );
+	}
+
 	@DisplayName( "It tests the BIF ParseDateTime in mm/dd/yyyy format" )
 	@Test
 	public void testParseDateSlashes() {
