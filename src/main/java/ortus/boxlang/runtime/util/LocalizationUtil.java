@@ -21,13 +21,14 @@ import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeFormatterBuilder;
 import java.time.format.FormatStyle;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Locale;
 
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.DateTime;
+import ortus.boxlang.runtime.types.Struct.Type;
 import ortus.boxlang.runtime.types.immutable.ImmutableStruct;
 
 /**
@@ -36,7 +37,8 @@ import ortus.boxlang.runtime.types.immutable.ImmutableStruct;
 public final class LocalizationUtil {
 
 	public static final ImmutableStruct	commonLocales	= new ImmutableStruct(
-	    new HashMap<Key, Locale>() {
+	    Type.LINKED,
+	    new LinkedHashMap<Key, Locale>() {
 
 		    {
 			    put( Key.of( "Canada" ), Locale.CANADA );
@@ -71,7 +73,8 @@ public final class LocalizationUtil {
 	);
 
 	public static final ImmutableStruct	localeAliases	= new ImmutableStruct(
-	    new HashMap<Key, Locale>() {
+	    Type.LINKED,
+	    new LinkedHashMap<Key, Locale>() {
 
 		    {
 			    put( Key.of( "Albanian (Albania)" ), new Locale( "sq", "AL" ) );
@@ -109,9 +112,9 @@ public final class LocalizationUtil {
 			    put( Key.of( "English (GB)" ), Locale.UK );
 			    put( Key.of( "English (Great Britan)" ), Locale.UK );
 			    put( Key.of( "English (US)" ), Locale.US );
+			    put( Key.of( "English (USA)" ), Locale.US );
 			    put( Key.of( "English (United States)" ), Locale.US );
 			    put( Key.of( "English (United States of America)" ), Locale.US );
-			    put( Key.of( "English (USA)" ), Locale.US );
 			    put( Key.of( "French (Belgium)" ), new Locale( "fr", "BE" ) );
 			    put( Key.of( "French (Belgian)" ), new Locale( "fr", "BE" ) );
 			    put( Key.of( "French (Canadian)" ), Locale.CANADA_FRENCH );
