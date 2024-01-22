@@ -184,11 +184,12 @@ public class DatePartTest {
 	@DisplayName( "It tests the DatePart for Minute" )
 	@Test
 	public void testBifMinute() {
-		Integer refMinute = ZonedDateTime.now().getMinute();
+		DateTime	refDate		= new DateTime();
+		Integer		refMinute	= refDate.getWrapped().getMinute();
+		variables.put( Key.date, refDate );
 		instance.executeSource(
 		    """
-		    now = now();
-		    result = datePart( "n", now );
+		    result = datePart( "n", date );
 		    """,
 		    context );
 		Integer result = ( Integer ) variables.get( Key.of( "result" ) );
