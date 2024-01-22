@@ -373,6 +373,23 @@ public class DateTime implements IType, IReferenceable {
 	}
 
 	/**
+	 * Convenience method to get a common date time formatter if it exists in the {@link DateTime#COMMON_FORMATTERS} map
+	 * else it will return a new DateTimeFormatter instance according to the passed mask.
+	 *
+	 * @param mask The mask to use with a postfix of {@code DateTime} or a common formatter key:
+	 *             fullDateTime, longDateTime, mediumDateTime, shortDateTime,
+	 *             ISODateTime, ISO8601DateTime, ODBCDateTime
+	 *
+	 * @return The DateTimeFormatter object
+	 */
+	public static DateTimeFormatter getDateTimeFormatter( String mask ) {
+		return ( DateTimeFormatter ) DateTime.COMMON_FORMATTERS.getOrDefault(
+		    Key.of( mask + MODE_DATETIME ),
+		    DateTimeFormatter.ofPattern( mask )
+		);
+	}
+
+	/**
 	 * Chainable member function to set the format and return the object
 	 *
 	 * @param mask the formatting mask to use
@@ -511,7 +528,8 @@ public class DateTime implements IType, IReferenceable {
 	/**
 	 * Returns the date time representation as a string in the specified locale
 	 *
-	 * @param mask the formatting mask to use
+	 * @param locale the locale to use
+	 * @param mask   the formatting mask to use
 	 *
 	 * @return the date time representation as a string in the specified format mask
 	 */
@@ -791,17 +809,4 @@ public class DateTime implements IType, IReferenceable {
 		}
 	}
 
-	/**
-	 * Convienience method to create a formatter with a specific pattern - will look up an equivalent known DateTime formatter
-	 *
-	 * @param mask The mask to use
-	 *
-	 * @return The DateTimeFormatter
-	 */
-	private static DateTimeFormatter getDateTimeFormatter( String mask ) {
-		Key formatKey = Key.of( mask + MODE_DATETIME );
-		return DateTime.COMMON_FORMATTERS.containsKey( formatKey )
-		    ? ( DateTimeFormatter ) DateTime.COMMON_FORMATTERS.get( formatKey )
-		    : DateTimeFormatter.ofPattern( mask );
-	}
 }
