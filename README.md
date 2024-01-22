@@ -83,8 +83,8 @@ Here is a listing of all of our core dependencies.  If you add one, make sure yo
 | [apache-commons-lang3](https://commons.apache.org/proper/commons-lang/) | 3.12.0 | Apache2 | Used for many utilities, class helpers and more |
 | [boxlang-compiler](https://github.com/ortus-solutions-private/boxlang-compiler) | 1.0.0 | Apache2 | The BoxLang Parser, Compiler, and ByteCode Generator |
 | [caffeine](https://mvnrepository.com/artifact/com.github.ben-manes.caffeine/caffeine) | 3.1.8| Apache2 | Caching engine  |
-| [slf4j-api](https://mvnrepository.com/artifact/org.slf4j/slf4j-api) | 2.0.7 | MIT | API for SLF4J (The Simple Logging Facade for Java)  |
-| [slf4j-jdk14](https://mvnrepository.com/artifact/org.slf4j/slf4j-jdk14) | 2.0.7 | MIT | SLF4J JDK14 Provider |
+| [slf4j-api](https://mvnrepository.com/artifact/org.slf4j/slf4j-api) | 2.0.11 | MIT | API for SLF4J (The Simple Logging Facade for Java)  |
+| [slf4j-jdk14](https://mvnrepository.com/artifact/org.slf4j/slf4j-jdk14) | 2.0.11 | MIT | SLF4J JDK14 Provider |
 
 ### Compiler
 
@@ -96,8 +96,8 @@ Here is a listing of all of our core dependencies.  If you add one, make sure yo
 | [commons-text](https://mvnrepository.com/artifact/org.apache.commons/commons-text) | 1.10.0 | Apache 2 | The Commons Text library provides additions to the standard JDK text handling. It includes algorithms for string similarity and for calculating the distance between strings. |
 | [javaparser-symbol-solver-core](https://github.com/javaparser/javaparser) | 3.25.4 | Apache 2 | Java 1-17 Parser and Abstract Syntax Tree for Java with advanced analysis functionalities. |
 | [kolasu-core](https://github.com/Strumenta/kolasu) | 1.5.24 | Apache 2 | Kotlin Language Support – AST Library |
-| [slf4j-api](https://mvnrepository.com/artifact/org.slf4j/slf4j-api) | 2.0.7 | MIT | API for SLF4J (The Simple Logging Facade for Java)  |
-| [slf4j-jdk14](https://mvnrepository.com/artifact/org.slf4j/slf4j-jdk14) | 2.0.7 | MIT | SLF4J JDK14 Provider |
+| [slf4j-api](https://mvnrepository.com/artifact/org.slf4j/slf4j-api) | 2.0.11 | MIT | API for SLF4J (The Simple Logging Facade for Java)  |
+| [slf4j-jdk14](https://mvnrepository.com/artifact/org.slf4j/slf4j-jdk14) | 2.0.11 | MIT | SLF4J JDK14 Provider |
 
 ## Contributing
 
