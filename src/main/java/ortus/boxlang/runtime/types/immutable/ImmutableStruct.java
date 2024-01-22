@@ -262,17 +262,30 @@ public class ImmutableStruct extends Struct implements IImmutable {
 	 * @param map
 	 */
 	private void _addAll( Map<? extends Object, ? extends Object> map ) {
-		map.entrySet()
-		    .parallelStream()
-		    .forEach( entry -> {
-			    Key key;
-			    if ( entry.getKey() instanceof Key entryKey ) {
-				    key = entryKey;
-			    } else {
-				    key = Key.of( entry.getKey().toString() );
-			    }
-			    _put( key, entry.getValue() );
-		    } );
+		var entryStream = map.entrySet().parallelStream();
+		// With a linked hashmap we need to maintain order - which is a tiny bit slower
+		if ( type.equals( Type.LINKED ) ) {
+			entryStream.forEachOrdered( entry -> {
+				Key key;
+				if ( entry.getKey() instanceof Key entryKey ) {
+					key = entryKey;
+				} else {
+					key = Key.of( entry.getKey().toString() );
+				}
+				_put( key, entry.getValue() );
+			} );
+		} else {
+			entryStream.forEach( entry -> {
+				Key key;
+				if ( entry.getKey() instanceof Key entryKey ) {
+					key = entryKey;
+				} else {
+					key = Key.of( entry.getKey().toString() );
+				}
+				_put( key, entry.getValue() );
+			} );
+		}
+
 	}
 
 	/**
