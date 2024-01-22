@@ -75,7 +75,7 @@ public class GetLocaleTest {
 
 	}
 
-	@DisplayName( "It tests the BIF GetLocale will find a known alias" )
+	@DisplayName( "It tests the BIF GetLocale will return `Language (Country)` without a known alias" )
 	@Test
 	public void testBifNoAlias() {
 		context.setConfigItem( Key.locale, new Locale( "ar", "TR" ) );
