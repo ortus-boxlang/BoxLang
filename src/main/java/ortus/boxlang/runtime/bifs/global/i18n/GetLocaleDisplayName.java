@@ -40,7 +40,7 @@ public class GetLocaleDisplayName extends GetLocaleInfo {
 		String	dspLocale		= arguments.getAsString( Key.dspLocale );
 
 		Locale	locale			= new Locale.Builder()
-		    .setLocale( LocalizationUtil.parseLocaleOrDefault( localeArg, Locale.getDefault() ) )
+		    .setLocale( LocalizationUtil.parseLocaleOrDefault( localeArg, ( Locale ) context.getConfigItem( Key.locale, Locale.getDefault() ) ) )
 		    .build();
 
 		Locale	displayLocale	= new Locale.Builder()
