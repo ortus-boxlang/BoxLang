@@ -80,16 +80,10 @@ public class ApplicationService extends BaseService {
 	public Application getApplication( Key name ) {
 		// TODO: Application settings
 		// TODO: possible Application listener class
-		Application thisApplication = applications.get( name );
-		if ( thisApplication == null ) {
-			synchronized ( applications ) {
-				thisApplication = applications.get( name );
-				if ( thisApplication == null ) {
-					thisApplication = new Application( name );
-					applications.put( name, thisApplication );
-				}
-			}
-		}
+		Application thisApplication = applications.computeIfAbsent( name, k -> new Application( name ) );
+
+		logger.info( "ApplicationService.getApplication() - {}", name );
+
 		return thisApplication;
 	}
 
