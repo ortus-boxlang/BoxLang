@@ -38,7 +38,7 @@ import ortus.boxlang.runtime.config.ConfigLoader;
 import ortus.boxlang.runtime.config.Configuration;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.RuntimeBoxContext;
-import ortus.boxlang.runtime.context.ScriptingBoxContext;
+import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
 import ortus.boxlang.runtime.interceptors.ASTCapture;
 import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.logging.LoggingConfigurator;
@@ -801,7 +801,7 @@ public class BoxRuntime {
 			context.getScopeNearby( VariablesScope.name );
 			return context;
 		} catch ( ScopeNotFoundException e ) {
-			return new ScriptingBoxContext( context );
+			return new ScriptingRequestBoxContext( context );
 		}
 	}
 

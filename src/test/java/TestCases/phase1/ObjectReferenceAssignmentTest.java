@@ -31,15 +31,15 @@ import org.junit.jupiter.api.Test;
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.FunctionBoxContext;
 import ortus.boxlang.runtime.context.IBoxContext;
-import ortus.boxlang.runtime.context.ScriptingBoxContext;
+import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.LocalScope;
 import ortus.boxlang.runtime.scopes.VariablesScope;
 import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.Function.Access;
-import ortus.boxlang.runtime.types.SampleUDF;
 import ortus.boxlang.runtime.types.IStruct;
+import ortus.boxlang.runtime.types.SampleUDF;
 import ortus.boxlang.runtime.types.exceptions.BoxLangException;
 
 public class ObjectReferenceAssignmentTest {
@@ -52,7 +52,7 @@ public class ObjectReferenceAssignmentTest {
 	@BeforeAll
 	public static void setUp() {
 		instance	= BoxRuntime.getInstance( true );
-		context		= new ScriptingBoxContext( instance.getRuntimeContext() );
+		context		= new ScriptingRequestBoxContext( instance.getRuntimeContext() );
 		variables	= context.getScopeNearby( VariablesScope.name );
 	}
 
@@ -205,7 +205,7 @@ public class ObjectReferenceAssignmentTest {
 	public void testDereferenceInvokeKey() {
 		instance.executeSource(
 		    """
-		      ctx = new java:ortus.boxlang.runtime.context.ScriptingBoxContext();
+		      ctx = new java:ortus.boxlang.runtime.context.ScriptingRequestBoxContext();
 		    result = variables.ctx.getDefaultAssignmentScope()
 		      """,
 		    context );
@@ -218,7 +218,7 @@ public class ObjectReferenceAssignmentTest {
 	public void testDereferenceInvokeHeadless() {
 		instance.executeSource(
 		    """
-		      ctx = new java:ortus.boxlang.runtime.context.ScriptingBoxContext();
+		      ctx = new java:ortus.boxlang.runtime.context.ScriptingRequestBoxContext();
 		    result = ctx.getDefaultAssignmentScope()
 		      """,
 		    context );

@@ -30,7 +30,7 @@ import javax.script.SimpleBindings;
 
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.IBoxContext;
-import ortus.boxlang.runtime.context.ScriptingBoxContext;
+import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
 import ortus.boxlang.runtime.runnables.RunnableLoader;
 
 public class BoxScriptingEngine implements ScriptEngine, Compilable {
@@ -42,7 +42,7 @@ public class BoxScriptingEngine implements ScriptEngine, Compilable {
 
 	public BoxScriptingEngine( BoxScriptingFactory boxScriptingFactory ) {
 		this.boxScriptingFactory	= boxScriptingFactory;
-		this.boxContext				= new ScriptingBoxContext( BoxRuntime.getInstance().getRuntimeContext() );
+		this.boxContext				= new ScriptingRequestBoxContext( BoxRuntime.getInstance().getRuntimeContext() );
 		this.boxRuntime				= BoxRuntime.getInstance();
 		this.scriptContext			= new BoxScriptingContext( boxContext );
 	}

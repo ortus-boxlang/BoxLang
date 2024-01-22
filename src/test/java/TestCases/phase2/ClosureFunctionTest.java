@@ -29,7 +29,7 @@ import org.junit.jupiter.api.Test;
 
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.IBoxContext;
-import ortus.boxlang.runtime.context.ScriptingBoxContext;
+import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
 import ortus.boxlang.runtime.dynamic.Referencer;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.IScope;
@@ -61,7 +61,7 @@ public class ClosureFunctionTest {
 
 	@BeforeEach
 	public void setupEach() {
-		context		= new ScriptingBoxContext( instance.getRuntimeContext() );
+		context		= new ScriptingRequestBoxContext( instance.getRuntimeContext() );
 		variables	= context.getScopeNearby( VariablesScope.name );
 	}
 
@@ -491,7 +491,7 @@ public class ClosureFunctionTest {
 
 		Closure		closure			= ( Closure ) variables.get( result );
 
-		IBoxContext	newContext		= new ScriptingBoxContext( instance.getRuntimeContext() );
+		IBoxContext	newContext		= new ScriptingRequestBoxContext( instance.getRuntimeContext() );
 		IScope		newVariables	= newContext.getScopeNearby( VariablesScope.name );
 
 		// Stick our original closure into the new variables scope in the new context

@@ -40,7 +40,7 @@ public class LambdaBoxContextTest {
 	@DisplayName( "Test constructors" )
 	void testConstructor() {
 		assertThrows( Throwable.class, () -> new LambdaBoxContext( null, null ) );
-		IBoxContext			parentContext	= new ScriptingBoxContext();
+		IBoxContext			parentContext	= new ScriptingRequestBoxContext();
 		Lambda				Lambda			= new SampleLambda( new Argument[] {}, "Brad" );
 		LambdaBoxContext	context			= new LambdaBoxContext( parentContext, Lambda );
 		assertThat( context.getParent() ).isNotNull();
@@ -54,7 +54,7 @@ public class LambdaBoxContextTest {
 	@DisplayName( "Test scope lookup" )
 	void testScopeLookup() {
 		Lambda			Lambda			= new SampleLambda( new Argument[] {}, "Brad" );
-		IBoxContext		parentContext	= new ScriptingBoxContext();
+		IBoxContext		parentContext	= new ScriptingRequestBoxContext();
 		ArgumentsScope	argumentsScope	= new ArgumentsScope();
 		IBoxContext		context			= new LambdaBoxContext( parentContext, Lambda, argumentsScope );
 		IScope			localScope		= context.getScopeNearby( LocalScope.name );
@@ -102,7 +102,7 @@ public class LambdaBoxContextTest {
 	void testCanfindClosestFunctionName() {
 		// We call a function
 		Key			funcName		= Key.of( "lambda" );
-		IBoxContext	parentContext	= new ScriptingBoxContext();
+		IBoxContext	parentContext	= new ScriptingRequestBoxContext();
 		Lambda		Lambda			= new SampleLambda( new Argument[] {}, "Brad" );
 		IBoxContext	context			= new LambdaBoxContext( parentContext, Lambda );
 
@@ -110,19 +110,19 @@ public class LambdaBoxContextTest {
 		assertThat( context.findClosestFunctionName() ).isEqualTo( funcName );
 
 		// Our function includes a template
-		IBoxContext childContext = new ScriptingBoxContext( context );
+		IBoxContext childContext = new ScriptingRequestBoxContext( context );
 
 		assertThat( childContext.findClosestFunctionName() ).isNotNull();
 		assertThat( childContext.findClosestFunctionName() ).isEqualTo( funcName );
 
 		// which includes another template
-		IBoxContext childChildContext = new ScriptingBoxContext( childContext );
+		IBoxContext childChildContext = new ScriptingRequestBoxContext( childContext );
 
 		assertThat( childChildContext.findClosestFunctionName() ).isNotNull();
 		assertThat( childChildContext.findClosestFunctionName() ).isEqualTo( funcName );
 
 		// which includes ANOTHER template
-		IBoxContext childChildChildContext = new ScriptingBoxContext( childChildContext );
+		IBoxContext childChildChildContext = new ScriptingRequestBoxContext( childChildContext );
 
 		assertThat( childChildChildContext.findClosestFunctionName() ).isNotNull();
 		assertThat( childChildChildContext.findClosestFunctionName() ).isEqualTo( funcName );
@@ -138,7 +138,7 @@ public class LambdaBoxContextTest {
 	@Test
 	@DisplayName( "Test default assignment scope" )
 	void testDefaultAssignmentScope() {
-		IBoxContext	parentContext	= new ScriptingBoxContext();
+		IBoxContext	parentContext	= new ScriptingRequestBoxContext();
 		Lambda		Lambda			= new SampleLambda( new Argument[] {}, "Brad" );
 		IBoxContext	context			= new LambdaBoxContext( parentContext, Lambda );
 		assertThat( context.getDefaultAssignmentScope().getName().getName() ).isEqualTo( "local" );

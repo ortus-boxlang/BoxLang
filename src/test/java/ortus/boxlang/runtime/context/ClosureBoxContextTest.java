@@ -40,8 +40,8 @@ public class ClosureBoxContextTest {
 	@DisplayName( "Test constructors" )
 	void testConstructor() {
 		assertThrows( Throwable.class, () -> new ClosureBoxContext( null, null ) );
-		IBoxContext			parentContext	= new ScriptingBoxContext();
-		Closure				closure			= new SampleClosure( new Argument[] {}, new ScriptingBoxContext(), "Brad" );
+		IBoxContext			parentContext	= new ScriptingRequestBoxContext();
+		Closure				closure			= new SampleClosure( new Argument[] {}, new ScriptingRequestBoxContext(), "Brad" );
 		ClosureBoxContext	context			= new ClosureBoxContext( parentContext, closure );
 		assertThat( context.getParent() ).isNotNull();
 		assertThat( context.getFunction() ).isNotNull();
@@ -54,13 +54,13 @@ public class ClosureBoxContextTest {
 	@DisplayName( "Test scope lookup" )
 	void testScopeLookup() {
 
-		IBoxContext		declaringDeclaringContext	= new ScriptingBoxContext();
-		IBoxContext		dummyParentContext			= new ScriptingBoxContext();
+		IBoxContext		declaringDeclaringContext	= new ScriptingRequestBoxContext();
+		IBoxContext		dummyParentContext			= new ScriptingRequestBoxContext();
 		Closure			declaringclosure			= new SampleClosure( new Argument[] {}, declaringDeclaringContext, "Brad" );
 
 		IBoxContext		declaringContext			= new ClosureBoxContext( dummyParentContext, declaringclosure );
 		Closure			closure						= new SampleClosure( new Argument[] {}, declaringContext, "Brad" );
-		IBoxContext		parentContext				= new ScriptingBoxContext();
+		IBoxContext		parentContext				= new ScriptingRequestBoxContext();
 		ArgumentsScope	argumentsScope				= new ArgumentsScope();
 		IBoxContext		context						= new ClosureBoxContext( parentContext, closure, argumentsScope );
 		IScope			localScope					= context.getScopeNearby( LocalScope.name );
@@ -112,9 +112,9 @@ public class ClosureBoxContextTest {
 	@DisplayName( "Can find closest function" )
 	void testCanfindClosestFunctionName() {
 		// We call a function
-		IBoxContext	declaringContext	= new ScriptingBoxContext();
+		IBoxContext	declaringContext	= new ScriptingRequestBoxContext();
 		Key			funcName			= Key.of( "closure" );
-		IBoxContext	parentContext		= new ScriptingBoxContext();
+		IBoxContext	parentContext		= new ScriptingRequestBoxContext();
 		Closure		closure				= new SampleClosure( new Argument[] {}, declaringContext, "Brad" );
 		IBoxContext	context				= new ClosureBoxContext( parentContext, closure );
 
@@ -122,19 +122,19 @@ public class ClosureBoxContextTest {
 		assertThat( context.findClosestFunctionName() ).isEqualTo( funcName );
 
 		// Our function includes a template
-		IBoxContext childContext = new ScriptingBoxContext( context );
+		IBoxContext childContext = new ScriptingRequestBoxContext( context );
 
 		assertThat( childContext.findClosestFunctionName() ).isNotNull();
 		assertThat( childContext.findClosestFunctionName() ).isEqualTo( funcName );
 
 		// which includes another template
-		IBoxContext childChildContext = new ScriptingBoxContext( childContext );
+		IBoxContext childChildContext = new ScriptingRequestBoxContext( childContext );
 
 		assertThat( childChildContext.findClosestFunctionName() ).isNotNull();
 		assertThat( childChildContext.findClosestFunctionName() ).isEqualTo( funcName );
 
 		// which includes ANOTHER template
-		IBoxContext childChildChildContext = new ScriptingBoxContext( childChildContext );
+		IBoxContext childChildChildContext = new ScriptingRequestBoxContext( childChildContext );
 
 		assertThat( childChildChildContext.findClosestFunctionName() ).isNotNull();
 		assertThat( childChildChildContext.findClosestFunctionName() ).isEqualTo( funcName );
@@ -150,8 +150,8 @@ public class ClosureBoxContextTest {
 	@Test
 	@DisplayName( "Test default assignment scope" )
 	void testDefaultAssignmentScope() {
-		IBoxContext	declaringContext	= new ScriptingBoxContext();
-		IBoxContext	parentContext		= new ScriptingBoxContext();
+		IBoxContext	declaringContext	= new ScriptingRequestBoxContext();
+		IBoxContext	parentContext		= new ScriptingRequestBoxContext();
 		Closure		closure				= new SampleClosure( new Argument[] {}, declaringContext, "Brad" );
 		IBoxContext	context				= new ClosureBoxContext( parentContext, closure );
 		assertThat( context.getDefaultAssignmentScope().getName().getName() ).isEqualTo( "local" );

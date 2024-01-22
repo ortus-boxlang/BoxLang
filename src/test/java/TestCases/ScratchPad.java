@@ -26,7 +26,7 @@ import java.util.List;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-import ortus.boxlang.runtime.context.ScriptingBoxContext;
+import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
 import ortus.boxlang.runtime.loader.ImportDefinition;
 import ortus.boxlang.runtime.loader.resolvers.BaseResolver;
 import ortus.boxlang.runtime.loader.resolvers.JavaResolver;
@@ -45,16 +45,16 @@ public class ScratchPad {
 
 		BaseResolver			jResolver	= JavaResolver.getInstance();
 
-		String					fqn			= jResolver.expandFromImport( new ScriptingBoxContext(), "String", imports );
+		String					fqn			= jResolver.expandFromImport( new ScriptingRequestBoxContext(), "String", imports );
 		assertThat( fqn ).isEqualTo( "java.lang.String" );
 
-		fqn = jResolver.expandFromImport( new ScriptingBoxContext(), "Integer", imports );
+		fqn = jResolver.expandFromImport( new ScriptingRequestBoxContext(), "Integer", imports );
 		assertThat( fqn ).isEqualTo( "java.lang.Integer" );
 
-		fqn = jResolver.expandFromImport( new ScriptingBoxContext(), "BaseResolver", imports );
+		fqn = jResolver.expandFromImport( new ScriptingRequestBoxContext(), "BaseResolver", imports );
 		assertThat( fqn ).isEqualTo( "ortus.boxlang.runtime.loader.resolvers.BaseResolver" );
 
-		fqn = jResolver.expandFromImport( new ScriptingBoxContext(), "jList", imports );
+		fqn = jResolver.expandFromImport( new ScriptingRequestBoxContext(), "jList", imports );
 		assertThat( fqn ).isEqualTo( "java.lang.List" );
 
 	}

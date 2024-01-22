@@ -24,12 +24,12 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import ortus.boxlang.runtime.context.IBoxContext;
-import ortus.boxlang.runtime.context.ScriptingBoxContext;
+import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
 import ortus.boxlang.runtime.types.exceptions.KeyNotFoundException;
 
 public class BaseScopeTest {
 
-	IBoxContext					context	= new ScriptingBoxContext();
+	IBoxContext					context	= new ScriptingRequestBoxContext();
 
 	private static BaseScope	scope;
 

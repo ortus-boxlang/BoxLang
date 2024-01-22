@@ -26,7 +26,7 @@ import org.junit.jupiter.api.Test;
 import ortus.boxlang.parser.BoxScriptType;
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.IBoxContext;
-import ortus.boxlang.runtime.context.ScriptingBoxContext;
+import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
 
@@ -50,7 +50,7 @@ public class TagTest {
 
 	@BeforeEach
 	public void setupEach() {
-		context		= new ScriptingBoxContext( instance.getRuntimeContext() );
+		context		= new ScriptingRequestBoxContext( instance.getRuntimeContext() );
 		variables	= ( VariablesScope ) context.getScopeNearby( VariablesScope.name );
 	}
 

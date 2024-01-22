@@ -24,7 +24,7 @@ import io.undertow.server.HttpHandler;
 import io.undertow.server.HttpServerExchange;
 import io.undertow.util.HttpString;
 import ortus.boxlang.runtime.BoxRuntime;
-import ortus.boxlang.web.WebBoxContext;
+import ortus.boxlang.web.WebRequestBoxContext;
 
 /**
  * Variables scope implementation in BoxLang
@@ -34,8 +34,8 @@ public class BLHandler implements HttpHandler {
 	@Override
 	public void handleRequest( io.undertow.server.HttpServerExchange exchange ) throws Exception {
 		try {
-			WebBoxContext	context		= new WebBoxContext( BoxRuntime.getInstance().getRuntimeContext(), exchange );
-			String			requestPath	= exchange.getRequestPath();
+			WebRequestBoxContext	context		= new WebRequestBoxContext( BoxRuntime.getInstance().getRuntimeContext(), exchange );
+			String					requestPath	= exchange.getRequestPath();
 			// Set default content type to text/html
 			exchange.getResponseHeaders().put( new HttpString( "Content-Type" ), "text/html" );
 			context.includeTemplate( requestPath );

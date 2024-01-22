@@ -27,13 +27,13 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import ortus.boxlang.runtime.context.IBoxContext;
-import ortus.boxlang.runtime.context.ScriptingBoxContext;
+import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 
 public class ClosureTest {
 
-	private IBoxContext context = new ScriptingBoxContext();
+	private IBoxContext context = new ScriptingRequestBoxContext();
 
 	@DisplayName( "can define Closure" )
 	@Test
@@ -42,7 +42,7 @@ public class ClosureTest {
 		    new Argument( true, "String", Key.of( "firstName" ), "brad" ),
 		    new Argument( true, "String", Key.of( "lastName" ), "wood" )
 		};
-		new SampleClosure( args, new ScriptingBoxContext(), "Brad" );
+		new SampleClosure( args, new ScriptingRequestBoxContext(), "Brad" );
 
 	}
 
@@ -58,7 +58,7 @@ public class ClosureTest {
 		    new Argument( true, "String", lastName, "wood" ),
 		    new Argument( false, "Numeric", age, 43 )
 		};
-		Closure		closure		= new SampleClosure( args, new ScriptingBoxContext(), "Brad" );
+		Closure		closure		= new SampleClosure( args, new ScriptingRequestBoxContext(), "Brad" );
 		IScope		argscope	= closure.createArgumentsScope();
 
 		assertThat( argscope.get( firstName ) ).isEqualTo( "brad" );
@@ -76,7 +76,7 @@ public class ClosureTest {
 		    new Argument( true, "String", firstName, "brad" ),
 		    new Argument( true, "String", lastName, "wood" )
 		};
-		Closure		closure		= new SampleClosure( args, new ScriptingBoxContext(), "Brad" );
+		Closure		closure		= new SampleClosure( args, new ScriptingRequestBoxContext(), "Brad" );
 		IScope		argscope	= closure.createArgumentsScope( new Object[] { "Luis", "Majano", "Extra" } );
 
 		assertThat( argscope.get( firstName ) ).isEqualTo( "Luis" );
@@ -94,7 +94,7 @@ public class ClosureTest {
 		    new Argument( true, "String", firstName, "brad" ),
 		    new Argument( true, "String", lastName, "wood" )
 		};
-		Closure		closure		= new SampleClosure( args, new ScriptingBoxContext(), "Brad" );
+		Closure		closure		= new SampleClosure( args, new ScriptingRequestBoxContext(), "Brad" );
 		IScope		argscope	= closure.createArgumentsScope( new Object[] { "Luis" } );
 
 		assertThat( argscope.get( firstName ) ).isEqualTo( "Luis" );
@@ -112,7 +112,7 @@ public class ClosureTest {
 		    new Argument( true, "String", firstName, "brad" ),
 		    new Argument( true, "String", lastName, "wood" )
 		};
-		Closure		closure		= new SampleClosure( args, new ScriptingBoxContext(), "Brad" );
+		Closure		closure		= new SampleClosure( args, new ScriptingRequestBoxContext(), "Brad" );
 		IScope		argscope	= closure
 		    .createArgumentsScope( Map.of( firstName, "Luis", lastName, "Majano", extra, "Gavin" ) );
 
@@ -129,7 +129,7 @@ public class ClosureTest {
 		Argument[]	args	= new Argument[] {
 		    new Argument( true, "numeric", age, "sdf" )
 		};
-		Closure		closure	= new SampleClosure( args, new ScriptingBoxContext(), "Brad" );
+		Closure		closure	= new SampleClosure( args, new ScriptingRequestBoxContext(), "Brad" );
 
 		// Explicit named arg
 		assertThrows( Throwable.class, () -> closure.createArgumentsScope( Map.of( age, "sdf" ) ) );
@@ -150,7 +150,7 @@ public class ClosureTest {
 		    new Argument( true, "String", firstName, "brad" ),
 		    new Argument( true, "String", lastName, "wood" )
 		};
-		Closure		closure		= new SampleClosure( args, new ScriptingBoxContext(), "Brad" );
+		Closure		closure		= new SampleClosure( args, new ScriptingRequestBoxContext(), "Brad" );
 		IScope		argscope	= closure
 		    .createArgumentsScope( Map.of( firstName, "Luis" ) );
 
@@ -170,7 +170,7 @@ public class ClosureTest {
 		    new Argument( true, "String", firstName, "brad" ),
 		    new Argument( true, "String", lastName, "wood" )
 		};
-		Closure		closure		= new SampleClosure( args, new ScriptingBoxContext(), "Brad" );
+		Closure		closure		= new SampleClosure( args, new ScriptingRequestBoxContext(), "Brad" );
 		IScope		argscope	= closure
 		    .createArgumentsScope( new HashMap<Key, Object>( Map.of(
 		        Function.ARGUMENT_COLLECTION, Map.of( firstName, "Luis", lastName, "Majano", extra, "Gavin" ),
@@ -191,7 +191,7 @@ public class ClosureTest {
 		Argument[]	args		= new Argument[] {
 		    new Argument( true, "String", firstName, "brad" )
 		};
-		Closure		closure		= new SampleClosure( args, new ScriptingBoxContext(), "Brad" );
+		Closure		closure		= new SampleClosure( args, new ScriptingRequestBoxContext(), "Brad" );
 		IScope		argscope	= closure
 		    .createArgumentsScope( new HashMap<Key, Object>( Map.of(
 		        Function.ARGUMENT_COLLECTION, Map.of( firstName, "from collection" ),
@@ -211,7 +211,7 @@ public class ClosureTest {
 		    new Argument( true, "String", firstName, null ),
 		    new Argument( true, "String", lastName, null )
 		};
-		Closure		closure		= new SampleClosure( args, new ScriptingBoxContext(), "Brad" );
+		Closure		closure		= new SampleClosure( args, new ScriptingRequestBoxContext(), "Brad" );
 
 		assertThrows( Throwable.class, () -> closure.createArgumentsScope() );
 		assertThrows( Throwable.class, () -> closure.createArgumentsScope( new Object[] { "Luis" } ) );
@@ -227,7 +227,7 @@ public class ClosureTest {
 		    new Argument( false, "String", firstName, "brad" ),
 		    new Argument( false, "String", lastName, "wood" )
 		};
-		Closure		closure		= new SampleClosure( args, new ScriptingBoxContext(), "Brad" );
+		Closure		closure		= new SampleClosure( args, new ScriptingRequestBoxContext(), "Brad" );
 		IScope		argscope	= closure.createArgumentsScope();
 
 		assertThat( argscope.get( firstName ) ).isEqualTo( "brad" );
@@ -245,7 +245,7 @@ public class ClosureTest {
 		    new Argument( false, "String", Key.of( "firstname" ), "brad", Struct.of( "hint", "First Name" ) ),
 		    new Argument( false, "String", lastName, "wood", Struct.of( "hint", "Last Name" ) )
 		};
-		Closure		closure		= new SampleClosure( args, new ScriptingBoxContext(), "Brad" );
+		Closure		closure		= new SampleClosure( args, new ScriptingRequestBoxContext(), "Brad" );
 
 		IStruct		meta		= closure.getMetaData();
 		assertThat( meta.get( Key.of( "name" ) ) ).isEqualTo( "Closure" );

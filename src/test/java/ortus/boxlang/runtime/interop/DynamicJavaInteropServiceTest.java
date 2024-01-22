@@ -34,7 +34,7 @@ import org.junit.jupiter.api.Test;
 
 import TestCases.interop.InvokeDynamicFields;
 import ortus.boxlang.runtime.context.IBoxContext;
-import ortus.boxlang.runtime.context.ScriptingBoxContext;
+import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
@@ -44,7 +44,7 @@ import ortus.boxlang.runtime.types.exceptions.NoMethodException;
 
 public class DynamicJavaInteropServiceTest {
 
-	private IBoxContext context = new ScriptingBoxContext();
+	private IBoxContext context = new ScriptingRequestBoxContext();
 
 	@DisplayName( "It can call a constructor with one argument" )
 	@Test

@@ -23,17 +23,17 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import ortus.boxlang.runtime.context.IBoxContext;
-import ortus.boxlang.runtime.context.ScriptingBoxContext;
+import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
 import ortus.boxlang.runtime.scopes.Key;
 
 public class QueryTest {
 
-	private IBoxContext context = new ScriptingBoxContext();
+	private IBoxContext context = new ScriptingRequestBoxContext();
 
 	@DisplayName( "Test Constructor" )
 	@Test
 	void testConstructors() {
-		IBoxContext	ctx	= new ScriptingBoxContext();
+		IBoxContext	ctx	= new ScriptingRequestBoxContext();
 		Query		qry	= new Query();
 		assertThat( qry.size() ).isEqualTo( 0 );
 		assertThat( qry.hasColumns() ).isEqualTo( false );

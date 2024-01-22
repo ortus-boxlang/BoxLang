@@ -34,7 +34,7 @@ import org.junit.jupiter.api.Test;
 
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.IBoxContext;
-import ortus.boxlang.runtime.context.ScriptingBoxContext;
+import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
 import ortus.boxlang.runtime.loader.ImportDefinition;
 import ortus.boxlang.runtime.runnables.BoxTemplate;
 import ortus.boxlang.runtime.scopes.IScope;
@@ -53,7 +53,7 @@ public class GetBaseTemplatePathTest {
 	@BeforeAll
 	public static void setUp() {
 		instance	= BoxRuntime.getInstance( true );
-		context		= new ScriptingBoxContext( instance.getRuntimeContext() );
+		context		= new ScriptingRequestBoxContext( instance.getRuntimeContext() );
 		variables	= context.getScopeNearby( VariablesScope.name );
 	}
 

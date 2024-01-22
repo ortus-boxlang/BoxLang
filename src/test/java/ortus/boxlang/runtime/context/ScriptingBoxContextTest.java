@@ -41,7 +41,7 @@ public class ScriptingBoxContextTest {
 	@Test
 	@DisplayName( "Test default constructor" )
 	void testDefaultConstructor() {
-		ScriptingBoxContext context = new ScriptingBoxContext();
+		ScriptingRequestBoxContext context = new ScriptingRequestBoxContext();
 		assertThat( context.hasTemplates() ).isFalse();
 		assertThat( context.findClosestFunctionName() ).isNull();
 	}
@@ -49,7 +49,7 @@ public class ScriptingBoxContextTest {
 	@Test
 	@DisplayName( "Test template path" )
 	void testTemplatePath() {
-		ScriptingBoxContext context = new ScriptingBoxContext();
+		ScriptingRequestBoxContext context = new ScriptingRequestBoxContext();
 		context.pushTemplate( new BoxTemplate() {
 
 			@Override
@@ -88,9 +88,9 @@ public class ScriptingBoxContextTest {
 	@Test
 	@DisplayName( "Test scopeFind with existing key" )
 	void testScopeFindExistingKey() {
-		ScriptingBoxContext	context			= new ScriptingBoxContext();
-		Key					key				= Key.of( "testIt" );
-		IScope				variablesScope	= context.getScopeNearby( Key.of( "variables" ) );
+		ScriptingRequestBoxContext	context			= new ScriptingRequestBoxContext();
+		Key							key				= Key.of( "testIt" );
+		IScope						variablesScope	= context.getScopeNearby( Key.of( "variables" ) );
 		variablesScope.put( key, "value" );
 		ScopeSearchResult result = context.scopeFindNearby( key, null );
 		assertThat( result.value() ).isEqualTo( "value" );
@@ -100,10 +100,10 @@ public class ScriptingBoxContextTest {
 	@Test
 	@DisplayName( "Test scopeFind default scope" )
 	void testScopeFindDefaultScope() {
-		ScriptingBoxContext	context			= new ScriptingBoxContext();
-		Key					key				= Key.of( "testIt" );
-		IScope				variablesScope	= context.getScopeNearby( Key.of( "variables" ) );
-		ScopeSearchResult	result			= context.scopeFindNearby( key, variablesScope );
+		ScriptingRequestBoxContext	context			= new ScriptingRequestBoxContext();
+		Key							key				= Key.of( "testIt" );
+		IScope						variablesScope	= context.getScopeNearby( Key.of( "variables" ) );
+		ScopeSearchResult			result			= context.scopeFindNearby( key, variablesScope );
 		assertThat( result.value() ).isEqualTo( null );
 		assertThat( result.scope() ).isEqualTo( variablesScope );
 	}
@@ -111,14 +111,14 @@ public class ScriptingBoxContextTest {
 	@Test
 	@DisplayName( "Test scopeFind with missing key" )
 	void testScopeFindMissingKey() {
-		ScriptingBoxContext context = new ScriptingBoxContext();
+		ScriptingRequestBoxContext context = new ScriptingRequestBoxContext();
 		assertThrows( KeyNotFoundException.class, () -> context.scopeFindNearby( new Key( "nonExistentKey" ), null ) );
 	}
 
 	@Test
 	@DisplayName( "Test default assignment scope" )
 	void testDefaultAssignmentScope() {
-		ScriptingBoxContext context = new ScriptingBoxContext();
+		ScriptingRequestBoxContext context = new ScriptingRequestBoxContext();
 		assertThat( context.getDefaultAssignmentScope().getName().getName() ).isEqualTo( "variables" );
 	}
 }

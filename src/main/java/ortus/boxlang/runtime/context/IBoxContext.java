@@ -372,6 +372,15 @@ public interface IBoxContext {
 	public IStruct getConfig();
 
 	/**
+	 * Serach for an ancestor context of the given type
+	 * 
+	 * @param <T> The type of context to search for
+	 *
+	 * @return The matching parent context, or null if one is not found of this type.
+	 */
+	public <T> T getParentOfType( Class<T> type );
+
+	/**
 	 * Convenience method to retrieve a config item
 	 *
 	 * @param itemKey the object key
@@ -389,26 +398,6 @@ public interface IBoxContext {
 	 * @return
 	 */
 	public Object getConfigItem( Key itemKey, Object defaultValue );
-
-	/**
-	 * Sets a config value
-	 *
-	 * @param itemKey   The Key instance in the config
-	 * @param itemValue The value of the key
-	 *
-	 * @return this context
-	 */
-	public BaseBoxContext setConfigItem( Key itemKey, Object itemValue );
-
-	/**
-	 * Sets a config value
-	 *
-	 * @param itemKey   A string value of which the Key instance will be created
-	 * @param itemValue The value of the key
-	 *
-	 * @return this context
-	 */
-	public BaseBoxContext setConfigItem( String itemKey, Object itemValue );
 
 	/**
 	 * Get the BoxLang runtime

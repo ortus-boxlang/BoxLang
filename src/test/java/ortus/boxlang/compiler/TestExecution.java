@@ -26,7 +26,7 @@ import org.junit.jupiter.api.Test;
 
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.IBoxContext;
-import ortus.boxlang.runtime.context.ScriptingBoxContext;
+import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
@@ -51,7 +51,7 @@ public class TestExecution extends TestBase {
 	@Test
 	public void executeWhile() throws IOException {
 		BoxRuntime	instance	= BoxRuntime.getInstance( true );
-		IBoxContext	context		= new ScriptingBoxContext( instance.getRuntimeContext() );
+		IBoxContext	context		= new ScriptingRequestBoxContext( instance.getRuntimeContext() );
 		IScope		variables	= context.getScopeNearby( VariablesScope.name );
 
 		instance.executeSource( """
@@ -85,7 +85,7 @@ public class TestExecution extends TestBase {
 	@Test
 	public void executeFor() throws IOException {
 		BoxRuntime	instance	= BoxRuntime.getInstance( true );
-		IBoxContext	context		= new ScriptingBoxContext( instance.getRuntimeContext() );
+		IBoxContext	context		= new ScriptingRequestBoxContext( instance.getRuntimeContext() );
 
 		instance.executeSource( """
 		                                                               variables['system'] = createObject('java','java.lang.System');
@@ -101,7 +101,7 @@ public class TestExecution extends TestBase {
 	@Test
 	public void comparison() throws IOException {
 		BoxRuntime	instance	= BoxRuntime.getInstance( true );
-		IBoxContext	context		= new ScriptingBoxContext( instance.getRuntimeContext() );
+		IBoxContext	context		= new ScriptingRequestBoxContext( instance.getRuntimeContext() );
 
 		Object		result		= instance.executeStatement( "6 > 5", context );
 		assertThat( result ).isEqualTo( true );
@@ -118,7 +118,7 @@ public class TestExecution extends TestBase {
 	@Test
 	public void testDoWhileLoop() {
 		BoxRuntime	instance	= BoxRuntime.getInstance( true );
-		IBoxContext	context		= new ScriptingBoxContext( instance.getRuntimeContext() );
+		IBoxContext	context		= new ScriptingRequestBoxContext( instance.getRuntimeContext() );
 		IScope		variables	= context.getScopeNearby( VariablesScope.name );
 
 		instance.executeSource(
@@ -138,7 +138,7 @@ public class TestExecution extends TestBase {
 	public void testCastAs() {
 
 		BoxRuntime	instance	= BoxRuntime.getInstance( true );
-		IBoxContext	context		= new ScriptingBoxContext( instance.getRuntimeContext() );
+		IBoxContext	context		= new ScriptingRequestBoxContext( instance.getRuntimeContext() );
 		assertThrows( Throwable.class, () -> instance.executeStatement( "5 castAs sdf",
 
 		    context ) );
@@ -152,7 +152,7 @@ public class TestExecution extends TestBase {
 	public void testTernary() {
 
 		BoxRuntime	instance	= BoxRuntime.getInstance( true );
-		IBoxContext	context		= new ScriptingBoxContext( instance.getRuntimeContext() );
+		IBoxContext	context		= new ScriptingRequestBoxContext( instance.getRuntimeContext() );
 
 		instance.executeSource(
 		    """
@@ -177,7 +177,7 @@ public class TestExecution extends TestBase {
 	public void testString3() {
 
 		BoxRuntime	instance	= BoxRuntime.getInstance( true );
-		IBoxContext	context		= new ScriptingBoxContext( instance.getRuntimeContext() );
+		IBoxContext	context		= new ScriptingRequestBoxContext( instance.getRuntimeContext() );
 		IScope		variables	= context.getScopeNearby( VariablesScope.name );
 
 		instance.executeSource(

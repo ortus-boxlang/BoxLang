@@ -22,10 +22,11 @@ import static com.google.common.truth.Truth.assertThat;
 
 import java.util.Arrays;
 import java.util.List;
+
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-import ortus.boxlang.runtime.context.ScriptingBoxContext;
+import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
 import ortus.boxlang.runtime.loader.ImportDefinition;
 
 public class BaseResolverTest {
@@ -55,24 +56,24 @@ public class BaseResolverTest {
 		BaseResolver			jResolver	= JavaResolver.getInstance();
 		jResolver.clearImportCache();
 
-		String fqn = jResolver.expandFromImport( new ScriptingBoxContext(), "String", imports );
+		String fqn = jResolver.expandFromImport( new ScriptingRequestBoxContext(), "String", imports );
 		assertThat( fqn ).isEqualTo( "java.lang.String" );
 		assertThat( jResolver.getImportCacheSize() ).isEqualTo( 1 );
 
-		fqn = jResolver.expandFromImport( new ScriptingBoxContext(), "Integer", imports );
+		fqn = jResolver.expandFromImport( new ScriptingRequestBoxContext(), "Integer", imports );
 		assertThat( fqn ).isEqualTo( "java.lang.Integer" );
 		assertThat( jResolver.getImportCacheSize() ).isEqualTo( 2 );
 
 		// The Java resolver will ignore this mapping
-		fqn = jResolver.expandFromImport( new ScriptingBoxContext(), "HelloWorld", imports );
+		fqn = jResolver.expandFromImport( new ScriptingRequestBoxContext(), "HelloWorld", imports );
 		assertThat( fqn ).isEqualTo( "HelloWorld" );
 		assertThat( jResolver.getImportCacheSize() ).isEqualTo( 2 );
 
-		fqn = jResolver.expandFromImport( new ScriptingBoxContext(), "BaseResolver", imports );
+		fqn = jResolver.expandFromImport( new ScriptingRequestBoxContext(), "BaseResolver", imports );
 		assertThat( fqn ).isEqualTo( "ortus.boxlang.runtime.loader.resolvers.BaseResolver" );
 		assertThat( jResolver.getImportCacheSize() ).isEqualTo( 3 );
 
-		fqn = jResolver.expandFromImport( new ScriptingBoxContext(), "jList", imports );
+		fqn = jResolver.expandFromImport( new ScriptingRequestBoxContext(), "jList", imports );
 		assertThat( fqn ).isEqualTo( "java.lang.List" );
 		assertThat( jResolver.getImportCacheSize() ).isEqualTo( 4 );
 	}

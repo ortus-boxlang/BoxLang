@@ -30,7 +30,7 @@ import org.junit.jupiter.api.Test;
 
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.IBoxContext;
-import ortus.boxlang.runtime.context.ScriptingBoxContext;
+import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
 
 public class InstanceOfTest {
 
@@ -39,7 +39,7 @@ public class InstanceOfTest {
 	@DisplayName( "It can check java type" )
 	@Test
 	void testItCanCheckType() {
-		IBoxContext context = new ScriptingBoxContext( runtimeContext );
+		IBoxContext context = new ScriptingRequestBoxContext( runtimeContext );
 		assertThat( InstanceOf.invoke( context, "Brad", "java.lang.String" ) ).isTrue();
 		// Lucee-only behavior
 		assertThat( InstanceOf.invoke( context, "Brad", "String" ) ).isTrue();
@@ -53,14 +53,14 @@ public class InstanceOfTest {
 	@DisplayName( "It can check java interface" )
 	@Test
 	void testItCanCheckInterface() {
-		IBoxContext context = new ScriptingBoxContext( runtimeContext );
+		IBoxContext context = new ScriptingRequestBoxContext( runtimeContext );
 		assertThat( InstanceOf.invoke( context, new HashMap<String, String>(), "java.util.Map" ) ).isTrue();
 	}
 
 	@DisplayName( "It can check java superinterface" )
 	@Test
 	void testItCanCheckSuperInterface() {
-		IBoxContext		context	= new ScriptingBoxContext( runtimeContext );
+		IBoxContext		context	= new ScriptingRequestBoxContext( runtimeContext );
 		List<String>	target	= new ArrayList<String>();
 		assertThat( InstanceOf.invoke( context, target, "java.util.ArrayList" ) ).isTrue();
 		assertThat( InstanceOf.invoke( context, target, "java.util.List" ) ).isTrue();
@@ -70,7 +70,7 @@ public class InstanceOfTest {
 	@DisplayName( "It can check java supertype" )
 	@Test
 	void testItCanCheckSupertype() {
-		IBoxContext			context	= new ScriptingBoxContext( runtimeContext );
+		IBoxContext			context	= new ScriptingRequestBoxContext( runtimeContext );
 		Map<String, String>	target	= new ConcurrentHashMap<String, String>();
 		assertThat( InstanceOf.invoke( context, target, "java.util.concurrent.ConcurrentHashMap" ) ).isTrue();
 		assertThat( InstanceOf.invoke( context, target, "java.util.HashMap" ) ).isFalse();

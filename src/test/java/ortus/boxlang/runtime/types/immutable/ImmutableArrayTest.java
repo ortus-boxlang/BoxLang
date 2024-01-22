@@ -26,14 +26,14 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import ortus.boxlang.runtime.context.IBoxContext;
-import ortus.boxlang.runtime.context.ScriptingBoxContext;
+import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.exceptions.UnmodifiableException;
 
 public class ImmutableArrayTest {
 
-	private IBoxContext context = new ScriptingBoxContext();
+	private IBoxContext context = new ScriptingRequestBoxContext();
 
 	@DisplayName( "Test Constructors" )
 	@Test

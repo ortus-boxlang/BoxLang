@@ -33,7 +33,8 @@ import org.junit.jupiter.api.Test;
 
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.IBoxContext;
-import ortus.boxlang.runtime.context.ScriptingBoxContext;
+import ortus.boxlang.runtime.context.RequestBoxContext;
+import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
 import ortus.boxlang.runtime.dynamic.casters.DateTimeCaster;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
@@ -50,8 +51,8 @@ public class DateConvertTest {
 	@BeforeAll
 	public static void setUp() {
 		instance	= BoxRuntime.getInstance( true );
-		context		= new ScriptingBoxContext( instance.getRuntimeContext() );
-		context.setConfigItem( Key.timezone, "America/Los_Angeles" );
+		context		= new ScriptingRequestBoxContext( instance.getRuntimeContext() );
+		context.getParentOfType( RequestBoxContext.class ).setTimezone( "America/Los_Angeles" );
 		variables = context.getScopeNearby( VariablesScope.name );
 	}
 

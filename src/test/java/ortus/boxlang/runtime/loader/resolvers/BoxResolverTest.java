@@ -26,7 +26,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import ortus.boxlang.runtime.context.IBoxContext;
-import ortus.boxlang.runtime.context.ScriptingBoxContext;
+import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
 
 public class BoxResolverTest {
 
@@ -43,7 +43,7 @@ public class BoxResolverTest {
 	public void testFindFromModules() {
 		BoxResolver	boxResolver	= BoxResolver.getInstance();
 		String		className	= "apppath.models.User"; // Example class name
-		assertThat( boxResolver.findFromModules( new ScriptingBoxContext(), className, new ArrayList<>() ).isPresent() ).isFalse();
+		assertThat( boxResolver.findFromModules( new ScriptingRequestBoxContext(), className, new ArrayList<>() ).isPresent() ).isFalse();
 	}
 
 	@DisplayName( "It can find classes from local disk" )
@@ -51,7 +51,7 @@ public class BoxResolverTest {
 	public void testFindFromLocal() {
 		BoxResolver	boxResolver	= BoxResolver.getInstance();
 		String		className	= "apppath.models.User"; // Example class name
-		assertThat( boxResolver.findFromLocal( new ScriptingBoxContext(), className, new ArrayList<>() ).isPresent() ).isFalse();
+		assertThat( boxResolver.findFromLocal( new ScriptingRequestBoxContext(), className, new ArrayList<>() ).isPresent() ).isFalse();
 	}
 
 	@DisplayName( "It can resolve classes" )
@@ -59,7 +59,7 @@ public class BoxResolverTest {
 	public void testResolve() {
 		BoxResolver	boxResolver	= BoxResolver.getInstance();
 
-		IBoxContext	context		= new ScriptingBoxContext();
+		IBoxContext	context		= new ScriptingRequestBoxContext();
 		String		className	= "apppath.models.User"; // Example class name
 
 		assertThat( boxResolver.resolve( context, className ).isPresent() ).isFalse();

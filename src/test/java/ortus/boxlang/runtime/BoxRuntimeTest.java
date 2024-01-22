@@ -29,7 +29,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import ortus.boxlang.runtime.context.IBoxContext;
-import ortus.boxlang.runtime.context.ScriptingBoxContext;
+import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
 import ortus.boxlang.runtime.types.exceptions.MissingIncludeException;
@@ -116,7 +116,7 @@ public class BoxRuntimeTest {
 	public void testItCanExecuteAStatement() {
 
 		BoxRuntime	instance	= BoxRuntime.getInstance( true );
-		IBoxContext	context		= new ScriptingBoxContext();
+		IBoxContext	context		= new ScriptingRequestBoxContext();
 
 		Object		result		= instance.executeStatement( "foo=2+2", context );
 		assertThat( result ).isEqualTo( 4 );
@@ -135,7 +135,7 @@ public class BoxRuntimeTest {
 	public void testItCanExecuteStatements() {
 
 		BoxRuntime	instance	= BoxRuntime.getInstance( true );
-		IBoxContext	context		= new ScriptingBoxContext();
+		IBoxContext	context		= new ScriptingRequestBoxContext();
 
 		String		src			= """
 		                          brad='wood';
@@ -154,7 +154,7 @@ public class BoxRuntimeTest {
 	public void testItCanExecuteMoreStatements() {
 
 		BoxRuntime	instance	= BoxRuntime.getInstance( true );
-		IBoxContext	context		= new ScriptingBoxContext();
+		IBoxContext	context		= new ScriptingRequestBoxContext();
 
 		String		src			= """
 		                          variables['system'] = createObject('java','java.lang.System');

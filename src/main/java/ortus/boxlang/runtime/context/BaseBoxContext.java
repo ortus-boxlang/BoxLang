@@ -80,22 +80,14 @@ public class BaseBoxContext implements IBoxContext {
 	 */
 	private final FunctionService			functionService;
 
-	protected IStruct						config		= new Struct();
-
 	/**
 	 * Creates a new execution context with a bounded execution template and parent context
 	 *
 	 * @param parent The parent context
 	 */
 	public BaseBoxContext( IBoxContext parent ) {
-		if ( parent != null ) {
-			this.parent = parent;
-			IStruct parentConfig = parent.getConfig();
-			if ( parentConfig != null ) {
-				this.config.putAll( parentConfig );
-			}
-		}
-		this.functionService = BoxRuntime.getInstance().getFunctionService();
+		this.parent				= parent;
+		this.functionService	= BoxRuntime.getInstance().getFunctionService();
 	}
 
 	/**
@@ -636,7 +628,10 @@ public class BaseBoxContext implements IBoxContext {
 	 * @return A struct of configuration
 	 */
 	public IStruct getConfig() {
-		return this.config;
+		if ( hasParent() ) {
+			return getParent().getConfig();
+		}
+		return new Struct();
 	}
 
 	/**
@@ -663,31 +658,6 @@ public class BaseBoxContext implements IBoxContext {
 	}
 
 	/**
-	 * Sets a config value
-	 *
-	 * @param itemKey   The Key instance in the config
-	 * @param itemValue The value of the key
-	 *
-	 * @return this context
-	 */
-	public BaseBoxContext setConfigItem( Key itemKey, Object itemValue ) {
-		this.config.put( itemKey, itemValue );
-		return this;
-	}
-
-	/**
-	 * Sets a config value
-	 *
-	 * @param itemKey   A string value of which the Key instance will be created
-	 * @param itemValue The value of the key
-	 *
-	 * @return this context
-	 */
-	public BaseBoxContext setConfigItem( String itemKey, Object itemValue ) {
-		return setConfigItem( Key.of( itemKey ), itemValue );
-	}
-
-	/**
 	 * Get the BoxLang runtime
 	 * '
 	 *
@@ -695,6 +665,24 @@ public class BaseBoxContext implements IBoxContext {
 	 */
 	public BoxRuntime getRuntime() {
 		return BoxRuntime.getInstance();
+	}
+
+	/**
+	 * Serach for an ancestor context of the given type
+	 * 
+	 * @param <T> The type of context to search for
+	 *
+	 * @return The matching parent context, or null if one is not found of this type.
+	 */
+	@Override
+	public <T> T getParentOfType( Class<T> type ) {
+		if ( type.isAssignableFrom( this.getClass() ) ) {
+			return ( T ) this;
+		}
+		if ( hasParent() ) {
+			return ( T ) getParent().getParentOfType( type );
+		}
+		return null;
 	}
 
 }

@@ -23,12 +23,12 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import org.junit.jupiter.api.Test;
 
 import ortus.boxlang.runtime.context.IBoxContext;
-import ortus.boxlang.runtime.context.ScriptingBoxContext;
+import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
 import ortus.boxlang.runtime.types.IStruct;
 
 public class ServerScopeTest {
 
-	private IBoxContext context = new ScriptingBoxContext();
+	private IBoxContext context = new ScriptingRequestBoxContext();
 
 	@Test
 	public void testConstructor() {

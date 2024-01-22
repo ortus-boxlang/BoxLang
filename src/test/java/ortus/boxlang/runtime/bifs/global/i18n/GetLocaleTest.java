@@ -31,7 +31,8 @@ import org.junit.jupiter.api.Test;
 
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.IBoxContext;
-import ortus.boxlang.runtime.context.ScriptingBoxContext;
+import ortus.boxlang.runtime.context.RequestBoxContext;
+import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
@@ -47,7 +48,7 @@ public class GetLocaleTest {
 	@BeforeAll
 	public static void setUp() {
 		instance	= BoxRuntime.getInstance( true );
-		context		= new ScriptingBoxContext( instance.getRuntimeContext() );
+		context		= new ScriptingRequestBoxContext( instance.getRuntimeContext() );
 		variables	= context.getScopeNearby( VariablesScope.name );
 	}
 
@@ -64,7 +65,7 @@ public class GetLocaleTest {
 	@DisplayName( "It tests the BIF GetLocale will find a known alias" )
 	@Test
 	public void testBif() {
-		context.setConfigItem( Key.locale, LocalizationUtil.commonLocales.get( "US" ) );
+		context.getParentOfType( RequestBoxContext.class ).setLocale( ( Locale ) LocalizationUtil.commonLocales.get( "US" ) );
 		instance.executeSource(
 		    """
 		    result = getLocale();
@@ -78,7 +79,7 @@ public class GetLocaleTest {
 	@DisplayName( "It tests the BIF GetLocale will return `Language (Country)` without a known alias" )
 	@Test
 	public void testBifNoAlias() {
-		context.setConfigItem( Key.locale, new Locale( "ar", "TR" ) );
+		context.getParentOfType( RequestBoxContext.class ).setLocale( new Locale( "ar", "TR" ) );
 		instance.executeSource(
 		    """
 		    result = getLocale();

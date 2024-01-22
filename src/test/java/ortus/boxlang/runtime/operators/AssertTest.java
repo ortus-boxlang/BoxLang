@@ -23,7 +23,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-import ortus.boxlang.runtime.context.ScriptingBoxContext;
+import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.SampleUDF;
@@ -35,32 +35,32 @@ public class AssertTest {
 	@DisplayName( "It can assert throw exceptions on null values" )
 	@Test
 	void testItCanThrowOnNullValues() {
-		assertThrows( AssertionError.class, () -> Assert.invoke( new ScriptingBoxContext(), null ) );
+		assertThrows( AssertionError.class, () -> Assert.invoke( new ScriptingRequestBoxContext(), null ) );
 	}
 
 	@DisplayName( "It can assert throw exceptions on false values" )
 	@Test
 	void testItCanThrowOnFalseValues() {
-		assertThrows( AssertionError.class, () -> Assert.invoke( new ScriptingBoxContext(), false ) );
+		assertThrows( AssertionError.class, () -> Assert.invoke( new ScriptingRequestBoxContext(), false ) );
 	}
 
 	@DisplayName( "It can assert" )
 	@Test
 	void testItCanAssert() {
-		assertThat( Assert.invoke( new ScriptingBoxContext(), true ) ).isTrue();
+		assertThat( Assert.invoke( new ScriptingRequestBoxContext(), true ) ).isTrue();
 	}
 
 	@DisplayName( "It can assert UDF" )
 	@Test
 	void testItCanAssertUDF() {
 		UDF udf = new SampleUDF( UDF.Access.PUBLIC, Key.of( "func" ), "any", new Argument[] {}, true );
-		assertThat( Assert.invoke( new ScriptingBoxContext(), udf ) ).isTrue();
+		assertThat( Assert.invoke( new ScriptingRequestBoxContext(), udf ) ).isTrue();
 
 		final UDF udf2 = new SampleUDF( UDF.Access.PUBLIC, Key.of( "func" ), "any", new Argument[] {}, false );
-		assertThrows( AssertionError.class, () -> Assert.invoke( new ScriptingBoxContext(), udf2 ) );
+		assertThrows( AssertionError.class, () -> Assert.invoke( new ScriptingRequestBoxContext(), udf2 ) );
 
 		final UDF udf3 = new SampleUDF( UDF.Access.PUBLIC, Key.of( "func" ), "any", new Argument[] {}, "brad" );
-		assertThrows( BoxLangException.class, () -> Assert.invoke( new ScriptingBoxContext(), udf3 ) );
+		assertThrows( BoxLangException.class, () -> Assert.invoke( new ScriptingRequestBoxContext(), udf3 ) );
 	}
 
 }

@@ -42,7 +42,7 @@ public class FunctionBoxContextTest {
 		UDF udf = new SampleUDF( UDF.Access.PUBLIC, Key.of( "foo" ), "any", new Argument[] {}, null );
 
 		assertThrows( Throwable.class, () -> new FunctionBoxContext( null, null ) );
-		IBoxContext			parentContext	= new ScriptingBoxContext();
+		IBoxContext			parentContext	= new ScriptingRequestBoxContext();
 		FunctionBoxContext	context			= new FunctionBoxContext( parentContext, udf );
 		assertThat( context.getParent() ).isNotNull();
 		assertThat( context.getFunction() ).isNotNull();
@@ -55,7 +55,7 @@ public class FunctionBoxContextTest {
 	@DisplayName( "Test scope lookup" )
 	void testScopeLookup() {
 		UDF				udf				= new SampleUDF( UDF.Access.PUBLIC, Key.of( "foo" ), "any", new Argument[] {}, null );
-		IBoxContext		parentContext	= new ScriptingBoxContext();
+		IBoxContext		parentContext	= new ScriptingRequestBoxContext();
 		ArgumentsScope	argumentsScope	= new ArgumentsScope();
 		IBoxContext		context			= new FunctionBoxContext( parentContext, udf, argumentsScope );
 		IScope			localScope		= context.getScopeNearby( LocalScope.name );
@@ -99,7 +99,7 @@ public class FunctionBoxContextTest {
 	void testCanfindClosestFunctionName() {
 		// We call a function
 		Key					funcName		= Key.of( "MyFunc$" );
-		IBoxContext			parentContext	= new ScriptingBoxContext();
+		IBoxContext			parentContext	= new ScriptingRequestBoxContext();
 		UDF					udf				= new SampleUDF( UDF.Access.PUBLIC, funcName, "String", new Argument[] {}, null );
 		FunctionBoxContext	context			= new FunctionBoxContext( parentContext, udf );
 
@@ -107,19 +107,19 @@ public class FunctionBoxContextTest {
 		assertThat( context.findClosestFunctionName() ).isEqualTo( funcName );
 
 		// Our function includes a template
-		IBoxContext childContext = new ScriptingBoxContext( context );
+		IBoxContext childContext = new ScriptingRequestBoxContext( context );
 
 		assertThat( childContext.findClosestFunctionName() ).isNotNull();
 		assertThat( childContext.findClosestFunctionName() ).isEqualTo( funcName );
 
 		// which includes another template
-		IBoxContext childChildContext = new ScriptingBoxContext( childContext );
+		IBoxContext childChildContext = new ScriptingRequestBoxContext( childContext );
 
 		assertThat( childChildContext.findClosestFunctionName() ).isNotNull();
 		assertThat( childChildContext.findClosestFunctionName() ).isEqualTo( funcName );
 
 		// which includes ANOTHER template
-		IBoxContext childChildChildContext = new ScriptingBoxContext( childChildContext );
+		IBoxContext childChildChildContext = new ScriptingRequestBoxContext( childChildContext );
 
 		assertThat( childChildChildContext.findClosestFunctionName() ).isNotNull();
 		assertThat( childChildChildContext.findClosestFunctionName() ).isEqualTo( funcName );
@@ -137,7 +137,7 @@ public class FunctionBoxContextTest {
 	@DisplayName( "Test default assignment scope" )
 	void testDefaultAssignmentScope() {
 		Key					funcName		= Key.of( "MyFunc$" );
-		IBoxContext			parentContext	= new ScriptingBoxContext();
+		IBoxContext			parentContext	= new ScriptingRequestBoxContext();
 		UDF					udf				= new SampleUDF( UDF.Access.PUBLIC, funcName, "String", new Argument[] {}, null );
 		FunctionBoxContext	context			= new FunctionBoxContext( parentContext, udf );
 		assertThat( context.getDefaultAssignmentScope().getName().getName() ).isEqualTo( "local" );

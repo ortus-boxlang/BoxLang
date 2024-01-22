@@ -23,13 +23,13 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import ortus.boxlang.runtime.context.IBoxContext;
-import ortus.boxlang.runtime.context.ScriptingBoxContext;
+import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
 import ortus.boxlang.runtime.types.IStruct;
 
 public class ArgumentsScopeTest {
 
 	private static ArgumentsScope	scope;
-	private IBoxContext				context	= new ScriptingBoxContext();
+	private IBoxContext				context	= new ScriptingRequestBoxContext();
 
 	@BeforeAll
 	public static void setUp() {

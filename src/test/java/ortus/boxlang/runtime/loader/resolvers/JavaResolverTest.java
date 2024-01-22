@@ -30,7 +30,7 @@ import org.apache.commons.lang3.ClassUtils;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-import ortus.boxlang.runtime.context.ScriptingBoxContext;
+import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
 import ortus.boxlang.runtime.loader.ClassLocator;
 import ortus.boxlang.runtime.loader.ClassLocator.ClassLocation;
 import ortus.boxlang.runtime.loader.ImportDefinition;
@@ -110,13 +110,13 @@ public class JavaResolverTest {
 		jResolver.clearJdkImportCache();
 		assertThat( jResolver.getJdkImportCacheSize() ).isEqualTo( 0 );
 
-		String fqn = jResolver.expandFromImport( new ScriptingBoxContext(), "String", imports );
+		String fqn = jResolver.expandFromImport( new ScriptingRequestBoxContext(), "String", imports );
 		assertThat( fqn ).isEqualTo( "java.lang.String" );
 
-		fqn = jResolver.expandFromImport( new ScriptingBoxContext(), "Integer", imports );
+		fqn = jResolver.expandFromImport( new ScriptingRequestBoxContext(), "Integer", imports );
 		assertThat( fqn ).isEqualTo( "java.lang.Integer" );
 
-		fqn = jResolver.expandFromImport( new ScriptingBoxContext(), "List", imports );
+		fqn = jResolver.expandFromImport( new ScriptingRequestBoxContext(), "List", imports );
 		assertThat( fqn ).isEqualTo( "java.util.List" );
 	}
 

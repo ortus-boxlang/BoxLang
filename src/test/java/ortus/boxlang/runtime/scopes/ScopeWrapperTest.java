@@ -26,12 +26,12 @@ import java.util.Map;
 import org.junit.jupiter.api.Test;
 
 import ortus.boxlang.runtime.context.IBoxContext;
-import ortus.boxlang.runtime.context.ScriptingBoxContext;
+import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
 import ortus.boxlang.runtime.types.exceptions.KeyNotFoundException;
 
 public class ScopeWrapperTest {
 
-	IBoxContext context = new ScriptingBoxContext();
+	IBoxContext context = new ScriptingRequestBoxContext();
 
 	@Test
 	void testWrapperScope() {

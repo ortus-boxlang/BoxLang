@@ -15,12 +15,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package ortus.boxlang.web;
+package ortus.boxlang.runtime.context;
 
-import io.undertow.server.HttpServerExchange;
 import ortus.boxlang.runtime.BoxRuntime;
-import ortus.boxlang.runtime.context.BaseBoxContext;
-import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.RequestScope;
@@ -29,18 +26,20 @@ import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.UDF;
 import ortus.boxlang.runtime.types.exceptions.KeyNotFoundException;
 import ortus.boxlang.runtime.types.exceptions.ScopeNotFoundException;
-import ortus.boxlang.web.scopes.CGIScope;
-import ortus.boxlang.web.scopes.CookieScope;
-import ortus.boxlang.web.scopes.FormScope;
-import ortus.boxlang.web.scopes.URLScope;
 
 /**
- * This context represents the context of a web/HTTP site in BoxLang
+ * This context represents the context of a scripting execution in BoxLang
  * There a variables and request scope present.
+ *
+ * The request scope may or may not belong here, but we're sort of using the scripting
+ * context as the top level context for an execution request right now, so it make the
+ * most sense here currently.
+ *
+ * There may or may NOT be a template defined.
  */
-public class WebBoxContext extends BaseBoxContext {
+public class ScriptingRequestBoxContext extends RequestBoxContext {
 
-	private static BoxRuntime		runtime			= BoxRuntime.getInstance();
+	private static BoxRuntime	runtime			= BoxRuntime.getInstance();
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -51,37 +50,12 @@ public class WebBoxContext extends BaseBoxContext {
 	/**
 	 * The variables scope
 	 */
-	protected IScope				variablesScope	= new VariablesScope();
+	protected IScope			variablesScope	= new VariablesScope();
 
 	/**
 	 * The request scope
 	 */
-	protected IScope				requestScope	= new RequestScope();
-
-	/**
-	 * The URL scope
-	 */
-	protected IScope				URLScope;
-
-	/**
-	 * The form scope
-	 */
-	protected IScope				FormScope;
-
-	/**
-	 * The CGI scope
-	 */
-	protected IScope				CGIScope;
-
-	/**
-	 * The cookie scope
-	 */
-	protected IScope				CookieScope;
-
-	/**
-	 * The Undertow exchange for this request
-	 */
-	protected HttpServerExchange	exchange;
+	protected IScope			requestScope	= new RequestScope();
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -94,13 +68,15 @@ public class WebBoxContext extends BaseBoxContext {
 	 *
 	 * @param parent The parent context
 	 */
-	public WebBoxContext( IBoxContext parent, HttpServerExchange exchange ) {
+	public ScriptingRequestBoxContext( IBoxContext parent ) {
 		super( parent );
-		this.exchange	= exchange;
-		URLScope		= new URLScope( exchange );
-		FormScope		= new FormScope( exchange );
-		CGIScope		= new CGIScope( exchange );
-		CookieScope		= new CookieScope( exchange );
+	}
+
+	/**
+	 * Creates a new execution context
+	 */
+	public ScriptingRequestBoxContext() {
+		this( runtime.getRuntimeContext() );
 	}
 
 	/**
@@ -113,6 +89,19 @@ public class WebBoxContext extends BaseBoxContext {
 	 * Try to get the requested key from the unscoped scope
 	 * Meaning it needs to search scopes in order according to it's context.
 	 * A local lookup is used for the closest context to the executing code
+	 *
+	 * Here is the order for bx templates
+	 * (Not all yet implemented and some will be according to platform: WebContext, AndroidContext, IOSContext, etc)
+	 *
+	 * 1. Query (only in query loops)
+	 * 2. Thread
+	 * 3. Variables
+	 * 4. CGI (should it exist in the core runtime?)
+	 * 5. CFFILE
+	 * 6. URL (Only for web runtime)
+	 * 7. FORM (Only for web runtime)
+	 * 8. COOKIE (Only for web runtime)
+	 * 9. CLIENT (Only for web runtime)
 	 *
 	 * @param key The key to search for
 	 *
@@ -152,27 +141,6 @@ public class WebBoxContext extends BaseBoxContext {
 	 */
 	public ScopeSearchResult scopeFind( Key key, IScope defaultScope ) {
 
-		Object result = CGIScope.getRaw( key );
-		// Null means not found
-		if ( result != null ) {
-			// Unwrap the value now in case it was really actually null for real
-			return new ScopeSearchResult( CGIScope, Struct.unWrapNull( result ) );
-		}
-
-		result = URLScope.getRaw( key );
-		// Null means not found
-		if ( result != null ) {
-			// Unwrap the value now in case it was really actually null for real
-			return new ScopeSearchResult( URLScope, Struct.unWrapNull( result ) );
-		}
-
-		result = FormScope.getRaw( key );
-		// Null means not found
-		if ( result != null ) {
-			// Unwrap the value now in case it was really actually null for real
-			return new ScopeSearchResult( FormScope, Struct.unWrapNull( result ) );
-		}
-
 		if ( parent != null ) {
 			return parent.scopeFind( key, defaultScope );
 		}
@@ -197,22 +165,6 @@ public class WebBoxContext extends BaseBoxContext {
 
 		if ( name.equals( requestScope.getName() ) ) {
 			return requestScope;
-		}
-
-		if ( name.equals( URLScope.getName() ) ) {
-			return URLScope;
-		}
-
-		if ( name.equals( FormScope.getName() ) ) {
-			return FormScope;
-		}
-
-		if ( name.equals( CGIScope.getName() ) ) {
-			return CGIScope;
-		}
-
-		if ( name.equals( CookieScope.getName() ) ) {
-			return CookieScope;
 		}
 
 		if ( parent != null ) {
@@ -271,8 +223,8 @@ public class WebBoxContext extends BaseBoxContext {
 			output = buffer.toString();
 			clearBuffer();
 		}
-
-		exchange.getResponseSender().send( output );
+		// If a scripting context is our top-level context, we flush to the console.
+		System.out.print( output );
 
 		return this;
 	}

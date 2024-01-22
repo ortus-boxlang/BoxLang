@@ -26,7 +26,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import ortus.boxlang.runtime.context.IBoxContext;
-import ortus.boxlang.runtime.context.ScriptingBoxContext;
+import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
@@ -37,7 +37,7 @@ import ortus.boxlang.runtime.types.exceptions.KeyNotFoundException;
 
 public class ReferencerTest {
 
-	private IBoxContext context = new ScriptingBoxContext();
+	private IBoxContext context = new ScriptingRequestBoxContext();
 
 	@DisplayName( "It can assign to a scope" )
 	@Test
@@ -95,7 +95,7 @@ public class ReferencerTest {
 		assertThat( ( ( IStruct ) scope.get( foo ) ).get( bar ) instanceof Map ).isTrue();
 		assertThat(
 		    ( ( IStruct ) ( ( IStruct ) scope.get( foo ) ).get( bar ) ).get( baz ) )
-		    .isEqualTo( true );
+		        .isEqualTo( true );
 	}
 
 	@DisplayName( "It can assign deeply array" )
@@ -114,7 +114,7 @@ public class ReferencerTest {
 		assertThat( ( ( Array ) scope.get( foo ) ).dereference( context, bar, false ) instanceof Map ).isTrue();
 		assertThat(
 		    ( ( IStruct ) ( ( Array ) scope.get( foo ) ).dereference( context, bar, false ) ).get( baz ) )
-		    .isEqualTo( true );
+		        .isEqualTo( true );
 	}
 
 	@DisplayName( "It can dereference from a struct" )

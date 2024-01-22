@@ -26,12 +26,12 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import ortus.boxlang.runtime.context.IBoxContext;
-import ortus.boxlang.runtime.context.ScriptingBoxContext;
+import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
 import ortus.boxlang.runtime.scopes.Key;
 
 public class ArrayTest {
 
-	private IBoxContext context = new ScriptingBoxContext();
+	private IBoxContext context = new ScriptingRequestBoxContext();
 
 	@DisplayName( "Test Constructors" )
 	@Test
@@ -72,7 +72,7 @@ public class ArrayTest {
 		assertThat( array.get( 0 ) ).isEqualTo( "foo" );
 		assertThat( array.dereference( context, Key.of( "1" ), false ) ).isEqualTo( "foo" );
 		assertThat( array.dereference( context, Key.of( 1 ), false ) ).isEqualTo( "foo" );
-		assertThat( array.dereferenceAndInvoke( new ScriptingBoxContext(), Key.of( "get" ), new Object[] { 0 }, false ) ).isEqualTo( "foo" );
+		assertThat( array.dereferenceAndInvoke( new ScriptingRequestBoxContext(), Key.of( "get" ), new Object[] { 0 }, false ) ).isEqualTo( "foo" );
 
 		// Can't reference negative, string, non-int, or out-of-bounds indexes
 		assertThrows( Throwable.class, () -> array.assign( context, Key.of( "-1" ), "foo" ) );

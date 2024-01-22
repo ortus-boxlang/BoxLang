@@ -29,14 +29,14 @@ import org.junit.jupiter.api.Test;
 
 import ortus.boxlang.runtime.context.FunctionBoxContext;
 import ortus.boxlang.runtime.context.IBoxContext;
-import ortus.boxlang.runtime.context.ScriptingBoxContext;
+import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 
 public class FunctionTest {
 
-	private IBoxContext context = new ScriptingBoxContext();
+	private IBoxContext context = new ScriptingRequestBoxContext();
 
 	@DisplayName( "can define UDF" )
 	@Test
@@ -319,7 +319,7 @@ public class FunctionTest {
 		UDF					udf				= new SampleUDF( UDF.Access.PUBLIC, Key.of( "foo" ), "String", new Argument[] {}, "Brad" );
 		ArgumentsScope		argscope		= udf.createArgumentsScope();
 
-		IBoxContext			parentContext	= new ScriptingBoxContext();
+		IBoxContext			parentContext	= new ScriptingRequestBoxContext();
 		FunctionBoxContext	context			= new FunctionBoxContext( parentContext, udf, argscope );
 		Object				result			= udf.invoke( context );
 		assertThat( result ).isEqualTo( "Brad" );
