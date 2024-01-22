@@ -70,6 +70,7 @@ public class GetLocaleDisplayNameTest {
 		    """,
 		    context );
 		var result = variables.get( Key.of( "result" ) );
+		System.out.println( result );
 		assertEquals( result, "English (United States)" );
 
 	}
@@ -83,6 +84,7 @@ public class GetLocaleDisplayNameTest {
 		    """,
 		    context );
 		var result = variables.get( Key.of( "result" ) );
+		System.out.println( result );
 		assertEquals( result, "English (United States)" );
 
 	}
@@ -98,6 +100,7 @@ public class GetLocaleDisplayNameTest {
 		    """,
 		    context );
 		var result = variables.get( Key.of( "result" ) );
+		System.out.println( result );
 		assertEquals( result, "English (United States)" );
 
 	}
