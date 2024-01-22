@@ -66,8 +66,8 @@ public final class LocalizationUtil {
 			    put( Key.of( "UK" ), Locale.UK );
 			    put( Key.of( "United Kingdom" ), Locale.UK );
 			    put( Key.of( "British" ), Locale.UK );
-			    put( Key.of( "US" ), Locale.US );
-			    put( Key.of( "United States" ), Locale.US );
+			    put( Key.of( "US" ), new Locale( "en", "US" ) );
+			    put( Key.of( "United States" ), ( Locale ) get( Key.of( "US" ) ) );
 		    }
 	    }
 	);
@@ -114,10 +114,10 @@ public final class LocalizationUtil {
 			    put( Key.of( "English (United Kingdom)" ), Locale.UK );
 			    put( Key.of( "English (GB)" ), Locale.UK );
 			    put( Key.of( "English (Great Britan)" ), Locale.UK );
-			    put( Key.of( "English (US)" ), Locale.US );
-			    put( Key.of( "English (USA)" ), Locale.US );
-			    put( Key.of( "English (United States)" ), Locale.US );
-			    put( Key.of( "English (United States of America)" ), Locale.US );
+			    put( Key.of( "English (US)" ), new Locale( "en", "US" ) );
+			    put( Key.of( "English (USA)" ), ( Locale ) get( Key.of( "English (US)" ) ) );
+			    put( Key.of( "English (United States)" ), ( Locale ) get( Key.of( "English (US)" ) ) );
+			    put( Key.of( "English (United States of America)" ), ( Locale ) get( Key.of( "English (US)" ) ) );
 			    put( Key.of( "French (Belgium)" ), new Locale( "fr", "BE" ) );
 			    put( Key.of( "French (Belgian)" ), new Locale( "fr", "BE" ) );
 			    put( Key.of( "French (Canadian)" ), Locale.CANADA_FRENCH );
