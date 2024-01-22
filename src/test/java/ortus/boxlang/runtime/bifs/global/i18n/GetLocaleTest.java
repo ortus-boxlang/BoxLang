@@ -35,6 +35,7 @@ import ortus.boxlang.runtime.context.ScriptingBoxContext;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
+import ortus.boxlang.runtime.util.LocalizationUtil;
 
 public class GetLocaleTest {
 
@@ -63,7 +64,7 @@ public class GetLocaleTest {
 	@DisplayName( "It tests the BIF GetLocale will find a known alias" )
 	@Test
 	public void testBif() {
-		context.setConfigItem( Key.locale, Locale.US );
+		context.setConfigItem( Key.locale, LocalizationUtil.commonLocales.get( "US" ) );
 		instance.executeSource(
 		    """
 		    result = getLocale();

@@ -41,8 +41,9 @@ public class GetLocale extends BIF {
 		} else {
 			return String.format(
 			    "%s (%s)",
-			    locale.getDisplayLanguage( Locale.US ),
-			    BooleanCaster.cast( locale.getVariant().length() ) ? locale.getVariant() : locale.getDisplayCountry( Locale.US )
+			    locale.getDisplayLanguage( ( Locale ) LocalizationUtil.commonLocales.get( "US" ) ),
+			    BooleanCaster.cast( locale.getVariant().length() ) ? locale.getVariant()
+			        : locale.getDisplayCountry( ( Locale ) LocalizationUtil.commonLocales.get( "US" ) )
 			);
 		}
 	}
