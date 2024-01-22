@@ -95,7 +95,7 @@ public class ReferencerTest {
 		assertThat( ( ( IStruct ) scope.get( foo ) ).get( bar ) instanceof Map ).isTrue();
 		assertThat(
 		    ( ( IStruct ) ( ( IStruct ) scope.get( foo ) ).get( bar ) ).get( baz ) )
-		        .isEqualTo( true );
+		    .isEqualTo( true );
 	}
 
 	@DisplayName( "It can assign deeply array" )
@@ -114,7 +114,7 @@ public class ReferencerTest {
 		assertThat( ( ( Array ) scope.get( foo ) ).dereference( context, bar, false ) instanceof Map ).isTrue();
 		assertThat(
 		    ( ( IStruct ) ( ( Array ) scope.get( foo ) ).dereference( context, bar, false ) ).get( baz ) )
-		        .isEqualTo( true );
+		    .isEqualTo( true );
 	}
 
 	@DisplayName( "It can dereference from a struct" )
