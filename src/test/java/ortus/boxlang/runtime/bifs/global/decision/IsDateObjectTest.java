@@ -23,7 +23,6 @@ import static com.google.common.truth.Truth.assertThat;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -34,7 +33,6 @@ import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
 
-@Disabled( "Unimplemented" )
 public class IsDateObjectTest {
 
 	static BoxRuntime	instance;
@@ -63,14 +61,12 @@ public class IsDateObjectTest {
 	public void testTrueConditions() {
 		instance.executeSource(
 		    """
-		    aNowCall        = isDateObject( now() );
-		    aCreateTimeCall = isDateObject( createTime( 3, 2, 1 ) );
-		    aCreateDateCall = isDateObject( createDate( 2023, 12, 21 ) );
+		    aNowCall            = isDateObject( now() );
+		    acreateDateTimeCall = isDateObject( createDateTime( 2024, 01, 22, 7, 15, 1, 999 ) );
 		      """,
 		    context );
 		assertThat( ( Boolean ) variables.get( Key.of( "aNowCall" ) ) ).isTrue();
-		assertThat( ( Boolean ) variables.get( Key.of( "aCreateTimeCall" ) ) ).isTrue();
-		assertThat( ( Boolean ) variables.get( Key.of( "aCreateDateCall" ) ) ).isTrue();
+		assertThat( ( Boolean ) variables.get( Key.of( "acreateDateTimeCall" ) ) ).isTrue();
 	}
 
 	@DisplayName( "It returns false for non-date objects" )
@@ -78,16 +74,16 @@ public class IsDateObjectTest {
 	public void testFalseConditions() {
 		instance.executeSource(
 		    """
-		    aTimespan      = isDateObject( createTimespan( 0, 24, 0, 0 ) );
+		    aTimespan      = isDateObject( createTimespan( 0, 24, 0, 0, 999 ) );
 		    aDateString    = isDateObject( "2023-12-21" );
 		    aFormattedDate = isDateObject( dateTimeFormat( now(), "iso8601" ) );
 		    aRandomString  = isDateObject( "abc" );
 		      """,
 		    context );
-		assertThat( ( Boolean ) variables.get( Key.of( "aTimespan" ) ) ).isTrue();
-		assertThat( ( Boolean ) variables.get( Key.of( "aDateString" ) ) ).isTrue();
-		assertThat( ( Boolean ) variables.get( Key.of( "aFormattedDate" ) ) ).isTrue();
-		assertThat( ( Boolean ) variables.get( Key.of( "aRandomString" ) ) ).isTrue();
+		assertThat( ( Boolean ) variables.get( Key.of( "aTimespan" ) ) ).isFalse();
+		assertThat( ( Boolean ) variables.get( Key.of( "aDateString" ) ) ).isFalse();
+		assertThat( ( Boolean ) variables.get( Key.of( "aFormattedDate" ) ) ).isFalse();
+		assertThat( ( Boolean ) variables.get( Key.of( "aRandomString" ) ) ).isFalse();
 	}
 
 }
