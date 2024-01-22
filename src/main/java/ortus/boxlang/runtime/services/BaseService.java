@@ -18,6 +18,9 @@
 package ortus.boxlang.runtime.services;
 
 import ortus.boxlang.runtime.BoxRuntime;
+import ortus.boxlang.runtime.scopes.Key;
+import ortus.boxlang.runtime.types.IStruct;
+import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.util.Timer;
 
 /**
@@ -77,5 +80,30 @@ public abstract class BaseService {
 	 * The shutdown event is fired when the runtime shuts down
 	 */
 	public abstract void onShutdown();
+
+	/**
+	 * --------------------------------------------------------------------------
+	 * Helpers
+	 * --------------------------------------------------------------------------
+	 */
+
+	/**
+	 * Announce an event with the provided {@link IStruct} of data.
+	 *
+	 * @param state The state key to announce
+	 * @param data  The data to announce
+	 */
+	public void announce( Key state, IStruct data ) {
+		runtime.getInterceptorService().announce( state, data );
+	}
+
+	/**
+	 * Announce an event with no data.
+	 *
+	 * @param state The state key to announce
+	 */
+	public void announce( Key state ) {
+		announce( state, new Struct() );
+	}
 
 }

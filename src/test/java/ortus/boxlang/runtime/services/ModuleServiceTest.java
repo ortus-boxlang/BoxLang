@@ -21,6 +21,7 @@ import static com.google.common.truth.Truth.assertThat;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
+import java.io.IOException;
 import java.nio.file.Paths;
 
 import org.junit.jupiter.api.AfterAll;
@@ -58,6 +59,7 @@ class ModuleServiceTest {
 	@Test
 	void testItCanLoadModulePaths() {
 		assertThat( service.getModulePaths().size() ).isGreaterThan( 0 );
+		System.out.println( service.getModulePaths() );
 	}
 
 	@DisplayName( "Test it can run the startup service event" )
@@ -95,5 +97,13 @@ class ModuleServiceTest {
 		String path = "/tmp/does-not-exist";
 		assertThrows( BoxRuntimeException.class, () -> service.addModulePath( path ) );
 		assertThat( service.getModulePaths() ).doesNotContain( path );
+	}
+
+	@Test
+	void testIt() throws IOException {
+		// Path path = Paths.get( "/Users/lmajano/Sites/projects/boxlang/src/main/resources/modules" );
+
+		System.out.println( service.getRegistry().keySet().toString() );
+
 	}
 }

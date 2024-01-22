@@ -27,14 +27,20 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import ortus.boxlang.runtime.BoxRuntime;
+import ortus.boxlang.runtime.modules.ModuleRecord;
 import ortus.boxlang.runtime.scopes.Key;
+import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
 /**
@@ -51,25 +57,67 @@ public class ModuleService extends BaseService {
 	/**
 	 * The location of the core modules in the runtime resources: {@code src/main/resources/modules}
 	 */
-	private static final String	CORE_MODULES	= "modules";
+	private static final String				CORE_MODULES		= "modules";
+
+	/**
+	 * The module descriptor file name
+	 */
+	private static final String				MODULE_DESCRIPTOR	= "ModuleConfig.bx";
 
 	/**
 	 * The core modules file system. This is used to load modules from the runtime resources.
 	 * This is only used in jar mode.
 	 */
-	private FileSystem			coreModulesFileSystem;
+	private FileSystem						coreModulesFileSystem;
 
 	/**
 	 * List locations to search for modules
 	 */
-	private List<Path>			modulePaths		= new ArrayList<>();
+	private List<Path>						modulePaths			= new ArrayList<>();
 
 	/**
 	 * Logger
 	 */
-	private static final Logger	logger			= LoggerFactory.getLogger( ModuleService.class );
+	private static final Logger				logger				= LoggerFactory.getLogger( ModuleService.class );
 
-	// private Map<Key, ModuleRecord> modules = new ConcurrentHashMap<>();
+	/**
+	 * Module registry
+	 */
+	private Map<Key, ModuleRecord>			registry			= new ConcurrentHashMap<>();
+
+	/**
+	 * Module Service Events
+	 */
+	private static final Key[]				MODULE_EVENTS		= Key.of(
+	    // after all modules have been registered
+	    "afterModuleRegistrations",
+	    // before a module is registered
+	    "preModuleRegistration",
+	    // after a module is registered
+	    "postModuleRegistration",
+	    // after all modules have been activated
+	    "afterModuleActivations",
+	    // before a module is activated
+	    "preModuleLoad",
+	    // after a module is activated
+	    "postModuleLoad",
+	    // before a module is unloaded
+	    "preModuleUnload",
+	    // after a module is unloaded
+	    "postModuleUnload",
+	    // on module service startup
+	    "onModuleServiceStartup",
+	    // on module service shutdown
+	    "onModuleServiceShutdown"
+	);
+	private static final Map<String, Key>	MODULE_EVENTS_MAP	= Arrays
+	    .stream( MODULE_EVENTS )
+	    .collect(
+	        Collectors.toMap(
+	            Key::getName,
+	            key -> key
+	        )
+	    );
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -96,8 +144,8 @@ public class ModuleService extends BaseService {
 		// Add the core modules path to the list of module paths
 		addCoreModulesPath();
 
-		// Register external module locations from the config
-		// addModulePath( Paths.get( runtime.getConfiguration().runtime.modulesDirectory ) );
+		// Add the module service events
+		runtime.getInterceptorService().registerInterceptionPoint( MODULE_EVENTS );
 	}
 
 	/**
@@ -144,8 +192,26 @@ public class ModuleService extends BaseService {
 	 */
 	@Override
 	public void onStartup() {
-		registerAllModules();
-		logger.info( "ModuleService.onStartup()" );
+		BoxRuntime.timerUtil.start( "moduleservice-startup" );
+		logger.atInfo().log( "+ Starting up Module Service..." );
+
+		// Register external module locations from the config
+		runtime.getConfiguration().runtime.modulesDirectory.forEach( this::addModulePath );
+
+		// Register all modules
+		registerAll();
+
+		// Activate all modules
+		// activateAllModules();
+
+		// Announce it
+		announce(
+		    MODULE_EVENTS_MAP.get( "onModuleServiceStartup" ),
+		    Struct.of( "moduleService", this )
+		);
+
+		// Let it be known!
+		logger.atInfo().log( "+ Module Service started in [{}] ms", BoxRuntime.timerUtil.stopAndGetMillis( "moduleservice-startup" ) );
 	}
 
 	/**
@@ -153,6 +219,13 @@ public class ModuleService extends BaseService {
 	 */
 	@Override
 	public void onShutdown() {
+		// Announce it
+		announce(
+		    MODULE_EVENTS_MAP.get( "onModuleServiceShutdown" ),
+		    Struct.of( "moduleService", this )
+		);
+
+		// Shutdown the core modules file system if it's in jar mode
 		if ( this.coreModulesFileSystem != null ) {
 			try {
 				this.coreModulesFileSystem.close();
@@ -160,8 +233,11 @@ public class ModuleService extends BaseService {
 				logger.error( "Error closing core modules file system", e );
 			}
 		}
+
+		// Unload all modules
 		// unloadAll();
-		logger.info( "ModuleService.onShutdown()" );
+
+		logger.atInfo().log( "+ Module Service shutdown" );
 	}
 
 	/**
@@ -170,12 +246,115 @@ public class ModuleService extends BaseService {
 	 * --------------------------------------------------------------------------
 	 */
 
-	void registerAllModules() {
-		// registerCoreModules();
+	/**
+	 * Scans all possible module locations and registers all modules found
+	 * This method doesn't activate the modules, it just registers them
+	 */
+	void registerAll() {
+		var timerLabel = "moduleservice-registerallmodules";
+		BoxRuntime.timerUtil.start( timerLabel );
+
+		// Scan for modules and build the registration records
+		buildRegistry();
+
+		// Register each module now
+		this.registry
+		    .keySet()
+		    .stream()
+		    .forEach( this::register );
+
+		// Log it
+		logger.atInfo().log(
+		    "+ Module Service: Registered [{}] modules in [{}] ms",
+		    this.registry.size(),
+		    BoxRuntime.timerUtil.stopAndGetMillis( timerLabel )
+		);
+
+		// Announce it
+		announce( MODULE_EVENTS_MAP.get( "afterModuleRegistrations" ), Struct.of( "moduleRegistry", this.registry ) );
 	}
 
-	void registerModule( Key name ) {
-		// if( !modules.containsKey( name ) ) {
+	/**
+	 * Register a module. This method doesn't activate the module, it just registers it.
+	 * Duplicate modules are not allowed, first one wins.
+	 * The module must be in the module registry or it will throw an exception.
+	 *
+	 * @param name The name of the module to register
+	 */
+	void register( Key name ) {
+		var timerLabel = "moduleservice-register-" + name.getName();
+		BoxRuntime.timerUtil.start( timerLabel );
+
+		// Check if the module is in the registry
+		if ( !this.registry.containsKey( name ) ) {
+			throw new BoxRuntimeException(
+			    "Cannot register the module [" + name + "] is not in the module registry." +
+			        "Valid modules are: " + this.registry.keySet().toString()
+			);
+		}
+
+		// Get the module record
+		var moduleRecord = this.registry.get( name );
+
+		// Announce it
+		announce(
+		    MODULE_EVENTS_MAP.get( "preModuleRegistration" ),
+		    Struct.of( "moduleRecord", moduleRecord, "moduleName", name )
+		);
+
+		// Load the module descriptor
+
+		// Announce it
+		announce(
+		    MODULE_EVENTS_MAP.get( "postModuleRegistration" ),
+		    Struct.of( "moduleRecord", moduleRecord, "moduleName", name )
+		);
+
+		// Log it
+		logger.atInfo().log(
+		    "+ Module Service: Registered module [{}@{}] in [{}] ms from [{}]",
+		    moduleRecord.name,
+		    moduleRecord.version,
+		    BoxRuntime.timerUtil.stopAndGetMillis( timerLabel ),
+		    moduleRecord.physicalPath
+		);
+	}
+
+	/**
+	 * Get the module registry
+	 */
+	public Map<Key, ModuleRecord> getRegistry() {
+		return this.registry;
+	}
+
+	/**
+	 * This method scans all possible module locations and builds the module registry
+	 * of all modules found. This method doesn't activate the modules, it just registers them.
+	 * Duplicate modules are not allowed, first one wins.
+	 */
+	private void buildRegistry() {
+		this.modulePaths
+		    .stream()
+		    // Walks the path and returns a stream of discovered modules for this path
+		    .flatMap( path -> {
+			    try {
+				    return Files.walk( path, 1 );
+			    } catch ( IOException e ) {
+				    throw new BoxRuntimeException( "Error walking module path: " + path.toString(), e );
+			    }
+		    } )
+		    // Exclude the path if it is a root path in the `modulePaths` list
+		    .filter( filePath -> !this.modulePaths.contains( filePath ) )
+		    // Only module folders
+		    .filter( Files::isDirectory )
+		    // Only where a ModuleConfig.bx exists in the root
+		    .filter( filePath -> Files.exists( filePath.resolve( MODULE_DESCRIPTOR ) ) )
+		    // Filter out already registered modules
+		    .filter( filePath -> !this.registry.containsKey( Key.of( filePath.getFileName().toString() ) ) )
+		    // Convert each filePath to a discovered ModuleRecord
+		    .map( filePath -> new ModuleRecord( Key.of( filePath.getFileName().toString() ), filePath.toString() ) )
+		    // Collect the stream into the module registry
+		    .forEach( moduleRecord -> this.registry.put( moduleRecord.name, moduleRecord ) );
 	}
 
 	/**
@@ -184,11 +363,19 @@ public class ModuleService extends BaseService {
 	 * --------------------------------------------------------------------------
 	 */
 
-	void activateAllModules() {
+	/**
+	 * Activate all modules
+	 */
+	void activateAll() {
 		// activateCoreModules();
 	}
 
-	void activateModule( Key name ) {
+	/**
+	 * Activate a module
+	 *
+	 * @param name The name of the module to activate
+	 */
+	void activate( Key name ) {
 		// if( modules.containsKey( name ) ) {
 	}
 
@@ -198,11 +385,22 @@ public class ModuleService extends BaseService {
 	 * --------------------------------------------------------------------------
 	 */
 
+	/**
+	 * Unload all modules
+	 */
 	void unloadAll() {
-		// unload all
+		this.registry
+		    .keySet()
+		    .stream()
+		    .forEach( this::unload );
 	}
 
-	void unloadModule( Key name ) {
+	/**
+	 * Unload a module
+	 *
+	 * @param name The name of the module to unload
+	 */
+	void unload( Key name ) {
 		// if( modules.containsKey( name ) ) {
 	}
 
@@ -214,9 +412,9 @@ public class ModuleService extends BaseService {
 
 	/**
 	 * Add a module path to the list of paths to search for modules.
-	 * This has to be an absolute path on disk or a relative path to the runtime resources.
+	 * This has to be an absolute path on disk or a relative path to the runtime resources using forward slashes.
 	 *
-	 * @param path The string path to add, package resources path or absolute path
+	 * @param path The string path to add, package resources path or absolute path using forward slashes.
 	 *
 	 * @return The ModuleService instance
 	 */
@@ -225,12 +423,6 @@ public class ModuleService extends BaseService {
 		if ( path == null || path.isBlank() ) {
 			return this;
 		}
-
-		// If it's a package path convert it to slashes
-		if ( path.contains( "." ) ) {
-			path = path.replace( ".", "/" );
-		}
-
 		return addModulePath( Paths.get( path ) );
 	}
 
@@ -250,15 +442,14 @@ public class ModuleService extends BaseService {
 		// Convert to absolute path if it's not already
 		path = path.toAbsolutePath();
 
-		// Verify or throw up, we don't ignore, because this is a pretty big deal if you're trying to load modules
-		if ( !Files.exists( path ) || !Files.isDirectory( path ) ) {
-			throw new BoxRuntimeException( "Module path does not exist or is not a directory " + path.toString() );
+		// Verify
+		if ( Files.exists( path ) && Files.isDirectory( path ) ) {
+			// Add a module path to the list
+			this.modulePaths.add( path );
+			logger.atDebug().log( "+ ModuleService: Added an external module path: [{}]", path.toString() );
+		} else {
+			logger.atWarn().log( "ModuleService: Requested addModulePath [{}] does not exist or is not a directory", path.toString() );
 		}
-
-		// Add a module path to the list
-		this.modulePaths.add( path );
-
-		logger.atDebug().log( "ModuleService: Added an external module path: {}", path.toString() );
 
 		return this;
 	}

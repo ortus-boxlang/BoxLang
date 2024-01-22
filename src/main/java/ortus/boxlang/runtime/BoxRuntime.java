@@ -27,6 +27,9 @@ import java.net.URL;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Instant;
+import java.util.Arrays;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -76,7 +79,7 @@ public class BoxRuntime {
 	/**
 	 * Register all the core runtime events here
 	 */
-	private static final Key[]	RUNTIME_EVENTS	= Key.of(
+	private static final Key[]				RUNTIME_EVENTS		= Key.of(
 	    "onRuntimeStart",
 	    "onRuntimeShutdown",
 	    "onRuntimeConfigurationLoad",
@@ -89,41 +92,49 @@ public class BoxRuntime {
 	    "onConfigurationOverrideLoad",
 	    "onParse"
 	);
+	private static final Map<String, Key>	RUNTIME_EVENTS_MAP	= Arrays
+	    .stream( RUNTIME_EVENTS )
+	    .collect(
+	        Collectors.toMap(
+	            Key::getName,
+	            key -> key
+	        )
+	    );
 
 	/**
 	 * Singleton instance
 	 */
-	private static BoxRuntime	instance;
+	private static BoxRuntime				instance;
 
 	/**
 	 * Logger for the runtime
 	 */
-	private Logger				logger;
+	private Logger							logger;
 
 	/**
 	 * The timestamp when the runtime was started
 	 */
-	private Instant				startTime;
+	private Instant							startTime;
 
 	/**
 	 * Debug mode; defaults to false
 	 */
-	private Boolean				debugMode		= false;
+	private Boolean							debugMode			= false;
 
 	/**
 	 * The runtime context
 	 */
-	private IBoxContext			runtimeContext;
+	private IBoxContext						runtimeContext;
 
 	/**
 	 * The BoxLang configuration class
 	 */
-	private Configuration		configuration;
+	private Configuration					configuration;
 
 	/**
 	 * The path to the configuration file to load as overrides
 	 */
-	private String				configPath;
+	private String							configPath;
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -134,32 +145,32 @@ public class BoxRuntime {
 	/**
 	 * The interceptor service in charge of core runtime events
 	 */
-	private InterceptorService	interceptorService;
+	private InterceptorService				interceptorService;
 
 	/**
 	 * The function service in charge of all BIFS
 	 */
-	private FunctionService		functionService;
+	private FunctionService					functionService;
 
 	/**
 	 * The application service in charge of all applications
 	 */
-	private ApplicationService	applicationService;
+	private ApplicationService				applicationService;
 
 	/**
 	 * The async service in charge of all async operations and executors
 	 */
-	private AsyncService		asyncService;
+	private AsyncService					asyncService;
 
 	/**
 	 * The Cache service in charge of all cache managers and providers
 	 */
-	private CacheService		cacheService;
+	private CacheService					cacheService;
 
 	/**
 	 * The Module service in charge of all modules
 	 */
-	private ModuleService		moduleService;
+	private ModuleService					moduleService;
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -170,7 +181,7 @@ public class BoxRuntime {
 	/**
 	 * The timer utility class
 	 */
-	public static final Timer	timerUtil		= new Timer();
+	public static final Timer				timerUtil			= new Timer();
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -225,7 +236,10 @@ public class BoxRuntime {
 	private void loadConfiguration( Boolean debugMode, String configPath ) {
 		// Load Core Configuration file
 		this.configuration = ConfigLoader.getInstance().loadCore();
-		this.interceptorService.announce( "onConfigurationLoad", Struct.of( "config", this.configuration ) );
+		this.interceptorService.announce(
+		    RUNTIME_EVENTS_MAP.get( "onConfigurationLoad" ),
+		    Struct.of( "config", this.configuration )
+		);
 
 		// User-HOME Override? Check user home for a ${user.home}/.boxlang/config.json
 		String userHomeConfigPath = Paths.get( System.getProperty( "user.home" ) )
@@ -234,13 +248,19 @@ public class BoxRuntime {
 		    .toString();
 		if ( new File( userHomeConfigPath ).exists() ) {
 			this.configuration.process( ConfigLoader.getInstance().deserializeConfig( userHomeConfigPath ) );
-			this.interceptorService.announce( "onConfigurationOverrideLoad", Struct.of( "config", this.configuration, "configOverride", userHomeConfigPath ) );
+			this.interceptorService.announce(
+			    RUNTIME_EVENTS_MAP.get( "onConfigurationOverrideLoad" ),
+			    Struct.of( "config", this.configuration, "configOverride", userHomeConfigPath )
+			);
 		}
 
 		// CLI or ENV Config Path Override?
 		if ( configPath != null ) {
 			this.configuration.process( ConfigLoader.getInstance().deserializeConfig( configPath ) );
-			this.interceptorService.announce( "onConfigurationOverrideLoad", Struct.of( "config", this.configuration, "configOverride", configPath ) );
+			this.interceptorService.announce(
+			    RUNTIME_EVENTS_MAP.get( "onConfigurationOverrideLoad" ),
+			    Struct.of( "config", this.configuration, "configOverride", configPath )
+			);
 		}
 
 		// Config DebugMode Override if null
@@ -291,7 +311,9 @@ public class BoxRuntime {
 		);
 
 		// Announce it baby! Runtime is up
-		this.interceptorService.announce( "onRuntimeStart", new Struct() );
+		this.interceptorService.announce(
+		    RUNTIME_EVENTS_MAP.get( "onRuntimeStart" )
+		);
 	}
 
 	/**
@@ -467,7 +489,17 @@ public class BoxRuntime {
 	 * @param data  The data to announce
 	 */
 	public void announce( String state, IStruct data ) {
-		getInterceptorService().announce( Key.of( state ), data );
+		getInterceptorService().announce( state, data );
+	}
+
+	/**
+	 * Announce an event with the provided {@link IStruct} of data short-hand for {@link #getInterceptorService()}.announce()
+	 *
+	 * @param state The Key state to announce
+	 * @param data  The data to announce
+	 */
+	public void announce( Key state, IStruct data ) {
+		getInterceptorService().announce( state, data );
 	}
 
 	/**
