@@ -68,18 +68,15 @@ public class ApplicationTest {
 		      	context = getBoxContext();
 		    thisApp = context.getRuntime().getApplicationService().getApplication( Key.of( "myApp" ) )
 		    // manually wire up application and session contexts
-		                   context
-		      		.injectParentContext(
-		      				new java:ApplicationBoxContext(
-		      					thisApp
+		    context
+		    	.injectTopParentContext(
+		    		new java:SessionBoxContext(
+		    			thisApp.getSession( Key.of( "my-session-id" ) )
+		    		)
+		    	)
+		    	.injectTopParentContext(
+		    		new java:ApplicationBoxContext( thisApp )
 		      				)
-		      			)
-		                   context
-		      		.injectParentContext(
-		      				new java:SessionBoxContext(
-		      					thisApp.getSession( Key.of( "my-session-id" ) )
-		      				)
-		      			)
 		      		result = application;
 		      		result2 = session;
 

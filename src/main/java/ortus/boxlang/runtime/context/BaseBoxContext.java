@@ -225,6 +225,23 @@ public class BaseBoxContext implements IBoxContext {
 	}
 
 	/**
+	 * Inject a top parent context above the request-type context, moving the request context's current parent to its grandparent
+	 *
+	 * @param parentContext The parent context to inject
+	 *
+	 * @return This context
+	 */
+	public IBoxContext injectTopParentContext( IBoxContext parentContext ) {
+		var requestContext = getParentOfType( RequestBoxContext.class );
+		// If there is no request-type context (unlikely), just fall back to injecting our own parent
+		if ( requestContext == null ) {
+			return injectParentContext( parentContext );
+		}
+		requestContext.injectParentContext( parentContext );
+		return this;
+	}
+
+	/**
 	 * Verifies if a parent context is attached to this context
 	 *
 	 * @return True if a parent context is attached to this context, else false
@@ -675,6 +692,7 @@ public class BaseBoxContext implements IBoxContext {
 	 * @return The matching parent context, or null if one is not found of this type.
 	 */
 	@Override
+	@SuppressWarnings( "unchecked" )
 	public <T> T getParentOfType( Class<T> type ) {
 		if ( type.isAssignableFrom( this.getClass() ) ) {
 			return ( T ) this;

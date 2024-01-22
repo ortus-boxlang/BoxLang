@@ -208,6 +208,15 @@ public interface IBoxContext {
 	public IBoxContext injectParentContext( IBoxContext parentContext );
 
 	/**
+	 * Inject a top parent context above the request-type context, moving the request context's current parent to its grandparent
+	 *
+	 * @param parentContext The parent context to inject
+	 *
+	 * @return This context
+	 */
+	public IBoxContext injectTopParentContext( IBoxContext parentContext );
+
+	/**
 	 * Finds the closest function call name
 	 *
 	 * @return The called name of the function if found, null if this code is not called from a function
