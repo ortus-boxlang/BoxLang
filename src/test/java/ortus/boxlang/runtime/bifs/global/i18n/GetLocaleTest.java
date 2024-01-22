@@ -33,6 +33,7 @@ import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.RequestBoxContext;
 import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
+import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
@@ -80,13 +81,20 @@ public class GetLocaleTest {
 	@Test
 	public void testBifNoAlias() {
 		context.getParentOfType( RequestBoxContext.class ).setLocale( new Locale( "ar", "TR" ) );
+		Locale	localeRef	= new Locale( "ar", "TR" );
+		String	refResult	= String.format(
+		    "%s (%s)",
+		    localeRef.getDisplayLanguage( ( Locale ) LocalizationUtil.commonLocales.get( "US" ) ),
+		    BooleanCaster.cast( localeRef.getVariant().length() ) ? localeRef.getVariant()
+		        : localeRef.getDisplayCountry( ( Locale ) LocalizationUtil.commonLocales.get( "US" ) )
+		);
 		instance.executeSource(
 		    """
 		    result = getLocale();
 		    """,
 		    context );
 		var result = variables.get( Key.of( "result" ) );
-		assertEquals( result, "Arabic (Turkey)" );
+		assertEquals( result, refResult );
 
 	}
 
