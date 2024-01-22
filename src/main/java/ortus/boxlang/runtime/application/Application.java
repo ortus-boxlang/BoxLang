@@ -17,6 +17,7 @@
  */
 package ortus.boxlang.runtime.application;
 
+import java.time.Instant;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -24,14 +25,25 @@ import ortus.boxlang.runtime.scopes.ApplicationScope;
 import ortus.boxlang.runtime.scopes.Key;
 
 /**
- * I represent an Applications
+ * I represent an Application in BoxLang
  */
 public class Application {
+
+	/**
+	 * --------------------------------------------------------------------------
+	 * Private Properties
+	 * --------------------------------------------------------------------------
+	 */
 
 	/**
 	 * The name of this application. Unique per runtime
 	 */
 	private Key					name;
+
+	/**
+	 * The timestamp when the runtime was started
+	 */
+	private Instant				startTime;
 
 	/**
 	 * The scope for this application
@@ -42,57 +54,76 @@ public class Application {
 	 * The sessions for this application
 	 * TODO: timeout sessions
 	 */
-	private Map<Key, Session>	sessions	= new ConcurrentHashMap<Key, Session>();
+	private Map<Key, Session>	sessions	= new ConcurrentHashMap<>();
+
+	/**
+	 * --------------------------------------------------------------------------
+	 * Constructor
+	 * --------------------------------------------------------------------------
+	 */
 
 	/**
 	 * Constructor
+	 *
+	 * @param name The name of the application
 	 */
 	public Application( Key name ) {
-		// TODO: onApplicationStart
-		this.name			= name;
-		applicationScope	= new ApplicationScope();
+		this.name				= name;
+		this.applicationScope	= new ApplicationScope();
+		this.startTime			= Instant.now();
+
+		startup();
 	}
 
 	/**
-	 * Get an application by name, creating if neccessary
-	 * 
-	 * @param name The name of the application
-	 * 
-	 * @return The application
+	 * --------------------------------------------------------------------------
+	 * Methods
+	 * --------------------------------------------------------------------------
+	 */
+
+	/**
+	 * Get a session by ID for this application, creating if neccessary
+	 *
+	 * @param ID The ID of the session
+	 *
+	 * @return The session
 	 */
 	public Session getSession( Key ID ) {
-		// TODO: Application settings
-		Session thisSession = sessions.get( ID );
-		if ( thisSession == null ) {
-			// Consider lock on session name so onsessionstarts don't block across sessinos
-			synchronized ( sessions ) {
-				thisSession = sessions.get( ID );
-				if ( thisSession == null ) {
-					// TODO: onSessionStart
-					thisSession = new Session( ID );
-					sessions.put( name, thisSession );
-				}
-			}
-		}
-		return thisSession;
+		return sessions.computeIfAbsent( ID, key -> new Session( ID ) );
 	}
 
 	/**
 	 * Get the scope for this application
-	 * 
+	 *
 	 * @return The scope
 	 */
 	public ApplicationScope getApplicationScope() {
-		return applicationScope;
+		return this.applicationScope;
 	}
 
 	/**
 	 * Get the name of this application
-	 * 
+	 *
 	 * @return The name
 	 */
 	public Key getName() {
-		return name;
+		return this.name;
+	}
+
+	/**
+	 * Get the start time of the application
+	 *
+	 * @return the application start time, or null if not started
+	 */
+	public Instant getStartTime() {
+		return this.startTime;
+	}
+
+	/**
+	 * Startup this application
+	 */
+	public void startup() {
+		// TODO: onApplicationStart
 	}
 
 	/**
@@ -101,9 +132,6 @@ public class Application {
 	public void shutdown() {
 		// TODO: onApplicationEnd
 
-		// loop over sessiona and shutdown
-		for ( Session session : sessions.values() ) {
-			session.shutdown();
-		}
+		sessions.values().parallelStream().forEach( Session::shutdown );
 	}
 }
