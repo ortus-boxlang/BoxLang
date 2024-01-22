@@ -90,6 +90,8 @@ public class GetLocaleDisplayNameTest {
 	@DisplayName( "It tests the BIF GetLocaleDisplayName" )
 	@Test
 	public void testGetLocaleDisplayNameBothArgs() {
+		// Set a different locale to test whether our explicit args are being honored
+		context.setConfigItem( Key.locale, Locale.GERMANY );
 		instance.executeSource(
 		    """
 		    result = GetLocaleDisplayName( "en-US", "en-US" );
