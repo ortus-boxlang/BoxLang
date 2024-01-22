@@ -64,6 +64,8 @@ public class GetLocaleDisplayNameTest {
 	@DisplayName( "It tests the BIF GetLocaleDisplayName with no arguments" )
 	@Test
 	public void testBifGetLocaleDisplayName() {
+		Locale	contextLocale	= ( Locale ) context.getConfigItem( Key.locale );
+		String	refDisplayName	= contextLocale.getDisplayName( contextLocale );
 		instance.executeSource(
 		    """
 		    result = GetLocaleDisplayName();
@@ -71,27 +73,30 @@ public class GetLocaleDisplayNameTest {
 		    context );
 		var result = variables.get( Key.of( "result" ) );
 		System.out.println( result );
-		assertEquals( result, "English (United States)" );
+		assertEquals( result, refDisplayName );
 
 	}
 
 	@DisplayName( "It tests the BIF GetLocaleDisplayName with only locale arg" )
 	@Test
 	public void testGetLocaleDisplayNameSingleArg() {
+		Locale	contextLocale	= ( Locale ) context.getConfigItem( Key.locale );
+		String	refDisplayName	= contextLocale.getDisplayName( contextLocale );
 		instance.executeSource(
 		    """
 		    result = GetLocaleDisplayName( "en-US" );
 		    """,
 		    context );
 		var result = variables.get( Key.of( "result" ) );
-		System.out.println( result );
-		assertEquals( result, "English (United States)" );
+		assertEquals( result, refDisplayName );
 
 	}
 
 	@DisplayName( "It tests the BIF GetLocaleDisplayName" )
 	@Test
 	public void testGetLocaleDisplayNameBothArgs() {
+		Locale	contextLocale	= ( Locale ) context.getConfigItem( Key.locale );
+		String	refDisplayName	= contextLocale.getDisplayName( contextLocale );
 		// Set a different locale to test whether our explicit args are being honored
 		context.setConfigItem( Key.locale, Locale.GERMANY );
 		instance.executeSource(
@@ -100,21 +105,22 @@ public class GetLocaleDisplayNameTest {
 		    """,
 		    context );
 		var result = variables.get( Key.of( "result" ) );
-		System.out.println( result );
-		assertEquals( result, "English (United States)" );
+		assertEquals( result, refDisplayName );
 
 	}
 
 	@DisplayName( "It tests the BIF GetLocaleDisplayName with only dspLocale arg" )
 	@Test
 	public void testGetLocaleDisplayNameDspArg() {
+		Locale	contextLocale	= ( Locale ) context.getConfigItem( Key.locale );
+		String	refDisplayName	= contextLocale.getDisplayName( Locale.GERMANY );
 		instance.executeSource(
 		    """
 		    result = GetLocaleDisplayName( dspLocale="Germany" );
 		    """,
 		    context );
 		var result = variables.get( Key.of( "result" ) );
-		assertEquals( result, "Englisch (Vereinigte Staaten)" );
+		assertEquals( result, refDisplayName );
 
 	}
 
