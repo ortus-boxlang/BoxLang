@@ -19,6 +19,9 @@ package TestCases.phase3;
 
 import static com.google.common.truth.Truth.assertThat;
 
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
+
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -62,28 +65,34 @@ public class ApplicationTest {
 
 		instance.executeSource(
 		    """
-		      import java:ortus.boxlang.runtime.context.ApplicationBoxContext;
-		      import java:ortus.boxlang.runtime.context.SessionBoxContext;
-		      import java:ortus.boxlang.runtime.scopes.Key;
-		      	context = getBoxContext();
-		    thisApp = context.getRuntime().getApplicationService().getApplication( Key.of( "myApp" ) )
-		    // manually wire up application and session contexts
-		    context
-		    	.injectTopParentContext(
-		    		new java:SessionBoxContext(
-		    			thisApp.getSession( Key.of( "my-session-id" ) )
-		    		)
-		    	)
-		    	.injectTopParentContext(
-		    		new java:ApplicationBoxContext( thisApp )
-		      				)
-		      		result = application;
-		      		result2 = session;
-
-		                        """, context );
+		        import java:ortus.boxlang.runtime.context.ApplicationBoxContext;
+		        import java:ortus.boxlang.runtime.context.SessionBoxContext;
+		        import java:ortus.boxlang.runtime.scopes.Key;
+		        	context = getBoxContext();
+		      thisApp = context.getRuntime().getApplicationService().getApplication( Key.of( "myApp" ) )
+		      // manually wire up application and session contexts
+		      context
+		      	.injectTopParentContext(
+		      		new java:SessionBoxContext(
+		      			thisApp.getSession( Key.of( "my-session-id" ) )
+		      		)
+		      	)
+		      	.injectTopParentContext(
+		      		new java:ApplicationBoxContext( thisApp )
+		        				)
+		        		result = application;
+		        		result2 = session;
+		    startTime = ApplicationStartTime()
+		                          """, context );
 
 		assertThat( variables.get( result ) ).isInstanceOf( ApplicationScope.class );
 		assertThat( variables.get( Key.of( "result2" ) ) ).isInstanceOf( SessionScope.class );
+
+		Instant	actual				= ( Instant ) variables.get( Key.of( "startTime" ) );
+		Instant	now					= Instant.now();
+		long	differenceInSeconds	= ChronoUnit.SECONDS.between( actual, now );
+
+		assertThat( differenceInSeconds ).isAtMost( 1L );
 	}
 
 }

@@ -125,4 +125,8 @@ public class ApplicationBoxContext extends BaseBoxContext {
 		return getScope( name );
 	}
 
+	public Application getApplication() {
+		return application;
+	}
+
 }
