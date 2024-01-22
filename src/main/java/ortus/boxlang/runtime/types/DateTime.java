@@ -289,7 +289,7 @@ public class DateTime implements IType, IReferenceable {
 	 * @param minute       The minute
 	 * @param second       The second
 	 * @param milliseconds The milliseconds
-	 * @param timezone     The timezone
+	 * @param timezone     The ZoneId for the timezone
 	 */
 	public DateTime(
 	    Integer year,
@@ -299,7 +299,7 @@ public class DateTime implements IType, IReferenceable {
 	    Integer minute,
 	    Integer second,
 	    Integer milliseconds,
-	    String timezone ) {
+	    ZoneId timezone ) {
 		this(
 		    ZonedDateTime.of(
 		        year,
@@ -309,7 +309,7 @@ public class DateTime implements IType, IReferenceable {
 		        minute,
 		        second,
 		        milliseconds * 1000000,
-		        ( timezone != null ) ? ZoneId.of( timezone ) : ZoneId.systemDefault()
+		        timezone == null ? ZoneId.systemDefault() : timezone
 		    )
 		);
 	}
@@ -340,7 +340,7 @@ public class DateTime implements IType, IReferenceable {
 	    Integer year,
 	    Integer month,
 	    Integer day,
-	    String timezone ) {
+	    ZoneId timezone ) {
 		this(
 		    ZonedDateTime.of(
 		        year,
@@ -350,7 +350,7 @@ public class DateTime implements IType, IReferenceable {
 		        0,
 		        0,
 		        0,
-		        ( timezone != null ) ? ZoneId.of( timezone ) : ZoneId.systemDefault()
+		        ( timezone != null ) ? timezone : ZoneId.systemDefault()
 		    )
 		);
 	}

@@ -110,7 +110,7 @@ public class CreateTimeSpanTest {
 		    BoxRuntimeException.class,
 		    () -> instance.executeSource(
 		        """
-		        result = createTimespan( 365, 1, 2, 3 );
+		        result = createTimespan( 365, 1, 2 );
 		        """,
 		        context )
 		);

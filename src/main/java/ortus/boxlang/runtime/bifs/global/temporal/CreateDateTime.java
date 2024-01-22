@@ -20,14 +20,15 @@ import java.time.ZoneId;
 import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
 import ortus.boxlang.runtime.context.IBoxContext;
-import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.DateTime;
+import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
+import ortus.boxlang.runtime.util.LocalizationUtil;
 
 @BoxBIF
-
+@BoxBIF( alias = "CreateDate" )
 public class CreateDateTime extends BIF {
 
 	/**
@@ -36,13 +37,13 @@ public class CreateDateTime extends BIF {
 	public CreateDateTime() {
 		super();
 		declaredArguments = new Argument[] {
-		    new Argument( true, "integer", Key.year ),
-		    new Argument( true, "integer", Key.month ),
-		    new Argument( true, "integer", Key.day ),
-		    new Argument( true, "integer", Key.hour ),
-		    new Argument( true, "integer", Key.minute ),
-		    new Argument( true, "integer", Key.second ),
-		    new Argument( true, "integer", Key.millisecond ),
+		    new Argument( false, "integer", Key.year, 0 ),
+		    new Argument( false, "integer", Key.month, 1 ),
+		    new Argument( false, "integer", Key.day, 1 ),
+		    new Argument( false, "integer", Key.hour, 0 ),
+		    new Argument( false, "integer", Key.minute, 0 ),
+		    new Argument( false, "integer", Key.second, 0 ),
+		    new Argument( false, "integer", Key.millisecond, 0 ),
 		    new Argument( false, "string", Key.timezone )
 		};
 	}
@@ -56,20 +57,31 @@ public class CreateDateTime extends BIF {
 	 * @argument.foo Describe any expected arguments
 	 */
 	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
-		String timezone = arguments.getAsString( Key.timezone );
-		if ( timezone == null ) {
-			timezone = StringCaster.cast( context.getConfigItem( Key.timezone, ZoneId.systemDefault().toString() ) );
+		ZoneId timezone = LocalizationUtil.parseZoneId( arguments.getAsString( Key.timezone ), context );
+		if ( arguments.isEmpty() ) {
+			return new DateTime( timezone );
+		} else {
+			if ( arguments.getAsInteger( Key.year ).equals( 0 ) ) {
+				throw new BoxRuntimeException( "The year argument passed to this method must be greater than zero" );
+			}
+			if ( arguments.getAsInteger( Key.month ).equals( 0 ) ) {
+				throw new BoxRuntimeException( "The month argument passed to this method must be greater than zero" );
+			}
+			if ( arguments.getAsInteger( Key.day ).equals( 0 ) ) {
+				throw new BoxRuntimeException( "The day argument passed to this method must be greater than zero" );
+			}
+			return new DateTime(
+			    arguments.getAsInteger( Key.year ),
+			    arguments.getAsInteger( Key.month ),
+			    arguments.getAsInteger( Key.day ),
+			    arguments.getAsInteger( Key.hour ),
+			    arguments.getAsInteger( Key.minute ),
+			    arguments.getAsInteger( Key.second ),
+			    arguments.getAsInteger( Key.millisecond ),
+			    timezone
+			);
 		}
-		return new DateTime(
-		    arguments.getAsInteger( Key.year ),
-		    arguments.getAsInteger( Key.month ),
-		    arguments.getAsInteger( Key.day ),
-		    arguments.getAsInteger( Key.hour ),
-		    arguments.getAsInteger( Key.minute ),
-		    arguments.getAsInteger( Key.second ),
-		    arguments.getAsInteger( Key.millisecond ),
-		    timezone
-		);
+
 	}
 
 }

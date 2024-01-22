@@ -24,7 +24,7 @@ public class CreateTimeSpan extends BIF {
 		    new Argument( true, "long", Key.hours ),
 		    new Argument( true, "long", Key.minutes ),
 		    new Argument( true, "long", Key.seconds ),
-		    new Argument( true, "long", Key.milliseconds )
+		    new Argument( false, "long", Key.milliseconds, 0l )
 		};
 	}
 
@@ -35,13 +35,13 @@ public class CreateTimeSpan extends BIF {
 	 * @param arguments Argument scope for the BIF.
 	 *
 	 * @argument.days The number of days in the timespan
-	 * 
+	 *
 	 * @argument.hours The number of hours in the timespan
-	 * 
+	 *
 	 * @argument.minutes The number of minutes in the timespan
-	 * 
+	 *
 	 * @argument.seconds The number of seconds in the timespan
-	 * 
+	 *
 	 * @argument.milliseconds The number of milliseconds in the timespan
 	 */
 	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
