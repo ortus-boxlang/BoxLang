@@ -72,6 +72,9 @@ public final class LocalizationUtil {
 	    }
 	);
 
+	/**
+	 * A collection of common locale aliases which are used by both ACF and Lucee
+	 */
 	public static final ImmutableStruct	localeAliases	= new ImmutableStruct(
 	    Type.LINKED,
 	    new LinkedHashMap<Key, Locale>() {
