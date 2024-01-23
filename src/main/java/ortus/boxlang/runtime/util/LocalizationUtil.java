@@ -21,13 +21,15 @@ import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeFormatterBuilder;
 import java.time.format.FormatStyle;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Locale;
+import java.util.stream.Collectors;
 
 import ortus.boxlang.runtime.context.IBoxContext;
-import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.DateTime;
+import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.Struct.Type;
 import ortus.boxlang.runtime.types.immutable.ImmutableStruct;
 
@@ -36,6 +38,9 @@ import ortus.boxlang.runtime.types.immutable.ImmutableStruct;
  **/
 public final class LocalizationUtil {
 
+	/**
+	 * A struct of common locale constants
+	 */
 	public static final ImmutableStruct	commonLocales	= new ImmutableStruct(
 	    Type.LINKED,
 	    new LinkedHashMap<Key, Locale>() {
@@ -66,6 +71,7 @@ public final class LocalizationUtil {
 			    put( Key.of( "UK" ), Locale.UK );
 			    put( Key.of( "United Kingdom" ), Locale.UK );
 			    put( Key.of( "British" ), Locale.UK );
+			    // We need to use an explicit country setting because new versions of JDK 17 and 21 return just "English" with Locale.US
 			    put( Key.of( "US" ), new Locale( "en", "US" ) );
 			    put( Key.of( "United States" ), ( Locale ) get( Key.of( "US" ) ) );
 		    }
@@ -148,6 +154,29 @@ public final class LocalizationUtil {
 
 	);
 
+	/**
+	 * A struct of ZoneID aliases ( e.g. PST )
+	 */
+	public static final Struct			zoneAliases		= new Struct(
+	    new HashMap<Key, String>() {
+
+		    {
+			    putAll( ZoneId.SHORT_IDS.entrySet().stream().collect( Collectors.toMap( entry -> Key.of( entry.getKey() ), entry -> entry.getValue() ) ) );
+			    put( Key.of( "PDT" ), "America/Los_Angeles" );
+			    put( Key.of( "MDT" ), "America/Denver" );
+			    put( Key.of( "CDT" ), "America/Chicago" );
+			    put( Key.of( "EDT" ), "America/New_York" );
+		    }
+	    }
+	);
+
+	/**
+	 * Parses a locale from a string, handling known common locales and aliases
+	 *
+	 * @param requestedLocale
+	 *
+	 * @return the Locale object
+	 */
 	public static Locale parseLocale( String requestedLocale ) {
 		Locale localeObj = null;
 		if ( requestedLocale != null && commonLocales.containsKey( requestedLocale ) ) {
@@ -166,16 +195,61 @@ public final class LocalizationUtil {
 		return localeObj;
 	}
 
+	/**
+	 * Parses a locale and returns a default value if the locale could not be parsed
+	 *
+	 * @param requestedLocale the string representation of the requested locale or alias
+	 * @param defaultLocale   the default locale to use if not found
+	 *
+	 * @return The Locale object found or the default
+	 */
 	public static Locale parseLocaleOrDefault( String requestedLocale, Locale defaultLocale ) {
 		Locale locale = parseLocale( requestedLocale );
 		return locale != null ? locale : defaultLocale;
 	}
 
+	/**
+	 * Parses a ZoneId from a string, falling back to the context setting, and then the system default
+	 *
+	 * @param timezone The timezone string representation
+	 * @param context  The context to retrieve the config item
+	 *
+	 * @return the ZoneId instance representing the assigned timezone
+	 */
 	public static ZoneId parseZoneId( String timezone, IBoxContext context ) {
-		if ( timezone == null ) {
-			timezone = StringCaster.cast( context.getConfigItem( Key.timezone, ZoneId.systemDefault().toString() ) );
+		if ( timezone != null ) {
+			Key zoneKey = Key.of( timezone );
+			if ( zoneAliases.containsKey( zoneKey ) ) {
+				return ZoneId.of( zoneAliases.getAsString( zoneKey ) );
+			} else {
+				ZoneId parsed = parseZoneId( timezone );
+				return parsed != null
+				    ? parsed
+				    : ( ZoneId ) context.getConfigItem( Key.timezone, ZoneId.systemDefault() );
+			}
+		} else {
+			return ( ZoneId ) context.getConfigItem( Key.timezone, ZoneId.systemDefault() );
 		}
-		return ZoneId.of( timezone );
+	}
+
+	/**
+	 * Attempts to parse a ZoneId from a string representation - return a null if the zone could not be parsed
+	 *
+	 * @param timezone The string representation of the timezone
+	 *
+	 * @return The ZoneId or null
+	 */
+	public static ZoneId parseZoneId( String timezone ) {
+		try {
+			Key zoneKey = Key.of( timezone );
+			if ( zoneAliases.containsKey( zoneKey ) ) {
+				return ZoneId.of( zoneAliases.getAsString( zoneKey ) );
+			} else {
+				return ZoneId.of( timezone );
+			}
+		} catch ( Exception e ) {
+			return null;
+		}
 	}
 
 	public static DateTimeFormatter localizedDateFormatter( Locale locale, FormatStyle style ) {
