@@ -34,7 +34,6 @@ import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
 
-@Disabled( "Unimplemented" )
 public class IsDateTest {
 
 	static BoxRuntime	instance;
@@ -79,20 +78,17 @@ public class IsDateTest {
 		assertThat( ( Boolean ) variables.get( Key.of( "anISO8601String" ) ) ).isTrue();
 	}
 
-	@Disabled( "Now(), createTime(), and createDate() are not implemented" )
 	@DisplayName( "It detects date objects returned from date functions" )
 	@Test
 	public void testDateFunctionCalls() {
 		instance.executeSource(
 		    """
 		    aNowCall               = isDate( now() );
-		    aCreateTimeCall        = isDate( createTime( 3, 2, 1 ) );
-		    aCreateDateCall        = isDate( createDate( 2023, 12, 21 ) );
+		    aCreateDateTimeCall = isDateObject( createDateTime( 2024, 01, 22, 7, 15, 1, 999 ) );
 		      """,
 		    context );
 		assertThat( ( Boolean ) variables.get( Key.of( "aNowCall" ) ) ).isTrue();
-		assertThat( ( Boolean ) variables.get( Key.of( "aCreateTimeCall" ) ) ).isTrue();
-		assertThat( ( Boolean ) variables.get( Key.of( "aCreateDateCall" ) ) ).isTrue();
+		assertThat( ( Boolean ) variables.get( Key.of( "aCreateDateTimeCall" ) ) ).isTrue();
 	}
 
 	@DisplayName( "It returns false for non-date values" )
@@ -104,23 +100,33 @@ public class IsDateTest {
 		    aNumericString = isDate( "2023" );
 		    anInteger = isDate( 2024 );
 		    aFloat = isDate( 2024.01 );
+		    gibberishAfterValidDate = isDate( "2023-12-21xyz" );
 
 		    // FYI: ACF 23 returns false, Lucee returns true.
 		    aTimespan = isDate( createTimespan( 0, 24, 0, 0 ) );
-
-		    invalidLeapDay = isDate( "2023-02-29" );
-		    invalidDayNumber = isDate( "2023-12-2100" );
-		    gibberishAfterValidDate = isDate( "2023-12-21xyz" );
 		      """,
 		    context );
 		assertThat( ( Boolean ) variables.get( Key.of( "aString" ) ) ).isFalse();
 		assertThat( ( Boolean ) variables.get( Key.of( "aNumericString" ) ) ).isFalse();
 		assertThat( ( Boolean ) variables.get( Key.of( "anInteger" ) ) ).isFalse();
 		assertThat( ( Boolean ) variables.get( Key.of( "aFloat" ) ) ).isFalse();
-		assertThat( ( Boolean ) variables.get( Key.of( "aTimespan" ) ) ).isFalse();
-		assertThat( ( Boolean ) variables.get( Key.of( "invalidLeapDay" ) ) ).isFalse();
-		assertThat( ( Boolean ) variables.get( Key.of( "invalidDayNumber" ) ) ).isFalse();
 		assertThat( ( Boolean ) variables.get( Key.of( "gibberishAfterValidDate" ) ) ).isFalse();
+		assertThat( ( Boolean ) variables.get( Key.of( "aTimespan" ) ) ).isFalse();
 	}
 
+	@Disabled( "Not yet implemented." )
+	@DisplayName( "It returns false for date-like values which are not valid dates" )
+	@Test
+	public void testInvalidDates() {
+		instance.executeSource(
+		    """
+		    invalidMonth = isDate( "2023-31-31" );
+		    invalidDayNumber = isDate( "2023-12-2100" );
+		    invalidLeapDay = isDate( "2023-02-30" );
+		        """,
+		    context );
+		assertThat( ( Boolean ) variables.get( Key.of( "invalidLeapDay" ) ) ).isFalse();
+		assertThat( ( Boolean ) variables.get( Key.of( "invalidMonth" ) ) ).isFalse();
+		assertThat( ( Boolean ) variables.get( Key.of( "invalidDayNumber" ) ) ).isFalse();
+	}
 }
