@@ -52,8 +52,7 @@ public class DateConvertTest {
 	public static void setUp() {
 		instance	= BoxRuntime.getInstance( true );
 		context		= new ScriptingRequestBoxContext( instance.getRuntimeContext() );
-		context.getParentOfType( RequestBoxContext.class ).setTimezone( "America/Los_Angeles" );
-		variables = context.getScopeNearby( VariablesScope.name );
+		variables	= context.getScopeNearby( VariablesScope.name );
 	}
 
 	@AfterAll
@@ -63,7 +62,7 @@ public class DateConvertTest {
 
 	@BeforeEach
 	public void setupEach() {
-		context.getConfig().put( Key.timezone, "America/Los_Angeles" );
+		context.getParentOfType( RequestBoxContext.class ).setTimezone( ZoneId.of( "America/Los_Angeles" ) );
 		variables.clear();
 	}
 

@@ -17,6 +17,7 @@
  */
 package ortus.boxlang.runtime.context;
 
+import java.time.ZoneId;
 import java.util.Locale;
 
 import ortus.boxlang.runtime.scopes.Key;
@@ -28,7 +29,7 @@ import ortus.boxlang.runtime.types.IStruct;
 public abstract class RequestBoxContext extends BaseBoxContext {
 
 	private Locale	locale		= null;
-	private String	timezone	= null;
+	private ZoneId	timezone	= null;
 
 	/**
 	 * Creates a new execution context with a bounded execution template and parent context
@@ -49,11 +50,11 @@ public abstract class RequestBoxContext extends BaseBoxContext {
 		this.locale = locale;
 	}
 
-	public String getTimezone() {
+	public ZoneId getTimezone() {
 		return timezone;
 	}
 
-	public void setTimezone( String timezone ) {
+	public void setTimezone( ZoneId timezone ) {
 		this.timezone = timezone;
 	}
 
