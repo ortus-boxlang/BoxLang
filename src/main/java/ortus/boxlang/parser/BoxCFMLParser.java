@@ -180,9 +180,9 @@ public class BoxCFMLParser extends BoxAbstractParser {
 
 	/**
 	 * Escape pounds in a string literal
-	 * 
+	 *
 	 * @param string the string to escape
-	 * 
+	 *
 	 * @return the escaped string
 	 */
 	private String escapeStringLiteral( String string ) {

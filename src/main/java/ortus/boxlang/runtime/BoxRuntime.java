@@ -27,9 +27,9 @@ import java.net.URL;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Instant;
-import java.util.Arrays;
 import java.util.Map;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -79,7 +79,7 @@ public class BoxRuntime {
 	/**
 	 * Register all the core runtime events here
 	 */
-	private static final Key[]				RUNTIME_EVENTS		= Key.of(
+	private static final Map<String, Key>	RUNTIME_EVENTS	= Stream.of(
 	    "onRuntimeStart",
 	    "onRuntimeShutdown",
 	    "onRuntimeConfigurationLoad",
@@ -91,15 +91,10 @@ public class BoxRuntime {
 	    "onConfigurationLoad",
 	    "onConfigurationOverrideLoad",
 	    "onParse"
-	);
-	private static final Map<String, Key>	RUNTIME_EVENTS_MAP	= Arrays
-	    .stream( RUNTIME_EVENTS )
-	    .collect(
-	        Collectors.toMap(
-	            Key::getName,
-	            key -> key
-	        )
-	    );
+	).collect( Collectors.toMap(
+	    eventName -> eventName,
+	    Key::of
+	) );
 
 	/**
 	 * Singleton instance
@@ -119,7 +114,7 @@ public class BoxRuntime {
 	/**
 	 * Debug mode; defaults to false
 	 */
-	private Boolean							debugMode			= false;
+	private Boolean							debugMode		= false;
 
 	/**
 	 * The runtime context
@@ -181,7 +176,7 @@ public class BoxRuntime {
 	/**
 	 * The timer utility class
 	 */
-	public static final Timer				timerUtil			= new Timer();
+	public static final Timer				timerUtil		= new Timer();
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -219,7 +214,7 @@ public class BoxRuntime {
 		this.startTime			= Instant.now();
 
 		// Create the Runtime Services
-		this.interceptorService	= new InterceptorService( this, RUNTIME_EVENTS );
+		this.interceptorService	= new InterceptorService( this, RUNTIME_EVENTS.values().toArray( Key[]::new ) );
 		this.asyncService		= new AsyncService( this );
 		this.cacheService		= new CacheService( this );
 		this.functionService	= new FunctionService( this );
@@ -237,7 +232,7 @@ public class BoxRuntime {
 		// Load Core Configuration file
 		this.configuration = ConfigLoader.getInstance().loadCore();
 		this.interceptorService.announce(
-		    RUNTIME_EVENTS_MAP.get( "onConfigurationLoad" ),
+		    RUNTIME_EVENTS.get( "onConfigurationLoad" ),
 		    Struct.of( "config", this.configuration )
 		);
 
@@ -249,7 +244,7 @@ public class BoxRuntime {
 		if ( new File( userHomeConfigPath ).exists() ) {
 			this.configuration.process( ConfigLoader.getInstance().deserializeConfig( userHomeConfigPath ) );
 			this.interceptorService.announce(
-			    RUNTIME_EVENTS_MAP.get( "onConfigurationOverrideLoad" ),
+			    RUNTIME_EVENTS.get( "onConfigurationOverrideLoad" ),
 			    Struct.of( "config", this.configuration, "configOverride", userHomeConfigPath )
 			);
 		}
@@ -258,7 +253,7 @@ public class BoxRuntime {
 		if ( configPath != null ) {
 			this.configuration.process( ConfigLoader.getInstance().deserializeConfig( configPath ) );
 			this.interceptorService.announce(
-			    RUNTIME_EVENTS_MAP.get( "onConfigurationOverrideLoad" ),
+			    RUNTIME_EVENTS.get( "onConfigurationOverrideLoad" ),
 			    Struct.of( "config", this.configuration, "configOverride", configPath )
 			);
 		}
@@ -312,7 +307,7 @@ public class BoxRuntime {
 
 		// Announce it baby! Runtime is up
 		this.interceptorService.announce(
-		    RUNTIME_EVENTS_MAP.get( "onRuntimeStart" )
+		    RUNTIME_EVENTS.get( "onRuntimeStart" )
 		);
 	}
 
