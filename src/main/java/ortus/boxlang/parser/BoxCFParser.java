@@ -470,7 +470,7 @@ public class BoxCFParser extends BoxAbstractParser {
 			} else {
 				// Add these issues to the main parser
 				issues.addAll( result.getIssues() );
-				return null;
+				return List.of();
 			}
 		} catch ( IOException e ) {
 			throw new BoxRuntimeException( "Error parsing tag island: " + code, e );

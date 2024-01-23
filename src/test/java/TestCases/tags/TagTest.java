@@ -22,6 +22,7 @@ import static com.google.common.truth.Truth.assertThat;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -190,6 +191,30 @@ public class TagTest {
 
 		assertThat( variables.get( result ) ).isEqualTo( "it worked" );
 		assertThat( variables.get( Key.of( "foo" ) ) ).isEqualTo( "bar" );
+	}
+
+	@DisplayName( "tag script Island inception" )
+	@Test
+	@Disabled( "This can't work without re-working the lexers to 'count' the island blocks." )
+	public void testTagScriptIslandInception() {
+		instance.executeSource(
+		    """
+		       result = "one"
+		    ```
+		    	<cfset result &= " two">
+		    	<cfscript>
+		    		result &= " three";
+		    		```
+		    			<cfset result &= " four">
+		    		```
+		    		result &= " five"
+		    	</cfscript>
+		    	<cfset result &= " six">
+		    ```
+		    result &= " seven"
+		                      """, context, BoxScriptType.CFSCRIPT );
+
+		assertThat( variables.get( result ) ).isEqualTo( "one two three four five six seven" );
 	}
 
 }
