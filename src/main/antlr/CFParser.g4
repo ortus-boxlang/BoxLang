@@ -116,7 +116,8 @@ statement:
 	| threadStatement
 	| throw
 	| try
-	| while;
+	| while
+	| tagIsland;
 
 simpleStatement: (
 		assert
@@ -264,6 +265,9 @@ scope:
 	| URL
 	| FORM;
 //  TODO add additional known scopes
+
+tagIslandBody: TAG_ISLAND_BODY*;
+tagIsland: TAG_ISLAND_START tagIslandBody TAG_ISLAND_END;
 
 try: TRY statementBlock ( catch_)* finally_?;
 

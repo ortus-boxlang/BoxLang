@@ -36,6 +36,7 @@ import ortus.boxlang.ast.BoxExpr;
 import ortus.boxlang.ast.BoxNode;
 import ortus.boxlang.ast.BoxScript;
 import ortus.boxlang.ast.BoxStatement;
+import ortus.boxlang.ast.BoxTemplate;
 import ortus.boxlang.ast.Issue;
 import ortus.boxlang.ast.Point;
 import ortus.boxlang.ast.Position;
@@ -99,10 +100,13 @@ import ortus.boxlang.ast.statement.BoxTry;
 import ortus.boxlang.ast.statement.BoxTryCatch;
 import ortus.boxlang.ast.statement.BoxType;
 import ortus.boxlang.ast.statement.BoxWhile;
+import ortus.boxlang.ast.statement.tag.BoxTagIsland;
 import ortus.boxlang.parser.antlr.CFLexer;
 import ortus.boxlang.parser.antlr.CFParser;
 import ortus.boxlang.parser.antlr.CFParser.ComponentContext;
 import ortus.boxlang.parser.antlr.CFParser.PreannotationContext;
+import ortus.boxlang.parser.antlr.CFParser.TagIslandContext;
+import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
 /**
  * Parser for CF scripts
@@ -421,8 +425,55 @@ public class BoxCFParser extends BoxAbstractParser {
 			return toAst( file, node.rethrow() );
 		} else if ( node.include() != null ) {
 			return toAst( file, node.include() );
+		} else if ( node.tagIsland() != null ) {
+			return toAst( file, node.tagIsland() );
 		} else {
 			throw new IllegalStateException( "not implemented: " + getSourceText( node ) );
+		}
+	}
+
+	/**
+	 * Converts the TagIslandContext parser rule to the corresponding AST node
+	 *
+	 * @param file source file, if any
+	 * @param node ANTLR TagIslandContext rule
+	 *
+	 * @return the corresponding AST BoxTagIsland
+	 *
+	 * @see BoxThrow
+	 */
+	private BoxTagIsland toAst( File file, TagIslandContext tagIsland ) {
+		return new BoxTagIsland(
+		    parseCFMLStatements(
+		        tagIsland.tagIslandBody().getText(),
+		        getPosition( tagIsland.tagIslandBody() )
+		    ),
+		    getPosition( tagIsland.tagIslandBody() ),
+		    getSourceText( tagIsland.tagIslandBody() )
+		);
+
+	}
+
+	public List<BoxStatement> parseCFMLStatements( String code, Position position ) {
+		try {
+			ParsingResult result = new BoxCFMLParser( position.getStart().getLine(), position.getStart().getColumn() ).parse( code );
+			if ( result.getIssues().isEmpty() ) {
+				BoxNode root = result.getRoot();
+				if ( root instanceof BoxTemplate template ) {
+					return template.getStatements();
+				} else if ( root instanceof BoxStatement statement ) {
+					return List.of( statement );
+				} else {
+					// Could be a BoxClass, which we may actually need to support
+					throw new BoxRuntimeException( "Unexpected root node type [" + root.getClass().getName() + "] in tag island." );
+				}
+			} else {
+				// Add these issues to the main parser
+				issues.addAll( result.getIssues() );
+				return null;
+			}
+		} catch ( IOException e ) {
+			throw new BoxRuntimeException( "Error parsing tag island: " + code, e );
 		}
 	}
 

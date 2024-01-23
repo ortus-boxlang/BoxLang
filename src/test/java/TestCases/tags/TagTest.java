@@ -75,6 +75,18 @@ public class TagTest {
 	public void testIfStatement() {
 		instance.executeSource(
 		    """
+		    <cfif false >
+		       	<cfset result = "then block">
+		    <cfelse>
+		    	<cfset result = "else block">
+		    </cfif>
+
+		                    """, context, BoxScriptType.CFMARKUP );
+
+		assertThat( variables.get( result ) ).isEqualTo( "else block" );
+
+		instance.executeSource(
+		    """
 		       <cfif true >
 		       	<cfset result = "then block">
 		       <cfelseif false >
@@ -137,6 +149,47 @@ public class TagTest {
 
 		assertThat( variables.get( result ) ).isEqualTo( "else block" );
 
+	}
+
+	@DisplayName( "script Island" )
+	@Test
+	public void testScriptIsland() {
+		instance.executeSource(
+		    """
+		            pre script
+		         <cfset result = "it didn't work">
+		      <cfscript>
+		      	i=0
+		    i++
+		    if ( i == 1 ) {
+		    	result = 'it worked'
+		    }
+		      </cfscript>
+		         post script
+		                 """, context, BoxScriptType.CFMARKUP );
+
+		assertThat( variables.get( result ) ).isEqualTo( "it worked" );
+
+	}
+
+	@DisplayName( "tag Island" )
+	@Test
+	public void testTagIsland() {
+		instance.executeSource(
+		    """
+		    i=0
+		    i++
+		    ```
+		    <cfset foo = "bar">
+		    Test outpout
+		    ```
+		    if ( i == 1 ) {
+		    	result = 'it worked'
+		    }
+		                   """, context, BoxScriptType.CFSCRIPT );
+
+		assertThat( variables.get( result ) ).isEqualTo( "it worked" );
+		assertThat( variables.get( Key.of( "foo" ) ) ).isEqualTo( "bar" );
 	}
 
 }
