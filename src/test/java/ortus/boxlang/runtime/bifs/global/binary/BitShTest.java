@@ -29,7 +29,7 @@ import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
 
-public class BitShlnTest {
+public class BitShTest {
 
 	static BoxRuntime	instance;
 	static IBoxContext	context;
@@ -80,4 +80,34 @@ public class BitShlnTest {
 		instance.executeSource( "result = bitShln(123456789, 2);", context );
 		assertThat( variables.get( result ) ).isEqualTo( 493827156 );
 	}
+
+	// Test bitwise shift-right operations
+	@DisplayName( "Bitwise shift-right operation with positive integers" )
+	@Test
+	public void testBitwiseShrnWithPositiveIntegers() {
+		instance.executeSource( "result = bitShrn(5, 1);", context );
+		assertThat( variables.get( result ) ).isEqualTo( 2 );
+	}
+
+	@DisplayName( "Bitwise shift-right operation with negative integers" )
+	@Test
+	public void testBitwiseShrnWithNegativeIntegers() {
+		instance.executeSource( "result = bitShrn(-5, 2);", context );
+		assertThat( variables.get( result ) ).isEqualTo( 1073741822 );
+	}
+
+	@DisplayName( "Bitwise shift-right operation with zero" )
+	@Test
+	public void testBitwiseShrnWithZero() {
+		instance.executeSource( "result = bitShrn(0, 5);", context );
+		assertThat( variables.get( result ) ).isEqualTo( 0 );
+	}
+
+	@DisplayName( "Bitwise shift-right operation with large integers" )
+	@Test
+	public void testBitwiseShrnWithLargeIntegers() {
+		instance.executeSource( "result = bitShrn(123456789, 2);", context );
+		assertThat( variables.get( result ) ).isEqualTo( 30864197 );
+	}
+
 }

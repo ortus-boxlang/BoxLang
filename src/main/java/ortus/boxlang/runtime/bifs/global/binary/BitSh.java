@@ -21,13 +21,14 @@ import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
 
-@BoxBIF
-public class BitShln extends BIF {
+@BoxBIF( alias = "bitShln" )
+@BoxBIF( alias = "bitShrn" )
+public class BitSh extends BIF {
 
 	/**
 	 * Constructor
 	 */
-	public BitShln() {
+	public BitSh() {
 		super();
 		declaredArguments = new Argument[] {
 		    new Argument( true, "integer", Key.number ),
@@ -36,24 +37,32 @@ public class BitShln extends BIF {
 	}
 
 	/**
-	 * Performs a bitwise shift-left, no-rotation operation.
+	 * Performs a bitwise shift-left or shift-right, no-rotation operation.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.number Numeric value to shift left.
+	 * @argument.number Numeric value to shift.
 	 *
-	 * @argument.count Number of bits to shift to the left (Integer in the range 0-31, inclusive).
+	 * @argument.count Number of bits to shift (Integer in the range 0-31, inclusive).
 	 *
-	 * @return Returns the result of the bitwise shift-left operation.
+	 * @return Returns the result of the bitwise shift operation.
 	 */
 	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
-		int	number	= arguments.getAsInteger( Key.number );
-		int	count	= arguments.getAsInteger( Key.count );
+		Key	bifMethodKey	= arguments.getAsKey( BIF.__functionName );
+
+		int	number			= arguments.getAsInteger( Key.number );
+		int	count			= arguments.getAsInteger( Key.count );
 
 		// Ensure count is within the valid range (0-31)
 		count = Math.max( 0, Math.min( count, 31 ) );
 
-		return number << count;
+		if ( bifMethodKey.equals( Key.of( "bitshln" ) ) ) {
+			return number << count;
+		} else if ( bifMethodKey.equals( Key.of( "bitshrn" ) ) ) {
+			return number >>> count;
+		}
+
+		return null;
 	}
 }
