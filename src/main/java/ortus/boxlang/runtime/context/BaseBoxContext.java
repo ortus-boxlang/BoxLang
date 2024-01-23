@@ -273,7 +273,7 @@ public class BaseBoxContext implements IBoxContext {
 	public Object invokeFunction( Key name, Map<Key, Object> namedArguments ) {
 		BIFDescriptor bif = findBIF( name );
 		if ( bif != null ) {
-			return bif.invoke( this, namedArguments, false );
+			return bif.invoke( this, namedArguments, false, name );
 		}
 
 		Function function = findFunction( name );

@@ -112,7 +112,7 @@ public class MemberDescriptor {
 			}
 			namedArguments.put( args[ 0 ].name(), object );
 		}
-		return BIFDescriptor.invoke( context, namedArguments, true );
+		return BIFDescriptor.invoke( context, namedArguments, true, name );
 	}
 
 }
