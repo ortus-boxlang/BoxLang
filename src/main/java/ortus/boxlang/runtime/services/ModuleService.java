@@ -50,6 +50,17 @@ public class ModuleService extends BaseService {
 
 	/**
 	 * --------------------------------------------------------------------------
+	 * Public Properties
+	 * --------------------------------------------------------------------------
+	 */
+
+	/**
+	 * The module mapping prefix
+	 */
+	public static final String				MODULE_MAPPING_PREFIX	= "/bxModules/";
+
+	/**
+	 * --------------------------------------------------------------------------
 	 * Private Properties
 	 * --------------------------------------------------------------------------
 	 */
@@ -57,12 +68,12 @@ public class ModuleService extends BaseService {
 	/**
 	 * The location of the core modules in the runtime resources: {@code src/main/resources/modules}
 	 */
-	private static final String				CORE_MODULES		= "modules";
+	private static final String				CORE_MODULES			= "modules";
 
 	/**
 	 * The module descriptor file name
 	 */
-	private static final String				MODULE_DESCRIPTOR	= "ModuleConfig.bx";
+	private static final String				MODULE_DESCRIPTOR		= "ModuleConfig.bx";
 
 	/**
 	 * The core modules file system. This is used to load modules from the runtime resources.
@@ -73,22 +84,22 @@ public class ModuleService extends BaseService {
 	/**
 	 * List locations to search for modules
 	 */
-	private List<Path>						modulePaths			= new ArrayList<>();
+	private List<Path>						modulePaths				= new ArrayList<>();
 
 	/**
 	 * Logger
 	 */
-	private static final Logger				logger				= LoggerFactory.getLogger( ModuleService.class );
+	private static final Logger				logger					= LoggerFactory.getLogger( ModuleService.class );
 
 	/**
 	 * Module registry
 	 */
-	private Map<Key, ModuleRecord>			registry			= new ConcurrentHashMap<>();
+	private Map<Key, ModuleRecord>			registry				= new ConcurrentHashMap<>();
 
 	/**
 	 * Module Service Events
 	 */
-	private static final Map<String, Key>	MODULE_EVENTS		= Stream.of(
+	private static final Map<String, Key>	MODULE_EVENTS			= Stream.of(
 	    "afterModuleRegistrations",
 	    "preModuleRegistration",
 	    "postModuleRegistration",
@@ -149,16 +160,7 @@ public class ModuleService extends BaseService {
 	}
 
 	/**
-	 * Check if the runtime is in jar mode
-	 *
-	 * @return true if in jar mode, false otherwise
-	 */
-	public boolean inJarMode() {
-		return this.coreModulesFileSystem != null;
-	}
-
-	/**
-	 * Get the list of module paths
+	 * Get the list of module paths registered in the module service
 	 *
 	 * @return the modulePaths
 	 */
@@ -265,6 +267,8 @@ public class ModuleService extends BaseService {
 	 * The module must be in the module registry or it will throw an exception.
 	 *
 	 * @param name The name of the module to register
+	 *
+	 * @throws BoxRuntimeException If the module is not in the module registry
 	 */
 	void register( Key name ) {
 		var timerLabel = "moduleservice-register-" + name.getName();
@@ -287,7 +291,16 @@ public class ModuleService extends BaseService {
 		    Struct.of( "moduleRecord", moduleRecord, "moduleName", name )
 		);
 
-		// Load the module descriptor
+		// Load the ModuleConfig.bx file
+
+		// Check if the module is disabled
+		if ( moduleRecord.isDisabled() ) {
+			logger.atInfo().log(
+			    "+ Module Service: Module [{}] is disabled, skipping registration",
+			    moduleRecord.name
+			);
+			return;
+		}
 
 		// Announce it
 		announce(

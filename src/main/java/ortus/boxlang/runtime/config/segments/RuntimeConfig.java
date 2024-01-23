@@ -20,6 +20,8 @@ package ortus.boxlang.runtime.config.segments;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
@@ -37,41 +39,71 @@ import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 public class RuntimeConfig {
 
 	/**
-	 * A struct of mappings for the runtime
+	 * A map of mappings for the runtime
 	 */
-	public IStruct				mappings			= new Struct();
+	public ConcurrentMap<Key, String>	mappings			= new ConcurrentSkipListMap<>(
+	    ( k1, k2 ) -> Integer.compare( k2.getName().length(), k1.getName().length() )
+	);
 
 	/**
 	 * An array of directories where modules are located and loaded from.
 	 * {@code [ /{user-home}/modules ]}
 	 */
-	public List<String>			modulesDirectory	= List.of( System.getProperty( "user.home" ) + "/modules" );
+	public List<String>					modulesDirectory	= List.of( System.getProperty( "user.home" ) + "/modules" );
 
 	/**
 	 * The cache configurations for the runtime
 	 */
-	public IStruct				caches				= new Struct();
+	public IStruct						caches				= new Struct();
 
 	/**
 	 * Logger
 	 */
-	private static final Logger	logger				= LoggerFactory.getLogger( RuntimeConfig.class );
+	private static final Logger			logger				= LoggerFactory.getLogger( RuntimeConfig.class );
 
 	/**
 	 * --------------------------------------------------------------------------
-	 * Methods
+	 * Mapping Methods
 	 * --------------------------------------------------------------------------
 	 */
 
 	/**
 	 * Get all the registered mappings as an array of strings
+	 * and sorted by the length of the mapping name
+	 *
+	 * @return The sorted array of mappings
 	 */
-	public String[] getMappingKeys() {
+	public String[] getSortedMappingKeys() {
 		return this.mappings.keySet()
 		    .stream()
-		    .sorted()
 		    .map( Key::getName )
 		    .toArray( String[]::new );
+	}
+
+	/**
+	 * Verify if a mapping exists
+	 *
+	 * @param mapping The mapping to verify: {@code /myMapping}, please note the leading slash
+	 *
+	 * @return True if the mapping exists, false otherwise
+	 */
+	public boolean hasMapping( String mapping ) {
+		return this.hasMapping( Key.of( mapping ) );
+	}
+
+	/**
+	 * Verify if a mapping exists
+	 *
+	 * @param mapping The mapping to verify: {@code /myMapping}, please note the leading slash
+	 *
+	 * @return True if the mapping exists, false otherwise
+	 */
+	public boolean hasMapping( Key mapping ) {
+		// Check if mapping has a leading slash else add it
+		if ( !mapping.getName().startsWith( "/" ) ) {
+			mapping = Key.of( "/" + mapping.getName() );
+		}
+		return this.mappings.containsKey( mapping );
 	}
 
 	/**
@@ -148,6 +180,12 @@ public class RuntimeConfig {
 	}
 
 	/**
+	 * --------------------------------------------------------------------------
+	 * JSON Processing
+	 * --------------------------------------------------------------------------
+	 */
+
+	/**
 	 * Processes the configuration struct. Each segment is processed individually from the initial configuration struct.
 	 *
 	 * @param config the configuration struct
@@ -160,7 +198,7 @@ public class RuntimeConfig {
 		if ( config.containsKey( "mappings" ) ) {
 			if ( config.get( "mappings" ) instanceof Map<?, ?> castedMap ) {
 				castedMap.forEach( ( key, value ) -> {
-					this.mappings.put( ( String ) key, PlaceholderHelper.resolve( value ) );
+					this.mappings.put( Key.of( key ), PlaceholderHelper.resolve( value ) );
 				} );
 			} else {
 				logger.warn( "The [runtime.mappings] configuration is not a JSON Object, ignoring it." );
@@ -207,7 +245,7 @@ public class RuntimeConfig {
 	 */
 	public IStruct asStruct() {
 		return Struct.of(
-		    Key.mappings, new Struct( this.mappings.getWrapped() ),
+		    Key.mappings, new Struct( this.mappings ),
 		    Key.modulesDirectory, this.modulesDirectory,
 		    Key.caches, this.caches
 		);

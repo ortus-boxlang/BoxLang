@@ -19,7 +19,6 @@ package ortus.boxlang.runtime.services;
 
 import static com.google.common.truth.Truth.assertThat;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.io.IOException;
 import java.nio.file.Paths;
@@ -31,7 +30,6 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import ortus.boxlang.runtime.BoxRuntime;
-import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
 class ModuleServiceTest {
 
@@ -89,15 +87,6 @@ class ModuleServiceTest {
 		var count = service.getModulePaths().size();
 		assertDoesNotThrow( () -> service.addModulePath( "" ) );
 		assertThat( service.getModulePaths().size() ).isEqualTo( count );
-	}
-
-	@DisplayName( "Test it can throw an exception when adding a non-existent path to the module search path" )
-	@Test
-	@Disabled
-	void testItCanThrowExceptionWhenAddingNonExistentPathToModuleSearchPath() {
-		String path = "/tmp/does-not-exist";
-		assertThrows( BoxRuntimeException.class, () -> service.addModulePath( path ) );
-		assertThat( service.getModulePaths() ).doesNotContain( path );
 	}
 
 	@Test

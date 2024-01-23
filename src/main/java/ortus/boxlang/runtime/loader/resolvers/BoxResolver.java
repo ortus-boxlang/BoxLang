@@ -36,14 +36,14 @@ import ortus.boxlang.runtime.types.IStruct;
 public class BoxResolver extends BaseResolver {
 
 	/**
-	 * The class directory for generated bx classes
-	 */
-	private String					classDirectory;
-
-	/**
 	 * Singleton instance
 	 */
-	protected static BoxResolver	instance;
+	protected static BoxResolver		instance;
+
+	/**
+	 * List of valid class extensions
+	 */
+	private static final List<String>	VALID_EXTENSIONS	= List.of( ".bx", ".cfc" );
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -69,19 +69,6 @@ public class BoxResolver extends BaseResolver {
 		}
 
 		return instance;
-	}
-
-	/**
-	 * --------------------------------------------------------------------------
-	 * Getters & Setters
-	 * --------------------------------------------------------------------------
-	 */
-
-	/**
-	 * @return the classDirectory
-	 */
-	public String getClassDirectory() {
-		return classDirectory;
 	}
 
 	/**
@@ -137,6 +124,7 @@ public class BoxResolver extends BaseResolver {
 	/**
 	 * Load a class from the configured directory byte code
 	 *
+	 * @param context The current context of execution
 	 * @param name    The fully qualified path of the class to load
 	 * @param imports The list of imports to use
 	 *
@@ -171,19 +159,21 @@ public class BoxResolver extends BaseResolver {
 				    ""
 				) );
 			}
-
 		}
 
 		// Next look for a mapping that matches the start of the path
 		IStruct		mappings	= context.getConfig().getAsStruct( Key.runtime ).getAsStruct( Key.mappings );
 		List<Key>	keys		= mappings.getKeys();
-		// System.out.println( "Mappings: " + mappings );
+
 		// Longest to shortest
 		keys.sort( ( s1, s2 ) -> Integer.compare( s2.getName().length(), s1.getName().length() ) );
 		for ( Key key : keys ) {
 			String mapping = ( String ) mappings.get( key );
+
 			// System.out.println( "Looking in mapping: " + key.getName() + " -> " + mapping );
+
 			if ( slashName.startsWith( key.getName() ) ) {
+				// System.out.println( "Found mapping: " + key.getName() + " -> " + mapping );
 				// See if path exists in this parent directory
 				File file;
 				// TODO: Make case insensitive
@@ -199,6 +189,8 @@ public class BoxResolver extends BaseResolver {
 					    ""
 					) );
 				}
+			} else {
+				System.out.println( "No mapping found for: " + slashName );
 			}
 		}
 		return Optional.ofNullable( null );

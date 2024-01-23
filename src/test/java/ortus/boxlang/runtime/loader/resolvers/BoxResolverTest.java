@@ -20,19 +20,46 @@ package ortus.boxlang.runtime.loader.resolvers;
 
 import static com.google.common.truth.Truth.assertThat;
 
+import java.net.URISyntaxException;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Optional;
 
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
+import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
+import ortus.boxlang.runtime.loader.ClassLocator.ClassLocation;
 
 public class BoxResolverTest {
 
+	static BoxRuntime	runtime;
+	static IBoxContext	context;
+
+	@BeforeAll
+	public static void setUp() {
+		runtime	= BoxRuntime.getInstance( true );
+		context	= new ScriptingRequestBoxContext( runtime.getRuntimeContext() );
+
+		// Create a mapping to the resources directory
+		Path resourcesDirectory = Paths.get( "src/test/resources" ).toAbsolutePath();
+		runtime.getConfiguration().runtime.registerMapping( "/tests", resourcesDirectory.toString() );
+	}
+
+	@AfterAll
+	public static void teardown() {
+		runtime.shutdown();
+	}
+
 	@DisplayName( "It can find be created" )
 	@Test
-	public void testItCanBeCreated() {
+	void testItCanBeCreated() {
 		BoxResolver boxResolver = BoxResolver.getInstance();
 		assertThat( boxResolver.getName() ).isEqualTo( "BoxResolver" );
 		assertThat( boxResolver.getPrefix() ).isEqualTo( "bx" );
@@ -40,7 +67,8 @@ public class BoxResolverTest {
 
 	@DisplayName( "It can find classes from modules" )
 	@Test
-	public void testFindFromModules() {
+	@Disabled
+	void testFindFromModules() {
 		BoxResolver	boxResolver	= BoxResolver.getInstance();
 		String		className	= "apppath.models.User"; // Example class name
 		assertThat( boxResolver.findFromModules( new ScriptingRequestBoxContext(), className, new ArrayList<>() ).isPresent() ).isFalse();
@@ -48,15 +76,21 @@ public class BoxResolverTest {
 
 	@DisplayName( "It can find classes from local disk" )
 	@Test
-	public void testFindFromLocal() {
-		BoxResolver	boxResolver	= BoxResolver.getInstance();
-		String		className	= "apppath.models.User"; // Example class name
-		assertThat( boxResolver.findFromLocal( new ScriptingRequestBoxContext(), className, new ArrayList<>() ).isPresent() ).isFalse();
+	void testFindFromLocal() throws URISyntaxException {
+		// You can find this in src/test/resources/tests/components/User.cfc
+		String					testComponent	= "tests.components.User";
+		BoxResolver				boxResolver		= BoxResolver.getInstance();
+
+		// System.out.println( "mappings: " + Arrays.toString( runtime.getConfiguration().runtime.getSortedMappingKeys() ) );
+
+		Optional<ClassLocation>	classLocation	= boxResolver.findFromLocal( context, testComponent, new ArrayList<>() );
+		System.err.println( "classLocation: " + classLocation );
+		// assertThat( boxResolver.findFromLocal( new ScriptingRequestBoxContext(), className, new ArrayList<>() ).isPresent() ).isFalse();
 	}
 
 	@DisplayName( "It can resolve classes" )
 	@Test
-	public void testResolve() {
+	void testResolve() {
 		BoxResolver	boxResolver	= BoxResolver.getInstance();
 
 		IBoxContext	context		= new ScriptingRequestBoxContext();

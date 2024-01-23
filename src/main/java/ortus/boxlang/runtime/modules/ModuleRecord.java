@@ -22,6 +22,7 @@ import java.util.List;
 import java.util.UUID;
 
 import ortus.boxlang.runtime.scopes.Key;
+import ortus.boxlang.runtime.services.ModuleService;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
 
@@ -71,6 +72,11 @@ public class ModuleRecord {
 	public boolean			disabled					= false;
 
 	/**
+	 * Flag to indicate if the module has been activated or not
+	 */
+	public boolean			activated					= false;
+
+	/**
 	 * The settings of the module
 	 */
 	public Struct			settings					= new Struct();
@@ -91,7 +97,10 @@ public class ModuleRecord {
 	public String			physicalPath				= "";
 
 	/**
-	 * The invocation path of the module
+	 * The invocation path of the module which is a composition of the
+	 * {@link ModuleService#MODULE_MAPPING_PREFIX} and the module name.
+	 * Example: {@code /bxModules/MyModule} is the mapping for the module
+	 * the invocation path would be {@code bxModules.MyModule}
 	 */
 	public String			invocationPath				= "";
 
@@ -111,6 +120,11 @@ public class ModuleRecord {
 	public Instant			startupTime;
 
 	/**
+	 * The class loader for the module
+	 */
+	public ClassLoader		classLoader					= null;
+
+	/**
 	 * --------------------------------------------------------------------------
 	 * Constructors
 	 * --------------------------------------------------------------------------
@@ -125,6 +139,10 @@ public class ModuleRecord {
 	public ModuleRecord( Key name, String physicalPath ) {
 		this.name			= name;
 		this.physicalPath	= physicalPath;
+		// Register the automatic mapping by convention: /bxModules/{name}
+		this.mapping		= ModuleService.MODULE_MAPPING_PREFIX + name.getName();
+		// Register the invocation path by convention: bxModules.{name}
+		this.invocationPath	= ModuleService.MODULE_MAPPING_PREFIX.substring( 1 ) + name.getName();
 	}
 
 	/**
@@ -134,6 +152,15 @@ public class ModuleRecord {
 	 */
 	public boolean isDisabled() {
 		return disabled;
+	}
+
+	/**
+	 * If the module is activated
+	 *
+	 * @return {@code true} if the module is activated, {@code false} otherwise
+	 */
+	public boolean isActivated() {
+		return activated;
 	}
 
 	/**
@@ -150,22 +177,22 @@ public class ModuleRecord {
 	 */
 	public IStruct asStruct() {
 		return Struct.of(
-		    "ID", id,
-		    "name", name,
-		    "version", version,
-		    "author", author,
-		    "description", description,
-		    "webURL", webURL,
-		    "mapping", mapping,
-		    "disabled", disabled,
-		    "settings", settings,
-		    "interceptors", interceptors,
-		    "customInterceptionPoints", customInterceptionPoints,
-		    "physicalPath", physicalPath,
-		    "invocationPath", invocationPath,
-		    "registrationTime", registrationTime,
 		    "activationTime", activationTime,
-		    "startupTime", startupTime
+		    "author", author,
+		    "customInterceptionPoints", customInterceptionPoints,
+		    "description", description,
+		    "disabled", disabled,
+		    "Id", id,
+		    "interceptors", interceptors,
+		    "invocationPath", invocationPath,
+		    "mapping", mapping,
+		    "name", name,
+		    "physicalPath", physicalPath,
+		    "registrationTime", registrationTime,
+		    "settings", settings,
+		    "startupTime", startupTime,
+		    "version", version,
+		    "webURL", webURL
 		);
 	}
 

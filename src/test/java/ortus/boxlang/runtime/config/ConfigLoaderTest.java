@@ -72,19 +72,22 @@ class ConfigLoaderTest {
 		assertThat( config.runtime.mappings ).isNotEmpty();
 		assertThat( config.runtime.mappings ).hasSize( 1 );
 
-		// Register a new mapping and check it
 		var path = Path.of( getClass().getResource( "ConfigLoaderTest.class" ).getFile() )
 		    .toAbsolutePath()
 		    .getParent()
 		    .toString();
 
 		config.runtime.registerMapping( "test", path );
-		assertThat( config.runtime.mappings ).hasSize( 2 );
-		assertThat( config.runtime.mappings.containsKey( "/test" ) ).isTrue();
+		assertThat( config.runtime.hasMapping( "/test" ) ).isTrue();
+
+		config.runtime.registerMapping( "test/boxlang", path );
+		assertThat( config.runtime.hasMapping( "/test/boxlang" ) ).isTrue();
 
 		config.runtime.registerMapping( "/myMapping", path );
-		assertThat( config.runtime.mappings ).hasSize( 3 );
-		assertThat( config.runtime.mappings.containsKey( "/myMapping" ) ).isTrue();
+		assertThat( config.runtime.hasMapping( "/myMapping" ) ).isTrue();
+
+		// Must be in the right order
+		assertThat( config.runtime.getSortedMappingKeys() ).isEqualTo( new String[] { "/test/boxlang", "/myMapping", "/test", "/" } );
 	}
 
 	@DisplayName( "It can unregister a mapping" )
@@ -102,11 +105,11 @@ class ConfigLoaderTest {
 
 		config.runtime.registerMapping( "test", path );
 		assertThat( config.runtime.mappings ).hasSize( 2 );
-		assertThat( config.runtime.mappings.containsKey( "/test" ) ).isTrue();
+		assertThat( config.runtime.hasMapping( "/test" ) ).isTrue();
 
 		config.runtime.unregisterMapping( "test" );
 		assertThat( config.runtime.mappings ).hasSize( 1 );
-		assertThat( config.runtime.mappings.containsKey( "/test" ) ).isFalse();
+		assertThat( config.runtime.hasMapping( "/test" ) ).isFalse();
 
 		config.runtime.registerMapping( "test", path );
 		assertThat( config.runtime.unregisterMapping( "/test" ) ).isTrue();
