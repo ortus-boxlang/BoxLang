@@ -768,6 +768,9 @@ public class Struct implements IStruct, IListenable {
 		return value;
 	}
 
+	/**
+	 * Get the wrapped map used in the implementation
+	 */
 	public Map<Key, Object> getWrapped() {
 		return wrapped;
 	}
@@ -817,6 +820,10 @@ public class Struct implements IStruct, IListenable {
 		}
 	}
 
+	/**
+	 * Convenience method for getting cast as {@Link Key}
+	 * Does NOT perform BoxLang casting, only Java cast so the object needs to actually be castable
+	 */
 	public Key getAsKey( Key key ) {
 		return ( Key ) DynamicObject.unWrap( get( key ) );
 	}

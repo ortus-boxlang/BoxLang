@@ -160,8 +160,15 @@ public interface IStruct extends Map<Key, Object>, IType, IReferenceable {
 	 */
 	public List<String> getKeysAsStrings();
 
+	/**
+	 * Get the wrapped map used in the implementation
+	 */
 	public Map<Key, Object> getWrapped();
 
+	/**
+	 * Convenience method for getting cast as {@Link Key}
+	 * Does NOT perform BoxLang casting, only Java cast so the object needs to actually be castable
+	 */
 	public Key getAsKey( Key key );
 
 	/**

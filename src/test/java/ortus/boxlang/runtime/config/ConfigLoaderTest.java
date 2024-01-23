@@ -28,7 +28,7 @@ import org.junit.jupiter.api.Test;
 
 import ortus.boxlang.runtime.config.segments.CacheConfig;
 
-public class ConfigLoaderTest {
+class ConfigLoaderTest {
 
 	@DisplayName( "It can load the core config file" )
 	@Test
@@ -63,6 +63,55 @@ public class ConfigLoaderTest {
 		assertThat( importCache.type.getNameNoCase() ).isEqualTo( "CAFFEINE" );
 		assertThat( importCache.properties ).isNotNull();
 		assertThat( importCache.properties.get( "maximumSize" ) ).isEqualTo( 1000 );
+	}
+
+	@DisplayName( "It can register a new mapping" )
+	@Test
+	void testItCanRegisterAMapping() {
+		Configuration config = ConfigLoader.getInstance().loadCore();
+		assertThat( config.runtime.mappings ).isNotEmpty();
+		assertThat( config.runtime.mappings ).hasSize( 1 );
+
+		// Register a new mapping and check it
+		var path = Path.of( getClass().getResource( "ConfigLoaderTest.class" ).getFile() )
+		    .toAbsolutePath()
+		    .getParent()
+		    .toString();
+
+		config.runtime.registerMapping( "test", path );
+		assertThat( config.runtime.mappings ).hasSize( 2 );
+		assertThat( config.runtime.mappings.containsKey( "/test" ) ).isTrue();
+
+		config.runtime.registerMapping( "/myMapping", path );
+		assertThat( config.runtime.mappings ).hasSize( 3 );
+		assertThat( config.runtime.mappings.containsKey( "/myMapping" ) ).isTrue();
+	}
+
+	@DisplayName( "It can unregister a mapping" )
+	@Test
+	void testItCanUnregisterAMapping() {
+		Configuration config = ConfigLoader.getInstance().loadCore();
+		assertThat( config.runtime.mappings ).isNotEmpty();
+		assertThat( config.runtime.mappings ).hasSize( 1 );
+
+		// Register a new mapping and check it
+		var path = Path.of( getClass().getResource( "ConfigLoaderTest.class" ).getFile() )
+		    .toAbsolutePath()
+		    .getParent()
+		    .toString();
+
+		config.runtime.registerMapping( "test", path );
+		assertThat( config.runtime.mappings ).hasSize( 2 );
+		assertThat( config.runtime.mappings.containsKey( "/test" ) ).isTrue();
+
+		config.runtime.unregisterMapping( "test" );
+		assertThat( config.runtime.mappings ).hasSize( 1 );
+		assertThat( config.runtime.mappings.containsKey( "/test" ) ).isFalse();
+
+		config.runtime.registerMapping( "test", path );
+		assertThat( config.runtime.unregisterMapping( "/test" ) ).isTrue();
+
+		assertThat( config.runtime.unregisterMapping( "bogus" ) ).isFalse();
 	}
 
 	@DisplayName( "It can load a custom config file using a string" )

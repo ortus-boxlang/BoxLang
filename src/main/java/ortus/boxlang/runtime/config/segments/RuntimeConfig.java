@@ -17,6 +17,7 @@
  */
 package ortus.boxlang.runtime.config.segments;
 
+import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -28,6 +29,7 @@ import ortus.boxlang.runtime.config.util.PlaceholderHelper;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
+import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
 /**
  * The runtime configuration for the BoxLang runtime
@@ -60,6 +62,90 @@ public class RuntimeConfig {
 	 * Methods
 	 * --------------------------------------------------------------------------
 	 */
+
+	/**
+	 * Get all the registered mappings as an array of strings
+	 */
+	public String[] getMappingKeys() {
+		return this.mappings.keySet()
+		    .stream()
+		    .sorted()
+		    .map( Key::getName )
+		    .toArray( String[]::new );
+	}
+
+	/**
+	 * Register a mapping in the runtime configuration
+	 *
+	 * @param mapping The mapping to register: {@code /myMapping}, please note the leading slash
+	 * @param path    The absolute path to the directory to map to the mapping
+	 *
+	 * @throws BoxRuntimeException If the path does not exist
+	 *
+	 * @return The runtime configuration
+	 */
+	public RuntimeConfig registerMapping( String mapping, String path ) {
+		return this.registerMapping( Key.of( mapping ), path );
+	}
+
+	/**
+	 * Register a mapping in the runtime configuration
+	 *
+	 * @param mapping The mapping to register: {@code /myMapping}, please note the leading slash
+	 * @param path    The absolute path to the directory to map to the mapping
+	 *
+	 * @throws BoxRuntimeException If the path does not exist
+	 *
+	 * @return The runtime configuration
+	 */
+	public RuntimeConfig registerMapping( Key mapping, String path ) {
+		// Check if mapping has a leading slash else add it
+		if ( !mapping.getName().startsWith( "/" ) ) {
+			mapping = Key.of( "/" + mapping.getName() );
+		}
+
+		// Convert the path to a Java Path
+		Path pathObj = Path.of( path ).toAbsolutePath();
+
+		// Verify it exists else throw an exception
+		if ( !pathObj.toFile().exists() ) {
+			throw new BoxRuntimeException(
+			    String.format( "The path [%s] does not exist.", pathObj )
+			);
+		}
+
+		// Now we can add it
+		this.mappings.put( mapping, pathObj.toString() );
+
+		return this;
+	}
+
+	/**
+	 * Unregister a mapping in the runtime configuration
+	 *
+	 * @param mapping The String mapping to unregister: {@code /myMapping}, please note the leading slash
+	 *
+	 * @return True if the mapping was removed, false otherwise
+	 */
+	public boolean unregisterMapping( String mapping ) {
+		return this.unregisterMapping( Key.of( mapping ) );
+	}
+
+	/**
+	 * Unregister a mapping in the runtime configuration using a {@link Key}
+	 *
+	 * @param mapping The Key mapping to unregister: {@code /myMapping}, please note the leading slash
+	 *
+	 * @return True if the mapping was removed, false otherwise
+	 */
+	public boolean unregisterMapping( Key mapping ) {
+		// Check if mapping has a leading slash else add it
+		if ( !mapping.getName().startsWith( "/" ) ) {
+			mapping = Key.of( "/" + mapping.getName() );
+		}
+
+		return this.mappings.remove( mapping ) != null;
+	}
 
 	/**
 	 * Processes the configuration struct. Each segment is processed individually from the initial configuration struct.
