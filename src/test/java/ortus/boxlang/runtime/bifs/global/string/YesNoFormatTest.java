@@ -56,7 +56,7 @@ public class YesNoFormatTest {
 
 	@DisplayName( "It works" )
 	@Test
-	public void testItWorks() {
+	void testItWorks() {
 		assertThat( instance.executeStatement( "yesNoFormat( 'true' )", context ) ).isEqualTo( "Yes" );
 		assertThat( instance.executeStatement( "yesNoFormat( true )", context ) ).isEqualTo( "Yes" );
 		assertThat( instance.executeStatement( "yesNoFormat( 1 )", context ) ).isEqualTo( "Yes" );
@@ -78,6 +78,8 @@ public class YesNoFormatTest {
 		assertThat( instance.executeStatement( "false.yesNoFormat()", context ) ).isEqualTo( "No" );
 		assertThat( instance.executeStatement( "(0).yesNoFormat()", context ) ).isEqualTo( "No" );
 		assertThat( instance.executeStatement( "'no'.yesNoFormat()", context ) ).isEqualTo( "No" );
+		assertThat( instance.executeStatement( "'no'.yesNoFormat( '' )", context ) ).isEqualTo( "No" );
+		assertThat( instance.executeStatement( "'no'.yesNoFormat( null )", context ) ).isEqualTo( "No" );
 	}
 
 }

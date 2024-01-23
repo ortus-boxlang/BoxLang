@@ -57,7 +57,7 @@ public class BoxFunctionInvocationTransformer extends AbstractTransformer {
 		}
 		String	template	= getTemplate( function );
 		Node	javaExpr	= parseExpression( template, values );
-		logger.info( side + node.getSourceText() + " -> " + javaExpr );
+		// logger.info( side + node.getSourceText() + " -> " + javaExpr );
 		addIndex( javaExpr, node );
 		return javaExpr;
 	}

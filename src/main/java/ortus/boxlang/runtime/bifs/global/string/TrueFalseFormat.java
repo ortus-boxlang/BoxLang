@@ -18,6 +18,7 @@ import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
 import ortus.boxlang.runtime.bifs.BoxMember;
 import ortus.boxlang.runtime.context.IBoxContext;
+import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
@@ -25,15 +26,15 @@ import ortus.boxlang.runtime.types.BoxLangType;
 
 @BoxBIF
 @BoxMember( type = BoxLangType.STRING )
-public class YesNoFormat extends BIF {
+public class TrueFalseFormat extends BIF {
 
 	/**
 	 * Constructor
 	 */
-	public YesNoFormat() {
+	public TrueFalseFormat() {
 		super();
 		declaredArguments = new Argument[] {
-		    new Argument( true, "boolean", Key.value )
+		    new Argument( true, "any", Key.value )
 		};
 	}
 
@@ -48,7 +49,13 @@ public class YesNoFormat extends BIF {
 	 *
 	 */
 	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
-		return arguments.getAsBoolean( Key.value ) ? "Yes" : "No";
+
+		// Edge case, test if incoming is a string and if it is empty, return false
+		if ( arguments.get( Key.value ) instanceof String castedString && ( castedString.length() == 0 ) ) {
+			return "false";
+		}
+
+		return BooleanCaster.cast( arguments.get( Key.value ) ) ? "true" : "false";
 	}
 
 }

@@ -85,10 +85,10 @@ public class MemberDescriptor {
 			args[ 0 ] = object;
 			System.arraycopy( positionalArguments, 0, args, 1, positionalArguments.length );
 
-			for ( int i = 0; i < args.length; i++ ) {
-				System.out.println( "args i: " + i );
-				System.out.println( args[ i ] );
-			}
+			// for ( int i = 0; i < args.length; i++ ) {
+			// System.out.println( "args i: " + i );
+			// System.out.println( args[ i ] );
+			// }
 
 			return BIFDescriptor.invoke( context, args, true, name );
 		}
