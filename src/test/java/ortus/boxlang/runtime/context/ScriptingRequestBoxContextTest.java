@@ -35,8 +35,8 @@ import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.exceptions.KeyNotFoundException;
 
-@DisplayName( "ScriptingBoxContext Tests" )
-public class ScriptingBoxContextTest {
+@DisplayName( "ScriptingRequestBoxContext Tests" )
+public class ScriptingRequestBoxContextTest {
 
 	@Test
 	@DisplayName( "Test default constructor" )
