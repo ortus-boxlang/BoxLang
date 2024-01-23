@@ -29,12 +29,14 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import ortus.boxlang.runtime.BoxRuntime;
+import ortus.boxlang.runtime.context.BaseBoxContext;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
 import ortus.boxlang.runtime.scopes.ApplicationScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.SessionScope;
 import ortus.boxlang.runtime.scopes.VariablesScope;
+import ortus.boxlang.runtime.types.IStruct;
 
 public class ApplicationTest {
 
@@ -93,6 +95,22 @@ public class ApplicationTest {
 		long	differenceInSeconds	= ChronoUnit.SECONDS.between( actual, now );
 
 		assertThat( differenceInSeconds ).isAtMost( 1L );
+	}
+
+	@DisplayName( "Ad-hoc config override" )
+	@Test
+	public void testAdHocConfigOverride() {
+
+		context.injectParentContext( new BaseBoxContext() {
+
+			public IStruct getConfig() {
+				IStruct config = super.getConfig();
+				config.put( "adHocConfig", "adHocConfigValue" );
+				return config;
+			}
+		} );
+
+		assertThat( context.getConfigItem( Key.of( "adHocConfig" ) ) ).isEqualTo( "adHocConfigValue" );
 	}
 
 }
