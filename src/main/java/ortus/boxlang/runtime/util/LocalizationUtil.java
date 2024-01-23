@@ -25,6 +25,7 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Locale;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.scopes.Key;
@@ -206,6 +207,21 @@ public final class LocalizationUtil {
 	public static Locale parseLocaleOrDefault( String requestedLocale, Locale defaultLocale ) {
 		Locale locale = parseLocale( requestedLocale );
 		return locale != null ? locale : defaultLocale;
+	}
+
+	/**
+	 * Determines if a locale is valid
+	 *
+	 * @param locale
+	 *
+	 * @return
+	 */
+	public static boolean isValidLocale( Locale locale ) {
+		return Stream.of( Locale.getAvailableLocales() )
+		    .parallel()
+		    .filter( available -> available.equals( locale ) )
+		    .findFirst()
+		    .orElse( null ) != null;
 	}
 
 	/**

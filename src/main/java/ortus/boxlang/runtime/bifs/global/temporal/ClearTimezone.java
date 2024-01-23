@@ -6,7 +6,6 @@ import ortus.boxlang.runtime.bifs.BoxBIF;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.RequestBoxContext;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
-import ortus.boxlang.runtime.scopes.Key;
 
 @BoxBIF
 
@@ -28,7 +27,6 @@ public class ClearTimezone extends BIF {
 	 */
 	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
 		context.getParentOfType( RequestBoxContext.class ).setTimezone( null );
-		context.getConfig().put( Key.timezone, null );
 		return null;
 	}
 
