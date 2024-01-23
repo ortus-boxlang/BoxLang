@@ -28,12 +28,12 @@ public class SetTimezone extends BIF {
 	}
 
 	/**
-	 * Describe what the invocation of your bif function does
+	 * Sets the timezone of the current request context
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.foo Describe any expected arguments
+	 * @argument.timezone The string representation or three character alias of the timezone
 	 */
 	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
 		String	timezone	= arguments.getAsString( Key.timezone );
