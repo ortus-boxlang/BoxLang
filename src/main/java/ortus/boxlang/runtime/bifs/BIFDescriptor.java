@@ -133,6 +133,7 @@ public class BIFDescriptor {
 	public Object invoke( IBoxContext context, boolean isMember ) {
 		ArgumentsScope scope = new ArgumentsScope();
 		scope.put( BIF.__isMemberExecution, isMember );
+		scope.put( BIF.__functionName, name );
 		return this.getBIF().invoke( context, scope );
 	}
 
