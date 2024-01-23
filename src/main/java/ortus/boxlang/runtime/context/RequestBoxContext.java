@@ -48,7 +48,6 @@ public abstract class RequestBoxContext extends BaseBoxContext {
 
 	public void setLocale( Locale locale ) {
 		this.locale = locale;
-		getConfig().put( Key.locale, locale );
 	}
 
 	public ZoneId getTimezone() {
@@ -57,7 +56,6 @@ public abstract class RequestBoxContext extends BaseBoxContext {
 
 	public void setTimezone( ZoneId timezone ) {
 		this.timezone = timezone;
-		getConfig().put( Key.timezone, timezone );
 	}
 
 	public IStruct getConfig() {
