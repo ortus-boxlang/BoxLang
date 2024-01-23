@@ -23,8 +23,10 @@ import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.BoxLangType;
 
-@BoxBIF
+@BoxBIF( )
+@BoxBIF( alias = "FindNoCase" )
 @BoxMember( type = BoxLangType.STRING, name = "Find", objectArgument = "string" )
+@BoxMember( type = BoxLangType.STRING, name = "FindNoCase", objectArgument = "string" )
 public class Find extends BIF {
 
 	/**
@@ -54,9 +56,11 @@ public class Find extends BIF {
 	 * @return Returns the position of the first occurrence of the substring. If the substring is not found, returns zero.
 	 */
 	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
-		String	substring	= arguments.getAsString( Key.substring );
-		String	input		= arguments.getAsString( Key.string );
-		int		start		= arguments.getAsInteger( Key.start );
+		Key		bifMethodKey	= arguments.getAsKey( BIF.__functionName );
+
+		String	substring		= arguments.getAsString( Key.substring );
+		String	input			= arguments.getAsString( Key.string );
+		int		start			= arguments.getAsInteger( Key.start );
 
 		// Check if the start position is within valid bounds
 		if ( start < 1 ) {
@@ -64,7 +68,8 @@ public class Find extends BIF {
 		}
 
 		// Find the first occurrence of the substring from the specified start position
-		int position = input.indexOf( substring, start - 1 ) + 1;
+		int position = bifMethodKey.equals( Key.of( "FindNoCase" ) ) ? input.toLowerCase().indexOf( substring.toLowerCase(), start - 1 ) + 1
+		    : input.indexOf( substring, start - 1 ) + 1;
 
 		return position > 0 ? position : 0; // Return position or 0 if not found
 	}

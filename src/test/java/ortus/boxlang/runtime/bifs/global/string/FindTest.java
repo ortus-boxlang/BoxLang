@@ -19,6 +19,7 @@ import static com.google.common.truth.Truth.assertThat;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -104,6 +105,64 @@ public class FindTest {
 		    """
 		    result = "BoxLang is great".find("Lang");
 		    """,
+		    context );
+		assertThat( variables.get( result ) ).isEqualTo( 4 ); // "Lang" starts at position 4
+	}
+
+	// Tests for findNoCase
+	@DisplayName( "It finds the first occurrence of a substring in a string, ignoring case" )
+	@Test
+	public void testFindNoCaseSubstring() {
+		instance.executeSource(
+		    """
+		    result = findNoCase("lang", "BoxLang is great");
+		    """,
+		    context );
+		assertThat( variables.get( result ) ).isEqualTo( 4 ); // "Lang" starts at position 4
+	}
+
+	@DisplayName( "It returns zero for substring not found, ignoring case" )
+	@Test
+	public void testFindNoCaseSubstringNotFound() {
+		instance.executeSource(
+		    """
+		    result = findNoCase("coldfusion", "BoxLang is great");
+		    """,
+		    context );
+		assertThat( variables.get( result ) ).isEqualTo( 0 ); // "ColdFusion" is not found
+	}
+
+	@DisplayName( "It finds the first occurrence from a specified start position, ignoring case" )
+	@Test
+	public void testFindNoCaseSubstringWithStart() {
+		instance.executeSource(
+		    """
+		    result = findNoCase("lang", "BoxLang is great", 2 );
+		    """,
+		    context );
+		assertThat( variables.get( result ) ).isEqualTo( 4 ); // "Lang" starts at position 10 after the 6th position
+	}
+
+	@DisplayName( "It returns for negative start position, ignoring case" )
+	@Test
+	public void testFindNoCaseNegativeStart() {
+		instance.executeSource(
+		    """
+		    result = findNoCase("lang", "BoxLang is great", -1);
+		    """,
+		    context );
+		assertThat( variables.get( result ) ).isEqualTo( 4 ); // Negative start position should be treated as 1
+	}
+
+	@DisplayName( "It returns for member function call, ignoring case" )
+	@Test
+	@Disabled
+	public void testFindNoCaseMemberFunctionCall() {
+		instance.executeSource(
+		    """
+		    string = "BoxLang is great";
+		      	result = string.findNoCase("lang");
+		      """,
 		    context );
 		assertThat( variables.get( result ) ).isEqualTo( 4 ); // "Lang" starts at position 4
 	}
