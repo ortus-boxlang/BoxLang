@@ -137,10 +137,6 @@ PLUS: '+';
 PLUSPLUS: '++';
 TEQ: '===';
 
-LCFTAG: '<' CFTAG '>';
-RCFTAG: '</' CFTAG '>';
-fragment CFTAG: 'cfscript';
-
 ICHAR_1:
 	'#' {_modeStack.contains(hashMode)}? -> type(ICHAR), popMode, popMode;
 ICHAR: '#';
@@ -167,6 +163,14 @@ FLOAT_LITERAL:
 
 INTEGER_LITERAL: DIGIT+;
 IDENTIFIER: [a-z_$]+ ( [_]+ | [a-z]+ | DIGIT)*;
+
+TAG_ISLAND_START: '```' -> pushMode(tagIsland);
+
+mode tagIsland;
+
+TAG_ISLAND_END: '```' -> popMode;
+
+TAG_ISLAND_BODY: .+?;
 
 mode squotesMode;
 CLOSE_SQUOTE: '\'' -> type(CLOSE_QUOTE), popMode;

@@ -46,6 +46,7 @@ import ortus.boxlang.ast.BoxBufferOutput;
 import ortus.boxlang.ast.BoxClass;
 import ortus.boxlang.ast.BoxNode;
 import ortus.boxlang.ast.BoxScript;
+import ortus.boxlang.ast.BoxScriptIsland;
 import ortus.boxlang.ast.expression.BoxArgument;
 import ortus.boxlang.ast.expression.BoxArrayAccess;
 import ortus.boxlang.ast.expression.BoxArrayLiteral;
@@ -93,6 +94,7 @@ import ortus.boxlang.ast.statement.BoxThrow;
 import ortus.boxlang.ast.statement.BoxTry;
 import ortus.boxlang.ast.statement.BoxWhile;
 import ortus.boxlang.ast.statement.tag.BoxOutput;
+import ortus.boxlang.ast.statement.tag.BoxTagIsland;
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.runnables.BoxTemplate;
 import ortus.boxlang.runtime.runnables.compiler.JavaSourceString;
@@ -152,6 +154,8 @@ import ortus.boxlang.transpiler.transformer.statement.BoxThrowTransformer;
 import ortus.boxlang.transpiler.transformer.statement.BoxTryTransformer;
 import ortus.boxlang.transpiler.transformer.statement.BoxWhileTransformer;
 import ortus.boxlang.transpiler.transformer.statement.tag.BoxOutputTransformer;
+import ortus.boxlang.transpiler.transformer.statement.tag.BoxScriptIslandTransformer;
+import ortus.boxlang.transpiler.transformer.statement.tag.BoxTagIslandTransformer;
 
 /**
  * BoxLang AST to Java AST transpiler
@@ -231,6 +235,8 @@ public class JavaTranspiler extends Transpiler {
 		registry.put( ortus.boxlang.ast.BoxTemplate.class, new BoxTemplateTransformer( this ) );
 		registry.put( BoxBufferOutput.class, new BoxBufferOutputTransformer( this ) );
 		registry.put( BoxOutput.class, new BoxOutputTransformer( this ) );
+		registry.put( BoxScriptIsland.class, new BoxScriptIslandTransformer( this ) );
+		registry.put( BoxTagIsland.class, new BoxTagIslandTransformer( this ) );
 	}
 
 	/**

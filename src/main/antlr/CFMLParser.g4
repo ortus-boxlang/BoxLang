@@ -33,7 +33,7 @@ quotedString:
 quotedStringPart: STRING_LITERAL | HASHHASH;
 
 tagName: TAG_NAME;
-statements: (statement | textContent)*;
+statements: (statement | script | textContent)*;
 
 statement:
 	function
@@ -41,7 +41,6 @@ statement:
 	| genericOpenTag
 	| genericCloseTag
 	| set
-	| script
 	| argument
 	| return
 	| if
@@ -70,7 +69,8 @@ function:
 set:
 	TAG_OPEN PREFIX SET expression (TAG_SLASH_CLOSE | TAG_CLOSE);
 
-script: SCRIPT_OPEN SCRIPT_BODY;
+scriptBody: SCRIPT_BODY*;
+script: SCRIPT_OPEN scriptBody SCRIPT_END_BODY;
 
 code: CONTENT_TEXT;
 

@@ -124,7 +124,11 @@ TAG_CLOSE2: '>' -> popMode, popMode, type(TAG_CLOSE);
 // *********************************************************************************************************************
 mode XFSCRIPT;
 
-SCRIPT_BODY: .*? '</cfscript>' -> popMode;
+fragment TAG_WHITESPACE2: [ \t\r\n]*;
+SCRIPT_END_BODY:
+	'</' TAG_WHITESPACE2 'cfscript' TAG_WHITESPACE2 '>' -> popMode;
+
+SCRIPT_BODY: .+?;
 
 // *********************************************************************************************************************
 mode ATTVALUE;

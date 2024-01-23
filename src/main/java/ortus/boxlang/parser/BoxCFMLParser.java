@@ -31,6 +31,7 @@ import ortus.boxlang.ast.BoxBufferOutput;
 import ortus.boxlang.ast.BoxExpr;
 import ortus.boxlang.ast.BoxNode;
 import ortus.boxlang.ast.BoxScript;
+import ortus.boxlang.ast.BoxScriptIsland;
 import ortus.boxlang.ast.BoxStatement;
 import ortus.boxlang.ast.BoxTemplate;
 import ortus.boxlang.ast.Point;
@@ -43,6 +44,7 @@ import ortus.boxlang.ast.statement.tag.BoxOutput;
 import ortus.boxlang.parser.antlr.CFMLLexer;
 import ortus.boxlang.parser.antlr.CFMLParser;
 import ortus.boxlang.parser.antlr.CFMLParser.OutputContext;
+import ortus.boxlang.parser.antlr.CFMLParser.ScriptContext;
 import ortus.boxlang.parser.antlr.CFMLParser.SetContext;
 import ortus.boxlang.parser.antlr.CFMLParser.StatementContext;
 import ortus.boxlang.parser.antlr.CFMLParser.StatementsContext;
@@ -92,6 +94,16 @@ public class BoxCFMLParser extends BoxAbstractParser {
 				statements.add( toAst( file, statement ) );
 			} else if ( child instanceof TextContentContext textContent ) {
 				statements.add( toAst( file, textContent ) );
+			} else if ( child instanceof ScriptContext script ) {
+				if ( script.scriptBody() != null ) {
+					statements.add(
+					    new BoxScriptIsland(
+					        parseCFStatements( script.scriptBody().getText(), getPosition( script.scriptBody() ) ),
+					        getPosition( script.scriptBody() ),
+					        getSourceText( script.scriptBody() )
+					    )
+					);
+				}
 			}
 		}
 		return statements;
