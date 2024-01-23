@@ -118,6 +118,10 @@ public class BoxCFParser extends BoxAbstractParser {
 		super();
 	}
 
+	public BoxCFParser( int startLine, int startColumn ) {
+		super( startLine, startColumn );
+	}
+
 	/**
 	 * Parse a cf script file
 	 *
@@ -238,11 +242,9 @@ public class BoxCFParser extends BoxAbstractParser {
 
 		lexer.reset();
 		Token			token		= lexer.nextToken();
-		BoxDOCParser	docParser	= new BoxDOCParser();
+		BoxDOCParser	docParser	= new BoxDOCParser( token.getLine(), token.getCharPositionInLine() );
 		while ( token.getType() != Token.EOF ) {
 			if ( token.getType() == CFLexer.JAVADOC_COMMENT ) {
-				docParser.setStartLine( token.getLine() );
-				docParser.setStartColumn( token.getCharPositionInLine() );
 				ParsingResult result = docParser.parse( null, token.getText() );
 				if ( docParser.issues.isEmpty() ) {
 					javadocs.add( ( BoxDocumentation ) result.getRoot() );

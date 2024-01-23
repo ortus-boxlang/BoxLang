@@ -29,15 +29,21 @@ import org.apache.commons.io.input.BOMInputStream;
 
 import ortus.boxlang.ast.BoxBufferOutput;
 import ortus.boxlang.ast.BoxExpr;
+import ortus.boxlang.ast.BoxNode;
 import ortus.boxlang.ast.BoxScript;
 import ortus.boxlang.ast.BoxStatement;
 import ortus.boxlang.ast.BoxTemplate;
+import ortus.boxlang.ast.Point;
+import ortus.boxlang.ast.Position;
 import ortus.boxlang.ast.expression.BoxStringInterpolation;
 import ortus.boxlang.ast.expression.BoxStringLiteral;
+import ortus.boxlang.ast.statement.BoxExpression;
+import ortus.boxlang.ast.statement.BoxIfElse;
 import ortus.boxlang.ast.statement.tag.BoxOutput;
 import ortus.boxlang.parser.antlr.CFMLLexer;
 import ortus.boxlang.parser.antlr.CFMLParser;
 import ortus.boxlang.parser.antlr.CFMLParser.OutputContext;
+import ortus.boxlang.parser.antlr.CFMLParser.SetContext;
 import ortus.boxlang.parser.antlr.CFMLParser.StatementContext;
 import ortus.boxlang.parser.antlr.CFMLParser.StatementsContext;
 import ortus.boxlang.parser.antlr.CFMLParser.TemplateContext;
@@ -48,6 +54,10 @@ public class BoxCFMLParser extends BoxAbstractParser {
 
 	public BoxCFMLParser() {
 		super();
+	}
+
+	public BoxCFMLParser( int startLine, int startColumn ) {
+		super( startLine, startColumn );
 	}
 
 	@Override
@@ -90,9 +100,54 @@ public class BoxCFMLParser extends BoxAbstractParser {
 	private BoxStatement toAst( File file, StatementContext node ) {
 		if ( node.output() != null ) {
 			return toAst( file, node.output() );
+		} else if ( node.set() != null ) {
+			return toAst( file, node.set() );
+		} else if ( node.if_() != null ) {
+			return toAst( file, node.if_() );
 		}
 		throw new BoxRuntimeException( "Statement node " + node.getClass().getName() + " parsing not implemented yet. " + node.getText() );
 
+	}
+
+	private BoxIfElse toAst( File file, CFMLParser.IfContext node ) {
+		// if condition will always exist
+		BoxExpr				condition	= parseCFExpression( node.ifCondition.getText(), getPosition( node.ifCondition ) );
+		List<BoxStatement>	thenBody	= new ArrayList<>();
+		List<BoxStatement>	elseBody	= new ArrayList<>();
+
+		// Then body will always exist
+		thenBody.addAll( toAst( file, node.thenBody ) );
+
+		if ( node.ELSE() != null ) {
+			elseBody.addAll( toAst( file, node.elseBody ) );
+		}
+
+		// Loop backward over elseif conditions, each one becoming the elseBody of the next.
+		for ( int i = node.elseIfCondition.size() - 1; i >= 0; i-- ) {
+			int		stopIndex;
+			Point	end	= new Point( node.elseIfTagClose.get( i ).getLine(),
+			    node.elseIfTagClose.get( i ).getCharPositionInLine() );
+			stopIndex = node.elseIfTagClose.get( i ).getStopIndex();
+			if ( node.elseThenBody.get( i ).statement().size() > 0 ) {
+				end			= new Point( node.elseThenBody.get( i ).statement( node.elseThenBody.get( i ).statement().size() - 1 ).getStop().getLine(),
+				    node.elseThenBody.get( i ).statement( node.elseThenBody.get( i ).statement().size() - 1 ).getStop().getCharPositionInLine() );
+				stopIndex	= node.elseThenBody.get( i ).statement( node.elseThenBody.get( i ).statement().size() - 1 ).getStop().getStopIndex();
+			}
+			Position	pos				= new Position(
+			    new Point( node.ELSEIF( i ).getSymbol().getLine(), node.ELSEIF( i ).getSymbol().getCharPositionInLine() - 3 ),
+			    end );
+			BoxExpr		thisCondition	= parseCFExpression( node.elseIfCondition.get( i ).getText(), getPosition( node.elseIfCondition.get( i ) ) );
+			elseBody = List.of( new BoxIfElse( thisCondition, toAst( file, node.elseThenBody.get( i ) ), elseBody, pos,
+			    getSourceText( node, node.ELSEIF().get( i ).getSymbol().getStartIndex() - 3, stopIndex ) ) );
+		}
+
+		// If there were no elseif's, the elsebody here will be the <cfelse>. Otherwise, it will be the last elseif.
+		return new BoxIfElse( condition, thenBody, elseBody, getPosition( node ), getSourceText( node ) );
+	}
+
+	private BoxStatement toAst( File file, SetContext set ) {
+		// In tags, a <bx:set ...> tag is an Expression Statement.
+		return new BoxExpression( parseCFExpression( set.expression().getText(), getPosition( set.expression() ) ), getPosition( set ), getSourceText( set ) );
 	}
 
 	private BoxStatement toAst( File file, OutputContext node ) {
@@ -112,17 +167,8 @@ public class BoxCFMLParser extends BoxAbstractParser {
 			List<BoxExpr> expressions = new ArrayList<>();
 			for ( var child : node.children ) {
 				if ( child instanceof CFMLParser.InterpolatedExpressionContext intrpexpr && intrpexpr.expression() != null ) {
-					try {
-						ParsingResult result = new BoxCFParser().parseExpression( intrpexpr.expression().getText() );
-						if ( result.getIssues().isEmpty() ) {
-							expressions.add( ( BoxExpr ) result.getRoot() );
-						} else {
-							// Add these issues to the main parser
-							issues.addAll( result.getIssues() );
-						}
-					} catch ( IOException e ) {
-						throw new BoxRuntimeException( "Error parsing interpolated expression: " + intrpexpr.expression().getText(), e );
-					}
+					// parse the text between the hash signs as a CF expression
+					expressions.add( parseCFExpression( intrpexpr.expression().getText(), getPosition( intrpexpr ) ) );
 				} else if ( child instanceof CFMLParser.NonInterpolatedTextContext strlit ) {
 					expressions.add( new BoxStringLiteral( escapeStringLiteral( strlit.getText() ), getPosition( strlit ), getSourceText( strlit ) ) );
 				}
@@ -158,4 +204,42 @@ public class BoxCFMLParser extends BoxAbstractParser {
 		return new ParsingResult( ast, issues );
 	}
 
+	public BoxExpr parseCFExpression( String code, Position position ) {
+		try {
+			ParsingResult result = new BoxCFParser( position.getStart().getLine(), position.getStart().getColumn() ).parseExpression( code );
+			if ( result.getIssues().isEmpty() ) {
+				return ( BoxExpr ) result.getRoot();
+			} else {
+				// Add these issues to the main parser
+				issues.addAll( result.getIssues() );
+				return null;
+			}
+		} catch ( IOException e ) {
+			throw new BoxRuntimeException( "Error parsing interpolated expression: " + code, e );
+		}
+	}
+
+	public List<BoxStatement> parseCFStatements( String code, Position position ) {
+		try {
+			ParsingResult result = new BoxCFParser( position.getStart().getLine(), position.getStart().getColumn() ).parse( code );
+			if ( result.getIssues().isEmpty() ) {
+				BoxNode root = result.getRoot();
+				if ( root instanceof BoxScript script ) {
+					return script.getStatements();
+				} else if ( root instanceof BoxStatement statement ) {
+					return List.of( statement );
+				} else {
+					// Could be a BoxClass, which we may actually need to support if there is a .cfc file with a top-level <cfscript> node containing a
+					// component.
+					throw new BoxRuntimeException( "Unexpected root node type [" + root.getClass().getName() + "] in script island." );
+				}
+			} else {
+				// Add these issues to the main parser
+				issues.addAll( result.getIssues() );
+				return null;
+			}
+		} catch ( IOException e ) {
+			throw new BoxRuntimeException( "Error parsing interpolated expression: " + code, e );
+		}
+	}
 }

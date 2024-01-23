@@ -24,12 +24,11 @@ options {
  _tokenStartLine, _tokenStartCharPositionInLine);
  emit(t);
  System.out.println(
- t.toString());
+ t.toString() + " " + _SYMBOLIC_NAMES[t.getType()] );
  return t;
  }
  }
  */
-
 COMMENT: '<!---' .*? '--->' -> channel(HIDDEN);
 
 SEA_WS: (' ' | '\t' | '\r'? '\n')+ -> channel(HIDDEN);
@@ -143,7 +142,7 @@ mode EXPRESSION_MODE_TAG;
 
 TAG_CLOSE1: '>' -> type(TAG_CLOSE), popMode, popMode;
 
-EXPRESSION_PART: ~['"]+;
+EXPRESSION_PART: ~[>'"]+;
 
 OPEN_QUOTE2:
 	'"' -> pushMode(quotesModeExpression), type(OPEN_QUOTE);

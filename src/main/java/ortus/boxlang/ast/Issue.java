@@ -62,7 +62,10 @@ public class Issue {
 			sb.append( position.getSource() );
 			sb.append( ":" );
 		}
+		sb.append( " Line: " );
 		sb.append( position.getStart().getLine() );
+		sb.append( " Col: " );
+		sb.append( position.getStart().getColumn() );
 		sb.append( " - " );
 		sb.append( this.message );
 

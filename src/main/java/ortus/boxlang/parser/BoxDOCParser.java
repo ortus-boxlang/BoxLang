@@ -24,24 +24,15 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.antlr.v4.runtime.BaseErrorListener;
-import org.antlr.v4.runtime.CharStream;
 import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
 import org.antlr.v4.runtime.Lexer;
 import org.antlr.v4.runtime.Parser;
 import org.antlr.v4.runtime.ParserRuleContext;
-import org.antlr.v4.runtime.RecognitionException;
-import org.antlr.v4.runtime.Recognizer;
-import org.antlr.v4.runtime.misc.Interval;
 import org.apache.commons.io.IOUtils;
 
 import ortus.boxlang.ast.BoxDocumentation;
 import ortus.boxlang.ast.BoxNode;
-import ortus.boxlang.ast.Issue;
-import ortus.boxlang.ast.Point;
-import ortus.boxlang.ast.Position;
-import ortus.boxlang.ast.SourceFile;
 import ortus.boxlang.ast.expression.BoxFQN;
 import ortus.boxlang.ast.expression.BoxStringLiteral;
 import ortus.boxlang.ast.statement.BoxDocumentationAnnotation;
@@ -51,68 +42,18 @@ import ortus.boxlang.parser.antlr.DOCParser;
 /**
  * Parser a javadoc style documentation
  */
-public class BoxDOCParser {
+public class BoxDOCParser extends BoxAbstractParser {
 
-	protected int					startLine;
-	protected int					startColumn;
-	protected File					file;
-	protected final List<Issue>		issues;
-
-	/**
-	 * Overrides the ANTL4 default error listener collecting the errors
-	 */
-	private final BaseErrorListener	errorListener	= new BaseErrorListener() {
-
-														@Override
-														public void syntaxError( Recognizer<?, ?> recognizer, Object offendingSymbol, int line,
-														    int charPositionInLine,
-														    String msg, RecognitionException e ) {
-															String		errorMessage	= msg != null ? msg : "unspecified";
-															Position	position		= new Position( new Point( line, charPositionInLine ),
-															    new Point( line, charPositionInLine ) );
-															if ( file != null ) {
-																position.setSource( new SourceFile( file ) );
-															}
-															issues.add( new Issue( errorMessage, position ) );
-														}
-													};
+	protected File file;
 
 	public BoxDOCParser() {
-		this.startLine		= 0;
-		this.startColumn	= 0;
-		this.issues			= new ArrayList<>();
+		super();
 	}
 
 	public BoxDOCParser( int startLine, int startColumn ) {
+		this();
 		this.startLine		= startLine - 1;
 		this.startColumn	= startColumn;
-		this.issues			= new ArrayList<>();
-	}
-
-	/**
-	 * Extracts the position from the ANTLR node
-	 *
-	 * @param node any ANTLR role
-	 *
-	 * @return a Position representing the region on the source code
-	 *
-	 * @see Position
-	 */
-	protected Position getPosition( ParserRuleContext node ) {
-		return new Position( new Point( node.start.getLine() + this.startLine, node.start.getCharPositionInLine() + startColumn ),
-		    new Point( node.stop.getLine() + startLine, node.stop.getCharPositionInLine() + startColumn ), new SourceFile( file ) );
-	}
-
-	/**
-	 * Extracts from the ANTLR node
-	 *
-	 * @param node any ANTLR role
-	 *
-	 * @return a string containing the source code
-	 */
-	protected String getSourceText( ParserRuleContext node ) {
-		CharStream s = node.getStart().getTokenSource().getInputStream();
-		return s.getText( new Interval( node.getStart().getStartIndex(), node.getStop().getStopIndex() ) );
 	}
 
 	public ParsingResult parse( File file, String code ) throws IOException {
@@ -203,6 +144,30 @@ public class BoxDOCParser {
 		lexer.addErrorListener( errorListener );
 		parser.removeErrorListeners();
 		parser.addErrorListener( errorListener );
+	}
+
+	@Override
+	public ParsingResult parse( File file ) throws IOException {
+		// TODO Auto-generated method stub
+		throw new UnsupportedOperationException( "Unimplemented method 'parse'" );
+	}
+
+	@Override
+	public ParsingResult parse( String code ) throws IOException {
+		// TODO Auto-generated method stub
+		throw new UnsupportedOperationException( "Unimplemented method 'parse'" );
+	}
+
+	@Override
+	protected ParserRuleContext parserFirstStage( InputStream stream ) throws IOException {
+		// TODO Auto-generated method stub
+		throw new UnsupportedOperationException( "Unimplemented method 'parserFirstStage'" );
+	}
+
+	@Override
+	protected BoxNode parseTreeToAst( File file, ParserRuleContext rule ) throws IOException {
+		// TODO Auto-generated method stub
+		throw new UnsupportedOperationException( "Unimplemented method 'parseTreeToAst'" );
 	}
 
 }

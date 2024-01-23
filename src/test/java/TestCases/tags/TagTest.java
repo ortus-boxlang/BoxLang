@@ -17,6 +17,8 @@
  */
 package TestCases.tags;
 
+import static com.google.common.truth.Truth.assertThat;
+
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -54,17 +56,86 @@ public class TagTest {
 		variables	= ( VariablesScope ) context.getScopeNearby( VariablesScope.name );
 	}
 
-	@DisplayName( "basic class" )
+	@DisplayName( "basic tags" )
 	@Test
-	public void testBasicClass() {
-		variables.put( foo, "bar" );
+	public void testBasicTags() {
 		instance.executeSource(
 		    """
-		    <cfoutput>
-		      	This is #foo# output!
-		    </cfoutput>
+		    <cfset foo = "bar">
+		       <cfoutput>
+		         	This is #foo# output!
+		       </cfoutput>
 
-		      """, context, BoxScriptType.CFMARKUP );
+		         """, context, BoxScriptType.CFMARKUP );
+
+	}
+
+	@DisplayName( "if statement" )
+	@Test
+	public void testIfStatement() {
+		instance.executeSource(
+		    """
+		       <cfif true >
+		       	<cfset result = "then block">
+		       <cfelseif false >
+		       	<cfset result = "first elseif block">
+		       <cfelseif false >
+		       	<cfset result = "second elseif block">
+		    <cfelse>
+		    	<cfset result = "else block">
+		    	</cfif>
+
+		                    """, context, BoxScriptType.CFMARKUP );
+
+		assertThat( variables.get( result ) ).isEqualTo( "then block" );
+
+		instance.executeSource(
+		    """
+		       <cfif false >
+		       	<cfset result = "then block">
+		       <cfelseif true >
+		       	<cfset result = "first elseif block">
+		       <cfelseif false >
+		       	<cfset result = "second	elseif block">
+		    <cfelse>
+		    	<cfset result = "else block">
+		    	</cfif>
+
+		                    """, context, BoxScriptType.CFMARKUP );
+
+		assertThat( variables.get( result ) ).isEqualTo( "first elseif block" );
+
+		instance.executeSource(
+		    """
+		       <cfif false >
+		       	<cfset result = "then block">
+		       <cfelseif false >
+		       	<cfset result = "first elseif block">
+		       <cfelseif true >
+		       	<cfset result = "second elseif block">
+		    <cfelse>
+		    	<cfset result = "else block">
+		    	</cfif>
+
+		                    """, context, BoxScriptType.CFMARKUP );
+
+		assertThat( variables.get( result ) ).isEqualTo( "second elseif block" );
+
+		instance.executeSource(
+		    """
+		       <cfif false >
+		       	<cfset result = "then block">
+		       <cfelseif false >
+		       	<cfset result = "first elseif block">
+		       <cfelseif false >
+		       	<cfset result = "second elseif block">
+		    <cfelse>
+		    	<cfset result = "else block">
+		    	</cfif>
+
+		                    """, context, BoxScriptType.CFMARKUP );
+
+		assertThat( variables.get( result ) ).isEqualTo( "else block" );
 
 	}
 

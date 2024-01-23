@@ -44,33 +44,41 @@ import ortus.boxlang.ast.SourceFile;
  */
 public abstract class BoxAbstractParser {
 
-	protected File					file;
-	protected final List<Issue>		issues;
+	protected int						startLine;
+	protected int						startColumn;
+	protected File						file;
+	protected final List<Issue>			issues;
 
 	/**
 	 * Overrides the ANTL4 default error listener collecting the errors
 	 */
-	private final BaseErrorListener	errorListener	= new BaseErrorListener() {
+	protected final BaseErrorListener	errorListener	= new BaseErrorListener() {
 
-														@Override
-														public void syntaxError( Recognizer<?, ?> recognizer, Object offendingSymbol, int line,
-														    int charPositionInLine,
-														    String msg, RecognitionException e ) {
-															String		errorMessage	= msg != null ? msg : "unspecified";
-															Position	position		= new Position( new Point( line, charPositionInLine ),
-															    new Point( line, charPositionInLine ) );
-															if ( file != null ) {
-																position.setSource( new SourceFile( file ) );
+															@Override
+															public void syntaxError( Recognizer<?, ?> recognizer, Object offendingSymbol, int line,
+															    int charPositionInLine,
+															    String msg, RecognitionException e ) {
+																String		errorMessage	= msg != null ? msg : "unspecified";
+																Position	position		= new Position( new Point( line, charPositionInLine ),
+																    new Point( line, charPositionInLine ) );
+																if ( file != null ) {
+																	position.setSource( new SourceFile( file ) );
+																}
+																issues.add( new Issue( errorMessage, position ) );
 															}
-															issues.add( new Issue( errorMessage, position ) );
-														}
-													};
+														};
 
 	/**
 	 * Constructor, initialize the error list
 	 */
 	public BoxAbstractParser() {
 		this.issues = new ArrayList<>();
+	}
+
+	public BoxAbstractParser( int startLine, int startColumn ) {
+		this();
+		this.startLine		= startLine - 1;
+		this.startColumn	= startColumn;
 	}
 
 	/**
@@ -164,8 +172,20 @@ public abstract class BoxAbstractParser {
 	 * @see Position
 	 */
 	protected Position getPosition( ParserRuleContext node ) {
-		return new Position( new Point( node.start.getLine(), node.start.getCharPositionInLine() ),
-		    new Point( node.stop.getLine(), node.stop.getCharPositionInLine() ), new SourceFile( file ) );
+		return new Position( new Point( node.start.getLine() + this.startLine, node.start.getCharPositionInLine() + startColumn ),
+		    new Point( node.stop.getLine() + startLine, node.stop.getCharPositionInLine() + startColumn ), new SourceFile( file ) );
+	}
+
+	/**
+	 * Extracts from the ANTLR node
+	 *
+	 * @param node any ANTLR role
+	 *
+	 * @return a string containing the source code
+	 */
+	protected String getSourceText( ParserRuleContext node, int startIndex, int stopIndex ) {
+		CharStream s = node.getStart().getTokenSource().getInputStream();
+		return s.getText( new Interval( startIndex, stopIndex ) );
 	}
 
 	/**
@@ -179,4 +199,5 @@ public abstract class BoxAbstractParser {
 		CharStream s = node.getStart().getTokenSource().getInputStream();
 		return s.getText( new Interval( node.getStart().getStartIndex(), node.getStop().getStopIndex() ) );
 	}
+
 }

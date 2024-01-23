@@ -87,14 +87,17 @@ return:
 	);
 
 if:
-	TAG_OPEN PREFIX IF expression (TAG_SLASH_CLOSE | TAG_CLOSE) statements (
-		TAG_OPEN PREFIX ELSEIF expression (
-			TAG_SLASH_CLOSE
-			| TAG_CLOSE
-		) statements
-	)* (
-		TAG_OPEN PREFIX ELSE (TAG_SLASH_CLOSE | TAG_CLOSE) statements
-	)* TAG_OPEN SLASH_PREFIX IF TAG_CLOSE;
+	// <cfif ... >`
+	TAG_OPEN PREFIX IF ifCondition = expression TAG_CLOSE thenBody = statements
+	// Any number of <cfelseif ... >
+	(
+		TAG_OPEN PREFIX ELSEIF elseIfCondition += expression elseIfTagClose += TAG_CLOSE
+			elseThenBody += statements
+	)*
+	// One optional <cfelse> 
+	(TAG_OPEN PREFIX ELSE TAG_CLOSE elseBody = statements)?
+	// Closing </cfif>
+	TAG_OPEN SLASH_PREFIX IF TAG_CLOSE;
 
 param:
 	TAG_OPEN PREFIX PARAM attribute* (
