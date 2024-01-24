@@ -23,7 +23,6 @@ import static com.google.common.truth.Truth.assertThat;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -34,7 +33,6 @@ import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
 
-@Disabled( "Unimplemented" )
 public class IsNumericTest {
 
 	static BoxRuntime	instance;
@@ -58,20 +56,35 @@ public class IsNumericTest {
 		variables.clear();
 	}
 
-	@DisplayName( "It detects binary values" )
+	@DisplayName( "It detects numeric values" )
 	@Test
-	public void testTrueConditions() {
+	public void testNumerics() {
 		instance.executeSource(
 		    """
-		    result = isBinary( toBinary( toBase64( "boxlang" ) ) );
+		    int         = isnumeric( 123 );
+		    stringInt   = isnumeric( "123" );
+		    stringFloat = isnumeric( "123.4" );
 		    """,
 		    context );
-		assertThat( ( Boolean ) variables.get( Key.of( "result" ) ) ).isTrue();
+		assertThat( ( Boolean ) variables.get( Key.of( "int" ) ) ).isTrue();
+		assertThat( ( Boolean ) variables.get( Key.of( "stringInt" ) ) ).isTrue();
+		assertThat( ( Boolean ) variables.get( Key.of( "stringFloat" ) ) ).isTrue();
 	}
 
-	@DisplayName( "It returns false for non-binary values" )
+	@DisplayName( "It returns false for non-numeric values, including non-string values like a struct" )
 	@Test
-	public void testFalseConditions() {
+	public void testSimpleNumerics() {
+		instance.executeSource(
+		    """
+		    int         = isnumeric( "abc83" );
+		    hexadecimal = isnumeric( "3FA5" );
+		    badFloat    = isnumeric( "123.x" );
+		    struct      = isnumeric( {} );
+		    """,
+		    context );
+		assertThat( ( Boolean ) variables.get( Key.of( "int" ) ) ).isFalse();
+		assertThat( ( Boolean ) variables.get( Key.of( "hexadecimal" ) ) ).isFalse();
+		assertThat( ( Boolean ) variables.get( Key.of( "badFloat" ) ) ).isFalse();
+		assertThat( ( Boolean ) variables.get( Key.of( "struct" ) ) ).isFalse();
 	}
-
 }
