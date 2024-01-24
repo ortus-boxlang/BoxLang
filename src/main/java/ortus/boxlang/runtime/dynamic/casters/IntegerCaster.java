@@ -75,7 +75,14 @@ public class IntegerCaster {
 			return Integer.valueOf( bool ? 1 : 0 );
 		}
 
-		String theValue = StringCaster.cast( object );
+		String theValue = StringCaster.cast( object, fail );
+		if ( theValue == null ) {
+			if ( fail ) {
+				throw new BoxCastException( "Can't cast null to a int." );
+			} else {
+				return null;
+			}
+		}
 		if ( isInteger( theValue ) ) {
 			return Integer.valueOf( theValue );
 		}

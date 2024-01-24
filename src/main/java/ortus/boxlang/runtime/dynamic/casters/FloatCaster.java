@@ -77,7 +77,15 @@ public class FloatCaster {
 
 		// TODO: Find a way to check if the string can be cast without throwing an exception here
 		try {
-			return Float.valueOf( StringCaster.cast( object ) );
+			String value = StringCaster.cast( object, fail );
+			if ( value == null ) {
+				if ( fail ) {
+					throw new BoxCastException( "Can't cast null to a float." );
+				} else {
+					return null;
+				}
+			}
+			return Float.valueOf( value );
 		} catch ( NumberFormatException e ) {
 			if ( fail ) {
 				throw e;

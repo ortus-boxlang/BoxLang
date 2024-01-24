@@ -77,7 +77,15 @@ public class LongCaster {
 
 		// TODO: Find a way to check if the string can be cast without throwing an exception here
 		try {
-			return Long.valueOf( StringCaster.cast( object ) );
+			String value = StringCaster.cast( object, fail );
+			if ( value == null ) {
+				if ( fail ) {
+					throw new BoxCastException( "Can't cast null to a long." );
+				} else {
+					return null;
+				}
+			}
+			return Long.valueOf( value );
 		} catch ( NumberFormatException e ) {
 			if ( fail ) {
 				throw e;
