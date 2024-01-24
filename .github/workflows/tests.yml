@@ -10,15 +10,20 @@ on:
 jobs:
   tests:
     name: Test BoxLang
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
     continue-on-error: ${{ matrix.experimental }}
     strategy:
       fail-fast: false
       matrix:
-        jdkVersion: [ "17" ]
-        experimental: [ false ]
+        os: ["ubuntu-latest", "windows-latest"]
+        jdkVersion: ["17"]
+        experimental: [false]
         include:
           - jdkVersion: "21"
+            os: "ubuntu-latest"
+            experimental: true
+          - jdkVersion: "21"
+            os: "ubuntu-latest"
             experimental: true
     steps:
       - name: Checkout Repository
@@ -57,7 +62,6 @@ jobs:
       pull-requests: write
       contents: read
       issues: read
-    if: always()
     steps:
       - name: Download Artifacts
         uses: actions/download-artifact@v3
