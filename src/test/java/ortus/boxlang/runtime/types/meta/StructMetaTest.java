@@ -48,7 +48,7 @@ public class StructMetaTest {
 		assertThat( $bx.meta.get( "type" ) ).isEqualTo( "DEFAULT" );
 		assertThat( $bx.meta.get( "immutable" ) ).isEqualTo( false );
 
-		str	= new ImmutableStruct( Struct.Type.SORTED );
+		str	= new ImmutableStruct( Struct.TYPE.SORTED );
 		$bx	= ( StructMeta ) Referencer.get( context, str, BoxMeta.key, false );
 
 		assertThat( $bx.$class ).isEqualTo( ImmutableStruct.class );

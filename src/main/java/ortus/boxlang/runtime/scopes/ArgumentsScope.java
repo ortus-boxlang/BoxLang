@@ -40,7 +40,7 @@ public class ArgumentsScope extends BaseScope {
 	 */
 
 	public ArgumentsScope() {
-		super( ArgumentsScope.name, Struct.Type.LINKED );
+		super( ArgumentsScope.name, Struct.TYPE.LINKED );
 	}
 
 	/**
@@ -105,9 +105,9 @@ public class ArgumentsScope extends BaseScope {
 	 * Arguments allows existing items to be referenced by name OR position.
 	 * argumetns[1] is the same as arguments.first
 	 * So if we have an int key coming in, change it to the actual key in that position
-	 * 
+	 *
 	 * @param key
-	 * 
+	 *
 	 * @return
 	 */
 	private Key resolveKey( Key key ) {

@@ -19,12 +19,13 @@ package ortus.boxlang.runtime.types;
 
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.TreeMap;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentSkipListMap;
 
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.bifs.MemberDescriptor;
@@ -35,7 +36,6 @@ import ortus.boxlang.runtime.interop.DynamicJavaInteropService;
 import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.runnables.IClassRunnable;
 import ortus.boxlang.runtime.scopes.Key;
-import ortus.boxlang.runtime.services.FunctionService;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.exceptions.KeyNotFoundException;
 import ortus.boxlang.runtime.types.immutable.ImmutableStruct;
@@ -44,9 +44,21 @@ import ortus.boxlang.runtime.types.meta.IChangeListener;
 import ortus.boxlang.runtime.types.meta.IListenable;
 import ortus.boxlang.runtime.types.meta.StructMeta;
 
+/**
+ * This class represents a struct in BoxLang
+ */
 public class Struct implements IStruct, IListenable {
 
-	public enum Type {
+	/**
+	 * --------------------------------------------------------------------------
+	 * Public Properties
+	 * --------------------------------------------------------------------------
+	 */
+
+	/**
+	 * The Available types of structs
+	 */
+	public enum TYPE {
 		LINKED,
 		SORTED,
 		DEFAULT
@@ -58,31 +70,30 @@ public class Struct implements IStruct, IListenable {
 	public static final IStruct			EMPTY				= new ImmutableStruct();
 
 	/**
-	 * --------------------------------------------------------------------------
-	 * Private Properties
-	 * --------------------------------------------------------------------------
-	 */
-	protected final Map<Key, Object>	wrapped;
-
-	/**
-	 * The type of struct
-	 */
-	public final Type					type;
-
-	/**
 	 * Metadata object
 	 */
 	public BoxMeta						$bx;
 
 	/**
+	 * The type of struct
+	 */
+	public final TYPE					type;
+
+	/**
+	 * --------------------------------------------------------------------------
+	 * Private Properties
+	 * --------------------------------------------------------------------------
+	 */
+
+	/**
+	 * The wrapped map used in the implementation
+	 */
+	protected final Map<Key, Object>	wrapped;
+
+	/**
 	 * Used to track change listeners. Intitialized on-demand
 	 */
 	private Map<Key, IChangeListener>	listeners;
-
-	/**
-	 * Function service
-	 */
-	private FunctionService				functionService;
 
 	/**
 	 * In general, a common approach is to choose an initial capacity that is a power of two.
@@ -101,20 +112,24 @@ public class Struct implements IStruct, IListenable {
 	 * Constructor
 	 *
 	 * @param type The type of struct to create: DEFAULT, LINKED, SORTED
+	 *
+	 * @throws BoxRuntimeException If an invalid type is specified: DEFAULT, LINKED, SORTED
 	 */
-	public Struct( Type type ) {
-		functionService	= BoxRuntime.getInstance().getFunctionService();
-		this.type		= type;
-		if ( type.equals( Type.DEFAULT ) ) {
-			wrapped = new ConcurrentHashMap<>( INITIAL_CAPACITY );
+	public Struct( TYPE type ) {
+		this.type = type;
+
+		// Initialize the wrapped map
+		if ( type.equals( TYPE.DEFAULT ) ) {
+			this.wrapped = new ConcurrentHashMap<>( INITIAL_CAPACITY );
 			return;
-		} else if ( type.equals( Type.LINKED ) ) {
-			wrapped = Collections.synchronizedMap( new LinkedHashMap<Key, Object>( INITIAL_CAPACITY ) );
+		} else if ( type.equals( TYPE.LINKED ) ) {
+			this.wrapped = Collections.synchronizedMap( new LinkedHashMap<Key, Object>( INITIAL_CAPACITY ) );
 			return;
-		} else if ( type.equals( Type.SORTED ) ) {
-			wrapped = Collections.synchronizedMap( new TreeMap<Key, Object>() );
+		} else if ( type.equals( TYPE.SORTED ) ) {
+			this.wrapped = new ConcurrentSkipListMap<>();
 			return;
 		}
+
 		throw new BoxRuntimeException( "Invalid struct type [" + type.name() + "]" );
 	}
 
@@ -122,7 +137,17 @@ public class Struct implements IStruct, IListenable {
 	 * Create a default struct
 	 */
 	public Struct() {
-		this( Type.DEFAULT );
+		this( TYPE.DEFAULT );
+	}
+
+	/**
+	 * Create a sorted struct with the passed {@Link Comparator} object
+	 *
+	 * @param comparator The comparator to use
+	 */
+	public Struct( Comparator<Key> comparator ) {
+		this.type		= TYPE.SORTED;
+		this.wrapped	= new ConcurrentSkipListMap<>( comparator );
 	}
 
 	/**
@@ -131,11 +156,12 @@ public class Struct implements IStruct, IListenable {
 	 * supply an explicit type to have this struct created with a copy of all the
 	 * keys/values in your map.
 	 *
-	 * @param map The map to create the struct from
+	 * @param map  The map to create the struct from
+	 * @param type The type of struct to create: DEFAULT, LINKED, SORTED
 	 */
-	protected Struct( Map<Key, Object> map, Type type ) {
-		this.type	= type;
-		wrapped		= map;
+	protected Struct( Map<Key, Object> map, TYPE type ) {
+		this.type		= type;
+		this.wrapped	= map;
 	}
 
 	/**
@@ -144,38 +170,56 @@ public class Struct implements IStruct, IListenable {
 	 * @param map The map to create the struct from
 	 */
 	public Struct( Map<? extends Object, ? extends Object> map ) {
-		this( Type.DEFAULT, map );
+		this( TYPE.DEFAULT, map );
 	}
 
 	/**
-	 * Construct a struct of a specific type from a map
+	 * Construct a struct of a specific type from an existing map
 	 *
-	 * @param map  The map to create the struct from
 	 * @param type The type of struct to create: DEFAULT, LINKED, SORTED
+	 * @param map  The map to create the struct from
 	 */
-	public Struct( Type type, Map<? extends Object, ? extends Object> map ) {
+	public Struct( TYPE type, Map<? extends Object, ? extends Object> map ) {
 		this( type );
 		addAll( map );
 	}
 
 	/**
-	 * Create a struct from a map
+	 * --------------------------------------------------------------------------
+	 * Static Creation from Maps
+	 * --------------------------------------------------------------------------
+	 * These methods are used to create structs from existing maps
+	 */
+
+	/**
+	 * Static helper to create a struct from an existing map
 	 *
 	 * @param map The map to create the struct from
+	 *
+	 * @return The struct created from the map
 	 */
 	public static IStruct fromMap( Map<Object, Object> map ) {
 		return new Struct( map );
 	}
 
 	/**
-	 * Construct a struct of a specific type from a map
+	 * Static helper to construct a struct of a specific type and an existing map
 	 *
-	 * @param map  The map to create the struct from
 	 * @param type The type of struct to create: DEFAULT, LINKED, SORTED
+	 * @param map  The map to create the struct from
+	 *
+	 * @return The struct created from the map with the specified type
 	 */
-	public static IStruct fromMap( Type type, Map<Object, Object> map ) {
+	public static IStruct fromMap( TYPE type, Map<Object, Object> map ) {
 		return new Struct( type, map );
 	}
+
+	/**
+	 * --------------------------------------------------------------------------
+	 * Static builders from name value pairs
+	 * --------------------------------------------------------------------------
+	 * These methods are used to create structs from name value pairs
+	 */
 
 	/**
 	 * Create a struct from a list of values. The values must be in pairs, key, value, key, value, etc.
@@ -206,10 +250,34 @@ public class Struct implements IStruct, IListenable {
 		if ( values.length % 2 != 0 ) {
 			throw new BoxRuntimeException( "Invalid number of arguments.  Must be an even number." );
 		}
-		IStruct struct = new Struct( Type.LINKED );
+		IStruct struct = new Struct( TYPE.LINKED );
 		for ( int i = 0; i < values.length; i += 2 ) {
 			struct.put( KeyCaster.cast( values[ i ] ), values[ i + 1 ] );
 		}
+		return struct;
+	}
+
+	/**
+	 * Create a sorted struct from a list of values and the passed comparator.
+	 * The values must be in pairs, key, value, key, value, etc.
+	 *
+	 * @param comparator The comparator to use
+	 * @param values     The values to create the struct from
+	 *
+	 * @return The sorted struct
+	 */
+	public static IStruct sortedOf( Comparator<Key> comparator, Object... values ) {
+
+		if ( values.length % 2 != 0 ) {
+			throw new BoxRuntimeException( "Invalid number of arguments.  Must be an even number." );
+		}
+
+		IStruct struct = ( comparator == null ? new Struct( TYPE.SORTED ) : new Struct( comparator ) );
+
+		for ( int i = 0; i < values.length; i += 2 ) {
+			struct.put( KeyCaster.cast( values[ i ] ), values[ i + 1 ] );
+		}
+
 		return struct;
 	}
 
@@ -467,7 +535,7 @@ public class Struct implements IStruct, IListenable {
 	public void addAll( Map<? extends Object, ? extends Object> map ) {
 		var entryStream = map.entrySet().parallelStream();
 		// With a linked hashmap we need to maintain order - which is a tiny bit slower
-		if ( type.equals( Type.LINKED ) ) {
+		if ( type.equals( TYPE.LINKED ) ) {
 			entryStream.forEachOrdered( entry -> {
 				Key key;
 				if ( entry.getKey() instanceof Key entryKey ) {
@@ -586,11 +654,25 @@ public class Struct implements IStruct, IListenable {
 		return sb.toString();
 	}
 
+	/**
+	 * Get the BoxMetadata object for this struct
+	 *
+	 * @return The {@Link BoxMeta} object for this struct
+	 */
 	public BoxMeta getBoxMeta() {
 		if ( this.$bx == null ) {
 			this.$bx = new StructMeta( this );
 		}
 		return this.$bx;
+	}
+
+	/**
+	 * Get the type of struct
+	 *
+	 * @return The type of struct according to the {@Link Type} enum
+	 */
+	public TYPE getType() {
+		return type;
 	}
 
 	/**
@@ -647,7 +729,7 @@ public class Struct implements IStruct, IListenable {
 	 */
 	public Object dereferenceAndInvoke( IBoxContext context, Key name, Object[] positionalArguments, Boolean safe ) {
 
-		MemberDescriptor memberDescriptor = functionService.getMemberMethod( name, BoxLangType.STRUCT );
+		MemberDescriptor memberDescriptor = BoxRuntime.getInstance().getFunctionService().getMemberMethod( name, BoxLangType.STRUCT );
 		if ( memberDescriptor != null ) {
 			return memberDescriptor.invoke( context, this, positionalArguments );
 		}
@@ -690,7 +772,7 @@ public class Struct implements IStruct, IListenable {
 	 */
 	public Object dereferenceAndInvoke( IBoxContext context, Key name, Map<Key, Object> namedArguments, Boolean safe ) {
 
-		MemberDescriptor memberDescriptor = functionService.getMemberMethod( name, BoxLangType.STRUCT );
+		MemberDescriptor memberDescriptor = BoxRuntime.getInstance().getFunctionService().getMemberMethod( name, BoxLangType.STRUCT );
 		if ( memberDescriptor != null ) {
 			return memberDescriptor.invoke( context, this, namedArguments );
 		}
@@ -915,7 +997,5 @@ public class Struct implements IStruct, IListenable {
 	public IClassRunnable getClassRunnable( Key key ) {
 		return ( IClassRunnable ) DynamicObject.unWrap( get( key ) );
 	}
-
-	// Add more as needed...
 
 }

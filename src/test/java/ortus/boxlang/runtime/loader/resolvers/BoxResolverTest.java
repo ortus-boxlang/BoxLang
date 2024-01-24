@@ -81,7 +81,7 @@ public class BoxResolverTest {
 		String					testComponent	= "tests.components.User";
 		BoxResolver				boxResolver		= BoxResolver.getInstance();
 
-		// System.out.println( "mappings: " + Arrays.toString( runtime.getConfiguration().runtime.getSortedMappingKeys() ) );
+		// System.out.println( "mappings: " + Arrays.toString( runtime.getConfiguration().runtime.getRegisteredMappings() ) );
 
 		Optional<ClassLocation>	classLocation	= boxResolver.findFromLocal( context, testComponent, new ArrayList<>() );
 		System.err.println( "classLocation: " + classLocation );
