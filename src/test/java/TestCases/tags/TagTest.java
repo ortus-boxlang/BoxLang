@@ -340,4 +340,21 @@ public class TagTest {
 
 	}
 
+	@DisplayName( "tag break" )
+	@Test
+	public void testBreak() {
+		instance.executeSource(
+		    """
+		     	<cfset counter = 0>
+		    <cfwhile condition="counter < 10">
+		    	<cfset counter++>
+		    <cfbreak>
+		    </cfwhile>
+		    <cfset result = counter>
+		                                      """, context, BoxScriptType.CFMARKUP );
+
+		assertThat( DynamicObject.unWrap( variables.get( result ) ) ).isEqualTo( 1 );
+
+	}
+
 }

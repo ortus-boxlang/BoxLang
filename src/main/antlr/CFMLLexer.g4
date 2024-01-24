@@ -55,22 +55,26 @@ ANY: . -> type(CONTENT_TEXT), popMode;
 mode TAG;
 
 COMPONENT: 'component';
-ARGUMENT: 'argument';
+INTERFACE: 'interface';
 FUNCTION: 'function';
+ARGUMENT: 'argument';
+
 SCRIPT: 'script' -> pushMode(XFSCRIPT);
 OUTPUT: 'output' -> pushMode(OUTPUT_MODE);
-
 RETURN: 'return' -> pushMode(EXPRESSION_MODE_TAG);
+
 IF: 'if' -> pushMode(EXPRESSION_MODE_TAG);
 ELSE: 'else';
 ELSEIF: 'elseif' -> pushMode(EXPRESSION_MODE_TAG);
-INTERFACE: 'interface';
+
+SET: 'set ' -> pushMode(EXPRESSION_MODE_TAG);
+
 TRY: 'try';
 CATCH: 'catch';
 FINALLY: 'finally';
 IMPORT: 'import';
 WHILE: 'while';
-SET: 'set ' -> pushMode(EXPRESSION_MODE_TAG);
+BREAK: 'break';
 
 TAG_CLOSE: '>' -> popMode, popMode;
 
@@ -122,6 +126,7 @@ CATCH2: 'catch' -> type(CATCH);
 FINALLY2: 'finally' -> type(FINALLY);
 IMPORT2: 'import' -> type(IMPORT);
 WHILE2: 'while' -> type(WHILE);
+BREAK2: 'break' -> type(BREAK);
 
 TAG_NAME2: TAG_NameStartChar TAG_NameChar* -> type(TAG_NAME);
 TAG_CLOSE2: '>' -> popMode, popMode, type(TAG_CLOSE);
