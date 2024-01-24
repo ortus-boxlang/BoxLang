@@ -18,6 +18,7 @@
 package TestCases.tags;
 
 import static com.google.common.truth.Truth.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -33,6 +34,7 @@ import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
 import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
+import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
 public class TagTest {
 
@@ -304,7 +306,6 @@ public class TagTest {
 		                                 """, context, BoxScriptType.CFMARKUP );
 
 		assertThat( variables.get( result ) ).isEqualTo( "barbaz" );
-
 	}
 
 	@DisplayName( "tag import" )
@@ -321,7 +322,6 @@ public class TagTest {
 
 		assertThat( DynamicObject.unWrap( variables.get( result ) ) ).isEqualTo( "foo" );
 		assertThat( DynamicObject.unWrap( variables.get( Key.of( "result2" ) ) ) ).isEqualTo( "bar" );
-
 	}
 
 	@DisplayName( "tag while" )
@@ -337,7 +337,6 @@ public class TagTest {
 		                                      """, context, BoxScriptType.CFMARKUP );
 
 		assertThat( variables.get( result ) ).isEqualTo( 10 );
-
 	}
 
 	@DisplayName( "tag break" )
@@ -354,7 +353,6 @@ public class TagTest {
 		                                      """, context, BoxScriptType.CFMARKUP );
 
 		assertThat( variables.get( result ) ).isEqualTo( 1 );
-
 	}
 
 	@DisplayName( "tag continue" )
@@ -373,7 +371,6 @@ public class TagTest {
 		                                          """, context, BoxScriptType.CFMARKUP );
 
 		assertThat( variables.get( result ) ).isEqualTo( 0 );
-
 	}
 
 	@DisplayName( "tag include" )
@@ -385,7 +382,24 @@ public class TagTest {
 		                                    """, context, BoxScriptType.CFMARKUP );
 
 		assertThat( variables.get( result ) ).isEqualTo( "was included" );
+	}
 
+	@DisplayName( "tag rethrow" )
+	@Test
+	public void testRethrow() {
+
+		Throwable e = assertThrows( BoxRuntimeException.class, () -> instance.executeSource(
+		    """
+		       <cftry>
+		    	<cfset 1/0>
+		    	<cfcatch>
+		    		<cfrethrow>
+		    	</cfcatch>
+		    </cftry>
+		                                       """, context, BoxScriptType.CFMARKUP ) );
+
+		assertThat( e.getMessage() ).contains( "zero" );
+		;
 	}
 
 }

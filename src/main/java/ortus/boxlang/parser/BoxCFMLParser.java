@@ -52,6 +52,7 @@ import ortus.boxlang.ast.statement.BoxFunctionDeclaration;
 import ortus.boxlang.ast.statement.BoxIfElse;
 import ortus.boxlang.ast.statement.BoxImport;
 import ortus.boxlang.ast.statement.BoxInclude;
+import ortus.boxlang.ast.statement.BoxRethrow;
 import ortus.boxlang.ast.statement.BoxReturn;
 import ortus.boxlang.ast.statement.BoxReturnType;
 import ortus.boxlang.ast.statement.BoxTry;
@@ -71,6 +72,7 @@ import ortus.boxlang.parser.antlr.CFMLParser.ContinueContext;
 import ortus.boxlang.parser.antlr.CFMLParser.FunctionContext;
 import ortus.boxlang.parser.antlr.CFMLParser.IncludeContext;
 import ortus.boxlang.parser.antlr.CFMLParser.OutputContext;
+import ortus.boxlang.parser.antlr.CFMLParser.RethrowContext;
 import ortus.boxlang.parser.antlr.CFMLParser.ReturnContext;
 import ortus.boxlang.parser.antlr.CFMLParser.ScriptContext;
 import ortus.boxlang.parser.antlr.CFMLParser.SetContext;
@@ -214,9 +216,15 @@ public class BoxCFMLParser extends BoxAbstractParser {
 			return toAst( file, node.continue_() );
 		} else if ( node.include() != null ) {
 			return toAst( file, node.include() );
+		} else if ( node.rethrow() != null ) {
+			return toAst( file, node.rethrow() );
 		}
 		throw new BoxRuntimeException( "Statement node " + node.getClass().getName() + " parsing not implemented yet. " + node.getText() );
 
+	}
+
+	private BoxStatement toAst( File file, RethrowContext node ) {
+		return new BoxRethrow( getPosition( node ), getSourceText( node ) );
 	}
 
 	private BoxStatement toAst( File file, IncludeContext node ) {
@@ -234,6 +242,7 @@ public class BoxCFMLParser extends BoxAbstractParser {
 			throw new BoxRuntimeException( "Include must have a template attribute - " + getSourceText( node ) );
 		}
 
+		// TODO: Add runOnce support
 		return new BoxInclude( template, getPosition( node ), getSourceText( node ) );
 	}
 

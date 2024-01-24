@@ -79,6 +79,8 @@ WHILE: 'while';
 BREAK: 'break';
 CONTINUE: 'continue';
 INCLUDE: 'include';
+PROPERTY: 'property';
+RETHROW: 'rethrow';
 
 TAG_CLOSE: '>' -> popMode, popMode;
 
@@ -133,6 +135,8 @@ WHILE2: 'while' -> type(WHILE);
 BREAK2: 'break' -> type(BREAK);
 CONTINUE2: 'continue' -> type(CONTINUE);
 INCLUDE2: 'include' -> type(INCLUDE);
+PROPERTY2: 'property' -> type(PROPERTY);
+RETHROW2: 'rethrow' -> type(RETHROW);
 
 TAG_NAME2: TAG_NameStartChar TAG_NameChar* -> type(TAG_NAME);
 TAG_CLOSE2: '>' -> popMode, popMode, type(TAG_CLOSE);

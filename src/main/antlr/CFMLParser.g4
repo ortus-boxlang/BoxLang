@@ -70,18 +70,33 @@ statement:
 	| while
 	| break
 	| continue
-	| include;
+	| include
+	| rethrow;
 
 component:
-	TAG_OPEN PREFIX COMPONENT attribute* (
-		TAG_SLASH_CLOSE
-		| TAG_CLOSE
-	) statements TAG_OPEN SLASH_PREFIX COMPONENT TAG_CLOSE;
+	// <cfcomponent ... >
+	TAG_OPEN PREFIX COMPONENT attribute* TAG_CLOSE
+	// <cfproperty name="..."> (zero or more)
+	property*
+	// code in pseudo-constructor
+	statements
+	// </cfcomponent>
+	TAG_OPEN SLASH_PREFIX COMPONENT TAG_CLOSE;
+
+// <cfproperty name="..."> or... <cfproperty name="..." />
+property:
+	TAG_OPEN PREFIX PROPERTY attribute* (
+		TAG_CLOSE
+		| TAG_SLASH_CLOSE
+	);
+
 interface:
-	TAG_OPEN PREFIX INTERFACE attribute* (
-		TAG_SLASH_CLOSE
-		| TAG_CLOSE
-	) statements TAG_OPEN SLASH_PREFIX INTERFACE TAG_CLOSE;
+	// <cfinterface ... >
+	TAG_OPEN PREFIX INTERFACE attribute* TAG_CLOSE
+	// Code in interface 
+	statements
+	// </cfinterface>
+	TAG_OPEN SLASH_PREFIX INTERFACE TAG_CLOSE;
 
 function:
 	// <cffunction name="foo" >
@@ -201,3 +216,6 @@ include:
 		TAG_CLOSE
 		| TAG_SLASH_CLOSE
 	);
+
+// <cfrethrow> or... <cfrethrow />
+rethrow: TAG_OPEN PREFIX RETHROW ( TAG_CLOSE | TAG_SLASH_CLOSE);
