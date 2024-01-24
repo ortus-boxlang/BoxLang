@@ -18,6 +18,7 @@
 package ortus.boxlang.runtime.dynamic.casters;
 
 import org.apache.commons.lang3.math.Fraction;
+import org.apache.commons.lang3.math.NumberUtils;
 
 import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.types.exceptions.BoxCastException;
@@ -114,17 +115,18 @@ public class DoubleCaster {
 	private static Double parseDouble( String value ) {
 		if ( value == null )
 			return null;
-		// handle fractions
-		boolean isFraction = StringCaster.cast( value ).split( "/" ).length > 1 && StringCaster.cast( value ).split( " " ).length > 1;
-		if ( isFraction ) {
-			return Fraction.getFraction( value ).doubleValue();
-		} else {
+		if ( NumberUtils.isCreatable( value ) ) {
 			try {
 				return Double.parseDouble( value );
 			} catch ( Exception e ) {
 				return null;
 			}
+			// test for fractions
+		} else if ( StringCaster.cast( value ).split( "/" ).length > 1 && StringCaster.cast( value ).split( " " ).length > 1 ) {
+			return Fraction.getFraction( value ).doubleValue();
 		}
+
+		return null;
 	}
 
 }

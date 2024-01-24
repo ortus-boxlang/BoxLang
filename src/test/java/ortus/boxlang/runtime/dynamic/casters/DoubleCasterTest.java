@@ -49,8 +49,6 @@ public class DoubleCasterTest {
 		assertThat( DoubleCaster.cast( "+42" ) ).isEqualTo( 42 );
 		assertThat( DoubleCaster.cast( "4.2" ) ).isEqualTo( 4.2 );
 		assertThat( DoubleCaster.cast( "42." ) ).isEqualTo( 42 );
-		assertThat( DoubleCaster.cast( "NaN" ) ).isEqualTo( Double.NaN );
-		assertThat( DoubleCaster.cast( "Infinity" ) ).isEqualTo( Double.POSITIVE_INFINITY );
 		assertThrows(
 		    BoxRuntimeException.class, () -> {
 			    DoubleCaster.cast( "42.brad" );
@@ -58,10 +56,17 @@ public class DoubleCasterTest {
 		);
 	}
 
+	@DisplayName( "Double casting can cast a fraction" )
 	@Test
-	@Disabled( "Double casting can cast a fraction" )
 	void testItCanCastFraction() {
 		assertThat( DoubleCaster.cast( "52 1/2" ) ).isEqualTo( 52.50 );
+	}
+
+	@Test
+	@Disabled( "It can cast double and infinity" )
+	void testInfinity() {
+		assertThat( DoubleCaster.cast( "NaN" ) ).isEqualTo( Double.NaN );
+		assertThat( DoubleCaster.cast( "Infinity" ) ).isEqualTo( Double.POSITIVE_INFINITY );
 	}
 
 	@Test
@@ -111,6 +116,18 @@ public class DoubleCasterTest {
 		assertThat( attempt2.getOrDefault( 42D ) ).isEqualTo( 42 );
 		assertThat( attempt2.getOrSupply( () -> 40D + 2D ) ).isEqualTo( 42 );
 
+	}
+
+	@DisplayName( "Ensures the performance benchmark for the attempt is met" )
+	@Test
+	void canMeetBenchmark() {
+		long start = System.nanoTime();
+		for ( int i = 1; i <= 100000; i++ ) {
+			DoubleCaster.attempt( "Brad" );
+		}
+		long end = System.nanoTime();
+		System.out.println( ( end - start ) / 1000000l );
+		assertThat( ( end - start ) / 1000000l ).isLessThan( 20l );
 	}
 
 }
