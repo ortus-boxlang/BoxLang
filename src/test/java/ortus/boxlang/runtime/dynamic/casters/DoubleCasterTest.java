@@ -49,6 +49,8 @@ public class DoubleCasterTest {
 		assertThat( DoubleCaster.cast( "+42" ) ).isEqualTo( 42 );
 		assertThat( DoubleCaster.cast( "4.2" ) ).isEqualTo( 4.2 );
 		assertThat( DoubleCaster.cast( "42." ) ).isEqualTo( 42 );
+		assertThat( DoubleCaster.cast( "NaN" ) ).isEqualTo( Double.NaN );
+		assertThat( DoubleCaster.cast( "Infinity" ) ).isEqualTo( Double.POSITIVE_INFINITY );
 		assertThrows(
 		    BoxRuntimeException.class, () -> {
 			    DoubleCaster.cast( "42.brad" );
