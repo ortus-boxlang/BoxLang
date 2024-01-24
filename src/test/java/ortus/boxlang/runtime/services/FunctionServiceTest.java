@@ -41,6 +41,7 @@ class FunctionServiceTest {
 	@BeforeEach
 	public void setupBeforeEach() {
 		service = new FunctionService( runtime );
+		service.onStartup();
 	}
 
 	@DisplayName( "It can create the function service" )
