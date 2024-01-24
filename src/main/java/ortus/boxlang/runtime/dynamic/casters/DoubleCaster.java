@@ -122,7 +122,7 @@ public class DoubleCaster {
 				return null;
 			}
 			// test for fractions
-		} else if ( StringCaster.cast( value ).split( "/" ).length > 1 && StringCaster.cast( value ).split( " " ).length > 1 ) {
+		} else if ( StringCaster.cast( value ).split( "/" ).length > 1 ) {
 			return Fraction.getFraction( value ).doubleValue();
 		}
 

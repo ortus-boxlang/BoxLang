@@ -60,6 +60,7 @@ public class DoubleCasterTest {
 	@Test
 	void testItCanCastFraction() {
 		assertThat( DoubleCaster.cast( "52 1/2" ) ).isEqualTo( 52.50 );
+		assertThat( DoubleCaster.cast( "1/2" ) ).isEqualTo( .50 );
 	}
 
 	@Test
