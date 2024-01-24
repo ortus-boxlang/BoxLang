@@ -68,7 +68,8 @@ statement:
 	| try
 	| output
 	| while
-	| break;
+	| break
+	| continue;
 
 component:
 	TAG_OPEN PREFIX COMPONENT attribute* (
@@ -188,3 +189,7 @@ while:
 
 // <cfbreak> or... <cfbreak />
 break: TAG_OPEN PREFIX BREAK ( TAG_CLOSE | TAG_SLASH_CLOSE);
+
+// <cfcontinue> or... <cfcontinue />
+continue:
+	TAG_OPEN PREFIX CONTINUE (TAG_CLOSE | TAG_SLASH_CLOSE);

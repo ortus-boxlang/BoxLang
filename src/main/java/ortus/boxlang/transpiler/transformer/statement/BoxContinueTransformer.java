@@ -15,8 +15,10 @@
 package ortus.boxlang.transpiler.transformer.statement;
 
 import com.github.javaparser.ast.Node;
-import com.github.javaparser.ast.stmt.BreakStmt;
+import com.github.javaparser.ast.expr.BooleanLiteralExpr;
 import com.github.javaparser.ast.stmt.ContinueStmt;
+import com.github.javaparser.ast.stmt.IfStmt;
+
 import ortus.boxlang.ast.BoxNode;
 import ortus.boxlang.transpiler.JavaTranspiler;
 import ortus.boxlang.transpiler.transformer.AbstractTransformer;
@@ -30,6 +32,6 @@ public class BoxContinueTransformer extends AbstractTransformer {
 
 	@Override
 	public Node transform( BoxNode node, TransformerContext context ) throws IllegalStateException {
-		return addIndex( new ContinueStmt(), node );
+		return addIndex( new IfStmt( new BooleanLiteralExpr( true ), new ContinueStmt(), null ), node );
 	}
 }

@@ -357,4 +357,23 @@ public class TagTest {
 
 	}
 
+	@DisplayName( "tag continue" )
+	@Test
+	public void testContinue() {
+		instance.executeSource(
+		    """
+		         	<cfset counter = 0>
+		      <cfset result = 0>
+		        <cfwhile condition="counter < 10">
+		        	<cfset counter++>
+		    <cfcontinue>
+		    <cfset result++>
+		        <cfbreak>
+		        </cfwhile>
+		                                          """, context, BoxScriptType.CFMARKUP );
+
+		assertThat( DynamicObject.unWrap( variables.get( result ) ) ).isEqualTo( 0 );
+
+	}
+
 }

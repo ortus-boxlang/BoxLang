@@ -45,6 +45,7 @@ import ortus.boxlang.ast.statement.BoxAccessModifier;
 import ortus.boxlang.ast.statement.BoxAnnotation;
 import ortus.boxlang.ast.statement.BoxArgumentDeclaration;
 import ortus.boxlang.ast.statement.BoxBreak;
+import ortus.boxlang.ast.statement.BoxContinue;
 import ortus.boxlang.ast.statement.BoxDocumentationAnnotation;
 import ortus.boxlang.ast.statement.BoxExpression;
 import ortus.boxlang.ast.statement.BoxFunctionDeclaration;
@@ -65,6 +66,7 @@ import ortus.boxlang.parser.antlr.CFMLParser.AttributeValueContext;
 import ortus.boxlang.parser.antlr.CFMLParser.BoxImportContext;
 import ortus.boxlang.parser.antlr.CFMLParser.BreakContext;
 import ortus.boxlang.parser.antlr.CFMLParser.CatchBlockContext;
+import ortus.boxlang.parser.antlr.CFMLParser.ContinueContext;
 import ortus.boxlang.parser.antlr.CFMLParser.FunctionContext;
 import ortus.boxlang.parser.antlr.CFMLParser.OutputContext;
 import ortus.boxlang.parser.antlr.CFMLParser.ReturnContext;
@@ -206,9 +208,15 @@ public class BoxCFMLParser extends BoxAbstractParser {
 			return toAst( file, node.while_() );
 		} else if ( node.break_() != null ) {
 			return toAst( file, node.break_() );
+		} else if ( node.continue_() != null ) {
+			return toAst( file, node.continue_() );
 		}
 		throw new BoxRuntimeException( "Statement node " + node.getClass().getName() + " parsing not implemented yet. " + node.getText() );
 
+	}
+
+	private BoxStatement toAst( File file, ContinueContext node ) {
+		return new BoxContinue( getPosition( node ), getSourceText( node ) );
 	}
 
 	private BoxStatement toAst( File file, BreakContext node ) {
@@ -567,7 +575,7 @@ public class BoxCFMLParser extends BoxAbstractParser {
 			} else {
 				// Add these issues to the main parser
 				issues.addAll( result.getIssues() );
-				return null;
+				return new BoxNull( null, null );
 			}
 		} catch ( IOException e ) {
 			throw new BoxRuntimeException( "Error parsing interpolated expression: " + code, e );
