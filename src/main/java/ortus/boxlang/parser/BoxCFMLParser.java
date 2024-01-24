@@ -36,13 +36,18 @@ import ortus.boxlang.ast.BoxStatement;
 import ortus.boxlang.ast.BoxTemplate;
 import ortus.boxlang.ast.Point;
 import ortus.boxlang.ast.Position;
+import ortus.boxlang.ast.expression.BoxFQN;
+import ortus.boxlang.ast.expression.BoxIdentifier;
 import ortus.boxlang.ast.expression.BoxStringInterpolation;
 import ortus.boxlang.ast.expression.BoxStringLiteral;
 import ortus.boxlang.ast.statement.BoxExpression;
 import ortus.boxlang.ast.statement.BoxIfElse;
+import ortus.boxlang.ast.statement.BoxTry;
+import ortus.boxlang.ast.statement.BoxTryCatch;
 import ortus.boxlang.ast.statement.tag.BoxOutput;
 import ortus.boxlang.parser.antlr.CFMLLexer;
 import ortus.boxlang.parser.antlr.CFMLParser;
+import ortus.boxlang.parser.antlr.CFMLParser.CatchBlockContext;
 import ortus.boxlang.parser.antlr.CFMLParser.OutputContext;
 import ortus.boxlang.parser.antlr.CFMLParser.ScriptContext;
 import ortus.boxlang.parser.antlr.CFMLParser.SetContext;
@@ -50,6 +55,7 @@ import ortus.boxlang.parser.antlr.CFMLParser.StatementContext;
 import ortus.boxlang.parser.antlr.CFMLParser.StatementsContext;
 import ortus.boxlang.parser.antlr.CFMLParser.TemplateContext;
 import ortus.boxlang.parser.antlr.CFMLParser.TextContentContext;
+import ortus.boxlang.parser.antlr.CFMLParser.TryContext;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
 public class BoxCFMLParser extends BoxAbstractParser {
@@ -89,20 +95,22 @@ public class BoxCFMLParser extends BoxAbstractParser {
 
 	private List<BoxStatement> toAst( File file, StatementsContext node ) {
 		List<BoxStatement> statements = new ArrayList<>();
-		for ( var child : node.children ) {
-			if ( child instanceof StatementContext statement ) {
-				statements.add( toAst( file, statement ) );
-			} else if ( child instanceof TextContentContext textContent ) {
-				statements.add( toAst( file, textContent ) );
-			} else if ( child instanceof ScriptContext script ) {
-				if ( script.scriptBody() != null ) {
-					statements.add(
-					    new BoxScriptIsland(
-					        parseCFStatements( script.scriptBody().getText(), getPosition( script.scriptBody() ) ),
-					        getPosition( script.scriptBody() ),
-					        getSourceText( script.scriptBody() )
-					    )
-					);
+		if ( node.children != null ) {
+			for ( var child : node.children ) {
+				if ( child instanceof StatementContext statement ) {
+					statements.add( toAst( file, statement ) );
+				} else if ( child instanceof TextContentContext textContent ) {
+					statements.add( toAst( file, textContent ) );
+				} else if ( child instanceof ScriptContext script ) {
+					if ( script.scriptBody() != null ) {
+						statements.add(
+						    new BoxScriptIsland(
+						        parseCFStatements( script.scriptBody().getText(), getPosition( script.scriptBody() ) ),
+						        getPosition( script.scriptBody() ),
+						        getSourceText( script.scriptBody() )
+						    )
+						);
+					}
 				}
 			}
 		}
@@ -116,9 +124,61 @@ public class BoxCFMLParser extends BoxAbstractParser {
 			return toAst( file, node.set() );
 		} else if ( node.if_() != null ) {
 			return toAst( file, node.if_() );
+		} else if ( node.try_() != null ) {
+			return toAst( file, node.try_() );
 		}
 		throw new BoxRuntimeException( "Statement node " + node.getClass().getName() + " parsing not implemented yet. " + node.getText() );
 
+	}
+
+	private BoxStatement toAst( File file, TryContext node ) {
+		List<BoxStatement>	tryBody		= toAst( file, node.statements() );
+		List<BoxTryCatch>	catches		= node.catchBlock().stream().map( it -> toAst( file, it ) ).toList();
+		List<BoxStatement>	finallyBody	= new ArrayList<>();
+		if ( node.finallyBlock() != null ) {
+			finallyBody.addAll( toAst( file, node.finallyBlock().statements() ) );
+		}
+		return new BoxTry( tryBody, catches, finallyBody, getPosition( node ), getSourceText( node ) );
+	}
+
+	private BoxTryCatch toAst( File file, CatchBlockContext node ) {
+		BoxExpr			exception	= new BoxIdentifier( "cfcatch", null, null );
+		List<BoxExpr>	catchTypes;
+
+		var				typeSearch	= node.attribute().stream()
+		    .filter( ( it ) -> it.attributeName().TAG_NAME().getText().equalsIgnoreCase( "type" ) && it.attributeValue() != null ).findFirst();
+		if ( typeSearch.isPresent() ) {
+			String typeText;
+			if ( typeSearch.get().attributeValue().identifier() != null ) {
+				typeText = typeSearch.get().attributeValue().identifier().getText();
+			} else {
+				typeText = typeSearch.get().attributeValue().quotedString().getText();
+				String quoteChar = typeText.substring( 0, 1 );
+				typeText	= typeText.substring( 1, typeText.length() - 1 );
+				typeText	= escapeStringLiteral( quoteChar, typeText );
+			}
+			catchTypes = List.of( new BoxStringLiteral( typeText, getPosition( typeSearch.get().attributeValue() ),
+			    getSourceText( typeSearch.get().attributeValue() ) ) );
+		} else {
+			catchTypes = List.of( new BoxFQN( "any", null, null ) );
+		}
+
+		List<BoxStatement> catchBody = toAst( file, node.statements() );
+
+		return new BoxTryCatch( catchTypes, exception, catchBody, getPosition( node ), getSourceText( node ) );
+	}
+
+	/**
+	 * Escape double up quotes and pounds in a string literal
+	 * 
+	 * @param quoteChar the quote character used to surround the string
+	 * @param string    the string to escape
+	 * 
+	 * @return the escaped string
+	 */
+	private String escapeStringLiteral( String quoteChar, String string ) {
+		String escaped = string.replace( "##", "#" );
+		return escaped.replace( quoteChar + quoteChar, quoteChar );
 	}
 
 	private BoxIfElse toAst( File file, CFMLParser.IfContext node ) {

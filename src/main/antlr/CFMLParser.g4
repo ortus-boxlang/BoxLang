@@ -46,7 +46,6 @@ statement:
 	| if
 	| param
 	| try
-	| catchBlock
 	| output;
 
 component:
@@ -106,15 +105,40 @@ param:
 	);
 
 try:
-	TAG_OPEN PREFIX TRY attribute* (TAG_SLASH_CLOSE | TAG_CLOSE) statements TAG_OPEN TAG_SLASH
-		PREFIX TRY TAG_CLOSE;
+	// <cftry>
+	TAG_OPEN PREFIX TRY TAG_CLOSE
+	// code inside try
+	statements
+	// <cfcatch> (zero or more)
+	catchBlock*
+	// <cffinally> (zero or one)
+	finallyBlock?
+	// </cftry>
+	TAG_OPEN SLASH_PREFIX TRY TAG_CLOSE;
 
 catchBlock:
-	TAG_OPEN PREFIX CATCH attribute* (
-		TAG_SLASH_CLOSE
-		| TAG_CLOSE
-	) statements TAG_OPEN SLASH_PREFIX CATCH TAG_CLOSE;
+	// <cfcatch type="...">
+	TAG_OPEN PREFIX CATCH attribute* TAG_CLOSE
+	// code in catch
+	statements
+	// </cfcatch>
+	TAG_OPEN SLASH_PREFIX CATCH TAG_CLOSE;
+
+finallyBlock:
+	// <cffinally>
+	TAG_OPEN PREFIX FINALLY TAG_CLOSE
+	// code in finally 
+	statements
+	// </cffinally>
+	TAG_OPEN SLASH_PREFIX FINALLY TAG_CLOSE;
 
 output:
+	// <cfoutput />
 	TAG_OPEN PREFIX OUTPUT attribute* TAG_SLASH_CLOSE
-	| TAG_OPEN PREFIX OUTPUT attribute* TAG_CLOSE statements TAG_OPEN SLASH_PREFIX OUTPUT;
+	|
+	// <cfoutput> ... 
+	TAG_OPEN PREFIX OUTPUT attribute* TAG_CLOSE
+	// code in output
+	statements
+	// </cfoutput>
+	TAG_OPEN SLASH_PREFIX OUTPUT;

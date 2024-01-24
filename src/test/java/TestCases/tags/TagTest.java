@@ -217,4 +217,77 @@ public class TagTest {
 		assertThat( variables.get( result ) ).isEqualTo( "one two three four five six seven" );
 	}
 
+	@DisplayName( "tag try/catch" )
+	@Test
+	public void testTryCatch() {
+		instance.executeSource(
+		    """
+		    <cfset result = "one">
+		       <cftry>
+		       	<cfset 1/0>
+		       	<cfcatch type="any">
+		       		<cfset result = "two">
+		       	</cfcatch>
+		       	<cfcatch type="foo.bar">
+		    		<cfset result = "three">
+		       	</cfcatch>
+		       	<cffinally>
+		    		<cfset result &= "finally">
+		       	</cffinally>
+		       </cftry>
+		                           """, context, BoxScriptType.CFMARKUP );
+
+		assertThat( variables.get( result ) ).isEqualTo( "twofinally" );
+
+		instance.executeSource(
+		    """
+		    <cfset result = "one">
+		       <cftry>
+		       	<cfset 1/0>
+		       	<cfcatch type="foo.bar">
+		       		<cfset result = "two">
+		       	</cfcatch>
+		       	<cfcatch type="any">
+		    		<cfset result = "three">
+		       	</cfcatch>
+		       	<cffinally>
+		    		<cfset result &= "finally">
+		       	</cffinally>
+		       </cftry>
+		                           """, context, BoxScriptType.CFMARKUP );
+
+		assertThat( variables.get( result ) ).isEqualTo( "threefinally" );
+
+		instance.executeSource(
+		    """
+		     <cftry>
+		       <cfset result = "try">
+		     	<cffinally>
+		    <cfset result &= "finally">
+		     	</cffinally>
+		     </cftry>
+		                         """, context, BoxScriptType.CFMARKUP );
+
+		assertThat( variables.get( result ) ).isEqualTo( "tryfinally" );
+
+		instance.executeSource(
+		    """
+		    <cfset result = "try">
+		       <cftry>
+		    <cfset 1/0>
+		      <cfcatch>
+		      <cfset result &= "catch">
+		      </cfcatch>
+		       </cftry>
+		                           """, context, BoxScriptType.CFMARKUP );
+
+		assertThat( variables.get( result ) ).isEqualTo( "trycatch" );
+
+		instance.executeSource(
+		    """
+		    <cftry><cfcatch></cfcatch><cffinally></cffinally></cftry>
+		                        """, context, BoxScriptType.CFMARKUP );
+		// Just make sure it parses without error
+	}
+
 }
