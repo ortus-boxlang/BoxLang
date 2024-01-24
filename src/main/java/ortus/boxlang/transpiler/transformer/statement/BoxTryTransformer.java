@@ -18,7 +18,7 @@ package ortus.boxlang.transpiler.transformer.statement;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 import com.github.javaparser.ast.Node;
 import com.github.javaparser.ast.NodeList;
@@ -160,26 +160,22 @@ public class BoxTryTransformer extends AbstractTransformer {
 			return transformCatchType( boxCatchTypes.get( 0 ), context, contextName, throwableName );
 		}
 
-		List<Expression>	catchTypesIfs		= boxCatchTypes.stream().map( bct -> transformCatchType( bct, context, contextName, throwableName ) )
-		    .collect( Collectors.toList() );
+		int size = boxCatchTypes.size();
+		return IntStream.range( 0, size )
+		    .map( i -> size - i + 0 - 1 )
+		    .mapToObj( i -> transformCatchType( boxCatchTypes.get( i ), context, contextName, throwableName ) )
+		    .reduce( null, ( acc, ex ) -> {
+			    BinaryExpr expr = new BinaryExpr();
 
-		BinaryExpr			firstOrExpression	= new BinaryExpr();
-		firstOrExpression.setLeft( catchTypesIfs.get( 0 ) );
-		firstOrExpression.setOperator( Operator.OR );
+			    expr.setOperator( Operator.OR );
+			    expr.setLeft( ex );
 
-		catchTypesIfs.stream().skip( 1 ).reduce( firstOrExpression, ( acc, ex ) -> {
-			BinaryExpr	orExpression	= ( BinaryExpr ) acc;
+			    if ( acc != null ) {
+				    expr.setRight( acc );
+			    }
 
-			BinaryExpr	right			= new BinaryExpr();
-			right.setLeft( ( Expression ) ex );
-			right.setOperator( Operator.OR );
-
-			orExpression.setRight( right );
-
-			return right;
-		} );
-
-		return firstOrExpression;
+			    return expr;
+		    } );
 	}
 
 	private Expression transformCatchType( BoxExpr catchType, TransformerContext context, String contextName, String throwableName ) {
