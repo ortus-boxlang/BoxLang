@@ -89,7 +89,7 @@ public class DateTimeCaster {
 			return object instanceof DateTime
 			    ? ( DateTime ) object
 			    : new DateTime( ( String ) object, timezone );
-		} catch ( DateTimeParseException e ) {
+		} catch ( DateTimeParseException | ClassCastException e ) {
 			if ( fail ) {
 				throw e;
 			}
