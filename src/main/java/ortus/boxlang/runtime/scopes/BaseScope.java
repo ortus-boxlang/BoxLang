@@ -43,10 +43,10 @@ public class BaseScope extends Struct implements IScope {
 	 * @param scopeName The name of the scope
 	 */
 	public BaseScope( Key scopeName ) {
-		this( scopeName, Struct.TYPE.DEFAULT );
+		this( scopeName, Struct.TYPES.DEFAULT );
 	}
 
-	public BaseScope( Key scopeName, Struct.TYPE type ) {
+	public BaseScope( Key scopeName, Struct.TYPES type ) {
 		super( type );
 		this.scopeName = scopeName;
 		BoxRuntime.getInstance().announce( "onScopeCreation", Struct.of( "scope", this ) );

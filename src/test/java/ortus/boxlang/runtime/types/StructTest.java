@@ -179,25 +179,25 @@ class StructTest {
 	void testCanCreateDefaultStruct() {
 		IStruct struct = new Struct();
 		assertThat( struct.size() ).isEqualTo( 0 );
-		assertThat( struct.getType() ).isEqualTo( Struct.TYPE.DEFAULT );
+		assertThat( struct.getType() ).isEqualTo( Struct.TYPES.DEFAULT );
 		assertThat( struct.getWrapped() ).isInstanceOf( ConcurrentHashMap.class );
 	}
 
 	@DisplayName( "Can create a linked struct in the constructor" )
 	@Test
 	void testCanCreateLinkedStruct() {
-		IStruct struct = new Struct( Struct.TYPE.LINKED );
+		IStruct struct = new Struct( Struct.TYPES.LINKED );
 		assertThat( struct.size() ).isEqualTo( 0 );
-		assertThat( struct.getType() ).isEqualTo( Struct.TYPE.LINKED );
+		assertThat( struct.getType() ).isEqualTo( Struct.TYPES.LINKED );
 		assertThat( struct.getWrapped() ).isNotInstanceOf( ConcurrentHashMap.class );
 	}
 
 	@DisplayName( "Can create a sorted struct in the constructor" )
 	@Test
 	void testCanCreateSortedStruct() {
-		IStruct struct = new Struct( Struct.TYPE.SORTED );
+		IStruct struct = new Struct( Struct.TYPES.SORTED );
 		assertThat( struct.size() ).isEqualTo( 0 );
-		assertThat( struct.getType() ).isEqualTo( Struct.TYPE.SORTED );
+		assertThat( struct.getType() ).isEqualTo( Struct.TYPES.SORTED );
 		assertThat( struct.getWrapped() ).isNotInstanceOf( ConcurrentHashMap.class );
 	}
 
@@ -206,7 +206,7 @@ class StructTest {
 	void testCanCreateSortedStructWithComparator() {
 		IStruct struct = new Struct( ( k1, k2 ) -> Integer.compare( k2.getName().length(), k1.getName().length() ) );
 		assertThat( struct.size() ).isEqualTo( 0 );
-		assertThat( struct.getType() ).isEqualTo( Struct.TYPE.SORTED );
+		assertThat( struct.getType() ).isEqualTo( Struct.TYPES.SORTED );
 		struct.put( "/hello", "test" );
 		struct.put( "/hello/again", "test" );
 		struct.put( "/hello/again/and/again", "test" );

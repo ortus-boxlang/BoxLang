@@ -52,7 +52,7 @@ public class TestStruct extends TestBase {
 	public void orderedStructLiterals() throws IOException {
 
 		assertEqualsNoWhiteSpaces(
-		    "new Struct(Struct.Type.LINKED)",
+		    "new Struct(Struct.TYPES.LINKED)",
 		    transformExpression( "[:]" )
 		);
 		assertEqualsNoWhiteSpaces(

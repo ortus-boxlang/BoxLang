@@ -23,7 +23,7 @@ import java.util.Map;
 import ortus.boxlang.runtime.dynamic.IReferenceable;
 import ortus.boxlang.runtime.runnables.IClassRunnable;
 import ortus.boxlang.runtime.scopes.Key;
-import ortus.boxlang.runtime.types.Struct.TYPE;
+import ortus.boxlang.runtime.types.Struct.TYPES;
 
 public interface IStruct extends Map<Key, Object>, IType, IReferenceable {
 
@@ -243,6 +243,6 @@ public interface IStruct extends Map<Key, Object>, IType, IReferenceable {
 	 *
 	 * @return The type of struct according to the {@Link Type} enum
 	 */
-	public TYPE getType();
+	public TYPES getType();
 
 }

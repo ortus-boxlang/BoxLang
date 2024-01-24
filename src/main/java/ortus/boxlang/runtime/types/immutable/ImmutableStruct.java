@@ -41,7 +41,7 @@ public class ImmutableStruct extends Struct implements IImmutable {
 	/**
 	 * The type of struct
 	 */
-	public final TYPE type;
+	public final TYPES type;
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -54,7 +54,7 @@ public class ImmutableStruct extends Struct implements IImmutable {
 	 *
 	 * @param type The type of struct to create: DEFAULT, LINKED, SORTED
 	 */
-	public ImmutableStruct( TYPE type ) {
+	public ImmutableStruct( TYPES type ) {
 		// Immutable struct does not use syncronized maps
 		super(
 		    switch ( type ) {
@@ -72,7 +72,7 @@ public class ImmutableStruct extends Struct implements IImmutable {
 	 * Create a default struct
 	 */
 	public ImmutableStruct() {
-		this( TYPE.DEFAULT );
+		this( TYPES.DEFAULT );
 	}
 
 	/**
@@ -81,7 +81,7 @@ public class ImmutableStruct extends Struct implements IImmutable {
 	 * @param map The map to create the struct from
 	 */
 	public ImmutableStruct( Map<? extends Object, ? extends Object> map ) {
-		this( TYPE.DEFAULT, map );
+		this( TYPES.DEFAULT, map );
 	}
 
 	/**
@@ -90,7 +90,7 @@ public class ImmutableStruct extends Struct implements IImmutable {
 	 * @param struct The struct to create the struct from
 	 */
 	public ImmutableStruct( IStruct struct ) {
-		this( struct instanceof Struct str ? str.type : Struct.TYPE.DEFAULT, struct.getWrapped() );
+		this( struct instanceof Struct str ? str.type : Struct.TYPES.DEFAULT, struct.getWrapped() );
 	}
 
 	/**
@@ -99,7 +99,7 @@ public class ImmutableStruct extends Struct implements IImmutable {
 	 * @param map  The map to create the struct from
 	 * @param type The type of struct to create: DEFAULT, LINKED, SORTED
 	 */
-	public ImmutableStruct( TYPE type, Map<? extends Object, ? extends Object> map ) {
+	public ImmutableStruct( TYPES type, Map<? extends Object, ? extends Object> map ) {
 		this( type );
 		_addAll( map );
 	}
@@ -119,7 +119,7 @@ public class ImmutableStruct extends Struct implements IImmutable {
 	 * @param map  The map to create the struct from
 	 * @param type The type of struct to create: DEFAULT, LINKED, SORTED
 	 */
-	public static ImmutableStruct fromMap( TYPE type, Map<Object, Object> map ) {
+	public static ImmutableStruct fromMap( TYPES type, Map<Object, Object> map ) {
 		return new ImmutableStruct( type, map );
 	}
 
@@ -264,7 +264,7 @@ public class ImmutableStruct extends Struct implements IImmutable {
 	private void _addAll( Map<? extends Object, ? extends Object> map ) {
 		var entryStream = map.entrySet().parallelStream();
 		// With a linked hashmap we need to maintain order - which is a tiny bit slower
-		if ( type.equals( TYPE.LINKED ) ) {
+		if ( type.equals( TYPES.LINKED ) ) {
 			entryStream.forEachOrdered( entry -> {
 				Key key;
 				if ( entry.getKey() instanceof Key entryKey ) {

@@ -40,7 +40,7 @@ public class ArgumentsScope extends BaseScope {
 	 */
 
 	public ArgumentsScope() {
-		super( ArgumentsScope.name, Struct.TYPE.LINKED );
+		super( ArgumentsScope.name, Struct.TYPES.LINKED );
 	}
 
 	/**

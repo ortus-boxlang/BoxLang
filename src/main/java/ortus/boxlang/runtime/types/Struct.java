@@ -58,7 +58,7 @@ public class Struct implements IStruct, IListenable {
 	/**
 	 * The Available types of structs
 	 */
-	public enum TYPE {
+	public enum TYPES {
 		LINKED,
 		SORTED,
 		DEFAULT
@@ -77,7 +77,7 @@ public class Struct implements IStruct, IListenable {
 	/**
 	 * The type of struct
 	 */
-	public final TYPE					type;
+	public final TYPES					type;
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -115,17 +115,17 @@ public class Struct implements IStruct, IListenable {
 	 *
 	 * @throws BoxRuntimeException If an invalid type is specified: DEFAULT, LINKED, SORTED
 	 */
-	public Struct( TYPE type ) {
+	public Struct( TYPES type ) {
 		this.type = type;
 
 		// Initialize the wrapped map
-		if ( type.equals( TYPE.DEFAULT ) ) {
+		if ( type.equals( TYPES.DEFAULT ) ) {
 			this.wrapped = new ConcurrentHashMap<>( INITIAL_CAPACITY );
 			return;
-		} else if ( type.equals( TYPE.LINKED ) ) {
+		} else if ( type.equals( TYPES.LINKED ) ) {
 			this.wrapped = Collections.synchronizedMap( new LinkedHashMap<Key, Object>( INITIAL_CAPACITY ) );
 			return;
-		} else if ( type.equals( TYPE.SORTED ) ) {
+		} else if ( type.equals( TYPES.SORTED ) ) {
 			this.wrapped = new ConcurrentSkipListMap<>();
 			return;
 		}
@@ -137,7 +137,7 @@ public class Struct implements IStruct, IListenable {
 	 * Create a default struct
 	 */
 	public Struct() {
-		this( TYPE.DEFAULT );
+		this( TYPES.DEFAULT );
 	}
 
 	/**
@@ -146,7 +146,7 @@ public class Struct implements IStruct, IListenable {
 	 * @param comparator The comparator to use
 	 */
 	public Struct( Comparator<Key> comparator ) {
-		this.type		= TYPE.SORTED;
+		this.type		= TYPES.SORTED;
 		this.wrapped	= new ConcurrentSkipListMap<>( comparator );
 	}
 
@@ -159,7 +159,7 @@ public class Struct implements IStruct, IListenable {
 	 * @param map  The map to create the struct from
 	 * @param type The type of struct to create: DEFAULT, LINKED, SORTED
 	 */
-	protected Struct( Map<Key, Object> map, TYPE type ) {
+	protected Struct( Map<Key, Object> map, TYPES type ) {
 		this.type		= type;
 		this.wrapped	= map;
 	}
@@ -170,7 +170,7 @@ public class Struct implements IStruct, IListenable {
 	 * @param map The map to create the struct from
 	 */
 	public Struct( Map<? extends Object, ? extends Object> map ) {
-		this( TYPE.DEFAULT, map );
+		this( TYPES.DEFAULT, map );
 	}
 
 	/**
@@ -179,7 +179,7 @@ public class Struct implements IStruct, IListenable {
 	 * @param type The type of struct to create: DEFAULT, LINKED, SORTED
 	 * @param map  The map to create the struct from
 	 */
-	public Struct( TYPE type, Map<? extends Object, ? extends Object> map ) {
+	public Struct( TYPES type, Map<? extends Object, ? extends Object> map ) {
 		this( type );
 		addAll( map );
 	}
@@ -210,7 +210,7 @@ public class Struct implements IStruct, IListenable {
 	 *
 	 * @return The struct created from the map with the specified type
 	 */
-	public static IStruct fromMap( TYPE type, Map<Object, Object> map ) {
+	public static IStruct fromMap( TYPES type, Map<Object, Object> map ) {
 		return new Struct( type, map );
 	}
 
@@ -250,7 +250,7 @@ public class Struct implements IStruct, IListenable {
 		if ( values.length % 2 != 0 ) {
 			throw new BoxRuntimeException( "Invalid number of arguments.  Must be an even number." );
 		}
-		IStruct struct = new Struct( TYPE.LINKED );
+		IStruct struct = new Struct( TYPES.LINKED );
 		for ( int i = 0; i < values.length; i += 2 ) {
 			struct.put( KeyCaster.cast( values[ i ] ), values[ i + 1 ] );
 		}
@@ -272,7 +272,7 @@ public class Struct implements IStruct, IListenable {
 			throw new BoxRuntimeException( "Invalid number of arguments.  Must be an even number." );
 		}
 
-		IStruct struct = ( comparator == null ? new Struct( TYPE.SORTED ) : new Struct( comparator ) );
+		IStruct struct = ( comparator == null ? new Struct( TYPES.SORTED ) : new Struct( comparator ) );
 
 		for ( int i = 0; i < values.length; i += 2 ) {
 			struct.put( KeyCaster.cast( values[ i ] ), values[ i + 1 ] );
@@ -535,7 +535,7 @@ public class Struct implements IStruct, IListenable {
 	public void addAll( Map<? extends Object, ? extends Object> map ) {
 		var entryStream = map.entrySet().parallelStream();
 		// With a linked hashmap we need to maintain order - which is a tiny bit slower
-		if ( type.equals( TYPE.LINKED ) ) {
+		if ( type.equals( TYPES.LINKED ) ) {
 			entryStream.forEachOrdered( entry -> {
 				Key key;
 				if ( entry.getKey() instanceof Key entryKey ) {
@@ -671,7 +671,7 @@ public class Struct implements IStruct, IListenable {
 	 *
 	 * @return The type of struct according to the {@Link Type} enum
 	 */
-	public TYPE getType() {
+	public TYPES getType() {
 		return type;
 	}
 
