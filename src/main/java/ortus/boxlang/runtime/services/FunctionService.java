@@ -96,13 +96,6 @@ public class FunctionService extends BaseService {
 	 */
 	public FunctionService( BoxRuntime runtime ) {
 		super( runtime );
-
-		// Load global functions immediately
-		try {
-			loadGlobalFunctions();
-		} catch ( IOException e ) {
-			throw new BoxRuntimeException( "Cannot load global functions", e );
-		}
 	}
 
 	/**
@@ -116,7 +109,21 @@ public class FunctionService extends BaseService {
 	 */
 	@Override
 	public void onStartup() {
-		logger.info( "FunctionService.onStartup()" );
+		var timerLabel = "functionservice-loadglobalfunctions";
+		BoxRuntime.timerUtil.start( timerLabel );
+
+		try {
+			loadGlobalFunctions();
+		} catch ( IOException e ) {
+			throw new BoxRuntimeException( "Cannot load global functions", e );
+		}
+
+		// Log it
+		logger.atInfo().log(
+		    "+ Function Service: Registered [{}] global functions in [{}] ms",
+		    getGlobalFunctionCount(),
+		    BoxRuntime.timerUtil.stopAndGetMillis( timerLabel )
+		);
 	}
 
 	/**

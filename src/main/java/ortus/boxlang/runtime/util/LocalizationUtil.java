@@ -31,7 +31,7 @@ import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.DateTime;
 import ortus.boxlang.runtime.types.Struct;
-import ortus.boxlang.runtime.types.Struct.Type;
+import ortus.boxlang.runtime.types.Struct.TYPES;
 import ortus.boxlang.runtime.types.immutable.ImmutableStruct;
 
 /**
@@ -43,7 +43,7 @@ public final class LocalizationUtil {
 	 * A struct of common locale constants
 	 */
 	public static final ImmutableStruct	commonLocales	= new ImmutableStruct(
-	    Type.LINKED,
+	    TYPES.LINKED,
 	    new LinkedHashMap<Key, Locale>() {
 
 		    {
@@ -83,7 +83,7 @@ public final class LocalizationUtil {
 	 * A collection of common locale aliases which are used by both ACF and Lucee
 	 */
 	public static final ImmutableStruct	localeAliases	= new ImmutableStruct(
-	    Type.LINKED,
+	    TYPES.LINKED,
 	    new LinkedHashMap<Key, Locale>() {
 
 		    {

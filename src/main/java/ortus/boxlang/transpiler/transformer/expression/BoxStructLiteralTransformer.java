@@ -89,7 +89,7 @@ public class BoxStructLiteralTransformer extends AbstractTransformer {
 			return javaExpr;
 		} else {
 			if ( empty ) {
-				Node javaExpr = parseExpression( "new Struct( Struct.Type.LINKED )", values );
+				Node javaExpr = parseExpression( "new Struct( Struct.TYPES.LINKED )", values );
 				logger.debug( "{} -> {}", node.getSourceText(), javaExpr );
 				addIndex( javaExpr, node );
 				return javaExpr;

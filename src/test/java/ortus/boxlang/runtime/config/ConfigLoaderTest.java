@@ -87,7 +87,7 @@ class ConfigLoaderTest {
 		assertThat( config.runtime.hasMapping( "/myMapping" ) ).isTrue();
 
 		// Must be in the right order
-		assertThat( config.runtime.getSortedMappingKeys() ).isEqualTo( new String[] { "/test/boxlang", "/myMapping", "/test", "/" } );
+		assertThat( config.runtime.getRegisteredMappings() ).isEqualTo( new String[] { "/test/boxlang", "/myMapping", "/test", "/" } );
 	}
 
 	@DisplayName( "It can unregister a mapping" )

@@ -256,7 +256,7 @@ public class ClassDiscovery {
 			if ( name.startsWith( startDir ) && name.endsWith( ".class" ) ) {
 				String className = name.replace( '/', '.' ).substring( 0, name.length() - 6 );
 				try {
-					Class<?> clazz = Class.forName( className, true, classLoader );
+					Class<?> clazz = Class.forName( className, false, classLoader );
 					if ( isAnnotated( clazz, annotations ) ) {
 						classes.add( clazz );
 					}
@@ -297,7 +297,7 @@ public class ClassDiscovery {
 				else if ( name.endsWith( ".class" ) ) {
 					String className = packageName + '.' + name.substring( 0, name.length() - 6 );
 					try {
-						Class<?> clazz = Class.forName( className, true, classLoader );
+						Class<?> clazz = Class.forName( className, false, classLoader );
 						if ( isAnnotated( clazz, annotations ) ) {
 							classes.add( clazz );
 						}

@@ -20,8 +20,6 @@ package ortus.boxlang.runtime.config.segments;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
@@ -39,9 +37,9 @@ import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 public class RuntimeConfig {
 
 	/**
-	 * A map of mappings for the runtime
+	 * A sorted struct of mappings
 	 */
-	public ConcurrentMap<Key, String>	mappings			= new ConcurrentSkipListMap<>(
+	public IStruct				mappings			= new Struct(
 	    ( k1, k2 ) -> Integer.compare( k2.getName().length(), k1.getName().length() )
 	);
 
@@ -49,17 +47,17 @@ public class RuntimeConfig {
 	 * An array of directories where modules are located and loaded from.
 	 * {@code [ /{user-home}/modules ]}
 	 */
-	public List<String>					modulesDirectory	= List.of( System.getProperty( "user.home" ) + "/modules" );
+	public List<String>			modulesDirectory	= List.of( System.getProperty( "user.home" ) + "/modules" );
 
 	/**
 	 * The cache configurations for the runtime
 	 */
-	public IStruct						caches				= new Struct();
+	public IStruct				caches				= new Struct();
 
 	/**
 	 * Logger
 	 */
-	private static final Logger			logger				= LoggerFactory.getLogger( RuntimeConfig.class );
+	private static final Logger	logger				= LoggerFactory.getLogger( RuntimeConfig.class );
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -68,14 +66,12 @@ public class RuntimeConfig {
 	 */
 
 	/**
-	 * Get all the registered mappings as an array of strings
-	 * and sorted by the length of the mapping name
+	 * Get all the mappings back as an array of strings in their length order
 	 *
-	 * @return The sorted array of mappings
+	 * @return The mappings as an array of strings
 	 */
-	public String[] getSortedMappingKeys() {
-		return this.mappings.keySet()
-		    .stream()
+	public String[] getRegisteredMappings() {
+		return this.mappings.keySet().stream()
 		    .map( Key::getName )
 		    .toArray( String[]::new );
 	}
@@ -245,7 +241,7 @@ public class RuntimeConfig {
 	 */
 	public IStruct asStruct() {
 		return Struct.of(
-		    Key.mappings, new Struct( this.mappings ),
+		    Key.mappings, this.mappings,
 		    Key.modulesDirectory, this.modulesDirectory,
 		    Key.caches, this.caches
 		);
