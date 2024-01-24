@@ -72,6 +72,24 @@ public class DollarFormatTest {
 		assertThat( variables.get( result ) ).isEqualTo( "$0.50" );
 	}
 
+	@DisplayName( "It tests the member function Numeric.dollarFormat" )
+	@Test
+	void testNumericMemberFunction() {
+		instance.executeSource(
+		    """
+		    number = 12345.67;
+		       result = number.dollarFormat();
+		       """,
+		    context );
+		assertThat( variables.get( result ) ).isEqualTo( "$12,345.67" );
+		instance.executeSource(
+		    """
+		    result = dollarFormat(0.5);
+		    """,
+		    context );
+		assertThat( variables.get( result ) ).isEqualTo( "$0.50" );
+	}
+
 	@DisplayName( "It formats a negative number as a U.S. Dollar string in parentheses" )
 	@Test
 	void testItFormatsNegativeNumberAsDollarStringInParentheses() {

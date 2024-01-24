@@ -44,9 +44,7 @@ statement:
 	| argument
 	| return
 	| if
-	| param
 	| try
-	| catchBlock
 	| output;
 
 component:
@@ -61,10 +59,21 @@ interface:
 	) statements TAG_OPEN SLASH_PREFIX INTERFACE TAG_CLOSE;
 
 function:
-	TAG_OPEN PREFIX FUNCTION attribute* (
+	// <cffunction name="foo" >
+	TAG_OPEN PREFIX FUNCTION attribute* TAG_CLOSE
+	// zero or more <cfargument ... >
+	argument*
+	// code inside function
+	statements
+	// </cffunction>
+	TAG_OPEN SLASH_PREFIX FUNCTION TAG_CLOSE;
+
+argument:
+	// <cfargument name="param">
+	TAG_OPEN PREFIX ARGUMENT attribute* (
 		TAG_SLASH_CLOSE
 		| TAG_CLOSE
-	) statements TAG_OPEN SLASH_PREFIX FUNCTION TAG_CLOSE;
+	);
 
 set:
 	TAG_OPEN PREFIX SET expression (TAG_SLASH_CLOSE | TAG_CLOSE);
@@ -73,12 +82,6 @@ scriptBody: SCRIPT_BODY*;
 script: SCRIPT_OPEN scriptBody SCRIPT_END_BODY;
 
 code: CONTENT_TEXT;
-
-argument:
-	TAG_OPEN PREFIX ARGUMENT attribute* (
-		TAG_SLASH_CLOSE
-		| TAG_CLOSE
-	);
 
 return:
 	TAG_OPEN PREFIX RETURN expression? (
@@ -99,22 +102,41 @@ if:
 	// Closing </cfif>
 	TAG_OPEN SLASH_PREFIX IF TAG_CLOSE;
 
-param:
-	TAG_OPEN PREFIX PARAM attribute* (
-		TAG_SLASH_CLOSE
-		| TAG_CLOSE
-	);
-
 try:
-	TAG_OPEN PREFIX TRY attribute* (TAG_SLASH_CLOSE | TAG_CLOSE) statements TAG_OPEN TAG_SLASH
-		PREFIX TRY TAG_CLOSE;
+	// <cftry>
+	TAG_OPEN PREFIX TRY TAG_CLOSE
+	// code inside try
+	statements
+	// <cfcatch> (zero or more)
+	catchBlock*
+	// <cffinally> (zero or one)
+	finallyBlock?
+	// </cftry>
+	TAG_OPEN SLASH_PREFIX TRY TAG_CLOSE;
 
 catchBlock:
-	TAG_OPEN PREFIX CATCH attribute* (
-		TAG_SLASH_CLOSE
-		| TAG_CLOSE
-	) statements TAG_OPEN SLASH_PREFIX CATCH TAG_CLOSE;
+	// <cfcatch type="...">
+	TAG_OPEN PREFIX CATCH attribute* TAG_CLOSE
+	// code in catch
+	statements
+	// </cfcatch>
+	TAG_OPEN SLASH_PREFIX CATCH TAG_CLOSE;
+
+finallyBlock:
+	// <cffinally>
+	TAG_OPEN PREFIX FINALLY TAG_CLOSE
+	// code in finally 
+	statements
+	// </cffinally>
+	TAG_OPEN SLASH_PREFIX FINALLY TAG_CLOSE;
 
 output:
+	// <cfoutput />
 	TAG_OPEN PREFIX OUTPUT attribute* TAG_SLASH_CLOSE
-	| TAG_OPEN PREFIX OUTPUT attribute* TAG_CLOSE statements TAG_OPEN SLASH_PREFIX OUTPUT;
+	|
+	// <cfoutput> ... 
+	TAG_OPEN PREFIX OUTPUT attribute* TAG_CLOSE
+	// code in output
+	statements
+	// </cfoutput>
+	TAG_OPEN SLASH_PREFIX OUTPUT;

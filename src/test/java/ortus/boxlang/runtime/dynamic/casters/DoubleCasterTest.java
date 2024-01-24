@@ -49,11 +49,19 @@ public class DoubleCasterTest {
 		assertThat( DoubleCaster.cast( "+42" ) ).isEqualTo( 42 );
 		assertThat( DoubleCaster.cast( "4.2" ) ).isEqualTo( 4.2 );
 		assertThat( DoubleCaster.cast( "42." ) ).isEqualTo( 42 );
+		assertThat( DoubleCaster.cast( "NaN" ) ).isEqualTo( Double.NaN );
+		assertThat( DoubleCaster.cast( "Infinity" ) ).isEqualTo( Double.POSITIVE_INFINITY );
 		assertThrows(
 		    BoxRuntimeException.class, () -> {
 			    DoubleCaster.cast( "42.brad" );
 		    }
 		);
+	}
+
+	@Test
+	@Disabled( "Double casting can cast a fraction" )
+	void testItCanCastFraction() {
+		assertThat( DoubleCaster.cast( "52 1/2" ) ).isEqualTo( 52.50 );
 	}
 
 	@Test

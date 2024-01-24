@@ -186,7 +186,7 @@ public class BaseBoxContext implements IBoxContext {
 			getParent().rethrow();
 		}
 
-		throw new BoxRuntimeException( "No exception to rethrow.  YOu can only rethrow inside of a catch block." );
+		throw new BoxRuntimeException( "No exception to rethrow.  You can only rethrow inside of a catch block." );
 	}
 
 	/**

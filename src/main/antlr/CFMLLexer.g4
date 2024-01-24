@@ -65,9 +65,9 @@ IF: 'if' -> pushMode(EXPRESSION_MODE_TAG);
 ELSE: 'else';
 ELSEIF: 'elseif' -> pushMode(EXPRESSION_MODE_TAG);
 INTERFACE: 'interface';
-PARAM: 'param';
 TRY: 'try';
 CATCH: 'catch';
+FINALLY: 'finally';
 SET: 'set ' -> pushMode(EXPRESSION_MODE_TAG);
 
 TAG_CLOSE: '>' -> popMode, popMode;
@@ -117,6 +117,7 @@ OUTPUT2:
 INTERFACE2: 'interface' -> type(INTERFACE);
 TRY2: 'try' -> type(TRY);
 CATCH2: 'catch' -> type(CATCH);
+FINALLY2: 'finally' -> type(FINALLY);
 
 TAG_NAME2: TAG_NameStartChar TAG_NameChar* -> type(TAG_NAME);
 TAG_CLOSE2: '>' -> popMode, popMode, type(TAG_CLOSE);

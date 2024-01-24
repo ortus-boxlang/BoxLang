@@ -21,7 +21,6 @@ import ortus.boxlang.runtime.dynamic.casters.DateTimeCaster;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
-import ortus.boxlang.runtime.types.DateTime;
 
 @BoxBIF
 public class IsDate extends BIF {
@@ -45,13 +44,7 @@ public class IsDate extends BIF {
 	 * @argument.value Value to test for date-ness
 	 */
 	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
-		Object value = arguments.get( Key.value );
-		if ( value instanceof DateTime ) {
-			return true;
-		} else if ( value instanceof String ) {
-			return DateTimeCaster.attempt( value ).wasSuccessful();
-		}
-		return false;
+		return DateTimeCaster.attempt( arguments.get( Key.value ) ).wasSuccessful();
 	}
 
 }
