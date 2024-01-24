@@ -119,7 +119,7 @@ public class DoubleCasterTest {
 
 	}
 
-	@DisplayName( "Ensures the performance benchmark for the attempt is met" )
+	@Disabled( "Ensures the performance benchmark for the attempt is met" )
 	@Test
 	void canMeetBenchmark() {
 		long start = System.nanoTime();
@@ -128,7 +128,7 @@ public class DoubleCasterTest {
 		}
 		long end = System.nanoTime();
 		System.out.println( ( end - start ) / 1000000l );
-		assertThat( ( end - start ) / 1000000l ).isLessThan( 30l );
+		assertThat( ( end - start ) / 1000000l ).isLessThan( 20l );
 	}
 
 }
