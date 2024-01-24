@@ -290,4 +290,20 @@ public class TagTest {
 		// Just make sure it parses without error
 	}
 
+	@DisplayName( "tag function" )
+	@Test
+	public void testFunction() {
+		instance.executeSource(
+		    """
+		          <cffunction name="foo" returntype="string">
+		          	<cfargument name="bar" type="string" required="true">
+		       	<cfreturn bar & "baz">
+		       </cffunction>
+		    <cfset result = foo("bar")>
+		                                 """, context, BoxScriptType.CFMARKUP );
+
+		assertThat( variables.get( result ) ).isEqualTo( "barbaz" );
+
+	}
+
 }

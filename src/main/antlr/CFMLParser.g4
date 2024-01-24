@@ -44,7 +44,6 @@ statement:
 	| argument
 	| return
 	| if
-	| param
 	| try
 	| output;
 
@@ -60,10 +59,21 @@ interface:
 	) statements TAG_OPEN SLASH_PREFIX INTERFACE TAG_CLOSE;
 
 function:
-	TAG_OPEN PREFIX FUNCTION attribute* (
+	// <cffunction name="foo" >
+	TAG_OPEN PREFIX FUNCTION attribute* TAG_CLOSE
+	// zero or more <cfargument ... >
+	argument*
+	// code inside function
+	statements
+	// </cffunction>
+	TAG_OPEN SLASH_PREFIX FUNCTION TAG_CLOSE;
+
+argument:
+	// <cfargument name="param">
+	TAG_OPEN PREFIX ARGUMENT attribute* (
 		TAG_SLASH_CLOSE
 		| TAG_CLOSE
-	) statements TAG_OPEN SLASH_PREFIX FUNCTION TAG_CLOSE;
+	);
 
 set:
 	TAG_OPEN PREFIX SET expression (TAG_SLASH_CLOSE | TAG_CLOSE);
@@ -72,12 +82,6 @@ scriptBody: SCRIPT_BODY*;
 script: SCRIPT_OPEN scriptBody SCRIPT_END_BODY;
 
 code: CONTENT_TEXT;
-
-argument:
-	TAG_OPEN PREFIX ARGUMENT attribute* (
-		TAG_SLASH_CLOSE
-		| TAG_CLOSE
-	);
 
 return:
 	TAG_OPEN PREFIX RETURN expression? (
@@ -97,12 +101,6 @@ if:
 	(TAG_OPEN PREFIX ELSE TAG_CLOSE elseBody = statements)?
 	// Closing </cfif>
 	TAG_OPEN SLASH_PREFIX IF TAG_CLOSE;
-
-param:
-	TAG_OPEN PREFIX PARAM attribute* (
-		TAG_SLASH_CLOSE
-		| TAG_CLOSE
-	);
 
 try:
 	// <cftry>

@@ -65,7 +65,6 @@ IF: 'if' -> pushMode(EXPRESSION_MODE_TAG);
 ELSE: 'else';
 ELSEIF: 'elseif' -> pushMode(EXPRESSION_MODE_TAG);
 INTERFACE: 'interface';
-PARAM: 'param';
 TRY: 'try';
 CATCH: 'catch';
 FINALLY: 'finally';
