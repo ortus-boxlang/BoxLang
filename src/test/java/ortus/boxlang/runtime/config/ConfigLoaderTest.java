@@ -20,6 +20,7 @@ package ortus.boxlang.runtime.config;
 
 import static com.google.common.truth.Truth.assertThat;
 
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.file.Path;
 
@@ -67,12 +68,12 @@ class ConfigLoaderTest {
 
 	@DisplayName( "It can register a new mapping" )
 	@Test
-	void testItCanRegisterAMapping() {
+	void testItCanRegisterAMapping() throws URISyntaxException {
 		Configuration config = ConfigLoader.getInstance().loadCore();
 		assertThat( config.runtime.mappings ).isNotEmpty();
 		assertThat( config.runtime.mappings ).hasSize( 1 );
 
-		var path = Path.of( getClass().getResource( "ConfigLoaderTest.class" ).getFile() )
+		var path = Path.of( getClass().getResource( "ConfigLoaderTest.class" ).toURI() )
 		    .toAbsolutePath()
 		    .getParent()
 		    .toString();
@@ -92,13 +93,13 @@ class ConfigLoaderTest {
 
 	@DisplayName( "It can unregister a mapping" )
 	@Test
-	void testItCanUnregisterAMapping() {
+	void testItCanUnregisterAMapping() throws URISyntaxException {
 		Configuration config = ConfigLoader.getInstance().loadCore();
 		assertThat( config.runtime.mappings ).isNotEmpty();
 		assertThat( config.runtime.mappings ).hasSize( 1 );
 
 		// Register a new mapping and check it
-		var path = Path.of( getClass().getResource( "ConfigLoaderTest.class" ).getFile() )
+		var path = Path.of( getClass().getResource( "ConfigLoaderTest.class" ).toURI() )
 		    .toAbsolutePath()
 		    .getParent()
 		    .toString();
