@@ -46,33 +46,12 @@ public class DecimalFormat extends BIF {
 	 */
 	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
 		Locale			locale			= ( Locale ) context.getConfigItem( Key.locale, Locale.getDefault() );
-		Object			numberVal		= arguments.get( Key.number );
+		double			value			= DoubleCaster.cast( arguments.get( Key.number ) );
 		int				decimalPlaces	= arguments.getAsInteger( Key.length );
 		NumberFormat	formatter		= java.text.DecimalFormat.getInstance( locale );
 		formatter.setMinimumFractionDigits( 2 );
 		formatter.setMaximumFractionDigits( decimalPlaces );
-		if ( numberVal instanceof String ) {
-			Double formatable = null;
-			// handle fractions
-			if ( IntegerCaster.cast( StringCaster.cast( numberVal ).split( " " ).length ).equals( 2 ) ) {
-				formatable = Fraction.getFraction( StringCaster.cast( numberVal ) ).doubleValue();
-			} else {
-				try {
-					formatable = formatter.parse( StringCaster.cast( numberVal ) ).doubleValue();
-				} catch ( ParseException e ) {
-					throw new BoxRuntimeException(
-					    String.format(
-					        "The value [%s] could not be parsed in to a valid numeric value",
-					        StringCaster.cast( numberVal )
-					    ),
-					    e
-					);
-				}
-			}
-			return formatter.format( formatable );
-		} else {
-			return formatter.format( DoubleCaster.cast( numberVal ) );
-		}
+		return formatter.format( value );
 	}
 
 }
