@@ -51,6 +51,7 @@ import ortus.boxlang.ast.statement.BoxExpression;
 import ortus.boxlang.ast.statement.BoxFunctionDeclaration;
 import ortus.boxlang.ast.statement.BoxIfElse;
 import ortus.boxlang.ast.statement.BoxImport;
+import ortus.boxlang.ast.statement.BoxInclude;
 import ortus.boxlang.ast.statement.BoxReturn;
 import ortus.boxlang.ast.statement.BoxReturnType;
 import ortus.boxlang.ast.statement.BoxTry;
@@ -68,6 +69,7 @@ import ortus.boxlang.parser.antlr.CFMLParser.BreakContext;
 import ortus.boxlang.parser.antlr.CFMLParser.CatchBlockContext;
 import ortus.boxlang.parser.antlr.CFMLParser.ContinueContext;
 import ortus.boxlang.parser.antlr.CFMLParser.FunctionContext;
+import ortus.boxlang.parser.antlr.CFMLParser.IncludeContext;
 import ortus.boxlang.parser.antlr.CFMLParser.OutputContext;
 import ortus.boxlang.parser.antlr.CFMLParser.ReturnContext;
 import ortus.boxlang.parser.antlr.CFMLParser.ScriptContext;
@@ -210,9 +212,29 @@ public class BoxCFMLParser extends BoxAbstractParser {
 			return toAst( file, node.break_() );
 		} else if ( node.continue_() != null ) {
 			return toAst( file, node.continue_() );
+		} else if ( node.include() != null ) {
+			return toAst( file, node.include() );
 		}
 		throw new BoxRuntimeException( "Statement node " + node.getClass().getName() + " parsing not implemented yet. " + node.getText() );
 
+	}
+
+	private BoxStatement toAst( File file, IncludeContext node ) {
+		BoxExpr				template;
+		List<BoxAnnotation>	annotations	= new ArrayList<>();
+
+		for ( var attr : node.attribute() ) {
+			annotations.add( toAst( file, attr ) );
+		}
+
+		var templateSearch = annotations.stream().filter( ( it ) -> it.getKey().getValue().equalsIgnoreCase( "template" ) ).findFirst();
+		if ( templateSearch.isPresent() ) {
+			template = templateSearch.get().getValue();
+		} else {
+			throw new BoxRuntimeException( "Include must have a template attribute - " + getSourceText( node ) );
+		}
+
+		return new BoxInclude( template, getPosition( node ), getSourceText( node ) );
 	}
 
 	private BoxStatement toAst( File file, ContinueContext node ) {

@@ -69,7 +69,8 @@ statement:
 	| output
 	| while
 	| break
-	| continue;
+	| continue
+	| include;
 
 component:
 	TAG_OPEN PREFIX COMPONENT attribute* (
@@ -193,3 +194,10 @@ break: TAG_OPEN PREFIX BREAK ( TAG_CLOSE | TAG_SLASH_CLOSE);
 // <cfcontinue> or... <cfcontinue />
 continue:
 	TAG_OPEN PREFIX CONTINUE (TAG_CLOSE | TAG_SLASH_CLOSE);
+
+// <cfinclude template="..."> or... <cfinclude template="..." />
+include:
+	TAG_OPEN PREFIX INCLUDE attribute* (
+		TAG_CLOSE
+		| TAG_SLASH_CLOSE
+	);

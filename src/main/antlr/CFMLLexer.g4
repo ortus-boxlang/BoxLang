@@ -54,6 +54,8 @@ ANY: . -> type(CONTENT_TEXT), popMode;
 // *********************************************************************************************************************
 mode TAG;
 
+// The rule of thumb here is that we are doing direct handling of any tags for which we have a
+// dedicated AST node for. All other tags will be handled generically
 COMPONENT: 'component';
 INTERFACE: 'interface';
 FUNCTION: 'function';
@@ -76,6 +78,7 @@ IMPORT: 'import';
 WHILE: 'while';
 BREAK: 'break';
 CONTINUE: 'continue';
+INCLUDE: 'include';
 
 TAG_CLOSE: '>' -> popMode, popMode;
 
@@ -129,6 +132,7 @@ IMPORT2: 'import' -> type(IMPORT);
 WHILE2: 'while' -> type(WHILE);
 BREAK2: 'break' -> type(BREAK);
 CONTINUE2: 'continue' -> type(CONTINUE);
+INCLUDE2: 'include' -> type(INCLUDE);
 
 TAG_NAME2: TAG_NameStartChar TAG_NameChar* -> type(TAG_NAME);
 TAG_CLOSE2: '>' -> popMode, popMode, type(TAG_CLOSE);

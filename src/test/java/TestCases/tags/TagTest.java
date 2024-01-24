@@ -336,7 +336,7 @@ public class TagTest {
 		    <cfset result = counter>
 		                                      """, context, BoxScriptType.CFMARKUP );
 
-		assertThat( DynamicObject.unWrap( variables.get( result ) ) ).isEqualTo( 10 );
+		assertThat( variables.get( result ) ).isEqualTo( 10 );
 
 	}
 
@@ -353,7 +353,7 @@ public class TagTest {
 		    <cfset result = counter>
 		                                      """, context, BoxScriptType.CFMARKUP );
 
-		assertThat( DynamicObject.unWrap( variables.get( result ) ) ).isEqualTo( 1 );
+		assertThat( variables.get( result ) ).isEqualTo( 1 );
 
 	}
 
@@ -372,7 +372,19 @@ public class TagTest {
 		        </cfwhile>
 		                                          """, context, BoxScriptType.CFMARKUP );
 
-		assertThat( DynamicObject.unWrap( variables.get( result ) ) ).isEqualTo( 0 );
+		assertThat( variables.get( result ) ).isEqualTo( 0 );
+
+	}
+
+	@DisplayName( "tag include" )
+	@Test
+	public void testInclude() {
+		instance.executeSource(
+		    """
+		    <cfinclude template="src/test/java/TestCases/tags/MyInclude.cfm">
+		                                    """, context, BoxScriptType.CFMARKUP );
+
+		assertThat( variables.get( result ) ).isEqualTo( "was included" );
 
 	}
 
