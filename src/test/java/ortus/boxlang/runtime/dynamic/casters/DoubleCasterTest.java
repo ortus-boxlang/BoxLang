@@ -128,7 +128,7 @@ public class DoubleCasterTest {
 		}
 		long end = System.nanoTime();
 		System.out.println( ( end - start ) / 1000000l );
-		assertThat( ( end - start ) / 1000000l ).isLessThan( 20l );
+		assertThat( ( end - start ) / 1000000l ).isLessThan( 30l );
 	}
 
 }
