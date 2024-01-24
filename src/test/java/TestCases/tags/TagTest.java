@@ -307,7 +307,7 @@ public class TagTest {
 
 	}
 
-	@DisplayName( "tag impport" )
+	@DisplayName( "tag import" )
 	@Test
 	public void testImport() {
 		instance.executeSource(
@@ -321,6 +321,22 @@ public class TagTest {
 
 		assertThat( DynamicObject.unWrap( variables.get( result ) ) ).isEqualTo( "foo" );
 		assertThat( DynamicObject.unWrap( variables.get( Key.of( "result2" ) ) ) ).isEqualTo( "bar" );
+
+	}
+
+	@DisplayName( "tag while" )
+	@Test
+	public void testWhile() {
+		instance.executeSource(
+		    """
+		     	<cfset counter = 0>
+		    <cfwhile condition="counter < 10">
+		    	<cfset counter++>
+		    </cfwhile>
+		    <cfset result = counter>
+		                                      """, context, BoxScriptType.CFMARKUP );
+
+		assertThat( DynamicObject.unWrap( variables.get( result ) ) ).isEqualTo( 10 );
 
 	}
 

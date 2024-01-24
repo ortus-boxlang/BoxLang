@@ -54,6 +54,7 @@ import ortus.boxlang.ast.statement.BoxReturnType;
 import ortus.boxlang.ast.statement.BoxTry;
 import ortus.boxlang.ast.statement.BoxTryCatch;
 import ortus.boxlang.ast.statement.BoxType;
+import ortus.boxlang.ast.statement.BoxWhile;
 import ortus.boxlang.ast.statement.tag.BoxOutput;
 import ortus.boxlang.parser.antlr.CFMLLexer;
 import ortus.boxlang.parser.antlr.CFMLParser;
@@ -72,6 +73,7 @@ import ortus.boxlang.parser.antlr.CFMLParser.StatementsContext;
 import ortus.boxlang.parser.antlr.CFMLParser.TemplateContext;
 import ortus.boxlang.parser.antlr.CFMLParser.TextContentContext;
 import ortus.boxlang.parser.antlr.CFMLParser.TryContext;
+import ortus.boxlang.parser.antlr.CFMLParser.WhileContext;
 import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
@@ -135,17 +137,17 @@ public class BoxCFMLParser extends BoxAbstractParser {
 		if ( nameSearch.isPresent() ) {
 			name = getBoxExprAsString( nameSearch.get().getValue(), "name" );
 			if ( name.trim().isEmpty() ) {
-				throw new BoxRuntimeException( "Import name cannot be empty - " + node.getText() );
+				throw new BoxRuntimeException( "Import name cannot be empty - " + getSourceText( node ) );
 			}
 		} else {
-			throw new BoxRuntimeException( "Import must have a name attribute - " + node.getText() );
+			throw new BoxRuntimeException( "Import must have a name attribute - " + getSourceText( node ) );
 		}
 
 		var prefixSearch = annotations.stream().filter( ( it ) -> it.getKey().getValue().equalsIgnoreCase( "prefix" ) ).findFirst();
 		if ( prefixSearch.isPresent() ) {
 			prefix = getBoxExprAsString( prefixSearch.get().getValue(), "prefix" );
 			if ( prefix.trim().isEmpty() ) {
-				throw new BoxRuntimeException( "Import prefix cannot be empty - " + node.getText() );
+				throw new BoxRuntimeException( "Import prefix cannot be empty - " + getSourceText( node ) );
 			}
 		}
 
@@ -198,9 +200,40 @@ public class BoxCFMLParser extends BoxAbstractParser {
 			return toAst( file, node.function() );
 		} else if ( node.return_() != null ) {
 			return toAst( file, node.return_() );
+		} else if ( node.while_() != null ) {
+			return toAst( file, node.while_() );
 		}
 		throw new BoxRuntimeException( "Statement node " + node.getClass().getName() + " parsing not implemented yet. " + node.getText() );
 
+	}
+
+	private BoxStatement toAst( File file, WhileContext node ) {
+		BoxExpr				condition;
+		List<BoxStatement>	body		= new ArrayList<>();
+		List<BoxAnnotation>	annotations	= new ArrayList<>();
+
+		for ( var attr : node.attribute() ) {
+			annotations.add( toAst( file, attr ) );
+		}
+
+		var conditionSearch = annotations.stream().filter( ( it ) -> it.getKey().getValue().equalsIgnoreCase( "condition" ) ).findFirst();
+		if ( conditionSearch.isPresent() ) {
+			condition = parseCFExpression(
+			    getBoxExprAsString(
+			        conditionSearch.get().getValue(),
+			        "condition"
+			    ),
+			    conditionSearch.get().getValue().getPosition()
+			);
+		} else {
+			throw new BoxRuntimeException( "While must have a condition attribute - " + getSourceText( node ) );
+		}
+
+		if ( node.statements() != null ) {
+			body.addAll( toAst( file, node.statements() ) );
+		}
+
+		return new BoxWhile( condition, body, getPosition( node ), getSourceText( node ) );
 	}
 
 	private BoxStatement toAst( File file, ReturnContext node ) {
@@ -229,10 +262,10 @@ public class BoxCFMLParser extends BoxAbstractParser {
 		if ( nameSearch.isPresent() ) {
 			name = getBoxExprAsString( nameSearch.get().getValue(), "name" );
 			if ( name.trim().isEmpty() ) {
-				throw new BoxRuntimeException( "Function name cannot be empty - " + node.getText() );
+				throw new BoxRuntimeException( "Function name cannot be empty - " + getSourceText( node ) );
 			}
 		} else {
-			throw new BoxRuntimeException( "Function must have a name attribute - " + node.getText() );
+			throw new BoxRuntimeException( "Function must have a name attribute - " + getSourceText( node ) );
 		}
 
 		var accessSearch = annotations.stream().filter( ( it ) -> it.getKey().getValue().equalsIgnoreCase( "access" ) ).findFirst();
@@ -295,10 +328,10 @@ public class BoxCFMLParser extends BoxAbstractParser {
 		if ( nameSearch.isPresent() ) {
 			name = getBoxExprAsString( nameSearch.get().getValue(), "name" );
 			if ( name.trim().isEmpty() ) {
-				throw new BoxRuntimeException( "Argument name cannot be empty - " + node.getText() );
+				throw new BoxRuntimeException( "Argument name cannot be empty - " + getSourceText( node ) );
 			}
 		} else {
-			throw new BoxRuntimeException( "Argument must have a name attribute - " + node.getText() );
+			throw new BoxRuntimeException( "Argument must have a name attribute - " + getSourceText( node ) );
 		}
 
 		var requiredSearch = annotations.stream().filter( ( it ) -> it.getKey().getValue().equalsIgnoreCase( "required" ) ).findFirst();

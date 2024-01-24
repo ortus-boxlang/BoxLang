@@ -66,7 +66,8 @@ statement:
 	| return
 	| if
 	| try
-	| output;
+	| output
+	| while;
 
 component:
 	TAG_OPEN PREFIX COMPONENT attribute* (
@@ -175,3 +176,11 @@ boxImport:
 		TAG_CLOSE
 		| TAG_SLASH_CLOSE
 	);
+
+while:
+	// <cfwhile condition="" >
+	TAG_OPEN PREFIX WHILE attribute* TAG_CLOSE
+	// code inside while
+	statements
+	// </cfwhile>
+	TAG_OPEN SLASH_PREFIX WHILE TAG_CLOSE;
