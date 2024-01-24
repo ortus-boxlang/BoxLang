@@ -356,10 +356,14 @@ public class BoxCFParser extends BoxAbstractParser {
 		BoxExpr			expr	= null;
 		BoxIdentifier	alias	= null;
 		if ( rule.fqn() != null ) {
-			expr = toAst( file, rule.fqn() );
+			String prefix = "";
+			if ( rule.prefix != null ) {
+				prefix = rule.prefix.getText() + ":";
+			}
+			expr = new BoxFQN( prefix + rule.fqn().getText(), getPosition( rule.fqn() ), getSourceText( rule.fqn() ) );
 		}
-		if ( rule.identifier() != null ) {
-			BoxExpr tmp = toAst( file, rule.identifier() );
+		if ( rule.alias != null ) {
+			BoxExpr tmp = toAst( file, rule.alias );
 			if ( tmp instanceof BoxScope ) {
 				throw new IllegalStateException( "Cannot use a scope as an alias" );
 			} else {

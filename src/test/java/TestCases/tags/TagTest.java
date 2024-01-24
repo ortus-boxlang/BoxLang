@@ -30,6 +30,7 @@ import ortus.boxlang.parser.BoxScriptType;
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
+import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
 
@@ -303,6 +304,23 @@ public class TagTest {
 		                                 """, context, BoxScriptType.CFMARKUP );
 
 		assertThat( variables.get( result ) ).isEqualTo( "barbaz" );
+
+	}
+
+	@DisplayName( "tag impport" )
+	@Test
+	public void testImport() {
+		instance.executeSource(
+		    """
+		    <cfimport prefix="java" name="java.lang.String">
+		    <cfimport prefix="java" name="java.lang.String" alias="BString">
+
+		    <cfset result = new String("foo")>
+		    <cfset result2 = new BString("bar")>
+		                                   """, context, BoxScriptType.CFMARKUP );
+
+		assertThat( DynamicObject.unWrap( variables.get( result ) ) ).isEqualTo( "foo" );
+		assertThat( DynamicObject.unWrap( variables.get( Key.of( "result2" ) ) ) ).isEqualTo( "bar" );
 
 	}
 

@@ -14,9 +14,11 @@ script:
 
 eos: SEMICOLON;
 
-// We should probably move this to the BL grammar. TODO: remove hard-coded java.
+// We should probably move this to the BL grammar.
 importStatement:
-	IMPORT (JAVA COLON)? fqn (DOT STAR)? (AS identifier)? eos?;
+	IMPORT (prefix = identifier COLON)? fqn (DOT STAR)? (
+		AS alias = identifier
+	)? eos?;
 
 include: INCLUDE expression eos?;
 

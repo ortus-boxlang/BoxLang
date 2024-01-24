@@ -4,41 +4,62 @@ options {
 	tokenVocab = CFMLLexer;
 }
 
-template: component | interface | statements EOF?;
+// Top-level template rule.  Consists of component or interface or statements.
+template: component | interface | ( boxImport* statements) EOF?;
 
+// <b>My Name is #qry.name#.</b>
 textContent: (nonInterpolatedText | interpolatedExpression)+;
 
+// ANYTHING
+tagName: TAG_NAME;
+
+// <cfANYTHING ... >
 genericOpenTag: TAG_OPEN PREFIX tagName attribute* TAG_CLOSE;
+
+// <cfANYTHING />
 genericOpenCloseTag:
 	TAG_OPEN PREFIX tagName attribute* TAG_SLASH_CLOSE;
+
+// </cfANYTHING>
 genericCloseTag: TAG_OPEN SLASH_PREFIX tagName TAG_CLOSE;
 
+// #bar#
 interpolatedExpression: ICHAR expression ICHAR;
+// Any text to be directly output
 nonInterpolatedText: (TAG_OPEN? CONTENT_TEXT)+;
+// bar or 1+2. The lexer keeps strings together so it doesnt end the expression prematurely
 expression: (EXPRESSION_PART | quotedString)+;
 
 attribute:
+	// foo="bar" foo=bar
 	attributeName TAG_EQUALS attributeValue
+	// foo (value will default to empty string)
 	| attributeName;
 
+// called TAG_NAME because the lexer doens't know the difference between a tag name and a variable name at lexing time
 attributeName: TAG_NAME;
 
+// foo or.... "foo" or... 'foo' or... "#foo#"
 attributeValue: identifier | quotedString;
 
+// foo
 identifier: IDENTIFIER;
 
+// "text#expression#text" or ... 'text#expression#text'
 quotedString:
 	OPEN_QUOTE (quotedStringPart | interpolatedExpression)* CLOSE_QUOTE;
 
 quotedStringPart: STRING_LITERAL | HASHHASH;
 
-tagName: TAG_NAME;
 statements: (statement | script | textContent)*;
 
 statement:
 	function
+	// <cfANYTHING />
 	| genericOpenCloseTag
+	// <cfANYTHING ... >
 	| genericOpenTag
+	// </cfANYTHING>
 	| genericCloseTag
 	| set
 	| argument
@@ -76,14 +97,15 @@ argument:
 	);
 
 set:
+	// <cfset expression> <cfset expression />
 	TAG_OPEN PREFIX SET expression (TAG_SLASH_CLOSE | TAG_CLOSE);
 
 scriptBody: SCRIPT_BODY*;
+// <cfscript> statements... </cfscript>
 script: SCRIPT_OPEN scriptBody SCRIPT_END_BODY;
 
-code: CONTENT_TEXT;
-
 return:
+	// <cfreturn> or... <cfreturn expression> or... <cfreturn expression />
 	TAG_OPEN PREFIX RETURN expression? (
 		TAG_SLASH_CLOSE
 		| TAG_CLOSE
@@ -140,3 +162,16 @@ output:
 	statements
 	// </cfoutput>
 	TAG_OPEN SLASH_PREFIX OUTPUT;
+
+/*
+ <cfimport taglib="..." prefix="...">
+ <cfimport name="com.foo.Bar">
+ <cfimport prefix="java"
+ name="com.foo.*">
+ <cfimport prefix="java" name="com.foo.Bar" alias="bradLib">
+ */
+boxImport:
+	TAG_OPEN PREFIX IMPORT attribute* (
+		TAG_CLOSE
+		| TAG_SLASH_CLOSE
+	);

@@ -68,6 +68,7 @@ INTERFACE: 'interface';
 TRY: 'try';
 CATCH: 'catch';
 FINALLY: 'finally';
+IMPORT: 'import';
 SET: 'set ' -> pushMode(EXPRESSION_MODE_TAG);
 
 TAG_CLOSE: '>' -> popMode, popMode;
@@ -118,6 +119,7 @@ INTERFACE2: 'interface' -> type(INTERFACE);
 TRY2: 'try' -> type(TRY);
 CATCH2: 'catch' -> type(CATCH);
 FINALLY2: 'finally' -> type(FINALLY);
+IMPORT2: 'import' -> type(IMPORT);
 
 TAG_NAME2: TAG_NameStartChar TAG_NameChar* -> type(TAG_NAME);
 TAG_CLOSE2: '>' -> popMode, popMode, type(TAG_CLOSE);

@@ -48,6 +48,7 @@ import ortus.boxlang.ast.statement.BoxDocumentationAnnotation;
 import ortus.boxlang.ast.statement.BoxExpression;
 import ortus.boxlang.ast.statement.BoxFunctionDeclaration;
 import ortus.boxlang.ast.statement.BoxIfElse;
+import ortus.boxlang.ast.statement.BoxImport;
 import ortus.boxlang.ast.statement.BoxReturn;
 import ortus.boxlang.ast.statement.BoxReturnType;
 import ortus.boxlang.ast.statement.BoxTry;
@@ -59,6 +60,7 @@ import ortus.boxlang.parser.antlr.CFMLParser;
 import ortus.boxlang.parser.antlr.CFMLParser.ArgumentContext;
 import ortus.boxlang.parser.antlr.CFMLParser.AttributeContext;
 import ortus.boxlang.parser.antlr.CFMLParser.AttributeValueContext;
+import ortus.boxlang.parser.antlr.CFMLParser.BoxImportContext;
 import ortus.boxlang.parser.antlr.CFMLParser.CatchBlockContext;
 import ortus.boxlang.parser.antlr.CFMLParser.FunctionContext;
 import ortus.boxlang.parser.antlr.CFMLParser.OutputContext;
@@ -96,6 +98,9 @@ public class BoxCFMLParser extends BoxAbstractParser {
 		TemplateContext		template	= ( TemplateContext ) parseTree;
 
 		List<BoxStatement>	statements	= new ArrayList<>();
+		if ( template.boxImport() != null ) {
+			statements.addAll( toAst( file, template.boxImport() ) );
+		}
 		if ( template.statements() != null ) {
 			statements.addAll( toAst( file, template.statements() ) );
 		}
@@ -106,6 +111,54 @@ public class BoxCFMLParser extends BoxAbstractParser {
 			throw new BoxRuntimeException( "tag interface parsing not implemented yet" );
 		}
 		return new BoxTemplate( statements, getPosition( parseTree ), getSourceText( parseTree ) );
+	}
+
+	private List<BoxImport> toAst( File file, List<BoxImportContext> imports ) {
+		List<BoxImport> boxImports = new ArrayList<>();
+		for ( var boxImport : imports ) {
+			boxImports.add( toAst( file, boxImport ) );
+		}
+		return boxImports;
+	}
+
+	private BoxImport toAst( File file, BoxImportContext node ) {
+		String				name		= null;
+		String				prefix		= null;
+		BoxIdentifier		alias		= null;
+		List<BoxAnnotation>	annotations	= new ArrayList<>();
+
+		for ( var attr : node.attribute() ) {
+			annotations.add( toAst( file, attr ) );
+		}
+		System.out.println( annotations.stream().map( it -> it.getKey().getValue() + "=" + it.getValue().getSourceText() ).toList() );
+		var nameSearch = annotations.stream().filter( ( it ) -> it.getKey().getValue().equalsIgnoreCase( "name" ) ).findFirst();
+		if ( nameSearch.isPresent() ) {
+			name = getBoxExprAsString( nameSearch.get().getValue(), "name" );
+			if ( name.trim().isEmpty() ) {
+				throw new BoxRuntimeException( "Import name cannot be empty - " + node.getText() );
+			}
+		} else {
+			throw new BoxRuntimeException( "Import must have a name attribute - " + node.getText() );
+		}
+
+		var prefixSearch = annotations.stream().filter( ( it ) -> it.getKey().getValue().equalsIgnoreCase( "prefix" ) ).findFirst();
+		if ( prefixSearch.isPresent() ) {
+			prefix = getBoxExprAsString( prefixSearch.get().getValue(), "prefix" );
+			if ( prefix.trim().isEmpty() ) {
+				throw new BoxRuntimeException( "Import prefix cannot be empty - " + node.getText() );
+			}
+		}
+
+		var aliasSearch = annotations.stream().filter( ( it ) -> it.getKey().getValue().equalsIgnoreCase( "alias" ) ).findFirst();
+		if ( aliasSearch.isPresent() ) {
+			alias = new BoxIdentifier( getBoxExprAsString( aliasSearch.get().getValue(), "alias" ), aliasSearch.get().getValue().getPosition(),
+			    aliasSearch.get().getValue().getSourceText() );
+		}
+		if ( prefix != null ) {
+			name = prefix + ":" + name;
+		}
+		return new BoxImport( new BoxFQN( name, nameSearch.get().getValue().getPosition(), nameSearch.get().getValue().getSourceText() ), alias,
+		    getPosition( node ), getSourceText( node ) );
 	}
 
 	private List<BoxStatement> toAst( File file, StatementsContext node ) {
