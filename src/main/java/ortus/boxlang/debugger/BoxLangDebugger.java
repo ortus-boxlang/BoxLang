@@ -3,6 +3,8 @@ package ortus.boxlang.debugger;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
+import java.lang.management.ManagementFactory;
+import java.util.List;
 // import java.lang.StackWalker.StackFrame;
 import java.util.Map;
 
@@ -34,18 +36,63 @@ public class BoxLangDebugger {
 
 	private Class	debugClass;
 	private int[]	breakPointLines;
+	private String	cliArgs;
 
-	public static void main( String[] args ) {
-		BoxLangDebugger bld = new BoxLangDebugger( ortus.boxlang.debugger.Debugee.class, new int[] { 9 } );
-		bld.startDebugSession();
+	private class CurrentJVMArgs {
+
+		static String fullVMArguments() {
+			String name = javaVmName();
+
+			return ( contains( name, "Server" ) ? "-server "
+			    : contains( name, "Client" ) ? "-client " : "" )
+			    + String.join( " ", vmArguments() );
+		}
+
+		static List<String> vmArguments() {
+			return ManagementFactory.getRuntimeMXBean().getInputArguments();
+		}
+
+		static boolean contains( String s, String b ) {
+			return s != null && s.indexOf( b ) >= 0;
+		}
+
+		static String javaVmName() {
+			return System.getProperty( "java.vm.name" );
+		}
+
+		// static String joinWithSpace( Collection<String> c ) {
+		// return join( " ", c );
+		// }
+
+		// public static String join( String glue, Iterable<String> strings ) {
+		// if ( strings == null )
+		// return "";
+		// StringBuilder buf = new StringBuilder();
+		// Iterator<String> i = strings.iterator();
+		// if ( i.hasNext() ) {
+		// buf.append( i.next() );
+		// while ( i.hasNext() )
+		// buf.append( glue ).append( i.next() );
+		// }
+		// return buf.toString();
+		// }
 	}
 
-	public BoxLangDebugger( Class debugClass, int[] breakPointLines ) {
+	// public static void main( String[] args ) {
+	// String ar = CurrentJVMArgs.fullVMArguments();
+	// BoxLangDebugger bld = new BoxLangDebugger( ortus.boxlang.debugger.Debugee.class, new int[] { 9 } );
+	// bld.startDebugSession();
+	// }
+
+	public BoxLangDebugger( Class debugClass, String cliArgs ) {
 		this.debugClass			= debugClass;
-		this.breakPointLines	= breakPointLines;
+		this.breakPointLines	= new int[] {};
+		this.cliArgs			= cliArgs;
+		// this.debugClass = ortus.boxlang.debugger.Debugee.class;
 	}
 
 	public void startDebugSession() {
+		// String ar = CurrentJVMArgs.fullVMArguments();
 		VirtualMachine vm = null;
 
 		try {
@@ -60,8 +107,9 @@ public class BoxLangDebugger {
 					if ( event instanceof VMDeathEvent de ) {
 						System.out.println( "Found event: " + event.toString() );
 					}
-					if ( event instanceof ClassPrepareEvent ) {
-						setBreakPoints( vm, ( ClassPrepareEvent ) event );
+					if ( event instanceof ClassPrepareEvent cpe ) {
+						System.out.println( "Preparing class: " + cpe.referenceType().name() );
+						// setBreakPoints( vm, cpe );
 					}
 					if ( event instanceof BreakpointEvent ) {
 						enableStepRequest( vm, ( BreakpointEvent ) event );
@@ -70,8 +118,10 @@ public class BoxLangDebugger {
 						displayVariables( ( StepEvent ) event );
 					}
 					vm.resume();
+					System.out.println( "done resuming" );
 				}
 			}
+			System.out.println( "out of hte while" );
 		} catch ( VMDisconnectedException e ) {
 			System.out.println( "Virtual Machine is disconnected." );
 			e.printStackTrace();
@@ -103,13 +153,15 @@ public class BoxLangDebugger {
 		    .defaultConnector();
 		Map<String, Connector.Argument>	arguments			= launchingConnector.defaultArguments();
 		// arguments.get( "main" ).setValue( debugClass.getName() );
-		arguments.get( "main" ).setValue( debugClass.getName() + " test" );
+		arguments.get( "options" ).setValue( "-cp " + System.getProperty( "java.class.path" ) );
+		arguments.get( "main" ).setValue( debugClass.getName() + " " + cliArgs );
 		return launchingConnector.launch( arguments );
 	}
 
 	public void enableClassPrepareRequest( VirtualMachine vm ) {
 		ClassPrepareRequest classPrepareRequest = vm.eventRequestManager().createClassPrepareRequest();
-		classPrepareRequest.addClassFilter( debugClass.getName() );
+		// classPrepareRequest.addClassFilter( debugClass.getName() );
+		classPrepareRequest.addClassFilter( "boxgenerated.*" );
 		classPrepareRequest.enable();
 	}
 

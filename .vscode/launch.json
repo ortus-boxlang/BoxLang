@@ -6,6 +6,13 @@
     "configurations": [
         {
             "type": "java",
+            "name": "BoxLangDebugger",
+            "request": "launch",
+            "mainClass": "ortus.boxlang.debugger.BoxLangDebugger",
+            "projectName": "boxlang"
+        },
+        {
+            "type": "java",
             "name": "Server",
             "request": "launch",
             "mainClass": "ortus.boxlang.web.Server",
@@ -99,7 +106,7 @@
             "projectName": "boxlang",
             "args": [
                 "--debugger",
-                "Test.cfs"
+                "CrazyFileTest.cfs"
             ]
         },
         {
