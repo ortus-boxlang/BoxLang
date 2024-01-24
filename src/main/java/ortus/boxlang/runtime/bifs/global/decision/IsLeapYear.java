@@ -14,6 +14,8 @@
  */
 package ortus.boxlang.runtime.bifs.global.decision;
 
+import java.time.Year;
+
 import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
 import ortus.boxlang.runtime.context.IBoxContext;
@@ -50,7 +52,7 @@ public class IsLeapYear extends BIF {
 		if ( !attempt.wasSuccessful() ) {
 			throw new IllegalArgumentException( "Argument must be an integer." );
 		}
-		return attempt.get() % 4 == 0;
+		return Year.isLeap( attempt.get() );
 	}
 
 }

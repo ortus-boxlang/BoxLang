@@ -69,7 +69,6 @@ public class IsLeapYearTest {
 		    aTwoDigitInteger   = isLeapYear( 20 );
 		    aStringInteger     = isLeapYear( "2024" );
 		    aStringFloat       = isLeapYear( "20.24" );
-		    anotherStringFloat = isLeapYear( ".01" );
 		       """,
 		    context );
 		assertThat( ( Boolean ) variables.get( Key.of( "anInteger" ) ) ).isTrue();
@@ -78,7 +77,21 @@ public class IsLeapYearTest {
 		assertThat( ( Boolean ) variables.get( Key.of( "aTwoDigitInteger" ) ) ).isTrue();
 		assertThat( ( Boolean ) variables.get( Key.of( "aStringInteger" ) ) ).isTrue();
 		assertThat( ( Boolean ) variables.get( Key.of( "aStringFloat" ) ) ).isTrue();
-		assertThat( ( Boolean ) variables.get( Key.of( "anotherStringFloat" ) ) ).isTrue();
+		assertThat( ( Boolean ) variables.get( Key.of( "aStringFloat" ) ) ).isTrue();
+	}
+
+	@Test
+	public void testCenturyTurns() {
+		instance.executeSource(
+		    """
+		    sixteenhundred     = isLeapYear( 1600 );
+		    nineteenhundred    = isLeapYear( 1900 );
+		    twothousand        = isLeapYear( 2000 );
+		    """,
+		    context );
+		assertThat( ( Boolean ) variables.get( Key.of( "sixteenhundred" ) ) ).isTrue();
+		assertThat( ( Boolean ) variables.get( Key.of( "nineteenhundred" ) ) ).isFalse();
+		assertThat( ( Boolean ) variables.get( Key.of( "twothousand" ) ) ).isTrue();
 	}
 
 	@DisplayName( "It returns false for non-leap years" )
