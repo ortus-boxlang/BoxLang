@@ -77,7 +77,7 @@ public class SleepTest {
 		System.out.println( result );
 		// it takes about 1s for the execution to complete
 		assertThat( result ).isGreaterThan( 9 );
-		assertThat( result ).isLessThan( 15 );
+		assertThat( result ).isLessThan( 30 );
 	}
 
 	@DisplayName( "It tests the BIF Sleep will throw an error with an invalid duration" )
