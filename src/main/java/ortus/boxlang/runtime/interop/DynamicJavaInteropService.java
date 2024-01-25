@@ -294,6 +294,17 @@ public class DynamicJavaInteropService {
 	}
 
 	/**
+	 * Invokes the no-arg constructor for the class with the given arguments and returns the instance of the object
+	 *
+	 * @param targetClass The Class that you want to invoke a constructor on
+	 *
+	 * @return The instance of the class
+	 */
+	public static <T> T invokeConstructor( IBoxContext context, Class<T> targetClass ) {
+		return invokeConstructor( context, targetClass, EMPTY_ARGS );
+	}
+
+	/**
 	 * Reusable method for bootstrapping IClassRunnables
 	 *
 	 * @param cfc  The class to bootstrap
@@ -379,17 +390,6 @@ public class DynamicJavaInteropService {
 		classContext.flushBuffer( false );
 		classContext.popTemplate();
 		return ( T ) cfc;
-	}
-
-	/**
-	 * Invokes the no-arg constructor for the class with the given arguments and returns the instance of the object
-	 *
-	 * @param targetClass The Class that you want to invoke a constructor on
-	 *
-	 * @return The instance of the class
-	 */
-	public static <T> T invokeConstructor( IBoxContext context, Class<T> targetClass ) {
-		return invokeConstructor( context, targetClass, EMPTY_ARGS );
 	}
 
 	/**

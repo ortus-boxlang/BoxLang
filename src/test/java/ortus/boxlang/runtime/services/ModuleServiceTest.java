@@ -20,7 +20,6 @@ package ortus.boxlang.runtime.services;
 import static com.google.common.truth.Truth.assertThat;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 
-import java.io.IOException;
 import java.nio.file.Paths;
 
 import org.junit.jupiter.api.AfterAll;
@@ -89,11 +88,4 @@ class ModuleServiceTest {
 		assertThat( service.getModulePaths().size() ).isEqualTo( count );
 	}
 
-	@Test
-	void testIt() throws IOException {
-		// Path path = Paths.get( "/Users/lmajano/Sites/projects/boxlang/src/main/resources/modules" );
-
-		System.out.println( service.getRegistry().keySet().toString() );
-
-	}
 }
