@@ -37,6 +37,7 @@ import ortus.boxlang.runtime.scopes.VariablesScope;
 import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.exceptions.CustomException;
+import ortus.boxlang.runtime.types.exceptions.ExpressionException;
 import ortus.boxlang.runtime.types.exceptions.MissingIncludeException;
 
 public class TagTest {
@@ -63,23 +64,37 @@ public class TagTest {
 		variables	= ( VariablesScope ) context.getScopeNearby( VariablesScope.name );
 	}
 
-	@DisplayName( "basic tags" )
 	@Test
-	public void testBasicTags() {
+	public void testSetTag() {
 		instance.executeSource(
 		    """
-		    <cfset foo = "bar">
-		       <cfoutput>
-		         	This is #foo# output!
-		       </cfoutput>
+		    <cfset result = "bar">
 
 		         """, context, BoxScriptType.CFMARKUP );
+		assertThat( variables.get( result ) ).isEqualTo( "bar" );
 
 	}
 
-	@DisplayName( "if statement" )
 	@Test
-	public void testIfStatement() {
+	public void testTextOutput() {
+		IBoxContext context = new ScriptingRequestBoxContext( instance.getRuntimeContext() );
+		instance.executeSource(
+		    """
+		       <cfset bar = "brad">
+		       This is #foo# output!
+		            <cfoutput>
+		              	This is #bar# output!
+		            </cfoutput>
+		    result = getBoxContext().getBuffer().toString();
+		              """, context, BoxScriptType.CFMARKUP );
+
+		assertThat( result ).contains( "This is #foo# output!" );
+		assertThat( result ).contains( "This is brad output!" );
+
+	}
+
+	@Test
+	public void testIfStatementElse() {
 		instance.executeSource(
 		    """
 		    <cfif false >
@@ -91,7 +106,10 @@ public class TagTest {
 		                    """, context, BoxScriptType.CFMARKUP );
 
 		assertThat( variables.get( result ) ).isEqualTo( "else block" );
+	}
 
+	@Test
+	public void testIfStatementThen() {
 		instance.executeSource(
 		    """
 		       <cfif true >
@@ -107,7 +125,10 @@ public class TagTest {
 		                    """, context, BoxScriptType.CFMARKUP );
 
 		assertThat( variables.get( result ) ).isEqualTo( "then block" );
+	}
 
+	@Test
+	public void testIfStatementFirst() {
 		instance.executeSource(
 		    """
 		       <cfif false >
@@ -123,7 +144,10 @@ public class TagTest {
 		                    """, context, BoxScriptType.CFMARKUP );
 
 		assertThat( variables.get( result ) ).isEqualTo( "first elseif block" );
+	}
 
+	@Test
+	public void testIfStatementSecond() {
 		instance.executeSource(
 		    """
 		       <cfif false >
@@ -139,7 +163,10 @@ public class TagTest {
 		                    """, context, BoxScriptType.CFMARKUP );
 
 		assertThat( variables.get( result ) ).isEqualTo( "second elseif block" );
+	}
 
+	@Test
+	public void testIfStatementElse2() {
 		instance.executeSource(
 		    """
 		       <cfif false >
@@ -223,9 +250,8 @@ public class TagTest {
 		assertThat( variables.get( result ) ).isEqualTo( "one two three four five six seven" );
 	}
 
-	@DisplayName( "tag try/catch" )
 	@Test
-	public void testTryCatch() {
+	public void testTryCatch1() {
 		instance.executeSource(
 		    """
 		    <cfset result = "one">
@@ -245,6 +271,10 @@ public class TagTest {
 
 		assertThat( variables.get( result ) ).isEqualTo( "twofinally" );
 
+	}
+
+	@Test
+	public void testTryCatch2() {
 		instance.executeSource(
 		    """
 		    <cfset result = "one">
@@ -264,6 +294,10 @@ public class TagTest {
 
 		assertThat( variables.get( result ) ).isEqualTo( "threefinally" );
 
+	}
+
+	@Test
+	public void testTryCatchFinally() {
 		instance.executeSource(
 		    """
 		     <cftry>
@@ -276,6 +310,10 @@ public class TagTest {
 
 		assertThat( variables.get( result ) ).isEqualTo( "tryfinally" );
 
+	}
+
+	@Test
+	public void testTryCatchNoFinally() {
 		instance.executeSource(
 		    """
 		    <cfset result = "try">
@@ -289,6 +327,10 @@ public class TagTest {
 
 		assertThat( variables.get( result ) ).isEqualTo( "trycatch" );
 
+	}
+
+	@Test
+	public void testTryCatchNoStatements() {
 		instance.executeSource(
 		    """
 		    <cftry><cfcatch></cfcatch><cffinally></cffinally></cftry>
@@ -404,29 +446,37 @@ public class TagTest {
 		assertThat( e.getMessage() ).contains( "zero" );
 	}
 
-	@DisplayName( "tag throw" )
 	@Test
 	public void testThrow() {
 		Throwable e = assertThrows( CustomException.class, () -> instance.executeSource(
 		    """
 		        <cfthrow>
 		    """, context, BoxScriptType.CFMARKUP ) );
+	}
 
-		e = assertThrows( CustomException.class, () -> instance.executeSource(
+	@Test
+	public void testThrowMessage() {
+		Throwable e = assertThrows( CustomException.class, () -> instance.executeSource(
 		    """
 		    <cfthrow message="my message">
 		    								""", context, BoxScriptType.CFMARKUP ) );
 
 		assertThat( e.getMessage() ).isEqualTo( "my message" );
+	}
 
-		e = assertThrows( MissingIncludeException.class, () -> instance.executeSource(
+	@Test
+	public void testThrowObject() {
+		Throwable e = assertThrows( MissingIncludeException.class, () -> instance.executeSource(
 		    """
 		    <cfthrow object="#new java:ortus.boxlang.runtime.types.exceptions.MissingIncludeException( "include message", "file.cfm" )#">
 		    								""", context, BoxScriptType.CFMARKUP ) );
 
 		assertThat( e.getMessage() ).isEqualTo( "include message" );
+	}
 
-		e = assertThrows( CustomException.class, () -> instance.executeSource(
+	@Test
+	public void testThrowMessageObject() {
+		Throwable e = assertThrows( CustomException.class, () -> instance.executeSource(
 		    """
 		        <cfthrow message="my wrapper exception" object="#new java:ortus.boxlang.runtime.types.exceptions.MissingIncludeException( "include message", "file.cfm" )#">
 		    """,
@@ -435,7 +485,10 @@ public class TagTest {
 		assertThat( e.getMessage() ).isEqualTo( "my wrapper exception" );
 		assertThat( e.getCause() ).isNotNull();
 		assertThat( e.getCause().getClass() ).isEqualTo( MissingIncludeException.class );
+	}
 
+	@Test
+	public void testThrowEverythingBagel() {
 		CustomException ce = assertThrows( CustomException.class, () -> instance.executeSource(
 		    """
 		        <cfthrow message="my message" detail="my detail" errorCode="42" extendedInfo="#[1,2,3,'brad']#" type="my.type" >
@@ -448,6 +501,140 @@ public class TagTest {
 		assertThat( ce.errorCode ).isEqualTo( "42" );
 		assertThat( ce.extendedInfo ).isInstanceOf( Array.class );
 		assertThat( ce.type ).isEqualTo( "my.type" );
+
+	}
+
+	@Test
+	public void testSwitchMultipleDefault() {
+
+		Throwable e = assertThrows( ExpressionException.class, () -> instance.executeSource(
+		    """
+		        <cfset result ="">
+		           <cfset vegetable = "carrot" />
+		           <cfswitch expression="#vegetable#">
+		       <cfcase value="carrot">
+		       	<cfset result ="Carrots are orange.">
+		       </cfcase>
+		    <cfset foo = "bar">
+		       <cfdefaultcase>
+		       	<cfset result ="You don't have any vegetables!">
+		       </cfdefaultcase>
+		           </cfswitch>
+		                                                """, context, BoxScriptType.CFMARKUP ) );
+
+		assertThat( e.getMessage() ).contains( "case" );
+	}
+
+	@Test
+	public void testSwitchNonCaseStatements() {
+
+		Throwable e = assertThrows( ExpressionException.class, () -> instance.executeSource(
+		    """
+		           <cfset result ="">
+		              <cfset vegetable = "carrot" />
+		              <cfswitch expression="#vegetable#">
+		          <cfcase value="carrot">
+		          	<cfset result ="Carrots are orange.">
+		          </cfcase>
+		    <cfdefaultcase>
+		    	<cfset result ="You don't have any vegetables!">
+		    </cfdefaultcase>
+		    <cfdefaultcase>
+		    	<cfset result ="You don't have any vegetables!">
+		    </cfdefaultcase>
+		              </cfswitch>
+		                                                   """, context, BoxScriptType.CFMARKUP ) );
+
+		assertThat( e.getMessage() ).contains( "default" );
+	}
+
+	@Test
+	public void testSwitchMatchCase() {
+		instance.executeSource(
+		    """
+		     <cfset result ="">
+		        <cfset vegetable = "carrot" />
+		        <cfswitch expression="#vegetable#">
+		    <cfcase value="carrot">
+		    	<cfset result ="Carrots are orange.">
+		    </cfcase>
+		    <cfdefaultcase>
+		    	<cfset result ="You don't have any vegetables!">
+		    </cfdefaultcase>
+		        </cfswitch>
+		                                             """, context, BoxScriptType.CFMARKUP );
+
+		assertThat( variables.get( result ) ).isEqualTo( "Carrots are orange." );
+	}
+
+	@Test
+	public void testSwitchMatchDefault() {
+		instance.executeSource(
+		    """
+		    	<cfoutput>
+		        <cfset result ="">
+		           <cfset vegetable = "sdf" />
+		           <cfswitch expression="#vegetable#">
+		    	sdfsdf
+		       <cfcase value="carrot">
+		       	<cfset result ="Carrots are orange.">
+		       </cfcase>
+		    sfdsdf#sdfsdf#dfdsf
+		       <cfdefaultcase>
+		       	<cfset result ="You don't have any vegetables!">
+		       </cfdefaultcase>
+		    sfddsf
+		           </cfswitch>
+		    	</cfoutput>
+		                                                """, context, BoxScriptType.CFMARKUP );
+
+		assertThat( variables.get( result ) ).isEqualTo( "You don't have any vegetables!" );
+	}
+
+	@Test
+	public void testSwitchEmpty() {
+		instance.executeSource(
+		    """
+		    <cfswitch expression="vegetable"></cfswitch>
+		                                         """, context, BoxScriptType.CFMARKUP );
+	}
+
+	@Test
+	public void testSwitchList() {
+		instance.executeSource(
+		    """
+		    <cfset result ="">
+		    	<cfset vegetable = "bugsBunnySnack" />
+		    	<cfswitch expression="#vegetable#">
+		    <cfcase value="carrot,bugsBunnySnack">
+		    	<cfset result ="Carrots are orange.">
+		    </cfcase>
+		    <cfdefaultcase>
+		    	<cfset result ="You don't have any vegetables!">
+		    </cfdefaultcase>
+		    	</cfswitch>
+		    										""", context, BoxScriptType.CFMARKUP );
+
+		assertThat( variables.get( result ) ).isEqualTo( "Carrots are orange." );
+	}
+
+	@Test
+	public void testSwitchListDelimiter() {
+		instance.executeSource(
+		    """
+		    <cfset result ="">
+		    	<cfset vegetable = "bugsBunnySnack" />
+		    	<cfswitch expression="#vegetable#">
+		    <cfcase value="carrot:bugsBunnySnack" delimiter=":">
+		    	<cfset result ="Carrots are orange.">
+		    </cfcase>
+		    <cfdefaultcase>
+		    	<cfset result ="You don't have any vegetables!">
+		    </cfdefaultcase>
+		    	</cfswitch>
+		    										""", context, BoxScriptType.CFMARKUP );
+
+		assertThat( variables.get( result ) ).isEqualTo( "Carrots are orange." );
 
 	}
 

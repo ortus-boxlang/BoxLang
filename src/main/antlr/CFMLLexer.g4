@@ -82,6 +82,9 @@ INCLUDE: 'include';
 PROPERTY: 'property';
 RETHROW: 'rethrow';
 THROW: 'throw';
+SWITCH: 'switch';
+CASE: 'case';
+DEFAULTCASE: 'defaultcase';
 
 TAG_CLOSE: '>' -> popMode, popMode;
 
@@ -139,6 +142,9 @@ INCLUDE2: 'include' -> type(INCLUDE);
 PROPERTY2: 'property' -> type(PROPERTY);
 RETHROW2: 'rethrow' -> type(RETHROW);
 THROW2: 'throw' -> type(THROW);
+SWITCH2: 'switch' -> type(SWITCH);
+CASE2: 'case' -> type(CASE);
+DEFAULTCASE2: 'defaultcase' -> type(DEFAULTCASE);
 
 TAG_NAME2: TAG_NameStartChar TAG_NameChar* -> type(TAG_NAME);
 TAG_CLOSE2: '>' -> popMode, popMode, type(TAG_CLOSE);

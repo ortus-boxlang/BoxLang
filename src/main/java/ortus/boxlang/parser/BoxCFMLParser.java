@@ -55,6 +55,8 @@ import ortus.boxlang.ast.statement.BoxInclude;
 import ortus.boxlang.ast.statement.BoxRethrow;
 import ortus.boxlang.ast.statement.BoxReturn;
 import ortus.boxlang.ast.statement.BoxReturnType;
+import ortus.boxlang.ast.statement.BoxSwitch;
+import ortus.boxlang.ast.statement.BoxSwitchCase;
 import ortus.boxlang.ast.statement.BoxThrow;
 import ortus.boxlang.ast.statement.BoxTry;
 import ortus.boxlang.ast.statement.BoxTryCatch;
@@ -68,6 +70,7 @@ import ortus.boxlang.parser.antlr.CFMLParser.AttributeContext;
 import ortus.boxlang.parser.antlr.CFMLParser.AttributeValueContext;
 import ortus.boxlang.parser.antlr.CFMLParser.BoxImportContext;
 import ortus.boxlang.parser.antlr.CFMLParser.BreakContext;
+import ortus.boxlang.parser.antlr.CFMLParser.CaseContext;
 import ortus.boxlang.parser.antlr.CFMLParser.CatchBlockContext;
 import ortus.boxlang.parser.antlr.CFMLParser.ContinueContext;
 import ortus.boxlang.parser.antlr.CFMLParser.FunctionContext;
@@ -79,6 +82,7 @@ import ortus.boxlang.parser.antlr.CFMLParser.ScriptContext;
 import ortus.boxlang.parser.antlr.CFMLParser.SetContext;
 import ortus.boxlang.parser.antlr.CFMLParser.StatementContext;
 import ortus.boxlang.parser.antlr.CFMLParser.StatementsContext;
+import ortus.boxlang.parser.antlr.CFMLParser.SwitchContext;
 import ortus.boxlang.parser.antlr.CFMLParser.TemplateContext;
 import ortus.boxlang.parser.antlr.CFMLParser.TextContentContext;
 import ortus.boxlang.parser.antlr.CFMLParser.ThrowContext;
@@ -86,6 +90,7 @@ import ortus.boxlang.parser.antlr.CFMLParser.TryContext;
 import ortus.boxlang.parser.antlr.CFMLParser.WhileContext;
 import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
+import ortus.boxlang.runtime.types.exceptions.ExpressionException;
 
 public class BoxCFMLParser extends BoxAbstractParser {
 
@@ -222,9 +227,76 @@ public class BoxCFMLParser extends BoxAbstractParser {
 			return toAst( file, node.rethrow() );
 		} else if ( node.throw_() != null ) {
 			return toAst( file, node.throw_() );
+		} else if ( node.switch_() != null ) {
+			return toAst( file, node.switch_() );
 		}
 		throw new BoxRuntimeException( "Statement node " + node.getClass().getName() + " parsing not implemented yet. " + node.getText() );
 
+	}
+
+	private BoxStatement toAst( File file, SwitchContext node ) {
+		BoxExpr				expression;
+		List<BoxAnnotation>	annotations	= new ArrayList<>();
+		List<BoxSwitchCase>	cases		= new ArrayList<>();
+
+		for ( var attr : node.attribute() ) {
+			annotations.add( toAst( file, attr ) );
+		}
+		var expressionSearch = annotations.stream().filter( ( it ) -> it.getKey().getValue().equalsIgnoreCase( "expression" ) ).findFirst();
+		if ( expressionSearch.isPresent() ) {
+			expression = expressionSearch.get().getValue();
+		} else {
+			throw new BoxRuntimeException( "Switch must have a expression attribute - " + getSourceText( node ) );
+		}
+
+		if ( node.switchBody() != null && node.switchBody().children != null ) {
+			for ( var c : node.switchBody().children ) {
+				if ( c instanceof CFMLParser.CaseContext caseNode ) {
+					cases.add( toAst( file, caseNode ) );
+					// We're willing to overlook text, but not other CF tags
+				} else if ( ! ( c instanceof CFMLParser.TextContentContext ) ) {
+					throw new ExpressionException( "Switch body can only contain case statements - ", getPosition( ( ParserRuleContext ) c ),
+					    getSourceText( ( ParserRuleContext ) c ) );
+				}
+			}
+		}
+		return new BoxSwitch( expression, cases, getPosition( node ), getSourceText( node ) );
+	}
+
+	private BoxSwitchCase toAst( File file, CaseContext node ) {
+		BoxExpr	value		= null;
+		BoxExpr	delimiter	= new BoxStringLiteral( ",", null, null );
+
+		// Only check for these on case nodes, not default case
+		if ( !node.CASE().isEmpty() ) {
+			List<BoxAnnotation> annotations = new ArrayList<>();
+
+			for ( var attr : node.attribute() ) {
+				annotations.add( toAst( file, attr ) );
+			}
+
+			var valueSearch = annotations.stream().filter( ( it ) -> it.getKey().getValue().equalsIgnoreCase( "value" ) ).findFirst();
+			if ( valueSearch.isPresent() ) {
+				value = valueSearch.get().getValue();
+			} else {
+				throw new ExpressionException( "Case must have a value attribute - ", getPosition( node ), getSourceText( node ) );
+			}
+
+			var delimiterSearch = annotations.stream().filter( ( it ) -> it.getKey().getValue().equalsIgnoreCase( "delimiter" ) ).findFirst();
+			if ( delimiterSearch.isPresent() ) {
+				delimiter = delimiterSearch.get().getValue();
+			}
+		}
+
+		List<BoxStatement> statements = new ArrayList<>();
+		if ( node.statements() != null ) {
+			statements.addAll( toAst( file, node.statements() ) );
+		}
+
+		// In tag mode, the break is implied
+		statements.add( new BoxBreak( null, null ) );
+
+		return new BoxSwitchCase( value, delimiter, statements, getPosition( node ), getSourceText( node ) );
 	}
 
 	private BoxStatement toAst( File file, ThrowContext node ) {

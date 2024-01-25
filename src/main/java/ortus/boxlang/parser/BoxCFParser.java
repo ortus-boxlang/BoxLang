@@ -647,7 +647,7 @@ public class BoxCFParser extends BoxAbstractParser {
 		BoxExpr				condition	= toAst( file, node.expression() );
 		List<BoxSwitchCase>	cases		= new ArrayList<>();
 		for ( CFParser.CaseContext c : node.case_() ) {
-			cases.add( toAst( file, c, condition ) );
+			cases.add( toAst( file, c ) );
 		}
 		return new BoxSwitch( condition, cases, getPosition( node ), getSourceText( node ) );
 	}
@@ -662,7 +662,7 @@ public class BoxCFParser extends BoxAbstractParser {
 	 *
 	 * @see BoxSwitchCase
 	 */
-	private BoxSwitchCase toAst( File file, CFParser.CaseContext node, BoxExpr condition ) {
+	private BoxSwitchCase toAst( File file, CFParser.CaseContext node ) {
 		BoxExpr expr = null;
 		if ( node.expression() != null ) {
 			expr = toAst( file, node.expression() );
@@ -679,7 +679,7 @@ public class BoxCFParser extends BoxAbstractParser {
 		if ( node.break_() != null ) {
 			statements.add( toAst( file, node.break_() ) );
 		}
-		return new BoxSwitchCase( expr, statements, getPosition( node ), getSourceText( node ) );
+		return new BoxSwitchCase( expr, null, statements, getPosition( node ), getSourceText( node ) );
 	}
 
 	/**

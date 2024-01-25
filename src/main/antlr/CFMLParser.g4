@@ -72,7 +72,8 @@ statement:
 	| continue
 	| include
 	| rethrow
-	| throw;
+	| throw
+	| switch;
 
 component:
 	// <cfcomponent ... >
@@ -226,4 +227,32 @@ throw:
 	TAG_OPEN PREFIX THROW attribute* (
 		TAG_CLOSE
 		| TAG_SLASH_CLOSE
+	);
+
+switch:
+	// <cfswitch expression="...">
+	TAG_OPEN PREFIX SWITCH attribute* TAG_CLOSE
+	// <cfcase> or <cfdefaultcase> 
+	switchBody
+	// </cftry>
+	TAG_OPEN SLASH_PREFIX SWITCH TAG_CLOSE;
+
+switchBody: (statement | script | textContent | case)*;
+
+case:
+	(
+		// <cfcase value="...">
+		TAG_OPEN PREFIX CASE attribute* TAG_CLOSE
+		// code in case
+		statements
+		// </cfcase>
+		TAG_OPEN SLASH_PREFIX CASE TAG_CLOSE
+	)
+	| (
+		// <cfdefaultcase>
+		TAG_OPEN PREFIX DEFAULTCASE TAG_CLOSE
+		// code in default case
+		statements
+		// </cfdefaultcase >
+		TAG_OPEN SLASH_PREFIX DEFAULTCASE TAG_CLOSE
 	);

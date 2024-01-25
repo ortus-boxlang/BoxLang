@@ -29,6 +29,7 @@ import ortus.boxlang.ast.Position;
 public class BoxSwitchCase extends BoxStatement {
 
 	private final BoxExpr				condition;
+	private final BoxExpr				delimiter;
 	private final List<BoxStatement>	body;
 
 	/**
@@ -39,12 +40,16 @@ public class BoxSwitchCase extends BoxStatement {
 	 * @param position   position of the statement in the source code
 	 * @param sourceText source code that originated the Node
 	 */
-	public BoxSwitchCase( BoxExpr condition, List<BoxStatement> body, Position position, String sourceText ) {
+	public BoxSwitchCase( BoxExpr condition, BoxExpr delimiter, List<BoxStatement> body, Position position, String sourceText ) {
 		super( position, sourceText );
 		this.condition = condition;
 		// condition == null is the default case
 		if ( condition != null ) {
 			this.condition.setParent( this );
+		}
+		this.delimiter = delimiter;
+		if ( delimiter != null ) {
+			this.delimiter.setParent( this );
 		}
 		this.body = Collections.unmodifiableList( body );
 		this.body.forEach( arg -> arg.setParent( this ) );
@@ -58,6 +63,10 @@ public class BoxSwitchCase extends BoxStatement {
 		return body;
 	}
 
+	public BoxExpr getDelimiter() {
+		return delimiter;
+	}
+
 	@Override
 	public Map<String, Object> toMap() {
 		Map<String, Object> map = super.toMap();
@@ -66,6 +75,11 @@ public class BoxSwitchCase extends BoxStatement {
 			map.put( "condition", condition.toMap() );
 		} else {
 			map.put( "condition", null );
+		}
+		if ( delimiter != null ) {
+			map.put( "delimiter", delimiter.toMap() );
+		} else {
+			map.put( "delimiter", null );
 		}
 		map.put( "body", body.stream().map( BoxStatement::toMap ).collect( Collectors.toList() ) );
 		return map;

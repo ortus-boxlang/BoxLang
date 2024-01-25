@@ -26,6 +26,7 @@ import com.github.javaparser.ast.stmt.Statement;
 
 import ortus.boxlang.ast.BoxNode;
 import ortus.boxlang.ast.statement.BoxSwitch;
+import ortus.boxlang.runtime.types.exceptions.ExpressionException;
 import ortus.boxlang.transpiler.JavaTranspiler;
 import ortus.boxlang.transpiler.transformer.AbstractTransformer;
 import ortus.boxlang.transpiler.transformer.TransformerContext;
@@ -71,15 +72,27 @@ public class BoxSwitchTransformer extends AbstractTransformer {
 		                                  """;
 		BlockStmt			body		= new BlockStmt();
 		DoStmt				javaSwitch	= ( DoStmt ) parseStatement( template, values );
+
 		// Create if statements for each case
 		boxSwitch.getCases().forEach( c -> {
 			if ( c.getCondition() != null ) {
-				String		caseTemplate	= """
-				                              	if( ${caseEnteredName} || ( EqualsEquals.invoke( ${condition}, ${switchValueName} ) ) ) {
-				                              		${caseEnteredName} = true;
-				                              }
-				                              """;
-				Expression	switchExpr		= ( Expression ) transpiler.transform( c.getCondition(), TransformerContext.RIGHT );
+				String caseTemplate;
+				if ( c.getDelimiter() == null ) {
+					caseTemplate = """
+					               	if( ${caseEnteredName} || EqualsEquals.invoke( ${condition}, ${switchValueName} ) ) {
+					               		${caseEnteredName} = true;
+					               }
+					               """;
+				} else {
+					Expression delimiter = ( Expression ) transpiler.transform( c.getDelimiter(), TransformerContext.RIGHT );
+					values.put( "delimiter", delimiter.toString() );
+					caseTemplate = """
+					               	if( ${caseEnteredName} || ListUtil.containsNoCase( StringCaster.cast( ${condition} ), StringCaster.cast( ${switchValueName} ), ${delimiter} ) ) {
+					               		${caseEnteredName} = true;
+					               }
+					               """;
+				}
+				Expression switchExpr = ( Expression ) transpiler.transform( c.getCondition(), TransformerContext.RIGHT );
 
 				values.put( "condition", switchExpr.toString() );
 				IfStmt		javaIfStmt	= ( IfStmt ) parseStatement( caseTemplate, values );
@@ -93,13 +106,18 @@ public class BoxSwitchTransformer extends AbstractTransformer {
 		} );
 		// Add any default cases to the end
 		// TODO: Can there be more than one default case?
-		boxSwitch.getCases().forEach( c -> {
+		boolean hasDefault = false;
+		for ( var c : boxSwitch.getCases() ) {
 			if ( c.getCondition() == null ) {
+				if ( hasDefault ) {
+					throw new ExpressionException( "Multiple default cases not supported", c.getPosition(), c.getSourceText() );
+				}
+				hasDefault = true;
 				c.getBody().forEach( stmt -> {
 					body.addStatement( ( Statement ) transpiler.transform( stmt ) );
 				} );
 			}
-		} );
+		}
 		javaSwitch.setBody( body );
 		addIndex( javaSwitch, node );
 
