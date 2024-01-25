@@ -22,7 +22,7 @@ import ortus.boxlang.runtime.scopes.Key;
 /**
  * Base exception for all custom exceptions thrown by the user
  */
-public class CustomException extends ApplicationException {
+public class CustomException extends BoxRuntimeException {
 
 	public static final Key	ErrorCodeKey	= Key.of( "errorCode" );
 
@@ -30,6 +30,25 @@ public class CustomException extends ApplicationException {
 	 * Applies to type = "custom". String error code.
 	 */
 	public String			errorCode		= "";
+
+	/**
+	 * Constructor
+	 *
+	 * @param message The message
+	 */
+	public CustomException( String message ) {
+		this( message, null, null, null, null );
+	}
+
+	/**
+	 * Constructor
+	 *
+	 * @param message The message
+	 * @param cause   The cause
+	 */
+	public CustomException( String message, Throwable cause ) {
+		this( message, null, null, null, cause );
+	}
 
 	/**
 	 * Constructor
@@ -49,8 +68,21 @@ public class CustomException extends ApplicationException {
 	 * @param errorCode The errorCode
 	 * @param cause     The cause
 	 */
-	public CustomException( String message, String detail, String errorCode, String extendedInfo, Throwable cause ) {
+	public CustomException( String message, String detail, String errorCode, Object extendedInfo, Throwable cause ) {
 		super( message, detail, extendedInfo, cause );
+		this.errorCode = errorCode;
+	}
+
+	/**
+	 * Constructor
+	 *
+	 * @param message   The message
+	 * @param detail    The detail
+	 * @param errorCode The errorCode
+	 * @param cause     The cause
+	 */
+	public CustomException( String message, String detail, String errorCode, String type, Object extendedInfo, Throwable cause ) {
+		super( message, detail, type, extendedInfo, cause );
 		this.errorCode = errorCode;
 	}
 

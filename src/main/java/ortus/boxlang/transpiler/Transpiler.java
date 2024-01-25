@@ -43,7 +43,7 @@ import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
 import ortus.boxlang.runtime.loader.ImportDefinition;
 import ortus.boxlang.runtime.runnables.BoxScript;
-import ortus.boxlang.runtime.types.exceptions.ApplicationException;
+import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.transpiler.transformer.TransformerContext;
 
 /**
@@ -94,7 +94,7 @@ public abstract class Transpiler implements ITranspiler {
 	}
 
 	@Override
-	public abstract TranspiledCode transpile( BoxNode node ) throws ApplicationException;
+	public abstract TranspiledCode transpile( BoxNode node ) throws BoxRuntimeException;
 
 	public abstract Node transform( BoxNode node );
 

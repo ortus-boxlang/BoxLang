@@ -81,6 +81,7 @@ CONTINUE: 'continue';
 INCLUDE: 'include';
 PROPERTY: 'property';
 RETHROW: 'rethrow';
+THROW: 'throw';
 
 TAG_CLOSE: '>' -> popMode, popMode;
 
@@ -137,6 +138,7 @@ CONTINUE2: 'continue' -> type(CONTINUE);
 INCLUDE2: 'include' -> type(INCLUDE);
 PROPERTY2: 'property' -> type(PROPERTY);
 RETHROW2: 'rethrow' -> type(RETHROW);
+THROW2: 'throw' -> type(THROW);
 
 TAG_NAME2: TAG_NameStartChar TAG_NameChar* -> type(TAG_NAME);
 TAG_CLOSE2: '>' -> popMode, popMode, type(TAG_CLOSE);

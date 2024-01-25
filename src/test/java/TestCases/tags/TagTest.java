@@ -34,7 +34,10 @@ import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
 import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
+import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
+import ortus.boxlang.runtime.types.exceptions.CustomException;
+import ortus.boxlang.runtime.types.exceptions.MissingIncludeException;
 
 public class TagTest {
 
@@ -399,7 +402,53 @@ public class TagTest {
 		                                       """, context, BoxScriptType.CFMARKUP ) );
 
 		assertThat( e.getMessage() ).contains( "zero" );
-		;
+	}
+
+	@DisplayName( "tag throw" )
+	@Test
+	public void testThrow() {
+		Throwable e = assertThrows( CustomException.class, () -> instance.executeSource(
+		    """
+		        <cfthrow>
+		    """, context, BoxScriptType.CFMARKUP ) );
+
+		e = assertThrows( CustomException.class, () -> instance.executeSource(
+		    """
+		    <cfthrow message="my message">
+		    								""", context, BoxScriptType.CFMARKUP ) );
+
+		assertThat( e.getMessage() ).isEqualTo( "my message" );
+
+		e = assertThrows( MissingIncludeException.class, () -> instance.executeSource(
+		    """
+		    <cfthrow object="#new java:ortus.boxlang.runtime.types.exceptions.MissingIncludeException( "include message", "file.cfm" )#">
+		    								""", context, BoxScriptType.CFMARKUP ) );
+
+		assertThat( e.getMessage() ).isEqualTo( "include message" );
+
+		e = assertThrows( CustomException.class, () -> instance.executeSource(
+		    """
+		        <cfthrow message="my wrapper exception" object="#new java:ortus.boxlang.runtime.types.exceptions.MissingIncludeException( "include message", "file.cfm" )#">
+		    """,
+		    context, BoxScriptType.CFMARKUP ) );
+
+		assertThat( e.getMessage() ).isEqualTo( "my wrapper exception" );
+		assertThat( e.getCause() ).isNotNull();
+		assertThat( e.getCause().getClass() ).isEqualTo( MissingIncludeException.class );
+
+		CustomException ce = assertThrows( CustomException.class, () -> instance.executeSource(
+		    """
+		        <cfthrow message="my message" detail="my detail" errorCode="42" extendedInfo="#[1,2,3,'brad']#" type="my.type" >
+		    """,
+		    context, BoxScriptType.CFMARKUP ) );
+
+		assertThat( ce.getMessage() ).isEqualTo( "my message" );
+		assertThat( ce.getCause() ).isNull();
+		assertThat( ce.detail ).isEqualTo( "my detail" );
+		assertThat( ce.errorCode ).isEqualTo( "42" );
+		assertThat( ce.extendedInfo ).isInstanceOf( Array.class );
+		assertThat( ce.type ).isEqualTo( "my.type" );
+
 	}
 
 }

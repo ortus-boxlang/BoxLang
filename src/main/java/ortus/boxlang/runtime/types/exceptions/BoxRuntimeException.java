@@ -29,7 +29,7 @@ public class BoxRuntimeException extends BoxLangException {
 	/**
 	 * Custom error message; information that the default exception handler does not display.
 	 */
-	public String			extendedInfo	= "";
+	public Object			extendedInfo	= "";
 
 	/**
 	 * Constructor
@@ -56,7 +56,7 @@ public class BoxRuntimeException extends BoxLangException {
 	 * @param message      The message
 	 * @param extendedInfo The extendedInfo
 	 */
-	public BoxRuntimeException( String message, String extendedInfo ) {
+	public BoxRuntimeException( String message, Object extendedInfo ) {
 		this( message, null, extendedInfo, null );
 	}
 
@@ -79,8 +79,8 @@ public class BoxRuntimeException extends BoxLangException {
 	 * @param extendedInfo The extendedInfo
 	 * @param cause        The cause
 	 */
-	public BoxRuntimeException( String message, String detail, String extendedInfo, Throwable cause ) {
-		this( message, detail, "BoxRuntimeException", extendedInfo, cause );
+	public BoxRuntimeException( String message, String detail, Object extendedInfo, Throwable cause ) {
+		this( message, detail, "Application", extendedInfo, cause );
 	}
 
 	/**
@@ -91,7 +91,7 @@ public class BoxRuntimeException extends BoxLangException {
 	 * @param extendedInfo The extendedInfo
 	 * @param cause        The cause
 	 */
-	public BoxRuntimeException( String message, String detail, String type, String extendedInfo, Throwable cause ) {
+	public BoxRuntimeException( String message, String detail, String type, Object extendedInfo, Throwable cause ) {
 		super( message, detail, type, cause );
 		this.extendedInfo = extendedInfo;
 	}

@@ -28,7 +28,12 @@ import ortus.boxlang.ast.Position;
  */
 public class BoxThrow extends BoxStatement {
 
-	private final BoxExpr expression;
+	private final BoxExpr	expression;
+	private final BoxExpr	type;
+	private final BoxExpr	message;
+	private final BoxExpr	detail;
+	private final BoxExpr	errorcode;
+	private final BoxExpr	extendedinfo;
 
 	/**
 	 * Creates the AST node
@@ -38,20 +43,102 @@ public class BoxThrow extends BoxStatement {
 	 * @param sourceText source code that originated the Node
 	 */
 	public BoxThrow( BoxExpr expression, Position position, String sourceText ) {
+		this( expression, null, null, null, null, null, position, sourceText );
+	}
+
+	/**
+	 * Creates the AST node
+	 *
+	 * @param expression argument expression to assert
+	 * @param position   position of the statement in the source code
+	 * @param sourceText source code that originated the Node
+	 */
+	public BoxThrow( BoxExpr expression, BoxExpr type, BoxExpr message, BoxExpr detail, BoxExpr errorcode, BoxExpr extendedInfo, Position position,
+	    String sourceText ) {
 		super( position, sourceText );
 		this.expression = expression;
-		this.expression.setParent( this );
+		if ( this.expression != null ) {
+			this.expression.setParent( this );
+		}
+		this.type = type;
+		if ( this.type != null ) {
+			this.type.setParent( this );
+		}
+		this.message = message;
+		if ( this.message != null ) {
+			this.message.setParent( this );
+		}
+		this.detail = detail;
+		if ( this.detail != null ) {
+			this.detail.setParent( this );
+		}
+		this.errorcode = errorcode;
+		if ( this.errorcode != null ) {
+			this.errorcode.setParent( this );
+		}
+		this.extendedinfo = extendedInfo;
+		if ( this.extendedinfo != null ) {
+			this.extendedinfo.setParent( this );
+		}
 	}
 
 	public BoxExpr getExpression() {
 		return expression;
 	}
 
+	public BoxExpr getType() {
+		return type;
+	}
+
+	public BoxExpr getMessage() {
+		return message;
+	}
+
+	public BoxExpr getDetail() {
+		return detail;
+	}
+
+	public BoxExpr getErrorCode() {
+		return errorcode;
+	}
+
+	public BoxExpr getExtendedInfo() {
+		return extendedinfo;
+	}
+
 	@Override
 	public Map<String, Object> toMap() {
 		Map<String, Object> map = super.toMap();
-
-		map.put( "expression", expression.toMap() );
+		if ( expression != null ) {
+			map.put( "expression", expression.toMap() );
+		} else {
+			map.put( "expression", null );
+		}
+		if ( type != null ) {
+			map.put( "type", type.toMap() );
+		} else {
+			map.put( "type", null );
+		}
+		if ( message != null ) {
+			map.put( "message", message.toMap() );
+		} else {
+			map.put( "message", null );
+		}
+		if ( detail != null ) {
+			map.put( "detail", detail.toMap() );
+		} else {
+			map.put( "detail", null );
+		}
+		if ( errorcode != null ) {
+			map.put( "errorcode", errorcode.toMap() );
+		} else {
+			map.put( "errorcode", null );
+		}
+		if ( extendedinfo != null ) {
+			map.put( "extendedinfo", extendedinfo.toMap() );
+		} else {
+			map.put( "extendedinfo", null );
+		}
 		return map;
 	}
 }

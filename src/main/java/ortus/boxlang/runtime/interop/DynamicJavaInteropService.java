@@ -50,7 +50,6 @@ import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.IType;
-import ortus.boxlang.runtime.types.exceptions.ApplicationException;
 import ortus.boxlang.runtime.types.exceptions.BoxLangException;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.exceptions.KeyNotFoundException;
@@ -105,7 +104,7 @@ public class DynamicJavaInteropService {
 	    BoxLangException.detailKey,
 	    BoxLangException.typeKey,
 	    BoxLangException.tagContextKey,
-	    ApplicationException.ExtendedInfoKey
+	    BoxRuntimeException.ExtendedInfoKey
 	) );
 
 	/**

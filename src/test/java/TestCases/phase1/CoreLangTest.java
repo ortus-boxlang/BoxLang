@@ -40,7 +40,6 @@ import ortus.boxlang.runtime.scopes.VariablesScope;
 import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.Function.Access;
 import ortus.boxlang.runtime.types.SampleUDF;
-import ortus.boxlang.runtime.types.exceptions.ApplicationException;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.exceptions.NoFieldException;
 
@@ -904,11 +903,11 @@ public class CoreLangTest {
 		assertThat( t.getMessage() ).contains( "Untermimated" );
 	}
 
-	@DisplayName( "It should throw ApplicationException" )
+	@DisplayName( "It should throw BoxRuntimeException" )
 	@Test
-	public void testApplicationException() {
+	public void testBoxRuntimeException() {
 
-		Throwable t = assertThrows( ApplicationException.class, () -> instance.executeSource(
+		Throwable t = assertThrows( BoxRuntimeException.class, () -> instance.executeSource(
 		    """
 		    throw "test"
 		     """,

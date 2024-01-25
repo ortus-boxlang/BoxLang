@@ -34,8 +34,8 @@ import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.dynamic.IReferenceable;
 import ortus.boxlang.runtime.runnables.IClassRunnable;
 import ortus.boxlang.runtime.scopes.Key;
-import ortus.boxlang.runtime.types.exceptions.ApplicationException;
 import ortus.boxlang.runtime.types.exceptions.BoxLangException;
+import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
 /**
  * This class is used to represent a BX/Java Class and invoke methods on classes using invoke dynamic.
@@ -88,7 +88,7 @@ public class DynamicObject implements IReferenceable {
 	    BoxLangException.detailKey,
 	    BoxLangException.typeKey,
 	    BoxLangException.tagContextKey,
-	    ApplicationException.ExtendedInfoKey
+	    BoxRuntimeException.ExtendedInfoKey
 	) );
 
 	/**

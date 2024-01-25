@@ -71,7 +71,8 @@ statement:
 	| break
 	| continue
 	| include
-	| rethrow;
+	| rethrow
+	| throw;
 
 component:
 	// <cfcomponent ... >
@@ -219,3 +220,10 @@ include:
 
 // <cfrethrow> or... <cfrethrow />
 rethrow: TAG_OPEN PREFIX RETHROW ( TAG_CLOSE | TAG_SLASH_CLOSE);
+
+// <cfthrow message="..." detail="..."> or... <cfthrow />
+throw:
+	TAG_OPEN PREFIX THROW attribute* (
+		TAG_CLOSE
+		| TAG_SLASH_CLOSE
+	);

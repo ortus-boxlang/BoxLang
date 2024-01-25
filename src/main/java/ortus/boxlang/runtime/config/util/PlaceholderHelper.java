@@ -24,7 +24,6 @@ import java.util.regex.Pattern;
 import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
-import ortus.boxlang.runtime.types.exceptions.ApplicationException;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
 /**
@@ -148,7 +147,7 @@ public class PlaceholderHelper {
 	 *
 	 * @return The Resolved string
 	 *
-	 * @throws ApplicationException - If the input object cannot be cast to a String
+	 * @throws BoxRuntimeException - If the input object cannot be cast to a String
 	 */
 	public static String resolve( Object input ) {
 		return resolve( StringCaster.cast( input ) );

@@ -72,7 +72,7 @@ public class Phase1TryCatch extends BoxTemplate {
 	 * }
 	 *
 	 * try {
-	 * throw new java:ortus.boxlang.runtime.types.exceptions.ApplicationException( "My Message", "My detail", "com.foo.type" );
+	 * throw new java:ortus.boxlang.runtime.types.exceptions.BoxRuntimeException( "My Message", "My detail", "com.foo.type" );
 	 * } catch ("com.foo.type" e) {
 	 * variables.system.out.println(e.message);
 	 * } catch (java.lang.RuntimeException e) {
@@ -152,7 +152,7 @@ public class Phase1TryCatch extends BoxTemplate {
 
 		try {
 			throw ( Throwable ) classLocator
-			    .load( context, "java:ortus.boxlang.runtime.types.exceptions.ApplicationException", imports )
+			    .load( context, "java:ortus.boxlang.runtime.types.exceptions.BoxRuntimeException", imports )
 			    .invokeConstructor( context, new Object[] { "My Message", "My detail", "com.foo.type" } ).getTargetInstance();
 		} catch ( Throwable e ) {
 			// This this context for all code in the catch block

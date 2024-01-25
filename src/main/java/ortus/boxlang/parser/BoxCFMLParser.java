@@ -55,6 +55,7 @@ import ortus.boxlang.ast.statement.BoxInclude;
 import ortus.boxlang.ast.statement.BoxRethrow;
 import ortus.boxlang.ast.statement.BoxReturn;
 import ortus.boxlang.ast.statement.BoxReturnType;
+import ortus.boxlang.ast.statement.BoxThrow;
 import ortus.boxlang.ast.statement.BoxTry;
 import ortus.boxlang.ast.statement.BoxTryCatch;
 import ortus.boxlang.ast.statement.BoxType;
@@ -80,6 +81,7 @@ import ortus.boxlang.parser.antlr.CFMLParser.StatementContext;
 import ortus.boxlang.parser.antlr.CFMLParser.StatementsContext;
 import ortus.boxlang.parser.antlr.CFMLParser.TemplateContext;
 import ortus.boxlang.parser.antlr.CFMLParser.TextContentContext;
+import ortus.boxlang.parser.antlr.CFMLParser.ThrowContext;
 import ortus.boxlang.parser.antlr.CFMLParser.TryContext;
 import ortus.boxlang.parser.antlr.CFMLParser.WhileContext;
 import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
@@ -218,9 +220,49 @@ public class BoxCFMLParser extends BoxAbstractParser {
 			return toAst( file, node.include() );
 		} else if ( node.rethrow() != null ) {
 			return toAst( file, node.rethrow() );
+		} else if ( node.throw_() != null ) {
+			return toAst( file, node.throw_() );
 		}
 		throw new BoxRuntimeException( "Statement node " + node.getClass().getName() + " parsing not implemented yet. " + node.getText() );
 
+	}
+
+	private BoxStatement toAst( File file, ThrowContext node ) {
+		BoxExpr				object			= null;
+		BoxExpr				type			= null;
+		BoxExpr				message			= null;
+		BoxExpr				detail			= null;
+		BoxExpr				errorcode		= null;
+		BoxExpr				extendedinfo	= null;
+
+		List<BoxAnnotation>	annotations		= new ArrayList<>();
+
+		for ( var attr : node.attribute() ) {
+			annotations.add( toAst( file, attr ) );
+		}
+
+		for ( var annotation : annotations ) {
+			if ( annotation.getKey().getValue().equalsIgnoreCase( "object" ) ) {
+				object = annotation.getValue();
+			}
+			if ( annotation.getKey().getValue().equalsIgnoreCase( "type" ) ) {
+				type = annotation.getValue();
+			}
+			if ( annotation.getKey().getValue().equalsIgnoreCase( "message" ) ) {
+				message = annotation.getValue();
+			}
+			if ( annotation.getKey().getValue().equalsIgnoreCase( "detail" ) ) {
+				detail = annotation.getValue();
+			}
+			if ( annotation.getKey().getValue().equalsIgnoreCase( "errorcode" ) ) {
+				errorcode = annotation.getValue();
+			}
+			if ( annotation.getKey().getValue().equalsIgnoreCase( "extendedinfo" ) ) {
+				extendedinfo = annotation.getValue();
+			}
+		}
+
+		return new BoxThrow( object, type, message, detail, errorcode, extendedinfo, getPosition( node ), getSourceText( node ) );
 	}
 
 	private BoxStatement toAst( File file, RethrowContext node ) {

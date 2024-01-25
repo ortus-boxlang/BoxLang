@@ -20,7 +20,7 @@ package ortus.boxlang.runtime.types.exceptions;
 /**
  * Thrown when a key is not found in a struct
  */
-public class UnmodifiableException extends ApplicationException {
+public class UnmodifiableException extends BoxRuntimeException {
 
 	/**
 	 * Constructor when we don't know the actual struct that was being searched

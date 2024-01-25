@@ -22,16 +22,16 @@ import java.util.List;
 import com.github.javaparser.ast.CompilationUnit;
 
 import ortus.boxlang.ast.BoxNode;
-import ortus.boxlang.runtime.types.exceptions.ApplicationException;
+import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
 /**
  * BoxLang AST transpiler interface
  */
 public interface ITranspiler {
 
-	TranspiledCode transpile( BoxNode node ) throws ApplicationException;
+	TranspiledCode transpile( BoxNode node ) throws BoxRuntimeException;
 
-	String compileJava( CompilationUnit cu, String outputPath, List<String> classPath ) throws ApplicationException;
+	String compileJava( CompilationUnit cu, String outputPath, List<String> classPath ) throws BoxRuntimeException;
 
 	void run( String fqn, List<String> classPath ) throws Throwable;
 

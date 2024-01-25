@@ -99,7 +99,7 @@ import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.runnables.BoxTemplate;
 import ortus.boxlang.runtime.runnables.compiler.JavaSourceString;
 import ortus.boxlang.runtime.scopes.Key;
-import ortus.boxlang.runtime.types.exceptions.ApplicationException;
+import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.transpiler.transformer.BoxClassTransformer;
 import ortus.boxlang.transpiler.transformer.Transformer;
 import ortus.boxlang.transpiler.transformer.TransformerContext;
@@ -403,7 +403,7 @@ public class JavaTranspiler extends Transpiler {
 	 * @see TranspiledCode
 	 */
 	@Override
-	public TranspiledCode transpile( BoxNode node ) throws ApplicationException {
+	public TranspiledCode transpile( BoxNode node ) throws BoxRuntimeException {
 
 		CompilationUnit				entryPoint	= ( CompilationUnit ) transform( node );
 

@@ -61,11 +61,11 @@ public class ExceptionUtil {
 		if ( ex instanceof RuntimeException runtimeException ) {
 			throw runtimeException;
 		} else if ( ex instanceof Throwable throwable ) {
-			throw new ApplicationException( throwable.getMessage(), throwable );
+			throw new CustomException( throwable.getMessage(), throwable );
 		}
 
 		if ( ex instanceof String string ) {
-			throw new ApplicationException( string );
+			throw new CustomException( string );
 		} else {
 			throw new BoxRuntimeException( "Cannot throw object of type [" + ex.getClass().getName() + "].  Must be a Throwable." );
 		}

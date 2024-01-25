@@ -53,6 +53,7 @@ public class BoxLambdaTransformer extends AbstractTransformer {
 		import ortus.boxlang.runtime.scopes.IScope;
 		import ortus.boxlang.runtime.scopes.Key;
 		import ortus.boxlang.runtime.context.FunctionBoxContext;
+		import ortus.boxlang.runtime.types.exceptions.*;
 		import ortus.boxlang.runtime.context.ClassBoxContext;
 		import ortus.boxlang.runtime.runnables.IBoxRunnable;
 		import ortus.boxlang.runtime.context.IBoxContext;

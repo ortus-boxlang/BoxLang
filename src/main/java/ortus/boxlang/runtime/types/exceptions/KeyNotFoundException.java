@@ -22,7 +22,7 @@ import ortus.boxlang.runtime.types.IStruct;
 /**
  * Thrown when a key is not found in a struct
  */
-public class KeyNotFoundException extends ApplicationException {
+public class KeyNotFoundException extends BoxRuntimeException {
 
 	/**
 	 * Constructor when we know the actual struct that was being searched

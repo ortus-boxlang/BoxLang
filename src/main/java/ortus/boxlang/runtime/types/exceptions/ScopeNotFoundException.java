@@ -20,7 +20,7 @@ package ortus.boxlang.runtime.types.exceptions;
 /**
  * Thrown when a scope is not found
  */
-public class ScopeNotFoundException extends ApplicationException {
+public class ScopeNotFoundException extends BoxRuntimeException {
 
 	/**
 	 * Constructor
