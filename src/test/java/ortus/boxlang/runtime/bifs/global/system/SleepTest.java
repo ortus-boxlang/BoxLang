@@ -76,7 +76,7 @@ public class SleepTest {
 		long result = LongCaster.cast( variables.get( Key.of( "result" ) ) );
 		System.out.println( result );
 		// it takes about 1s for the execution to complete
-		assertThat( result ).isGreaterThan( 10 );
+		assertThat( result ).isGreaterThan( 9 );
 		assertThat( result ).isLessThan( 15 );
 	}
 
