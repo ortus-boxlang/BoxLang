@@ -59,8 +59,9 @@ public abstract class BoxAbstractParser {
 															    int charPositionInLine,
 															    String msg, RecognitionException e ) {
 																String		errorMessage	= msg != null ? msg : "unspecified";
-																Position	position		= new Position( new Point( line, charPositionInLine ),
-																    new Point( line, charPositionInLine ) );
+																Position	position		= new Position(
+																    new Point( line + startLine, charPositionInLine + startColumn ),
+																    new Point( line + startLine, charPositionInLine + startColumn ) );
 																if ( file != null ) {
 																	position.setSource( new SourceFile( file ) );
 																}

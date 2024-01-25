@@ -70,7 +70,7 @@ public class TagTest {
 		    """
 		    <cfset result = "bar">
 
-		         """, context, BoxScriptType.CFMARKUP );
+		            """, context, BoxScriptType.CFMARKUP );
 		assertThat( variables.get( result ) ).isEqualTo( "bar" );
 
 	}

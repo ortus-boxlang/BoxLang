@@ -744,7 +744,7 @@ public class BoxCFMLParser extends BoxAbstractParser {
 			} else {
 				// Add these issues to the main parser
 				issues.addAll( result.getIssues() );
-				return null;
+				return List.of( new BoxExpression( new BoxNull( null, null ), null, null ) );
 			}
 		} catch ( IOException e ) {
 			throw new BoxRuntimeException( "Error parsing interpolated expression: " + code, e );
