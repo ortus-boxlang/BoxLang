@@ -200,6 +200,7 @@ public class Key implements Comparable<Key> {
 	public static final Key	variable					= Key.of( "variable" );
 	public static final Key	variant						= Key.of( "variant" );
 	public static final Key	year						= Key.of( "year" );
+	public static final Key	ip							= Key.of( "ip" );
 
 	/**
 	 * --------------------------------------------------------------------------

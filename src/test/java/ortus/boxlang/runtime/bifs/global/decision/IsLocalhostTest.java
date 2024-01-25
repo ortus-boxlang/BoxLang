@@ -19,11 +19,11 @@
 package ortus.boxlang.runtime.bifs.global.decision;
 
 import static com.google.common.truth.Truth.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -34,7 +34,6 @@ import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
 
-@Disabled( "Unimplemented" )
 public class IsLocalhostTest {
 
 	static BoxRuntime	instance;
@@ -58,20 +57,37 @@ public class IsLocalhostTest {
 		variables.clear();
 	}
 
-	@DisplayName( "It detects binary values" )
+	@DisplayName( "It detects loopback IP addresses" )
 	@Test
 	public void testTrueConditions() {
 		instance.executeSource(
 		    """
-		    result = isBinary( toBinary( toBase64( "boxlang" ) ) );
+		    localhost    = isLocalHost( "localhost" );
+		    ipv4loopback = isLocalHost( "127.0.0.1" );
+		    ipv6loopback = isLocalHost( "::1" );
 		    """,
 		    context );
-		assertThat( ( Boolean ) variables.get( Key.of( "result" ) ) ).isTrue();
+		assertThat( ( Boolean ) variables.get( Key.of( "localhost" ) ) ).isTrue();
+		assertThat( ( Boolean ) variables.get( Key.of( "ipv4loopback" ) ) ).isTrue();
+		assertThat( ( Boolean ) variables.get( Key.of( "ipv6loopback" ) ) ).isTrue();
 	}
 
-	@DisplayName( "It returns false for non-binary values" )
+	@DisplayName( "It returns false for non-loopback IP addresses or strings" )
 	@Test
 	public void testFalseConditions() {
+		instance.executeSource(
+		    """
+		    empty        = isLocalHost( "" );
+		    """,
+		    context );
+		assertThat( ( Boolean ) variables.get( Key.of( "empty" ) ) ).isFalse();
+	}
+
+	@DisplayName( "It throws on non-string values" )
+	@Test
+	public void testThrow() {
+		// throws in ACF and Lucee
+		assertThrows( Throwable.class, () -> instance.executeSource( "isLocalHost( {} );", context ) );
 	}
 
 }
