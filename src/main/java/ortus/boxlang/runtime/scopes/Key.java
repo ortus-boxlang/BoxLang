@@ -100,6 +100,7 @@ public class Key implements Comparable<Key> {
 	public static final Key	directory					= Key.of( "directory" );
 	public static final Key	display						= Key.of( "display" );
 	public static final Key	dspLocale					= Key.of( "dspLocale" );
+	public static final Key	duration					= Key.of( "duration" );
 	public static final Key	elementCountForRemoval		= Key.of( "elementCountForRemoval" );
 	public static final Key	encoding					= Key.of( "encoding" );
 	public static final Key	end							= Key.of( "end" );
