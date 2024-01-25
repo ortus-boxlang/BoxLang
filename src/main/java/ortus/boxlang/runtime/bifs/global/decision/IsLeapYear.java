@@ -19,7 +19,6 @@ import java.time.Year;
 import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
 import ortus.boxlang.runtime.context.IBoxContext;
-import ortus.boxlang.runtime.dynamic.casters.CastAttempt;
 import ortus.boxlang.runtime.dynamic.casters.IntegerCaster;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
@@ -47,12 +46,7 @@ public class IsLeapYear extends BIF {
 	 * @argument.year Number representing the year to test.
 	 */
 	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
-		Object					value	= arguments.get( Key.year );
-		CastAttempt<Integer>	attempt	= IntegerCaster.attempt( value );
-		if ( !attempt.wasSuccessful() ) {
-			throw new IllegalArgumentException( "Argument must be an integer." );
-		}
-		return Year.isLeap( attempt.get() );
+		return Year.isLeap( IntegerCaster.cast( arguments.get( Key.year ), true ) );
 	}
 
 }

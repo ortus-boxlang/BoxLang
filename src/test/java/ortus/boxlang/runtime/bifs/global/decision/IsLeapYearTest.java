@@ -64,18 +64,18 @@ public class IsLeapYearTest {
 		    """
 		    // returns true in both engines
 		    anInteger          = isLeapYear( 2024 );
+		    aStringInteger     = isLeapYear( "2024" );
 		    aFloat             = isLeapYear( .2024 );
 		    anotherFloat       = isLeapYear( 20.24 );
 		    aTwoDigitInteger   = isLeapYear( 20 );
-		    aStringInteger     = isLeapYear( "2024" );
 		    aStringFloat       = isLeapYear( "20.24" );
 		       """,
 		    context );
 		assertThat( ( Boolean ) variables.get( Key.of( "anInteger" ) ) ).isTrue();
+		assertThat( ( Boolean ) variables.get( Key.of( "aStringInteger" ) ) ).isTrue();
 		assertThat( ( Boolean ) variables.get( Key.of( "aFloat" ) ) ).isTrue();
 		assertThat( ( Boolean ) variables.get( Key.of( "anotherFloat" ) ) ).isTrue();
 		assertThat( ( Boolean ) variables.get( Key.of( "aTwoDigitInteger" ) ) ).isTrue();
-		assertThat( ( Boolean ) variables.get( Key.of( "aStringInteger" ) ) ).isTrue();
 		assertThat( ( Boolean ) variables.get( Key.of( "aStringFloat" ) ) ).isTrue();
 		assertThat( ( Boolean ) variables.get( Key.of( "aStringFloat" ) ) ).isTrue();
 	}
