@@ -62,7 +62,6 @@ statement:
 	// </cfANYTHING>
 	| genericCloseTag
 	| set
-	| argument
 	| return
 	| if
 	| try

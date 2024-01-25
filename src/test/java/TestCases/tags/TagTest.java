@@ -76,9 +76,8 @@ public class TagTest {
 	}
 
 	@Test
-	@Disabled
 	public void testTextOutput() {
-		IBoxContext context = new ScriptingRequestBoxContext( instance.getRuntimeContext() );
+		IBoxContext context2 = new ScriptingRequestBoxContext( instance.getRuntimeContext() );
 		instance.executeSource(
 		    """
 		       <cfset bar = "brad">
@@ -86,11 +85,13 @@ public class TagTest {
 		            <cfoutput>
 		              	This is #bar# output!
 		            </cfoutput>
-		    result = getBoxContext().getBuffer().toString();
-		              """, context, BoxScriptType.CFMARKUP );
+		    <cfset result = getBoxContext().getBuffer().toString()>
+		              """, context2, BoxScriptType.CFMARKUP );
 
-		// assertThat( result ).contains( "This is #foo# output!" );
-		// assertThat( result ).contains( "This is brad output!" );
+		var variables = ( VariablesScope ) context2.getScopeNearby( VariablesScope.name );
+		assertThat( variables.getAsString( result ) ).contains( "This is #foo# output!" );
+		assertThat( variables.getAsString( result ) ).contains( "This is brad output!" );
+
 	}
 
 	@Test
