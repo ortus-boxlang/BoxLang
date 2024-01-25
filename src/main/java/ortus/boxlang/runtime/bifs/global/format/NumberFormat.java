@@ -1,8 +1,7 @@
 
 package ortus.boxlang.runtime.bifs.global.format;
 
-import java.text.DecimalFormat;
-import java.util.HashMap;
+import java.util.Locale;
 
 import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
@@ -13,28 +12,12 @@ import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.BoxLangType;
-import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.util.LocalizationUtil;
 
 @BoxBIF
 @BoxMember( type = BoxLangType.NUMERIC )
 
 public class NumberFormat extends BIF {
-
-	private static final Struct commonFormats = new Struct(
-	    new HashMap<Key, String>() {
-
-		    {
-			    put( Key.of( "()" ), "0;(0)" );
-			    put( Key.of( "_,9" ), "#.000000000" );
-			    put( Key.of( "+" ), "+0;-0" );
-			    put( Key.of( "-" ), " 0;-0" );
-			    put( Key.of( "," ), "#,#00.#" );
-			    put( Key.of( "$" ), "'$'#,#00.00;-'$'#,#00.00" );
-			    put( Key.of( "ls$" ), "¤#,#00.00;-¤#,#00.00" );
-		    }
-	    }
-	);
 
 	/**
 	 * Constructor
@@ -60,14 +43,27 @@ public class NumberFormat extends BIF {
 	 * @argument.locale Note used by standard NumberFormat but used by LSNumberFormat
 	 */
 	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
-		double	value	= DoubleCaster.cast( arguments.get( Key.number ) );
-		String	format	= arguments.getAsString( Key.mask );
-		String	locale	= arguments.getAsString( Key.locale );
+		double					value		= DoubleCaster.cast( arguments.get( Key.number ) );
+		String					format		= arguments.getAsString( Key.mask );
+		Locale					locale		= LocalizationUtil.parseLocaleOrDefault(
+		    arguments.getAsString( Key.locale ),
+		    ( Locale ) context.getConfigItem( Key.locale, Locale.getDefault() )
+		);
+		java.text.NumberFormat	formatter	= LocalizationUtil.localizedDecimalFormatter(
+		    locale,
+		    LocalizationUtil.numberFormatPatterns.getAsString( Key.of( "," ) )
+		);
 
 		if ( format != null ) {
+			if ( format.equals( "$" ) )
+				format = "USD";
 			Key formatKey = Key.of( format );
-			if ( commonFormats.containsKey( formatKey ) ) {
-				format = commonFormats.getAsString( formatKey );
+			if ( LocalizationUtil.commonNumberFormatters.containsKey( formatKey ) ) {
+				formatter = ( java.text.NumberFormat ) LocalizationUtil.commonNumberFormatters.get( formatKey );
+			} else if ( LocalizationUtil.numberFormatPatterns.containsKey( formatKey ) ) {
+				formatter = LocalizationUtil.localizedDecimalFormatter( locale, LocalizationUtil.numberFormatPatterns.getAsString( formatKey ) );
+			} else if ( format.equals( "ls$" ) ) {
+				formatter = LocalizationUtil.localizedCurrencyFormatter( locale );
 			} else {
 				format = format.replaceAll( "9", "0" )
 				    .replaceAll( "_", "#" );
@@ -76,18 +72,10 @@ public class NumberFormat extends BIF {
 				} else if ( format.substring( 0, 1 ).equals( "C" ) ) {
 					format = format.substring( 1, format.length() ).replace( "0", "#" );
 				}
+				formatter = LocalizationUtil.localizedDecimalFormatter( locale, format );
 			}
-		} else {
-			format = commonFormats.getAsString( Key.of( "," ) );
 		}
 
-		java.text.NumberFormat formatter = null;
-		if ( locale != null ) {
-			formatter = DecimalFormat.getInstance( LocalizationUtil.parseLocale( locale ) );
-			( ( DecimalFormat ) formatter ).applyLocalizedPattern( format );
-		} else {
-			formatter = new DecimalFormat( format );
-		}
 		return formatter.format( value );
 	}
 

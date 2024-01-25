@@ -17,6 +17,9 @@
  */
 package ortus.boxlang.runtime.util;
 
+import java.text.DecimalFormat;
+import java.text.DecimalFormatSymbols;
+import java.text.NumberFormat;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeFormatterBuilder;
@@ -42,7 +45,7 @@ public final class LocalizationUtil {
 	/**
 	 * A struct of common locale constants
 	 */
-	public static final ImmutableStruct	commonLocales	= new ImmutableStruct(
+	public static final ImmutableStruct	commonLocales			= new ImmutableStruct(
 	    TYPES.LINKED,
 	    new LinkedHashMap<Key, Locale>() {
 
@@ -82,7 +85,7 @@ public final class LocalizationUtil {
 	/**
 	 * A collection of common locale aliases which are used by both ACF and Lucee
 	 */
-	public static final ImmutableStruct	localeAliases	= new ImmutableStruct(
+	public static final ImmutableStruct	localeAliases			= new ImmutableStruct(
 	    TYPES.LINKED,
 	    new LinkedHashMap<Key, Locale>() {
 
@@ -155,10 +158,40 @@ public final class LocalizationUtil {
 
 	);
 
+	public static final Struct			commonNumberFormatters	= new Struct(
+	    new HashMap<Key, java.text.NumberFormat>() {
+
+		    {
+			    put( Key.of( "USD" ), DecimalFormat.getCurrencyInstance( ( Locale ) LocalizationUtil.commonLocales.get( "US" ) ) );
+			    put( Key.of( "EURO" ), DecimalFormat.getCurrencyInstance( ( Locale ) LocalizationUtil.commonLocales.get( "German" ) ) );
+		    }
+	    }
+	);
+
+	public static final Struct			numberFormatPatterns	= new Struct(
+	    new HashMap<Key, String>() {
+
+		    {
+			    put( Key.of( "()" ), "0;(0)" );
+			    put( Key.of( "_,2" ), "#.00" );
+			    put( Key.of( "_,3" ), "#.000" );
+			    put( Key.of( "_,4" ), "#.0000" );
+			    put( Key.of( "_,5" ), "#.00000" );
+			    put( Key.of( "_,6" ), "#.000000" );
+			    put( Key.of( "_,7" ), "#.0000000" );
+			    put( Key.of( "_,8" ), "#.00000000" );
+			    put( Key.of( "_,9" ), "#.000000000" );
+			    put( Key.of( "+" ), "+0;-0" );
+			    put( Key.of( "-" ), " 0;-0" );
+			    put( Key.of( "," ), "#,#00.#" );
+		    }
+	    }
+	);
+
 	/**
 	 * A struct of ZoneID aliases ( e.g. PST )
 	 */
-	public static final Struct			zoneAliases		= new Struct(
+	public static final Struct			zoneAliases				= new Struct(
 	    new HashMap<Key, String>() {
 
 		    {
@@ -268,8 +301,71 @@ public final class LocalizationUtil {
 		}
 	}
 
+	/**
+	 * Returns a localized DateTimeFormatter instance
+	 *
+	 * @param locale the Locale instance to apply to the formatter
+	 * @param style  the FormatStyle instance to apply
+	 *
+	 * @return
+	 */
 	public static DateTimeFormatter localizedDateFormatter( Locale locale, FormatStyle style ) {
 		return DateTimeFormatter.ofLocalizedDate( style ).withLocale( locale );
+	}
+
+	/**
+	 * Returns a localized currency formatter
+	 *
+	 * @param locale the Locale instance to apply to the formatter
+	 *
+	 * @return
+	 */
+	public static NumberFormat localizedCurrencyFormatter( Locale locale ) {
+		return NumberFormat.getCurrencyInstance( locale );
+	}
+
+	/**
+	 * Returns a localized decimal formatter
+	 *
+	 * @param locale the Locale instance to apply to the formatter
+	 *
+	 * @return
+	 */
+	public static DecimalFormat localizedDecimalFormatter( Locale locale ) {
+		DecimalFormat formatter = ( DecimalFormat ) DecimalFormat.getNumberInstance( locale );
+		formatter.setDecimalFormatSymbols( localizedDecimalSymbols( locale ) );
+		return formatter;
+	}
+
+	/**
+	 * Returns a localized decimal formatter
+	 *
+	 * @param locale the Locale instance to apply to the formatter
+	 *
+	 * @return
+	 */
+	public static DecimalFormat localizedDecimalFormatter( Locale locale, String format ) {
+		return new DecimalFormat( format, localizedDecimalSymbols( locale ) );
+	}
+
+	/**
+	 * Returns the localized decimal format symbols for the specified locale
+	 *
+	 * @param locale the target locale instance
+	 *
+	 * @return
+	 */
+	public static DecimalFormatSymbols localizedDecimalSymbols( Locale locale ) {
+		DecimalFormatSymbols	symbols		= new DecimalFormatSymbols( locale );
+		// fix for some thin space grouping separators not being the expected standard for the locale
+		// ( e.g de_AT allows a non-breaking space, but the decimal point is expected )
+		Character				thinSpace	= '\u00a0';
+		// Useful for debugging some unicode characters as group separators
+		// System.out.println( String.format( "\\u%04x", ( int ) symbols.getGroupingSeparator() ) );
+		if ( thinSpace.equals( ( Character ) symbols.getGroupingSeparator() ) ) {
+			symbols.setGroupingSeparator( '.' );
+		}
+		return symbols;
 	}
 
 	/**

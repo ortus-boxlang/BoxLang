@@ -17,7 +17,7 @@
  * limitations under the License.
  */
 
-package ortus.boxlang.runtime.bifs.global.format;
+package ortus.boxlang.runtime.bifs.global.i18n;
 
 import static org.junit.Assert.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -38,8 +38,9 @@ import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
+import ortus.boxlang.runtime.util.LocalizationUtil;
 
-public class NumberFormatTest {
+public class LSNumberFormatTest {
 
 	static BoxRuntime	instance;
 	static IBoxContext	context;
@@ -63,121 +64,60 @@ public class NumberFormatTest {
 		variables.clear();
 	}
 
-	@DisplayName( "It tests the BIF NumberFormat with no mask" )
+	@DisplayName( "It tests the BIF LSNumberFormat with default mask and locale" )
 	@Test
 	public void testDefault() {
 		instance.executeSource(
 		    """
-		    result = numberFormat( 12345 );
+		    result = LSnumberFormat( 12345 );
 		    """,
 		    context );
 		assertEquals( variables.getAsString( result ), "12,345" );
 	}
 
-	@DisplayName( "It tests the BIF NumberFormat with number format placeholder Masks" )
+	@DisplayName( "It tests the BIF LSNumberFormat with number format placeholder and locale" )
 	@Test
 	public void testBif() {
 
 		instance.executeSource(
 		    """
-		    result = numberFormat( 12345, "9.99");
+		    result = LSnumberFormat( 12345, "0.00", "German (Austrian)");
 		    """,
 		    context );
-		assertEquals( variables.getAsString( result ), "12345.00" );
+		assertEquals( variables.getAsString( result ), "12345,00" );
 		instance.executeSource(
 		    """
-		    result = numberFormat( 12345, "_.__");
+		    result = LSnumberFormat( 12345, "_.__", "German (Austrian)");
 		    """,
 		    context );
 		assertEquals( variables.getAsString( result ), "12345" );
 		instance.executeSource(
 		    """
-		    result = numberFormat( 12345, "9.999");
+		    result = LSnumberFormat( 12345, "9.999", "German (Austrian)");
 		    """,
 		    context );
-		assertEquals( variables.getAsString( result ), "12345.000" );
+		assertEquals( variables.getAsString( result ), "12345,000" );
+		String refGrouped = new DecimalFormat( "#,##0.00", LocalizationUtil.localizedDecimalSymbols( new Locale( "de", "AT" ) ) ).format( 12345D );
+		instance.executeSource(
+		    """
+		    result = LSnumberFormat( 12345, "_,__0.00", "German (Austrian)");
+		    """,
+		    context );
+		System.out.println( variables.getAsString( result ) );
+		assertEquals( variables.getAsString( result ), refGrouped );
 	}
 
-	@DisplayName( "It tests the BIF NumberFormat with common format masks" )
+	@DisplayName( "It tests the BIF LSNumberFormat localized masks" )
 	@Test
 	public void testBifCommonFormat() {
+		java.text.NumberFormat formatter = DecimalFormat.getCurrencyInstance( new Locale( "de", "AT" ) );
 		instance.executeSource(
 		    """
-		    result = numberFormat( -12345, "()");
+		    result = LSnumberFormat( 12345, "ls$", "German (Austrian)" );
 		    """,
 		    context );
-		assertEquals( variables.getAsString( result ), "(12345)" );
-		instance.executeSource(
-		    """
-		    result = numberFormat( 12345, "()");
-		    """,
-		    context );
-		assertEquals( variables.getAsString( result ), "12345" );
-		instance.executeSource(
-		    """
-		    result = numberFormat( 12345, "_,9");
-		    """,
-		    context );
-		assertEquals( variables.getAsString( result ), "12345.000000000" );
-		instance.executeSource(
-		    """
-		    result = numberFormat( 12345, "+");
-		    """,
-		    context );
-		assertEquals( variables.getAsString( result ), "+12345" );
-
-		instance.executeSource(
-		    """
-		    result = numberFormat( -12345, "+");
-		    """,
-		    context );
-		assertEquals( variables.getAsString( result ), "-12345" );
-
-		instance.executeSource(
-		    """
-		    result = numberFormat( 12345, "-");
-		    """,
-		    context );
-		assertEquals( variables.getAsString( result ), " 12345" );
-
-		instance.executeSource(
-		    """
-		    result = numberFormat( -12345, "-");
-		    """,
-		    context );
-		assertEquals( variables.getAsString( result ), "-12345" );
-
-		instance.executeSource(
-		    """
-		    result = numberFormat( 12345, "$");
-		    """,
-		    context );
-		assertEquals( variables.getAsString( result ), "$12,345.00" );
-
-		java.text.NumberFormat formatter = DecimalFormat.getCurrencyInstance( Locale.getDefault() );
-		instance.executeSource(
-		    """
-		    result = numberFormat( 12345, "ls$");
-		    """,
-		    context );
+		System.out.println( variables.getAsString( result ) );
 		assertEquals( variables.getAsString( result ), formatter.format( 12345D ) );
-	}
-
-	@DisplayName( "It tests the BIF NumberFormat with justification masks" )
-	@Test
-	public void testBifJustify() {
-		instance.executeSource(
-		    """
-		    result = numberFormat( 1, "L000");
-		    """,
-		    context );
-		assertEquals( variables.getAsString( result ), "001" );
-		instance.executeSource(
-		    """
-		    result = numberFormat( 1, "C000");
-		    """,
-		    context );
-		assertEquals( variables.getAsString( result ), "1" );
 	}
 
 	@DisplayName( "It tests will throw an error with an unparseable date" )
@@ -187,7 +127,7 @@ public class NumberFormatTest {
 		    BoxRuntimeException.class,
 		    () -> instance.executeSource(
 		        """
-		        result = numberFormat( "Blah", "0.00");
+		        result = LSnumberFormat( "Blah", "0.00");
 		        """,
 		        context )
 		);
