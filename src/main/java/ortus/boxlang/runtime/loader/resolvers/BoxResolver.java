@@ -20,6 +20,7 @@ package ortus.boxlang.runtime.loader.resolvers;
 import java.io.File;
 import java.util.List;
 import java.util.Optional;
+import java.util.regex.Pattern;
 
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.loader.ClassLocator;
@@ -160,6 +161,9 @@ public class BoxResolver extends BaseResolver {
 		// Look for a mapping that matches the start of the path
 		IStruct mappings = context.getConfig().getAsStruct( Key.runtime ).getAsStruct( Key.mappings );
 
+		// System.out.println( "mappings: " + mappings );
+		System.out.println( "slashName: " + slashName );
+
 		// Maybe if we have > 20 mappings we should use parallel streams
 
 		return mappings
@@ -168,13 +172,16 @@ public class BoxResolver extends BaseResolver {
 		    // Filter out mappings that don't match the start of the mapping path
 		    .filter( entry -> slashName.startsWith( entry.getKey().getName() ) )
 		    // Map it to a File object representing the path to the class
-		    .map( entry -> new File( entry.getValue() + slashName.replace( entry.getKey().getName(), "" ) + ".cfc" ) )
+		    .map( entry -> new File( entry.getValue() + slashName.replace( Pattern.quote( entry.getKey().getName() ), "" ) + ".cfc" ) )
+		    // .peek( file -> System.out.println( "Class Location: " + file ) )
 		    // Verify that the file exists
 		    .filter( File::exists )
+		    // .peek( file -> System.out.println( "File Exists." ) )
 		    // Map it to a ClassLocation object
 		    .map( file -> {
 			    String className = file.getName().replace( ".cfc", "" );
 			    String packageName = name.replace( className, "" ).substring( 0, name.lastIndexOf( "." ) );
+
 			    return new ClassLocation(
 			        className,
 			        file.toURI().toString(),
@@ -206,6 +213,9 @@ public class BoxResolver extends BaseResolver {
 
 		// Check if the class exists in the directory of the currently-executing template
 		ITemplateRunnable template = context.findClosestTemplate();
+
+		// System.out.println( "template: " + template );
+
 		if ( template != null ) {
 			// See if path exists in this parent directory
 			File file;
