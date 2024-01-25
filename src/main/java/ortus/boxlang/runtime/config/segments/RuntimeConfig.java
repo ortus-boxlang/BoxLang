@@ -193,9 +193,10 @@ public class RuntimeConfig {
 		// Process mappings
 		if ( config.containsKey( "mappings" ) ) {
 			if ( config.get( "mappings" ) instanceof Map<?, ?> castedMap ) {
-				castedMap.forEach( ( key, value ) -> {
-					this.mappings.put( Key.of( key ), PlaceholderHelper.resolve( value ) );
-				} );
+				castedMap.forEach( ( key, value ) -> this.mappings.put(
+				    Key.of( key ),
+				    PlaceholderHelper.resolve( value )
+				) );
 			} else {
 				logger.warn( "The [runtime.mappings] configuration is not a JSON Object, ignoring it." );
 			}

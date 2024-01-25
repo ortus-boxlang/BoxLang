@@ -131,13 +131,81 @@ public class BoxResolver extends BaseResolver {
 	 * @return The loaded class or null if not found
 	 */
 	public Optional<ClassLocation> findFromLocal( IBoxContext context, String name, List<ImportDefinition> imports ) {
-		// TODO: How do we deal with .bx vs .cfc extensions?
+		// Convert package dot name to a lookup path
+		String slashName = "/" + name.replace( ".", "/" );
 
-		String				slashName	= "/" + name.replace( ".", "/" );
-		// System.out.println( "resolving: " + slashName );
+		// Find the class using:
+		// 1. Relative to the current template
+		// 2. A mapping
+		return findByRelativeLocation( context, slashName, name, imports )
+		    .or( () -> findByMapping( context, slashName, name, imports ) );
+	}
 
-		// First look and see if the CFC lives in the directory of the currently-executing template
-		ITemplateRunnable	template	= context.findClosestTemplate();
+	/**
+	 * Find a class by mapping resolution
+	 *
+	 * @param context   The current context of execution
+	 * @param slashName The name of the class to find using slahes instead of dots
+	 * @param name      The original dot notation name of the class to find
+	 * @param imports   The list of imports to use
+	 *
+	 * @return An Optional of {@link ClassLocation} if found, {@link Optional#empty()} otherwise
+	 */
+	private Optional<ClassLocation> findByMapping(
+	    IBoxContext context,
+	    String slashName,
+	    String name,
+	    List<ImportDefinition> imports ) {
+
+		// Look for a mapping that matches the start of the path
+		IStruct mappings = context.getConfig().getAsStruct( Key.runtime ).getAsStruct( Key.mappings );
+
+		// Maybe if we have > 20 mappings we should use parallel streams
+
+		return mappings
+		    .entrySet()
+		    .stream()
+		    // Filter out mappings that don't match the start of the mapping path
+		    .filter( entry -> slashName.startsWith( entry.getKey().getName() ) )
+		    // Map it to a File object representing the path to the class
+		    .map( entry -> new File( entry.getValue() + slashName.replace( entry.getKey().getName(), "" ) + ".cfc" ) )
+		    // Verify that the file exists
+		    .filter( File::exists )
+		    // Map it to a ClassLocation object
+		    .map( file -> {
+			    String className = file.getName().replace( ".cfc", "" );
+			    String packageName = name.replace( className, "" ).substring( 0, name.lastIndexOf( "." ) );
+			    return new ClassLocation(
+			        className,
+			        file.toURI().toString(),
+			        packageName,
+			        ClassLocator.TYPE_BX,
+			        RunnableLoader.getInstance().loadClass( file.toPath(), packageName, context ),
+			        ""
+			    );
+		    } )
+		    // Find the first one or return empty
+		    .findFirst();
+	}
+
+	/**
+	 * Find a class by relative location resolution
+	 *
+	 * @param context   The current context of execution
+	 * @param slashName The name of the class to find using slahes instead of dots
+	 * @param name      The original dot notation name of the class to find
+	 * @param imports   The list of imports to use
+	 *
+	 * @return An Optional of {@link ClassLocation} if found, {@link Optional#empty()} otherwise
+	 */
+	private Optional<ClassLocation> findByRelativeLocation(
+	    IBoxContext context,
+	    String slashName,
+	    String name,
+	    List<ImportDefinition> imports ) {
+
+		// Check if the class exists in the directory of the currently-executing template
+		ITemplateRunnable template = context.findClosestTemplate();
 		if ( template != null ) {
 			// See if path exists in this parent directory
 			File file;
@@ -147,9 +215,11 @@ public class BoxResolver extends BaseResolver {
 			    && ( file = template.getRunnablePath().getParent().resolve( slashName.substring( 1 ) + ".cfc" ).toFile() ).exists() ) {
 				String	className	= file.getName().replace( ".cfc", "" );
 				String	packageName	= name.replace( className, "" );
+
 				// System.out.println( "name: " + name );
 				// System.out.println( "packageName: " + packageName );
 				// System.out.println( "className: " + className );
+
 				return Optional.of( new ClassLocation(
 				    className,
 				    file.toURI().toString(),
@@ -160,40 +230,7 @@ public class BoxResolver extends BaseResolver {
 				) );
 			}
 		}
-
-		// Next look for a mapping that matches the start of the path
-		IStruct		mappings	= context.getConfig().getAsStruct( Key.runtime ).getAsStruct( Key.mappings );
-		List<Key>	keys		= mappings.getKeys();
-
-		// Longest to shortest
-		keys.sort( ( s1, s2 ) -> Integer.compare( s2.getName().length(), s1.getName().length() ) );
-		for ( Key key : keys ) {
-			String mapping = ( String ) mappings.get( key );
-
-			// System.out.println( "Looking in mapping: " + key.getName() + " -> " + mapping );
-
-			if ( slashName.startsWith( key.getName() ) ) {
-				// System.out.println( "Found mapping: " + key.getName() + " -> " + mapping );
-				// See if path exists in this parent directory
-				File file;
-				// TODO: Make case insensitive
-				if ( ( file = new File( mapping + slashName + ".cfc" ) ).exists() ) {
-					String	className	= file.getName().replace( ".cfc", "" );
-					String	packageName	= name.replace( className, "" );
-					return Optional.of( new ClassLocation(
-					    className,
-					    file.toURI().toString(),
-					    packageName,
-					    ClassLocator.TYPE_BX,
-					    RunnableLoader.getInstance().loadClass( file.toPath(), packageName, context ),
-					    ""
-					) );
-				}
-			} else {
-				System.out.println( "No mapping found for: " + slashName );
-			}
-		}
-		return Optional.ofNullable( null );
+		return Optional.empty();
 	}
 
 }

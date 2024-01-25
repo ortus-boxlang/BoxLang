@@ -35,7 +35,11 @@ import org.junit.jupiter.api.Test;
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
+import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.loader.ClassLocator.ClassLocation;
+import ortus.boxlang.runtime.runnables.IClassRunnable;
+import ortus.boxlang.runtime.scopes.Key;
+import ortus.boxlang.runtime.types.DateTime;
 
 public class BoxResolverTest {
 
@@ -47,9 +51,10 @@ public class BoxResolverTest {
 		runtime	= BoxRuntime.getInstance( true );
 		context	= new ScriptingRequestBoxContext( runtime.getRuntimeContext() );
 
-		// Create a mapping to the resources directory
+		// Create a mapping to the `resources` directory
 		Path resourcesDirectory = Paths.get( "src/test/resources" ).toAbsolutePath();
 		runtime.getConfiguration().runtime.registerMapping( "/tests", resourcesDirectory.toString() );
+		// System.out.println( "mappings: " + Arrays.toString( runtime.getConfiguration().runtime.getRegisteredMappings() ) );
 	}
 
 	@AfterAll
@@ -74,7 +79,7 @@ public class BoxResolverTest {
 		assertThat( boxResolver.findFromModules( new ScriptingRequestBoxContext(), className, new ArrayList<>() ).isPresent() ).isFalse();
 	}
 
-	@DisplayName( "It can find classes from local disk" )
+	@DisplayName( "It can find classes from local disk using a mapping" )
 	@Test
 	void testFindFromLocal() throws URISyntaxException {
 		// You can find this in src/test/resources/tests/components/User.cfc
@@ -84,8 +89,17 @@ public class BoxResolverTest {
 		// System.out.println( "mappings: " + Arrays.toString( runtime.getConfiguration().runtime.getRegisteredMappings() ) );
 
 		Optional<ClassLocation>	classLocation	= boxResolver.findFromLocal( context, testComponent, new ArrayList<>() );
-		System.err.println( "classLocation: " + classLocation );
-		// assertThat( boxResolver.findFromLocal( new ScriptingRequestBoxContext(), className, new ArrayList<>() ).isPresent() ).isFalse();
+
+		assertThat( classLocation.isPresent() ).isTrue();
+		assertThat( classLocation.get().name() ).isEqualTo( "User" );
+		assertThat( classLocation.get().packageName() ).isEqualTo( "tests.components" );
+
+		IClassRunnable cfc = ( IClassRunnable ) DynamicObject.of( classLocation.get().clazz() )
+		    .invokeConstructor( context )
+		    .getTargetInstance();
+		assertThat( cfc ).isNotNull();
+		assertThat( cfc.getThisScope().getAsString( Key.of( "name" ) ) ).isEqualTo( "test" );
+		assertThat( cfc.getThisScope().get( Key.of( "created" ) ) ).isInstanceOf( DateTime.class );
 	}
 
 	@DisplayName( "It can resolve classes" )
