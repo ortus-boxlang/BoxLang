@@ -23,6 +23,7 @@ import java.util.UUID;
 
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.services.ModuleService;
+import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
 
@@ -142,7 +143,7 @@ public class ModuleRecord {
 		// Register the automatic mapping by convention: /bxModules/{name}
 		this.mapping		= ModuleService.MODULE_MAPPING_PREFIX + name.getName();
 		// Register the invocation path by convention: bxModules.{name}
-		this.invocationPath	= ModuleService.MODULE_MAPPING_PREFIX.substring( 1 ) + name.getName();
+		this.invocationPath	= ModuleService.MODULE_MAPPING_INVOCATION_PREFIX + name.getName();
 	}
 
 	/**
@@ -178,12 +179,13 @@ public class ModuleRecord {
 	public IStruct asStruct() {
 		return Struct.of(
 		    "activationTime", activationTime,
+		    "activated", activated,
 		    "author", author,
-		    "customInterceptionPoints", customInterceptionPoints,
+		    "customInterceptionPoints", Array.copyOf( customInterceptionPoints ),
 		    "description", description,
 		    "disabled", disabled,
 		    "Id", id,
-		    "interceptors", interceptors,
+		    "interceptors", Array.copyOf( interceptors ),
 		    "invocationPath", invocationPath,
 		    "mapping", mapping,
 		    "name", name,

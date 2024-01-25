@@ -55,9 +55,10 @@ public class ModuleService extends BaseService {
 	 */
 
 	/**
-	 * The module mapping prefix
+	 * The module mapping and invocation prefixes
 	 */
-	public static final String				MODULE_MAPPING_PREFIX	= "/bxModules/";
+	public static final String				MODULE_MAPPING_PREFIX				= "/bxModules/";
+	public static final String				MODULE_MAPPING_INVOCATION_PREFIX	= "bxModules.";
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -68,12 +69,12 @@ public class ModuleService extends BaseService {
 	/**
 	 * The location of the core modules in the runtime resources: {@code src/main/resources/modules}
 	 */
-	private static final String				CORE_MODULES			= "modules";
+	private static final String				CORE_MODULES						= "modules";
 
 	/**
 	 * The module descriptor file name
 	 */
-	private static final String				MODULE_DESCRIPTOR		= "ModuleConfig.bx";
+	private static final String				MODULE_DESCRIPTOR					= "ModuleConfig.bx";
 
 	/**
 	 * The core modules file system. This is used to load modules from the runtime resources.
@@ -84,22 +85,22 @@ public class ModuleService extends BaseService {
 	/**
 	 * List locations to search for modules
 	 */
-	private List<Path>						modulePaths				= new ArrayList<>();
+	private List<Path>						modulePaths							= new ArrayList<>();
 
 	/**
 	 * Logger
 	 */
-	private static final Logger				logger					= LoggerFactory.getLogger( ModuleService.class );
+	private static final Logger				logger								= LoggerFactory.getLogger( ModuleService.class );
 
 	/**
 	 * Module registry
 	 */
-	private Map<Key, ModuleRecord>			registry				= new ConcurrentHashMap<>();
+	private Map<Key, ModuleRecord>			registry							= new ConcurrentHashMap<>();
 
 	/**
 	 * Module Service Events
 	 */
-	private static final Map<String, Key>	MODULE_EVENTS			= Stream.of(
+	private static final Map<String, Key>	MODULE_EVENTS						= Stream.of(
 	    "afterModuleRegistrations",
 	    "preModuleRegistration",
 	    "postModuleRegistration",

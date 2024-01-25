@@ -157,7 +157,7 @@ public class Array implements List<Object>, IType, IReferenceable, IListenable {
 	 *
 	 * @return The Array
 	 */
-	public static Array copyOf( List<Object> arr ) {
+	public static Array copyOf( List<?> arr ) {
 		Array newArr = new Array();
 		// loop over list and add all elements
 		for ( Object o : arr ) {
