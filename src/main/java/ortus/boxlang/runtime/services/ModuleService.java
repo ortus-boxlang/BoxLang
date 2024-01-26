@@ -308,7 +308,7 @@ public class ModuleService extends BaseService {
 		// Register the mapping in the runtime
 		runtime
 		    .getConfiguration().runtime
-		        .registerMapping( moduleRecord.mapping, moduleRecord.physicalPath.toString() );
+		    .registerMapping( moduleRecord.mapping, moduleRecord.physicalPath.toString() );
 
 		// Call the configure method if it exists
 		if ( moduleRecord.moduleConfig.getThisScope().containsKey( Key.configure ) ) {
