@@ -34,7 +34,6 @@ import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
 
-@Disabled( "Unimplemented" )
 public class IsSimpleValueTest {
 
 	static BoxRuntime	instance;
@@ -58,20 +57,47 @@ public class IsSimpleValueTest {
 		variables.clear();
 	}
 
-	@DisplayName( "It detects binary values" )
+	@DisplayName( "It detects simple values" )
 	@Test
 	public void testTrueConditions() {
 		instance.executeSource(
 		    """
-		    result = isBinary( toBinary( toBase64( "boxlang" ) ) );
+		    aString = isSimpleValue( "Michael" );
+		    anInt   = isSimpleValue( 12345 );
+		    aFloat  = isSimpleValue( 3.45 );
+		    aDate   = isSimpleValue( value = now() );
+		    aUUID   = isSimpleValue( value = createUUID() );
 		    """,
 		    context );
-		assertThat( ( Boolean ) variables.get( Key.of( "result" ) ) ).isTrue();
+		assertThat( ( Boolean ) variables.get( Key.of( "aString" ) ) ).isTrue();
+		assertThat( ( Boolean ) variables.get( Key.of( "anInt" ) ) ).isTrue();
+		assertThat( ( Boolean ) variables.get( Key.of( "aFloat" ) ) ).isTrue();
+		assertThat( ( Boolean ) variables.get( Key.of( "aDate" ) ) ).isTrue();
+		assertThat( ( Boolean ) variables.get( Key.of( "aUUID" ) ) ).isTrue();
 	}
 
-	@DisplayName( "It returns false for non-binary values" )
+	@DisplayName( "It returns false for non-simple values" )
 	@Test
 	public void testFalseConditions() {
+		instance.executeSource(
+		    """
+		    aStruct     = isSimpleValue( {} );
+		    anArray     = isSimpleValue( [] );
+		    aNull       = isSimpleValue( value = nullValue() );
+		    aJavaClass  = isSimpleValue( value = createObject( 'java', "java.lang.String" ) );
+		    """,
+		    context );
+		assertThat( ( Boolean ) variables.get( Key.of( "aStruct" ) ) ).isFalse();
+		assertThat( ( Boolean ) variables.get( Key.of( "anArray" ) ) ).isFalse();
+		assertThat( ( Boolean ) variables.get( Key.of( "aNull" ) ) ).isFalse();
+		assertThat( ( Boolean ) variables.get( Key.of( "aJavaClass" ) ) ).isFalse();
+	}
+
+	@Disabled( "QueryNew is not yet implemented." )
+	@DisplayName( "It returns false for queries" )
+	@Test
+	public void testQuery() {
+		assertThat( ( Boolean ) instance.executeStatement( "isSimpleValue( queryNew( 'id' ) )" ) ).isFalse();
 	}
 
 }
