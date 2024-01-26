@@ -219,28 +219,37 @@ public class BoxResolver extends BaseResolver {
 		ITemplateRunnable template = context.findClosestTemplate();
 
 		if ( template != null ) {
-			// See if path exists in this parent directory
-			Path targetPath = template.getRunnablePath().getParent().resolve( slashName.substring( 1 ) + ".cfc" );
-			if ( template.getRunnablePath().getParent() != null && Files.exists( targetPath ) ) {
+			// Get the parent directory of the template, verify it exists, else we are done
+			Path parentPath = template.getRunnablePath().getParent();
+			if ( parentPath != null ) {
+				// See if path exists in this parent directory
+				Path targetPath = template.getRunnablePath().getParent().resolve( slashName.substring( 1 ) + ".cfc" );
+				if ( Files.exists( targetPath ) ) {
 
-				String	className	= FilenameUtils.getBaseName( targetPath.toString() );
-				String	packageName	= name.replace( className, "" );
+					String	className	= FilenameUtils.getBaseName( targetPath.toString() );
+					String	packageName	= name.replace( className, "" );
 
-				// Remove ending dot if it exists
-				if ( packageName.endsWith( "." ) ) {
-					packageName = packageName.substring( 0, packageName.length() - 1 );
+					// System.out.println( "packageName: " + packageName );
+					// System.out.println( "classname: " + className );
+					// System.out.println( "name: " + name );
+
+					// Remove ending dot if it exists
+					if ( packageName.endsWith( "." ) ) {
+						packageName = packageName.substring( 0, packageName.length() - 1 );
+					}
+
+					return Optional.of( new ClassLocation(
+					    className,
+					    targetPath.toAbsolutePath().toString(),
+					    packageName,
+					    ClassLocator.TYPE_BX,
+					    RunnableLoader.getInstance().loadClass( targetPath, packageName, context ),
+					    ""
+					) );
 				}
-
-				return Optional.of( new ClassLocation(
-				    className,
-				    targetPath.toAbsolutePath().toString(),
-				    packageName,
-				    ClassLocator.TYPE_BX,
-				    RunnableLoader.getInstance().loadClass( targetPath, packageName, context ),
-				    ""
-				) );
 			}
 		}
+
 		return Optional.empty();
 	}
 
