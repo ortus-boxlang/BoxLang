@@ -89,9 +89,41 @@ VARIABLES: 'VARIABLES';
 WHEN: 'WHEN';
 WHILE: 'WHILE';
 XOR: 'XOR';
+EQV: 'EQV';
+IMP: 'IMP';
+
+AND: 'AND';
+AMPAMP: '&&';
+
+EQ: 'EQ';
+EQUAL: 'EQUAL';
+EQEQ: '==';
+
+GT: 'GT';
+GTSIGN: '>';
+
+GTE: 'GTE';
+GE: 'GE';
+GTESIGN: '>=';
+
+LT: 'LT';
+LTSIGN: '<';
+
+LTE: 'LTE';
+LE: 'LE';
+LTESIGN: '<=';
+
+NEQ: 'NEQ';
+BANGEQUAL: '!=';
+LESSTHANGREATERTHAN: '<>';
+
+NOT: 'NOT';
+BANG: '!';
+
+OR: 'OR';
+PIPEPIPE: '||';
 
 AMPERSAND: '&';
-AND: '&&' | 'AND';
 ARROW: '->';
 AT: '@';
 BACKSLASH: '\\';
@@ -100,12 +132,7 @@ COLON: ':';
 COLONCOLON: '::';
 DOT: '.';
 ELVIS: '?:';
-EQUAL: '=';
-EQ: '==' | 'EQ' | 'EQUAL';
-EQV: 'EQV';
-IMP: 'IMP';
-GT: '>' | 'GT';
-GTE: '>=' | 'GTE' | 'GE';
+EQUALSIGN: '=';
 LBRACE: '{';
 RBRACE: '}';
 LPAREN: '(';
@@ -113,13 +140,8 @@ RPAREN: ')';
 LBRACKET: '[';
 RBRACKET: ']';
 ARROW_RIGHT: '=>';
-LT: '<' | 'LT';
-LTE: '<=' | 'LTE' | 'LE';
 MINUS: '-';
 MINUSMINUS: '--';
-NEQ: '!=' | 'NEQ' | '<>';
-NOT: '!' | 'NOT';
-OR: '||' | 'OR';
 PIPE: '|';
 PERCENT: '%';
 POWER: '^';
@@ -136,6 +158,8 @@ MODEQUAL: '%=';
 PLUS: '+';
 PLUSPLUS: '++';
 TEQ: '===';
+
+// ANY NEW LEXER RULES FOR AN ENGLISH WORD NEEDS ADDED TO THE identifer RULE IN THE PARSER
 
 ICHAR_1:
 	'#' {_modeStack.contains(hashMode)}? -> type(ICHAR), popMode, popMode;

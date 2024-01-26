@@ -39,13 +39,15 @@ function: functionSignature (postannotation)* statementBlock;
 
 paramList: param (COMMA param)*;
 
-param: (REQUIRED)? (type)? identifier (EQUAL expression)? postannotation*
-	| (REQUIRED)? (type)? identifier (EQUAL statementBlock)?;
+param: (REQUIRED)? (type)? identifier (EQUALSIGN expression)? postannotation*
+	| (REQUIRED)? (type)? identifier (EQUALSIGN statementBlock)?;
 
 preannotation: AT fqn (literalExpression)*;
 
 postannotation:
-	key = identifier ((EQUAL | COLON) value = attributeSimple)?;
+	key = identifier (
+		(EQUALSIGN | COLON) value = attributeSimple
+	)?;
 
 // This allows [1, 2, 3], "foo", or foo Adobe allows more chars than an identifer, Lucee allows darn
 // near anything, but ANTLR is incapable of matching any tokens until the next whitespace. The
@@ -97,7 +99,7 @@ anonymousFunctionBody: statementBlock | simpleStatement;
 statementBlock: LBRACE (statement)* RBRACE eos?;
 
 statementParameters: (
-		parameters += accessExpression EQUAL (
+		parameters += accessExpression EQUALSIGN (
 			values += stringLiteral
 			| expressions += expression
 		)
@@ -113,12 +115,12 @@ statement:
 	| lockStatement
 	| rethrow
 	| saveContentStatement
-	| simpleStatement
 	| switch
 	| threadStatement
 	| throw
 	| try
 	| while
+	| simpleStatement
 	| tagIsland;
 
 simpleStatement: (
@@ -139,7 +141,7 @@ incrementDecrementStatement:
 
 assignment:
 	VAR? assignmentLeft (
-		EQUAL
+		EQUALSIGN
 		| PLUSEQUAL
 		| MINUSEQUAL
 		| STAREQUAL
@@ -177,7 +179,7 @@ argumentList:
  'foo' : bar, 'baz' :
  qux
  */
-namedArgument: (identifier | stringLiteral) (EQUAL | COLON) expression;
+namedArgument: (identifier | stringLiteral) (EQUALSIGN | COLON) expression;
 // foo, bar, baz
 positionalArgument: expression;
 
@@ -213,8 +215,8 @@ return: RETURN expression?;
 
 rethrow: RETHROW eos?;
 throw:
-	THROW LPAREN (TYPE EQUAL)? expression (
-		COMMA (MESSAGE EQUAL)? stringLiteral
+	THROW LPAREN (TYPE EQUALSIGN)? expression (
+		COMMA (MESSAGE EQUALSIGN)? stringLiteral
 	)? RPAREN eos?
 	| THROW expression eos?;
 
@@ -227,31 +229,94 @@ case:
 identifier: IDENTIFIER | reservedKeyword;
 reservedKeyword:
 	scope
+	| ABSTRACT
+	| ABORT
+	| ADMIN
+	| ANY
 	| ARRAY
+	| AS
+	| ASSERT
+	| BOOLEAN
+	| BREAK
+	| CASE
+	| CASTAS
+	| CATCH
+	| CLASS
+	| COMPONENT
+	| CONTAIN
 	| CONTAINS
+	| CONTINUE
 	| DEFAULT
+	| DOES
+	| DO
+	| ELSE
+	| ELIF
+	| FALSE
+	| FINALLY
+	| FOR
 	| FUNCTION
+	| GREATER
+	| IF
+	| IN
+	| IMPORT
+	| INCLUDE
+	| INTERFACE
+	| INSTANCEOF
+	| IS
+	| JAVA
+	| LESS
+	| LOCAL
+	| LOCK
 	| MOD
+	| MESSAGE
 	| NEW
+	| NULL
 	| NUMERIC
+	| PACKAGE
+	| PARAM
+	| PRIVATE
+	| PROPERTY
+	| PUBLIC
+	| QUERY
+	| REMOTE
+	| REQUIRED
+	| REQUEST
+	| RETURN
+	| RETHROW
+	| SAVECONTENT
 	| SETTING
+	| STATIC
 	| STRING
 	| STRUCT
-	| PRIVATE
-	| QUERY
+	//| SWITCH --> Could possibly be a var name, but not a function/method name
+	| THAN
+	| TO
+	| THREAD
+	| THROW
 	| TYPE
+	| TRUE
+	| TRY
 	| VAR
 	| WHEN
-	| DOES
-	| ANY
-	| PARAM
-	//    | 	NOT
-	| CONTAIN
-	| JAVA
-	| MESSAGE
-	| NULL
-	| PROPERTY;
-//    | 	ASSERT
+	| WHILE
+	| XOR
+	| EQV
+	| IMP
+	| AND
+	| EQ
+	| EQUAL
+	| GT
+	| GTE
+	| GE
+	| LT
+	| LTE
+	| LE
+	| NEQ
+	| NOT
+	| OR;
+
+// ANY NEW LEXER RULES IN DEFAULT MODE FOR WORDS NEED ADDED HERE
+
 scope:
 	APPLICATION
 	| ARGUMENTS
@@ -301,8 +366,8 @@ structExpression:
 structMembers: structMember (COMMA structMember)* COMMA?;
 
 structMember:
-	identifier (COLON | EQUAL) expression
-	| stringLiteral (COLON | EQUAL) expression;
+	identifier (COLON | EQUALSIGN) expression
+	| stringLiteral (COLON | EQUALSIGN) expression;
 
 unary: (MINUS | PLUS) expression;
 
@@ -330,12 +395,16 @@ expression:
 	| expression ( XOR | INSTANCEOF) expression
 	| expression (AMPERSAND expression)+
 	| expression (
-		EQ
-		| (GT | GREATER THAN)
-		| (GTE | GREATER THAN OR EQ TO)
-		| (LT | LESS THAN)
-		| (LTE | LESS THAN OR EQ TO)
-		| NEQ
+		eq
+		| (
+			gte
+			| GREATER THAN OR EQ TO
+			| GREATER THAN OR EQUAL TO
+		)
+		| (gt | GREATER THAN)
+		| (lte | LESS THAN OR EQ TO | LESS THAN OR EQUAL TO)
+		| (lt | LESS THAN)
+		| neq
 		| EQV
 		| IMP
 		| CONTAINS
@@ -347,10 +416,28 @@ expression:
 	| expression CASTAS expression // CastAs operator
 	| expression INSTANCEOF expression // InstanceOf operator
 	| expression DOES NOT CONTAIN expression
-	| NOT expression
-	| expression (AND | OR) expression
+	| notOrBang expression
+	| expression (and | or) expression
 	| expression QM expression COLON expression; // Ternary
 // Logical
+
+and: AND | AMPAMP;
+
+eq: EQ | EQUAL | EQEQ;
+
+gt: GT | GTSIGN;
+
+gte: GTE | GE | GTESIGN;
+
+lt: LT | LTSIGN;
+
+lte: LTE | LE | LTESIGN;
+
+neq: NEQ | BANGEQUAL | LESSTHANGREATERTHAN;
+
+notOrBang: NOT | BANG;
+
+or: OR | PIPEPIPE;
 
 // All literal expressions
 literalExpression:

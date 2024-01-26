@@ -40,6 +40,7 @@ import ortus.boxlang.runtime.scopes.VariablesScope;
 import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.Function.Access;
 import ortus.boxlang.runtime.types.SampleUDF;
+import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.exceptions.NoFieldException;
 
@@ -172,7 +173,6 @@ public class CoreLangTest {
 	@DisplayName( "throw in statement" )
 	@Test
 	public void testThrowStatement() {
-
 		assertThrows( NoFieldException.class,
 		    () -> instance.executeStatement( "throw new java:ortus.boxlang.runtime.types.exceptions.NoFieldException( 'My Message' );", context )
 		);
@@ -1131,4 +1131,462 @@ public class CoreLangTest {
 		System.out.println( System.nanoTime() - startn );
 
 	}
+
+	@Test
+	public void testKeywords() {
+
+		instance.executeSource(
+		    """
+		                          result = {
+		            				class : ()->"class",
+		            				abstract : ()->'abstract',
+		            				abort : ()->'abort',
+		            				admin : ()->'admin',
+		            				any : ()->'any',
+		            				array : ()->'array',
+		            				as : ()->'as',
+		            				assert : ()->'assert',
+		            				boolean : ()->'boolean',
+		            				break : ()->'break',
+		            				case : ()->'case',
+		            				castas : ()->'castas',
+		            				catch : ()->'catch',
+		            				class : ()->'class',
+		            				component : ()->'component',
+		            				contain : ()->'contain',
+		            				contains : ()->'contains',
+		            				continue : ()->'continue',
+		            				default : ()->'default',
+		            				does : ()->'does',
+		            				do : ()->'do',
+		            				else : ()->'else',
+		            				elif : ()->'elif',
+		            				false : ()->'false',
+		            				finally : ()->'finally',
+		            				for : ()->'for',
+		            				function : ()->'function',
+		            				greater : ()->'greater',
+		            				if : ()->'if',
+		            				in : ()->'in',
+		            				import : ()->'import',
+		            				include : ()->'include',
+		            				interface : ()->'interface',
+		            				instanceof : ()->'instanceof',
+		            				is : ()->'is',
+		            				java : ()->'java',
+		            				less : ()->'less',
+		            				local : ()->'local',
+		            				lock : ()->'lock',
+		            				mod : ()->'mod',
+		            				message : ()->'message',
+		            				new : ()->'new',
+		            				null : ()->'null',
+		            				numeric : ()->'numeric',
+		            				package : ()->'package',
+		            				param : ()->'param',
+		            				private : ()->'private',
+		            				property : ()->'property',
+		            				public : ()->'public',
+		            				query : ()->'query',
+		            				remote : ()->'remote',
+		            				required : ()->'required',
+		            				request : ()->'request',
+		            				return : ()->'return',
+		            				rethrow : ()->'rethrow',
+		            				savecontent : ()->'savecontent',
+		            				setting : ()->'setting',
+		            				static : ()->'static',
+		            				string : ()->'string',
+		            				struct : ()->'struct',
+		            				//switch : ()->'switch',
+		            				than : ()->'than',
+		            				to : ()->'to',
+		            				thread : ()->'thread',
+		            				throw : ()->'throw',
+		            				type : ()->'type',
+		            				true : ()->'true',
+		            				try : ()->'try',
+		            				var : ()->'var',
+		            				when : ()->'when',
+		            				while : ()->'while',
+		            				xor : ()->'xor',
+		            				eq : ()->'eq',
+		            				eqv : ()->'eqv',
+		            				imp : ()->'imp',
+		            				and : ()->'and',
+		            				eq : ()->'eq',
+		            				equal : ()->'equal',
+		            				gt : ()->'gt',
+		            				gte : ()->'gte',
+		            				ge : ()->'ge',
+		            				lt : ()->'lt',
+		            				lte : ()->'lte',
+		            				le : ()->'le',
+		            				neq : ()->'neq',
+		            				not : ()->'not',
+		            				or : ()->'or'
+
+		                       };
+
+
+		              result.class;
+		              result.abstract;
+		              result.abort;
+		              result.admin;
+		              result.any;
+		              result.array;
+		              result.as;
+		              result.assert;
+		              result.boolean;
+		              result.break;
+		              result.case;
+		              result.castas;
+		              result.catch;
+		              result.class;
+		              result.component;
+		              result.contain;
+		              result.contains;
+		              result.continue;
+		              result.default;
+		              result.does;
+		              result.do;
+		              result.else;
+		              result.elif;
+		              result.false;
+		              result.finally;
+		              result.for;
+		              result.function;
+		              result.greater;
+		              result.if;
+		              result.in;
+		              result.import;
+		              result.include;
+		              result.interface;
+		              result.instanceof;
+		              result.is;
+		              result.java;
+		              result.less;
+		              result.local;
+		              result.lock;
+		              result.mod;
+		              result.message;
+		              result.new;
+		              result.null;
+		              result.numeric;
+		              result.package;
+		              result.param;
+		              result.private;
+		              result.property;
+		              result.public;
+		              result.query;
+		              result.remote;
+		              result.required;
+		              result.request;
+		              result.return;
+		              result.rethrow;
+		              result.savecontent;
+		              result.setting;
+		              result.static;
+		              result.string;
+		              result.struct;
+		          //    result.switch;
+		              result.than;
+		              result.to;
+		              result.thread;
+		              result.throw;
+		              result.type;
+		              result.true;
+		              result.try;
+		              result.var;
+		              result.when;
+		              result.while;
+		              result.xor;
+		              result.eq;
+		              result.eqv;
+		              result.imp;
+		              result.and;
+		              result.eq;
+		              result.equal;
+		              result.gt;
+		              result.gte;
+		              result.ge;
+		              result.lt;
+		              result.lte;
+		              result.le;
+		              result.neq;
+		              result.not;
+		              result.or;
+
+		            result.class();
+		            result.abstract();
+		            result.abort();
+		            result.admin();
+		            result.any();
+		            result.array();
+		            result.as();
+		            result.assert();
+		            result.boolean();
+		            result.break();
+		            result.case();
+		            result.castas();
+		            result.catch();
+		            result.class();
+		            result.component();
+		            result.contain();
+		            result.contains();
+		            result.continue();
+		            result.default();
+		            result.does();
+		            result.do();
+		            result.else();
+		            result.elif();
+		            result.false();
+		            result.finally();
+		            result.for();
+		            result.function();
+		            result.greater();
+		            result.if();
+		            result.in();
+		            result.import();
+		            result.include();
+		            result.interface();
+		            result.instanceof();
+		            result.is();
+		            result.java();
+		            result.less();
+		            result.local();
+		            result.lock();
+		            result.mod();
+		            result.message();
+		            result.new();
+		            result.null();
+		            result.numeric();
+		            result.package();
+		            result.param();
+		            result.private();
+		            result.property();
+		            result.public();
+		            result.query();
+		            result.remote();
+		            result.required();
+		            result.request();
+		            result.return();
+		            result.rethrow();
+		            result.savecontent();
+		            result.setting();
+		            result.static();
+		            result.string();
+		            result.struct();
+		         //   result.switch();
+		            result.than();
+		            result.to();
+		            result.thread();
+		            result.throw();
+		            result.type();
+		            result.true();
+		            result.try();
+		            result.var();
+		            result.when();
+		            result.while();
+		            result.xor();
+		            result.eq();
+		            result.eqv();
+		            result.imp();
+		            result.and();
+		            result.eq();
+		            result.equal();
+		            result.gt();
+		            result.gte();
+		            result.ge();
+		            result.lt();
+		            result.lte();
+		            result.le();
+		            result.neq();
+		            result.not();
+		            result.or();
+
+		         variables.addAll( result.getWrapped() );
+
+		      class();
+		      abstract();
+		      abort();
+		      admin();
+		      any();
+		      array();
+		      as();
+		      assert();
+		      boolean();
+		      break();
+		      case();
+		      castas();
+		      catch();
+		      class();
+		      component();
+		      contain();
+		      contains();
+		      continue();
+		      default();
+		      does();
+		      do();
+		      else();
+		      elif();
+		      false();
+		      finally();
+		      for();
+		      function();
+		      greater();
+		      if();
+		      in();
+		      import();
+		      include();
+		      interface();
+		      instanceof();
+		      is();
+		      java();
+		      less();
+		      local();
+		      lock();
+		      mod();
+		      message();
+		      new();
+		      null();
+		      numeric();
+		      package();
+		      param();
+		      private();
+		      property();
+		      public();
+		      query();
+		      remote();
+		      required();
+		      request();
+		      return();
+		      rethrow();
+		      savecontent();
+		      setting();
+		      static();
+		      string();
+		      struct();
+		    //  switch();
+		      than();
+		      to();
+		      thread();
+		     // throw(); <-- Actual throw construct
+		      type();
+		      true();
+		      try();
+		      var();
+		      when();
+		      while();
+		      xor();
+		      eq();
+		      eqv();
+		      imp();
+		      and();
+		      eq();
+		      equal();
+		      gt();
+		      gte();
+		      ge();
+		      lt();
+		      lte();
+		      le();
+		      neq();
+		      not();
+		      or();
+		                                   """,
+		    context );
+
+		assertThat( variables.get( result ) ).isInstanceOf( Struct.class );
+		var str = variables.getAsStruct( result );
+		assertThat( str.dereferenceAndInvoke( context, Key.of( "class" ), new Object[] {}, false ) ).isEqualTo( "class" );
+		assertThat( str.dereferenceAndInvoke( context, Key.of( "abstract" ), new Object[] {}, false ) ).isEqualTo( "abstract" );
+		assertThat( str.dereferenceAndInvoke( context, Key.of( "abort" ), new Object[] {}, false ) ).isEqualTo( "abort" );
+		assertThat( str.dereferenceAndInvoke( context, Key.of( "admin" ), new Object[] {}, false ) ).isEqualTo( "admin" );
+		assertThat( str.dereferenceAndInvoke( context, Key.of( "any" ), new Object[] {}, false ) ).isEqualTo( "any" );
+		assertThat( str.dereferenceAndInvoke( context, Key.of( "array" ), new Object[] {}, false ) ).isEqualTo( "array" );
+		assertThat( str.dereferenceAndInvoke( context, Key.of( "as" ), new Object[] {}, false ) ).isEqualTo( "as" );
+		assertThat( str.dereferenceAndInvoke( context, Key.of( "assert" ), new Object[] {}, false ) ).isEqualTo( "assert" );
+		assertThat( str.dereferenceAndInvoke( context, Key.of( "boolean" ), new Object[] {}, false ) ).isEqualTo( "boolean" );
+		assertThat( str.dereferenceAndInvoke( context, Key.of( "break" ), new Object[] {}, false ) ).isEqualTo( "break" );
+		assertThat( str.dereferenceAndInvoke( context, Key.of( "case" ), new Object[] {}, false ) ).isEqualTo( "case" );
+		assertThat( str.dereferenceAndInvoke( context, Key.of( "castas" ), new Object[] {}, false ) ).isEqualTo( "castas" );
+		assertThat( str.dereferenceAndInvoke( context, Key.of( "catch" ), new Object[] {}, false ) ).isEqualTo( "catch" );
+		assertThat( str.dereferenceAndInvoke( context, Key.of( "class" ), new Object[] {}, false ) ).isEqualTo( "class" );
+		assertThat( str.dereferenceAndInvoke( context, Key.of( "component" ), new Object[] {}, false ) ).isEqualTo( "component" );
+		assertThat( str.dereferenceAndInvoke( context, Key.of( "contain" ), new Object[] {}, false ) ).isEqualTo( "contain" );
+		assertThat( str.dereferenceAndInvoke( context, Key.of( "contains" ), new Object[] {}, false ) ).isEqualTo( "contains" );
+		assertThat( str.dereferenceAndInvoke( context, Key.of( "continue" ), new Object[] {}, false ) ).isEqualTo( "continue" );
+		assertThat( str.dereferenceAndInvoke( context, Key.of( "default" ), new Object[] {}, false ) ).isEqualTo( "default" );
+		assertThat( str.dereferenceAndInvoke( context, Key.of( "does" ), new Object[] {}, false ) ).isEqualTo( "does" );
+		assertThat( str.dereferenceAndInvoke( context, Key.of( "do" ), new Object[] {}, false ) ).isEqualTo( "do" );
+		assertThat( str.dereferenceAndInvoke( context, Key.of( "else" ), new Object[] {}, false ) ).isEqualTo( "else" );
+		assertThat( str.dereferenceAndInvoke( context, Key.of( "elif" ), new Object[] {}, false ) ).isEqualTo( "elif" );
+		assertThat( str.dereferenceAndInvoke( context, Key.of( "false" ), new Object[] {}, false ) ).isEqualTo( "false" );
+		assertThat( str.dereferenceAndInvoke( context, Key.of( "finally" ), new Object[] {}, false ) ).isEqualTo( "finally" );
+		assertThat( str.dereferenceAndInvoke( context, Key.of( "for" ), new Object[] {}, false ) ).isEqualTo( "for" );
+		assertThat( str.dereferenceAndInvoke( context, Key.of( "function" ), new Object[] {}, false ) ).isEqualTo( "function" );
+		assertThat( str.dereferenceAndInvoke( context, Key.of( "greater" ), new Object[] {}, false ) ).isEqualTo( "greater" );
+		assertThat( str.dereferenceAndInvoke( context, Key.of( "if" ), new Object[] {}, false ) ).isEqualTo( "if" );
+		assertThat( str.dereferenceAndInvoke( context, Key.of( "in" ), new Object[] {}, false ) ).isEqualTo( "in" );
+		assertThat( str.dereferenceAndInvoke( context, Key.of( "import" ), new Object[] {}, false ) ).isEqualTo( "import" );
+		assertThat( str.dereferenceAndInvoke( context, Key.of( "include" ), new Object[] {}, false ) ).isEqualTo( "include" );
+		assertThat( str.dereferenceAndInvoke( context, Key.of( "interface" ), new Object[] {}, false ) ).isEqualTo( "interface" );
+		assertThat( str.dereferenceAndInvoke( context, Key.of( "instanceof" ), new Object[] {}, false ) ).isEqualTo( "instanceof" );
+		assertThat( str.dereferenceAndInvoke( context, Key.of( "is" ), new Object[] {}, false ) ).isEqualTo( "is" );
+		assertThat( str.dereferenceAndInvoke( context, Key.of( "java" ), new Object[] {}, false ) ).isEqualTo( "java" );
+		assertThat( str.dereferenceAndInvoke( context, Key.of( "less" ), new Object[] {}, false ) ).isEqualTo( "less" );
+		assertThat( str.dereferenceAndInvoke( context, Key.of( "local" ), new Object[] {}, false ) ).isEqualTo( "local" );
+		assertThat( str.dereferenceAndInvoke( context, Key.of( "lock" ), new Object[] {}, false ) ).isEqualTo( "lock" );
+		assertThat( str.dereferenceAndInvoke( context, Key.of( "mod" ), new Object[] {}, false ) ).isEqualTo( "mod" );
+		assertThat( str.dereferenceAndInvoke( context, Key.of( "message" ), new Object[] {}, false ) ).isEqualTo( "message" );
+		assertThat( str.dereferenceAndInvoke( context, Key.of( "new" ), new Object[] {}, false ) ).isEqualTo( "new" );
+		assertThat( str.dereferenceAndInvoke( context, Key.of( "null" ), new Object[] {}, false ) ).isEqualTo( "null" );
+		assertThat( str.dereferenceAndInvoke( context, Key.of( "numeric" ), new Object[] {}, false ) ).isEqualTo( "numeric" );
+		assertThat( str.dereferenceAndInvoke( context, Key.of( "package" ), new Object[] {}, false ) ).isEqualTo( "package" );
+		assertThat( str.dereferenceAndInvoke( context, Key.of( "param" ), new Object[] {}, false ) ).isEqualTo( "param" );
+		assertThat( str.dereferenceAndInvoke( context, Key.of( "private" ), new Object[] {}, false ) ).isEqualTo( "private" );
+		assertThat( str.dereferenceAndInvoke( context, Key.of( "property" ), new Object[] {}, false ) ).isEqualTo( "property" );
+		assertThat( str.dereferenceAndInvoke( context, Key.of( "public" ), new Object[] {}, false ) ).isEqualTo( "public" );
+		assertThat( str.dereferenceAndInvoke( context, Key.of( "query" ), new Object[] {}, false ) ).isEqualTo( "query" );
+		assertThat( str.dereferenceAndInvoke( context, Key.of( "remote" ), new Object[] {}, false ) ).isEqualTo( "remote" );
+		assertThat( str.dereferenceAndInvoke( context, Key.of( "required" ), new Object[] {}, false ) ).isEqualTo( "required" );
+		assertThat( str.dereferenceAndInvoke( context, Key.of( "request" ), new Object[] {}, false ) ).isEqualTo( "request" );
+		assertThat( str.dereferenceAndInvoke( context, Key.of( "return" ), new Object[] {}, false ) ).isEqualTo( "return" );
+		assertThat( str.dereferenceAndInvoke( context, Key.of( "rethrow" ), new Object[] {}, false ) ).isEqualTo( "rethrow" );
+		assertThat( str.dereferenceAndInvoke( context, Key.of( "savecontent" ), new Object[] {}, false ) ).isEqualTo( "savecontent" );
+		assertThat( str.dereferenceAndInvoke( context, Key.of( "setting" ), new Object[] {}, false ) ).isEqualTo( "setting" );
+		assertThat( str.dereferenceAndInvoke( context, Key.of( "static" ), new Object[] {}, false ) ).isEqualTo( "static" );
+		assertThat( str.dereferenceAndInvoke( context, Key.of( "string" ), new Object[] {}, false ) ).isEqualTo( "string" );
+		assertThat( str.dereferenceAndInvoke( context, Key.of( "struct" ), new Object[] {}, false ) ).isEqualTo( "struct" );
+		// assertThat( str.dereferenceAndInvoke( context, Key.of( "switch" ), new Object[] {}, false ) ).isEqualTo( "switch" );
+		assertThat( str.dereferenceAndInvoke( context, Key.of( "than" ), new Object[] {}, false ) ).isEqualTo( "than" );
+		assertThat( str.dereferenceAndInvoke( context, Key.of( "to" ), new Object[] {}, false ) ).isEqualTo( "to" );
+		assertThat( str.dereferenceAndInvoke( context, Key.of( "thread" ), new Object[] {}, false ) ).isEqualTo( "thread" );
+		assertThat( str.dereferenceAndInvoke( context, Key.of( "throw" ), new Object[] {}, false ) ).isEqualTo( "throw" );
+		assertThat( str.dereferenceAndInvoke( context, Key.of( "type" ), new Object[] {}, false ) ).isEqualTo( "type" );
+		assertThat( str.dereferenceAndInvoke( context, Key.of( "true" ), new Object[] {}, false ) ).isEqualTo( "true" );
+		assertThat( str.dereferenceAndInvoke( context, Key.of( "try" ), new Object[] {}, false ) ).isEqualTo( "try" );
+		assertThat( str.dereferenceAndInvoke( context, Key.of( "var" ), new Object[] {}, false ) ).isEqualTo( "var" );
+		assertThat( str.dereferenceAndInvoke( context, Key.of( "when" ), new Object[] {}, false ) ).isEqualTo( "when" );
+		assertThat( str.dereferenceAndInvoke( context, Key.of( "while" ), new Object[] {}, false ) ).isEqualTo( "while" );
+		assertThat( str.dereferenceAndInvoke( context, Key.of( "xor" ), new Object[] {}, false ) ).isEqualTo( "xor" );
+		assertThat( str.dereferenceAndInvoke( context, Key.of( "eq" ), new Object[] {}, false ) ).isEqualTo( "eq" );
+		assertThat( str.dereferenceAndInvoke( context, Key.of( "eqv" ), new Object[] {}, false ) ).isEqualTo( "eqv" );
+		assertThat( str.dereferenceAndInvoke( context, Key.of( "imp" ), new Object[] {}, false ) ).isEqualTo( "imp" );
+		assertThat( str.dereferenceAndInvoke( context, Key.of( "and" ), new Object[] {}, false ) ).isEqualTo( "and" );
+		assertThat( str.dereferenceAndInvoke( context, Key.of( "eq" ), new Object[] {}, false ) ).isEqualTo( "eq" );
+		assertThat( str.dereferenceAndInvoke( context, Key.of( "equal" ), new Object[] {}, false ) ).isEqualTo( "equal" );
+		assertThat( str.dereferenceAndInvoke( context, Key.of( "gt" ), new Object[] {}, false ) ).isEqualTo( "gt" );
+		assertThat( str.dereferenceAndInvoke( context, Key.of( "gte" ), new Object[] {}, false ) ).isEqualTo( "gte" );
+		assertThat( str.dereferenceAndInvoke( context, Key.of( "ge" ), new Object[] {}, false ) ).isEqualTo( "ge" );
+		assertThat( str.dereferenceAndInvoke( context, Key.of( "lt" ), new Object[] {}, false ) ).isEqualTo( "lt" );
+		assertThat( str.dereferenceAndInvoke( context, Key.of( "lte" ), new Object[] {}, false ) ).isEqualTo( "lte" );
+		assertThat( str.dereferenceAndInvoke( context, Key.of( "le" ), new Object[] {}, false ) ).isEqualTo( "le" );
+		assertThat( str.dereferenceAndInvoke( context, Key.of( "neq" ), new Object[] {}, false ) ).isEqualTo( "neq" );
+		assertThat( str.dereferenceAndInvoke( context, Key.of( "not" ), new Object[] {}, false ) ).isEqualTo( "not" );
+		assertThat( str.dereferenceAndInvoke( context, Key.of( "or" ), new Object[] {}, false ) ).isEqualTo( "or" );
+
+	}
+
 }

@@ -1010,11 +1010,11 @@ public class BoxCFParser extends BoxAbstractParser {
 	private BoxExpr toAst( File file, CFParser.ExpressionContext expression ) {
 		if ( expression.accessExpression() != null ) {
 			return toAst( file, expression.accessExpression() );
-		} else if ( expression.AND() != null ) {
+		} else if ( expression.and() != null ) {
 			BoxExpr	left	= toAst( file, expression.expression( 0 ) );
 			BoxExpr	right	= toAst( file, expression.expression( 1 ) );
 			return new BoxBinaryOperation( left, BoxBinaryOperator.And, right, getPosition( expression ), getSourceText( expression ) );
-		} else if ( expression.OR() != null && ( expression.THAN() == null ) ) {
+		} else if ( expression.or() != null && ( expression.THAN() == null ) ) {
 			BoxExpr	left	= toAst( file, expression.expression( 0 ) );
 			BoxExpr	right	= toAst( file, expression.expression( 1 ) );
 			return new BoxBinaryOperation( left, BoxBinaryOperator.Or, right, getPosition( expression ), getSourceText( expression ) );
@@ -1060,27 +1060,27 @@ public class BoxCFParser extends BoxAbstractParser {
 			BoxExpr	left	= toAst( file, expression.expression( 0 ) );
 			BoxExpr	right	= toAst( file, expression.expression( 1 ) );
 			return new BoxComparisonOperation( left, BoxComparisonOperator.TEqual, right, getPosition( expression ), getSourceText( expression ) );
-		} else if ( expression.NEQ() != null ) {
+		} else if ( expression.neq() != null ) {
 			BoxExpr	left	= toAst( file, expression.expression( 0 ) );
 			BoxExpr	right	= toAst( file, expression.expression( 1 ) );
 			return new BoxComparisonOperation( left, BoxComparisonOperator.NotEqual, right, getPosition( expression ), getSourceText( expression ) );
-		} else if ( expression.GT() != null || ( expression.GREATER() != null && expression.THAN() != null ) && expression.OR() == null ) {
+		} else if ( expression.gt() != null || ( expression.GREATER() != null && expression.THAN() != null ) && expression.OR() == null ) {
 			BoxExpr	left	= toAst( file, expression.expression( 0 ) );
 			BoxExpr	right	= toAst( file, expression.expression( 1 ) );
 			return new BoxComparisonOperation( left, BoxComparisonOperator.GreaterThan, right, getPosition( expression ), getSourceText( expression ) );
-		} else if ( expression.GTE() != null || ( expression.GREATER() != null && expression.THAN() != null ) && expression.OR() != null ) {
+		} else if ( expression.gte() != null || ( expression.GREATER() != null && expression.THAN() != null ) && expression.OR() != null ) {
 			BoxExpr	left	= toAst( file, expression.expression( 0 ) );
 			BoxExpr	right	= toAst( file, expression.expression( 1 ) );
 			return new BoxComparisonOperation( left, BoxComparisonOperator.GreaterThanEquals, right, getPosition( expression ), getSourceText( expression ) );
-		} else if ( expression.LT() != null || ( expression.LESS() != null && expression.THAN() != null && expression.OR() == null ) ) {
+		} else if ( expression.lt() != null || ( expression.LESS() != null && expression.THAN() != null && expression.OR() == null ) ) {
 			BoxExpr	left	= toAst( file, expression.expression( 0 ) );
 			BoxExpr	right	= toAst( file, expression.expression( 1 ) );
 			return new BoxComparisonOperation( left, BoxComparisonOperator.LessThan, right, getPosition( expression ), getSourceText( expression ) );
-		} else if ( expression.LTE() != null || ( expression.LESS() != null && expression.THAN() != null && expression.OR() != null ) ) {
+		} else if ( expression.lte() != null || ( expression.LESS() != null && expression.THAN() != null && expression.OR() != null ) ) {
 			BoxExpr	left	= toAst( file, expression.expression( 0 ) );
 			BoxExpr	right	= toAst( file, expression.expression( 1 ) );
 			return new BoxComparisonOperation( left, BoxComparisonOperator.LesslThanEqual, right, getPosition( expression ), getSourceText( expression ) );
-		} else if ( expression.EQ() != null || expression.IS() != null ) {
+		} else if ( expression.eq() != null || expression.IS() != null ) {
 			BoxExpr	left	= toAst( file, expression.expression( 0 ) );
 			BoxExpr	right	= toAst( file, expression.expression( 1 ) );
 			return new BoxComparisonOperation( left, BoxComparisonOperator.Equal, right, getPosition( expression ), getSourceText( expression ) );
@@ -1115,7 +1115,7 @@ public class BoxCFParser extends BoxAbstractParser {
 			BoxExpr	whenTrue	= toAst( file, expression.expression( 1 ) );
 			BoxExpr	whenFalse	= toAst( file, expression.expression( 2 ) );
 			return new BoxTernaryOperation( condition, whenTrue, whenFalse, getPosition( expression ), getSourceText( expression ) );
-		} else if ( expression.NOT() != null && expression.CONTAIN() == null ) {
+		} else if ( expression.notOrBang() != null && expression.CONTAIN() == null ) {
 			BoxExpr expr = toAst( file, expression.expression( 0 ) );
 			return new BoxUnaryOperation( expr, BoxUnaryOperator.Not, getPosition( expression ), getSourceText( expression ) );
 			// return new BoxNegateOperation( expr, BoxNegateOperator.Not, getPosition( expression ), getSourceText( expression ) );
