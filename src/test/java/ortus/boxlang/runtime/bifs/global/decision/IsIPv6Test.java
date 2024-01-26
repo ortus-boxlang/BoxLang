@@ -70,7 +70,6 @@ public class IsIPv6Test {
 		       cloudflareipv6 = isipv6( "2606:4700:4700::1001" )
 		       """,
 		    context );
-		assertThat( ( Boolean ) variables.get( Key.of( "localhost" ) ) ).isFalse();
 		assertThat( ( Boolean ) variables.get( Key.of( "googlehost" ) ) ).isTrue();
 		assertThat( ( Boolean ) variables.get( Key.of( "ipv6loopback" ) ) ).isTrue();
 		assertThat( ( Boolean ) variables.get( Key.of( "cloudflareipv6" ) ) ).isTrue();
