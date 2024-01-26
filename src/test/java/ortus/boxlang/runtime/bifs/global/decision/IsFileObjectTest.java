@@ -20,6 +20,8 @@ package ortus.boxlang.runtime.bifs.global.decision;
 
 import static com.google.common.truth.Truth.assertThat;
 
+import java.io.IOException;
+
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -31,12 +33,15 @@ import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.VariablesScope;
+import ortus.boxlang.runtime.util.FileSystemUtil;
 
 public class IsFileObjectTest {
 
-	static BoxRuntime	instance;
-	static IBoxContext	context;
-	static IScope		variables;
+	static BoxRuntime		instance;
+	static IBoxContext		context;
+	static IScope			variables;
+	private static String	tmpDirectory	= "src/test/resources/tmp";
+	private static String	testFile		= "src/test/resources/tmp/file-test.txt";
 
 	@BeforeAll
 	public static void setUp() {
@@ -46,25 +51,31 @@ public class IsFileObjectTest {
 	}
 
 	@AfterAll
-	public static void teardown() {
+	public static void teardown() throws IOException {
+		if ( FileSystemUtil.exists( tmpDirectory ) ) {
+			FileSystemUtil.deleteDirectory( tmpDirectory, true );
+		}
 		instance.shutdown();
 	}
 
 	@BeforeEach
-	public void setupEach() {
+	public void setupEach() throws IOException {
+		if ( !FileSystemUtil.exists( testFile ) ) {
+			FileSystemUtil.write( testFile, "is file obj test!".getBytes( "UTF-8" ), true );
+		}
 		variables.clear();
 	}
 
 	@DisplayName( "It detects file objects" )
 	@Test
 	public void testTrueConditions() {
-		assertThat( ( Boolean ) instance.executeStatement( "isFileObject( fileOpen( './foo.txt', 'write' ) )" ) ).isTrue();
+		assertThat( ( Boolean ) instance.executeStatement( "isFileObject( fileOpen( '" + testFile + "', 'write' ) )" ) ).isTrue();
 	}
 
 	@DisplayName( "It detects non-file objects" )
 	@Test
 	public void testFalseConditions() {
-		assertThat( ( Boolean ) instance.executeStatement( "isFileObject( './foo.txt' )" ) ).isFalse();
+		assertThat( ( Boolean ) instance.executeStatement( "isFileObject( '" + testFile + "' )" ) ).isFalse();
 		assertThat( ( Boolean ) instance.executeStatement( "isFileObject( createObject( 'java', 'java.io.File' ) )" ) ).isFalse();
 
 	}
