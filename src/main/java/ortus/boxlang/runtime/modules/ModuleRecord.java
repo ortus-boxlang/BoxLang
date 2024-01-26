@@ -284,7 +284,7 @@ public class ModuleRecord {
 		BoxRuntime
 		    .getInstance()
 		    .getConfiguration().runtime
-		        .registerMapping( this.mapping, this.path );
+		    .registerMapping( this.mapping, this.path );
 
 		// Call the configure() method if it exists in the descriptor
 		if ( thisScope.containsKey( Key.configure ) ) {
