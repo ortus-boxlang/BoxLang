@@ -62,6 +62,7 @@ public class IsSimpleValueTest {
 	public void testTrueConditions() {
 		instance.executeSource(
 		    """
+		    aBool   = isSimpleValue( true );
 		    aString = isSimpleValue( "Michael" );
 		    anInt   = isSimpleValue( 12345 );
 		    aFloat  = isSimpleValue( 3.45 );
@@ -69,6 +70,7 @@ public class IsSimpleValueTest {
 		    aUUID   = isSimpleValue( value = createUUID() );
 		    """,
 		    context );
+		assertThat( ( Boolean ) variables.get( Key.of( "aBool" ) ) ).isTrue();
 		assertThat( ( Boolean ) variables.get( Key.of( "aString" ) ) ).isTrue();
 		assertThat( ( Boolean ) variables.get( Key.of( "anInt" ) ) ).isTrue();
 		assertThat( ( Boolean ) variables.get( Key.of( "aFloat" ) ) ).isTrue();

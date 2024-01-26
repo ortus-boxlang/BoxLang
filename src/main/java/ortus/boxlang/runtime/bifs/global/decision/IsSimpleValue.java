@@ -46,10 +46,7 @@ public class IsSimpleValue extends BIF {
 	 */
 	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
 		Object value = arguments.get( Key.value );
-		return value != null
-		    && ( GenericCaster.attempt( value, "string" ).wasSuccessful()
-		        || GenericCaster.attempt( value, "numeric" ).wasSuccessful()
-		        || GenericCaster.attempt( value, "datetime" ).wasSuccessful() );
+		return value != null && GenericCaster.attempt( value, "string" ).wasSuccessful();
 	}
 
 }
