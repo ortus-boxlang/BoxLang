@@ -25,6 +25,8 @@ import java.util.List;
 import java.util.Map;
 
 import ortus.boxlang.debugger.BoxLangDebugger;
+import ortus.boxlang.debugger.BoxLangRemoteDebugger;
+import ortus.boxlang.debugger.IBoxLangDebugger;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.util.Timer;
 
@@ -83,7 +85,14 @@ public class BoxRunner {
 		BoxRuntime boxRuntime = BoxRuntime.getInstance( options.debug(), options.configFile() );
 
 		if ( options.debugger() ) {
-			BoxLangDebugger debugger = new BoxLangDebugger( BoxRunner.class, options.templatePath() );
+			IBoxLangDebugger debugger;
+
+			if ( false ) {
+				debugger = new BoxLangDebugger( BoxRunner.class, options.templatePath(), System.out );
+			} else {
+				debugger = new BoxLangRemoteDebugger( 4404 );
+			}
+
 			try {
 				debugger.startDebugSession();
 			} catch ( Exception e ) {

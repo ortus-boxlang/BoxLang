@@ -1,10 +1,9 @@
 package ortus.boxlang.debugger;
 
 import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.OutputStreamWriter;
-import java.lang.management.ManagementFactory;
-import java.util.List;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.nio.ByteBuffer;
 // import java.lang.StackWalker.StackFrame;
 import java.util.Map;
 
@@ -16,7 +15,6 @@ import com.sun.jdi.Locatable;
 import com.sun.jdi.Location;
 import com.sun.jdi.ReferenceType;
 import com.sun.jdi.StackFrame;
-import com.sun.jdi.VMDisconnectedException;
 import com.sun.jdi.Value;
 import com.sun.jdi.VirtualMachine;
 import com.sun.jdi.connect.Connector;
@@ -32,111 +30,83 @@ import com.sun.jdi.request.BreakpointRequest;
 import com.sun.jdi.request.ClassPrepareRequest;
 import com.sun.jdi.request.StepRequest;
 
-public class BoxLangDebugger {
+import ortus.boxlang.debugger.event.OutputEvent;
 
-	private Class	debugClass;
-	private int[]	breakPointLines;
-	private String	cliArgs;
+public class BoxLangDebugger implements IBoxLangDebugger {
 
-	private class CurrentJVMArgs {
+	private Class			debugClass;
+	private int[]			breakPointLines;
+	private String			cliArgs;
+	private OutputStream	debugAdapterOutput;
 
-		static String fullVMArguments() {
-			String name = javaVmName();
-
-			return ( contains( name, "Server" ) ? "-server "
-			    : contains( name, "Client" ) ? "-client " : "" )
-			    + String.join( " ", vmArguments() );
-		}
-
-		static List<String> vmArguments() {
-			return ManagementFactory.getRuntimeMXBean().getInputArguments();
-		}
-
-		static boolean contains( String s, String b ) {
-			return s != null && s.indexOf( b ) >= 0;
-		}
-
-		static String javaVmName() {
-			return System.getProperty( "java.vm.name" );
-		}
-
-		// static String joinWithSpace( Collection<String> c ) {
-		// return join( " ", c );
-		// }
-
-		// public static String join( String glue, Iterable<String> strings ) {
-		// if ( strings == null )
-		// return "";
-		// StringBuilder buf = new StringBuilder();
-		// Iterator<String> i = strings.iterator();
-		// if ( i.hasNext() ) {
-		// buf.append( i.next() );
-		// while ( i.hasNext() )
-		// buf.append( glue ).append( i.next() );
-		// }
-		// return buf.toString();
-		// }
-	}
-
-	// public static void main( String[] args ) {
-	// String ar = CurrentJVMArgs.fullVMArguments();
-	// BoxLangDebugger bld = new BoxLangDebugger( ortus.boxlang.debugger.Debugee.class, new int[] { 9 } );
-	// bld.startDebugSession();
-	// }
-
-	public BoxLangDebugger( Class debugClass, String cliArgs ) {
+	public BoxLangDebugger( Class debugClass, String cliArgs, OutputStream debugAdapterOutput ) {
 		this.debugClass			= debugClass;
 		this.breakPointLines	= new int[] {};
 		this.cliArgs			= cliArgs;
-		// this.debugClass = ortus.boxlang.debugger.Debugee.class;
+		this.debugAdapterOutput	= debugAdapterOutput;
 	}
 
 	public void startDebugSession() {
-		// String ar = CurrentJVMArgs.fullVMArguments();
 		VirtualMachine vm = null;
 
 		try {
 			vm = connectAndLaunchVM();
 			enableClassPrepareRequest( vm );
 			// vm.setDebugTraceMode( VirtualMachine.TRACE_ALL );
-			EventSet eventSet = null;
-			while ( ( eventSet = vm.eventQueue().remove() ) != null ) {
-				System.out.println( "as" );
-				for ( Event event : eventSet ) {
-					System.out.println( "Found event: " + event.toString() );
-					if ( event instanceof VMDeathEvent de ) {
+			EventSet	eventSet	= null;
+			InputStream	vmInput		= vm.process().getInputStream();
+			boolean		done		= false;
+			while ( !done ) {
+				while ( ( eventSet = vm.eventQueue().remove() ) != null ) {
+
+					System.out.println( "checking available" );
+					int	available	= vmInput.available();
+					int	a			= 4;
+					if ( available > 0 ) {
+						byte[] bytes = ByteBuffer.allocate( available ).array();
+						vmInput.read( bytes );
+
+						new OutputEvent( "stdout", new String( bytes ) ).send( this.debugAdapterOutput );
+					}
+
+					for ( Event event : eventSet ) {
 						System.out.println( "Found event: " + event.toString() );
+
+						if ( event instanceof VMDeathEvent de ) {
+							System.out.println( "Found event: " + event.toString() );
+							done = true;
+						}
+						if ( event instanceof ClassPrepareEvent cpe ) {
+							System.out.println( "Preparing class: " + cpe.referenceType().name() );
+							// setBreakPoints( vm, cpe );
+						}
+						if ( event instanceof BreakpointEvent ) {
+							enableStepRequest( vm, ( BreakpointEvent ) event );
+						}
+						if ( event instanceof StepEvent ) {
+							displayVariables( ( StepEvent ) event );
+						}
+						vm.resume();
+						System.out.println( "done resuming" );
 					}
-					if ( event instanceof ClassPrepareEvent cpe ) {
-						System.out.println( "Preparing class: " + cpe.referenceType().name() );
-						// setBreakPoints( vm, cpe );
-					}
-					if ( event instanceof BreakpointEvent ) {
-						enableStepRequest( vm, ( BreakpointEvent ) event );
-					}
-					if ( event instanceof StepEvent ) {
-						displayVariables( ( StepEvent ) event );
-					}
-					vm.resume();
-					System.out.println( "done resuming" );
 				}
 			}
+
 			System.out.println( "out of hte while" );
-		} catch ( VMDisconnectedException e ) {
-			System.out.println( "Virtual Machine is disconnected." );
-			e.printStackTrace();
 		} catch ( Exception e ) {
 			System.out.println( "eeeeeeeeeee" );
 			e.printStackTrace();
 		} finally {
-			InputStreamReader	reader	= new InputStreamReader( vm.process().getInputStream() );
-			OutputStreamWriter	writer	= new OutputStreamWriter( System.out );
-			char[]				buf		= new char[ 1024 ];
-
 			try {
-				reader.read( buf );
-				writer.write( buf );
-				writer.flush();
+				System.out.println( "checking available" );
+				InputStream	vmInput		= vm.process().getInputStream();
+				int			available	= vmInput.available();
+				if ( available > 0 ) {
+					byte[] bytes = ByteBuffer.allocate( available ).array();
+					vmInput.read( bytes );
+
+					new OutputEvent( "stdout", new String( bytes ) ).send( this.debugAdapterOutput );
+				}
 			} catch ( IOException e ) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
@@ -155,7 +125,9 @@ public class BoxLangDebugger {
 		// arguments.get( "main" ).setValue( debugClass.getName() );
 		arguments.get( "options" ).setValue( "-cp " + System.getProperty( "java.class.path" ) );
 		arguments.get( "main" ).setValue( debugClass.getName() + " " + cliArgs );
-		return launchingConnector.launch( arguments );
+		VirtualMachine vm = launchingConnector.launch( arguments );
+
+		return vm;
 	}
 
 	public void enableClassPrepareRequest( VirtualMachine vm ) {
