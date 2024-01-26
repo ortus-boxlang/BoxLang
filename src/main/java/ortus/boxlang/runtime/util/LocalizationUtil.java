@@ -35,6 +35,7 @@ import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.DateTime;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.Struct.TYPES;
+import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.immutable.ImmutableStruct;
 
 /**
@@ -45,7 +46,7 @@ public final class LocalizationUtil {
 	/**
 	 * A struct of common locale constants
 	 */
-	public static final ImmutableStruct	commonLocales			= new ImmutableStruct(
+	public static final ImmutableStruct	commonLocales				= new ImmutableStruct(
 	    TYPES.LINKED,
 	    new LinkedHashMap<Key, Locale>() {
 
@@ -85,7 +86,7 @@ public final class LocalizationUtil {
 	/**
 	 * A collection of common locale aliases which are used by both ACF and Lucee
 	 */
-	public static final ImmutableStruct	localeAliases			= new ImmutableStruct(
+	public static final ImmutableStruct	localeAliases				= new ImmutableStruct(
 	    TYPES.LINKED,
 	    new LinkedHashMap<Key, Locale>() {
 
@@ -158,7 +159,10 @@ public final class LocalizationUtil {
 
 	);
 
-	public static final Struct			commonNumberFormatters	= new Struct(
+	/**
+	 * Common Number formatter instances
+	 */
+	public static final Struct			commonNumberFormatters		= new Struct(
 	    new HashMap<Key, java.text.NumberFormat>() {
 
 		    {
@@ -168,7 +172,15 @@ public final class LocalizationUtil {
 	    }
 	);
 
-	public static final Struct			numberFormatPatterns	= new Struct(
+	/*
+	 * The key for the default number format
+	 */
+	public static final Key				DEFAULT_NUMBER_FORMAT_KEY	= Key.of( "," );
+
+	/**
+	 * Common number format patterns and shorthand variations
+	 */
+	public static final Struct			numberFormatPatterns		= new Struct(
 	    new HashMap<Key, String>() {
 
 		    {
@@ -183,15 +195,19 @@ public final class LocalizationUtil {
 			    put( Key.of( "_,9" ), "#.000000000" );
 			    put( Key.of( "+" ), "+0;-0" );
 			    put( Key.of( "-" ), " 0;-0" );
-			    put( Key.of( "," ), "#,#00.#" );
+			    put( DEFAULT_NUMBER_FORMAT_KEY, "#,#00.#" );
 		    }
 	    }
 	);
 
+	public static final String			CURRENCY_TYPE_LOCAL			= "local";
+	public static final String			CURRENCY_TYPE_INTERNATIONAL	= "international";
+	public static final String			CURRENCY_TYPE_NONE			= "none";
+
 	/**
 	 * A struct of ZoneID aliases ( e.g. PST )
 	 */
-	public static final Struct			zoneAliases				= new Struct(
+	public static final Struct			zoneAliases					= new Struct(
 	    new HashMap<Key, String>() {
 
 		    {
@@ -325,6 +341,45 @@ public final class LocalizationUtil {
 	}
 
 	/**
+	 * Returns a localized currency formatter
+	 *
+	 * @param locale the Locale instance to apply to the formatter
+	 * @param type   A recognized currency format type, which will change or remove the currency symbol
+	 *
+	 * @return
+	 */
+	public static NumberFormat localizedCurrencyFormatter( Locale locale, String type ) {
+		DecimalFormat			formatter	= ( DecimalFormat ) localizedCurrencyFormatter( locale );
+		DecimalFormatSymbols	symbols		= localizedDecimalSymbols( locale );
+		switch ( type.toLowerCase() ) {
+			case CURRENCY_TYPE_INTERNATIONAL : {
+				symbols.setCurrencySymbol( symbols.getInternationalCurrencySymbol() + " " );
+				break;
+			}
+			case CURRENCY_TYPE_NONE : {
+				symbols.setCurrencySymbol( "" );
+				break;
+			}
+			case CURRENCY_TYPE_LOCAL : {
+				// this is the default
+				break;
+			}
+			default : {
+				throw new BoxRuntimeException(
+				    String.format(
+				        "The argument [type] [%s] is not recognized as a valid currency format type.",
+				        type
+				    )
+				);
+			}
+
+		}
+		formatter.setDecimalFormatSymbols( symbols );
+		return formatter;
+
+	}
+
+	/**
 	 * Returns a localized decimal formatter
 	 *
 	 * @param locale the Locale instance to apply to the formatter
@@ -345,6 +400,10 @@ public final class LocalizationUtil {
 	 * @return
 	 */
 	public static DecimalFormat localizedDecimalFormatter( Locale locale, String format ) {
+		Key formatKey = Key.of( format );
+		if ( numberFormatPatterns.containsKey( formatKey ) ) {
+			format = numberFormatPatterns.getAsString( formatKey );
+		}
 		return new DecimalFormat( format, localizedDecimalSymbols( locale ) );
 	}
 
