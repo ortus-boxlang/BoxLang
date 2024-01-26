@@ -284,17 +284,16 @@ public class ClassDiscovery {
 	    String packageName,
 	    ClassLoader classLoader,
 	    Class<? extends Annotation>[] annotations ) {
-		Path			filePath	= Path.of( directory ).normalize();
+		Path			filePath	= Path.of( directory );
 
-		// Ensure threadsafe list
 		List<Class<?>>	classes		= Collections.synchronizedList( new ArrayList<>() );
 
 		try {
-			Files.walk( filePath, 1 ).parallel().forEach(
+			Files.walk( filePath ).parallel().forEach(
 			    path -> {
-				    String name = path.getFileName().toString();
+				    String name = path.toString();
 				    // recursion
-				    if ( !path.equals( filePath ) && Files.isDirectory( path ) ) {
+				    if ( Files.isDirectory( path ) ) {
 					    classes.addAll( findClassesInDirectory( path.toAbsolutePath().toString(), packageName + "." + name, classLoader, annotations ) );
 				    }
 				    // Class file found
