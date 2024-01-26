@@ -64,7 +64,7 @@ public class ModuleService extends BaseService {
 	 * The module descriptor file name
 	 */
 	public static final String				MODULE_DESCRIPTOR					= "ModuleConfig.cfc";
-	// public static final String MODULE_DESCRIPTOR = "ModuleConfig.bx";
+	public static final String				MODULE_DESCRIPTOR_BX				= "ModuleConfig.bx";
 
 	/**
 	 * The location of the core modules in the runtime resources: {@code src/main/resources/modules}
@@ -308,7 +308,7 @@ public class ModuleService extends BaseService {
 		// Register the mapping in the runtime
 		runtime
 		    .getConfiguration().runtime
-		    .registerMapping( moduleRecord.mapping, moduleRecord.physicalPath.toString() );
+		        .registerMapping( moduleRecord.mapping, moduleRecord.physicalPath.toString() );
 
 		// Call the configure method if it exists
 		if ( moduleRecord.moduleConfig.getThisScope().containsKey( Key.configure ) ) {
@@ -319,6 +319,8 @@ public class ModuleService extends BaseService {
 			    false
 			);
 		}
+
+		// Load up the settings now
 
 		// Finalize
 		moduleRecord.registrationTime = runtime.timerUtil.stopAndGetMillis( timerLabel );

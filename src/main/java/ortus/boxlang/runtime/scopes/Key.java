@@ -85,6 +85,8 @@ public class Key implements Comparable<Key> {
 	public static final Key	currentRow					= Key.of( "currentRow" );
 	public static final Key	customInterceptionPoints	= Key.of( "customInterceptionPoints" );
 	public static final Key	data						= Key.of( "data" );
+	public static final Key	datasource					= Key.of( "datasource" );
+	public static final Key	datasources					= Key.of( "datasources" );
 	public static final Key	datatype					= Key.of( "datatype" );
 	public static final Key	date						= Key.of( "date" );
 	public static final Key	date1						= Key.of( "date1" );
@@ -138,6 +140,8 @@ public class Key implements Comparable<Key> {
 	public static final Key	length						= Key.of( "length" );
 	public static final Key	listInfo					= Key.of( "listInfo" );
 	public static final Key	lJustify					= Key.of( "lJustify" );
+	public static final Key	log							= Key.of( "log" );
+	public static final Key	logger						= Key.of( "logger" );
 	public static final Key	locale						= Key.of( "locale" );
 	public static final Key	localeSensitive				= Key.of( "localeSensitive" );
 	public static final Key	lucee						= Key.of( "lucee" );
@@ -166,6 +170,7 @@ public class Key implements Comparable<Key> {
 	public static final Key	numIterations				= Key.of( "numIterations" );
 	public static final Key	object						= Key.of( "object" );
 	public static final Key	oldPath						= Key.of( "oldPath" );
+	public static final Key	objectMappings				= Key.of( "objectMappings" );
 	public static final Key	onMissingMethod				= Key.of( "onMissingMethod" );
 	public static final Key	onParse						= Key.of( "onParse" );
 	public static final Key	onLoad						= Key.of( "onLoad" );

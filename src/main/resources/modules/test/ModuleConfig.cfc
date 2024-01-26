@@ -25,7 +25,7 @@ component{
 	 * Your module version. Try to use semantic versioning
 	 * @mandatory
 	 */
-	this.version = "1.0.0";
+	this.version = "2.0.0";
 
 	/**
 	 * The BoxLang mapping for your module.  All BoxLang modules are registered with an internal
@@ -76,8 +76,7 @@ component{
 		 */
 		interceptors = [
 			// { class="path.to.Interceptor", properties={} }
-			// TODO:Uncomment when the parser fixes the array of structs bug
-			//{ class : "bxModules.test.interceptors.Listener", properties : {} }
+			{ class : "bxModules.test.interceptors.Listener", properties : {} }
 		];
 
 		/**

@@ -23,6 +23,9 @@ import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 
+import org.slf4j.LoggerFactory;
+
+import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.runnables.IClassRunnable;
@@ -47,42 +50,44 @@ public class ModuleRecord {
 	public final String			id							= UUID.randomUUID().toString();
 
 	/**
-	 * The name of the module
+	 * The name of the module, defaults to the folder name on disk
 	 */
 	public Key					name;
 
 	/**
-	 * The version of the module
+	 * The version of the module, defaults to 1.0.0
 	 */
 	public String				version						= "1.0.0";
 
 	/**
-	 * The author of the module
+	 * The author of the module or empty if not set
 	 */
 	public String				author						= "";
 
 	/**
-	 * The description of the module
+	 * The description of the module or empty if not set
 	 */
 	public String				description					= "";
 
 	/**
-	 * The web URL of the module
+	 * The web URL of the module or empty if not set
 	 */
 	public String				webURL						= "";
 
 	/**
-	 * The mapping of the module
+	 * The BoxLang mapping of the module used to construct classes from within it.
+	 * All mappings have a prefix of {@link ModuleService#MODULE_MAPPING_INVOCATION_PREFIX}
+	 *
 	 */
 	public String				mapping						= "";
 
 	/**
-	 * If the module is disabled for activation
+	 * If the module is disabled for activation, defaults to false
 	 */
 	public boolean				disabled					= false;
 
 	/**
-	 * Flag to indicate if the module has been activated or not
+	 * Flag to indicate if the module has been activated or not yet
 	 */
 	public boolean				activated					= false;
 
@@ -90,6 +95,16 @@ public class ModuleRecord {
 	 * The settings of the module
 	 */
 	public Struct				settings					= new Struct();
+
+	/**
+	 * The object mappings of the module
+	 */
+	public Struct				objectMappings				= new Struct();
+
+	/**
+	 * The datasources to register by the module
+	 */
+	public Struct				datasources					= new Struct( Struct.TYPES.LINKED );
 
 	/**
 	 * The interceptors of the module
@@ -102,18 +117,19 @@ public class ModuleRecord {
 	public List<String>			customInterceptionPoints	= List.of();
 
 	/**
-	 * The physical path of the module
+	 * The physical path of the module on disk as a Java {@link Path}
 	 */
 	public Path					physicalPath;
 
 	/**
 	 * The physical path of the module but in string format. Used by BoxLang code mostly
+	 * Same as the {@link ModuleRecord#physicalPath} but in string format
 	 */
-	public String				modulePath;
+	public String				path;
 
 	/**
 	 * The invocation path of the module which is a composition of the
-	 * {@link ModuleService#MODULE_MAPPING_PREFIX} and the module name.
+	 * {@link ModuleService#MODULE_MAPPING_INVOCATION_PREFIX} and the module name.
 	 * Example: {@code /bxModules/MyModule} is the mapping for the module
 	 * the invocation path would be {@code bxModules.MyModule}
 	 */
@@ -176,7 +192,7 @@ public class ModuleRecord {
 		// Beautiful name
 		this.name			= name;
 		// Path to the module in string and Path formats
-		this.modulePath		= physicalPath;
+		this.path			= physicalPath;
 		this.physicalPath	= Paths.get( physicalPath );
 		// Register the automatic mapping by convention: /bxModules/{name}
 		this.mapping		= ModuleService.MODULE_MAPPING_PREFIX + name.getName();
@@ -212,7 +228,7 @@ public class ModuleRecord {
 		ThisScope		thisScope		= this.moduleConfig.getThisScope();
 		VariablesScope	variablesScope	= this.moduleConfig.getVariablesScope();
 
-		// Store the descriptor information
+		// Store the descriptor information into the record
 		this.version		= ( String ) thisScope.getOrDefault( Key.version, "1.0.0" );
 		this.author			= ( String ) thisScope.getOrDefault( Key.author, "" );
 		this.description	= ( String ) thisScope.getOrDefault( Key.description, "" );
@@ -220,6 +236,7 @@ public class ModuleRecord {
 		this.disabled		= ( Boolean ) thisScope.getOrDefault( Key.disabled, false );
 
 		// Do we have a custom mapping to override?
+		// If so, recalculate it
 		if ( thisScope.containsKey( Key.mapping ) &&
 		    thisScope.get( Key.mapping ) instanceof String castedMapping &&
 		    !castedMapping.isBlank() ) {
@@ -228,20 +245,27 @@ public class ModuleRecord {
 		}
 
 		// Verify the internal config structures exist, else default them
-		if ( !variablesScope.containsKey( Key.settings ) ) {
-			variablesScope.put( Key.settings, new Struct() );
-		}
-		if ( !variablesScope.containsKey( Key.interceptors ) ) {
-			variablesScope.put( Key.interceptors, Array.of() );
-		}
-		if ( !variablesScope.containsKey( Key.customInterceptionPoints ) ) {
-			variablesScope.put( Key.customInterceptionPoints, Array.of() );
-		}
+		variablesScope.computeIfAbsent( Key.settings, k -> new Struct() );
+		variablesScope.computeIfAbsent( Key.objectMappings, k -> new Struct() );
+		variablesScope.computeIfAbsent( Key.datasources, k -> new Struct( Struct.TYPES.LINKED ) );
+		variablesScope.computeIfAbsent( Key.interceptors, k -> Array.of() );
+		variablesScope.computeIfAbsent( Key.customInterceptionPoints, k -> Array.of() );
 
-		// DI: Incorporate a few injections into the variables scope
-		// variablesScope.put( Key.moduleRecord, this );
-		// variablesScope.put( Key.boxRuntime, BoxRuntime.getInstance() );
+		/**
+		 * --------------------------------------------------------------------------
+		 * DI Injections
+		 * --------------------------------------------------------------------------
+		 * Inject the following references into the CFC
+		 * - moduleRecord : The ModuleRecord instance
+		 * - boxRuntime : The BoxRuntime instance
+		 * - log : A logger for the module config itself
+		 */
 
+		variablesScope.put( Key.moduleRecord, this );
+		variablesScope.put( Key.boxRuntime, BoxRuntime.getInstance() );
+		variablesScope.put( Key.log, LoggerFactory.getLogger( this.moduleConfig.getClass() ) );
+
+		// Finalized registration time
 		this.registeredOn = Instant.now();
 
 		return this;
@@ -296,7 +320,6 @@ public class ModuleRecord {
 		    "interceptors", Array.copyOf( interceptors ),
 		    "invocationPath", invocationPath,
 		    "mapping", mapping,
-		    "modulePath", modulePath,
 		    "name", name,
 		    "physicalPath", physicalPath.toString(),
 		    "registeredOn", registeredOn,

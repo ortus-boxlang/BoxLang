@@ -23,13 +23,13 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Instant;
 
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
 import ortus.boxlang.runtime.scopes.Key;
+import ortus.boxlang.runtime.services.ModuleService;
 import ortus.boxlang.runtime.types.IStruct;
 
 class ModuleRecordTest {
@@ -97,7 +97,6 @@ class ModuleRecordTest {
 
 	@DisplayName( "Can load a module descriptor" )
 	@Test
-	@Disabled
 	void testCanLoadModuleDescriptor() {
 		// Given
 		Key				moduleName		= new Key( "test" );
@@ -107,5 +106,15 @@ class ModuleRecordTest {
 
 		// When
 		moduleRecord.loadDescriptor( context );
+
+		// Then
+		assertThat( moduleRecord.version ).isEqualTo( "2.0.0" );
+		assertThat( moduleRecord.author ).isEqualTo( "Luis Majano" );
+		assertThat( moduleRecord.description ).isEqualTo( "This module does amazing things" );
+		assertThat( moduleRecord.webURL ).isEqualTo( "https://www.ortussolutions.com" );
+		assertThat( moduleRecord.disabled ).isEqualTo( false );
+		assertThat( moduleRecord.mapping ).isEqualTo( ModuleService.MODULE_MAPPING_PREFIX + "test" );
+		assertThat( moduleRecord.invocationPath ).isEqualTo( ModuleService.MODULE_MAPPING_INVOCATION_PREFIX + moduleRecord.name.getName() );
+
 	}
 }
