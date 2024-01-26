@@ -61,10 +61,8 @@ component{
 
 	/**
 	 * Called by the ModuleService on module registration
-	 *
-	 * @runtime - The Runtime instance
 	 */
-	function configure( runtime ){
+	function configure(){
 		/**
 		 * Every module has a settings configuration object
 		 */
@@ -78,7 +76,8 @@ component{
 		 */
 		interceptors = [
 			// { class="path.to.Interceptor", properties={} }
-			{ class="bxModules.test.interceptors.Listener", properties={} }
+			// TODO:Uncomment when the parser fixes the array of structs bug
+			//{ class : "bxModules.test.interceptors.Listener", properties : {} }
 		];
 
 		/**
@@ -89,19 +88,15 @@ component{
 
 	/**
 	 * Called by the ModuleService on module activation
-	 *
-	 * @runtime - The Runtime instance
 	 */
-	function onLoad( runtime ){
+	function onLoad(){
 
 	}
 
 	/**
 	 * Called by the ModuleService on module deactivation
-	 *
-	 * @runtime - The Runtime instance
 	 */
-	function onUnload( runtime ){
+	function onUnload(){
 
 	}
 

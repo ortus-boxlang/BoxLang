@@ -61,20 +61,21 @@ public class ModuleService extends BaseService {
 	public static final String				MODULE_MAPPING_INVOCATION_PREFIX	= "bxModules.";
 
 	/**
-	 * --------------------------------------------------------------------------
-	 * Private Properties
-	 * --------------------------------------------------------------------------
+	 * The module descriptor file name
 	 */
+	public static final String				MODULE_DESCRIPTOR					= "ModuleConfig.cfc";
+	// public static final String MODULE_DESCRIPTOR = "ModuleConfig.bx";
 
 	/**
 	 * The location of the core modules in the runtime resources: {@code src/main/resources/modules}
 	 */
-	private static final String				CORE_MODULES						= "modules";
+	public static final String				CORE_MODULES						= "modules";
 
 	/**
-	 * The module descriptor file name
+	 * --------------------------------------------------------------------------
+	 * Private Properties
+	 * --------------------------------------------------------------------------
 	 */
-	private static final String				MODULE_DESCRIPTOR					= "ModuleConfig.bx";
 
 	/**
 	 * The core modules file system. This is used to load modules from the runtime resources.
@@ -293,6 +294,7 @@ public class ModuleService extends BaseService {
 		);
 
 		// Load the ModuleConfig.bx file
+		moduleRecord.loadDescriptor( runtime.getRuntimeContext() );
 
 		// Check if the module is disabled
 		if ( moduleRecord.isDisabled() ) {
@@ -302,6 +304,24 @@ public class ModuleService extends BaseService {
 			);
 			return;
 		}
+
+		// Register the mapping in the runtime
+		runtime
+		    .getConfiguration().runtime
+		        .registerMapping( moduleRecord.mapping, moduleRecord.physicalPath.toString() );
+
+		// Call the configure method if it exists
+		if ( moduleRecord.moduleConfig.getThisScope().containsKey( Key.configure ) ) {
+			moduleRecord.moduleConfig.dereferenceAndInvoke(
+			    runtime.getRuntimeContext(),
+			    Key.configure,
+			    new Object[] {},
+			    false
+			);
+		}
+
+		// Finalize
+		moduleRecord.registrationTime = runtime.timerUtil.stopAndGetMillis( timerLabel );
 
 		// Announce it
 		announce(
@@ -314,7 +334,7 @@ public class ModuleService extends BaseService {
 		    "+ Module Service: Registered module [{}@{}] in [{}] ms from [{}]",
 		    moduleRecord.name,
 		    moduleRecord.version,
-		    BoxRuntime.timerUtil.stopAndGetMillis( timerLabel ),
+		    moduleRecord.registrationTime,
 		    moduleRecord.physicalPath
 		);
 	}

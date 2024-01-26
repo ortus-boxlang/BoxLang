@@ -19,11 +19,16 @@ package ortus.boxlang.runtime.modules;
 
 import static com.google.common.truth.Truth.assertThat;
 
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.time.Instant;
 
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
+import ortus.boxlang.runtime.context.IBoxContext;
+import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.IStruct;
 
@@ -32,53 +37,54 @@ class ModuleRecordTest {
 	@Test
 	@DisplayName( "ModuleRecord Initialization" )
 	void testModuleRecordInitialization() {
-		// Arrange
+		// Given
 		Key				moduleName		= new Key( "TestModule" );
 		String			physicalPath	= "/path/to/module";
 
-		// Act
+		// When
 		ModuleRecord	moduleRecord	= new ModuleRecord( moduleName, physicalPath );
 
-		// Assert
+		// Then
 		assertThat( moduleRecord.name ).isEqualTo( moduleName );
-		assertThat( moduleRecord.physicalPath ).isEqualTo( physicalPath );
 		assertThat( moduleRecord.mapping ).isEqualTo( "/bxModules/TestModule" );
+		Path modulePath = moduleRecord.physicalPath;
+		assertThat( modulePath.getFileName().toString() ).isEqualTo( "module" );
 		assertThat( moduleRecord.invocationPath ).isEqualTo( "bxModules.TestModule" );
-		assertThat( moduleRecord.registrationTime ).isNotNull();
+		assertThat( moduleRecord.registeredOn ).isNull();
 	}
 
 	@Test
 	@DisplayName( "ModuleRecord Activation" )
 	void testModuleRecordActivation() {
-		// Arrange
+		// Given
 		Key				moduleName		= new Key( "TestModule" );
 		String			physicalPath	= "/path/to/module";
 		ModuleRecord	moduleRecord	= new ModuleRecord( moduleName, physicalPath );
 
-		// Act
+		// When
 		moduleRecord.activated		= true;
-		moduleRecord.activationTime	= Instant.now();
+		moduleRecord.activatedOn	= Instant.now();
 
-		// Assert
+		// Then
 		assertThat( moduleRecord.isActivated() ).isTrue();
-		assertThat( moduleRecord.activationTime ).isNotNull();
+		assertThat( moduleRecord.activatedOn ).isNotNull();
 	}
 
 	@Test
 	@DisplayName( "ModuleRecord As Struct" )
 	void testModuleRecordAsStruct() {
-		// Arrange
+		// Given
 		Key				moduleName				= new Key( "TestModule" );
 		String			physicalPath			= "/path/to/module";
 		ModuleRecord	moduleRecord			= new ModuleRecord( moduleName, physicalPath );
 
-		// Act
+		// When
 		IStruct			structRepresentation	= moduleRecord.asStruct();
 
-		// Assert
+		// Then
 		assertThat( structRepresentation ).isInstanceOf( IStruct.class );
 		assertThat( structRepresentation.getAsBoolean( Key.of( "activated" ) ) ).isFalse();
-		assertThat( structRepresentation.get( "activationTime" ) ).isNull();
+		assertThat( structRepresentation.get( "activatedOn" ) ).isNull();
 		assertThat( structRepresentation.get( "author" ) ).isEqualTo( "" );
 		assertThat( structRepresentation.get( "description" ) ).isEqualTo( "" );
 		assertThat( structRepresentation.getAsBoolean( Key.of( "disabled" ) ) ).isFalse();
@@ -88,7 +94,19 @@ class ModuleRecordTest {
 		assertThat( structRepresentation.get( "mapping" ) ).isEqualTo( "/bxModules/TestModule" );
 		assertThat( structRepresentation.get( "name" ) ).isEqualTo( moduleName );
 		assertThat( structRepresentation.get( "physicalPath" ) ).isEqualTo( physicalPath );
-		assertThat( structRepresentation.get( "registrationTime" ) ).isNotNull();
+	}
 
+	@DisplayName( "Can load a module descriptor" )
+	@Test
+	@Disabled
+	void testCanLoadModuleDescriptor() {
+		// Given
+		Key				moduleName		= new Key( "test" );
+		String			physicalPath	= Paths.get( "src/main/resources/modules/test" ).toAbsolutePath().toString();
+		ModuleRecord	moduleRecord	= new ModuleRecord( moduleName, physicalPath );
+		IBoxContext		context			= new ScriptingRequestBoxContext();
+
+		// When
+		moduleRecord.loadDescriptor( context );
 	}
 }
