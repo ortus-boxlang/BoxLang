@@ -1,17 +1,14 @@
 package ortus.boxlang.debugger.request;
 
-import java.util.Map;
-
 import ortus.boxlang.debugger.DebugAdapter;
 
 public class LaunchRequest extends AbstractRequest {
 
-	public String program;
+	public LaunchRequestArguments arguments;
 
-	public LaunchRequest( Map<String, Object> requestData ) {
-		super( requestData );
+	public static class LaunchRequestArguments {
 
-		this.program = ( String ) ( ( Map ) requestData.get( "arguments" ) ).get( "program" );
+		public String program;
 	}
 
 	@Override

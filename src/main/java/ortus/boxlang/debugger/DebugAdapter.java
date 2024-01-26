@@ -19,6 +19,7 @@ import ortus.boxlang.debugger.event.Event;
 import ortus.boxlang.debugger.request.IDebugRequest;
 import ortus.boxlang.debugger.request.InitializeRequest;
 import ortus.boxlang.debugger.request.LaunchRequest;
+import ortus.boxlang.debugger.request.SetBreakpoints;
 import ortus.boxlang.debugger.response.InitializeResponse;
 import ortus.boxlang.runtime.BoxRunner;
 import ortus.boxlang.runtime.BoxRuntime;
@@ -105,9 +106,11 @@ public class DebugAdapter {
 
 		switch ( command ) {
 			case "initialize" :
-				return new InitializeRequest( requestData );
+				return JsonUtil.fromJson( InitializeRequest.class, json );
 			case "launch" :
-				return new LaunchRequest( requestData );
+				return JsonUtil.fromJson( LaunchRequest.class, json );
+			case "setBreakpoints" :
+				return JsonUtil.fromJson( SetBreakpoints.class, json );
 		}
 
 		return null;
@@ -124,7 +127,7 @@ public class DebugAdapter {
 	}
 
 	public void visit( LaunchRequest debugRequest ) {
-		this.debugger = new BoxLangDebugger( BoxRunner.class, debugRequest.program, this.output );
+		this.debugger = new BoxLangDebugger( BoxRunner.class, debugRequest.arguments.program, this.output );
 		this.debugger.startDebugSession();
 		this.running = false;
 	}
