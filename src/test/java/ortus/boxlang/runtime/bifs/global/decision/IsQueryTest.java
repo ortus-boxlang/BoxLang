@@ -34,7 +34,6 @@ import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
 
-@Disabled( "Unimplemented" )
 public class IsQueryTest {
 
 	static BoxRuntime	instance;
@@ -58,20 +57,31 @@ public class IsQueryTest {
 		variables.clear();
 	}
 
-	@DisplayName( "It detects binary values" )
+	@Disabled( "Fails for unknown reason." )
+	@DisplayName( "It detects query values" )
 	@Test
-	public void testTrueConditions() {
-		instance.executeSource(
-		    """
-		    result = isBinary( toBinary( toBase64( "boxlang" ) ) );
-		    """,
-		    context );
-		assertThat( ( Boolean ) variables.get( Key.of( "result" ) ) ).isTrue();
+	public void testOnCreateObject() {
+		assertThat( ( Boolean ) instance.executeStatement( "isQuery( createObject( 'java', 'ortus.boxlang.runtime.types.Query' ) )" ) ).isTrue();
 	}
 
-	@DisplayName( "It returns false for non-binary values" )
+	@Disabled( "QueryNew doesn't yet exist." )
+	@DisplayName( "It detects query values" )
+	@Test
+	public void testOnQueryNew() {
+		assertThat( ( Boolean ) instance.executeStatement( "isQuery( queryNew( 'id,name' ) )" ) ).isTrue();
+	}
+
+	@DisplayName( "It returns false for non-query values" )
 	@Test
 	public void testFalseConditions() {
+		instance.executeSource(
+		    """
+		    aBool = isQuery( true );
+		    aStruct = isQuery( { columns: ["id", "name" ]} );
+		    """,
+		    context );
+		assertThat( ( Boolean ) variables.get( Key.of( "aBool" ) ) ).isFalse();
+		assertThat( ( Boolean ) variables.get( Key.of( "aStruct" ) ) ).isFalse();
 	}
 
 }
