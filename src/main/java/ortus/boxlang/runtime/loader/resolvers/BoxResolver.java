@@ -17,12 +17,13 @@
  */
 package ortus.boxlang.runtime.loader.resolvers;
 
-import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Optional;
 
+import org.apache.commons.io.FilenameUtils;
+import org.apache.commons.lang3.ClassUtils;
 import org.apache.commons.lang3.StringUtils;
 
 import ortus.boxlang.runtime.context.IBoxContext;
@@ -165,7 +166,7 @@ public class BoxResolver extends BaseResolver {
 		IStruct mappings = context.getConfig().getAsStruct( Key.runtime ).getAsStruct( Key.mappings );
 
 		// System.out.println( "mappings: " + mappings );
-		// // System.out.println( "slashName: " + slashName );
+		// System.out.println( "slashName: " + slashName );
 
 		// Maybe if we have > 20 mappings we should use parallel streams
 
@@ -173,18 +174,18 @@ public class BoxResolver extends BaseResolver {
 		    .entrySet()
 		    .stream()
 		    // Filter out mappings that don't match the start of the mapping path
-		    .filter( entry -> slashName.startsWith( entry.getKey().getName() ) )
-		    // Map it to a File object representing the path to the class
+		    .filter( entry -> StringUtils.startsWithIgnoreCase( slashName, entry.getKey().getName() ) )
+		    // Map it to a Path object representing the path to the class
 		    .map( entry -> Path.of( StringUtils.replaceOnceIgnoreCase( slashName, entry.getKey().getName(), entry.getValue() + "/" ) + ".cfc" ).normalize() )
-		    .peek( file -> System.out.println( "Class Location: " + file.toAbsolutePath() ) )
+		    // .peek( path -> System.out.println( "Class Location: " + path.toString() ) )
 		    // Verify that the file exists
 		    .filter( Files::exists )
 		    // .peek( file -> System.out.println( "File Exists." ) )
 		    // Map it to a ClassLocation object
 		    .map( path -> {
-			    String className = path.getFileName().toString().replace( ".cfc", "" );
-			    String packageName = name.replace( className, "" ).substring( 0, name.lastIndexOf( "." ) );
-
+			    var	className	= FilenameUtils.getBaseName( path.toString() );
+			    // From original name with mappings: tests.components.User -> tests.components
+			    String packageName = ClassUtils.getPackageName( name );
 			    return new ClassLocation(
 			        className,
 			        path.toAbsolutePath().toString(),
@@ -219,10 +220,10 @@ public class BoxResolver extends BaseResolver {
 
 		if ( template != null ) {
 			// See if path exists in this parent directory
-			File file;
-			if ( template.getRunnablePath().getParent() != null
-			    && ( file = template.getRunnablePath().getParent().resolve( slashName.substring( 1 ) + ".cfc" ).toFile() ).exists() ) {
-				String	className	= file.getName().replace( ".cfc", "" );
+			Path targetPath = template.getRunnablePath().getParent().resolve( slashName.substring( 1 ) + ".cfc" );
+			if ( template.getRunnablePath().getParent() != null && Files.exists( targetPath ) ) {
+
+				String	className	= FilenameUtils.getBaseName( targetPath.toString() );
 				String	packageName	= name.replace( className, "" );
 
 				// Remove ending dot if it exists
@@ -232,10 +233,10 @@ public class BoxResolver extends BaseResolver {
 
 				return Optional.of( new ClassLocation(
 				    className,
-				    file.toURI().toString(),
+				    targetPath.toAbsolutePath().toString(),
 				    packageName,
 				    ClassLocator.TYPE_BX,
-				    RunnableLoader.getInstance().loadClass( file.toPath(), packageName, context ),
+				    RunnableLoader.getInstance().loadClass( targetPath, packageName, context ),
 				    ""
 				) );
 			}
