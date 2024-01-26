@@ -9,16 +9,16 @@ public class Capabilities {
 	/**
 	 * The debug adapter supports function breakpoints.
 	 */
-	public boolean	supportsFunctionBreakpoints				= true;
+	public boolean	supportsFunctionBreakpoints				= false;
 	/**
 	 * The debug adapter supports conditional breakpoints.
 	 */
-	public boolean	supportsConditionalBreakpoints			= true;
+	public boolean	supportsConditionalBreakpoints			= false;
 	/**
 	 * The debug adapter supports breakpoints that break execution after a
 	 * specified number of hits.
 	 */
-	public boolean	supportsHitConditionalBreakpoints		= true;
+	public boolean	supportsHitConditionalBreakpoints		= false;
 	/**
 	 * The debug adapter supports a (side effect free) `evaluate` request for data
 	 * hovers.
@@ -135,7 +135,7 @@ public class Capabilities {
 	/**
 	 * The debug adapter supports data breakpoints.
 	 */
-	public boolean	supportsDataBreakpoints					= true;
+	public boolean	supportsDataBreakpoints					= false;
 	/**
 	 * The debug adapter supports the `readMemory` request.
 	 */
@@ -155,7 +155,7 @@ public class Capabilities {
 	/**
 	 * The debug adapter supports the `breakpointLocations` request.
 	 */
-	public boolean	supportsBreakpointLocationsRequest		= true;
+	public boolean	supportsBreakpointLocationsRequest		= false;
 	/**
 	 * The debug adapter supports the `clipboard` context value in the `evaluate`
 	 * request.
@@ -170,7 +170,7 @@ public class Capabilities {
 	 * The debug adapter supports adding breakpoints based on instruction
 	 * references.
 	 */
-	public boolean	supportsInstructionBreakpoints			= true;
+	public boolean	supportsInstructionBreakpoints			= false;
 	/**
 	 * The debug adapter supports `filterOptions` as an argument on the
 	 * `setExceptionBreakpoints` request.

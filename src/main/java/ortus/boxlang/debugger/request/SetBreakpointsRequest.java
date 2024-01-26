@@ -2,7 +2,7 @@ package ortus.boxlang.debugger.request;
 
 import ortus.boxlang.debugger.DebugAdapter;
 
-public class SetBreakpoints extends AbstractRequest {
+public class SetBreakpointsRequest extends AbstractRequest {
 
 	public String					program;
 	public SetBreakpointArguments	arguments;

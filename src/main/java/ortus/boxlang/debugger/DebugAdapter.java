@@ -11,16 +11,18 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import org.apache.commons.lang3.NotImplementedException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import ortus.boxlang.debugger.event.Event;
+import ortus.boxlang.debugger.request.ConfigurationDoneRequest;
 import ortus.boxlang.debugger.request.IDebugRequest;
 import ortus.boxlang.debugger.request.InitializeRequest;
 import ortus.boxlang.debugger.request.LaunchRequest;
-import ortus.boxlang.debugger.request.SetBreakpoints;
+import ortus.boxlang.debugger.request.SetBreakpointsRequest;
 import ortus.boxlang.debugger.response.InitializeResponse;
+import ortus.boxlang.debugger.response.NoBodyResponse;
+import ortus.boxlang.debugger.response.SetBreakpointsResponse;
 import ortus.boxlang.runtime.BoxRunner;
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.util.JsonUtil;
@@ -110,7 +112,9 @@ public class DebugAdapter {
 			case "launch" :
 				return JsonUtil.fromJson( LaunchRequest.class, json );
 			case "setBreakpoints" :
-				return JsonUtil.fromJson( SetBreakpoints.class, json );
+				return JsonUtil.fromJson( SetBreakpointsRequest.class, json );
+			case "configurationDone" :
+				return JsonUtil.fromJson( ConfigurationDoneRequest.class, json );
 		}
 
 		return null;
@@ -118,7 +122,7 @@ public class DebugAdapter {
 	}
 
 	public void visit( IDebugRequest debugRequest ) {
-		throw new NotImplementedException( debugRequest.getCommand() );
+		// throw new NotImplementedException( debugRequest.getCommand() );
 	}
 
 	public void visit( InitializeRequest debugRequest ) {
@@ -127,9 +131,18 @@ public class DebugAdapter {
 	}
 
 	public void visit( LaunchRequest debugRequest ) {
+		new NoBodyResponse( debugRequest ).send( this.output );
 		this.debugger = new BoxLangDebugger( BoxRunner.class, debugRequest.arguments.program, this.output );
+	}
+
+	public void visit( SetBreakpointsRequest debugRequest ) {
+		new SetBreakpointsResponse( debugRequest ).send( this.output );
+	}
+
+	public void visit( ConfigurationDoneRequest debugRequest ) {
+		new NoBodyResponse( debugRequest ).send( this.output );
+
 		this.debugger.startDebugSession();
 		this.running = false;
 	}
-
 }
