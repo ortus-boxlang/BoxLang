@@ -23,6 +23,7 @@ import java.lang.annotation.Annotation;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLDecoder;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -143,7 +144,7 @@ public class ClassDiscovery {
 				else {
 					classes.addAll(
 					    findClassesInDirectory(
-					        new File( resource.getFile() ),
+					        resource.getFile(),
 					        startDir.replace( '/', '.' ),
 					        classLoader,
 					        annotations
@@ -279,33 +280,43 @@ public class ClassDiscovery {
 	 * @return A list of classes
 	 */
 	private static List<Class<?>> findClassesInDirectory(
-	    File directory,
+	    String directory,
 	    String packageName,
 	    ClassLoader classLoader,
 	    Class<? extends Annotation>[] annotations ) {
+		Path			filePath	= Path.of( directory );
 
-		List<Class<?>> classes = new ArrayList<>();
-		if ( directory.exists() ) {
-			for ( File file : directory.listFiles() ) {
-				String name = file.getName();
+		List<Class<?>>	classes		= Collections.synchronizedList( new ArrayList<>() );
 
-				// recursion
-				if ( file.isDirectory() ) {
-					classes.addAll( findClassesInDirectory( file, packageName + "." + name, classLoader, annotations ) );
-				}
-				// Class file found
-				else if ( name.endsWith( ".class" ) ) {
-					String className = packageName + '.' + name.substring( 0, name.length() - 6 );
-					try {
-						Class<?> clazz = Class.forName( className, false, classLoader );
-						if ( isAnnotated( clazz, annotations ) ) {
-							classes.add( clazz );
-						}
-					} catch ( ClassNotFoundException e ) {
-						logger.error( "Class not found: {}", className, e );
-					}
-				}
-			}
+		try {
+			Files.walk( filePath ).parallel().forEach(
+			    path -> {
+				    String name = path.toString();
+				    // recursion
+				    if ( Files.isDirectory( path ) ) {
+					    classes.addAll( findClassesInDirectory( path.toAbsolutePath().toString(), packageName + "." + name, classLoader, annotations ) );
+				    }
+				    // Class file found
+				    else if ( name.endsWith( ".class" ) ) {
+					    String className = packageName + '.' + name.substring( 0, name.length() - 6 );
+					    try {
+						    Class<?> clazz = Class.forName( className, false, classLoader );
+						    if ( isAnnotated( clazz, annotations ) ) {
+							    classes.add( clazz );
+						    }
+					    } catch ( ClassNotFoundException e ) {
+						    logger.error( "Class not found: {}", className, e );
+					    }
+				    }
+			    }
+			);
+		} catch ( IOException e ) {
+			throw new BoxRuntimeException(
+			    String.format(
+			        "The directory [%s] could not be opened as a file strem",
+			        directory
+			    )
+			);
 		}
 
 		return classes;

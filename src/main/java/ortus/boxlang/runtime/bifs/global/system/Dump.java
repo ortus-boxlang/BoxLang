@@ -17,11 +17,11 @@
  */
 package ortus.boxlang.runtime.bifs.global.system;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.Scanner;
 
 import ortus.boxlang.runtime.BoxRuntime;
@@ -93,10 +93,11 @@ public class Dump extends BIF {
 		if ( runningFromJar ) {
 			dumpTemplate = this.getClass().getResourceAsStream( dumpTemplatePath );
 		} else {
-			if ( new File( "src/main/resources" + dumpTemplatePath ).exists() ) {
+			Path filePath = Path.of( "src/main/resources" + dumpTemplatePath );
+			if ( Files.exists( filePath ) ) {
 				try {
-					dumpTemplate = new FileInputStream( new File( "src/main/resources" + dumpTemplatePath ) );
-				} catch ( FileNotFoundException e ) {
+					dumpTemplate = Files.newInputStream( filePath );
+				} catch ( IOException e ) {
 					throw new BoxRuntimeException( dumpTemplatePath + " not found", e );
 				}
 			}
@@ -104,13 +105,16 @@ public class Dump extends BIF {
 
 		if ( dumpTemplate == null ) {
 			dumpTemplatePath = templateBasePath + "Class.cfs";
+
 			if ( runningFromJar ) {
 				dumpTemplate = this.getClass().getResourceAsStream( dumpTemplatePath );
 			} else {
-				if ( new File( "src/main/resources" + dumpTemplatePath ).exists() ) {
+				Path templatePath = Path.of( dumpTemplatePath );
+
+				if ( Files.exists( templatePath ) ) {
 					try {
-						dumpTemplate = new FileInputStream( new File( "src/main/resources" + dumpTemplatePath ) );
-					} catch ( FileNotFoundException e ) {
+						dumpTemplate = Files.newInputStream( templatePath );
+					} catch ( IOException e ) {
 						throw new BoxRuntimeException( dumpTemplatePath + " not found", e );
 					}
 				}

@@ -18,12 +18,12 @@
 package ortus.boxlang.runtime;
 
 import java.io.BufferedReader;
-import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.URISyntaxException;
 import java.net.URL;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Instant;
@@ -241,7 +241,7 @@ public class BoxRuntime {
 		    .resolve( ".boxlang" )
 		    .resolve( "config.json" )
 		    .toString();
-		if ( new File( userHomeConfigPath ).exists() ) {
+		if ( Files.exists( Path.of( userHomeConfigPath ) ) ) {
 			this.configuration.process( ConfigLoader.getInstance().deserializeConfig( userHomeConfigPath ) );
 			this.interceptorService.announce(
 			    RUNTIME_EVENTS.get( "onConfigurationOverrideLoad" ),
@@ -561,7 +561,7 @@ public class BoxRuntime {
 	public void executeTemplate( URL templateURL, IBoxContext context ) {
 		String path;
 		try {
-			path = ( new File( templateURL.toURI() ) ).getPath();
+			path = Path.of( templateURL.toURI() ).toAbsolutePath().toString();
 		} catch ( URISyntaxException e ) {
 			throw new MissingIncludeException( "Invalid template path to execute.", "", templateURL.toString(), e );
 		}
