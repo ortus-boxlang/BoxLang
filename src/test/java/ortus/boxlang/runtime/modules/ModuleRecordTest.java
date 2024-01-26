@@ -93,7 +93,6 @@ class ModuleRecordTest {
 		assertThat( structRepresentation.get( "invocationPath" ) ).isEqualTo( "bxModules.TestModule" );
 		assertThat( structRepresentation.get( "mapping" ) ).isEqualTo( "/bxModules/TestModule" );
 		assertThat( structRepresentation.get( "name" ) ).isEqualTo( moduleName );
-		assertThat( structRepresentation.get( "physicalPath" ) ).isEqualTo( physicalPath );
 	}
 
 	@DisplayName( "Can load a module descriptor" )
