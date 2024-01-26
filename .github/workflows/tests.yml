@@ -20,7 +20,7 @@ jobs:
         experimental: [false]
         include:
           - jdkVersion: "21"
-            os: "ubuntu-latest"
+            os: "windows-latest"
             experimental: true
           - jdkVersion: "21"
             os: "ubuntu-latest"
