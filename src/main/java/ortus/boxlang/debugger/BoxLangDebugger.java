@@ -60,8 +60,7 @@ public class BoxLangDebugger implements IBoxLangDebugger {
 				while ( ( eventSet = vm.eventQueue().remove() ) != null ) {
 
 					System.out.println( "checking available" );
-					int	available	= vmInput.available();
-					int	a			= 4;
+					int available = vmInput.available();
 					if ( available > 0 ) {
 						byte[] bytes = ByteBuffer.allocate( available ).array();
 						vmInput.read( bytes );
