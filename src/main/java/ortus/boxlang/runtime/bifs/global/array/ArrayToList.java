@@ -14,19 +14,17 @@
  */
 package ortus.boxlang.runtime.bifs.global.array;
 
-import java.util.stream.Collectors;
-
 import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
 import ortus.boxlang.runtime.bifs.BoxMember;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.dynamic.casters.ArrayCaster;
-import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.BoxLangType;
+import ortus.boxlang.runtime.util.StringUtil;
 
 @BoxBIF
 @BoxMember( type = BoxLangType.ARRAY )
@@ -58,8 +56,7 @@ public class ArrayToList extends BIF {
 	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
 		Array actualArray = ArrayCaster.cast( arguments.get( Key.array ) );
 
-		return actualArray.stream()
-		    .map( StringCaster::cast )
-		    .collect( Collectors.joining( ( arguments.getAsString( Key.delimiter ) ) ) );
+		return StringUtil.toList( actualArray, arguments.getAsString( Key.delimiter ) );
+
 	}
 }

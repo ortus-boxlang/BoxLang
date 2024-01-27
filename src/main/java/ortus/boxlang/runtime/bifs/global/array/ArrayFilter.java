@@ -14,23 +14,18 @@
  */
 package ortus.boxlang.runtime.bifs.global.array;
 
-import java.util.function.IntPredicate;
-import java.util.concurrent.ForkJoinPool;
-import java.util.concurrent.CompletableFuture;
-
 import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
 import ortus.boxlang.runtime.bifs.BoxMember;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.dynamic.casters.ArrayCaster;
-import ortus.boxlang.runtime.dynamic.casters.IntegerCaster;
 import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
+import ortus.boxlang.runtime.dynamic.casters.IntegerCaster;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
-import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.BoxLangType;
-import ortus.boxlang.runtime.types.Function;
+import ortus.boxlang.runtime.util.ArrayUtil;
 
 @BoxBIF
 @BoxMember( type = BoxLangType.ARRAY )
@@ -65,27 +60,12 @@ public class ArrayFilter extends BIF {
 	 * @argument.maxThreads The maximum number of threads to use when parallel = true
 	 */
 	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
-
-		Array			actualArray	= ArrayCaster.cast( arguments.get( "array" ) );
-		Function		func		= arguments.getAsFunction( Key.callback );
-		IntPredicate	test		= idx -> ( boolean ) context.invokeFunction( func, new Object[] { actualArray.get( idx ), idx + 1, actualArray } );
-
-		ForkJoinPool	pool		= null;
-		if ( BooleanCaster.cast( arguments.getOrDefault( "parallel", false ) ) ) {
-			pool = new ForkJoinPool( IntegerCaster.cast( arguments.getOrDefault( "maxThreads", 20 ) ) );
-		}
-
-		return ArrayCaster.cast(
-		    pool == null
-		        ? actualArray.intStream()
-		            .filter( test )
-		            .mapToObj( idx -> actualArray.get( idx ) )
-		            .toArray()
-
-		        : CompletableFuture.supplyAsync(
-		            () -> actualArray.intStream().parallel().filter( test ).mapToObj( idx -> actualArray.get( idx ) ),
-		            pool
-		        ).join().toArray()
+		return ArrayUtil.filter(
+		    ArrayCaster.cast( arguments.get( "array" ) ),
+		    arguments.getAsFunction( Key.callback ),
+		    context,
+		    BooleanCaster.cast( arguments.getOrDefault( "parallel", false ) ),
+		    IntegerCaster.cast( arguments.getOrDefault( "maxThreads", 20 ) )
 		);
 	}
 }

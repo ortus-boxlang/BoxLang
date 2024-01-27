@@ -1,25 +1,17 @@
 
 package ortus.boxlang.runtime.bifs.global.list;
 
-import org.apache.commons.lang3.StringUtils;
-
 import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
 import ortus.boxlang.runtime.context.IBoxContext;
-import ortus.boxlang.runtime.interop.DynamicJavaInteropService;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
-import ortus.boxlang.runtime.types.Array;
+import ortus.boxlang.runtime.util.StringUtil;
 
 @BoxBIF
 
 public class ListToArray extends BIF {
-
-	private static final String	fn_Split				= "split";
-	private static final String	fn_splitWholePreserve	= "splitByWholeSeparatorPreserveAllTokens";
-	private static final String	fn_splitWhole			= "splitByWholeSeparator";
-	private static final String	fn_splitPreserve		= "splitPreserveAllTokens";
 
 	/**
 	 * Constructor
@@ -44,22 +36,11 @@ public class ListToArray extends BIF {
 	 * @argument.foo Describe any expected arguments
 	 */
 	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
-		String	list			= arguments.getAsString( Key.list );
-		String	delimiter		= arguments.getAsString( Key.delimiter );
-		Boolean	wholeDelimiter	= arguments.getAsBoolean( Key.multiCharacterDelimiter );
-		Boolean	includeEmpty	= arguments.getAsBoolean( Key.includeEmptyFields );
-		String	utilFn			= fn_Split;
-		if ( wholeDelimiter ) {
-			if ( includeEmpty ) {
-				utilFn = fn_splitWholePreserve;
-			} else {
-				utilFn = fn_splitWhole;
-			}
-		} else if ( includeEmpty ) {
-			utilFn = fn_splitPreserve;
-		}
-		return new Array(
-		    ( String[] ) DynamicJavaInteropService.invokeStatic( StringUtils.class, utilFn, list, delimiter )
+		return StringUtil.toArray(
+		    arguments.getAsString( Key.list ),
+		    arguments.getAsString( Key.delimiter ),
+		    arguments.getAsBoolean( Key.includeEmptyFields ),
+		    arguments.getAsBoolean( Key.multiCharacterDelimiter )
 		);
 	}
 
