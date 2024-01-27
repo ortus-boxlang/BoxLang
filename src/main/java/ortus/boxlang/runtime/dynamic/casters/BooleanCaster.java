@@ -17,13 +17,34 @@
  */
 package ortus.boxlang.runtime.dynamic.casters;
 
+import java.util.HashMap;
+
 import ortus.boxlang.runtime.interop.DynamicObject;
+import ortus.boxlang.runtime.scopes.Key;
+import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.BoxCastException;
 
 /**
  * I handle casting anything to a boolean
  */
 public class BooleanCaster {
+
+	/**
+	 * Well-Known-Text representations of boolean values
+	 */
+	private static final Struct wkt = new Struct(
+	    new HashMap<Key, Boolean>() {
+
+		    {
+			    put( Key.of( "Y" ), true );
+			    put( Key.of( "N" ), false );
+			    put( Key.of( "Yes" ), true );
+			    put( Key.of( "No" ), false );
+			    put( Key.of( "true" ), true );
+			    put( Key.of( "false" ), false );
+		    }
+	    }
+	);
 
 	/**
 	 * Tests to see if the value can be cast to a boolean.
@@ -72,12 +93,9 @@ public class BooleanCaster {
 			return num.doubleValue() != 0;
 		}
 		if ( object instanceof String str ) {
-			// String true and yes are truthy
-			if ( str.equalsIgnoreCase( "true" ) || str.equalsIgnoreCase( "yes" ) ) {
-				return true;
-				// String false and no are falsey
-			} else if ( str.equalsIgnoreCase( "false" ) || str.equalsIgnoreCase( "no" ) ) {
-				return false;
+			Key aliasKey = Key.of( str );
+			if ( wkt.containsKey( aliasKey ) ) {
+				return wkt.getAsBoolean( aliasKey );
 			}
 			if ( fail ) {
 				throw new BoxCastException(
