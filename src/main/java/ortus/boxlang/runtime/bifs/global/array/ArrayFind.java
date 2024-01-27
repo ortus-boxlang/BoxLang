@@ -34,6 +34,14 @@ import ortus.boxlang.runtime.types.Function;
 @BoxMember( type = BoxLangType.ARRAY, name = "findNoCase" )
 public class ArrayFind extends BIF {
 
+	private static final Array caseSensitiveFunctions = new Array(
+	    new Object[] {
+	        Key.find,
+	        Key.arrayFind,
+	        Key.of( "listFind" )
+	    }
+	);
+
 	/**
 	 * Constructor
 	 */
@@ -47,12 +55,12 @@ public class ArrayFind extends BIF {
 
 	/**
 	 * Return int position of value in array, case sensitive
-	 * 
+	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
-	 * 
+	 *
 	 * @argument.array The array to be searched.
-	 * 
+	 *
 	 * @argument.value The value to found.
 	 */
 	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
@@ -76,6 +84,6 @@ public class ArrayFind extends BIF {
 	}
 
 	private boolean isCaseSensitive( Key functionName ) {
-		return functionName.equals( Key.find ) || functionName.equals( Key.arrayFind );
+		return caseSensitiveFunctions.stream().filter( fn -> functionName.equals( fn ) ).findFirst().orElse( null ) != null;
 	}
 }

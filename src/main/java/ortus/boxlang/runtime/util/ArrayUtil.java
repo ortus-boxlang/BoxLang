@@ -16,11 +16,25 @@ import ortus.boxlang.runtime.types.Function;
 
 public class ArrayUtil {
 
+	/**
+	 * StringUtil constant method names for splitting strings to arrays
+	 */
 	private static final String	fn_Split				= "split";
 	private static final String	fn_splitWholePreserve	= "splitByWholeSeparatorPreserveAllTokens";
 	private static final String	fn_splitWhole			= "splitByWholeSeparator";
 	private static final String	fn_splitPreserve		= "splitPreserveAllTokens";
 
+	/**
+	 * Creates an array from a delimited list
+	 * 
+	 * @param list           The string lists
+	 * @param delimiter      The delimiter(s) of the list
+	 * @param includeEmpty   Whether to include empty items in the result array
+	 * @param wholeDelimiter Whether the delimiter contains multiple characters which should be matched. Otherwise all characters in the delimiter are
+	 *                       treated as separate delimiters
+	 * 
+	 * @return
+	 */
 	public static Array ofList(
 	    String list,
 	    String delimiter,
@@ -42,6 +56,14 @@ public class ArrayUtil {
 		);
 	}
 
+	/**
+	 * Converts an Array object to a delimited list using the specified delimiter
+	 *
+	 * @param array
+	 * @param delimiter
+	 *
+	 * @return
+	 */
 	public static String toList(
 	    Array array,
 	    String delimiter ) {
@@ -50,6 +72,17 @@ public class ArrayUtil {
 		    .collect( Collectors.joining( ( delimiter ) ) );
 	}
 
+	/**
+	 * Method to filter an array with a function callback and context
+	 *
+	 * @param array           The array object to filter
+	 * @param callback        The callback Function object
+	 * @param callbackContext The context in which to execute the callback
+	 * @param parallel        Whether to process the filter in parallel
+	 * @param maxThreads      Optional max threads for parallel execution
+	 *
+	 * @return A filtered array
+	 */
 	public static Array filter(
 	    Array array,
 	    Function callback,
