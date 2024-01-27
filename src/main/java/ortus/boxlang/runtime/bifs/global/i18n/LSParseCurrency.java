@@ -26,7 +26,7 @@ public class LSParseCurrency extends BIF {
 		super();
 		declaredArguments = new Argument[] {
 		    new Argument( true, "string", Key.string ),
-		    new Argument( true, "string", Key.locale )
+		    new Argument( false, "string", Key.locale )
 		};
 	}
 
@@ -42,10 +42,7 @@ public class LSParseCurrency extends BIF {
 	 */
 	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
 		String	value	= arguments.getAsString( Key.string );
-		Locale	locale	= LocalizationUtil.parseLocaleOrDefault(
-		    arguments.getAsString( Key.locale ),
-		    ( Locale ) context.getConfigItem( Key.locale, Locale.getDefault() )
-		);
+		Locale	locale	= LocalizationUtil.parseLocaleFromContext( context, arguments );
 
 		Double	parsed	= NumberUtils.isCreatable( value )
 		    ? DoubleCaster.cast( value )

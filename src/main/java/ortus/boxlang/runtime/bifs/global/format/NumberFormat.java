@@ -45,10 +45,7 @@ public class NumberFormat extends BIF {
 	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
 		double					value		= DoubleCaster.cast( arguments.get( Key.number ), true );
 		String					format		= arguments.getAsString( Key.mask );
-		Locale					locale		= LocalizationUtil.parseLocaleOrDefault(
-		    arguments.getAsString( Key.locale ),
-		    ( Locale ) context.getConfigItem( Key.locale, Locale.getDefault() )
-		);
+		Locale					locale		= LocalizationUtil.parseLocaleFromContext( context, arguments );
 		java.text.NumberFormat	formatter	= LocalizationUtil.localizedDecimalFormatter(
 		    locale,
 		    LocalizationUtil.numberFormatPatterns.getAsString( LocalizationUtil.DEFAULT_NUMBER_FORMAT_KEY )

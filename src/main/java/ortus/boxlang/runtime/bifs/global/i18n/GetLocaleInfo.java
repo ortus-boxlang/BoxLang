@@ -40,11 +40,10 @@ public class GetLocaleInfo extends BIF {
 	 *
 	 */
 	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
-		String	localeArg		= arguments.getAsString( Key.locale );
 		String	dspLocale		= arguments.getAsString( Key.dspLocale );
 
 		Locale	locale			= new Locale.Builder()
-		    .setLocale( LocalizationUtil.parseLocaleOrDefault( localeArg, ( Locale ) context.getConfigItem( Key.locale, Locale.getDefault() ) ) )
+		    .setLocale( LocalizationUtil.parseLocaleFromContext( context, arguments ) )
 		    .build();
 
 		Locale	displayLocale	= new Locale.Builder()

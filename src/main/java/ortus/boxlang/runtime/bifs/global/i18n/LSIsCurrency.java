@@ -24,7 +24,7 @@ public class LSIsCurrency extends BIF {
 		super();
 		declaredArguments = new Argument[] {
 		    new Argument( true, "any", Key.number ),
-		    new Argument( true, "string", Key.locale )
+		    new Argument( false, "string", Key.locale )
 		};
 	}
 
@@ -41,10 +41,7 @@ public class LSIsCurrency extends BIF {
 	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
 		String	value	= arguments.getAsString( Key.number );
 
-		Locale	locale	= LocalizationUtil.parseLocaleOrDefault(
-		    arguments.getAsString( Key.locale ),
-		    ( Locale ) context.getConfigItem( Key.locale, Locale.getDefault() )
-		);
+		Locale	locale	= LocalizationUtil.parseLocaleFromContext( context, arguments );
 
 		return NumberUtils.isCreatable( value )
 		    ? true

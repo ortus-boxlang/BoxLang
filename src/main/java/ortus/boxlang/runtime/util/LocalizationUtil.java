@@ -33,6 +33,7 @@ import java.util.stream.Stream;
 
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.dynamic.casters.StringCaster;
+import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.DateTime;
 import ortus.boxlang.runtime.types.Struct;
@@ -262,6 +263,21 @@ public final class LocalizationUtil {
 	public static Locale parseLocaleOrDefault( String requestedLocale, Locale defaultLocale ) {
 		Locale locale = parseLocale( requestedLocale );
 		return locale != null ? locale : defaultLocale;
+	}
+
+	/**
+	 * Convience method to extract the locale from arguments or context, falling back tothe system default
+	 *
+	 * @param contex    The context from which to extract the default locale
+	 * @param arguments The arguments scope which may or may not contain a locale key
+	 *
+	 * @return The Locale object found or the default
+	 */
+	public static Locale parseLocaleFromContext( IBoxContext context, ArgumentsScope arguments ) {
+		return parseLocaleOrDefault(
+		    arguments.getAsString( Key.locale ),
+		    ( Locale ) context.getConfigItem( Key.locale, Locale.getDefault() )
+		);
 	}
 
 	/**
