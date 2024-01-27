@@ -338,6 +338,20 @@ public final class LocalizationUtil {
 	}
 
 	/**
+	 * Parses a localized number string
+	 *
+	 * @param value  The value to be parsed
+	 * @param locale The locale object to apply to the parse operation
+	 *
+	 * @return
+	 */
+	public static Double parseLocalizedNumber( Object value, Locale locale ) {
+		DecimalFormat	parser	= ( DecimalFormat ) DecimalFormat.getInstance( locale );
+		Number			parsed	= parser.parse( StringCaster.cast( value ), new ParsePosition( 0 ) );
+		return parsed == null ? null : parsed.doubleValue();
+	}
+
+	/**
 	 * Returns a localized DateTimeFormatter instance
 	 *
 	 * @param locale the Locale instance to apply to the formatter
