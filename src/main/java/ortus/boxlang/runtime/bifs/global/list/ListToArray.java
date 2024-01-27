@@ -26,7 +26,6 @@ public class ListToArray extends BIF {
 	 */
 	public ListToArray() {
 		super();
-		// list=string, delimiter=string, includeEmptyFields=boolean, multiCharacterDelimiter=boolean
 		declaredArguments = new Argument[] {
 		    new Argument( true, "string", Key.list ),
 		    new Argument( false, "string", Key.delimiter, "," ),
