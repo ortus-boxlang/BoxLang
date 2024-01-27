@@ -1,8 +1,6 @@
 
 package ortus.boxlang.runtime.bifs.global.i18n;
 
-import java.util.Locale;
-
 import ortus.boxlang.runtime.bifs.BoxBIF;
 import ortus.boxlang.runtime.bifs.BoxMember;
 import ortus.boxlang.runtime.bifs.global.format.NumberFormat;
@@ -42,10 +40,6 @@ public class LSNumberFormat extends NumberFormat {
 	 * @argument.locale The locale string to apply to the format
 	 */
 	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
-		String locale = arguments.getAsString( Key.locale );
-		if ( locale == null ) {
-			arguments.put( Key.locale, Locale.getDefault().toString() );
-		}
 		return super.invoke( context, arguments );
 	}
 

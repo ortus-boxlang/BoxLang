@@ -72,6 +72,27 @@ component{
 		};
 
 		/**
+		 * Every module can have a list of object mappings
+		 * that can be created by boxLang.  This is a great way
+		 * to create objects that can be used by the module
+		 * or other modules.
+		 * The mappings will be created in the following format:
+		 * bxModules.{this.mapping}.{mappingName}
+		 * Ex: bxModules.test.MyObject => bxModules.test.models.MyObject
+		 */
+		objectMappings = {
+			// { name="MyObject", class="models.utilities.MyObject" }
+		}
+
+		/**
+		 * Datasources can be defined by a module and they will be registered
+		 * for you in the runtime
+		 */
+		datasources = {
+			// { name="MyDSN", class="coldbox.system.datasources.ColdBoxDataSource", properties={dsn="mydsn"} }
+		};
+
+		/**
 		 * The module interceptors to register into the runtime
 		 */
 		interceptors = [

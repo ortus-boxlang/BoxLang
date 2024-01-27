@@ -285,7 +285,8 @@ public class ModuleService extends BaseService {
 		}
 
 		// Get the module record
-		var moduleRecord = this.registry.get( name );
+		var	moduleRecord	= this.registry.get( name );
+		var	runtimeContext	= runtime.getRuntimeContext();
 
 		// Announce it
 		announce(
@@ -294,9 +295,9 @@ public class ModuleService extends BaseService {
 		);
 
 		// Load the ModuleConfig.bx file
-		moduleRecord.loadDescriptor( runtime.getRuntimeContext() );
+		moduleRecord.loadDescriptor( runtimeContext );
 
-		// Check if the module is disabled
+		// Check if the module is disabled, if so, skip it
 		if ( moduleRecord.isDisabled() ) {
 			logger.atInfo().log(
 			    "+ Module Service: Module [{}] is disabled, skipping registration",
@@ -305,25 +306,9 @@ public class ModuleService extends BaseService {
 			return;
 		}
 
-		// Register the mapping in the runtime
-		runtime
-		    .getConfiguration().runtime
-		    .registerMapping( moduleRecord.mapping, moduleRecord.physicalPath.toString() );
-
-		// Call the configure method if it exists
-		if ( moduleRecord.moduleConfig.getThisScope().containsKey( Key.configure ) ) {
-			moduleRecord.moduleConfig.dereferenceAndInvoke(
-			    runtime.getRuntimeContext(),
-			    Key.configure,
-			    new Object[] {},
-			    false
-			);
-		}
-
-		// Load up the settings now
-
-		// Finalize
-		moduleRecord.registrationTime = runtime.timerUtil.stopAndGetMillis( timerLabel );
+		// Configure the module
+		moduleRecord.configure( runtimeContext );
+		moduleRecord.registrationTime = BoxRuntime.timerUtil.stopAndGetMillis( timerLabel );
 
 		// Announce it
 		announce(

@@ -139,6 +139,10 @@ public class DiskClassLoader extends URLClassLoader {
 		return Paths.get( diskStore.toString(), name.replace( ".", File.separator ) + ".class" );
 	}
 
+	private Path generateDiskJSONPath( String name ) {
+		return Paths.get( diskStore.toString(), name.replace( ".", File.separator ) + ".json" );
+	}
+
 	/**
 	 * Write class file to disk
 	 *
@@ -173,5 +177,18 @@ public class DiskClassLoader extends URLClassLoader {
 	@SuppressWarnings( "unused" )
 	private void appendToClassPathForInstrumentation( String jarfile ) throws IOException {
 		addURL( Paths.get( jarfile ).toRealPath().toUri().toURL() );
+	}
+
+	public void writeLineNumbers( String fqn, String lineNumberJSON ) {
+		if ( lineNumberJSON == null ) {
+			return;
+		}
+		Path diskPath = generateDiskJSONPath( fqn );
+		diskPath.toFile().getParentFile().mkdirs();
+		try {
+			Files.write( diskPath, lineNumberJSON.getBytes() );
+		} catch ( IOException e ) {
+			throw new BoxRuntimeException( "Unable to write line number JSON file to disk", e );
+		}
 	}
 }

@@ -20,7 +20,6 @@ package ortus.boxlang.runtime.modules;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Instant;
-import java.util.List;
 import java.util.UUID;
 
 import org.slf4j.LoggerFactory;
@@ -109,12 +108,12 @@ public class ModuleRecord {
 	/**
 	 * The interceptors of the module
 	 */
-	public List<Struct>			interceptors				= List.of();
+	public Array				interceptors				= new Array();
 
 	/**
 	 * The custom interception points of the module
 	 */
-	public List<String>			customInterceptionPoints	= List.of();
+	public Array				customInterceptionPoints	= new Array();
 
 	/**
 	 * The physical path of the module on disk as a Java {@link Path}
@@ -265,7 +264,54 @@ public class ModuleRecord {
 		variablesScope.put( Key.boxRuntime, BoxRuntime.getInstance() );
 		variablesScope.put( Key.log, LoggerFactory.getLogger( this.moduleConfig.getClass() ) );
 
-		// Finalized registration time
+		return this;
+	}
+
+	/**
+	 * This method registers the module with all the runtime services.
+	 * This is called by the ModuleService if the module is allowed to be registered or not
+	 *
+	 * @param context The current context of execution
+	 *
+	 * @return The ModuleRecord
+	 */
+	public ModuleRecord configure( IBoxContext context ) {
+		// Convenience References
+		ThisScope		thisScope		= this.moduleConfig.getThisScope();
+		VariablesScope	variablesScope	= this.moduleConfig.getVariablesScope();
+
+		// Register the mapping in the runtime
+		BoxRuntime
+		    .getInstance()
+		    .getConfiguration().runtime
+		    .registerMapping( this.mapping, this.path );
+
+		// Call the configure() method if it exists in the descriptor
+		if ( thisScope.containsKey( Key.configure ) ) {
+			this.moduleConfig.dereferenceAndInvoke(
+			    context,
+			    Key.configure,
+			    new Object[] {},
+			    false
+			);
+		}
+
+		// Register Module configuration
+		this.settings					= ( Struct ) variablesScope.getAsStruct( Key.settings );
+		this.interceptors				= variablesScope.getAsArray( Key.interceptors );
+		this.customInterceptionPoints	= variablesScope.getAsArray( Key.customInterceptionPoints );
+		this.objectMappings				= ( Struct ) variablesScope.getAsStruct( Key.objectMappings );
+		this.datasources				= ( Struct ) variablesScope.getAsStruct( Key.datasources );
+
+		// Register Interception points
+		if ( this.customInterceptionPoints.isEmpty() ) {
+			BoxRuntime
+			    .getInstance()
+			    .getInterceptorService()
+			    .registerInterceptionPoint( this.customInterceptionPoints.stream().map( Key::of ).toArray( Key[]::new ) );
+		}
+
+		// Finalize
 		this.registeredOn = Instant.now();
 
 		return this;
