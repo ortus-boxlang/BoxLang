@@ -125,6 +125,7 @@ public class Key implements Comparable<Key> {
 	public static final Key	hostname					= Key.of( "hostname" );
 	public static final Key	hour						= Key.of( "hour" );
 	public static final Key	hours						= Key.of( "hours" );
+	public static final Key	includeEmptyFields			= Key.of( "includeEmptyFields" );
 	public static final Key	ignoreExists				= Key.of( "ignoreExists" );
 	public static final Key	index						= Key.of( "index" );
 	public static final Key	init						= Key.of( "init" );
@@ -139,6 +140,7 @@ public class Key implements Comparable<Key> {
 	public static final Key	language					= Key.of( "language" );
 	public static final Key	leaveIndex					= Key.of( "leaveIndex" );
 	public static final Key	length						= Key.of( "length" );
+	public static final Key	list						= Key.of( "list" );
 	public static final Key	listInfo					= Key.of( "listInfo" );
 	public static final Key	lJustify					= Key.of( "lJustify" );
 	public static final Key	log							= Key.of( "log" );
@@ -163,6 +165,7 @@ public class Key implements Comparable<Key> {
 	public static final Key	moduleMapping				= Key.of( "moduleMapping" );
 	public static final Key	moduleRecord				= Key.of( "moduleRecord" );
 	public static final Key	month						= Key.of( "month" );
+	public static final Key	multiCharacterDelimiter		= Key.of( "multiCharacterDelimiter" );
 	public static final Key	newPath						= Key.of( "newPath" );
 	public static final Key	noInit						= Key.of( "noInit" );
 	public static final Key	number						= Key.of( "number" );
