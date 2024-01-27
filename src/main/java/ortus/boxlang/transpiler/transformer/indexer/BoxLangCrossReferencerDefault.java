@@ -20,7 +20,6 @@ package ortus.boxlang.transpiler.transformer.indexer;
 import static ortus.boxlang.transpiler.transformer.indexer.BoxNodeKey.BOX_NODE_DATA_KEY;
 
 import com.github.javaparser.ast.Node;
-import com.github.javaparser.ast.stmt.Statement;
 
 /**
  * Cross Reference default implementation
@@ -37,9 +36,9 @@ public class BoxLangCrossReferencerDefault extends BoxLangCrossReferencer {
 	 */
 	public Node storeReference( Node javaNode, ortus.boxlang.ast.BoxNode boxNode ) {
 		if ( this.enabled ) {
-			if ( javaNode instanceof Statement ) {
-				javaNode.setData( BOX_NODE_DATA_KEY, boxNode );
-			}
+			// if ( javaNode instanceof Statement ) {
+			javaNode.setData( BOX_NODE_DATA_KEY, boxNode );
+			// }
 		}
 		return javaNode;
 	}

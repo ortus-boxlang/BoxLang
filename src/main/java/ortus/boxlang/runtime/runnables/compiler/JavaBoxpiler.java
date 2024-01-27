@@ -37,9 +37,14 @@ import javax.tools.ToolProvider;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.fasterxml.jackson.jr.ob.JSON;
+import com.fasterxml.jackson.jr.ob.JSON.Feature;
+import com.fasterxml.jackson.jr.ob.JSONObjectException;
 import com.github.javaparser.ast.CompilationUnit;
+import com.github.javaparser.ast.Node;
 import com.github.javaparser.ast.body.ClassOrInterfaceDeclaration;
 
+import ortus.boxlang.ast.BoxNode;
 import ortus.boxlang.parser.BoxParser;
 import ortus.boxlang.parser.BoxScriptType;
 import ortus.boxlang.parser.ParsingResult;
@@ -48,9 +53,11 @@ import ortus.boxlang.runtime.runnables.IBoxRunnable;
 import ortus.boxlang.runtime.runnables.IClassRunnable;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.exceptions.ParseException;
+import ortus.boxlang.transpiler.CustomPrettyPrinter;
 import ortus.boxlang.transpiler.JavaTranspiler;
 import ortus.boxlang.transpiler.TranspiledCode;
 import ortus.boxlang.transpiler.Transpiler;
+import ortus.boxlang.transpiler.transformer.indexer.BoxNodeKey;
 
 /**
  * This class uses the Java compiler to turn a BoxLang script into a Java class
@@ -97,8 +104,7 @@ public class JavaBoxpiler {
 		    new URL[] {},
 		    this.getClass().getClassLoader(),
 		    Paths.get( BoxRuntime.getInstance().getConfiguration().compiler.classGenerationDirectory ),
-		    manager
-		);
+		    manager );
 
 		this.classLoader		= new JavaDynamicClassLoader(
 		    new URL[] {
@@ -106,8 +112,7 @@ public class JavaBoxpiler {
 		    },
 		    this.getClass().getClassLoader(),
 		    manager,
-		    this.diskClassLoader
-		);
+		    this.diskClassLoader );
 
 	}
 
@@ -164,10 +169,16 @@ public class JavaBoxpiler {
 
 				// Process functions and lamdas
 				for ( CompilationUnit callable : javaASTs.getCallables() ) {
-					ClassOrInterfaceDeclaration innerClass = callable.findFirst( ClassOrInterfaceDeclaration.class ).get();
+					ClassOrInterfaceDeclaration innerClass = callable.findFirst( ClassOrInterfaceDeclaration.class )
+					    .get();
 					outerClass.addMember( innerClass.setPublic( true ).setStatic( true ) );
 				}
-				compileSource( javaASTs.getEntryPoint().toString(), fqn );
+				var prettyPrinter = new CustomPrettyPrinter();
+				if ( false )
+					throw new BoxRuntimeException( prettyPrinter.print( javaASTs.getEntryPoint() ) );
+
+				compileSource( prettyPrinter.print( javaASTs.getEntryPoint() ), fqn );
+				diskClassLoader.writeLineNumbers( fqn, generateLineNumberJSON( prettyPrinter.getVisitor().getLineNumbers() ) );
 			}
 		}
 		return getClass( fqn );
@@ -206,17 +217,67 @@ public class JavaBoxpiler {
 
 				// Process functions and lamdas
 				for ( CompilationUnit callable : javaASTs.getCallables() ) {
-					ClassOrInterfaceDeclaration innerClass = callable.findFirst( ClassOrInterfaceDeclaration.class ).get();
+					ClassOrInterfaceDeclaration innerClass = callable.findFirst( ClassOrInterfaceDeclaration.class )
+					    .get();
 					outerClass.addMember( innerClass.setPublic( true ).setStatic( true ) );
 				}
+				var prettyPrinter = new CustomPrettyPrinter();
 				if ( false )
-					throw new BoxRuntimeException( javaASTs.getEntryPoint().toString() );
+					throw new BoxRuntimeException( prettyPrinter.print( javaASTs.getEntryPoint() ) );
 
-				compileSource( javaASTs.getEntryPoint().toString(), fqn );
-
+				compileSource( prettyPrinter.print( javaASTs.getEntryPoint() ), fqn );
+				diskClassLoader.writeLineNumbers( fqn, generateLineNumberJSON( prettyPrinter.getVisitor().getLineNumbers() ) );
 			}
 		}
-		return getClass( fqn );
+		return
+
+		getClass( fqn );
+	}
+
+	private String generateLineNumberJSON( List<Object[]> lineNumbers ) {
+		try {
+			return JSON.std.with( Feature.PRETTY_PRINT_OUTPUT ).asString(
+			    lineNumbers.stream().map( e -> {
+				    Node jNode	= ( Node ) e[ 0 ];
+				    int	jLine	= ( int ) e[ 1 ];
+				    // Not every node of Java source code has a corresponding BoxNode
+				    if ( !jNode.containsData( BoxNodeKey.BOX_NODE_DATA_KEY ) ) {
+					    return null;
+				    }
+				    BoxNode boxNode = jNode.getData( BoxNodeKey.BOX_NODE_DATA_KEY );
+				    // Some BoxNodes were created on-the-fly by the parser and don't correspond to any specific source line
+				    if ( boxNode.getPosition() == null ) {
+					    return null;
+				    }
+				    HashMap<String, Object> map = new HashMap<>();
+				    map.put( "javaSourceLine", jLine );
+				    map.put( "originSourceLine", boxNode.getPosition().getStart().getLine() );
+				    // Really just for debugging. Remove later.
+				    map.put( "javaSourceNode", jNode.getClass().getSimpleName() );
+				    map.put( "originSourceNode", boxNode.getClass().getSimpleName() );
+				    return map;
+			    } )
+			        // filter out nulls
+			        .filter( e -> e != null )
+			        // sort by origin source line, then by java source line
+			        .sorted( ( e1, e2 ) -> {
+				        int result2 = ( ( Integer ) e1.get( "originSourceLine" ) )
+				            .compareTo( ( Integer ) e2.get( "originSourceLine" ) );
+				        if ( result2 == 0 ) {
+					        result2 = ( ( Integer ) e1.get( "javaSourceLine" ) )
+					            .compareTo( ( Integer ) e2.get( "javaSourceLine" ) );
+				        }
+				        return result2;
+			        } )
+			        .toList()
+			);
+		} catch ( JSONObjectException e ) {
+			e.printStackTrace();
+			return null;
+		} catch ( IOException e ) {
+			e.printStackTrace();
+			return null;
+		}
 	}
 
 	public Class<IBoxRunnable> compileTemplate( Path path, String packagePath ) {
@@ -268,10 +329,12 @@ public class JavaBoxpiler {
 					outerClass.addMember( innerClass.setPublic( true ).setStatic( true ) );
 				}
 
+				var prettyPrinter = new CustomPrettyPrinter();
 				if ( false )
-					throw new BoxRuntimeException( javaASTs.getEntryPoint().toString() );
-				compileSource( javaASTs.getEntryPoint().toString(), fqn );
+					throw new BoxRuntimeException( prettyPrinter.print( javaASTs.getEntryPoint() ) );
 
+				compileSource( prettyPrinter.print( javaASTs.getEntryPoint() ), fqn );
+				diskClassLoader.writeLineNumbers( fqn, generateLineNumberJSON( prettyPrinter.getVisitor().getLineNumbers() ) );
 			}
 		}
 		return getClass( fqn );
@@ -308,13 +371,16 @@ public class JavaBoxpiler {
 
 				// Process functions and lamdas
 				for ( CompilationUnit callable : javaASTs.getCallables() ) {
-					ClassOrInterfaceDeclaration innerClass = callable.findFirst( ClassOrInterfaceDeclaration.class ).get();
+					ClassOrInterfaceDeclaration innerClass = callable.findFirst( ClassOrInterfaceDeclaration.class )
+					    .get();
 					outerClass.addMember( innerClass.setPublic( true ).setStatic( true ) );
 				}
+				var prettyPrinter = new CustomPrettyPrinter();
 				if ( false )
-					throw new BoxRuntimeException( javaASTs.getEntryPoint().toString() );
+					throw new BoxRuntimeException( prettyPrinter.print( javaASTs.getEntryPoint() ) );
 
-				compileSource( javaASTs.getEntryPoint().toString(), fqn );
+				compileSource( prettyPrinter.print( javaASTs.getEntryPoint() ), fqn );
+				diskClassLoader.writeLineNumbers( fqn, generateLineNumberJSON( prettyPrinter.getVisitor().getLineNumbers() ) );
 
 			}
 		}
@@ -371,13 +437,16 @@ public class JavaBoxpiler {
 
 				// Process functions and lamdas
 				for ( CompilationUnit callable : javaASTs.getCallables() ) {
-					ClassOrInterfaceDeclaration innerClass = callable.findFirst( ClassOrInterfaceDeclaration.class ).get();
+					ClassOrInterfaceDeclaration innerClass = callable.findFirst( ClassOrInterfaceDeclaration.class )
+					    .get();
 					outerClass.addMember( innerClass.setPublic( true ).setStatic( true ) );
 				}
+				var prettyPrinter = new CustomPrettyPrinter();
 				if ( false )
-					throw new BoxRuntimeException( javaASTs.getEntryPoint().toString() );
+					throw new BoxRuntimeException( prettyPrinter.print( javaASTs.getEntryPoint() ) );
 
-				compileSource( javaASTs.getEntryPoint().toString(), fqn );
+				compileSource( prettyPrinter.print( javaASTs.getEntryPoint() ), fqn );
+				diskClassLoader.writeLineNumbers( fqn, generateLineNumberJSON( prettyPrinter.getVisitor().getLineNumbers() ) );
 
 			}
 		}
@@ -390,8 +459,10 @@ public class JavaBoxpiler {
 
 		String								javaRT			= System.getProperty( "java.class.path" );
 
-		// String boxRT = "C:/Users/Brad/Documents/GitHub/boxlang/runtime/build/classes/java/main";
-		// String compRT = "C:/Users/Brad/Documents/GitHub/boxlang/compiler/build/classes/java/main";
+		// String boxRT =
+		// "C:/Users/Brad/Documents/GitHub/boxlang/runtime/build/classes/java/main";
+		// String compRT =
+		// "C:/Users/Brad/Documents/GitHub/boxlang/compiler/build/classes/java/main";
 
 		List<JavaFileObject>				sourceFiles		= Collections.singletonList( new JavaSourceString( fqn, javaSource ) );
 		List<String>						options			= new ArrayList<>() {
@@ -399,7 +470,8 @@ public class JavaBoxpiler {
 																{
 																	add( "-g" );
 																	// add( "-cp" );
-																	// add( javaRT + File.pathSeparator + boxRT + File.pathSeparator + File.pathSeparator +
+																	// add( javaRT + File.pathSeparator + boxRT + File.pathSeparator +
+																	// File.pathSeparator +
 																	// compRT );
 																}
 															};
@@ -407,7 +479,8 @@ public class JavaBoxpiler {
 		boolean								compilerResult	= task.call();
 
 		if ( !compilerResult ) {
-			String errors = diagnostics.getDiagnostics().stream().map( d -> d.toString() ).collect( Collectors.joining( "\n" ) );
+			String errors = diagnostics.getDiagnostics().stream().map( d -> d.toString() )
+			    .collect( Collectors.joining( "\n" ) );
 			throw new BoxRuntimeException( errors + "\n" + javaSource );
 		}
 
@@ -519,7 +592,8 @@ public class JavaBoxpiler {
 	 *
 	 * @param file File object to grab the class name for.
 	 *
-	 * @return returns the class name according the name conventions Test.ext - Test$ext
+	 * @return returns the class name according the name conventions Test.ext -
+	 *         Test$ext
 	 */
 	public static String getClassName( File file ) {
 		String name = file.getName().replace( ".", "$" );
@@ -532,7 +606,8 @@ public class JavaBoxpiler {
 	 *
 	 * @param file File object to grab the package name for.
 	 *
-	 * @return returns the class name according the name conventions Test.ext - Test$ext
+	 * @return returns the class name according the name conventions Test.ext -
+	 *         Test$ext
 	 */
 	public static String getPackageName( File file ) {
 		String packg = file.toString().replace( File.separatorChar + file.getName(), "" );
@@ -547,9 +622,12 @@ public class JavaBoxpiler {
 		if ( packg.endsWith( "\\" ) || packg.endsWith( "/" ) ) {
 			packg = packg.substring( 0, packg.length() - 1 );
 		}
-		// TODO: This needs a lot more work. There are tons of disallowed edge cases such as a folder that is a number.
-		// We probably need to iterate each path segment and clean or remove as neccessary to make it a valid package name.
-		// Also, I'd like cfincluded files to use the relative path as the package name, which will require some refactoring.
+		// TODO: This needs a lot more work. There are tons of disallowed edge cases
+		// such as a folder that is a number.
+		// We probably need to iterate each path segment and clean or remove as
+		// neccessary to make it a valid package name.
+		// Also, I'd like cfincluded files to use the relative path as the package name,
+		// which will require some refactoring.
 
 		// Take out periods in folder names
 		packg	= packg.replaceAll( "\\.", "" );
@@ -565,6 +643,14 @@ public class JavaBoxpiler {
 		packg	= packg.replaceAll( "[^a-zA-Z0-9\\.]", "" );
 		return packg.toLowerCase();
 
+	}
+
+	/**
+	 * Get Disk Class Loader
+	 * 
+	 */
+	public DiskClassLoader getDiskClassLoader() {
+		return diskClassLoader;
 	}
 
 }
