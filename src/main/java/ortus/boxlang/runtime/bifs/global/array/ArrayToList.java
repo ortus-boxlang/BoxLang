@@ -24,7 +24,7 @@ import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.BoxLangType;
-import ortus.boxlang.runtime.util.StringUtil;
+import ortus.boxlang.runtime.util.ArrayUtil;
 
 @BoxBIF
 @BoxMember( type = BoxLangType.ARRAY )
@@ -56,7 +56,7 @@ public class ArrayToList extends BIF {
 	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
 		Array actualArray = ArrayCaster.cast( arguments.get( Key.array ) );
 
-		return StringUtil.toList( actualArray, arguments.getAsString( Key.delimiter ) );
+		return ArrayUtil.toList( actualArray, arguments.getAsString( Key.delimiter ) );
 
 	}
 }
