@@ -165,7 +165,7 @@ public class Main {
 					String	fqn			= "";
 					try {
 
-						Transpiler transpiler = Transpiler.getTranspiler( null /* Config ? */ );
+						Transpiler transpiler = Transpiler.getTranspiler();
 						transpiler.setProperty( "baseclass", "BoxScript" );
 						transpiler.setProperty( "returnType", "void" );
 						TranspiledCode code = transpiler.transpile( result.getRoot() );

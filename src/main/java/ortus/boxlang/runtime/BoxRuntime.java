@@ -34,7 +34,6 @@ import java.util.stream.Stream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import ortus.boxlang.parser.BoxParser;
 import ortus.boxlang.parser.BoxScriptType;
 import ortus.boxlang.parser.ParsingResult;
 import ortus.boxlang.runtime.config.ConfigLoader;
@@ -168,6 +167,11 @@ public class BoxRuntime {
 	private ModuleService					moduleService;
 
 	/**
+	 * The JavaBoxPiler instance
+	 */
+	private JavaBoxpiler					javaBoxpiler;
+
+	/**
 	 * --------------------------------------------------------------------------
 	 * Public Fields
 	 * --------------------------------------------------------------------------
@@ -293,7 +297,8 @@ public class BoxRuntime {
 		this.applicationService.onStartup();
 
 		// Create our runtime context that will be the granddaddy of all contexts that execute inside this runtime
-		this.runtimeContext = new RuntimeBoxContext();
+		this.runtimeContext	= new RuntimeBoxContext();
+		this.javaBoxpiler	= JavaBoxpiler.getInstance();
 
 		// Now startup the modules so we can have a runtime context available to them
 		this.moduleService.onStartup();
@@ -786,10 +791,11 @@ public class BoxRuntime {
 
 	}
 
-	public void printTranspiledJavCode( String filePath ) {
-		String javaCode = JavaBoxpiler.getInstance().transpile( Path.of( filePath ) );
+	public void printTranspiledJavaCode( String filePath ) {
+		JavaBoxpiler.ClassInfo	classInfo	= JavaBoxpiler.ClassInfo.forTemplate( Path.of( filePath ), "boxclass.generated" );
+		ParsingResult			result		= javaBoxpiler.parseOrFail( Path.of( filePath ).toFile() );
 
-		System.out.print( javaCode );
+		System.out.print( javaBoxpiler.generateJavaSource( result.getRoot(), classInfo ) );
 	}
 
 	/**
@@ -799,19 +805,7 @@ public class BoxRuntime {
 	 *
 	 */
 	public void printSourceAST( String source ) {
-		BoxParser		parser	= new BoxParser();
-		ParsingResult	result;
-		try {
-			result = parser.parse( source, BoxScriptType.CFSCRIPT );
-		} catch ( IOException e ) {
-			throw new BoxRuntimeException( "Error compiling source", e );
-		}
-
-		result.getIssues().forEach( System.out::println );
-		if ( !result.isCorrect() ) {
-			throw new BoxRuntimeException( "Error compiling source. " + result.getIssues().get( 0 ).toString() );
-		}
-
+		ParsingResult result = javaBoxpiler.parseOrFail( source, BoxScriptType.CFSCRIPT );
 		System.out.println( result.getRoot().toJSON() );
 	}
 

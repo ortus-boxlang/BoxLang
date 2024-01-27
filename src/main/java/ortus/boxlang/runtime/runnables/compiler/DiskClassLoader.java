@@ -21,8 +21,11 @@ import java.net.URLClassLoader;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Map;
 
 import javax.tools.JavaFileObject;
+
+import com.fasterxml.jackson.jr.ob.JSON;
 
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
@@ -94,6 +97,17 @@ public class DiskClassLoader extends URLClassLoader {
 			return false;
 		}
 		return generateDiskPath( name ).toFile().exists();
+	}
+
+	/**
+	 * Check if a JSON exists on disk
+	 *
+	 * @param name class name
+	 *
+	 * @return true if JSON exists on disk
+	 */
+	public boolean hasLineNumbers( String name ) {
+		return generateDiskJSONPath( name ).toFile().exists();
 	}
 
 	/**
@@ -191,4 +205,25 @@ public class DiskClassLoader extends URLClassLoader {
 			throw new BoxRuntimeException( "Unable to write line number JSON file to disk", e );
 		}
 	}
+
+	/**
+	 * Read line numbers.
+	 * 
+	 * @returns array of maps. Null if not found.
+	 */
+	@SuppressWarnings( "unchecked" )
+	public Map<String, Object>[] readLineNumbers( String fqn ) {
+		if ( !hasLineNumbers( fqn ) ) {
+			return null;
+		}
+		Path diskPath = generateDiskJSONPath( fqn );
+		try {
+			String json = new String( Files.readAllBytes( diskPath ) );
+			return ( Map<String, Object>[] ) JSON.std.arrayFrom( json );
+		} catch ( IOException e ) {
+			throw new BoxRuntimeException( "Unable to read line number JSON file from disk", e );
+		}
+
+	}
+
 }

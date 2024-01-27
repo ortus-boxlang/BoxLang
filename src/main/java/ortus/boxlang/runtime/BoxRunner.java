@@ -84,7 +84,7 @@ public class BoxRunner {
 		if ( options.printAST() && options.code() != null ) {
 			boxRuntime.printSourceAST( options.code() );
 		} else if ( options.transpile() ) {
-			boxRuntime.printTranspiledJavCode( options.templatePath() );
+			boxRuntime.printTranspiledJavaCode( options.templatePath() );
 		} else if ( options.templatePath() != null ) {
 			// Execute a file
 			boxRuntime.executeTemplate( options.templatePath() );

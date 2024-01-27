@@ -22,7 +22,6 @@ import java.io.IOException;
 import java.net.URL;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -54,7 +53,6 @@ import ortus.boxlang.runtime.runnables.IClassRunnable;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.exceptions.ParseException;
 import ortus.boxlang.transpiler.CustomPrettyPrinter;
-import ortus.boxlang.transpiler.JavaTranspiler;
 import ortus.boxlang.transpiler.TranspiledCode;
 import ortus.boxlang.transpiler.Transpiler;
 import ortus.boxlang.transpiler.transformer.indexer.BoxNodeKey;
@@ -136,104 +134,257 @@ public class JavaBoxpiler {
 
 	Logger logger = LoggerFactory.getLogger( JavaBoxpiler.class );
 
+	/**
+	 * Compile a single BoxLang statement into a Java class
+	 * 
+	 * @param source The BoxLang source code as a string
+	 * @param type   The type of BoxLang source code
+	 * 
+	 * @return The loaded class
+	 */
 	public Class<IBoxRunnable> compileStatement( String source, BoxScriptType type ) {
-		String	packageName	= "generated";
-		String	className	= "Statement_" + MD5( source );
-		String	fqn			= packageName + "." + className;
-
-		if ( !classLoader.hasClass( fqn ) ) {
-
-			if ( diskClassLoader.hasClass( fqn ) ) {
-				return getDiskClass( fqn );
+		ClassInfo classInfo = ClassInfo.forStatement( source, type );
+		if ( !classLoader.hasClass( classInfo.FQN() ) ) {
+			if ( diskClassLoader.hasClass( classInfo.FQN() ) ) {
+				return getDiskClass( classInfo.FQN() );
 			} else {
-				BoxParser		parser	= new BoxParser();
-				ParsingResult	result;
-				try {
-					result = parser.parse( source, BoxScriptType.CFSCRIPT );
-				} catch ( IOException e ) {
-					throw new BoxRuntimeException( "Error compiling source", e );
-				}
-
-				if ( !result.isCorrect() ) {
-					throw new ParseException( result.getIssues() );
-				}
-
-				Transpiler transpiler = Transpiler.getTranspiler( null /* Config ? */ );
-				transpiler.setProperty( "classname", className );
-				transpiler.setProperty( "packageName", packageName );
-				transpiler.setProperty( "baseclass", "BoxScript" );
-				transpiler.setProperty( "returnType", "Object" );
-
-				TranspiledCode				javaASTs	= transpiler.transpile( result.getRoot() );
-				ClassOrInterfaceDeclaration	outerClass	= javaASTs.getEntryPoint().getClassByName( className ).get();
-
-				// Process functions and lamdas
-				for ( CompilationUnit callable : javaASTs.getCallables() ) {
-					ClassOrInterfaceDeclaration innerClass = callable.findFirst( ClassOrInterfaceDeclaration.class )
-					    .get();
-					outerClass.addMember( innerClass.setPublic( true ).setStatic( true ) );
-				}
-				var prettyPrinter = new CustomPrettyPrinter();
-				if ( false )
-					throw new BoxRuntimeException( prettyPrinter.print( javaASTs.getEntryPoint() ) );
-
-				compileSource( prettyPrinter.print( javaASTs.getEntryPoint() ), fqn );
-				diskClassLoader.writeLineNumbers( fqn, generateLineNumberJSON( prettyPrinter.getVisitor().getLineNumbers() ) );
+				ParsingResult result = parseOrFail( source, BoxScriptType.CFSCRIPT );
+				compileSource( generateJavaSource( result.getRoot(), classInfo ), classInfo.FQN() );
 			}
 		}
-		return getClass( fqn );
+		return getClass( classInfo.FQN() );
 
 	}
 
+	/**
+	 * Compile a BoxLang script into a Java class
+	 * 
+	 * @param source The BoxLang source code as a string
+	 * @param type   The type of BoxLang source code
+	 * 
+	 * @return The loaded class
+	 */
 	public Class<IBoxRunnable> compileScript( String source, BoxScriptType type ) {
-		String	packageName	= "generated";
-		String	className	= "Script_" + MD5( source );
-		String	fqn			= packageName + "." + className;
+		ClassInfo classInfo = ClassInfo.forScript( source, type );
 
-		if ( !classLoader.hasClass( fqn ) ) {
-			if ( diskClassLoader.hasClass( fqn ) ) {
-				return getDiskClass( fqn );
+		if ( !classLoader.hasClass( classInfo.FQN() ) ) {
+			if ( diskClassLoader.hasClass( classInfo.FQN() ) ) {
+				return getDiskClass( classInfo.FQN() );
 			} else {
-				BoxParser		parser	= new BoxParser();
-				ParsingResult	result;
-				try {
-					result = parser.parse( source, type );
-				} catch ( IOException e ) {
-					throw new BoxRuntimeException( "Error compiling source", e );
-				}
-
-				if ( !result.isCorrect() ) {
-					throw new ParseException( result.getIssues() );
-				}
-
-				Transpiler transpiler = Transpiler.getTranspiler( null /* Config ? */ );
-				transpiler.setProperty( "classname", className );
-				transpiler.setProperty( "packageName", packageName );
-				transpiler.setProperty( "baseclass", "BoxScript" );
-				transpiler.setProperty( "returnType", "Object" );
-
-				TranspiledCode				javaASTs	= transpiler.transpile( result.getRoot() );
-				ClassOrInterfaceDeclaration	outerClass	= javaASTs.getEntryPoint().getClassByName( className ).get();
-
-				// Process functions and lamdas
-				for ( CompilationUnit callable : javaASTs.getCallables() ) {
-					ClassOrInterfaceDeclaration innerClass = callable.findFirst( ClassOrInterfaceDeclaration.class )
-					    .get();
-					outerClass.addMember( innerClass.setPublic( true ).setStatic( true ) );
-				}
-				var prettyPrinter = new CustomPrettyPrinter();
-				if ( false )
-					throw new BoxRuntimeException( prettyPrinter.print( javaASTs.getEntryPoint() ) );
-
-				compileSource( prettyPrinter.print( javaASTs.getEntryPoint() ), fqn );
-				diskClassLoader.writeLineNumbers( fqn, generateLineNumberJSON( prettyPrinter.getVisitor().getLineNumbers() ) );
+				ParsingResult result = parseOrFail( source, type );
+				compileSource( generateJavaSource( result.getRoot(), classInfo ), classInfo.FQN() );
 			}
 		}
-		return
-
-		getClass( fqn );
+		return getClass( classInfo.FQN() );
 	}
 
+	/**
+	 * Compile a BoxLang template (file on disk) into a Java class
+	 * 
+	 * @param source      The BoxLang source on disk as a Path
+	 * @param packagePath The package path used to resolve this file path
+	 * 
+	 * @return The loaded class
+	 */
+	public Class<IBoxRunnable> compileTemplate( Path path, String packagePath ) {
+		ClassInfo	classInfo		= ClassInfo.forTemplate( path, packagePath );
+		long		lastModified	= path.toFile().lastModified();
+
+		if ( !classLoader.hasClass( classInfo.FQN(), lastModified ) ) {
+			if ( diskClassLoader.hasClass( classInfo.FQN(), lastModified ) ) {
+				return getDiskClass( classInfo.FQN() );
+			} else {
+				classInfo = classInfo.next();
+				classCounter.put( classInfo.originalFQN(), classInfo.compileCount() );
+				ParsingResult result = parseOrFail( path.toFile() );
+				compileSource( generateJavaSource( result.getRoot(), classInfo ), classInfo.FQN() );
+			}
+		}
+		return getClass( classInfo.FQN() );
+	}
+
+	/**
+	 * Compile a BoxLang Class from source into a Java class
+	 * 
+	 * @param source The BoxLang source code as a string
+	 * 
+	 * @return The loaded class
+	 */
+	public Class<IClassRunnable> compileClass( String source ) {
+		ClassInfo classInfo = ClassInfo.forClass( source );
+
+		if ( !classLoader.hasClass( classInfo.FQN() ) ) {
+			if ( diskClassLoader.hasClass( classInfo.FQN() ) ) {
+				return getDiskClassClass( classInfo.FQN() );
+			} else {
+				ParsingResult result = parseOrFail( source, BoxScriptType.CFSCRIPT );
+				compileSource( generateJavaSource( result.getRoot(), classInfo ), classInfo.FQN() );
+			}
+		}
+		return getClassClass( classInfo.FQN() );
+	}
+
+	/**
+	 * Compile a BoxLang Class from a file into a Java class
+	 * 
+	 * @param source      The BoxLang source code as a Path on disk
+	 * @param packagePath The package path representing the mapping used to resolve this class
+	 * 
+	 * @return The loaded class
+	 */
+	public Class<IClassRunnable> compileClass( Path path, String packagePath ) {
+		ClassInfo	classInfo		= ClassInfo.forClass( path, packagePath );
+		long		lastModified	= path.toFile().lastModified();
+
+		if ( !classLoader.hasClass( classInfo.FQN(), lastModified ) ) {
+			if ( diskClassLoader.hasClass( classInfo.FQN(), lastModified ) ) {
+				return getDiskClassClass( classInfo.FQN() );
+			} else {
+				classInfo = classInfo.next();
+				classCounter.put( classInfo.originalFQN(), classInfo.compileCount() );
+				ParsingResult result = parseOrFail( path.toFile() );
+				compileSource( generateJavaSource( result.getRoot(), classInfo ), classInfo.FQN() );
+			}
+		}
+		return getClassClass( classInfo.FQN() );
+	}
+
+	/**
+	 * Parse a file on disk into BoxLang AST nodes. This method will NOT throw an exception if the parse fails.
+	 * 
+	 * @param file The file to parse
+	 * 
+	 * @return The parsed AST nodes and any issues if encountered while parsing.
+	 */
+	public ParsingResult parse( File file ) {
+		BoxParser parser = new BoxParser();
+		try {
+			return parser.parse( file );
+		} catch ( IOException e ) {
+			throw new BoxRuntimeException( "Error compiling source", e );
+		}
+	}
+
+	/**
+	 * Parse source text into BoxLang AST nodes. This method will NOT throw an exception if the parse fails.
+	 * 
+	 * @param file The file to parse
+	 * 
+	 * @return The parsed AST nodes and any issues if encountered while parsing.
+	 */
+	public ParsingResult parse( String source, BoxScriptType type ) {
+		BoxParser parser = new BoxParser();
+		try {
+			return parser.parse( source, type );
+		} catch ( IOException e ) {
+			throw new BoxRuntimeException( "Error compiling source", e );
+		}
+	}
+
+	/**
+	 * Parse a file on disk into BoxLang AST nodes. This method will throw an exception if the parse fails.
+	 * 
+	 * @param file The file to parse
+	 * 
+	 * @return The parsed AST nodes and any issues if encountered while parsing.
+	 */
+	public ParsingResult parseOrFail( File file ) {
+		return validateParse( parse( file ) );
+	}
+
+	/**
+	 * Parse source text into BoxLang AST nodes. This method will throw an exception if the parse fails.
+	 * 
+	 * @param file The file to parse
+	 * 
+	 * @return The parsed AST nodes and any issues if encountered while parsing.
+	 */
+	public ParsingResult parseOrFail( String source, BoxScriptType type ) {
+		return validateParse( parse( source, type ) );
+	}
+
+	/**
+	 * Validate a parsing result and throw an exception if the parse failed.
+	 * 
+	 * @param result The parsing result to validate
+	 * 
+	 * @return The parsing result if the parse was successful
+	 */
+	public ParsingResult validateParse( ParsingResult result ) {
+		if ( !result.isCorrect() ) {
+			throw new ParseException( result.getIssues() );
+		}
+		return result;
+	}
+
+	/**
+	 * Generate Java source code from BoxLang AST nodes
+	 * 
+	 * @param node      The BoxLang root AST node
+	 * @param classInfo The class info object for this class
+	 * 
+	 * @return The generated Java source code as a string
+	 */
+	@SuppressWarnings( "unused" )
+	public String generateJavaSource( BoxNode node, ClassInfo classInfo ) {
+		Transpiler transpiler = Transpiler.getTranspiler();
+		transpiler.setProperty( "classname", classInfo.className() );
+		transpiler.setProperty( "packageName", classInfo.packageName() );
+		transpiler.setProperty( "boxPackageName", classInfo.boxPackageName() );
+		transpiler.setProperty( "baseclass", classInfo.baseclass() );
+		transpiler.setProperty( "returnType", classInfo.returnType() );
+
+		TranspiledCode				javaASTs	= transpiler.transpile( node );
+		ClassOrInterfaceDeclaration	outerClass	= javaASTs.getEntryPoint().getClassByName( classInfo.className() ).get();
+
+		// Process functions and lamdas
+		for ( CompilationUnit callable : javaASTs.getCallables() ) {
+			ClassOrInterfaceDeclaration innerClass = callable.findFirst( ClassOrInterfaceDeclaration.class )
+			    .get();
+			outerClass.addMember( innerClass.setPublic( true ).setStatic( true ) );
+		}
+		var		prettyPrinter	= new CustomPrettyPrinter();
+		String	javaSource		= prettyPrinter.print( javaASTs.getEntryPoint() );
+
+		if ( false )
+			throw new BoxRuntimeException( javaSource );
+
+		// Capture the line numbers of each Java AST node from printing the Java source
+		diskClassLoader.writeLineNumbers( classInfo.FQN(), generateLineNumberJSON( prettyPrinter.getVisitor().getLineNumbers() ) );
+		return javaSource;
+	}
+
+	/**
+	 * Compile Java source code into a Java class
+	 * 
+	 * @param javaSource The Java source code as a string
+	 * @param fqn        The fully qualified name of the class
+	 */
+	@SuppressWarnings( "unused" )
+	public void compileSource( String javaSource, String fqn ) {
+
+		DiagnosticCollector<JavaFileObject>	diagnostics		= new DiagnosticCollector<>();
+		String								javaRT			= System.getProperty( "java.class.path" );
+		List<JavaFileObject>				sourceFiles		= Collections.singletonList( new JavaSourceString( fqn, javaSource ) );
+		List<String>						options			= List.of( "-g" );
+		JavaCompiler.CompilationTask		task			= compiler.getTask( null, manager, diagnostics, options, null, sourceFiles );
+		boolean								compilerResult	= task.call();
+
+		if ( !compilerResult ) {
+			String errors = diagnostics.getDiagnostics().stream().map( d -> d.toString() )
+			    .collect( Collectors.joining( "\n" ) );
+			throw new BoxRuntimeException( errors + "\n" + javaSource );
+		}
+
+	}
+
+	/**
+	 * Generate JSON for line numbers mapping BoxLang Source to the transpiled java source
+	 * 
+	 * @param lineNumbers List of line numbers
+	 * 
+	 * @return JSON string
+	 */
 	private String generateLineNumberJSON( List<Object[]> lineNumbers ) {
 		try {
 			return JSON.std.with( Feature.PRETTY_PRINT_OUTPUT ).asString(
@@ -280,245 +431,13 @@ public class JavaBoxpiler {
 		}
 	}
 
-	public Class<IBoxRunnable> compileTemplate( Path path, String packagePath ) {
-		File	lcaseFile	= new File( packagePath.toString().toLowerCase() );
-		String	packageName	= getPackageName( lcaseFile );
-		packageName = "templates" + ( packageName.equals( "" ) ? "" : "." ) + packageName;
-		String	className			= getClassName( lcaseFile );
-		String	fqn					= packageName + "." + className;
-		String	originalClassName	= className;
-		String	originalfqn			= fqn;
-		var		compileCount		= classCounter.getOrDefault( fqn, 0 );
-
-		className	= className + compileCount;
-		fqn			= fqn + compileCount;
-		long lastModified = path.toFile().lastModified();
-
-		if ( !classLoader.hasClass( fqn, lastModified ) ) {
-			if ( diskClassLoader.hasClass( fqn, lastModified ) ) {
-				return getDiskClass( fqn );
-			} else {
-				classCounter.put( originalfqn, ++compileCount );
-
-				className	= originalClassName + compileCount;
-				fqn			= originalfqn + compileCount;
-
-				BoxParser		parser	= new BoxParser();
-				ParsingResult	result;
-				try {
-					result = parser.parse( path.toFile() );
-				} catch ( IOException e ) {
-					throw new BoxRuntimeException( "Error compiling source", e );
-				}
-
-				if ( !result.isCorrect() ) {
-					throw new ParseException( result.getIssues() );
-				}
-
-				Transpiler transpiler = Transpiler.getTranspiler( null /* Config ? */ );
-				transpiler.setProperty( "classname", className );
-				transpiler.setProperty( "packageName", packageName );
-				transpiler.setProperty( "baseclass", "BoxTemplate" );
-				transpiler.setProperty( "returnType", "void" );
-				TranspiledCode				javaASTs	= transpiler.transpile( result.getRoot() );
-				ClassOrInterfaceDeclaration	outerClass	= javaASTs.getEntryPoint().getClassByName( className ).get();
-
-				// Process functions and lamdas
-				for ( CompilationUnit callable : javaASTs.getCallables() ) {
-					ClassOrInterfaceDeclaration innerClass = callable.findFirst( ClassOrInterfaceDeclaration.class ).get();
-					outerClass.addMember( innerClass.setPublic( true ).setStatic( true ) );
-				}
-
-				var prettyPrinter = new CustomPrettyPrinter();
-				if ( false )
-					throw new BoxRuntimeException( prettyPrinter.print( javaASTs.getEntryPoint() ) );
-
-				compileSource( prettyPrinter.print( javaASTs.getEntryPoint() ), fqn );
-				diskClassLoader.writeLineNumbers( fqn, generateLineNumberJSON( prettyPrinter.getVisitor().getLineNumbers() ) );
-			}
-		}
-		return getClass( fqn );
-	}
-
-	public Class<IClassRunnable> compileClass( String source ) {
-		String	packageName	= "generated";
-		String	className	= "Class_" + MD5( source );
-		String	fqn			= packageName + "." + className;
-
-		if ( !classLoader.hasClass( fqn ) ) {
-			if ( diskClassLoader.hasClass( fqn ) ) {
-				return getDiskClassClass( fqn );
-			} else {
-				BoxParser		parser	= new BoxParser();
-				ParsingResult	result;
-				try {
-					result = parser.parse( source, BoxScriptType.CFSCRIPT );
-				} catch ( IOException e ) {
-					throw new BoxRuntimeException( "Error compiling source", e );
-				}
-
-				if ( !result.isCorrect() ) {
-					throw new ParseException( result.getIssues() );
-				}
-
-				Transpiler transpiler = Transpiler.getTranspiler( null );
-				transpiler.setProperty( "classname", className );
-				transpiler.setProperty( "packageName", packageName );
-				transpiler.setProperty( "boxPackageName", packageName );
-
-				TranspiledCode				javaASTs	= transpiler.transpile( result.getRoot() );
-				ClassOrInterfaceDeclaration	outerClass	= javaASTs.getEntryPoint().getClassByName( className ).get();
-
-				// Process functions and lamdas
-				for ( CompilationUnit callable : javaASTs.getCallables() ) {
-					ClassOrInterfaceDeclaration innerClass = callable.findFirst( ClassOrInterfaceDeclaration.class )
-					    .get();
-					outerClass.addMember( innerClass.setPublic( true ).setStatic( true ) );
-				}
-				var prettyPrinter = new CustomPrettyPrinter();
-				if ( false )
-					throw new BoxRuntimeException( prettyPrinter.print( javaASTs.getEntryPoint() ) );
-
-				compileSource( prettyPrinter.print( javaASTs.getEntryPoint() ), fqn );
-				diskClassLoader.writeLineNumbers( fqn, generateLineNumberJSON( prettyPrinter.getVisitor().getLineNumbers() ) );
-
-			}
-		}
-		return getClassClass( fqn );
-	}
-
-	public Class<IClassRunnable> compileClass( Path path, String packagePath ) {
-		long	lastModified	= path.toFile().lastModified();
-		String	boxPackagePath	= packagePath;
-		if ( boxPackagePath.endsWith( "." ) ) {
-			boxPackagePath = boxPackagePath.substring( 0, boxPackagePath.length() - 1 );
-		}
-		packagePath = "boxclass." + packagePath;
-		// trim trailing period
-		if ( packagePath.endsWith( "." ) ) {
-			packagePath = packagePath.substring( 0, packagePath.length() - 1 );
-		}
-		String	className			= getClassName( path.toFile() );
-		String	fqn					= packagePath + "." + className;
-		String	originalClassName	= className;
-		String	originalfqn			= fqn;
-		var		compileCount		= classCounter.getOrDefault( fqn, 0 );
-		className	= className + compileCount;
-		fqn			= fqn + compileCount;
-
-		if ( !classLoader.hasClass( fqn, lastModified ) ) {
-			if ( diskClassLoader.hasClass( fqn, lastModified ) ) {
-				return getDiskClassClass( fqn );
-			} else {
-				classCounter.put( originalfqn, ++compileCount );
-
-				className	= originalClassName + compileCount;
-				fqn			= originalfqn + compileCount;
-
-				BoxParser		parser	= new BoxParser();
-				ParsingResult	result;
-				try {
-					result = parser.parse( path.toFile() );
-				} catch ( IOException e ) {
-					throw new BoxRuntimeException( "Error compiling source", e );
-				}
-
-				if ( !result.isCorrect() ) {
-					throw new ParseException( result.getIssues() );
-				}
-
-				Transpiler transpiler = Transpiler.getTranspiler( null );
-				transpiler.setProperty( "classname", className );
-				transpiler.setProperty( "packageName", packagePath );
-				transpiler.setProperty( "boxPackageName", boxPackagePath );
-
-				TranspiledCode				javaASTs	= transpiler.transpile( result.getRoot() );
-				ClassOrInterfaceDeclaration	outerClass	= javaASTs.getEntryPoint().getClassByName( className ).get();
-
-				// Process functions and lamdas
-				for ( CompilationUnit callable : javaASTs.getCallables() ) {
-					ClassOrInterfaceDeclaration innerClass = callable.findFirst( ClassOrInterfaceDeclaration.class )
-					    .get();
-					outerClass.addMember( innerClass.setPublic( true ).setStatic( true ) );
-				}
-				var prettyPrinter = new CustomPrettyPrinter();
-				if ( false )
-					throw new BoxRuntimeException( prettyPrinter.print( javaASTs.getEntryPoint() ) );
-
-				compileSource( prettyPrinter.print( javaASTs.getEntryPoint() ), fqn );
-				diskClassLoader.writeLineNumbers( fqn, generateLineNumberJSON( prettyPrinter.getVisitor().getLineNumbers() ) );
-
-			}
-		}
-		return getClassClass( fqn );
-	}
-
-	public void compileSource( String javaSource, String fqn ) {
-
-		DiagnosticCollector<JavaFileObject>	diagnostics		= new DiagnosticCollector<>();
-
-		String								javaRT			= System.getProperty( "java.class.path" );
-
-		// String boxRT =
-		// "C:/Users/Brad/Documents/GitHub/boxlang/runtime/build/classes/java/main";
-		// String compRT =
-		// "C:/Users/Brad/Documents/GitHub/boxlang/compiler/build/classes/java/main";
-
-		List<JavaFileObject>				sourceFiles		= Collections.singletonList( new JavaSourceString( fqn, javaSource ) );
-		List<String>						options			= new ArrayList<>() {
-
-																{
-																	add( "-g" );
-																	// add( "-cp" );
-																	// add( javaRT + File.pathSeparator + boxRT + File.pathSeparator +
-																	// File.pathSeparator +
-																	// compRT );
-																}
-															};
-		JavaCompiler.CompilationTask		task			= compiler.getTask( null, manager, diagnostics, options, null, sourceFiles );
-		boolean								compilerResult	= task.call();
-
-		if ( !compilerResult ) {
-			String errors = diagnostics.getDiagnostics().stream().map( d -> d.toString() )
-			    .collect( Collectors.joining( "\n" ) );
-			throw new BoxRuntimeException( errors + "\n" + javaSource );
-		}
-
-	}
-
-	public String transpile( Path path ) {
-		ParsingResult result;
-
-		try {
-			result = new BoxParser().parse( path.toFile() );
-		} catch ( IOException e ) {
-			throw new BoxRuntimeException( "Error compiling source", e );
-		}
-
-		if ( !result.isCorrect() ) {
-			throw new ParseException( result.getIssues() );
-		}
-
-		String		className	= getClassName( path.toFile() );
-
-		Transpiler	transpiler	= Transpiler.getTranspiler( null );
-		transpiler.setProperty( "classname", className );
-		transpiler.setProperty( "packageName", "boxclass.generated" );
-		transpiler.setProperty( "boxPackageName", "generated" );
-
-		TranspiledCode				javaASTs	= transpiler.transpile( result.getRoot() );
-		ClassOrInterfaceDeclaration	outerClass	= javaASTs.getEntryPoint().getClassByName( className ).get();
-
-		// Process functions and lamdas
-		for ( CompilationUnit callable : javaASTs.getCallables() ) {
-			ClassOrInterfaceDeclaration innerClass = callable.findFirst( ClassOrInterfaceDeclaration.class ).get();
-			outerClass.addMember( innerClass.setPublic( true ).setStatic( true ) );
-		}
-
-		return javaASTs.getEntryPoint().toString();
-	}
-
-	// get class
+	/**
+	 * Get a class for a class name
+	 * 
+	 * @param fqn The fully qualified name of the class
+	 * 
+	 * @return The loaded class
+	 */
 	public Class<IBoxRunnable> getClass( String fqn ) {
 		try {
 			return ( Class<IBoxRunnable> ) classLoader.loadClass( fqn );
@@ -527,6 +446,13 @@ public class JavaBoxpiler {
 		}
 	}
 
+	/**
+	 * Get a class for a class name from disk
+	 * 
+	 * @param fqn The fully qualified name of the class
+	 * 
+	 * @return The loaded class
+	 */
 	public Class<IBoxRunnable> getDiskClass( String fqn ) {
 		try {
 			return ( Class<IBoxRunnable> ) diskClassLoader.loadClass( fqn );
@@ -535,6 +461,13 @@ public class JavaBoxpiler {
 		}
 	}
 
+	/**
+	 * Get a Box class for a class name
+	 * 
+	 * @param fqn The fully qualified name of the class
+	 * 
+	 * @return The loaded class
+	 */
 	public Class<IClassRunnable> getClassClass( String fqn ) {
 		try {
 			return ( Class<IClassRunnable> ) classLoader.loadClass( fqn );
@@ -543,6 +476,13 @@ public class JavaBoxpiler {
 		}
 	}
 
+	/**
+	 * Get a Box class for a class name from disk
+	 * 
+	 * @param fqn The fully qualified name of the class
+	 * 
+	 * @return The loaded class
+	 */
 	public Class<IClassRunnable> getDiskClassClass( String fqn ) {
 		try {
 			return ( Class<IClassRunnable> ) diskClassLoader.loadClass( fqn );
@@ -551,29 +491,15 @@ public class JavaBoxpiler {
 		}
 	}
 
-	public String getStatementsAsStringReturnLast( JavaTranspiler transpiler ) {
-		StringBuilder	result		= new StringBuilder();
-		boolean			returned	= false;
-		// loop over statements
-		for ( int i = 0; i < transpiler.getStatements().size(); i++ ) {
-			// if last statement, return it
-			if ( ( i == transpiler.getStatements().size() - 1 )
-			    && ! ( transpiler.getStatements().get( i ).toString().contains( "ExceptionUtil.throwException(" ) ) ) {
-				result.append( "return " );
-				returned = true;
-			}
-			result.append( transpiler.getStatements().get( i ).toString() );
-			if ( i < transpiler.getStatements().size() - 1 ) {
-				result.append( ";\n" );
-			}
-		}
-		if ( !returned ) {
-			result.append( "\nreturn null;" );
-		}
-		return result.toString();
-	}
-
-	public String MD5( String md5 ) {
+	/**
+	 * Generate an MD5 hash.
+	 * TODO: Move to util class
+	 * 
+	 * @param md5 String to hash
+	 * 
+	 * @return MD5 hash
+	 */
+	public static String MD5( String md5 ) {
 		try {
 			java.security.MessageDigest	md		= java.security.MessageDigest.getInstance( "MD5" );
 			byte[]						array	= md.digest( md5.getBytes() );
@@ -646,11 +572,124 @@ public class JavaBoxpiler {
 	}
 
 	/**
-	 * Get Disk Class Loader
+	 * Get line numbers for fqn
 	 * 
+	 * @param fqn The fully qualified name of the class
+	 * 
+	 * @return The line numbers
 	 */
-	public DiskClassLoader getDiskClassLoader() {
-		return diskClassLoader;
+	public Map<String, Object>[] getLineNumbers( String fqn ) {
+		return diskClassLoader.readLineNumbers( fqn );
+	}
+
+	/**
+	 * A Record that represents the information about a class to be compiled
+	 */
+	public record ClassInfo( String packageName, String className, int compileCount, String boxPackageName, String baseclass, String returnType ) {
+
+		public static ClassInfo forScript( String source, BoxScriptType type ) {
+			return new ClassInfo(
+			    "generated",
+			    "Script_" + MD5( type.toString() + source ),
+			    0,
+			    "generated",
+			    "BoxScript",
+			    "Object"
+			);
+		}
+
+		public static ClassInfo forStatement( String source, BoxScriptType type ) {
+			return new ClassInfo( "generated", "Statement_" + MD5( type.toString() + source ), 0, "generated", "BoxScript", "Object" );
+		}
+
+		public static ClassInfo forTemplate( Path path, String packagePath ) {
+			File	lcaseFile	= new File( packagePath.toString().toLowerCase() );
+			String	packageName	= getPackageName( lcaseFile );
+			packageName = "templates" + ( packageName.equals( "" ) ? "" : "." ) + packageName;
+			String className = getClassName( lcaseFile );
+			return new ClassInfo(
+			    packageName,
+			    className,
+			    JavaBoxpiler.getInstance().getClassCounter().getOrDefault( packageName + "." + className, 0 ),
+			    packageName,
+			    "BoxTemplate",
+			    "void"
+			);
+		}
+
+		public static ClassInfo forClass( Path path, String packagePath ) {
+			String boxPackagePath = packagePath;
+			if ( boxPackagePath.endsWith( "." ) ) {
+				boxPackagePath = boxPackagePath.substring( 0, boxPackagePath.length() - 1 );
+			}
+			packagePath = "boxclass." + packagePath;
+			// trim trailing period
+			if ( packagePath.endsWith( "." ) ) {
+				packagePath = packagePath.substring( 0, packagePath.length() - 1 );
+			}
+			String className = getClassName( path.toFile() );
+
+			return new ClassInfo(
+			    packagePath,
+			    className,
+			    JavaBoxpiler.getInstance().getClassCounter().getOrDefault( packagePath + "." + className, 0 ),
+			    boxPackagePath,
+			    null,
+			    null
+			);
+		}
+
+		public static ClassInfo forClass( String source ) {
+			return new ClassInfo(
+			    "generated",
+			    "Class_" + MD5( source ),
+			    0,
+			    "generated",
+			    null,
+			    null
+			);
+		}
+
+		/**
+		 * Called when we need to re-compile a class because it's already been compiled
+		 * 
+		 * @return new ClassInfo object with the compile count incremented
+		 */
+		public ClassInfo next() {
+			return new ClassInfo(
+			    this.packageName,
+			    this.className,
+			    this.compileCount + 1,
+			    this.boxPackageName,
+			    this.baseclass,
+			    this.returnType );
+		}
+
+		public String FQN() {
+			return packageName + "." + className();
+		}
+
+		public String className() {
+			return className + compileCount;
+		}
+
+		public String originalClassName() {
+			return className;
+		}
+
+		public String originalFQN() {
+			return packageName + "." + originalClassName();
+		}
+
+	}
+
+	/**
+	 * Get the Class Counter map
+	 * 
+	 * @return the classCounter
+	 */
+	public Map<String, Integer> getClassCounter() {
+		return classCounter;
 	}
 
 }

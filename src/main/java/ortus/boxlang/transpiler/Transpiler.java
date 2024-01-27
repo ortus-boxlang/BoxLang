@@ -38,7 +38,6 @@ import ortus.boxlang.ast.BoxNode;
 import ortus.boxlang.ast.expression.BoxIntegerLiteral;
 import ortus.boxlang.ast.expression.BoxStringLiteral;
 import ortus.boxlang.runtime.BoxRuntime;
-import ortus.boxlang.runtime.config.Configuration;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
 import ortus.boxlang.runtime.loader.ImportDefinition;
@@ -89,7 +88,7 @@ public abstract class Transpiler implements ITranspiler {
 	 *
 	 * @return a subclass of Transpiler
 	 */
-	public static Transpiler getTranspiler( Configuration config ) {
+	public static Transpiler getTranspiler() {
 		return new JavaTranspiler();
 	}
 
