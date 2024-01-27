@@ -222,6 +222,9 @@ public class Key implements Comparable<Key> {
 	public static final Key	version						= Key.of( "version" );
 	public static final Key	webURL						= Key.of( "webURL" );
 	public static final Key	year						= Key.of( "year" );
+	public static final Key	min							= Key.of( "min" );
+	public static final Key	max							= Key.of( "max" );
+	public static final Key	pattern						= Key.of( "pattern" );
 
 	/**
 	 * --------------------------------------------------------------------------

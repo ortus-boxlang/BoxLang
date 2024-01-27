@@ -34,7 +34,6 @@ import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
 
-@Disabled( "Unimplemented" )
 public class IsValidTest {
 
 	static BoxRuntime	instance;
@@ -63,16 +62,18 @@ public class IsValidTest {
 	public void testAny() {
 		instance.executeSource(
 		    """
-		    aStruct = isValid( 'Any', {} );
-		    aBool = isValid( 'Any', true );
-		    aDate = isValid( 'Any', now() );
-		    anInt = isValid( 'Any', 12345 );
+		    aStruct   = isValid( 'Any', {} );
+		    aBool     = isValid( 'Any', true );
+		    aDate     = isValid( 'Any', now() );
+		    anInt     = isValid( 'Any', 12345 );
+		    namedArgs = isValid( type = 'Any', value = 12345 );
 		    """,
 		    context );
 		assertThat( ( Boolean ) variables.get( Key.of( "aStruct" ) ) ).isTrue();
 		assertThat( ( Boolean ) variables.get( Key.of( "aBool" ) ) ).isTrue();
 		assertThat( ( Boolean ) variables.get( Key.of( "aDate" ) ) ).isTrue();
 		assertThat( ( Boolean ) variables.get( Key.of( "anInt" ) ) ).isTrue();
+		assertThat( ( Boolean ) variables.get( Key.of( "namedArgs" ) ) ).isTrue();
 	}
 
 	@DisplayName( "It works on Arrays" )
@@ -105,6 +106,7 @@ public class IsValidTest {
 		assertThat( ( Boolean ) variables.get( Key.of( "aStringFalse" ) ) ).isTrue();
 	}
 
+	@Disabled( "Unimplemented" )
 	@DisplayName( "It works on creditcards" )
 	@Test
 	public void testCreditcard() {
@@ -120,6 +122,7 @@ public class IsValidTest {
 		assertThat( ( Boolean ) instance.executeStatement( "isValid( 'component',{} )" ) ).isFalse();
 	}
 
+	@Disabled( "Unimplemented" )
 	@DisplayName( "It works on dates" )
 	@Test
 	public void testDate() {
@@ -127,6 +130,7 @@ public class IsValidTest {
 		assertThat( ( Boolean ) instance.executeStatement( "isValid( 'date', '2024-01-26777' )" ) ).isFalse();
 	}
 
+	@Disabled( "Unimplemented" )
 	@DisplayName( "It works on times" )
 	@Test
 	public void testTime() {
@@ -134,6 +138,7 @@ public class IsValidTest {
 		assertThat( ( Boolean ) instance.executeStatement( "isValid( 'time', '' )" ) ).isFalse();
 	}
 
+	@Disabled( "Unimplemented" )
 	@DisplayName( "It works on emails" )
 	@Test
 	public void testEmail() {
@@ -161,6 +166,7 @@ public class IsValidTest {
 
 	}
 
+	@Disabled( "Unimplemented" )
 	@DisplayName( "It works on eurodates" )
 	@Test
 	public void testEurodate() {
@@ -205,6 +211,7 @@ public class IsValidTest {
 		assertThat( ( Boolean ) instance.executeStatement( "isValid( 'float', 'xyz' )" ) ).isFalse();
 	}
 
+	@Disabled( "Unimplemented" )
 	@DisplayName( "It works on guids" )
 	@Test
 	public void testGuid() {
@@ -223,7 +230,8 @@ public class IsValidTest {
 	@Test
 	public void testNumeric() {
 		assertThat( ( Boolean ) instance.executeStatement( "isValid( 'Numeric', 19.99 )" ) ).isTrue();
-		assertThat( ( Boolean ) instance.executeStatement( "isValid( 'Numeric', '1e1' )" ) ).isFalse();
+		assertThat( ( Boolean ) instance.executeStatement( "isValid( 'Numeric', '1e1' )" ) ).isTrue();
+		assertThat( ( Boolean ) instance.executeStatement( "isValid( 'Numeric', '1x1' )" ) ).isFalse();
 	}
 
 	@Disabled( "QueryNew() is not implemented" )
@@ -234,6 +242,7 @@ public class IsValidTest {
 		assertThat( ( Boolean ) instance.executeStatement( "isValid( 'Query', {} )" ) ).isFalse();
 	}
 
+	@Disabled( "Unimplemented" )
 	@DisplayName( "It works on ranges" )
 	@Test
 	public void testRange() {
@@ -262,6 +271,7 @@ public class IsValidTest {
 		assertThat( ( Boolean ) variables.get( Key.of( "isXin1through5" ) ) ).isFalse();
 	}
 
+	@Disabled( "Unimplemented" )
 	@DisplayName( "It works on Regexs" )
 	@Test
 	public void testRegex() {
@@ -285,6 +295,7 @@ public class IsValidTest {
 		assertThat( ( Boolean ) variables.get( Key.of( "mismatch" ) ) ).isFalse();
 	}
 
+	@Disabled( "Unimplemented" )
 	@DisplayName( "It works on regular_expressions" )
 	@Test
 	public void testRegular_expression() {
@@ -308,6 +319,7 @@ public class IsValidTest {
 		assertThat( ( Boolean ) variables.get( Key.of( "mismatch" ) ) ).isFalse();
 	}
 
+	@Disabled( "Unimplemented" )
 	@DisplayName( "It works on ssns" )
 	@Test
 	public void testSSN() {
@@ -315,6 +327,7 @@ public class IsValidTest {
 		assertThat( ( Boolean ) instance.executeStatement( "isValid( 'ssn', '12345678900000' )" ) ).isFalse();
 	}
 
+	@Disabled( "Unimplemented" )
 	@DisplayName( "It works on social_security_numbers" )
 	@Test
 	public void testSocial_security_number() {
@@ -326,7 +339,7 @@ public class IsValidTest {
 	@Test
 	public void testString() {
 		assertThat( ( Boolean ) instance.executeStatement( "isValid( 'String', 'aString' )" ) ).isTrue();
-		assertThat( ( Boolean ) instance.executeStatement( "isValid( 'String', 42 )" ) ).isFalse();
+		assertThat( ( Boolean ) instance.executeStatement( "isValid( 'String', {} )" ) ).isFalse();
 	}
 
 	@DisplayName( "It works on Structs" )
@@ -336,6 +349,7 @@ public class IsValidTest {
 		assertThat( ( Boolean ) instance.executeStatement( "isValid( 'Struct', [] )" ) ).isFalse();
 	}
 
+	@Disabled( "Unimplemented" )
 	@DisplayName( "It works on telephones" )
 	@Test
 	public void testTelephone() {
@@ -344,6 +358,7 @@ public class IsValidTest {
 		assertThat( ( Boolean ) instance.executeStatement( "isValid( 'telephone', '16782563011' )" ) ).isFalse();
 	}
 
+	@Disabled( "Unimplemented" )
 	@DisplayName( "It works on URLs" )
 	@Test
 	public void testURL() {
@@ -351,6 +366,7 @@ public class IsValidTest {
 		assertThat( ( Boolean ) instance.executeStatement( "isValid( 'URL', badValue )" ) ).isFalse();
 	}
 
+	@Disabled( "Unimplemented" )
 	@DisplayName( "It works on UUIDs" )
 	@Test
 	public void testUUID() {
@@ -358,6 +374,7 @@ public class IsValidTest {
 		assertThat( ( Boolean ) instance.executeStatement( "isValid( 'UUID', createGUID() )" ) ).isFalse();
 	}
 
+	@Disabled( "Unimplemented" )
 	@DisplayName( "It works on usdates" )
 	@Test
 	public void testUsdate() {
@@ -365,6 +382,7 @@ public class IsValidTest {
 		assertThat( ( Boolean ) instance.executeStatement( "isValid( 'usdate', badValue )" ) ).isFalse();
 	}
 
+	@Disabled( "Unimplemented" )
 	@DisplayName( "It works on variablenames" )
 	@Test
 	public void testVariablename() {
@@ -372,6 +390,7 @@ public class IsValidTest {
 		assertThat( ( Boolean ) instance.executeStatement( "isValid( 'variablename','new' )" ) ).isFalse();
 	}
 
+	@Disabled( "Unimplemented" )
 	@DisplayName( "It works on xmls" )
 	@Test
 	public void testXml() {
@@ -392,6 +411,7 @@ public class IsValidTest {
 		assertThat( ( Boolean ) variables.get( Key.of( "emptybrackets" ) ) ).isFalse();
 	}
 
+	@Disabled( "Unimplemented" )
 	@DisplayName( "It works on zipcodes" )
 	@Test
 	public void testZipcode() {
