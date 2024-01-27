@@ -195,6 +195,7 @@ public final class LocalizationUtil {
 			    put( Key.of( "_,9" ), "#.000000000" );
 			    put( Key.of( "+" ), "+0;-0" );
 			    put( Key.of( "-" ), " 0;-0" );
+			    put( Key.dollarFormat, "$#,##0.00;($#,##0.00)" );
 			    put( DEFAULT_NUMBER_FORMAT_KEY, "#,#00.#" );
 		    }
 	    }

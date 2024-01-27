@@ -136,7 +136,7 @@ public class DollarFormatTest {
 		    BoxRuntimeException.class,
 		    () -> instance.executeSource(
 		        """
-		        dollarFormat("foo");
+		        dollarFormat( "foo" );
 		        """,
 		        context )
 		);

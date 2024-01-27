@@ -43,25 +43,19 @@ public class NumberFormat extends BIF {
 	 * @argument.locale Note used by standard NumberFormat but used by LSNumberFormat
 	 */
 	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
-		Key						bifMethodKey	= arguments.getAsKey( BIF.__functionName );
-		double					value			= DoubleCaster.cast( arguments.get( Key.number ) );
-		String					format			= null;
-		Locale					locale			= LocalizationUtil.parseLocaleOrDefault(
+		double					value		= DoubleCaster.cast( arguments.get( Key.number ), true );
+		String					format		= arguments.getAsString( Key.mask );
+		Locale					locale		= LocalizationUtil.parseLocaleOrDefault(
 		    arguments.getAsString( Key.locale ),
 		    ( Locale ) context.getConfigItem( Key.locale, Locale.getDefault() )
 		);
-		java.text.NumberFormat	formatter		= LocalizationUtil.localizedDecimalFormatter(
+		java.text.NumberFormat	formatter	= LocalizationUtil.localizedDecimalFormatter(
 		    locale,
 		    LocalizationUtil.numberFormatPatterns.getAsString( LocalizationUtil.DEFAULT_NUMBER_FORMAT_KEY )
 		);
-		if ( bifMethodKey.equals( Key.dollarFormat ) ) {
-			formatter = ( java.text.NumberFormat ) LocalizationUtil.commonNumberFormatters.get( "USD" );
-		} else {
-			format = arguments.getAsString( Key.mask );
-		}
 
 		// Currency-specific arguments
-		String type = arguments.getAsString( Key.type );
+		String					type		= arguments.getAsString( Key.type );
 		if ( type != null ) {
 			formatter = ( java.text.NumberFormat ) LocalizationUtil.localizedCurrencyFormatter( locale, type );
 			// Format parsing

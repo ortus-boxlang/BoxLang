@@ -15,19 +15,19 @@
 
 package ortus.boxlang.runtime.bifs.global.format;
 
-import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
 import ortus.boxlang.runtime.bifs.BoxMember;
 import ortus.boxlang.runtime.context.IBoxContext;
+import ortus.boxlang.runtime.dynamic.casters.DoubleCaster;
+import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.BoxLangType;
-import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
 @BoxBIF
 @BoxMember( type = BoxLangType.NUMERIC )
-public class DollarFormat extends BIF {
+public class DollarFormat extends NumberFormat {
 
 	/**
 	 * Constructor
@@ -50,30 +50,18 @@ public class DollarFormat extends BIF {
 	 * @argument.number The number to format as a U.S. Dollar string.
 	 */
 	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
-		Object originalValue = arguments.get( Key.number );
+		Object	number	= arguments.get( Key.number );
+		Double	value	= null;
 
-		if ( originalValue instanceof String ) {
-			String stringValue = ( String ) originalValue;
-			if ( stringValue.isEmpty() ) {
-				return "$0.00";
-			}
-
-			try {
-				double value = Double.parseDouble( stringValue );
-				return formatAsDollar( value );
-			} catch ( NumberFormatException e ) {
-				throw new BoxRuntimeException( "Cannot format number as U.S. Dollar string; invalid number: " + stringValue );
-			}
-		} else if ( originalValue instanceof Double ) {
-			return formatAsDollar( ( Double ) originalValue );
+		if ( number == null || ( number instanceof String && StringCaster.cast( number ).isEmpty() ) ) {
+			value = 0D;
+		} else {
+			value = DoubleCaster.cast( number, true );
 		}
-
-		return "$0.00"; // Handle other types or null values as "$0.00"
-	}
-
-	private String formatAsDollar( double value ) {
-		String formattedValue = String.format( "%,.2f", StrictMath.abs( value ) );
-		return ( value < 0 ) ? "($" + formattedValue + ")" : "$" + formattedValue;
+		arguments.put( Key.number, value );
+		arguments.put( Key.mask, "dollarFormat" );
+		arguments.put( Key.locale, "US" );
+		return super.invoke( context, arguments );
 	}
 
 }
