@@ -10,29 +10,20 @@ import org.apache.commons.lang3.StringUtils;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.dynamic.casters.ArrayCaster;
 import ortus.boxlang.runtime.dynamic.casters.StringCaster;
-import ortus.boxlang.runtime.interop.DynamicJavaInteropService;
 import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.Function;
 
 public class ArrayUtil {
 
 	/**
-	 * StringUtil constant method names for splitting strings to arrays
-	 */
-	private static final String	fn_Split				= "split";
-	private static final String	fn_splitWholePreserve	= "splitByWholeSeparatorPreserveAllTokens";
-	private static final String	fn_splitWhole			= "splitByWholeSeparator";
-	private static final String	fn_splitPreserve		= "splitPreserveAllTokens";
-
-	/**
 	 * Creates an array from a delimited list
-	 * 
+	 *
 	 * @param list           The string lists
 	 * @param delimiter      The delimiter(s) of the list
 	 * @param includeEmpty   Whether to include empty items in the result array
 	 * @param wholeDelimiter Whether the delimiter contains multiple characters which should be matched. Otherwise all characters in the delimiter are
 	 *                       treated as separate delimiters
-	 * 
+	 *
 	 * @return
 	 */
 	public static Array ofList(
@@ -41,19 +32,19 @@ public class ArrayUtil {
 	    Boolean includeEmpty,
 	    Boolean wholeDelimiter ) {
 
-		String utilFn = fn_Split;
+		String[] result = null;
 		if ( wholeDelimiter ) {
 			if ( includeEmpty ) {
-				utilFn = fn_splitWholePreserve;
+				result = StringUtils.splitByWholeSeparatorPreserveAllTokens( list, delimiter );
 			} else {
-				utilFn = fn_splitWhole;
+				result = StringUtils.splitByWholeSeparator( list, delimiter );
 			}
 		} else if ( includeEmpty ) {
-			utilFn = fn_splitPreserve;
+			result = StringUtils.splitPreserveAllTokens( list, delimiter );
+		} else {
+			result = StringUtils.split( list, delimiter );
 		}
-		return new Array(
-		    ( String[] ) DynamicJavaInteropService.invokeStatic( StringUtils.class, utilFn, list, delimiter )
-		);
+		return new Array( result );
 	}
 
 	/**
