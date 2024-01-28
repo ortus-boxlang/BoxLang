@@ -38,6 +38,7 @@ import ortus.boxlang.runtime.dynamic.casters.CastAttempt;
 import ortus.boxlang.runtime.dynamic.casters.DoubleCaster;
 import ortus.boxlang.runtime.interop.DynamicJavaInteropService;
 import ortus.boxlang.runtime.interop.DynamicObject;
+import ortus.boxlang.runtime.operators.EqualsEquals;
 import ortus.boxlang.runtime.scopes.IntKey;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.services.FunctionService;
@@ -237,17 +238,23 @@ public class Array implements List<Object>, IType, IReferenceable, IListenable {
 
 	public boolean removeAll( Collection<?> c ) {
 		// TODO: deal with listeners
-		return wrapped.removeAll( c );
+		synchronized ( wrapped ) {
+			return wrapped.removeAll( c );
+		}
 	}
 
 	public boolean retainAll( Collection<?> c ) {
 		// TODO: deal with listeners
-		return wrapped.retainAll( c );
+		synchronized ( wrapped ) {
+			return wrapped.retainAll( c );
+		}
 	}
 
 	public void clear() {
 		// TODO: deal with listeners
-		wrapped.clear();
+		synchronized ( wrapped ) {
+			wrapped.clear();
+		}
 	}
 
 	public Object get( int index ) {
@@ -388,6 +395,89 @@ public class Array implements List<Object>, IType, IReferenceable, IListenable {
 		}
 		return this.$bx;
 
+	}
+
+	/**
+	 * --------------------------------------------------------------------------
+	 * One-based index methods for getters/setters and filtering
+	 * --------------------------------------------------------------------------
+	 */
+
+	/**
+	 * Retrieves and object using the one-based index value
+	 *
+	 * @param index
+	 *
+	 * @return
+	 */
+	public Object getAt( int index ) {
+		if ( index < 1 || index > wrapped.size() ) {
+			throw new BoxRuntimeException( "Index out of bounds for list with " + wrapped.size() + " elements." );
+		}
+		return wrapped.get( index - 1 );
+	}
+
+	/**
+	 * Sets an object using the one-based index value
+	 *
+	 * @param index
+	 *
+	 * @return
+	 */
+	public Array setAt( int index, Object element ) {
+		if ( index < 1 || index > wrapped.size() ) {
+			throw new BoxRuntimeException( "Index out of bounds for list with " + wrapped.size() + " elements." );
+		}
+		wrapped.set( index - 1, element );
+		return this;
+	}
+
+	/**
+	 * Finds the first one-based index of an string - either case sensitively or not
+	 *
+	 * @param value         The value to be searched
+	 * @param caseSensitive Whether the test should be case sensitive or not
+	 *
+	 * @return The one-based index value or zero if not found
+	 */
+	public int findIndex( Object value, Boolean caseSensitive ) {
+		return intStream()
+		    .filter(
+		        i -> EqualsEquals.invoke( get( i ), value, caseSensitive ) || get( i ).equals( value )
+		    )
+		    .findFirst()
+		    .orElse( -1 ) + 1;
+	}
+
+	/**
+	 * Finds the first one-based index of an array item with a specified value
+	 *
+	 * @param value The value to be searched
+	 *
+	 * @return The one-based index value or zero if not found
+	 */
+	public int findIndex( Object value ) {
+		return intStream()
+		    .filter(
+		        i -> get( i ).equals( value )
+		    )
+		    .findFirst()
+		    .orElse( -1 ) + 1;
+	}
+
+	/**
+	 * Finds the first index of an array item using a function filter
+	 *
+	 * @param test
+	 * @param context
+	 *
+	 * @return
+	 */
+	public int findIndex( Function test, IBoxContext context ) {
+		return intStream()
+		    .filter( i -> ( boolean ) context.invokeFunction( test, new Object[] { get( i ) } ) )
+		    .findFirst()
+		    .orElse( -1 ) + 1;
 	}
 
 	/**

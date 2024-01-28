@@ -34,6 +34,8 @@ import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
  */
 public class ListUtil {
 
+	public static final String DEFAULT_DELIMITER = ",";
+
 	/**
 	 * Turns a list into a string
 	 *
@@ -102,7 +104,7 @@ public class ListUtil {
 	 * @return The (1-based) index of the value or 0 if not found
 	 */
 	public static int indexOf( String list, String value, String delimiter ) {
-		return asList( list, delimiter ).indexOf( value ) + 1;
+		return asList( list, delimiter ).findIndex( value, true );
 	}
 
 	/**
@@ -115,7 +117,7 @@ public class ListUtil {
 	 * @return The (1-based) index of the value or 0 if not found
 	 */
 	public static int indexOfNoCase( String list, String value, String delimiter ) {
-		return asList( list.toLowerCase(), delimiter ).indexOf( value.toLowerCase() ) + 1;
+		return asList( list.toLowerCase(), delimiter ).findIndex( value, false );
 	}
 
 	/**
@@ -154,12 +156,7 @@ public class ListUtil {
 	 * @return The value at the index if found
 	 */
 	public static String getAt( String list, int index, String delimiter ) {
-		Array jList = asList( list, delimiter );
-		// Throw if index is out of bounds
-		if ( index < 1 || index > jList.size() ) {
-			throw new BoxRuntimeException( "Index out of bounds for list with " + jList.size() + " elements." );
-		}
-		return StringCaster.cast( jList.get( index - 1 ) );
+		return StringCaster.cast( asList( list, delimiter ).getAt( index ) );
 	}
 
 	/**
@@ -172,13 +169,7 @@ public class ListUtil {
 	 * @return The new list
 	 */
 	public static String setAt( String list, int index, String value, String delimiter ) {
-		Array jList = asList( list, delimiter );
-		// Throw if index is out of bounds
-		if ( index < 1 || index > jList.size() ) {
-			throw new BoxRuntimeException( "Index out of bounds for list with " + jList.size() + " elements." );
-		}
-		jList.set( index - 1, value );
-		return asString( jList, delimiter );
+		return asString( asList( list, delimiter ).setAt( index, value ), delimiter );
 	}
 
 	/**

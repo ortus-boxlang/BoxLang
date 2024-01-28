@@ -20,7 +20,7 @@ public class ListToArray extends BIF {
 		super();
 		declaredArguments = new Argument[] {
 		    new Argument( true, "string", Key.list ),
-		    new Argument( false, "string", Key.delimiter, "," ),
+		    new Argument( false, "string", Key.delimiter, ListUtil.DEFAULT_DELIMITER ),
 		    new Argument( false, "boolean", Key.includeEmptyFields, false ),
 		    new Argument( false, "boolean", Key.multiCharacterDelimiter, false ),
 

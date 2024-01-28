@@ -38,7 +38,7 @@ public class ArrayToList extends BIF {
 		super();
 		declaredArguments = new Argument[] {
 		    new Argument( true, "array", Key.array ),
-		    new Argument( false, "String", Key.delimiter, "," ),
+		    new Argument( false, "String", Key.delimiter, ListUtil.DEFAULT_DELIMITER ),
 		    new Argument( Key.initialValue )
 		};
 	}
