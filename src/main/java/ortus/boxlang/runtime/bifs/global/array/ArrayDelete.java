@@ -41,18 +41,18 @@ public class ArrayDelete extends BIF {
 
 	/**
 	 * Delete first occurance of item in array case sensitive
-	 * 
+	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
-	 * 
+	 *
 	 * @argument.array The array to be deleted from.
-	 * 
+	 *
 	 * @argument.value The value to deleted.
 	 */
 	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
 		Array	actualArray	= arguments.getAsArray( Key.array );
 		Object	value		= arguments.get( Key.value );
-		int		index		= ArrayContains._invoke( actualArray, value );
+		int		index		= actualArray.findIndex( value );
 		if ( index > 0 ) {
 			actualArray.remove( index - 1 );
 			return true;
