@@ -34,7 +34,7 @@ import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
 import ortus.boxlang.runtime.types.Array;
-import ortus.boxlang.runtime.util.ArrayUtil;
+import ortus.boxlang.runtime.types.ListUtil;
 
 public class ListFilterTest {
 
@@ -76,7 +76,7 @@ public class ListFilterTest {
 		        result = ListFilter( nums, filterFn );
 		    """,
 		    context );
-		Array resultArray = ArrayUtil.ofList( variables.getAsString( result ), ",", false, false );
+		Array resultArray = ListUtil.asList( variables.getAsString( result ), ",", false, false );
 		assertThat( resultArray.size() ).isEqualTo( 5 );
 		assertThat( resultArray.get( 0 ) ).isEqualTo( "1" );
 		assertThat( resultArray.get( 1 ) ).isEqualTo( "2" );
@@ -108,7 +108,7 @@ public class ListFilterTest {
 		        result = ListFilter( nums, filterFn, "|" );
 		    """,
 		    context );
-		Array resultArray = ArrayUtil.ofList( variables.getAsString( result ), "|", false, false );
+		Array resultArray = ListUtil.asList( variables.getAsString( result ), "|", false, false );
 		assertThat( resultArray.size() ).isEqualTo( 3 );
 		assertThat( resultArray.get( 0 ) ).isEqualTo( "1" );
 		assertThat( resultArray.get( 1 ) ).isEqualTo( "2" );
@@ -138,7 +138,7 @@ public class ListFilterTest {
 		        result = ListFilter( nums, filterFn );
 		    """,
 		    context );
-		Array resultArray = ArrayUtil.ofList( variables.getAsString( result ), ",", false, false );
+		Array resultArray = ListUtil.asList( variables.getAsString( result ), ",", false, false );
 		assertThat( resultArray.size() ).isEqualTo( 3 );
 		assertThat( resultArray.get( 0 ) ).isEqualTo( "1" );
 		assertThat( resultArray.get( 1 ) ).isEqualTo( "2" );
@@ -168,7 +168,7 @@ public class ListFilterTest {
 		        result = nums.filter( filterFn );
 		    """,
 		    context );
-		Array resultArray = ArrayUtil.ofList( variables.getAsString( result ), ",", false, false );
+		Array resultArray = ListUtil.asList( variables.getAsString( result ), ",", false, false );
 		assertThat( resultArray.size() ).isEqualTo( 3 );
 		assertThat( resultArray.get( 0 ) ).isEqualTo( "1" );
 		assertThat( resultArray.get( 1 ) ).isEqualTo( "2" );
@@ -198,7 +198,7 @@ public class ListFilterTest {
 		        result = nums.filter( filter=filterFn, parallel=true );
 		    """,
 		    context );
-		Array resultArray = ArrayUtil.ofList( variables.getAsString( result ), ",", false, false );
+		Array resultArray = ListUtil.asList( variables.getAsString( result ), ",", false, false );
 		assertThat( resultArray.size() ).isEqualTo( 3 );
 		assertThat( resultArray.get( 0 ) ).isEqualTo( "1" );
 		assertThat( resultArray.get( 1 ) ).isEqualTo( "2" );
@@ -228,7 +228,7 @@ public class ListFilterTest {
 		        result = nums.filter( filter=filterFn, parallel=true, maxThreads=5 );
 		    """,
 		    context );
-		Array resultArray = ArrayUtil.ofList( variables.getAsString( result ), ",", false, false );
+		Array resultArray = ListUtil.asList( variables.getAsString( result ), ",", false, false );
 		assertThat( resultArray.size() ).isEqualTo( 3 );
 		assertThat( resultArray.get( 0 ) ).isEqualTo( "1" );
 		assertThat( resultArray.get( 1 ) ).isEqualTo( "2" );

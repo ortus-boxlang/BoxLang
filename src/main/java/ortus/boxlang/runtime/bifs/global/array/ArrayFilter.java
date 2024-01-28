@@ -25,7 +25,7 @@ import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.BoxLangType;
-import ortus.boxlang.runtime.util.ArrayUtil;
+import ortus.boxlang.runtime.types.ListUtil;
 
 @BoxBIF
 @BoxMember( type = BoxLangType.ARRAY )
@@ -60,7 +60,7 @@ public class ArrayFilter extends BIF {
 	 * @argument.maxThreads The maximum number of threads to use when parallel = true
 	 */
 	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
-		return ArrayUtil.filter(
+		return ListUtil.filter(
 		    ArrayCaster.cast( arguments.get( "array" ) ),
 		    arguments.getAsFunction( Key.callback ),
 		    context,

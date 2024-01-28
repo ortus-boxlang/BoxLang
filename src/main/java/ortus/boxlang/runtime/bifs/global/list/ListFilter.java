@@ -11,7 +11,7 @@ import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.BoxLangType;
-import ortus.boxlang.runtime.util.ArrayUtil;
+import ortus.boxlang.runtime.types.ListUtil;
 
 @BoxBIF
 @BoxMember( type = BoxLangType.STRING, name = "filter" )
@@ -55,9 +55,9 @@ public class ListFilter extends BIF {
 	 * @argument.maxThreads number the maximum number of threads to use in the parallel filter
 	 */
 	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
-		return ArrayUtil.toList(
-		    ArrayUtil.filter(
-		        ArrayUtil.ofList(
+		return ListUtil.asString(
+		    ListUtil.filter(
+		        ListUtil.asList(
 		            arguments.getAsString( Key.list ),
 		            arguments.getAsString( Key.delimiter ),
 		            arguments.getAsBoolean( Key.includeEmptyFields ),

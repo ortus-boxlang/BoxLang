@@ -7,7 +7,7 @@ import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
-import ortus.boxlang.runtime.util.ArrayUtil;
+import ortus.boxlang.runtime.types.ListUtil;
 
 @BoxBIF
 
@@ -36,7 +36,7 @@ public class ListToArray extends BIF {
 	 * @argument.foo Describe any expected arguments
 	 */
 	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
-		return ArrayUtil.ofList(
+		return ListUtil.asList(
 		    arguments.getAsString( Key.list ),
 		    arguments.getAsString( Key.delimiter ),
 		    arguments.getAsBoolean( Key.includeEmptyFields ),
