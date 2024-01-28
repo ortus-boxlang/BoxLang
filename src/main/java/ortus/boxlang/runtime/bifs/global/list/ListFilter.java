@@ -28,7 +28,7 @@ public class ListFilter extends BIF {
 		    new Argument( true, "function", Key.filter ),
 		    new Argument( false, "string", Key.delimiter, ListUtil.DEFAULT_DELIMITER ),
 		    new Argument( false, "boolean", Key.includeEmptyFields, false ),
-		    new Argument( false, "boolean", Key.multiCharacterDelimiter, false ),
+		    new Argument( false, "boolean", Key.multiCharacterDelimiter, true ),
 		    new Argument( false, "boolean", Key.parallel ),
 		    new Argument( false, "numeric", Key.maxThreads, 20 )
 		};
