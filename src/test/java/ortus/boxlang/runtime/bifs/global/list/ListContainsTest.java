@@ -1,3 +1,4 @@
+
 /**
  * [BoxLang]
  *
@@ -16,7 +17,7 @@
  * limitations under the License.
  */
 
-package ortus.boxlang.runtime.bifs.global.array;
+package ortus.boxlang.runtime.bifs.global.list;
 
 import static com.google.common.truth.Truth.assertThat;
 import static org.junit.Assert.assertThrows;
@@ -35,7 +36,7 @@ import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
-public class ArrayContainsTest {
+public class ListContainsTest {
 
 	static BoxRuntime	instance;
 	static IBoxContext	context;
@@ -65,33 +66,56 @@ public class ArrayContainsTest {
 
 		instance.executeSource(
 		    """
-		    arr = [ 'a', 'b', 'c' ];
-		    result = arrayContains( arr, 'b' );
+		    list = "a,b,c";
+		    result = listContains( list, 'b' );
 		    """,
 		    context );
 		assertThat( variables.get( result ) ).isEqualTo( 2 );
 
 		instance.executeSource(
 		    """
-		    arr = [ 'a', 'b', 'c' ];
-		    result = arrayContains( arr, 'B' );
+		    list = "1.234,2.345,3.456";
+		    result = listContains( list, 3.456 );
+		    """,
+		    context );
+		assertThat( variables.get( result ) ).isEqualTo( 3 );
+	}
+
+	@DisplayName( "It can search case insensitively" )
+	@Test
+	public void testCanSearchNoCase() {
+
+		instance.executeSource(
+		    """
+		    list = "a,b,c";
+		    result = listContains( list, 'B' );
 		    """,
 		    context );
 		assertThat( variables.get( result ) ).isEqualTo( 0 );
+
+		instance.executeSource(
+		    """
+		    list = "a,b,c";
+		    result = listContainsNoCase( list, 'B' );
+		    """,
+		    context );
+		assertThat( variables.get( result ) ).isEqualTo( 2 );
+
 	}
 
-	@DisplayName( "Will throw an error if a UDF is used as the search" )
+	@DisplayName( "It will throw an error if the search is not a string" )
 	@Test
 	public void testCanSearchUDF() {
 		assertThrows(
 		    BoxRuntimeException.class,
 		    () -> instance.executeSource(
 		        """
-		        arr = [ 'a', 'b', 'c' ];
-		        result = arrayContains( arr, i->i=="b" );
+		        list = "a,b,c";
+		        result = listContains( list, i->i=="b" );
 		        """,
 		        context )
 		);
+
 	}
 
 	@DisplayName( "It can search member" )
@@ -100,19 +124,27 @@ public class ArrayContainsTest {
 
 		instance.executeSource(
 		    """
-		    arr = [ 'a', 'b', 'c' ];
-		    result = arr.contains( 'b' );
+		    list = "a,b,c";
+		    result = list.listContains( 'b' );
 		    """,
 		    context );
 		assertThat( variables.get( result ) ).isEqualTo( 2 );
 
 		instance.executeSource(
 		    """
-		    arr = [ 'a', 'b', 'c' ];
-		    result = arr.contains( 'B' );
+		    list = "a,b,c";
+		    result = list.listContains( 'B' );
 		    """,
 		    context );
 		assertThat( variables.get( result ) ).isEqualTo( 0 );
+
+		instance.executeSource(
+		    """
+		    list = "a,b,c";
+		    result = list.listContainsNoCase( 'B' );
+		    """,
+		    context );
+		assertThat( variables.get( result ) ).isEqualTo( 2 );
 	}
 
 }

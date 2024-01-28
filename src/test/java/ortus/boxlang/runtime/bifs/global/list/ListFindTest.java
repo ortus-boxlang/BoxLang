@@ -24,6 +24,7 @@ import static com.google.common.truth.Truth.assertThat;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -147,6 +148,24 @@ public class ListFindTest {
 		    context );
 		int found = ( int ) variables.get( result );
 		assertThat( found ).isEqualTo( 2 );
+	}
+
+	@Disabled( "Performance benchmark test" )
+	@Test
+	public void benchmark() {
+		instance.executeSource(
+		    """
+		                nums = "red,blue,orange";
+		          system = createObject( "java", "java.lang.System" );
+		       start = system.currentTimeMillis();
+		       for( i=1; i <= 100000; i++ ){
+		       	result = nums.listFindNoCase( "bluE" );
+		       }
+		       end = system.currentTimeMillis();
+		    totalTime = ( end - start );
+		            """,
+		    context );
+		System.out.println( variables.get( Key.of( "totalTime" ) ) );
 	}
 
 }

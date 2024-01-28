@@ -414,7 +414,7 @@ public class Array implements List<Object>, IType, IReferenceable, IListenable {
 		if ( index < 1 || index > wrapped.size() ) {
 			throw new BoxRuntimeException( "Index out of bounds for list with " + wrapped.size() + " elements." );
 		}
-		return wrapped.get( index - 1 );
+		return get( index - 1 );
 	}
 
 	/**
@@ -428,7 +428,7 @@ public class Array implements List<Object>, IType, IReferenceable, IListenable {
 		if ( index < 1 || index > wrapped.size() ) {
 			throw new BoxRuntimeException( "Index out of bounds for list with " + wrapped.size() + " elements." );
 		}
-		wrapped.set( index - 1, element );
+		set( index - 1, element );
 		return this;
 	}
 
@@ -457,12 +457,7 @@ public class Array implements List<Object>, IType, IReferenceable, IListenable {
 	 * @return The one-based index value or zero if not found
 	 */
 	public int findIndex( Object value ) {
-		return intStream()
-		    .filter(
-		        i -> get( i ).equals( value )
-		    )
-		    .findFirst()
-		    .orElse( -1 ) + 1;
+		return findIndex( value, true );
 	}
 
 	/**

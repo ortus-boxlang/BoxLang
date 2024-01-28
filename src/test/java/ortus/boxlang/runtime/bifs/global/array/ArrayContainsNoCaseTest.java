@@ -19,6 +19,7 @@
 package ortus.boxlang.runtime.bifs.global.array;
 
 import static com.google.common.truth.Truth.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -32,6 +33,7 @@ import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
+import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
 public class ArrayContainsNoCaseTest {
 
@@ -78,17 +80,18 @@ public class ArrayContainsNoCaseTest {
 		assertThat( variables.get( result ) ).isEqualTo( 2 );
 	}
 
-	@DisplayName( "It can search UDF" )
+	@DisplayName( "Will throw an error if a UDF is used as the search" )
 	@Test
 	public void testCanSearchUDF() {
-		instance.executeSource(
-		    """
-		    arr = [ 'a', 'b', 'c' ];
-		    result = arrayContainsNoCase( arr, i->i=="b" );
-		    """,
-		    context );
-		assertThat( variables.get( result ) ).isEqualTo( 2 );
-
+		assertThrows(
+		    BoxRuntimeException.class,
+		    () -> instance.executeSource(
+		        """
+		        arr = [ 'a', 'b', 'c' ];
+		        result = arrayContainsNoCase( arr, i->i=="b" );
+		        """,
+		        context )
+		);
 	}
 
 	@DisplayName( "It can search member" )
@@ -111,17 +114,4 @@ public class ArrayContainsNoCaseTest {
 		    context );
 		assertThat( variables.get( result ) ).isEqualTo( 2 );
 	}
-
-	@DisplayName( "It can search UDF Member" )
-	@Test
-	public void testCanSearchUDFMember() {
-		instance.executeSource(
-		    """
-		    arr = [ 'a', 'b', 'c' ];
-		    result =  arr.containsNoCase( i->i=="b" );
-		    """,
-		    context );
-		assertThat( variables.get( result ) ).isEqualTo( 2 );
-	}
-
 }

@@ -32,7 +32,7 @@ import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
 
-public class ArrayDeletetNoCaseTest {
+public class ArrayDeleteNoCaseTest {
 
 	static BoxRuntime		instance;
 	static IBoxContext		context;

@@ -14,31 +14,46 @@
  */
 package ortus.boxlang.runtime.bifs.global.array;
 
-import java.util.function.IntPredicate;
-
 import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
 import ortus.boxlang.runtime.bifs.BoxMember;
 import ortus.boxlang.runtime.context.IBoxContext;
-import ortus.boxlang.runtime.operators.EqualsEquals;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.BoxLangType;
 import ortus.boxlang.runtime.types.Function;
+import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
 @BoxBIF
 @BoxBIF( alias = "ArrayFindNoCase" )
+@BoxBIF( alias = "ArrayContains" )
+@BoxBIF( alias = "ArrayContainsNoCase" )
 @BoxMember( type = BoxLangType.ARRAY )
 @BoxMember( type = BoxLangType.ARRAY, name = "findNoCase" )
+@BoxMember( type = BoxLangType.ARRAY, name = "contains" )
+@BoxMember( type = BoxLangType.ARRAY, name = "containsNoCase" )
 public class ArrayFind extends BIF {
 
-	private static final Array caseSensitiveFunctions = new Array(
+	private static final Array	caseSensitiveFunctions	= new Array(
 	    new Object[] {
 	        Key.find,
 	        Key.arrayFind,
-	        Key.of( "listFind" )
+	        Key.of( "arrayContains" ),
+	        Key.of( "contains" ),
+	        Key.of( "listFind" ),
+	        Key.of( "listContains" )
+	    }
+	);
+
+	private static final Array	simpleValueFunctions	= new Array(
+	    new Object[] {
+	        Key.of( "arrayContains" ),
+	        Key.of( "arrayContainsNoCase" ),
+	        Key.of( "contains" ),
+	        Key.of( "listContains" ),
+	        Key.of( "listContainsNoCase" )
 	    }
 	);
 
@@ -64,26 +79,31 @@ public class ArrayFind extends BIF {
 	 * @argument.value The value to found.
 	 */
 	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
-		Array			actualArray	= arguments.getAsArray( Key.array );
-		Object			value		= arguments.get( Key.value );
-		IntPredicate	test		= getPredicate( context, actualArray, value, isCaseSensitive( arguments.getAsKey( BIF.__functionName ) ) );
-
-		return actualArray.intStream()
-		    .filter( test )
-		    .findFirst()
-		    .orElse( -1 ) + 1;
-	}
-
-	private IntPredicate getPredicate( IBoxContext context, Array actualArray, Object value, boolean caseSensitive ) {
-
-		if ( value instanceof Function functionValue ) {
-			return i -> ( boolean ) context.invokeFunction( functionValue, new Object[] { actualArray.get( i ) } );
+		Key bifMethodKey = arguments.getAsKey( BIF.__functionName );
+		System.out.println( isSimpleValueFunction( bifMethodKey ) );
+		System.out.println( arguments.get( Key.value ).getClass().getSimpleName() );
+		if ( isSimpleValueFunction( bifMethodKey ) && arguments.get( Key.value ) instanceof Function ) {
+			throw new BoxRuntimeException(
+			    String.format(
+			        "Closures are not a valid search value argument for the function [%s]",
+			        bifMethodKey.getName()
+			    )
+			);
 		}
+		Array	actualArray	= arguments.getAsArray( Key.array );
+		Object	value		= arguments.get( Key.value );
 
-		return i -> EqualsEquals.invoke( actualArray.get( i ), value, caseSensitive ) || actualArray.get( i ).equals( value );
+		return value instanceof Function
+		    ? actualArray.findIndex( ( Function ) value, context )
+		    : actualArray.findIndex( value, isCaseSensitive( bifMethodKey ) );
 	}
 
 	private boolean isCaseSensitive( Key functionName ) {
 		return caseSensitiveFunctions.stream().filter( fn -> functionName.equals( fn ) ).findFirst().orElse( null ) != null;
 	}
+
+	private boolean isSimpleValueFunction( Key functionName ) {
+		return simpleValueFunctions.stream().filter( fn -> functionName.equals( fn ) ).findFirst().orElse( null ) != null;
+	}
+
 }
