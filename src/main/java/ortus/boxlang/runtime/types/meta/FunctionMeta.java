@@ -17,11 +17,12 @@
  */
 package ortus.boxlang.runtime.types.meta;
 
+import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.Closure;
 import ortus.boxlang.runtime.types.Function;
-import ortus.boxlang.runtime.types.Lambda;
 import ortus.boxlang.runtime.types.IStruct;
+import ortus.boxlang.runtime.types.Lambda;
 import ortus.boxlang.runtime.types.immutable.ImmutableArray;
 import ortus.boxlang.runtime.types.immutable.ImmutableStruct;
 
@@ -52,26 +53,27 @@ public class FunctionMeta extends BoxMeta {
 		int			i		= 0;
 		for ( Argument argument : target.getArguments() ) {
 			params[ i++ ] = ImmutableStruct.of(
-			    "name", argument.name().getName(),
-			    "required", argument.required(),
-			    "type", argument.type(),
-			    "default", argument.defaultValue(),
-			    "documentation", argument.documentation(),
-			    "annotations", argument.annotations()
+			    Key._NAME, argument.name().getName(),
+			    Key.nameAsKey, argument.name(),
+			    Key.required, argument.required(),
+			    Key.type, argument.type(),
+			    Key._DEFAULT, argument.defaultValue(),
+			    Key.documentation, argument.documentation(),
+			    Key.annotations, argument.annotations()
 			);
 		}
 		// Assemble the metadata
 		this.meta = ImmutableStruct.of(
-		    "name", target.getName().getName(),
-		    "returnType", target.getReturnType(),
-		    "access", target.getAccess().toString().toLowerCase(),
-		    "documentation", target.getDocumentation(),
-		    "annotations", target.getAnnotations(),
-		    "parameters", new ImmutableArray( params ),
-		    "closure", target instanceof Closure,
-		    "lambda", target instanceof Lambda
+		    Key._NAME, target.getName().getName(),
+		    Key.nameAsKey, target.getName(),
+		    Key.returnType, target.getReturnType(),
+		    Key.access, target.getAccess().toString().toLowerCase(),
+		    Key.documentation, target.getDocumentation(),
+		    Key.annotations, target.getAnnotations(),
+		    Key.parameters, new ImmutableArray( params ),
+		    Key.closure, target instanceof Closure,
+		    Key.lambda, target instanceof Lambda
 		);
-
 	}
 
 	/**
