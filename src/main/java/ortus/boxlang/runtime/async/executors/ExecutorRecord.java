@@ -142,6 +142,7 @@ public record ExecutorRecord( ExecutorService executor, String name, ExecutorTyp
 				    "type", this.type
 				);
 			case WORK_STEALING :
+			case FORK_JOIN :
 				ForkJoinPool pool = ( ForkJoinPool ) this.executor;
 				return Struct.of(
 				    "activeCount", 0,
