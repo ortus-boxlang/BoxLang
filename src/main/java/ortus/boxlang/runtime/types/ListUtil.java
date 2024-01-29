@@ -21,6 +21,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ForkJoinPool;
 import java.util.function.IntPredicate;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 import org.apache.commons.lang3.StringUtils;
 
@@ -420,25 +421,48 @@ public class ListUtil {
 	    Boolean parallel,
 	    Integer maxThreads ) {
 
-		IntPredicate	test	= idx -> ( boolean ) callbackContext.invokeFunction( callback,
+		IntPredicate	test		= idx -> ( boolean ) callbackContext.invokeFunction( callback,
 		    new Object[] { array.get( idx ), idx + 1, array } );
 
-		ForkJoinPool	pool	= null;
-		if ( parallel ) {
-			pool = new ForkJoinPool( maxThreads );
+		IntStream		intStream	= array.intStream();
+
+		ForkJoinPool	pool		= null;
+		if ( maxThreads != null ) {
+			try {
+				pool = new ForkJoinPool( maxThreads );
+			} catch ( IllegalArgumentException e ) {
+				throw new BoxRuntimeException(
+				    String.format(
+				        "The requested maxThreads [%s] requested exceeds the maximum number of pool threads allowed: [%s]",
+				        StringCaster.cast( maxThreads ),
+				        32767
+				    )
+				);
+			}
+		} else if ( parallel ) {
+			intStream.parallel();
 		}
 
+		// We fall back to the common pool here because we need a final variable for our onClose,
+		// but the common pool ignores the shutdown command
+		final ForkJoinPool joinPool = pool != null ? pool : ForkJoinPool.commonPool();
+
 		return ArrayCaster.cast(
-		    pool == null
-		        ? array.intStream()
+		    maxThreads == null
+		        ? intStream
 		            .filter( test )
 		            .mapToObj( array::get )
 		            .toArray()
 
 		        : CompletableFuture.supplyAsync(
-		            () -> array.intStream().parallel().filter( test ).mapToObj( array::get ),
+		            () -> array.intStream().parallel().onClose( joinPool::shutdown ).filter( test ).mapToObj( array::get ),
 		            pool
-		        ).join().toArray()
+		        ).exceptionally( jException -> {
+			        throw new BoxRuntimeException(
+			            "An error occurred while attempting a parallel filter of the array with the specified max threads",
+			            jException
+			        );
+		        } ).join().toArray()
 		);
 	}
 

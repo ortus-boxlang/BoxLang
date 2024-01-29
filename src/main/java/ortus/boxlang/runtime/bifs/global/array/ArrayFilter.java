@@ -20,7 +20,6 @@ import ortus.boxlang.runtime.bifs.BoxMember;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.dynamic.casters.ArrayCaster;
 import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
-import ortus.boxlang.runtime.dynamic.casters.IntegerCaster;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
@@ -40,7 +39,7 @@ public class ArrayFilter extends BIF {
 		    new Argument( true, "array", Key.array ),
 		    new Argument( true, "function", Key.callback ),
 		    new Argument( false, "boolean", Key.parallel ),
-		    new Argument( false, "numeric", Key.maxThreads, 20 ),
+		    new Argument( false, "integer", Key.maxThreads ),
 		    new Argument( Key.initialValue )
 		};
 	}
@@ -65,7 +64,8 @@ public class ArrayFilter extends BIF {
 		    arguments.getAsFunction( Key.callback ),
 		    context,
 		    BooleanCaster.cast( arguments.getOrDefault( "parallel", false ) ),
-		    IntegerCaster.cast( arguments.getOrDefault( "maxThreads", 20 ) )
+		    // we can't use the integer caster here because we need a cast null for the filter method signature
+		    ( Integer ) arguments.get( "maxThreads" )
 		);
 	}
 }
