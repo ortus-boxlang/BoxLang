@@ -40,6 +40,7 @@ import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.exceptions.CustomException;
 import ortus.boxlang.runtime.types.exceptions.ExpressionException;
 import ortus.boxlang.runtime.types.exceptions.MissingIncludeException;
+import ortus.boxlang.runtime.types.exceptions.ParseException;
 
 public class TagTest {
 
@@ -509,7 +510,7 @@ public class TagTest {
 	@Test
 	public void testSwitchMultipleDefault() {
 
-		Throwable e = assertThrows( ExpressionException.class, () -> instance.executeSource(
+		Throwable e = assertThrows( ParseException.class, () -> instance.executeSource(
 		    """
 		        <cfset result ="">
 		           <cfset vegetable = "carrot" />

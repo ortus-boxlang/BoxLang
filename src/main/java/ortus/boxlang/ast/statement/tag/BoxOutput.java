@@ -18,6 +18,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import ortus.boxlang.ast.BoxExpr;
 import ortus.boxlang.ast.BoxNode;
 import ortus.boxlang.ast.BoxStatement;
 import ortus.boxlang.ast.Position;
@@ -27,7 +28,13 @@ import ortus.boxlang.ast.Position;
  */
 public class BoxOutput extends BoxStatement {
 
-	private final List<BoxStatement> body;
+	private final List<BoxStatement>	body;
+	private final BoxExpr				query;
+	private final BoxExpr				group;
+	private final BoxExpr				groupCaseSensitive;
+	private final BoxExpr				startRow;
+	private final BoxExpr				maxRows;
+	private final BoxExpr				encodeFor;
 
 	/**
 	 * Creates an AST for a program which is represented by a list of statements
@@ -39,10 +46,35 @@ public class BoxOutput extends BoxStatement {
 	 * @see Position
 	 * @see BoxStatement
 	 */
-	public BoxOutput( List<BoxStatement> statements, Position position, String sourceText ) {
+	public BoxOutput( List<BoxStatement> statements, BoxExpr query, BoxExpr group, BoxExpr groupCaseSensitive, BoxExpr startRow, BoxExpr maxRows,
+	    BoxExpr encodeFor, Position position, String sourceText ) {
 		super( position, sourceText );
 		this.body = statements;
 		this.body.forEach( statement -> statement.setParent( this ) );
+		this.query = query;
+		if ( query != null ) {
+			this.query.setParent( this );
+		}
+		this.group = group;
+		if ( group != null ) {
+			this.group.setParent( this );
+		}
+		this.groupCaseSensitive = groupCaseSensitive;
+		if ( groupCaseSensitive != null ) {
+			this.groupCaseSensitive.setParent( this );
+		}
+		this.startRow = startRow;
+		if ( startRow != null ) {
+			this.startRow.setParent( this );
+		}
+		this.maxRows = maxRows;
+		if ( maxRows != null ) {
+			this.maxRows.setParent( this );
+		}
+		this.encodeFor = encodeFor;
+		if ( encodeFor != null ) {
+			this.encodeFor.setParent( this );
+		}
 	}
 
 	public List<BoxStatement> getBody() {
@@ -54,6 +86,25 @@ public class BoxOutput extends BoxStatement {
 		Map<String, Object> map = super.toMap();
 
 		map.put( "body", body.stream().map( BoxNode::toMap ).collect( Collectors.toList() ) );
+		if ( query != null ) {
+			map.put( "query", query.toMap() );
+		}
+		if ( group != null ) {
+			map.put( "group", group.toMap() );
+		}
+		if ( groupCaseSensitive != null ) {
+			map.put( "groupCaseSensitive", groupCaseSensitive.toMap() );
+		}
+		if ( startRow != null ) {
+			map.put( "startRow", startRow.toMap() );
+		}
+		if ( maxRows != null ) {
+			map.put( "maxRows", maxRows.toMap() );
+		}
+		if ( encodeFor != null ) {
+			map.put( "encodeFor", encodeFor.toMap() );
+		}
+
 		return map;
 	}
 

@@ -35,6 +35,7 @@ import ortus.boxlang.ast.BoxScript;
 import ortus.boxlang.ast.BoxScriptIsland;
 import ortus.boxlang.ast.BoxStatement;
 import ortus.boxlang.ast.BoxTemplate;
+import ortus.boxlang.ast.Issue;
 import ortus.boxlang.ast.Point;
 import ortus.boxlang.ast.Position;
 import ortus.boxlang.ast.expression.BoxFQN;
@@ -94,7 +95,6 @@ import ortus.boxlang.parser.antlr.CFMLParser.TryContext;
 import ortus.boxlang.parser.antlr.CFMLParser.WhileContext;
 import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
-import ortus.boxlang.runtime.types.exceptions.ExpressionException;
 
 public class BoxCFMLParser extends BoxAbstractParser {
 
@@ -188,35 +188,24 @@ public class BoxCFMLParser extends BoxAbstractParser {
 		for ( var attr : node.attribute() ) {
 			annotations.add( toAst( file, attr ) );
 		}
-		System.out.println( annotations.stream().map( it -> it.getKey().getValue() + "=" + it.getValue().getSourceText() ).toList() );
-		var nameSearch = annotations.stream().filter( ( it ) -> it.getKey().getValue().equalsIgnoreCase( "name" ) ).findFirst();
-		if ( nameSearch.isPresent() ) {
-			name = getBoxExprAsString( nameSearch.get().getValue(), "name" );
-			if ( name.trim().isEmpty() ) {
-				throw new BoxRuntimeException( "Import name cannot be empty - " + getSourceText( node ) );
-			}
-		} else {
-			throw new BoxRuntimeException( "Import must have a name attribute - " + getSourceText( node ) );
+
+		BoxExpr nameSearch = findExprInAnnotations( annotations, "name", true, null, "import", getPosition( node ) );
+		name = getBoxExprAsString( nameSearch, "name", false );
+		BoxFQN nameFQN = new BoxFQN( name, nameSearch.getPosition(), nameSearch.getSourceText() );
+
+		prefix = getBoxExprAsString( findExprInAnnotations( annotations, "prefix", false, null, null, null ), "prefix", false );
+
+		BoxExpr aliasSearch = findExprInAnnotations( annotations, "alias", false, null, null, null );
+		if ( aliasSearch != null ) {
+			alias = new BoxIdentifier( getBoxExprAsString( aliasSearch, "alias", false ),
+			    aliasSearch.getPosition(),
+			    aliasSearch.getSourceText() );
 		}
 
-		var prefixSearch = annotations.stream().filter( ( it ) -> it.getKey().getValue().equalsIgnoreCase( "prefix" ) ).findFirst();
-		if ( prefixSearch.isPresent() ) {
-			prefix = getBoxExprAsString( prefixSearch.get().getValue(), "prefix" );
-			if ( prefix.trim().isEmpty() ) {
-				throw new BoxRuntimeException( "Import prefix cannot be empty - " + getSourceText( node ) );
-			}
-		}
-
-		var aliasSearch = annotations.stream().filter( ( it ) -> it.getKey().getValue().equalsIgnoreCase( "alias" ) ).findFirst();
-		if ( aliasSearch.isPresent() ) {
-			alias = new BoxIdentifier( getBoxExprAsString( aliasSearch.get().getValue(), "alias" ), aliasSearch.get().getValue().getPosition(),
-			    aliasSearch.get().getValue().getSourceText() );
-		}
 		if ( prefix != null ) {
 			name = prefix + ":" + name;
 		}
-		return new BoxImport( new BoxFQN( name, nameSearch.get().getValue().getPosition(), nameSearch.get().getValue().getSourceText() ), alias,
-		    getPosition( node ), getSourceText( node ) );
+		return new BoxImport( nameFQN, alias, getPosition( node ), getSourceText( node ) );
 	}
 
 	private List<BoxStatement> toAst( File file, StatementsContext node ) {
@@ -283,12 +272,8 @@ public class BoxCFMLParser extends BoxAbstractParser {
 		for ( var attr : node.attribute() ) {
 			annotations.add( toAst( file, attr ) );
 		}
-		var expressionSearch = annotations.stream().filter( ( it ) -> it.getKey().getValue().equalsIgnoreCase( "expression" ) ).findFirst();
-		if ( expressionSearch.isPresent() ) {
-			expression = expressionSearch.get().getValue();
-		} else {
-			throw new BoxRuntimeException( "Switch must have a expression attribute - " + getSourceText( node ) );
-		}
+
+		expression = findExprInAnnotations( annotations, "expression", true, null, "switch", getPosition( node ) );
 
 		if ( node.switchBody() != null && node.switchBody().children != null ) {
 			for ( var c : node.switchBody().children ) {
@@ -296,8 +281,7 @@ public class BoxCFMLParser extends BoxAbstractParser {
 					cases.add( toAst( file, caseNode ) );
 					// We're willing to overlook text, but not other CF tags
 				} else if ( ! ( c instanceof CFMLParser.TextContentContext ) ) {
-					throw new ExpressionException( "Switch body can only contain case statements - ", getPosition( ( ParserRuleContext ) c ),
-					    getSourceText( ( ParserRuleContext ) c ) );
+					issues.add( new Issue( "Switch body can only contain case statements - ", getPosition( ( ParserRuleContext ) c ) ) );
 				}
 			}
 		}
@@ -306,7 +290,7 @@ public class BoxCFMLParser extends BoxAbstractParser {
 
 	private BoxSwitchCase toAst( File file, CaseContext node ) {
 		BoxExpr	value		= null;
-		BoxExpr	delimiter	= new BoxStringLiteral( ",", null, null );
+		BoxExpr	delimiter	= null;
 
 		// Only check for these on case nodes, not default case
 		if ( !node.CASE().isEmpty() ) {
@@ -316,17 +300,8 @@ public class BoxCFMLParser extends BoxAbstractParser {
 				annotations.add( toAst( file, attr ) );
 			}
 
-			var valueSearch = annotations.stream().filter( ( it ) -> it.getKey().getValue().equalsIgnoreCase( "value" ) ).findFirst();
-			if ( valueSearch.isPresent() ) {
-				value = valueSearch.get().getValue();
-			} else {
-				throw new ExpressionException( "Case must have a value attribute - ", getPosition( node ), getSourceText( node ) );
-			}
-
-			var delimiterSearch = annotations.stream().filter( ( it ) -> it.getKey().getValue().equalsIgnoreCase( "delimiter" ) ).findFirst();
-			if ( delimiterSearch.isPresent() ) {
-				delimiter = delimiterSearch.get().getValue();
-			}
+			value		= findExprInAnnotations( annotations, "value", true, null, "case", getPosition( node ) );
+			delimiter	= findExprInAnnotations( annotations, "delimiter", false, new BoxStringLiteral( ",", null, null ), "case", getPosition( node ) );
 		}
 
 		List<BoxStatement> statements = new ArrayList<>();
@@ -390,12 +365,7 @@ public class BoxCFMLParser extends BoxAbstractParser {
 			annotations.add( toAst( file, attr ) );
 		}
 
-		var templateSearch = annotations.stream().filter( ( it ) -> it.getKey().getValue().equalsIgnoreCase( "template" ) ).findFirst();
-		if ( templateSearch.isPresent() ) {
-			template = templateSearch.get().getValue();
-		} else {
-			throw new BoxRuntimeException( "Include must have a template attribute - " + getSourceText( node ) );
-		}
+		template = findExprInAnnotations( annotations, "template", true, null, "include", getPosition( node ) );
 
 		// TODO: Add runOnce support
 		return new BoxInclude( template, getPosition( node ), getSourceText( node ) );
@@ -418,18 +388,15 @@ public class BoxCFMLParser extends BoxAbstractParser {
 			annotations.add( toAst( file, attr ) );
 		}
 
-		var conditionSearch = annotations.stream().filter( ( it ) -> it.getKey().getValue().equalsIgnoreCase( "condition" ) ).findFirst();
-		if ( conditionSearch.isPresent() ) {
-			condition = parseCFExpression(
-			    getBoxExprAsString(
-			        conditionSearch.get().getValue(),
-			        "condition"
-			    ),
-			    conditionSearch.get().getValue().getPosition()
-			);
-		} else {
-			throw new BoxRuntimeException( "While must have a condition attribute - " + getSourceText( node ) );
-		}
+		BoxExpr conditionSearch = findExprInAnnotations( annotations, "condition", true, null, "while", getPosition( node ) );
+		condition = parseCFExpression(
+		    getBoxExprAsString(
+		        conditionSearch,
+		        "condition",
+		        false
+		    ),
+		    conditionSearch.getPosition()
+		);
 
 		if ( node.statements() != null ) {
 			body.addAll( toAst( file, node.statements() ) );
@@ -460,19 +427,12 @@ public class BoxCFMLParser extends BoxAbstractParser {
 		for ( var attr : node.attribute() ) {
 			annotations.add( toAst( file, attr ) );
 		}
-		var nameSearch = annotations.stream().filter( ( it ) -> it.getKey().getValue().equalsIgnoreCase( "name" ) ).findFirst();
-		if ( nameSearch.isPresent() ) {
-			name = getBoxExprAsString( nameSearch.get().getValue(), "name" );
-			if ( name.trim().isEmpty() ) {
-				throw new BoxRuntimeException( "Function name cannot be empty - " + getSourceText( node ) );
-			}
-		} else {
-			throw new BoxRuntimeException( "Function must have a name attribute - " + getSourceText( node ) );
-		}
 
-		var accessSearch = annotations.stream().filter( ( it ) -> it.getKey().getValue().equalsIgnoreCase( "access" ) ).findFirst();
-		if ( accessSearch.isPresent() ) {
-			String accessText = getBoxExprAsString( accessSearch.get().getValue(), "access" ).toLowerCase();
+		name = getBoxExprAsString( findExprInAnnotations( annotations, "name", true, null, "function", getPosition( node ) ), "name", false );
+
+		String accessText = getBoxExprAsString( findExprInAnnotations( annotations, "function", false, null, null, null ), "access", true );
+		if ( accessText != null ) {
+			accessText = accessText.toLowerCase();
 			if ( accessText.equals( "public" ) ) {
 				modifier = BoxAccessModifier.Public;
 			} else if ( accessText.equals( "private" ) ) {
@@ -484,10 +444,11 @@ public class BoxCFMLParser extends BoxAbstractParser {
 			}
 		}
 
-		var returnTypeSearch = annotations.stream().filter( ( it ) -> it.getKey().getValue().equalsIgnoreCase( "returnType" ) ).findFirst();
-		if ( returnTypeSearch.isPresent() ) {
-			String	returnTypeText	= getBoxExprAsString( returnTypeSearch.get().getValue(), "returnType" ).toLowerCase();
-			BoxType	type			= null;
+		BoxExpr	returnTypeSearch	= findExprInAnnotations( annotations, "returnType", false, null, null, null );
+		String	returnTypeText		= getBoxExprAsString( returnTypeSearch, "returnType", true );
+		if ( returnTypeText != null ) {
+			returnTypeText = returnTypeText.toLowerCase();
+			BoxType type = null;
 			if ( returnTypeText.equals( "boolean" ) ) {
 				type = BoxType.Boolean;
 			}
@@ -499,9 +460,9 @@ public class BoxCFMLParser extends BoxAbstractParser {
 			}
 			// TODO: Add rest of types or make dynamic
 			if ( type != null ) {
-				returnType = new BoxReturnType( type, null, returnTypeSearch.get().getPosition(), returnTypeSearch.get().getSourceText() );
+				returnType = new BoxReturnType( type, null, returnTypeSearch.getPosition(), returnTypeSearch.getSourceText() );
 			} else {
-				returnType = new BoxReturnType( BoxType.Fqn, returnTypeText, returnTypeSearch.get().getPosition(), returnTypeSearch.get().getSourceText() );
+				returnType = new BoxReturnType( BoxType.Fqn, returnTypeText, returnTypeSearch.getPosition(), returnTypeSearch.getSourceText() );
 			}
 		}
 
@@ -526,40 +487,21 @@ public class BoxCFMLParser extends BoxAbstractParser {
 			annotations.add( toAst( file, attr ) );
 		}
 
-		var nameSearch = annotations.stream().filter( ( it ) -> it.getKey().getValue().equalsIgnoreCase( "name" ) ).findFirst();
-		if ( nameSearch.isPresent() ) {
-			name = getBoxExprAsString( nameSearch.get().getValue(), "name" );
-			if ( name.trim().isEmpty() ) {
-				throw new BoxRuntimeException( "Argument name cannot be empty - " + getSourceText( node ) );
-			}
-		} else {
-			throw new BoxRuntimeException( "Argument must have a name attribute - " + getSourceText( node ) );
-		}
+		name		= getBoxExprAsString( findExprInAnnotations( annotations, "name", true, null, "function", getPosition( node ) ), "name", false );
 
-		var requiredSearch = annotations.stream().filter( ( it ) -> it.getKey().getValue().equalsIgnoreCase( "required" ) ).findFirst();
-		if ( requiredSearch.isPresent() ) {
-			required = BooleanCaster.cast( getBoxExprAsString( requiredSearch.get().getValue(), "required" ) );
-		}
+		required	= BooleanCaster.cast(
+		    getBoxExprAsString(
+		        findExprInAnnotations( annotations, "required", false, null, null, null ),
+		        "required",
+		        false
+		    )
+		);
 
-		var defaultSearch = annotations.stream().filter( ( it ) -> it.getKey().getValue().equalsIgnoreCase( "default" ) ).findFirst();
-		if ( defaultSearch.isPresent() ) {
-			expr = defaultSearch.get().getValue();
-		}
-
-		var typeSearch = annotations.stream().filter( ( it ) -> it.getKey().getValue().equalsIgnoreCase( "type" ) ).findFirst();
-		if ( typeSearch.isPresent() ) {
-			type = getBoxExprAsString( typeSearch.get().getValue(), "type" );
-		}
+		expr		= findExprInAnnotations( annotations, "default", false, null, null, null );
+		type		= getBoxExprAsString( findExprInAnnotations( annotations, "type", false, new BoxStringLiteral( "Any", null, null ), null, null ), "type",
+		    false );
 
 		return new BoxArgumentDeclaration( required, type, name, expr, annotations, documentation, getPosition( node ), getSourceText( node ) );
-	}
-
-	private String getBoxExprAsString( BoxExpr expr, String name ) {
-		if ( expr instanceof BoxStringLiteral str ) {
-			return str.getValue();
-		} else {
-			throw new BoxRuntimeException( name + " attribute must be a string literal - " + expr.getSourceText() );
-		}
 	}
 
 	private BoxAnnotation toAst( File file, AttributeContext attribute ) {
@@ -700,11 +642,77 @@ public class BoxCFMLParser extends BoxAbstractParser {
 	}
 
 	private BoxStatement toAst( File file, OutputContext node ) {
-		List<BoxStatement> statements = new ArrayList<>();
+		List<BoxStatement>	statements	= new ArrayList<>();
+		List<BoxAnnotation>	annotations	= new ArrayList<>();
+
+		for ( var attr : node.attribute() ) {
+			annotations.add( toAst( file, attr ) );
+		}
+
+		BoxExpr	query				= findExprInAnnotations( annotations, "query", false, null, null, null );
+		BoxExpr	group				= findExprInAnnotations( annotations, "group", false, null, null, null );
+		BoxExpr	groupCaseSensitive	= findExprInAnnotations( annotations, "groupCaseSensitive", false, null, null, null );
+		BoxExpr	startRow			= findExprInAnnotations( annotations, "startRow", false, null, null, null );
+		BoxExpr	maxRows				= findExprInAnnotations( annotations, "maxRows", false, null, null, null );
+		BoxExpr	encodeFor			= findExprInAnnotations( annotations, "encodeFor", false, null, null, null );
+
 		if ( node.statements() != null ) {
 			statements.addAll( toAst( file, node.statements() ) );
 		}
-		return new BoxOutput( statements, getPosition( node ), getSourceText( node ) );
+
+		return new BoxOutput( statements, query, group, groupCaseSensitive, startRow, maxRows, encodeFor, getPosition( node ), getSourceText( node ) );
+	}
+
+	/**
+	 * A helper function to find a specific annotation by name and return the value expression
+	 * 
+	 * @param annotations       the list of annotations to search
+	 * @param name              the name of the annotation to find
+	 * @param required          whether the annotation is required. If required, and not present a parsing Issue is created.
+	 * @param defaultValue      the default value to return if the annotation is not found. Ignored if requried is false.
+	 * @param containingTagName the name of the tag that contains the annotation, used in error handling
+	 * @param position          the position of the tag, used in error handling
+	 * 
+	 * @return the value expression of the annotation, or the default value if the annotation is not found
+	 * 
+	 */
+	private BoxExpr findExprInAnnotations( List<BoxAnnotation> annotations, String name, boolean required, BoxExpr defaultValue, String containingTagName,
+	    Position position ) {
+		var search = annotations.stream().filter( ( it ) -> it.getKey().getValue().equalsIgnoreCase( name ) ).findFirst();
+		if ( search.isPresent() ) {
+			return search.get().getValue();
+		} else if ( !required ) {
+			return defaultValue;
+		} else {
+			issues.add( new Issue( "Missing " + name + " attribute on " + containingTagName + " tag", position ) );
+			return new BoxNull( null, null );
+		}
+
+	}
+
+	/**
+	 * A helper function to take a BoxExpr and return the value expression as a string.
+	 * If the expression is not a string literal, an Issue is created.
+	 * 
+	 * @param expr       the expression to get the value from
+	 * @param name       the name of the attribute, used in error handling
+	 * @param allowEmpty whether an empty string is allowed. If not allowed, an Issue is created.
+	 * 
+	 * @return the value of the expression as a string, or null if the expression is null
+	 */
+	private String getBoxExprAsString( BoxExpr expr, String name, boolean allowEmpty ) {
+		if ( expr == null ) {
+			return null;
+		}
+		if ( expr instanceof BoxStringLiteral str ) {
+			if ( !allowEmpty && str.getValue().trim().isEmpty() ) {
+				issues.add( new Issue( "Attribute [" + name + "] cannot be empty", expr.getPosition() ) );
+			}
+			return str.getValue();
+		} else {
+			issues.add( new Issue( "Attribute [" + name + "] attribute must be a string literal", expr.getPosition() ) );
+			return "";
+		}
 	}
 
 	private BoxStatement toAst( File file, TextContentContext node ) {
@@ -764,7 +772,8 @@ public class BoxCFMLParser extends BoxAbstractParser {
 				return new BoxNull( null, null );
 			}
 		} catch ( IOException e ) {
-			throw new BoxRuntimeException( "Error parsing interpolated expression: " + code, e );
+			issues.add( new Issue( "Error parsing interpolated expression " + e.getMessage(), position ) );
+			return new BoxNull( null, null );
 		}
 	}
 
@@ -780,7 +789,8 @@ public class BoxCFMLParser extends BoxAbstractParser {
 				} else {
 					// Could be a BoxClass, which we may actually need to support if there is a .cfc file with a top-level <cfscript> node containing a
 					// component.
-					throw new BoxRuntimeException( "Unexpected root node type [" + root.getClass().getName() + "] in script island." );
+					issues.add( new Issue( "Unexpected root node type [" + root.getClass().getName() + "] in script island.", position ) );
+					return List.of();
 				}
 			} else {
 				// Add these issues to the main parser
@@ -788,7 +798,8 @@ public class BoxCFMLParser extends BoxAbstractParser {
 				return List.of( new BoxExpression( new BoxNull( null, null ), null, null ) );
 			}
 		} catch ( IOException e ) {
-			throw new BoxRuntimeException( "Error parsing interpolated expression: " + code, e );
+			issues.add( new Issue( "Error parsing interpolated expression " + e.getMessage(), position ) );
+			return List.of();
 		}
 	}
 }
