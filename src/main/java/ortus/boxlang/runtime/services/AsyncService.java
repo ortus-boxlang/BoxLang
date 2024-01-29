@@ -415,13 +415,7 @@ public class AsyncService extends BaseService {
 	}
 
 	/**
-	 * --------------------------------------------------------------------------
-	 * Private Utilities
-	 * --------------------------------------------------------------------------
-	 */
-
-	/**
-	 * Build an executor
+	 * Build an executor without registering it using BoxLang specs
 	 *
 	 * @param name       The name of the executor
 	 * @param type       The executor type: CACHED, FIXED, SINGLE, SCHEDULED, WORK_STEALING
@@ -429,7 +423,7 @@ public class AsyncService extends BaseService {
 	 *
 	 * @return The executor
 	 */
-	private ExecutorRecord buildExecutor( String name, ExecutorType type, int maxThreads ) {
+	public ExecutorRecord buildExecutor( String name, ExecutorType type, int maxThreads ) {
 		ExecutorService executor = null;
 		switch ( type ) {
 			case CACHED :

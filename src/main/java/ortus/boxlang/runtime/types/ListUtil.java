@@ -271,11 +271,11 @@ public class ListUtil {
 		    pool == null
 		        ? array.intStream()
 		            .filter( test )
-		            .mapToObj( idx -> array.get( idx ) )
+		            .mapToObj( array::get )
 		            .toArray()
 
 		        : CompletableFuture.supplyAsync(
-		            () -> array.intStream().parallel().filter( test ).mapToObj( idx -> array.get( idx ) ),
+		            () -> array.intStream().parallel().filter( test ).mapToObj( array::get ),
 		            pool
 		        ).join().toArray()
 		);

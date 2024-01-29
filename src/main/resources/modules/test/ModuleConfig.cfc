@@ -127,4 +127,8 @@ component{
 	 * You can listen to any Runtime events by creating the methods
 	 * that match the approved Runtime Interception Points
 	 */
+
+	 function onScopeCreation(){
+		// do something
+	 }
 }

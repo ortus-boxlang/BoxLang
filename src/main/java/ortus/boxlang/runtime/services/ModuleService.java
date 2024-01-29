@@ -247,6 +247,7 @@ public class ModuleService extends BaseService {
 		buildRegistry();
 
 		// Register each module now
+		// If we detect more than 10 modules, do it async
 		this.registry
 		    .keySet()
 		    .stream()
@@ -308,6 +309,8 @@ public class ModuleService extends BaseService {
 
 		// Configure the module
 		moduleRecord.configure( runtimeContext );
+
+		// Log registration time
 		moduleRecord.registrationTime = BoxRuntime.timerUtil.stopAndGetMillis( timerLabel );
 
 		// Announce it
