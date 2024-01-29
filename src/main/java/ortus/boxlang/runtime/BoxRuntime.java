@@ -305,7 +305,7 @@ public class BoxRuntime {
 
 		// Runtime Started log it
 		this.logger.atInfo().log(
-		    "+ BoxLang Runtime Started at [{}] in [{}]",
+		    "+ BoxLang Runtime Started at [{}] in [{}]ms",
 		    Instant.now(),
 		    timerUtil.stopAndGetMillis( "runtime-startup" )
 		);
