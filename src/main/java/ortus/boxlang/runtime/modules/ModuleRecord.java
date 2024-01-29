@@ -280,11 +280,11 @@ public class ModuleRecord {
 		ThisScope		thisScope		= this.moduleConfig.getThisScope();
 		VariablesScope	variablesScope	= this.moduleConfig.getVariablesScope();
 
-		// Register the mapping in the runtime
+		// Register the module mapping in the runtime
+		// Called first in case this is used in the `configure` method
 		BoxRuntime
 		    .getInstance()
-		    .getConfiguration().runtime
-		    .registerMapping( this.mapping, this.path );
+		    .getConfiguration().runtime.registerMapping( this.mapping, this.path );
 
 		// Call the configure() method if it exists in the descriptor
 		if ( thisScope.containsKey( Key.configure ) ) {
@@ -296,15 +296,15 @@ public class ModuleRecord {
 			);
 		}
 
-		// Register Module configuration
+		// Register Module configurations now that they are set
 		this.settings					= ( Struct ) variablesScope.getAsStruct( Key.settings );
 		this.interceptors				= variablesScope.getAsArray( Key.interceptors );
 		this.customInterceptionPoints	= variablesScope.getAsArray( Key.customInterceptionPoints );
 		this.objectMappings				= ( Struct ) variablesScope.getAsStruct( Key.objectMappings );
 		this.datasources				= ( Struct ) variablesScope.getAsStruct( Key.datasources );
 
-		// Register Interception points
-		if ( this.customInterceptionPoints.isEmpty() ) {
+		// Register Interception points with the InterceptorService\
+		if ( !this.customInterceptionPoints.isEmpty() ) {
 			BoxRuntime
 			    .getInstance()
 			    .getInterceptorService()

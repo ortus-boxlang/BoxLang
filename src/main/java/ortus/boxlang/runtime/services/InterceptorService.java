@@ -154,7 +154,7 @@ public class InterceptorService extends BaseService {
 	 *
 	 * @return The same service
 	 */
-	public InterceptorService registerInterceptionPoint( Key... points ) {
+	public synchronized InterceptorService registerInterceptionPoint( Key... points ) {
 		logger.atDebug().log( "InterceptorService.registerInterceptionPoint() - registering {}", Arrays.toString( points ) );
 		interceptionPoints.addAll( Arrays.asList( points ) );
 		return this;
@@ -167,7 +167,7 @@ public class InterceptorService extends BaseService {
 	 *
 	 * @return The same service
 	 */
-	public InterceptorService removeInterceptionPoint( Key... points ) {
+	public synchronized InterceptorService removeInterceptionPoint( Key... points ) {
 		logger.atDebug().log( "InterceptorService.removeInterceptionPoint() - removing {}", Arrays.toString( points ) );
 		interceptionPoints.removeAll( Arrays.asList( points ) );
 		interceptionStates.keySet().removeAll( Arrays.asList( points ) );
@@ -338,6 +338,7 @@ public class InterceptorService extends BaseService {
 	 *
 	 * @param state The state key to announce
 	 */
+	@Override
 	public void announce( Key state ) {
 		announce( state, new Struct() );
 	}
@@ -348,6 +349,7 @@ public class InterceptorService extends BaseService {
 	 * @param state The state key to announce
 	 * @param data  The data to announce
 	 */
+	@Override
 	public void announce( Key state, IStruct data ) {
 		if ( hasState( state ) ) {
 			// logger.atDebug().log( "InterceptorService.announce() - announcing {}", state.getName() );

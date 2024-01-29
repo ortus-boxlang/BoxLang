@@ -285,7 +285,8 @@ public class ModuleService extends BaseService {
 			);
 		}
 
-		// Get the module record
+		// Get the module record and context of execution for moduels
+		// Which is separate from anything else
 		var	moduleRecord	= this.registry.get( name );
 		var	runtimeContext	= runtime.getRuntimeContext();
 
