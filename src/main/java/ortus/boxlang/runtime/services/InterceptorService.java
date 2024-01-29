@@ -18,7 +18,9 @@
 package ortus.boxlang.runtime.services;
 
 import java.util.Arrays;
+import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -26,8 +28,13 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import ortus.boxlang.runtime.BoxRuntime;
+import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.events.InterceptorState;
 import ortus.boxlang.runtime.interop.DynamicObject;
+import ortus.boxlang.runtime.loader.ClassLocator.ClassLocation;
+import ortus.boxlang.runtime.loader.resolvers.BoxResolver;
+import ortus.boxlang.runtime.modules.ModuleRecord;
+import ortus.boxlang.runtime.runnables.IClassRunnable;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
@@ -225,7 +232,7 @@ public class InterceptorService extends BaseService {
 		}
 
 		// Register it
-		interceptionStates.putIfAbsent( name, new InterceptorState( name.getName() ) );
+		interceptionStates.putIfAbsent( name, new InterceptorState( name ) );
 		return getState( name );
 	}
 
@@ -250,6 +257,120 @@ public class InterceptorService extends BaseService {
 	 * Interception Registration Methods
 	 * --------------------------------------------------------------------------
 	 */
+
+	/**
+	 * This method resolves, creates, wires, and registers a BoxLang interceptor Class with the service.
+	 *
+	 * @param clazz        The BoxLang class invocation path of the interceptor to resolve. Example: "ortus.interceptors.MyInterceptor"
+	 * @param properties   A {@Link Struct} of properties to wire the interceptor with
+	 * @param name         The unique name of the interceptor
+	 * @param moduleRecord If passed (it can be null), it means that a module is registering the interceptor
+	 *
+	 * @throws BoxRuntimeException If the interceptor class cannot be found
+	 *
+	 * @return The newly built interceptor
+	 */
+	public IClassRunnable newAndRegister(
+	    String clazz,
+	    IStruct properties,
+	    String name,
+	    ModuleRecord moduleRecord ) {
+
+		IBoxContext				context			= runtime.getRuntimeContext();
+		Optional<ClassLocation>	classLocation	= BoxResolver.getInstance().resolve(
+		    context,
+		    clazz,
+		    List.of()
+		);
+
+		// Throw an exception if we can't find the class
+		if ( !classLocation.isPresent() ) {
+			throw new BoxRuntimeException( "Interceptor class [" + clazz + "] not found locally or with any mappings" );
+		}
+
+		// Load the Interceptor by it's class, Construct it and assign it to the record
+		IClassRunnable oInterceptor = ( IClassRunnable ) DynamicObject.of( classLocation.get().clazz() )
+		    .invokeConstructor( context )
+		    .getTargetInstance();
+
+		// Interceptor DI Injections into the variables scope
+		// - Name : The name of the interceptor
+		// - Properties : The properties of the interceptor
+		// - Log : A logger for the interceptor itself
+		// - InterceptorService : The InterceptorService instance
+		// - BoxRuntime : The BoxRuntime instance
+		// - ModuleRecord : The ModuleRecord instance, if passed
+		oInterceptor.getVariablesScope().put( Key._NAME, name );
+		oInterceptor.getVariablesScope().put( Key.properties, properties );
+		oInterceptor.getVariablesScope().put( Key.log, LoggerFactory.getLogger( oInterceptor.getClass() ) );
+		oInterceptor.getVariablesScope().put( Key.interceptorService, this );
+		oInterceptor.getVariablesScope().put( Key.boxRuntime, runtime );
+
+		// If we are in module mode, then add it in.
+		if ( moduleRecord != null ) {
+			oInterceptor.getVariablesScope().put( Key.moduleRecord, moduleRecord );
+		}
+
+		// Call the configure method if it exists in the interceptor
+		if ( oInterceptor.getThisScope().containsKey( Key.configure ) ) {
+			oInterceptor.dereferenceAndInvoke(
+			    context,
+			    Key.configure,
+			    new Object[] {},
+			    false
+			);
+		}
+
+		// Now we can register it
+		register( oInterceptor );
+
+		return oInterceptor;
+	}
+
+	/**
+	 * This method registers an interceptor with the service by metadata inspection.
+	 * It will inspect the interceptor for methods that match the states that the
+	 * InterceptorService can announce. If the interceptor has a method that matches
+	 * the state, it will register it with the service.
+	 *
+	 * If a method has a {@code interceptionPoint} BoxLang annotation, then the name
+	 * of the method will be registered as a valid state and auto-registered.
+	 *
+	 * @param interceptor The interceptor to register that must implement {@link IClassRunnable}
+	 *
+	 * @return The same service
+	 */
+	public InterceptorService register( IClassRunnable interceptor ) {
+		// Get the metadata of the class
+		IStruct	metadata	= interceptor.getBoxMeta().getMeta();
+
+		// System.out.println( metadata.getAsArray( Key.functions ).toString() );
+
+		// Discover the states to register the interceptor with
+		Key[]	states		= metadata
+		    .getAsArray( Key.functions )
+		    .stream()
+		    // Casting so compiler is happy
+		    .map( IStruct.class::cast )
+		    // Iterate and find all the functions with interception points or that they are interception points
+		    .filter( function -> {
+			    // Check if the function has the @interceptionPoint annotation
+			    // Check if the name of the Function is a valid interception point
+			    return function.getAsStruct( Key.annotations ).containsKey( Key.interceptionPoint ) ||
+			        interceptionPoints.contains( function.getAsKey( Key.nameAsKey ) );
+		    } )
+		    // Map it to the function name only now, this is what we need
+		    .map( function -> function.getAsKey( Key.nameAsKey ) )
+		    // Collect to the states array to register
+		    .toArray( Key[]::new );
+
+		// If we have any states, register them
+		if ( states.length > 0 ) {
+			register( DynamicObject.of( interceptor ), states );
+		}
+
+		return this;
+	}
 
 	/**
 	 * Register an interceptor with the service which must be an instance of
@@ -355,7 +476,7 @@ public class InterceptorService extends BaseService {
 			// logger.atDebug().log( "InterceptorService.announce() - announcing {}", state.getName() );
 
 			try {
-				getState( state ).announce( data );
+				getState( state ).announce( data, runtime.getRuntimeContext() );
 			} catch ( Exception e ) {
 				String errorMessage = String.format( "Errors announcing [%s] interception", state.getName() );
 				logger.error( errorMessage, e );

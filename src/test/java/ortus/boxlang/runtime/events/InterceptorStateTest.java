@@ -24,12 +24,13 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
+import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
 import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
 
-public class InterceptorStateTest {
+class InterceptorStateTest {
 
 	private InterceptorState	interceptorState;
 	private DynamicObject		observer1;
@@ -37,10 +38,10 @@ public class InterceptorStateTest {
 
 	@BeforeEach
 	void setUp() {
-		interceptorState	= new InterceptorState( "onTests" );
+		interceptorState	= new InterceptorState( Key.of( "onTests" ) );
 		observer1			= DynamicObject.of( this );
 		observer2			= DynamicObject.of( this );
-		assertThat( interceptorState.getName() ).isEqualTo( "onTests" );
+		assertThat( interceptorState.getName().getName() ).isEqualTo( "onTests" );
 	}
 
 	@DisplayName( "It can register and unregister observers" )
@@ -62,7 +63,7 @@ public class InterceptorStateTest {
 		IStruct	data		= new Struct();
 		data.put( counterKey, 0 );
 
-		interceptorState.announce( data );
+		interceptorState.announce( data, new ScriptingRequestBoxContext() );
 
 		assertThat( data.get( counterKey ) ).isEqualTo( 2 );
 	}
