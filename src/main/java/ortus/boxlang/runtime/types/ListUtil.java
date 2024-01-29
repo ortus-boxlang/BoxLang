@@ -17,17 +17,19 @@
  */
 package ortus.boxlang.runtime.types;
 
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ForkJoinPool;
+import java.util.UUID;
+import java.util.concurrent.ExecutionException;
 import java.util.function.IntPredicate;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import org.apache.commons.lang3.StringUtils;
 
+import ortus.boxlang.runtime.async.executors.ExecutorRecord;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.dynamic.casters.ArrayCaster;
 import ortus.boxlang.runtime.dynamic.casters.StringCaster;
+import ortus.boxlang.runtime.services.AsyncService;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
 /**
@@ -421,49 +423,45 @@ public class ListUtil {
 	    Boolean parallel,
 	    Integer maxThreads ) {
 
-		IntPredicate	test		= idx -> ( boolean ) callbackContext.invokeFunction( callback,
+		IntPredicate			test		= idx -> ( boolean ) callbackContext.invokeFunction( callback,
 		    new Object[] { array.get( idx ), idx + 1, array } );
 
-		IntStream		intStream	= array.intStream();
+		IntStream				intStream	= array.intStream();
 
-		ForkJoinPool	pool		= null;
-		if ( maxThreads != null ) {
-			try {
-				pool = new ForkJoinPool( maxThreads );
-			} catch ( IllegalArgumentException e ) {
-				throw new BoxRuntimeException(
-				    String.format(
-				        "The requested maxThreads [%s] requested exceeds the maximum number of pool threads allowed: [%s]",
-				        StringCaster.cast( maxThreads ),
-				        32767
-				    )
-				);
-			}
-		} else if ( parallel ) {
-			intStream.parallel();
+		// If parallel we create a fork join pool.
+		// If no max threads is specified it uses the {@link java.util.concurrent.ForkJoinPool#commonPool}
+		final ExecutorRecord	execPool	= parallel ? AsyncService.buildExecutor(
+		    "ArrayFilter_" + UUID.randomUUID().toString(),
+		    AsyncService.ExecutorType.FORK_JOIN,
+		    maxThreads
+		) : new ExecutorRecord( null, null, null, null );
+
+		try {
+			return ArrayCaster.cast(
+			    !parallel
+			        ? intStream
+			            .filter( test )
+			            .mapToObj( array::get )
+			            .toArray()
+
+			        : execPool.executor()
+			            .submit(
+			                () -> array.intStream().parallel().filter( test ).mapToObj( array::get ).toArray()
+			            ).get()
+			);
+		} catch ( InterruptedException e ) {
+			throw new BoxRuntimeException(
+			    "An interruption occurred while attempting to process the filter in parallel", e
+			);
+
+		} catch ( ExecutionException e ) {
+			throw new BoxRuntimeException(
+			    "An execution error occurred while attempting to process the filter in parallel", e
+			);
+		} finally {
+			execPool.shutdownQuiet();
 		}
 
-		// We fall back to the common pool here because we need a final variable for our onClose,
-		// but the common pool ignores the shutdown command
-		final ForkJoinPool joinPool = pool != null ? pool : ForkJoinPool.commonPool();
-
-		return ArrayCaster.cast(
-		    maxThreads == null
-		        ? intStream
-		            .filter( test )
-		            .mapToObj( array::get )
-		            .toArray()
-
-		        : CompletableFuture.supplyAsync(
-		            () -> array.intStream().parallel().onClose( joinPool::shutdown ).filter( test ).mapToObj( array::get ),
-		            pool
-		        ).exceptionally( jException -> {
-			        throw new BoxRuntimeException(
-			            "An error occurred while attempting a parallel filter of the array with the specified max threads",
-			            jException
-			        );
-		        } ).join().toArray()
-		);
 	}
 
 }
