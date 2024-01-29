@@ -423,14 +423,14 @@ public class ListUtil {
 	    Boolean parallel,
 	    Integer maxThreads ) {
 
-		IntPredicate			test		= idx -> ( boolean ) callbackContext.invokeFunction( callback,
+		IntPredicate	test		= idx -> ( boolean ) callbackContext.invokeFunction( callback,
 		    new Object[] { array.get( idx ), idx + 1, array } );
 
-		IntStream				intStream	= array.intStream();
+		IntStream		intStream	= array.intStream();
 
 		// If parallel we create a fork join pool.
 		// If no max threads is specified it uses the {@link java.util.concurrent.ForkJoinPool#commonPool}
-		final ExecutorRecord	execPool	= parallel ? AsyncService.buildExecutor(
+		ExecutorRecord	execPool	= parallel ? AsyncService.buildExecutor(
 		    "ArrayFilter_" + UUID.randomUUID().toString(),
 		    AsyncService.ExecutorType.FORK_JOIN,
 		    maxThreads
