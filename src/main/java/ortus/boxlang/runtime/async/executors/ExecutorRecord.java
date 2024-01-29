@@ -18,8 +18,11 @@
 package ortus.boxlang.runtime.async.executors;
 
 import java.util.List;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ForkJoinPool;
+import java.util.concurrent.ForkJoinTask;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
@@ -30,6 +33,7 @@ import ortus.boxlang.runtime.services.AsyncService;
 import ortus.boxlang.runtime.services.AsyncService.ExecutorType;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
+import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
 /**
  * A record for an executor
@@ -177,6 +181,79 @@ public record ExecutorRecord( ExecutorService executor, String name, ExecutorTyp
 				);
 			default :
 				return new Struct();
+		}
+	}
+
+	/**
+	 * Method to submit a Callable to the executor and return the result
+	 *
+	 * @param fn The Runnable lambda to submit
+	 *
+	 * @return The result of the submission and retrieval
+	 */
+	public Object submitAndGet( Callable<? extends Object> fn ) {
+		try {
+			return this.executor.submit( fn ).get();
+		} catch ( InterruptedException e ) {
+			throw new BoxRuntimeException(
+			    "An interruption occurred while attempting to process the requested method in parallel", e
+			);
+
+		} catch ( ExecutionException e ) {
+			throw new BoxRuntimeException(
+			    "An execution error occurred while attempting to process the requested method in  in parallel", e
+			);
+		} finally {
+			shutdownQuiet();
+		}
+	}
+
+	/**
+	 * Method to submit a Callable to the executor and return the result
+	 *
+	 * @param fn The Runnable lambda to submit
+	 *
+	 * @return The result of the submission and retrieval
+	 */
+	public Object submitAndGet( ForkJoinTask<? extends Object> fn ) {
+		try {
+			ForkJoinPool exec = ( ForkJoinPool ) this.executor;
+			return exec.submit( fn ).get();
+		} catch ( InterruptedException e ) {
+			throw new BoxRuntimeException(
+			    "An interruption occurred while attempting to process the requested method in parallel", e
+			);
+
+		} catch ( ExecutionException e ) {
+			throw new BoxRuntimeException(
+			    "An execution error occurred while attempting to process the requested method in  in parallel", e
+			);
+		} finally {
+			shutdownQuiet();
+		}
+	}
+
+	/**
+	 * Method to submit a runnable to the executor and return the result
+	 *
+	 * @param fn The Runnable lambda to submit
+	 *
+	 * @return The result of the submission and retrieval
+	 */
+	public Object submitAndGet( Runnable fn ) {
+		try {
+			return this.executor.submit( fn ).get();
+		} catch ( InterruptedException e ) {
+			throw new BoxRuntimeException(
+			    "An interruption occurred while attempting to process the requested method in parallel", e
+			);
+
+		} catch ( ExecutionException e ) {
+			throw new BoxRuntimeException(
+			    "An execution error occurred while attempting to process the requested method in  in parallel", e
+			);
+		} finally {
+			shutdownQuiet();
 		}
 	}
 }

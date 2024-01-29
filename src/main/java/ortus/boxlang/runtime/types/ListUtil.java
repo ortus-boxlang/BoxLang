@@ -18,14 +18,12 @@
 package ortus.boxlang.runtime.types;
 
 import java.util.UUID;
-import java.util.concurrent.ExecutionException;
 import java.util.function.IntPredicate;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import org.apache.commons.lang3.StringUtils;
 
-import ortus.boxlang.runtime.async.executors.ExecutorRecord;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.dynamic.casters.ArrayCaster;
 import ortus.boxlang.runtime.dynamic.casters.StringCaster;
@@ -406,7 +404,42 @@ public class ListUtil {
 	}
 
 	/**
+	 * Method to test if any item in the array meets the criteria in the callback
+	 *
+	 * @param array           The array object to filter
+	 * @param callback        The callback Function object
+	 * @param callbackContext The context in which to execute the callback
+	 * @param parallel        Whether to process the filter in parallel
+	 * @param maxThreads      Optional max threads for parallel execution
+	 *
+	 * @return The boolean value as to whether the test is met
+	 */
+	public static Boolean some(
+	    Array array,
+	    Function callback,
+	    IBoxContext callbackContext,
+	    Boolean parallel,
+	    Integer maxThreads ) {
+
+		IntPredicate	test		= idx -> ( boolean ) callbackContext.invokeFunction( callback,
+		    new Object[] { array.get( idx ), idx + 1, array } );
+
+		IntStream		intStream	= array.intStream();
+
+		return !parallel
+		    ? ( Boolean ) intStream.anyMatch( test )
+		    : ( Boolean ) AsyncService.buildExecutor(
+		        "ArrayFilter_" + UUID.randomUUID().toString(),
+		        AsyncService.ExecutorType.FORK_JOIN,
+		        maxThreads
+		    ).submitAndGet( () -> array.intStream().parallel().anyMatch( test ) );
+
+	}
+
+	/**
 	 * Method to filter an list with a function callback and context
+	 *
+	 * If parallel we create a fork join pool. If no max threads is specified it uses the {@link java.util.concurrent.ForkJoinPool#commonPool}
 	 *
 	 * @param array           The array object to filter
 	 * @param callback        The callback Function object
@@ -428,39 +461,19 @@ public class ListUtil {
 
 		IntStream		intStream	= array.intStream();
 
-		// If parallel we create a fork join pool.
-		// If no max threads is specified it uses the {@link java.util.concurrent.ForkJoinPool#commonPool}
-		ExecutorRecord	execPool	= parallel ? AsyncService.buildExecutor(
-		    "ArrayFilter_" + UUID.randomUUID().toString(),
-		    AsyncService.ExecutorType.FORK_JOIN,
-		    maxThreads
-		) : new ExecutorRecord( null, null, null, null );
+		return ArrayCaster.cast(
+		    !parallel
+		        ? intStream
+		            .filter( test )
+		            .mapToObj( array::get )
+		            .toArray()
 
-		try {
-			return ArrayCaster.cast(
-			    !parallel
-			        ? intStream
-			            .filter( test )
-			            .mapToObj( array::get )
-			            .toArray()
-
-			        : execPool.executor()
-			            .submit(
-			                () -> array.intStream().parallel().filter( test ).mapToObj( array::get ).toArray()
-			            ).get()
-			);
-		} catch ( InterruptedException e ) {
-			throw new BoxRuntimeException(
-			    "An interruption occurred while attempting to process the filter in parallel", e
-			);
-
-		} catch ( ExecutionException e ) {
-			throw new BoxRuntimeException(
-			    "An execution error occurred while attempting to process the filter in parallel", e
-			);
-		} finally {
-			execPool.shutdownQuiet();
-		}
+		        : AsyncService.buildExecutor(
+		            "ArrayFilter_" + UUID.randomUUID().toString(),
+		            AsyncService.ExecutorType.FORK_JOIN,
+		            maxThreads
+		        ).submitAndGet( () -> array.intStream().parallel().filter( test ).mapToObj( array::get ).toArray() )
+		);
 
 	}
 
