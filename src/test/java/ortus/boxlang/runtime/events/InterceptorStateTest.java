@@ -30,7 +30,7 @@ import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
 
-class InterceptorStateTest {
+public class InterceptorStateTest {
 
 	private InterceptorState	interceptorState;
 	private DynamicObject		observer1;
