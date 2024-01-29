@@ -104,7 +104,23 @@ public class ListUtil {
 	 * @return The (1-based) index of the value or 0 if not found
 	 */
 	public static int indexOf( String list, String value, String delimiter ) {
-		return asList( list, delimiter ).findIndex( value, true );
+		return indexOf( list, value, delimiter, false, false );
+	}
+
+	/**
+	 * Find the index of a value in a list
+	 *
+	 * @param list           The list to search
+	 * @param value          The value to search for
+	 * @param delimiter      The delimiter to use
+	 * @param includeEmpty   Whether to include empty items in the result array
+	 * @param wholeDelimiter Whether the delimiter contains multiple characters which should be matched. Otherwise all characters in the delimiter are
+	 *                       treated as separate delimiters
+	 *
+	 * @return The (1-based) index of the value or 0 if not found
+	 */
+	public static int indexOf( String list, String value, String delimiter, Boolean includeEmpty, Boolean wholeDelimiter ) {
+		return asList( list, delimiter, includeEmpty, wholeDelimiter ).findIndex( value, true );
 	}
 
 	/**
@@ -117,7 +133,23 @@ public class ListUtil {
 	 * @return The (1-based) index of the value or 0 if not found
 	 */
 	public static int indexOfNoCase( String list, String value, String delimiter ) {
-		return asList( list.toLowerCase(), delimiter ).findIndex( value, false );
+		return indexOfNoCase( list, value, delimiter, false, false );
+	}
+
+	/**
+	 * Find the index of a value in a list case insensitive
+	 *
+	 * @param list           The list to search
+	 * @param value          The value to search for
+	 * @param delimiter      The delimiter to use
+	 * @param includeEmpty   Whether to include empty items in the result array
+	 * @param wholeDelimiter Whether the delimiter contains multiple characters which should be matched. Otherwise all characters in the delimiter are
+	 *                       treated as separate delimiters
+	 *
+	 * @return The (1-based) index of the value or 0 if not found
+	 */
+	public static int indexOfNoCase( String list, String value, String delimiter, Boolean includeEmpty, Boolean wholeDelimiter ) {
+		return asList( list, delimiter, includeEmpty, wholeDelimiter ).findIndex( value, false );
 	}
 
 	/**
@@ -130,7 +162,23 @@ public class ListUtil {
 	 * @return True if the value is in the list
 	 */
 	public static Boolean contains( String list, String value, String delimiter ) {
-		return indexOf( list, value, delimiter ) > 0;
+		return contains( list, value, delimiter, false, false );
+	}
+
+	/**
+	 * Determine if a value is in a list
+	 *
+	 * @param list           The list to search
+	 * @param value          The value to search for
+	 * @param delimiter      The delimiter to use
+	 * @param includeEmpty   Whether to include empty items in the result array
+	 * @param wholeDelimiter Whether the delimiter contains multiple characters which should be matched. Otherwise all characters in the delimiter are
+	 *                       treated as separate delimiters
+	 *
+	 * @return True if the value is in the list
+	 */
+	public static Boolean contains( String list, String value, String delimiter, Boolean includeEmpty, Boolean wholeDelimiter ) {
+		return indexOf( list, value, delimiter, includeEmpty, wholeDelimiter ) > 0;
 	}
 
 	/**
@@ -143,7 +191,23 @@ public class ListUtil {
 	 * @return True if the value is in the list
 	 */
 	public static Boolean containsNoCase( String list, String value, String delimiter ) {
-		return indexOfNoCase( list, value, delimiter ) > 0;
+		return containsNoCase( list, value, delimiter, false, false );
+	}
+
+	/**
+	 * Determine if a value is in a list
+	 *
+	 * @param list           The list to search
+	 * @param value          The value to search for
+	 * @param delimiter      The delimiter to use
+	 * @param includeEmpty   Whether to include empty items in the result array
+	 * @param wholeDelimiter Whether the delimiter contains multiple characters which should be matched. Otherwise all characters in the delimiter are
+	 *                       treated as separate delimiters
+	 *
+	 * @return True if the value is in the list
+	 */
+	public static Boolean containsNoCase( String list, String value, String delimiter, Boolean includeEmpty, Boolean wholeDelimiter ) {
+		return asList( list, delimiter, includeEmpty, wholeDelimiter ).findIndex( value, false ) > 0;
 	}
 
 	/**
@@ -156,7 +220,23 @@ public class ListUtil {
 	 * @return The value at the index if found
 	 */
 	public static String getAt( String list, int index, String delimiter ) {
-		return StringCaster.cast( asList( list, delimiter ).getAt( index ) );
+		return getAt( list, index, delimiter, false, false );
+	}
+
+	/**
+	 * Get an item at a specific (1-based) index
+	 *
+	 * @param list           The list to search
+	 * @param index          The index to get
+	 * @param delimiter      The delimiter to use
+	 * @param includeEmpty   Whether to include empty items in the result array
+	 * @param wholeDelimiter Whether the delimiter contains multiple characters which should be matched. Otherwise all characters in the delimiter are
+	 *                       treated as separate delimiters
+	 *
+	 * @return The value at the index if found
+	 */
+	public static String getAt( String list, int index, String delimiter, Boolean includeEmpty, Boolean wholeDelimiter ) {
+		return StringCaster.cast( asList( list, delimiter, includeEmpty, wholeDelimiter ).getAt( index ) );
 	}
 
 	/**
@@ -169,7 +249,23 @@ public class ListUtil {
 	 * @return The new list
 	 */
 	public static String setAt( String list, int index, String value, String delimiter ) {
-		return asString( asList( list, delimiter ).setAt( index, value ), delimiter );
+		return setAt( list, index, value, delimiter, false, false );
+	}
+
+	/**
+	 * Set an item at a specific (1-based) index
+	 *
+	 * @param list           The list to set into
+	 * @param index          The index to set
+	 * @param delimiter      The delimiter to use
+	 * @param includeEmpty   Whether to include empty items in the result array
+	 * @param wholeDelimiter Whether the delimiter contains multiple characters which should be matched. Otherwise all characters in the delimiter are
+	 *                       treated as separate delimiters
+	 *
+	 * @return The new list
+	 */
+	public static String setAt( String list, int index, String value, String delimiter, Boolean includeEmpty, Boolean wholeDelimiter ) {
+		return asString( asList( list, delimiter, includeEmpty, wholeDelimiter ).setAt( index, value ), delimiter );
 	}
 
 	/**
@@ -182,7 +278,23 @@ public class ListUtil {
 	 * @return The new list
 	 */
 	public static String append( String list, String value, String delimiter ) {
-		Array jList = asList( list, delimiter );
+		return append( list, value, delimiter, false, false );
+	}
+
+	/**
+	 * Append an item to the end of a list
+	 *
+	 * @param list           The list to append to
+	 * @param value          The value to append
+	 * @param delimiter      The delimiter to use
+	 * @param includeEmpty   Whether to include empty items in the result array
+	 * @param wholeDelimiter Whether the delimiter contains multiple characters which should be matched. Otherwise all characters in the delimiter are
+	 *                       treated as separate delimiters
+	 *
+	 * @return The new list
+	 */
+	public static String append( String list, String value, String delimiter, Boolean includeEmpty, Boolean wholeDelimiter ) {
+		Array jList = asList( list, delimiter, includeEmpty, wholeDelimiter );
 		jList.add( value );
 		return asString( jList, delimiter );
 	}
@@ -197,7 +309,23 @@ public class ListUtil {
 	 * @return The new list
 	 */
 	public static String prepend( String list, String value, String delimiter ) {
-		Array jList = asList( list, delimiter );
+		return prepend( list, value, delimiter, false, false );
+	}
+
+	/**
+	 * Prepend an item to the beginning of a list
+	 *
+	 * @param list           The list to prepend to
+	 * @param value          The value to prepend
+	 * @param delimiter      The delimiter to use
+	 * @param includeEmpty   Whether to include empty items in the result array
+	 * @param wholeDelimiter Whether the delimiter contains multiple characters which should be matched. Otherwise all characters in the delimiter are
+	 *                       treated as separate delimiters
+	 *
+	 * @return The new list
+	 */
+	public static String prepend( String list, String value, String delimiter, Boolean includeEmpty, Boolean wholeDelimiter ) {
+		Array jList = asList( list, delimiter, includeEmpty, wholeDelimiter );
 		jList.add( 0, value );
 		return asString( jList, delimiter );
 	}
@@ -213,7 +341,24 @@ public class ListUtil {
 	 * @return The new list
 	 */
 	public static String insertAt( String list, int index, String value, String delimiter ) {
-		Array jList = asList( list, delimiter );
+		return insertAt( list, index, value, delimiter, false, false );
+	}
+
+	/**
+	 * Insert an item at a specific (1-based) index
+	 *
+	 * @param list           The list to insert into
+	 * @param index          The index to insert at
+	 * @param value          The value to insert
+	 * @param delimiter      The delimiter to use
+	 * @param includeEmpty   Whether to include empty items in the result array
+	 * @param wholeDelimiter Whether the delimiter contains multiple characters which should be matched. Otherwise all characters in the delimiter are
+	 *                       treated as separate delimiters
+	 *
+	 * @return The new list
+	 */
+	public static String insertAt( String list, int index, String value, String delimiter, Boolean includeEmpty, Boolean wholeDelimiter ) {
+		Array jList = asList( list, delimiter, includeEmpty, wholeDelimiter );
 		// Throw if index is out of bounds
 		if ( index < 1 || index > jList.size() + 1 ) {
 			throw new BoxRuntimeException( "Index out of bounds for list with " + jList.size() + " elements." );
@@ -232,7 +377,23 @@ public class ListUtil {
 	 * @return The new list
 	 */
 	public static String deleteAt( String list, int index, String delimiter ) {
-		Array jList = asList( list, delimiter );
+		return deleteAt( list, index, delimiter, false, false );
+	}
+
+	/**
+	 * Remove an item at a specific (1-based) index
+	 *
+	 * @param list           The list to remove from
+	 * @param index          The index to remove
+	 * @param delimiter      The delimiter to use
+	 * @param includeEmpty   Whether to include empty items in the result array
+	 * @param wholeDelimiter Whether the delimiter contains multiple characters which should be matched. Otherwise all characters in the delimiter are
+	 *                       treated as separate delimiters
+	 *
+	 * @return The new list
+	 */
+	public static String deleteAt( String list, int index, String delimiter, Boolean includeEmpty, Boolean wholeDelimiter ) {
+		Array jList = asList( list, delimiter, includeEmpty, wholeDelimiter );
 		// Throw if index is out of bounds
 		if ( index < 1 || index > jList.size() ) {
 			throw new BoxRuntimeException( "Index out of bounds for list with " + jList.size() + " elements." );
