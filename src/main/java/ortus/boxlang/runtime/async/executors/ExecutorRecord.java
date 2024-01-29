@@ -56,6 +56,16 @@ public record ExecutorRecord( ExecutorService executor, String name, ExecutorTyp
 	}
 
 	/**
+	 * Calls the `shutdown` of the executor - which is non blocking
+	 */
+	public void shutdownQuiet() {
+		if ( executor == null )
+			return;
+		logger.info( "Executor ({}) shuttingdown quiet", this.name );
+		this.executor.shutdown();
+	}
+
+	/**
 	 * Blocks until all tasks have completed execution after a shutdown request, or the timeout occurs, or
 	 * the current thread is interrupted, whichever happens first.
 	 *
@@ -63,6 +73,8 @@ public record ExecutorRecord( ExecutorService executor, String name, ExecutorTyp
 	 * @param unit    The time unit to use, available units are: days, hours, microseconds, milliseconds, minutes, nanoseconds, and seconds. The default
 	 */
 	public void shutdownAndAwaitTermination( Long timeout, TimeUnit unit ) {
+		if ( executor == null )
+			return;
 		timeout	= timeout == null ? AsyncService.DEFAULT_TIMEOUT : timeout;
 		unit	= unit == null ? TimeUnit.SECONDS : unit;
 
