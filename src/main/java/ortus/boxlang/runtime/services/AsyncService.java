@@ -442,9 +442,10 @@ public class AsyncService extends BaseService {
 				executor = Executors.newWorkStealingPool( maxThreads );
 				break;
 			case FORK_JOIN :
-			default :
 				executor = maxThreads != null ? new ForkJoinPool( maxThreads ) : ForkJoinPool.commonPool();
 				break;
+			default :
+				executor = null;
 		}
 		return new ExecutorRecord( executor, name, type, maxThreads );
 	}
