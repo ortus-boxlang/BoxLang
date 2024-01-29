@@ -40,8 +40,8 @@ public class ArraySome extends BIF {
 		declaredArguments = new Argument[] {
 		    new Argument( true, "array", Key.array ),
 		    new Argument( true, "function", Key.callback ),
-		    new Argument( false, "boolean", Key.parallel ),
-		    new Argument( false, "numeric", Key.maxThreads, 20 ),
+		    new Argument( false, "boolean", Key.parallel, false ),
+		    new Argument( false, "numeric", Key.maxThreads ),
 		    new Argument( Key.initialValue )
 		};
 	}
