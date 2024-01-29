@@ -5,7 +5,7 @@ options {
 }
 
 // Top-level template rule.  Consists of component or interface or statements.
-template: component | interface | ( boxImport* statements) EOF?;
+template: boxImport* component | interface | statements EOF?;
 
 // <b>My Name is #qry.name#.</b>
 textContent: (nonInterpolatedText | interpolatedExpression)+;
@@ -37,7 +37,35 @@ attribute:
 	| attributeName;
 
 // called TAG_NAME because the lexer doens't know the difference between a tag name and a variable name at lexing time
-attributeName: TAG_NAME;
+attributeName:
+	TAG_NAME
+	// These allow attributes inside a tag to be any of these "reserved" words.
+	| COMPONENT
+	| INTERFACE
+	| FUNCTION
+	| ARGUMENT
+	| SCRIPT
+	| OUTPUT
+	| RETURN
+	| IF
+	| ELSE
+	| ELSEIF
+	| SET
+	| TRY
+	| CATCH
+	| FINALLY
+	| IMPORT
+	| WHILE
+	| BREAK
+	| CONTINUE
+	| INCLUDE
+	| PROPERTY
+	| RETHROW
+	| THROW
+	| SWITCH
+	| CASE
+	| DEFAULTCASE
+	| PREFIX;
 
 // foo or.... "foo" or... 'foo' or... "#foo#"
 attributeValue: identifier | quotedString;

@@ -175,8 +175,8 @@ public class RunnableLoader {
 	 *
 	 * @return
 	 */
-	public Class<IClassRunnable> loadClass( String source, IBoxContext context ) {
-		return JavaBoxpiler.getInstance().compileClass( source );
+	public Class<IClassRunnable> loadClass( String source, IBoxContext context, BoxScriptType type ) {
+		return JavaBoxpiler.getInstance().compileClass( source, type );
 	}
 
 	/**

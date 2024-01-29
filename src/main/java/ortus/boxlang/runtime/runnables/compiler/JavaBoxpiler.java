@@ -210,14 +210,14 @@ public class JavaBoxpiler {
 	 * 
 	 * @return The loaded class
 	 */
-	public Class<IClassRunnable> compileClass( String source ) {
+	public Class<IClassRunnable> compileClass( String source, BoxScriptType type ) {
 		ClassInfo classInfo = ClassInfo.forClass( source );
 
 		if ( !classLoader.hasClass( classInfo.FQN() ) ) {
 			if ( diskClassLoader.hasClass( classInfo.FQN() ) ) {
 				return getDiskClassClass( classInfo.FQN() );
 			} else {
-				ParsingResult result = parseOrFail( source, BoxScriptType.CFSCRIPT );
+				ParsingResult result = parseOrFail( source, type );
 				compileSource( generateJavaSource( result.getRoot(), classInfo ), classInfo.FQN() );
 			}
 		}

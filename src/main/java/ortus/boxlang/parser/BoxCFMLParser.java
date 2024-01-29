@@ -28,6 +28,7 @@ import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.input.BOMInputStream;
 
 import ortus.boxlang.ast.BoxBufferOutput;
+import ortus.boxlang.ast.BoxClass;
 import ortus.boxlang.ast.BoxExpr;
 import ortus.boxlang.ast.BoxNode;
 import ortus.boxlang.ast.BoxScript;
@@ -52,6 +53,7 @@ import ortus.boxlang.ast.statement.BoxFunctionDeclaration;
 import ortus.boxlang.ast.statement.BoxIfElse;
 import ortus.boxlang.ast.statement.BoxImport;
 import ortus.boxlang.ast.statement.BoxInclude;
+import ortus.boxlang.ast.statement.BoxProperty;
 import ortus.boxlang.ast.statement.BoxRethrow;
 import ortus.boxlang.ast.statement.BoxReturn;
 import ortus.boxlang.ast.statement.BoxReturnType;
@@ -72,10 +74,12 @@ import ortus.boxlang.parser.antlr.CFMLParser.BoxImportContext;
 import ortus.boxlang.parser.antlr.CFMLParser.BreakContext;
 import ortus.boxlang.parser.antlr.CFMLParser.CaseContext;
 import ortus.boxlang.parser.antlr.CFMLParser.CatchBlockContext;
+import ortus.boxlang.parser.antlr.CFMLParser.ComponentContext;
 import ortus.boxlang.parser.antlr.CFMLParser.ContinueContext;
 import ortus.boxlang.parser.antlr.CFMLParser.FunctionContext;
 import ortus.boxlang.parser.antlr.CFMLParser.IncludeContext;
 import ortus.boxlang.parser.antlr.CFMLParser.OutputContext;
+import ortus.boxlang.parser.antlr.CFMLParser.PropertyContext;
 import ortus.boxlang.parser.antlr.CFMLParser.RethrowContext;
 import ortus.boxlang.parser.antlr.CFMLParser.ReturnContext;
 import ortus.boxlang.parser.antlr.CFMLParser.ScriptContext;
@@ -111,23 +115,60 @@ public class BoxCFMLParser extends BoxAbstractParser {
 	}
 
 	@Override
-	protected BoxScript parseTreeToAst( File file, ParserRuleContext parseTree ) throws IOException {
+	protected BoxNode parseTreeToAst( File file, ParserRuleContext parseTree ) throws IOException {
 		TemplateContext		template	= ( TemplateContext ) parseTree;
 
 		List<BoxStatement>	statements	= new ArrayList<>();
 		if ( template.boxImport() != null ) {
 			statements.addAll( toAst( file, template.boxImport() ) );
 		}
-		if ( template.statements() != null ) {
-			statements.addAll( toAst( file, template.statements() ) );
-		}
 		if ( template.component() != null ) {
-			throw new BoxRuntimeException( "tag component parsing not implemented yet" );
+			return toAst( file, template.component(), statements );
 		}
 		if ( template.interface_() != null ) {
 			throw new BoxRuntimeException( "tag interface parsing not implemented yet" );
 		}
+		if ( template.statements() != null ) {
+			statements.addAll( toAst( file, template.statements() ) );
+		}
 		return new BoxTemplate( statements, getPosition( parseTree ), getSourceText( parseTree ) );
+	}
+
+	private BoxNode toAst( File file, ComponentContext node, List<BoxStatement> importStatements ) {
+		List<BoxImport>						imports			= new ArrayList<>();
+		List<BoxStatement>					body			= new ArrayList<>();
+		List<BoxAnnotation>					annotations		= new ArrayList<>();
+		// This will be empty in tags
+		List<BoxDocumentationAnnotation>	documentation	= new ArrayList<>();
+		List<BoxProperty>					properties		= new ArrayList<>();
+
+		for ( BoxStatement importStatement : importStatements ) {
+			imports.add( ( BoxImport ) importStatement );
+		}
+		for ( var attr : node.attribute() ) {
+			annotations.add( toAst( file, attr ) );
+		}
+
+		if ( node.statements() != null ) {
+			body.addAll( toAst( file, node.statements() ) );
+		}
+		for ( CFMLParser.PropertyContext annotation : node.property() ) {
+			properties.add( toAst( file, annotation ) );
+		}
+
+		return new BoxClass( imports, body, annotations, documentation, properties, getPosition( node ), getSourceText( node ) );
+	}
+
+	private BoxProperty toAst( File file, PropertyContext node ) {
+		List<BoxAnnotation>					annotations		= new ArrayList<>();
+		// This will be empty in tags
+		List<BoxDocumentationAnnotation>	documentation	= new ArrayList<>();
+
+		for ( var attr : node.attribute() ) {
+			annotations.add( toAst( file, attr ) );
+		}
+
+		return new BoxProperty( annotations, documentation, getPosition( node ), getSourceText( node ) );
 	}
 
 	private List<BoxImport> toAst( File file, List<BoxImportContext> imports ) {
@@ -701,14 +742,14 @@ public class BoxCFMLParser extends BoxAbstractParser {
 		BOMInputStream				inputStream	= getInputStream( file );
 
 		CFMLParser.TemplateContext	parseTree	= ( CFMLParser.TemplateContext ) parserFirstStage( inputStream );
-		BoxScript					ast			= parseTreeToAst( file, parseTree );
+		BoxNode						ast			= parseTreeToAst( file, parseTree );
 		return new ParsingResult( ast, issues );
 	}
 
 	public ParsingResult parse( String code ) throws IOException {
 		InputStream					inputStream	= IOUtils.toInputStream( code, StandardCharsets.UTF_8 );
 		CFMLParser.TemplateContext	parseTree	= ( CFMLParser.TemplateContext ) parserFirstStage( inputStream );
-		BoxScript					ast			= parseTreeToAst( file, parseTree );
+		BoxNode						ast			= parseTreeToAst( file, parseTree );
 		return new ParsingResult( ast, issues );
 	}
 

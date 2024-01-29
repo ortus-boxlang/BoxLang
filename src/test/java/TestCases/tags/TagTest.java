@@ -32,6 +32,7 @@ import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
 import ortus.boxlang.runtime.interop.DynamicObject;
+import ortus.boxlang.runtime.runnables.IClassRunnable;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
 import ortus.boxlang.runtime.types.Array;
@@ -636,6 +637,17 @@ public class TagTest {
 		    										""", context, BoxScriptType.CFMARKUP );
 
 		assertThat( variables.get( result ) ).isEqualTo( "Carrots are orange." );
+
+	}
+
+	@Test
+	public void testSClass() {
+		instance.executeSource(
+		    """
+		    <cfset result = new src.test.java.TestCases.tags.MyClass()>
+		    """, context, BoxScriptType.CFMARKUP );
+
+		assertThat( variables.get( result ) ).isInstanceOf( IClassRunnable.class );
 
 	}
 
