@@ -18,6 +18,7 @@
 package ortus.boxlang.runtime.types;
 
 import java.util.UUID;
+import java.util.function.IntConsumer;
 import java.util.function.IntPredicate;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -401,6 +402,48 @@ public class ListUtil {
 		}
 		jList.remove( index - 1 );
 		return asString( jList, delimiter );
+	}
+
+	/**
+	 * Method to invoke a function for every iteration of the array
+	 *
+	 * @param array           The array object to filter
+	 * @param callback        The callback Function object
+	 * @param callbackContext The context in which to execute the callback
+	 * @param parallel        Whether to process the filter in parallel
+	 * @param maxThreads      Optional max threads for parallel execution
+	 * @param ordered         Boolean as to whether to maintain order in parallel execution
+	 *
+	 * @return The boolean value as to whether the test is met
+	 */
+	public static void each(
+	    Array array,
+	    Function callback,
+	    IBoxContext callbackContext,
+	    Boolean parallel,
+	    Integer maxThreads,
+	    Boolean ordered ) {
+
+		IntConsumer	exec		= idx -> callbackContext.invokeFunction( callback,
+		    new Object[] { array.get( idx ), idx + 1, array } );
+
+		IntStream	intStream	= array.intStream();
+		if ( !parallel ) {
+			intStream.forEach( exec );
+		} else if ( ordered ) {
+			AsyncService.buildExecutor(
+			    "ArrayFilter_" + UUID.randomUUID().toString(),
+			    AsyncService.ExecutorType.FORK_JOIN,
+			    maxThreads
+			).submitAndGet( () -> array.intStream().parallel().forEachOrdered( exec ) );
+		} else {
+			AsyncService.buildExecutor(
+			    "ArrayFilter_" + UUID.randomUUID().toString(),
+			    AsyncService.ExecutorType.FORK_JOIN,
+			    maxThreads
+			).submitAndGet( () -> array.intStream().parallel().forEach( exec ) );
+		}
+
 	}
 
 	/**

@@ -179,6 +179,7 @@ public class Key implements Comparable<Key> {
 	public static final Key	onParse						= Key.of( "onParse" );
 	public static final Key	onLoad						= Key.of( "onLoad" );
 	public static final Key	onUnload					= Key.of( "onUnload" );
+	public static final Key	ordered						= Key.of( "ordered" );
 	public static final Key	os							= Key.of( "os" );
 	public static final Key	output						= Key.of( "output" );
 	public static final Key	parallel					= Key.of( "parallel" );
