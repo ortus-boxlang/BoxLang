@@ -33,12 +33,22 @@ public class ListSetAt extends BIF {
 	}
 
 	/**
-	 * Describe what the invocation of your bif function does
+	 * Retrieves an item in to a delimited list at the specified position
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.foo Describe any expected arguments
+	 * @argument.list string list to filter entries from
+	 *
+	 * @argument.position numeric the one-based index position to retrieve the value at
+	 * 
+	 * @argument.value string the value to set at the specified position
+	 *
+	 * @argument.delimiter string the list delimiter
+	 *
+	 * @argument.includeEmptyFields boolean whether to include empty fields in the returned result
+	 *
+	 * @argument.multiCharacterDelimiter boolean whether the delimiter is multi-character
 	 */
 	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
 		return ListUtil.setAt(

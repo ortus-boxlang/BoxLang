@@ -41,7 +41,7 @@ public class ArraySome extends BIF {
 		    new Argument( true, "array", Key.array ),
 		    new Argument( true, "function", Key.callback ),
 		    new Argument( false, "boolean", Key.parallel, false ),
-		    new Argument( false, "numeric", Key.maxThreads ),
+		    new Argument( false, "integer", Key.maxThreads ),
 		    new Argument( Key.initialValue )
 		};
 	}
