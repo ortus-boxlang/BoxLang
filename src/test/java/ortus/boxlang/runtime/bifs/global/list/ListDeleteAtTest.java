@@ -1,3 +1,4 @@
+
 /**
  * [BoxLang]
  *
@@ -16,7 +17,7 @@
  * limitations under the License.
  */
 
-package ortus.boxlang.runtime.bifs.global.array;
+package ortus.boxlang.runtime.bifs.global.list;
 
 import static com.google.common.truth.Truth.assertThat;
 
@@ -29,22 +30,23 @@ import org.junit.jupiter.api.Test;
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
+import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
+import ortus.boxlang.runtime.types.ListUtil;
 
-public class ArrayDeletetAtTest {
+public class ListDeleteAtTest {
 
-	static BoxRuntime		instance;
-	static IBoxContext		context;
-	static VariablesScope	variables;
-	static Key				result	= new Key( "result" );
-	static Key				arr		= new Key( "arr" );
+	static BoxRuntime	instance;
+	static IBoxContext	context;
+	static IScope		variables;
+	static Key			result	= new Key( "result" );
 
 	@BeforeAll
 	public static void setUp() {
 		instance	= BoxRuntime.getInstance( true );
 		context		= new ScriptingRequestBoxContext( instance.getRuntimeContext() );
-		variables	= ( VariablesScope ) context.getScopeNearby( VariablesScope.name );
+		variables	= context.getScopeNearby( VariablesScope.name );
 	}
 
 	@AfterAll
@@ -63,12 +65,11 @@ public class ArrayDeletetAtTest {
 
 		instance.executeSource(
 		    """
-		    arr = [ 'a', 'b', 'c' ];
-		    result = arraydeleteAt( arr, 2 );
+		    arr = "a,b,c";
+		    result = listDeleteAt( arr, 2 );
 		    """,
 		    context );
-		assertThat( variables.get( result ) ).isEqualTo( true );
-		assertThat( variables.getAsArray( arr ) ).hasSize( 2 );
+		assertThat( ListUtil.asList( variables.getAsString( result ), ListUtil.DEFAULT_DELIMITER ) ).hasSize( 2 );
 
 	}
 
@@ -78,12 +79,12 @@ public class ArrayDeletetAtTest {
 
 		instance.executeSource(
 		    """
-		    arr = [ 'a', 'b', 'c' ];
-		    result = arr.DeleteAt( 2 );
+		    arr = "a,b,c";
+		    result = arr.listDeleteAt( 2 );
 		    """,
 		    context );
-		assertThat( variables.get( result ) ).isEqualTo( true );
-		assertThat( variables.getAsArray( arr ) ).hasSize( 2 );
+		assertThat( ListUtil.asList( variables.getAsString( result ), ListUtil.DEFAULT_DELIMITER ) ).hasSize( 2 );
 
 	}
+
 }

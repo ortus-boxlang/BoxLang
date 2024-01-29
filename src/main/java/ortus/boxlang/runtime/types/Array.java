@@ -448,6 +448,7 @@ public class Array implements List<Object>, IType, IReferenceable, IListenable {
 	 * Sets an object using the one-based index value
 	 *
 	 * @param index
+	 * @param element the object to set at the specified position
 	 *
 	 * @return
 	 */
@@ -456,6 +457,21 @@ public class Array implements List<Object>, IType, IReferenceable, IListenable {
 			throw new BoxRuntimeException( "Index out of bounds for list with " + wrapped.size() + " elements." );
 		}
 		set( index - 1, element );
+		return this;
+	}
+
+	/**
+	 * Deletes an object from the array using the one-based index value
+	 *
+	 * @param index The one-based index value to use for deletion
+	 *
+	 * @return
+	 */
+	public Array deleteAt( int index ) {
+		if ( index < 1 || index > wrapped.size() ) {
+			throw new BoxRuntimeException( "Index out of bounds for list with " + wrapped.size() + " elements." );
+		}
+		remove( index - 1 );
 		return this;
 	}
 

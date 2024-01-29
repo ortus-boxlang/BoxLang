@@ -395,13 +395,10 @@ public class ListUtil {
 	 * @return The new list
 	 */
 	public static String deleteAt( String list, int index, String delimiter, Boolean includeEmpty, Boolean wholeDelimiter ) {
-		Array jList = asList( list, delimiter, includeEmpty, wholeDelimiter );
-		// Throw if index is out of bounds
-		if ( index < 1 || index > jList.size() ) {
-			throw new BoxRuntimeException( "Index out of bounds for list with " + jList.size() + " elements." );
-		}
-		jList.remove( index - 1 );
-		return asString( jList, delimiter );
+		return asString(
+		    asList( list, delimiter, includeEmpty, wholeDelimiter ).deleteAt( index ),
+		    delimiter
+		);
 	}
 
 	/**

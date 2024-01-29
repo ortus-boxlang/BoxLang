@@ -32,7 +32,7 @@ import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
 
-public class ArrayDeletetTest {
+public class ArrayDeleteAtTest {
 
 	static BoxRuntime		instance;
 	static IBoxContext		context;
@@ -57,49 +57,33 @@ public class ArrayDeletetTest {
 		variables.clear();
 	}
 
-	@DisplayName( "It can delete" )
+	@DisplayName( "It can delete at" )
 	@Test
-	public void testCanDelete() {
+	public void testCanDeleteAt() {
 
 		instance.executeSource(
 		    """
 		    arr = [ 'a', 'b', 'c' ];
-		    result = arraydelete( arr, 'b' );
+		    result = arraydeleteAt( arr, 2 );
 		    """,
 		    context );
 		assertThat( variables.get( result ) ).isEqualTo( true );
 		assertThat( variables.getAsArray( arr ) ).hasSize( 2 );
 
-		instance.executeSource(
-		    """
-		    arr = [ 'a', 'b', 'c' ];
-		    result = arraydelete( arr, 'B' );
-		    """,
-		    context );
-		assertThat( variables.get( result ) ).isEqualTo( false );
-		assertThat( variables.getAsArray( arr ) ).hasSize( 3 );
 	}
 
-	@DisplayName( "It can delete member" )
+	@DisplayName( "It can delete at member" )
 	@Test
-	public void testCanDeleteMember() {
+	public void testCanDeleteAtMember() {
 
 		instance.executeSource(
 		    """
 		    arr = [ 'a', 'b', 'c' ];
-		    result = arr.Delete( 'b' );
+		    result = arr.DeleteAt( 2 );
 		    """,
 		    context );
 		assertThat( variables.get( result ) ).isEqualTo( true );
 		assertThat( variables.getAsArray( arr ) ).hasSize( 2 );
 
-		instance.executeSource(
-		    """
-		    arr = [ 'a', 'b', 'c' ];
-		    result = arr.Delete( 'B' );
-		    """,
-		    context );
-		assertThat( variables.get( result ) ).isEqualTo( false );
-		assertThat( variables.getAsArray( arr ) ).hasSize( 3 );
 	}
 }
