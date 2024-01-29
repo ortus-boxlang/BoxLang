@@ -56,7 +56,7 @@ public class ArrayPush extends BIF {
 		Array	actualArray	= arguments.getAsArray( Key.array );
 		Object	value		= arguments.get( Key.value );
 
-		actualArray.add( value );
+		actualArray.push( value );
 
 		return actualArray.size();
 	}
