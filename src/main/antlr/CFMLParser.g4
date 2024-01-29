@@ -5,7 +5,7 @@ options {
 }
 
 // Top-level template rule.  Consists of component or interface or statements.
-template: boxImport* component | interface | statements EOF?;
+template: boxImport* (component | interface | statements) EOF?;
 
 // <b>My Name is #qry.name#.</b>
 textContent: (nonInterpolatedText | interpolatedExpression)+;
