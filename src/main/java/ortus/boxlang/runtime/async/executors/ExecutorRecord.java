@@ -39,7 +39,7 @@ import ortus.boxlang.runtime.types.Struct;
  * @param type       The executor type
  * @param maxThreads The max threads, if applicable
  */
-public record ExecutorRecord( ExecutorService executor, String name, ExecutorType type, int maxThreads ) {
+public record ExecutorRecord( ExecutorService executor, String name, ExecutorType type, Integer maxThreads ) {
 
 	/**
 	 * Logger

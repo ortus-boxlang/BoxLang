@@ -423,7 +423,7 @@ public class AsyncService extends BaseService {
 	 *
 	 * @return The executor
 	 */
-	public ExecutorRecord buildExecutor( String name, ExecutorType type, int maxThreads ) {
+	public static ExecutorRecord buildExecutor( String name, ExecutorType type, Integer maxThreads ) {
 		ExecutorService executor = null;
 		switch ( type ) {
 			case CACHED :
@@ -443,7 +443,7 @@ public class AsyncService extends BaseService {
 				break;
 			case FORK_JOIN :
 			default :
-				executor = new ForkJoinPool( maxThreads );
+				executor = maxThreads != null ? new ForkJoinPool( maxThreads ) : ForkJoinPool.commonPool();
 				break;
 		}
 		return new ExecutorRecord( executor, name, type, maxThreads );
