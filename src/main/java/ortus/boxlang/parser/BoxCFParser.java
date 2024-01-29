@@ -1446,12 +1446,17 @@ public class BoxCFParser extends BoxAbstractParser {
 	 *
 	 */
 	private List<BoxArgument> toAst( File file, CFParser.ArgumentListContext node ) {
-		List<BoxArgument> args = new ArrayList<>();
+		List<BoxArgument>	args	= new ArrayList<>();
+		Boolean				isNamed	= false;
 		if ( node != null ) {
 			for ( CFParser.NamedArgumentContext arg : node.namedArgument() ) {
+				isNamed = true;
 				args.add( toAst( file, arg ) );
 			}
 			for ( CFParser.PositionalArgumentContext arg : node.positionalArgument() ) {
+				if ( isNamed ) {
+					issues.add( new Issue( "You cannot mix named and positional arguments", getPosition( arg ) ) );
+				}
 				args.add( toAst( file, arg ) );
 			}
 		}

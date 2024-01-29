@@ -169,8 +169,9 @@ saveContentStatement:
 
 // Arguments are zero or more named args, or zero or more positional args, but not both.
 argumentList:
-	namedArgument (COMMA namedArgument)*
-	| positionalArgument (COMMA positionalArgument)*;
+	(namedArgument | positionalArgument) (
+		COMMA (namedArgument | positionalArgument)
+	)*;
 
 /* 
  foo = bar, baz = qux 
