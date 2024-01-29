@@ -48,11 +48,12 @@ public class ListGetAt extends BIF {
 	 * @argument.multiCharacterDelimiter boolean whether the delimiter is multi-character
 	 */
 	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
-		return ListUtil.asList(
+		return ListUtil.getAt(
 		    arguments.getAsString( Key.list ),
+		    IntegerCaster.cast( arguments.get( Key.position ) ),
 		    arguments.getAsString( Key.delimiter ),
 		    arguments.getAsBoolean( Key.includeEmptyFields ),
 		    arguments.getAsBoolean( Key.multiCharacterDelimiter )
-		).getAt( IntegerCaster.cast( arguments.get( Key.position ) ) );
+		);
 	}
 }
