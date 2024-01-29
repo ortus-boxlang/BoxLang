@@ -191,7 +191,7 @@ public class ModuleService extends BaseService {
 		registerAll();
 
 		// Activate all modules
-		// activateAllModules();
+		activateAll();
 
 		// Announce it
 		announce(
@@ -285,7 +285,7 @@ public class ModuleService extends BaseService {
 			);
 		}
 
-		// Get the module record and context of execution for moduels
+		// Get the module record and context of execution for modules
 		// Which is separate from anything else
 		var	moduleRecord	= this.registry.get( name );
 		var	runtimeContext	= runtime.getRuntimeContext();
@@ -374,19 +374,96 @@ public class ModuleService extends BaseService {
 	 */
 
 	/**
-	 * Activate all modules
+	 * Activate all modules that are not disabled
 	 */
 	void activateAll() {
-		// activateCoreModules();
+		var timerLabel = "moduleservice-activateallmodules";
+		BoxRuntime.timerUtil.start( timerLabel );
+
+		// If we detect more than 10 modules, do it async
+		this.registry
+		    .keySet()
+		    .stream()
+		    .forEach( this::activate );
+
+		// Log it
+		logger.atInfo().log(
+		    "+ Module Service: Activated [{}] modules in [{}] ms",
+		    this.registry.size(),
+		    BoxRuntime.timerUtil.stopAndGetMillis( timerLabel )
+		);
+
+		// Announce it
+		announce( MODULE_EVENTS.get( "afterModuleActivations" ), Struct.of( "moduleRegistry", this.registry ) );
 	}
 
 	/**
 	 * Activate a module
 	 *
 	 * @param name The name of the module to activate
+	 *
+	 * @throws BoxRuntimeException If the module is not in the module registry
 	 */
 	void activate( Key name ) {
-		// if( modules.containsKey( name ) ) {
+		var timerLabel = "moduleservice-activate-" + name.getName();
+		BoxRuntime.timerUtil.start( timerLabel );
+
+		// Check if the module is in the registry
+		if ( !this.registry.containsKey( name ) ) {
+			throw new BoxRuntimeException(
+			    "Cannot activate the module [" + name + "] is not in the module registry." +
+			        "Valid modules are: " + this.registry.keySet().toString()
+			);
+		}
+
+		// Check if the module is already activated
+		if ( this.registry.get( name ).isActivated() ) {
+			logger.atWarn().log(
+			    "+ Module Service: Module [{}] is already activated, skipping re-activation",
+			    name
+			);
+			return;
+		}
+
+		// Check if the module is disabled
+		if ( this.registry.get( name ).isDisabled() ) {
+			logger.atInfo().log(
+			    "+ Module Service: Module [{}] is disabled, skipping activation",
+			    name
+			);
+			return;
+		}
+
+		// Get the module record and context of execution for modules
+		// Which is separate from anything else
+		var	moduleRecord	= this.registry.get( name );
+		var	runtimeContext	= runtime.getRuntimeContext();
+
+		// Announce it
+		announce(
+		    MODULE_EVENTS.get( "preModuleLoad" ),
+		    Struct.of( "moduleRecord", moduleRecord, "moduleName", name )
+		);
+
+		// Activate it
+		moduleRecord.activate( runtimeContext );
+
+		// Finalized
+		moduleRecord.activationTime = BoxRuntime.timerUtil.stopAndGetMillis( timerLabel );
+
+		// Announce it
+		announce(
+		    MODULE_EVENTS.get( "postModuleLoad" ),
+		    Struct.of( "moduleRecord", moduleRecord, "moduleName", name )
+		);
+
+		// Log it
+		logger.atInfo().log(
+		    "+ Module Service: Activated module [{}@{}] in [{}] ms",
+		    moduleRecord.name,
+		    moduleRecord.version,
+		    moduleRecord.activationTime
+		);
 	}
 
 	/**
@@ -406,12 +483,45 @@ public class ModuleService extends BaseService {
 	}
 
 	/**
-	 * Unload a module
+	 * Unload a module if it exists, else it's ignored
 	 *
 	 * @param name The name of the module to unload
 	 */
 	void unload( Key name ) {
-		// if( modules.containsKey( name ) ) {
+		// Check if the module is in the registry or it's already deactivated
+		if ( !this.registry.containsKey( name ) || !this.registry.get( name ).isActivated() ) {
+			return;
+		}
+
+		// Get the module record and context of execution for modules
+		// Which is separate from anything else
+		var	moduleRecord	= this.registry.get( name );
+		var	runtimeContext	= runtime.getRuntimeContext();
+
+		// Announce it
+		announce(
+		    MODULE_EVENTS.get( "preModuleUnload" ),
+		    Struct.of( "moduleRecord", moduleRecord, "moduleName", name )
+		);
+
+		// Call onUnload()
+		moduleRecord.unload( runtimeContext );
+
+		// Announce it
+		announce(
+		    MODULE_EVENTS.get( "postModuleUnload" ),
+		    Struct.of( "moduleRecord", moduleRecord, "moduleName", name )
+		);
+
+		// Log it
+		logger.atInfo().log(
+		    "+ Module Service: Unload module [{}@{}]",
+		    moduleRecord.name,
+		    moduleRecord.version
+		);
+
+		// Remove it
+		this.registry.remove( name );
 	}
 
 	/**
