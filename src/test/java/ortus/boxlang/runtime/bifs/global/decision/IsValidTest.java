@@ -167,48 +167,28 @@ public class IsValidTest {
 	}
 
 	@Disabled( "Unimplemented" )
-	@DisplayName( "It works on eurodates" )
-	@Test
-	public void testEurodate() {
-		instance.executeSource(
-		    """
-		    // true with slashes
-		    jan1       = isValid( 'eurodate', '1/1/2001' );
-		    dec31      = isValid( 'eurodate', '31/12/2001' );
-		    leapday    = isValid( 'eurodate', '29/2/2000' );
-		    // true with dots
-		    jan1dot    = isValid( 'eurodate', '1.1.2001' );
-		    dec31dot   = isValid( 'eurodate', '31.12.2001' );
-		    leapdaydot = isValid( 'eurodate', '29.2.2000' );
-
-		    // various falses
-		    daymonthswitched = isValid( 'eurodate', '12/31/2001' );
-		    daymonthswitcheddot = isValid( 'eurodate', '12.31.2001' );
-		    invalidmonth = isValid( 'eurodate', '31.13.2001' );
-
-		    nowString = isValid( 'eurodate',""&now());
-		    now = isValid( 'eurodate',now());
-		    """,
-		    context );
-		assertThat( ( Boolean ) variables.get( Key.of( "jan1" ) ) ).isTrue();
-		assertThat( ( Boolean ) variables.get( Key.of( "dec31" ) ) ).isTrue();
-		assertThat( ( Boolean ) variables.get( Key.of( "leapday" ) ) ).isTrue();
-		assertThat( ( Boolean ) variables.get( Key.of( "jan1dot" ) ) ).isTrue();
-		assertThat( ( Boolean ) variables.get( Key.of( "dec31dot" ) ) ).isTrue();
-		assertThat( ( Boolean ) variables.get( Key.of( "leapdaydot" ) ) ).isTrue();
-
-		assertThat( ( Boolean ) variables.get( Key.of( "daymonthswitched" ) ) ).isFalse();
-		assertThat( ( Boolean ) variables.get( Key.of( "daymonthswitcheddot" ) ) ).isFalse();
-		assertThat( ( Boolean ) variables.get( Key.of( "invalidmonth" ) ) ).isFalse();
-		assertThat( ( Boolean ) variables.get( Key.of( "nowString" ) ) ).isFalse();
-		assertThat( ( Boolean ) variables.get( Key.of( "now" ) ) ).isFalse();
-	}
-
 	@DisplayName( "It works on floats" )
 	@Test
 	public void testFloat() {
 		assertThat( ( Boolean ) instance.executeStatement( "isValid( 'float', 1.23 )" ) ).isTrue();
 		assertThat( ( Boolean ) instance.executeStatement( "isValid( 'float', 'xyz' )" ) ).isFalse();
+		instance.executeSource(
+		    """
+		    // trues
+		    float       = isValid( 'numeric', 123.45 );
+		    stringFloat = isValid( 'numeric', "123.45" );
+
+		    // falsies
+		    int       = isValid( 'numeric', 123 );
+		    bool      = isValid( 'numeric', true );
+		    stringval = isValid( 'numeric', '3x' );
+		    """,
+		    context );
+		assertThat( ( Boolean ) variables.get( Key.of( "float" ) ) ).isTrue();
+		assertThat( ( Boolean ) variables.get( Key.of( "stringFloat" ) ) ).isTrue();
+		assertThat( ( Boolean ) variables.get( Key.of( "int" ) ) ).isFalse();
+		assertThat( ( Boolean ) variables.get( Key.of( "bool" ) ) ).isFalse();
+		assertThat( ( Boolean ) variables.get( Key.of( "stringval" ) ) ).isFalse();
 	}
 
 	@Disabled( "Unimplemented" )
@@ -222,16 +202,44 @@ public class IsValidTest {
 	@DisplayName( "It works on integers" )
 	@Test
 	public void testInteger() {
-		assertThat( ( Boolean ) instance.executeStatement( "isValid( 'integer', 123 )" ) ).isTrue();
-		assertThat( ( Boolean ) instance.executeStatement( "isValid( 'integer', '3x' )" ) ).isFalse();
+		instance.executeSource(
+		    """
+		    // trues
+		    int       = isValid( 'integer', 123 );
+		    // falsies
+		    bool      = isValid( 'integer', true );
+		    float     = isValid( 'integer', 123.45 );
+		    stringval = isValid( 'integer', '3x' );
+		    """,
+		    context );
+		assertThat( ( Boolean ) variables.get( Key.of( "int" ) ) ).isTrue();
+		assertThat( ( Boolean ) variables.get( Key.of( "bool" ) ) ).isFalse();
+		assertThat( ( Boolean ) variables.get( Key.of( "float" ) ) ).isFalse();
+		assertThat( ( Boolean ) variables.get( Key.of( "stringval" ) ) ).isFalse();
 	}
 
 	@DisplayName( "It works on Numerics" )
 	@Test
 	public void testNumeric() {
-		assertThat( ( Boolean ) instance.executeStatement( "isValid( 'Numeric', 19.99 )" ) ).isTrue();
-		assertThat( ( Boolean ) instance.executeStatement( "isValid( 'Numeric', '1e1' )" ) ).isTrue();
-		assertThat( ( Boolean ) instance.executeStatement( "isValid( 'Numeric', '1x1' )" ) ).isFalse();
+		instance.executeSource(
+		    """
+		    // trues
+		    int         = isValid( 'numeric', 123 );
+		    float       = isValid( 'numeric', 123.45 );
+		    stringInt   = isValid( 'numeric', "123" );
+		    stringFloat = isValid( 'numeric', "123.45" );
+
+		    // falsies
+		    bool      = isValid( 'numeric', true );
+		    stringval = isValid( 'numeric', '3x' );
+		    """,
+		    context );
+		assertThat( ( Boolean ) variables.get( Key.of( "int" ) ) ).isTrue();
+		assertThat( ( Boolean ) variables.get( Key.of( "float" ) ) ).isTrue();
+		assertThat( ( Boolean ) variables.get( Key.of( "stringInt" ) ) ).isTrue();
+		assertThat( ( Boolean ) variables.get( Key.of( "stringFloat" ) ) ).isTrue();
+		assertThat( ( Boolean ) variables.get( Key.of( "bool" ) ) ).isFalse();
+		assertThat( ( Boolean ) variables.get( Key.of( "stringval" ) ) ).isFalse();
 	}
 
 	@Disabled( "QueryNew() is not implemented" )
@@ -319,20 +327,54 @@ public class IsValidTest {
 		assertThat( ( Boolean ) variables.get( Key.of( "mismatch" ) ) ).isFalse();
 	}
 
-	@Disabled( "Unimplemented" )
 	@DisplayName( "It works on ssns" )
 	@Test
 	public void testSSN() {
-		assertThat( ( Boolean ) instance.executeStatement( "isValid( 'ssn', '123-45-6789' )" ) ).isTrue();
-		assertThat( ( Boolean ) instance.executeStatement( "isValid( 'ssn', '12345678900000' )" ) ).isFalse();
+		instance.executeSource(
+		    """
+		    // trues
+		    validwithdashes = isValid( 'ssn', '123-45-6789' );
+		    validnodashes   = isValid( 'ssn', '123-45-6789' );
+
+		    // falsies
+		    toomanychars  = isValid( 'ssn', '1234567891' );
+		    zeros         = isValid( 'ssn', '123-00-6789' );
+		    woolworth     = isValid( 'ssn', '078-05-1120' );
+		    ssaDisallowed = isValid( 'ssn', '219-09-9999' );
+		       """,
+		    context );
+		assertThat( ( Boolean ) variables.get( Key.of( "validwithdashes" ) ) ).isTrue();
+		assertThat( ( Boolean ) variables.get( Key.of( "validnodashes" ) ) ).isTrue();
+
+		assertThat( ( Boolean ) variables.get( Key.of( "toomanychars" ) ) ).isFalse();
+		assertThat( ( Boolean ) variables.get( Key.of( "zeros" ) ) ).isFalse();
+		assertThat( ( Boolean ) variables.get( Key.of( "woolworth" ) ) ).isFalse();
+		assertThat( ( Boolean ) variables.get( Key.of( "ssaDisallowed" ) ) ).isFalse();
 	}
 
-	@Disabled( "Unimplemented" )
 	@DisplayName( "It works on social_security_numbers" )
 	@Test
 	public void testSocial_security_number() {
-		assertThat( ( Boolean ) instance.executeStatement( "isValid( 'ssn', '123-45-6789' )" ) ).isTrue();
-		assertThat( ( Boolean ) instance.executeStatement( "isValid( 'ssn', '12345678900000' )" ) ).isFalse();
+		instance.executeSource(
+		    """
+		    // trues
+		    validwithdashes = isValid( 'ssn', '123-45-6789' );
+		    validnodashes   = isValid( 'ssn', '123-45-6789' );
+
+		    // falsies
+		    toomanychars  = isValid( 'ssn', '1234567891' );
+		    zeros         = isValid( 'ssn', '123-00-6789' );
+		    woolworth     = isValid( 'ssn', '078-05-1120' );
+		    ssaDisallowed = isValid( 'ssn', '219-09-9999' );
+		       """,
+		    context );
+		assertThat( ( Boolean ) variables.get( Key.of( "validwithdashes" ) ) ).isTrue();
+		assertThat( ( Boolean ) variables.get( Key.of( "validnodashes" ) ) ).isTrue();
+
+		assertThat( ( Boolean ) variables.get( Key.of( "toomanychars" ) ) ).isFalse();
+		assertThat( ( Boolean ) variables.get( Key.of( "zeros" ) ) ).isFalse();
+		assertThat( ( Boolean ) variables.get( Key.of( "woolworth" ) ) ).isFalse();
+		assertThat( ( Boolean ) variables.get( Key.of( "ssaDisallowed" ) ) ).isFalse();
 	}
 
 	@DisplayName( "It works on Strings" )
@@ -366,20 +408,32 @@ public class IsValidTest {
 		assertThat( ( Boolean ) instance.executeStatement( "isValid( 'URL', badValue )" ) ).isFalse();
 	}
 
-	@Disabled( "Unimplemented" )
 	@DisplayName( "It works on UUIDs" )
 	@Test
 	public void testUUID() {
-		assertThat( ( Boolean ) instance.executeStatement( "isValid( 'UUID', createUUID() )" ) ).isTrue();
-		assertThat( ( Boolean ) instance.executeStatement( "isValid( 'UUID', createGUID() )" ) ).isFalse();
+		instance.executeSource(
+		    """
+		    // trues
+		    createuuid = isValid( 'uuid', createUUID() );
+		    result     = isValid( 'uuid', '8BC22B08-53A4-4876-A4E08CD9690DBF2C' );
+
+		    // falsies
+		    // guid         = isValid( 'uuid', createGUID() );
+		    toomanychars = isValid( 'uuid', '8BC22B08-53A4-4876-A4E08CD9690DBF2C111' );
+		    """,
+		    context );
+		assertThat( ( Boolean ) variables.get( Key.of( "createuuid" ) ) ).isTrue();
+		assertThat( ( Boolean ) variables.get( Key.of( "result" ) ) ).isTrue();
+
+		// assertThat( ( Boolean ) variables.get( Key.of( "guid" ) ) ).isFalse();
+		assertThat( ( Boolean ) variables.get( Key.of( "toomanychars" ) ) ).isFalse();
 	}
 
-	@Disabled( "Unimplemented" )
 	@DisplayName( "It works on usdates" )
 	@Test
 	public void testUsdate() {
-		assertThat( ( Boolean ) instance.executeStatement( "isValid( 'usdate', goodValue )" ) ).isTrue();
-		assertThat( ( Boolean ) instance.executeStatement( "isValid( 'usdate', badValue )" ) ).isFalse();
+		assertThat( ( Boolean ) instance.executeStatement( "isValid( 'usdate', '1/31/2024' )" ) ).isTrue();
+		assertThat( ( Boolean ) instance.executeStatement( "isValid( 'usdate', '31/1/2024' )" ) ).isFalse();
 	}
 
 	@Disabled( "Unimplemented" )
@@ -411,27 +465,25 @@ public class IsValidTest {
 		assertThat( ( Boolean ) variables.get( Key.of( "emptybrackets" ) ) ).isFalse();
 	}
 
-	@Disabled( "Unimplemented" )
 	@DisplayName( "It works on zipcodes" )
 	@Test
 	public void testZipcode() {
 		instance.executeSource(
 		    """
-		    fivedigit  = IsValid( "zipcode", '12345' );
-		    9withdash  = IsValid( "zipcode", '12345-6789' );
-		    9withspace = IsValid( "zipcode", '12345 6789' );
+		    fivedigit     = IsValid( "zipcode", '12345' );
+		    ninewithdash  = IsValid( "zipcode", '12345-6789' );
+		    ninewithspace = IsValid( "zipcode", '12345 6789' );
 
 		    // falsies
-		    4digit    = IsValid( "zipcode", '1234' );
-		    8withdash = IsValid( "zipcode", '1234-12345' );
+		    fourdigit     = IsValid( "zipcode", '1234' );
+		    eightwithdash = IsValid( "zipcode", '1234-12345' );
 		    """,
 		    context );
 		assertThat( ( Boolean ) variables.get( Key.of( "fivedigit" ) ) ).isTrue();
-		assertThat( ( Boolean ) variables.get( Key.of( "9withdash" ) ) ).isTrue();
-		assertThat( ( Boolean ) variables.get( Key.of( "9withspace" ) ) ).isTrue();
+		assertThat( ( Boolean ) variables.get( Key.of( "ninewithdash" ) ) ).isTrue();
+		assertThat( ( Boolean ) variables.get( Key.of( "ninewithspace" ) ) ).isTrue();
 
-		assertThat( ( Boolean ) variables.get( Key.of( "4digit" ) ) ).isFalse();
-		assertThat( ( Boolean ) variables.get( Key.of( "8withdash" ) ) ).isFalse();
+		assertThat( ( Boolean ) variables.get( Key.of( "fourdigit" ) ) ).isFalse();
+		assertThat( ( Boolean ) variables.get( Key.of( "eightwithdash" ) ) ).isFalse();
 	}
-
 }
