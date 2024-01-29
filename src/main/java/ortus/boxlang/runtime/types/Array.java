@@ -404,6 +404,33 @@ public class Array implements List<Object>, IType, IReferenceable, IListenable {
 	 */
 
 	/**
+	 * Inserts an object at a specified position using the one-based index value
+	 *
+	 * @param index
+	 *
+	 * @return
+	 */
+	public Array insertAt( int index, Object element ) {
+		if ( index < 1 || index > wrapped.size() ) {
+			throw new BoxRuntimeException( "Index out of bounds for list with " + wrapped.size() + " elements." );
+		}
+		add( index - 1, element );
+		return this;
+	}
+
+	/**
+	 * Appends a new object to the array
+	 *
+	 * @param element The object to insert
+	 *
+	 * @return
+	 */
+	public Array push( Object element ) {
+		add( element );
+		return this;
+	}
+
+	/**
 	 * Retrieves and object using the one-based index value
 	 *
 	 * @param index
