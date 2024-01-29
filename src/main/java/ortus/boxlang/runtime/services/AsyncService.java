@@ -22,6 +22,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
@@ -77,7 +78,8 @@ public class AsyncService extends BaseService {
 		FIXED,   // Fixed-size thread pool executor
 		SINGLE,  // Single-threaded executor
 		SCHEDULED, // Scheduled thread pool
-		WORK_STEALING  // Work-stealing executor
+		WORK_STEALING,  // Work-stealing executor,
+		FORK_JOIN // Fork join pool
 	}
 
 	/**
@@ -444,6 +446,10 @@ public class AsyncService extends BaseService {
 				break;
 			case WORK_STEALING :
 				executor = Executors.newWorkStealingPool( maxThreads );
+				break;
+			case FORK_JOIN :
+			default :
+				executor = new ForkJoinPool( maxThreads );
 				break;
 		}
 		return new ExecutorRecord( executor, name, type, maxThreads );
