@@ -104,6 +104,7 @@ import ortus.boxlang.ast.statement.tag.BoxTagIsland;
 import ortus.boxlang.parser.antlr.CFLexer;
 import ortus.boxlang.parser.antlr.CFParser;
 import ortus.boxlang.parser.antlr.CFParser.ComponentContext;
+import ortus.boxlang.parser.antlr.CFParser.NewContext;
 import ortus.boxlang.parser.antlr.CFParser.PreannotationContext;
 import ortus.boxlang.parser.antlr.CFParser.TagIslandContext;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
@@ -413,22 +414,12 @@ public class BoxCFParser extends BoxAbstractParser {
 			return toAst( file, node.while_() );
 		} else if ( node.do_() != null ) {
 			return toAst( file, node.do_() );
-		} else if ( node.break_() != null ) {
-			return toAst( file, node.break_() );
-		} else if ( node.continue_() != null ) {
-			return toAst( file, node.continue_() );
 		} else if ( node.switch_() != null ) {
 			return toAst( file, node.switch_() );
 		} else if ( node.for_() != null ) {
 			return toAst( file, node.for_() );
 		} else if ( node.try_() != null ) {
 			return toAst( file, node.try_() );
-		} else if ( node.throw_() != null ) {
-			return toAst( file, node.throw_() );
-		} else if ( node.rethrow() != null ) {
-			return toAst( file, node.rethrow() );
-		} else if ( node.include() != null ) {
-			return toAst( file, node.include() );
 		} else if ( node.tagIsland() != null ) {
 			return toAst( file, node.tagIsland() );
 		} else {
@@ -670,14 +661,12 @@ public class BoxCFParser extends BoxAbstractParser {
 
 		List<BoxStatement> statements = new ArrayList<>();
 		if ( node.statement() != null ) {
-			statements.add( toAst( file, node.statement() ) );
-
+			for ( var statement : node.statement() ) {
+				statements.add( toAst( file, statement ) );
+			}
 		}
 		if ( node.statementBlock() != null ) {
 			statements.addAll( toAst( file, node.statementBlock() ) );
-		}
-		if ( node.break_() != null ) {
-			statements.add( toAst( file, node.break_() ) );
 		}
 		return new BoxSwitchCase( expr, null, statements, getPosition( node ), getSourceText( node ) );
 	}
@@ -801,6 +790,16 @@ public class BoxCFParser extends BoxAbstractParser {
 		} else if ( node.expression() != null ) {
 			BoxExpr expr = toAst( file, node.expression() );
 			return new BoxExpression( expr, getPosition( node ), getSourceText( node ) );
+		} else if ( node.break_() != null ) {
+			return toAst( file, node.break_() );
+		} else if ( node.continue_() != null ) {
+			return toAst( file, node.continue_() );
+		} else if ( node.rethrow() != null ) {
+			return toAst( file, node.rethrow() );
+		} else if ( node.include() != null ) {
+			return toAst( file, node.include() );
+		} else if ( node.throw_() != null ) {
+			return toAst( file, node.throw_() );
 		}
 
 		throw new IllegalStateException( "not implemented: " + node.getClass().getSimpleName() );
@@ -1184,8 +1183,8 @@ public class BoxCFParser extends BoxAbstractParser {
 				List<BoxAnnotation>				annotations	= new ArrayList<>();
 				List<BoxStatement>				body		= new ArrayList<>();
 				/* Process the arguments */
-				if ( lambda.paramList() != null ) {
-					for ( CFParser.ParamContext arg : lambda.paramList().param() ) {
+				if ( lambda.functionParamList() != null ) {
+					for ( CFParser.FunctionParamContext arg : lambda.functionParamList().functionParam() ) {
 						BoxArgumentDeclaration argDeclaration = toAst( file, arg );
 						args.add( argDeclaration );
 					}
@@ -1213,8 +1212,8 @@ public class BoxCFParser extends BoxAbstractParser {
 				List<BoxAnnotation>				annotations	= new ArrayList<>();
 				List<BoxStatement>				body		= new ArrayList<>();
 
-				if ( closure.paramList() != null ) {
-					for ( CFParser.ParamContext arg : closure.paramList().param() ) {
+				if ( closure.functionParamList() != null ) {
+					for ( CFParser.FunctionParamContext arg : closure.functionParamList().functionParam() ) {
 						BoxArgumentDeclaration argDeclaration = toAst( file, arg );
 						args.add( argDeclaration );
 					}
@@ -1286,7 +1285,7 @@ public class BoxCFParser extends BoxAbstractParser {
 	}
 
 	/**
-	 * Converts the ObjectExpression parser rule to the corresponding AST node. * @param file
+	 * Converts the ObjectExpression parser rule to the corresponding AST node. *
 	 *
 	 * @param file source file, if any
 	 * @param node ANTLR ObjectExpressionContext rule
@@ -1307,19 +1306,41 @@ public class BoxCFParser extends BoxAbstractParser {
 		else if ( node.literalExpression() != null ) {
 			return toAst( file, node.literalExpression() );
 		} else if ( node.new_() != null ) {
-			BoxExpr				expr	= null;
-			List<BoxArgument>	args	= toAst( file, node.new_().argumentList() );
-			if ( node.new_().fqn() != null ) {
-				expr = toAst( file, node.new_().fqn() );
-			}
-			if ( node.new_().stringLiteral() != null ) {
-				expr = toAst( file, node.new_().stringLiteral() );
-			}
-			return new BoxNewOperation( expr, args, getPosition( node ), getSourceText( node ) );
+			return toAst( file, node.new_() );
 		}
 
 		throw new IllegalStateException( "ObjectExpression not implemented: " + getSourceText( node ) );
 
+	}
+
+	/**
+	 * Converts the NewContext parser rule to the corresponding AST node. *
+	 *
+	 * @param file source file, if any
+	 * @param node ANTLR NewContext rule
+	 *
+	 * @return corresponding AST
+	 */
+	private BoxExpr toAst( File file, NewContext node ) {
+		BoxExpr				expr	= null;
+		BoxIdentifier		prefix	= null;
+		List<BoxArgument>	args	= toAst( file, node.argumentList() );
+		if ( node.fqn() != null ) {
+			expr = toAst( file, node.fqn() );
+		}
+		if ( node.stringLiteral() != null ) {
+			expr = toAst( file, node.stringLiteral() );
+		}
+		if ( node.identifier() != null ) {
+			var tmp = toAst( file, node.identifier() );
+			if ( tmp instanceof BoxIdentifier bi ) {
+				prefix = bi;
+			} else {
+				prefix = new BoxIdentifier( ( ( BoxScope ) tmp ).getName(), getPosition( node.identifier() ), getSourceText( node.identifier() ) );
+			}
+
+		}
+		return new BoxNewOperation( prefix, expr, args, getPosition( node ), getSourceText( node ) );
 	}
 
 	/**
@@ -1537,8 +1558,8 @@ public class BoxCFParser extends BoxAbstractParser {
 			name = node.functionSignature().identifier().getText();
 		}
 
-		if ( node.functionSignature().paramList() != null ) {
-			for ( CFParser.ParamContext arg : node.functionSignature().paramList().param() ) {
+		if ( node.functionSignature().functionParamList() != null ) {
+			for ( CFParser.FunctionParamContext arg : node.functionSignature().functionParamList().functionParam() ) {
 				BoxArgumentDeclaration argDeclaration = toAst( file, arg );
 				/* Resolve annotations @name.key "value" */
 				for ( BoxAnnotation pre : annotations ) {
@@ -1705,7 +1726,7 @@ public class BoxCFParser extends BoxAbstractParser {
 	 *
 	 * @see BoxArgumentDeclaration
 	 */
-	private BoxArgumentDeclaration toAst( File file, CFParser.ParamContext node ) {
+	private BoxArgumentDeclaration toAst( File file, CFParser.FunctionParamContext node ) {
 		Boolean								required		= false;
 		String								type			= "Any";
 		String								name			= "undefined";

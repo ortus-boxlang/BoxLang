@@ -28,6 +28,7 @@ import ortus.boxlang.ast.Position;
 public class BoxNewOperation extends BoxExpr {
 
 	private final BoxExpr			expression;
+	private final BoxIdentifier		prefix;
 	private final List<BoxArgument>	arguments;
 
 	/**
@@ -38,7 +39,7 @@ public class BoxNewOperation extends BoxExpr {
 	 * @param position   position of the statement in the source code
 	 * @param sourceText source code that originated the Node
 	 */
-	public BoxNewOperation( BoxExpr expression, List<BoxArgument> arguments, Position position, String sourceText ) {
+	public BoxNewOperation( BoxIdentifier prefix, BoxExpr expression, List<BoxArgument> arguments, Position position, String sourceText ) {
 		super( position, sourceText );
 		this.expression = expression;
 		if ( expression != null ) {
@@ -46,6 +47,10 @@ public class BoxNewOperation extends BoxExpr {
 		}
 		this.arguments = Collections.unmodifiableList( arguments );
 		this.arguments.forEach( arg -> arg.setParent( this ) );
+		this.prefix = prefix;
+		if ( prefix != null ) {
+			this.prefix.setParent( this );
+		}
 	}
 
 	public BoxExpr getExpression() {
@@ -56,11 +61,19 @@ public class BoxNewOperation extends BoxExpr {
 		return arguments;
 	}
 
+	public BoxIdentifier getPrefix() {
+		return prefix;
+	}
+
 	@Override
 	public Map<String, Object> toMap() {
 		Map<String, Object> map = super.toMap();
 
-		// handle null
+		if ( prefix == null ) {
+			map.put( "prefix", null );
+		} else {
+			map.put( "prefix", prefix.toMap() );
+		}
 		if ( expression == null ) {
 			map.put( "expression", null );
 		} else {

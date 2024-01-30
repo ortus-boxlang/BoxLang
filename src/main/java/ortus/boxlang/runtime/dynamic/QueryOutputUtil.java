@@ -17,10 +17,14 @@
  */
 package ortus.boxlang.runtime.dynamic;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.dynamic.casters.CastAttempt;
 import ortus.boxlang.runtime.dynamic.casters.GenericCaster;
 import ortus.boxlang.runtime.dynamic.casters.StringCaster;
+import ortus.boxlang.runtime.operators.EqualsEquals;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.ListUtil;
 import ortus.boxlang.runtime.types.Query;
@@ -53,45 +57,71 @@ public class QueryOutputUtil {
 		iStartRow	= Math.max( iStartRow, 0 );
 		iEndRow		= Math.min( iEndRow, theQuery.size() - 1 );
 
-		boolean		isGrouped		= group != null;
-		Key[]		groupKeys		= null;
-		Object[]	lastGroupValues	= null;
+		// If there's nothing to loop over, exit stage left
+		if ( iEndRow <= iStartRow ) {
+			return;
+		}
+
+		boolean					isGrouped			= group != null;
+		Key[]					groupKeys			= null;
+		Object[]				lastGroupValues		= null;
+		Map<String, Boolean>	isSameGroup			= new HashMap<>();
+		int						currentGroupEndRow	= 0;
+		isSameGroup.put( "value", true );
+
 		if ( isGrouped ) {
 			groupKeys		= ListUtil.asList( StringCaster.cast( group ), "," )
 			    .stream()
 			    .map( ( c ) -> Key.of( ( ( String ) c ).trim() ) )
 			    .toArray( Key[]::new );
+
 			lastGroupValues	= new Object[ groupKeys.length ];
+			// Calculate the group values for the first row
+			lastGroupValues	= getGroupValuesForRow( theQuery, groupKeys, lastGroupValues, iStartRow, isSameGroup );
 		}
 		// This allows query references to know what row we're on and for unscoped column references to work
 		context.registerQueryLoop( theQuery, iStartRow );
 		try {
 			for ( int i = iStartRow; i <= iEndRow; i++ ) {
+				System.out.println( "i: " + i );
 				if ( isGrouped ) {
-					Object[]	thisGroupValues	= new Object[ groupKeys.length ];
-					boolean		isSameGroup		= true;
-					for ( int j = 0; j < groupKeys.length; j++ ) {
-						thisGroupValues[ j ] = theQuery.getCell( groupKeys[ j ], i );
-						if ( !thisGroupValues[ j ].equals( lastGroupValues[ j ] ) ) {
-							isSameGroup = false;
-						}
+					if ( i < iEndRow ) {
+						lastGroupValues = getGroupValuesForRow( theQuery, groupKeys, lastGroupValues, i + 1, isSameGroup );
+					} else {
+						isSameGroup.put( "value", false );
 					}
-					if ( isSameGroup ) {
-						// Next row, please!
-						context.incrementQueryLoop( theQuery );
+					if ( isSameGroup.get( "value" ) ) {
+						System.out.println( "Same group" );
 						continue;
 					} else {
-						lastGroupValues = thisGroupValues;
+						// TODO: handle nested output with groups
+						currentGroupEndRow = i;
 					}
 				}
 				// Run the code inside of the output loop
 				consumer.accept( context );
 				// Next row, please!
-				context.incrementQueryLoop( theQuery );
+				context.registerQueryLoop( theQuery, i + 1 );
 			}
 		} finally {
 			// This query is DONE!
 			context.unregisterQueryLoop( theQuery );
 		}
+	}
+
+	private static Object[] getGroupValuesForRow( Query query, Key[] groupKeys, Object[] lastGroupValues, int row, Map<String, Boolean> isSameGroup ) {
+		Object[] thisGroupValues = new Object[ groupKeys.length ];
+		isSameGroup.put( "value", true );
+		System.out.println( "calc group data for Row: " + row );
+		for ( int j = 0; j < groupKeys.length; j++ ) {
+			thisGroupValues[ j ] = query.getCell( groupKeys[ j ], row );
+			// TODO: Use case sensitive flag. Perhaps this needs to use compare?
+			if ( !EqualsEquals.invoke( thisGroupValues[ j ], lastGroupValues[ j ] ) ) {
+				System.out.println( "Row: " + row + " is not the same as last row key " + groupKeys[ j ].getName() + " " + thisGroupValues[ j ] + " != "
+				    + lastGroupValues[ j ] );
+				isSameGroup.put( "value", false );
+			}
+		}
+		return thisGroupValues;
 	}
 }

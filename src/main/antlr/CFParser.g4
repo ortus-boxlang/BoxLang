@@ -4,6 +4,7 @@ options {
 	tokenVocab = CFLexer;
 }
 
+// This is the top level rule, which allow imports always, followed by a component, or an interface, or just a bunch of statements.
 script:
 	importStatement* (
 		component
@@ -12,16 +13,19 @@ script:
 	)
 	| EOF;
 
+// marks the end of simple statements (no body)
 eos: SEMICOLON;
 
-// We should probably move this to the BL grammar.
+// TODO: This belongs only in the BL grammar. import java:foo.bar.Baz as myAlias;
 importStatement:
 	IMPORT (prefix = identifier COLON)? fqn (DOT STAR)? (
 		AS alias = identifier
 	)? eos?;
 
-include: INCLUDE expression eos?;
+// include "myFile.cfm";
+include: INCLUDE expression;
 
+// component {}
 component:
 	javadoc? (preannotation)* ABSTRACT? COMPONENT postannotation* LBRACE property*
 		functionOrStatement* RBRACE;
@@ -32,18 +36,32 @@ interface:
 // TODO: default method implementations
 interfaceFunction: functionSignature eos;
 
+// public String myFunction( String foo, String bar )
 functionSignature:
 	javadoc? (preannotation)* accessModifier? STATIC? returnType? FUNCTION identifier LPAREN
-		paramList? RPAREN;
-function: functionSignature (postannotation)* statementBlock;
+		functionParamList? RPAREN;
 
-paramList: param (COMMA param)*;
+// UDF 
+function:
+	functionSignature (postannotation)* statementBlock
+	// This will "eat" random extra ; at the end of statements 
+	eos*;
 
-param: (REQUIRED)? (type)? identifier (EQUALSIGN expression)? postannotation*
-	| (REQUIRED)? (type)? identifier (EQUALSIGN statementBlock)?;
+// Declared arguments for a function
+functionParamList: functionParam (COMMA functionParam)*;
 
+// required String param1="default" inject="something"
+functionParam: (REQUIRED)? (type)? identifier (
+		EQUALSIGN expression
+	)? postannotation*;
+
+// TODO: Do I need the generic tag-in-script implementation here, or can the generic rule capture it?
+param: PARAM (type)? identifier ( EQUALSIGN expression)?;
+
+// @MyAnnotation "value" true
 preannotation: AT fqn (literalExpression)*;
 
+// foo=bar baz="bum"
 postannotation:
 	key = identifier (
 		(EQUALSIGN | COLON) value = attributeSimple
@@ -54,8 +72,10 @@ postannotation:
 // literalExpression is just a BoxLang flourish to allow for more flexible expressions.
 attributeSimple: literalExpression | identifier;
 
+// String function foo() or MyClass function foo()
 returnType: type | identifier;
 
+// private String function foo()
 accessModifier: PUBLIC | PRIVATE | REMOTE | PACKAGE;
 
 type:
@@ -70,75 +90,80 @@ type:
 	| fqn
 	| ANY;
 
+// Allow any statement or a function.  TODO: This may need to be changed if functions are allowed inside of functions
 functionOrStatement: function | statement;
 
+// property name="foo" type="string" default="bar" inject="something";
 property:
 	javadoc? (preannotation)* PROPERTY postannotation* eos;
 
+// /** Comment */
 javadoc: JAVADOC_COMMENT;
 
+// function() {} or () => {} or () -> {}
 anonymousFunction: lambda | closure;
 
 lambda:
 	// ( param, param ) -> {}
-	LPAREN paramList? RPAREN (postannotation)* ARROW anonymousFunctionBody
+	LPAREN functionParamList? RPAREN (postannotation)* ARROW anonymousFunctionBody
 	// param -> {}
 	| identifier ARROW anonymousFunctionBody;
 
 closure:
 	// function( param, param ) {}
-	FUNCTION LPAREN paramList? RPAREN (postannotation)* statementBlock
+	FUNCTION LPAREN functionParamList? RPAREN (postannotation)* statementBlock
 	// ( param, param ) => {}
-	| LPAREN paramList? RPAREN (postannotation)* ARROW_RIGHT anonymousFunctionBody
+	| LPAREN functionParamList? RPAREN (postannotation)* ARROW_RIGHT anonymousFunctionBody
 	// param => {}
 	| identifier ARROW_RIGHT anonymousFunctionBody;
 
 // Can be a body of statement(s) or a single statement.
 anonymousFunctionBody: statementBlock | simpleStatement;
 
-statementBlock: LBRACE (statement)* RBRACE eos?;
+// { statement; statement; }
+statementBlock: LBRACE (statement)* RBRACE;
 
-statementParameters: (
-		parameters += accessExpression EQUALSIGN (
-			values += stringLiteral
-			| expressions += expression
-		)
-	)+;
+// Any top-level statement that can be in a block.  
+statement: (
+		do
+		| for
+		| if
+		| switch
+		| try
+		| while
+		| simpleStatement
+		| tagIsland
+	)
+	// This will "eat" random extra ; at the end of statements 
+	eos*;
 
-statement:
-	break
-	| continue
-	| do
-	| for
-	| if
-	| include
-	| lockStatement
-	| rethrow
-	| saveContentStatement
-	| switch
-	| threadStatement
-	| throw
-	| try
-	| while
-	| simpleStatement
-	| tagIsland;
-
+// Simple statements have no body
 simpleStatement: (
-		assert
-		| applicationStatement
+		break
+		| throw
+		| include
+		| continue
+		| rethrow
+		| assert
+		| param
 		| incrementDecrementStatement
-		| paramStatement
 		| return
-		| settingStatement
 		| expression
 	) eos?;
 
+/*
+ ++foo
+ foo++
+ --foo
+ foo--
+ */
 incrementDecrementStatement:
 	PLUSPLUS accessExpression		# preIncrement
 	| accessExpression PLUSPLUS		# postIncrement
 	| MINUSMINUS accessExpression	# preDecremenent
 	| accessExpression MINUSMINUS	# postDecrement;
 
+// var foo = bar
 assignment:
 	VAR? assignmentLeft (
 		EQUALSIGN
@@ -149,23 +174,9 @@ assignment:
 		| MODEQUAL
 		| CONCATEQUAL
 	) assignmentRight;
+
 assignmentLeft: accessExpression;
 assignmentRight: expression;
-
-invokable: LPAREN RPAREN | ARROW LPAREN RPAREN;
-
-settingStatement: SETTING assignment;
-
-threadStatement: THREAD statementParameters statementBlock;
-
-lockStatement: LOCK statementParameters statementBlock;
-
-applicationStatement: APPLICATION statementParameters;
-
-paramStatement: PARAM statementParameters;
-
-saveContentStatement:
-	SAVECONTENT statementParameters statementBlock;
 
 // Arguments are zero or more named args, or zero or more positional args, but not both.
 argumentList:
@@ -174,14 +185,14 @@ argumentList:
 	)*;
 
 /* 
- foo = bar, baz = qux 
- foo : bar, baz : qux
- "foo" = bar, "baz" = qux 
- 'foo' : bar, 'baz' :
- qux
+ func( foo = bar, baz = qux )
+ func( foo : bar, baz : qux )
+ func( "foo" = bar, "baz" = qux ) 
+ func( 'foo' : bar, 'baz' : qux )
  */
 namedArgument: (identifier | stringLiteral) (EQUALSIGN | COLON) expression;
-// foo, bar, baz
+
+// func( foo, bar, baz )
 positionalArgument: expression;
 
 // We support if blocks with or without else blocks, and if statements without else blocks. That's
@@ -194,40 +205,89 @@ if:
 		)
 	)?
 	| IF LPAREN expression RPAREN ifStmt = statement;
+
+/*
+ for( var i = 0; i < 10; i++ ) {}
+ or...
+ for( var foo in bar ) {}
+ */
 for:
 	FOR LPAREN VAR? accessExpression IN expression RPAREN statementBlock
 	| FOR LPAREN forAssignment eos forCondition eos forIncrement RPAREN statementBlock;
+
+// The assignment expression (var i = 0) in a for(var i = 0; i < 10; i++ ) loop
 forAssignment: expression;
+
+// The condition expression (i < 10) in a for(var i = 0; i < 10; i++ ) loop
 forCondition: expression;
+
+// The increment expression (i++) in a for(var i = 0; i < 10; i++ ) loop
 forIncrement: expression;
 
+/*
+ do {
+ statement;
+ } while( expression );
+ */
 do: DO statementBlock WHILE LPAREN expression RPAREN;
 
+/*
+ while( expression ) {
+ statement;
+ }
+ */
 while:
 	WHILE LPAREN condition = expression RPAREN (
 		statementBlock
 		| statement
 	);
 
+// assert isTrue;
 assert: ASSERT expression;
-break: BREAK eos?;
-continue: CONTINUE eos?;
+
+// break;
+break: BREAK;
+
+// continue
+continue: CONTINUE;
+
+/*
+ return;
+ return foo;
+ */
 return: RETURN expression?;
 
-rethrow: RETHROW eos?;
-throw:
-	THROW LPAREN (TYPE EQUALSIGN)? expression (
-		COMMA (MESSAGE EQUALSIGN)? stringLiteral
-	)? RPAREN eos?
-	| THROW expression eos?;
+// rethrow;
+rethrow: RETHROW;
 
+// throw Exception;
+throw: THROW expression;
+
+/*
+ switch( expression ) {
+ case 1:
+ statement;
+ break;
+ default: {
+ statement;
+ }
+ }
+ */
 switch: SWITCH LPAREN expression RPAREN LBRACE (case)* RBRACE;
 
+/*
+ case 1:
+ statement;
+ break;
+ */
 case:
-	CASE (expression) COLON (statementBlock | statement)? break?
-	| DEFAULT COLON (statementBlock | statement)?;
+	CASE (expression) COLON (statementBlock | statement+)?
+	| DEFAULT COLON (statementBlock | statement+)?;
 
+// foo
 identifier: IDENTIFIER | reservedKeyword;
+
+// These are reserved words in the lexer, but are allowed to be an indentifer (variable name, method name)
 reservedKeyword:
 	scope
 	| ABSTRACT
@@ -318,6 +378,7 @@ reservedKeyword:
 
 // ANY NEW LEXER RULES IN DEFAULT MODE FOR WORDS NEED ADDED HERE
 
+// Known scope names. TODO: Should the core parser "know" about scopes in modules that may not be installed?
 scope:
 	APPLICATION
 	| ARGUMENTS
@@ -334,31 +395,62 @@ scope:
 	| FORM;
 //  TODO add additional known scopes
 
-tagIslandBody: TAG_ISLAND_BODY*;
+/*
+ ```
+ <cfset tags="here">
+ ```
+ */
 tagIsland: TAG_ISLAND_START tagIslandBody TAG_ISLAND_END;
+tagIslandBody: TAG_ISLAND_BODY*;
 
+/*
+ try {
+ 
+ } catch( e ) {
+ } finally {
+ }
+ */
 try: TRY statementBlock ( catch_)* finally_?;
 
+// catch( e ) {} 
 catch_:
 	CATCH LPAREN catchType? (PIPE catchType)* expression RPAREN statementBlock;
 
+// finally {}
 finally_: FINALLY statementBlock;
 
+/*
+ foo.bar.Baz
+ or...
+ "foo.bar.Baz"
+ */
 catchType: stringLiteral | fqn;
+
+/*
+ "foo"
+ or...
+ 'foo'
+ */
 stringLiteral:
 	OPEN_QUOTE (stringLiteralPart | ICHAR (expression) ICHAR)* CLOSE_QUOTE;
 
 stringLiteralPart: STRING_LITERAL | HASHHASH;
 
+// 42
 integerLiteral: INTEGER_LITERAL;
+
+// 3.14159
 floatLiteral: FLOAT_LITERAL;
 
+// true | false
 booleanLiteral: TRUE | FALSE;
 
+// [1,2,3]
 arrayExpression: LBRACKET arrayValues? RBRACKET;
 
 arrayValues: expression (COMMA expression)*;
 
+// { foo: "bar", baz = "bum" }
 structExpression:
 	LBRACE structMembers? RBRACE
 	| LBRACKET structMembers RBRACKET
@@ -370,17 +462,20 @@ structMember:
 	identifier (COLON | EQUALSIGN) expression
 	| stringLiteral (COLON | EQUALSIGN) expression;
 
+// +foo -bar
 unary: (MINUS | PLUS) expression;
 
-// TODO: remove hard-coded Java
+// new java:String( param1 )
 new:
-	NEW (JAVA COLON)? (fqn | stringLiteral) LPAREN argumentList? RPAREN;
-// TODO add namespace
+	NEW (identifier COLON)? (fqn | stringLiteral) LPAREN argumentList? RPAREN;
 
+// foo.bar.Baz
 fqn: (identifier DOT)* identifier;
 
 expression:
+	// foo = bar
 	assignment
+	// null 
 	| NULL
 	| anonymousFunction
 	| accessExpression

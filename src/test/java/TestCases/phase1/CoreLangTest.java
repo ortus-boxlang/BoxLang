@@ -977,6 +977,9 @@ public class CoreLangTest {
 		      case "brad":
 		      	// case 1 logic
 		      	result = "case1"
+		      	more="than";
+		      	one="statement"
+		      	here="test";
 		      	break;
 		      case 42: {
 		      	// case 2 logic
@@ -986,6 +989,9 @@ public class CoreLangTest {
 		      case 5+7:
 		      	// case 3 logic
 		      	result = "case3"
+		      	more="than";
+		      	one="statement"
+		      	here="test";
 		      	break;
 		      case variables.foo:
 		      	// case 4 logic
