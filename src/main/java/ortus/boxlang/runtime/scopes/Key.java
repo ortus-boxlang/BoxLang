@@ -83,6 +83,7 @@ public class Key implements Comparable<Key> {
 	public static final Key	closure						= Key.of( "closure" );
 	public static final Key	coldfusion					= Key.of( "coldfusion" );
 	public static final Key	columnList					= Key.of( "columnList" );
+	public static final Key	columnTypeList				= Key.of( "columnTypeList" );
 	public static final Key	compiler					= Key.of( "compiler" );
 	public static final Key	configure					= Key.of( "configure" );
 	public static final Key	contains					= Key.of( "contains" );
@@ -209,6 +210,7 @@ public class Key implements Comparable<Key> {
 	public static final Key	position2					= Key.of( "position2" );
 	public static final Key	properties					= Key.of( "properties" );
 	public static final Key	quarter						= Key.of( "quarter" );
+	public static final Key	query						= Key.of( "query" );
 	public static final Key	radix						= Key.of( "radix" );
 	public static final Key	required					= Key.of( "required" );
 	public static final Key	recordCount					= Key.of( "recordCount" );
@@ -217,6 +219,7 @@ public class Key implements Comparable<Key> {
 	public static final Key	replacements				= Key.of( "replacements" );
 	public static final Key	returnType					= Key.of( "returnType" );
 	public static final Key	rJustify					= Key.of( "rJustify" );
+	public static final Key	rowData						= Key.of( "rowData" );
 	public static final Key	runtime						= Key.of( "runtime" );
 	public static final Key	script_name					= Key.of( "script_name" );
 	public static final Key	second						= Key.of( "second" );

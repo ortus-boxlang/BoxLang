@@ -18,6 +18,7 @@
 package ortus.boxlang.runtime.types;
 
 public enum QueryColumnType {
+
 	INTEGER,
 	BIGINT,
 	DOUBLE,
@@ -28,5 +29,38 @@ public enum QueryColumnType {
 	TIME,
 	DATE,
 	TIMESTAMP,
-	OBJECT
+	OBJECT;
+
+	public static QueryColumnType fromString( String type ) {
+		type = type.toLowerCase();
+		// TODO: handle other types
+		switch ( type ) {
+			case "integer" :
+				return INTEGER;
+			case "bigint" :
+				return BIGINT;
+			case "double" :
+			case "numeric" :
+				return DOUBLE;
+			case "decimal" :
+				return DECIMAL;
+			case "varchar" :
+			case "string" :
+				return VARCHAR;
+			case "binary" :
+				return BINARY;
+			case "bit" :
+				return BIT;
+			case "time" :
+				return TIME;
+			case "date" :
+				return DATE;
+			case "timestamp" :
+				return TIMESTAMP;
+			case "object" :
+				return OBJECT;
+			default :
+				throw new RuntimeException( "Unknown QueryColumnType: " + type );
+		}
+	}
 }
