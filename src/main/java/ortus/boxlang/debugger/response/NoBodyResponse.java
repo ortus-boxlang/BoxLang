@@ -19,6 +19,9 @@ package ortus.boxlang.debugger.response;
 
 import ortus.boxlang.debugger.request.IDebugRequest;
 
+/**
+ * Can be used to model any response that is a simple acknowledgement and doesn't transmit any data.
+ */
 public class NoBodyResponse extends AbstractResponse {
 
 	public NoBodyResponse( IDebugRequest request ) {

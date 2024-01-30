@@ -21,14 +21,26 @@ import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
 
+/**
+ * Listens on the provided port to allow connections from a debug tool. Each time a client connects a new DebugAdapter will be initialized and used to
+ * marshal DAP messages.
+ */
 public class BoxLangRemoteDebugger implements IBoxLangDebugger {
 
-	int port;
+	private int port;
 
+	/**
+	 * Constructor
+	 * 
+	 * @param port The port to listen for connections on
+	 */
 	public BoxLangRemoteDebugger( int port ) {
 		this.port = port;
 	}
 
+	/**
+	 * Starts the server
+	 */
 	@Override
 	public void startDebugSession() {
 

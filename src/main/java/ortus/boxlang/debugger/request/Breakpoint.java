@@ -17,6 +17,9 @@
  */
 package ortus.boxlang.debugger.request;
 
+/**
+ * Models a breakpoint record sent from the debug tool.
+ */
 public class Breakpoint {
 
 	public int		id;

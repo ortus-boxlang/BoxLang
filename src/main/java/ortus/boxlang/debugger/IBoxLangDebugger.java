@@ -17,6 +17,9 @@
  */
 package ortus.boxlang.debugger;
 
+/**
+ * Interface for BoxLangDebuggers. Allows us to model both remote and local debug sessions.
+ */
 public interface IBoxLangDebugger {
 
 	public void startDebugSession();

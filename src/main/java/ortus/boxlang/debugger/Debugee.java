@@ -17,6 +17,9 @@
  */
 package ortus.boxlang.debugger;
 
+/**
+ * Test class
+ */
 public class Debugee {
 
 	public static void main( String[] args ) {

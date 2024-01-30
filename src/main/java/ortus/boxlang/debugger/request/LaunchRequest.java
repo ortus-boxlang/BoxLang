@@ -19,6 +19,9 @@ package ortus.boxlang.debugger.request;
 
 import ortus.boxlang.debugger.DebugAdapter;
 
+/**
+ * Models the request to launch a specific file
+ */
 public class LaunchRequest extends AbstractRequest {
 
 	public LaunchRequestArguments arguments;

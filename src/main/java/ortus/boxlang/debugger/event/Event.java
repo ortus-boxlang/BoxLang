@@ -28,11 +28,17 @@ public class Event implements ISendable {
 		this.event = event;
 	}
 
+	/**
+	 * Gets the type of the debug protocl message. Always "event".
+	 */
 	@Override
 	public String getType() {
 		return type;
 	}
 
+	/**
+	 * Gets the name of the event
+	 */
 	@Override
 	public String getName() {
 		return event;

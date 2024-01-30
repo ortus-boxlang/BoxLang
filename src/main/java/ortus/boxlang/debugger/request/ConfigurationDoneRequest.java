@@ -19,6 +19,9 @@ package ortus.boxlang.debugger.request;
 
 import ortus.boxlang.debugger.DebugAdapter;
 
+/**
+ * Models the command that the debug tool has finished configuration.
+ */
 public class ConfigurationDoneRequest extends AbstractRequest {
 
 	@Override

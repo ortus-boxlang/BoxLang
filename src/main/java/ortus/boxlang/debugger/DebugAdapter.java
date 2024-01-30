@@ -44,6 +44,9 @@ import ortus.boxlang.runtime.BoxRunner;
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.util.JsonUtil;
 
+/**
+ * Implements Microsoft's Debug Adapter Protocol https://microsoft.github.io/debug-adapter-protocol/
+ */
 public class DebugAdapter {
 
 	private Socket				debugClient;
@@ -53,6 +56,11 @@ public class DebugAdapter {
 	private IBoxLangDebugger	debugger;
 	private boolean				running	= true;
 
+	/**
+	 * Constructor
+	 * 
+	 * @param debugClient The socket that handles communication with the debug tool
+	 */
 	public DebugAdapter( Socket debugClient ) {
 		this.debugClient	= debugClient;
 		this.logger			= LoggerFactory.getLogger( BoxRuntime.class );
@@ -66,14 +74,29 @@ public class DebugAdapter {
 		}
 	}
 
+	/**
+	 * Used to determin if the debug session has completed.
+	 * 
+	 * @return
+	 */
 	public boolean isRunning() {
 		return this.running;
 	}
 
+	/**
+	 * Creates an OutputStream from the debug client socket
+	 * 
+	 * @throws IOException
+	 */
 	private void createOutputStream() throws IOException {
 		this.output = debugClient.getOutputStream();
 	}
 
+	/**
+	 * Starts a new thread to wait for messages from the debug client. Each message will deserialized and then visited.
+	 * 
+	 * @throws IOException
+	 */
 	private void createInputListenerThread() throws IOException {
 		Socket				socket	= this.debugClient;
 		InputStream			iS		= socket.getInputStream();
@@ -118,6 +141,13 @@ public class DebugAdapter {
 		this.inputThread.start();
 	}
 
+	/**
+	 * Parse a debug request and deserialie it into its associated class.
+	 * 
+	 * @param json
+	 * 
+	 * @return
+	 */
 	private IDebugRequest parseDebugRequest( String json ) {
 		Map<String, Object>	requestData	= ( Map<String, Object> ) JsonUtil.fromJson( json );
 		String				command		= ( String ) requestData.get( "command" );
@@ -139,24 +169,49 @@ public class DebugAdapter {
 		// throw new NotImplementedException( command );
 	}
 
+	/**
+	 * Default visit handler
+	 * 
+	 * @param debugRequest
+	 */
 	public void visit( IDebugRequest debugRequest ) {
 		// throw new NotImplementedException( debugRequest.getCommand() );
 	}
 
+	/**
+	 * Visit InitializeRequest instances. Respond to the initialize request and send an initialized event.
+	 * 
+	 * @param debugRequest
+	 */
 	public void visit( InitializeRequest debugRequest ) {
 		new InitializeResponse( debugRequest ).send( this.output );
 		new Event( "initialized" ).send( this.output );
 	}
 
+	/**
+	 * Visit LaunchRequest instances. Send a NobodyResponse and setup a BoxLangDebugger.
+	 * 
+	 * @param debugRequest
+	 */
 	public void visit( LaunchRequest debugRequest ) {
 		new NoBodyResponse( debugRequest ).send( this.output );
 		this.debugger = new BoxLangDebugger( BoxRunner.class, debugRequest.arguments.program, this.output );
 	}
 
+	/**
+	 * Visit SetBreakpointsRequest instances. Send a response.
+	 * 
+	 * @param debugRequest
+	 */
 	public void visit( SetBreakpointsRequest debugRequest ) {
 		new SetBreakpointsResponse( debugRequest ).send( this.output );
 	}
 
+	/**
+	 * Visit ConfigurationDoneRequest instances. After responding the debugger can begin executing.
+	 * 
+	 * @param debugRequest
+	 */
 	public void visit( ConfigurationDoneRequest debugRequest ) {
 		new NoBodyResponse( debugRequest ).send( this.output );
 

@@ -17,15 +17,24 @@
  */
 package ortus.boxlang.debugger.request;
 
+/**
+ * An abstract requet. Implement this to model a request that conforms to the debug protocol.
+ */
 public abstract class AbstractRequest implements IDebugRequest {
 
 	public String	command;
 	public int		seq;
 
+	/**
+	 * The command for the debugger to execute
+	 */
 	public String getCommand() {
 		return command;
 	}
 
+	/**
+	 * Returns the sequence number of this request
+	 */
 	public int getSeq() {
 		return this.seq;
 	}

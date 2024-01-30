@@ -19,6 +19,9 @@ package ortus.boxlang.debugger.request;
 
 import ortus.boxlang.debugger.DebugAdapter;
 
+/**
+ * Models the command to initialize a debug session.
+ */
 public class InitializeRequest extends AbstractRequest {
 
 	@Override

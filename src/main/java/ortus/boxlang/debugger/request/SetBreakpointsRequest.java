@@ -19,11 +19,17 @@ package ortus.boxlang.debugger.request;
 
 import ortus.boxlang.debugger.DebugAdapter;
 
+/**
+ * Models the request to add a breakpoint to a line of source code
+ */
 public class SetBreakpointsRequest extends AbstractRequest {
 
 	public String					program;
 	public SetBreakpointArguments	arguments;
 
+	/**
+	 * The arguments of the SetBreakpoint Request
+	 */
 	public static class SetBreakpointArguments {
 
 		public Source		source;

@@ -28,10 +28,18 @@ import com.fasterxml.jackson.jr.ob.JSONObjectException;
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.util.JsonUtil;
 
+/**
+ * Interface for messages that will be sent to the debugger tool.
+ */
 public interface ISendable {
 
 	Object logger = null;
 
+	/**
+	 * Serialize the instance to JSON
+	 * 
+	 * @return
+	 */
 	default public String toJSON() {
 		try {
 			return JsonUtil.getJsonBuilder().asString( this );
@@ -46,10 +54,25 @@ public interface ISendable {
 		return "";
 	}
 
+	/**
+	 * The type; either: request, event, or response.
+	 * 
+	 * @return
+	 */
 	public String getType();
 
+	/**
+	 * Used internally for logging
+	 * 
+	 * @return
+	 */
 	public String getName();
 
+	/**
+	 * Sends this object through the OutputStream
+	 * 
+	 * @param out
+	 */
 	default public void send( OutputStream out ) {
 		String	payload	= this.toJSON();
 		int		size	= payload.getBytes().length;

@@ -17,6 +17,9 @@
  */
 package ortus.boxlang.debugger.event;
 
+/**
+ * Models the Output event for the Debug Protocol
+ */
 public class OutputEvent extends Event {
 
 	public OutputBody body;
@@ -27,6 +30,12 @@ public class OutputEvent extends Event {
 		public String	output;
 	}
 
+	/**
+	 * Constructor
+	 * 
+	 * @param category One of 'console' | 'important' | 'stdout' | 'stderr' | 'telemetry'
+	 * @param output   The data to output
+	 */
 	public OutputEvent( String category, String output ) {
 		super( "output" );
 

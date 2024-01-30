@@ -17,6 +17,9 @@
  */
 package ortus.boxlang.debugger.response;
 
+/**
+ * Abstract base class to aid in modeling response types
+ */
 public class AbstractResponse implements IDebugResponse {
 
 	public String	type	= "response";
@@ -30,10 +33,16 @@ public class AbstractResponse implements IDebugResponse {
 		this.success		= success;
 	}
 
+	/**
+	 * The type of the message. In this case it will always be "request".
+	 */
 	public String getType() {
 		return this.type;
 	}
 
+	/**
+	 * The name of the message. primarily used for logging. In this case it will always be "request".
+	 */
 	@Override
 	public String getName() {
 		return this.type;

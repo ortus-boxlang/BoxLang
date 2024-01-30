@@ -20,6 +20,9 @@ package ortus.boxlang.debugger.response;
 import ortus.boxlang.debugger.request.Breakpoint;
 import ortus.boxlang.debugger.request.SetBreakpointsRequest;
 
+/**
+ * Models a SetBreakpoint response in the DAP
+ */
 public class SetBreakpointsResponse extends AbstractResponse {
 
 	public SetBreakpointsResponseBody body;
@@ -29,6 +32,11 @@ public class SetBreakpointsResponse extends AbstractResponse {
 		public Breakpoint[] breakpoints;
 	}
 
+	/**
+	 * Constructor
+	 * 
+	 * @param request The request to respond to
+	 */
 	public SetBreakpointsResponse( SetBreakpointsRequest request ) {
 		super( request.getCommand(), request.getSeq(), true );
 		this.body				= new SetBreakpointsResponseBody();

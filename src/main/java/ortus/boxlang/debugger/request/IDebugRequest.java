@@ -19,11 +19,25 @@ package ortus.boxlang.debugger.request;
 
 import ortus.boxlang.debugger.DebugAdapter;
 
+/**
+ * Interface to help model the debug protocol request type.
+ */
 public interface IDebugRequest {
 
+	/**
+	 * @return The command that was issued by the debug tool
+	 */
 	public String getCommand();
 
+	/**
+	 * @return The sequence number of this command
+	 */
 	public int getSeq();
 
+	/**
+	 * Implement this to use a DebugAdapter as a visitor
+	 * 
+	 * @param adapter The visitor that will visit this node
+	 */
 	public void accept( DebugAdapter adapter );
 }

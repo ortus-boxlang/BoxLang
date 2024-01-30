@@ -19,11 +19,19 @@ package ortus.boxlang.debugger.response;
 
 import ortus.boxlang.debugger.request.IDebugRequest;
 
+/**
+ * Responds to the InitializeRequest. Lets the debug tool know that the
+ */
 public class InitializeResponse extends AbstractResponse {
 
 	IDebugRequest		request;
 	public Capabilities	body;
 
+	/**
+	 * Constructor
+	 * 
+	 * @param request The request to respond to
+	 */
 	public InitializeResponse( IDebugRequest request ) {
 		super( request.getCommand(), request.getSeq(), true );
 		this.request	= request;

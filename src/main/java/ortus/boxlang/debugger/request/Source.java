@@ -17,6 +17,9 @@
  */
 package ortus.boxlang.debugger.request;
 
+/**
+ * Models the Source type of the DAP
+ */
 public class Source {
 
 	public String	name;
