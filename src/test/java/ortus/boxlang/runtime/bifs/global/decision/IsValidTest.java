@@ -395,9 +395,26 @@ public class IsValidTest {
 	@DisplayName( "It works on telephones" )
 	@Test
 	public void testTelephone() {
-		assertThat( ( Boolean ) instance.executeStatement( "isValid( 'telephone', '1.678.256.3011' )" ) ).isTrue();
-		assertThat( ( Boolean ) instance.executeStatement( "isValid( 'telephone', '+1 (678) 256-3011' )" ) ).isTrue();
-		assertThat( ( Boolean ) instance.executeStatement( "isValid( 'telephone', '16782563011' )" ) ).isFalse();
+		instance.executeSource(
+		    """
+		    // trues
+		    dotdelimited  = isValid( 'telephone', '1.678.256.3011' );
+		    pluscountry   = isValid( 'telephone', '+1 (678) 256-3011' );
+		    noPunctuation = isValid( 'telephone', '16782563011' );
+
+		    // falsies
+		    tooshort           = isValid( 'telephone', '234-567' );
+		    toolong            = isValid( 'telephone', '+1 1234-456-7890' );
+		    missingCountryCode = isValid( 'telephone', '+ 1234-456-7890' );
+		       """,
+		    context );
+		assertThat( ( Boolean ) variables.get( Key.of( "dotdelimited" ) ) ).isTrue();
+		assertThat( ( Boolean ) variables.get( Key.of( "pluscountry" ) ) ).isTrue();
+		assertThat( ( Boolean ) variables.get( Key.of( "noPunctuation" ) ) ).isTrue();
+
+		assertThat( ( Boolean ) variables.get( Key.of( "tooshort" ) ) ).isFalse();
+		assertThat( ( Boolean ) variables.get( Key.of( "toolong" ) ) ).isFalse();
+		assertThat( ( Boolean ) variables.get( Key.of( "missingCountryCode" ) ) ).isFalse();
 	}
 
 	@Disabled( "Unimplemented" )

@@ -5,6 +5,26 @@ import java.util.regex.Pattern;
 public class ValidationUtil {
 
 	/**
+	 * Regular expression, in {@link String} form, to match a URL with a `http`, `https`, `ftp`, or `file` scheme.
+	 */
+	public static final String	URL_STRING				= "^(https?|ftp|file)://[-a-zA-Z0-9+&@#/%?=~_|!:,.;]*[-a-zA-Z0-9+&@#/%=~_|]";
+
+	/**
+	 * Regular expression Pattern to match a URL with a `http`, `https`, `ftp`, or `file` scheme.
+	 */
+	public static final Pattern	URL						= Pattern.compile( URL_STRING );
+	/**
+	 * Regular expression, in {@link String} form, to match a North American Numbering Plan (NANP) telephone number. This does not support international
+	 * numbers.
+	 */
+	public static final String	TELEPHONE_STRING		= "^(?:(?:\\+?1\\s*(?:[.-]\\s*)?)?(?:\\(\\s*([2-9]1[02-9]|[2-9][02-8]1|[2-9][02-8][02-9])\\s*\\)|([2-9]1[02-9]|[2-9][02-8]1|[2-9][02-8][02-9]))\\s*(?:[.-]\\s*)?)?([2-9]1[02-9]|[2-9][02-9]1|[2-9][02-9]{2})\\s*(?:[.-]\\s*)?([0-9]{4})(?:\\s*(?:#|x\\.?|ext\\.?|extension)\\s*(\\d+))?$";
+
+	/**
+	 * Regular expression Pattern to match a North American Numbering Plan (NANP) telephone number. This does not support international numbers.
+	 */
+	public static final Pattern	TELEPHONE				= Pattern.compile( TELEPHONE_STRING );
+
+	/**
 	 * Regular expression, in {@link String} form, to match a United States Postal Service (USPS)
 	 * ZIP Code.
 	 */
@@ -90,6 +110,17 @@ public class ValidationUtil {
 		return SSN.matcher(
 		    ssn.replace( "-", "" ).replace( " ", "" )
 		).matches();
+	}
+
+	/**
+	 * Validates a North American Numbering Plan (NANP) telephone number. This does not support international numbers.
+	 *
+	 * @param phone Phone number in string format. Dash-delimited, space-delimited, or no-dash variants are all supported.
+	 *
+	 * @return Boolean indicating whether the given string is a valid US or North American telephone number.
+	 */
+	public static boolean isValidTelephone( String phone ) {
+		return TELEPHONE.matcher( phone ).matches();
 	}
 
 	/**
