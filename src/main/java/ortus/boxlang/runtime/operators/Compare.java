@@ -17,9 +17,15 @@
  */
 package ortus.boxlang.runtime.operators;
 
+import java.util.Locale;
+
+import org.apache.commons.lang3.StringUtils;
+
 import ortus.boxlang.runtime.dynamic.casters.CastAttempt;
+import ortus.boxlang.runtime.dynamic.casters.DateTimeCaster;
 import ortus.boxlang.runtime.dynamic.casters.DoubleCaster;
 import ortus.boxlang.runtime.interop.DynamicObject;
+import ortus.boxlang.runtime.types.DateTime;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
 /**
@@ -63,8 +69,23 @@ public class Compare implements IOperator {
 	 *
 	 * @return 1 if greater than, -1 if less than, = if equal
 	 */
-	@SuppressWarnings( "unchecked" )
 	public static Integer attempt( Object left, Object right, Boolean caseSensitive, boolean fail ) {
+		return attempt( left, right, caseSensitive, fail, Locale.US );
+	}
+
+	/**
+	 * Invokes the comparison
+	 *
+	 * @param left          The left operand
+	 * @param right         The right operand
+	 * @param caseSensitive Whether to compare strings case sensitive
+	 * @param fail          True to throw an exception if the left and right arguments cannot be compared
+	 * @param locale        The locale to use for comparison
+	 *
+	 * @return 1 if greater than, -1 if less than, = if equal
+	 */
+	@SuppressWarnings( "unchecked" )
+	public static Integer attempt( Object left, Object right, Boolean caseSensitive, boolean fail, Locale locale ) {
 		// Two nulls are equal
 		if ( left == null && right == null ) {
 			return 0;
@@ -90,20 +111,27 @@ public class Compare implements IOperator {
 			}
 		}
 
-		// TODO: This is too simplistic
-		if ( left instanceof String || right instanceof String ) {
-			if ( caseSensitive ) {
-				return left.toString().compareTo( right.toString() );
+		if ( left instanceof String && right instanceof String ) {
+			if ( !caseSensitive ) {
+				left	= StringUtils.lowerCase( left.toString(), locale );
+				right	= StringUtils.lowerCase( right.toString(), locale );
 			} else {
-				return left.toString().compareToIgnoreCase( right.toString() );
+				// Assume that if the case sensitive argument is passed as false, dates are not expected
+				if ( DateTimeCaster.attempt( left ).wasSuccessful() && DateTimeCaster.attempt( right ).wasSuccessful() ) {
+					// TODO: This is potentially slow with multiple failures - we need to add some validation methods in to the DateTime cast attempt
+					DateTime	ref		= DateTimeCaster.cast( left );
+					DateTime	target	= DateTimeCaster.cast( right );
+					return ref.compareTo( target );
+				}
 			}
+
+			return StringUtils.compare( ( String ) left, ( String ) right );
+
 		}
 
 		if ( left instanceof Comparable && right instanceof Comparable ) {
 			return ( ( Comparable<Object> ) left ).compareTo( ( Comparable<Object> ) right );
 		}
-
-		// TODO: Dates
 
 		if ( fail ) {
 			throw new BoxRuntimeException(
