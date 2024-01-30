@@ -118,4 +118,21 @@ public class ListRemoveDuplicatesTest {
 		assertEquals( list.get( 2 ), "GrAnT" );
 	}
 
+	@DisplayName( "Can deduplicate case insensitively" )
+	@Test
+	public void testMemberFunction() {
+		instance.executeSource(
+		    """
+		        nums = "Brad,BRAD,Luis,Luis,LUIS,GrAnT,Grant";
+		        result = nums.listRemoveDuplicates( ignoreCase=true );
+		    """,
+		    context );
+		Array list = ListUtil.asList( StringCaster.cast( variables.get( result ) ), "," );
+		System.out.println( list );
+		assertThat( list.size() ).isEqualTo( 3 );
+		assertEquals( list.get( 0 ), "Brad" );
+		assertEquals( list.get( 1 ), "Luis" );
+		assertEquals( list.get( 2 ), "GrAnT" );
+	}
+
 }
