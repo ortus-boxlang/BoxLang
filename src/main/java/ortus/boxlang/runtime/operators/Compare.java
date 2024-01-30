@@ -17,6 +17,7 @@
  */
 package ortus.boxlang.runtime.operators;
 
+import java.text.Collator;
 import java.util.Locale;
 
 import org.apache.commons.lang3.StringUtils;
@@ -27,6 +28,7 @@ import ortus.boxlang.runtime.dynamic.casters.DoubleCaster;
 import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.types.DateTime;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
+import ortus.boxlang.runtime.util.LocalizationUtil;
 
 /**
  * Performs EQ, GT, and LT comparisons
@@ -111,7 +113,7 @@ public class Compare implements IOperator {
 			}
 		}
 
-		if ( left instanceof String && right instanceof String ) {
+		if ( left instanceof String || right instanceof String ) {
 			if ( !caseSensitive ) {
 				left	= StringUtils.lowerCase( left.toString(), locale );
 				right	= StringUtils.lowerCase( right.toString(), locale );
@@ -124,8 +126,13 @@ public class Compare implements IOperator {
 					return ref.compareTo( target );
 				}
 			}
-
-			return StringUtils.compare( ( String ) left, ( String ) right );
+			// if our locale is different than an EN locale use the Collator
+			if ( !locale.equals( ( Locale ) LocalizationUtil.commonLocales.get( "US" ) ) && !locale.equals( Locale.ENGLISH ) ) {
+				Collator collator = Collator.getInstance( locale );
+				return collator.getCollationKey( left.toString() ).compareTo( collator.getCollationKey( right.toString() ) );
+			} else {
+				return left.toString().compareTo( right.toString() );
+			}
 
 		}
 

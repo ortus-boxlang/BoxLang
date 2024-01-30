@@ -573,6 +573,7 @@ public class ListUtil {
 	 *
 	 * @return A filtered array
 	 */
+	@SuppressWarnings( "unchecked" )
 	public static Array sort(
 	    Array array,
 	    String sortType,
@@ -585,7 +586,7 @@ public class ListUtil {
 			throw new BoxRuntimeException( "You must supply either a sortOrder or callback" );
 		}
 
-		array.sort( ( Comparator ) sortDirectives.get( sortKey ) );
+		array.sort( ( Comparator<Object> ) sortDirectives.get( sortKey ) );
 
 		return array;
 

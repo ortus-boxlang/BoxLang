@@ -73,20 +73,27 @@ public class ArraySort extends BIF {
 			callback = ( Function ) sortType;
 		}
 
+		Array result = null;
+
 		if ( callback != null ) {
-			return ListUtil.sort(
+			result = ListUtil.sort(
 			    array,
 			    callback,
 			    context
 			);
 		} else {
-			return ListUtil.sort(
+			result = ListUtil.sort(
 			    array,
 			    StringCaster.cast( sortType ),
 			    sortOrder,
 			    LocalizationUtil.parseLocaleFromContext( context, arguments )
 			);
 		}
+
+		// TODO: This behavior difference between the member and the BIF is stupid. Let's deprecate the boolean return or just fahgeddaboutit
+		return arguments.getAsBoolean( __isMemberExecution )
+		    ? result
+		    : true;
 
 	}
 
