@@ -27,6 +27,7 @@ import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
@@ -36,8 +37,10 @@ import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.dynamic.IReferenceable;
 import ortus.boxlang.runtime.dynamic.casters.CastAttempt;
 import ortus.boxlang.runtime.dynamic.casters.DoubleCaster;
+import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 import ortus.boxlang.runtime.interop.DynamicJavaInteropService;
 import ortus.boxlang.runtime.interop.DynamicObject;
+import ortus.boxlang.runtime.operators.Compare;
 import ortus.boxlang.runtime.operators.EqualsEquals;
 import ortus.boxlang.runtime.scopes.IntKey;
 import ortus.boxlang.runtime.scopes.Key;
@@ -516,6 +519,36 @@ public class Array implements List<Object>, IType, IReferenceable, IListenable {
 		    .filter( i -> ( boolean ) context.invokeFunction( test, new Object[] { get( i ) } ) )
 		    .findFirst()
 		    .orElse( -1 ) + 1;
+	}
+
+	/**
+	 * Returns a new array removing all of the duplicates caseSenstively
+	 *
+	 * @return
+	 */
+	public Array removeDuplicates() {
+		return removeDuplicates( true );
+	}
+
+	/**
+	 * Returns a new array removing all of the duplicates - either caseSenstively or not
+	 *
+	 * @param caseSensitive whether to perform the deduplication caseSenstively
+	 *
+	 * @return
+	 */
+	public Array removeDuplicates( Boolean caseSensitive ) {
+		Array	ref			= this;
+		Array	distinct	= new Array( ref.stream()
+		    .collect( Collectors.groupingBy( item -> caseSensitive ? item : Key.of( item ), Collectors.counting() ) )
+		    .keySet()
+		    .stream()
+		    .map( item -> StringCaster.cast( item ) )
+		    .toArray()
+		);
+		// Our collector HashMap didn't maintain order so we need to restore it
+		distinct.sort( ( a, b ) -> Compare.invoke( ref.findIndex( a ), ref.findIndex( b ) ) );
+		return distinct;
 	}
 
 	/**

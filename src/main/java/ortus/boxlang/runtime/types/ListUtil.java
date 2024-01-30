@@ -30,6 +30,7 @@ import org.apache.commons.lang3.StringUtils;
 
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.dynamic.casters.ArrayCaster;
+import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
 import ortus.boxlang.runtime.dynamic.casters.IntegerCaster;
 import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 import ortus.boxlang.runtime.operators.Compare;
@@ -422,6 +423,22 @@ public class ListUtil {
 	}
 
 	/**
+	 * De-duplicates a list
+	 *
+	 * @param list          The list to remove from
+	 * @param delimiter     The delimiter to use
+	 * @param caseSensitive Whether the perform the deduplication case-insenstively
+	 *
+	 * @return The new list
+	 */
+	public static String removeDuplicates( String list, String delimiter, Boolean caseSensitive ) {
+		return asString(
+		    asList( list, delimiter ).removeDuplicates( caseSensitive ),
+		    delimiter
+		);
+	}
+
+	/**
 	 * Method to invoke a function for every iteration of the array
 	 *
 	 * @param array           The array object to filter
@@ -493,6 +510,41 @@ public class ListUtil {
 		        AsyncService.ExecutorType.FORK_JOIN,
 		        maxThreads
 		    ).submitAndGet( () -> array.intStream().parallel().anyMatch( test ) );
+
+	}
+
+	/**
+	 * Method to test if any item in the array meets the criteria in the callback
+	 *
+	 * @param array           The array object to filter
+	 * @param callback        The callback Function object
+	 * @param callbackContext The context in which to execute the callback
+	 * @param parallel        Whether to process the filter in parallel
+	 * @param maxThreads      Optional max threads for parallel execution
+	 *
+	 * @return The boolean value as to whether the test is met
+	 */
+	public static Boolean every(
+	    Array array,
+	    Function callback,
+	    IBoxContext callbackContext,
+	    Boolean parallel,
+	    Integer maxThreads ) {
+
+		IntPredicate	test		= idx -> ( boolean ) callbackContext.invokeFunction( callback,
+		    new Object[] { array.get( idx ), idx + 1, array } );
+
+		IntStream		intStream	= array.intStream();
+
+		return !parallel
+		    ? intStream.dropWhile( test ).toArray().length == 0
+		    : BooleanCaster.cast(
+		        AsyncService.buildExecutor(
+		            "ArrayFilter_" + UUID.randomUUID().toString(),
+		            AsyncService.ExecutorType.FORK_JOIN,
+		            maxThreads
+		        ).submitAndGet( () -> array.intStream().parallel().dropWhile( test ).toArray().length == 0 )
+		    );
 
 	}
 

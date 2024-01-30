@@ -22,9 +22,8 @@ import ortus.boxlang.runtime.dynamic.casters.ArrayCaster;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
-import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.BoxLangType;
-import ortus.boxlang.runtime.types.Function;
+import ortus.boxlang.runtime.types.ListUtil;
 
 @BoxBIF
 @BoxMember( type = BoxLangType.ARRAY )
@@ -59,19 +58,14 @@ public class ArrayEvery extends BIF {
 	 * @argument.maxThreads The maximum number of threads to use when parallel = true
 	 */
 	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
-		Array		actualArray	= ArrayCaster.cast( arguments.get( Key.array ) );
-		Function	func		= arguments.getAsFunction( Key.callback );
 
-		for ( int i = 0; i < actualArray.size(); i++ ) {
-			boolean result = ( boolean ) context.invokeFunction( func, new Object[] { actualArray.get( i ), i + 1, actualArray } );
+		return ListUtil.every(
+		    ArrayCaster.cast( arguments.get( Key.array ) ),
+		    arguments.getAsFunction( Key.callback ),
+		    context,
+		    arguments.getAsBoolean( Key.parallel ),
+		    arguments.getAsInteger( Key.maxThreads )
+		);
 
-			if ( !result ) {
-				return false;
-			}
-		}
-
-		// TODO: handle parallel argument and maxThreads
-
-		return true;
 	}
 }
