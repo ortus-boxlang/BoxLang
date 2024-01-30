@@ -506,7 +506,7 @@ public class ListUtil {
 		return !parallel
 		    ? ( Boolean ) intStream.anyMatch( test )
 		    : ( Boolean ) AsyncService.buildExecutor(
-		        "ArrayFilter_" + UUID.randomUUID().toString(),
+		        "ArraySome_" + UUID.randomUUID().toString(),
 		        AsyncService.ExecutorType.FORK_JOIN,
 		        maxThreads
 		    ).submitAndGet( () -> array.intStream().parallel().anyMatch( test ) );
@@ -540,7 +540,7 @@ public class ListUtil {
 		    ? intStream.dropWhile( test ).toArray().length == 0
 		    : BooleanCaster.cast(
 		        AsyncService.buildExecutor(
-		            "ArrayFilter_" + UUID.randomUUID().toString(),
+		            "ArrayEvery_" + UUID.randomUUID().toString(),
 		            AsyncService.ExecutorType.FORK_JOIN,
 		            maxThreads
 		        ).submitAndGet( () -> array.intStream().parallel().dropWhile( test ).toArray().length == 0 )
