@@ -431,17 +431,10 @@ public class ListUtil {
 	 * @return The new list
 	 */
 	public static String removeDuplicates( String list, String delimiter, Boolean caseSensitive ) {
-		Array	ref			= asList( list, delimiter );
-		Array	distinct	= ArrayCaster.cast( ref.stream()
-		    .collect( Collectors.groupingBy( item -> caseSensitive ? item : Key.of( item ), Collectors.counting() ) )
-		    .keySet()
-		    .stream()
-		    .map( item -> StringCaster.cast( item ) )
-		    .toArray()
+		return asString(
+		    asList( list, delimiter ).removeDuplicates( caseSensitive ),
+		    delimiter
 		);
-		// Our collector HashMap didn't maintain order so we need to restore it
-		distinct.sort( ( a, b ) -> Compare.invoke( ref.findIndex( a ), ref.findIndex( b ) ) );
-		return asString( distinct, delimiter );
 	}
 
 	/**
