@@ -17,6 +17,9 @@
  */
 package ortus.boxlang.runtime.types;
 
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.Locale;
 import java.util.UUID;
 import java.util.function.IntConsumer;
 import java.util.function.IntPredicate;
@@ -27,7 +30,10 @@ import org.apache.commons.lang3.StringUtils;
 
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.dynamic.casters.ArrayCaster;
+import ortus.boxlang.runtime.dynamic.casters.IntegerCaster;
 import ortus.boxlang.runtime.dynamic.casters.StringCaster;
+import ortus.boxlang.runtime.operators.Compare;
+import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.services.AsyncService;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
@@ -36,7 +42,21 @@ import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
  */
 public class ListUtil {
 
-	public static final String DEFAULT_DELIMITER = ",";
+	public static final String	DEFAULT_DELIMITER	= ",";
+
+	public static final Struct	sortDirectives		= new Struct(
+	    new HashMap<Key, Comparator<Object>>() {
+
+		    {
+			    put( Key.of( "numericAsc" ), ( a, b ) -> Compare.invoke( a, b, false ) );
+			    put( Key.of( "numericDesc" ), ( b, a ) -> Compare.invoke( a, b, true ) );
+			    put( Key.of( "textAsc" ), ( a, b ) -> Compare.invoke( a, b, true ) );
+			    put( Key.of( "textDesc" ), ( b, a ) -> Compare.invoke( a, b, true ) );
+			    put( Key.of( "textNoCaseAsc" ), ( a, b ) -> Compare.invoke( a, b, false ) );
+			    put( Key.of( "textNoCaseDesc" ), ( b, a ) -> Compare.invoke( a, b, false ) );
+		    }
+	    }
+	);
 
 	/**
 	 * Turns a list into a string
@@ -514,6 +534,60 @@ public class ListUtil {
 		            maxThreads
 		        ).submitAndGet( () -> array.intStream().parallel().filter( test ).mapToObj( array::get ).toArray() )
 		);
+
+	}
+
+	/**
+	 * Method to filter an list with a function callback and context
+	 *
+	 * If parallel we create a fork join pool. If no max threads is specified it uses the {@link java.util.concurrent.ForkJoinPool#commonPool}
+	 *
+	 * @param array           The array object to filter
+	 * @param callback        The callback Function object
+	 * @param callbackContext The context in which to execute the callback
+	 * @param parallel        Whether to process the filter in parallel
+	 * @param maxThreads      Optional max threads for parallel execution
+	 *
+	 * @return A filtered array
+	 */
+	public static Array sort(
+	    Array array,
+	    Function callback,
+	    IBoxContext callbackContext ) {
+
+		array.sort(
+		    ( a, b ) -> IntegerCaster.cast( callbackContext.invokeFunction( callback, new Object[] { a, b } ) )
+		);
+		return array;
+
+	}
+
+	/**
+	 * Method to filter an list with a function callback and context
+	 *
+	 * If parallel we create a fork join pool. If no max threads is specified it uses the {@link java.util.concurrent.ForkJoinPool#commonPool}
+	 *
+	 * @param array           The array object to filter
+	 * @param sortType        The textual sort directive
+	 * @param localeSensitive Whether to use locale-specific comparisons
+	 *
+	 * @return A filtered array
+	 */
+	public static Array sort(
+	    Array array,
+	    String sortType,
+	    String sortOrder,
+	    Locale locale ) {
+
+		Key sortKey = Key.of( sortType + sortOrder );
+
+		if ( !sortDirectives.containsKey( sortKey ) ) {
+			throw new BoxRuntimeException( "You must supply either a sortOrder or callback" );
+		}
+
+		array.sort( ( Comparator ) sortDirectives.get( sortKey ) );
+
+		return array;
 
 	}
 
