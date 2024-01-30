@@ -137,6 +137,7 @@ public class Key implements Comparable<Key> {
 	public static final Key	hostname					= Key.of( "hostname" );
 	public static final Key	hour						= Key.of( "hour" );
 	public static final Key	hours						= Key.of( "hours" );
+	public static final Key	ignoreCase					= Key.of( "ignoreCase" );
 	public static final Key	ignoreExists				= Key.of( "ignoreExists" );
 	public static final Key	includeEmptyFields			= Key.of( "includeEmptyFields" );
 	public static final Key	index						= Key.of( "index" );

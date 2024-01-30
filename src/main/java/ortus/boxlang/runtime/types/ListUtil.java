@@ -422,6 +422,29 @@ public class ListUtil {
 	}
 
 	/**
+	 * De-duplicates a list
+	 *
+	 * @param list          The list to remove from
+	 * @param delimiter     The delimiter to use
+	 * @param caseSensitive Whether the perform the deduplication case-insenstively
+	 *
+	 * @return The new list
+	 */
+	public static String removeDuplicates( String list, String delimiter, Boolean caseSensitive ) {
+		Array	ref			= asList( list, delimiter );
+		Array	distinct	= ArrayCaster.cast( ref.stream()
+		    .collect( Collectors.groupingBy( item -> caseSensitive ? item : Key.of( item ), Collectors.counting() ) )
+		    .keySet()
+		    .stream()
+		    .map( item -> StringCaster.cast( item ) )
+		    .toArray()
+		);
+		// Our collector HashMap didn't maintain order so we need to restore it
+		distinct.sort( ( a, b ) -> Compare.invoke( ref.findIndex( a ), ref.findIndex( b ) ) );
+		return asString( distinct, delimiter );
+	}
+
+	/**
 	 * Method to invoke a function for every iteration of the array
 	 *
 	 * @param array           The array object to filter
