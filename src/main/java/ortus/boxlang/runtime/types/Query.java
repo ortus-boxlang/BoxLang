@@ -405,6 +405,16 @@ public class Query implements IType, IReferenceable, Collection<IStruct> {
 		return context.getQueryRow( this );
 	}
 
+	/**
+	 * Get the list of column names as a comma-separated string
+	 * TODO: Look into caching this and invalidating when columns are added/removed
+	 * 
+	 * @return column names as string
+	 */
+	public String getColumnList() {
+		return getColumns().keySet().stream().map( Key::getName ).collect( Collectors.joining( "," ) );
+	}
+
 	/***************************
 	 * Collection implementation
 	 ****************************/
@@ -507,7 +517,7 @@ public class Query implements IType, IReferenceable, Collection<IStruct> {
 			return size();
 		}
 		if ( name.equals( Key.columnList ) ) {
-			return getColumns().keySet().stream().map( Key::getName ).collect( Collectors.joining( "," ) );
+			return getColumnList();
 		}
 		if ( name.equals( Key.currentRow ) ) {
 			return getRowFromContext( context ) + 1;

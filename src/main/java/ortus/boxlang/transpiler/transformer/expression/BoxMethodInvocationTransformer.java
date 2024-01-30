@@ -73,7 +73,7 @@ public class BoxMethodInvocationTransformer extends AbstractTransformer {
 		values.put( "methodKey", accessKey.toString() );
 		template = getTemplate( invocation );
 		Node javaExpr = parseExpression( template, values );
-		// logger.info( side + node.getSourceText() + " -> " + javaExpr );
+		// logger.debug( side + node.getSourceText() + " -> " + javaExpr );
 		addIndex( javaExpr, node );
 		return javaExpr;
 	}

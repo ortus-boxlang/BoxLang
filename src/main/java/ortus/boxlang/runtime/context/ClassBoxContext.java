@@ -76,6 +76,12 @@ public class ClassBoxContext extends BaseBoxContext {
 	@Override
 	public ScopeSearchResult scopeFindNearby( Key key, IScope defaultScope, boolean shallow ) {
 
+		// In query loop?
+		var querySearch = queryFindNearby( key );
+		if ( querySearch != null ) {
+			return querySearch;
+		}
+
 		Object result = variablesScope.getRaw( key );
 		// Null means not found
 		if ( result != null ) {

@@ -81,6 +81,30 @@ public class BoxOutput extends BoxStatement {
 		return body;
 	}
 
+	public BoxExpr getQuery() {
+		return query;
+	}
+
+	public BoxExpr getGroup() {
+		return group;
+	}
+
+	public BoxExpr getGroupCaseSensitive() {
+		return groupCaseSensitive;
+	}
+
+	public BoxExpr getStartRow() {
+		return startRow;
+	}
+
+	public BoxExpr getMaxRows() {
+		return maxRows;
+	}
+
+	public BoxExpr getEncodeFor() {
+		return encodeFor;
+	}
+
 	@Override
 	public Map<String, Object> toMap() {
 		Map<String, Object> map = super.toMap();

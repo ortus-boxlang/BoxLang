@@ -50,15 +50,16 @@ import ortus.boxlang.transpiler.transformer.TransformerContext;
  */
 public abstract class Transpiler implements ITranspiler {
 
-	private final HashMap<String, String>	properties			= new HashMap<String, String>();
-	private int								tryCatchCounter		= 0;
-	private int								switchCounter		= 0;
-	private int								forInCounter		= 0;
-	private int								lambdaCounter		= 0;
-	private int								closureCounter		= 0;
-	private ArrayDeque<String>				currentContextName	= new ArrayDeque<>();
-	private List<ImportDefinition>			imports				= new ArrayList<ImportDefinition>();
-	private Map<String, BoxExpr>			keys				= new LinkedHashMap<String, BoxExpr>();
+	private final HashMap<String, String>	properties				= new HashMap<String, String>();
+	private int								tryCatchCounter			= 0;
+	private int								switchCounter			= 0;
+	private int								forInCounter			= 0;
+	private int								lambdaCounter			= 0;
+	private int								closureCounter			= 0;
+	private int								lambdaContextCounter	= 0;
+	private ArrayDeque<String>				currentContextName		= new ArrayDeque<>();
+	private List<ImportDefinition>			imports					= new ArrayList<ImportDefinition>();
+	private Map<String, BoxExpr>			keys					= new LinkedHashMap<String, BoxExpr>();
 
 	/**
 	 * Set a property
@@ -183,6 +184,10 @@ public abstract class Transpiler implements ITranspiler {
 
 	public int incrementAndGetClosureCounter() {
 		return ++closureCounter;
+	}
+
+	public int incrementAndGetLambdaContextCounter() {
+		return ++lambdaContextCounter;
 	}
 
 	public int registerKey( BoxExpr key ) {

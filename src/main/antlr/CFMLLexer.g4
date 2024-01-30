@@ -161,8 +161,7 @@ SCRIPT_BODY: .+?;
 // *********************************************************************************************************************
 mode ATTVALUE;
 
-fragment DIGIT2: [0-9];
-IDENTIFIER: [a-z_$]+ ( [_]+ | [a-z]+ | DIGIT2)* -> popMode;
+IDENTIFIER: [a-z_$0-9]+ -> popMode;
 
 OPEN_QUOTE: '"' -> pushMode(quotesModeTag);
 

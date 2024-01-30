@@ -15,9 +15,19 @@
 package ortus.boxlang.transpiler.transformer.statement.tag;
 
 import com.github.javaparser.ast.Node;
+import com.github.javaparser.ast.NodeList;
+import com.github.javaparser.ast.body.Parameter;
+import com.github.javaparser.ast.expr.Expression;
+import com.github.javaparser.ast.expr.LambdaExpr;
+import com.github.javaparser.ast.expr.MethodCallExpr;
+import com.github.javaparser.ast.expr.NameExpr;
+import com.github.javaparser.ast.expr.NullLiteralExpr;
 import com.github.javaparser.ast.stmt.BlockStmt;
+import com.github.javaparser.ast.stmt.ExpressionStmt;
 import com.github.javaparser.ast.stmt.Statement;
+import com.github.javaparser.ast.type.UnknownType;
 
+import ortus.boxlang.ast.BoxExpr;
 import ortus.boxlang.ast.BoxNode;
 import ortus.boxlang.ast.statement.tag.BoxOutput;
 import ortus.boxlang.transpiler.JavaTranspiler;
@@ -32,12 +42,54 @@ public class BoxOutputTransformer extends AbstractTransformer {
 
 	@Override
 	public Node transform( BoxNode node, TransformerContext context ) throws IllegalStateException {
-		BoxOutput	boxOutput	= ( BoxOutput ) node;
+		BoxOutput	boxOutput			= ( BoxOutput ) node;
+		BoxExpr		query				= boxOutput.getQuery();
+		BoxExpr		group				= boxOutput.getGroup();
+		BoxExpr		groupCaseSensitive	= boxOutput.getGroupCaseSensitive();
+		BoxExpr		startRow			= boxOutput.getStartRow();
+		BoxExpr		maxRows				= boxOutput.getMaxRows();
+		// TODO: This needs to be handled in the context somehow
+		BoxExpr		encodeFor			= boxOutput.getEncodeFor();
 
-		BlockStmt	body		= new BlockStmt();
-		for ( BoxNode statement : boxOutput.getBody() ) {
-			body.getStatements().add( ( Statement ) transpiler.transform( statement ) );
+		if ( query != null ) {
+			BlockStmt	jBody				= new BlockStmt();
+			String		lambdaContextName	= "lambdaContext" + transpiler.incrementAndGetLambdaContextCounter();
+			transpiler.pushContextName( lambdaContextName );
+			for ( BoxNode statement : boxOutput.getBody() ) {
+				jBody.getStatements().add( ( Statement ) transpiler.transform( statement ) );
+			}
+			transpiler.popContextName();
+
+			LambdaExpr lambda = new LambdaExpr();
+			lambda.setParameters( new NodeList<>(
+			    new Parameter( new UnknownType(), lambdaContextName ) ) );
+			lambda.setBody( jBody );
+
+			Statement jStatement = new ExpressionStmt(
+			    new MethodCallExpr(
+			        new NameExpr( "QueryOutputUtil" ),
+			        "doLoop",
+			        new NodeList<>(
+			            new NameExpr( transpiler.peekContextName() ),
+			            ( Expression ) transpiler.transform( query ),
+			            group == null ? new NullLiteralExpr() : ( Expression ) transpiler.transform( group ),
+			            groupCaseSensitive == null ? new NullLiteralExpr() : ( Expression ) transpiler.transform( groupCaseSensitive ),
+			            startRow == null ? new NullLiteralExpr() : ( Expression ) transpiler.transform( startRow ),
+			            maxRows == null ? new NullLiteralExpr() : ( Expression ) transpiler.transform( maxRows ),
+			            lambda )
+			    )
+			);
+
+			addIndex( jStatement, node );
+			logger.debug( "{} -> {}", node.getSourceText(), jStatement );
+			return jStatement;
 		}
-		return body;
+		BlockStmt jBody = new BlockStmt();
+		for ( BoxNode statement : boxOutput.getBody() ) {
+			jBody.getStatements().add( ( Statement ) transpiler.transform( statement ) );
+		}
+		addIndex( jBody, node );
+		logger.debug( "{} -> {}", node.getSourceText(), jBody );
+		return jBody;
 	}
 }

@@ -319,8 +319,9 @@ public interface IBoxContext {
 	 * Register a query loop
 	 *
 	 * @param query The query to register
+	 * @param row   The row to start at
 	 */
-	public void registerQueryLoop( Query query );
+	public void registerQueryLoop( Query query, int row );
 
 	/**
 	 * Unregister a query loop

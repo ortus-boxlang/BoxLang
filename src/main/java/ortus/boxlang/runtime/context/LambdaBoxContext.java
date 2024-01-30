@@ -88,6 +88,12 @@ public class LambdaBoxContext extends FunctionBoxContext {
 			return new ScopeSearchResult( argumentsScope, Struct.unWrapNull( result ) );
 		}
 
+		// In query loop?
+		var querySearch = queryFindNearby( key );
+		if ( querySearch != null ) {
+			return querySearch;
+		}
+
 		if ( shallow ) {
 			return null;
 		}

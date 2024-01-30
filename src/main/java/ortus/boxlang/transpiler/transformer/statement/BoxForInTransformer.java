@@ -106,7 +106,7 @@ public class BoxForInTransformer extends AbstractTransformer {
 
 		String		template1c			= """
 		                                  if( ${isQueryName} ) {
-		                                  	${contextName}.registerQueryLoop( (Query) ${collectionName} );
+		                                  	${contextName}.registerQueryLoop( (Query) ${collectionName}, 0 );
 		                                  }
 		                                                     """;
 		String		template1d			= """
