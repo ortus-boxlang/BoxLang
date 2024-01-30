@@ -187,6 +187,7 @@ public class Key implements Comparable<Key> {
 	public static final Key	multiCharacterDelimiter		= Key.of( "multiCharacterDelimiter" );
 	public static final Key	nameAsKey					= Key.of( "nameAsKey" );
 	public static final Key	newPath						= Key.of( "newPath" );
+	public static final Key	newDelimiter				= Key.of( "newDelimiter" );
 	public static final Key	noInit						= Key.of( "noInit" );
 	public static final Key	number						= Key.of( "number" );
 	public static final Key	number1						= Key.of( "number1" );
