@@ -44,7 +44,7 @@ import ortus.boxlang.runtime.types.meta.BoxMeta;
 import ortus.boxlang.runtime.types.meta.GenericMeta;
 import ortus.boxlang.runtime.util.LocalizationUtil;
 
-public class DateTime implements IType, IReferenceable {
+public class DateTime implements IType, IReferenceable, Comparable<DateTime> {
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -807,6 +807,13 @@ public class DateTime implements IType, IReferenceable {
 			    )
 			);
 		}
+	}
+
+	/**
+	 * Comparable interface method
+	 */
+	public int compareTo( DateTime other ) {
+		return getWrapped().compareTo( other.getWrapped() );
 	}
 
 }
