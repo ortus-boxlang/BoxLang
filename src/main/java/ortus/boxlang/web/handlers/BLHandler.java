@@ -33,20 +33,23 @@ public class BLHandler implements HttpHandler {
 
 	@Override
 	public void handleRequest( io.undertow.server.HttpServerExchange exchange ) throws Exception {
+		WebRequestBoxContext context = new WebRequestBoxContext( BoxRuntime.getInstance().getRuntimeContext(), exchange );
 		try {
-			WebRequestBoxContext	context		= new WebRequestBoxContext( BoxRuntime.getInstance().getRuntimeContext(), exchange );
-			String					requestPath	= exchange.getRequestPath();
+			String requestPath = exchange.getRequestPath();
 			// Set default content type to text/html
 			exchange.getResponseHeaders().put( new HttpString( "Content-Type" ), "text/html" );
 			context.includeTemplate( requestPath );
-			context.flushBuffer( false );
 
 		} catch ( Throwable e ) {
-			handleError( e, exchange );
+			// context.flushBuffer( false );
+			handleError( e, exchange, context );
+		} finally {
+			context.flushBuffer( false );
+			exchange.endExchange();
 		}
 	}
 
-	public void handleError( Throwable e, HttpServerExchange exchange ) {
+	public void handleError( Throwable e, HttpServerExchange exchange, WebRequestBoxContext context ) {
 		StringBuilder errorOutput = new StringBuilder();
 		errorOutput.append( "<h1>BoxLang Error</h1>" )
 		    .append( "<h2>Message</h2>" )
@@ -63,7 +66,7 @@ public class BLHandler implements HttpHandler {
 
 		errorOutput.append( "</pre>" );
 
-		exchange.getResponseSender().send( errorOutput.toString() );
+		context.writeToBuffer( errorOutput.toString() );
 
 		e.printStackTrace();
 	}

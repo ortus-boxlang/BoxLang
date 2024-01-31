@@ -63,7 +63,7 @@ public class BoxBufferOutputTransformer extends AbstractTransformer {
 										};
 		javaExpr = parseStatement( expr, values );
 
-		logger.info( "{} -> {}", node.getSourceText(), javaExpr );
+		logger.debug( "{} -> {}", node.getSourceText(), javaExpr );
 		addIndex( javaExpr, node );
 		return javaExpr;
 	}

@@ -168,4 +168,21 @@ class ModuleRecordTest {
 		assertThat( moduleRecord.mapping ).isEqualTo( ModuleService.MODULE_MAPPING_PREFIX + "test" );
 		assertThat( moduleRecord.invocationPath ).isEqualTo( ModuleService.MODULE_MAPPING_INVOCATION_PREFIX + moduleRecord.name.getName() );
 	}
+
+	@DisplayName( "Can activate a module descriptor" )
+	@Test
+	void testItCanActivateAModule() {
+		// Given
+		Key				moduleName		= new Key( "test" );
+		String			physicalPath	= Paths.get( "src/main/resources/modules/test" ).toAbsolutePath().toString();
+		ModuleRecord	moduleRecord	= new ModuleRecord( moduleName, physicalPath );
+		IBoxContext		context			= new ScriptingRequestBoxContext();
+
+		// When
+		moduleRecord
+		    .loadDescriptor( context )
+		    .configure( context )
+		    .activate( context );
+
+	}
 }

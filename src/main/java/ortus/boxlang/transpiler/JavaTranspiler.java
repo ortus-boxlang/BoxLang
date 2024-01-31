@@ -16,11 +16,6 @@ package ortus.boxlang.transpiler;
 
 import java.io.File;
 import java.io.Writer;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
-import java.net.MalformedURLException;
-import java.net.URL;
-import java.net.URLClassLoader;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -47,6 +42,7 @@ import ortus.boxlang.ast.BoxClass;
 import ortus.boxlang.ast.BoxNode;
 import ortus.boxlang.ast.BoxScript;
 import ortus.boxlang.ast.BoxScriptIsland;
+import ortus.boxlang.ast.BoxTemplate;
 import ortus.boxlang.ast.expression.BoxArgument;
 import ortus.boxlang.ast.expression.BoxArrayAccess;
 import ortus.boxlang.ast.expression.BoxArrayLiteral;
@@ -93,10 +89,9 @@ import ortus.boxlang.ast.statement.BoxSwitch;
 import ortus.boxlang.ast.statement.BoxThrow;
 import ortus.boxlang.ast.statement.BoxTry;
 import ortus.boxlang.ast.statement.BoxWhile;
-import ortus.boxlang.ast.statement.tag.BoxOutput;
-import ortus.boxlang.ast.statement.tag.BoxTagIsland;
-import ortus.boxlang.runtime.BoxRuntime;
-import ortus.boxlang.runtime.runnables.BoxTemplate;
+import ortus.boxlang.ast.statement.component.BoxComponent;
+import ortus.boxlang.ast.statement.component.BoxOutput;
+import ortus.boxlang.ast.statement.component.BoxTemplateIsland;
 import ortus.boxlang.runtime.runnables.compiler.JavaSourceString;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
@@ -153,9 +148,10 @@ import ortus.boxlang.transpiler.transformer.statement.BoxTemplateTransformer;
 import ortus.boxlang.transpiler.transformer.statement.BoxThrowTransformer;
 import ortus.boxlang.transpiler.transformer.statement.BoxTryTransformer;
 import ortus.boxlang.transpiler.transformer.statement.BoxWhileTransformer;
-import ortus.boxlang.transpiler.transformer.statement.tag.BoxOutputTransformer;
-import ortus.boxlang.transpiler.transformer.statement.tag.BoxScriptIslandTransformer;
-import ortus.boxlang.transpiler.transformer.statement.tag.BoxTagIslandTransformer;
+import ortus.boxlang.transpiler.transformer.statement.component.BoxComponentTransformer;
+import ortus.boxlang.transpiler.transformer.statement.component.BoxOutputTransformer;
+import ortus.boxlang.transpiler.transformer.statement.component.BoxScriptIslandTransformer;
+import ortus.boxlang.transpiler.transformer.statement.component.BoxTemplateIslandTransformer;
 
 /**
  * BoxLang AST to Java AST transpiler
@@ -231,12 +227,14 @@ public class JavaTranspiler extends Transpiler {
 		registry.put( BoxClosure.class, new BoxClosureTransformer( this ) );
 		registry.put( BoxClass.class, new BoxClassTransformer( this ) );
 
-		// Tags
-		registry.put( ortus.boxlang.ast.BoxTemplate.class, new BoxTemplateTransformer( this ) );
+		// Templating Components
+		registry.put( BoxTemplate.class, new BoxTemplateTransformer( this ) );
 		registry.put( BoxBufferOutput.class, new BoxBufferOutputTransformer( this ) );
 		registry.put( BoxOutput.class, new BoxOutputTransformer( this ) );
 		registry.put( BoxScriptIsland.class, new BoxScriptIslandTransformer( this ) );
-		registry.put( BoxTagIsland.class, new BoxTagIslandTransformer( this ) );
+		registry.put( BoxTemplateIsland.class, new BoxTemplateIslandTransformer( this ) );
+		registry.put( BoxComponent.class, new BoxComponentTransformer( this ) );
+
 	}
 
 	/**
@@ -344,52 +342,6 @@ public class JavaTranspiler extends Transpiler {
 		}
 
 		return fqn;
-	}
-
-	/**
-	 * Runa a java class
-	 *
-	 * @param fqn
-	 * @param classPath
-	 *
-	 * @throws ClassNotFoundException
-	 * @throws InvocationTargetException
-	 * @throws NoSuchMethodException
-	 * @throws IllegalAccessException
-	 */
-	public void runJavaClass( String fqn, List<String> classPath )
-	    throws ClassNotFoundException, InvocationTargetException, NoSuchMethodException, IllegalAccessException {
-		List<URL> finalClassPath = new ArrayList<>();
-		for ( String path : classPath ) {
-			try {
-				finalClassPath.add( new File( path ).toURI().toURL() );
-
-			} catch ( MalformedURLException e ) {
-				throw new RuntimeException( e );
-			}
-		}
-
-		try {
-			URL[]			classLoaderClassPath	= finalClassPath.toArray( new URL[ 0 ] );
-			URLClassLoader	classLoader				= new URLClassLoader(
-			    classLoaderClassPath,
-			    this.getClass().getClassLoader()
-			);
-			Class			boxClass				= Class.forName( fqn, true, classLoader );
-			Method			method					= boxClass.getDeclaredMethod( "getInstance" );
-			Object			instance				= method.invoke( boxClass );
-
-			// Runtime
-			BoxRuntime		rt						= BoxRuntime.getInstance();
-
-			rt.executeTemplate( ( BoxTemplate ) instance );
-
-			rt.shutdown();
-
-		} catch ( Throwable e ) {
-			throw e;
-		}
-
 	}
 
 	/**

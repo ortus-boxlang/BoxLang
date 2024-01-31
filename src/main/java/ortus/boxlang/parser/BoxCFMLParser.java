@@ -28,12 +28,14 @@ import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.input.BOMInputStream;
 
 import ortus.boxlang.ast.BoxBufferOutput;
+import ortus.boxlang.ast.BoxClass;
 import ortus.boxlang.ast.BoxExpr;
 import ortus.boxlang.ast.BoxNode;
 import ortus.boxlang.ast.BoxScript;
 import ortus.boxlang.ast.BoxScriptIsland;
 import ortus.boxlang.ast.BoxStatement;
 import ortus.boxlang.ast.BoxTemplate;
+import ortus.boxlang.ast.Issue;
 import ortus.boxlang.ast.Point;
 import ortus.boxlang.ast.Position;
 import ortus.boxlang.ast.expression.BoxFQN;
@@ -52,6 +54,7 @@ import ortus.boxlang.ast.statement.BoxFunctionDeclaration;
 import ortus.boxlang.ast.statement.BoxIfElse;
 import ortus.boxlang.ast.statement.BoxImport;
 import ortus.boxlang.ast.statement.BoxInclude;
+import ortus.boxlang.ast.statement.BoxProperty;
 import ortus.boxlang.ast.statement.BoxRethrow;
 import ortus.boxlang.ast.statement.BoxReturn;
 import ortus.boxlang.ast.statement.BoxReturnType;
@@ -62,7 +65,8 @@ import ortus.boxlang.ast.statement.BoxTry;
 import ortus.boxlang.ast.statement.BoxTryCatch;
 import ortus.boxlang.ast.statement.BoxType;
 import ortus.boxlang.ast.statement.BoxWhile;
-import ortus.boxlang.ast.statement.tag.BoxOutput;
+import ortus.boxlang.ast.statement.component.BoxComponent;
+import ortus.boxlang.ast.statement.component.BoxOutput;
 import ortus.boxlang.parser.antlr.CFMLLexer;
 import ortus.boxlang.parser.antlr.CFMLParser;
 import ortus.boxlang.parser.antlr.CFMLParser.ArgumentContext;
@@ -72,10 +76,14 @@ import ortus.boxlang.parser.antlr.CFMLParser.BoxImportContext;
 import ortus.boxlang.parser.antlr.CFMLParser.BreakContext;
 import ortus.boxlang.parser.antlr.CFMLParser.CaseContext;
 import ortus.boxlang.parser.antlr.CFMLParser.CatchBlockContext;
+import ortus.boxlang.parser.antlr.CFMLParser.ComponentContext;
 import ortus.boxlang.parser.antlr.CFMLParser.ContinueContext;
 import ortus.boxlang.parser.antlr.CFMLParser.FunctionContext;
+import ortus.boxlang.parser.antlr.CFMLParser.GenericOpenCloseComponentContext;
+import ortus.boxlang.parser.antlr.CFMLParser.GenericOpenComponentContext;
 import ortus.boxlang.parser.antlr.CFMLParser.IncludeContext;
 import ortus.boxlang.parser.antlr.CFMLParser.OutputContext;
+import ortus.boxlang.parser.antlr.CFMLParser.PropertyContext;
 import ortus.boxlang.parser.antlr.CFMLParser.RethrowContext;
 import ortus.boxlang.parser.antlr.CFMLParser.ReturnContext;
 import ortus.boxlang.parser.antlr.CFMLParser.ScriptContext;
@@ -90,9 +98,10 @@ import ortus.boxlang.parser.antlr.CFMLParser.TryContext;
 import ortus.boxlang.parser.antlr.CFMLParser.WhileContext;
 import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
-import ortus.boxlang.runtime.types.exceptions.ExpressionException;
 
 public class BoxCFMLParser extends BoxAbstractParser {
+
+	private int outputCounter = 0;
 
 	public BoxCFMLParser() {
 		super();
@@ -111,23 +120,60 @@ public class BoxCFMLParser extends BoxAbstractParser {
 	}
 
 	@Override
-	protected BoxScript parseTreeToAst( File file, ParserRuleContext parseTree ) throws IOException {
+	protected BoxNode parseTreeToAst( File file, ParserRuleContext parseTree ) throws IOException {
 		TemplateContext		template	= ( TemplateContext ) parseTree;
 
 		List<BoxStatement>	statements	= new ArrayList<>();
 		if ( template.boxImport() != null ) {
 			statements.addAll( toAst( file, template.boxImport() ) );
 		}
+		if ( template.component() != null ) {
+			return toAst( file, template.component(), statements );
+		}
+		if ( template.interface_() != null ) {
+			throw new BoxRuntimeException( "component interface parsing not implemented yet" );
+		}
 		if ( template.statements() != null ) {
 			statements.addAll( toAst( file, template.statements() ) );
 		}
-		if ( template.component() != null ) {
-			throw new BoxRuntimeException( "tag component parsing not implemented yet" );
-		}
-		if ( template.interface_() != null ) {
-			throw new BoxRuntimeException( "tag interface parsing not implemented yet" );
-		}
 		return new BoxTemplate( statements, getPosition( parseTree ), getSourceText( parseTree ) );
+	}
+
+	private BoxNode toAst( File file, ComponentContext node, List<BoxStatement> importStatements ) {
+		List<BoxImport>						imports			= new ArrayList<>();
+		List<BoxStatement>					body			= new ArrayList<>();
+		List<BoxAnnotation>					annotations		= new ArrayList<>();
+		// This will be empty in components
+		List<BoxDocumentationAnnotation>	documentation	= new ArrayList<>();
+		List<BoxProperty>					properties		= new ArrayList<>();
+
+		for ( BoxStatement importStatement : importStatements ) {
+			imports.add( ( BoxImport ) importStatement );
+		}
+		for ( var attr : node.attribute() ) {
+			annotations.add( toAst( file, attr ) );
+		}
+
+		if ( node.statements() != null ) {
+			body.addAll( toAst( file, node.statements() ) );
+		}
+		for ( CFMLParser.PropertyContext annotation : node.property() ) {
+			properties.add( toAst( file, annotation ) );
+		}
+
+		return new BoxClass( imports, body, annotations, documentation, properties, getPosition( node ), getSourceText( node ) );
+	}
+
+	private BoxProperty toAst( File file, PropertyContext node ) {
+		List<BoxAnnotation>					annotations		= new ArrayList<>();
+		// This will be empty in components
+		List<BoxDocumentationAnnotation>	documentation	= new ArrayList<>();
+
+		for ( var attr : node.attribute() ) {
+			annotations.add( toAst( file, attr ) );
+		}
+
+		return new BoxProperty( annotations, documentation, getPosition( node ), getSourceText( node ) );
 	}
 
 	private List<BoxImport> toAst( File file, List<BoxImportContext> imports ) {
@@ -147,35 +193,24 @@ public class BoxCFMLParser extends BoxAbstractParser {
 		for ( var attr : node.attribute() ) {
 			annotations.add( toAst( file, attr ) );
 		}
-		System.out.println( annotations.stream().map( it -> it.getKey().getValue() + "=" + it.getValue().getSourceText() ).toList() );
-		var nameSearch = annotations.stream().filter( ( it ) -> it.getKey().getValue().equalsIgnoreCase( "name" ) ).findFirst();
-		if ( nameSearch.isPresent() ) {
-			name = getBoxExprAsString( nameSearch.get().getValue(), "name" );
-			if ( name.trim().isEmpty() ) {
-				throw new BoxRuntimeException( "Import name cannot be empty - " + getSourceText( node ) );
-			}
-		} else {
-			throw new BoxRuntimeException( "Import must have a name attribute - " + getSourceText( node ) );
+
+		BoxExpr nameSearch = findExprInAnnotations( annotations, "name", true, null, "import", getPosition( node ) );
+		name = getBoxExprAsString( nameSearch, "name", false );
+		BoxFQN nameFQN = new BoxFQN( name, nameSearch.getPosition(), nameSearch.getSourceText() );
+
+		prefix = getBoxExprAsString( findExprInAnnotations( annotations, "prefix", false, null, null, null ), "prefix", false );
+
+		BoxExpr aliasSearch = findExprInAnnotations( annotations, "alias", false, null, null, null );
+		if ( aliasSearch != null ) {
+			alias = new BoxIdentifier( getBoxExprAsString( aliasSearch, "alias", false ),
+			    aliasSearch.getPosition(),
+			    aliasSearch.getSourceText() );
 		}
 
-		var prefixSearch = annotations.stream().filter( ( it ) -> it.getKey().getValue().equalsIgnoreCase( "prefix" ) ).findFirst();
-		if ( prefixSearch.isPresent() ) {
-			prefix = getBoxExprAsString( prefixSearch.get().getValue(), "prefix" );
-			if ( prefix.trim().isEmpty() ) {
-				throw new BoxRuntimeException( "Import prefix cannot be empty - " + getSourceText( node ) );
-			}
-		}
-
-		var aliasSearch = annotations.stream().filter( ( it ) -> it.getKey().getValue().equalsIgnoreCase( "alias" ) ).findFirst();
-		if ( aliasSearch.isPresent() ) {
-			alias = new BoxIdentifier( getBoxExprAsString( aliasSearch.get().getValue(), "alias" ), aliasSearch.get().getValue().getPosition(),
-			    aliasSearch.get().getValue().getSourceText() );
-		}
 		if ( prefix != null ) {
 			name = prefix + ":" + name;
 		}
-		return new BoxImport( new BoxFQN( name, nameSearch.get().getValue().getPosition(), nameSearch.get().getValue().getSourceText() ), alias,
-		    getPosition( node ), getSourceText( node ) );
+		return new BoxImport( nameFQN, alias, getPosition( node ), getSourceText( node ) );
 	}
 
 	private List<BoxStatement> toAst( File file, StatementsContext node ) {
@@ -183,7 +218,39 @@ public class BoxCFMLParser extends BoxAbstractParser {
 		if ( node.children != null ) {
 			for ( var child : node.children ) {
 				if ( child instanceof StatementContext statement ) {
-					statements.add( toAst( file, statement ) );
+					if ( statement.genericCloseComponent() != null ) {
+						String	componentName	= statement.genericCloseComponent().componentName().getText();
+						// see if statements list has a BoxComponent with this name
+						int		size			= statements.size();
+						boolean	foundStart		= false;
+						int		removeAfter		= -1;
+						// loop backwards checking for a BoxComponent with this name
+						for ( int i = size - 1; i >= 0; i-- ) {
+							BoxStatement boxStatement = statements.get( i );
+							if ( boxStatement instanceof BoxComponent boxComponent ) {
+								if ( boxComponent.getName().equalsIgnoreCase( componentName ) && boxComponent.getBody() == null ) {
+									foundStart = true;
+									// slice all statements from this position to the end and set them as the body of the start component
+									boxComponent.setBody( new ArrayList<>( statements.subList( i + 1, size ) ) );
+									boxComponent.getPosition().setEnd( getPosition( statement.genericCloseComponent() ).getEnd() );
+									boxComponent.setSourceText( getSourceText( boxComponent.getSourceStartIndex(), statement.genericCloseComponent() ) );
+									removeAfter = i;
+									break;
+								}
+							}
+						}
+						// remove all items in list after removeAfter index
+						if ( removeAfter >= 0 ) {
+							statements.subList( removeAfter + 1, size ).clear();
+						}
+						if ( !foundStart ) {
+							issues.add( new Issue( "Found end component [" + componentName + "] without matching start component",
+							    getPosition( statement.genericCloseComponent() ) ) );
+						}
+
+					} else {
+						statements.add( toAst( file, statement ) );
+					}
 				} else if ( child instanceof TextContentContext textContent ) {
 					statements.add( toAst( file, textContent ) );
 				} else if ( child instanceof ScriptContext script ) {
@@ -229,9 +296,32 @@ public class BoxCFMLParser extends BoxAbstractParser {
 			return toAst( file, node.throw_() );
 		} else if ( node.switch_() != null ) {
 			return toAst( file, node.switch_() );
+		} else if ( node.genericOpenCloseComponent() != null ) {
+			return toAst( file, node.genericOpenCloseComponent() );
+		} else if ( node.genericOpenComponent() != null ) {
+			return toAst( file, node.genericOpenComponent() );
 		}
 		throw new BoxRuntimeException( "Statement node " + node.getClass().getName() + " parsing not implemented yet. " + node.getText() );
 
+	}
+
+	private BoxStatement toAst( File file, GenericOpenCloseComponentContext node ) {
+		List<BoxAnnotation> attributes = new ArrayList<>();
+		for ( var attr : node.attribute() ) {
+			attributes.add( toAst( file, attr ) );
+		}
+		return new BoxComponent( node.componentName().getText(), attributes, List.of(), node.getStart().getStartIndex(), getPosition( node ),
+		    getSourceText( node ) );
+	}
+
+	private BoxStatement toAst( File file, GenericOpenComponentContext node ) {
+		List<BoxAnnotation> attributes = new ArrayList<>();
+		for ( var attr : node.attribute() ) {
+			attributes.add( toAst( file, attr ) );
+		}
+		// Body may get set later, if we find an end component
+		return new BoxComponent( node.componentName().getText(), attributes, null, node.getStart().getStartIndex(), getPosition( node ),
+		    getSourceText( node ) );
 	}
 
 	private BoxStatement toAst( File file, SwitchContext node ) {
@@ -242,21 +332,16 @@ public class BoxCFMLParser extends BoxAbstractParser {
 		for ( var attr : node.attribute() ) {
 			annotations.add( toAst( file, attr ) );
 		}
-		var expressionSearch = annotations.stream().filter( ( it ) -> it.getKey().getValue().equalsIgnoreCase( "expression" ) ).findFirst();
-		if ( expressionSearch.isPresent() ) {
-			expression = expressionSearch.get().getValue();
-		} else {
-			throw new BoxRuntimeException( "Switch must have a expression attribute - " + getSourceText( node ) );
-		}
+
+		expression = findExprInAnnotations( annotations, "expression", true, null, "switch", getPosition( node ) );
 
 		if ( node.switchBody() != null && node.switchBody().children != null ) {
 			for ( var c : node.switchBody().children ) {
 				if ( c instanceof CFMLParser.CaseContext caseNode ) {
 					cases.add( toAst( file, caseNode ) );
-					// We're willing to overlook text, but not other CF tags
+					// We're willing to overlook text, but not other CF components
 				} else if ( ! ( c instanceof CFMLParser.TextContentContext ) ) {
-					throw new ExpressionException( "Switch body can only contain case statements - ", getPosition( ( ParserRuleContext ) c ),
-					    getSourceText( ( ParserRuleContext ) c ) );
+					issues.add( new Issue( "Switch body can only contain case statements - ", getPosition( ( ParserRuleContext ) c ) ) );
 				}
 			}
 		}
@@ -265,7 +350,7 @@ public class BoxCFMLParser extends BoxAbstractParser {
 
 	private BoxSwitchCase toAst( File file, CaseContext node ) {
 		BoxExpr	value		= null;
-		BoxExpr	delimiter	= new BoxStringLiteral( ",", null, null );
+		BoxExpr	delimiter	= null;
 
 		// Only check for these on case nodes, not default case
 		if ( !node.CASE().isEmpty() ) {
@@ -275,17 +360,8 @@ public class BoxCFMLParser extends BoxAbstractParser {
 				annotations.add( toAst( file, attr ) );
 			}
 
-			var valueSearch = annotations.stream().filter( ( it ) -> it.getKey().getValue().equalsIgnoreCase( "value" ) ).findFirst();
-			if ( valueSearch.isPresent() ) {
-				value = valueSearch.get().getValue();
-			} else {
-				throw new ExpressionException( "Case must have a value attribute - ", getPosition( node ), getSourceText( node ) );
-			}
-
-			var delimiterSearch = annotations.stream().filter( ( it ) -> it.getKey().getValue().equalsIgnoreCase( "delimiter" ) ).findFirst();
-			if ( delimiterSearch.isPresent() ) {
-				delimiter = delimiterSearch.get().getValue();
-			}
+			value		= findExprInAnnotations( annotations, "value", true, null, "case", getPosition( node ) );
+			delimiter	= findExprInAnnotations( annotations, "delimiter", false, new BoxStringLiteral( ",", null, null ), "case", getPosition( node ) );
 		}
 
 		List<BoxStatement> statements = new ArrayList<>();
@@ -293,7 +369,7 @@ public class BoxCFMLParser extends BoxAbstractParser {
 			statements.addAll( toAst( file, node.statements() ) );
 		}
 
-		// In tag mode, the break is implied
+		// In component mode, the break is implied
 		statements.add( new BoxBreak( null, null ) );
 
 		return new BoxSwitchCase( value, delimiter, statements, getPosition( node ), getSourceText( node ) );
@@ -349,12 +425,7 @@ public class BoxCFMLParser extends BoxAbstractParser {
 			annotations.add( toAst( file, attr ) );
 		}
 
-		var templateSearch = annotations.stream().filter( ( it ) -> it.getKey().getValue().equalsIgnoreCase( "template" ) ).findFirst();
-		if ( templateSearch.isPresent() ) {
-			template = templateSearch.get().getValue();
-		} else {
-			throw new BoxRuntimeException( "Include must have a template attribute - " + getSourceText( node ) );
-		}
+		template = findExprInAnnotations( annotations, "template", true, null, "include", getPosition( node ) );
 
 		// TODO: Add runOnce support
 		return new BoxInclude( template, getPosition( node ), getSourceText( node ) );
@@ -377,18 +448,15 @@ public class BoxCFMLParser extends BoxAbstractParser {
 			annotations.add( toAst( file, attr ) );
 		}
 
-		var conditionSearch = annotations.stream().filter( ( it ) -> it.getKey().getValue().equalsIgnoreCase( "condition" ) ).findFirst();
-		if ( conditionSearch.isPresent() ) {
-			condition = parseCFExpression(
-			    getBoxExprAsString(
-			        conditionSearch.get().getValue(),
-			        "condition"
-			    ),
-			    conditionSearch.get().getValue().getPosition()
-			);
-		} else {
-			throw new BoxRuntimeException( "While must have a condition attribute - " + getSourceText( node ) );
-		}
+		BoxExpr conditionSearch = findExprInAnnotations( annotations, "condition", true, null, "while", getPosition( node ) );
+		condition = parseCFExpression(
+		    getBoxExprAsString(
+		        conditionSearch,
+		        "condition",
+		        false
+		    ),
+		    conditionSearch.getPosition()
+		);
 
 		if ( node.statements() != null ) {
 			body.addAll( toAst( file, node.statements() ) );
@@ -419,19 +487,12 @@ public class BoxCFMLParser extends BoxAbstractParser {
 		for ( var attr : node.attribute() ) {
 			annotations.add( toAst( file, attr ) );
 		}
-		var nameSearch = annotations.stream().filter( ( it ) -> it.getKey().getValue().equalsIgnoreCase( "name" ) ).findFirst();
-		if ( nameSearch.isPresent() ) {
-			name = getBoxExprAsString( nameSearch.get().getValue(), "name" );
-			if ( name.trim().isEmpty() ) {
-				throw new BoxRuntimeException( "Function name cannot be empty - " + getSourceText( node ) );
-			}
-		} else {
-			throw new BoxRuntimeException( "Function must have a name attribute - " + getSourceText( node ) );
-		}
 
-		var accessSearch = annotations.stream().filter( ( it ) -> it.getKey().getValue().equalsIgnoreCase( "access" ) ).findFirst();
-		if ( accessSearch.isPresent() ) {
-			String accessText = getBoxExprAsString( accessSearch.get().getValue(), "access" ).toLowerCase();
+		name = getBoxExprAsString( findExprInAnnotations( annotations, "name", true, null, "function", getPosition( node ) ), "name", false );
+
+		String accessText = getBoxExprAsString( findExprInAnnotations( annotations, "function", false, null, null, null ), "access", true );
+		if ( accessText != null ) {
+			accessText = accessText.toLowerCase();
 			if ( accessText.equals( "public" ) ) {
 				modifier = BoxAccessModifier.Public;
 			} else if ( accessText.equals( "private" ) ) {
@@ -443,10 +504,11 @@ public class BoxCFMLParser extends BoxAbstractParser {
 			}
 		}
 
-		var returnTypeSearch = annotations.stream().filter( ( it ) -> it.getKey().getValue().equalsIgnoreCase( "returnType" ) ).findFirst();
-		if ( returnTypeSearch.isPresent() ) {
-			String	returnTypeText	= getBoxExprAsString( returnTypeSearch.get().getValue(), "returnType" ).toLowerCase();
-			BoxType	type			= null;
+		BoxExpr	returnTypeSearch	= findExprInAnnotations( annotations, "returnType", false, null, null, null );
+		String	returnTypeText		= getBoxExprAsString( returnTypeSearch, "returnType", true );
+		if ( returnTypeText != null ) {
+			returnTypeText = returnTypeText.toLowerCase();
+			BoxType type = null;
 			if ( returnTypeText.equals( "boolean" ) ) {
 				type = BoxType.Boolean;
 			}
@@ -458,9 +520,9 @@ public class BoxCFMLParser extends BoxAbstractParser {
 			}
 			// TODO: Add rest of types or make dynamic
 			if ( type != null ) {
-				returnType = new BoxReturnType( type, null, returnTypeSearch.get().getPosition(), returnTypeSearch.get().getSourceText() );
+				returnType = new BoxReturnType( type, null, returnTypeSearch.getPosition(), returnTypeSearch.getSourceText() );
 			} else {
-				returnType = new BoxReturnType( BoxType.Fqn, returnTypeText, returnTypeSearch.get().getPosition(), returnTypeSearch.get().getSourceText() );
+				returnType = new BoxReturnType( BoxType.Fqn, returnTypeText, returnTypeSearch.getPosition(), returnTypeSearch.getSourceText() );
 			}
 		}
 
@@ -485,40 +547,21 @@ public class BoxCFMLParser extends BoxAbstractParser {
 			annotations.add( toAst( file, attr ) );
 		}
 
-		var nameSearch = annotations.stream().filter( ( it ) -> it.getKey().getValue().equalsIgnoreCase( "name" ) ).findFirst();
-		if ( nameSearch.isPresent() ) {
-			name = getBoxExprAsString( nameSearch.get().getValue(), "name" );
-			if ( name.trim().isEmpty() ) {
-				throw new BoxRuntimeException( "Argument name cannot be empty - " + getSourceText( node ) );
-			}
-		} else {
-			throw new BoxRuntimeException( "Argument must have a name attribute - " + getSourceText( node ) );
-		}
+		name		= getBoxExprAsString( findExprInAnnotations( annotations, "name", true, null, "function", getPosition( node ) ), "name", false );
 
-		var requiredSearch = annotations.stream().filter( ( it ) -> it.getKey().getValue().equalsIgnoreCase( "required" ) ).findFirst();
-		if ( requiredSearch.isPresent() ) {
-			required = BooleanCaster.cast( getBoxExprAsString( requiredSearch.get().getValue(), "required" ) );
-		}
+		required	= BooleanCaster.cast(
+		    getBoxExprAsString(
+		        findExprInAnnotations( annotations, "required", false, null, null, null ),
+		        "required",
+		        false
+		    )
+		);
 
-		var defaultSearch = annotations.stream().filter( ( it ) -> it.getKey().getValue().equalsIgnoreCase( "default" ) ).findFirst();
-		if ( defaultSearch.isPresent() ) {
-			expr = defaultSearch.get().getValue();
-		}
-
-		var typeSearch = annotations.stream().filter( ( it ) -> it.getKey().getValue().equalsIgnoreCase( "type" ) ).findFirst();
-		if ( typeSearch.isPresent() ) {
-			type = getBoxExprAsString( typeSearch.get().getValue(), "type" );
-		}
+		expr		= findExprInAnnotations( annotations, "default", false, null, null, null );
+		type		= getBoxExprAsString( findExprInAnnotations( annotations, "type", false, new BoxStringLiteral( "Any", null, null ), null, null ), "type",
+		    false );
 
 		return new BoxArgumentDeclaration( required, type, name, expr, annotations, documentation, getPosition( node ), getSourceText( node ) );
-	}
-
-	private String getBoxExprAsString( BoxExpr expr, String name ) {
-		if ( expr instanceof BoxStringLiteral str ) {
-			return str.getValue();
-		} else {
-			throw new BoxRuntimeException( name + " attribute must be a string literal - " + expr.getSourceText() );
-		}
 	}
 
 	private BoxAnnotation toAst( File file, AttributeContext attribute ) {
@@ -557,7 +600,7 @@ public class BoxCFMLParser extends BoxAbstractParser {
 		List<BoxExpr>	catchTypes;
 
 		var				typeSearch	= node.attribute().stream()
-		    .filter( ( it ) -> it.attributeName().TAG_NAME().getText().equalsIgnoreCase( "type" ) && it.attributeValue() != null ).findFirst();
+		    .filter( ( it ) -> it.attributeName().COMPONENT_NAME().getText().equalsIgnoreCase( "type" ) && it.attributeValue() != null ).findFirst();
 		if ( typeSearch.isPresent() ) {
 			BoxExpr type;
 			if ( typeSearch.get().attributeValue().identifier() != null ) {
@@ -633,9 +676,9 @@ public class BoxCFMLParser extends BoxAbstractParser {
 		// Loop backward over elseif conditions, each one becoming the elseBody of the next.
 		for ( int i = node.elseIfCondition.size() - 1; i >= 0; i-- ) {
 			int		stopIndex;
-			Point	end	= new Point( node.elseIfTagClose.get( i ).getLine(),
-			    node.elseIfTagClose.get( i ).getCharPositionInLine() );
-			stopIndex = node.elseIfTagClose.get( i ).getStopIndex();
+			Point	end	= new Point( node.elseIfComponentClose.get( i ).getLine(),
+			    node.elseIfComponentClose.get( i ).getCharPositionInLine() );
+			stopIndex = node.elseIfComponentClose.get( i ).getStopIndex();
 			if ( node.elseThenBody.get( i ).statement().size() > 0 ) {
 				end			= new Point( node.elseThenBody.get( i ).statement( node.elseThenBody.get( i ).statement().size() - 1 ).getStop().getLine(),
 				    node.elseThenBody.get( i ).statement( node.elseThenBody.get( i ).statement().size() - 1 ).getStop().getCharPositionInLine() );
@@ -654,16 +697,84 @@ public class BoxCFMLParser extends BoxAbstractParser {
 	}
 
 	private BoxStatement toAst( File file, SetContext set ) {
-		// In tags, a <bx:set ...> tag is an Expression Statement.
+		// In components, a <bx:set ...> component is an Expression Statement.
 		return new BoxExpression( parseCFExpression( set.expression().getText(), getPosition( set.expression() ) ), getPosition( set ), getSourceText( set ) );
 	}
 
 	private BoxStatement toAst( File file, OutputContext node ) {
-		List<BoxStatement> statements = new ArrayList<>();
-		if ( node.statements() != null ) {
-			statements.addAll( toAst( file, node.statements() ) );
+		List<BoxStatement>	statements	= new ArrayList<>();
+		List<BoxAnnotation>	annotations	= new ArrayList<>();
+
+		for ( var attr : node.attribute() ) {
+			annotations.add( toAst( file, attr ) );
 		}
-		return new BoxOutput( statements, getPosition( node ), getSourceText( node ) );
+
+		BoxExpr	query				= findExprInAnnotations( annotations, "query", false, null, null, null );
+		BoxExpr	group				= findExprInAnnotations( annotations, "group", false, null, null, null );
+		BoxExpr	groupCaseSensitive	= findExprInAnnotations( annotations, "groupCaseSensitive", false, null, null, null );
+		BoxExpr	startRow			= findExprInAnnotations( annotations, "startRow", false, null, null, null );
+		BoxExpr	maxRows				= findExprInAnnotations( annotations, "maxRows", false, null, null, null );
+		BoxExpr	encodeFor			= findExprInAnnotations( annotations, "encodeFor", false, null, null, null );
+
+		if ( node.statements() != null ) {
+			outputCounter++;
+			statements.addAll( toAst( file, node.statements() ) );
+			outputCounter--;
+		}
+
+		return new BoxOutput( statements, query, group, groupCaseSensitive, startRow, maxRows, encodeFor, getPosition( node ), getSourceText( node ) );
+	}
+
+	/**
+	 * A helper function to find a specific annotation by name and return the value expression
+	 * 
+	 * @param annotations             the list of annotations to search
+	 * @param name                    the name of the annotation to find
+	 * @param required                whether the annotation is required. If required, and not present a parsing Issue is created.
+	 * @param defaultValue            the default value to return if the annotation is not found. Ignored if requried is false.
+	 * @param containingComponentName the name of the component that contains the annotation, used in error handling
+	 * @param position                the position of the component, used in error handling
+	 * 
+	 * @return the value expression of the annotation, or the default value if the annotation is not found
+	 * 
+	 */
+	private BoxExpr findExprInAnnotations( List<BoxAnnotation> annotations, String name, boolean required, BoxExpr defaultValue, String containingComponentName,
+	    Position position ) {
+		var search = annotations.stream().filter( ( it ) -> it.getKey().getValue().equalsIgnoreCase( name ) ).findFirst();
+		if ( search.isPresent() ) {
+			return search.get().getValue();
+		} else if ( !required ) {
+			return defaultValue;
+		} else {
+			issues.add( new Issue( "Missing " + name + " attribute on " + containingComponentName + " component", position ) );
+			return new BoxNull( null, null );
+		}
+
+	}
+
+	/**
+	 * A helper function to take a BoxExpr and return the value expression as a string.
+	 * If the expression is not a string literal, an Issue is created.
+	 * 
+	 * @param expr       the expression to get the value from
+	 * @param name       the name of the attribute, used in error handling
+	 * @param allowEmpty whether an empty string is allowed. If not allowed, an Issue is created.
+	 * 
+	 * @return the value of the expression as a string, or null if the expression is null
+	 */
+	private String getBoxExprAsString( BoxExpr expr, String name, boolean allowEmpty ) {
+		if ( expr == null ) {
+			return null;
+		}
+		if ( expr instanceof BoxStringLiteral str ) {
+			if ( !allowEmpty && str.getValue().trim().isEmpty() ) {
+				issues.add( new Issue( "Attribute [" + name + "] cannot be empty", expr.getPosition() ) );
+			}
+			return str.getValue();
+		} else {
+			issues.add( new Issue( "Attribute [" + name + "] attribute must be a string literal", expr.getPosition() ) );
+			return "";
+		}
 	}
 
 	private BoxStatement toAst( File file, TextContentContext node ) {
@@ -701,14 +812,14 @@ public class BoxCFMLParser extends BoxAbstractParser {
 		BOMInputStream				inputStream	= getInputStream( file );
 
 		CFMLParser.TemplateContext	parseTree	= ( CFMLParser.TemplateContext ) parserFirstStage( inputStream );
-		BoxScript					ast			= parseTreeToAst( file, parseTree );
+		BoxNode						ast			= parseTreeToAst( file, parseTree );
 		return new ParsingResult( ast, issues );
 	}
 
 	public ParsingResult parse( String code ) throws IOException {
 		InputStream					inputStream	= IOUtils.toInputStream( code, StandardCharsets.UTF_8 );
 		CFMLParser.TemplateContext	parseTree	= ( CFMLParser.TemplateContext ) parserFirstStage( inputStream );
-		BoxScript					ast			= parseTreeToAst( file, parseTree );
+		BoxNode						ast			= parseTreeToAst( file, parseTree );
 		return new ParsingResult( ast, issues );
 	}
 
@@ -723,13 +834,14 @@ public class BoxCFMLParser extends BoxAbstractParser {
 				return new BoxNull( null, null );
 			}
 		} catch ( IOException e ) {
-			throw new BoxRuntimeException( "Error parsing interpolated expression: " + code, e );
+			issues.add( new Issue( "Error parsing interpolated expression " + e.getMessage(), position ) );
+			return new BoxNull( null, null );
 		}
 	}
 
 	public List<BoxStatement> parseCFStatements( String code, Position position ) {
 		try {
-			ParsingResult result = new BoxCFParser( position.getStart().getLine(), position.getStart().getColumn() ).parse( code );
+			ParsingResult result = new BoxCFParser( position.getStart().getLine(), position.getStart().getColumn(), ( outputCounter > 0 ) ).parse( code );
 			if ( result.getIssues().isEmpty() ) {
 				BoxNode root = result.getRoot();
 				if ( root instanceof BoxScript script ) {
@@ -739,7 +851,8 @@ public class BoxCFMLParser extends BoxAbstractParser {
 				} else {
 					// Could be a BoxClass, which we may actually need to support if there is a .cfc file with a top-level <cfscript> node containing a
 					// component.
-					throw new BoxRuntimeException( "Unexpected root node type [" + root.getClass().getName() + "] in script island." );
+					issues.add( new Issue( "Unexpected root node type [" + root.getClass().getName() + "] in script island.", position ) );
+					return List.of();
 				}
 			} else {
 				// Add these issues to the main parser
@@ -747,7 +860,8 @@ public class BoxCFMLParser extends BoxAbstractParser {
 				return List.of( new BoxExpression( new BoxNull( null, null ), null, null ) );
 			}
 		} catch ( IOException e ) {
-			throw new BoxRuntimeException( "Error parsing interpolated expression: " + code, e );
+			issues.add( new Issue( "Error parsing interpolated expression " + e.getMessage(), position ) );
+			return List.of();
 		}
 	}
 }

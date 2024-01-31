@@ -26,6 +26,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
+import ortus.boxlang.parser.BoxScriptType;
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
@@ -190,7 +191,7 @@ public class ClassTest {
 		    	 */
 		    }
 
-		      """, context ) )
+		      """, context, BoxScriptType.CFSCRIPT ) )
 		    .invokeConstructor( context )
 		    .getTargetInstance();
 	}
@@ -236,7 +237,7 @@ public class ClassTest {
 		             }
 
 
-		                    """, context ) ).invokeConstructor( context ).getTargetInstance();
+		                    """, context, BoxScriptType.CFSCRIPT ) ).invokeConstructor( context ).getTargetInstance();
 
 		// execute public method
 		Object			funcResult	= cfc.dereferenceAndInvoke( context, Key.of( "foo" ), new Object[] {}, false );

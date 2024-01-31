@@ -22,6 +22,7 @@ import java.nio.file.Paths;
 import java.time.Instant;
 import java.util.UUID;
 
+import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import ortus.boxlang.runtime.BoxRuntime;
@@ -32,10 +33,12 @@ import ortus.boxlang.runtime.runnables.RunnableLoader;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.ThisScope;
 import ortus.boxlang.runtime.scopes.VariablesScope;
+import ortus.boxlang.runtime.services.InterceptorService;
 import ortus.boxlang.runtime.services.ModuleService;
 import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
+import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.util.EncryptionUtil;
 
 /**
@@ -176,6 +179,11 @@ public class ModuleRecord {
 	private static final String	MODULE_PACKAGE_NAME			= "ortus.boxlang.runtime.modules.";
 
 	/**
+	 * Moudule Logger
+	 */
+	private static final Logger	logger						= LoggerFactory.getLogger( ModuleRecord.class );
+
+	/**
 	 * --------------------------------------------------------------------------
 	 * Constructors
 	 * --------------------------------------------------------------------------
@@ -313,6 +321,122 @@ public class ModuleRecord {
 
 		// Finalize
 		this.registeredOn = Instant.now();
+
+		return this;
+	}
+
+	/**
+	 * Unload the module from the runtime
+	 *
+	 * @param context The current context of execution
+	 *
+	 * @return The ModuleRecord
+	 */
+	public ModuleRecord unload( IBoxContext context ) {
+		// Convenience References
+		ThisScope			thisScope			= this.moduleConfig.getThisScope();
+		InterceptorService	interceptorService	= BoxRuntime.getInstance().getInterceptorService();
+
+		// Call the onLoad() method if it exists in the descriptor
+		if ( thisScope.containsKey( Key.onUnload ) ) {
+			try {
+				this.moduleConfig.dereferenceAndInvoke(
+				    context,
+				    Key.onUnload,
+				    new Object[] {},
+				    false
+				);
+			} catch ( Exception e ) {
+				logger.error( "Error while unloading module [{}]", this.name, e );
+			}
+		}
+
+		// Unregister all interceptors from all states
+		if ( !this.interceptors.isEmpty() ) {
+			for ( Object interceptor : this.interceptors ) {
+				IStruct interceptorRecord = ( IStruct ) interceptor;
+				interceptorService.unregister( DynamicObject.of( interceptorRecord.getAsString( Key.interceptor ) ) );
+			}
+		}
+
+		// Unregister the ModuleConfig
+		interceptorService.unregister( DynamicObject.of( this.moduleConfig ) );
+
+		return this;
+	}
+
+	/**
+	 * This method activates the module in the runtime.
+	 * Called by the ModuleService if the module is allowed to be activated or not
+	 *
+	 * @param context The current context of execution
+	 *
+	 * @throws BoxRuntimeException If an interceptor record is missing the [class] which is mandatory
+	 * @throws BoxRuntimeException If an interceptor class is not found locally or with any mappings
+	 *
+	 * @return The ModuleRecord
+	 */
+	public ModuleRecord activate( IBoxContext context ) {
+		// Convenience References
+		ThisScope			thisScope			= this.moduleConfig.getThisScope();
+		InterceptorService	interceptorService	= BoxRuntime.getInstance().getInterceptorService();
+
+		/**
+		 * --------------------------------------------------------------------------
+		 * Register the ModuleConfig as an Interceptor
+		 * --------------------------------------------------------------------------
+		 */
+		interceptorService.register( this.moduleConfig );
+
+		/**
+		 * --------------------------------------------------------------------------
+		 * Register module Interceptors
+		 * --------------------------------------------------------------------------
+		 */
+		if ( !this.interceptors.isEmpty() ) {
+			for ( Object interceptor : this.interceptors ) {
+				IStruct interceptorRecord = ( IStruct ) interceptor;
+				// Verify the class else throw an exception
+				if ( !interceptorRecord.containsKey( Key._CLASS ) ) {
+					throw new BoxRuntimeException( "Interceptor record is missing the [class] key which is mandatory" );
+				}
+				// Quick Ref
+				String interceptorClass = interceptorRecord.getAsString( Key._CLASS );
+				// Default Properties struct
+				interceptorRecord.computeIfAbsent( Key.properties, k -> new Struct() );
+				// The default name is the class name + @ + the module name
+				interceptorRecord.computeIfAbsent( Key._NAME, k -> interceptorClass + "@" + this.name );
+				// Create and Register
+				interceptorRecord.put(
+				    Key.interceptor,
+				    interceptorService.newAndRegister(
+				        interceptorClass,
+				        interceptorRecord.getAsStruct( Key.properties ),
+				        interceptorRecord.getAsString( Key._NAME ),
+				        this
+				    )
+				);
+			}
+		}
+
+		/**
+		 * --------------------------------------------------------------------------
+		 * onLoad()
+		 * --------------------------------------------------------------------------
+		 */
+		// Call the onLoad() method if it exists in the descriptor
+		if ( thisScope.containsKey( Key.onLoad ) ) {
+			this.moduleConfig.dereferenceAndInvoke(
+			    context,
+			    Key.onLoad,
+			    new Object[] {},
+			    false
+			);
+		}
+
+		// Finalize
+		this.activated		= true;
+		this.activatedOn	= Instant.now();
 
 		return this;
 	}

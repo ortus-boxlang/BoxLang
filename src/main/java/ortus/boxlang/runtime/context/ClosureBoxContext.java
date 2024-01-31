@@ -94,6 +94,12 @@ public class ClosureBoxContext extends FunctionBoxContext {
 			return new ScopeSearchResult( argumentsScope, Struct.unWrapNull( result ) );
 		}
 
+		// In query loop?
+		var querySearch = queryFindNearby( key );
+		if ( querySearch != null ) {
+			return querySearch;
+		}
+
 		// After a closure has checked local and arguments, it stops to do a shallow lookup in the declaring scope. If the declaring scope
 		// is also a CLosureBoxContext, it will do the same thing, and so on until it finds a non-ClosureBoxContext.
 		ScopeSearchResult declaringContextResult = getFunction().getDeclaringContext().scopeFindNearby( key, defaultScope, true );

@@ -20,6 +20,7 @@ package ortus.boxlang.runtime.types.meta;
 import java.util.ArrayList;
 
 import ortus.boxlang.runtime.runnables.IClassRunnable;
+import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Function;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
@@ -46,30 +47,32 @@ public class ClassMeta extends BoxMeta {
 		// Assemble the metadata
 		var functions = new ArrayList<Object>();
 		// loop over target's variables scope and add metadata for each function
-		for ( var entry : target.getThisScope().keySet() ) {
-			var value = target.getThisScope().get( entry );
-			if ( value instanceof Function fun ) {
+		// TODO: If more than 20 do parallel
+		for ( var entry : target.getThisScope().entrySet() ) {
+			if ( entry.getValue() instanceof Function fun ) {
 				functions.add( ( ( FunctionMeta ) fun.getBoxMeta() ).meta );
 			}
 		}
 
 		this.meta = ImmutableStruct.of(
-		    "name", target.getName().getName(),
-		    "documentation", ImmutableStruct.fromStruct( target.getDocumentation() ),
-		    "annotations", ImmutableStruct.fromStruct( target.getAnnotations() ),
-		    "extends", target.getSuper() != null ? target.getSuper().getBoxMeta().getMeta() : Struct.EMPTY,
-		    "functions", ImmutableArray.fromList( functions ),
-		    "hashCode", target.hashCode(),
-		    "properties", ImmutableArray.of( target.getProperties().entrySet().stream().map( entry -> ImmutableStruct.of(
-		        "name", entry.getKey().getName(),
-		        "type", entry.getValue().type(),
-		        "defaultValue", entry.getValue().defaultValue(),
-		        "annotations", ImmutableStruct.fromStruct( entry.getValue().annotations() ),
-		        "documentation", ImmutableStruct.fromStruct( entry.getValue().documentation() )
+		    Key._NAME, target.getName().getName(),
+		    Key.nameAsKey, target.getName(),
+		    Key.documentation, ImmutableStruct.fromStruct( target.getDocumentation() ),
+		    Key.annotations, ImmutableStruct.fromStruct( target.getAnnotations() ),
+		    Key._EXTENDS, target.getSuper() != null ? target.getSuper().getBoxMeta().getMeta() : Struct.EMPTY,
+		    Key.functions, ImmutableArray.fromList( functions ),
+		    Key._HASHCODE, target.hashCode(),
+		    Key.properties, ImmutableArray.of( target.getProperties().entrySet().stream().map( entry -> ImmutableStruct.of(
+		        Key._NAME, entry.getKey().getName(),
+		        Key.nameAsKey, entry.getKey(),
+		        Key.type, entry.getValue().type(),
+		        Key.defaultValue, entry.getValue().defaultValue(),
+		        Key.annotations, ImmutableStruct.fromStruct( entry.getValue().annotations() ),
+		        Key.documentation, ImmutableStruct.fromStruct( entry.getValue().documentation() )
 		    ) ).toArray() ),
-		    "type", "Component",
-		    "fullname", target.getName().getName(),
-		    "path", target.getRunnablePath().toString()
+		    Key.type, "Component",
+		    Key.fullname, target.getName().getName(),
+		    Key.path, target.getRunnablePath().toString()
 		);
 
 	}

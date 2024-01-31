@@ -35,7 +35,7 @@ SEA_WS: (' ' | '\t' | '\r'? '\n')+ -> channel(HIDDEN);
 
 SCRIPT_OPEN: '<cfscript' .*? '>' -> pushMode(XFSCRIPT);
 
-TAG_OPEN: '<' -> pushMode(POSSIBLE_TAG);
+COMPONENT_OPEN: '<' -> pushMode(POSSIBLE_COMPONENT);
 
 HASHHASH: '##' -> type(CONTENT_TEXT);
 ICHAR:
@@ -45,17 +45,17 @@ ICHAR_1: '#' -> type(CONTENT_TEXT);
 CONTENT_TEXT: ~[<#]+;
 
 // *********************************************************************************************************************
-mode POSSIBLE_TAG;
+mode POSSIBLE_COMPONENT;
 
-PREFIX: 'cf' -> pushMode(TAG);
-SLASH_PREFIX: '/cf' -> pushMode(END_TAG);
+PREFIX: 'cf' -> pushMode(COMPONENT_MODE);
+SLASH_PREFIX: '/cf' -> pushMode(END_COMPONENT);
 ANY: . -> type(CONTENT_TEXT), popMode;
 
 // *********************************************************************************************************************
-mode TAG;
+mode COMPONENT_MODE;
 
-// The rule of thumb here is that we are doing direct handling of any tags for which we have a
-// dedicated AST node for. All other tags will be handled generically
+// The rule of thumb here is that we are doing direct handling of any components for which we have a
+// dedicated AST node for. All other components will be handled generically
 COMPONENT: 'component';
 INTERFACE: 'interface';
 FUNCTION: 'function';
@@ -63,13 +63,13 @@ ARGUMENT: 'argument';
 
 SCRIPT: 'script' -> pushMode(XFSCRIPT);
 OUTPUT: 'output' -> pushMode(OUTPUT_MODE);
-RETURN: 'return' -> pushMode(EXPRESSION_MODE_TAG);
+RETURN: 'return' -> pushMode(EXPRESSION_MODE_COMPONENT);
 
-IF: 'if' -> pushMode(EXPRESSION_MODE_TAG);
+IF: 'if' -> pushMode(EXPRESSION_MODE_COMPONENT);
 ELSE: 'else';
-ELSEIF: 'elseif' -> pushMode(EXPRESSION_MODE_TAG);
+ELSEIF: 'elseif' -> pushMode(EXPRESSION_MODE_COMPONENT);
 
-SET: 'set ' -> pushMode(EXPRESSION_MODE_TAG);
+SET: 'set ' -> pushMode(EXPRESSION_MODE_COMPONENT);
 
 TRY: 'try';
 CATCH: 'catch';
@@ -86,48 +86,51 @@ SWITCH: 'switch';
 CASE: 'case';
 DEFAULTCASE: 'defaultcase';
 
-TAG_CLOSE: '>' -> popMode, popMode;
+COMPONENT_CLOSE: '>' -> popMode, popMode;
 
-TAG_SLASH_CLOSE: '/>' -> popMode, popMode;
+COMPONENT_SLASH_CLOSE: '/>' -> popMode, popMode;
 
-TAG_SLASH: '/';
+COMPONENT_SLASH: '/';
 
-TAG_EQUALS: '=' -> pushMode(ATTVALUE);
+COMPONENT_EQUALS: '=' -> pushMode(ATTVALUE);
 
-TAG_NAME: TAG_NameStartChar TAG_NameChar*;
+COMPONENT_NAME: COMPONENT_NameStartChar COMPONENT_NameChar*;
 
-TAG_WHITESPACE: [ \t\r\n] -> skip;
+COMPONENT_WHITESPACE: [ \t\r\n] -> skip;
 
 fragment DIGIT: [0-9];
 
-fragment TAG_NameChar: TAG_NameStartChar | '_' | DIGIT;
+fragment COMPONENT_NameChar:
+	COMPONENT_NameStartChar
+	| '_'
+	| DIGIT;
 
-fragment TAG_NameStartChar: [:a-z];
+fragment COMPONENT_NameStartChar: [:a-z];
 
 // *********************************************************************************************************************
 mode OUTPUT_MODE;
 
-TAG_CLOSE_OUTPUT:
-	'>' -> pushMode(DEFAULT_MODE), type(TAG_CLOSE);
+COMPONENT_CLOSE_OUTPUT:
+	'>' -> pushMode(DEFAULT_MODE), type(COMPONENT_CLOSE);
 
-TAG_SLASH_CLOSE_OUTPUT:
-	'/>' -> popMode, popMode, popMode, type(TAG_SLASH_CLOSE);
+COMPONENT_SLASH_CLOSE_OUTPUT:
+	'/>' -> popMode, popMode, popMode, type(COMPONENT_SLASH_CLOSE);
 
-TAG_EQUALS_OUTPUT:
-	'=' -> pushMode(ATTVALUE), type(TAG_EQUALS);
+COMPONENT_EQUALS_OUTPUT:
+	'=' -> pushMode(ATTVALUE), type(COMPONENT_EQUALS);
 
-TAG_NAME_OUTPUT:
-	TAG_NameStartChar TAG_NameChar* -> type(TAG_NAME);
+COMPONENT_NAME_OUTPUT:
+	COMPONENT_NameStartChar COMPONENT_NameChar* -> type(COMPONENT_NAME);
 
-TAG_WHITESPACE_OUTPUT: [ \t\r\n] -> skip;
+COMPONENT_WHITESPACE_OUTPUT: [ \t\r\n] -> skip;
 
 // *********************************************************************************************************************
-mode END_TAG;
+mode END_COMPONENT;
 
 IF2: 'if' -> type(IF);
 COMPONENT2: 'component' -> type(COMPONENT);
 FUNCTION2: 'function' -> type(FUNCTION);
-// popping back to: POSSIBLE_TAG -> DEFAULT_MODE -> OUTPUT_MODE -> TAG -> POSSIBLE_TAG -> DEFAULT_MODE
+// popping back to: POSSIBLE_COMPONENT -> DEFAULT_MODE -> OUTPUT_MODE -> COMPONENT -> POSSIBLE_COMPONENT -> DEFAULT_MODE
 OUTPUT2:
 	'output>' -> type(OUTPUT), popMode, popMode, popMode, popMode, popMode, popMode;
 INTERFACE2: 'interface' -> type(INTERFACE);
@@ -146,33 +149,35 @@ SWITCH2: 'switch' -> type(SWITCH);
 CASE2: 'case' -> type(CASE);
 DEFAULTCASE2: 'defaultcase' -> type(DEFAULTCASE);
 
-TAG_NAME2: TAG_NameStartChar TAG_NameChar* -> type(TAG_NAME);
-TAG_CLOSE2: '>' -> popMode, popMode, type(TAG_CLOSE);
+COMPONENT_NAME2:
+	COMPONENT_NameStartChar COMPONENT_NameChar* -> type(COMPONENT_NAME);
+COMPONENT_CLOSE2:
+	'>' -> popMode, popMode, type(COMPONENT_CLOSE);
 
 // *********************************************************************************************************************
 mode XFSCRIPT;
 
-fragment TAG_WHITESPACE2: [ \t\r\n]*;
+fragment COMPONENT_WHITESPACE2: [ \t\r\n]*;
 SCRIPT_END_BODY:
-	'</' TAG_WHITESPACE2 'cfscript' TAG_WHITESPACE2 '>' -> popMode;
+	'</' COMPONENT_WHITESPACE2 'cfscript' COMPONENT_WHITESPACE2 '>' -> popMode;
 
 SCRIPT_BODY: .+?;
 
 // *********************************************************************************************************************
 mode ATTVALUE;
 
-fragment DIGIT2: [0-9];
-IDENTIFIER: [a-z_$]+ ( [_]+ | [a-z]+ | DIGIT2)* -> popMode;
+IDENTIFIER: [a-z_$0-9]+ -> popMode;
 
-OPEN_QUOTE: '"' -> pushMode(quotesModeTag);
+OPEN_QUOTE: '"' -> pushMode(quotesModeCOMPONENT);
 
 OPEN_SINGLE:
-	'\'' -> type( OPEN_QUOTE ), pushMode(squotesModeTag);
+	'\'' -> type( OPEN_QUOTE ), pushMode(squotesModeCOMPONENT);
 
 // *********************************************************************************************************************
-mode EXPRESSION_MODE_TAG;
+mode EXPRESSION_MODE_COMPONENT;
 
-TAG_CLOSE1: '>' -> type(TAG_CLOSE), popMode, popMode;
+COMPONENT_CLOSE1:
+	'>' -> type(COMPONENT_CLOSE), popMode, popMode;
 
 EXPRESSION_PART: ~[>'"]+;
 
@@ -195,7 +200,7 @@ OPEN_SINGLE3:
 	'\'' -> type( OPEN_QUOTE ), pushMode(squotesModeExpression);
 
 // *********************************************************************************************************************
-mode squotesModeTag;
+mode squotesModeCOMPONENT;
 ICHAR2: '#' -> pushMode(EXPRESSION_MODE_STRING);
 CLOSE_SQUOTE:
 	'\'' {
@@ -209,7 +214,7 @@ SHASHHASH: '##' -> type(HASHHASH);
 SSTRING_LITERAL: (~['#]+ | '\'\'')+ -> type(STRING_LITERAL);
 
 // *********************************************************************************************************************
-mode quotesModeTag;
+mode quotesModeCOMPONENT;
 ICHAR3: '#' -> type(ICHAR), pushMode(EXPRESSION_MODE_STRING);
 CLOSE_QUOTE:
 	'"' {  

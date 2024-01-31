@@ -25,9 +25,11 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
+import org.mockito.Mockito;
 import org.mockito.Spy;
 
 import ortus.boxlang.runtime.BoxRuntime;
+import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
 import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.IStruct;
@@ -39,10 +41,13 @@ class InterceptorServiceTest {
 
 	@Spy
 	@InjectMocks
-	private BoxRuntime	runtime;
+	private BoxRuntime	runtime	= Mockito.spy( BoxRuntime.getInstance() );
 
 	@BeforeEach
 	public void setupBeforeEach() {
+
+		Mockito.doReturn( new ScriptingRequestBoxContext() ).when( runtime ).getRuntimeContext();
+
 		service = new InterceptorService( runtime );
 	}
 
@@ -94,7 +99,7 @@ class InterceptorServiceTest {
 		service.registerState( pointKey );
 
 		assertThat( service.hasState( pointKey ) ).isTrue();
-		assertThat( service.getState( pointKey ).getName() ).isEqualTo( pointKey.getName() );
+		assertThat( service.getState( pointKey ).getName() ).isEqualTo( pointKey );
 
 		service.removeState( pointKey );
 		assertThat( service.hasState( pointKey ) ).isFalse();
@@ -108,7 +113,7 @@ class InterceptorServiceTest {
 		service.registerState( pointKey );
 
 		assertThat( service.hasState( pointKey ) ).isTrue();
-		assertThat( service.getState( pointKey ).getName() ).isEqualTo( pointKey.getName() );
+		assertThat( service.getState( pointKey ).getName() ).isEqualTo( pointKey );
 
 		service.removeState( pointKey );
 		assertThat( service.hasState( pointKey ) ).isFalse();

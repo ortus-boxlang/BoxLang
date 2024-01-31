@@ -1,2 +1,0 @@
-// boolean template
-echo( "Boolean: #var#" )

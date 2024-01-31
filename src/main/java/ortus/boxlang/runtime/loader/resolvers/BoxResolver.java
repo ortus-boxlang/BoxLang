@@ -43,12 +43,17 @@ public class BoxResolver extends BaseResolver {
 	/**
 	 * Singleton instance
 	 */
-	protected static BoxResolver		instance;
+	protected static BoxResolver				instance;
 
 	/**
 	 * List of valid class extensions
 	 */
-	private static final List<String>	VALID_EXTENSIONS	= List.of( ".bx", ".cfc" );
+	private static final List<String>			VALID_EXTENSIONS	= List.of( ".bx", ".cfc" );
+
+	/**
+	 * Empty list of imports
+	 */
+	private static final List<ImportDefinition>	EMPTY_IMPORTS		= List.of();
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -94,7 +99,7 @@ public class BoxResolver extends BaseResolver {
 	 */
 	@Override
 	public Optional<ClassLocation> resolve( IBoxContext context, String name ) {
-		return resolve( context, name, List.of() );
+		return resolve( context, name, EMPTY_IMPORTS );
 	}
 
 	/**

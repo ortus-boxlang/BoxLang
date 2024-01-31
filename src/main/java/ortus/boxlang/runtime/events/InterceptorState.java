@@ -20,8 +20,11 @@ package ortus.boxlang.runtime.events;
 import java.util.ArrayList;
 import java.util.List;
 
+import ortus.boxlang.runtime.context.IBoxContext;
+import ortus.boxlang.runtime.dynamic.IReferenceable;
 import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
 import ortus.boxlang.runtime.interop.DynamicObject;
+import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.IStruct;
 
 /**
@@ -36,7 +39,7 @@ public class InterceptorState {
 	/**
 	 * The state name (e.g. "preProcess", "postProcess", "onRuntimeStartup" etc.)
 	 */
-	private String				name;
+	private Key					name;
 
 	/**
 	 * The observers for this state
@@ -55,6 +58,15 @@ public class InterceptorState {
 	 * @param name The state name
 	 */
 	public InterceptorState( String name ) {
+		this( Key.of( name ) );
+	}
+
+	/**
+	 * Constructor
+	 *
+	 * @param name The state name
+	 */
+	public InterceptorState( Key name ) {
 		this.name = name;
 	}
 
@@ -63,7 +75,7 @@ public class InterceptorState {
 	 *
 	 * @return The state name
 	 */
-	public String getName() {
+	public Key getName() {
 		return name;
 	}
 
@@ -114,10 +126,10 @@ public class InterceptorState {
 	/**
 	 * Process the state by announcing it to all observers
 	 *
-	 * @param data The struct of data to pass to the observers
-	 *
+	 * @param data    The struct of data to pass to the observers
+	 * @param context The box context to execute on
 	 */
-	public void announce( IStruct data ) {
+	public void announce( IStruct data, IBoxContext context ) {
 
 		// Quick short ciruit
 		if ( observers.isEmpty() ) {
@@ -127,8 +139,22 @@ public class InterceptorState {
 		// Process the state
 		Object[] args = new Object[] { data };
 		for ( DynamicObject observer : observers ) {
-			// Announce to the observer
-			Object stopChain = observer.invoke( getName(), args );
+			Object stopChain;
+
+			// Do we have a BoxLang class or Java Class
+			if ( observer.unWrap() instanceof IReferenceable castedObserver ) {
+				// Dereference and Invoke the BoxLang class
+				stopChain = castedObserver.dereferenceAndInvoke(
+				    context,
+				    getName(),
+				    args,
+				    false
+				);
+			} else {
+				// Announce to the Java observer via Indy
+				stopChain = observer.invoke( getName().getName(), args );
+			}
+
 			// If the observer returns true, we short circuit the rest of the observers
 			if ( stopChain != null && BooleanCaster.cast( stopChain ) ) {
 				break;

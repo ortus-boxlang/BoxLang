@@ -22,6 +22,7 @@ import java.nio.file.Path;
 import java.text.DecimalFormat;
 
 import ortus.boxlang.runtime.interop.DynamicObject;
+import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.DateTime;
 import ortus.boxlang.runtime.types.exceptions.BoxCastException;
 
@@ -71,7 +72,9 @@ public class StringCaster {
 			}
 		}
 		object = DynamicObject.unWrap( object );
-
+		if ( object instanceof Key key ) {
+			return key.getName();
+		}
 		if ( object instanceof String str ) {
 			return str;
 		}

@@ -17,6 +17,11 @@
  */
 package ortus.boxlang.web;
 
+import java.io.IOException;
+import java.nio.ByteBuffer;
+
+import org.xnio.channels.StreamSinkChannel;
+
 import io.undertow.server.HttpServerExchange;
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.IBoxContext;
@@ -122,7 +127,10 @@ public class WebRequestBoxContext extends RequestBoxContext {
 	public ScopeSearchResult scopeFindNearby( Key key, IScope defaultScope, boolean shallow ) {
 
 		// In query loop?
-		// Need to add mechanism to keep a stack of temp scopes based on cfoutput or cfloop based on query
+		var querySearch = queryFindNearby( key );
+		if ( querySearch != null ) {
+			return querySearch;
+		}
 
 		// In Variables scope? (thread-safe lookup and get)
 		Object result = variablesScope.getRaw( key );
@@ -272,7 +280,15 @@ public class WebRequestBoxContext extends RequestBoxContext {
 			clearBuffer();
 		}
 
-		exchange.getResponseSender().send( output );
+		StreamSinkChannel	channel	= exchange.getResponseChannel();
+		ByteBuffer			bBuffer	= ByteBuffer.wrap( output.getBytes() );
+		try {
+			channel.write( bBuffer );
+			channel.flush();
+		} catch ( IOException e ) {
+			e.printStackTrace();
+		}
+		// exchange.getResponseSender().send( output );
 
 		return this;
 	}

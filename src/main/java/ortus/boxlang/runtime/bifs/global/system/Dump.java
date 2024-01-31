@@ -24,6 +24,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Scanner;
 
+import ortus.boxlang.parser.BoxScriptType;
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
@@ -76,15 +77,15 @@ public class Dump extends BIF {
 		String		templateBasePath	= "/dump/html/";
 		Object		target				= arguments.get( Key.var );
 		InputStream	dumpTemplate		= null;
-		String		name				= "Class.cfs";
+		String		name				= "Class.cfm";
 		if ( target instanceof IType ) {
-			name = target.getClass().getSimpleName() + ".cfs";
+			name = target.getClass().getSimpleName() + ".cfm";
 		} else if ( target instanceof String ) {
-			name = "String.cfs";
+			name = "String.cfm";
 		} else if ( target instanceof Number ) {
-			name = "Number.cfs";
+			name = "Number.cfm";
 		} else if ( target instanceof Boolean ) {
-			name = "Boolean.cfs";
+			name = "Boolean.cfm";
 		}
 		URL		url					= this.getClass().getResource( "" );
 		boolean	runningFromJar		= url.getProtocol().equals( "jar" );
@@ -104,7 +105,7 @@ public class Dump extends BIF {
 		}
 
 		if ( dumpTemplate == null ) {
-			dumpTemplatePath = templateBasePath + "Class.cfs";
+			dumpTemplatePath = templateBasePath + "Class.cfm";
 
 			if ( runningFromJar ) {
 				dumpTemplate = this.getClass().getResourceAsStream( dumpTemplatePath );
@@ -130,7 +131,7 @@ public class Dump extends BIF {
 		dumpContext.getScopeNearby( VariablesScope.name ).put( Key.var, target );
 		try ( Scanner s = new Scanner( dumpTemplate ).useDelimiter( "\\A" ) ) {
 			String fileContents = s.hasNext() ? s.next() : "";
-			runtime.executeSource( fileContents, dumpContext );
+			runtime.executeSource( fileContents, dumpContext, BoxScriptType.CFMARKUP );
 			dumpContext.flushBuffer( false );
 		}
 

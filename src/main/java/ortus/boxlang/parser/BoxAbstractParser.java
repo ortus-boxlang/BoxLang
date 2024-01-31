@@ -201,4 +201,17 @@ public abstract class BoxAbstractParser {
 		return s.getText( new Interval( node.getStart().getStartIndex(), node.getStop().getStopIndex() ) );
 	}
 
+	/**
+	 * Extracts from the ANTLR node where one node is the start, and another node is the end
+	 * 
+	 * @param nodeStart The start node
+	 * @param nodeStop  The stop node
+	 * 
+	 * @return a string containing the source code
+	 */
+	protected String getSourceText( int startIndex, ParserRuleContext nodeStop ) {
+		CharStream s = nodeStop.getStart().getTokenSource().getInputStream();
+		return s.getText( new Interval( startIndex, nodeStop.getStop().getStopIndex() ) );
+	}
+
 }

@@ -15,21 +15,19 @@
 
 package ortus.boxlang.runtime.bifs.global.array;
 
-import java.util.Comparator;
-
 import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
 import ortus.boxlang.runtime.bifs.BoxMember;
 import ortus.boxlang.runtime.context.IBoxContext;
-import ortus.boxlang.runtime.dynamic.casters.IntegerCaster;
-import ortus.boxlang.runtime.operators.Compare;
+import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.BoxLangType;
 import ortus.boxlang.runtime.types.Function;
-import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
+import ortus.boxlang.runtime.types.ListUtil;
+import ortus.boxlang.runtime.util.LocalizationUtil;
 
 @BoxBIF
 @BoxMember( type = BoxLangType.ARRAY )
@@ -56,13 +54,13 @@ public class ArraySort extends BIF {
 	 * @param arguments Argument scope for the BIF.
 	 *
 	 * @argument.array The array to sort
-	 * 
+	 *
 	 * @argument.sortType Options are text, numeric, or textnocase
-	 * 
+	 *
 	 * @argument.sortOrder Options are asc or desc
-	 * 
+	 *
 	 * @argument.localeSensitive Sort based on local rules
-	 * 
+	 *
 	 * @argument.callback Function to sort by
 	 */
 	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
@@ -70,41 +68,33 @@ public class ArraySort extends BIF {
 		Function	callback	= arguments.getAsFunction( Key.callback );
 		Object		sortType	= arguments.get( Key.sortType );
 		String		sortOrder	= arguments.getAsString( Key.sortOrder );
-		Comparator	compareFunc	= getCompareFunc( context, sortType, sortOrder, callback );
 
-		array.sort( compareFunc );
-
-		return true;
-	}
-
-	private Comparator getCompareFunc( IBoxContext context, Object sortType, String sortOrder, Function callback ) {
-		if ( callback == null && sortType == null ) {
-			throw new BoxRuntimeException( "You must supply either a sortOrder or callback" );
+		if ( sortType != null && sortType instanceof Function sortFunc ) {
+			callback = ( Function ) sortType;
 		}
 
-		// use provided callback
+		Array result = null;
+
 		if ( callback != null ) {
-			return ( a, b ) -> IntegerCaster.cast( context.invokeFunction( callback, new Object[] { a, b } ) );
-		} else if ( sortType instanceof Function sortFunc ) {
-			return ( a, b ) -> {
-				Integer val = IntegerCaster.cast( context.invokeFunction( sortFunc, new Object[] { a, b } ) );
-				return val;
-			};
+			result = ListUtil.sort(
+			    array,
+			    callback,
+			    context
+			);
+		} else {
+			result = ListUtil.sort(
+			    array,
+			    StringCaster.cast( sortType ),
+			    sortOrder,
+			    LocalizationUtil.parseLocaleFromContext( context, arguments )
+			);
 		}
 
-		// String sortType argument
-		String	sort			= ( String ) sortType;
-		int		sortModifier	= sortOrder.equalsIgnoreCase( "asc" ) ? 1 : -1;
+		// TODO: This behavior difference between the member and the BIF is stupid. Let's deprecate the boolean return or just fahgeddaboutit
+		return arguments.getAsBoolean( __isMemberExecution )
+		    ? result
+		    : true;
 
-		if ( sort.equalsIgnoreCase( "text" ) ) {
-			return ( a, b ) -> Compare.invoke( a, b, true ) * sortModifier;
-		} else if ( sort.equalsIgnoreCase( "numeric" ) ) {
-			return ( a, b ) -> Compare.invoke( a, b, true ) * sortModifier;
-		} else if ( sort.equalsIgnoreCase( "textnocase" ) ) {
-			return ( a, b ) -> Compare.invoke( a, b, false ) * sortModifier;
-		}
-
-		throw new BoxRuntimeException( "You must supply either a sortOrder or callback" );
 	}
 
 }

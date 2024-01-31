@@ -26,10 +26,21 @@ import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
  */
 public abstract class BoxMeta {
 
-	public static final Key key = Key.of( "$bx" );
+	/**
+	 * The key used for BoxLang meta data
+	 */
+	public static final Key key = Key.$bx;
 
+	/**
+	 * Get target object this metadata is for.
+	 * Implementations should return the target object.
+	 */
 	public abstract Object getTarget();
 
+	/**
+	 * Get the meta data of the target object.
+	 * Implementations should return the meta data.
+	 */
 	public abstract IStruct getMeta();
 
 	public void registerChangeListener( IChangeListener listener ) {
@@ -38,14 +49,19 @@ public abstract class BoxMeta {
 
 	public void registerChangeListener( Key key, IChangeListener listener ) {
 		ensureTargetListenable().registerChangeListener( key, listener );
-
 	}
 
 	public void removeChangeListener( Key key ) {
 		ensureTargetListenable().removeChangeListener( key );
-
 	}
 
+	/**
+	 * Ensure the target is listenable
+	 *
+	 * @return The target as a listenable
+	 *
+	 * @throws BoxRuntimeException If the target is not listenable
+	 */
 	private IListenable ensureTargetListenable() {
 		if ( getTarget() instanceof IListenable listenable ) {
 			return listenable;

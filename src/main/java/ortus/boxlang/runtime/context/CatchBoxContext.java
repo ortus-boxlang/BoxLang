@@ -85,6 +85,12 @@ public class CatchBoxContext extends BaseBoxContext {
 	 */
 	public ScopeSearchResult scopeFindNearby( Key key, IScope defaultScope, boolean shallow ) {
 
+		// In query loop?
+		var querySearch = queryFindNearby( key );
+		if ( querySearch != null ) {
+			return querySearch;
+		}
+
 		// In Variables scope? (thread-safe lookup and get)
 		Object result = variablesScope.getRaw( key );
 		// Null means not found

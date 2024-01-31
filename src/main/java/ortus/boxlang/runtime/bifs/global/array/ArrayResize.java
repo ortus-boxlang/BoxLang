@@ -44,7 +44,7 @@ public class ArrayResize extends BIF {
 	 * Resets an array to a specified minimum number of elements.
 	 * This can improve performance, if used to size an array to its
 	 * expected maximum. For more than 500 elements, use arrayResize
-	 * immediately after using the ArrayNew tag.
+	 * immediately after using the ArrayNew BIF.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.

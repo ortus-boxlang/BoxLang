@@ -18,6 +18,7 @@
 package TestCases.phase2;
 
 import static com.google.common.truth.Truth.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.util.List;
 
@@ -38,6 +39,7 @@ import ortus.boxlang.runtime.scopes.VariablesScope;
 import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.UDF;
+import ortus.boxlang.runtime.types.exceptions.ParseException;
 import ortus.boxlang.runtime.types.meta.BoxMeta;
 import ortus.boxlang.runtime.types.meta.FunctionMeta;
 
@@ -450,6 +452,30 @@ public class UDFFunctionTest {
 		assertThat( keys.get( 1 ) ).isEqualTo( "param2" );
 		assertThat( keys.get( 2 ) ).isEqualTo( "param3" );
 		assertThat( keys.get( 3 ) ).isEqualTo( "param4" );
+
+	}
+
+	@DisplayName( "named positional arguments mix" )
+	@Test
+	public void testNamedPositionalArgumentsMix() {
+
+		Throwable e = assertThrows( ParseException.class, () -> instance.executeSource(
+		    """
+		    function foo() {
+		    }
+		    foo( param1='value1', 'value2' );
+		    """ ) );
+
+		assertThat( e.getMessage() ).contains( "named" );
+
+		e = assertThrows( ParseException.class, () -> instance.executeSource(
+		    """
+		    function foo() {
+		    }
+		    foo( 'value2', param1='value1' );
+		    """ ) );
+
+		assertThat( e.getMessage() ).contains( "named" );
 
 	}
 

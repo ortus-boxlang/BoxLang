@@ -23,6 +23,7 @@ import java.util.List;
 import ortus.boxlang.runtime.types.BoxLangType;
 import ortus.boxlang.runtime.types.Function;
 import ortus.boxlang.runtime.types.NullValue;
+import ortus.boxlang.runtime.types.Query;
 import ortus.boxlang.runtime.types.exceptions.BoxCastException;
 
 /**
@@ -200,6 +201,18 @@ public class GenericCaster {
 			}
 			if ( fail ) {
 				throw new BoxCastException( String.format( "Cannot cast %s, to a Function.", object.getClass().getName() ) );
+			} else {
+				return null;
+			}
+		}
+
+		if ( type.equals( "query" ) ) {
+			// No real "casting" to do, just return it if it is one
+			if ( object instanceof Query ) {
+				return object;
+			}
+			if ( fail ) {
+				throw new BoxCastException( String.format( "Cannot cast %s, to a Query.", object.getClass().getName() ) );
 			} else {
 				return null;
 			}

@@ -29,12 +29,13 @@ import ortus.boxlang.runtime.loader.ClassLocator;
  * https://helpx.adobe.com/coldfusion/cfml-reference/coldfusion-functions/functions-in-k/isinstanceof.html
  *
  * - The object specified by the first parameter is an instance of the interface or component specified by the second parameter.
- * - The Java object specified by the first parameter was created by using the cfobject tag or CreateObject method and is an instance of the Java
+ * - The Java object specified by the first parameter was created by using the object component or CreateObject method and is an instance of the Java
  * class specified by the second parameter.
  * - The object specified by the first parameter is an instance of a component that extends the component specified in the second parameter.
  * - The object specified by the first parameter is an instance of a component that extends a component that implements the interface specified in the
  * second parameter.
- * - The Java object specified by the first parameter was created by using the cfobject tag or CreateObjectmethod and is an instance of a Java class
+ * - The Java object specified by the first parameter was created by using the object component or CreateObject method and is an instance of a Java
+ * class
  * that extends the class specified by the second parameter.
  */
 public class InstanceOf implements IOperator {

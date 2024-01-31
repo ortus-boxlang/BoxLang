@@ -124,8 +124,6 @@ public class Scheduler {
 		this.name			= name;
 		this.timezone		= timezone;
 		this.asyncService	= asyncService;
-		// Build out an executor for this scheduler
-		this.executor		= asyncService.newScheduledExecutor( name + "-scheduler" );
 		// Log it
 		logger.info( "Created scheduler [{}] with a [{}] timezone", name, timezone.getId() );
 	}
@@ -198,7 +196,7 @@ public class Scheduler {
 		// Create task with custom name
 		var oTask =
 		    // Give me the task broda!
-		    new ScheduledTask( name, group, this.executor )
+		    new ScheduledTask( name, group, null, this )
 		        // Register ourselves in the task
 		        .setScheduler( this )
 		        // Set default timezone into the task
@@ -221,6 +219,9 @@ public class Scheduler {
 	 */
 	public synchronized Scheduler startup() {
 		if ( !this.started ) {
+			// Build out an executor for this scheduler
+			this.executor = asyncService.newScheduledExecutor( name + "-scheduler" );
+
 			// Iterate over tasks and send them off for scheduling
 			this.tasks.entrySet()
 			    .parallelStream()
@@ -236,6 +237,38 @@ public class Scheduler {
 			logger.info( "Scheduler [{}] has started!", this.name );
 		}
 
+		return this;
+	}
+
+	/**
+	 * Restart the scheduler by shutting it down and starting it up again
+	 *
+	 * @param force   If true, it forces all shutdowns this is usually true when doing reinits
+	 * @param timeout The timeout in seconds to wait for the shutdown of all tasks, defaults to 30 or whatever you set using the setShutdownTimeout()
+	 *
+	 * @return
+	 */
+	public synchronized Scheduler restart( boolean force, long timeout ) {
+		logger.info( "+ Restarting scheduler [{}] with force: {} and timeout: {}", this.name, force, timeout );
+		// Shutdown first
+		shutdown( force, timeout );
+		// Clear tasks
+		clearTasks();
+		// Configure again
+		configure();
+		// Startup
+		startup();
+		logger.info( "+ Scheduler [{}] has been restarted!", this.name );
+		return this;
+	}
+
+	/**
+	 * Clear all tasks from the scheduler. Usually done by a restart
+	 *
+	 * @return The scheduler object
+	 */
+	public synchronized Scheduler clearTasks() {
+		this.tasks.clear();
 		return this;
 	}
 

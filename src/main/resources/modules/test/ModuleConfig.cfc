@@ -128,7 +128,7 @@ component{
 	 * that match the approved Runtime Interception Points
 	 */
 
-	 function onScopeCreation(){
+	 function afterModuleActivations(){
 		// do something
 	 }
 }

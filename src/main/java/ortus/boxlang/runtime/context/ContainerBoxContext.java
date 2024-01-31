@@ -75,7 +75,10 @@ public class ContainerBoxContext extends BaseBoxContext {
 	public ScopeSearchResult scopeFindNearby( Key key, IScope defaultScope, boolean shallow ) {
 
 		// In query loop?
-		// Need to add mechanism to keep a stack of temp scopes based on cfoutput or cfloop based on query
+		var querySearch = queryFindNearby( key );
+		if ( querySearch != null ) {
+			return querySearch;
+		}
 
 		// In Variables scope? (thread-safe lookup and get)
 		Object result = variablesScope.getRaw( key );

@@ -73,6 +73,15 @@ public class Position {
 	}
 
 	/**
+	 * Set the end point
+	 * 
+	 * @param end the end point of the region
+	 */
+	public void setEnd( Point end ) {
+		this.end = end;
+	}
+
+	/**
 	 * Returns the source of the position
 	 *
 	 * @return the start point of the region

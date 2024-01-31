@@ -61,6 +61,7 @@ public class BoxNewOperationTransformer extends AbstractTransformer {
 											{
 												put( "expr", finalFqn );
 												put( "contextName", transpiler.peekContextName() );
+												put( "prefix", boxNew.getPrefix() == null ? "" : boxNew.getPrefix().getName() + ":" );
 
 											}
 										};
@@ -68,10 +69,10 @@ public class BoxNewOperationTransformer extends AbstractTransformer {
 			Expression expr2 = ( Expression ) transpiler.transform( ( BoxNode ) boxNew.getArguments().get( i ), context );
 			values.put( "arg" + i, expr2.toString() );
 		}
-		String	template	= "classLocator.load(context,StringCaster.cast(${expr}),imports).invokeConstructor( ${contextName}, "
+		String	template	= "classLocator.load(context,\"${prefix}\".concat( StringCaster.cast(${expr})),imports).invokeConstructor( ${contextName}, "
 		    + generateArguments( boxNew.getArguments() ) + " ).unWrapBoxLangClass()";
 		Node	javaStmt	= parseExpression( template, values );
-		logger.info( node.getSourceText() + " -> " + javaStmt );
+		logger.debug( node.getSourceText() + " -> " + javaStmt );
 		addIndex( javaStmt, node );
 		return javaStmt;
 

@@ -30,7 +30,7 @@ import com.fasterxml.jackson.jr.ob.JSONObjectException;
 public class Node {
 
 	protected Position			position;
-	private final String		sourceText;
+	private String				sourceText;
 	protected Node				parent	= null;
 	private final List<Node>	children;
 	private Node				originator;
@@ -59,12 +59,25 @@ public class Node {
 	}
 
 	/**
+	 * Set the position of the node
+	 * 
+	 * @param position the position within the source code that originated the node
+	 */
+	public void setPosition( Position position ) {
+		this.position = position;
+	}
+
+	/**
 	 * Returns the source code that originated the Node
 	 *
 	 * @return the snipped of the source code
 	 */
 	public String getSourceText() {
 		return sourceText;
+	}
+
+	public void setSourceText( String sourceText ) {
+		this.sourceText = sourceText;
 	}
 
 	/**

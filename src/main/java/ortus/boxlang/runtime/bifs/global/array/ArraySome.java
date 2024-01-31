@@ -14,8 +14,6 @@
  */
 package ortus.boxlang.runtime.bifs.global.array;
 
-import java.util.function.IntPredicate;
-
 import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
 import ortus.boxlang.runtime.bifs.BoxMember;
@@ -24,9 +22,8 @@ import ortus.boxlang.runtime.dynamic.casters.ArrayCaster;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
-import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.BoxLangType;
-import ortus.boxlang.runtime.types.Function;
+import ortus.boxlang.runtime.types.ListUtil;
 
 @BoxBIF
 @BoxMember( type = BoxLangType.ARRAY )
@@ -40,8 +37,8 @@ public class ArraySome extends BIF {
 		declaredArguments = new Argument[] {
 		    new Argument( true, "array", Key.array ),
 		    new Argument( true, "function", Key.callback ),
-		    new Argument( false, "boolean", Key.parallel ),
-		    new Argument( false, "numeric", Key.maxThreads, 20 ),
+		    new Argument( false, "boolean", Key.parallel, false ),
+		    new Argument( false, "integer", Key.maxThreads ),
 		    new Argument( Key.initialValue )
 		};
 	}
@@ -61,11 +58,13 @@ public class ArraySome extends BIF {
 	 * @argument.maxThreads The maximum number of threads to use when parallel = true
 	 */
 	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
-		Array			actualArray	= ArrayCaster.cast( arguments.get( Key.array ) );
-		Function		func		= arguments.getAsFunction( Key.callback );
-		IntPredicate	test		= i -> ( boolean ) context.invokeFunction( func, new Object[] { actualArray.get( i ), i + 1, actualArray } );
-
-		return actualArray.intStream()
-		    .anyMatch( test );
+		return ListUtil.some(
+		    ArrayCaster.cast( arguments.get( Key.array ) ),
+		    arguments.getAsFunction( Key.callback ),
+		    context,
+		    arguments.getAsBoolean( Key.parallel ),
+		    // we can't use the integer caster here because we need a cast null for the filter method signature
+		    ( Integer ) arguments.get( "maxThreads" )
+		);
 	}
 }

@@ -452,6 +452,36 @@ public class BaseBoxContext implements IBoxContext {
 	}
 
 	/**
+	 * Search any query loops for a column name matching the uncscoped variable
+	 * 
+	 * @param key The key to search for
+	 * 
+	 * @return A ScopeSearchResult if found, else null
+	 */
+	protected ScopeSearchResult queryFindNearby( Key key ) {
+		if ( queryLoops.size() > 0 ) {
+			var queries = queryLoops.keySet().toArray( new Query[ 0 ] );
+			for ( int i = queries.length - 1; i >= 0; i-- ) {
+				Query query = queries[ i ];
+				if ( key.equals( Key.recordCount ) ) {
+					return new ScopeSearchResult( null, query.size() );
+				}
+				if ( key.equals( Key.currentRow ) ) {
+					return new ScopeSearchResult( null, queryLoops.get( query ) + 1 );
+				}
+				if ( key.equals( Key.columnList ) ) {
+					return new ScopeSearchResult( null, query.getColumnList() );
+				}
+				if ( query.hasColumn( key ) ) {
+					// TODO: create query scope wrapper for edge cases
+					return new ScopeSearchResult( null, query.getCell( key, queryLoops.get( query ) ) );
+				}
+			}
+		}
+		return null;
+	}
+
+	/**
 	 * Register a UDF with the local context.
 	 *
 	 * @param udf The UDF to register
@@ -566,8 +596,8 @@ public class BaseBoxContext implements IBoxContext {
 	 *
 	 * @param query The query to register
 	 */
-	public void registerQueryLoop( Query query ) {
-		queryLoops.put( query, 0 );
+	public void registerQueryLoop( Query query, int row ) {
+		queryLoops.put( query, row );
 	}
 
 	/**

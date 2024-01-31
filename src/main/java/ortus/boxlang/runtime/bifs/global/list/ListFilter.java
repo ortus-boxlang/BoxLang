@@ -5,8 +5,6 @@ import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
 import ortus.boxlang.runtime.bifs.BoxMember;
 import ortus.boxlang.runtime.context.IBoxContext;
-import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
-import ortus.boxlang.runtime.dynamic.casters.IntegerCaster;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
@@ -29,8 +27,8 @@ public class ListFilter extends BIF {
 		    new Argument( false, "string", Key.delimiter, ListUtil.DEFAULT_DELIMITER ),
 		    new Argument( false, "boolean", Key.includeEmptyFields, false ),
 		    new Argument( false, "boolean", Key.multiCharacterDelimiter, true ),
-		    new Argument( false, "boolean", Key.parallel ),
-		    new Argument( false, "numeric", Key.maxThreads, 20 )
+		    new Argument( false, "boolean", Key.parallel, false ),
+		    new Argument( false, "integer", Key.maxThreads )
 		};
 	}
 
@@ -65,8 +63,8 @@ public class ListFilter extends BIF {
 		        ),
 		        arguments.getAsFunction( Key.filter ),
 		        context,
-		        BooleanCaster.cast( arguments.getOrDefault( "parallel", false ) ),
-		        IntegerCaster.cast( arguments.getOrDefault( "maxThreads", 20 ) )
+		        arguments.getAsBoolean( Key.parallel ),
+		        ( Integer ) arguments.get( Key.maxThreads )
 		    ),
 		    arguments.getAsString( Key.delimiter )
 		);

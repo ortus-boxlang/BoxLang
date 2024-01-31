@@ -24,6 +24,9 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
+import ortus.boxlang.debugger.BoxLangDebugger;
+import ortus.boxlang.debugger.BoxLangRemoteDebugger;
+import ortus.boxlang.debugger.IBoxLangDebugger;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.util.Timer;
 
@@ -81,7 +84,23 @@ public class BoxRunner {
 		// Get a runtime going
 		BoxRuntime boxRuntime = BoxRuntime.getInstance( options.debug(), options.configFile() );
 
-		if ( options.printAST() && options.code() != null ) {
+		if ( options.debugger() ) {
+			IBoxLangDebugger debugger;
+
+			if ( false ) {
+				debugger = new BoxLangDebugger( BoxRunner.class, options.templatePath(), System.out );
+			} else {
+				debugger = new BoxLangRemoteDebugger( 4404 );
+			}
+
+			try {
+				debugger.startDebugSession();
+			} catch ( Exception e ) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+			return;
+		} else if ( options.printAST() && options.code() != null ) {
 			boxRuntime.printSourceAST( options.code() );
 		} else if ( options.transpile() ) {
 			boxRuntime.printTranspiledJavaCode( options.templatePath() );
@@ -132,7 +151,8 @@ public class BoxRunner {
 		    options.code(),
 		    configFile,
 		    options.printAST(),
-		    transpile
+		    transpile,
+		    options.debugger()
 		);
 	}
 
@@ -153,6 +173,7 @@ public class BoxRunner {
 		String			configFile	= null;
 		String			code		= null;
 		Boolean			transpile	= false;
+		Boolean			debugger	= false;
 
 		// Consume args in order
 		// Example: --debug
@@ -162,6 +183,11 @@ public class BoxRunner {
 			// Debug mode Flag, we find and continue to the next argument
 			if ( current.equalsIgnoreCase( "--debug" ) ) {
 				debug = true;
+				continue;
+			}
+
+			if ( current.equalsIgnoreCase( "--debugger" ) ) {
+				debugger = true;
 				continue;
 			}
 
@@ -203,7 +229,7 @@ public class BoxRunner {
 			file = templatePath.toString();
 		}
 
-		return new CLIOptions( file, debug, code, configFile, printAST, transpile );
+		return new CLIOptions( file, debug, code, configFile, printAST, transpile, debugger );
 	}
 
 	/**
@@ -220,7 +246,8 @@ public class BoxRunner {
 	    String code,
 	    String configFile,
 	    Boolean printAST,
-	    Boolean transpile ) {
+	    Boolean transpile,
+	    Boolean debugger ) {
 		// The record automatically generates the constructor, getters, equals, hashCode, and toString methods.
 	}
 

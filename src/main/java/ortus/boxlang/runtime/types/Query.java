@@ -30,6 +30,9 @@ import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.bifs.MemberDescriptor;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.dynamic.IReferenceable;
+import ortus.boxlang.runtime.dynamic.casters.ArrayCaster;
+import ortus.boxlang.runtime.dynamic.casters.CastAttempt;
+import ortus.boxlang.runtime.dynamic.casters.StructCaster;
 import ortus.boxlang.runtime.interop.DynamicJavaInteropService;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.services.FunctionService;
@@ -260,12 +263,73 @@ public class Query implements IType, IReferenceable, Collection<IStruct> {
 		int			i		= 0;
 		Object		o;
 		for ( QueryColumn column : columns.values() ) {
-			// Missing keys in the struct go in the queyr as an empty string (CF compat)
+			// Missing keys in the struct go in the query as an empty string (CF compat)
 			rowData[ i ] = ( o = row.get( column.getName() ) ) == null ? "" : o;
 			i++;
 		}
 		// We're ignoring extra keys in the struct that aren't query columns. Lucee compat, but not CF compat.
 		return addRow( rowData );
+	}
+
+	/**
+	 * Add empty rows to the query
+	 * 
+	 * @param rows Number of rows to add
+	 * 
+	 * @return Last row added
+	 */
+	public int addRows( int rows ) {
+		Object[]	rowData	= new Object[ columns.size() ];
+		int			lastRow	= 0;
+		for ( int i = 0; i < rows; i++ ) {
+			lastRow = addRow( rowData );
+		}
+		return lastRow;
+	}
+
+	/**
+	 * Helper method for queryNew() and queryAddRow() to handle the different scenarios for adding data to a query
+	 * 
+	 * @param rowData Data to populate the query. Can be a struct (with keys matching column names), an array of structs, or an array of arrays (in
+	 *                same order as columnList)
+	 * 
+	 * @return index of last row added
+	 */
+	public int addData( Object rowData ) {
+		CastAttempt<IStruct> structCastAttempt = StructCaster.attempt( rowData );
+		// Add a single row as a struct
+		if ( structCastAttempt.wasSuccessful() ) {
+			return addRow( structCastAttempt.get() );
+		}
+		// Add multiple rows as an array of structs
+		CastAttempt<Array> arrayCastAttempt = ArrayCaster.attempt( rowData );
+		if ( arrayCastAttempt.wasSuccessful() ) {
+			Array arrData = arrayCastAttempt.get();
+			if ( arrData.size() == 0 ) {
+				return 0;
+			}
+			// Test the first row to see if we have an array of arrays or an array of structs
+			Boolean	isArray		= ArrayCaster.attempt( arrData.get( 0 ) ).wasSuccessful();
+			Boolean	isStruct	= StructCaster.attempt( arrData.get( 0 ) ).wasSuccessful();
+			if ( isArray || isStruct ) {
+				int lastRow = 0;
+				for ( Object row : arrData ) {
+					if ( isArray ) {
+						// Will throw if the first row is an array, but the rest are not
+						lastRow = addRow( ArrayCaster.cast( row ) );
+					} else {
+						// Will throw if the first row is an struct, but the rest are not
+						lastRow = addRow( StructCaster.cast( row ) );
+					}
+				}
+				return lastRow;
+			} else {
+				// A single array of simple values to be set into the cells of the first row
+				return addRow( arrData );
+			}
+		}
+		throw new BoxRuntimeException(
+		    "rowData must be a struct, an array of structs, or an array of arrays.  " + rowData.getClass().getName() + " was passed." );
 	}
 
 	/**
@@ -339,6 +403,16 @@ public class Query implements IType, IReferenceable, Collection<IStruct> {
 	 */
 	public int getRowFromContext( IBoxContext context ) {
 		return context.getQueryRow( this );
+	}
+
+	/**
+	 * Get the list of column names as a comma-separated string
+	 * TODO: Look into caching this and invalidating when columns are added/removed
+	 * 
+	 * @return column names as string
+	 */
+	public String getColumnList() {
+		return getColumns().keySet().stream().map( Key::getName ).collect( Collectors.joining( "," ) );
 	}
 
 	/***************************
@@ -443,7 +517,7 @@ public class Query implements IType, IReferenceable, Collection<IStruct> {
 			return size();
 		}
 		if ( name.equals( Key.columnList ) ) {
-			return getColumns().keySet().stream().map( Key::getName ).collect( Collectors.joining( "," ) );
+			return getColumnList();
 		}
 		if ( name.equals( Key.currentRow ) ) {
 			return getRowFromContext( context ) + 1;

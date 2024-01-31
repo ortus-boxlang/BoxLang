@@ -17,7 +17,7 @@ package ortus.boxlang.ast;
 import java.util.List;
 
 /**
- * Root node for a tag/templating (program) cfm/bxm
+ * Root node for a templating (program) cfm/bxm
  */
 public class BoxTemplate extends BoxScript {
 
