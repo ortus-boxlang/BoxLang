@@ -11,12 +11,11 @@
  * </pre>
  *
  * The runtime needs to inject the following into the variables	scope:
- * - functionName 		: The name of the function being executed
- * - isMemberExecution : A boolean indicating if the function is being executed as a member function
- * - runtime 			: BoxLangRuntime
- * - log 				: A logger
- * - functionService 	: The BoxLang FunctionService
+ * - boxRuntime : BoxLangRuntime
+ * - log : A logger
+ * - functionService : The BoxLang FunctionService
  * - interceptorService : The BoxLang InterceptorService
+ * - moduleRecord : The ModuleRecord instance
  */
 @BoxBIF 'moduleHelloWorld'
 @BoxMember 'string'

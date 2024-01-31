@@ -136,6 +136,7 @@ public class Key implements Comparable<Key> {
 	public static final Key	find						= Key.of( "find" );
 	public static final Key	findAll						= Key.of( "findAll" );
 	public static final Key	findNoCase					= Key.of( "findNoCase" );
+	public static final Key	functionService				= Key.of( "functionService" );
 	public static final Key	format						= Key.of( "format" );
 	public static final Key	fullname					= Key.of( "fullname" );
 	public static final Key	function					= Key.of( "function" );

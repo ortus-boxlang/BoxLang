@@ -295,9 +295,10 @@ public class ModuleRecord {
 	 */
 	public ModuleRecord register( IBoxContext context ) {
 		// Convenience References
-		ThisScope		thisScope		= this.moduleConfig.getThisScope();
-		VariablesScope	variablesScope	= this.moduleConfig.getVariablesScope();
-		FunctionService	functionService	= BoxRuntime.getInstance().getFunctionService();
+		ThisScope			thisScope			= this.moduleConfig.getThisScope();
+		VariablesScope		variablesScope		= this.moduleConfig.getVariablesScope();
+		FunctionService		functionService		= BoxRuntime.getInstance().getFunctionService();
+		InterceptorService	interceptorService	= BoxRuntime.getInstance().getInterceptorService();
 
 		// Register the module mapping in the runtime
 		// Called first in case this is used in the `configure` method
@@ -324,10 +325,7 @@ public class ModuleRecord {
 
 		// Register Interception points with the InterceptorService
 		if ( !this.customInterceptionPoints.isEmpty() ) {
-			BoxRuntime
-			    .getInstance()
-			    .getInterceptorService()
-			    .registerInterceptionPoint( this.customInterceptionPoints.stream().map( Key::of ).toArray( Key[]::new ) );
+			interceptorService.registerInterceptionPoint( this.customInterceptionPoints.stream().map( Key::of ).toArray( Key[]::new ) );
 		}
 
 		// Register Bifs if they exist on disk
@@ -351,13 +349,31 @@ public class ModuleRecord {
 
 				// Register the BIF
 				Key				className	= Key.of( FilenameUtils.getBaseName( targetFile.getAbsolutePath() ) );
-				IClassRunnable	runnable	= ( IClassRunnable ) DynamicObject.of(
+				IClassRunnable	boxLangBIF	= ( IClassRunnable ) DynamicObject.of(
 				    RunnableLoader.getInstance().loadClass( targetFile.toPath(), this.invocationPath + "." + ModuleService.MODULE_BIFS, context )
 				).invokeConstructor( context )
 				    .getTargetInstance();
 
+				/**
+				 * --------------------------------------------------------------------------
+				 * DI Injections
+				 * --------------------------------------------------------------------------
+				 * Inject the following references into the CFC
+				 * - boxRuntime : BoxLangRuntime
+				 * - log : A logger
+				 * - functionService : The BoxLang FunctionService
+				 * - interceptorService : The BoxLang InterceptorService
+				 * - moduleRecord : The ModuleRecord instance
+				 */
+
+				boxLangBIF.getVariablesScope().put( Key.moduleRecord, this );
+				boxLangBIF.getVariablesScope().put( Key.boxRuntime, BoxRuntime.getInstance() );
+				boxLangBIF.getVariablesScope().put( Key.functionService, functionService );
+				boxLangBIF.getVariablesScope().put( Key.interceptorService, interceptorService );
+				boxLangBIF.getVariablesScope().put( Key.log, LoggerFactory.getLogger( boxLangBIF.getClass() ) );
+
 				// System.out.println( "Registering BIF " + className + " from " + runnable.getClass().getName() );
-				Object			boxBifs		= runnable.getBoxMeta().getMeta().getAsStruct( Key.annotations ).getOrDefault( Key.boxBif, new Array() );
+				Object boxBifs = boxLangBIF.getBoxMeta().getMeta().getAsStruct( Key.annotations ).getOrDefault( Key.boxBif, new Array() );
 				if ( boxBifs instanceof String ) {
 					boxBifs = Array.of( boxBifs );
 				}
@@ -369,11 +385,11 @@ public class ModuleRecord {
 				functionService.registerGlobalFunction(
 				    new BIFDescriptor(
 				        className,
-				        runnable.getClass(),
+				        boxLangBIF.getClass(),
 				        this.name.getName(),
 				        null,
 				        true,
-				        new BoxLangBIFProxy( runnable )
+				        new BoxLangBIFProxy( boxLangBIF )
 				    ),
 				    true
 				);
