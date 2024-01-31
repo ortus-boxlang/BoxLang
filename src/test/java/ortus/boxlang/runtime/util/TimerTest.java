@@ -18,6 +18,7 @@
 package ortus.boxlang.runtime.util;
 
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import com.google.common.truth.Truth;
@@ -97,5 +98,46 @@ public class TimerTest {
 
 		Truth.assertThat( elapsedNanos ).isAtLeast( 0L );
 		System.out.println( "Elapsed Nanoseconds: " + elapsedNanos );
+	}
+
+	@DisplayName( "Can time a runnable lambda" )
+	@Test
+	void testCanTimeRunnableLambda() {
+		// Given
+		Runnable	runnable	= () -> {
+									// Simulate some work
+									try {
+										Thread.sleep( 100 );
+									} catch ( InterruptedException e ) {
+										throw new BoxRuntimeException( e.getMessage(), e );
+									}
+								};
+
+		// When
+		String		elapsedTime	= timer.timeIt( runnable );
+
+		// Then
+		Truth.assertThat( elapsedTime ).isNotNull();
+		System.out.println( "Lambda Elapsed Time: " + elapsedTime );
+	}
+
+	@DisplayName( "Time and print a lambda using the default of milliseconds" )
+	@Test
+	void testTimeAndPrintLambda() {
+		// Given
+		Runnable runnable = () -> {
+			// Simulate some work
+			try {
+				Thread.sleep( 100 );
+			} catch ( InterruptedException e ) {
+				throw new BoxRuntimeException( e.getMessage(), e );
+			}
+		};
+
+		// When
+		long time = Timer.timeAndPrint( runnable );
+
+		// Then
+		Truth.assertThat( time ).isAtLeast( 0L );
 	}
 }
