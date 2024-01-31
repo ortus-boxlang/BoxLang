@@ -29,7 +29,7 @@ import org.slf4j.LoggerFactory;
 
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.bifs.BIFDescriptor;
-import ortus.boxlang.runtime.bifs.BoxLangBIF;
+import ortus.boxlang.runtime.bifs.BoxLangBIFProxy;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.runnables.IClassRunnable;
@@ -349,6 +349,7 @@ public class ModuleRecord {
 					continue;
 				}
 
+				// Register the BIF
 				Key				className	= Key.of( FilenameUtils.getBaseName( targetFile.getAbsolutePath() ) );
 				IClassRunnable	runnable	= ( IClassRunnable ) DynamicObject.of(
 				    RunnableLoader.getInstance().loadClass( targetFile.toPath(), this.invocationPath + "." + ModuleService.MODULE_BIFS, context )
@@ -356,7 +357,15 @@ public class ModuleRecord {
 				    .getTargetInstance();
 
 				// System.out.println( "Registering BIF " + className + " from " + runnable.getClass().getName() );
+				Object			boxBifs		= runnable.getBoxMeta().getMeta().getAsStruct( Key.annotations ).getOrDefault( Key.boxBif, new Array() );
+				if ( boxBifs instanceof String ) {
+					boxBifs = Array.of( boxBifs );
+				}
+				// Append the bif name
+				Array aliases = ( ( Array ) boxBifs ).push( className );
 
+				// Iterate and register aliases
+				// Loop over aliases to register
 				functionService.registerGlobalFunction(
 				    new BIFDescriptor(
 				        className,
@@ -364,11 +373,13 @@ public class ModuleRecord {
 				        this.name.getName(),
 				        null,
 				        true,
-				        new BoxLangBIF( runnable )
+				        new BoxLangBIFProxy( runnable )
 				    ),
 				    true
 				);
 				this.bifs.push( className );
+
+				// Register Member Functions
 			}
 		}
 

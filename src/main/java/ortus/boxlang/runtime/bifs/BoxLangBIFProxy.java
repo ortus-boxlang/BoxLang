@@ -17,35 +17,45 @@
  */
 package ortus.boxlang.runtime.bifs;
 
+import ortus.boxlang.runtime.context.FunctionBoxContext;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.runnables.IClassRunnable;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
+import ortus.boxlang.runtime.types.Function;
 
 /**
  * This is a BIF that is used to proxy from a BoxLang script to a Java method
  */
 @BoxBIF
-public class BoxLangBIF extends BIF {
+public class BoxLangBIFProxy extends BIF {
 
 	/**
 	 * The target BoxLang BIF class we proxy to
 	 */
-	private IClassRunnable target;
+	private IClassRunnable	target;
+
+	/**
+	 * The BoxLang function we proxy to
+	 */
+	private Function		bxFunction;
 
 	/**
 	 * Constructor
 	 *
 	 * @param target The target function we proxy to
 	 */
-	public BoxLangBIF( IClassRunnable target ) {
-		this.target = target;
+	public BoxLangBIFProxy( IClassRunnable target ) {
+		super();
+		this.target			= target;
+		this.bxFunction		= this.target.getThisScope().getAsFunction( Key.invoke );
+		declaredArguments	= this.bxFunction.getArguments();
 	}
 
 	/**
 	 * Constructor
 	 */
-	public BoxLangBIF() {
+	public BoxLangBIFProxy() {
 	}
 
 	/**
@@ -64,10 +74,25 @@ public class BoxLangBIF extends BIF {
 
 	@Override
 	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
-		System.out.println( "BoxLangBIF.invoke() called" );
-		System.out.println( "Arguments " + arguments.toString() );
-		// Any AOP Stuff HERE if we need to
-		return this.target.dereferenceAndInvoke( context, Key.invoke, arguments.asStruct(), false );
+		// System.out.println( "BoxLangBIF.invoke() called" );
+		// System.out.println( "Arguments " + arguments.toString() );
+
+		// Any AOP Stuff HERE if we need to goes here
+
+		// Execute
+		FunctionBoxContext fContext = Function.generateFunctionContext(
+		    this.bxFunction,
+		    context.getFunctionParentContext(),
+		    Key.invoke,
+		    arguments
+		);
+		fContext.pushTemplate( this.target );
+
+		try {
+			return this.bxFunction.invoke( fContext );
+		} finally {
+			fContext.popTemplate();
+		}
 	}
 
 }

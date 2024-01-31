@@ -25,14 +25,15 @@ import java.time.Instant;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
+import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
+import ortus.boxlang.runtime.scopes.VariablesScope;
 import ortus.boxlang.runtime.services.FunctionService;
 import ortus.boxlang.runtime.services.ModuleService;
 import ortus.boxlang.runtime.types.IStruct;
@@ -173,7 +174,6 @@ class ModuleRecordTest {
 
 	@DisplayName( "Can activate a module descriptor" )
 	@Test
-	@Disabled
 	void testItCanActivateAModule() {
 		// Given
 		Key				moduleName		= new Key( "test" );
@@ -194,13 +194,16 @@ class ModuleRecordTest {
 		assertThat( moduleRecord.bifs.size() ).isEqualTo( 1 );
 		assertThat( functionService.hasGlobalFunction( Key.of( "Hello" ) ) ).isTrue();
 
-		// Test the bif
+		// // Test the bif
 		runtime.executeSource(
 		    """
 		    result = hello( 'boxlang' );
 		    """,
 		    context );
-		assertThat( context.getScopeNearby( Key.of( "result" ) ) )
+
+		IScope variables = context.getScopeNearby( VariablesScope.name );
+
+		assertThat( variables.getAsString( Key.result ) )
 		    .isEqualTo( "Hello World, my name is boxlang and I am 0 years old" );
 	}
 }
