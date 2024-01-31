@@ -37,7 +37,6 @@ import javax.management.InvalidAttributeValueException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import ortus.boxlang.runtime.async.executors.ExecutorRecord;
 import ortus.boxlang.runtime.async.time.DateTimeHelper;
 import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.scopes.Key;
@@ -70,11 +69,6 @@ public class ScheduledTask implements Runnable {
 	 * The human group name of this task
 	 */
 	private String									group;
-
-	/**
-	 * The executor to use for this task
-	 */
-	private ExecutorRecord							executor;
 
 	/**
 	 * The task as a {@link DynamicObject} or a {@link java.util.concurrent.Callable} Lambda that will be executed by the task
@@ -201,7 +195,7 @@ public class ScheduledTask implements Runnable {
 	/**
 	 * This task can be assigned to a task scheduler or be executed on its own at runtime
 	 */
-	private Scheduler								scheduler			= null;
+	private Scheduler								scheduler;
 
 	/**
 	 * A struct for the task that can be used to store any metadata
@@ -258,15 +252,15 @@ public class ScheduledTask implements Runnable {
 	/**
 	 * Creates a new ScheduledTask with a name and a named group and it's accompanying executor
 	 *
-	 * @param name     The name of the task
-	 * @param group    The group of the task
-	 * @param executor The executor we are bound to
+	 * @param name      The name of the task
+	 * @param group     The group of the task
+	 * @param scheulder The scheduler we are bound to
 	 */
-	public ScheduledTask( String name, String group, ExecutorRecord executor ) {
+	public ScheduledTask( String name, String group, Scheduler scheduler ) {
 		// Seed it
 		this.name		= name;
 		this.group		= group;
-		this.executor	= executor;
+		this.scheduler	= scheduler;
 
 		// Init the stats
 		this.stats		= Struct.of(
@@ -304,11 +298,11 @@ public class ScheduledTask implements Runnable {
 	/**
 	 * Creates a new ScheduledTask with a name and the default "empty" group
 	 *
-	 * @param name     The name of the task
-	 * @param executor The executor we are bound to
+	 * @param name      The name of the task
+	 * @param scheduler The scheduler we are bound to
 	 */
-	public ScheduledTask( String name, ExecutorRecord executor ) {
-		this( name, "", executor );
+	public ScheduledTask( String name, Scheduler scheduler ) {
+		this( name, "", scheduler );
 	}
 
 	/**
@@ -504,7 +498,7 @@ public class ScheduledTask implements Runnable {
 		try {
 			// Startup a spaced frequency task: no overlaps
 			if ( spacedDelay > 0 ) {
-				return executor.scheduledExecutor().scheduleWithFixedDelay(
+				return scheduler.getExecutor().scheduledExecutor().scheduleWithFixedDelay(
 				    this,
 				    spacedDelay,
 				    delay,
@@ -514,7 +508,7 @@ public class ScheduledTask implements Runnable {
 
 			// Startup a task with a frequency period
 			if ( period > 0 ) {
-				return executor.scheduledExecutor().scheduleAtFixedRate(
+				return scheduler.getExecutor().scheduledExecutor().scheduleAtFixedRate(
 				    this,
 				    period,
 				    delay,
@@ -523,7 +517,7 @@ public class ScheduledTask implements Runnable {
 			}
 
 			// Start off a one-off task
-			return executor.scheduledExecutor().schedule(
+			return scheduler.getExecutor().scheduledExecutor().schedule(
 			    this,
 			    delay,
 			    timeUnit

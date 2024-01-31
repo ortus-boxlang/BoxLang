@@ -55,6 +55,8 @@ class SchedulerTest {
 		assertThat( scheduler ).isNotNull();
 		assertThat( scheduler.getName() ).isEqualTo( "bdd" );
 		assertThat( scheduler.getAsyncService() ).isNotNull();
+		assertThat( scheduler.getExecutor() ).isNull();
+		scheduler.startup();
 		assertThat( scheduler.getExecutor() ).isNotNull();
 		assertThat( scheduler.getExecutor().name() ).isEqualTo( "bdd-scheduler" );
 	}

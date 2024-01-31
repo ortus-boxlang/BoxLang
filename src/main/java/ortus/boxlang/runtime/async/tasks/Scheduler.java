@@ -196,7 +196,7 @@ public class Scheduler {
 		// Create task with custom name
 		var oTask =
 		    // Give me the task broda!
-		    new ScheduledTask( name, group, this.executor )
+		    new ScheduledTask( name, group, this )
 		        // Register ourselves in the task
 		        .setScheduler( this )
 		        // Set default timezone into the task
