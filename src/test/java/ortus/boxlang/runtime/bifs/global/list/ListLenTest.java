@@ -34,16 +34,16 @@ import ortus.boxlang.runtime.scopes.VariablesScope;
 
 public class ListLenTest {
 
-	static BoxRuntime instance;
-	static IBoxContext context;
-	static IScope variables;
-	static Key result = new Key("result");
+	static BoxRuntime	instance;
+	static IBoxContext	context;
+	static IScope		variables;
+	static Key			result	= new Key( "result" );
 
 	@BeforeAll
 	public static void setUp() {
-		instance = BoxRuntime.getInstance(true);
-		context = new ScriptingRequestBoxContext(instance.getRuntimeContext());
-		variables = context.getScopeNearby(VariablesScope.name);
+		instance	= BoxRuntime.getInstance( true );
+		context		= new ScriptingRequestBoxContext( instance.getRuntimeContext() );
+		variables	= context.getScopeNearby( VariablesScope.name );
 	}
 
 	@AfterAll
@@ -56,113 +56,111 @@ public class ListLenTest {
 		variables.clear();
 	}
 
-	@DisplayName(
-		"It can calculate the length of a list with the default comma delimiter"
-	)
+	@DisplayName( "It can calculate the length of a list with the default comma delimiter" )
 	@Test
 	public void testLenDefault() {
 		instance.executeSource(
-			"""
+		    """
 		    	list = "a,b,c";
 		    	result = listLen( list );
 		    """,
-			context
+		    context
 		);
-		assertThat(variables.get(result)).isEqualTo(3);
+		assertThat( variables.get( result ) ).isEqualTo( 3 );
 		instance.executeSource(
-			"""
+		    """
 		    list = "a,b,c,d";
 		    result = listLen( list );
 		    """,
-			context
+		    context
 		);
-		assertThat(variables.get(result)).isEqualTo(4);
+		assertThat( variables.get( result ) ).isEqualTo( 4 );
 		instance.executeSource(
-			"""
+		    """
 		    list = "";
 		    result = listLen( list );
 		    """,
-			context
+		    context
 		);
-		assertThat(variables.get(result)).isEqualTo(0);
+		assertThat( variables.get( result ) ).isEqualTo( 0 );
 	}
 
-	@DisplayName("It can use a custom delimiter")
+	@DisplayName( "It can use a custom delimiter" )
 	@Test
 	public void testCustomDelimiter() {
 		instance.executeSource(
-			"""
+		    """
 		    	list = "a:b:c";
 		    	result = listLen( list, ":" );
 		    """,
-			context
+		    context
 		);
-		assertThat(variables.get(result)).isEqualTo(3);
+		assertThat( variables.get( result ) ).isEqualTo( 3 );
 		instance.executeSource(
-			"""
+		    """
 		    list = "a:b,c";
 		    result = listLen( list, ":" );
 		    """,
-			context
+		    context
 		);
-		assertThat(variables.get(result)).isEqualTo(2);
+		assertThat( variables.get( result ) ).isEqualTo( 2 );
 		instance.executeSource(
-			"""
+		    """
 		    list = "a,b,c";
 		    result = listLen( list, ":" );
 		    """,
-			context
+		    context
 		);
-		assertThat(variables.get(result)).isEqualTo(1);
+		assertThat( variables.get( result ) ).isEqualTo( 1 );
 	}
 
-	@DisplayName("It can count empty spaces as items")
+	@DisplayName( "It can count empty spaces as items" )
 	@Test
 	public void testIncludeEmptyFields() {
 		instance.executeSource(
-			"""
+		    """
 		    	list = "a,b,,c";
 		    	result = listLen( list, ",", true );
 		    """,
-			context
+		    context
 		);
-		assertThat(variables.get(result)).isEqualTo(4);
+		assertThat( variables.get( result ) ).isEqualTo( 4 );
 		instance.executeSource(
-			"""
+		    """
 		    	list = "a,b,,c";
 		    	result = listLen( list, ",", false );
 		    """,
-			context
+		    context
 		);
-		assertThat(variables.get(result)).isEqualTo(3);
+		assertThat( variables.get( result ) ).isEqualTo( 3 );
 	}
 
-	@DisplayName("It can use the member function")
+	@DisplayName( "It can use the member function" )
 	@Test
 	public void testMemberFunction() {
 		instance.executeSource(
-			"""
+		    """
 		    	list = "a,b,c";
 		    	result = list.listLen();
 		    """,
-			context
+		    context
 		);
-		assertThat(variables.get(result)).isEqualTo(3);
+		assertThat( variables.get( result ) ).isEqualTo( 3 );
 		instance.executeSource(
-			"""
+		    """
 		    	list = "a:b::c";
 		    	result = list.listLen( ":" );
 		    """,
-			context
+		    context
 		);
-		assertThat(variables.get(result)).isEqualTo(3);
+		assertThat( variables.get( result ) ).isEqualTo( 3 );
 		instance.executeSource(
-			"""
+		    """
 		    	list = "a:b,c::d";
 		    	result = list.listLen( ":", true );
 		    """,
-			context
+		    context
 		);
-		assertThat(variables.get(result)).isEqualTo(4);
+		assertThat( variables.get( result ) ).isEqualTo( 4 );
 	}
 }

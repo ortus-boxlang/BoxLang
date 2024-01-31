@@ -115,9 +115,9 @@ public class ListIndexExistsTest {
 		assertThat( variables.get( result ) ).isEqualTo( false );
 		instance.executeSource(
 		    """
-			list = "a,b,,c";
-			result = listIndexExists( list, 4, ",", true );
-		    """,
+		    list = "a,b,,c";
+		    result = listIndexExists( list, 4, ",", true );
+		       """,
 		    context );
 		assertThat( variables.get( result ) ).isEqualTo( true );
 	}

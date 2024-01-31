@@ -11,7 +11,7 @@ import ortus.boxlang.runtime.types.BoxLangType;
 import ortus.boxlang.runtime.types.ListUtil;
 
 @BoxBIF
-@BoxMember(type = BoxLangType.STRING, name = "listCompact")
+@BoxMember( type = BoxLangType.STRING, name = "listCompact" )
 public class ListCompact extends BIF {
 
 	/**
@@ -19,22 +19,21 @@ public class ListCompact extends BIF {
 	 */
 	public ListCompact() {
 		super();
-		declaredArguments =
-			new Argument[] {
-				new Argument(true, "string", Key.list),
-				new Argument(
-					false,
-					"string",
-					Key.delimiter,
-					ListUtil.DEFAULT_DELIMITER
-				),
-				new Argument(
-					false,
-					"boolean",
-					Key.multiCharacterDelimiter,
-					false
-				),
-			};
+		declaredArguments = new Argument[] {
+		    new Argument( true, "string", Key.list ),
+		    new Argument(
+		        false,
+		        "string",
+		        Key.delimiter,
+		        ListUtil.DEFAULT_DELIMITER
+		    ),
+		    new Argument(
+		        false,
+		        "boolean",
+		        Key.multiCharacterDelimiter,
+		        false
+		    ),
+		};
 	}
 
 	/**
@@ -49,21 +48,21 @@ public class ListCompact extends BIF {
 	 *
 	 * @argument.multiCharacterDelimiter boolean whether the delimiter is multi-character
 	 */
-	public Object invoke(IBoxContext context, ArgumentsScope arguments) {
-		Boolean multiCharacterDelimiter = arguments.getAsBoolean(
-			Key.multiCharacterDelimiter
+	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
+		Boolean	multiCharacterDelimiter	= arguments.getAsBoolean(
+		    Key.multiCharacterDelimiter
 		);
-		String delimiter = arguments.getAsString(Key.delimiter);
+		String	delimiter				= arguments.getAsString( Key.delimiter );
 		return ListUtil.asString(
-			ListUtil.trim(
-				ListUtil.asList(
-					arguments.getAsString(Key.list),
-					delimiter,
-					true,
-					multiCharacterDelimiter
-				)
-			),
-			multiCharacterDelimiter ? delimiter : delimiter.substring(0, 1)
+		    ListUtil.trim(
+		        ListUtil.asList(
+		            arguments.getAsString( Key.list ),
+		            delimiter,
+		            true,
+		            multiCharacterDelimiter
+		        )
+		    ),
+		    multiCharacterDelimiter ? delimiter : delimiter.substring( 0, 1 )
 		);
 	}
 }

@@ -43,12 +43,12 @@ public class ListIndexExists extends BIF {
 	 * @argument.includeEmptyFields boolean whether to include empty fields in the returned result
 	 */
 	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
-		Double index = arguments.getAsDouble(Key.index);
+		Double index = arguments.getAsDouble( Key.index );
 		return index > 0 && ListUtil.asList(
-			arguments.getAsString(Key.list),
-			arguments.getAsString(Key.delimiter),
-			arguments.getAsBoolean(Key.includeEmptyFields),
-			false
+		    arguments.getAsString( Key.list ),
+		    arguments.getAsString( Key.delimiter ),
+		    arguments.getAsBoolean( Key.includeEmptyFields ),
+		    false
 		).size() >= index;
 	}
 }

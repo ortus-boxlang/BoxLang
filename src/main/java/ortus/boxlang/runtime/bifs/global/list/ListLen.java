@@ -11,7 +11,7 @@ import ortus.boxlang.runtime.types.BoxLangType;
 import ortus.boxlang.runtime.types.ListUtil;
 
 @BoxBIF
-@BoxMember(type = BoxLangType.STRING, name = "listLen")
+@BoxMember( type = BoxLangType.STRING, name = "listLen" )
 public class ListLen extends BIF {
 
 	/**
@@ -19,17 +19,16 @@ public class ListLen extends BIF {
 	 */
 	public ListLen() {
 		super();
-		declaredArguments =
-			new Argument[] {
-				new Argument(true, "string", Key.list),
-				new Argument(
-					false,
-					"string",
-					Key.delimiter,
-					ListUtil.DEFAULT_DELIMITER
-				),
-				new Argument(false, "boolean", Key.includeEmptyFields, false),
-			};
+		declaredArguments = new Argument[] {
+		    new Argument( true, "string", Key.list ),
+		    new Argument(
+		        false,
+		        "string",
+		        Key.delimiter,
+		        ListUtil.DEFAULT_DELIMITER
+		    ),
+		    new Argument( false, "boolean", Key.includeEmptyFields, false ),
+		};
 	}
 
 	/**
@@ -44,14 +43,14 @@ public class ListLen extends BIF {
 	 *
 	 * @argument.includeEmptyFields boolean whether to include empty fields in the returned result
 	 */
-	public Object invoke(IBoxContext context, ArgumentsScope arguments) {
+	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
 		return ListUtil
-			.asList(
-				arguments.getAsString(Key.list),
-				arguments.getAsString(Key.delimiter),
-				arguments.getAsBoolean(Key.includeEmptyFields),
-				false
-			)
-			.size();
+		    .asList(
+		        arguments.getAsString( Key.list ),
+		        arguments.getAsString( Key.delimiter ),
+		        arguments.getAsBoolean( Key.includeEmptyFields ),
+		        false
+		    )
+		    .size();
 	}
 }

@@ -35,16 +35,16 @@ import ortus.boxlang.runtime.scopes.VariablesScope;
 
 public class ListChangeDelimsTest {
 
-	static BoxRuntime instance;
-	static IBoxContext context;
-	static IScope variables;
-	static Key result = new Key("result");
+	static BoxRuntime	instance;
+	static IBoxContext	context;
+	static IScope		variables;
+	static Key			result	= new Key( "result" );
 
 	@BeforeAll
 	public static void setUp() {
-		instance = BoxRuntime.getInstance(true);
-		context = new ScriptingRequestBoxContext(instance.getRuntimeContext());
-		variables = context.getScopeNearby(VariablesScope.name);
+		instance	= BoxRuntime.getInstance( true );
+		context		= new ScriptingRequestBoxContext( instance.getRuntimeContext() );
+		variables	= context.getScopeNearby( VariablesScope.name );
 	}
 
 	@AfterAll
@@ -57,113 +57,111 @@ public class ListChangeDelimsTest {
 		variables.clear();
 	}
 
-	@DisplayName("It can change the delimiter from the default comma")
+	@DisplayName( "It can change the delimiter from the default comma" )
 	@Test
 	public void testChangeDefaultDelimiter() {
 		instance.executeSource(
-			"""
+		    """
 		    	list = "a,b,c";
 		    	result = listChangeDelims( list, ":" );
 		    """,
-			context
+		    context
 		);
-		assertThat(variables.get(result)).isEqualTo("a:b:c");
+		assertThat( variables.get( result ) ).isEqualTo( "a:b:c" );
 		instance.executeSource(
-			"""
+		    """
 		    list = "a,b,c,d";
 		    result = listChangeDelims( list, ":" );
 		    """,
-			context
+		    context
 		);
-		assertThat(variables.get(result)).isEqualTo("a:b:c:d");
+		assertThat( variables.get( result ) ).isEqualTo( "a:b:c:d" );
 		instance.executeSource(
-			"""
+		    """
 		    list = "";
 		    result = listChangeDelims( list, ":" );
 		    """,
-			context
+		    context
 		);
-		assertThat(variables.get(result)).isEqualTo("");
+		assertThat( variables.get( result ) ).isEqualTo( "" );
 	}
 
-	@DisplayName(
-		"It can change the delimiter from one custom delimiter to another"
-	)
+	@DisplayName( "It can change the delimiter from one custom delimiter to another" )
 	@Test
 	public void testChangeCustomDelimiter() {
 		instance.executeSource(
-			"""
+		    """
 		    	list = "a:b:c";
 		    	result = listChangeDelims( list, "-", ":" );
 		    """,
-			context
+		    context
 		);
-		assertThat(variables.get(result)).isEqualTo("a-b-c");
+		assertThat( variables.get( result ) ).isEqualTo( "a-b-c" );
 		instance.executeSource(
-			"""
+		    """
 		    list = "a:b,c";
 		    result = listChangeDelims( list, "-", ":" );
 		    """,
-			context
+		    context
 		);
-		assertThat(variables.get(result)).isEqualTo("a-b,c");
+		assertThat( variables.get( result ) ).isEqualTo( "a-b,c" );
 		instance.executeSource(
-			"""
+		    """
 		    list = "a,b,c";
 		    result = listChangeDelims( list, ":", "-" );
 		    """,
-			context
+		    context
 		);
-		assertThat(variables.get(result)).isEqualTo("a,b,c");
+		assertThat( variables.get( result ) ).isEqualTo( "a,b,c" );
 	}
 
-	@DisplayName("It can count empty spaces as items")
+	@DisplayName( "It can count empty spaces as items" )
 	@Test
 	public void testIncludeEmptyFields() {
 		instance.executeSource(
-			"""
+		    """
 		    	list = "a,b,,c";
 		    	result = listChangeDelims( list, ":", ",", true );
 		    """,
-			context
+		    context
 		);
-		assertThat(variables.get(result)).isEqualTo("a:b::c");
+		assertThat( variables.get( result ) ).isEqualTo( "a:b::c" );
 		instance.executeSource(
-			"""
+		    """
 		    	list = "a,b,,c";
 		    	result = listChangeDelims( list, ":", ",", false );
 		    """,
-			context
+		    context
 		);
-		assertThat(variables.get(result)).isEqualTo("a:b:c");
+		assertThat( variables.get( result ) ).isEqualTo( "a:b:c" );
 	}
 
-	@DisplayName("It can use the member function")
+	@DisplayName( "It can use the member function" )
 	@Test
 	public void testMemberFunction() {
 		instance.executeSource(
-			"""
+		    """
 		    	list = "a,b,c";
 		    	result = list.listChangeDelims( ":" );
 		    """,
-			context
+		    context
 		);
-		assertThat(variables.get(result)).isEqualTo("a:b:c");
+		assertThat( variables.get( result ) ).isEqualTo( "a:b:c" );
 		instance.executeSource(
-			"""
+		    """
 		    	list = "a:b::c";
 		    	result = list.listChangeDelims( "-", ":" );
 		    """,
-			context
+		    context
 		);
-		assertThat(variables.get(result)).isEqualTo("a-b-c");
+		assertThat( variables.get( result ) ).isEqualTo( "a-b-c" );
 		instance.executeSource(
-			"""
+		    """
 		    	list = "a:b,c::d";
 		    	result = list.listChangeDelims( "-", ":", true );
 		    """,
-			context
+		    context
 		);
-		assertThat(variables.get(result)).isEqualTo("a-b,c--d");
+		assertThat( variables.get( result ) ).isEqualTo( "a-b,c--d" );
 	}
 }

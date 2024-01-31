@@ -35,16 +35,16 @@ import ortus.boxlang.runtime.scopes.VariablesScope;
 
 public class ListCompactTest {
 
-	static BoxRuntime instance;
-	static IBoxContext context;
-	static IScope variables;
-	static Key result = new Key("result");
+	static BoxRuntime	instance;
+	static IBoxContext	context;
+	static IScope		variables;
+	static Key			result	= new Key( "result" );
 
 	@BeforeAll
 	public static void setUp() {
-		instance = BoxRuntime.getInstance(true);
-		context = new ScriptingRequestBoxContext(instance.getRuntimeContext());
-		variables = context.getScopeNearby(VariablesScope.name);
+		instance	= BoxRuntime.getInstance( true );
+		context		= new ScriptingRequestBoxContext( instance.getRuntimeContext() );
+		variables	= context.getScopeNearby( VariablesScope.name );
 	}
 
 	@AfterAll
@@ -57,121 +57,115 @@ public class ListCompactTest {
 		variables.clear();
 	}
 
-	@DisplayName(
-		"It removes the default comma delimiter from the start and end of a list"
-	)
+	@DisplayName( "It removes the default comma delimiter from the start and end of a list" )
 	@Test
 	public void testCompactDefault() {
 		instance.executeSource(
-			"""
+		    """
 		    	list = ",a,b,c,";
 		    	result = listCompact( list );
 		    """,
-			context
+		    context
 		);
-		assertThat(variables.get(result)).isEqualTo("a,b,c");
+		assertThat( variables.get( result ) ).isEqualTo( "a,b,c" );
 		instance.executeSource(
-			"""
+		    """
 		    list = ",a,b,c";
 		    result = listCompact( list );
 		    """,
-			context
+		    context
 		);
-		assertThat(variables.get(result)).isEqualTo("a,b,c");
+		assertThat( variables.get( result ) ).isEqualTo( "a,b,c" );
 	}
 
-	@DisplayName(
-		"It removes multiple instances of the same delimiter from the start and end of a list"
-	)
+	@DisplayName( "It removes multiple instances of the same delimiter from the start and end of a list" )
 	@Test
 	public void testCompactMultiple() {
 		instance.executeSource(
-			"""
+		    """
 		    	list = ",,,,,,,a,b,c,,,";
 		    	result = listCompact( list );
 		    """,
-			context
+		    context
 		);
-		assertThat(variables.get(result)).isEqualTo("a,b,c");
+		assertThat( variables.get( result ) ).isEqualTo( "a,b,c" );
 	}
 
-	@DisplayName("It can compact using a custom delimiter")
+	@DisplayName( "It can compact using a custom delimiter" )
 	@Test
 	public void testCompactCustomDelimiter() {
 		instance.executeSource(
-			"""
+		    """
 		    	list = ":::a:b:c:";
 		    	result = listCompact( list, ":" );
 		    """,
-			context
+		    context
 		);
-		assertThat(variables.get(result)).isEqualTo("a:b:c");
+		assertThat( variables.get( result ) ).isEqualTo( "a:b:c" );
 	}
 
-	@DisplayName("It can compact using a multi-character delimiter")
+	@DisplayName( "It can compact using a multi-character delimiter" )
 	@Test
 	public void testMultiCharacterDelimiter() {
 		instance.executeSource(
-			"""
+		    """
 		    	list = ":::a::b::c:";
 		    	result = listCompact( list, "::", true );
 		    """,
-			context
+		    context
 		);
-		assertThat(variables.get(result)).isEqualTo(":a::b::c:");
+		assertThat( variables.get( result ) ).isEqualTo( ":a::b::c:" );
 
 		instance.executeSource(
-			"""
+		    """
 		    	list = ":::a:::b:::c:";
 		    	result = listCompact( list, ":::", true );
 		    """,
-			context
+		    context
 		);
-		assertThat(variables.get(result)).isEqualTo("a:::b:::c:");
+		assertThat( variables.get( result ) ).isEqualTo( "a:::b:::c:" );
 	}
 
-	@DisplayName(
-		"It uses a single character if the multi-character delimiter flag is false"
-	)
+	@DisplayName( "It uses a single character if the multi-character delimiter flag is false" )
 	@Test
 	public void testSingleCharacterDelimiterWhenMultiDelimiterFlagIsFalse() {
 		instance.executeSource(
-			"""
+		    """
 		    	list = ":::a:b:c:";
 		    	result = listCompact( list, "::", false );
 		    """,
-			context
+		    context
 		);
-		assertThat(variables.get(result)).isEqualTo("a:b:c");
+		assertThat( variables.get( result ) ).isEqualTo( "a:b:c" );
 
 		instance.executeSource(
-			"""
+		    """
 		    	list = ":::a:b:c:";
 		    	result = listCompact( list, ":::", false );
 		    """,
-			context
+		    context
 		);
-		assertThat(variables.get(result)).isEqualTo("a:b:c");
+		assertThat( variables.get( result ) ).isEqualTo( "a:b:c" );
 	}
 
-	@DisplayName("It can use the member function")
+	@DisplayName( "It can use the member function" )
 	@Test
 	public void testMemberFunction() {
 		instance.executeSource(
-			"""
+		    """
 		    	list = ",,,,a,b,c,";
 		    	result = list.listCompact();
 		    """,
-			context
+		    context
 		);
-		assertThat(variables.get(result)).isEqualTo("a,b,c");
+		assertThat( variables.get( result ) ).isEqualTo( "a,b,c" );
 		instance.executeSource(
-			"""
+		    """
 		    	list = "::::a::b::c:::";
 		    	result = list.listCompact( "::", true );
 		    """,
-			context
+		    context
 		);
-		assertThat(variables.get(result)).isEqualTo("a::b::c:::");
+		assertThat( variables.get( result ) ).isEqualTo( "a::b::c:::" );
 	}
 }

@@ -11,7 +11,7 @@ import ortus.boxlang.runtime.types.BoxLangType;
 import ortus.boxlang.runtime.types.ListUtil;
 
 @BoxBIF
-@BoxMember(type = BoxLangType.STRING, name = "listChangeDelims")
+@BoxMember( type = BoxLangType.STRING, name = "listChangeDelims" )
 public class ListChangeDelims extends BIF {
 
 	/**
@@ -19,18 +19,17 @@ public class ListChangeDelims extends BIF {
 	 */
 	public ListChangeDelims() {
 		super();
-		declaredArguments =
-			new Argument[] {
-				new Argument(true, "string", Key.list),
-				new Argument(true, "string", Key.newDelimiter),
-				new Argument(
-					false,
-					"string",
-					Key.delimiter,
-					ListUtil.DEFAULT_DELIMITER
-				),
-				new Argument(false, "boolean", Key.includeEmptyFields, false),
-			};
+		declaredArguments = new Argument[] {
+		    new Argument( true, "string", Key.list ),
+		    new Argument( true, "string", Key.newDelimiter ),
+		    new Argument(
+		        false,
+		        "string",
+		        Key.delimiter,
+		        ListUtil.DEFAULT_DELIMITER
+		    ),
+		    new Argument( false, "boolean", Key.includeEmptyFields, false ),
+		};
 	}
 
 	/**
@@ -47,15 +46,15 @@ public class ListChangeDelims extends BIF {
 	 *
 	 * @argument.includeEmptyFields boolean whether to include empty fields in the returned result
 	 */
-	public Object invoke(IBoxContext context, ArgumentsScope arguments) {
+	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
 		return ListUtil.asString(
-			ListUtil.asList(
-				arguments.getAsString(Key.list),
-				arguments.getAsString(Key.delimiter),
-				arguments.getAsBoolean(Key.includeEmptyFields),
-				false
-			),
-			arguments.getAsString(Key.newDelimiter)
+		    ListUtil.asList(
+		        arguments.getAsString( Key.list ),
+		        arguments.getAsString( Key.delimiter ),
+		        arguments.getAsBoolean( Key.includeEmptyFields ),
+		        false
+		    ),
+		    arguments.getAsString( Key.newDelimiter )
 		);
 	}
 }

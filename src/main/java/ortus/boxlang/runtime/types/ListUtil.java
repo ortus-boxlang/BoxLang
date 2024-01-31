@@ -644,19 +644,21 @@ public class ListUtil {
 
 	}
 
-	public static Array trim(Array array) {
+	public static Array trim( Array array ) {
 		int fromIndex = 0;
-		for (int i = 0; i < array.size(); i++) {
+		for ( int i = 0; i < array.size(); i++ ) {
 			fromIndex = i;
-			if (StringCaster.cast(array.get(i)).length() > 0) break;
+			if ( StringCaster.cast( array.get( i ) ).length() > 0 )
+				break;
 		}
 
 		int toIndex = 0;
-		for (int i = array.size() - 1; i >= 0; i--) {
+		for ( int i = array.size() - 1; i >= 0; i-- ) {
 			toIndex = i;
-			if (StringCaster.cast(array.get(i)).length() > 0) break;
+			if ( StringCaster.cast( array.get( i ) ).length() > 0 )
+				break;
 		}
 
-		return Array.copyOf(array.subList(fromIndex, toIndex + 1));
+		return Array.copyOf( array.subList( fromIndex, toIndex + 1 ) );
 	}
 }
