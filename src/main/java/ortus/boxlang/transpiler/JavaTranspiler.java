@@ -94,6 +94,7 @@ import ortus.boxlang.ast.statement.BoxThrow;
 import ortus.boxlang.ast.statement.BoxTry;
 import ortus.boxlang.ast.statement.BoxWhile;
 import ortus.boxlang.ast.statement.tag.BoxOutput;
+import ortus.boxlang.ast.statement.tag.BoxTag;
 import ortus.boxlang.ast.statement.tag.BoxTagIsland;
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.runnables.BoxTemplate;
@@ -156,6 +157,7 @@ import ortus.boxlang.transpiler.transformer.statement.BoxWhileTransformer;
 import ortus.boxlang.transpiler.transformer.statement.tag.BoxOutputTransformer;
 import ortus.boxlang.transpiler.transformer.statement.tag.BoxScriptIslandTransformer;
 import ortus.boxlang.transpiler.transformer.statement.tag.BoxTagIslandTransformer;
+import ortus.boxlang.transpiler.transformer.statement.tag.BoxTagTransformer;
 
 /**
  * BoxLang AST to Java AST transpiler
@@ -237,6 +239,8 @@ public class JavaTranspiler extends Transpiler {
 		registry.put( BoxOutput.class, new BoxOutputTransformer( this ) );
 		registry.put( BoxScriptIsland.class, new BoxScriptIslandTransformer( this ) );
 		registry.put( BoxTagIsland.class, new BoxTagIslandTransformer( this ) );
+		registry.put( BoxTag.class, new BoxTagTransformer( this ) );
+
 	}
 
 	/**

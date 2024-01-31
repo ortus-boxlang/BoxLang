@@ -767,4 +767,65 @@ public class TagTest {
 
 	}
 
+	@Test
+	public void testGenericTagsDanglingEnd() {
+		Throwable e = assertThrows( ParseException.class, () -> instance.executeSource(
+		    """
+		    	<cfbrad outer=true foo="bar">
+		          <cfsdf attr="value" />
+		          <cfbrad inner=false foo="bar">
+		          	test
+		        <cfset foo = "bar">
+		        again
+		          </cfbrad>
+		       trailing
+		    </cfbrad>
+		    </cfbrad>
+		               """,
+		    context, BoxScriptType.CFMARKUP ) );
+		assertThat( e.getMessage() ).contains( "end tag" );
+
+	}
+
+	@Test
+	public void testGenericTags() {
+		instance.executeSource(
+		    """
+		    	<cfbrad outer=true foo="bar">
+		          <cfsdf attr="value" />
+		          <cfbrad inner=false foo="bar">
+		          	test
+		     <cfbrad selfClose="yeah!" />
+		        <cfset foo = "bar">
+		        again
+		          </cfbrad>
+		       trailing
+		    </cfbrad>
+		               """,
+		    context, BoxScriptType.CFMARKUP );
+
+	}
+
+	@Test
+	public void testGenericTagsInScript() {
+		instance.executeSource(
+		    """
+		    http url="google.com" throwOnTimeout=true {
+		    	foo = "bar";
+		    	baz;
+		    }
+
+		    http url="google.com" throwOnTimeout=true;
+
+		    cfhttp( url="google.com",  throwOnTimeout=true ){
+		    	foo = "bar";
+		    	baz;
+		    }
+
+		    cfhttp( url="google.com",  throwOnTimeout=true )
+		                  """,
+		    context, BoxScriptType.CFSCRIPT );
+
+	}
+
 }

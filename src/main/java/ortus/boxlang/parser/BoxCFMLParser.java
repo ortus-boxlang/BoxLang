@@ -66,6 +66,7 @@ import ortus.boxlang.ast.statement.BoxTryCatch;
 import ortus.boxlang.ast.statement.BoxType;
 import ortus.boxlang.ast.statement.BoxWhile;
 import ortus.boxlang.ast.statement.tag.BoxOutput;
+import ortus.boxlang.ast.statement.tag.BoxTag;
 import ortus.boxlang.parser.antlr.CFMLLexer;
 import ortus.boxlang.parser.antlr.CFMLParser;
 import ortus.boxlang.parser.antlr.CFMLParser.ArgumentContext;
@@ -78,6 +79,8 @@ import ortus.boxlang.parser.antlr.CFMLParser.CatchBlockContext;
 import ortus.boxlang.parser.antlr.CFMLParser.ComponentContext;
 import ortus.boxlang.parser.antlr.CFMLParser.ContinueContext;
 import ortus.boxlang.parser.antlr.CFMLParser.FunctionContext;
+import ortus.boxlang.parser.antlr.CFMLParser.GenericOpenCloseTagContext;
+import ortus.boxlang.parser.antlr.CFMLParser.GenericOpenTagContext;
 import ortus.boxlang.parser.antlr.CFMLParser.IncludeContext;
 import ortus.boxlang.parser.antlr.CFMLParser.OutputContext;
 import ortus.boxlang.parser.antlr.CFMLParser.PropertyContext;
@@ -213,7 +216,38 @@ public class BoxCFMLParser extends BoxAbstractParser {
 		if ( node.children != null ) {
 			for ( var child : node.children ) {
 				if ( child instanceof StatementContext statement ) {
-					statements.add( toAst( file, statement ) );
+					if ( statement.genericCloseTag() != null ) {
+						String	tagName		= statement.genericCloseTag().tagName().getText();
+						// see if statements list has a BoxTag with this name
+						int		size		= statements.size();
+						boolean	foundStart	= false;
+						int		removeAfter	= -1;
+						// loop backwards checking for a BoxTag with this name
+						for ( int i = size - 1; i >= 0; i-- ) {
+							BoxStatement boxStatement = statements.get( i );
+							if ( boxStatement instanceof BoxTag boxTag ) {
+								if ( boxTag.getName().equalsIgnoreCase( tagName ) && boxTag.getBody() == null ) {
+									foundStart = true;
+									// slice all statements from this position to the end and set them as the body of the start tag
+									boxTag.setBody( new ArrayList<>( statements.subList( i + 1, size ) ) );
+									boxTag.getPosition().setEnd( getPosition( statement.genericCloseTag() ).getEnd() );
+									boxTag.setSourceText( getSourceText( boxTag.getSourceStartIndex(), statement.genericCloseTag() ) );
+									removeAfter = i;
+									break;
+								}
+							}
+						}
+						// remove all items in list after removeAfter index
+						if ( removeAfter >= 0 ) {
+							statements.subList( removeAfter + 1, size ).clear();
+						}
+						if ( !foundStart ) {
+							issues.add( new Issue( "Found end tag [" + tagName + "] without matching start tag", getPosition( statement.genericCloseTag() ) ) );
+						}
+
+					} else {
+						statements.add( toAst( file, statement ) );
+					}
 				} else if ( child instanceof TextContentContext textContent ) {
 					statements.add( toAst( file, textContent ) );
 				} else if ( child instanceof ScriptContext script ) {
@@ -259,9 +293,30 @@ public class BoxCFMLParser extends BoxAbstractParser {
 			return toAst( file, node.throw_() );
 		} else if ( node.switch_() != null ) {
 			return toAst( file, node.switch_() );
+		} else if ( node.genericOpenCloseTag() != null ) {
+			return toAst( file, node.genericOpenCloseTag() );
+		} else if ( node.genericOpenTag() != null ) {
+			return toAst( file, node.genericOpenTag() );
 		}
 		throw new BoxRuntimeException( "Statement node " + node.getClass().getName() + " parsing not implemented yet. " + node.getText() );
 
+	}
+
+	private BoxStatement toAst( File file, GenericOpenCloseTagContext node ) {
+		List<BoxAnnotation> attributes = new ArrayList<>();
+		for ( var attr : node.attribute() ) {
+			attributes.add( toAst( file, attr ) );
+		}
+		return new BoxTag( node.tagName().getText(), attributes, List.of(), node.getStart().getStartIndex(), getPosition( node ), getSourceText( node ) );
+	}
+
+	private BoxStatement toAst( File file, GenericOpenTagContext node ) {
+		List<BoxAnnotation> attributes = new ArrayList<>();
+		for ( var attr : node.attribute() ) {
+			attributes.add( toAst( file, attr ) );
+		}
+		// Body may get set later, if we find an end tag
+		return new BoxTag( node.tagName().getText(), attributes, null, node.getStart().getStartIndex(), getPosition( node ), getSourceText( node ) );
 	}
 
 	private BoxStatement toAst( File file, SwitchContext node ) {

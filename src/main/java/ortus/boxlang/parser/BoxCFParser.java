@@ -100,12 +100,14 @@ import ortus.boxlang.ast.statement.BoxTry;
 import ortus.boxlang.ast.statement.BoxTryCatch;
 import ortus.boxlang.ast.statement.BoxType;
 import ortus.boxlang.ast.statement.BoxWhile;
+import ortus.boxlang.ast.statement.tag.BoxTag;
 import ortus.boxlang.ast.statement.tag.BoxTagIsland;
 import ortus.boxlang.parser.antlr.CFLexer;
 import ortus.boxlang.parser.antlr.CFParser;
 import ortus.boxlang.parser.antlr.CFParser.ComponentContext;
 import ortus.boxlang.parser.antlr.CFParser.NewContext;
 import ortus.boxlang.parser.antlr.CFParser.PreannotationContext;
+import ortus.boxlang.parser.antlr.CFParser.TagContext;
 import ortus.boxlang.parser.antlr.CFParser.TagIslandContext;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
@@ -422,9 +424,55 @@ public class BoxCFParser extends BoxAbstractParser {
 			return toAst( file, node.try_() );
 		} else if ( node.tagIsland() != null ) {
 			return toAst( file, node.tagIsland() );
+		} else if ( node.tag() != null ) {
+			return toAst( file, node.tag() );
 		} else {
 			throw new IllegalStateException( "not implemented: " + getSourceText( node ) );
 		}
+	}
+
+	private BoxStatement toAst( File file, TagContext node ) {
+		List<BoxStatement>	body		= null;
+		String				tagName		= null;
+		List<BoxAnnotation>	attributes	= new ArrayList<>();
+
+		if ( node.tagAttributes() != null && node.tagAttributes().namedArgument() != null ) {
+			for ( var attr : node.tagAttributes().namedArgument() ) {
+				attributes.add( toAstAnnotation( file, attr ) );
+			}
+		} else if ( node.delimitedTagAttributes() != null && node.delimitedTagAttributes().namedArgument() != null ) {
+			for ( var attr : node.delimitedTagAttributes().namedArgument() ) {
+				attributes.add( toAstAnnotation( file, attr ) );
+			}
+		}
+
+		if ( node.tagName() != null ) {
+			tagName = node.tagName().getText();
+		} else {
+			// strip prefix from name so "cfbrad" becomes "brad
+			tagName = node.prefixedIdentifier().getText().substring( 2 );
+		}
+
+		if ( node.statementBlock() != null ) {
+			body = new ArrayList<>();
+			body.addAll( toAst( file, node.statementBlock() ) );
+		}
+		return new BoxTag( tagName, attributes, body, 0, getPosition( node ), getSourceText( node ) );
+	}
+
+	private BoxAnnotation toAstAnnotation( File file, CFParser.NamedArgumentContext node ) {
+		BoxFQN name;
+		if ( node.identifier() != null ) {
+			name = new BoxFQN( node.identifier().getText(), getPosition( node.identifier() ), getSourceText( node.identifier() ) );
+		} else {
+			// Raw text
+			String	stringLit	= node.stringLiteral().getText();
+			// Find quote char
+			String	s			= stringLit.substring( 1, stringLit.length() - 1 );
+			name = new BoxFQN( escapeStringLiteral( stringLit, s ), getPosition( node.identifier() ), getSourceText( node.identifier() ) );
+		}
+		BoxExpr value = toAst( file, node.expression() );
+		return new BoxAnnotation( name, value, getPosition( node ), getSourceText( node ) );
 	}
 
 	/**

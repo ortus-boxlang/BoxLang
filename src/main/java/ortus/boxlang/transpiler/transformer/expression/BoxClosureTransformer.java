@@ -57,6 +57,7 @@ public class BoxClosureTransformer extends AbstractTransformer {
 		import ortus.boxlang.runtime.loader.ImportDefinition;
 		import ortus.boxlang.runtime.interop.DynamicObject;
 		import ortus.boxlang.runtime.dynamic.QueryOutputUtil;
+		import ortus.boxlang.runtime.dynamic.TagUtil;
 
 		// Classes Auto-Imported on all Templates and Classes by BoxLang
 		import java.time.LocalDateTime;

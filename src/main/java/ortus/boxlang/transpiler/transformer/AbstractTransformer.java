@@ -85,7 +85,7 @@ public abstract class AbstractTransformer implements Transformer {
 	 *
 	 * @return the Java Parser AST representation of the expression
 	 */
-	protected Node parseExpression( String template, Map<String, String> values ) {
+	protected Expression parseExpression( String template, Map<String, String> values ) {
 		String code = PlaceholderHelper.resolve( template, values );
 		try {
 			ParseResult<Expression> result = javaParser.parseExpression( code );
@@ -124,7 +124,7 @@ public abstract class AbstractTransformer implements Transformer {
 	 *
 	 * @return The method call expression
 	 */
-	protected Node createKey( BoxExpr expr ) {
+	protected Expression createKey( BoxExpr expr ) {
 		// If this key is a literal, we can optimize it
 		if ( expr instanceof BoxStringLiteral || expr instanceof BoxIntegerLiteral ) {
 			int pos = transpiler.registerKey( expr );
@@ -147,7 +147,7 @@ public abstract class AbstractTransformer implements Transformer {
 	 *
 	 * @return Instance of the Key.of method call expression
 	 */
-	protected Node createKey( String expr ) {
+	protected Expression createKey( String expr ) {
 		return createKey( new BoxStringLiteral( expr, null, expr ) );
 	}
 

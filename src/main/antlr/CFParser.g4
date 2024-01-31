@@ -131,6 +131,7 @@ statement: (
 		| switch
 		| try
 		| while
+		| tag
 		| simpleStatement
 		| tagIsland
 	)
@@ -150,6 +151,27 @@ simpleStatement: (
 		| return
 		| expression
 	) eos?;
+
+tag:
+	// http url="google.com" {}
+	(tagName tagAttributes statementBlock)
+	// http url="google.com";
+	| (tagName tagAttributes eos)
+	// cfhttp( url="google.com" ){}   -- Only needed for CF parser
+	| (
+		prefixedIdentifier LPAREN delimitedTagAttributes RPAREN statementBlock
+	)
+	// cfhttp( url="google.com" )   -- Only needed for CF parser
+	| (prefixedIdentifier LPAREN delimitedTagAttributes RPAREN);
+
+// cfSomething
+prefixedIdentifier: PREFIXEDIDENTIFIER;
+
+// foo="bar" baz="bum"
+tagAttributes: (namedArgument) (namedArgument)*;
+
+// foo="bar", baz="bum"
+delimitedTagAttributes: (namedArgument) (COMMA namedArgument)*;
 
 /*
  ++foo
@@ -287,12 +309,24 @@ case:
 // foo
 identifier: IDENTIFIER | reservedKeyword;
 
+tagName:
+	IDENTIFIER
+	| THREAD
+	| COOKIE
+	| APPLICATION
+	| BREAK
+	| COMPONENT
+	| FUNCTION
+	| INCLUDE
+	| ABORT
+	| QUERY
+	| RETHROW;
+
 // These are reserved words in the lexer, but are allowed to be an indentifer (variable name, method name)
 reservedKeyword:
 	scope
 	| ABSTRACT
 	| ABORT
-	| ADMIN
 	| ANY
 	| ARRAY
 	| AS
@@ -327,7 +361,6 @@ reservedKeyword:
 	| JAVA
 	| LESS
 	| LOCAL
-	| LOCK
 	| MOD
 	| MESSAGE
 	| NEW
@@ -341,10 +374,8 @@ reservedKeyword:
 	| QUERY
 	| REMOTE
 	| REQUIRED
-	| REQUEST
 	| RETURN
 	| RETHROW
-	| SAVECONTENT
 	| SETTING
 	| STATIC
 	| STRING
@@ -352,7 +383,6 @@ reservedKeyword:
 	//| SWITCH --> Could possibly be a var name, but not a function/method name
 	| THAN
 	| TO
-	| THREAD
 	| THROW
 	| TYPE
 	| TRUE
@@ -374,7 +404,9 @@ reservedKeyword:
 	| LE
 	| NEQ
 	| NOT
-	| OR;
+	| OR
+	| PREFIX
+	| PREFIXEDIDENTIFIER;
 
 // ANY NEW LEXER RULES IN DEFAULT MODE FOR WORDS NEED ADDED HERE
 
