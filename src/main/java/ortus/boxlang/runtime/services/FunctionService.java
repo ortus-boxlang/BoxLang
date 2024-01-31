@@ -264,14 +264,26 @@ public class FunctionService extends BaseService {
 	 * Registers a global function with the service
 	 *
 	 * @param descriptor The descriptor for the global function
+	 * @param force      Whether or not to force the registration, usually it means an overwrite
 	 *
-	 * @throws IllegalArgumentException If the global function already exists
+	 * @throws BoxRuntimeException If the global function already exists
 	 */
-	public void registerGlobalFunction( BIFDescriptor descriptor ) throws IllegalArgumentException {
-		if ( hasGlobalFunction( descriptor.name ) ) {
+	public void registerGlobalFunction( BIFDescriptor descriptor, Boolean force ) {
+		if ( hasGlobalFunction( descriptor.name ) && !force ) {
 			throw new BoxRuntimeException( "Global function " + descriptor.name + " already exists" );
 		}
-		this.globalFunctions.put( Key.of( descriptor.name ), descriptor );
+		this.globalFunctions.put( descriptor.name, descriptor );
+	}
+
+	/**
+	 * Registers a global function with the service
+	 *
+	 * @param descriptor The descriptor for the global function
+	 *
+	 * @throws BoxRuntimeException If the global function already exists
+	 */
+	public void registerGlobalFunction( BIFDescriptor descriptor ) {
+		registerGlobalFunction( descriptor, false );
 	}
 
 	/**
@@ -279,23 +291,19 @@ public class FunctionService extends BaseService {
 	 *
 	 * @param BIFClass The BIF class
 	 * @param module   The module the global function belongs to
-	 *
-	 * @throws IllegalArgumentException If the global function already exists
 	 */
-	public void registerGlobalFunction( Class<?> BIFClass, String module ) throws IllegalArgumentException {
+	public void registerGlobalFunction( Class<?> BIFClass, String module ) {
 		registerGlobalFunction( BIFClass, null, module );
 	}
 
 	/**
 	 * Registers a global function with the service. The BIF class needs to be annotated with {@link BoxBIF} or {@link BoxMember}
 	 *
-	 * @param BIFClass The BIF class
-	 * @param function The global function
-	 *
-	 * @throws IllegalArgumentException If the global function already exists
+	 * @param function The global function instance
+	 * @param module   The module the global function belongs to
 	 */
-	public void registerGlobalFunction( BIF function, String module ) throws IllegalArgumentException {
-		registerGlobalFunction( null, function, module );
+	public void registerGlobalFunction( BIF function, String module ) {
+		registerGlobalFunction( function.getClass(), function, module );
 	}
 
 	/**
@@ -305,9 +313,9 @@ public class FunctionService extends BaseService {
 	 * @param function The global function
 	 * @param module   The module the global function belongs to
 	 *
-	 * @throws IllegalArgumentException If the global function already exists
+	 * @throws BoxRuntimeException If no BIF class or function was provided
 	 */
-	private void registerGlobalFunction( Class<?> BIFClass, BIF function, String module ) throws IllegalArgumentException {
+	private void registerGlobalFunction( Class<?> BIFClass, BIF function, String module ) {
 		// If no BIFClass is provided, get it from the function instance
 		if ( BIFClass == null && function != null ) {
 			BIFClass = function.getClass();
@@ -316,7 +324,7 @@ public class FunctionService extends BaseService {
 			throw new BoxRuntimeException( "Cannot register global function because no BIF class or function was provided" );
 		}
 
-		// We'll re-use this same BIFDescriptor for each annotation to ensure there's onlky ever one actual BIF instance.
+		// We'll re-use this same BIFDescriptor for each annotation to ensure there's only ever one actual BIF instance.
 		String			className		= BIFClass.getSimpleName();
 		Key				classNameKey	= Key.of( className );
 		BIFDescriptor	descriptor		= new BIFDescriptor(
