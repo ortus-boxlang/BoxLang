@@ -1,6 +1,9 @@
 component{
 
 	function configure(){
+		// Create The Hello Model
+		var hello = new bxModules.test.models.Hello();
+		printLn( hello.sayHello() );
 	}
 
 	function afterModuleActivations( data ){

@@ -46,10 +46,19 @@ public class BaseScope extends Struct implements IScope {
 		this( scopeName, Struct.TYPES.DEFAULT );
 	}
 
+	/**
+	 * Constructor
+	 *
+	 * @param scopeName The name of the scope
+	 * @param type      The Struct type of the scope
+	 */
 	public BaseScope( Key scopeName, Struct.TYPES type ) {
 		super( type );
 		this.scopeName = scopeName;
-		BoxRuntime.getInstance().announce( "onScopeCreation", Struct.of( "scope", this ) );
+		BoxRuntime.getInstance().announce(
+		    BoxRuntime.RUNTIME_EVENTS.get( "onScopeCreation" ),
+		    Struct.of( "scope", this )
+		);
 	}
 
 	/**

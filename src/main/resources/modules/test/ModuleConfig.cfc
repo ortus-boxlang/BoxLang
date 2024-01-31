@@ -97,7 +97,10 @@ component{
 		 */
 		interceptors = [
 			// { class="path.to.Interceptor", properties={} }
-			{ class : "bxModules.test.interceptors.Listener", properties : {} }
+			{ class : "#moduleRecord.invocationPath#.interceptors.Listener", properties : {
+				createdOn : now(),
+				by : "Luis Majano"
+			} }
 		];
 
 		/**

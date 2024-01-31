@@ -31,7 +31,7 @@ public class ArgumentsScope extends BaseScope {
 	 * Public Properties
 	 * --------------------------------------------------------------------------
 	 */
-	public static final Key name = Key.of( "arguments" );
+	public static final Key name = Key.arguments;
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -58,7 +58,7 @@ public class ArgumentsScope extends BaseScope {
 	}
 
 	public IStruct asStruct() {
-		return ( IStruct ) this;
+		return this;
 	}
 
 	@Override
@@ -72,11 +72,13 @@ public class ArgumentsScope extends BaseScope {
 		return super.get( key );
 	}
 
+	@Override
 	public Object getOrDefault( Key key, Object defaultValue ) {
 		key = resolveKey( key );
 		return super.getOrDefault( key, defaultValue );
 	}
 
+	@Override
 	public Object getRaw( Key key ) {
 		key = resolveKey( key );
 		return super.getRaw( key );
@@ -106,9 +108,9 @@ public class ArgumentsScope extends BaseScope {
 	 * argumetns[1] is the same as arguments.first
 	 * So if we have an int key coming in, change it to the actual key in that position
 	 *
-	 * @param key
+	 * @param key The key to resolve
 	 *
-	 * @return
+	 * @return The resolved key
 	 */
 	private Key resolveKey( Key key ) {
 		if ( key instanceof IntKey iKey ) {

@@ -17,15 +17,19 @@
  */
 package ortus.boxlang.runtime.modules;
 
+import java.io.File;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Instant;
 import java.util.UUID;
 
+import org.apache.commons.io.FilenameUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import ortus.boxlang.runtime.BoxRuntime;
+import ortus.boxlang.runtime.bifs.BIFDescriptor;
+import ortus.boxlang.runtime.bifs.BoxLangBIF;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.runnables.IClassRunnable;
@@ -33,6 +37,7 @@ import ortus.boxlang.runtime.runnables.RunnableLoader;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.ThisScope;
 import ortus.boxlang.runtime.scopes.VariablesScope;
+import ortus.boxlang.runtime.services.FunctionService;
 import ortus.boxlang.runtime.services.InterceptorService;
 import ortus.boxlang.runtime.services.ModuleService;
 import ortus.boxlang.runtime.types.Array;
@@ -112,6 +117,11 @@ public class ModuleRecord {
 	 * The interceptors of the module
 	 */
 	public Array				interceptors				= new Array();
+
+	/**
+	 * The BIFS of the module
+	 */
+	public Array				bifs						= new Array();
 
 	/**
 	 * The custom interception points of the module
@@ -283,10 +293,11 @@ public class ModuleRecord {
 	 *
 	 * @return The ModuleRecord
 	 */
-	public ModuleRecord configure( IBoxContext context ) {
+	public ModuleRecord register( IBoxContext context ) {
 		// Convenience References
 		ThisScope		thisScope		= this.moduleConfig.getThisScope();
 		VariablesScope	variablesScope	= this.moduleConfig.getVariablesScope();
+		FunctionService	functionService	= BoxRuntime.getInstance().getFunctionService();
 
 		// Register the module mapping in the runtime
 		// Called first in case this is used in the `configure` method
@@ -311,12 +322,54 @@ public class ModuleRecord {
 		this.objectMappings				= ( Struct ) variablesScope.getAsStruct( Key.objectMappings );
 		this.datasources				= ( Struct ) variablesScope.getAsStruct( Key.datasources );
 
-		// Register Interception points with the InterceptorService\
+		// Register Interception points with the InterceptorService
 		if ( !this.customInterceptionPoints.isEmpty() ) {
 			BoxRuntime
 			    .getInstance()
 			    .getInterceptorService()
 			    .registerInterceptionPoint( this.customInterceptionPoints.stream().map( Key::of ).toArray( Key[]::new ) );
+		}
+
+		// Register Bifs if they exist on disk
+		// TODO: Make it pretty
+		Path bifsPath = this.physicalPath.resolve( ModuleService.MODULE_BIFS );
+		if ( bifsPath.toFile().exists() ) {
+			// Iterate over all files *.cfc/bx and register them
+			for ( File targetFile : bifsPath.toFile().listFiles() ) {
+
+				// System.out.println( "Processing " + targetFile.getAbsolutePath() );
+
+				// Skip directories
+				if ( targetFile.isDirectory() ) {
+					continue;
+				}
+
+				// Skip non CFC/BX files
+				if ( !targetFile.getName().matches( "^.*\\.(cfc|bx)$" ) ) {
+					continue;
+				}
+
+				Key				className	= Key.of( FilenameUtils.getBaseName( targetFile.getAbsolutePath() ) );
+				IClassRunnable	runnable	= ( IClassRunnable ) DynamicObject.of(
+				    RunnableLoader.getInstance().loadClass( targetFile.toPath(), this.invocationPath + "." + ModuleService.MODULE_BIFS, context )
+				).invokeConstructor( context )
+				    .getTargetInstance();
+
+				// System.out.println( "Registering BIF " + className + " from " + runnable.getClass().getName() );
+
+				functionService.registerGlobalFunction(
+				    new BIFDescriptor(
+				        className,
+				        runnable.getClass(),
+				        this.name.getName(),
+				        null,
+				        true,
+				        new BoxLangBIF( runnable )
+				    ),
+				    true
+				);
+				this.bifs.push( className );
+			}
 		}
 
 		// Finalize

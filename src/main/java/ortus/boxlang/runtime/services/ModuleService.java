@@ -61,10 +61,13 @@ public class ModuleService extends BaseService {
 	public static final String				MODULE_MAPPING_INVOCATION_PREFIX	= "bxModules.";
 
 	/**
-	 * The module descriptor file name
+	 * The module conventions
 	 */
 	public static final String				MODULE_DESCRIPTOR					= "ModuleConfig.cfc";
 	public static final String				MODULE_DESCRIPTOR_BX				= "ModuleConfig.bx";
+	public static final String				MODULE_BIFS							= "bifs";
+	public static final String				MODULE_COMPONENTS					= "components";
+	public static final String				MODULE_LIBS							= "libs";
 
 	/**
 	 * The location of the core modules in the runtime resources: {@code src/main/resources/modules}
@@ -309,7 +312,7 @@ public class ModuleService extends BaseService {
 		}
 
 		// Configure the module
-		moduleRecord.configure( runtimeContext );
+		moduleRecord.register( runtimeContext );
 
 		// Log registration time
 		moduleRecord.registrationTime = BoxRuntime.timerUtil.stopAndGetMillis( timerLabel );

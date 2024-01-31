@@ -70,6 +70,7 @@ public class Key implements Comparable<Key> {
 	public static final Key	arrayFind					= Key.of( "arrayFind" );
 	public static final Key	arrayFindAll				= Key.of( "arrayFindAll" );
 	public static final Key	attribute					= Key.of( "attribute" );
+	public static final Key	arguments					= Key.of( "arguments" );
 	public static final Key	attributes					= Key.of( "attributes" );
 	public static final Key	author						= Key.of( "author" );
 	public static final Key	boxRuntime					= Key.of( "boxRuntime" );
@@ -137,6 +138,7 @@ public class Key implements Comparable<Key> {
 	public static final Key	hostname					= Key.of( "hostname" );
 	public static final Key	hour						= Key.of( "hour" );
 	public static final Key	hours						= Key.of( "hours" );
+	public static final Key	invoke						= Key.of( "invoke" );
 	public static final Key	ignoreCase					= Key.of( "ignoreCase" );
 	public static final Key	ignoreExists				= Key.of( "ignoreExists" );
 	public static final Key	includeEmptyFields			= Key.of( "includeEmptyFields" );
