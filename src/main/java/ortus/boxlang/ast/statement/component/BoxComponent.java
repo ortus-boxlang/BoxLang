@@ -12,7 +12,7 @@
  * BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language
  * governing permissions and limitations under the License.
  */
-package ortus.boxlang.ast.statement.tag;
+package ortus.boxlang.ast.statement.component;
 
 import java.util.List;
 import java.util.Map;
@@ -24,9 +24,9 @@ import ortus.boxlang.ast.Position;
 import ortus.boxlang.ast.statement.BoxAnnotation;
 
 /**
- * Root node for a tag/templating (program) cfm/bxm
+ * Root node for a templating (program) cfm/bxm
  */
-public class BoxTag extends BoxStatement {
+public class BoxComponent extends BoxStatement {
 
 	// If null, there was no body
 	private final String				name;
@@ -44,7 +44,7 @@ public class BoxTag extends BoxStatement {
 	 * @see Position
 	 * @see BoxStatement
 	 */
-	public BoxTag( String name, List<BoxAnnotation> annotations, List<BoxStatement> body, int sourceStartIndex, Position position, String sourceText ) {
+	public BoxComponent( String name, List<BoxAnnotation> annotations, List<BoxStatement> body, int sourceStartIndex, Position position, String sourceText ) {
 		super( position, sourceText );
 		this.name	= name;
 		this.body	= body;

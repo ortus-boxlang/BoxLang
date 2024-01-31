@@ -7,7 +7,7 @@ options {
 // This is the top level rule, which allow imports always, followed by a component, or an interface, or just a bunch of statements.
 script:
 	importStatement* (
-		component
+		boxClass
 		| interface
 		| functionOrStatement*
 	)
@@ -26,7 +26,7 @@ importStatement:
 include: INCLUDE expression;
 
 // component {}
-component:
+boxClass:
 	javadoc? (preannotation)* ABSTRACT? COMPONENT postannotation* LBRACE property*
 		functionOrStatement* RBRACE;
 
@@ -55,7 +55,7 @@ functionParam: (REQUIRED)? (type)? identifier (
 		EQUALSIGN expression
 	)? postannotation*;
 
-// TODO: Do I need the generic tag-in-script implementation here, or can the generic rule capture it?
+// TODO: Do I need the generic component-in-script implementation here, or can the generic rule capture it?
 param: PARAM (type)? identifier ( EQUALSIGN expression)?;
 
 // @MyAnnotation "value" true
@@ -131,9 +131,9 @@ statement: (
 		| switch
 		| try
 		| while
-		| tag
+		| component
 		| simpleStatement
-		| tagIsland
+		| componentIsland
 	)
 	// This will "eat" random extra ; at the end of statements 
 	eos*;
@@ -152,26 +152,30 @@ simpleStatement: (
 		| expression
 	) eos?;
 
-tag:
+component:
 	// http url="google.com" {}
-	(tagName tagAttributes statementBlock)
+	(componentName componentAttributes statementBlock)
 	// http url="google.com";
-	| (tagName tagAttributes eos)
+	| (componentName componentAttributes eos)
 	// cfhttp( url="google.com" ){}   -- Only needed for CF parser
 	| (
-		prefixedIdentifier LPAREN delimitedTagAttributes RPAREN statementBlock
+		prefixedIdentifier LPAREN delimitedComponentAttributes RPAREN statementBlock
 	)
 	// cfhttp( url="google.com" )   -- Only needed for CF parser
-	| (prefixedIdentifier LPAREN delimitedTagAttributes RPAREN);
+	| (
+		prefixedIdentifier LPAREN delimitedComponentAttributes RPAREN
+	);
 
 // cfSomething
 prefixedIdentifier: PREFIXEDIDENTIFIER;
 
 // foo="bar" baz="bum"
-tagAttributes: (namedArgument) (namedArgument)*;
+componentAttributes: (namedArgument) (namedArgument)*;
 
 // foo="bar", baz="bum"
-delimitedTagAttributes: (namedArgument) (COMMA namedArgument)*;
+delimitedComponentAttributes: (namedArgument) (
+		COMMA namedArgument
+	)*;
 
 /*
  ++foo
@@ -309,7 +313,7 @@ case:
 // foo
 identifier: IDENTIFIER | reservedKeyword;
 
-tagName:
+componentName: // { ortus.com.main.StaticCOMPONENTService.getInstance().isCOMPONENT( LA.() ) }?
 	IDENTIFIER
 	| THREAD
 	| COOKIE
@@ -429,11 +433,12 @@ scope:
 
 /*
  ```
- <cfset tags="here">
+ <cfset components="here">
  ```
  */
-tagIsland: TAG_ISLAND_START tagIslandBody TAG_ISLAND_END;
-tagIslandBody: TAG_ISLAND_BODY*;
+componentIsland:
+	COMPONENT_ISLAND_START componentIslandBody COMPONENT_ISLAND_END;
+componentIslandBody: COMPONENT_ISLAND_BODY*;
 
 /*
  try {

@@ -49,7 +49,7 @@ public class DatabaseException extends BoxLangException {
 	 */
 	public String			queryError			= "";
 	/**
-	 * If the query uses the cfqueryparam tag, query parameter name-value pairs.
+	 * If the query uses the queryparam component, query parameter name-value pairs.
 	 */
 	public String			where				= "";
 

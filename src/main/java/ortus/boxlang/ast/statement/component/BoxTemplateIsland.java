@@ -12,7 +12,7 @@
  * BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language
  * governing permissions and limitations under the License.
  */
-package ortus.boxlang.ast.statement.tag;
+package ortus.boxlang.ast.statement.component;
 
 import java.util.List;
 import java.util.Map;
@@ -24,7 +24,7 @@ import ortus.boxlang.ast.Position;
 /**
  * An island of script code within a template
  */
-public class BoxTagIsland extends BoxStatement {
+public class BoxTemplateIsland extends BoxStatement {
 
 	private final List<BoxStatement> statements;
 
@@ -38,7 +38,7 @@ public class BoxTagIsland extends BoxStatement {
 	 * @see Position
 	 * @see BoxStatement
 	 */
-	public BoxTagIsland( List<BoxStatement> statements, Position position, String sourceText ) {
+	public BoxTemplateIsland( List<BoxStatement> statements, Position position, String sourceText ) {
 		super( position, sourceText );
 		this.statements = statements;
 		this.statements.forEach( arg -> arg.setParent( this ) );

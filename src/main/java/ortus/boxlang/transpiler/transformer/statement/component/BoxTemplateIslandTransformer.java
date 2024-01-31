@@ -12,31 +12,31 @@
  * BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language
  * governing permissions and limitations under the License.
  */
-package ortus.boxlang.transpiler.transformer.statement.tag;
+package ortus.boxlang.transpiler.transformer.statement.component;
 
 import com.github.javaparser.ast.Node;
 import com.github.javaparser.ast.stmt.BlockStmt;
 import com.github.javaparser.ast.stmt.Statement;
 
 import ortus.boxlang.ast.BoxNode;
-import ortus.boxlang.ast.BoxScriptIsland;
 import ortus.boxlang.ast.BoxStatement;
+import ortus.boxlang.ast.statement.component.BoxTemplateIsland;
 import ortus.boxlang.transpiler.JavaTranspiler;
 import ortus.boxlang.transpiler.transformer.AbstractTransformer;
 import ortus.boxlang.transpiler.transformer.TransformerContext;
 
-public class BoxScriptIslandTransformer extends AbstractTransformer {
+public class BoxTemplateIslandTransformer extends AbstractTransformer {
 
-	public BoxScriptIslandTransformer( JavaTranspiler transpiler ) {
+	public BoxTemplateIslandTransformer( JavaTranspiler transpiler ) {
 		super( transpiler );
 	}
 
 	@Override
 	public Node transform( BoxNode node, TransformerContext context ) throws IllegalStateException {
-		BoxScriptIsland	scriptIsland	= ( BoxScriptIsland ) node;
+		BoxTemplateIsland	componentIsland	= ( BoxTemplateIsland ) node;
 
-		BlockStmt		body			= new BlockStmt();
-		for ( BoxStatement statement : scriptIsland.getStatements() ) {
+		BlockStmt			body			= new BlockStmt();
+		for ( BoxStatement statement : componentIsland.getStatements() ) {
 			body.getStatements().add( ( Statement ) transpiler.transform( statement ) );
 		}
 		return body;

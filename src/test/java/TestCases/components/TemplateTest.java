@@ -15,10 +15,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package TestCases.tags;
+package TestCases.components;
 
 import static com.google.common.truth.Truth.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+
+import java.time.LocalDateTime;
+import java.util.List;
 
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -29,20 +32,28 @@ import org.junit.jupiter.api.Test;
 
 import ortus.boxlang.parser.BoxScriptType;
 import ortus.boxlang.runtime.BoxRuntime;
+import ortus.boxlang.runtime.context.FunctionBoxContext;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
 import ortus.boxlang.runtime.interop.DynamicObject;
+import ortus.boxlang.runtime.loader.ImportDefinition;
 import ortus.boxlang.runtime.runnables.IClassRunnable;
+import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
+import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.Array;
+import ortus.boxlang.runtime.types.Function;
+import ortus.boxlang.runtime.types.IStruct;
+import ortus.boxlang.runtime.types.Lambda;
+import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.exceptions.CustomException;
 import ortus.boxlang.runtime.types.exceptions.ExpressionException;
 import ortus.boxlang.runtime.types.exceptions.MissingIncludeException;
 import ortus.boxlang.runtime.types.exceptions.ParseException;
 
-public class TagTest {
+public class TemplateTest {
 
 	static BoxRuntime	instance;
 	IBoxContext			context;
@@ -67,7 +78,7 @@ public class TagTest {
 	}
 
 	@Test
-	public void testSetTag() {
+	public void testSetComponent() {
 		instance.executeSource(
 		    """
 		    <cfset result = "bar">
@@ -209,9 +220,9 @@ public class TagTest {
 
 	}
 
-	@DisplayName( "tag Island" )
+	@DisplayName( "component Island" )
 	@Test
-	public void testTagIsland() {
+	public void testComponentIsland() {
 		instance.executeSource(
 		    """
 		    i=0
@@ -229,10 +240,10 @@ public class TagTest {
 		assertThat( variables.get( Key.of( "foo" ) ) ).isEqualTo( "bar" );
 	}
 
-	@DisplayName( "tag script Island inception" )
+	@DisplayName( "component script Island inception" )
 	@Test
 	@Disabled( "This can't work without re-working the lexers to 'count' the island blocks." )
-	public void testTagScriptIslandInception() {
+	public void testComponentScriptIslandInception() {
 		instance.executeSource(
 		    """
 		       result = "one"
@@ -341,7 +352,7 @@ public class TagTest {
 		// Just make sure it parses without error
 	}
 
-	@DisplayName( "tag function" )
+	@DisplayName( "component function" )
 	@Test
 	public void testFunction() {
 		instance.executeSource(
@@ -356,7 +367,7 @@ public class TagTest {
 		assertThat( variables.get( result ) ).isEqualTo( "barbaz" );
 	}
 
-	@DisplayName( "tag import" )
+	@DisplayName( "component import" )
 	@Test
 	public void testImport() {
 		instance.executeSource(
@@ -372,7 +383,7 @@ public class TagTest {
 		assertThat( DynamicObject.unWrap( variables.get( Key.of( "result2" ) ) ) ).isEqualTo( "bar" );
 	}
 
-	@DisplayName( "tag while" )
+	@DisplayName( "component while" )
 	@Test
 	public void testWhile() {
 		instance.executeSource(
@@ -387,7 +398,7 @@ public class TagTest {
 		assertThat( variables.get( result ) ).isEqualTo( 10 );
 	}
 
-	@DisplayName( "tag break" )
+	@DisplayName( "component break" )
 	@Test
 	public void testBreak() {
 		instance.executeSource(
@@ -403,7 +414,7 @@ public class TagTest {
 		assertThat( variables.get( result ) ).isEqualTo( 1 );
 	}
 
-	@DisplayName( "tag continue" )
+	@DisplayName( "component continue" )
 	@Test
 	public void testContinue() {
 		instance.executeSource(
@@ -421,18 +432,18 @@ public class TagTest {
 		assertThat( variables.get( result ) ).isEqualTo( 0 );
 	}
 
-	@DisplayName( "tag include" )
+	@DisplayName( "component include" )
 	@Test
 	public void testInclude() {
 		instance.executeSource(
 		    """
-		    <cfinclude template="src/test/java/TestCases/tags/MyInclude.cfm">
+		    <cfinclude template="src/test/java/TestCases/components/MyInclude.cfm">
 		                                    """, context, BoxScriptType.CFMARKUP );
 
 		assertThat( variables.get( result ) ).isEqualTo( "was included" );
 	}
 
-	@DisplayName( "tag rethrow" )
+	@DisplayName( "component rethrow" )
 	@Test
 	public void testRethrow() {
 
@@ -645,7 +656,7 @@ public class TagTest {
 	public void testClass() {
 		instance.executeSource(
 		    """
-		    <cfset result = new src.test.java.TestCases.tags.MyClass()>
+		    <cfset result = new src.test.java.TestCases.components.MyClass()>
 		    """, context, BoxScriptType.CFMARKUP );
 
 		assertThat( variables.get( result ) ).isInstanceOf( IClassRunnable.class );
@@ -768,7 +779,7 @@ public class TagTest {
 	}
 
 	@Test
-	public void testGenericTagsDanglingEnd() {
+	public void testGenericComponentsDanglingEnd() {
 		Throwable e = assertThrows( ParseException.class, () -> instance.executeSource(
 		    """
 		    	<cfbrad outer=true foo="bar">
@@ -783,12 +794,12 @@ public class TagTest {
 		    </cfbrad>
 		               """,
 		    context, BoxScriptType.CFMARKUP ) );
-		assertThat( e.getMessage() ).contains( "end tag" );
+		assertThat( e.getMessage() ).contains( "end component" );
 
 	}
 
 	@Test
-	public void testGenericTags() {
+	public void testGenericComponents() {
 		instance.executeSource(
 		    """
 		    	<cfbrad outer=true foo="bar">
@@ -807,7 +818,7 @@ public class TagTest {
 	}
 
 	@Test
-	public void testGenericTagsInScript() {
+	public void testGenericComponentsInScript() {
 		instance.executeSource(
 		    """
 		    http url="google.com" throwOnTimeout=true {
@@ -824,6 +835,77 @@ public class TagTest {
 
 		    cfhttp( url="google.com",  throwOnTimeout=true )
 		                  """,
+		    context, BoxScriptType.CFSCRIPT );
+
+	}
+
+	@Test
+	public void testUDFInJava() {
+
+		Function func = new Lambda() {
+
+			public Object _invoke( FunctionBoxContext context ) {
+				return context.getScopeNearby( ArgumentsScope.name ).dereference( context, Key.of( "param1" ), false );
+			}
+
+			@Override
+			public List<ImportDefinition> getImports() {
+				return null;
+			}
+
+			@Override
+			public Key getName() {
+				return Key.of( "myFunc" );
+			}
+
+			@Override
+			public Argument[] getArguments() {
+				return new Argument[] { new Argument( false, "string", Key.of( "param1" ) ) };
+			}
+
+			@Override
+			public String getReturnType() {
+				return "any";
+			}
+
+			@Override
+			public IStruct getAnnotations() {
+				return Struct.EMPTY;
+			}
+
+			@Override
+			public IStruct getDocumentation() {
+				return Struct.EMPTY;
+			}
+
+			@Override
+			public Access getAccess() {
+				return Access.PUBLIC;
+			}
+
+			@Override
+			public long getRunnableCompileVersion() {
+				return 0;
+			}
+
+			@Override
+			public LocalDateTime getRunnableCompiledOn() {
+				return null;
+			}
+
+			@Override
+			public Object getRunnableAST() {
+				return null;
+			}
+		};
+
+		variables.put( Key.of( "myFunc" ), func );
+
+		instance.executeSource(
+		    """
+		    result = myFunc( "brad" );
+		    println( result )
+		       """,
 		    context, BoxScriptType.CFSCRIPT );
 
 	}

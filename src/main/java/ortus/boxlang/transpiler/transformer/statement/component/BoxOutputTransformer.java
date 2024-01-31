@@ -12,7 +12,7 @@
  * BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language
  * governing permissions and limitations under the License.
  */
-package ortus.boxlang.transpiler.transformer.statement.tag;
+package ortus.boxlang.transpiler.transformer.statement.component;
 
 import com.github.javaparser.ast.Node;
 import com.github.javaparser.ast.NodeList;
@@ -29,7 +29,7 @@ import com.github.javaparser.ast.type.UnknownType;
 
 import ortus.boxlang.ast.BoxExpr;
 import ortus.boxlang.ast.BoxNode;
-import ortus.boxlang.ast.statement.tag.BoxOutput;
+import ortus.boxlang.ast.statement.component.BoxOutput;
 import ortus.boxlang.transpiler.JavaTranspiler;
 import ortus.boxlang.transpiler.transformer.AbstractTransformer;
 import ortus.boxlang.transpiler.transformer.TransformerContext;

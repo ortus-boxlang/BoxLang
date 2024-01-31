@@ -65,8 +65,8 @@ import ortus.boxlang.ast.statement.BoxTry;
 import ortus.boxlang.ast.statement.BoxTryCatch;
 import ortus.boxlang.ast.statement.BoxType;
 import ortus.boxlang.ast.statement.BoxWhile;
-import ortus.boxlang.ast.statement.tag.BoxOutput;
-import ortus.boxlang.ast.statement.tag.BoxTag;
+import ortus.boxlang.ast.statement.component.BoxComponent;
+import ortus.boxlang.ast.statement.component.BoxOutput;
 import ortus.boxlang.parser.antlr.CFMLLexer;
 import ortus.boxlang.parser.antlr.CFMLParser;
 import ortus.boxlang.parser.antlr.CFMLParser.ArgumentContext;
@@ -79,8 +79,8 @@ import ortus.boxlang.parser.antlr.CFMLParser.CatchBlockContext;
 import ortus.boxlang.parser.antlr.CFMLParser.ComponentContext;
 import ortus.boxlang.parser.antlr.CFMLParser.ContinueContext;
 import ortus.boxlang.parser.antlr.CFMLParser.FunctionContext;
-import ortus.boxlang.parser.antlr.CFMLParser.GenericOpenCloseTagContext;
-import ortus.boxlang.parser.antlr.CFMLParser.GenericOpenTagContext;
+import ortus.boxlang.parser.antlr.CFMLParser.GenericOpenCloseComponentContext;
+import ortus.boxlang.parser.antlr.CFMLParser.GenericOpenComponentContext;
 import ortus.boxlang.parser.antlr.CFMLParser.IncludeContext;
 import ortus.boxlang.parser.antlr.CFMLParser.OutputContext;
 import ortus.boxlang.parser.antlr.CFMLParser.PropertyContext;
@@ -131,7 +131,7 @@ public class BoxCFMLParser extends BoxAbstractParser {
 			return toAst( file, template.component(), statements );
 		}
 		if ( template.interface_() != null ) {
-			throw new BoxRuntimeException( "tag interface parsing not implemented yet" );
+			throw new BoxRuntimeException( "component interface parsing not implemented yet" );
 		}
 		if ( template.statements() != null ) {
 			statements.addAll( toAst( file, template.statements() ) );
@@ -143,7 +143,7 @@ public class BoxCFMLParser extends BoxAbstractParser {
 		List<BoxImport>						imports			= new ArrayList<>();
 		List<BoxStatement>					body			= new ArrayList<>();
 		List<BoxAnnotation>					annotations		= new ArrayList<>();
-		// This will be empty in tags
+		// This will be empty in components
 		List<BoxDocumentationAnnotation>	documentation	= new ArrayList<>();
 		List<BoxProperty>					properties		= new ArrayList<>();
 
@@ -166,7 +166,7 @@ public class BoxCFMLParser extends BoxAbstractParser {
 
 	private BoxProperty toAst( File file, PropertyContext node ) {
 		List<BoxAnnotation>					annotations		= new ArrayList<>();
-		// This will be empty in tags
+		// This will be empty in components
 		List<BoxDocumentationAnnotation>	documentation	= new ArrayList<>();
 
 		for ( var attr : node.attribute() ) {
@@ -218,22 +218,22 @@ public class BoxCFMLParser extends BoxAbstractParser {
 		if ( node.children != null ) {
 			for ( var child : node.children ) {
 				if ( child instanceof StatementContext statement ) {
-					if ( statement.genericCloseTag() != null ) {
-						String	tagName		= statement.genericCloseTag().tagName().getText();
-						// see if statements list has a BoxTag with this name
-						int		size		= statements.size();
-						boolean	foundStart	= false;
-						int		removeAfter	= -1;
-						// loop backwards checking for a BoxTag with this name
+					if ( statement.genericCloseComponent() != null ) {
+						String	componentName	= statement.genericCloseComponent().componentName().getText();
+						// see if statements list has a BoxComponent with this name
+						int		size			= statements.size();
+						boolean	foundStart		= false;
+						int		removeAfter		= -1;
+						// loop backwards checking for a BoxComponent with this name
 						for ( int i = size - 1; i >= 0; i-- ) {
 							BoxStatement boxStatement = statements.get( i );
-							if ( boxStatement instanceof BoxTag boxTag ) {
-								if ( boxTag.getName().equalsIgnoreCase( tagName ) && boxTag.getBody() == null ) {
+							if ( boxStatement instanceof BoxComponent boxComponent ) {
+								if ( boxComponent.getName().equalsIgnoreCase( componentName ) && boxComponent.getBody() == null ) {
 									foundStart = true;
-									// slice all statements from this position to the end and set them as the body of the start tag
-									boxTag.setBody( new ArrayList<>( statements.subList( i + 1, size ) ) );
-									boxTag.getPosition().setEnd( getPosition( statement.genericCloseTag() ).getEnd() );
-									boxTag.setSourceText( getSourceText( boxTag.getSourceStartIndex(), statement.genericCloseTag() ) );
+									// slice all statements from this position to the end and set them as the body of the start component
+									boxComponent.setBody( new ArrayList<>( statements.subList( i + 1, size ) ) );
+									boxComponent.getPosition().setEnd( getPosition( statement.genericCloseComponent() ).getEnd() );
+									boxComponent.setSourceText( getSourceText( boxComponent.getSourceStartIndex(), statement.genericCloseComponent() ) );
 									removeAfter = i;
 									break;
 								}
@@ -244,7 +244,8 @@ public class BoxCFMLParser extends BoxAbstractParser {
 							statements.subList( removeAfter + 1, size ).clear();
 						}
 						if ( !foundStart ) {
-							issues.add( new Issue( "Found end tag [" + tagName + "] without matching start tag", getPosition( statement.genericCloseTag() ) ) );
+							issues.add( new Issue( "Found end component [" + componentName + "] without matching start component",
+							    getPosition( statement.genericCloseComponent() ) ) );
 						}
 
 					} else {
@@ -295,30 +296,32 @@ public class BoxCFMLParser extends BoxAbstractParser {
 			return toAst( file, node.throw_() );
 		} else if ( node.switch_() != null ) {
 			return toAst( file, node.switch_() );
-		} else if ( node.genericOpenCloseTag() != null ) {
-			return toAst( file, node.genericOpenCloseTag() );
-		} else if ( node.genericOpenTag() != null ) {
-			return toAst( file, node.genericOpenTag() );
+		} else if ( node.genericOpenCloseComponent() != null ) {
+			return toAst( file, node.genericOpenCloseComponent() );
+		} else if ( node.genericOpenComponent() != null ) {
+			return toAst( file, node.genericOpenComponent() );
 		}
 		throw new BoxRuntimeException( "Statement node " + node.getClass().getName() + " parsing not implemented yet. " + node.getText() );
 
 	}
 
-	private BoxStatement toAst( File file, GenericOpenCloseTagContext node ) {
+	private BoxStatement toAst( File file, GenericOpenCloseComponentContext node ) {
 		List<BoxAnnotation> attributes = new ArrayList<>();
 		for ( var attr : node.attribute() ) {
 			attributes.add( toAst( file, attr ) );
 		}
-		return new BoxTag( node.tagName().getText(), attributes, List.of(), node.getStart().getStartIndex(), getPosition( node ), getSourceText( node ) );
+		return new BoxComponent( node.componentName().getText(), attributes, List.of(), node.getStart().getStartIndex(), getPosition( node ),
+		    getSourceText( node ) );
 	}
 
-	private BoxStatement toAst( File file, GenericOpenTagContext node ) {
+	private BoxStatement toAst( File file, GenericOpenComponentContext node ) {
 		List<BoxAnnotation> attributes = new ArrayList<>();
 		for ( var attr : node.attribute() ) {
 			attributes.add( toAst( file, attr ) );
 		}
-		// Body may get set later, if we find an end tag
-		return new BoxTag( node.tagName().getText(), attributes, null, node.getStart().getStartIndex(), getPosition( node ), getSourceText( node ) );
+		// Body may get set later, if we find an end component
+		return new BoxComponent( node.componentName().getText(), attributes, null, node.getStart().getStartIndex(), getPosition( node ),
+		    getSourceText( node ) );
 	}
 
 	private BoxStatement toAst( File file, SwitchContext node ) {
@@ -336,7 +339,7 @@ public class BoxCFMLParser extends BoxAbstractParser {
 			for ( var c : node.switchBody().children ) {
 				if ( c instanceof CFMLParser.CaseContext caseNode ) {
 					cases.add( toAst( file, caseNode ) );
-					// We're willing to overlook text, but not other CF tags
+					// We're willing to overlook text, but not other CF components
 				} else if ( ! ( c instanceof CFMLParser.TextContentContext ) ) {
 					issues.add( new Issue( "Switch body can only contain case statements - ", getPosition( ( ParserRuleContext ) c ) ) );
 				}
@@ -366,7 +369,7 @@ public class BoxCFMLParser extends BoxAbstractParser {
 			statements.addAll( toAst( file, node.statements() ) );
 		}
 
-		// In tag mode, the break is implied
+		// In component mode, the break is implied
 		statements.add( new BoxBreak( null, null ) );
 
 		return new BoxSwitchCase( value, delimiter, statements, getPosition( node ), getSourceText( node ) );
@@ -597,7 +600,7 @@ public class BoxCFMLParser extends BoxAbstractParser {
 		List<BoxExpr>	catchTypes;
 
 		var				typeSearch	= node.attribute().stream()
-		    .filter( ( it ) -> it.attributeName().TAG_NAME().getText().equalsIgnoreCase( "type" ) && it.attributeValue() != null ).findFirst();
+		    .filter( ( it ) -> it.attributeName().COMPONENT_NAME().getText().equalsIgnoreCase( "type" ) && it.attributeValue() != null ).findFirst();
 		if ( typeSearch.isPresent() ) {
 			BoxExpr type;
 			if ( typeSearch.get().attributeValue().identifier() != null ) {
@@ -673,9 +676,9 @@ public class BoxCFMLParser extends BoxAbstractParser {
 		// Loop backward over elseif conditions, each one becoming the elseBody of the next.
 		for ( int i = node.elseIfCondition.size() - 1; i >= 0; i-- ) {
 			int		stopIndex;
-			Point	end	= new Point( node.elseIfTagClose.get( i ).getLine(),
-			    node.elseIfTagClose.get( i ).getCharPositionInLine() );
-			stopIndex = node.elseIfTagClose.get( i ).getStopIndex();
+			Point	end	= new Point( node.elseIfComponentClose.get( i ).getLine(),
+			    node.elseIfComponentClose.get( i ).getCharPositionInLine() );
+			stopIndex = node.elseIfComponentClose.get( i ).getStopIndex();
 			if ( node.elseThenBody.get( i ).statement().size() > 0 ) {
 				end			= new Point( node.elseThenBody.get( i ).statement( node.elseThenBody.get( i ).statement().size() - 1 ).getStop().getLine(),
 				    node.elseThenBody.get( i ).statement( node.elseThenBody.get( i ).statement().size() - 1 ).getStop().getCharPositionInLine() );
@@ -694,7 +697,7 @@ public class BoxCFMLParser extends BoxAbstractParser {
 	}
 
 	private BoxStatement toAst( File file, SetContext set ) {
-		// In tags, a <bx:set ...> tag is an Expression Statement.
+		// In components, a <bx:set ...> component is an Expression Statement.
 		return new BoxExpression( parseCFExpression( set.expression().getText(), getPosition( set.expression() ) ), getPosition( set ), getSourceText( set ) );
 	}
 
@@ -725,17 +728,17 @@ public class BoxCFMLParser extends BoxAbstractParser {
 	/**
 	 * A helper function to find a specific annotation by name and return the value expression
 	 * 
-	 * @param annotations       the list of annotations to search
-	 * @param name              the name of the annotation to find
-	 * @param required          whether the annotation is required. If required, and not present a parsing Issue is created.
-	 * @param defaultValue      the default value to return if the annotation is not found. Ignored if requried is false.
-	 * @param containingTagName the name of the tag that contains the annotation, used in error handling
-	 * @param position          the position of the tag, used in error handling
+	 * @param annotations             the list of annotations to search
+	 * @param name                    the name of the annotation to find
+	 * @param required                whether the annotation is required. If required, and not present a parsing Issue is created.
+	 * @param defaultValue            the default value to return if the annotation is not found. Ignored if requried is false.
+	 * @param containingComponentName the name of the component that contains the annotation, used in error handling
+	 * @param position                the position of the component, used in error handling
 	 * 
 	 * @return the value expression of the annotation, or the default value if the annotation is not found
 	 * 
 	 */
-	private BoxExpr findExprInAnnotations( List<BoxAnnotation> annotations, String name, boolean required, BoxExpr defaultValue, String containingTagName,
+	private BoxExpr findExprInAnnotations( List<BoxAnnotation> annotations, String name, boolean required, BoxExpr defaultValue, String containingComponentName,
 	    Position position ) {
 		var search = annotations.stream().filter( ( it ) -> it.getKey().getValue().equalsIgnoreCase( name ) ).findFirst();
 		if ( search.isPresent() ) {
@@ -743,7 +746,7 @@ public class BoxCFMLParser extends BoxAbstractParser {
 		} else if ( !required ) {
 			return defaultValue;
 		} else {
-			issues.add( new Issue( "Missing " + name + " attribute on " + containingTagName + " tag", position ) );
+			issues.add( new Issue( "Missing " + name + " attribute on " + containingComponentName + " component", position ) );
 			return new BoxNull( null, null );
 		}
 

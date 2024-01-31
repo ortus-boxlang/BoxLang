@@ -12,7 +12,7 @@
  * BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language
  * governing permissions and limitations under the License.
  */
-package ortus.boxlang.transpiler.transformer.statement.tag;
+package ortus.boxlang.transpiler.transformer.statement.component;
 
 import com.github.javaparser.ast.Node;
 import com.github.javaparser.ast.NodeList;
@@ -28,27 +28,27 @@ import com.github.javaparser.ast.stmt.Statement;
 import com.github.javaparser.ast.type.UnknownType;
 
 import ortus.boxlang.ast.BoxNode;
-import ortus.boxlang.ast.statement.tag.BoxTag;
+import ortus.boxlang.ast.statement.component.BoxComponent;
 import ortus.boxlang.transpiler.JavaTranspiler;
 import ortus.boxlang.transpiler.transformer.AbstractTransformer;
 import ortus.boxlang.transpiler.transformer.TransformerContext;
 
-public class BoxTagTransformer extends AbstractTransformer {
+public class BoxComponentTransformer extends AbstractTransformer {
 
-	public BoxTagTransformer( JavaTranspiler transpiler ) {
+	public BoxComponentTransformer( JavaTranspiler transpiler ) {
 		super( transpiler );
 	}
 
 	@Override
 	public Node transform( BoxNode node, TransformerContext context ) throws IllegalStateException {
-		BoxTag		boxTag	= ( BoxTag ) node;
-		Expression	jTagBody;
-		if ( boxTag.getBody() != null ) {
+		BoxComponent	boxComponent	= ( BoxComponent ) node;
+		Expression		jComponentBody;
+		if ( boxComponent.getBody() != null ) {
 
 			BlockStmt	jBody				= new BlockStmt();
 			String		lambdaContextName	= "lambdaContext" + transpiler.incrementAndGetLambdaContextCounter();
 			transpiler.pushContextName( lambdaContextName );
-			for ( BoxNode statement : boxTag.getBody() ) {
+			for ( BoxNode statement : boxComponent.getBody() ) {
 				jBody.getStatements().add( ( Statement ) transpiler.transform( statement ) );
 			}
 			transpiler.popContextName();
@@ -56,20 +56,20 @@ public class BoxTagTransformer extends AbstractTransformer {
 			lambda.setParameters( new NodeList<>(
 			    new Parameter( new UnknownType(), lambdaContextName ) ) );
 			lambda.setBody( jBody );
-			jTagBody = lambda;
+			jComponentBody = lambda;
 		} else {
-			jTagBody = new NullLiteralExpr();
+			jComponentBody = new NullLiteralExpr();
 		}
 
 		Statement jStatement = new ExpressionStmt(
 		    new MethodCallExpr(
-		        new NameExpr( "TagUtil" ),
-		        "doTag",
+		        new NameExpr( "TemplateUtil" ),
+		        "doComponent",
 		        new NodeList<Expression>(
 		            new NameExpr( transpiler.peekContextName() ),
-		            createKey( boxTag.getName() ),
-		            transformAnnotations( boxTag.getAttributes() ),
-		            jTagBody )
+		            createKey( boxComponent.getName() ),
+		            transformAnnotations( boxComponent.getAttributes() ),
+		            jComponentBody )
 		    )
 		);
 		logger.debug( node.getSourceText() + " -> " + jStatement );

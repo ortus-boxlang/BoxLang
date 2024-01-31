@@ -11,35 +11,37 @@ template: boxImport* (component | interface | statements) EOF?;
 textContent: (nonInterpolatedText | interpolatedExpression)+;
 
 // ANYTHING
-tagName: TAG_NAME;
+componentName: COMPONENT_NAME;
 
 // <cfANYTHING ... >
-genericOpenTag: TAG_OPEN PREFIX tagName attribute* TAG_CLOSE;
+genericOpenComponent:
+	COMPONENT_OPEN PREFIX componentName attribute* COMPONENT_CLOSE;
 
 // <cfANYTHING />
-genericOpenCloseTag:
-	TAG_OPEN PREFIX tagName attribute* TAG_SLASH_CLOSE;
+genericOpenCloseComponent:
+	COMPONENT_OPEN PREFIX componentName attribute* COMPONENT_SLASH_CLOSE;
 
 // </cfANYTHING>
-genericCloseTag: TAG_OPEN SLASH_PREFIX tagName TAG_CLOSE;
+genericCloseComponent:
+	COMPONENT_OPEN SLASH_PREFIX componentName COMPONENT_CLOSE;
 
 // #bar#
 interpolatedExpression: ICHAR expression ICHAR;
 // Any text to be directly output
-nonInterpolatedText: (TAG_OPEN? CONTENT_TEXT)+;
+nonInterpolatedText: (COMPONENT_OPEN? CONTENT_TEXT)+;
 // bar or 1+2. The lexer keeps strings together so it doesnt end the expression prematurely
 expression: (EXPRESSION_PART | quotedString)+;
 
 attribute:
 	// foo="bar" foo=bar
-	attributeName TAG_EQUALS attributeValue
+	attributeName COMPONENT_EQUALS attributeValue
 	// foo (value will default to empty string)
 	| attributeName;
 
-// called TAG_NAME because the lexer doens't know the difference between a tag name and a variable name at lexing time
+// called COMPONENT_NAME because the lexer doens't know the difference between a component name and a variable name at lexing time
 attributeName:
-	TAG_NAME
-	// These allow attributes inside a tag to be any of these "reserved" words.
+	COMPONENT_NAME
+	// These allow attributes inside a component to be any of these "reserved" words.
 	| COMPONENT
 	| INTERFACE
 	| FUNCTION
@@ -84,11 +86,11 @@ statements: (statement | script | textContent)*;
 statement:
 	function
 	// <cfANYTHING />
-	| genericOpenCloseTag
+	| genericOpenCloseComponent
 	// <cfANYTHING ... >
-	| genericOpenTag
+	| genericOpenComponent
 	// </cfANYTHING>
-	| genericCloseTag
+	| genericCloseComponent
 	| set
 	| return
 	| if
@@ -104,49 +106,52 @@ statement:
 
 component:
 	// <cfcomponent ... >
-	TAG_OPEN PREFIX COMPONENT attribute* TAG_CLOSE
+	COMPONENT_OPEN PREFIX COMPONENT attribute* COMPONENT_CLOSE
 	// <cfproperty name="..."> (zero or more)
 	property*
 	// code in pseudo-constructor
 	statements
 	// </cfcomponent>
-	TAG_OPEN SLASH_PREFIX COMPONENT TAG_CLOSE;
+	COMPONENT_OPEN SLASH_PREFIX COMPONENT COMPONENT_CLOSE;
 
 // <cfproperty name="..."> or... <cfproperty name="..." />
 property:
-	TAG_OPEN PREFIX PROPERTY attribute* (
-		TAG_CLOSE
-		| TAG_SLASH_CLOSE
+	COMPONENT_OPEN PREFIX PROPERTY attribute* (
+		COMPONENT_CLOSE
+		| COMPONENT_SLASH_CLOSE
 	);
 
 interface:
 	// <cfinterface ... >
-	TAG_OPEN PREFIX INTERFACE attribute* TAG_CLOSE
+	COMPONENT_OPEN PREFIX INTERFACE attribute* COMPONENT_CLOSE
 	// Code in interface 
 	statements
 	// </cfinterface>
-	TAG_OPEN SLASH_PREFIX INTERFACE TAG_CLOSE;
+	COMPONENT_OPEN SLASH_PREFIX INTERFACE COMPONENT_CLOSE;
 
 function:
 	// <cffunction name="foo" >
-	TAG_OPEN PREFIX FUNCTION attribute* TAG_CLOSE
+	COMPONENT_OPEN PREFIX FUNCTION attribute* COMPONENT_CLOSE
 	// zero or more <cfargument ... >
 	argument*
 	// code inside function
 	statements
 	// </cffunction>
-	TAG_OPEN SLASH_PREFIX FUNCTION TAG_CLOSE;
+	COMPONENT_OPEN SLASH_PREFIX FUNCTION COMPONENT_CLOSE;
 
 argument:
 	// <cfargument name="param">
-	TAG_OPEN PREFIX ARGUMENT attribute* (
-		TAG_SLASH_CLOSE
-		| TAG_CLOSE
+	COMPONENT_OPEN PREFIX ARGUMENT attribute* (
+		COMPONENT_SLASH_CLOSE
+		| COMPONENT_CLOSE
 	);
 
 set:
 	// <cfset expression> <cfset expression />
-	TAG_OPEN PREFIX SET expression (TAG_SLASH_CLOSE | TAG_CLOSE);
+	COMPONENT_OPEN PREFIX SET expression (
+		COMPONENT_SLASH_CLOSE
+		| COMPONENT_CLOSE
+	);
 
 scriptBody: SCRIPT_BODY*;
 // <cfscript> statements... </cfscript>
@@ -154,27 +159,29 @@ script: SCRIPT_OPEN scriptBody SCRIPT_END_BODY;
 
 return:
 	// <cfreturn> or... <cfreturn expression> or... <cfreturn expression />
-	TAG_OPEN PREFIX RETURN expression? (
-		TAG_SLASH_CLOSE
-		| TAG_CLOSE
+	COMPONENT_OPEN PREFIX RETURN expression? (
+		COMPONENT_SLASH_CLOSE
+		| COMPONENT_CLOSE
 	);
 
 if:
 	// <cfif ... >`
-	TAG_OPEN PREFIX IF ifCondition = expression TAG_CLOSE thenBody = statements
+	COMPONENT_OPEN PREFIX IF ifCondition = expression COMPONENT_CLOSE thenBody = statements
 	// Any number of <cfelseif ... >
 	(
-		TAG_OPEN PREFIX ELSEIF elseIfCondition += expression elseIfTagClose += TAG_CLOSE
-			elseThenBody += statements
+		COMPONENT_OPEN PREFIX ELSEIF elseIfCondition += expression elseIfComponentClose +=
+			COMPONENT_CLOSE elseThenBody += statements
 	)*
 	// One optional <cfelse> 
-	(TAG_OPEN PREFIX ELSE TAG_CLOSE elseBody = statements)?
+	(
+		COMPONENT_OPEN PREFIX ELSE COMPONENT_CLOSE elseBody = statements
+	)?
 	// Closing </cfif>
-	TAG_OPEN SLASH_PREFIX IF TAG_CLOSE;
+	COMPONENT_OPEN SLASH_PREFIX IF COMPONENT_CLOSE;
 
 try:
 	// <cftry>
-	TAG_OPEN PREFIX TRY TAG_CLOSE
+	COMPONENT_OPEN PREFIX TRY COMPONENT_CLOSE
 	// code inside try
 	statements
 	// <cfcatch> (zero or more)
@@ -182,104 +189,115 @@ try:
 	// <cffinally> (zero or one)
 	finallyBlock?
 	// </cftry>
-	TAG_OPEN SLASH_PREFIX TRY TAG_CLOSE;
+	COMPONENT_OPEN SLASH_PREFIX TRY COMPONENT_CLOSE;
 
 catchBlock:
 	// <cfcatch type="...">
-	TAG_OPEN PREFIX CATCH attribute* TAG_CLOSE
+	COMPONENT_OPEN PREFIX CATCH attribute* COMPONENT_CLOSE
 	// code in catch
 	statements
 	// </cfcatch>
-	TAG_OPEN SLASH_PREFIX CATCH TAG_CLOSE;
+	COMPONENT_OPEN SLASH_PREFIX CATCH COMPONENT_CLOSE;
 
 finallyBlock:
 	// <cffinally>
-	TAG_OPEN PREFIX FINALLY TAG_CLOSE
+	COMPONENT_OPEN PREFIX FINALLY COMPONENT_CLOSE
 	// code in finally 
 	statements
 	// </cffinally>
-	TAG_OPEN SLASH_PREFIX FINALLY TAG_CLOSE;
+	COMPONENT_OPEN SLASH_PREFIX FINALLY COMPONENT_CLOSE;
 
 output:
 	// <cfoutput />
-	TAG_OPEN PREFIX OUTPUT attribute* TAG_SLASH_CLOSE
+	COMPONENT_OPEN PREFIX OUTPUT attribute* COMPONENT_SLASH_CLOSE
 	|
 	// <cfoutput> ... 
-	TAG_OPEN PREFIX OUTPUT attribute* TAG_CLOSE
+	COMPONENT_OPEN PREFIX OUTPUT attribute* COMPONENT_CLOSE
 	// code in output
 	statements
 	// </cfoutput>
-	TAG_OPEN SLASH_PREFIX OUTPUT;
+	COMPONENT_OPEN SLASH_PREFIX OUTPUT;
 
 /*
- <cfimport taglib="..." prefix="...">
+ <cfimport componentlib="..." prefix="...">
  <cfimport name="com.foo.Bar">
  <cfimport prefix="java"
  name="com.foo.*">
  <cfimport prefix="java" name="com.foo.Bar" alias="bradLib">
  */
 boxImport:
-	TAG_OPEN PREFIX IMPORT attribute* (
-		TAG_CLOSE
-		| TAG_SLASH_CLOSE
+	COMPONENT_OPEN PREFIX IMPORT attribute* (
+		COMPONENT_CLOSE
+		| COMPONENT_SLASH_CLOSE
 	);
 
 while:
 	// <cfwhile condition="" >
-	TAG_OPEN PREFIX WHILE attribute* TAG_CLOSE
+	COMPONENT_OPEN PREFIX WHILE attribute* COMPONENT_CLOSE
 	// code inside while
 	statements
 	// </cfwhile>
-	TAG_OPEN SLASH_PREFIX WHILE TAG_CLOSE;
+	COMPONENT_OPEN SLASH_PREFIX WHILE COMPONENT_CLOSE;
 
 // <cfbreak> or... <cfbreak />
-break: TAG_OPEN PREFIX BREAK ( TAG_CLOSE | TAG_SLASH_CLOSE);
+break:
+	COMPONENT_OPEN PREFIX BREAK (
+		COMPONENT_CLOSE
+		| COMPONENT_SLASH_CLOSE
+	);
 
 // <cfcontinue> or... <cfcontinue />
 continue:
-	TAG_OPEN PREFIX CONTINUE (TAG_CLOSE | TAG_SLASH_CLOSE);
+	COMPONENT_OPEN PREFIX CONTINUE (
+		COMPONENT_CLOSE
+		| COMPONENT_SLASH_CLOSE
+	);
 
 // <cfinclude template="..."> or... <cfinclude template="..." />
 include:
-	TAG_OPEN PREFIX INCLUDE attribute* (
-		TAG_CLOSE
-		| TAG_SLASH_CLOSE
+	COMPONENT_OPEN PREFIX INCLUDE attribute* (
+		COMPONENT_CLOSE
+		| COMPONENT_SLASH_CLOSE
 	);
 
 // <cfrethrow> or... <cfrethrow />
-rethrow: TAG_OPEN PREFIX RETHROW ( TAG_CLOSE | TAG_SLASH_CLOSE);
+rethrow:
+	COMPONENT_OPEN PREFIX RETHROW (
+		COMPONENT_CLOSE
+		| COMPONENT_SLASH_CLOSE
+	);
 
 // <cfthrow message="..." detail="..."> or... <cfthrow />
 throw:
-	TAG_OPEN PREFIX THROW attribute* (
-		TAG_CLOSE
-		| TAG_SLASH_CLOSE
+	COMPONENT_OPEN PREFIX THROW attribute* (
+		COMPONENT_CLOSE
+		| COMPONENT_SLASH_CLOSE
 	);
 
 switch:
 	// <cfswitch expression="...">
-	TAG_OPEN PREFIX SWITCH attribute* TAG_CLOSE
+	COMPONENT_OPEN PREFIX SWITCH attribute* COMPONENT_CLOSE
 	// <cfcase> or <cfdefaultcase> 
 	switchBody
 	// </cftry>
-	TAG_OPEN SLASH_PREFIX SWITCH TAG_CLOSE;
+	COMPONENT_OPEN SLASH_PREFIX SWITCH COMPONENT_CLOSE;
 
 switchBody: (statement | script | textContent | case)*;
 
 case:
 	(
 		// <cfcase value="...">
-		TAG_OPEN PREFIX CASE attribute* TAG_CLOSE
+		COMPONENT_OPEN PREFIX CASE attribute* COMPONENT_CLOSE
 		// code in case
 		statements
 		// </cfcase>
-		TAG_OPEN SLASH_PREFIX CASE TAG_CLOSE
+		COMPONENT_OPEN SLASH_PREFIX CASE COMPONENT_CLOSE
 	)
 	| (
 		// <cfdefaultcase>
-		TAG_OPEN PREFIX DEFAULTCASE TAG_CLOSE
+		COMPONENT_OPEN PREFIX DEFAULTCASE COMPONENT_CLOSE
 		// code in default case
 		statements
 		// </cfdefaultcase >
-		TAG_OPEN SLASH_PREFIX DEFAULTCASE TAG_CLOSE
+		COMPONENT_OPEN SLASH_PREFIX DEFAULTCASE COMPONENT_CLOSE
 	);

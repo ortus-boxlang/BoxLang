@@ -30,7 +30,7 @@ import ortus.boxlang.runtime.types.ListUtil;
 import ortus.boxlang.runtime.types.Query;
 
 /**
- * I help iterating over queries in tag output
+ * I help iterating over queries in templating output
  */
 public class QueryOutputUtil {
 

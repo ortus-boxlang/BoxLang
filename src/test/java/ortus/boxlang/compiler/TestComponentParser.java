@@ -26,7 +26,7 @@ import org.junit.jupiter.api.Test;
 import ortus.boxlang.parser.BoxCFMLParser;
 import ortus.boxlang.parser.ParsingResult;
 
-public class TestTagParser extends TestBase {
+public class TestComponentParser extends TestBase {
 
 	public ParsingResult parseStatement( String statement ) throws IOException {
 		BoxCFMLParser	parser	= new BoxCFMLParser();

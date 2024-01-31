@@ -23,9 +23,9 @@ import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
 /**
- * I am a proof of concept for running tags generically
+ * I am a proof of concept for running templating components generically
  */
-public class TagUtil {
+public class TemplateUtil {
 
 	@FunctionalInterface
 	public interface ContextConsumer {
@@ -33,19 +33,19 @@ public class TagUtil {
 		void accept( IBoxContext context );
 	}
 
-	public static void doTag( IBoxContext context, Key name, IStruct attributes, ContextConsumer tagBody ) {
+	public static void doComponent( IBoxContext context, Key name, IStruct attributes, ContextConsumer componentBody ) {
 		if ( name.equals( Key.of( "Brad" ) ) ) {
-			System.out.println( "Brad tag attributes: " + attributes.asString() );
-			if ( tagBody != null ) {
-				tagBody.accept( context );
+			System.out.println( "Brad component attributes: " + attributes.asString() );
+			if ( componentBody != null ) {
+				componentBody.accept( context );
 			}
-			System.out.println( "end of brad tag" );
+			System.out.println( "end of brad component" );
 		} else if ( name.equals( Key.of( "sdf" ) ) ) {
-			System.out.println( "sdf tag attributes: " + attributes.asString() );
+			System.out.println( "sdf component attributes: " + attributes.asString() );
 		} else if ( name.equals( Key.of( "http" ) ) ) {
-			System.out.println( "http tag attributes: " + attributes.asString() );
+			System.out.println( "http component attributes: " + attributes.asString() );
 		} else {
-			throw new BoxRuntimeException( "Tag [" + name.getName() + "] not implemented yet" );
+			throw new BoxRuntimeException( "Component [" + name.getName() + "] not implemented yet" );
 		}
 	}
 

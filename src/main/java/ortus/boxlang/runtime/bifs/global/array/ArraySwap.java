@@ -41,7 +41,7 @@ public class ArraySwap extends BIF {
 	}
 
 	/**
-	 * Swaps array values of an array at specified positions. This function is more efficient than multiple cfset tags
+	 * Swaps array values of an array at specified positions. This function is more efficient than multiple assignment statements
 	 * 
 	 * @param context
 	 * @param arguments Argument scope defining the array.

@@ -100,15 +100,15 @@ import ortus.boxlang.ast.statement.BoxTry;
 import ortus.boxlang.ast.statement.BoxTryCatch;
 import ortus.boxlang.ast.statement.BoxType;
 import ortus.boxlang.ast.statement.BoxWhile;
-import ortus.boxlang.ast.statement.tag.BoxTag;
-import ortus.boxlang.ast.statement.tag.BoxTagIsland;
+import ortus.boxlang.ast.statement.component.BoxComponent;
+import ortus.boxlang.ast.statement.component.BoxTemplateIsland;
 import ortus.boxlang.parser.antlr.CFLexer;
 import ortus.boxlang.parser.antlr.CFParser;
+import ortus.boxlang.parser.antlr.CFParser.BoxClassContext;
 import ortus.boxlang.parser.antlr.CFParser.ComponentContext;
+import ortus.boxlang.parser.antlr.CFParser.ComponentIslandContext;
 import ortus.boxlang.parser.antlr.CFParser.NewContext;
 import ortus.boxlang.parser.antlr.CFParser.PreannotationContext;
-import ortus.boxlang.parser.antlr.CFParser.TagContext;
-import ortus.boxlang.parser.antlr.CFParser.TagIslandContext;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
 /**
@@ -320,8 +320,8 @@ public class BoxCFParser extends BoxAbstractParser {
 			imports.add( toAst( file, stmt ) );
 		} );
 
-		if ( parseTree.component() != null ) {
-			return toAst( file, parseTree.component(), imports );
+		if ( parseTree.boxClass() != null ) {
+			return toAst( file, parseTree.boxClass(), imports );
 		} else {
 			statements.addAll( imports );
 			parseTree.functionOrStatement().forEach( stmt -> {
@@ -331,7 +331,7 @@ public class BoxCFParser extends BoxAbstractParser {
 		}
 	}
 
-	private BoxNode toAst( File file, ComponentContext component, List<BoxImport> imports ) {
+	private BoxNode toAst( File file, BoxClassContext component, List<BoxImport> imports ) {
 		List<BoxStatement>					body			= new ArrayList<>();
 		List<BoxAnnotation>					annotations		= new ArrayList<>();
 		List<BoxDocumentationAnnotation>	documentation	= new ArrayList<>();
@@ -436,42 +436,42 @@ public class BoxCFParser extends BoxAbstractParser {
 			return toAst( file, node.for_() );
 		} else if ( node.try_() != null ) {
 			return toAst( file, node.try_() );
-		} else if ( node.tagIsland() != null ) {
-			return toAst( file, node.tagIsland() );
-		} else if ( node.tag() != null ) {
-			return toAst( file, node.tag() );
+		} else if ( node.componentIsland() != null ) {
+			return toAst( file, node.componentIsland() );
+		} else if ( node.component() != null ) {
+			return toAst( file, node.component() );
 		} else {
 			throw new IllegalStateException( "not implemented: " + getSourceText( node ) );
 		}
 	}
 
-	private BoxStatement toAst( File file, TagContext node ) {
-		List<BoxStatement>	body		= null;
-		String				tagName		= null;
-		List<BoxAnnotation>	attributes	= new ArrayList<>();
+	private BoxStatement toAst( File file, ComponentContext node ) {
+		List<BoxStatement>	body			= null;
+		String				componentName	= null;
+		List<BoxAnnotation>	attributes		= new ArrayList<>();
 
-		if ( node.tagAttributes() != null && node.tagAttributes().namedArgument() != null ) {
-			for ( var attr : node.tagAttributes().namedArgument() ) {
+		if ( node.componentAttributes() != null && node.componentAttributes().namedArgument() != null ) {
+			for ( var attr : node.componentAttributes().namedArgument() ) {
 				attributes.add( toAstAnnotation( file, attr ) );
 			}
-		} else if ( node.delimitedTagAttributes() != null && node.delimitedTagAttributes().namedArgument() != null ) {
-			for ( var attr : node.delimitedTagAttributes().namedArgument() ) {
+		} else if ( node.delimitedComponentAttributes() != null && node.delimitedComponentAttributes().namedArgument() != null ) {
+			for ( var attr : node.delimitedComponentAttributes().namedArgument() ) {
 				attributes.add( toAstAnnotation( file, attr ) );
 			}
 		}
 
-		if ( node.tagName() != null ) {
-			tagName = node.tagName().getText();
+		if ( node.componentName() != null ) {
+			componentName = node.componentName().getText();
 		} else {
 			// strip prefix from name so "cfbrad" becomes "brad
-			tagName = node.prefixedIdentifier().getText().substring( 2 );
+			componentName = node.prefixedIdentifier().getText().substring( 2 );
 		}
 
 		if ( node.statementBlock() != null ) {
 			body = new ArrayList<>();
 			body.addAll( toAst( file, node.statementBlock() ) );
 		}
-		return new BoxTag( tagName, attributes, body, 0, getPosition( node ), getSourceText( node ) );
+		return new BoxComponent( componentName, attributes, body, 0, getPosition( node ), getSourceText( node ) );
 	}
 
 	private BoxAnnotation toAstAnnotation( File file, CFParser.NamedArgumentContext node ) {
@@ -490,23 +490,23 @@ public class BoxCFParser extends BoxAbstractParser {
 	}
 
 	/**
-	 * Converts the TagIslandContext parser rule to the corresponding AST node
+	 * Converts the ComponentIslandContext parser rule to the corresponding AST node
 	 *
 	 * @param file source file, if any
-	 * @param node ANTLR TagIslandContext rule
+	 * @param node ANTLR ComponentIslandContext rule
 	 *
-	 * @return the corresponding AST BoxTagIsland
+	 * @return the corresponding AST BoxComponentIsland
 	 *
 	 * @see BoxThrow
 	 */
-	private BoxTagIsland toAst( File file, TagIslandContext tagIsland ) {
-		return new BoxTagIsland(
+	private BoxTemplateIsland toAst( File file, ComponentIslandContext componentIsland ) {
+		return new BoxTemplateIsland(
 		    parseCFMLStatements(
-		        tagIsland.tagIslandBody().getText(),
-		        getPosition( tagIsland.tagIslandBody() )
+		        componentIsland.componentIslandBody().getText(),
+		        getPosition( componentIsland.componentIslandBody() )
 		    ),
-		    getPosition( tagIsland.tagIslandBody() ),
-		    getSourceText( tagIsland.tagIslandBody() )
+		    getPosition( componentIsland.componentIslandBody() ),
+		    getSourceText( componentIsland.componentIslandBody() )
 		);
 
 	}
@@ -525,7 +525,7 @@ public class BoxCFParser extends BoxAbstractParser {
 					return List.of( statement );
 				} else {
 					// Could be a BoxClass, which we may actually need to support
-					throw new BoxRuntimeException( "Unexpected root node type [" + root.getClass().getName() + "] in tag island." );
+					throw new BoxRuntimeException( "Unexpected root node type [" + root.getClass().getName() + "] in component island." );
 				}
 			} else {
 				// Add these issues to the main parser
@@ -533,7 +533,7 @@ public class BoxCFParser extends BoxAbstractParser {
 				return List.of();
 			}
 		} catch ( IOException e ) {
-			throw new BoxRuntimeException( "Error parsing tag island: " + code, e );
+			throw new BoxRuntimeException( "Error parsing component island: " + code, e );
 		}
 	}
 

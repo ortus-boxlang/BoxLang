@@ -64,10 +64,6 @@ public class BoxLangScriptParser extends BoxAbstractParser {
 		BoxScriptParser.ScriptContext	parseTree	= ( BoxScriptParser.ScriptContext ) rule;
 		List<BoxStatement>				statements	= new ArrayList<>();
 
-		if ( parseTree.tag() != null ) {
-			parseTree = parseTree.tag().script();
-		}
-
 		parseTree.functionOrStatement().forEach( stmt -> {
 			statements.add( toAst( file, stmt ) );
 		} );

@@ -187,13 +187,13 @@ INTEGER_LITERAL: DIGIT+;
 PREFIXEDIDENTIFIER: PREFIX IDENTIFIER;
 IDENTIFIER: [a-z_$]+ ( [_]+ | [a-z]+ | DIGIT)*;
 
-TAG_ISLAND_START: '```' -> pushMode(tagIsland);
+COMPONENT_ISLAND_START: '```' -> pushMode(componentIsland);
 
-mode tagIsland;
+mode componentIsland;
 
-TAG_ISLAND_END: '```' -> popMode;
+COMPONENT_ISLAND_END: '```' -> popMode;
 
-TAG_ISLAND_BODY: .+?;
+COMPONENT_ISLAND_BODY: .+?;
 
 mode squotesMode;
 CLOSE_SQUOTE: '\'' -> type(CLOSE_QUOTE), popMode;
