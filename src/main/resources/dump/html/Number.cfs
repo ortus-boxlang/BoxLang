@@ -1,2 +1,0 @@
-// Number template
-echo( "Number: #var#" )

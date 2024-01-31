@@ -17,6 +17,11 @@
  */
 package ortus.boxlang.web;
 
+import java.io.IOException;
+import java.nio.ByteBuffer;
+
+import org.xnio.channels.StreamSinkChannel;
+
 import io.undertow.server.HttpServerExchange;
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.IBoxContext;
@@ -275,7 +280,15 @@ public class WebRequestBoxContext extends RequestBoxContext {
 			clearBuffer();
 		}
 
-		exchange.getResponseSender().send( output );
+		StreamSinkChannel	channel	= exchange.getResponseChannel();
+		ByteBuffer			bBuffer	= ByteBuffer.wrap( output.getBytes() );
+		try {
+			channel.write( bBuffer );
+			channel.flush();
+		} catch ( IOException e ) {
+			e.printStackTrace();
+		}
+		// exchange.getResponseSender().send( output );
 
 		return this;
 	}

@@ -116,7 +116,8 @@ import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
  */
 public class BoxCFParser extends BoxAbstractParser {
 
-	private final List<BoxDocumentation> javadocs = new ArrayList<>();
+	private final List<BoxDocumentation>	javadocs		= new ArrayList<>();
+	private boolean							inOutputBlock	= false;
 
 	/**
 	 * Constructor
@@ -127,6 +128,19 @@ public class BoxCFParser extends BoxAbstractParser {
 
 	public BoxCFParser( int startLine, int startColumn ) {
 		super( startLine, startColumn );
+	}
+
+	public BoxCFParser( int startLine, int startColumn, boolean inOutputBlock ) {
+		super( startLine, startColumn );
+		this.inOutputBlock = inOutputBlock;
+	}
+
+	public void setInOutputBlock( boolean inOutputBlock ) {
+		this.inOutputBlock = inOutputBlock;
+	}
+
+	public boolean getInOutputBlock() {
+		return inOutputBlock;
 	}
 
 	/**
@@ -499,6 +513,9 @@ public class BoxCFParser extends BoxAbstractParser {
 
 	public List<BoxStatement> parseCFMLStatements( String code, Position position ) {
 		try {
+			if ( inOutputBlock ) {
+				code = "<cfoutput>" + code + "</cfoutput>";
+			}
 			ParsingResult result = new BoxCFMLParser( position.getStart().getLine(), position.getStart().getColumn() ).parse( code );
 			if ( result.getIssues().isEmpty() ) {
 				BoxNode root = result.getRoot();

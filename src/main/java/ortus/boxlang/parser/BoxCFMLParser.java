@@ -101,6 +101,8 @@ import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
 public class BoxCFMLParser extends BoxAbstractParser {
 
+	private int outputCounter = 0;
+
 	public BoxCFMLParser() {
 		super();
 	}
@@ -712,7 +714,9 @@ public class BoxCFMLParser extends BoxAbstractParser {
 		BoxExpr	encodeFor			= findExprInAnnotations( annotations, "encodeFor", false, null, null, null );
 
 		if ( node.statements() != null ) {
+			outputCounter++;
 			statements.addAll( toAst( file, node.statements() ) );
+			outputCounter--;
 		}
 
 		return new BoxOutput( statements, query, group, groupCaseSensitive, startRow, maxRows, encodeFor, getPosition( node ), getSourceText( node ) );
@@ -834,7 +838,7 @@ public class BoxCFMLParser extends BoxAbstractParser {
 
 	public List<BoxStatement> parseCFStatements( String code, Position position ) {
 		try {
-			ParsingResult result = new BoxCFParser( position.getStart().getLine(), position.getStart().getColumn() ).parse( code );
+			ParsingResult result = new BoxCFParser( position.getStart().getLine(), position.getStart().getColumn(), ( outputCounter > 0 ) ).parse( code );
 			if ( result.getIssues().isEmpty() ) {
 				BoxNode root = result.getRoot();
 				if ( root instanceof BoxScript script ) {
