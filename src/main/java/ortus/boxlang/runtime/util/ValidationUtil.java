@@ -6,8 +6,10 @@ public class ValidationUtil {
 
 	/**
 	 * Regular expression, in {@link String} form, to match a URL with a `http`, `https`, `ftp`, or `file` scheme.
+	 *
+	 * @see https://regex101.com/r/kWhB1u/1
 	 */
-	public static final String	URL_STRING				= "^(https?|ftp|file)://[-a-zA-Z0-9+&@#/%?=~_|!:,.;]*[-a-zA-Z0-9+&@#/%=~_|]";
+	public static final String	URL_STRING				= "^(https?|ftp|file)://([A-Za-z0-90.]*)/?([-a-zA-Z0-9.+&@#/]+)?(\\??[^\\s]*)$";
 
 	/**
 	 * Regular expression Pattern to match a URL with a `http`, `https`, `ftp`, or `file` scheme.
@@ -121,6 +123,17 @@ public class ValidationUtil {
 	 */
 	public static boolean isValidTelephone( String phone ) {
 		return TELEPHONE.matcher( phone ).matches();
+	}
+
+	/**
+	 * Validates a URL string.
+	 *
+	 * @param url URL in string format. Must include a scheme, such as `http`, `https`, `ftp`, or `file`.
+	 *
+	 * @return Boolean indicating whether the given string is a valid URL.
+	 */
+	public static boolean isValidURL( String url ) {
+		return URL.matcher( url ).matches();
 	}
 
 	/**

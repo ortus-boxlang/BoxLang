@@ -88,7 +88,7 @@ public class IsValid extends BIF {
 			// case REGEX, REGULAR_EXPRESSION -> ValidationUtil.isValidREGEX( value.toString() );
 			case SSN, SOCIAL_SECURITY_NUMBER -> ValidationUtil.isValidSSN( value.toString() );
 			case TELEPHONE -> ValidationUtil.isValidTelephone( value.toString() );
-			// case URL -> ValidationUtil.isValidURL( value );
+			case URL -> ValidationUtil.isValidURL( value.toString() );
 			case UUID -> ValidationUtil.isValidCFUUID( value.toString() ) || ValidationUtil.isValidUUID( value.toString() );
 			case USDATE -> context.invokeFunction( Key.of( "LSIsDate" ), java.util.Map.of( Key.date, value, Key.locale, "en_US" ) );
 			// case VARIABLENAME -> ValidationUtil.isValidVARIABLENAME( value );

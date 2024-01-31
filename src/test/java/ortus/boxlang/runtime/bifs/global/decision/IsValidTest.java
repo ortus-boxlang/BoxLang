@@ -391,7 +391,6 @@ public class IsValidTest {
 		assertThat( ( Boolean ) instance.executeStatement( "isValid( 'Struct', [] )" ) ).isFalse();
 	}
 
-	@Disabled( "Unimplemented" )
 	@DisplayName( "It works on telephones" )
 	@Test
 	public void testTelephone() {
@@ -417,12 +416,39 @@ public class IsValidTest {
 		assertThat( ( Boolean ) variables.get( Key.of( "missingCountryCode" ) ) ).isFalse();
 	}
 
-	@Disabled( "Unimplemented" )
 	@DisplayName( "It works on URLs" )
 	@Test
 	public void testURL() {
-		assertThat( ( Boolean ) instance.executeStatement( "isValid( 'URL', goodValue )" ) ).isTrue();
-		assertThat( ( Boolean ) instance.executeStatement( "isValid( 'URL', badValue )" ) ).isFalse();
+		instance.executeSource(
+		    """
+		    // trues
+		    httpScheme        = isValid( 'url', 'http://ortussolutions.com' );
+		    httpsScheme      = isValid( 'url', 'https://ortussolutions.com' );
+		    ftpScheme        = isValid( 'url', 'ftp://ortussolutions.com' );
+		    fileScheme        = isValid( 'url', 'file://ortussolutions.com' );
+
+		    doubleslash      = isValid( 'url', 'https://ortussolutions.com//' );
+		    filename         = isValid( 'url', 'https://ortussolutions.com/foo.html' );
+		    querystring      = isValid( 'url', 'https://ortussolutions.com/foo.html?page=brad' );
+		    querystringfunky = isValid( 'url', 'https://www.ortussolutions.com/services/web-development?page=brad%20writes%20command.box&fo0+foo=foo!' );
+
+		    // falsies
+		    noscheme = isValid( 'url', 'ortussolutions.com' );
+		    filepath = isValid( 'url', '../www/var/html' );
+		       """,
+		    context );
+		assertThat( ( Boolean ) variables.get( Key.of( "httpScheme" ) ) ).isTrue();
+		assertThat( ( Boolean ) variables.get( Key.of( "httpsScheme" ) ) ).isTrue();
+		assertThat( ( Boolean ) variables.get( Key.of( "ftpScheme" ) ) ).isTrue();
+		assertThat( ( Boolean ) variables.get( Key.of( "fileScheme" ) ) ).isTrue();
+
+		assertThat( ( Boolean ) variables.get( Key.of( "doubleslash" ) ) ).isTrue();
+		assertThat( ( Boolean ) variables.get( Key.of( "filename" ) ) ).isTrue();
+		assertThat( ( Boolean ) variables.get( Key.of( "querystring" ) ) ).isTrue();
+		assertThat( ( Boolean ) variables.get( Key.of( "querystringfunky" ) ) ).isTrue();
+
+		assertThat( ( Boolean ) variables.get( Key.of( "noscheme" ) ) ).isFalse();
+		assertThat( ( Boolean ) variables.get( Key.of( "filepath" ) ) ).isFalse();
 	}
 
 	@DisplayName( "It works on UUIDs" )
