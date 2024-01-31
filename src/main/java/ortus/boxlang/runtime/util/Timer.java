@@ -358,6 +358,31 @@ public class Timer {
 	}
 
 	/**
+	 * Stop the timer with the given label, print the elapsed time in the default of milliseconds
+	 *
+	 * @param label The label
+	 *
+	 * @return The timer instance
+	 */
+	public Timer stopAndPrint( String label ) {
+		return stopAndPrint( label, TimeUnit.MILLISECONDS );
+	}
+
+	/**
+	 * Stop the timer with the given label, print the elapsed time in the default of milliseconds
+	 *
+	 * @param label The label
+	 *
+	 * @return The timer instance
+	 */
+	public Timer stopAndPrint( String label, TimeUnit timeUnit ) {
+		System.out.println(
+		    label + " took: " + stop( label, timeUnit )
+		);
+		return this;
+	}
+
+	/**
 	 * This method receives a long time in nanoseconds
 	 * and returns it in the appropriate time unit
 	 *

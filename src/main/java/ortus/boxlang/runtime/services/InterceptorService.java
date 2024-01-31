@@ -18,7 +18,6 @@
 package ortus.boxlang.runtime.services;
 
 import java.util.Arrays;
-import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -279,10 +278,8 @@ public class InterceptorService extends BaseService {
 		IBoxContext				context			= runtime.getRuntimeContext();
 		Optional<ClassLocation>	classLocation	= BoxResolver.getInstance().resolve(
 		    context,
-		    clazz,
-		    List.of()
+		    clazz
 		);
-
 		// Throw an exception if we can't find the class
 		if ( !classLocation.isPresent() ) {
 			throw new BoxRuntimeException( "Interceptor class [" + clazz + "] not found locally or with any mappings" );

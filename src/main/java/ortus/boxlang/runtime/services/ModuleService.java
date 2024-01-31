@@ -323,7 +323,7 @@ public class ModuleService extends BaseService {
 		// Log it
 		logger.atInfo().log(
 		    "+ Module Service: Registered module [{}@{}] in [{}] ms from [{}]",
-		    moduleRecord.name,
+		    moduleRecord.name.getName(),
 		    moduleRecord.version,
 		    moduleRecord.registrationTime,
 		    moduleRecord.physicalPath
@@ -460,7 +460,7 @@ public class ModuleService extends BaseService {
 		// Log it
 		logger.atInfo().log(
 		    "+ Module Service: Activated module [{}@{}] in [{}] ms",
-		    moduleRecord.name,
+		    moduleRecord.name.getName(),
 		    moduleRecord.version,
 		    moduleRecord.activationTime
 		);
