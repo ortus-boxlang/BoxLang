@@ -16,8 +16,6 @@ package ortus.boxlang.runtime.bifs.global.decision;
 
 import java.util.Arrays;
 
-import org.apache.commons.lang3.math.NumberUtils;
-
 import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
 import ortus.boxlang.runtime.context.IBoxContext;
@@ -65,35 +63,36 @@ public class IsValid extends BIF {
 			/*
 			 * Implemented in GenericCaster, mostly non-string types.
 			 */
-			case ANY -> GenericCaster.attempt( value, "any" ).wasSuccessful();
-			case ARRAY -> GenericCaster.attempt( value, "array" ).wasSuccessful();
-			case BOOLEAN -> GenericCaster.attempt( value, "boolean" ).wasSuccessful();
-			case DATE -> GenericCaster.attempt( value, "datetime" ).wasSuccessful();
-			case STRING -> GenericCaster.attempt( value, "string" ).wasSuccessful();
-			case STRUCT -> GenericCaster.attempt( value, "struct" ).wasSuccessful();
-			case TIME -> GenericCaster.attempt( value, "datetime" ).wasSuccessful();
+			case ANY -> GenericCaster.attempt( arguments.get( Key.value ), "any" ).wasSuccessful();
+			case ARRAY -> GenericCaster.attempt( arguments.get( Key.value ), "array" ).wasSuccessful();
+			case BOOLEAN -> GenericCaster.attempt( arguments.get( Key.value ), "boolean" ).wasSuccessful();
+			case DATE -> GenericCaster.attempt( arguments.get( Key.value ), "datetime" ).wasSuccessful();
+			case STRING -> GenericCaster.attempt( arguments.get( Key.value ), "string" ).wasSuccessful();
+			case STRUCT -> GenericCaster.attempt( arguments.get( Key.value ), "struct" ).wasSuccessful();
+			case TIME -> GenericCaster.attempt( arguments.get( Key.value ), "datetime" ).wasSuccessful();
 			/*
 			 * Implemented in ValidationUtil
 			 */
-			// case BINARY -> ValidationUtil.isValidBINARY( value );
-			// case CREDITCARD -> ValidationUtil.isValidCREDITCARD( value );
+			// case BINARY -> ValidationUtil.isValidBINARY( arguments.get( Key.value ) );
+			// case CREDITCARD -> ValidationUtil.isValidCREDITCARD( arguments.getAsString( Key.value ) );
 			// case COMPONENT -> ValidationUtil.isValidCOMPONENT( value );
-			// case EMAIL -> ValidationUtil.isValidEMAIL( value );
+			// case EMAIL -> ValidationUtil.isValidEMAIL( arguments.getAsString( Key.value ) );
 			// case FLOAT -> value instanceof Float || ???
-			// case GUID -> ValidationUtil.isValidGUID( value );
-			case INTEGER -> value instanceof Integer || ( value instanceof String stringVal && NumberUtils.isDigits( stringVal ) );
-			case NUMERIC -> value instanceof Number || ( value instanceof String stringVal && NumberUtils.isCreatable( stringVal ) );
+			// case GUID -> ValidationUtil.isValidGUID( arguments.getAsString( Key.value ) );
+			case INTEGER -> ValidationUtil.isValidInteger( arguments.get( Key.value ) );
+			case NUMERIC -> ValidationUtil.isValidNumeric( arguments.get( Key.value ) );
 			// case QUERY -> ValidationUtil.isValidQUERY( value );
 			// case RANGE -> ValidationUtil.isValidRANGE( value );
-			// case REGEX, REGULAR_EXPRESSION -> ValidationUtil.isValidREGEX( value.toString() );
-			case SSN, SOCIAL_SECURITY_NUMBER -> ValidationUtil.isValidSSN( value.toString() );
-			case TELEPHONE -> ValidationUtil.isValidTelephone( value.toString() );
-			case URL -> ValidationUtil.isValidURL( value.toString() );
-			case UUID -> ValidationUtil.isValidCFUUID( value.toString() ) || ValidationUtil.isValidUUID( value.toString() );
+			// case REGEX, REGULAR_EXPRESSION -> ValidationUtil.isValidREGEX( arguments.getAsString( Key.value ) );
+			case SSN, SOCIAL_SECURITY_NUMBER -> ValidationUtil.isValidSSN( arguments.getAsString( Key.value ) );
+			case TELEPHONE -> ValidationUtil.isValidTelephone( arguments.getAsString( Key.value ) );
+			case URL -> ValidationUtil.isValidURL( arguments.getAsString( Key.value ) );
+			case UUID -> ValidationUtil.isValidCFUUID( arguments.getAsString( Key.value ) ) || ValidationUtil.isValidUUID( arguments.getAsString( Key.value ) );
 			case USDATE -> context.invokeFunction( Key.of( "LSIsDate" ), java.util.Map.of( Key.date, value, Key.locale, "en_US" ) );
 			// case VARIABLENAME -> ValidationUtil.isValidVARIABLENAME( value );
 			// case XML -> ValidationUtil.isValidXML( value );
-			case ZIPCODE -> ValidationUtil.isValidZipCode( value.toString() );
+			case ZIPCODE -> ValidationUtil.isValidZipCode( arguments.getAsString( Key.value ) );
+			// Lucee Only:
 			// case LAMBDA -> ValidationUtil.isValidLAMBDA( value );
 			// case FUNCTION -> ValidationUtil.isValidFUNCTION( value );
 			// case CLOSURE -> ValidationUtil.isValidCLOSURE( value );
@@ -124,18 +123,16 @@ public class IsValid extends BIF {
 		STRUCT,
 		TELEPHONE,
 		TIME,
-	    // URL,
+		URL,
 		UUID,
 		USDATE,
 	    // VARIABLENAME,
 	    // XML,
-		ZIPCODE,
+		ZIPCODE;
 
-		// // possibly Lucee only?
 		// LAMBDA,
 		// FUNCTION,
-		// CLOSURE
-		;
+		// CLOSURE;
 
 		public static IsValidType fromString( String type ) {
 			try {

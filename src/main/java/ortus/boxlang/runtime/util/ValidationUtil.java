@@ -2,75 +2,70 @@ package ortus.boxlang.runtime.util;
 
 import java.util.regex.Pattern;
 
+import org.apache.commons.lang3.math.NumberUtils;
+
 public class ValidationUtil {
 
 	/**
-	 * Regular expression, in {@link String} form, to match a URL with a `http`, `https`, `ftp`, or `file` scheme.
+	 * Regular expression Pattern to match a URL with a `http`, `https`, `ftp`, or `file` scheme.
 	 *
 	 * @see https://regex101.com/r/kWhB1u/1
 	 */
-	public static final String	URL_STRING				= "^(https?|ftp|file)://([A-Za-z0-90.]*)/?([-a-zA-Z0-9.+&@#/]+)?(\\??[^\\s]*)$";
-
-	/**
-	 * Regular expression Pattern to match a URL with a `http`, `https`, `ftp`, or `file` scheme.
-	 */
-	public static final Pattern	URL						= Pattern.compile( URL_STRING );
-	/**
-	 * Regular expression, in {@link String} form, to match a North American Numbering Plan (NANP) telephone number. This does not support international
-	 * numbers.
-	 */
-	public static final String	TELEPHONE_STRING		= "^(?:(?:\\+?1\\s*(?:[.-]\\s*)?)?(?:\\(\\s*([2-9]1[02-9]|[2-9][02-8]1|[2-9][02-8][02-9])\\s*\\)|([2-9]1[02-9]|[2-9][02-8]1|[2-9][02-8][02-9]))\\s*(?:[.-]\\s*)?)?([2-9]1[02-9]|[2-9][02-9]1|[2-9][02-9]{2})\\s*(?:[.-]\\s*)?([0-9]{4})(?:\\s*(?:#|x\\.?|ext\\.?|extension)\\s*(\\d+))?$";
+	public static final Pattern	URL						= Pattern.compile( "^(https?|ftp|file)://([A-Za-z0-90.]*)/?([-a-zA-Z0-9.+&@#/]+)?(\\??[^\\s]*)$" );
 
 	/**
 	 * Regular expression Pattern to match a North American Numbering Plan (NANP) telephone number. This does not support international numbers.
 	 */
-	public static final Pattern	TELEPHONE				= Pattern.compile( TELEPHONE_STRING );
+	public static final Pattern	TELEPHONE				= Pattern.compile(
+	    "^(?:(?:\\+?1\\s*(?:[.-]\\s*)?)?(?:\\(\\s*([2-9]1[02-9]|[2-9][02-8]1|[2-9][02-8][02-9])\\s*\\)|([2-9]1[02-9]|[2-9][02-8]1|[2-9][02-8][02-9]))\\s*(?:[.-]\\s*)?)?([2-9]1[02-9]|[2-9][02-9]1|[2-9][02-9]{2})\\s*(?:[.-]\\s*)?([0-9]{4})(?:\\s*(?:#|x\\.?|ext\\.?|extension)\\s*(\\d+))?$" );
 
-	/**
-	 * Regular expression, in {@link String} form, to match a United States Postal Service (USPS)
-	 * ZIP Code.
-	 */
-	public static final String	ZIPCODE_STRING			= "\\d{5}([ -]?\\d{4})?";
 	/**
 	 * Regular expression Pattern to match a United States Postal Service (USPS) ZIP Code.
 	 */
-	public static final Pattern	ZIPCODE					= Pattern.compile( ZIPCODE_STRING );
-
-	/**
-	 * Regular expression, in {@link String} form, to match a Social Security Number (SSN).
-	 */
-	public static final String	SSN_STRING				= "^(?!219099999|078051120)(?!666|000|9\\d{2})\\d{3}(?!00)\\d{2}(?!0{4})\\d{4}$";
+	public static final Pattern	ZIPCODE					= Pattern.compile( "\\d{5}([ -]?\\d{4})?" );
 
 	/**
 	 * Regular expression Pattern to match a Social Security Number (SSN).
 	 */
-	public static final Pattern	SSN						= Pattern.compile( SSN_STRING );
+	public static final Pattern	SSN						= Pattern.compile( "^(?!219099999|078051120)(?!666|000|9\\d{2})\\d{3}(?!00)\\d{2}(?!0{4})\\d{4}$" );
 
 	/**
-	 * Regular expression, in {@link String} form, to match a Version 4 Universally Unique Identifier
-	 * (UUID), in a case-insensitive fashion.
+	 * Regular expression to match a Version 4 Universally Unique Identifier (UUID), in a
+	 * case-insensitive fashion.
 	 *
 	 * @see https://gitlab.com/jamietanna/uuid/-/blob/v0.2.0/uuid-core/src/main/java/me/jvt/uuid/Patterns.java
 	 */
-	public static final String	UUID_V4_STRING			= "[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-4[a-fA-F0-9]{3}-[89abAB][a-fA-F0-9]{3}-[a-fA-F0-9]{12}";
+	public static final Pattern	UUID_V4					= Pattern
+	    .compile( "[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-4[a-fA-F0-9]{3}-[89abAB][a-fA-F0-9]{3}-[a-fA-F0-9]{12}" );
+
 	/**
 	 * Regular expression to match a Version 4 Universally Unique Identifier (UUID), in a
 	 * case-insensitive fashion.
 	 */
-	public static final Pattern	UUID_V4					= Pattern.compile( UUID_V4_STRING );
+	public static final Pattern	CFCOMPAT_UUID_PATTERN	= Pattern
+	    .compile( "[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-4[a-fA-F0-9]{3}-[89abAB][a-fA-F0-9]{3}[a-fA-F0-9]{12}" );
 
 	/**
-	 * Regular expression, in {@link String} form, to match a Version 4 Universally Unique Identifier
-	 * (UUID), in a case-insensitive fashion.
+	 * Validates the given string is a valid integer value.
 	 *
-	 * @see https://gitlab.com/jamietanna/uuid/-/blob/v0.2.0/uuid-core/src/main/java/me/jvt/uuid/Patterns.java
+	 * @param value String or object value to check for a valid integer format. Only Integer types or strings containing ONLY digits will return true.
+	 *
+	 * @return Boolean indicating whether the given string is a valid integer
 	 */
-	public static final String	CFML_COMPAT_UUID_STRING	= "[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-4[a-fA-F0-9]{3}-[89abAB][a-fA-F0-9]{3}[a-fA-F0-9]{12}";
+	public static boolean isValidInteger( Object value ) {
+		return value instanceof Integer || ( value instanceof String stringVal && NumberUtils.isDigits( stringVal ) );
+	}
+
 	/**
-	 * Regular expression to match a Version 4 Universally Unique Identifier (UUID), in a
-	 * case-insensitive fashion.
+	 * Validates the given string is a valid numeric value.
+	 *
+	 * @param uuid String or object value to check for a valid numeric format, including Number types and strings containing numeric values.
+	 *
+	 * @return Boolean indicating whether the given string is a valid numeric value.
 	 */
-	public static final Pattern	CFCOMPAT_UUID_PATTERN	= Pattern.compile( CFML_COMPAT_UUID_STRING );
+	public static boolean isValidNumeric( Object value ) {
+		return value instanceof Number || ( value instanceof String stringVal && NumberUtils.isCreatable( stringVal ) );
+	}
 
 	/**
 	 * Validates the given string is a valid Version 4 UUID.
