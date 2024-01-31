@@ -52,6 +52,11 @@ public class Timer {
 	private static final long			MILLIS_2_SECONDS	= 1000;
 
 	/**
+	 * Whether or not to auto remove timers when they are stopped
+	 */
+	private boolean						autoRemoveTimers;
+
+	/**
 	 * The time units it supports
 	 */
 	public enum TimeUnit {
@@ -62,12 +67,45 @@ public class Timer {
 
 	/**
 	 * --------------------------------------------------------------------------
+	 * Constructors
+	 * --------------------------------------------------------------------------
+	 */
+
+	/**
+	 * Create a new timer instance with auto remove timers set to true
+	 */
+	public Timer() {
+		this.autoRemoveTimers = true;
+	}
+
+	/**
+	 * Create a new timer instance
+	 *
+	 * @param autoRemoveTimers Whether or not to auto remove timers when they are stopped
+	 */
+	public Timer( boolean autoRemoveTimers ) {
+		this.autoRemoveTimers = autoRemoveTimers;
+	}
+
+	/**
+	 * --------------------------------------------------------------------------
 	 * Static Helpers
 	 * --------------------------------------------------------------------------
 	 */
 
 	/**
-	 * Create a new timer instance
+	 * Create a new timer instance with an auto remove timers option
+	 *
+	 * @param autoRemoveTimers Whether or not to auto remove timers when they are stopped
+	 *
+	 * @return The timer instance
+	 */
+	public static Timer create( boolean autoRemoveTimers ) {
+		return new Timer( autoRemoveTimers );
+	}
+
+	/**
+	 * Create a new timer instance with auto remove timers set to true
 	 *
 	 * @return The timer instance
 	 */
@@ -135,13 +173,36 @@ public class Timer {
 	}
 
 	/**
+	 * Clear all timers
+	 */
+	public void clearTimers() {
+		timers.clear();
+	}
+
+	/**
 	 * This convenience methods prints out to the console all the timers
 	 * using the passed timeunit
 	 */
 	public void printTimers( TimeUnit timeUnit ) {
-		timers.forEach( ( label, time ) -> {
-			System.out.println( label + " took: " + TIMING_FORMAT.format( convert( time, timeUnit ) ) + " " + timeUnit );
-		} );
+		System.out.println( "|----------------------|----------------------|" );
+		System.out.println( "| Timer                | Duration             |" );
+		System.out.println( "|----------------------|----------------------|" );
+
+		for ( Map.Entry<String, Long> entry : timers.entrySet() ) {
+			String	key			= entry.getKey();
+			long	duration	= entry.getValue();
+
+			// Adjust the column widths based on your data
+			System.out.printf(
+			    "| %-20s | %-20s |%n",
+			    key,
+			    TIMING_FORMAT.format( convert( duration, timeUnit ) )
+			);
+		}
+
+		System.out.println( "|----------------------|----------------------|" );
+		System.out.println( "" );
+		System.out.println( "Duration = " + timeUnit );
 	}
 
 	/**
@@ -248,9 +309,17 @@ public class Timer {
 		}
 
 		long	endTime		= System.nanoTime();
-		long	startTime	= timers.remove( label );
+		long	startTime	= timers.get( label );
+		long	duration	= endTime - startTime;
 
-		return endTime - startTime;
+		if ( this.autoRemoveTimers ) {
+			timers.remove( label );
+		} else {
+			// Store the final timer value if not in auto-remove mode
+			timers.put( label, duration );
+		}
+
+		return duration;
 	}
 
 	/**
@@ -300,7 +369,7 @@ public class Timer {
 	public static long convert( long time, TimeUnit timeUnit ) {
 		switch ( timeUnit ) {
 			case SECONDS :
-				return time / MILLIS_2_SECONDS;
+				return time / NANO_2_MILLIS / MILLIS_2_SECONDS;
 
 			case MILLISECONDS :
 				return time / NANO_2_MILLIS;

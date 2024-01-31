@@ -140,4 +140,31 @@ public class TimerTest {
 		// Then
 		Truth.assertThat( time ).isAtLeast( 0L );
 	}
+
+	@DisplayName( "I can print a timers report" )
+	@Test
+	void testPrintTimers() {
+		Timer		timer		= Timer.create( false );
+		// Given
+		Runnable	runnable	= () -> {
+									// Simulate some work
+									try {
+										Thread.sleep( 100 );
+									} catch ( InterruptedException e ) {
+										throw new BoxRuntimeException( e.getMessage(), e );
+									}
+								};
+
+		// When
+		timer.timeIt( runnable, "Lambda" );
+		timer.start( "testTimer" );
+		try {
+			Thread.sleep( 100 );
+		} catch ( InterruptedException e ) {
+			throw new BoxRuntimeException( e.getMessage(), e );
+		}
+		timer.stop( "testTimer" );
+
+		timer.printTimers();
+	}
 }
