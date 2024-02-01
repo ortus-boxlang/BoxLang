@@ -51,6 +51,17 @@ public class TemplateUtil {
 	public static void doComponent( IBoxContext context, Key name, IStruct attributes, Component.ComponentBody componentBody ) {
 		if ( registry.containsKey( name ) ) {
 			Component component = registry.get( name );
+			// if attributeCollection key exists and is a struct, merge it into the main attributes and delete it
+			// When merging, don't overwrite existing keys
+			if ( attributes.containsKey( Key.attributeCollection ) && attributes.get( Key.attributeCollection ) instanceof IStruct attrCol ) {
+				for ( var key : attrCol.keySet() ) {
+					if ( !attributes.containsKey( key ) ) {
+						attributes.put( key, attrCol.get( key ) );
+					}
+				}
+				attributes.remove( Key.attributeCollection );
+			}
+
 			// call validators on attributes)
 			for ( var attribute : component.getDeclaredAttributes() ) {
 				// Automatically enforce type, if set

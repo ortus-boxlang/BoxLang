@@ -132,4 +132,27 @@ public class HTTPTest {
 
 	}
 
+	@DisplayName( "It can make HTTP call tag attributeCollection" )
+	@Test
+	public void testCanMakeHTTPCallTagAttributeCollection() {
+
+		instance.executeSource(
+		    """
+		    <cfset attrs = { type="header", name="Accept-Encoding", value="gzip,deflate" }>
+		          <cfhttp url="http://www.google.com">
+		              <cfhttpparam attributeCollection="#attrs#" value="sdf" />
+		          </cfhttp>
+		       <cfset result = cfhttp>
+		          """,
+		    context, BoxScriptType.CFMARKUP );
+
+		assertThat( variables.get( result ) ).isInstanceOf( IStruct.class );
+
+		IStruct cfhttp = variables.getAsStruct( result );
+		assertThat( cfhttp.get( Key.statusCode ) ).isEqualTo( 200 );
+		assertThat( cfhttp.get( Key.statusText ) ).isEqualTo( "OK" );
+		assertThat( cfhttp.get( Key.fileContent ) ).isEqualTo( "This is the response text" );
+
+	}
+
 }

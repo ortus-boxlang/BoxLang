@@ -76,6 +76,7 @@ public class Key implements Comparable<Key> {
 	public static final Key	arrayFindAll				= Key.of( "arrayFindAll" );
 	public static final Key	attribute					= Key.of( "attribute" );
 	public static final Key	attributes					= Key.of( "attributes" );
+	public static final Key	attributeCollection			= Key.of( "attributeCollection" );
 	public static final Key	author						= Key.of( "author" );
 	public static final Key	boxBif						= Key.of( "boxBif" );
 	public static final Key	boxMember					= Key.of( "boxMember" );
