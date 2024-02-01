@@ -31,6 +31,7 @@ import ortus.boxlang.runtime.dynamic.casters.GenericCaster;
 import ortus.boxlang.runtime.runnables.IFunctionRunnable;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
+import ortus.boxlang.runtime.services.InterceptorService;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.meta.BoxMeta;
 import ortus.boxlang.runtime.types.meta.FunctionMeta;
@@ -69,7 +70,7 @@ public abstract class Function implements IType, IFunctionRunnable {
 	/**
 	 * The argument collection key which defaults to : {@code argumentCollection}
 	 */
-	public static final Key	ARGUMENT_COLLECTION	= Key.of( "argumentCollection" );
+	public static final Key	ARGUMENT_COLLECTION	= Key.argumentCollection;
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -137,30 +138,36 @@ public abstract class Function implements IType, IFunctionRunnable {
 	/**
 	 * Call this method externally to invoke the function
 	 *
-	 * @param context
+	 * @param context The context to invoke the function in
 	 *
-	 * @return
+	 * @return The result of the function, which may be null
 	 */
 	public Object invoke( FunctionBoxContext context ) {
-		BoxRuntime	runtime	= BoxRuntime.getInstance();
+		InterceptorService	interceptorService	= BoxRuntime.getInstance().getInterceptorService();
 
 		// Announcements
-		IStruct		data	= Struct.of(
-		    "context", context,
-		    "function", this
+		IStruct				data				= Struct.of(
+		    Key.context, context,
+		    Key.function, this
 		);
-		runtime.announce( "preFunctionInvoke", data );
+		interceptorService.announce(
+		    BoxRuntime.RUNTIME_EVENTS.get( "preFunctionInvoke" ),
+		    data
+		);
 		Object result = ensureReturnType( _invoke( context ) );
+		data.put( Key.result, result );
 
-		data.put( "result", result );
-		runtime.announce( "postFunctionInvoke", data );
+		interceptorService.announce(
+		    BoxRuntime.RUNTIME_EVENTS.get( "postFunctionInvoke" ),
+		    data
+		);
 
 		// If output=true, then flush any content in buffer
 		if ( canOutput( context ) ) {
 			context.flushBuffer( false );
 		}
 
-		return data.get( "result" );
+		return result;
 	}
 
 	/**
@@ -272,18 +279,18 @@ public abstract class Function implements IType, IFunctionRunnable {
 		if ( getAnnotations() != null ) {
 			meta.putAll( getAnnotations() );
 		}
-		meta.put( "name", getName().getName() );
-		meta.put( "returnType", getReturnType() );
-		meta.putIfAbsent( "hint", "" );
-		meta.putIfAbsent( "output", false );
-		meta.put( "access", getAccess().toString().toLowerCase() );
+		meta.put( Key._NAME, getName().getName() );
+		meta.put( Key.returnType, getReturnType() );
+		meta.putIfAbsent( Key.hint, "" );
+		meta.putIfAbsent( Key.output, false );
+		meta.put( Key.access, getAccess().toString().toLowerCase() );
 		Array params = new Array();
 		for ( Argument argument : getArguments() ) {
 			IStruct arg = new Struct();
-			arg.put( "name", argument.name().getName() );
-			arg.put( "required", argument.required() );
-			arg.put( "type", argument.type() );
-			arg.put( "default", argument.defaultValue() );
+			arg.put( Key._NAME, argument.name().getName() );
+			arg.put( Key.required, argument.required() );
+			arg.put( Key.type, argument.type() );
+			arg.put( Key._DEFAULT, argument.defaultValue() );
 			if ( argument.documentation() != null ) {
 				arg.putAll( argument.documentation() );
 			}
@@ -291,26 +298,26 @@ public abstract class Function implements IType, IFunctionRunnable {
 				arg.putAll( argument.annotations() );
 			}
 			// Always have this key present?
-			arg.putIfAbsent( "hint", "" );
+			arg.putIfAbsent( Key.hint, "" );
 			params.add( arg );
 		}
-		meta.put( "parameters", params );
+		meta.put( Key.parameters, params );
 
 		// polymorphsism is a pain due to storing the metdata as static values on the class, so we'll just add the closure and lambda checks here
 		// Adobe and Lucee only set the following flags when they are true, but that's inconsistent, so we will always set them.
 
 		boolean isClosure = this instanceof Closure;
 		// Adobe and Lucee have this
-		meta.put( "closure", isClosure );
+		meta.put( Key.closure, isClosure );
 		// Adobe and Lucee have this
-		meta.put( "ANONYMOUSCLOSURE", isClosure );
+		meta.put( Key.ANONYMOUSCLOSURE, isClosure );
 
 		// Adobe and Lucee don't have "lambdas" in the same way we have where the actual implementation is a pure function
 		boolean isLambda = this instanceof Lambda;
 		// Neither Adobe nor Lucee have this, but we're setting it for consistency
-		meta.put( "lambda", isLambda );
+		meta.put( Key.lambda, isLambda );
 		// Lucee has this, but it's true for fat arrow functions. We're setting it true only for skinny arrow (true lambda) functions
-		meta.put( "ANONYMOUSLAMBDA", isLambda );
+		meta.put( Key.ANONYMOUSLAMBDA, isLambda );
 
 		return meta;
 	}
@@ -335,9 +342,9 @@ public abstract class Function implements IType, IFunctionRunnable {
 
 	/**
 	 * A helper to look at the "output" annotation, caching the result
-	 * 
+	 *
 	 * @param context If not null, will be checked for an output annotation
-	 * 
+	 *
 	 * @return Whether the function can output
 	 */
 	public boolean canOutput( FunctionBoxContext context ) {
@@ -351,11 +358,7 @@ public abstract class Function implements IType, IFunctionRunnable {
 			// at a time. Each class has its own caching later for the output annotation.
 			if ( context != null && context.isInClass() ) {
 				// If we're in a class, we need to check the class output annotation
-				if ( context.getThisClass().canOutput() ) {
-					return true;
-				} else {
-					return false;
-				}
+				return context.getThisClass().canOutput();
 			}
 			// If not in a class, we're good
 			return true;

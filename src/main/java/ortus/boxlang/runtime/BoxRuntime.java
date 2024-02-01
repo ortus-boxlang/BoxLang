@@ -78,7 +78,7 @@ public class BoxRuntime {
 	/**
 	 * Register all the core runtime events here
 	 */
-	private static final Map<String, Key>	RUNTIME_EVENTS	= Stream.of(
+	public static final Map<String, Key>	RUNTIME_EVENTS	= Stream.of(
 	    "onRuntimeStart",
 	    "onRuntimeShutdown",
 	    "onRuntimeConfigurationLoad",

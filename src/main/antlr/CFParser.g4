@@ -25,7 +25,7 @@ importStatement:
 // include "myFile.cfm";
 include: INCLUDE expression;
 
-// component {}
+// class {}
 boxClass:
 	javadoc? (preannotation)* ABSTRACT? COMPONENT postannotation* LBRACE property*
 		functionOrStatement* RBRACE;

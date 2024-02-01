@@ -23,15 +23,18 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Instant;
 
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
+import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
+import ortus.boxlang.runtime.scopes.VariablesScope;
+import ortus.boxlang.runtime.services.FunctionService;
 import ortus.boxlang.runtime.services.ModuleService;
 import ortus.boxlang.runtime.types.IStruct;
 
@@ -39,13 +42,13 @@ class ModuleRecordTest {
 
 	static BoxRuntime runtime;
 
-	@BeforeAll
-	public static void setupBeforeAll() {
+	@BeforeEach
+	public void setup() {
 		runtime = BoxRuntime.getInstance( true );
 	}
 
-	@AfterAll
-	public static void tearDownAfterAll() {
+	@AfterEach
+	public void tearDown() {
 		runtime.shutdown();
 	}
 
@@ -143,7 +146,7 @@ class ModuleRecordTest {
 
 		// When
 		moduleRecord.loadDescriptor( context );
-		moduleRecord.configure( context );
+		moduleRecord.register( context );
 
 		// Then
 
@@ -181,8 +184,26 @@ class ModuleRecordTest {
 		// When
 		moduleRecord
 		    .loadDescriptor( context )
-		    .configure( context )
+		    .register( context )
 		    .activate( context );
 
+		// Then
+
+		// It should register global functions
+		FunctionService functionService = runtime.getFunctionService();
+		assertThat( moduleRecord.bifs.size() ).isEqualTo( 1 );
+		assertThat( functionService.hasGlobalFunction( Key.of( "Hello" ) ) ).isTrue();
+
+		// // Test the bif
+		runtime.executeSource(
+		    """
+		    result = hello( 'boxlang' );
+		    """,
+		    context );
+
+		IScope variables = context.getScopeNearby( VariablesScope.name );
+
+		assertThat( variables.getAsString( Key.result ) )
+		    .isEqualTo( "Hello World, my name is boxlang and I am 0 years old" );
 	}
 }
