@@ -159,9 +159,8 @@ public class BaseBoxContext implements IBoxContext {
 	 * @return The execution state for the closest component, null if none was found
 	 */
 	public IStruct findClosestComponent( Key name ) {
-		// loop backwards from the end of the component queue looking for a matching key
 		IStruct[] componentArray = getComponents();
-		for ( int i = componentArray.length - 1; i >= 0; i-- ) {
+		for ( int i = 1; i < componentArray.length; i++ ) {
 			IStruct component = componentArray[ i ];
 			if ( component.get( Key._NAME ).equals( name ) ) {
 				return component;

@@ -85,9 +85,9 @@ public abstract class Component {
 	public void invoke( IBoxContext context, IStruct attributes, ComponentBody body ) {
 		// TODO: Move this validation to the parsing stage so we don't even create the AST if there is a body.
 		// We'll need to get the Component Descriptor in the parser to validate this.
-		if ( !allowBody && body != null ) {
-			throw new RuntimeException( "The [" + this.name.getName() + "] component does not allow a body" );
-		}
+		// if ( !allowBody && body != null ) {
+		// throw new RuntimeException( "The [" + this.name.getName() + "] component does not allow a body" );
+		// }
 
 		validateAttributes( attributes );
 		IStruct executionState = new Struct();

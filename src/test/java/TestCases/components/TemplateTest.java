@@ -823,14 +823,14 @@ public class TemplateTest {
 		    """
 		    http url="google.com" throwOnTimeout=true {
 		    	foo = "bar";
-		    	baz;
+		    	baz=true;
 		    }
 
 		    http url="google.com" throwOnTimeout=true;
 
 		    cfhttp( url="google.com",  throwOnTimeout=true ){
 		    	foo = "bar";
-		    	baz;
+		    	baz=true;
 		    }
 
 		    cfhttp( url="google.com",  throwOnTimeout=true )

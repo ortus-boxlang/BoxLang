@@ -15,25 +15,25 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package ortus.boxlang.runtime.components.system;
+package ortus.boxlang.runtime.components.net;
 
 import ortus.boxlang.runtime.components.Component;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.dynamic.ExpressionInterpreter;
-import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
 import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 import ortus.boxlang.runtime.scopes.Key;
+import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.IStruct;
+import ortus.boxlang.runtime.types.Struct;
 
-public class SaveContent extends Component {
+public class HTTP extends Component {
 
-	public SaveContent() {
-		super( Key.of( "SaveContent" ) );
-		captureBodyOutput = true;
+	public HTTP() {
+		super( Key.of( "HTTP" ) );
 	}
 
 	/**
-	 * I capture the generated content from the body statements and save it into a variable
+	 * I make an HTTP call
 	 *
 	 * @param context        The context in which the BIF is being invoked
 	 * @param attributes     The attributes to the BIF
@@ -42,26 +42,23 @@ public class SaveContent extends Component {
 	 *
 	 */
 	public void _invoke( IBoxContext context, IStruct attributes, ComponentBody body, IStruct executionState ) {
-		String	content			= processBody( context, body );
-		String	variableName	= attributes.getAsString( Key.variable );
+		executionState.put( Key.HTTPParams, new Array() );
 
-		boolean	trim			= BooleanCaster.cast( attributes.getOrDefault( Key.trim, false ) );
-		boolean	append			= BooleanCaster.cast( attributes.getOrDefault( Key.append, false ) );
+		processBody( context, body );
 
-		// Optionally trim captured content
-		if ( trim ) {
-			content = content.trim();
-		}
+		String	variableName	= StringCaster.cast( attributes.getOrDefault( Key.result, "cfhttp" ) );
+		String	theURL			= StringCaster.cast( attributes.dereference( context, Key.URL, false ) );
+		Struct	HTTPResult		= new Struct();
 
-		// Lookup existing value and append if it existed
-		if ( append ) {
-			Object priorContent = ExpressionInterpreter.getVariable( context, variableName, true );
-			if ( priorContent != null ) {
-				content = StringCaster.cast( priorContent ).concat( content );
-			}
-		}
+		System.out.println( "Make HTTP call to: " + theURL );
+		System.out.println( "Using the following HTTP Params: " );
+		System.out.println( executionState.getAsArray( Key.HTTPParams ).asString() );
+
+		HTTPResult.put( Key.statusCode, 200 );
+		HTTPResult.put( Key.statusText, "OK" );
+		HTTPResult.put( Key.fileContent, "This is the response text" );
 
 		// Set the result back into the page
-		ExpressionInterpreter.setVariable( context, variableName, content );
+		ExpressionInterpreter.setVariable( context, variableName, HTTPResult );
 	}
 }

@@ -74,6 +74,22 @@ public class SaveContentTest {
 		assertThat( variables.get( result ) ).isEqualTo( "Hello World" );
 	}
 
+	@DisplayName( "It can capture content ACF script" )
+	@Test
+	public void testCanCaptureContentACFScript() {
+
+		instance.executeSource(
+		    """
+		       	echo( "before" );
+		          cfsaveContent( variable="result" ) {
+		       	echo( "Hello World" );
+		       }
+		    echo( "after" );
+		          """,
+		    context );
+		assertThat( variables.get( result ) ).isEqualTo( "Hello World" );
+	}
+
 	@DisplayName( "It can capture content tag" )
 	@Test
 	public void testCanCaptureContentTag() {

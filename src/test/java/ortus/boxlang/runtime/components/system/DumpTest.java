@@ -73,4 +73,34 @@ public class DumpTest {
 		assertThat( variables.getAsString( result ) ).contains( "String" );
 	}
 
+	@DisplayName( "It can dump script" )
+	@Test
+	public void testCanDumpScript() {
+
+		instance.executeSource(
+		    """
+		       dump var="My Value";
+		    result = getBoxContext().getBuffer().toString();
+		          """,
+		    context );
+		assertThat( variables.getAsString( result ) ).contains( "My Value" );
+		// If we change our cfdump template, this may break
+		assertThat( variables.getAsString( result ) ).contains( "String" );
+	}
+
+	@DisplayName( "It can dump ACF script" )
+	@Test
+	public void testCanDumpACFScript() {
+
+		instance.executeSource(
+		    """
+		       cfdump( var="My Value");
+		    result = getBoxContext().getBuffer().toString();
+		          """,
+		    context );
+		assertThat( variables.getAsString( result ) ).contains( "My Value" );
+		// If we change our cfdump template, this may break
+		assertThat( variables.getAsString( result ) ).contains( "String" );
+	}
+
 }

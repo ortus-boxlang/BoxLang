@@ -18,6 +18,8 @@
 package ortus.boxlang.runtime.dynamic;
 
 import ortus.boxlang.runtime.components.Component;
+import ortus.boxlang.runtime.components.net.HTTP;
+import ortus.boxlang.runtime.components.net.HTTPParam;
 import ortus.boxlang.runtime.components.system.Dump;
 import ortus.boxlang.runtime.components.system.Include;
 import ortus.boxlang.runtime.components.system.SaveContent;
@@ -43,8 +45,10 @@ public class TemplateUtil {
 			System.out.println( "end of brad component" );
 		} else if ( name.equals( Key.of( "sdf" ) ) ) {
 			System.out.println( "sdf component attributes: " + attributes.asString() );
-		} else if ( name.equals( Key.of( "http" ) ) ) {
-			System.out.println( "http component attributes: " + attributes.asString() );
+		} else if ( name.equals( Key.HTTP ) ) {
+			new HTTP().invoke( context, attributes, componentBody );
+		} else if ( name.equals( Key.HTTPParam ) ) {
+			new HTTPParam().invoke( context, attributes, componentBody );
 		} else if ( name.equals( Key.of( "include" ) ) ) {
 			new Include().invoke( context, attributes, componentBody );
 		} else if ( name.equals( Key.of( "SaveContent" ) ) ) {
