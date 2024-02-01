@@ -75,7 +75,7 @@ public class Array implements List<Object>, IType, IReferenceable, IListenable {
 	/**
 	 * Function service
 	 */
-	private FunctionService				functionService	= BoxRuntime.getInstance().getFunctionService();
+	private static FunctionService		functionService	= BoxRuntime.getInstance().getFunctionService();
 
 	DynamicObject						dynamicObject	= null;
 

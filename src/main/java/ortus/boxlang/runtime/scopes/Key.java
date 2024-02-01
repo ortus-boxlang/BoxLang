@@ -17,12 +17,14 @@
  */
 package ortus.boxlang.runtime.scopes;
 
+import java.io.Serializable;
 import java.util.Arrays;
 
 /**
  * Represents a case-insenstive key, while retaining the original case too.
+ * Implements the Serializable interface in case duplication is requested within a native HashMap or ArrayList
  */
-public class Key implements Comparable<Key> {
+public class Key implements Comparable<Key>, Serializable {
 
 	// Static instances of common keys
 	public static final Key	_0							= Key.of( 0 );
@@ -115,6 +117,7 @@ public class Key implements Comparable<Key> {
 	public static final Key	day							= Key.of( "day" );
 	public static final Key	days						= Key.of( "days" );
 	public static final Key	debugMode					= Key.of( "debugMode" );
+	public static final Key	deep						= Key.of( "deep" );
 	public static final Key	defaultValue				= Key.of( "defaultValue" );
 	public static final Key	delimiter					= Key.of( "delimiter" );
 	public static final Key	description					= Key.of( "description" );
