@@ -46,6 +46,53 @@ public class ValidationUtil {
 	    .compile( "[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-4[a-fA-F0-9]{3}-[89abAB][a-fA-F0-9]{3}[a-fA-F0-9]{12}" );
 
 	/**
+	 * Perform the Lunh algorithm to validate a credit card number.
+	 * <p>
+	 * Validates that the card is between 12 and 19 digits long, contains no alphabetic characters, and passes the Luhn algorithm.
+	 * <p>
+	 * Does not validate:
+	 * <ul>
+	 * <li>the existence of the card number</li>
+	 * <li>the card number prefix</li>
+	 * <li>whether the card number length matches the prefix. (For example, Visa card numbers can be 13, 16, or 19 characters depending on the sub
+	 * brand.)</li>
+	 * </ul>
+	 * <p>
+	 * More extensive validation is required to ensure a card number is valid, and should be performed by either the card issuer or a third-party
+	 * validation library such as Apache Commons Validator.
+	 *
+	 * @param cardNumber String to check for a valid credit card number format.
+	 *
+	 * @return Boolean indicating whether the given string is a valid credit card number.
+	 */
+	public static boolean isValidCreditCard( String cardNumber ) {
+		int	shortestValidCardLength	= 12;
+		int	longestValidCardLength	= 19;
+		if ( cardNumber == null || !cardNumber.matches( "[0-9 ,_-]+" ) ) {
+			// cardNumber contains characters other than digit, space, or underscore
+			return false;
+		}
+		String sanitized = cardNumber.replaceAll( "[^0-9]", "" );
+		if ( sanitized.length() < shortestValidCardLength || sanitized.length() > longestValidCardLength ) {
+			return false;
+		}
+		int		sum			= 0;
+		boolean	alternate	= false;
+		for ( int i = sanitized.length() - 1; i >= 0; i-- ) {
+			int n = Character.getNumericValue( sanitized.charAt( i ) );
+			if ( alternate ) {
+				n *= 2;
+				if ( n > 9 ) {
+					n = ( n % 10 ) + 1;
+				}
+			}
+			sum			+= n;
+			alternate	= !alternate;
+		}
+		return ( sum % 10 == 0 );
+	}
+
+	/**
 	 * Validates the given string is a valid integer value.
 	 *
 	 * @param value String or object value to check for a valid integer format. Only Integer types or strings containing ONLY digits will return true.

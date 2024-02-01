@@ -106,12 +106,41 @@ public class IsValidTest {
 		assertThat( ( Boolean ) variables.get( Key.of( "aStringFalse" ) ) ).isTrue();
 	}
 
-	@Disabled( "Unimplemented" )
 	@DisplayName( "It works on creditcards" )
 	@Test
 	public void testCreditcard() {
-		assertThat( ( Boolean ) instance.executeStatement( "isValid( 'creditcard','4111111111111111' )" ) ).isTrue();
-		assertThat( ( Boolean ) instance.executeStatement( "isValid( 'creditcard','41111111111111114' )" ) ).isFalse();
+		instance.executeSource(
+		    """
+		    stripeTestCard = isValid( "creditcard","4111111111111111" );
+		    valid1 = IsValid( "creditcard","4000000000006" );
+		    valid2 = IsValid( "creditcard","378888888888858" );
+		    valid3 = IsValid( "creditcard","4888888888888838" );
+		    valid3 = IsValid( "creditcard","5588888888888838" );
+		    valid4 = IsValid( "creditcard","6011222233334444" );
+		    valid5 = IsValid( "creditcard","6011-2222-3333-4444" );
+		    valid6 = IsValid( "creditcard","6011 2222 3333 4444" );
+		    valid7 = IsValid( "creditcard","6011,2222,3333,4444" );
+
+		    // falsies
+		    stripeTestWithExtra4 = isValid( "creditcard","41111111111111114" );
+		    alphachars           = IsValid( "creditcard","4111x1111x1111y11114" );
+		    invalid3             = IsValid( "creditcard","6010222233334444" );
+		    invalid4             = IsValid( "creditcard","4000000000007" );
+		       """,
+		    context );
+		assertThat( ( Boolean ) variables.get( Key.of( "stripeTestCard" ) ) ).isTrue();
+		assertThat( ( Boolean ) variables.get( Key.of( "valid1" ) ) ).isTrue();
+		assertThat( ( Boolean ) variables.get( Key.of( "valid2" ) ) ).isTrue();
+		assertThat( ( Boolean ) variables.get( Key.of( "valid3" ) ) ).isTrue();
+		assertThat( ( Boolean ) variables.get( Key.of( "valid4" ) ) ).isTrue();
+		assertThat( ( Boolean ) variables.get( Key.of( "valid5" ) ) ).isTrue();
+		assertThat( ( Boolean ) variables.get( Key.of( "valid6" ) ) ).isTrue();
+		assertThat( ( Boolean ) variables.get( Key.of( "valid7" ) ) ).isTrue();
+
+		assertThat( ( Boolean ) variables.get( Key.of( "stripeTestWithExtra4" ) ) ).isFalse();
+		assertThat( ( Boolean ) variables.get( Key.of( "alphachars" ) ) ).isFalse();
+		assertThat( ( Boolean ) variables.get( Key.of( "invalid3" ) ) ).isFalse();
+		assertThat( ( Boolean ) variables.get( Key.of( "invalid4" ) ) ).isFalse();
 	}
 
 	@Disabled( "Unimplemented" )

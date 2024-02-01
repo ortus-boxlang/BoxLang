@@ -57,8 +57,7 @@ public class IsValid extends BIF {
 	 * @argument.value Value to test for validaty on a given type
 	 */
 	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
-		IsValidType	type	= IsValidType.fromString( arguments.getAsString( Key.type ) );
-		Object		value	= arguments.get( Key.value );
+		IsValidType type = IsValidType.fromString( arguments.getAsString( Key.type ) );
 		return switch ( type ) {
 			/*
 			 * Implemented in GenericCaster, mostly non-string types.
@@ -74,7 +73,7 @@ public class IsValid extends BIF {
 			 * Implemented in ValidationUtil
 			 */
 			// case BINARY -> ValidationUtil.isValidBINARY( arguments.get( Key.value ) );
-			// case CREDITCARD -> ValidationUtil.isValidCREDITCARD( arguments.getAsString( Key.value ) );
+			case CREDITCARD -> ValidationUtil.isValidCreditCard( arguments.getAsString( Key.value ) );
 			// case COMPONENT -> ValidationUtil.isValidCOMPONENT( value );
 			// case EMAIL -> ValidationUtil.isValidEMAIL( arguments.getAsString( Key.value ) );
 			// case FLOAT -> value instanceof Float || ???
@@ -88,14 +87,15 @@ public class IsValid extends BIF {
 			case TELEPHONE -> ValidationUtil.isValidTelephone( arguments.getAsString( Key.value ) );
 			case URL -> ValidationUtil.isValidURL( arguments.getAsString( Key.value ) );
 			case UUID -> ValidationUtil.isValidCFUUID( arguments.getAsString( Key.value ) ) || ValidationUtil.isValidUUID( arguments.getAsString( Key.value ) );
-			case USDATE -> context.invokeFunction( Key.of( "LSIsDate" ), java.util.Map.of( Key.date, value, Key.locale, "en_US" ) );
+			case USDATE -> context.invokeFunction( Key.of( "LSIsDate" ),
+			    java.util.Map.of( Key.date, arguments.getAsString( Key.value ), Key.locale, "en_US" ) );
 			// case VARIABLENAME -> ValidationUtil.isValidVARIABLENAME( value );
 			// case XML -> ValidationUtil.isValidXML( value );
 			case ZIPCODE -> ValidationUtil.isValidZipCode( arguments.getAsString( Key.value ) );
 			// Lucee Only:
-			// case LAMBDA -> ValidationUtil.isValidLAMBDA( value );
-			// case FUNCTION -> ValidationUtil.isValidFUNCTION( value );
-			// case CLOSURE -> ValidationUtil.isValidCLOSURE( value );
+			// case LAMBDA -> arguments.get( Key.value ) instanceof Lambda;
+			// case FUNCTION -> arguments.get( Key.value ) instanceof UDF;
+			// case CLOSURE -> arguments.get( Key.value ) instanceof Closure;
 		};
 	}
 
@@ -105,7 +105,7 @@ public class IsValid extends BIF {
 		ARRAY,
 	    // BINARY,
 		BOOLEAN,
-	    // CREDITCARD,
+		CREDITCARD,
 	    // COMPONENT,
 		DATE,
 	    // EMAIL,
@@ -129,7 +129,7 @@ public class IsValid extends BIF {
 	    // VARIABLENAME,
 	    // XML,
 		ZIPCODE;
-
+		// Lucee Only:
 		// LAMBDA,
 		// FUNCTION,
 		// CLOSURE;
