@@ -191,19 +191,23 @@ class ModuleRecordTest {
 
 		// It should register global functions
 		FunctionService functionService = runtime.getFunctionService();
-		assertThat( moduleRecord.bifs.size() ).isEqualTo( 1 );
-		assertThat( functionService.hasGlobalFunction( Key.of( "Hello" ) ) ).isTrue();
+		assertThat( moduleRecord.bifs.size() ).isEqualTo( 2 );
+		assertThat( functionService.hasGlobalFunction( Key.of( "moduleHelloWorld" ) ) ).isTrue();
+		assertThat( functionService.hasGlobalFunction( Key.of( "moduleNow" ) ) ).isTrue();
 
-		// // Test the bif
+		// Test the bif
+		// @formatter:off
 		runtime.executeSource(
 		    """
-		    result = hello( 'boxlang' );
+		       result = moduleHelloWorld( 'boxlang' );
+		    	result2 = moduleNow();
 		    """,
 		    context );
+		// @formatter:on
 
 		IScope variables = context.getScopeNearby( VariablesScope.name );
-
 		assertThat( variables.getAsString( Key.result ) )
 		    .isEqualTo( "Hello World, my name is boxlang and I am 0 years old" );
+		assertThat( variables.get( Key.of( "result2" ) ) ).isNotNull();
 	}
 }
