@@ -38,7 +38,8 @@ public class Val extends BIF {
 	}
 
 	/**
-	 * Converts numeric characters that occur at the beginning of a string to a number. If conversion fails, returns zero.
+	 * Converts numeric characters and the first period found that occur at the beginning of a string to a number. A period not accompianied by at least
+	 * one numeric digit will be ignored. If no numeric digits are found at the start of the string, zero will be returned.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.

@@ -221,7 +221,8 @@ public class ScriptingRequestBoxContext extends RequestBoxContext {
 	 * @return This context
 	 */
 	public IBoxContext flushBuffer( boolean force ) {
-		String output;
+		String			output;
+		StringBuffer	buffer	= getBuffer();
 		synchronized ( buffer ) {
 			output = buffer.toString();
 			clearBuffer();

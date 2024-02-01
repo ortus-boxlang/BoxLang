@@ -17,6 +17,10 @@
  */
 package ortus.boxlang.runtime.dynamic;
 
+import ortus.boxlang.runtime.components.Component;
+import ortus.boxlang.runtime.components.system.Dump;
+import ortus.boxlang.runtime.components.system.Include;
+import ortus.boxlang.runtime.components.system.SaveContent;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.IStruct;
@@ -27,23 +31,26 @@ import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
  */
 public class TemplateUtil {
 
-	@FunctionalInterface
-	public interface ContextConsumer {
-
-		void accept( IBoxContext context );
-	}
-
-	public static void doComponent( IBoxContext context, Key name, IStruct attributes, ContextConsumer componentBody ) {
+	// This needs to change to actually looking up the component in a registry and running it dynamically
+	// Components are designed to be singletons.
+	// Use a ComponentDescriptor like we do with BIFs and member methods.
+	public static void doComponent( IBoxContext context, Key name, IStruct attributes, Component.ComponentBody componentBody ) {
 		if ( name.equals( Key.of( "Brad" ) ) ) {
 			System.out.println( "Brad component attributes: " + attributes.asString() );
 			if ( componentBody != null ) {
-				componentBody.accept( context );
+				componentBody.process( context );
 			}
 			System.out.println( "end of brad component" );
 		} else if ( name.equals( Key.of( "sdf" ) ) ) {
 			System.out.println( "sdf component attributes: " + attributes.asString() );
 		} else if ( name.equals( Key.of( "http" ) ) ) {
 			System.out.println( "http component attributes: " + attributes.asString() );
+		} else if ( name.equals( Key.of( "include" ) ) ) {
+			new Include().invoke( context, attributes, componentBody );
+		} else if ( name.equals( Key.of( "SaveContent" ) ) ) {
+			new SaveContent().invoke( context, attributes, componentBody );
+		} else if ( name.equals( Key.dump ) ) {
+			new Dump().invoke( context, attributes, componentBody );
 		} else {
 			throw new BoxRuntimeException( "Component [" + name.getName() + "] not implemented yet" );
 		}

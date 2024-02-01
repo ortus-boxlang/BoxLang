@@ -41,6 +41,7 @@ public class Key implements Comparable<Key> {
 	public static final Key	__isMemberExecution			= Key.of( "__isMemberExecution" );
 	public static final Key	__functionName				= Key.of( "__functionName" );
 	public static final Key	_ANY						= Key.of( "any" );
+	public static final Key	append						= Key.of( "append" );
 	public static final Key	_ARRAY						= Key.of( "array" );
 	public static final Key	_BOOLEAN					= Key.of( "boolean" );
 	public static final Key	_CLASS						= Key.of( "class" );
@@ -127,6 +128,7 @@ public class Key implements Comparable<Key> {
 	public static final Key	doLowerIfAllUppercase		= Key.of( "doLowerIfAllUppercase" );
 	public static final Key	dspLocale					= Key.of( "dspLocale" );
 	public static final Key	duration					= Key.of( "duration" );
+	public static final Key	dump						= Key.of( "dump" );
 	public static final Key	elementCountForRemoval		= Key.of( "elementCountForRemoval" );
 	public static final Key	encoding					= Key.of( "encoding" );
 	public static final Key	end							= Key.of( "end" );
@@ -257,8 +259,10 @@ public class Key implements Comparable<Key> {
 	public static final Key	structure					= Key.of( "structure" );
 	public static final Key	substring					= Key.of( "substring" );
 	public static final Key	system						= Key.of( "system" );
+	public static final Key	template					= Key.of( "template" );
 	public static final Key	timeFormat					= Key.of( "timeFormat" );
 	public static final Key	timezone					= Key.of( "timezone" );
+	public static final Key	trim						= Key.of( "trim" );
 	public static final Key	type						= Key.of( "type" );
 	public static final Key	value						= Key.of( "value" );
 	public static final Key	var							= Key.of( "var" );

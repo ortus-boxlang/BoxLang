@@ -78,6 +78,7 @@ public class Dump extends BIF {
 		Object		target				= arguments.get( Key.var );
 		InputStream	dumpTemplate		= null;
 		String		name				= "Class.cfm";
+
 		if ( target instanceof IType ) {
 			name = target.getClass().getSimpleName() + ".cfm";
 		} else if ( target instanceof String ) {

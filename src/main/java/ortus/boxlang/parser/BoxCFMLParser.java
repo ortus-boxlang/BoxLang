@@ -53,7 +53,6 @@ import ortus.boxlang.ast.statement.BoxExpression;
 import ortus.boxlang.ast.statement.BoxFunctionDeclaration;
 import ortus.boxlang.ast.statement.BoxIfElse;
 import ortus.boxlang.ast.statement.BoxImport;
-import ortus.boxlang.ast.statement.BoxInclude;
 import ortus.boxlang.ast.statement.BoxProperty;
 import ortus.boxlang.ast.statement.BoxRethrow;
 import ortus.boxlang.ast.statement.BoxReturn;
@@ -418,17 +417,18 @@ public class BoxCFMLParser extends BoxAbstractParser {
 	}
 
 	private BoxStatement toAst( File file, IncludeContext node ) {
-		BoxExpr				template;
-		List<BoxAnnotation>	annotations	= new ArrayList<>();
+		List<BoxAnnotation> annotations = new ArrayList<>();
 
 		for ( var attr : node.attribute() ) {
 			annotations.add( toAst( file, attr ) );
 		}
 
-		template = findExprInAnnotations( annotations, "template", true, null, "include", getPosition( node ) );
-
-		// TODO: Add runOnce support
-		return new BoxInclude( template, getPosition( node ), getSourceText( node ) );
+		return new BoxComponent(
+		    "include",
+		    annotations,
+		    getPosition( node ),
+		    getSourceText( node )
+		);
 	}
 
 	private BoxStatement toAst( File file, ContinueContext node ) {
