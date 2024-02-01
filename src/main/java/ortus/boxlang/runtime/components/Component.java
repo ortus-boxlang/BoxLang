@@ -41,6 +41,11 @@ public abstract class Component {
 	protected Key					name;
 
 	/**
+	 * Component Attributes
+	 */
+	protected Attribute[]			declaredAttributes	= new Attribute[] {};
+
+	/**
 	 * Flag to capture buffered output from the body
 	 */
 	protected boolean				captureBodyOutput	= false;
@@ -155,6 +160,42 @@ public abstract class Component {
 
 		}
 		return null;
+	}
+
+	/**
+	 * Get the name of the component
+	 * 
+	 * @return The name of the component
+	 */
+	public Key getName() {
+		return name;
+	}
+
+	/**
+	 * Get the attributes for this component
+	 * 
+	 * @return The attributes for this component
+	 */
+	public Attribute[] getDeclaredAttributes() {
+		return declaredAttributes;
+	}
+
+	/**
+	 * Get whether this component allows a body
+	 * 
+	 * @return Whether this component allows a body
+	 */
+	public boolean allowsBody() {
+		return allowBody;
+	}
+
+	/**
+	 * Get whether this component captures the output of the body
+	 * 
+	 * @return Whether this component captures the output of the body
+	 */
+	public boolean capturesBodyOutput() {
+		return captureBodyOutput;
 	}
 
 }

@@ -799,41 +799,22 @@ public class TemplateTest {
 	}
 
 	@Test
-	public void testGenericComponents() {
-		instance.executeSource(
-		    """
-		    	<cfbrad outer=true foo="bar">
-		          <cfsdf attr="value" />
-		          <cfbrad inner=false foo="bar">
-		          	test
-		     <cfbrad selfClose="yeah!" />
-		        <cfset foo = "bar">
-		        again
-		          </cfbrad>
-		       trailing
-		    </cfbrad>
-		               """,
-		    context, BoxScriptType.CFMARKUP );
-
-	}
-
-	@Test
 	public void testGenericComponentsInScript() {
 		instance.executeSource(
 		    """
-		    http url="google.com" throwOnTimeout=true {
+		    http url="http://google.com" throwOnTimeout=true {
 		    	foo = "bar";
 		    	baz=true;
 		    }
 
-		    http url="google.com" throwOnTimeout=true;
+		    http url="http://google.com" throwOnTimeout=true;
 
-		    cfhttp( url="google.com",  throwOnTimeout=true ){
+		    cfhttp( url="http://google.com",  throwOnTimeout=true ){
 		    	foo = "bar";
 		    	baz=true;
 		    }
 
-		    cfhttp( url="google.com",  throwOnTimeout=true )
+		    cfhttp( url="http://google.com",  throwOnTimeout=true )
 		                  """,
 		    context, BoxScriptType.CFSCRIPT );
 

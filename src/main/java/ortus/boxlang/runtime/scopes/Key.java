@@ -130,6 +130,7 @@ public class Key implements Comparable<Key> {
 	public static final Key	dump						= Key.of( "dump" );
 	public static final Key	duration					= Key.of( "duration" );
 	public static final Key	elementCountForRemoval		= Key.of( "elementCountForRemoval" );
+	public static final Key	encoded						= Key.of( "encoded" );
 	public static final Key	encoding					= Key.of( "encoding" );
 	public static final Key	end							= Key.of( "end" );
 	public static final Key	file						= Key.of( "file" );
@@ -189,6 +190,7 @@ public class Key implements Comparable<Key> {
 	public static final Key	maxThreads					= Key.of( "maxThreads" );
 	public static final Key	merge						= Key.of( "merge" );
 	public static final Key	message						= Key.of( "message" );
+	public static final Key	mimetype					= Key.of( "mimetype " );
 	public static final Key	millisecond					= Key.of( "millisecond" );
 	public static final Key	milliseconds				= Key.of( "milliseconds" );
 	public static final Key	min							= Key.of( "min" );

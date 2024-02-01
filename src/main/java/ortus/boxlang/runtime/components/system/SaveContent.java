@@ -17,10 +17,13 @@
  */
 package ortus.boxlang.runtime.components.system;
 
+import java.util.Set;
+
+import ortus.boxlang.runtime.components.Attribute;
 import ortus.boxlang.runtime.components.Component;
+import ortus.boxlang.runtime.components.validators.Validator;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.dynamic.ExpressionInterpreter;
-import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
 import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.IStruct;
@@ -29,7 +32,12 @@ public class SaveContent extends Component {
 
 	public SaveContent() {
 		super( Key.of( "SaveContent" ) );
-		captureBodyOutput = true;
+		declaredAttributes	= new Attribute[] {
+		    new Attribute( Key.variable, "string", Set.of( Validator.REQUIRED, Validator.NON_EMPTY ) ),
+		    new Attribute( Key.trim, "boolean", false ),
+		    new Attribute( Key.append, "boolean", false )
+		};
+		captureBodyOutput	= true;
 	}
 
 	/**
@@ -45,8 +53,8 @@ public class SaveContent extends Component {
 		String	content			= processBody( context, body );
 		String	variableName	= attributes.getAsString( Key.variable );
 
-		boolean	trim			= BooleanCaster.cast( attributes.getOrDefault( Key.trim, false ) );
-		boolean	append			= BooleanCaster.cast( attributes.getOrDefault( Key.append, false ) );
+		boolean	trim			= attributes.getAsBoolean( Key.trim );
+		boolean	append			= attributes.getAsBoolean( Key.append );
 
 		// Optionally trim captured content
 		if ( trim ) {

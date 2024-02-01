@@ -17,7 +17,11 @@
  */
 package ortus.boxlang.runtime.components.system;
 
+import java.util.Set;
+
+import ortus.boxlang.runtime.components.Attribute;
 import ortus.boxlang.runtime.components.Component;
+import ortus.boxlang.runtime.components.validators.Validator;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.IStruct;
@@ -26,7 +30,10 @@ public class Dump extends Component {
 
 	public Dump() {
 		super( Key.dump );
-		allowBody = false;
+		declaredAttributes	= new Attribute[] {
+		    new Attribute( Key.var, "any", Set.of( Validator.REQUIRED ) )
+		};
+		allowBody			= false;
 	}
 
 	/**
@@ -39,7 +46,7 @@ public class Dump extends Component {
 	 *
 	 */
 	public void _invoke( IBoxContext context, IStruct attributes, ComponentBody body, IStruct executionState ) {
-		Object theVar = attributes.dereference( context, Key.var, false );
+		Object theVar = attributes.get( Key.var );
 		runtime.getFunctionService().getGlobalFunction( Key.dump ).invoke( context, new Object[] { theVar }, false, Key.dump );
 	}
 }

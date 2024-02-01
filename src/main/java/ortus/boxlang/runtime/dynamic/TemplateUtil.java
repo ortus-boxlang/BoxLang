@@ -17,12 +17,15 @@
  */
 package ortus.boxlang.runtime.dynamic;
 
+import java.util.Map;
+
 import ortus.boxlang.runtime.components.Component;
 import ortus.boxlang.runtime.components.net.HTTP;
 import ortus.boxlang.runtime.components.net.HTTPParam;
 import ortus.boxlang.runtime.components.system.Dump;
 import ortus.boxlang.runtime.components.system.Include;
 import ortus.boxlang.runtime.components.system.SaveContent;
+import ortus.boxlang.runtime.components.validators.Validator;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.IStruct;
@@ -36,25 +39,28 @@ public class TemplateUtil {
 	// This needs to change to actually looking up the component in a registry and running it dynamically
 	// Components are designed to be singletons.
 	// Use a ComponentDescriptor like we do with BIFs and member methods.
+	private static Map<Key, Component> registry = Map.of(
+	    Key.dump, new Dump(),
+	    Key.HTTP, new HTTP(),
+	    Key.HTTPParam, new HTTPParam(),
+	    Key.of( "include" ), new Include(),
+	    Key.of( "SaveContent" ), new SaveContent()
+	);
+
+	// This method needs to become the invoke method in the ComponentDescriptor to run a given component
 	public static void doComponent( IBoxContext context, Key name, IStruct attributes, Component.ComponentBody componentBody ) {
-		if ( name.equals( Key.of( "Brad" ) ) ) {
-			System.out.println( "Brad component attributes: " + attributes.asString() );
-			if ( componentBody != null ) {
-				componentBody.process( context );
+		if ( registry.containsKey( name ) ) {
+			Component component = registry.get( name );
+			// call validators on attributes)
+			for ( var attribute : component.getDeclaredAttributes() ) {
+				// Automatically enforce type, if set
+				Validator.TYPE.validate( context, component, attribute, attributes );
+				// Automatically enforce default value, if set
+				Validator.DEFAULT_VALUE.validate( context, component, attribute, attributes );
+				// Now run the rest of the validators
+				attribute.validate( context, component, attributes );
 			}
-			System.out.println( "end of brad component" );
-		} else if ( name.equals( Key.of( "sdf" ) ) ) {
-			System.out.println( "sdf component attributes: " + attributes.asString() );
-		} else if ( name.equals( Key.HTTP ) ) {
-			new HTTP().invoke( context, attributes, componentBody );
-		} else if ( name.equals( Key.HTTPParam ) ) {
-			new HTTPParam().invoke( context, attributes, componentBody );
-		} else if ( name.equals( Key.of( "include" ) ) ) {
-			new Include().invoke( context, attributes, componentBody );
-		} else if ( name.equals( Key.of( "SaveContent" ) ) ) {
-			new SaveContent().invoke( context, attributes, componentBody );
-		} else if ( name.equals( Key.dump ) ) {
-			new Dump().invoke( context, attributes, componentBody );
+			component.invoke( context, attributes, componentBody );
 		} else {
 			throw new BoxRuntimeException( "Component [" + name.getName() + "] not implemented yet" );
 		}

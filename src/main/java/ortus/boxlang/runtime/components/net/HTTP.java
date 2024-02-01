@@ -17,7 +17,11 @@
  */
 package ortus.boxlang.runtime.components.net;
 
+import java.util.Set;
+
+import ortus.boxlang.runtime.components.Attribute;
 import ortus.boxlang.runtime.components.Component;
+import ortus.boxlang.runtime.components.validators.Validator;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.dynamic.ExpressionInterpreter;
 import ortus.boxlang.runtime.dynamic.casters.StringCaster;
@@ -25,11 +29,58 @@ import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
+import ortus.boxlang.runtime.types.exceptions.BoxValidationException;
 
 public class HTTP extends Component {
 
 	public HTTP() {
 		super( Key.of( "HTTP" ) );
+		declaredAttributes = new Attribute[] {
+		    new Attribute( Key.URL, "string", Set.of(
+		        Validator.REQUIRED,
+		        Validator.NON_EMPTY,
+		        ( cxt, comp, attr, attrs ) -> {
+			        if ( !attrs.getAsString( attr.name() ).startsWith( "http" ) ) {
+				        throw new BoxValidationException( comp, attr, "must start with 'http://' or 'https://'" );
+			        }
+		        }
+		    ) ),
+		    new Attribute( Key.result, "string" )
+			/*
+			 * TODO:
+			 * port
+			 * method
+			 * proxyserver
+			 * proxyport
+			 * proxyuser
+			 * proxypassword
+			 * username
+			 * password
+			 * useragent
+			 * charset
+			 * resolveurl
+			 * throwonerror
+			 * redirect
+			 * timeout
+			 * getasbinary
+			 * delimiter
+			 * name
+			 * columns
+			 * firstrowasheaders
+			 * textqualifier
+			 * file
+			 * multipart
+			 * clientcertpassword
+			 * clientcert
+			 * path
+			 * compression
+			 * authType
+			 * domain
+			 * workstation
+			 * cachedWithin
+			 * encodeURL
+			 */
+		};
 	}
 
 	/**

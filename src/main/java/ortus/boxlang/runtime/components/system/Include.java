@@ -17,7 +17,11 @@
  */
 package ortus.boxlang.runtime.components.system;
 
+import java.util.Set;
+
+import ortus.boxlang.runtime.components.Attribute;
 import ortus.boxlang.runtime.components.Component;
+import ortus.boxlang.runtime.components.validators.Validator;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.IStruct;
@@ -26,7 +30,10 @@ public class Include extends Component {
 
 	public Include() {
 		super( Key.of( "include" ) );
-		allowBody = false;
+		declaredAttributes	= new Attribute[] {
+		    new Attribute( Key.template, "string", Set.of( Validator.REQUIRED, Validator.NON_EMPTY ) )
+		};
+		allowBody			= false;
 	}
 
 	/**

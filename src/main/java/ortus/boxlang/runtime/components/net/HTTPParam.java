@@ -17,16 +17,61 @@
  */
 package ortus.boxlang.runtime.components.net;
 
+import java.util.Set;
+
+import ortus.boxlang.runtime.components.Attribute;
 import ortus.boxlang.runtime.components.Component;
+import ortus.boxlang.runtime.components.validators.Validator;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.IStruct;
+import ortus.boxlang.runtime.types.exceptions.BoxValidationException;
 
 public class HTTPParam extends Component {
 
 	public HTTPParam() {
 		super( Key.HTTPParam );
-		allowBody = false;
+		declaredAttributes	= new Attribute[] {
+		    new Attribute( Key.type, "string", Set.of(
+		        Validator.REQUIRED,
+		        Validator.NON_EMPTY,
+		        ( cxt, comp, attr, attrs ) -> {
+			        String type = attrs.getAsString( attr.name() ).toLowerCase();
+			        if ( !Set.of( "header", "body", "xml", "cgi", "file", "url", "formfield", "cookie" ).contains( type ) ) {
+				        throw new BoxValidationException( comp, attr, "Must be one of [header, body, xml, cgi, file, url, formfield, cookie]" );
+			        }
+		        }
+		    ) ),
+		    new Attribute( Key._NAME, "string", Set.of(
+		        ( cxt, comp, attr, attrs ) -> {
+			        String type = attrs.getAsString( Key.type ).toLowerCase();
+			        if ( !Set.of( "body", "xml", "file" ).contains( type )
+			            && ( attrs.get( attr.name() ) == null || attrs.getAsString( attr.name() ).isEmpty() ) ) {
+				        throw new BoxValidationException( comp, attr, "is required when type is one of [header, cgi, url, formfield, cookie]" );
+			        }
+		        }
+		    ) ),
+		    new Attribute( Key.value, "any" ),
+		    new Attribute( Key.file, "string", Set.of(
+		        ( cxt, comp, attr, attrs ) -> {
+			        String type = attrs.getAsString( Key.type ).toLowerCase();
+			        if ( type.equals( "file" )
+			            && ( attrs.get( attr.name() ) == null || attrs.getAsString( attr.name() ).isEmpty() ) ) {
+				        throw new BoxValidationException( comp, attr, "is required when type is [file]" );
+			        }
+		        }
+		    ) ),
+		    new Attribute( Key.encoded, "boolean", false ),
+		    new Attribute( Key.mimetype, "string", Set.of(
+		        ( cxt, comp, attr, attrs ) -> {
+			        String type = attrs.getAsString( Key.type ).toLowerCase();
+			        if ( !type.equals( "file" ) && attrs.get( attr.name() ) != null ) {
+				        throw new BoxValidationException( comp, attr, "is only allowed when type is [file]" );
+			        }
+		        }
+		    ) )
+		};
+		allowBody			= false;
 	}
 
 	/**
