@@ -163,6 +163,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key	ignoreExists				= Key.of( "ignoreExists" );
 	public static final Key	includeEmptyFields			= Key.of( "includeEmptyFields" );
 	public static final Key	index						= Key.of( "index" );
+	public static final Key	indicateNotExists			= Key.of( "indicateNotExists" );
 	public static final Key	init						= Key.of( "init" );
 	public static final Key	initialValue				= Key.of( "initialValue" );
 	public static final Key	initMethod					= Key.of( "initMethod" );
