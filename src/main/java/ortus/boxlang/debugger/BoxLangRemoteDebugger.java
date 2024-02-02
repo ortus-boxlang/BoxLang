@@ -20,6 +20,11 @@ package ortus.boxlang.debugger;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.util.List;
+
+import com.sun.jdi.ThreadReference;
+
+import ortus.boxlang.debugger.request.Breakpoint;
 
 /**
  * Listens on the provided port to allow connections from a debug tool. Each time a client connects a new DebugAdapter will be initialized and used to
@@ -49,7 +54,7 @@ public class BoxLangRemoteDebugger implements IBoxLangDebugger {
 		try ( ServerSocket socket = new ServerSocket( this.port ) ) {
 			while ( true ) {
 				Socket			connectionSocket	= socket.accept();
-				DebugAdapter	adapter				= new DebugAdapter( connectionSocket );
+				DebugAdapter	adapter				= new DebugAdapter( connectionSocket.getInputStream(), connectionSocket.getOutputStream() );
 
 				while ( adapter.isRunning() ) {
 					// wait until adapter is finished
@@ -61,6 +66,30 @@ public class BoxLangRemoteDebugger implements IBoxLangDebugger {
 		} catch ( IOException e ) {
 			e.printStackTrace();
 		}
+	}
+
+	@Override
+	public void addBreakpoint( String filePath, Breakpoint breakpoint ) {
+		// TODO Auto-generated method stub
+		throw new UnsupportedOperationException( "Unimplemented method 'addBreakpoint'" );
+	}
+
+	@Override
+	public void keepWorking() {
+		// TODO Auto-generated method stub
+		throw new UnsupportedOperationException( "Unimplemented method 'keepWorking'" );
+	}
+
+	@Override
+	public List<ThreadReference> getAllThreadReferences() {
+		// TODO Auto-generated method stub
+		throw new UnsupportedOperationException( "Unimplemented method 'getAllThreadReferences'" );
+	}
+
+	@Override
+	public void initialize() {
+		// TODO Auto-generated method stub
+		throw new UnsupportedOperationException( "Unimplemented method 'initialize'" );
 	}
 
 }

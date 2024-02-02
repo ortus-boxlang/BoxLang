@@ -21,14 +21,12 @@ import java.net.URLClassLoader;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.Map;
 
 import javax.tools.JavaFileObject;
 
-import com.fasterxml.jackson.jr.ob.JSON;
-
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
+import ortus.boxlang.runtime.util.JsonUtil;
 
 /**
  * Dynamic in Memory classloader
@@ -212,18 +210,30 @@ public class DiskClassLoader extends URLClassLoader {
 	 * @returns array of maps. Null if not found.
 	 */
 	@SuppressWarnings( "unchecked" )
-	public Map<String, Object>[] readLineNumbers( String fqn ) {
+	public SourceMap readLineNumbers( String fqn ) {
 		if ( !hasLineNumbers( fqn ) ) {
 			return null;
 		}
 		Path diskPath = generateDiskJSONPath( fqn );
 		try {
 			String json = new String( Files.readAllBytes( diskPath ) );
-			return ( Map<String, Object>[] ) JSON.std.arrayFrom( json );
+			return JsonUtil.fromJson( SourceMap.class, json );
 		} catch ( IOException e ) {
 			throw new BoxRuntimeException( "Unable to read line number JSON file from disk", e );
 		}
+	}
 
+	public static class SourceMap {
+
+		public SourceMapRecord[] sourceMapRecords;
+	}
+
+	public static class SourceMapRecord {
+
+		public int		originSourceLine;
+		public int		javaSourceLine;
+		public String	originSourceNode;
+		public String	javaSourceNode;
 	}
 
 }

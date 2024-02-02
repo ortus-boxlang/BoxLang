@@ -15,26 +15,34 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package ortus.boxlang.debugger;
+package ortus.boxlang.debugger.response;
 
 import java.util.List;
 
-import com.sun.jdi.ThreadReference;
-
-import ortus.boxlang.debugger.request.Breakpoint;
+import ortus.boxlang.debugger.request.Thread;
+import ortus.boxlang.debugger.request.ThreadsRequest;
 
 /**
- * Interface for BoxLangDebuggers. Allows us to model both remote and local debug sessions.
+ * Models a SetBreakpoint response in the DAP
  */
-public interface IBoxLangDebugger {
+public class ThreadsResponse extends AbstractResponse {
 
-	public void startDebugSession();
+	public ThreadsResponseBody body;
 
-	public void addBreakpoint( String filePath, Breakpoint breakpoint );
+	public class ThreadsResponseBody {
 
-	public void keepWorking();
+		public List<Thread> threads;
+	}
 
-	public List<ThreadReference> getAllThreadReferences();
+	/**
+	 * Constructor
+	 * 
+	 * @param request The request to respond to
+	 */
+	public ThreadsResponse( ThreadsRequest request, List<Thread> threads ) {
+		super( request.getCommand(), request.getSeq(), true );
+		this.body			= new ThreadsResponseBody();
 
-	public void initialize();
+		this.body.threads	= threads;
+	}
 }

@@ -15,26 +15,30 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package ortus.boxlang.debugger;
-
-import java.util.List;
-
-import com.sun.jdi.ThreadReference;
-
-import ortus.boxlang.debugger.request.Breakpoint;
+package ortus.boxlang.debugger.event;
 
 /**
- * Interface for BoxLangDebuggers. Allows us to model both remote and local debug sessions.
+ * Models the Continued event for the Debug Protocol
  */
-public interface IBoxLangDebugger {
+public class ContinuedEvent extends Event {
 
-	public void startDebugSession();
+	public ContinuedBody body;
 
-	public void addBreakpoint( String filePath, Breakpoint breakpoint );
+	private class ContinuedBody {
 
-	public void keepWorking();
+		public int threadId;
+	}
 
-	public List<ThreadReference> getAllThreadReferences();
+	/**
+	 * Constructor
+	 * 
+	 * @param threadId The id of the thread being continued
+	 */
+	public ContinuedEvent( int threadId ) {
+		super( "continued" );
 
-	public void initialize();
+		this.body			= new ContinuedBody();
+		this.body.threadId	= threadId;
+	}
+
 }

@@ -17,6 +17,7 @@
  */
 package ortus.boxlang.debugger.request;
 
+// TODO rework requests so that we only have one request class that takes a generic argument for its body
 /**
  * An abstract requet. Implement this to model a request that conforms to the debug protocol.
  */

@@ -15,26 +15,28 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package ortus.boxlang.debugger;
+package ortus.boxlang.debugger.request;
 
-import java.util.List;
-
-import com.sun.jdi.ThreadReference;
-
-import ortus.boxlang.debugger.request.Breakpoint;
+import ortus.boxlang.debugger.DebugAdapter;
 
 /**
- * Interface for BoxLangDebuggers. Allows us to model both remote and local debug sessions.
+ * Models the command that the debug tool has finished configuration.
  */
-public interface IBoxLangDebugger {
+public class StackTraceRequest extends AbstractRequest {
 
-	public void startDebugSession();
+	public StackTraceRequestArguments arguments;
 
-	public void addBreakpoint( String filePath, Breakpoint breakpoint );
+	/**
+	 * The arguments of the StackTrace Request
+	 */
+	public static class StackTraceRequestArguments {
 
-	public void keepWorking();
+		public int threadId;
+	}
 
-	public List<ThreadReference> getAllThreadReferences();
+	@Override
+	public void accept( DebugAdapter adapter ) {
+		adapter.visit( this );
+	}
 
-	public void initialize();
 }

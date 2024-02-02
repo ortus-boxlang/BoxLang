@@ -15,26 +15,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package ortus.boxlang.debugger;
-
-import java.util.List;
-
-import com.sun.jdi.ThreadReference;
-
-import ortus.boxlang.debugger.request.Breakpoint;
+package ortus.boxlang.debugger.request;
 
 /**
- * Interface for BoxLangDebuggers. Allows us to model both remote and local debug sessions.
+ * Models the Thread type of the DAP
  */
-public interface IBoxLangDebugger {
+public class Thread {
 
-	public void startDebugSession();
-
-	public void addBreakpoint( String filePath, Breakpoint breakpoint );
-
-	public void keepWorking();
-
-	public List<ThreadReference> getAllThreadReferences();
-
-	public void initialize();
+	public String	name;
+	public int		id;
 }

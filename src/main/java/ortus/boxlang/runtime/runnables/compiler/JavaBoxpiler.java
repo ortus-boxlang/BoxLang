@@ -26,6 +26,8 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import javax.tools.DiagnosticCollector;
@@ -50,6 +52,8 @@ import ortus.boxlang.parser.ParsingResult;
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.runnables.IBoxRunnable;
 import ortus.boxlang.runtime.runnables.IClassRunnable;
+import ortus.boxlang.runtime.runnables.compiler.DiskClassLoader.SourceMap;
+import ortus.boxlang.runtime.runnables.compiler.DiskClassLoader.SourceMapRecord;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.exceptions.ParseException;
 import ortus.boxlang.transpiler.CustomPrettyPrinter;
@@ -354,6 +358,24 @@ public class JavaBoxpiler {
 		return javaSource;
 	}
 
+	public int convertSourceLineToJavaLine( String FQN, int sourceLine ) throws BoxRuntimeException {
+		SourceMap sourceMap = diskClassLoader.readLineNumbers( FQN );
+
+		for ( SourceMapRecord sourceMapRecord : sourceMap.sourceMapRecords ) {
+			if ( sourceMapRecord.originSourceLine == sourceLine ) {
+				return sourceMapRecord.javaSourceLine;
+			}
+		}
+
+		throw ( new BoxRuntimeException( "No matching source line" ) );
+	}
+
+	public boolean doesFilePathMatchFQNWithoutGeneration( Path sourcePath, String FQN ) {
+		ClassInfo classInfo = ClassInfo.forTemplate( sourcePath, sourcePath.toString() );
+
+		return classInfo.matchesFQNWithoutCompileCount( FQN );
+	}
+
 	/**
 	 * Compile Java source code into a Java class
 	 * 
@@ -386,42 +408,44 @@ public class JavaBoxpiler {
 	 * @return JSON string
 	 */
 	private String generateLineNumberJSON( List<Object[]> lineNumbers ) {
+		List	stuff	= lineNumbers.stream().map( e -> {
+							Node	jNode	= ( Node ) e[ 0 ];
+							int		jLine	= ( int ) e[ 1 ];
+							// Not every node of Java source code has a corresponding BoxNode
+							if ( !jNode.containsData( BoxNodeKey.BOX_NODE_DATA_KEY ) ) {
+								return null;
+							}
+							BoxNode boxNode = jNode.getData( BoxNodeKey.BOX_NODE_DATA_KEY );
+							// Some BoxNodes were created on-the-fly by the parser and don't correspond to any specific source line
+							if ( boxNode.getPosition() == null ) {
+								return null;
+							}
+							HashMap<String, Object> map = new HashMap<>();
+							map.put( "javaSourceLine", jLine );
+							map.put( "originSourceLine", boxNode.getPosition().getStart().getLine() );
+							// Really just for debugging. Remove later.
+							map.put( "javaSourceNode", jNode.getClass().getSimpleName() );
+							map.put( "originSourceNode", boxNode.getClass().getSimpleName() );
+							return map;
+						} )
+		    // filter out nulls
+		    .filter( e -> e != null )
+		    // sort by origin source line, then by java source line
+		    .sorted( ( e1, e2 ) -> {
+			    int result2 = ( ( Integer ) e1.get( "originSourceLine" ) )
+			        .compareTo( ( Integer ) e2.get( "originSourceLine" ) );
+			    if ( result2 == 0 ) {
+				    result2 = ( ( Integer ) e1.get( "javaSourceLine" ) )
+				        .compareTo( ( Integer ) e2.get( "javaSourceLine" ) );
+			    }
+			    return result2;
+		    } )
+		    .toList();
+
+		Map		output	= new HashMap<String, Object>();
+		output.put( "sourceMapRecords", stuff );
 		try {
-			return JSON.std.with( Feature.PRETTY_PRINT_OUTPUT ).asString(
-			    lineNumbers.stream().map( e -> {
-				    Node jNode	= ( Node ) e[ 0 ];
-				    int	jLine	= ( int ) e[ 1 ];
-				    // Not every node of Java source code has a corresponding BoxNode
-				    if ( !jNode.containsData( BoxNodeKey.BOX_NODE_DATA_KEY ) ) {
-					    return null;
-				    }
-				    BoxNode boxNode = jNode.getData( BoxNodeKey.BOX_NODE_DATA_KEY );
-				    // Some BoxNodes were created on-the-fly by the parser and don't correspond to any specific source line
-				    if ( boxNode.getPosition() == null ) {
-					    return null;
-				    }
-				    HashMap<String, Object> map = new HashMap<>();
-				    map.put( "javaSourceLine", jLine );
-				    map.put( "originSourceLine", boxNode.getPosition().getStart().getLine() );
-				    // Really just for debugging. Remove later.
-				    map.put( "javaSourceNode", jNode.getClass().getSimpleName() );
-				    map.put( "originSourceNode", boxNode.getClass().getSimpleName() );
-				    return map;
-			    } )
-			        // filter out nulls
-			        .filter( e -> e != null )
-			        // sort by origin source line, then by java source line
-			        .sorted( ( e1, e2 ) -> {
-				        int result2 = ( ( Integer ) e1.get( "originSourceLine" ) )
-				            .compareTo( ( Integer ) e2.get( "originSourceLine" ) );
-				        if ( result2 == 0 ) {
-					        result2 = ( ( Integer ) e1.get( "javaSourceLine" ) )
-					            .compareTo( ( Integer ) e2.get( "javaSourceLine" ) );
-				        }
-				        return result2;
-			        } )
-			        .toList()
-			);
+			return JSON.std.with( Feature.PRETTY_PRINT_OUTPUT ).asString( output );
 		} catch ( JSONObjectException e ) {
 			e.printStackTrace();
 			return null;
@@ -578,7 +602,7 @@ public class JavaBoxpiler {
 	 * 
 	 * @return The line numbers
 	 */
-	public Map<String, Object>[] getLineNumbers( String fqn ) {
+	public SourceMap getLineNumbers( String fqn ) {
 		return diskClassLoader.readLineNumbers( fqn );
 	}
 
@@ -592,20 +616,20 @@ public class JavaBoxpiler {
 			    "generated",
 			    "Script_" + MD5( type.toString() + source ),
 			    0,
-			    "generated",
+			    "boxgenerated.generated",
 			    "BoxScript",
 			    "Object"
 			);
 		}
 
 		public static ClassInfo forStatement( String source, BoxScriptType type ) {
-			return new ClassInfo( "generated", "Statement_" + MD5( type.toString() + source ), 0, "generated", "BoxScript", "Object" );
+			return new ClassInfo( "generated", "Statement_" + MD5( type.toString() + source ), 0, "boxgenerated.generated", "BoxScript", "Object" );
 		}
 
 		public static ClassInfo forTemplate( Path path, String packagePath ) {
 			File	lcaseFile	= new File( packagePath.toString().toLowerCase() );
 			String	packageName	= getPackageName( lcaseFile );
-			packageName = "templates" + ( packageName.equals( "" ) ? "" : "." ) + packageName;
+			packageName = "boxgenerated.templates" + ( packageName.equals( "" ) ? "" : "." ) + packageName;
 			String className = getClassName( lcaseFile );
 			return new ClassInfo(
 			    packageName,
@@ -618,7 +642,7 @@ public class JavaBoxpiler {
 		}
 
 		public static ClassInfo forClass( Path path, String packagePath ) {
-			String boxPackagePath = packagePath;
+			String boxPackagePath = "boxgenerated." + packagePath;
 			if ( boxPackagePath.endsWith( "." ) ) {
 				boxPackagePath = boxPackagePath.substring( 0, boxPackagePath.length() - 1 );
 			}
@@ -644,7 +668,7 @@ public class JavaBoxpiler {
 			    "generated",
 			    "Class_" + MD5( source ),
 			    0,
-			    "generated",
+			    "boxgenerated.generated",
 			    null,
 			    null
 			);
@@ -679,6 +703,13 @@ public class JavaBoxpiler {
 
 		public String originalFQN() {
 			return packageName + "." + originalClassName();
+		}
+
+		public boolean matchesFQNWithoutCompileCount( String FQN ) {
+			Pattern	pattern	= Pattern.compile( originalFQN().replace( "$", "\\$" ) + "\\d+" );
+			Matcher	matcher	= pattern.matcher( FQN );
+
+			return matcher.find();
 		}
 
 	}
