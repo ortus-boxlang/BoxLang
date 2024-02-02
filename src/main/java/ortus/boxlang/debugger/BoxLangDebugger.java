@@ -118,8 +118,8 @@ public class BoxLangDebugger implements IBoxLangDebugger {
 			EventSet eventSet = null;
 			while ( ( eventSet = vm.eventQueue().remove( 300 ) ) != null ) {
 
-				// readVMInput();
-				// readVMErrorInput();
+				readVMInput();
+				readVMErrorInput();
 
 				processVMEvents( eventSet );
 
@@ -130,8 +130,8 @@ public class BoxLangDebugger implements IBoxLangDebugger {
 		} catch ( Exception e ) {
 			e.printStackTrace();
 		} finally {
-			// readVMInput();
-			// readVMErrorInput();
+			readVMInput();
+			readVMErrorInput();
 		}
 	}
 
