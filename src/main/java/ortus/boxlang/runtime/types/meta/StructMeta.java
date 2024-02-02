@@ -42,7 +42,7 @@ public class StructMeta extends BoxMeta {
 
 		// Assemble the metadata
 		this.meta	= ImmutableStruct.of(
-		    "type", this.target.type.name(),
+		    "type", this.target.getType().name(),
 		    "immutable", this.target instanceof IImmutable
 		);
 

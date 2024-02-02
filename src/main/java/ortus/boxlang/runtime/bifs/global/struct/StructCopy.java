@@ -9,7 +9,6 @@ import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.BoxLangType;
-import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.util.DuplicationUtil;
 
 @BoxBIF
@@ -28,15 +27,15 @@ public class StructCopy extends BIF {
 	}
 
 	/**
-	 * Describe what the invocation of your bif function does
+	 * Creates a shallow copy of a struct. Copies top-level keys, values, and arrays in the structure by value; copies nested structures by reference.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.foo Describe any expected arguments
+	 * @argument.struct The struct to copy
 	 */
 	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
-		return DuplicationUtil.duplicateStruct( ( Struct ) arguments.getAsStruct( Key.struct ), false );
+		return DuplicationUtil.duplicateStruct( arguments.getAsStruct( Key.struct ), false );
 	}
 
 }

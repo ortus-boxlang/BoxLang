@@ -36,8 +36,8 @@ import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.DateTime;
+import ortus.boxlang.runtime.types.IStruct.TYPES;
 import ortus.boxlang.runtime.types.Struct;
-import ortus.boxlang.runtime.types.Struct.TYPES;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.immutable.ImmutableStruct;
 
