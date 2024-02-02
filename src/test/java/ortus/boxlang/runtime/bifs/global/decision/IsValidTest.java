@@ -150,7 +150,6 @@ public class IsValidTest {
 		assertThat( ( Boolean ) instance.executeStatement( "isValid( 'component', {} )" ) ).isFalse();
 	}
 
-	@Disabled( "Unimplemented" )
 	@DisplayName( "It works on dates" )
 	@Test
 	public void testDate() {
@@ -158,7 +157,6 @@ public class IsValidTest {
 		assertThat( ( Boolean ) instance.executeStatement( "isValid( 'date', '2024-01-26777' )" ) ).isFalse();
 	}
 
-	@Disabled( "Unimplemented" )
 	@DisplayName( "It works on times" )
 	@Test
 	public void testTime() {
