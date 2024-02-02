@@ -21,7 +21,6 @@ public class StructDelete extends BIF {
 	 */
 	public StructDelete() {
 		super();
-		// Uncomment and define declare argument to this BIF
 		declaredArguments = new Argument[] {
 		    new Argument( true, "struct", Key.struct ),
 		    new Argument( true, "string", Key.key ),
@@ -30,12 +29,16 @@ public class StructDelete extends BIF {
 	}
 
 	/**
-	 * Describe what the invocation of your bif function does
+	 * Deletes a key from a struct
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.foo Describe any expected arguments
+	 * @argument.struct The struct target
+	 *
+	 * @argument.key The key to delete
+	 *
+	 * @argument.indicateNotExsists Applies only to BIFs - will return false if the key attempted for deletion does not exist
 	 */
 	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
 		IStruct	target				= arguments.getAsStruct( Key.struct );
