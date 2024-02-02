@@ -26,7 +26,9 @@ public class StoppedEvent extends Event {
 
 	private class StoppedBody {
 
+		@SuppressWarnings( value = { "unused" } )
 		public String	reason;
+		@SuppressWarnings( value = { "unused" } )
 		public int		threadId;
 	}
 

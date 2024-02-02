@@ -26,7 +26,10 @@ public class OutputEvent extends Event {
 
 	private class OutputBody {
 
+		@SuppressWarnings( value = { "unused" } )
 		public String	category;
+
+		@SuppressWarnings( value = { "unused" } )
 		public String	output;
 	}
 

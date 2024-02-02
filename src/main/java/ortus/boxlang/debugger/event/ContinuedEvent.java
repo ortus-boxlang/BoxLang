@@ -26,6 +26,7 @@ public class ContinuedEvent extends Event {
 
 	private class ContinuedBody {
 
+		@SuppressWarnings( value = { "unused" } )
 		public int threadId;
 	}
 
