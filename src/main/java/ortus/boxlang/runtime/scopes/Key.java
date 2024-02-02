@@ -41,6 +41,7 @@ public class Key implements Comparable<Key> {
 	public static final Key	__isMemberExecution			= Key.of( "__isMemberExecution" );
 	public static final Key	__functionName				= Key.of( "__functionName" );
 	public static final Key	_ANY						= Key.of( "any" );
+	public static final Key	append						= Key.of( "append" );
 	public static final Key	_ARRAY						= Key.of( "array" );
 	public static final Key	_BOOLEAN					= Key.of( "boolean" );
 	public static final Key	_CLASS						= Key.of( "class" );
@@ -59,14 +60,14 @@ public class Key implements Comparable<Key> {
 	public static final Key	$bx							= Key.of( "$bx" );
 
 	// Global Dictionary
-	public static final Key	ANONYMOUSCLOSURE			= Key.of( "ANONYMOUSCLOSURE" );
-	public static final Key	ANONYMOUSLAMBDA				= Key.of( "ANONYMOUSLAMBDA" );
 	public static final Key	access						= Key.of( "access" );
-	public static final Key	argumentCollection			= Key.of( "argumentCollection" );
 	public static final Key	accessors					= Key.of( "accessors" );
 	public static final Key	algorithm					= Key.of( "algorithm" );
 	public static final Key	allowRealPath				= Key.of( "allowRealPath" );
 	public static final Key	annotations					= Key.of( "annotations" );
+	public static final Key	ANONYMOUSCLOSURE			= Key.of( "ANONYMOUSCLOSURE" );
+	public static final Key	ANONYMOUSLAMBDA				= Key.of( "ANONYMOUSLAMBDA" );
+	public static final Key	argumentCollection			= Key.of( "argumentCollection" );
 	public static final Key	arguments					= Key.of( "arguments" );
 	public static final Key	array						= Key.of( "array" );
 	public static final Key	array1						= Key.of( "array1" );
@@ -75,6 +76,7 @@ public class Key implements Comparable<Key> {
 	public static final Key	arrayFindAll				= Key.of( "arrayFindAll" );
 	public static final Key	attribute					= Key.of( "attribute" );
 	public static final Key	attributes					= Key.of( "attributes" );
+	public static final Key	attributeCollection			= Key.of( "attributeCollection" );
 	public static final Key	author						= Key.of( "author" );
 	public static final Key	boxBif						= Key.of( "boxBif" );
 	public static final Key	boxMember					= Key.of( "boxMember" );
@@ -126,26 +128,33 @@ public class Key implements Comparable<Key> {
 	public static final Key	dollarFormat				= Key.of( "dollarFormat" );
 	public static final Key	doLowerIfAllUppercase		= Key.of( "doLowerIfAllUppercase" );
 	public static final Key	dspLocale					= Key.of( "dspLocale" );
+	public static final Key	dump						= Key.of( "dump" );
 	public static final Key	duration					= Key.of( "duration" );
 	public static final Key	elementCountForRemoval		= Key.of( "elementCountForRemoval" );
+	public static final Key	encoded						= Key.of( "encoded" );
 	public static final Key	encoding					= Key.of( "encoding" );
 	public static final Key	end							= Key.of( "end" );
 	public static final Key	file						= Key.of( "file" );
+	public static final Key	fileContent					= Key.of( "fileContent" );
 	public static final Key	filepath					= Key.of( "filepath" );
 	public static final Key	filter						= Key.of( "filter" );
 	public static final Key	find						= Key.of( "find" );
 	public static final Key	findAll						= Key.of( "findAll" );
 	public static final Key	findNoCase					= Key.of( "findNoCase" );
-	public static final Key	functionService				= Key.of( "functionService" );
 	public static final Key	format						= Key.of( "format" );
 	public static final Key	fullname					= Key.of( "fullname" );
 	public static final Key	function					= Key.of( "function" );
 	public static final Key	functions					= Key.of( "functions" );
+	public static final Key	functionService				= Key.of( "functionService" );
 	public static final Key	getFileInfo					= Key.of( "getFileInfo" );
 	public static final Key	hash40						= Key.of( "hash40" );
+	public static final Key	hint						= Key.of( "hint" );
 	public static final Key	hostname					= Key.of( "hostname" );
 	public static final Key	hour						= Key.of( "hour" );
 	public static final Key	hours						= Key.of( "hours" );
+	public static final Key	HTTP						= Key.of( "http" );
+	public static final Key	HTTPParam					= Key.of( "httpParam" );
+	public static final Key	HTTPParams					= Key.of( "httpParams" );
 	public static final Key	ignoreCase					= Key.of( "ignoreCase" );
 	public static final Key	ignoreExists				= Key.of( "ignoreExists" );
 	public static final Key	includeEmptyFields			= Key.of( "includeEmptyFields" );
@@ -175,7 +184,6 @@ public class Key implements Comparable<Key> {
 	public static final Key	log							= Key.of( "log" );
 	public static final Key	logger						= Key.of( "logger" );
 	public static final Key	lucee						= Key.of( "lucee" );
-	public static final Key	hint						= Key.of( "hint" );
 	public static final Key	mapping						= Key.of( "mapping" );
 	public static final Key	mappings					= Key.of( "mappings" );
 	public static final Key	mask						= Key.of( "mask" );
@@ -183,6 +191,7 @@ public class Key implements Comparable<Key> {
 	public static final Key	maxThreads					= Key.of( "maxThreads" );
 	public static final Key	merge						= Key.of( "merge" );
 	public static final Key	message						= Key.of( "message" );
+	public static final Key	mimetype					= Key.of( "mimetype " );
 	public static final Key	millisecond					= Key.of( "millisecond" );
 	public static final Key	milliseconds				= Key.of( "milliseconds" );
 	public static final Key	min							= Key.of( "min" );
@@ -250,6 +259,8 @@ public class Key implements Comparable<Key> {
 	public static final Key	source						= Key.of( "source" );
 	public static final Key	start						= Key.of( "start" );
 	public static final Key	state						= Key.of( "state" );
+	public static final Key	statusCode					= Key.of( "statusCode" );
+	public static final Key	statusText					= Key.of( "statusText" );
 	public static final Key	strict						= Key.of( "strict" );
 	public static final Key	string						= Key.of( "string" );
 	public static final Key	string1						= Key.of( "string1" );
@@ -257,9 +268,12 @@ public class Key implements Comparable<Key> {
 	public static final Key	structure					= Key.of( "structure" );
 	public static final Key	substring					= Key.of( "substring" );
 	public static final Key	system						= Key.of( "system" );
+	public static final Key	template					= Key.of( "template" );
 	public static final Key	timeFormat					= Key.of( "timeFormat" );
 	public static final Key	timezone					= Key.of( "timezone" );
+	public static final Key	trim						= Key.of( "trim" );
 	public static final Key	type						= Key.of( "type" );
+	public static final Key	URL							= Key.of( "URL" );
 	public static final Key	value						= Key.of( "value" );
 	public static final Key	var							= Key.of( "var" );
 	public static final Key	variable					= Key.of( "variable" );

@@ -240,6 +240,37 @@ public interface IBoxContext {
 	public ITemplateRunnable popTemplate();
 
 	/**
+	 * Push a Component to the stack
+	 *
+	 * @param name           The name of the component
+	 * @param executionState The state for this component execution
+	 *
+	 * @return This context
+	 */
+	public IBoxContext pushComponent( IStruct executionState );
+
+	/**
+	 * Pop a template from the stack
+	 *
+	 * @return This context
+	 */
+	public IBoxContext popComponent();
+
+	/**
+	 * Get the stack of components as an array
+	 *
+	 * @return This context
+	 */
+	public IStruct[] getComponents();
+
+	/**
+	 * Gets the execution state for the closest component.
+	 *
+	 * @return The execution state for the closest component, null if none was found
+	 */
+	public IStruct findClosestComponent( Key name );
+
+	/**
 	 * Has the execution context been bound to a template?
 	 *
 	 * @return True if bound, else false
@@ -370,6 +401,22 @@ public interface IBoxContext {
 	 * @return The buffer
 	 */
 	public StringBuffer getBuffer();
+
+	/**
+	 * Push a buffer onto the stack. This is mostly so components can capture any output generated in their body
+	 * 
+	 * @param buffer The buffer to push
+	 * 
+	 * @return This context
+	 */
+	public IBoxContext pushBuffer( StringBuffer buffer );
+
+	/**
+	 * Pop a buffer from the stack
+	 * 
+	 * @return This context
+	 */
+	public IBoxContext popBuffer();
 
 	/**
 	 * Get the contexual config struct. Each context has a chance to add in config of their

@@ -66,6 +66,11 @@ public class BaseBoxContext implements IBoxContext {
 	protected ArrayDeque<ITemplateRunnable>	templates	= new ArrayDeque<>();
 
 	/**
+	 * A way to discover the current executing componenet
+	 */
+	protected ArrayDeque<IStruct>			components	= new ArrayDeque<>();
+
+	/**
 	 * A way to track query loops
 	 */
 	protected LinkedHashMap<Query, Integer>	queryLoops	= new LinkedHashMap<>();
@@ -73,7 +78,7 @@ public class BaseBoxContext implements IBoxContext {
 	/**
 	 * A buffer to write output to
 	 */
-	protected StringBuffer					buffer		= new StringBuffer();
+	protected ArrayDeque<StringBuffer>		buffers		= new ArrayDeque<>();
 
 	/**
 	 * The function service we can use to retrieve BIFS and member methods
@@ -88,6 +93,7 @@ public class BaseBoxContext implements IBoxContext {
 	public BaseBoxContext( IBoxContext parent ) {
 		this.parent				= parent;
 		this.functionService	= BoxRuntime.getInstance().getFunctionService();
+		buffers.push( new StringBuffer() );
 	}
 
 	/**
@@ -122,6 +128,63 @@ public class BaseBoxContext implements IBoxContext {
 	 */
 	public ITemplateRunnable popTemplate() {
 		return this.templates.pop();
+	}
+
+	/**
+	 * Push a Component to the stack
+	 *
+	 * @param name           The name of the component
+	 * @param executionState The state for this component execution
+	 *
+	 * @return This context
+	 */
+	public IBoxContext pushComponent( IStruct executionState ) {
+		this.components.push( executionState );
+		return this;
+	}
+
+	/**
+	 * Pop a template from the stack
+	 *
+	 * @return This context
+	 */
+	public IBoxContext popComponent() {
+		this.components.pop();
+		return this;
+	}
+
+	/**
+	 * Gets the execution state for the closest component.
+	 *
+	 * @return The execution state for the closest component, null if none was found
+	 */
+	public IStruct findClosestComponent( Key name ) {
+		IStruct[] componentArray = getComponents();
+		for ( int i = 1; i < componentArray.length; i++ ) {
+			IStruct component = componentArray[ i ];
+			if ( component.get( Key._NAME ).equals( name ) ) {
+				return component;
+			}
+		}
+		return null;
+	}
+
+	/**
+	 * Get the stack of components as an array
+	 *
+	 * @return This context
+	 */
+	public IStruct[] getComponents() {
+		// get parent components and append our own
+		if ( hasParent() ) {
+			IStruct[]	parentComponents	= getParent().getComponents();
+			IStruct[]	myComponents		= this.components.toArray( new IStruct[ 0 ] );
+			IStruct[]	allComponents		= new IStruct[ parentComponents.length + myComponents.length ];
+			System.arraycopy( parentComponents, 0, allComponents, 0, parentComponents.length );
+			System.arraycopy( myComponents, 0, allComponents, parentComponents.length, myComponents.length );
+			return allComponents;
+		}
+		return this.components.toArray( new IStruct[ 0 ] );
 	}
 
 	/**
@@ -626,7 +689,7 @@ public class BaseBoxContext implements IBoxContext {
 	 * @return This context
 	 */
 	public IBoxContext writeToBuffer( Object o ) {
-		buffer.append( StringCaster.cast( o ) );
+		getBuffer().append( StringCaster.cast( o ) );
 		return this;
 	}
 
@@ -638,10 +701,13 @@ public class BaseBoxContext implements IBoxContext {
 	 * @return This context
 	 */
 	public IBoxContext flushBuffer( boolean force ) {
-		if ( hasParent() ) {
-			synchronized ( buffer ) {
-				getParent().writeToBuffer( buffer.toString() );
-				clearBuffer();
+		// If there are extra buffers registered, we ignore flush requests since someone
+		// out there is wanting to capture our buffer instead.
+		if ( hasParent() && buffers.size() == 1 ) {
+			StringBuffer thisBuffer = getBuffer();
+			synchronized ( thisBuffer ) {
+				getParent().writeToBuffer( thisBuffer.toString() );
+				thisBuffer.setLength( 0 );
 			}
 		}
 		return this;
@@ -653,7 +719,7 @@ public class BaseBoxContext implements IBoxContext {
 	 * @return This context
 	 */
 	public IBoxContext clearBuffer() {
-		buffer.setLength( 0 );
+		getBuffer().setLength( 0 );
 		return this;
 	}
 
@@ -663,7 +729,29 @@ public class BaseBoxContext implements IBoxContext {
 	 * @return The buffer
 	 */
 	public StringBuffer getBuffer() {
-		return this.buffer;
+		return this.buffers.peek();
+	}
+
+	/**
+	 * Push a buffer onto the stack. This is mostly so components can capture any output generated in their body
+	 * 
+	 * @param buffer The buffer to push
+	 * 
+	 * @return This context
+	 */
+	public IBoxContext pushBuffer( StringBuffer buffer ) {
+		this.buffers.push( buffer );
+		return this;
+	}
+
+	/**
+	 * Pop a buffer from the stack
+	 * 
+	 * @return This context
+	 */
+	public IBoxContext popBuffer() {
+		this.buffers.pop();
+		return this;
 	}
 
 	/**

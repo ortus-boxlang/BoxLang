@@ -24,7 +24,7 @@ import ortus.boxlang.ast.Position;
 import ortus.boxlang.ast.statement.BoxAnnotation;
 
 /**
- * Root node for a templating (program) cfm/bxm
+ * Represents a tag or script component
  */
 public class BoxComponent extends BoxStatement {
 
@@ -35,11 +35,45 @@ public class BoxComponent extends BoxStatement {
 	private final int					sourceStartIndex;
 
 	/**
-	 * Creates an AST for a program which is represented by a list of statements
+	 * Create an AST for a component
 	 *
-	 * @param statements list of the statements nodes
-	 * @param position   position within the source code
-	 * @param sourceText source code
+	 * @param name        name of the component
+	 * @param annotations list of the annotations
+	 * @param position    position within the source code
+	 * @param sourceText  source code
+	 *
+	 * @see Position
+	 * @see BoxStatement
+	 */
+	public BoxComponent( String name, List<BoxAnnotation> annotations, Position position, String sourceText ) {
+		this( name, annotations, null, 0, position, sourceText );
+	}
+
+	/**
+	 * Create an AST for a component
+	 *
+	 * @param name        name of the component
+	 * @param annotations list of the annotations
+	 * @param body        list of the statements nodes
+	 * @param position    position within the source code
+	 * @param sourceText  source code
+	 *
+	 * @see Position
+	 * @see BoxStatement
+	 */
+	public BoxComponent( String name, List<BoxAnnotation> annotations, List<BoxStatement> body, Position position, String sourceText ) {
+		this( name, annotations, body, 0, position, sourceText );
+	}
+
+	/**
+	 * Create an AST for a component
+	 *
+	 * @param name        name of the component
+	 * @param annotations list of the annotations
+	 * @param body        list of the statements nodes
+	 * @param sourceText  source code
+	 * @param position    position within the source code
+	 * @param sourceText  source code
 	 *
 	 * @see Position
 	 * @see BoxStatement

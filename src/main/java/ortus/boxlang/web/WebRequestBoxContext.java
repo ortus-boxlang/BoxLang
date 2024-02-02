@@ -274,7 +274,8 @@ public class WebRequestBoxContext extends RequestBoxContext {
 	 * @return This context
 	 */
 	public IBoxContext flushBuffer( boolean force ) {
-		String output;
+		String			output;
+		StringBuffer	buffer	= getBuffer();
 		synchronized ( buffer ) {
 			output = buffer.toString();
 			clearBuffer();
@@ -288,6 +289,7 @@ public class WebRequestBoxContext extends RequestBoxContext {
 		} catch ( IOException e ) {
 			e.printStackTrace();
 		}
+		// This ends the exchange, so not what we want
 		// exchange.getResponseSender().send( output );
 
 		return this;

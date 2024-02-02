@@ -261,49 +261,66 @@ public class FunctionService extends BaseService {
 	 */
 
 	/**
-	 * Registers a global function with the service
+	 * Registers a global function with the service using a
+	 * descriptor, a name, and if we want to override if it exists, else it will throw an exception
 	 *
 	 * @param descriptor The descriptor for the global function
+	 * @param name       The name of the global function
 	 * @param force      Whether or not to force the registration, usually it means an overwrite
 	 *
 	 * @throws BoxRuntimeException If the global function already exists
 	 */
-	public void registerGlobalFunction( BIFDescriptor descriptor, Boolean force ) {
+	public void registerGlobalFunction( BIFDescriptor descriptor, Key name, Boolean force ) {
 		if ( hasGlobalFunction( descriptor.name ) && !force ) {
-			throw new BoxRuntimeException( "Global function " + descriptor.name + " already exists" );
+			throw new BoxRuntimeException( "Global function " + name.getName() + " already exists" );
 		}
-		this.globalFunctions.put( descriptor.name, descriptor );
+		this.globalFunctions.put( name, descriptor );
 	}
 
 	/**
-	 * Registers a global function with the service
+	 * Registers a global function with the service only using a descriptor.
+	 * We take the name from the descriptor itself and we do not force the registration
 	 *
 	 * @param descriptor The descriptor for the global function
 	 *
 	 * @throws BoxRuntimeException If the global function already exists
 	 */
 	public void registerGlobalFunction( BIFDescriptor descriptor ) {
-		registerGlobalFunction( descriptor, false );
+		registerGlobalFunction( descriptor, descriptor.name, false );
 	}
 
 	/**
-	 * Registers a global function with the service. The BIF class needs to be annotated with {@link BoxBIF} or {@link BoxMember}
+	 * Unregisters a global function with the service
 	 *
-	 * @param BIFClass The BIF class
-	 * @param module   The module the global function belongs to
+	 * @param name The name of the global function
 	 */
-	public void registerGlobalFunction( Class<?> BIFClass, String module ) {
-		registerGlobalFunction( BIFClass, null, module );
+	public void unregisterGlobalFunction( Key name ) {
+		this.globalFunctions.remove( name );
 	}
 
 	/**
-	 * Registers a global function with the service. The BIF class needs to be annotated with {@link BoxBIF} or {@link BoxMember}
-	 *
-	 * @param function The global function instance
-	 * @param module   The module the global function belongs to
+	 * --------------------------------------------------------------------------
+	 * Global Loading
+	 * --------------------------------------------------------------------------
 	 */
-	public void registerGlobalFunction( BIF function, String module ) {
-		registerGlobalFunction( function.getClass(), function, module );
+
+	/**
+	 * This method loads all of the global functions into the service by scanning the
+	 * {@code ortus.boxlang.runtime.bifs.global} package.
+	 *
+	 * @throws IOException If there is an error loading the global functions
+	 */
+	public void loadGlobalFunctions() throws IOException {
+		ClassDiscovery
+		    .findAnnotatedClasses(
+		        ( FUNCTIONS_PACKAGE + ".global" ).replace( '.', '/' ),
+		        BoxBIF.class, BoxBIFs.class, BoxMember.class, BoxMembers.class
+		    )
+		    .parallel()
+		    // Filter to subclasses of BIF
+		    .filter( BIF.class::isAssignableFrom )
+		    // Process each class for registration
+		    .forEach( targetClass -> registerGlobalFunction( targetClass, null, null ) );
 	}
 
 	/**
@@ -377,40 +394,6 @@ public class FunctionService extends BaseService {
 			);
 		}
 
-	}
-
-	/**
-	 * Unregisters a global function with the service
-	 *
-	 * @param name The name of the global function
-	 */
-	public void unregisterGlobalFunction( Key name ) {
-		this.globalFunctions.remove( name );
-	}
-
-	/**
-	 * --------------------------------------------------------------------------
-	 * Global Loading
-	 * --------------------------------------------------------------------------
-	 */
-
-	/**
-	 * This method loads all of the global functions into the service by scanning the
-	 * {@code ortus.boxlang.runtime.bifs.global} package.
-	 *
-	 * @throws IOException If there is an error loading the global functions
-	 */
-	public void loadGlobalFunctions() throws IOException {
-		ClassDiscovery
-		    .findAnnotatedClasses(
-		        ( FUNCTIONS_PACKAGE + ".global" ).replace( '.', '/' ),
-		        BoxBIF.class, BoxBIFs.class, BoxMember.class, BoxMembers.class
-		    )
-		    .parallel()
-		    // Filter to subclasses of BIF
-		    .filter( BIF.class::isAssignableFrom )
-		    // Process each class
-		    .forEach( targetClass -> registerGlobalFunction( targetClass, null, null ) );
 	}
 
 	/**

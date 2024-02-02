@@ -88,7 +88,6 @@ import ortus.boxlang.ast.statement.BoxForIndex;
 import ortus.boxlang.ast.statement.BoxFunctionDeclaration;
 import ortus.boxlang.ast.statement.BoxIfElse;
 import ortus.boxlang.ast.statement.BoxImport;
-import ortus.boxlang.ast.statement.BoxInclude;
 import ortus.boxlang.ast.statement.BoxProperty;
 import ortus.boxlang.ast.statement.BoxRethrow;
 import ortus.boxlang.ast.statement.BoxReturn;
@@ -548,7 +547,21 @@ public class BoxCFParser extends BoxAbstractParser {
 	 * @see BoxThrow
 	 */
 	private BoxStatement toAst( File file, CFParser.IncludeContext node ) {
-		return new BoxInclude( toAst( file, node.expression() ), getPosition( node ), getSourceText( node ) );
+		return new BoxComponent(
+		    "include",
+		    List.of(
+		        new BoxAnnotation(
+		            new BoxFQN( "template",
+		                getPosition( node.expression() ),
+		                getSourceText( node.expression() ) ),
+		            toAst( file, node.expression() ),
+		            getPosition( node.expression() ),
+		            getSourceText( node.expression() )
+		        )
+		    ),
+		    getPosition( node ),
+		    getSourceText( node )
+		);
 	}
 
 	/**
