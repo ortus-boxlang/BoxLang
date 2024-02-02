@@ -18,6 +18,8 @@
 package ortus.boxlang.debugger.request;
 
 import ortus.boxlang.debugger.DebugAdapter;
+import ortus.boxlang.debugger.types.Breakpoint;
+import ortus.boxlang.debugger.types.Source;
 
 /**
  * Models the request to add a breakpoint to a line of source code

@@ -17,8 +17,8 @@
  */
 package ortus.boxlang.debugger.response;
 
-import ortus.boxlang.debugger.request.Breakpoint;
 import ortus.boxlang.debugger.request.SetBreakpointsRequest;
+import ortus.boxlang.debugger.types.Breakpoint;
 
 /**
  * Models a SetBreakpoint response in the DAP

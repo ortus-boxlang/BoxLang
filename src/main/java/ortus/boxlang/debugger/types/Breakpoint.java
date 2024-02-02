@@ -15,13 +15,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package ortus.boxlang.debugger.request;
+package ortus.boxlang.debugger.types;
 
 /**
- * Models the Thread type of the DAP
+ * Models a breakpoint record sent from the debug tool.
  */
-public class Thread {
+public class Breakpoint {
 
-	public String	name;
 	public int		id;
+	public boolean	verified;
+	public Source	source;
+	public int		line;
+	public int		column;
 }

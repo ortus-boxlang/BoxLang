@@ -24,7 +24,7 @@ import java.util.List;
 
 import com.sun.jdi.ThreadReference;
 
-import ortus.boxlang.debugger.request.Breakpoint;
+import ortus.boxlang.debugger.types.Breakpoint;
 
 /**
  * Listens on the provided port to allow connections from a debug tool. Each time a client connects a new DebugAdapter will be initialized and used to

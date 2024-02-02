@@ -53,7 +53,7 @@ import com.sun.jdi.request.ClassPrepareRequest;
 import com.sun.jdi.request.StepRequest;
 
 import ortus.boxlang.debugger.event.OutputEvent;
-import ortus.boxlang.debugger.request.Breakpoint;
+import ortus.boxlang.debugger.types.Breakpoint;
 import ortus.boxlang.runtime.runnables.compiler.JavaBoxpiler;
 import ortus.boxlang.runtime.runnables.compiler.JavaBoxpiler.ClassInfo;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;

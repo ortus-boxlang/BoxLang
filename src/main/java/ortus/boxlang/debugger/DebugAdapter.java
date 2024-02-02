@@ -38,7 +38,6 @@ import com.sun.jdi.IncompatibleThreadStateException;
 
 import ortus.boxlang.debugger.event.Event;
 import ortus.boxlang.debugger.event.StoppedEvent;
-import ortus.boxlang.debugger.request.Breakpoint;
 import ortus.boxlang.debugger.request.ConfigurationDoneRequest;
 import ortus.boxlang.debugger.request.IDebugRequest;
 import ortus.boxlang.debugger.request.InitializeRequest;
@@ -51,6 +50,7 @@ import ortus.boxlang.debugger.response.NoBodyResponse;
 import ortus.boxlang.debugger.response.SetBreakpointsResponse;
 import ortus.boxlang.debugger.response.StackTraceResponse;
 import ortus.boxlang.debugger.response.ThreadsResponse;
+import ortus.boxlang.debugger.types.Breakpoint;
 import ortus.boxlang.debugger.types.StackFrame;
 import ortus.boxlang.runtime.BoxRunner;
 import ortus.boxlang.runtime.BoxRuntime;
@@ -282,10 +282,10 @@ public class DebugAdapter {
 	 * @param debugRequest
 	 */
 	public void visit( ThreadsRequest debugRequest ) {
-		List<ortus.boxlang.debugger.request.Thread> threads = this.debugger.getAllThreadReferences()
+		List<ortus.boxlang.debugger.types.Thread> threads = this.debugger.getAllThreadReferences()
 		    .stream()
 		    .map( ( threadReference ) -> {
-			    ortus.boxlang.debugger.request.Thread t = new ortus.boxlang.debugger.request.Thread();
+			    ortus.boxlang.debugger.types.Thread t = new ortus.boxlang.debugger.types.Thread();
 			    t.id = ( int ) threadReference.uniqueID();
 			    t.name = threadReference.name();
 

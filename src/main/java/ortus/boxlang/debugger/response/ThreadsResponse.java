@@ -19,8 +19,8 @@ package ortus.boxlang.debugger.response;
 
 import java.util.List;
 
-import ortus.boxlang.debugger.request.Thread;
 import ortus.boxlang.debugger.request.ThreadsRequest;
+import ortus.boxlang.debugger.types.Thread;
 
 /**
  * Models a SetBreakpoint response in the DAP

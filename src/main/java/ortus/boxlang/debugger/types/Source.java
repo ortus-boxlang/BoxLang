@@ -15,7 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package ortus.boxlang.debugger.request;
+package ortus.boxlang.debugger.types;
 
 /**
  * Models the Source type of the DAP

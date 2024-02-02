@@ -21,7 +21,7 @@ import java.util.List;
 
 import com.sun.jdi.ThreadReference;
 
-import ortus.boxlang.debugger.request.Breakpoint;
+import ortus.boxlang.debugger.types.Breakpoint;
 
 /**
  * Interface for BoxLangDebuggers. Allows us to model both remote and local debug sessions.
