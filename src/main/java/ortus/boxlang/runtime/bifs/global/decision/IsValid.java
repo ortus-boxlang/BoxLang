@@ -23,6 +23,9 @@ import ortus.boxlang.runtime.dynamic.casters.GenericCaster;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
+import ortus.boxlang.runtime.types.Closure;
+import ortus.boxlang.runtime.types.Lambda;
+import ortus.boxlang.runtime.types.UDF;
 import ortus.boxlang.runtime.util.ValidationUtil;
 
 @BoxBIF
@@ -93,9 +96,9 @@ public class IsValid extends BIF {
 			// case XML -> ValidationUtil.isValidXML( value );
 			case ZIPCODE -> ValidationUtil.isValidZipCode( arguments.getAsString( Key.value ) );
 			// Lucee Only:
-			// case LAMBDA -> arguments.get( Key.value ) instanceof Lambda;
-			// case FUNCTION -> arguments.get( Key.value ) instanceof UDF;
-			// case CLOSURE -> arguments.get( Key.value ) instanceof Closure;
+			case LAMBDA -> arguments.get( Key.value ) instanceof Lambda;
+			case FUNCTION -> arguments.get( Key.value ) instanceof UDF;
+			case CLOSURE -> arguments.get( Key.value ) instanceof Closure;
 		};
 	}
 
@@ -128,11 +131,11 @@ public class IsValid extends BIF {
 		USDATE,
 	    // VARIABLENAME,
 	    // XML,
-		ZIPCODE;
-		// Lucee Only:
-		// LAMBDA,
-		// FUNCTION,
-		// CLOSURE;
+		ZIPCODE,
+	    // Lucee Only:
+		LAMBDA,
+		FUNCTION,
+		CLOSURE;
 
 		public static IsValidType fromString( String type ) {
 			try {

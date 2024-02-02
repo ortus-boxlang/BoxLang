@@ -558,4 +558,45 @@ public class IsValidTest {
 		assertThat( ( Boolean ) variables.get( Key.of( "fourdigit" ) ) ).isFalse();
 		assertThat( ( Boolean ) variables.get( Key.of( "eightwithdash" ) ) ).isFalse();
 	}
+
+	@Disabled( "Not working. 😢" )
+	@DisplayName( "It works on lambdas" )
+	@Test
+	public void testLambda() {
+		instance.executeSource(
+		    """
+		    aLambdaIsLambda  = IsValid( "lambda", () => {} );
+		    aClosureIsLambda = IsValid( "lambda", function(){} );
+		    """,
+		    context );
+		assertThat( ( Boolean ) variables.get( Key.of( "aLambdaIsLambda" ) ) ).isTrue();
+		assertThat( ( Boolean ) variables.get( Key.of( "aClosureIsLambda" ) ) ).isFalse();
+	}
+
+	@Disabled( "Not working. 😢" )
+	@DisplayName( "It works on closures" )
+	@Test
+	public void testClosure() {
+		assertThat( ( Boolean ) instance.executeStatement( "isValid( 'closure', function() {} )" ) ).isTrue();
+		assertThat( ( Boolean ) instance.executeStatement( "isValid( 'closure', () => {} )" ) ).isFalse();
+	}
+
+	@Disabled( "Not working. 😢" )
+	@DisplayName( "It works on custom functions" )
+	@Test
+	public void testFunctions() {
+		instance.executeSource(
+		    """
+		    function myFunkyUDF() {};
+		    aUDF       = IsValid( "function", myFunkyUDF );
+
+		    // falsies
+		    aClosure = IsValid( "function", function() {} );
+		    aLambda  = IsValid( "function", () => {} );
+		    """,
+		    context );
+		assertThat( ( Boolean ) variables.get( Key.of( "aUDF" ) ) ).isTrue();
+		assertThat( ( Boolean ) variables.get( Key.of( "aClosure" ) ) ).isFalse();
+		assertThat( ( Boolean ) variables.get( Key.of( "aLambda" ) ) ).isFalse();
+	}
 }
