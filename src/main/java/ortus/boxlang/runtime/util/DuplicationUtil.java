@@ -32,7 +32,7 @@ public class DuplicationUtil {
 			// functions should never be duplicated
 			return target;
 		} else if ( target instanceof Serializable ) {
-			// Once we get here duplication is deep but slow, but many java classes like ArrayList and all HashMaps implement this class
+			// Once we get here duplication is deep but very slow, but many java classes like ArrayList and all HashMaps implement this class
 			// If a new type is created, add a custom routine above for duplication
 			return SerializationUtils.clone( ( Serializable ) target );
 		} else {
