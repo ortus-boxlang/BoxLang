@@ -90,6 +90,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key	charsetOrBufferSize			= Key.of( "charsetOrBufferSize" );
 	public static final Key	classGenerationDirectory	= Key.of( "classGenerationDirectory" );
 	public static final Key	className					= Key.of( "className" );
+	public static final Key	clazz						= Key.of( "clazz" );
 	public static final Key	closure						= Key.of( "closure" );
 	public static final Key	coldfusion					= Key.of( "coldfusion" );
 	public static final Key	columnList					= Key.of( "columnList" );
