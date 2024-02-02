@@ -229,6 +229,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key	ordered						= Key.of( "ordered" );
 	public static final Key	os							= Key.of( "os" );
 	public static final Key	output						= Key.of( "output" );
+	public static final Key	overwrite					= Key.of( "overwrite" );
 	public static final Key	parallel					= Key.of( "parallel" );
 	public static final Key	parameters					= Key.of( "parameters" );
 	public static final Key	path						= Key.of( "path" );
