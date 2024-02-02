@@ -138,8 +138,9 @@ component {
 			 */
 			public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
 				// Replace this example function body with your own implementation;
-				#listLast( ( memberClass ?: "Foo"), "." )# actualObj = arguments.get( Key.foo );
-				return actualObj.foo( arguments.get( Key.bar ) );
+				//#listLast( ( memberClass ?: "Foo"), "." )# actualObj = arguments.get( Key.foo );
+				//return actualObj.foo( arguments.get( Key.bar ) );
+				return null;
 			}
 
 		}
@@ -199,16 +200,37 @@ component {
 
 			@DisplayName( "It tests the BIF #bifName#" )
 			@Test
-			@Ignore
 			public void testBif() {
-				// Remove the @Ignore attribute and add your tests to this function body
+				// Remove use the following examples to create a test for your member function
+				// Full source execution:
+				// instance.executeSource(
+				// 	"""
+				// 	myObj="foo";
+				// 	result = #bifName#(arr);
+				// 	""",
+				// 	context );
+				// assertThat( variables.get( result ) ).isEqualTo( "foo" );
+
+				// Statement execution only and return the result:
+				// assertThat( ( Boolean ) instance.executeStatement( "#bifName#( '' +  "foo" +'' )" ) ).isTrue();
+
 			}
 
 			@DisplayName( "It tests the member function for #bifName#" )
 			@Test
-			@Ignore
-			public void testItReturnsFloorMember() {
-				// Remove the @Ignore attribute and add your tests to this function body
+			public void testMemberFunction() {
+				// Remove use the following examples to create a test for your member function
+				// Full source execution:
+				// instance.executeSource(
+				// 	"""
+				// 	myObj="foo";
+				// 	result = myObj.#bifName#();
+				// 	""",
+				// 	context );
+				// assertThat( variables.get( result ) ).isEqualTo( "foo" );
+
+				// Statement execution only and return the result:
+				// assertThat( ( Boolean ) instance.executeStatement( "  '' +  "foo" +''.#bifName#()" ) ).isTrue();
 			}
 
 		}
