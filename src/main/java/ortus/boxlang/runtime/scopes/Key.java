@@ -269,6 +269,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key	string						= Key.of( "string" );
 	public static final Key	string1						= Key.of( "string1" );
 	public static final Key	string2						= Key.of( "string2" );
+	public static final Key	struct						= Key.of( "struct" );
 	public static final Key	structure					= Key.of( "structure" );
 	public static final Key	substring					= Key.of( "substring" );
 	public static final Key	system						= Key.of( "system" );
