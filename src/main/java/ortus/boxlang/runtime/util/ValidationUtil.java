@@ -4,6 +4,11 @@ import java.util.regex.Pattern;
 
 import org.apache.commons.lang3.math.NumberUtils;
 
+/**
+ * Utility class for validating user-level data types such as credit cards, postal codes, phone numbers, and URLs.
+ *
+ * Is not concerned with whether the data is parseable or can be converted to a given type, only whether it is in a valid format.
+ */
 public class ValidationUtil {
 
 	/**

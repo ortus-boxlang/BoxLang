@@ -23,7 +23,6 @@ import static com.google.common.truth.Truth.assertThat;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -34,7 +33,6 @@ import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
 
-@Disabled( "Unimplemented" )
 public class IsDefinedTest {
 
 	static BoxRuntime	instance;
@@ -63,20 +61,24 @@ public class IsDefinedTest {
 	public void testTrueConditions() {
 		instance.executeSource(
 		    """
-		       var result = true;
-		    variableName = "result";
+		    result        = true;
+		    variableName  = "result";
 		    variables.foo = "bar";
+		    brad          = { age: 42 };
 
-		    stringVarName     = isDefined( "result" );
+		    stringVarName     = isDefined( variable = "result" );
 		    variableReference = isDefined( variableName );
-		    localReference    = isDefined( "local.result" );
+		    // localReference    = isDefined( "local.result" );
 		    variableScope     = isDefined( "variables.foo" );
-		       """,
+		    structReference   = isDefined( "brad.age" );
+		    """,
 		    context );
 		assertThat( ( Boolean ) variables.get( Key.of( "stringVarName" ) ) ).isTrue();
 		assertThat( ( Boolean ) variables.get( Key.of( "variableReference" ) ) ).isTrue();
-		assertThat( ( Boolean ) variables.get( Key.of( "localReference" ) ) ).isTrue();
+		// @TODO: Discuss var keyword and the `local` scope with brad
+		// assertThat( ( Boolean ) variables.get( Key.of( "localReference" ) ) ).isTrue();
 		assertThat( ( Boolean ) variables.get( Key.of( "variableScope" ) ) ).isTrue();
+		assertThat( ( Boolean ) variables.get( Key.of( "structReference" ) ) ).isTrue();
 	}
 
 	@DisplayName( "It returns false for non-existing variables" )
@@ -84,19 +86,18 @@ public class IsDefinedTest {
 	public void testFalseConditions() {
 		instance.executeSource(
 		    """
-		    variableName = "result";
-		    variables.foo = "bar";
+		    brad = { age: 42 };
 
-		    stringVarName     = isDefined( "doesntexist" );
-		    variableReference = isDefined( variableName );
+		    stringVarName     = isDefined( variable = "doesntexist" );
 		    localReference    = isDefined( "local.result" );
-		    variableScope     = isDefined( "variables.foo" );
-		       """,
+		    variableScope     = isDefined( "variables.bradzooks" );
+		    structReference   = isDefined( "brad.oldAge" );
+		    """,
 		    context );
 		assertThat( ( Boolean ) variables.get( Key.of( "stringVarName" ) ) ).isFalse();
-		assertThat( ( Boolean ) variables.get( Key.of( "variableReference" ) ) ).isFalse();
 		assertThat( ( Boolean ) variables.get( Key.of( "localReference" ) ) ).isFalse();
 		assertThat( ( Boolean ) variables.get( Key.of( "variableScope" ) ) ).isFalse();
+		assertThat( ( Boolean ) variables.get( Key.of( "structReference" ) ) ).isFalse();
 	}
 
 }
