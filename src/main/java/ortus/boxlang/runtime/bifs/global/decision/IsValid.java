@@ -77,27 +77,34 @@ public class IsValid extends BIF {
 			/*
 			 * Implemented in ValidationUtil
 			 */
-			// case BINARY -> ValidationUtil.isValidBINARY( arguments.get( Key.value ) );
 			case CREDITCARD -> ValidationUtil.isValidCreditCard( arguments.getAsString( Key.value ) );
 			case COMPONENT -> arguments.get( Key.value ) instanceof IClassRunnable;
-			// case EMAIL -> ValidationUtil.isValidEMAIL( arguments.getAsString( Key.value ) );
-			// case FLOAT -> value instanceof Float || ???
 			case GUID -> ValidationUtil.isValidGUID( arguments.getAsString( Key.value ) );
 			case INTEGER -> ValidationUtil.isValidInteger( arguments.get( Key.value ) );
 			case NUMERIC -> ValidationUtil.isValidNumeric( arguments.get( Key.value ) );
-			// case QUERY -> ValidationUtil.isValidQUERY( value );
-			// case RANGE -> ValidationUtil.isValidRANGE( value );
-			// case REGEX, REGULAR_EXPRESSION -> ValidationUtil.isValidREGEX( arguments.getAsString( Key.value ) );
 			case SSN, SOCIAL_SECURITY_NUMBER -> ValidationUtil.isValidSSN( arguments.getAsString( Key.value ) );
 			case TELEPHONE -> ValidationUtil.isValidTelephone( arguments.getAsString( Key.value ) );
 			case URL -> ValidationUtil.isValidURL( arguments.getAsString( Key.value ) );
 			case UUID -> ValidationUtil.isValidUUID( arguments.getAsString( Key.value ) ) || ValidationUtil.isValidGUID( arguments.getAsString( Key.value ) );
 			case USDATE -> context.invokeFunction( Key.of( "LSIsDate" ),
 			    java.util.Map.of( Key.date, arguments.getAsString( Key.value ), Key.locale, "en_US" ) );
+			case ZIPCODE -> ValidationUtil.isValidZipCode( arguments.getAsString( Key.value ) );
+
+			/*
+			 * @TODO: Implement these!
+			 */
+			// case BINARY -> ValidationUtil.isValidBINARY( arguments.get( Key.value ) );
+			// case EMAIL -> ValidationUtil.isValidEMAIL( arguments.getAsString( Key.value ) );
+			// case FLOAT -> value instanceof Float || ???
+			// case QUERY -> ValidationUtil.isValidQUERY( value );
+			// case RANGE -> ValidationUtil.isValidRANGE( value );
+			// case REGEX, REGULAR_EXPRESSION -> ValidationUtil.isValidREGEX( arguments.getAsString( Key.value ) );
 			// case VARIABLENAME -> ValidationUtil.isValidVARIABLENAME( value );
 			// case XML -> ValidationUtil.isValidXML( value );
-			case ZIPCODE -> ValidationUtil.isValidZipCode( arguments.getAsString( Key.value ) );
-			// Lucee Only:
+
+			/*
+			 * Lucee Only:
+			 */
 			case LAMBDA -> arguments.get( Key.value ) instanceof Lambda;
 			case FUNCTION -> arguments.get( Key.value ) instanceof UDF;
 			case CLOSURE -> arguments.get( Key.value ) instanceof Closure;

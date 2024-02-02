@@ -83,14 +83,6 @@ public class IsValidTest {
 		assertThat( ( Boolean ) instance.executeStatement( "isValid( 'Array', {} )" ) ).isFalse();
 	}
 
-	@Disabled( "toBinary is not implemented" )
-	@DisplayName( "It works on Binaries" )
-	@Test
-	public void testBinary() {
-		assertThat( ( Boolean ) instance.executeStatement( "isValid( 'Binary', toBinary( toBase64( 'boxlang' ) )  )" ) ).isTrue();
-		assertThat( ( Boolean ) instance.executeStatement( "isValid( 'Binary', toBase64( 'boxlang' )  )" ) ).isFalse();
-	}
-
 	@DisplayName( "It works on booleans" )
 	@Test
 	public void testBoolean() {
@@ -164,59 +156,6 @@ public class IsValidTest {
 		assertThat( ( Boolean ) instance.executeStatement( "isValid( 'time', '' )" ) ).isFalse();
 	}
 
-	@Disabled( "Unimplemented" )
-	@DisplayName( "It works on emails" )
-	@Test
-	public void testEmail() {
-		instance.executeSource(
-		    """
-		    singlechar   = isValid( 'email', 'a@ortus.solutions.com' );
-		    specialchars = isValid( 'email', 'a-sw.ell-brad+foo_09@gm.ail.com' );
-
-		    // falsies
-		    doubleat         = IsValid( "email", 'brad@a@bc-_brad.box.lang' );
-		    nouser           = IsValid( "email", '@abc-_brad.box.lang' );
-		    domainendwithdot = IsValid( "email", 'dddd@abc-_brad.box.' );
-		    userendwithdot   = isValid( 'email', 'brad.@ortussolutions.xom' );
-		    userstartwithdot = isValid( 'email', '.foo@ortussolutions.xom' );
-		       """,
-		    context );
-		assertThat( ( Boolean ) variables.get( Key.of( "singlechar" ) ) ).isTrue();
-		assertThat( ( Boolean ) variables.get( Key.of( "specialchars" ) ) ).isTrue();
-
-		assertThat( ( Boolean ) variables.get( Key.of( "doubleat" ) ) ).isFalse();
-		assertThat( ( Boolean ) variables.get( Key.of( "nouser" ) ) ).isFalse();
-		assertThat( ( Boolean ) variables.get( Key.of( "domainendwithdot" ) ) ).isFalse();
-		assertThat( ( Boolean ) variables.get( Key.of( "userendwithdot" ) ) ).isFalse();
-		assertThat( ( Boolean ) variables.get( Key.of( "userstartwithdot" ) ) ).isFalse();
-
-	}
-
-	@Disabled( "Unimplemented" )
-	@DisplayName( "It works on floats" )
-	@Test
-	public void testFloat() {
-		assertThat( ( Boolean ) instance.executeStatement( "isValid( 'float', 1.23 )" ) ).isTrue();
-		assertThat( ( Boolean ) instance.executeStatement( "isValid( 'float', 'xyz' )" ) ).isFalse();
-		instance.executeSource(
-		    """
-		    // trues
-		    float       = isValid( 'numeric', 123.45 );
-		    stringFloat = isValid( 'numeric', "123.45" );
-
-		    // falsies
-		    int       = isValid( 'numeric', 123 );
-		    bool      = isValid( 'numeric', true );
-		    stringval = isValid( 'numeric', '3x' );
-		    """,
-		    context );
-		assertThat( ( Boolean ) variables.get( Key.of( "float" ) ) ).isTrue();
-		assertThat( ( Boolean ) variables.get( Key.of( "stringFloat" ) ) ).isTrue();
-		assertThat( ( Boolean ) variables.get( Key.of( "int" ) ) ).isFalse();
-		assertThat( ( Boolean ) variables.get( Key.of( "bool" ) ) ).isFalse();
-		assertThat( ( Boolean ) variables.get( Key.of( "stringval" ) ) ).isFalse();
-	}
-
 	@DisplayName( "It works on guids" )
 	@Test
 	public void testGuid() {
@@ -265,91 +204,6 @@ public class IsValidTest {
 		assertThat( ( Boolean ) variables.get( Key.of( "stringFloat" ) ) ).isTrue();
 		assertThat( ( Boolean ) variables.get( Key.of( "bool" ) ) ).isFalse();
 		assertThat( ( Boolean ) variables.get( Key.of( "stringval" ) ) ).isFalse();
-	}
-
-	@Disabled( "QueryNew() is not implemented" )
-	@DisplayName( "It works on Querys" )
-	@Test
-	public void testQuery() {
-		assertThat( ( Boolean ) instance.executeStatement( "isValid( 'Query', queryNew( 'id,name' ) )" ) ).isTrue();
-		assertThat( ( Boolean ) instance.executeStatement( "isValid( 'Query', {} )" ) ).isFalse();
-	}
-
-	@Disabled( "Unimplemented" )
-	@DisplayName( "It works on ranges" )
-	@Test
-	public void testRange() {
-		instance.executeSource(
-		    """
-		    // trues
-		    is3in1through5 = IsValid( "range", '3',1,5);
-		    is1in1through5 = IsValid( "range", '1',1,5);
-		    is5in1through5 = IsValid( "range", '5',1,5);
-
-		    // falses
-		    is6in1through5  = IsValid( "range", '6',1,5);
-		    is0in1through5  = IsValid( "range", '0',1,5);
-		    is10in1through5 = IsValid( "range", '10',10,5);
-		    isXin1through5  = IsValid( "range", 'x',1,5);
-		    """,
-		    context );
-		assertThat( ( Boolean ) variables.get( Key.of( "is3in1through5" ) ) ).isTrue();
-		assertThat( ( Boolean ) variables.get( Key.of( "is1in1through5" ) ) ).isTrue();
-		assertThat( ( Boolean ) variables.get( Key.of( "is5in1through5" ) ) ).isTrue();
-
-		assertThat( ( Boolean ) variables.get( Key.of( "is6in1through5" ) ) ).isFalse();
-		assertThat( ( Boolean ) variables.get( Key.of( "is0in1through5" ) ) ).isFalse();
-		assertThat( ( Boolean ) variables.get( Key.of( "is10in1through5" ) ) ).isFalse();
-		assertThat( ( Boolean ) variables.get( Key.of( "is3in1through5" ) ) ).isFalse();
-		assertThat( ( Boolean ) variables.get( Key.of( "isXin1through5" ) ) ).isFalse();
-	}
-
-	@Disabled( "Unimplemented" )
-	@DisplayName( "It works on Regexs" )
-	@Test
-	public void testRegex() {
-		instance.executeSource(
-		    """
-		    // trues
-		    singlechar      = IsValid( "regex", 'abc', '...' );
-		    plusquantifier  = IsValid( "regex", 'abc', '.+' );
-		    curlyquantifier = IsValid( "regex", 'abc', '[abc]{3}' );
-
-		    // falses
-		    wrongCasing = IsValid( "regex", 'ABC', '[abc]{3}' );
-		    mismatch = IsValid( "regex", '(abc', '[abc]{3}' );
-		    """,
-		    context );
-		assertThat( ( Boolean ) variables.get( Key.of( "singlechar" ) ) ).isTrue();
-		assertThat( ( Boolean ) variables.get( Key.of( "is3in1through5" ) ) ).isTrue();
-		assertThat( ( Boolean ) variables.get( Key.of( "plusquantifier" ) ) ).isTrue();
-
-		assertThat( ( Boolean ) variables.get( Key.of( "wrongCasing" ) ) ).isFalse();
-		assertThat( ( Boolean ) variables.get( Key.of( "mismatch" ) ) ).isFalse();
-	}
-
-	@Disabled( "Unimplemented" )
-	@DisplayName( "It works on regular_expressions" )
-	@Test
-	public void testRegular_expression() {
-		instance.executeSource(
-		    """
-		    // trues
-		    singlechar      = IsValid( "regex", 'abc', '...' );
-		    plusquantifier  = IsValid( "regex", 'abc', '.+' );
-		    curlyquantifier = IsValid( "regex", 'abc', '[abc]{3}' );
-
-		    // falses
-		    wrongCasing = IsValid( "regex", 'ABC', '[abc]{3}' );
-		    mismatch = IsValid( "regex", '(abc', '[abc]{3}' );
-		    """,
-		    context );
-		assertThat( ( Boolean ) variables.get( Key.of( "singlechar" ) ) ).isTrue();
-		assertThat( ( Boolean ) variables.get( Key.of( "is3in1through5" ) ) ).isTrue();
-		assertThat( ( Boolean ) variables.get( Key.of( "plusquantifier" ) ) ).isTrue();
-
-		assertThat( ( Boolean ) variables.get( Key.of( "wrongCasing" ) ) ).isFalse();
-		assertThat( ( Boolean ) variables.get( Key.of( "mismatch" ) ) ).isFalse();
 	}
 
 	@DisplayName( "It works on ssns" )
@@ -504,6 +358,174 @@ public class IsValidTest {
 		assertThat( ( Boolean ) instance.executeStatement( "isValid( 'usdate', '31/1/2024' )" ) ).isFalse();
 	}
 
+	@DisplayName( "It works on zipcodes" )
+	@Test
+	public void testZipcode() {
+		instance.executeSource(
+		    """
+		    fivedigit     = IsValid( "zipcode", '12345' );
+		    ninewithdash  = IsValid( "zipcode", '12345-6789' );
+		    ninewithspace = IsValid( "zipcode", '12345 6789' );
+
+		    // falsies
+		    fourdigit     = IsValid( "zipcode", '1234' );
+		    eightwithdash = IsValid( "zipcode", '1234-12345' );
+		    """,
+		    context );
+		assertThat( ( Boolean ) variables.get( Key.of( "fivedigit" ) ) ).isTrue();
+		assertThat( ( Boolean ) variables.get( Key.of( "ninewithdash" ) ) ).isTrue();
+		assertThat( ( Boolean ) variables.get( Key.of( "ninewithspace" ) ) ).isTrue();
+
+		assertThat( ( Boolean ) variables.get( Key.of( "fourdigit" ) ) ).isFalse();
+		assertThat( ( Boolean ) variables.get( Key.of( "eightwithdash" ) ) ).isFalse();
+	}
+
+	@Disabled( "toBinary is not implemented" )
+	@DisplayName( "It works on Binaries" )
+	@Test
+	public void testBinary() {
+		assertThat( ( Boolean ) instance.executeStatement( "isValid( 'Binary', toBinary( toBase64( 'boxlang' ) )  )" ) ).isTrue();
+		assertThat( ( Boolean ) instance.executeStatement( "isValid( 'Binary', toBase64( 'boxlang' )  )" ) ).isFalse();
+	}
+
+	@Disabled( "Unimplemented" )
+	@DisplayName( "It works on emails" )
+	@Test
+	public void testEmail() {
+		instance.executeSource(
+		    """
+		    singlechar   = isValid( 'email', 'a@ortus.solutions.com' );
+		    specialchars = isValid( 'email', 'a-sw.ell-brad+foo_09@gm.ail.com' );
+
+		    // falsies
+		    doubleat         = IsValid( "email", 'brad@a@bc-_brad.box.lang' );
+		    nouser           = IsValid( "email", '@abc-_brad.box.lang' );
+		    domainendwithdot = IsValid( "email", 'dddd@abc-_brad.box.' );
+		    userendwithdot   = isValid( 'email', 'brad.@ortussolutions.xom' );
+		    userstartwithdot = isValid( 'email', '.foo@ortussolutions.xom' );
+		       """,
+		    context );
+		assertThat( ( Boolean ) variables.get( Key.of( "singlechar" ) ) ).isTrue();
+		assertThat( ( Boolean ) variables.get( Key.of( "specialchars" ) ) ).isTrue();
+
+		assertThat( ( Boolean ) variables.get( Key.of( "doubleat" ) ) ).isFalse();
+		assertThat( ( Boolean ) variables.get( Key.of( "nouser" ) ) ).isFalse();
+		assertThat( ( Boolean ) variables.get( Key.of( "domainendwithdot" ) ) ).isFalse();
+		assertThat( ( Boolean ) variables.get( Key.of( "userendwithdot" ) ) ).isFalse();
+		assertThat( ( Boolean ) variables.get( Key.of( "userstartwithdot" ) ) ).isFalse();
+
+	}
+
+	@Disabled( "Unimplemented" )
+	@DisplayName( "It works on floats" )
+	@Test
+	public void testFloat() {
+		assertThat( ( Boolean ) instance.executeStatement( "isValid( 'float', 1.23 )" ) ).isTrue();
+		assertThat( ( Boolean ) instance.executeStatement( "isValid( 'float', 'xyz' )" ) ).isFalse();
+		instance.executeSource(
+		    """
+		    // trues
+		    float       = isValid( 'numeric', 123.45 );
+		    stringFloat = isValid( 'numeric', "123.45" );
+
+		    // falsies
+		    int       = isValid( 'numeric', 123 );
+		    bool      = isValid( 'numeric', true );
+		    stringval = isValid( 'numeric', '3x' );
+		    """,
+		    context );
+		assertThat( ( Boolean ) variables.get( Key.of( "float" ) ) ).isTrue();
+		assertThat( ( Boolean ) variables.get( Key.of( "stringFloat" ) ) ).isTrue();
+		assertThat( ( Boolean ) variables.get( Key.of( "int" ) ) ).isFalse();
+		assertThat( ( Boolean ) variables.get( Key.of( "bool" ) ) ).isFalse();
+		assertThat( ( Boolean ) variables.get( Key.of( "stringval" ) ) ).isFalse();
+	}
+
+	@Disabled( "QueryNew() is not implemented" )
+	@DisplayName( "It works on Querys" )
+	@Test
+	public void testQuery() {
+		assertThat( ( Boolean ) instance.executeStatement( "isValid( 'Query', queryNew( 'id,name' ) )" ) ).isTrue();
+		assertThat( ( Boolean ) instance.executeStatement( "isValid( 'Query', {} )" ) ).isFalse();
+	}
+
+	@Disabled( "Unimplemented" )
+	@DisplayName( "It works on ranges" )
+	@Test
+	public void testRange() {
+		instance.executeSource(
+		    """
+		    // trues
+		    is3in1through5 = IsValid( "range", '3',1,5);
+		    is1in1through5 = IsValid( "range", '1',1,5);
+		    is5in1through5 = IsValid( "range", '5',1,5);
+
+		    // falses
+		    is6in1through5  = IsValid( "range", '6',1,5);
+		    is0in1through5  = IsValid( "range", '0',1,5);
+		    is10in1through5 = IsValid( "range", '10',10,5);
+		    isXin1through5  = IsValid( "range", 'x',1,5);
+		    """,
+		    context );
+		assertThat( ( Boolean ) variables.get( Key.of( "is3in1through5" ) ) ).isTrue();
+		assertThat( ( Boolean ) variables.get( Key.of( "is1in1through5" ) ) ).isTrue();
+		assertThat( ( Boolean ) variables.get( Key.of( "is5in1through5" ) ) ).isTrue();
+
+		assertThat( ( Boolean ) variables.get( Key.of( "is6in1through5" ) ) ).isFalse();
+		assertThat( ( Boolean ) variables.get( Key.of( "is0in1through5" ) ) ).isFalse();
+		assertThat( ( Boolean ) variables.get( Key.of( "is10in1through5" ) ) ).isFalse();
+		assertThat( ( Boolean ) variables.get( Key.of( "is3in1through5" ) ) ).isFalse();
+		assertThat( ( Boolean ) variables.get( Key.of( "isXin1through5" ) ) ).isFalse();
+	}
+
+	@Disabled( "Unimplemented" )
+	@DisplayName( "It works on Regexs" )
+	@Test
+	public void testRegex() {
+		instance.executeSource(
+		    """
+		    // trues
+		    singlechar      = IsValid( "regex", 'abc', '...' );
+		    plusquantifier  = IsValid( "regex", 'abc', '.+' );
+		    curlyquantifier = IsValid( "regex", 'abc', '[abc]{3}' );
+
+		    // falses
+		    wrongCasing = IsValid( "regex", 'ABC', '[abc]{3}' );
+		    mismatch = IsValid( "regex", '(abc', '[abc]{3}' );
+		    """,
+		    context );
+		assertThat( ( Boolean ) variables.get( Key.of( "singlechar" ) ) ).isTrue();
+		assertThat( ( Boolean ) variables.get( Key.of( "is3in1through5" ) ) ).isTrue();
+		assertThat( ( Boolean ) variables.get( Key.of( "plusquantifier" ) ) ).isTrue();
+
+		assertThat( ( Boolean ) variables.get( Key.of( "wrongCasing" ) ) ).isFalse();
+		assertThat( ( Boolean ) variables.get( Key.of( "mismatch" ) ) ).isFalse();
+	}
+
+	@Disabled( "Unimplemented" )
+	@DisplayName( "It works on regular_expressions" )
+	@Test
+	public void testRegular_expression() {
+		instance.executeSource(
+		    """
+		    // trues
+		    singlechar      = IsValid( "regex", 'abc', '...' );
+		    plusquantifier  = IsValid( "regex", 'abc', '.+' );
+		    curlyquantifier = IsValid( "regex", 'abc', '[abc]{3}' );
+
+		    // falses
+		    wrongCasing = IsValid( "regex", 'ABC', '[abc]{3}' );
+		    mismatch = IsValid( "regex", '(abc', '[abc]{3}' );
+		    """,
+		    context );
+		assertThat( ( Boolean ) variables.get( Key.of( "singlechar" ) ) ).isTrue();
+		assertThat( ( Boolean ) variables.get( Key.of( "is3in1through5" ) ) ).isTrue();
+		assertThat( ( Boolean ) variables.get( Key.of( "plusquantifier" ) ) ).isTrue();
+
+		assertThat( ( Boolean ) variables.get( Key.of( "wrongCasing" ) ) ).isFalse();
+		assertThat( ( Boolean ) variables.get( Key.of( "mismatch" ) ) ).isFalse();
+	}
+
 	@Disabled( "Unimplemented" )
 	@DisplayName( "It works on variablenames" )
 	@Test
@@ -531,28 +553,6 @@ public class IsValidTest {
 
 		assertThat( ( Boolean ) variables.get( Key.of( "invalidchildnode" ) ) ).isFalse();
 		assertThat( ( Boolean ) variables.get( Key.of( "emptybrackets" ) ) ).isFalse();
-	}
-
-	@DisplayName( "It works on zipcodes" )
-	@Test
-	public void testZipcode() {
-		instance.executeSource(
-		    """
-		    fivedigit     = IsValid( "zipcode", '12345' );
-		    ninewithdash  = IsValid( "zipcode", '12345-6789' );
-		    ninewithspace = IsValid( "zipcode", '12345 6789' );
-
-		    // falsies
-		    fourdigit     = IsValid( "zipcode", '1234' );
-		    eightwithdash = IsValid( "zipcode", '1234-12345' );
-		    """,
-		    context );
-		assertThat( ( Boolean ) variables.get( Key.of( "fivedigit" ) ) ).isTrue();
-		assertThat( ( Boolean ) variables.get( Key.of( "ninewithdash" ) ) ).isTrue();
-		assertThat( ( Boolean ) variables.get( Key.of( "ninewithspace" ) ) ).isTrue();
-
-		assertThat( ( Boolean ) variables.get( Key.of( "fourdigit" ) ) ).isFalse();
-		assertThat( ( Boolean ) variables.get( Key.of( "eightwithdash" ) ) ).isFalse();
 	}
 
 	@Disabled( "Not working. 😢" )
