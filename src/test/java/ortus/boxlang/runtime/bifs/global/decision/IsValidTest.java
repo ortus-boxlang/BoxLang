@@ -143,12 +143,11 @@ public class IsValidTest {
 		assertThat( ( Boolean ) variables.get( Key.of( "invalid4" ) ) ).isFalse();
 	}
 
-	@Disabled( "Unimplemented" )
 	@DisplayName( "It works on components" )
 	@Test
 	public void testComponent() {
-		assertThat( ( Boolean ) instance.executeStatement( "isValid( 'component',new FunkyComponent() )" ) ).isTrue();
-		assertThat( ( Boolean ) instance.executeStatement( "isValid( 'component',{} )" ) ).isFalse();
+		assertThat( ( Boolean ) instance.executeStatement( "isValid( 'component', new src.test.java.TestCases.phase3.MyClass() )" ) ).isTrue();
+		assertThat( ( Boolean ) instance.executeStatement( "isValid( 'component', {} )" ) ).isFalse();
 	}
 
 	@Disabled( "Unimplemented" )
