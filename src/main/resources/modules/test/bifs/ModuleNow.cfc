@@ -1,6 +1,7 @@
 /**
  * No aliases
  */
+@BoxMember "string"
 component{
 
 	/**

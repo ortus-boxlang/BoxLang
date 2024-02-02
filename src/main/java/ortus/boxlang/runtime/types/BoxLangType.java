@@ -59,4 +59,31 @@ public enum BoxLangType {
 		return this.key;
 	}
 
+	/**
+	 * Validate if the incoming value is a valid BoxLangType.
+	 *
+	 * @param value The key value to validate
+	 *
+	 * @return True if the value is a valid BoxLangType, false otherwise
+	 */
+	public static boolean isValid( Key value ) {
+		for ( BoxLangType type : BoxLangType.values() ) {
+			if ( type.getKey().equals( value ) ) {
+				return true;
+			}
+		}
+		return false;
+	}
+
+	/**
+	 * Validate if the incoming value is a valid BoxLangType.
+	 *
+	 * @param value The key value to validate
+	 *
+	 * @return True if the value is a valid BoxLangType, false otherwise
+	 */
+	public static boolean isValid( String value ) {
+		return isValid( Key.of( value ) );
+	}
+
 }

@@ -279,7 +279,7 @@ public class FunctionService extends BaseService {
 
 	/**
 	 * Registers a global function with the service only using a descriptor.
-	 * We take the name from the descriptor itself and we do not force the registration
+	 * We take the name from the descriptor itself {@code descriptor.name} and we do not force the registration.
 	 *
 	 * @param descriptor The descriptor for the global function
 	 *
@@ -296,6 +296,24 @@ public class FunctionService extends BaseService {
 	 */
 	public void unregisterGlobalFunction( Key name ) {
 		this.globalFunctions.remove( name );
+	}
+
+	/**
+	 * Register a member method with the service using a member key and a {@link MemberDescriptor}
+	 *
+	 * @param memberKey  The key for the member method: Ex: "append", "insert", "remove"
+	 * @param descriptor The descriptor for the member method: {@link MemberDescriptor}
+	 */
+	public void registerMemberMethod( Key memberKey, MemberDescriptor descriptor ) {
+
+		// Make sure the container for the member key exists
+		// Ex: memberMethods[ "foo" ] = { BoxLangType.ARRAY : MemberDescriptor, BoxLangType.STRING : MemberDescriptor }
+		synchronized ( this.memberMethods ) {
+			this.memberMethods.putIfAbsent( memberKey, new ConcurrentHashMap<>() );
+		}
+
+		// Now add them up
+		this.memberMethods.get( memberKey ).put( descriptor.type, descriptor );
 	}
 
 	/**
@@ -324,7 +342,8 @@ public class FunctionService extends BaseService {
 	}
 
 	/**
-	 * Registers a global function with the service. The BIF class needs to be annotated with {@link BoxBIF} or {@link BoxMember}
+	 * Registers a global function with the service. The BIF class needs to be annotated with {@link BoxBIF} or {@link BoxMember}.
+	 * This is mostly called by the global function loader.
 	 *
 	 * @param BIFClass The BIF class
 	 * @param function The global function
@@ -356,16 +375,14 @@ public class FunctionService extends BaseService {
 		// Register BIF with default name or alias
 		BoxBIF[]		bifAnnotations	= BIFClass.getAnnotationsByType( BoxBIF.class );
 		for ( BoxBIF bif : bifAnnotations ) {
-			globalFunctions.put(
-			    // Use the annotation's alias, if present, if not, the name of the class.
-			    bif.alias().equals( "" ) ? classNameKey : Key.of( bif.alias() ),
-			    descriptor
-			);
+			registerGlobalFunction( descriptor, bif.alias().equals( "" ) ? classNameKey : Key.of( bif.alias() ), true );
 		}
 
 		// Register member methods
 		BoxMember[] boxMemberAnnotations = BIFClass.getAnnotationsByType( BoxMember.class );
 		for ( BoxMember member : boxMemberAnnotations ) {
+
+			// Discover the member method name
 			Key memberKey;
 			if ( member.name().equals( "" ) ) {
 				// Default member name for class ArrayFoo with BoxType of Array is just foo()
@@ -373,17 +390,10 @@ public class FunctionService extends BaseService {
 			} else {
 				memberKey = Key.of( member.name() );
 			}
-			// Since we're processing in parallel, syncronize the addition of new member method keys to our map
-			synchronized ( memberMethods ) {
-				if ( !memberMethods.containsKey( memberKey ) ) {
-					memberMethods.put( memberKey, new ConcurrentHashMap<BoxLangType, MemberDescriptor>() );
-				}
-			}
-			Map<BoxLangType, MemberDescriptor> memberMethods = this.memberMethods.get( memberKey );
-			// member method map is in format memberMethods[ "nameOfMethod" ][ BoxLangType.ARRAY ] = MemberDesccriptor
-			// Whih optimizes lookup for matching member methods at runtime.
-			memberMethods.put(
-			    member.type(),
+
+			// Register the member method using the data and BIF Descriptor
+			registerMemberMethod(
+			    memberKey,
 			    new MemberDescriptor(
 			        memberKey,
 			        member.type(),

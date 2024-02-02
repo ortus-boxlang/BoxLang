@@ -80,8 +80,8 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key	attributes					= Key.of( "attributes" );
 	public static final Key	attributeCollection			= Key.of( "attributeCollection" );
 	public static final Key	author						= Key.of( "author" );
-	public static final Key	boxBif						= Key.of( "boxBif" );
-	public static final Key	boxMember					= Key.of( "boxMember" );
+	public static final Key	boxBif						= Key.of( "BoxBif" );
+	public static final Key	boxMember					= Key.of( "BoxMember" );
 	public static final Key	boxRuntime					= Key.of( "boxRuntime" );
 	public static final Key	buffersize					= Key.of( "buffersize" );
 	public static final Key	caches						= Key.of( "caches" );
@@ -217,6 +217,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key	number2						= Key.of( "number2" );
 	public static final Key	numIterations				= Key.of( "numIterations" );
 	public static final Key	object						= Key.of( "object" );
+	public static final Key	objectArgument				= Key.of( "objectArgument" );
 	public static final Key	objectMappings				= Key.of( "objectMappings" );
 	public static final Key	oldPath						= Key.of( "oldPath" );
 	public static final Key	onLoad						= Key.of( "onLoad" );
