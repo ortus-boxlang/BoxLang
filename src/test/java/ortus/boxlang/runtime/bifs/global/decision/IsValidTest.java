@@ -219,7 +219,6 @@ public class IsValidTest {
 		assertThat( ( Boolean ) variables.get( Key.of( "stringval" ) ) ).isFalse();
 	}
 
-	@Disabled( "Unimplemented" )
 	@DisplayName( "It works on guids" )
 	@Test
 	public void testGuid() {

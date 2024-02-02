@@ -73,6 +73,7 @@ public class IsValid extends BIF {
 			case STRING -> GenericCaster.attempt( arguments.get( Key.value ), "string" ).wasSuccessful();
 			case STRUCT -> GenericCaster.attempt( arguments.get( Key.value ), "struct" ).wasSuccessful();
 			case TIME -> GenericCaster.attempt( arguments.get( Key.value ), "datetime" ).wasSuccessful();
+
 			/*
 			 * Implemented in ValidationUtil
 			 */
@@ -81,7 +82,7 @@ public class IsValid extends BIF {
 			case COMPONENT -> arguments.get( Key.value ) instanceof IClassRunnable;
 			// case EMAIL -> ValidationUtil.isValidEMAIL( arguments.getAsString( Key.value ) );
 			// case FLOAT -> value instanceof Float || ???
-			// case GUID -> ValidationUtil.isValidGUID( arguments.getAsString( Key.value ) );
+			case GUID -> ValidationUtil.isValidGUID( arguments.getAsString( Key.value ) );
 			case INTEGER -> ValidationUtil.isValidInteger( arguments.get( Key.value ) );
 			case NUMERIC -> ValidationUtil.isValidNumeric( arguments.get( Key.value ) );
 			// case QUERY -> ValidationUtil.isValidQUERY( value );
@@ -90,7 +91,7 @@ public class IsValid extends BIF {
 			case SSN, SOCIAL_SECURITY_NUMBER -> ValidationUtil.isValidSSN( arguments.getAsString( Key.value ) );
 			case TELEPHONE -> ValidationUtil.isValidTelephone( arguments.getAsString( Key.value ) );
 			case URL -> ValidationUtil.isValidURL( arguments.getAsString( Key.value ) );
-			case UUID -> ValidationUtil.isValidCFUUID( arguments.getAsString( Key.value ) ) || ValidationUtil.isValidUUID( arguments.getAsString( Key.value ) );
+			case UUID -> ValidationUtil.isValidUUID( arguments.getAsString( Key.value ) ) || ValidationUtil.isValidGUID( arguments.getAsString( Key.value ) );
 			case USDATE -> context.invokeFunction( Key.of( "LSIsDate" ),
 			    java.util.Map.of( Key.date, arguments.getAsString( Key.value ), Key.locale, "en_US" ) );
 			// case VARIABLENAME -> ValidationUtil.isValidVARIABLENAME( value );
@@ -114,7 +115,7 @@ public class IsValid extends BIF {
 		DATE,
 	    // EMAIL,
 	    // FLOAT,
-	    // GUID,
+		GUID,
 		INTEGER,
 		NUMERIC,
 	    // QUERY,

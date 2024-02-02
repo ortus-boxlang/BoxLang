@@ -134,28 +134,28 @@ public class ValidationUtil {
 	}
 
 	/**
-	 * Validates the given string is a valid Version 4 UUID.
+	 * Validates the given string is a valid Version 4 UUID - in SQL Server, this is known as a GUID.
 	 * <p>
-	 * <strong>Beware:</strong> This will <em>not</em> match values from <code>createUUID()</code>. For that, use {@link #isValidCFUUID(String)}.
+	 * <strong>Beware:</strong> This will <em>not</em> match values from <code>createUUID()</code>. For that, use {@link #isValidUUID(String)}.
 	 *
 	 * @param uuid String to check for a valid CFML-compatible UUID format.
 	 *
 	 * @return Boolean indicating whether the given string is a valid CFML-compatible UUID.
 	 */
-	public static boolean isValidUUID( String uuid ) {
+	public static boolean isValidGUID( String uuid ) {
 		return UUID_V4.matcher( uuid ).matches();
 	}
 
 	/**
 	 * Validates the given string is a valid CFML-compatible UUID.
 	 * <p>
-	 * A CFML-compat UUID is a version 4 UUID with the final hypen removed. If you want to validate a standard UUID, use {@link #isValidUUID(String)}.
+	 * A CFML-compat UUID is a version 4 UUID with the final hypen removed. If you want to validate a standard UUID, use {@link #isValidGUID(String)}.
 	 *
 	 * @param uuid String to check for a valid CFML-compatible UUID format.
 	 *
 	 * @return Boolean indicating whether the given string is a valid CFML-compatible UUID.
 	 */
-	public static boolean isValidCFUUID( String uuid ) {
+	public static boolean isValidUUID( String uuid ) {
 		return CFCOMPAT_UUID_PATTERN.matcher( uuid ).matches();
 	}
 
