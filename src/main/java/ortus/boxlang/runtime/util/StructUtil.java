@@ -166,6 +166,7 @@ public class StructUtil {
 	 *
 	 * @return A filtered array
 	 */
+	@SuppressWarnings( "unchecked" )
 	public static Struct filter(
 	    IStruct struct,
 	    Function callback,
@@ -173,17 +174,18 @@ public class StructUtil {
 	    Boolean parallel,
 	    Integer maxThreads ) {
 
-		Stream<Map.Entry<Key, Object>>		entryStream	= struct.entrySet().stream();
+		Stream<Map.Entry<Key, Object>>		entryStream		= struct.entrySet().stream();
+		Stream<Map.Entry<Key, Object>>		filteredStream	= null;
 
-		Predicate<Map.Entry<Key, Object>>	test		= item -> ( boolean ) callbackContext.invokeFunction(
+		Predicate<Map.Entry<Key, Object>>	test			= item -> ( boolean ) callbackContext.invokeFunction(
 		    callback,
 		    new Object[] { item.getKey().getName(), item.getValue(), struct }
 		);
 
 		if ( parallel ) {
-			entryStream.filter( test );
+			filteredStream = entryStream.filter( test );
 		} else {
-			AsyncService.buildExecutor(
+			filteredStream = ( Stream<Map.Entry<Key, Object>> ) AsyncService.buildExecutor(
 			    "ArrayFilter_" + UUID.randomUUID().toString(),
 			    AsyncService.ExecutorType.FORK_JOIN,
 			    maxThreads
@@ -193,7 +195,7 @@ public class StructUtil {
 		if ( struct.getType().equals( Struct.TYPES.LINKED ) ) {
 			return new Struct(
 			    struct.getType(),
-			    entryStream.collect(
+			    filteredStream.collect(
 			        Collectors.toMap(
 			            entry -> entry.getKey(),
 			            entry -> entry.getValue(),
@@ -207,7 +209,7 @@ public class StructUtil {
 		} else if ( struct.getType().equals( Struct.TYPES.SORTED ) ) {
 			return new Struct(
 			    struct.getType(),
-			    entryStream.collect(
+			    filteredStream.collect(
 			        Collectors.toMap(
 			            entry -> entry.getKey(),
 			            entry -> entry.getValue(),
@@ -221,7 +223,7 @@ public class StructUtil {
 		} else {
 			return new Struct(
 			    struct.getType(),
-			    entryStream.collect( Collectors.toConcurrentMap( entry -> entry.getKey(), entry -> entry.getValue() ) )
+			    filteredStream.collect( Collectors.toConcurrentMap( entry -> entry.getKey(), entry -> entry.getValue() ) )
 			);
 		}
 
