@@ -83,6 +83,7 @@ component {
 	){
 
 		var body = "
+			#getHeader()#
 			package #package#;
 
 			import ortus.boxlang.runtime.bifs.BIF;
