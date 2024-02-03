@@ -551,8 +551,6 @@ public class ListUtil {
 	/**
 	 * Method to filter an list with a function callback and context
 	 *
-	 * If parallel we create a fork join pool. If no max threads is specified it uses the {@link java.util.concurrent.ForkJoinPool#commonPool}
-	 *
 	 * @param array           The array object to filter
 	 * @param callback        The callback Function object
 	 * @param callbackContext The context in which to execute the callback
@@ -611,7 +609,6 @@ public class ListUtil {
 		    ( a, b ) -> IntegerCaster.cast( callbackContext.invokeFunction( callback, new Object[] { a, b } ) )
 		);
 		return array;
-
 	}
 
 	/**
