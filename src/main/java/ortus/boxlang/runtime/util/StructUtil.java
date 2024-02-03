@@ -229,4 +229,52 @@ public class StructUtil {
 
 	}
 
+	/**
+	 * Method to map a struct to a new struct
+	 *
+	 * @param struct          The struct object to filter
+	 * @param callback        The callback Function object
+	 * @param callbackContext The context in which to execute the callback
+	 * @param parallel        Whether to process the filter in parallel
+	 * @param maxThreads      Optional max threads for parallel execution
+	 *
+	 * @return A filtered array
+	 */
+	public static Struct map(
+	    IStruct struct,
+	    Function callback,
+	    IBoxContext callbackContext,
+	    Boolean parallel,
+	    Integer maxThreads ) {
+
+		Stream<Map.Entry<Key, Object>>	entryStream	= struct.entrySet().stream();
+		Struct							result		= new Struct( struct.getType() );
+
+		if ( !parallel ) {
+			entryStream.forEach( item -> result.put(
+			    item.getKey(),
+			    callbackContext.invokeFunction(
+			        callback,
+			        new Object[] { item.getKey().getName(), item.getValue(), struct }
+			    )
+			)
+			);
+		} else {
+			AsyncService.buildExecutor(
+			    "StructMap_" + UUID.randomUUID().toString(),
+			    AsyncService.ExecutorType.FORK_JOIN,
+			    maxThreads
+			).submitAndGet( () -> entryStream.parallel().forEach( item -> result.put(
+			    item.getKey(),
+			    callbackContext.invokeFunction(
+			        callback,
+			        new Object[] { item.getKey().getName(), item.getValue(), struct }
+			    )
+			)
+			) );
+		}
+		return result;
+
+	}
+
 }
