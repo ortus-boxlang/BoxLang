@@ -202,6 +202,7 @@ public class DebugAdapter {
 		String				command		= ( String ) requestData.get( "command" );
 
 		this.logger.info( "Received command {}", command );
+		this.logger.info( "Received command {}", json );
 
 		// TODO move this into an instance of Map<String, Class>
 		switch ( command ) {
