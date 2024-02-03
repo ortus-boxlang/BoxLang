@@ -19,13 +19,22 @@ package ortus.boxlang.runtime.types;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import ortus.boxlang.runtime.dynamic.IReferenceable;
 import ortus.boxlang.runtime.runnables.IClassRunnable;
 import ortus.boxlang.runtime.scopes.Key;
-import ortus.boxlang.runtime.types.Struct.TYPES;
 
 public interface IStruct extends Map<Key, Object>, IType, IReferenceable {
+
+	/**
+	 * The Available types of structs
+	 */
+	public enum TYPES {
+		LINKED,
+		SORTED,
+		DEFAULT
+	}
 
 	/**
 	 * Returns {@code true} if this map contains a mapping for the specified {@code Key}
@@ -244,5 +253,10 @@ public interface IStruct extends Map<Key, Object>, IType, IReferenceable {
 	 * @return The type of struct according to the {@Link Type} enum
 	 */
 	public TYPES getType();
+
+	/**
+	 * Returns a {@link Set} view of the mappings contained in this map.
+	 */
+	public Set<Entry<Key, Object>> entrySet();
 
 }

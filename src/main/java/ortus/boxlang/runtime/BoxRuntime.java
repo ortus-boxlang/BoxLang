@@ -79,6 +79,7 @@ public class BoxRuntime {
 	 * Register all the core runtime events here
 	 */
 	public static final Map<String, Key>	RUNTIME_EVENTS	= Stream.of(
+	    "afterDynamicObjectCreation",
 	    "onRuntimeStart",
 	    "onRuntimeShutdown",
 	    "onRuntimeConfigurationLoad",

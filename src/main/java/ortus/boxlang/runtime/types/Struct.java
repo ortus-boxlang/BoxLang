@@ -56,15 +56,6 @@ public class Struct implements IStruct, IListenable {
 	 */
 
 	/**
-	 * The Available types of structs
-	 */
-	public enum TYPES {
-		LINKED,
-		SORTED,
-		DEFAULT
-	}
-
-	/**
 	 * An immutable singleton empty struct
 	 */
 	public static final IStruct			EMPTY				= new ImmutableStruct();
@@ -75,9 +66,9 @@ public class Struct implements IStruct, IListenable {
 	public BoxMeta						$bx;
 
 	/**
-	 * The type of struct
+	 * The type of struct ( private so that the interface method `getType` will be used )
 	 */
-	public final TYPES					type;
+	private final TYPES					type;
 
 	/**
 	 * --------------------------------------------------------------------------

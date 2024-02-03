@@ -31,6 +31,7 @@ import org.slf4j.LoggerFactory;
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.bifs.BIFDescriptor;
 import ortus.boxlang.runtime.bifs.BoxLangBIFProxy;
+import ortus.boxlang.runtime.bifs.MemberDescriptor;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.runnables.IClassRunnable;
@@ -42,6 +43,7 @@ import ortus.boxlang.runtime.services.FunctionService;
 import ortus.boxlang.runtime.services.InterceptorService;
 import ortus.boxlang.runtime.services.ModuleService;
 import ortus.boxlang.runtime.types.Array;
+import ortus.boxlang.runtime.types.BoxLangType;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
@@ -120,9 +122,14 @@ public class ModuleRecord {
 	public Array				interceptors				= new Array();
 
 	/**
-	 * The BIFS of the module
+	 * The BIFS collaborated by the module
 	 */
 	public Array				bifs						= new Array();
+
+	/**
+	 * The member Methods collaborated by the module
+	 */
+	public Array				memberMethods				= new Array();
 
 	/**
 	 * The custom interception points of the module
@@ -351,11 +358,6 @@ public class ModuleRecord {
 	 * @return The ModuleRecord
 	 */
 	private ModuleRecord registerBIF( File targetFile, IBoxContext context ) {
-		// Nice References
-		BoxRuntime			runtime				= BoxRuntime.getInstance();
-		FunctionService		functionService		= runtime.getFunctionService();
-		InterceptorService	interceptorService	= runtime.getInterceptorService();
-
 		// System.out.println( "Processing " + targetFile.getAbsolutePath() );
 
 		// Skip directories and non CFC/BX files
@@ -364,9 +366,14 @@ public class ModuleRecord {
 			return this;
 		}
 
+		// Nice References
+		BoxRuntime			runtime				= BoxRuntime.getInstance();
+		FunctionService		functionService		= runtime.getFunctionService();
+		InterceptorService	interceptorService	= runtime.getInterceptorService();
+
 		// Try to load the BoxLang class
-		Key				className	= Key.of( FilenameUtils.getBaseName( targetFile.getAbsolutePath() ) );
-		IClassRunnable	oBIF		= ( IClassRunnable ) DynamicObject.of(
+		Key					className			= Key.of( FilenameUtils.getBaseName( targetFile.getAbsolutePath() ) );
+		IClassRunnable		oBIF				= ( IClassRunnable ) DynamicObject.of(
 		    RunnableLoader.getInstance().loadClass( targetFile.toPath(), this.invocationPath + "." + ModuleService.MODULE_BIFS, context )
 		).invokeConstructor( context )
 		    .getTargetInstance();
@@ -394,25 +401,150 @@ public class ModuleRecord {
 		 * BIF Registration
 		 * --------------------------------------------------------------------------
 		 */
-		Key[] aliases = buildBIFAliases( oBIF, className );
-		for ( Key bifAlias : aliases ) {
+		BIFDescriptor	bifDescriptor	= new BIFDescriptor(
+		    className,
+		    oBIF.getClass(),
+		    this.name.getName(),
+		    null,
+		    true,
+		    new BoxLangBIFProxy( oBIF )
+		);
+		Key[]			bifAliases		= buildBIFAliases( oBIF, className );
+		for ( Key bifAlias : bifAliases ) {
 			// Register the mapping in the runtime
 			functionService.registerGlobalFunction(
-			    new BIFDescriptor(
-			        className,
-			        oBIF.getClass(),
-			        this.name.getName(),
-			        null,
-			        true,
-			        new BoxLangBIFProxy( oBIF )
-			    ),
+			    bifDescriptor,
 			    bifAlias,
 			    true
+			);
+			logger.info(
+			    "> Registered Module [{}] BIF [{}] with alias [{}]",
+			    this.name.getName(),
+			    className.getName(),
+			    bifAlias.getName()
 			);
 			this.bifs.push( bifAlias );
 		}
 
+		/**
+		 * --------------------------------------------------------------------------
+		 * BIF Member Method(s) Registration
+		 * --------------------------------------------------------------------------
+		 */
+		Array bifMemberMethods = discoverMemberMethods( oBIF, className );
+		for ( Object memberMethod : bifMemberMethods ) {
+			Key			memberKey		= Key.of( ( ( IStruct ) memberMethod ).getAsString( Key._NAME ) );
+			BoxLangType	memberType		= ( BoxLangType ) ( ( IStruct ) memberMethod ).get( Key.type );
+			String		objectArgument	= ( ( IStruct ) memberMethod ).getAsString( Key.objectArgument );
+
+			// Call to register
+			functionService.registerMemberMethod(
+			    memberKey,
+			    new MemberDescriptor(
+			        memberKey,
+			        memberType,
+			        // Pass null if objectArgument is empty
+			        objectArgument.equals( "" ) ? null : Key.of( objectArgument ),
+			        bifDescriptor
+			    )
+			);
+			logger.info(
+			    "> Registered Module [{}] MemberMethod [{}]",
+			    this.name.getName(),
+			    memberMethod
+			);
+			this.memberMethods.push( memberMethod );
+		}
+
 		return this;
+	}
+
+	/**
+	 * Discover member methods by getting the {@code BoxMember} annotation on the Class.
+	 *
+	 * @param targetBIF The target BIF to discover member methods for
+	 * @param className The class name of the BIF
+	 *
+	 * @return An array of member methods for the BIF: {@code [ { name : "", objectArgument: "", type : BoxLangType } ] }
+	 */
+	private Array discoverMemberMethods( IClassRunnable targetBIF, Key className ) {
+		// Get the BoxMember annotation
+		Object boxMembers = targetBIF.getBoxMeta().getMeta().getAsStruct( Key.annotations ).getOrDefault( Key.boxMember, null );
+
+		// System.out.println( className.getName() + " BoxMembers Found [" + boxMembers + "]" );
+
+		// Case 0: If null, then we don't have any :)
+		if ( boxMembers == null ) {
+			return new Array();
+		}
+
+		// Case 1 : This is a simple String with no value, throw an exception
+		// @BoxMember
+		if ( boxMembers instanceof String castedBoxMember && castedBoxMember.isBlank() ) {
+			throw new BoxRuntimeException( className.getName() + " BoxMember annotation is missing it's type value, which is mandatory" );
+		}
+
+		// Case 2 : This is a simple String with a value which is the type. Validate it, default it's record and return it
+		// ClassName : ArrayFoo
+		// @BoxMember "array" -> { "name": "foo", "objectArgument": null, type: BoxLangType.ARRAY }
+		if ( boxMembers instanceof String castedBoxMember && !castedBoxMember.isBlank() ) {
+			// Validate the type is valid else throw an exception
+			if ( !BoxLangType.isValid( castedBoxMember ) ) {
+				throw new BoxRuntimeException(
+				    className.getName() + " BoxMember annotation has an invalid type value [" + castedBoxMember + "]" +
+				        "Valid types are: " + BoxLangType.values()
+				);
+			}
+			BoxLangType boxType = BoxLangType.valueOf( castedBoxMember.toUpperCase() );
+			return Array.of(
+			    Struct.of(
+			        // Default member name for class ArrayFoo with BoxType of Array is just foo()
+			        Key._NAME, className.getNameNoCase().replaceAll( boxType.getKey().getNameNoCase(), "" ),
+			        Key.objectArgument, "",
+			        Key.type, boxType
+			    )
+			);
+		}
+
+		// Case 3 : We have a struct of member methods, validate them and return them
+		// @BoxMember { "string": { "name": "append", "objectArgument": "string" } }
+		if ( boxMembers instanceof IStruct castedBoxMember ) {
+			Array result = new Array();
+
+			// Iterate over all entries and validate them
+			for ( IStruct.Entry<Key, ?> entry : castedBoxMember.entrySet() ) {
+				// Validate Type first which is the key of the entry
+				Key type = entry.getKey();
+				if ( !BoxLangType.isValid( type ) ) {
+					throw new BoxRuntimeException(
+					    className.getName() + " BoxMember annotation has an invalid type value [" + type.getName() + "]" +
+					        "Valid types are: " + BoxLangType.values()
+					);
+				}
+
+				// Now the value of this key must be a struct with the following keys: name, objectArgument
+				// Validate the value is a struct
+				if ( ! ( entry.getValue() instanceof IStruct ) ) {
+					throw new BoxRuntimeException(
+					    className.getName() + " BoxMember annotation value must be a struct with the following keys: [name], [objectArgument]"
+					);
+				}
+
+				// Prepare the record now
+				IStruct		memberRecord	= ( IStruct ) entry.getValue();
+				BoxLangType	boxType			= BoxLangType.valueOf( type.getNameNoCase() );
+				memberRecord.put( Key.type, boxType );
+				memberRecord.computeIfAbsent( Key._NAME, k -> className.getNameNoCase().replaceAll( type.getNameNoCase(), "" )
+				);
+				memberRecord.computeIfAbsent( Key.objectArgument, k -> "" );
+				result.push( memberRecord );
+			}
+
+			return result;
+		}
+
+		// Who knows what this is, just return an empty struct
+		return new Array();
 	}
 
 	/**

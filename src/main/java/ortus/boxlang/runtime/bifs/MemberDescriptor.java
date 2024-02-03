@@ -26,13 +26,40 @@ import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.BoxLangType;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
+/**
+ * This describes a member method and how to invoke it
+ */
 public class MemberDescriptor {
 
+	/**
+	 * The name of the member method : "insert", "update", "delete", etc
+	 */
 	public final Key			name;
+
+	/**
+	 * The type this method can be attached to. {@link BoxLangType}
+	 */
 	public final BoxLangType	type;
+
+	/**
+	 * The name of the argument that is the object this method is attached to
+	 * When calling BIFS. This is the first argument by default.
+	 */
 	public final Key			objectArgument;
+
+	/**
+	 * The BIFDescriptor that describes how to invoke this method
+	 */
 	public final BIFDescriptor	BIFDescriptor;
 
+	/**
+	 * Constructor for a member method
+	 *
+	 * @param name           The name of the member method
+	 * @param type           The type this method can be attached to
+	 * @param objectArgument The name of the argument that is the object this method is attached to
+	 * @param BIFDescriptor  The BIFDescriptor that describes how to invoke this method
+	 */
 	public MemberDescriptor(
 	    Key name,
 	    BoxLangType type,
@@ -47,7 +74,8 @@ public class MemberDescriptor {
 	/**
 	 * Invoke the BIF with no arguments
 	 *
-	 * @param context
+	 * @param context The context to invoke the BIF in
+	 * @param object  The object to invoke the BIF on
 	 *
 	 * @return The result of the invocation
 	 */
@@ -58,7 +86,9 @@ public class MemberDescriptor {
 	/**
 	 * Invoke the BIF with positional arguments
 	 *
-	 * @param context
+	 * @param context             The context to invoke the BIF in
+	 * @param object              The object to invoke the BIF on
+	 * @param positionalArguments The positional arguments to pass to the BIF
 	 *
 	 * @return The result of the invocation
 	 */
@@ -97,7 +127,9 @@ public class MemberDescriptor {
 	/**
 	 * Invoke the BIF with named arguments
 	 *
-	 * @param context
+	 * @param context        The context to invoke the BIF in
+	 * @param object         The object to invoke the BIF on
+	 * @param namedArguments The named arguments to pass to the BIF
 	 *
 	 * @return The result of the invocation
 	 */

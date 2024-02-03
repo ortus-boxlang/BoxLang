@@ -18,7 +18,7 @@
  * - moduleRecord : The ModuleRecord instance
  */
 @BoxBIF 'moduleHelloWorld'
-@BoxMember 'string'
+@BoxMember { "string" : { name : "foo" }, "array" : {} }
 component{
 
 	/**

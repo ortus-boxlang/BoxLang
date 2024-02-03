@@ -90,7 +90,7 @@ public class ImmutableStruct extends Struct implements IImmutable {
 	 * @param struct The struct to create the struct from
 	 */
 	public ImmutableStruct( IStruct struct ) {
-		this( struct instanceof Struct str ? str.type : Struct.TYPES.DEFAULT, struct.getWrapped() );
+		this( struct instanceof Struct str ? str.getType() : Struct.TYPES.DEFAULT, struct.getWrapped() );
 	}
 
 	/**

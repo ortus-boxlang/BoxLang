@@ -50,6 +50,7 @@ import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.IType;
+import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.BoxLangException;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.exceptions.KeyNotFoundException;
@@ -238,6 +239,19 @@ public class DynamicJavaInteropService {
 			if ( thisInstance instanceof IClassRunnable cfc ) {
 				return bootstrapBLClass( context, cfc, BLArgs, null, noInit );
 			}
+
+			// Announce it to the world
+			BoxRuntime
+			    .getInstance()
+			    .getInterceptorService()
+			    .announce(
+			        BoxRuntime.RUNTIME_EVENTS.get( "afterDynamicObjectCreation" ),
+			        Struct.of(
+			            Key.object, thisInstance,
+			            Key.clazz, targetClass
+			        )
+			    );
+
 			return thisInstance;
 		} catch ( RuntimeException e ) {
 			throw e;

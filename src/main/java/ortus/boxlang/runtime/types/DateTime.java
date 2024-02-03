@@ -58,17 +58,6 @@ public class DateTime implements IType, IReferenceable, Comparable<DateTime> {
 	protected ZonedDateTime					wrapped;
 
 	/**
-	 * The format we use to represent the date time
-	 * which defaults to the ODBC format: {ts '''yyyy-MM-dd HH:mm:ss'''}
-	 */
-	private DateTimeFormatter				formatter						= DateTimeFormatter.ofPattern( TS_FORMAT_MASK );
-
-	/**
-	 * Function service
-	 */
-	private static final FunctionService	functionService					= BoxRuntime.getInstance().getFunctionService();
-
-	/**
 	 * --------------------------------------------------------------------------
 	 * Public Properties
 	 * --------------------------------------------------------------------------
@@ -115,6 +104,17 @@ public class DateTime implements IType, IReferenceable, Comparable<DateTime> {
 	    "ISO8601Time", DateTimeFormatter.ISO_TIME,
 	    "ODBCTime", DateTimeFormatter.ofPattern( ODBC_TIME_FORMAT_MASK )
 	);
+
+	/**
+	 * The format we use to represent the date time
+	 * which defaults to the ODBC format: {ts '''yyyy-MM-dd HH:mm:ss'''}
+	 */
+	private transient DateTimeFormatter		formatter						= DateTimeFormatter.ofPattern( TS_FORMAT_MASK );
+
+	/**
+	 * Function service
+	 */
+	private static final FunctionService	functionService					= BoxRuntime.getInstance().getFunctionService();
 
 	/**
 	 * Metadata object
@@ -481,6 +481,7 @@ public class DateTime implements IType, IReferenceable, Comparable<DateTime> {
 	/*
 	 * Clones this object to produce a new object
 	 */
+	@Override
 	public DateTime clone() {
 		return clone( this.wrapped.getZone() );
 	}

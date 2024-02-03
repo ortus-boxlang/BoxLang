@@ -17,12 +17,14 @@
  */
 package ortus.boxlang.runtime.scopes;
 
+import java.io.Serializable;
 import java.util.Arrays;
 
 /**
  * Represents a case-insenstive key, while retaining the original case too.
+ * Implements the Serializable interface in case duplication is requested within a native HashMap or ArrayList
  */
-public class Key implements Comparable<Key> {
+public class Key implements Comparable<Key>, Serializable {
 
 	// Static instances of common keys
 	public static final Key	_0							= Key.of( 0 );
@@ -78,8 +80,8 @@ public class Key implements Comparable<Key> {
 	public static final Key	attributes					= Key.of( "attributes" );
 	public static final Key	attributeCollection			= Key.of( "attributeCollection" );
 	public static final Key	author						= Key.of( "author" );
-	public static final Key	boxBif						= Key.of( "boxBif" );
-	public static final Key	boxMember					= Key.of( "boxMember" );
+	public static final Key	boxBif						= Key.of( "BoxBif" );
+	public static final Key	boxMember					= Key.of( "BoxMember" );
 	public static final Key	boxRuntime					= Key.of( "boxRuntime" );
 	public static final Key	buffersize					= Key.of( "buffersize" );
 	public static final Key	caches						= Key.of( "caches" );
@@ -88,6 +90,7 @@ public class Key implements Comparable<Key> {
 	public static final Key	charsetOrBufferSize			= Key.of( "charsetOrBufferSize" );
 	public static final Key	classGenerationDirectory	= Key.of( "classGenerationDirectory" );
 	public static final Key	className					= Key.of( "className" );
+	public static final Key	clazz						= Key.of( "clazz" );
 	public static final Key	closure						= Key.of( "closure" );
 	public static final Key	coldfusion					= Key.of( "coldfusion" );
 	public static final Key	columnList					= Key.of( "columnList" );
@@ -115,6 +118,7 @@ public class Key implements Comparable<Key> {
 	public static final Key	day							= Key.of( "day" );
 	public static final Key	days						= Key.of( "days" );
 	public static final Key	debugMode					= Key.of( "debugMode" );
+	public static final Key	deep						= Key.of( "deep" );
 	public static final Key	defaultValue				= Key.of( "defaultValue" );
 	public static final Key	delimiter					= Key.of( "delimiter" );
 	public static final Key	description					= Key.of( "description" );
@@ -159,6 +163,7 @@ public class Key implements Comparable<Key> {
 	public static final Key	ignoreExists				= Key.of( "ignoreExists" );
 	public static final Key	includeEmptyFields			= Key.of( "includeEmptyFields" );
 	public static final Key	index						= Key.of( "index" );
+	public static final Key	indicateNotExists			= Key.of( "indicateNotExists" );
 	public static final Key	init						= Key.of( "init" );
 	public static final Key	initialValue				= Key.of( "initialValue" );
 	public static final Key	initMethod					= Key.of( "initMethod" );
@@ -214,6 +219,7 @@ public class Key implements Comparable<Key> {
 	public static final Key	number2						= Key.of( "number2" );
 	public static final Key	numIterations				= Key.of( "numIterations" );
 	public static final Key	object						= Key.of( "object" );
+	public static final Key	objectArgument				= Key.of( "objectArgument" );
 	public static final Key	objectMappings				= Key.of( "objectMappings" );
 	public static final Key	oldPath						= Key.of( "oldPath" );
 	public static final Key	onLoad						= Key.of( "onLoad" );
@@ -223,6 +229,7 @@ public class Key implements Comparable<Key> {
 	public static final Key	ordered						= Key.of( "ordered" );
 	public static final Key	os							= Key.of( "os" );
 	public static final Key	output						= Key.of( "output" );
+	public static final Key	overwrite					= Key.of( "overwrite" );
 	public static final Key	parallel					= Key.of( "parallel" );
 	public static final Key	parameters					= Key.of( "parameters" );
 	public static final Key	path						= Key.of( "path" );
@@ -265,6 +272,7 @@ public class Key implements Comparable<Key> {
 	public static final Key	string						= Key.of( "string" );
 	public static final Key	string1						= Key.of( "string1" );
 	public static final Key	string2						= Key.of( "string2" );
+	public static final Key	struct						= Key.of( "struct" );
 	public static final Key	structure					= Key.of( "structure" );
 	public static final Key	substring					= Key.of( "substring" );
 	public static final Key	system						= Key.of( "system" );
