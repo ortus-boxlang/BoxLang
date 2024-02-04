@@ -20,6 +20,7 @@ package ortus.boxlang.runtime.util;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
@@ -182,6 +183,8 @@ public class StructUtil {
 		    new Object[] { item.getKey().getName(), item.getValue(), struct }
 		);
 
+		Struct								result			= new Struct( struct.getType() );
+
 		if ( parallel ) {
 			filteredStream = entryStream.filter( test );
 		} else {
@@ -193,39 +196,38 @@ public class StructUtil {
 		}
 
 		if ( struct.getType().equals( Struct.TYPES.LINKED ) ) {
-			return new Struct(
-			    struct.getType(),
-			    filteredStream.collect(
+			result.putAll(
+			    ( LinkedHashMap<Key, Object> ) filteredStream.collect(
 			        Collectors.toMap(
 			            entry -> entry.getKey(),
 			            entry -> entry.getValue(),
 			            ( v1, v2 ) -> {
-				            throw new BoxRuntimeException( "An exception occurred while duplicating the linked HashMap" );
+				            throw new BoxRuntimeException( "An exception occurred while filtering the struct" );
 			            },
 			            LinkedHashMap<Key, Object>::new
 			        )
 			    )
 			);
 		} else if ( struct.getType().equals( Struct.TYPES.SORTED ) ) {
-			return new Struct(
-			    struct.getType(),
-			    filteredStream.collect(
+			result.putAll(
+			    ( ConcurrentSkipListMap<Key, Object> ) filteredStream.collect(
 			        Collectors.toMap(
 			            entry -> entry.getKey(),
 			            entry -> entry.getValue(),
 			            ( v1, v2 ) -> {
-				            throw new BoxRuntimeException( "An exception occurred while duplicating the linked HashMap" );
+				            throw new BoxRuntimeException( "An exception occurred while filtering the struct" );
 			            },
 			            ConcurrentSkipListMap<Key, Object>::new
 			        )
 			    )
 			);
 		} else {
-			return new Struct(
-			    struct.getType(),
-			    filteredStream.collect( Collectors.toConcurrentMap( entry -> entry.getKey(), entry -> entry.getValue() ) )
+			result.putAll(
+			    ( ConcurrentHashMap<Key, Object> ) filteredStream.collect( Collectors.toConcurrentMap( entry -> entry.getKey(), entry -> entry.getValue() ) )
 			);
 		}
+
+		return result;
 
 	}
 
@@ -259,6 +261,19 @@ public class StructUtil {
 			    )
 			)
 			);
+		} else if ( struct.getType().equals( IStruct.TYPES.LINKED ) ) {
+			AsyncService.buildExecutor(
+			    "StructMap_" + UUID.randomUUID().toString(),
+			    AsyncService.ExecutorType.FORK_JOIN,
+			    maxThreads
+			).submitAndGet( () -> entryStream.parallel().forEachOrdered( item -> result.put(
+			    item.getKey(),
+			    callbackContext.invokeFunction(
+			        callback,
+			        new Object[] { item.getKey().getName(), item.getValue(), struct }
+			    )
+			)
+			) );
 		} else {
 			AsyncService.buildExecutor(
 			    "StructMap_" + UUID.randomUUID().toString(),
