@@ -658,4 +658,40 @@ public class ListUtil {
 
 		return Array.copyOf( array.subList( fromIndex, toIndex + 1 ) );
 	}
+
+	/**
+	 * Maps an existing array to a new array
+	 *
+	 * @param array           The array object to map
+	 * @param callback        The callback Function object
+	 * @param callbackContext The context in which to execute the callback
+	 * @param parallel        Whether to process the filter in parallel
+	 * @param maxThreads      Optional max threads for parallel execution
+	 * @param ordered         Boolean as to whether to maintain order in parallel execution
+	 *
+	 * @return The boolean value as to whether the test is met
+	 */
+	public static Array map(
+	    Array array,
+	    Function callback,
+	    IBoxContext callbackContext,
+	    Boolean parallel,
+	    Integer maxThreads ) {
+
+		java.util.function.IntFunction<Object>	mapper		= idx -> ( Object ) callbackContext.invokeFunction( callback,
+		    new Object[] { array.get( idx ), idx + 1, array } );
+
+		IntStream								intStream	= array.intStream();
+		if ( !parallel ) {
+			return new Array( intStream.mapToObj( mapper ).toArray() );
+		} else {
+			return ArrayCaster.cast( AsyncService.buildExecutor(
+			    "ArrayFilter_" + UUID.randomUUID().toString(),
+			    AsyncService.ExecutorType.FORK_JOIN,
+			    maxThreads
+			).submitAndGet( () -> new Array( array.intStream().parallel().mapToObj( mapper ).toArray() ) )
+			);
+		}
+
+	}
 }

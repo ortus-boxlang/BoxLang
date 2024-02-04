@@ -42,6 +42,8 @@ public class ListMap extends ArrayMap {
 		    new Argument( true, "function", Key.callback ),
 		    new Argument( false, "string", Key.delimiter, ListUtil.DEFAULT_DELIMITER ),
 		    new Argument( false, "boolean", Key.includeEmptyFields, false ),
+		    new Argument( false, "boolean", Key.parallel, false ),
+		    new Argument( false, "integer", Key.maxThreads ),
 		};
 	}
 

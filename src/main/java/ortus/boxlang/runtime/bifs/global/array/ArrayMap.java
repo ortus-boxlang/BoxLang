@@ -23,7 +23,7 @@ import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.BoxLangType;
-import ortus.boxlang.runtime.types.Function;
+import ortus.boxlang.runtime.types.ListUtil;
 
 @BoxBIF
 @BoxMember( type = BoxLangType.ARRAY )
@@ -37,6 +37,8 @@ public class ArrayMap extends BIF {
 		declaredArguments = new Argument[] {
 		    new Argument( true, "array", Key.array ),
 		    new Argument( true, "function", Key.callback ),
+		    new Argument( false, "boolean", Key.parallel, false ),
+		    new Argument( false, "integer", Key.maxThreads ),
 		    new Argument( Key.initialValue )
 		};
 	}
@@ -55,14 +57,11 @@ public class ArrayMap extends BIF {
 	 *
 	 */
 	public Array invoke( IBoxContext context, ArgumentsScope arguments ) {
-		Array		actualArray	= arguments.getAsArray( Key.array );
-		Array		newArray	= new Array( actualArray.size() );
-		Function	func		= arguments.getAsFunction( Key.callback );
-
-		for ( int i = 0; i < actualArray.size(); i++ ) {
-			newArray.add( i, context.invokeFunction( func, new Object[] { actualArray.get( i ), i + 1, actualArray } ) );
-		}
-
-		return newArray;
+		return ListUtil.map(
+		    arguments.getAsArray( Key.array ),
+		    arguments.getAsFunction( Key.callback ),
+		    context, arguments.getAsBoolean( Key.parallel ),
+		    arguments.getAsInteger( Key.maxThreads )
+		);
 	}
 }
