@@ -21,10 +21,10 @@ import ortus.boxlang.runtime.bifs.BoxBIF;
 import ortus.boxlang.runtime.bifs.BoxMember;
 import ortus.boxlang.runtime.bifs.global.array.ArrayMap;
 import ortus.boxlang.runtime.context.IBoxContext;
+import ortus.boxlang.runtime.dynamic.casters.ArrayCaster;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
-import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.BoxLangType;
 import ortus.boxlang.runtime.types.ListUtil;
 
@@ -61,7 +61,7 @@ public class ListMap extends ArrayMap {
 	 *
 	 * @argument.includeEmptyFields boolean whether to include empty fields in the returned result
 	 */
-	public Array invoke( IBoxContext context, ArgumentsScope arguments ) {
+	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
 		arguments.put(
 		    Key.array,
 		    ListUtil.asList(
@@ -71,7 +71,7 @@ public class ListMap extends ArrayMap {
 		        false
 		    )
 		);
-		return super.invoke( context, arguments );
+		return ListUtil.asString( ArrayCaster.cast( super.invoke( context, arguments ) ), arguments.getAsString( Key.delimiter ) );
 	}
 
 }

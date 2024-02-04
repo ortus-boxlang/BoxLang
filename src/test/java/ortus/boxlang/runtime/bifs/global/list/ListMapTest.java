@@ -34,6 +34,7 @@ import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
 import ortus.boxlang.runtime.types.Array;
+import ortus.boxlang.runtime.types.ListUtil;
 
 public class ListMapTest {
 
@@ -73,13 +74,13 @@ public class ListMapTest {
 		        result = ListMap( nums, mapFn );
 		    """,
 		    context );
-		Array result = ( Array ) variables.get( Key.of( "result" ) );
+		Array result = ListUtil.asList( variables.getAsString( Key.of( "result" ) ), "," );
 		assertThat( result.size() ).isEqualTo( 5 );
-		assertThat( result.get( 0 ) ).isEqualTo( 2 );
-		assertThat( result.get( 1 ) ).isEqualTo( 4 );
-		assertThat( result.get( 2 ) ).isEqualTo( 6 );
-		assertThat( result.get( 3 ) ).isEqualTo( 8 );
-		assertThat( result.get( 4 ) ).isEqualTo( 10 );
+		assertThat( result.get( 0 ) ).isEqualTo( "2" );
+		assertThat( result.get( 1 ) ).isEqualTo( "4" );
+		assertThat( result.get( 2 ) ).isEqualTo( "6" );
+		assertThat( result.get( 3 ) ).isEqualTo( "8" );
+		assertThat( result.get( 4 ) ).isEqualTo( "10" );
 	}
 
 	@DisplayName( "It should allow you to call it as a member function" )
@@ -96,13 +97,13 @@ public class ListMapTest {
 		        result = nums.listMap( mapFn );
 		    """,
 		    context );
-		Array result = ( Array ) variables.get( Key.of( "result" ) );
+		Array result = ListUtil.asList( variables.getAsString( Key.of( "result" ) ), "," );
 		assertThat( result.size() ).isEqualTo( 5 );
-		assertThat( result.get( 0 ) ).isEqualTo( 2 );
-		assertThat( result.get( 1 ) ).isEqualTo( 4 );
-		assertThat( result.get( 2 ) ).isEqualTo( 6 );
-		assertThat( result.get( 3 ) ).isEqualTo( 8 );
-		assertThat( result.get( 4 ) ).isEqualTo( 10 );
+		assertThat( result.get( 0 ) ).isEqualTo( "2" );
+		assertThat( result.get( 1 ) ).isEqualTo( "4" );
+		assertThat( result.get( 2 ) ).isEqualTo( "6" );
+		assertThat( result.get( 3 ) ).isEqualTo( "8" );
+		assertThat( result.get( 4 ) ).isEqualTo( "10" );
 	}
 
 }

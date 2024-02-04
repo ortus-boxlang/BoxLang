@@ -21,7 +21,6 @@ import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
-import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.BoxLangType;
 import ortus.boxlang.runtime.types.ListUtil;
 
@@ -56,7 +55,7 @@ public class ArrayMap extends BIF {
 	 *                    current index, and the original array. The function should return the value that will be set at the same index in the new array.
 	 *
 	 */
-	public Array invoke( IBoxContext context, ArgumentsScope arguments ) {
+	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
 		return ListUtil.map(
 		    arguments.getAsArray( Key.array ),
 		    arguments.getAsFunction( Key.callback ),
