@@ -665,7 +665,7 @@ public class ListUtil {
 	 * @param array           The array object to map
 	 * @param callback        The callback Function object
 	 * @param callbackContext The context in which to execute the callback
-	 * @param parallel        Whether to process the filter in parallel
+	 * @param parallel        Whether to process the map in parallel
 	 * @param maxThreads      Optional max threads for parallel execution
 	 * @param ordered         Boolean as to whether to maintain order in parallel execution
 	 *
