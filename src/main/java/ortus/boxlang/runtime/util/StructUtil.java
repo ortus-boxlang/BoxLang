@@ -22,6 +22,7 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentSkipListMap;
+import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -289,6 +290,34 @@ public class StructUtil {
 			) );
 		}
 		return result;
+
+	}
+
+	/**
+	 * Method to reduce a struct to an accumulated object
+	 *
+	 * @param struct          The struct object to reduce
+	 * @param callback        The callback Function object
+	 * @param callbackContext The context in which to execute the callback
+	 * @param initialValue    The initial value of the accumulation
+	 *
+	 * @return the new object reduction
+	 */
+	public static Object reduce(
+	    IStruct struct,
+	    Function callback,
+	    IBoxContext callbackContext,
+	    Object initialValue ) {
+
+		BiFunction<Object, Map.Entry<Key, Object>, Object> reduction = ( acc, item ) -> callbackContext.invokeFunction( callback,
+		    new Object[] { acc, item.getKey().getName(), item.getValue(), struct } );
+
+		return struct.entrySet().stream()
+		    .reduce(
+		        initialValue,
+		        reduction,
+		        ( acc, intermediate ) -> acc
+		    );
 
 	}
 
