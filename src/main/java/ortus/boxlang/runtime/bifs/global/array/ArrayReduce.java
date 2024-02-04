@@ -18,13 +18,11 @@ import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
 import ortus.boxlang.runtime.bifs.BoxMember;
 import ortus.boxlang.runtime.context.IBoxContext;
-import ortus.boxlang.runtime.dynamic.casters.ArrayCaster;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
-import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.BoxLangType;
-import ortus.boxlang.runtime.types.Function;
+import ortus.boxlang.runtime.types.ListUtil;
 
 @BoxBIF
 @BoxMember( type = BoxLangType.ARRAY )
@@ -56,14 +54,13 @@ public class ArrayReduce extends BIF {
 	 * @argument.initialValue The initial value of the accumulator
 	 */
 	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
-		Array		actualArray	= ArrayCaster.cast( arguments.get( Key.array ) );
-		Object		accumulator	= arguments.get( Key.initialValue );
-		Function	func		= arguments.getAsFunction( Key.callback );
 
-		for ( int i = 0; i < actualArray.size(); i++ ) {
-			accumulator = context.invokeFunction( func, new Object[] { accumulator, actualArray.get( i ), i + 1, actualArray } );
-		}
+		return ListUtil.reduce(
+		    arguments.getAsArray( Key.array ),
+		    arguments.getAsFunction( Key.callback ),
+		    context,
+		    arguments.get( Key.initialValue )
+		);
 
-		return accumulator;
 	}
 }

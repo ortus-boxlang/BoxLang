@@ -21,6 +21,7 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.UUID;
+import java.util.function.BiFunction;
 import java.util.function.IntConsumer;
 import java.util.function.IntPredicate;
 import java.util.stream.Collectors;
@@ -692,6 +693,35 @@ public class ListUtil {
 			).submitAndGet( () -> new Array( array.intStream().parallel().mapToObj( mapper ).toArray() ) )
 			);
 		}
+
+	}
+
+	/**
+	 * Method reduce an array
+	 *
+	 * @param array           The array to reduce
+	 * @param callback        The callback Function object
+	 * @param callbackContext The context in which to execute the callback
+	 * @param initialValue    the initial value
+	 *
+	 * @return the new object reduction
+	 */
+	public static Object reduce(
+	    Array array,
+	    Function callback,
+	    IBoxContext callbackContext,
+	    Object initialValue ) {
+
+		BiFunction<Object, Integer, Object> reduction = ( acc, idx ) -> callbackContext.invokeFunction( callback,
+		    new Object[] { acc, array.get( idx ), idx + 1, array } );
+
+		return array.intStream()
+		    .boxed()
+		    .reduce(
+		        initialValue,
+		        reduction,
+		        ( acc, intermediate ) -> acc
+		    );
 
 	}
 }
