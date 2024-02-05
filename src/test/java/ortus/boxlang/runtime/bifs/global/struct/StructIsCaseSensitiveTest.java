@@ -63,7 +63,7 @@ public class StructIsCaseSensitiveTest {
 	@DisplayName( "It tests the BIF StructIsCaseSensitive" )
 	@Test
 	public void testBif() {
-		variables.put( Key.of( "csStruct" ), new Struct( Struct.TYPES.CASESENSITIVE ) );
+		variables.put( Key.of( "csStruct" ), new Struct( Struct.TYPES.CASE_SENSITIVE ) );
 		variables.put( Key.of( "ordStruct" ), new Struct( Struct.TYPES.SORTED ) );
 		assertTrue( ( Boolean ) instance.executeStatement( "StructIsCaseSensitive( csStruct )", context ) );
 		assertFalse( ( Boolean ) instance.executeStatement( "StructIsCaseSensitive( {} )" ) );
@@ -75,7 +75,7 @@ public class StructIsCaseSensitiveTest {
 	@DisplayName( "It tests the member function for Struct.IsCaseSensitive" )
 	@Test
 	public void testMemberFunction() {
-		variables.put( Key.of( "csStruct" ), new Struct( Struct.TYPES.CASESENSITIVE ) );
+		variables.put( Key.of( "csStruct" ), new Struct( Struct.TYPES.CASE_SENSITIVE ) );
 		variables.put( Key.of( "ordStruct" ), new Struct( Struct.TYPES.SORTED ) );
 		assertTrue( ( Boolean ) instance.executeStatement( "csStruct.isCaseSensitive()", context ) );
 		assertFalse( ( Boolean ) instance.executeStatement( "{}.isCaseSensitive()" ) );

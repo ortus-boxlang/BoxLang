@@ -17,6 +17,7 @@
  */
 package ortus.boxlang.runtime.types;
 
+import java.lang.ref.SoftReference;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
@@ -24,6 +25,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.WeakHashMap;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentSkipListMap;
 
@@ -110,14 +112,17 @@ public class Struct implements IStruct, IListenable {
 		this.type = type;
 
 		// Initialize the wrapped map
-		if ( type.equals( TYPES.DEFAULT ) || type.equals( TYPES.CASESENSITIVE ) ) {
+		if ( type.equals( TYPES.DEFAULT ) || type.equals( TYPES.CASE_SENSITIVE ) || type.equals( TYPES.SOFT ) ) {
 			this.wrapped = new ConcurrentHashMap<>( INITIAL_CAPACITY );
 			return;
-		} else if ( type.equals( TYPES.LINKED ) ) {
+		} else if ( type.equals( TYPES.LINKED ) || type.equals( TYPES.LINKED_CASE_SENSITIVE ) ) {
 			this.wrapped = Collections.synchronizedMap( new LinkedHashMap<Key, Object>( INITIAL_CAPACITY ) );
 			return;
 		} else if ( type.equals( TYPES.SORTED ) ) {
 			this.wrapped = new ConcurrentSkipListMap<>();
+			return;
+		} else if ( type.equals( TYPES.WEAK ) ) {
+			this.wrapped = new WeakHashMap<Key, Object>( INITIAL_CAPACITY );
 			return;
 		}
 
@@ -306,7 +311,10 @@ public class Struct implements IStruct, IListenable {
 	 * @return {@code true} if this map contains a mapping for the specified
 	 */
 	public boolean containsKey( Key key ) {
-		return wrapped.containsKey( key );
+		return isCaseSensitive()
+		    ? ( boolean ) keySet().stream().anyMatch( match -> match.equalsWithCase( key ) )
+		    : wrapped.containsKey( key );
+
 	}
 
 	/**
@@ -323,7 +331,7 @@ public class Struct implements IStruct, IListenable {
 		if ( key instanceof String stringKey ) {
 			return containsKey( stringKey );
 		}
-		return wrapped.containsKey( Key.of( StringCaster.cast( key ), isCaseSensitive() ) );
+		return wrapped.containsKey( Key.of( StringCaster.cast( key ) ) );
 	}
 
 	/**
@@ -334,7 +342,7 @@ public class Struct implements IStruct, IListenable {
 	 * @return {@code true} if this map contains a mapping for the specified
 	 */
 	public boolean containsKey( String key ) {
-		return containsKey( Key.of( key, isCaseSensitive() ) );
+		return containsKey( Key.of( key ) );
 	}
 
 	/**
@@ -359,12 +367,16 @@ public class Struct implements IStruct, IListenable {
 	@Override
 	public Object get( Object key ) {
 		if ( key instanceof Key keyKey ) {
-			return unWrapNull( wrapped.get( keyKey ) );
+			return unWrapNull(
+			    isCaseSensitive()
+			        ? wrapped.get( keySet().stream().filter( k -> KeyCaster.cast( k ).equalsWithCase( keyKey ) ).findFirst().orElse( Key.EMPTY ) )
+			        : wrapped.get( keyKey )
+			);
 		}
 		if ( key instanceof String stringKey ) {
-			return unWrapNull( wrapped.get( Key.of( stringKey, isCaseSensitive() ) ) );
+			return get( stringKey );
 		}
-		return unWrapNull( wrapped.get( Key.of( StringCaster.cast( key ), isCaseSensitive() ) ) );
+		return get( StringCaster.cast( key ) );
 	}
 
 	/**
@@ -375,7 +387,12 @@ public class Struct implements IStruct, IListenable {
 	 * @return the value to which the specified key is mapped or null if not found
 	 */
 	public Object get( String key ) {
-		return unWrapNull( wrapped.get( Key.of( key, isCaseSensitive() ) ) );
+		Key keyObj = Key.of( key );
+		return unWrapNull(
+		    isCaseSensitive()
+		        ? wrapped.get( keySet().stream().filter( k -> KeyCaster.cast( k ).equalsWithCase( keyObj ) ).findFirst().orElse( Key.EMPTY ) )
+		        : wrapped.get( keyObj )
+		);
 	}
 
 	/**
@@ -387,7 +404,12 @@ public class Struct implements IStruct, IListenable {
 	 * @return The value of the key
 	 */
 	public Object getOrDefault( Key key, Object defaultValue ) {
-		return unWrapNull( wrapped.getOrDefault( key, defaultValue ) );
+		return isCaseSensitive()
+		    ? unWrapNull(
+		        wrapped.getOrDefault( keySet().stream().filter( k -> KeyCaster.cast( k ).equalsWithCase( key ) ).findFirst().orElse( Key.EMPTY ), defaultValue )
+		    )
+		    : unWrapNull( wrapped.getOrDefault( key, defaultValue ) );
+
 	}
 
 	/**
@@ -399,7 +421,7 @@ public class Struct implements IStruct, IListenable {
 	 * @return The value of the key
 	 */
 	public Object getOrDefault( String key, Object defaultValue ) {
-		return getOrDefault( Key.of( key, isCaseSensitive() ), defaultValue );
+		return getOrDefault( Key.of( key ), defaultValue );
 	}
 
 	/**
@@ -410,7 +432,10 @@ public class Struct implements IStruct, IListenable {
 	 * @return The value of the key or a NullValue object, null means the key didn't exist *
 	 */
 	public Object getRaw( Key key ) {
-		return wrapped.get( key );
+		return isCaseSensitive()
+		    ? wrapped.get( keySet().stream().filter( k -> KeyCaster.cast( k ).equalsWithCase( key ) ).findFirst().orElse( Key.EMPTY ) )
+		    : wrapped.get( key );
+
 	}
 
 	/**
@@ -438,7 +463,7 @@ public class Struct implements IStruct, IListenable {
 	 * @return The previous value of the key, or null if not found
 	 */
 	public Object put( String key, Object value ) {
-		return put( Key.of( key, isCaseSensitive() ), value );
+		return put( Key.of( key ), value );
 	}
 
 	/**
@@ -469,7 +494,7 @@ public class Struct implements IStruct, IListenable {
 	 * @return The previous value of the key, or null if not found
 	 */
 	public Object putIfAbsent( String key, Object value ) {
-		return putIfAbsent( Key.of( key, isCaseSensitive() ), value );
+		return putIfAbsent( Key.of( key ), value );
 	}
 
 	/**
@@ -485,7 +510,7 @@ public class Struct implements IStruct, IListenable {
 		if ( key instanceof String stringKey ) {
 			return remove( stringKey );
 		}
-		return wrapped.remove( Key.of( StringCaster.cast( key ), isCaseSensitive() ) );
+		return remove( Key.of( StringCaster.cast( key ) ) );
 	}
 
 	/**
@@ -494,7 +519,7 @@ public class Struct implements IStruct, IListenable {
 	 * @param key The String key to remove
 	 */
 	public Object remove( String key ) {
-		return remove( Key.of( key, isCaseSensitive() ) );
+		return remove( Key.of( key ) );
 	}
 
 	/**
@@ -504,7 +529,9 @@ public class Struct implements IStruct, IListenable {
 	 */
 	public Object remove( Key key ) {
 		notifyListeners( key, null );
-		return wrapped.remove( key );
+		return isCaseSensitive()
+		    ? wrapped.remove( keySet().stream().filter( k -> KeyCaster.cast( k ).equalsWithCase( key ) ).findFirst().orElse( Key.EMPTY ) )
+		    : wrapped.remove( key );
 	}
 
 	/**
@@ -532,7 +559,7 @@ public class Struct implements IStruct, IListenable {
 				if ( entry.getKey() instanceof Key entryKey ) {
 					key = entryKey;
 				} else {
-					key = Key.of( entry.getKey().toString(), isCaseSensitive() );
+					key = Key.of( entry.getKey().toString() );
 				}
 				put( key, entry.getValue() );
 			} );
@@ -542,7 +569,7 @@ public class Struct implements IStruct, IListenable {
 				if ( entry.getKey() instanceof Key entryKey ) {
 					key = entryKey;
 				} else {
-					key = Key.of( entry.getKey().toString(), isCaseSensitive() );
+					key = Key.of( entry.getKey().toString() );
 				}
 				put( key, entry.getValue() );
 			} );
@@ -670,7 +697,14 @@ public class Struct implements IStruct, IListenable {
 	 * Returns a boolean as to whether the struct instance is case sensitive
 	 */
 	public Boolean isCaseSensitive() {
-		return type.equals( TYPES.CASESENSITIVE );
+		return type.equals( TYPES.CASE_SENSITIVE ) || type.equals( TYPES.LINKED_CASE_SENSITIVE );
+	}
+
+	/**
+	 * Returns a boolean as to whether this is a soft-referenced struct
+	 */
+	public Boolean isSoftReferenced() {
+		return type.equals( TYPES.SOFT );
 	}
 
 	/**
@@ -809,11 +843,22 @@ public class Struct implements IStruct, IListenable {
 	 *
 	 * @return The wrapped value
 	 */
-	public static Object wrapNull( Object value ) {
+	public Object wrapNull( Object value ) {
 		if ( value == null ) {
 			return new NullValue();
 		}
-		return value;
+		return wrapAssignment( value );
+	}
+
+	/**
+	 * Wraps the assignment value
+	 *
+	 * @param value The object to wrap ( or not )
+	 */
+	public Object wrapAssignment( Object value ) {
+		return isSoftReferenced()
+		    ? new SoftReference<Object>( value )
+		    : value;
 	}
 
 	/**
@@ -841,11 +886,14 @@ public class Struct implements IStruct, IListenable {
 	 *
 	 * @return The unwrapped value which can be null
 	 */
+	@SuppressWarnings( "unchecked" )
 	public static Object unWrapNull( Object value ) {
 		if ( value instanceof NullValue ) {
 			return null;
 		}
-		return value;
+		return value instanceof SoftReference
+		    ? ( ( SoftReference<Object> ) value ).get()
+		    : value;
 	}
 
 	/**

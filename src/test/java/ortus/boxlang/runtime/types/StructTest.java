@@ -179,7 +179,7 @@ class StructTest {
 	@DisplayName( "Can create a case-sensitive struct and perform key comparisons and deletions" )
 	@Test
 	void testCanCompareCaseSensitiveKeys() {
-		IStruct struct = new Struct( Struct.TYPES.CASESENSITIVE );
+		IStruct struct = new Struct( Struct.TYPES.CASE_SENSITIVE );
 
 		struct.put( "foo", "bar" );
 		struct.put( "flea", "flah" );
@@ -243,9 +243,9 @@ class StructTest {
 	@DisplayName( "Can create a case-sensitive struct" )
 	@Test
 	void testCanCreateCaseSensitiveStruct() {
-		IStruct struct = new Struct( Struct.TYPES.CASESENSITIVE );
+		IStruct struct = new Struct( Struct.TYPES.CASE_SENSITIVE );
 		assertThat( struct.size() ).isEqualTo( 0 );
-		assertThat( struct.getType() ).isEqualTo( Struct.TYPES.CASESENSITIVE );
+		assertThat( struct.getType() ).isEqualTo( Struct.TYPES.CASE_SENSITIVE );
 		assertThat( struct.getWrapped() ).isInstanceOf( ConcurrentHashMap.class );
 	}
 

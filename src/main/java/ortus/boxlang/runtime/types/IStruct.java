@@ -34,7 +34,10 @@ public interface IStruct extends Map<Key, Object>, IType, IReferenceable {
 		LINKED,
 		SORTED,
 		DEFAULT,
-		CASESENSITIVE
+		CASE_SENSITIVE,
+		LINKED_CASE_SENSITIVE,
+		SOFT,
+		WEAK
 	}
 
 	/**
@@ -259,6 +262,11 @@ public interface IStruct extends Map<Key, Object>, IType, IReferenceable {
 	 * Returns a boolean as to whether the struct instance is case sensitive
 	 */
 	public Boolean isCaseSensitive();
+
+	/**
+	 * Returns a boolean as to whether the struct assignments are soft referenced
+	 */
+	public Boolean isSoftReferenced();
 
 	/**
 	 * Returns a {@link Set} view of the mappings contained in this map.

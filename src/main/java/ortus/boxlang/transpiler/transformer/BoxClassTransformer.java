@@ -602,7 +602,8 @@ public class BoxClassTransformer extends AbstractTransformer {
 		}
 		if ( !result.isSuccessful() ) {
 			// Temp debugging to see generated Java code
-			throw new BoxRuntimeException( result.toString() + "\n" + code );
+			throw new BoxRuntimeException(
+			    "Error parsing class" + packageName + "." + className + ". The message received was:" + result.toString() + "\n" + code );
 		}
 
 		CompilationUnit		entryPoint				= result.getResult().get();
