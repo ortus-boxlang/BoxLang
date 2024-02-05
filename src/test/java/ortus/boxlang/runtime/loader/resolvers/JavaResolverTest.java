@@ -35,6 +35,7 @@ import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
 import ortus.boxlang.runtime.loader.ClassLocator;
 import ortus.boxlang.runtime.loader.ClassLocator.ClassLocation;
 import ortus.boxlang.runtime.loader.ImportDefinition;
+import ortus.boxlang.runtime.types.IStruct;
 
 public class JavaResolverTest {
 
@@ -57,6 +58,21 @@ public class JavaResolverTest {
 		assertThat( classLocation.get().clazz() ).isEqualTo( Map.Entry.class );
 		assertThat( classLocation.get().name() ).isEqualTo( "Entry" );
 		assertThat( classLocation.get().packageName() ).isEqualTo( "java.util" );
+		assertThat( classLocation.get().type() ).isEqualTo( ClassLocator.TYPE_JAVA );
+		assertThat( classLocation.get().module() ).isNull();
+	}
+
+	@DisplayName( "It can find inner class enums using the $ separator" )
+	@Test
+	public void testFindInnerClassEnums() {
+		JavaResolver			javaResolver	= JavaResolver.getInstance();
+		String					className		= "ortus.boxlang.runtime.types.IStruct$TYPES";
+		Optional<ClassLocation>	classLocation	= javaResolver.findFromSystem( className, new ArrayList<>() );
+
+		assertThat( classLocation.isPresent() ).isTrue();
+		assertThat( classLocation.get().clazz() ).isEqualTo( IStruct.TYPES.class );
+		assertThat( classLocation.get().name() ).isEqualTo( "TYPES" );
+		assertThat( classLocation.get().packageName() ).isEqualTo( "ortus.boxlang.runtime.types" );
 		assertThat( classLocation.get().type() ).isEqualTo( ClassLocator.TYPE_JAVA );
 		assertThat( classLocation.get().module() ).isNull();
 	}
