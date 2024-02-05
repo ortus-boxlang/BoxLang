@@ -40,7 +40,7 @@ public class MinLength implements Validator {
 		// If it was passed...
 		if ( attributes.get( attribute.name() ) != null ) {
 			// then make sure it's not greater than our threshold
-			if ( StringCaster.cast( attributes.get( attribute.name() ) ).length() >= this.minLength.doubleValue() ) {
+			if ( StringCaster.cast( attributes.get( attribute.name() ) ).length() < this.minLength.doubleValue() ) {
 				throw new BoxValidationException( component, attribute, "cannot be shorter than [" + StringCaster.cast( this.minLength ) + "] character(s)." );
 			}
 		}

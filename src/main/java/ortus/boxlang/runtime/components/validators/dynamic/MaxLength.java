@@ -40,7 +40,7 @@ public class MaxLength implements Validator {
 		// If it was passed...
 		if ( attributes.get( attribute.name() ) != null ) {
 			// then make sure it's not greater than our threshold
-			if ( StringCaster.cast( attributes.get( attribute.name() ) ).length() >= this.maxLength.doubleValue() ) {
+			if ( StringCaster.cast( attributes.get( attribute.name() ) ).length() > this.maxLength.doubleValue() ) {
 				throw new BoxValidationException( component, attribute, "cannot be longer than [" + StringCaster.cast( this.maxLength ) + "] character(s)." );
 			}
 		}

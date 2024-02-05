@@ -26,6 +26,7 @@ import ortus.boxlang.runtime.components.validators.dynamic.MaxLength;
 import ortus.boxlang.runtime.components.validators.dynamic.Min;
 import ortus.boxlang.runtime.components.validators.dynamic.MinLength;
 import ortus.boxlang.runtime.components.validators.dynamic.Requires;
+import ortus.boxlang.runtime.components.validators.dynamic.ValueRequires;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.IStruct;
@@ -112,6 +113,17 @@ public interface Validator {
 	 */
 	public static Validator requires( Key... attributeNames ) {
 		return new Requires( Set.of( attributeNames ) );
+	}
+
+	/**
+	 * Builder method to create a Requires validator
+	 * 
+	 * @param attributeNames The names of the attributes that are required if this attribute is present
+	 * 
+	 * @return The Requires validator
+	 */
+	public static Validator valueRequires( String value, Key... attributeNames ) {
+		return new ValueRequires( value, Set.of( attributeNames ) );
 	}
 
 }

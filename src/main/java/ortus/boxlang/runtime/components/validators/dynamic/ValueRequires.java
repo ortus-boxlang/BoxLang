@@ -34,10 +34,12 @@ import ortus.boxlang.runtime.types.exceptions.BoxValidationException;
  */
 public class ValueRequires implements Validator {
 
-	private Set<Key> attributeNames;
+	private Set<Key>	attributeNames;
+	private String		value;
 
-	public ValueRequires( Set<Key> attributeNames ) {
-		this.attributeNames = attributeNames;
+	public ValueRequires( String value, Set<Key> attributeNames ) {
+		this.attributeNames	= attributeNames;
+		this.value			= value;
 	}
 
 	public void validate( IBoxContext context, Component component, Attribute attribute, IStruct attributes ) {
