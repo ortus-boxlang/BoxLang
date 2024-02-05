@@ -18,7 +18,9 @@
 package ortus.boxlang.runtime.types;
 
 import static com.google.common.truth.Truth.assertThat;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.Comparator;
 import java.util.HashMap;
@@ -174,6 +176,27 @@ class StructTest {
 		assertThat( struct.size() ).isEqualTo( 0 );
 	}
 
+	@DisplayName( "Can create a case-sensitive struct and perform key comparisons and deletions" )
+	@Test
+	void testCanCompareCaseSensitiveKeys() {
+		IStruct struct = new Struct( Struct.TYPES.CASESENSITIVE );
+
+		struct.put( "foo", "bar" );
+		struct.put( "flea", "flah" );
+
+		assertThat( struct.size() ).isEqualTo( 2 );
+		System.out.println( struct.asString() );
+		assertTrue( struct.containsKey( "foo" ) );
+		assertFalse( struct.containsKey( "fOO" ) );
+		assertTrue( struct.containsKey( "flea" ) );
+		assertFalse( struct.containsKey( "Fleah" ) );
+		struct.remove( "FOO" );
+		assertThat( struct.size() ).isEqualTo( 2 );
+		struct.remove( "foo" );
+		assertThat( struct.size() ).isEqualTo( 1 );
+
+	}
+
 	@DisplayName( "Can create a default struct in the constructor" )
 	@Test
 	void testCanCreateDefaultStruct() {
@@ -215,6 +238,15 @@ class StructTest {
 		assertThat( struct.keySet().toArray()[ 0 ] ).isEqualTo( Key.of( "/hello/again/and/again" ) );
 		assertThat( struct.keySet().toArray()[ 1 ] ).isEqualTo( Key.of( "/hello/again" ) );
 		assertThat( struct.keySet().toArray()[ 2 ] ).isEqualTo( Key.of( "/hello" ) );
+	}
+
+	@DisplayName( "Can create a case-sensitive struct" )
+	@Test
+	void testCanCreateCaseSensitiveStruct() {
+		IStruct struct = new Struct( Struct.TYPES.CASESENSITIVE );
+		assertThat( struct.size() ).isEqualTo( 0 );
+		assertThat( struct.getType() ).isEqualTo( Struct.TYPES.CASESENSITIVE );
+		assertThat( struct.getWrapped() ).isInstanceOf( ConcurrentHashMap.class );
 	}
 
 }

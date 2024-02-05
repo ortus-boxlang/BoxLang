@@ -319,6 +319,11 @@ public class Key implements Comparable<Key>, Serializable {
 	protected int			hashCode;
 
 	/**
+	 * Whether this Key instance was created with case sensitivity
+	 */
+	protected Boolean		caseSensitive;
+
+	/**
 	 * --------------------------------------------------------------------------
 	 * Constructors
 	 * --------------------------------------------------------------------------
@@ -329,11 +334,34 @@ public class Key implements Comparable<Key>, Serializable {
 	 *
 	 * @param name The target key to use, which is the original case.
 	 */
-	public Key( String name ) {
+	public Key( String name, Boolean caseSenstive ) {
 		this.name			= name;
 		this.originalValue	= name;
 		this.nameNoCase		= name.toUpperCase();
-		this.hashCode		= this.nameNoCase.hashCode();
+		this.caseSensitive	= caseSenstive;
+		this.hashCode		= caseSenstive ? this.name.hashCode() : this.nameNoCase.hashCode();
+	}
+
+	/**
+	 * Constructor
+	 *
+	 * @param name The target key to use, which is the original case.
+	 */
+	public Key( String name ) {
+		this( name, false );
+	}
+
+	/**
+	 * Constructor for a key that is not a string
+	 *
+	 * @param name The target key to use, which is the original case.
+	 */
+	public Key( String name, Object originalValue, Boolean caseSenstive ) {
+		this.name			= name;
+		this.originalValue	= originalValue;
+		this.nameNoCase		= name.toUpperCase();
+		this.caseSensitive	= caseSenstive;
+		this.hashCode		= caseSenstive ? this.name.hashCode() : this.nameNoCase.hashCode();
 	}
 
 	/**
@@ -342,10 +370,7 @@ public class Key implements Comparable<Key>, Serializable {
 	 * @param name The target key to use, which is the original case.
 	 */
 	public Key( String name, Object originalValue ) {
-		this.name			= name;
-		this.originalValue	= originalValue;
-		this.nameNoCase		= name.toUpperCase();
-		this.hashCode		= this.nameNoCase.hashCode();
+		this( name, originalValue, false );
 	}
 
 	/**
@@ -378,7 +403,7 @@ public class Key implements Comparable<Key>, Serializable {
 	/**
 	 * Verifies equality with the following rules:
 	 * - Same object
-	 * - Same key name (case-insensitive)
+	 * - Same key hash
 	 *
 	 * @param obj The object to compare against.
 	 */
@@ -433,7 +458,7 @@ public class Key implements Comparable<Key>, Serializable {
 	 *
 	 * @return A case-insensitive key class
 	 */
-	public static Key of( String name ) {
+	public static Key of( String name, Boolean caseSensitive ) {
 		int len = name.length();
 		if ( len <= 3 ) {
 			byte[] bytes = name.getBytes();
@@ -445,7 +470,18 @@ public class Key implements Comparable<Key>, Serializable {
 
 			}
 		}
-		return new Key( name );
+		return new Key( name, caseSensitive );
+	}
+
+	/**
+	 * Static builder of a case-insensitive key using the incoming key name
+	 *
+	 * @param name The key name to use.
+	 *
+	 * @return A case-insensitive key class
+	 */
+	public static Key of( String name ) {
+		return of( name, false );
 	}
 
 	/**
@@ -552,7 +588,9 @@ public class Key implements Comparable<Key>, Serializable {
 	 */
 	@Override
 	public int compareTo( Key otherKey ) {
-		return this.nameNoCase.compareTo( otherKey.nameNoCase );
+		return caseSensitive
+		    ? this.compareToWithCase( otherKey )
+		    : this.nameNoCase.compareTo( otherKey.nameNoCase );
 	}
 
 	/**

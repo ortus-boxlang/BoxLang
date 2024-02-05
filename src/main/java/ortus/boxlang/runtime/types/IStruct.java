@@ -33,7 +33,8 @@ public interface IStruct extends Map<Key, Object>, IType, IReferenceable {
 	public enum TYPES {
 		LINKED,
 		SORTED,
-		DEFAULT
+		DEFAULT,
+		CASESENSITIVE
 	}
 
 	/**

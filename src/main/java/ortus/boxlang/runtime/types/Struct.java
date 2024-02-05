@@ -110,7 +110,7 @@ public class Struct implements IStruct, IListenable {
 		this.type = type;
 
 		// Initialize the wrapped map
-		if ( type.equals( TYPES.DEFAULT ) ) {
+		if ( type.equals( TYPES.DEFAULT ) || type.equals( TYPES.CASESENSITIVE ) ) {
 			this.wrapped = new ConcurrentHashMap<>( INITIAL_CAPACITY );
 			return;
 		} else if ( type.equals( TYPES.LINKED ) ) {
@@ -323,7 +323,7 @@ public class Struct implements IStruct, IListenable {
 		if ( key instanceof String stringKey ) {
 			return containsKey( stringKey );
 		}
-		return wrapped.containsKey( Key.of( StringCaster.cast( key ) ) );
+		return wrapped.containsKey( Key.of( StringCaster.cast( key ), isCaseSensitive() ) );
 	}
 
 	/**
@@ -334,7 +334,7 @@ public class Struct implements IStruct, IListenable {
 	 * @return {@code true} if this map contains a mapping for the specified
 	 */
 	public boolean containsKey( String key ) {
-		return containsKey( Key.of( key ) );
+		return containsKey( Key.of( key, isCaseSensitive() ) );
 	}
 
 	/**
@@ -362,9 +362,9 @@ public class Struct implements IStruct, IListenable {
 			return unWrapNull( wrapped.get( keyKey ) );
 		}
 		if ( key instanceof String stringKey ) {
-			return unWrapNull( wrapped.get( Key.of( stringKey ) ) );
+			return unWrapNull( wrapped.get( Key.of( stringKey, isCaseSensitive() ) ) );
 		}
-		return unWrapNull( wrapped.get( Key.of( StringCaster.cast( key ) ) ) );
+		return unWrapNull( wrapped.get( Key.of( StringCaster.cast( key ), isCaseSensitive() ) ) );
 	}
 
 	/**
@@ -375,7 +375,7 @@ public class Struct implements IStruct, IListenable {
 	 * @return the value to which the specified key is mapped or null if not found
 	 */
 	public Object get( String key ) {
-		return unWrapNull( wrapped.get( Key.of( key ) ) );
+		return unWrapNull( wrapped.get( Key.of( key, isCaseSensitive() ) ) );
 	}
 
 	/**
@@ -399,7 +399,7 @@ public class Struct implements IStruct, IListenable {
 	 * @return The value of the key
 	 */
 	public Object getOrDefault( String key, Object defaultValue ) {
-		return getOrDefault( Key.of( key ), defaultValue );
+		return getOrDefault( Key.of( key, isCaseSensitive() ), defaultValue );
 	}
 
 	/**
@@ -438,7 +438,7 @@ public class Struct implements IStruct, IListenable {
 	 * @return The previous value of the key, or null if not found
 	 */
 	public Object put( String key, Object value ) {
-		return put( Key.of( key ), value );
+		return put( Key.of( key, isCaseSensitive() ), value );
 	}
 
 	/**
@@ -469,7 +469,7 @@ public class Struct implements IStruct, IListenable {
 	 * @return The previous value of the key, or null if not found
 	 */
 	public Object putIfAbsent( String key, Object value ) {
-		return putIfAbsent( Key.of( key ), value );
+		return putIfAbsent( Key.of( key, isCaseSensitive() ), value );
 	}
 
 	/**
@@ -485,7 +485,7 @@ public class Struct implements IStruct, IListenable {
 		if ( key instanceof String stringKey ) {
 			return remove( stringKey );
 		}
-		return wrapped.remove( Key.of( StringCaster.cast( key ) ) );
+		return wrapped.remove( Key.of( StringCaster.cast( key ), isCaseSensitive() ) );
 	}
 
 	/**
@@ -494,7 +494,7 @@ public class Struct implements IStruct, IListenable {
 	 * @param key The String key to remove
 	 */
 	public Object remove( String key ) {
-		return remove( Key.of( key ) );
+		return remove( Key.of( key, isCaseSensitive() ) );
 	}
 
 	/**
@@ -532,7 +532,7 @@ public class Struct implements IStruct, IListenable {
 				if ( entry.getKey() instanceof Key entryKey ) {
 					key = entryKey;
 				} else {
-					key = Key.of( entry.getKey().toString() );
+					key = Key.of( entry.getKey().toString(), isCaseSensitive() );
 				}
 				put( key, entry.getValue() );
 			} );
@@ -542,7 +542,7 @@ public class Struct implements IStruct, IListenable {
 				if ( entry.getKey() instanceof Key entryKey ) {
 					key = entryKey;
 				} else {
-					key = Key.of( entry.getKey().toString() );
+					key = Key.of( entry.getKey().toString(), isCaseSensitive() );
 				}
 				put( key, entry.getValue() );
 			} );
@@ -664,6 +664,13 @@ public class Struct implements IStruct, IListenable {
 	 */
 	public TYPES getType() {
 		return type;
+	}
+
+	/**
+	 * Returns a boolean as to whether the struct instance is case sensitive
+	 */
+	public Boolean isCaseSensitive() {
+		return type.equals( TYPES.CASESENSITIVE );
 	}
 
 	/**
