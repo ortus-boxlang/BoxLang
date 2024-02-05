@@ -15,7 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package ortus.boxlang.transpiler;
+package TestCases.transpiler;
 
 import java.io.IOException;
 import java.nio.file.FileVisitResult;
@@ -45,6 +45,8 @@ import com.github.javaparser.ast.stmt.Statement;
 
 import ortus.boxlang.parser.BoxParser;
 import ortus.boxlang.parser.ParsingResult;
+import ortus.boxlang.transpiler.TranspiledCode;
+import ortus.boxlang.transpiler.Transpiler;
 
 public class Main {
 

@@ -65,6 +65,7 @@ dependencies {
     testImplementation "org.junit.jupiter:junit-jupiter:5.+"
 	testImplementation "org.mockito:mockito-core:5.+"
 	testImplementation "com.google.truth:truth:1.+"
+	testImplementation 'commons-cli:commons-cli:1.6.0'
 
 	// Antlr
 	antlr "org.antlr:antlr4:$antlrVersion"
@@ -72,8 +73,6 @@ dependencies {
 	// Implementation Dependencies
 	// https://mvnrepository.com/artifact/commons-io/commons-io
 	implementation "commons-io:commons-io:2.15.1"
-	// https://mvnrepository.com/artifact/commons-cli/commons-cli
-	implementation 'commons-cli:commons-cli:1.6.0'
 	// https://mvnrepository.com/artifact/com.github.javaparser/javaparser-symbol-solver-core
 	implementation 'com.github.javaparser:javaparser-symbol-solver-core:3.25.4'
 	// https://mvnrepository.com/artifact/org.apache.commons/commons-lang3
