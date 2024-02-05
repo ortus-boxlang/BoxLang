@@ -256,6 +256,11 @@ public interface IStruct extends Map<Key, Object>, IType, IReferenceable {
 	public TYPES getType();
 
 	/**
+	 * Returns a boolean as to whether the struct instance is case sensitive
+	 */
+	public Boolean isCaseSensitive();
+
+	/**
 	 * Returns a {@link Set} view of the mappings contained in this map.
 	 */
 	public Set<Entry<Key, Object>> entrySet();
