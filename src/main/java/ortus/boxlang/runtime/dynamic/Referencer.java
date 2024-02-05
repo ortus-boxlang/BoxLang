@@ -20,7 +20,7 @@ package ortus.boxlang.runtime.dynamic;
 import java.util.Map;
 
 import ortus.boxlang.runtime.context.IBoxContext;
-import ortus.boxlang.runtime.interop.DynamicJavaInteropService;
+import ortus.boxlang.runtime.interop.DynamicInteropService;
 import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Array;
@@ -48,7 +48,7 @@ public class Referencer {
 		if ( safe && object == null ) {
 			return null;
 		}
-		return DynamicJavaInteropService.dereference( context, object.getClass(), object, key, safe );
+		return DynamicInteropService.dereference( context, object.getClass(), object, key, safe );
 	}
 
 	/**
@@ -67,7 +67,7 @@ public class Referencer {
 		if ( safe && object == null ) {
 			return null;
 		}
-		return DynamicJavaInteropService.dereferenceAndInvoke( object, context, key, positionalArguments, safe );
+		return DynamicInteropService.dereferenceAndInvoke( object, context, key, positionalArguments, safe );
 	}
 
 	/**
@@ -83,7 +83,7 @@ public class Referencer {
 		if ( safe && object == null ) {
 			return null;
 		}
-		return DynamicJavaInteropService.dereferenceAndInvoke( object, context, key, new Object[] {}, safe );
+		return DynamicInteropService.dereferenceAndInvoke( object, context, key, new Object[] {}, safe );
 	}
 
 	/**
@@ -101,7 +101,7 @@ public class Referencer {
 		if ( safe && object == null ) {
 			return null;
 		}
-		return DynamicJavaInteropService.dereferenceAndInvoke( object, context, key, namedArguments, safe );
+		return DynamicInteropService.dereferenceAndInvoke( object, context, key, namedArguments, safe );
 	}
 
 	/**
@@ -115,7 +115,7 @@ public class Referencer {
 	 * @return The value that was assigned
 	 */
 	public static Object set( IBoxContext context, Object object, Key key, Object value ) {
-		return DynamicJavaInteropService.assign( context, object.getClass(), object, key, value );
+		return DynamicInteropService.assign( context, object.getClass(), object, key, value );
 	}
 
 	/**

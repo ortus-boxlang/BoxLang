@@ -33,7 +33,7 @@ import ortus.boxlang.runtime.dynamic.IReferenceable;
 import ortus.boxlang.runtime.dynamic.casters.ArrayCaster;
 import ortus.boxlang.runtime.dynamic.casters.CastAttempt;
 import ortus.boxlang.runtime.dynamic.casters.StructCaster;
-import ortus.boxlang.runtime.interop.DynamicJavaInteropService;
+import ortus.boxlang.runtime.interop.DynamicInteropService;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.services.FunctionService;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
@@ -73,7 +73,7 @@ public class Query implements IType, IReferenceable, Collection<IStruct> {
 
 	/**
 	 * Get the list of column definitions for this query
-	 * 
+	 *
 	 * @return map of columns
 	 */
 	public Map<Key, QueryColumn> getColumns() {
@@ -82,7 +82,7 @@ public class Query implements IType, IReferenceable, Collection<IStruct> {
 
 	/**
 	 * Does this query have columns?
-	 * 
+	 *
 	 * @return true if query has columns
 	 */
 	public boolean hasColumns() {
@@ -91,7 +91,7 @@ public class Query implements IType, IReferenceable, Collection<IStruct> {
 
 	/**
 	 * Does this query have a specific column?
-	 * 
+	 *
 	 * @return true if query has column
 	 */
 	public boolean hasColumn( Key name ) {
@@ -101,7 +101,7 @@ public class Query implements IType, IReferenceable, Collection<IStruct> {
 	/**
 	 * Get the data for this query
 	 * This method is really only for debugging and the underlying List you get will not be syncronized with the query.
-	 * 
+	 *
 	 * @return list of arrays of data
 	 */
 	public List<Object[]> getData() {
@@ -110,10 +110,10 @@ public class Query implements IType, IReferenceable, Collection<IStruct> {
 
 	/**
 	 * Add a column to the query, populated with nulls
-	 * 
+	 *
 	 * @param name column name
 	 * @param type column type
-	 * 
+	 *
 	 * @return this query
 	 */
 	public Query addColumn( Key name, QueryColumnType type ) {
@@ -123,10 +123,10 @@ public class Query implements IType, IReferenceable, Collection<IStruct> {
 	/**
 	 * Add a column to the query, populated with provided data. If the data array is shorter than the current number of rows, the remaining rows will be
 	 * populated with nulls.
-	 * 
+	 *
 	 * @param name column name
 	 * @param type column type
-	 * 
+	 *
 	 * @return this query
 	 */
 	public synchronized Query addColumn( Key name, QueryColumnType type, Object[] columnData ) {
@@ -148,9 +148,9 @@ public class Query implements IType, IReferenceable, Collection<IStruct> {
 	 * Get all data in a column as a Java Object[]
 	 * Data is copied, so re-assignments into the array will not be reflected in the query.
 	 * Mutating a complex object in the array will be reflected in the query.
-	 * 
+	 *
 	 * @param name column name
-	 * 
+	 *
 	 * @return array of column data
 	 */
 	public Object[] getColumnData( Key name ) {
@@ -166,9 +166,9 @@ public class Query implements IType, IReferenceable, Collection<IStruct> {
 	 * Get all data in a column as an BoxLang Array
 	 * Data is copied, so re-assignments into the array will not be reflected in the query.
 	 * Mutating a complex object in the array will be reflected in the query.
-	 * 
+	 *
 	 * @param name column name
-	 * 
+	 *
 	 * @return array of column data
 	 */
 	public Array getColumnDataAsArray( Key name ) {
@@ -177,9 +177,9 @@ public class Query implements IType, IReferenceable, Collection<IStruct> {
 
 	/**
 	 * Get the index of a column
-	 * 
+	 *
 	 * @param name column name
-	 * 
+	 *
 	 * @return index of column, or -1 if not found
 	 */
 	public int getColumnIndex( Key name ) {
@@ -196,9 +196,9 @@ public class Query implements IType, IReferenceable, Collection<IStruct> {
 	/**
 	 * Get the QueryColumn object for a column
 	 * Throws an exception if the column doesn't exist
-	 * 
+	 *
 	 * @param name column name
-	 * 
+	 *
 	 * @return QueryColumn object
 	 */
 	public QueryColumn getColumn( Key name ) {
@@ -212,9 +212,9 @@ public class Query implements IType, IReferenceable, Collection<IStruct> {
 	/**
 	 * Get data for a row as an array. 0-based index!
 	 * Array is passed by reference and changes made to it will be reflected in the query.
-	 * 
+	 *
 	 * @param index row index, starting at 0
-	 * 
+	 *
 	 * @return array of row data
 	 */
 	public Object[] getRow( int index ) {
@@ -224,9 +224,9 @@ public class Query implements IType, IReferenceable, Collection<IStruct> {
 
 	/**
 	 * Add a row to the query
-	 * 
+	 *
 	 * @param row row data as array of objects
-	 * 
+	 *
 	 * @return this query
 	 */
 	public int addRow( Object[] row ) {
@@ -241,9 +241,9 @@ public class Query implements IType, IReferenceable, Collection<IStruct> {
 
 	/**
 	 * Add a row to the query
-	 * 
+	 *
 	 * @param row row data as a BoxLang array
-	 * 
+	 *
 	 * @return this query
 	 */
 	public int addRow( Array row ) {
@@ -252,9 +252,9 @@ public class Query implements IType, IReferenceable, Collection<IStruct> {
 
 	/**
 	 * Add a row to the query
-	 * 
+	 *
 	 * @param row row data as Struct
-	 * 
+	 *
 	 * @return this query
 	 */
 	public int addRow( IStruct row ) {
@@ -273,9 +273,9 @@ public class Query implements IType, IReferenceable, Collection<IStruct> {
 
 	/**
 	 * Add empty rows to the query
-	 * 
+	 *
 	 * @param rows Number of rows to add
-	 * 
+	 *
 	 * @return Last row added
 	 */
 	public int addRows( int rows ) {
@@ -289,10 +289,10 @@ public class Query implements IType, IReferenceable, Collection<IStruct> {
 
 	/**
 	 * Helper method for queryNew() and queryAddRow() to handle the different scenarios for adding data to a query
-	 * 
+	 *
 	 * @param rowData Data to populate the query. Can be a struct (with keys matching column names), an array of structs, or an array of arrays (in
 	 *                same order as columnList)
-	 * 
+	 *
 	 * @return index of last row added
 	 */
 	public int addData( Object rowData ) {
@@ -336,9 +336,9 @@ public class Query implements IType, IReferenceable, Collection<IStruct> {
 	 * Get data for a row as a Struct. 0-based index!
 	 * Data is copied, so re-assignments into the struct will not be reflected in the query.
 	 * Mutating a complex object in the array will be reflected in the query.
-	 * 
+	 *
 	 * @param index row index, starting at 0
-	 * 
+	 *
 	 * @return array of row data
 	 */
 	public IStruct getRowAsStruct( int index ) {
@@ -355,10 +355,10 @@ public class Query implements IType, IReferenceable, Collection<IStruct> {
 
 	/**
 	 * Get data for a single cell. 0-based index!
-	 * 
+	 *
 	 * @param columnName column name
 	 * @param rowIndex   row index, starting at 0
-	 * 
+	 *
 	 * @return cell data
 	 */
 	public Object getCell( Key columnName, int rowIndex ) {
@@ -369,10 +369,10 @@ public class Query implements IType, IReferenceable, Collection<IStruct> {
 
 	/**
 	 * Set data for a single cell. 0-based index!
-	 * 
+	 *
 	 * @param columnName column name
 	 * @param rowIndex   row index, starting at 0
-	 * 
+	 *
 	 * @return this query
 	 */
 	public Query setCell( Key columnName, int rowIndex, Object value ) {
@@ -386,7 +386,7 @@ public class Query implements IType, IReferenceable, Collection<IStruct> {
 	/**
 	 * Validate that a row index is within bounds
 	 * Throw exception if not
-	 * 
+	 *
 	 * @param index row index, 0-based
 	 */
 	public void validateRow( int index ) {
@@ -398,7 +398,7 @@ public class Query implements IType, IReferenceable, Collection<IStruct> {
 	/**
 	 * Validate that a row index is within bounds
 	 * Throw exception if not
-	 * 
+	 *
 	 * @param index row index, 0-based
 	 */
 	public int getRowFromContext( IBoxContext context ) {
@@ -408,7 +408,7 @@ public class Query implements IType, IReferenceable, Collection<IStruct> {
 	/**
 	 * Get the list of column names as a comma-separated string
 	 * TODO: Look into caching this and invalidating when columns are added/removed
-	 * 
+	 *
 	 * @return column names as string
 	 */
 	public String getColumnList() {
@@ -536,7 +536,7 @@ public class Query implements IType, IReferenceable, Collection<IStruct> {
 			return memberDescriptor.invoke( context, this, positionalArguments );
 		}
 
-		return DynamicJavaInteropService.invoke( this, name.getName(), safe, positionalArguments );
+		return DynamicInteropService.invoke( this, name.getName(), safe, positionalArguments );
 	}
 
 	@Override
@@ -546,7 +546,7 @@ public class Query implements IType, IReferenceable, Collection<IStruct> {
 			return memberDescriptor.invoke( context, this, namedArguments );
 		}
 
-		return DynamicJavaInteropService.invoke( this, name.getName(), safe, namedArguments );
+		return DynamicInteropService.invoke( this, name.getName(), safe, namedArguments );
 	}
 
 	@Override

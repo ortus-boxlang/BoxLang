@@ -81,7 +81,7 @@ import ortus.boxlang.runtime.types.meta.GenericMeta;
  * - {@code invokeStaticMethod( String methodName, Object... args )} - Invoke a static method on the class
  * - {@code invoke( String methodName, Object... args )} - Invoke a method on the instance of the class
  */
-public class DynamicJavaInteropService {
+public class DynamicInteropService {
 
 	/**
 	 * --------------------------------------------------------------------------

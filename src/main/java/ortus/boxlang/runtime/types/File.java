@@ -41,7 +41,7 @@ import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.dynamic.IReferenceable;
 import ortus.boxlang.runtime.dynamic.casters.LongCaster;
 import ortus.boxlang.runtime.dynamic.casters.StringCaster;
-import ortus.boxlang.runtime.interop.DynamicJavaInteropService;
+import ortus.boxlang.runtime.interop.DynamicInteropService;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.services.FunctionService;
 import ortus.boxlang.runtime.types.exceptions.BoxIOException;
@@ -447,7 +447,7 @@ public class File implements IType, IReferenceable {
 	 */
 	@Override
 	public Object assign( IBoxContext context, Key key, Object value ) {
-		DynamicJavaInteropService.setField( this, key.getName().toLowerCase(), value );
+		DynamicInteropService.setField( this, key.getName().toLowerCase(), value );
 		return this;
 	}
 
@@ -462,7 +462,7 @@ public class File implements IType, IReferenceable {
 	@Override
 	public Object dereference( IBoxContext context, Key key, Boolean safe ) {
 		try {
-			return DynamicJavaInteropService.getField( this, key.getName().toLowerCase() ).get();
+			return DynamicInteropService.getField( this, key.getName().toLowerCase() ).get();
 		} catch ( NoSuchElementException e ) {
 			throw new BoxRuntimeException(
 			    "The property [" + key.getName() + "] does not exist or is not public in the class [" + this.getClass().getSimpleName() + "]." );
@@ -485,7 +485,7 @@ public class File implements IType, IReferenceable {
 			return memberDescriptor.invoke( context, this, positionalArguments );
 		}
 
-		return DynamicJavaInteropService.invoke( this, name.getName(), safe, positionalArguments );
+		return DynamicInteropService.invoke( this, name.getName(), safe, positionalArguments );
 	}
 
 	/**
@@ -504,7 +504,7 @@ public class File implements IType, IReferenceable {
 			return memberDescriptor.invoke( context, this, namedArguments );
 		}
 
-		return DynamicJavaInteropService.invoke( this, name.getName(), safe, namedArguments );
+		return DynamicInteropService.invoke( this, name.getName(), safe, namedArguments );
 	}
 
 }

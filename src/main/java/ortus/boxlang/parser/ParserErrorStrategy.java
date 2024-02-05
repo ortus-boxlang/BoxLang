@@ -1,7 +1,11 @@
 package ortus.boxlang.parser;
 
-import org.antlr.v4.runtime.*;
-import org.antlr.v4.runtime.misc.IntervalSet;
+import org.antlr.v4.runtime.DefaultErrorStrategy;
+import org.antlr.v4.runtime.InputMismatchException;
+import org.antlr.v4.runtime.NoViableAltException;
+import org.antlr.v4.runtime.Parser;
+import org.antlr.v4.runtime.Token;
+
 import ortus.boxlang.parser.antlr.CFLexer;
 
 /**

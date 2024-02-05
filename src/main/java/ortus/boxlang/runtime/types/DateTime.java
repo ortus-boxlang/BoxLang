@@ -36,7 +36,7 @@ import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.bifs.MemberDescriptor;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.dynamic.IReferenceable;
-import ortus.boxlang.runtime.interop.DynamicJavaInteropService;
+import ortus.boxlang.runtime.interop.DynamicInteropService;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.services.FunctionService;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
@@ -718,7 +718,7 @@ public class DateTime implements IType, IReferenceable, Comparable<DateTime> {
 	 */
 	@Override
 	public Object assign( IBoxContext context, Key key, Object value ) {
-		DynamicJavaInteropService.setField( this, key.getName().toLowerCase(), value );
+		DynamicInteropService.setField( this, key.getName().toLowerCase(), value );
 		return this;
 	}
 
@@ -733,7 +733,7 @@ public class DateTime implements IType, IReferenceable, Comparable<DateTime> {
 	@Override
 	public Object dereference( IBoxContext context, Key key, Boolean safe ) {
 		try {
-			return DynamicJavaInteropService.getField( this, key.getName().toLowerCase() ).get();
+			return DynamicInteropService.getField( this, key.getName().toLowerCase() ).get();
 		} catch ( NoSuchElementException e ) {
 			throw new BoxRuntimeException(
 			    String.format(
@@ -760,12 +760,12 @@ public class DateTime implements IType, IReferenceable, Comparable<DateTime> {
 			return memberDescriptor.invoke( context, this, positionalArguments );
 		}
 
-		if ( DynamicJavaInteropService.hasMethodNoCase( this.getClass(), name.getName() ) ) {
-			return DynamicJavaInteropService.invoke( this, name.getName(), safe, positionalArguments );
-		} else if ( DynamicJavaInteropService.hasMethodNoCase( this.wrapped.getClass(), name.getName() ) ) {
-			return DynamicJavaInteropService.invoke( this.wrapped, name.getName(), safe, positionalArguments );
-		} else if ( DynamicJavaInteropService.hasMethodNoCase( this.getClass(), "get" + name.getName() ) ) {
-			return DynamicJavaInteropService.invoke( this.wrapped, "get" + name.getName(), safe, positionalArguments );
+		if ( DynamicInteropService.hasMethodNoCase( this.getClass(), name.getName() ) ) {
+			return DynamicInteropService.invoke( this, name.getName(), safe, positionalArguments );
+		} else if ( DynamicInteropService.hasMethodNoCase( this.wrapped.getClass(), name.getName() ) ) {
+			return DynamicInteropService.invoke( this.wrapped, name.getName(), safe, positionalArguments );
+		} else if ( DynamicInteropService.hasMethodNoCase( this.getClass(), "get" + name.getName() ) ) {
+			return DynamicInteropService.invoke( this.wrapped, "get" + name.getName(), safe, positionalArguments );
 		} else {
 			throw new BoxRuntimeException(
 			    String.format(
@@ -792,13 +792,13 @@ public class DateTime implements IType, IReferenceable, Comparable<DateTime> {
 		if ( memberDescriptor != null ) {
 			return memberDescriptor.invoke( context, this, namedArguments );
 		}
-		if ( DynamicJavaInteropService.hasMethodNoCase( this.getClass(), name.getName() ) ) {
-			return DynamicJavaInteropService.invoke( this, name.getName(), safe, namedArguments );
+		if ( DynamicInteropService.hasMethodNoCase( this.getClass(), name.getName() ) ) {
+			return DynamicInteropService.invoke( this, name.getName(), safe, namedArguments );
 			// no args - just pass through to the wrapped methods
-		} else if ( DynamicJavaInteropService.hasMethodNoCase( this.wrapped.getClass(), name.getName() ) ) {
-			return DynamicJavaInteropService.invoke( this.wrapped, name.getName(), safe );
-		} else if ( DynamicJavaInteropService.hasMethodNoCase( this.getClass(), "get" + name.getName() ) ) {
-			return DynamicJavaInteropService.invoke( this.wrapped, "get" + name.getName(), safe );
+		} else if ( DynamicInteropService.hasMethodNoCase( this.wrapped.getClass(), name.getName() ) ) {
+			return DynamicInteropService.invoke( this.wrapped, name.getName(), safe );
+		} else if ( DynamicInteropService.hasMethodNoCase( this.getClass(), "get" + name.getName() ) ) {
+			return DynamicInteropService.invoke( this.wrapped, "get" + name.getName(), safe );
 		} else {
 			throw new BoxRuntimeException(
 			    String.format(

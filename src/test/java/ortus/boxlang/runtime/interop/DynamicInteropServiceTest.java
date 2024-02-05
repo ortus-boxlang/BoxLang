@@ -42,14 +42,14 @@ import ortus.boxlang.runtime.types.exceptions.BoxLangException;
 import ortus.boxlang.runtime.types.exceptions.NoFieldException;
 import ortus.boxlang.runtime.types.exceptions.NoMethodException;
 
-public class DynamicJavaInteropServiceTest {
+public class DynamicInteropServiceTest {
 
 	private IBoxContext context = new ScriptingRequestBoxContext();
 
 	@DisplayName( "It can call a constructor with one argument" )
 	@Test
 	void testItCanCallConstructorsWithOneArgument() {
-		Object target = DynamicJavaInteropService.invokeConstructor( null, String.class, "Hello World" );
+		Object target = DynamicInteropService.invokeConstructor( null, String.class, "Hello World" );
 		assertThat( target.getClass() ).isEqualTo( String.class );
 		assertThat( target ).isEqualTo( "Hello World" );
 	}
@@ -57,14 +57,14 @@ public class DynamicJavaInteropServiceTest {
 	@DisplayName( "It can call a constructor with many arguments" )
 	@Test
 	void testItCanCallConstructorsWithManyArguments() {
-		Object target = DynamicJavaInteropService.invokeConstructor( null, LinkedHashMap.class, 16, 0.75f, true );
+		Object target = DynamicInteropService.invokeConstructor( null, LinkedHashMap.class, 16, 0.75f, true );
 		assertThat( target.getClass() ).isEqualTo( LinkedHashMap.class );
 	}
 
 	@DisplayName( "It can call a constructor with no arguments" )
 	@Test
 	void testItCanCallConstructorsWithNoArguments() {
-		Object target = DynamicJavaInteropService.invokeConstructor( null, String.class );
+		Object target = DynamicInteropService.invokeConstructor( null, String.class );
 		assertThat( target.getClass() ).isEqualTo( String.class );
 		assertThat( target ).isEqualTo( "" );
 	}
@@ -72,18 +72,18 @@ public class DynamicJavaInteropServiceTest {
 	@DisplayName( "It can call instance methods with no arguments" )
 	@Test
 	void testItCanCallMethodsWithNoArguments() {
-		HashMap map = DynamicJavaInteropService.invokeConstructor( null, HashMap.class );
-		assertThat( DynamicJavaInteropService.invoke( map, "size", false ) ).isEqualTo( 0 );
-		assertThat( ( Boolean ) DynamicJavaInteropService.invoke( map, "isEmpty", false ) ).isTrue();
+		HashMap map = DynamicInteropService.invokeConstructor( null, HashMap.class );
+		assertThat( DynamicInteropService.invoke( map, "size", false ) ).isEqualTo( 0 );
+		assertThat( ( Boolean ) DynamicInteropService.invoke( map, "isEmpty", false ) ).isTrue();
 	}
 
 	@DisplayName( "It can call instance methods with many arguments" )
 	@Test
 	void testItCanCallMethodsWithManyArguments() {
-		HashMap map = DynamicJavaInteropService.invokeConstructor( null, HashMap.class );
-		DynamicJavaInteropService.invoke( map, "put", false, "name", "luis" );
-		assertThat( DynamicJavaInteropService.invoke( map, "size", false ) ).isEqualTo( 1 );
-		assertThat( DynamicJavaInteropService.invoke( map, "get", false, "name" ) ).isEqualTo( "luis" );
+		HashMap map = DynamicInteropService.invokeConstructor( null, HashMap.class );
+		DynamicInteropService.invoke( map, "put", false, "name", "luis" );
+		assertThat( DynamicInteropService.invoke( map, "size", false ) ).isEqualTo( 1 );
+		assertThat( DynamicInteropService.invoke( map, "get", false, "name" ) ).isEqualTo( "luis" );
 	}
 
 	@DisplayName( "It can call static methods on classes" )
@@ -92,11 +92,11 @@ public class DynamicJavaInteropServiceTest {
 		Duration results = null;
 
 		// Use int to long promotion
-		results = ( Duration ) DynamicJavaInteropService.invoke( Duration.class, "ofSeconds", false, new Object[] { 120 } );
+		results = ( Duration ) DynamicInteropService.invoke( Duration.class, "ofSeconds", false, new Object[] { 120 } );
 		assertThat( results.toString() ).isEqualTo( "PT2M" );
 
 		// Normal Long
-		results = ( Duration ) DynamicJavaInteropService.invoke( Duration.class, "ofSeconds", false, new Object[] { 200L } );
+		results = ( Duration ) DynamicInteropService.invoke( Duration.class, "ofSeconds", false, new Object[] { 200L } );
 		assertThat( results.toString() ).isEqualTo( "PT3M20S" );
 	}
 
@@ -104,7 +104,7 @@ public class DynamicJavaInteropServiceTest {
 	@Test
 	@SuppressWarnings( "unchecked" )
 	void testItCanCallMethodsOnInterfaces() {
-		List<Object> results = ( List<Object> ) DynamicJavaInteropService.invoke( List.class, "of", false, new Object[] { "Hello" } );
+		List<Object> results = ( List<Object> ) DynamicInteropService.invoke( List.class, "of", false, new Object[] { "Hello" } );
 		assertThat( results.toString() ).isEqualTo( "[Hello]" );
 		assertThat( results ).isNotEmpty();
 	}
@@ -112,16 +112,16 @@ public class DynamicJavaInteropServiceTest {
 	@DisplayName( "It can get public fields" )
 	@Test
 	void testItCanGetPublicFields() {
-		assertThat( DynamicJavaInteropService.getField( InvokeDynamicFields.class, new InvokeDynamicFields(), "name" ).get() ).isEqualTo( "luis" );
-		assertThat( DynamicJavaInteropService.getField( new InvokeDynamicFields(), "name" ).get() ).isEqualTo( "luis" );
+		assertThat( DynamicInteropService.getField( InvokeDynamicFields.class, new InvokeDynamicFields(), "name" ).get() ).isEqualTo( "luis" );
+		assertThat( DynamicInteropService.getField( new InvokeDynamicFields(), "name" ).get() ).isEqualTo( "luis" );
 	}
 
 	@DisplayName( "It can get public fields with any case-sensitivity" )
 	@Test
 	void testItCanGetPublicFieldsInAnyCase() {
 		InvokeDynamicFields invoker = new InvokeDynamicFields();
-		assertThat( DynamicJavaInteropService.getField( invoker, "NaMe" ).get() ).isEqualTo( "luis" );
-		assertThat( DynamicJavaInteropService.getField( InvokeDynamicFields.class, invoker, "NaMe" ).get() ).isEqualTo( "luis" );
+		assertThat( DynamicInteropService.getField( invoker, "NaMe" ).get() ).isEqualTo( "luis" );
+		assertThat( DynamicInteropService.getField( InvokeDynamicFields.class, invoker, "NaMe" ).get() ).isEqualTo( "luis" );
 	}
 
 	@DisplayName( "It can get non-existent field with a default value" )
@@ -129,8 +129,8 @@ public class DynamicJavaInteropServiceTest {
 	void testItCanGetPublicFieldsWithADefaultValue() {
 
 		InvokeDynamicFields invoker = new InvokeDynamicFields();
-		assertThat( DynamicJavaInteropService.getField( invoker, "InvalidFieldBaby", "sorry" ).get() ).isEqualTo( "sorry" );
-		assertThat( DynamicJavaInteropService.getField( InvokeDynamicFields.class, invoker, "InvalidFieldBaby", "sorry" ).get() ).isEqualTo( "sorry" );
+		assertThat( DynamicInteropService.getField( invoker, "InvalidFieldBaby", "sorry" ).get() ).isEqualTo( "sorry" );
+		assertThat( DynamicInteropService.getField( InvokeDynamicFields.class, invoker, "InvalidFieldBaby", "sorry" ).get() ).isEqualTo( "sorry" );
 
 	}
 
@@ -139,8 +139,8 @@ public class DynamicJavaInteropServiceTest {
 	void testItCanGetStaticPublicFields() {
 		InvokeDynamicFields invoker = new InvokeDynamicFields();
 
-		assertThat( DynamicJavaInteropService.getField( invoker, "HELLO" ).get() ).isEqualTo( "Hello World" );
-		assertThat( DynamicJavaInteropService.getField( invoker, "MY_PRIMITIVE" ).get() ).isEqualTo( 42 );
+		assertThat( DynamicInteropService.getField( invoker, "HELLO" ).get() ).isEqualTo( "Hello World" );
+		assertThat( DynamicInteropService.getField( invoker, "MY_PRIMITIVE" ).get() ).isEqualTo( 42 );
 	}
 
 	@DisplayName( "It can throw an exception when getting an invalid field" )
@@ -148,7 +148,7 @@ public class DynamicJavaInteropServiceTest {
 	void testItCanThrowExceptionForInvalidFields() {
 		NoFieldException exception = assertThrows( NoFieldException.class, () -> {
 			InvokeDynamicFields invoker = new InvokeDynamicFields();
-			DynamicJavaInteropService.getField( invoker, "InvalidField" );
+			DynamicInteropService.getField( invoker, "InvalidField" );
 		} );
 		assertThat( exception.getMessage() ).contains( "InvalidField" );
 	}
@@ -158,14 +158,14 @@ public class DynamicJavaInteropServiceTest {
 	void testItCanSetPublicFields() {
 		InvokeDynamicFields invoker = new InvokeDynamicFields();
 
-		DynamicJavaInteropService.setField( invoker, "name", "Hola Tests" );
-		assertThat( DynamicJavaInteropService.getField( invoker, "name" ).get() ).isEqualTo( "Hola Tests" );
+		DynamicInteropService.setField( invoker, "name", "Hola Tests" );
+		assertThat( DynamicInteropService.getField( invoker, "name" ).get() ).isEqualTo( "Hola Tests" );
 	}
 
 	@DisplayName( "It can get all the fields of a class" )
 	@Test
 	void testItCanGetAllFields() {
-		Field[] fields = DynamicJavaInteropService.getFields( InvokeDynamicFields.class );
+		Field[] fields = DynamicInteropService.getFields( InvokeDynamicFields.class );
 		assertThat( fields ).isNotEmpty();
 		assertThat( fields.length ).isEqualTo( 3 );
 	}
@@ -173,7 +173,7 @@ public class DynamicJavaInteropServiceTest {
 	@DisplayName( "It can get all the field names of a class" )
 	@Test
 	void testItCanGetAllFieldNames() {
-		List<String> names = DynamicJavaInteropService.getFieldNames( InvokeDynamicFields.class );
+		List<String> names = DynamicInteropService.getFieldNames( InvokeDynamicFields.class );
 		assertThat( names ).isNotEmpty();
 		assertThat( names.size() ).isEqualTo( 3 );
 		assertThat( names ).containsExactly( new Object[] { "name", "HELLO", "MY_PRIMITIVE" } );
@@ -182,7 +182,7 @@ public class DynamicJavaInteropServiceTest {
 	@DisplayName( "It can get all the field names of a class with no case sensitivity" )
 	@Test
 	void testItCanGetAllFieldNamesNoCase() {
-		List<String> names = DynamicJavaInteropService.getFieldNamesNoCase( InvokeDynamicFields.class );
+		List<String> names = DynamicInteropService.getFieldNamesNoCase( InvokeDynamicFields.class );
 		assertThat( names ).isNotEmpty();
 		assertThat( names.size() ).isEqualTo( 3 );
 		assertThat( names ).containsExactly( new Object[] { "NAME", "HELLO", "MY_PRIMITIVE" } );
@@ -192,18 +192,18 @@ public class DynamicJavaInteropServiceTest {
 	@Test
 	void testItCanCheckForFields() {
 		assertThat(
-		    DynamicJavaInteropService.hasField( InvokeDynamicFields.class, "name" )
+		    DynamicInteropService.hasField( InvokeDynamicFields.class, "name" )
 		).isTrue();
 
 		assertThat(
-		    DynamicJavaInteropService.hasField( InvokeDynamicFields.class, "NaMe" )
+		    DynamicInteropService.hasField( InvokeDynamicFields.class, "NaMe" )
 		).isFalse();
 		assertThat(
-		    DynamicJavaInteropService.hasFieldNoCase( InvokeDynamicFields.class, "NaMe" )
+		    DynamicInteropService.hasFieldNoCase( InvokeDynamicFields.class, "NaMe" )
 		).isTrue();
 
 		assertThat(
-		    DynamicJavaInteropService.hasField( InvokeDynamicFields.class, "bogus" )
+		    DynamicInteropService.hasField( InvokeDynamicFields.class, "bogus" )
 		).isFalse();
 
 	}
@@ -211,7 +211,7 @@ public class DynamicJavaInteropServiceTest {
 	@DisplayName( "It can get all the callable method names of a class" )
 	@Test
 	void testItCanGetAllMethodNames() {
-		List<String> names = DynamicJavaInteropService.getMethodNames( InvokeDynamicFields.class );
+		List<String> names = DynamicInteropService.getMethodNames( InvokeDynamicFields.class );
 		assertThat( names ).isNotEmpty();
 		assertThat( names.size() ).isEqualTo( 16 );
 		assertThat( names ).containsAtLeast(
@@ -222,7 +222,7 @@ public class DynamicJavaInteropServiceTest {
 	@DisplayName( "It can get all the callable method names of a class with no case" )
 	@Test
 	void testItCanGetAllMethodNamesNoCase() {
-		List<String> names = DynamicJavaInteropService.getMethodNamesNoCase( InvokeDynamicFields.class );
+		List<String> names = DynamicInteropService.getMethodNamesNoCase( InvokeDynamicFields.class );
 		assertThat( names ).isNotEmpty();
 		assertThat( names.size() ).isEqualTo( 16 );
 		assertThat( names ).containsAtLeast(
@@ -234,17 +234,17 @@ public class DynamicJavaInteropServiceTest {
 	@Test
 	void testItCanCheckIfItHasMethodNames() {
 		assertThat(
-		    DynamicJavaInteropService.hasMethod( InvokeDynamicFields.class, "getName" )
+		    DynamicInteropService.hasMethod( InvokeDynamicFields.class, "getName" )
 		).isTrue();
 		assertThat(
-		    DynamicJavaInteropService.hasMethod( InvokeDynamicFields.class, "GETnAme" )
+		    DynamicInteropService.hasMethod( InvokeDynamicFields.class, "GETnAme" )
 		).isFalse();
 
 		assertThat(
-		    DynamicJavaInteropService.hasMethodNoCase( InvokeDynamicFields.class, "getNamE" )
+		    DynamicInteropService.hasMethodNoCase( InvokeDynamicFields.class, "getNamE" )
 		).isTrue();
 		assertThat(
-		    DynamicJavaInteropService.hasMethodNoCase( InvokeDynamicFields.class, "bogus" )
+		    DynamicInteropService.hasMethodNoCase( InvokeDynamicFields.class, "bogus" )
 		).isFalse();
 	}
 
@@ -254,28 +254,28 @@ public class DynamicJavaInteropServiceTest {
 		Method method = null;
 
 		// True Check
-		method = DynamicJavaInteropService.findMatchingMethod( InvokeDynamicFields.class, "GetNAME", new Class[] {} );
+		method = DynamicInteropService.findMatchingMethod( InvokeDynamicFields.class, "GetNAME", new Class[] {} );
 		assertThat( method.getName() ).isEqualTo( "getName" );
-		method = DynamicJavaInteropService.findMatchingMethod( InvokeDynamicFields.class, "getNoW", new Class[] {} );
+		method = DynamicInteropService.findMatchingMethod( InvokeDynamicFields.class, "getNoW", new Class[] {} );
 		assertThat( method.getName() ).isEqualTo( "getNow" );
-		method = DynamicJavaInteropService.findMatchingMethod( InvokeDynamicFields.class, "setName", new Class[] { String.class } );
+		method = DynamicInteropService.findMatchingMethod( InvokeDynamicFields.class, "setName", new Class[] { String.class } );
 		assertThat( method.getName() ).isEqualTo( "setName" );
-		method = DynamicJavaInteropService.findMatchingMethod( InvokeDynamicFields.class, "HELLO", new Class[] {} );
+		method = DynamicInteropService.findMatchingMethod( InvokeDynamicFields.class, "HELLO", new Class[] {} );
 		assertThat( method.getName() ).isEqualTo( "hello" );
-		method = DynamicJavaInteropService.findMatchingMethod( InvokeDynamicFields.class, "HELLO", new Class[] { String.class } );
+		method = DynamicInteropService.findMatchingMethod( InvokeDynamicFields.class, "HELLO", new Class[] { String.class } );
 		assertThat( method.getName() ).isEqualTo( "hello" );
-		method = DynamicJavaInteropService.findMatchingMethod( InvokeDynamicFields.class, "HELLO", new Class[] { String.class, int.class } );
+		method = DynamicInteropService.findMatchingMethod( InvokeDynamicFields.class, "HELLO", new Class[] { String.class, int.class } );
 		assertThat( method.getName() ).isEqualTo( "hello" );
 
 		// False Check
 		assertThrows( NoMethodException.class, () -> {
-			DynamicJavaInteropService.findMatchingMethod( InvokeDynamicFields.class, "getName", new Class[] { String.class } );
+			DynamicInteropService.findMatchingMethod( InvokeDynamicFields.class, "getName", new Class[] { String.class } );
 		} );
 		assertThrows( NoMethodException.class, () -> {
-			DynamicJavaInteropService.findMatchingMethod( InvokeDynamicFields.class, "BogusName", new Class[] { String.class } );
+			DynamicInteropService.findMatchingMethod( InvokeDynamicFields.class, "BogusName", new Class[] { String.class } );
 		} );
 		assertThrows( NoMethodException.class, () -> {
-			DynamicJavaInteropService.findMatchingMethod( InvokeDynamicFields.class, "setName", new Class[] { Integer.class } );
+			DynamicInteropService.findMatchingMethod( InvokeDynamicFields.class, "setName", new Class[] { Integer.class } );
 		} );
 
 	}
@@ -287,7 +287,7 @@ public class DynamicJavaInteropServiceTest {
 		Map<Object, Object> map = new HashMap<Object, Object>();
 		map.put( "key", "value" );
 		assertThat(
-		    DynamicJavaInteropService.dereference(
+		    DynamicInteropService.dereference(
 		        context,
 		        map,
 		        Key.of( "key" ),
@@ -295,7 +295,7 @@ public class DynamicJavaInteropServiceTest {
 		    )
 		).isEqualTo( "value" );
 
-		DynamicJavaInteropService.assign(
+		DynamicInteropService.assign(
 		    context,
 		    map,
 		    Key.of( "key2" ),
@@ -303,7 +303,7 @@ public class DynamicJavaInteropServiceTest {
 		);
 
 		assertThat(
-		    DynamicJavaInteropService.dereference(
+		    DynamicInteropService.dereference(
 		        context,
 		        map,
 		        Key.of( "key2" ),
@@ -326,7 +326,7 @@ public class DynamicJavaInteropServiceTest {
 		map.put( str, "bradwood" );
 
 		assertThat(
-		    DynamicJavaInteropService.dereference(
+		    DynamicInteropService.dereference(
 		        context,
 		        map,
 		        Key.of( Struct.EMPTY ),
@@ -335,7 +335,7 @@ public class DynamicJavaInteropServiceTest {
 		).isEqualTo( "empty" );
 
 		assertThat(
-		    DynamicJavaInteropService.dereference(
+		    DynamicInteropService.dereference(
 		        context,
 		        map,
 		        Key.of( str ),
@@ -343,7 +343,7 @@ public class DynamicJavaInteropServiceTest {
 		    )
 		).isEqualTo( "bradwood" );
 
-		DynamicJavaInteropService.assign(
+		DynamicInteropService.assign(
 		    context,
 		    map,
 		    Key.of( str2 ),
@@ -351,7 +351,7 @@ public class DynamicJavaInteropServiceTest {
 		);
 
 		assertThat(
-		    DynamicJavaInteropService.dereference(
+		    DynamicInteropService.dereference(
 		        context,
 		        map,
 		        Key.of( str2 ),
@@ -370,7 +370,7 @@ public class DynamicJavaInteropServiceTest {
 	void testItCanUseNativeArrays() {
 		String[] array = new String[] { "Brad", "Wood" };
 		assertThat(
-		    DynamicJavaInteropService.dereference(
+		    DynamicInteropService.dereference(
 		        context,
 		        array,
 		        // Use IntKey
@@ -380,7 +380,7 @@ public class DynamicJavaInteropServiceTest {
 		).isEqualTo( "Brad" );
 
 		assertThat(
-		    DynamicJavaInteropService.dereference(
+		    DynamicInteropService.dereference(
 		        context,
 		        array,
 		        // Use Key
@@ -389,7 +389,7 @@ public class DynamicJavaInteropServiceTest {
 		    )
 		).isEqualTo( "Brad" );
 
-		DynamicJavaInteropService.assign(
+		DynamicInteropService.assign(
 		    context,
 		    array,
 		    Key.of( 2 ),
@@ -397,7 +397,7 @@ public class DynamicJavaInteropServiceTest {
 		);
 
 		assertThat(
-		    DynamicJavaInteropService.dereference(
+		    DynamicInteropService.dereference(
 		        context,
 		        array,
 		        Key.of( 2 ),
@@ -406,7 +406,7 @@ public class DynamicJavaInteropServiceTest {
 		).isEqualTo( "Ortus Solutions" );
 
 		assertThat(
-		    DynamicJavaInteropService.dereference(
+		    DynamicInteropService.dereference(
 		        context,
 		        array,
 		        Key.of( "length" ),
@@ -415,7 +415,7 @@ public class DynamicJavaInteropServiceTest {
 		).isEqualTo( 2 );
 
 		assertThrows( BoxLangException.class, () -> {
-			DynamicJavaInteropService.dereference(
+			DynamicInteropService.dereference(
 			    context,
 			    array,
 			    Key.of( "test" ),
@@ -424,7 +424,7 @@ public class DynamicJavaInteropServiceTest {
 		} );
 
 		assertThrows( BoxLangException.class, () -> {
-			DynamicJavaInteropService.dereference(
+			DynamicInteropService.dereference(
 			    context,
 			    array,
 			    Key.of( 0 ),
@@ -433,7 +433,7 @@ public class DynamicJavaInteropServiceTest {
 		} );
 
 		assertThrows( BoxLangException.class, () -> {
-			DynamicJavaInteropService.dereference(
+			DynamicInteropService.dereference(
 			    context,
 			    array,
 			    Key.of( 1.5 ),
@@ -442,7 +442,7 @@ public class DynamicJavaInteropServiceTest {
 		} );
 
 		assertThrows( BoxLangException.class, () -> {
-			DynamicJavaInteropService.dereference(
+			DynamicInteropService.dereference(
 			    context,
 			    array,
 			    Key.of( 50 ),
@@ -450,10 +450,10 @@ public class DynamicJavaInteropServiceTest {
 			);
 		} );
 
-		assertThat( DynamicJavaInteropService.dereference( context, array, Key.of( "test" ), true ) ).isEqualTo( null );
-		assertThat( DynamicJavaInteropService.dereference( context, array, Key.of( 0 ), true ) ).isEqualTo( null );
-		assertThat( DynamicJavaInteropService.dereference( context, array, Key.of( 1.5 ), true ) ).isEqualTo( null );
-		assertThat( DynamicJavaInteropService.dereference( context, array, Key.of( 50 ), true ) ).isEqualTo( null );
+		assertThat( DynamicInteropService.dereference( context, array, Key.of( "test" ), true ) ).isEqualTo( null );
+		assertThat( DynamicInteropService.dereference( context, array, Key.of( 0 ), true ) ).isEqualTo( null );
+		assertThat( DynamicInteropService.dereference( context, array, Key.of( 1.5 ), true ) ).isEqualTo( null );
+		assertThat( DynamicInteropService.dereference( context, array, Key.of( 50 ), true ) ).isEqualTo( null );
 	}
 
 	@DisplayName( "It use Lists" )
@@ -464,7 +464,7 @@ public class DynamicJavaInteropServiceTest {
 		list.add( "Wood" );
 
 		assertThat(
-		    DynamicJavaInteropService.dereference(
+		    DynamicInteropService.dereference(
 		        context,
 		        list,
 		        // Use IntKey
@@ -474,7 +474,7 @@ public class DynamicJavaInteropServiceTest {
 		).isEqualTo( "Brad" );
 
 		assertThat(
-		    DynamicJavaInteropService.dereference(
+		    DynamicInteropService.dereference(
 		        context,
 		        list,
 		        // Use Key
@@ -483,7 +483,7 @@ public class DynamicJavaInteropServiceTest {
 		    )
 		).isEqualTo( "Brad" );
 
-		DynamicJavaInteropService.assign(
+		DynamicInteropService.assign(
 		    context,
 		    list,
 		    Key.of( 2 ),
@@ -491,7 +491,7 @@ public class DynamicJavaInteropServiceTest {
 		);
 
 		assertThat(
-		    DynamicJavaInteropService.dereference(
+		    DynamicInteropService.dereference(
 		        context,
 		        list,
 		        Key.of( 2 ),
@@ -500,7 +500,7 @@ public class DynamicJavaInteropServiceTest {
 		).isEqualTo( "Ortus Solutions" );
 
 		assertThrows( BoxLangException.class, () -> {
-			DynamicJavaInteropService.dereference(
+			DynamicInteropService.dereference(
 			    context,
 			    list,
 			    Key.of( "test" ),
@@ -509,7 +509,7 @@ public class DynamicJavaInteropServiceTest {
 		} );
 
 		assertThrows( BoxLangException.class, () -> {
-			DynamicJavaInteropService.dereference(
+			DynamicInteropService.dereference(
 			    context,
 			    list,
 			    Key.of( 0 ),
@@ -518,7 +518,7 @@ public class DynamicJavaInteropServiceTest {
 		} );
 
 		assertThrows( BoxLangException.class, () -> {
-			DynamicJavaInteropService.dereference(
+			DynamicInteropService.dereference(
 			    context,
 			    list,
 			    Key.of( 1.5 ),
@@ -527,7 +527,7 @@ public class DynamicJavaInteropServiceTest {
 		} );
 
 		assertThrows( BoxLangException.class, () -> {
-			DynamicJavaInteropService.dereference(
+			DynamicInteropService.dereference(
 			    context,
 			    list,
 			    Key.of( 50 ),
@@ -535,10 +535,10 @@ public class DynamicJavaInteropServiceTest {
 			);
 		} );
 
-		assertThat( DynamicJavaInteropService.dereference( context, list, Key.of( "test" ), true ) ).isEqualTo( null );
-		assertThat( DynamicJavaInteropService.dereference( context, list, Key.of( 0 ), true ) ).isEqualTo( null );
-		assertThat( DynamicJavaInteropService.dereference( context, list, Key.of( 1.5 ), true ) ).isEqualTo( null );
-		assertThat( DynamicJavaInteropService.dereference( context, list, Key.of( 50 ), true ) ).isEqualTo( null );
+		assertThat( DynamicInteropService.dereference( context, list, Key.of( "test" ), true ) ).isEqualTo( null );
+		assertThat( DynamicInteropService.dereference( context, list, Key.of( 0 ), true ) ).isEqualTo( null );
+		assertThat( DynamicInteropService.dereference( context, list, Key.of( 1.5 ), true ) ).isEqualTo( null );
+		assertThat( DynamicInteropService.dereference( context, list, Key.of( 50 ), true ) ).isEqualTo( null );
 	}
 
 }

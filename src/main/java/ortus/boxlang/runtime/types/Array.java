@@ -38,7 +38,7 @@ import ortus.boxlang.runtime.dynamic.IReferenceable;
 import ortus.boxlang.runtime.dynamic.casters.CastAttempt;
 import ortus.boxlang.runtime.dynamic.casters.DoubleCaster;
 import ortus.boxlang.runtime.dynamic.casters.StringCaster;
-import ortus.boxlang.runtime.interop.DynamicJavaInteropService;
+import ortus.boxlang.runtime.interop.DynamicInteropService;
 import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.operators.Compare;
 import ortus.boxlang.runtime.operators.EqualsEquals;
@@ -629,7 +629,7 @@ public class Array implements List<Object>, IType, IReferenceable, IListenable {
 			return result / wrapped.size();
 		}
 
-		return DynamicJavaInteropService.invoke( this, name.getName(), safe, positionalArguments );
+		return DynamicInteropService.invoke( this, name.getName(), safe, positionalArguments );
 	}
 
 	/**
@@ -658,7 +658,7 @@ public class Array implements List<Object>, IType, IReferenceable, IListenable {
 			return result / wrapped.size();
 		}
 
-		return DynamicJavaInteropService.invoke( this, name.getName(), safe, namedArguments );
+		return DynamicInteropService.invoke( this, name.getName(), safe, namedArguments );
 	}
 
 	/**

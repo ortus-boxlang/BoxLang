@@ -24,7 +24,7 @@ import ortus.boxlang.runtime.dynamic.IReferenceable;
 import ortus.boxlang.runtime.dynamic.Referencer;
 import ortus.boxlang.runtime.dynamic.casters.CastAttempt;
 import ortus.boxlang.runtime.dynamic.casters.DoubleCaster;
-import ortus.boxlang.runtime.interop.DynamicJavaInteropService;
+import ortus.boxlang.runtime.interop.DynamicInteropService;
 import ortus.boxlang.runtime.scopes.IntKey;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
@@ -84,10 +84,10 @@ public class QueryColumn implements IReferenceable {
 
 	/**
 	 * Set the value of a cell in this column
-	 * 
+	 *
 	 * @param row   The row to set, 0-based index
 	 * @param value The value to set
-	 * 
+	 *
 	 * @return This QueryColumn
 	 */
 	public QueryColumn setCell( int row, Object value ) {
@@ -98,9 +98,9 @@ public class QueryColumn implements IReferenceable {
 
 	/**
 	 * Get the value of a cell in this column
-	 * 
+	 *
 	 * @param row The row to get, 0-based index
-	 * 
+	 *
 	 * @return The value of the cell
 	 */
 	public Object getCell( int row ) {
@@ -115,9 +115,9 @@ public class QueryColumn implements IReferenceable {
 	 * Get all data in a column as a Java Object[]
 	 * Data is copied, so re-assignments into the array will not be reflected in the query.
 	 * Mutating a complex object in the array will be reflected in the query.
-	 * 
+	 *
 	 * @param name column name
-	 * 
+	 *
 	 * @return array of column data
 	 */
 	public Object[] getColumnData() {
@@ -128,9 +128,9 @@ public class QueryColumn implements IReferenceable {
 	 * Get all data in a column as an BoxLang Array
 	 * Data is copied, so re-assignments into the array will not be reflected in the query.
 	 * Mutating a complex object in the array will be reflected in the query.
-	 * 
+	 *
 	 * @param name column name
-	 * 
+	 *
 	 * @return array of column data
 	 */
 	public Array getColumnDataAsArray() {
@@ -199,14 +199,14 @@ public class QueryColumn implements IReferenceable {
 	public Object dereferenceAndInvoke( IBoxContext context, Key name, Object[] positionalArguments, Boolean safe ) {
 		// qry.col.method() will ALWAYS get the value from the current row and call the method on that cell value
 		// Unlike Lucee/Adobe, we'll never call the method on the query column itself
-		return DynamicJavaInteropService.invoke( getCell( query.getRowFromContext( context ) ), name.getName(), safe, positionalArguments );
+		return DynamicInteropService.invoke( getCell( query.getRowFromContext( context ) ), name.getName(), safe, positionalArguments );
 	}
 
 	@Override
 	public Object dereferenceAndInvoke( IBoxContext context, Key name, Map<Key, Object> namedArguments, Boolean safe ) {
 		// qry.col.method() will ALWAYS get the value from the current row and call the method on that cell value
 		// Unlike Lucee/Adobe, we'll never call the method on the query column itself
-		return DynamicJavaInteropService.invoke( getCell( query.getRowFromContext( context ) ), name.getName(), safe, namedArguments );
+		return DynamicInteropService.invoke( getCell( query.getRowFromContext( context ) ), name.getName(), safe, namedArguments );
 	}
 
 	@Override

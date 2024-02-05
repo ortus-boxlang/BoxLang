@@ -198,7 +198,7 @@ public class DynamicObject implements IReferenceable {
 	 * @return The instance of the class
 	 */
 	public DynamicObject invokeConstructor( IBoxContext context, Object... args ) {
-		this.targetInstance = DynamicJavaInteropService.invokeConstructor( context, this.targetClass, args );
+		this.targetInstance = DynamicInteropService.invokeConstructor( context, this.targetClass, args );
 		return this;
 	}
 
@@ -211,7 +211,7 @@ public class DynamicObject implements IReferenceable {
 	 * @return The instance of the class
 	 */
 	public DynamicObject invokeConstructor( IBoxContext context, Map<Key, Object> args ) {
-		this.targetInstance = DynamicJavaInteropService.invokeConstructor( context, this.targetClass, args );
+		this.targetInstance = DynamicInteropService.invokeConstructor( context, this.targetClass, args );
 		return this;
 	}
 
@@ -237,7 +237,7 @@ public class DynamicObject implements IReferenceable {
 	 * @return The result of the method invocation
 	 */
 	public Object invoke( String methodName, Object... arguments ) {
-		return DynamicJavaInteropService.invoke( this.getTargetClass(), this.getTargetInstance(), methodName, false, arguments );
+		return DynamicInteropService.invoke( this.getTargetClass(), this.getTargetInstance(), methodName, false, arguments );
 	}
 
 	/**
@@ -250,7 +250,7 @@ public class DynamicObject implements IReferenceable {
 	 *
 	 */
 	public Object invokeStatic( String methodName, Object... arguments ) {
-		return DynamicJavaInteropService.invoke( this.targetClass, methodName, false, arguments );
+		return DynamicInteropService.invoke( this.targetClass, methodName, false, arguments );
 	}
 
 	/**
@@ -268,7 +268,7 @@ public class DynamicObject implements IReferenceable {
 	 *
 	 */
 	public Optional<Object> getField( String fieldName ) {
-		return DynamicJavaInteropService.getField( this.targetClass, this.targetInstance, fieldName );
+		return DynamicInteropService.getField( this.targetClass, this.targetInstance, fieldName );
 	}
 
 	/**
@@ -282,7 +282,7 @@ public class DynamicObject implements IReferenceable {
 	 * @return The value of the field or the default value wrapped in an Optional
 	 */
 	public Optional<Object> getField( String fieldName, Object defaultValue ) {
-		return DynamicJavaInteropService.getField( this.targetClass, this.targetInstance, fieldName, defaultValue );
+		return DynamicInteropService.getField( this.targetClass, this.targetInstance, fieldName, defaultValue );
 	}
 
 	/**
@@ -295,7 +295,7 @@ public class DynamicObject implements IReferenceable {
 	 *
 	 */
 	public DynamicObject setField( String fieldName, Object value ) {
-		DynamicJavaInteropService.setField( this.targetClass, this.targetInstance, fieldName, value );
+		DynamicInteropService.setField( this.targetClass, this.targetInstance, fieldName, value );
 
 		return this;
 	}
@@ -309,7 +309,7 @@ public class DynamicObject implements IReferenceable {
 	 *
 	 */
 	public Field findField( String fieldName ) {
-		return DynamicJavaInteropService.findField( this.targetClass, fieldName );
+		return DynamicInteropService.findField( this.targetClass, fieldName );
 	}
 
 	/**
@@ -320,7 +320,7 @@ public class DynamicObject implements IReferenceable {
 	 * @return True if the field exists, false otherwise
 	 */
 	public Boolean hasField( String fieldName ) {
-		return DynamicJavaInteropService.hasField( this.targetClass, fieldName );
+		return DynamicInteropService.hasField( this.targetClass, fieldName );
 	}
 
 	/**
@@ -331,7 +331,7 @@ public class DynamicObject implements IReferenceable {
 	 * @return True if the field exists, false otherwise
 	 */
 	public Boolean hasFieldNoCase( String fieldName ) {
-		return DynamicJavaInteropService.hasFieldNoCase( this.targetClass, fieldName );
+		return DynamicInteropService.hasFieldNoCase( this.targetClass, fieldName );
 	}
 
 	/**
@@ -340,7 +340,7 @@ public class DynamicObject implements IReferenceable {
 	 * @return The fields in the class
 	 */
 	public Field[] getFields() {
-		return DynamicJavaInteropService.getFields( this.targetClass );
+		return DynamicInteropService.getFields( this.targetClass );
 	}
 
 	/**
@@ -349,7 +349,7 @@ public class DynamicObject implements IReferenceable {
 	 * @return The stream of fields in the class
 	 */
 	public Stream<Field> getFieldsAsStream() {
-		return DynamicJavaInteropService.getFieldsAsStream( this.targetClass );
+		return DynamicInteropService.getFieldsAsStream( this.targetClass );
 	}
 
 	/**
@@ -358,7 +358,7 @@ public class DynamicObject implements IReferenceable {
 	 * @return A list of field names
 	 */
 	public List<String> getFieldNames() {
-		return DynamicJavaInteropService.getFieldNames( this.targetClass );
+		return DynamicInteropService.getFieldNames( this.targetClass );
 
 	}
 
@@ -368,7 +368,7 @@ public class DynamicObject implements IReferenceable {
 	 * @return A list of field names
 	 */
 	public List<String> getFieldNamesNoCase() {
-		return DynamicJavaInteropService.getFieldNamesNoCase( this.targetClass );
+		return DynamicInteropService.getFieldNamesNoCase( this.targetClass );
 
 	}
 
@@ -384,7 +384,7 @@ public class DynamicObject implements IReferenceable {
 	 * @return A unique set of callable methods
 	 */
 	public Set<Method> getMethods() {
-		return DynamicJavaInteropService.getMethods( this.targetClass );
+		return DynamicInteropService.getMethods( this.targetClass );
 	}
 
 	/**
@@ -393,7 +393,7 @@ public class DynamicObject implements IReferenceable {
 	 * @return A stream of unique callable methods
 	 */
 	public Stream<Method> getMethodsAsStream() {
-		return DynamicJavaInteropService.getMethodsAsStream( this.targetClass );
+		return DynamicInteropService.getMethodsAsStream( this.targetClass );
 	}
 
 	/**
@@ -402,7 +402,7 @@ public class DynamicObject implements IReferenceable {
 	 * @return A list of method names
 	 */
 	public List<String> getMethodNames() {
-		return DynamicJavaInteropService.getMethodNames( this.targetClass );
+		return DynamicInteropService.getMethodNames( this.targetClass );
 	}
 
 	/**
@@ -411,7 +411,7 @@ public class DynamicObject implements IReferenceable {
 	 * @return A list of method names with no case
 	 */
 	public List<String> getMethodNamesNoCase() {
-		return DynamicJavaInteropService.getMethodNamesNoCase( this.targetClass );
+		return DynamicInteropService.getMethodNamesNoCase( this.targetClass );
 	}
 
 	/**
@@ -422,7 +422,7 @@ public class DynamicObject implements IReferenceable {
 	 * @return True if the method exists, false otherwise
 	 */
 	public Boolean hasMethod( String methodName ) {
-		return DynamicJavaInteropService.hasMethod( this.targetClass, methodName );
+		return DynamicInteropService.hasMethod( this.targetClass, methodName );
 	}
 
 	/**
@@ -433,7 +433,7 @@ public class DynamicObject implements IReferenceable {
 	 * @return True if the method exists, false otherwise
 	 */
 	public Boolean hasMethodNoCase( String methodName ) {
-		return DynamicJavaInteropService.hasMethodNoCase( this.targetClass, methodName );
+		return DynamicInteropService.hasMethodNoCase( this.targetClass, methodName );
 	}
 
 	/**
@@ -446,7 +446,7 @@ public class DynamicObject implements IReferenceable {
 	 *
 	 */
 	public Method findMatchingMethod( String methodName, Class<?>[] argumentsAsClasses ) {
-		return DynamicJavaInteropService.findMatchingMethod( this.targetClass, methodName, argumentsAsClasses );
+		return DynamicInteropService.findMatchingMethod( this.targetClass, methodName, argumentsAsClasses );
 	}
 
 	/**
@@ -458,7 +458,7 @@ public class DynamicObject implements IReferenceable {
 	 *
 	 */
 	public static MethodHandle toMethodHandle( Method method ) {
-		return DynamicJavaInteropService.toMethodHandle( method );
+		return DynamicInteropService.toMethodHandle( method );
 	}
 
 	/**
@@ -478,7 +478,7 @@ public class DynamicObject implements IReferenceable {
 	 * @return The class representation of the argument
 	 */
 	public static Class<?> argumentToClass( Object thisArg ) {
-		return DynamicJavaInteropService.argumentToClass( thisArg );
+		return DynamicInteropService.argumentToClass( thisArg );
 	}
 
 	/**
@@ -489,7 +489,7 @@ public class DynamicObject implements IReferenceable {
 	 * @return The array of classes
 	 */
 	public static Class<?>[] argumentsToClasses( Object... args ) {
-		return DynamicJavaInteropService.argumentsToClasses( args );
+		return DynamicInteropService.argumentsToClasses( args );
 	}
 
 	/**
@@ -500,7 +500,7 @@ public class DynamicObject implements IReferenceable {
 	 * @return The target instance or class, depending which one is set
 	 */
 	public static Object unWrap( Object param ) {
-		return DynamicJavaInteropService.unWrap( param );
+		return DynamicInteropService.unWrap( param );
 	}
 
 	/**
@@ -554,7 +554,7 @@ public class DynamicObject implements IReferenceable {
 	 */
 	@SuppressWarnings( "unchecked" )
 	public Object dereference( IBoxContext context, Key name, Boolean safe ) {
-		return DynamicJavaInteropService.dereference( context, this.targetClass, this.targetInstance, name, safe );
+		return DynamicInteropService.dereference( context, this.targetClass, this.targetInstance, name, safe );
 	}
 
 	/**
@@ -567,7 +567,7 @@ public class DynamicObject implements IReferenceable {
 	 * @return The requested return value or null
 	 */
 	public Object dereferenceAndInvoke( IBoxContext context, Key name, Object[] positionalArguments, Boolean safe ) {
-		return DynamicJavaInteropService.dereferenceAndInvoke( this.targetClass, this.targetInstance, context, name, positionalArguments, safe );
+		return DynamicInteropService.dereferenceAndInvoke( this.targetClass, this.targetInstance, context, name, positionalArguments, safe );
 	}
 
 	/**
@@ -580,7 +580,7 @@ public class DynamicObject implements IReferenceable {
 	 * @return The requested return value or null
 	 */
 	public Object dereferenceAndInvoke( IBoxContext context, Key name, Map<Key, Object> namedArguments, Boolean safe ) {
-		return DynamicJavaInteropService.dereferenceAndInvoke( this.targetClass, this.targetInstance, context, name, namedArguments, safe );
+		return DynamicInteropService.dereferenceAndInvoke( this.targetClass, this.targetInstance, context, name, namedArguments, safe );
 	}
 
 	/**
@@ -591,6 +591,6 @@ public class DynamicObject implements IReferenceable {
 	 */
 	@SuppressWarnings( "unchecked" )
 	public Object assign( IBoxContext context, Key name, Object value ) {
-		return DynamicJavaInteropService.assign( context, this.targetClass, this.targetInstance, name, value );
+		return DynamicInteropService.assign( context, this.targetClass, this.targetInstance, name, value );
 	}
 }

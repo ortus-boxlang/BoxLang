@@ -32,7 +32,7 @@ import ortus.boxlang.runtime.bifs.MemberDescriptor;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.dynamic.casters.KeyCaster;
 import ortus.boxlang.runtime.dynamic.casters.StringCaster;
-import ortus.boxlang.runtime.interop.DynamicJavaInteropService;
+import ortus.boxlang.runtime.interop.DynamicInteropService;
 import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.runnables.IClassRunnable;
 import ortus.boxlang.runtime.scopes.Key;
@@ -756,7 +756,7 @@ public class Struct implements IStruct, IListenable {
 			}
 		}
 
-		return DynamicJavaInteropService.invoke( this, name.getName(), safe, positionalArguments );
+		return DynamicInteropService.invoke( this, name.getName(), safe, positionalArguments );
 	}
 
 	/**
@@ -799,7 +799,7 @@ public class Struct implements IStruct, IListenable {
 			}
 		}
 
-		return DynamicJavaInteropService.invoke( this, name.getName(), safe, namedArguments );
+		return DynamicInteropService.invoke( this, name.getName(), safe, namedArguments );
 	}
 
 	/**
