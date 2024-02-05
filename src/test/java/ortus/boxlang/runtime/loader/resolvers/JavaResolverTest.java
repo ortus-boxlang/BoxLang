@@ -23,6 +23,7 @@ import static com.google.common.truth.Truth.assertThat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.logging.ConsoleHandler;
 
@@ -43,6 +44,21 @@ public class JavaResolverTest {
 		JavaResolver javaResolver = JavaResolver.getInstance();
 		assertThat( javaResolver.getName() ).isEqualTo( "JavaResolver" );
 		assertThat( javaResolver.getPrefix() ).isEqualTo( "java" );
+	}
+
+	@DisplayName( "It can find inner classes using the $ separator" )
+	@Test
+	public void testFindInnerClasses() {
+		JavaResolver			javaResolver	= JavaResolver.getInstance();
+		String					className		= "java.util.Map$Entry"; // Example class name
+		Optional<ClassLocation>	classLocation	= javaResolver.findFromSystem( className, new ArrayList<>() );
+
+		assertThat( classLocation.isPresent() ).isTrue();
+		assertThat( classLocation.get().clazz() ).isEqualTo( Map.Entry.class );
+		assertThat( classLocation.get().name() ).isEqualTo( "Entry" );
+		assertThat( classLocation.get().packageName() ).isEqualTo( "java.util" );
+		assertThat( classLocation.get().type() ).isEqualTo( ClassLocator.TYPE_JAVA );
+		assertThat( classLocation.get().module() ).isNull();
 	}
 
 	@DisplayName( "It can find classes from modules" )
