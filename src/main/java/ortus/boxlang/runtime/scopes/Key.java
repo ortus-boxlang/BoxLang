@@ -332,7 +332,8 @@ public class Key implements Comparable<Key>, Serializable {
 	/**
 	 * Constructor
 	 *
-	 * @param name The target key to use, which is the original case.
+	 * @param name                   The target key to use, which is the original case.
+	 * @param caseSensitive hether this key is case sensitve
 	 */
 	public Key( String name, Boolean caseSenstive ) {
 		this.name			= name;
@@ -354,7 +355,8 @@ public class Key implements Comparable<Key>, Serializable {
 	/**
 	 * Constructor for a key that is not a string
 	 *
-	 * @param name The target key to use, which is the original case.
+	 * @param name                   The target key to use, which is the original case.
+	 * @param caseSensitive hether this key is case sensitve
 	 */
 	public Key( String name, Object originalValue, Boolean caseSenstive ) {
 		this.name			= name;
@@ -455,6 +457,7 @@ public class Key implements Comparable<Key>, Serializable {
 	 * Static builder of a case-insensitive key using the incoming key name
 	 *
 	 * @param name The key name to use.
+	 * @param caseSensitive  Whether this key is case sensitve
 	 *
 	 * @return A case-insensitive key class
 	 */
