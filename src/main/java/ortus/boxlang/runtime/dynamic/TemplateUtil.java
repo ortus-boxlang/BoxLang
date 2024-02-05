@@ -25,7 +25,6 @@ import ortus.boxlang.runtime.components.net.HTTPParam;
 import ortus.boxlang.runtime.components.system.Dump;
 import ortus.boxlang.runtime.components.system.Include;
 import ortus.boxlang.runtime.components.system.SaveContent;
-import ortus.boxlang.runtime.components.validators.Validator;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.IStruct;
@@ -64,14 +63,11 @@ public class TemplateUtil {
 
 			// call validators on attributes)
 			for ( var attribute : component.getDeclaredAttributes() ) {
-				// Automatically enforce type, if set
-				Validator.TYPE.validate( context, component, attribute, attributes );
-				// Automatically enforce default value, if set
-				Validator.DEFAULT_VALUE.validate( context, component, attribute, attributes );
-				// Now run the rest of the validators
 				attribute.validate( context, component, attributes );
 			}
+			// Invoke the component here. The component is responsible for calling its body, if one exists.
 			component.invoke( context, attributes, componentBody );
+
 		} else {
 			throw new BoxRuntimeException( "Component [" + name.getName() + "] not implemented yet" );
 		}

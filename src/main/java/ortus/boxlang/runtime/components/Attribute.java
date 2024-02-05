@@ -34,33 +34,66 @@ import ortus.boxlang.runtime.types.IStruct;
  * @param requires     Attributes that are required for this attribute to be valid
  *
  */
-public record Attribute( Key name, String type, Set<Validator> validators, Object defaultValue, Set<Key> requires ) {
+public record Attribute( Key name, String type, Object defaultValue, Set<Validator> validators ) {
 
+	/**
+	 * Create an attribute declaration with a name accepting any type, but no default value or validators.
+	 * 
+	 * @param name The name of the attribute
+	 */
 	public Attribute( Key name ) {
 		this( name, "any" );
 	}
 
-	public Attribute( Key name, String type, Object defaultValue ) {
-		this( name, type, Set.of(), defaultValue );
-	}
-
+	/**
+	 * Create an attribute declaration with a name and type but no default value or validators.
+	 * 
+	 * @param name The name of the attribute
+	 * @param type The type of the attribute
+	 */
 	public Attribute( Key name, String type ) {
-		this( name, type, Set.of() );
+		this( name, type, null, Set.of() );
 	}
 
+	/**
+	 * Create an attribute declaration with a name and type and default value, but no validators.
+	 * 
+	 * @param name         The name of the attribute
+	 * @param type         The type of the attribute
+	 * @param defaultValue The default value of the attribute
+	 */
+	public Attribute( Key name, String type, Object defaultValue ) {
+		this( name, type, defaultValue, Set.of() );
+	}
+
+	/**
+	 * Create an attribute declaration with a name and type and validators but no default value.
+	 * 
+	 * @param name         The name of the attribute
+	 * @param type         The type of the attribute
+	 * @param defaultValue The default value of the attribute
+	 * @param validators   Validators for the attribute
+	 */
 	public Attribute( Key name, String type, Set<Validator> validators ) {
-		this( name, type, validators, null );
+		this( name, type, null, validators );
 	}
 
-	public Attribute( Key name, String type, Set<Validator> validators, Object defaultValue ) {
-		this( name, type, validators, defaultValue, Set.of() );
-	}
-
-	// validate myself
+	/**
+	 * Validate myself
+	 * 
+	 * @param context
+	 * @param component
+	 * @param attributes
+	 */
 	public void validate( IBoxContext context, Component component, IStruct attributes ) {
 		// loop over validators and call
 		for ( Validator validator : this.validators() ) {
+			// Automatically enforce type, if set. This always happens first.
+			Validator.TYPE.validate( context, component, this, attributes );
+			// Now run the rest of the validators
 			validator.validate( context, component, this, attributes );
+			// Automatically enforce default value, if set. This always happens last.
+			Validator.DEFAULT_VALUE.validate( context, component, this, attributes );
 		}
 	}
 

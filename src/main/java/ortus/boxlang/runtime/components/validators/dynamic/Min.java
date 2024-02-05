@@ -15,26 +15,34 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package ortus.boxlang.runtime.components.validators;
+package ortus.boxlang.runtime.components.validators.dynamic;
 
 import ortus.boxlang.runtime.components.Attribute;
 import ortus.boxlang.runtime.components.Component;
+import ortus.boxlang.runtime.components.validators.Validator;
 import ortus.boxlang.runtime.context.IBoxContext;
+import ortus.boxlang.runtime.dynamic.casters.DoubleCaster;
 import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.exceptions.BoxValidationException;
 
 /**
- * I check a string-based attribute to ensure it is not empty. If the attribute was not passed, I do nothing.
+ * I require a numeric arg that cannot be greater than the number I'm instantiated with
  */
-public class NonEmpty implements Validator {
+public class Min implements Validator {
+
+	private Number min;
+
+	public Min( Number min ) {
+		this.min = min;
+	}
 
 	public void validate( IBoxContext context, Component component, Attribute attribute, IStruct attributes ) {
 		// If it was passed...
 		if ( attributes.get( attribute.name() ) != null ) {
-			// ... it must be non-empty
-			if ( StringCaster.cast( attributes.get( attribute.name() ) ).isEmpty() ) {
-				throw new BoxValidationException( component, attribute, "cannot be empty." );
+			// then make sure it's not less than our threshold
+			if ( DoubleCaster.cast( attributes.get( attribute.name() ) ) < this.min.doubleValue() ) {
+				throw new BoxValidationException( component, attribute, "cannot be less than [" + StringCaster.cast( this.min ) + "]." );
 			}
 		}
 	}

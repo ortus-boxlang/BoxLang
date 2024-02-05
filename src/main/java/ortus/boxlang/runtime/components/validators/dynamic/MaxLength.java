@@ -15,34 +15,33 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package ortus.boxlang.runtime.components.validators;
-
-import java.util.ArrayList;
-import java.util.List;
+package ortus.boxlang.runtime.components.validators.dynamic;
 
 import ortus.boxlang.runtime.components.Attribute;
 import ortus.boxlang.runtime.components.Component;
+import ortus.boxlang.runtime.components.validators.Validator;
 import ortus.boxlang.runtime.context.IBoxContext;
-import ortus.boxlang.runtime.scopes.Key;
+import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.exceptions.BoxValidationException;
 
 /**
- * If this attribute is present, ensure that the required attributes are also present
+ * I require a string arg that cannot be of greater length than the threshold I'm instantiated with
  */
-public class Requires implements Validator {
+public class MaxLength implements Validator {
+
+	private Number maxLength;
+
+	public MaxLength( Number maxLength ) {
+		this.maxLength = maxLength;
+	}
 
 	public void validate( IBoxContext context, Component component, Attribute attribute, IStruct attributes ) {
-		if ( attributes.containsKey( attribute.name() ) ) {
-			List<String> missingAttributes = new ArrayList<>();
-			for ( Key required : attribute.requires() ) {
-				if ( !attributes.containsKey( required ) ) {
-					missingAttributes.add( required.getName() );
-				}
-			}
-			if ( !missingAttributes.isEmpty() ) {
-				String missingAttributesString = String.join( ", ", missingAttributes );
-				throw new BoxValidationException( component, attribute, "requires the following attributes to be present: " + missingAttributesString );
+		// If it was passed...
+		if ( attributes.get( attribute.name() ) != null ) {
+			// then make sure it's not greater than our threshold
+			if ( StringCaster.cast( attributes.get( attribute.name() ) ).length() >= this.maxLength.doubleValue() ) {
+				throw new BoxValidationException( component, attribute, "cannot be longer than [" + StringCaster.cast( this.maxLength ) + "] character(s)." );
 			}
 		}
 	}

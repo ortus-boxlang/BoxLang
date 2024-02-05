@@ -30,7 +30,7 @@ public interface IStruct extends Map<Key, Object>, IType, IReferenceable {
 	/**
 	 * The Available types of structs
 	 */
-	public enum TYPES {
+	public static enum TYPES {
 		LINKED,
 		SORTED,
 		DEFAULT,

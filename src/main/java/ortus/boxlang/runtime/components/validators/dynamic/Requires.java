@@ -15,37 +15,42 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package ortus.boxlang.runtime.components.validators;
+package ortus.boxlang.runtime.components.validators.dynamic;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Set;
 
 import ortus.boxlang.runtime.components.Attribute;
 import ortus.boxlang.runtime.components.Component;
+import ortus.boxlang.runtime.components.validators.Validator;
 import ortus.boxlang.runtime.context.IBoxContext;
-import ortus.boxlang.runtime.dynamic.casters.DoubleCaster;
-import ortus.boxlang.runtime.dynamic.casters.StringCaster;
+import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.exceptions.BoxValidationException;
 
 /**
- * I require a numeric arg that cannot be greater than the number I'm instantiated with
+ * If this attribute is present, ensure that the required attributes are also present
  */
-public class Max implements Validator {
+public class Requires implements Validator {
 
-	private Double max;
+	private Set<Key> attributeNames;
 
-	public Max( Double max ) {
-		this.max = max;
-	}
-
-	public Max( Integer max ) {
-		this.max = Double.valueOf( max );
+	public Requires( Set<Key> attributeNames ) {
+		this.attributeNames = attributeNames;
 	}
 
 	public void validate( IBoxContext context, Component component, Attribute attribute, IStruct attributes ) {
-		// If it was passed...
-		if ( attributes.get( attribute.name() ) != null ) {
-			// then make sure it's not greater than our threshold
-			if ( DoubleCaster.cast( attributes.get( attribute.name() ) ) > this.max ) {
-				throw new BoxValidationException( component, attribute, "cannot be greater than [" + StringCaster.cast( this.max ) + "]." );
+		if ( attributes.containsKey( attribute.name() ) ) {
+			List<String> missingAttributes = new ArrayList<>();
+			for ( Key required : attributeNames ) {
+				if ( !attributes.containsKey( required ) ) {
+					missingAttributes.add( required.getName() );
+				}
+			}
+			if ( !missingAttributes.isEmpty() ) {
+				String missingAttributesString = String.join( ", ", missingAttributes );
+				throw new BoxValidationException( component, attribute, "requires the following attributes to be present: " + missingAttributesString );
 			}
 		}
 	}
