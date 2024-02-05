@@ -11,6 +11,7 @@
  *
  * Every Module will have it's own ClassLoader that will be used to load the module libs and dependencies.
  */
+
 component{
 
 	/**
@@ -25,13 +26,13 @@ component{
 	 * Your module version. Try to use semantic versioning
 	 * @mandatory
 	 */
-	this.version = "1.0.0";
+	this.version = "2.0.0";
 
 	/**
 	 * The BoxLang mapping for your module.  All BoxLang modules are registered with an internal
 	 * mapping prefix of : bxModules.{this.mapping}, /bxmodules/{this.mapping}. Ex: bxModules.test, /bxmodules/test
 	 */
-	this.mapping = "disabledModule";
+	this.mapping = "test";
 
 	/**
 	 * Who built the module
@@ -41,7 +42,7 @@ component{
 	/**
 	 * The module description
 	 */
-	this.description = "This module does more amazing things";
+	this.description = "This module does amazing things";
 
 	/**
 	 * The module web URL
@@ -51,7 +52,7 @@ component{
 	/**
 	 * This boolean flag tells the module service to skip the module registration/activation process.
 	 */
-	this.disabled = true;
+	this.disabled = false;
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -61,10 +62,8 @@ component{
 
 	/**
 	 * Called by the ModuleService on module registration
-	 *
-	 * @runtime - The Runtime instance
 	 */
-	function configure( runtime ){
+	function configure(){
 		/**
 		 * Every module has a settings configuration object
 		 */
@@ -74,33 +73,54 @@ component{
 		};
 
 		/**
+		 * Every module can have a list of object mappings
+		 * that can be created by boxLang.  This is a great way
+		 * to create objects that can be used by the module
+		 * or other modules.
+		 * The mappings will be created in the following format:
+		 * bxModules.{this.mapping}.{mappingName}
+		 * Ex: bxModules.test.MyObject => bxModules.test.models.MyObject
+		 */
+		objectMappings = {
+			// { name="MyObject", class="models.utilities.MyObject" }
+		}
+
+		/**
+		 * Datasources can be defined by a module and they will be registered
+		 * for you in the runtime
+		 */
+		datasources = {
+			// { name="MyDSN", class="coldbox.system.datasources.ColdBoxDataSource", properties={dsn="mydsn"} }
+		};
+
+		/**
 		 * The module interceptors to register into the runtime
 		 */
 		interceptors = [
 			// { class="path.to.Interceptor", properties={} }
+			{ class : "#moduleRecord.invocationPath#.interceptors.Listener", properties : {
+				createdOn : now(),
+				by : "Luis Majano"
+			} }
 		];
 
 		/**
 		 * A list of custom interception points to register into the runtime
 		 */
-		customInterceptionPoints = [  ];
+		customInterceptionPoints = [ "onBxTestModule" ];
 	}
 
 	/**
 	 * Called by the ModuleService on module activation
-	 *
-	 * @runtime - The Runtime instance
 	 */
-	function onLoad( runtime ){
+	function onLoad(){
 
 	}
 
 	/**
 	 * Called by the ModuleService on module deactivation
-	 *
-	 * @runtime - The Runtime instance
 	 */
-	function onUnload( runtime ){
+	function onUnload(){
 
 	}
 
@@ -111,4 +131,8 @@ component{
 	 * You can listen to any Runtime events by creating the methods
 	 * that match the approved Runtime Interception Points
 	 */
+
+	 function afterModuleActivations(){
+		// do something
+	 }
 }
