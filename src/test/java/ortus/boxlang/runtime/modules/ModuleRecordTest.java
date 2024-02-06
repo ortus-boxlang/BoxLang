@@ -184,12 +184,15 @@ class ModuleRecordTest {
 		String			physicalPath	= Paths.get( "src/main/resources/modules/test" ).toAbsolutePath().toString();
 		ModuleRecord	moduleRecord	= new ModuleRecord( moduleName, physicalPath );
 		IBoxContext		context			= new ScriptingRequestBoxContext();
+		ModuleService	moduleService	= runtime.getModuleService();
 
 		// When
 		moduleRecord
 		    .loadDescriptor( context )
 		    .register( context )
 		    .activate( context );
+
+		moduleService.getRegistry().put( moduleName, moduleRecord );
 
 		// Then
 
@@ -201,20 +204,21 @@ class ModuleRecordTest {
 
 		// Register a class loader
 		assertThat( moduleRecord.hasClassLoader() ).isTrue();
-		assertThat( moduleRecord.findModuleClass( "HelloWorld", false ) ).isNotNull();
+		Class<?> clazz = moduleRecord.findModuleClass( "HelloWorld", false );
+		assertThat( clazz ).isNotNull();
+		assertThat( clazz.getName() ).isEqualTo( "HelloWorld" );
 
-		// Can do explicit resolution from the class resolver
+		// JavaResolver can find the class explicitly
 		Optional<ClassLocation> classLocation = JavaResolver.getInstance().findFromModules( "HelloWorld@test", List.of() );
 		assertThat( classLocation.isPresent() ).isTrue();
+		assertThat( classLocation.get().clazz().getName() ).isEqualTo( "HelloWorld" );
 
 		// Test the bif
 		// @formatter:off
-		runtime.executeSource(
-		    """
+		runtime.executeSource("""
 		       result = moduleHelloWorld( 'boxlang' );
 		    	result2 = moduleNow();
-		    """,
-		    context );
+		    """, context );
 		// @formatter:on
 
 		IScope variables = context.getScopeNearby( VariablesScope.name );

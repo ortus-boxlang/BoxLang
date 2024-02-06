@@ -131,50 +131,66 @@ public class JavaResolver extends BaseResolver {
 	 */
 	public Optional<ClassLocation> findFromModules( String fullyQualifiedName, List<ImportDefinition> imports ) {
 		// Do we have a explicit module name? path.to.Class@moduleName
-		String[]		parts			= fullyQualifiedName.split( "@" );
-		ModuleService	moduleService	= BoxRuntime.getInstance().getModuleService();
+		String[] parts = fullyQualifiedName.split( "@" );
 
 		// If we have a module name, then we need to load the class from the module explicitly
 		if ( parts.length == 2 ) {
-			Key		moduleName	= Key.of( parts[ 1 ] );
-			String	className	= parts[ 0 ];
-
-			// Verify the module exists, else throw up, as it was an explicit call
-			if ( !moduleService.hasModule( moduleName ) ) {
-				throw new BoxRuntimeException(
-				    String.format(
-				        "Module requested [%s] not found when looking for [%s]. Valid modules are: [{}]",
-				        moduleName,
-				        className,
-				        moduleService.getModuleNames()
-				    )
-				);
-			}
-
-			// Get the module class loader and try to load it
-			// We don't do safe, because the request was explicit
-			try {
-				var clazz = moduleService.getModuleRecord( moduleName ).findModuleClass( className, false );
-				return Optional.of(
-				    new ClassLocation(
-				        ClassUtils.getSimpleName( clazz ),
-				        this.name,
-				        ClassUtils.getPackageName( clazz ),
-				        ClassLocator.TYPE_JAVA,
-				        clazz,
-				        moduleName.getName()
-				    )
-				);
-			} catch ( ClassNotFoundException e ) {
-				logger.atError().setCause( e ).log( "Could not find class [{}] in requested module [{}]", className, moduleName.getName() );
-				throw new BoxRuntimeException(
-				    String.format( "Could not find class [%s] in requested module [%s]", className, moduleName.getName() ),
-				    e
-				);
-			}
+			return findFromModule( parts[ 0 ], parts[ 1 ], imports );
 		}
 
 		return Optional.ofNullable( null );
+	}
+
+	/**
+	 * Find a class from a specific module explicitly.
+	 *
+	 * @param fullyQualifiedName The fully qualified path of the class to load
+	 * @param moduleName         The name of the module to look in
+	 * @param imports            The list of imports to use
+	 *
+	 * @throws BoxRuntimeException If the module is not found
+	 *
+	 * @return The ClassLocation record wrapped in an optional if found, empty otherwise
+	 */
+	public Optional<ClassLocation> findFromModule( String fullyQualifiedName, String moduleName, List<ImportDefinition> imports ) {
+		Key				moduleNameKey	= Key.of( moduleName );
+		ModuleService	moduleService	= BoxRuntime.getInstance().getModuleService();
+
+		// Verify the module exists, else throw up, as it was an explicit call
+		if ( !moduleService.hasModule( moduleNameKey ) ) {
+			throw new BoxRuntimeException(
+			    String.format(
+			        "Module requested [%s] not found when looking for [%s]. Valid modules are: [%s]",
+			        moduleName,
+			        fullyQualifiedName,
+			        moduleService.getModuleNames()
+			    )
+			);
+		}
+
+		// Get the module class loader and try to load it
+		Class<?> clazz = null;
+		try {
+			clazz = moduleService.getModuleRecord( moduleNameKey ).findModuleClass( fullyQualifiedName, true );
+		} catch ( ClassNotFoundException e ) {
+			// We can't get here because we are using the safe flag. However Java is dumb!
+		}
+
+		// If we didn't find it, then return empty
+		if ( clazz == null ) {
+			return Optional.empty();
+		}
+
+		return Optional.of(
+		    new ClassLocation(
+		        ClassUtils.getSimpleName( clazz ),
+		        this.name,
+		        ClassUtils.getPackageName( clazz ),
+		        ClassLocator.TYPE_JAVA,
+		        clazz,
+		        moduleName
+		    )
+		);
 	}
 
 	/**

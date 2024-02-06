@@ -24,6 +24,7 @@ import java.net.URLClassLoader;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Stream;
@@ -31,6 +32,7 @@ import java.util.stream.Stream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import ortus.boxlang.runtime.bifs.global.type.NullValue;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
@@ -50,6 +52,11 @@ public class DynamicClassLoader extends URLClassLoader {
 	 * The cache of loaded classes
 	 */
 	private final ConcurrentHashMap<String, Class<?>>	loadedClasses	= new ConcurrentHashMap<>();
+
+	/**
+	 * The cache of unfound classes, for performance reasons
+	 */
+	private final ConcurrentHashMap<String, Class<?>>	unfoundClasses	= new ConcurrentHashMap<>();
 
 	/**
 	 * Logger
@@ -110,34 +117,48 @@ public class DynamicClassLoader extends URLClassLoader {
 
 		logger.atDebug().log( "[{}] Discovering class: [{}]", this.nameAsKey.getName(), className );
 
-		// 1. Check cache first and return if found
-		Class<?> cachedClass = loadedClasses.get( className );
+		// 1. Check the loaded cache first and return if found
+		Class<?> cachedClass = this.loadedClasses.get( className );
 		if ( cachedClass != null ) {
 			logger.atDebug().log( "[{}].[{}] : Class found in cache", this.nameAsKey.getName(), className );
 			return cachedClass;
 		}
 
-		// 2. Attempt to load from JARs/classes in the seeded URLs
+		// 2. Check the unfound cache, and if already there, return just null or throw an exception depending on the safe flag
+		if ( this.unfoundClasses.containsKey( className ) ) {
+			logger.atDebug().log( "[{}].[{}] : Class not found in cache, but already in unfound cache", this.nameAsKey.getName(), className );
+			if ( safe ) {
+				return null;
+			}
+			throw new ClassNotFoundException( String.format( "Class [%s] not found in class loader [%s]", className, this.nameAsKey.getName() ) );
+		}
+
+		// 3. Attempt to load from JARs/classes in the seeded URLs
 		try {
 			cachedClass = super.findClass( className );
 			logger.atDebug().log( "[{}].[{}] : Class found locally", this.nameAsKey.getName(), className );
 		} catch ( ClassNotFoundException e ) {
+
 			// 3. If not found in JARs, delegate to parent class loader
-			logger.atDebug().log( "[{}].[{}] : Class not found locally, trying the parent...", this.nameAsKey.getName(), className );
 			try {
+				logger.atDebug().log( "[{}].[{}] : Class not found locally, trying the parent...", this.nameAsKey.getName(), className );
 				cachedClass = getDynamicParent().loadClass( className );
 				logger.atDebug().log( "[{}].[{}] : Class found in parent", this.nameAsKey.getName(), className );
-			} catch ( ClassNotFoundException e1 ) {
-				if ( safe ) {
+			} catch ( ClassNotFoundException parentException ) {
+				// Add to the unfound cache
+				this.unfoundClasses.put( className, NullValue.class );
+				// If not safe, throw the exception
+				if ( !safe ) {
 					throw new ClassNotFoundException( String.format( "Class [%s] not found in class loader [%s]", className, this.nameAsKey.getName() ) );
 				}
 				logger.atDebug().log( "[{}].[{}] : Class not found in parent", this.nameAsKey.getName(), className );
 			}
+
 		}
 
 		// 4. Put the loaded class in the cache if found
 		if ( cachedClass != null ) {
-			loadedClasses.put( className, cachedClass );
+			this.loadedClasses.put( className, cachedClass );
 		}
 
 		return cachedClass;
@@ -194,9 +215,45 @@ public class DynamicClassLoader extends URLClassLoader {
 
 	/**
 	 * Size of the cache
+	 *
+	 * @return The size of the cache
 	 */
 	public int getCacheSize() {
 		return this.loadedClasses.size();
+	}
+
+	/**
+	 * Get the cache of unfound classes
+	 *
+	 * @return The cache of unfound classes
+	 */
+	public Map<String, Class<?>> getUnfoundClasses() {
+		return this.unfoundClasses;
+	}
+
+	/**
+	 * Get the set of keys in the unfound class cache
+	 *
+	 * @return The keys in the unfound class cache
+	 */
+	public Set<String> getUnfoundClassesKeys() {
+		return this.unfoundClasses.keySet();
+	}
+
+	/**
+	 * How many unfound classes we have found
+	 *
+	 * @return The size of the unfound classes
+	 */
+	public int getUnfoundClassesSize() {
+		return this.unfoundClasses.size();
+	}
+
+	/**
+	 * Clear the unfound class cache
+	 */
+	public void clearUnfoundClasses() {
+		this.unfoundClasses.clear();
 	}
 
 	/**

@@ -321,7 +321,8 @@ public class ModuleRecord {
 				this.classLoader = new DynamicClassLoader(
 				    this.name,
 				    DynamicClassLoader.getJarURLs( libsPath ),
-				    ClassLoader.getSystemClassLoader() );
+				    ClassLoader.getSystemClassLoader()
+				);
 			} catch ( IOException e ) {
 				logger.error( "Error while creating the DynamicClassLoader for the module [{}]", this.name, e );
 				throw new BoxRuntimeException( "Error while creating the DynamicClassLoader for the module [" + this.name + "]", e );
