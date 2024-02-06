@@ -80,12 +80,18 @@ public class StructNew extends BIF {
 	}
 
 	/**
-	 * Describe what the invocation of your bif function does
+	 * Creates a new struct of the specified type
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.foo Describe any expected arguments
+	 * @argument.type The struct type
+	 *
+	 * @argument.sortType An optional sort type to apply to that type
+	 *
+	 * @argument.sortOrder The sort order applicable to the sortType argument
+	 *
+	 * @argument.callback An optional callback to use as the sorting function
 	 */
 	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
 		Key typeKey = Key.of( arguments.getAsString( Key.type ) );
