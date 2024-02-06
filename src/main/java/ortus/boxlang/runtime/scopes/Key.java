@@ -290,6 +290,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key	variant						= Key.of( "variant" );
 	public static final Key	version						= Key.of( "version" );
 	public static final Key	webURL						= Key.of( "webURL" );
+	public static final Key	XSL							= Key.of( "XSL" );
 	public static final Key	XML							= Key.of( "XML" );
 	public static final Key	XMLAttributes				= Key.of( "XMLAttributes" );
 	public static final Key	XMLCdata					= Key.of( "XMLCdata" );

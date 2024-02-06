@@ -69,4 +69,18 @@ public class XMLParseTest {
 		assertThat( variables.get( result ) ).isInstanceOf( XML.class );
 	}
 
+	@DisplayName( "It can parse from file" )
+	@Test
+	public void testCanParseFromFile() {
+		instance.executeSource(
+		    """
+		    import java.io.File;
+		      xml = new File( "src/test/java/ortus/boxlang/runtime/bifs/global/xml/document.xml" ).getAbsolutePath();
+
+		         result = XMLParse( xml );
+		         """,
+		    context );
+		assertThat( variables.get( result ) ).isInstanceOf( XML.class );
+	}
+
 }
