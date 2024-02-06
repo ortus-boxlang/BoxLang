@@ -212,6 +212,10 @@ class ModuleRecordTest {
 		Optional<ClassLocation> classLocation = JavaResolver.getInstance().findFromModules( "HelloWorld@test", List.of() );
 		assertThat( classLocation.isPresent() ).isTrue();
 		assertThat( classLocation.get().clazz().getName() ).isEqualTo( "HelloWorld" );
+		// JavaResolver can find the class by discovery, it should interrogate all modules for it.
+		classLocation = JavaResolver.getInstance().findFromModules( "HelloWorld", List.of() );
+		assertThat( classLocation.isPresent() ).isTrue();
+		assertThat( classLocation.get().clazz().getName() ).isEqualTo( "HelloWorld" );
 
 		// Test the bif
 		// @formatter:off

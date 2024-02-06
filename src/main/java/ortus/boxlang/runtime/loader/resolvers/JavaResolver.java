@@ -135,10 +135,32 @@ public class JavaResolver extends BaseResolver {
 
 		// If we have a module name, then we need to load the class from the module explicitly
 		if ( parts.length == 2 ) {
-			return findFromModule( parts[ 0 ], parts[ 1 ], imports );
+			return findFromModule( parts[ 0 ], Key.of( parts[ 1 ] ), imports );
 		}
 
-		return Optional.ofNullable( null );
+		// Otherwise, we need to search all the modules
+		return findFromAllModules( fullyQualifiedName, imports );
+	}
+
+	/**
+	 * Find a class from all the registered runtime modules by asking them individually
+	 *
+	 * @param fullyQualifiedName The fully qualified path of the class to load
+	 * @param imports            The list of imports to use
+	 *
+	 * @return The ClassLocation record wrapped in an optional if found, empty otherwise
+	 */
+	public Optional<ClassLocation> findFromAllModules( String fullyQualifiedName, List<ImportDefinition> imports ) {
+		// Loop through all the modules and try to locate the class requested
+		// First one found wins
+		return BoxRuntime.getInstance()
+		    .getModuleService()
+		    .getModuleNames()
+		    .stream()
+		    .map( moduleName -> findFromModule( fullyQualifiedName, moduleName, imports ) )
+		    .filter( Optional::isPresent )
+		    .map( Optional::get )
+		    .findFirst();
 	}
 
 	/**
@@ -152,16 +174,15 @@ public class JavaResolver extends BaseResolver {
 	 *
 	 * @return The ClassLocation record wrapped in an optional if found, empty otherwise
 	 */
-	public Optional<ClassLocation> findFromModule( String fullyQualifiedName, String moduleName, List<ImportDefinition> imports ) {
-		Key				moduleNameKey	= Key.of( moduleName );
-		ModuleService	moduleService	= BoxRuntime.getInstance().getModuleService();
+	public Optional<ClassLocation> findFromModule( String fullyQualifiedName, Key moduleName, List<ImportDefinition> imports ) {
+		ModuleService moduleService = BoxRuntime.getInstance().getModuleService();
 
 		// Verify the module exists, else throw up, as it was an explicit call
-		if ( !moduleService.hasModule( moduleNameKey ) ) {
+		if ( !moduleService.hasModule( moduleName ) ) {
 			throw new BoxRuntimeException(
 			    String.format(
 			        "Module requested [%s] not found when looking for [%s]. Valid modules are: [%s]",
-			        moduleName,
+			        moduleName.getName(),
 			        fullyQualifiedName,
 			        moduleService.getModuleNames()
 			    )
@@ -171,7 +192,7 @@ public class JavaResolver extends BaseResolver {
 		// Get the module class loader and try to load it
 		Class<?> clazz = null;
 		try {
-			clazz = moduleService.getModuleRecord( moduleNameKey ).findModuleClass( fullyQualifiedName, true );
+			clazz = moduleService.getModuleRecord( moduleName ).findModuleClass( fullyQualifiedName, true );
 		} catch ( ClassNotFoundException e ) {
 			// We can't get here because we are using the safe flag. However Java is dumb!
 		}
@@ -188,7 +209,7 @@ public class JavaResolver extends BaseResolver {
 		        ClassUtils.getPackageName( clazz ),
 		        ClassLocator.TYPE_JAVA,
 		        clazz,
-		        moduleName
+		        moduleName.getName()
 		    )
 		);
 	}
