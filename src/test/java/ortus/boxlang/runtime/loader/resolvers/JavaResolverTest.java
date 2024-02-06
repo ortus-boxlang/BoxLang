@@ -81,8 +81,8 @@ public class JavaResolverTest {
 	@Test
 	public void testFindFromModules() {
 		JavaResolver	javaResolver	= JavaResolver.getInstance();
-		String			className		= "java.util.Map"; // Example class name
-		assertThat( javaResolver.findFromModules( className, new ArrayList<>() ).isPresent() ).isFalse();
+		String			className		= "java.util.Map";
+		assertThat( javaResolver.findFromModules( className, new ArrayList<>() ).isPresent() ).isTrue();
 	}
 
 	@DisplayName( "It can find classes from the system" )
