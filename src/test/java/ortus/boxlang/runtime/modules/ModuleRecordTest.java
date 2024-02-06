@@ -22,6 +22,8 @@ import static com.google.common.truth.Truth.assertThat;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Instant;
+import java.util.List;
+import java.util.Optional;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -31,6 +33,8 @@ import org.junit.jupiter.api.Test;
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
+import ortus.boxlang.runtime.loader.ClassLocator.ClassLocation;
+import ortus.boxlang.runtime.loader.resolvers.JavaResolver;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
@@ -174,7 +178,7 @@ class ModuleRecordTest {
 
 	@DisplayName( "Can activate a module descriptor" )
 	@Test
-	void testItCanActivateAModule() {
+	void testItCanActivateAModule() throws ClassNotFoundException {
 		// Given
 		Key				moduleName		= new Key( "test" );
 		String			physicalPath	= Paths.get( "src/main/resources/modules/test" ).toAbsolutePath().toString();
@@ -197,6 +201,11 @@ class ModuleRecordTest {
 
 		// Register a class loader
 		assertThat( moduleRecord.hasClassLoader() ).isTrue();
+		assertThat( moduleRecord.findModuleClass( "HelloWorld", false ) ).isNotNull();
+
+		// Can do explicit resolution from the class resolver
+		Optional<ClassLocation> classLocation = JavaResolver.getInstance().findFromModules( "HelloWorld@test", List.of() );
+		assertThat( classLocation.isPresent() ).isTrue();
 
 		// Test the bif
 		// @formatter:off

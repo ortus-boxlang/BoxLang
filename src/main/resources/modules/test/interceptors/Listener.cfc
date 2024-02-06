@@ -4,6 +4,10 @@ component{
 		// Create The Hello Model
 		var hello = new bxModules.test.models.Hello();
 		printLn( hello.sayHello() );
+
+		// // Java Class Integration
+		// var javaHello = new java:HelloWorld@test();
+		// printLn( javaHello.hello() );
 	}
 
 	function afterModuleActivations( data ){

@@ -81,7 +81,7 @@ public class BaseResolver implements IClassResolver {
 	 * @return The resolver name
 	 */
 	public String getName() {
-		return name;
+		return this.name;
 	}
 
 	/**
@@ -92,7 +92,7 @@ public class BaseResolver implements IClassResolver {
 	 * @return The prefix
 	 */
 	public String getPrefix() {
-		return prefix;
+		return this.prefix;
 	}
 
 	/**
@@ -101,7 +101,7 @@ public class BaseResolver implements IClassResolver {
 	 * @return The importCache set
 	 */
 	public Set<String> getImportCache() {
-		return importCache;
+		return this.importCache;
 	}
 
 	/**
@@ -110,14 +110,14 @@ public class BaseResolver implements IClassResolver {
 	 * @return The importCache size
 	 */
 	public Integer getImportCacheSize() {
-		return importCache.size();
+		return this.importCache.size();
 	}
 
 	/**
 	 * Clear the import cache
 	 */
 	public void clearImportCache() {
-		importCache.clear();
+		this.importCache.clear();
 	}
 
 	/**

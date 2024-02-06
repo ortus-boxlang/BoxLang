@@ -334,43 +334,6 @@ public class ModuleService extends BaseService {
 	}
 
 	/**
-	 * Get the module registry
-	 */
-	public Map<Key, ModuleRecord> getRegistry() {
-		return this.registry;
-	}
-
-	/**
-	 * This method scans all possible module locations and builds the module registry
-	 * of all modules found. This method doesn't activate the modules, it just registers them.
-	 * Duplicate modules are not allowed, first one wins.
-	 */
-	private void buildRegistry() {
-		this.modulePaths
-		    .stream()
-		    // Walks the path and returns a stream of discovered modules for this path
-		    .flatMap( path -> {
-			    try {
-				    return Files.walk( path, 1 );
-			    } catch ( IOException e ) {
-				    throw new BoxRuntimeException( "Error walking module path: " + path.toString(), e );
-			    }
-		    } )
-		    // Exclude the path if it is a root path in the `modulePaths` list
-		    .filter( filePath -> !this.modulePaths.contains( filePath ) )
-		    // Only module folders
-		    .filter( Files::isDirectory )
-		    // Only where a ModuleConfig.bx exists in the root
-		    .filter( filePath -> Files.exists( filePath.resolve( MODULE_DESCRIPTOR ) ) )
-		    // Filter out already registered modules
-		    .filter( filePath -> !this.registry.containsKey( Key.of( filePath.getFileName().toString() ) ) )
-		    // Convert each filePath to a discovered ModuleRecord
-		    .map( filePath -> new ModuleRecord( Key.of( filePath.getFileName().toString() ), filePath.toString() ) )
-		    // Collect the stream into the module registry
-		    .forEach( moduleRecord -> this.registry.put( moduleRecord.name, moduleRecord ) );
-	}
-
-	/**
 	 * --------------------------------------------------------------------------
 	 * Activations
 	 * --------------------------------------------------------------------------
@@ -534,6 +497,44 @@ public class ModuleService extends BaseService {
 	 */
 
 	/**
+	 * Get the module registry
+	 */
+	public Map<Key, ModuleRecord> getRegistry() {
+		return this.registry;
+	}
+
+	/**
+	 * Get a list of module names in the registry
+	 *
+	 * @return The list of module names
+	 */
+	public List<Key> getModuleNames() {
+		return new ArrayList<>( this.registry.keySet() );
+	}
+
+	/**
+	 * Get a module record from the registry
+	 *
+	 * @param name The name of the module to get
+	 *
+	 * @return The module record or null if not found
+	 */
+	public ModuleRecord getModuleRecord( Key name ) {
+		return this.registry.get( name );
+	}
+
+	/**
+	 * Verify if we have a module in the registry
+	 *
+	 * @param name The name of the module to verify
+	 *
+	 * @return True if the module is in the registry, false otherwise
+	 */
+	public boolean hasModule( Key name ) {
+		return this.registry.containsKey( name );
+	}
+
+	/**
 	 * Add a module path to the list of paths to search for modules.
 	 * This has to be an absolute path on disk or a relative path to the runtime resources using forward slashes.
 	 *
@@ -640,5 +641,35 @@ public class ModuleService extends BaseService {
 		}
 
 		return this.coreModulesFileSystem;
+	}
+
+	/**
+	 * This method scans all possible module locations and builds the module registry
+	 * of all modules found. This method doesn't activate the modules, it just registers them.
+	 * Duplicate modules are not allowed, first one wins.
+	 */
+	private void buildRegistry() {
+		this.modulePaths
+		    .stream()
+		    // Walks the path and returns a stream of discovered modules for this path
+		    .flatMap( path -> {
+			    try {
+				    return Files.walk( path, 1 );
+			    } catch ( IOException e ) {
+				    throw new BoxRuntimeException( "Error walking module path: " + path.toString(), e );
+			    }
+		    } )
+		    // Exclude the path if it is a root path in the `modulePaths` list
+		    .filter( filePath -> !this.modulePaths.contains( filePath ) )
+		    // Only module folders
+		    .filter( Files::isDirectory )
+		    // Only where a ModuleConfig.bx exists in the root
+		    .filter( filePath -> Files.exists( filePath.resolve( MODULE_DESCRIPTOR ) ) )
+		    // Filter out already registered modules
+		    .filter( filePath -> !this.registry.containsKey( Key.of( filePath.getFileName().toString() ) ) )
+		    // Convert each filePath to a discovered ModuleRecord
+		    .map( filePath -> new ModuleRecord( Key.of( filePath.getFileName().toString() ), filePath.toString() ) )
+		    // Collect the stream into the module registry
+		    .forEach( moduleRecord -> this.registry.put( moduleRecord.name, moduleRecord ) );
 	}
 }

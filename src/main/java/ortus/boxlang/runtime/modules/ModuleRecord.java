@@ -670,6 +670,20 @@ public class ModuleRecord {
 	}
 
 	/**
+	 * Find a class in the module class loader first and then the parent.
+	 *
+	 * @param className The name of the class to find in the module's libs
+	 * @param safe      Whether to throw an exception if the class is not found
+	 *
+	 * @return The class if found, null otherwise
+	 *
+	 * @throws ClassNotFoundException If the class is not found
+	 */
+	public Class<?> findModuleClass( String className, Boolean safe ) throws ClassNotFoundException {
+		return hasClassLoader() ? this.classLoader.findClass( className, safe ) : null;
+	}
+
+	/**
 	 * This method activates the module in the runtime.
 	 * Called by the ModuleService if the module is allowed to be activated or not
 	 *

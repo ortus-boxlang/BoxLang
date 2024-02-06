@@ -87,16 +87,30 @@ public class DynamicClassLoader extends URLClassLoader {
 	}
 
 	/**
-	 * Find a class in the class loader or delegate to the parent
+	 * Find a class in the class loader or delegate to the parent. If not found, then throw an exception
 	 *
 	 * @param className The name of the class to find
 	 */
 	@Override
-	protected Class<?> findClass( String className ) throws ClassNotFoundException {
+	public Class<?> findClass( String className ) throws ClassNotFoundException {
+		return findClass( className, false );
+	}
+
+	/**
+	 * Find a class in the class loader or delegate to the parent
+	 *
+	 * @param className The name of the class to find
+	 * @param safe      Whether to throw an exception if the class is not found
+	 */
+	public Class<?> findClass( String className, Boolean safe ) throws ClassNotFoundException {
+		// Default it to false
+		if ( safe == null ) {
+			safe = false;
+		}
 
 		logger.atDebug().log( "[{}] Discovering class: [{}]", this.nameAsKey.getName(), className );
 
-		// 1. Check cache first
+		// 1. Check cache first and return if found
 		Class<?> cachedClass = loadedClasses.get( className );
 		if ( cachedClass != null ) {
 			logger.atDebug().log( "[{}].[{}] : Class found in cache", this.nameAsKey.getName(), className );
@@ -110,12 +124,21 @@ public class DynamicClassLoader extends URLClassLoader {
 		} catch ( ClassNotFoundException e ) {
 			// 3. If not found in JARs, delegate to parent class loader
 			logger.atDebug().log( "[{}].[{}] : Class not found locally, trying the parent...", this.nameAsKey.getName(), className );
-			cachedClass = getDynamicParent().loadClass( className );
-			logger.atDebug().log( "[{}].[{}] : Class found in parent", this.nameAsKey.getName(), className );
+			try {
+				cachedClass = getDynamicParent().loadClass( className );
+				logger.atDebug().log( "[{}].[{}] : Class found in parent", this.nameAsKey.getName(), className );
+			} catch ( ClassNotFoundException e1 ) {
+				if ( safe ) {
+					throw new ClassNotFoundException( String.format( "Class [%s] not found in class loader [%s]", className, this.nameAsKey.getName() ) );
+				}
+				logger.atDebug().log( "[{}].[{}] : Class not found in parent", this.nameAsKey.getName(), className );
+			}
 		}
 
-		// 4. Put the loaded class in the cache
-		loadedClasses.put( className, cachedClass );
+		// 4. Put the loaded class in the cache if found
+		if ( cachedClass != null ) {
+			loadedClasses.put( className, cachedClass );
+		}
 
 		return cachedClass;
 	}

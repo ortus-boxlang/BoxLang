@@ -26,10 +26,14 @@ import org.apache.commons.lang3.ClassUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.loader.ClassLocator;
 import ortus.boxlang.runtime.loader.ClassLocator.ClassLocation;
 import ortus.boxlang.runtime.loader.ImportDefinition;
+import ortus.boxlang.runtime.scopes.Key;
+import ortus.boxlang.runtime.services.ModuleService;
+import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
 /**
  * This resolver deals with Java classes only.
@@ -126,6 +130,50 @@ public class JavaResolver extends BaseResolver {
 	 * @return The loaded class or null if not found
 	 */
 	public Optional<ClassLocation> findFromModules( String fullyQualifiedName, List<ImportDefinition> imports ) {
+		// Do we have a explicit module name? path.to.Class@moduleName
+		String[]		parts			= fullyQualifiedName.split( "@" );
+		ModuleService	moduleService	= BoxRuntime.getInstance().getModuleService();
+
+		// If we have a module name, then we need to load the class from the module explicitly
+		if ( parts.length == 2 ) {
+			Key		moduleName	= Key.of( parts[ 1 ] );
+			String	className	= parts[ 0 ];
+
+			// Verify the module exists, else throw up, as it was an explicit call
+			if ( !moduleService.hasModule( moduleName ) ) {
+				throw new BoxRuntimeException(
+				    String.format(
+				        "Module requested [%s] not found when looking for [%s]. Valid modules are: [{}]",
+				        moduleName,
+				        className,
+				        moduleService.getModuleNames()
+				    )
+				);
+			}
+
+			// Get the module class loader and try to load it
+			// We don't do safe, because the request was explicit
+			try {
+				var clazz = moduleService.getModuleRecord( moduleName ).findModuleClass( className, false );
+				return Optional.of(
+				    new ClassLocation(
+				        ClassUtils.getSimpleName( clazz ),
+				        this.name,
+				        ClassUtils.getPackageName( clazz ),
+				        ClassLocator.TYPE_JAVA,
+				        clazz,
+				        moduleName.getName()
+				    )
+				);
+			} catch ( ClassNotFoundException e ) {
+				logger.atError().setCause( e ).log( "Could not find class [{}] in requested module [{}]", className, moduleName.getName() );
+				throw new BoxRuntimeException(
+				    String.format( "Could not find class [%s] in requested module [%s]", className, moduleName.getName() ),
+				    e
+				);
+			}
+		}
+
 		return Optional.ofNullable( null );
 	}
 
@@ -144,7 +192,7 @@ public class JavaResolver extends BaseResolver {
 			return Optional.of(
 			    new ClassLocation(
 			        ClassUtils.getSimpleName( clazz ),
-			        name,
+			        this.name,
 			        ClassUtils.getPackageName( clazz ),
 			        ClassLocator.TYPE_JAVA,
 			        clazz,
