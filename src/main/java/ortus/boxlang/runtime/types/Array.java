@@ -619,16 +619,6 @@ public class Array implements List<Object>, IType, IReferenceable, IListenable {
 			return memberDescriptor.invoke( context, this, positionalArguments );
 		}
 
-		// Member functions here
-		// temp workaround for unit test src\test\java\TestCases\phase2\ObjectLiteralTest.java
-		if ( name.equals( Key.of( "avg" ) ) ) {
-			Double result = 0D;
-			for ( Object o : wrapped ) {
-				result += DoubleCaster.cast( o );
-			}
-			return result / wrapped.size();
-		}
-
 		return DynamicInteropService.invoke( this, name.getName(), safe, positionalArguments );
 	}
 
@@ -646,16 +636,6 @@ public class Array implements List<Object>, IType, IReferenceable, IListenable {
 		MemberDescriptor memberDescriptor = functionService.getMemberMethod( name, BoxLangType.ARRAY );
 		if ( memberDescriptor != null ) {
 			return memberDescriptor.invoke( context, this, namedArguments );
-		}
-
-		// Member functions here
-		// temp workaround for unit test src\test\java\TestCases\phase2\ObjectLiteralTest.java
-		if ( name.equals( Key.of( "avg" ) ) ) {
-			Double result = 0D;
-			for ( Object o : wrapped ) {
-				result += DoubleCaster.cast( o );
-			}
-			return result / wrapped.size();
 		}
 
 		return DynamicInteropService.invoke( this, name.getName(), safe, namedArguments );

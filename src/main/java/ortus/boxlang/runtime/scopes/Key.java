@@ -77,8 +77,8 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key	arrayFind					= Key.of( "arrayFind" );
 	public static final Key	arrayFindAll				= Key.of( "arrayFindAll" );
 	public static final Key	attribute					= Key.of( "attribute" );
-	public static final Key	attributes					= Key.of( "attributes" );
 	public static final Key	attributeCollection			= Key.of( "attributeCollection" );
+	public static final Key	attributes					= Key.of( "attributes" );
 	public static final Key	author						= Key.of( "author" );
 	public static final Key	boxBif						= Key.of( "BoxBif" );
 	public static final Key	boxMember					= Key.of( "BoxMember" );
@@ -196,9 +196,9 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key	maxThreads					= Key.of( "maxThreads" );
 	public static final Key	merge						= Key.of( "merge" );
 	public static final Key	message						= Key.of( "message" );
-	public static final Key	mimetype					= Key.of( "mimetype " );
 	public static final Key	millisecond					= Key.of( "millisecond" );
 	public static final Key	milliseconds				= Key.of( "milliseconds" );
+	public static final Key	mimetype					= Key.of( "mimetype " );
 	public static final Key	min							= Key.of( "min" );
 	public static final Key	minute						= Key.of( "minute" );
 	public static final Key	minutes						= Key.of( "minutes" );
@@ -232,6 +232,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key	overwrite					= Key.of( "overwrite" );
 	public static final Key	parallel					= Key.of( "parallel" );
 	public static final Key	parameters					= Key.of( "parameters" );
+	public static final Key	params						= Key.of( "params" );
 	public static final Key	path						= Key.of( "path" );
 	public static final Key	pattern						= Key.of( "pattern" );
 	public static final Key	position					= Key.of( "position" );
@@ -289,6 +290,23 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key	variant						= Key.of( "variant" );
 	public static final Key	version						= Key.of( "version" );
 	public static final Key	webURL						= Key.of( "webURL" );
+	public static final Key	XML							= Key.of( "XML" );
+	public static final Key	XMLAttributes				= Key.of( "XMLAttributes" );
+	public static final Key	XMLCdata					= Key.of( "XMLCdata" );
+	public static final Key	XMLChildren					= Key.of( "XMLChildren" );
+	public static final Key	XMLComment					= Key.of( "XMLComment" );
+	public static final Key	XMLDocType					= Key.of( "XMLDocType" );
+	public static final Key	XMLName						= Key.of( "XMLName" );
+	public static final Key	XMLNodes					= Key.of( "XMLNodes" );
+	public static final Key	XMLNode						= Key.of( "XMLNode" );
+	public static final Key	XMLNsPrefix					= Key.of( "XMLNsPrefix" );
+	public static final Key	XMLNsURI					= Key.of( "XMLNsURI" );
+	public static final Key	XMLParent					= Key.of( "XMLParent" );
+	public static final Key	xpath						= Key.of( "xpath" );
+	public static final Key	XMLRoot						= Key.of( "XMLRoot" );
+	public static final Key	XMLText						= Key.of( "XMLText" );
+	public static final Key	XMLType						= Key.of( "XMLType" );
+	public static final Key	XMLValue					= Key.of( "XMLValue" );
 	public static final Key	year						= Key.of( "year" );
 
 	public static final Key	EMPTY						= Key.of( "" );

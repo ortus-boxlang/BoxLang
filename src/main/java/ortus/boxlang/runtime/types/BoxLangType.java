@@ -34,7 +34,8 @@ public enum BoxLangType {
 	NUMERIC( Key._NUMERIC ),
 	QUERY( Key._QUERY ),
 	STRING( Key._STRING ),
-	STRUCT( Key._STRUCT );
+	STRUCT( Key._STRUCT ),
+	XML( Key.XML );
 
 	/**
 	 * This class is used to store the key of the enum.

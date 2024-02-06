@@ -1037,6 +1037,14 @@ public class Struct implements IStruct, IListenable {
 	}
 
 	/**
+	 * Convenience method for getting cast as XML
+	 * Does NOT perform BoxLang casting, only Java cast so the object needs to actually be castable
+	 */
+	public XML getAsXML( Key key ) {
+		return ( XML ) DynamicObject.unWrap( get( key ) );
+	}
+
+	/**
 	 * Convenience method for getting cast as BoxRunnable
 	 * Does NOT perform BoxLang casting, only Java cast so the object needs to actually be castable
 	 */

@@ -24,6 +24,7 @@ import java.text.DecimalFormat;
 import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.DateTime;
+import ortus.boxlang.runtime.types.XML;
 import ortus.boxlang.runtime.types.exceptions.BoxCastException;
 
 /**
@@ -113,6 +114,10 @@ public class StringCaster {
 
 		if ( object instanceof byte[] b ) {
 			return new String( b );
+		}
+
+		if ( object instanceof XML xml ) {
+			return xml.asString();
 		}
 
 		if ( fail ) {
