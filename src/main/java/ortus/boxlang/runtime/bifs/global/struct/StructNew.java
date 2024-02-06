@@ -25,45 +25,30 @@ import java.util.HashMap;
 import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
 import ortus.boxlang.runtime.context.IBoxContext;
-import ortus.boxlang.runtime.dynamic.casters.DoubleCaster;
-import ortus.boxlang.runtime.operators.Compare;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
+import ortus.boxlang.runtime.util.StructUtil;
 
 @BoxBIF
 
 public class StructNew extends BIF {
 
-	private static final HashMap<Key, IStruct.TYPES>	typeMap		= new HashMap<Key, IStruct.TYPES>() {
+	private static final HashMap<Key, IStruct.TYPES> typeMap = new HashMap<Key, IStruct.TYPES>() {
 
-																		{
-																			put( Key.of( "default" ), IStruct.TYPES.DEFAULT );
-																			put( Key.of( "ordered" ), IStruct.TYPES.LINKED );
-																			put( Key.of( "sorted" ), IStruct.TYPES.SORTED );
-																			put( Key.of( "soft" ), IStruct.TYPES.SOFT );
-																			put( Key.of( "weak" ), IStruct.TYPES.WEAK );
-																			put( Key.of( "casesensitive" ), IStruct.TYPES.CASE_SENSITIVE );
-																			put( Key.of( "ordered-casesensitive" ), IStruct.TYPES.LINKED_CASE_SENSITIVE );
-																		}
-																	};
-
-	private static final HashMap<Key, Comparator<Key>>	comparators	= new HashMap<Key, Comparator<Key>>() {
-
-																		{
-																			put( Key.of( "textAsc" ), ( a, b ) -> Compare.invoke( a, b, false ) );
-																			put( Key.of( "textDesc" ), ( b, a ) -> Compare.invoke( a, b, false ) );
-																			put( Key.of( "numericAsc" ), ( a, b ) -> Compare
-																			    .invoke( DoubleCaster.cast( a.getOriginalValue() ),
-																			        DoubleCaster.cast( b.getOriginalValue() ) ) );
-																			put( Key.of( "numericDesc" ), ( b, a ) -> Compare
-																			    .invoke( DoubleCaster.cast( a.getOriginalValue() ),
-																			        DoubleCaster.cast( b.getOriginalValue() ) ) );
-																		}
-																	};
+		{
+			put( Key.of( "default" ), IStruct.TYPES.DEFAULT );
+			put( Key.of( "ordered" ), IStruct.TYPES.LINKED );
+			put( Key.of( "sorted" ), IStruct.TYPES.SORTED );
+			put( Key.of( "soft" ), IStruct.TYPES.SOFT );
+			put( Key.of( "weak" ), IStruct.TYPES.WEAK );
+			put( Key.of( "casesensitive" ), IStruct.TYPES.CASE_SENSITIVE );
+			put( Key.of( "ordered-casesensitive" ), IStruct.TYPES.LINKED_CASE_SENSITIVE );
+		}
+	};
 
 	/**
 	 * Constructor
@@ -109,7 +94,7 @@ public class StructNew extends BIF {
 		if ( sort != null ) {
 			typeKey = Key.of( "sorted" );
 			Key sortKey = Key.of( sort + arguments.getAsString( Key.sortOrder ) );
-			comparator = comparators.get( sortKey );
+			comparator = StructUtil.commonComparators.get( sortKey );
 		} else if ( arguments.getAsFunction( Key.callback ) != null ) {
 			// TODO: This doesn't quite match ACF's method signature.
 			// We will need to investigates other types of maps that can use a `K,V,KV` BiFunction as a comparator

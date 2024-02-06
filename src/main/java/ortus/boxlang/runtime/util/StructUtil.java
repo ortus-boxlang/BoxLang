@@ -17,6 +17,8 @@
  */
 package ortus.boxlang.runtime.util;
 
+import java.util.Comparator;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.UUID;
@@ -31,14 +33,37 @@ import com.google.common.base.Predicate;
 
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
+import ortus.boxlang.runtime.dynamic.casters.DoubleCaster;
+import ortus.boxlang.runtime.dynamic.casters.IntegerCaster;
+import ortus.boxlang.runtime.dynamic.casters.StructCaster;
+import ortus.boxlang.runtime.operators.Compare;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.services.AsyncService;
+import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.Function;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
 public class StructUtil {
+
+	public static final HashMap<Key, Comparator<Key>> commonComparators = new HashMap<Key, Comparator<Key>>() {
+
+		{
+			put( Key.of( "textAsc" ), ( a, b ) -> Compare.invoke( a, b, true ) );
+			put( Key.of( "textDesc" ), ( b, a ) -> Compare.invoke( a, b, true ) );
+			put( Key.of( "textNoCaseAsc" ), ( a, b ) -> Compare.invoke( a, b, false ) );
+			put( Key.of( "textNoCaseDesc" ), ( b, a ) -> Compare.invoke( a, b, false ) );
+			put( Key.of( "numericAsc" ), ( a, b ) -> Compare.invoke(
+			    DoubleCaster.cast( a.getOriginalValue() ),
+			    DoubleCaster.cast( b.getOriginalValue() )
+			) );
+			put( Key.of( "numericDesc" ), ( b, a ) -> Compare.invoke(
+			    DoubleCaster.cast( a.getOriginalValue() ),
+			    DoubleCaster.cast( b.getOriginalValue() )
+			) );
+		}
+	};
 
 	/**
 	 * Method to invoke a function for every item in a struct
@@ -319,6 +344,108 @@ public class StructUtil {
 		        ( acc, intermediate ) -> acc
 		    );
 
+	}
+
+	/**
+	 * Performs a stort of a struct and returns the top-level keys in the sorted order
+	 *
+	 * @param struct    the struct to sort
+	 * @param sortType  the textual sort directive ( numeric, text, textNoCase )
+	 * @param sortOrder the sort order (asc, desc)
+	 * @param path      An optional nested string path to perform the sort on
+	 *
+	 * @return an array containing the sorted keys
+	 */
+	public static Array sort(
+	    IStruct struct,
+	    String sortType,
+	    String sortOrder,
+	    String path ) {
+		if ( path == null ) {
+			Key typeKey = Key.of( sortType + sortOrder );
+			if ( !commonComparators.containsKey( typeKey ) ) {
+				throw new BoxRuntimeException(
+				    String.format(
+				        "The sort directive [%s,%s] is not a valid struct sorting directive",
+				        sortType,
+				        sortOrder
+				    )
+				);
+			}
+			return new Array(
+			    struct.keySet()
+			        .stream()
+			        .sorted( commonComparators.get( typeKey ) )
+			        .map( k -> k.getName() )
+			        .toArray()
+			);
+		} else {
+			Boolean isDescending = Key.of( sortOrder ).equals( Key.of( "desc" ) );
+			return new Array( struct.entrySet().stream().sorted(
+			    ( a, b ) -> Compare.invoke(
+			        StructUtil.getAtPath( StructCaster.cast( isDescending ? b.getValue() : a.getValue() ), path ),
+			        StructUtil.getAtPath( StructCaster.cast( isDescending ? a.getValue() : b.getValue() ), path ),
+			        sortType.toLowerCase().contains( "nocase" ) ? false : true
+			    )
+			).map( e -> e.getKey().getName() ).toArray()
+			);
+		}
+
+	}
+
+	/**
+	 * Performs a stort of a struct with a callback funciton and returns the ordered struct keys
+	 *
+	 * @param struct          the struct to sort
+	 * @param callback        the callback sort function which is passed the arguments (k1,k2) for comparison
+	 * @param callbackContext the IBoxContext to execute the callback within
+	 *
+	 * @return an array containing the sorted keys
+	 */
+	public static Array sort(
+	    IStruct struct,
+	    Function callback,
+	    IBoxContext callbackContext ) {
+
+		return new Array(
+		    struct.keySet()
+		        .stream()
+		        .map( k -> k.getName() )
+		        .sorted(
+		            ( a, b ) -> IntegerCaster.cast( callbackContext.invokeFunction(
+		                callback,
+		                new Object[] { a, b }
+		            ) )
+		        )
+		        .toArray()
+		);
+	}
+
+	/**
+	 * Retreives the final value of a nested string path within a struct
+	 *
+	 * @param struct the struct to search within
+	 * @param path   the string path representation ( e.g. foo.bar.baz )
+	 *
+	 * @return The found object or null
+	 */
+	public static Object getAtPath(
+	    IStruct struct,
+	    String path ) {
+		String[]	parts	= path.split( "\\." );
+		Object		ref		= null;
+		Key			refName	= Key.of( parts[ 0 ] );
+		if ( struct.containsKey( refName ) ) {
+			ref = struct.get( refName );
+			for ( int i = 1; i < parts.length - 1; i++ ) {
+				ref = StructCaster.cast( ref ).get( Key.of( parts[ i ] ) );
+				if ( ref == null )
+					break;
+			}
+			return ref;
+		} else {
+			return null;
+		}
 	}
 
 }

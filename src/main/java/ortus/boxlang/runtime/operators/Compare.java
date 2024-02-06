@@ -26,6 +26,7 @@ import ortus.boxlang.runtime.dynamic.casters.CastAttempt;
 import ortus.boxlang.runtime.dynamic.casters.DateTimeCaster;
 import ortus.boxlang.runtime.dynamic.casters.DoubleCaster;
 import ortus.boxlang.runtime.interop.DynamicObject;
+import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.DateTime;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.util.LocalizationUtil;
@@ -137,7 +138,11 @@ public class Compare implements IOperator {
 		}
 
 		if ( left instanceof Comparable && right instanceof Comparable ) {
-			return ( ( Comparable<Object> ) left ).compareTo( ( Comparable<Object> ) right );
+			return caseSensitive
+			    && left instanceof Key keyLeft
+			    && right instanceof Key keyRight
+			        ? keyLeft.compareToWithCase( keyRight )
+			        : ( ( Comparable<Object> ) left ).compareTo( ( Comparable<Object> ) right );
 		}
 
 		if ( fail ) {

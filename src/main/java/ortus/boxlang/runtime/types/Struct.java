@@ -278,6 +278,23 @@ public class Struct implements IStruct, IListenable {
 	}
 
 	/**
+	 * Create a sorted struct from an existing map.
+	 *
+	 * @param comparator The comparator to use
+	 * @param map        An existing map to create the sorted struct from
+	 *
+	 * @return The sorted struct
+	 */
+	public static IStruct sortedOf( Comparator<Key> comparator, Map<Key, Object> map ) {
+
+		IStruct struct = ( comparator == null ? new Struct( TYPES.SORTED ) : new Struct( comparator ) );
+
+		struct.putAll( map );
+
+		return struct;
+	}
+
+	/**
 	 * --------------------------------------------------------------------------
 	 * Map Interface Methods
 	 * --------------------------------------------------------------------------
