@@ -49,19 +49,12 @@ public class CompareNoCase extends BIF {
 	 * @param arguments Argument scope for the BIF.
 	 *
 	 * @argument.string1 The first string to compare
-	 * 
+	 *
 	 * @argument.string2 The second string to compare
 	 *
 	 */
 	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
-		int result = arguments.getAsString( Key.string1 ).compareToIgnoreCase( arguments.getAsString( Key.string2 ) );
-		if ( result == 0 ) {
-			return 0;
-		} else if ( result < 0 ) {
-			return -1;
-		} else {
-			return 1;
-		}
+		return ortus.boxlang.runtime.operators.Compare.invoke( arguments.get( Key.string1 ), arguments.get( Key.string2 ), false );
 	}
 
 }
