@@ -18,6 +18,7 @@
 package ortus.boxlang.runtime.modules;
 
 import java.io.File;
+import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -34,6 +35,7 @@ import ortus.boxlang.runtime.bifs.BoxLangBIFProxy;
 import ortus.boxlang.runtime.bifs.MemberDescriptor;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.interop.DynamicObject;
+import ortus.boxlang.runtime.loader.DynamicClassLoader;
 import ortus.boxlang.runtime.runnables.IClassRunnable;
 import ortus.boxlang.runtime.runnables.RunnableLoader;
 import ortus.boxlang.runtime.scopes.Key;
@@ -176,9 +178,9 @@ public class ModuleRecord {
 	public long					activationTime				= 0;
 
 	/**
-	 * The class loader for the module
+	 * The Dynamic class loader for the module
 	 */
-	public ClassLoader			classLoader					= null;
+	public DynamicClassLoader	classLoader					= null;
 
 	/**
 	 * The descriptor for the module
@@ -311,6 +313,20 @@ public class ModuleRecord {
 		// Register the module mapping in the runtime
 		// Called first in case this is used in the `configure` method
 		runtime.getConfiguration().runtime.registerMapping( this.mapping, this.path );
+
+		// Do we have libs to load?
+		Path libsPath = this.physicalPath.resolve( ModuleService.MODULE_LIBS );
+		if ( Files.exists( libsPath ) && Files.isDirectory( libsPath ) ) {
+			try {
+				this.classLoader = new DynamicClassLoader(
+				    this.name,
+				    DynamicClassLoader.getJarURLs( libsPath ),
+				    ClassLoader.getSystemClassLoader() );
+			} catch ( IOException e ) {
+				logger.error( "Error while creating the DynamicClassLoader for the module [{}]", this.name, e );
+				throw new BoxRuntimeException( "Error while creating the DynamicClassLoader for the module [" + this.name + "]", e );
+			}
+		}
 
 		// Call the configure() method if it exists in the descriptor
 		if ( thisScope.containsKey( Key.configure ) ) {
@@ -630,7 +646,27 @@ public class ModuleRecord {
 		// Unregister the ModuleConfig
 		interceptorService.unregister( DynamicObject.of( this.moduleConfig ) );
 
+		// Destroy the ClassLoader if it exists
+		if ( hasClassLoader() ) {
+			try {
+				this.classLoader.close();
+			} catch ( IOException e ) {
+				logger.error( "Error while closing the DynamicClassLoader for module [{}]", this.name, e );
+			} finally {
+				this.classLoader = null;
+			}
+		}
+
 		return this;
+	}
+
+	/**
+	 * Verify if we have a class loader loaded. If the module has a {@code libs} folder, then we have a class loader
+	 *
+	 * @return {@code true} if we have a class loader loaded, {@code false} otherwise
+	 */
+	public boolean hasClassLoader() {
+		return this.classLoader != null;
 	}
 
 	/**

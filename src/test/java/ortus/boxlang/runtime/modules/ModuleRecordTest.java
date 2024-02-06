@@ -195,6 +195,9 @@ class ModuleRecordTest {
 		assertThat( functionService.hasGlobalFunction( Key.of( "moduleHelloWorld" ) ) ).isTrue();
 		assertThat( functionService.hasGlobalFunction( Key.of( "moduleNow" ) ) ).isTrue();
 
+		// Register a class loader
+		assertThat( moduleRecord.hasClassLoader() ).isTrue();
+
 		// Test the bif
 		// @formatter:off
 		runtime.executeSource(
