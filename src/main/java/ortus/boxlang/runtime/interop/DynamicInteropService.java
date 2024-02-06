@@ -731,6 +731,23 @@ public class DynamicInteropService {
 	}
 
 	/**
+	 * Find a class by name with no case-sensitivity (upper case) in the class
+	 *
+	 * @param targetClass The class to find the class in
+	 * @param className   The name of the class to find
+	 *
+	 * @return The class if discovered
+	 */
+	public static Class<?> findClass( Class<?> targetClass, String className ) {
+		return getClassesAsStream( targetClass )
+		    .filter( target -> target.getSimpleName().equalsIgnoreCase( className ) )
+		    .findFirst()
+		    .orElseThrow( () -> new NoFieldException(
+		        String.format( "No such inner class [%s] found in the class [%s].", className, targetClass.getName() )
+		    ) );
+	}
+
+	/**
 	 * Verifies if the class has a public or public static field with the given name
 	 *
 	 * @param targetClass The class to check
@@ -740,6 +757,30 @@ public class DynamicInteropService {
 	 */
 	public static Boolean hasField( Class<?> targetClass, String fieldName ) {
 		return getFieldNames( targetClass ).contains( fieldName );
+	}
+
+	/**
+	 * Verifies if the class has a public or public static Class with the given name
+	 *
+	 * @param targetClass The class to check
+	 * @param className   The name of the Class to check
+	 *
+	 * @return True if the Class exists, false otherwise
+	 */
+	public static Boolean hasClass( Class<?> targetClass, String className ) {
+		return getClassNames( targetClass ).contains( className );
+	}
+
+	/**
+	 * Verifies if the class has a public or public static Class with the given name and no case-sensitivity (upper case)
+	 *
+	 * @param targetClass The class to check
+	 * @param className   The name of the Class to check
+	 *
+	 * @return True if the Class exists, false otherwise
+	 */
+	public static Boolean hasClassNoCase( Class<?> targetClass, String className ) {
+		return getClassNamesNoCase( targetClass ).contains( className.toUpperCase() );
 	}
 
 	/**
@@ -766,6 +807,17 @@ public class DynamicInteropService {
 	}
 
 	/**
+	 * Get an array of classes for the given class
+	 *
+	 * @param targetClass The class to get the classes for
+	 *
+	 * @return The classes in the class
+	 */
+	public static Class<?>[] getClasses( Class<?> targetClass ) {
+		return targetClass.getClasses();
+	}
+
+	/**
 	 * Get a stream of fields of all the public fields for the given class
 	 *
 	 * @param targetClass The class to get the fields for
@@ -774,6 +826,17 @@ public class DynamicInteropService {
 	 */
 	public static Stream<Field> getFieldsAsStream( Class<?> targetClass ) {
 		return Stream.of( getFields( targetClass ) );
+	}
+
+	/**
+	 * Get a stream of Classes for the given class
+	 *
+	 * @param targetClass The class to get the Classes for
+	 *
+	 * @return The stream of Classes in the class
+	 */
+	public static Stream<Class<?>> getClassesAsStream( Class<?> targetClass ) {
+		return Stream.of( getClasses( targetClass ) );
 	}
 
 	/**
@@ -791,6 +854,20 @@ public class DynamicInteropService {
 	}
 
 	/**
+	 * Get a list of Class names for the given class with case-sensitivity
+	 *
+	 * @param targetClass The class to get the Classes for
+	 *
+	 * @return A list of Class names
+	 */
+	public static List<String> getClassNames( Class<?> targetClass ) {
+		return getClassesAsStream( targetClass )
+		    .map( Class::getSimpleName )
+		    .toList();
+
+	}
+
+	/**
 	 * Get a list of field names for the given class with no case-sensitivity (upper case)
 	 *
 	 * @param targetClass The class to get the fields for
@@ -800,6 +877,21 @@ public class DynamicInteropService {
 	public static List<String> getFieldNamesNoCase( Class<?> targetClass ) {
 		return getFieldsAsStream( targetClass )
 		    .map( Field::getName )
+		    .map( String::toUpperCase )
+		    .toList();
+
+	}
+
+	/**
+	 * Get a list of Class names for the given class with no case-sensitivity (upper case)
+	 *
+	 * @param targetClass The class to get the Classes for
+	 *
+	 * @return A list of Class names
+	 */
+	public static List<String> getClassNamesNoCase( Class<?> targetClass ) {
+		return getClassesAsStream( targetClass )
+		    .map( Class::getSimpleName )
 		    .map( String::toUpperCase )
 		    .toList();
 
@@ -1097,19 +1189,6 @@ public class DynamicInteropService {
 	}
 
 	/**
-	 * Unwrap any ClassInvoker instances in the arguments
-	 *
-	 * @param arguments The arguments to unwrap
-	 *
-	 * @return The unwrapped arguments
-	 */
-	private static void unWrapArguments( Map<Key, Object> arguments ) {
-		for ( Key key : arguments.keySet() ) {
-			arguments.put( key, unWrap( arguments.get( key ) ) );
-		}
-	}
-
-	/**
 	 * --------------------------------------------------------------------------
 	 * Implementation of IReferencable
 	 * --------------------------------------------------------------------------
@@ -1124,7 +1203,6 @@ public class DynamicInteropService {
 	 *
 	 * @return The requested object
 	 */
-	@SuppressWarnings( "unchecked" )
 	public static Object dereference( IBoxContext context, Class<?> targetClass, Key name, Boolean safe ) {
 		return dereference( context, targetClass, null, name, safe );
 	}
@@ -1138,7 +1216,6 @@ public class DynamicInteropService {
 	 *
 	 * @return The requested object
 	 */
-	@SuppressWarnings( "unchecked" )
 	public static Object dereference( IBoxContext context, Object targetInstance, Key name, Boolean safe ) {
 		return dereference( context, targetInstance.getClass(), targetInstance, name, safe );
 	}
@@ -1209,9 +1286,13 @@ public class DynamicInteropService {
 			}
 			return s.substring( index - 1, index );
 			// Special logic for native arrays. Possibly move to helper
-		} else if ( hasField( targetClass, name.getName() ) ) {
-			// If we have the field, return it's value, even if it's null
+		} else if ( hasFieldNoCase( targetClass, name.getName() ) ) {
+			// If we have the field, return its value, even if it's null
 			return getField( targetClass, targetInstance, name.getName() ).orElse( null );
+		} else if ( hasClassNoCase( targetClass, name.getName() ) ) {
+			return findClass( targetClass, name.getName() );
+		} else if ( targetClass.isEnum() ) {
+			return Enum.valueOf( ( Class<Enum> ) targetClass, name.getName() );
 		}
 
 		if ( safe ) {
@@ -1221,7 +1302,7 @@ public class DynamicInteropService {
 		// Field not found anywhere
 		if ( targetInstance != null ) {
 			throw new KeyNotFoundException(
-			    String.format( "The instance [%s] has no public field [%s]. The allowed fields are [%s]",
+			    String.format( "The instance [%s] has no public field or inner class [%s]. The allowed fields are [%s]",
 			        ClassUtils.getCanonicalName( targetClass ),
 			        name.getName(),
 			        getFieldNames( targetClass )
@@ -1229,7 +1310,7 @@ public class DynamicInteropService {
 			);
 		} else {
 			throw new KeyNotFoundException(
-			    String.format( "The instance [%s] has no static field [%s]. The allowed fields are [%s]",
+			    String.format( "The instance [%s] has no static field or inner class [%s]. The allowed fields are [%s]",
 			        ClassUtils.getCanonicalName( targetClass ),
 			        name.getName(),
 			        getFieldNames( targetClass )
@@ -1348,7 +1429,6 @@ public class DynamicInteropService {
 	 * @param name        The name of the field to assign
 	 * @param value       The value to assign
 	 */
-	@SuppressWarnings( "unchecked" )
 	public static Object assign( IBoxContext context, Class<?> targetClass, Key name, Object value ) {
 		return assign( context, targetClass, null, name, value );
 	}
@@ -1360,7 +1440,6 @@ public class DynamicInteropService {
 	 * @param name           The name of the field to assign
 	 * @param value          The value to assign
 	 */
-	@SuppressWarnings( "unchecked" )
 	public static Object assign( IBoxContext context, Object targetInstance, Key name, Object value ) {
 		return assign( context, targetInstance.getClass(), targetInstance, name, value );
 	}

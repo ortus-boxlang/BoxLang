@@ -17,6 +17,10 @@
  */
 package TestCases.phase1;
 
+import static com.google.common.truth.Truth.assertThat;
+
+import java.util.Map;
+
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -26,6 +30,7 @@ import org.junit.jupiter.api.Test;
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
+import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
@@ -182,6 +187,52 @@ public class DereferenceTest {
 		    foo[ "a" & "aa" ][ 12 ].other[ 2 + 5 ];
 		    """,
 		    context );
+	}
+
+	@DisplayName( "dereference enum key" )
+	@Test
+	public void testDereferenceEnumKey() {
+		instance.executeSource(
+		    """
+		    import ortus.boxlang.runtime.types.BoxLangType;
+		    result = BoxLangType.LIST.getKey().getName();
+		         """,
+		    context );
+		assertThat( variables.get( result ) ).isEqualTo( "list" );
+	}
+
+	@DisplayName( "dereference enum as nested class" )
+	@Test
+	public void testDereferenceEnumAsNestedClass() {
+		instance.executeSource(
+		    """
+		        import ortus.boxlang.runtime.types.Struct as jStruct;
+		    import ortus.boxlang.runtime.types.IStruct;
+		          struct = new jStruct( IStruct.TYPES.CASE_SENSITIVE );
+		             """,
+		    context );
+	}
+
+	@DisplayName( "dereference nested class" )
+	@Test
+	public void testDereferenceNestedClass() {
+		instance.executeSource(
+		    """
+		    import java.util.Map
+		      result = Map.Entry;
+		         """,
+		    context );
+
+		assertThat( variables.get( result ) ).isEqualTo( Map.Entry.class );
+
+		instance.executeSource(
+		    """
+		    import java.util.Map$Entry;
+		      result = Map$Entry;
+		         """,
+		    context );
+
+		assertThat( DynamicObject.unWrap( variables.get( result ) ) ).isEqualTo( Map.Entry.class );
 	}
 
 }

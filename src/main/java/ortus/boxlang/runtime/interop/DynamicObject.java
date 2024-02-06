@@ -589,7 +589,6 @@ public class DynamicObject implements IReferenceable {
 	 * @param name  The name of the field to assign
 	 * @param value The value to assign
 	 */
-	@SuppressWarnings( "unchecked" )
 	public Object assign( IBoxContext context, Key name, Object value ) {
 		return DynamicInteropService.assign( context, this.targetClass, this.targetInstance, name, value );
 	}

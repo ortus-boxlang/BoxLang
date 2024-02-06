@@ -48,7 +48,11 @@ public class Referencer {
 		if ( safe && object == null ) {
 			return null;
 		}
-		return DynamicInteropService.dereference( context, object.getClass(), object, key, safe );
+		if ( object instanceof Class clazz ) {
+			return DynamicInteropService.dereference( context, clazz, null, key, safe );
+		} else {
+			return DynamicInteropService.dereference( context, object.getClass(), object, key, safe );
+		}
 	}
 
 	/**
@@ -115,7 +119,11 @@ public class Referencer {
 	 * @return The value that was assigned
 	 */
 	public static Object set( IBoxContext context, Object object, Key key, Object value ) {
-		return DynamicInteropService.assign( context, object.getClass(), object, key, value );
+		if ( object instanceof Class clazz ) {
+			return DynamicInteropService.assign( context, clazz, null, key, value );
+		} else {
+			return DynamicInteropService.assign( context, object.getClass(), object, key, value );
+		}
 	}
 
 	/**
