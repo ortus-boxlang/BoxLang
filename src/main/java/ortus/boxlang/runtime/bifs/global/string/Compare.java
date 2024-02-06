@@ -54,7 +54,10 @@ public class Compare extends BIF {
 	 *
 	 */
 	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
-		return ortus.boxlang.runtime.operators.Compare.invoke( arguments.get( Key.string1 ), arguments.get( Key.string2 ), true );
+		Integer comparison = ortus.boxlang.runtime.operators.Compare.invoke( arguments.get( Key.string1 ), arguments.get( Key.string2 ), true );
+		return comparison < 0 ? -1
+		    : comparison > 0 ? 1
+		        : 0;
 	}
 
 }
