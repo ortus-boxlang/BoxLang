@@ -86,15 +86,14 @@ public record Attribute( Key name, String type, Object defaultValue, Set<Validat
 	 * @param attributes
 	 */
 	public void validate( IBoxContext context, Component component, IStruct attributes ) {
+		// Automatically enforce type, if set. This always happens first.
+		Validator.TYPE.validate( context, component, this, attributes );
 		// loop over validators and call
 		for ( Validator validator : this.validators() ) {
-			// Automatically enforce type, if set. This always happens first.
-			Validator.TYPE.validate( context, component, this, attributes );
-			// Now run the rest of the validators
 			validator.validate( context, component, this, attributes );
-			// Automatically enforce default value, if set. This always happens last.
-			Validator.DEFAULT_VALUE.validate( context, component, this, attributes );
 		}
+		// Automatically enforce default value, if set. This always happens last.
+		Validator.DEFAULT_VALUE.validate( context, component, this, attributes );
 	}
 
 }
