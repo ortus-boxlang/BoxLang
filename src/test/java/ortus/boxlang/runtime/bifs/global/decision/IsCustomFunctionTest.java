@@ -24,7 +24,6 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -64,16 +63,18 @@ public class IsCustomFunctionTest {
 		instance.executeSource(
 		    """
 		    closure = isCustomFunction( function(){} );
-		    arrowFunction = isCustomFunction( () => {} );
+		    arrowClosure = isCustomFunction( () => {} );
+		    lambda = isCustomFunction( () -> {} );
 
 		    myFunc = function() {};
-		    functionReference = isCustomFunction( myFunc );
+		    udf = isCustomFunction( myFunc );
 		       """,
 		    context
 		);
-		assertThat( ( Boolean ) variables.get( Key.of( "closure" ) ) ).isTrue();
-		assertThat( ( Boolean ) variables.get( Key.of( "arrowFunction" ) ) ).isTrue();
-		assertThat( ( Boolean ) variables.get( Key.of( "functionReference" ) ) ).isTrue();
+		assertThat( variables.getAsBoolean( Key.of( "closure" ) ) ).isTrue();
+		assertThat( variables.getAsBoolean( Key.of( "arrowClosure" ) ) ).isTrue();
+		assertThat( variables.getAsBoolean( Key.of( "lambda" ) ) ).isTrue();
+		assertThat( variables.getAsBoolean( Key.of( "udf" ) ) ).isTrue();
 	}
 
 	@DisplayName( "It returns false for non-custom functions" )
@@ -85,19 +86,18 @@ public class IsCustomFunctionTest {
 		    aString = isCustomFunction( "abc" );
 		       """,
 		    context );
-		assertThat( ( Boolean ) variables.get( Key.of( "anInteger" ) ) ).isFalse();
-		assertThat( ( Boolean ) variables.get( Key.of( "aString" ) ) ).isFalse();
+		assertThat( variables.getAsBoolean( Key.of( "anInteger" ) ) ).isFalse();
+		assertThat( variables.getAsBoolean( Key.of( "aString" ) ) ).isFalse();
 	}
 
-	@Disabled( "Lucee's results do not match our own; determine the proper behavior" )
 	@DisplayName( "It supports Lucee's type parameter" )
 	@Test
 	public void testTypeParameter() {
 		instance.executeSource(
 		    """
-		    isLambdaAUDFType = isCustomFunction( () => {}, "udf" );
-		    isLambdaAClosureType = isCustomFunction( () => {}, "closure" );
-		    isLambdaALambdaType = isCustomFunction( () => {}, "lambda" );
+		    isLambdaAUDFType = isCustomFunction( () -> {}, "udf" );
+		    isLambdaAClosureType = isCustomFunction( () -> {}, "closure" );
+		    isLambdaALambdaType = isCustomFunction( () -> {}, "lambda" );
 
 		    function myUDF(){};
 		    isUDFaLambdaType = isCustomFunction( myUDF, "lambda" );
@@ -107,19 +107,27 @@ public class IsCustomFunctionTest {
 		    isClosureaLambdaType = isCustomFunction( function(){}, "lambda" );
 		    isClosureaUDFType = isCustomFunction( function(){}, "udf" );
 		    isClosureaClosureType = isCustomFunction( function(){}, "closure" );
+
+		    isArrowClosureaLambdaType = isCustomFunction( () => {}, "Lambda" );
+		    isArrowClosureaUDFType = isCustomFunction( () => {}, "UDF" );
+		    isArrowClosureaClosureType = isCustomFunction( () => {}, "Closure" );
 		       """,
 		    context );
-		assertThat( ( Boolean ) variables.get( Key.of( "isLambdaAUDFType" ) ) ).isFalse();
-		assertThat( ( Boolean ) variables.get( Key.of( "isLambdaAClosureType" ) ) ).isFalse();
-		assertThat( ( Boolean ) variables.get( Key.of( "isLambdaALambdaType" ) ) ).isTrue();
+		assertThat( variables.getAsBoolean( Key.of( "isLambdaAUDFType" ) ) ).isFalse();
+		assertThat( variables.getAsBoolean( Key.of( "isLambdaAClosureType" ) ) ).isFalse();
+		assertThat( variables.getAsBoolean( Key.of( "isLambdaALambdaType" ) ) ).isTrue();
 
-		assertThat( ( Boolean ) variables.get( Key.of( "isUDFaLambdaType" ) ) ).isFalse();
-		assertThat( ( Boolean ) variables.get( Key.of( "isUDFaClosureType" ) ) ).isFalse();
-		assertThat( ( Boolean ) variables.get( Key.of( "isUDFaUDFType" ) ) ).isTrue();
+		assertThat( variables.getAsBoolean( Key.of( "isUDFaLambdaType" ) ) ).isFalse();
+		assertThat( variables.getAsBoolean( Key.of( "isUDFaClosureType" ) ) ).isFalse();
+		assertThat( variables.getAsBoolean( Key.of( "isUDFaUDFType" ) ) ).isTrue();
 
-		assertThat( ( Boolean ) variables.get( Key.of( "isClosureaLambdaType" ) ) ).isFalse();
-		assertThat( ( Boolean ) variables.get( Key.of( "isClosureaUDFType" ) ) ).isFalse();
-		assertThat( ( Boolean ) variables.get( Key.of( "isClosureaClosureType" ) ) ).isTrue();
+		assertThat( variables.getAsBoolean( Key.of( "isClosureaLambdaType" ) ) ).isFalse();
+		assertThat( variables.getAsBoolean( Key.of( "isClosureaUDFType" ) ) ).isFalse();
+		assertThat( variables.getAsBoolean( Key.of( "isClosureaClosureType" ) ) ).isTrue();
+
+		assertThat( variables.getAsBoolean( Key.of( "isArrowClosureaLambdaType" ) ) ).isFalse();
+		assertThat( variables.getAsBoolean( Key.of( "isArrowClosureaUDFType" ) ) ).isFalse();
+		assertThat( variables.getAsBoolean( Key.of( "isArrowClosureaClosureType" ) ) ).isTrue();
 	}
 
 	@DisplayName( "It validates the type parameter" )

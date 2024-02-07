@@ -24,7 +24,6 @@ import ortus.boxlang.runtime.types.BoxLangType;
 import ortus.boxlang.runtime.types.Function;
 import ortus.boxlang.runtime.types.NullValue;
 import ortus.boxlang.runtime.types.Query;
-import ortus.boxlang.runtime.types.XML;
 import ortus.boxlang.runtime.types.exceptions.BoxCastException;
 
 /**
@@ -194,6 +193,9 @@ public class GenericCaster {
 		if ( type.equals( "modifiablestruct" ) ) {
 			return ModifiableStructCaster.cast( object, fail );
 		}
+		if ( type.equals( "xml" ) ) {
+			return XMLCaster.cast( object, fail );
+		}
 
 		if ( type.equals( "function" ) ) {
 			// No real "casting" to do, just return it if it is one
@@ -219,21 +221,9 @@ public class GenericCaster {
 			}
 		}
 
-		if ( type.equals( "xml" ) ) {
-			// No real "casting" to do, just return it if it is one
-			if ( object instanceof XML ) {
-				return object;
-			}
-			if ( fail ) {
-				throw new BoxCastException( String.format( "Cannot cast %s, to an XML document.", object.getClass().getName() ) );
-			} else {
-				return null;
-			}
-		}
 		// Throwing even if fail is false because this is a programming error
-		throw new BoxCastException(
-		    String.format( "Invalid cast type [%s]", type )
-		);
+		throw new BoxCastException( String.format( "Invalid cast type [%s]", type ) );
+
 	}
 
 	public static Class<?> getClassFromType( String type ) {

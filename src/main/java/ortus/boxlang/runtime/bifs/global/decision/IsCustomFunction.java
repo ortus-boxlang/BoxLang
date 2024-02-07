@@ -23,6 +23,7 @@ import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.Closure;
+import ortus.boxlang.runtime.types.Function;
 import ortus.boxlang.runtime.types.Lambda;
 import ortus.boxlang.runtime.types.UDF;
 
@@ -53,7 +54,7 @@ public class IsCustomFunction extends BIF {
 	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
 		String type = arguments.getAsString( Key.type );
 		if ( type == null || type.isEmpty() ) {
-			return arguments.get( Key.object ) instanceof Closure;
+			return arguments.get( Key.object ) instanceof Function;
 		}
 		Object value = arguments.get( Key.object );
 		switch ( CustomFunctionType.fromString( type ) ) {

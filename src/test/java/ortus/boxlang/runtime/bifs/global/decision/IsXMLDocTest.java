@@ -33,11 +33,12 @@ import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
 
-public class IsQueryTest {
+public class IsXMLDocTest {
 
 	static BoxRuntime	instance;
 	static IBoxContext	context;
 	static IScope		variables;
+	static Key			result	= new Key( "result" );
 
 	@BeforeAll
 	public static void setUp() {
@@ -56,29 +57,26 @@ public class IsQueryTest {
 		variables.clear();
 	}
 
-	@DisplayName( "It detects query values" )
+	@DisplayName( "It detects XML values" )
 	@Test
-	public void testOnCreateObject() {
-		assertThat( ( Boolean ) instance.executeStatement( "isQuery( new java:ortus.boxlang.runtime.types.Query() )" ) ).isTrue();
-	}
-
-	@DisplayName( "It detects query values" )
-	@Test
-	public void testOnQueryNew() {
-		assertThat( ( Boolean ) instance.executeStatement( "isQuery( queryNew( 'id,name', 'numeric,varchar' ) )" ) ).isTrue();
-	}
-
-	@DisplayName( "It returns false for non-query values" )
-	@Test
-	public void testFalseConditions() {
+	public void testXMLValues() {
 		instance.executeSource(
 		    """
-		    aBool = isQuery( true );
-		    aStruct = isQuery( { columns: ["id", "name" ]} );
+		    result = isXMLDoc( XMLParse( "<root />" ) )
 		    """,
 		    context );
-		assertThat( ( Boolean ) variables.get( Key.of( "aBool" ) ) ).isFalse();
-		assertThat( ( Boolean ) variables.get( Key.of( "aStruct" ) ) ).isFalse();
+		assertThat( variables.get( result ) ).isEqualTo( true );
+	}
+
+	@DisplayName( "It detects non XML values" )
+	@Test
+	public void testNonXMLValues() {
+		instance.executeSource(
+		    """
+		    result = isXMLDoc( "<root />" )
+		    """,
+		    context );
+		assertThat( variables.get( result ) ).isEqualTo( false );
 	}
 
 }

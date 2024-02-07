@@ -42,7 +42,31 @@ public class StringCaster {
 	 * @return The string value
 	 */
 	public static CastAttempt<String> attempt( Object object ) {
-		return CastAttempt.ofNullable( cast( object, false ) );
+		return attempt( object, null );
+	}
+
+	/**
+	 * Tests to see if the value can be cast to a string.
+	 * Returns a {@code CastAttempt<T>} which will contain the result if casting was
+	 * was successfull, or can be interogated to proceed otherwise.
+	 *
+	 * @param object The value to cast to a string
+	 *
+	 * @return The string value
+	 */
+	public static CastAttempt<String> attempt( Object object, String encoding ) {
+		return CastAttempt.ofNullable( cast( object, encoding, false ) );
+	}
+
+	/**
+	 * Used to cast anything to a string, throwing exception if we fail
+	 *
+	 * @param object The value to cast to a string
+	 *
+	 * @return The string value
+	 */
+	public static String cast( Object object, String encoding ) {
+		return cast( object, encoding, true );
 	}
 
 	/**
@@ -65,6 +89,18 @@ public class StringCaster {
 	 * @return The String value
 	 */
 	public static String cast( Object object, Boolean fail ) {
+		return cast( object, null, fail );
+	}
+
+	/**
+	 * Used to cast anything to a string
+	 *
+	 * @param object The value to cast to a string
+	 * @param fail   True to throw exception when failing.
+	 *
+	 * @return The String value
+	 */
+	public static String cast( Object object, String encoding, Boolean fail ) {
 		if ( object == null ) {
 			if ( fail ) {
 				throw new BoxCastException( "Can't cast null to a string." );
@@ -113,7 +149,11 @@ public class StringCaster {
 		}
 
 		if ( object instanceof byte[] b ) {
-			return new String( b );
+			if ( encoding != null && !encoding.isEmpty() ) {
+				return new String( b, java.nio.charset.Charset.forName( encoding ) );
+			} else {
+				return new String( b );
+			}
 		}
 
 		if ( object instanceof XML xml ) {

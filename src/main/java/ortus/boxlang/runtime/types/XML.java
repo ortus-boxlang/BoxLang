@@ -263,7 +263,7 @@ public class XML implements IType, IReferenceable/* , Collection<XML> */ {
 	 * 
 	 * @return the type of this XML node as text
 	 */
-	private String getXMLType() {
+	public String getXMLType() {
 		switch ( node.getNodeType() ) {
 			case Node.ELEMENT_NODE :
 				return "ELEMENT";

@@ -117,6 +117,66 @@ public class XMLTransformTest {
 
 	}
 
+	@DisplayName( "It can transform member" )
+	@Test
+	public void testCanTransformMember() {
+		instance.executeSource(
+		    """
+		          xml = XMLParse( '<?xml version="1.0"?>
+		    <breakfast_menu>
+		     <food>
+		      <name>Eggs Benedict</name>
+		      <price>$8.95</price>
+		     </food>
+		     <food>
+		      <name>Pancakes</name>
+		      <price>$7.95</price>
+		     </food>
+		     <food>
+		      <name>French Toast</name>
+		      <price>$6.95</price>
+		     </food>
+		    </breakfast_menu>' );
+
+		    xslt = '<?xml version="1.0"?>
+		       <xsl:stylesheet version="1.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
+		       <xsl:output method="html" doctype-public="-//W3C//DTD HTML 4.0 Transitional//EN" />
+		       <xsl:template match="/">
+		       <html>
+		       <body>
+		       <table border="2" bgcolor="yellow">
+		       <tr>
+		       <th>Name</th>
+		       <th>Price</th>
+		       </tr>
+		       <xsl:for-each select="breakfast_menu/food">
+		       <tr>
+		       <td>
+		       <xsl:value-of select="name"/>
+		       </td>
+		       <td>
+		       <xsl:value-of select="price"/>
+		       </td>
+		       </tr>
+		       </xsl:for-each>
+		       </table>
+		       </body>
+		       </html>
+		       </xsl:template>
+		       </xsl:stylesheet>';
+
+		       result = xml.transform( xslt);
+		          """,
+		    context );
+		assertThat( variables.get( result ) ).isInstanceOf( String.class );
+		String	transformed	= variables.getAsString( result );
+		String	expected	= """
+		                      <!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN"> <html> <body> <table border="2" bgcolor="yellow"> <tr> <th>Name</th><th>Price</th> </tr> <tr> <td>Eggs Benedict</td><td>$8.95</td> </tr> <tr> <td>Pancakes</td><td>$7.95</td> </tr> <tr> <td>French Toast</td><td>$6.95</td> </tr> </table> </body> </html>
+		                                             """;
+		assertThat( transformed.replaceAll( "\\s", "" ) ).isEqualTo( expected.replaceAll( "\\s", "" ) );
+
+	}
+
 	@DisplayName( "It can transform from file" )
 	@Test
 	public void testCanTransformFromFile() {
@@ -142,6 +202,43 @@ public class XMLTransformTest {
 		        xslt = new File( "src/test/java/ortus/boxlang/runtime/bifs/global/xml/transformer.xsl" ).getAbsolutePath();
 
 		           result = XmlTransform(xml, xslt);
+		              """,
+		    context );
+
+		assertThat( variables.get( result ) ).isInstanceOf( String.class );
+		String	transformed	= variables.getAsString( result );
+		String	expected	= """
+		                      <!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN"> <html> <body> <table border="2" bgcolor="yellow"> <tr> <th>Name</th><th>Price</th> </tr> <tr> <td>Eggs Benedict</td><td>$8.95</td> </tr> <tr> <td>Pancakes</td><td>$7.95</td> </tr> <tr> <td>French Toast</td><td>$6.95</td> </tr> </table> </body> </html>
+		                                             """;
+		assertThat( transformed.replaceAll( "\\s", "" ) ).isEqualTo( expected.replaceAll( "\\s", "" ) );
+
+	}
+
+	@DisplayName( "It can transform from file member" )
+	@Test
+	public void testCanTransformFromFileMember() {
+		instance.executeSource(
+		    """
+		    import java.io.File;
+		              xml = XMLParse( '<?xml version="1.0"?>
+		        <breakfast_menu>
+		         <food>
+		          <name>Eggs Benedict</name>
+		          <price>$8.95</price>
+		         </food>
+		         <food>
+		          <name>Pancakes</name>
+		          <price>$7.95</price>
+		         </food>
+		         <food>
+		          <name>French Toast</name>
+		          <price>$6.95</price>
+		         </food>
+		        </breakfast_menu>' );
+
+		        xslt = new File( "src/test/java/ortus/boxlang/runtime/bifs/global/xml/transformer.xsl" ).getAbsolutePath();
+
+		           result = xml.transform(xslt);
 		              """,
 		    context );
 
