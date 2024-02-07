@@ -20,7 +20,7 @@ package ortus.boxlang.runtime.scopes;
 import java.util.Arrays;
 
 /**
- * Represents a case-senstive key
+ * Represents a case-sensitive key
  * Implements the Serializable interface in case duplication is requested within a native HashMap or ArrayList
  */
 public class KeyCased extends Key {
