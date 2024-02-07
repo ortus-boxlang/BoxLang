@@ -386,12 +386,12 @@ public final class FileSystemUtil {
 		String mimeType = null;
 		if ( filePath.substring( 0, 4 ).toLowerCase().equals( "http" ) ) {
 			mimeType = Files.probeContentType( Paths.get( new URL( filePath ).getFile() ).getFileName() );
-			// if we can't determin a mimetype from a path we assume the file is text ( e.g. a friendly URL )
-			if ( mimeType == null ) {
-				return false;
-			}
 		} else {
 			mimeType = Files.probeContentType( Paths.get( filePath ).getFileName() );
+		}
+		// if we can't determin a mimetype from a path we assume the file is text ( e.g. a friendly URL )
+		if ( mimeType == null ) {
+			return false;
 		}
 		Object[] mimeParts = mimeType.split( "/" );
 
