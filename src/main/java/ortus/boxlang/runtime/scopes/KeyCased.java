@@ -20,7 +20,7 @@ package ortus.boxlang.runtime.scopes;
 import java.util.Arrays;
 
 /**
- * Represents a case-insenstive key, while retaining the original case too.
+ * Represents a case-senstive key
  * Implements the Serializable interface in case duplication is requested within a native HashMap or ArrayList
  */
 public class KeyCased extends Key {
@@ -85,7 +85,7 @@ public class KeyCased extends Key {
 
 	/**
 	 * The string representation of the key which includes
-	 * the original case and the upper case version.
+	 * the original case.
 	 *
 	 * @return The string representation of the key
 	 */
@@ -95,7 +95,7 @@ public class KeyCased extends Key {
 	}
 
 	/**
-	 * Compare keys in a case-insensitive manner.
+	 * Compare keys in a case-sensitive manner.
 	 *
 	 * @param otherKey The key to compare to.
 	 *
@@ -104,17 +104,6 @@ public class KeyCased extends Key {
 	@Override
 	public int compareTo( Key otherKey ) {
 		return this.name.compareTo( otherKey.name );
-	}
-
-	/**
-	 * Compare keys in a case-sensitive manner.
-	 *
-	 * @param otherKey The key to compare to.
-	 *
-	 * @return A negative integer, zero, or a positive integer if this key is less than, equal to, or greater than the specified key.
-	 */
-	public int compareToWithCase( Key otherKey ) {
-		return this.compareTo( otherKey );
 	}
 
 }
