@@ -115,8 +115,9 @@ public class Array implements List<Object>, IType, IReferenceable, IListenable {
 	 *
 	 * @param list The List to create the Array from
 	 */
-	public Array( List<Object> list ) {
-		wrapped = list;
+	@SuppressWarnings( "unchecked" )
+	public Array( List<? extends Object> list ) {
+		wrapped = ( List<Object> ) list;
 	}
 
 	/**
@@ -130,7 +131,7 @@ public class Array implements List<Object>, IType, IReferenceable, IListenable {
 	 *
 	 * @param list The List to create the Array from
 	 */
-	public static Array fromList( List<Object> list ) {
+	public static Array fromList( List<? extends Object> list ) {
 		return new Array( list );
 	}
 

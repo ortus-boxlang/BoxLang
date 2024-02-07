@@ -88,6 +88,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key	callback					= Key.of( "callback" );
 	public static final Key	charset						= Key.of( "charset" );
 	public static final Key	charsetOrBufferSize			= Key.of( "charsetOrBufferSize" );
+	public static final Key	childname					= Key.of( "childname" );
 	public static final Key	classGenerationDirectory	= Key.of( "classGenerationDirectory" );
 	public static final Key	className					= Key.of( "className" );
 	public static final Key	clazz						= Key.of( "clazz" );
@@ -135,6 +136,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key	dspLocale					= Key.of( "dspLocale" );
 	public static final Key	dump						= Key.of( "dump" );
 	public static final Key	duration					= Key.of( "duration" );
+	public static final Key	elem						= Key.of( "elem" );
 	public static final Key	elementCountForRemoval		= Key.of( "elementCountForRemoval" );
 	public static final Key	encoded						= Key.of( "encoded" );
 	public static final Key	encoding					= Key.of( "encoding" );
@@ -213,6 +215,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key	modulesDirectory			= Key.of( "modulesDirectory" );
 	public static final Key	month						= Key.of( "month" );
 	public static final Key	multiCharacterDelimiter		= Key.of( "multiCharacterDelimiter" );
+	public static final Key	n							= Key.of( "n" );
 	public static final Key	nameAsKey					= Key.of( "nameAsKey" );
 	public static final Key	newDelimiter				= Key.of( "newDelimiter" );
 	public static final Key	newPath						= Key.of( "newPath" );

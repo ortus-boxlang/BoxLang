@@ -20,6 +20,8 @@ package ortus.boxlang.runtime.types;
 import java.io.IOException;
 import java.io.StringReader;
 import java.io.StringWriter;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -48,7 +50,10 @@ import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.bifs.MemberDescriptor;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.dynamic.IReferenceable;
+import ortus.boxlang.runtime.dynamic.casters.CastAttempt;
+import ortus.boxlang.runtime.dynamic.casters.DoubleCaster;
 import ortus.boxlang.runtime.interop.DynamicInteropService;
+import ortus.boxlang.runtime.scopes.IntKey;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.services.FunctionService;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
@@ -138,8 +143,8 @@ public class XML implements IType, IReferenceable/* , Collection<XML> */ {
 	 * 
 	 * @return the element children
 	 */
-	public Array getXMLChildren() {
-		Array		children	= new Array();
+	public List<XML> getXMLChildrenAsList() {
+		List<XML>	children	= new ArrayList<XML>();
 		NodeList	childNodes	= node.getChildNodes();
 		for ( int i = 0; i < childNodes.getLength(); i++ ) {
 			Node child = childNodes.item( i );
@@ -148,6 +153,15 @@ public class XML implements IType, IReferenceable/* , Collection<XML> */ {
 			}
 		}
 		return children;
+	}
+
+	/**
+	 * Get the element children of this XML node as an array of XML objects
+	 * 
+	 * @return the element children
+	 */
+	public Array getXMLChildren() {
+		return new Array( getXMLChildrenAsList() );
 	}
 
 	/**
@@ -356,16 +370,65 @@ public class XML implements IType, IReferenceable/* , Collection<XML> */ {
 			    "Key [" + name.getName() + "] can only be use with an Element node, but you have a [" + getXMLType() + "] node here." );
 		}
 
-		// Fall back is to check for a child element of this name and return the first one.
-		NodeList children = node.getChildNodes();
-		for ( int i = 0; i < children.getLength(); i++ ) {
-			Node child = children.item( i );
-			if ( child.getNodeType() == Node.ELEMENT_NODE && child.getNodeName().equalsIgnoreCase( name.getName() ) ) {
-				return new XML( child );
+		if ( node.getNodeType() == Node.ELEMENT_NODE ) {
+			// Check if the key is numeric,
+			int index = getIntFromKey( name );
+			// If dereferncing a node with a number like xml.users[1], then we ALWAYS get the value from that row
+			if ( index > 0 ) {
+				return getSiblingAtPosition( index - 1 );
 			}
 		}
 
+		// Fall back is to check for a child element of this name and return the first one.
+		XML child = getFirstChildOfName( name.getName() );
+		if ( child != null ) {
+			return child;
+		}
+
 		throw new KeyNotFoundException( "Key [" + name.getName() + "] not found in XML node." );
+	}
+
+	/**
+	 * Get the first child of this XML node with the given name
+	 * 
+	 * @param childName The name of the child to get. Case insensitive.
+	 * 
+	 * @return The first child of this XML node with the given name, or null if no such child exists.
+	 */
+	public XML getFirstChildOfName( String childName ) {
+		NodeList children = node.getChildNodes();
+		for ( int i = 0; i < children.getLength(); i++ ) {
+			Node child = children.item( i );
+			if ( child.getNodeType() == Node.ELEMENT_NODE && child.getNodeName().equalsIgnoreCase( childName ) ) {
+				return new XML( child );
+			}
+		}
+		return null;
+	}
+
+	/**
+	 * Get the sibling of this XML node having the same name at the given index
+	 * 
+	 * @param index The index of the sibling to get. 0-based.
+	 * 
+	 * @return The sibling of this XML node having the same name at the given index
+	 */
+	public XML getSiblingAtPosition( int index ) {
+		String		ourName		= node.getNodeName();
+		int			currMatch	= -1;
+		// Get sibling nodes (including ourself)
+		NodeList	children	= node.getParentNode().getChildNodes();
+		for ( int i = 0; i < children.getLength(); i++ ) {
+			Node child = children.item( i );
+			if ( child.getNodeType() == Node.ELEMENT_NODE && child.getNodeName().equalsIgnoreCase( ourName ) ) {
+				currMatch++;
+				if ( currMatch == index ) {
+					return new XML( child );
+				}
+			}
+		}
+		throw new KeyNotFoundException(
+		    "Index [" + index + "] out of bounds for child [" + ourName + "] XML nodes.  There were only " + currMatch + " children." );
 	}
 
 	@Override
@@ -444,6 +507,28 @@ public class XML implements IType, IReferenceable/* , Collection<XML> */ {
 
 	public Node getNode() {
 		return node;
+	}
+
+	public static int getIntFromKey( Key key ) {
+		Integer index;
+
+		// If key is int, use it directly
+		if ( key instanceof IntKey intKey ) {
+			index = intKey.getIntValue();
+		} else {
+			// If key is not an int, we must attempt to cast it
+			CastAttempt<Double> indexAtt = DoubleCaster.attempt( key.getName() );
+			if ( !indexAtt.wasSuccessful() ) {
+				return -1;
+			}
+			Double dIndex = indexAtt.get();
+			index = dIndex.intValue();
+			// Dissallow non-integer indexes foo[1.5]
+			if ( index.doubleValue() != dIndex ) {
+				return -1;
+			}
+		}
+		return index;
 	}
 
 }

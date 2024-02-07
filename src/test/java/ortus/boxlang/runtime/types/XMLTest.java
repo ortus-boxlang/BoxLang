@@ -112,37 +112,55 @@ class XMLTest {
 	void testAccessElementFields() {
 		instance.executeSource(
 		    """
-		                       result = XMLParse( '<!-- my doc comment --><root attr="my value">
-		                    pre
-		           <![CDATA[cdata]]>
-		                    				<child>value1</child>
-		                     middle
-		         <!-- my inline comment -->
-		                    				<child>value2</child>
-		                     post
+		                          result = XMLParse( '<!-- my doc comment --><root attr="my value">
+		                       pre
+		              <![CDATA[cdata]]>
+		                       				<child>value1</child>
+		                        middle
+		            <!-- my inline comment -->
+		                       				<child>value2</child>
+		                        post
 
-		                    			</root>' );
-		    root = result.XMLroot;
-		    rootName = root.XMLName;
-		    rootType = root.XMLType;
-		    rootValue = root.XMLValue;
-		    rootChild = root.child;
-		    rootXMLComment = root.XMLComment;
-		    rootXMLParent = root.XMLParent;
-		    rootXMLChildren = root.XMLChildren;
-		    rootXMLNodes = root.XMLNodes;
-		    rootXMLText = root.XMLText;
-		    rootXMLCdata = root.XMLCdata;
-		    rootXMLAttributes = root.XMLAttributes;
-		    rootXMLNsPrefix = root.XMLNsPrefix;
-		    rootXMLNsURI = root.XMLNsURI;
-		                       """,
+		                       			</root>' );
+		       root = result.XMLroot;
+		       rootName = root.XMLName;
+		       rootType = root.XMLType;
+		       rootValue = root.XMLValue;
+
+		    // Gets first matching child
+		       rootChild = root.child;
+
+		    // Gets first matching child
+		       rootChild1 = root.child[1];
+
+		    // Gets second matching child
+		       rootChild2 = root.child[2];
+
+		       rootXMLComment = root.XMLComment;
+		       rootXMLParent = root.XMLParent;
+		       rootXMLChildren = root.XMLChildren;
+		       rootXMLNodes = root.XMLNodes;
+		       rootXMLText = root.XMLText;
+		       rootXMLCdata = root.XMLCdata;
+		       rootXMLAttributes = root.XMLAttributes;
+		       rootXMLNsPrefix = root.XMLNsPrefix;
+		       rootXMLNsURI = root.XMLNsURI;
+		                          """,
 		    context );
 		assertThat( variables.get( result ) ).isInstanceOf( XML.class );
 		assertThat( variables.get( Key.of( "rootName" ) ) ).isEqualTo( "root" );
 		assertThat( variables.get( Key.of( "rootType" ) ) ).isEqualTo( "ELEMENT" );
 		assertThat( variables.get( Key.of( "rootValue" ) ) ).isEqualTo( "" );
+
 		assertThat( variables.get( Key.of( "rootChild" ) ) ).isInstanceOf( XML.class );
+		assertThat( variables.getAsXML( Key.of( "rootChild" ) ).getXMLText() ).isEqualTo( "value1" );
+
+		assertThat( variables.get( Key.of( "rootChild1" ) ) ).isInstanceOf( XML.class );
+		assertThat( variables.getAsXML( Key.of( "rootChild1" ) ).getXMLText() ).isEqualTo( "value1" );
+
+		assertThat( variables.get( Key.of( "rootChild2" ) ) ).isInstanceOf( XML.class );
+		assertThat( variables.getAsXML( Key.of( "rootChild2" ) ).getXMLText() ).isEqualTo( "value2" );
+
 		assertThat( variables.getAsString( Key.of( "rootXMLComment" ) ).replaceAll( "\\s", "" ) ).isEqualTo( "myinlinecomment" );
 		assertThat( variables.get( Key.of( "rootXMLParent" ) ) ).isInstanceOf( XML.class );
 

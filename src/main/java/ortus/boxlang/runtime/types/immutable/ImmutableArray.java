@@ -70,7 +70,7 @@ public class ImmutableArray extends Array implements IImmutable {
 	 *
 	 * @param list The List to create the Array from
 	 */
-	public ImmutableArray( List<Object> list ) {
+	public ImmutableArray( List<? extends Object> list ) {
 		this( list.size() );
 		// add each item to this array
 		for ( Object item : list ) {
@@ -89,7 +89,7 @@ public class ImmutableArray extends Array implements IImmutable {
 	 *
 	 * @param list The List to create the Array from
 	 */
-	public static ImmutableArray fromList( List<Object> list ) {
+	public static ImmutableArray fromList( List<? extends Object> list ) {
 		return new ImmutableArray( list );
 	}
 
