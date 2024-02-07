@@ -123,6 +123,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key	delimiter					= Key.of( "delimiter" );
 	public static final Key	description					= Key.of( "description" );
 	public static final Key	destination					= Key.of( "destination" );
+	public static final Key	detail						= Key.of( "detail" );
 	public static final Key	dimensions					= Key.of( "dimensions" );
 	public static final Key	directory					= Key.of( "directory" );
 	public static final Key	disabled					= Key.of( "disabled" );
@@ -138,6 +139,8 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key	encoded						= Key.of( "encoded" );
 	public static final Key	encoding					= Key.of( "encoding" );
 	public static final Key	end							= Key.of( "end" );
+	public static final Key	errorcode					= Key.of( "errorcode" );
+	public static final Key	extendedinfo				= Key.of( "extendedinfo" );
 	public static final Key	file						= Key.of( "file" );
 	public static final Key	fileContent					= Key.of( "fileContent" );
 	public static final Key	filepath					= Key.of( "filepath" );
@@ -290,7 +293,6 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key	variant						= Key.of( "variant" );
 	public static final Key	version						= Key.of( "version" );
 	public static final Key	webURL						= Key.of( "webURL" );
-	public static final Key	XSL							= Key.of( "XSL" );
 	public static final Key	XML							= Key.of( "XML" );
 	public static final Key	XMLAttributes				= Key.of( "XMLAttributes" );
 	public static final Key	XMLCdata					= Key.of( "XMLCdata" );
@@ -298,16 +300,17 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key	XMLComment					= Key.of( "XMLComment" );
 	public static final Key	XMLDocType					= Key.of( "XMLDocType" );
 	public static final Key	XMLName						= Key.of( "XMLName" );
-	public static final Key	XMLNodes					= Key.of( "XMLNodes" );
 	public static final Key	XMLNode						= Key.of( "XMLNode" );
+	public static final Key	XMLNodes					= Key.of( "XMLNodes" );
 	public static final Key	XMLNsPrefix					= Key.of( "XMLNsPrefix" );
 	public static final Key	XMLNsURI					= Key.of( "XMLNsURI" );
 	public static final Key	XMLParent					= Key.of( "XMLParent" );
-	public static final Key	xpath						= Key.of( "xpath" );
 	public static final Key	XMLRoot						= Key.of( "XMLRoot" );
 	public static final Key	XMLText						= Key.of( "XMLText" );
 	public static final Key	XMLType						= Key.of( "XMLType" );
 	public static final Key	XMLValue					= Key.of( "XMLValue" );
+	public static final Key	xpath						= Key.of( "xpath" );
+	public static final Key	XSL							= Key.of( "XSL" );
 	public static final Key	year						= Key.of( "year" );
 
 	public static final Key	EMPTY						= Key.of( "" );

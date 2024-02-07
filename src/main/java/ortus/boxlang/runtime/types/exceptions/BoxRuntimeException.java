@@ -96,4 +96,12 @@ public class BoxRuntimeException extends BoxLangException {
 		this.extendedInfo = extendedInfo;
 	}
 
+	/**
+	 * Get the extended info
+	 * 
+	 * @return The extended info
+	 */
+	public Object getExtendedInfo() {
+		return extendedInfo;
+	}
 }

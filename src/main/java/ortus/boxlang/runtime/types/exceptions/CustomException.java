@@ -69,7 +69,7 @@ public class CustomException extends BoxRuntimeException {
 	 * @param cause     The cause
 	 */
 	public CustomException( String message, String detail, String errorCode, Object extendedInfo, Throwable cause ) {
-		super( message, detail, extendedInfo, cause );
+		super( message, detail, "Custom", extendedInfo, cause );
 		this.errorCode = errorCode;
 	}
 

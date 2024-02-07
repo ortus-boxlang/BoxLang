@@ -102,4 +102,32 @@ public abstract class BoxLangException extends RuntimeException {
 			initCause( cause );
 		}
 	}
+
+	/**
+	 * Get the detail
+	 * 
+	 * @return The detail
+	 */
+	public String getDetail() {
+		return detail;
+	}
+
+	/**
+	 * Get the type
+	 * 
+	 * @return The type
+	 */
+	public String getType() {
+		return type;
+	}
+
+	/**
+	 * Get the tag context
+	 * 
+	 * @return The tag context
+	 */
+	public String getTagContext() {
+		return tagContext;
+	}
+
 }
