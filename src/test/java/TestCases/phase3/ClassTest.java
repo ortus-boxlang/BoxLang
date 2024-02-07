@@ -302,9 +302,9 @@ public class ClassTest {
 
 		var	cfc		= variables.getClassRunnable( Key.of( "cfc" ) );
 		var	meta	= cfc.getMetaData();
-		assertThat( meta.get( Key.of( "name" ) ) ).isEqualTo( "src.test.java.TestCases.phase3.MyClass" );
+		assertThat( meta.get( Key.of( "name" ) ) ).isEqualTo( "boxgenerated.src.test.java.TestCases.phase3.MyClass" );
 		assertThat( meta.get( Key.of( "type" ) ) ).isEqualTo( "Component" );
-		assertThat( meta.get( Key.of( "fullname" ) ) ).isEqualTo( "src.test.java.TestCases.phase3.MyClass" );
+		assertThat( meta.get( Key.of( "fullname" ) ) ).isEqualTo( "boxgenerated.src.test.java.TestCases.phase3.MyClass" );
 		assertThat( meta.getAsString( Key.of( "path" ) ).contains( "MyClass.cfc" ) ).isTrue();
 		assertThat( meta.get( Key.of( "hashcode" ) ) ).isEqualTo( cfc.hashCode() );
 		assertThat( meta.get( Key.of( "properties" ) ) ).isInstanceOf( Array.class );
@@ -343,7 +343,7 @@ public class ClassTest {
 		var	boxMeta	= ( ClassMeta ) cfc.getBoxMeta();
 		var	meta	= boxMeta.meta;
 		assertThat( meta.get( Key.of( "type" ) ) ).isEqualTo( "Component" );
-		assertThat( meta.get( Key.of( "fullname" ) ) ).isEqualTo( "src.test.java.TestCases.phase3.MyClass" );
+		assertThat( meta.get( Key.of( "fullname" ) ) ).isEqualTo( "boxgenerated.src.test.java.TestCases.phase3.MyClass" );
 		assertThat( meta.getAsString( Key.of( "path" ) ).contains( "MyClass.cfc" ) ).isTrue();
 		assertThat( meta.get( Key.of( "hashcode" ) ) ).isEqualTo( cfc.hashCode() );
 		assertThat( meta.get( Key.of( "properties" ) ) instanceof Array ).isTrue();
@@ -551,11 +551,11 @@ public class ClassTest {
 		    // Then the concrete class inits. getCurrentTemplate() shows the concrete class.
 		    "Chihuahua init Chihuahua.cfc",
 		    // A method inherited from a base class, sees "this" as the concrete class.
-		    "animal this is: src.test.java.TestCases.phase3.Chihuahua",
+		    "animal this is: boxgenerated.src.test.java.TestCases.phase3.Chihuahua",
 		    // A method inherited from a base class, sees the top level "variables" scope.
 		    "animal sees inDog as: true",
 		    // A method delegated to as super.foo() sees "this" as the concrete class.
-		    "super animal sees: src.test.java.TestCases.phase3.Chihuahua",
+		    "super animal sees: boxgenerated.src.test.java.TestCases.phase3.Chihuahua",
 		    // A method delegated to as super.foo() sees the top level "variables" scope.
 		    "super sees inDog as: true",
 		} );
@@ -564,13 +564,13 @@ public class ClassTest {
 		var	boxMeta	= ( ClassMeta ) cfc.getBoxMeta();
 		var	meta	= boxMeta.meta;
 
-		assertThat( meta.get( Key.of( "name" ) ) ).isEqualTo( "src.test.java.TestCases.phase3.Chihuahua" );
+		assertThat( meta.get( Key.of( "name" ) ) ).isEqualTo( "boxgenerated.src.test.java.TestCases.phase3.Chihuahua" );
 
 		IStruct extendsMeta = meta.getAsStruct( Key.of( "extends" ) );
-		assertThat( extendsMeta.get( Key.of( "name" ) ) ).isEqualTo( "Dog" );
+		assertThat( extendsMeta.get( Key.of( "name" ) ) ).isEqualTo( "boxgenerated.Dog" );
 
 		extendsMeta = extendsMeta.getAsStruct( Key.of( "extends" ) );
-		assertThat( extendsMeta.get( Key.of( "name" ) ) ).isEqualTo( "Animal" );
+		assertThat( extendsMeta.get( Key.of( "name" ) ) ).isEqualTo( "boxgenerated.Animal" );
 
 		extendsMeta = extendsMeta.getAsStruct( Key.of( "extends" ) );
 		assertThat( extendsMeta ).hasSize( 0 );

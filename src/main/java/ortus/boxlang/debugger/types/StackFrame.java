@@ -6,4 +6,5 @@ public class StackFrame {
 	public String	name;
 	public int		line;
 	public int		column;
+	public Source	source;
 }

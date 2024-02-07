@@ -52,8 +52,6 @@ import ortus.boxlang.parser.ParsingResult;
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.runnables.IBoxRunnable;
 import ortus.boxlang.runtime.runnables.IClassRunnable;
-import ortus.boxlang.runtime.runnables.compiler.DiskClassLoader.SourceMap;
-import ortus.boxlang.runtime.runnables.compiler.DiskClassLoader.SourceMapRecord;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.exceptions.ParseException;
 import ortus.boxlang.transpiler.CustomPrettyPrinter;
@@ -354,20 +352,12 @@ public class JavaBoxpiler {
 			throw new BoxRuntimeException( javaSource );
 
 		// Capture the line numbers of each Java AST node from printing the Java source
-		diskClassLoader.writeLineNumbers( classInfo.FQN(), generateLineNumberJSON( prettyPrinter.getVisitor().getLineNumbers() ) );
+		diskClassLoader.writeLineNumbers( classInfo.FQN(), generateLineNumberJSON( classInfo, prettyPrinter.getVisitor().getLineNumbers() ) );
 		return javaSource;
 	}
 
-	public int convertSourceLineToJavaLine( String FQN, int sourceLine ) throws BoxRuntimeException {
-		SourceMap sourceMap = diskClassLoader.readLineNumbers( FQN );
-
-		for ( SourceMapRecord sourceMapRecord : sourceMap.sourceMapRecords ) {
-			if ( sourceMapRecord.originSourceLine == sourceLine ) {
-				return sourceMapRecord.javaSourceLine;
-			}
-		}
-
-		throw ( new BoxRuntimeException( "No matching source line" ) );
+	public SourceMap getSourceMapFromFQN( String FQN ) {
+		return diskClassLoader.readLineNumbers( FQN );
 	}
 
 	public boolean doesFilePathMatchFQNWithoutGeneration( Path sourcePath, String FQN ) {
@@ -407,7 +397,7 @@ public class JavaBoxpiler {
 	 * 
 	 * @return JSON string
 	 */
-	private String generateLineNumberJSON( List<Object[]> lineNumbers ) {
+	private String generateLineNumberJSON( ClassInfo classInfo, List<Object[]> lineNumbers ) {
 		List	stuff	= lineNumbers.stream().map( e -> {
 							Node	jNode	= ( Node ) e[ 0 ];
 							int		jLine	= ( int ) e[ 1 ];
@@ -444,6 +434,7 @@ public class JavaBoxpiler {
 
 		Map		output	= new HashMap<String, Object>();
 		output.put( "sourceMapRecords", stuff );
+		output.put( "source", classInfo.sourcePath );
 		try {
 			return JSON.std.with( Feature.PRETTY_PRINT_OUTPUT ).asString( output );
 		} catch ( JSONObjectException e ) {
@@ -609,10 +600,12 @@ public class JavaBoxpiler {
 	/**
 	 * A Record that represents the information about a class to be compiled
 	 */
-	public record ClassInfo( String packageName, String className, int compileCount, String boxPackageName, String baseclass, String returnType ) {
+	public record ClassInfo( String sourcePath, String packageName, String className, int compileCount, String boxPackageName, String baseclass,
+	    String returnType ) {
 
 		public static ClassInfo forScript( String source, BoxScriptType type ) {
 			return new ClassInfo(
+			    null,
 			    "generated",
 			    "Script_" + MD5( type.toString() + source ),
 			    0,
@@ -623,7 +616,7 @@ public class JavaBoxpiler {
 		}
 
 		public static ClassInfo forStatement( String source, BoxScriptType type ) {
-			return new ClassInfo( "generated", "Statement_" + MD5( type.toString() + source ), 0, "boxgenerated.generated", "BoxScript", "Object" );
+			return new ClassInfo( null, "generated", "Statement_" + MD5( type.toString() + source ), 0, "boxgenerated.generated", "BoxScript", "Object" );
 		}
 
 		public static ClassInfo forTemplate( Path path, String packagePath ) {
@@ -632,6 +625,7 @@ public class JavaBoxpiler {
 			packageName = "boxgenerated.templates" + ( packageName.equals( "" ) ? "" : "." ) + packageName;
 			String className = getClassName( lcaseFile );
 			return new ClassInfo(
+			    path.toString(),
 			    packageName,
 			    className,
 			    JavaBoxpiler.getInstance().getClassCounter().getOrDefault( packageName + "." + className, 0 ),
@@ -654,6 +648,7 @@ public class JavaBoxpiler {
 			String className = getClassName( path.toFile() );
 
 			return new ClassInfo(
+			    path.toString(),
 			    packagePath,
 			    className,
 			    JavaBoxpiler.getInstance().getClassCounter().getOrDefault( packagePath + "." + className, 0 ),
@@ -665,6 +660,7 @@ public class JavaBoxpiler {
 
 		public static ClassInfo forClass( String source ) {
 			return new ClassInfo(
+			    null,
 			    "generated",
 			    "Class_" + MD5( source ),
 			    0,
@@ -681,6 +677,7 @@ public class JavaBoxpiler {
 		 */
 		public ClassInfo next() {
 			return new ClassInfo(
+			    this.sourcePath,
 			    this.packageName,
 			    this.className,
 			    this.compileCount + 1,

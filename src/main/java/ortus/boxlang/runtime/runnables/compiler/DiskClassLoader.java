@@ -223,17 +223,4 @@ public class DiskClassLoader extends URLClassLoader {
 		}
 	}
 
-	public static class SourceMap {
-
-		public SourceMapRecord[] sourceMapRecords;
-	}
-
-	public static class SourceMapRecord {
-
-		public int		originSourceLine;
-		public int		javaSourceLine;
-		public String	originSourceNode;
-		public String	javaSourceNode;
-	}
-
 }

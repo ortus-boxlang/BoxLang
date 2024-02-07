@@ -385,7 +385,7 @@ public class BoxLangDebugger implements IBoxLangDebugger {
 			for ( Breakpoint breakpoint : this.breakpoints.get( fileName ) ) {
 				try {
 
-					int			javaSourceLine	= javaBoxpiler.convertSourceLineToJavaLine( vmClass.name(), breakpoint.line );
+					int			javaSourceLine	= javaBoxpiler.getSourceMapFromFQN( vmClass.name() ).convertSourceLineToJavaLine( breakpoint.line );
 					Location	location;
 					try {
 						location = vmClass.locationsOfLine( javaSourceLine ).get( 0 );

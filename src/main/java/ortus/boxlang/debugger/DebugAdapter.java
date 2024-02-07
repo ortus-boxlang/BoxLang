@@ -35,6 +35,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.sun.jdi.IncompatibleThreadStateException;
+import com.sun.jdi.LocalVariable;
+import com.sun.jdi.ObjectReference;
+import com.sun.jdi.Value;
 
 import ortus.boxlang.debugger.event.Event;
 import ortus.boxlang.debugger.event.StoppedEvent;
@@ -42,6 +45,7 @@ import ortus.boxlang.debugger.request.ConfigurationDoneRequest;
 import ortus.boxlang.debugger.request.IDebugRequest;
 import ortus.boxlang.debugger.request.InitializeRequest;
 import ortus.boxlang.debugger.request.LaunchRequest;
+import ortus.boxlang.debugger.request.ScopeRequest;
 import ortus.boxlang.debugger.request.SetBreakpointsRequest;
 import ortus.boxlang.debugger.request.StackTraceRequest;
 import ortus.boxlang.debugger.request.ThreadsRequest;
@@ -51,9 +55,12 @@ import ortus.boxlang.debugger.response.SetBreakpointsResponse;
 import ortus.boxlang.debugger.response.StackTraceResponse;
 import ortus.boxlang.debugger.response.ThreadsResponse;
 import ortus.boxlang.debugger.types.Breakpoint;
+import ortus.boxlang.debugger.types.Source;
 import ortus.boxlang.debugger.types.StackFrame;
 import ortus.boxlang.runtime.BoxRunner;
 import ortus.boxlang.runtime.BoxRuntime;
+import ortus.boxlang.runtime.runnables.compiler.JavaBoxpiler;
+import ortus.boxlang.runtime.runnables.compiler.SourceMap;
 import ortus.boxlang.runtime.util.JSONUtil;
 
 /**
@@ -68,6 +75,7 @@ public class DebugAdapter {
 	private BoxLangDebugger		debugger;
 	private boolean				running	= true;
 	private List<IDebugRequest>	requestQueue;
+	private JavaBoxpiler		javaBoxpiler;
 
 	/**
 	 * Constructor
@@ -79,6 +87,7 @@ public class DebugAdapter {
 		this.inputStream	= inputStream;
 		this.outputStream	= outputStream;
 		this.requestQueue	= new ArrayList<IDebugRequest>();
+		this.javaBoxpiler	= JavaBoxpiler.getInstance();
 
 		try {
 			createInputListenerThread();
@@ -218,6 +227,8 @@ public class DebugAdapter {
 				return JSONUtil.fromJSON( ThreadsRequest.class, json );
 			case "stackTrace" :
 				return JSONUtil.fromJSON( StackTraceRequest.class, json );
+			case "scopes" :
+				return JSONUtil.fromJSON( ScopeRequest.class, json );
 		}
 
 		throw new NotImplementedException( command );
@@ -313,12 +324,20 @@ public class DebugAdapter {
 			// TODO decide if we should filter out java stack or make it available
 
 			List<StackFrame> stackFrames = this.debugger.getStackFrames( debugRequest.arguments.threadId ).stream().map( ( stackFrame ) -> {
-				StackFrame sf = new StackFrame();
+				StackFrame	sf	= new StackFrame();
+				SourceMap	map	= javaBoxpiler.getSourceMapFromFQN( stackFrame.location().declaringType().name() );
 
 				sf.id		= stackFrame.hashCode();
 				sf.line		= stackFrame.location().lineNumber();
 				sf.column	= 0;
 				sf.name		= stackFrame.location().method().name();
+
+				if ( map != null && map.isTemplate() ) {
+					sf.name			= map.getFileName();
+					sf.source		= new Source();
+					sf.source.path	= map.source.toString();
+					sf.source.name	= sf.name + "(Template)";
+				}
 
 				return sf;
 			} )
@@ -329,6 +348,41 @@ public class DebugAdapter {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
+	}
+
+	public void visit( ScopeRequest debugRequest ) {
+		com.sun.jdi.StackFrame		vmStackFrame	= findStackFrame( debugRequest.arguments.frameId );
+		Map<LocalVariable, Value>	visibleVariables;
+		try {
+			visibleVariables = vmStackFrame.getValues( vmStackFrame.visibleVariables() );
+			ObjectReference	context		= ( ObjectReference ) JDITools.findVariableyName( vmStackFrame, "context" );
+			ObjectReference	variables	= ( ObjectReference ) JDITools.findPropertyByName( context, "variablesScope" );
+
+			Value			returnValue	= JDITools.invoke( vmStackFrame.thread(), variables, "getKeysAsStrings", new ArrayList<Value>() );
+
+			// TODO figure out how to get variables from returnValue
+			// TODO send ScopeResponse
+		} catch ( Exception e ) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+	}
+
+	private com.sun.jdi.StackFrame findStackFrame( int id ) {
+		for ( com.sun.jdi.ThreadReference thread : this.debugger.getAllThreadReferences() ) {
+			try {
+				for ( com.sun.jdi.StackFrame stackFrame : this.debugger.getStackFrames( thread.hashCode() ) ) {
+					if ( stackFrame.hashCode() == id ) {
+						return stackFrame;
+					}
+				}
+			} catch ( IncompatibleThreadStateException e ) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		}
+
+		return null;
 	}
 
 	// ===================================================
