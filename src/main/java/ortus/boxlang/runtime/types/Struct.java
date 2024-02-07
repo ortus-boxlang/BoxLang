@@ -38,6 +38,7 @@ import ortus.boxlang.runtime.interop.DynamicInteropService;
 import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.runnables.IClassRunnable;
 import ortus.boxlang.runtime.scopes.Key;
+import ortus.boxlang.runtime.scopes.KeyCased;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.exceptions.KeyNotFoundException;
 import ortus.boxlang.runtime.types.immutable.ImmutableStruct;
@@ -466,7 +467,7 @@ public class Struct implements IStruct, IListenable {
 	@Override
 	public Object put( Key key, Object value ) {
 		return wrapped.put(
-		    key,
+		    isCaseSensitive() && ! ( key instanceof KeyCased ) ? new KeyCased( key.getName() ) : key,
 		    notifyListeners( key, wrapNull( value ) )
 		);
 	}
@@ -480,7 +481,7 @@ public class Struct implements IStruct, IListenable {
 	 * @return The previous value of the key, or null if not found
 	 */
 	public Object put( String key, Object value ) {
-		return put( Key.of( key ), value );
+		return put( isCaseSensitive() ? KeyCased.of( key ) : Key.of( key ), value );
 	}
 
 	/**
@@ -495,7 +496,7 @@ public class Struct implements IStruct, IListenable {
 	public Object putIfAbsent( Key key, Object value ) {
 		if ( !containsKey( key ) ) {
 			return wrapped.putIfAbsent(
-			    key,
+			    isCaseSensitive() && ! ( key instanceof KeyCased ) ? new KeyCased( key.getName() ) : key,
 			    notifyListeners( key, wrapNull( value ) )
 			);
 		}

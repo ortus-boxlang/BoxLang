@@ -25,7 +25,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -203,35 +202,27 @@ public class StructSortTest {
 
 		instance.executeSource(
 		    """
-		             	myStruct = {
-		           	cow: {
-		           		total: 12
-		           	},
-		           	pig: {
-		           		total: 5
-		           	},
-		           	cat: {
-		           		total: 3
-		           	}
-		           };
-		        system = createObject( "java", "java.lang.System" );
+		        	myStruct = {
+		      	cow: {
+		      		total: 12
+		      	},
+		      	pig: {
+		      		total: 5
+		      	},
+		      	cat: {
+		      		total: 3
+		      	}
+		      };
 
-		             	result = structSort( myStruct, ( a , b ) => {
-		       System.out.println( b );
-		        		System.out.println( myStruct[ b ].total );
-		       System.out.println( a );
-		        		System.out.println( myStruct[ a ].total );
+		        	result = structSort( myStruct, ( a , b ) => {
+		    	return compare( myStruct[ b ].total, myStruct[ a ].total )
+		    } );
 
-		    System.out.println( compare( myStruct[ b ].total, myStruct[ a ].total ) );
-		        		return compare( myStruct[ b ].total, myStruct[ a ].total )
-		        	} );
-
-		             """,
+		        """,
 		    context );
 
 		assertTrue( variables.get( result ) instanceof Array );
 		assertEquals( variables.getAsArray( result ).size(), 3 );
-		System.out.println( variables.getAsArray( result ) );
 		assertEquals( variables.getAsArray( result ).get( 2 ), "cat" );
 		assertEquals( variables.getAsArray( result ).get( 1 ), "pig" );
 		assertEquals( variables.getAsArray( result ).get( 0 ), "cow" );
@@ -263,8 +254,7 @@ public class StructSortTest {
 		assertEquals( variables.getAsArray( result ).get( 2 ), "cow" );
 	}
 
-	// We need to disable this for now until we can replicate Adobe's case-sensitive behavior with keys being case sensitive
-	@Disabled( "Can execute sort operations on a case-senstive struct" )
+	@DisplayName( "Can execute sort operations on a case-senstive struct" )
 	@Test
 	public void testMemberCaseSensitive() {
 		instance.executeSource(
@@ -283,10 +273,36 @@ public class StructSortTest {
 
 		assertTrue( variables.get( result ) instanceof Array );
 		assertEquals( variables.getAsInteger( Key.of( "count" ) ), 4 );
-		assertEquals( variables.getAsArray( result ).get( 0 ), "bar" );
-		assertEquals( variables.getAsArray( result ).get( 1 ), "bAR" );
-		assertEquals( variables.getAsArray( result ).get( 2 ), "foo" );
-		assertEquals( variables.getAsArray( result ).get( 3 ), "fOO" );
+		assertEquals( variables.getAsArray( result ).get( 0 ), "bAR" );
+		assertEquals( variables.getAsArray( result ).get( 1 ), "bar" );
+		assertEquals( variables.getAsArray( result ).get( 2 ), "fOO" );
+		assertEquals( variables.getAsArray( result ).get( 3 ), "foo" );
+
+		instance.executeSource(
+		    """
+		    myStruct = structNew( "casesensitive" );
+		          myStruct[ "coW" ] = {
+		    	total: 12
+		    };
+		    myStruct[ "Pig" ] = {
+		    	total: 12
+		    };
+		    myStruct[ "cAt" ] = {
+		    	total: 3
+		    };
+
+		               	result = myStruct.sort( ( a , b ) => {
+		          		return compare( myStruct[ b ].total, myStruct[ a ].total )
+		          	} );
+
+		               """,
+		    context );
+
+		assertTrue( variables.get( result ) instanceof Array );
+		assertEquals( variables.getAsArray( result ).size(), 3 );
+		assertEquals( variables.getAsArray( result ).get( 2 ), "cAt" );
+		assertEquals( variables.getAsArray( result ).get( 1 ), "Pig" );
+		assertEquals( variables.getAsArray( result ).get( 0 ), "coW" );
 
 	}
 
