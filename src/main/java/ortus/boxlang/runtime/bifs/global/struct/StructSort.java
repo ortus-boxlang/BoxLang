@@ -51,12 +51,18 @@ public class StructSort extends BIF {
 	}
 
 	/**
-	 * Describe what the invocation of your bif function does
+	 * Sorts a struct according to the specified arguments and returns an array of struct keys
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.foo Describe any expected arguments
+	 * @argument.struct The struct to sort
+	 *
+	 * @argument.sortType An optional sort type to apply to that type - if a callback is given in this position it will be used as that argument
+	 *
+	 * @argument.sortOrder The sort order applicable to the sortType argument
+	 *
+	 * @argument.callback An optional callback to use as the sorting function
 	 */
 	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
 		IStruct target = arguments.getAsStruct( Key.struct );
