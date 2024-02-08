@@ -9,10 +9,10 @@ plugins {
 	id "application"
 	id 'antlr'
 	// For source code formatting
-	id "com.diffplug.spotless" version "6.20.0"
+	id "com.diffplug.spotless" version "6.25.0"
     id 'com.github.johnrengelman.shadow' version '8.1.1'
 	// task to check for dependency updates
-	id 'com.github.ben-manes.versions' version '0.50.0'
+	id 'com.github.ben-manes.versions' version '0.51.0'
 }
 
 /**
@@ -74,7 +74,7 @@ dependencies {
 	// https://mvnrepository.com/artifact/commons-io/commons-io
 	implementation "commons-io:commons-io:2.15.1"
 	// https://mvnrepository.com/artifact/com.github.javaparser/javaparser-symbol-solver-core
-	implementation 'com.github.javaparser:javaparser-symbol-solver-core:3.25.4'
+	implementation 'com.github.javaparser:javaparser-symbol-solver-core:3.25.8'
 	// https://mvnrepository.com/artifact/org.apache.commons/commons-lang3
 	implementation 'org.apache.commons:commons-lang3:3.14.0'
 	// https://mvnrepository.com/artifact/com.fasterxml.jackson.jr/jackson-jr-all
