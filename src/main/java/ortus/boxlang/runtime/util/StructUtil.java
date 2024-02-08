@@ -17,6 +17,7 @@
  */
 package ortus.boxlang.runtime.util;
 
+import java.util.AbstractMap;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -28,6 +29,8 @@ import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+
+import org.apache.commons.lang3.StringUtils;
 
 import com.google.common.base.Predicate;
 
@@ -47,23 +50,26 @@ import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
 public class StructUtil {
 
-	public static final HashMap<Key, Comparator<Key>> commonComparators = new HashMap<Key, Comparator<Key>>() {
+	public static final HashMap<Key, Comparator<Key>>	commonComparators	= new HashMap<Key, Comparator<Key>>() {
 
-		{
-			put( Key.of( "textAsc" ), ( a, b ) -> Compare.invoke( a, b, true ) );
-			put( Key.of( "textDesc" ), ( b, a ) -> Compare.invoke( a, b, true ) );
-			put( Key.of( "textNoCaseAsc" ), ( a, b ) -> Compare.invoke( a, b, false ) );
-			put( Key.of( "textNoCaseDesc" ), ( b, a ) -> Compare.invoke( a, b, false ) );
-			put( Key.of( "numericAsc" ), ( a, b ) -> Compare.invoke(
-			    DoubleCaster.cast( a.getOriginalValue() ),
-			    DoubleCaster.cast( b.getOriginalValue() )
-			) );
-			put( Key.of( "numericDesc" ), ( b, a ) -> Compare.invoke(
-			    DoubleCaster.cast( a.getOriginalValue() ),
-			    DoubleCaster.cast( b.getOriginalValue() )
-			) );
-		}
-	};
+																				{
+																					put( Key.of( "textAsc" ), ( a, b ) -> Compare.invoke( a, b, true ) );
+																					put( Key.of( "textDesc" ), ( b, a ) -> Compare.invoke( a, b, true ) );
+																					put( Key.of( "textNoCaseAsc" ), ( a, b ) -> Compare.invoke( a, b, false ) );
+																					put( Key.of( "textNoCaseDesc" ),
+																					    ( b, a ) -> Compare.invoke( a, b, false ) );
+																					put( Key.of( "numericAsc" ), ( a, b ) -> Compare.invoke(
+																					    DoubleCaster.cast( a.getOriginalValue() ),
+																					    DoubleCaster.cast( b.getOriginalValue() )
+																					) );
+																					put( Key.of( "numericDesc" ), ( b, a ) -> Compare.invoke(
+																					    DoubleCaster.cast( a.getOriginalValue() ),
+																					    DoubleCaster.cast( b.getOriginalValue() )
+																					) );
+																				}
+																			};
+
+	public static final Key								scopeAll			= Key.of( "all" );
 
 	/**
 	 * Method to invoke a function for every item in a struct
@@ -446,6 +452,121 @@ public class StructUtil {
 		} else {
 			return null;
 		}
+	}
+
+	/**
+	 * Returns an array of keys
+	 *
+	 * @param struct
+	 * @param key
+	 *
+	 * @return
+	 */
+	public static Stream<IStruct> findKey( IStruct struct, String key ) {
+		int		keyLength	= key.length();
+		IStruct	flatMap		= toFlatMap( struct );
+		return flatMap.entrySet()
+		    .stream()
+		    .filter( entry -> {
+			    String stringKey = entry.getKey().getName().toLowerCase();
+			    return StringUtils.right( stringKey, keyLength ).equals( key.toLowerCase() );
+		    } )
+		    .map( entry -> {
+			    Struct returnStruct	= new Struct( Struct.TYPES.LINKED );
+			    String keyName		= entry.getKey().getName();
+			    Key	parentKey		= Key.of( keyName.substring( 0, keyName.lastIndexOf( "." ) ) );
+			    returnStruct.put(
+			        Key.owner,
+			        flatMap.get( parentKey )
+			    );
+			    returnStruct.put(
+			        Key.path,
+			        keyName
+			    );
+			    returnStruct.put(
+			        Key.value,
+			        entry.getValue()
+			    );
+			    return returnStruct;
+		    } );
+
+	}
+
+	public static Stream<IStruct> findValue( IStruct struct, Object value ) {
+		IStruct flatMap = toFlatMap( struct );
+		return flatMap.entrySet()
+		    .stream()
+		    .filter( entry -> Compare.invoke( value, entry.getValue() ) == 0 )
+		    .map( entry -> {
+			    Struct returnStruct	= new Struct( Struct.TYPES.LINKED );
+			    String keyName		= entry.getKey().getName();
+			    Key	parentKey		= Key.of( keyName.substring( 0, keyName.lastIndexOf( "." ) ) );
+			    returnStruct.put(
+			        Key.owner,
+			        flatMap.get( parentKey )
+			    );
+			    // TODO: This dot prefix is silly given the context this function operates in. Deprecate the dot prefix in a future release.
+			    returnStruct.put(
+			        Key.path,
+			        "." + keyName
+			    );
+			    returnStruct.put(
+			        Key.key,
+			        entry.getKey().getName()
+			    );
+			    return returnStruct;
+		    } );
+
+	}
+
+	/**
+	 * Flattens a struct in to a struct containing dot-delmited keys for nested structs
+	 *
+	 * @param struct
+	 *
+	 * @return a flattened map of the struct
+	 */
+	public static IStruct toFlatMap( IStruct struct ) {
+		return new Struct(
+		    struct.getType(),
+		    struct.entrySet().stream()
+		        .flatMap( StructUtil::flattenEntry )
+		        .collect(
+		            Collectors.toMap(
+		                entry -> entry.getKey(),
+		                entry -> entry.getValue(),
+		                ( v1, v2 ) -> {
+			                throw new BoxRuntimeException( "An exception occurred while flattening the struct" );
+		                },
+		                LinkedHashMap<Key, Object>::new
+		            )
+		        )
+		);
+	}
+
+	/**
+	 * Method to recursively flatten an entry set containing structs
+	 *
+	 * @param entry the individual entry set from the stream
+	 *
+	 * @return the stream object for further operations
+	 */
+	public static Stream<Map.Entry<Key, Object>> flattenEntry( Map.Entry<Key, Object> entry ) {
+
+		java.util.function.Function<Map.Entry<Key, Object>, AbstractMap.SimpleEntry<Key, Object>> flattener = e -> new AbstractMap.SimpleEntry<Key, Object>(
+		    Key.of(
+		        entry.getKey().getName() + "." + e.getKey().getName()
+		    ),
+		    e.getValue()
+		);
+
+		if ( entry.getValue() instanceof Map ) {
+			IStruct nested = StructCaster.cast( entry.getValue() );
+			return nested.entrySet().stream()
+			    .map( flattener )
+			    .flatMap( StructUtil::flattenEntry );
+		}
+		return Stream.of( entry );
 	}
 
 }

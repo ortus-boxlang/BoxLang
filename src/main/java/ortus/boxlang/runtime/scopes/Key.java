@@ -236,6 +236,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key	os							= Key.of( "os" );
 	public static final Key	output						= Key.of( "output" );
 	public static final Key	overwrite					= Key.of( "overwrite" );
+	public static final Key	owner						= Key.of( "owner" );
 	public static final Key	parallel					= Key.of( "parallel" );
 	public static final Key	parameters					= Key.of( "parameters" );
 	public static final Key	params						= Key.of( "params" );
@@ -258,6 +259,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key	rJustify					= Key.of( "rJustify" );
 	public static final Key	rowData						= Key.of( "rowData" );
 	public static final Key	runtime						= Key.of( "runtime" );
+	public static final Key	scope						= Key.of( "scope" );
 	public static final Key	script_name					= Key.of( "script_name" );
 	public static final Key	second						= Key.of( "second" );
 	public static final Key	seconds						= Key.of( "seconds" );
