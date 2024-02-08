@@ -634,7 +634,9 @@ public class Struct implements IStruct, IListenable {
 	 */
 	@Override
 	public boolean equals( Object obj ) {
-		return wrapped.equals( obj );
+		return obj instanceof IStruct struct
+		    ? wrapped.equals( struct.getWrapped() )
+		    : wrapped.equals( obj );
 	}
 
 	/**
