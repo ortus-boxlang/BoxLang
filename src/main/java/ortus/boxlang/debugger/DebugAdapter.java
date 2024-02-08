@@ -25,6 +25,7 @@ import java.io.OutputStream;
 import java.net.SocketException;
 import java.nio.CharBuffer;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.regex.Matcher;
@@ -35,13 +36,12 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.sun.jdi.IncompatibleThreadStateException;
-import com.sun.jdi.LocalVariable;
 import com.sun.jdi.ObjectReference;
-import com.sun.jdi.Value;
 
 import ortus.boxlang.debugger.event.Event;
 import ortus.boxlang.debugger.event.StoppedEvent;
 import ortus.boxlang.debugger.request.ConfigurationDoneRequest;
+import ortus.boxlang.debugger.request.ContinueRequest;
 import ortus.boxlang.debugger.request.IDebugRequest;
 import ortus.boxlang.debugger.request.InitializeRequest;
 import ortus.boxlang.debugger.request.LaunchRequest;
@@ -49,14 +49,20 @@ import ortus.boxlang.debugger.request.ScopeRequest;
 import ortus.boxlang.debugger.request.SetBreakpointsRequest;
 import ortus.boxlang.debugger.request.StackTraceRequest;
 import ortus.boxlang.debugger.request.ThreadsRequest;
+import ortus.boxlang.debugger.request.VariablesRequest;
+import ortus.boxlang.debugger.response.ContinueResponse;
 import ortus.boxlang.debugger.response.InitializeResponse;
 import ortus.boxlang.debugger.response.NoBodyResponse;
+import ortus.boxlang.debugger.response.ScopeResponse;
 import ortus.boxlang.debugger.response.SetBreakpointsResponse;
 import ortus.boxlang.debugger.response.StackTraceResponse;
 import ortus.boxlang.debugger.response.ThreadsResponse;
+import ortus.boxlang.debugger.response.VariablesResponse;
 import ortus.boxlang.debugger.types.Breakpoint;
+import ortus.boxlang.debugger.types.Scope;
 import ortus.boxlang.debugger.types.Source;
 import ortus.boxlang.debugger.types.StackFrame;
+import ortus.boxlang.debugger.types.Variable;
 import ortus.boxlang.runtime.BoxRunner;
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.runnables.compiler.JavaBoxpiler;
@@ -68,14 +74,16 @@ import ortus.boxlang.runtime.util.JSONUtil;
  */
 public class DebugAdapter {
 
-	private Thread				inputThread;
-	private Logger				logger;
-	private InputStream			inputStream;
-	private OutputStream		outputStream;
-	private BoxLangDebugger		debugger;
-	private boolean				running	= true;
-	private List<IDebugRequest>	requestQueue;
-	private JavaBoxpiler		javaBoxpiler;
+	private Thread						inputThread;
+	private Logger						logger;
+	private InputStream					inputStream;
+	private OutputStream				outputStream;
+	private BoxLangDebugger				debugger;
+	private boolean						running		= true;
+	private List<IDebugRequest>			requestQueue;
+	private JavaBoxpiler				javaBoxpiler;
+
+	private Map<Integer, ScopeCache>	seenScopes	= new HashMap<Integer, ScopeCache>();
 
 	/**
 	 * Constructor
@@ -229,6 +237,10 @@ public class DebugAdapter {
 				return JSONUtil.fromJSON( StackTraceRequest.class, json );
 			case "scopes" :
 				return JSONUtil.fromJSON( ScopeRequest.class, json );
+			case "variables" :
+				return JSONUtil.fromJSON( VariablesRequest.class, json );
+			case "continue" :
+				return JSONUtil.fromJSON( ContinueRequest.class, json );
 		}
 
 		throw new NotImplementedException( command );
@@ -252,6 +264,16 @@ public class DebugAdapter {
 	public void visit( InitializeRequest debugRequest ) {
 		new InitializeResponse( debugRequest ).send( this.outputStream );
 		new Event( "initialized" ).send( this.outputStream );
+	}
+
+	/**
+	 * Visit InitializeRequest instances. Respond to the initialize request and send an initialized event.
+	 * 
+	 * @param debugRequest
+	 */
+	public void visit( ContinueRequest debugRequest ) {
+		this.debugger.forceResume();
+		new ContinueResponse( debugRequest, true ).send( this.outputStream );
 	}
 
 	/**
@@ -351,17 +373,100 @@ public class DebugAdapter {
 	}
 
 	public void visit( ScopeRequest debugRequest ) {
-		com.sun.jdi.StackFrame		vmStackFrame	= findStackFrame( debugRequest.arguments.frameId );
-		Map<LocalVariable, Value>	visibleVariables;
+		com.sun.jdi.StackFrame vmStackFrame = findStackFrame( debugRequest.arguments.frameId );
 		try {
-			visibleVariables = vmStackFrame.getValues( vmStackFrame.visibleVariables() );
 			ObjectReference	context		= ( ObjectReference ) JDITools.findVariableyName( vmStackFrame, "context" );
 			ObjectReference	variables	= ( ObjectReference ) JDITools.findPropertyByName( context, "variablesScope" );
+			// Map<String, String> vars = JDITools.convertScopeToMap( this.debugger.vm, vmStackFrame.thread(), variables );
 
-			Value			returnValue	= JDITools.invoke( vmStackFrame.thread(), variables, "getKeysAsStrings", new ArrayList<Value>() );
+			this.seenScopes.put( variables.hashCode(), new ScopeCache( vmStackFrame, variables ) );
+
+			Scope variablesScope = new Scope();
+			variablesScope.name					= "Variables Scope";
+			variablesScope.variablesReference	= variables.hashCode();
+			List<Scope> scopes = new ArrayList<Scope>();
+			scopes.add( variablesScope );
+			new ScopeResponse( debugRequest, scopes ).send( this.outputStream );
+
+			// Value returnValue = JDITools.invoke( vmStackFrame.thread(), variables, "getKeysAsStrings", new ArrayList<Value>() );
 
 			// TODO figure out how to get variables from returnValue
 			// TODO send ScopeResponse
+		} catch ( Exception e ) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+	}
+
+	public void visit( VariablesRequest debugRequest ) {
+		try {
+			// ScopeCache scopeCache = this.seenScopes.get( debugRequest.arguments.variablesReference );
+			// com.sun.jdi.StackFrame vmStackFrame = scopeCache.stackFrame;
+			// ObjectReference variables = scopeCache.scope;
+			// Map<String, Object> vars = JDITools.getValuesFromScope( variables )
+
+			List<Variable> ideVars = new ArrayList<Variable>();
+
+			if ( debugRequest.arguments.variablesReference == 11 ) {
+				/*
+				 * person = {
+				 * firstName: "Phillip",
+				 * lastName: "Fry",
+				 * age: 30,
+				 * job: "Delivery Boy",
+				 * company: "Planet Express"
+				 * };
+				 */
+				Variable firstName = new Variable();
+				firstName.name					= "firstName";
+				firstName.value					= "\"Phillip\"";
+				firstName.type					= "string";
+				firstName.variablesReference	= 0;
+				ideVars.add( firstName );
+
+				Variable lastName = new Variable();
+				lastName.name				= "lastName";
+				lastName.value				= "\"Fry\"";
+				lastName.type				= "string";
+				lastName.variablesReference	= 0;
+				ideVars.add( lastName );
+
+				Variable age = new Variable();
+				age.name				= "age";
+				age.value				= "30";
+				age.type				= "numeric";
+				age.variablesReference	= 0;
+				ideVars.add( age );
+
+				Variable job = new Variable();
+				job.name				= "job";
+				job.value				= "\"Delivery Boy\"";
+				job.type				= "string";
+				job.variablesReference	= 0;
+				ideVars.add( job );
+
+				Variable company = new Variable();
+				company.name				= "company";
+				company.value				= "\"Planet Express\"";
+				company.type				= "string";
+				company.variablesReference	= 0;
+				ideVars.add( company );
+			} else {
+				Variable color = new Variable();
+				color.name					= "color";
+				color.value					= "\"green\"";
+				color.type					= "string";
+				color.variablesReference	= 0;
+				ideVars.add( color );
+
+				Variable person = new Variable();
+				person.name					= "person";
+				person.value				= "{}";
+				person.type					= "struct";
+				person.variablesReference	= 11;
+				ideVars.add( person );
+			}
+			new VariablesResponse( debugRequest, ideVars ).send( this.outputStream );
 		} catch ( Exception e ) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -392,4 +497,8 @@ public class DebugAdapter {
 	public void sendStoppedEventForBreakpoint( int threadId ) {
 		StoppedEvent.breakpoint( threadId ).send( this.outputStream );
 	}
+
+	record ScopeCache( com.sun.jdi.StackFrame stackFrame, ObjectReference scope ) {
+
+	};
 }

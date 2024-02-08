@@ -52,6 +52,7 @@ import com.sun.jdi.request.BreakpointRequest;
 import com.sun.jdi.request.ClassPrepareRequest;
 import com.sun.jdi.request.StepRequest;
 
+import ortus.boxlang.debugger.event.ExitEvent;
 import ortus.boxlang.debugger.event.OutputEvent;
 import ortus.boxlang.debugger.types.Breakpoint;
 import ortus.boxlang.runtime.runnables.compiler.JavaBoxpiler;
@@ -60,18 +61,19 @@ import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
 public class BoxLangDebugger implements IBoxLangDebugger {
 
+	public VirtualMachine			vm;
 	private Class					debugClass;
 	private int[]					breakPointLines;
 	private String					cliArgs;
 	private OutputStream			debugAdapterOutput;
 	Map<String, List<Breakpoint>>	breakpoints;
-	private VirtualMachine			vm;
 	private List<ReferenceType>		vmClasses;
 	private JavaBoxpiler			javaBoxpiler;
 	private Status					status;
 	private DebugAdapter			debugAdapter;
 	private InputStream				vmInput;
 	private InputStream				vmErrorInput;
+	private BreakpointEvent			bpe;
 
 	public enum Status {
 		NOT_STARTED,
@@ -122,10 +124,10 @@ public class BoxLangDebugger implements IBoxLangDebugger {
 				readVMErrorInput();
 
 				processVMEvents( eventSet );
+			}
 
-				if ( this.status == Status.RUNNING ) {
-					vm.resume();
-				}
+			if ( this.status == Status.RUNNING ) {
+				vm.resume();
 			}
 		} catch ( Exception e ) {
 			e.printStackTrace();
@@ -140,7 +142,8 @@ public class BoxLangDebugger implements IBoxLangDebugger {
 			System.out.println( "Found event: " + event.toString() );
 
 			if ( event instanceof VMDeathEvent de ) {
-				this.status = Status.DONE;
+				// this.status = Status.DONE;
+				handleDeathEvent( de );
 			}
 			if ( event instanceof ClassPrepareEvent cpe ) {
 				vmClasses.add( cpe.referenceType() );
@@ -154,6 +157,11 @@ public class BoxLangDebugger implements IBoxLangDebugger {
 			}
 
 		}
+	}
+
+	private void handleDeathEvent( VMDeathEvent de ) {
+		new ExitEvent( this.vm.process().exitValue() ).send( this.debugAdapterOutput );
+		this.status = Status.DONE;
 	}
 
 	private void readVMInput() {
@@ -201,6 +209,7 @@ public class BoxLangDebugger implements IBoxLangDebugger {
 
 	public void forceResume() {
 		this.status = Status.RUNNING;
+		this.bpe.thread().resume();
 	}
 
 	public void startDebugSession() {
@@ -287,8 +296,9 @@ public class BoxLangDebugger implements IBoxLangDebugger {
 		this.status = Status.STOPPED;
 		this.debugAdapter.sendStoppedEventForBreakpoint( ( int ) bpe.thread().uniqueID() );
 		// displayVariables( bpe );
-
-		enableStepRequest( vm, bpe );
+		this.bpe = bpe;
+		// vm.suspend();
+		// enableStepRequest( vm, bpe );
 	}
 
 	public VirtualMachine connectAndLaunchVM() throws Exception {
