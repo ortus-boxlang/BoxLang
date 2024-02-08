@@ -102,10 +102,10 @@ public class IsXMLDocTest {
 	public void testRandomNode() {
 		instance.executeSource(
 		    """
-				xml = XMLParse( xmlString );
-				search = xmlSearch( xml, '//@attr' )
-		    result = isXMLDoc( search[1] )
-		    """,
+		    xml = XMLParse( xmlString );
+		    search = xmlSearch( xml, '//@attr' )
+		      result = isXMLDoc( search[1] )
+		      """,
 		    context );
 		assertThat( variables.get( result ) ).isEqualTo( false );
 	}
