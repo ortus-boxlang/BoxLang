@@ -58,7 +58,7 @@ public class IsXMLElemTest {
 		variables.put(
 		    Key.of( "xmlString" ),
 		    """
-		    <rootN ode>
+		    <rootNode>
 		    	<subNode attr="value" />
 		    </rootNode>
 		    """ );
