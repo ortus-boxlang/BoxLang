@@ -153,6 +153,14 @@ public interface IStruct extends Map<Key, Object>, IType, IReferenceable {
 	public Object remove( Key key );
 
 	/**
+	 * Copies all of the mappings from the specified map to this map (optional operation).
+	 * This method will automatically convert the keys to Key objects
+	 *
+	 * @param map
+	 */
+	public void addAll( Map<? extends Object, ? extends Object> map );
+
+	/**
 	 * Convert the struct to a human-readable string, usually great for debugging
 	 * Remember structs have no order except their internal hash code
 	 *
