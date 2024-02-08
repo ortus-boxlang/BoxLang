@@ -103,3 +103,5 @@ Here is a listing of all of our core dependencies.  If you add one, make sure yo
 
 - All code should be formatted using either our Java Formatter or the CFFormatter.
 - All code should have a license/copyright header based on [CodeHeader.txt](workbench/CodeHeader.txt)
+
+Made with ♥️ in USA 🇺🇸, El Salvador 🇸🇻 and Spain 🇪🇸
