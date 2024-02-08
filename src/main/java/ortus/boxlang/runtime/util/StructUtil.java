@@ -472,16 +472,18 @@ public class StructUtil {
 			    return StringUtils.right( stringKey, keyLength ).equals( key.toLowerCase() );
 		    } )
 		    .map( entry -> {
-			    Struct returnStruct	= new Struct( Struct.TYPES.LINKED );
-			    String keyName		= entry.getKey().getName();
-			    Key	parentKey		= Key.of( keyName.substring( 0, keyName.lastIndexOf( "." ) ) );
+			    Struct	returnStruct	= new Struct( Struct.TYPES.LINKED );
+			    String	keyName			= entry.getKey().getName();
+			    String[] keyParts		= entry.getKey().getName().split( "\\." );
 			    returnStruct.put(
 			        Key.owner,
-			        flatMap.get( parentKey )
+			        keyParts.length > 1
+			            ? flatMap.get( Key.of( keyName.substring( 0, keyName.lastIndexOf( "." ) ) ) )
+			            : struct
 			    );
 			    returnStruct.put(
 			        Key.path,
-			        keyName
+			        "." + keyName
 			    );
 			    returnStruct.put(
 			        Key.value,
@@ -498,12 +500,14 @@ public class StructUtil {
 		    .stream()
 		    .filter( entry -> Compare.invoke( value, entry.getValue() ) == 0 )
 		    .map( entry -> {
-			    Struct returnStruct	= new Struct( Struct.TYPES.LINKED );
-			    String keyName		= entry.getKey().getName();
-			    Key	parentKey		= Key.of( keyName.substring( 0, keyName.lastIndexOf( "." ) ) );
+			    Struct	returnStruct	= new Struct( Struct.TYPES.LINKED );
+			    String	keyName			= entry.getKey().getName();
+			    String[] keyParts		= entry.getKey().getName().split( "\\." );
 			    returnStruct.put(
 			        Key.owner,
-			        flatMap.get( parentKey )
+			        keyParts.length > 1
+			            ? flatMap.get( Key.of( keyName.substring( 0, keyName.lastIndexOf( "." ) ) ) )
+			            : struct
 			    );
 			    // TODO: This dot prefix is silly given the context this function operates in. Deprecate the dot prefix in a future release.
 			    returnStruct.put(
@@ -512,7 +516,7 @@ public class StructUtil {
 			    );
 			    returnStruct.put(
 			        Key.key,
-			        entry.getKey().getName()
+			        keyParts[ keyParts.length - 1 ]
 			    );
 			    return returnStruct;
 		    } );

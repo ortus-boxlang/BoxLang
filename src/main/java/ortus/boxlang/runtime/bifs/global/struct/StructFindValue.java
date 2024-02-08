@@ -37,37 +37,37 @@ import ortus.boxlang.runtime.util.StructUtil;
 @BoxBIF
 @BoxMember( type = BoxLangType.STRUCT )
 
-public class StructFindKey extends BIF {
+public class StructFindValue extends BIF {
 
 	/**
 	 * Constructor
 	 */
-	public StructFindKey() {
+	public StructFindValue() {
 		super();
 		declaredArguments = new Argument[] {
 		    new Argument( true, "struct", Key.struct ),
-		    new Argument( true, "string", Key.key ),
+		    new Argument( true, "string", Key.value ),
 		    new Argument( false, "string", Key.scope, "one" )
 		};
 	}
 
 	/**
-	 * Searches a struct for a given key and returns an array of values
+	 * Searches a struct for a given value and returns an array of results
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
 	 * @argument.struct The struct to search
 	 *
-	 * @argument.key The key to search for
+	 * @argument.value The value to search for
 	 *
 	 * @argument.scope Either one (default), which finds the first instance or all to return all values
 	 */
 	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
 		Key				scopeKey		= Key.of( arguments.getAsString( Key.scope ) );
-		Stream<IStruct>	searchStream	= StructUtil.findKey(
+		Stream<IStruct>	searchStream	= StructUtil.findValue(
 		    arguments.getAsStruct( Key.struct ),
-		    arguments.getAsString( Key.key )
+		    arguments.getAsString( Key.value )
 		);
 
 		Object			result			= scopeKey.equals( StructUtil.scopeAll )
