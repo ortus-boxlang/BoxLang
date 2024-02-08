@@ -79,6 +79,16 @@ public class DynamicClassLoader extends URLClassLoader {
 	}
 
 	/**
+	 * Construct the class loader
+	 *
+	 * @param name   The unique name of the class loader
+	 * @param parent The parent class loader to delegate to
+	 */
+	public DynamicClassLoader( Key name, ClassLoader parent ) {
+		this( name, new URL[ 0 ], parent );
+	}
+
+	/**
 	 * --------------------------------------------------------------------------
 	 * Resolving Methods
 	 * --------------------------------------------------------------------------
@@ -171,6 +181,31 @@ public class DynamicClassLoader extends URLClassLoader {
 	 */
 	public ClassLoader getDynamicParent() {
 		return this.parent;
+	}
+
+	/**
+	 * Add a URL to the class loader
+	 *
+	 * @param url The URL to add
+	 *
+	 * @see URLClassLoader#addURL(URL)
+	 */
+	@Override
+	public void addURL( URL url ) {
+		super.addURL( url );
+	}
+
+	/**
+	 * Add an array of URLs to the class loader
+	 *
+	 * @param urls The URLs to add
+	 *
+	 * @see URLClassLoader#addURL(URL)
+	 */
+	public void addURLs( URL[] urls ) {
+		for ( URL url : urls ) {
+			addURL( url );
+		}
 	}
 
 	/**
