@@ -14,8 +14,6 @@
  */
 package ortus.boxlang.runtime.bifs.global.decision;
 
-import org.w3c.dom.Node;
-
 import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
 import ortus.boxlang.runtime.context.IBoxContext;
@@ -27,12 +25,12 @@ import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.XML;
 
 @BoxBIF
-public class IsXMLDoc extends BIF {
+public class IsXMLNode extends BIF {
 
 	/**
 	 * Constructor
 	 */
-	public IsXMLDoc() {
+	public IsXMLNode() {
 		super();
 		declaredArguments = new Argument[] {
 		    new Argument( true, "any", Key.value ),
@@ -40,7 +38,7 @@ public class IsXMLDoc extends BIF {
 	}
 
 	/**
-	 * Determines whether the function parameter is an Extended Markup language (XML) document object.
+	 * Determines whether the function parameter is a ANY node of an XML doc.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
@@ -49,7 +47,7 @@ public class IsXMLDoc extends BIF {
 	 */
 	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
 		CastAttempt<XML> castAttempt = XMLCaster.attempt( arguments.get( Key.value ) );
-		return castAttempt.wasSuccessful() && castAttempt.get().getNode().getNodeType() == Node.DOCUMENT_NODE;
+		return castAttempt.wasSuccessful();
 	}
 
 }

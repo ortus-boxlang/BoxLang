@@ -17,9 +17,12 @@
  */
 package ortus.boxlang.runtime.dynamic.casters;
 
+import org.xml.sax.SAXException;
+
 import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.types.XML;
 import ortus.boxlang.runtime.types.exceptions.BoxCastException;
+import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
 /**
  * I handle casting anything to XML
@@ -78,11 +81,41 @@ public class XMLCaster {
 			return new XML( node );
 		}
 
+		// If we have a string-ish input, let's try to parse it.
+		CastAttempt<String> stringCastAttempt = StringCaster.attempt( object );
+		if ( stringCastAttempt.wasSuccessful() ) {
+			String oString = stringCastAttempt.get();
+			if ( XMLSmokeTest( oString ) ) {
+				try {
+					return new XML( oString );
+				} catch ( BoxRuntimeException e ) {
+					// If the error we hit didn't seem to be related to the actual parsing, rethrow it
+					if ( e.getCause() == null || ! ( e.getCause() instanceof SAXException ) ) {
+						throw e;
+					}
+					// Do nothing, we'll throw below
+				}
+			}
+		}
+
 		if ( fail ) {
 			throw new BoxCastException( "Can't cast " + object.getClass().getName() + " to XML." );
 		} else {
 			return null;
 		}
+	}
+
+	/**
+	 * An attempt to do a basic smoke test on the string before actually parsing it and possibly catching an execption.
+	 * If this is problematic, remove it and just take the parsing hit.
+	 * 
+	 * @param xmlData The XML data to test
+	 * 
+	 * @return True if the data is valid XML
+	 */
+	private static boolean XMLSmokeTest( String xmlData ) {
+		String trimmed = xmlData.trim();
+		return trimmed.startsWith( "<" ) && trimmed.endsWith( ">" );
 	}
 
 }

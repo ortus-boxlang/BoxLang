@@ -14,6 +14,8 @@
  */
 package ortus.boxlang.runtime.bifs.global.decision;
 
+import org.w3c.dom.Node;
+
 import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
 import ortus.boxlang.runtime.context.IBoxContext;
@@ -38,7 +40,7 @@ public class IsXmlAttribute extends BIF {
 	}
 
 	/**
-	 * Determines whether the function parameter is an XML Document Object Model (DOM) attribute node.
+	 * Determines whether the function parameter is an ATTRIBUTE node of an XML doc.
 	 * Will return false for values refernced through the XMLAttributes struct. Useful for the results of XMLSearch()
 	 *
 	 * @param context   The context in which the BIF is being invoked.
@@ -48,14 +50,7 @@ public class IsXmlAttribute extends BIF {
 	 */
 	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
 		CastAttempt<XML> castAttempt = XMLCaster.attempt( arguments.get( Key.value ) );
-		// If this is an XML node
-		System.out.println( "castAttempt.wasSuccessful(): " + castAttempt.wasSuccessful() );
-		if ( castAttempt.wasSuccessful() ) {
-			// See if it's an attribute specifically
-			System.out.println( "castAttempt.get().getXMLType(): " + castAttempt.get().getXMLType() );
-			return castAttempt.get().getXMLType().equals( "ATTRIBUTE" );
-		}
-		return false;
+		return castAttempt.wasSuccessful() && castAttempt.get().getNode().getNodeType() == Node.ATTRIBUTE_NODE;
 	}
 
 }

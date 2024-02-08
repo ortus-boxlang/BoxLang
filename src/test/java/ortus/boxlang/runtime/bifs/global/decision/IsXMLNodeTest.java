@@ -33,7 +33,7 @@ import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
 
-public class IsXMLAttributeTest {
+public class IsXMLNodeTest {
 
 	static BoxRuntime	instance;
 	static IBoxContext	context;
@@ -59,7 +59,7 @@ public class IsXMLAttributeTest {
 		    Key.of( "xmlString" ),
 		    """
 		    <rootNode>
-		     <subNode attr="value" />
+		    	<subNode attr="value" />
 		    </rootNode>
 		    """ );
 	}
@@ -69,10 +69,10 @@ public class IsXMLAttributeTest {
 	public void testDocument() {
 		instance.executeSource(
 		    """
-		    result = IsXMLAttribute( XMLParse( xmlString ) )
+		    result = IsXMLNode( XMLParse( xmlString ) )
 		    """,
 		    context );
-		assertThat( variables.get( result ) ).isEqualTo( false );
+		assertThat( variables.get( result ) ).isEqualTo( true );
 	}
 
 	@DisplayName( "It works on root node" )
@@ -80,10 +80,10 @@ public class IsXMLAttributeTest {
 	public void testRootNode() {
 		instance.executeSource(
 		    """
-		    result = IsXMLAttribute( XMLParse( xmlString ).rootNode )
+		    result = IsXMLNode( XMLParse( xmlString ).rootNode )
 		    """,
 		    context );
-		assertThat( variables.get( result ) ).isEqualTo( false );
+		assertThat( variables.get( result ) ).isEqualTo( true );
 	}
 
 	@DisplayName( "It works on Element" )
@@ -91,21 +91,21 @@ public class IsXMLAttributeTest {
 	public void testElement() {
 		instance.executeSource(
 		    """
-		    result = IsXMLAttribute( XMLParse( xmlString ).rootNode.subNode )
+		    result = IsXMLNode( XMLParse( xmlString ).rootNode.subNode )
 		    """,
 		    context );
-		assertThat( variables.get( result ) ).isEqualTo( false );
+		assertThat( variables.get( result ) ).isEqualTo( true );
 	}
 
-	@DisplayName( "It works attribute Node" )
+	@DisplayName( "It works Random Node" )
 	@Test
 	public void testRandomNode() {
 		instance.executeSource(
 		    """
-		     xml = XMLParse( xmlString );
-		     search = xmlSearch( xml, '//@attr' )
-		    result = IsXMLAttribute( search[1] )
-		    """,
+		    xml = XMLParse( xmlString );
+		    search = xmlSearch( xml, '//@attr' )
+		      result = IsXMLNode( search[1] )
+		      """,
 		    context );
 		assertThat( variables.get( result ) ).isEqualTo( true );
 	}
@@ -115,7 +115,7 @@ public class IsXMLAttributeTest {
 	public void testNonXMLVar() {
 		instance.executeSource(
 		    """
-		    result = IsXMLAttribute( [] )
+		    result = IsXMLNode( [] )
 		    """,
 		    context );
 		assertThat( variables.get( result ) ).isEqualTo( false );

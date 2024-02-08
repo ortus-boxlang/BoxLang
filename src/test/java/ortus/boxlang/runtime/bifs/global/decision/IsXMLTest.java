@@ -33,7 +33,7 @@ import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
 
-public class IsXMLAttributeTest {
+public class IsXMLTest {
 
 	static BoxRuntime	instance;
 	static IBoxContext	context;
@@ -55,70 +55,77 @@ public class IsXMLAttributeTest {
 	@BeforeEach
 	public void setupEach() {
 		variables.clear();
-		variables.put(
-		    Key.of( "xmlString" ),
-		    """
-		    <rootNode>
-		     <subNode attr="value" />
-		    </rootNode>
-		    """ );
 	}
 
-	@DisplayName( "It works on Document" )
+	@DisplayName( "It works on valid XML" )
 	@Test
-	public void testDocument() {
+	public void testValidXML() {
 		instance.executeSource(
 		    """
-		    result = IsXMLAttribute( XMLParse( xmlString ) )
-		    """,
-		    context );
-		assertThat( variables.get( result ) ).isEqualTo( false );
-	}
-
-	@DisplayName( "It works on root node" )
-	@Test
-	public void testRootNode() {
-		instance.executeSource(
-		    """
-		    result = IsXMLAttribute( XMLParse( xmlString ).rootNode )
-		    """,
-		    context );
-		assertThat( variables.get( result ) ).isEqualTo( false );
-	}
-
-	@DisplayName( "It works on Element" )
-	@Test
-	public void testElement() {
-		instance.executeSource(
-		    """
-		    result = IsXMLAttribute( XMLParse( xmlString ).rootNode.subNode )
-		    """,
-		    context );
-		assertThat( variables.get( result ) ).isEqualTo( false );
-	}
-
-	@DisplayName( "It works attribute Node" )
-	@Test
-	public void testRandomNode() {
-		instance.executeSource(
-		    """
-		     xml = XMLParse( xmlString );
-		     search = xmlSearch( xml, '//@attr' )
-		    result = IsXMLAttribute( search[1] )
+		    result = isXML( "<root />" )
 		    """,
 		    context );
 		assertThat( variables.get( result ) ).isEqualTo( true );
 	}
 
-	@DisplayName( "It works on Non-XML var" )
+	@DisplayName( "It works on more valid XML" )
 	@Test
-	public void testNonXMLVar() {
+	public void testMoreValidXML() {
 		instance.executeSource(
 		    """
-		    result = IsXMLAttribute( [] )
-		    """,
+		       result = isXML( '<?xml version="1.0"?>
+		    <xsl:stylesheet version="1.0"
+		    	xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
+		    	<xsl:output method="html" doctype-public="-//W3C//DTD HTML 4.0 Transitional//EN" />
+		    	<xsl:template match="/">
+		    		<html>
+		    			<body>
+		    				<table border="2" bgcolor="yellow">
+		    					<tr>
+		    						<th>Name</th>
+		    						<th>Price</th>
+		    					</tr>
+		    					<xsl:for-each select="breakfast_menu/food">
+		    						<tr>
+		    							<td>
+		    								<xsl:value-of select="name"/>
+		    							</td>
+		    							<td>
+		    								<xsl:value-of select="price"/>
+		    							</td>
+		    						</tr>
+		    					</xsl:for-each>
+		    				</table>
+		    			</body>
+		    		</html>
+		    	</xsl:template>
+		    </xsl:stylesheet>' )
+		       """,
+		    context );
+		assertThat( variables.get( result ) ).isEqualTo( true );
+	}
+
+	@DisplayName( "It rejects invalid XML" )
+	@Test
+	public void testRejectInvalid() {
+		instance.executeSource(
+		    """
+		    result = isXML( null )
+		    result2 = isXML( '' )
+		    result3 = isXML( 56 )
+		    result4 = isXML( {} )
+		    result5 = isXML( [] )
+		    result6 = isXML( '<foo>' )
+		    result7 = isXML( 'This is a test of the emergency broadcast system.' )
+		      """,
 		    context );
 		assertThat( variables.get( result ) ).isEqualTo( false );
+		assertThat( variables.get( Key.of( "result2" ) ) ).isEqualTo( false );
+		assertThat( variables.get( Key.of( "result3" ) ) ).isEqualTo( false );
+		assertThat( variables.get( Key.of( "result4" ) ) ).isEqualTo( false );
+		assertThat( variables.get( Key.of( "result5" ) ) ).isEqualTo( false );
+		assertThat( variables.get( Key.of( "result6" ) ) ).isEqualTo( false );
+		assertThat( variables.get( Key.of( "result7" ) ) ).isEqualTo( false );
 	}
 
 }

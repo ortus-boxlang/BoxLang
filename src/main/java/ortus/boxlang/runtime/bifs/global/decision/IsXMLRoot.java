@@ -27,12 +27,12 @@ import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.XML;
 
 @BoxBIF
-public class IsXMLDoc extends BIF {
+public class IsXMLRoot extends BIF {
 
 	/**
 	 * Constructor
 	 */
-	public IsXMLDoc() {
+	public IsXMLRoot() {
 		super();
 		declaredArguments = new Argument[] {
 		    new Argument( true, "any", Key.value ),
@@ -40,7 +40,7 @@ public class IsXMLDoc extends BIF {
 	}
 
 	/**
-	 * Determines whether the function parameter is an Extended Markup language (XML) document object.
+	 * Determines whether the function parameter is a root element node of an XML doc.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
@@ -48,8 +48,12 @@ public class IsXMLDoc extends BIF {
 	 * @argument.value Value to test
 	 */
 	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
-		CastAttempt<XML> castAttempt = XMLCaster.attempt( arguments.get( Key.value ) );
-		return castAttempt.wasSuccessful() && castAttempt.get().getNode().getNodeType() == Node.DOCUMENT_NODE;
+		CastAttempt<XML>	castAttempt	= XMLCaster.attempt( arguments.get( Key.value ) );
+		XML					xml;
+		return castAttempt.wasSuccessful()
+		    && ( xml = castAttempt.get() ).getNode().getNodeType() == Node.ELEMENT_NODE
+		    && xml.getNode().getParentNode() != null
+		    && xml.getNode().getParentNode().getNodeType() == Node.DOCUMENT_NODE;
 	}
 
 }

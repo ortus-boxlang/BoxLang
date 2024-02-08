@@ -55,25 +55,67 @@ public class IsXMLDocTest {
 	@BeforeEach
 	public void setupEach() {
 		variables.clear();
+		variables.put(
+		    Key.of( "xmlString" ),
+		    """
+		    <rootNode>
+		    	<subNode attr="value" />
+		    </rootNode>
+		    """ );
 	}
 
-	@DisplayName( "It detects XML values" )
+	@DisplayName( "It works on Document" )
 	@Test
-	public void testXMLValues() {
+	public void testDocument() {
 		instance.executeSource(
 		    """
-		    result = isXMLDoc( XMLParse( "<root />" ) )
+		    result = isXMLDoc( XMLParse( xmlString ) )
 		    """,
 		    context );
 		assertThat( variables.get( result ) ).isEqualTo( true );
 	}
 
-	@DisplayName( "It detects non XML values" )
+	@DisplayName( "It works on root node" )
 	@Test
-	public void testNonXMLValues() {
+	public void testRootNode() {
 		instance.executeSource(
 		    """
-		    result = isXMLDoc( "<root />" )
+		    result = isXMLDoc( XMLParse( xmlString ).rootNode )
+		    """,
+		    context );
+		assertThat( variables.get( result ) ).isEqualTo( false );
+	}
+
+	@DisplayName( "It works on Element" )
+	@Test
+	public void testElement() {
+		instance.executeSource(
+		    """
+		    result = isXMLDoc( XMLParse( xmlString ).rootNode.subNode )
+		    """,
+		    context );
+		assertThat( variables.get( result ) ).isEqualTo( false );
+	}
+
+	@DisplayName( "It works Random Node" )
+	@Test
+	public void testRandomNode() {
+		instance.executeSource(
+		    """
+				xml = XMLParse( xmlString );
+				search = xmlSearch( xml, '//@attr' )
+		    result = isXMLDoc( search[1] )
+		    """,
+		    context );
+		assertThat( variables.get( result ) ).isEqualTo( false );
+	}
+
+	@DisplayName( "It works on Non-XML var" )
+	@Test
+	public void testNonXMLVar() {
+		instance.executeSource(
+		    """
+		    result = isXMLDoc( [] )
 		    """,
 		    context );
 		assertThat( variables.get( result ) ).isEqualTo( false );
