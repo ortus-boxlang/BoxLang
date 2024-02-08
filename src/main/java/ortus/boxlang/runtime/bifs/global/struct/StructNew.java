@@ -101,7 +101,7 @@ public class StructNew extends BIF {
 			typeKey		= Key.of( "sorted" );
 			comparator	= ( a, b ) -> ( Integer ) context.invokeFunction(
 			    arguments.getAsFunction( Key.callback ),
-			    new Object[] { a, b }
+			    new Object[] { a.getName(), b.getName() }
 			);
 		}
 
