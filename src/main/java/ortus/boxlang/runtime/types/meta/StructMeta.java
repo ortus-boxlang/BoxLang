@@ -18,7 +18,6 @@
 package ortus.boxlang.runtime.types.meta;
 
 import ortus.boxlang.runtime.types.IStruct;
-import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.immutable.IImmutable;
 import ortus.boxlang.runtime.types.immutable.ImmutableStruct;
 
@@ -27,15 +26,14 @@ import ortus.boxlang.runtime.types.immutable.ImmutableStruct;
  */
 public class StructMeta extends BoxMeta {
 
-	@SuppressWarnings( "unused" )
-	private Struct	target;
+	private IStruct	target;
 	public Class<?>	$class;
 	public IStruct	meta;
 
 	/**
 	 * Constructor
 	 */
-	public StructMeta( Struct target ) {
+	public StructMeta( IStruct target ) {
 		super();
 		this.target	= target;
 		this.$class	= target.getClass();
@@ -43,7 +41,10 @@ public class StructMeta extends BoxMeta {
 		// Assemble the metadata
 		this.meta	= ImmutableStruct.of(
 		    "type", this.target.getType().name(),
-		    "immutable", this.target instanceof IImmutable
+		    "immutable", this.target instanceof IImmutable,
+		    "casesensitive", this.target.isCaseSensitive(),
+		    "soft", this.target.isSoftReferenced(),
+		    "ordered", this.target.getType().equals( IStruct.TYPES.LINKED ) || this.target.getType().equals( IStruct.TYPES.LINKED_CASE_SENSITIVE )
 		);
 
 	}
