@@ -41,12 +41,12 @@ public class GetSystemSettingTest {
 		variables.clear();
 	}
 
-	@DisplayName( "It can get a valid system property" )
+	@DisplayName( "It can get a valid system property with any case" )
 	@Test
 	public void testGetSystemSetting() {
 		instance.executeSource(
 		    """
-		    result = getSystemSetting( "java.version" )
+		    result = getSystemSetting( "Java.VerSion" )
 		    """,
 		    context );
 		assertThat( variables.get( result ) ).isEqualTo( System.getProperty( "java.version" ) );
@@ -57,7 +57,7 @@ public class GetSystemSettingTest {
 	public void testGetSystemSettingEnv() {
 		instance.executeSource(
 		    """
-		    result = getSystemSetting( "PATH" )
+		    result = getSystemSetting( "Path" )
 		    """,
 		    context );
 		assertThat( variables.get( result ) ).isEqualTo( System.getenv( "PATH" ) );

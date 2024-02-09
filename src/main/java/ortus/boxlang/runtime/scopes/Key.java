@@ -143,6 +143,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key	encoded						= Key.of( "encoded" );
 	public static final Key	encoding					= Key.of( "encoding" );
 	public static final Key	end							= Key.of( "end" );
+	public static final Key	environment					= Key.of( "environment" );
 	public static final Key	errorcode					= Key.of( "errorcode" );
 	public static final Key	extendedinfo				= Key.of( "extendedinfo" );
 	public static final Key	file						= Key.of( "file" );

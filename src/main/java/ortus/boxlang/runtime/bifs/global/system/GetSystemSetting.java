@@ -23,6 +23,7 @@ import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
+import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
 @BoxBIF
@@ -53,17 +54,21 @@ public class GetSystemSetting extends BIF {
 	 * @argument.defaultValue The default value to return if the property or environment variable is not found
 	 */
 	public String invoke( IBoxContext context, ArgumentsScope arguments ) {
-		String	key				= arguments.getAsString( Key.key );
+		Key		key				= Key.of( arguments.getAsString( Key.key ) );
 		String	defaultValue	= arguments.getAsString( Key.defaultValue );
-		String	value			= System.getProperty( key );
+		IStruct	system			= context.getScope( Key.server ).getAsStruct( Key.system );
+		IStruct	environment		= system.getAsStruct( Key.environment );
+		IStruct	properties		= system.getAsStruct( Key.properties );
 
+		// Get from properties first
+		String	value			= properties.getAsString( key );
 		// If not null, return it
 		if ( value != null ) {
 			return value;
 		}
 
 		// If null, try the environment
-		value = System.getenv( key );
+		value = environment.getAsString( key );
 		// If not null, return it
 		if ( value != null ) {
 			return value;
