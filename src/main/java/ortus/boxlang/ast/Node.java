@@ -171,7 +171,7 @@ public class Node {
 
 	public String toJSON() {
 		try {
-			return JSON.std.with( Feature.PRETTY_PRINT_OUTPUT ).asString( toMap() );
+			return JSON.std.with( Feature.PRETTY_PRINT_OUTPUT, Feature.WRITE_NULL_PROPERTIES ).asString( toMap() );
 		} catch ( JSONObjectException e ) {
 			e.printStackTrace();
 		} catch ( IOException e ) {

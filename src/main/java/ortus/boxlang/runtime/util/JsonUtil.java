@@ -25,7 +25,7 @@ import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 /**
  * Utility class for JSON operations based on our library of choice.
  */
-public class JsonUtil {
+public class JSONUtil {
 
 	/**
 	 * The JSON builder library we use
@@ -45,15 +45,17 @@ public class JsonUtil {
 	 *
 	 * @return The JSON builder
 	 */
-	public static JSON getJsonBuilder() {
+	public static JSON getJSONBuilder() {
 		return JSON_BUILDER;
 	}
 
 	/**
 	 * Read method that will take given JSON Source (of one of supported types),
 	 * read contents and map it to one of simple mappings ({@link java.util.Map}
-	 * for JSON Objects, {@link java.util.List} for JSON Arrays, {@link java.lang.String}
-	 * for JSON Strings, null for JSON null, {@link java.lang.Boolean} for JSON booleans
+	 * for JSON Objects, {@link java.util.List} for JSON Arrays,
+	 * {@link java.lang.String}
+	 * for JSON Strings, null for JSON null, {@link java.lang.Boolean} for JSON
+	 * booleans
 	 * and {@link java.lang.Number} for JSON numbers.
 	 *
 	 * Supported source types include:
@@ -71,7 +73,7 @@ public class JsonUtil {
 	 *
 	 * @return The parsed JSON in raw Java format
 	 */
-	public static Object fromJson( Object json ) {
+	public static Object fromJSON( Object json ) {
 		try {
 			return JSON_BUILDER.anyFrom( json );
 		} catch ( Exception e ) {
@@ -83,7 +85,9 @@ public class JsonUtil {
 	 * Read method that will take given JSON Source (of one of supported types),
 	 * read contents and map it to a Java Bean of given type.
 	 *
-	 * <a href="https://github.com/FasterXML/jackson-jr#readingwriting-simple-objects-beans-listarrays-thereof">Read more here:</a>
+	 * <a href=
+	 * "https://github.com/FasterXML/jackson-jr#readingwriting-simple-objects-beans-listarrays-thereof">Read
+	 * more here:</a>
 	 *
 	 * Supported source types include:
 	 * <ul>
@@ -101,7 +105,7 @@ public class JsonUtil {
 	 *
 	 * @return The parsed JSON into the given class passsed
 	 */
-	public static <T> T fromJson( Class<T> clazz, Object json ) {
+	public static <T> T fromJSON( Class<T> clazz, Object json ) {
 		try {
 			return JSON_BUILDER.beanFrom( clazz, json );
 		} catch ( Exception e ) {

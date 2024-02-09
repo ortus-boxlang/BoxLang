@@ -15,7 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package ortus.boxlang.runtime.bifs.global.system;
+package ortus.boxlang.runtime.bifs.global.conversion;
 
 import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
@@ -33,12 +33,12 @@ import ortus.boxlang.runtime.types.IType;
 @BoxBIF
 @BoxMember( type = BoxLangType.XML )
 @BoxMember( type = BoxLangType.STRING )
-public class toString extends BIF {
+public class ToString extends BIF {
 
 	/**
 	 * Constructor
 	 */
-	public toString() {
+	public ToString() {
 		super();
 		declaredArguments = new Argument[] {
 		    new Argument( true, "any", Key.value ),

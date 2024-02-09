@@ -43,6 +43,14 @@ public class QueryColumn implements IReferenceable {
 	 */
 	public BoxMeta			$bx;
 
+	/**
+	 * Add new column to query
+	 * 
+	 * @param name  column name
+	 * @param type  column type
+	 * @param query query
+	 * @param index column index (0-based)
+	 */
 	public QueryColumn( Key name, QueryColumnType type, Query query, int index ) {
 		this.name	= name;
 		this.type	= type;

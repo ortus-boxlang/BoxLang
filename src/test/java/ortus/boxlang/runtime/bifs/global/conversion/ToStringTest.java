@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-package ortus.boxlang.runtime.bifs.global.system;
+package ortus.boxlang.runtime.bifs.global.conversion;
 
 import static com.google.common.truth.Truth.assertThat;
 

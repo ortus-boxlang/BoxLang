@@ -18,16 +18,19 @@
 package ortus.boxlang.runtime.types;
 
 import java.lang.ref.SoftReference;
+import java.util.AbstractMap.SimpleEntry;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.WeakHashMap;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentSkipListMap;
+import java.util.stream.Collectors;
 
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.bifs.MemberDescriptor;
@@ -624,7 +627,9 @@ public class Struct implements IStruct, IListenable {
 	 */
 	@Override
 	public Set<Entry<Key, Object>> entrySet() {
-		return wrapped.entrySet();
+		return wrapped.entrySet().stream()
+		    .map( entry -> new SimpleEntry<>( entry.getKey(), unWrapNull( entry.getValue() ) ) )
+		    .collect( Collectors.toCollection( LinkedHashSet::new ) );
 	}
 
 	/**

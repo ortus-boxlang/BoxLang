@@ -26,7 +26,7 @@ import org.slf4j.LoggerFactory;
 import com.fasterxml.jackson.jr.ob.JSONObjectException;
 
 import ortus.boxlang.runtime.BoxRuntime;
-import ortus.boxlang.runtime.util.JsonUtil;
+import ortus.boxlang.runtime.util.JSONUtil;
 
 /**
  * Interface for messages that will be sent to the debugger tool.
@@ -42,7 +42,7 @@ public interface ISendable {
 	 */
 	default public String toJSON() {
 		try {
-			return JsonUtil.getJsonBuilder().asString( this );
+			return JSONUtil.getJSONBuilder().asString( this );
 		} catch ( JSONObjectException e ) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();

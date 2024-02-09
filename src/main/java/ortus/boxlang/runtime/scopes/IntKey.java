@@ -87,15 +87,4 @@ public class IntKey extends Key {
 		return false;
 	}
 
-	/**
-	 * The string representation of the key which includes
-	 * the original case and the upper case version.
-	 *
-	 * @return The string representation of the key
-	 */
-	@Override
-	public String toString() {
-		return String.format( "IntKey [name=%s]", name );
-	}
-
 }

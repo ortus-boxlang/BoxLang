@@ -130,16 +130,36 @@ public class Query implements IType, IReferenceable, Collection<IStruct> {
 	 * @return this query
 	 */
 	public synchronized Query addColumn( Key name, QueryColumnType type, Object[] columnData ) {
-		columns.put( name, new QueryColumn( name, type, this, getColumns().size() ) );
-		// loop over data and replace each array with a new array having an additional null at the end
-		for ( int i = 0; i < data.size(); i++ ) {
-			Object[]	row		= data.get( i );
-			Object[]	newRow	= new Object[ row.length + 1 ];
-			System.arraycopy( row, 0, newRow, 0, row.length );
-			if ( columnData != null && i < columnData.length ) {
-				newRow[ newRow.length - 1 ] = columnData[ i ];
+		// check if column name already exists
+		int	index		= -1;
+		int	newColIndex	= getColumns().size();
+		// Get index from linked map of where the key exists already
+		for ( Key key : columns.keySet() ) {
+			index++;
+			if ( key.equals( name ) ) {
+				newColIndex = index;
+				break;
 			}
-			data.set( i, newRow );
+		}
+		columns.put( name, new QueryColumn( name, type, this, newColIndex ) );
+		if ( data.size() > 0 ) {
+			// loop over data and replace each array with a new array having an additional null at the end
+			for ( int i = 0; i < data.size(); i++ ) {
+				Object[]	row		= data.get( i );
+				Object[]	newRow	= new Object[ row.length + 1 ];
+				System.arraycopy( row, 0, newRow, 0, row.length );
+				if ( columnData != null && i < columnData.length ) {
+					newRow[ newColIndex ] = columnData[ i ];
+				}
+				data.set( i, newRow );
+			}
+		} else if ( columnData != null ) {
+			// loop over column data and add that many rows with an array as big as their are columns
+			for ( int i = 0; i < columnData.length; i++ ) {
+				Object[] row = new Object[ columns.size() ];
+				row[ newColIndex ] = columnData[ i ];
+				data.add( row );
+			}
 		}
 		return this;
 	}

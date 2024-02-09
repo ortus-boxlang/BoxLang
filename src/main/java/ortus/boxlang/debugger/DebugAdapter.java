@@ -42,7 +42,7 @@ import ortus.boxlang.debugger.response.NoBodyResponse;
 import ortus.boxlang.debugger.response.SetBreakpointsResponse;
 import ortus.boxlang.runtime.BoxRunner;
 import ortus.boxlang.runtime.BoxRuntime;
-import ortus.boxlang.runtime.util.JsonUtil;
+import ortus.boxlang.runtime.util.JSONUtil;
 
 /**
  * Implements Microsoft's Debug Adapter Protocol https://microsoft.github.io/debug-adapter-protocol/
@@ -149,20 +149,20 @@ public class DebugAdapter {
 	 * @return
 	 */
 	private IDebugRequest parseDebugRequest( String json ) {
-		Map<String, Object>	requestData	= ( Map<String, Object> ) JsonUtil.fromJson( json );
+		Map<String, Object>	requestData	= ( Map<String, Object> ) JSONUtil.fromJSON( json );
 		String				command		= ( String ) requestData.get( "command" );
 
 		this.logger.info( "Received command {}", command );
 
 		switch ( command ) {
 			case "initialize" :
-				return JsonUtil.fromJson( InitializeRequest.class, json );
+				return JSONUtil.fromJSON( InitializeRequest.class, json );
 			case "launch" :
-				return JsonUtil.fromJson( LaunchRequest.class, json );
+				return JSONUtil.fromJSON( LaunchRequest.class, json );
 			case "setBreakpoints" :
-				return JsonUtil.fromJson( SetBreakpointsRequest.class, json );
+				return JSONUtil.fromJSON( SetBreakpointsRequest.class, json );
 			case "configurationDone" :
-				return JsonUtil.fromJson( ConfigurationDoneRequest.class, json );
+				return JSONUtil.fromJSON( ConfigurationDoneRequest.class, json );
 		}
 
 		return null;

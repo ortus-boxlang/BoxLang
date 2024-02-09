@@ -62,12 +62,12 @@ import ortus.boxlang.runtime.types.meta.BoxMeta;
 import ortus.boxlang.runtime.types.meta.GenericMeta;
 
 /**
- * This class represents a query.
+ * This class represents a XML Node.
  */
 public class XML implements IType, IReferenceable/* , Collection<XML> */ {
 
 	/**
-	 * Query data as List of arrays
+	 * XML data as List of arrays
 	 */
 	private Node					node;
 
@@ -498,8 +498,7 @@ public class XML implements IType, IReferenceable/* , Collection<XML> */ {
 	@Override
 	public BoxMeta getBoxMeta() {
 		if ( this.$bx == null ) {
-			// TODO: Create query metadata class
-			// getMetaData() in CF returns array of query column metadata objects
+			// TODO: Create XML metadata class
 			this.$bx = new GenericMeta( this );
 		}
 		return this.$bx;
