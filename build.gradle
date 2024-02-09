@@ -34,8 +34,10 @@ def antlrGrammarDir = "src/main/antlr"
 sourceSets {
     main {
         resources {
-            srcDirs = ['src/main/resources']
+            srcDirs = [ 'src/main/resources' ]
             include '**/*.properties'
+			include '**/*.class'
+			include '**/*.jar'
             include '**/*.json'
 			include '**/*.bx*'
 			include '**/*.cf*'
@@ -46,8 +48,6 @@ sourceSets {
 
 // Add ANTLR generated sources to the main source set
 sourceSets.main.java.srcDirs += "$antlrGeneratedParserBaseDir"
-
-
 
 /**
  * Repositories for dependencies in order
@@ -120,21 +120,6 @@ project.ext.bumpVersion = { boolean major = false, boolean minor = false, boolea
 
 	println "Bumped version from ${currentVersion} to ${newVersion}"
 }
-
-/**
- * Source Code Formatting
- */
-spotless {
-    java {
-		target fileTree( "." ) {
-            include "**/*.java"
-            exclude "**/build/**", "bin/**", "examples/**", "src/main/java/ortus/boxlang/runtime/testing/**"
-        }
-        eclipse().configFile( "workbench/ortus-java-style.xml" )
-		toggleOffOn()
-    }
-}
-
 
 /**
  * Influence the Java compiler
@@ -212,12 +197,19 @@ compileJava {
 	dependsOn generateGrammarSource,  generateTestGrammarSource
 }
 
+task compileCoreModules( type: JavaCompile ) {
+    source = files( [ 'src/main/resources/modules' ] ).asFileTree
+    destinationDir = file( 'src/main/resources' )
+    classpath = files( [ sourceSets.main.compileClasspath, sourceSets.main.output ] )
+	dependsOn compileJava
+}
+
 /**
  * Compile Test Java Customizations
  */
 compileTestJava {
 	source sourceSets.test.java
-	dependsOn compileJava, generateTestGrammarSource
+	dependsOn compileJava, compileCoreModules,  generateTestGrammarSource
 }
 
 /**
@@ -259,6 +251,24 @@ test {
 /****************************************************************
  * CUSTOM TASKS
  ****************************************************************/
+
+/**
+ * Source Code Formatting
+ */
+spotless {
+    java {
+		target fileTree( "." ) {
+            include "**/*.java"
+            exclude "**/build/**", "bin/**", "examples/**", "src/main/java/ortus/boxlang/runtime/testing/**"
+        }
+        eclipse().configFile( "workbench/ortus-java-style.xml" )
+		toggleOffOn()
+    }
+}
+spotlessJava {
+  // other configurations
+  dependsOn tasks.named( "compileCoreModules" )
+}
 
 /**
  * Install the CFML dependencies for the parser tests via CommandBox

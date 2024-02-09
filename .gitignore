@@ -24,3 +24,5 @@ src/test/resources/tmp/*
 cfml-parser-tests/**
 /src/main/antlr/.antlr/*
 
+# Core Module Class Files
+src/main/resources/modules/**/*.class

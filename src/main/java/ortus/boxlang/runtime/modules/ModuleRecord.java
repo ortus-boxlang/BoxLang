@@ -314,18 +314,20 @@ public class ModuleRecord {
 		// Called first in case this is used in the `configure` method
 		runtime.getConfiguration().runtime.registerMapping( this.mapping, this.path );
 
-		// Do we have libs to load?
+		// Create the module class loader with no URLs
+		this.classLoader = new DynamicClassLoader(
+		    this.name,
+		    ClassLoader.getSystemClassLoader()
+		);
+
+		// Do we have libs to add to the ?
 		Path libsPath = this.physicalPath.resolve( ModuleService.MODULE_LIBS );
 		if ( Files.exists( libsPath ) && Files.isDirectory( libsPath ) ) {
 			try {
-				this.classLoader = new DynamicClassLoader(
-				    this.name,
-				    DynamicClassLoader.getJarURLs( libsPath ),
-				    ClassLoader.getSystemClassLoader()
-				);
+				this.classLoader.addURLs( DynamicClassLoader.getJarURLs( libsPath ) );
 			} catch ( IOException e ) {
-				logger.error( "Error while creating the DynamicClassLoader for the module [{}]", this.name, e );
-				throw new BoxRuntimeException( "Error while creating the DynamicClassLoader for the module [" + this.name + "]", e );
+				logger.error( "Error while seeding the module [{}] class loader with the libs folder.", this.name, e );
+				throw new BoxRuntimeException( "Error while seeding the module [" + this.name + "] class loader with the libs folder", e );
 			}
 		}
 
@@ -358,6 +360,30 @@ public class ModuleRecord {
 			for ( File targetFile : bifsPath.toFile().listFiles() ) {
 				registerBIF( targetFile, context );
 			}
+
+			// // Do we have any Java BIFs to load?
+			// try {
+			// // URL[] urls = DynamicClassLoader.getJarURLs( bifsPath );
+			// // System.out.println( "Bif URLs: " + Arrays.toString( urls ) );
+			// this.classLoader.addURLs( new URL[] { bifsPath.toUri().toURL() } );
+			// } catch ( IOException e ) {
+			// logger.error( "Error while seeding the module [{}] class loader with the bifs folder.", this.name, e );
+			// throw new BoxRuntimeException( "Error while seeding the module [" + this.name + "] class loader with the bifs folder", e );
+			// }
+
+			// System.out.println( "Scanning for Java BIFs..." );
+			// Enumeration<URL> foundData;
+			// try {
+			// foundData = this.classLoader.findResources( "" );
+
+			// // Output the found data to the console
+			// while ( foundData.hasMoreElements() ) {
+			// System.out.println( "Found Resource " + foundData.nextElement() );
+			// }
+			// } catch ( IOException e ) {
+			// e.printStackTrace();
+			// }
+			// System.out.println( "===========================" );
 		}
 
 		// Finalize Registration
