@@ -377,7 +377,6 @@ public class DebugAdapter {
 		try {
 			ObjectReference	context		= ( ObjectReference ) JDITools.findVariableyName( vmStackFrame, "context" );
 			ObjectReference	variables	= ( ObjectReference ) JDITools.findPropertyByName( context, "variablesScope" );
-			// Map<String, String> vars = JDITools.convertScopeToMap( this.debugger.vm, vmStackFrame.thread(), variables );
 
 			this.seenScopes.put( variables.hashCode(), new ScopeCache( vmStackFrame, variables ) );
 
@@ -387,11 +386,6 @@ public class DebugAdapter {
 			List<Scope> scopes = new ArrayList<Scope>();
 			scopes.add( variablesScope );
 			new ScopeResponse( debugRequest, scopes ).send( this.outputStream );
-
-			// Value returnValue = JDITools.invoke( vmStackFrame.thread(), variables, "getKeysAsStrings", new ArrayList<Value>() );
-
-			// TODO figure out how to get variables from returnValue
-			// TODO send ScopeResponse
 		} catch ( Exception e ) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -399,78 +393,15 @@ public class DebugAdapter {
 	}
 
 	public void visit( VariablesRequest debugRequest ) {
-		try {
-			// ScopeCache scopeCache = this.seenScopes.get( debugRequest.arguments.variablesReference );
-			// com.sun.jdi.StackFrame vmStackFrame = scopeCache.stackFrame;
-			// ObjectReference variables = scopeCache.scope;
-			// Map<String, Object> vars = JDITools.getValuesFromScope( variables )
+		List<Variable> ideVars = new ArrayList<Variable>();
 
-			List<Variable> ideVars = new ArrayList<Variable>();
-
-			if ( debugRequest.arguments.variablesReference == 11 ) {
-				/*
-				 * person = {
-				 * firstName: "Phillip",
-				 * lastName: "Fry",
-				 * age: 30,
-				 * job: "Delivery Boy",
-				 * company: "Planet Express"
-				 * };
-				 */
-				Variable firstName = new Variable();
-				firstName.name					= "firstName";
-				firstName.value					= "\"Phillip\"";
-				firstName.type					= "string";
-				firstName.variablesReference	= 0;
-				ideVars.add( firstName );
-
-				Variable lastName = new Variable();
-				lastName.name				= "lastName";
-				lastName.value				= "\"Fry\"";
-				lastName.type				= "string";
-				lastName.variablesReference	= 0;
-				ideVars.add( lastName );
-
-				Variable age = new Variable();
-				age.name				= "age";
-				age.value				= "30";
-				age.type				= "numeric";
-				age.variablesReference	= 0;
-				ideVars.add( age );
-
-				Variable job = new Variable();
-				job.name				= "job";
-				job.value				= "\"Delivery Boy\"";
-				job.type				= "string";
-				job.variablesReference	= 0;
-				ideVars.add( job );
-
-				Variable company = new Variable();
-				company.name				= "company";
-				company.value				= "\"Planet Express\"";
-				company.type				= "string";
-				company.variablesReference	= 0;
-				ideVars.add( company );
-			} else {
-				Variable color = new Variable();
-				color.name					= "color";
-				color.value					= "\"green\"";
-				color.type					= "string";
-				color.variablesReference	= 0;
-				ideVars.add( color );
-
-				Variable person = new Variable();
-				person.name					= "person";
-				person.value				= "{}";
-				person.type					= "struct";
-				person.variablesReference	= 11;
-				ideVars.add( person );
-			}
-			new VariablesResponse( debugRequest, ideVars ).send( this.outputStream );
-		} catch ( Exception e ) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+		if ( this.seenScopes.containsKey( debugRequest.arguments.variablesReference ) ) {
+			ideVars = JDITools.gerVariablesFromStruct( this.seenScopes.get( debugRequest.arguments.variablesReference ).scope );
+		} else if ( JDITools.hasSeen( debugRequest.arguments.variablesReference ) ) {
+			ideVars = JDITools.gerVariablesFromStruct( ( ObjectReference ) JDITools.getSeenValue( debugRequest.arguments.variablesReference ) );
 		}
+
+		new VariablesResponse( debugRequest, ideVars ).send( this.outputStream );
 	}
 
 	private com.sun.jdi.StackFrame findStackFrame( int id ) {

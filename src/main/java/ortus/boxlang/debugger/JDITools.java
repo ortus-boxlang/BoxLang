@@ -1,29 +1,136 @@
 package ortus.boxlang.debugger;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 import com.sun.jdi.AbsentInformationException;
-import com.sun.jdi.BooleanValue;
-import com.sun.jdi.ClassNotLoadedException;
+import com.sun.jdi.ArrayReference;
+import com.sun.jdi.DoubleValue;
 import com.sun.jdi.Field;
-import com.sun.jdi.IncompatibleThreadStateException;
 import com.sun.jdi.IntegerValue;
-import com.sun.jdi.InvalidTypeException;
-import com.sun.jdi.InvocationException;
 import com.sun.jdi.LocalVariable;
 import com.sun.jdi.Method;
 import com.sun.jdi.ObjectReference;
 import com.sun.jdi.ReferenceType;
 import com.sun.jdi.StackFrame;
 import com.sun.jdi.StringReference;
-import com.sun.jdi.ThreadReference;
 import com.sun.jdi.Value;
-import com.sun.jdi.VirtualMachine;
+
+import ortus.boxlang.debugger.types.Variable;
+import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 
 public class JDITools {
+
+	private static Map<Long, Value>	values;
+	private static long				variableReferenceCount	= 1;
+
+	static {
+		values = new HashMap<Long, Value>();
+	}
+
+	public static boolean hasSeen( long variableReference ) {
+		return values.containsKey( variableReference );
+	}
+
+	public static Value getSeenValue( long variableReference ) {
+		// TODO check to make sure the value hasn't been garbage collected - if it has remove it from the map and return null
+		return values.get( variableReference );
+	}
+
+	public static List<Variable> gerVariablesFromStruct( ObjectReference struct ) {
+		var	wrapped	= JDITools.getObjRefByName( struct, "wrapped" );
+		var	table	= ( ArrayReference ) getFieldValueByName( wrapped, "table" );
+
+		// TODO remove functions
+		return table.getValues().stream()
+		    .filter( item -> item != null )
+		    .map( item -> {
+			    ObjectReference obj = ( ObjectReference ) item;
+
+			    Variable	var	= getVariableFromValue( getNameFromKeyValue( obj ), getFieldValueByName( obj, "val" ) );
+
+			    return var;
+		    } ).toList();
+	}
+
+	public static String getNameFromKeyValue( ObjectReference item ) {
+		return getStringFromValue( getFieldValueByName( ( ObjectReference ) getFieldValueByName( item, "key" ), "originalValue" ) );
+	}
+
+	public static Variable getVariableFromValue( String name, Value val ) {
+		Variable var = new Variable();
+		var.value	= "";
+		var.type	= "null";
+
+		if ( val instanceof StringReference stringRef ) {
+			var.value	= "\"" + stringRef.value() + "\"";
+			var.type	= "String";
+		} else if ( val instanceof IntegerValue integerVal ) {
+			var.value	= Integer.toString( integerVal.intValue() );
+			var.type	= "numeric";
+		} else if ( val instanceof DoubleValue doubleVal ) {
+			var.value	= StringCaster.cast( doubleVal.doubleValue() );
+			var.type	= "numeric";
+		} else if ( val.type().name().compareToIgnoreCase( "java.lang.double" ) == 0 ) {
+			var.value	= StringCaster.cast( ( ( DoubleValue ) getFieldValueByName( ( ObjectReference ) val, "value" ) ).doubleValue() );
+			var.type	= "numeric";
+		} else if ( val.type().name().compareToIgnoreCase( "ortus.boxlang.runtime.types.struct" ) == 0 ) {
+			var = getVariableFromStruct( ( ObjectReference ) val );
+		} else if ( val != null ) {
+			var.value = "Unimplemented type - " + val.getClass().getName() + " " + val.type().name();
+		}
+
+		var.name = name;
+
+		return var;
+	}
+
+	private static Variable getVariableFromStruct( ObjectReference val ) {
+		Variable	var	= new Variable();
+		long		id	= variableReferenceCount++;
+
+		var.type				= "Struct";
+		var.value				= "{}";
+		var.variablesReference	= ( int ) id;
+		values.put( id, val );
+
+		return var;
+	}
+
+	public static ObjectReference getObjRefByName( ObjectReference object, String name ) {
+		for ( Field field : object.referenceType().allFields() ) {
+			if ( field.name().compareTo( name ) == 0 ) {
+				return ( ObjectReference ) object.getValue( field );
+			}
+		}
+
+		return null;
+	}
+
+	public static Value getFieldValueByName( ObjectReference object, String name ) {
+		for ( Field field : object.referenceType().allFields() ) {
+			if ( field.name().compareTo( name ) == 0 ) {
+				return object.getValue( field );
+			}
+		}
+
+		return null;
+	}
+
+	public static String getStringFromValue( Value value ) {
+		if ( value == null ) {
+			return null;
+		} else if ( value instanceof IntegerValue iv ) {
+			return Integer.toString( iv.intValue() );
+		} else if ( value instanceof StringReference sv ) {
+			return sv.value();
+		} else if ( value instanceof ObjectReference objref ) {
+			return objref.type().name();
+		}
+
+		return null;
+	}
 
 	public static Method findFirstMethodByName( ReferenceType type, String methodName ) {
 		for ( Method method : type.allMethods() ) {
@@ -35,7 +142,7 @@ public class JDITools {
 		return null;
 	}
 
-	public static Object findVariableyName( StackFrame stackFrame, String name ) {
+	public static Value findVariableyName( StackFrame stackFrame, String name ) {
 		Map<LocalVariable, Value> visibleVariables;
 		try {
 			visibleVariables = stackFrame.getValues( stackFrame.visibleVariables() );
@@ -55,7 +162,7 @@ public class JDITools {
 
 	}
 
-	public static Object findPropertyByName( ObjectReference object, String name ) {
+	public static Value findPropertyByName( ObjectReference object, String name ) {
 		for ( Field field : object.referenceType().allFields() ) {
 			if ( field.name().compareTo( name ) == 0 ) {
 				return object.getValue( field );
@@ -63,90 +170,5 @@ public class JDITools {
 		}
 
 		return null;
-	}
-
-	public static Value invoke( ThreadReference thread, ObjectReference obj, String methodName, List<Value> args ) {
-		try {
-			return obj.invokeMethod( thread, findFirstMethodByName( obj.referenceType(), methodName ), args, 0 );
-		} catch ( InvalidTypeException e ) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch ( ClassNotLoadedException e ) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch ( IncompatibleThreadStateException e ) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch ( InvocationException e ) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-
-		return null;
-	}
-
-	public static Map<String, Object> getValuesFromScope( ObjectReference scope ) {
-		Map<String, Object>	values	= new HashMap<String, Object>();
-		ObjectReference		wrapped	= ( ObjectReference ) findPropertyByName( scope, "wrapped" );
-
-		return values;
-	}
-
-	public static Map<String, Object> convertObjectReferenceToMap( ObjectReference obj ) {
-		Map<String, Object>	values	= new HashMap<String, Object>();
-		Map<String, Object>	fields	= new HashMap<String, Object>();
-
-		values.put( "_class", obj.referenceType().genericSignature() );
-		values.put( "fields", fields );
-
-		for ( Field field : obj.referenceType().allFields() ) {
-			Map<String, Object> f = new HashMap<String, Object>();
-			f.put( "name", field.name() );
-
-			Value val = obj.getValue( field );
-
-			if ( val instanceof IntegerValue iobj ) {
-				f.put( "value", iobj.value() );
-			} else if ( val instanceof BooleanValue boolobj ) {
-				f.put( "value", boolobj.value() );
-			} else if ( val instanceof StringReference strobj ) {
-				f.put( "value", strobj.value() );
-			} else if ( val instanceof ObjectReference subObj ) {
-				f.put( "value", convertObjectReferenceToMap( subObj ) );
-			}
-
-			fields.put( field.name(), f );
-
-		}
-
-		return values;
-	}
-
-	public static Map<String, String> convertScopeToMap( VirtualMachine vm, ThreadReference thread, ObjectReference scope ) {
-		Value				returnValue	= invoke( thread, scope, "getKeysAsStrings", new ArrayList<Value>() );
-		List<String>		keys		= getStringsFromListReference( vm, thread, ( ObjectReference ) returnValue );
-		Map<String, String>	values		= new HashMap<String, String>();
-
-		for ( String key : keys ) {
-			List<Value> args = new ArrayList<Value>();
-			args.add( vm.mirrorOf( key ) );
-			values.put( key, ( invoke( thread, scope, "get", args ) ).toString() );
-		}
-
-		return values;
-	}
-
-	public static List<String> getStringsFromListReference( VirtualMachine vm, ThreadReference thread, ObjectReference list ) {
-		int				size	= ( ( IntegerValue ) invoke( thread, list, "size", new ArrayList<Value>() ) ).intValue();
-		List<String>	keys	= new ArrayList<String>();
-
-		List<Value>		args	= new ArrayList<Value>();
-		args.add( vm.mirrorOf( 0 ) );
-		for ( int i = 0; i < size; i++ ) {
-			args.set( 0, vm.mirrorOf( i ) );
-			keys.add( ( ( StringReference ) invoke( thread, list, "get", args ) ).value() );
-		}
-
-		return keys;
 	}
 }
