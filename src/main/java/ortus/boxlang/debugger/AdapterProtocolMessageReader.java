@@ -15,7 +15,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import ortus.boxlang.runtime.BoxRuntime;
-import ortus.boxlang.runtime.util.JsonUtil;
+import ortus.boxlang.runtime.util.JSONUtil;
 
 public class AdapterProtocolMessageReader {
 
@@ -39,7 +39,7 @@ public class AdapterProtocolMessageReader {
 	 * @return
 	 */
 	private IAdapterProtocolMessage parseAdapterProtocolMessage( String json ) {
-		Map<String, Object>	requestData	= ( Map<String, Object> ) JsonUtil.fromJson( json );
+		Map<String, Object>	requestData	= ( Map<String, Object> ) JSONUtil.fromJSON( json );
 		String				command		= ( String ) requestData.get( "command" );
 
 		this.logger.info( "Received command {}", command );
@@ -48,7 +48,7 @@ public class AdapterProtocolMessageReader {
 		Class parseTarget = this.parseMap.get( command );
 
 		if ( parseTarget != null ) {
-			IAdapterProtocolMessage message = ( IAdapterProtocolMessage ) JsonUtil.fromJson( parseTarget, json );
+			IAdapterProtocolMessage message = ( IAdapterProtocolMessage ) JSONUtil.fromJSON( parseTarget, json );
 			message.setRawMessageData( requestData );
 
 			return message;

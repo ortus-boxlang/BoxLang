@@ -16,12 +16,12 @@ import com.fasterxml.jackson.jr.ob.JSONObjectException;
 import ortus.boxlang.debugger.AdapterProtocolMessageReader;
 import ortus.boxlang.debugger.DebugAdapter;
 import ortus.boxlang.debugger.IAdapterProtocolMessage;
-import ortus.boxlang.runtime.util.JsonUtil;
+import ortus.boxlang.runtime.util.JSONUtil;
 
 public class IntegrationTest {
 
 	private AdapterProtocolMessageReader runDebugger( Map<String, Object> map ) throws JSONObjectException, IOException, InterruptedException {
-		String					jsonMessage	= JsonUtil.getJsonBuilder().asString( map );
+		String					jsonMessage	= JSONUtil.getJSONBuilder().asString( map );
 		// @formatter:off
 		// prettier-ignore
 		String test = String.format("""

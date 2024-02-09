@@ -26,7 +26,7 @@ import javax.tools.JavaFileObject;
 
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
-import ortus.boxlang.runtime.util.JsonUtil;
+import ortus.boxlang.runtime.util.JSONUtil;
 
 /**
  * Dynamic in Memory classloader
@@ -217,7 +217,7 @@ public class DiskClassLoader extends URLClassLoader {
 		Path diskPath = generateDiskJSONPath( fqn );
 		try {
 			String json = new String( Files.readAllBytes( diskPath ) );
-			return JsonUtil.fromJson( SourceMap.class, json );
+			return JSONUtil.fromJSON( SourceMap.class, json );
 		} catch ( IOException e ) {
 			throw new BoxRuntimeException( "Unable to read line number JSON file from disk", e );
 		}
