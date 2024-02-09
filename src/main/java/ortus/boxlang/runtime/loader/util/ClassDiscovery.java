@@ -118,25 +118,28 @@ public class ClassDiscovery {
 	}
 
 	/**
-	 * Find all classes annotated with the given annotation(s) in the given directory
+	 * Find all classes annotated with the given annotation(s) in the given directory and given class loader
 	 *
-	 * @param startDir    The directory to start searching in
-	 * @param annotations The annotation classes to search for (varargs)
+	 * @param startDir     The directory to start searching in
+	 * @param targetLoader The classloader to use
+	 * @param annotations  The annotation classes to search for (varargs)
 	 *
 	 * @return A stream of classes
 	 */
 	@SafeVarargs
-	public static Stream<Class<?>> findAnnotatedClasses( String startDir, Class<? extends Annotation>... annotations ) {
+	public static Stream<Class<?>> findAnnotatedClasses( String startDir, ClassLoader targetLoader, Class<? extends Annotation>... annotations ) {
 		List<Class<?>> classes = new ArrayList<>();
 		try {
-			ClassLoader			classLoader	= ClassDiscovery.class.getClassLoader();
-			Enumeration<URL>	resources	= classLoader.getResources( startDir );
+			Enumeration<URL> resources = targetLoader.getResources( startDir );
 			while ( resources.hasMoreElements() ) {
 				URL resource = resources.nextElement();
+
+				// System.out.println( "Found Resource: " + resource );
+
 				// Jar Loading
 				if ( resource.getProtocol().equals( "jar" ) ) {
 					classes.addAll(
-					    findClassesInJar( resource, startDir, classLoader, annotations )
+					    findClassesInJar( resource, startDir, targetLoader, annotations )
 					);
 				}
 				// Normal directory loading
@@ -145,7 +148,7 @@ public class ClassDiscovery {
 					    findClassesInDirectory(
 					        new File( resource.getFile() ),
 					        startDir.replace( '/', '.' ),
-					        classLoader,
+					        targetLoader,
 					        annotations
 					    )
 					);
@@ -155,6 +158,19 @@ public class ClassDiscovery {
 			logger.error( "Exception finding annotated classes in path [{}]", startDir, e );
 		}
 		return classes.stream();
+	}
+
+	/**
+	 * Find all classes annotated with the given annotation(s) in the given directory
+	 *
+	 * @param startDir    The directory to start searching in
+	 * @param annotations The annotation classes to search for (varargs)
+	 *
+	 * @return A stream of classes
+	 */
+	@SafeVarargs
+	public static Stream<Class<?>> findAnnotatedClasses( String startDir, Class<? extends Annotation>... annotations ) {
+		return findAnnotatedClasses( startDir, ClassDiscovery.class.getClassLoader(), annotations );
 	}
 
 	/**
