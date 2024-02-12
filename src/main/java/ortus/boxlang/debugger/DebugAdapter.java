@@ -23,13 +23,10 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.net.SocketException;
-import java.nio.CharBuffer;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 import org.apache.commons.lang3.NotImplementedException;
 import org.slf4j.Logger;
@@ -42,7 +39,6 @@ import ortus.boxlang.debugger.event.Event;
 import ortus.boxlang.debugger.event.StoppedEvent;
 import ortus.boxlang.debugger.request.ConfigurationDoneRequest;
 import ortus.boxlang.debugger.request.ContinueRequest;
-import ortus.boxlang.debugger.request.IDebugRequest;
 import ortus.boxlang.debugger.request.InitializeRequest;
 import ortus.boxlang.debugger.request.LaunchRequest;
 import ortus.boxlang.debugger.request.ScopeRequest;
@@ -67,23 +63,23 @@ import ortus.boxlang.runtime.BoxRunner;
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.runnables.compiler.JavaBoxpiler;
 import ortus.boxlang.runtime.runnables.compiler.SourceMap;
-import ortus.boxlang.runtime.util.JSONUtil;
 
 /**
  * Implements Microsoft's Debug Adapter Protocol https://microsoft.github.io/debug-adapter-protocol/
  */
 public class DebugAdapter {
 
-	private Thread						inputThread;
-	private Logger						logger;
-	private InputStream					inputStream;
-	private OutputStream				outputStream;
-	private BoxLangDebugger				debugger;
-	private boolean						running		= true;
-	private List<IDebugRequest>			requestQueue;
-	private JavaBoxpiler				javaBoxpiler;
+	private Thread							inputThread;
+	private Logger							logger;
+	private InputStream						inputStream;
+	private OutputStream					outputStream;
+	private BoxLangDebugger					debugger;
+	private boolean							running		= true;
+	private List<IAdapterProtocolMessage>	requestQueue;
+	private JavaBoxpiler					javaBoxpiler;
+	private AdapterProtocolMessageReader	DAPReader;
 
-	private Map<Integer, ScopeCache>	seenScopes	= new HashMap<Integer, ScopeCache>();
+	private Map<Integer, ScopeCache>		seenScopes	= new HashMap<Integer, ScopeCache>();
 
 	/**
 	 * Constructor
@@ -94,8 +90,25 @@ public class DebugAdapter {
 		this.logger			= LoggerFactory.getLogger( BoxRuntime.class );
 		this.inputStream	= inputStream;
 		this.outputStream	= outputStream;
-		this.requestQueue	= new ArrayList<IDebugRequest>();
+		this.requestQueue	= new ArrayList<IAdapterProtocolMessage>();
 		this.javaBoxpiler	= JavaBoxpiler.getInstance();
+
+		try {
+			this.DAPReader = new AdapterProtocolMessageReader( inputStream );
+
+			this.DAPReader.register( "initialize", InitializeRequest.class )
+			    .register( "launch", LaunchRequest.class )
+			    .register( "setBreakpoints", SetBreakpointsRequest.class )
+			    .register( "configurationDone", ConfigurationDoneRequest.class )
+			    .register( "threads", ThreadsRequest.class )
+			    .register( "stackTrace", StackTraceRequest.class )
+			    .register( "scopes", ScopeRequest.class )
+			    .register( "variables", VariablesRequest.class )
+			    .register( "continue", ContinueRequest.class );
+		} catch ( IOException e ) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 
 		try {
 			createInputListenerThread();
@@ -126,23 +139,10 @@ public class DebugAdapter {
 	}
 
 	private void processDebugProtocolMessages() {
-		// while ( requestQueue.size() > 0 ) {
-		// IDebugRequest request = null;
-		// synchronized ( requestQueue ) {
-		// if ( requestQueue.size() > 0 ) {
-		// request = requestQueue.remove( 0 );
-		// }
-		// }
-		// if ( request != null ) {
-		// request.accept( this );
-
-		// }
-		// }
-
 		synchronized ( this ) {
 			while ( requestQueue.size() > 0 ) {
 
-				IDebugRequest request = null;
+				IAdapterProtocolMessage request = null;
 				if ( requestQueue.size() > 0 ) {
 					request = requestQueue.remove( 0 );
 				}
@@ -170,25 +170,12 @@ public class DebugAdapter {
 			@Override
 			public void run() {
 				while ( true ) {
+
 					try {
-						String line = bR.readLine();
-						System.out.println( line );
-						Pattern	p	= Pattern.compile( "Content-Length: (\\d+)" );
-						Matcher	m	= p.matcher( line );
-
-						if ( m.find() ) {
-							int			contentLength	= Integer.parseInt( m.group( 1 ) );
-							CharBuffer	buf				= CharBuffer.allocate( contentLength );
-
-							bR.readLine();
-							bR.read( buf );
-
-							IDebugRequest request = parseDebugRequest( new String( buf.array() ) );
-
-							if ( request != null ) {
-								synchronized ( adapter ) {
-									requestQueue.add( request );
-								}
+						IAdapterProtocolMessage message = DAPReader.read();
+						if ( message != null ) {
+							synchronized ( adapter ) {
+								requestQueue.add( message );
 							}
 						}
 					} catch ( SocketException e ) {
@@ -199,6 +186,7 @@ public class DebugAdapter {
 						e.printStackTrace();
 						break;
 					}
+
 				}
 			}
 
@@ -208,51 +196,11 @@ public class DebugAdapter {
 	}
 
 	/**
-	 * Parse a debug request and deserialie it into its associated class.
-	 * 
-	 * @param json
-	 * 
-	 * @return
-	 */
-	private IDebugRequest parseDebugRequest( String json ) {
-		Map<String, Object>	requestData	= ( Map<String, Object> ) JSONUtil.fromJSON( json );
-		String				command		= ( String ) requestData.get( "command" );
-
-		this.logger.info( "Received command {}", command );
-		this.logger.info( "Received command {}", json );
-
-		// TODO move this into an instance of Map<String, Class>
-		switch ( command ) {
-			case "initialize" :
-				return JSONUtil.fromJSON( InitializeRequest.class, json );
-			case "launch" :
-				return JSONUtil.fromJSON( LaunchRequest.class, json );
-			case "setBreakpoints" :
-				return JSONUtil.fromJSON( SetBreakpointsRequest.class, json );
-			case "configurationDone" :
-				return JSONUtil.fromJSON( ConfigurationDoneRequest.class, json );
-			case "threads" :
-				return JSONUtil.fromJSON( ThreadsRequest.class, json );
-			case "stackTrace" :
-				return JSONUtil.fromJSON( StackTraceRequest.class, json );
-			case "scopes" :
-				return JSONUtil.fromJSON( ScopeRequest.class, json );
-			case "variables" :
-				return JSONUtil.fromJSON( VariablesRequest.class, json );
-			case "continue" :
-				return JSONUtil.fromJSON( ContinueRequest.class, json );
-		}
-
-		throw new NotImplementedException( command );
-		// return null;
-	}
-
-	/**
 	 * Default visit handler
 	 * 
 	 * @param debugRequest
 	 */
-	public void visit( IDebugRequest debugRequest ) {
+	public void visit( IAdapterProtocolMessage debugRequest ) {
 		throw new NotImplementedException( debugRequest.getCommand() );
 	}
 
@@ -426,10 +374,10 @@ public class DebugAdapter {
 	// ===================================================
 
 	public void sendStoppedEventForBreakpoint( int threadId ) {
+		// TODO convert this file/line number to boxlang
 		StoppedEvent.breakpoint( threadId ).send( this.outputStream );
 	}
 
 	record ScopeCache( com.sun.jdi.StackFrame stackFrame, ObjectReference scope ) {
-
 	};
 }

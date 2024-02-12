@@ -17,14 +17,27 @@
  */
 package ortus.boxlang.debugger.request;
 
+import java.util.Map;
+
+import ortus.boxlang.debugger.IAdapterProtocolMessage;
+
 // TODO rework requests so that we only have one request class that takes a generic argument for its body
 /**
  * An abstract requet. Implement this to model a request that conforms to the debug protocol.
  */
-public abstract class AbstractRequest implements IDebugRequest {
+public abstract class AbstractRequest implements IAdapterProtocolMessage {
 
-	public String	command;
-	public int		seq;
+	public String				command;
+	public int					seq;
+	private Map<String, Object>	messageData;
+
+	public void setRawMessageData( Map<String, Object> messageData ) {
+		this.messageData = messageData;
+	}
+
+	public Map<String, Object> getRawMessageData() {
+		return this.messageData;
+	}
 
 	/**
 	 * The command for the debugger to execute

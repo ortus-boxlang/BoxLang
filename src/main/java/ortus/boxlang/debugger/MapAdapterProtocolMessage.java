@@ -19,4 +19,22 @@ public class MapAdapterProtocolMessage implements IAdapterProtocolMessage {
 	public Map<String, Object> getRawMessageData() {
 		return this.messageData;
 	}
+
+	@Override
+	public String getCommand() {
+		// TODO Auto-generated method stub
+		throw new UnsupportedOperationException( "Unimplemented method 'getCommand'" );
+	}
+
+	@Override
+	public int getSeq() {
+		// TODO Auto-generated method stub
+		throw new UnsupportedOperationException( "Unimplemented method 'getSeq'" );
+	}
+
+	@Override
+	public void accept( DebugAdapter adapter ) {
+		// TODO Auto-generated method stub
+		throw new UnsupportedOperationException( "Unimplemented method 'accept'" );
+	}
 }

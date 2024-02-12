@@ -17,14 +17,14 @@
  */
 package ortus.boxlang.debugger.response;
 
-import ortus.boxlang.debugger.request.IDebugRequest;
+import ortus.boxlang.debugger.IAdapterProtocolMessage;
 
 /**
  * Can be used to model any response that is a simple acknowledgement and doesn't transmit any data.
  */
 public class NoBodyResponse extends AbstractResponse {
 
-	public NoBodyResponse( IDebugRequest request ) {
+	public NoBodyResponse( IAdapterProtocolMessage request ) {
 		super( request.getCommand(), request.getSeq(), true );
 	}
 }

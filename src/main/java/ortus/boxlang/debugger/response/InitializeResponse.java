@@ -17,15 +17,15 @@
  */
 package ortus.boxlang.debugger.response;
 
-import ortus.boxlang.debugger.request.IDebugRequest;
+import ortus.boxlang.debugger.IAdapterProtocolMessage;
 
 /**
  * Responds to the InitializeRequest. Lets the debug tool know that the
  */
 public class InitializeResponse extends AbstractResponse {
 
-	IDebugRequest		request;
-	public Capabilities	body;
+	IAdapterProtocolMessage	request;
+	public Capabilities		body;
 
 	public static class Capabilities {
 
@@ -216,7 +216,7 @@ public class InitializeResponse extends AbstractResponse {
 	 * 
 	 * @param request The request to respond to
 	 */
-	public InitializeResponse( IDebugRequest request ) {
+	public InitializeResponse( IAdapterProtocolMessage request ) {
 		super( request.getCommand(), request.getSeq(), true );
 		this.request	= request;
 		this.body		= new Capabilities();
