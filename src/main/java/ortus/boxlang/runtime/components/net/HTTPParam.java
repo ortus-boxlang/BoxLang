@@ -20,6 +20,7 @@ package ortus.boxlang.runtime.components.net;
 import java.util.Set;
 
 import ortus.boxlang.runtime.components.Attribute;
+import ortus.boxlang.runtime.components.BoxComponent;
 import ortus.boxlang.runtime.components.Component;
 import ortus.boxlang.runtime.components.validators.Validator;
 import ortus.boxlang.runtime.context.IBoxContext;
@@ -27,6 +28,7 @@ import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.exceptions.BoxValidationException;
 
+@BoxComponent
 public class HTTPParam extends Component {
 
 	public HTTPParam() {

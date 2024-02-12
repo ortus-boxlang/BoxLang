@@ -53,6 +53,7 @@ import ortus.boxlang.runtime.scopes.VariablesScope;
 import ortus.boxlang.runtime.services.ApplicationService;
 import ortus.boxlang.runtime.services.AsyncService;
 import ortus.boxlang.runtime.services.CacheService;
+import ortus.boxlang.runtime.services.ComponentService;
 import ortus.boxlang.runtime.services.FunctionService;
 import ortus.boxlang.runtime.services.InterceptorService;
 import ortus.boxlang.runtime.services.ModuleService;
@@ -148,6 +149,11 @@ public class BoxRuntime {
 	private FunctionService					functionService;
 
 	/**
+	 * The function service in charge of all BIFS
+	 */
+	private ComponentService				componentService;
+
+	/**
 	 * The application service in charge of all applications
 	 */
 	private ApplicationService				applicationService;
@@ -223,6 +229,7 @@ public class BoxRuntime {
 		this.asyncService		= new AsyncService( this );
 		this.cacheService		= new CacheService( this );
 		this.functionService	= new FunctionService( this );
+		this.componentService	= new ComponentService( this );
 		this.applicationService	= new ApplicationService( this );
 		this.moduleService		= new ModuleService( this );
 		this.configPath			= configPath;
@@ -295,6 +302,7 @@ public class BoxRuntime {
 		this.asyncService.onStartup();
 		this.cacheService.onStartup();
 		this.functionService.onStartup();
+		this.componentService.onStartup();
 		this.applicationService.onStartup();
 
 		// Create our runtime context that will be the granddaddy of all contexts that execute inside this runtime
@@ -403,6 +411,15 @@ public class BoxRuntime {
 	 */
 	public FunctionService getFunctionService() {
 		return functionService;
+	}
+
+	/**
+	 * Get the component service
+	 *
+	 * @return {@link ComponentService} or null if the runtime has not started
+	 */
+	public ComponentService getComponentService() {
+		return componentService;
 	}
 
 	/**
@@ -518,6 +535,7 @@ public class BoxRuntime {
 		instance.cacheService.onShutdown();
 		instance.asyncService.onShutdown();
 		instance.functionService.onShutdown();
+		instance.componentService.onShutdown();
 		instance.interceptorService.onShutdown();
 
 		// Shutdown logging

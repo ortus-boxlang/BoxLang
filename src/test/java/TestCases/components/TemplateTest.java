@@ -817,7 +817,17 @@ public class TemplateTest {
 		    cfhttp( url="http://google.com",  throwOnTimeout=true )
 		                  """,
 		    context, BoxScriptType.CFSCRIPT );
+	}
 
+	@Test
+	public void testNonExistentcComponentsInScript() {
+		Throwable e = assertThrows( BoxRuntimeException.class, () -> instance.executeSource(
+		    """
+		    brad {
+		    }
+		          """,
+		    context, BoxScriptType.CFSCRIPT ) );
+		assertThat( e.getMessage() ).contains( "[brad] was not located" );
 	}
 
 	@Test

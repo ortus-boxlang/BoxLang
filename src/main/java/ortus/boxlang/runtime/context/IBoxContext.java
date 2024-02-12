@@ -21,6 +21,7 @@ import java.util.List;
 import java.util.Map;
 
 import ortus.boxlang.runtime.BoxRuntime;
+import ortus.boxlang.runtime.components.Component;
 import ortus.boxlang.runtime.loader.ImportDefinition;
 import ortus.boxlang.runtime.runnables.ITemplateRunnable;
 import ortus.boxlang.runtime.scopes.IScope;
@@ -159,6 +160,16 @@ public interface IBoxContext {
 	 * @return Return value of the function call
 	 */
 	public Object invokeFunction( Object function );
+
+	/**
+	 * Invoke a component call
+	 *
+	 * @param name          The name of the component to invoke
+	 * @param attributes    The attributes to pass to the component
+	 * @param componentBody The body of the component
+	 * 
+	 */
+	public void invokeComponent( Key name, IStruct attributes, Component.ComponentBody componentBody );
 
 	/**
 	 * Invoke a template in the current context

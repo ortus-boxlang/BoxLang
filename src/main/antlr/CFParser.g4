@@ -4,6 +4,11 @@ options {
 	tokenVocab = CFLexer;
 }
 
+@members { 
+	// This allows script components to be verified at parse time.
+ 	public ortus.boxlang.runtime.services.ComponentService componentService = ortus.boxlang.runtime.BoxRuntime.getInstance().getComponentService();
+ }
+
 // This is the top level rule, which allow imports always, followed by a component, or an interface, or just a bunch of statements.
 script:
 	importStatement* (
@@ -313,18 +318,9 @@ case:
 // foo
 identifier: IDENTIFIER | reservedKeyword;
 
-componentName: // { ortus.com.main.StaticCOMPONENTService.getInstance().isCOMPONENT( LA.() ) }?
-	IDENTIFIER
-	| THREAD
-	| COOKIE
-	| APPLICATION
-	| BREAK
-	| COMPONENT
-	| FUNCTION
-	| INCLUDE
-	| ABORT
-	| QUERY
-	| RETHROW;
+componentName:
+	// Ask the component service if the component exists
+	{ componentService.hasComponent( _input.LT(1).getText() ) }? identifier;
 
 // These are reserved words in the lexer, but are allowed to be an indentifer (variable name, method name)
 reservedKeyword:

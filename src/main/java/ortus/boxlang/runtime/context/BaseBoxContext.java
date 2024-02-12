@@ -24,6 +24,8 @@ import java.util.Map;
 
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.bifs.BIFDescriptor;
+import ortus.boxlang.runtime.components.Component;
+import ortus.boxlang.runtime.components.ComponentDescriptor;
 import ortus.boxlang.runtime.dynamic.casters.FunctionCaster;
 import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 import ortus.boxlang.runtime.loader.ImportDefinition;
@@ -33,6 +35,7 @@ import ortus.boxlang.runtime.runnables.RunnableLoader;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
+import ortus.boxlang.runtime.services.ComponentService;
 import ortus.boxlang.runtime.services.FunctionService;
 import ortus.boxlang.runtime.types.Function;
 import ortus.boxlang.runtime.types.IStruct;
@@ -86,6 +89,11 @@ public class BaseBoxContext implements IBoxContext {
 	private final FunctionService			functionService;
 
 	/**
+	 * The component service
+	 */
+	private final ComponentService			componentService;
+
+	/**
 	 * Creates a new execution context with a bounded execution template and parent context
 	 *
 	 * @param parent The parent context
@@ -93,6 +101,7 @@ public class BaseBoxContext implements IBoxContext {
 	public BaseBoxContext( IBoxContext parent ) {
 		this.parent				= parent;
 		this.functionService	= BoxRuntime.getInstance().getFunctionService();
+		this.componentService	= BoxRuntime.getInstance().getComponentService();
 		buffers.push( new StringBuffer() );
 	}
 
@@ -356,6 +365,23 @@ public class BaseBoxContext implements IBoxContext {
 
 		Function function = findFunction( name );
 		return invokeFunction( function, name, function.createArgumentsScope( new Object[] {} ) );
+	}
+
+	/**
+	 * Invoke a component call
+	 *
+	 * @param name          The name of the component to invoke
+	 * @param attributes    The attributes to pass to the component
+	 * @param componentBody The body of the component
+	 * 
+	 */
+	public void invokeComponent( Key name, IStruct attributes, Component.ComponentBody componentBody ) {
+		ComponentDescriptor comp = componentService.getComponent( name );
+		if ( comp != null ) {
+			comp.invoke( this, attributes, componentBody );
+		} else {
+			throw new BoxRuntimeException( "Component [" + name.getName() + "] count not be found." );
+		}
 	}
 
 	/**

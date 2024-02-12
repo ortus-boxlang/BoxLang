@@ -134,8 +134,6 @@ public class ClassDiscovery {
 			while ( resources.hasMoreElements() ) {
 				URL resource = resources.nextElement();
 
-				// System.out.println( "Found Resource: " + resource );
-
 				// Jar Loading
 				if ( resource.getProtocol().equals( "jar" ) ) {
 					classes.addAll(
@@ -155,7 +153,8 @@ public class ClassDiscovery {
 				}
 			}
 		} catch ( Exception e ) {
-			logger.error( "Exception finding annotated classes in path [{}]", startDir, e );
+			throw new BoxRuntimeException( "Exception finding annotated classes in path " + startDir, e );
+			// logger.error( "Exception finding annotated classes in path [{}]", startDir, e );
 		}
 		return classes.stream();
 	}
@@ -277,7 +276,8 @@ public class ClassDiscovery {
 						classes.add( clazz );
 					}
 				} catch ( ClassNotFoundException e ) {
-					logger.error( "Class not found: {}", className, e );
+					throw new BoxRuntimeException( "Class not found: " + className, e );
+					// logger.error( "Class not found: {}", className, e );
 				}
 			}
 		}
@@ -318,7 +318,8 @@ public class ClassDiscovery {
 							classes.add( clazz );
 						}
 					} catch ( ClassNotFoundException e ) {
-						logger.error( "Class not found: {}", className, e );
+						throw new BoxRuntimeException( "Class not found: " + className, e );
+						// logger.error( "Class not found: {}", className, e );
 					}
 				}
 			}

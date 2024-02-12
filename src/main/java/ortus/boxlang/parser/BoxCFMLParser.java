@@ -95,12 +95,16 @@ import ortus.boxlang.parser.antlr.CFMLParser.TextContentContext;
 import ortus.boxlang.parser.antlr.CFMLParser.ThrowContext;
 import ortus.boxlang.parser.antlr.CFMLParser.TryContext;
 import ortus.boxlang.parser.antlr.CFMLParser.WhileContext;
+import ortus.boxlang.runtime.BoxRuntime;
+import ortus.boxlang.runtime.components.ComponentDescriptor;
 import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
+import ortus.boxlang.runtime.services.ComponentService;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
 public class BoxCFMLParser extends BoxAbstractParser {
 
-	private int outputCounter = 0;
+	private int				outputCounter		= 0;
+	public ComponentService	componentService	= BoxRuntime.getInstance().getComponentService();
 
 	public BoxCFMLParser() {
 		super();
@@ -218,11 +222,18 @@ public class BoxCFMLParser extends BoxAbstractParser {
 			for ( var child : node.children ) {
 				if ( child instanceof StatementContext statement ) {
 					if ( statement.genericCloseComponent() != null ) {
-						String	componentName	= statement.genericCloseComponent().componentName().getText();
+						String				componentName	= statement.genericCloseComponent().componentName().getText();
+
+						ComponentDescriptor	descriptor		= componentService.getComponent( componentName );
+						if ( descriptor != null ) {
+							if ( !descriptor.allowsBody() ) {
+								issues.add( new Issue( "The [" + componentName + "] component does not allow a body", getPosition( node ) ) );
+							}
+						}
 						// see if statements list has a BoxComponent with this name
-						int		size			= statements.size();
-						boolean	foundStart		= false;
-						int		removeAfter		= -1;
+						int		size		= statements.size();
+						boolean	foundStart	= false;
+						int		removeAfter	= -1;
 						// loop backwards checking for a BoxComponent with this name
 						for ( int i = size - 1; i >= 0; i-- ) {
 							BoxStatement boxStatement = statements.get( i );

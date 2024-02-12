@@ -63,10 +63,9 @@ public class BoxComponentTransformer extends AbstractTransformer {
 
 		Statement jStatement = new ExpressionStmt(
 		    new MethodCallExpr(
-		        new NameExpr( "TemplateUtil" ),
-		        "doComponent",
+		        new NameExpr( transpiler.peekContextName() ),
+		        "invokeComponent",
 		        new NodeList<Expression>(
-		            new NameExpr( transpiler.peekContextName() ),
 		            createKey( boxComponent.getName() ),
 		            transformAnnotations( boxComponent.getAttributes() ),
 		            jComponentBody )

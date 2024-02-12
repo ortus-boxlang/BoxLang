@@ -108,6 +108,9 @@ import ortus.boxlang.parser.antlr.CFParser.ComponentContext;
 import ortus.boxlang.parser.antlr.CFParser.ComponentIslandContext;
 import ortus.boxlang.parser.antlr.CFParser.NewContext;
 import ortus.boxlang.parser.antlr.CFParser.PreannotationContext;
+import ortus.boxlang.runtime.BoxRuntime;
+import ortus.boxlang.runtime.components.ComponentDescriptor;
+import ortus.boxlang.runtime.services.ComponentService;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
 /**
@@ -115,8 +118,9 @@ import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
  */
 public class BoxCFParser extends BoxAbstractParser {
 
-	private final List<BoxDocumentation>	javadocs		= new ArrayList<>();
-	private boolean							inOutputBlock	= false;
+	private final List<BoxDocumentation>	javadocs			= new ArrayList<>();
+	private boolean							inOutputBlock		= false;
+	public ComponentService					componentService	= BoxRuntime.getInstance().getComponentService();
 
 	/**
 	 * Constructor
@@ -467,6 +471,12 @@ public class BoxCFParser extends BoxAbstractParser {
 		}
 
 		if ( node.statementBlock() != null ) {
+			ComponentDescriptor descriptor = componentService.getComponent( componentName );
+			if ( descriptor != null ) {
+				if ( !descriptor.allowsBody() ) {
+					issues.add( new Issue( "The [" + componentName + "] component does not allow a body", getPosition( node ) ) );
+				}
+			}
 			body = new ArrayList<>();
 			body.addAll( toAst( file, node.statementBlock() ) );
 		}
