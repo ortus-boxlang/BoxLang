@@ -79,7 +79,6 @@ public class BoxScriptTransformer extends AbstractTransformer {
 		import ortus.boxlang.runtime.context.FunctionBoxContext;
 		import ortus.boxlang.runtime.context.ClassBoxContext;
 		import ortus.boxlang.runtime.interop.DynamicObject;
-		import ortus.boxlang.runtime.dynamic.QueryOutputUtil;
 
 		import java.nio.file.Path;
 		import java.nio.file.Paths;

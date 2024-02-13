@@ -65,7 +65,6 @@ import ortus.boxlang.ast.statement.BoxTryCatch;
 import ortus.boxlang.ast.statement.BoxType;
 import ortus.boxlang.ast.statement.BoxWhile;
 import ortus.boxlang.ast.statement.component.BoxComponent;
-import ortus.boxlang.ast.statement.component.BoxOutput;
 import ortus.boxlang.parser.antlr.CFMLLexer;
 import ortus.boxlang.parser.antlr.CFMLParser;
 import ortus.boxlang.parser.antlr.CFMLParser.ArgumentContext;
@@ -190,6 +189,7 @@ public class BoxCFMLParser extends BoxAbstractParser {
 	private BoxImport toAst( File file, BoxImportContext node ) {
 		String				name		= null;
 		String				prefix		= null;
+		String				module		= null;
 		BoxIdentifier		alias		= null;
 		List<BoxAnnotation>	annotations	= new ArrayList<>();
 
@@ -198,10 +198,14 @@ public class BoxCFMLParser extends BoxAbstractParser {
 		}
 
 		BoxExpr nameSearch = findExprInAnnotations( annotations, "name", true, null, "import", getPosition( node ) );
-		name = getBoxExprAsString( nameSearch, "name", false );
+		name	= getBoxExprAsString( nameSearch, "name", false );
+		prefix	= getBoxExprAsString( findExprInAnnotations( annotations, "prefix", false, null, null, null ), "prefix", false );
+		if ( prefix != null ) {
+			name = prefix + ":" + name;
+		}
 		BoxFQN nameFQN = new BoxFQN( name, nameSearch.getPosition(), nameSearch.getSourceText() );
 
-		prefix = getBoxExprAsString( findExprInAnnotations( annotations, "prefix", false, null, null, null ), "prefix", false );
+		module = getBoxExprAsString( findExprInAnnotations( annotations, "module", false, null, null, null ), "module", false );
 
 		BoxExpr aliasSearch = findExprInAnnotations( annotations, "alias", false, null, null, null );
 		if ( aliasSearch != null ) {
@@ -210,9 +214,6 @@ public class BoxCFMLParser extends BoxAbstractParser {
 			    aliasSearch.getSourceText() );
 		}
 
-		if ( prefix != null ) {
-			name = prefix + ":" + name;
-		}
 		return new BoxImport( nameFQN, alias, getPosition( node ), getSourceText( node ) );
 	}
 
@@ -223,7 +224,6 @@ public class BoxCFMLParser extends BoxAbstractParser {
 				if ( child instanceof StatementContext statement ) {
 					if ( statement.genericCloseComponent() != null ) {
 						String				componentName	= statement.genericCloseComponent().componentName().getText();
-
 						ComponentDescriptor	descriptor		= componentService.getComponent( componentName );
 						if ( descriptor != null ) {
 							if ( !descriptor.allowsBody() ) {
@@ -246,6 +246,8 @@ public class BoxCFMLParser extends BoxAbstractParser {
 									boxComponent.setSourceText( getSourceText( boxComponent.getSourceStartIndex(), statement.genericCloseComponent() ) );
 									removeAfter = i;
 									break;
+								} else if ( boxComponent.getBody() == null && boxComponent.getRequiresBody() ) {
+									issues.add( new Issue( "Component [" + boxComponent.getName() + "] requires a body.", boxComponent.getPosition() ) );
 								}
 							}
 						}
@@ -273,6 +275,14 @@ public class BoxCFMLParser extends BoxAbstractParser {
 						    )
 						);
 					}
+				}
+			}
+		}
+		// Loop over statements and look for any BoxComponets who require a body but it's null
+		for ( BoxStatement statement : statements ) {
+			if ( statement instanceof BoxComponent boxComponent ) {
+				if ( boxComponent.getBody() == null && boxComponent.getRequiresBody() ) {
+					issues.add( new Issue( "Component [" + boxComponent.getName() + "] requires a body.", boxComponent.getPosition() ) );
 				}
 			}
 		}
@@ -329,9 +339,19 @@ public class BoxCFMLParser extends BoxAbstractParser {
 		for ( var attr : node.attribute() ) {
 			attributes.add( toAst( file, attr ) );
 		}
+		String				name		= node.componentName().getText();
+
 		// Body may get set later, if we find an end component
-		return new BoxComponent( node.componentName().getText(), attributes, null, node.getStart().getStartIndex(), getPosition( node ),
+		var					comp		= new BoxComponent( name, attributes, null, node.getStart().getStartIndex(), getPosition( node ),
 		    getSourceText( node ) );
+
+		ComponentDescriptor	descriptor	= componentService.getComponent( name );
+		if ( descriptor != null && descriptor.requiresBody() ) {
+			comp.setRequiresBody( true );
+		}
+
+		return comp;
+
 	}
 
 	private BoxStatement toAst( File file, SwitchContext node ) {
@@ -719,21 +739,13 @@ public class BoxCFMLParser extends BoxAbstractParser {
 		for ( var attr : node.attribute() ) {
 			annotations.add( toAst( file, attr ) );
 		}
-
-		BoxExpr	query				= findExprInAnnotations( annotations, "query", false, null, null, null );
-		BoxExpr	group				= findExprInAnnotations( annotations, "group", false, null, null, null );
-		BoxExpr	groupCaseSensitive	= findExprInAnnotations( annotations, "groupCaseSensitive", false, null, null, null );
-		BoxExpr	startRow			= findExprInAnnotations( annotations, "startRow", false, null, null, null );
-		BoxExpr	maxRows				= findExprInAnnotations( annotations, "maxRows", false, null, null, null );
-		BoxExpr	encodeFor			= findExprInAnnotations( annotations, "encodeFor", false, null, null, null );
-
 		if ( node.statements() != null ) {
 			outputCounter++;
 			statements.addAll( toAst( file, node.statements() ) );
 			outputCounter--;
 		}
 
-		return new BoxOutput( statements, query, group, groupCaseSensitive, startRow, maxRows, encodeFor, getPosition( node ), getSourceText( node ) );
+		return new BoxComponent( "output", annotations, statements, getPosition( node ), getSourceText( node ) );
 	}
 
 	/**

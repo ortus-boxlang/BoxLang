@@ -29,7 +29,7 @@ import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.IStruct;
 
-@BoxComponent( allowsBody = true )
+@BoxComponent( requiresBody = true )
 public class SaveContent extends Component {
 
 	public SaveContent() {

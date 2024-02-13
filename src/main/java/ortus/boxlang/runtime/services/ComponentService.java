@@ -268,9 +268,11 @@ public class ComponentService extends BaseService {
 		}
 
 		boolean			allowsBody				= false;
+		boolean			requiresBody			= false;
 		BoxComponent[]	commponentAnnotations	= componentClass.getAnnotationsByType( BoxComponent.class );
 		if ( commponentAnnotations.length > 0 ) {
-			allowsBody = commponentAnnotations[ 0 ].allowsBody();
+			allowsBody		= commponentAnnotations[ 0 ].allowsBody();
+			requiresBody	= commponentAnnotations[ 0 ].requiresBody();
 		}
 
 		registerComponent( new ComponentDescriptor(
@@ -279,7 +281,8 @@ public class ComponentService extends BaseService {
 		    module,
 		    null,
 		    component,
-		    allowsBody
+		    allowsBody,
+		    requiresBody
 		) );
 
 	}

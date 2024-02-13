@@ -470,15 +470,15 @@ public class BoxCFParser extends BoxAbstractParser {
 			componentName = node.prefixedIdentifier().getText().substring( 2 );
 		}
 
+		ComponentDescriptor descriptor = componentService.getComponent( componentName );
 		if ( node.statementBlock() != null ) {
-			ComponentDescriptor descriptor = componentService.getComponent( componentName );
-			if ( descriptor != null ) {
-				if ( !descriptor.allowsBody() ) {
-					issues.add( new Issue( "The [" + componentName + "] component does not allow a body", getPosition( node ) ) );
-				}
+			if ( descriptor != null && !descriptor.allowsBody() ) {
+				issues.add( new Issue( "The [" + componentName + "] component does not allow a body", getPosition( node ) ) );
 			}
 			body = new ArrayList<>();
 			body.addAll( toAst( file, node.statementBlock() ) );
+		} else if ( descriptor != null && descriptor.requiresBody() ) {
+			issues.add( new Issue( "The [" + componentName + "] component requires a body", getPosition( node ) ) );
 		}
 		return new BoxComponent( componentName, attributes, body, 0, getPosition( node ), getSourceText( node ) );
 	}

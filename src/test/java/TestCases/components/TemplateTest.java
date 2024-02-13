@@ -462,7 +462,7 @@ public class TemplateTest {
 
 	@Test
 	public void testThrow() {
-		Throwable e = assertThrows( CustomException.class, () -> instance.executeSource(
+		assertThrows( CustomException.class, () -> instance.executeSource(
 		    """
 		        <cfthrow>
 		    """, context, BoxScriptType.CFMARKUP ) );

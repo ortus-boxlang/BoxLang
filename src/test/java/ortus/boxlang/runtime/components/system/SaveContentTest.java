@@ -99,7 +99,7 @@ public class SaveContentTest {
 		    before
 		       <cfsaveContent variable="result" >
 		       	Hello World
-		       </cfsaveContent>
+		      </cfsaveContent>
 		    after
 		          """,
 		    context, BoxScriptType.CFMARKUP );

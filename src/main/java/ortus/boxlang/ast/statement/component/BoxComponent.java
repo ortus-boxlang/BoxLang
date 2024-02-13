@@ -33,6 +33,7 @@ public class BoxComponent extends BoxStatement {
 	private List<BoxStatement>			body;
 	private final List<BoxAnnotation>	attributes;
 	private final int					sourceStartIndex;
+	public Boolean						requiresBody	= false;
 
 	/**
 	 * Create an AST for a component
@@ -113,6 +114,14 @@ public class BoxComponent extends BoxStatement {
 		if ( this.body != null ) {
 			this.body.forEach( statement -> statement.setParent( this ) );
 		}
+	}
+
+	public void setRequiresBody( Boolean requiresBody ) {
+		this.requiresBody = requiresBody;
+	}
+
+	public Boolean getRequiresBody() {
+		return requiresBody;
 	}
 
 	@Override

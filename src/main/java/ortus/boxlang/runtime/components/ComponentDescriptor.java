@@ -38,7 +38,12 @@ public class ComponentDescriptor {
 	/**
 	 * component allows a body. Used to help validate parsing
 	 */
-	public Boolean				allowsBody	= true;
+	public Boolean				allowsBody;
+
+	/**
+	 * component requires a body. Used to help validate parsing
+	 */
+	public Boolean				requiresBody;
 
 	/**
 	 * component class
@@ -69,12 +74,14 @@ public class ComponentDescriptor {
 	    String module,
 	    String namespace,
 	    Component componentInstance,
-	    Boolean allowsBody ) {
+	    Boolean allowsBody,
+	    Boolean requiresBody ) {
 		this.name				= name;
 		this.componentClass		= componentClass;
 		this.module				= module;
 		this.componentInstance	= componentInstance;
 		this.allowsBody			= allowsBody;
+		this.requiresBody		= requiresBody;
 	}
 
 	/**
@@ -90,7 +97,14 @@ public class ComponentDescriptor {
 	 * Descriptor allows a body or not
 	 */
 	public Boolean allowsBody() {
-		return allowsBody;
+		return allowsBody || requiresBody;
+	}
+
+	/**
+	 * Descriptor requires a body or not
+	 */
+	public Boolean requiresBody() {
+		return requiresBody;
 	}
 
 	/**

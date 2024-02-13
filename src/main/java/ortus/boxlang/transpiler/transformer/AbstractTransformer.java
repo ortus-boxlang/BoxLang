@@ -245,7 +245,7 @@ public abstract class AbstractTransformer implements Transformer {
 			members.add( value );
 		} );
 		if ( annotations.isEmpty() ) {
-			return ( Expression ) parseExpression( "Struct.EMPTY", new HashMap<>() );
+			return ( Expression ) parseExpression( "new Struct()", new HashMap<>() );
 		} else {
 			MethodCallExpr annotationStruct = ( MethodCallExpr ) parseExpression( "Struct.of()", new HashMap<>() );
 			annotationStruct.getArguments().addAll( members );

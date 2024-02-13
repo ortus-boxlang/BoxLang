@@ -89,7 +89,6 @@ import ortus.boxlang.ast.statement.BoxThrow;
 import ortus.boxlang.ast.statement.BoxTry;
 import ortus.boxlang.ast.statement.BoxWhile;
 import ortus.boxlang.ast.statement.component.BoxComponent;
-import ortus.boxlang.ast.statement.component.BoxOutput;
 import ortus.boxlang.ast.statement.component.BoxTemplateIsland;
 import ortus.boxlang.runtime.runnables.compiler.JavaSourceString;
 import ortus.boxlang.runtime.scopes.Key;
@@ -147,7 +146,6 @@ import ortus.boxlang.transpiler.transformer.statement.BoxThrowTransformer;
 import ortus.boxlang.transpiler.transformer.statement.BoxTryTransformer;
 import ortus.boxlang.transpiler.transformer.statement.BoxWhileTransformer;
 import ortus.boxlang.transpiler.transformer.statement.component.BoxComponentTransformer;
-import ortus.boxlang.transpiler.transformer.statement.component.BoxOutputTransformer;
 import ortus.boxlang.transpiler.transformer.statement.component.BoxScriptIslandTransformer;
 import ortus.boxlang.transpiler.transformer.statement.component.BoxTemplateIslandTransformer;
 
@@ -227,7 +225,6 @@ public class JavaTranspiler extends Transpiler {
 		// Templating Components
 		registry.put( BoxTemplate.class, new BoxTemplateTransformer( this ) );
 		registry.put( BoxBufferOutput.class, new BoxBufferOutputTransformer( this ) );
-		registry.put( BoxOutput.class, new BoxOutputTransformer( this ) );
 		registry.put( BoxScriptIsland.class, new BoxScriptIslandTransformer( this ) );
 		registry.put( BoxTemplateIsland.class, new BoxTemplateIslandTransformer( this ) );
 		registry.put( BoxComponent.class, new BoxComponentTransformer( this ) );
