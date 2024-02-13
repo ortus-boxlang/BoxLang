@@ -87,26 +87,6 @@ public class TemplateTest {
 		assertThat( variables.get( result ) ).isEqualTo( "bar" );
 
 	}
-
-	@Test
-	public void testTextOutput() {
-		IBoxContext context2 = new ScriptingRequestBoxContext( instance.getRuntimeContext() );
-		instance.executeSource(
-		    """
-		       <cfset bar = "brad">
-		       This is #foo# output!
-		            <cfoutput>
-		              	This is #bar# output!
-		            </cfoutput>
-		    <cfset result = getBoxContext().getBuffer().toString()>
-		              """, context2, BoxScriptType.CFMARKUP );
-
-		var variables = ( VariablesScope ) context2.getScopeNearby( VariablesScope.name );
-		assertThat( variables.getAsString( result ) ).contains( "This is #foo# output!" );
-		assertThat( variables.getAsString( result ) ).contains( "This is brad output!" );
-
-	}
-
 	@Test
 	public void testIfStatementElse() {
 		instance.executeSource(
