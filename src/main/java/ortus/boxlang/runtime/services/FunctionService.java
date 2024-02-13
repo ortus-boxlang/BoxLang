@@ -338,20 +338,22 @@ public class FunctionService extends BaseService {
 		    // Filter to subclasses of BIF
 		    .filter( BIF.class::isAssignableFrom )
 		    // Process each class for registration
-		    .forEach( targetClass -> registerGlobalFunction( targetClass, null, null ) );
+		    .forEach( targetClass -> processBIFRegistration( targetClass, null, null ) );
 	}
 
 	/**
-	 * Registers a global function with the service. The BIF class needs to be annotated with {@link BoxBIF} or {@link BoxMember}.
-	 * This is mostly called by the global function loader.
+	 * This method process a raw BIF registration usually from a {@code BIFClass} and a {@code function} instance.
+	 * This creates an internal {@code BIFDescriptor} and registers it with the service.
 	 *
-	 * @param BIFClass The BIF class
-	 * @param function The global function
-	 * @param module   The module the global function belongs to
+	 * This is main way to register Java based BIFs with the runtime.
+	 *
+	 * @param BIFClass The BIF class to process for registration
+	 * @param function The global function to process for registration
+	 * @param module   The module the global function belongs to when registering
 	 *
 	 * @throws BoxRuntimeException If no BIF class or function was provided
 	 */
-	private void registerGlobalFunction( Class<?> BIFClass, BIF function, String module ) {
+	public void processBIFRegistration( Class<?> BIFClass, BIF function, String module ) {
 		// If no BIFClass is provided, get it from the function instance
 		if ( BIFClass == null && function != null ) {
 			BIFClass = function.getClass();

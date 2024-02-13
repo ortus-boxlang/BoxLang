@@ -220,8 +220,15 @@ class ModuleRecordTest {
 		// Test the bif
 		// @formatter:off
 		runtime.executeSource("""
+				// Test BoxLang Bifs
 		       result = moduleHelloWorld( 'boxlang' );
 		    	result2 = moduleNow();
+
+				// Test Member Methods
+				result3 = "boxlang".foo();
+
+				// Test Java Bifs
+				result4 = hola();
 		    """, context );
 		// @formatter:on
 
@@ -229,5 +236,9 @@ class ModuleRecordTest {
 		assertThat( variables.getAsString( Key.result ) )
 		    .isEqualTo( "Hello World, my name is boxlang and I am 0 years old" );
 		assertThat( variables.get( Key.of( "result2" ) ) ).isNotNull();
+		assertThat( variables.getAsString( Key.of( "result3" ) ) ).isEqualTo(
+		    "Hello World, my name is boxlang and I am 0 years old"
+		);
+		assertThat( variables.getAsString( Key.of( "result4" ) ) ).isEqualTo( "Hola Mundo!" );
 	}
 }

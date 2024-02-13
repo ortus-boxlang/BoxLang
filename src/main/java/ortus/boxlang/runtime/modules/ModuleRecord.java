@@ -31,8 +31,13 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import ortus.boxlang.runtime.BoxRuntime;
+import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BIFDescriptor;
+import ortus.boxlang.runtime.bifs.BoxBIF;
+import ortus.boxlang.runtime.bifs.BoxBIFs;
 import ortus.boxlang.runtime.bifs.BoxLangBIFProxy;
+import ortus.boxlang.runtime.bifs.BoxMember;
+import ortus.boxlang.runtime.bifs.BoxMembers;
 import ortus.boxlang.runtime.bifs.MemberDescriptor;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.interop.DynamicObject;
@@ -311,6 +316,7 @@ public class ModuleRecord {
 		VariablesScope		variablesScope		= this.moduleConfig.getVariablesScope();
 		BoxRuntime			runtime				= BoxRuntime.getInstance();
 		InterceptorService	interceptorService	= runtime.getInterceptorService();
+		FunctionService		functionService		= runtime.getFunctionService();
 
 		// Register the module mapping in the runtime
 		// Called first in case this is used in the `configure` method
@@ -376,15 +382,16 @@ public class ModuleRecord {
 			}
 
 			// Do we have any Java BIFs to load?
-			System.out.println( "Scanning for Java BIFs..." );
-
-			Class<?>[] clazzes = ClassDiscovery.findAnnotatedClasses(
+			ClassDiscovery.findAnnotatedClasses(
 			    "",
 			    this.classLoader,
-			    ModuleService.MODULE_PACKAGE_PREFIX + "." + this.name.getName()
-			).toArray( Class[]::new );
-
-			System.out.println( "Found " + clazzes.length + " Java BIFs" );
+			    ModuleService.MODULE_PACKAGE_PREFIX + "." + this.name.getName(),
+			    BoxBIF.class, BoxBIFs.class, BoxMember.class, BoxMembers.class
+			)
+			    // Only subclasses of BIF
+			    .filter( BIF.class::isAssignableFrom )
+			    // Process each class for registration
+			    .forEach( clazz -> functionService.processBIFRegistration( clazz, null, null ) );
 
 		}
 
