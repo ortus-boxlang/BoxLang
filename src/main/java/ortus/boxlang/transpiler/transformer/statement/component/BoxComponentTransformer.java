@@ -67,7 +67,7 @@ public class BoxComponentTransformer extends AbstractTransformer {
 		        "invokeComponent",
 		        new NodeList<Expression>(
 		            createKey( boxComponent.getName() ),
-		            transformAnnotations( boxComponent.getAttributes() ),
+		            transformAnnotations( boxComponent.getAttributes(), true ),
 		            jComponentBody )
 		    )
 		);

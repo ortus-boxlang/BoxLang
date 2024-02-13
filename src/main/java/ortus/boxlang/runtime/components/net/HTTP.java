@@ -35,8 +35,8 @@ import ortus.boxlang.runtime.types.exceptions.BoxValidationException;
 @BoxComponent( allowsBody = true )
 public class HTTP extends Component {
 
-	public HTTP() {
-		super( Key.of( "HTTP" ) );
+	public HTTP( Key name ) {
+		super( name );
 		declaredAttributes = new Attribute[] {
 		    new Attribute( Key.URL, "string", Set.of(
 		        Validator.REQUIRED,

@@ -39,8 +39,8 @@ import ortus.boxlang.runtime.types.Query;
 @BoxComponent( requiresBody = true )
 public class Output extends Component {
 
-	public Output() {
-		super( Key.of( "Output" ) );
+	public Output( Key name ) {
+		super( name );
 		declaredAttributes = new Attribute[] {
 		    new Attribute( Key.query, "any" ),
 		    new Attribute( Key.group, "string", Set.of( Validator.NON_EMPTY ) ),

@@ -30,8 +30,8 @@ import ortus.boxlang.runtime.types.IStruct;
 @BoxComponent
 public class Dump extends Component {
 
-	public Dump() {
-		super( Key.dump );
+	public Dump( Key name ) {
+		super( name );
 		declaredAttributes	= new Attribute[] {
 		    new Attribute( Key.var, "any", Set.of( Validator.REQUIRED ) )
 		};

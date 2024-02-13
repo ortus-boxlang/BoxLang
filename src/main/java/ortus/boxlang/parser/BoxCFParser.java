@@ -453,12 +453,12 @@ public class BoxCFParser extends BoxAbstractParser {
 		String				componentName	= null;
 		List<BoxAnnotation>	attributes		= new ArrayList<>();
 
-		if ( node.componentAttributes() != null && node.componentAttributes().namedArgument() != null ) {
-			for ( var attr : node.componentAttributes().namedArgument() ) {
+		if ( node.componentAttributes() != null && node.componentAttributes().componentAttribute() != null ) {
+			for ( var attr : node.componentAttributes().componentAttribute() ) {
 				attributes.add( toAstAnnotation( file, attr ) );
 			}
-		} else if ( node.delimitedComponentAttributes() != null && node.delimitedComponentAttributes().namedArgument() != null ) {
-			for ( var attr : node.delimitedComponentAttributes().namedArgument() ) {
+		} else if ( node.delimitedComponentAttributes() != null && node.delimitedComponentAttributes().componentAttribute() != null ) {
+			for ( var attr : node.delimitedComponentAttributes().componentAttribute() ) {
 				attributes.add( toAstAnnotation( file, attr ) );
 			}
 		}
@@ -468,6 +468,72 @@ public class BoxCFParser extends BoxAbstractParser {
 		} else {
 			// strip prefix from name so "cfbrad" becomes "brad
 			componentName = node.prefixedIdentifier().getText().substring( 2 );
+		}
+
+		// Special check for param's script shortcut
+		if ( componentName.equalsIgnoreCase( "param" ) ) {
+			// If there is only one attribute and it is not name= and has a value, then we need to convert it to a name/value pair
+			// Ex: param foo="bar";
+			// Becomes: param name="foo" default="bar";
+			if ( attributes.size() == 1 && !attributes.get( 0 ).getKey().getValue().equalsIgnoreCase( "name" ) && attributes.get( 0 ).getValue() != null ) {
+				List<BoxAnnotation> newAttributes = new ArrayList<>();
+				newAttributes.add(
+				    new BoxAnnotation(
+				        new BoxFQN( "name", getPosition( node ), "name" ),
+				        new BoxStringLiteral( attributes.get( 0 ).getKey().getValue(), attributes.get( 0 ).getKey().getPosition(),
+				            attributes.get( 0 ).getKey().getSourceText() ),
+				        attributes.get( 0 ).getKey().getPosition(),
+				        "name=\"" + attributes.get( 0 ).getKey().getSourceText() + "\""
+				    )
+				);
+				newAttributes.add(
+				    new BoxAnnotation(
+				        new BoxFQN( "default", attributes.get( 0 ).getValue().getPosition(), "default" ),
+				        attributes.get( 0 ).getValue(),
+				        attributes.get( 0 ).getValue().getPosition(),
+				        "default=" + attributes.get( 0 ).getValue().getSourceText()
+				    )
+				);
+				attributes = newAttributes;
+				// If there are two attributes, the first one has a null value, and none of them are named "name"
+				// Ex: param String foo="bar";
+				// Becomes: param type="String" name="foo" default="bar";
+				// Ex: param String foo;
+				// Becomes: param type="String" name="foo";
+			} else if ( attributes.size() == 2 && attributes.get( 0 ).getValue() == null && !attributes.get( 0 ).getKey().getValue().equalsIgnoreCase( "name" )
+			    && !attributes.get( 1 ).getKey().getValue().equalsIgnoreCase( "name" ) ) {
+				List<BoxAnnotation> newAttributes = new ArrayList<>();
+				newAttributes.add(
+				    new BoxAnnotation(
+				        new BoxFQN( "type", getPosition( node ), "type" ),
+				        new BoxStringLiteral( attributes.get( 0 ).getKey().getValue(), attributes.get( 0 ).getKey().getPosition(),
+				            attributes.get( 0 ).getKey().getSourceText() ),
+				        attributes.get( 0 ).getKey().getPosition(),
+				        "type=\"" + attributes.get( 0 ).getKey().getSourceText() + "\""
+				    )
+				);
+				newAttributes.add(
+				    new BoxAnnotation(
+				        new BoxFQN( "name", getPosition( node ), "name" ),
+				        new BoxStringLiteral( attributes.get( 1 ).getKey().getValue(), attributes.get( 1 ).getKey().getPosition(),
+				            attributes.get( 1 ).getKey().getSourceText() ),
+				        attributes.get( 1 ).getKey().getPosition(),
+				        "name=" + attributes.get( 1 ).getKey().getSourceText()
+				    )
+				);
+				// Only if there is a default
+				if ( attributes.get( 1 ).getValue() != null ) {
+					newAttributes.add(
+					    new BoxAnnotation(
+					        new BoxFQN( "default", attributes.get( 1 ).getValue().getPosition(), "default" ),
+					        attributes.get( 1 ).getValue(),
+					        attributes.get( 1 ).getValue().getPosition(),
+					        "default=" + attributes.get( 1 ).getValue().getSourceText()
+					    )
+					);
+				}
+				attributes = newAttributes;
+			}
 		}
 
 		ComponentDescriptor descriptor = componentService.getComponent( componentName );
@@ -483,18 +549,12 @@ public class BoxCFParser extends BoxAbstractParser {
 		return new BoxComponent( componentName, attributes, body, 0, getPosition( node ), getSourceText( node ) );
 	}
 
-	private BoxAnnotation toAstAnnotation( File file, CFParser.NamedArgumentContext node ) {
-		BoxFQN name;
-		if ( node.identifier() != null ) {
-			name = new BoxFQN( node.identifier().getText(), getPosition( node.identifier() ), getSourceText( node.identifier() ) );
-		} else {
-			// Raw text
-			String	stringLit	= node.stringLiteral().getText();
-			// Find quote char
-			String	s			= stringLit.substring( 1, stringLit.length() - 1 );
-			name = new BoxFQN( escapeStringLiteral( stringLit, s ), getPosition( node.identifier() ), getSourceText( node.identifier() ) );
+	private BoxAnnotation toAstAnnotation( File file, CFParser.ComponentAttributeContext node ) {
+		BoxFQN	name	= new BoxFQN( node.identifier().getText(), getPosition( node.identifier() ), getSourceText( node.identifier() ) );
+		BoxExpr	value	= null;
+		if ( node.expression() != null ) {
+			value = toAst( file, node.expression() );
 		}
-		BoxExpr value = toAst( file, node.expression() );
 		return new BoxAnnotation( name, value, getPosition( node ), getSourceText( node ) );
 	}
 

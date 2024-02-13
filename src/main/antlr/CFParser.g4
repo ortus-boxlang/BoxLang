@@ -60,9 +60,6 @@ functionParam: (REQUIRED)? (type)? identifier (
 		EQUALSIGN expression
 	)? postannotation*;
 
-// TODO: Do I need the generic component-in-script implementation here, or can the generic rule capture it?
-param: PARAM (type)? identifier ( EQUALSIGN expression)?;
-
 // @MyAnnotation "value" true
 preannotation: AT fqn (literalExpression)*;
 
@@ -151,7 +148,6 @@ simpleStatement: (
 		| continue
 		| rethrow
 		| assert
-		| param
 		| incrementDecrementStatement
 		| return
 		| expression
@@ -174,12 +170,14 @@ component:
 // cfSomething
 prefixedIdentifier: PREFIXEDIDENTIFIER;
 
-// foo="bar" baz="bum"
-componentAttributes: (namedArgument) (namedArgument)*;
+// foo="bar" baz="bum" qux
+componentAttributes: (componentAttribute) (componentAttribute)*;
+
+componentAttribute: identifier (EQUALSIGN expression)?;
 
 // foo="bar", baz="bum"
-delimitedComponentAttributes: (namedArgument) (
-		COMMA namedArgument
+delimitedComponentAttributes: (componentAttribute) (
+		COMMA componentAttribute
 	)*;
 
 /*
@@ -367,7 +365,6 @@ reservedKeyword:
 	| NULL
 	| NUMERIC
 	| PACKAGE
-	| PARAM
 	| PRIVATE
 	| PROPERTY
 	| PUBLIC

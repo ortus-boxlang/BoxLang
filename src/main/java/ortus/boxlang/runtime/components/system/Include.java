@@ -30,8 +30,8 @@ import ortus.boxlang.runtime.types.IStruct;
 @BoxComponent
 public class Include extends Component {
 
-	public Include() {
-		super( Key.of( "include" ) );
+	public Include( Key name ) {
+		super( name );
 		declaredAttributes	= new Attribute[] {
 		    new Attribute( Key.template, "string", Set.of( Validator.REQUIRED, Validator.NON_EMPTY ) )
 		};

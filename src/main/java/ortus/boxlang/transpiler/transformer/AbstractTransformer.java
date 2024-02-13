@@ -26,6 +26,7 @@ import com.github.javaparser.JavaParser;
 import com.github.javaparser.ParseResult;
 import com.github.javaparser.ParserConfiguration;
 import com.github.javaparser.ast.Node;
+import com.github.javaparser.ast.expr.BooleanLiteralExpr;
 import com.github.javaparser.ast.expr.Expression;
 import com.github.javaparser.ast.expr.MethodCallExpr;
 import com.github.javaparser.ast.expr.NameExpr;
@@ -229,7 +230,7 @@ public abstract class AbstractTransformer implements Transformer {
 	 *
 	 * @return an Expression node
 	 */
-	protected Expression transformAnnotations( List<BoxAnnotation> annotations ) {
+	protected Expression transformAnnotations( List<BoxAnnotation> annotations, Boolean defaultTrue ) {
 		List<Expression> members = new ArrayList<>();
 		annotations.forEach( annotation -> {
 			Expression annotationKey = ( Expression ) createKey( annotation.getKey().getValue() );
@@ -238,8 +239,11 @@ public abstract class AbstractTransformer implements Transformer {
 			Expression	value;
 			if ( thisValue != null ) {
 				value = ( Expression ) transpiler.transform( thisValue );
+			} else if ( defaultTrue ) {
+				// Annotations in tags with no value default to true string (CF compat)
+				value = new BooleanLiteralExpr( true );
 			} else {
-				// Annotations with no value default to empty string (CF compat)
+				// Annotations in script with no value default to empty string (CF compat)
 				value = new StringLiteralExpr( "" );
 			}
 			members.add( value );
@@ -251,6 +255,17 @@ public abstract class AbstractTransformer implements Transformer {
 			annotationStruct.getArguments().addAll( members );
 			return annotationStruct;
 		}
+	}
+
+	/**
+	 * Transforms a collection of annotations in a BoxLang Struct
+	 *
+	 * @param annotations list of annotation
+	 *
+	 * @return an Expression node
+	 */
+	protected Expression transformAnnotations( List<BoxAnnotation> annotations ) {
+		return transformAnnotations( annotations, false );
 	}
 
 	protected String generateArguments( List<BoxArgument> arguments ) {

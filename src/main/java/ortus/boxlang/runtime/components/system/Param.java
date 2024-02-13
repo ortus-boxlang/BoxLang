@@ -25,53 +25,58 @@ import ortus.boxlang.runtime.components.Component;
 import ortus.boxlang.runtime.components.validators.Validator;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.dynamic.ExpressionInterpreter;
-import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.IStruct;
 
-@BoxComponent( requiresBody = true )
-public class SaveContent extends Component {
+@BoxComponent
+public class Param extends Component {
 
-	public SaveContent( Key name ) {
+	public Param( Key name ) {
 		super( name );
 		declaredAttributes	= new Attribute[] {
-		    new Attribute( Key.variable, "string", Set.of( Validator.REQUIRED, Validator.NON_EMPTY ) ),
-		    new Attribute( Key.trim, "boolean", false ),
-		    new Attribute( Key.append, "boolean", false )
+		    new Attribute( Key._NAME, "string", Set.of( Validator.REQUIRED ) ),
+		    new Attribute( Key.type, "string" ),
+		    new Attribute( Key._DEFAULT, "any" ),
+		    new Attribute( Key.max, "numeric" ),
+		    new Attribute( Key.min, "numeric" ),
+		    new Attribute( Key.pattern, "string" )
 		};
-		captureBodyOutput	= true;
+		allowBody			= false;
 	}
 
 	/**
-	 * I capture the generated content from the body statements and save it into a variable
+	 * Tests for a parameter's existence, tests its data type, and, if a default value is not assigned, optionally provides one.
 	 *
 	 * @param context        The context in which the BIF is being invoked
 	 * @param attributes     The attributes to the BIF
 	 * @param body           The body of the BIF
 	 * @param executionState The execution state of the BIF
+	 * 
+	 * @argument.name The name of the parameter
+	 * 
+	 * @argument.type The data type of the parameter
+	 * 
+	 * @argument.default The default value of the parameter
+	 * 
+	 * @argument.max The maximum value of the parameter
+	 * 
+	 * @argument.min The minimum value of the parameter
+	 * 
+	 * @argument.pattern The pattern of the parameter
 	 *
 	 */
 	public void _invoke( IBoxContext context, IStruct attributes, ComponentBody body, IStruct executionState ) {
-		String	content			= processBody( context, body );
-		String	variableName	= attributes.getAsString( Key.variable );
-
-		boolean	trim			= attributes.getAsBoolean( Key.trim );
-		boolean	append			= attributes.getAsBoolean( Key.append );
-
-		// Optionally trim captured content
-		if ( trim ) {
-			content = content.trim();
+		String	varName			= attributes.getAsString( Key._NAME );
+		Object	defaultValue	= attributes.get( Key._DEFAULT );
+		Object	existingValue	= ExpressionInterpreter.getVariable( context, varName, defaultValue != null );
+		if ( existingValue == null && defaultValue != null ) {
+			existingValue = defaultValue;
 		}
 
-		// Lookup existing value and append if it existed
-		if ( append ) {
-			Object priorContent = ExpressionInterpreter.getVariable( context, variableName, true );
-			if ( priorContent != null ) {
-				content = StringCaster.cast( priorContent ).concat( content );
-			}
-		}
+		// TODO: Enforce validation here
+		// BL types can be passed to GenericCaster
+		// Other type delegate to isValid()
 
-		// Set the result back into the page
-		ExpressionInterpreter.setVariable( context, variableName, content );
+		ExpressionInterpreter.setVariable( context, varName, existingValue );
 	}
 }
