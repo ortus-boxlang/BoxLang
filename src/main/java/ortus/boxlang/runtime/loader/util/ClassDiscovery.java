@@ -22,6 +22,7 @@ import java.io.IOException;
 import java.lang.annotation.Annotation;
 import java.net.URISyntaxException;
 import java.net.URL;
+import java.net.URLClassLoader;
 import java.net.URLDecoder;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -122,15 +123,35 @@ public class ClassDiscovery {
 	 *
 	 * @param startDir     The directory to start searching in
 	 * @param targetLoader The classloader to use
+	 * @param packageName  The package name for classes found inside the base directory, if null, we auto-detect it
 	 * @param annotations  The annotation classes to search for (varargs)
 	 *
 	 * @return A stream of classes
 	 */
 	@SafeVarargs
-	public static Stream<Class<?>> findAnnotatedClasses( String startDir, ClassLoader targetLoader, Class<? extends Annotation>... annotations ) {
+	public static Stream<Class<?>> findAnnotatedClasses(
+	    String startDir,
+	    ClassLoader targetLoader,
+	    String packageName,
+	    Class<? extends Annotation>... annotations ) {
+
 		List<Class<?>> classes = new ArrayList<>();
+
+		// Auto-detect package name
+		if ( packageName == null ) {
+			packageName = startDir.replace( '/', '.' );
+		}
+
 		try {
-			Enumeration<URL> resources = targetLoader.getResources( startDir );
+			Enumeration<URL> resources;
+
+			// URL Class loaders are different, look locally first
+			if ( targetLoader instanceof URLClassLoader URLTargetLoader ) {
+				resources = URLTargetLoader.findResources( startDir );
+			} else {
+				resources = targetLoader.getResources( startDir );
+			}
+
 			while ( resources.hasMoreElements() ) {
 				URL resource = resources.nextElement();
 
@@ -144,10 +165,10 @@ public class ClassDiscovery {
 				else {
 					classes.addAll(
 					    findClassesInDirectory(
-					        new File( resource.getFile() ),
-					        startDir.replace( '/', '.' ),
-					        targetLoader,
-					        annotations
+					        new File( resource.getFile() ), // directory
+					        packageName, // package name
+					        targetLoader, // class loader
+					        annotations // annotations
 					    )
 					);
 				}
@@ -160,7 +181,8 @@ public class ClassDiscovery {
 	}
 
 	/**
-	 * Find all classes annotated with the given annotation(s) in the given directory
+	 * Find all classes annotated with the given annotation(s) in the given directory.
+	 * We also auto-detect the package name and use the system classloader
 	 *
 	 * @param startDir    The directory to start searching in
 	 * @param annotations The annotation classes to search for (varargs)
@@ -169,7 +191,21 @@ public class ClassDiscovery {
 	 */
 	@SafeVarargs
 	public static Stream<Class<?>> findAnnotatedClasses( String startDir, Class<? extends Annotation>... annotations ) {
-		return findAnnotatedClasses( startDir, ClassDiscovery.class.getClassLoader(), annotations );
+		return findAnnotatedClasses( startDir, ClassDiscovery.class.getClassLoader(), null, annotations );
+	}
+
+	/**
+	 * Find all classes annotated with the given annotation(s) in the given directory
+	 *
+	 * @param startDir    The directory to start searching in
+	 * @param packageName The package name for classes found inside the base directory, if null, we auto-detect it
+	 * @param annotations The annotation classes to search for (varargs)
+	 *
+	 * @return A stream of classes
+	 */
+	@SafeVarargs
+	public static Stream<Class<?>> findAnnotatedClasses( String startDir, String packageName, Class<? extends Annotation>... annotations ) {
+		return findAnnotatedClasses( startDir, ClassDiscovery.class.getClassLoader(), packageName, annotations );
 	}
 
 	/**
@@ -224,7 +260,7 @@ public class ClassDiscovery {
 	 *
 	 * @throws ClassNotFoundException
 	 */
-	private static String[] findClassNames( File directory, String packageName, Boolean recursive ) {
+	public static String[] findClassNames( File directory, String packageName, Boolean recursive ) {
 		return Arrays.stream( directory.listFiles() )
 		    .parallel()
 		    .flatMap( file -> {
@@ -253,7 +289,7 @@ public class ClassDiscovery {
 	 *
 	 * @throws IOException
 	 */
-	private static List<Class<?>> findClassesInJar(
+	public static List<Class<?>> findClassesInJar(
 	    URL jarURL,
 	    String startDir,
 	    ClassLoader classLoader,
@@ -294,16 +330,23 @@ public class ClassDiscovery {
 	 *
 	 * @return A list of classes
 	 */
-	private static List<Class<?>> findClassesInDirectory(
+	public static List<Class<?>> findClassesInDirectory(
 	    File directory,
 	    String packageName,
 	    ClassLoader classLoader,
 	    Class<? extends Annotation>[] annotations ) {
 
 		List<Class<?>> classes = new ArrayList<>();
+
+		// System.out.println( "Scanning directory: " + directory );
+		// System.out.println( "Directory Exists: " + directory.exists() );
+
 		if ( directory.exists() ) {
 			for ( File file : directory.listFiles() ) {
 				String name = file.getName();
+
+				// System.out.println( "File Name: " + name );
+				// System.out.println( "File is Directory: " + file.isDirectory() );
 
 				// recursion
 				if ( file.isDirectory() ) {
@@ -312,6 +355,8 @@ public class ClassDiscovery {
 				// Class file found
 				else if ( name.endsWith( ".class" ) ) {
 					String className = packageName + '.' + name.substring( 0, name.length() - 6 );
+
+					// System.out.println( "Found class: " + className + " from FileName: " + name );
 					try {
 						Class<?> clazz = Class.forName( className, false, classLoader );
 						if ( isAnnotated( clazz, annotations ) ) {
@@ -321,7 +366,7 @@ public class ClassDiscovery {
 						throw new BoxRuntimeException( "Class not found: " + className, e );
 						// logger.error( "Class not found: {}", className, e );
 					}
-				}
+				} // else ignored
 			}
 		}
 
@@ -336,8 +381,8 @@ public class ClassDiscovery {
 	 *
 	 * @return
 	 */
-	private static boolean isAnnotated( Class<?> clazz, Class<? extends Annotation>[] annotations ) {
-		return Arrays.stream( annotations ).anyMatch( clazz::isAnnotationPresent );
+	public static boolean isAnnotated( Class<?> clazz, Class<? extends Annotation>[] annotations ) {
+		return annotations.length > 0 ? Arrays.stream( annotations ).anyMatch( clazz::isAnnotationPresent ) : true;
 	}
 
 }

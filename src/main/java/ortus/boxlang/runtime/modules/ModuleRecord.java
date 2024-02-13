@@ -19,6 +19,7 @@ package ortus.boxlang.runtime.modules;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.MalformedURLException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -36,6 +37,7 @@ import ortus.boxlang.runtime.bifs.MemberDescriptor;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.loader.DynamicClassLoader;
+import ortus.boxlang.runtime.loader.util.ClassDiscovery;
 import ortus.boxlang.runtime.runnables.IClassRunnable;
 import ortus.boxlang.runtime.runnables.RunnableLoader;
 import ortus.boxlang.runtime.scopes.Key;
@@ -314,13 +316,23 @@ public class ModuleRecord {
 		// Called first in case this is used in the `configure` method
 		runtime.getConfiguration().runtime.registerMapping( this.mapping, this.path );
 
-		// Create the module class loader with no URLs
-		this.classLoader = new DynamicClassLoader(
-		    this.name,
-		    ClassLoader.getSystemClassLoader()
-		);
+		// Create the module class loader and seed it with the physical path to the module
+		// This traverses the module and looks for *.class files to load (NOT JARs)
+		// Using the `modules.{module_name}` package prefix
+		// This is important for module developers to include this as their package prefix.
+		try {
+			this.classLoader = new DynamicClassLoader(
+			    this.name,
+			    this.physicalPath.toUri().toURL(),
+			    ClassLoader.getSystemClassLoader()
+			);
+		} catch ( MalformedURLException e ) {
+			logger.error( "Error creating module [{}] class loader.", this.name, e );
+			throw new BoxRuntimeException( "Error creating module [" + this.name + "] class loader", e );
+		}
 
-		// Do we have libs to add to the ?
+		// Do we have libs to add to the class loader? These are jars ONLY
+		// All dependencies on Java libs must be on this folder as JARs
 		Path libsPath = this.physicalPath.resolve( ModuleService.MODULE_LIBS );
 		if ( Files.exists( libsPath ) && Files.isDirectory( libsPath ) ) {
 			try {
@@ -353,37 +365,27 @@ public class ModuleRecord {
 			interceptorService.registerInterceptionPoint( this.customInterceptionPoints.stream().map( Key::of ).toArray( Key[]::new ) );
 		}
 
-		// Register Bifs if they exist on disk
+		// Register Bifs if they exist
 		Path bifsPath = this.physicalPath.resolve( ModuleService.MODULE_BIFS );
 		if ( Files.exists( bifsPath ) && Files.isDirectory( bifsPath ) ) {
+
 			// Iterate over all files *.cfc/bx and register them
+			// These are the BoxLang Bifs
 			for ( File targetFile : bifsPath.toFile().listFiles() ) {
 				registerBIF( targetFile, context );
 			}
 
-			// // Do we have any Java BIFs to load?
-			// try {
-			// // URL[] urls = DynamicClassLoader.getJarURLs( bifsPath );
-			// // System.out.println( "Bif URLs: " + Arrays.toString( urls ) );
-			// this.classLoader.addURLs( new URL[] { bifsPath.toUri().toURL() } );
-			// } catch ( IOException e ) {
-			// logger.error( "Error while seeding the module [{}] class loader with the bifs folder.", this.name, e );
-			// throw new BoxRuntimeException( "Error while seeding the module [" + this.name + "] class loader with the bifs folder", e );
-			// }
+			// Do we have any Java BIFs to load?
+			System.out.println( "Scanning for Java BIFs..." );
 
-			// System.out.println( "Scanning for Java BIFs..." );
-			// Enumeration<URL> foundData;
-			// try {
-			// foundData = this.classLoader.findResources( "" );
+			Class<?>[] clazzes = ClassDiscovery.findAnnotatedClasses(
+			    "",
+			    this.classLoader,
+			    ModuleService.MODULE_PACKAGE_PREFIX + "." + this.name.getName()
+			).toArray( Class[]::new );
 
-			// // Output the found data to the console
-			// while ( foundData.hasMoreElements() ) {
-			// System.out.println( "Found Resource " + foundData.nextElement() );
-			// }
-			// } catch ( IOException e ) {
-			// e.printStackTrace();
-			// }
-			// System.out.println( "===========================" );
+			System.out.println( "Found " + clazzes.length + " Java BIFs" );
+
 		}
 
 		// Finalize Registration
