@@ -67,10 +67,15 @@ public class BoxTryTransformer extends AbstractTransformer {
 			int			catchCounter	= transpiler.incrementAndGetTryCatchCounter();
 			String		throwableName	= "e" + catchCounter;
 			BlockStmt	catchBody		= new BlockStmt();
+			BlockStmt	abortBody		= new BlockStmt();
+			abortBody.addStatement( parseStatement(
+			    "throw e;",
+			    Map.of()
+			) );
 			// This top-level if statment is used to implement the runtime checks for multiple catch clauses
-			IfStmt		javaIfStmt		= new IfStmt();
+			IfStmt	javaIfStmt	= new IfStmt();
 			// This is used to keep track of the last if statement so we can add the else statement
-			IfStmt		javaLastIf		= javaIfStmt;
+			IfStmt	javaLastIf	= javaIfStmt;
 			// Add our empty top-level if statement to the catch body, we'll flesh out the conditions and then/else blocks as we go
 			catchBody.addStatement( javaIfStmt );
 			String	catchContextName;
@@ -128,6 +133,8 @@ public class BoxTryTransformer extends AbstractTransformer {
 			);
 
 			NodeList<CatchClause> catchClauses = new NodeList<>();
+			catchClauses
+			    .add( new CatchClause( new Parameter( new ClassOrInterfaceType( "ortus.boxlang.runtime.types.exceptions.AbortException" ), "e" ), abortBody ) );
 			catchClauses.add( new CatchClause( new Parameter( new ClassOrInterfaceType( "Throwable" ), throwableName ), catchBody ) );
 			javaTry.setCatchClauses( catchClauses );
 		}

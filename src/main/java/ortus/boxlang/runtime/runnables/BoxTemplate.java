@@ -26,6 +26,7 @@ import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.loader.ImportDefinition;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
+import ortus.boxlang.runtime.types.exceptions.AbortException;
 
 public abstract class BoxTemplate implements ITemplateRunnable {
 
@@ -58,6 +59,12 @@ public abstract class BoxTemplate implements ITemplateRunnable {
 
 			// Announce
 			runtime.announce( "postTemplateInvoke", data );
+		} catch ( AbortException e ) {
+			// Swallowing aborts here if type="page"
+			// Ignoring showerror in case for now
+			if ( e.isRequest() ) {
+				throw e;
+			}
 		} finally {
 			context.popTemplate();
 		}

@@ -33,7 +33,7 @@ public class Param extends Component {
 
 	public Param( Key name ) {
 		super( name );
-		declaredAttributes	= new Attribute[] {
+		declaredAttributes = new Attribute[] {
 		    new Attribute( Key._NAME, "string", Set.of( Validator.REQUIRED ) ),
 		    new Attribute( Key.type, "string" ),
 		    new Attribute( Key._DEFAULT, "any" ),
@@ -41,7 +41,6 @@ public class Param extends Component {
 		    new Attribute( Key.min, "numeric" ),
 		    new Attribute( Key.pattern, "string" )
 		};
-		allowBody			= false;
 	}
 
 	/**

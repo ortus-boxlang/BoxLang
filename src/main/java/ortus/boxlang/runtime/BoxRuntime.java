@@ -59,6 +59,7 @@ import ortus.boxlang.runtime.services.InterceptorService;
 import ortus.boxlang.runtime.services.ModuleService;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
+import ortus.boxlang.runtime.types.exceptions.AbortException;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.exceptions.MissingIncludeException;
 import ortus.boxlang.runtime.types.exceptions.ScopeNotFoundException;
@@ -629,6 +630,11 @@ public class BoxRuntime {
 		try {
 			// Fire!!!
 			template.invoke( scriptingContext );
+		} catch ( AbortException e ) {
+			if ( e.getCause() != null ) {
+				// This will always be an instance of CustomException
+				throw ( RuntimeException ) e.getCause();
+			}
 		} finally {
 			scriptingContext.flushBuffer( false );
 
@@ -676,6 +682,12 @@ public class BoxRuntime {
 		try {
 			// Fire!!!
 			return scriptRunnable.invoke( scriptingContext );
+		} catch ( AbortException e ) {
+			if ( e.getCause() != null ) {
+				// This will always be an instance of CustomException
+				throw ( RuntimeException ) e.getCause();
+			}
+			return null;
 		} finally {
 			scriptingContext.flushBuffer( false );
 			// Debugging Timer
@@ -727,6 +739,11 @@ public class BoxRuntime {
 		try {
 			// Fire!!!
 			scriptRunnable.invoke( scriptingContext );
+		} catch ( AbortException e ) {
+			if ( e.getCause() != null ) {
+				// This will always be an instance of CustomException
+				throw ( RuntimeException ) e.getCause();
+			}
 		} finally {
 			scriptingContext.flushBuffer( false );
 
@@ -788,6 +805,10 @@ public class BoxRuntime {
 					Object		result			= scriptRunnable.invoke( scriptingContext );
 					scriptingContext.flushBuffer( false );
 					System.out.println( result );
+				} catch ( AbortException e ) {
+					if ( e.getCause() != null ) {
+						System.out.println( "Abort: " + e.getCause().getMessage() );
+					}
 				} catch ( Exception e ) {
 					e.printStackTrace();
 				} finally {

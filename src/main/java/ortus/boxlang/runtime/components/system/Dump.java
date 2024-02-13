@@ -32,10 +32,9 @@ public class Dump extends Component {
 
 	public Dump( Key name ) {
 		super( name );
-		declaredAttributes	= new Attribute[] {
+		declaredAttributes = new Attribute[] {
 		    new Attribute( Key.var, "any", Set.of( Validator.REQUIRED ) )
 		};
-		allowBody			= false;
 	}
 
 	/**

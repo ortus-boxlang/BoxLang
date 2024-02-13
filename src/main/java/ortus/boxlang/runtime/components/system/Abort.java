@@ -17,36 +17,47 @@
  */
 package ortus.boxlang.runtime.components.system;
 
-import java.util.Set;
-
 import ortus.boxlang.runtime.components.Attribute;
 import ortus.boxlang.runtime.components.BoxComponent;
 import ortus.boxlang.runtime.components.Component;
-import ortus.boxlang.runtime.components.validators.Validator;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.IStruct;
+import ortus.boxlang.runtime.types.exceptions.AbortException;
+import ortus.boxlang.runtime.types.exceptions.CustomException;
 
 @BoxComponent
-public class Include extends Component {
+public class Abort extends Component {
 
-	public Include( Key name ) {
+	public Abort( Key name ) {
 		super( name );
 		declaredAttributes = new Attribute[] {
-		    new Attribute( Key.template, "string", Set.of( Validator.REQUIRED, Validator.NON_EMPTY ) )
+		    new Attribute( Key.showerror, "string" ),
+		    new Attribute( Key.type, "string", "request" )
 		};
 	}
 
 	/**
-	 * I include a template into the current template
+	 * Tests for a parameter's existence, tests its data type, and, if a default value is not assigned, optionally provides one.
 	 *
 	 * @param context        The context in which the BIF is being invoked
 	 * @param attributes     The attributes to the BIF
 	 * @param body           The body of the BIF
 	 * @param executionState The execution state of the BIF
+	 * 
+	 * @argument.showerror Whether to show an error
+	 * 
+	 * @argument.type The type of the abort (request or page)
 	 *
 	 */
 	public void _invoke( IBoxContext context, IStruct attributes, ComponentBody body, IStruct executionState ) {
-		context.includeTemplate( attributes.getAsString( Key.template ) );
+		String		showerror	= attributes.getAsString( Key.showerror );
+		String		type		= attributes.getAsString( Key.type );
+
+		Throwable	cause		= null;
+		if ( showerror != null && !showerror.isEmpty() ) {
+			cause = new CustomException( showerror );
+		}
+		throw new AbortException( type, cause );
 	}
 }

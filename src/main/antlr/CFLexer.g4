@@ -9,7 +9,6 @@ options {
  https://github.com/antlr/antlr4/blob/master/doc/lexer-rules.md#lexical-modes
  */
 ABSTRACT: 'ABSTRACT';
-ABORT: 'ABORT';
 ANY: 'ANY';
 APPLICATION: 'APPLICATION';
 SESSION: 'SESSION';

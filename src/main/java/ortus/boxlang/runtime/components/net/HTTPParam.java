@@ -33,7 +33,7 @@ public class HTTPParam extends Component {
 
 	public HTTPParam( Key name ) {
 		super( name );
-		declaredAttributes	= new Attribute[] {
+		declaredAttributes = new Attribute[] {
 		    new Attribute( Key.type, "string", Set.of(
 		        Validator.REQUIRED,
 		        Validator.NON_EMPTY,
@@ -73,7 +73,6 @@ public class HTTPParam extends Component {
 		        }
 		    ) )
 		};
-		allowBody			= false;
 	}
 
 	/**

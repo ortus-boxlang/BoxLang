@@ -109,7 +109,7 @@ public abstract class AbstractTransformer implements Transformer {
 	 *
 	 * @return the Java Parser AST representation of the statement
 	 */
-	protected Node parseStatement( String template, Map<String, String> values ) {
+	protected Statement parseStatement( String template, Map<String, String> values ) {
 		String					code	= PlaceholderHelper.resolve( template, values );
 		ParseResult<Statement>	result	= javaParser.parseStatement( code );
 		if ( !result.isSuccessful() ) {

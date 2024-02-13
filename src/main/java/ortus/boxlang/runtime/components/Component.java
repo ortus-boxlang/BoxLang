@@ -51,11 +51,6 @@ public abstract class Component {
 	protected boolean				captureBodyOutput	= false;
 
 	/**
-	 * Whether this tag allows a body.
-	 */
-	protected boolean				allowBody			= true;
-
-	/**
 	 * The runtime instance
 	 */
 	protected BoxRuntime			runtime				= BoxRuntime.getInstance();
@@ -88,12 +83,6 @@ public abstract class Component {
 	 * @return The result of the invocation
 	 */
 	public void invoke( IBoxContext context, IStruct attributes, ComponentBody body ) {
-		// TODO: Move this validation to the parsing stage so we don't even create the AST if there is a body.
-		// We'll need to get the Component Descriptor in the parser to validate this.
-		// if ( !allowBody && body != null ) {
-		// throw new RuntimeException( "The [" + this.name.getName() + "] component does not allow a body" );
-		// }
-
 		validateAttributes( attributes );
 		IStruct executionState = new Struct();
 		executionState.put( Key._NAME, name );
@@ -178,15 +167,6 @@ public abstract class Component {
 	 */
 	public Attribute[] getDeclaredAttributes() {
 		return declaredAttributes;
-	}
-
-	/**
-	 * Get whether this component allows a body
-	 * 
-	 * @return Whether this component allows a body
-	 */
-	public boolean allowsBody() {
-		return allowBody;
 	}
 
 	/**

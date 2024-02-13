@@ -160,18 +160,18 @@ component:
 	| (componentName componentAttributes eos)
 	// cfhttp( url="google.com" ){}   -- Only needed for CF parser
 	| (
-		prefixedIdentifier LPAREN delimitedComponentAttributes RPAREN statementBlock
+		prefixedIdentifier LPAREN delimitedComponentAttributes? RPAREN statementBlock
 	)
 	// cfhttp( url="google.com" )   -- Only needed for CF parser
 	| (
-		prefixedIdentifier LPAREN delimitedComponentAttributes RPAREN
+		prefixedIdentifier LPAREN delimitedComponentAttributes? RPAREN
 	);
 
 // cfSomething
 prefixedIdentifier: PREFIXEDIDENTIFIER;
 
 // foo="bar" baz="bum" qux
-componentAttributes: (componentAttribute) (componentAttribute)*;
+componentAttributes: (componentAttribute)*;
 
 componentAttribute: identifier (EQUALSIGN expression)?;
 
@@ -207,7 +207,7 @@ assignment:
 assignmentLeft: accessExpression;
 assignmentRight: expression;
 
-// Arguments are zero or more named args, or zero or more positional args, but not both.
+// Arguments are zero or more named args, or zero or more positional args, but not both (validated in the AST-building stage).
 argumentList:
 	(namedArgument | positionalArgument) (
 		COMMA (namedArgument | positionalArgument)
@@ -324,7 +324,6 @@ componentName:
 reservedKeyword:
 	scope
 	| ABSTRACT
-	| ABORT
 	| ANY
 	| ARRAY
 	| AS
