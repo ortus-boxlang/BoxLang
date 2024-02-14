@@ -21,13 +21,12 @@ import static com.google.common.truth.Truth.assertThat;
 
 import java.io.File;
 import java.io.IOException;
-import java.net.URI;
-import java.nio.file.FileSystem;
-import java.nio.file.FileSystems;
-import java.nio.file.Files;
+import java.net.URISyntaxException;
+import java.net.URL;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Arrays;
-import java.util.HashMap;
+import java.util.List;
 
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
@@ -79,21 +78,23 @@ class ClassDiscoveryTest {
 		assertThat( file.isDirectory() ).isFalse();
 	}
 
-	@DisplayName( "Can convert a jar resource location to a Path" )
+	@Disabled( "This test is disabled because it requires a jar file to be present, used for manual testing purposes" )
 	@Test
-	@Disabled
-	void testGetFileFromJarResourcePath() throws IOException {
-		// Given
-		URI		jarPath	= URI.create( "jar:file:/Users/lmajano/Sites/projects/boxlang/build/libs/boxlang-1.0.0-all.jar!/modules" );
-		Path	resourcePath;
+	void testFindClassesInJar() throws IOException, URISyntaxException {
+		// jar:file:/Users/lmajano/Sites/projects/boxlang/build/libs/boxlang-1.0.0-all.jar!/modules
+		String			jar		= "build/libs/boxlang-1.0.0-all.jar";
+		Path			jarPath	= Paths.get( jar ).toAbsolutePath();
+		URL				jarURL	= new URL( "jar:file:" + jarPath.toString() + "!/" );
 
-		try ( FileSystem fileSystem = FileSystems.newFileSystem( jarPath, new HashMap<>() ) ) {
-			resourcePath = fileSystem.getPath( "modules/test/ModuleConfig.bx" );
-		}
+		@SuppressWarnings( "unchecked" )
+		List<Class<?>>	classes	= ClassDiscovery.findClassesInJar(
+		    jarURL,
+		    "ortus.boxlang.runtime.bifs.global".replace( '.', '/' ),
+		    ClassLoader.getSystemClassLoader(),
+		    new Class[] {}
+		);
 
-		byte[] bytes = Files.readAllBytes( resourcePath );
-		System.out.println( "Resource contents: " + new String( bytes ) );
-
+		System.out.println( "Classes: " + classes.size() );
 	}
 
 }

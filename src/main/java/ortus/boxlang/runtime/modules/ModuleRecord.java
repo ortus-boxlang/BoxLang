@@ -682,27 +682,16 @@ public class ModuleRecord {
 		// Unregister the ModuleConfig
 		interceptorService.unregister( DynamicObject.of( this.moduleConfig ) );
 
-		// Destroy the ClassLoader if it exists
-		if ( hasClassLoader() ) {
-			try {
-				this.classLoader.close();
-			} catch ( IOException e ) {
-				logger.error( "Error while closing the DynamicClassLoader for module [{}]", this.name, e );
-			} finally {
-				this.classLoader = null;
-			}
+		// Destroy the ClassLoader
+		try {
+			this.classLoader.close();
+		} catch ( IOException e ) {
+			logger.error( "Error while closing the DynamicClassLoader for module [{}]", this.name, e );
+		} finally {
+			this.classLoader = null;
 		}
 
 		return this;
-	}
-
-	/**
-	 * Verify if we have a class loader loaded. If the module has a {@code libs} folder, then we have a class loader
-	 *
-	 * @return {@code true} if we have a class loader loaded, {@code false} otherwise
-	 */
-	public boolean hasClassLoader() {
-		return this.classLoader != null;
 	}
 
 	/**
@@ -716,7 +705,7 @@ public class ModuleRecord {
 	 * @throws ClassNotFoundException If the class is not found
 	 */
 	public Class<?> findModuleClass( String className, Boolean safe ) throws ClassNotFoundException {
-		return hasClassLoader() ? this.classLoader.findClass( className, safe ) : null;
+		return this.classLoader.findClass( className, safe );
 	}
 
 	/**

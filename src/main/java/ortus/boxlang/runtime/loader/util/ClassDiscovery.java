@@ -24,6 +24,7 @@ import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.net.URLDecoder;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -31,10 +32,11 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Enumeration;
 import java.util.List;
-import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -52,7 +54,10 @@ public class ClassDiscovery {
 	/**
 	 * Logger
 	 */
-	private static final Logger logger = LoggerFactory.getLogger( ClassDiscovery.class );
+	private static final Logger	logger					= LoggerFactory.getLogger( ClassDiscovery.class );
+
+	private static final String	JAR_FILE_EXTENSION		= "jar";
+	private static final String	CLASS_FILE_EXTENSION	= ".class";
 
 	/**
 	 * Scans all classes accessible from the context class loader which belong to the given package and subpackages.
@@ -66,7 +71,7 @@ public class ClassDiscovery {
 	 */
 	public static Stream<String> getClassFilesAsStream( String packageName, Boolean recursive ) throws IOException {
 		ClassLoader			classLoader	= ClassLoader.getSystemClassLoader();
-		String				path		= packageName.replace( '.', '/' );
+		String				path		= packageName.replace( '.', File.separatorChar );
 		Enumeration<URL>	resources	= classLoader.getResources( path );
 
 		return Collections.list( resources )
@@ -137,9 +142,9 @@ public class ClassDiscovery {
 
 		List<Class<?>> classes = new ArrayList<>();
 
-		// Auto-detect package name
+		// Auto-detect package name if not passed.
 		if ( packageName == null ) {
-			packageName = startDir.replace( '/', '.' );
+			packageName = startDir.replace( File.separatorChar, '.' );
 		}
 
 		try {
@@ -157,12 +162,16 @@ public class ClassDiscovery {
 
 				// Jar Loading
 				if ( resource.getProtocol().equals( "jar" ) ) {
+
+					logger.info( "FindAnnotatedClasses: Jar file found: {}", resource );
+
 					classes.addAll(
 					    findClassesInJar( resource, startDir, targetLoader, annotations )
 					);
 				}
 				// Normal directory loading
 				else {
+					logger.info( "FindAnnotatedClasses: Normal directory found: {}", resource );
 					classes.addAll(
 					    findClassesInDirectory(
 					        new File( resource.getFile() ), // directory
@@ -177,6 +186,7 @@ public class ClassDiscovery {
 			throw new BoxRuntimeException( "Exception finding annotated classes in path " + startDir, e );
 			// logger.error( "Exception finding annotated classes in path [{}]", startDir, e );
 		}
+
 		return classes.stream();
 	}
 
@@ -270,8 +280,8 @@ public class ClassDiscovery {
 				    }
 				    return Stream.empty();
 			    } else {
-				    return file.getName().endsWith( ".class" )
-				        ? Stream.of( packageName + "." + file.getName().replace( ".class", "" ) )
+				    return file.getName().endsWith( CLASS_FILE_EXTENSION )
+				        ? Stream.of( packageName + "." + file.getName().replace( CLASS_FILE_EXTENSION, "" ) )
 				        : Stream.empty();
 			    }
 		    } )
@@ -279,50 +289,59 @@ public class ClassDiscovery {
 	}
 
 	/**
-	 * Find all classes annotated with {@code BoxBIF} or {@code BoxMember} in the given directory
+	 * Find all classes annotated in the specified jar file and subdirectories.
+	 * Using the given classloader, start directory and the given annotations to search for.
+	 * If a class cannot be loaded, it is logged and ignored.
 	 *
 	 * @param jarURL      The URL to the jar file
 	 * @param startDir    The directory to start searching in
 	 * @param classLoader The classloader to use
 	 *
-	 * @return A list of classes
-	 *
-	 * @throws IOException
+	 * @return A list of classes found in the jar and subdirectories
 	 */
 	public static List<Class<?>> findClassesInJar(
 	    URL jarURL,
 	    String startDir,
 	    ClassLoader classLoader,
-	    Class<? extends Annotation>[] annotations ) throws IOException {
+	    Class<? extends Annotation>[] annotations ) {
 
-		List<Class<?>>			classes	= new ArrayList<>();
-		String					jarPath	= jarURL.getPath().substring( 5, jarURL.getPath().indexOf( "!" ) );
-		JarFile					jar		= new JarFile( URLDecoder.decode( jarPath, "UTF-8" ) );
-		Enumeration<JarEntry>	entries	= jar.entries();
+		List<Class<?>>	classes;
+		String			jarPath	= jarURL.getPath().substring( 5, jarURL.getPath().indexOf( "!" ) );
 
-		while ( entries.hasMoreElements() ) {
-			JarEntry	entry	= entries.nextElement();
-			String		name	= entry.getName();
+		try ( JarFile jar = new JarFile( URLDecoder.decode( jarPath, "UTF-8" ) ) ) {
+			classes = jar.stream()
+			    // divide and conquer!
+			    .parallel()
+			    // Only process entries that start with the startDir and end with .class
+			    .filter( entry -> entry.getName().startsWith( startDir ) && entry.getName().endsWith( CLASS_FILE_EXTENSION ) )
+			    // Construct the class name from the path
+			    .map( entry -> entry.getName().replace( File.separatorChar, '.' ).substring( 0, entry.getName().length() - 6 ) )
+			    // Load it or log it
+			    .map( className -> {
+				    try {
+					    return Class.forName( className, false, classLoader );
+				    } catch ( ClassNotFoundException e ) {
+					    logger.error( "Class not found: {}", className, e );
+					    return null;
+				    }
+			    } )
+			    // Only annotated ones and non null
+			    .filter( clazz -> clazz != null && isAnnotated( clazz, annotations ) )
+			    // Collect them
+			    .collect( Collectors.toList() );
 
-			if ( name.startsWith( startDir ) && name.endsWith( ".class" ) ) {
-				String className = name.replace( '/', '.' ).substring( 0, name.length() - 6 );
-				try {
-					Class<?> clazz = Class.forName( className, false, classLoader );
-					if ( isAnnotated( clazz, annotations ) ) {
-						classes.add( clazz );
-					}
-				} catch ( ClassNotFoundException e ) {
-					throw new BoxRuntimeException( "Class not found: " + className, e );
-					// logger.error( "Class not found: {}", className, e );
-				}
-			}
+		} catch ( IOException e ) {
+			logger.error( "Error while processing JAR file", e );
+			throw new BoxRuntimeException( "Error while processing JAR file", e );
 		}
-		jar.close();
+
 		return classes;
 	}
 
 	/**
-	 * Find all classes annotated with {@code BoxBIF} or {@code BoxMember} in the given directory
+	 * Find all classes annotated in the specified directory and subdirectories.
+	 * It will load the classes but not initialize them via the passed classloader and package name
+	 * and the given annotations.
 	 *
 	 * @param directory   The directory to start searching in
 	 * @param packageName The package name for classes found inside the base directory
@@ -336,38 +355,36 @@ public class ClassDiscovery {
 	    ClassLoader classLoader,
 	    Class<? extends Annotation>[] annotations ) {
 
-		List<Class<?>> classes = new ArrayList<>();
+		List<Class<?>>	classes;
+		Path			directoryPath	= directory.toPath();
 
 		// System.out.println( "Scanning directory: " + directory );
-		// System.out.println( "Directory Exists: " + directory.exists() );
-
-		if ( directory.exists() ) {
-			for ( File file : directory.listFiles() ) {
-				String name = file.getName();
-
-				// System.out.println( "File Name: " + name );
-				// System.out.println( "File is Directory: " + file.isDirectory() );
-
-				// recursion
-				if ( file.isDirectory() ) {
-					classes.addAll( findClassesInDirectory( file, packageName + "." + name, classLoader, annotations ) );
-				}
-				// Class file found
-				else if ( name.endsWith( ".class" ) ) {
-					String className = packageName + '.' + name.substring( 0, name.length() - 6 );
-
-					// System.out.println( "Found class: " + className + " from FileName: " + name );
-					try {
-						Class<?> clazz = Class.forName( className, false, classLoader );
-						if ( isAnnotated( clazz, annotations ) ) {
-							classes.add( clazz );
-						}
-					} catch ( ClassNotFoundException e ) {
-						throw new BoxRuntimeException( "Class not found: " + className, e );
-						// logger.error( "Class not found: {}", className, e );
-					}
-				} // else ignored
-			}
+		// System.out.println( "PackageName: " + packageName );
+		try ( Stream<Path> pathStream = Files.walk( directoryPath ) ) {
+			classes = pathStream
+			    // Run baby run!
+			    .parallel()
+			    // Only .class files please
+			    .filter( path -> path.toString().endsWith( CLASS_FILE_EXTENSION ) )
+			    // Replace the base directory path so we only work with packages and use dot notation
+			    .map( path -> directoryPath.relativize( path ).toString().replace( File.separator, "." ) )
+			    // Construct the class name from the path
+			    .map( path -> packageName + "." + StringUtils.replaceIgnoreCase( path, CLASS_FILE_EXTENSION, "" ) )
+			    // Load it or throw up
+			    .map( className -> {
+				    try {
+					    return Class.forName( className, false, classLoader );
+				    } catch ( ClassNotFoundException e ) {
+					    logger.error( "Class not found: {}", className, e );
+					    return null;
+				    }
+			    } )
+			    // Only annotated ones
+			    .filter( clazz -> clazz != null && isAnnotated( clazz, annotations ) )
+			    // Collect them
+			    .collect( Collectors.toList() );
+		} catch ( IOException e ) {
+			throw new BoxRuntimeException( "Exception finding classes in directory " + directory, e );
 		}
 
 		return classes;

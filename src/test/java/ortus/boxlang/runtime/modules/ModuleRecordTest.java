@@ -203,7 +203,6 @@ class ModuleRecordTest {
 		assertThat( functionService.hasGlobalFunction( Key.of( "moduleNow" ) ) ).isTrue();
 
 		// Register a class loader
-		assertThat( moduleRecord.hasClassLoader() ).isTrue();
 		Class<?> clazz = moduleRecord.findModuleClass( "HelloWorld", false );
 		assertThat( clazz ).isNotNull();
 		assertThat( clazz.getName() ).isEqualTo( "HelloWorld" );
