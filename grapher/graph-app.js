@@ -149,19 +149,28 @@ function vizDataSetToEdges(vizDataset) {
 
 
 function convertRawASTNode(rawNode) {
+    if (rawNode == null) {
+        return;
+    }
     if (Array.isArray(rawNode)) {
         return rawNode.map(convertRawASTNode);
     }
     else if (typeof rawNode === 'object') {
         const node = Object.keys(rawNode).reduce((acc, key) => {
-            if (key.match(/ASTType|sourceText|position|safe/i)) {
+            if (key.match(/name/)) {
+                return acc;
+            }
+            else if (key.match(/ASTType|sourceText|position|safe/i)) {
                 acc[key] = rawNode[key];
             }
             else if (typeof rawNode[key] === 'object') {
                 let val = convertRawASTNode(rawNode[key]);
                 val = Array.isArray(val) ? val : [val];
 
-                if (val.length == 1) {
+                if (val.length == 0) {
+                    // pass
+                }
+                else if (val.length == 1) {
                     val = val[0];
                     val.ASTType = key + '/' + val.ASTType;
 
