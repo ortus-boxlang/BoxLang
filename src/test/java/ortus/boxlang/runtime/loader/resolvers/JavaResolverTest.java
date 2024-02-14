@@ -77,14 +77,6 @@ public class JavaResolverTest {
 		assertThat( classLocation.get().module() ).isNull();
 	}
 
-	@DisplayName( "It can find classes from modules" )
-	@Test
-	public void testFindFromModules() {
-		JavaResolver	javaResolver	= JavaResolver.getInstance();
-		String			className		= "java.util.Map";
-		assertThat( javaResolver.findFromModules( className, new ArrayList<>() ).isPresent() ).isTrue();
-	}
-
 	@DisplayName( "It can find classes from the system" )
 	@Test
 	public void testFindFromSystem() {

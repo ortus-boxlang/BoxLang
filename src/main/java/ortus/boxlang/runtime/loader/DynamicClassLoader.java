@@ -67,6 +67,17 @@ public class DynamicClassLoader extends URLClassLoader {
 	 * Construct the class loader
 	 *
 	 * @param name   The unique name of the class loader
+	 * @param url    A single URL to load from
+	 * @param parent The parent class loader to delegate to
+	 */
+	public DynamicClassLoader( Key name, URL url, ClassLoader parent ) {
+		this( name, new URL[] { url }, parent );
+	}
+
+	/**
+	 * Construct the class loader
+	 *
+	 * @param name   The unique name of the class loader
 	 * @param urls   The URLs to load from
 	 * @param parent The parent class loader to delegate to
 	 */

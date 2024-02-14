@@ -31,7 +31,7 @@ options {
  */
 COMMENT: '<!---' .*? '--->' -> channel(HIDDEN);
 
-SEA_WS: (' ' | '\t' | '\r'? '\n')+ -> channel(HIDDEN);
+WS: (' ' | '\t' | '\r'? '\n')+;
 
 SCRIPT_OPEN: '<cfscript' .*? '>' -> pushMode(XFSCRIPT);
 

@@ -221,15 +221,18 @@ public class ScriptingRequestBoxContext extends RequestBoxContext {
 	 * @return This context
 	 */
 	public IBoxContext flushBuffer( boolean force ) {
-		String			output;
-		StringBuffer	buffer	= getBuffer();
-		synchronized ( buffer ) {
-			output = buffer.toString();
-			clearBuffer();
+		// If there are extra buffers registered, we ignore flush requests since someone
+		// out there is wanting to capture our buffer instead.
+		if ( hasParent() && buffers.size() == 1 ) {
+			String			output;
+			StringBuffer	buffer	= getBuffer();
+			synchronized ( buffer ) {
+				output = buffer.toString();
+				clearBuffer();
+			}
+			// If a scripting context is our top-level context, we flush to the console.
+			System.out.print( output );
 		}
-		// If a scripting context is our top-level context, we flush to the console.
-		System.out.print( output );
-
 		return this;
 	}
 

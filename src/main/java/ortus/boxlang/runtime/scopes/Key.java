@@ -77,6 +77,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key	array2						= Key.of( "array2" );
 	public static final Key	arrayFind					= Key.of( "arrayFind" );
 	public static final Key	arrayFindAll				= Key.of( "arrayFindAll" );
+	public static final Key	assocAttribs				= Key.of( "assocAttribs" );
 	public static final Key	attribute					= Key.of( "attribute" );
 	public static final Key	attributeCollection			= Key.of( "attributeCollection" );
 	public static final Key	attributes					= Key.of( "attributes" );
@@ -87,6 +88,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key	buffersize					= Key.of( "buffersize" );
 	public static final Key	caches						= Key.of( "caches" );
 	public static final Key	callback					= Key.of( "callback" );
+	public static final Key	caller						= Key.of( "caller" );
 	public static final Key	charset						= Key.of( "charset" );
 	public static final Key	charsetOrBufferSize			= Key.of( "charsetOrBufferSize" );
 	public static final Key	childname					= Key.of( "childname" );
@@ -145,6 +147,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key	end							= Key.of( "end" );
 	public static final Key	environment					= Key.of( "environment" );
 	public static final Key	errorcode					= Key.of( "errorcode" );
+	public static final Key	executionMode				= Key.of( "executionMode" );
 	public static final Key	extendedinfo				= Key.of( "extendedinfo" );
 	public static final Key	file						= Key.of( "file" );
 	public static final Key	fileContent					= Key.of( "fileContent" );
@@ -158,9 +161,11 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key	function					= Key.of( "function" );
 	public static final Key	functions					= Key.of( "functions" );
 	public static final Key	functionService				= Key.of( "functionService" );
+	public static final Key	generatedContent			= Key.of( "generatedContent" );
 	public static final Key	getFileInfo					= Key.of( "getFileInfo" );
 	public static final Key	group						= Key.of( "group" );
 	public static final Key	groupCaseSensitive			= Key.of( "groupCaseSensitive" );
+	public static final Key	hasEndTag					= Key.of( "hasEndTag" );
 	public static final Key	hash40						= Key.of( "hash40" );
 	public static final Key	hint						= Key.of( "hint" );
 	public static final Key	hostname					= Key.of( "hostname" );
@@ -301,6 +306,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key	substring					= Key.of( "substring" );
 	public static final Key	system						= Key.of( "system" );
 	public static final Key	template					= Key.of( "template" );
+	public static final Key	thisTag						= Key.of( "thisTag" );
 	public static final Key	timeFormat					= Key.of( "timeFormat" );
 	public static final Key	timezone					= Key.of( "timezone" );
 	public static final Key	trim						= Key.of( "trim" );

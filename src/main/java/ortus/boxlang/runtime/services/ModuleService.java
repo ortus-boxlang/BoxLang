@@ -68,6 +68,7 @@ public class ModuleService extends BaseService {
 	public static final String				MODULE_BIFS							= "bifs";
 	public static final String				MODULE_COMPONENTS					= "components";
 	public static final String				MODULE_LIBS							= "libs";
+	public static final String				MODULE_PACKAGE_PREFIX				= "modules";
 
 	/**
 	 * The location of the core modules in the runtime resources: {@code src/main/resources/modules}

@@ -274,24 +274,27 @@ public class WebRequestBoxContext extends RequestBoxContext {
 	 * @return This context
 	 */
 	public IBoxContext flushBuffer( boolean force ) {
-		String			output;
-		StringBuffer	buffer	= getBuffer();
-		synchronized ( buffer ) {
-			output = buffer.toString();
-			clearBuffer();
-		}
+		// If there are extra buffers registered, we ignore flush requests since someone
+		// out there is wanting to capture our buffer instead.
+		if ( hasParent() && buffers.size() == 1 ) {
+			String			output;
+			StringBuffer	buffer	= getBuffer();
+			synchronized ( buffer ) {
+				output = buffer.toString();
+				clearBuffer();
+			}
 
-		StreamSinkChannel	channel	= exchange.getResponseChannel();
-		ByteBuffer			bBuffer	= ByteBuffer.wrap( output.getBytes() );
-		try {
-			channel.write( bBuffer );
-			channel.flush();
-		} catch ( IOException e ) {
-			e.printStackTrace();
+			StreamSinkChannel	channel	= exchange.getResponseChannel();
+			ByteBuffer			bBuffer	= ByteBuffer.wrap( output.getBytes() );
+			try {
+				channel.write( bBuffer );
+				channel.flush();
+			} catch ( IOException e ) {
+				e.printStackTrace();
+			}
+			// This ends the exchange, so not what we want
+			// exchange.getResponseSender().send( output );
 		}
-		// This ends the exchange, so not what we want
-		// exchange.getResponseSender().send( output );
-
 		return this;
 	}
 

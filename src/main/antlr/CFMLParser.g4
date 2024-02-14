@@ -5,7 +5,12 @@ options {
 }
 
 // Top-level template rule.  Consists of component or interface or statements.
-template: boxImport* (component | interface | statements) EOF?;
+template:
+	whitespace? (boxImport whitespace?)* (
+		component
+		| interface
+		| statements
+	) EOF?;
 
 // <b>My Name is #qry.name#.</b>
 textContent: (nonInterpolatedText | interpolatedExpression)+;
@@ -28,7 +33,9 @@ genericCloseComponent:
 // #bar#
 interpolatedExpression: ICHAR expression ICHAR;
 // Any text to be directly output
-nonInterpolatedText: (COMPONENT_OPEN? CONTENT_TEXT)+;
+nonInterpolatedText: (COMPONENT_OPEN | CONTENT_TEXT | whitespace)+;
+
+whitespace: WS+;
 // bar or 1+2. The lexer keeps strings together so it doesnt end the expression prematurely
 expression: (EXPRESSION_PART | quotedString)+;
 
@@ -108,7 +115,7 @@ component:
 	// <cfcomponent ... >
 	COMPONENT_OPEN PREFIX COMPONENT attribute* COMPONENT_CLOSE
 	// <cfproperty name="..."> (zero or more)
-	property*
+	(whitespace? property)*
 	// code in pseudo-constructor
 	statements
 	// </cfcomponent>
@@ -133,9 +140,9 @@ function:
 	// <cffunction name="foo" >
 	COMPONENT_OPEN PREFIX FUNCTION attribute* COMPONENT_CLOSE
 	// zero or more <cfargument ... >
-	argument*
+	whitespace? (argument whitespace?)*
 	// code inside function
-	statements
+	body = statements
 	// </cffunction>
 	COMPONENT_OPEN SLASH_PREFIX FUNCTION COMPONENT_CLOSE;
 
@@ -185,9 +192,9 @@ try:
 	// code inside try
 	statements
 	// <cfcatch> (zero or more)
-	catchBlock*
+	(catchBlock statements)*
 	// <cffinally> (zero or one)
-	finallyBlock?
+	finallyBlock? statements
 	// </cftry>
 	COMPONENT_OPEN SLASH_PREFIX TRY COMPONENT_CLOSE;
 
