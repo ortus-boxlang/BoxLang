@@ -128,4 +128,15 @@ public class ModuleTest {
 		assertThat( buffer.toString().replaceAll( "\\s", "" ) ).isEqualTo( "<b>Pizza</b>" );
 	}
 
+	@Test
+	public void testCanRunCustomTagCustomAttributes() {
+
+		instance.executeSource(
+		    """
+		    <cfmodule template="src/test/java/ortus/boxlang/runtime/components/system/MyTag3.cfm" attributeCollection="#{ template : "something" }#">
+		            """,
+		    context, BoxScriptType.CFMARKUP );
+		assertThat( buffer.toString().trim() ).isEqualTo( "Template: something" );
+	}
+
 }

@@ -146,6 +146,11 @@ public class ComponentDescriptor {
 	 * @return The result of the invocation
 	 */
 	public void invoke( IBoxContext context, IStruct attributes, Component.ComponentBody componentBody ) {
+		// the module component has special handling of attributes
+		if ( name.equals( Key.module ) ) {
+			invokeModule( context, attributes, componentBody );
+			return;
+		}
 		Component component = getComponent();
 		// if attributeCollection key exists and is a struct, merge it into the main attributes and delete it
 		// When merging, don't overwrite existing keys
@@ -158,6 +163,44 @@ public class ComponentDescriptor {
 			attributes.remove( Key.attributeCollection );
 		}
 
+		// call validators on attributes)
+		for ( var attribute : component.getDeclaredAttributes() ) {
+			attribute.validate( context, component, attributes );
+		}
+		// Invoke the component here. The component is responsible for calling its body, if one exists.
+		component.invoke( context, attributes, componentBody );
+	}
+
+	/**
+	 * Invoke the component with attributes
+	 *
+	 * @param context    The context
+	 * @param attributes The attributes
+	 *
+	 * @return The result of the invocation
+	 */
+	public void invokeModule( IBoxContext context, IStruct attributes, Component.ComponentBody componentBody ) {
+		Component	component			= getComponent();
+		Struct		moduleAttributes	= new Struct();
+		// Add all attributes not named "name" or "template"
+		for ( var key : attributes.keySet() ) {
+			if ( !key.equals( Key._NAME ) && !key.equals( Key.template ) ) {
+				moduleAttributes.put( key, attributes.get( key ) );
+				// remove the attribute from the original attributes
+				attributes.remove( key );
+			}
+		}
+		// if attributeCollection key exists and is a struct, merge it into the main attributes and delete it
+		// When merging, don't overwrite existing keys
+		if ( moduleAttributes.containsKey( Key.attributeCollection ) && moduleAttributes.get( Key.attributeCollection ) instanceof IStruct attrCol ) {
+			for ( var key : attrCol.keySet() ) {
+				if ( !moduleAttributes.containsKey( key ) ) {
+					moduleAttributes.put( key, attrCol.get( key ) );
+				}
+			}
+			moduleAttributes.remove( Key.attributeCollection );
+		}
+		attributes.put( Key.attributes, moduleAttributes );
 		// call validators on attributes)
 		for ( var attribute : component.getDeclaredAttributes() ) {
 			attribute.validate( context, component, attributes );

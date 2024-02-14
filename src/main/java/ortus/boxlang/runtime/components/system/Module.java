@@ -59,8 +59,10 @@ public class Module extends Component {
 	 *
 	 */
 	public void _invoke( IBoxContext context, IStruct attributes, ComponentBody body, IStruct executionState ) {
-		String	template	= attributes.getAsString( Key.template );
-		String	name		= attributes.getAsString( Key._NAME );
+		String	template			= attributes.getAsString( Key.template );
+		String	name				= attributes.getAsString( Key._NAME );
+		IStruct	actualAttributes	= attributes.getAsStruct( Key.attributes );
+
 		String	actualFilePath;
 
 		if ( template != null && !template.isEmpty() ) {
@@ -74,12 +76,14 @@ public class Module extends Component {
 		VariablesScope		caller		= ( VariablesScope ) context.getScopeNearby( VariablesScope.name );
 		CustomTagBoxContext	ctContext	= new CustomTagBoxContext( context );
 		VariablesScope		variables	= ( VariablesScope ) ctContext.getScopeNearby( VariablesScope.name );
-		variables.put( Key.attributes, attributes );
+		variables.put( Key.attributes, actualAttributes );
 		variables.put( Key.caller, caller );
 		IStruct thisTag = new Struct();
 		thisTag.put( Key.executionMode, "start" );
 		thisTag.put( Key.hasEndTag, body != null );
 		thisTag.put( Key.generatedContent, "" );
+		// TODO: This requires cfassociate module to be implemented.
+		// Should be able to use our executionState to accomplish this.
 		thisTag.put( Key.assocAttribs, new Array() );
 		variables.put( Key.thisTag, thisTag );
 

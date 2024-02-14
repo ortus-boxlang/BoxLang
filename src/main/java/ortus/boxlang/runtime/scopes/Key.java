@@ -223,6 +223,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key	missingMethodArguments		= Key.of( "missingMethodArguments" );
 	public static final Key	missingMethodName			= Key.of( "missingMethodName" );
 	public static final Key	mode						= Key.of( "mode" );
+	public static final Key	module						= Key.of( "module" );
 	public static final Key	moduleMapping				= Key.of( "moduleMapping" );
 	public static final Key	moduleRecord				= Key.of( "moduleRecord" );
 	public static final Key	modulesDirectory			= Key.of( "modulesDirectory" );
