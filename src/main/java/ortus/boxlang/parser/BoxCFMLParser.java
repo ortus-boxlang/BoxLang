@@ -561,7 +561,7 @@ public class BoxCFMLParser extends BoxAbstractParser {
 			args.add( toAst( file, arg ) );
 		}
 
-		body.addAll( toAst( file, node.statements() ) );
+		body.addAll( toAst( file, node.body ) );
 
 		return new BoxFunctionDeclaration( modifier, name, returnType, args, annotations, documentation, body, getPosition( node ), getSourceText( node ) );
 	}
@@ -617,7 +617,10 @@ public class BoxCFMLParser extends BoxAbstractParser {
 	}
 
 	private BoxStatement toAst( File file, TryContext node ) {
-		List<BoxStatement>	tryBody		= toAst( file, node.statements() );
+		List<BoxStatement> tryBody = new ArrayList<>();
+		for ( var statements : node.statements() ) {
+			tryBody.addAll( toAst( file, statements ) );
+		}
 		List<BoxTryCatch>	catches		= node.catchBlock().stream().map( it -> toAst( file, it ) ).toList();
 		List<BoxStatement>	finallyBody	= new ArrayList<>();
 		if ( node.finallyBlock() != null ) {
