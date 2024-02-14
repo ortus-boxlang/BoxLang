@@ -6,6 +6,8 @@ import java.util.Map;
 
 import com.sun.jdi.AbsentInformationException;
 import com.sun.jdi.ArrayReference;
+import com.sun.jdi.BooleanValue;
+import com.sun.jdi.ClassType;
 import com.sun.jdi.DoubleValue;
 import com.sun.jdi.Field;
 import com.sun.jdi.IntegerValue;
@@ -72,11 +74,19 @@ public class JDITools {
 		} else if ( val instanceof DoubleValue doubleVal ) {
 			var.value	= StringCaster.cast( doubleVal.doubleValue() );
 			var.type	= "numeric";
+		} else if ( val.type().name().compareToIgnoreCase( "java.lang.Boolean" ) == 0 ) {
+			var.value	= StringCaster.cast( ( ( BooleanValue ) getFieldValueByName( ( ObjectReference ) val, "value" ) ).booleanValue() );
+			var.type	= "boolean";
 		} else if ( val.type().name().compareToIgnoreCase( "java.lang.double" ) == 0 ) {
 			var.value	= StringCaster.cast( ( ( DoubleValue ) getFieldValueByName( ( ObjectReference ) val, "value" ) ).doubleValue() );
 			var.type	= "numeric";
 		} else if ( val.type().name().compareToIgnoreCase( "ortus.boxlang.runtime.types.struct" ) == 0 ) {
 			var = getVariableFromStruct( ( ObjectReference ) val );
+		} else if ( val instanceof ObjectReference
+		    && val.type() instanceof ClassType ctype
+		    && ctype.superclass().name().compareToIgnoreCase( "ortus.boxlang.runtime.types.UDF" ) == 0 ) {
+			var.type	= "function";
+			var.value	= "() => {}";
 		} else if ( val != null ) {
 			var.value = "Unimplemented type - " + val.getClass().getName() + " " + val.type().name();
 		}
