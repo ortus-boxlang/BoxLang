@@ -675,7 +675,7 @@ public class ModuleRecord {
 		if ( !this.interceptors.isEmpty() ) {
 			for ( Object interceptor : this.interceptors ) {
 				IStruct interceptorRecord = ( IStruct ) interceptor;
-				interceptorService.unregister( DynamicObject.of( interceptorRecord.getAsString( Key.interceptor ) ) );
+				interceptorService.unregister( DynamicObject.of( interceptorRecord.get( Key.interceptor ) ) );
 			}
 		}
 
