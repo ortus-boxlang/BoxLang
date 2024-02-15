@@ -29,6 +29,18 @@ import ortus.boxlang.runtime.types.exceptions.CustomException;
 @BoxComponent
 public class Abort extends Component {
 
+	/**
+	 * --------------------------------------------------------------------------
+	 * Constructor(s)
+	 * --------------------------------------------------------------------------
+	 */
+
+	/**
+	 * Required by SLI
+	 */
+	public Abort() {
+	}
+
 	public Abort( Key name ) {
 		super( name );
 		declaredAttributes = new Attribute[] {
@@ -44,9 +56,9 @@ public class Abort extends Component {
 	 * @param attributes     The attributes to the BIF
 	 * @param body           The body of the BIF
 	 * @param executionState The execution state of the BIF
-	 * 
+	 *
 	 * @argument.showerror Whether to show an error
-	 * 
+	 *
 	 * @argument.type The type of the abort (request or page)
 	 *
 	 */

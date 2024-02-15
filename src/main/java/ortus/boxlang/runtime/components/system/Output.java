@@ -39,6 +39,18 @@ import ortus.boxlang.runtime.types.Query;
 @BoxComponent( requiresBody = true )
 public class Output extends Component {
 
+	/**
+	 * --------------------------------------------------------------------------
+	 * Constructor(s)
+	 * --------------------------------------------------------------------------
+	 */
+
+	/**
+	 * Required by SLI
+	 */
+	public Output() {
+	}
+
 	public Output( Key name ) {
 		super( name );
 		declaredAttributes = new Attribute[] {

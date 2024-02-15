@@ -35,6 +35,23 @@ import ortus.boxlang.runtime.types.exceptions.BoxValidationException;
 @BoxComponent( allowsBody = true )
 public class HTTP extends Component {
 
+	/**
+	 * --------------------------------------------------------------------------
+	 * Constructor(s)
+	 * --------------------------------------------------------------------------
+	 */
+
+	/**
+	 * Required by SLI
+	 */
+	public HTTP() {
+	}
+
+	/**
+	 * Constructor
+	 *
+	 * @param name The name of the component
+	 */
 	public HTTP( Key name ) {
 		super( name );
 		declaredAttributes = new Attribute[] {

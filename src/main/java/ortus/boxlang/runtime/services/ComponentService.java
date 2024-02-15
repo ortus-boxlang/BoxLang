@@ -19,6 +19,7 @@ package ortus.boxlang.runtime.services;
 
 import java.io.IOException;
 import java.util.Map;
+import java.util.ServiceLoader;
 import java.util.concurrent.ConcurrentHashMap;
 
 import org.slf4j.Logger;
@@ -28,7 +29,6 @@ import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.components.BoxComponent;
 import ortus.boxlang.runtime.components.Component;
 import ortus.boxlang.runtime.components.ComponentDescriptor;
-import ortus.boxlang.runtime.loader.util.ClassDiscovery;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
@@ -43,11 +43,6 @@ public class ComponentService extends BaseService {
 	 * Private Properties
 	 * --------------------------------------------------------------------------
 	 */
-
-	/**
-	 * The location of the core components
-	 */
-	private static final String				COMPONENTS_PACKAGE	= "ortus.boxlang.runtime.components";
 
 	/**
 	 * Logger
@@ -239,12 +234,12 @@ public class ComponentService extends BaseService {
 	 * @throws IOException If there is an error loading the components
 	 */
 	public void loadComponentRegistry() throws IOException {
-		ClassDiscovery
-		    .findAnnotatedClasses( ( COMPONENTS_PACKAGE ).replace( '.', '/' ), BoxComponent.class )
+		ServiceLoader
+		    .load( Component.class )
+		    .stream()
 		    .parallel()
-		    // Filter to subclasses of component
-		    .filter( Component.class::isAssignableFrom )
-		    // Process each class for registration
+		    .map( ServiceLoader.Provider::type )
+		    // .peek( targetClass -> System.out.println( "targetClass: " + targetClass.getName() ) )
 		    .forEach( targetClass -> registerComponent( targetClass, null, null ) );
 	}
 

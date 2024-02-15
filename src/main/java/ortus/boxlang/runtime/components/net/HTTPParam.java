@@ -31,6 +31,20 @@ import ortus.boxlang.runtime.types.exceptions.BoxValidationException;
 @BoxComponent
 public class HTTPParam extends Component {
 
+	/**
+	 * --------------------------------------------------------------------------
+	 * Constructor(s)
+	 * --------------------------------------------------------------------------
+	 */
+
+	public HTTPParam() {
+	}
+
+	/**
+	 * Constructor
+	 *
+	 * @param name The name of the component
+	 */
 	public HTTPParam( Key name ) {
 		super( name );
 		declaredAttributes = new Attribute[] {

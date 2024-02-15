@@ -67,10 +67,17 @@ public abstract class Component {
 
 	/**
 	 * A base component
-	 * 
+	 */
+	protected Component() {
+
+	}
+
+	/**
+	 * A base component
+	 *
 	 * @param name The name of the component
 	 */
-	public Component( Key name ) {
+	protected Component( Key name ) {
 		this.name = name;
 	}
 
@@ -123,9 +130,9 @@ public abstract class Component {
 
 	/**
 	 * Process the body of the component.
-	 * 
+	 *
 	 * @param context The context in which the body is being processed
-	 * 
+	 *
 	 * @return If captureBodyOutput is set to true, the captured output of the body will be returned as a string. Otherwise,
 	 *         null will be returned.
 	 */
@@ -153,7 +160,7 @@ public abstract class Component {
 
 	/**
 	 * Get the name of the component
-	 * 
+	 *
 	 * @return The name of the component
 	 */
 	public Key getName() {
@@ -162,7 +169,7 @@ public abstract class Component {
 
 	/**
 	 * Get the attributes for this component
-	 * 
+	 *
 	 * @return The attributes for this component
 	 */
 	public Attribute[] getDeclaredAttributes() {
@@ -171,7 +178,7 @@ public abstract class Component {
 
 	/**
 	 * Get whether this component captures the output of the body
-	 * 
+	 *
 	 * @return Whether this component captures the output of the body
 	 */
 	public boolean capturesBodyOutput() {

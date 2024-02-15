@@ -30,6 +30,18 @@ import ortus.boxlang.runtime.types.IStruct;
 @BoxComponent
 public class Include extends Component {
 
+	/**
+	 * --------------------------------------------------------------------------
+	 * Constructor(s)
+	 * --------------------------------------------------------------------------
+	 */
+
+	/**
+	 * Required by SLI
+	 */
+	public Include() {
+	}
+
 	public Include( Key name ) {
 		super( name );
 		declaredAttributes = new Attribute[] {

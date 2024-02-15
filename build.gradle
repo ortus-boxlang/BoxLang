@@ -270,12 +270,25 @@ spotlessJava {
   dependsOn tasks.named( "compileCoreModules" )
 }
 
+/**
+ * Generate the BIF Service Providers
+ */
 task generateBIFServiceProviders( type: JavaExec ) {
     classpath = sourceSets.test.runtimeClasspath
     main = 'tools.BIFServiceProviderGenerator'
 }
 // Make the build task depend on your custom task
 build.dependsOn generateBIFServiceProviders
+
+/**
+ * Generate the Component Service Providers
+ */
+task generateComponentServiceProviders( type: JavaExec ) {
+    classpath = sourceSets.test.runtimeClasspath
+    main = 'tools.ComponentServiceProviderGenerator'
+}
+// Make the build task depend on your custom task
+build.dependsOn generateComponentServiceProviders
 
 /**
  * Install the CFML dependencies for the parser tests via CommandBox

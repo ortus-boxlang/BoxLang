@@ -30,6 +30,18 @@ import ortus.boxlang.runtime.types.IStruct;
 @BoxComponent
 public class Dump extends Component {
 
+	/**
+	 * --------------------------------------------------------------------------
+	 * Constructor(s)
+	 * --------------------------------------------------------------------------
+	 */
+
+	/**
+	 * Required by SLI
+	 */
+	public Dump() {
+	}
+
 	public Dump( Key name ) {
 		super( name );
 		declaredAttributes = new Attribute[] {

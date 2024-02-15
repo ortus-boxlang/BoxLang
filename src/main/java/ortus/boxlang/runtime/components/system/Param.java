@@ -31,6 +31,18 @@ import ortus.boxlang.runtime.types.IStruct;
 @BoxComponent
 public class Param extends Component {
 
+	/**
+	 * --------------------------------------------------------------------------
+	 * Constructor(s)
+	 * --------------------------------------------------------------------------
+	 */
+
+	/**
+	 * Required by SLI
+	 */
+	public Param() {
+	}
+
 	public Param( Key name ) {
 		super( name );
 		declaredAttributes = new Attribute[] {
@@ -50,17 +62,17 @@ public class Param extends Component {
 	 * @param attributes     The attributes to the BIF
 	 * @param body           The body of the BIF
 	 * @param executionState The execution state of the BIF
-	 * 
+	 *
 	 * @argument.name The name of the parameter
-	 * 
+	 *
 	 * @argument.type The data type of the parameter
-	 * 
+	 *
 	 * @argument.default The default value of the parameter
-	 * 
+	 *
 	 * @argument.max The maximum value of the parameter
-	 * 
+	 *
 	 * @argument.min The minimum value of the parameter
-	 * 
+	 *
 	 * @argument.pattern The pattern of the parameter
 	 *
 	 */

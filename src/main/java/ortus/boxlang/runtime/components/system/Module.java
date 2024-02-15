@@ -38,6 +38,18 @@ import ortus.boxlang.runtime.types.exceptions.CustomException;
 @BoxComponent( allowsBody = true )
 public class Module extends Component {
 
+	/**
+	 * --------------------------------------------------------------------------
+	 * Constructor(s)
+	 * --------------------------------------------------------------------------
+	 */
+
+	/**
+	 * Required by SLI
+	 */
+	public Module() {
+	}
+
 	public Module( Key name ) {
 		super( name );
 		declaredAttributes	= new Attribute[] {
@@ -54,9 +66,9 @@ public class Module extends Component {
 	 * @param attributes     The attributes to the BIF
 	 * @param body           The body of the BIF
 	 * @param executionState The execution state of the BIF
-	 * 
+	 *
 	 * @argument.template Mutually exclusive with the name attribute. A path to the template that implements the tag.
-	 * 
+	 *
 	 * @argument.name Mutually exclusive with the template attribute. A custom tag name, in the form "Name.Name.Name..." Identifies subdirectory, under
 	 *                the CFML tag root directory, that contains custom tag template.
 	 *
@@ -118,14 +130,14 @@ public class Module extends Component {
 	/**
 	 * Lookup a custom tag by name based on our lookup rules.
 	 * An error is thrown is the name could not be found.
-	 * 
+	 *
 	 * - Directories specified in the this.customTagPaths page variable, if it exists.
 	 * - Directories specified in the engine config Custom Tag Paths
 	 * - The /boxlang/CustomTags directory, and its subdirectories.
 	 * - Directories specified in the mappings in the engine config
-	 * 
+	 *
 	 * @param name The name of the custom tag in the format "foo.bar.baz". If the tag was called in the format <cf_brad>, then the name would be "brad"
-	 * 
+	 *
 	 * @return The absolute path found
 	 */
 	private Path findByName( IBoxContext context, String name ) {

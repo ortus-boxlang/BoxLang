@@ -32,6 +32,18 @@ import ortus.boxlang.runtime.types.IStruct;
 @BoxComponent( requiresBody = true )
 public class SaveContent extends Component {
 
+	/**
+	 * --------------------------------------------------------------------------
+	 * Constructor(s)
+	 * --------------------------------------------------------------------------
+	 */
+
+	/**
+	 * Required by SLI
+	 */
+	public SaveContent() {
+	}
+
 	public SaveContent( Key name ) {
 		super( name );
 		declaredAttributes	= new Attribute[] {
