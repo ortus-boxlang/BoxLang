@@ -17,6 +17,9 @@
  */
 package ortus.boxlang.runtime.components.system;
 
+import java.io.File;
+import java.nio.file.Path;
+
 import ortus.boxlang.runtime.components.Attribute;
 import ortus.boxlang.runtime.components.BoxComponent;
 import ortus.boxlang.runtime.components.Component;
@@ -59,14 +62,19 @@ public class Module extends Component {
 	 *
 	 */
 	public void _invoke( IBoxContext context, IStruct attributes, ComponentBody body, IStruct executionState ) {
-		String	template	= attributes.getAsString( Key.template );
-		String	name		= attributes.getAsString( Key._NAME );
-		String	actualFilePath;
+		String		template			= attributes.getAsString( Key.template );
+		String		name				= attributes.getAsString( Key._NAME );
+		IStruct		actualAttributes	= attributes.getAsStruct( Key.attributes );
+		BoxTemplate	bTemplate;
 
+		// Load template class, compiling if neccessary
 		if ( template != null && !template.isEmpty() ) {
-			actualFilePath = template;
+			// This method already takes into account looking
+			// - relative to the current template
+			// - relative to a mapping
+			bTemplate = RunnableLoader.getInstance().loadTemplateRelative( context, template );
 		} else if ( name != null && !name.isEmpty() ) {
-			throw new BoxRuntimeException( "name not implemented yet" );
+			bTemplate = RunnableLoader.getInstance().loadTemplateAbsolute( context, findByName( context, name ) );
 		} else {
 			throw new CustomException( "Either the template or name attribute must be specified." );
 		}
@@ -74,17 +82,17 @@ public class Module extends Component {
 		VariablesScope		caller		= ( VariablesScope ) context.getScopeNearby( VariablesScope.name );
 		CustomTagBoxContext	ctContext	= new CustomTagBoxContext( context );
 		VariablesScope		variables	= ( VariablesScope ) ctContext.getScopeNearby( VariablesScope.name );
-		variables.put( Key.attributes, attributes );
+		variables.put( Key.attributes, actualAttributes );
 		variables.put( Key.caller, caller );
 		IStruct thisTag = new Struct();
 		thisTag.put( Key.executionMode, "start" );
 		thisTag.put( Key.hasEndTag, body != null );
 		thisTag.put( Key.generatedContent, "" );
+		// TODO: This requires cfassociate module to be implemented.
+		// Should be able to use our executionState to accomplish this.
 		thisTag.put( Key.assocAttribs, new Array() );
 		variables.put( Key.thisTag, thisTag );
 
-		// Load template class, compiling if neccessary
-		BoxTemplate bTemplate = RunnableLoader.getInstance().loadTemplateRelative( context, actualFilePath );
 		try {
 			bTemplate.invoke( ctContext );
 			ctContext.flushBuffer( false );
@@ -105,5 +113,39 @@ public class Module extends Component {
 			ctContext.flushBuffer( false );
 		}
 
+	}
+
+	/**
+	 * Lookup a custom tag by name based on our lookup rules.
+	 * An error is thrown is the name could not be found.
+	 * 
+	 * - Directories specified in the this.customTagPaths page variable, if it exists.
+	 * - Directories specified in the engine config Custom Tag Paths
+	 * - The /boxlang/CustomTags directory, and its subdirectories.
+	 * - Directories specified in the mappings in the engine config
+	 * 
+	 * @param name The name of the custom tag in the format "foo.bar.baz". If the tag was called in the format <cf_brad>, then the name would be "brad"
+	 * 
+	 * @return The absolute path found
+	 */
+	private Path findByName( IBoxContext context, String name ) {
+		// Convert dots to file separator in name
+		// TODO: include BL extensions
+		String	fullName		= name.replace( '.', File.separatorChar ) + ".cfm";
+		Array	pathToSearch	= new Array();
+		pathToSearch.addAll( context.getConfig().getAsStruct( Key.runtime ).getAsArray( Key.customTagsDirectory ) );
+		// Add in mappings to search
+		pathToSearch.addAll( context.getConfig().getAsStruct( Key.runtime ).getAsStruct( Key.mappings ).values() );
+
+		// TODO: Case insensitive search.
+		Path foundPath = pathToSearch
+		    .stream()
+		    .map( p -> new File( p.toString(), fullName ) )
+		    .filter( f -> f.exists() )
+		    .findFirst()
+		    .orElseThrow( () -> new BoxRuntimeException( "Could not find custom tag [" + name + "]" ) )
+		    .toPath();
+
+		return foundPath;
 	}
 }

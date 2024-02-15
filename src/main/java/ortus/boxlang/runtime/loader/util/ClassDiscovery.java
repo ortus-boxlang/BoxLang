@@ -71,7 +71,7 @@ public class ClassDiscovery {
 	 */
 	public static Stream<String> getClassFilesAsStream( String packageName, Boolean recursive ) throws IOException {
 		ClassLoader			classLoader	= ClassLoader.getSystemClassLoader();
-		String				path		= packageName.replace( '.', File.separatorChar );
+		String				path		= packageName.replace( '.', '/' );
 		Enumeration<URL>	resources	= classLoader.getResources( path );
 
 		return Collections.list( resources )
@@ -144,7 +144,8 @@ public class ClassDiscovery {
 
 		// Auto-detect package name if not passed.
 		if ( packageName == null ) {
-			packageName = startDir.replace( File.separatorChar, '.' );
+			packageName	= startDir.replace( '/', '.' );
+			packageName	= packageName.replace( '\\', '.' );
 		}
 
 		try {
@@ -163,7 +164,7 @@ public class ClassDiscovery {
 				// Jar Loading
 				if ( resource.getProtocol().equals( "jar" ) ) {
 
-					logger.info( "FindAnnotatedClasses: Jar file found: {}", resource );
+					logger.atDebug().log( "FindAnnotatedClasses: Jar file found: {}", resource );
 
 					classes.addAll(
 					    findClassesInJar( resource, startDir, targetLoader, annotations )
@@ -171,7 +172,7 @@ public class ClassDiscovery {
 				}
 				// Normal directory loading
 				else {
-					logger.info( "FindAnnotatedClasses: Normal directory found: {}", resource );
+					logger.atDebug().log( "FindAnnotatedClasses: Normal directory found: {}", resource );
 					classes.addAll(
 					    findClassesInDirectory(
 					        new File( resource.getFile() ), // directory
@@ -315,7 +316,7 @@ public class ClassDiscovery {
 			    // Only process entries that start with the startDir and end with .class
 			    .filter( entry -> entry.getName().startsWith( startDir ) && entry.getName().endsWith( CLASS_FILE_EXTENSION ) )
 			    // Construct the class name from the path
-			    .map( entry -> entry.getName().replace( File.separatorChar, '.' ).substring( 0, entry.getName().length() - 6 ) )
+			    .map( entry -> entry.getName().replace( '/', '.' ).substring( 0, entry.getName().length() - 6 ) )
 			    // Load it or log it
 			    .map( className -> {
 				    try {

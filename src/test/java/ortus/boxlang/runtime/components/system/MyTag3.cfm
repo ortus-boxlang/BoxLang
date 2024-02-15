@@ -1,0 +1,1 @@
+<cfoutput>Template: #attributes.template#</cfoutput>

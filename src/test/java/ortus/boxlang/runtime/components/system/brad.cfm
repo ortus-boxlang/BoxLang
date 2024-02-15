@@ -1,0 +1,1 @@
+This is the Brad tag <cfoutput>#attributes.foo#</cfoutput>

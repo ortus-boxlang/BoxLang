@@ -380,7 +380,7 @@ public class BaseBoxContext implements IBoxContext {
 		if ( comp != null ) {
 			comp.invoke( this, attributes, componentBody );
 		} else {
-			throw new BoxRuntimeException( "Component [" + name.getName() + "] count not be found." );
+			throw new BoxRuntimeException( "Component [" + name.getName() + "] could not be found." );
 		}
 	}
 

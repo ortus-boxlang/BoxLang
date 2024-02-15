@@ -105,7 +105,7 @@ fragment COMPONENT_NameChar:
 	| '_'
 	| DIGIT;
 
-fragment COMPONENT_NameStartChar: [:a-z];
+fragment COMPONENT_NameStartChar: [a-z_];
 
 // *********************************************************************************************************************
 mode OUTPUT_MODE;

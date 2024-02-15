@@ -18,16 +18,10 @@
 package ortus.boxlang.runtime.services;
 
 import java.io.IOException;
-import java.net.URISyntaxException;
-import java.net.URL;
-import java.nio.file.FileSystem;
-import java.nio.file.FileSystemNotFoundException;
-import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -71,21 +65,10 @@ public class ModuleService extends BaseService {
 	public static final String				MODULE_PACKAGE_PREFIX				= "modules";
 
 	/**
-	 * The location of the core modules in the runtime resources: {@code src/main/resources/modules}
-	 */
-	public static final String				CORE_MODULES						= "modules";
-
-	/**
 	 * --------------------------------------------------------------------------
 	 * Private Properties
 	 * --------------------------------------------------------------------------
 	 */
-
-	/**
-	 * The core modules file system. This is used to load modules from the runtime resources.
-	 * This is only used in jar mode.
-	 */
-	private FileSystem						coreModulesFileSystem;
 
 	/**
 	 * List locations to search for modules
@@ -135,17 +118,6 @@ public class ModuleService extends BaseService {
 	public ModuleService( BoxRuntime runtime ) {
 		super( runtime );
 
-		if ( runtime.inJarMode() ) {
-			try {
-				buildCoreModulesFileSystem();
-			} catch ( IOException | URISyntaxException e ) {
-				throw new BoxRuntimeException( "Cannot build core modules file system from the runtime jar, this is really bad :(", e );
-			}
-		}
-
-		// Add the core modules path to the list of module paths
-		addCoreModulesPath();
-
 		// Add the module service events
 		runtime.getInterceptorService().registerInterceptionPoint( MODULE_EVENTS.values().toArray( Key[]::new ) );
 	}
@@ -155,15 +127,6 @@ public class ModuleService extends BaseService {
 	 * Getters(s) / Setters(s)
 	 * --------------------------------------------------------------------------
 	 */
-
-	/**
-	 * Get the core modules file system if it's in jar mode
-	 *
-	 * @return The coreModulesFileSystem or null if not in jar mode
-	 */
-	public FileSystem getCoreModulesFileSystem() {
-		return this.coreModulesFileSystem;
-	}
 
 	/**
 	 * Get the list of module paths registered in the module service
@@ -218,17 +181,8 @@ public class ModuleService extends BaseService {
 		    Struct.of( "moduleService", this )
 		);
 
-		// Shutdown the core modules file system if it's in jar mode
-		if ( this.coreModulesFileSystem != null ) {
-			try {
-				this.coreModulesFileSystem.close();
-			} catch ( Exception e ) {
-				logger.error( "Error closing core modules file system", e );
-			}
-		}
-
 		// Unload all modules
-		// unloadAll();
+		unloadAll();
 
 		logger.atInfo().log( "+ Module Service shutdown" );
 	}
@@ -584,65 +538,6 @@ public class ModuleService extends BaseService {
 	 * Private Methods
 	 * --------------------------------------------------------------------------
 	 */
-
-	/**
-	 * The core modules are the modules that are included in the runtime resources.
-	 * This method will detect if your are in dev or jar mode and add it accordingly.
-	 */
-	private void addCoreModulesPath() {
-		URL coreModulesUrl = ModuleService.class.getClassLoader().getResource( CORE_MODULES );
-
-		// Check if the resource exists
-		if ( coreModulesUrl == null ) {
-			throw new BoxRuntimeException( "Core Modules not found, something is really wrong " + coreModulesUrl );
-		}
-
-		// Jar Mode
-		if ( this.runtime.inJarMode() ) {
-			try {
-				this.modulePaths.add( getCoreModulesFileSystem().getPath( coreModulesUrl.toString() ) );
-			} catch ( Exception e ) {
-				e.printStackTrace();
-				throw new BoxRuntimeException(
-				    String.format( "Cannot build an Path/URI from the discovered resource %s", coreModulesUrl ),
-				    e
-				);
-			}
-		}
-		// Non Jar Mode
-		else {
-			try {
-				this.modulePaths.add( Paths.get( coreModulesUrl.toURI() ) );
-			} catch ( Exception e ) {
-				throw new BoxRuntimeException(
-				    String.format( "Cannot build an Path/URI from the discovered resource %s", coreModulesUrl ),
-				    e
-				);
-			}
-		}
-
-		logger.atDebug().log( "ModuleService: Added core modules path: {}", this.modulePaths.toString() );
-	}
-
-	/**
-	 * Build the core modules file system from the runtime jar
-	 *
-	 * @return The core modules file system
-	 *
-	 * @throws IOException        If there is an error building the file system
-	 * @throws URISyntaxException If there is an error in the URI syntax
-	 */
-	private FileSystem buildCoreModulesFileSystem() throws IOException, URISyntaxException {
-		URL coreModulesUrl = ModuleService.class.getClassLoader().getResource( CORE_MODULES );
-
-		try {
-			this.coreModulesFileSystem = FileSystems.getFileSystem( coreModulesUrl.toURI() );
-		} catch ( FileSystemNotFoundException | URISyntaxException e ) {
-			this.coreModulesFileSystem = FileSystems.newFileSystem( coreModulesUrl.toURI(), new HashMap<>() );
-		}
-
-		return this.coreModulesFileSystem;
-	}
 
 	/**
 	 * This method scans all possible module locations and builds the module registry

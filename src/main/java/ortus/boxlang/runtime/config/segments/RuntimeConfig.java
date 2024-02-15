@@ -18,6 +18,7 @@
 package ortus.boxlang.runtime.config.segments;
 
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -27,6 +28,7 @@ import org.slf4j.LoggerFactory;
 
 import ortus.boxlang.runtime.config.util.PlaceholderHelper;
 import ortus.boxlang.runtime.scopes.Key;
+import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
@@ -47,7 +49,23 @@ public class RuntimeConfig {
 	 * An array of directories where modules are located and loaded from.
 	 * {@code [ /{user-home}/modules ]}
 	 */
-	public List<String>			modulesDirectory	= List.of( System.getProperty( "user.home" ) + "/modules" );
+	public List<String>			modulesDirectory	= new ArrayList<String>() {
+
+														{
+															add( System.getProperty( "user.home" ) + "/modules" );
+														}
+													};
+
+	/**
+	 * An array of directories where custom tags are located and loaded from.
+	 * {@code [ /{user-home}/customTags ]}
+	 */
+	public List<String>			customTagsDirectory	= new ArrayList<String>() {
+
+														{
+															add( System.getProperty( "user.home" ) + "/customTags" );
+														}
+													};
 
 	/**
 	 * The cache configurations for the runtime
@@ -213,6 +231,17 @@ public class RuntimeConfig {
 			}
 		}
 
+		// Process customTags
+		if ( config.containsKey( "customTagsDirectory" ) ) {
+			if ( config.get( "customTags" ) instanceof List<?> castedList ) {
+				this.customTagsDirectory = ( ( List<?> ) castedList ).stream()
+				    .map( PlaceholderHelper::resolve )
+				    .collect( Collectors.toList() );
+			} else {
+				logger.warn( "The [runtime.customTagsDirectory] configuration is not a JSON Array, ignoring it." );
+			}
+		}
+
 		// Process cache configurations
 		if ( config.containsKey( "caches" ) ) {
 			if ( config.get( "caches" ) instanceof Map<?, ?> castedCaches ) {
@@ -243,7 +272,8 @@ public class RuntimeConfig {
 	public IStruct asStruct() {
 		return Struct.of(
 		    Key.mappings, this.mappings,
-		    Key.modulesDirectory, this.modulesDirectory,
+		    Key.modulesDirectory, Array.fromList( this.modulesDirectory ),
+		    Key.customTagsDirectory, Array.fromList( this.customTagsDirectory ),
 		    Key.caches, this.caches
 		);
 	}
