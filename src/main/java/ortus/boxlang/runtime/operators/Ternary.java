@@ -17,6 +17,9 @@
  */
 package ortus.boxlang.runtime.operators;
 
+import java.util.function.Function;
+
+import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
 
 /**
@@ -33,8 +36,8 @@ public class Ternary implements IOperator {
 	 *
 	 * @return The result of the ternary operation
 	 */
-	public static Object invoke( Object condition, Object ifTrue, Object ifFalse ) {
-		return BooleanCaster.cast( condition ) ? ifTrue : ifFalse;
+	public static Object invoke( IBoxContext context, Object condition, Function<IBoxContext, Object> ifTrue, Function<IBoxContext, Object> ifFalse ) {
+		return BooleanCaster.cast( condition ) ? ifTrue.apply( context ) : ifFalse.apply( context );
 	}
 
 }

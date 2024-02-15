@@ -17,11 +17,16 @@
  */
 package ortus.boxlang.transpiler.transformer.expression;
 
-import java.util.HashMap;
-import java.util.Map;
-
 import com.github.javaparser.ast.Node;
+import com.github.javaparser.ast.NodeList;
+import com.github.javaparser.ast.body.Parameter;
 import com.github.javaparser.ast.expr.Expression;
+import com.github.javaparser.ast.expr.LambdaExpr;
+import com.github.javaparser.ast.expr.MethodCallExpr;
+import com.github.javaparser.ast.expr.NameExpr;
+import com.github.javaparser.ast.stmt.BlockStmt;
+import com.github.javaparser.ast.stmt.ReturnStmt;
+import com.github.javaparser.ast.type.UnknownType;
 
 import ortus.boxlang.ast.BoxNode;
 import ortus.boxlang.ast.expression.BoxTernaryOperation;
@@ -39,20 +44,27 @@ public class BoxTernaryOperationTransformer extends AbstractTransformer {
 	public Node transform( BoxNode node, TransformerContext context ) throws IllegalStateException {
 		BoxTernaryOperation	operation	= ( BoxTernaryOperation ) node;
 		Expression			condition	= ( Expression ) transpiler.transform( operation.getCondition() );
-		Expression			whenTrue	= ( Expression ) transpiler.transform( operation.getWhenTrue() );
-		Expression			whenFalse	= ( Expression ) transpiler.transform( operation.getWhenFalse() );
-		Map<String, String>	values		= new HashMap<>() {
+		Expression			whenTrue	= wrapInLambda( ( Expression ) transpiler.transform( operation.getWhenTrue() ) );
+		Expression			whenFalse	= wrapInLambda( ( Expression ) transpiler.transform( operation.getWhenFalse() ) );
 
-											{
-												put( "condition", condition.toString() );
-												put( "whenTrue", whenTrue.toString() );
-												put( "whenFalse", whenFalse.toString() );
-												put( "contextName", transpiler.peekContextName() );
-											}
-										};
+		return new MethodCallExpr(
+		    new NameExpr( "Ternary" ),
+		    "invoke",
+		    new NodeList<Expression>( new NameExpr( transpiler.peekContextName() ), condition, whenTrue, whenFalse )
+		);
+	}
 
-		String				template	= "Ternary.invoke(${condition},${whenTrue},${whenFalse})";
+	public Expression wrapInLambda( Expression body ) {
+		String lambdaContextName = "lambdaContext" + transpiler.incrementAndGetLambdaContextCounter();
 
-		return parseExpression( template, values );
+		transpiler.pushContextName( lambdaContextName );
+
+		LambdaExpr lambda = new LambdaExpr();
+		lambda.setParameters( new NodeList<>( new Parameter( new UnknownType(), lambdaContextName ) ) );
+		lambda.setBody( new BlockStmt().addStatement( new ReturnStmt( body ) ) );
+
+		transpiler.popContextName();
+
+		return lambda;
 	}
 }

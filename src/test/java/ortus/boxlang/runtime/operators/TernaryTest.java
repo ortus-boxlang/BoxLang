@@ -22,19 +22,23 @@ import static com.google.common.truth.Truth.assertThat;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
+import ortus.boxlang.runtime.context.BaseBoxContext;
+import ortus.boxlang.runtime.context.IBoxContext;
+
 public class TernaryTest {
 
 	@DisplayName( "It can work correctly" )
 	@Test
 	void testItWork() {
-		assertThat( Ternary.invoke( true, "was true", "was false" ) ).isEqualTo( "was true" );
-		assertThat( Ternary.invoke( false, "was true", "was false" ) ).isEqualTo( "was false" );
+		IBoxContext context = new BaseBoxContext();
+		assertThat( Ternary.invoke( context, true, ( c ) -> "was true", ( c ) -> "was false" ) ).isEqualTo( "was true" );
+		assertThat( Ternary.invoke( context, false, ( c ) -> "was true", ( c ) -> "was false" ) ).isEqualTo( "was false" );
 
-		assertThat( Ternary.invoke( 1, "was true", "was false" ) ).isEqualTo( "was true" );
-		assertThat( Ternary.invoke( 0, "was true", "was false" ) ).isEqualTo( "was false" );
+		assertThat( Ternary.invoke( context, 1, ( c ) -> "was true", ( c ) -> "was false" ) ).isEqualTo( "was true" );
+		assertThat( Ternary.invoke( context, 0, ( c ) -> "was true", ( c ) -> "was false" ) ).isEqualTo( "was false" );
 
-		assertThat( Ternary.invoke( "yes", "was true", "was false" ) ).isEqualTo( "was true" );
-		assertThat( Ternary.invoke( "no", "was true", "was false" ) ).isEqualTo( "was false" );
+		assertThat( Ternary.invoke( context, "yes", ( c ) -> "was true", ( c ) -> "was false" ) ).isEqualTo( "was true" );
+		assertThat( Ternary.invoke( context, "no", ( c ) -> "was true", ( c ) -> "was false" ) ).isEqualTo( "was false" );
 	}
 
 }

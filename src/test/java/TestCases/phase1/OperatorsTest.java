@@ -523,6 +523,26 @@ public class OperatorsTest {
 
 	}
 
+	@DisplayName( "It should lazily evaluate its true branche" )
+	@Test
+	public void testTernaryTrueLazyEvaluation() {
+
+		Object result = instance.executeStatement( """
+		                                           			"false" castas "boolean" ? "a" castas "boolean" : "0" castas "boolean";
+		                                           """, context );
+		assertThat( result ).isEqualTo( false );
+	}
+
+	@DisplayName( "It should lazily evaluate its false branche" )
+	@Test
+	public void testTernaryFalseLazyEvaluation() {
+
+		Object result = instance.executeStatement( """
+		                                           			"true" castas "boolean" ? "false" castas "boolean" : "x" castas "boolean";
+		                                           """, context );
+		assertThat( result ).isEqualTo( false );
+	}
+
 	@DisplayName( "It should properly handle comparison operators" )
 	@Test
 	public void testTernaryWithComparison() {
