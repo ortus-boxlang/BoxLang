@@ -109,6 +109,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key	createPath					= Key.of( "createPath" );
 	public static final Key	currentRow					= Key.of( "currentRow" );
 	public static final Key	customInterceptionPoints	= Key.of( "customInterceptionPoints" );
+	public static final Key	customTagsDirectory			= Key.of( "customTagsDirectory" );
 	public static final Key	data						= Key.of( "data" );
 	public static final Key	datasource					= Key.of( "datasource" );
 	public static final Key	datasources					= Key.of( "datasources" );

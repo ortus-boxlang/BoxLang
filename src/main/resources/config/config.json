@@ -10,6 +10,9 @@
 		"modulesDirectory": [
 			"${user-home}/.boxlang/modules"
 		],
+		"customTagsDirectory": [
+			"${user-home}/.boxlang/customTags"
+		],
 		"caches": {
 			"imports": {
 				"type": "Caffeine",

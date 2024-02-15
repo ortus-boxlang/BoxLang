@@ -14,6 +14,9 @@
  */
 package ortus.boxlang.transpiler.transformer.statement.component;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import com.github.javaparser.ast.Node;
 import com.github.javaparser.ast.NodeList;
 import com.github.javaparser.ast.body.Parameter;
@@ -28,6 +31,9 @@ import com.github.javaparser.ast.stmt.Statement;
 import com.github.javaparser.ast.type.UnknownType;
 
 import ortus.boxlang.ast.BoxNode;
+import ortus.boxlang.ast.expression.BoxFQN;
+import ortus.boxlang.ast.expression.BoxStringLiteral;
+import ortus.boxlang.ast.statement.BoxAnnotation;
 import ortus.boxlang.ast.statement.component.BoxComponent;
 import ortus.boxlang.transpiler.JavaTranspiler;
 import ortus.boxlang.transpiler.transformer.AbstractTransformer;
@@ -41,8 +47,24 @@ public class BoxComponentTransformer extends AbstractTransformer {
 
 	@Override
 	public Node transform( BoxNode node, TransformerContext context ) throws IllegalStateException {
-		BoxComponent	boxComponent	= ( BoxComponent ) node;
-		Expression		jComponentBody;
+		BoxComponent		boxComponent	= ( BoxComponent ) node;
+		Expression			jComponentBody;
+		String				componentName	= boxComponent.getName();
+		List<BoxAnnotation>	attributes		= new ArrayList<BoxAnnotation>();
+		attributes.addAll( boxComponent.getAttributes() );
+
+		// Check for custom tag shortcut like <cf_brad>
+		if ( componentName.startsWith( "_" ) ) {
+			attributes.add(
+			    new BoxAnnotation(
+			        new BoxFQN( "name", null, componentName ),
+			        new BoxStringLiteral( componentName.substring( 1 ), null, componentName ),
+			        null,
+			        null )
+			);
+			componentName = "module";
+		}
+
 		if ( boxComponent.getBody() != null ) {
 
 			BlockStmt	jBody				= new BlockStmt();
@@ -66,12 +88,12 @@ public class BoxComponentTransformer extends AbstractTransformer {
 		        new NameExpr( transpiler.peekContextName() ),
 		        "invokeComponent",
 		        new NodeList<Expression>(
-		            createKey( boxComponent.getName() ),
-		            transformAnnotations( boxComponent.getAttributes(), true ),
+		            createKey( componentName ),
+		            transformAnnotations( attributes, true ),
 		            jComponentBody )
 		    )
 		);
-		logger.debug( node.getSourceText() + " -> " + jStatement );
+		logger.info( node.getSourceText() + " -> " + jStatement );
 		addIndex( jStatement, node );
 		return jStatement;
 	}
