@@ -25,7 +25,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
@@ -49,57 +48,59 @@ import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
  * In a ColdBox context, this object will inherit from the ColdBox super type as well dynamically at runtime.
  *
  */
-public class Scheduler {
+public class Scheduler implements IScheduler {
 
 	/**
 	 * --------------------------------------------------------------------------
-	 * Private Properties
+	 * Protected Properties
 	 * --------------------------------------------------------------------------
+	 * All the properties are protected so they can be accessed by concrete implementations
+	 * and also by the super class.
 	 */
-
-	/**
-	 * The name of this scheduler
-	 */
-	private String								name;
 
 	/**
 	 * An ordered struct of all the tasks this scheduler manages
 	 */
-	private LinkedHashMap<String, TaskRecord>	tasks						= new LinkedHashMap<>( 20 );
+	protected LinkedHashMap<String, TaskRecord>	tasks						= new LinkedHashMap<>( 20 );
 
 	/**
 	 * The Scheduled Executor we are bound to
 	 */
-	private ExecutorRecord						executor;
+	protected ExecutorRecord					executor;
 
 	/**
 	 * The timezone for the scheduler and the tasks it creates and manages
 	 */
-	private ZoneId								timezone					= ZoneId.systemDefault();
-
-	/**
-	 * The default timeout to use when gracefully shutting down this scheduler. Default is 30 seconds.
-	 */
-	private static final long					DEFAULT_SHUTDOWN_TIMEOUT	= 30;
+	protected ZoneId							timezone					= ZoneId.systemDefault();
 
 	/**
 	 * The async service we are bound to
 	 */
-	private AsyncService						asyncService;
+	protected AsyncService						asyncService;
 
 	/**
 	 * Is the scheduler started?
 	 */
-	private Boolean								started						= false;
+	protected Boolean							started						= false;
+
+	/**
+	 * The name of this scheduler
+	 */
+	protected String							name;
+
+	/**
+	 * The default timeout to use when gracefully shutting down this scheduler. Default is 30 seconds.
+	 */
+	protected static final long					DEFAULT_SHUTDOWN_TIMEOUT	= 30;
 
 	/**
 	 * Logger
 	 */
-	private static final Logger					logger						= LoggerFactory.getLogger( Scheduler.class );
+	protected static final Logger				logger						= LoggerFactory.getLogger( Scheduler.class );
 
 	/**
 	 * --------------------------------------------------------------------------
-	 * Constructor
+	 * Constructors
 	 * --------------------------------------------------------------------------
 	 */
 
@@ -558,19 +559,29 @@ public class Scheduler {
 	}
 
 	/**
-	 * @return the timezone
-	 */
-	public ZoneId getTimezone() {
-		return this.timezone;
-	}
-
-	/**
 	 * Get the scheduler name
 	 *
 	 * @return the name
 	 */
 	public String getName() {
 		return this.name;
+	}
+
+	/**
+	 * Set the scheduler name
+	 *
+	 * @param name the name to set
+	 */
+	public Scheduler setName( String name ) {
+		this.name = name;
+		return this;
+	}
+
+	/**
+	 * @return the timezone
+	 */
+	public ZoneId getTimezone() {
+		return this.timezone;
 	}
 
 	/**
@@ -593,6 +604,26 @@ public class Scheduler {
 	}
 
 	/**
+	 * Set the default timezone into the task
+	 *
+	 * @return Scheduler
+	 */
+	public Scheduler setDefaultTimezone() {
+		this.timezone = ZoneId.systemDefault();
+		return this;
+	}
+
+	/**
+	 * Set the async service
+	 *
+	 * @param asyncService the asyncService to set
+	 */
+	public Scheduler setAsyncService( AsyncService asyncService ) {
+		this.asyncService = asyncService;
+		return this;
+	}
+
+	/**
 	 * Get the Aysnc Service
 	 *
 	 * @return the asyncService
@@ -610,72 +641,4 @@ public class Scheduler {
 		return executor;
 	}
 
-	/**
-	 * The task record holds all the information of a living task in the scheduler.
-	 */
-	public class TaskRecord {
-
-		/**
-		 * Task name
-		 */
-		public String				name;
-		/**
-		 * Task group
-		 */
-		public String				group;
-		/**
-		 * The task object
-		 */
-		public ScheduledTask		task;
-		/**
-		 * The future object for the task
-		 */
-		public ScheduledFuture<?>	future;
-		/**
-		 * The scheduled date for the task
-		 */
-		public LocalDateTime		scheduledAt;
-		/**
-		 * The registered date for the task
-		 */
-		public LocalDateTime		registeredAt;
-		/**
-		 * If the task is disabled
-		 */
-		public Boolean				disabled		= false;
-		/**
-		 * If the task errored out when scheduling
-		 */
-		public Boolean				error			= false;
-		/**
-		 * The error message if any
-		 */
-		public String				errorMessage	= "";
-		/**
-		 * The stacktrace if any
-		 */
-		public String				stacktrace		= "";
-		/**
-		 * The inet host
-		 */
-		public String				inetHost		= "";
-		/**
-		 * The inet address
-		 */
-		public String				localIp			= "";
-
-		/**
-		 * Construct the record
-		 *
-		 * @param name  The name of the task
-		 * @param group The group of the task
-		 * @param task  The task object
-		 */
-		public TaskRecord( String name, String group, ScheduledTask task ) {
-			this.name			= name;
-			this.group			= group;
-			this.task			= task;
-			this.registeredAt	= LocalDateTime.now( task.getTimezone() );
-		}
-	}
 }
