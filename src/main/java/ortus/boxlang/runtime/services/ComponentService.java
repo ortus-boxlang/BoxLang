@@ -253,7 +253,7 @@ public class ComponentService extends BaseService {
 	 *
 	 * @throws BoxRuntimeException If no component class or component was provided
 	 */
-	private void registerComponent( Class<?> componentClass, Component component, String module ) {
+	public void registerComponent( Class<?> componentClass, Component component, String module ) {
 		// If no componentClass is provided, get it from the component instance
 		if ( componentClass == null && component != null ) {
 			componentClass = component.getClass();
@@ -279,7 +279,6 @@ public class ComponentService extends BaseService {
 		    allowsBody,
 		    requiresBody
 		) );
-
 	}
 
 }

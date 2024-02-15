@@ -36,6 +36,7 @@ import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BIFDescriptor;
 import ortus.boxlang.runtime.bifs.BoxLangBIFProxy;
 import ortus.boxlang.runtime.bifs.MemberDescriptor;
+import ortus.boxlang.runtime.components.Component;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.loader.DynamicClassLoader;
@@ -44,6 +45,7 @@ import ortus.boxlang.runtime.runnables.RunnableLoader;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.ThisScope;
 import ortus.boxlang.runtime.scopes.VariablesScope;
+import ortus.boxlang.runtime.services.ComponentService;
 import ortus.boxlang.runtime.services.FunctionService;
 import ortus.boxlang.runtime.services.InterceptorService;
 import ortus.boxlang.runtime.services.ModuleService;
@@ -313,6 +315,7 @@ public class ModuleRecord {
 		BoxRuntime			runtime				= BoxRuntime.getInstance();
 		InterceptorService	interceptorService	= runtime.getInterceptorService();
 		FunctionService		functionService		= runtime.getFunctionService();
+		ComponentService	componentService	= runtime.getComponentService();
 
 		// Register the module mapping in the runtime
 		// Called first in case this is used in the `configure` method
@@ -383,6 +386,12 @@ public class ModuleRecord {
 		    .stream()
 		    .map( ServiceLoader.Provider::type )
 		    .forEach( clazz -> functionService.processBIFRegistration( clazz, null, null ) );
+
+		// Do we have any Java Component Tags to load?
+		ServiceLoader.load( Component.class, this.classLoader )
+		    .stream()
+		    .map( ServiceLoader.Provider::type )
+		    .forEach( targetClass -> componentService.registerComponent( targetClass, null, null ) );
 
 		// Finalize Registration
 		this.registeredOn = Instant.now();
