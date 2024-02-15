@@ -24,6 +24,8 @@ import ortus.boxlang.ast.BoxNode;
 import ortus.boxlang.ast.expression.BoxAccess;
 import ortus.boxlang.ast.expression.BoxDotAccess;
 import ortus.boxlang.ast.expression.BoxIdentifier;
+import ortus.boxlang.ast.expression.BoxParenthesis;
+import ortus.boxlang.ast.expression.BoxScope;
 import ortus.boxlang.ast.expression.BoxUnaryOperation;
 import ortus.boxlang.ast.expression.BoxUnaryOperator;
 import ortus.boxlang.runtime.config.util.PlaceholderHelper;
@@ -65,35 +67,39 @@ public class BoxUnaryOperationTransformer extends AbstractTransformer {
 											}
 										};
 
-		// +5, -6, or !true are "simple" use cases, same with ++5, --5, 5++, 5--
-		if ( operator == BoxUnaryOperator.Plus || operator == BoxUnaryOperator.Minus || operator == BoxUnaryOperator.Not || operation.getExpr().isLiteral() ) {
-			template = getMethodCallTemplateSimple( operation );
-			values.put( "expr", transpiler.transform( expr ).toString() );
-		} else {
+		// Outer parenthesis are useless at this point, so unwrap them until we get to something other than BoxParenthesis
+		while ( expr instanceof BoxParenthesis boxparen ) {
+			expr = boxparen.getExpression();
+		}
+
+		// for non literals, we need to identify the key being incremented/decremented and the object it lives in (which may be a scope)
+		if ( expr instanceof BoxIdentifier id && operator != BoxUnaryOperator.Not ) {
+			Node accessKey;
+			template	= getMethodCallTemplateCompound( operation );
+			accessKey	= createKey( id.getName() );
+			values.put( "accessKey", accessKey.toString() );
+			String obj = PlaceholderHelper.resolve(
+			    "${contextName}.scopeFindNearby( ${accessKey}, null ).scope()",
+			    values );
+			values.put( "obj", obj );
+		} else if ( expr instanceof BoxAccess objectAccess && operator != BoxUnaryOperator.Not ) {
 			Node accessKey;
 			template = getMethodCallTemplateCompound( operation );
-			// for non literals, we need to identify the key being incremented/decremented and the object it lives in (which may be a scope)
-			if ( expr instanceof BoxIdentifier id ) {
-				accessKey = createKey( id.getName() );
-				values.put( "accessKey", accessKey.toString() );
-				String obj = PlaceholderHelper.resolve(
-				    "${contextName}.scopeFindNearby( ${accessKey}, null ).scope()",
-				    values );
-				values.put( "obj", obj );
-			} else if ( expr instanceof BoxAccess objectAccess ) {
-				values.put( "obj", transpiler.transform( objectAccess.getContext() ).toString() );
-				// DotAccess just uses the string directly, array access allows any expression
-				if ( objectAccess instanceof BoxDotAccess dotAccess ) {
-					accessKey = createKey( ( ( BoxIdentifier ) dotAccess.getAccess() ).getName() );
-				} else {
-					accessKey = createKey( objectAccess.getAccess() );
-				}
-				values.put( "accessKey", accessKey.toString() );
+			values.put( "obj", transpiler.transform( objectAccess.getContext() ).toString() );
+			// DotAccess just uses the string directly, array access allows any expression
+			if ( objectAccess instanceof BoxDotAccess dotAccess ) {
+				accessKey = createKey( ( ( BoxIdentifier ) dotAccess.getAccess() ).getName() );
 			} else {
-				throw new ExpressionException( "You cannot perform an increment/decrement operation on a " + expr.getClass().getSimpleName() + " expression.",
-				    expr.getPosition(), expr.getSourceText() );
+				accessKey = createKey( objectAccess.getAccess() );
 			}
-
+			values.put( "accessKey", accessKey.toString() );
+		} else if ( expr instanceof BoxScope ) {
+			throw new ExpressionException( "You cannot perform an increment/decrement operation on a " + expr.getClass().getSimpleName() + " expression.",
+			    expr.getPosition(), expr.getSourceText() );
+		} else {
+			// +5, -6, or !true are "simple" use cases, same with ++5, --5, 5++, 5--, (something)++ (-5)-- ++foo() foo.bar()--
+			template = getMethodCallTemplateSimple( operation );
+			values.put( "expr", transpiler.transform( expr ).toString() );
 		}
 
 		Node javaExpr = parseExpression( template, values );

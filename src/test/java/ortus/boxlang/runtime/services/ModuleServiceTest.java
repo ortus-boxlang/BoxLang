@@ -52,11 +52,11 @@ class ModuleServiceTest {
 		assertThat( service ).isNotNull();
 	}
 
-	@DisplayName( "Test it can get an load the initial module paths" )
+	@DisplayName( "Test it can get and load the initial module paths" )
 	@Test
 	void testItCanLoadModulePaths() {
-		assertThat( service.getModulePaths().size() ).isGreaterThan( 0 );
 		System.out.println( service.getModulePaths() );
+		assertThat( service.getModulePaths().size() ).isGreaterThan( 0 );
 	}
 
 	@DisplayName( "Test it can run the startup service event" )

@@ -29,6 +29,7 @@ import org.junit.jupiter.api.Test;
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
+import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
 import ortus.boxlang.runtime.types.exceptions.ExpressionException;
@@ -37,11 +38,16 @@ import ortus.boxlang.runtime.types.exceptions.KeyNotFoundException;
 public class OperatorsTest {
 
 	static BoxRuntime	instance;
-	IBoxContext			context;
+	static IBoxContext	context;
+	static IScope		variables;
+	static Key			resultKey	= new Key( "result" );
+	static Key			tmpKey		= new Key( "tmp" );
 
 	@BeforeAll
 	public static void setUp() {
-		instance = BoxRuntime.getInstance( true );
+		instance	= BoxRuntime.getInstance( true );
+		context		= new ScriptingRequestBoxContext( instance.getRuntimeContext() );
+		variables	= context.getScopeNearby( VariablesScope.name );
 	}
 
 	@AfterAll
@@ -51,7 +57,7 @@ public class OperatorsTest {
 
 	@BeforeEach
 	public void setupEach() {
-		context = new ScriptingRequestBoxContext( instance.getRuntimeContext() );
+		variables.clear();
 	}
 
 	@DisplayName( "string concat" )
@@ -154,11 +160,66 @@ public class OperatorsTest {
 
 		result = instance.executeStatement( "result=5++", context );
 		assertThat( result ).isEqualTo( 5 );
-		assertThat( context.getScopeNearby( VariablesScope.name ).get( Key.of( "result" ) ) ).isEqualTo( 5 );
+		assertThat( variables.get( resultKey ) ).isEqualTo( 5 );
 
 		result = instance.executeStatement( "result=++5", context );
 		assertThat( result ).isEqualTo( 6 );
-		assertThat( context.getScopeNearby( VariablesScope.name ).get( Key.of( "result" ) ) ).isEqualTo( 6 );
+		assertThat( variables.get( resultKey ) ).isEqualTo( 6 );
+
+	}
+
+	@DisplayName( "math plus plus parenthetical" )
+	@Test
+	public void testMathPlusPlusParenthetical() {
+		Object result = instance.executeStatement( "(5)++", context );
+		assertThat( result ).isEqualTo( 5 );
+
+		result = instance.executeStatement( "++(5)", context );
+		assertThat( result ).isEqualTo( 6 );
+
+		result = instance.executeStatement( "result=(5)++", context );
+		assertThat( result ).isEqualTo( 5 );
+		assertThat( variables.get( resultKey ) ).isEqualTo( 5 );
+
+		result = instance.executeStatement( "result=++(5)", context );
+		assertThat( result ).isEqualTo( 6 );
+		assertThat( variables.get( resultKey ) ).isEqualTo( 6 );
+
+		instance.executeSource( """
+		                        myvar = 5;
+		                        result = ++(myvar);
+		                        """, context );
+		assertThat( variables.get( resultKey ) ).isEqualTo( 6 );
+		assertThat( variables.get( Key.of( "myvar" ) ) ).isEqualTo( 6 );
+
+		instance.executeSource( """
+		                        myvar = 5;
+		                        result = (myvar)++;
+		                        """, context );
+		assertThat( variables.get( resultKey ) ).isEqualTo( 5 );
+		assertThat( variables.get( Key.of( "myvar" ) ) ).isEqualTo( 6 );
+
+	}
+
+	@DisplayName( "math plus plus other" )
+	@Test
+	public void testMathPlusPlusOther() {
+
+		instance.executeSource( """
+		                        function num() {
+		                            return 5;
+		                        }
+		                        result = ++num();
+		                        """, context );
+		assertThat( variables.get( resultKey ) ).isEqualTo( 6 );
+
+		instance.executeSource( """
+		                        function num() {
+		                            return 5;
+		                        }
+		                        result = num()++;
+		                        """, context );
+		assertThat( variables.get( resultKey ) ).isEqualTo( 5 );
 
 	}
 
@@ -171,8 +232,8 @@ public class OperatorsTest {
 		    result = variables.tmp++;
 		    """,
 		    context );
-		assertThat( context.getScopeNearby( VariablesScope.name ).get( Key.of( "result" ) ) ).isEqualTo( 5 );
-		assertThat( context.getScopeNearby( VariablesScope.name ).get( Key.of( "tmp" ) ) ).isEqualTo( 6 );
+		assertThat( variables.get( resultKey ) ).isEqualTo( 5 );
+		assertThat( variables.get( tmpKey ) ).isEqualTo( 6 );
 
 		instance.executeSource(
 		    """
@@ -180,8 +241,8 @@ public class OperatorsTest {
 		    result = ++variables.tmp;
 		    """,
 		    context );
-		assertThat( context.getScopeNearby( VariablesScope.name ).get( Key.of( "result" ) ) ).isEqualTo( 6 );
-		assertThat( context.getScopeNearby( VariablesScope.name ).get( Key.of( "tmp" ) ) ).isEqualTo( 6 );
+		assertThat( variables.get( resultKey ) ).isEqualTo( 6 );
+		assertThat( variables.get( tmpKey ) ).isEqualTo( 6 );
 	}
 
 	@DisplayName( "math plus plus invalid" )
@@ -189,8 +250,6 @@ public class OperatorsTest {
 	public void testMathPlusPlusInvalid() {
 
 		assertThrows( ExpressionException.class, () -> instance.executeSource( "variables++", context ) );
-		assertThrows( ExpressionException.class, () -> instance.executeSource( "(2+3)++", context ) );
-		assertThrows( ExpressionException.class, () -> instance.executeSource( "foo.bar()++", context ) );
 
 	}
 
@@ -203,8 +262,8 @@ public class OperatorsTest {
 		    result = tmp++;
 		    """,
 		    context );
-		assertThat( context.getScopeNearby( VariablesScope.name ).get( Key.of( "result" ) ) ).isEqualTo( 5 );
-		assertThat( context.getScopeNearby( VariablesScope.name ).get( Key.of( "tmp" ) ) ).isEqualTo( 6 );
+		assertThat( variables.get( resultKey ) ).isEqualTo( 5 );
+		assertThat( variables.get( tmpKey ) ).isEqualTo( 6 );
 
 		instance.executeSource(
 		    """
@@ -212,8 +271,8 @@ public class OperatorsTest {
 		    result = ++tmp;
 		    """,
 		    context );
-		assertThat( context.getScopeNearby( VariablesScope.name ).get( Key.of( "result" ) ) ).isEqualTo( 6 );
-		assertThat( context.getScopeNearby( VariablesScope.name ).get( Key.of( "tmp" ) ) ).isEqualTo( 6 );
+		assertThat( variables.get( resultKey ) ).isEqualTo( 6 );
+		assertThat( variables.get( tmpKey ) ).isEqualTo( 6 );
 
 		instance.executeSource(
 		    """
@@ -222,8 +281,8 @@ public class OperatorsTest {
 		    tmp = foo.bar.baz;
 		       """,
 		    context );
-		assertThat( context.getScopeNearby( VariablesScope.name ).get( Key.of( "result" ) ) ).isEqualTo( 5 );
-		assertThat( context.getScopeNearby( VariablesScope.name ).get( Key.of( "tmp" ) ) ).isEqualTo( 6 );
+		assertThat( variables.get( resultKey ) ).isEqualTo( 5 );
+		assertThat( variables.get( tmpKey ) ).isEqualTo( 6 );
 
 		instance.executeSource(
 		    """
@@ -232,8 +291,8 @@ public class OperatorsTest {
 		    tmp = foo.bar.baz;
 		       """,
 		    context );
-		assertThat( context.getScopeNearby( VariablesScope.name ).get( Key.of( "result" ) ) ).isEqualTo( 6 );
-		assertThat( context.getScopeNearby( VariablesScope.name ).get( Key.of( "tmp" ) ) ).isEqualTo( 6 );
+		assertThat( variables.get( resultKey ) ).isEqualTo( 6 );
+		assertThat( variables.get( tmpKey ) ).isEqualTo( 6 );
 	}
 
 	@DisplayName( "math minus minus literals" )
@@ -247,11 +306,44 @@ public class OperatorsTest {
 
 		result = instance.executeStatement( "result=5--", context );
 		assertThat( result ).isEqualTo( 5 );
-		assertThat( context.getScopeNearby( VariablesScope.name ).get( Key.of( "result" ) ) ).isEqualTo( 5 );
+		assertThat( variables.get( resultKey ) ).isEqualTo( 5 );
 
 		result = instance.executeStatement( "result=--5", context );
 		assertThat( result ).isEqualTo( 4 );
-		assertThat( context.getScopeNearby( VariablesScope.name ).get( Key.of( "result" ) ) ).isEqualTo( 4 );
+		assertThat( variables.get( resultKey ) ).isEqualTo( 4 );
+
+	}
+
+	@DisplayName( "math minus minus parenthetical" )
+	@Test
+	public void testMathMinusMinusParenthetical() {
+		Object result = instance.executeStatement( "(5)--", context );
+		assertThat( result ).isEqualTo( 5 );
+
+		result = instance.executeStatement( "--(5)", context );
+		assertThat( result ).isEqualTo( 4 );
+
+		result = instance.executeStatement( "result=(5)--", context );
+		assertThat( result ).isEqualTo( 5 );
+		assertThat( variables.get( resultKey ) ).isEqualTo( 5 );
+
+		result = instance.executeStatement( "result=--(5)", context );
+		assertThat( result ).isEqualTo( 4 );
+		assertThat( variables.get( resultKey ) ).isEqualTo( 4 );
+
+		instance.executeSource( """
+		                        myvar = 5;
+		                        result = --(myvar);
+		                        """, context );
+		assertThat( variables.get( resultKey ) ).isEqualTo( 4 );
+		assertThat( variables.get( Key.of( "myvar" ) ) ).isEqualTo( 4 );
+
+		instance.executeSource( """
+		                        myvar = 5;
+		                        result = (myvar)--;
+		                        """, context );
+		assertThat( variables.get( resultKey ) ).isEqualTo( 5 );
+		assertThat( variables.get( Key.of( "myvar" ) ) ).isEqualTo( 4 );
 
 	}
 
@@ -264,8 +356,8 @@ public class OperatorsTest {
 		    result = variables.tmp--;
 		    """,
 		    context );
-		assertThat( context.getScopeNearby( VariablesScope.name ).get( Key.of( "result" ) ) ).isEqualTo( 5 );
-		assertThat( context.getScopeNearby( VariablesScope.name ).get( Key.of( "tmp" ) ) ).isEqualTo( 4 );
+		assertThat( variables.get( resultKey ) ).isEqualTo( 5 );
+		assertThat( variables.get( tmpKey ) ).isEqualTo( 4 );
 
 		instance.executeSource(
 		    """
@@ -273,8 +365,8 @@ public class OperatorsTest {
 		    result = --variables.tmp;
 		    """,
 		    context );
-		assertThat( context.getScopeNearby( VariablesScope.name ).get( Key.of( "result" ) ) ).isEqualTo( 4 );
-		assertThat( context.getScopeNearby( VariablesScope.name ).get( Key.of( "tmp" ) ) ).isEqualTo( 4 );
+		assertThat( variables.get( resultKey ) ).isEqualTo( 4 );
+		assertThat( variables.get( tmpKey ) ).isEqualTo( 4 );
 	}
 
 	@DisplayName( "math minus minus unscoped" )
@@ -286,8 +378,8 @@ public class OperatorsTest {
 		    result = tmp--;
 		    """,
 		    context );
-		assertThat( context.getScopeNearby( VariablesScope.name ).get( Key.of( "result" ) ) ).isEqualTo( 5 );
-		assertThat( context.getScopeNearby( VariablesScope.name ).get( Key.of( "tmp" ) ) ).isEqualTo( 4 );
+		assertThat( variables.get( resultKey ) ).isEqualTo( 5 );
+		assertThat( variables.get( tmpKey ) ).isEqualTo( 4 );
 
 		instance.executeSource(
 		    """
@@ -295,8 +387,8 @@ public class OperatorsTest {
 		    result = --tmp;
 		    """,
 		    context );
-		assertThat( context.getScopeNearby( VariablesScope.name ).get( Key.of( "result" ) ) ).isEqualTo( 4 );
-		assertThat( context.getScopeNearby( VariablesScope.name ).get( Key.of( "tmp" ) ) ).isEqualTo( 4 );
+		assertThat( variables.get( resultKey ) ).isEqualTo( 4 );
+		assertThat( variables.get( tmpKey ) ).isEqualTo( 4 );
 
 		instance.executeSource(
 		    """
@@ -305,8 +397,8 @@ public class OperatorsTest {
 		    tmp = foo.bar.baz;
 		       """,
 		    context );
-		assertThat( context.getScopeNearby( VariablesScope.name ).get( Key.of( "result" ) ) ).isEqualTo( 5 );
-		assertThat( context.getScopeNearby( VariablesScope.name ).get( Key.of( "tmp" ) ) ).isEqualTo( 4 );
+		assertThat( variables.get( resultKey ) ).isEqualTo( 5 );
+		assertThat( variables.get( tmpKey ) ).isEqualTo( 4 );
 
 		instance.executeSource(
 		    """
@@ -315,8 +407,8 @@ public class OperatorsTest {
 		    tmp = foo.bar.baz;
 		       """,
 		    context );
-		assertThat( context.getScopeNearby( VariablesScope.name ).get( Key.of( "result" ) ) ).isEqualTo( 4 );
-		assertThat( context.getScopeNearby( VariablesScope.name ).get( Key.of( "tmp" ) ) ).isEqualTo( 4 );
+		assertThat( variables.get( resultKey ) ).isEqualTo( 4 );
+		assertThat( variables.get( tmpKey ) ).isEqualTo( 4 );
 	}
 
 	@DisplayName( "compound operator plus" )
@@ -328,7 +420,7 @@ public class OperatorsTest {
 		    result += 5;
 		    """,
 		    context );
-		assertThat( context.getScopeNearby( VariablesScope.name ).get( Key.of( "result" ) ) ).isEqualTo( 10 );
+		assertThat( variables.get( resultKey ) ).isEqualTo( 10 );
 
 		instance.executeSource(
 		    """
@@ -336,7 +428,7 @@ public class OperatorsTest {
 		    variables.result += 5;
 		    """,
 		    context );
-		assertThat( context.getScopeNearby( VariablesScope.name ).get( Key.of( "result" ) ) ).isEqualTo( 10 );
+		assertThat( variables.get( resultKey ) ).isEqualTo( 10 );
 	}
 
 	@DisplayName( "compound operators minus" )
@@ -348,7 +440,7 @@ public class OperatorsTest {
 		    result -= 4;
 		    """,
 		    context );
-		assertThat( context.getScopeNearby( VariablesScope.name ).get( Key.of( "result" ) ) ).isEqualTo( 1 );
+		assertThat( variables.get( resultKey ) ).isEqualTo( 1 );
 	}
 
 	@DisplayName( "compound operator multiply" )
@@ -360,7 +452,7 @@ public class OperatorsTest {
 		    result *= 5;
 		    """,
 		    context );
-		assertThat( context.getScopeNearby( VariablesScope.name ).get( Key.of( "result" ) ) ).isEqualTo( 25 );
+		assertThat( variables.get( resultKey ) ).isEqualTo( 25 );
 	}
 
 	@DisplayName( "compound operator divide" )
@@ -372,7 +464,7 @@ public class OperatorsTest {
 		    result /= 5;
 		    """,
 		    context );
-		assertThat( context.getScopeNearby( VariablesScope.name ).get( Key.of( "result" ) ) ).isEqualTo( 4 );
+		assertThat( variables.get( resultKey ) ).isEqualTo( 4 );
 	}
 
 	@DisplayName( "compound operator modulus" )
@@ -384,7 +476,7 @@ public class OperatorsTest {
 		    result %= 4;
 		    """,
 		    context );
-		assertThat( context.getScopeNearby( VariablesScope.name ).get( Key.of( "result" ) ) ).isEqualTo( 1 );
+		assertThat( variables.get( resultKey ) ).isEqualTo( 1 );
 	}
 
 	@DisplayName( "compound operator concat" )
@@ -396,7 +488,7 @@ public class OperatorsTest {
 		    result &= "wood";
 		    """,
 		    context );
-		assertThat( context.getScopeNearby( VariablesScope.name ).get( Key.of( "result" ) ) ).isEqualTo( "bradwood" );
+		assertThat( variables.get( resultKey ) ).isEqualTo( "bradwood" );
 	}
 
 	@DisplayName( "compound operator with var" )
@@ -413,7 +505,7 @@ public class OperatorsTest {
 		    var result &= "wood";
 		    """,
 		    context );
-		assertThat( context.getScopeNearby( VariablesScope.name ).get( Key.of( "result" ) ) ).isEqualTo( "bradwood" );
+		assertThat( variables.get( resultKey ) ).isEqualTo( "bradwood" );
 	}
 
 	@DisplayName( "logical and" )
@@ -481,7 +573,7 @@ public class OperatorsTest {
 		    result = tmp ?: 'default'
 		    """,
 		    context );
-		assertThat( context.getScopeNearby( VariablesScope.name ).get( Key.of( "result" ) ) ).isEqualTo( "brad" );
+		assertThat( variables.get( resultKey ) ).isEqualTo( "brad" );
 
 		Object result = instance.executeStatement( "null ?: 'default'", context );
 		assertThat( result ).isEqualTo( "default" );
@@ -519,7 +611,7 @@ public class OperatorsTest {
 		    result = tmp ? 'itwastrue' : 'itwasfalse'
 		    """,
 		    context );
-		assertThat( context.getScopeNearby( VariablesScope.name ).get( Key.of( "result" ) ) ).isEqualTo( "itwastrue" );
+		assertThat( variables.get( resultKey ) ).isEqualTo( "itwastrue" );
 
 	}
 
@@ -559,7 +651,7 @@ public class OperatorsTest {
 		    result = tmp == true ? 'itwastrue' : 'itwasfalse'
 		    """,
 		    context );
-		assertThat( context.getScopeNearby( VariablesScope.name ).get( Key.of( "result" ) ) ).isEqualTo( "itwastrue" );
+		assertThat( variables.get( resultKey ) ).isEqualTo( "itwastrue" );
 
 	}
 
