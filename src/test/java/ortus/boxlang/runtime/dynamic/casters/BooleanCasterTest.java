@@ -52,6 +52,9 @@ public class BooleanCasterTest {
 		assertThat( BooleanCaster.cast( "FALSE" ) ).isFalse();
 		assertThat( BooleanCaster.cast( "yes" ) ).isTrue();
 		assertThat( BooleanCaster.cast( "no" ) ).isFalse();
+		assertThat( BooleanCaster.cast( "4" ) ).isTrue();
+		assertThat( BooleanCaster.cast( "0" ) ).isFalse();
+		assertThat( BooleanCaster.cast( "-5" ) ).isTrue();
 
 		assertThrows( BoxLangException.class, () -> BooleanCaster.cast( "Brad" ) );
 	}

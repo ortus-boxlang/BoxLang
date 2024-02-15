@@ -88,6 +88,8 @@ public class BooleanCaster {
 		if ( object instanceof Boolean bool ) {
 			return bool;
 		}
+
+		// Quick number check first
 		if ( object instanceof Number num ) {
 			// Positive and negative numbers are true, zero is false
 			return num.doubleValue() != 0;
@@ -96,6 +98,12 @@ public class BooleanCaster {
 			Key aliasKey = Key.of( str );
 			if ( wkt.containsKey( aliasKey ) ) {
 				return wkt.getAsBoolean( aliasKey );
+			}
+			// Is string a number
+			CastAttempt<Double> numberAttempt = DoubleCaster.attempt( str );
+			if ( numberAttempt.wasSuccessful() ) {
+				// Positive and negative numbers are true, zero is false
+				return numberAttempt.get() != 0;
 			}
 			if ( fail ) {
 				throw new BoxCastException(
