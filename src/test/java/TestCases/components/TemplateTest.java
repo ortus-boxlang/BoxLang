@@ -81,12 +81,11 @@ public class TemplateTest {
 	public void testSetComponent() {
 		instance.executeSource(
 		    """
-		    <cfset result = "bar">
-
-		            """, context, BoxScriptType.CFMARKUP );
+		       <cfset result = "bar">
+		    """, context, BoxScriptType.CFMARKUP );
 		assertThat( variables.get( result ) ).isEqualTo( "bar" );
-
 	}
+
 	@Test
 	public void testIfStatementElse() {
 		instance.executeSource(

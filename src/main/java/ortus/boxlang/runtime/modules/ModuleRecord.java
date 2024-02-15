@@ -24,6 +24,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Instant;
+import java.util.ServiceLoader;
 import java.util.UUID;
 
 import org.apache.commons.io.FilenameUtils;
@@ -33,16 +34,11 @@ import org.slf4j.LoggerFactory;
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BIFDescriptor;
-import ortus.boxlang.runtime.bifs.BoxBIF;
-import ortus.boxlang.runtime.bifs.BoxBIFs;
 import ortus.boxlang.runtime.bifs.BoxLangBIFProxy;
-import ortus.boxlang.runtime.bifs.BoxMember;
-import ortus.boxlang.runtime.bifs.BoxMembers;
 import ortus.boxlang.runtime.bifs.MemberDescriptor;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.loader.DynamicClassLoader;
-import ortus.boxlang.runtime.loader.util.ClassDiscovery;
 import ortus.boxlang.runtime.runnables.IClassRunnable;
 import ortus.boxlang.runtime.runnables.RunnableLoader;
 import ortus.boxlang.runtime.scopes.Key;
@@ -371,7 +367,7 @@ public class ModuleRecord {
 			interceptorService.registerInterceptionPoint( this.customInterceptionPoints.stream().map( Key::of ).toArray( Key[]::new ) );
 		}
 
-		// Register Bifs if they exist
+		// Register BoxLang Bifs if they exist
 		Path bifsPath = this.physicalPath.resolve( ModuleService.MODULE_BIFS );
 		if ( Files.exists( bifsPath ) && Files.isDirectory( bifsPath ) ) {
 
@@ -380,20 +376,13 @@ public class ModuleRecord {
 			for ( File targetFile : bifsPath.toFile().listFiles() ) {
 				registerBIF( targetFile, context );
 			}
-
-			// Do we have any Java BIFs to load?
-			ClassDiscovery.findAnnotatedClasses(
-			    "",
-			    this.classLoader,
-			    ModuleService.MODULE_PACKAGE_PREFIX + "." + this.name.getName(),
-			    BoxBIF.class, BoxBIFs.class, BoxMember.class, BoxMembers.class
-			)
-			    // Only subclasses of BIF
-			    .filter( BIF.class::isAssignableFrom )
-			    // Process each class for registration
-			    .forEach( clazz -> functionService.processBIFRegistration( clazz, null, null ) );
-
 		}
+
+		// Do we have any Java BIFs to load?
+		ServiceLoader.load( BIF.class, this.classLoader )
+		    .stream()
+		    .map( ServiceLoader.Provider::type )
+		    .forEach( clazz -> functionService.processBIFRegistration( clazz, null, null ) );
 
 		// Finalize Registration
 		this.registeredOn = Instant.now();

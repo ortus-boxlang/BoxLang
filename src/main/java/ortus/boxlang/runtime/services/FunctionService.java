@@ -19,6 +19,7 @@ package ortus.boxlang.runtime.services;
 
 import java.io.IOException;
 import java.util.Map;
+import java.util.ServiceLoader;
 import java.util.concurrent.ConcurrentHashMap;
 
 import org.slf4j.Logger;
@@ -29,13 +30,10 @@ import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BIFDescriptor;
 import ortus.boxlang.runtime.bifs.BIFNamespace;
 import ortus.boxlang.runtime.bifs.BoxBIF;
-import ortus.boxlang.runtime.bifs.BoxBIFs;
 import ortus.boxlang.runtime.bifs.BoxMember;
-import ortus.boxlang.runtime.bifs.BoxMembers;
 import ortus.boxlang.runtime.bifs.MemberDescriptor;
 import ortus.boxlang.runtime.dynamic.casters.CastAttempt;
 import ortus.boxlang.runtime.dynamic.casters.GenericCaster;
-import ortus.boxlang.runtime.loader.util.ClassDiscovery;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.BoxLangType;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
@@ -329,15 +327,12 @@ public class FunctionService extends BaseService {
 	 * @throws IOException If there is an error loading the global functions
 	 */
 	public void loadGlobalFunctions() throws IOException {
-		ClassDiscovery
-		    .findAnnotatedClasses(
-		        ( FUNCTIONS_PACKAGE + ".global" ).replace( '.', '/' ),
-		        BoxBIF.class, BoxBIFs.class, BoxMember.class, BoxMembers.class
-		    )
+		ServiceLoader
+		    .load( BIF.class )
+		    .stream()
 		    .parallel()
-		    // Filter to subclasses of BIF
-		    .filter( BIF.class::isAssignableFrom )
-		    // Process each class for registration
+		    .map( ServiceLoader.Provider::type )
+		    // .peek( targetClass -> System.out.println( "targetClass: " + targetClass.getName() ) )
 		    .forEach( targetClass -> processBIFRegistration( targetClass, null, null ) );
 	}
 
