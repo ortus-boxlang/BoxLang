@@ -165,6 +165,11 @@ function convertRawASTNode(rawNode) {
             }
             else if (typeof rawNode[key] === 'object') {
                 let val = convertRawASTNode(rawNode[key]);
+
+                if (!val) {
+                    return acc;
+                }
+
                 val = Array.isArray(val) ? val : [val];
 
                 if (val.length == 0) {
