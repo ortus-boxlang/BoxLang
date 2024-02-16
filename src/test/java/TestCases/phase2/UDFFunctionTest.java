@@ -20,6 +20,7 @@ package TestCases.phase2;
 import static com.google.common.truth.Truth.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 import org.junit.jupiter.api.AfterAll;
@@ -28,16 +29,23 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
+import ortus.boxlang.parser.BoxScriptType;
 import ortus.boxlang.runtime.BoxRuntime;
+import ortus.boxlang.runtime.context.FunctionBoxContext;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
 import ortus.boxlang.runtime.dynamic.Referencer;
+import ortus.boxlang.runtime.loader.ImportDefinition;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
+import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.Array;
+import ortus.boxlang.runtime.types.Function;
 import ortus.boxlang.runtime.types.IStruct;
+import ortus.boxlang.runtime.types.Lambda;
+import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.UDF;
 import ortus.boxlang.runtime.types.exceptions.ParseException;
 import ortus.boxlang.runtime.types.meta.BoxMeta;
@@ -513,6 +521,77 @@ public class UDFFunctionTest {
 		assertThat( keys.get( 1 ) ).isEqualTo( "param2" );
 		assertThat( keys.get( 2 ) ).isEqualTo( "param3" );
 		assertThat( keys.get( 3 ) ).isEqualTo( "param4" );
+
+	}
+
+	@Test
+	public void testUDFInJava() {
+
+		Function func = new Lambda() {
+
+			public Object _invoke( FunctionBoxContext context ) {
+				return context.getScopeNearby( ArgumentsScope.name ).dereference( context, Key.of( "param1" ), false );
+			}
+
+			@Override
+			public List<ImportDefinition> getImports() {
+				return null;
+			}
+
+			@Override
+			public Key getName() {
+				return Key.of( "myFunc" );
+			}
+
+			@Override
+			public Argument[] getArguments() {
+				return new Argument[] { new Argument( false, "string", Key.of( "param1" ) ) };
+			}
+
+			@Override
+			public String getReturnType() {
+				return "any";
+			}
+
+			@Override
+			public IStruct getAnnotations() {
+				return Struct.EMPTY;
+			}
+
+			@Override
+			public IStruct getDocumentation() {
+				return Struct.EMPTY;
+			}
+
+			@Override
+			public Access getAccess() {
+				return Access.PUBLIC;
+			}
+
+			@Override
+			public long getRunnableCompileVersion() {
+				return 0;
+			}
+
+			@Override
+			public LocalDateTime getRunnableCompiledOn() {
+				return null;
+			}
+
+			@Override
+			public Object getRunnableAST() {
+				return null;
+			}
+		};
+
+		variables.put( Key.of( "myFunc" ), func );
+
+		instance.executeSource(
+		    """
+		    result = myFunc( "brad" );
+		    println( result )
+		       """,
+		    context, BoxScriptType.CFSCRIPT );
 
 	}
 

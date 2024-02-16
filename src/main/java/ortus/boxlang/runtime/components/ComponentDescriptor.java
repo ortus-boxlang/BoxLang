@@ -17,6 +17,8 @@
  */
 package ortus.boxlang.runtime.components;
 
+import java.util.Optional;
+
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.scopes.Key;
@@ -133,8 +135,8 @@ public class ComponentDescriptor {
 	 *
 	 * @return The result of the invocation
 	 */
-	public void invoke( IBoxContext context, Component.ComponentBody componentBody ) {
-		invoke( context, Struct.EMPTY, componentBody );
+	public Optional<Object> invoke( IBoxContext context, Component.ComponentBody componentBody ) {
+		return invoke( context, Struct.EMPTY, componentBody );
 	}
 
 	/**
@@ -145,11 +147,10 @@ public class ComponentDescriptor {
 	 *
 	 * @return The result of the invocation
 	 */
-	public void invoke( IBoxContext context, IStruct attributes, Component.ComponentBody componentBody ) {
+	public Optional<Object> invoke( IBoxContext context, IStruct attributes, Component.ComponentBody componentBody ) {
 		// the module component has special handling of attributes
 		if ( name.equals( Key.module ) ) {
-			invokeModule( context, attributes, componentBody );
-			return;
+			return invokeModule( context, attributes, componentBody );
 		}
 		Component component = getComponent();
 		// if attributeCollection key exists and is a struct, merge it into the main attributes and delete it
@@ -168,7 +169,7 @@ public class ComponentDescriptor {
 			attribute.validate( context, component, attributes );
 		}
 		// Invoke the component here. The component is responsible for calling its body, if one exists.
-		component.invoke( context, attributes, componentBody );
+		return component.invoke( context, attributes, componentBody );
 	}
 
 	/**
@@ -179,7 +180,7 @@ public class ComponentDescriptor {
 	 *
 	 * @return The result of the invocation
 	 */
-	public void invokeModule( IBoxContext context, IStruct attributes, Component.ComponentBody componentBody ) {
+	public Optional<Object> invokeModule( IBoxContext context, IStruct attributes, Component.ComponentBody componentBody ) {
 		Component	component			= getComponent();
 		Struct		moduleAttributes	= new Struct();
 		// Add all attributes not named "name" or "template"
@@ -206,7 +207,7 @@ public class ComponentDescriptor {
 			attribute.validate( context, component, attributes );
 		}
 		// Invoke the component here. The component is responsible for calling its body, if one exists.
-		component.invoke( context, attributes, componentBody );
+		return component.invoke( context, attributes, componentBody );
 	}
 
 }

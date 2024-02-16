@@ -17,6 +17,7 @@
  */
 package ortus.boxlang.runtime.components.net;
 
+import java.util.Optional;
 import java.util.Set;
 
 import ortus.boxlang.runtime.components.Attribute;
@@ -111,10 +112,14 @@ public class HTTP extends Component {
 	 * @param executionState The execution state of the BIF
 	 *
 	 */
-	public void _invoke( IBoxContext context, IStruct attributes, ComponentBody body, IStruct executionState ) {
+	public Optional<Object> _invoke( IBoxContext context, IStruct attributes, ComponentBody body, IStruct executionState ) {
 		executionState.put( Key.HTTPParams, new Array() );
 
-		processBody( context, body );
+		BodyResult bodyResult = processBody( context, body );
+		// IF there was a return statement inside our body, we early exit now
+		if ( bodyResult.returnValue().isPresent() ) {
+			return bodyResult.returnValue();
+		}
 
 		String	variableName	= StringCaster.cast( attributes.getOrDefault( Key.result, "cfhttp" ) );
 		String	theURL			= StringCaster.cast( attributes.dereference( context, Key.URL, false ) );
@@ -130,5 +135,7 @@ public class HTTP extends Component {
 
 		// Set the result back into the page
 		ExpressionInterpreter.setVariable( context, variableName, HTTPResult );
+
+		return DEFAULT_RETURN;
 	}
 }

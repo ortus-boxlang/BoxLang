@@ -19,6 +19,7 @@ package ortus.boxlang.runtime.components.system;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 
 import ortus.boxlang.runtime.components.Attribute;
@@ -72,12 +73,16 @@ public class Output extends Component {
 	 * @param executionState The execution state of the BIF
 	 *
 	 */
-	public void _invoke( IBoxContext context, IStruct attributes, ComponentBody body, IStruct executionState ) {
+	public Optional<Object> _invoke( IBoxContext context, IStruct attributes, ComponentBody body, IStruct executionState ) {
 		Object queryOrName = attributes.get( Key.query );
 		// Short circuit if there's no query
 		if ( queryOrName == null ) {
-			processBody( context, body );
-			return;
+			BodyResult bodyResult = processBody( context, body );
+			// IF there was a return statement inside our body, we early exit now
+			if ( bodyResult.returnValue().isPresent() ) {
+				return bodyResult.returnValue();
+			}
+			return DEFAULT_RETURN;
 		}
 
 		String				group				= attributes.getAsString( Key.group );
@@ -108,7 +113,7 @@ public class Output extends Component {
 
 		// If there's nothing to loop over, exit stage left
 		if ( iEndRow <= iStartRow ) {
-			return;
+			return DEFAULT_RETURN;
 		}
 
 		boolean					isGrouped			= group != null;
@@ -148,7 +153,11 @@ public class Output extends Component {
 					}
 				}
 				// Run the code inside of the output loop
-				processBody( context, body );
+				BodyResult bodyResult = processBody( context, body );
+				// IF there was a return statement inside our body, we early exit now
+				if ( bodyResult.returnValue().isPresent() ) {
+					return bodyResult.returnValue();
+				}
 				// Next row, please!
 				context.registerQueryLoop( theQuery, i + 1 );
 			}
@@ -156,6 +165,7 @@ public class Output extends Component {
 			// This query is DONE!
 			context.unregisterQueryLoop( theQuery );
 		}
+		return DEFAULT_RETURN;
 	}
 
 	private static Object[] getGroupValuesForRow( Query query, Key[] groupKeys, Object[] lastGroupValues, int row, Map<String, Boolean> isSameGroup ) {

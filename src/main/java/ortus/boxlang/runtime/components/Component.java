@@ -17,6 +17,8 @@
  */
 package ortus.boxlang.runtime.components;
 
+import java.util.Optional;
+
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.scopes.Key;
@@ -29,10 +31,12 @@ import ortus.boxlang.runtime.types.Struct;
  */
 public abstract class Component {
 
+	public static final Optional<Object> DEFAULT_RETURN = Optional.empty();
+
 	@FunctionalInterface
 	public static interface ComponentBody {
 
-		void process( IBoxContext context );
+		Optional<Object> process( IBoxContext context );
 	}
 
 	/**
@@ -89,7 +93,7 @@ public abstract class Component {
 	 *
 	 * @return The result of the invocation
 	 */
-	public void invoke( IBoxContext context, IStruct attributes, ComponentBody body ) {
+	public Optional<Object> invoke( IBoxContext context, IStruct attributes, ComponentBody body ) {
 		validateAttributes( attributes );
 		IStruct executionState = new Struct();
 		executionState.put( Key._NAME, name );
@@ -97,7 +101,7 @@ public abstract class Component {
 		executionState.put( Key.attributes, attributes );
 		context.pushComponent( executionState );
 		try {
-			_invoke( context, attributes, body, executionState );
+			return _invoke( context, attributes, body, executionState );
 		} finally {
 			context.popComponent();
 		}
@@ -112,7 +116,7 @@ public abstract class Component {
 	 *
 	 * @return The result of the invocation
 	 */
-	public abstract void _invoke( IBoxContext context, IStruct attributes, ComponentBody body, IStruct executionState );
+	public abstract Optional<Object> _invoke( IBoxContext context, IStruct attributes, ComponentBody body, IStruct executionState );
 
 	/**
 	 * Announce an event with the provided {@link IStruct} of data.
@@ -136,7 +140,9 @@ public abstract class Component {
 	 * @return If captureBodyOutput is set to true, the captured output of the body will be returned as a string. Otherwise,
 	 *         null will be returned.
 	 */
-	public String processBody( IBoxContext context, ComponentBody body ) {
+	public BodyResult processBody( IBoxContext context, ComponentBody body ) {
+		String				bufferResult	= null;
+		Optional<Object>	returnValue		= DEFAULT_RETURN;
 		if ( body != null ) {
 			// If we want to capture generated output, then we need to buffer it
 			if ( captureBodyOutput ) {
@@ -144,18 +150,18 @@ public abstract class Component {
 				StringBuffer buffer = new StringBuffer();
 				context.pushBuffer( buffer );
 				try {
-					body.process( context );
+					returnValue = body.process( context );
 				} finally {
 					context.popBuffer();
 				}
 				// Get the generated content from the buffer and return it
-				return buffer.toString();
+				bufferResult = buffer.toString();
 			} else {
-				body.process( context );
+				returnValue = body.process( context );
 			}
 
 		}
-		return null;
+		return new BodyResult( bufferResult, returnValue );
 	}
 
 	/**
@@ -183,6 +189,9 @@ public abstract class Component {
 	 */
 	public boolean capturesBodyOutput() {
 		return captureBodyOutput;
+	}
+
+	public record BodyResult( String buffer, Optional<Object> returnValue ) {
 	}
 
 }

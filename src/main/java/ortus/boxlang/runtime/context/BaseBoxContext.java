@@ -21,6 +21,7 @@ import java.util.ArrayDeque;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.bifs.BIFDescriptor;
@@ -375,10 +376,10 @@ public class BaseBoxContext implements IBoxContext {
 	 * @param componentBody The body of the component
 	 * 
 	 */
-	public void invokeComponent( Key name, IStruct attributes, Component.ComponentBody componentBody ) {
+	public Optional<Object> invokeComponent( Key name, IStruct attributes, Component.ComponentBody componentBody ) {
 		ComponentDescriptor comp = componentService.getComponent( name );
 		if ( comp != null ) {
-			comp.invoke( this, attributes, componentBody );
+			return comp.invoke( this, attributes, componentBody );
 		} else {
 			throw new BoxRuntimeException( "Component [" + name.getName() + "] could not be found." );
 		}

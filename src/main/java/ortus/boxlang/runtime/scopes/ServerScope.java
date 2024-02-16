@@ -105,7 +105,8 @@ public class ServerScope extends BaseScope {
 		// TODO: switch to immutable struct
 		put( Key.coldfusion, Struct.of(
 		    // TODO: Compat?
-		    "productName", "BoxLang"
+		    "productName", "BoxLang",
+		    "productVersion", "0.0.0"
 		) );
 
 		// TODO: switch to immutable struct
@@ -125,6 +126,7 @@ public class ServerScope extends BaseScope {
 		// TODO: switch to immutable struct
 		put( Key.lucee, Struct.of(
 		    // TODO: Compat?
+		    "version", "0.0.0"
 		) );
 
 		// TODO: switch to immutable struct

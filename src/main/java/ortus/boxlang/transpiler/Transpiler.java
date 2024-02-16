@@ -50,16 +50,19 @@ import ortus.boxlang.transpiler.transformer.TransformerContext;
  */
 public abstract class Transpiler implements ITranspiler {
 
-	private final HashMap<String, String>	properties				= new HashMap<String, String>();
-	private int								tryCatchCounter			= 0;
-	private int								switchCounter			= 0;
-	private int								forInCounter			= 0;
-	private int								lambdaCounter			= 0;
-	private int								closureCounter			= 0;
-	private int								lambdaContextCounter	= 0;
-	private ArrayDeque<String>				currentContextName		= new ArrayDeque<>();
-	private List<ImportDefinition>			imports					= new ArrayList<ImportDefinition>();
-	private Map<String, BoxExpr>			keys					= new LinkedHashMap<String, BoxExpr>();
+	private final HashMap<String, String>	properties					= new HashMap<String, String>();
+	private int								tryCatchCounter				= 0;
+	private int								switchCounter				= 0;
+	private int								forInCounter				= 0;
+	private int								lambdaCounter				= 0;
+	private int								closureCounter				= 0;
+	private int								lambdaContextCounter		= 0;
+	private int								componentCounter			= 0;
+	private int								componentOptionalCounter	= 0;
+	private int								functionBodyCounter			= 0;
+	private ArrayDeque<String>				currentContextName			= new ArrayDeque<>();
+	private List<ImportDefinition>			imports						= new ArrayList<ImportDefinition>();
+	private Map<String, BoxExpr>			keys						= new LinkedHashMap<String, BoxExpr>();
 
 	/**
 	 * Set a property
@@ -188,6 +191,34 @@ public abstract class Transpiler implements ITranspiler {
 
 	public int incrementAndGetLambdaContextCounter() {
 		return ++lambdaContextCounter;
+	}
+
+	public int incrementAndGetComponentOptionalCounter() {
+		return ++componentOptionalCounter;
+	}
+
+	public void pushComponent() {
+		componentCounter++;
+	}
+
+	public void popComponent() {
+		componentCounter--;
+	}
+
+	public boolean isInsideComponent() {
+		return componentCounter > 0;
+	}
+
+	public void pushfunctionBodyCounter() {
+		functionBodyCounter++;
+	}
+
+	public void popfunctionBodyCounter() {
+		functionBodyCounter--;
+	}
+
+	public boolean canReturn() {
+		return functionBodyCounter > 0;
 	}
 
 	public int registerKey( BoxExpr key ) {

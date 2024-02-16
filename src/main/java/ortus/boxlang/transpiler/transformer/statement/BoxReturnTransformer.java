@@ -40,8 +40,9 @@ public class BoxReturnTransformer extends AbstractTransformer {
 	@Override
 	public Node transform( BoxNode node, TransformerContext context ) throws IllegalStateException {
 		BoxReturn			boxReturn	= ( BoxReturn ) node;
+		// TODO: validate transpiler.canReturn()
+		// CF doesn't allow a cfm included from a function to return. Should we?
 
-		String				template	= "return;";
 		Map<String, String>	values		= new HashMap<>() {
 
 											{
@@ -54,12 +55,18 @@ public class BoxReturnTransformer extends AbstractTransformer {
 			Expression expr = ( Expression ) transpiler.transform( boxReturn.getExpression(), TransformerContext.RIGHT );
 			values.put( "expr", expr.toString() );
 		}
-		template	= "return ${expr};";
+		String template;
+		if ( transpiler.isInsideComponent() ) {
+			template = "return Optional.of( ${expr} );";
+		} else {
+			template = "return ${expr};";
+		}
 		// Avoid unreachable statement error
-		template	= "if( true ) " + template;
+		template = "if( true ) " + template;
 		Node javaStmt = parseStatement( template, values );
 		logger.debug( node.getSourceText() + " -> " + javaStmt );
 		addIndex( javaStmt, node );
 		return javaStmt;
 	}
+
 }

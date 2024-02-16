@@ -19,6 +19,7 @@ package ortus.boxlang.runtime.components.system;
 
 import java.io.File;
 import java.nio.file.Path;
+import java.util.Optional;
 
 import ortus.boxlang.runtime.components.Attribute;
 import ortus.boxlang.runtime.components.BoxComponent;
@@ -73,7 +74,7 @@ public class Module extends Component {
 	 *                the CFML tag root directory, that contains custom tag template.
 	 *
 	 */
-	public void _invoke( IBoxContext context, IStruct attributes, ComponentBody body, IStruct executionState ) {
+	public Optional<Object> _invoke( IBoxContext context, IStruct attributes, ComponentBody body, IStruct executionState ) {
 		String		template			= attributes.getAsString( Key.template );
 		String		name				= attributes.getAsString( Key._NAME );
 		IStruct		actualAttributes	= attributes.getAsStruct( Key.attributes );
@@ -113,7 +114,14 @@ public class Module extends Component {
 
 				thisTag.put( Key.executionMode, "inactive" );
 
-				thisTag.put( Key.generatedContent, processBody( context, body ) );
+				BodyResult bodyResult = processBody( context, body );
+				// IF there was a return statement inside our body, we early exit now
+				if ( bodyResult.returnValue().isPresent() ) {
+					// Output thus far
+					context.writeToBuffer( bodyResult.buffer() );
+					return bodyResult.returnValue();
+				}
+				thisTag.put( Key.generatedContent, bodyResult.buffer() );
 
 				thisTag.put( Key.executionMode, "end" );
 
@@ -125,6 +133,7 @@ public class Module extends Component {
 			ctContext.flushBuffer( false );
 		}
 
+		return DEFAULT_RETURN;
 	}
 
 	/**

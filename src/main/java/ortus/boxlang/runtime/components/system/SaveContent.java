@@ -17,6 +17,7 @@
  */
 package ortus.boxlang.runtime.components.system;
 
+import java.util.Optional;
 import java.util.Set;
 
 import ortus.boxlang.runtime.components.Attribute;
@@ -63,8 +64,14 @@ public class SaveContent extends Component {
 	 * @param executionState The execution state of the BIF
 	 *
 	 */
-	public void _invoke( IBoxContext context, IStruct attributes, ComponentBody body, IStruct executionState ) {
-		String	content			= processBody( context, body );
+	public Optional<Object> _invoke( IBoxContext context, IStruct attributes, ComponentBody body, IStruct executionState ) {
+		BodyResult bodyResult = processBody( context, body );
+		// IF there was a return statement inside our body, we early exit now
+		if ( bodyResult.returnValue().isPresent() ) {
+			// A return statement inside of savecontent discards all output that was built up
+			return bodyResult.returnValue();
+		}
+		String	content			= bodyResult.buffer();
 		String	variableName	= attributes.getAsString( Key.variable );
 
 		boolean	trim			= attributes.getAsBoolean( Key.trim );
@@ -85,5 +92,6 @@ public class SaveContent extends Component {
 
 		// Set the result back into the page
 		ExpressionInterpreter.setVariable( context, variableName, content );
+		return DEFAULT_RETURN;
 	}
 }

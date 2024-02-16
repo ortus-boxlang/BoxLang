@@ -15,19 +15,23 @@
 package ortus.boxlang.transpiler.transformer.statement.component;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import com.github.javaparser.ast.Node;
 import com.github.javaparser.ast.NodeList;
 import com.github.javaparser.ast.body.Parameter;
+import com.github.javaparser.ast.body.VariableDeclarator;
 import com.github.javaparser.ast.expr.Expression;
 import com.github.javaparser.ast.expr.LambdaExpr;
 import com.github.javaparser.ast.expr.MethodCallExpr;
 import com.github.javaparser.ast.expr.NameExpr;
 import com.github.javaparser.ast.expr.NullLiteralExpr;
+import com.github.javaparser.ast.expr.VariableDeclarationExpr;
 import com.github.javaparser.ast.stmt.BlockStmt;
-import com.github.javaparser.ast.stmt.ExpressionStmt;
 import com.github.javaparser.ast.stmt.Statement;
+import com.github.javaparser.ast.type.ClassOrInterfaceType;
 import com.github.javaparser.ast.type.UnknownType;
 
 import ortus.boxlang.ast.BoxNode;
@@ -50,6 +54,7 @@ public class BoxComponentTransformer extends AbstractTransformer {
 		BoxComponent		boxComponent	= ( BoxComponent ) node;
 		Expression			jComponentBody;
 		String				componentName	= boxComponent.getName();
+		Boolean				hasBody			= boxComponent.getBody() != null;
 		List<BoxAnnotation>	attributes		= new ArrayList<BoxAnnotation>();
 		attributes.addAll( boxComponent.getAttributes() );
 
@@ -65,15 +70,19 @@ public class BoxComponentTransformer extends AbstractTransformer {
 			componentName = "module";
 		}
 
-		if ( boxComponent.getBody() != null ) {
+		if ( hasBody ) {
 
 			BlockStmt	jBody				= new BlockStmt();
 			String		lambdaContextName	= "lambdaContext" + transpiler.incrementAndGetLambdaContextCounter();
 			transpiler.pushContextName( lambdaContextName );
+			transpiler.pushComponent();
 			for ( BoxNode statement : boxComponent.getBody() ) {
 				jBody.getStatements().add( ( Statement ) transpiler.transform( statement ) );
 			}
+			// Every component body closure needs to return an Optional. Either from an explicit return statement, or this catch-all at the end
+			jBody.getStatements().add( parseStatement( "return Optional.empty();", new HashMap<>() ) );
 			transpiler.popContextName();
+			transpiler.popComponent();
 			LambdaExpr lambda = new LambdaExpr();
 			lambda.setParameters( new NodeList<>(
 			    new Parameter( new UnknownType(), lambdaContextName ) ) );
@@ -83,18 +92,53 @@ public class BoxComponentTransformer extends AbstractTransformer {
 			jComponentBody = new NullLiteralExpr();
 		}
 
-		Statement jStatement = new ExpressionStmt(
-		    new MethodCallExpr(
-		        new NameExpr( transpiler.peekContextName() ),
-		        "invokeComponent",
-		        new NodeList<Expression>(
-		            createKey( componentName ),
-		            transformAnnotations( attributes, true ),
-		            jComponentBody )
+		BlockStmt				jBlock						= new BlockStmt();
+		int						componentOptionalCounter	= transpiler.incrementAndGetComponentOptionalCounter();
+		String					optionalResultName			= "optionalResult" + componentOptionalCounter;
+		Map<String, String>		values						= new HashMap<>() {
+
+																{
+																	put( "optionalResultName", optionalResultName );
+
+																}
+															};
+		VariableDeclarationExpr	jStatement					= new VariableDeclarationExpr(
+		    new VariableDeclarator(
+		        new ClassOrInterfaceType( null, "Optional<Object>" ),
+		        optionalResultName,
+		        new MethodCallExpr(
+		            new NameExpr( transpiler.peekContextName() ),
+		            "invokeComponent",
+		            new NodeList<Expression>(
+		                createKey( componentName ),
+		                transformAnnotations( attributes, true ),
+		                jComponentBody
+		            )
+		        )
 		    )
 		);
-		logger.debug( node.getSourceText() + " -> " + jStatement );
-		addIndex( jStatement, node );
-		return jStatement;
+		jBlock.addStatement( jStatement );
+		if ( hasBody && transpiler.canReturn() ) {
+			String template;
+			if ( transpiler.isInsideComponent() ) {
+				template = """
+				           if ( ${optionalResultName}.isPresent() ) {
+				           	return ${optionalResultName};
+				           }
+				           		""";
+			} else {
+				template = """
+				           if ( ${optionalResultName}.isPresent() ) {
+				           	return ${optionalResultName}.get();
+				           }
+				           		""";
+			}
+			Statement jReturnIfNeeded = parseStatement( template, values );
+			jBlock.addStatement( jReturnIfNeeded );
+		}
+
+		logger.debug( node.getSourceText() + " -> " + jBlock );
+		addIndex( jBlock, node );
+		return jBlock;
 	}
 }

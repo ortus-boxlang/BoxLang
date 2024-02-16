@@ -17,6 +17,8 @@
  */
 package ortus.boxlang.runtime.components.system;
 
+import java.util.Optional;
+
 import ortus.boxlang.runtime.components.Attribute;
 import ortus.boxlang.runtime.components.BoxComponent;
 import ortus.boxlang.runtime.components.Component;
@@ -24,7 +26,7 @@ import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.IStruct;
 
-@BoxComponent( requiresBody = true)
+@BoxComponent( requiresBody = true )
 public class Lock extends Component {
 
 	/**
@@ -55,6 +57,14 @@ public class Lock extends Component {
 	 * @argument.type The type of the abort (request or page)
 	 *
 	 */
-	public void _invoke( IBoxContext context, IStruct attributes, ComponentBody body, IStruct executionState ) {
+	public Optional<Object> _invoke( IBoxContext context, IStruct attributes, ComponentBody body, IStruct executionState ) {
+		// TODO: Actually implement locking
+		
+		BodyResult bodyResult = processBody( context, body );
+		// IF there was a return statement inside our body, we early exit now
+		if ( bodyResult.returnValue().isPresent() ) {
+			return bodyResult.returnValue();
+		}
+		return DEFAULT_RETURN;
 	}
 }

@@ -19,6 +19,7 @@ package ortus.boxlang.runtime.context;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.components.Component;
@@ -162,14 +163,15 @@ public interface IBoxContext {
 	public Object invokeFunction( Object function );
 
 	/**
-	 * Invoke a component call
+	 * Invoke a component call. If the optional that comes back has a value, it means the body of the compnent early-returned and did not finish.
+	 * The calling code should check, and if the value is present, it should return that value
 	 *
 	 * @param name          The name of the component to invoke
 	 * @param attributes    The attributes to pass to the component
 	 * @param componentBody The body of the component
 	 * 
 	 */
-	public void invokeComponent( Key name, IStruct attributes, Component.ComponentBody componentBody );
+	public Optional<Object> invokeComponent( Key name, IStruct attributes, Component.ComponentBody componentBody );
 
 	/**
 	 * Invoke a template in the current context

@@ -229,9 +229,11 @@ ortus.boxlang.runtime.bifs.global.system.GetApplicationMetadata
 ortus.boxlang.runtime.bifs.global.system.GetBaseTemplatePath
 ortus.boxlang.runtime.bifs.global.system.GetBoxContext
 ortus.boxlang.runtime.bifs.global.system.GetBoxRuntime
+ortus.boxlang.runtime.bifs.global.system.GetComponentMetadata
 ortus.boxlang.runtime.bifs.global.system.GetCurrentTemplatePath
 ortus.boxlang.runtime.bifs.global.system.GetFileFromPath
 ortus.boxlang.runtime.bifs.global.system.GetSystemSetting
+ortus.boxlang.runtime.bifs.global.system.GetTickCount
 ortus.boxlang.runtime.bifs.global.system.JavaCast
 ortus.boxlang.runtime.bifs.global.system.Print
 ortus.boxlang.runtime.bifs.global.system.Println
