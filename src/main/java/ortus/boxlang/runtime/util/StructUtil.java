@@ -59,14 +59,24 @@ public class StructUtil {
 																					put( Key.of( "textNoCaseAsc" ), ( a, b ) -> Compare.invoke( a, b, false ) );
 																					put( Key.of( "textNoCaseDesc" ),
 																					    ( b, a ) -> Compare.invoke( a, b, false ) );
-																					put( Key.of( "numericAsc" ), ( a, b ) -> Compare.invoke(
-																					    DoubleCaster.cast( a.getOriginalValue() ),
-																					    DoubleCaster.cast( b.getOriginalValue() )
-																					) );
-																					put( Key.of( "numericDesc" ), ( b, a ) -> Compare.invoke(
-																					    DoubleCaster.cast( a.getOriginalValue() ),
-																					    DoubleCaster.cast( b.getOriginalValue() )
-																					) );
+																					put( Key.of( "numericAsc" ),
+																					    ( a, b ) -> DoubleCaster.attempt( a.getOriginalValue() ).wasSuccessful()
+																					        && DoubleCaster.attempt( b.getOriginalValue() ).wasSuccessful()
+																					            ? Compare.invoke(
+																					                DoubleCaster.cast( a.getOriginalValue() ),
+																					                DoubleCaster.cast( b.getOriginalValue() )
+																					            )
+																					            : Compare.invoke( a.toString(), b.toString(), true )
+																					);
+																					put( Key.of( "numericDesc" ),
+																					    ( b, a ) -> DoubleCaster.attempt( a.getOriginalValue() ).wasSuccessful()
+																					        && DoubleCaster.attempt( b.getOriginalValue() ).wasSuccessful()
+																					            ? Compare.invoke(
+																					                DoubleCaster.cast( a.getOriginalValue() ),
+																					                DoubleCaster.cast( b.getOriginalValue() )
+																					            )
+																					            : Compare.invoke( a.toString(), b.toString(), true )
+																					);
 																				}
 																			};
 
