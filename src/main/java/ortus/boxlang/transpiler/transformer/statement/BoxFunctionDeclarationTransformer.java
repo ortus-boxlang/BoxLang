@@ -25,6 +25,7 @@ import com.github.javaparser.ast.expr.ArrayInitializerExpr;
 import com.github.javaparser.ast.expr.Expression;
 import com.github.javaparser.ast.expr.NullLiteralExpr;
 import com.github.javaparser.ast.stmt.BlockStmt;
+import com.github.javaparser.ast.stmt.EmptyStmt;
 import com.github.javaparser.ast.stmt.ReturnStmt;
 import com.github.javaparser.ast.stmt.Statement;
 
@@ -35,6 +36,7 @@ import ortus.boxlang.ast.statement.BoxFunctionDeclaration;
 import ortus.boxlang.ast.statement.BoxReturnType;
 import ortus.boxlang.ast.statement.BoxType;
 import ortus.boxlang.runtime.config.util.PlaceholderHelper;
+import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.transpiler.JavaTranspiler;
 import ortus.boxlang.transpiler.transformer.AbstractTransformer;
@@ -146,78 +148,79 @@ public class BoxFunctionDeclarationTransformer extends AbstractTransformer {
 			access = BoxAccessModifier.Public;
 		}
 
-		if ( context == TransformerContext.REGISTER ) {
-			Map<String, String>	values		= Map.ofEntries(
-			    Map.entry( "className", className ),
-			    Map.entry( "contextName", transpiler.peekContextName() ),
-			    Map.entry( "enclosingClassName", enclosingClassName )
-			);
-			Node				javaStmt	= parseStatement( registrationTemplate, values );
-			logger.debug( node.getSourceText() + " -> " + javaStmt );
-			addIndex( javaStmt, node );
-			return javaStmt;
+		Map<String, String> values = Map.ofEntries(
+		    Map.entry( "packageName", packageName ),
+		    Map.entry( "className", className ),
+		    Map.entry( "access", access.toString().toUpperCase() ),
+		    Map.entry( "functionName", createKey( function.getName() ).toString() ),
+		    Map.entry( "returnType", returnType.equals( BoxType.Fqn ) ? fqn : returnType.name() ),
+		    Map.entry( "enclosingClassName", enclosingClassName ),
+		    Map.entry( "compiledOnTimestamp", transpiler.getDateTime( LocalDateTime.now() ) ),
+		    Map.entry( "compileVersion", "1L" )
+		);
+		transpiler.pushContextName( "context" );
 
-		} else {
-
-			Map<String, String> values = Map.ofEntries(
-			    Map.entry( "packageName", packageName ),
-			    Map.entry( "className", className ),
-			    Map.entry( "access", access.toString().toUpperCase() ),
-			    Map.entry( "functionName", createKey( function.getName() ).toString() ),
-			    Map.entry( "returnType", returnType.equals( BoxType.Fqn ) ? fqn : returnType.name() ),
-			    Map.entry( "enclosingClassName", enclosingClassName ),
-			    Map.entry( "compiledOnTimestamp", transpiler.getDateTime( LocalDateTime.now() ) ),
-			    Map.entry( "compileVersion", "1L" )
-			);
-			transpiler.pushContextName( "context" );
-
-			String							code	= PlaceholderHelper.resolve( classTemplate, values );
-			ParseResult<CompilationUnit>	result;
-			try {
-				result = javaParser.parse( code );
-			} catch ( Exception e ) {
-				// Temp debugging to see generated Java code
-				throw new BoxRuntimeException( code, e );
-			}
-			if ( !result.isSuccessful() ) {
-				// Temp debugging to see generated Java code
-				throw new BoxRuntimeException( result + "\n" + code );
-			}
-
-			/* Transform the arguments creating the initialization values */
-			ArrayInitializerExpr argInitializer = new ArrayInitializerExpr();
-			function.getArgs().forEach( arg -> {
-				Expression argument = ( Expression ) transpiler.transform( arg );
-				argInitializer.getValues().add( argument );
-			} );
-			result.getResult().orElseThrow().getType( 0 ).getFieldByName( "arguments" ).orElseThrow().getVariable( 0 ).setInitializer( argInitializer );
-
-			/* Transform the annotations creating the initialization value */
-			Expression annotationStruct = transformAnnotations( function.getAnnotations() );
-			result.getResult().orElseThrow().getType( 0 ).getFieldByName( "annotations" ).orElseThrow().getVariable( 0 ).setInitializer( annotationStruct );
-
-			/* Transform the documentation creating the initialization value */
-			Expression documentationStruct = transformDocumentation( function.getDocumentation() );
-			result.getResult().orElseThrow().getType( 0 ).getFieldByName( "documentation" ).orElseThrow().getVariable( 0 )
-			    .setInitializer( documentationStruct );
-
-			CompilationUnit		javaClass		= result.getResult().get();
-			MethodDeclaration	invokeMethod	= javaClass.findCompilationUnit().orElseThrow()
-			    .getClassByName( className ).orElseThrow()
-			    .getMethodsByName( "_invoke" ).get( 0 );
-
-			for ( BoxStatement statement : function.getBody() ) {
-				Node javaStmt = transpiler.transform( statement );
-				if ( javaStmt instanceof BlockStmt stmt ) {
-					stmt.getStatements().forEach( it -> invokeMethod.getBody().get().addStatement( it ) );
-				} else {
-					invokeMethod.getBody().get().addStatement( ( Statement ) javaStmt );
-				}
-			}
-			// Ensure we have a return statement
-			invokeMethod.getBody().get().addStatement( new ReturnStmt( new NullLiteralExpr() ) );
-			transpiler.popContextName();
-			return javaClass;
+		String							code	= PlaceholderHelper.resolve( classTemplate, values );
+		ParseResult<CompilationUnit>	result;
+		try {
+			result = javaParser.parse( code );
+		} catch ( Exception e ) {
+			// Temp debugging to see generated Java code
+			throw new BoxRuntimeException( code, e );
 		}
+		if ( !result.isSuccessful() ) {
+			// Temp debugging to see generated Java code
+			throw new BoxRuntimeException( result + "\n" + code );
+		}
+
+		/* Transform the arguments creating the initialization values */
+		ArrayInitializerExpr argInitializer = new ArrayInitializerExpr();
+		function.getArgs().forEach( arg -> {
+			Expression argument = ( Expression ) transpiler.transform( arg );
+			argInitializer.getValues().add( argument );
+		} );
+		result.getResult().orElseThrow().getType( 0 ).getFieldByName( "arguments" ).orElseThrow().getVariable( 0 ).setInitializer( argInitializer );
+
+		/* Transform the annotations creating the initialization value */
+		Expression annotationStruct = transformAnnotations( function.getAnnotations() );
+		result.getResult().orElseThrow().getType( 0 ).getFieldByName( "annotations" ).orElseThrow().getVariable( 0 ).setInitializer( annotationStruct );
+
+		/* Transform the documentation creating the initialization value */
+		Expression documentationStruct = transformDocumentation( function.getDocumentation() );
+		result.getResult().orElseThrow().getType( 0 ).getFieldByName( "documentation" ).orElseThrow().getVariable( 0 )
+		    .setInitializer( documentationStruct );
+
+		CompilationUnit		javaClass		= result.getResult().get();
+		MethodDeclaration	invokeMethod	= javaClass.findCompilationUnit().orElseThrow()
+		    .getClassByName( className ).orElseThrow()
+		    .getMethodsByName( "_invoke" ).get( 0 );
+
+		for ( BoxStatement statement : function.getBody() ) {
+			Node javaStmt = transpiler.transform( statement );
+			if ( javaStmt instanceof BlockStmt stmt ) {
+				stmt.getStatements().forEach( it -> invokeMethod.getBody().get().addStatement( it ) );
+			} else {
+				invokeMethod.getBody().get().addStatement( ( Statement ) javaStmt );
+			}
+		}
+		// Ensure we have a return statement
+		invokeMethod.getBody().get().addStatement( new ReturnStmt( new NullLiteralExpr() ) );
+		transpiler.popContextName();
+
+		( ( JavaTranspiler ) transpiler ).getUDFcallables().put( Key.of( function.getName() ), javaClass );
+
+		// UDF Declaratino
+		values = Map.ofEntries(
+		    Map.entry( "className", className ),
+		    Map.entry( "contextName", transpiler.peekContextName() ),
+		    Map.entry( "enclosingClassName", enclosingClassName )
+		);
+		Statement javaStmt = parseStatement( registrationTemplate, values );
+		logger.debug( node.getSourceText() + " -> " + javaStmt );
+		addIndex( javaStmt, node );
+		( ( JavaTranspiler ) transpiler ).getUDFDeclarations().add( javaStmt );
+
+		// The actual declaration is hoisted to the top, so I just need a dummy node to return here
+		return new EmptyStmt();
 	}
 }

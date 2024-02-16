@@ -47,12 +47,10 @@ import ortus.boxlang.ast.expression.BoxIntegerLiteral;
 import ortus.boxlang.ast.expression.BoxNull;
 import ortus.boxlang.ast.expression.BoxStringLiteral;
 import ortus.boxlang.ast.statement.BoxAnnotation;
-import ortus.boxlang.ast.statement.BoxFunctionDeclaration;
 import ortus.boxlang.ast.statement.BoxImport;
 import ortus.boxlang.ast.statement.BoxProperty;
 import ortus.boxlang.runtime.config.util.PlaceholderHelper;
 import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
-import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.transpiler.JavaTranspiler;
 
@@ -89,6 +87,7 @@ public class BoxClassTransformer extends AbstractTransformer {
 		import ortus.boxlang.runtime.interop.DynamicObject;
 		import ortus.boxlang.runtime.types.Property;
 		import ortus.boxlang.runtime.types.MapHelper;
+		import ortus.boxlang.runtime.dynamic.ExpressionInterpreter;
 
 		import java.nio.file.Path;
 		import java.nio.file.Paths;
@@ -135,6 +134,13 @@ public class BoxClassTransformer extends AbstractTransformer {
 			private IClassRunnable child = null;
 
 			public ${className}() {
+			}
+
+			public Map<Key,Property> getGetterLookup() {
+				return getterLookup;
+			}
+			public Map<Key,Property> getSetterLookup() {
+				return setterLookup;
 			}
 
 			public void pseudoConstructor( IBoxContext context ) {
@@ -638,6 +644,8 @@ public class BoxClassTransformer extends AbstractTransformer {
 		    .setInitializer( propertyStructs.get( 2 ) );
 
 		transpiler.pushContextName( "context" );
+		var pseudoConstructorBody = pseudoConstructorMethod.getBody().orElseThrow();
+
 		// Add imports
 		for ( BoxImport statement : boxClass.getImports() ) {
 			Node			javaASTNode	= transpiler.transform( statement );
@@ -649,32 +657,26 @@ public class BoxClassTransformer extends AbstractTransformer {
 		for ( BoxStatement statement : boxClass.getBody() ) {
 
 			Node javaASTNode = transpiler.transform( statement );
-			// For Function declarations, we add the transformed function itself as a compilation unit
-			// and also hoist the declaration itself to the top of the _invoke() method.
-			if ( statement instanceof BoxFunctionDeclaration BoxFunc ) {
-				// a function declaration generate
-				( ( JavaTranspiler ) transpiler ).getUDFcallables().put( Key.of( BoxFunc.getName() ), ( CompilationUnit ) javaASTNode );
-				Node registrer = transpiler.transform( statement, TransformerContext.REGISTER );
-				pseudoConstructorMethod.getBody().orElseThrow().addStatement( 0, ( Statement ) registrer );
-
+			// Java block get each statement in their block added
+			if ( javaASTNode instanceof BlockStmt ) {
+				BlockStmt stmt = ( BlockStmt ) javaASTNode;
+				stmt.getStatements().forEach( it -> {
+					pseudoConstructorBody.addStatement( it );
+					// statements.add( it );
+				} );
+			} else if ( statement instanceof BoxImport ) {
+				// For import statements, we add an argument to the constructor of the static List of imports
+				MethodCallExpr imp = ( MethodCallExpr ) imports.getVariable( 0 ).getInitializer().orElseThrow();
+				imp.getArguments().add( ( MethodCallExpr ) javaASTNode );
 			} else {
-				// Java block get each statement in their block added
-				if ( javaASTNode instanceof BlockStmt ) {
-					BlockStmt stmt = ( BlockStmt ) javaASTNode;
-					stmt.getStatements().forEach( it -> {
-						pseudoConstructorMethod.getBody().get().addStatement( it );
-						// statements.add( it );
-					} );
-				} else if ( statement instanceof BoxImport ) {
-					// For import statements, we add an argument to the constructor of the static List of imports
-					MethodCallExpr imp = ( MethodCallExpr ) imports.getVariable( 0 ).getInitializer().orElseThrow();
-					imp.getArguments().add( ( MethodCallExpr ) javaASTNode );
-				} else {
-					// All other statements are added to the _invoke() method
-					pseudoConstructorMethod.getBody().orElseThrow().addStatement( ( Statement ) javaASTNode );
-					// statements.add( ( Statement ) javaASTNode );
-				}
+				// All other statements are added to the _invoke() method
+				pseudoConstructorBody.addStatement( ( Statement ) javaASTNode );
+				// statements.add( ( Statement ) javaASTNode );
 			}
+			// loop over UDF registrations and add them to the _invoke() method
+			( ( JavaTranspiler ) transpiler ).getUDFDeclarations().forEach( it -> {
+				pseudoConstructorBody.addStatement( 0, it );
+			} );
 		}
 
 		// Add the keys to the static keys array
@@ -844,8 +846,8 @@ public class BoxClassTransformer extends AbstractTransformer {
 			return List.of( emptyMap, emptyMap, emptyMap );
 		} else {
 			MethodCallExpr	propertiesStruct	= ( MethodCallExpr ) parseExpression( "MapHelper.LinkedHashMapOfProperties()", new HashMap<>() );
-			MethodCallExpr	getterStruct		= ( MethodCallExpr ) parseExpression( "Map.of()", new HashMap<>() );
-			MethodCallExpr	setterStruct		= ( MethodCallExpr ) parseExpression( "Map.of()", new HashMap<>() );
+			MethodCallExpr	getterStruct		= ( MethodCallExpr ) parseExpression( "MapHelper.HashMapOfProperties()", new HashMap<>() );
+			MethodCallExpr	setterStruct		= ( MethodCallExpr ) parseExpression( "MapHelper.HashMapOfProperties()", new HashMap<>() );
 			propertiesStruct.getArguments().addAll( members );
 			getterStruct.getArguments().addAll( getterLookup );
 			setterStruct.getArguments().addAll( setterLookup );

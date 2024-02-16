@@ -786,18 +786,9 @@ public class Struct implements IStruct, IListenable {
 	 */
 	public Object dereferenceAndInvoke( IBoxContext context, Key name, Object[] positionalArguments, Boolean safe ) {
 
-		MemberDescriptor memberDescriptor = BoxRuntime.getInstance().getFunctionService().getMemberMethod( name, BoxLangType.STRUCT );
-		if ( memberDescriptor != null ) {
-			return memberDescriptor.invoke( context, this, positionalArguments );
-		}
+		MemberDescriptor	memberDescriptor	= BoxRuntime.getInstance().getFunctionService().getMemberMethod( name, BoxLangType.STRUCT );
 
-		// Member functions here
-		// temp workaround for unit test src\test\java\TestCases\phase2\ObjectLiteralTest.java
-		if ( name.equals( Key.of( "keyArray" ) ) ) {
-			return Array.fromList( keySet().stream().map( Key::getName ).collect( java.util.stream.Collectors.toList() ) );
-		}
-
-		Object value = dereference( context, name, true );
+		Object				value				= dereference( context, name, true );
 		if ( value != null ) {
 
 			if ( value instanceof Function function ) {
@@ -809,10 +800,14 @@ public class Struct implements IStruct, IListenable {
 				        function.createArgumentsScope( positionalArguments )
 				    )
 				);
-			} else {
+			} else if ( memberDescriptor == null ) {
 				throw new BoxRuntimeException(
 				    "key '" + name.getName() + "' of type  '" + value.getClass().getName() + "'  is not a function " );
 			}
+		}
+
+		if ( memberDescriptor != null ) {
+			return memberDescriptor.invoke( context, this, positionalArguments );
 		}
 
 		return DynamicInteropService.invoke( this, name.getName(), safe, positionalArguments );
@@ -829,18 +824,9 @@ public class Struct implements IStruct, IListenable {
 	 */
 	public Object dereferenceAndInvoke( IBoxContext context, Key name, Map<Key, Object> namedArguments, Boolean safe ) {
 
-		MemberDescriptor memberDescriptor = BoxRuntime.getInstance().getFunctionService().getMemberMethod( name, BoxLangType.STRUCT );
-		if ( memberDescriptor != null ) {
-			return memberDescriptor.invoke( context, this, namedArguments );
-		}
+		MemberDescriptor	memberDescriptor	= BoxRuntime.getInstance().getFunctionService().getMemberMethod( name, BoxLangType.STRUCT );
 
-		// Member functions here
-		// temp workaround for unit test src\test\java\TestCases\phase2\ObjectLiteralTest.java
-		if ( name.equals( Key.of( "keyArray" ) ) ) {
-			return Array.fromList( keySet().stream().map( Key::getName ).collect( java.util.stream.Collectors.toList() ) );
-		}
-
-		Object value = dereference( context, name, safe );
+		Object				value				= dereference( context, name, safe );
 		if ( value != null ) {
 			if ( value instanceof Function function ) {
 				return function.invoke(
@@ -851,11 +837,14 @@ public class Struct implements IStruct, IListenable {
 				        function.createArgumentsScope( namedArguments )
 				    )
 				);
-			} else {
+			} else if ( memberDescriptor == null ) {
 				throw new BoxRuntimeException(
 				    "key '" + name.getName() + "' of type  '" + value.getClass().getName() + "'  is not a function "
 				);
 			}
+		}
+		if ( memberDescriptor != null ) {
+			return memberDescriptor.invoke( context, this, namedArguments );
 		}
 
 		return DynamicInteropService.invoke( this, name.getName(), safe, namedArguments );

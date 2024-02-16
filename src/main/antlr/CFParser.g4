@@ -420,7 +420,8 @@ scope:
 	| SESSION
 	| COOKIE
 	| URL
-	| FORM;
+	| FORM
+	| SERVER;
 //  TODO add additional known scopes
 
 /*

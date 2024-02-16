@@ -82,8 +82,8 @@ public class BoxScopeTransformer extends AbstractTransformer {
 							if( javaIsStupid instanceof ClassBoxContext ) {
 								ClassBoxContext bc = (ClassBoxContext) javaIsStupid;
 								yield bc.getThisClass();
-							} else if( ${contextName} instanceof FunctionBoxContext ) {
-								FunctionBoxContext fc = (FunctionBoxContext) ${contextName};
+							} else if(javaIsStupid instanceof FunctionBoxContext ) {
+								FunctionBoxContext fc = (FunctionBoxContext) javaIsStupid;
 								if( fc.isInClass() ) {
 									yield fc.getThisClass().getBottomClass();
 								} else {

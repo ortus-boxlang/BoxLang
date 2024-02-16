@@ -165,6 +165,7 @@ public class JavaTranspiler extends Transpiler {
 	private List<CrossReference>				crossReferences	= new ArrayList<>();
 	private Map<Key, CompilationUnit>			UDFcallables	= new HashMap<Key, CompilationUnit>();
 	private List<CompilationUnit>				callables		= new ArrayList<>();
+	private List<Statement>						UDFDeclarations	= new ArrayList<>();
 
 	public JavaTranspiler() {
 		registry.put( BoxScript.class, new BoxScriptTransformer( this ) );
@@ -378,6 +379,15 @@ public class JavaTranspiler extends Transpiler {
 	 */
 	public Map<Key, CompilationUnit> getUDFcallables() {
 		return UDFcallables;
+	}
+
+	/**
+	 * Get the list of UDF declarations that will get hoisted to the top
+	 *
+	 * @return the UDF declarations
+	 */
+	public List<Statement> getUDFDeclarations() {
+		return UDFDeclarations;
 	}
 
 }

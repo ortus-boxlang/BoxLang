@@ -520,7 +520,6 @@ public class TemplateTest {
 
 	@Test
 	public void testSwitchNonCaseStatements() {
-
 		Throwable e = assertThrows( ExpressionException.class, () -> instance.executeSource(
 		    """
 		           <cfset result ="">

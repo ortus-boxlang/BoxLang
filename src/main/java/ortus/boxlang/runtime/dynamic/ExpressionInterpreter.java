@@ -115,7 +115,7 @@ public class ExpressionInterpreter {
 	 * 
 	 * @return The expression found
 	 */
-	public static void setVariable( IBoxContext context, String expression, Object value ) {
+	public static Object setVariable( IBoxContext context, String expression, Object value ) {
 		if ( expression.isEmpty() || expression.startsWith( "." ) || expression.endsWith( "." ) ) {
 			throw new ExpressionException( "Invalid expression", null, expression );
 		}
@@ -150,6 +150,6 @@ public class ExpressionInterpreter {
 		}
 
 		// Now that we have the root variable, set the remaining keys
-		Referencer.setDeep( context, ref, value, keys );
+		return Referencer.setDeep( context, ref, value, keys );
 	}
 }

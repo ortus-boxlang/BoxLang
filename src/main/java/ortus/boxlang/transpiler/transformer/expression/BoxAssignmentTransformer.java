@@ -34,6 +34,8 @@ import ortus.boxlang.ast.expression.BoxAssignmentModifier;
 import ortus.boxlang.ast.expression.BoxDotAccess;
 import ortus.boxlang.ast.expression.BoxIdentifier;
 import ortus.boxlang.ast.expression.BoxScope;
+import ortus.boxlang.ast.expression.BoxStringInterpolation;
+import ortus.boxlang.ast.expression.BoxStringLiteral;
 import ortus.boxlang.ast.statement.BoxAssignmentOperator;
 import ortus.boxlang.runtime.config.util.PlaceholderHelper;
 import ortus.boxlang.runtime.types.exceptions.ExpressionException;
@@ -63,18 +65,34 @@ public class BoxAssignmentTransformer extends AbstractTransformer {
 	public Node transformEquals( BoxExpr left, Expression jRight, BoxAssignmentOperator op, List<BoxAssignmentModifier> modifiers, String sourceText,
 	    TransformerContext context ) throws IllegalStateException {
 		String				template;
-		boolean				hasVar			= hasVar( modifiers );
+		boolean				hasVar	= hasVar( modifiers );
 
-		Map<String, String>	values			= new HashMap<>() {
+		Map<String, String>	values	= new HashMap<>() {
 
-												{
-													put( "contextName", transpiler.peekContextName() );
-													put( "right", jRight.toString() );
-												}
-											};
+										{
+											put( "contextName", transpiler.peekContextName() );
+											put( "right", jRight.toString() );
+										}
+									};
 
-		List<Node>			accessKeys		= new ArrayList<Node>();
-		BoxExpr				furthestLeft	= left;
+		// "#arguments.scope#.#arguments.propertyName#" = arguments.propertyValue;
+		if ( left instanceof BoxStringInterpolation || left instanceof BoxStringLiteral ) {
+			values.put( "left", transpiler.transform( left ).toString() );
+			template = """
+			           ExpressionInterpreter.setVariable(
+			           ${contextName},
+			           ${left},
+			           ${right}
+			           )
+			           	""";
+
+			Node javaExpr = parseExpression( template, values );
+			logger.debug( sourceText + " -> " + javaExpr.toString() );
+			return javaExpr;
+		}
+
+		List<Node>	accessKeys		= new ArrayList<Node>();
+		BoxExpr		furthestLeft	= left;
 
 		while ( furthestLeft instanceof BoxAccess currentObjectAccess ) {
 			// DotAccess just uses the string directly, array access allows any expression

@@ -42,10 +42,8 @@ import ortus.boxlang.ast.SourceFile;
 import ortus.boxlang.ast.expression.BoxIntegerLiteral;
 import ortus.boxlang.ast.expression.BoxStringLiteral;
 import ortus.boxlang.ast.statement.BoxExpression;
-import ortus.boxlang.ast.statement.BoxFunctionDeclaration;
 import ortus.boxlang.ast.statement.BoxImport;
 import ortus.boxlang.runtime.config.util.PlaceholderHelper;
-import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.transpiler.JavaTranspiler;
 import ortus.boxlang.transpiler.transformer.AbstractTransformer;
@@ -79,6 +77,7 @@ public class BoxScriptTransformer extends AbstractTransformer {
 		import ortus.boxlang.runtime.context.FunctionBoxContext;
 		import ortus.boxlang.runtime.context.ClassBoxContext;
 		import ortus.boxlang.runtime.interop.DynamicObject;
+		import ortus.boxlang.runtime.dynamic.ExpressionInterpreter;
 
 		import java.nio.file.Path;
 		import java.nio.file.Paths;
@@ -226,8 +225,11 @@ public class BoxScriptTransformer extends AbstractTransformer {
 		    .getFieldByName( "keys" ).orElseThrow();
 
 		transpiler.pushContextName( "context" );
+
+		BlockStmt	invokeBody					= invokeMethod.getBody().get();
+
 		// Track if the latest BL AST node we encountered was a returnable expression
-		boolean lastStatementIsReturnable = false;
+		boolean		lastStatementIsReturnable	= false;
 		for ( BoxStatement statement : script.getStatements() ) {
 			// Expressions are returnable
 			lastStatementIsReturnable = statement instanceof BoxExpression;
@@ -235,30 +237,27 @@ public class BoxScriptTransformer extends AbstractTransformer {
 			Node javaASTNode = transpiler.transform( statement );
 			// For Function declarations, we add the transformed function itself as a compilation unit
 			// and also hoist the declaration itself to the top of the _invoke() method.
-			if ( statement instanceof BoxFunctionDeclaration BoxFunc ) {
-				// a function declaration generate
-				( ( JavaTranspiler ) transpiler ).getUDFcallables().put( Key.of( BoxFunc.getName() ), ( CompilationUnit ) javaASTNode );
-				Node registrer = transpiler.transform( statement, TransformerContext.REGISTER );
-				invokeMethod.getBody().orElseThrow().addStatement( 0, ( Statement ) registrer );
 
+			// Java block get each statement in their block added
+			if ( javaASTNode instanceof BlockStmt ) {
+				BlockStmt stmt = ( BlockStmt ) javaASTNode;
+				stmt.getStatements().forEach( it -> {
+					invokeBody.addStatement( it );
+					// statements.add( it );
+				} );
+			} else if ( statement instanceof BoxImport ) {
+				// For import statements, we add an argument to the constructor of the static List of imports
+				MethodCallExpr imp = ( MethodCallExpr ) imports.getVariable( 0 ).getInitializer().orElseThrow();
+				imp.getArguments().add( ( MethodCallExpr ) javaASTNode );
 			} else {
-				// Java block get each statement in their block added
-				if ( javaASTNode instanceof BlockStmt ) {
-					BlockStmt stmt = ( BlockStmt ) javaASTNode;
-					stmt.getStatements().forEach( it -> {
-						invokeMethod.getBody().get().addStatement( it );
-						// statements.add( it );
-					} );
-				} else if ( statement instanceof BoxImport ) {
-					// For import statements, we add an argument to the constructor of the static List of imports
-					MethodCallExpr imp = ( MethodCallExpr ) imports.getVariable( 0 ).getInitializer().orElseThrow();
-					imp.getArguments().add( ( MethodCallExpr ) javaASTNode );
-				} else {
-					// All other statements are added to the _invoke() method
-					invokeMethod.getBody().orElseThrow().addStatement( ( Statement ) javaASTNode );
-					// statements.add( ( Statement ) javaASTNode );
-				}
+				// All other statements are added to the _invoke() method
+				invokeBody.addStatement( ( Statement ) javaASTNode );
+				// statements.add( ( Statement ) javaASTNode );
 			}
+			// loop over UDF registrations and add them to the _invoke() method
+			( ( JavaTranspiler ) transpiler ).getUDFDeclarations().forEach( it -> {
+				invokeBody.addStatement( 0, it );
+			} );
 		}
 
 		// Add the keys to the static keys array

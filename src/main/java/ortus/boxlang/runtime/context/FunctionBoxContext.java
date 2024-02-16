@@ -17,6 +17,8 @@
  */
 package ortus.boxlang.runtime.context;
 
+import java.util.Map;
+
 import ortus.boxlang.runtime.runnables.IClassRunnable;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.IScope;
@@ -298,5 +300,54 @@ public class FunctionBoxContext extends BaseBoxContext {
 			super.flushBuffer( force );
 		}
 		return this;
+	}
+
+	/**
+	 * Invoke a function call such as foo() using positional args. Will check for a registered BIF first, then search known scopes for a UDF.
+	 *
+	 * @return Return value of the function call
+	 */
+	public Object invokeFunction( Key name, Object[] positionalArguments ) {
+		if ( isInClass() ) {
+			IClassRunnable cfc = getThisClass();
+			if ( cfc.getSetterLookup().containsKey( name ) || cfc.getGetterLookup().containsKey( name ) ) {
+				return cfc.dereferenceAndInvoke( this, name, positionalArguments, false );
+			}
+		}
+		return super.invokeFunction( name, positionalArguments );
+	}
+
+	/**
+	 * Invoke a function call such as foo() using named args. Will check for a registered BIF first, then search known scopes for a UDF.
+	 *
+	 * @return Return value of the function call
+	 */
+	public Object invokeFunction( Key name, Map<Key, Object> namedArguments ) {
+		if ( isInClass() ) {
+			IClassRunnable cfc = getThisClass();
+			if ( cfc.getSetterLookup().containsKey( name ) || cfc.getGetterLookup().containsKey( name ) ) {
+				return cfc.dereferenceAndInvoke( this, name, namedArguments, false );
+			}
+		}
+		return super.invokeFunction( name, namedArguments );
+	}
+
+	/**
+	 * Invoke a function expression such as (()=>{})() using named args.
+	 *
+	 * @return Return value of the function call
+	 */
+	public Object invokeFunction( Function function, Key calledName, ArgumentsScope argumentsScope ) {
+		FunctionBoxContext functionContext = new FunctionBoxContext( this, function, calledName, argumentsScope );
+		if ( isInClass() ) {
+			functionContext.pushTemplate( getThisClass() );
+		}
+		try {
+			return function.invoke( functionContext );
+		} finally {
+			if ( isInClass() ) {
+				functionContext.popTemplate();
+			}
+		}
 	}
 }

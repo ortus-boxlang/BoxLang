@@ -9,4 +9,8 @@ component accessors=true {
      */
     @preanno "myValue" "anothervalue"
     property string anotherprop;
+
+    function init() {
+        getMyProperty();
+    }
 }

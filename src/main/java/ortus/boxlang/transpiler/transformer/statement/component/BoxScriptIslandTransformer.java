@@ -21,6 +21,7 @@ import com.github.javaparser.ast.stmt.Statement;
 import ortus.boxlang.ast.BoxNode;
 import ortus.boxlang.ast.BoxScriptIsland;
 import ortus.boxlang.ast.BoxStatement;
+import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.transpiler.JavaTranspiler;
 import ortus.boxlang.transpiler.transformer.AbstractTransformer;
 import ortus.boxlang.transpiler.transformer.TransformerContext;
@@ -37,7 +38,13 @@ public class BoxScriptIslandTransformer extends AbstractTransformer {
 
 		BlockStmt		body			= new BlockStmt();
 		for ( BoxStatement statement : scriptIsland.getStatements() ) {
-			body.getStatements().add( ( Statement ) transpiler.transform( statement ) );
+			var javaNode = transpiler.transform( statement );
+			if ( javaNode instanceof Statement stmt ) {
+				body.getStatements().add( stmt );
+			} else {
+				throw new BoxRuntimeException(
+				    "Unexpected node type: " + javaNode.getClass().getSimpleName() + " for BL Node " + statement.getClass().getSimpleName() );
+			}
 		}
 		return body;
 	}

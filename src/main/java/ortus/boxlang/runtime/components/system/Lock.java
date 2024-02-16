@@ -23,29 +23,22 @@ import ortus.boxlang.runtime.components.Component;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.IStruct;
-import ortus.boxlang.runtime.types.exceptions.AbortException;
-import ortus.boxlang.runtime.types.exceptions.CustomException;
 
-@BoxComponent
-public class Abort extends Component {
-
-	/**
-	 * --------------------------------------------------------------------------
-	 * Constructor(s)
-	 * --------------------------------------------------------------------------
-	 */
+@BoxComponent( requiresBody = true)
+public class Lock extends Component {
 
 	/**
 	 * Required by SLI
 	 */
-	public Abort() {
+	public Lock() {
 	}
 
-	public Abort( Key name ) {
+	public Lock( Key name ) {
 		super( name );
 		declaredAttributes = new Attribute[] {
-		    new Attribute( Key.showerror, "string" ),
-		    new Attribute( Key.type, "string", "request" )
+		    new Attribute( Key._NAME, "string" ),
+		    new Attribute( Key.type, "string" ),
+		    new Attribute( Key.timeout, "numeric" )
 		};
 	}
 
@@ -56,21 +49,12 @@ public class Abort extends Component {
 	 * @param attributes     The attributes to the BIF
 	 * @param body           The body of the BIF
 	 * @param executionState The execution state of the BIF
-	 *
+	 * 
 	 * @argument.showerror Whether to show an error
-	 *
+	 * 
 	 * @argument.type The type of the abort (request or page)
 	 *
 	 */
 	public void _invoke( IBoxContext context, IStruct attributes, ComponentBody body, IStruct executionState ) {
-		String		showerror	= attributes.getAsString( Key.showerror );
-		String		type		= attributes.getAsString( Key.type );
-
-		Throwable	cause		= null;
-		if ( showerror != null && !showerror.isEmpty() ) {
-			cause = new CustomException( showerror );
-		}
-		context.flushBuffer( true );
-		throw new AbortException( type, cause );
 	}
 }

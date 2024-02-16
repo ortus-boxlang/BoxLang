@@ -239,6 +239,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key	number1						= Key.of( "number1" );
 	public static final Key	number2						= Key.of( "number2" );
 	public static final Key	numIterations				= Key.of( "numIterations" );
+	public static final Key	obj							= Key.of( "obj" );
 	public static final Key	object						= Key.of( "object" );
 	public static final Key	objectArgument				= Key.of( "objectArgument" );
 	public static final Key	objectMappings				= Key.of( "objectMappings" );
@@ -268,6 +269,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key	recordCount					= Key.of( "recordCount" );
 	public static final Key	recurse						= Key.of( "recurse" );
 	public static final Key	recursive					= Key.of( "recursive" );
+	public static final Key	regex						= Key.of( "regex" );
 	public static final Key	replacements				= Key.of( "replacements" );
 	public static final Key	required					= Key.of( "required" );
 	public static final Key	result						= Key.of( "result" );
@@ -306,10 +308,12 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key	struct2						= Key.of( "struct2" );
 	public static final Key	structure					= Key.of( "structure" );
 	public static final Key	substring					= Key.of( "substring" );
+	public static final Key	substring1					= Key.of( "substring1" );
 	public static final Key	system						= Key.of( "system" );
 	public static final Key	template					= Key.of( "template" );
 	public static final Key	thisTag						= Key.of( "thisTag" );
 	public static final Key	timeFormat					= Key.of( "timeFormat" );
+	public static final Key	timeout						= Key.of( "timeout" );
 	public static final Key	timezone					= Key.of( "timezone" );
 	public static final Key	trim						= Key.of( "trim" );
 	public static final Key	type						= Key.of( "type" );

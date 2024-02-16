@@ -444,7 +444,7 @@ public class BaseBoxContext implements IBoxContext {
 	 *
 	 * @return The function instance
 	 */
-	private Function findFunction( Key name ) {
+	protected Function findFunction( Key name ) {
 		ScopeSearchResult result = null;
 		try {
 			result = scopeFindNearby( name, null );
@@ -734,6 +734,9 @@ public class BaseBoxContext implements IBoxContext {
 			synchronized ( thisBuffer ) {
 				getParent().writeToBuffer( thisBuffer.toString() );
 				thisBuffer.setLength( 0 );
+			}
+			if ( force ) {
+				getParent().flushBuffer( true );
 			}
 		}
 		return this;

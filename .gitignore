@@ -26,3 +26,4 @@ cfml-parser-tests/**
 
 # Core Module Class Files
 src/main/resources/modules/**/*.class
+src/main/java/ortus/boxlang/web/www/testbox/

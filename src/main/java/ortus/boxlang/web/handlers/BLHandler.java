@@ -24,6 +24,7 @@ import io.undertow.server.HttpHandler;
 import io.undertow.server.HttpServerExchange;
 import io.undertow.util.HttpString;
 import ortus.boxlang.runtime.BoxRuntime;
+import ortus.boxlang.runtime.types.exceptions.AbortException;
 import ortus.boxlang.web.WebRequestBoxContext;
 
 /**
@@ -40,6 +41,11 @@ public class BLHandler implements HttpHandler {
 			exchange.getResponseHeaders().put( new HttpString( "Content-Type" ), "text/html" );
 			context.includeTemplate( requestPath );
 
+		} catch ( AbortException e ) {
+			if ( e.getCause() != null ) {
+				// This will always be an instance of CustomException
+				throw ( RuntimeException ) e.getCause();
+			}
 		} catch ( Throwable e ) {
 			// context.flushBuffer( false );
 			handleError( e, exchange, context );

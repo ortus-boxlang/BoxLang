@@ -53,6 +53,7 @@ import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.runnables.IBoxRunnable;
 import ortus.boxlang.runtime.runnables.IClassRunnable;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
+import ortus.boxlang.runtime.types.exceptions.ExpressionException;
 import ortus.boxlang.runtime.types.exceptions.ParseException;
 import ortus.boxlang.transpiler.CustomPrettyPrinter;
 import ortus.boxlang.transpiler.TranspiledCode;
@@ -335,9 +336,17 @@ public class JavaBoxpiler {
 		transpiler.setProperty( "boxPackageName", classInfo.boxPackageName() );
 		transpiler.setProperty( "baseclass", classInfo.baseclass() );
 		transpiler.setProperty( "returnType", classInfo.returnType() );
-
-		TranspiledCode				javaASTs	= transpiler.transpile( node );
-		ClassOrInterfaceDeclaration	outerClass	= javaASTs.getEntryPoint().getClassByName( classInfo.className() ).get();
+		TranspiledCode javaASTs;
+		try {
+			javaASTs = transpiler.transpile( node );
+		} catch ( ExpressionException e ) {
+			// These are fine as-is
+			throw e;
+		} catch ( Exception e ) {
+			// This is for low-level bugs in the actual compilatin that are unexpected and can be hard to debug
+			throw new BoxRuntimeException( "Error transpiling BoxLang to Java. " + classInfo.toString(), e );
+		}
+		ClassOrInterfaceDeclaration outerClass = javaASTs.getEntryPoint().getClassByName( classInfo.className() ).get();
 
 		// Process functions and lamdas
 		for ( CompilationUnit callable : javaASTs.getCallables() ) {
@@ -622,6 +631,10 @@ public class JavaBoxpiler {
 		public static ClassInfo forTemplate( Path path, String packagePath ) {
 			File	lcaseFile	= new File( packagePath.toString().toLowerCase() );
 			String	packageName	= getPackageName( lcaseFile );
+			// if package name has starting dot, remove it
+			if ( packageName.startsWith( "." ) ) {
+				packageName = packageName.substring( 1 );
+			}
 			packageName = "boxgenerated.templates" + ( packageName.equals( "" ) ? "" : "." ) + packageName;
 			String className = getClassName( lcaseFile );
 			return new ClassInfo(
@@ -707,6 +720,10 @@ public class JavaBoxpiler {
 			Matcher	matcher	= pattern.matcher( FQN );
 
 			return matcher.find();
+		}
+
+		public String toString() {
+			return "Class Info: " + sourcePath + ", " + packageName + ", " + className;
 		}
 
 	}

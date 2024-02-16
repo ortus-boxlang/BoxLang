@@ -23,6 +23,7 @@ import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.ServerScope;
 import ortus.boxlang.runtime.types.IStruct;
+import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.UDF;
 import ortus.boxlang.runtime.types.exceptions.KeyNotFoundException;
 import ortus.boxlang.runtime.types.exceptions.ScopeNotFoundException;
@@ -111,6 +112,14 @@ public class RuntimeBoxContext extends BaseBoxContext {
 	 *
 	 */
 	public ScopeSearchResult scopeFind( Key key, IScope defaultScope ) {
+
+		// In Variables scope? (thread-safe lookup and get)
+		Object result = serverScope.getRaw( key );
+		// Null means not found
+		if ( result != null ) {
+			// Unwrap the value now in case it was really actually null for real
+			return new ScopeSearchResult( serverScope, Struct.unWrapNull( result ) );
+		}
 
 		if ( parent != null ) {
 			return parent.scopeFind( key, defaultScope );

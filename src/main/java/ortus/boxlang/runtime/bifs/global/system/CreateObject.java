@@ -55,7 +55,9 @@ public class CreateObject extends BIF {
 		if ( arguments.getAsString( Key.type ).equalsIgnoreCase( "java" ) ) {
 			return classLocator.load( context, "java:" + arguments.getAsString( Key.className ), context.getCurrentImports() );
 		} else if ( arguments.getAsString( Key.type ).equalsIgnoreCase( "component" ) ) {
-			return classLocator.load( context, "bx:" + arguments.getAsString( Key.className ), context.getCurrentImports() ).unWrapBoxLangClass();
+			return classLocator.load( context, "bx:" + arguments.getAsString( Key.className ), context.getCurrentImports() )
+			    .invokeConstructor( context, Key.noInit )
+			    .unWrapBoxLangClass();
 		}
 		// TODO: everything else!
 		throw new BoxRuntimeException( "Unsupported type: " + arguments.getAsString( Key.type ) );

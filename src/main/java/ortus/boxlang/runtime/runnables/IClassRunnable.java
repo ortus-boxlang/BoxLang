@@ -17,18 +17,25 @@
  */
 package ortus.boxlang.runtime.runnables;
 
+import java.util.Collection;
+import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import ortus.boxlang.runtime.context.IBoxContext;
-import ortus.boxlang.runtime.dynamic.IReferenceable;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.ThisScope;
 import ortus.boxlang.runtime.scopes.VariablesScope;
-import ortus.boxlang.runtime.types.Property;
+import ortus.boxlang.runtime.types.Array;
+import ortus.boxlang.runtime.types.DateTime;
+import ortus.boxlang.runtime.types.Function;
 import ortus.boxlang.runtime.types.IStruct;
+import ortus.boxlang.runtime.types.Property;
+import ortus.boxlang.runtime.types.Query;
+import ortus.boxlang.runtime.types.XML;
 import ortus.boxlang.runtime.types.meta.BoxMeta;
 
-public interface IClassRunnable extends ITemplateRunnable, IReferenceable {
+public interface IClassRunnable extends ITemplateRunnable, IStruct {
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -114,5 +121,228 @@ public interface IClassRunnable extends ITemplateRunnable, IReferenceable {
 	 * Get the bottom class in the inheritance chain
 	 */
 	public IClassRunnable getBottomClass();
+
+	public Map<Key, Property> getGetterLookup();
+
+	public Map<Key, Property> getSetterLookup();
+
+	@Override
+	default Object get( Object key ) {
+		return getThisScope().get( key );
+	}
+
+	@Override
+	default Object put( String key, Object value ) {
+		return getThisScope().put( key, value );
+	}
+
+	@Override
+	default Set<Key> keySet() {
+		return getThisScope().keySet();
+	}
+
+	@Override
+	default Set<Entry<Key, Object>> entrySet() {
+		return getThisScope().entrySet();
+	}
+
+	@Override
+	default boolean containsKey( Object key ) {
+		return getThisScope().containsKey( key );
+	}
+
+	@Override
+	default boolean containsValue( Object value ) {
+		return getThisScope().containsValue( value );
+	}
+
+	@Override
+	default int size() {
+		return getThisScope().size();
+	}
+
+	@Override
+	default boolean isEmpty() {
+		return getThisScope().isEmpty();
+	}
+
+	@Override
+	default void clear() {
+		getThisScope().clear();
+	}
+
+	@Override
+	default boolean containsKey( Key key ) {
+		return getThisScope().containsKey( key );
+	}
+
+	@Override
+	default boolean containsKey( String key ) {
+		return getThisScope().containsKey( key );
+	}
+
+	@Override
+	default Object get( String key ) {
+		return getThisScope().get( key );
+	}
+
+	@Override
+	default Object getOrDefault( Key key, Object defaultValue ) {
+		return getThisScope().getOrDefault( key, defaultValue );
+	}
+
+	@Override
+	default Object getOrDefault( String key, Object defaultValue ) {
+		return getThisScope().getOrDefault( key, defaultValue );
+	}
+
+	@Override
+	default Object getRaw( Key key ) {
+		return getThisScope().getRaw( key );
+	}
+
+	@Override
+	default Object put( Key key, Object value ) {
+		return getThisScope().put( key, value );
+	}
+
+	@Override
+	default Object putIfAbsent( Key key, Object value ) {
+		return getThisScope().putIfAbsent( key, value );
+	}
+
+	@Override
+	default Object putIfAbsent( String key, Object value ) {
+		return getThisScope().putIfAbsent( key, value );
+	}
+
+	@Override
+	default Object remove( String key ) {
+		return getThisScope().remove( key );
+	}
+
+	@Override
+	default Object remove( Key key ) {
+		return getThisScope().remove( key );
+	}
+
+	@Override
+	default void addAll( Map<? extends Object, ? extends Object> map ) {
+		getThisScope().addAll( map );
+	}
+
+	@Override
+	default String toStringWithCase() {
+		return getThisScope().toStringWithCase();
+	}
+
+	@Override
+	default List<Key> getKeys() {
+		return getThisScope().getKeys();
+	}
+
+	@Override
+	default List<String> getKeysAsStrings() {
+		return getThisScope().getKeysAsStrings();
+	}
+
+	@Override
+	default Map<Key, Object> getWrapped() {
+		return getThisScope().getWrapped();
+	}
+
+	@Override
+	default Key getAsKey( Key key ) {
+		return getThisScope().getAsKey( key );
+	}
+
+	@Override
+	default Array getAsArray( Key key ) {
+		return getThisScope().getAsArray( key );
+	}
+
+	@Override
+	default IStruct getAsStruct( Key key ) {
+		return getThisScope().getAsStruct( key );
+	}
+
+	@Override
+	default DateTime getAsDateTime( Key key ) {
+		return getThisScope().getAsDateTime( key );
+	}
+
+	@Override
+	default String getAsString( Key key ) {
+		return getThisScope().getAsString( key );
+	}
+
+	@Override
+	default Double getAsDouble( Key key ) {
+		return getThisScope().getAsDouble( key );
+	}
+
+	@Override
+	default Long getAsLong( Key key ) {
+		return getThisScope().getAsLong( key );
+	}
+
+	@Override
+	default Integer getAsInteger( Key key ) {
+		return getThisScope().getAsInteger( key );
+	}
+
+	@Override
+	default Boolean getAsBoolean( Key key ) {
+		return getThisScope().getAsBoolean( key );
+	}
+
+	@Override
+	default Function getAsFunction( Key key ) {
+		return getThisScope().getAsFunction( key );
+	}
+
+	@Override
+	default Query getAsQuery( Key key ) {
+		return getThisScope().getAsQuery( key );
+	}
+
+	@Override
+	default XML getAsXML( Key key ) {
+		return getThisScope().getAsXML( key );
+	}
+
+	@Override
+	default TYPES getType() {
+		return getThisScope().getType();
+	}
+
+	@Override
+	default Boolean isCaseSensitive() {
+		return getThisScope().isCaseSensitive();
+	}
+
+	@Override
+	default Boolean isSoftReferenced() {
+		return getThisScope().isSoftReferenced();
+	}
+
+	@Override
+	default Object remove( Object key ) {
+		return getThisScope().remove( key );
+	}
+
+	@Override
+	default void putAll( Map<? extends Key, ? extends Object> m ) {
+		getThisScope().putAll( m );
+	}
+
+	@Override
+	default Collection<Object> values() {
+		return getThisScope().values();
+	}
+
+	default IClassRunnable getClassRunnable( Key key ) {
+		return getThisScope().getClassRunnable( key );
+	}
 
 }

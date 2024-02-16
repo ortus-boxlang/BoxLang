@@ -22,6 +22,7 @@ import java.util.Map;
 
 import ortus.boxlang.runtime.dynamic.casters.CastAttempt;
 import ortus.boxlang.runtime.dynamic.casters.GenericCaster;
+import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
@@ -156,7 +157,7 @@ public class ArgumentUtil {
 		if ( !typeCheck.wasSuccessful() ) {
 			throw new BoxRuntimeException(
 			    String.format( "Argument [%s] with a type of [%s] does not match the declared type of [%s]",
-			        name.getName(), value.getClass().getName(), type )
+			        name.getName(), DynamicObject.unWrap( value ).getClass().getName(), type )
 			);
 		}
 		// Should we actually return the casted value??? Not CFML Compat! If so, return typeCheck.get() with check for NullValue instances.

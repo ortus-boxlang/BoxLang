@@ -17,6 +17,7 @@
  */
 package ortus.boxlang.runtime.types;
 
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 
 import ortus.boxlang.runtime.scopes.Key;
@@ -36,6 +37,24 @@ public class MapHelper {
 			throw new BoxRuntimeException( "Invalid number of arguments.  Must be an even number." );
 		}
 		var map = new LinkedHashMap<Key, Property>();
+		for ( int i = 0; i < values.length; i += 2 ) {
+			map.put( ( Key ) values[ i ], ( Property ) values[ i + 1 ] );
+		}
+		return map;
+	}
+
+	/**
+	 * Create a HashMap from a list of values. The values must be in pairs, key, value, key, value, etc.
+	 *
+	 * @param values The values to create the struct from
+	 *
+	 * @return The struct
+	 */
+	public static HashMap<Key, Property> HashMapOfProperties( Object... values ) {
+		if ( values.length % 2 != 0 ) {
+			throw new BoxRuntimeException( "Invalid number of arguments.  Must be an even number." );
+		}
+		var map = new HashMap<Key, Property>();
 		for ( int i = 0; i < values.length; i += 2 ) {
 			map.put( ( Key ) values[ i ], ( Property ) values[ i + 1 ] );
 		}
