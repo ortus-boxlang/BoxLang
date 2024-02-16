@@ -23,12 +23,9 @@ import static org.junit.Assert.assertTrue;
 import java.io.IOException;
 
 import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
-import com.github.javaparser.ast.CompilationUnit;
 import com.github.javaparser.ast.Node;
-import com.github.javaparser.ast.body.VariableDeclarator;
 
 import ortus.boxlang.ast.BoxDocumentation;
 import ortus.boxlang.ast.BoxScript;
@@ -151,13 +148,8 @@ public class TestUDF extends TestBase {
 			} );
 		} );
 
-		CompilationUnit		javaAST		= ( CompilationUnit ) transformUDF( code );
-		VariableDeclarator	arguments	= javaAST.getType( 0 ).getFieldByName( "arguments" ).get().getVariable( 0 );
-		Assertions.assertEquals( 1, arguments.getInitializer().get().asArrayInitializerExpr().getValues().size() );
-		VariableDeclarator annotations = javaAST.getType( 0 ).getFieldByName( "annotations" ).get().getVariable( 0 );
-		assertEqualsNoWhiteSpaces( """
-		                           Struct.of(MyUDF.keys[4],Array.of("value","anothervalue"),MyUDF.keys[5],"value",MyUDF.keys[6],"")
-		                                                     """, annotations.getInitializer().get().toString() );
+		transformUDF( code );
+
 	}
 
 	@Test

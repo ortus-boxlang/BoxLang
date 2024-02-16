@@ -84,9 +84,11 @@ public class BoxBinaryOperationTransformer extends AbstractTransformer {
 		} else if ( operation.getOperator() == BoxBinaryOperator.Mod ) {
 			template = "Modulus.invoke(${left},${right})";
 		} else if ( operation.getOperator() == BoxBinaryOperator.And ) {
-			template = "And.invoke(${left},${right})";
+			// template = "And.invoke(${left},${right})";
+			template = "BooleanCaster.cast( ${left} ) && BooleanCaster.cast( ${right} )";
 		} else if ( operation.getOperator() == BoxBinaryOperator.Or ) {
-			template = "Or.invoke(${left},${right})";
+			// template = "Or.invoke(${left},${right})";
+			template = "BooleanCaster.cast( ${left} ) || BooleanCaster.cast( ${right} )";
 		} else if ( operation.getOperator() == BoxBinaryOperator.Equivalence ) {
 			template = "Equivalence.invoke(${left},${right})";
 		} else if ( operation.getOperator() == BoxBinaryOperator.Implies ) {

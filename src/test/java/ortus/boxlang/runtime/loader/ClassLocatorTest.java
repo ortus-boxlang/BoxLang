@@ -152,7 +152,8 @@ public class ClassLocatorTest {
 		        "java.lang",
 		        ClassLocator.TYPE_JAVA,
 		        String.class,
-		        null
+		        null,
+		        false
 		    )
 		);
 		assertThat( locator.hasClass( targetClass ) ).isTrue();

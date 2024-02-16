@@ -154,19 +154,21 @@ public abstract class Function implements IType, IFunctionRunnable {
 		    BoxRuntime.RUNTIME_EVENTS.get( "preFunctionInvoke" ),
 		    data
 		);
-		Object result = ensureReturnType( _invoke( context ) );
-		data.put( Key.result, result );
+		Object result = null;
+		try {
+			result = ensureReturnType( _invoke( context ) );
+			data.put( Key.result, result );
 
-		interceptorService.announce(
-		    BoxRuntime.RUNTIME_EVENTS.get( "postFunctionInvoke" ),
-		    data
-		);
-
-		// If output=true, then flush any content in buffer
-		if ( canOutput( context ) ) {
-			context.flushBuffer( false );
+			interceptorService.announce(
+			    BoxRuntime.RUNTIME_EVENTS.get( "postFunctionInvoke" ),
+			    data
+			);
+		} finally {
+			// If output=true, then flush any content in buffer
+			if ( canOutput( context ) ) {
+				context.flushBuffer( false );
+			}
 		}
-
 		return result;
 	}
 

@@ -97,7 +97,7 @@ public class DoubleCaster {
 
 		// Verify if we can throw an exception
 		if ( fail ) {
-			throw new BoxCastException( String.format( "Can't cast %s to a double.", object.toString() ) );
+			throw new BoxCastException( String.format( "Can't cast [%s] to a double.", object.toString() ) );
 		} else {
 			return null;
 		}

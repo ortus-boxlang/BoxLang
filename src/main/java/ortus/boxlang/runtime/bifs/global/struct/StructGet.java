@@ -56,7 +56,6 @@ public class StructGet extends BIF {
 		String path = arguments.getAsString( Key.path );
 		if ( arguments.getAsBoolean( __isMemberExecution ) ) {
 			path = "arguments.object." + path;
-			System.out.println( path );
 		}
 		return ExpressionInterpreter.getVariable( context, path, true );
 

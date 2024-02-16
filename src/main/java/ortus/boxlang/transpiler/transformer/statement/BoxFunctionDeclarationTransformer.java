@@ -212,7 +212,7 @@ public class BoxFunctionDeclarationTransformer extends AbstractTransformer {
 		// UDF Declaratino
 		values = Map.ofEntries(
 		    Map.entry( "className", className ),
-		    Map.entry( "contextName", transpiler.peekContextName() ),
+		    Map.entry( "contextName", "context" ),
 		    Map.entry( "enclosingClassName", enclosingClassName )
 		);
 		Statement javaStmt = parseStatement( registrationTemplate, values );

@@ -26,7 +26,8 @@ import javax.tools.SimpleJavaFileObject;
  */
 public class JavaClassByteCode extends SimpleJavaFileObject {
 
-	protected ByteArrayOutputStream bos = new ByteArrayOutputStream();
+	long							lastModified	= System.currentTimeMillis();
+	protected ByteArrayOutputStream	bos				= new ByteArrayOutputStream();
 
 	public JavaClassByteCode( String name, Kind kind ) {
 		super( URI.create( "string:///" + name.replace( '.', '/' )
@@ -40,5 +41,9 @@ public class JavaClassByteCode extends SimpleJavaFileObject {
 	@Override
 	public OutputStream openOutputStream() {
 		return bos;
+	}
+
+	public long getLastModified() {
+		return lastModified;
 	}
 }

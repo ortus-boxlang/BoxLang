@@ -331,78 +331,81 @@ public class DynamicInteropService {
 		// context once the CFC is initialized. Methods called on this CFC will have access to the variables/this scope via their
 		// FunctionBoxContext, but their parent context will be whatever context they are called from.
 		IBoxContext classContext = new ClassBoxContext( context, cfc );
-
 		// Bootstrap the pseudoConstructor
 		classContext.pushTemplate( cfc );
 
-		// First, we load an super class
-		Object superClassObject = cfc.getAnnotations().get( Key._EXTENDS );
-		if ( superClassObject != null ) {
-			String superClassName = StringCaster.cast( superClassObject );
-			if ( superClassName != null && superClassName.length() > 0 ) {
-				// Recursivley load the super class
-				IClassRunnable _super = ( IClassRunnable ) classLocator.load( classContext,
-				    superClassName,
-				    classContext.getCurrentImports()
-				)
-				    // Constructor args are NOT passed. Only the outermost class gets to use those
-				    .invokeConstructor( classContext, new Object[] { Key.noInit } )
-				    .unWrapBoxLangClass();
+		try {
+			// First, we load an super class
+			Object superClassObject = cfc.getAnnotations().get( Key._EXTENDS );
+			if ( superClassObject != null ) {
+				String superClassName = StringCaster.cast( superClassObject );
+				if ( superClassName != null && superClassName.length() > 0 ) {
+					// Recursivley load the super class
+					IClassRunnable _super = ( IClassRunnable ) classLocator.load( classContext,
+					    superClassName,
+					    classContext.getCurrentImports()
+					)
+					    // Constructor args are NOT passed. Only the outermost class gets to use those
+					    .invokeConstructor( classContext, new Object[] { Key.noInit } )
+					    .unWrapBoxLangClass();
 
-				// Set in our super class
-				cfc.setSuper( _super );
+					// Set in our super class
+					cfc.setSuper( _super );
+				}
 			}
-		}
 
-		cfc.pseudoConstructor( classContext );
+			cfc.pseudoConstructor( classContext );
 
-		if ( !noInit ) {
-			// Call constructor
-			// look for initMethod annotation
-			Object	initMethod	= cfc.getAnnotations().get( Key.initMethod );
-			Key		initKey;
-			if ( initMethod != null ) {
-				initKey = Key.of( StringCaster.cast( initMethod ) );
-			} else {
-				initKey = Key.init;
-			}
-			if ( cfc.dereference( context, initKey, true ) != null ) {
-				Object result;
-				if ( positionalArgs != null ) {
-					result = cfc.dereferenceAndInvoke( classContext, initKey, positionalArgs, false );
+			if ( !noInit ) {
+				// Call constructor
+				// look for initMethod annotation
+				Object	initMethod	= cfc.getAnnotations().get( Key.initMethod );
+				Key		initKey;
+				if ( initMethod != null ) {
+					initKey = Key.of( StringCaster.cast( initMethod ) );
 				} else {
-					result = cfc.dereferenceAndInvoke( classContext, initKey, namedArgs, false );
+					initKey = Key.init;
 				}
-				// CF returns the actual result of the constructor, but I'm not sure it makes sense or if people actually ever
-				// return anything other than "this".
-				if ( result != null ) {
-					// This cast will fail if the init returns something like a string
-					return ( T ) result;
-				}
-			} else {
-				// implicit constructor
+				if ( cfc.dereference( context, initKey, true ) != null ) {
+					Object result;
+					if ( positionalArgs != null ) {
+						result = cfc.dereferenceAndInvoke( classContext, initKey, positionalArgs, false );
+					} else {
+						result = cfc.dereferenceAndInvoke( classContext, initKey, namedArgs, false );
+					}
+					// CF returns the actual result of the constructor, but I'm not sure it makes sense or if people actually ever
+					// return anything other than "this".
+					if ( result != null ) {
+						// This cast will fail if the init returns something like a string
+						return ( T ) result;
+					}
+				} else {
+					// implicit constructor
 
-				if ( positionalArgs != null && positionalArgs.length == 1 && positionalArgs[ 0 ] instanceof IStruct named ) {
-					namedArgs = named.getWrapped();
-				} else if ( positionalArgs != null && positionalArgs.length > 0 ) {
-					throw new BoxRuntimeException( "Implicit constructor only accepts named args or a single Struct as a positional arg." );
-				}
+					if ( positionalArgs != null && positionalArgs.length == 1 && positionalArgs[ 0 ] instanceof IStruct named ) {
+						namedArgs = named.getWrapped();
+					} else if ( positionalArgs != null && positionalArgs.length > 0 ) {
+						throw new BoxRuntimeException( "Implicit constructor only accepts named args or a single Struct as a positional arg." );
+					}
 
-				if ( namedArgs != null ) {
-					// loop over args and invoke setter methods for each
-					for ( Map.Entry<Key, Object> entry : namedArgs.entrySet() ) {
-						// not a great way to pre-create/cache these keys since they're really based on whatever crazy args the user gives us.
-						// If this becomes a performance issue, we can look at caching the expected keys in the CFC in a map where the key is the propery name
-						// and
-						// the value is the key of the setter (basically the inverse of the setterlookup map)
-						cfc.dereferenceAndInvoke( classContext, Key.of( "set" + entry.getKey().getName() ), new Object[] { entry.getValue() }, false );
+					if ( namedArgs != null ) {
+						// loop over args and invoke setter methods for each
+						for ( Map.Entry<Key, Object> entry : namedArgs.entrySet() ) {
+							// not a great way to pre-create/cache these keys since they're really based on whatever crazy args the user gives us.
+							// If this becomes a performance issue, we can look at caching the expected keys in the CFC in a map where the key is the propery
+							// name
+							// and
+							// the value is the key of the setter (basically the inverse of the setterlookup map)
+							cfc.dereferenceAndInvoke( classContext, Key.of( "set" + entry.getKey().getName() ), new Object[] { entry.getValue() }, false );
+						}
 					}
 				}
 			}
+		} finally {
+			// This is for any output written in the pseudoconstructor that needs to be flushed
+			classContext.flushBuffer( false );
+			classContext.popTemplate();
 		}
-		// This is for any output written in the pseudoconstructor that needs to be flushed
-		classContext.flushBuffer( false );
-		classContext.popTemplate();
 		return ( T ) cfc;
 	}
 

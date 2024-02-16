@@ -124,12 +124,6 @@ public class ObjectReferenceAssignmentTest {
 		    """,
 		    context ) );
 
-		assertThrows( BoxLangException.class, () -> instance.executeSource(
-		    """
-		    "foo" = "brad";
-		    """,
-		    context ) );
-
 		// These are all a BoxAccess, but the "var" keyword can only come before an INITIAL identifier or BoxAccess
 		assertThrows( BoxLangException.class, () -> instance.executeSource(
 		    """

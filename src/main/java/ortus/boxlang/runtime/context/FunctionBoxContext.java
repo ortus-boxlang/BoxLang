@@ -338,14 +338,15 @@ public class FunctionBoxContext extends BaseBoxContext {
 	 * @return Return value of the function call
 	 */
 	public Object invokeFunction( Function function, Key calledName, ArgumentsScope argumentsScope ) {
-		FunctionBoxContext functionContext = new FunctionBoxContext( this, function, calledName, argumentsScope );
-		if ( isInClass() ) {
+		FunctionBoxContext	functionContext	= new FunctionBoxContext( this, function, calledName, argumentsScope );
+		boolean				inClass			= isInClass();
+		if ( inClass ) {
 			functionContext.pushTemplate( getThisClass() );
 		}
 		try {
 			return function.invoke( functionContext );
 		} finally {
-			if ( isInClass() ) {
+			if ( inClass ) {
 				functionContext.popTemplate();
 			}
 		}

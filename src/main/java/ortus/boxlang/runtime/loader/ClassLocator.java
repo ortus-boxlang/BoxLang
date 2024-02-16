@@ -415,7 +415,9 @@ public class ClassLocator extends ClassLoader {
 		    .or( () -> getResolver( resolverPrefix ).resolve( context, name, thisImports ) )
 		    // If found, cache it
 		    .map( target -> {
-			    resolverCache.put( cacheKey, target );
+			    if ( target.cachable() ) {
+				    resolverCache.put( cacheKey, target );
+			    }
 			    return target;
 		    } );
 
@@ -551,7 +553,9 @@ public class ClassLocator extends ClassLoader {
 		    .or( () -> getResolver( "java" ).resolve( context, name, imports ) )
 		    // If found, cache it
 		    .map( target -> {
-			    resolverCache.put( name, target );
+			    if ( target.cachable() ) {
+				    resolverCache.put( name, target );
+			    }
 			    return target;
 		    } );
 
@@ -590,7 +594,8 @@ public class ClassLocator extends ClassLoader {
 	    String packageName,
 	    int type,
 	    Class<?> clazz,
-	    String module ) {
+	    String module,
+	    Boolean cachable ) {
 
 		Boolean isFromModule() {
 			return module != null;

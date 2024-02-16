@@ -197,7 +197,8 @@ public class BoxResolver extends BaseResolver {
 			        packageName,
 			        ClassLocator.TYPE_BX,
 			        RunnableLoader.getInstance().loadClass( path, packageName, context ),
-			        ""
+			        "",
+			        false
 			    );
 		    } )
 		    // Find the first one or return empty
@@ -249,7 +250,8 @@ public class BoxResolver extends BaseResolver {
 					    packageName,
 					    ClassLocator.TYPE_BX,
 					    RunnableLoader.getInstance().loadClass( targetPath, packageName, context ),
-					    ""
+					    "",
+					    false
 					) );
 				}
 			}

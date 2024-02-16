@@ -40,7 +40,6 @@ import ortus.boxlang.runtime.bifs.MemberDescriptor;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.dynamic.IReferenceable;
 import ortus.boxlang.runtime.dynamic.casters.LongCaster;
-import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 import ortus.boxlang.runtime.interop.DynamicInteropService;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.services.FunctionService;
@@ -144,7 +143,7 @@ public class File implements IType, IReferenceable {
 	 */
 	public File( String file, String mode, String charset, Boolean seekable ) {
 		this.mode = mode;
-		System.out.println( "HTTP Index:" + StringCaster.cast( file.toLowerCase().indexOf( "http" ) ) );
+		// System.out.println( "HTTP Index:" + StringCaster.cast( file.toLowerCase().indexOf( "http" ) ) );
 		if ( file.toLowerCase().indexOf( "http" ) == 0 ) {
 			try {
 				URL fileURL = new URL( file );

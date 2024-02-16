@@ -132,7 +132,7 @@ public class Output extends Component {
 		context.registerQueryLoop( theQuery, iStartRow );
 		try {
 			for ( int i = iStartRow; i <= iEndRow; i++ ) {
-				System.out.println( "i: " + i );
+				// System.out.println( "i: " + i );
 				if ( isGrouped ) {
 					if ( i < iEndRow ) {
 						lastGroupValues = getGroupValuesForRow( theQuery, groupKeys, lastGroupValues, i + 1, isSameGroup );
@@ -140,7 +140,7 @@ public class Output extends Component {
 						isSameGroup.put( "value", false );
 					}
 					if ( isSameGroup.get( "value" ) ) {
-						System.out.println( "Same group" );
+						// System.out.println( "Same group" );
 						continue;
 					} else {
 						// TODO: handle nested output with groups
@@ -161,13 +161,13 @@ public class Output extends Component {
 	private static Object[] getGroupValuesForRow( Query query, Key[] groupKeys, Object[] lastGroupValues, int row, Map<String, Boolean> isSameGroup ) {
 		Object[] thisGroupValues = new Object[ groupKeys.length ];
 		isSameGroup.put( "value", true );
-		System.out.println( "calc group data for Row: " + row );
+		// System.out.println( "calc group data for Row: " + row );
 		for ( int j = 0; j < groupKeys.length; j++ ) {
 			thisGroupValues[ j ] = query.getCell( groupKeys[ j ], row );
 			// TODO: Use case sensitive flag. Perhaps this needs to use compare?
 			if ( !EqualsEquals.invoke( thisGroupValues[ j ], lastGroupValues[ j ] ) ) {
-				System.out.println( "Row: " + row + " is not the same as last row key " + groupKeys[ j ].getName() + " " + thisGroupValues[ j ] + " != "
-				    + lastGroupValues[ j ] );
+				// System.out.println( "Row: " + row + " is not the same as last row key " + groupKeys[ j ].getName() + " " + thisGroupValues[ j ] + " != "
+				// + lastGroupValues[ j ] );
 				isSameGroup.put( "value", false );
 			}
 		}
