@@ -16,6 +16,7 @@ package ortus.boxlang.runtime.jdbc;
 
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.Properties;
 
 import com.zaxxer.hikari.HikariConfig;
@@ -90,13 +91,8 @@ public class DataSource {
 	/**
 	 * Configure and initialize a new DataSourceRecord object from a struct of properties.
 	 *
-	 * @param properties Struct of properties for configuring the datasource.
-	 *                   The following properties are required:
-	 *                   <li><code>username</code></li>
-	 *                   <li><code>password</code></li>
-	 *                   <li><code>url</code></li>
-	 *                   <li><code>databaseName</code></li>
-	 *                   <li><code>port</code></li>
+	 * @param properties Struct of properties for configuring the datasource. Be aware that the struct keys are case-sensitive and must match the Hikari
+	 *                   configuration property names. (We'll be adding support for case-insensitive keys in the near future.)
 	 *
 	 * @return
 	 */
@@ -155,14 +151,26 @@ public class DataSource {
 	 * Execute a query on the connection, using a connection from the connection pool.
 	 */
 	public void execute( String query ) {
-		execute( query, getConnection() );
+		try ( Connection conn = getConnection(); ) {
+			execute( query, conn );
+		} catch ( SQLException e ) {
+			throw new BoxRuntimeException( "Unable to close connection:", e );
+		}
 	}
 
 	/**
 	 * Execute a query on the connection, using the provided connection.
+	 *
+	 * @param query The SQL query to execute.
 	 */
 	public void execute( String query, Connection conn ) {
-		// @TODO: Implement!
+		try ( Statement stmt = conn.createStatement() ) {
+			// @TODO: Implement parameterized queries with PreparedStatement.
+			stmt.execute( query );
+			// @TODO: Implement ResultSet processing and return an array or query object.
+		} catch ( SQLException e ) {
+			throw new BoxRuntimeException( "Unable to execute query:", e );
+		}
 	}
 
 	/**
@@ -195,7 +203,7 @@ public class DataSource {
 		} catch ( SQLException e ) {
 			// @TODO: Rollback the transaction?
 			// conn.rollback();
-			throw new RuntimeException( e );
+			throw new BoxRuntimeException( "Error in transaction", e );
 		}
 	}
 
