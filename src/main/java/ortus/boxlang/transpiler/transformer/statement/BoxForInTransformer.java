@@ -85,7 +85,7 @@ public class BoxForInTransformer extends AbstractTransformer {
 		}
 		Node loopAssignment = new BoxAssignmentTransformer( ( JavaTranspiler ) transpiler ).transformEquals(
 		    boxFor.getVariable(),
-		    ( Expression ) parseExpression( "${isStructName} ? ((Key)${jVarName}.next()).getName() : ${jVarName}.next()", values ),
+		    ( Expression ) parseExpression( "${isStructName} ? ${jVarName}.next() : ${jVarName}.next()", values ),
 		    BoxAssignmentOperator.Equal,
 		    modifiers,
 		    ( boxFor.getHasVar() ? "var " : "" ) + boxFor.getVariable().getSourceText(),

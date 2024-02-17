@@ -104,7 +104,7 @@ public class Output extends Component {
 			queryOrName = ExpressionInterpreter.getVariable( context, queryName.get(), false );
 		}
 		// See if what we have is a query!
-		theQuery = ( Query ) GenericCaster.cast( queryOrName, "query" );
+		theQuery = ( Query ) GenericCaster.cast( context, queryOrName, "query" );
 		int	iStartRow	= ( startRow == null ) ? 0 : ( startRow - 1 );
 		int	iEndRow		= ( maxRows == null ) ? ( theQuery.size() - 1 ) : ( maxRows + iStartRow - 1 );
 

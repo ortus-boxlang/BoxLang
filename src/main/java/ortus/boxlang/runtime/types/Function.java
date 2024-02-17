@@ -111,8 +111,8 @@ public abstract class Function implements IType, IFunctionRunnable {
 	 *
 	 * @return The arguments scope
 	 */
-	public ArgumentsScope createArgumentsScope( Object[] positionalArguments ) {
-		return ArgumentUtil.createArgumentsScope( positionalArguments, getArguments() );
+	public ArgumentsScope createArgumentsScope( IBoxContext context, Object[] positionalArguments ) {
+		return ArgumentUtil.createArgumentsScope( context, positionalArguments, getArguments() );
 	}
 
 	/**
@@ -122,8 +122,8 @@ public abstract class Function implements IType, IFunctionRunnable {
 	 *
 	 * @return The arguments scope
 	 */
-	public ArgumentsScope createArgumentsScope( Map<Key, Object> namedArguments ) {
-		return ArgumentUtil.createArgumentsScope( namedArguments, getArguments() );
+	public ArgumentsScope createArgumentsScope( IBoxContext context, Map<Key, Object> namedArguments ) {
+		return ArgumentUtil.createArgumentsScope( context, namedArguments, getArguments() );
 	}
 
 	/**
@@ -131,8 +131,8 @@ public abstract class Function implements IType, IFunctionRunnable {
 	 *
 	 * @return The arguments scope
 	 */
-	public ArgumentsScope createArgumentsScope() {
-		return ArgumentUtil.createArgumentsScope( getArguments() );
+	public ArgumentsScope createArgumentsScope( IBoxContext context ) {
+		return ArgumentUtil.createArgumentsScope( context, getArguments() );
 	}
 
 	/**
@@ -156,7 +156,7 @@ public abstract class Function implements IType, IFunctionRunnable {
 		);
 		Object result = null;
 		try {
-			result = ensureReturnType( _invoke( context ) );
+			result = ensureReturnType( context, _invoke( context ) );
 			data.put( Key.result, result );
 
 			interceptorService.announce(
@@ -179,8 +179,8 @@ public abstract class Function implements IType, IFunctionRunnable {
 	 *
 	 * @return
 	 */
-	protected Object ensureReturnType( Object value ) {
-		CastAttempt<Object> typeCheck = GenericCaster.attempt( value, getReturnType(), true );
+	protected Object ensureReturnType( IBoxContext context, Object value ) {
+		CastAttempt<Object> typeCheck = GenericCaster.attempt( context, value, getReturnType(), true );
 		if ( !typeCheck.wasSuccessful() ) {
 			throw new BoxRuntimeException(
 			    String.format( "The return value of the function [%s] does not match the declared type of [%s]",

@@ -561,8 +561,17 @@ public class Struct implements IStruct, IListenable {
 	 */
 	@Override
 	public void putAll( Map<? extends Key, ? extends Object> map ) {
-		// TODO: handle listeners
-		wrapped.putAll( map );
+		var entryStream = map.entrySet().parallelStream();
+		// With a linked hashmap we need to maintain order - which is a tiny bit slower
+		if ( type.equals( TYPES.LINKED ) ) {
+			entryStream.forEachOrdered( entry -> {
+				wrapped.put( entry.getKey(), ( entry.getValue() == null ) ? new NullValue() : entry.getValue() );
+			} );
+		} else {
+			entryStream.forEach( entry -> {
+				wrapped.put( entry.getKey(), ( entry.getValue() == null ) ? new NullValue() : entry.getValue() );
+			} );
+		}
 	}
 
 	/**
@@ -582,7 +591,7 @@ public class Struct implements IStruct, IListenable {
 				} else {
 					key = Key.of( entry.getKey().toString() );
 				}
-				put( key, entry.getValue() );
+				wrapped.put( key, ( entry.getValue() == null ) ? new NullValue() : entry.getValue() );
 			} );
 		} else {
 			entryStream.forEach( entry -> {
@@ -592,7 +601,7 @@ public class Struct implements IStruct, IListenable {
 				} else {
 					key = Key.of( entry.getKey().toString() );
 				}
-				put( key, entry.getValue() );
+				wrapped.put( key, ( entry.getValue() == null ) ? new NullValue() : entry.getValue() );
 			} );
 		}
 	}
@@ -797,7 +806,7 @@ public class Struct implements IStruct, IListenable {
 				        function,
 				        context.getFunctionParentContext(),
 				        name,
-				        function.createArgumentsScope( positionalArguments )
+				        function.createArgumentsScope( context, positionalArguments )
 				    )
 				);
 			} else if ( memberDescriptor == null ) {
@@ -834,7 +843,7 @@ public class Struct implements IStruct, IListenable {
 				        function,
 				        context.getFunctionParentContext(),
 				        name,
-				        function.createArgumentsScope( namedArguments )
+				        function.createArgumentsScope( context, namedArguments )
 				    )
 				);
 			} else if ( memberDescriptor == null ) {

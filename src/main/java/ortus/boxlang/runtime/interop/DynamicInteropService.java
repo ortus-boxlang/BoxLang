@@ -17,6 +17,8 @@
  */
 package ortus.boxlang.runtime.interop;
 
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.lang.invoke.CallSite;
 import java.lang.invoke.ConstantCallSite;
 import java.lang.invoke.MethodHandle;
@@ -105,7 +107,8 @@ public class DynamicInteropService {
 	    BoxLangException.detailKey,
 	    BoxLangException.typeKey,
 	    BoxLangException.tagContextKey,
-	    BoxRuntimeException.ExtendedInfoKey
+	    BoxRuntimeException.ExtendedInfoKey,
+	    Key.stackTrace
 	) );
 
 	/**
@@ -1276,6 +1279,23 @@ public class DynamicInteropService {
 			// Throwable.message always delegates through to the message field
 			if ( name.equals( BoxLangException.messageKey ) ) {
 				return t.getMessage();
+			} else if ( name.equals( Key.stackTrace ) ) {
+				StringWriter	sw	= new StringWriter();
+				PrintWriter		pw	= new PrintWriter( sw );
+				t.printStackTrace( pw );
+				return sw.toString();
+			} else if ( targetInstance instanceof BoxLangException ble ) {
+				if ( name.equals( BoxLangException.detailKey ) ) {
+					return ble.getDetail();
+				} else if ( name.equals( BoxLangException.typeKey ) ) {
+					return ble.getType();
+				} else if ( name.equals( BoxLangException.tagContextKey ) ) {
+					return ble.getTagContext();
+				} else if ( ble instanceof BoxRuntimeException bre && name.equals( BoxRuntimeException.ExtendedInfoKey ) ) {
+					return bre.getExtendedInfo();
+				} else {
+					return "";
+				}
 			} else {
 				// CFML returns "" for Throwable.detail, etc
 				return "";
@@ -1374,7 +1394,7 @@ public class DynamicInteropService {
 		}
 
 		if ( targetInstance != null ) {
-			MemberDescriptor memberDescriptor = BoxRuntime.getInstance().getFunctionService().getMemberMethod( name, targetInstance );
+			MemberDescriptor memberDescriptor = BoxRuntime.getInstance().getFunctionService().getMemberMethod( context, name, targetInstance );
 			if ( memberDescriptor != null ) {
 				return memberDescriptor.invoke( context, targetInstance, positionalArguments );
 			}
@@ -1416,7 +1436,7 @@ public class DynamicInteropService {
 		}
 
 		if ( targetInstance != null ) {
-			MemberDescriptor memberDescriptor = BoxRuntime.getInstance().getFunctionService().getMemberMethod( name, targetInstance );
+			MemberDescriptor memberDescriptor = BoxRuntime.getInstance().getFunctionService().getMemberMethod( context, name, targetInstance );
 			if ( memberDescriptor != null ) {
 				return memberDescriptor.invoke( context, targetInstance, namedArguments );
 			}

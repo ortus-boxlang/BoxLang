@@ -25,17 +25,18 @@ import ortus.boxlang.runtime.components.Component;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.IStruct;
+import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
-@BoxComponent
-public class Setting extends Component {
+@BoxComponent( requiresBody = true )
+public class Thread extends Component {
 
 	/**
 	 * Required by SLI
 	 */
-	public Setting() {
+	public Thread() {
 	}
 
-	public Setting( Key name ) {
+	public Thread( Key name ) {
 		super( name );
 		declaredAttributes = new Attribute[] {
 		};
@@ -52,7 +53,7 @@ public class Setting extends Component {
 	 *
 	 */
 	public Optional<Object> _invoke( IBoxContext context, IStruct attributes, ComponentBody body, IStruct executionState ) {
-		// TODO: Make this do something
-		return DEFAULT_RETURN;
+		throw new BoxRuntimeException( "Not implemented" );
+		// return DEFAULT_RETURN;
 	}
 }

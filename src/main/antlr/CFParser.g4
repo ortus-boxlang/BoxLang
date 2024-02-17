@@ -416,7 +416,7 @@ scope:
 	| THIS
 	| SUPER
 	| CGI
-	| THREAD
+	//| THREAD
 	| SESSION
 	| COOKIE
 	| URL

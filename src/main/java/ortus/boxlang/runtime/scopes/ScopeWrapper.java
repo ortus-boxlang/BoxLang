@@ -32,7 +32,7 @@ public class ScopeWrapper extends BaseScope {
 	 * Private Properties
 	 * --------------------------------------------------------------------------
 	 */
-	IScope wrapped;
+	IScope wrappedScope;
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -40,15 +40,15 @@ public class ScopeWrapper extends BaseScope {
 	 * --------------------------------------------------------------------------
 	 */
 
-	public ScopeWrapper( IScope wrapped ) {
-		this( wrapped, null );
+	public ScopeWrapper( IScope wrappedScope ) {
+		this( wrappedScope, null );
 	}
 
-	public ScopeWrapper( IScope wrapped, Map<Key, Object> override ) {
+	public ScopeWrapper( IScope wrappedScope, Map<Key, Object> override ) {
 		super( Key.of( "wrapper" ) );
-		this.wrapped = wrapped;
+		this.wrappedScope = wrappedScope;
 		if ( override != null ) {
-			this.putAll( override );
+			super.putAll( override );
 		}
 	}
 
@@ -58,11 +58,11 @@ public class ScopeWrapper extends BaseScope {
 	 * --------------------------------------------------------------------------
 	 */
 	public IScope getWrapped() {
-		return wrapped;
+		return wrappedScope;
 	}
 
-	public void setWrapped( IScope wrapped ) {
-		this.wrapped = wrapped;
+	public void setWrapped( IScope wrappedScope ) {
+		this.wrappedScope = wrappedScope;
 	}
 
 	/**
@@ -71,7 +71,7 @@ public class ScopeWrapper extends BaseScope {
 	 * @return The name of the scope
 	 */
 	public Key getName() {
-		return wrapped.getName();
+		return wrappedScope.getName();
 	}
 
 	@Override
@@ -79,14 +79,14 @@ public class ScopeWrapper extends BaseScope {
 		if ( super.containsKey( name ) ) {
 			return true;
 		}
-		return wrapped.containsKey( name );
+		return wrappedScope.containsKey( name );
 	}
 
 	public boolean containsKey( Key name ) throws NullPointerException {
 		if ( super.containsKey( name ) ) {
 			return true;
 		}
-		return wrapped.containsKey( name );
+		return wrappedScope.containsKey( name );
 	}
 
 	@Override
@@ -95,7 +95,7 @@ public class ScopeWrapper extends BaseScope {
 		if ( result != null ) {
 			return Struct.unWrapNull( result );
 		}
-		return wrapped.get( name );
+		return wrappedScope.get( name );
 	}
 
 	@Override
@@ -103,20 +103,20 @@ public class ScopeWrapper extends BaseScope {
 		if ( super.containsKey( name ) ) {
 			return super.put( name, value );
 		}
-		return wrapped.put( name, value );
+		return wrappedScope.put( name, value );
 	}
 
 	@Override
 	public List<String> getKeysAsStrings() {
 		List<String> result = keySet().stream().map( Key::getName ).collect( java.util.stream.Collectors.toList() );
-		result.addAll( wrapped.keySet().stream().map( Key::getName ).collect( java.util.stream.Collectors.toList() ) );
+		result.addAll( wrappedScope.keySet().stream().map( Key::getName ).collect( java.util.stream.Collectors.toList() ) );
 		return result;
 	}
 
 	@Override
 	public List<Key> getKeys() {
 		List<Key> result = keySet().stream().collect( java.util.stream.Collectors.toList() );
-		result.addAll( wrapped.keySet().stream().collect( java.util.stream.Collectors.toList() ) );
+		result.addAll( wrappedScope.keySet().stream().collect( java.util.stream.Collectors.toList() ) );
 		return result;
 	}
 

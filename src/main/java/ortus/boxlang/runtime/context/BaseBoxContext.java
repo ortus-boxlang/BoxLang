@@ -335,7 +335,7 @@ public class BaseBoxContext implements IBoxContext {
 		}
 
 		Function function = findFunction( name );
-		return invokeFunction( function, name, function.createArgumentsScope( positionalArguments ) );
+		return invokeFunction( function, name, function.createArgumentsScope( this, positionalArguments ) );
 	}
 
 	/**
@@ -350,7 +350,7 @@ public class BaseBoxContext implements IBoxContext {
 		}
 
 		Function function = findFunction( name );
-		return invokeFunction( function, name, function.createArgumentsScope( namedArguments ) );
+		return invokeFunction( function, name, function.createArgumentsScope( this, namedArguments ) );
 	}
 
 	/**
@@ -365,7 +365,7 @@ public class BaseBoxContext implements IBoxContext {
 		}
 
 		Function function = findFunction( name );
-		return invokeFunction( function, name, function.createArgumentsScope( new Object[] {} ) );
+		return invokeFunction( function, name, function.createArgumentsScope( this, new Object[] {} ) );
 	}
 
 	/**
@@ -393,7 +393,7 @@ public class BaseBoxContext implements IBoxContext {
 	 */
 	public Object invokeFunction( Object function, Object[] positionalArguments ) {
 		Function func = FunctionCaster.cast( function );
-		return invokeFunction( func, func.getName(), func.createArgumentsScope( positionalArguments ) );
+		return invokeFunction( func, func.getName(), func.createArgumentsScope( this, positionalArguments ) );
 	}
 
 	/**
@@ -415,7 +415,7 @@ public class BaseBoxContext implements IBoxContext {
 	 */
 	public Object invokeFunction( Object function, Map<Key, Object> namedArguments ) {
 		Function func = FunctionCaster.cast( function );
-		return invokeFunction( func, func.getName(), func.createArgumentsScope( namedArguments ) );
+		return invokeFunction( func, func.getName(), func.createArgumentsScope( this, namedArguments ) );
 	}
 
 	/**
@@ -426,7 +426,7 @@ public class BaseBoxContext implements IBoxContext {
 	 */
 	public Object invokeFunction( Object function ) {
 		Function func = FunctionCaster.cast( function );
-		return invokeFunction( func, func.getName(), func.createArgumentsScope( new Object[] {} ) );
+		return invokeFunction( func, func.getName(), func.createArgumentsScope( this, new Object[] {} ) );
 	}
 
 	/**

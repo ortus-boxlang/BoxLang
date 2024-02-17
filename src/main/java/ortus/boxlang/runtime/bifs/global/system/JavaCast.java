@@ -54,6 +54,6 @@ public class JavaCast extends BIF {
 			return null;
 		}
 
-		return GenericCaster.cast( variable, Key.of( type ).getName() );
+		return GenericCaster.cast( context, variable, Key.of( type ).getName() );
 	}
 }

@@ -366,6 +366,11 @@ public class JavaBoxpiler {
 	}
 
 	public SourceMap getSourceMapFromFQN( String FQN ) {
+		// If fqn ends with $Cloure_xxx or $Func_xxx, $Lambda_xxx, then we need to strip that off to get the original FQN
+		Matcher m = Pattern.compile( "(.*?)(\\$Closure_.*|\\$Func_.*|\\$Lambda_.*)$" ).matcher( FQN );
+		if ( m.find() ) {
+			FQN = m.group( 1 );
+		}
 		return diskClassLoader.readLineNumbers( FQN );
 	}
 

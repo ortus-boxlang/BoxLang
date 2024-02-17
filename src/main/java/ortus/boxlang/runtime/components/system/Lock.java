@@ -59,7 +59,7 @@ public class Lock extends Component {
 	 */
 	public Optional<Object> _invoke( IBoxContext context, IStruct attributes, ComponentBody body, IStruct executionState ) {
 		// TODO: Actually implement locking
-		
+
 		BodyResult bodyResult = processBody( context, body );
 		// IF there was a return statement inside our body, we early exit now
 		if ( bodyResult.returnValue().isPresent() ) {

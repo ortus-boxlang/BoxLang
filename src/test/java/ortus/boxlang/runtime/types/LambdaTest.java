@@ -59,7 +59,7 @@ public class LambdaTest {
 		    new Argument( false, "Numeric", age, 43 )
 		};
 		Lambda		lambda		= new SampleLambda( args, "Brad" );
-		IScope		argscope	= lambda.createArgumentsScope();
+		IScope		argscope	= lambda.createArgumentsScope( context );
 
 		assertThat( argscope.get( firstName ) ).isEqualTo( "brad" );
 		assertThat( argscope.get( lastName ) ).isEqualTo( "wood" );
@@ -77,7 +77,7 @@ public class LambdaTest {
 		    new Argument( true, "String", lastName, "wood" )
 		};
 		Lambda		lambda		= new SampleLambda( args, "Brad" );
-		IScope		argscope	= lambda.createArgumentsScope( new Object[] { "Luis", "Majano", "Extra" } );
+		IScope		argscope	= lambda.createArgumentsScope( context, new Object[] { "Luis", "Majano", "Extra" } );
 
 		assertThat( argscope.get( firstName ) ).isEqualTo( "Luis" );
 		assertThat( argscope.get( lastName ) ).isEqualTo( "Majano" );
@@ -95,7 +95,7 @@ public class LambdaTest {
 		    new Argument( true, "String", lastName, "wood" )
 		};
 		Lambda		lambda		= new SampleLambda( args, "Brad" );
-		IScope		argscope	= lambda.createArgumentsScope( new Object[] { "Luis" } );
+		IScope		argscope	= lambda.createArgumentsScope( context, new Object[] { "Luis" } );
 
 		assertThat( argscope.get( firstName ) ).isEqualTo( "Luis" );
 		assertThat( argscope.get( lastName ) ).isEqualTo( "wood" );
@@ -114,7 +114,7 @@ public class LambdaTest {
 		};
 		Lambda		lambda		= new SampleLambda( args, "Brad" );
 		IScope		argscope	= lambda
-		    .createArgumentsScope( Map.of( firstName, "Luis", lastName, "Majano", extra, "Gavin" ) );
+		    .createArgumentsScope( context, Map.of( firstName, "Luis", lastName, "Majano", extra, "Gavin" ) );
 
 		assertThat( argscope.get( firstName ) ).isEqualTo( "Luis" );
 		assertThat( argscope.get( lastName ) ).isEqualTo( "Majano" );
@@ -132,13 +132,13 @@ public class LambdaTest {
 		Lambda		lambda	= new SampleLambda( args, "Brad" );
 
 		// Explicit named arg
-		assertThrows( Throwable.class, () -> lambda.createArgumentsScope( Map.of( age, "sdf" ) ) );
+		assertThrows( Throwable.class, () -> lambda.createArgumentsScope( context, Map.of( age, "sdf" ) ) );
 		// Explicit positional arg
-		assertThrows( Throwable.class, () -> lambda.createArgumentsScope( new Object[] { "sdf" } ) );
+		assertThrows( Throwable.class, () -> lambda.createArgumentsScope( context, new Object[] { "sdf" } ) );
 		// Default postiional arg
-		assertThrows( Throwable.class, () -> lambda.createArgumentsScope() );
+		assertThrows( Throwable.class, () -> lambda.createArgumentsScope( context ) );
 		// Default named arg
-		assertThrows( Throwable.class, () -> lambda.createArgumentsScope( Map.of() ) );
+		assertThrows( Throwable.class, () -> lambda.createArgumentsScope( context, Map.of() ) );
 	}
 
 	@DisplayName( "can default missing named args" )
@@ -152,7 +152,7 @@ public class LambdaTest {
 		};
 		Lambda		lambda		= new SampleLambda( args, "Brad" );
 		IScope		argscope	= lambda
-		    .createArgumentsScope( Map.of( firstName, "Luis" ) );
+		    .createArgumentsScope( context, Map.of( firstName, "Luis" ) );
 
 		assertThat( argscope.get( firstName ) ).isEqualTo( "Luis" );
 		assertThat( argscope.get( lastName ) ).isEqualTo( "wood" );
@@ -172,7 +172,7 @@ public class LambdaTest {
 		};
 		Lambda		lambda		= new SampleLambda( args, "Brad" );
 		IScope		argscope	= lambda
-		    .createArgumentsScope( new HashMap<Key, Object>( Map.of(
+		    .createArgumentsScope( context, new HashMap<Key, Object>( Map.of(
 		        Function.ARGUMENT_COLLECTION, Map.of( firstName, "Luis", lastName, "Majano", extra, "Gavin" ),
 		        extraExtra, "Jorge"
 		    ) ) );
@@ -193,7 +193,7 @@ public class LambdaTest {
 		};
 		Lambda		lambda		= new SampleLambda( args, "Brad" );
 		IScope		argscope	= lambda
-		    .createArgumentsScope( new HashMap<Key, Object>( Map.of(
+		    .createArgumentsScope( context, new HashMap<Key, Object>( Map.of(
 		        Function.ARGUMENT_COLLECTION, Map.of( firstName, "from collection" ),
 		        firstName, "top level"
 		    ) ) );
@@ -213,9 +213,9 @@ public class LambdaTest {
 		};
 		Lambda		lambda		= new SampleLambda( args, "Brad" );
 
-		assertThrows( Throwable.class, () -> lambda.createArgumentsScope() );
-		assertThrows( Throwable.class, () -> lambda.createArgumentsScope( new Object[] { "Luis" } ) );
-		assertThrows( Throwable.class, () -> lambda.createArgumentsScope( Map.of( firstName, "Luis" ) ) );
+		assertThrows( Throwable.class, () -> lambda.createArgumentsScope( context ) );
+		assertThrows( Throwable.class, () -> lambda.createArgumentsScope( context, new Object[] { "Luis" } ) );
+		assertThrows( Throwable.class, () -> lambda.createArgumentsScope( context, Map.of( firstName, "Luis" ) ) );
 	}
 
 	@DisplayName( "can process no args" )
@@ -228,7 +228,7 @@ public class LambdaTest {
 		    new Argument( false, "String", lastName, "wood" )
 		};
 		Lambda		lambda		= new SampleLambda( args, "Brad" );
-		IScope		argscope	= lambda.createArgumentsScope();
+		IScope		argscope	= lambda.createArgumentsScope( context );
 
 		assertThat( argscope.get( firstName ) ).isEqualTo( "brad" );
 		assertThat( argscope.get( lastName ) ).isEqualTo( "wood" );

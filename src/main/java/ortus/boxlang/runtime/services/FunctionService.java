@@ -32,6 +32,7 @@ import ortus.boxlang.runtime.bifs.BIFNamespace;
 import ortus.boxlang.runtime.bifs.BoxBIF;
 import ortus.boxlang.runtime.bifs.BoxMember;
 import ortus.boxlang.runtime.bifs.MemberDescriptor;
+import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.dynamic.casters.CastAttempt;
 import ortus.boxlang.runtime.dynamic.casters.GenericCaster;
 import ortus.boxlang.runtime.scopes.Key;
@@ -218,14 +219,19 @@ public class FunctionService extends BaseService {
 	 *
 	 * @return The member method with the given name and type or null if none exists
 	 */
-	public MemberDescriptor getMemberMethod( Key name, Object object ) {
+	public MemberDescriptor getMemberMethod( IBoxContext context, Key name, Object object ) {
 		// For obj.method() we first look for a registered member method of this name
+		System.out.println( "name: " + name );
 		Map<BoxLangType, MemberDescriptor> targetMethodMap = this.memberMethods.get( name );
+		System.out.println( "targetMethodMap != null: " + ( targetMethodMap != null ) );
 		if ( targetMethodMap != null ) {
 			// Then we see if our object is castable to any of the possible types for that method registered
 			// Breaks on first successful cast
 			for ( Map.Entry<BoxLangType, MemberDescriptor> entry : targetMethodMap.entrySet() ) {
-				CastAttempt<?> castAttempt = GenericCaster.attempt( object, entry.getKey() );
+				System.out.println( "entry.getKey(): " + entry.getKey() );
+				System.out.println( "object: " + object.getClass().getName() );
+				CastAttempt<?> castAttempt = GenericCaster.attempt( context, object, entry.getKey() );
+				System.out.println( "castAttempt.wasSuccessful(): " + castAttempt.wasSuccessful() );
 				if ( castAttempt.wasSuccessful() ) {
 					return entry.getValue();
 				}

@@ -17,6 +17,7 @@
  */
 package ortus.boxlang.runtime.operators;
 
+import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.dynamic.casters.GenericCaster;
 
 /**
@@ -31,8 +32,8 @@ public class CastAs implements IOperator {
 	 *
 	 * @return The result
 	 */
-	public static Object invoke( Object left, Object right ) {
-		return GenericCaster.cast( left, right );
+	public static Object invoke( IBoxContext context, Object left, Object right ) {
+		return GenericCaster.cast( context, left, right );
 	}
 
 }

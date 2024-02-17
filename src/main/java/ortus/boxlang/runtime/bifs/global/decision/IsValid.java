@@ -66,13 +66,13 @@ public class IsValid extends BIF {
 			/*
 			 * Implemented in GenericCaster, mostly non-string types.
 			 */
-			case ANY -> GenericCaster.attempt( arguments.get( Key.value ), "any" ).wasSuccessful();
-			case ARRAY -> GenericCaster.attempt( arguments.get( Key.value ), "array" ).wasSuccessful();
-			case BOOLEAN -> GenericCaster.attempt( arguments.get( Key.value ), "boolean" ).wasSuccessful();
-			case DATE -> GenericCaster.attempt( arguments.get( Key.value ), "datetime" ).wasSuccessful();
-			case STRING -> GenericCaster.attempt( arguments.get( Key.value ), "string" ).wasSuccessful();
-			case STRUCT -> GenericCaster.attempt( arguments.get( Key.value ), "struct" ).wasSuccessful();
-			case TIME -> GenericCaster.attempt( arguments.get( Key.value ), "datetime" ).wasSuccessful();
+			case ANY -> GenericCaster.attempt( context, arguments.get( Key.value ), "any" ).wasSuccessful();
+			case ARRAY -> GenericCaster.attempt( context, arguments.get( Key.value ), "array" ).wasSuccessful();
+			case BOOLEAN -> GenericCaster.attempt( context, arguments.get( Key.value ), "boolean" ).wasSuccessful();
+			case DATE -> GenericCaster.attempt( context, arguments.get( Key.value ), "datetime" ).wasSuccessful();
+			case STRING -> GenericCaster.attempt( context, arguments.get( Key.value ), "string" ).wasSuccessful();
+			case STRUCT -> GenericCaster.attempt( context, arguments.get( Key.value ), "struct" ).wasSuccessful();
+			case TIME -> GenericCaster.attempt( context, arguments.get( Key.value ), "datetime" ).wasSuccessful();
 
 			/*
 			 * Implemented in ValidationUtil

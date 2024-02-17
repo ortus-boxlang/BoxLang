@@ -23,6 +23,9 @@ import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.loader.ClassLocator;
+import ortus.boxlang.runtime.runnables.IClassRunnable;
+import ortus.boxlang.runtime.scopes.Key;
+import ortus.boxlang.runtime.types.IStruct;
 
 /**
  * Performs instance of check.
@@ -50,27 +53,45 @@ public class InstanceOf implements IOperator {
 		if ( left == null ) {
 			return false;
 		}
+		IClassRunnable	cfc		= null;
 
-		String type = StringCaster.cast( right );
+		String			type	= StringCaster.cast( right );
 
 		left = DynamicObject.unWrap( left );
 
-		// TODO: Determine if type is a known CFC type
-		// Right now, just doing Java type checking
-
-		// TODO: First perform exact CFC check
+		// First perform exact CFC check
+		if ( left instanceof IClassRunnable cfc2 ) {
+			cfc = cfc2;
+			String cfcName = cfc.getName().getName();
+			if ( cfcName.equalsIgnoreCase( type )
+			    || cfcName.toLowerCase().endsWith( "." + type.toLowerCase() ) ) {
+				return true;
+			}
+		}
 
 		// Perform exact Java type check
 		if ( left.getClass().getName().equalsIgnoreCase( type )
 		    // Lucee does some loose typing here, not sure exactly how it works, but it's along these lines
 		    || left.getClass().getName().toLowerCase().endsWith( "." + type.toLowerCase() ) ) {
+
+			System.out.println( "java exact check true" );
 			return true;
 		}
 
-		// TODO: Perform CFC inheritance check
+		// Perform CFC inheritance check
+		if ( cfc != null ) {
+			IStruct meta = cfc.getBoxMeta().getMeta();
+			while ( ( meta = meta.getAsStruct( Key._EXTENDS ) ).size() > 0 ) {
+				String cfcName = meta.getAsString( Key._NAME );
+				if ( cfcName.equalsIgnoreCase( type )
+				    || cfcName.toLowerCase().endsWith( "." + type.toLowerCase() ) ) {
+					return true;
+				}
+			}
+		}
 
 		// Perform Java inheritance check
-		Optional<DynamicObject> loadResult = ClassLocator.getInstance().safeLoad( context, type );
+		Optional<DynamicObject> loadResult = ClassLocator.getInstance().safeLoad( context, type, "java" );
 		// true if left's class is the same as, or a superclass or superinterface of javaType
 		if ( loadResult.isPresent() && loadResult.get().getTargetClass().isAssignableFrom( left.getClass() ) ) {
 			return true;

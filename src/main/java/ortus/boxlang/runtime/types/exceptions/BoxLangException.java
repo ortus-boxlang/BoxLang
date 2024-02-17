@@ -17,7 +17,13 @@
  */
 package ortus.boxlang.runtime.types.exceptions;
 
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+import ortus.boxlang.runtime.runnables.compiler.JavaBoxpiler;
 import ortus.boxlang.runtime.scopes.Key;
+import ortus.boxlang.runtime.types.Array;
+import ortus.boxlang.runtime.types.Struct;
 
 /**
  * This is the root exception for all exceptions thrown by BoxLang.
@@ -52,8 +58,8 @@ public abstract class BoxLangException extends RuntimeException {
 	 * ensure the type string matches the exception class as well.
 	 */
 	public String			type			= null;
-	// TODO:
-	public String			tagContext		= "";
+
+	public Array			tagContext		= null;
 
 	/**
 	 * Constructor
@@ -101,6 +107,7 @@ public abstract class BoxLangException extends RuntimeException {
 		if ( cause != null ) {
 			initCause( cause );
 		}
+		tagContext = buildTagContext();
 	}
 
 	/**
@@ -126,7 +133,43 @@ public abstract class BoxLangException extends RuntimeException {
 	 * 
 	 * @return The tag context
 	 */
-	public String getTagContext() {
+	public Array getTagContext() {
+		return tagContext;
+	}
+
+	private Array buildTagContext() {
+		Array		tagContext	= new Array();
+		Throwable	cause		= this;
+		while ( cause != null ) {
+			for ( StackTraceElement element : cause.getStackTrace() ) {
+				String fileName = element.toString();
+				if ( ( fileName.contains( "$cf" ) || fileName.contains( "$bx" ) ) && fileName.contains( "._invoke(" ) ) {
+					int		lineNo		= -1;
+					String	BLFileName	= element.getClassName();
+					var		sourceMap	= JavaBoxpiler.getInstance().getSourceMapFromFQN( element.getClassName() );
+					if ( sourceMap != null ) {
+						lineNo		= sourceMap.convertJavaLineToSourceLine( element.getLineNumber() );
+						BLFileName	= sourceMap.getSource();
+					}
+					String	id	= "";
+					Matcher	m	= Pattern.compile( ".*\\$Func_(.*)$" ).matcher( element.getClassName() );
+					if ( m.find() ) {
+						id = m.group( 1 ) + "()";
+					}
+					tagContext.add( Struct.of(
+					    Key.codePrintHTML, "",
+					    Key.codePrintPlain, "",
+					    Key.column, -1,
+					    Key.id, id,
+					    Key.line, lineNo,
+					    Key.Raw_Trace, element.toString(),
+					    Key.template, BLFileName,
+					    Key.type, "CFML"
+					) );
+				}
+			}
+			cause = cause.getCause();
+		}
 		return tagContext;
 	}
 

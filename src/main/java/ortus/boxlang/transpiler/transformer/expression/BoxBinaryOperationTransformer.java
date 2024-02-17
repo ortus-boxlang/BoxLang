@@ -102,7 +102,7 @@ public class BoxBinaryOperationTransformer extends AbstractTransformer {
 		} else if ( operation.getOperator() == BoxBinaryOperator.NotContains ) {
 			template = "!Contains.invoke(${left},${right})";
 		} else if ( operation.getOperator() == BoxBinaryOperator.CastAs ) {
-			template = "CastAs.invoke(${left},${right})";
+			template = "CastAs.invoke(${contextName},${left},${right})";
 		} else {
 			throw new IllegalStateException( "not implemented" );
 		}

@@ -20,6 +20,7 @@ package ortus.boxlang.runtime.types;
 import java.util.List;
 import java.util.Map;
 
+import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.dynamic.casters.CastAttempt;
 import ortus.boxlang.runtime.dynamic.casters.GenericCaster;
 import ortus.boxlang.runtime.interop.DynamicObject;
@@ -40,7 +41,7 @@ public class ArgumentUtil {
 	 *
 	 * @return The arguments scope
 	 */
-	public static ArgumentsScope createArgumentsScope( Object[] positionalArguments, Argument[] arguments ) {
+	public static ArgumentsScope createArgumentsScope( IBoxContext context, Object[] positionalArguments, Argument[] arguments ) {
 		ArgumentsScope scope = new ArgumentsScope();
 		// Add all incoming args to the scope, using the name if declared, otherwise using the position
 		for ( int i = 0; i < positionalArguments.length; i++ ) {
@@ -48,7 +49,7 @@ public class ArgumentUtil {
 			Object	value	= positionalArguments[ i ];
 			if ( arguments.length - 1 >= i ) {
 				name	= arguments[ i ].name();
-				value	= ensureArgumentType( name, value, arguments[ i ].type() );
+				value	= ensureArgumentType( context, name, value, arguments[ i ].type() );
 			} else {
 				name = Key.of( Integer.toString( i + 1 ) );
 			}
@@ -62,7 +63,7 @@ public class ArgumentUtil {
 					throw new BoxRuntimeException( "Required argument " + arguments[ i ].name().getName() + " is missing" );
 				}
 				scope.put( arguments[ i ].name(),
-				    ensureArgumentType( arguments[ i ].name(), arguments[ i ].defaultValue(), arguments[ i ].type() ) );
+				    ensureArgumentType( context, arguments[ i ].name(), arguments[ i ].defaultValue(), arguments[ i ].type() ) );
 			}
 		}
 		return scope;
@@ -76,7 +77,7 @@ public class ArgumentUtil {
 	 *
 	 * @return The arguments scope
 	 */
-	public static ArgumentsScope createArgumentsScope( Map<Key, Object> namedArguments, Argument[] arguments ) {
+	public static ArgumentsScope createArgumentsScope( IBoxContext context, Map<Key, Object> namedArguments, Argument[] arguments ) {
 		ArgumentsScope scope = new ArgumentsScope();
 
 		// If argumentCollection exists, add it
@@ -118,11 +119,11 @@ public class ArgumentUtil {
 					throw new BoxRuntimeException( "Required argument " + argument.name().getName() + " is missing" );
 				}
 				// Make sure the default value is valid
-				scope.put( argument.name(), ensureArgumentType( argument.name(), argument.defaultValue(), argument.type() ) );
+				scope.put( argument.name(), ensureArgumentType( context, argument.name(), argument.defaultValue(), argument.type() ) );
 				// If they are here, confirm their types
 			} else {
 				scope.put( argument.name(),
-				    ensureArgumentType( argument.name(), scope.get( argument.name() ), argument.type() ) );
+				    ensureArgumentType( context, argument.name(), scope.get( argument.name() ), argument.type() ) );
 			}
 		}
 		return scope;
@@ -135,8 +136,8 @@ public class ArgumentUtil {
 	 *
 	 * @return The arguments scope
 	 */
-	public static ArgumentsScope createArgumentsScope( Argument[] arguments ) {
-		return createArgumentsScope( new Object[] {}, arguments );
+	public static ArgumentsScope createArgumentsScope( IBoxContext context, Argument[] arguments ) {
+		return createArgumentsScope( context, new Object[] {}, arguments );
 	}
 
 	/**
@@ -149,11 +150,11 @@ public class ArgumentUtil {
 	 * @return The value of the argument
 	 *
 	 */
-	public static Object ensureArgumentType( Key name, Object value, String type ) {
+	public static Object ensureArgumentType( IBoxContext context, Key name, Object value, String type ) {
 		if ( value == null ) {
 			return null;
 		}
-		CastAttempt<Object> typeCheck = GenericCaster.attempt( value, type, true );
+		CastAttempt<Object> typeCheck = GenericCaster.attempt( context, value, type, true );
 		if ( !typeCheck.wasSuccessful() ) {
 			throw new BoxRuntimeException(
 			    String.format( "Argument [%s] with a type of [%s] does not match the declared type of [%s]",

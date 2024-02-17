@@ -689,4 +689,32 @@ public class ClosureFunctionTest {
 
 	}
 
+	@DisplayName( "More lexical scoping" )
+	@Test
+	public void testMoreLexicalScoping() {
+
+		instance.executeSource(
+		    """
+		        function getActiveModules(){
+		        	return {
+		        		"cbstreams" : {
+		    	moduleConfig : {}
+		    }
+		        	};
+		        }
+		          function announceToModules( required event, args = {} ){
+		          	getActiveModules().each( ( moduleName, config ) => {
+		          		if ( structKeyExists( config.moduleConfig, event ) ) {
+		          			//invoke( config.moduleConfig, event, args );
+		          		}
+		          	} );
+		     }
+		        announceToModules( "myEvent", { "foo" : "bar" } );
+		                       """,
+		    context );
+
+		assertThat( variables.get( result ) ).isEqualTo( null );
+
+	}
+
 }

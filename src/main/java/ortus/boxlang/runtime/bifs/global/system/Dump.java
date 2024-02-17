@@ -30,10 +30,14 @@ import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
 import ortus.boxlang.runtime.context.ContainerBoxContext;
 import ortus.boxlang.runtime.context.IBoxContext;
+import ortus.boxlang.runtime.runnables.IClassRunnable;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
+import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
 import ortus.boxlang.runtime.types.Argument;
+import ortus.boxlang.runtime.types.DateTime;
+import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.IType;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
@@ -79,7 +83,17 @@ public class Dump extends BIF {
 		InputStream	dumpTemplate		= null;
 		String		name				= "Class.cfm";
 
-		if ( target instanceof IType ) {
+		if ( target == null ) {
+			name = "Null.cfm";
+		} else if ( target instanceof IScope ) {
+			name = "Struct.cfm";
+		} else if ( target instanceof DateTime ) {
+			name = "DateTime.cfm";
+		} else if ( target instanceof IClassRunnable ) {
+			name = "BoxClass.cfm";
+		} else if ( target instanceof IStruct ) {
+			name = "Struct.cfm";
+		} else if ( target instanceof IType ) {
 			name = target.getClass().getSimpleName() + ".cfm";
 		} else if ( target instanceof String ) {
 			name = "String.cfm";
@@ -111,7 +125,7 @@ public class Dump extends BIF {
 			if ( runningFromJar ) {
 				dumpTemplate = this.getClass().getResourceAsStream( dumpTemplatePath );
 			} else {
-				Path templatePath = Path.of( dumpTemplatePath );
+				Path templatePath = Path.of( "src/main/resources" + dumpTemplatePath );
 
 				if ( Files.exists( templatePath ) ) {
 					try {

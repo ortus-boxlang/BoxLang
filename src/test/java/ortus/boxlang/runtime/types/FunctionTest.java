@@ -62,7 +62,7 @@ public class FunctionTest {
 		    new Argument( false, "Numeric", age, 43 )
 		};
 		UDF			udf			= new SampleUDF( UDF.Access.PUBLIC, Key.of( "foo" ), "any", args, null );
-		IScope		argscope	= udf.createArgumentsScope();
+		IScope		argscope	= udf.createArgumentsScope( context );
 
 		assertThat( argscope.get( firstName ) ).isEqualTo( "brad" );
 		assertThat( argscope.get( lastName ) ).isEqualTo( "wood" );
@@ -80,7 +80,7 @@ public class FunctionTest {
 		    new Argument( true, "String", lastName, "wood" )
 		};
 		UDF			udf			= new SampleUDF( UDF.Access.PUBLIC, Key.of( "foo" ), "any", args, null );
-		IScope		argscope	= udf.createArgumentsScope( new Object[] { "Luis", "Majano", "Extra" } );
+		IScope		argscope	= udf.createArgumentsScope( context, new Object[] { "Luis", "Majano", "Extra" } );
 
 		assertThat( argscope.get( firstName ) ).isEqualTo( "Luis" );
 		assertThat( argscope.get( lastName ) ).isEqualTo( "Majano" );
@@ -98,7 +98,7 @@ public class FunctionTest {
 		    new Argument( true, "String", lastName, "wood" )
 		};
 		UDF			udf			= new SampleUDF( UDF.Access.PUBLIC, Key.of( "foo" ), "any", args, null );
-		IScope		argscope	= udf.createArgumentsScope( new Object[] { "Luis" } );
+		IScope		argscope	= udf.createArgumentsScope( context, new Object[] { "Luis" } );
 
 		assertThat( argscope.get( firstName ) ).isEqualTo( "Luis" );
 		assertThat( argscope.get( lastName ) ).isEqualTo( "wood" );
@@ -117,7 +117,7 @@ public class FunctionTest {
 		};
 		UDF			udf			= new SampleUDF( UDF.Access.PUBLIC, Key.of( "foo" ), "any", args, null );
 		IScope		argscope	= udf
-		    .createArgumentsScope( Map.of( firstName, "Luis", lastName, "Majano", extra, "Gavin" ) );
+		    .createArgumentsScope( context, Map.of( firstName, "Luis", lastName, "Majano", extra, "Gavin" ) );
 
 		assertThat( argscope.get( firstName ) ).isEqualTo( "Luis" );
 		assertThat( argscope.get( lastName ) ).isEqualTo( "Majano" );
@@ -135,13 +135,13 @@ public class FunctionTest {
 		UDF			udf		= new SampleUDF( UDF.Access.PUBLIC, Key.of( "foo" ), "any", args, null );
 
 		// Explicit named arg
-		assertThrows( Throwable.class, () -> udf.createArgumentsScope( Map.of( age, "sdf" ) ) );
+		assertThrows( Throwable.class, () -> udf.createArgumentsScope( context, Map.of( age, "sdf" ) ) );
 		// Explicit positional arg
-		assertThrows( Throwable.class, () -> udf.createArgumentsScope( new Object[] { "sdf" } ) );
+		assertThrows( Throwable.class, () -> udf.createArgumentsScope( context, new Object[] { "sdf" } ) );
 		// Default postiional arg
-		assertThrows( Throwable.class, () -> udf.createArgumentsScope() );
+		assertThrows( Throwable.class, () -> udf.createArgumentsScope( context ) );
 		// Default named arg
-		assertThrows( Throwable.class, () -> udf.createArgumentsScope( Map.of() ) );
+		assertThrows( Throwable.class, () -> udf.createArgumentsScope( context, Map.of() ) );
 	}
 
 	@DisplayName( "can default missing named args" )
@@ -155,7 +155,7 @@ public class FunctionTest {
 		};
 		UDF			udf			= new SampleUDF( UDF.Access.PUBLIC, Key.of( "foo" ), "any", args, null );
 		IScope		argscope	= udf
-		    .createArgumentsScope( Map.of( firstName, "Luis" ) );
+		    .createArgumentsScope( context, Map.of( firstName, "Luis" ) );
 
 		assertThat( argscope.get( firstName ) ).isEqualTo( "Luis" );
 		assertThat( argscope.get( lastName ) ).isEqualTo( "wood" );
@@ -175,7 +175,7 @@ public class FunctionTest {
 		};
 		UDF			udf			= new SampleUDF( UDF.Access.PUBLIC, Key.of( "foo" ), "any", args, null );
 		IScope		argscope	= udf
-		    .createArgumentsScope( new HashMap<Key, Object>( Map.of(
+		    .createArgumentsScope( context, new HashMap<Key, Object>( Map.of(
 		        Function.ARGUMENT_COLLECTION, Map.of( firstName, "Luis", lastName, "Majano", extra, "Gavin" ),
 		        extraExtra, "Jorge"
 		    ) ) );
@@ -200,7 +200,7 @@ public class FunctionTest {
 		};
 		UDF			udf			= new SampleUDF( UDF.Access.PUBLIC, Key.of( "foo" ), "any", args, null );
 		IScope		argscope	= udf
-		    .createArgumentsScope( new HashMap<Key, Object>( Map.of(
+		    .createArgumentsScope( context, new HashMap<Key, Object>( Map.of(
 		        Function.ARGUMENT_COLLECTION, List.of( "Luis", "Majano", "Gavin" ),
 		        extraExtra, "Jorge"
 		    ) ) );
@@ -222,7 +222,7 @@ public class FunctionTest {
 		};
 		UDF			udf			= new SampleUDF( UDF.Access.PUBLIC, Key.of( "foo" ), "any", args, null );
 		IScope		argscope	= udf
-		    .createArgumentsScope( new HashMap<Key, Object>( Map.of(
+		    .createArgumentsScope( context, new HashMap<Key, Object>( Map.of(
 		        Function.ARGUMENT_COLLECTION, List.of( "foo", "bar" ),
 		        param, "42"
 		    ) ) );
@@ -239,7 +239,7 @@ public class FunctionTest {
 		Argument[]	args		= new Argument[] {};
 		UDF			udf			= new SampleUDF( UDF.Access.PUBLIC, Key.of( "foo" ), "any", args, null );
 		IScope		argscope	= udf
-		    .createArgumentsScope( new HashMap<Key, Object>( Map.of(
+		    .createArgumentsScope( context, new HashMap<Key, Object>( Map.of(
 		        Function.ARGUMENT_COLLECTION, Map.of( param, "foo" ),
 		        param, "42"
 		    ) ) );
@@ -254,7 +254,7 @@ public class FunctionTest {
 		Argument[]	args		= new Argument[] {};
 		UDF			udf			= new SampleUDF( UDF.Access.PUBLIC, Key.of( "foo" ), "any", args, null );
 		IScope		argscope	= udf
-		    .createArgumentsScope( new HashMap<Key, Object>( Map.of(
+		    .createArgumentsScope( context, new HashMap<Key, Object>( Map.of(
 		        Function.ARGUMENT_COLLECTION, "sdf"
 		    ) ) );
 
@@ -271,7 +271,7 @@ public class FunctionTest {
 		};
 		UDF			udf			= new SampleUDF( UDF.Access.PUBLIC, Key.of( "foo" ), "any", args, null );
 		IScope		argscope	= udf
-		    .createArgumentsScope( new HashMap<Key, Object>( Map.of(
+		    .createArgumentsScope( context, new HashMap<Key, Object>( Map.of(
 		        Function.ARGUMENT_COLLECTION, Map.of( firstName, "from collection" ),
 		        firstName, "top level"
 		    ) ) );
@@ -291,9 +291,9 @@ public class FunctionTest {
 		};
 		UDF			udf			= new SampleUDF( UDF.Access.PUBLIC, Key.of( "foo" ), "any", args, null );
 
-		assertThrows( Throwable.class, () -> udf.createArgumentsScope() );
-		assertThrows( Throwable.class, () -> udf.createArgumentsScope( new Object[] { "Luis" } ) );
-		assertThrows( Throwable.class, () -> udf.createArgumentsScope( Map.of( firstName, "Luis" ) ) );
+		assertThrows( Throwable.class, () -> udf.createArgumentsScope( context ) );
+		assertThrows( Throwable.class, () -> udf.createArgumentsScope( context, new Object[] { "Luis" } ) );
+		assertThrows( Throwable.class, () -> udf.createArgumentsScope( context, Map.of( firstName, "Luis" ) ) );
 	}
 
 	@DisplayName( "can process no args" )
@@ -306,7 +306,7 @@ public class FunctionTest {
 		    new Argument( false, "String", lastName, "wood" )
 		};
 		UDF			udf			= new SampleUDF( UDF.Access.PUBLIC, Key.of( "foo" ), "any", args, null );
-		IScope		argscope	= udf.createArgumentsScope();
+		IScope		argscope	= udf.createArgumentsScope( context );
 
 		assertThat( argscope.get( firstName ) ).isEqualTo( "brad" );
 		assertThat( argscope.get( lastName ) ).isEqualTo( "wood" );
@@ -317,7 +317,7 @@ public class FunctionTest {
 	@Test
 	void testCanVerifyReturnTypes() {
 		UDF					udf				= new SampleUDF( UDF.Access.PUBLIC, Key.of( "foo" ), "String", new Argument[] {}, "Brad" );
-		ArgumentsScope		argscope		= udf.createArgumentsScope();
+		ArgumentsScope		argscope		= udf.createArgumentsScope( context );
 
 		IBoxContext			parentContext	= new ScriptingRequestBoxContext();
 		FunctionBoxContext	context			= new FunctionBoxContext( parentContext, udf, argscope );

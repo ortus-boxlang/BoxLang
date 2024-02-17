@@ -33,7 +33,7 @@ public class Type implements Validator {
 		if ( attribute.type() != null ) {
 			Object value = attributes.get( attribute.name() );
 			if ( value != null ) {
-				attributes.put( attribute.name(), GenericCaster.cast( value, attribute.type() ) );
+				attributes.put( attribute.name(), GenericCaster.cast( context, value, attribute.type() ) );
 			}
 		}
 	}

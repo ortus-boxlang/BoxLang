@@ -96,7 +96,10 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key	className					= Key.of( "className" );
 	public static final Key	clazz						= Key.of( "clazz" );
 	public static final Key	closure						= Key.of( "closure" );
+	public static final Key	codePrintHTML				= Key.of( "codePrintHTML" );
+	public static final Key	codePrintPlain				= Key.of( "codePrintPlain" );
 	public static final Key	coldfusion					= Key.of( "coldfusion" );
+	public static final Key	column						= Key.of( "column" );
 	public static final Key	columnList					= Key.of( "columnList" );
 	public static final Key	columnTypeList				= Key.of( "columnTypeList" );
 	public static final Key	compiler					= Key.of( "compiler" );
@@ -175,6 +178,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key	HTTP						= Key.of( "http" );
 	public static final Key	HTTPParam					= Key.of( "httpParam" );
 	public static final Key	HTTPParams					= Key.of( "httpParams" );
+	public static final Key	id							= Key.of( "id" );
 	public static final Key	ignoreCase					= Key.of( "ignoreCase" );
 	public static final Key	ignoreExists				= Key.of( "ignoreExists" );
 	public static final Key	includeEmptyFields			= Key.of( "includeEmptyFields" );
@@ -198,6 +202,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key	language					= Key.of( "language" );
 	public static final Key	leaveIndex					= Key.of( "leaveIndex" );
 	public static final Key	length						= Key.of( "length" );
+	public static final Key	line						= Key.of( "line" );
 	public static final Key	list						= Key.of( "list" );
 	public static final Key	listInfo					= Key.of( "listInfo" );
 	public static final Key	listToJSON					= Key.of( "listToJSON" );
@@ -266,6 +271,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key	query						= Key.of( "query" );
 	public static final Key	queryFormat					= Key.of( "queryFormat" );
 	public static final Key	radix						= Key.of( "radix" );
+	public static final Key	Raw_Trace					= Key.of( "Raw_Trace" );
 	public static final Key	recordCount					= Key.of( "recordCount" );
 	public static final Key	recurse						= Key.of( "recurse" );
 	public static final Key	recursive					= Key.of( "recursive" );
@@ -293,6 +299,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key	sortOrder					= Key.of( "sortOrder" );
 	public static final Key	sortType					= Key.of( "sortType" );
 	public static final Key	source						= Key.of( "source" );
+	public static final Key	stackTrace					= Key.of( "stackTrace" );
 	public static final Key	start						= Key.of( "start" );
 	public static final Key	startRow					= Key.of( "startRow" );
 	public static final Key	state						= Key.of( "state" );
@@ -317,6 +324,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key	timezone					= Key.of( "timezone" );
 	public static final Key	trim						= Key.of( "trim" );
 	public static final Key	type						= Key.of( "type" );
+	public static final Key	typename					= Key.of( "typename" );
 	public static final Key	URL							= Key.of( "URL" );
 	public static final Key	useCustomSerializer			= Key.of( "useCustomSerializer" );
 	public static final Key	useSecureJSONPrefix			= Key.of( "useSecureJSONPrefix" );

@@ -151,10 +151,6 @@ public class FunctionBoxContext extends BaseBoxContext {
 			return querySearch;
 		}
 
-		if ( shallow ) {
-			return null;
-		}
-
 		if ( isInClass() ) {
 			// A function executing in a class can see the class variables
 			IScope classVariablesScope = getThisClass().getBottomClass().getVariablesScope();
@@ -166,9 +162,18 @@ public class FunctionBoxContext extends BaseBoxContext {
 				return new ScopeSearchResult( classVariablesScope, Struct.unWrapNull( result ) );
 			}
 
+			if ( shallow ) {
+				return null;
+			}
+
 			// A component cannot see nearby scopes above it
 			return parent.scopeFind( key, defaultScope );
 		} else {
+
+			if ( shallow ) {
+				return null;
+			}
+
 			// A UDF is "transparent" and can see everything in the parent scope as a "local" observer
 			return parent.scopeFindNearby( key, defaultScope );
 		}
@@ -219,19 +224,25 @@ public class FunctionBoxContext extends BaseBoxContext {
 			return argumentsScope;
 		}
 
-		if ( shallow ) {
-			return null;
-		}
-
 		if ( isInClass() ) {
 			if ( name.equals( VariablesScope.name ) ) {
 				return getThisClass().getBottomClass().getVariablesScope();
 			}
+
+			if ( shallow ) {
+				return null;
+			}
+
 			// We don't have a check for "this" here because this.foo transpiles to a direct reference to the class itself
 
 			// A component cannot see nearby scopes above it
 			return parent.getScope( name );
 		} else {
+
+			if ( shallow ) {
+				return null;
+			}
+
 			// The FunctionBoxContext has no "global" scopes, so just defer to parent
 			return parent.getScopeNearby( name );
 		}
@@ -338,7 +349,7 @@ public class FunctionBoxContext extends BaseBoxContext {
 	 * @return Return value of the function call
 	 */
 	public Object invokeFunction( Function function, Key calledName, ArgumentsScope argumentsScope ) {
-		FunctionBoxContext	functionContext	= new FunctionBoxContext( this, function, calledName, argumentsScope );
+		FunctionBoxContext	functionContext	= Function.generateFunctionContext( function, getFunctionParentContext(), calledName, argumentsScope );
 		boolean				inClass			= isInClass();
 		if ( inClass ) {
 			functionContext.pushTemplate( getThisClass() );

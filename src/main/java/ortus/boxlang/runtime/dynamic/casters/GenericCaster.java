@@ -20,6 +20,8 @@ package ortus.boxlang.runtime.dynamic.casters;
 import java.math.BigDecimal;
 import java.util.List;
 
+import ortus.boxlang.runtime.context.IBoxContext;
+import ortus.boxlang.runtime.operators.InstanceOf;
 import ortus.boxlang.runtime.types.BoxLangType;
 import ortus.boxlang.runtime.types.Function;
 import ortus.boxlang.runtime.types.NullValue;
@@ -44,7 +46,7 @@ public class GenericCaster {
 	 *
 	 * @return A CastAttempt, which contains the casted value, if successful
 	 */
-	public static CastAttempt<Object> attempt( Object object, Object oType, boolean strict ) {
+	public static CastAttempt<Object> attempt( IBoxContext context, Object object, Object oType, boolean strict ) {
 		String type;
 		if ( oType instanceof BoxLangType boxType ) {
 			type = boxType.name().toLowerCase();
@@ -67,7 +69,7 @@ public class GenericCaster {
 			return CastAttempt.ofNullable( new NullValue() );
 		}
 
-		return CastAttempt.ofNullable( cast( object, type, false ) );
+		return CastAttempt.ofNullable( cast( context, object, type, false ) );
 	}
 
 	/**
@@ -82,8 +84,8 @@ public class GenericCaster {
 	 *
 	 * @return A CastAttempt, which contains the casted value, if successful
 	 */
-	public static CastAttempt<Object> attempt( Object object, Object oType ) {
-		return attempt( object, oType, false );
+	public static CastAttempt<Object> attempt( IBoxContext context, Object object, Object oType ) {
+		return attempt( context, object, oType, false );
 	}
 
 	/**
@@ -94,8 +96,8 @@ public class GenericCaster {
 	 *
 	 * @return The value
 	 */
-	public static Object cast( Object object, Object oType ) {
-		return cast( object, oType, true );
+	public static Object cast( IBoxContext context, Object object, Object oType ) {
+		return cast( context, object, oType, true );
 	}
 
 	/**
@@ -110,7 +112,7 @@ public class GenericCaster {
 	 *
 	 * @return The value, or null when cannot be cast or if the type was "null" or "void"
 	 */
-	public static Object cast( Object object, Object oType, Boolean fail ) {
+	public static Object cast( IBoxContext context, Object object, Object oType, Boolean fail ) {
 		String type = StringCaster.cast( oType ).toLowerCase();
 
 		if ( type.equals( "null" ) || type.equals( "void" ) ) {
@@ -142,7 +144,7 @@ public class GenericCaster {
 			    incomingList.length );
 
 			for ( int i = incomingList.length - 1; i >= 0; i-- ) {
-				result[ i ] = GenericCaster.cast( incomingList[ i ], newType, fail );
+				result[ i ] = GenericCaster.cast( context, incomingList[ i ], newType, fail );
 			}
 			return result;
 
@@ -221,8 +223,15 @@ public class GenericCaster {
 			}
 		}
 
-		// Throwing even if fail is false because this is a programming error
-		throw new BoxCastException( String.format( "Invalid cast type [%s]", type ) );
+		// Handle CFC types. If it is an instance, we pass it
+		if ( InstanceOf.invoke( context, object, type ) ) {
+			return object;
+		}
+		if ( fail ) {
+			throw new BoxCastException( String.format( "Could not cast object [%s] to type [%s]", object.getClass().getSimpleName(), type ) );
+		} else {
+			return null;
+		}
 
 	}
 

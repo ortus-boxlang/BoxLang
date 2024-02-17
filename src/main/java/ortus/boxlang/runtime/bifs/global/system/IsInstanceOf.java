@@ -12,41 +12,42 @@
  * BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language
  * governing permissions and limitations under the License.
  */
-package ortus.boxlang.runtime.bifs.global.decision;
+package ortus.boxlang.runtime.bifs.global.system;
 
 import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
 import ortus.boxlang.runtime.context.IBoxContext;
-import ortus.boxlang.runtime.dynamic.casters.GenericCaster;
+import ortus.boxlang.runtime.operators.InstanceOf;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
 
 @BoxBIF
-public class IsSimpleValue extends BIF {
+public class IsInstanceOf extends BIF {
 
 	/**
 	 * Constructor
 	 */
-	public IsSimpleValue() {
+	public IsInstanceOf() {
 		super();
 		declaredArguments = new Argument[] {
-		    new Argument( true, "any", Key.value ),
+		    new Argument( true, "any", Key.object ),
+		    new Argument( true, "string", Key.typename )
 		};
 	}
 
 	/**
-	 * Determine whether the given value is a string, numeric, or date.Arrays, structs, queries, closures, classes and components, and other complex
-	 * structures will return false.
+	 * Determines whether an object is an instance of a ColdFusion interface or component, or of a Java class.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
+	 * 
+	 * @argument.object The CFC instance or Java object that you are testing
+	 * 
+	 * @argument.typename The name of the interface, component, or Java class of which the object might be an instance
 	 *
-	 * @argument.value Value to test for simple-ness.
 	 */
 	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
-		Object value = arguments.get( Key.value );
-		return value != null && GenericCaster.attempt( context, value, "string" ).wasSuccessful();
+		return InstanceOf.invoke( context, arguments.get( Key.object ), arguments.getAsString( Key.typename ) );
 	}
-
 }

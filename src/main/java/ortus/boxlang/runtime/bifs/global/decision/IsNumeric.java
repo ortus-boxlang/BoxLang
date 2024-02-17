@@ -48,7 +48,7 @@ public class IsNumeric extends BIF {
 		if ( value == null ) {
 			return false;
 		}
-		return GenericCaster.attempt( value, "numeric" ).wasSuccessful();
+		return GenericCaster.attempt( context, value, "numeric" ).wasSuccessful();
 	}
 
 }
