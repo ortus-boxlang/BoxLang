@@ -52,7 +52,11 @@ public class DataSourceTest {
 
 	@BeforeEach
 	public void setupEach() throws SQLException {
-		datasource.getConnection().createStatement().execute( "DROP TABLE foo" );
+		try {
+			datasource.getConnection().createStatement().execute( "DROP TABLE foo" );
+		} catch ( SQLException e ) {
+			// Table doesn't exist, that's fine and good because that's what we want. if it's a connection error, we'll catch that in the test itself.
+		}
 	}
 
 	@DisplayName( "It can get an Apache Derby JDBC connection" )
@@ -108,9 +112,20 @@ public class DataSourceTest {
 		assertThat( conn.isValid( 5 ) ).isFalse();
 	}
 
-	@DisplayName( "It can execute queries in a transaction without providing a connection" )
+	@DisplayName( "It can execute simple queries without or without providing a connection" )
 	@Test
-	void testTransactionalQueryExecuteNoConn() {
+	void testQueryExecuteNoConn() {
+		assertDoesNotThrow( () -> {
+			datasource.execute( "CREATE TABLE foo (id INTEGER)" );
+		} );
+		assertDoesNotThrow( () -> {
+			datasource.execute( "SELECT * FROM foo", datasource.getConnection() );
+		} );
+	}
+
+	@DisplayName( "It can execute queries in a transaction, with or without providing a specific connection" )
+	@Test
+	void testTransactionalQueryExecuteWithConn() {
 		String[] queries = new String[] {
 		    "CREATE TABLE foo (id INTEGER)",
 		    "INSERT INTO foo (id) VALUES ( 1 )"
@@ -118,15 +133,6 @@ public class DataSourceTest {
 		assertDoesNotThrow( () -> {
 			datasource.executeTransactionally( queries );
 		} );
-	}
-
-	@DisplayName( "It can execute queries in a transaction, with providing a specific connection" )
-	@Test
-	void testTransactionalQueryExecuteWithConn() {
-		String[] queries = new String[] {
-		    "CREATE TABLE foo (id INTEGER)",
-		    "INSERT INTO foo (id) VALUES ( 1 )"
-		};
 		assertDoesNotThrow( () -> {
 			datasource.executeTransactionally( queries, datasource.getConnection() );
 		} );
