@@ -1,0 +1,13 @@
+----------------------------------------------------------------
+Sat Feb 17 13:52:55 CST 2024:
+Booting Derby version The Apache Software Foundation - Apache Derby - 10.16.1.1 - (1901046): instance a816c00e-018d-b8a0-ffb0-00001ed94250 
+on database directory C:\Users\brad\Documents\GitHub\boxlang\src\test\resources\tmp\testDB with class loader jdk.internal.loader.ClassLoaders$AppClassLoader@659e0bfd 
+Loaded from file:/C:/Users/brad/.gradle/caches/modules-2/files-2.1/org.apache.derby/derby/10.16.1.1/f9ca2054b3e33ec3f3f19df4a7490352d82de54a/derby-10.16.1.1.jar
+java.vendor=Oracle Corporation
+java.runtime.version=17.0.9+11-LTS-201
+user.dir=C:\Users\brad\Documents\GitHub\boxlang
+os.name=Windows 11
+os.arch=amd64
+os.version=10.0
+derby.system.home=null
+Database Class Loader started - derby.database.classpath=''

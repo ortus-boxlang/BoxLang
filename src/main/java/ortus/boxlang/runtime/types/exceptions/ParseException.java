@@ -34,8 +34,8 @@ public class ParseException extends BoxRuntimeException {
 	 *
 	 * @param issues List of issues encountered during parsing.
 	 */
-	public ParseException( List<Issue> issues ) {
-		super( "Error compiling source. " + issuesAsString( issues ) );
+	public ParseException( List<Issue> issues, String source ) {
+		super( "Error compiling [ " + source + " ]. " + issuesAsString( issues ) );
 
 		this.issues			= issues;
 		this.extendedInfo	= issuesAsString( issues );

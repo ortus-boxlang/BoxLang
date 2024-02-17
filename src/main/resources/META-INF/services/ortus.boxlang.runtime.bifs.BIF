@@ -240,6 +240,7 @@ ortus.boxlang.runtime.bifs.global.system.Print
 ortus.boxlang.runtime.bifs.global.system.Println
 ortus.boxlang.runtime.bifs.global.system.Sleep
 ortus.boxlang.runtime.bifs.global.system.Throw
+ortus.boxlang.runtime.bifs.global.system.URLEncodedFormat
 ortus.boxlang.runtime.bifs.global.system.WriteOutput
 ortus.boxlang.runtime.bifs.global.temporal.ClearTimezone
 ortus.boxlang.runtime.bifs.global.temporal.CreateDateTime

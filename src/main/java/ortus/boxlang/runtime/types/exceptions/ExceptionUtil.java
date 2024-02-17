@@ -17,9 +17,16 @@
  */
 package ortus.boxlang.runtime.types.exceptions;
 
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.operators.InstanceOf;
+import ortus.boxlang.runtime.runnables.compiler.JavaBoxpiler;
+import ortus.boxlang.runtime.scopes.Key;
+import ortus.boxlang.runtime.types.Array;
+import ortus.boxlang.runtime.types.Struct;
 
 /**
  * This exception is thrown when a cast can't be done on any type
@@ -69,5 +76,41 @@ public class ExceptionUtil {
 		} else {
 			throw new BoxRuntimeException( "Cannot throw object of type [" + ex.getClass().getName() + "].  Must be a Throwable." );
 		}
+	}
+
+	public static Array buildTagContext( Throwable e ) {
+		Array		tagContext	= new Array();
+		Throwable	cause		= e;
+		while ( cause != null ) {
+			for ( StackTraceElement element : cause.getStackTrace() ) {
+				String fileName = element.toString();
+				if ( ( fileName.contains( "$cf" ) || fileName.contains( "$bx" ) ) && fileName.contains( "._invoke(" ) ) {
+					int		lineNo		= -1;
+					String	BLFileName	= element.getClassName();
+					var		sourceMap	= JavaBoxpiler.getInstance().getSourceMapFromFQN( element.getClassName() );
+					if ( sourceMap != null ) {
+						lineNo		= sourceMap.convertJavaLineToSourceLine( element.getLineNumber() );
+						BLFileName	= sourceMap.getSource();
+					}
+					String	id	= "";
+					Matcher	m	= Pattern.compile( ".*\\$Func_(.*)$" ).matcher( element.getClassName() );
+					if ( m.find() ) {
+						id = m.group( 1 ) + "()";
+					}
+					tagContext.add( Struct.of(
+					    Key.codePrintHTML, "",
+					    Key.codePrintPlain, "",
+					    Key.column, -1,
+					    Key.id, id,
+					    Key.line, lineNo,
+					    Key.Raw_Trace, element.toString(),
+					    Key.template, BLFileName,
+					    Key.type, "CFML"
+					) );
+				}
+			}
+			cause = cause.getCause();
+		}
+		return tagContext;
 	}
 }

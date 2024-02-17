@@ -33,6 +33,7 @@ import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.exceptions.AbortException;
 import ortus.boxlang.runtime.types.exceptions.BoxLangException;
+import ortus.boxlang.runtime.types.exceptions.ExceptionUtil;
 import ortus.boxlang.web.WebRequestBoxContext;
 
 /**
@@ -75,31 +76,33 @@ public class BLHandler implements HttpHandler {
 				errorOutput.append( "<h2>Detail</h2><pre>" )
 				    .append( escapeHTML( ble.getDetail() ) )
 				    .append( "</pre><h2>Type</h2>" )
-				    .append( escapeHTML( ble.getType() ) )
-				    .append( "<h2>Tag Context</h2>" )
-				    .append( "<table border='1' cellPadding='5' cellspacing='0'>" )
-				    .append( "<tr><th>File</th><th>Line</th><th>Method</th></tr>" );
-				Array tagContext = ble.getTagContext();
+				    .append( escapeHTML( ble.getType() ) );
 
-				for ( var t : tagContext ) {
-					IStruct	item		= ( IStruct ) t;
-					Integer	lineNo		= item.getAsInteger( Key.line );
-					String	fileName	= item.getAsString( Key.template );
-					errorOutput.append( "<tr><td><b>" )
-					    .append( fileName );
-					if ( lineNo > 0 ) {
-						errorOutput.append( "</b><br><pre>" )
-						    .append( getSurroudingLinesOfCode( fileName, lineNo ) )
-						    .append( "</pre>" );
-					}
-					errorOutput.append( "</td><td>" )
-					    .append( lineNo.toString() )
-					    .append( "</td><td>" )
-					    .append( escapeHTML( item.getAsString( Key.id ) ) )
-					    .append( "</td></tr>" );
-				}
-				errorOutput.append( "</table>" );
 			}
+			errorOutput.append( "<h2>Tag Context</h2>" )
+			    .append( "<table border='1' cellPadding='5' cellspacing='0'>" )
+			    .append( "<tr><th>File</th><th>Line</th><th>Method</th></tr>" );
+
+			Array tagContext = ExceptionUtil.buildTagContext( e );
+
+			for ( var t : tagContext ) {
+				IStruct	item		= ( IStruct ) t;
+				Integer	lineNo		= item.getAsInteger( Key.line );
+				String	fileName	= item.getAsString( Key.template );
+				errorOutput.append( "<tr><td><b>" )
+				    .append( fileName );
+				if ( lineNo > 0 ) {
+					errorOutput.append( "</b><br><pre>" )
+					    .append( getSurroudingLinesOfCode( fileName, lineNo ) )
+					    .append( "</pre>" );
+				}
+				errorOutput.append( "</td><td>" )
+				    .append( lineNo.toString() )
+				    .append( "</td><td>" )
+				    .append( escapeHTML( item.getAsString( Key.id ) ) )
+				    .append( "</td></tr>" );
+			}
+			errorOutput.append( "</table>" );
 
 			errorOutput.append( "<h2>Stack Trace</h2>" )
 			    .append( "<pre>" );
@@ -120,21 +123,18 @@ public class BLHandler implements HttpHandler {
 	}
 
 	private String getSurroudingLinesOfCode( String fileName, int lineNo ) {
-		System.out.println( "Getting surrounding lines of code for " + fileName + " at line " + lineNo );
 		// read file, if exists, and return the surrounding lines of code, 2 before and 2 after
 		File srcFile = new File( fileName );
 		if ( srcFile.exists() ) {
 			// ...
 
 			try {
-				List<String> lines = Files.readAllLines( srcFile.toPath() );
-				System.out.println( "lines.size() " + lines.size() );
+				List<String>	lines		= Files.readAllLines( srcFile.toPath() );
 				int				startLine	= Math.max( 1, lineNo - 2 );
 				int				endLine		= Math.min( lines.size(), lineNo + 2 );
 
 				StringBuilder	codeSnippet	= new StringBuilder();
 				for ( int i = startLine; i <= endLine; i++ ) {
-					System.out.println( "line: " + i + " : " + lines.get( i - 1 ) );
 					String theLine = escapeHTML( lines.get( i - 1 ) );
 					if ( i == lineNo ) {
 						codeSnippet.append( "<b>" ).append( i ).append( ": " ).append( theLine ).append( "</b>" ).append( "\n" );
@@ -152,6 +152,9 @@ public class BLHandler implements HttpHandler {
 	}
 
 	private String escapeHTML( String s ) {
+		if ( s == null ) {
+			return "";
+		}
 		return s.replace( "<", "&lt;" ).replace( ">", "&gt;" );
 	}
 

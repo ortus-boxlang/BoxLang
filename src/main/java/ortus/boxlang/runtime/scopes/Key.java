@@ -20,6 +20,8 @@ package ortus.boxlang.runtime.scopes;
 import java.io.Serializable;
 import java.util.Arrays;
 
+import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
+
 /**
  * Represents a case-insenstive key, while retaining the original case too.
  * Implements the Serializable interface in case duplication is requested within a native HashMap or ArrayList
@@ -542,6 +544,10 @@ public class Key implements Comparable<Key>, Serializable {
 	public static Key of( Object obj ) {
 		if ( obj instanceof Double d ) {
 			return Key.of( d );
+		}
+		// TODO: TODO: also check this higher up so we can tell the user more about what was null.
+		if ( obj == null ) {
+			throw new BoxRuntimeException( "Cannot create a key from a null object" );
 		}
 		return new Key( obj.toString(), obj );
 	}
