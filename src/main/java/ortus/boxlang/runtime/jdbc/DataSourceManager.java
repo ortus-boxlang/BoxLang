@@ -69,7 +69,7 @@ public class DataSourceManager {
 	 * @param datasource Struct of datasource properties for configuring the datasource.
 	 */
 	public DataSourceManager registerDatasource( Key name, IStruct datasource ) {
-		this.datasources.put( name, DataSource.fromStruct( datasource ) );
+		this.datasources.put( name, new DataSource( datasource ) );
 		return this;
 	}
 

@@ -23,7 +23,6 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.sql.Connection;
 import java.sql.SQLException;
-import java.util.Map;
 
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -53,9 +52,9 @@ public class DatasourceManagerTest {
 	@DisplayName( "It throws on invalid datasource connection URLs" )
 	@Test
 	void testThrow() {
-		IStruct config = Struct.fromMap( Map.of(
-		    Key.URL, "jdbc:foobar:myDB"
-		) );
+		IStruct config = Struct.of(
+		    "jdbcUrl", "jdbc:foobar:myDB"
+		);
 		assertThrows( RuntimeException.class, () -> {
 			manager.registerDatasource( datasourceName, config );
 		} );
@@ -64,13 +63,9 @@ public class DatasourceManagerTest {
 	@DisplayName( "It can clear all registered datasources" )
 	@Test
 	void testClear() throws SQLException {
-		manager.registerDatasource( datasourceName, Struct.fromMap( Map.of(
-		    Key.driver, "derby",
-		    Key.username, "user",
-		    Key.password, "password",
-		    Key.databaseName, "test",
-		    Key.URL, "jdbc:derby:src/test/resources/tmp/testDB;create=true"
-		) ) );
+		manager.registerDatasource( datasourceName, Struct.of(
+		    "jdbcUrl", "jdbc:derby:src/test/resources/tmp/testDB;create=true"
+		) );
 		assertThat( manager.getDatasource( datasourceName ) ).isInstanceOf( DataSource.class );
 		Connection connection = manager.getDatasource( datasourceName ).getConnection();
 		assertThat( connection ).isInstanceOf( Connection.class );
@@ -84,13 +79,9 @@ public class DatasourceManagerTest {
 	@Test
 	void testRegisterDatasource() {
 		assertThat( manager.getDatasource( datasourceName ) ).isNull();
-		manager.registerDatasource( datasourceName, Struct.fromMap( Map.of(
-		    Key.driver, "derby",
-		    Key.username, "user",
-		    Key.password, "password",
-		    Key.databaseName, "test",
-		    Key.URL, "jdbc:derby:src/test/resources/tmp/testDB;create=true"
-		) ) );
+		manager.registerDatasource( datasourceName, Struct.of(
+		    "jdbcUrl", "jdbc:derby:src/test/resources/tmp/testDB;create=true"
+		) );
 		assertThat( manager.getDatasource( datasourceName ) ).isInstanceOf( DataSource.class );
 	}
 
@@ -98,13 +89,9 @@ public class DatasourceManagerTest {
 	@Test
 	void testDefaultDatasource() {
 		assertThat( manager.getDefaultDatasource() ).isNull();
-		DataSource defaultDatasource = DataSource.fromStruct( Struct.fromMap( Map.of(
-		    Key.driver, "derby",
-		    Key.username, "user",
-		    Key.password, "password",
-		    Key.databaseName, "test",
-		    Key.URL, "jdbc:derby:src/test/resources/tmp/testDB;create=true"
-		) ) );
+		DataSource defaultDatasource = new DataSource( Struct.of(
+		    "jdbcUrl", "jdbc:derby:src/test/resources/tmp/testDB;create=true"
+		) );
 		manager.setDefaultDatasource( defaultDatasource );
 
 		assertThat( manager.getDefaultDatasource() ).isEqualTo( defaultDatasource );

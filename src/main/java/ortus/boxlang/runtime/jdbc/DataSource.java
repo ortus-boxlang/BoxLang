@@ -16,85 +16,76 @@ package ortus.boxlang.runtime.jdbc;
 
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.util.Properties;
 
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
 
-import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
 /**
  * Encapsulates a datasource configuration.
+ *
+ * @TODO: This class needs to move to a JDBC module to allow a leaner, lighter-weight BoxLang Core.
  */
 public class DataSource {
 
-	/**
-	 * Driver type, used in constructing connection urls, as well as choosing which connection pool to utilize.
-	 *
-	 * <ul>
-	 * <li><code>postgresql</code></li>
-	 * <li><code>mysql</code></li>
-	 * <li><code>mariadb</code></li>
-	 * <li><code>mssql</code></li>
-	 * <li>etc, etc.</li>
-	 * </ul>
-	 */
-	private String				driver;
+	// /**
+	// * Driver type. For future use.
+	// *
+	// * <ul>
+	// * <li><code>postgresql</code></li>
+	// * <li><code>mysql</code></li>
+	// * <li><code>mariadb</code></li>
+	// * <li><code>mssql</code></li>
+	// * <li>etc, etc.</li>
+	// * </ul>
+	// */
+	// private String driver;
 
-	/**
-	 * Username for the datasource. Generally required on all datasource connections with the exception of in-memory databases.
-	 */
-	private String				username;
+	// /**
+	// * Username for the datasource. Generally required on all datasource connections with the exception of in-memory databases.
+	// */
+	// private String username;
 
-	/**
-	 * Password for the datasource. Generally required on all datasource connections with the exception of in-memory databases.
-	 */
-	private String				password;
+	// /**
+	// * Password for the datasource. Generally required on all datasource connections with the exception of in-memory databases.
+	// */
+	// private String password;
 
-	/**
-	 * JDBC URL for the datasource.
-	 * <p>
-	 * Specifies the driver type, host, port, and database name. The format of this URL is specific to the database being used - for example, a PostgreSQL
-	 * connection url looks like <code>jdbc:postgresql://host:port/database</code>.
-	 * <p>
-	 * The URL is optional, but mutually exclusive with `driver`, `host`, `port`, and `databaseName`. If the URL is provided, `driver`, `host`, `port`,
-	 * and `databaseName` are
-	 * ignored.
-	 */
-	private String				url;
-	private String				databaseName;
-	private String				host;
-	private Integer				port;
+	// /**
+	// * JDBC URL for the datasource.
+	// * <p>
+	// * Specifies the driver type, host, port, and database name. The format of this URL is specific to the database being used - for example, a
+	// PostgreSQL
+	// * connection url looks like <code>jdbc:postgresql://host:port/database</code>.
+	// * <p>
+	// * The URL is optional, but mutually exclusive with `driver`, `host`, `port`, and `databaseName`. If the URL is provided, `driver`, `host`, `port`,
+	// * and `databaseName` are
+	// * ignored.
+	// */
+	// private String url;
+
+	// /**
+	// * Database name to connect to. Most, but not all, database vendors require this.
+	// */
+	// private String databaseName;
+
+	// /**
+	// * Hostname of the database server. Most, but not all, database vendors require this.
+	// */
+	// private String host;
+
+	// /**
+	// * Port number of the database server. Most, but not all, database vendors require this.
+	// */
+	// private Integer port;
 
 	/**
 	 * Underlying HikariDataSource object, used in connection pooling.
 	 */
-	private HikariDataSource	hikariDataSource;
-
-	/**
-	 * Private constructor. Use fromStruct() instead.
-	 */
-	private DataSource( String driver, String username, String password, String url, String host, Integer port, String databaseName ) {
-		this.driver			= driver;
-		this.username		= username;
-		this.password		= password;
-		this.url			= url;
-		this.host			= host;
-		this.port			= port;
-		this.databaseName	= databaseName;
-
-		HikariConfig config = new HikariConfig();
-		config.setJdbcUrl( url );
-		config.setUsername( username );
-		config.setPassword( password );
-		// @TODO: Support ad-hoc properties:
-		// config.addDataSourceProperty( "cachePrepStmts", "true" );
-		// config.addDataSourceProperty( "prepStmtCacheSize", "250" );
-		// config.addDataSourceProperty( "prepStmtCacheSqlLimit", "2048" );
-
-		this.hikariDataSource = new HikariDataSource( config );
-	}
+	private HikariDataSource hikariDataSource;
 
 	/**
 	 * Configure and initialize a new DataSourceRecord object from a struct of properties.
@@ -109,19 +100,30 @@ public class DataSource {
 	 *
 	 * @return
 	 */
-	public static DataSource fromStruct( IStruct properties ) {
-		// @TODO: Do we need to wrap exceptions in a BoxRuntimeException? Hikari already throws a RuntimeException if the connection pool can't be
-		// established, so wrapping as a BoxRuntimeException (or a BoxSQLException?) would be redundant, not to mention the additional overhead.
-		return new DataSource(
-		    properties.getAsString( Key.driver ),
-		    properties.getAsString( Key.username ),
-		    properties.getAsString( Key.password ),
-		    properties.getAsString( Key.URL ),
-		    properties.getAsString( Key.host ),
-		    properties.getAsInteger( Key.port ),
-		    properties.getAsString( Key.databaseName )
-		);
+	public DataSource( IStruct config ) {
+		Properties properties = new Properties();
+		config.forEach( ( key, value ) -> {
+			properties.setProperty( key.getName(), ( String ) value );
+		} );
+
+		HikariConfig hikariConfig = new HikariConfig( properties );
+		this.hikariDataSource = new HikariDataSource( hikariConfig );
+
 	}
+
+	// public static DataSource fromStruct( IStruct properties ) {
+	// // @TODO: Do we need to wrap exceptions in a BoxRuntimeException? Hikari already throws a RuntimeException if the connection pool can't be
+	// // established, so wrapping as a BoxRuntimeException (or a BoxSQLException?) would be redundant, not to mention the additional overhead.
+	// return new DataSource(
+	// properties.getAsString( Key.driver ),
+	// properties.getAsString( Key.username ),
+	// properties.getAsString( Key.password ),
+	// properties.getAsString( Key.URL ),
+	// properties.getAsString( Key.host ),
+	// properties.getAsInteger( Key.port ),
+	// properties.getAsString( Key.databaseName )
+	// );
+	// }
 
 	/**
 	 * Get a connection to the configured datasource.
@@ -150,8 +152,18 @@ public class DataSource {
 	}
 
 	/**
-	 * Execute a query on the connection.
+	 * Execute a query on the connection, using a connection from the connection pool.
 	 */
+	public void execute( String query ) {
+		execute( query, getConnection() );
+	}
+
+	/**
+	 * Execute a query on the connection, using the provided connection.
+	 */
+	public void execute( String query, Connection conn ) {
+		// @TODO: Implement!
+	}
 
 	/**
 	 * Begin a transaction on the connection. (i.e. acquire a transaction object for further operations)
@@ -163,7 +175,8 @@ public class DataSource {
 	/**
 	 * Execute a series of statements in a transaction.
 	 *
-	 * @param conn The connection to execute the transaction on. If not provided, a connection will be acquired from the datasource connection pool.
+	 * @param query An array of SQL statements to execute in the transaction.
+	 * @param conn  The connection to execute the transaction on. If not provided, a connection will be acquired from the datasource connection pool.
 	 */
 	public void executeTransactionally( String[] query, Connection conn ) {
 		try {

@@ -19,11 +19,12 @@
 package ortus.boxlang.runtime.jdbc;
 
 import static com.google.common.truth.Truth.assertThat;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 
 import java.sql.Connection;
 import java.sql.SQLException;
-import java.util.Map;
 
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
@@ -39,48 +40,67 @@ public class DataSourceTest {
 
 	@BeforeAll
 	public static void setUp() {
-		datasource = DataSource.fromStruct( Struct.fromMap( Map.of(
-		    Key.driver, "derby",
-		    Key.URL, "jdbc:derby:src/test/resources/tmp/testDB;create=true"
-		) ) );
+		datasource = new DataSource( Struct.of(
+		    "jdbcUrl", "jdbc:derby:src/test/resources/tmp/testDB;create=true"
+		) );
+	}
+
+	@AfterAll
+	public static void teardown() throws SQLException {
+		datasource.shutdown();
 	}
 
 	@BeforeEach
-	public void setupEach() {
-	}
-
-	@Disabled( "Need ability to enable/disable tests based on available third-party services." )
-	@DisplayName( "It can get a MySQL JDBC connection" )
-	@Test
-	void testMySQLConnection() throws SQLException {
-		DataSource	myDatasource	= DataSource.fromStruct( Struct.fromMap( Map.of(
-		    Key.driver, "mysql",
-		    Key.username, "root",
-		    Key.password, "secret",
-		    Key.databaseName, "test",
-		    Key.URL, "jdbc:mysql://localhost:3306"
-		) ) );
-		Connection	conn			= myDatasource.getConnection();
-		assertThat( conn ).isInstanceOf( Connection.class );
+	public void setupEach() throws SQLException {
+		datasource.getConnection().createStatement().execute( "DROP TABLE foo" );
 	}
 
 	@DisplayName( "It can get an Apache Derby JDBC connection" )
 	@Test
 	void testDerbyConnection() throws SQLException {
+		datasource = new DataSource( Struct.of(
+		    Key.of( "jdbcUrl" ), "jdbc:derby:src/test/resources/tmp/testDB;create=true"
+		) );
 		Connection conn = datasource.getConnection();
+		assertThat( conn ).isInstanceOf( Connection.class );
+	}
+
+	// @TODO: Move to mysql JDBC module tests?
+	@Disabled( "Need ability to enable/disable tests based on available third-party services." )
+	@DisplayName( "It can get a MySQL JDBC connection" )
+	@Test
+	void testMySQLConnection() throws SQLException {
+		DataSource	myDatasource	= new DataSource( Struct.of(
+		    // "driver", "mysql",
+		    "username", "root",
+		    "password", "secret",
+		    "databaseName", "test",
+		    "jdbcUrl", "jdbc:mysql://localhost:3306"
+		) );
+		Connection	conn			= myDatasource.getConnection();
+		assertThat( conn ).isInstanceOf( Connection.class );
+	}
+
+	@Disabled( "Need to implement this!" )
+	@DisplayName( "It can get a JDBC connection regardless of key casing" )
+	@Test
+	void testDerbyConnectionFunnyKeyCasing() throws SQLException {
+		DataSource	funkyDatasource	= new DataSource( Struct.of(
+		    "JDBCurl", "jdbc:derby:src/test/resources/tmp/testDB;create=true"
+		) );
+		Connection	conn			= funkyDatasource.getConnection();
 		assertThat( conn ).isInstanceOf( Connection.class );
 	}
 
 	@DisplayName( "It closes datasource connections on shutdown" )
 	@Test
 	void testDatasourceClose() throws SQLException {
-		DataSource	myDatasource	= DataSource.fromStruct( Struct.fromMap( Map.of(
-		    Key.driver, "derby",
-		    Key.username, "user",
-		    Key.password, "password",
-		    Key.databaseName, "test",
-		    Key.URL, "jdbc:derby:src/test/resources/tmp/testDB;create=true"
-		) ) );
+		DataSource	myDatasource	= new DataSource( Struct.of(
+		    "username", "user",
+		    "password", "password",
+		    // "databaseName", "test",
+		    "jdbcUrl", "jdbc:derby:src/test/resources/tmp/testDB;create=true"
+		) );
 		Connection	conn			= myDatasource.getConnection();
 		assertThat( conn ).isInstanceOf( Connection.class );
 
@@ -91,24 +111,24 @@ public class DataSourceTest {
 	@DisplayName( "It can execute queries in a transaction without providing a connection" )
 	@Test
 	void testTransactionalQueryExecuteNoConn() {
-		datasource.executeTransactionally(
-		    new String[] {
-		        "CREATE TABLE foo (id INTEGER)",
-		        "INSERT INTO foo (id) VALUES ( 1 )"
-		    }
-		);
+		String[] queries = new String[] {
+		    "CREATE TABLE foo (id INTEGER)",
+		    "INSERT INTO foo (id) VALUES ( 1 )"
+		};
+		assertDoesNotThrow( () -> {
+			datasource.executeTransactionally( queries );
+		} );
 	}
 
 	@DisplayName( "It can execute queries in a transaction, with providing a specific connection" )
 	@Test
 	void testTransactionalQueryExecuteWithConn() {
-		datasource.executeTransactionally(
-		    new String[] {
-		        "CREATE TABLE foobar (id INTEGER)",
-		        "INSERT INTO foobar (id) VALUES ( 1 )"
-		    },
-		    datasource.getConnection()
-		);
-		// assertThat()
+		String[] queries = new String[] {
+		    "CREATE TABLE foo (id INTEGER)",
+		    "INSERT INTO foo (id) VALUES ( 1 )"
+		};
+		assertDoesNotThrow( () -> {
+			datasource.executeTransactionally( queries, datasource.getConnection() );
+		} );
 	}
 }
