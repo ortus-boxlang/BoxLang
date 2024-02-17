@@ -89,6 +89,14 @@ dependencies {
 	// MOVE TO BOXLANG WEB PROJECT
 	// https://mvnrepository.com/artifact/io.undertow/undertow-core/2.3.10.Final
 	implementation 'io.undertow:undertow-core:2.3.10.Final'
+
+	// MOVE TO DERBY JDBC MODULE
+	// https://mvnrepository.com/artifact/org.apache.derby/derby
+	testImplementation 'org.apache.derby:derby:10.16.1.1'
+
+	// MOVE TO GENERIC JDBC MODULE
+	// https://mvnrepository.com/artifact/com.zaxxer/HikariCP
+	implementation 'com.zaxxer:HikariCP:5.1.0'
 }
 
 /**

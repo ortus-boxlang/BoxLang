@@ -354,8 +354,15 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key	xpath						= Key.of( "xpath" );
 	public static final Key	XSL							= Key.of( "XSL" );
 	public static final Key	year						= Key.of( "year" );
-
 	public static final Key	EMPTY						= Key.of( "" );
+
+	// jdbc
+	public static final Key	driver						= Key.of( "driver" );
+	public static final Key	host						= Key.of( "host" );
+	public static final Key	port						= Key.of( "port" );
+	public static final Key	username					= Key.of( "username" );
+	public static final Key	password					= Key.of( "password" );
+	public static final Key	databaseName				= Key.of( "databaseName" );
 
 	/**
 	 * --------------------------------------------------------------------------
