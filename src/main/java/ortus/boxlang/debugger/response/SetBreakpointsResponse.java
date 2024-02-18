@@ -42,5 +42,9 @@ public class SetBreakpointsResponse extends AbstractResponse {
 		this.body				= new SetBreakpointsResponseBody();
 
 		this.body.breakpoints	= request.arguments.breakpoints;
+
+		for ( Breakpoint bp : this.body.breakpoints ) {
+			bp.verified = true;
+		}
 	}
 }

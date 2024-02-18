@@ -15,31 +15,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package ortus.boxlang.debugger.event;
+package ortus.boxlang.debugger.request;
+
+import ortus.boxlang.debugger.DebugAdapter;
 
 /**
- * Models the Exit event for the Debug Protocol
+ * Models the command to disconnect a debug session.
  */
-public class ExitEvent extends Event {
+public class DisconnectRequest extends AbstractRequest {
 
-	public ExitBody body;
-
-	private class ExitBody {
-
-		@SuppressWarnings( value = { "unused" } )
-		public int exitCode;
-	}
-
-	/**
-	 * Constructor
-	 * 
-	 * @param exitCode The exit code of the program being debugged
-	 */
-	public ExitEvent( int exitCode ) {
-		super( "exited" );
-
-		this.body			= new ExitBody();
-		this.body.exitCode	= exitCode;
+	@Override
+	public void accept( DebugAdapter adapter ) {
+		adapter.visit( this );
 	}
 
 }
