@@ -82,9 +82,26 @@ public class ExceptionUtil {
 		Array		tagContext	= new Array();
 		Throwable	cause		= e;
 		while ( cause != null ) {
+			boolean	isInComponent	= false;
+			String	skipNext		= "";
 			for ( StackTraceElement element : cause.getStackTrace() ) {
 				String fileName = element.toString();
-				if ( ( fileName.contains( "$cf" ) || fileName.contains( "$bx" ) ) && fileName.contains( "._invoke(" ) ) {
+				if ( ( fileName.contains( "$cf" ) || fileName.contains( "$bx" ) )
+				    // ._invoke means we're just executing the template or function. lambda$_invoke$ means we're in a lambda inside of that same tmeplate for
+				    // function
+				    && ( fileName.contains( "._invoke(" ) || ( isInComponent = fileName.contains( ".lambda$_invoke$" ) ) ) ) {
+					// If we're just inside the nested lambda for a component, skip subssequent lines of the stack trace
+					if ( !skipNext.isEmpty() ) {
+						if ( fileName.startsWith( skipNext ) ) {
+							continue;
+						}
+						skipNext = "";
+					}
+					// If this stack trace line was inside of a lambda, skip the next line(s) starting with this
+					if ( isInComponent ) {
+						// take entire string up until ".lambda$_invoke$"
+						skipNext = fileName.substring( 0, fileName.indexOf( ".lambda$_invoke$" ) );
+					}
 					int		lineNo		= -1;
 					String	BLFileName	= element.getClassName();
 					var		sourceMap	= JavaBoxpiler.getInstance().getSourceMapFromFQN( element.getClassName() );
@@ -108,6 +125,7 @@ public class ExceptionUtil {
 					    Key.type, "CFML"
 					) );
 				}
+				isInComponent = false;
 			}
 			cause = cause.getCause();
 		}
