@@ -21,6 +21,7 @@ package ortus.boxlang.runtime.jdbc;
 import static com.google.common.truth.Truth.assertThat;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.sql.Connection;
 import java.sql.SQLException;
@@ -43,24 +44,14 @@ public class DataSourceTest {
 		datasource = new DataSource( Struct.of(
 		    "jdbcUrl", "jdbc:derby:memory:testDB;create=true"
 		) );
-		datasource.execute( "CREATE TABLE foo ( id INTEGER, name VARCHAR(155) )" );
+		datasource.execute( "CREATE TABLE developers ( id INTEGER, name VARCHAR(155) )" );
+		datasource.execute( "INSERT INTO developers ( id, name ) VALUES ( 1, 'Luis Majano' )" );
 	}
 
 	@AfterAll
 	public static void teardown() throws SQLException {
 		datasource.shutdown();
 	}
-
-	// @BeforeEach
-	// public void setupEach() throws SQLException {
-	// try (
-	// Connection conn = datasource.getConnection();
-	// java.sql.Statement stmt = conn.createStatement() ) {
-	// stmt.execute( "DROP TABLE foo" );
-	// } catch ( SQLException e ) {
-	// // Table doesn't exist, that's fine and good because that's what we want. if it's a connection error, we'll catch that in the test itself.
-	// }
-	// }
 
 	@DisplayName( "It can get an Apache Derby JDBC connection" )
 	@Test
@@ -120,11 +111,28 @@ public class DataSourceTest {
 	@Test
 	void testQueryExecute() {
 		assertDoesNotThrow( () -> {
-			datasource.execute( "INSERT INTO foo (id) VALUES ( 1 )" );
+			datasource.execute( "INSERT INTO developers ( id, name ) VALUES ( 77, 'Michael Born' )" );
 		} );
-		assertDoesNotThrow( () -> {
-			datasource.execute( "SELECT * FROM foo", datasource.getConnection() );
-		} );
+		try ( Connection conn = datasource.getConnection() ) {
+			assertDoesNotThrow( () -> {
+				datasource.execute( "SELECT * FROM developers", conn );
+			} );
+		} catch ( SQLException e ) {
+			throw new RuntimeException( e );
+		}
+	}
+
+	@DisplayName( "It can get results back from the query" )
+	@Test
+	void testQueryExecuteResults() {
+		Struct[] results = datasource.execute( "SELECT * FROM developers WHERE id=1" );
+		assertTrue( results.length > 0 );
+
+		assert ( results[ 0 ].containsKey( "id" ) );
+		assert ( results[ 0 ].containsKey( "name" ) );
+
+		assert ( results[ 0 ].getAsInteger( Key.of( "id" ) ) == 1 );
+		assert ( results[ 0 ].getAsString( Key.of( "name" ) ).equals( "Luis Majano" ) );
 	}
 
 	@DisplayName( "It can execute queries in a transaction, with or without providing a specific connection" )
@@ -132,21 +140,21 @@ public class DataSourceTest {
 	void testTransactionalQueryExecute() throws SQLException {
 		assertDoesNotThrow( () -> {
 			datasource.executeTransactionally( new String[] {
-			    "INSERT INTO foo (id) VALUES ( 1 )",
-			    "INSERT INTO foo (id) VALUES ( 2 )"
+			    "INSERT INTO developers (id) VALUES ( 11 )",
+			    "INSERT INTO developers (id) VALUES ( 12 )"
 			} );
 		} );
 		assertDoesNotThrow( () -> {
 			datasource.executeTransactionally( new String[] {
-			    "INSERT INTO foo (id) VALUES ( 3 )",
-			    "INSERT INTO foo (id) VALUES ( 4 )"
+			    "INSERT INTO developers (id) VALUES ( 13 )",
+			    "INSERT INTO developers (id) VALUES ( 14 )"
 			}, datasource.getConnection() );
 		} );
 
 		Connection conn = datasource.getConnection();
 		datasource.executeTransactionally( new String[] {
-		    "INSERT INTO foo (id) VALUES ( 5 )",
-		    "INSERT INTO foo (id) VALUES ( 6 )"
+		    "INSERT INTO developers (id) VALUES ( 15 )",
+		    "INSERT INTO developers (id) VALUES ( 16 )"
 		}, conn );
 
 		// In the case where we pass in our own connection, it is up to us to close it.

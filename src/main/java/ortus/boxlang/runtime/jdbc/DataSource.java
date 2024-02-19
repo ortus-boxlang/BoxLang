@@ -15,14 +15,19 @@
 package ortus.boxlang.runtime.jdbc;
 
 import java.sql.Connection;
+import java.sql.ResultSet;
+import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Properties;
 
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
 
 import ortus.boxlang.runtime.types.IStruct;
+import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
 /**
@@ -148,11 +153,16 @@ public class DataSource {
 	}
 
 	/**
-	 * Execute a query on the connection, using a connection from the connection pool.
+	 * Execute a query on the connection, using a connection from the connection pool which is autoclosed upon query completion.
+	 *
+	 * @param query The SQL query to execute.
+	 *
+	 * @return An array of Structs, each representing a row of the result set (if any). If there are no results (say, for an UPDATE statement), an empty
+	 *         array is returned.
 	 */
-	public void execute( String query ) {
+	public Struct[] execute( String query ) {
 		try ( Connection conn = getConnection(); ) {
-			execute( query, conn );
+			return execute( query, conn );
 		} catch ( SQLException e ) {
 			throw new BoxRuntimeException( "Unable to close connection:", e );
 		}
@@ -165,12 +175,33 @@ public class DataSource {
 	 * an automanaged, i.e. autoclosed connection, use the <code>execute(String)</code> method.
 	 *
 	 * @param query The SQL query to execute.
+	 *
+	 * @return An array of Structs, each representing a row of the result set (if any). If there are no results (say, for an UPDATE statement), an empty
+	 *         array is returned.
 	 */
-	public void execute( String query, Connection conn ) {
+	public Struct[] execute( String query, Connection conn ) {
 		try ( Statement stmt = conn.createStatement() ) {
 			// @TODO: Implement parameterized queries with PreparedStatement.
-			stmt.execute( query );
-			// @TODO: Implement ResultSet processing and return an array or query object.
+			boolean hasResult = stmt.execute( query );
+
+			if ( hasResult ) {
+				ResultSet		resultSet	= stmt.getResultSet();
+				List<IStruct>	result		= new ArrayList<>();
+				while ( resultSet.next() ) {
+					IStruct				row			= new Struct();
+					ResultSetMetaData	metaData	= resultSet.getMetaData();
+					int					columnCount	= metaData.getColumnCount();
+					for ( int i = 1; i <= columnCount; i++ ) {
+						String	columnName	= metaData.getColumnName( i );
+						Object	columnValue	= resultSet.getObject( i );
+						row.put( columnName, columnValue );
+					}
+					result.add( row );
+				}
+				return result.toArray( new Struct[ 0 ] );
+			} else {
+				return new Struct[ 0 ];
+			}
 		} catch ( SQLException e ) {
 			throw new BoxRuntimeException( "Unable to execute query:", e );
 		}
