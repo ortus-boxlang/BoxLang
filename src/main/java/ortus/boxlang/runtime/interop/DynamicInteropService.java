@@ -236,6 +236,7 @@ public class DynamicInteropService {
 		// Invoke Dynamic tries to do argument coercion, so we need to convert the arguments to the right types
 		MethodHandle	constructorInvoker	= callSite.dynamicInvoker();
 		try {
+			@SuppressWarnings( "unchecked" )
 			T thisInstance = ( T ) constructorInvoker.invokeWithArguments( args );
 
 			// If this is a Box Class, some additional initialization is needed
@@ -296,6 +297,7 @@ public class DynamicInteropService {
 		// Invoke Dynamic tries to do argument coercion, so we need to convert the arguments to the right types
 		MethodHandle	constructorInvoker	= callSite.dynamicInvoker();
 		try {
+			@SuppressWarnings( "unchecked" )
 			T thisInstance = ( T ) constructorInvoker.invokeWithArguments( EMPTY_ARGS );
 
 			// If this is a Box Class, some additional initialization is needed
@@ -329,6 +331,7 @@ public class DynamicInteropService {
 	 *
 	 * @return The instance of the class
 	 */
+	@SuppressWarnings( "unchecked" )
 	private static <T> T bootstrapBLClass( IBoxContext context, IClassRunnable cfc, Object[] positionalArgs, Map<Key, Object> namedArgs, boolean noInit ) {
 		// This class context is really only used while boostrapping the pseudoConstructor. It will NOT be used as a parent
 		// context once the CFC is initialized. Methods called on this CFC will have access to the variables/this scope via their

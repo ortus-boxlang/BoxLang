@@ -83,7 +83,7 @@ public class DynamicObject implements IReferenceable {
 	 * --------------------------------------------------------------------------
 	 */
 
-	Set<Key>								exceptionKeys	= new HashSet<Key>( Arrays.asList(
+	Set<Key>								exceptionKeys	= new HashSet<>( Arrays.asList(
 	    BoxLangException.messageKey,
 	    BoxLangException.detailKey,
 	    BoxLangException.typeKey,
@@ -552,7 +552,6 @@ public class DynamicObject implements IReferenceable {
 	 *
 	 * @return The requested object
 	 */
-	@SuppressWarnings( "unchecked" )
 	public Object dereference( IBoxContext context, Key name, Boolean safe ) {
 		return DynamicInteropService.dereference( context, this.targetClass, this.targetInstance, name, safe );
 	}
