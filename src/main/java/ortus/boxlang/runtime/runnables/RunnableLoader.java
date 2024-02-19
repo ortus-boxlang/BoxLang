@@ -111,11 +111,11 @@ public class RunnableLoader {
 	 */
 	public BoxTemplate loadTemplateRelative( IBoxContext context, String path ) {
 		// Determine what this path is relative to
-		ITemplateRunnable	template	= context.findClosestTemplate();
-		String				relativeBase;
+		Path	template	= context.findClosestTemplate();
+		String	relativeBase;
 		// We our current context is executing a template, then we are relative to that template
 		if ( template != null ) {
-			relativeBase = template.getRunnablePath().getParent().toString();
+			relativeBase = template.getParent().toString();
 		} else {
 			// Otherwise we are relative to the root of the runtime (the / mapping, or the working dir of the process)
 			Object rootMapping = context.getConfig().getAsStruct( Key.runtime ).getAsStruct( Key.mappings )

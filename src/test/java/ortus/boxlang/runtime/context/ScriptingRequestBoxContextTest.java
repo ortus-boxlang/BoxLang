@@ -73,7 +73,7 @@ public class ScriptingRequestBoxContextTest {
 
 			@Override
 			public Path getRunnablePath() {
-				return null;
+				return Path.of( "test/file.cfm" );
 			}
 
 			public List<ImportDefinition> getImports() {

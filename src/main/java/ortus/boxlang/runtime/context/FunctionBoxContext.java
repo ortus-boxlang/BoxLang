@@ -41,22 +41,27 @@ public class FunctionBoxContext extends BaseBoxContext {
 	/**
 	 * The arguments scope
 	 */
-	protected IScope	argumentsScope;
+	protected IScope			argumentsScope;
 
 	/**
 	 * The local scope
 	 */
-	protected IScope	localScope;
+	protected IScope			localScope;
 
 	/**
 	 * The Function being invoked with this context
 	 */
-	protected Function	function;
+	protected Function			function;
+
+	/**
+	 * The class in which this function is executing, if any
+	 */
+	protected IClassRunnable	enclosingBoxClass	= null;
 
 	/**
 	 * The Function name being invoked with this context. Note this may or may not be the name the function was declared as.
 	 */
-	protected Key		functionCalledName;
+	protected Key				functionCalledName;
 
 	/**
 	 * Creates a new execution context with a bounded function instance and parent context
@@ -287,12 +292,7 @@ public class FunctionBoxContext extends BaseBoxContext {
 	 * @return true if there is an IClassRunnable at the top of the template stack
 	 */
 	public boolean isInClass() {
-		for ( Object template : templates ) {
-			if ( template instanceof IClassRunnable ) {
-				return true;
-			}
-		}
-		return false;
+		return enclosingBoxClass != null;
 	}
 
 	/**
@@ -301,12 +301,17 @@ public class FunctionBoxContext extends BaseBoxContext {
 	 * @return true if there is an IClassRunnable at the top of the template stack
 	 */
 	public IClassRunnable getThisClass() {
-		for ( Object template : templates ) {
-			if ( template instanceof IClassRunnable icr ) {
-				return icr;
-			}
-		}
-		return null;
+		return enclosingBoxClass;
+	}
+
+	/**
+	 * Set the encoding box class
+	 * 
+	 * @param enclosingBoxClass The class in which this function is executing
+	 */
+	public IBoxContext setThisClass( IClassRunnable enclosingBoxClass ) {
+		this.enclosingBoxClass = enclosingBoxClass;
+		return this;
 	}
 
 	/**
@@ -363,14 +368,14 @@ public class FunctionBoxContext extends BaseBoxContext {
 		FunctionBoxContext	functionContext	= Function.generateFunctionContext( function, getFunctionParentContext(), calledName, argumentsScope );
 		boolean				inClass			= isInClass();
 		if ( inClass ) {
+			functionContext.setThisClass( getThisClass() );
 			functionContext.pushTemplate( getThisClass() );
 		}
 		try {
 			return function.invoke( functionContext );
 		} finally {
 			if ( inClass ) {
-				// TODO: Test this
-				// functionContext.popTemplate();
+				functionContext.popTemplate();
 			}
 		}
 	}

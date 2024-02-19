@@ -30,7 +30,6 @@ import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.loader.ClassLocator;
 import ortus.boxlang.runtime.loader.ClassLocator.ClassLocation;
 import ortus.boxlang.runtime.loader.ImportDefinition;
-import ortus.boxlang.runtime.runnables.ITemplateRunnable;
 import ortus.boxlang.runtime.runnables.RunnableLoader;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.IStruct;
@@ -222,14 +221,16 @@ public class BoxResolver extends BaseResolver {
 	    List<ImportDefinition> imports ) {
 
 		// Check if the class exists in the directory of the currently-executing template
-		ITemplateRunnable template = context.findClosestTemplate();
+		Path template = context.findClosestTemplate();
 
 		if ( template != null ) {
 			// Get the parent directory of the template, verify it exists, else we are done
-			Path parentPath = template.getRunnablePath().getParent();
+			Path parentPath = template.getParent();
+			// System.out.println( "parentPath: " + parentPath );
 			if ( parentPath != null ) {
 				// See if path exists in this parent directory
-				Path targetPath = template.getRunnablePath().getParent().resolve( slashName.substring( 1 ) + ".cfc" );
+				Path targetPath = template.getParent().resolve( slashName.substring( 1 ) + ".cfc" );
+				// System.out.println( "targetPath: " + targetPath );
 				if ( Files.exists( targetPath ) ) {
 
 					String	className	= FilenameUtils.getBaseName( targetPath.toString() );

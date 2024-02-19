@@ -17,6 +17,7 @@
  */
 package ortus.boxlang.runtime.context;
 
+import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -250,7 +251,7 @@ public interface IBoxContext {
 	 *
 	 * @return The template that this execution context is bound to
 	 */
-	public ITemplateRunnable popTemplate();
+	public Path popTemplate();
 
 	/**
 	 * Push a Component to the stack
@@ -295,21 +296,21 @@ public interface IBoxContext {
 	 * 
 	 * @return The templates
 	 */
-	public ITemplateRunnable[] getTemplates();
+	public Path[] getTemplates();
 
 	/**
 	 * Finds the closest template
 	 *
 	 * @return The template instance if found, null if this code is not called from a template
 	 */
-	public ITemplateRunnable findClosestTemplate();
+	public Path findClosestTemplate();
 
 	/**
 	 * Finds the base (first) template in this request
 	 *
 	 * @return The template instance if found, null if this code is not called from a template
 	 */
-	public ITemplateRunnable findBaseTemplate();
+	public Path findBaseTemplate();
 
 	/**
 	 * Get the default variable assignment scope for this context

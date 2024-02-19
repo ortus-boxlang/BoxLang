@@ -55,7 +55,7 @@ public class DebugBoxContexts extends BIF {
 	private Object generateContextData( IBoxContext c ) {
 		var templates = new Array();
 		for ( var t : c.getTemplates() ) {
-			templates.add( 0, t.getRunnablePath().toString() );
+			templates.add( 0, t.toString() );
 		}
 		return Struct.linkedOf(
 		    "name", c.getClass().getSimpleName(),

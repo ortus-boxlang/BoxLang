@@ -20,7 +20,6 @@ package ortus.boxlang.runtime.bifs.global.system;
 import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
 import ortus.boxlang.runtime.context.IBoxContext;
-import ortus.boxlang.runtime.runnables.ITemplateRunnable;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 
 @BoxBIF
@@ -41,10 +40,6 @@ public class GetBaseTemplatePath extends BIF {
 	 *
 	 */
 	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
-		ITemplateRunnable runnable = context.findBaseTemplate();
-		if ( runnable == null ) {
-			return null;
-		}
-		return runnable.getRunnablePath();
+		return context.findBaseTemplate();
 	}
 }

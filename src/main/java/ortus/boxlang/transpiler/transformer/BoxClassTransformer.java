@@ -191,7 +191,7 @@ public class BoxClassTransformer extends AbstractTransformer {
 				* The path to the template
 			*/
 			public Path getRunnablePath() {
-			return ${className}.path;
+				return ${className}.path;
 			}
 
 			/**
@@ -374,12 +374,14 @@ public class BoxClassTransformer extends AbstractTransformer {
 						name,
 						function.createArgumentsScope( context, positionalArguments )
 					);
+					
+					functionContext.setThisClass( this );
 					functionContext.pushTemplate( this );
 
 					try {
 						return function.invoke( functionContext );
 					} finally{
-					//	functionContext.popTemplate();
+						functionContext.popTemplate();
 					}
 				}
 
@@ -443,11 +445,13 @@ public class BoxClassTransformer extends AbstractTransformer {
 							name,
 							function.createArgumentsScope(  context, namedArguments )
 						);
+
+					functionContext.setThisClass( this );
 					functionContext.pushTemplate( this );
 					try {
 						return function.invoke( functionContext );
 					} finally{
-					//	functionContext.popTemplate();
+						functionContext.popTemplate();
 					}
 				}
 

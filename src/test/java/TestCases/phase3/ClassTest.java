@@ -544,10 +544,11 @@ public class ClassTest {
 		    "dog sees variables.inAnimal as: true",
 		    // And lastly, the concrete class is instantiated. getCurrentTemplate() shows that file
 		    "Chihuahua pseudo Chihuahua.cfc",
-		    // I'm calling super.init() first, so animal inits first. getCurrentTemplate() shows the concrete class.
-		    "Animal init Chihuahua.cfc",
-		    // Then dog inits as we work backwards. getCurrentTemplate() shows the concrete class.
-		    "Dog init Chihuahua.cfc",
+		    // I'm calling super.init() first, so animal inits first. getCurrentTemplate() shows the current class. INCOMPAT WITH CF which returns concrete
+		    // class!
+		    "Animal init Animal.cfc",
+		    // Then dog inits as we work backwards. getCurrentTemplate() shows the current class. INCOMPAT WITH CF which returns concrete class!
+		    "Dog init Dog.cfc",
 		    // Then the concrete class inits. getCurrentTemplate() shows the concrete class.
 		    "Chihuahua init Chihuahua.cfc",
 		    // A method inherited from a base class, sees "this" as the concrete class.

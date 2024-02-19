@@ -18,7 +18,6 @@
 package ortus.boxlang.runtime.context;
 
 import ortus.boxlang.runtime.runnables.IClassRunnable;
-import ortus.boxlang.runtime.runnables.ITemplateRunnable;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
@@ -168,7 +167,7 @@ public class ClosureBoxContext extends FunctionBoxContext {
 	 * @return true if there is an IClassRunnable at the top of the template stack
 	 */
 	public boolean isInClass() {
-		return getFunction().getDeclaringContext().findClosestTemplate() instanceof IClassRunnable;
+		return false;
 	}
 
 	/**
@@ -177,10 +176,6 @@ public class ClosureBoxContext extends FunctionBoxContext {
 	 * @return the IClassRunnable this context is executing in, or null if not in a class
 	 */
 	public IClassRunnable getThisClass() {
-		ITemplateRunnable template = getFunction().getDeclaringContext().findClosestTemplate();
-		if ( template instanceof IClassRunnable icr ) {
-			return icr;
-		}
 		return null;
 	}
 

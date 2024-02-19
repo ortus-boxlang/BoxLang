@@ -17,6 +17,7 @@
  */
 package ortus.boxlang.runtime.context;
 
+import java.nio.file.Path;
 import java.util.ArrayDeque;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -65,24 +66,32 @@ public class BaseBoxContext implements IBoxContext {
 	protected IBoxContext					parent;
 
 	/**
-	 * A way to discover the current executing template
+	 * A way to discover the current executing template. We're storing the path directly instead of the
+	 * ITemplateRunnable instance to avoid memory leaks by keepin Box Classes in memory since all
+	 * we really need is static data from them
 	 */
-	protected ArrayDeque<ITemplateRunnable>	templates	= new ArrayDeque<>();
+	protected ArrayDeque<Path>				templates		= new ArrayDeque<>();
+
+	/**
+	 * A way to discover the imports tied to the original source of the current template.
+	 * This should always match the top current template stack
+	 */
+	protected List<ImportDefinition>		currentImports	= null;
 
 	/**
 	 * A way to discover the current executing componenet
 	 */
-	protected ArrayDeque<IStruct>			components	= new ArrayDeque<>();
+	protected ArrayDeque<IStruct>			components		= new ArrayDeque<>();
 
 	/**
 	 * A way to track query loops
 	 */
-	protected LinkedHashMap<Query, Integer>	queryLoops	= new LinkedHashMap<>();
+	protected LinkedHashMap<Query, Integer>	queryLoops		= new LinkedHashMap<>();
 
 	/**
 	 * A buffer to write output to
 	 */
-	protected ArrayDeque<StringBuffer>		buffers		= new ArrayDeque<>();
+	protected ArrayDeque<StringBuffer>		buffers			= new ArrayDeque<>();
 
 	/**
 	 * The function service we can use to retrieve BIFS and member methods
@@ -127,7 +136,8 @@ public class BaseBoxContext implements IBoxContext {
 	 * @return IBoxContext
 	 */
 	public IBoxContext pushTemplate( ITemplateRunnable template ) {
-		this.templates.push( template );
+		this.templates.push( template.getRunnablePath() );
+		this.currentImports = template.getImports();
 		return this;
 	}
 
@@ -136,7 +146,7 @@ public class BaseBoxContext implements IBoxContext {
 	 *
 	 * @return The template that this execution context is bound to
 	 */
-	public ITemplateRunnable popTemplate() {
+	public Path popTemplate() {
 		return this.templates.pop();
 	}
 
@@ -145,8 +155,8 @@ public class BaseBoxContext implements IBoxContext {
 	 * 
 	 * @return The templates
 	 */
-	public ITemplateRunnable[] getTemplates() {
-		return this.templates.toArray( new ITemplateRunnable[ 0 ] );
+	public Path[] getTemplates() {
+		return this.templates.toArray( new Path[ 0 ] );
 	}
 
 	/**
@@ -220,7 +230,7 @@ public class BaseBoxContext implements IBoxContext {
 	 *
 	 * @return The template instance if found, null if this code is not called from a template
 	 */
-	public ITemplateRunnable findClosestTemplate() {
+	public Path findClosestTemplate() {
 		// If this context has templates, grab the first
 		if ( hasTemplates() ) {
 			return this.templates.peek();
@@ -240,8 +250,8 @@ public class BaseBoxContext implements IBoxContext {
 	 *
 	 * @return The template instance if found, null if this code is not called from a template
 	 */
-	public ITemplateRunnable findBaseTemplate() {
-		ITemplateRunnable result = null;
+	public Path findBaseTemplate() {
+		Path result = null;
 		// If we have a parent, ask them
 		if ( hasParent() ) {
 			result = getParent().findBaseTemplate();
@@ -445,12 +455,12 @@ public class BaseBoxContext implements IBoxContext {
 	 */
 	public Object invokeFunction( Function function, Key calledName, ArgumentsScope argumentsScope ) {
 		return function.invoke(
-		    Function.generateFunctionContext( 
-				function, 
-				getFunctionParentContext(), 
-				calledName, 
-				argumentsScope 
-			)
+		    Function.generateFunctionContext(
+		        function,
+		        getFunctionParentContext(),
+		        calledName,
+		        argumentsScope
+		    )
 		);
 	}
 
@@ -658,12 +668,7 @@ public class BaseBoxContext implements IBoxContext {
 	 * @return List of import definitions
 	 */
 	public List<ImportDefinition> getCurrentImports() {
-		ITemplateRunnable template = findClosestTemplate();
-		if ( template == null ) {
-			return null;
-		}
-
-		return template.getImports();
+		return currentImports;
 	}
 
 	/**

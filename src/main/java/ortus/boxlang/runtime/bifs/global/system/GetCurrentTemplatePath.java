@@ -20,8 +20,6 @@ package ortus.boxlang.runtime.bifs.global.system;
 import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
 import ortus.boxlang.runtime.context.IBoxContext;
-import ortus.boxlang.runtime.runnables.IClassRunnable;
-import ortus.boxlang.runtime.runnables.ITemplateRunnable;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 
 @BoxBIF
@@ -42,15 +40,6 @@ public class GetCurrentTemplatePath extends BIF {
 	 *
 	 */
 	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
-		ITemplateRunnable runnable = context.findClosestTemplate();
-		if ( runnable == null ) {
-			return null;
-		}
-		// If we're executing inside of a parent class [super.foo()], then the super template is at the
-		// top of the stack, but this BIF needs to return the path to the bottom class.
-		if ( runnable instanceof IClassRunnable classRun ) {
-			runnable = classRun.getBottomClass();
-		}
-		return runnable.getRunnablePath();
+		return context.findClosestTemplate();
 	}
 }

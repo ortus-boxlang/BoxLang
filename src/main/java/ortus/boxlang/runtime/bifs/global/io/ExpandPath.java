@@ -16,11 +16,11 @@
 package ortus.boxlang.runtime.bifs.global.io;
 
 import java.io.File;
+import java.nio.file.Path;
 
 import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
 import ortus.boxlang.runtime.context.IBoxContext;
-import ortus.boxlang.runtime.runnables.ITemplateRunnable;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
@@ -54,10 +54,10 @@ public class ExpandPath extends BIF {
 		}
 
 		// Determine what this path is relative to
-		ITemplateRunnable template = context.findClosestTemplate();
+		Path template = context.findClosestTemplate();
 		// We our current context is executing a template, then we are relative to that template
-		if ( template != null && new File( template.getRunnablePath().getParent().toString(), path ).exists() ) {
-			return new File( template.getRunnablePath().getParent().toString(), path ).getAbsolutePath();
+		if ( template != null && new File( template.getParent().toString(), path ).exists() ) {
+			return new File( template.getParent().toString(), path ).getAbsolutePath();
 		}
 
 		if ( !path.startsWith( "/" ) ) {

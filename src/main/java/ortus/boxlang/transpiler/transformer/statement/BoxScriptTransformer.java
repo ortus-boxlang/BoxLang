@@ -145,7 +145,7 @@ public class BoxScriptTransformer extends AbstractTransformer {
 				* The path to the template
 			*/
 			public Path getRunnablePath() {
-			return ${className}.path;
+				return ${className}.path;
 			}
 
 			/**
