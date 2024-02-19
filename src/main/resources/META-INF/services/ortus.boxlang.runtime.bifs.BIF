@@ -234,6 +234,7 @@ ortus.boxlang.runtime.bifs.global.system.GetBoxRuntime
 ortus.boxlang.runtime.bifs.global.system.GetComponentMetadata
 ortus.boxlang.runtime.bifs.global.system.GetCurrentTemplatePath
 ortus.boxlang.runtime.bifs.global.system.GetFileFromPath
+ortus.boxlang.runtime.bifs.global.system.GetFunctionList
 ortus.boxlang.runtime.bifs.global.system.GetSystemSetting
 ortus.boxlang.runtime.bifs.global.system.GetTickCount
 ortus.boxlang.runtime.bifs.global.system.IsInstanceOf
