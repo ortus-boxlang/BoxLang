@@ -34,11 +34,13 @@ import org.slf4j.LoggerFactory;
 
 import com.sun.jdi.IncompatibleThreadStateException;
 import com.sun.jdi.ObjectReference;
+import com.sun.jdi.event.BreakpointEvent;
 
 import ortus.boxlang.debugger.event.Event;
 import ortus.boxlang.debugger.event.StoppedEvent;
 import ortus.boxlang.debugger.request.ConfigurationDoneRequest;
 import ortus.boxlang.debugger.request.ContinueRequest;
+import ortus.boxlang.debugger.request.DisconnectRequest;
 import ortus.boxlang.debugger.request.InitializeRequest;
 import ortus.boxlang.debugger.request.LaunchRequest;
 import ortus.boxlang.debugger.request.ScopeRequest;
@@ -80,6 +82,7 @@ public class DebugAdapter {
 	private AdapterProtocolMessageReader	DAPReader;
 
 	private Map<Integer, ScopeCache>		seenScopes	= new HashMap<Integer, ScopeCache>();
+	private Map<Integer, BreakpointRequest>	breakpoints	= new HashMap<Integer, BreakpointRequest>();
 
 	/**
 	 * Constructor
@@ -104,7 +107,8 @@ public class DebugAdapter {
 			    .register( "stackTrace", StackTraceRequest.class )
 			    .register( "scopes", ScopeRequest.class )
 			    .register( "variables", VariablesRequest.class )
-			    .register( "continue", ContinueRequest.class );
+			    .register( "continue", ContinueRequest.class )
+			    .register( "disconnect", DisconnectRequest.class );
 		} catch ( IOException e ) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -242,6 +246,7 @@ public class DebugAdapter {
 	public void visit( SetBreakpointsRequest debugRequest ) {
 		for ( Breakpoint bp : debugRequest.arguments.breakpoints ) {
 			this.debugger.addBreakpoint( debugRequest.arguments.source.path, bp );
+			this.breakpoints.put( bp.id, new BreakpointRequest( bp.id, bp.line, debugRequest.arguments.source.path.toLowerCase() ) );
 		}
 
 		new SetBreakpointsResponse( debugRequest ).send( this.outputStream );
@@ -266,6 +271,9 @@ public class DebugAdapter {
 	public void visit( ThreadsRequest debugRequest ) {
 		List<ortus.boxlang.debugger.types.Thread> threads = this.debugger.getAllThreadReferences()
 		    .stream()
+		    .filter( ( threadReference ) -> {
+			    return threadReference.name().compareToIgnoreCase( "main" ) == 0;
+		    } )
 		    .map( ( threadReference ) -> {
 			    ortus.boxlang.debugger.types.Thread t = new ortus.boxlang.debugger.types.Thread();
 			    t.id = ( int ) threadReference.uniqueID();
@@ -293,24 +301,31 @@ public class DebugAdapter {
 			// TODO convert from java info to boxlang info when possible
 			// TODO decide if we should filter out java stack or make it available
 
-			List<StackFrame> stackFrames = this.debugger.getStackFrames( debugRequest.arguments.threadId ).stream().map( ( stackFrame ) -> {
-				StackFrame	sf	= new StackFrame();
-				SourceMap	map	= javaBoxpiler.getSourceMapFromFQN( stackFrame.location().declaringType().name() );
+			List<StackFrame> stackFrames = this.debugger.getStackFrames( debugRequest.arguments.threadId ).stream()
+			    .filter( ( stackFrame ) -> stackFrame.location().declaringType().name().contains( "boxgenerated" ) )
+			    .map( ( stackFrame ) -> {
+				    StackFrame sf = new StackFrame();
+				    SourceMap map = javaBoxpiler.getSourceMapFromFQN( stackFrame.location().declaringType().name() );
 
-				sf.id		= stackFrame.hashCode();
-				sf.line		= stackFrame.location().lineNumber();
-				sf.column	= 0;
-				sf.name		= stackFrame.location().method().name();
+				    sf.id	= stackFrame.hashCode();
+				    sf.line	= stackFrame.location().lineNumber();
+				    sf.column = 0;
+				    sf.name	= stackFrame.location().method().name();
 
-				if ( map != null && map.isTemplate() ) {
-					sf.name			= map.getFileName();
-					sf.source		= new Source();
-					sf.source.path	= map.source.toString();
-					sf.source.name	= sf.name + "(Template)";
-				}
+				    Integer sourceLine = map.convertJavaLinetoSourceLine( sf.line );
+				    if ( sourceLine != null ) {
+					    sf.line = sourceLine;
+				    }
 
-				return sf;
-			} )
+				    if ( map != null && map.isTemplate() ) {
+					    sf.name		= map.getFileName();
+					    sf.source	= new Source();
+					    sf.source.path = map.source.toString();
+					    sf.source.name = sf.name + "(Template)";
+				    }
+
+				    return sf;
+			    } )
 			    .toList();
 
 			new StackTraceResponse( debugRequest, stackFrames ).send( this.outputStream );
@@ -346,7 +361,7 @@ public class DebugAdapter {
 		if ( this.seenScopes.containsKey( debugRequest.arguments.variablesReference ) ) {
 			ideVars = JDITools.gerVariablesFromStruct( this.seenScopes.get( debugRequest.arguments.variablesReference ).scope );
 		} else if ( JDITools.hasSeen( debugRequest.arguments.variablesReference ) ) {
-			ideVars = JDITools.gerVariablesFromStruct( ( ObjectReference ) JDITools.getSeenValue( debugRequest.arguments.variablesReference ) );
+			ideVars = JDITools.getVariablesFromSeen( debugRequest.arguments.variablesReference );
 		}
 
 		new VariablesResponse( debugRequest, ideVars ).send( this.outputStream );
@@ -369,15 +384,35 @@ public class DebugAdapter {
 		return null;
 	}
 
+	public void visit( DisconnectRequest debugRequest ) {
+		this.running = false;
+		new NoBodyResponse( debugRequest ).send( this.outputStream );
+	}
+
 	// ===================================================
 	// ================= EVENTS ==========================
 	// ===================================================
 
-	public void sendStoppedEventForBreakpoint( int threadId ) {
+	public void sendStoppedEventForBreakpoint( BreakpointEvent breakpointEvent ) {
+		SourceMap			map			= javaBoxpiler.getSourceMapFromFQN( breakpointEvent.location().declaringType().name() );
+		String				sourcePath	= map.source.toLowerCase();
+
+		BreakpointRequest	bp			= null;
+
+		for ( BreakpointRequest b : this.breakpoints.values() ) {
+			if ( b.source.compareToIgnoreCase( sourcePath ) == 0 ) {
+				bp = b;
+				break;
+			}
+		}
 		// TODO convert this file/line number to boxlang
-		StoppedEvent.breakpoint( threadId ).send( this.outputStream );
+		StoppedEvent.breakpoint( breakpointEvent, bp.id ).send( this.outputStream );
 	}
 
 	record ScopeCache( com.sun.jdi.StackFrame stackFrame, ObjectReference scope ) {
 	};
+
+	record BreakpointRequest( int id, int line, String source ) {
+
+	}
 }

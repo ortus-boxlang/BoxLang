@@ -54,6 +54,7 @@ import com.sun.jdi.request.StepRequest;
 
 import ortus.boxlang.debugger.event.ExitEvent;
 import ortus.boxlang.debugger.event.OutputEvent;
+import ortus.boxlang.debugger.event.TerminatedEvent;
 import ortus.boxlang.debugger.types.Breakpoint;
 import ortus.boxlang.runtime.runnables.compiler.JavaBoxpiler;
 import ortus.boxlang.runtime.runnables.compiler.JavaBoxpiler.ClassInfo;
@@ -124,11 +125,17 @@ public class BoxLangDebugger implements IBoxLangDebugger {
 				readVMErrorInput();
 
 				processVMEvents( eventSet );
+
+				if ( this.status == Status.DONE ) {
+					break;
+				}
 			}
 
 			if ( this.status == Status.RUNNING ) {
 				vm.resume();
 			}
+		} catch ( com.sun.jdi.VMDisconnectedException e ) {
+			this.status = Status.DONE;
 		} catch ( Exception e ) {
 			e.printStackTrace();
 		} finally {
@@ -160,8 +167,12 @@ public class BoxLangDebugger implements IBoxLangDebugger {
 	}
 
 	private void handleDeathEvent( VMDeathEvent de ) {
-		new ExitEvent( this.vm.process().exitValue() ).send( this.debugAdapterOutput );
+
 		this.status = Status.DONE;
+
+		this.vm.process().onExit().join();
+		new ExitEvent( this.vm.process().exitValue() ).send( this.debugAdapterOutput );
+		new TerminatedEvent().send( this.debugAdapterOutput );
 	}
 
 	private void readVMInput() {
@@ -294,7 +305,7 @@ public class BoxLangDebugger implements IBoxLangDebugger {
 
 	private void handleBreakPointEvent( BreakpointEvent bpe ) throws IncompatibleThreadStateException, AbsentInformationException {
 		this.status = Status.STOPPED;
-		this.debugAdapter.sendStoppedEventForBreakpoint( ( int ) bpe.thread().uniqueID() );
+		this.debugAdapter.sendStoppedEventForBreakpoint( bpe );
 		// displayVariables( bpe );
 		this.bpe = bpe;
 		// vm.suspend();

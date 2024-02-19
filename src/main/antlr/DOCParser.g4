@@ -39,7 +39,12 @@ descriptionLineNoSpaceNoAt:
 
 descriptionLineElement: inlineTag | descriptionLineText;
 
-descriptionLineText: (descriptionLineNoSpaceNoAt | SPACE | AT)+;
+descriptionLineText: (
+		descriptionLineNoSpaceNoAt
+		| SPACE
+		| AT
+		| JAVADOC_START
+	)+;
 
 descriptionNewline: NEWLINE;
 
@@ -60,7 +65,8 @@ blockTagTextElement:
 	| STAR
 	| SLASH
 	| BRACE_OPEN
-	| BRACE_CLOSE;
+	| BRACE_CLOSE
+	| JAVADOC_START;
 
 inlineTag:
 	INLINE_TAG_START inlineTagName SPACE* inlineTagContent? BRACE_CLOSE;

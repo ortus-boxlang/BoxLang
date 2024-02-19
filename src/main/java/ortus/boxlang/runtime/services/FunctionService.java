@@ -221,17 +221,12 @@ public class FunctionService extends BaseService {
 	 */
 	public MemberDescriptor getMemberMethod( IBoxContext context, Key name, Object object ) {
 		// For obj.method() we first look for a registered member method of this name
-		System.out.println( "name: " + name );
 		Map<BoxLangType, MemberDescriptor> targetMethodMap = this.memberMethods.get( name );
-		System.out.println( "targetMethodMap != null: " + ( targetMethodMap != null ) );
 		if ( targetMethodMap != null ) {
 			// Then we see if our object is castable to any of the possible types for that method registered
 			// Breaks on first successful cast
 			for ( Map.Entry<BoxLangType, MemberDescriptor> entry : targetMethodMap.entrySet() ) {
-				System.out.println( "entry.getKey(): " + entry.getKey() );
-				System.out.println( "object: " + object.getClass().getName() );
 				CastAttempt<?> castAttempt = GenericCaster.attempt( context, object, entry.getKey() );
-				System.out.println( "castAttempt.wasSuccessful(): " + castAttempt.wasSuccessful() );
 				if ( castAttempt.wasSuccessful() ) {
 					return entry.getValue();
 				}

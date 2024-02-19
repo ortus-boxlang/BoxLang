@@ -20,26 +20,26 @@ package ortus.boxlang.debugger.event;
 /**
  * Models the Exit event for the Debug Protocol
  */
-public class ExitEvent extends Event {
+public class TerminatedEvent extends Event {
 
-	public ExitBody body;
+	public TerminatedBody body;
 
-	private class ExitBody {
+	private class TerminatedBody {
 
 		@SuppressWarnings( value = { "unused" } )
-		public int exitCode;
+		public boolean restart;
 	}
 
 	/**
 	 * Constructor
 	 * 
-	 * @param exitCode The exit code of the program being debugged
+	 * @param TerminatedCode The Terminated code of the program being debugged
 	 */
-	public ExitEvent( int exitCode ) {
-		super( "exited" );
+	public TerminatedEvent() {
+		super( "terminated" );
 
-		this.body			= new ExitBody();
-		this.body.exitCode	= exitCode;
+		this.body			= new TerminatedBody();
+		this.body.restart	= false;
 	}
 
 }

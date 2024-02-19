@@ -264,7 +264,7 @@ public class JavaBoxpiler {
 		try {
 			return parser.parse( file );
 		} catch ( IOException e ) {
-			throw new BoxRuntimeException( "Error compiling source", e );
+			throw new BoxRuntimeException( "Error compiling source " + file.toString(), e );
 		}
 	}
 
@@ -292,7 +292,7 @@ public class JavaBoxpiler {
 	 * @return The parsed AST nodes and any issues if encountered while parsing.
 	 */
 	public ParsingResult parseOrFail( File file ) {
-		return validateParse( parse( file ) );
+		return validateParse( parse( file ), file.toString() );
 	}
 
 	/**
@@ -303,7 +303,7 @@ public class JavaBoxpiler {
 	 * @return The parsed AST nodes and any issues if encountered while parsing.
 	 */
 	public ParsingResult parseOrFail( String source, BoxScriptType type ) {
-		return validateParse( parse( source, type ) );
+		return validateParse( parse( source, type ), "ad-hoc source" );
 	}
 
 	/**
@@ -313,9 +313,9 @@ public class JavaBoxpiler {
 	 * 
 	 * @return The parsing result if the parse was successful
 	 */
-	public ParsingResult validateParse( ParsingResult result ) {
+	public ParsingResult validateParse( ParsingResult result, String source ) {
 		if ( !result.isCorrect() ) {
-			throw new ParseException( result.getIssues() );
+			throw new ParseException( result.getIssues(), source );
 		}
 		return result;
 	}
@@ -388,7 +388,7 @@ public class JavaBoxpiler {
 	 */
 	@SuppressWarnings( "unused" )
 	public void compileSource( String javaSource, String fqn ) {
-
+		// System.out.println( "Compiling " + fqn );
 		DiagnosticCollector<JavaFileObject>	diagnostics		= new DiagnosticCollector<>();
 		String								javaRT			= System.getProperty( "java.class.path" );
 		List<JavaFileObject>				sourceFiles		= Collections.singletonList( new JavaSourceString( fqn, javaSource ) );
@@ -471,7 +471,7 @@ public class JavaBoxpiler {
 		try {
 			return ( Class<IBoxRunnable> ) classLoader.loadClass( fqn );
 		} catch ( ClassNotFoundException e ) {
-			throw new BoxRuntimeException( "Error compiling source", e );
+			throw new BoxRuntimeException( "Error compiling source " + fqn, e );
 		}
 	}
 
@@ -486,7 +486,7 @@ public class JavaBoxpiler {
 		try {
 			return ( Class<IBoxRunnable> ) diskClassLoader.loadClass( fqn );
 		} catch ( ClassNotFoundException e ) {
-			throw new BoxRuntimeException( "Error compiling source", e );
+			throw new BoxRuntimeException( "Error compiling source " + fqn, e );
 		}
 	}
 
@@ -501,7 +501,7 @@ public class JavaBoxpiler {
 		try {
 			return ( Class<IClassRunnable> ) classLoader.loadClass( fqn );
 		} catch ( ClassNotFoundException e ) {
-			throw new BoxRuntimeException( "Error compiling source", e );
+			throw new BoxRuntimeException( "Error compiling source " + fqn, e );
 		}
 	}
 
@@ -516,7 +516,7 @@ public class JavaBoxpiler {
 		try {
 			return ( Class<IClassRunnable> ) diskClassLoader.loadClass( fqn );
 		} catch ( ClassNotFoundException e ) {
-			throw new BoxRuntimeException( "Error compiling source", e );
+			throw new BoxRuntimeException( "Error compiling source " + fqn, e );
 		}
 	}
 

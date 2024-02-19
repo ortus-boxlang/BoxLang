@@ -25,6 +25,16 @@ public class SourceMap {
 		public String	javaSourceNode;
 	}
 
+	public Integer convertJavaLinetoSourceLine( int javaLine ) {
+		for ( SourceMapRecord sourceMapRecord : sourceMapRecords ) {
+			if ( sourceMapRecord.javaSourceLine == javaLine ) {
+				return sourceMapRecord.originSourceLine;
+			}
+		}
+
+		return null;
+	}
+
 	public int convertSourceLineToJavaLine( int sourceLine ) throws BoxRuntimeException {
 		int result = -1;
 		for ( SourceMapRecord sourceMapRecord : sourceMapRecords ) {
