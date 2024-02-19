@@ -20,13 +20,13 @@ package ortus.boxlang.runtime.jdbc;
 
 import static com.google.common.truth.Truth.assertThat;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 
 import java.sql.Connection;
 import java.sql.SQLException;
 
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -41,8 +41,9 @@ public class DataSourceTest {
 	@BeforeAll
 	public static void setUp() {
 		datasource = new DataSource( Struct.of(
-		    "jdbcUrl", "jdbc:derby:src/test/resources/tmp/testDB;create=true"
+		    "jdbcUrl", "jdbc:derby:memory:testDB;create=true"
 		) );
+		datasource.execute( "CREATE TABLE foo ( id INTEGER, name VARCHAR(155) )" );
 	}
 
 	@AfterAll
@@ -50,23 +51,27 @@ public class DataSourceTest {
 		datasource.shutdown();
 	}
 
-	@BeforeEach
-	public void setupEach() throws SQLException {
-		try {
-			datasource.getConnection().createStatement().execute( "DROP TABLE foo" );
-		} catch ( SQLException e ) {
-			// Table doesn't exist, that's fine and good because that's what we want. if it's a connection error, we'll catch that in the test itself.
-		}
-	}
+	// @BeforeEach
+	// public void setupEach() throws SQLException {
+	// try (
+	// Connection conn = datasource.getConnection();
+	// java.sql.Statement stmt = conn.createStatement() ) {
+	// stmt.execute( "DROP TABLE foo" );
+	// } catch ( SQLException e ) {
+	// // Table doesn't exist, that's fine and good because that's what we want. if it's a connection error, we'll catch that in the test itself.
+	// }
+	// }
 
 	@DisplayName( "It can get an Apache Derby JDBC connection" )
 	@Test
 	void testDerbyConnection() throws SQLException {
-		datasource = new DataSource( Struct.of(
-		    Key.of( "jdbcUrl" ), "jdbc:derby:src/test/resources/tmp/testDB;create=true"
+		DataSource derbyDB = new DataSource( Struct.of(
+		    Key.of( "jdbcUrl" ), "jdbc:derby:memory:funkyDB;create=true"
 		) );
-		Connection conn = datasource.getConnection();
-		assertThat( conn ).isInstanceOf( Connection.class );
+		try ( Connection conn = derbyDB.getConnection() ) {
+			assertThat( conn ).isInstanceOf( Connection.class );
+		}
+		derbyDB.shutdown();
 	}
 
 	// @TODO: Move to mysql JDBC module tests?
@@ -102,7 +107,6 @@ public class DataSourceTest {
 		DataSource	myDatasource	= new DataSource( Struct.of(
 		    "username", "user",
 		    "password", "password",
-		    // "databaseName", "test",
 		    "jdbcUrl", "jdbc:derby:src/test/resources/tmp/testDB;create=true"
 		) );
 		Connection	conn			= myDatasource.getConnection();
@@ -114,9 +118,9 @@ public class DataSourceTest {
 
 	@DisplayName( "It can execute simple queries without or without providing a connection" )
 	@Test
-	void testQueryExecuteNoConn() {
+	void testQueryExecute() {
 		assertDoesNotThrow( () -> {
-			datasource.execute( "CREATE TABLE foo (id INTEGER)" );
+			datasource.execute( "INSERT INTO foo (id) VALUES ( 1 )" );
 		} );
 		assertDoesNotThrow( () -> {
 			datasource.execute( "SELECT * FROM foo", datasource.getConnection() );
@@ -125,16 +129,27 @@ public class DataSourceTest {
 
 	@DisplayName( "It can execute queries in a transaction, with or without providing a specific connection" )
 	@Test
-	void testTransactionalQueryExecuteWithConn() {
-		String[] queries = new String[] {
-		    "CREATE TABLE foo (id INTEGER)",
-		    "INSERT INTO foo (id) VALUES ( 1 )"
-		};
+	void testTransactionalQueryExecute() throws SQLException {
 		assertDoesNotThrow( () -> {
-			datasource.executeTransactionally( queries );
+			datasource.executeTransactionally( new String[] {
+			    "INSERT INTO foo (id) VALUES ( 1 )",
+			    "INSERT INTO foo (id) VALUES ( 2 )"
+			} );
 		} );
 		assertDoesNotThrow( () -> {
-			datasource.executeTransactionally( queries, datasource.getConnection() );
+			datasource.executeTransactionally( new String[] {
+			    "INSERT INTO foo (id) VALUES ( 3 )",
+			    "INSERT INTO foo (id) VALUES ( 4 )"
+			}, datasource.getConnection() );
 		} );
+
+		Connection conn = datasource.getConnection();
+		datasource.executeTransactionally( new String[] {
+		    "INSERT INTO foo (id) VALUES ( 5 )",
+		    "INSERT INTO foo (id) VALUES ( 6 )"
+		}, conn );
+
+		// In the case where we pass in our own connection, it is up to us to close it.
+		assertFalse( conn.isClosed(), "Caller-provided connection should NOT be closed on completion" );
 	}
 }

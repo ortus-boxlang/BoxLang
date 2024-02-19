@@ -160,6 +160,9 @@ public class DataSource {
 
 	/**
 	 * Execute a query on the connection, using the provided connection.
+	 * <p>
+	 * Note the connection passed in is NOT closed automatically. It is up to the caller to close the connection when they are done with it. If you want
+	 * an automanaged, i.e. autoclosed connection, use the <code>execute(String)</code> method.
 	 *
 	 * @param query The SQL query to execute.
 	 */
@@ -177,14 +180,22 @@ public class DataSource {
 	 * Begin a transaction on the connection. (i.e. acquire a transaction object for further operations)
 	 */
 	public void executeTransactionally( String[] query ) {
-		executeTransactionally( query, getConnection() );
+		try ( Connection conn = getConnection() ) {
+			executeTransactionally( query, conn );
+		} catch ( SQLException e ) {
+			throw new BoxRuntimeException( "Unable to close connection:", e );
+		}
 	}
 
 	/**
 	 * Execute a series of statements in a transaction.
+	 * <p>
+	 * Note the connection passed in is NOT closed automatically. It is up to the caller to close the connection when they are done with it. If you want
+	 * an automanaged, i.e. autoclosed transaction, use the <code>executeTransactionally(String[])</code> method.
 	 *
 	 * @param query An array of SQL statements to execute in the transaction.
-	 * @param conn  The connection to execute the transaction on. If not provided, a connection will be acquired from the datasource connection pool.
+	 * @param conn  The connection to execute the transaction on. A connection is required - use <code>executeTransactionally(String[])</code> if you
+	 *              don't wish to provide one.
 	 */
 	public void executeTransactionally( String[] query, Connection conn ) {
 		try {
@@ -199,11 +210,22 @@ public class DataSource {
 				}
 			}
 			conn.commit();
-			conn.setAutoCommit( true );
 		} catch ( SQLException e ) {
-			// @TODO: Rollback the transaction?
-			// conn.rollback();
-			throw new BoxRuntimeException( "Error in transaction", e );
+			BoxRuntimeException bre = new BoxRuntimeException( "Error in transaction", e );
+			// @TODO: Rolling back the transaction is a good idea... right?
+			try {
+				conn.rollback();
+			} catch ( SQLException e2 ) {
+				// keep our original exception as the "cause" so we're not obscuring upstream exceptions.
+				bre = new BoxRuntimeException( "Error rolling back transaction", bre );
+			}
+			throw bre;
+		} finally {
+			try {
+				conn.setAutoCommit( true );
+			} catch ( SQLException e ) {
+				throw new BoxRuntimeException( "Unable to re-enable autoCommit:", e );
+			}
 		}
 	}
 
