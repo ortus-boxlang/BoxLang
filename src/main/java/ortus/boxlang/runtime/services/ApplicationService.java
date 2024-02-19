@@ -80,6 +80,8 @@ public class ApplicationService extends BaseService {
 	public Application getApplication( Key name ) {
 		// TODO: Application settings
 		// TODO: possible Application listener class
+		// TODO: Startups and shutdowns
+		// TODO: Not sure if we should create the application by just getting it
 		Application thisApplication = applications.computeIfAbsent( name, k -> new Application( name ) );
 
 		logger.info( "ApplicationService.getApplication() - {}", name );
@@ -130,7 +132,7 @@ public class ApplicationService extends BaseService {
 	 */
 	@Override
 	public void onShutdown() {
-		// loop over applications and shutdown
+		// loop over applications and shutdown as the runtime is going down.
 		applications.values().parallelStream().forEach( Application::shutdown );
 		logger.info( "ApplicationService.onShutdown()" );
 	}

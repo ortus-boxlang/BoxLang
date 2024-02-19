@@ -23,9 +23,7 @@ import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.exceptions.ScopeNotFoundException;
 
 /**
- * This context represents the context of the entire BoxLang Runtime. The runtime is persistent once
- * started, and can be used to process one or more "requests" for execution. The "server" scope here is
- * global and will be shared by all requests.
+ * This context represents an Application in BoxLang
  */
 public class ApplicationBoxContext extends BaseBoxContext {
 
@@ -36,7 +34,7 @@ public class ApplicationBoxContext extends BaseBoxContext {
 	 */
 
 	/**
-	 * The variables scope
+	 * The actual BoxLang application
 	 */
 	protected Application	application;
 

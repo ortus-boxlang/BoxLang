@@ -25,10 +25,10 @@ import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
 @BoxBIF
-public class ApplicationStop extends BIF {
+public class ApplicationRestart extends BIF {
 
 	/**
-	 * Stops the currently running application
+	 * Restarts the currently running application
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
@@ -36,10 +36,10 @@ public class ApplicationStop extends BIF {
 	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
 		ApplicationBoxContext applicationContext;
 		if ( ( applicationContext = context.getParentOfType( ApplicationBoxContext.class ) ) != null ) {
-			applicationContext.getApplication().shutdown();
+			applicationContext.getApplication().restart();
 			return true;
 		} else {
-			throw new BoxRuntimeException( "There is no Application context defined, so we can't stop it!" );
+			throw new BoxRuntimeException( "There is no Application context defined, so we can't restart it!" );
 		}
 	}
 }

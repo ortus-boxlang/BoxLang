@@ -32,6 +32,7 @@ public class ComponentServiceProviderGenerator {
 			    targetPackage.replace( ".", "/" ),
 			    BoxComponent.class
 			)
+			    .sorted( ( a, b ) -> a.getName().compareTo( b.getName() ) )
 			    .forEach( ( clazz ) -> {
 				    try {
 					    writer.write( clazz.getName() );

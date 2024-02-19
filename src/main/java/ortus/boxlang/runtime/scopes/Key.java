@@ -147,6 +147,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key	duration					= Key.of( "duration" );
 	public static final Key	elem						= Key.of( "elem" );
 	public static final Key	elementCountForRemoval		= Key.of( "elementCountForRemoval" );
+	public static final Key	EMPTY						= Key.of( "" );
 	public static final Key	encoded						= Key.of( "encoded" );
 	public static final Key	encodefor					= Key.of( "encodefor" );
 	public static final Key	encoding					= Key.of( "encoding" );
@@ -251,6 +252,9 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key	objectArgument				= Key.of( "objectArgument" );
 	public static final Key	objectMappings				= Key.of( "objectMappings" );
 	public static final Key	oldPath						= Key.of( "oldPath" );
+	public static final Key	onApplicationEnd			= Key.of( "onApplicationEnd" );
+	public static final Key	onApplicationRestart		= Key.of( "onApplicationRestart" );
+	public static final Key	onApplicationStart			= Key.of( "onApplicationStart" );
 	public static final Key	onLoad						= Key.of( "onLoad" );
 	public static final Key	onMissingMethod				= Key.of( "onMissingMethod" );
 	public static final Key	onParse						= Key.of( "onParse" );
@@ -356,7 +360,6 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key	xpath						= Key.of( "xpath" );
 	public static final Key	XSL							= Key.of( "XSL" );
 	public static final Key	year						= Key.of( "year" );
-	public static final Key	EMPTY						= Key.of( "" );
 
 	// jdbc
 	public static final Key	driver						= Key.of( "driver" );

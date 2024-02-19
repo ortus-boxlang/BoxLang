@@ -35,6 +35,7 @@ public class BIFServiceProviderGenerator {
 			    targetPackage.replace( ".", "/" ),
 			    BoxBIF.class, BoxBIFs.class, BoxMember.class, BoxMembers.class
 			)
+			    .sorted( ( a, b ) -> a.getName().compareTo( b.getName() ) )
 			    .forEach( ( clazz ) -> {
 				    try {
 					    writer.write( clazz.getName() );

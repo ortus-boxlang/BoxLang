@@ -22,6 +22,7 @@ import ortus.boxlang.runtime.bifs.BoxBIF;
 import ortus.boxlang.runtime.context.ApplicationBoxContext;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
+import ortus.boxlang.runtime.types.DateTime;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
 @BoxBIF
@@ -34,10 +35,10 @@ public class ApplicationStartTime extends BIF {
 	 * @param arguments Argument scope for the BIF.
 	 *
 	 */
-	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
+	public DateTime invoke( IBoxContext context, ArgumentsScope arguments ) {
 		ApplicationBoxContext applicationContext;
 		if ( ( applicationContext = context.getParentOfType( ApplicationBoxContext.class ) ) != null ) {
-			return applicationContext.getApplication().getStartTime();
+			return new DateTime( applicationContext.getApplication().getStartTime() );
 		} else {
 			throw new BoxRuntimeException( "There is no Application context defined, so we can't get a start time!" );
 		}
