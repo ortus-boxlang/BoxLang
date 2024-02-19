@@ -376,13 +376,7 @@ public class BoxClassTransformer extends AbstractTransformer {
 					);
 					
 					functionContext.setThisClass( this );
-					functionContext.pushTemplate( this );
-
-					try {
-						return function.invoke( functionContext );
-					} finally{
-						functionContext.popTemplate();
-					}
+					return function.invoke( functionContext );
 				}
 
 				if ( value != null ) {
@@ -447,12 +441,7 @@ public class BoxClassTransformer extends AbstractTransformer {
 						);
 
 					functionContext.setThisClass( this );
-					functionContext.pushTemplate( this );
-					try {
-						return function.invoke( functionContext );
-					} finally{
-						functionContext.popTemplate();
-					}
+					return function.invoke( functionContext );
 				}
 
 				if( getSuper() != null && getSuper().getThisScope().get( name ) != null ) {

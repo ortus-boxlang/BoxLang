@@ -17,8 +17,6 @@
  */
 package ortus.boxlang.runtime.runnables;
 
-import java.nio.file.Path;
-
 public interface ITemplateRunnable extends IBoxRunnable {
 
 	/**
@@ -26,10 +24,5 @@ public interface ITemplateRunnable extends IBoxRunnable {
 	 * Methods
 	 * --------------------------------------------------------------------------
 	 */
-
-	/**
-	 * The path to the template
-	 */
-	public Path getRunnablePath();
 
 }

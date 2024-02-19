@@ -32,6 +32,7 @@ import ortus.boxlang.runtime.dynamic.casters.FunctionCaster;
 import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 import ortus.boxlang.runtime.loader.ImportDefinition;
 import ortus.boxlang.runtime.runnables.BoxTemplate;
+import ortus.boxlang.runtime.runnables.IBoxRunnable;
 import ortus.boxlang.runtime.runnables.ITemplateRunnable;
 import ortus.boxlang.runtime.runnables.RunnableLoader;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
@@ -135,7 +136,7 @@ public class BaseBoxContext implements IBoxContext {
 	 *
 	 * @return IBoxContext
 	 */
-	public IBoxContext pushTemplate( ITemplateRunnable template ) {
+	public IBoxContext pushTemplate( IBoxRunnable template ) {
 		this.templates.push( template.getRunnablePath() );
 		this.currentImports = template.getImports();
 		return this;

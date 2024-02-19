@@ -17,6 +17,7 @@
  */
 package ortus.boxlang.runtime.types;
 
+import java.nio.file.Path;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -76,6 +77,10 @@ public class SampleClosure extends Closure {
 
 	public List<ImportDefinition> getImports() {
 		return null;
+	}
+
+	public Path getRunnablePath() {
+		return Path.of( "unknown" );
 	}
 
 	public SampleClosure( Argument[] arguments, IBoxContext declaringContext, Object returnVal ) {

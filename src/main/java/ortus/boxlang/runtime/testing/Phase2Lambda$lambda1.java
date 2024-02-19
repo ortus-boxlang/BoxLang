@@ -17,6 +17,7 @@
  */
 package ortus.boxlang.runtime.testing;
 
+import java.nio.file.Path;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -172,5 +173,9 @@ public class Phase2Lambda$lambda1 extends Lambda {
 	 */
 	public Object getRunnableAST() {
 		return Phase2Lambda$lambda1.ast;
+	}
+
+	public Path getRunnablePath() {
+		return Path.of( "unknown" );
 	}
 }

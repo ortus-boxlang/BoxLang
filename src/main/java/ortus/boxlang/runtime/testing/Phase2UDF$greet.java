@@ -17,6 +17,7 @@
  */
 package ortus.boxlang.runtime.testing;
 
+import java.nio.file.Path;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -198,6 +199,10 @@ public class Phase2UDF$greet extends UDF {
 	 */
 	public Object getRunnableAST() {
 		return Phase2UDF$greet.ast;
+	}
+
+	public Path getRunnablePath() {
+		return Path.of( "unknown" );
 	}
 
 }

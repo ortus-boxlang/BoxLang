@@ -17,6 +17,7 @@
  */
 package ortus.boxlang.runtime.types;
 
+import java.nio.file.Path;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -77,6 +78,10 @@ public class SampleUDF extends UDF {
 
 	public List<ImportDefinition> getImports() {
 		return null;
+	}
+
+	public Path getRunnablePath() {
+		return Path.of( "unknown" );
 	}
 
 	public SampleUDF( Access access, Key name, String returnType, Argument[] arguments, Object returnVal ) {

@@ -369,15 +369,8 @@ public class FunctionBoxContext extends BaseBoxContext {
 		boolean				inClass			= isInClass();
 		if ( inClass ) {
 			functionContext.setThisClass( getThisClass() );
-			functionContext.pushTemplate( getThisClass() );
 		}
-		try {
-			return function.invoke( functionContext );
-		} finally {
-			if ( inClass ) {
-				functionContext.popTemplate();
-			}
-		}
+		return function.invoke( functionContext );
 	}
 
 	/**

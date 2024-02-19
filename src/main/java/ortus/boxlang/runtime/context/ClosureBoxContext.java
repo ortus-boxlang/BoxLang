@@ -22,6 +22,7 @@ import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Closure;
+import ortus.boxlang.runtime.types.Function;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.exceptions.ScopeNotFoundException;
@@ -162,20 +163,36 @@ public class ClosureBoxContext extends FunctionBoxContext {
 	}
 
 	/**
-	 * Detects of this Function is executing in the context of a class
-	 * 
-	 * @return true if there is an IClassRunnable at the top of the template stack
+	 * Invoke a function expression such as (()=>{})() using named args.
+	 *
+	 * @return Return value of the function call
 	 */
-	public boolean isInClass() {
-		return false;
+	public Object invokeFunction( Function function, Key calledName, ArgumentsScope argumentsScope ) {
+		FunctionBoxContext functionContext = Function.generateFunctionContext( function, getFunctionParentContext(), calledName, argumentsScope );
+		if ( getFunction().getDeclaringContext() instanceof FunctionBoxContext fbc && fbc.isInClass() ) {
+			functionContext.setThisClass( fbc.getThisClass() );
+		}
+		return function.invoke( functionContext );
 	}
 
 	/**
 	 * Detects of this Function is executing in the context of a class
 	 * 
-	 * @return the IClassRunnable this context is executing in, or null if not in a class
+	 * @return true if there is an IClassRunnable at the top of the template stack
+	 */
+	public boolean isInClass() {
+		return getFunction().getDeclaringContext() instanceof FunctionBoxContext fbc && fbc.isInClass();
+	}
+
+	/**
+	 * Detects of this Function is executing in the context of a class
+	 * 
+	 * @return true if there is an IClassRunnable at the top of the template stack
 	 */
 	public IClassRunnable getThisClass() {
+		if ( getFunction().getDeclaringContext() instanceof FunctionBoxContext fbc ) {
+			return fbc.getThisClass();
+		}
 		return null;
 	}
 

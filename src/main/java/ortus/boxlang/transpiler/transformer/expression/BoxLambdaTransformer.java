@@ -148,6 +148,10 @@ public class BoxLambdaTransformer extends AbstractTransformer {
 
 			}
 
+			public Path getRunnablePath() {
+				return ${enclosingClassName}.path;
+			}
+
   		}
  	""";
 	// @formatter:on

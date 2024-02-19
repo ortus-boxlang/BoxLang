@@ -20,6 +20,7 @@ package TestCases.phase2;
 import static com.google.common.truth.Truth.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
+import java.nio.file.Path;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -581,6 +582,10 @@ public class UDFFunctionTest {
 			@Override
 			public Object getRunnableAST() {
 				return null;
+			}
+
+			public Path getRunnablePath() {
+				return Path.of( "unknown" );
 			}
 		};
 

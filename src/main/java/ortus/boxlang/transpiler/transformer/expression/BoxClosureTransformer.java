@@ -138,6 +138,10 @@ public class BoxClosureTransformer extends AbstractTransformer {
 
 			}
 
+			public Path getRunnablePath() {
+				return ${enclosingClassName}.path;
+			}
+
   		}
  	""";
 	// @formatter:on

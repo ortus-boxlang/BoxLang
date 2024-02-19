@@ -17,6 +17,7 @@
  */
 package ortus.boxlang.runtime.types;
 
+import java.nio.file.Path;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -75,6 +76,10 @@ public class SampleLambda extends Lambda {
 
 	public List<ImportDefinition> getImports() {
 		return null;
+	}
+
+	public Path getRunnablePath() {
+		return Path.of( "unknown" );
 	}
 
 	public SampleLambda( Argument[] arguments, Object returnVal ) {

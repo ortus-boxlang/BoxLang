@@ -17,6 +17,7 @@
  */
 package ortus.boxlang.runtime.testing;
 
+import java.nio.file.Path;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -98,6 +99,10 @@ public class Phase2Closure$closure1 extends Closure {
 
 	public Access getAccess() {
 		return access;
+	}
+
+	public Path getRunnablePath() {
+		return Path.of( "unknown" );
 	}
 
 	public Phase2Closure$closure1( IBoxContext declaringContext ) {

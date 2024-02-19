@@ -117,6 +117,10 @@ public class BoxFunctionDeclarationTransformer extends AbstractTransformer {
 				return imports;
 			}
 
+			public Path getRunnablePath() {
+				return ${enclosingClassName}.path;
+			}
+
 			@Override
 			public Object _invoke( FunctionBoxContext context ) {
 				ClassLocator classLocator = ClassLocator.getInstance();

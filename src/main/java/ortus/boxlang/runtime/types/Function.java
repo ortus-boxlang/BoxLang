@@ -155,6 +155,7 @@ public abstract class Function implements IType, IFunctionRunnable {
 		    data
 		);
 		Object result = null;
+		context.pushTemplate( this );
 		try {
 			result = ensureReturnType( context, _invoke( context ) );
 			data.put( Key.result, result );
@@ -167,6 +168,7 @@ public abstract class Function implements IType, IFunctionRunnable {
 			context.flushBuffer( true );
 			throw e;
 		} finally {
+			context.popTemplate();
 			// If output=true, then flush any content in buffer
 			if ( canOutput( context ) ) {
 				context.flushBuffer( false );

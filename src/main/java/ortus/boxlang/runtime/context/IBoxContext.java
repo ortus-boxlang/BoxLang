@@ -25,7 +25,7 @@ import java.util.Optional;
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.components.Component;
 import ortus.boxlang.runtime.loader.ImportDefinition;
-import ortus.boxlang.runtime.runnables.ITemplateRunnable;
+import ortus.boxlang.runtime.runnables.IBoxRunnable;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.IStruct;
@@ -244,7 +244,7 @@ public interface IBoxContext {
 	 *
 	 * @return IBoxContext
 	 */
-	public IBoxContext pushTemplate( ITemplateRunnable template );
+	public IBoxContext pushTemplate( IBoxRunnable template );
 
 	/**
 	 * Pop a template from the stack

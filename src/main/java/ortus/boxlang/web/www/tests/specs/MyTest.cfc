@@ -17,11 +17,11 @@ component extends="testbox.system.BaseSpec" {
                 expect(true).toBeTrue();
             });
 
-         /*    describe("Nested suite", function() {
+            describe("Nested suite", function() {
                 it("can have a spec", function() {
-                    expect(1).toBe(1);
+                    expect(1).toBe(0);
                 });
-            }); */
+            });
         });
     }
 }
