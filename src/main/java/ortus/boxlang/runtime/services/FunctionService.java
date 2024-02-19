@@ -52,24 +52,19 @@ public class FunctionService extends BaseService {
 	 */
 
 	/**
-	 * The location of the core bifs
-	 */
-	private static final String								FUNCTIONS_PACKAGE	= "ortus.boxlang.runtime.bifs";
-
-	/**
 	 * Logger
 	 */
-	private static final Logger								logger				= LoggerFactory.getLogger( FunctionService.class );
+	private static final Logger								logger			= LoggerFactory.getLogger( FunctionService.class );
 
 	/**
 	 * The set of global functions registered with the service
 	 */
-	private Map<Key, BIFDescriptor>							globalFunctions		= new ConcurrentHashMap<>();
+	private Map<Key, BIFDescriptor>							globalFunctions	= new ConcurrentHashMap<>();
 
 	/**
 	 * The set of namespaced functions registered with the service
 	 */
-	private Map<Key, BIFNamespace>							namespaces			= new ConcurrentHashMap<>();
+	private Map<Key, BIFNamespace>							namespaces		= new ConcurrentHashMap<>();
 
 	/**
 	 * Represents the set of registered member methods.
@@ -80,7 +75,7 @@ public class FunctionService extends BaseService {
 	 * { "foo" : { BoxLangType.ARRAY : MemberDescriptor, BoxLangType.STRING : MemberDescriptor } }
 	 * )
 	 */
-	private Map<Key, Map<BoxLangType, MemberDescriptor>>	memberMethods		= new ConcurrentHashMap<>();
+	private Map<Key, Map<BoxLangType, MemberDescriptor>>	memberMethods	= new ConcurrentHashMap<>();
 
 	/**
 	 * --------------------------------------------------------------------------
