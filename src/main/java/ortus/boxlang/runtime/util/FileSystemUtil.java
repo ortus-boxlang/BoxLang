@@ -129,7 +129,7 @@ public final class FileSystemUtil {
 				} else {
 					InputStreamReader inputReader = new InputStreamReader( fileURL.openStream() );
 					try ( BufferedReader reader = new BufferedReader( inputReader ) ) {
-						return reader.lines().parallel().collect( Collectors.joining( lineSeparator ) );
+						return ( String ) reader.lines().parallel().collect( Collectors.joining( lineSeparator ) );
 					}
 				}
 			} catch ( MalformedURLException e ) {
@@ -137,11 +137,15 @@ public final class FileSystemUtil {
 			}
 
 		} else {
-			return isBinaryFile( filePath )
-			    ? Files.readAllBytes( path )
-			    : ( bufferSize == null
-			        ? Files.readString( path, cs )
-			        : new BufferedReader( Files.newBufferedReader( path, cs ), bufferSize ).lines().parallel().collect( Collectors.joining( lineSeparator ) ) );
+			if ( isBinaryFile( filePath ) ) {
+				return Files.readAllBytes( path );
+			} else if ( bufferSize == null ) {
+				return Files.readString( path, cs );
+			} else {
+				try ( BufferedReader reader = new BufferedReader( Files.newBufferedReader( path, cs ), bufferSize ) ) {
+					return reader.lines().parallel().collect( Collectors.joining( lineSeparator ) );
+				}
+			}
 		}
 	}
 
