@@ -521,8 +521,17 @@ public class ModuleService extends BaseService {
 		// Convert to absolute path if it's not already
 		path = path.toAbsolutePath();
 
-		// Verify
-		if ( Files.exists( path ) && Files.isDirectory( path ) ) {
+		// Verify if the directory exists, else create it
+		if ( !Files.exists( path ) ) {
+			try {
+				Files.createDirectories( path );
+			} catch ( IOException e ) {
+				throw new BoxRuntimeException( "Error creating module path: " + path.toString(), e );
+			}
+		}
+
+		// Verify it is a directory
+		if ( Files.isDirectory( path ) ) {
 			// Add a module path to the list
 			this.modulePaths.add( path );
 			logger.atDebug().log( "+ ModuleService: Added an external module path: [{}]", path.toString() );
