@@ -23,6 +23,7 @@ import java.io.InputStreamReader;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.DirectoryNotEmptyException;
 import java.nio.file.FileSystems;
 import java.nio.file.Files;
@@ -111,12 +112,12 @@ public final class FileSystemUtil {
 	public static Object read( String filePath, String charset, Integer bufferSize ) throws IOException {
 		Path	path	= null;
 		Boolean	isURL	= false;
-		if ( filePath.substring( 0, 4 ).toLowerCase().equals( "http" ) ) {
+		if ( filePath.substring( 0, 4 ).equalsIgnoreCase( "http" ) ) {
 			isURL = true;
 		} else {
 			path = Path.of( filePath );
 		}
-		Charset cs = Charset.forName( DEFAULT_CHARSET );
+		Charset cs = StandardCharsets.UTF_8;
 		if ( charset != null ) {
 			cs = Charset.forName( charset );
 		}
@@ -126,9 +127,10 @@ public final class FileSystemUtil {
 				if ( isBinaryFile( filePath ) ) {
 					return IOUtils.toByteArray( fileURL.openStream() );
 				} else {
-					InputStreamReader	inputReader	= new InputStreamReader( fileURL.openStream() );
-					BufferedReader		reader		= new BufferedReader( inputReader );
-					return ( String ) reader.lines().parallel().collect( Collectors.joining( lineSeparator ) );
+					InputStreamReader inputReader = new InputStreamReader( fileURL.openStream() );
+					try ( BufferedReader reader = new BufferedReader( inputReader ) ) {
+						return reader.lines().parallel().collect( Collectors.joining( lineSeparator ) );
+					}
 				}
 			} catch ( MalformedURLException e ) {
 				throw new BoxRuntimeException( "The url [" + filePath + "] could not be parsed.  The reason was:" + e.getMessage() + "(" + e.getCause() + ")" );
@@ -384,7 +386,7 @@ public final class FileSystemUtil {
 	 */
 	public static Boolean isBinaryFile( String filePath ) throws IOException {
 		String mimeType = null;
-		if ( filePath.substring( 0, 4 ).toLowerCase().equals( "http" ) ) {
+		if ( filePath.substring( 0, 4 ).equalsIgnoreCase( "http" ) ) {
 			mimeType = Files.probeContentType( Paths.get( new URL( filePath ).getFile() ).getFileName() );
 		} else {
 			mimeType = Files.probeContentType( Paths.get( filePath ).getFileName() );
