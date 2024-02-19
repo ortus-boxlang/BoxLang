@@ -74,7 +74,7 @@ public class ModifiableStructCaster {
 		}
 		object = DynamicObject.unWrap( object );
 
-		if ( object instanceof ImmutableStruct col ) {
+		if ( object instanceof ImmutableStruct ) {
 			throw new BoxCastException( "Can't cast ImmutableStruct to a modifiable Struct." );
 		}
 

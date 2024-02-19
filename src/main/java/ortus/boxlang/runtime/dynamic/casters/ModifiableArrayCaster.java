@@ -75,7 +75,7 @@ public class ModifiableArrayCaster {
 		}
 		object = DynamicObject.unWrap( object );
 
-		if ( object instanceof ImmutableArray col ) {
+		if ( object instanceof ImmutableArray ) {
 			throw new BoxCastException( "Can't cast ImmutableArray to a modifiable Array." );
 		}
 
