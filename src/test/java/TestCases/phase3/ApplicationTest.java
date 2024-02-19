@@ -32,6 +32,7 @@ import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.BaseBoxContext;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
+import ortus.boxlang.runtime.dynamic.casters.DateTimeCaster;
 import ortus.boxlang.runtime.scopes.ApplicationScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.SessionScope;
@@ -90,7 +91,7 @@ public class ApplicationTest {
 		assertThat( variables.get( result ) ).isInstanceOf( ApplicationScope.class );
 		assertThat( variables.get( Key.of( "result2" ) ) ).isInstanceOf( SessionScope.class );
 
-		Instant	actual				= ( Instant ) variables.get( Key.of( "startTime" ) );
+		Instant	actual				= DateTimeCaster.cast( variables.get( Key.of( "startTime" ) ) ).getWrapped().toInstant();
 		Instant	now					= Instant.now();
 		long	differenceInSeconds	= ChronoUnit.SECONDS.between( actual, now );
 
