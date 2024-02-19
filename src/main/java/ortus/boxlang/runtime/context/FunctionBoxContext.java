@@ -27,6 +27,7 @@ import ortus.boxlang.runtime.scopes.LocalScope;
 import ortus.boxlang.runtime.scopes.VariablesScope;
 import ortus.boxlang.runtime.types.Function;
 import ortus.boxlang.runtime.types.Struct;
+import ortus.boxlang.runtime.types.UDF;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.exceptions.ScopeNotFoundException;
 
@@ -286,7 +287,12 @@ public class FunctionBoxContext extends BaseBoxContext {
 	 * @return true if there is an IClassRunnable at the top of the template stack
 	 */
 	public boolean isInClass() {
-		return templates.peek() instanceof IClassRunnable;
+		for ( Object template : templates ) {
+			if ( template instanceof IClassRunnable ) {
+				return true;
+			}
+		}
+		return false;
 	}
 
 	/**
@@ -295,7 +301,12 @@ public class FunctionBoxContext extends BaseBoxContext {
 	 * @return true if there is an IClassRunnable at the top of the template stack
 	 */
 	public IClassRunnable getThisClass() {
-		return ( IClassRunnable ) templates.peek();
+		for ( Object template : templates ) {
+			if ( template instanceof IClassRunnable icr ) {
+				return icr;
+			}
+		}
+		return null;
 	}
 
 	/**
@@ -363,4 +374,19 @@ public class FunctionBoxContext extends BaseBoxContext {
 			}
 		}
 	}
+
+	/**
+	 * If this function is executing inside of a BoxClass, register a UDF in the class's variables scope
+	 * OTherise, defer to the parent context, which is probably a scripting context
+	 * 
+	 * @param udf The UDF to register
+	 */
+	public void registerUDF( UDF udf ) {
+		if ( isInClass() ) {
+			IClassRunnable cfc = getThisClass();
+			cfc.getVariablesScope().put( udf.getName(), udf );
+		}
+		getParent().registerUDF( udf );
+	}
+
 }

@@ -22,8 +22,10 @@ import com.github.javaparser.ast.CompilationUnit;
 import com.github.javaparser.ast.Node;
 import com.github.javaparser.ast.body.MethodDeclaration;
 import com.github.javaparser.ast.expr.ArrayInitializerExpr;
+import com.github.javaparser.ast.expr.EnclosedExpr;
 import com.github.javaparser.ast.expr.Expression;
 import com.github.javaparser.ast.expr.NullLiteralExpr;
+import com.github.javaparser.ast.expr.VariableDeclarationExpr;
 import com.github.javaparser.ast.stmt.BlockStmt;
 import com.github.javaparser.ast.stmt.ExpressionStmt;
 import com.github.javaparser.ast.stmt.ReturnStmt;
@@ -132,6 +134,7 @@ public class BoxClosureTransformer extends AbstractTransformer {
 			}
 			@Override
 			public Object _invoke( FunctionBoxContext context ) {
+				ClassLocator classLocator = ClassLocator.getInstance();
 
 			}
 
@@ -210,11 +213,11 @@ public class BoxClosureTransformer extends AbstractTransformer {
 		}
 		boolean needReturn = true;
 		// ensure last statemtent in body is wrapped in a return statement if it was an expression
-		if ( body.getStatements().size() > 0 ) {
+		if ( body.getStatements().size() > 1 ) {
 			Statement lastStatement = body.getStatement( body.getStatements().size() - 1 );
-			if ( lastStatement instanceof ExpressionStmt expr ) {
+			if ( lastStatement instanceof ExpressionStmt expr && ! ( expr.getExpression() instanceof VariableDeclarationExpr ) ) {
 				body.getStatements().remove( lastStatement );
-				body.addStatement( new ReturnStmt( expr.getExpression() ) );
+				body.addStatement( new ReturnStmt( new EnclosedExpr( expr.getExpression() ) ) );
 				needReturn = false;
 			}
 		}

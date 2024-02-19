@@ -58,15 +58,17 @@ public class Issue {
 	@Override
 	public String toString() {
 		StringBuilder sb = new StringBuilder();
-		if ( this.position.getSource() != null ) {
-			sb.append( position.getSource() );
-			sb.append( ":" );
+		if ( this.position != null ) {
+			if ( this.position.getSource() != null ) {
+				sb.append( position.getSource() );
+				sb.append( ":" );
+			}
+			sb.append( " Line: " );
+			sb.append( position.getStart().getLine() );
+			sb.append( " Col: " );
+			sb.append( position.getStart().getColumn() );
+			sb.append( " - " );
 		}
-		sb.append( " Line: " );
-		sb.append( position.getStart().getLine() );
-		sb.append( " Col: " );
-		sb.append( position.getStart().getColumn() );
-		sb.append( " - " );
 		sb.append( this.message );
 
 		return sb.toString();

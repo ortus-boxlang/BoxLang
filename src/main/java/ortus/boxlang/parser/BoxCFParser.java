@@ -88,6 +88,7 @@ import ortus.boxlang.ast.statement.BoxForIndex;
 import ortus.boxlang.ast.statement.BoxFunctionDeclaration;
 import ortus.boxlang.ast.statement.BoxIfElse;
 import ortus.boxlang.ast.statement.BoxImport;
+import ortus.boxlang.ast.statement.BoxParam;
 import ortus.boxlang.ast.statement.BoxProperty;
 import ortus.boxlang.ast.statement.BoxRethrow;
 import ortus.boxlang.ast.statement.BoxReturn;
@@ -107,6 +108,7 @@ import ortus.boxlang.parser.antlr.CFParser.BoxClassContext;
 import ortus.boxlang.parser.antlr.CFParser.ComponentContext;
 import ortus.boxlang.parser.antlr.CFParser.ComponentIslandContext;
 import ortus.boxlang.parser.antlr.CFParser.NewContext;
+import ortus.boxlang.parser.antlr.CFParser.ParamContext;
 import ortus.boxlang.parser.antlr.CFParser.PreannotationContext;
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.components.ComponentDescriptor;
@@ -264,9 +266,40 @@ public class BoxCFParser extends BoxAbstractParser {
 		addErrorListeners( lexer, parser );
 		ParserRuleContext parseTree = parser.script();
 
+		if ( lexer.hasUnpoppedModes() ) {
+			List<String>	modes		= lexer.getUnpoppedModes();
+
+			// TODO: get position
+			Position		position	= new Position( new Point( 0, 0 ),
+			    new Point( 0, 0 ) );
+			if ( modes.contains( "hashMode" ) ) {
+				issues.add( new Issue( "Untermimated hash expression inside of string literal.", position ) );
+			} else {
+				// Not sure this is always the case
+				issues.add( new Issue( "Untermimated string literal.", position ) );
+			}
+		}
+
+		// Check if there are unconsumed tokens
+		Token token = lexer.nextToken();
+		if ( token.getType() != Token.EOF ) {
+			StringBuffer	extraText	= new StringBuffer();
+			int				startLine	= token.getLine();
+			int				startColumn	= token.getCharPositionInLine();
+			int				endColumn	= startColumn + token.getText().length();
+			Position		position	= new Position( new Point( startLine, startColumn ),
+			    new Point( startLine, endColumn ) );
+			extraText.append( token.getText() );
+			while ( token.getType() != Token.EOF && extraText.length() < 100 ) {
+				token = lexer.nextToken();
+				extraText.append( token.getText() );
+			}
+			issues.add( new Issue( "Extra char(s) [" + extraText.toString() + "] at the end of parsing.", position ) );
+		}
+
 		lexer.reset();
-		Token			token		= lexer.nextToken();
-		BoxDOCParser	docParser	= new BoxDOCParser( token.getLine(), token.getCharPositionInLine() );
+		token = lexer.nextToken();
+		BoxDOCParser docParser = new BoxDOCParser( token.getLine(), token.getCharPositionInLine() );
 		while ( token.getType() != Token.EOF ) {
 			if ( token.getType() == CFLexer.JAVADOC_COMMENT ) {
 				ParsingResult result = docParser.parse( null, token.getText() );
@@ -278,25 +311,6 @@ public class BoxCFParser extends BoxAbstractParser {
 				}
 			}
 			token = lexer.nextToken();
-		}
-
-		if ( lexer.hasUnpoppedModes() ) {
-			List<String>	modes		= lexer.getUnpoppedModes();
-
-			/*
-			 * modes.forEach( mode -> {
-			 * System.out.println( "Unpopped mode: " + mode );
-			 * } );
-			 */
-			// TODO: get position
-			Position		position	= new Position( new Point( 0, 0 ),
-			    new Point( 0, 0 ) );
-			if ( modes.contains( "hashMode" ) ) {
-				issues.add( new Issue( "Untermimated hash expression inside of string literal.", position ) );
-			} else {
-				// Not sure this is always the case
-				issues.add( new Issue( "Untermimated string literal.", position ) );
-			}
 		}
 
 		return parseTree;
@@ -948,10 +962,30 @@ public class BoxCFParser extends BoxAbstractParser {
 			return toAst( file, node.include() );
 		} else if ( node.throw_() != null ) {
 			return toAst( file, node.throw_() );
+		} else if ( node.param() != null ) {
+			return toAst( file, node.param() );
 		}
 
-		throw new IllegalStateException( "not implemented: " + node.getClass().getSimpleName() );
+		throw new IllegalStateException( "not implemented: " + getSourceText( node ) );
 
+	}
+
+	private BoxStatement toAst( File file, ParamContext node ) {
+		BoxExpr	type			= null;
+		BoxExpr	defaultValue	= null;
+		if ( node.type() != null ) {
+			type = new BoxStringLiteral( node.type().getText(), getPosition( node.type() ), getSourceText( node.type() ) );
+		}
+		if ( node.expression() != null ) {
+			defaultValue = toAst( file, node.expression() );
+		}
+		return new BoxParam(
+		    new BoxStringLiteral( node.accessExpression().getText(), getPosition( node.accessExpression() ), getSourceText( node.accessExpression() ) ),
+		    type,
+		    defaultValue,
+		    getPosition( node ),
+		    getSourceText( node )
+		);
 	}
 
 	/**

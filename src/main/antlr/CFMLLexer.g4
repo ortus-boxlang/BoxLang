@@ -35,6 +35,8 @@ WS: (' ' | '\t' | '\r'? '\n')+;
 
 SCRIPT_OPEN: '<cfscript' .*? '>' -> pushMode(XFSCRIPT);
 
+OUTPUT_START:
+	'<cfoutput' -> pushMode(POSSIBLE_COMPONENT), pushMode(COMPONENT_MODE), pushMode(OUTPUT_MODE);
 COMPONENT_OPEN: '<' -> pushMode(POSSIBLE_COMPONENT);
 
 HASHHASH: '##' -> type(CONTENT_TEXT);
@@ -62,7 +64,6 @@ FUNCTION: 'function';
 ARGUMENT: 'argument';
 
 SCRIPT: 'script' -> pushMode(XFSCRIPT);
-OUTPUT: 'output' -> pushMode(OUTPUT_MODE);
 RETURN: 'return' -> pushMode(EXPRESSION_MODE_COMPONENT);
 
 IF: 'if' -> pushMode(EXPRESSION_MODE_COMPONENT);
@@ -131,8 +132,8 @@ IF2: 'if' -> type(IF);
 COMPONENT2: 'component' -> type(COMPONENT);
 FUNCTION2: 'function' -> type(FUNCTION);
 // popping back to: POSSIBLE_COMPONENT -> DEFAULT_MODE -> OUTPUT_MODE -> COMPONENT -> POSSIBLE_COMPONENT -> DEFAULT_MODE
-OUTPUT2:
-	'output>' -> type(OUTPUT), popMode, popMode, popMode, popMode, popMode, popMode;
+OUTPUT_END:
+	'output>' -> popMode, popMode, popMode, popMode, popMode, popMode;
 INTERFACE2: 'interface' -> type(INTERFACE);
 TRY2: 'try' -> type(TRY);
 CATCH2: 'catch' -> type(CATCH);
@@ -177,7 +178,7 @@ OPEN_SINGLE:
 mode EXPRESSION_MODE_COMPONENT;
 
 COMPONENT_CLOSE1:
-	'>' -> type(COMPONENT_CLOSE), popMode, popMode;
+	'>' -> type(COMPONENT_CLOSE), popMode, popMode, popMode;
 
 EXPRESSION_PART: ~[>'"]+;
 

@@ -82,6 +82,7 @@ import ortus.boxlang.ast.statement.BoxForIndex;
 import ortus.boxlang.ast.statement.BoxFunctionDeclaration;
 import ortus.boxlang.ast.statement.BoxIfElse;
 import ortus.boxlang.ast.statement.BoxImport;
+import ortus.boxlang.ast.statement.BoxParam;
 import ortus.boxlang.ast.statement.BoxRethrow;
 import ortus.boxlang.ast.statement.BoxReturn;
 import ortus.boxlang.ast.statement.BoxSwitch;
@@ -137,6 +138,7 @@ import ortus.boxlang.transpiler.transformer.statement.BoxForIndexTransformer;
 import ortus.boxlang.transpiler.transformer.statement.BoxFunctionDeclarationTransformer;
 import ortus.boxlang.transpiler.transformer.statement.BoxIfElseTransformer;
 import ortus.boxlang.transpiler.transformer.statement.BoxImportTransformer;
+import ortus.boxlang.transpiler.transformer.statement.BoxParamTransformer;
 import ortus.boxlang.transpiler.transformer.statement.BoxRethrowTransformer;
 import ortus.boxlang.transpiler.transformer.statement.BoxReturnTransformer;
 import ortus.boxlang.transpiler.transformer.statement.BoxScriptTransformer;
@@ -222,6 +224,7 @@ public class JavaTranspiler extends Transpiler {
 		registry.put( BoxExpressionInvocation.class, new BoxExpressionInvocationTransformer( this ) );
 		registry.put( BoxClosure.class, new BoxClosureTransformer( this ) );
 		registry.put( BoxClass.class, new BoxClassTransformer( this ) );
+		registry.put( BoxParam.class, new BoxParamTransformer( this ) );
 
 		// Templating Components
 		registry.put( BoxTemplate.class, new BoxTemplateTransformer( this ) );

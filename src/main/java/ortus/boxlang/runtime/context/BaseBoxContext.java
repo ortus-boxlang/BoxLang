@@ -141,6 +141,15 @@ public class BaseBoxContext implements IBoxContext {
 	}
 
 	/**
+	 * Get templates
+	 * 
+	 * @return The templates
+	 */
+	public ITemplateRunnable[] getTemplates() {
+		return this.templates.toArray( new ITemplateRunnable[ 0 ] );
+	}
+
+	/**
 	 * Push a Component to the stack
 	 *
 	 * @param name           The name of the component
@@ -435,7 +444,14 @@ public class BaseBoxContext implements IBoxContext {
 	 * @return Return value of the function call
 	 */
 	public Object invokeFunction( Function function, Key calledName, ArgumentsScope argumentsScope ) {
-		return function.invoke( Function.generateFunctionContext( function, getFunctionParentContext(), calledName, argumentsScope ) );
+		return function.invoke(
+		    Function.generateFunctionContext( 
+				function, 
+				getFunctionParentContext(), 
+				calledName, 
+				argumentsScope 
+			)
+		);
 	}
 
 	/**
@@ -577,7 +593,7 @@ public class BaseBoxContext implements IBoxContext {
 	 * @param udf The UDF to register
 	 */
 	public void registerUDF( UDF udf ) {
-		throw new BoxRuntimeException( "This context cannot register a function" );
+		throw new BoxRuntimeException( "This context [" + getClass().getSimpleName() + "] cannot register a function" );
 	}
 
 	/**
@@ -736,9 +752,14 @@ public class BaseBoxContext implements IBoxContext {
 				getParent().writeToBuffer( thisBuffer.toString() );
 				thisBuffer.setLength( 0 );
 			}
-			if ( force ) {
-				getParent().flushBuffer( true );
+		} else if ( force && hasParent() ) {
+			for ( StringBuffer buf : buffers ) {
+				synchronized ( buf ) {
+					getParent().writeToBuffer( buf.toString() );
+					buf.setLength( 0 );
+				}
 			}
+			getParent().flushBuffer( true );
 		}
 		return this;
 	}

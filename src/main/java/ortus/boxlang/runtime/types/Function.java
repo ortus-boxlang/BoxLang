@@ -163,6 +163,9 @@ public abstract class Function implements IType, IFunctionRunnable {
 			    BoxRuntime.RUNTIME_EVENTS.get( "postFunctionInvoke" ),
 			    data
 			);
+		} catch ( Throwable e ) {
+			context.flushBuffer( true );
+			throw e;
 		} finally {
 			// If output=true, then flush any content in buffer
 			if ( canOutput( context ) ) {

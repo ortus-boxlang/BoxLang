@@ -173,8 +173,14 @@ public abstract class BoxAbstractParser {
 	 * @see Position
 	 */
 	protected Position getPosition( ParserRuleContext node ) {
+		int	stopLine	= 0;
+		int	stopCol		= 0;
+		if ( node.stop != null ) {
+			stopLine	= node.stop.getLine() + startLine;
+			stopCol		= node.stop.getCharPositionInLine() + startColumn;
+		}
 		return new Position( new Point( node.start.getLine() + this.startLine, node.start.getCharPositionInLine() + startColumn ),
-		    new Point( node.stop.getLine() + startLine, node.stop.getCharPositionInLine() + startColumn ), new SourceFile( file ) );
+		    new Point( stopLine, stopCol ), new SourceFile( file ) );
 	}
 
 	/**
@@ -197,6 +203,9 @@ public abstract class BoxAbstractParser {
 	 * @return a string containing the source code
 	 */
 	protected String getSourceText( ParserRuleContext node ) {
+		if ( node.getStop() == null ) {
+			return "";
+		}
 		CharStream s = node.getStart().getTokenSource().getInputStream();
 		return s.getText( new Interval( node.getStart().getStartIndex(), node.getStop().getStopIndex() ) );
 	}

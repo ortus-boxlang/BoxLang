@@ -106,6 +106,43 @@ public class ParamTest {
 		assertThat( variables.getAsString( result ) ).isEqualTo( "my default" );
 	}
 
+	@DisplayName( "It can param script shortcut scope no type" )
+	@Test
+	public void testCanParamScriptShortcutScopeNoType() {
+
+		instance.executeSource(
+		    """
+		    param variables.result="my default";
+		       """,
+		    context );
+		assertThat( variables.getAsString( result ) ).isEqualTo( "my default" );
+	}
+
+	@DisplayName( "It can param script shortcut scope type" )
+	@Test
+	public void testCanParamScriptShortcutScopeType() {
+
+		instance.executeSource(
+		    """
+		    param String variables.result="my default";
+		       """,
+		    context );
+		assertThat( variables.getAsString( result ) ).isEqualTo( "my default" );
+	}
+
+	@DisplayName( "It can param script shortcut scope type Only" )
+	@Test
+	public void testCanParamScriptShortcutScopeTypeOnly() {
+
+		instance.executeSource(
+		    """
+		    variables.result="value";
+		      param String variables.result;
+		         """,
+		    context );
+		assertThat( variables.getAsString( result ) ).isEqualTo( "value" );
+	}
+
 	@DisplayName( "It can param script shortcut with type" )
 	@Test
 	public void testCanParamScriptShortcutWithType() {

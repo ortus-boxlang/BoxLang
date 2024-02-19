@@ -54,7 +54,6 @@ attributeName:
 	| FUNCTION
 	| ARGUMENT
 	| SCRIPT
-	| OUTPUT
 	| RETURN
 	| IF
 	| ELSE
@@ -216,14 +215,14 @@ finallyBlock:
 
 output:
 	// <cfoutput />
-	COMPONENT_OPEN PREFIX OUTPUT attribute* COMPONENT_SLASH_CLOSE
+	OUTPUT_START attribute* COMPONENT_SLASH_CLOSE
 	|
 	// <cfoutput> ... 
-	COMPONENT_OPEN PREFIX OUTPUT attribute* COMPONENT_CLOSE
+	OUTPUT_START attribute* COMPONENT_CLOSE
 	// code in output
 	statements
 	// </cfoutput>
-	COMPONENT_OPEN SLASH_PREFIX OUTPUT;
+	COMPONENT_OPEN SLASH_PREFIX OUTPUT_END;
 
 /*
  <cfimport componentlib="..." prefix="...">

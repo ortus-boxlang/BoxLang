@@ -51,12 +51,13 @@ public class BLHandler implements HttpHandler {
 			context.includeTemplate( requestPath );
 
 		} catch ( AbortException e ) {
+			context.flushBuffer( true );
 			if ( e.getCause() != null ) {
 				// This will always be an instance of CustomException
 				throw ( RuntimeException ) e.getCause();
 			}
 		} catch ( Throwable e ) {
-			// context.flushBuffer( false );
+			context.flushBuffer( true );
 			handleError( e, exchange, context );
 		} finally {
 			context.flushBuffer( false );
@@ -115,9 +116,11 @@ public class BLHandler implements HttpHandler {
 			errorOutput.append( "</pre>" );
 
 			context.writeToBuffer( errorOutput.toString() );
+			context.flushBuffer( true );
 
 			e.printStackTrace();
 		} catch ( Throwable t ) {
+			e.printStackTrace();
 			t.printStackTrace();
 		}
 	}

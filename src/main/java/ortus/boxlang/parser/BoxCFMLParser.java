@@ -24,6 +24,7 @@ import java.util.List;
 import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
 import org.antlr.v4.runtime.ParserRuleContext;
+import org.antlr.v4.runtime.Token;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.input.BOMInputStream;
 
@@ -65,7 +66,6 @@ import ortus.boxlang.ast.statement.BoxTryCatch;
 import ortus.boxlang.ast.statement.BoxType;
 import ortus.boxlang.ast.statement.BoxWhile;
 import ortus.boxlang.ast.statement.component.BoxComponent;
-import ortus.boxlang.parser.antlr.CFMLLexer;
 import ortus.boxlang.parser.antlr.CFMLParser;
 import ortus.boxlang.parser.antlr.CFMLParser.ArgumentContext;
 import ortus.boxlang.parser.antlr.CFMLParser.AttributeContext;
@@ -115,10 +115,43 @@ public class BoxCFMLParser extends BoxAbstractParser {
 
 	@Override
 	protected ParserRuleContext parserFirstStage( InputStream inputStream ) throws IOException {
-		CFMLLexer	lexer	= new CFMLLexer( CharStreams.fromStream( inputStream ) );
-		CFMLParser	parser	= new CFMLParser( new CommonTokenStream( lexer ) );
+		CFMLLexerCustom	lexer	= new CFMLLexerCustom( CharStreams.fromStream( inputStream ) );
+		CFMLParser		parser	= new CFMLParser( new CommonTokenStream( lexer ) );
 		addErrorListeners( lexer, parser );
-		return parser.template();
+		ParserRuleContext parseTree = parser.template();
+		if ( lexer.hasUnpoppedModes() ) {
+			List<String>	modes		= lexer.getUnpoppedModes();
+
+			/*
+			 * modes.forEach( mode -> {
+			 * System.out.println( "Unpopped mode: " + mode );
+			 * } );
+			 */
+
+			// TODO: get position
+			Position		position	= new Position( new Point( 0, 0 ),
+			    new Point( 0, 0 ) );
+			issues.add( new Issue( "Invalid Syntax. (Unpopped modes)", position ) );
+		}
+
+		// Check if there are unconsumed tokens
+		Token token = lexer.nextToken();
+		if ( token.getType() != Token.EOF ) {
+
+			StringBuffer	extraText	= new StringBuffer();
+			int				startLine	= token.getLine();
+			int				startColumn	= token.getCharPositionInLine();
+			int				endColumn	= startColumn + token.getText().length();
+			Position		position	= new Position( new Point( startLine, startColumn ),
+			    new Point( startLine, endColumn ) );
+			extraText.append( token.getText() );
+			while ( token.getType() != Token.EOF && extraText.length() < 100 ) {
+				token = lexer.nextToken();
+				extraText.append( token.getText() );
+			}
+			issues.add( new Issue( "Extra char(s) [" + extraText.toString() + "] at the end of parsing.", position ) );
+		}
+		return parseTree;
 	}
 
 	@Override

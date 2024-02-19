@@ -198,6 +198,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key	invoke						= Key.of( "invoke" );
 	public static final Key	ip							= Key.of( "ip" );
 	public static final Key	iso							= Key.of( "iso" );
+	public static final Key	item						= Key.of( "item" );
 	public static final Key	java						= Key.of( "java" );
 	public static final Key	json						= Key.of( "json" );
 	public static final Key	key							= Key.of( "key" );
@@ -314,6 +315,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key	strict						= Key.of( "strict" );
 	public static final Key	strictMapping				= Key.of( "strictMapping" );
 	public static final Key	string						= Key.of( "string" );
+	public static final Key	string_or_object			= Key.of( "string_or_object" );
 	public static final Key	string1						= Key.of( "string1" );
 	public static final Key	string2						= Key.of( "string2" );
 	public static final Key	struct						= Key.of( "struct" );
@@ -360,6 +362,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key	xpath						= Key.of( "xpath" );
 	public static final Key	XSL							= Key.of( "XSL" );
 	public static final Key	year						= Key.of( "year" );
+	public static Key		canonicalize				= Key.of( "canonicalize" );
 
 	// jdbc
 	public static final Key	driver						= Key.of( "driver" );

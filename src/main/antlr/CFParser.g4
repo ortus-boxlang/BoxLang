@@ -148,6 +148,7 @@ simpleStatement: (
 		| continue
 		| rethrow
 		| assert
+		| param
 		| incrementDecrementStatement
 		| return
 		| expression
@@ -223,6 +224,14 @@ namedArgument: (identifier | stringLiteral) (EQUALSIGN | COLON) expression;
 
 // func( foo, bar, baz )
 positionalArgument: expression;
+
+// The generic component syntax won't capture all access expressions so we need this rule too param
+/*
+ param String foo.bar="baz";
+ param foo.bar="baz";
+ param String foo.bar;
+ */
+param: PARAM type? accessExpression ( EQUALSIGN expression)?;
 
 // We support if blocks with or without else blocks, and if statements without else blocks. That's
 // it - no other valid if constructs.
@@ -364,6 +373,7 @@ reservedKeyword:
 	| NULL
 	| NUMERIC
 	| PACKAGE
+	| PARAM
 	| PRIVATE
 	| PROPERTY
 	| PUBLIC

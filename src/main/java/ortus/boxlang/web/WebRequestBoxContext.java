@@ -89,6 +89,11 @@ public class WebRequestBoxContext extends RequestBoxContext {
 	protected HttpServerExchange	exchange;
 
 	/**
+	 * Undertow response channel
+	 */
+	protected StreamSinkChannel		channel;
+
+	/**
 	 * --------------------------------------------------------------------------
 	 * Constructors
 	 * --------------------------------------------------------------------------
@@ -102,6 +107,7 @@ public class WebRequestBoxContext extends RequestBoxContext {
 	public WebRequestBoxContext( IBoxContext parent, HttpServerExchange exchange ) {
 		super( parent );
 		this.exchange	= exchange;
+		channel			= exchange.getResponseChannel();
 		URLScope		= new URLScope( exchange );
 		FormScope		= new FormScope( exchange );
 		CGIScope		= new CGIScope( exchange );
@@ -274,21 +280,37 @@ public class WebRequestBoxContext extends RequestBoxContext {
 	 * @return This context
 	 */
 	public IBoxContext flushBuffer( boolean force ) {
+		String output = "";
 		// If there are extra buffers registered, we ignore flush requests since someone
 		// out there is wanting to capture our buffer instead.
-		if ( hasParent() && buffers.size() == 1 ) {
-			String			output;
-			StringBuffer	buffer	= getBuffer();
+		if ( buffers.size() == 1 ) {
+			StringBuffer buffer = getBuffer();
 			synchronized ( buffer ) {
 				output = buffer.toString();
 				clearBuffer();
 			}
 
-			StreamSinkChannel	channel	= exchange.getResponseChannel();
-			ByteBuffer			bBuffer	= ByteBuffer.wrap( output.getBytes() );
+		} else if ( force ) {
+			for ( StringBuffer buf : buffers ) {
+				synchronized ( buf ) {
+					output.concat( buf.toString() );
+					buf.setLength( 0 );
+				}
+			}
+		}
+		if ( !output.isEmpty() ) {
+			ByteBuffer bBuffer = ByteBuffer.wrap( output.getBytes() );
 			try {
 				channel.write( bBuffer );
-				channel.flush();
+				/*
+				 * channel.shutdownWrites();
+				 * while ( !channel.flush() ) {
+				 * try {
+				 * Thread.sleep( 10 );
+				 * } catch ( InterruptedException e ) {
+				 * }
+				 * }
+				 */
 			} catch ( IOException e ) {
 				e.printStackTrace();
 			}

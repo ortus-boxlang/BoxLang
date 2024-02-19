@@ -151,6 +151,12 @@ public abstract class Component {
 				context.pushBuffer( buffer );
 				try {
 					returnValue = body.process( context );
+				} catch ( Throwable e ) {
+					// If there is an error, we flush out all content regardless and rethrow
+					bufferResult = buffer.toString();
+					context.writeToBuffer( bufferResult );
+					throw e;
+
 				} finally {
 					context.popBuffer();
 				}

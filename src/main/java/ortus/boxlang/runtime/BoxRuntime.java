@@ -634,6 +634,7 @@ public class BoxRuntime {
 			// Fire!!!
 			template.invoke( scriptingContext );
 		} catch ( AbortException e ) {
+			scriptingContext.flushBuffer( true );
 			if ( e.getCause() != null ) {
 				// This will always be an instance of CustomException
 				throw ( RuntimeException ) e.getCause();
@@ -686,6 +687,7 @@ public class BoxRuntime {
 			// Fire!!!
 			return scriptRunnable.invoke( scriptingContext );
 		} catch ( AbortException e ) {
+			scriptingContext.flushBuffer( true );
 			if ( e.getCause() != null ) {
 				// This will always be an instance of CustomException
 				throw ( RuntimeException ) e.getCause();
@@ -743,6 +745,7 @@ public class BoxRuntime {
 			// Fire!!!
 			scriptRunnable.invoke( scriptingContext );
 		} catch ( AbortException e ) {
+			scriptingContext.flushBuffer( true );
 			if ( e.getCause() != null ) {
 				// This will always be an instance of CustomException
 				throw ( RuntimeException ) e.getCause();
@@ -809,6 +812,7 @@ public class BoxRuntime {
 					scriptingContext.flushBuffer( false );
 					System.out.println( result );
 				} catch ( AbortException e ) {
+					scriptingContext.flushBuffer( true );
 					if ( e.getCause() != null ) {
 						System.out.println( "Abort: " + e.getCause().getMessage() );
 					}

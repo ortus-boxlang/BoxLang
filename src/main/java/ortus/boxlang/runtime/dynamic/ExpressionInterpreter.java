@@ -23,6 +23,7 @@ import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.scopes.ApplicationScope;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
+import ortus.boxlang.runtime.scopes.LocalScope;
 import ortus.boxlang.runtime.scopes.RequestScope;
 import ortus.boxlang.runtime.scopes.ServerScope;
 import ortus.boxlang.runtime.scopes.SessionScope;
@@ -53,6 +54,7 @@ public class ExpressionInterpreter {
 	    ServerScope.name,
 	    CookieScope.name,
 	    FormScope.name,
+	    LocalScope.name,
 	    URLScope.name,
 	    // ThreadScope.name,
 	    // ClientScope.name,

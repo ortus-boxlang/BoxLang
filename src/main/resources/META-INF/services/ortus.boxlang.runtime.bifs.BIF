@@ -50,6 +50,7 @@ ortus.boxlang.runtime.bifs.global.binary.BitXor
 ortus.boxlang.runtime.bifs.global.conversion.JSONDeserialize
 ortus.boxlang.runtime.bifs.global.conversion.JSONSerialize
 ortus.boxlang.runtime.bifs.global.conversion.ParseNumber
+ortus.boxlang.runtime.bifs.global.conversion.ToBase64
 ortus.boxlang.runtime.bifs.global.conversion.ToString
 ortus.boxlang.runtime.bifs.global.decision.IsArray
 ortus.boxlang.runtime.bifs.global.decision.IsBoolean
@@ -225,8 +226,10 @@ ortus.boxlang.runtime.bifs.global.system.BoxAnnounce
 ortus.boxlang.runtime.bifs.global.system.CreateGUID
 ortus.boxlang.runtime.bifs.global.system.CreateObject
 ortus.boxlang.runtime.bifs.global.system.CreateUUID
+ortus.boxlang.runtime.bifs.global.system.DebugBoxContexts
 ortus.boxlang.runtime.bifs.global.system.Dump
 ortus.boxlang.runtime.bifs.global.system.Duplicate
+ortus.boxlang.runtime.bifs.global.system.EncodeForHTML
 ortus.boxlang.runtime.bifs.global.system.GetApplicationMetadata
 ortus.boxlang.runtime.bifs.global.system.GetBaseTemplatePath
 ortus.boxlang.runtime.bifs.global.system.GetBoxContext
@@ -245,6 +248,7 @@ ortus.boxlang.runtime.bifs.global.system.Println
 ortus.boxlang.runtime.bifs.global.system.Sleep
 ortus.boxlang.runtime.bifs.global.system.Throw
 ortus.boxlang.runtime.bifs.global.system.URLEncodedFormat
+ortus.boxlang.runtime.bifs.global.system.WriteLog
 ortus.boxlang.runtime.bifs.global.system.WriteOutput
 ortus.boxlang.runtime.bifs.global.temporal.ClearTimezone
 ortus.boxlang.runtime.bifs.global.temporal.CreateDateTime

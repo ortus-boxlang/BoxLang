@@ -25,32 +25,33 @@ import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
 
 @BoxBIF
-@BoxBIF( alias = "echo" )
-public class WriteOutput extends BIF {
+public class EncodeForHTML extends BIF {
 
 	/**
 	 * Constructor
 	 */
-	public WriteOutput() {
+	public EncodeForHTML() {
 		super();
 		declaredArguments = new Argument[] {
-		    new Argument( true, "any", Key.message )
+		    new Argument( true, "string", Key.string ),
+		    new Argument( true, "boolean", Key.canonicalize, false )
 		};
 	}
 
 	/**
-	 * Print a message with line break to the buffer
-	 *
+	 * Encodes the input string for safe output in the body of a HTML tag. The encoding in meant to mitigate Cross Site Scripting (XSS) attacks. This
+	 * function can provide more protection from XSS than the HTMLEditFormat or XMLFormat functions do.
+	 * 
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.message The message to print
+	 * @argument.String The string to encode.
+	 * 
+	 * @argument.canonicalize If set to true, canonicalization happens before encoding. If set to false, the given input string will just be encoded.
 	 */
 	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
-		Object obj = arguments.get( Key.message );
-		if ( obj != null ) {
-			context.writeToBuffer( arguments.get( Key.message ) );
-		}
-		return null;
+		// TODO: Just stubbing this out to make TestBox work. Convert to ESAPI
+		String str = arguments.getAsString( Key.string );
+		return str.replace( "<", "&lt;" ).replace( ">", "&gt;" ).replace( "&", "&amp;" ).replace( "\"", "&quot;" ).replace( "'", "&#39;" );
 	}
 }

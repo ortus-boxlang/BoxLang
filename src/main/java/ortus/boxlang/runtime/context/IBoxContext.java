@@ -291,6 +291,13 @@ public interface IBoxContext {
 	public boolean hasTemplates();
 
 	/**
+	 * Get templates
+	 * 
+	 * @return The templates
+	 */
+	public ITemplateRunnable[] getTemplates();
+
+	/**
 	 * Finds the closest template
 	 *
 	 * @return The template instance if found, null if this code is not called from a template

@@ -54,17 +54,20 @@ public abstract class BoxTemplate implements ITemplateRunnable {
 			    "templatePath", this.getRunnablePath()
 			);
 			runtime.announce( "preTemplateInvoke", data );
-
 			_invoke( context );
 
 			// Announce
 			runtime.announce( "postTemplateInvoke", data );
 		} catch ( AbortException e ) {
+			context.flushBuffer( true );
 			// Swallowing aborts here if type="page"
 			// Ignoring showerror in case for now
 			if ( e.isRequest() ) {
 				throw e;
 			}
+		} catch ( Throwable e ) {
+			context.flushBuffer( true );
+			throw e;
 		} finally {
 			context.popTemplate();
 		}

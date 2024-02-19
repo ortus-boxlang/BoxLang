@@ -155,6 +155,10 @@ public class DiskClassLoader extends URLClassLoader {
 		return Paths.get( diskStore.toString(), name.replace( ".", File.separator ) + ".json" );
 	}
 
+	private Path generateDiskJavaPath( String name ) {
+		return Paths.get( diskStore.toString(), name.replace( ".", File.separator ) + ".java" );
+	}
+
 	/**
 	 * Write class file to disk
 	 *
@@ -220,6 +224,22 @@ public class DiskClassLoader extends URLClassLoader {
 			return JSONUtil.fromJSON( SourceMap.class, json );
 		} catch ( IOException e ) {
 			throw new BoxRuntimeException( "Unable to read line number JSON file from disk", e );
+		}
+	}
+
+	/**
+	 * This is really just for debugging purposes. It's not used in production.
+	 * 
+	 * @param fqn        The fully qualified name of the class
+	 * @param javaSource The Java source code
+	 */
+	public void writeJavaSource( String fqn, String javaSource ) {
+		Path diskPath = generateDiskJavaPath( fqn );
+		diskPath.toFile().getParentFile().mkdirs();
+		try {
+			Files.write( diskPath, javaSource.getBytes() );
+		} catch ( IOException e ) {
+			throw new BoxRuntimeException( "Unable to write Java Sourece file to disk", e );
 		}
 	}
 

@@ -422,7 +422,7 @@ public class CoreLangTest {
 		       for( var foo["bar"].name in arr ) {
 		       	result &= foo["bar"].name;
 		       }
-		       }
+
 		           """,
 		    functionBoxContext );
 		assertThat( variables.get( result ) ).isEqualTo( "bradwoodluismajano" );

@@ -31,6 +31,7 @@ import ortus.boxlang.runtime.bifs.BoxBIF;
 import ortus.boxlang.runtime.context.ContainerBoxContext;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.runnables.IClassRunnable;
+import ortus.boxlang.runtime.runnables.ITemplateRunnable;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
@@ -87,10 +88,15 @@ public class Dump extends BIF {
 			name = "Null.cfm";
 		} else if ( target instanceof IScope ) {
 			name = "Struct.cfm";
+		} else if ( target instanceof Key ) {
+			name = "Key.cfm";
 		} else if ( target instanceof DateTime ) {
 			name = "DateTime.cfm";
 		} else if ( target instanceof IClassRunnable ) {
 			name = "BoxClass.cfm";
+		} else if ( target instanceof ITemplateRunnable itr ) {
+			target	= itr.getRunnablePath();
+			name	= "ITemplateRunnable.cfm";
 		} else if ( target instanceof IStruct ) {
 			name = "Struct.cfm";
 		} else if ( target instanceof IType ) {
@@ -101,6 +107,8 @@ public class Dump extends BIF {
 			name = "Number.cfm";
 		} else if ( target instanceof Boolean ) {
 			name = "Boolean.cfm";
+		} else if ( target.getClass().isArray() ) {
+			name = "NativeArray.cfm";
 		}
 		URL		url					= this.getClass().getResource( "" );
 		boolean	runningFromJar		= url.getProtocol().equals( "jar" );
@@ -147,7 +155,6 @@ public class Dump extends BIF {
 		try ( Scanner s = new Scanner( dumpTemplate ).useDelimiter( "\\A" ) ) {
 			String fileContents = s.hasNext() ? s.next() : "";
 			runtime.executeSource( fileContents, dumpContext, BoxScriptType.CFMARKUP );
-			dumpContext.flushBuffer( false );
 		}
 
 		return null;

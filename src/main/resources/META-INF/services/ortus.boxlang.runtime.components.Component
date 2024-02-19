@@ -4,6 +4,7 @@ ortus.boxlang.runtime.components.system.Abort
 ortus.boxlang.runtime.components.system.Dump
 ortus.boxlang.runtime.components.system.Include
 ortus.boxlang.runtime.components.system.Lock
+ortus.boxlang.runtime.components.system.Loop
 ortus.boxlang.runtime.components.system.Module
 ortus.boxlang.runtime.components.system.Output
 ortus.boxlang.runtime.components.system.Param

@@ -28,6 +28,7 @@ import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.BoxLangType;
 import ortus.boxlang.runtime.types.IStruct;
+import ortus.boxlang.runtime.types.Query;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
 @BoxBIF // Len()
@@ -63,8 +64,11 @@ public class Len extends BIF {
 	 * @argument.value The number to return the absolute value of
 	 */
 	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
-		Object				object			= arguments.get( Key.value );
-		CastAttempt<Array>	arrayAttempt	= ArrayCaster.attempt( object );
+		Object object = arguments.get( Key.value );
+		if ( object == null ) {
+			return 0;
+		}
+		CastAttempt<Array> arrayAttempt = ArrayCaster.attempt( object );
 		if ( arrayAttempt.wasSuccessful() ) {
 			return arrayAttempt.get().size();
 		}
@@ -76,7 +80,11 @@ public class Len extends BIF {
 		if ( stringAttempt.wasSuccessful() ) {
 			return stringAttempt.get().length();
 		}
-		// TODO: Queries
+
+		if ( object instanceof Query q ) {
+			return q.size();
+		}
+
 		throw new BoxRuntimeException( "Cannot determine length of object of type " + object.getClass().getName() );
 	}
 

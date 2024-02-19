@@ -379,7 +379,7 @@ public class BoxClassTransformer extends AbstractTransformer {
 					try {
 						return function.invoke( functionContext );
 					} finally{
-						functionContext.popTemplate();
+					//	functionContext.popTemplate();
 					}
 				}
 
@@ -447,7 +447,7 @@ public class BoxClassTransformer extends AbstractTransformer {
 					try {
 						return function.invoke( functionContext );
 					} finally{
-						functionContext.popTemplate();
+					//	functionContext.popTemplate();
 					}
 				}
 

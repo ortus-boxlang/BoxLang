@@ -389,6 +389,10 @@ public class JavaBoxpiler {
 	@SuppressWarnings( "unused" )
 	public void compileSource( String javaSource, String fqn ) {
 		// System.out.println( "Compiling " + fqn );
+
+		// This is just for debugging. Remove later.
+		diskClassLoader.writeJavaSource( fqn, javaSource );
+
 		DiagnosticCollector<JavaFileObject>	diagnostics		= new DiagnosticCollector<>();
 		String								javaRT			= System.getProperty( "java.class.path" );
 		List<JavaFileObject>				sourceFiles		= Collections.singletonList( new JavaSourceString( fqn, javaSource ) );
