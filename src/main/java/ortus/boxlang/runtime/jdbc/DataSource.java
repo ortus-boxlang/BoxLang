@@ -31,62 +31,36 @@ import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
 /**
- * Encapsulates a datasource configuration.
+ * Encapsulates a datasource configuration and connection pool, providing methods for executing queries (transactionally or single) on the datasource.
+ * <p>
+ * <strong>Warning:</strong> Datasource configuration is currently case-sensitive. This will be fixed in a future release. Refer to the
+ * {@link <a href="https://github.com/brettwooldridge/HikariCP?tab=readme-ov-file#gear-configuration-knobs-baby">HikariCP
+ * configuration docs</a>} for a list of valid configuration properties:
  *
- * @TODO: This class needs to move to a JDBC module to allow a leaner, lighter-weight BoxLang Core.
+ * @TODO:
+ *        <ul>
+ *        <li>Move all JDBC classes to a JDBC module to allow a leaner, lighter-weight BoxLang Core.
+ *        <li>Implement parameterized queries with PreparedStatement.</li>
+ *        <li>Allow setting isolation levels, connection timeouts, and other ad-hoc connection settings at query time</li>
+ *        <li>Potentially re-enable Driver-based configuration for constructing a JDBC URL from individual driver/host/port/username/password
+ *        properties.</li>
+ *        <li>Add support for case-insensitive keys in the properties struct. Java.util.Properties is case-sensitive, so using this method to
+ *        configure HikariConfig with dynamic configuration means that a connection attempt with `JDBCurl: 'jdbc:derby:foo'` will fail with a
+ *        '"jdbcUrl" propertty is required"' message.</li>
+ *        <li>Return Query values by default from the execute methods.
+ *        <li>
+ *        <li>Handle multiple return types in the `execute()` and `executeTransactionally()` methods.
+ *        <ul>
+ *        <li>"query": returns a query object</li>
+ *        <li>"array_of_entity": returns an array of ORM entities (requires dbtype to be "hql")</li>
+ *        <li>"array": returns an array of structs</li>
+ *        <li>"struct": returns a struct of structs (requires columnkey to be defined).</li>
+ *        </ul>
+ *        </li>
+ *        <li>Add support for return values in the `executeTransactionally()` methods.
+ *        <li>
  */
 public class DataSource {
-
-	// /**
-	// * Driver type. For future use.
-	// *
-	// * <ul>
-	// * <li><code>postgresql</code></li>
-	// * <li><code>mysql</code></li>
-	// * <li><code>mariadb</code></li>
-	// * <li><code>mssql</code></li>
-	// * <li>etc, etc.</li>
-	// * </ul>
-	// */
-	// private String driver;
-
-	// /**
-	// * Username for the datasource. Generally required on all datasource connections with the exception of in-memory databases.
-	// */
-	// private String username;
-
-	// /**
-	// * Password for the datasource. Generally required on all datasource connections with the exception of in-memory databases.
-	// */
-	// private String password;
-
-	// /**
-	// * JDBC URL for the datasource.
-	// * <p>
-	// * Specifies the driver type, host, port, and database name. The format of this URL is specific to the database being used - for example, a
-	// PostgreSQL
-	// * connection url looks like <code>jdbc:postgresql://host:port/database</code>.
-	// * <p>
-	// * The URL is optional, but mutually exclusive with `driver`, `host`, `port`, and `databaseName`. If the URL is provided, `driver`, `host`, `port`,
-	// * and `databaseName` are
-	// * ignored.
-	// */
-	// private String url;
-
-	// /**
-	// * Database name to connect to. Most, but not all, database vendors require this.
-	// */
-	// private String databaseName;
-
-	// /**
-	// * Hostname of the database server. Most, but not all, database vendors require this.
-	// */
-	// private String host;
-
-	// /**
-	// * Port number of the database server. Most, but not all, database vendors require this.
-	// */
-	// private Integer port;
 
 	/**
 	 * Underlying HikariDataSource object, used in connection pooling.
@@ -96,6 +70,8 @@ public class DataSource {
 	/**
 	 * Configure and initialize a new DataSourceRecord object from a struct of properties.
 	 *
+	 * @see https://github.com/brettwooldridge/HikariCP?tab=readme-ov-file#gear-configuration-knobs-baby
+	 *
 	 * @param properties Struct of properties for configuring the datasource. Be aware that the struct keys are case-sensitive and must match the Hikari
 	 *                   configuration property names. (We'll be adding support for case-insensitive keys in the near future.)
 	 *
@@ -103,28 +79,12 @@ public class DataSource {
 	 */
 	public DataSource( IStruct config ) {
 		Properties properties = new Properties();
-		config.forEach( ( key, value ) -> {
-			properties.setProperty( key.getName(), ( String ) value );
-		} );
+		config.forEach( ( key, value ) -> properties.setProperty( key.getName(), ( String ) value ) );
 
 		HikariConfig hikariConfig = new HikariConfig( properties );
 		this.hikariDataSource = new HikariDataSource( hikariConfig );
 
 	}
-
-	// public static DataSource fromStruct( IStruct properties ) {
-	// // @TODO: Do we need to wrap exceptions in a BoxRuntimeException? Hikari already throws a RuntimeException if the connection pool can't be
-	// // established, so wrapping as a BoxRuntimeException (or a BoxSQLException?) would be redundant, not to mention the additional overhead.
-	// return new DataSource(
-	// properties.getAsString( Key.driver ),
-	// properties.getAsString( Key.username ),
-	// properties.getAsString( Key.password ),
-	// properties.getAsString( Key.URL ),
-	// properties.getAsString( Key.host ),
-	// properties.getAsInteger( Key.port ),
-	// properties.getAsString( Key.databaseName )
-	// );
-	// }
 
 	/**
 	 * Get a connection to the configured datasource.
@@ -185,6 +145,7 @@ public class DataSource {
 			boolean hasResult = stmt.execute( query );
 
 			if ( hasResult ) {
+				// Move to an abstract result processing method which looks at the query `returnType` option
 				ResultSet		resultSet	= stmt.getResultSet();
 				List<IStruct>	result		= new ArrayList<>();
 				while ( resultSet.next() ) {
