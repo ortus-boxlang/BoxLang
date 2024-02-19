@@ -57,6 +57,7 @@ import ortus.boxlang.runtime.services.ComponentService;
 import ortus.boxlang.runtime.services.FunctionService;
 import ortus.boxlang.runtime.services.InterceptorService;
 import ortus.boxlang.runtime.services.ModuleService;
+import ortus.boxlang.runtime.services.SchedulerService;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.AbortException;
@@ -183,6 +184,11 @@ public class BoxRuntime {
 	private JavaBoxpiler					javaBoxpiler;
 
 	/**
+	 * The Scheduler service in charge of all schedulers
+	 */
+	private SchedulerService				schedulerService;
+
+	/**
 	 * --------------------------------------------------------------------------
 	 * Public Fields
 	 * --------------------------------------------------------------------------
@@ -236,6 +242,7 @@ public class BoxRuntime {
 		this.componentService	= new ComponentService( this );
 		this.applicationService	= new ApplicationService( this );
 		this.moduleService		= new ModuleService( this );
+		this.schedulerService	= new SchedulerService( this );
 		this.configPath			= configPath;
 	}
 
@@ -302,8 +309,8 @@ public class BoxRuntime {
 		loadConfiguration( debugMode, configPath );
 
 		// Announce Startup to Services only
-		this.interceptorService.onStartup();
 		this.asyncService.onStartup();
+		this.interceptorService.onStartup();
 		this.cacheService.onStartup();
 		this.functionService.onStartup();
 		this.componentService.onStartup();
@@ -315,6 +322,8 @@ public class BoxRuntime {
 
 		// Now startup the modules so we can have a runtime context available to them
 		this.moduleService.onStartup();
+		// Now all schedulers can be started
+		this.schedulerService.onStartup();
 
 		// Runtime Started log it
 		this.logger.atInfo().log(
@@ -406,6 +415,15 @@ public class BoxRuntime {
 	 */
 	public CacheService getCacheService() {
 		return cacheService;
+	}
+
+	/**
+	 * Get the scheduler service
+	 *
+	 * @return {@link SchedulerService} or null if the runtime has not started
+	 */
+	public SchedulerService getSchedulerService() {
+		return schedulerService;
 	}
 
 	/**
@@ -525,22 +543,32 @@ public class BoxRuntime {
 	}
 
 	/**
-	 * Shut down the runtime
+	 * Shut down the runtime gracefully
 	 */
 	public synchronized void shutdown() {
+		shutdown( false );
+	}
+
+	/**
+	 * Shut down the runtime with the option to force it
+	 *
+	 * @force If true, forces the shutdown of the runtime, nothing will be gracefully shutdown
+	 */
+	public synchronized void shutdown( Boolean force ) {
 		instance.logger.atInfo().log( "Shutting down BoxLang Runtime..." );
 
 		// Announce it globally!
-		instance.interceptorService.announce( "onRuntimeShutdown", new Struct() );
+		instance.interceptorService.announce( "onRuntimeShutdown", Struct.of( "runtime", this, "force", force ) );
 
 		// Shutdown the services
-		instance.applicationService.onShutdown();
-		instance.moduleService.onShutdown();
-		instance.cacheService.onShutdown();
-		instance.asyncService.onShutdown();
-		instance.functionService.onShutdown();
-		instance.componentService.onShutdown();
-		instance.interceptorService.onShutdown();
+		instance.applicationService.onShutdown( force );
+		instance.moduleService.onShutdown( force );
+		instance.cacheService.onShutdown( force );
+		instance.asyncService.onShutdown( force );
+		instance.functionService.onShutdown( force );
+		instance.componentService.onShutdown( force );
+		instance.interceptorService.onShutdown( force );
+		instance.schedulerService.onShutdown( force );
 
 		// Shutdown logging
 		instance.logger.atInfo().log( "+ BoxLang Runtime has been shutdown" );

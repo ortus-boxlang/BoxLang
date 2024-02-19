@@ -129,9 +129,11 @@ public class ApplicationService extends BaseService {
 
 	/**
 	 * The shutdown event is fired when the runtime shuts down
+	 *
+	 * @param force If true, forces the shutdown of the scheduler
 	 */
 	@Override
-	public void onShutdown() {
+	public void onShutdown( Boolean force ) {
 		// loop over applications and shutdown as the runtime is going down.
 		applications.values().parallelStream().forEach( Application::shutdown );
 		logger.info( "ApplicationService.onShutdown()" );

@@ -138,11 +138,13 @@ public class AsyncService extends BaseService {
 
 	/**
 	 * The shutdown event is fired when the runtime shuts down
+	 *
+	 * @param force Whether the shutdown is forced
 	 */
 	@Override
-	public void onShutdown() {
+	public void onShutdown( Boolean force ) {
 		logger.info( "AsyncService.onShutdown()" );
-		shutdownAllExecutors( false, DEFAULT_TIMEOUT, TimeUnit.SECONDS );
+		shutdownAllExecutors( force, DEFAULT_TIMEOUT, TimeUnit.SECONDS );
 	}
 
 	/**

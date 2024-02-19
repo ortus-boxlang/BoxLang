@@ -17,6 +17,7 @@
  */
 package ortus.boxlang.runtime.async.tasks;
 
+import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.ArrayList;
@@ -82,6 +83,11 @@ public class Scheduler implements IScheduler {
 	 * Is the scheduler started?
 	 */
 	protected Boolean							started						= false;
+
+	/**
+	 * When the scheduler was started
+	 */
+	protected Instant							startedAt;
 
 	/**
 	 * The name of this scheduler
@@ -229,7 +235,8 @@ public class Scheduler implements IScheduler {
 			    .forEachOrdered( entry -> startupTask( entry.getKey(), entry.getValue() ) );
 
 			// Mark scheduler as started
-			this.started = true;
+			this.started	= true;
+			this.startedAt	= Instant.now();
 
 			// callback
 			this.onStartup();
@@ -327,6 +334,12 @@ public class Scheduler implements IScheduler {
 	 *                method
 	 */
 	public Scheduler shutdown( boolean force, long timeout ) {
+		// If started, then we can shutdown
+		if ( !this.started ) {
+			logger.info( "Scheduler [{}] has not been started yet. Skipping shutdown.", this.name );
+			return this;
+		}
+
 		// callback
 		this.onShutdown();
 
@@ -339,8 +352,13 @@ public class Scheduler implements IScheduler {
 
 		// Remove executor
 		this.asyncService.deleteExecutor( this.name + "-scheduler" );
+		// Remove task records
+		clearTasks();
+
 		// Mark it as stopped
-		this.started = false;
+		this.started	= false;
+		this.startedAt	= null;
+
 		// Log it
 		logger.info( "Scheduler [{}] has been shutdown!", this.name );
 		return this;
@@ -546,7 +564,7 @@ public class Scheduler implements IScheduler {
 	 * @return the tasks
 	 */
 	public Map<String, TaskRecord> getTasks() {
-		return tasks;
+		return this.tasks;
 	}
 
 	/**
@@ -556,6 +574,13 @@ public class Scheduler implements IScheduler {
 	 */
 	public Boolean hasStarted() {
 		return this.started;
+	}
+
+	/**
+	 * Get when it was started. If not started, then it will return null
+	 */
+	public Instant getStartedAt() {
+		return this.startedAt;
 	}
 
 	/**
@@ -578,6 +603,8 @@ public class Scheduler implements IScheduler {
 	}
 
 	/**
+	 * Get the timezone
+	 *
 	 * @return the timezone
 	 */
 	public ZoneId getTimezone() {

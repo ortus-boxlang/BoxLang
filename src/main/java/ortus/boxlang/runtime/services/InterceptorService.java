@@ -110,9 +110,11 @@ public class InterceptorService extends BaseService {
 
 	/**
 	 * The shutdown event is fired when the runtime shuts down
+	 * 
+	 * @param force True if the shutdown is forced, false otherwise
 	 */
 	@Override
-	public void onShutdown() {
+	public void onShutdown( Boolean force ) {
 		logger.info( "InterceptorService.onShutdown()" );
 	}
 

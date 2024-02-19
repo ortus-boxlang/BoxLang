@@ -99,9 +99,11 @@ public class ComponentService extends BaseService {
 
 	/**
 	 * The shutdown event is fired when the runtime shuts down
+	 *
+	 * @param force Whether or not to force the shutdown
 	 */
 	@Override
-	public void onShutdown() {
+	public void onShutdown( Boolean force ) {
 		logger.info( "ComponentService.onShutdown()" );
 	}
 

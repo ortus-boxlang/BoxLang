@@ -172,9 +172,11 @@ public class ModuleService extends BaseService {
 
 	/**
 	 * The shutdown event is fired when the runtime shuts down
+	 * 
+	 * @param force Whether the shutdown is forced
 	 */
 	@Override
-	public void onShutdown() {
+	public void onShutdown( Boolean force ) {
 		// Announce it
 		announce(
 		    MODULE_EVENTS.get( "onModuleServiceShutdown" ),

@@ -66,7 +66,7 @@ class InterceptorServiceTest {
 	@DisplayName( "Test it can run the onShutdown service event" )
 	@Test
 	void testItCanRunOnShutdownEvent() {
-		assertDoesNotThrow( () -> service.onShutdown() );
+		assertDoesNotThrow( () -> service.onShutdown( false ) );
 	}
 
 	@DisplayName( "Test it can register interception points and filter duplicates" )

@@ -17,6 +17,7 @@
  */
 package ortus.boxlang.runtime.async.tasks;
 
+import java.time.ZoneId;
 import java.util.Optional;
 
 /**
@@ -54,6 +55,13 @@ public interface IScheduler {
 	 * Startup this scheduler and all of it's scheduled tasks
 	 */
 	public Scheduler startup();
+
+	/**
+	 * Has this scheduler been started?
+	 *
+	 * @return true if started, false if not
+	 */
+	public Boolean hasStarted();
 
 	/**
 	 * Restart the scheduler by shutting it down and starting it up again
@@ -139,5 +147,25 @@ public interface IScheduler {
 	 * @param result The result (if any) that the task produced
 	 */
 	public void afterAnyTask( ScheduledTask task, Optional<?> result );
+
+	/**
+	 * --------------------------------------------------------------------------
+	 * Required methods
+	 * --------------------------------------------------------------------------
+	 */
+
+	/**
+	 * Get the scheduler name
+	 *
+	 * @return the name
+	 */
+	public String getName();
+
+	/**
+	 * Get the scheduler timezone
+	 * 
+	 * @return the timezone
+	 */
+	public ZoneId getTimezone();
 
 }

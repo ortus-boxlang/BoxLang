@@ -68,7 +68,7 @@ class ModuleServiceTest {
 	@DisplayName( "Test it can run the onShutdown service event" )
 	@Test
 	void testItCanRunOnShutdownEvent() {
-		assertDoesNotThrow( () -> service.onShutdown() );
+		assertDoesNotThrow( () -> service.onShutdown( false ) );
 	}
 
 	@DisplayName( "Test it can add an absolute path to the module search path" )

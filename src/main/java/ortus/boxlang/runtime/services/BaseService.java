@@ -78,8 +78,10 @@ public abstract class BaseService {
 
 	/**
 	 * The shutdown event is fired when the runtime shuts down
+	 *
+	 * @param force Whether the shutdown is forced
 	 */
-	public abstract void onShutdown();
+	public abstract void onShutdown( Boolean force );
 
 	/**
 	 * --------------------------------------------------------------------------
