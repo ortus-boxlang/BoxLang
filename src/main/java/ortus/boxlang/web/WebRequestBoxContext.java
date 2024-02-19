@@ -130,6 +130,7 @@ public class WebRequestBoxContext extends RequestBoxContext {
 	 * @return The value of the key if found
 	 *
 	 */
+	@Override
 	public ScopeSearchResult scopeFindNearby( Key key, IScope defaultScope, boolean shallow ) {
 
 		// In query loop?
@@ -164,6 +165,7 @@ public class WebRequestBoxContext extends RequestBoxContext {
 	 * @return The value of the key if found
 	 *
 	 */
+	@Override
 	public ScopeSearchResult scopeFind( Key key, IScope defaultScope ) {
 
 		Object result = CGIScope.getRaw( key );
@@ -207,6 +209,7 @@ public class WebRequestBoxContext extends RequestBoxContext {
 	 *
 	 * @return The requested scope
 	 */
+	@Override
 	public IScope getScope( Key name ) throws ScopeNotFoundException {
 
 		if ( name.equals( requestScope.getName() ) ) {
@@ -246,6 +249,7 @@ public class WebRequestBoxContext extends RequestBoxContext {
 	 *
 	 * @return The requested scope
 	 */
+	@Override
 	public IScope getScopeNearby( Key name, boolean shallow ) throws ScopeNotFoundException {
 		// Check the scopes I know about
 		if ( name.equals( variablesScope.getName() ) ) {
@@ -259,6 +263,7 @@ public class WebRequestBoxContext extends RequestBoxContext {
 		return getScope( name );
 	}
 
+	@Override
 	public void registerUDF( UDF udf ) {
 		variablesScope.put( udf.getName(), udf );
 	}
@@ -268,17 +273,19 @@ public class WebRequestBoxContext extends RequestBoxContext {
 	 *
 	 * @return The scope reference to use
 	 */
+	@Override
 	public IScope getDefaultAssignmentScope() {
 		return variablesScope;
 	}
 
 	/**
 	 * Flush the buffer to the output stream
-	 * 
+	 *
 	 * @param force true, flush even if output is disabled
-	 * 
+	 *
 	 * @return This context
 	 */
+	@Override
 	public IBoxContext flushBuffer( boolean force ) {
 		String output = "";
 		// If there are extra buffers registered, we ignore flush requests since someone

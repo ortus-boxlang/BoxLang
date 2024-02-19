@@ -36,7 +36,7 @@ public abstract class RequestBoxContext extends BaseBoxContext {
 	 *
 	 * @param parent The parent context
 	 */
-	public RequestBoxContext( IBoxContext parent ) {
+	protected RequestBoxContext( IBoxContext parent ) {
 		super( parent );
 	}
 
@@ -58,6 +58,7 @@ public abstract class RequestBoxContext extends BaseBoxContext {
 		this.timezone = timezone;
 	}
 
+	@Override
 	public IStruct getConfig() {
 		IStruct config = super.getConfig();
 
