@@ -176,7 +176,7 @@ public class FileSetAttributeTest {
 	@Test
 	public void testSetAttributeHidden() throws IOException {
 		System.out.println( SystemUtils.IS_OS_WINDOWS );
-		assertFalse( FileSystemUtil.isWindows );
+		assertFalse( FileSystemUtil.IS_WINDOWS );
 		variables.put( Key.of( "testFile" ), Path.of( testTextFile ).toAbsolutePath().toString() );
 		Set<PosixFilePermission> initialPermissions = FileSystemUtil.getPosixPermissions( testTextFile );
 		assertEquals( initialPermissions, PosixFilePermissions.fromString( "rw-r--r--" ) );
@@ -185,7 +185,7 @@ public class FileSetAttributeTest {
 		    result = fileSetAttribute( variables.testFile, "hidden" );
 		       """,
 		    context );
-		if ( !FileSystemUtil.isWindows ) {
+		if ( !FileSystemUtil.IS_WINDOWS ) {
 			Set<PosixFilePermission> finalPermissions = FileSystemUtil.getPosixPermissions( testTextFile );
 			assertEquals( finalPermissions, initialPermissions );
 		} else {
@@ -204,7 +204,7 @@ public class FileSetAttributeTest {
 		    result = fileSetAttribute( variables.testFile, "system" );
 		       """,
 		    context );
-		if ( !FileSystemUtil.isWindows ) {
+		if ( !FileSystemUtil.IS_WINDOWS ) {
 			Set<PosixFilePermission> finalPermissions = FileSystemUtil.getPosixPermissions( testTextFile );
 			assertEquals( finalPermissions, initialPermissions );
 		} else {
@@ -223,7 +223,7 @@ public class FileSetAttributeTest {
 		    result = fileSetAttribute( variables.testFile, "archive" );
 		       """,
 		    context );
-		if ( !FileSystemUtil.isWindows ) {
+		if ( !FileSystemUtil.IS_WINDOWS ) {
 			Set<PosixFilePermission> finalPermissions = FileSystemUtil.getPosixPermissions( testTextFile );
 			assertEquals( finalPermissions, initialPermissions );
 		} else {

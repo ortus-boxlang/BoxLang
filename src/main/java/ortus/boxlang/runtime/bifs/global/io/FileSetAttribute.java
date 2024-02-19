@@ -74,7 +74,7 @@ public class FileSetAttribute extends BIF {
 		String	permissionSet	= null;
 		Path	filePath		= Path.of( file );
 		Boolean	isPosix			= filePath.getFileSystem().supportedFileAttributeViews().contains( "posix" );
-		boolean	isWindows		= FileSystemUtil.isWindows;
+		boolean	isWindows		= FileSystemUtil.IS_WINDOWS;
 		Object	returnItem		= fileObj != null ? fileObj : null;
 		switch ( attribute.toLowerCase() ) {
 			case "normal" :

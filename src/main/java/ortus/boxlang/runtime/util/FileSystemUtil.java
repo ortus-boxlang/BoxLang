@@ -25,6 +25,7 @@ import java.net.URL;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.DirectoryNotEmptyException;
+import java.nio.file.DirectoryStream;
 import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -34,7 +35,6 @@ import java.nio.file.StandardOpenOption;
 import java.nio.file.attribute.PosixFilePermission;
 import java.nio.file.attribute.PosixFilePermissions;
 import java.util.Comparator;
-import java.util.Iterator;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -53,7 +53,10 @@ import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
 public final class FileSystemUtil {
 
-	public static final String	DEFAULT_CHARSET			= "UTF-8";
+	/**
+	 * The default charset for file operations in BoxLang
+	 */
+	public static final Charset	DEFAULT_CHARSET			= StandardCharsets.UTF_8;
 
 	/**
 	 * MimeType suffixes which denote files which should be treated as text - e.g. application/json, application/xml, etc
@@ -90,12 +93,15 @@ public final class FileSystemUtil {
 	private static final int	OTHERS_WRITE_FILEMODE	= 0002;
 	private static final int	OTHERS_EXEC_FILEMODE	= 0001;
 
-	public static final Boolean	isWindows				= SystemUtils.IS_OS_WINDOWS;
+	/**
+	 * The Necessary constants for the file mode
+	 */
+	public static final Boolean	IS_WINDOWS				= SystemUtils.IS_OS_WINDOWS;
 
 	/**
 	 * The OS line separator
 	 */
-	private static final String	lineSeparator			= System.getProperty( "line.separator" );
+	private static final String	LINE_SEPARATOR			= System.getProperty( "line.separator" );
 
 	/**
 	 * Returns the contents of a file
@@ -129,7 +135,7 @@ public final class FileSystemUtil {
 				} else {
 					InputStreamReader inputReader = new InputStreamReader( fileURL.openStream() );
 					try ( BufferedReader reader = new BufferedReader( inputReader ) ) {
-						return ( String ) reader.lines().parallel().collect( Collectors.joining( lineSeparator ) );
+						return reader.lines().parallel().collect( Collectors.joining( LINE_SEPARATOR ) );
 					}
 				}
 			} catch ( MalformedURLException e ) {
@@ -143,7 +149,7 @@ public final class FileSystemUtil {
 				return Files.readString( path, cs );
 			} else {
 				try ( BufferedReader reader = new BufferedReader( Files.newBufferedReader( path, cs ), bufferSize ) ) {
-					return reader.lines().parallel().collect( Collectors.joining( lineSeparator ) );
+					return reader.lines().parallel().collect( Collectors.joining( LINE_SEPARATOR ) );
 				}
 			}
 		}
@@ -178,19 +184,21 @@ public final class FileSystemUtil {
 	 */
 	public static void deleteDirectory( String directoryPath, Boolean recursive ) throws IOException {
 		Path targetDirectory = Path.of( directoryPath );
+
 		if ( recursive ) {
-			Iterator<Path> fileIterator = Files.newDirectoryStream( targetDirectory ).iterator();
-			while ( fileIterator.hasNext() ) {
-				Path filePath = fileIterator.next();
-				if ( Files.isDirectory( filePath ) ) {
-					deleteDirectory( filePath.toString(), true );
-				} else {
-					Files.delete( filePath );
+			try ( DirectoryStream<Path> stream = Files.newDirectoryStream( targetDirectory ) ) {
+				for ( Path entry : stream ) {
+					if ( Files.isDirectory( entry ) ) {
+						deleteDirectory( entry.toString(), true );
+					} else {
+						Files.delete( entry );
+					}
 				}
 			}
 		}
+
 		try {
-			Files.delete( Path.of( directoryPath ) );
+			Files.delete( targetDirectory );
 		} catch ( DirectoryNotEmptyException e ) {
 			throw new BoxRuntimeException( "The directory " + directoryPath + " is not empty and may not be deleted without the recursive option." );
 		}
@@ -212,23 +220,25 @@ public final class FileSystemUtil {
 						    ? ( int ) Long.compareUnsigned( Files.size( b ), Files.size( a ) )
 						    : ( int ) Long.compareUnsigned( Files.size( a ), Files.size( b ) );
 					} catch ( IOException e ) {
-						return ( int ) Long.compareUnsigned( 0l, 0l );
+						return Long.compareUnsigned( 0l, 0l );
 					}
-
 				};
+				break;
 			case "directory" :
 				pathSort = ( final Path a, final Path b ) -> sortDirection.equals( "desc" )
 				    ? b.getParent().toString().compareTo( a.getParent().toString() )
 				    : a.getParent().toString().compareTo( b.getParent().toString() );
+				break;
 			case "namenocase" :
 				pathSort = ( final Path a, final Path b ) -> sortDirection.equals( "desc" )
 				    ? b.toString().toLowerCase().compareTo( a.toString().toLowerCase() )
 				    : a.toString().toLowerCase().compareTo( b.toString().toLowerCase() );
+				break;
 			default :
 				pathSort = ( final Path a, final Path b ) -> sortDirection.equals( "desc" )
 				    ? b.toString().compareTo( a.toString() )
 				    : a.toString().compareTo( b.toString() );
-
+				break;
 		}
 
 		try {
@@ -251,7 +261,7 @@ public final class FileSystemUtil {
 			case "directory" :
 				return Files.isDirectory( item );
 			case "file" :
-				return !Files.isDirectory( item );
+				return Files.isRegularFile( item );
 			default :
 				return true;
 		}
@@ -382,7 +392,7 @@ public final class FileSystemUtil {
 	/**
 	 * Tests whether a file is binary
 	 *
-	 * @param filePath
+	 * @param filePath the file path string
 	 *
 	 * @return a boolean as to whether the file is binary
 	 *
@@ -395,13 +405,13 @@ public final class FileSystemUtil {
 		} else {
 			mimeType = Files.probeContentType( Paths.get( filePath ).getFileName() );
 		}
-		// if we can't determin a mimetype from a path we assume the file is text ( e.g. a friendly URL )
+		// if we can't determine a mimetype from a path we assume the file is text ( e.g. a friendly URL )
 		if ( mimeType == null ) {
 			return false;
 		}
 		Object[] mimeParts = mimeType.split( "/" );
 
-		return !TEXT_MIME_PREFIXES.contains( ( String ) mimeParts[ 0 ] ) && !TEXT_MIME_PREFIXES.contains( ( String ) mimeParts[ mimeParts.length - 1 ] );
+		return !TEXT_MIME_PREFIXES.contains( mimeParts[ 0 ] ) && !TEXT_MIME_PREFIXES.contains( mimeParts[ mimeParts.length - 1 ] );
 	}
 
 	/**
@@ -601,9 +611,9 @@ public final class FileSystemUtil {
 				infoStruct.put( "canRead", Files.isReadable( path ) );
 				infoStruct.put( "canWrite", Files.isWritable( path ) );
 				infoStruct.put( "canExecute", Files.isExecutable( path ) );
-				infoStruct.put( "isArchive", isWindows ? Files.getAttribute( path, "dos:archive" ) : false );
-				infoStruct.put( "isSystem", isWindows ? Files.getAttribute( path, "dos:system" ) : false );
-				infoStruct.put( "isAttributesSupported", isWindows );
+				infoStruct.put( "isArchive", IS_WINDOWS ? Files.getAttribute( path, "dos:archive" ) : false );
+				infoStruct.put( "isSystem", IS_WINDOWS ? Files.getAttribute( path, "dos:system" ) : false );
+				infoStruct.put( "isAttributesSupported", IS_WINDOWS );
 				infoStruct.put( "isModeSupported", isPosixCompliant( path ) );
 				infoStruct.put( "isCaseSensitive", !Files.exists( Path.of( path.toAbsolutePath().toString().toUpperCase() ) ) );
 			}
