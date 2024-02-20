@@ -379,12 +379,16 @@ public class DebugAdapter {
 	}
 
 	private Scope scopeByName( WrappedValue context, String name, String key ) {
-		WrappedValue	scopeValue	= context.invokeByNameAndArgs(
+		WrappedValue scopeValue = context.invokeByNameAndArgs(
 		    "getScopeNearby",
 		    Arrays.asList( "ortus.boxlang.runtime.scopes.Key", "boolean" ),
 		    Arrays.asList( this.debugger.mirrorOfKey( key ), this.debugger.vm.mirrorOf( false ) ) );
 
-		Scope			scope		= new Scope();
+		if ( scopeValue == null ) {
+			return null;
+		}
+
+		Scope scope = new Scope();
 		scope.name					= name;
 		scope.variablesReference	= ( int ) scopeValue.id();
 

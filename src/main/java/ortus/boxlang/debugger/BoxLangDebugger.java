@@ -159,7 +159,6 @@ public class BoxLangDebugger implements IBoxLangDebugger {
 			}
 			if ( event instanceof ClassPrepareEvent cpe ) {
 				vmClasses.add( cpe.referenceType() );
-				setAllBreakpoints();
 			}
 			if ( event instanceof BreakpointEvent bpe ) {
 				handleBreakPointEvent( bpe );
@@ -169,6 +168,8 @@ public class BoxLangDebugger implements IBoxLangDebugger {
 			}
 
 		}
+
+		setAllBreakpoints();
 	}
 
 	private void handleDeathEvent( VMDeathEvent de ) {
@@ -442,6 +443,10 @@ public class BoxLangDebugger implements IBoxLangDebugger {
 				List<ReferenceType>	matchingTypes		= getMatchingReferenceTypes( fileName );
 				List<Location>		possibleLocations	= new ArrayList<Location>();
 
+				if ( matchingTypes.size() == 0 ) {
+					continue;
+				}
+
 				for ( ReferenceType vmClass : matchingTypes ) {
 					try {
 						if ( javaSourceLine == null ) {
@@ -450,13 +455,22 @@ public class BoxLangDebugger implements IBoxLangDebugger {
 						int			val				= javaSourceLine.intValue();
 						Location	closestLocation	= vmClass.allLineLocations().stream().reduce( null, ( closest, location ) -> {
 														if ( closest == null ) {
+															if ( location.lineNumber() > val ) {
+																return null;
+															}
 															return location;
 														}
 
-														return closest == null || val - closest.lineNumber() > val - location.lineNumber() ? location : closest;
+														if ( location.lineNumber() > val ) {
+															return closest;
+														}
+
+														return val - closest.lineNumber() > val - location.lineNumber() ? location : closest;
 													} );
 
-						possibleLocations.add( closestLocation );
+						if ( closestLocation != null ) {
+							possibleLocations.add( closestLocation );
+						}
 					} catch ( BoxRuntimeException e ) {
 						e.printStackTrace();
 					} catch ( AbsentInformationException e ) {
@@ -465,14 +479,31 @@ public class BoxLangDebugger implements IBoxLangDebugger {
 					}
 				}
 
+				if ( javaSourceLine == null ) {
+					continue;
+				}
+
 				int			val		= javaSourceLine.intValue();
 				Location	closest	= possibleLocations.stream().reduce( null, ( acc, location ) -> {
 										if ( acc == null ) {
+											if ( location.lineNumber() > val ) {
+												return null;
+											}
 											return location;
 										}
 
-										return acc == null || val - acc.lineNumber() > val - location.lineNumber() ? location : acc;
+										if ( location.lineNumber() > val ) {
+											return acc;
+										}
+
+										return val - acc.lineNumber() > val - location.lineNumber() ? location : acc;
 									} );
+
+				// TODO this is terrible - the reason this is here is because when the first ClassPreparedEvent executes we get the wrong line number for the
+				// breakpoint we need a more accurate line number strategy
+				if ( val - closest.lineNumber() > 10 ) {
+					continue;
+				}
 				try {
 					BreakpointRequest bpReq = vm.eventRequestManager().createBreakpointRequest( closest );
 					bpReq.enable();
