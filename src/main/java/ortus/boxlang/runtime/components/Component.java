@@ -17,8 +17,6 @@
  */
 package ortus.boxlang.runtime.components;
 
-import java.util.Optional;
-
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.scopes.Key;
@@ -31,12 +29,12 @@ import ortus.boxlang.runtime.types.Struct;
  */
 public abstract class Component {
 
-	public static final Optional<Object> DEFAULT_RETURN = Optional.empty();
+	public static final BodyResult DEFAULT_RETURN = BodyResult.ofDefault();
 
 	@FunctionalInterface
 	public static interface ComponentBody {
 
-		Optional<Object> process( IBoxContext context );
+		BodyResult process( IBoxContext context );
 	}
 
 	/**
@@ -48,11 +46,6 @@ public abstract class Component {
 	 * Component Attributes
 	 */
 	protected Attribute[]			declaredAttributes	= new Attribute[] {};
-
-	/**
-	 * Flag to capture buffered output from the body
-	 */
-	protected boolean				captureBodyOutput	= false;
 
 	/**
 	 * The runtime instance
@@ -93,7 +86,7 @@ public abstract class Component {
 	 *
 	 * @return The result of the invocation
 	 */
-	public Optional<Object> invoke( IBoxContext context, IStruct attributes, ComponentBody body ) {
+	public BodyResult invoke( IBoxContext context, IStruct attributes, ComponentBody body ) {
 		validateAttributes( attributes );
 		IStruct executionState = new Struct();
 		executionState.put( Key._NAME, name );
@@ -116,7 +109,7 @@ public abstract class Component {
 	 *
 	 * @return The result of the invocation
 	 */
-	public abstract Optional<Object> _invoke( IBoxContext context, IStruct attributes, ComponentBody body, IStruct executionState );
+	public abstract BodyResult _invoke( IBoxContext context, IStruct attributes, ComponentBody body, IStruct executionState );
 
 	/**
 	 * Announce an event with the provided {@link IStruct} of data.
@@ -133,21 +126,33 @@ public abstract class Component {
 	}
 
 	/**
-	 * Process the body of the component.
+	 * Process the body of the component and not do capture output.
 	 *
 	 * @param context The context in which the body is being processed
+	 * @param body    The body to process
 	 *
-	 * @return If captureBodyOutput is set to true, the captured output of the body will be returned as a string. Otherwise,
-	 *         null will be returned.
+	 * @return A BodyResult object which describes the result of the body processing
 	 */
 	public BodyResult processBody( IBoxContext context, ComponentBody body ) {
-		String				bufferResult	= null;
-		Optional<Object>	returnValue		= DEFAULT_RETURN;
+		return processBody( context, body, null );
+	}
+
+	/**
+	 * Process the body of the component while capturing the output into a provided buffer.
+	 *
+	 * @param context The context in which the body is being processed
+	 * @param body    The body to process
+	 * @param buffer  The buffer to capture the output into
+	 *
+	 * @return A BodyResult object which describes the result of the body processing
+	 */
+	public BodyResult processBody( IBoxContext context, ComponentBody body, StringBuffer buffer ) {
+		String		bufferResult	= null;
+		BodyResult	returnValue		= DEFAULT_RETURN;
 		if ( body != null ) {
 			// If we want to capture generated output, then we need to buffer it
-			if ( captureBodyOutput ) {
-				// Register a new buffer with the context
-				StringBuffer buffer = new StringBuffer();
+			if ( buffer != null ) {
+				// Register the buffer with the context
 				context.pushBuffer( buffer );
 				try {
 					returnValue = body.process( context );
@@ -156,18 +161,15 @@ public abstract class Component {
 					bufferResult = buffer.toString();
 					context.writeToBuffer( bufferResult );
 					throw e;
-
 				} finally {
 					context.popBuffer();
 				}
-				// Get the generated content from the buffer and return it
-				bufferResult = buffer.toString();
 			} else {
 				returnValue = body.process( context );
 			}
 
 		}
-		return new BodyResult( bufferResult, returnValue );
+		return returnValue;
 	}
 
 	/**
@@ -188,16 +190,44 @@ public abstract class Component {
 		return declaredAttributes;
 	}
 
-	/**
-	 * Get whether this component captures the output of the body
-	 *
-	 * @return Whether this component captures the output of the body
-	 */
-	public boolean capturesBodyOutput() {
-		return captureBodyOutput;
-	}
+	public record BodyResult( int resultType, Object returnValue ) {
 
-	public record BodyResult( String buffer, Optional<Object> returnValue ) {
+		public static final int DEFAULT = 0;
+		public static final int RETURN = 1;
+		public static final int BREAK = 2;
+		public static final int CONTINUE = 3;
+
+		public static BodyResult ofBreak() {
+			return new BodyResult( BREAK, null );
+		}
+
+		public static BodyResult ofContinue() {
+			return new BodyResult( CONTINUE, null );
+		}
+
+		public static BodyResult ofReturn( Object returnValue ) {
+			return new BodyResult( RETURN, returnValue );
+		}
+
+		public static BodyResult ofDefault() {
+			return new BodyResult( DEFAULT, null );
+		}
+
+		public boolean isBreak() {
+			return resultType == BREAK;
+		}
+
+		public boolean isContinue() {
+			return resultType == CONTINUE;
+		}
+
+		public boolean isReturn() {
+			return resultType == RETURN;
+		}
+
+		public boolean isEarlyExit() {
+			return isBreak() || isContinue() || isReturn();
+		}
 	}
 
 }

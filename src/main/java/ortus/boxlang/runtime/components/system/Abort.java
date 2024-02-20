@@ -17,8 +17,6 @@
  */
 package ortus.boxlang.runtime.components.system;
 
-import java.util.Optional;
-
 import ortus.boxlang.runtime.components.Attribute;
 import ortus.boxlang.runtime.components.BoxComponent;
 import ortus.boxlang.runtime.components.Component;
@@ -64,7 +62,7 @@ public class Abort extends Component {
 	 * @argument.type The type of the abort (request or page)
 	 *
 	 */
-	public Optional<Object> _invoke( IBoxContext context, IStruct attributes, ComponentBody body, IStruct executionState ) {
+	public BodyResult _invoke( IBoxContext context, IStruct attributes, ComponentBody body, IStruct executionState ) {
 		String		showerror	= attributes.getAsString( Key.showerror );
 		String		type		= attributes.getAsString( Key.type );
 

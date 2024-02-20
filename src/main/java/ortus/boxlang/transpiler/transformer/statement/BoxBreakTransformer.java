@@ -14,12 +14,12 @@
  */
 package ortus.boxlang.transpiler.transformer.statement;
 
+import java.util.HashMap;
+
 import com.github.javaparser.ast.Node;
-import com.github.javaparser.ast.expr.BooleanLiteralExpr;
-import com.github.javaparser.ast.stmt.BreakStmt;
-import com.github.javaparser.ast.stmt.IfStmt;
 
 import ortus.boxlang.ast.BoxNode;
+import ortus.boxlang.ast.statement.BoxSwitchCase;
 import ortus.boxlang.transpiler.JavaTranspiler;
 import ortus.boxlang.transpiler.transformer.AbstractTransformer;
 import ortus.boxlang.transpiler.transformer.TransformerContext;
@@ -32,6 +32,16 @@ public class BoxBreakTransformer extends AbstractTransformer {
 
 	@Override
 	public Node transform( BoxNode node, TransformerContext context ) throws IllegalStateException {
-		return addIndex( new IfStmt( new BooleanLiteralExpr( true ), new BreakStmt(), null ), node );
+		String	template;
+		boolean	isInSwitch	= node.getParent() instanceof BoxSwitchCase;
+		if ( transpiler.isInsideComponent() && !isInSwitch ) {
+			template = "if(true) return Component.BodyResult.ofBreak();";
+		} else {
+			template = "if(true) break;";
+		}
+		Node javaStmt = parseStatement( template, new HashMap<>() );
+		logger.debug( node.getSourceText() + " -> " + javaStmt );
+		addIndex( javaStmt, node );
+		return javaStmt;
 	}
 }

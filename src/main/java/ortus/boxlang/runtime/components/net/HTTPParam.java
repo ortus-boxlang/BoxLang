@@ -17,7 +17,6 @@
  */
 package ortus.boxlang.runtime.components.net;
 
-import java.util.Optional;
 import java.util.Set;
 
 import ortus.boxlang.runtime.components.Attribute;
@@ -99,7 +98,7 @@ public class HTTPParam extends Component {
 	 * @param executionState The execution state of the BIF
 	 *
 	 */
-	public Optional<Object> _invoke( IBoxContext context, IStruct attributes, ComponentBody body, IStruct executionState ) {
+	public BodyResult _invoke( IBoxContext context, IStruct attributes, ComponentBody body, IStruct executionState ) {
 		IStruct parentState = context.findClosestComponent( Key.HTTP );
 		if ( parentState == null ) {
 			throw new RuntimeException( "HTTPParam must be nested in the body of an HTTP component" );

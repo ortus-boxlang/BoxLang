@@ -38,6 +38,7 @@ import ortus.boxlang.ast.BoxNode;
 import ortus.boxlang.ast.expression.BoxFQN;
 import ortus.boxlang.ast.expression.BoxStringLiteral;
 import ortus.boxlang.ast.statement.BoxAnnotation;
+import ortus.boxlang.ast.statement.BoxSwitchCase;
 import ortus.boxlang.ast.statement.component.BoxComponent;
 import ortus.boxlang.transpiler.JavaTranspiler;
 import ortus.boxlang.transpiler.transformer.AbstractTransformer;
@@ -80,7 +81,7 @@ public class BoxComponentTransformer extends AbstractTransformer {
 				jBody.getStatements().add( ( Statement ) transpiler.transform( statement ) );
 			}
 			// Every component body closure needs to return an Optional. Either from an explicit return statement, or this catch-all at the end
-			jBody.getStatements().add( parseStatement( "return Optional.empty();", new HashMap<>() ) );
+			jBody.getStatements().add( parseStatement( "return Component.DEFAULT_RETURN;", new HashMap<>() ) );
 			transpiler.popContextName();
 			transpiler.popComponent();
 			LambdaExpr lambda = new LambdaExpr();
@@ -104,7 +105,7 @@ public class BoxComponentTransformer extends AbstractTransformer {
 															};
 		VariableDeclarationExpr	jStatement					= new VariableDeclarationExpr(
 		    new VariableDeclarator(
-		        new ClassOrInterfaceType( null, "Optional<Object>" ),
+		        new ClassOrInterfaceType( null, "Component.BodyResult" ),
 		        optionalResultName,
 		        new MethodCallExpr(
 		            new NameExpr( transpiler.peekContextName() ),
@@ -118,23 +119,68 @@ public class BoxComponentTransformer extends AbstractTransformer {
 		    )
 		);
 		jBlock.addStatement( jStatement );
-		if ( hasBody && transpiler.canReturn() ) {
-			String template;
+		if ( hasBody ) {
+			boolean	isInSwitch	= boxComponent.getParent() instanceof BoxSwitchCase;
+			String	template	= "";
 			if ( transpiler.isInsideComponent() ) {
+				if ( isInSwitch ) {
+
+					template = """
+					           if ( ${optionalResultName}.isEarlyExit() ) {
+					           	if(${optionalResultName}.isBreak() ) {
+					           		if(true) break;
+					           	}
+					           	return ${optionalResultName};
+					           }
+					           		""";
+				} else {
+
+					template = """
+					           if ( ${optionalResultName}.isEarlyExit() ) {
+					           	return ${optionalResultName};
+					           }
+					           		""";
+				}
+			} else if ( isInSwitch ) {
+				if ( transpiler.canReturn() ) {
+					template = """
+					           if ( ${optionalResultName}.isEarlyExit() ) {
+					           	if ( ${optionalResultName}.isContinue() ) {
+					           		throw new BoxRuntimeException( "Continue statement not allowed in this context" );
+					           	} else if ( ${optionalResultName}.isBreak() ) {
+					           		if(true) break;
+					           	} else {
+					           		// TODO: If we're in a BoxScript, this will not compile
+					           		return ${optionalResultName}.returnValue();
+					           	}
+					           }
+					                     		""";
+				} else {
+
+					template = """
+					           if ( ${optionalResultName}.isBreak() ) {
+					           	if(true) break;
+					           }
+					           				  """;
+				}
+			} else if ( transpiler.canReturn() ) {
 				template = """
-				           if ( ${optionalResultName}.isPresent() ) {
-				           	return ${optionalResultName};
+				           if ( ${optionalResultName}.isEarlyExit() ) {
+				           	if ( ${optionalResultName}.isContinue() ) {
+				           		throw new BoxRuntimeException( "Continue statement not allowed in this context" );
+				           	} else if ( ${optionalResultName}.isBreak() ) {
+				           		throw new BoxRuntimeException( "Break statement not allowed in this context" );
+				           	} else {
+				           		// TODO: If we're in a BoxScript, this will not compile
+				           		return ${optionalResultName}.returnValue();
+				           	}
 				           }
-				           		""";
-			} else {
-				template = """
-				           if ( ${optionalResultName}.isPresent() ) {
-				           	return ${optionalResultName}.get();
-				           }
-				           		""";
+				                     		""";
 			}
-			Statement jReturnIfNeeded = parseStatement( template, values );
-			jBlock.addStatement( jReturnIfNeeded );
+			if ( template.length() > 0 ) {
+				Statement jReturnIfNeeded = parseStatement( template, values );
+				jBlock.addStatement( jReturnIfNeeded );
+			}
 		}
 
 		logger.debug( node.getSourceText() + " -> " + jBlock );

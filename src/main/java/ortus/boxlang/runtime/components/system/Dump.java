@@ -17,7 +17,6 @@
  */
 package ortus.boxlang.runtime.components.system;
 
-import java.util.Optional;
 import java.util.Set;
 
 import ortus.boxlang.runtime.components.Attribute;
@@ -59,7 +58,7 @@ public class Dump extends Component {
 	 * @param executionState The execution state of the BIF
 	 *
 	 */
-	public Optional<Object> _invoke( IBoxContext context, IStruct attributes, ComponentBody body, IStruct executionState ) {
+	public BodyResult _invoke( IBoxContext context, IStruct attributes, ComponentBody body, IStruct executionState ) {
 		Object theVar = attributes.get( Key.var );
 		runtime.getFunctionService().getGlobalFunction( Key.dump ).invoke( context, new Object[] { theVar }, false, Key.dump );
 		return DEFAULT_RETURN;

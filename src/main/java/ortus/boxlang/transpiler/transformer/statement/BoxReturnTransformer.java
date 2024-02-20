@@ -57,7 +57,7 @@ public class BoxReturnTransformer extends AbstractTransformer {
 		}
 		String template;
 		if ( transpiler.isInsideComponent() ) {
-			template = "return Optional.of( ${expr} );";
+			template = "return Component.BodyResult.ofReturn( ${expr} );";
 		} else {
 			template = "return ${expr};";
 		}

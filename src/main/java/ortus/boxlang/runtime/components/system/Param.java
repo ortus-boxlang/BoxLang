@@ -17,7 +17,6 @@
  */
 package ortus.boxlang.runtime.components.system;
 
-import java.util.Optional;
 import java.util.Set;
 
 import ortus.boxlang.runtime.components.Attribute;
@@ -77,7 +76,7 @@ public class Param extends Component {
 	 * @argument.pattern The pattern of the parameter
 	 *
 	 */
-	public Optional<Object> _invoke( IBoxContext context, IStruct attributes, ComponentBody body, IStruct executionState ) {
+	public BodyResult _invoke( IBoxContext context, IStruct attributes, ComponentBody body, IStruct executionState ) {
 		String	varName			= attributes.getAsString( Key._NAME );
 		Object	defaultValue	= attributes.get( Key._DEFAULT );
 		Object	existingValue	= ExpressionInterpreter.getVariable( context, varName, defaultValue != null );
