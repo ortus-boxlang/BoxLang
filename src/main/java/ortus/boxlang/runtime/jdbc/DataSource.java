@@ -14,11 +14,7 @@
  */
 package ortus.boxlang.runtime.jdbc;
 
-import java.sql.Connection;
-import java.sql.ResultSet;
-import java.sql.ResultSetMetaData;
-import java.sql.SQLException;
-import java.sql.Statement;
+import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
@@ -140,9 +136,9 @@ public class DataSource {
 	 *         array is returned.
 	 */
 	public Struct[] execute( String query, Connection conn ) {
-		try ( Statement stmt = conn.createStatement() ) {
+		try ( PreparedStatement stmt = conn.prepareStatement(query) ) {
 			// @TODO: Implement parameterized queries with PreparedStatement.
-			boolean hasResult = stmt.execute( query );
+			boolean hasResult = stmt.execute();
 
 			if ( hasResult ) {
 				// Move to an abstract result processing method which looks at the query `returnType` option

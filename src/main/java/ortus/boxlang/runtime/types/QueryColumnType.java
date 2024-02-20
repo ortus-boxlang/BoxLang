@@ -29,7 +29,8 @@ public enum QueryColumnType {
 	TIME,
 	DATE,
 	TIMESTAMP,
-	OBJECT;
+	OBJECT,
+	OTHER;
 
 	public static QueryColumnType fromString( String type ) {
 		type = type.toLowerCase();
@@ -59,6 +60,8 @@ public enum QueryColumnType {
 				return TIMESTAMP;
 			case "object" :
 				return OBJECT;
+			case "other" :
+				return OTHER;
 			default :
 				throw new RuntimeException( "Unknown QueryColumnType: " + type );
 		}
