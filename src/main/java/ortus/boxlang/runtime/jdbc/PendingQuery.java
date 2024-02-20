@@ -1,5 +1,8 @@
 package ortus.boxlang.runtime.jdbc;
 
+import ortus.boxlang.runtime.types.Array;
+import ortus.boxlang.runtime.types.IStruct;
+
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
@@ -14,6 +17,10 @@ public class PendingQuery {
 	public PendingQuery(String sql, List<QueryParameter> parameters) {
 		this.sql = sql;
 		this.parameters = parameters;
+	}
+
+	public PendingQuery(String sql, Array parameters) {
+		this(sql, parameters.stream().map(param -> new QueryParameter(param)))
 	}
 
 	public List<Object> getParameterValues() {

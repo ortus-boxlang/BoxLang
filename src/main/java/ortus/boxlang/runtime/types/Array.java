@@ -201,6 +201,8 @@ public class Array implements List<Object>, IType, IReferenceable, IListenable {
 		return wrapped.toArray( a );
 	}
 
+	public List<Object> toList() { return wrapped; }
+
 	public boolean add( Object e ) {
 		synchronized ( wrapped ) {
 			return wrapped.add( notifyListeners( wrapped.size(), e ) );

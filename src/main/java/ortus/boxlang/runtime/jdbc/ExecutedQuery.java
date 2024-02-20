@@ -16,7 +16,7 @@ public class ExecutedQuery {
 	public final PreparedStatement statement;
 	public final long executionTime;
 	public final ResultSet resultSet;
-	public final List<IStruct> results;
+	public final List<Struct> results;
 	public final int recordCount;
 	public final List<QueryColumn> columns;
 	private Object generatedKey;
@@ -27,39 +27,40 @@ public class ExecutedQuery {
 		this.executionTime = executionTime;
 
 		this.resultSet = this.statement.getResultSet();
-
-        ResultSetMetaData resultSetMetaData = this.resultSet.getMetaData();
-		int columnCount = resultSetMetaData.getColumnCount();
-
-		// The column count starts from 1
-		List<QueryColumn> columns = new ArrayList<>();
-		for (int i = 1; i <= columnCount; i++ ) {
-			columns.add(new QueryColumn(
-				resultSetMetaData.getColumnLabel(i),
-				resultSetMetaData.getColumnType(i)
-			));
-		}
-		this.columns = columns;
-
 		this.results = new ArrayList<>();
-		while (this.resultSet.next()) {
-			IStruct row = new Struct(IStruct.TYPES.LINKED);
-			int rowNum = this.resultSet.getRow();
-			for (QueryColumn column: this.columns) {
-				row.put(column.name, this.resultSet.getObject(rowNum));
+		this.columns = new ArrayList<>();
+
+		if (this.resultSet != null) {
+			ResultSetMetaData resultSetMetaData = this.resultSet.getMetaData();
+			int columnCount = resultSetMetaData.getColumnCount();
+
+			// The column count starts from 1
+			for (int i = 1; i <= columnCount; i++) {
+				columns.add(new QueryColumn(
+					resultSetMetaData.getColumnLabel(i),
+					resultSetMetaData.getColumnType(i)
+				));
 			}
-			this.results.add(row);
+
+			while (this.resultSet.next()) {
+				Struct row = new Struct(IStruct.TYPES.LINKED);
+				int rowNum = this.resultSet.getRow();
+				for (QueryColumn column : this.columns) {
+					row.put(column.name, this.resultSet.getObject(rowNum));
+				}
+				this.results.add(row);
+			}
 		}
 
 		this.recordCount = this.results.size();
 
 		ResultSet generatedKeysResultSet = this.statement.getGeneratedKeys();
-		while (generatedKeysResultSet.next()) {
+		if (generatedKeysResultSet.next()) {
             this.generatedKey = generatedKeysResultSet.getObject(generatedKeysResultSet.getRow());
         }
 	}
 
-	public List<IStruct> getResults() {
+	public List<Struct> getResults() {
 		return this.results;
 	}
 
@@ -76,7 +77,7 @@ public class ExecutedQuery {
 		return q;
 	}
 
-	public IStruct getResultStruct() {
+	public Struct getResultStruct() {
 		/**
 		 * * SQL: The SQL statement that was executed. (string)
 		 * * Cached: If the query was cached. (boolean)
@@ -86,7 +87,7 @@ public class ExecutedQuery {
 		 * * ExecutionTime: Execution time for the SQL request. (numeric)
 		 * * GENERATEDKEY: CF 9+ If the query was an INSERT with an identity or auto-increment value the value of that ID is placed in this variable.
 		 */
-		IStruct result = new Struct();
+		Struct result = new Struct();
 		result.put("sql", statement.toString());
 		result.put("cached", false);
 		result.put("sqlParameters", Array.fromList(pendingQuery.getParameterValues()));
