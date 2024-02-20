@@ -63,8 +63,6 @@ component {
 			fileWrite( testTargetDirectory & "/#name#Test.java", getBIFTestBody( name, package ) );
 		}
 
-		command( "!gradle spotlessApply" ).run( echo=true );
-
 	}
 
 	function getHeader(){
