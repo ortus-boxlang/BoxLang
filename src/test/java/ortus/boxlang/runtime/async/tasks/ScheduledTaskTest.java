@@ -165,7 +165,7 @@ class ScheduledTaskTest {
 		@Test
 		void testEveryHourAt() {
 			var t = task.everyHourAt( 15 );
-			assertThat( t.getDelay() ).isNotEqualTo( 0 );
+			assertThat( t.getInitialDelay() ).isNotEqualTo( 0 );
 			assertThat( t.getPeriod() ).isEqualTo( 3600 );
 			assertThat( t.getTimeUnit().toString().toLowerCase() ).isEqualTo( "seconds" );
 		}
@@ -182,7 +182,7 @@ class ScheduledTaskTest {
 		@Test
 		void testEveryDayAt() throws InvalidAttributeValueException {
 			var t = task.everyDayAt( "04:00" );
-			assertThat( t.getDelay() ).isNotEqualTo( 0 );
+			assertThat( t.getInitialDelay() ).isNotEqualTo( 0 );
 			assertThat( t.getPeriod() ).isEqualTo( 86400 );
 			assertThat( t.getTimeUnit().toString().toLowerCase() ).isEqualTo( "seconds" );
 		}

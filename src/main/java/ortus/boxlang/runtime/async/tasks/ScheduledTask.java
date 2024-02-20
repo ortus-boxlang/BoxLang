@@ -90,23 +90,23 @@ public class ScheduledTask implements Runnable {
 	/**
 	 * The delay or time to wait before we execute the task in the scheduler
 	 */
-	private long									delay				= 0;
+	private long									initialDelay		= 0L;
 
 	/**
 	 * The time unit string used when there is a delay requested for the task
 	 */
-	private TimeUnit								delayTimeUnit;
+	private TimeUnit								initialDelayTimeUnit;
 
 	/**
 	 * A fixed time period of execution of the tasks in this schedule. It does not wait for tasks to finish,
 	 * tasks are fired exactly at that time period.
 	 */
-	private long									period				= 0;
+	private long									period				= 0L;
 
 	/**
 	 * The delay to use when using scheduleWithFixedDelay(), so tasks execute after this delay once completed
 	 */
-	private long									spacedDelay			= 0;
+	private long									spacedDelay			= 0L;
 
 	/**
 	 * The time unit used to schedule the task
@@ -201,7 +201,7 @@ public class ScheduledTask implements Runnable {
 	/**
 	 * This task can be assigned to a task scheduler or be executed on its own at runtime
 	 */
-	private Scheduler								scheduler			= null;
+	private BaseScheduler							scheduler			= null;
 
 	/**
 	 * A struct for the task that can be used to store any metadata
@@ -263,7 +263,7 @@ public class ScheduledTask implements Runnable {
 	 * @param executor  The executor we are bound to
 	 * @param scheduler The scheduler we are bound to
 	 */
-	public ScheduledTask( String name, String group, ExecutorRecord executor, Scheduler scheduler ) {
+	public ScheduledTask( String name, String group, ExecutorRecord executor, BaseScheduler scheduler ) {
 		// Seed it
 		this.name		= name;
 		this.group		= group;
@@ -319,7 +319,7 @@ public class ScheduledTask implements Runnable {
 	 * @param name      The name of the task
 	 * @param scheduler The scheduler we are bound to
 	 */
-	public ScheduledTask( String name, Scheduler scheduler ) {
+	public ScheduledTask( String name, BaseScheduler scheduler ) {
 		this( name, "", null, scheduler );
 	}
 
@@ -379,38 +379,45 @@ public class ScheduledTask implements Runnable {
 
 		// Mark the task as it will run now for the first time
 		stats.put( "neverRun", false );
-
 		try {
 			// Before Interceptors
 			if ( hasScheduler() ) {
-				// getScheduler().beforeAnyTask( this );
+				getScheduler().beforeAnyTask( this );
 			}
 			if ( beforeTask != null ) {
 				beforeTask.accept( this );
 			}
 
-			// Target task call callable
+			// Execution by type
 			if ( task instanceof DynamicObject castedTask ) {
 				stats.put( "lastResult", Optional.ofNullable( castedTask.invoke( method ) ) );
 			} else if ( task instanceof Callable<?> castedTask ) {
 				stats.put( "lastResult", Optional.ofNullable( castedTask.call() ) );
+			} else if ( task instanceof Runnable castedTask ) {
+				castedTask.run();
+				stats.put( "lastResult", Optional.empty() );
+			} else {
+				throw new IllegalArgumentException( "Task is not a DynamicObject or a Callable or a Runnable" );
 			}
+
+			// Get the last result
+			var result = ( Optional<?> ) stats.get( "lastResult" );
 
 			// After Interceptors
 			if ( afterTask != null ) {
-				afterTask.accept( this, ( Optional<?> ) stats.get( "lastResult" ) );
+				afterTask.accept( this, result );
 			}
 			if ( hasScheduler() ) {
-				// getScheduler().afterAnyTask( this, stats?.lastResult );
+				getScheduler().afterAnyTask( this, result );
 			}
 
 			// Store successes and call success interceptor
 			( ( AtomicInteger ) stats.get( "totalSuccess" ) ).incrementAndGet();
 			if ( onTaskSuccess != null ) {
-				onTaskSuccess.accept( this, ( Optional<?> ) stats.get( "lastResult" ) );
+				onTaskSuccess.accept( this, result );
 			}
 			if ( hasScheduler() ) {
-				// getScheduler().onAnyTaskSuccess( this, variables.stats?.lastResult );
+				getScheduler().onAnyTaskSuccess( this, result );
 			}
 
 		} catch ( Exception e ) {
@@ -427,15 +434,15 @@ public class ScheduledTask implements Runnable {
 				}
 				// If we have a scheduler attached, called the schedulers life-cycle
 				if ( hasScheduler() ) {
-					// getScheduler().onAnyTaskError( this, e );
+					getScheduler().onAnyTaskError( this, e );
 				}
+
 				// After Tasks Interceptor with the exception as the last result
 				if ( afterTask != null ) {
-					// afterTask( this, stats?.lastResult );
-					afterTask.accept( this, ( Optional<?> ) stats.get( "lastResult" ) );
+					afterTask.accept( this, Optional.of( e ) );
 				}
 				if ( hasScheduler() ) {
-					// getScheduler().afterAnyTask( this, e );
+					getScheduler().afterAnyTask( this, Optional.of( e ) );
 				}
 			} catch ( Exception afterException ) {
 				// Log it, so it doesn't go to ether and executor doesn't die.
@@ -479,8 +486,8 @@ public class ScheduledTask implements Runnable {
 	 */
 	public ScheduledFuture<?> start() {
 		// If we have overlaps and the spaced delay is 0 then grab it from the period
-		if ( noOverlaps && spacedDelay == 0 ) {
-			spacedDelay = period;
+		if ( this.noOverlaps && this.spacedDelay == 0 ) {
+			this.spacedDelay = this.period;
 		}
 
 		// If we have a delay and a delayTimeUnit, then we need to compare to our
@@ -488,15 +495,15 @@ public class ScheduledTask implements Runnable {
 		// ( only if our time unit is seconds , if not we disable the delay )
 		// for the previous issue where the delay and/or setting would replace
 		// the time setting of the task based on the order presented
-		if ( delay > 0 &&
-		    delayTimeUnit != null &&
-		    !delayTimeUnit.equals( timeUnit ) ) {
-			if ( timeUnit != TimeUnit.SECONDS ) {
-				delay = 0;
+		if ( this.initialDelay > 0 &&
+		    this.initialDelayTimeUnit != null &&
+		    !this.initialDelayTimeUnit.equals( this.timeUnit ) ) {
+			if ( this.timeUnit != TimeUnit.SECONDS ) {
+				this.initialDelay = 0;
 				// reset the initial nextRunTime
 				stats.put( "nextRun", null );
 			} else {
-				delay = DateTimeHelper.timeUnitToSeconds( delay, delayTimeUnit );
+				this.initialDelay = DateTimeHelper.timeUnitToSeconds( this.initialDelay, this.initialDelayTimeUnit );
 			}
 		}
 
@@ -504,23 +511,23 @@ public class ScheduledTask implements Runnable {
 		debugLog(
 		    "start",
 		    Struct.of(
-		        "delay", delay,
-		        "delayTimeUnit", delayTimeUnit,
-		        "period", period,
-		        "spacedDelay", spacedDelay,
-		        "timeUnit", timeUnit,
-		        "type", spacedDelay > 0 ? "scheduleWithFixedDelay" : period > 0 ? "scheduleAtFixedRate" : "runOnce"
+		        "initialDelay", this.initialDelay,
+		        "delayTimeUnit", this.initialDelayTimeUnit,
+		        "period", this.period,
+		        "spacedDelay", this.spacedDelay,
+		        "timeUnit", this.timeUnit,
+		        "type", this.spacedDelay > 0 ? "scheduleWithFixedDelay" : this.period > 0 ? "scheduleAtFixedRate" : "runOnce"
 		    )
 		);
 
 		try {
 			// Startup a spaced frequency task: no overlaps
-			if ( spacedDelay > 0 ) {
+			if ( this.spacedDelay > 0 ) {
 				return getExecutor().scheduledExecutor().scheduleWithFixedDelay(
 				    this,
-				    spacedDelay,
-				    delay,
-				    timeUnit
+				    this.initialDelay,
+				    this.spacedDelay,
+				    this.timeUnit
 				);
 			}
 
@@ -528,20 +535,20 @@ public class ScheduledTask implements Runnable {
 			if ( period > 0 ) {
 				return getExecutor().scheduledExecutor().scheduleAtFixedRate(
 				    this,
-				    period,
-				    delay,
-				    timeUnit
+				    this.initialDelay,
+				    this.period,
+				    this.timeUnit
 				);
 			}
 
 			// Start off a one-off task
 			return getExecutor().scheduledExecutor().schedule(
 			    this,
-			    delay,
-			    timeUnit
+			    this.initialDelay,
+			    this.timeUnit
 			);
 		} finally {
-			scheduled = true;
+			this.scheduled = true;
 		}
 	}
 
@@ -636,6 +643,17 @@ public class ScheduledTask implements Runnable {
 	 * @return The ScheduledTask instance
 	 */
 	public ScheduledTask call( Callable<?> task ) {
+		return call( task, null );
+	}
+
+	/**
+	 * This method is used to register the Runnable Lambda on this scheduled task.
+	 *
+	 * @param task The {@link Runnable} Lambda to register
+	 *
+	 * @return The ScheduledTask instance
+	 */
+	public ScheduledTask call( Runnable task ) {
 		return call( task, null );
 	}
 
@@ -860,7 +878,7 @@ public class ScheduledTask implements Runnable {
 	 */
 
 	/**
-	 * Set a delay in the running of the task that will be registered with this schedule
+	 * Set an initial delay in the running of the task that will be registered with this schedule
 	 *
 	 * @param delay      The delay that will be used before executing the task
 	 * @param timeUnit   The time unit to use, available units are: days, hours, microseconds, milliseconds, minutes, nanoseconds, and seconds. The
@@ -882,18 +900,25 @@ public class ScheduledTask implements Runnable {
 		    )
 		);
 
-		if ( overwrites || this.delay == 0 ) {
-			this.delay			= delay;
-			this.delayTimeUnit	= timeUnit;
+		if ( overwrites || this.initialDelay == 0 ) {
+			this.initialDelay			= delay;
+			this.initialDelayTimeUnit	= timeUnit;
 		}
 
-		if ( this.delay > 0 ) {
+		if ( this.initialDelay > 0 ) {
 			setNextRunTime();
 		}
 
 		return this;
 	}
 
+	/**
+	 * Set an initial delay in the running of the task that will be registered with this schedule in milliseconds
+	 *
+	 * @param delay The delay that will be used before executing the task
+	 *
+	 * @return The ScheduledTask instance
+	 */
 	public ScheduledTask delay( long delay ) {
 		return delay( delay, TimeUnit.MILLISECONDS, false );
 	}
@@ -1693,8 +1718,8 @@ public class ScheduledTask implements Runnable {
 		debugLog(
 		    "setNextRunTime-start",
 		    Struct.of(
-		        "delay", this.delay,
-		        "delayTimeUnit", this.delayTimeUnit,
+		        "delay", this.initialDelay,
+		        "delayTimeUnit", this.initialDelayTimeUnit,
 		        "period", this.period,
 		        "spacedDelay", this.spacedDelay,
 		        "timeUnit", this.timeUnit,
@@ -1720,8 +1745,8 @@ public class ScheduledTask implements Runnable {
 		}
 
 		// Add in the delay ONLY if it's the initial next run
-		if ( this.delay > 0 && initialNextRun == null ) {
-			nextRun = DateTimeHelper.dateTimeAdd( nextRun, this.delay, this.delayTimeUnit );
+		if ( this.initialDelay > 0 && initialNextRun == null ) {
+			nextRun = DateTimeHelper.dateTimeAdd( nextRun, this.initialDelay, this.initialDelayTimeUnit );
 		}
 		// If we have run this task already and have already a task run
 		// then calculate it via the period and timeUnit
@@ -1900,10 +1925,10 @@ public class ScheduledTask implements Runnable {
 	 * @return The ScheduledTask instance
 	 */
 	public ScheduledTask setTask( Object task ) {
-		if ( task instanceof DynamicObject || task instanceof Callable ) {
+		if ( task instanceof DynamicObject || task instanceof Callable || task instanceof Runnable ) {
 			this.task = task;
 		} else {
-			throw new IllegalArgumentException( "Task must be a DynamicObject or a Callable Lambda" );
+			throw new IllegalArgumentException( "Task must be a DynamicObject or a Callable or Runnable Lambda" );
 		}
 		return this;
 	}
@@ -1929,36 +1954,36 @@ public class ScheduledTask implements Runnable {
 	 * @return the stats
 	 */
 	public IStruct getStats() {
-		return stats;
+		return this.stats;
 	}
 
 	/**
 	 * Get the delay or time to wait before we execute the task in the scheduler.
 	 */
-	public long getDelay() {
-		return delay;
+	public long getInitialDelay() {
+		return this.initialDelay;
 	}
 
 	/**
 	 * Set the delay or time to wait before we execute the task in the scheduler.
 	 */
-	public ScheduledTask setDelay( long delay ) {
-		this.delay = delay;
+	public ScheduledTask setInitialDelay( long delay ) {
+		this.initialDelay = delay;
 		return this;
 	}
 
 	/**
 	 * Get the time unit string used when there is a delay requested for the task.
 	 */
-	public TimeUnit getDelayTimeUnit() {
-		return delayTimeUnit;
+	public TimeUnit getInitialDelayTimeUnit() {
+		return this.initialDelayTimeUnit;
 	}
 
 	/**
 	 * Set the time unit string used when there is a delay requested for the task.
 	 */
-	public ScheduledTask setDelayTimeUnit( TimeUnit delayTimeUnit ) {
-		this.delayTimeUnit = delayTimeUnit;
+	public ScheduledTask setInitialDelayTimeUnit( TimeUnit delayTimeUnit ) {
+		this.initialDelayTimeUnit = delayTimeUnit;
 		return this;
 	}
 
@@ -1967,7 +1992,7 @@ public class ScheduledTask implements Runnable {
 	 * It does not wait for tasks to finish; tasks are fired exactly at that time period.
 	 */
 	public long getPeriod() {
-		return period;
+		return this.period;
 	}
 
 	/**
@@ -1983,7 +2008,7 @@ public class ScheduledTask implements Runnable {
 	 * Get the delay to use when using scheduleWithFixedDelay(), so tasks execute after this delay once completed.
 	 */
 	public long getSpacedDelay() {
-		return spacedDelay;
+		return this.spacedDelay;
 	}
 
 	/**
@@ -1998,7 +2023,7 @@ public class ScheduledTask implements Runnable {
 	 * Get the time unit used to schedule the task.
 	 */
 	public TimeUnit getTimeUnit() {
-		return timeUnit;
+		return this.timeUnit;
 	}
 
 	/**
@@ -2013,7 +2038,7 @@ public class ScheduledTask implements Runnable {
 	 * Get a handy boolean that is set when the task is annually scheduled.
 	 */
 	public Boolean isAnnually() {
-		return annually;
+		return this.annually;
 	}
 
 	/**
@@ -2028,7 +2053,7 @@ public class ScheduledTask implements Runnable {
 	 * Is the task disabled
 	 */
 	public Boolean isDisabled() {
-		return disabled;
+		return this.disabled;
 	}
 
 	/**
@@ -2073,7 +2098,7 @@ public class ScheduledTask implements Runnable {
 	 * It is both evaluated at scheduling and at runtime.
 	 */
 	public Predicate<ScheduledTask> getWhenPredicate() {
-		return whenPredicate;
+		return this.whenPredicate;
 	}
 
 	/**
@@ -2089,7 +2114,7 @@ public class ScheduledTask implements Runnable {
 	 * Get the constraint of what day of the month we need to run on: 1-31.
 	 */
 	public int getDayOfTheMonth() {
-		return dayOfTheMonth;
+		return this.dayOfTheMonth;
 	}
 
 	/**
@@ -2370,7 +2395,7 @@ public class ScheduledTask implements Runnable {
 	 *
 	 * @return the scheduler or null if not bound
 	 */
-	public Scheduler getScheduler() {
+	public BaseScheduler getScheduler() {
 		return this.scheduler;
 	}
 
@@ -2388,7 +2413,7 @@ public class ScheduledTask implements Runnable {
 	 *
 	 * @param scheduler the scheduler to set
 	 */
-	public ScheduledTask setScheduler( Scheduler scheduler ) {
+	public ScheduledTask setScheduler( BaseScheduler scheduler ) {
 		this.scheduler = scheduler;
 		return this;
 	}
@@ -2453,11 +2478,16 @@ public class ScheduledTask implements Runnable {
 		return this;
 	}
 
+	/**
+	 * Lazy getter for the executor
+	 *
+	 * @return The executor
+	 */
 	private ExecutorRecord getExecutor() {
-		if ( executor == null ) {
-			executor = scheduler.getExecutor();
+		if ( this.executor == null ) {
+			this.executor = this.scheduler.getExecutor();
 		}
-		return executor;
+		return this.executor;
 	}
 
 }

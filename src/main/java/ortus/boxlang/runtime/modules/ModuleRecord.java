@@ -393,6 +393,12 @@ public class ModuleRecord {
 		    .map( ServiceLoader.Provider::type )
 		    .forEach( targetClass -> componentService.registerComponent( targetClass, null, null ) );
 
+		// Do we have any Java Schedulers to register?
+		// ServiceLoader.load( IScheduler.class, this.classLoader )
+		// .stream()
+		// .map( ServiceLoader.Provider::get )
+		// .forEach( scheduler -> runtime.getSchedulerService().registerScheduler( scheduler ) );
+
 		// Finalize Registration
 		this.registeredOn = Instant.now();
 

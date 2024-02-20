@@ -32,12 +32,11 @@ import org.mockito.Mockito;
 import org.mockito.Spy;
 
 import ortus.boxlang.runtime.BoxRuntime;
-import ortus.boxlang.runtime.services.AsyncService;
 import ortus.boxlang.runtime.types.IStruct;
 
 class SchedulerTest {
 
-	Scheduler			scheduler;
+	BaseScheduler		scheduler;
 
 	@Spy
 	@InjectMocks
@@ -45,7 +44,7 @@ class SchedulerTest {
 
 	@BeforeEach
 	public void setupBeforeEach() {
-		scheduler	= new Scheduler( "bdd", new AsyncService( runtime ) );
+		scheduler	= new BaseScheduler( "bdd" );
 		scheduler	= Mockito.spy( scheduler );
 	}
 
@@ -212,6 +211,28 @@ class SchedulerTest {
 			scheduler.shutdown();
 			assertThat( scheduler.hasStarted() ).isFalse();
 		}
+	}
+
+	@Test
+	void testFullSchedulerLifecycle() {
+		IScheduler scheduler = new modules.test.config.Scheduler();
+		scheduler.configure();
+		assertThat( scheduler.hasStarted() ).isFalse();
+
+		// Startup the scheduler and wait a bit
+		scheduler.startup();
+		assertThat( scheduler.hasStarted() ).isTrue();
+
+		try {
+			System.out.println( "Sleeping for 3 seconds....." );
+			Thread.sleep( 3000 );
+		} catch ( InterruptedException e ) {
+			e.printStackTrace();
+		}
+
+		// Shutdown the scheduler
+		scheduler.shutdown( true );
+		assertThat( scheduler.hasStarted() ).isFalse();
 	}
 
 }
