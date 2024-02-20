@@ -133,7 +133,7 @@ public class JSONDeserializeTest {
 		       result = JSONDeserialize( '{
 		    	"one" : "wood",
 		    	"two" : null,
-		    	"three" : 42,
+		    	"three" : "42.1",
 		    	"four" : [1,2,3],
 		    	"five" : {},
 		    	"six" : true
@@ -145,7 +145,7 @@ public class JSONDeserializeTest {
 		assertThat( struct.size() ).isEqualTo( 6 );
 		assertThat( struct.get( "one" ) ).isEqualTo( "wood" );
 		assertThat( struct.get( "two" ) ).isNull();
-		assertThat( struct.get( "three" ) ).isEqualTo( 42 );
+		assertThat( struct.get( "three" ) ).isEqualTo( "42.1" );
 		assertThat( struct.get( "four" ) ).isInstanceOf( Array.class );
 
 		Array arr = struct.getAsArray( Key.of( "four" ) );

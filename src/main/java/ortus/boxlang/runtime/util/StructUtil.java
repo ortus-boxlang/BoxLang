@@ -612,4 +612,50 @@ public class StructUtil {
 		return Stream.of( entry );
 	}
 
+	/**
+	 * Translates a struct with dot-delimited keys in to a nested struct
+	 *
+	 * @param struct
+	 *
+	 * @return a flattened map of the struct
+	 */
+	public static IStruct unFlattenKeys( IStruct struct, boolean deep, boolean retainKeys ) {
+		String	key;
+		Object	value;
+		int		index;
+		for ( Key k : struct.getKeys() ) {
+			key		= k.getName();
+			value	= struct.get( k );
+			if ( deep && value instanceof IStruct )
+				unFlattenKeys( StructCaster.cast( value ), deep, retainKeys );
+			if ( ( index = key.indexOf( '.' ) ) != -1 ) {
+				unFlattenKey( index, k, key, struct, retainKeys );
+			}
+		}
+
+		return struct;
+
+	}
+
+	/**
+	 * Method to recursively un-flatten a struct with keys in dot-notation
+	 *
+	 * @param entry the individual entry set from the stream
+	 *
+	 * @return the stream object for further operations
+	 */
+	public static void unFlattenKey( int index, Key key, String keyValue, IStruct original, boolean retainKeys ) {
+
+		String	left;
+		Object	value	= retainKeys ? original.get( key ) : original.remove( key );
+		do {
+			left		= keyValue.substring( 0, index );
+			keyValue	= keyValue.substring( index + 1 );
+			original.put( Key.of( left ), new Struct() );
+
+		} while ( ( index = keyValue.indexOf( '.' ) ) != -1 );
+		// final put of the last key in the delimited string
+		original.put( Key.of( keyValue ), value );
+	}
+
 }
