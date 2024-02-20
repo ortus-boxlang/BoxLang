@@ -15,17 +15,14 @@
 package ortus.boxlang.runtime.jdbc;
 
 import java.sql.Connection;
-import java.sql.ResultSet;
-import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.sql.Statement;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Properties;
 
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
 
+import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
@@ -48,7 +45,6 @@ import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
  *        configure HikariConfig with dynamic configuration means that a connection attempt with `JDBCurl: 'jdbc:derby:foo'` will fail with a
  *        '"jdbcUrl" propertty is required"' message.</li>
  *        <li>Return Query values by default from the execute methods.
- *        <li>
  *        <li>Handle multiple return types in the `execute()` and `executeTransactionally()` methods.
  *        <ul>
  *        <li>"query": returns a query object</li>
@@ -57,8 +53,9 @@ import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
  *        <li>"struct": returns a struct of structs (requires columnkey to be defined).</li>
  *        </ul>
  *        </li>
- *        <li>Add support for return values in the `executeTransactionally()` methods.
- *        <li>
+ *        <li>Add support for return values in the `executeTransactionally()` methods.</li>
+ *        <li>Handle generated keys, i.e. stmt.execute( query, Statement.RETURN_GENERATED_KEYS );</li>
+ *        </ul>
  */
 public class DataSource {
 
@@ -115,14 +112,18 @@ public class DataSource {
 	/**
 	 * Execute a query on the connection, using a connection from the connection pool which is autoclosed upon query completion.
 	 *
-	 * @param query The SQL query to execute.
+	 * @param query        The SQL query to execute.
+	 * @param queryOptions Struct of query options to influence the query execution or result.
 	 *
 	 * @return An array of Structs, each representing a row of the result set (if any). If there are no results (say, for an UPDATE statement), an empty
 	 *         array is returned.
 	 */
-	public Struct[] execute( String query ) {
+	public Object execute( String query, IStruct queryOptions ) {
+		if ( queryOptions == null ) {
+			queryOptions = getDefaultQueryOptions();
+		}
 		try ( Connection conn = getConnection(); ) {
-			return execute( query, conn );
+			return execute( query, conn, queryOptions );
 		} catch ( SQLException e ) {
 			throw new BoxRuntimeException( "Unable to close connection:", e );
 		}
@@ -134,34 +135,35 @@ public class DataSource {
 	 * Note the connection passed in is NOT closed automatically. It is up to the caller to close the connection when they are done with it. If you want
 	 * an automanaged, i.e. autoclosed connection, use the <code>execute(String)</code> method.
 	 *
-	 * @param query The SQL query to execute.
+	 * @param query        The SQL query to execute.
+	 * @param conn         The connection to execute the query on. A connection is required - use <code>execute(String)</code> if you don't wish to
+	 *                     provide one.
+	 * @param queryOptions Struct of query options to influence the query execution or result.
 	 *
 	 * @return An array of Structs, each representing a row of the result set (if any). If there are no results (say, for an UPDATE statement), an empty
 	 *         array is returned.
 	 */
-	public Struct[] execute( String query, Connection conn ) {
+	public Object execute( String query, Connection conn, IStruct queryOptions ) {
+		if ( queryOptions == null ) {
+			queryOptions = getDefaultQueryOptions();
+		}
 		try ( Statement stmt = conn.createStatement() ) {
 			// @TODO: Implement parameterized queries with PreparedStatement.
-			boolean hasResult = stmt.execute( query );
+			// @TODO: Handle generated keys, i.e. stmt.execute( query, Statement.RETURN_GENERATED_KEYS );
+			stmt.execute( query );
 
-			if ( hasResult ) {
-				// Move to an abstract result processing method which looks at the query `returnType` option
-				ResultSet		resultSet	= stmt.getResultSet();
-				List<IStruct>	result		= new ArrayList<>();
-				while ( resultSet.next() ) {
-					IStruct				row			= new Struct();
-					ResultSetMetaData	metaData	= resultSet.getMetaData();
-					int					columnCount	= metaData.getColumnCount();
-					for ( int i = 1; i <= columnCount; i++ ) {
-						String	columnName	= metaData.getColumnName( i );
-						Object	columnValue	= resultSet.getObject( i );
-						row.put( columnName, columnValue );
-					}
-					result.add( row );
-				}
-				return result.toArray( new Struct[ 0 ] );
-			} else {
-				return new Struct[ 0 ];
+			switch ( queryOptions.getAsString( Key.returnType ) ) {
+				// @TODO: Validate the returntype argument? Or simply fall back to the query result?
+				// @TODO: Implement these return types.
+				// case "array_of_entity":
+				// break;
+				// case "struct":
+				// break;
+				case "array" :
+					return new StatementResult( stmt.getResultSet(), queryOptions ).toArray();
+				case "query" :
+				default :
+					return new StatementResult( stmt.getResultSet(), queryOptions ).toQuery();
 			}
 		} catch ( SQLException e ) {
 			throw new BoxRuntimeException( "Unable to execute query:", e );
@@ -221,4 +223,14 @@ public class DataSource {
 		}
 	}
 
+	/**
+	 * Defines the default query options
+	 *
+	 * @return A struct of default query options.
+	 */
+	private IStruct getDefaultQueryOptions() {
+		return Struct.of(
+		    "returntype", "array"
+		);
+	}
 }

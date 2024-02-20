@@ -17,6 +17,8 @@
  */
 package ortus.boxlang.runtime.types;
 
+import java.sql.Types;
+
 public enum QueryColumnType {
 
 	INTEGER,
@@ -61,6 +63,88 @@ public enum QueryColumnType {
 				return OBJECT;
 			default :
 				throw new RuntimeException( "Unknown QueryColumnType: " + type );
+		}
+	}
+
+	/**
+	 * Acquire a QueryColumnType from a SQL type. Useful for assembling Query objects from JDBC result sets.
+	 *
+	 * @param type The SQL type to convert.
+	 *
+	 * @return The QueryColumnType corresponding to the SQL type.
+	 */
+	public static QueryColumnType fromSQLType( int type ) {
+		switch ( type ) {
+			case Types.ARRAY :
+				return OBJECT;
+			case Types.BIGINT :
+				return BIGINT;
+			case Types.BINARY :
+				return BINARY;
+			case Types.BIT :
+				return BIT;
+			case Types.BLOB :
+				return OBJECT;
+			case Types.CLOB :
+				return OBJECT;
+			case Types.NCLOB :
+				return OBJECT;
+			case Types.DATALINK :
+				return OBJECT;
+			case Types.DATE :
+				return DATE;
+			case Types.DECIMAL :
+				return DECIMAL;
+			case Types.DISTINCT :
+				return OBJECT;
+			case Types.DOUBLE :
+			case Types.NUMERIC :
+				return DOUBLE;
+			case Types.FLOAT :
+				return DOUBLE;
+			case Types.INTEGER :
+				return INTEGER;
+			case Types.JAVA_OBJECT :
+				return OBJECT;
+			case Types.NULL :
+				return OBJECT;
+			case Types.OTHER :
+				return OBJECT;
+			case Types.REF :
+				return OBJECT;
+			case Types.STRUCT :
+				return OBJECT;
+			case Types.TIME :
+				return TIME;
+			case Types.TIMESTAMP :
+				return TIMESTAMP;
+			case Types.VARCHAR :
+				return VARCHAR;
+			// @TODO: Implement these return types.
+			// case Types.BOOLEAN:
+			// return BOOLEAN;
+			// case Types.CHAR:
+			// return CHAR;
+			// case Types.NCHAR:
+			// return NCHAR;
+			// case Types.LONGVARBINARY:
+			// return LONGVARBINARY;
+			// case Types.LONGVARCHAR:
+			// return LONGVARCHAR;
+			// case Types.REAL:
+			// return REAL;
+			// case Types.TINYINT:
+			// return TINYINT;
+			// case Types.VARBINARY:
+			// return VARBINARY;
+			// case Types.NVARCHAR:
+			// return NVARCHAR;
+			// case Types.SQLXML:
+			// return SQLXML;
+			// case Types.SMALLINT:
+			// return SMALLINT;
+			default :
+				return VARCHAR;
 		}
 	}
 }
