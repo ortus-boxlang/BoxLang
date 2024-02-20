@@ -89,21 +89,101 @@ public class StructKeyTranslateTest {
 
 	}
 
-	@DisplayName( "It tests the member function for StructKeyTranslate" )
+	@DisplayName( "It tests the BIF StructKeyTranslate with key retention" )
+	@Test
+	public void testBifKeyRetention() {
+		instance.executeSource(
+		    """
+		    result = {
+		    	cow: {
+		    		noise: "moo",
+		    		size: "large"
+		    	},
+		    	"bird.noise": "chirp",
+		    	"bird.size": "small"
+		    };
+		    structKeyTranslate( struct=result, retainKeys=true  );
+		    """,
+		    context );
+		assertTrue( variables.get( result ) instanceof IStruct );
+		assertTrue( variables.getAsStruct( result ).containsKey( Key.of( "cow" ) ) );
+		assertTrue( variables.getAsStruct( result ).containsKey( Key.of( "bird" ) ) );
+		assertTrue( variables.getAsStruct( result ).containsKey( Key.of( "bird.noise" ) ) );
+		assertTrue( variables.getAsStruct( result ).containsKey( Key.of( "bird.size" ) ) );
+		IStruct bird = StructCaster.cast( variables.getAsStruct( result ).get( Key.of( "bird" ) ) );
+		assertEquals( bird.get( Key.of( "noise" ) ), "chirp" );
+		assertEquals( bird.get( Key.of( "size" ) ), "small" );
+
+	}
+
+	@DisplayName( "It tests the BIF StructKeyTranslate with deep translation" )
+	@Test
+	public void testBifDeep() {
+		instance.executeSource(
+		    """
+		      result = {
+		      	cow: {
+		      		noise: "moo",
+		      		size: "large",
+		    	"location.city" : "Grand Rapids",
+		    	"location.state" : "Michigan"
+		      	},
+		      	"bird.noise": "chirp",
+		      	"bird.size": "small",
+		    "bird.location.city" : "Grand Rapids",
+		    "bird.location.state" : "Michigan"
+		      };
+		      structKeyTranslate( struct=result, deep=true  );
+		      """,
+		    context );
+		assertTrue( variables.get( result ) instanceof IStruct );
+		System.out.println( variables.getAsStruct( result ).toString() );
+		assertTrue( variables.getAsStruct( result ).containsKey( Key.of( "cow" ) ) );
+		assertTrue( variables.getAsStruct( result ).containsKey( Key.of( "bird" ) ) );
+		assertFalse( variables.getAsStruct( result ).containsKey( Key.of( "bird.noise" ) ) );
+		assertFalse( variables.getAsStruct( result ).containsKey( Key.of( "bird.size" ) ) );
+		assertFalse( variables.getAsStruct( result ).containsKey( Key.of( "bird.location.city" ) ) );
+		assertFalse( variables.getAsStruct( result ).containsKey( Key.of( "bird.location.state" ) ) );
+		IStruct cow = StructCaster.cast( variables.getAsStruct( result ).get( Key.of( "cow" ) ) );
+		assertTrue( cow.containsKey( Key.of( "location" ) ) );
+		assertFalse( cow.containsKey( Key.of( "location.city" ) ) );
+		assertFalse( cow.containsKey( Key.of( "location.state" ) ) );
+		assertEquals( cow.getAsStruct( Key.of( "location" ) ).get( Key.of( "city" ) ), "Grand Rapids" );
+		assertEquals( cow.getAsStruct( Key.of( "location" ) ).get( Key.of( "state" ) ), "Michigan" );
+		IStruct bird = StructCaster.cast( variables.getAsStruct( result ).get( Key.of( "bird" ) ) );
+		assertEquals( bird.get( Key.of( "noise" ) ), "chirp" );
+		assertEquals( bird.get( Key.of( "size" ) ), "small" );
+		assertTrue( bird.containsKey( Key.of( "location" ) ) );
+		assertFalse( bird.containsKey( Key.of( "location.city" ) ) );
+		assertEquals( bird.getAsStruct( Key.of( "location" ) ).get( Key.of( "city" ) ), "Grand Rapids" );
+		assertEquals( bird.getAsStruct( Key.of( "location" ) ).get( Key.of( "state" ) ), "Michigan" );
+
+	}
+
+	@DisplayName( "It tests the member function Struct.translateKeys" )
 	@Test
 	public void testMemberFunction() {
-		// Remove use the following examples to create a test for your member function
-		// Full source execution:
-		// instance.executeSource(
-		// """
-		// myObj="foo";
-		// result = myObj.StructKeyTranslate();
-		// """,
-		// context );
-		// assertThat( variables.get( result ) ).isEqualTo( "foo" );
-
-		// Statement execution only and return the result:
-		// assertThat( ( Boolean ) instance.executeStatement( " ' + "foo" +'.StructKeyTranslate()" ) ).isTrue();
+		instance.executeSource(
+		    """
+		    result = {
+		    	cow: {
+		    		noise: "moo",
+		    		size: "large"
+		    	},
+		    	"bird.noise": "chirp",
+		    	"bird.size": "small"
+		    };
+		    result.translateKeys();
+		    """,
+		    context );
+		assertTrue( variables.get( result ) instanceof IStruct );
+		assertTrue( variables.getAsStruct( result ).containsKey( Key.of( "cow" ) ) );
+		assertTrue( variables.getAsStruct( result ).containsKey( Key.of( "bird" ) ) );
+		assertFalse( variables.getAsStruct( result ).containsKey( Key.of( "bird.noise" ) ) );
+		assertFalse( variables.getAsStruct( result ).containsKey( Key.of( "bird.size" ) ) );
+		IStruct bird = StructCaster.cast( variables.getAsStruct( result ).get( Key.of( "bird" ) ) );
+		assertEquals( bird.get( Key.of( "noise" ) ), "chirp" );
+		assertEquals( bird.get( Key.of( "size" ) ), "small" );
 	}
 
 }
