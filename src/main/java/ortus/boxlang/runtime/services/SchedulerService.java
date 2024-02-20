@@ -107,7 +107,7 @@ public class SchedulerService extends BaseService {
 
 	/**
 	 * The shutdown event is fired when the runtime shuts down
-	 * 
+	 *
 	 * @param force If true, forces the shutdown of the scheduler
 	 */
 	@Override
@@ -200,10 +200,47 @@ public class SchedulerService extends BaseService {
 	 * @return The scheduler
 	 */
 	public IScheduler registerScheduler( IScheduler scheduler ) {
-		if ( this.schedulers.containsKey( Key.of( scheduler.getName() ) ) ) {
+		return registerScheduler( scheduler, false );
+	}
+
+	/**
+	 * Register a scheduler with the service
+	 *
+	 * @param scheduler The IScheduler to register
+	 * @param force     If true, forces the registration of the scheduler
+	 *
+	 * @throws BoxRuntimeException If a scheduler with the same name already exists
+	 *
+	 * @return The scheduler
+	 */
+	public IScheduler registerScheduler( IScheduler scheduler, Boolean force ) {
+		if ( this.schedulers.containsKey( Key.of( scheduler.getName() ) ) && !force ) {
 			throw new BoxRuntimeException( "A scheduler with the name [" + scheduler.getName() + "] already exists" );
 		}
 		this.schedulers.put( Key.of( scheduler.getName() ), scheduler );
+		return scheduler;
+	}
+
+	/**
+	 * This method is used to load a scheduler into the service. If the scheduler already exists, it will be replaced.
+	 * This is usually used from the ModuleService to load a module scheduler
+	 *
+	 * @param name      The name of the scheduler
+	 * @param scheduler The IScheduler to load
+	 *
+	 * @return
+	 */
+	public IScheduler loadScheduler( Key name, IScheduler scheduler ) {
+
+		System.out.println( "Loading scheduler [" + name + "]" );
+
+		// Register it
+		registerScheduler( scheduler.setName( name.getName() ), true );
+
+		// Configure it
+		scheduler.configure();
+
+		// Return it
 		return scheduler;
 	}
 
