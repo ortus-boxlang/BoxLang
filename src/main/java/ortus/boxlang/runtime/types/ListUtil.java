@@ -104,7 +104,9 @@ public class ListUtil {
 	    Boolean wholeDelimiter ) {
 
 		String[] result = null;
-		if ( wholeDelimiter ) {
+		if ( delimiter.length() == 0 ) {
+			result = list.split( "" );
+		} else if ( wholeDelimiter ) {
 			if ( includeEmpty ) {
 				result = StringUtils.splitByWholeSeparatorPreserveAllTokens( list, delimiter );
 			} else {

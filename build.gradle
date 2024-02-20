@@ -293,7 +293,7 @@ test {
 	systemProperties.putIfAbsent( "testboxdir", testboxDir)
 	systemProperties.putIfAbsent( "contentboxdir", contentboxDir)
 	systemProperties.putIfAbsent( "coldboxdir", coldboxDir)
-	dependsOn compileJava, compileTestJava, generateBIFServiceProviders, generateComponentServiceProviders
+	dependsOn compileJava, generateBIFServiceProviders, generateComponentServiceProviders, compileTestJava
 	exclude '**/resources/**'
 }
 
