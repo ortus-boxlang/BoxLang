@@ -36,14 +36,8 @@ public class Include extends Component {
 	 * --------------------------------------------------------------------------
 	 */
 
-	/**
-	 * Required by SLI
-	 */
 	public Include() {
-	}
-
-	public Include( Key name ) {
-		super( name );
+		super();
 		declaredAttributes = new Attribute[] {
 		    new Attribute( Key.template, "string", Set.of( Validator.REQUIRED, Validator.NON_EMPTY ) )
 		};

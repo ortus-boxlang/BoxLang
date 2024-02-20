@@ -44,14 +44,8 @@ public class Module extends Component {
 	 * --------------------------------------------------------------------------
 	 */
 
-	/**
-	 * Required by SLI
-	 */
 	public Module() {
-	}
-
-	public Module( Key name ) {
-		super( name );
+		super();
 		declaredAttributes = new Attribute[] {
 		    new Attribute( Key.template, "string" ),
 		    new Attribute( Key._NAME, "string" )

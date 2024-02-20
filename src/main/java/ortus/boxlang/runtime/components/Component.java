@@ -70,12 +70,15 @@ public abstract class Component {
 	}
 
 	/**
-	 * A base component
-	 *
+	 * Set name
+	 * 
 	 * @param name The name of the component
+	 * 
+	 * @return this
 	 */
-	protected Component( Key name ) {
+	public Component setName( Key name ) {
 		this.name = name;
+		return this;
 	}
 
 	/**

@@ -35,14 +35,8 @@ public class Abort extends Component {
 	 * --------------------------------------------------------------------------
 	 */
 
-	/**
-	 * Required by SLI
-	 */
 	public Abort() {
-	}
-
-	public Abort( Key name ) {
-		super( name );
+		super();
 		declaredAttributes = new Attribute[] {
 		    new Attribute( Key.showerror, "string" ),
 		    new Attribute( Key.type, "string", "request" )

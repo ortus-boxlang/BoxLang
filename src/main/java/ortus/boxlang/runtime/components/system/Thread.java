@@ -21,21 +21,14 @@ import ortus.boxlang.runtime.components.Attribute;
 import ortus.boxlang.runtime.components.BoxComponent;
 import ortus.boxlang.runtime.components.Component;
 import ortus.boxlang.runtime.context.IBoxContext;
-import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
 @BoxComponent( requiresBody = true )
 public class Thread extends Component {
 
-	/**
-	 * Required by SLI
-	 */
 	public Thread() {
-	}
-
-	public Thread( Key name ) {
-		super( name );
+		super();
 		declaredAttributes = new Attribute[] {
 		};
 	}

@@ -118,9 +118,10 @@ public class ComponentDescriptor {
 			synchronized ( this ) {
 				// Double check inside lock
 				if ( this.componentInstance == null ) {
-					this.componentInstance = ( Component ) DynamicObject.of( this.componentClass )
-					    .invokeConstructor( ( IBoxContext ) null, new Object[] { name } )
-					    .getTargetInstance();
+					this.componentInstance = ( ( Component ) DynamicObject.of( this.componentClass )
+					    .invokeConstructor( ( IBoxContext ) null, new Object[] {} )
+					    .getTargetInstance() )
+					        .setName( name );
 				}
 			}
 		}

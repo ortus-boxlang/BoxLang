@@ -20,7 +20,6 @@ package ortus.boxlang.runtime.components.system;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
-import ortus.boxlang.runtime.types.ListUtil;
 
 import ortus.boxlang.runtime.components.Attribute;
 import ortus.boxlang.runtime.components.BoxComponent;
@@ -35,6 +34,7 @@ import ortus.boxlang.runtime.operators.EqualsEquals;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.IStruct;
+import ortus.boxlang.runtime.types.ListUtil;
 import ortus.boxlang.runtime.types.Query;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
@@ -47,14 +47,8 @@ public class Loop extends Component {
 	 * --------------------------------------------------------------------------
 	 */
 
-	/**
-	 * Required by SLI
-	 */
 	public Loop() {
-	}
-
-	public Loop( Key name ) {
-		super( name );
+		super();
 		declaredAttributes = new Attribute[] {
 		    new Attribute( Key.array, "array" ),
 		    new Attribute( Key.item, "string", Set.of( Validator.NON_EMPTY ) ),

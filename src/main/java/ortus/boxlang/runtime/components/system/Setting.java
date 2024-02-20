@@ -21,20 +21,13 @@ import ortus.boxlang.runtime.components.Attribute;
 import ortus.boxlang.runtime.components.BoxComponent;
 import ortus.boxlang.runtime.components.Component;
 import ortus.boxlang.runtime.context.IBoxContext;
-import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.IStruct;
 
 @BoxComponent
 public class Setting extends Component {
 
-	/**
-	 * Required by SLI
-	 */
 	public Setting() {
-	}
-
-	public Setting( Key name ) {
-		super( name );
+		super();
 		declaredAttributes = new Attribute[] {
 		};
 	}

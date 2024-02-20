@@ -36,14 +36,8 @@ public class Dump extends Component {
 	 * --------------------------------------------------------------------------
 	 */
 
-	/**
-	 * Required by SLI
-	 */
 	public Dump() {
-	}
-
-	public Dump( Key name ) {
-		super( name );
+		super();
 		declaredAttributes = new Attribute[] {
 		    new Attribute( Key.var, "any", Set.of( Validator.REQUIRED ) )
 		};

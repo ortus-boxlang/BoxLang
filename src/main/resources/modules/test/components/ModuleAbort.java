@@ -35,14 +35,8 @@ public class ModuleAbort extends Component {
 	 * --------------------------------------------------------------------------
 	 */
 
-	/**
-	 * Required by SLI
-	 */
 	public ModuleAbort() {
-	}
-
-	public ModuleAbort( Key name ) {
-		super( name );
+		super();
 		declaredAttributes = new Attribute[] {
 		    new Attribute( Key.showerror, "string" ),
 		    new Attribute( Key.type, "string", "request" )

@@ -45,14 +45,8 @@ public class Output extends Component {
 	 * --------------------------------------------------------------------------
 	 */
 
-	/**
-	 * Required by SLI
-	 */
 	public Output() {
-	}
-
-	public Output( Key name ) {
-		super( name );
+		super();
 		declaredAttributes = new Attribute[] {
 		    new Attribute( Key.query, "any" ),
 		    new Attribute( Key.group, "string", Set.of( Validator.NON_EMPTY ) ),

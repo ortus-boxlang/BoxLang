@@ -27,14 +27,8 @@ import ortus.boxlang.runtime.types.IStruct;
 @BoxComponent( requiresBody = true )
 public class Lock extends Component {
 
-	/**
-	 * Required by SLI
-	 */
 	public Lock() {
-	}
-
-	public Lock( Key name ) {
-		super( name );
+		super();
 		declaredAttributes = new Attribute[] {
 		    new Attribute( Key._NAME, "string" ),
 		    new Attribute( Key.type, "string" ),

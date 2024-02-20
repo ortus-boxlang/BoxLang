@@ -38,14 +38,8 @@ public class SaveContent extends Component {
 	 * --------------------------------------------------------------------------
 	 */
 
-	/**
-	 * Required by SLI
-	 */
 	public SaveContent() {
-	}
-
-	public SaveContent( Key name ) {
-		super( name );
+		super();
 		declaredAttributes = new Attribute[] {
 		    new Attribute( Key.variable, "string", Set.of( Validator.REQUIRED, Validator.NON_EMPTY ) ),
 		    new Attribute( Key.trim, "boolean", false ),

@@ -37,14 +37,8 @@ public class Param extends Component {
 	 * --------------------------------------------------------------------------
 	 */
 
-	/**
-	 * Required by SLI
-	 */
 	public Param() {
-	}
-
-	public Param( Key name ) {
-		super( name );
+		super();
 		declaredAttributes = new Attribute[] {
 		    new Attribute( Key._NAME, "string", Set.of( Validator.REQUIRED ) ),
 		    new Attribute( Key.type, "string" ),

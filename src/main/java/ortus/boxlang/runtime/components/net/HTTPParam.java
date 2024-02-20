@@ -37,16 +37,13 @@ public class HTTPParam extends Component {
 	 * --------------------------------------------------------------------------
 	 */
 
-	public HTTPParam() {
-	}
-
 	/**
 	 * Constructor
 	 *
 	 * @param name The name of the component
 	 */
-	public HTTPParam( Key name ) {
-		super( name );
+	public HTTPParam() {
+		super();
 		declaredAttributes = new Attribute[] {
 		    new Attribute( Key.type, "string", Set.of(
 		        Validator.REQUIRED,

@@ -42,18 +42,12 @@ public class HTTP extends Component {
 	 */
 
 	/**
-	 * Required by SLI
-	 */
-	public HTTP() {
-	}
-
-	/**
 	 * Constructor
 	 *
 	 * @param name The name of the component
 	 */
-	public HTTP( Key name ) {
-		super( name );
+	public HTTP() {
+		super();
 		declaredAttributes = new Attribute[] {
 		    new Attribute( Key.URL, "string", Set.of(
 		        Validator.REQUIRED,
