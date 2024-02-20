@@ -4,11 +4,16 @@ import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.*;
 import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.Struct;
+import ortus.boxlang.runtime.types.exceptions.DatabaseException;
 
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
+
+import static java.util.stream.Collectors.groupingBy;
+import static java.util.stream.Collectors.toMap;
 
 public class ExecutedQuery {
 
@@ -21,43 +26,51 @@ public class ExecutedQuery {
 	public final List<QueryColumn> columns;
 	private Object generatedKey;
 
-	public ExecutedQuery(PendingQuery pendingQuery, PreparedStatement statement, long executionTime) throws SQLException {
+	public ExecutedQuery(PendingQuery pendingQuery, PreparedStatement statement, long executionTime, boolean hasResults) {
 		this.pendingQuery = pendingQuery;
 		this.statement = statement;
 		this.executionTime = executionTime;
 
-		this.resultSet = this.statement.getResultSet();
-		this.results = new ArrayList<>();
-		this.columns = new ArrayList<>();
+		try ( ResultSet rs = this.statement.getResultSet() ) {
+			this.resultSet = rs;
 
-		if (this.resultSet != null) {
-			ResultSetMetaData resultSetMetaData = this.resultSet.getMetaData();
-			int columnCount = resultSetMetaData.getColumnCount();
+			this.results = new ArrayList<>();
+			this.columns = new ArrayList<>();
 
-			// The column count starts from 1
-			for (int i = 1; i <= columnCount; i++) {
-				columns.add(new QueryColumn(
-					resultSetMetaData.getColumnLabel(i),
-					resultSetMetaData.getColumnType(i)
-				));
-			}
+			if (this.resultSet != null) {
+				ResultSetMetaData resultSetMetaData = this.resultSet.getMetaData();
+				int columnCount = resultSetMetaData.getColumnCount();
 
-			while (this.resultSet.next()) {
-				Struct row = new Struct(IStruct.TYPES.LINKED);
-				int rowNum = this.resultSet.getRow();
-				for (QueryColumn column : this.columns) {
-					row.put(column.name, this.resultSet.getObject(rowNum));
+				// The column count starts from 1
+				for (int i = 1; i <= columnCount; i++) {
+					columns.add(new QueryColumn(
+						resultSetMetaData.getColumnLabel(i),
+						resultSetMetaData.getColumnType(i)
+					));
 				}
-				this.results.add(row);
+
+				while (this.resultSet.next()) {
+					Struct row = new Struct(IStruct.TYPES.LINKED);
+					int rowNum = this.resultSet.getRow();
+					for (QueryColumn column : this.columns) {
+						row.put(column.name, this.resultSet.getObject(rowNum));
+					}
+					this.results.add(row);
+				}
 			}
+
+			this.recordCount = this.results.size();
+		} catch (SQLException e) {
+			throw new DatabaseException(e.getMessage(), e);
 		}
 
-		this.recordCount = this.results.size();
-
-		ResultSet generatedKeysResultSet = this.statement.getGeneratedKeys();
-		if (generatedKeysResultSet.next()) {
-            this.generatedKey = generatedKeysResultSet.getObject(generatedKeysResultSet.getRow());
-        }
+		try (ResultSet generatedKeysResultSet = this.statement.getGeneratedKeys()) {
+			if (generatedKeysResultSet.next()) {
+				this.generatedKey = generatedKeysResultSet.getObject(generatedKeysResultSet.getRow());
+			}
+		} catch (SQLException e) {
+			throw new DatabaseException(e.getMessage(), e);
+		}
 	}
 
 	public List<Struct> getResults() {
@@ -77,8 +90,17 @@ public class ExecutedQuery {
 		return q;
 	}
 
+	public IStruct getResultsAsStruct(String key) {
+		Map<Object, List<Struct>> groupedResults = this.results.stream().collect(groupingBy(r -> r.get(key)));
+		Map<Object, Object> groupedArray = groupedResults.entrySet().stream().collect(toMap(Map.Entry::getKey, e -> new Array(e.getValue())));
+		return Struct.fromMap(
+			IStruct.TYPES.LINKED,
+			groupedArray
+        );
+	}
+
 	public Struct getResultStruct() {
-		/**
+		/*
 		 * * SQL: The SQL statement that was executed. (string)
 		 * * Cached: If the query was cached. (boolean)
 		 * * SqlParameters: An ordered Array of cfqueryparam values. (array)

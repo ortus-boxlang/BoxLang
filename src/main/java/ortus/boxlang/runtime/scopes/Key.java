@@ -91,6 +91,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key	caches						= Key.of( "caches" );
 	public static final Key	callback					= Key.of( "callback" );
 	public static final Key	caller						= Key.of( "caller" );
+	public static final Key	cfsqltype					= Key.of( "cfsqltype" );
 	public static final Key	charset						= Key.of( "charset" );
 	public static final Key	charsetOrBufferSize			= Key.of( "charsetOrBufferSize" );
 	public static final Key	childname					= Key.of( "childname" );
@@ -220,6 +221,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key	mappings					= Key.of( "mappings" );
 	public static final Key	mask						= Key.of( "mask" );
 	public static final Key	max							= Key.of( "max" );
+	public static final Key	maxLength					= Key.of( "maxLength" );
 	public static final Key	maxRows						= Key.of( "maxRows" );
 	public static final Key	maxThreads					= Key.of( "maxThreads" );
 	public static final Key	merge						= Key.of( "merge" );
@@ -244,6 +246,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key	newDelimiter				= Key.of( "newDelimiter" );
 	public static final Key	newPath						= Key.of( "newPath" );
 	public static final Key	noInit						= Key.of( "noInit" );
+	public static final Key	nulls						= Key.of( "null" );
 	public static final Key	number						= Key.of( "number" );
 	public static final Key	number1						= Key.of( "number1" );
 	public static final Key	number2						= Key.of( "number2" );
@@ -291,6 +294,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key	rJustify					= Key.of( "rJustify" );
 	public static final Key	rowData						= Key.of( "rowData" );
 	public static final Key	runtime						= Key.of( "runtime" );
+	public static final Key	scale						= Key.of( "scale" );
 	public static final Key	scope						= Key.of( "scope" );
 	public static final Key	script_name					= Key.of( "script_name" );
 	public static final Key	second						= Key.of( "second" );
@@ -307,6 +311,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key	sortOrder					= Key.of( "sortOrder" );
 	public static final Key	sortType					= Key.of( "sortType" );
 	public static final Key	source						= Key.of( "source" );
+	public static final Key	sqltype						= Key.of( "sqltype" );
 	public static final Key	stackTrace					= Key.of( "stackTrace" );
 	public static final Key	start						= Key.of( "start" );
 	public static final Key	startRow					= Key.of( "startRow" );
