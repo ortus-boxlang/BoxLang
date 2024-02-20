@@ -25,7 +25,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
@@ -214,27 +213,27 @@ class SchedulerTest {
 		}
 	}
 
-	@Test
-	@Disabled
-	void testFullSchedulerLifecycle() {
-		IScheduler scheduler = new modules.test.config.Scheduler();
-		scheduler.configure();
-		assertThat( scheduler.hasStarted() ).isFalse();
+	// @Test
+	// @Disabled
+	// void testFullSchedulerLifecycle() {
+	// IScheduler scheduler = new modules.test.config.Scheduler();
+	// scheduler.configure();
+	// assertThat( scheduler.hasStarted() ).isFalse();
 
-		// Startup the scheduler and wait a bit
-		scheduler.startup();
-		assertThat( scheduler.hasStarted() ).isTrue();
+	// // Startup the scheduler and wait a bit
+	// scheduler.startup();
+	// assertThat( scheduler.hasStarted() ).isTrue();
 
-		try {
-			System.out.println( "Sleeping for 3 seconds....." );
-			Thread.sleep( 3000 );
-		} catch ( InterruptedException e ) {
-			e.printStackTrace();
-		}
+	// try {
+	// System.out.println( "Sleeping for 3 seconds....." );
+	// Thread.sleep( 3000 );
+	// } catch ( InterruptedException e ) {
+	// e.printStackTrace();
+	// }
 
-		// Shutdown the scheduler
-		scheduler.shutdown( true );
-		assertThat( scheduler.hasStarted() ).isFalse();
-	}
+	// // Shutdown the scheduler
+	// scheduler.shutdown( true );
+	// assertThat( scheduler.hasStarted() ).isFalse();
+	// }
 
 }
