@@ -162,17 +162,8 @@ shadowJar {
 		attributes 'Description': 'This is the Ortus BoxLang Distribution JAR'
 	}
 	minimize {
-		exclude(dependency('org.slf4j:slf4j-jdk14:.*'))
+		exclude( dependency( 'org.slf4j:slf4j-jdk14:.*' ) )
 	}
-}
-
-/**
- * Copy dependencies to build/dependencies
- * Useful for testing and deebugging
- */
-task getDependencies( type: Copy ) {
-  from sourceSets.main.runtimeClasspath
-  into 'build/dependencies/'
 }
 
 /**
@@ -190,11 +181,6 @@ tasks.named( 'test' ) {
     // Use JUnit Platform for unit tests.
     useJUnitPlatform()
 }
-
-/**
- * Custom tasks to run in the `build` task lifecycle
- */
- build.finalizedBy( javadoc )
 
 /**
  * Compile Java Customizations
@@ -217,7 +203,7 @@ task compileCoreModules( type: JavaCompile ) {
  */
 compileTestJava {
 	source sourceSets.test.java
-	dependsOn compileJava, compileCoreModules,  generateTestGrammarSource
+	dependsOn compileJava, compileCoreModules, generateTestGrammarSource
 }
 
 /**
@@ -242,9 +228,13 @@ generateTestGrammarSource {
 	outputDirectory = file( "$projectDir/$antlrGeneratedParserBaseDir/$antlrGeneratedParserPackageDir" )
 }
 
-/****************************************************************
- * CUSTOM TASKS
- ****************************************************************/
+/**
+ * Custom task: clean the ANTLR generated sources
+ */
+clean {
+	// Clean the ANTLR generated sources
+	delete generatedSrcDir
+}
 
 /**
  * Source Code Formatting
@@ -271,8 +261,7 @@ task generateBIFServiceProviders( type: JavaExec ) {
     classpath = sourceSets.test.runtimeClasspath
     main = 'tools.BIFServiceProviderGenerator'
 }
-// Make the build task depend on this custom task
-build.dependsOn generateBIFServiceProviders
+
 /**
  * Generate the Component Service Providers
  */
@@ -280,8 +269,6 @@ task generateComponentServiceProviders( type: JavaExec ) {
     classpath = sourceSets.test.runtimeClasspath
     main = 'tools.ComponentServiceProviderGenerator'
 }
-// Make the build task depend on this custom task
-build.dependsOn generateComponentServiceProviders
 
 /**
  * Test Task Customizations
@@ -293,7 +280,7 @@ test {
 	systemProperties.putIfAbsent( "testboxdir", testboxDir)
 	systemProperties.putIfAbsent( "contentboxdir", contentboxDir)
 	systemProperties.putIfAbsent( "coldboxdir", coldboxDir)
-	dependsOn compileJava, generateBIFServiceProviders, generateComponentServiceProviders, compileTestJava
+	dependsOn compileJava, compileTestJava, generateBIFServiceProviders, generateComponentServiceProviders
 	exclude '**/resources/**'
 }
 
@@ -304,14 +291,6 @@ task installCommandBoxDependencies( type: Exec ) {
 	// Set the command to execute your operating system binary
 	commandLine 'box', 'install'
 	workingDir = project.projectDir
-}
-
-/**
- * Custom task: clean the ANTLR generated sources
- */
-clean {
-	// Clean the ANTLR generated sources
-	delete generatedSrcDir
 }
 
 /**
@@ -340,3 +319,19 @@ task bumpPatchVersion {
 		bumpVersion( false, false, true )
 	}
 }
+
+/**
+ * Copy dependencies to build/dependencies
+ * Useful for testing and deebugging
+ */
+task getDependencies( type: Copy ) {
+  from sourceSets.main.runtimeClasspath
+  into 'build/dependencies/'
+}
+
+/**
+ * Custom tasks to run in the `build` task lifecycle
+ * It's last due to groovy being dump and not reading the order of the tasks
+ */
+ build.finalizedBy( javadoc )
+ build.dependsOn generateBIFServiceProviders, generateComponentServiceProviders
