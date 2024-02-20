@@ -211,6 +211,7 @@ ortus.boxlang.runtime.bifs.global.struct.StructIsOrdered
 ortus.boxlang.runtime.bifs.global.struct.StructKeyArray
 ortus.boxlang.runtime.bifs.global.struct.StructKeyExists
 ortus.boxlang.runtime.bifs.global.struct.StructKeyList
+ortus.boxlang.runtime.bifs.global.struct.StructKeyTranslate
 ortus.boxlang.runtime.bifs.global.struct.StructMap
 ortus.boxlang.runtime.bifs.global.struct.StructNew
 ortus.boxlang.runtime.bifs.global.struct.StructReduce
