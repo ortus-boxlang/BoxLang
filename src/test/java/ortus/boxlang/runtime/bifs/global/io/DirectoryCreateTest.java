@@ -47,8 +47,8 @@ public class DirectoryCreateTest {
 	static IBoxContext	context;
 	static IScope		variables;
 	static Key			result			= new Key( "result" );
-	static String		tmpDirectory	= "src/test/resources/tmp";
-	static String		targetDirectory	= "src/test/resources/tmp/nested/path";
+	static String		tmpDirectory	= "src/test/resources/tmp/directoryCreateTest";
+	static String		targetDirectory	= "src/test/resources/tmp/directoryCreateTest/nested/path";
 
 	@BeforeAll
 	public static void setUp() {
@@ -64,8 +64,8 @@ public class DirectoryCreateTest {
 
 	@BeforeEach
 	public void setupEach() throws IOException {
-		if ( FileSystemUtil.exists( "src/test/resources/tmp/nested" ) ) {
-			FileSystemUtil.deleteDirectory( "src/test/resources/tmp/nested", true );
+		if ( FileSystemUtil.exists( tmpDirectory + "/nested" ) ) {
+			FileSystemUtil.deleteDirectory( tmpDirectory + "/nested", true );
 		}
 		variables.clear();
 	}

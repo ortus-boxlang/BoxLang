@@ -49,10 +49,10 @@ public class FileCloseTest {
 	static IScope			variables;
 	static Key				result			= new Key( "result" );
 
-	private static String	tmpDirectory	= "src/test/resources/tmp";
-	private static String	testFile		= "src/test/resources/tmp/file-test.txt";
-	private static String	emptyFile		= "src/test/resources/tmp/file-write-test.txt";
-	static String			testBinaryFile	= "src/test/resources/tmp/test.jpg";
+	private static String	tmpDirectory	= "src/test/resources/tmp/fileCloseTest";
+	private static String	testFile		= "src/test/resources/tmp/fileCloseTest/file-test.txt";
+	private static String	emptyFile		= "src/test/resources/tmp/fileCloseTest/file-write-test.txt";
+	static String			testBinaryFile	= "src/test/resources/tmp/fileCloseTest/test.jpg";
 	private static File		readFile		= null;
 	private static File		writeFile		= null;
 

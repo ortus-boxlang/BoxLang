@@ -47,7 +47,7 @@ public class DirectoryDeleteTest {
 	static IBoxContext	context;
 	static IScope		variables;
 	static Key			result			= new Key( "result" );
-	static String		tmpDirectory	= "src/test/resources/tmp";
+	static String		tmpDirectory	= "src/test/resources/tmp/directoryDeleteTest";
 	static String		testDirectory	= tmpDirectory + "/foo";
 
 	@BeforeAll

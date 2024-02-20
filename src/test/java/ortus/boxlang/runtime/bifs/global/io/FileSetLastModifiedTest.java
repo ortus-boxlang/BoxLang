@@ -48,8 +48,8 @@ public class FileSetLastModifiedTest {
 	static IBoxContext	context;
 	static IScope		variables;
 	static Key			result			= new Key( "result" );
-	static String		testTextFile	= "src/test/resources/tmp/time.txt";
-	static String		tmpDirectory	= "src/test/resources/tmp";
+	static String		testTextFile	= "src/test/resources/tmp/FileSetLastModifiedTest/time.txt";
+	static String		tmpDirectory	= "src/test/resources/tmp/FileSetLastModifiedTest";
 	static Instant		creationTime	= null;
 	static File			modFile			= null;
 

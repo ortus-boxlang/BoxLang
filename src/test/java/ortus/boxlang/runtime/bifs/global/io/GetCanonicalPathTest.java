@@ -46,9 +46,9 @@ public class GetCanonicalPathTest {
 	static IBoxContext	context;
 	static IScope		variables;
 	static Key			result				= new Key( "result" );
-	static String		testTextFile		= "src/test/resources/tmp/time.txt";
-	static String		relativeTextFile	= "src/test/resources/tmp/../tmp/time.txt";
-	static String		tmpDirectory		= "src/test/resources/tmp";
+	static String		testTextFile		= "src/test/resources/tmp/GetCanonicalPathTest/time.txt";
+	static String		relativeTextFile	= "src/test/resources/tmp/GetCanonicalPathTest/../tmp/time.txt";
+	static String		tmpDirectory		= "src/test/resources/tmp/GetCanonicalPathTest";
 
 	@BeforeAll
 	public static void setUp() throws IOException {

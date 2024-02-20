@@ -48,9 +48,9 @@ public class FileReadLineTest {
 	static IScope			variables;
 	static Key				result			= new Key( "result" );
 
-	private static String	tmpDirectory	= "src/test/resources/tmp";
-	private static String	testFile		= "src/test/resources/tmp/file-read-line-test.txt";
-	private static String	emptyFile		= "src/test/resources/tmp/empty.txt";
+	private static String	tmpDirectory	= "src/test/resources/tmp/fileReadLineTest";
+	private static String	testFile		= "src/test/resources/tmp/fileReadLineTest/file-read-line-test.txt";
+	private static String	emptyFile		= "src/test/resources/tmp/fileReadLineTest/empty.txt";
 	private static File		writeFile		= null;
 	private static File		readFile		= null;
 

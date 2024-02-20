@@ -50,9 +50,9 @@ public class DirectoryMoveTest {
 	static IBoxContext	context;
 	static IScope		variables;
 	static Key			result			= new Key( "result" );
-	static String		tmpDirectory	= "src/test/resources/tmp";
-	static String		source			= "src/test/resources/tmp/start";
-	static String		destination		= "src/test/resources/tmp/end";
+	static String		tmpDirectory	= "src/test/resources/tmp/directoryMoveTest";
+	static String		source			= "src/test/resources/tmp/directoryMoveTest/start";
+	static String		destination		= "src/test/resources/tmp/directoryMoveTest/end";
 	static Object[]		sourceObjects	= new Object[] {
 	    "test.txt",
 	    "nested/test.txt",

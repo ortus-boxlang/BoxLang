@@ -47,8 +47,8 @@ public class FileWriteLineTest {
 	static IScope			variables;
 	static Key				result			= new Key( "result" );
 
-	private static String	tmpDirectory	= "src/test/resources/tmp";
-	private static String	emptyFile		= "src/test/resources/tmp/file-write-line-test.txt";
+	private static String	tmpDirectory	= "src/test/resources/tmp/fileWriteLineTest";
+	private static String	emptyFile		= "src/test/resources/tmp/fileWriteLineTest/file-write-line-test.txt";
 	private static File		writeFile		= null;
 
 	@BeforeAll

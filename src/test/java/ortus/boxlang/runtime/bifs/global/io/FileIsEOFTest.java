@@ -50,9 +50,9 @@ public class FileIsEOFTest {
 	static IScope			variables;
 	static Key				result			= new Key( "result" );
 
-	private static String	tmpDirectory	= "src/test/resources/tmp";
-	private static String	testFile		= "src/test/resources/tmp/file-test.txt";
-	private static String	emptyFile		= "src/test/resources/tmp/file-write-test.txt";
+	private static String	tmpDirectory	= "src/test/resources/tmp/fileIsEOFTest";
+	private static String	testFile		= "src/test/resources/tmp/fileIsEOFTest/file-test.txt";
+	private static String	emptyFile		= "src/test/resources/tmp/fileIsEOFTest/file-write-test.txt";
 	private static File		readFile		= null;
 	private static File		writeFile		= null;
 

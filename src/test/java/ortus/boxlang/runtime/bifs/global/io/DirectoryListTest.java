@@ -48,7 +48,7 @@ public class DirectoryListTest {
 	static IBoxContext	context;
 	static IScope		variables;
 	static Key			result			= new Key( "result" );
-	static String		tmpDirectory	= "src/test/resources/tmp";
+	static String		tmpDirectory	= "src/test/resources/tmp/directoryListTest";
 	static String		testDirectory	= tmpDirectory + "/foo";
 	static String		testFile1		= testDirectory + "/test.txt";
 	static String		testDirectory2	= testDirectory + "/bar";

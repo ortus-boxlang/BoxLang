@@ -50,9 +50,9 @@ public class FileSeekTest {
 	static IScope			variables;
 	static Key				result			= new Key( "result" );
 
-	private static String	tmpDirectory	= "src/test/resources/tmp";
-	private static String	testFile		= "src/test/resources/tmp/file-seek-test.txt";
-	static String			testBinaryFile	= "src/test/resources/tmp/test.jpg";
+	private static String	tmpDirectory	= "src/test/resources/tmp/fileSeekTest";
+	private static String	testFile		= "src/test/resources/tmp/fileSeekTest/file-seek-test.txt";
+	static String			testBinaryFile	= "src/test/resources/tmp/fileSeekTest/test.jpg";
 	private static File		writeFile		= null;
 
 	@BeforeAll

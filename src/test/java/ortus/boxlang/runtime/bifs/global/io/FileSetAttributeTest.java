@@ -56,8 +56,8 @@ public class FileSetAttributeTest {
 	static IBoxContext	context;
 	static IScope		variables;
 	static Key			result			= new Key( "result" );
-	static String		testTextFile	= "src/test/resources/tmp/time.txt";
-	static String		tmpDirectory	= "src/test/resources/tmp";
+	static String		testTextFile	= "src/test/resources/tmp/FileSetAttributeTest/time.txt";
+	static String		tmpDirectory	= "src/test/resources/tmp/FileSetAttributeTest";
 	static Instant		creationTime	= null;
 
 	@BeforeAll

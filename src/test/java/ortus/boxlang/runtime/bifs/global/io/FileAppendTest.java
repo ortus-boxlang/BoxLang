@@ -47,8 +47,8 @@ public class FileAppendTest {
 	static IScope			variables;
 	static Key				result			= new Key( "result" );
 
-	private static String	tmpDirectory	= "src/test/resources/tmp";
-	private static String	emptyFile		= "src/test/resources/tmp/file-append-test.txt";
+	private static String	tmpDirectory	= "src/test/resources/tmp/fileAppendTest";
+	private static String	emptyFile		= "src/test/resources/tmp/fileAppendTest/file-append-test.txt";
 	private static File		writeFile		= null;
 
 	@BeforeAll

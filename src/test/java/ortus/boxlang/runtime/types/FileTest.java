@@ -32,9 +32,9 @@ import ortus.boxlang.runtime.util.FileSystemUtil;
 
 public class FileTest {
 
-	private static String	tmpDirectory	= "src/test/resources/tmp";
-	private static String	testFile		= "src/test/resources/tmp/file-test.txt";
-	private static String	emptyFile		= "src/test/resources/tmp/file-write-test.txt";
+	private static String	tmpDirectory	= "src/test/resources/tmp/FileTest";
+	private static String	testFile		= "src/test/resources/tmp/FileTest/file-test.txt";
+	private static String	emptyFile		= "src/test/resources/tmp/FileTest/file-write-test.txt";
 	private static File		readFile		= null;
 	private static File		writeFile		= null;
 

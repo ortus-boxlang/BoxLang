@@ -47,11 +47,11 @@ public class FileWriteTest {
 	static IBoxContext	context;
 	static IScope		variables;
 	static Key			result			= new Key( "result" );
-	static String		testTextFile	= "src/test/resources/tmp/text.txt";
-	static String		testTextFile2	= "src/test/resources/tmp/nested/path/text2.txt";
-	static String		testNestedFile	= "src/test/resources/tmp/nested/path/text.txt";
-	static String		testBinaryFile	= "src/test/resources/tmp/test.jpg";
-	static String		tmpDirectory	= "src/test/resources/tmp";
+	static String		testTextFile	= "src/test/resources/tmp/FileWriteTest/text.txt";
+	static String		testTextFile2	= "src/test/resources/tmp/FileWriteTest/nested/path/text2.txt";
+	static String		testNestedFile	= "src/test/resources/tmp/FileWriteTest/nested/path/text.txt";
+	static String		testBinaryFile	= "src/test/resources/tmp/FileWriteTest/test.jpg";
+	static String		tmpDirectory	= "src/test/resources/tmp/FileWriteTest";
 
 	@BeforeAll
 	public static void setUp() throws IOException {

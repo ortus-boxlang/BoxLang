@@ -48,10 +48,10 @@ public class FileCopyTest {
 	static IBoxContext	context;
 	static IScope		variables;
 	static Key			result					= new Key( "result" );
-	static String		tmpDirectory			= "src/test/resources/tmp";
-	static String		sourceFile				= "src/test/resources/tmp/source.txt";
-	static String		destinationFile			= "src/test/resources/tmp/destination.txt";
-	static String		nestedDestinationFile	= "src/test/resources/tmp/nested/further/destination.txt";
+	static String		tmpDirectory			= "src/test/resources/tmp/fileCopyTest";
+	static String		sourceFile				= "src/test/resources/tmp/fileCopyTest/source.txt";
+	static String		destinationFile			= "src/test/resources/tmp/fileCopyTest/destination.txt";
+	static String		nestedDestinationFile	= "src/test/resources/tmp/fileCopyTest/nested/further/destination.txt";
 
 	@BeforeAll
 	public static void setUp() {
@@ -84,8 +84,8 @@ public class FileCopyTest {
 	@AfterEach
 	public void teardownEach() throws IOException {
 		Files.deleteIfExists( Path.of( destinationFile ) );
-		if ( FileSystemUtil.exists( "src/test/resources/tmp/nested" ) ) {
-			FileSystemUtil.deleteDirectory( "src/test/resources/tmp/nested", true );
+		if ( FileSystemUtil.exists( tmpDirectory + "/nested" ) ) {
+			FileSystemUtil.deleteDirectory( tmpDirectory + "/nested", true );
 		}
 		variables.clear();
 	}

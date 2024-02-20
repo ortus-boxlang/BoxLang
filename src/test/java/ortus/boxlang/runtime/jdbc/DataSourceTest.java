@@ -87,7 +87,7 @@ public class DataSourceTest {
 	@Test
 	void testDerbyConnectionFunnyKeyCasing() throws SQLException {
 		DataSource	funkyDatasource	= new DataSource( Struct.of(
-		    "JDBCurl", "jdbc:derby:src/test/resources/tmp/testDB;create=true"
+		    "JDBCurl", "jdbc:derby:src/test/resources/tmp/DataSourceTests/testDB;create=true"
 		) );
 		Connection	conn			= funkyDatasource.getConnection();
 		assertThat( conn ).isInstanceOf( Connection.class );
@@ -99,7 +99,7 @@ public class DataSourceTest {
 		DataSource	myDatasource	= new DataSource( Struct.of(
 		    "username", "user",
 		    "password", "password",
-		    "jdbcUrl", "jdbc:derby:src/test/resources/tmp/testDB;create=true"
+		    "jdbcUrl", "jdbc:derby:src/test/resources/tmp/DataSourceTests/testDB;create=true"
 		) );
 		Connection	conn			= myDatasource.getConnection();
 		assertThat( conn ).isInstanceOf( Connection.class );

@@ -50,9 +50,9 @@ public class FileGetMimeTypeTest {
 	static IBoxContext	context;
 	static IScope		variables;
 	static Key			result			= new Key( "result" );
-	static String		testTextFile	= "src/test/resources/tmp/text.txt";
-	static String		testBinaryFile	= "src/test/resources/tmp/test.jpg";
-	static String		tmpDirectory	= "src/test/resources/tmp";
+	static String		testTextFile	= "src/test/resources/tmp/fileGetMimeType/text.txt";
+	static String		testBinaryFile	= "src/test/resources/tmp/fileGetMimeType/test.jpg";
+	static String		tmpDirectory	= "src/test/resources/tmp/fileGetMimeType";
 
 	@BeforeAll
 	public static void setUp() throws IOException {

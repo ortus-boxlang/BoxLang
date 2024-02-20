@@ -47,9 +47,9 @@ public class FileMoveTest {
 	static IBoxContext	context;
 	static IScope		variables;
 	static Key			result			= new Key( "result" );
-	static String		source			= "src/test/resources/tmp/start.txt";
-	static String		destination		= "src/test/resources/tmp/end.txt";
-	static String		tmpDirectory	= "src/test/resources/tmp";
+	static String		source			= "src/test/resources/tmp/fileMoveTest/start.txt";
+	static String		destination		= "src/test/resources/tmp/fileMoveTest/end.txt";
+	static String		tmpDirectory	= "src/test/resources/tmp/fileMoveTest";
 
 	@BeforeAll
 	public static void setUp() {

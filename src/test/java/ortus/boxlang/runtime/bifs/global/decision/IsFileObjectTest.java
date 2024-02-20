@@ -40,7 +40,7 @@ public class IsFileObjectTest {
 	static BoxRuntime		instance;
 	static IBoxContext		context;
 	static IScope			variables;
-	private static String	tmpDirectory	= "src/test/resources/tmp";
+	private static String	tmpDirectory	= "src/test/resources/tmp/isFileObjectTest";
 	private static String	testFile		= "src/test/resources/tmp/file-test.txt";
 
 	@BeforeAll
