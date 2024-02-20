@@ -14,7 +14,6 @@
  */
 package ortus.boxlang.runtime.bifs.global.xml;
 
-import java.io.IOException;
 import java.io.StringReader;
 import java.io.StringWriter;
 
@@ -40,7 +39,6 @@ import ortus.boxlang.runtime.types.BoxLangType;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.XML;
-import ortus.boxlang.runtime.types.exceptions.BoxIOException;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.util.FileSystemUtil;
 
@@ -62,14 +60,14 @@ public class XMLTransform extends BIF {
 
 	/**
 	 * Get XML values according to given xPath query
-	 * 
+	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
-	 * 
+	 *
 	 * @argument XML The XML to transform
 	 * @argument XSL The XSL to use for the transformation
 	 * @argument parameters The parameters to pass to the xsl transformation
-	 * 
+	 *
 	 */
 	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
 		Object	xmlAny	= arguments.get( Key.XML );
@@ -82,11 +80,7 @@ public class XMLTransform extends BIF {
 		String xsl = arguments.getAsString( Key.XSL );
 		// Is not XML. Must be file or URL
 		if ( !xsl.trim().startsWith( "<" ) ) {
-			try {
-				xsl = StringCaster.cast( FileSystemUtil.read( xsl ) );
-			} catch ( IOException e ) {
-				throw new BoxIOException( e );
-			}
+			xsl = StringCaster.cast( FileSystemUtil.read( xsl ) );
 		}
 		IStruct parameters = arguments.getAsStruct( Key.parameters );
 		try {
