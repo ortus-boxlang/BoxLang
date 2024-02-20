@@ -725,7 +725,7 @@ public class JavaBoxpiler {
 		}
 
 		public boolean matchesFQNWithoutCompileCount( String FQN ) {
-			Pattern	pattern	= Pattern.compile( originalFQN().replace( "$", "\\$" ) + "\\d+" );
+			Pattern	pattern	= Pattern.compile( originalFQN().replace( "$", "\\$" ) + ".+$" );
 			Matcher	matcher	= pattern.matcher( FQN );
 
 			return matcher.find();

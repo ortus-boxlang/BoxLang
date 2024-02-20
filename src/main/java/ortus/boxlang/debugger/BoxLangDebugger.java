@@ -23,6 +23,7 @@ import java.io.OutputStream;
 import java.nio.ByteBuffer;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 // import java.lang.StackWalker.StackFrame;
@@ -30,10 +31,14 @@ import java.util.Map;
 
 import com.sun.jdi.AbsentInformationException;
 import com.sun.jdi.Bootstrap;
+import com.sun.jdi.ClassNotLoadedException;
 import com.sun.jdi.IncompatibleThreadStateException;
+import com.sun.jdi.InvalidTypeException;
+import com.sun.jdi.InvocationException;
 import com.sun.jdi.LocalVariable;
 import com.sun.jdi.Locatable;
 import com.sun.jdi.Location;
+import com.sun.jdi.Method;
 import com.sun.jdi.ReferenceType;
 import com.sun.jdi.StackFrame;
 import com.sun.jdi.ThreadReference;
@@ -74,7 +79,7 @@ public class BoxLangDebugger implements IBoxLangDebugger {
 	private DebugAdapter			debugAdapter;
 	private InputStream				vmInput;
 	private InputStream				vmErrorInput;
-	private BreakpointEvent			bpe;
+	public BreakpointEvent			bpe;
 
 	public enum Status {
 		NOT_STARTED,
@@ -368,6 +373,35 @@ public class BoxLangDebugger implements IBoxLangDebugger {
 		// }
 	}
 
+	public Value mirrorOfKey( String name ) {
+		ReferenceType	ref				= this.vm.allClasses().stream()
+		    .filter( ( type ) -> type.name().compareToIgnoreCase( "ortus.boxlang.runtime.scopes.key" ) == 0 )
+		    .findFirst()
+		    .get();
+
+		Method			contstructor	= ref.allMethods().stream().filter( ( method ) -> method.name().compareToIgnoreCase( "<init>" ) == 0 ).findFirst()
+		    .get();
+
+		try {
+			return ( ( com.sun.jdi.ClassType ) ref ).newInstance( bpe.thread(), contstructor, Arrays.asList( this.vm.mirrorOf( name ) ), 0 );
+		} catch ( InvalidTypeException e ) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch ( ClassNotLoadedException e ) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch ( IncompatibleThreadStateException e ) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch ( InvocationException e ) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+
+		return null;
+
+	}
+
 	public List<ThreadReference> getAllThreadReferences() {
 		return this.vm.allThreads();
 	}
@@ -395,33 +429,65 @@ public class BoxLangDebugger implements IBoxLangDebugger {
 		}
 
 		this.vm.eventRequestManager().deleteAllBreakpoints();
+		Integer javaSourceLine = null;
 
 		for ( String fileName : this.breakpoints.keySet() ) {
-			ReferenceType vmClass = getVMReferenceType( fileName );
+			// ReferenceType vmClass = getVMReferenceType( fileName );
 
-			if ( vmClass == null ) {
-				continue;
-			}
+			// if ( vmClass == null ) {
+			// continue;
+			// }
 
 			for ( Breakpoint breakpoint : this.breakpoints.get( fileName ) ) {
-				try {
+				List<ReferenceType>	matchingTypes		= getMatchingReferenceTypes( fileName );
+				List<Location>		possibleLocations	= new ArrayList<Location>();
 
-					int			javaSourceLine	= javaBoxpiler.getSourceMapFromFQN( vmClass.name() ).convertSourceLineToJavaLine( breakpoint.line );
-					Location	location;
+				for ( ReferenceType vmClass : matchingTypes ) {
 					try {
-						location = vmClass.locationsOfLine( javaSourceLine ).get( 0 );
-						BreakpointRequest bpReq = vm.eventRequestManager().createBreakpointRequest( location );
-						bpReq.enable();
+						if ( javaSourceLine == null ) {
+							javaSourceLine = javaBoxpiler.getSourceMapFromFQN( vmClass.name() ).convertSourceLineToJavaLine( breakpoint.line );
+						}
+						int			val				= javaSourceLine.intValue();
+						Location	closestLocation	= vmClass.allLineLocations().stream().reduce( null, ( closest, location ) -> {
+														if ( closest == null ) {
+															return location;
+														}
+
+														return closest == null || val - closest.lineNumber() > val - location.lineNumber() ? location : closest;
+													} );
+
+						possibleLocations.add( closestLocation );
+					} catch ( BoxRuntimeException e ) {
+						e.printStackTrace();
 					} catch ( AbsentInformationException e ) {
 						// TODO Auto-generated catch block
 						e.printStackTrace();
 					}
+				}
+
+				int			val		= javaSourceLine.intValue();
+				Location	closest	= possibleLocations.stream().reduce( null, ( acc, location ) -> {
+										if ( acc == null ) {
+											return location;
+										}
+
+										return acc == null || val - acc.lineNumber() > val - location.lineNumber() ? location : acc;
+									} );
+				try {
+					BreakpointRequest bpReq = vm.eventRequestManager().createBreakpointRequest( closest );
+					bpReq.enable();
 				} catch ( BoxRuntimeException e ) {
 					e.printStackTrace();
 				}
 
 			}
 		}
+	}
+
+	private List<ReferenceType> getMatchingReferenceTypes( String fileName ) {
+		ClassInfo classInfo = ClassInfo.forTemplate( Path.of( fileName ), fileName );
+
+		return vmClasses.stream().filter( ( rt ) -> classInfo.matchesFQNWithoutCompileCount( rt.name() ) ).toList();
 	}
 
 	private ReferenceType getVMReferenceType( String fileName ) {
