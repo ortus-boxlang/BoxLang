@@ -20,31 +20,31 @@
 package ortus.boxlang.runtime.bifs.global.string;
 
 import ortus.boxlang.runtime.bifs.BoxBIF;
-import ortus.boxlang.runtime.bifs.global.list.ListFilter;
+import ortus.boxlang.runtime.bifs.global.list.ListEvery;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 
 @BoxBIF
 
-public class StringFilter extends ListFilter {
+public class StringEvery extends ListEvery {
 
 	/**
 	 * Constructor
 	 */
-	public StringFilter() {
+	public StringEvery() {
 		super();
 	}
 
 	/**
-	 * Filters all the elements in a string according to a specified callback
+	 * Tests a string that all elements meet the specified criteria
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
 	 * @argument.string The string to iterate
 	 *
-	 * @argument.callback The callback which returns a boolean and filters the string
+	 * @argument.callback The callback to use for the test
 	 */
 	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
 		arguments.put( Key.delimiter, "" );

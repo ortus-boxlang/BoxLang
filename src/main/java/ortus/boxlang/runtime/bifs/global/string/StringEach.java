@@ -36,12 +36,14 @@ public class StringEach extends ListEach {
 	}
 
 	/**
-	 * Describe what the invocation of your bif function does
+	 * Iterates all the elements in a string and runs the passed callback on each character
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.foo Describe any expected arguments
+	 * @argument.string The string to iterate
+	 * 
+	 * @argument.callback The callback to execute
 	 */
 	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
 		arguments.put( Key.delimiter, "" );
