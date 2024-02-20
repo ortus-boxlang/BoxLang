@@ -44,19 +44,17 @@ public class StringEveryTest {
 
 	@BeforeAll
 	public static void setUp() {
-		instance	= BoxRuntime.getInstance( true );
-		context		= new ScriptingRequestBoxContext( instance.getRuntimeContext() );
-		variables	= context.getScopeNearby( VariablesScope.name );
+		instance = BoxRuntime.getInstance( true );
 	}
 
 	@AfterAll
 	public static void teardown() {
-		instance.shutdown();
 	}
 
 	@BeforeEach
 	public void setupEach() {
-		variables.clear();
+		context		= new ScriptingRequestBoxContext( instance.getRuntimeContext() );
+		variables	= context.getScopeNearby( VariablesScope.name );
 	}
 
 	@DisplayName( "It should run the UDF over every element as long as they return true" )

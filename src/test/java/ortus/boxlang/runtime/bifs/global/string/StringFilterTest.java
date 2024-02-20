@@ -52,12 +52,12 @@ public class StringFilterTest {
 
 	@AfterAll
 	public static void teardown() {
-		instance.shutdown();
 	}
 
 	@BeforeEach
 	public void setupEach() {
-		variables.clear();
+		context		= new ScriptingRequestBoxContext( instance.getRuntimeContext() );
+		variables	= context.getScopeNearby( VariablesScope.name );
 	}
 
 	@DisplayName( "It tests the bif String Filter" )
