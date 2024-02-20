@@ -44,30 +44,30 @@ import ortus.boxlang.runtime.util.FileSystemUtil;
 public class DirectoryCreateTest {
 
 	static BoxRuntime	instance;
-	static IBoxContext	context;
-	static IScope		variables;
+	IBoxContext			context;
+	IScope				variables;
 	static Key			result			= new Key( "result" );
 	static String		tmpDirectory	= "src/test/resources/tmp/directoryCreateTest";
 	static String		targetDirectory	= "src/test/resources/tmp/directoryCreateTest/nested/path";
 
 	@BeforeAll
 	public static void setUp() {
-		instance	= BoxRuntime.getInstance( true );
-		context		= new ScriptingRequestBoxContext( instance.getRuntimeContext() );
-		variables	= context.getScopeNearby( VariablesScope.name );
+		instance = BoxRuntime.getInstance( true );
 	}
 
 	@AfterAll
 	public static void teardown() {
-		instance.shutdown();
+
 	}
 
 	@BeforeEach
 	public void setupEach() throws IOException {
+		context		= new ScriptingRequestBoxContext( instance.getRuntimeContext() );
+		variables	= context.getScopeNearby( VariablesScope.name );
 		if ( FileSystemUtil.exists( tmpDirectory + "/nested" ) ) {
 			FileSystemUtil.deleteDirectory( tmpDirectory + "/nested", true );
 		}
-		variables.clear();
+
 	}
 
 	@DisplayName( "It tests the BIF DirectoryCreate with the defaults" )

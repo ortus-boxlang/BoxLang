@@ -29,6 +29,8 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.parallel.Execution;
+import org.junit.jupiter.api.parallel.ExecutionMode;
 
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.IBoxContext;
@@ -37,11 +39,12 @@ import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
 
+@Execution( ExecutionMode.SAME_THREAD )
 public class EchoTest {
 
 	static BoxRuntime				instance;
-	static IBoxContext				context;
-	static IScope					variables;
+	IBoxContext						context;
+	IScope							variables;
 	static Key						result		= new Key( "result" );
 	static ByteArrayOutputStream	outContent;
 	static PrintStream				originalOut	= System.out;
@@ -49,8 +52,6 @@ public class EchoTest {
 	@BeforeAll
 	public static void setUp() {
 		instance	= BoxRuntime.getInstance( true );
-		context		= new ScriptingRequestBoxContext( instance.getRuntimeContext() );
-		variables	= context.getScopeNearby( VariablesScope.name );
 		outContent	= new ByteArrayOutputStream();
 		System.setOut( new PrintStream( outContent ) );
 	}
@@ -58,12 +59,14 @@ public class EchoTest {
 	@AfterAll
 	public static void teardown() {
 		System.setOut( originalOut );
-		instance.shutdown();
+
 	}
 
 	@BeforeEach
 	public void setupEach() {
-		variables.clear();
+		context		= new ScriptingRequestBoxContext( instance.getRuntimeContext() );
+		variables	= context.getScopeNearby( VariablesScope.name );
+
 		outContent.reset();
 	}
 

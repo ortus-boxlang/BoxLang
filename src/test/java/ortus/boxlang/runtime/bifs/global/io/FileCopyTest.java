@@ -45,8 +45,8 @@ import ortus.boxlang.runtime.util.FileSystemUtil;
 public class FileCopyTest {
 
 	static BoxRuntime	instance;
-	static IBoxContext	context;
-	static IScope		variables;
+	IBoxContext			context;
+	IScope				variables;
 	static Key			result					= new Key( "result" );
 	static String		tmpDirectory			= "src/test/resources/tmp/fileCopyTest";
 	static String		sourceFile				= "src/test/resources/tmp/fileCopyTest/source.txt";
@@ -55,9 +55,7 @@ public class FileCopyTest {
 
 	@BeforeAll
 	public static void setUp() {
-		instance	= BoxRuntime.getInstance( true );
-		context		= new ScriptingRequestBoxContext( instance.getRuntimeContext() );
-		variables	= context.getScopeNearby( VariablesScope.name );
+		instance = BoxRuntime.getInstance( true );
 
 	}
 
@@ -66,11 +64,13 @@ public class FileCopyTest {
 		if ( FileSystemUtil.exists( tmpDirectory ) ) {
 			FileSystemUtil.deleteDirectory( tmpDirectory, true );
 		}
-		instance.shutdown();
+
 	}
 
 	@BeforeEach
 	public void setupEach() throws IOException {
+		context		= new ScriptingRequestBoxContext( instance.getRuntimeContext() );
+		variables	= context.getScopeNearby( VariablesScope.name );
 		if ( FileSystemUtil.exists( destinationFile ) ) {
 			FileSystemUtil.deleteFile( destinationFile );
 		}
@@ -78,7 +78,6 @@ public class FileCopyTest {
 			FileSystemUtil.write( sourceFile, "copy me", "utf-8", true );
 
 		}
-		variables.clear();
 	}
 
 	@AfterEach
@@ -87,7 +86,6 @@ public class FileCopyTest {
 		if ( FileSystemUtil.exists( tmpDirectory + "/nested" ) ) {
 			FileSystemUtil.deleteDirectory( tmpDirectory + "/nested", true );
 		}
-		variables.clear();
 	}
 
 	@DisplayName( "It tests the BIF FileCopy" )

@@ -44,17 +44,15 @@ import ortus.boxlang.runtime.util.FileSystemUtil;
 public class DirectoryDeleteTest {
 
 	static BoxRuntime	instance;
-	static IBoxContext	context;
-	static IScope		variables;
+	IBoxContext			context;
+	IScope				variables;
 	static Key			result			= new Key( "result" );
 	static String		tmpDirectory	= "src/test/resources/tmp/directoryDeleteTest";
 	static String		testDirectory	= tmpDirectory + "/foo";
 
 	@BeforeAll
 	public static void setUp() {
-		instance	= BoxRuntime.getInstance( true );
-		context		= new ScriptingRequestBoxContext( instance.getRuntimeContext() );
-		variables	= context.getScopeNearby( VariablesScope.name );
+		instance = BoxRuntime.getInstance( true );
 	}
 
 	@AfterAll
@@ -62,18 +60,19 @@ public class DirectoryDeleteTest {
 		if ( FileSystemUtil.exists( tmpDirectory ) ) {
 			FileSystemUtil.deleteDirectory( tmpDirectory, true );
 		}
-		instance.shutdown();
+
 	}
 
 	@BeforeEach
 	public void setupEach() throws IOException {
+		context		= new ScriptingRequestBoxContext( instance.getRuntimeContext() );
+		variables	= context.getScopeNearby( VariablesScope.name );
 		if ( !FileSystemUtil.exists( tmpDirectory ) ) {
 			FileSystemUtil.createDirectory( tmpDirectory );
 		}
 		if ( FileSystemUtil.exists( testDirectory ) ) {
 			FileSystemUtil.deleteDirectory( testDirectory, true );
 		}
-		variables.clear();
 	}
 
 	@DisplayName( "It tests the BIF DirectoryDelete" )

@@ -42,32 +42,33 @@ import ortus.boxlang.runtime.util.FileSystemUtil;
 public class FileExistsTest {
 
 	static BoxRuntime	instance;
-	static IBoxContext	context;
-	static IScope		variables;
-	static Key			result	= new Key( "result" );
+	IBoxContext			context;
+	IScope				variables;
+	static Key			result			= new Key( "result" );
+	static String		tmpDirectory	= "src/test/resources/tmp/FileExistsTest";
 
 	@BeforeAll
 	public static void setUp() {
-		instance	= BoxRuntime.getInstance( true );
-		context		= new ScriptingRequestBoxContext( instance.getRuntimeContext() );
-		variables	= context.getScopeNearby( VariablesScope.name );
+		instance = BoxRuntime.getInstance( true );
 	}
 
 	@AfterAll
 	public static void teardown() throws IOException {
-		FileSystemUtil.deleteDirectory( "src/test/resources/tmp", true );
-		instance.shutdown();
+		if ( FileSystemUtil.exists( tmpDirectory ) ) {
+			FileSystemUtil.deleteDirectory( tmpDirectory, true );
+		}
 	}
 
 	@BeforeEach
 	public void setupEach() {
-		variables.clear();
+		context		= new ScriptingRequestBoxContext( instance.getRuntimeContext() );
+		variables	= context.getScopeNearby( VariablesScope.name );
 	}
 
 	@DisplayName( "It tests the BIF FileExists on an existing file" )
 	@Test
 	public void testFileExists() throws IOException {
-		String testFile = "src/test/resources/tmp/exists.txt";
+		String testFile = tmpDirectory + "exists.txt";
 		variables.put( Key.of( "testFile" ), Path.of( testFile ).toAbsolutePath().toString() );
 		FileSystemUtil.write( testFile, "file exists test!".getBytes( "UTF-8" ), true );
 		assertTrue( FileSystemUtil.exists( testFile ) );
@@ -83,7 +84,7 @@ public class FileExistsTest {
 	@DisplayName( "It tests the BIF FileExists on a non-existent file" )
 	@Test
 	public void testFileNotExists() throws IOException {
-		String testFile = "src/test/resources/tmp/not-exists.txt";
+		String testFile = tmpDirectory + "not-exists.txt";
 		variables.put( Key.of( "testFile" ), Path.of( testFile ).toAbsolutePath().toString() );
 		instance.executeSource(
 		    """
@@ -97,7 +98,7 @@ public class FileExistsTest {
 	@DisplayName( "It tests the BIF FileExists on a directory" )
 	@Test
 	public void testDirectoryNotExists() throws IOException {
-		String testFile = "src/test/resources/tmp";
+		String testFile = tmpDirectory;
 		variables.put( Key.of( "testFile" ), Path.of( testFile ).toAbsolutePath().toString() );
 		instance.executeSource(
 		    """

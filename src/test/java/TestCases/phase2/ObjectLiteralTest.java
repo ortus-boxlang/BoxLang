@@ -54,7 +54,7 @@ public class ObjectLiteralTest {
 
 	@AfterAll
 	public static void teardown() {
-		instance.shutdown();
+
 	}
 
 	@BeforeEach

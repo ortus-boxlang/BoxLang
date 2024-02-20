@@ -28,6 +28,7 @@ import org.junit.jupiter.api.Test;
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
+import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
 import ortus.boxlang.runtime.types.IStruct;
@@ -37,7 +38,7 @@ public class QueryTest {
 
 	static BoxRuntime	instance;
 	IBoxContext			context;
-	VariablesScope		variables;
+	IScope				variables;
 	static Key			result	= new Key( "result" );
 
 	@BeforeAll
@@ -47,13 +48,13 @@ public class QueryTest {
 
 	@AfterAll
 	public static void teardown() {
-		instance.shutdown();
+
 	}
 
 	@BeforeEach
 	public void setupEach() {
 		context		= new ScriptingRequestBoxContext( instance.getRuntimeContext() );
-		variables	= ( VariablesScope ) context.getScopeNearby( VariablesScope.name );
+		variables	= context.getScopeNearby( VariablesScope.name );
 	}
 
 	@DisplayName( "Query" )

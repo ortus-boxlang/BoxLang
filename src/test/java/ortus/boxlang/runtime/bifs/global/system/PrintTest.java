@@ -49,8 +49,6 @@ public class PrintTest {
 	@BeforeAll
 	public static void setUp() {
 		instance	= BoxRuntime.getInstance( true );
-		context		= new ScriptingRequestBoxContext( instance.getRuntimeContext() );
-		variables	= context.getScopeNearby( VariablesScope.name );
 		outContent	= new ByteArrayOutputStream();
 		System.setOut( new PrintStream( outContent ) );
 	}
@@ -58,12 +56,13 @@ public class PrintTest {
 	@AfterAll
 	public static void teardown() {
 		System.setOut( originalOut );
-		instance.shutdown();
+
 	}
 
 	@BeforeEach
 	public void setupEach() {
-		variables.clear();
+		context		= new ScriptingRequestBoxContext( instance.getRuntimeContext() );
+		variables	= context.getScopeNearby( VariablesScope.name );
 		outContent.reset();
 	}
 

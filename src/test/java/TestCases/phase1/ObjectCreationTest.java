@@ -47,7 +47,7 @@ public class ObjectCreationTest {
 
 	@AfterAll
 	public static void teardown() {
-		instance.shutdown();
+
 	}
 
 	@BeforeEach

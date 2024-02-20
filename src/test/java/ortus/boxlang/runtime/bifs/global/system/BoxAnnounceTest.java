@@ -35,25 +35,24 @@ import ortus.boxlang.runtime.scopes.VariablesScope;
 public class BoxAnnounceTest {
 
 	static BoxRuntime	instance;
-	static IBoxContext	context;
-	static IScope		variables;
+	IBoxContext			context;
+	IScope				variables;
 	static Key			result	= new Key( "result" );
 
 	@BeforeAll
 	public static void setUp() {
-		instance	= BoxRuntime.getInstance( true );
-		context		= new ScriptingRequestBoxContext( instance.getRuntimeContext() );
-		variables	= context.getScopeNearby( VariablesScope.name );
+		instance = BoxRuntime.getInstance( true );
 	}
 
 	@AfterAll
 	public static void teardown() {
-		instance.shutdown();
+
 	}
 
 	@BeforeEach
 	void setupEach() {
-		variables.clear();
+		context		= new ScriptingRequestBoxContext( instance.getRuntimeContext() );
+		variables	= context.getScopeNearby( VariablesScope.name );
 	}
 
 	@DisplayName( "It can announce a non-existent event with no data" )

@@ -78,8 +78,6 @@ public class TestExecution extends TestBase {
 		                        assert(variables["a"] == 10);
 		                        """ );
 
-		instance.shutdown();
-
 	}
 
 	@Test
@@ -95,7 +93,7 @@ public class TestExecution extends TestBase {
 		                                                               }
 		                                        assert(variables["a"] == 10);
 		                                                               """ );
-		instance.shutdown();
+
 	}
 
 	@Test
@@ -112,7 +110,6 @@ public class TestExecution extends TestBase {
 		result = instance.executeStatement( "5 LESS THAN 10", context );
 		assertThat( result ).isEqualTo( true );
 
-		instance.shutdown();
 	}
 
 	@Test

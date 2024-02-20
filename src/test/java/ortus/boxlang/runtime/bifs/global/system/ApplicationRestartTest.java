@@ -39,28 +39,27 @@ import ortus.boxlang.runtime.services.ApplicationService;
 
 public class ApplicationRestartTest {
 
-	static BoxRuntime			runtime;
+	static BoxRuntime			instance;
 	static ApplicationService	applicationService;
-	static IBoxContext			context;
-	static IScope				variables;
+	IBoxContext					context;
+	IScope						variables;
 	static Key					result	= new Key( "result" );
 
 	@BeforeAll
 	public static void setUp() {
-		runtime				= BoxRuntime.getInstance( true );
-		applicationService	= runtime.getApplicationService();
-		context				= new ScriptingRequestBoxContext( runtime.getRuntimeContext() );
-		variables			= context.getScopeNearby( VariablesScope.name );
+		instance			= BoxRuntime.getInstance( true );
+		applicationService	= instance.getApplicationService();
 	}
 
 	@AfterAll
 	public static void teardown() {
-		runtime.shutdown();
+
 	}
 
 	@BeforeEach
 	void setupEach() {
-		variables.clear();
+		context		= new ScriptingRequestBoxContext( instance.getRuntimeContext() );
+		variables	= context.getScopeNearby( VariablesScope.name );
 	}
 
 	@DisplayName( "It can stop an application" )
@@ -73,10 +72,10 @@ public class ApplicationRestartTest {
 		Instant					startTime	= targetApp.getStartTime();
 
 		ApplicationBoxContext	appContext	= new ApplicationBoxContext( targetApp );
-		appContext.setParent( runtime.getRuntimeContext() );
+		appContext.setParent( instance.getRuntimeContext() );
 		context.setParent( appContext );
 
-		runtime.executeSource(
+		instance.executeSource(
 		    """
 		    applicationRestart();
 		    """,

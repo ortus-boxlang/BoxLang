@@ -46,8 +46,8 @@ import ortus.boxlang.runtime.util.FileSystemUtil;
 public class FileIsEOFTest {
 
 	static BoxRuntime		instance;
-	static IBoxContext		context;
-	static IScope			variables;
+	IBoxContext				context;
+	IScope					variables;
 	static Key				result			= new Key( "result" );
 
 	private static String	tmpDirectory	= "src/test/resources/tmp/fileIsEOFTest";
@@ -58,9 +58,7 @@ public class FileIsEOFTest {
 
 	@BeforeAll
 	public static void setUp() throws IOException {
-		instance	= BoxRuntime.getInstance( true );
-		context		= new ScriptingRequestBoxContext( instance.getRuntimeContext() );
-		variables	= context.getScopeNearby( VariablesScope.name );
+		instance = BoxRuntime.getInstance( true );
 		if ( !FileSystemUtil.exists( tmpDirectory ) ) {
 			FileSystemUtil.createDirectory( tmpDirectory );
 		}
@@ -77,11 +75,13 @@ public class FileIsEOFTest {
 		if ( FileSystemUtil.exists( tmpDirectory ) ) {
 			FileSystemUtil.deleteDirectory( tmpDirectory, true );
 		}
-		instance.shutdown();
+
 	}
 
 	@BeforeEach
 	public void setupEach() throws IOException {
+		context		= new ScriptingRequestBoxContext( instance.getRuntimeContext() );
+		variables	= context.getScopeNearby( VariablesScope.name );
 		if ( !FileSystemUtil.exists( testFile ) ) {
 			File testFileObj = new File( testFile, "write", "utf-8", false );
 			for ( var i = 1; i <= 100; i++ ) {
@@ -92,7 +92,6 @@ public class FileIsEOFTest {
 		if ( FileSystemUtil.exists( emptyFile ) ) {
 			FileSystemUtil.deleteFile( emptyFile );
 		}
-		variables.clear();
 	}
 
 	@DisplayName( "It tests the BIF FileISEOF with a read stream" )

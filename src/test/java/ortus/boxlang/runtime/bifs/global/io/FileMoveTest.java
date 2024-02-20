@@ -44,8 +44,8 @@ import ortus.boxlang.runtime.util.FileSystemUtil;
 public class FileMoveTest {
 
 	static BoxRuntime	instance;
-	static IBoxContext	context;
-	static IScope		variables;
+	IBoxContext			context;
+	IScope				variables;
 	static Key			result			= new Key( "result" );
 	static String		source			= "src/test/resources/tmp/fileMoveTest/start.txt";
 	static String		destination		= "src/test/resources/tmp/fileMoveTest/end.txt";
@@ -53,22 +53,21 @@ public class FileMoveTest {
 
 	@BeforeAll
 	public static void setUp() {
-		instance	= BoxRuntime.getInstance( true );
-		context		= new ScriptingRequestBoxContext( instance.getRuntimeContext() );
-		variables	= context.getScopeNearby( VariablesScope.name );
+		instance = BoxRuntime.getInstance( true );
 	}
 
 	@AfterAll
 	public static void teardown() {
-		instance.shutdown();
+
 	}
 
 	@BeforeEach
 	public void setupEach() throws IOException {
+		context		= new ScriptingRequestBoxContext( instance.getRuntimeContext() );
+		variables	= context.getScopeNearby( VariablesScope.name );
 		if ( !FileSystemUtil.exists( source ) ) {
 			FileSystemUtil.write( source, "moving!".getBytes( "UTF-8" ), true );
 		}
-		variables.clear();
 	}
 
 	@AfterEach
@@ -76,7 +75,6 @@ public class FileMoveTest {
 		if ( FileSystemUtil.exists( tmpDirectory ) ) {
 			FileSystemUtil.deleteDirectory( tmpDirectory, true );
 		}
-		variables.clear();
 	}
 
 	@DisplayName( "It tests the BIF FileMove" )

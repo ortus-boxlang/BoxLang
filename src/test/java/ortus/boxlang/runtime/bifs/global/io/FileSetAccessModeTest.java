@@ -51,8 +51,8 @@ import ortus.boxlang.runtime.util.FileSystemUtil;
 public class FileSetAccessModeTest {
 
 	static BoxRuntime	instance;
-	static IBoxContext	context;
-	static IScope		variables;
+	IBoxContext			context;
+	IScope				variables;
 	static Key			result			= new Key( "result" );
 	static String		testTextFile	= "src/test/resources/tmp/fileSetAccessModeTest/time.txt";
 	static String		tmpDirectory	= "src/test/resources/tmp/fileSetAccessModeTest";
@@ -60,9 +60,7 @@ public class FileSetAccessModeTest {
 
 	@BeforeAll
 	public static void setUp() throws IOException {
-		instance	= BoxRuntime.getInstance( true );
-		context		= new ScriptingRequestBoxContext( instance.getRuntimeContext() );
-		variables	= context.getScopeNearby( VariablesScope.name );
+		instance = BoxRuntime.getInstance( true );
 
 		Assumptions.assumeTrue( FileSystems.getDefault().supportedFileAttributeViews().contains( "posix" ),
 		    "The underlying file system is not posix compliant." );
@@ -80,12 +78,13 @@ public class FileSetAccessModeTest {
 			FileSystemUtil.deleteDirectory( tmpDirectory, true );
 		}
 
-		instance.shutdown();
 	}
 
 	@BeforeEach
 	public void setupEach() throws IOException {
-		variables.clear();
+
+		context		= new ScriptingRequestBoxContext( instance.getRuntimeContext() );
+		variables	= context.getScopeNearby( VariablesScope.name );
 		Assumptions.assumeTrue( FileSystems.getDefault().supportedFileAttributeViews().contains( "posix" ),
 		    "The underlying file system for path [src/test/resources/tmp/time.txt] is not posix compliant." );
 

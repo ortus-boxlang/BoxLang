@@ -72,7 +72,7 @@ public class BoxRuntimeTest {
 		assertDoesNotThrow( () -> {
 			BoxRuntime instance = BoxRuntime.getInstance( true );
 			instance.executeTemplate( testTemplate );
-			instance.shutdown();
+
 		} );
 	}
 
@@ -85,7 +85,7 @@ public class BoxRuntimeTest {
 		assertDoesNotThrow( () -> {
 			BoxRuntime instance = BoxRuntime.getInstance( true );
 			instance.executeTemplate( testTemplate );
-			instance.shutdown();
+
 		} );
 	}
 
@@ -107,8 +107,6 @@ public class BoxRuntimeTest {
 		result = instance.executeStatement( "5*6" );
 		assertThat( result ).isEqualTo( 30 );
 
-		instance.shutdown();
-
 	}
 
 	@DisplayName( "It can execute a statement" )
@@ -126,8 +124,6 @@ public class BoxRuntimeTest {
 		assertThat( result ).isEqualTo( 5 );
 		assertThat( context.getScopeNearby( VariablesScope.name ).get( Key.of( "bar" ) ) ).isEqualTo( 5 );
 
-		instance.shutdown();
-
 	}
 
 	@DisplayName( "It can execute statements" )
@@ -144,8 +140,6 @@ public class BoxRuntimeTest {
 		instance.executeSource( src, context );
 		assertThat( context.getScopeNearby( VariablesScope.name ).get( Key.of( "brad" ) ) ).isEqualTo( "wood" );
 		assertThat( context.getScopeNearby( VariablesScope.name ).get( Key.of( "luis" ) ) ).isEqualTo( "wood majano" );
-
-		instance.shutdown();
 
 	}
 
@@ -181,8 +175,6 @@ public class BoxRuntimeTest {
 		                          """;
 		instance.executeSource( src, context );
 		assertThat( context.getScopeNearby( VariablesScope.name ).containsKey( Key.of( "system" ) ) ).isTrue();
-
-		instance.shutdown();
 
 	}
 

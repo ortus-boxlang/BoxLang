@@ -58,7 +58,7 @@ public class CoreLangTest {
 
 	@AfterAll
 	public static void teardown() {
-		instance.shutdown();
+
 	}
 
 	@BeforeEach

@@ -45,8 +45,8 @@ import ortus.boxlang.runtime.util.FileSystemUtil;
 public class FileCloseTest {
 
 	static BoxRuntime		instance;
-	static IBoxContext		context;
-	static IScope			variables;
+	IBoxContext				context;
+	IScope					variables;
 	static Key				result			= new Key( "result" );
 
 	private static String	tmpDirectory	= "src/test/resources/tmp/fileCloseTest";
@@ -58,9 +58,7 @@ public class FileCloseTest {
 
 	@BeforeAll
 	public static void setUp() {
-		instance	= BoxRuntime.getInstance( true );
-		context		= new ScriptingRequestBoxContext( instance.getRuntimeContext() );
-		variables	= context.getScopeNearby( VariablesScope.name );
+		instance = BoxRuntime.getInstance( true );
 	}
 
 	@AfterAll
@@ -74,18 +72,19 @@ public class FileCloseTest {
 		if ( FileSystemUtil.exists( tmpDirectory ) ) {
 			FileSystemUtil.deleteDirectory( tmpDirectory, true );
 		}
-		instance.shutdown();
+
 	}
 
 	@BeforeEach
 	public void setupEach() throws IOException {
+		context		= new ScriptingRequestBoxContext( instance.getRuntimeContext() );
+		variables	= context.getScopeNearby( VariablesScope.name );
 		if ( !FileSystemUtil.exists( testFile ) ) {
 			FileSystemUtil.write( testFile, "close file test!".getBytes( "UTF-8" ), true );
 		}
 		if ( FileSystemUtil.exists( emptyFile ) ) {
 			FileSystemUtil.deleteFile( emptyFile );
 		}
-		variables.clear();
 	}
 
 	@DisplayName( "It tests the BIF FileOpen with a read stream" )

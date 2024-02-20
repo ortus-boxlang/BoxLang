@@ -44,26 +44,25 @@ import ortus.boxlang.runtime.types.DateTime;
 public class DateConvertTest {
 
 	static BoxRuntime	instance;
-	static IBoxContext	context;
-	static IScope		variables;
+	IBoxContext			context;
+	IScope				variables;
 	static Key			result	= new Key( "result" );
 
 	@BeforeAll
 	public static void setUp() {
-		instance	= BoxRuntime.getInstance( true );
-		context		= new ScriptingRequestBoxContext( instance.getRuntimeContext() );
-		variables	= context.getScopeNearby( VariablesScope.name );
+		instance = BoxRuntime.getInstance( true );
 	}
 
 	@AfterAll
 	public static void teardown() {
-		instance.shutdown();
+
 	}
 
 	@BeforeEach
 	public void setupEach() {
+		context		= new ScriptingRequestBoxContext( instance.getRuntimeContext() );
+		variables	= context.getScopeNearby( VariablesScope.name );
 		context.getParentOfType( RequestBoxContext.class ).setTimezone( ZoneId.of( "America/Los_Angeles" ) );
-		variables.clear();
 	}
 
 	@DisplayName( "It tests the BIF DateConvert local2UTC" )

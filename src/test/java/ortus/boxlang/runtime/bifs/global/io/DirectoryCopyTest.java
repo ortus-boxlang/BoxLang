@@ -45,8 +45,8 @@ import ortus.boxlang.runtime.util.FileSystemUtil;
 public class DirectoryCopyTest {
 
 	static BoxRuntime	instance;
-	static IBoxContext	context;
-	static IScope		variables;
+	IBoxContext			context;
+	IScope				variables;
 	static Key			result			= new Key( "result" );
 	static String		tmpDirectory	= "src/test/resources/tmp/directoryCopyTest";
 	static String		source			= "src/test/resources/tmp/directoryCopyTest/start";
@@ -60,9 +60,7 @@ public class DirectoryCopyTest {
 
 	@BeforeAll
 	public static void setUp() {
-		instance	= BoxRuntime.getInstance( true );
-		context		= new ScriptingRequestBoxContext( instance.getRuntimeContext() );
-		variables	= context.getScopeNearby( VariablesScope.name );
+		instance = BoxRuntime.getInstance( true );
 
 	}
 
@@ -71,11 +69,13 @@ public class DirectoryCopyTest {
 		if ( FileSystemUtil.exists( tmpDirectory ) ) {
 			FileSystemUtil.deleteDirectory( tmpDirectory, true );
 		}
-		instance.shutdown();
+
 	}
 
 	@BeforeEach
 	public void setupEach() throws IOException {
+		context		= new ScriptingRequestBoxContext( instance.getRuntimeContext() );
+		variables	= context.getScopeNearby( VariablesScope.name );
 		if ( FileSystemUtil.exists( destination ) ) {
 			FileSystemUtil.deleteDirectory( destination, true );
 		}
@@ -91,15 +91,15 @@ public class DirectoryCopyTest {
 				}
 			} );
 		}
-		variables.clear();
 	}
 
 	@AfterEach
 	public void teardownEach() throws IOException {
+		context		= new ScriptingRequestBoxContext( instance.getRuntimeContext() );
+		variables	= context.getScopeNearby( VariablesScope.name );
 		if ( FileSystemUtil.exists( destination ) ) {
 			FileSystemUtil.deleteDirectory( destination, true );
 		}
-		variables.clear();
 	}
 
 	@DisplayName( "It tests the BIF DirectoryCopy without Recursion" )

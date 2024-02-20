@@ -21,6 +21,7 @@ package ortus.boxlang.runtime.bifs.global.decision;
 import static com.google.common.truth.Truth.assertThat;
 
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -32,7 +33,7 @@ public class IsDebugModeTest {
 
 	@AfterEach
 	public void setupEach() {
-		instance.shutdown();
+
 	}
 
 	@DisplayName( "It detects debug mode" )
@@ -44,6 +45,7 @@ public class IsDebugModeTest {
 
 	@DisplayName( "It detects non-debug mode" )
 	@Test
+	@Disabled( "This test doesn't work when running the entire suite in parallel since the runtime may already be started" )
 	public void testItDetectsNonDebugMode() {
 		instance = BoxRuntime.getInstance( false );
 		assertThat( ( Boolean ) instance.executeStatement( "isDebugMode()" ) ).isFalse();

@@ -45,8 +45,8 @@ import ortus.boxlang.runtime.util.FileSystemUtil;
 public class DirectoryListTest {
 
 	static BoxRuntime	instance;
-	static IBoxContext	context;
-	static IScope		variables;
+	IBoxContext			context;
+	IScope				variables;
 	static Key			result			= new Key( "result" );
 	static String		tmpDirectory	= "src/test/resources/tmp/directoryListTest";
 	static String		testDirectory	= tmpDirectory + "/foo";
@@ -56,9 +56,7 @@ public class DirectoryListTest {
 
 	@BeforeAll
 	public static void setUp() throws IOException {
-		instance	= BoxRuntime.getInstance( true );
-		context		= new ScriptingRequestBoxContext( instance.getRuntimeContext() );
-		variables	= context.getScopeNearby( VariablesScope.name );
+		instance = BoxRuntime.getInstance( true );
 		FileSystemUtil.createDirectory( testDirectory );
 		FileSystemUtil.write( testFile1, "directory list test!" );
 		FileSystemUtil.createDirectory( testDirectory2 );
@@ -68,12 +66,13 @@ public class DirectoryListTest {
 	@AfterAll
 	public static void teardown() throws IOException {
 		FileSystemUtil.deleteDirectory( testDirectory, true );
-		instance.shutdown();
+
 	}
 
 	@BeforeEach
 	public void setupEach() {
-		variables.clear();
+		context		= new ScriptingRequestBoxContext( instance.getRuntimeContext() );
+		variables	= context.getScopeNearby( VariablesScope.name );
 	}
 
 	@DisplayName( "It tests the BIF DirectoryList with the default arguments" )

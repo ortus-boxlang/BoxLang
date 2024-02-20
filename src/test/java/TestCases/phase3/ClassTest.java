@@ -33,6 +33,7 @@ import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
 import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.runnables.IClassRunnable;
 import ortus.boxlang.runtime.runnables.RunnableLoader;
+import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.RequestScope;
 import ortus.boxlang.runtime.scopes.VariablesScope;
@@ -46,7 +47,7 @@ public class ClassTest {
 
 	static BoxRuntime	instance;
 	IBoxContext			context;
-	VariablesScope		variables;
+	IScope				variables;
 	static Key			result	= new Key( "result" );
 	static Key			foo		= new Key( "foo" );
 
@@ -57,13 +58,13 @@ public class ClassTest {
 
 	@AfterAll
 	public static void teardown() {
-		instance.shutdown();
+
 	}
 
 	@BeforeEach
 	public void setupEach() {
 		context		= new ScriptingRequestBoxContext( instance.getRuntimeContext() );
-		variables	= ( VariablesScope ) context.getScopeNearby( VariablesScope.name );
+		variables	= context.getScopeNearby( VariablesScope.name );
 	}
 
 	@DisplayName( "Test can create vanilla module config" )

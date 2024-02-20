@@ -43,8 +43,8 @@ import ortus.boxlang.runtime.util.FileSystemUtil;
 public class FileWriteLineTest {
 
 	static BoxRuntime		instance;
-	static IBoxContext		context;
-	static IScope			variables;
+	IBoxContext				context;
+	IScope					variables;
 	static Key				result			= new Key( "result" );
 
 	private static String	tmpDirectory	= "src/test/resources/tmp/fileWriteLineTest";
@@ -53,9 +53,7 @@ public class FileWriteLineTest {
 
 	@BeforeAll
 	public static void setUp() throws IOException {
-		instance	= BoxRuntime.getInstance( true );
-		context		= new ScriptingRequestBoxContext( instance.getRuntimeContext() );
-		variables	= context.getScopeNearby( VariablesScope.name );
+		instance = BoxRuntime.getInstance( true );
 		if ( !FileSystemUtil.exists( tmpDirectory ) ) {
 			FileSystemUtil.createDirectory( tmpDirectory );
 		}
@@ -69,15 +67,17 @@ public class FileWriteLineTest {
 		if ( FileSystemUtil.exists( tmpDirectory ) ) {
 			FileSystemUtil.deleteDirectory( tmpDirectory, true );
 		}
-		instance.shutdown();
+
 	}
 
 	@BeforeEach
 	public void setupEach() throws IOException {
+		context		= new ScriptingRequestBoxContext( instance.getRuntimeContext() );
+		variables	= context.getScopeNearby( VariablesScope.name );
 		if ( FileSystemUtil.exists( emptyFile ) ) {
 			FileSystemUtil.deleteFile( emptyFile );
 		}
-		variables.clear();
+
 	}
 
 	@DisplayName( "It tests the BIF FileWriteLine on a file object" )

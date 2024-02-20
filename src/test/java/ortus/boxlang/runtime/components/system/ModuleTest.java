@@ -21,6 +21,7 @@ package ortus.boxlang.runtime.components.system;
 import static com.google.common.truth.Truth.assertThat;
 
 import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -36,29 +37,32 @@ import ortus.boxlang.runtime.scopes.VariablesScope;
 public class ModuleTest {
 
 	static BoxRuntime	instance;
-	static IBoxContext	context;
-	static IScope		variables;
+	IBoxContext			context;
+	IScope				variables;
 	static Key			result	= new Key( "result" );
-	static StringBuffer	buffer	= new StringBuffer();
+	StringBuffer		buffer;
 
 	@BeforeAll
 	public static void setUp() {
-		instance	= BoxRuntime.getInstance( true );
-		context		= new ScriptingRequestBoxContext( instance.getRuntimeContext() );
-		context.pushBuffer( buffer );
-		variables = context.getScopeNearby( VariablesScope.name );
+		instance = BoxRuntime.getInstance( true );
 	}
 
 	@AfterAll
 	public static void teardown() {
-		context.popBuffer();
-		instance.shutdown();
+
 	}
 
 	@BeforeEach
 	public void setupEach() {
-		variables.clear();
-		buffer.setLength( 0 );
+		context		= new ScriptingRequestBoxContext( instance.getRuntimeContext() );
+		variables	= context.getScopeNearby( VariablesScope.name );
+		buffer		= new StringBuffer();
+		context.pushBuffer( buffer );
+	}
+
+	@AfterEach
+	public void teardownEach() {
+		context.popBuffer();
 	}
 
 	@Test

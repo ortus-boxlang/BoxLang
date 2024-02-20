@@ -44,8 +44,8 @@ import ortus.boxlang.runtime.util.FileSystemUtil;
 public class FileWriteTest {
 
 	static BoxRuntime	instance;
-	static IBoxContext	context;
-	static IScope		variables;
+	IBoxContext			context;
+	IScope				variables;
 	static Key			result			= new Key( "result" );
 	static String		testTextFile	= "src/test/resources/tmp/FileWriteTest/text.txt";
 	static String		testTextFile2	= "src/test/resources/tmp/FileWriteTest/nested/path/text2.txt";
@@ -55,9 +55,7 @@ public class FileWriteTest {
 
 	@BeforeAll
 	public static void setUp() throws IOException {
-		instance	= BoxRuntime.getInstance( true );
-		context		= new ScriptingRequestBoxContext( instance.getRuntimeContext() );
-		variables	= context.getScopeNearby( VariablesScope.name );
+		instance = BoxRuntime.getInstance( true );
 
 	}
 
@@ -68,15 +66,15 @@ public class FileWriteTest {
 			FileSystemUtil.deleteDirectory( tmpDirectory, true );
 		}
 
-		instance.shutdown();
 	}
 
 	@BeforeEach
 	public void setupEach() throws IOException {
+		context		= new ScriptingRequestBoxContext( instance.getRuntimeContext() );
+		variables	= context.getScopeNearby( VariablesScope.name );
 		if ( !FileSystemUtil.exists( tmpDirectory ) ) {
 			FileSystemUtil.createDirectory( tmpDirectory );
 		}
-		variables.clear();
 	}
 
 	@DisplayName( "It tests the ability to write a text file with the default charset and ensure options" )

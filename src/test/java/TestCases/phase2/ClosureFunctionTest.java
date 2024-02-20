@@ -56,7 +56,7 @@ public class ClosureFunctionTest {
 
 	@AfterAll
 	public static void teardown() {
-		instance.shutdown();
+
 	}
 
 	@BeforeEach

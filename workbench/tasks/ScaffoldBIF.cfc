@@ -178,25 +178,23 @@ component {
 		public class #bifName#Test {
 
 			static BoxRuntime	instance;
-			static IBoxContext	context;
-			static IScope		variables;
+			IBoxContext	context;
+			IScope		variables;
 			static Key			result	= new Key( "result" );
 
 			@BeforeAll
 			public static void setUp() {
 				instance	= BoxRuntime.getInstance( true );
-				context		= new ScriptingRequestBoxContext( instance.getRuntimeContext() );
-				variables	= context.getScopeNearby( VariablesScope.name );
 			}
 
 			@AfterAll
 			public static void teardown() {
-				instance.shutdown();
 			}
 
 			@BeforeEach
 			public void setupEach() {
-				variables.clear();
+				context		= new ScriptingRequestBoxContext( instance.getRuntimeContext() );
+				variables	= context.getScopeNearby( VariablesScope.name );
 			}
 
 			@DisplayName( "It tests the BIF #bifName#" )

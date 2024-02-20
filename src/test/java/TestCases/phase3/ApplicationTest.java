@@ -34,6 +34,7 @@ import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
 import ortus.boxlang.runtime.dynamic.casters.DateTimeCaster;
 import ortus.boxlang.runtime.scopes.ApplicationScope;
+import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.SessionScope;
 import ortus.boxlang.runtime.scopes.VariablesScope;
@@ -43,7 +44,7 @@ public class ApplicationTest {
 
 	static BoxRuntime	instance;
 	IBoxContext			context;
-	VariablesScope		variables;
+	IScope				variables;
 	static Key			result	= new Key( "result" );
 
 	@BeforeAll
@@ -53,13 +54,13 @@ public class ApplicationTest {
 
 	@AfterAll
 	public static void teardown() {
-		instance.shutdown();
+
 	}
 
 	@BeforeEach
 	public void setupEach() {
 		context		= new ScriptingRequestBoxContext( instance.getRuntimeContext() );
-		variables	= ( VariablesScope ) context.getScopeNearby( VariablesScope.name );
+		variables	= context.getScopeNearby( VariablesScope.name );
 	}
 
 	@DisplayName( "basic class" )

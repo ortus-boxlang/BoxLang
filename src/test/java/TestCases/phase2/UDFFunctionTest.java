@@ -67,7 +67,7 @@ public class UDFFunctionTest {
 
 	@AfterAll
 	public static void teardown() {
-		instance.shutdown();
+
 	}
 
 	@BeforeEach

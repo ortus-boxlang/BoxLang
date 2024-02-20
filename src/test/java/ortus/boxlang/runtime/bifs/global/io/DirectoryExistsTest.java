@@ -42,32 +42,34 @@ import ortus.boxlang.runtime.util.FileSystemUtil;
 public class DirectoryExistsTest {
 
 	static BoxRuntime	instance;
-	static IBoxContext	context;
-	static IScope		variables;
-	static Key			result	= new Key( "result" );
+	IBoxContext			context;
+	IScope				variables;
+	static Key			result			= new Key( "result" );
+	static String		tmpDirectory	= "src/test/resources/tmp/directoryExistsTest";
 
 	@BeforeAll
 	public static void setUp() {
-		instance	= BoxRuntime.getInstance( true );
-		context		= new ScriptingRequestBoxContext( instance.getRuntimeContext() );
-		variables	= context.getScopeNearby( VariablesScope.name );
+		instance = BoxRuntime.getInstance( true );
 	}
 
 	@AfterAll
 	public static void teardown() throws IOException {
-		FileSystemUtil.deleteDirectory( "src/test/resources/tmp", true );
-		instance.shutdown();
+		if ( FileSystemUtil.exists( tmpDirectory ) ) {
+			FileSystemUtil.deleteDirectory( tmpDirectory, true );
+		}
+
 	}
 
 	@BeforeEach
 	public void setupEach() {
-		variables.clear();
+		context		= new ScriptingRequestBoxContext( instance.getRuntimeContext() );
+		variables	= context.getScopeNearby( VariablesScope.name );
 	}
 
 	@DisplayName( "It tests the BIF DirectoryExists on an existing directory" )
 	@Test
 	public void testDirectoryExists() throws IOException {
-		String testDirectory = "src/test/resources/tmp/foo";
+		String testDirectory = tmpDirectory + "/foo";
 		variables.put( Key.of( "testDirectory" ), Path.of( testDirectory ).toAbsolutePath().toString() );
 		FileSystemUtil.createDirectory( testDirectory );
 		assertTrue( FileSystemUtil.exists( testDirectory ) );
@@ -83,7 +85,7 @@ public class DirectoryExistsTest {
 	@DisplayName( "It tests the BIF DirectoryExists on a non-existent directory" )
 	@Test
 	public void testDirectoryNotExists() throws IOException {
-		String testDirectory = "src/test/resources/tmp/blah";
+		String testDirectory = tmpDirectory + "/blah";
 		if ( FileSystemUtil.exists( testDirectory ) ) {
 			FileSystemUtil.deleteDirectory( testDirectory, true );
 		}
@@ -100,7 +102,7 @@ public class DirectoryExistsTest {
 	@DisplayName( "It tests the BIF DirectoryExists on a file" )
 	@Test
 	public void testDirectoryExistsFile() throws IOException {
-		String testFile = "src/test/resources/tmp/a-file.txt";
+		String testFile = tmpDirectory + "/a-file.txt";
 		variables.put( Key.of( "testFile" ), Path.of( testFile ).toAbsolutePath().toString() );
 		FileSystemUtil.write( testFile, "test directory!".getBytes( "UTF-8" ), true );
 		assertTrue( FileSystemUtil.exists( testFile ) );
