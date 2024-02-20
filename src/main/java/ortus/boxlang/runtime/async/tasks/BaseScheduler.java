@@ -29,9 +29,11 @@ import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
+import org.apache.commons.lang3.RandomStringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.async.executors.ExecutorRecord;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.services.AsyncService;
@@ -42,14 +44,10 @@ import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 /**
  * The Async Scheduler is in charge of registering scheduled tasks, starting them, monitoring them and shutting them down if needed.
  *
- * Each scheduler is bound to an scheduled executor class. You can override the executor using the `setExecutor()` method if you so desire.
+ * Each scheduler is bound to an scheduled executor class.
  * The scheduled executor will be named <code>{name}-scheduler</code>
- *
- * In a ColdBox context, you might have the global scheduler in charge of the global tasks and also 1 per module as well in HMVC fashion.
- * In a ColdBox context, this object will inherit from the ColdBox super type as well dynamically at runtime.
- *
  */
-public class Scheduler implements IScheduler {
+public class BaseScheduler implements IScheduler {
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -102,7 +100,7 @@ public class Scheduler implements IScheduler {
 	/**
 	 * Logger
 	 */
-	protected static final Logger				logger						= LoggerFactory.getLogger( Scheduler.class );
+	protected static final Logger				logger						= LoggerFactory.getLogger( BaseScheduler.class );
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -111,26 +109,32 @@ public class Scheduler implements IScheduler {
 	 */
 
 	/**
+	 * Zero arg constructor with basic defaults:
+	 * Auto-generated name, system default timezone and the default async service
+	 */
+	public BaseScheduler() {
+		this( "boxlang-scheduler-" + RandomStringUtils.randomAlphanumeric( 10 ) );
+	}
+
+	/**
 	 * Create a new scheduler with a name and the default system timezone.
 	 *
-	 * @param name         The name of the scheduler
-	 * @param asyncService The async service we are bound to
+	 * @param name The name of the scheduler
 	 */
-	public Scheduler( String name, AsyncService asyncService ) {
-		this( name, ZoneId.systemDefault(), asyncService );
+	public BaseScheduler( String name ) {
+		this( name, ZoneId.systemDefault() );
 	}
 
 	/**
 	 * Create a new scheduler with a name and a specific timezone
 	 *
-	 * @param name         The name of the scheduler
-	 * @param timezone     The timezone for the scheduler and the tasks it creates and manages
-	 * @param asyncService The async service we are bound to
+	 * @param name     The name of the scheduler
+	 * @param timezone The timezone for the scheduler and the tasks it creates and manages
 	 */
-	public Scheduler( String name, ZoneId timezone, AsyncService asyncService ) {
+	public BaseScheduler( String name, ZoneId timezone ) {
 		this.name			= name;
 		this.timezone		= timezone;
-		this.asyncService	= asyncService;
+		this.asyncService	= BoxRuntime.getInstance().getAsyncService();
 		// Log it
 		logger.info( "Created scheduler [{}] with a [{}] timezone", name, timezone.getId() );
 	}
@@ -224,7 +228,7 @@ public class Scheduler implements IScheduler {
 	/**
 	 * Startup this scheduler and all of it's scheduled tasks
 	 */
-	public synchronized Scheduler startup() {
+	public synchronized BaseScheduler startup() {
 		if ( !this.started ) {
 			// Build out an executor for this scheduler
 			this.executor = asyncService.newScheduledExecutor( name + "-scheduler" );
@@ -256,7 +260,7 @@ public class Scheduler implements IScheduler {
 	 *
 	 * @return
 	 */
-	public synchronized Scheduler restart( boolean force, long timeout ) {
+	public synchronized BaseScheduler restart( boolean force, long timeout ) {
 		logger.info( "+ Restarting scheduler [{}] with force: {} and timeout: {}", this.name, force, timeout );
 		// Shutdown first
 		shutdown( force, timeout );
@@ -275,7 +279,7 @@ public class Scheduler implements IScheduler {
 	 *
 	 * @return The scheduler object
 	 */
-	public synchronized Scheduler clearTasks() {
+	public synchronized BaseScheduler clearTasks() {
 		this.tasks.clear();
 		return this;
 	}
@@ -320,6 +324,8 @@ public class Scheduler implements IScheduler {
 			    this.name + "." + taskName,
 			    e.getMessage()
 			);
+			e.printStackTrace();
+			// Mark it as an error
 			taskRecord.error		= true;
 			taskRecord.errorMessage	= e.getMessage();
 			taskRecord.stacktrace	= Arrays.toString( e.getStackTrace() );
@@ -333,7 +339,7 @@ public class Scheduler implements IScheduler {
 	 * @param timeout The timeout in seconds to wait for the shutdown of all tasks, defaults to 30 or whatever you set using the setShutdownTimeout()
 	 *                method
 	 */
-	public Scheduler shutdown( boolean force, long timeout ) {
+	public BaseScheduler shutdown( boolean force, long timeout ) {
 		// If started, then we can shutdown
 		if ( !this.started ) {
 			logger.info( "Scheduler [{}] has not been started yet. Skipping shutdown.", this.name );
@@ -372,7 +378,7 @@ public class Scheduler implements IScheduler {
 	 *
 	 * @return The scheduler object
 	 */
-	public Scheduler shutdown( boolean force ) {
+	public BaseScheduler shutdown( boolean force ) {
 		return shutdown( force, DEFAULT_SHUTDOWN_TIMEOUT );
 	}
 
@@ -382,7 +388,7 @@ public class Scheduler implements IScheduler {
 	 *
 	 * @return The scheduler object
 	 */
-	public Scheduler shutdown() {
+	public BaseScheduler shutdown() {
 		return shutdown( false, DEFAULT_SHUTDOWN_TIMEOUT );
 	}
 
@@ -538,7 +544,7 @@ public class Scheduler implements IScheduler {
 	 *
 	 * @return The scheduler object
 	 */
-	public Scheduler removeTask( String name ) {
+	public BaseScheduler removeTask( String name ) {
 		var taskRecord = getTaskRecord( name );
 
 		// Check if the task has been registered so we can cancel it
@@ -597,7 +603,7 @@ public class Scheduler implements IScheduler {
 	 *
 	 * @param name the name to set
 	 */
-	public Scheduler setName( String name ) {
+	public BaseScheduler setName( String name ) {
 		this.name = name;
 		return this;
 	}
@@ -616,7 +622,7 @@ public class Scheduler implements IScheduler {
 	 *
 	 * @param timezone the timezone to set
 	 */
-	public Scheduler setTimezone( ZoneId timezone ) {
+	public BaseScheduler setTimezone( ZoneId timezone ) {
 		this.timezone = timezone;
 		return this;
 	}
@@ -626,7 +632,7 @@ public class Scheduler implements IScheduler {
 	 *
 	 * @param timezone the timezone to set as a string
 	 */
-	public Scheduler setTimezone( String timezone ) {
+	public BaseScheduler setTimezone( String timezone ) {
 		return setTimezone( ZoneId.of( timezone ) );
 	}
 
@@ -635,18 +641,8 @@ public class Scheduler implements IScheduler {
 	 *
 	 * @return Scheduler
 	 */
-	public Scheduler setDefaultTimezone() {
+	public BaseScheduler setDefaultTimezone() {
 		this.timezone = ZoneId.systemDefault();
-		return this;
-	}
-
-	/**
-	 * Set the async service
-	 *
-	 * @param asyncService the asyncService to set
-	 */
-	public Scheduler setAsyncService( AsyncService asyncService ) {
-		this.asyncService = asyncService;
 		return this;
 	}
 
@@ -656,7 +652,7 @@ public class Scheduler implements IScheduler {
 	 * @return the asyncService
 	 */
 	public AsyncService getAsyncService() {
-		return asyncService;
+		return this.asyncService;
 	}
 
 	/**
@@ -665,7 +661,7 @@ public class Scheduler implements IScheduler {
 	 * @return the executor record
 	 */
 	public ExecutorRecord getExecutor() {
-		return executor;
+		return this.executor;
 	}
 
 }

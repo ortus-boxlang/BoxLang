@@ -28,6 +28,7 @@ import java.nio.file.DirectoryNotEmptyException;
 import java.nio.file.DirectoryStream;
 import java.nio.file.FileSystems;
 import java.nio.file.Files;
+import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.nio.file.PathMatcher;
 import java.nio.file.Paths;
@@ -115,7 +116,7 @@ public final class FileSystemUtil {
 	 *
 	 * @throws IOException
 	 */
-	public static Object read( String filePath, String charset, Integer bufferSize ) throws IOException {
+	public static Object read( String filePath, String charset, Integer bufferSize ) {
 		Path	path	= null;
 		Boolean	isURL	= false;
 		if ( filePath.substring( 0, 4 ).equalsIgnoreCase( "http" ) ) {
@@ -127,31 +128,38 @@ public final class FileSystemUtil {
 		if ( charset != null ) {
 			cs = Charset.forName( charset );
 		}
-		if ( isURL ) {
-			try {
-				URL fileURL = new URL( filePath );
+
+		try {
+			if ( isURL ) {
+				try {
+					URL fileURL = new URL( filePath );
+					if ( isBinaryFile( filePath ) ) {
+						return IOUtils.toByteArray( fileURL.openStream() );
+					} else {
+						InputStreamReader inputReader = new InputStreamReader( fileURL.openStream() );
+						try ( BufferedReader reader = new BufferedReader( inputReader ) ) {
+							return reader.lines().parallel().collect( Collectors.joining( LINE_SEPARATOR ) );
+						}
+					}
+				} catch ( MalformedURLException e ) {
+					throw new BoxRuntimeException(
+					    "The url [" + filePath + "] could not be parsed.  The reason was:" + e.getMessage() + "(" + e.getCause() + ")" );
+				}
+
+			} else {
 				if ( isBinaryFile( filePath ) ) {
-					return IOUtils.toByteArray( fileURL.openStream() );
+					return Files.readAllBytes( path );
+				} else if ( bufferSize == null ) {
+					return Files.readString( path, cs );
 				} else {
-					InputStreamReader inputReader = new InputStreamReader( fileURL.openStream() );
-					try ( BufferedReader reader = new BufferedReader( inputReader ) ) {
+					try ( BufferedReader reader = new BufferedReader( Files.newBufferedReader( path, cs ), bufferSize ) ) {
 						return reader.lines().parallel().collect( Collectors.joining( LINE_SEPARATOR ) );
 					}
 				}
-			} catch ( MalformedURLException e ) {
-				throw new BoxRuntimeException( "The url [" + filePath + "] could not be parsed.  The reason was:" + e.getMessage() + "(" + e.getCause() + ")" );
 			}
 
-		} else {
-			if ( isBinaryFile( filePath ) ) {
-				return Files.readAllBytes( path );
-			} else if ( bufferSize == null ) {
-				return Files.readString( path, cs );
-			} else {
-				try ( BufferedReader reader = new BufferedReader( Files.newBufferedReader( path, cs ), bufferSize ) ) {
-					return reader.lines().parallel().collect( Collectors.joining( LINE_SEPARATOR ) );
-				}
-			}
+		} catch ( IOException e ) {
+			throw new BoxIOException( e );
 		}
 	}
 
@@ -160,7 +168,7 @@ public final class FileSystemUtil {
 	 *
 	 * @param filePath
 	 */
-	public static Object read( String filePath ) throws IOException {
+	public static Object read( String filePath ) {
 		return read( filePath, null, null );
 	}
 
@@ -171,8 +179,12 @@ public final class FileSystemUtil {
 	 *
 	 * @throws IOException
 	 */
-	public static void createDirectory( String directoryPath ) throws IOException {
-		Files.createDirectories( Path.of( directoryPath ) );
+	public static void createDirectory( String directoryPath ) {
+		try {
+			Files.createDirectories( Path.of( directoryPath ) );
+		} catch ( IOException e ) {
+			throw new BoxIOException( e );
+		}
 	}
 
 	/**
@@ -182,7 +194,7 @@ public final class FileSystemUtil {
 	 *
 	 * @throws IOException
 	 */
-	public static void deleteDirectory( String directoryPath, Boolean recursive ) throws IOException {
+	public static void deleteDirectory( String directoryPath, Boolean recursive ) {
 		Path targetDirectory = Path.of( directoryPath );
 
 		if ( recursive ) {
@@ -194,6 +206,8 @@ public final class FileSystemUtil {
 						Files.delete( entry );
 					}
 				}
+			} catch ( IOException e ) {
+				throw new BoxIOException( e );
 			}
 		}
 
@@ -201,6 +215,8 @@ public final class FileSystemUtil {
 			Files.delete( targetDirectory );
 		} catch ( DirectoryNotEmptyException e ) {
 			throw new BoxRuntimeException( "The directory " + directoryPath + " is not empty and may not be deleted without the recursive option." );
+		} catch ( IOException e ) {
+			throw new BoxIOException( e );
 		}
 	}
 
@@ -274,8 +290,12 @@ public final class FileSystemUtil {
 	 *
 	 * @throws IOException
 	 */
-	public static void deleteFile( String filePath ) throws IOException {
-		Files.delete( Path.of( filePath ) );
+	public static void deleteFile( String filePath ) {
+		try {
+			Files.delete( Path.of( filePath ) );
+		} catch ( IOException e ) {
+			throw new BoxIOException( e );
+		}
 	}
 
 	/**
@@ -286,7 +306,7 @@ public final class FileSystemUtil {
 	 *
 	 * @throws IOException
 	 */
-	public static void write( String filePath, String contents ) throws IOException {
+	public static void write( String filePath, String contents ) {
 		write( filePath, contents.getBytes( DEFAULT_CHARSET ), false );
 	}
 
@@ -299,7 +319,7 @@ public final class FileSystemUtil {
 	 *
 	 * @throws IOException
 	 */
-	public static void write( String filePath, String contents, String charset ) throws IOException {
+	public static void write( String filePath, String contents, String charset ) {
 		write( filePath, contents.getBytes( Charset.forName( charset ) ), false );
 	}
 
@@ -313,7 +333,7 @@ public final class FileSystemUtil {
 	 *
 	 * @throws IOException
 	 */
-	public static void write( String filePath, String contents, String charset, Boolean ensureDirectory ) throws IOException {
+	public static void write( String filePath, String contents, String charset, Boolean ensureDirectory ) {
 		write( filePath, contents.getBytes( Charset.forName( charset ) ), ensureDirectory );
 	}
 
@@ -326,15 +346,24 @@ public final class FileSystemUtil {
 	 *
 	 * @throws IOException
 	 */
-	public static void write( String filePath, byte[] contents, Boolean ensureDirectory ) throws IOException {
+	public static void write( String filePath, byte[] contents, Boolean ensureDirectory ) {
 
 		Path fileTarget = Path.of( filePath );
 
-		if ( ensureDirectory && !Files.exists( fileTarget.getParent() ) ) {
-			Files.createDirectories( fileTarget.getParent() );
-		}
+		try {
 
-		Files.write( fileTarget, contents, StandardOpenOption.CREATE );
+			if ( ensureDirectory && !Files.exists( fileTarget.getParent() ) ) {
+				Files.createDirectories( fileTarget.getParent() );
+			}
+
+			Files.write( fileTarget, contents, StandardOpenOption.CREATE );
+
+		} catch ( NoSuchFileException e ) {
+			throw new BoxRuntimeException(
+			    "The file [" + filePath + "] could not be writtent. The directory [" + Path.of( filePath ).getParent().toString() + "] does not exist." );
+		} catch ( IOException e ) {
+			throw new BoxIOException( e );
+		}
 
 	}
 
@@ -398,12 +427,16 @@ public final class FileSystemUtil {
 	 *
 	 * @throws IOException
 	 */
-	public static Boolean isBinaryFile( String filePath ) throws IOException {
+	public static Boolean isBinaryFile( String filePath ) {
 		String mimeType = null;
-		if ( filePath.substring( 0, 4 ).equalsIgnoreCase( "http" ) ) {
-			mimeType = Files.probeContentType( Paths.get( new URL( filePath ).getFile() ).getFileName() );
-		} else {
-			mimeType = Files.probeContentType( Paths.get( filePath ).getFileName() );
+		try {
+			if ( filePath.substring( 0, 4 ).equalsIgnoreCase( "http" ) ) {
+				mimeType = Files.probeContentType( Paths.get( new URL( filePath ).getFile() ).getFileName() );
+			} else {
+				mimeType = Files.probeContentType( Paths.get( filePath ).getFileName() );
+			}
+		} catch ( IOException e ) {
+			throw new BoxIOException( e );
 		}
 		// if we can't determine a mimetype from a path we assume the file is text ( e.g. a friendly URL )
 		if ( mimeType == null ) {
@@ -423,12 +456,16 @@ public final class FileSystemUtil {
 	 *
 	 * @throws IOException
 	 */
-	public static Set<PosixFilePermission> getPosixPermissions( String filePath ) throws IOException {
+	public static Set<PosixFilePermission> getPosixPermissions( String filePath ) {
 		Path path = Path.of( filePath );
 		if ( !isPosixCompliant( path ) ) {
 			throw new BoxRuntimeException( "The underlying file system for path  [" + filePath + "] is not posix compliant." );
 		} else {
-			return Files.getPosixFilePermissions( Path.of( filePath ) );
+			try {
+				return Files.getPosixFilePermissions( Path.of( filePath ) );
+			} catch ( IOException e ) {
+				throw new BoxIOException( e );
+			}
 		}
 	}
 

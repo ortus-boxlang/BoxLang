@@ -14,10 +14,9 @@
  */
 package ortus.boxlang.transpiler.transformer.statement;
 
+import java.util.HashMap;
+
 import com.github.javaparser.ast.Node;
-import com.github.javaparser.ast.expr.BooleanLiteralExpr;
-import com.github.javaparser.ast.stmt.ContinueStmt;
-import com.github.javaparser.ast.stmt.IfStmt;
 
 import ortus.boxlang.ast.BoxNode;
 import ortus.boxlang.transpiler.JavaTranspiler;
@@ -32,6 +31,15 @@ public class BoxContinueTransformer extends AbstractTransformer {
 
 	@Override
 	public Node transform( BoxNode node, TransformerContext context ) throws IllegalStateException {
-		return addIndex( new IfStmt( new BooleanLiteralExpr( true ), new ContinueStmt(), null ), node );
+		String template;
+		if ( transpiler.isInsideComponent() ) {
+			template = "if(true) return Component.BodyResult.ofContinue();";
+		} else {
+			template = "if(true) continue;";
+		}
+		Node javaStmt = parseStatement( template, new HashMap<>() );
+		logger.debug( node.getSourceText() + " -> " + javaStmt );
+		addIndex( javaStmt, node );
+		return javaStmt;
 	}
 }

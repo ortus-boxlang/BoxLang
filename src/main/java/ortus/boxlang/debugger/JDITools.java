@@ -4,41 +4,241 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.OptionalLong;
 
 import com.sun.jdi.AbsentInformationException;
 import com.sun.jdi.ArrayReference;
 import com.sun.jdi.BooleanValue;
+import com.sun.jdi.ClassNotLoadedException;
 import com.sun.jdi.ClassType;
 import com.sun.jdi.DoubleValue;
 import com.sun.jdi.Field;
+import com.sun.jdi.IncompatibleThreadStateException;
 import com.sun.jdi.IntegerValue;
+import com.sun.jdi.InvalidTypeException;
+import com.sun.jdi.InvocationException;
 import com.sun.jdi.LocalVariable;
 import com.sun.jdi.Method;
 import com.sun.jdi.ObjectReference;
 import com.sun.jdi.ReferenceType;
 import com.sun.jdi.StackFrame;
 import com.sun.jdi.StringReference;
+import com.sun.jdi.ThreadReference;
 import com.sun.jdi.Value;
+import com.sun.jdi.VirtualMachine;
 
 import ortus.boxlang.debugger.types.Variable;
 import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 
 public class JDITools {
 
-	private static Map<Long, VariableReference>	values;
-	private static long							variableReferenceCount	= 1;
-
-	private static enum VariableType {
-		ARRAY,
-		STRUCT
-	}
-
-	private static record VariableReference( long id, VariableType type, Value value ) {
-
-	}
+	private static Map<Long, WrappedValue>	values;
+	private static Map<Long, Long>			mirrorToId;
+	private static long						variableReferenceCount	= 1;
 
 	static {
-		values = new HashMap<Long, VariableReference>();
+		values		= new HashMap<Long, WrappedValue>();
+		mirrorToId	= new HashMap<Long, Long>();
+	}
+
+	public static WrappedValue wrap( ThreadReference thread, Value value ) {
+		long			id		= variableReferenceCount++;
+		WrappedValue	wrapped	= new WrappedValue( id, thread, value );
+		values.put( id, wrapped );
+
+		wrapped.uniqueID().ifPresent( ( unique ) -> mirrorToId.put( unique, id ) );
+
+		return wrapped;
+	}
+
+	public static Method findMethodByNameAndArgs( ClassType classType, String name, List<String> args ) {
+		for ( Method method : classType.allMethods() ) {
+			if ( method.name().compareToIgnoreCase( name ) != 0 ) {
+				continue;
+			}
+
+			List<String> argumentNames = method.argumentTypeNames();
+
+			if ( argumentNames.size() != args.size() ) {
+				continue;
+			}
+
+			boolean matches = true;
+
+			for ( int i = 0; i < argumentNames.size(); i++ ) {
+				if ( argumentNames.get( i ).compareToIgnoreCase( args.get( i ) ) != 0 ) {
+					matches = false;
+					break;
+				}
+			}
+
+			if ( matches ) {
+				return method;
+			}
+		}
+
+		return null;
+	}
+
+	public static record WrappedValue( long id, ThreadReference thread, Value value ) {
+
+		private Method findFirstMethodByName( ReferenceType type, String methodName ) {
+			for ( Method method : type.allMethods() ) {
+				if ( method.name().compareTo( methodName ) == 0 ) {
+					return method;
+				}
+			}
+
+			return null;
+		}
+
+		public boolean isOfType( String type ) {
+
+			return value.type().name().compareToIgnoreCase( type ) == 0;
+		}
+
+		public boolean isStruct() {
+			if ( ! ( value.type() instanceof ClassType ) ) {
+				return false;
+			}
+
+			return ( ( ClassType ) value.type() ).allInterfaces()
+			    .stream().anyMatch( ( i ) -> i.name().compareToIgnoreCase( "ortus.boxlang.runtime.types.IStruct" ) == 0 );
+		}
+
+		public boolean hasSuperClass( String type ) {
+			return value instanceof ObjectReference
+			    && value.type() instanceof ClassType ctype
+			    && ctype.superclass().name().compareToIgnoreCase( type ) == 0;
+		}
+
+		public WrappedValue property( String name ) {
+			return wrap( thread, findPropertyByName( ( ObjectReference ) value, name ) );
+		}
+
+		public OptionalLong uniqueID() {
+			if ( value instanceof ObjectReference objRef ) {
+				return OptionalLong.of( objRef.uniqueID() );
+			} else if ( value instanceof ArrayReference arrRef ) {
+				return OptionalLong.of( arrRef.uniqueID() );
+			}
+
+			return OptionalLong.empty();
+		}
+
+		public BooleanValue asBooleanValue() {
+			return ( BooleanValue ) value;
+		}
+
+		public DoubleValue asDoubleValue() {
+			return ( DoubleValue ) value;
+		}
+
+		public ArrayReference asArrayReference() {
+			return ( ArrayReference ) value;
+		}
+
+		public StringReference asStringReference() {
+			return ( StringReference ) value;
+		}
+
+		public ObjectReference asObjectReference() {
+			return ( ObjectReference ) value;
+		}
+
+		public WrappedValue invoke( String methodName ) {
+			return invoke( methodName, new ArrayList<Value>() );
+		}
+
+		public VirtualMachine vm() {
+			return thread.virtualMachine();
+		}
+
+		public WrappedValue invokeByNameAndArgs( String methodName, List<String> argTypes, List<Value> args ) {
+			try {
+				Value val = ( ( ObjectReference ) this.value )
+				    .invokeMethod(
+				        thread,
+				        JDITools.findMethodByNameAndArgs( ( ClassType ) ( ( ObjectReference ) value ).referenceType(), methodName, argTypes ),
+				        args,
+				        ObjectReference.INVOKE_SINGLE_THREADED
+				    );
+
+				return wrap( thread, val );
+			} catch ( InvalidTypeException e ) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			} catch ( ClassNotLoadedException e ) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			} catch ( IncompatibleThreadStateException e ) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			} catch ( InvocationException e ) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+
+			return null;
+		}
+
+		public WrappedValue invoke( String methodName, List<Value> args ) {
+			try {
+				Value val = ( ( ObjectReference ) this.value )
+				    .invokeMethod(
+				        thread,
+				        findFirstMethodByName( ( ( ObjectReference ) value ).referenceType(), methodName ),
+				        args,
+				        ObjectReference.INVOKE_SINGLE_THREADED
+				    );
+
+				return wrap( thread, val );
+			} catch ( InvalidTypeException e ) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			} catch ( ClassNotLoadedException e ) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			} catch ( IncompatibleThreadStateException e ) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			} catch ( InvocationException e ) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+
+			return null;
+		}
+	}
+
+	public static enum BoxLangType {
+		ARRAY,
+		STRUCT,
+		UDF,
+		CLOSURE,
+		LAMBDA,
+		UNKNOWN
+	};
+
+	public static BoxLangType determineBoxLangType( ReferenceType type ) {
+		if ( doesExtend( type, "ortus.boxlang.runtime.types.struct" ) ) {
+			return BoxLangType.STRUCT;
+		} else if ( doesExtend( type, "ortus.boxlang.runtime.types.array" ) ) {
+			return BoxLangType.ARRAY;
+		} else if ( doesExtend( type, "ortus.boxlang.runtime.types.udf" ) ) {
+			return BoxLangType.UDF;
+		} else if ( doesExtend( type, "ortus.boxlang.runtime.types.closure" ) ) {
+			return BoxLangType.CLOSURE;
+		} else if ( doesExtend( type, "ortus.boxlang.runtime.types.lambda" ) ) {
+			return BoxLangType.LAMBDA;
+		}
+
+		return BoxLangType.UNKNOWN;
+	}
+
+	public static boolean doesExtend( ReferenceType type, String superType ) {
+		return type instanceof ClassType ctype
+		    && ctype.superclass().name().compareToIgnoreCase( superType ) == 0;
 	}
 
 	public static boolean hasSeen( long variableReference ) {
@@ -50,176 +250,26 @@ public class JDITools {
 		return values.get( variableReference ).value;
 	}
 
-	public static List<Variable> gerVariablesFromStruct( ObjectReference struct ) {
-		var	wrapped	= JDITools.getObjRefByName( struct, "wrapped" );
-		var	table	= ( ArrayReference ) getFieldValueByName( wrapped, "table" );
-
-		// TODO remove functions
-		return table.getValues().stream()
-		    .filter( item -> item != null )
-		    .map( item -> {
-			    ObjectReference obj = ( ObjectReference ) item;
-
-			    Variable	var	= getVariableFromValue( getNameFromKeyValue( obj ), getFieldValueByName( obj, "val" ) );
-
-			    return var;
-		    } ).toList();
-	}
-
-	public static String getNameFromKeyValue( ObjectReference item ) {
-		return getStringFromValue( getFieldValueByName( ( ObjectReference ) getFieldValueByName( item, "key" ), "originalValue" ) );
-	}
-
-	public static Variable getVariableFromValue( String name, Value val ) {
-		Variable var = new Variable();
-		var.value	= "";
-		var.type	= "null";
-
-		if ( val instanceof StringReference stringRef ) {
-			var.value	= "\"" + stringRef.value() + "\"";
-			var.type	= "String";
-		} else if ( val instanceof IntegerValue integerVal ) {
-			var.value	= Integer.toString( integerVal.intValue() );
-			var.type	= "numeric";
-		} else if ( val instanceof DoubleValue doubleVal ) {
-			var.value	= StringCaster.cast( doubleVal.doubleValue() );
-			var.type	= "numeric";
-		} else if ( val.type().name().compareToIgnoreCase( "java.lang.Boolean" ) == 0 ) {
-			var.value	= StringCaster.cast( ( ( BooleanValue ) getFieldValueByName( ( ObjectReference ) val, "value" ) ).booleanValue() );
-			var.type	= "boolean";
-		} else if ( val.type().name().compareToIgnoreCase( "java.lang.double" ) == 0 ) {
-			var.value	= StringCaster.cast( ( ( DoubleValue ) getFieldValueByName( ( ObjectReference ) val, "value" ) ).doubleValue() );
-			var.type	= "numeric";
-		} else if ( val.type().name().compareToIgnoreCase( "ortus.boxlang.runtime.types.array" ) == 0 ) {
-			var = getVariableFromArray( ( ObjectReference ) val );
-		} else if ( val.type().name().compareToIgnoreCase( "ortus.boxlang.runtime.types.struct" ) == 0 ) {
-			var = getVariableFromStruct( ( ObjectReference ) val );
-		} else if ( val instanceof ObjectReference
-		    && val.type() instanceof ClassType ctype
-		    && ctype.superclass().name().compareToIgnoreCase( "ortus.boxlang.runtime.types.Closure" ) == 0 ) {
-			var.type	= "closure";
-			var.value	= "closure";
-		} else if ( val instanceof ObjectReference
-		    && val.type() instanceof ClassType ctype
-		    && ctype.superclass().name().compareToIgnoreCase( "ortus.boxlang.runtime.types.Lambda" ) == 0 ) {
-			var.type	= "lambda";
-			var.value	= "lambda";
-		} else if ( val instanceof ObjectReference
-		    && val.type() instanceof ClassType ctype
-		    && ctype.superclass().name().compareToIgnoreCase( "ortus.boxlang.runtime.types.UDF" ) == 0 ) {
-			var.type	= "function";
-			var.value	= "() => {}";
-		} else if ( val != null ) {
-			var.value = "Unimplemented type - " + val.getClass().getName() + " " + val.type().name();
-		}
-
-		var.name = name;
-
-		return var;
-	}
-
 	public static List<Variable> getVariablesFromSeen( long variableReference ) {
-		VariableReference ref = values.get( variableReference );
+		WrappedValue wrapped = values.get( variableReference );
 
-		switch ( ref.type ) {
-			case STRUCT :
-				return gerVariablesFromStruct( ( ObjectReference ) ref.value );
-			case ARRAY :
-				return gerVariablesFromArray( ( ObjectReference ) ref.value );
+		if ( wrapped.isOfType( "ortus.boxlang.runtime.types.array" ) ) {
+			return gerVariablesFromArray( wrapped );
+		} else if ( wrapped.isStruct() ) {
+			return gerVariablesFromStruct( wrapped );
 		}
 
 		return new ArrayList<Variable>();
 	}
 
-	private static List<Variable> gerVariablesFromArray( ObjectReference value ) {
-		var				wrapped	= JDITools.getObjRefByName( value, "wrapped" );
-		var				list	= ( ObjectReference ) getFieldValueByName( wrapped, "list" );
-		var				table	= ( ArrayReference ) getFieldValueByName( list, "elementData" );
-		List<Variable>	vars	= new ArrayList<Variable>();
-
-		for ( int i = 0; i < table.length(); i++ ) {
-			vars.add( getVariableFromValue( Integer.toString( i ), table.getValue( i ) ) );
-		}
-
-		return vars;
-	}
-
-	private static Variable getVariableFromArray( ObjectReference val ) {
-		Variable	var	= new Variable();
-		long		id	= variableReferenceCount++;
-
-		var.type				= "array";
-		var.value				= "[]";
-		var.variablesReference	= ( int ) id;
-		values.put( id, new VariableReference( id, VariableType.ARRAY, val ) );
-
-		return var;
-	}
-
-	private static Variable getVariableFromStruct( ObjectReference val ) {
-		Variable	var	= new Variable();
-		long		id	= variableReferenceCount++;
-
-		var.type				= "Struct";
-		var.value				= "{}";
-		var.variablesReference	= ( int ) id;
-		values.put( id, new VariableReference( id, VariableType.STRUCT, val ) );
-
-		return var;
-	}
-
-	public static ObjectReference getObjRefByName( ObjectReference object, String name ) {
-		for ( Field field : object.referenceType().allFields() ) {
-			if ( field.name().compareTo( name ) == 0 ) {
-				return ( ObjectReference ) object.getValue( field );
-			}
-		}
-
-		return null;
-	}
-
-	public static Value getFieldValueByName( ObjectReference object, String name ) {
-		for ( Field field : object.referenceType().allFields() ) {
-			if ( field.name().compareTo( name ) == 0 ) {
-				return object.getValue( field );
-			}
-		}
-
-		return null;
-	}
-
-	public static String getStringFromValue( Value value ) {
-		if ( value == null ) {
-			return null;
-		} else if ( value instanceof IntegerValue iv ) {
-			return Integer.toString( iv.intValue() );
-		} else if ( value instanceof StringReference sv ) {
-			return sv.value();
-		} else if ( value instanceof ObjectReference objref ) {
-			return objref.type().name();
-		}
-
-		return null;
-	}
-
-	public static Method findFirstMethodByName( ReferenceType type, String methodName ) {
-		for ( Method method : type.allMethods() ) {
-			if ( method.name().compareTo( methodName ) == 0 ) {
-				return method;
-			}
-		}
-
-		return null;
-	}
-
-	public static Value findVariableyName( StackFrame stackFrame, String name ) {
+	public static WrappedValue findVariableyName( StackFrame stackFrame, String name ) {
 		Map<LocalVariable, Value> visibleVariables;
 		try {
 			visibleVariables = stackFrame.getValues( stackFrame.visibleVariables() );
 
 			for ( Map.Entry<LocalVariable, Value> entry : visibleVariables.entrySet() ) {
 				if ( entry.getKey().name().compareTo( name ) == 0 ) {
-					return entry.getValue();
+					return wrap( stackFrame.thread(), entry.getValue() );
 				}
 			}
 
@@ -232,7 +282,81 @@ public class JDITools {
 
 	}
 
-	public static Value findPropertyByName( ObjectReference object, String name ) {
+	public static List<Variable> gerVariablesFromStruct( WrappedValue struct ) {
+		List<Value> entries = struct.invoke( "entrySet" ).invoke( "toArray" ).asArrayReference().getValues();
+
+		return entries.stream()
+		    .filter( entry -> entry != null )
+		    .map( entry -> wrap( struct.thread, entry ) )
+		    .map( wrappedEntry -> {
+
+			    String	keyName	= wrappedEntry.invoke( "getKey" ).invoke( "getOriginalValue" ).asStringReference().value();
+
+			    Variable var	= getVariable( keyName, wrappedEntry.invoke( "getValue" ) );
+
+			    return var;
+		    } ).toList();
+	}
+
+	private static Variable getVariable( String name, WrappedValue wrapped ) {
+		Value		val	= wrapped.value;
+		Variable	var	= new Variable();
+		var.value	= "";
+		var.type	= "null";
+
+		if ( val instanceof StringReference stringRef ) {
+			var.value	= "\"" + stringRef.value() + "\"";
+			var.type	= "String";
+		} else if ( val instanceof IntegerValue integerVal ) {
+			var.value	= Integer.toString( integerVal.intValue() );
+			var.type	= "numeric";
+		} else if ( val instanceof DoubleValue doubleVal ) {
+			var.value	= StringCaster.cast( doubleVal.doubleValue() );
+			var.type	= "numeric";
+		} else if ( wrapped.isOfType( "java.lang.Boolean" ) ) {
+			var.value	= StringCaster.cast( wrapped.property( "value" ).asBooleanValue().booleanValue() );
+			var.type	= "boolean";
+		} else if ( wrapped.isOfType( "java.lang.double" ) ) {
+			var.value	= StringCaster.cast( wrapped.property( "value" ).asDoubleValue().doubleValue() );
+			var.type	= "numeric";
+		} else if ( wrapped.isOfType( "ortus.boxlang.runtime.types.array" ) ) {
+			var.type				= "array";
+			var.value				= "[]";
+			var.variablesReference	= ( int ) wrapped.id;
+		} else if ( wrapped.isStruct() ) {
+			var.type				= "Struct";
+			var.value				= "{}";
+			var.variablesReference	= ( int ) wrapped.id;
+		} else if ( wrapped.hasSuperClass( "ortus.boxlang.runtime.types.Closure" ) ) {
+			var.type	= "closure";
+			var.value	= "closure";
+		} else if ( wrapped.hasSuperClass( "ortus.boxlang.runtime.types.Lambda" ) ) {
+			var.type	= "lambda";
+			var.value	= "lambda";
+		} else if ( wrapped.hasSuperClass( "ortus.boxlang.runtime.types.UDF" ) ) {
+			var.type	= "function";
+			var.value	= "() => {}";
+		} else if ( val != null ) {
+			var.value = "Unimplemented type - " + val.getClass().getName() + " " + val.type().name();
+		}
+
+		var.name = name;
+
+		return var;
+	}
+
+	private static List<Variable> gerVariablesFromArray( WrappedValue wrapped ) {
+		ArrayReference	table	= wrapped.invoke( "toArray" ).asArrayReference();
+		List<Variable>	vars	= new ArrayList<Variable>();
+
+		for ( int i = 0; i < table.length(); i++ ) {
+			vars.add( getVariable( Integer.toString( i ), wrap( wrapped.thread, table.getValue( i ) ) ) );
+		}
+
+		return vars;
+	}
+
+	private static Value findPropertyByName( ObjectReference object, String name ) {
 		for ( Field field : object.referenceType().allFields() ) {
 			if ( field.name().compareTo( name ) == 0 ) {
 				return object.getValue( field );

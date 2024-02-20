@@ -24,6 +24,7 @@ import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.net.SocketException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -33,9 +34,12 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.sun.jdi.IncompatibleThreadStateException;
+import com.sun.jdi.Location;
 import com.sun.jdi.ObjectReference;
 import com.sun.jdi.event.BreakpointEvent;
 
+import ortus.boxlang.debugger.JDITools.BoxLangType;
+import ortus.boxlang.debugger.JDITools.WrappedValue;
 import ortus.boxlang.debugger.event.Event;
 import ortus.boxlang.debugger.event.StoppedEvent;
 import ortus.boxlang.debugger.request.ConfigurationDoneRequest;
@@ -304,20 +308,30 @@ public class DebugAdapter {
 			List<StackFrame> stackFrames = this.debugger.getStackFrames( debugRequest.arguments.threadId ).stream()
 			    .filter( ( stackFrame ) -> stackFrame.location().declaringType().name().contains( "boxgenerated" ) )
 			    .map( ( stackFrame ) -> {
-				    StackFrame sf = new StackFrame();
-				    SourceMap map = javaBoxpiler.getSourceMapFromFQN( stackFrame.location().declaringType().name() );
-
+				    StackFrame sf		= new StackFrame();
+				    SourceMap map		= javaBoxpiler.getSourceMapFromFQN( stackFrame.location().declaringType().name() );
+				    Location location	= stackFrame.location();
 				    sf.id	= stackFrame.hashCode();
-				    sf.line	= stackFrame.location().lineNumber();
+				    sf.line	= location.lineNumber();
 				    sf.column = 0;
-				    sf.name	= stackFrame.location().method().name();
+				    sf.name	= location.method().name();
 
 				    Integer sourceLine = map.convertJavaLinetoSourceLine( sf.line );
 				    if ( sourceLine != null ) {
 					    sf.line = sourceLine;
 				    }
 
-				    if ( map != null && map.isTemplate() ) {
+				    BoxLangType blType = JDITools.determineBoxLangType( location.declaringType() );
+
+				    if ( blType == BoxLangType.UDF ) {
+					    ObjectReference ref = stackFrame.thisObject();
+					    sf.name = JDITools.wrap( this.debugger.bpe.thread(), ref ).property( "name" ).property( "originalValue" )
+					        .asStringReference().value();
+					    ;
+					    sf.source	= new Source();
+					    sf.source.path = map.source.toString();
+					    sf.source.name = sf.name + "(UDF)";
+				    } else if ( map != null && map.isTemplate() ) {
 					    sf.name		= map.getFileName();
 					    sf.source	= new Source();
 					    sf.source.path = map.source.toString();
@@ -338,16 +352,25 @@ public class DebugAdapter {
 	public void visit( ScopeRequest debugRequest ) {
 		com.sun.jdi.StackFrame vmStackFrame = findStackFrame( debugRequest.arguments.frameId );
 		try {
-			ObjectReference	context		= ( ObjectReference ) JDITools.findVariableyName( vmStackFrame, "context" );
-			ObjectReference	variables	= ( ObjectReference ) JDITools.findPropertyByName( context, "variablesScope" );
+			WrappedValue	context			= JDITools.findVariableyName( vmStackFrame, "context" );
 
-			this.seenScopes.put( variables.hashCode(), new ScopeCache( vmStackFrame, variables ) );
+			List<Scope>		scopes			= new ArrayList<Scope>();
 
-			Scope variablesScope = new Scope();
-			variablesScope.name					= "Variables Scope";
-			variablesScope.variablesReference	= variables.hashCode();
-			List<Scope> scopes = new ArrayList<Scope>();
-			scopes.add( variablesScope );
+			Scope			argumentScope	= scopeByName( context, "Arguments Scope", "arguments" );
+			if ( argumentScope != null ) {
+				argumentScope.presentationHint = "arguments";
+				scopes.add( argumentScope );
+			}
+			Scope localScope = scopeByName( context, "Local Scope", "local" );
+			if ( localScope != null ) {
+				localScope.presentationHint = "locals";
+				scopes.add( localScope );
+			}
+			Scope variablesScope = scopeByName( context, "Variables Scope", "variables" );
+			if ( variablesScope != null ) {
+				scopes.add( variablesScope );
+			}
+
 			new ScopeResponse( debugRequest, scopes ).send( this.outputStream );
 		} catch ( Exception e ) {
 			// TODO Auto-generated catch block
@@ -355,12 +378,23 @@ public class DebugAdapter {
 		}
 	}
 
+	private Scope scopeByName( WrappedValue context, String name, String key ) {
+		WrappedValue	scopeValue	= context.invokeByNameAndArgs(
+		    "getScopeNearby",
+		    Arrays.asList( "ortus.boxlang.runtime.scopes.Key", "boolean" ),
+		    Arrays.asList( this.debugger.mirrorOfKey( key ), this.debugger.vm.mirrorOf( false ) ) );
+
+		Scope			scope		= new Scope();
+		scope.name					= name;
+		scope.variablesReference	= ( int ) scopeValue.id();
+
+		return scope;
+	}
+
 	public void visit( VariablesRequest debugRequest ) {
 		List<Variable> ideVars = new ArrayList<Variable>();
 
-		if ( this.seenScopes.containsKey( debugRequest.arguments.variablesReference ) ) {
-			ideVars = JDITools.gerVariablesFromStruct( this.seenScopes.get( debugRequest.arguments.variablesReference ).scope );
-		} else if ( JDITools.hasSeen( debugRequest.arguments.variablesReference ) ) {
+		if ( JDITools.hasSeen( debugRequest.arguments.variablesReference ) ) {
 			ideVars = JDITools.getVariablesFromSeen( debugRequest.arguments.variablesReference );
 		}
 

@@ -19,7 +19,6 @@ package ortus.boxlang.runtime.components.system;
 
 import java.io.File;
 import java.nio.file.Path;
-import java.util.Optional;
 
 import ortus.boxlang.runtime.components.Attribute;
 import ortus.boxlang.runtime.components.BoxComponent;
@@ -53,11 +52,10 @@ public class Module extends Component {
 
 	public Module( Key name ) {
 		super( name );
-		declaredAttributes	= new Attribute[] {
+		declaredAttributes = new Attribute[] {
 		    new Attribute( Key.template, "string" ),
 		    new Attribute( Key._NAME, "string" )
 		};
-		captureBodyOutput	= true;
 	}
 
 	/**
@@ -74,7 +72,7 @@ public class Module extends Component {
 	 *                the CFML tag root directory, that contains custom tag template.
 	 *
 	 */
-	public Optional<Object> _invoke( IBoxContext context, IStruct attributes, ComponentBody body, IStruct executionState ) {
+	public BodyResult _invoke( IBoxContext context, IStruct attributes, ComponentBody body, IStruct executionState ) {
 		String		template			= attributes.getAsString( Key.template );
 		String		name				= attributes.getAsString( Key._NAME );
 		IStruct		actualAttributes	= attributes.getAsStruct( Key.attributes );
@@ -114,14 +112,15 @@ public class Module extends Component {
 
 				thisTag.put( Key.executionMode, "inactive" );
 
-				BodyResult bodyResult = processBody( context, body );
+				StringBuffer	buffer		= new StringBuffer();
+				BodyResult		bodyResult	= processBody( context, body, buffer );
 				// IF there was a return statement inside our body, we early exit now
-				if ( bodyResult.returnValue().isPresent() ) {
+				if ( bodyResult.isEarlyExit() ) {
 					// Output thus far
-					context.writeToBuffer( bodyResult.buffer() );
-					return bodyResult.returnValue();
+					context.writeToBuffer( buffer.toString() );
+					return bodyResult;
 				}
-				thisTag.put( Key.generatedContent, bodyResult.buffer() );
+				thisTag.put( Key.generatedContent, buffer.toString() );
 
 				thisTag.put( Key.executionMode, "end" );
 

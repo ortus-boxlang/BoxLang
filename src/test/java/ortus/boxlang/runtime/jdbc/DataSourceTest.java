@@ -33,6 +33,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import ortus.boxlang.runtime.scopes.Key;
+import ortus.boxlang.runtime.types.Query;
 import ortus.boxlang.runtime.types.Struct;
 
 public class DataSourceTest {
@@ -44,8 +45,8 @@ public class DataSourceTest {
 		datasource = new DataSource( Struct.of(
 		    "jdbcUrl", "jdbc:derby:memory:testDB;create=true"
 		) );
-		datasource.execute( "CREATE TABLE developers ( id INTEGER, name VARCHAR(155) )" );
-		datasource.execute( "INSERT INTO developers ( id, name ) VALUES ( 1, 'Luis Majano' )" );
+		datasource.execute( "CREATE TABLE developers ( id INTEGER, name VARCHAR(155) )", null );
+		datasource.execute( "INSERT INTO developers ( id, name ) VALUES ( 1, 'Luis Majano' )", null );
 	}
 
 	@AfterAll
@@ -111,28 +112,50 @@ public class DataSourceTest {
 	@Test
 	void testQueryExecute() {
 		assertDoesNotThrow( () -> {
-			datasource.execute( "INSERT INTO developers ( id, name ) VALUES ( 77, 'Michael Born' )" );
+			datasource.execute( "INSERT INTO developers ( id, name ) VALUES ( 77, 'Michael Born' )", null );
 		} );
 		try ( Connection conn = datasource.getConnection() ) {
 			assertDoesNotThrow( () -> {
-				datasource.execute( "SELECT * FROM developers", conn );
+				datasource.execute( "SELECT * FROM developers", conn, null );
 			} );
 		} catch ( SQLException e ) {
 			throw new RuntimeException( e );
 		}
 	}
 
-	@DisplayName( "It can get results back from the query" )
+	@DisplayName( "It can get results in query form" )
 	@Test
-	void testQueryExecuteResults() {
-		Struct[] results = datasource.execute( "SELECT * FROM developers WHERE id=1" );
-		assertTrue( results.length > 0 );
+	void testQueryExecuteQueryResults() {
+		Object results = datasource.execute( "SELECT * FROM developers WHERE id=1", Struct.of(
+		    "returntype", "query"
+		) );
+		assertTrue( results instanceof Query );
+		Query queryResults = ( Query ) results;
 
-		assert ( results[ 0 ].containsKey( "id" ) );
-		assert ( results[ 0 ].containsKey( "name" ) );
+		assertTrue( queryResults.size() > 0 );
+		assertTrue( queryResults.hasColumn( Key.of( "id" ) ) );
+		assertTrue( queryResults.hasColumn( Key.of( "name" ) ) );
 
-		assert ( results[ 0 ].getAsInteger( Key.of( "id" ) ) == 1 );
-		assert ( results[ 0 ].getAsString( Key.of( "name" ) ).equals( "Luis Majano" ) );
+		Object[] firstRow = queryResults.getRow( 0 );
+		assert ( firstRow[ 0 ].equals( 1 ) );
+		assert ( firstRow[ 1 ].equals( "Luis Majano" ) );
+	}
+
+	@DisplayName( "It can get results in array form" )
+	@Test
+	void testQueryExecuteArrayResults() {
+		Object results = datasource.execute( "SELECT * FROM developers WHERE id=1", Struct.of(
+		    "returntype", "array"
+		) );
+		assertTrue( results instanceof Struct[] );
+		Struct[] arrayResults = ( Struct[] ) results;
+		assertTrue( arrayResults.length > 0 );
+
+		assert ( arrayResults[ 0 ].containsKey( "id" ) );
+		assert ( arrayResults[ 0 ].containsKey( "name" ) );
+
+		assert ( arrayResults[ 0 ].getAsInteger( Key.of( "id" ) ) == 1 );
+		assert ( arrayResults[ 0 ].getAsString( Key.of( "name" ) ).equals( "Luis Majano" ) );
 	}
 
 	@DisplayName( "It can execute queries in a transaction, with or without providing a specific connection" )

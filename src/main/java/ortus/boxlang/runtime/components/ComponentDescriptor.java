@@ -17,8 +17,7 @@
  */
 package ortus.boxlang.runtime.components;
 
-import java.util.Optional;
-
+import ortus.boxlang.runtime.components.Component.BodyResult;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.scopes.Key;
@@ -135,7 +134,7 @@ public class ComponentDescriptor {
 	 *
 	 * @return The result of the invocation
 	 */
-	public Optional<Object> invoke( IBoxContext context, Component.ComponentBody componentBody ) {
+	public BodyResult invoke( IBoxContext context, Component.ComponentBody componentBody ) {
 		return invoke( context, Struct.EMPTY, componentBody );
 	}
 
@@ -147,7 +146,7 @@ public class ComponentDescriptor {
 	 *
 	 * @return The result of the invocation
 	 */
-	public Optional<Object> invoke( IBoxContext context, IStruct attributes, Component.ComponentBody componentBody ) {
+	public BodyResult invoke( IBoxContext context, IStruct attributes, Component.ComponentBody componentBody ) {
 		// the module component has special handling of attributes
 		if ( name.equals( Key.module ) ) {
 			return invokeModule( context, attributes, componentBody );
@@ -180,7 +179,7 @@ public class ComponentDescriptor {
 	 *
 	 * @return The result of the invocation
 	 */
-	public Optional<Object> invokeModule( IBoxContext context, IStruct attributes, Component.ComponentBody componentBody ) {
+	public BodyResult invokeModule( IBoxContext context, IStruct attributes, Component.ComponentBody componentBody ) {
 		Component	component			= getComponent();
 		Struct		moduleAttributes	= new Struct();
 		// Add all attributes not named "name" or "template"

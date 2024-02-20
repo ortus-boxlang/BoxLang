@@ -69,7 +69,7 @@ public class DirectoryMoveTest {
 	}
 
 	@AfterAll
-	public static void teardown() throws IOException {
+	public static void teardown() {
 		if ( FileSystemUtil.exists( tmpDirectory ) ) {
 			FileSystemUtil.deleteDirectory( tmpDirectory, true );
 		}
@@ -77,7 +77,7 @@ public class DirectoryMoveTest {
 	}
 
 	@BeforeEach
-	public void setupEach() throws IOException {
+	public void setupEach() {
 		if ( FileSystemUtil.exists( destination ) ) {
 			FileSystemUtil.deleteDirectory( destination, true );
 		}
@@ -87,17 +87,9 @@ public class DirectoryMoveTest {
 				String	target		= source + "/" + item;
 				Path	itemPath	= Path.of( target );
 				if ( Files.isDirectory( itemPath ) ) {
-					try {
-						FileSystemUtil.createDirectory( target );
-					} catch ( IOException e ) {
-						throw new RuntimeException( e );
-					}
+					FileSystemUtil.createDirectory( target );
 				} else {
-					try {
-						FileSystemUtil.write( target, "move me", "utf-8", true );
-					} catch ( IOException e ) {
-						throw new RuntimeException( e );
-					}
+					FileSystemUtil.write( target, "move me", "utf-8", true );
 				}
 			} );
 		}

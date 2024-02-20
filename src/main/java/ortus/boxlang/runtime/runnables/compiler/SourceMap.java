@@ -26,13 +26,19 @@ public class SourceMap {
 	}
 
 	public Integer convertJavaLinetoSourceLine( int javaLine ) {
+		SourceMapRecord closest = sourceMapRecords[ 1 ];
+
 		for ( SourceMapRecord sourceMapRecord : sourceMapRecords ) {
 			if ( sourceMapRecord.javaSourceLine == javaLine ) {
 				return sourceMapRecord.originSourceLine;
 			}
+
+			if ( sourceMapRecord.javaSourceLine < javaLine && javaLine - sourceMapRecord.javaSourceLine < javaLine - closest.javaSourceLine ) {
+				closest = sourceMapRecord;
+			}
 		}
 
-		return null;
+		return closest.originSourceLine;
 	}
 
 	public int convertSourceLineToJavaLine( int sourceLine ) throws BoxRuntimeException {

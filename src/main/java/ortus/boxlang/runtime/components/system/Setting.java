@@ -17,8 +17,6 @@
  */
 package ortus.boxlang.runtime.components.system;
 
-import java.util.Optional;
-
 import ortus.boxlang.runtime.components.Attribute;
 import ortus.boxlang.runtime.components.BoxComponent;
 import ortus.boxlang.runtime.components.Component;
@@ -51,7 +49,7 @@ public class Setting extends Component {
 	 * 
 	 *
 	 */
-	public Optional<Object> _invoke( IBoxContext context, IStruct attributes, ComponentBody body, IStruct executionState ) {
+	public BodyResult _invoke( IBoxContext context, IStruct attributes, ComponentBody body, IStruct executionState ) {
 		// TODO: Make this do something
 		return DEFAULT_RETURN;
 	}

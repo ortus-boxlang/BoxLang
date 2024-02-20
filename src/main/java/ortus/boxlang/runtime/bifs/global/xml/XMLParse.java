@@ -14,8 +14,6 @@
  */
 package ortus.boxlang.runtime.bifs.global.xml;
 
-import java.io.IOException;
-
 import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
 import ortus.boxlang.runtime.context.IBoxContext;
@@ -24,7 +22,6 @@ import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.XML;
-import ortus.boxlang.runtime.types.exceptions.BoxIOException;
 import ortus.boxlang.runtime.util.FileSystemUtil;
 
 @BoxBIF
@@ -42,21 +39,17 @@ public class XMLParse extends BIF {
 
 	/**
 	 * Return new array
-	 * 
+	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
-	 * 
+	 *
 	 */
 	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
 		String xml = arguments.getAsString( Key.XML );
 
 		// Is not XML. Must be file or URL
 		if ( !xml.trim().startsWith( "<" ) ) {
-			try {
-				xml = StringCaster.cast( FileSystemUtil.read( xml ) );
-			} catch ( IOException e ) {
-				throw new BoxIOException( e );
-			}
+			xml = StringCaster.cast( FileSystemUtil.read( xml ) );
 		}
 		return new XML( xml );
 	}

@@ -30,7 +30,7 @@ import java.util.Optional;
  * This is also important so a {@link java.util.ServiceLoader} can find the
  * concrete implementations of the {@code IScheduler} interface.
  *
- * @see Scheduler
+ * @see BaseScheduler
  */
 public interface IScheduler {
 
@@ -54,7 +54,7 @@ public interface IScheduler {
 	/**
 	 * Startup this scheduler and all of it's scheduled tasks
 	 */
-	public Scheduler startup();
+	public BaseScheduler startup();
 
 	/**
 	 * Has this scheduler been started?
@@ -71,7 +71,7 @@ public interface IScheduler {
 	 *
 	 * @return
 	 */
-	public Scheduler restart( boolean force, long timeout );
+	public BaseScheduler restart( boolean force, long timeout );
 
 	/**
 	 * Shutdown this scheduler by calling the executor to shutdown and disabling all tasks
@@ -80,7 +80,7 @@ public interface IScheduler {
 	 * @param timeout The timeout in seconds to wait for the shutdown of all tasks, defaults to 30 or whatever you set using the setShutdownTimeout()
 	 *                method
 	 */
-	public Scheduler shutdown( boolean force, long timeout );
+	public BaseScheduler shutdown( boolean force, long timeout );
 
 	/**
 	 * Shutdown this scheduler by calling the executor to shutdown and disabling all tasks
@@ -90,7 +90,7 @@ public interface IScheduler {
 	 *
 	 * @return The scheduler object
 	 */
-	public Scheduler shutdown( boolean force );
+	public BaseScheduler shutdown( boolean force );
 
 	/**
 	 * Shutdown this scheduler by calling the executor to shutdown and disabling all tasks
@@ -98,7 +98,7 @@ public interface IScheduler {
 	 *
 	 * @return The scheduler object
 	 */
-	public Scheduler shutdown();
+	public BaseScheduler shutdown();
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -162,10 +162,28 @@ public interface IScheduler {
 	public String getName();
 
 	/**
+	 * Set the scheduler name
+	 *
+	 * @param name the name
+	 *
+	 * @return the scheduler object
+	 */
+	public BaseScheduler setName( String name );
+
+	/**
 	 * Get the scheduler timezone
-	 * 
+	 *
 	 * @return the timezone
 	 */
 	public ZoneId getTimezone();
+
+	/**
+	 * Set the scheduler's timezone
+	 *
+	 * @param timezone the timezone to set
+	 * 
+	 * @return the scheduler object
+	 */
+	public BaseScheduler setTimezone( ZoneId timezone );
 
 }

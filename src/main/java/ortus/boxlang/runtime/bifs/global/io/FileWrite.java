@@ -15,18 +15,12 @@
 
 package ortus.boxlang.runtime.bifs.global.io;
 
-import java.io.IOException;
-import java.nio.file.NoSuchFileException;
-import java.nio.file.Path;
-
 import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
-import ortus.boxlang.runtime.types.exceptions.BoxIOException;
-import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.util.FileSystemUtil;
 
 @BoxBIF
@@ -65,17 +59,11 @@ public class FileWrite extends BIF {
 		Object	fileContent	= arguments.get( Key.data );
 		String	charset		= arguments.getAsString( Key.charset );
 		Boolean	createPath	= arguments.getAsBoolean( Key.createPath );
-		try {
-			if ( fileContent instanceof String ) {
-				FileSystemUtil.write( filePath, arguments.getAsString( Key.data ), charset, createPath );
-			} else {
-				FileSystemUtil.write( filePath, ( byte[] ) fileContent, createPath );
-			}
-		} catch ( NoSuchFileException e ) {
-			throw new BoxRuntimeException(
-			    "The file [" + filePath + "] could not be writtent. The directory [" + Path.of( filePath ).getParent().toString() + "] does not exist." );
-		} catch ( IOException e ) {
-			throw new BoxIOException( e );
+
+		if ( fileContent instanceof String ) {
+			FileSystemUtil.write( filePath, arguments.getAsString( Key.data ), charset, createPath );
+		} else {
+			FileSystemUtil.write( filePath, ( byte[] ) fileContent, createPath );
 		}
 
 		return null;

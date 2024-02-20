@@ -17,7 +17,6 @@
  */
 package ortus.boxlang.runtime.components.system;
 
-import java.util.Optional;
 import java.util.Set;
 
 import ortus.boxlang.runtime.components.Attribute;
@@ -47,12 +46,11 @@ public class SaveContent extends Component {
 
 	public SaveContent( Key name ) {
 		super( name );
-		declaredAttributes	= new Attribute[] {
+		declaredAttributes = new Attribute[] {
 		    new Attribute( Key.variable, "string", Set.of( Validator.REQUIRED, Validator.NON_EMPTY ) ),
 		    new Attribute( Key.trim, "boolean", false ),
 		    new Attribute( Key.append, "boolean", false )
 		};
-		captureBodyOutput	= true;
 	}
 
 	/**
@@ -64,14 +62,15 @@ public class SaveContent extends Component {
 	 * @param executionState The execution state of the BIF
 	 *
 	 */
-	public Optional<Object> _invoke( IBoxContext context, IStruct attributes, ComponentBody body, IStruct executionState ) {
-		BodyResult bodyResult = processBody( context, body );
+	public BodyResult _invoke( IBoxContext context, IStruct attributes, ComponentBody body, IStruct executionState ) {
+		StringBuffer	buffer		= new StringBuffer();
+		BodyResult		bodyResult	= processBody( context, body, buffer );
 		// IF there was a return statement inside our body, we early exit now
-		if ( bodyResult.returnValue().isPresent() ) {
+		if ( bodyResult.isEarlyExit() ) {
 			// A return statement inside of savecontent discards all output that was built up
-			return bodyResult.returnValue();
+			return bodyResult;
 		}
-		String	content			= bodyResult.buffer();
+		String	content			= buffer.toString();
 		String	variableName	= attributes.getAsString( Key.variable );
 
 		boolean	trim			= attributes.getAsBoolean( Key.trim );

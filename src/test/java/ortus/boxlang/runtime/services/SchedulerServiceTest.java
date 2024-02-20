@@ -25,8 +25,8 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import ortus.boxlang.runtime.BoxRuntime;
+import ortus.boxlang.runtime.async.tasks.BaseScheduler;
 import ortus.boxlang.runtime.async.tasks.IScheduler;
-import ortus.boxlang.runtime.async.tasks.Scheduler;
 import ortus.boxlang.runtime.scopes.Key;
 
 public class SchedulerServiceTest {
@@ -64,7 +64,7 @@ public class SchedulerServiceTest {
 		// Given: Any necessary setup
 
 		// When: A scheduler is registered
-		IScheduler scheduler = new Scheduler( "test", runtime.getAsyncService() );
+		IScheduler scheduler = new BaseScheduler( "test" );
 		schedulerService.registerScheduler( scheduler );
 
 		assertThat( schedulerService.size() ).isEqualTo( 1 );
@@ -76,7 +76,7 @@ public class SchedulerServiceTest {
 	@DisplayName( "Given a registered scheduler, when unregistered, then it should be removed from the service" )
 	void testUnregisterScheduler() {
 		// Given: A registered scheduler
-		IScheduler scheduler = new Scheduler( "test", runtime.getAsyncService() );
+		IScheduler scheduler = new BaseScheduler( "test" );
 		schedulerService.removeScheduler( Key.of( "test" ), true, 0L );
 
 		schedulerService.registerScheduler( scheduler );

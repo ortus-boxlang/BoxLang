@@ -19,9 +19,7 @@ package ortus.boxlang.transpiler;
 
 import com.github.javaparser.ast.Node;
 import com.github.javaparser.printer.DefaultPrettyPrinter;
-import com.github.javaparser.printer.configuration.DefaultConfigurationOption;
 import com.github.javaparser.printer.configuration.DefaultPrinterConfiguration;
-import com.github.javaparser.printer.configuration.DefaultPrinterConfiguration.ConfigOption;
 
 public class CustomPrettyPrinter extends DefaultPrettyPrinter {
 
@@ -30,8 +28,9 @@ public class CustomPrettyPrinter extends DefaultPrettyPrinter {
 	public CustomPrettyPrinter() {
 		super();
 		this.visitor = new PrettyPrintVisitor( new DefaultPrinterConfiguration()
-		    .addOption( new DefaultConfigurationOption( ConfigOption.COLUMN_ALIGN_FIRST_METHOD_CHAIN ) )
-		    .addOption( new DefaultConfigurationOption( ConfigOption.COLUMN_ALIGN_PARAMETERS ) ) );
+		// .addOption( new DefaultConfigurationOption( ConfigOption.COLUMN_ALIGN_FIRST_METHOD_CHAIN ) )
+		// .addOption( new DefaultConfigurationOption( ConfigOption.COLUMN_ALIGN_PARAMETERS ) )
+		);
 	}
 
 	@Override

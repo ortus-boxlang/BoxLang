@@ -89,6 +89,7 @@ public class BoxClassTransformer extends AbstractTransformer {
 		import ortus.boxlang.runtime.types.MapHelper;
 		import ortus.boxlang.runtime.dynamic.ExpressionInterpreter;
 		import java.util.Optional;
+		import ortus.boxlang.runtime.components.Component;
 
 		import java.nio.file.Path;
 		import java.nio.file.Paths;

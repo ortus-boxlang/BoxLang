@@ -19,7 +19,6 @@ package ortus.boxlang.runtime.components.system;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 
 import ortus.boxlang.runtime.components.Attribute;
@@ -73,14 +72,14 @@ public class Output extends Component {
 	 * @param executionState The execution state of the BIF
 	 *
 	 */
-	public Optional<Object> _invoke( IBoxContext context, IStruct attributes, ComponentBody body, IStruct executionState ) {
+	public BodyResult _invoke( IBoxContext context, IStruct attributes, ComponentBody body, IStruct executionState ) {
 		Object queryOrName = attributes.get( Key.query );
 		// Short circuit if there's no query
 		if ( queryOrName == null ) {
 			BodyResult bodyResult = processBody( context, body );
 			// IF there was a return statement inside our body, we early exit now
-			if ( bodyResult.returnValue().isPresent() ) {
-				return bodyResult.returnValue();
+			if ( bodyResult.isEarlyExit() ) {
+				return bodyResult;
 			}
 			return DEFAULT_RETURN;
 		}
@@ -155,8 +154,14 @@ public class Output extends Component {
 				// Run the code inside of the output loop
 				BodyResult bodyResult = processBody( context, body );
 				// IF there was a return statement inside our body, we early exit now
-				if ( bodyResult.returnValue().isPresent() ) {
-					return bodyResult.returnValue();
+				if ( bodyResult.isEarlyExit() ) {
+					if ( bodyResult.isContinue() ) {
+						continue;
+					} else if ( bodyResult.isBreak() ) {
+						break;
+					} else {
+						return bodyResult;
+					}
 				}
 				// Next row, please!
 				context.registerQueryLoop( theQuery, i + 1 );

@@ -20,7 +20,6 @@ package ortus.boxlang.runtime.context;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.components.Component;
@@ -172,7 +171,7 @@ public interface IBoxContext {
 	 * @param componentBody The body of the component
 	 * 
 	 */
-	public Optional<Object> invokeComponent( Key name, IStruct attributes, Component.ComponentBody componentBody );
+	public Component.BodyResult invokeComponent( Key name, IStruct attributes, Component.ComponentBody componentBody );
 
 	/**
 	 * Invoke a template in the current context

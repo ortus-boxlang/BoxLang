@@ -22,18 +22,17 @@ import java.util.ArrayDeque;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.bifs.BIFDescriptor;
 import ortus.boxlang.runtime.components.Component;
+import ortus.boxlang.runtime.components.Component.BodyResult;
 import ortus.boxlang.runtime.components.ComponentDescriptor;
 import ortus.boxlang.runtime.dynamic.casters.FunctionCaster;
 import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 import ortus.boxlang.runtime.loader.ImportDefinition;
 import ortus.boxlang.runtime.runnables.BoxTemplate;
 import ortus.boxlang.runtime.runnables.IBoxRunnable;
-import ortus.boxlang.runtime.runnables.ITemplateRunnable;
 import ortus.boxlang.runtime.runnables.RunnableLoader;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.IScope;
@@ -396,7 +395,7 @@ public class BaseBoxContext implements IBoxContext {
 	 * @param componentBody The body of the component
 	 * 
 	 */
-	public Optional<Object> invokeComponent( Key name, IStruct attributes, Component.ComponentBody componentBody ) {
+	public Component.BodyResult invokeComponent( Key name, IStruct attributes, Component.ComponentBody componentBody ) {
 		ComponentDescriptor comp = componentService.getComponent( name );
 		if ( comp != null ) {
 			return comp.invoke( this, attributes, componentBody );

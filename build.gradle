@@ -242,20 +242,6 @@ generateTestGrammarSource {
 	outputDirectory = file( "$projectDir/$antlrGeneratedParserBaseDir/$antlrGeneratedParserPackageDir" )
 }
 
-/**
- * Test Task Customizations
- */
-test {
-	testLogging {
-		showStandardStreams = true
-	}
-	systemProperties.putIfAbsent( "testboxdir", testboxDir)
-	systemProperties.putIfAbsent( "contentboxdir", contentboxDir)
-	systemProperties.putIfAbsent( "coldboxdir", coldboxDir)
-	dependsOn compileJava, compileTestJava
-	exclude '**/resources/**'
-}
-
 /****************************************************************
  * CUSTOM TASKS
  ****************************************************************/
@@ -285,9 +271,8 @@ task generateBIFServiceProviders( type: JavaExec ) {
     classpath = sourceSets.test.runtimeClasspath
     main = 'tools.BIFServiceProviderGenerator'
 }
-// Make the build task depend on your custom task
+// Make the build task depend on this custom task
 build.dependsOn generateBIFServiceProviders
-
 /**
  * Generate the Component Service Providers
  */
@@ -295,8 +280,22 @@ task generateComponentServiceProviders( type: JavaExec ) {
     classpath = sourceSets.test.runtimeClasspath
     main = 'tools.ComponentServiceProviderGenerator'
 }
-// Make the build task depend on your custom task
+// Make the build task depend on this custom task
 build.dependsOn generateComponentServiceProviders
+
+/**
+ * Test Task Customizations
+ */
+test {
+	testLogging {
+		showStandardStreams = true
+	}
+	systemProperties.putIfAbsent( "testboxdir", testboxDir)
+	systemProperties.putIfAbsent( "contentboxdir", contentboxDir)
+	systemProperties.putIfAbsent( "coldboxdir", coldboxDir)
+	dependsOn compileJava, compileTestJava, generateBIFServiceProviders, generateComponentServiceProviders
+	exclude '**/resources/**'
+}
 
 /**
  * Install the CFML dependencies for the parser tests via CommandBox

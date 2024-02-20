@@ -85,17 +85,9 @@ public class DirectoryCopyTest {
 				String	target		= source + "/" + item;
 				Path	itemPath	= Path.of( target );
 				if ( Files.isDirectory( itemPath ) ) {
-					try {
-						FileSystemUtil.createDirectory( target );
-					} catch ( IOException e ) {
-						throw new RuntimeException( e );
-					}
+					FileSystemUtil.createDirectory( target );
 				} else {
-					try {
-						FileSystemUtil.write( target, "move me", "utf-8", true );
-					} catch ( IOException e ) {
-						throw new RuntimeException( e );
-					}
+					FileSystemUtil.write( target, "move me", "utf-8", true );
 				}
 			} );
 		}

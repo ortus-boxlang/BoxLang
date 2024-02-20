@@ -612,4 +612,63 @@ public class StructUtil {
 		return Stream.of( entry );
 	}
 
+	/**
+	 * Translates a struct with dot-delimited keys in to nested struct
+	 *
+	 * @param struct     The struct to de-flatten
+	 * @param deep       Whether to recurse in to nested keys to unflatten
+	 * @param retainKeys Whether to retain the original keys
+	 *
+	 * @return a flattened map of the struct
+	 */
+	public static IStruct unFlattenKeys( IStruct struct, boolean deep, boolean retainKeys ) {
+		String	key;
+		Object	value;
+		int		index;
+		for ( Key k : struct.getKeys() ) {
+			key		= k.getName();
+			value	= struct.get( k );
+			if ( deep && value instanceof IStruct )
+				unFlattenKeys( StructCaster.cast( value ), deep, retainKeys );
+			if ( ( index = key.indexOf( '.' ) ) != -1 ) {
+				unFlattenKey( index, k, key, struct, retainKeys );
+			}
+		}
+
+		return struct;
+
+	}
+
+	/**
+	 * Method to recursively un-flatten a struct with keys in dot-notation
+	 *
+	 * @param index      the initial key index
+	 * @param key        the struct key to de-flatten
+	 * @param keyValue   the string representation of the key
+	 * @param original   the original struct to start the deflattening
+	 * @param retainKeys whether to retain the original flattened keys
+	 *
+	 * @return the stream object for further operations
+	 */
+	public static void unFlattenKey( int index, Key key, String keyValue, IStruct original, boolean retainKeys ) {
+
+		String	left;
+		Object	value	= original.get( key );
+		System.out.println( "value: " + value.toString() );
+		IStruct destination = original;
+		if ( !retainKeys )
+			original.remove( key );
+		do {
+			left		= keyValue.substring( 0, index );
+			keyValue	= keyValue.substring( index + 1 );
+			Key destinationKey = Key.of( left );
+			if ( !destination.containsKey( destinationKey ) ) {
+				destination.put( destinationKey, new Struct() );
+			}
+			destination = destination.getAsStruct( destinationKey );
+		} while ( ( index = keyValue.indexOf( '.' ) ) != -1 );
+		// final put of the last key in the delimited string
+		destination.put( Key.of( keyValue ), value );
+	}
+
 }

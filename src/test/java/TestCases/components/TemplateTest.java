@@ -699,4 +699,40 @@ public class TemplateTest {
 		assertThat( variables.get( result ) ).isEqualTo( "bar" );
 	}
 
+	@Test
+	public void testBreakInComponentBody() {
+		instance.executeSource(
+		    """
+		    <cfset result = "">
+		         <cfset myArr = [1,2,3,4]>
+		            <cfloop array="#myArr#" item="i">
+		            	<cfoutput>
+		            		<cfsavecontent variable="dummy">
+		    			 	<cfset result &= i>
+		            			<cfbreak>
+		            		</cfsavecontent>
+		            	</cfoutput>
+		       </cfloop>
+		       """, context, BoxScriptType.CFMARKUP );
+		assertThat( variables.get( result ) ).isEqualTo( "1" );
+	}
+
+	@Test
+	public void testContinueInComponentBody() {
+		instance.executeSource(
+		    """
+		    <cfset result = "">
+		        <cfset myArr = [1,2,3,4]>
+		           <cfloop array="#myArr#" item="i">
+		           	<cfoutput>
+		           		<cfsavecontent variable="dummy">
+		    				 <cfset result &= i>
+		           			<cfcontinue>
+		           		</cfsavecontent>
+		           	</cfoutput>
+		      </cfloop>
+		      """, context, BoxScriptType.CFMARKUP );
+		assertThat( variables.get( result ) ).isEqualTo( "1234" );
+	}
+
 }

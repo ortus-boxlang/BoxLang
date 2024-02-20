@@ -32,6 +32,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import ortus.boxlang.runtime.BoxRuntime;
+import ortus.boxlang.runtime.async.tasks.IScheduler;
 import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BIFDescriptor;
 import ortus.boxlang.runtime.bifs.BoxLangBIFProxy;
@@ -392,6 +393,12 @@ public class ModuleRecord {
 		    .stream()
 		    .map( ServiceLoader.Provider::type )
 		    .forEach( targetClass -> componentService.registerComponent( targetClass, null, null ) );
+
+		// Do we have any Java Schedulers to register in the SchedulerService
+		ServiceLoader.load( IScheduler.class, this.classLoader )
+		    .stream()
+		    .map( ServiceLoader.Provider::get )
+		    .forEach( scheduler -> runtime.getSchedulerService().loadScheduler( Key.of( "bxScheduler@" + this.name ), scheduler ) );
 
 		// Finalize Registration
 		this.registeredOn = Instant.now();

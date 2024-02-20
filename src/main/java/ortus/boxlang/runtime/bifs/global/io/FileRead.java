@@ -15,8 +15,6 @@
 
 package ortus.boxlang.runtime.bifs.global.io;
 
-import java.io.IOException;
-
 import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
 import ortus.boxlang.runtime.context.IBoxContext;
@@ -24,7 +22,6 @@ import ortus.boxlang.runtime.dynamic.casters.IntegerCaster;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
-import ortus.boxlang.runtime.types.exceptions.BoxIOException;
 import ortus.boxlang.runtime.util.FileSystemUtil;
 
 @BoxBIF
@@ -65,11 +62,7 @@ public class FileRead extends BIF {
 			}
 		}
 
-		try {
-			return FileSystemUtil.read( arguments.getAsString( Key.filepath ), charset, bufferSize );
-		} catch ( IOException e ) {
-			throw new BoxIOException( e );
-		}
+		return FileSystemUtil.read( arguments.getAsString( Key.filepath ), charset, bufferSize );
 
 	}
 
