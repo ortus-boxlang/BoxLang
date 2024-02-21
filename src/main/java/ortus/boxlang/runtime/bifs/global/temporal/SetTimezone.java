@@ -51,7 +51,7 @@ public class SetTimezone extends BIF {
 	 *
 	 * @argument.timezone The string representation or three character alias of the timezone
 	 */
-	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
+	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		String	timezone	= arguments.getAsString( Key.timezone );
 		ZoneId	assigned	= LocalizationUtil.parseZoneId( timezone );
 		if ( assigned == null ) {

@@ -135,7 +135,7 @@ component {
 			 *
 			 * @argument.foo Describe any expected arguments
 			 */
-			public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
+			public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 				// Replace this example function body with your own implementation;
 				//#listLast( ( memberClass ?: "Foo"), "." )# actualObj = arguments.get( Key.foo );
 				//return actualObj.foo( arguments.get( Key.bar ) );

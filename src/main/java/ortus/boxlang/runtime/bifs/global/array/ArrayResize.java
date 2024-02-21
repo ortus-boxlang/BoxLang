@@ -53,7 +53,7 @@ public class ArrayResize extends BIF {
 	 * 
 	 * @argument.size The new minimum size of the array
 	 */
-	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
+	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		Array	actualObj	= arguments.getAsArray( Key.array );
 		Integer	size		= arguments.getAsInteger( Key.size );
 

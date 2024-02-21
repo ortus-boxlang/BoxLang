@@ -45,7 +45,7 @@ public class Now extends BIF {
 	 *
 	 * @argument.timezone A timezone to use for the DateTime object, defaults to the system default
 	 */
-	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
+	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		return new DateTime( LocalizationUtil.parseZoneId( arguments.getAsString( Key.timezone ), context ) );
 	}
 

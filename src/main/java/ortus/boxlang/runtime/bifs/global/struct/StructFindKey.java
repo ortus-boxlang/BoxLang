@@ -63,7 +63,7 @@ public class StructFindKey extends BIF {
 	 *
 	 * @argument.scope Either one (default), which finds the first instance or all to return all values
 	 */
-	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
+	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		Key				scopeKey		= Key.of( arguments.getAsString( Key.scope ) );
 		Stream<IStruct>	searchStream	= StructUtil.findKey(
 		    arguments.getAsStruct( Key.struct ),

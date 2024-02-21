@@ -41,7 +41,7 @@ public class ClearTimezone extends BIF {
 	 * @param arguments Argument scope for the BIF.
 	 *
 	 */
-	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
+	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		context.getParentOfType( RequestBoxContext.class ).setTimezone( null );
 		return null;
 	}

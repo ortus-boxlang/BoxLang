@@ -55,7 +55,7 @@ public class Find extends BIF {
 	 *
 	 * @return Returns the position of the first occurrence of the substring. If the substring is not found, returns zero.
 	 */
-	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
+	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		Key		bifMethodKey	= arguments.getAsKey( BIF.__functionName );
 
 		String	substring		= arguments.getAsString( Key.substring );

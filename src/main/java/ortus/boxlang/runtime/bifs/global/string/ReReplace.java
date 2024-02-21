@@ -59,7 +59,7 @@ public class ReReplace extends BIF {
 	 * @argument.scope The scope to search in
 	 * 
 	 */
-	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
+	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		String	string		= arguments.getAsString( Key.string );
 		String	regex		= arguments.getAsString( Key.regex );
 		String	substring	= arguments.getAsString( Key.substring );

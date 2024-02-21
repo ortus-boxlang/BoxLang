@@ -70,9 +70,9 @@ public class LSTimeUnits extends TimeUnits {
 	 *
 	 * @argument.timezone The timezone with which to cast the result
 	 */
-	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
+	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		arguments.put( BIF.__functionName, functionMap.get( arguments.getAsKey( BIF.__functionName ) ) );
-		return super.invoke( context, arguments );
+		return super._invoke( context, arguments );
 	}
 
 }

@@ -68,7 +68,7 @@ public class CreateODBCDateTime extends BIF {
 	 *
 	 * @argument.timezone An optional timezone to apply
 	 */
-	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
+	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		DateTime dateRef = DateTimeCaster.cast(
 		    arguments.get( Key.date ),
 		    true,

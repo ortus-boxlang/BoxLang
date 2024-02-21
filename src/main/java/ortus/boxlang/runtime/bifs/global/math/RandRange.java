@@ -44,7 +44,7 @@ public class RandRange extends BIF {
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 */
-	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
+	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		if ( arguments.get( Key.algorithm ) != null ) {
 			throw new BoxRuntimeException( "The algorithm argument has not yet been implemented" );
 		}

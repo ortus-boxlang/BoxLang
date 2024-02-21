@@ -44,7 +44,7 @@ public class WriteLog extends BIF {
 	 *
 	 * @argument.
 	 */
-	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
+	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		// TODO: implement
 		return null;
 	}

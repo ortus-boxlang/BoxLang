@@ -52,7 +52,7 @@ public class Insert extends BIF {
 	 * 
 	 * @argument.position The position at which to insert the string.
 	 */
-	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
+	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		String	substring		= arguments.getAsString( Key.substring );
 		String	originalString	= arguments.getAsString( Key.string );
 		int		position		= arguments.getAsInteger( Key.position );

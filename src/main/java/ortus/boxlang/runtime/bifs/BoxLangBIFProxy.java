@@ -73,7 +73,7 @@ public class BoxLangBIFProxy extends BIF {
 	}
 
 	@Override
-	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
+	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		// System.out.println( "BoxLangBIF.invoke() called" );
 		// System.out.println( "Arguments " + arguments.toString() );
 

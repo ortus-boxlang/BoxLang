@@ -63,7 +63,7 @@ public class Len extends BIF {
 	 *
 	 * @argument.value The number to return the absolute value of
 	 */
-	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
+	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		Object object = arguments.get( Key.value );
 		if ( object == null ) {
 			return 0;

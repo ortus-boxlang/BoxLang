@@ -44,7 +44,7 @@ public class XMLParse extends BIF {
 	 * @param arguments Argument scope for the BIF.
 	 *
 	 */
-	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
+	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		String xml = arguments.getAsString( Key.XML );
 
 		// Is not XML. Must be file or URL

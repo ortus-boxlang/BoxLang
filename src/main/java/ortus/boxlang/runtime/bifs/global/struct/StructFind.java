@@ -59,7 +59,7 @@ public class StructFind extends BIF {
 	 * 
 	 * @argument.defaultValue An optional value to be returned if the struct does not contain the key
 	 */
-	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
+	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		IStruct	struct			= arguments.getAsStruct( Key.struct );
 		Key		searchKey		= Key.of( arguments.getAsString( Key.key ) );
 		Object	defaultValue	= arguments.get( Key.defaultValue );

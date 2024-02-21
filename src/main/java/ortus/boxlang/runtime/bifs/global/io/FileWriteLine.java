@@ -52,7 +52,7 @@ public class FileWriteLine extends BIF {
 	 *
 	 * @argument.data The line of data to be written
 	 */
-	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
+	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		File file = null;
 		if ( arguments.get( Key.file ) instanceof File ) {
 			file = ( File ) arguments.get( Key.file );

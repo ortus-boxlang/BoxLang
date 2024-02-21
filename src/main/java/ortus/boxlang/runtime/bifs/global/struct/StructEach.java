@@ -63,7 +63,7 @@ public class StructEach extends BIF {
 	 *
 	 * @argument.ordered (BoxLang only) whether parallel operations should execute and maintain order
 	 */
-	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
+	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		IStruct target = arguments.getAsStruct( Key.struct );
 
 		StructUtil.each(

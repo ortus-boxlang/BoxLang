@@ -48,7 +48,7 @@ public class ArrayShift extends BIF {
 	 *
 	 * @argument.array The array to shift
 	 */
-	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
+	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		Array actualObj = arguments.getAsArray( Key.array );
 
 		return actualObj.removeAt( 0 );

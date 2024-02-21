@@ -43,7 +43,7 @@ public class Char extends BIF {
 	 *
 	 * @argument.number The UCS-2 code value to convert.
 	 */
-	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
+	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		int code = arguments.getAsInteger( Key.number );
 
 		// Check if the code is within the valid range

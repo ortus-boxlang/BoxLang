@@ -78,7 +78,7 @@ public class ArrayFind extends BIF {
 	 *
 	 * @argument.value The value to found.
 	 */
-	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
+	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		Key bifMethodKey = arguments.getAsKey( BIF.__functionName );
 		if ( isSimpleValueFunction( bifMethodKey ) && arguments.get( Key.value ) instanceof Function ) {
 			throw new BoxRuntimeException(

@@ -46,7 +46,7 @@ public class GetDirectoryFromPath extends BIF {
 	 *
 	 * @argument.path The path to extract the parent directory from
 	 */
-	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
+	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		return Path.of( arguments.getAsString( Key.path ) ).getParent().toAbsolutePath().toString();
 	}
 

@@ -54,7 +54,7 @@ public class LSParseNumber extends BIF {
 	 *
 	 * @argument.foo Describe any expected arguments
 	 */
-	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
+	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		String	value	= arguments.getAsString( Key.number );
 		Locale	locale	= LocalizationUtil.parseLocaleFromContext( context, arguments );
 

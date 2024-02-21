@@ -62,7 +62,7 @@ public class DirectoryList extends BIF {
 	 *
 	 * @argument.foo Describe any expected arguments
 	 */
-	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
+	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		// Replace this example function body with your own implementation;
 		String			returnType	= arguments.getAsString( Key.listInfo );
 

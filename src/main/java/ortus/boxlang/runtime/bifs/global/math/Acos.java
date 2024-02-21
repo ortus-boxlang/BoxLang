@@ -46,7 +46,7 @@ public class Acos extends BIF {
 	 *
 	 * @argument.number The number to calculate the arccosine of
 	 */
-	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
+	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		double value = arguments.getAsDouble( Key.number );
 		if ( value < -1.0 || value > 1.0 ) {
 			throw new BoxRuntimeException( "Input value must be in the range [-1, 1] for ACos function." );

@@ -46,7 +46,7 @@ public class RepeatString extends BIF {
 	 * 
 	 * @argument.count The number of times to repeat the string.
 	 */
-	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
+	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		String	input	= arguments.getAsString( Key.string );
 		int		count	= arguments.getAsInteger( Key.count );
 

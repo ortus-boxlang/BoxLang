@@ -55,8 +55,8 @@ public class LSNumberFormat extends NumberFormat {
 	 *
 	 * @argument.locale The locale string to apply to the format
 	 */
-	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
-		return super.invoke( context, arguments );
+	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
+		return super._invoke( context, arguments );
 	}
 
 }

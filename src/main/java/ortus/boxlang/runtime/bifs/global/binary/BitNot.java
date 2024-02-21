@@ -45,7 +45,7 @@ public class BitNot extends BIF {
 	 *
 	 * @argument.number Numeric value for bitwise NOT.
 	 */
-	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
+	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		int number = arguments.getAsInteger( Key.number );
 
 		return ~number;

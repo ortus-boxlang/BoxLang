@@ -56,7 +56,7 @@ public class ToBase64 extends BIF {
 	 * 
 	 * @argument.encoding The character encoding (character set) of the string, used with binary data.
 	 */
-	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
+	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		Object string_or_object = arguments.get( Key.string_or_object );
 
 		if ( string_or_object instanceof byte[] b ) {

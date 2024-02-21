@@ -49,7 +49,7 @@ public class Right extends BIF {
 	 *
 	 * @argument.count The number of characters to retrieve.
 	 */
-	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
+	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		String	input	= arguments.getAsString( Key.string );
 		int		count	= arguments.getAsInteger( Key.count );
 

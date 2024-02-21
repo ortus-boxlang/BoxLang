@@ -48,7 +48,7 @@ public class GetCanonicalPath extends BIF {
 	 *
 	 * @argument.path The file or directory path string
 	 */
-	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
+	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		try {
 			return Path.of( arguments.getAsString( Key.path ) ).toRealPath().toString();
 		} catch ( IOException e ) {

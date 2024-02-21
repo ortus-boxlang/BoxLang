@@ -57,7 +57,7 @@ public class DirectoryMove extends BIF {
 	 *
 	 * @argument.createPath [true] Whether to create all necessary paths to the new path
 	 */
-	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
+	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		Path	sourcePath		= Path.of( arguments.getAsString( Key.oldPath ) );
 		Path	destinationPath	= Path.of( arguments.getAsString( Key.newPath ) );
 		Boolean	createPath		= arguments.getAsBoolean( Key.createPath );

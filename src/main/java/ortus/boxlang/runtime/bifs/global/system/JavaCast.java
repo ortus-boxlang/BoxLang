@@ -46,7 +46,7 @@ public class JavaCast extends BIF {
 	 *
 	 * @argument.variable The variable, Java object, or array to cast.
 	 */
-	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
+	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		String	type		= arguments.getAsString( Key.type );
 		Object	variable	= arguments.get( Key.variable );
 

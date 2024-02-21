@@ -51,7 +51,7 @@ public class SetLocale extends BIF {
 	 *
 	 * @argument.locale The locale ISO directive, common name or alias
 	 */
-	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
+	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		Locale locale = LocalizationUtil.parseLocale( arguments.getAsString( Key.locale ) );
 		if ( locale == null || !LocalizationUtil.isValidLocale( locale ) ) {
 			throw new BoxRuntimeException(

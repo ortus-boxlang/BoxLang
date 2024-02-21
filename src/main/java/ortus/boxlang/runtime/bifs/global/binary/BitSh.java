@@ -48,7 +48,7 @@ public class BitSh extends BIF {
 	 *
 	 * @return Returns the result of the bitwise shift operation.
 	 */
-	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
+	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		Key	bifMethodKey	= arguments.getAsKey( BIF.__functionName );
 
 		int	number			= arguments.getAsInteger( Key.number );

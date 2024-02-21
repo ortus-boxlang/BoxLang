@@ -47,7 +47,7 @@ public class ArrayPop extends BIF {
 	 * 
 	 * @argument.array The array to get the last
 	 */
-	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
+	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		Array actualArray = arguments.getAsArray( Key.array );
 		if ( actualArray.size() == 0 ) {
 			return arguments.get( Key.defaultValue );

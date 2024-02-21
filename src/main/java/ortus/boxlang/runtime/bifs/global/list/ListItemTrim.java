@@ -61,7 +61,7 @@ public class ListItemTrim extends BIF {
 	 *
 	 * @argument.includeEmptyFields boolean whether to include empty fields in the returned result
 	 */
-	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
+	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		String delimiter = arguments.getAsString( Key.delimiter );
 
 		return ListUtil.asString(

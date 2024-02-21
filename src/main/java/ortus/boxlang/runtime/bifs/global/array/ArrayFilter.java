@@ -58,7 +58,7 @@ public class ArrayFilter extends BIF {
 	 *
 	 * @argument.maxThreads The maximum number of threads to use when parallel = true
 	 */
-	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
+	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		return ListUtil.filter(
 		    ArrayCaster.cast( arguments.get( "array" ) ),
 		    arguments.getAsFunction( Key.callback ),

@@ -50,7 +50,7 @@ public class DirectoryDelete extends BIF {
 	 *                     If falls and the directory is not empty, with throw a runtime exception
 	 *
 	 */
-	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
+	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		FileSystemUtil.deleteDirectory( arguments.getAsString( Key.path ), arguments.getAsBoolean( Key.recursive ) );
 		return null;
 	}

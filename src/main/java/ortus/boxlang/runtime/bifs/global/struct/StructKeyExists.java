@@ -52,7 +52,7 @@ public class StructKeyExists extends BIF {
 	 *
 	 * @argument.key The key within the struct to test for existence
 	 */
-	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
+	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		return arguments.getAsStruct( Key.struct ).containsKey( Key.of( arguments.getAsString( Key.key ) ) );
 	}
 

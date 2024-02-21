@@ -47,7 +47,7 @@ public class IsIPv6 extends BIF {
 	 *
 	 * @argument.ip String representing the IP address to test.
 	 */
-	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
+	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		try {
 			InetAddress[] addresses;
 			if ( arguments.containsKey( Key.hostname ) ) {

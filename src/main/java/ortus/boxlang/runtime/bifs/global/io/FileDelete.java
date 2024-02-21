@@ -45,7 +45,7 @@ public class FileDelete extends BIF {
 	 *
 	 * @argument.foo Describe any expected arguments
 	 */
-	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
+	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		FileSystemUtil.deleteFile( arguments.getAsString( Key.file ) );
 		return null;
 	}

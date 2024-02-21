@@ -60,7 +60,7 @@ public class IsValid extends BIF {
 	 *
 	 * @argument.value Value to test for validaty on a given type
 	 */
-	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
+	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		IsValidType type = IsValidType.fromString( arguments.getAsString( Key.type ) );
 		return switch ( type ) {
 			/*

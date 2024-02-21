@@ -57,7 +57,7 @@ public class DirectoryCreate extends BIF {
 	 *
 	 * @argument.ignoreExists [false] Whether to ignore if a directory already exists
 	 */
-	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
+	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		String	targetDirectory	= arguments.getAsString( Key.path );
 		Path	targetPath		= Path.of( targetDirectory );
 		Boolean	createPath		= arguments.getAsBoolean( Key.createPath );

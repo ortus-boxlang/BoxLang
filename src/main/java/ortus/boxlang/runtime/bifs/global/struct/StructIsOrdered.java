@@ -50,7 +50,7 @@ public class StructIsOrdered extends BIF {
 	 *
 	 * @argument.struct The struct to test for a linked type
 	 */
-	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
+	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		return arguments.getAsStruct( Key.struct ).getType().equals( IStruct.TYPES.LINKED );
 	}
 

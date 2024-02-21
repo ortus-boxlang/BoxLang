@@ -42,7 +42,7 @@ public class GetFunctionList extends BIF {
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 */
-	public IStruct invoke( IBoxContext context, ArgumentsScope arguments ) {
+	public IStruct _invoke( IBoxContext context, ArgumentsScope arguments ) {
 
 		IStruct functions = new Struct( Struct.TYPES.LINKED );
 

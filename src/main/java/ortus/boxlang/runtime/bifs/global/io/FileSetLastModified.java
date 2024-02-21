@@ -52,7 +52,7 @@ public class FileSetLastModified extends BIF {
 	 *
 	 * @argument.date A date time object or string
 	 */
-	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
+	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		File file = null;
 		if ( arguments.get( Key.file ) instanceof File ) {
 			file = ( File ) arguments.get( Key.file );

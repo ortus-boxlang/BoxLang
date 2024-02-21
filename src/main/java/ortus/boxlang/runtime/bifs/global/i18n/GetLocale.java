@@ -47,7 +47,7 @@ public class GetLocale extends BIF {
 	 * @param arguments Argument scope for the BIF.
 	 *
 	 */
-	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
+	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		Locale			locale	= ( Locale ) context.getConfigItem( Key.locale, Locale.getDefault() );
 		ImmutableStruct	aliases	= LocalizationUtil.localeAliases;
 		Object			alias	= aliases.keySet().stream().filter( key -> locale.equals( aliases.get( key ) ) ).findFirst()

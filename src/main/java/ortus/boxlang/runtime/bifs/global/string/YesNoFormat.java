@@ -47,7 +47,7 @@ public class YesNoFormat extends BIF {
 	 * @argument.value The value to check for true/false and return Yes/No
 	 *
 	 */
-	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
+	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		return arguments.getAsBoolean( Key.value ) ? "Yes" : "No";
 	}
 

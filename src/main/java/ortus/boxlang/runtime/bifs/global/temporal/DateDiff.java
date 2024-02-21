@@ -80,7 +80,7 @@ public class DateDiff extends BIF {
 	 *
 	 * @argument.date2 The date which to compare against date1
 	 */
-	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
+	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		Key			datePart	= Key.of( arguments.getAsString( Key.datepart ) );
 		ZoneId		timezone	= LocalizationUtil.parseZoneId( null, context );
 		DateTime	date1		= DateTimeCaster.cast( arguments.get( Key.date1 ), true, timezone );

@@ -46,7 +46,7 @@ public class ParseNumber extends BIF {
 	 * 
 	 * @argument.radix The numeral system to use for conversion (e.g., "bin", "oct", "dec", "hex").
 	 */
-	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
+	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		String	number	= arguments.getAsString( Key.number );
 		String	radix	= arguments.getAsString( Key.radix );
 

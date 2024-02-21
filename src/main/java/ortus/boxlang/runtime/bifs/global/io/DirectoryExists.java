@@ -52,7 +52,7 @@ public class DirectoryExists extends BIF {
 	 *
 	 * @arguments.allowRealPath Whether to allow an absolute path as the path argument
 	 */
-	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
+	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		String	directoryPath	= arguments.getAsString( Key.path );
 		Boolean	allowRealPath	= arguments.getAsBoolean( Key.allowRealPath );
 		if ( !allowRealPath && Path.of( directoryPath ).isAbsolute() ) {

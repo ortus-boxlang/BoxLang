@@ -41,7 +41,7 @@ public class GetApplicationMetadata extends BIF {
 	 *
 	 * @argument.message The message to print
 	 */
-	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
+	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		return Struct.of(
 		    "mappings", runtime.getConfiguration().runtime.mappings
 		);

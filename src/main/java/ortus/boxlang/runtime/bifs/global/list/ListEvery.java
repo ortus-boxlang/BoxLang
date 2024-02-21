@@ -68,7 +68,7 @@ public class ListEvery extends ArrayEvery {
 	 *
 	 * @argument.maxThreads number the maximum number of threads to use in the parallel filter
 	 */
-	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
+	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		arguments.put(
 		    Key.array,
 		    ListUtil.asList(
@@ -78,7 +78,7 @@ public class ListEvery extends ArrayEvery {
 		        arguments.getAsBoolean( Key.multiCharacterDelimiter )
 		    )
 		);
-		return super.invoke( context, arguments );
+		return super._invoke( context, arguments );
 	}
 
 }

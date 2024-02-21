@@ -64,7 +64,7 @@ public class StructSort extends BIF {
 	 *
 	 * @argument.callback An optional callback to use as the sorting function
 	 */
-	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
+	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		IStruct target = arguments.getAsStruct( Key.struct );
 		if ( arguments.get( Key.sortType ) instanceof Function fn ) {
 			arguments.put( Key.callback, fn );

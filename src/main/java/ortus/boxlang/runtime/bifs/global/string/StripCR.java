@@ -45,7 +45,7 @@ public class StripCR extends BIF {
 	 *
 	 * @argument.string The string or variable that contains the text.
 	 */
-	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
+	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		String			inputString		= arguments.getAsString( Key.string );
 		StringBuilder	strippedString	= new StringBuilder( inputString.length() );
 

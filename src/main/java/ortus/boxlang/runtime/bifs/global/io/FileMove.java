@@ -46,7 +46,7 @@ public class FileMove extends BIF {
 	 *
 	 * @argument.foo Describe any expected arguments
 	 */
-	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
+	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		FileSystemUtil.move( arguments.getAsString( Key.source ), arguments.getAsString( Key.destination ) );
 		return null;
 	}

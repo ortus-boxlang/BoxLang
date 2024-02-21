@@ -50,7 +50,7 @@ public class ArrayUnshift extends BIF {
 	 * 
 	 * @argument.object The value to add
 	 */
-	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
+	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		Array actualObj = arguments.getAsArray( Key.array );
 
 		actualObj.add( 0, arguments.get( Key.object ) );

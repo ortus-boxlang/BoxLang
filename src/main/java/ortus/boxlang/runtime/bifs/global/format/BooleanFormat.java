@@ -51,7 +51,7 @@ public class BooleanFormat extends BIF {
 	 *
 	 * @argument.value The value to cast as a boolean and return the string value
 	 */
-	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
+	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		return BooleanCaster.cast( arguments.get( Key.value ), true ).toString();
 	}
 

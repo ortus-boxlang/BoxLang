@@ -58,7 +58,7 @@ public class Replace extends BIF {
 	 * @argument.scope The scope to search in
 	 * 
 	 */
-	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
+	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		String	string		= arguments.getAsString( Key.string );
 		String	substring1	= arguments.getAsString( Key.substring1 );
 		String	obj			= arguments.getAsString( Key.obj );

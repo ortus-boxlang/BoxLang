@@ -52,7 +52,7 @@ public class FileAppend extends BIF {
 	 *
 	 * @argument.charset [utf-8] the default charset to open the file for writing
 	 */
-	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
+	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		File file = null;
 		if ( arguments.get( Key.file ) instanceof File ) {
 			file = ( File ) arguments.get( Key.file );

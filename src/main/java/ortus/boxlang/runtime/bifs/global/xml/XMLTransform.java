@@ -69,7 +69,7 @@ public class XMLTransform extends BIF {
 	 * @argument parameters The parameters to pass to the xsl transformation
 	 *
 	 */
-	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
+	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		Object	xmlAny	= arguments.get( Key.XML );
 		XML		xml;
 		if ( xmlAny instanceof XML xmlCast ) {

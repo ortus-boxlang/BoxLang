@@ -54,7 +54,7 @@ public class DateAdd extends BIF {
 	 *
 	 * @argument.foo Describe any expected arguments
 	 */
-	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
+	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		ZoneId		timezone	= LocalizationUtil.parseZoneId( null, context );
 		DateTime	ref			= DateTimeCaster.cast( arguments.get( Key.date ), true, timezone );
 		return ref.modify(

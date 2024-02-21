@@ -52,7 +52,7 @@ public class FileExists extends BIF {
 	 *
 	 * @arguments.allowRealPath Whether to allow an absolute path as the path argument
 	 */
-	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
+	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		String	filePath		= arguments.getAsString( Key.source );
 		Boolean	allowRealPath	= arguments.getAsBoolean( Key.allowRealPath );
 

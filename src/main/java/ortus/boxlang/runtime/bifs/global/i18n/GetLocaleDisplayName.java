@@ -51,7 +51,7 @@ public class GetLocaleDisplayName extends GetLocaleInfo {
 	 *
 	 * @argument.dspLocale Optional display language locale
 	 */
-	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
+	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		String	dspLocale		= arguments.getAsString( Key.dspLocale );
 
 		Locale	locale			= new Locale.Builder()

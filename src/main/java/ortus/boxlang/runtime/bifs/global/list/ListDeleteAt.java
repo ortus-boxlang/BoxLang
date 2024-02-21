@@ -55,7 +55,7 @@ public class ListDeleteAt extends BIF {
 	 *
 	 * @argument.foo Describe any expected arguments
 	 */
-	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
+	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		return ListUtil.deleteAt(
 		    arguments.getAsString( Key.list ),
 		    IntegerCaster.cast( arguments.get( Key.position ) ),

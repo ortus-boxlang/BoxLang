@@ -46,7 +46,7 @@ public class Ascii extends BIF {
 	 *
 	 * @argument.string The string containing a single character to determine the ASCII value.
 	 */
-	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
+	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		String inputString = arguments.getAsString( Key.string );
 
 		// Check if the input string has a single character

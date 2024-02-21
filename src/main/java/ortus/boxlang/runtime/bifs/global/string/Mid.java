@@ -51,7 +51,7 @@ public class Mid extends BIF {
 	 * 
 	 * @argument.count The number of characters to retrieve.
 	 */
-	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
+	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		String	input	= arguments.getAsString( Key.string );
 		int		start	= arguments.getAsInteger( Key.start );
 		int		count	= arguments.getAsInteger( Key.count );

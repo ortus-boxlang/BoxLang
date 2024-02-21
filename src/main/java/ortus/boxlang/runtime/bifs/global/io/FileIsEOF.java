@@ -47,7 +47,7 @@ public class FileIsEOF extends BIF {
 	 *
 	 * @argument.foo Describe any expected arguments
 	 */
-	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
+	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		if ( arguments.get( Key.file ) instanceof File ) {
 			File file = ( File ) arguments.get( Key.file );
 			return file.isEOF();

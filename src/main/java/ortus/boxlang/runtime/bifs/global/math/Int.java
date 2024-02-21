@@ -45,7 +45,7 @@ public class Int extends BIF {
 	 * 
 	 * @argument.number The number to calculate the closest integer for
 	 */
-	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
+	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		return ( int ) StrictMath.floor( arguments.getAsDouble( Key.number ) );
 	}
 

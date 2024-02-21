@@ -48,7 +48,7 @@ public class Atn extends BIF {
 	 * 
 	 * @argument.number The number to calculate the arc tangent of
 	 */
-	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
+	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		double value = arguments.getAsDouble( Key.number );
 		return StrictMath.atan( value );
 	}

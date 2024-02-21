@@ -57,7 +57,7 @@ public class DirectoryCopy extends BIF {
 	 *
 	 * @argument.createPath [ true ] whether to create any nested paths required to the new directory
 	 */
-	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
+	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		FileSystemUtil.copyDirectory(
 		    arguments.getAsString( Key.source ),
 		    arguments.getAsString( Key.destination ),

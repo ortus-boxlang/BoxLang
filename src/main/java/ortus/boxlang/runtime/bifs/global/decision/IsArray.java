@@ -48,7 +48,7 @@ public class IsArray extends BIF {
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope defining the value to test.
 	 */
-	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
+	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		Boolean				matchesDimension	= true;
 		CastAttempt<Array>	attempt				= ArrayCaster.attempt( arguments.get( Key.value ) );
 

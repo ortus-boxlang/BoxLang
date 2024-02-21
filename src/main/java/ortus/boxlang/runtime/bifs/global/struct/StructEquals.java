@@ -54,7 +54,7 @@ public class StructEquals extends BIF {
 	 * 
 	 * @argument.struct2 The struct to test for equality
 	 */
-	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
+	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		return arguments.getAsStruct( Key.struct1 ).equals( arguments.getAsStruct( Key.struct2 ) );
 	}
 

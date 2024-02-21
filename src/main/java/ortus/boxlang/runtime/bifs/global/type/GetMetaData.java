@@ -46,7 +46,7 @@ public class GetMetaData extends BIF {
 	 *
 	 * @argument.object The object to get metadata for.
 	 */
-	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
+	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		Object object = arguments.get( Key.object );
 
 		// Functions have a legacy metadata view that matches CF engines

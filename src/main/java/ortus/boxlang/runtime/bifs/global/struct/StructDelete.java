@@ -56,7 +56,7 @@ public class StructDelete extends BIF {
 	 *
 	 * @argument.indicateNotExsists Applies only to BIFs - will return false if the key attempted for deletion does not exist
 	 */
-	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
+	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		IStruct	target				= arguments.getAsStruct( Key.struct );
 		Key		key					= Key.of( arguments.getAsString( Key.key ) );
 		Boolean	indicateNotExists	= arguments.getAsBoolean( Key.indicateNotExists );

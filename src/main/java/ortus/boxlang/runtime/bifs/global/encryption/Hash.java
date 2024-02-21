@@ -74,7 +74,7 @@ public class Hash extends BIF {
 	 *
 	 * @argument.iterations The number of iterations to re-digest the object ( default 1 );
 	 */
-	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
+	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		hashItem = arguments.get( Key.input );
 		Integer	iterations		= arguments.getAsInteger( Key.numIterations );
 		String	algorithm		= arguments.getAsString( Key.algorithm );

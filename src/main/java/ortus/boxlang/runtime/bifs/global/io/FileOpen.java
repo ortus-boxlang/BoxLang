@@ -48,7 +48,7 @@ public class FileOpen extends BIF {
 	 *
 	 * @argument.foo Describe any expected arguments
 	 */
-	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
+	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		return new File(
 		    arguments.getAsString( Key.file ),
 		    arguments.getAsString( Key.mode ),

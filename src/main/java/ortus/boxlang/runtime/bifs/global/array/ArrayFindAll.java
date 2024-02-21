@@ -56,7 +56,7 @@ public class ArrayFindAll extends BIF {
 	 * 
 	 * @argument.value The value to found.
 	 */
-	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
+	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		Array			actualArray	= arguments.getAsArray( Key.array );
 		Object			value		= arguments.get( Key.value );
 		IntPredicate	test		= getPredicate( context, actualArray, value, isCaseSensitive( arguments.getAsKey( BIF.__functionName ) ) );

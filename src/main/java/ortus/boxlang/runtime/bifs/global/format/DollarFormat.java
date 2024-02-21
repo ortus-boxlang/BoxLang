@@ -49,7 +49,7 @@ public class DollarFormat extends NumberFormat {
 	 *
 	 * @argument.number The number to format as a U.S. Dollar string.
 	 */
-	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
+	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		Object	number	= arguments.get( Key.number );
 		Double	value	= null;
 
@@ -61,7 +61,7 @@ public class DollarFormat extends NumberFormat {
 		arguments.put( Key.number, value );
 		arguments.put( Key.mask, "dollarFormat" );
 		arguments.put( Key.locale, "US" );
-		return super.invoke( context, arguments );
+		return super._invoke( context, arguments );
 	}
 
 }

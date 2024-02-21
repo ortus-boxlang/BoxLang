@@ -48,7 +48,7 @@ public class BitOr extends BIF {
 	 * 
 	 * @argument.number2 Numeric value for bitwise OR.
 	 */
-	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
+	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		int	number1	= arguments.getAsInteger( Key.number1 );
 		int	number2	= arguments.getAsInteger( Key.number2 );
 

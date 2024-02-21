@@ -53,7 +53,7 @@ public class FileInfo extends BIF {
 	 *
 	 * @argument.File The filepath or file object to retrieve info upon
 	 */
-	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
+	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		Object	file		= arguments.get( Key.file );
 		Path	filePath	= null;
 

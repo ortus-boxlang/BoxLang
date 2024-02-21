@@ -47,7 +47,7 @@ public class ArrayGetMetadata extends BIF {
 	 *
 	 * @argument.array The array to be inserted into
 	 */
-	public IStruct invoke( IBoxContext context, ArgumentsScope arguments ) {
+	public IStruct _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		// Array actualArray = arguments.getAsArray( Key.array );
 		IStruct meta = new Struct();
 

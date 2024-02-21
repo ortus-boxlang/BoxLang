@@ -57,7 +57,7 @@ public class StructReduce extends BIF {
 	 *
 	 * @argument.initialValue The initial value of the accumulator
 	 */
-	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
+	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		return StructUtil.reduce(
 		    arguments.getAsStruct( Key.struct ), arguments.getAsFunction( Key.callback ), context, arguments.get( Key.initialValue )
 		);

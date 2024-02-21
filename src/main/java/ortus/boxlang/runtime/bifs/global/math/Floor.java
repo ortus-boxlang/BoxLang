@@ -45,7 +45,7 @@ public class Floor extends BIF {
 	 * 
 	 * @argument.value The number to return the absolute value of
 	 */
-	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
+	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		return StrictMath.floor( arguments.getAsDouble( Key.number ) );
 	}
 

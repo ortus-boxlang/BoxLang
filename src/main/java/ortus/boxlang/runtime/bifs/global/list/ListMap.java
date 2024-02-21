@@ -61,7 +61,7 @@ public class ListMap extends ArrayMap {
 	 *
 	 * @argument.includeEmptyFields boolean whether to include empty fields in the returned result
 	 */
-	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
+	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		arguments.put(
 		    Key.array,
 		    ListUtil.asList(
@@ -71,7 +71,7 @@ public class ListMap extends ArrayMap {
 		        false
 		    )
 		);
-		return ListUtil.asString( ArrayCaster.cast( super.invoke( context, arguments ) ), arguments.getAsString( Key.delimiter ) );
+		return ListUtil.asString( ArrayCaster.cast( super._invoke( context, arguments ) ), arguments.getAsString( Key.delimiter ) );
 	}
 
 }

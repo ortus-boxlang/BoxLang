@@ -46,7 +46,7 @@ public class ArrayClear extends BIF {
 	 * 
 	 * @argument.array The array to clear.
 	 */
-	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
+	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		Array actualArray = arguments.getAsArray( Key.array );
 		actualArray.clear();
 		// CF Compat, but dumb

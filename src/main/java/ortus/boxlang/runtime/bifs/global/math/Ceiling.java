@@ -46,7 +46,7 @@ public class Ceiling extends BIF {
 	 *
 	 * @argument.number The number for which to find the ceiling value.
 	 */
-	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
+	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		double value = arguments.getAsDouble( Key.number );
 		return StrictMath.ceil( value );
 	}

@@ -46,7 +46,7 @@ public class URLEncodedFormat extends BIF {
 	 *
 	 * @argument.String
 	 */
-	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
+	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		// TODO: Just stubbing this out to make TestBox work. We're going to look into transpiling this to use ESAPI's encodeForURL().
 		String str = arguments.getAsString( Key.string );
 		return java.net.URLEncoder.encode( str );

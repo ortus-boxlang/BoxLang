@@ -53,7 +53,7 @@ public class LSIsDate extends BIF {
 	 *
 	 * @argument.foo Describe any expected arguments
 	 */
-	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
+	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		Object	dateRef		= arguments.get( Key.date );
 		String	timezone	= arguments.getAsString( Key.timezone );
 		String	locale		= arguments.getAsString( Key.locale );

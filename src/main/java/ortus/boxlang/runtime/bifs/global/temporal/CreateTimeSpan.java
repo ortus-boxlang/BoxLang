@@ -60,7 +60,7 @@ public class CreateTimeSpan extends BIF {
 	 *
 	 * @argument.milliseconds The number of milliseconds in the timespan
 	 */
-	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
+	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		return Duration.ofDays( arguments.getAsLong( Key.days ) )
 		    .plusHours( arguments.getAsLong( Key.hours ) )
 		    .plusMinutes( arguments.getAsLong( Key.minutes ) )

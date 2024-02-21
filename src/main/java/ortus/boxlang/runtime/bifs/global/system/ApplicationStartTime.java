@@ -35,7 +35,7 @@ public class ApplicationStartTime extends BIF {
 	 * @param arguments Argument scope for the BIF.
 	 *
 	 */
-	public DateTime invoke( IBoxContext context, ArgumentsScope arguments ) {
+	public DateTime _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		ApplicationBoxContext applicationContext;
 		if ( ( applicationContext = context.getParentOfType( ApplicationBoxContext.class ) ) != null ) {
 			return new DateTime( applicationContext.getApplication().getStartTime() );

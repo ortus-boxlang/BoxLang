@@ -51,7 +51,7 @@ public class IsCustomFunction extends BIF {
 	 *
 	 * @argument.type Check for a specific type of custom function - `UDF`, `Lambda`, or `Closure`.
 	 */
-	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
+	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		String type = arguments.getAsString( Key.type );
 		if ( type == null || type.isEmpty() ) {
 			return arguments.get( Key.object ) instanceof Function;

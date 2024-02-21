@@ -54,7 +54,7 @@ public class FileSeek extends BIF {
 	 *
 	 * @argument.position The cursor position to move forward in the file
 	 */
-	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
+	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		File file = null;
 		if ( arguments.get( Key.file ) instanceof File ) {
 			file = ( File ) arguments.get( Key.file );

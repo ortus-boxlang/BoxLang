@@ -48,7 +48,7 @@ public class IsXmlAttribute extends BIF {
 	 *
 	 * @argument.value Value to test
 	 */
-	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
+	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		CastAttempt<XML> castAttempt = XMLCaster.attempt( arguments.get( Key.value ) );
 		return castAttempt.wasSuccessful() && castAttempt.get().getNode().getNodeType() == Node.ATTRIBUTE_NODE;
 	}

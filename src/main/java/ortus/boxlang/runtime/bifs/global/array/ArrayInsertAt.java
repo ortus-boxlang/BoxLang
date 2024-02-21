@@ -52,7 +52,7 @@ public class ArrayInsertAt extends BIF {
 	 * 
 	 * @argument.value The value to insert
 	 */
-	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
+	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		Array	actualArray	= arguments.getAsArray( Key.array );
 		int		position	= arguments.getAsInteger( Key.position );
 		actualArray.add( position - 1, arguments.get( Key.value ) );

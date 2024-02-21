@@ -60,7 +60,7 @@ public class ListLen extends BIF {
 	 *
 	 * @argument.includeEmptyFields boolean whether to include empty fields in the returned result
 	 */
-	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
+	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		return ListUtil
 		    .asList(
 		        arguments.getAsString( Key.list ),

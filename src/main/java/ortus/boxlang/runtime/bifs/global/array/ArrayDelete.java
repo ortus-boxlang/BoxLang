@@ -49,7 +49,7 @@ public class ArrayDelete extends BIF {
 	 *
 	 * @argument.value The value to deleted.
 	 */
-	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
+	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		Array	actualArray	= arguments.getAsArray( Key.array );
 		Object	value		= arguments.get( Key.value );
 		int		index		= actualArray.findIndex( value );

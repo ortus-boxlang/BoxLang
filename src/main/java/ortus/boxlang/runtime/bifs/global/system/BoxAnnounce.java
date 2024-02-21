@@ -50,7 +50,7 @@ public class BoxAnnounce extends BIF {
 	 * @argument.data The data to send with the event
 	 *
 	 */
-	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
+	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		runtime.getInterceptorService().announce( arguments.getAsString( Key.state ), arguments.getAsStruct( Key.data ) );
 		return true;
 	}

@@ -46,7 +46,7 @@ public class Min extends BIF {
 	 * 
 	 * @argument.number2 The second number
 	 */
-	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
+	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		double	number1	= arguments.getAsDouble( Key.number1 );
 		double	number2	= arguments.getAsDouble( Key.number2 );
 		return Min._invoke( number1, number2 );

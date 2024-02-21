@@ -64,7 +64,7 @@ public class LSParseDateTime extends BIF {
 	 *
 	 * @argument.timezone the timezone to apply to the parsed datetime
 	 */
-	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
+	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		Object	dateRef		= arguments.get( Key.date );
 		String	timezone	= arguments.getAsString( Key.timezone );
 		String	format		= arguments.getAsString( Key.format );

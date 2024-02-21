@@ -42,7 +42,7 @@ public class IsNull extends BIF {
 	 *
 	 * @argument.object Value to test for null.
 	 */
-	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
+	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		return arguments.get( Key.object ) == null;
 	}
 

@@ -66,7 +66,7 @@ public class ListAppend extends BIF {
 	 *
 	 * @argument.maxThreads number the maximum number of threads to use in the parallel filter
 	 */
-	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
+	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		Boolean	isMultiChar	= arguments.getAsBoolean( Key.multiCharacterDelimiter );
 		String	delimiter	= arguments.getAsString( Key.delimiter );
 		return ListUtil.asString(

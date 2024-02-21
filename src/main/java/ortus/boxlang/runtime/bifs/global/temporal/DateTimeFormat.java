@@ -64,7 +64,7 @@ public class DateTimeFormat extends BIF {
 	 *
 	 * @argument.timezone Optional specific timezone to apply to the date ( if not present in the date string )
 	 */
-	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
+	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		ZoneId		timezone		= LocalizationUtil.parseZoneId( arguments.getAsString( Key.timezone ), context );
 		DateTime	ref				= DateTimeCaster.cast( arguments.get( Key.date ), true, timezone );
 		Key			bifMethodKey	= arguments.getAsKey( BIF.__functionName );

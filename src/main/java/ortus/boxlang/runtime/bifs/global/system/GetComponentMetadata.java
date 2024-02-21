@@ -45,7 +45,7 @@ public class GetComponentMetadata extends BIF {
 	 * @param arguments Argument scope for the BIF.
 	 *
 	 */
-	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
+	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		String			path	= arguments.getAsString( Key.path );
 		IClassRunnable	cfc		= ( IClassRunnable ) classLocator
 		    .load( context, "bx:" + path, context.getCurrentImports() )

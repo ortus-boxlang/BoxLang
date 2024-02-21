@@ -53,7 +53,7 @@ public class QueryAddRow extends BIF {
 	 *                   same order as columnList)
 	 * 
 	 */
-	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
+	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		Query					query		= arguments.getAsQuery( Key.query );
 		Object					rowData		= arguments.get( Key.rowData );
 		CastAttempt<Integer>	castAttempt	= IntegerCaster.attempt( rowData );

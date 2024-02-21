@@ -49,7 +49,7 @@ public class FileRead extends BIF {
 	 *
 	 * @argument.foo Describe any expected arguments
 	 */
-	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
+	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		String	charsetOrBufferSize	= arguments.getAsString( Key.charsetOrBufferSize );
 		String	charset				= arguments.getAsString( Key.charset );
 		Integer	bufferSize			= arguments.getAsInteger( Key.buffersize );

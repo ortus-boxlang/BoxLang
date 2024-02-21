@@ -65,7 +65,7 @@ public class XMLSearch extends BIF {
 	 * @argument params The parameters to pass to the xpath query
 	 * 
 	 */
-	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
+	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		XML				xml			= arguments.getAsXML( Key.XMLNode );
 		String			xpathString	= arguments.getAsString( Key.xpath );
 		final IStruct	params		= arguments.getAsStruct( Key.params );

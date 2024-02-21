@@ -57,7 +57,7 @@ public class ListToArray extends BIF {
 	 *
 	 * @argument.multiCharacterDelimiter boolean whether the delimiter is multi-character
 	 */
-	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
+	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		return ListUtil.asList(
 		    arguments.getAsString( Key.list ),
 		    arguments.getAsString( Key.delimiter ),

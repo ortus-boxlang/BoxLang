@@ -54,7 +54,7 @@ public class LSIsNumeric extends BIF {
 	 *
 	 * @argument.locale Optional locale string, otherwise the context default is used
 	 */
-	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
+	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		String	value	= arguments.getAsString( Key.number );
 		Locale	locale	= LocalizationUtil.parseLocaleFromContext( context, arguments );
 

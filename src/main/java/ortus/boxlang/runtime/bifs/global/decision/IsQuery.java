@@ -44,7 +44,7 @@ public class IsQuery extends BIF {
 	 *
 	 * @argument.value Value to test for query-ness.
 	 */
-	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
+	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		return DynamicObject.unWrap( arguments.get( Key.value ) ) instanceof Query;
 	}
 

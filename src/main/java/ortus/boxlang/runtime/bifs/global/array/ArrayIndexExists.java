@@ -52,7 +52,7 @@ public class ArrayIndexExists extends BIF {
 	 * 
 	 * @argument.index The index to check.
 	 */
-	public Boolean invoke( IBoxContext context, ArgumentsScope arguments ) {
+	public Boolean _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		Array	actualArray	= arguments.getAsArray( Key.array );
 		int		index		= IntegerCaster.cast( arguments.get( Key.index ) ) - 1;
 

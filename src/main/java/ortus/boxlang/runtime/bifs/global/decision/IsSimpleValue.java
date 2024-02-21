@@ -44,7 +44,7 @@ public class IsSimpleValue extends BIF {
 	 *
 	 * @argument.value Value to test for simple-ness.
 	 */
-	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
+	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		Object value = arguments.get( Key.value );
 		return value != null && GenericCaster.attempt( context, value, "string" ).wasSuccessful();
 	}

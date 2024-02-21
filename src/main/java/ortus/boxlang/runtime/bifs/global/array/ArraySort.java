@@ -63,7 +63,7 @@ public class ArraySort extends BIF {
 	 *
 	 * @argument.callback Function to sort by
 	 */
-	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
+	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		Array		array		= arguments.getAsArray( Key.array );
 		Function	callback	= arguments.getAsFunction( Key.callback );
 		Object		sortType	= arguments.get( Key.sortType );

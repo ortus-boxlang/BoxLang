@@ -61,7 +61,7 @@ public class StructMap extends BIF {
 	 *
 	 * @argument.maxThreads The maximum number of threads to use when parallel = true
 	 */
-	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
+	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		IStruct target = arguments.getAsStruct( Key.struct );
 		return StructUtil.map(
 		    target,

@@ -59,7 +59,7 @@ public class StructKeyTranslate extends BIF {
 	 *
 	 * @argument.retainKeys Whether to retain the original dot-notated keys - default false
 	 */
-	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
+	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		IStruct ref = arguments.getAsStruct( Key.struct );
 		StructUtil.unFlattenKeys( ref, arguments.getAsBoolean( Key.deep ), arguments.getAsBoolean( Key.retainKeys ) );
 		return arguments.getAsBoolean( __isMemberExecution )

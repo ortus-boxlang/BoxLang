@@ -51,7 +51,7 @@ public class StructIsCaseSensitive extends BIF {
 	 *
 	 * @argument.struct The struct to test for type
 	 */
-	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
+	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		return arguments.getAsStruct( Key.struct ).isCaseSensitive();
 	}
 

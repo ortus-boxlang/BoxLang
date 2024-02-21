@@ -58,7 +58,7 @@ public class NumberFormat extends BIF {
 	 *
 	 * @argument.locale Note used by standard NumberFormat but used by LSNumberFormat
 	 */
-	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
+	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		double					value		= DoubleCaster.cast( arguments.get( Key.number ), true );
 		String					format		= arguments.getAsString( Key.mask );
 		Locale					locale		= LocalizationUtil.parseLocaleFromContext( context, arguments );

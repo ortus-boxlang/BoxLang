@@ -46,7 +46,7 @@ public class ArrayIsEmpty extends BIF {
 	 *
 	 * @argument.array The array to test.
 	 */
-	public Boolean invoke( IBoxContext context, ArgumentsScope arguments ) {
+	public Boolean _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		Array actualArray = arguments.getAsArray( Key.array );
 
 		return actualArray.size() == 0;

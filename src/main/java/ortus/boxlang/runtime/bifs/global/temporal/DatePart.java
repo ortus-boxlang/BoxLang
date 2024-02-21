@@ -71,7 +71,7 @@ public class DatePart extends TimeUnits {
 	 *
 	 * @argument.foo Describe any expected arguments
 	 */
-	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
+	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		Key datePart = Key.of( arguments.getAsString( Key.datepart ) );
 		if ( !parts.containsKey( datePart ) ) {
 			throw new BoxRuntimeException(
@@ -82,7 +82,7 @@ public class DatePart extends TimeUnits {
 			);
 		}
 		arguments.put( BIF.__functionName, parts.get( datePart ) );
-		return super.invoke( context, arguments );
+		return super._invoke( context, arguments );
 	}
 
 }

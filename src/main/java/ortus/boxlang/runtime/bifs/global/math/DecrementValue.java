@@ -45,7 +45,7 @@ public class DecrementValue extends BIF {
 	 *
 	 * @argument.number The number to decrement the integer part of.
 	 */
-	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
+	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		double number = arguments.getAsDouble( Key.number );
 		return --number;
 	}

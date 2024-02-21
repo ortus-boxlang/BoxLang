@@ -46,7 +46,7 @@ public class IsDateObject extends BIF {
 	 *
 	 * @argument.value Value to test for date object-ness
 	 */
-	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
+	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		return arguments.get( Key.value ) instanceof DateTime;
 	}
 

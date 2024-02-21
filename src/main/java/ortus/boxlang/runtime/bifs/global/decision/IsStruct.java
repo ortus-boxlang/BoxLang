@@ -45,7 +45,7 @@ public class IsStruct extends BIF {
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope defining the value to test.
 	 */
-	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
+	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		CastAttempt<IStruct> attempt = StructCaster.attempt( arguments.get( Key.variable ) );
 		return attempt.wasSuccessful();
 	}

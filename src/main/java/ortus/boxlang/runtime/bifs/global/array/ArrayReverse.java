@@ -51,7 +51,7 @@ public class ArrayReverse extends BIF {
 	 *
 	 * @argument.array The array to reverse
 	 */
-	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
+	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		Array	actualObj	= arguments.getAsArray( Key.array );
 		int		size		= actualObj.size();
 

@@ -48,7 +48,7 @@ public class TrueFalseFormat extends BIF {
 	 * @argument.value The value to check for true/false and return Yes/No
 	 *
 	 */
-	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
+	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 
 		// Edge case, test if incoming is a string and if it is empty, return false
 		if ( arguments.get( Key.value ) instanceof String castedString && ( castedString.length() == 0 ) ) {

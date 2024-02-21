@@ -43,7 +43,7 @@ public class IsNumeric extends BIF {
 	 *
 	 * @argument.string Value to test for date-ness
 	 */
-	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
+	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		Object value = arguments.get( Key.string );
 		if ( value == null ) {
 			return false;

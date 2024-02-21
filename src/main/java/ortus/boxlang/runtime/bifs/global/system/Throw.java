@@ -65,7 +65,7 @@ public class Throw extends BIF {
 	 * @argument.object An instance of an exception object. If there is no message provided, this object will be thrown directly. If there is a message, a
 	 *                  CustomException will be thrown and this object will be used as the cause.
 	 */
-	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
+	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		Throwable	cause			= null;
 		Throwable	exceptionToThrow;
 		String		message			= arguments.getAsString( Key.message );

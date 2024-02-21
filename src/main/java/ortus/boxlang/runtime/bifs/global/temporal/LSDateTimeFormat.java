@@ -61,11 +61,11 @@ public class LSDateTimeFormat extends DateTimeFormat {
 	 *
 	 * @argument.timezone Optional specific timezone to apply to the date ( if not present in the date string )
 	 */
-	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
+	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		String	functionName	= arguments.getAsKey( BIF.__functionName ).getName();
 		Key		dtFunctionName	= Key.of( functionName.substring( 2 ) );
 		arguments.put( BIF.__functionName, dtFunctionName );
-		return super.invoke( context, arguments );
+		return super._invoke( context, arguments );
 	}
 
 }

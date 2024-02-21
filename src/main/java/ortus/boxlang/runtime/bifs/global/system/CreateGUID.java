@@ -41,7 +41,7 @@ public class CreateGUID extends BIF {
 	 *
 	 * @return A GUID (Microsoft-y UUID) string.
 	 */
-	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
+	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		return UUID.randomUUID().toString().toUpperCase();
 	}
 }

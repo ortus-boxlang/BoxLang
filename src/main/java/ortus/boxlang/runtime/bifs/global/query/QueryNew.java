@@ -55,7 +55,7 @@ public class QueryNew extends BIF {
 	 *                   same order as columnList)
 	 * 
 	 */
-	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
+	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		Array	columnNames	= ListUtil.asList( arguments.getAsString( Key.columnList ), "," );
 		Array	columnTypes	= ListUtil.asList( arguments.getAsString( Key.columnTypeList ), "," );
 		if ( columnNames.size() != columnTypes.size() ) {

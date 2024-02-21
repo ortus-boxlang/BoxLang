@@ -45,7 +45,7 @@ public class Reverse extends BIF {
 	 *
 	 * @argument.string The string to reverse.
 	 */
-	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
+	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		String			input		= arguments.getAsString( Key.string );
 
 		// Create a StringBuilder to reverse the string

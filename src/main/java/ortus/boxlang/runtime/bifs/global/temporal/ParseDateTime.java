@@ -56,7 +56,7 @@ public class ParseDateTime extends BIF {
 	 *
 	 * @argument.timezone the timezone to apply to the parsed datetime
 	 */
-	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
+	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		Object	dateRef		= arguments.get( Key.date );
 		String	format		= arguments.getAsString( Key.format );
 		ZoneId	timezone	= LocalizationUtil.parseZoneId( arguments.getAsString( Key.timezone ), context );

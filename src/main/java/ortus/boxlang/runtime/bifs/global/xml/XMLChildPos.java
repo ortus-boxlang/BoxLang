@@ -56,7 +56,7 @@ public class XMLChildPos extends BIF {
 	 * @return The position of the child element. 1-based.
 	 * 
 	 */
-	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
+	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		XML			xml			= arguments.getAsXML( Key.elem );
 		List<XML>	children	= xml.getXMLChildrenAsList();
 		String		childname	= arguments.getAsString( Key.childname );

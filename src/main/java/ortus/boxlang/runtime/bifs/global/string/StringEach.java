@@ -45,9 +45,9 @@ public class StringEach extends ListEach {
 	 * 
 	 * @argument.callback The callback to execute
 	 */
-	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
+	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		arguments.put( Key.delimiter, "" );
-		return super.invoke( context, arguments );
+		return super._invoke( context, arguments );
 	}
 
 }

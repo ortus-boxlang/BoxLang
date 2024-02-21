@@ -47,7 +47,7 @@ public class StructKeyArray extends BIF {
 	 * 
 	 * @return An array containing the keys of the structure.
 	 */
-	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
+	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		IStruct struct = arguments.getAsStruct( Key.structure );
 		return Array.fromArray( struct.getKeysAsStrings().toArray() );
 	}

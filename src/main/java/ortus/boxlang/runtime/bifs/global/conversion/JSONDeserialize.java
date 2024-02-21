@@ -65,7 +65,7 @@ public class JSONDeserialize extends BIF {
 	 * 
 	 * @return The CFML data representation of the JSON string.
 	 */
-	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
+	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		String	json			= arguments.getAsString( Key.json );
 		Boolean	strictMapping	= arguments.getAsBoolean( Key.strictMapping );
 		Object	result			= JSONUtil.fromJSON( json );

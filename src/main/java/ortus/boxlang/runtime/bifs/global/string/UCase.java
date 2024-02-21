@@ -47,7 +47,7 @@ public class UCase extends BIF {
 	 * @argument.string The string to uppercase
 	 * 
 	 */
-	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
+	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		return arguments.getAsString( Key.string ).toUpperCase();
 	}
 

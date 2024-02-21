@@ -56,7 +56,7 @@ public class LSParseCurrency extends BIF {
 	 *
 	 * @argument.locale the optional locale to apply in parsing
 	 */
-	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
+	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		String	value	= arguments.getAsString( Key.string );
 		Locale	locale	= LocalizationUtil.parseLocaleFromContext( context, arguments );
 

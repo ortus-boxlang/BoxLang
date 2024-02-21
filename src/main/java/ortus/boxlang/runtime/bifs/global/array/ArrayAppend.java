@@ -57,7 +57,7 @@ public class ArrayAppend extends BIF {
 	 * @param context
 	 * @param arguments Argument scope defining the array and value to append.
 	 */
-	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
+	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		Array	actualArray	= arguments.getAsArray( Key.array );
 		Object	value		= arguments.get( Key.value );
 		if ( arguments.getAsBoolean( Key.merge ) ) {

@@ -30,7 +30,7 @@ public class Pi extends BIF {
 	 * @param arguments Argument scope for the BIF.
 	 * 
 	 */
-	public Double invoke( IBoxContext context, ArgumentsScope arguments ) {
+	public Double _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		return 3.14159265359;
 	}
 }

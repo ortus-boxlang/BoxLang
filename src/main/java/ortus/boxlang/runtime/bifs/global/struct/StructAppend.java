@@ -58,7 +58,7 @@ public class StructAppend extends BIF {
 	 * 
 	 * @argument.overwrite Default true. Whether to overwrite existing values found in struct1 from the values in struct2
 	 */
-	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
+	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		Boolean	overwrite	= arguments.getAsBoolean( Key.overwrite );
 		IStruct	recipient	= arguments.getAsStruct( Key.struct1 );
 		IStruct	assignments	= arguments.getAsStruct( Key.struct2 );

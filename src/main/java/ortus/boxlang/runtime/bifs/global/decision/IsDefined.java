@@ -54,7 +54,7 @@ public class IsDefined extends BIF {
 	 *                    notation
 	 *                    is not supported, nor is function invocation, etc.
 	 */
-	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
+	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		return ExpressionInterpreter.getVariable( context, arguments.getAsString( Key.variable ), true ) != null;
 	}
 

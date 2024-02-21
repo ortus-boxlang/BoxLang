@@ -56,7 +56,7 @@ public class ToString extends BIF {
 	 * 
 	 * @argument.encoding The character encoding (character set) of the string, used with binary data.
 	 */
-	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
+	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		Object obj = arguments.get( Key.value );
 		// String caster will not cast null
 		if ( obj == null ) {

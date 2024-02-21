@@ -53,7 +53,7 @@ public class DateConvert extends BIF {
 	 *
 	 * @argument.foo Describe any expected arguments
 	 */
-	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
+	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		Key			conversion	= Key.of( arguments.getAsString( Key.conversionType ) );
 		ZoneId		localZone	= LocalizationUtil.parseZoneId( null, context );
 		DateTime	dateRef		= DateTimeCaster.cast(

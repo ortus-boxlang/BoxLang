@@ -57,9 +57,9 @@ public class StructUpdate extends StructInsert {
 	 * @argument.value The value to assign for the specified key
 	 *
 	 */
-	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
+	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		arguments.put( Key.overwrite, true );
-		return super.invoke( context, arguments );
+		return super._invoke( context, arguments );
 	}
 
 }

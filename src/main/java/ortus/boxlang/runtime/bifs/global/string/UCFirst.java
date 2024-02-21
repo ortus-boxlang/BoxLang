@@ -51,7 +51,7 @@ public class UCFirst extends BIF {
 	 * 
 	 * @argument.doLowerIfAllUppercase Boolean flag indicating whether to lowercase uppercase characters.
 	 */
-	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
+	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		String	input					= arguments.getAsString( Key.string );
 		boolean	doAll					= arguments.getAsBoolean( Key.doAll );
 		boolean	doLowerIfAllUppercase	= arguments.getAsBoolean( Key.doLowerIfAllUppercase );

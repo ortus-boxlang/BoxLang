@@ -55,7 +55,7 @@ public class ArrayMap extends BIF {
 	 *                    current index, and the original array. The function should return the value that will be set at the same index in the new array.
 	 *
 	 */
-	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
+	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		return ListUtil.map(
 		    arguments.getAsArray( Key.array ),
 		    arguments.getAsFunction( Key.callback ),

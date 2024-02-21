@@ -47,7 +47,7 @@ public class ExpandPath extends BIF {
 	 * @argument.path Relative or absolute directory reference or filename, within the current directory, (.\ and ..\) to convert to an absolute path. Can
 	 *                include forward or backward slashes.
 	 */
-	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
+	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		String path = arguments.getAsString( Key.path );
 		if ( new File( path ).isAbsolute() ) {
 			return path;

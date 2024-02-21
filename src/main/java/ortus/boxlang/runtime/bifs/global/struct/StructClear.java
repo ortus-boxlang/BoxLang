@@ -46,7 +46,7 @@ public class StructClear extends BIF {
 	 * 
 	 * @argument.structure The struct to clear.
 	 */
-	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
+	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		IStruct actualStruct = arguments.getAsStruct( Key.structure );
 		actualStruct.clear();
 

@@ -47,7 +47,7 @@ public class XMLGetNodeType extends BIF {
 	 * @argument XMLNode An XML DOM object node.
 	 * 
 	 */
-	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
+	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		XML xml = arguments.getAsXML( Key.XMLNode );
 		return xml.getXMLType().replace( " ", "_" ) + "_NODE";
 	}

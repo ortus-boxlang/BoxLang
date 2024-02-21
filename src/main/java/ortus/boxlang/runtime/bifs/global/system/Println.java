@@ -46,7 +46,7 @@ public class Println extends BIF {
 	 *
 	 * @argument.message The message to print
 	 */
-	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
+	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		Object obj = arguments.get( Key.message );
 		if ( obj instanceof IType t ) {
 			obj = t.asString();

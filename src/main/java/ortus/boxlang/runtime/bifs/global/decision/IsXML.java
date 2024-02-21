@@ -46,7 +46,7 @@ public class IsXML extends BIF {
 	 * @argument.value A string containing the XML document text.
 	 * 
 	 */
-	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
+	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		CastAttempt<XML> castAttempt = XMLCaster.attempt( arguments.get( Key.value ) );
 		return castAttempt.wasSuccessful();
 	}

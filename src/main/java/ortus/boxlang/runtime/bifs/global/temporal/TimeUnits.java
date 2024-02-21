@@ -148,7 +148,7 @@ public class TimeUnits extends BIF {
 	 *
 	 * @argument.timezone The timezone with which to cast the result
 	 */
-	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
+	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		DateTime dateRef = DateTimeCaster.cast( arguments.get( Key.date ), true,
 		    LocalizationUtil.parseZoneId( arguments.getAsString( Key.timezone ), context ) );
 

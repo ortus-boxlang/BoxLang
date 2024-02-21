@@ -46,9 +46,9 @@ public class StringFilter extends ListFilter {
 	 *
 	 * @argument.callback The callback which returns a boolean and filters the string
 	 */
-	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
+	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		arguments.put( Key.delimiter, "" );
-		return super.invoke( context, arguments );
+		return super._invoke( context, arguments );
 	}
 
 }

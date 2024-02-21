@@ -47,7 +47,7 @@ public class ArrayMin extends BIF {
 	 * 
 	 * @argument.array The array to get min value from
 	 */
-	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
+	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		Array	actualArray	= arguments.getAsArray( Key.array );
 		double	min			= 0;
 		if ( actualArray.size() > 0 ) {

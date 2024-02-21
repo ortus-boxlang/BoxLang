@@ -43,7 +43,7 @@ public class IsFileObject extends BIF {
 	 *
 	 * @argument.object Object to test.
 	 */
-	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
+	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		return arguments.get( Key.object ) instanceof File;
 	}
 

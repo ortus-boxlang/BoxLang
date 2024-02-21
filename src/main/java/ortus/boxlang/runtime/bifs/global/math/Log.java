@@ -46,7 +46,7 @@ public class Log extends BIF {
 	 *
 	 * @argument.number The number to calculate the natural logarithm of
 	 */
-	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
+	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		double value = arguments.getAsDouble( Key.number );
 		return StrictMath.log( value );
 	}

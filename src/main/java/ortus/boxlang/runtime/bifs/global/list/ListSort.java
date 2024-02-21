@@ -73,7 +73,7 @@ public class ListSort extends ArraySort {
 	 *
 	 * @argument.callback Optional function to use for sorting - if the sort type is a closure, it will be recognized as a callback
 	 */
-	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
+	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		Array listArray = ListUtil.asList(
 		    arguments.getAsString( Key.list ),
 		    arguments.getAsString( Key.delimiter ),
@@ -83,7 +83,7 @@ public class ListSort extends ArraySort {
 		arguments.put( Key.array, listArray );
 		arguments.put( __isMemberExecution, true );
 		return ListUtil.asString(
-		    ArrayCaster.cast( super.invoke( context, arguments ) ),
+		    ArrayCaster.cast( super._invoke( context, arguments ) ),
 		    arguments.getAsString( Key.delimiter )
 
 		);

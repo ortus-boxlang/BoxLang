@@ -55,7 +55,7 @@ public class ArraySet extends BIF {
 	 *
 	 * @argument.foo Describe any expected arguments
 	 */
-	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
+	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		Array	actualObj	= arguments.getAsArray( Key.array );
 		Integer	start		= arguments.getAsInteger( Key.start );
 		Integer	end			= arguments.getAsInteger( Key.end );

@@ -45,7 +45,7 @@ public class Sqr extends BIF {
 	 * 
 	 * @argument.value The number to return the square root of
 	 */
-	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
+	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		return StrictMath.sqrt( arguments.getAsDouble( Key.value ) );
 	}
 

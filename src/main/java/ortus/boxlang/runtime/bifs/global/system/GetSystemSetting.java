@@ -53,7 +53,7 @@ public class GetSystemSetting extends BIF {
 	 *
 	 * @argument.defaultValue The default value to return if the property or environment variable is not found
 	 */
-	public String invoke( IBoxContext context, ArgumentsScope arguments ) {
+	public String _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		Key		key				= Key.of( arguments.getAsString( Key.key ) );
 		String	defaultValue	= arguments.getAsString( Key.defaultValue );
 		IStruct	system			= context.getScope( Key.server ).getAsStruct( Key.system );

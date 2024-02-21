@@ -64,7 +64,7 @@ public class ListGetEndings extends BIF {
 	 *
 	 * @argument.multiCharacterDelimiter boolean whether the delimiter is multi-character
 	 */
-	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
+	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		Key		bifMethodKey	= arguments.getAsKey( BIF.__functionName );
 		Array	listArray		= ListUtil.asList(
 		    arguments.getAsString( Key.list ),

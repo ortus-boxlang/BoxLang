@@ -46,7 +46,7 @@ public class Tan extends BIF {
 	 *
 	 * @argument.number The angle in radians to calculate the tangent of
 	 */
-	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
+	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		double value = arguments.getAsDouble( Key.number );
 		return StrictMath.tan( value );
 	}

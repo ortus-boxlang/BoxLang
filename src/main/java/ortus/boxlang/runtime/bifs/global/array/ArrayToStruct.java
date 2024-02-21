@@ -49,7 +49,7 @@ public class ArrayToStruct extends BIF {
 	 *
 	 * @argument.array The array to convert
 	 */
-	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
+	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		Array	array		= arguments.getAsArray( Key.array );
 		IStruct	toReturn	= new Struct();
 

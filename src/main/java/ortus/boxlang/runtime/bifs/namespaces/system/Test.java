@@ -42,7 +42,7 @@ public class Test extends BIF {
 	 * 
 	 * @argument.message The message to print
 	 */
-	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
+	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		System.out.println( arguments.get( Key.message ) );
 		return true;
 	}

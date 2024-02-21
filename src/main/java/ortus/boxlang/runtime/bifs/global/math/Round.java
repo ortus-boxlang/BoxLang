@@ -48,7 +48,7 @@ public class Round extends BIF {
 	 *
 	 * @argument.number The number to be rounded.
 	 */
-	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
+	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		double value = arguments.getAsDouble( Key.number );
 		return StrictMath.round( value );
 	}

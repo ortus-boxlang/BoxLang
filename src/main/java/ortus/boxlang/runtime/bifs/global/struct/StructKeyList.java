@@ -47,7 +47,7 @@ public class StructKeyList extends BIF {
 	 *
 	 * @return A string containing the keys of the structure, delimited by the specified delimiter (or a default delimiter comma if not provided).
 	 */
-	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
+	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		IStruct struct = arguments.getAsStruct( Key.structure );
 		return String.join( arguments.getAsString( Key.delimiter ), struct.getKeysAsStrings() );
 	}

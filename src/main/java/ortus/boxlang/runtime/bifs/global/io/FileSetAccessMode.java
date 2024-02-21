@@ -52,7 +52,7 @@ public class FileSetAccessMode extends BIF {
 	 *
 	 * @argument.mode The three-digit permission designations for the file or directory
 	 */
-	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
+	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		String	file	= null;
 		File	fileObj	= null;
 		if ( arguments.get( Key.file ) instanceof File ) {

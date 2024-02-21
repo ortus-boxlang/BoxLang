@@ -56,7 +56,7 @@ public class CreateDateTime extends BIF {
 	 *
 	 * @argument.foo Describe any expected arguments
 	 */
-	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
+	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		ZoneId timezone = LocalizationUtil.parseZoneId( arguments.getAsString( Key.timezone ), context );
 		if ( arguments.isEmpty() ) {
 			return new DateTime( timezone );

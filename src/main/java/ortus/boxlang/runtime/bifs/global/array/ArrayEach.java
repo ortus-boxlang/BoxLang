@@ -61,7 +61,7 @@ public class ArrayEach extends BIF {
 	 *
 	 * @argument.ordered (BoxLang only) whether parallel operations should execute and maintain order
 	 */
-	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
+	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		ListUtil.each(
 		    ArrayCaster.cast( arguments.get( Key.array ) ),
 		    arguments.getAsFunction( Key.callback ),

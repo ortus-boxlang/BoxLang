@@ -46,7 +46,7 @@ public class ArrayAvg extends BIF {
 	 * 
 	 * @argument.array The array whose elements will be averaged.
 	 */
-	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
+	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		Array actualArray = arguments.getAsArray( Key.array );
 		return ArraySum._invoke( actualArray ) / actualArray.size();
 	}

@@ -46,9 +46,9 @@ public class StringEvery extends ListEvery {
 	 *
 	 * @argument.callback The callback to use for the test
 	 */
-	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
+	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		arguments.put( Key.delimiter, "" );
-		return super.invoke( context, arguments );
+		return super._invoke( context, arguments );
 	}
 
 }

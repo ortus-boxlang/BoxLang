@@ -50,7 +50,7 @@ public class ArraySwap extends BIF {
 	 * 
 	 * @arguments.position2 The second position to swap
 	 */
-	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
+	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		Array	actualArray	= arguments.getAsArray( Key.array );
 		Object	temp		= actualArray.get( arguments.getAsInteger( Key.position1 ) - 1 );
 

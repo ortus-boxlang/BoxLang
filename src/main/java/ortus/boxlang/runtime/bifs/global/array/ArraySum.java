@@ -45,7 +45,7 @@ public class ArraySum extends BIF {
 	 * @param context
 	 * @param arguments Argument scope defining the array.
 	 */
-	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
+	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		Array actualArray = arguments.getAsArray( Key.array );
 		return ArraySum._invoke( actualArray );
 	}

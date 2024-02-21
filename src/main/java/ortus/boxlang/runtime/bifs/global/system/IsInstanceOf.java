@@ -47,7 +47,7 @@ public class IsInstanceOf extends BIF {
 	 * @argument.typename The name of the interface, component, or Java class of which the object might be an instance
 	 *
 	 */
-	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
+	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		return InstanceOf.invoke( context, arguments.get( Key.object ), arguments.getAsString( Key.typename ) );
 	}
 }

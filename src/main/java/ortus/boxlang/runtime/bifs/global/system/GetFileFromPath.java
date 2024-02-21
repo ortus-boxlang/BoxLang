@@ -48,7 +48,7 @@ public class GetFileFromPath extends BIF {
 	 * @argument.path The absolute path to extract the filename from
 	 *
 	 */
-	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
+	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		return FilenameUtils.getName( arguments.getAsString( Key.path ) );
 	}
 }

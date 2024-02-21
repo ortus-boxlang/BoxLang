@@ -53,7 +53,7 @@ public class Compare extends BIF {
 	 * @argument.string2 The second string to compare
 	 *
 	 */
-	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
+	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		Integer comparison = ortus.boxlang.runtime.operators.Compare.invoke( arguments.get( Key.string1 ), arguments.get( Key.string2 ), true );
 		return comparison < 0 ? -1
 		    : comparison > 0 ? 1

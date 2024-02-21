@@ -55,7 +55,7 @@ public class IsEmpty extends BIF {
 	 *
 	 * @argument.value The value to test for emptiness.
 	 */
-	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
+	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		Object object = arguments.get( Key.value );
 		if ( object == null ) {
 			return true;

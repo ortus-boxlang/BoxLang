@@ -48,7 +48,7 @@ public class ArrayDeleteAt extends BIF {
 	 *
 	 * @argument.index The index to deleted.
 	 */
-	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
+	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		arguments.getAsArray( Key.array ).deleteAt( arguments.getAsInteger( Key.index ) );
 		return true;
 

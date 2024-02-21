@@ -65,7 +65,7 @@ public class ListCompact extends BIF {
 	 *
 	 * @argument.multiCharacterDelimiter boolean whether the delimiter is multi-character
 	 */
-	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
+	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		Boolean	multiCharacterDelimiter	= arguments.getAsBoolean(
 		    Key.multiCharacterDelimiter
 		);

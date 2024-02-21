@@ -60,7 +60,7 @@ public class FileSetAttribute extends BIF {
 	 *
 	 * @argument.attribute The attribute to set true
 	 */
-	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
+	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		String	file	= null;
 		File	fileObj	= null;
 		if ( arguments.get( Key.file ) instanceof File ) {

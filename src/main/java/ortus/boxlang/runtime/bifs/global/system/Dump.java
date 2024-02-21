@@ -78,7 +78,7 @@ public class Dump extends BIF {
 	 *
 	 * @argument.var The variable to dump
 	 */
-	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
+	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		String		templateBasePath	= "/dump/html/";
 		Object		target				= arguments.get( Key.var );
 		InputStream	dumpTemplate		= null;

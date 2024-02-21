@@ -53,7 +53,7 @@ public class ArrayReduce extends BIF {
 	 *
 	 * @argument.initialValue The initial value of the accumulator
 	 */
-	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
+	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 
 		return ListUtil.reduce(
 		    arguments.getAsArray( Key.array ),

@@ -52,7 +52,7 @@ public class Justify extends BIF {
 	 *
 	 * @argument.length The specified length of the resulting string.
 	 */
-	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
+	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		Key		bifMethodKey	= arguments.getAsKey( BIF.__functionName );
 
 		String	input			= arguments.getAsString( Key.string );

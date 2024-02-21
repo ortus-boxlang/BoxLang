@@ -49,7 +49,7 @@ public class EncodeForHTML extends BIF {
 	 * 
 	 * @argument.canonicalize If set to true, canonicalization happens before encoding. If set to false, the given input string will just be encoded.
 	 */
-	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
+	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		// TODO: Just stubbing this out to make TestBox work. Convert to ESAPI
 		String str = arguments.getAsString( Key.string );
 		return str.replace( "<", "&lt;" ).replace( ">", "&gt;" ).replace( "&", "&amp;" ).replace( "\"", "&quot;" ).replace( "'", "&#39;" );

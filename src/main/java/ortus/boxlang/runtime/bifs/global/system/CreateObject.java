@@ -51,7 +51,7 @@ public class CreateObject extends BIF {
 	 * @argument.path The absolute path to extract the filename from
 	 *
 	 */
-	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
+	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		if ( arguments.getAsString( Key.type ).equalsIgnoreCase( "java" ) ) {
 			return classLocator.load( context, "java:" + arguments.getAsString( Key.className ), context.getCurrentImports() );
 		} else if ( arguments.getAsString( Key.type ).equalsIgnoreCase( "component" ) ) {

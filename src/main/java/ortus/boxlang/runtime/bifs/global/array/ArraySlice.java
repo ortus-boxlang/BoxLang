@@ -48,7 +48,7 @@ public class ArraySlice extends BIF {
 	 * @param context
 	 * @param arguments Argument scope defining the array.
 	 */
-	public Array invoke( IBoxContext context, ArgumentsScope arguments ) {
+	public Array _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		Array	actualArray	= arguments.getAsArray( Key.array );
 		int		start		= arguments.getAsInteger( Key.start ) - 1;
 		int		length		= arguments.getAsInteger( Key.length );

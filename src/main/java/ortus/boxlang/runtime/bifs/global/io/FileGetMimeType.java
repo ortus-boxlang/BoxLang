@@ -51,7 +51,7 @@ public class FileGetMimeType extends BIF {
 	 *
 	 * @argument.foo Describe any expected arguments
 	 */
-	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
+	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		Path	filePath	= Path.of( arguments.getAsString( Key.file ) );
 		Boolean	strict		= arguments.getAsBoolean( Key.strict );
 

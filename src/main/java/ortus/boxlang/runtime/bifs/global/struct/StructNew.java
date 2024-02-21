@@ -78,7 +78,7 @@ public class StructNew extends BIF {
 	 *
 	 * @argument.callback An optional callback to use as the sorting function
 	 */
-	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
+	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		Key typeKey = Key.of( arguments.getAsString( Key.type ) );
 		if ( !typeMap.containsKey( typeKey ) ) {
 			throw new BoxRuntimeException(

@@ -66,7 +66,7 @@ public class ListFind extends ArrayFind {
 	 *
 	 * @argument.includeEmptyFields Whether to include empty fields in the search
 	 */
-	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
+	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		arguments.put(
 		    Key.array,
 		    ListUtil.asList(
@@ -76,7 +76,7 @@ public class ListFind extends ArrayFind {
 		        arguments.getAsBoolean( Key.multiCharacterDelimiter )
 		    )
 		);
-		return super.invoke( context, arguments );
+		return super._invoke( context, arguments );
 	}
 
 }

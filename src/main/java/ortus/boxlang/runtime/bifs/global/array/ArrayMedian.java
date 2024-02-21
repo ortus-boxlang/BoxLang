@@ -51,7 +51,7 @@ public class ArrayMedian extends BIF {
 	 * 
 	 * @argument.array The array to get median value from
 	 */
-	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
+	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		Array			actualArray	= arguments.getAsArray( Key.array );
 		List<Double>	vals		= actualArray.stream().map( ( x ) -> DoubleCaster.cast( x ) ).collect( Collectors.toList() );
 		int				size		= actualArray.size();

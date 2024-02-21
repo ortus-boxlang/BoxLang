@@ -70,7 +70,20 @@ public abstract class BIF {
 	 *
 	 * @return The result of the invocation
 	 */
-	public abstract Object invoke( IBoxContext context, ArgumentsScope arguments );
+	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
+		// Add any setup/teardown here that needs to run for all BIFs.
+		return _invoke( context, arguments );
+	}
+
+	/**
+	 * This is overridden by the concrete to provide the actual BIF implementation
+	 *
+	 * @param context   The context in which the BIF is being invoked
+	 * @param arguments The arguments to the BIF
+	 *
+	 * @return The result of the invocation
+	 */
+	public abstract Object _invoke( IBoxContext context, ArgumentsScope arguments );
 
 	/**
 	 * Get the arguments for this BIF

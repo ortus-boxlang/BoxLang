@@ -54,7 +54,7 @@ public class LSIsCurrency extends BIF {
 	 *
 	 * @argument.locale The locale to apply to parsing - uses the context config value if not specified
 	 */
-	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
+	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		String	value	= arguments.getAsString( Key.number );
 
 		Locale	locale	= LocalizationUtil.parseLocaleFromContext( context, arguments );

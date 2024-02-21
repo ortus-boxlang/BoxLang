@@ -52,7 +52,7 @@ public class StructValueArray extends BIF {
 	 *
 	 * @argument.struct The target struct from which to retrieve values
 	 */
-	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
+	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		return new Array( arguments.getAsStruct( Key.struct ).values().toArray() );
 	}
 

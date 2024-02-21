@@ -32,7 +32,7 @@ public class GetBoxContext extends BIF {
 	 * @param arguments Argument scope for the BIF.
 	 *
 	 */
-	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
+	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		return context;
 	}
 }

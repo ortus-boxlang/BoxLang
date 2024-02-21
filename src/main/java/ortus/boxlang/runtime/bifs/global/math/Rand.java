@@ -48,7 +48,7 @@ public class Rand extends BIF {
 	 * 
 	 * @argument.algorithm The algorithm to use to generate the random number.
 	 */
-	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
+	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		if ( arguments.get( Key.algorithm ) != null ) {
 			return _invoke( arguments.getAsString( Key.algorithm ) );
 		}

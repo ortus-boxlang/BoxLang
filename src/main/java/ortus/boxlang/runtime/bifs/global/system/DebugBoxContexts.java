@@ -41,7 +41,7 @@ public class DebugBoxContexts extends BIF {
 	 * @param arguments Argument scope for the BIF.
 	 *
 	 */
-	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
+	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		Array		var	= new Array();
 		IBoxContext	c	= context;
 		while ( c != null ) {

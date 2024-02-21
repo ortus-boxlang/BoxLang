@@ -47,7 +47,7 @@ public class Sleep extends BIF {
 	 *
 	 * @argument.duration The amount of time, in milliseconds to sleep the thread
 	 */
-	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
+	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		Long duration = arguments.getAsLong( Key.duration );
 		try {
 			Thread.sleep( duration );

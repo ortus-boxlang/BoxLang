@@ -59,7 +59,7 @@ public class StructInsert extends BIF {
 	 *
 	 * @argument.overwrite Whether to overwrite the existing value if the key exists ( default: false )
 	 */
-	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
+	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		IStruct	struct		= arguments.getAsStruct( Key.struct );
 		Key		key			= Key.of( arguments.getAsString( Key.key ) );
 		Boolean	overwrite	= arguments.getAsBoolean( Key.overwrite );

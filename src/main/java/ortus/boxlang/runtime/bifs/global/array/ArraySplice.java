@@ -58,7 +58,7 @@ public class ArraySplice extends BIF {
 	 * 
 	 * @argument.replacements An array of elements to insert
 	 */
-	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
+	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		Array	arr			= arguments.getAsArray( Key.array );
 		Integer	startIndex	= IntegerCaster.cast( arguments.get( Key.index ) );
 		Integer	toRemove	= IntegerCaster.cast( arguments.get( Key.elementCountForRemoval ) );

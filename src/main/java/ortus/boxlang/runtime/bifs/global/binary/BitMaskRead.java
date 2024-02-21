@@ -54,7 +54,7 @@ public class BitMaskRead extends BIF {
 	 *
 	 * @throws BoxRuntimeException If length or start is not in the range 0-31, inclusive.
 	 */
-	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
+	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		int	number	= arguments.getAsInteger( Key.number );
 		int	start	= arguments.getAsInteger( Key.start );
 		int	length	= arguments.getAsInteger( Key.length );

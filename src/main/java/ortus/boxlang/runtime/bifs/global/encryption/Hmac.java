@@ -65,7 +65,7 @@ public class Hmac extends BIF {
 	 *
 	 * @argument.iterations The number of iterations to re-digest the object ( default 1 );
 	 */
-	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
+	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		hashItem = arguments.get( Key.input );
 		String	key			= arguments.getAsString( Key.key );
 		String	algorithm	= arguments.getAsString( Key.algorithm );

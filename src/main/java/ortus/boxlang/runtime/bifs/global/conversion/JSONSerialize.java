@@ -74,7 +74,7 @@ public class JSONSerialize extends BIF {
 	 * 
 	 * @argument.useCustomSerializer If true, the JSON string is serialized using a custom serializer. (Not used)
 	 */
-	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
+	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		Object	obj			= arguments.get( Key.var );
 		String	queryFormat	= arguments.getAsString( Key.queryFormat ).toLowerCase();
 		if ( queryFormat.equals( "yes" ) ) {

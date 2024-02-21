@@ -53,7 +53,7 @@ public class ArrayMerge extends BIF {
 	 * 
 	 * @argument.leaveIndex Set to true maintain value indexes - if two values have the same index it will keep values from array1
 	 */
-	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
+	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		Array	arrayOne	= arguments.getAsArray( Key.array1 );
 		Array	arrayTwo	= arguments.getAsArray( Key.array2 );
 		Boolean	leaveIndex	= arguments.getAsBoolean( Key.leaveIndex );

@@ -50,7 +50,7 @@ public class StructCopy extends BIF {
 	 *
 	 * @argument.struct The struct to copy
 	 */
-	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
+	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		return DuplicationUtil.duplicateStruct( arguments.getAsStruct( Key.struct ), false );
 	}
 

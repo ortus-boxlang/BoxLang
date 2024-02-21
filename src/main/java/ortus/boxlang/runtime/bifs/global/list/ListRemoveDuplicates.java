@@ -56,7 +56,7 @@ public class ListRemoveDuplicates extends BIF {
 	 *
 	 * @argument.ignoreCase Whether case should be ignored or not during deduplication - defaults to false
 	 */
-	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
+	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		return ListUtil.removeDuplicates(
 		    arguments.getAsString( Key.list ),
 		    arguments.getAsString( Key.delimiter ),

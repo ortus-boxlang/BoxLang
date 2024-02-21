@@ -72,7 +72,7 @@ public class ListEach extends ArrayEach {
 	 *
 	 * @argument.ordered (BoxLang only) whether parallel operations should execute and maintain order
 	 */
-	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
+	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		arguments.put(
 		    Key.array,
 		    ListUtil.asList(
@@ -82,7 +82,7 @@ public class ListEach extends ArrayEach {
 		        arguments.getAsBoolean( Key.multiCharacterDelimiter )
 		    )
 		);
-		return super.invoke( context, arguments );
+		return super._invoke( context, arguments );
 	}
 
 }

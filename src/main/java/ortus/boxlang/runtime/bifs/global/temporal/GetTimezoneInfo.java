@@ -57,7 +57,7 @@ public class GetTimezoneInfo extends BIF {
 	 *
 	 * @argument.locale optional, a specific locale for language output of the timezone name fields
 	 */
-	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
+	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		ZoneId		zone	= LocalizationUtil.parseZoneId( arguments.getAsString( Key.timezone ), context );
 		TimeZone	tz		= TimeZone.getTimeZone( zone );
 		Locale		locale	= LocalizationUtil.parseLocale( arguments.getAsString( Key.locale ) );

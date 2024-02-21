@@ -45,7 +45,7 @@ public class Fix extends BIF {
 	 * 
 	 * @argument.number The number to convert to an integer
 	 */
-	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
+	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		double number = arguments.getAsDouble( Key.number );
 		if ( number == 0 )
 			return number;

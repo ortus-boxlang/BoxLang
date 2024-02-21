@@ -52,7 +52,7 @@ public class StructGet extends BIF {
 	 * @argument.path The string path to the object requested in the struct
 	 *
 	 */
-	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
+	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		String path = arguments.getAsString( Key.path );
 		if ( arguments.getAsBoolean( __isMemberExecution ) ) {
 			path = "arguments.object." + path;

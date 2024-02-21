@@ -43,7 +43,7 @@ public class IsDate extends BIF {
 	 *
 	 * @argument.value Value to test for date-ness
 	 */
-	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
+	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		return DateTimeCaster.attempt( arguments.get( Key.value ) ).wasSuccessful();
 	}
 

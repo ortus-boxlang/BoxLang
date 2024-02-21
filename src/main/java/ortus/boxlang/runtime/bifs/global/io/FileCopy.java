@@ -55,7 +55,7 @@ public class FileCopy extends BIF {
 	 *
 	 * @argument.createPath [ true ] whether to create any nested paths required to the new file
 	 */
-	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
+	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		Path	sourcePath				= Path.of( arguments.getAsString( Key.source ) );
 		Path	destinationPath			= Path.of( arguments.getAsString( Key.destination ) );
 		Path	destinationDirectory	= destinationPath.getParent();

@@ -45,7 +45,7 @@ public class LTrim extends BIF {
 	 *
 	 * @argument.string The string to trim
 	 */
-	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
+	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		String	input		= arguments.getAsString( Key.string );
 		int		startIndex	= 0;
 
