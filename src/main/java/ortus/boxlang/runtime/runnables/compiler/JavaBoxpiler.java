@@ -35,6 +35,7 @@ import javax.tools.JavaCompiler;
 import javax.tools.JavaFileObject;
 import javax.tools.ToolProvider;
 
+import org.apache.commons.io.FileUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -77,15 +78,40 @@ public class JavaBoxpiler {
 	 */
 	private static JavaBoxpiler		instance;
 
+	/**
+	 * In-memory class loader for compiled classes
+	 */
 	private JavaMemoryManager		manager;
 
+	/**
+	 * The Java compiler
+	 */
 	private JavaCompiler			compiler;
 
+	/**
+	 * The class loader for compiled classes
+	 */
 	private JavaDynamicClassLoader	classLoader;
 
+	/**
+	 * The disk class loader
+	 */
 	private DiskClassLoader			diskClassLoader;
 
-	private Map<String, Integer>	classCounter	= new HashMap<String, Integer>();
+	/**
+	 * Keeps track of how many times a class has been compiled
+	 */
+	private Map<String, Integer>	classCounter	= new HashMap<>();
+
+	/**
+	 * Logger
+	 */
+	private static final Logger		logger			= LoggerFactory.getLogger( JavaBoxpiler.class );
+
+	/**
+	 * The directory where the generated classes are stored
+	 */
+	private Path					classGenerationDirectory;
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -98,14 +124,26 @@ public class JavaBoxpiler {
 	 */
 	private JavaBoxpiler() {
 
-		this.compiler			= ToolProvider.getSystemJavaCompiler();
-		this.manager			= new JavaMemoryManager( compiler.getStandardFileManager( null, null, null ) );
+		this.compiler					= ToolProvider.getSystemJavaCompiler();
+		this.manager					= new JavaMemoryManager( compiler.getStandardFileManager( null, null, null ) );
+		this.classGenerationDirectory	= Paths.get( BoxRuntime.getInstance().getConfiguration().compiler.classGenerationDirectory );
+
+		// If we are in debug mode, let's clean out the class generation directory
+		if ( BoxRuntime.getInstance().inDebugMode() ) {
+			try {
+				logger.info( "Running in debugmode, first startup cleaning out class generation directory: " + classGenerationDirectory );
+				FileUtils.cleanDirectory( classGenerationDirectory.toFile() );
+			} catch ( IOException e ) {
+				throw new BoxRuntimeException( "Error cleaning out class generation directory on first run", e );
+			}
+		}
 
 		this.diskClassLoader	= new DiskClassLoader(
 		    new URL[] {},
 		    this.getClass().getClassLoader(),
 		    Paths.get( BoxRuntime.getInstance().getConfiguration().compiler.classGenerationDirectory ),
-		    manager );
+		    manager
+		);
 
 		this.classLoader		= new JavaDynamicClassLoader(
 		    new URL[] {
@@ -113,8 +151,8 @@ public class JavaBoxpiler {
 		    },
 		    this.getClass().getClassLoader(),
 		    manager,
-		    this.diskClassLoader );
-
+		    this.diskClassLoader
+		);
 	}
 
 	/**
@@ -135,14 +173,12 @@ public class JavaBoxpiler {
 	 * --------------------------------------------------------------------------
 	 */
 
-	Logger logger = LoggerFactory.getLogger( JavaBoxpiler.class );
-
 	/**
 	 * Compile a single BoxLang statement into a Java class
-	 * 
+	 *
 	 * @param source The BoxLang source code as a string
 	 * @param type   The type of BoxLang source code
-	 * 
+	 *
 	 * @return The loaded class
 	 */
 	public Class<IBoxRunnable> compileStatement( String source, BoxScriptType type ) {
@@ -161,10 +197,10 @@ public class JavaBoxpiler {
 
 	/**
 	 * Compile a BoxLang script into a Java class
-	 * 
+	 *
 	 * @param source The BoxLang source code as a string
 	 * @param type   The type of BoxLang source code
-	 * 
+	 *
 	 * @return The loaded class
 	 */
 	public Class<IBoxRunnable> compileScript( String source, BoxScriptType type ) {
@@ -183,10 +219,10 @@ public class JavaBoxpiler {
 
 	/**
 	 * Compile a BoxLang template (file on disk) into a Java class
-	 * 
+	 *
 	 * @param source      The BoxLang source on disk as a Path
 	 * @param packagePath The package path used to resolve this file path
-	 * 
+	 *
 	 * @return The loaded class
 	 */
 	public Class<IBoxRunnable> compileTemplate( Path path, String packagePath ) {
@@ -208,9 +244,9 @@ public class JavaBoxpiler {
 
 	/**
 	 * Compile a BoxLang Class from source into a Java class
-	 * 
+	 *
 	 * @param source The BoxLang source code as a string
-	 * 
+	 *
 	 * @return The loaded class
 	 */
 	public Class<IClassRunnable> compileClass( String source, BoxScriptType type ) {
@@ -229,10 +265,10 @@ public class JavaBoxpiler {
 
 	/**
 	 * Compile a BoxLang Class from a file into a Java class
-	 * 
+	 *
 	 * @param source      The BoxLang source code as a Path on disk
 	 * @param packagePath The package path representing the mapping used to resolve this class
-	 * 
+	 *
 	 * @return The loaded class
 	 */
 	public Class<IClassRunnable> compileClass( Path path, String packagePath ) {
@@ -254,9 +290,9 @@ public class JavaBoxpiler {
 
 	/**
 	 * Parse a file on disk into BoxLang AST nodes. This method will NOT throw an exception if the parse fails.
-	 * 
+	 *
 	 * @param file The file to parse
-	 * 
+	 *
 	 * @return The parsed AST nodes and any issues if encountered while parsing.
 	 */
 	public ParsingResult parse( File file ) {
@@ -270,9 +306,9 @@ public class JavaBoxpiler {
 
 	/**
 	 * Parse source text into BoxLang AST nodes. This method will NOT throw an exception if the parse fails.
-	 * 
+	 *
 	 * @param file The file to parse
-	 * 
+	 *
 	 * @return The parsed AST nodes and any issues if encountered while parsing.
 	 */
 	public ParsingResult parse( String source, BoxScriptType type ) {
@@ -286,9 +322,9 @@ public class JavaBoxpiler {
 
 	/**
 	 * Parse a file on disk into BoxLang AST nodes. This method will throw an exception if the parse fails.
-	 * 
+	 *
 	 * @param file The file to parse
-	 * 
+	 *
 	 * @return The parsed AST nodes and any issues if encountered while parsing.
 	 */
 	public ParsingResult parseOrFail( File file ) {
@@ -297,9 +333,9 @@ public class JavaBoxpiler {
 
 	/**
 	 * Parse source text into BoxLang AST nodes. This method will throw an exception if the parse fails.
-	 * 
+	 *
 	 * @param file The file to parse
-	 * 
+	 *
 	 * @return The parsed AST nodes and any issues if encountered while parsing.
 	 */
 	public ParsingResult parseOrFail( String source, BoxScriptType type ) {
@@ -308,9 +344,9 @@ public class JavaBoxpiler {
 
 	/**
 	 * Validate a parsing result and throw an exception if the parse failed.
-	 * 
+	 *
 	 * @param result The parsing result to validate
-	 * 
+	 *
 	 * @return The parsing result if the parse was successful
 	 */
 	public ParsingResult validateParse( ParsingResult result, String source ) {
@@ -322,10 +358,10 @@ public class JavaBoxpiler {
 
 	/**
 	 * Generate Java source code from BoxLang AST nodes
-	 * 
+	 *
 	 * @param node      The BoxLang root AST node
 	 * @param classInfo The class info object for this class
-	 * 
+	 *
 	 * @return The generated Java source code as a string
 	 */
 	@SuppressWarnings( "unused" )
@@ -382,7 +418,7 @@ public class JavaBoxpiler {
 
 	/**
 	 * Compile Java source code into a Java class
-	 * 
+	 *
 	 * @param javaSource The Java source code as a string
 	 * @param fqn        The fully qualified name of the class
 	 */
@@ -410,9 +446,9 @@ public class JavaBoxpiler {
 
 	/**
 	 * Generate JSON for line numbers mapping BoxLang Source to the transpiled java source
-	 * 
+	 *
 	 * @param lineNumbers List of line numbers
-	 * 
+	 *
 	 * @return JSON string
 	 */
 	private String generateLineNumberJSON( ClassInfo classInfo, List<Object[]> lineNumbers ) {
@@ -466,9 +502,9 @@ public class JavaBoxpiler {
 
 	/**
 	 * Get a class for a class name
-	 * 
+	 *
 	 * @param fqn The fully qualified name of the class
-	 * 
+	 *
 	 * @return The loaded class
 	 */
 	public Class<IBoxRunnable> getClass( String fqn ) {
@@ -481,9 +517,9 @@ public class JavaBoxpiler {
 
 	/**
 	 * Get a class for a class name from disk
-	 * 
+	 *
 	 * @param fqn The fully qualified name of the class
-	 * 
+	 *
 	 * @return The loaded class
 	 */
 	public Class<IBoxRunnable> getDiskClass( String fqn ) {
@@ -496,9 +532,9 @@ public class JavaBoxpiler {
 
 	/**
 	 * Get a Box class for a class name
-	 * 
+	 *
 	 * @param fqn The fully qualified name of the class
-	 * 
+	 *
 	 * @return The loaded class
 	 */
 	public Class<IClassRunnable> getClassClass( String fqn ) {
@@ -511,9 +547,9 @@ public class JavaBoxpiler {
 
 	/**
 	 * Get a Box class for a class name from disk
-	 * 
+	 *
 	 * @param fqn The fully qualified name of the class
-	 * 
+	 *
 	 * @return The loaded class
 	 */
 	public Class<IClassRunnable> getDiskClassClass( String fqn ) {
@@ -527,9 +563,9 @@ public class JavaBoxpiler {
 	/**
 	 * Generate an MD5 hash.
 	 * TODO: Move to util class
-	 * 
+	 *
 	 * @param md5 String to hash
-	 * 
+	 *
 	 * @return MD5 hash
 	 */
 	public static String MD5( String md5 ) {
@@ -606,9 +642,9 @@ public class JavaBoxpiler {
 
 	/**
 	 * Get line numbers for fqn
-	 * 
+	 *
 	 * @param fqn The fully qualified name of the class
-	 * 
+	 *
 	 * @return The line numbers
 	 */
 	public SourceMap getLineNumbers( String fqn ) {
@@ -694,7 +730,7 @@ public class JavaBoxpiler {
 
 		/**
 		 * Called when we need to re-compile a class because it's already been compiled
-		 * 
+		 *
 		 * @return new ClassInfo object with the compile count incremented
 		 */
 		public ClassInfo next() {
@@ -739,7 +775,7 @@ public class JavaBoxpiler {
 
 	/**
 	 * Get the Class Counter map
-	 * 
+	 *
 	 * @return the classCounter
 	 */
 	public Map<String, Integer> getClassCounter() {

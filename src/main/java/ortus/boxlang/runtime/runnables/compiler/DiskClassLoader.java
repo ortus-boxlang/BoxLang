@@ -33,7 +33,14 @@ import ortus.boxlang.runtime.util.JSONUtil;
  */
 public class DiskClassLoader extends URLClassLoader {
 
+	/**
+	 * The location of the disk store
+	 */
 	private Path				diskStore;
+
+	/**
+	 * The memory manager for BoxLang
+	 */
 	private JavaMemoryManager	manager;
 
 	/**
@@ -41,13 +48,14 @@ public class DiskClassLoader extends URLClassLoader {
 	 *
 	 * @param urls      classpath
 	 * @param parent    parent classloader
-	 * @param diskStore disk store
+	 * @param diskStore disk store location path
 	 * @param manager   memory manager
 	 */
 	public DiskClassLoader( URL[] urls, ClassLoader parent, Path diskStore, JavaMemoryManager manager ) {
 		super( urls, parent );
 		this.manager	= manager;
 		this.diskStore	= diskStore;
+		// Init disk store
 		diskStore.toFile().mkdirs();
 	}
 
@@ -210,7 +218,7 @@ public class DiskClassLoader extends URLClassLoader {
 
 	/**
 	 * Read line numbers.
-	 * 
+	 *
 	 * @returns array of maps. Null if not found.
 	 */
 	@SuppressWarnings( "unchecked" )
@@ -229,7 +237,7 @@ public class DiskClassLoader extends URLClassLoader {
 
 	/**
 	 * This is really just for debugging purposes. It's not used in production.
-	 * 
+	 *
 	 * @param fqn        The fully qualified name of the class
 	 * @param javaSource The Java source code
 	 */

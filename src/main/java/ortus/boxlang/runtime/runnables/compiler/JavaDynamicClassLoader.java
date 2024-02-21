@@ -30,12 +30,27 @@ public class JavaDynamicClassLoader extends URLClassLoader {
 	private JavaMemoryManager	manager;
 	private DiskClassLoader		diskClassLoader;
 
+	/**
+	 * Constructor
+	 *
+	 * @param urls            classpath
+	 * @param parent          parent classloader
+	 * @param manager         memory manager
+	 * @param diskClassLoader disk classloader
+	 */
 	public JavaDynamicClassLoader( URL[] urls, ClassLoader parent, JavaMemoryManager manager, DiskClassLoader diskClassLoader ) {
 		super( urls, parent );
 		this.manager			= manager;
 		this.diskClassLoader	= diskClassLoader;
 	}
 
+	/**
+	 * Find a class in the classloader
+	 *
+	 * @param name class name
+	 *
+	 * @return the class
+	 */
 	@Override
 	protected Class<?> findClass( String name ) throws ClassNotFoundException {
 
@@ -43,8 +58,7 @@ public class JavaDynamicClassLoader extends URLClassLoader {
 		    .getBytesMap();
 
 		if ( compiledClasses.containsKey( name ) ) {
-			byte[] bytes = compiledClasses.get( name )
-			    .getBytes();
+			byte[] bytes = compiledClasses.get( name ).getBytes();
 
 			// Don't use disk cache if we are in debug mode
 			if ( !BoxRuntime.getInstance().inDebugMode() ) {
@@ -79,15 +93,13 @@ public class JavaDynamicClassLoader extends URLClassLoader {
 	 */
 	public boolean hasClass( String name, long lastModified ) {
 		JavaClassByteCode jcb = manager.getBytesMap().get( name );
+
 		if ( jcb == null ) {
 			return false;
 		}
-		// If source file is modified after class file
-		if ( lastModified > jcb.getLastModified() ) {
-			return false;
-		}
 
-		return true;
+		// If source file is modified after class file return false
+		return lastModified > jcb.getLastModified() ? false : true;
 	}
 
 	/*
