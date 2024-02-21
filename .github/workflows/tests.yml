@@ -42,6 +42,7 @@ jobs:
 
       - name: Test BoxLang
         run: |
+          gradle compileCoreModules
           gradle test --stacktrace --console=plain
 
       - name: Upload Test Results

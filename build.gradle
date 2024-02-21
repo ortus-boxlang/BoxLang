@@ -65,7 +65,7 @@ dependencies {
     testImplementation "org.junit.jupiter:junit-jupiter:5.+"
 	testImplementation "org.mockito:mockito-core:5.+"
 	testImplementation "com.google.truth:truth:1.+"
-	testImplementation 'commons-cli:commons-cli:1.6.0'
+	testImplementation "commons-cli:commons-cli:1.6.0"
 
 	// Antlr
 	antlr "org.antlr:antlr4:$antlrVersion"
@@ -188,22 +188,22 @@ tasks.named( 'test' ) {
 compileJava {
 	source sourceSets.main.java
 	// Generate the ANTLR parser before compiling
-	dependsOn generateGrammarSource,  generateTestGrammarSource
+	dependsOn generateGrammarSource, generateTestGrammarSource
 }
 
 task compileCoreModules( type: JavaCompile ) {
     source = files( [ 'src/main/resources/modules' ] ).asFileTree
     destinationDir = file( 'src/main/resources' )
     classpath = files( [ sourceSets.main.compileClasspath, sourceSets.main.output ] )
-	dependsOn compileJava
 }
+compileJava.finalizedBy( compileCoreModules )
 
 /**
  * Compile Test Java Customizations
  */
 compileTestJava {
 	source sourceSets.test.java
-	dependsOn compileJava, compileCoreModules, generateTestGrammarSource
+	dependsOn compileJava, generateTestGrammarSource
 }
 
 /**
@@ -277,11 +277,15 @@ test {
 	testLogging {
 		showStandardStreams = true
 	}
+
 	systemProperties.putIfAbsent( "testboxdir", testboxDir)
 	systemProperties.putIfAbsent( "contentboxdir", contentboxDir)
 	systemProperties.putIfAbsent( "coldboxdir", coldboxDir)
-	dependsOn compileJava, compileTestJava, generateBIFServiceProviders, generateComponentServiceProviders
-	exclude '**/resources/**'
+
+	dependsOn compileJava, compileCoreModules, compileTestJava, generateBIFServiceProviders, generateComponentServiceProviders
+
+	classpath += files( "src/main/resources/modules" )
+	//exclude '**/resources/**'
 }
 
 /**
