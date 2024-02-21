@@ -26,7 +26,6 @@ import java.util.Map;
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.bifs.BIFDescriptor;
 import ortus.boxlang.runtime.components.Component;
-import ortus.boxlang.runtime.components.Component.BodyResult;
 import ortus.boxlang.runtime.components.ComponentDescriptor;
 import ortus.boxlang.runtime.dynamic.casters.FunctionCaster;
 import ortus.boxlang.runtime.dynamic.casters.StringCaster;
@@ -34,7 +33,6 @@ import ortus.boxlang.runtime.loader.ImportDefinition;
 import ortus.boxlang.runtime.runnables.BoxTemplate;
 import ortus.boxlang.runtime.runnables.IBoxRunnable;
 import ortus.boxlang.runtime.runnables.RunnableLoader;
-import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.services.ComponentService;
@@ -354,7 +352,7 @@ public class BaseBoxContext implements IBoxContext {
 		}
 
 		Function function = findFunction( name );
-		return invokeFunction( function, name, function.createArgumentsScope( this, positionalArguments ) );
+		return invokeFunction( function, name, positionalArguments );
 	}
 
 	/**
@@ -369,7 +367,7 @@ public class BaseBoxContext implements IBoxContext {
 		}
 
 		Function function = findFunction( name );
-		return invokeFunction( function, name, function.createArgumentsScope( this, namedArguments ) );
+		return invokeFunction( function, name, namedArguments );
 	}
 
 	/**
@@ -384,7 +382,7 @@ public class BaseBoxContext implements IBoxContext {
 		}
 
 		Function function = findFunction( name );
-		return invokeFunction( function, name, function.createArgumentsScope( this, new Object[] {} ) );
+		return invokeFunction( function, name, new Object[] {} );
 	}
 
 	/**
@@ -412,7 +410,11 @@ public class BaseBoxContext implements IBoxContext {
 	 */
 	public Object invokeFunction( Object function, Object[] positionalArguments ) {
 		Function func = FunctionCaster.cast( function );
-		return invokeFunction( func, func.getName(), func.createArgumentsScope( this, positionalArguments ) );
+		return invokeFunction(
+		    func,
+		    func.getName(),
+		    positionalArguments
+		);
 	}
 
 	/**
@@ -434,7 +436,11 @@ public class BaseBoxContext implements IBoxContext {
 	 */
 	public Object invokeFunction( Object function, Map<Key, Object> namedArguments ) {
 		Function func = FunctionCaster.cast( function );
-		return invokeFunction( func, func.getName(), func.createArgumentsScope( this, namedArguments ) );
+		return invokeFunction(
+		    func,
+		    func.getName(),
+		    namedArguments
+		);
 	}
 
 	/**
@@ -445,7 +451,14 @@ public class BaseBoxContext implements IBoxContext {
 	 */
 	public Object invokeFunction( Object function ) {
 		Function func = FunctionCaster.cast( function );
-		return invokeFunction( func, func.getName(), func.createArgumentsScope( this, new Object[] {} ) );
+		return func.invoke(
+		    Function.generateFunctionContext(
+		        func,
+		        getFunctionParentContext(),
+		        func.getName(),
+		        new Object[] {}
+		    )
+		);
 	}
 
 	/**
@@ -453,13 +466,29 @@ public class BaseBoxContext implements IBoxContext {
 	 *
 	 * @return Return value of the function call
 	 */
-	public Object invokeFunction( Function function, Key calledName, ArgumentsScope argumentsScope ) {
+	public Object invokeFunction( Function function, Key calledName, Object[] positionalArguments ) {
 		return function.invoke(
 		    Function.generateFunctionContext(
 		        function,
 		        getFunctionParentContext(),
 		        calledName,
-		        argumentsScope
+		        positionalArguments
+		    )
+		);
+	}
+
+	/**
+	 * Invoke a function expression such as (()=>{})() using named args.
+	 *
+	 * @return Return value of the function call
+	 */
+	public Object invokeFunction( Function function, Key calledName, Map<Key, Object> namedArguments ) {
+		return function.invoke(
+		    Function.generateFunctionContext(
+		        function,
+		        getFunctionParentContext(),
+		        calledName,
+		        namedArguments
 		    )
 		);
 	}

@@ -332,18 +332,36 @@ public abstract class Function implements IType, IFunctionRunnable {
 	/**
 	 * This is a helper method to generate the correct context for a function based on type
 	 *
+	 * @param function            The function to generate the context for
+	 * @param parentContext       The parent context
+	 * @param calledName          The name the function was called with
+	 * @param positionalArguments The arguments for the function
+	 */
+	public static FunctionBoxContext generateFunctionContext( Function function, IBoxContext parentContext, Key calledName, Object[] positionalArguments ) {
+		if ( function instanceof Closure clos ) {
+			return new ClosureBoxContext( parentContext, clos, calledName, positionalArguments );
+		} else if ( function instanceof Lambda lam ) {
+			return new LambdaBoxContext( parentContext, lam, calledName, positionalArguments );
+		} else {
+			return new FunctionBoxContext( parentContext, function, calledName, positionalArguments );
+		}
+	}
+
+	/**
+	 * This is a helper method to generate the correct context for a function based on type
+	 *
 	 * @param function       The function to generate the context for
 	 * @param parentContext  The parent context
 	 * @param calledName     The name the function was called with
-	 * @param argumentsScope The arguments scope for the function
+	 * @param namedArguments The arguments for the function
 	 */
-	public static FunctionBoxContext generateFunctionContext( Function function, IBoxContext parentContext, Key calledName, ArgumentsScope argumentsScope ) {
+	public static FunctionBoxContext generateFunctionContext( Function function, IBoxContext parentContext, Key calledName, Map<Key, Object> namedArguments ) {
 		if ( function instanceof Closure clos ) {
-			return new ClosureBoxContext( parentContext, clos, calledName, argumentsScope );
+			return new ClosureBoxContext( parentContext, clos, calledName, namedArguments );
 		} else if ( function instanceof Lambda lam ) {
-			return new LambdaBoxContext( parentContext, lam, calledName, argumentsScope );
+			return new LambdaBoxContext( parentContext, lam, calledName, namedArguments );
 		} else {
-			return new FunctionBoxContext( parentContext, function, calledName, argumentsScope );
+			return new FunctionBoxContext( parentContext, function, calledName, namedArguments );
 		}
 	}
 

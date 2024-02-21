@@ -25,6 +25,7 @@ import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.LocalScope;
 import ortus.boxlang.runtime.scopes.VariablesScope;
+import ortus.boxlang.runtime.types.ArgumentUtil;
 import ortus.boxlang.runtime.types.Function;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.UDF;
@@ -114,6 +115,50 @@ public class FunctionBoxContext extends BaseBoxContext {
 		}
 		this.localScope			= new LocalScope();
 		this.argumentsScope		= argumentsScope;
+		this.function			= function;
+		this.functionCalledName	= functionCalledName;
+	}
+
+	/**
+	 * Creates a new execution context with a bounded function instance and parent context and arguments scope
+	 *
+	 * @param parent              The parent context
+	 * @param function            The function being invoked with this context
+	 * @param functionCalledName  The name of the function being invoked
+	 * @param positionalArguments The arguments
+	 */
+	public FunctionBoxContext( IBoxContext parent, Function function, Key functionCalledName, Object[] positionalArguments ) {
+		super( parent );
+		if ( parent == null ) {
+			throw new BoxRuntimeException( "Parent context cannot be null for FunctionBoxContext" );
+		}
+		if ( function == null ) {
+			throw new BoxRuntimeException( "function cannot be null for FunctionBoxContext" );
+		}
+		this.localScope			= new LocalScope();
+		this.argumentsScope		= ArgumentUtil.createArgumentsScope( this, positionalArguments, function.getArguments() );
+		this.function			= function;
+		this.functionCalledName	= functionCalledName;
+	}
+
+	/**
+	 * Creates a new execution context with a bounded function instance and parent context and arguments scope
+	 *
+	 * @param parent             The parent context
+	 * @param function           The function being invoked with this context
+	 * @param functionCalledName The name of the function being invoked
+	 * @param namedArguments     The arguments
+	 */
+	public FunctionBoxContext( IBoxContext parent, Function function, Key functionCalledName, Map<Key, Object> namedArguments ) {
+		super( parent );
+		if ( parent == null ) {
+			throw new BoxRuntimeException( "Parent context cannot be null for FunctionBoxContext" );
+		}
+		if ( function == null ) {
+			throw new BoxRuntimeException( "function cannot be null for FunctionBoxContext" );
+		}
+		this.localScope			= new LocalScope();
+		this.argumentsScope		= ArgumentUtil.createArgumentsScope( this, namedArguments, function.getArguments() );
 		this.function			= function;
 		this.functionCalledName	= functionCalledName;
 	}
@@ -364,8 +409,22 @@ public class FunctionBoxContext extends BaseBoxContext {
 	 *
 	 * @return Return value of the function call
 	 */
-	public Object invokeFunction( Function function, Key calledName, ArgumentsScope argumentsScope ) {
-		FunctionBoxContext	functionContext	= Function.generateFunctionContext( function, getFunctionParentContext(), calledName, argumentsScope );
+	public Object invokeFunction( Function function, Key calledName, Object[] positionalArguments ) {
+		FunctionBoxContext	functionContext	= Function.generateFunctionContext( function, getFunctionParentContext(), calledName, positionalArguments );
+		boolean				inClass			= isInClass();
+		if ( inClass ) {
+			functionContext.setThisClass( getThisClass() );
+		}
+		return function.invoke( functionContext );
+	}
+
+	/**
+	 * Invoke a function expression such as (()=>{})() using named args.
+	 *
+	 * @return Return value of the function call
+	 */
+	public Object invokeFunction( Function function, Key calledName, Map<Key, Object> namedArguments ) {
+		FunctionBoxContext	functionContext	= Function.generateFunctionContext( function, getFunctionParentContext(), calledName, namedArguments );
 		boolean				inClass			= isInClass();
 		if ( inClass ) {
 			functionContext.setThisClass( getThisClass() );

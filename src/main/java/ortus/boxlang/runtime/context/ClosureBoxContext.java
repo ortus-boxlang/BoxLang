@@ -17,6 +17,8 @@
  */
 package ortus.boxlang.runtime.context;
 
+import java.util.Map;
+
 import ortus.boxlang.runtime.runnables.IClassRunnable;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.IScope;
@@ -65,6 +67,36 @@ public class ClosureBoxContext extends FunctionBoxContext {
 	 */
 	public ClosureBoxContext( IBoxContext parent, Closure function, Key functionCalledName, ArgumentsScope argumentsScope ) {
 		super( parent, function, functionCalledName, argumentsScope );
+		if ( parent == null ) {
+			throw new BoxRuntimeException( "Parent context cannot be null for ClosureBoxContext" );
+		}
+	}
+
+	/**
+	 * Creates a new execution context with a bounded function instance and parent context and arguments scope
+	 *
+	 * @param parent              The parent context
+	 * @param function            The Closure being invoked with this context
+	 * @param functionCalledName  The name of the function being invoked
+	 * @param positionalArguments The arguments scope for this context
+	 */
+	public ClosureBoxContext( IBoxContext parent, Closure function, Key functionCalledName, Object[] positionalArguments ) {
+		super( parent, function, functionCalledName, positionalArguments );
+		if ( parent == null ) {
+			throw new BoxRuntimeException( "Parent context cannot be null for ClosureBoxContext" );
+		}
+	}
+
+	/**
+	 * Creates a new execution context with a bounded function instance and parent context and arguments scope
+	 *
+	 * @param parent             The parent context
+	 * @param function           The Closure being invoked with this context
+	 * @param functionCalledName The name of the function being invoked
+	 * @param namedArguments     The arguments scope for this context
+	 */
+	public ClosureBoxContext( IBoxContext parent, Closure function, Key functionCalledName, Map<Key, Object> namedArguments ) {
+		super( parent, function, functionCalledName, namedArguments );
 		if ( parent == null ) {
 			throw new BoxRuntimeException( "Parent context cannot be null for ClosureBoxContext" );
 		}
@@ -167,8 +199,21 @@ public class ClosureBoxContext extends FunctionBoxContext {
 	 *
 	 * @return Return value of the function call
 	 */
-	public Object invokeFunction( Function function, Key calledName, ArgumentsScope argumentsScope ) {
-		FunctionBoxContext functionContext = Function.generateFunctionContext( function, getFunctionParentContext(), calledName, argumentsScope );
+	public Object invokeFunction( Function function, Key calledName, Object[] positionalArguments ) {
+		FunctionBoxContext functionContext = Function.generateFunctionContext( function, getFunctionParentContext(), calledName, positionalArguments );
+		if ( getFunction().getDeclaringContext() instanceof FunctionBoxContext fbc && fbc.isInClass() ) {
+			functionContext.setThisClass( fbc.getThisClass() );
+		}
+		return function.invoke( functionContext );
+	}
+
+	/**
+	 * Invoke a function expression such as (()=>{})() using named args.
+	 *
+	 * @return Return value of the function call
+	 */
+	public Object invokeFunction( Function function, Key calledName, Map<Key, Object> namedArguments ) {
+		FunctionBoxContext functionContext = Function.generateFunctionContext( function, getFunctionParentContext(), calledName, namedArguments );
 		if ( getFunction().getDeclaringContext() instanceof FunctionBoxContext fbc && fbc.isInClass() ) {
 			functionContext.setThisClass( fbc.getThisClass() );
 		}

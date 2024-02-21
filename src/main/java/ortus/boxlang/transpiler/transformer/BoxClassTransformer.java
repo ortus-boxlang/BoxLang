@@ -373,7 +373,7 @@ public class BoxClassTransformer extends AbstractTransformer {
 						// because we've pushed the CFC onto the template stack in the function context.
 						context,
 						name,
-						function.createArgumentsScope( context, positionalArguments )
+						positionalArguments
 					);
 					
 					functionContext.setThisClass( this );
@@ -438,7 +438,7 @@ public class BoxClassTransformer extends AbstractTransformer {
 							// because we've pushed the CFC onto the template stack in the function context.
 							context,
 							name,
-							function.createArgumentsScope(  context, namedArguments )
+							namedArguments
 						);
 
 					functionContext.setThisClass( this );

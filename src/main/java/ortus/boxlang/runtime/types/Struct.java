@@ -806,7 +806,7 @@ public class Struct implements IStruct, IListenable {
 				        function,
 				        context.getFunctionParentContext(),
 				        name,
-				        function.createArgumentsScope( context, positionalArguments )
+				        positionalArguments
 				    )
 				);
 			} else if ( memberDescriptor == null ) {
@@ -843,7 +843,7 @@ public class Struct implements IStruct, IListenable {
 				        function,
 				        context.getFunctionParentContext(),
 				        name,
-				        function.createArgumentsScope( context, namedArguments )
+				        namedArguments
 				    )
 				);
 			} else if ( memberDescriptor == null ) {

@@ -17,6 +17,8 @@
  */
 package ortus.boxlang.runtime.context;
 
+import java.util.Map;
+
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
@@ -52,6 +54,36 @@ public class LambdaBoxContext extends FunctionBoxContext {
 	 */
 	public LambdaBoxContext( IBoxContext parent, Lambda function, ArgumentsScope argumentsScope ) {
 		this( parent, function, function.getName(), argumentsScope );
+	}
+
+	/**
+	 * Creates a new execution context with a bounded function instance and parent context and arguments scope
+	 *
+	 * @param parent              The parent context
+	 * @param function            The Closure being invoked with this context
+	 * @param functionCalledName  The name of the function being invoked
+	 * @param positionalArguments The arguments scope for this context
+	 */
+	public LambdaBoxContext( IBoxContext parent, Lambda function, Key functionCalledName, Object[] positionalArguments ) {
+		super( parent, function, functionCalledName, positionalArguments );
+		if ( parent == null ) {
+			throw new BoxRuntimeException( "Parent context cannot be null for LambdaBoxContext" );
+		}
+	}
+
+	/**
+	 * Creates a new execution context with a bounded function instance and parent context and arguments scope
+	 *
+	 * @param parent             The parent context
+	 * @param function           The Closure being invoked with this context
+	 * @param functionCalledName The name of the function being invoked
+	 * @param namedArguments     The arguments scope for this context
+	 */
+	public LambdaBoxContext( IBoxContext parent, Lambda function, Key functionCalledName, Map<Key, Object> namedArguments ) {
+		super( parent, function, functionCalledName, namedArguments );
+		if ( parent == null ) {
+			throw new BoxRuntimeException( "Parent context cannot be null for LambdaBoxContext" );
+		}
 	}
 
 	/**
