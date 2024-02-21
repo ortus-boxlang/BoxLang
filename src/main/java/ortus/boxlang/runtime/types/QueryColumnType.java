@@ -21,17 +21,25 @@ import java.sql.Types;
 
 public enum QueryColumnType {
 
-	INTEGER,
-	BIGINT,
-	DOUBLE,
-	DECIMAL,
-	VARCHAR,
-	BINARY,
-	BIT,
-	TIME,
-	DATE,
-	TIMESTAMP,
-	OBJECT;
+	INTEGER( Types.INTEGER ),
+	BIGINT( Types.BIGINT ),
+	DOUBLE( Types.DOUBLE ),
+	DECIMAL( Types.DECIMAL ),
+	VARCHAR( Types.VARCHAR ),
+	BINARY( Types.BINARY ),
+	BIT( Types.BIT ),
+	TIME( Types.TIME ),
+	DATE( Types.DATE ),
+	TIMESTAMP( Types.TIMESTAMP ),
+	OBJECT( Types.JAVA_OBJECT ),
+	OTHER( Types.OTHER ),
+	NULL( Types.NULL );
+
+	public final int sqlType;
+
+	QueryColumnType( int sqlType ) {
+		this.sqlType = sqlType;
+	}
 
 	public static QueryColumnType fromString( String type ) {
 		type = type.toLowerCase();
@@ -61,6 +69,8 @@ public enum QueryColumnType {
 				return TIMESTAMP;
 			case "object" :
 				return OBJECT;
+			case "other" :
+				return OTHER;
 			default :
 				throw new RuntimeException( "Unknown QueryColumnType: " + type );
 		}

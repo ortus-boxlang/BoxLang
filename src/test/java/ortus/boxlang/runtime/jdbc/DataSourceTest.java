@@ -19,12 +19,11 @@
 package ortus.boxlang.runtime.jdbc;
 
 import static com.google.common.truth.Truth.assertThat;
-import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.util.List;
 
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -33,6 +32,8 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import ortus.boxlang.runtime.scopes.Key;
+import ortus.boxlang.runtime.types.Array;
+import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Query;
 import ortus.boxlang.runtime.types.Struct;
 
@@ -108,15 +109,39 @@ public class DataSourceTest {
 		assertThat( conn.isValid( 5 ) ).isFalse();
 	}
 
-	@DisplayName( "It can execute simple queries without or without providing a connection" )
+	@DisplayName( "It can execute simple queries without providing a connection" )
 	@Test
-	void testQueryExecute() {
+	void testDatasourceExecute() {
 		assertDoesNotThrow( () -> {
+			datasource.execute( "TRUNCATE TABLE developers", null );
 			datasource.execute( "INSERT INTO developers ( id, name ) VALUES ( 77, 'Michael Born' )", null );
 		} );
 		try ( Connection conn = datasource.getConnection() ) {
 			assertDoesNotThrow( () -> {
-				datasource.execute( "SELECT * FROM developers", conn, null );
+				ExecutedQuery executedQuery = datasource.execute( "SELECT * FROM developers", conn, null );
+				assertEquals( 1, executedQuery.recordCount );
+			} );
+		} catch ( SQLException e ) {
+			throw new RuntimeException( e );
+		}
+	}
+
+	@DisplayName( "It can execute queries with parameters without providing a connection" )
+	@Test
+	void testDatasourceWithParamsExecute() {
+		assertDoesNotThrow( () -> {
+			datasource.execute( "TRUNCATE TABLE developers", null );
+			datasource.execute( "INSERT INTO developers ( id, name ) VALUES (?, ?)", Array.of( 77, "Michael Born" ), null );
+		} );
+		try ( Connection conn = datasource.getConnection() ) {
+			assertDoesNotThrow( () -> {
+				ExecutedQuery executedQuery = datasource.execute( "SELECT * FROM developers", conn, null );
+				assertEquals( 1, executedQuery.recordCount );
+				List<Struct> results = executedQuery.getResults();
+				assertEquals( 1, results.size() );
+				Struct developer = results.get( 0 );
+				assertEquals( 77, developer.get( "id" ) );
+				assertEquals( "Michael Born", developer.get( "name" ) );
 			} );
 		} catch ( SQLException e ) {
 			throw new RuntimeException( e );
@@ -126,13 +151,15 @@ public class DataSourceTest {
 	@DisplayName( "It can get results in query form" )
 	@Test
 	void testQueryExecuteQueryResults() {
-		Object results = datasource.execute( "SELECT * FROM developers WHERE id=1", Struct.of(
-		    "returntype", "query"
-		) );
+		datasource.execute( "TRUNCATE TABLE developers", null );
+		datasource.execute( "INSERT INTO developers ( id, name ) VALUES ( 1, 'Luis Majano' )", null );
+
+		ExecutedQuery	executedQuery	= datasource.execute( "SELECT * FROM developers WHERE id=1", null );
+		Query			results			= executedQuery.getResultsAsQuery();
 		assertTrue( results instanceof Query );
 		Query queryResults = ( Query ) results;
 
-		assertTrue( queryResults.size() > 0 );
+		assertNotEquals( 0, queryResults.size() );
 		assertTrue( queryResults.hasColumn( Key.of( "id" ) ) );
 		assertTrue( queryResults.hasColumn( Key.of( "name" ) ) );
 
@@ -144,18 +171,19 @@ public class DataSourceTest {
 	@DisplayName( "It can get results in array form" )
 	@Test
 	void testQueryExecuteArrayResults() {
-		Object results = datasource.execute( "SELECT * FROM developers WHERE id=1", Struct.of(
-		    "returntype", "array"
-		) );
-		assertTrue( results instanceof Struct[] );
-		Struct[] arrayResults = ( Struct[] ) results;
-		assertTrue( arrayResults.length > 0 );
+		datasource.execute( "TRUNCATE TABLE developers", null );
+		datasource.execute( "INSERT INTO developers ( id, name ) VALUES ( 1, 'Luis Majano' )", null );
 
-		assert ( arrayResults[ 0 ].containsKey( "id" ) );
-		assert ( arrayResults[ 0 ].containsKey( "name" ) );
+		ExecutedQuery	executedQuery	= datasource.execute( "SELECT * FROM developers WHERE id=1", null );
+		Array			results			= executedQuery.getResultsAsArray();
+		assertNotEquals( 0, results.size() );
 
-		assert ( arrayResults[ 0 ].getAsInteger( Key.of( "id" ) ) == 1 );
-		assert ( arrayResults[ 0 ].getAsString( Key.of( "name" ) ).equals( "Luis Majano" ) );
+		Struct firstRow = ( Struct ) results.get( 0 );
+		assert ( firstRow.containsKey( "id" ) );
+		assert ( firstRow.containsKey( "name" ) );
+
+		assert ( firstRow.getAsInteger( Key.of( "id" ) ) == 1 );
+		assert ( firstRow.getAsString( Key.of( "name" ) ).equals( "Luis Majano" ) );
 	}
 
 	@DisplayName( "It can execute queries in a transaction, with or without providing a specific connection" )
