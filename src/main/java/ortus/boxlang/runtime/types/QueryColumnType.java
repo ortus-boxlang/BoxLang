@@ -21,23 +21,23 @@ import java.sql.Types;
 
 public enum QueryColumnType {
 
-	INTEGER(Types.INTEGER),
-	BIGINT(Types.BIGINT),
-	DOUBLE(Types.DOUBLE),
-	DECIMAL(Types.DECIMAL),
-	VARCHAR(Types.VARCHAR),
-	BINARY(Types.BINARY),
-	BIT(Types.BIT),
-	TIME(Types.TIME),
-	DATE(Types.DATE),
-	TIMESTAMP(Types.TIMESTAMP),
-	OBJECT(Types.JAVA_OBJECT),
-	OTHER(Types.OTHER),
-	NULL(Types.NULL);
+	INTEGER( Types.INTEGER ),
+	BIGINT( Types.BIGINT ),
+	DOUBLE( Types.DOUBLE ),
+	DECIMAL( Types.DECIMAL ),
+	VARCHAR( Types.VARCHAR ),
+	BINARY( Types.BINARY ),
+	BIT( Types.BIT ),
+	TIME( Types.TIME ),
+	DATE( Types.DATE ),
+	TIMESTAMP( Types.TIMESTAMP ),
+	OBJECT( Types.JAVA_OBJECT ),
+	OTHER( Types.OTHER ),
+	NULL( Types.NULL );
 
 	public final int sqlType;
 
-	QueryColumnType(int sqlType) {
+	QueryColumnType( int sqlType ) {
 		this.sqlType = sqlType;
 	}
 

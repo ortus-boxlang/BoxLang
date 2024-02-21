@@ -17,15 +17,21 @@ package ortus.boxlang.runtime.jdbc;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Properties;
 
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
 
+import ortus.boxlang.runtime.dynamic.ExpressionInterpreter;
 import ortus.boxlang.runtime.scopes.Key;
+import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.IStruct;
+import ortus.boxlang.runtime.types.Query;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
+import ortus.boxlang.runtime.types.exceptions.DatabaseException;
 
 /**
  * Encapsulates a datasource configuration and connection pool, providing methods for executing queries (transactionally or single) on the datasource.
@@ -118,14 +124,11 @@ public class DataSource {
 	 * @return An array of Structs, each representing a row of the result set (if any). If there are no results (say, for an UPDATE statement), an empty
 	 *         array is returned.
 	 */
-	public Object execute( String query, IStruct queryOptions ) {
-		if ( queryOptions == null ) {
-			queryOptions = getDefaultQueryOptions();
-		}
+	public ExecutedQuery execute( String query, IStruct queryOptions ) {
 		try ( Connection conn = getConnection(); ) {
 			return execute( query, conn, queryOptions );
 		} catch ( SQLException e ) {
-			throw new BoxRuntimeException( "Unable to close connection:", e );
+			throw new DatabaseException( e.getMessage(), e );
 		}
 	}
 
@@ -143,31 +146,119 @@ public class DataSource {
 	 * @return An array of Structs, each representing a row of the result set (if any). If there are no results (say, for an UPDATE statement), an empty
 	 *         array is returned.
 	 */
-	public Object execute( String query, Connection conn, IStruct queryOptions ) {
-		if ( queryOptions == null ) {
-			queryOptions = getDefaultQueryOptions();
-		}
-		try ( Statement stmt = conn.createStatement() ) {
-			// @TODO: Implement parameterized queries with PreparedStatement.
-			// @TODO: Handle generated keys, i.e. stmt.execute( query, Statement.RETURN_GENERATED_KEYS );
-			stmt.execute( query );
+	public ExecutedQuery execute( String query, Connection conn, IStruct queryOptions ) {
+		PendingQuery pendingQuery = new PendingQuery( query, new ArrayList<>() );
+		return executePendingQuery( pendingQuery, conn, queryOptions );
+	}
 
-			switch ( queryOptions.getAsString( Key.returnType ) ) {
-				// @TODO: Validate the returntype argument? Or simply fall back to the query result?
-				// @TODO: Implement these return types.
-				// case "array_of_entity":
-				// break;
-				// case "struct":
-				// break;
-				case "array" :
-					return new StatementResult( stmt.getResultSet(), queryOptions ).toArray();
-				case "query" :
-				default :
-					return new StatementResult( stmt.getResultSet(), queryOptions ).toQuery();
-			}
+	/**
+	 * Execute a query with a List of parameters on a given connection.
+	 *
+	 * @param query
+	 * @param parameters
+	 * @param conn
+	 * @param queryOptions
+	 * 
+	 * @return
+	 */
+	public ExecutedQuery execute( String query, List<QueryParameter> parameters, Connection conn, IStruct queryOptions ) {
+		PendingQuery pendingQuery = new PendingQuery( query, parameters );
+		return executePendingQuery( pendingQuery, conn, queryOptions );
+	}
+
+	/**
+	 * Execute a query with a List of parameters on the default connection.
+	 *
+	 * @param query
+	 * @param parameters
+	 * @param queryOptions
+	 * 
+	 * @return
+	 */
+	public ExecutedQuery execute( String query, List<QueryParameter> parameters, IStruct queryOptions ) {
+		try ( Connection conn = getConnection(); ) {
+			return execute( query, parameters, conn, queryOptions );
 		} catch ( SQLException e ) {
-			throw new BoxRuntimeException( "Unable to execute query:", e );
+			throw new DatabaseException( e.getMessage(), e );
 		}
+	}
+
+	/**
+	 * Execute a query with an array of parameters on a given connection.
+	 *
+	 * @param query
+	 * @param parameters
+	 * @param conn
+	 * @param queryOptions
+	 * 
+	 * @return
+	 */
+	public ExecutedQuery execute( String query, Array parameters, Connection conn, IStruct queryOptions ) {
+		PendingQuery pendingQuery = new PendingQuery( query, parameters );
+		return executePendingQuery( pendingQuery, conn, queryOptions );
+	}
+
+	/**
+	 * Execute a query with an array of parameters on the default connection.
+	 *
+	 * @param query
+	 * @param parameters
+	 * @param queryOptions
+	 * 
+	 * @return
+	 */
+	public ExecutedQuery execute( String query, Array parameters, IStruct queryOptions ) {
+		try ( Connection conn = getConnection(); ) {
+			return execute( query, parameters, conn, queryOptions );
+		} catch ( SQLException e ) {
+			throw new DatabaseException( e.getMessage(), e );
+		}
+	}
+
+	/**
+	 * Execute a query with a struct of parameters on a given connection.
+	 *
+	 * @param query
+	 * @param parameters
+	 * @param conn
+	 * @param queryOptions
+	 * 
+	 * @return
+	 */
+	public ExecutedQuery execute( String query, IStruct parameters, Connection conn, IStruct queryOptions ) {
+		PendingQuery pendingQuery = PendingQuery.fromStructParameters( query, parameters );
+		return executePendingQuery( pendingQuery, conn, queryOptions );
+	}
+
+	/**
+	 * Execute a query with a struct of parameters on the default connection.
+	 *
+	 * @param query
+	 * @param parameters
+	 * @param queryOptions
+	 * 
+	 * @return
+	 */
+	public ExecutedQuery execute( String query, IStruct parameters, IStruct queryOptions ) {
+		try ( Connection conn = getConnection() ) {
+			return execute( query, parameters, conn, queryOptions );
+		} catch ( SQLException e ) {
+			throw new DatabaseException( e.getMessage(), e );
+		}
+	}
+
+	public ExecutedQuery executePendingQuery( PendingQuery pendingQuery, Connection conn, IStruct queryOptions ) {
+		return pendingQuery.execute( conn );
+		// String resultVariable = queryOptions.getAsString(Key.result);
+		// return switch (queryOptions.getAsString(Key.returnType)) {
+		// // @TODO: Validate the returntype argument? Or simply fall back to the query result?
+		// // @TODO: Implement these return types.
+		// // case "array_of_entity":
+		// // break;
+		// case "struct" -> executedQuery.getResultsAsStruct(queryOptions.getAsString(Key.columnKey));
+		// case "array" -> executedQuery.getResultsAsArray();
+		// default -> executedQuery.getResultsAsQuery();
+		// };
 	}
 
 	/**
