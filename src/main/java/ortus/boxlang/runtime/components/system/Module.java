@@ -55,10 +55,10 @@ public class Module extends Component {
 	/**
 	 * Invokes a custom tag.
 	 *
-	 * @param context        The context in which the BIF is being invoked
-	 * @param attributes     The attributes to the BIF
-	 * @param body           The body of the BIF
-	 * @param executionState The execution state of the BIF
+	 * @param context        The context in which the Component is being invoked
+	 * @param attributes     The attributes to the Component
+	 * @param body           The body of the Component
+	 * @param executionState The execution state of the Component
 	 *
 	 * @attribute.template Mutually exclusive with the name attribute. A path to the template that implements the tag.
 	 *

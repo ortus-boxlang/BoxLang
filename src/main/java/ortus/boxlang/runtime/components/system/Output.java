@@ -60,10 +60,10 @@ public class Output extends Component {
 	/**
 	 * I capture the generated content from the body statements and save it into a variable
 	 *
-	 * @param context        The context in which the BIF is being invoked
-	 * @param attributes     The attributes to the BIF
-	 * @param body           The body of the BIF
-	 * @param executionState The execution state of the BIF
+	 * @param context        The context in which the Component is being invoked
+	 * @param attributes     The attributes to the Component
+	 * @param body           The body of the Component
+	 * @param executionState The execution state of the Component
 	 *
 	 */
 	public BodyResult _invoke( IBoxContext context, IStruct attributes, ComponentBody body, IStruct executionState ) {

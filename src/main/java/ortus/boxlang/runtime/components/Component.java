@@ -82,10 +82,10 @@ public abstract class Component {
 	}
 
 	/**
-	 * Invoke the BIF with the given arguments. This is a wrapper method that sets up the execution.
+	 * Invoke the Component with the given arguments. This is a wrapper method that sets up the execution.
 	 *
-	 * @param context   The context in which the BIF is being invoked
-	 * @param arguments The arguments to the BIF
+	 * @param context   The context in which the Component is being invoked
+	 * @param arguments The arguments to the Component
 	 *
 	 * @return The result of the invocation
 	 */
@@ -105,10 +105,10 @@ public abstract class Component {
 	}
 
 	/**
-	 * Invoke the BIF with the given arguments. This is the actual method that must be implemented by the component.
+	 * Invoke the Component with the given arguments. This is the actual method that must be implemented by the component.
 	 *
-	 * @param context   The context in which the BIF is being invoked
-	 * @param arguments The arguments to the BIF
+	 * @param context   The context in which the Component is being invoked
+	 * @param arguments The arguments to the Component
 	 *
 	 * @return The result of the invocation
 	 */

@@ -80,10 +80,10 @@ public class Loop extends Component {
 	 * [index + from + to ] [index + list] [collection + item ]
 	 * *
 	 * 
-	 * @param context        The context in which the BIF is being invoked
-	 * @param attributes     The attributes to the BIF
-	 * @param body           The body of the BIF
-	 * @param executionState The execution state of the BIF
+	 * @param context        The context in which the Component is being invoked
+	 * @param attributes     The attributes to the Component
+	 * @param body           The body of the Component
+	 * @param executionState The execution state of the Component
 	 *
 	 */
 	public BodyResult _invoke( IBoxContext context, IStruct attributes, ComponentBody body, IStruct executionState ) {
@@ -101,12 +101,12 @@ public class Loop extends Component {
 	/**
 	 * Loop over array with optional item and index
 	 * 
-	 * @param context        The context in which the BIF is being invoked
+	 * @param context        The context in which the Component is being invoked
 	 * @param array          The array to loop over
 	 * @param item           The name of the variable to hold the current item
 	 * @param index          The name of the variable to hold the current index
-	 * @param body           The body of the BIF
-	 * @param executionState The execution state of the BIF
+	 * @param body           The body of the Component
+	 * @param executionState The execution state of the Component
 	 * 
 	 * @return The result of the loop body execution
 	 */
