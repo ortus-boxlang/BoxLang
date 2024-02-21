@@ -232,7 +232,7 @@ public class SchedulerService extends BaseService {
 	 */
 	public IScheduler loadScheduler( Key name, IScheduler scheduler ) {
 
-		System.out.println( "Loading scheduler [" + name + "]" );
+		// System.out.println( "Loading scheduler [" + name + "]" );
 
 		// Register it
 		registerScheduler( scheduler.setName( name.getName() ), true );
