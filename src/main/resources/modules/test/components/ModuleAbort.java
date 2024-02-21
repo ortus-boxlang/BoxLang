@@ -51,9 +51,9 @@ public class ModuleAbort extends Component {
 	 * @param body           The body of the BIF
 	 * @param executionState The execution state of the BIF
 	 *
-	 * @argument.showerror Whether to show an error
+	 * @attribute.showerror Whether to show an error
 	 *
-	 * @argument.type The type of the abort (request or page)
+	 * @attribute.type The type of the abort (request or page)
 	 *
 	 */
 	public BodyResult _invoke( IBoxContext context, IStruct attributes, ComponentBody body, IStruct executionState ) {

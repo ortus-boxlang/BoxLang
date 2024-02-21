@@ -57,17 +57,17 @@ public class Param extends Component {
 	 * @param body           The body of the BIF
 	 * @param executionState The execution state of the BIF
 	 *
-	 * @argument.name The name of the parameter
+	 * @attribute.name The name of the parameter
 	 *
-	 * @argument.type The data type of the parameter
+	 * @attribute.type The data type of the parameter
 	 *
-	 * @argument.default The default value of the parameter
+	 * @attribute.default The default value of the parameter
 	 *
-	 * @argument.max The maximum value of the parameter
+	 * @attribute.max The maximum value of the parameter
 	 *
-	 * @argument.min The minimum value of the parameter
+	 * @attribute.min The minimum value of the parameter
 	 *
-	 * @argument.pattern The pattern of the parameter
+	 * @attribute.pattern The pattern of the parameter
 	 *
 	 */
 	public BodyResult _invoke( IBoxContext context, IStruct attributes, ComponentBody body, IStruct executionState ) {

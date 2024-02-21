@@ -60,10 +60,10 @@ public class Module extends Component {
 	 * @param body           The body of the BIF
 	 * @param executionState The execution state of the BIF
 	 *
-	 * @argument.template Mutually exclusive with the name attribute. A path to the template that implements the tag.
+	 * @attribute.template Mutually exclusive with the name attribute. A path to the template that implements the tag.
 	 *
-	 * @argument.name Mutually exclusive with the template attribute. A custom tag name, in the form "Name.Name.Name..." Identifies subdirectory, under
-	 *                the CFML tag root directory, that contains custom tag template.
+	 * @attribute.name Mutually exclusive with the template attribute. A custom tag name, in the form "Name.Name.Name..." Identifies subdirectory, under
+	 *                 the CFML tag root directory, that contains custom tag template.
 	 *
 	 */
 	public BodyResult _invoke( IBoxContext context, IStruct attributes, ComponentBody body, IStruct executionState ) {

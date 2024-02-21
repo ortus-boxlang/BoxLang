@@ -90,7 +90,7 @@ public abstract class Component {
 	 * @return The result of the invocation
 	 */
 	public BodyResult invoke( IBoxContext context, IStruct attributes, ComponentBody body ) {
-		validateAttributes( attributes );
+		validateAttributes( context, attributes );
 		IStruct executionState = new Struct();
 		executionState.put( Key._NAME, name );
 		executionState.put( Key._CLASS, this.getClass() );
@@ -124,7 +124,7 @@ public abstract class Component {
 		interceptorService.announce( state, data );
 	}
 
-	public void validateAttributes( IStruct attributes ) {
+	public void validateAttributes( IBoxContext context, IStruct attributes ) {
 		// Do nothing by default. Override this method to provide validation
 	}
 
