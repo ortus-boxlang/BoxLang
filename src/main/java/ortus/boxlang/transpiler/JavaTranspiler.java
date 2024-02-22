@@ -35,7 +35,6 @@ import org.slf4j.LoggerFactory;
 import com.github.javaparser.ast.CompilationUnit;
 import com.github.javaparser.ast.Node;
 import com.github.javaparser.ast.stmt.Statement;
-import com.github.javaparser.printer.configuration.DefaultPrinterConfiguration;
 
 import ortus.boxlang.ast.BoxBufferOutput;
 import ortus.boxlang.ast.BoxClass;
@@ -124,8 +123,6 @@ import ortus.boxlang.transpiler.transformer.expression.BoxStringLiteralTransform
 import ortus.boxlang.transpiler.transformer.expression.BoxStructLiteralTransformer;
 import ortus.boxlang.transpiler.transformer.expression.BoxTernaryOperationTransformer;
 import ortus.boxlang.transpiler.transformer.expression.BoxUnaryOperationTransformer;
-import ortus.boxlang.transpiler.transformer.indexer.CrossReference;
-import ortus.boxlang.transpiler.transformer.indexer.IndexPrettyPrinterVisitor;
 import ortus.boxlang.transpiler.transformer.statement.BoxArgumentDeclarationTransformer;
 import ortus.boxlang.transpiler.transformer.statement.BoxAssertTransformer;
 import ortus.boxlang.transpiler.transformer.statement.BoxBreakTransformer;
@@ -164,7 +161,6 @@ public class JavaTranspiler extends Transpiler {
 
 	private static HashMap<Class, Transformer>	registry		= new HashMap<>();
 	private List<Statement>						statements		= new ArrayList<>();
-	private List<CrossReference>				crossReferences	= new ArrayList<>();
 	private Map<Key, CompilationUnit>			UDFcallables	= new HashMap<Key, CompilationUnit>();
 	private List<CompilationUnit>				callables		= new ArrayList<>();
 	private List<Statement>						UDFDeclarations	= new ArrayList<>();
@@ -275,16 +271,6 @@ public class JavaTranspiler extends Transpiler {
 	}
 
 	/**
-	 * Cross reference
-	 *
-	 * @return the list of references between the source and the generated code
-	 */
-
-	public List<CrossReference> getCrossReferences() {
-		return crossReferences;
-	}
-
-	/**
 	 * Write a class bytecode
 	 *
 	 * @param cu         java compilation unit
@@ -354,14 +340,8 @@ public class JavaTranspiler extends Transpiler {
 	 */
 	@Override
 	public TranspiledCode transpile( BoxNode node ) throws BoxRuntimeException {
-
-		CompilationUnit				entryPoint	= ( CompilationUnit ) transform( node );
-
-		IndexPrettyPrinterVisitor	visitor		= new IndexPrettyPrinterVisitor( new DefaultPrinterConfiguration() );
-		entryPoint.accept( visitor, null );
-		this.crossReferences.addAll( visitor.getCrossReferences() );
-
-		List<CompilationUnit> allCallables = getCallables();
+		CompilationUnit			entryPoint		= ( CompilationUnit ) transform( node );
+		List<CompilationUnit>	allCallables	= getCallables();
 		allCallables.addAll( getUDFcallables().values() );
 		return new TranspiledCode( entryPoint, allCallables );
 	}

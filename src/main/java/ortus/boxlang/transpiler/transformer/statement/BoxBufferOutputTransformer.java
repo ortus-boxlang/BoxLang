@@ -17,10 +17,12 @@
  */
 package ortus.boxlang.transpiler.transformer.statement;
 
-import java.util.HashMap;
-import java.util.Map;
-
 import com.github.javaparser.ast.Node;
+import com.github.javaparser.ast.expr.Expression;
+import com.github.javaparser.ast.expr.MethodCallExpr;
+import com.github.javaparser.ast.expr.NameExpr;
+import com.github.javaparser.ast.stmt.ExpressionStmt;
+import com.github.javaparser.ast.stmt.Statement;
 
 import ortus.boxlang.ast.BoxBufferOutput;
 import ortus.boxlang.ast.BoxNode;
@@ -49,22 +51,14 @@ public class BoxBufferOutputTransformer extends AbstractTransformer {
 	 */
 	@Override
 	public Node transform( BoxNode node, TransformerContext context ) throws IllegalStateException {
-		BoxBufferOutput		bufferOuput	= ( BoxBufferOutput ) node;
-		Node				javaExpr;
+		BoxBufferOutput	bufferOuput		= ( BoxBufferOutput ) node;
 
-		String				expr		= "${contextName}.writeToBuffer( ${expression} );";
-
-		Map<String, String>	values		= new HashMap<>() {
-
-											{
-												put( "contextName", transpiler.peekContextName() );
-												put( "expression", transpiler.transform( bufferOuput.getExpression(), TransformerContext.NONE ).toString() );
-											}
-										};
-		javaExpr = parseStatement( expr, values );
-
-		logger.debug( "{} -> {}", node.getSourceText(), javaExpr );
-		addIndex( javaExpr, node );
-		return javaExpr;
+		NameExpr		nameExpr		= new NameExpr( transpiler.peekContextName() );
+		MethodCallExpr	methodCallExpr	= new MethodCallExpr( nameExpr, "writeToBuffer" );
+		methodCallExpr.addArgument( ( Expression ) transpiler.transform( bufferOuput.getExpression(), TransformerContext.NONE ) );
+		Statement jStatement = new ExpressionStmt( methodCallExpr );
+		logger.debug( "{} -> {}", node.getSourceText(), jStatement );
+		addIndex( jStatement, node );
+		return jStatement;
 	}
 }

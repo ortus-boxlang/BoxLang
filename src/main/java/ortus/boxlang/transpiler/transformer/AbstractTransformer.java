@@ -14,6 +14,8 @@
  */
 package ortus.boxlang.transpiler.transformer;
 
+import static ortus.boxlang.transpiler.transformer.indexer.BoxNodeKey.BOX_NODE_DATA_KEY;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -47,8 +49,6 @@ import ortus.boxlang.ast.statement.BoxAnnotation;
 import ortus.boxlang.ast.statement.BoxDocumentationAnnotation;
 import ortus.boxlang.runtime.config.util.PlaceholderHelper;
 import ortus.boxlang.transpiler.Transpiler;
-import ortus.boxlang.transpiler.transformer.indexer.BoxLangCrossReferencer;
-import ortus.boxlang.transpiler.transformer.indexer.BoxLangCrossReferencerDefault;
 
 /**
  * Abstract Transformer class
@@ -56,15 +56,14 @@ import ortus.boxlang.transpiler.transformer.indexer.BoxLangCrossReferencerDefaul
  */
 public abstract class AbstractTransformer implements Transformer {
 
-	protected Transpiler					transpiler;
-	protected static JavaParser				javaParser		= new JavaParser(
+	protected Transpiler		transpiler;
+	protected static JavaParser	javaParser	= new JavaParser(
 	    new ParserConfiguration().setLanguageLevel( ParserConfiguration.LanguageLevel.JAVA_17_PREVIEW ) );
-	protected static BoxLangCrossReferencer	crossReferencer	= new BoxLangCrossReferencerDefault();
 
 	/**
 	 * Logger
 	 */
-	protected Logger						logger;
+	protected Logger			logger;
 
 	public AbstractTransformer( Transpiler transpiler ) {
 		this.transpiler	= transpiler;
@@ -178,7 +177,7 @@ public abstract class AbstractTransformer implements Transformer {
 			if ( op.getOperator() == BoxUnaryOperator.Not )
 				return false;
 		}
-		if ( condition instanceof BoxComparisonOperation op ) {
+		if ( condition instanceof BoxComparisonOperation ) {
 			return false;
 		}
 		return true;
@@ -193,9 +192,7 @@ public abstract class AbstractTransformer implements Transformer {
 	 * @return the Java Parser Node
 	 */
 	protected Node addIndex( Node javaNode, BoxNode boxNode ) {
-		if ( crossReferencer != null ) {
-			crossReferencer.storeReference( javaNode, boxNode );
-		}
+		javaNode.setData( BOX_NODE_DATA_KEY, boxNode );
 		return javaNode;
 	}
 
