@@ -5,8 +5,6 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.regex.Pattern;
 
-import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
-
 public class SourceMap {
 
 	public SourceMapRecord[]	sourceMapRecords;
@@ -19,57 +17,43 @@ public class SourceMap {
 
 	public static class SourceMapRecord {
 
-		public int		originSourceLine;
-		public int		javaSourceLine;
+		public int		originSourceLineStart;
+		public int		originSourceLineEnd;
+		public int		javaSourceLineStart;
+		public int		javaSourceLineEnd;
 		public String	originSourceNode;
 		public String	javaSourceNode;
+		public String	javaSourceClassName;
 	}
 
-	public Integer convertJavaLinetoSourceLine( int javaLine ) {
-		SourceMapRecord closest = sourceMapRecords[ 1 ];
-
-		for ( SourceMapRecord sourceMapRecord : sourceMapRecords ) {
-			if ( sourceMapRecord.javaSourceLine == javaLine ) {
-				return sourceMapRecord.originSourceLine;
-			}
-
-			if ( sourceMapRecord.javaSourceLine < javaLine && javaLine - sourceMapRecord.javaSourceLine < javaLine - closest.javaSourceLine ) {
-				closest = sourceMapRecord;
-			}
-		}
-
-		return closest.originSourceLine;
-	}
-
-	public int convertSourceLineToJavaLine( int sourceLine ) throws BoxRuntimeException {
+	public int convertSourceLineToJavaLine( int sourceLine ) {
 		int result = -1;
 		for ( SourceMapRecord sourceMapRecord : sourceMapRecords ) {
 			// Move our pointer so long as we haven't passed the source line
-			if ( sourceMapRecord.originSourceLine <= sourceLine ) {
-				result = sourceMapRecord.javaSourceLine;
-			}
-			// Once we've reached or gone past the source line, we'll take the last thing we found
-			if ( sourceMapRecord.originSourceLine >= sourceLine ) {
+			if ( sourceMapRecord.originSourceLineStart <= sourceLine && sourceMapRecord.originSourceLineEnd >= sourceLine ) {
+				result = sourceMapRecord.javaSourceLineStart;
+			} else if ( result > -1 ) {
+				// If we don't match, but we matched before, then we're past the previous correct result
 				break;
 			}
 		}
 		return result;
 	}
 
-	public int convertJavaLineToSourceLine( int javaLine ) throws BoxRuntimeException {
+	public int convertJavaLineToSourceLine( int javaLine ) {
 		int						result					= -1;
 		List<SourceMapRecord>	sortedSourceMapRecords	= Arrays.asList( sourceMapRecords );
 		// Sort sortedSourceMapRecords by javaSourceLine asc
-		sortedSourceMapRecords.sort( ( a, b ) -> a.javaSourceLine - b.javaSourceLine );
+		sortedSourceMapRecords.sort( ( a, b ) -> a.javaSourceLineStart - b.javaSourceLineStart );
 		for ( SourceMapRecord sourceMapRecord : sortedSourceMapRecords ) {
 			// Move our pointer so long as we haven't passed the source line
-			if ( sourceMapRecord.javaSourceLine <= javaLine ) {
-				result = sourceMapRecord.originSourceLine;
-			}
-			// Once we've reached or gone past the source line, we'll take the last thing we found
-			if ( sourceMapRecord.javaSourceLine >= javaLine ) {
+			if ( sourceMapRecord.javaSourceLineStart <= javaLine && sourceMapRecord.javaSourceLineEnd >= javaLine ) {
+				result = sourceMapRecord.originSourceLineStart;
+			} else if ( result > -1 ) {
+				// If we don't match, but we matched before, then we're past the previous correct result
 				break;
 			}
+
 		}
 		return result;
 	}

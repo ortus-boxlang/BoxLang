@@ -315,7 +315,7 @@ public class DebugAdapter {
 				    sf.column = 0;
 				    sf.name	= location.method().name();
 
-				    Integer sourceLine = map.convertJavaLinetoSourceLine( sf.line );
+				    Integer sourceLine = map.convertJavaLineToSourceLine( sf.line );
 				    if ( sourceLine != null ) {
 					    sf.line = sourceLine;
 				    }

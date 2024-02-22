@@ -24,6 +24,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.regex.Matcher;
@@ -453,8 +454,10 @@ public class JavaBoxpiler {
 	 */
 	private String generateLineNumberJSON( ClassInfo classInfo, List<Object[]> lineNumbers ) {
 		List	stuff	= lineNumbers.stream().map( e -> {
-							Node	jNode	= ( Node ) e[ 0 ];
-							int		jLine	= ( int ) e[ 1 ];
+							Node	jNode		= ( Node ) e[ 0 ];
+							int		jLineStart	= ( int ) e[ 1 ];
+							int		jLineEnd	= ( int ) e[ 2 ];
+							String	jClassName	= ( String ) e[ 3 ];
 							// Not every node of Java source code has a corresponding BoxNode
 							if ( !jNode.containsData( BoxNodeKey.BOX_NODE_DATA_KEY ) ) {
 								return null;
@@ -464,9 +467,12 @@ public class JavaBoxpiler {
 							if ( boxNode.getPosition() == null ) {
 								return null;
 							}
-							HashMap<String, Object> map = new HashMap<>();
-							map.put( "javaSourceLine", jLine );
-							map.put( "originSourceLine", boxNode.getPosition().getStart().getLine() );
+							LinkedHashMap<String, Object> map = new LinkedHashMap<>();
+							map.put( "javaSourceLineStart", jLineStart );
+							map.put( "javaSourceLineEnd", jLineEnd );
+							map.put( "originSourceLineStart", boxNode.getPosition().getStart().getLine() );
+							map.put( "originSourceLineEnd", boxNode.getPosition().getEnd().getLine() );
+							map.put( "javaSourceClassName", jClassName );
 							// Really just for debugging. Remove later.
 							map.put( "javaSourceNode", jNode.getClass().getSimpleName() );
 							map.put( "originSourceNode", boxNode.getClass().getSimpleName() );
@@ -476,11 +482,11 @@ public class JavaBoxpiler {
 		    .filter( e -> e != null )
 		    // sort by origin source line, then by java source line
 		    .sorted( ( e1, e2 ) -> {
-			    int result2 = ( ( Integer ) e1.get( "originSourceLine" ) )
-			        .compareTo( ( Integer ) e2.get( "originSourceLine" ) );
+			    int result2 = ( ( Integer ) e1.get( "originSourceLineStart" ) )
+			        .compareTo( ( Integer ) e2.get( "originSourceLineStart" ) );
 			    if ( result2 == 0 ) {
-				    result2 = ( ( Integer ) e1.get( "javaSourceLine" ) )
-				        .compareTo( ( Integer ) e2.get( "javaSourceLine" ) );
+				    result2 = ( ( Integer ) e1.get( "javaSourceLineStart" ) )
+				        .compareTo( ( Integer ) e2.get( "javaSourceLineStart" ) );
 			    }
 			    return result2;
 		    } )
