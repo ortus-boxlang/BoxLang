@@ -177,6 +177,7 @@ ortus.boxlang.runtime.bifs.global.string.Justify
 ortus.boxlang.runtime.bifs.global.string.LCase
 ortus.boxlang.runtime.bifs.global.string.LTrim
 ortus.boxlang.runtime.bifs.global.string.Left
+ortus.boxlang.runtime.bifs.global.string.ListReduce
 ortus.boxlang.runtime.bifs.global.string.Mid
 ortus.boxlang.runtime.bifs.global.string.RTrim
 ortus.boxlang.runtime.bifs.global.string.ReReplace
@@ -189,6 +190,7 @@ ortus.boxlang.runtime.bifs.global.string.StringEach
 ortus.boxlang.runtime.bifs.global.string.StringEvery
 ortus.boxlang.runtime.bifs.global.string.StringFilter
 ortus.boxlang.runtime.bifs.global.string.StringMap
+ortus.boxlang.runtime.bifs.global.string.StringReduce
 ortus.boxlang.runtime.bifs.global.string.StripCR
 ortus.boxlang.runtime.bifs.global.string.Trim
 ortus.boxlang.runtime.bifs.global.string.TrueFalseFormat
