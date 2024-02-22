@@ -27,12 +27,14 @@ public class SourceMap {
 	}
 
 	public int convertSourceLineToJavaLine( int sourceLine ) {
-		int result = -1;
+		int	result				= -1;
+		int	endOfClosestWrapper	= -1;
 		for ( SourceMapRecord sourceMapRecord : sourceMapRecords ) {
 			// Move our pointer so long as we haven't passed the source line
 			if ( sourceMapRecord.originSourceLineStart <= sourceLine && sourceMapRecord.originSourceLineEnd >= sourceLine ) {
-				result = sourceMapRecord.javaSourceLineStart;
-			} else if ( result > -1 ) {
+				result				= sourceMapRecord.javaSourceLineStart;
+				endOfClosestWrapper	= sourceMapRecord.originSourceLineEnd;
+			} else if ( result > -1 && result > endOfClosestWrapper ) {
 				// If we don't match, but we matched before, then we're past the previous correct result
 				break;
 			}
@@ -42,14 +44,16 @@ public class SourceMap {
 
 	public int convertJavaLineToSourceLine( int javaLine ) {
 		int						result					= -1;
+		int						endOfClosestWrapper		= -1;
 		List<SourceMapRecord>	sortedSourceMapRecords	= Arrays.asList( sourceMapRecords );
 		// Sort sortedSourceMapRecords by javaSourceLine asc
 		sortedSourceMapRecords.sort( ( a, b ) -> a.javaSourceLineStart - b.javaSourceLineStart );
 		for ( SourceMapRecord sourceMapRecord : sortedSourceMapRecords ) {
 			// Move our pointer so long as we haven't passed the source line
 			if ( sourceMapRecord.javaSourceLineStart <= javaLine && sourceMapRecord.javaSourceLineEnd >= javaLine ) {
-				result = sourceMapRecord.originSourceLineStart;
-			} else if ( result > -1 ) {
+				result				= sourceMapRecord.originSourceLineStart;
+				endOfClosestWrapper	= sourceMapRecord.javaSourceLineEnd;
+			} else if ( result > -1 && result > endOfClosestWrapper ) {
 				// If we don't match, but we matched before, then we're past the previous correct result
 				break;
 			}
