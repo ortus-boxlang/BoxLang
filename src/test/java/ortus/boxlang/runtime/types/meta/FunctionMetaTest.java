@@ -53,6 +53,7 @@ public class FunctionMetaTest {
 		            "String",
 		            Key.of( "param1" ),
 		            "my default",
+		            null,
 		            Struct.of( "inject", "myService" ),
 		            Struct.of( "hint", "First Name" )
 		        )

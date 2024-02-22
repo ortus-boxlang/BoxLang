@@ -34,6 +34,7 @@ import com.github.javaparser.ast.expr.MethodCallExpr;
 import com.github.javaparser.ast.expr.NameExpr;
 import com.github.javaparser.ast.expr.StringLiteralExpr;
 import com.github.javaparser.ast.stmt.BlockStmt;
+import com.github.javaparser.ast.stmt.EmptyStmt;
 import com.github.javaparser.ast.stmt.Statement;
 
 import ortus.boxlang.ast.BoxClass;
@@ -652,6 +653,12 @@ public class BoxClassTransformer extends AbstractTransformer {
 		for ( BoxStatement statement : boxClass.getBody() ) {
 
 			Node javaASTNode = transpiler.transform( statement );
+
+			// These get left behind from UDF declarations
+			if ( javaASTNode instanceof EmptyStmt ) {
+				continue;
+			}
+
 			// Java block get each statement in their block added
 			if ( javaASTNode instanceof BlockStmt ) {
 				BlockStmt stmt = ( BlockStmt ) javaASTNode;
@@ -668,11 +675,11 @@ public class BoxClassTransformer extends AbstractTransformer {
 				pseudoConstructorBody.addStatement( ( Statement ) javaASTNode );
 				// statements.add( ( Statement ) javaASTNode );
 			}
-			// loop over UDF registrations and add them to the _invoke() method
-			( ( JavaTranspiler ) transpiler ).getUDFDeclarations().forEach( it -> {
-				pseudoConstructorBody.addStatement( 0, it );
-			} );
 		}
+		// loop over UDF registrations and add them to the _invoke() method
+		( ( JavaTranspiler ) transpiler ).getUDFDeclarations().forEach( it -> {
+			pseudoConstructorBody.addStatement( 0, it );
+		} );
 
 		// Add the keys to the static keys array
 		ArrayCreationExpr keysImp = ( ArrayCreationExpr ) keys.getVariable( 0 ).getInitializer().orElseThrow();

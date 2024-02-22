@@ -29,6 +29,7 @@ import com.github.javaparser.ast.expr.NameExpr;
 import com.github.javaparser.ast.expr.NullLiteralExpr;
 import com.github.javaparser.ast.expr.StringLiteralExpr;
 import com.github.javaparser.ast.stmt.BlockStmt;
+import com.github.javaparser.ast.stmt.EmptyStmt;
 import com.github.javaparser.ast.stmt.ExpressionStmt;
 import com.github.javaparser.ast.stmt.ReturnStmt;
 import com.github.javaparser.ast.stmt.Statement;
@@ -237,6 +238,10 @@ public class BoxScriptTransformer extends AbstractTransformer {
 			lastStatementIsReturnable = statement instanceof BoxExpression;
 
 			Node javaASTNode = transpiler.transform( statement );
+			// These get left behind from UDF declarations
+			if ( javaASTNode instanceof EmptyStmt ) {
+				continue;
+			}
 			// For Function declarations, we add the transformed function itself as a compilation unit
 			// and also hoist the declaration itself to the top of the _invoke() method.
 
@@ -256,11 +261,11 @@ public class BoxScriptTransformer extends AbstractTransformer {
 				invokeBody.addStatement( ( Statement ) javaASTNode );
 				// statements.add( ( Statement ) javaASTNode );
 			}
-			// loop over UDF registrations and add them to the _invoke() method
-			( ( JavaTranspiler ) transpiler ).getUDFDeclarations().forEach( it -> {
-				invokeBody.addStatement( 0, it );
-			} );
 		}
+		// loop over UDF registrations and add them to the _invoke() method
+		( ( JavaTranspiler ) transpiler ).getUDFDeclarations().forEach( it -> {
+			invokeBody.addStatement( 0, it );
+		} );
 
 		// Add the keys to the static keys array
 		ArrayCreationExpr keysImp = ( ArrayCreationExpr ) keys.getVariable( 0 ).getInitializer().orElseThrow();

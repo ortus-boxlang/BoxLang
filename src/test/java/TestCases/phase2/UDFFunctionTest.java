@@ -600,4 +600,46 @@ public class UDFFunctionTest {
 
 	}
 
+	@DisplayName( "Runtime Default" )
+	@Test
+	public void testRuntimeDefault() {
+
+		instance.executeSource(
+		    """
+		    function foo( param1=request.foo ) {
+		    	return arguments.param1;
+		    }
+		    request.foo="first"
+		    result = foo();
+
+		    request.foo="second"
+		    result2 = foo();
+		        """,
+		    context );
+
+		assertThat( variables.get( result ) ).isEqualTo( "first" );
+		assertThat( variables.get( Key.of( "result2" ) ) ).isEqualTo( "second" );
+	}
+
+	@DisplayName( "Self Referencing Argument Default" )
+	@Test
+	public void testSelfReferencingArgumentDefault() {
+
+		instance.executeSource(
+		    """
+		       function foo(
+		    	required param1,
+		    	param2=arguments.param1,
+		    	param3=param2
+		    ) {
+		       	return arguments.param3;
+		       }
+
+		       result = foo( param1="value yo!" );
+		           """,
+		    context );
+
+		assertThat( variables.get( result ) ).isEqualTo( "value yo!" );
+	}
+
 }

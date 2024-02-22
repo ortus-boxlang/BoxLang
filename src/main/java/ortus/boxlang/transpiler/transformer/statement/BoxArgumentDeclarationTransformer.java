@@ -20,7 +20,12 @@ package ortus.boxlang.transpiler.transformer.statement;
 import java.util.Map;
 
 import com.github.javaparser.ast.Node;
+import com.github.javaparser.ast.NodeList;
+import com.github.javaparser.ast.body.Parameter;
 import com.github.javaparser.ast.expr.Expression;
+import com.github.javaparser.ast.expr.LambdaExpr;
+import com.github.javaparser.ast.stmt.ExpressionStmt;
+import com.github.javaparser.ast.type.UnknownType;
 
 import ortus.boxlang.ast.BoxNode;
 import ortus.boxlang.ast.statement.BoxArgumentDeclaration;
@@ -39,14 +44,27 @@ public class BoxArgumentDeclarationTransformer extends AbstractTransformer {
 
 	@Override
 	public Node transform( BoxNode node, TransformerContext context ) throws IllegalStateException {
-		BoxArgumentDeclaration	boxArgument	= ( BoxArgumentDeclaration ) node;
+		BoxArgumentDeclaration	boxArgument			= ( BoxArgumentDeclaration ) node;
 
 		/* Process default value */
-		String					init		= "null";
-		// TODO:, this expression needs to be defered and evaluated at runtime
+		String					defaultLiteral		= "null";
+		String					defaultExpression	= "null";
 		if ( boxArgument.getValue() != null ) {
-			Node initExpr = transpiler.transform( boxArgument.getValue() );
-			init = initExpr.toString();
+			if ( boxArgument.getValue().isLiteral() ) {
+				Node initExpr = transpiler.transform( boxArgument.getValue() );
+				defaultLiteral = initExpr.toString();
+			} else {
+				String lambdaContextName = "lambdaContext" + transpiler.incrementAndGetLambdaContextCounter();
+				transpiler.pushContextName( lambdaContextName );
+				Node initExpr = transpiler.transform( boxArgument.getValue() );
+				transpiler.popContextName();
+
+				LambdaExpr lambda = new LambdaExpr();
+				lambda.setParameters( new NodeList<>(
+				    new Parameter( new UnknownType(), lambdaContextName ) ) );
+				lambda.setBody( new ExpressionStmt( ( Expression ) initExpr ) );
+				defaultExpression = lambda.toString();
+			}
 		}
 
 		/* Process annotations */
@@ -58,12 +76,13 @@ public class BoxArgumentDeclarationTransformer extends AbstractTransformer {
 		    "required", String.valueOf( boxArgument.getRequired() ),
 		    "type", boxArgument.getType(),
 		    "name", createKey( boxArgument.getName() ).toString(),
-		    "init", init,
+		    "defaultLiteral", defaultLiteral,
+		    "defaultExpression", defaultExpression,
 		    "annotations", annotationStruct.toString(),
 		    "documentation", documentationStruct.toString()
 		);
 		String				template			= """
-		                                          				new Argument( ${required}, "${type}" , ${name}, ${init}, ${annotations} ,${documentation} )
+		                                          new Argument( ${required}, "${type}" , ${name}, ${defaultLiteral}, ${defaultExpression}, ${annotations} ,${documentation} )
 		                                          """;
 		Expression			javaExpr			= ( Expression ) parseExpression( template, values );
 		logger.debug( "{} -> {}", node.getSourceText(), javaExpr );

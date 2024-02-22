@@ -147,7 +147,8 @@ public class BIFDescriptor {
 	 * @return The result of the invocation
 	 */
 	public Object invoke( IBoxContext context, Object[] positionalArguments, boolean isMember, Key name ) {
-		ArgumentsScope scope = ArgumentUtil.createArgumentsScope( context, positionalArguments, getBIF().getDeclaredArguments() );
+		ArgumentsScope scope = new ArgumentsScope();
+		ArgumentUtil.createArgumentsScope( context, positionalArguments, getBIF().getDeclaredArguments(), scope );
 		scope.put( BIF.__isMemberExecution, isMember );
 		scope.put( BIF.__functionName, name );
 		// Invoke it baby!
@@ -164,7 +165,8 @@ public class BIFDescriptor {
 	 * @return The result of the invocation
 	 */
 	public Object invoke( IBoxContext context, Map<Key, Object> namedArguments, boolean isMember, Key name ) {
-		ArgumentsScope scope = ArgumentUtil.createArgumentsScope( context, namedArguments, getBIF().getDeclaredArguments() );
+		ArgumentsScope scope = new ArgumentsScope();
+		ArgumentUtil.createArgumentsScope( context, namedArguments, getBIF().getDeclaredArguments(), scope );
 		scope.put( BIF.__isMemberExecution, isMember );
 		scope.put( BIF.__functionName, name );
 		// Invoke it baby!

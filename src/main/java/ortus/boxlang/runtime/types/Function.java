@@ -112,7 +112,7 @@ public abstract class Function implements IType, IFunctionRunnable {
 	 * @return The arguments scope
 	 */
 	public ArgumentsScope createArgumentsScope( IBoxContext context, Object[] positionalArguments ) {
-		return ArgumentUtil.createArgumentsScope( context, positionalArguments, getArguments() );
+		return ArgumentUtil.createArgumentsScope( context, positionalArguments, getArguments(), new ArgumentsScope() );
 	}
 
 	/**
@@ -123,7 +123,7 @@ public abstract class Function implements IType, IFunctionRunnable {
 	 * @return The arguments scope
 	 */
 	public ArgumentsScope createArgumentsScope( IBoxContext context, Map<Key, Object> namedArguments ) {
-		return ArgumentUtil.createArgumentsScope( context, namedArguments, getArguments() );
+		return ArgumentUtil.createArgumentsScope( context, namedArguments, getArguments(), new ArgumentsScope() );
 	}
 
 	/**
@@ -132,7 +132,7 @@ public abstract class Function implements IType, IFunctionRunnable {
 	 * @return The arguments scope
 	 */
 	public ArgumentsScope createArgumentsScope( IBoxContext context ) {
-		return ArgumentUtil.createArgumentsScope( context, getArguments() );
+		return ArgumentUtil.createArgumentsScope( context, getArguments(), new ArgumentsScope() );
 	}
 
 	/**

@@ -42,7 +42,7 @@ public class FunctionBoxContext extends BaseBoxContext {
 	/**
 	 * The arguments scope
 	 */
-	protected IScope			argumentsScope;
+	protected ArgumentsScope	argumentsScope;
 
 	/**
 	 * The local scope
@@ -135,8 +135,9 @@ public class FunctionBoxContext extends BaseBoxContext {
 		if ( function == null ) {
 			throw new BoxRuntimeException( "function cannot be null for FunctionBoxContext" );
 		}
-		this.localScope			= new LocalScope();
-		this.argumentsScope		= ArgumentUtil.createArgumentsScope( this, positionalArguments, function.getArguments() );
+		this.localScope		= new LocalScope();
+		this.argumentsScope	= new ArgumentsScope();
+		ArgumentUtil.createArgumentsScope( this, positionalArguments, function.getArguments(), this.argumentsScope );
 		this.function			= function;
 		this.functionCalledName	= functionCalledName;
 	}
@@ -157,8 +158,9 @@ public class FunctionBoxContext extends BaseBoxContext {
 		if ( function == null ) {
 			throw new BoxRuntimeException( "function cannot be null for FunctionBoxContext" );
 		}
-		this.localScope			= new LocalScope();
-		this.argumentsScope		= ArgumentUtil.createArgumentsScope( this, namedArguments, function.getArguments() );
+		this.localScope		= new LocalScope();
+		this.argumentsScope	= new ArgumentsScope();
+		ArgumentUtil.createArgumentsScope( this, namedArguments, function.getArguments(), this.argumentsScope );
 		this.function			= function;
 		this.functionCalledName	= functionCalledName;
 	}

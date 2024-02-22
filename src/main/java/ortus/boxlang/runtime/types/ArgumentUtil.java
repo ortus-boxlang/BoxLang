@@ -41,8 +41,7 @@ public class ArgumentUtil {
 	 *
 	 * @return The arguments scope
 	 */
-	public static ArgumentsScope createArgumentsScope( IBoxContext context, Object[] positionalArguments, Argument[] arguments ) {
-		ArgumentsScope scope = new ArgumentsScope();
+	public static ArgumentsScope createArgumentsScope( IBoxContext context, Object[] positionalArguments, Argument[] arguments, ArgumentsScope scope ) {
 		// Add all incoming args to the scope, using the name if declared, otherwise using the position
 		for ( int i = 0; i < positionalArguments.length; i++ ) {
 			Key		name;
@@ -59,11 +58,11 @@ public class ArgumentUtil {
 		// Fill in any remaining declared arguments with default value
 		if ( arguments.length > scope.size() ) {
 			for ( int i = scope.size(); i < arguments.length; i++ ) {
-				if ( arguments[ i ].required() && arguments[ i ].defaultValue() == null ) {
+				if ( arguments[ i ].required() && !arguments[ i ].hasDefaultValue() ) {
 					throw new BoxRuntimeException( "Required argument " + arguments[ i ].name().getName() + " is missing" );
 				}
 				scope.put( arguments[ i ].name(),
-				    ensureArgumentType( context, arguments[ i ].name(), arguments[ i ].defaultValue(), arguments[ i ].type() ) );
+				    ensureArgumentType( context, arguments[ i ].name(), arguments[ i ].getDefaultValue( context ), arguments[ i ].type() ) );
 			}
 		}
 		return scope;
@@ -77,9 +76,7 @@ public class ArgumentUtil {
 	 *
 	 * @return The arguments scope
 	 */
-	public static ArgumentsScope createArgumentsScope( IBoxContext context, Map<Key, Object> namedArguments, Argument[] arguments ) {
-		ArgumentsScope scope = new ArgumentsScope();
-
+	public static ArgumentsScope createArgumentsScope( IBoxContext context, Map<Key, Object> namedArguments, Argument[] arguments, ArgumentsScope scope ) {
 		// If argumentCollection exists, add it
 		if ( namedArguments.containsKey( Function.ARGUMENT_COLLECTION ) ) {
 			Object argCollection = namedArguments.get( Function.ARGUMENT_COLLECTION );
@@ -115,11 +112,11 @@ public class ArgumentUtil {
 		for ( Argument argument : arguments ) {
 			// If they aren't here, add their default value (if defined)
 			if ( !scope.containsKey( argument.name() ) ) {
-				if ( argument.required() && argument.defaultValue() == null ) {
+				if ( argument.required() && !argument.hasDefaultValue() ) {
 					throw new BoxRuntimeException( "Required argument " + argument.name().getName() + " is missing" );
 				}
 				// Make sure the default value is valid
-				scope.put( argument.name(), ensureArgumentType( context, argument.name(), argument.defaultValue(), argument.type() ) );
+				scope.put( argument.name(), ensureArgumentType( context, argument.name(), argument.getDefaultValue( context ), argument.type() ) );
 				// If they are here, confirm their types
 			} else {
 				scope.put( argument.name(),
@@ -136,8 +133,8 @@ public class ArgumentUtil {
 	 *
 	 * @return The arguments scope
 	 */
-	public static ArgumentsScope createArgumentsScope( IBoxContext context, Argument[] arguments ) {
-		return createArgumentsScope( context, new Object[] {}, arguments );
+	public static ArgumentsScope createArgumentsScope( IBoxContext context, Argument[] arguments, ArgumentsScope scope ) {
+		return createArgumentsScope( context, new Object[] {}, arguments, scope );
 	}
 
 	/**
