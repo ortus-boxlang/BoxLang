@@ -18,6 +18,7 @@
 package ortus.boxlang.runtime.config.segments;
 
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
@@ -49,13 +50,13 @@ public class RuntimeConfig {
 	 * An array of directories where modules are located and loaded from.
 	 * {@code [ /{user-home}/modules ]}
 	 */
-	public List<String>			modulesDirectory	= Arrays.asList( System.getProperty( "user.home" ) + "/modules" );
+	public List<String>			modulesDirectory	= new ArrayList<>( Arrays.asList( System.getProperty( "user.home" ) + "/modules" ) );
 
 	/**
 	 * An array of directories where custom tags are located and loaded from.
 	 * {@code [ /{user-home}/customTags ]}
 	 */
-	public List<String>			customTagsDirectory	= Arrays.asList( System.getProperty( "user.home" ) + "/customTags" );
+	public List<String>			customTagsDirectory	= new ArrayList<>( Arrays.asList( System.getProperty( "user.home" ) + "/customTags" ) );
 
 	/**
 	 * Cache registrations
