@@ -33,7 +33,7 @@ public class SourceMap {
 			// Move our pointer so long as we haven't passed the source line
 			if ( sourceMapRecord.originSourceLineStart <= sourceLine && sourceMapRecord.originSourceLineEnd >= sourceLine ) {
 				result				= sourceMapRecord.javaSourceLineStart;
-				endOfClosestWrapper	= sourceMapRecord.originSourceLineEnd;
+				endOfClosestWrapper	= sourceMapRecord.javaSourceLineEnd;
 			} else if ( result > -1 && result > endOfClosestWrapper ) {
 				// If we don't match, but we matched before, then we're past the previous correct result
 				break;
@@ -52,7 +52,7 @@ public class SourceMap {
 			// Move our pointer so long as we haven't passed the source line
 			if ( sourceMapRecord.javaSourceLineStart <= javaLine && sourceMapRecord.javaSourceLineEnd >= javaLine ) {
 				result				= sourceMapRecord.originSourceLineStart;
-				endOfClosestWrapper	= sourceMapRecord.javaSourceLineEnd;
+				endOfClosestWrapper	= sourceMapRecord.originSourceLineEnd;
 			} else if ( result > -1 && result > endOfClosestWrapper ) {
 				// If we don't match, but we matched before, then we're past the previous correct result
 				break;
