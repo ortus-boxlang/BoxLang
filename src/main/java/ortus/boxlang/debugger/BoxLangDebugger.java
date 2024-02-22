@@ -32,6 +32,7 @@ import java.util.Map;
 import com.sun.jdi.AbsentInformationException;
 import com.sun.jdi.Bootstrap;
 import com.sun.jdi.ClassNotLoadedException;
+import com.sun.jdi.ClassType;
 import com.sun.jdi.IncompatibleThreadStateException;
 import com.sun.jdi.InvalidTypeException;
 import com.sun.jdi.InvocationException;
@@ -54,12 +55,15 @@ import com.sun.jdi.request.BreakpointRequest;
 import com.sun.jdi.request.ClassPrepareRequest;
 import com.sun.jdi.request.StepRequest;
 
+import ortus.boxlang.debugger.JDITools.WrappedValue;
 import ortus.boxlang.debugger.event.ExitEvent;
 import ortus.boxlang.debugger.event.OutputEvent;
 import ortus.boxlang.debugger.event.TerminatedEvent;
 import ortus.boxlang.debugger.types.Breakpoint;
+import ortus.boxlang.debugger.types.Variable;
 import ortus.boxlang.runtime.runnables.compiler.JavaBoxpiler;
 import ortus.boxlang.runtime.runnables.compiler.JavaBoxpiler.ClassInfo;
+import ortus.boxlang.runtime.types.BoxLangType;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
 public class BoxLangDebugger implements IBoxLangDebugger {
@@ -77,6 +81,8 @@ public class BoxLangDebugger implements IBoxLangDebugger {
 	private InputStream				vmInput;
 	private InputStream				vmErrorInput;
 	public BreakpointEvent			bpe;
+
+	private ClassType				keyClassRef	= null;
 
 	public enum Status {
 		NOT_STARTED,
@@ -144,6 +150,160 @@ public class BoxLangDebugger implements IBoxLangDebugger {
 			readVMInput();
 			readVMErrorInput();
 		}
+	}
+
+	public void begin() {
+		this.status = Status.RUNNING;
+	}
+
+	public void forceResume() {
+		this.status = Status.RUNNING;
+		this.bpe.thread().resume();
+	}
+
+	public void startDebugSession() {
+		// pass
+	}
+
+	public VirtualMachine connectAndLaunchVM() throws Exception {
+
+		LaunchingConnector				launchingConnector	= Bootstrap.virtualMachineManager()
+		    .defaultConnector();
+		Map<String, Connector.Argument>	arguments			= launchingConnector.defaultArguments();
+		arguments.get( "options" ).setValue( "-cp " + System.getProperty( "java.class.path" ) );
+		arguments.get( "main" ).setValue( debugClass.getName() + " " + cliArgs );
+		VirtualMachine vm = launchingConnector.launch( arguments );
+
+		return vm;
+	}
+
+	public void addBreakpoint( String filePath, Breakpoint breakpoint ) {
+		List<Breakpoint> breakpoints = this.breakpoints.computeIfAbsent( filePath, ( key ) -> new ArrayList<Breakpoint>() );
+		breakpoints.add( breakpoint );
+		setAllBreakpoints();
+	}
+
+	public void enableClassPrepareRequest( VirtualMachine vm ) {
+		ClassPrepareRequest classPrepareRequest = vm.eventRequestManager().createClassPrepareRequest();
+		classPrepareRequest.addClassFilter( "boxgenerated.*" );
+		classPrepareRequest.enable();
+	}
+
+	public void setBreakPoints( VirtualMachine vm, ClassPrepareEvent event ) throws AbsentInformationException {
+		ReferenceType classType = event.referenceType();
+		for ( int lineNumber : breakPointLines ) {
+			Location			location	= classType.locationsOfLine( lineNumber ).get( 0 );
+			BreakpointRequest	bpReq		= vm.eventRequestManager().createBreakpointRequest( location );
+			bpReq.enable();
+		}
+	}
+
+	public void enableStepRequest( VirtualMachine vm, BreakpointEvent event ) {
+		// enable step request for last break point
+		// if ( event.location().toString().contains( debugClass.getName() + ":" + breakPointLines[ breakPointLines.length - 1 ] ) ) {
+		StepRequest stepRequest = vm.eventRequestManager()
+		    .createStepRequest( event.thread(), StepRequest.STEP_LINE, StepRequest.STEP_OVER );
+		stepRequest.enable();
+		// }
+	}
+
+	public WrappedValue getObjectFromStackFrame( StackFrame stackFrame ) {
+		return JDITools.wrap( this.bpe.thread(), stackFrame.thisObject() );
+	}
+
+	public BoxLangType determineBoxLangType( ReferenceType type ) {
+		return JDITools.determineBoxLangType( type );
+	}
+
+	public WrappedValue getContextForStackFrame( int id ) {
+		return JDITools.findVariableyName( findStackFrame( id ), "context" );
+	}
+
+	public StackFrame findStackFrame( int id ) {
+		for ( ThreadReference thread : getAllThreadReferences() ) {
+			try {
+				for ( StackFrame stackFrame : getStackFrames( thread.hashCode() ) ) {
+					if ( stackFrame.hashCode() == id ) {
+						return stackFrame;
+					}
+				}
+			} catch ( IncompatibleThreadStateException e ) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		}
+
+		return null;
+	}
+
+	public boolean hasSeen( long variableReference ) {
+		return JDITools.hasSeen( variableReference );
+	}
+
+	public List<Variable> getVariablesFromSeen( long variableReference ) {
+		return JDITools.getVariablesFromSeen( variableReference );
+	}
+
+	public Value mirrorOfKey( String name ) {
+		ClassType	ref				= getKeyClassType();
+
+		Method		contstructor	= ref.allMethods()
+		    .stream()
+		    .filter( ( method ) -> method.name().compareToIgnoreCase( "<init>" ) == 0 )
+		    .findFirst()
+		    .get();
+
+		try {
+			return ref.newInstance( bpe.thread(), contstructor, Arrays.asList( this.vm.mirrorOf( name ) ), 0 );
+		} catch ( InvalidTypeException e ) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch ( ClassNotLoadedException e ) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch ( IncompatibleThreadStateException e ) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch ( InvocationException e ) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+
+		return null;
+
+	}
+
+	public List<ThreadReference> getAllThreadReferences() {
+		return this.vm.allThreads();
+	}
+
+	public List<StackFrame> getStackFrames( int threadId ) throws IncompatibleThreadStateException {
+		ThreadReference matchingThreadRef = null;
+
+		for ( ThreadReference threadReference : this.vm.allThreads() ) {
+			if ( threadReference.uniqueID() == threadId ) {
+				matchingThreadRef = threadReference;
+				break;
+			}
+		}
+
+		if ( matchingThreadRef == null ) {
+			throw ( new BoxRuntimeException( "Couldn't find thread: " + threadId ) );
+		}
+
+		return matchingThreadRef.frames();
+	}
+
+	private ClassType getKeyClassType() {
+		if ( keyClassRef == null ) {
+			keyClassRef = ( ClassType ) this.vm.allClasses()
+			    .stream()
+			    .filter( ( type ) -> type.name().compareToIgnoreCase( "ortus.boxlang.runtime.scopes.key" ) == 0 )
+			    .findFirst()
+			    .get();
+		}
+
+		return keyClassRef;
 	}
 
 	private void processVMEvents( EventSet eventSet ) throws IncompatibleThreadStateException, AbsentInformationException {
@@ -217,115 +377,10 @@ public class BoxLangDebugger implements IBoxLangDebugger {
 		}
 	}
 
-	public void begin() {
-		this.status = Status.RUNNING;
-	}
-
-	public void forceResume() {
-		this.status = Status.RUNNING;
-		this.bpe.thread().resume();
-	}
-
-	public void startDebugSession() {
-		// pass
-	}
-
 	private void handleBreakPointEvent( BreakpointEvent bpe ) throws IncompatibleThreadStateException, AbsentInformationException {
 		this.status = Status.STOPPED;
 		this.debugAdapter.sendStoppedEventForBreakpoint( bpe );
 		this.bpe = bpe;
-	}
-
-	public VirtualMachine connectAndLaunchVM() throws Exception {
-
-		LaunchingConnector				launchingConnector	= Bootstrap.virtualMachineManager()
-		    .defaultConnector();
-		Map<String, Connector.Argument>	arguments			= launchingConnector.defaultArguments();
-		arguments.get( "options" ).setValue( "-cp " + System.getProperty( "java.class.path" ) );
-		arguments.get( "main" ).setValue( debugClass.getName() + " " + cliArgs );
-		VirtualMachine vm = launchingConnector.launch( arguments );
-
-		return vm;
-	}
-
-	public void addBreakpoint( String filePath, Breakpoint breakpoint ) {
-		List<Breakpoint> breakpoints = this.breakpoints.computeIfAbsent( filePath, ( key ) -> new ArrayList<Breakpoint>() );
-		breakpoints.add( breakpoint );
-		setAllBreakpoints();
-	}
-
-	public void enableClassPrepareRequest( VirtualMachine vm ) {
-		ClassPrepareRequest classPrepareRequest = vm.eventRequestManager().createClassPrepareRequest();
-		classPrepareRequest.addClassFilter( "boxgenerated.*" );
-		classPrepareRequest.enable();
-	}
-
-	public void setBreakPoints( VirtualMachine vm, ClassPrepareEvent event ) throws AbsentInformationException {
-		ReferenceType classType = event.referenceType();
-		for ( int lineNumber : breakPointLines ) {
-			Location			location	= classType.locationsOfLine( lineNumber ).get( 0 );
-			BreakpointRequest	bpReq		= vm.eventRequestManager().createBreakpointRequest( location );
-			bpReq.enable();
-		}
-	}
-
-	public void enableStepRequest( VirtualMachine vm, BreakpointEvent event ) {
-		// enable step request for last break point
-		// if ( event.location().toString().contains( debugClass.getName() + ":" + breakPointLines[ breakPointLines.length - 1 ] ) ) {
-		StepRequest stepRequest = vm.eventRequestManager()
-		    .createStepRequest( event.thread(), StepRequest.STEP_LINE, StepRequest.STEP_OVER );
-		stepRequest.enable();
-		// }
-	}
-
-	public Value mirrorOfKey( String name ) {
-		ReferenceType	ref				= this.vm.allClasses().stream()
-		    .filter( ( type ) -> type.name().compareToIgnoreCase( "ortus.boxlang.runtime.scopes.key" ) == 0 )
-		    .findFirst()
-		    .get();
-
-		Method			contstructor	= ref.allMethods().stream().filter( ( method ) -> method.name().compareToIgnoreCase( "<init>" ) == 0 ).findFirst()
-		    .get();
-
-		try {
-			return ( ( com.sun.jdi.ClassType ) ref ).newInstance( bpe.thread(), contstructor, Arrays.asList( this.vm.mirrorOf( name ) ), 0 );
-		} catch ( InvalidTypeException e ) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch ( ClassNotLoadedException e ) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch ( IncompatibleThreadStateException e ) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch ( InvocationException e ) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-
-		return null;
-
-	}
-
-	public List<ThreadReference> getAllThreadReferences() {
-		return this.vm.allThreads();
-	}
-
-	public List<StackFrame> getStackFrames( int threadId ) throws IncompatibleThreadStateException {
-		ThreadReference matchingThreadRef = null;
-
-		for ( ThreadReference threadReference : this.vm.allThreads() ) {
-			if ( threadReference.uniqueID() == threadId ) {
-				matchingThreadRef = threadReference;
-				break;
-			}
-		}
-
-		if ( matchingThreadRef == null ) {
-			throw ( new BoxRuntimeException( "Couldn't find thread: " + threadId ) );
-		}
-
-		return matchingThreadRef.frames();
 	}
 
 	private void setAllBreakpoints() {

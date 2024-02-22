@@ -38,7 +38,6 @@ import com.sun.jdi.Location;
 import com.sun.jdi.ObjectReference;
 import com.sun.jdi.event.BreakpointEvent;
 
-import ortus.boxlang.debugger.JDITools.BoxLangType;
 import ortus.boxlang.debugger.JDITools.WrappedValue;
 import ortus.boxlang.debugger.event.Event;
 import ortus.boxlang.debugger.event.StoppedEvent;
@@ -69,6 +68,7 @@ import ortus.boxlang.runtime.BoxRunner;
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.runnables.compiler.JavaBoxpiler;
 import ortus.boxlang.runtime.runnables.compiler.SourceMap;
+import ortus.boxlang.runtime.types.BoxLangType;
 
 /**
  * Implements Microsoft's Debug Adapter Protocol https://microsoft.github.io/debug-adapter-protocol/
@@ -320,13 +320,13 @@ public class DebugAdapter {
 					    sf.line = sourceLine;
 				    }
 
-				    BoxLangType blType = JDITools.determineBoxLangType( location.declaringType() );
+				    BoxLangType blType = this.debugger.determineBoxLangType( location.declaringType() );
 
 				    if ( blType == BoxLangType.UDF ) {
-					    ObjectReference ref = stackFrame.thisObject();
-					    sf.name = JDITools.wrap( this.debugger.bpe.thread(), ref ).property( "name" ).property( "originalValue" )
+					    sf.name		= this.debugger.getObjectFromStackFrame( stackFrame )
+					        .property( "name" )
+					        .property( "originalValue" )
 					        .asStringReference().value();
-					    ;
 					    sf.source	= new Source();
 					    sf.source.path = map.source.toString();
 					    sf.source.name = sf.name + "(UDF)";
@@ -349,9 +349,8 @@ public class DebugAdapter {
 	}
 
 	public void visit( ScopeRequest debugRequest ) {
-		com.sun.jdi.StackFrame vmStackFrame = findStackFrame( debugRequest.arguments.frameId );
 		try {
-			WrappedValue	context			= JDITools.findVariableyName( vmStackFrame, "context" );
+			WrappedValue	context			= this.debugger.getContextForStackFrame( debugRequest.arguments.frameId );
 
 			List<Scope>		scopes			= new ArrayList<Scope>();
 
@@ -397,28 +396,11 @@ public class DebugAdapter {
 	public void visit( VariablesRequest debugRequest ) {
 		List<Variable> ideVars = new ArrayList<Variable>();
 
-		if ( JDITools.hasSeen( debugRequest.arguments.variablesReference ) ) {
-			ideVars = JDITools.getVariablesFromSeen( debugRequest.arguments.variablesReference );
+		if ( this.debugger.hasSeen( debugRequest.arguments.variablesReference ) ) {
+			ideVars = this.debugger.getVariablesFromSeen( debugRequest.arguments.variablesReference );
 		}
 
 		new VariablesResponse( debugRequest, ideVars ).send( this.outputStream );
-	}
-
-	private com.sun.jdi.StackFrame findStackFrame( int id ) {
-		for ( com.sun.jdi.ThreadReference thread : this.debugger.getAllThreadReferences() ) {
-			try {
-				for ( com.sun.jdi.StackFrame stackFrame : this.debugger.getStackFrames( thread.hashCode() ) ) {
-					if ( stackFrame.hashCode() == id ) {
-						return stackFrame;
-					}
-				}
-			} catch ( IncompatibleThreadStateException e ) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
-		}
-
-		return null;
 	}
 
 	public void visit( DisconnectRequest debugRequest ) {

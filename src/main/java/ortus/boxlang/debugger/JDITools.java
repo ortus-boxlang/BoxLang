@@ -29,6 +29,7 @@ import com.sun.jdi.VirtualMachine;
 
 import ortus.boxlang.debugger.types.Variable;
 import ortus.boxlang.runtime.dynamic.casters.StringCaster;
+import ortus.boxlang.runtime.types.BoxLangType;
 
 public class JDITools {
 
@@ -315,15 +316,6 @@ public class JDITools {
 		}
 	}
 
-	public static enum BoxLangType {
-		ARRAY,
-		STRUCT,
-		UDF,
-		CLOSURE,
-		LAMBDA,
-		UNKNOWN
-	};
-
 	public static BoxLangType determineBoxLangType( ReferenceType type ) {
 		if ( doesExtend( type, "ortus.boxlang.runtime.types.struct" ) ) {
 			return BoxLangType.STRUCT;
@@ -337,7 +329,7 @@ public class JDITools {
 			return BoxLangType.LAMBDA;
 		}
 
-		return BoxLangType.UNKNOWN;
+		return null;
 	}
 
 	public static boolean doesExtend( ReferenceType type, String superType ) {
@@ -347,11 +339,6 @@ public class JDITools {
 
 	public static boolean hasSeen( long variableReference ) {
 		return values.containsKey( variableReference );
-	}
-
-	public static Value getSeenValue( long variableReference ) {
-		// TODO check to make sure the value hasn't been garbage collected - if it has remove it from the map and return null
-		return values.get( variableReference ).value;
 	}
 
 	public static List<Variable> getVariablesFromSeen( long variableReference ) {
