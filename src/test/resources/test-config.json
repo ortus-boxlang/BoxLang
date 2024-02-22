@@ -7,17 +7,32 @@
 		"modulesDirectory": [
 			"${user-home}/.boxlangtests/modules"
 		],
+		"defaultCache": {
+			"evictCount": 1,
+			"evictionPolicy": "LRU",
+			"freeMemoryPercentageThreshold": 0,
+			"maxObjects": 1000,
+			"defaultLastAccessTimeout": 30,
+			"defaultTimeout": 120,
+			"objectStore": "ConcurrentSoftReferenceStore",
+			"reapFrequency": 2,
+			"resetTimeoutOnAccess": false,
+			"useLastAccessTimeouts": true
+		},
 		"caches": {
 			"imports": {
-				"type": "Caffeine",
+				"provider": "BoxLang",
 				"properties": {
-					"maximumSize": 500
-				}
-			},
-			"default": {
-				"type": "Caffeine",
-				"properties": {
-					"maximumSize": 500
+					"evictCount": 1,
+					"evictionPolicy": "LRU",
+					"freeMemoryPercentageThreshold": 0,
+					"maxObjects": 200,
+					"defaultLastAccessTimeout": 30,
+					"defaultTimeout": 60,
+					"objectStore": "ConcurrentStore",
+					"reapFrequency": 2,
+					"resetTimeoutOnAccess": false,
+					"useLastAccessTimeouts": true
 				}
 			}
 		}

@@ -13,17 +13,21 @@
 		"customTagsDirectory": [
 			"${user-home}/.boxlang/customTags"
 		],
+		"defaultCache": {},
 		"caches": {
 			"imports": {
-				"type": "Caffeine",
+				"provider": "BoxLang",
 				"properties": {
-					"maximumSize": 1000
-				}
-			},
-			"default": {
-				"type": "Caffeine",
-				"properties": {
-					"maximumSize": 1000
+					"evictCount": 1,
+					"evictionPolicy": "LRU",
+					"freeMemoryPercentageThreshold": 0,
+					"maxObjects": 200,
+					"defaultLastAccessTimeout": 30,
+					"defaultTimeout": 60,
+					"objectStore": "ConcurrentStore",
+					"reapFrequency": 2,
+					"resetTimeoutOnAccess": false,
+					"useLastAccessTimeouts": true
 				}
 			}
 		}

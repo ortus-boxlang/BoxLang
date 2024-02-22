@@ -19,25 +19,30 @@ package ortus.boxlang.runtime.services;
 
 import static com.google.common.truth.Truth.assertThat;
 
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.mockito.InjectMocks;
-import org.mockito.Spy;
 
 import ortus.boxlang.runtime.BoxRuntime;
 
 public class CacheServiceTest {
 
-	CacheService		service;
-
-	@Spy
-	@InjectMocks
-	private BoxRuntime	runtime;
+	CacheService	service;
+	BoxRuntime		runtime;
 
 	@BeforeEach
 	public void setupBeforeEach() {
-		service = new CacheService( runtime );
+		runtime	= BoxRuntime.getInstance( false );
+		service	= runtime.getCacheService();
+	}
+
+	/**
+	 * Run shutdown code after each test
+	 */
+	@AfterEach
+	public void tearDown() {
+		runtime.shutdown();
 	}
 
 	@DisplayName( "Test it can get an instance of the service" )

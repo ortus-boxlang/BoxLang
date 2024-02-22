@@ -18,7 +18,7 @@
 package ortus.boxlang.runtime.config.segments;
 
 import java.nio.file.Path;
-import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -49,28 +49,23 @@ public class RuntimeConfig {
 	 * An array of directories where modules are located and loaded from.
 	 * {@code [ /{user-home}/modules ]}
 	 */
-	public List<String>			modulesDirectory	= new ArrayList<String>() {
-
-														{
-															add( System.getProperty( "user.home" ) + "/modules" );
-														}
-													};
+	public List<String>			modulesDirectory	= Arrays.asList( System.getProperty( "user.home" ) + "/modules" );
 
 	/**
 	 * An array of directories where custom tags are located and loaded from.
 	 * {@code [ /{user-home}/customTags ]}
 	 */
-	public List<String>			customTagsDirectory	= new ArrayList<String>() {
-
-														{
-															add( System.getProperty( "user.home" ) + "/customTags" );
-														}
-													};
+	public List<String>			customTagsDirectory	= Arrays.asList( System.getProperty( "user.home" ) + "/customTags" );
 
 	/**
-	 * The cache configurations for the runtime
+	 * Cache registrations
 	 */
 	public IStruct				caches				= new Struct();
+
+	/**
+	 * Default cache registration
+	 */
+	public CacheConfig			defaultCache		= new CacheConfig();
 
 	/**
 	 * Logger
@@ -220,7 +215,7 @@ public class RuntimeConfig {
 			}
 		}
 
-		// Process Modules
+		// Process Modules directories
 		if ( config.containsKey( "modulesDirectory" ) ) {
 			if ( config.get( "modulesDirectory" ) instanceof List<?> castedList ) {
 				this.modulesDirectory = ( ( List<?> ) castedList ).stream()
@@ -231,7 +226,7 @@ public class RuntimeConfig {
 			}
 		}
 
-		// Process customTags
+		// Process customTags directories
 		if ( config.containsKey( "customTagsDirectory" ) ) {
 			if ( config.get( "customTags" ) instanceof List<?> castedList ) {
 				this.customTagsDirectory = ( ( List<?> ) castedList ).stream()
@@ -242,7 +237,16 @@ public class RuntimeConfig {
 			}
 		}
 
-		// Process cache configurations
+		// Process default cache configuration
+		if ( config.containsKey( "defaultCache" ) ) {
+			if ( config.get( "defaultCache" ) instanceof Map<?, ?> castedMap ) {
+				this.defaultCache = new CacheConfig().processProperties( new Struct( castedMap ) );
+			} else {
+				logger.warn( "The [runtime.defaultCache] configuration is not a JSON Object, ignoring it." );
+			}
+		}
+
+		// Process declared cache configurations
 		if ( config.containsKey( "caches" ) ) {
 			if ( config.get( "caches" ) instanceof Map<?, ?> castedCaches ) {
 				// Process each cache configuration
@@ -271,10 +275,11 @@ public class RuntimeConfig {
 	 */
 	public IStruct asStruct() {
 		return Struct.of(
-		    Key.mappings, this.mappings,
-		    Key.modulesDirectory, Array.fromList( this.modulesDirectory ),
+		    Key.caches, this.caches,
 		    Key.customTagsDirectory, Array.fromList( this.customTagsDirectory ),
-		    Key.caches, this.caches
+		    Key.defaultCache, this.defaultCache,
+		    Key.mappings, this.mappings,
+		    Key.modulesDirectory, Array.fromList( this.modulesDirectory )
 		);
 	}
 

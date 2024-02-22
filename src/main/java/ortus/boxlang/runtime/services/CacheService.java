@@ -17,13 +17,21 @@
  */
 package ortus.boxlang.runtime.services;
 
+import java.util.Map;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import ortus.boxlang.runtime.BoxRuntime;
+import ortus.boxlang.runtime.async.executors.ExecutorRecord;
+import ortus.boxlang.runtime.scopes.Key;
+import ortus.boxlang.runtime.types.Struct;
 
 /**
- *
+ * This is a service that provides caching functionality to BoxLang
+ * based on the CacheBox library.
  */
 public class CacheService extends BaseService {
 
@@ -36,7 +44,45 @@ public class CacheService extends BaseService {
 	/**
 	 * Logger
 	 */
-	private static final Logger logger = LoggerFactory.getLogger( CacheService.class );
+	private static final Logger				logger			= LoggerFactory.getLogger( CacheService.class );
+
+	/**
+	 * Service Events
+	 */
+	private static final Map<String, Key>	CACHE_EVENTS	= Stream.of(
+	    "afterCacheElementInsert",
+	    "afterCacheElementRemoved",
+	    "afterCacheElementExpired",
+	    "afterCacheElementUpdated",
+	    "afterCacheClearAll",
+	    "afterCacheRegistration",
+	    "afterCacheRemoval",
+	    "beforeCacheRemoval",
+	    "beforeCacheReplacement",
+	    "afterCacheServiceConfiguration",
+	    "beforeCacheServiceShutdown",
+	    "afterCacheServiceShutdown",
+	    "beforeCacheShutdown",
+	    "afterCacheShutdown"
+	).collect( Collectors.toMap(
+	    eventName -> eventName,
+	    Key::of
+	) );
+
+	/**
+	 * The async service
+	 */
+	private final AsyncService				asyncService;
+
+	/**
+	 * The interceptor service
+	 */
+	private final InterceptorService		interceptorService;
+
+	/**
+	 * The scheduled executor service record
+	 */
+	private final ExecutorRecord			executor;
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -51,6 +97,12 @@ public class CacheService extends BaseService {
 	 */
 	public CacheService( BoxRuntime runtime ) {
 		super( runtime );
+		this.asyncService		= runtime.getAsyncService();
+		this.interceptorService	= runtime.getInterceptorService();
+		// Add the service events
+		this.interceptorService.registerInterceptionPoint( CACHE_EVENTS.values().toArray( Key[]::new ) );
+		// Register the scheduled executor service
+		this.executor = this.asyncService.newScheduledExecutor( "cacheservice-tasks", 20 );
 	}
 
 	/**
@@ -64,7 +116,22 @@ public class CacheService extends BaseService {
 	 */
 	@Override
 	public void onStartup() {
-		logger.info( "CacheService.onStartup()" );
+		BoxRuntime.timerUtil.start( "cacheservice-startup" );
+		logger.atInfo().log( "+ Starting up Cache Service..." );
+
+		// Read the configuration from disk
+		// this.config = this.runtime.getConfiguration().runtime.caches;
+
+		// Register the core providers
+
+		// Announce it
+		announce(
+		    CACHE_EVENTS.get( "afterCacheServiceConfiguration" ),
+		    Struct.of( "cacheService", this )
+		);
+
+		// Let it be known!
+		logger.atInfo().log( "+ Cache Service started in [{}] ms", BoxRuntime.timerUtil.stopAndGetMillis( "cacheservice-startup" ) );
 	}
 
 	/**

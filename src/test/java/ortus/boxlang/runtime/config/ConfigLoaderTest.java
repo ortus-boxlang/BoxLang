@@ -48,22 +48,30 @@ class ConfigLoaderTest {
 
 		// Cache Checks
 		assertThat( config.runtime.caches ).isNotEmpty();
-		assertThat( config.runtime.caches ).hasSize( 2 );
+		assertThat( config.runtime.caches ).hasSize( 1 );
 
 		// Default Cache Checks
-		CacheConfig defaultCache = ( CacheConfig ) config.runtime.caches.get( "default" );
+		CacheConfig defaultCache = ( CacheConfig ) config.runtime.defaultCache;
 		assertThat( defaultCache ).isNotNull();
 		assertThat( defaultCache.name.getNameNoCase() ).isEqualTo( "DEFAULT" );
-		assertThat( defaultCache.type.getNameNoCase() ).isEqualTo( "CAFFEINE" );
+		assertThat( defaultCache.provider.getNameNoCase() ).isEqualTo( "BOXLANG" );
 		assertThat( defaultCache.properties ).isNotNull();
-		assertThat( defaultCache.properties.get( "maximumSize" ) ).isEqualTo( 1000 );
+		assertThat( defaultCache.properties.get( "maxObjects" ) ).isEqualTo( 1000 );
+		assertThat( defaultCache.properties.get( "reapFrequency" ) ).isEqualTo( 10 );
+		assertThat( defaultCache.properties.get( "evictionPolicy" ) ).isEqualTo( "LRU" );
+		assertThat( defaultCache.properties.get( "objectStore" ) ).isEqualTo( "ConcurrentSoftReferenceStore" );
+		assertThat( defaultCache.properties.get( "useLastAccessTimeouts" ) ).isEqualTo( true );
 
 		// Import Cache Checks
 		CacheConfig importCache = ( CacheConfig ) config.runtime.caches.get( "imports" );
 		assertThat( importCache.name.getNameNoCase() ).isEqualTo( "IMPORTS" );
-		assertThat( importCache.type.getNameNoCase() ).isEqualTo( "CAFFEINE" );
+		assertThat( importCache.provider.getNameNoCase() ).isEqualTo( "BOXLANG" );
 		assertThat( importCache.properties ).isNotNull();
-		assertThat( importCache.properties.get( "maximumSize" ) ).isEqualTo( 1000 );
+		assertThat( importCache.properties.get( "maxObjects" ) ).isEqualTo( 200 );
+		assertThat( importCache.properties.get( "reapFrequency" ) ).isEqualTo( 2 );
+		assertThat( importCache.properties.get( "evictionPolicy" ) ).isEqualTo( "LRU" );
+		assertThat( importCache.properties.get( "objectStore" ) ).isEqualTo( "ConcurrentStore" );
+		assertThat( importCache.properties.get( "useLastAccessTimeouts" ) ).isEqualTo( true );
 	}
 
 	@DisplayName( "It can register a new mapping" )
@@ -153,22 +161,26 @@ class ConfigLoaderTest {
 
 		// Cache Checks
 		assertThat( config.runtime.caches ).isNotEmpty();
-		assertThat( config.runtime.caches ).hasSize( 2 );
+		assertThat( config.runtime.caches ).hasSize( 1 );
 
 		// Default Cache Checks
-		CacheConfig defaultCache = ( CacheConfig ) config.runtime.caches.get( "default" );
+		CacheConfig defaultCache = ( CacheConfig ) config.runtime.defaultCache;
 		assertThat( defaultCache ).isNotNull();
 		assertThat( defaultCache.name.getNameNoCase() ).isEqualTo( "DEFAULT" );
-		assertThat( defaultCache.type.getNameNoCase() ).isEqualTo( "CAFFEINE" );
+		assertThat( defaultCache.provider.getNameNoCase() ).isEqualTo( "BOXLANG" );
 		assertThat( defaultCache.properties ).isNotNull();
-		assertThat( defaultCache.properties.get( "maximumSize" ) ).isEqualTo( 500 );
+		assertThat( defaultCache.properties.get( "maxObjects" ) ).isEqualTo( 1000 );
+		assertThat( defaultCache.properties.get( "reapFrequency" ) ).isEqualTo( 2 );
+		assertThat( defaultCache.properties.get( "evictionPolicy" ) ).isEqualTo( "LRU" );
+		assertThat( defaultCache.properties.get( "objectStore" ) ).isEqualTo( "ConcurrentSoftReferenceStore" );
+		assertThat( defaultCache.properties.get( "useLastAccessTimeouts" ) ).isEqualTo( true );
 
 		// Import Cache Checks
 		CacheConfig importCache = ( CacheConfig ) config.runtime.caches.get( "imports" );
 		assertThat( importCache.name.getNameNoCase() ).isEqualTo( "IMPORTS" );
-		assertThat( importCache.type.getNameNoCase() ).isEqualTo( "CAFFEINE" );
+		assertThat( importCache.provider.getNameNoCase() ).isEqualTo( "BOXLANG" );
 		assertThat( importCache.properties ).isNotNull();
-		assertThat( importCache.properties.get( "maximumSize" ) ).isEqualTo( 500 );
+		assertThat( importCache.properties.get( "maxObjects" ) ).isEqualTo( 200 );
 	}
 
 }
