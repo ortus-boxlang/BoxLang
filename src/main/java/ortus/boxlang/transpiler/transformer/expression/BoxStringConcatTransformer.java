@@ -17,11 +17,12 @@
  */
 package ortus.boxlang.transpiler.transformer.expression;
 
-import java.util.HashMap;
-import java.util.Map;
-import java.util.stream.Collectors;
+import java.util.List;
 
 import com.github.javaparser.ast.Node;
+import com.github.javaparser.ast.expr.Expression;
+import com.github.javaparser.ast.expr.MethodCallExpr;
+import com.github.javaparser.ast.expr.NameExpr;
 
 import ortus.boxlang.ast.BoxNode;
 import ortus.boxlang.ast.expression.BoxStringConcat;
@@ -56,20 +57,15 @@ public class BoxStringConcatTransformer extends AbstractTransformer {
 			javaExpr = transpiler.transform( interpolation.getValues().get( 0 ), TransformerContext.RIGHT );
 		} else {
 
-			String				operands	= interpolation.getValues()
+			List<Expression>	operands		= interpolation.getValues()
 			    .stream()
-			    .map( it -> transpiler.transform( it, TransformerContext.RIGHT ).toString() )
-			    .collect( Collectors.joining( "," ) );
+			    .map( it -> ( Expression ) transpiler.transform( it, TransformerContext.RIGHT ) )
+			    .toList();
 
-			String				expr		= "Concat.invoke(" + operands + ")";
-
-			Map<String, String>	values		= new HashMap<>() {
-
-												{
-													put( "contextName", transpiler.peekContextName() );
-												}
-											};
-			javaExpr = parseExpression( expr.toString(), values );
+			NameExpr			nameExpr		= new NameExpr( "Concat" );
+			MethodCallExpr		methodCallExpr	= new MethodCallExpr( nameExpr, "invoke" );
+			operands.forEach( methodCallExpr::addArgument );
+			javaExpr = methodCallExpr;
 		}
 		logger.debug( "{} -> {}", node.getSourceText(), javaExpr );
 		addIndex( javaExpr, node );
