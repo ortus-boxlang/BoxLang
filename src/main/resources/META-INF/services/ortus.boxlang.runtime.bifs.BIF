@@ -188,6 +188,7 @@ ortus.boxlang.runtime.bifs.global.string.Right
 ortus.boxlang.runtime.bifs.global.string.StringEach
 ortus.boxlang.runtime.bifs.global.string.StringEvery
 ortus.boxlang.runtime.bifs.global.string.StringFilter
+ortus.boxlang.runtime.bifs.global.string.StringMap
 ortus.boxlang.runtime.bifs.global.string.StripCR
 ortus.boxlang.runtime.bifs.global.string.Trim
 ortus.boxlang.runtime.bifs.global.string.TrueFalseFormat
