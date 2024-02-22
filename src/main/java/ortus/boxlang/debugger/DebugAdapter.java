@@ -85,7 +85,6 @@ public class DebugAdapter {
 	private JavaBoxpiler					javaBoxpiler;
 	private AdapterProtocolMessageReader	DAPReader;
 
-	private Map<Integer, ScopeCache>		seenScopes	= new HashMap<Integer, ScopeCache>();
 	private Map<Integer, BreakpointRequest>	breakpoints	= new HashMap<Integer, BreakpointRequest>();
 
 	/**

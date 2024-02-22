@@ -35,8 +35,6 @@ import com.sun.jdi.ClassNotLoadedException;
 import com.sun.jdi.IncompatibleThreadStateException;
 import com.sun.jdi.InvalidTypeException;
 import com.sun.jdi.InvocationException;
-import com.sun.jdi.LocalVariable;
-import com.sun.jdi.Locatable;
 import com.sun.jdi.Location;
 import com.sun.jdi.Method;
 import com.sun.jdi.ReferenceType;
@@ -50,7 +48,6 @@ import com.sun.jdi.event.BreakpointEvent;
 import com.sun.jdi.event.ClassPrepareEvent;
 import com.sun.jdi.event.Event;
 import com.sun.jdi.event.EventSet;
-import com.sun.jdi.event.LocatableEvent;
 import com.sun.jdi.event.StepEvent;
 import com.sun.jdi.event.VMDeathEvent;
 import com.sun.jdi.request.BreakpointRequest;
@@ -90,7 +87,7 @@ public class BoxLangDebugger implements IBoxLangDebugger {
 		DONE
 	}
 
-	public BoxLangDebugger( Class debugClass, String cliArgs, OutputStream debugAdapterOutput, DebugAdapter debugAdapter ) {
+	public BoxLangDebugger( Class<?> debugClass, String cliArgs, OutputStream debugAdapterOutput, DebugAdapter debugAdapter ) {
 		this.debugClass			= debugClass;
 		this.breakPointLines	= new int[] {};
 		this.cliArgs			= cliArgs;
@@ -164,7 +161,7 @@ public class BoxLangDebugger implements IBoxLangDebugger {
 				handleBreakPointEvent( bpe );
 			}
 			if ( event instanceof StepEvent ) {
-				// displayVariables( ( StepEvent ) event );
+				// pass
 			}
 
 		}
@@ -230,92 +227,13 @@ public class BoxLangDebugger implements IBoxLangDebugger {
 	}
 
 	public void startDebugSession() {
-		// this.vm = null;
-
-		// try {
-		// this.vm = connectAndLaunchVM();
-		// enableClassPrepareRequest( vm );
-		// // vm.setDebugTraceMode( VirtualMachine.TRACE_ALL );
-		// EventSet eventSet = null;
-		// InputStream vmInput = vm.process().getInputStream();
-		// InputStream vmErrorInput = vm.process().getErrorStream();
-
-		// this.status = Status.RUNNING;
-
-		// while ( this.status != Status.DONE ) {
-		// while ( ( eventSet = vm.eventQueue().remove() ) != null ) {
-
-		// System.out.println( "checking available" );
-		// int available = vmInput.available();
-		// if ( available > 0 ) {
-		// byte[] bytes = ByteBuffer.allocate( available ).array();
-		// vmInput.read( bytes );
-
-		// new OutputEvent( "stdout", new String( bytes ) ).send( this.debugAdapterOutput );
-		// }
-		// int errorAvailable = vmErrorInput.available();
-		// if ( errorAvailable > 0 ) {
-		// byte[] bytes = ByteBuffer.allocate( errorAvailable ).array();
-		// vmErrorInput.read( bytes );
-
-		// new OutputEvent( "stderr", new String( bytes ) ).send( this.debugAdapterOutput );
-		// }
-
-		// for ( Event event : eventSet ) {
-		// System.out.println( "Found event: " + event.toString() );
-
-		// if ( event instanceof VMDeathEvent de ) {
-		// this.status = Status.DONE;
-		// }
-		// if ( event instanceof ClassPrepareEvent cpe ) {
-		// vmClasses.add( cpe.referenceType() );
-		// setAllBreakpoints();
-		// }
-		// if ( event instanceof BreakpointEvent bpe ) {
-		// handleBreakPointEvent( bpe );
-		// }
-		// if ( event instanceof StepEvent ) {
-		// displayVariables( ( StepEvent ) event );
-		// }
-
-		// if ( this.status == Status.RUNNING ) {
-		// vm.resume();
-		// }
-		// }
-		// }
-		// }
-		// } catch ( VMDisconnectedException e ) {
-		// // pass
-		// } catch ( Exception e ) {
-		// e.printStackTrace();
-		// } finally {
-		// try {
-		// System.out.println( "checking available" );
-		// InputStream vmInput = vm.process().getInputStream();
-		// int available = vmInput.available();
-		// if ( available > 0 ) {
-		// byte[] bytes = ByteBuffer.allocate( available ).array();
-		// vmInput.read( bytes );
-
-		// new OutputEvent( "stdout", new String( bytes ) ).send( this.debugAdapterOutput );
-		// }
-		// } catch ( IOException e ) {
-		// // TODO Auto-generated catch block
-		// e.printStackTrace();
-		// }
-
-		// }
-
-		// System.out.println( "done debugging" );
+		// pass
 	}
 
 	private void handleBreakPointEvent( BreakpointEvent bpe ) throws IncompatibleThreadStateException, AbsentInformationException {
 		this.status = Status.STOPPED;
 		this.debugAdapter.sendStoppedEventForBreakpoint( bpe );
-		// displayVariables( bpe );
 		this.bpe = bpe;
-		// vm.suspend();
-		// enableStepRequest( vm, bpe );
 	}
 
 	public VirtualMachine connectAndLaunchVM() throws Exception {
@@ -323,7 +241,6 @@ public class BoxLangDebugger implements IBoxLangDebugger {
 		LaunchingConnector				launchingConnector	= Bootstrap.virtualMachineManager()
 		    .defaultConnector();
 		Map<String, Connector.Argument>	arguments			= launchingConnector.defaultArguments();
-		// arguments.get( "main" ).setValue( debugClass.getName() );
 		arguments.get( "options" ).setValue( "-cp " + System.getProperty( "java.class.path" ) );
 		arguments.get( "main" ).setValue( debugClass.getName() + " " + cliArgs );
 		VirtualMachine vm = launchingConnector.launch( arguments );
@@ -339,7 +256,6 @@ public class BoxLangDebugger implements IBoxLangDebugger {
 
 	public void enableClassPrepareRequest( VirtualMachine vm ) {
 		ClassPrepareRequest classPrepareRequest = vm.eventRequestManager().createClassPrepareRequest();
-		// classPrepareRequest.addClassFilter( debugClass.getName() );
 		classPrepareRequest.addClassFilter( "boxgenerated.*" );
 		classPrepareRequest.enable();
 	}
@@ -351,18 +267,6 @@ public class BoxLangDebugger implements IBoxLangDebugger {
 			BreakpointRequest	bpReq		= vm.eventRequestManager().createBreakpointRequest( location );
 			bpReq.enable();
 		}
-	}
-
-	public void displayVariables( LocatableEvent event ) throws IncompatibleThreadStateException,
-	    AbsentInformationException {
-		StackFrame					stackFrame			= ( StackFrame ) event.thread().frame( 0 );
-		// if ( ( ( Locatable ) stackFrame ).location().toString().contains( debugClass.getName() ) ) {
-		Map<LocalVariable, Value>	visibleVariables	= stackFrame.getValues( stackFrame.visibleVariables() );
-		System.out.println( "Variables at " + ( ( Locatable ) stackFrame ).location().toString() + " > " );
-		for ( Map.Entry<LocalVariable, Value> entry : visibleVariables.entrySet() ) {
-			System.out.println( entry.getKey().name() + " = " + entry.getValue() );
-		}
-		// }
 	}
 
 	public void enableStepRequest( VirtualMachine vm, BreakpointEvent event ) {
@@ -433,11 +337,6 @@ public class BoxLangDebugger implements IBoxLangDebugger {
 		Integer javaSourceLine = null;
 
 		for ( String fileName : this.breakpoints.keySet() ) {
-			// ReferenceType vmClass = getVMReferenceType( fileName );
-
-			// if ( vmClass == null ) {
-			// continue;
-			// }
 
 			for ( Breakpoint breakpoint : this.breakpoints.get( fileName ) ) {
 				List<ReferenceType>	matchingTypes		= getMatchingReferenceTypes( fileName );
@@ -519,16 +418,5 @@ public class BoxLangDebugger implements IBoxLangDebugger {
 		ClassInfo classInfo = ClassInfo.forTemplate( Path.of( fileName ), fileName );
 
 		return vmClasses.stream().filter( ( rt ) -> classInfo.matchesFQNWithoutCompileCount( rt.name() ) ).toList();
-	}
-
-	private ReferenceType getVMReferenceType( String fileName ) {
-		ClassInfo classInfo = ClassInfo.forTemplate( Path.of( fileName ), fileName );
-		for ( ReferenceType vmClass : this.vmClasses ) {
-			if ( classInfo.matchesFQNWithoutCompileCount( vmClass.name() ) ) {
-				return vmClass;
-			}
-		}
-
-		return null;
 	}
 }
