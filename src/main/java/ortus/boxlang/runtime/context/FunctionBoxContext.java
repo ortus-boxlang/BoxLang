@@ -27,6 +27,7 @@ import ortus.boxlang.runtime.scopes.LocalScope;
 import ortus.boxlang.runtime.scopes.VariablesScope;
 import ortus.boxlang.runtime.types.ArgumentUtil;
 import ortus.boxlang.runtime.types.Function;
+import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.UDF;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
@@ -165,6 +166,21 @@ public class FunctionBoxContext extends BaseBoxContext {
 		this.functionCalledName	= functionCalledName;
 	}
 
+	public IStruct getVisibleScopes( IStruct scopes, boolean nearby, boolean shallow ) {
+		if ( hasParent() ) {
+			getParent().getVisibleScopes( scopes, true, shallow );
+		}
+		if ( nearby ) {
+			scopes.getAsStruct( Key.contextual ).put( ArgumentsScope.name, argumentsScope );
+			scopes.getAsStruct( Key.contextual ).put( LocalScope.name, localScope );
+		}
+		if ( isInClass() ) {
+			// A function executing in a class can see the class variables
+			scopes.getAsStruct( Key.contextual ).put( VariablesScope.name, getThisClass().getBottomClass().getVariablesScope() );
+		}
+		return scopes;
+	}
+
 	/**
 	 * Returns the function being invoked with this context
 	 */
@@ -224,7 +240,7 @@ public class FunctionBoxContext extends BaseBoxContext {
 		} else {
 
 			if ( shallow ) {
-				return null;
+				return parent.scopeFindNearby( key, defaultScope, true );
 			}
 
 			// A UDF is "transparent" and can see everything in the parent scope as a "local" observer

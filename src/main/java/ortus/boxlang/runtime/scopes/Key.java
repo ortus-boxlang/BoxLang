@@ -84,8 +84,8 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key	attributeCollection			= Key.of( "attributeCollection" );
 	public static final Key	attributes					= Key.of( "attributes" );
 	public static final Key	author						= Key.of( "author" );
-	public static final Key	boxlang						= Key.of( "boxlang" );
 	public static final Key	boxBif						= Key.of( "BoxBif" );
+	public static final Key	boxlang						= Key.of( "boxlang" );
 	public static final Key	boxMember					= Key.of( "BoxMember" );
 	public static final Key	boxRuntime					= Key.of( "boxRuntime" );
 	public static final Key	buffersize					= Key.of( "buffersize" );
@@ -104,8 +104,8 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key	codePrintPlain				= Key.of( "codePrintPlain" );
 	public static final Key	coldfusion					= Key.of( "coldfusion" );
 	public static final Key	column						= Key.of( "column" );
-	public static final Key	columnList					= Key.of( "columnList" );
 	public static final Key	columnKey					= Key.of( "columnKey" );
+	public static final Key	columnList					= Key.of( "columnList" );
 	public static final Key	columnTypeList				= Key.of( "columnTypeList" );
 	public static final Key	compiler					= Key.of( "compiler" );
 	public static final Key	configure					= Key.of( "configure" );
@@ -132,8 +132,8 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key	days						= Key.of( "days" );
 	public static final Key	debugMode					= Key.of( "debugMode" );
 	public static final Key	deep						= Key.of( "deep" );
-	public static final Key	defaultValue				= Key.of( "defaultValue" );
 	public static final Key	defaultCache				= Key.of( "defaultCache" );
+	public static final Key	defaultValue				= Key.of( "defaultValue" );
 	public static final Key	delimiter					= Key.of( "delimiter" );
 	public static final Key	description					= Key.of( "description" );
 	public static final Key	destination					= Key.of( "destination" );
@@ -292,8 +292,8 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key	replacements				= Key.of( "replacements" );
 	public static final Key	required					= Key.of( "required" );
 	public static final Key	result						= Key.of( "result" );
-	public static final Key	returnType					= Key.of( "returnType" );
 	public static final Key	retainKeys					= Key.of( "retainKeys" );
+	public static final Key	returnType					= Key.of( "returnType" );
 	public static final Key	rJustify					= Key.of( "rJustify" );
 	public static final Key	rowData						= Key.of( "rowData" );
 	public static final Key	runtime						= Key.of( "runtime" );
@@ -372,6 +372,8 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key	XSL							= Key.of( "XSL" );
 	public static final Key	year						= Key.of( "year" );
 	public static Key		canonicalize				= Key.of( "canonicalize" );
+	public static Key		contextual					= Key.of( "contextual" );
+	public static Key		lexical						= Key.of( "lexical" );
 
 	// jdbc
 	public static final Key	driver						= Key.of( "driver" );

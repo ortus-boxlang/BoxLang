@@ -20,6 +20,7 @@ package ortus.boxlang.runtime.context;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
+import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.UDF;
 import ortus.boxlang.runtime.types.exceptions.ScopeNotFoundException;
@@ -61,6 +62,16 @@ public class ContainerBoxContext extends BaseBoxContext {
 	 * Getters & Setters
 	 * --------------------------------------------------------------------------
 	 */
+
+	public IStruct getVisibleScopes( IStruct scopes, boolean nearby, boolean shallow ) {
+		if ( hasParent() && !shallow ) {
+			getParent().getVisibleScopes( scopes, false, false );
+		}
+		if ( nearby ) {
+			scopes.getAsStruct( Key.contextual ).put( VariablesScope.name, variablesScope );
+		}
+		return scopes;
+	}
 
 	/**
 	 * Try to get the requested key from the unscoped scope

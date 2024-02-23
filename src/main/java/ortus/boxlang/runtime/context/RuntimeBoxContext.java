@@ -83,6 +83,14 @@ public class RuntimeBoxContext extends BaseBoxContext {
 	 * --------------------------------------------------------------------------
 	 */
 
+	public IStruct getVisibleScopes( IStruct scopes, boolean nearby, boolean shallow ) {
+		if ( hasParent() && !shallow ) {
+			getParent().getVisibleScopes( scopes, false, false );
+		}
+		scopes.getAsStruct( Key.contextual ).put( ServerScope.name, serverScope );
+		return scopes;
+	}
+
 	/**
 	 * Try to get the requested key from the unscoped scope
 	 *

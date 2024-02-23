@@ -23,8 +23,10 @@ import ortus.boxlang.runtime.runnables.IClassRunnable;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
+import ortus.boxlang.runtime.scopes.LocalScope;
 import ortus.boxlang.runtime.types.Closure;
 import ortus.boxlang.runtime.types.Function;
+import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.exceptions.ScopeNotFoundException;
@@ -100,6 +102,31 @@ public class ClosureBoxContext extends FunctionBoxContext {
 		if ( parent == null ) {
 			throw new BoxRuntimeException( "Parent context cannot be null for ClosureBoxContext" );
 		}
+	}
+
+	public IStruct getVisibleScopes( IStruct scopes, boolean nearby, boolean shallow ) {
+		if ( hasParent() && !shallow ) {
+			getParent().getVisibleScopes( scopes, false, false );
+		}
+		if ( nearby ) {
+			scopes.getAsStruct( Key.contextual ).put( ArgumentsScope.name, argumentsScope );
+			scopes.getAsStruct( Key.contextual ).put( LocalScope.name, localScope );
+		}
+		IStruct lexicalScopes = getFunction().getDeclaringContext().getVisibleScopes(
+		    Struct.linkedOf(
+		        Key.contextual,
+		        Struct.linkedOf(),
+		        Key.lexical,
+		        Struct.linkedOf()
+		    ),
+		    true,
+		    true
+		);
+		// If we're in more than one closure call with the same name, this will overwrite. We can do something to force it dynamic like adding a counter to
+		// the name
+		scopes.getAsStruct( Key.lexical ).putAll( lexicalScopes.getAsStruct( Key.lexical ) );
+		scopes.getAsStruct( Key.lexical ).put( findClosestFunctionName(), lexicalScopes.getAsStruct( Key.contextual ) );
+		return scopes;
 	}
 
 	/**

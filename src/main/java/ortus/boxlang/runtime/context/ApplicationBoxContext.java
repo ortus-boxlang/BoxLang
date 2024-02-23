@@ -18,8 +18,10 @@
 package ortus.boxlang.runtime.context;
 
 import ortus.boxlang.runtime.application.Application;
+import ortus.boxlang.runtime.scopes.ApplicationScope;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
+import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.exceptions.ScopeNotFoundException;
 
 /**
@@ -58,6 +60,14 @@ public class ApplicationBoxContext extends BaseBoxContext {
 		super( null );
 		this.application		= application;
 		this.applicationScope	= application.getApplicationScope();
+	}
+
+	public IStruct getVisibleScopes( IStruct scopes, boolean nearby, boolean shallow ) {
+		if ( hasParent() && !shallow ) {
+			getParent().getVisibleScopes( scopes, false, false );
+		}
+		scopes.getAsStruct( Key.contextual ).put( ApplicationScope.name, applicationScope );
+		return scopes;
 	}
 
 	/**

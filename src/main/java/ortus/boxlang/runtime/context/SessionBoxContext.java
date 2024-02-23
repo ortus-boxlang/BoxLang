@@ -20,6 +20,8 @@ package ortus.boxlang.runtime.context;
 import ortus.boxlang.runtime.application.Session;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
+import ortus.boxlang.runtime.scopes.SessionScope;
+import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.exceptions.ScopeNotFoundException;
 
 /**
@@ -60,6 +62,14 @@ public class SessionBoxContext extends BaseBoxContext {
 		super( null );
 		this.session		= session;
 		this.sessionScope	= session.getSessionScope();
+	}
+
+	public IStruct getVisibleScopes( IStruct scopes, boolean nearby, boolean shallow ) {
+		if ( hasParent() && !shallow ) {
+			getParent().getVisibleScopes( scopes, false, false );
+		}
+		scopes.getAsStruct( Key.contextual ).put( SessionScope.name, sessionScope );
+		return scopes;
 	}
 
 	/**

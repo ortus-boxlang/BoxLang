@@ -533,6 +533,35 @@ public class BaseBoxContext implements IBoxContext {
 	}
 
 	/**
+	 * This is mostly for the debugger. It returns all visible scopes from this context.
+	 *
+	 * @return A struct containing all contextual and lexically visible scopes
+	 *
+	 */
+	public IStruct getVisibleScopes() {
+		IStruct scopes = Struct.linkedOf(
+		    Key.contextual,
+		    Struct.linkedOf(),
+		    Key.lexical,
+		    Struct.linkedOf()
+		);
+		return getVisibleScopes( scopes, true, false );
+	}
+
+	/**
+	 * This is mostly for the debugger. It returns all visible scopes from this context.
+	 *
+	 * @return A struct containing all contextual and lexically visible scopes
+	 *
+	 */
+	public IStruct getVisibleScopes( IStruct scopes, boolean nearby, boolean shallow ) {
+		if ( hasParent() && !shallow ) {
+			getParent().getVisibleScopes( scopes, nearby, shallow );
+		}
+		return scopes;
+	}
+
+	/**
 	 * Get a scope from the context. If not found, the parent context is asked.
 	 * Don't search for scopes which are nearby to an execution context
 	 *

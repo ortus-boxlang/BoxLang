@@ -20,6 +20,7 @@ package ortus.boxlang.runtime.context;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
+import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.ScopeNotFoundException;
 
@@ -43,6 +44,16 @@ public class CustomTagBoxContext extends BaseBoxContext {
 	public CustomTagBoxContext( IBoxContext parent ) {
 		super( parent );
 		variablesScope = new VariablesScope();
+	}
+
+	public IStruct getVisibleScopes( IStruct scopes, boolean nearby, boolean shallow ) {
+		if ( hasParent() && !shallow ) {
+			getParent().getVisibleScopes( scopes, false, false );
+		}
+		if ( nearby ) {
+			scopes.getAsStruct( Key.contextual ).put( VariablesScope.name, variablesScope );
+		}
+		return scopes;
 	}
 
 	/**

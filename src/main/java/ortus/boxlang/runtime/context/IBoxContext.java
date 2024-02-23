@@ -33,9 +33,25 @@ import ortus.boxlang.runtime.types.UDF;
 import ortus.boxlang.runtime.types.exceptions.ScopeNotFoundException;
 
 /**
- * This represents the most basic box context.
+ * This represents the interface for all box contexts.
  */
 public interface IBoxContext {
+
+	/**
+	 * This is mostly for the debugger. It returns all visible scopes from this context.
+	 *
+	 * @return A struct containing all contextual and lexically visible scopes
+	 *
+	 */
+	public IStruct getVisibleScopes( IStruct scopes, boolean nearby, boolean shallow );
+
+	/**
+	 * This is mostly for the debugger. It returns all visible scopes from this context.
+	 *
+	 * @return A struct containing all contextual and lexically visible scopes
+	 *
+	 */
+	public IStruct getVisibleScopes();
 
 	/**
 	 * Get a scope from the context. If not found, the parent context is asked.

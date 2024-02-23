@@ -20,6 +20,9 @@ package ortus.boxlang.runtime.context;
 import ortus.boxlang.runtime.runnables.IClassRunnable;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
+import ortus.boxlang.runtime.scopes.ThisScope;
+import ortus.boxlang.runtime.scopes.VariablesScope;
+import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.UDF;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
@@ -62,6 +65,17 @@ public class ClassBoxContext extends BaseBoxContext {
 		if ( parent == null ) {
 			throw new BoxRuntimeException( "Parent context cannot be null for ClassBoxContext" );
 		}
+	}
+
+	public IStruct getVisibleScopes( IStruct scopes, boolean nearby, boolean shallow ) {
+		if ( hasParent() && !shallow ) {
+			getParent().getVisibleScopes( scopes, false, false );
+		}
+		if ( nearby ) {
+			scopes.getAsStruct( Key.contextual ).put( ThisScope.name, thisScope );
+			scopes.getAsStruct( Key.contextual ).put( VariablesScope.name, variablesScope );
+		}
+		return scopes;
 	}
 
 	/**

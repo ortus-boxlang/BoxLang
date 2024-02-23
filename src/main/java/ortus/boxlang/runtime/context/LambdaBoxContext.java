@@ -22,6 +22,8 @@ import java.util.Map;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
+import ortus.boxlang.runtime.scopes.LocalScope;
+import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Lambda;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
@@ -101,6 +103,17 @@ public class LambdaBoxContext extends FunctionBoxContext {
 		}
 	}
 
+	public IStruct getVisibleScopes( IStruct scopes, boolean nearby, boolean shallow ) {
+		if ( !nearby ) {
+			getParent().getVisibleScopes( scopes, false, false );
+		}
+		if ( nearby ) {
+			scopes.getAsStruct( Key.contextual ).put( ArgumentsScope.name, argumentsScope );
+			scopes.getAsStruct( Key.contextual ).put( LocalScope.name, localScope );
+		}
+		return scopes;
+	}
+
 	/**
 	 * Search for a variable in "nearby" scopes
 	 */
@@ -168,6 +181,11 @@ public class LambdaBoxContext extends FunctionBoxContext {
 		    String.format( "The requested scope name [%s] was not located in any context", name.getName() )
 		);
 
+	}
+
+	@Override
+	public ScopeSearchResult scopeFind( Key key, IScope defaultScope ) {
+		return parent.scopeFind( key, defaultScope );
 	}
 
 	/**

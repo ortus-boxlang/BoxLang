@@ -22,6 +22,7 @@ import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.RequestScope;
 import ortus.boxlang.runtime.scopes.VariablesScope;
+import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.UDF;
 import ortus.boxlang.runtime.types.exceptions.KeyNotFoundException;
@@ -84,6 +85,19 @@ public class ScriptingRequestBoxContext extends RequestBoxContext {
 	 * Getters & Setters
 	 * --------------------------------------------------------------------------
 	 */
+
+	public IStruct getVisibleScopes( IStruct scopes, boolean nearby, boolean shallow ) {
+		if ( hasParent() && !shallow ) {
+			getParent().getVisibleScopes( scopes, false, false );
+		}
+		if ( !shallow ) {
+			scopes.getAsStruct( Key.contextual ).put( RequestScope.name, requestScope );
+		}
+		if ( nearby ) {
+			scopes.getAsStruct( Key.contextual ).put( VariablesScope.name, variablesScope );
+		}
+		return scopes;
+	}
 
 	/**
 	 * Try to get the requested key from the unscoped scope

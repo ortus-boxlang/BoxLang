@@ -30,6 +30,7 @@ import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.RequestScope;
 import ortus.boxlang.runtime.scopes.VariablesScope;
+import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.UDF;
 import ortus.boxlang.runtime.types.exceptions.KeyNotFoundException;
@@ -71,7 +72,7 @@ public class WebRequestBoxContext extends RequestBoxContext {
 	/**
 	 * The form scope
 	 */
-	protected IScope				FormScope;
+	protected IScope				formScope;
 
 	/**
 	 * The CGI scope
@@ -81,7 +82,7 @@ public class WebRequestBoxContext extends RequestBoxContext {
 	/**
 	 * The cookie scope
 	 */
-	protected IScope				CookieScope;
+	protected IScope				cookieScope;
 
 	/**
 	 * The Undertow exchange for this request
@@ -109,9 +110,9 @@ public class WebRequestBoxContext extends RequestBoxContext {
 		this.exchange	= exchange;
 		channel			= exchange.getResponseChannel();
 		URLScope		= new URLScope( exchange );
-		FormScope		= new FormScope( exchange );
+		formScope		= new FormScope( exchange );
 		CGIScope		= new CGIScope( exchange );
-		CookieScope		= new CookieScope( exchange );
+		cookieScope		= new CookieScope( exchange );
 	}
 
 	/**
@@ -119,6 +120,20 @@ public class WebRequestBoxContext extends RequestBoxContext {
 	 * Getters & Setters
 	 * --------------------------------------------------------------------------
 	 */
+	public IStruct getVisibleScopes( IStruct scopes, boolean nearby, boolean shallow ) {
+		if ( hasParent() && !shallow ) {
+			getParent().getVisibleScopes( scopes, false, false );
+		}
+		scopes.getAsStruct( Key.contextual ).put( ortus.boxlang.web.scopes.URLScope.name, URLScope );
+		scopes.getAsStruct( Key.contextual ).put( FormScope.name, formScope );
+		scopes.getAsStruct( Key.contextual ).put( ortus.boxlang.web.scopes.CGIScope.name, CGIScope );
+		scopes.getAsStruct( Key.contextual ).put( CookieScope.name, cookieScope );
+		scopes.getAsStruct( Key.contextual ).put( RequestScope.name, requestScope );
+		if ( nearby ) {
+			scopes.getAsStruct( Key.contextual ).put( VariablesScope.name, variablesScope );
+		}
+		return scopes;
+	}
 
 	/**
 	 * Try to get the requested key from the unscoped scope
@@ -182,11 +197,11 @@ public class WebRequestBoxContext extends RequestBoxContext {
 			return new ScopeSearchResult( URLScope, Struct.unWrapNull( result ) );
 		}
 
-		result = FormScope.getRaw( key );
+		result = formScope.getRaw( key );
 		// Null means not found
 		if ( result != null ) {
 			// Unwrap the value now in case it was really actually null for real
-			return new ScopeSearchResult( FormScope, Struct.unWrapNull( result ) );
+			return new ScopeSearchResult( formScope, Struct.unWrapNull( result ) );
 		}
 
 		if ( parent != null ) {
@@ -220,16 +235,16 @@ public class WebRequestBoxContext extends RequestBoxContext {
 			return URLScope;
 		}
 
-		if ( name.equals( FormScope.getName() ) ) {
-			return FormScope;
+		if ( name.equals( formScope.getName() ) ) {
+			return formScope;
 		}
 
 		if ( name.equals( CGIScope.getName() ) ) {
 			return CGIScope;
 		}
 
-		if ( name.equals( CookieScope.getName() ) ) {
-			return CookieScope;
+		if ( name.equals( cookieScope.getName() ) ) {
+			return cookieScope;
 		}
 
 		if ( parent != null ) {
