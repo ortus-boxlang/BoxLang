@@ -1,11 +1,5 @@
 package ortus.boxlang.runtime.jdbc;
 
-import ortus.boxlang.runtime.types.Array;
-import ortus.boxlang.runtime.types.IStruct;
-import ortus.boxlang.runtime.types.ListUtil;
-import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
-import ortus.boxlang.runtime.types.exceptions.DatabaseException;
-
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
@@ -15,6 +9,12 @@ import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+
+import ortus.boxlang.runtime.types.Array;
+import ortus.boxlang.runtime.types.IStruct;
+import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
+import ortus.boxlang.runtime.types.exceptions.DatabaseException;
+import ortus.boxlang.runtime.util.ListUtil;
 
 public class PendingQuery {
 

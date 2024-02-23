@@ -17,6 +17,7 @@
  */
 package ortus.boxlang.runtime.types;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -39,7 +40,6 @@ import ortus.boxlang.runtime.dynamic.casters.CastAttempt;
 import ortus.boxlang.runtime.dynamic.casters.DoubleCaster;
 import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 import ortus.boxlang.runtime.interop.DynamicInteropService;
-import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.operators.Compare;
 import ortus.boxlang.runtime.operators.EqualsEquals;
 import ortus.boxlang.runtime.scopes.IntKey;
@@ -52,32 +52,44 @@ import ortus.boxlang.runtime.types.meta.GenericMeta;
 import ortus.boxlang.runtime.types.meta.IChangeListener;
 import ortus.boxlang.runtime.types.meta.IListenable;
 
-public class Array implements List<Object>, IType, IReferenceable, IListenable {
+/**
+ * The BoxLang implementation of an Array with the awesome index starting at 1, like humans!
+ */
+public class Array implements List<Object>, IType, IReferenceable, IListenable, Serializable {
 
-	public static final Array			EMPTY			= new ImmutableArray();
+	/**
+	 * --------------------------------------------------------------------------
+	 * Public Properties
+	 * --------------------------------------------------------------------------
+	 */
+	public static final Array					EMPTY				= new ImmutableArray();
+
 	/**
 	 * --------------------------------------------------------------------------
 	 * Private Properties
 	 * --------------------------------------------------------------------------
 	 */
-	protected final List<Object>		wrapped;
+	protected final List<Object>				wrapped;
 
 	/**
 	 * Metadata object
 	 */
-	public BoxMeta						$bx;
+	public transient BoxMeta					$bx;
 
 	/**
 	 * Used to track change listeners. Intitialized on-demand
 	 */
-	private Map<Key, IChangeListener>	listeners;
+	private transient Map<Key, IChangeListener>	listeners;
 
 	/**
 	 * Function service
 	 */
-	private static FunctionService		functionService	= BoxRuntime.getInstance().getFunctionService();
+	private static FunctionService				functionService		= BoxRuntime.getInstance().getFunctionService();
 
-	DynamicObject						dynamicObject	= null;
+	/**
+	 * Serialization ID
+	 */
+	private static final long					serialVersionUID	= 1L;
 
 	/**
 	 * --------------------------------------------------------------------------

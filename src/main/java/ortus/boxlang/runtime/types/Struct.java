@@ -17,6 +17,7 @@
  */
 package ortus.boxlang.runtime.types;
 
+import java.io.Serializable;
 import java.lang.ref.SoftReference;
 import java.util.AbstractMap.SimpleEntry;
 import java.util.Collection;
@@ -53,7 +54,7 @@ import ortus.boxlang.runtime.types.meta.StructMeta;
 /**
  * This class represents a struct in BoxLang
  */
-public class Struct implements IStruct, IListenable {
+public class Struct implements IStruct, IListenable, Serializable {
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -81,6 +82,11 @@ public class Struct implements IStruct, IListenable {
 	 * Private Properties
 	 * --------------------------------------------------------------------------
 	 */
+
+	/**
+	 * Serial version UID
+	 */
+	private static final long			serialVersionUID	= 1L;
 
 	/**
 	 * The wrapped map used in the implementation

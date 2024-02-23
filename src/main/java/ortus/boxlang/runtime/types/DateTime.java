@@ -17,6 +17,7 @@
  */
 package ortus.boxlang.runtime.types;
 
+import java.io.Serializable;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -44,13 +45,18 @@ import ortus.boxlang.runtime.types.meta.BoxMeta;
 import ortus.boxlang.runtime.types.meta.GenericMeta;
 import ortus.boxlang.runtime.util.LocalizationUtil;
 
-public class DateTime implements IType, IReferenceable, Comparable<DateTime> {
+public class DateTime implements IType, IReferenceable, Comparable<DateTime>, Serializable {
 
 	/**
 	 * --------------------------------------------------------------------------
 	 * Private Properties
 	 * --------------------------------------------------------------------------
 	 */
+
+	/**
+	 * Serial version UID
+	 */
+	private static final long				serialVersionUID				= 1L;
 
 	/**
 	 * Represents the wrapped ZonedDateTime object we enhance
@@ -119,7 +125,7 @@ public class DateTime implements IType, IReferenceable, Comparable<DateTime> {
 	/**
 	 * Metadata object
 	 */
-	public BoxMeta							$bx;
+	public transient BoxMeta				$bx;
 
 	/**
 	 * --------------------------------------------------------------------------

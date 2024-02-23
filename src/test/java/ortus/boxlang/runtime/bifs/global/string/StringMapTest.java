@@ -34,7 +34,7 @@ import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
 import ortus.boxlang.runtime.types.Array;
-import ortus.boxlang.runtime.types.ListUtil;
+import ortus.boxlang.runtime.util.ListUtil;
 
 public class StringMapTest {
 

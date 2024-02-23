@@ -25,13 +25,13 @@ import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.LocalScope;
 import ortus.boxlang.runtime.scopes.VariablesScope;
-import ortus.boxlang.runtime.types.ArgumentUtil;
 import ortus.boxlang.runtime.types.Function;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.UDF;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.exceptions.ScopeNotFoundException;
+import ortus.boxlang.runtime.util.ArgumentUtil;
 
 /**
  * This context represents the context of any function execution in BoxLang
@@ -351,7 +351,7 @@ public class FunctionBoxContext extends BaseBoxContext {
 
 	/**
 	 * Detects of this Function is executing in the context of a class
-	 * 
+	 *
 	 * @return true if there is an IClassRunnable at the top of the template stack
 	 */
 	public boolean isInClass() {
@@ -360,7 +360,7 @@ public class FunctionBoxContext extends BaseBoxContext {
 
 	/**
 	 * Detects of this Function is executing in the context of a class
-	 * 
+	 *
 	 * @return true if there is an IClassRunnable at the top of the template stack
 	 */
 	public IClassRunnable getThisClass() {
@@ -369,7 +369,7 @@ public class FunctionBoxContext extends BaseBoxContext {
 
 	/**
 	 * Set the encoding box class
-	 * 
+	 *
 	 * @param enclosingBoxClass The class in which this function is executing
 	 */
 	public IBoxContext setThisClass( IClassRunnable enclosingBoxClass ) {
@@ -379,9 +379,9 @@ public class FunctionBoxContext extends BaseBoxContext {
 
 	/**
 	 * Flush the buffer to the output stream and then clears the local buffers
-	 * 
+	 *
 	 * @param force true, flush even if output is disabled
-	 * 
+	 *
 	 * @return This context
 	 */
 	public IBoxContext flushBuffer( boolean force ) {
@@ -453,7 +453,7 @@ public class FunctionBoxContext extends BaseBoxContext {
 	/**
 	 * If this function is executing inside of a BoxClass, register a UDF in the class's variables scope
 	 * OTherise, defer to the parent context, which is probably a scripting context
-	 * 
+	 *
 	 * @param udf The UDF to register
 	 */
 	public void registerUDF( UDF udf ) {

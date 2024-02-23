@@ -18,6 +18,7 @@
 package ortus.boxlang.runtime.types;
 
 import java.io.IOException;
+import java.io.Serializable;
 import java.io.StringReader;
 import java.io.StringWriter;
 import java.util.ArrayList;
@@ -64,7 +65,7 @@ import ortus.boxlang.runtime.types.meta.GenericMeta;
 /**
  * This class represents a XML Node.
  */
-public class XML implements IType, IReferenceable/* , Collection<XML> */ {
+public class XML implements IType, IReferenceable, Serializable /* , Collection<XML> */ {
 
 	/**
 	 * XML data as List of arrays
@@ -84,13 +85,18 @@ public class XML implements IType, IReferenceable/* , Collection<XML> */ {
 	/**
 	 * Keys that are only valid for document nodes
 	 */
-	private final static Set<Key>	documentOnlyKeys	= Set.of( Key.XMLRoot, Key.XMLDocType );
+	private static final Set<Key>	documentOnlyKeys	= Set.of( Key.XMLRoot, Key.XMLDocType );
 
 	/**
 	 * Keys that are only valid for element nodes
 	 */
-	private final static Set<Key>	elementOnlyKeys		= Set.of( Key.XMLText, Key.XMLCdata, Key.XMLAttributes, Key.XMLChildren, Key.XMLParent,
+	private static final Set<Key>	elementOnlyKeys		= Set.of( Key.XMLText, Key.XMLCdata, Key.XMLAttributes, Key.XMLChildren, Key.XMLParent,
 	    Key.XMLNodes, Key.XMLNsPrefix, Key.XMLNsURI );
+
+	/**
+	 * Serial version UID
+	 */
+	private static final long		serialVersionUID	= 1L;
 
 	/**
 	 * Create a new XML Document from the given string
@@ -123,7 +129,7 @@ public class XML implements IType, IReferenceable/* , Collection<XML> */ {
 
 	/**
 	 * Get the text inside this XML node as a string
-	 * 
+	 *
 	 * @return the text inside this XML node as a string
 	 */
 	public String getXMLText() {
@@ -140,7 +146,7 @@ public class XML implements IType, IReferenceable/* , Collection<XML> */ {
 
 	/**
 	 * Get the element children of this XML node as an array of XML objects
-	 * 
+	 *
 	 * @return the element children
 	 */
 	public List<XML> getXMLChildrenAsList() {
@@ -157,7 +163,7 @@ public class XML implements IType, IReferenceable/* , Collection<XML> */ {
 
 	/**
 	 * Get the element children of this XML node as an array of XML objects
-	 * 
+	 *
 	 * @return the element children
 	 */
 	public Array getXMLChildren() {
@@ -166,7 +172,7 @@ public class XML implements IType, IReferenceable/* , Collection<XML> */ {
 
 	/**
 	 * Get all child nodes except attribute nodes
-	 * 
+	 *
 	 * @return an array of XML objects representing the child nodes
 	 */
 	public Array getXMLNodes() {
@@ -183,7 +189,7 @@ public class XML implements IType, IReferenceable/* , Collection<XML> */ {
 
 	/**
 	 * Get the comments inside this XML node as a string
-	 * 
+	 *
 	 * @return the comments inside this XML node as a string
 	 */
 	public String getNodeComments() {
@@ -200,7 +206,7 @@ public class XML implements IType, IReferenceable/* , Collection<XML> */ {
 
 	/**
 	 * Get the attributes of this XML node as a struct
-	 * 
+	 *
 	 * @return the attributes of this XML node as a struct
 	 */
 	public Struct getXMLAttributes() {
@@ -215,7 +221,7 @@ public class XML implements IType, IReferenceable/* , Collection<XML> */ {
 
 	/**
 	 * Get the name of this XML node
-	 * 
+	 *
 	 * @return the name of this XML node
 	 */
 	public String getXMLName() {
@@ -249,7 +255,7 @@ public class XML implements IType, IReferenceable/* , Collection<XML> */ {
 
 	/**
 	 * Get the value of this XML node
-	 * 
+	 *
 	 * @return the value of this XML node
 	 */
 	public String getXMLValue() {
@@ -274,7 +280,7 @@ public class XML implements IType, IReferenceable/* , Collection<XML> */ {
 
 	/**
 	 * Get the type of this XML node as text
-	 * 
+	 *
 	 * @return the type of this XML node as text
 	 */
 	public String getXMLType() {
@@ -390,9 +396,9 @@ public class XML implements IType, IReferenceable/* , Collection<XML> */ {
 
 	/**
 	 * Get the first child of this XML node with the given name
-	 * 
+	 *
 	 * @param childName The name of the child to get. Case insensitive.
-	 * 
+	 *
 	 * @return The first child of this XML node with the given name, or null if no such child exists.
 	 */
 	public XML getFirstChildOfName( String childName ) {
@@ -408,9 +414,9 @@ public class XML implements IType, IReferenceable/* , Collection<XML> */ {
 
 	/**
 	 * Get the sibling of this XML node having the same name at the given index
-	 * 
+	 *
 	 * @param index The index of the sibling to get. 0-based.
-	 * 
+	 *
 	 * @return The sibling of this XML node having the same name at the given index
 	 */
 	public XML getSiblingAtPosition( int index ) {

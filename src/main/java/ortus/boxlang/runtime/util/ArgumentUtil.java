@@ -15,7 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package ortus.boxlang.runtime.types;
+package ortus.boxlang.runtime.util;
 
 import java.util.List;
 import java.util.Map;
@@ -26,6 +26,9 @@ import ortus.boxlang.runtime.dynamic.casters.GenericCaster;
 import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
+import ortus.boxlang.runtime.types.Argument;
+import ortus.boxlang.runtime.types.Function;
+import ortus.boxlang.runtime.types.NullValue;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
 /**
@@ -128,7 +131,7 @@ public class ArgumentUtil {
 
 	/**
 	 * Create an arguments scope from no arguments
-	 * 
+	 *
 	 * @param arguments The declared arguments
 	 *
 	 * @return The arguments scope

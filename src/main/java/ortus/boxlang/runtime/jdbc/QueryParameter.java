@@ -2,9 +2,9 @@ package ortus.boxlang.runtime.jdbc;
 
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.IStruct;
-import ortus.boxlang.runtime.types.ListUtil;
 import ortus.boxlang.runtime.types.QueryColumnType;
 import ortus.boxlang.runtime.types.Struct;
+import ortus.boxlang.runtime.util.ListUtil;
 
 public class QueryParameter {
 

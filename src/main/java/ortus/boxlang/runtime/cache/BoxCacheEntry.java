@@ -17,6 +17,7 @@
  */
 package ortus.boxlang.runtime.cache;
 
+import java.io.Serializable;
 import java.time.Instant;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -30,7 +31,7 @@ import ortus.boxlang.runtime.types.Struct;
  * This entry can be stored inside the cache provider if needed.
  * You can also inherit from this class to create your own cache entry implementation.
  */
-public class BoxCacheEntry implements ICacheEntry {
+public class BoxCacheEntry implements ICacheEntry, Serializable {
 
 	// Add a serialVersionUID to avoid warning
 	private static final long	serialVersionUID	= 1L;
@@ -41,16 +42,16 @@ public class BoxCacheEntry implements ICacheEntry {
 	 * --------------------------------------------------------------------------
 	 */
 
-	protected Key				cacheName;
-	protected AtomicLong		hits				= new AtomicLong( 0 );
-	protected long				timeout;
-	protected long				lastAccessTimeout;
-	protected Instant			created				= Instant.now();
-	protected Instant			lastAccessed;
-	protected Key				key;
-	protected Object			value;
-	protected Struct			metadata			= new Struct();
-	protected AtomicBoolean		isExpired			= new AtomicBoolean( false );
+	private Key					cacheName;
+	private AtomicLong			hits				= new AtomicLong( 0 );
+	private long				timeout;
+	private long				lastAccessTimeout;
+	private Instant				created				= Instant.now();
+	private Instant				lastAccessed;
+	private Key					key;
+	private Object				value;
+	private Struct				metadata			= new Struct();
+	private AtomicBoolean		isExpired			= new AtomicBoolean( false );
 
 	/**
 	 * Constructor with metadata
@@ -58,7 +59,6 @@ public class BoxCacheEntry implements ICacheEntry {
 	 * @param cacheName         The name of the cache associated with this entry
 	 * @param timeout           The timeout in seconds
 	 * @param lastAccessTimeout The last access timeout in seconds
-	 * @param created           The creation date
 	 * @param key               The key
 	 * @param value             The value
 	 * @param metadata          The metadata
@@ -67,7 +67,6 @@ public class BoxCacheEntry implements ICacheEntry {
 	    Key cacheName,
 	    long timeout,
 	    long lastAccessTimeout,
-	    Instant created,
 	    Key key,
 	    Object value,
 	    Struct metadata ) {
@@ -75,7 +74,6 @@ public class BoxCacheEntry implements ICacheEntry {
 		this.cacheName			= cacheName;
 		this.timeout			= timeout;
 		this.lastAccessTimeout	= lastAccessTimeout;
-		this.created			= created;
 		this.key				= key;
 		this.value				= value;
 		this.metadata			= metadata;
@@ -139,6 +137,7 @@ public class BoxCacheEntry implements ICacheEntry {
 	 * --------------------------------------------------------------------------
 	 * Interface Methods
 	 * --------------------------------------------------------------------------
+	 * Mostly Getters
 	 */
 
 	@Override

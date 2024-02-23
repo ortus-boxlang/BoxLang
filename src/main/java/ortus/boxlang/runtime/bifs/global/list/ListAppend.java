@@ -25,7 +25,7 @@ import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.BoxLangType;
-import ortus.boxlang.runtime.types.ListUtil;
+import ortus.boxlang.runtime.util.ListUtil;
 
 @BoxBIF
 @BoxMember( type = BoxLangType.STRING, name = "listAppend" )

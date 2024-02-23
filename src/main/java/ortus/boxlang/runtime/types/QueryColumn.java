@@ -17,6 +17,7 @@
  */
 package ortus.boxlang.runtime.types;
 
+import java.io.Serializable;
 import java.util.Map;
 
 import ortus.boxlang.runtime.context.IBoxContext;
@@ -31,21 +32,41 @@ import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.meta.BoxMeta;
 import ortus.boxlang.runtime.types.meta.GenericMeta;
 
-public class QueryColumn implements IReferenceable {
+public class QueryColumn implements IReferenceable, Serializable {
 
-	private Key				name;
-	private QueryColumnType	type;
-	private Query			query;
-	// Keep in sync if columns are added or removed
-	private int				index;
+	/**
+	 * The name of the column
+	 */
+	private Key					name;
+
+	/**
+	 * The type of the column
+	 */
+	private QueryColumnType		type;
+
+	/**
+	 * The query this column is a part of
+	 */
+	private transient Query		query;
+
+	/**
+	 * Keep in sync if columns are added or removed
+	 */
+	private int					index;
+
 	/**
 	 * Metadata object
 	 */
-	public BoxMeta			$bx;
+	public transient BoxMeta	$bx;
+
+	/**
+	 * Serial version UID
+	 */
+	private static final long	serialVersionUID	= 1L;
 
 	/**
 	 * Add new column to query
-	 * 
+	 *
 	 * @param name  column name
 	 * @param type  column type
 	 * @param query query
@@ -58,6 +79,11 @@ public class QueryColumn implements IReferenceable {
 		this.index	= index;
 	}
 
+	/**
+	 * Get the metadata object for this column
+	 *
+	 * @return metadata object
+	 */
 	public BoxMeta getBoxMeta() {
 		if ( this.$bx == null ) {
 			// TODO: create query column meta object.

@@ -34,9 +34,9 @@ import ortus.boxlang.runtime.operators.EqualsEquals;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.IStruct;
-import ortus.boxlang.runtime.types.ListUtil;
 import ortus.boxlang.runtime.types.Query;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
+import ortus.boxlang.runtime.util.ListUtil;
 
 @BoxComponent( requiresBody = true )
 public class Loop extends Component {
@@ -79,7 +79,7 @@ public class Loop extends Component {
 	 * Different items are required based on loop type. Items listed as required may not be depending on your loop type. Loop forms: [query] [condition]
 	 * [index + from + to ] [index + list] [collection + item ]
 	 * *
-	 * 
+	 *
 	 * @param context        The context in which the Component is being invoked
 	 * @param attributes     The attributes to the Component
 	 * @param body           The body of the Component
@@ -100,14 +100,14 @@ public class Loop extends Component {
 
 	/**
 	 * Loop over array with optional item and index
-	 * 
+	 *
 	 * @param context        The context in which the Component is being invoked
 	 * @param array          The array to loop over
 	 * @param item           The name of the variable to hold the current item
 	 * @param index          The name of the variable to hold the current index
 	 * @param body           The body of the Component
 	 * @param executionState The execution state of the Component
-	 * 
+	 *
 	 * @return The result of the loop body execution
 	 */
 	private BodyResult _invokeArray( IBoxContext context, Array array, String item, String index, ComponentBody body, IStruct executionState ) {

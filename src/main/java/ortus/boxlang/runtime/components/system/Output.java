@@ -33,8 +33,8 @@ import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 import ortus.boxlang.runtime.operators.EqualsEquals;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.IStruct;
-import ortus.boxlang.runtime.types.ListUtil;
 import ortus.boxlang.runtime.types.Query;
+import ortus.boxlang.runtime.util.ListUtil;
 
 @BoxComponent( requiresBody = true )
 public class Output extends Component {

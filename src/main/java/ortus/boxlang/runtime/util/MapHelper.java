@@ -15,12 +15,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package ortus.boxlang.runtime.types;
+package ortus.boxlang.runtime.util;
 
 import java.util.HashMap;
 import java.util.LinkedHashMap;
+import java.util.Map;
 
 import ortus.boxlang.runtime.scopes.Key;
+import ortus.boxlang.runtime.types.Property;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
 public class MapHelper {
@@ -32,7 +34,7 @@ public class MapHelper {
 	 *
 	 * @return The struct
 	 */
-	public static LinkedHashMap<Key, Property> LinkedHashMapOfProperties( Object... values ) {
+	public static Map<Key, Property> LinkedHashMapOfProperties( Object... values ) {
 		if ( values.length % 2 != 0 ) {
 			throw new BoxRuntimeException( "Invalid number of arguments.  Must be an even number." );
 		}
@@ -50,7 +52,7 @@ public class MapHelper {
 	 *
 	 * @return The struct
 	 */
-	public static HashMap<Key, Property> HashMapOfProperties( Object... values ) {
+	public static Map<Key, Property> HashMapOfProperties( Object... values ) {
 		if ( values.length % 2 != 0 ) {
 			throw new BoxRuntimeException( "Invalid number of arguments.  Must be an even number." );
 		}

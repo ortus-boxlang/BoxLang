@@ -28,7 +28,7 @@ import ortus.boxlang.runtime.scopes.Key;
  */
 public abstract class Lambda extends Function {
 
-	static public final Key defaultName = Key.of( "Lambda" );
+	public static final Key defaultName = Key.of( "Lambda" );
 
 	/**
 	 * Constructor

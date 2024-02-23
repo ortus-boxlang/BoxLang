@@ -17,6 +17,7 @@
  */
 package ortus.boxlang.runtime.types;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -43,26 +44,31 @@ import ortus.boxlang.runtime.types.meta.GenericMeta;
 /**
  * This class represents a query.
  */
-public class Query implements IType, IReferenceable, Collection<IStruct> {
+public class Query implements IType, IReferenceable, Collection<IStruct>, Serializable {
 
 	/**
 	 * Query data as List of arrays
 	 */
-	private List<Object[]>			data	= Collections.synchronizedList( new ArrayList<Object[]>() );
+	private List<Object[]>				data				= Collections.synchronizedList( new ArrayList<Object[]>() );
 
 	/**
 	 * Map of column definitions
 	 */
-	private Map<Key, QueryColumn>	columns	= Collections.synchronizedMap( new LinkedHashMap<Key, QueryColumn>() );
+	private Map<Key, QueryColumn>		columns				= Collections.synchronizedMap( new LinkedHashMap<Key, QueryColumn>() );
 	/**
 	 * Metadata object
 	 */
-	public BoxMeta					$bx;
+	public transient BoxMeta			$bx;
 
 	/**
 	 * Function service
 	 */
-	private FunctionService			functionService;
+	private transient FunctionService	functionService;
+
+	/**
+	 * Serialization version
+	 */
+	private static final long			serialVersionUID	= 1L;
 
 	/**
 	 * Create a new query

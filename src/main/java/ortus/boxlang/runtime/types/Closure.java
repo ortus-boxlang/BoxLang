@@ -28,7 +28,7 @@ import ortus.boxlang.runtime.scopes.Key;
  */
 public abstract class Closure extends Function {
 
-	static public final Key	defaultName	= Key.of( "Closure" );
+	public static final Key	defaultName	= Key.of( "Closure" );
 
 	/**
 	 * The context in which this closure was declared.
@@ -55,7 +55,7 @@ public abstract class Closure extends Function {
 
 	/**
 	 * Detects of this Function is executing in the context of a class
-	 * 
+	 *
 	 * @return true if there is an IClassRunnable at the top of the template stack
 	 */
 	public boolean isInClass() {
@@ -64,7 +64,7 @@ public abstract class Closure extends Function {
 
 	/**
 	 * Detects of this Function is executing in the context of a class
-	 * 
+	 *
 	 * @return the IClassRunnable this context is executing in, or null if not in a class
 	 */
 	public IClassRunnable getThisClass() {

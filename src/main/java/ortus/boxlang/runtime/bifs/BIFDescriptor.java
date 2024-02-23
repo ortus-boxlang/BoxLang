@@ -23,7 +23,7 @@ import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
-import ortus.boxlang.runtime.types.ArgumentUtil;
+import ortus.boxlang.runtime.util.ArgumentUtil;
 
 /**
  * This class is used to describe a BIF

@@ -61,48 +61,49 @@ public class BoxClassTransformer extends AbstractTransformer {
 	private final String template = """
 		package ${packageName};
 
-		import ortus.boxlang.runtime.BoxRuntime;
-		import ortus.boxlang.runtime.context.*;
 
 		// BoxLang Auto Imports
-		import ortus.boxlang.runtime.runnables.BoxTemplate;
-		import ortus.boxlang.runtime.runnables.BoxScript;
+		import ortus.boxlang.runtime.BoxRuntime;
+		import ortus.boxlang.runtime.components.Component;
+		import ortus.boxlang.runtime.context.*;
+		import ortus.boxlang.runtime.context.ClassBoxContext;
+		import ortus.boxlang.runtime.context.FunctionBoxContext;
+		import ortus.boxlang.runtime.dynamic.casters.*;
+		import ortus.boxlang.runtime.dynamic.ExpressionInterpreter;
+		import ortus.boxlang.runtime.dynamic.IReferenceable;
 		import ortus.boxlang.runtime.dynamic.Referencer;
+		import ortus.boxlang.runtime.interop.DynamicObject;
 		import ortus.boxlang.runtime.interop.DynamicObject;
 		import ortus.boxlang.runtime.loader.ClassLocator;
 		import ortus.boxlang.runtime.loader.ImportDefinition;
 		import ortus.boxlang.runtime.operators.*;
-		import ortus.boxlang.runtime.scopes.Key;
+		import ortus.boxlang.runtime.runnables.BoxScript;
+		import ortus.boxlang.runtime.runnables.BoxTemplate;
+		import ortus.boxlang.runtime.runnables.IClassRunnable;
 		import ortus.boxlang.runtime.scopes.*;
-		import ortus.boxlang.web.scopes.*;
-		import ortus.boxlang.runtime.dynamic.casters.*;
-		import ortus.boxlang.runtime.types.exceptions.ExceptionUtil;
+		import ortus.boxlang.runtime.scopes.Key;
 		import ortus.boxlang.runtime.types.*;
 		import ortus.boxlang.runtime.types.exceptions.*;
-		import ortus.boxlang.runtime.runnables.IClassRunnable;
-		import ortus.boxlang.runtime.dynamic.IReferenceable;
-		import ortus.boxlang.runtime.context.FunctionBoxContext;
-		import ortus.boxlang.runtime.context.ClassBoxContext;
+		import ortus.boxlang.runtime.types.exceptions.ExceptionUtil;
 		import ortus.boxlang.runtime.types.meta.BoxMeta;
 		import ortus.boxlang.runtime.types.meta.ClassMeta;
-		import ortus.boxlang.runtime.interop.DynamicObject;
 		import ortus.boxlang.runtime.types.Property;
-		import ortus.boxlang.runtime.types.MapHelper;
-		import ortus.boxlang.runtime.dynamic.ExpressionInterpreter;
-		import java.util.Optional;
-		import ortus.boxlang.runtime.components.Component;
+		import ortus.boxlang.runtime.util.*;
+		import ortus.boxlang.web.scopes.*;
 
+		// Java Imports
 		import java.nio.file.Path;
 		import java.nio.file.Paths;
 		import java.time.LocalDateTime;
-		import java.util.List;
-		import java.util.Iterator;
-		import java.util.Map;
-		import java.util.HashMap;
-		import java.util.LinkedHashMap;
 		import java.util.ArrayList;
 		import java.util.Collections;
+		import java.util.HashMap;
+		import java.util.Iterator;
 		import java.util.LinkedHashMap;
+		import java.util.LinkedHashMap;
+		import java.util.List;
+		import java.util.Map;
+		import java.util.Optional;
 
 		public class ${className} implements IClassRunnable, IReferenceable, IType {
 
@@ -376,7 +377,7 @@ public class BoxClassTransformer extends AbstractTransformer {
 						name,
 						positionalArguments
 					);
-					
+
 					functionContext.setThisClass( this );
 					return function.invoke( functionContext );
 				}

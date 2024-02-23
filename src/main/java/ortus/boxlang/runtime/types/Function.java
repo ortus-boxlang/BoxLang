@@ -17,6 +17,7 @@
  */
 package ortus.boxlang.runtime.types;
 
+import java.io.Serializable;
 import java.time.LocalDateTime;
 import java.util.Map;
 
@@ -35,11 +36,12 @@ import ortus.boxlang.runtime.services.InterceptorService;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.meta.BoxMeta;
 import ortus.boxlang.runtime.types.meta.FunctionMeta;
+import ortus.boxlang.runtime.util.ArgumentUtil;
 
 /**
  * A BoxLang Function base class
  */
-public abstract class Function implements IType, IFunctionRunnable {
+public abstract class Function implements IType, IFunctionRunnable, Serializable {
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -60,17 +62,22 @@ public abstract class Function implements IType, IFunctionRunnable {
 	/**
 	 * Metadata object
 	 */
-	public BoxMeta			$bx;
-
-	/**
-	 * Cached lookup of the output annotation
-	 */
-	private Boolean			canOutput			= null;
+	public transient BoxMeta	$bx;
 
 	/**
 	 * The argument collection key which defaults to : {@code argumentCollection}
 	 */
-	public static final Key	ARGUMENT_COLLECTION	= Key.argumentCollection;
+	public static final Key		ARGUMENT_COLLECTION	= Key.argumentCollection;
+
+	/**
+	 * Cached lookup of the output annotation
+	 */
+	private Boolean				canOutput			= null;
+
+	/**
+	 * Serialization version
+	 */
+	private static final long	serialVersionUID	= 1L;
 
 	/**
 	 * --------------------------------------------------------------------------

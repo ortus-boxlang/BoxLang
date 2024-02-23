@@ -31,12 +31,12 @@ import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.BoxLangType;
 import ortus.boxlang.runtime.types.IStruct;
-import ortus.boxlang.runtime.types.ListUtil;
 import ortus.boxlang.runtime.types.Query;
 import ortus.boxlang.runtime.types.QueryColumn;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.util.JSONUtil;
+import ortus.boxlang.runtime.util.ListUtil;
 
 @BoxBIF
 @BoxMember( type = BoxLangType.STRING, name = "toJSON" )
@@ -67,11 +67,11 @@ public class JSONSerialize extends BIF {
 	 * @param arguments Argument scope for the BIF.
 	 *
 	 * @argument.var The variable to convert to a JSON string.
-	 * 
+	 *
 	 * @argument.queryFormat If the variable is a query, specifies whether to serialize the query by rows or by columns.
-	 * 
+	 *
 	 * @argument.useSecureJSONPrefix If true, the JSON string is prefixed with a secure JSON prefix.
-	 * 
+	 *
 	 * @argument.useCustomSerializer If true, the JSON string is serialized using a custom serializer. (Not used)
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {

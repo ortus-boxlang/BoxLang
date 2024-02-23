@@ -21,10 +21,10 @@ import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.Array;
-import ortus.boxlang.runtime.types.ListUtil;
 import ortus.boxlang.runtime.types.Query;
 import ortus.boxlang.runtime.types.QueryColumnType;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
+import ortus.boxlang.runtime.util.ListUtil;
 
 @BoxBIF
 public class QueryNew extends BIF {
@@ -43,17 +43,17 @@ public class QueryNew extends BIF {
 
 	/**
 	 * Return new query
-	 * 
+	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
-	 * 
+	 *
 	 * @argument.columnList The column list to be used in the query. Delimited list of column names, or an empty string.
-	 * 
+	 *
 	 * @argument.columnTypeList Comma-delimited list specifying column data types.
-	 * 
+	 *
 	 * @argument.rowData Data to populate the query. Can be a struct (with keys matching column names), an array of structs, or an array of arrays (in
 	 *                   same order as columnList)
-	 * 
+	 *
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		Array	columnNames	= ListUtil.asList( arguments.getAsString( Key.columnList ), "," );
