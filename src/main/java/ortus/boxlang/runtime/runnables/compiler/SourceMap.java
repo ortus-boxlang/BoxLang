@@ -26,6 +26,24 @@ public class SourceMap {
 		public String	javaSourceClassName;
 	}
 
+	public SourceMapRecord findClosestSourceMapRecord( int sourceLine ) {
+		SourceMapRecord	found				= null;
+		int				result				= -1;
+		int				endOfClosestWrapper	= -1;
+		for ( SourceMapRecord sourceMapRecord : sourceMapRecords ) {
+			// Move our pointer so long as we haven't passed the source line
+			if ( sourceMapRecord.originSourceLineStart <= sourceLine && sourceMapRecord.originSourceLineEnd >= sourceLine ) {
+				result				= sourceMapRecord.javaSourceLineStart;
+				endOfClosestWrapper	= sourceMapRecord.javaSourceLineEnd;
+				found				= sourceMapRecord;
+			} else if ( result > -1 && result > endOfClosestWrapper ) {
+				// If we don't match, but we matched before, then we're past the previous correct result
+				break;
+			}
+		}
+		return found;
+	}
+
 	public int convertSourceLineToJavaLine( int sourceLine ) {
 		int	result				= -1;
 		int	endOfClosestWrapper	= -1;

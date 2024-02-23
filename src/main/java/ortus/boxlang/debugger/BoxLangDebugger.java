@@ -36,6 +36,7 @@ import com.sun.jdi.ClassType;
 import com.sun.jdi.IncompatibleThreadStateException;
 import com.sun.jdi.InvalidTypeException;
 import com.sun.jdi.InvocationException;
+import com.sun.jdi.LocalVariable;
 import com.sun.jdi.Location;
 import com.sun.jdi.Method;
 import com.sun.jdi.ReferenceType;
@@ -63,10 +64,17 @@ import ortus.boxlang.debugger.types.Breakpoint;
 import ortus.boxlang.debugger.types.Variable;
 import ortus.boxlang.runtime.runnables.compiler.JavaBoxpiler;
 import ortus.boxlang.runtime.runnables.compiler.JavaBoxpiler.ClassInfo;
+import ortus.boxlang.runtime.runnables.compiler.SourceMap.SourceMapRecord;
 import ortus.boxlang.runtime.types.BoxLangType;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
 public class BoxLangDebugger implements IBoxLangDebugger {
+
+	private static Map<Integer, StackFrameTuple> seenStacks;
+
+	static {
+		seenStacks = new HashMap<Integer, StackFrameTuple>();
+	}
 
 	public VirtualMachine			vm;
 	private Class					debugClass;
@@ -216,7 +224,11 @@ public class BoxLangDebugger implements IBoxLangDebugger {
 	}
 
 	public WrappedValue getContextForStackFrame( int id ) {
-		return JDITools.findVariableyName( findStackFrame( id ), "context" );
+		return findVariableyName( getSeenStack( id ), "context" );
+	}
+
+	public WrappedValue getContextForStackFrame( StackFrameTuple tuple ) {
+		return findVariableyName( tuple, "context" );
 	}
 
 	public StackFrame findStackFrame( int id ) {
@@ -294,6 +306,45 @@ public class BoxLangDebugger implements IBoxLangDebugger {
 		return matchingThreadRef.frames();
 	}
 
+	public record StackFrameTuple( StackFrame stackFrame, Location location, int id, Map<LocalVariable, Value> values ) {
+
+	}
+
+	public StackFrameTuple getSeenStack( int stackFrameId ) {
+		return seenStacks.get( stackFrameId );
+	}
+
+	public List<StackFrameTuple> getBoxLangStackFrames( int threadId ) throws IncompatibleThreadStateException {
+		ThreadReference matchingThreadRef = null;
+
+		for ( ThreadReference threadReference : this.vm.allThreads() ) {
+			if ( threadReference.uniqueID() == threadId ) {
+				matchingThreadRef = threadReference;
+				break;
+			}
+		}
+
+		if ( matchingThreadRef == null ) {
+			throw ( new BoxRuntimeException( "Couldn't find thread: " + threadId ) );
+		}
+
+		return matchingThreadRef.frames()
+		    .stream()
+		    .filter( ( stackFrame ) -> stackFrame.location().declaringType().name().contains( "boxgenerated" ) )
+		    .map( ( sf ) -> {
+			    try {
+
+				    seenStacks.put( sf.hashCode(), new StackFrameTuple( sf, sf.location(), sf.hashCode(), sf.getValues( sf.visibleVariables() ) ) );
+			    } catch ( AbsentInformationException e ) {
+				    // TODO handle exception
+				    e.printStackTrace();
+			    }
+
+			    return seenStacks.get( sf.hashCode() );
+		    } )
+		    .toList();
+	}
+
 	private ClassType getKeyClassType() {
 		if ( keyClassRef == null ) {
 			keyClassRef = ( ClassType ) this.vm.allClasses()
@@ -358,6 +409,19 @@ public class BoxLangDebugger implements IBoxLangDebugger {
 		}
 	}
 
+	public WrappedValue findVariableyName( StackFrameTuple tuple, String name ) {
+		Map<LocalVariable, Value> visibleVariables = tuple.values;
+
+		for ( Map.Entry<LocalVariable, Value> entry : visibleVariables.entrySet() ) {
+			if ( entry.getKey().name().compareTo( name ) == 0 ) {
+				return JDITools.wrap( bpe.thread(), entry.getValue() );
+			}
+		}
+
+		return null;
+
+	}
+
 	private void readVMErrorInput() {
 		if ( this.vmErrorInput == null ) {
 			return;
@@ -403,28 +467,28 @@ public class BoxLangDebugger implements IBoxLangDebugger {
 
 				for ( ReferenceType vmClass : matchingTypes ) {
 					try {
-						if ( javaSourceLine == null ) {
-							javaSourceLine = javaBoxpiler.getSourceMapFromFQN( vmClass.name() ).convertSourceLineToJavaLine( breakpoint.line );
+						SourceMapRecord	foundMapRecord	= javaBoxpiler.getSourceMapFromFQN( vmClass.name() ).findClosestSourceMapRecord( breakpoint.line );
+						String			sourceName		= foundMapRecord.javaSourceClassName.replaceAll( "(\\d)(\\.)", "$1\\$" );
+						if ( sourceName.compareToIgnoreCase( vmClass.name() ) != 0 ) {
+							continue;
 						}
-						int			val				= javaSourceLine.intValue();
-						Location	closestLocation	= vmClass.allLineLocations().stream().reduce( null, ( closest, location ) -> {
-														if ( closest == null ) {
-															if ( location.lineNumber() > val ) {
-																return null;
-															}
-															return location;
-														}
 
-														if ( location.lineNumber() > val ) {
-															return closest;
-														}
-
-														return val - closest.lineNumber() > val - location.lineNumber() ? location : closest;
-													} );
-
-						if ( closestLocation != null ) {
-							possibleLocations.add( closestLocation );
+						Location foundLoc = null;
+						for ( Location loc : vmClass.allLineLocations() ) {
+							if ( loc.lineNumber() >= foundMapRecord.javaSourceLineStart && loc.lineNumber() <= foundMapRecord.javaSourceLineEnd ) {
+								foundLoc = loc;
+								break;
+							}
 						}
+
+						if ( foundLoc == null ) {
+							break;
+						}
+
+						BreakpointRequest bpReq = vm.eventRequestManager().createBreakpointRequest( foundLoc );
+						bpReq.enable();
+						break;
+
 					} catch ( BoxRuntimeException e ) {
 						e.printStackTrace();
 					} catch ( AbsentInformationException e ) {
@@ -432,39 +496,6 @@ public class BoxLangDebugger implements IBoxLangDebugger {
 						e.printStackTrace();
 					}
 				}
-
-				if ( javaSourceLine == null ) {
-					continue;
-				}
-
-				int			val		= javaSourceLine.intValue();
-				Location	closest	= possibleLocations.stream().reduce( null, ( acc, location ) -> {
-										if ( acc == null ) {
-											if ( location.lineNumber() > val ) {
-												return null;
-											}
-											return location;
-										}
-
-										if ( location.lineNumber() > val ) {
-											return acc;
-										}
-
-										return val - acc.lineNumber() > val - location.lineNumber() ? location : acc;
-									} );
-
-				// TODO this is terrible - the reason this is here is because when the first ClassPreparedEvent executes we get the wrong line number for the
-				// breakpoint we need a more accurate line number strategy
-				if ( val - closest.lineNumber() > 10 ) {
-					continue;
-				}
-				try {
-					BreakpointRequest bpReq = vm.eventRequestManager().createBreakpointRequest( closest );
-					bpReq.enable();
-				} catch ( BoxRuntimeException e ) {
-					e.printStackTrace();
-				}
-
 			}
 		}
 	}

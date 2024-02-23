@@ -34,7 +34,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.sun.jdi.IncompatibleThreadStateException;
-import com.sun.jdi.Location;
 import com.sun.jdi.ObjectReference;
 import com.sun.jdi.event.BreakpointEvent;
 
@@ -304,13 +303,31 @@ public class DebugAdapter {
 			// TODO convert from java info to boxlang info when possible
 			// TODO decide if we should filter out java stack or make it available
 
-			List<StackFrame> stackFrames = this.debugger.getStackFrames( debugRequest.arguments.threadId ).stream()
-			    .filter( ( stackFrame ) -> stackFrame.location().declaringType().name().contains( "boxgenerated" ) )
-			    .map( ( stackFrame ) -> {
-				    StackFrame sf		= new StackFrame();
-				    SourceMap map		= javaBoxpiler.getSourceMapFromFQN( stackFrame.location().declaringType().name() );
-				    Location location	= stackFrame.location();
-				    sf.id	= stackFrame.hashCode();
+			/*
+			 * You cannot get a stackfrme, call invoke, and then try to reuse that stackframe as the thread will resume and invalidate the stackframe
+			 * we have some options
+			 * 
+			 * 1) do not use invoke while working with a stackframe
+			 * pros - keeps the vm state nice and clean
+			 * cons - tightly couples implementation, lots of work to navigate, won't be able to access stackinformation after eval either
+			 * 
+			 * 2) gather all the necessary information for a stack ahead of time before it is invalidated
+			 * pros - makes sure we have all the data early, lets us keep invoke
+			 * cons - overly eager implementation, will cause problems when vscode requests a stackframe later
+			 * 
+			 * 3) track stackframes our own way and when a stackframe is invalidated get its' equivalent from the vm
+			 * pros - lets us do whatever we want
+			 * cons - how do we match them up? a stackframe may not be findable again... what do we do when null?
+			 */
+
+			List<StackFrame> stackFrames = this.debugger.getBoxLangStackFrames( debugRequest.arguments.threadId ).stream()
+			    .map( ( tuple ) -> {
+				    com.sun.jdi.StackFrame stackFrame = tuple.stackFrame();
+				    com.sun.jdi.Location location	= tuple.location();
+				    StackFrame			sf			= new StackFrame();
+				    SourceMap			map			= javaBoxpiler.getSourceMapFromFQN( location.declaringType().name() );
+
+				    sf.id	= tuple.id();
 				    sf.line	= location.lineNumber();
 				    sf.column = 0;
 				    sf.name	= location.method().name();
@@ -330,11 +347,28 @@ public class DebugAdapter {
 					    sf.source	= new Source();
 					    sf.source.path = map.source.toString();
 					    sf.source.name = sf.name + "(UDF)";
+				    } else if ( blType == BoxLangType.CLOSURE ) {
+					    // TODO figure out how to get the name of the closure from a parent context
+					    String calledName = this.debugger.getContextForStackFrame( tuple ).invoke( "findClosestFunctionName" ).invoke( "getOriginalValue" )
+					        .asStringReference().value();
+
+					    sf.name		= calledName + "(closure)";
+					    sf.source	= new Source();
+					    sf.source.path = map.source.toString();
+					    sf.source.name = sf.name;
+				    } else if ( blType == BoxLangType.LAMBDA ) {
+					    sf.name		= this.debugger.getObjectFromStackFrame( stackFrame )
+					        .property( "name" )
+					        .property( "originalValue" )
+					        .asStringReference().value();
+					    sf.source	= new Source();
+					    sf.source.path = map.source.toString();
+					    sf.source.name = sf.name + "(LAMBDA)";
 				    } else if ( map != null && map.isTemplate() ) {
 					    sf.name		= map.getFileName();
 					    sf.source	= new Source();
 					    sf.source.path = map.source.toString();
-					    sf.source.name = sf.name + "(Template)";
+					    sf.source.name = sf.name;
 				    }
 
 				    return sf;
@@ -354,17 +388,17 @@ public class DebugAdapter {
 
 			List<Scope>		scopes			= new ArrayList<Scope>();
 
-			Scope			argumentScope	= scopeByName( context, "Arguments Scope", "arguments" );
+			Scope			argumentScope	= scopeByName( context, "arguments" );
 			if ( argumentScope != null ) {
 				argumentScope.presentationHint = "arguments";
 				scopes.add( argumentScope );
 			}
-			Scope localScope = scopeByName( context, "Local Scope", "local" );
+			Scope localScope = scopeByName( context, "local" );
 			if ( localScope != null ) {
 				localScope.presentationHint = "locals";
 				scopes.add( localScope );
 			}
-			Scope variablesScope = scopeByName( context, "Variables Scope", "variables" );
+			Scope variablesScope = scopeByName( context, "variables" );
 			if ( variablesScope != null ) {
 				scopes.add( variablesScope );
 			}
@@ -376,7 +410,7 @@ public class DebugAdapter {
 		}
 	}
 
-	private Scope scopeByName( WrappedValue context, String name, String key ) {
+	private Scope scopeByName( WrappedValue context, String key ) {
 		WrappedValue scopeValue = context.invokeByNameAndArgs(
 		    "getScopeNearby",
 		    Arrays.asList( "ortus.boxlang.runtime.scopes.Key", "boolean" ),
@@ -387,7 +421,7 @@ public class DebugAdapter {
 		}
 
 		Scope scope = new Scope();
-		scope.name					= name;
+		scope.name					= key;
 		scope.variablesReference	= ( int ) scopeValue.id();
 
 		return scope;
