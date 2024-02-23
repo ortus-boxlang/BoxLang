@@ -93,10 +93,17 @@ public class BoxCacheStats implements ICacheStats {
 	/**
 	 * Get the cache's hit rate = hits / (hits + misses)
 	 *
-	 * @return The hit ratio
+	 * @return The hit ratio in percentage or 0 if no hits or misses
 	 */
 	public int hitRate() {
-		return ( int ) ( ( this.hits.get() / ( this.hits.get() + this.misses.get() ) ) * 100 );
+		long	_hits	= this.hits.get();
+		long	_misses	= this.misses.get();
+
+		if ( _hits == 0 && _misses == 0 ) {
+			return 0;
+		}
+
+		return ( int ) ( ( _hits / ( _hits + _misses ) ) * 100 );
 	}
 
 	/**
