@@ -71,7 +71,7 @@ public class BoxCacheEntryTest {
 
 	@Test
 	@DisplayName( "When updating BoxCacheEntry properties, they should reflect the changes" )
-	void testBoxCacheEntryPropertiesUpdate() {
+	void testBoxCacheEntryPropertiesUpdate() throws InterruptedException {
 		// Given
 		Instant newLastAccessed = Instant.now();
 
@@ -80,6 +80,8 @@ public class BoxCacheEntryTest {
 		cacheEntry.setValue( newLastAccessed );
 		cacheEntry.incrementHits();
 		Instant originalCreated = cacheEntry.created();
+
+		Thread.sleep( 1000 ); // Sleep for 1 second to ensure the created time is different
 
 		cacheEntry.resetCreated();
 
