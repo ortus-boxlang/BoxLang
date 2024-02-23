@@ -50,9 +50,6 @@ public class BoxScopeTransformer extends AbstractTransformer {
 			template = "${contextName}.getScopeNearby( LocalScope.name )";
 		} else if ( "variables".equalsIgnoreCase( scope.getName() ) ) {
 			template = "${contextName}.getScopeNearby( VariablesScope.name )";
-			// This is assuming all class templates' invoke method gets the varaiblesScope reference first
-			// Nevermind-- this doens't work in a catch block where I need the variables scope to come from the CATCHBOXCONTEXT instead
-			// template = "variablesScope";
 		} else if ( "request".equalsIgnoreCase( scope.getName() ) ) {
 			template = "${contextName}.getScopeNearby( RequestScope.name )";
 		} else if ( "server".equalsIgnoreCase( scope.getName() ) ) {
@@ -71,6 +68,10 @@ public class BoxScopeTransformer extends AbstractTransformer {
 			template = "${contextName}.getScopeNearby( CGIScope.name )";
 		} else if ( "cookie".equalsIgnoreCase( scope.getName() ) ) {
 			template = "${contextName}.getScopeNearby( CookieScope.name )";
+		} else if ( "thread".equalsIgnoreCase( scope.getName() ) ) {
+			// TODO: If this code is not in a thread, this needs to not be a scope, but just a normal variable.
+			// Perhaps do a scope search for a "thread" variable and return that instead?
+			template = "${contextName}.getScopeNearby( ThreadScope.name )";
 		} else if ( "this".equalsIgnoreCase( scope.getName() ) ) {
 
 	// @formatter:off

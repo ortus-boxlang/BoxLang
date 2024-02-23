@@ -1,0 +1,155 @@
+/**
+ * [BoxLang]
+ *
+ * Copyright [2023] [Ortus Solutions, Corp]
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package ortus.boxlang.runtime.components.threading;
+
+import java.util.Set;
+
+import ortus.boxlang.runtime.components.Attribute;
+import ortus.boxlang.runtime.components.BoxComponent;
+import ortus.boxlang.runtime.components.Component;
+import ortus.boxlang.runtime.components.validators.Validator;
+import ortus.boxlang.runtime.context.IBoxContext;
+import ortus.boxlang.runtime.context.ThreadBoxContext;
+import ortus.boxlang.runtime.scopes.Key;
+import ortus.boxlang.runtime.scopes.LocalScope;
+import ortus.boxlang.runtime.types.IStruct;
+import ortus.boxlang.runtime.types.exceptions.AbortException;
+import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
+
+@BoxComponent( allowsBody = true )
+public class Thread extends Component {
+
+	/**
+	 * --------------------------------------------------------------------------
+	 * Constructor(s)
+	 * --------------------------------------------------------------------------
+	 */
+
+	/**
+	 * Constructor
+	 *
+	 * @param name The name of the component
+	 */
+	public Thread() {
+		super();
+		declaredAttributes = new Attribute[] {
+		    new Attribute( Key._NAME, "string" ),
+		    new Attribute( Key.action, "string", "run", Set.of(
+		        Validator.valueOneOf( "join", "run", "sleep", "terminate" ),
+		        Validator.valueRequires( "sleep", Key.duration )
+		    ) ),
+		    new Attribute( Key.duration, "integer", 0, Set.of(
+		        Validator.min( 0 )
+		    ) ),
+		    new Attribute( Key.priority, "string", "normal", Set.of(
+		        Validator.valueOneOf( "high", "low", "normal" )
+		    ) ),
+		    new Attribute( Key.timeout, "integer" )
+		};
+	}
+
+	/**
+	 * The thread component enables multithreaded programming in BoxLang. Threads are independent streams of execution, and multiple threads on a page can
+	 * execute simultaneously and asynchronously, letting you perform asynchronous processing. Code within the thread component body executes on a
+	 * separate thread while the request thread continues processing without waiting for the thread body to finish. You use this tag to run or end a
+	 * thread, temporarily stop thread execution, or join together multiple threads.
+	 *
+	 * @param context        The context in which the Component is being invoked
+	 * @param attributes     The attributes to the Component
+	 * @param body           The body of the Component
+	 * @param executionState The execution state of the Component
+	 * 
+	 * @attribute.name The name of the thread.
+	 * 
+	 * @attribute.action The action to perform. The default value is "run". The following are the possible values: "join", "run", "sleep", "terminate".
+	 * 
+	 * @attribute.duration The number of milliseconds to pause the thread. This attribute is required if the action attribute is set to "sleep".
+	 * 
+	 * @attribute.priority The priority of the thread. The default value is "normal". The following are the possible values: "high", "low", "normal".
+	 * 
+	 * @attribute.timeout The number of milliseconds to wait for the thread to finish. If the thread does not finish within the specified time, the thread
+	 *                    is
+	 *                    terminated. If the timeout attribute is not specified, the thread runs until it finishes.
+	 *
+	 */
+	public BodyResult _invoke( IBoxContext context, IStruct attributes, ComponentBody body, IStruct executionState ) {
+		Key		action		= Key.of( attributes.getAsString( Key.action ) );
+		String	name		= attributes.getAsString( Key._NAME );
+		Integer	duration	= attributes.getAsInteger( Key.duration );
+		String	priority	= attributes.getAsString( Key.priority );
+		Integer	timeout		= attributes.getAsInteger( Key.timeout );
+
+		if ( action.equals( Key.join ) ) {
+			join( context, name, timeout );
+		} else if ( action.equals( Key.run ) ) {
+			run( context, name, priority, attributes, body );
+		} else if ( action.equals( Key.sleep ) ) {
+			sleep( context, duration );
+		} else if ( action.equals( Key.terminate ) ) {
+			terminate( context, name );
+		} else {
+			throw new BoxRuntimeException( "Invalid action: " + action );
+		}
+
+		return DEFAULT_RETURN;
+	}
+
+	private void run( IBoxContext context, String name, String priority, IStruct attributes, ComponentBody body ) {
+		if ( name == null || name.isEmpty() ) {
+			// generate random name
+			name = "BoxLang-Thread-" + java.util.UUID.randomUUID().toString();
+		}
+		ThreadBoxContext	tContext	= new ThreadBoxContext( context );
+		java.lang.Thread	thread		= new java.lang.Thread( () -> {
+											StringBuffer buffer = new StringBuffer();
+											try {
+												processBody( tContext, body, buffer );
+											} catch ( AbortException e ) {
+												// Nothing to do here
+											} catch ( Throwable e ) {
+												e.printStackTrace();
+												// TODO: put exception into thread scope
+											} finally {
+												// TODO: put buffer into thread scope
+											}
+										} );
+
+		tContext.setThread( thread );
+		LocalScope local = ( LocalScope ) tContext.getScopeNearby( LocalScope.name );
+		local.put( Key.attributes, attributes );
+
+		// TODO: register thread with thread manager
+
+		thread.start();
+	}
+
+	private void join( IBoxContext context, String name, Integer timeout ) {
+		// TODO Auto-generated method stub
+		throw new UnsupportedOperationException( "Unimplemented method 'join'" );
+	}
+
+	private void terminate( IBoxContext context, String name ) {
+		// TODO Auto-generated method stub
+		throw new UnsupportedOperationException( "Unimplemented method 'terminate'" );
+	}
+
+	private void sleep( IBoxContext context, Integer duration ) {
+		context.invokeFunction( Key.sleep, new Object[] { duration } );
+	}
+
+}

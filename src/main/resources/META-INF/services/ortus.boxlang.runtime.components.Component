@@ -10,4 +10,4 @@ ortus.boxlang.runtime.components.system.Output
 ortus.boxlang.runtime.components.system.Param
 ortus.boxlang.runtime.components.system.SaveContent
 ortus.boxlang.runtime.components.system.Setting
-ortus.boxlang.runtime.components.system.Thread
+ortus.boxlang.runtime.components.threading.Thread

@@ -26,6 +26,7 @@ import ortus.boxlang.runtime.components.validators.dynamic.MaxLength;
 import ortus.boxlang.runtime.components.validators.dynamic.Min;
 import ortus.boxlang.runtime.components.validators.dynamic.MinLength;
 import ortus.boxlang.runtime.components.validators.dynamic.Requires;
+import ortus.boxlang.runtime.components.validators.dynamic.ValueOneOf;
 import ortus.boxlang.runtime.components.validators.dynamic.ValueRequires;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.scopes.Key;
@@ -124,6 +125,17 @@ public interface Validator {
 	 */
 	public static Validator valueRequires( String value, Key... attributeNames ) {
 		return new ValueRequires( value, Set.of( attributeNames ) );
+	}
+
+	/**
+	 * Builder method to create a ValueOneOf validator
+	 * 
+	 * @param validValues The valid values
+	 * 
+	 * @return The ValueOneOf validator
+	 */
+	public static Validator valueOneOf( String... validValues ) {
+		return new ValueOneOf( Set.of( validValues ) );
 	}
 
 }
