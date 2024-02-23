@@ -60,6 +60,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		_QUERY						= Key.of( "query" );
 	public static final Key		_STRING						= Key.of( "string" );
 	public static final Key		_STRUCT						= Key.of( "struct" );
+	public static final Key		_UDF						= Key.of( "udf" );
 
 	// Global Dictionary
 	public static final Key		$bx							= Key.of( "$bx" );
