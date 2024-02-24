@@ -19,7 +19,12 @@
 package ortus.boxlang.runtime.jdbc;
 
 import static com.google.common.truth.Truth.assertThat;
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.sql.Connection;
 import java.sql.SQLException;
@@ -27,15 +32,16 @@ import java.util.List;
 
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Array;
-import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Query;
 import ortus.boxlang.runtime.types.Struct;
+import ortus.boxlang.runtime.types.exceptions.DatabaseException;
 
 public class DataSourceTest {
 
@@ -47,12 +53,20 @@ public class DataSourceTest {
 		    "jdbcUrl", "jdbc:derby:memory:testDB;create=true"
 		) );
 		datasource.execute( "CREATE TABLE developers ( id INTEGER, name VARCHAR(155) )", null );
-		datasource.execute( "INSERT INTO developers ( id, name ) VALUES ( 1, 'Luis Majano' )", null );
 	}
 
 	@AfterAll
 	public static void teardown() throws SQLException {
 		datasource.shutdown();
+	}
+
+	@BeforeEach
+	public void resetTable() {
+		assertDoesNotThrow( () -> {
+			datasource.execute( "TRUNCATE TABLE developers", null );
+			datasource.execute( "INSERT INTO developers ( id, name ) VALUES ( 77, 'Michael Born' )", null );
+			datasource.execute( "INSERT INTO developers ( id, name ) VALUES ( 1, 'Luis Majano' )", null );
+		} );
 	}
 
 	@DisplayName( "It can get an Apache Derby JDBC connection" )
@@ -112,14 +126,10 @@ public class DataSourceTest {
 	@DisplayName( "It can execute simple queries without providing a connection" )
 	@Test
 	void testDatasourceExecute() {
-		assertDoesNotThrow( () -> {
-			datasource.execute( "TRUNCATE TABLE developers", null );
-			datasource.execute( "INSERT INTO developers ( id, name ) VALUES ( 77, 'Michael Born' )", null );
-		} );
 		try ( Connection conn = datasource.getConnection() ) {
 			assertDoesNotThrow( () -> {
 				ExecutedQuery executedQuery = datasource.execute( "SELECT * FROM developers", conn, null );
-				assertEquals( 1, executedQuery.recordCount );
+				assertEquals( 2, executedQuery.recordCount );
 			} );
 		} catch ( SQLException e ) {
 			throw new RuntimeException( e );
@@ -129,16 +139,12 @@ public class DataSourceTest {
 	@DisplayName( "It can execute queries with parameters without providing a connection" )
 	@Test
 	void testDatasourceWithParamsExecute() {
-		assertDoesNotThrow( () -> {
-			datasource.execute( "TRUNCATE TABLE developers", null );
-			datasource.execute( "INSERT INTO developers ( id, name ) VALUES (?, ?)", Array.of( 77, "Michael Born" ), null );
-		} );
 		try ( Connection conn = datasource.getConnection() ) {
 			assertDoesNotThrow( () -> {
 				ExecutedQuery executedQuery = datasource.execute( "SELECT * FROM developers", conn, null );
-				assertEquals( 1, executedQuery.recordCount );
+				assertEquals( 2, executedQuery.recordCount );
 				List<Struct> results = executedQuery.getResults();
-				assertEquals( 1, results.size() );
+				assertEquals( 2, results.size() );
 				Struct developer = results.get( 0 );
 				assertEquals( 77, developer.get( "id" ) );
 				assertEquals( "Michael Born", developer.get( "name" ) );
@@ -151,9 +157,6 @@ public class DataSourceTest {
 	@DisplayName( "It can get results in query form" )
 	@Test
 	void testQueryExecuteQueryResults() {
-		datasource.execute( "TRUNCATE TABLE developers", null );
-		datasource.execute( "INSERT INTO developers ( id, name ) VALUES ( 1, 'Luis Majano' )", null );
-
 		ExecutedQuery	executedQuery	= datasource.execute( "SELECT * FROM developers WHERE id=1", null );
 		Query			results			= executedQuery.getResultsAsQuery();
 		assertTrue( results instanceof Query );
@@ -168,12 +171,15 @@ public class DataSourceTest {
 		assert ( firstRow[ 1 ].equals( "Luis Majano" ) );
 	}
 
+	@DisplayName( "It can get results in query form" )
+	@Test
+	void testQueryExecuteException() {
+		assertThrows( DatabaseException.class, () -> datasource.execute( "SELECT * FROM foobar WHERE id=1", null ) );
+	}
+
 	@DisplayName( "It can get results in array form" )
 	@Test
 	void testQueryExecuteArrayResults() {
-		datasource.execute( "TRUNCATE TABLE developers", null );
-		datasource.execute( "INSERT INTO developers ( id, name ) VALUES ( 1, 'Luis Majano' )", null );
-
 		ExecutedQuery	executedQuery	= datasource.execute( "SELECT * FROM developers WHERE id=1", null );
 		Array			results			= executedQuery.getResultsAsArray();
 		assertNotEquals( 0, results.size() );
