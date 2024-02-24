@@ -700,21 +700,23 @@ public class JavaBoxpiler {
 		}
 
 		public static ClassInfo forClass( Path path, String packagePath ) {
-			File	lcaseFile	= new File( packagePath.toString().toLowerCase() );
-			String	packageName	= getPackageName( lcaseFile );
-			// if package name has starting dot, remove it
-			if ( packageName.startsWith( "." ) ) {
-				packageName = packageName.substring( 1 );
+			String boxPackagePath = "boxgenerated." + packagePath;
+			if ( boxPackagePath.endsWith( "." ) ) {
+				boxPackagePath = boxPackagePath.substring( 0, boxPackagePath.length() - 1 );
 			}
-			packageName = "boxgenerated.boxClass" + ( packageName.equals( "" ) ? "" : "." ) + packageName;
-			String className = getClassName( lcaseFile );
+			packagePath = "boxgenerated.boxclass." + packagePath;
+			// trim trailing period
+			if ( packagePath.endsWith( "." ) ) {
+				packagePath = packagePath.substring( 0, packagePath.length() - 1 );
+			}
+			String className = getClassName( path.toFile() );
 
 			return new ClassInfo(
 			    path.toString(),
-			    packageName,
+			    packagePath,
 			    className,
 			    JavaBoxpiler.getInstance().getClassCounter().getOrDefault( packagePath + "." + className, 0 ),
-			    packageName,
+			    boxPackagePath,
 			    null,
 			    null
 			);
