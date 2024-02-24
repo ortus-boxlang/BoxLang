@@ -192,4 +192,27 @@ class XMLTest {
 
 	}
 
+	@DisplayName( "XML Node Is Struct" )
+	@Test
+	void testXMLNodeIsStruct() {
+		instance.executeSource(
+		    """
+		          result = XMLParse( '<company name="Ortus Solutions">
+		       	<employee fname="Luis" lname="Majano"  />
+		       	<employee fname="Brad" lname="Wood" />
+		       </company>' );
+		       isStructDoc = isStruct( result );
+		       isStructRoot = isStruct( result.company );
+		       isStructChild = isStruct( result.company.employee[1] );
+		    structGetEmp = structGet( "result.company.employee" );
+		                            """,
+		    context );
+		assertThat( variables.get( Key.of( "isStructDoc" ) ) ).isEqualTo( true );
+		assertThat( variables.get( Key.of( "isStructRoot" ) ) ).isEqualTo( true );
+		assertThat( variables.get( Key.of( "isStructChild" ) ) ).isEqualTo( true );
+		assertThat( variables.getAsXML( Key.of( "structGetEmp" ) ).getXMLName() ).isEqualTo( "employee" );
+		assertThat( variables.getAsXML( Key.of( "structGetEmp" ) ).getXMLAttributes().get( "fname" ) ).isEqualTo( "Luis" );
+
+	}
+
 }

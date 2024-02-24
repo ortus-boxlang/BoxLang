@@ -301,7 +301,7 @@ public class ClassTest {
 		    	cfc = new src.test.java.TestCases.phase3.MyClass();
 		    """, context );
 
-		var	cfc		= variables.getClassRunnable( Key.of( "cfc" ) );
+		var	cfc		= variables.getAsClassRunnable( Key.of( "cfc" ) );
 		var	meta	= cfc.getMetaData();
 		assertThat( meta.get( Key.of( "name" ) ) ).isEqualTo( "boxgenerated.src.test.java.TestCases.phase3.MyClass" );
 		assertThat( meta.get( Key.of( "type" ) ) ).isEqualTo( "Component" );
@@ -340,7 +340,7 @@ public class ClassTest {
 		    	cfc = new src.test.java.TestCases.phase3.MyClass();
 		    """, context );
 
-		var	cfc		= variables.getClassRunnable( Key.of( "cfc" ) );
+		var	cfc		= variables.getAsClassRunnable( Key.of( "cfc" ) );
 		var	boxMeta	= ( ClassMeta ) cfc.getBoxMeta();
 		var	meta	= boxMeta.meta;
 		assertThat( meta.get( Key.of( "type" ) ) ).isEqualTo( "Component" );
@@ -385,7 +385,7 @@ public class ClassTest {
 		    nameGet2 = cfc.getMyProperty();
 		      """, context );
 
-		var cfc = variables.getClassRunnable( Key.of( "cfc" ) );
+		var cfc = variables.getAsClassRunnable( Key.of( "cfc" ) );
 
 		assertThat( variables.get( Key.of( "nameGet" ) ) ).isEqualTo( "myDefaultValue" );
 		assertThat( variables.get( Key.of( "nameGet2" ) ) ).isEqualTo( "anotherValue" );
@@ -562,7 +562,7 @@ public class ClassTest {
 		    "super sees inDog as: true",
 		} );
 
-		var	cfc		= variables.getClassRunnable( Key.of( "cfc" ) );
+		var	cfc		= variables.getAsClassRunnable( Key.of( "cfc" ) );
 		var	boxMeta	= ( ClassMeta ) cfc.getBoxMeta();
 		var	meta	= boxMeta.meta;
 
@@ -576,6 +576,26 @@ public class ClassTest {
 
 		extendsMeta = extendsMeta.getAsStruct( Key.of( "extends" ) );
 		assertThat( extendsMeta ).hasSize( 0 );
+
+	}
+
+	@DisplayName( "class as struct" )
+	@Test
+	public void testClassAsStruct() {
+
+		instance.executeStatement(
+		    """
+		         	cfc = new src.test.java.TestCases.phase3.MyClass();
+		       result = isStruct( cfc )
+		    cfc.foo = "bar"
+		    result2 = structGet( "cfc.foo")
+		    keyArray = structKeyArray( cfc )
+
+		         """, context );
+
+		assertThat( variables.get( result ) ).isEqualTo( true );
+		assertThat( variables.get( Key.of( "result2" ) ) ).isEqualTo( "bar" );
+		assertThat( variables.get( Key.of( "keyArray" ) ) ).isInstanceOf( Array.class );
 
 	}
 
