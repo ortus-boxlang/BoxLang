@@ -111,9 +111,7 @@ public class DataSourceManager {
 	 * Will close all open connections and remove all datasources (including the default) from the manager.
 	 */
 	public DataSourceManager clear() {
-		this.datasources.forEach( ( name, datasource ) -> {
-			datasource.shutdown();
-		} );
+		this.datasources.forEach( ( name, datasource ) -> datasource.shutdown() );
 		this.datasources.clear();
 		return this;
 	}
