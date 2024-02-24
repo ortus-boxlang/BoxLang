@@ -172,7 +172,7 @@ public class ModuleService extends BaseService {
 
 	/**
 	 * The shutdown event is fired when the runtime shuts down
-	 * 
+	 *
 	 * @param force Whether the shutdown is forced
 	 */
 	@Override
@@ -570,8 +570,8 @@ public class ModuleService extends BaseService {
 		    .filter( filePath -> !this.modulePaths.contains( filePath ) )
 		    // Only module folders
 		    .filter( Files::isDirectory )
-		    // Only where a ModuleConfig.bx exists in the root
-		    .filter( filePath -> Files.exists( filePath.resolve( MODULE_DESCRIPTOR ) ) )
+		    // Only where a ModuleConfig.bx or .cfc exists in the root
+		    .filter( filePath -> Files.exists( filePath.resolve( MODULE_DESCRIPTOR ) ) || Files.exists( filePath.resolve( MODULE_DESCRIPTOR_BX ) ) )
 		    // Filter out already registered modules
 		    .filter( filePath -> !this.registry.containsKey( Key.of( filePath.getFileName().toString() ) ) )
 		    // Convert each filePath to a discovered ModuleRecord
