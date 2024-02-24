@@ -453,7 +453,6 @@ public class BoxLangDebugger implements IBoxLangDebugger {
 		}
 
 		this.vm.eventRequestManager().deleteAllBreakpoints();
-		Integer javaSourceLine = null;
 
 		for ( String fileName : this.breakpoints.keySet() ) {
 
@@ -501,8 +500,15 @@ public class BoxLangDebugger implements IBoxLangDebugger {
 	}
 
 	private List<ReferenceType> getMatchingReferenceTypes( String fileName ) {
-		ClassInfo classInfo = ClassInfo.forTemplate( Path.of( fileName ), fileName );
-
+		ClassInfo classInfo = getClassInfo( fileName );
 		return vmClasses.stream().filter( ( rt ) -> classInfo.matchesFQNWithoutCompileCount( rt.name() ) ).toList();
+	}
+
+	private ClassInfo getClassInfo( String fileName ) {
+		if ( fileName.endsWith( "bx" ) ) {
+			return ClassInfo.forClass( Path.of( fileName ), fileName );
+		}
+
+		return ClassInfo.forTemplate( Path.of( fileName ), fileName );
 	}
 }

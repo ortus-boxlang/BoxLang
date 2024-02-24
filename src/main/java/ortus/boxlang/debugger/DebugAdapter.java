@@ -384,24 +384,24 @@ public class DebugAdapter {
 
 	public void visit( ScopeRequest debugRequest ) {
 		try {
-			WrappedValue	context			= this.debugger.getContextForStackFrame( debugRequest.arguments.frameId );
+			WrappedValue	context				= this.debugger.getContextForStackFrame( debugRequest.arguments.frameId );
 
-			List<Scope>		scopes			= new ArrayList<Scope>();
+			List<Scope>		scopes				= new ArrayList<Scope>();
 
-			Scope			argumentScope	= scopeByName( context, "arguments" );
-			if ( argumentScope != null ) {
-				argumentScope.presentationHint = "arguments";
-				scopes.add( argumentScope );
-			}
-			Scope localScope = scopeByName( context, "local" );
-			if ( localScope != null ) {
-				localScope.presentationHint = "locals";
-				scopes.add( localScope );
-			}
-			Scope variablesScope = scopeByName( context, "variables" );
-			if ( variablesScope != null ) {
-				scopes.add( variablesScope );
-			}
+			WrappedValue	visibleScopes		= context.invokeByNameAndArgs( "getVisibleScopes", new ArrayList<String>(),
+			    new ArrayList<com.sun.jdi.Value>() );
+			WrappedValue	contextualScopes	= visibleScopes.invokeByNameAndArgs( "get", Arrays.asList( "java.lang.String" ),
+			    Arrays.asList( this.debugger.vm.mirrorOf( "contextual" ) ) );
+
+			scopes = contextualScopes.invoke( "getKeysAsStrings" )
+			    .invoke( "toArray" )
+			    .asArrayReference()
+			    .getValues()
+			    .stream()
+			    .map( ( scopeNameValue ) -> ( String ) ( ( com.sun.jdi.StringReference ) scopeNameValue ).value() )
+			    .map( ( scopeName ) -> scopeByName( context, scopeName ) )
+			    .filter( ( scope ) -> scope != null )
+			    .toList();
 
 			new ScopeResponse( debugRequest, scopes ).send( this.outputStream );
 		} catch ( Exception e ) {
@@ -423,6 +423,12 @@ public class DebugAdapter {
 		Scope scope = new Scope();
 		scope.name					= key;
 		scope.variablesReference	= ( int ) scopeValue.id();
+
+		if ( key == "arguments" ) {
+			scope.presentationHint = "arguments";
+		} else if ( key == "local" ) {
+			scope.presentationHint = "locals";
+		}
 
 		return scope;
 	}
