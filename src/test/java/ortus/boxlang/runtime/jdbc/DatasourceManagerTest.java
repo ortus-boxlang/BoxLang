@@ -60,21 +60,6 @@ public class DatasourceManagerTest {
 		} );
 	}
 
-	@DisplayName( "It can clear all registered datasources" )
-	@Test
-	void testClear() throws SQLException {
-		manager.registerDatasource( datasourceName, Struct.of(
-		    "jdbcUrl", "jdbc:derby:src/test/resources/tmp/DataSourceTests/testDB;create=true"
-		) );
-		assertThat( manager.getDatasource( datasourceName ) ).isInstanceOf( DataSource.class );
-		Connection connection = manager.getDatasource( datasourceName ).getConnection();
-		assertThat( connection ).isInstanceOf( Connection.class );
-		manager.clear();
-		assertThat( manager.getDatasource( datasourceName ) ).isNull();
-		// The manager should close datasources, connection pools, and connections upon calling .clear()
-		assertThat( connection.isValid( 1 ) ).isFalse();
-	}
-
 	@DisplayName( "It can set and get datasources by name" )
 	@Test
 	void testRegisterDatasource() {
@@ -96,5 +81,35 @@ public class DatasourceManagerTest {
 
 		assertThat( manager.getDefaultDatasource() ).isEqualTo( defaultDatasource );
 		assertThat( manager.getDatasource( Key._DEFAULT ) ).isEqualTo( defaultDatasource );
+	}
+
+	@DisplayName( "It can clear all registered datasources" )
+	@Test
+	void testClear() throws SQLException {
+		manager.registerDatasource( datasourceName, Struct.of(
+		    "jdbcUrl", "jdbc:derby:src/test/resources/tmp/DataSourceTests/testDB;create=true"
+		) );
+		assertThat( manager.getDatasource( datasourceName ) ).isInstanceOf( DataSource.class );
+		Connection connection = manager.getDatasource( datasourceName ).getConnection();
+		assertThat( connection ).isInstanceOf( Connection.class );
+		manager.clear();
+		assertThat( manager.getDatasource( datasourceName ) ).isNull();
+		// The manager should close datasources, connection pools, and connections upon calling .clear()
+		assertThat( connection.isValid( 1 ) ).isFalse();
+	}
+
+	@DisplayName( "It can shut down" )
+	@Test
+	void testShutdown() throws SQLException {
+		manager.registerDatasource( datasourceName, Struct.of(
+		    "jdbcUrl", "jdbc:derby:src/test/resources/tmp/DataSourceTests/testDB;create=true"
+		) );
+		assertThat( manager.getDatasource( datasourceName ) ).isInstanceOf( DataSource.class );
+		Connection connection = manager.getDatasource( datasourceName ).getConnection();
+		assertThat( connection ).isInstanceOf( Connection.class );
+		manager.shutdown();
+		assertThat( manager.getDatasource( datasourceName ) ).isNull();
+		// The manager should close datasources, connection pools, and connections upon calling .clear()
+		assertThat( connection.isValid( 1 ) ).isFalse();
 	}
 }

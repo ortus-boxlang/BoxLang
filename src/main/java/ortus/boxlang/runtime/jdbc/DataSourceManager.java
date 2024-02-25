@@ -25,7 +25,7 @@ public class DataSourceManager {
 	/**
 	 * Singleton instance of the DatasourceManager.
 	 */
-	private static DataSourceManager	instance	= null;
+	private static DataSourceManager	instance;
 
 	/**
 	 * Map of datasources registered with the manager.
@@ -114,5 +114,15 @@ public class DataSourceManager {
 		this.datasources.forEach( ( name, datasource ) -> datasource.shutdown() );
 		this.datasources.clear();
 		return this;
+	}
+
+	/**
+	 * Shutdown the DatasourceManager, including closing all open datasources, connections, and connection pools.
+	 *
+	 * Will self-destruct, at which point a new instance can be obtained via `DataSourceManager.getInstance()`.
+	 */
+	public void shutdown() {
+		this.clear();
+		instance = null;
 	}
 }
