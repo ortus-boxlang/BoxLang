@@ -341,8 +341,8 @@ public interface IClassRunnable extends ITemplateRunnable, IStruct {
 		return getThisScope().values();
 	}
 
-	default IClassRunnable getClassRunnable( Key key ) {
-		return getThisScope().getClassRunnable( key );
+	default IClassRunnable getAsClassRunnable( Key key ) {
+		return getThisScope().getAsClassRunnable( key );
 	}
 
 }

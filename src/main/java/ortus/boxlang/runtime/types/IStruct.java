@@ -22,6 +22,7 @@ import java.util.Map;
 import java.util.Set;
 
 import ortus.boxlang.runtime.dynamic.IReferenceable;
+import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.runnables.IClassRunnable;
 import ortus.boxlang.runtime.scopes.Key;
 
@@ -188,84 +189,6 @@ public interface IStruct extends Map<Key, Object>, IType, IReferenceable {
 	public Map<Key, Object> getWrapped();
 
 	/**
-	 * Convenience method for getting cast as {@Link Key}
-	 * Does NOT perform BoxLang casting, only Java cast so the object needs to actually be castable
-	 */
-	public Key getAsKey( Key key );
-
-	/**
-	 * Convenience method for getting cast as Array
-	 * Does NOT perform BoxLang casting, only Java cast so the object needs to actually be castable
-	 */
-	public Array getAsArray( Key key );
-
-	/**
-	 * Convenience method for getting cast as Struct
-	 * Does NOT perform BoxLang casting, only Java cast so the object needs to actually be castable
-	 */
-	public IStruct getAsStruct( Key key );
-
-	/**
-	 * Convenience method for getting cast as DateTime
-	 * Does NOT perform BoxLang casting, only Java cast so the object needs to actually be castable
-	 */
-	public DateTime getAsDateTime( Key key );
-
-	/**
-	 * Convenience method for getting cast as String
-	 * Does NOT perform BoxLang casting, only Java cast so the object needs to actually be castable
-	 */
-	public String getAsString( Key key );
-
-	/**
-	 * Convenience method for getting cast as Double
-	 * Does NOT perform BoxLang casting, only Java cast so the object needs to actually be castable
-	 */
-	public Double getAsDouble( Key key );
-
-	/**
-	 * Convenience method for getting cast as Long
-	 * Does NOT perform BoxLang casting, only Java cast so the object needs to actually be castable
-	 */
-	public Long getAsLong( Key key );
-
-	/**
-	 * Convenience method for getting cast as Integer
-	 * Does NOT perform BoxLang casting, only Java cast so the object needs to actually be castable
-	 */
-	public Integer getAsInteger( Key key );
-
-	/**
-	 * Convenience method for getting cast as Boolean
-	 * Does NOT perform BoxLang casting, only Java cast so the object needs to actually be castable
-	 */
-	public Boolean getAsBoolean( Key key );
-
-	/**
-	 * Convenience method for getting cast as Function
-	 * Does NOT perform BoxLang casting, only Java cast so the object needs to actually be castable
-	 */
-	public Function getAsFunction( Key key );
-
-	/**
-	 * Convenience method for getting cast as Query
-	 * Does NOT perform BoxLang casting, only Java cast so the object needs to actually be castable
-	 */
-	public Query getAsQuery( Key key );
-
-	/**
-	 * Convenience method for getting cast as XML
-	 * Does NOT perform BoxLang casting, only Java cast so the object needs to actually be castable
-	 */
-	public XML getAsXML( Key key );
-
-	/**
-	 * Convenience method for getting cast as BoxRunnable
-	 * Does NOT perform BoxLang casting, only Java cast so the object needs to actually be castable
-	 */
-	public IClassRunnable getClassRunnable( Key key );
-
-	/**
 	 * Get the type of struct
 	 *
 	 * @return The type of struct according to the {@Link Type} enum
@@ -286,5 +209,109 @@ public interface IStruct extends Map<Key, Object>, IType, IReferenceable {
 	 * Returns a {@link Set} view of the mappings contained in this map.
 	 */
 	public Set<Entry<Key, Object>> entrySet();
+
+	/**
+	 * Convenience method for getting cast as {@Link Key}
+	 * Does NOT perform BoxLang casting, only Java cast so the object needs to actually be castable
+	 */
+	default Key getAsKey( Key key ) {
+		return ( Key ) DynamicObject.unWrap( get( key ) );
+	}
+
+	/**
+	 * Convenience method for getting cast as Array
+	 * Does NOT perform BoxLang casting, only Java cast so the object needs to actually be castable
+	 */
+	default Array getAsArray( Key key ) {
+		return ( Array ) DynamicObject.unWrap( get( key ) );
+	}
+
+	/**
+	 * Convenience method for getting cast as Struct
+	 * Does NOT perform BoxLang casting, only Java cast so the object needs to actually be castable
+	 */
+	default IStruct getAsStruct( Key key ) {
+		return ( IStruct ) DynamicObject.unWrap( get( key ) );
+	}
+
+	/**
+	 * Convenience method for getting cast as DateTime
+	 * Does NOT perform BoxLang casting, only Java cast so the object needs to actually be castable
+	 */
+	default DateTime getAsDateTime( Key key ) {
+		return ( DateTime ) DynamicObject.unWrap( get( key ) );
+	}
+
+	/**
+	 * Convenience method for getting cast as String
+	 * Does NOT perform BoxLang casting, only Java cast so the object needs to actually be castable
+	 */
+	default String getAsString( Key key ) {
+		return ( String ) DynamicObject.unWrap( get( key ) );
+	}
+
+	/**
+	 * Convenience method for getting cast as Double
+	 * Does NOT perform BoxLang casting, only Java cast so the object needs to actually be castable
+	 */
+	default Double getAsDouble( Key key ) {
+		return ( Double ) DynamicObject.unWrap( get( key ) );
+	}
+
+	/**
+	 * Convenience method for getting cast as Long
+	 * Does NOT perform BoxLang casting, only Java cast so the object needs to actually be castable
+	 */
+	default Long getAsLong( Key key ) {
+		return ( Long ) DynamicObject.unWrap( get( key ) );
+	}
+
+	/**
+	 * Convenience method for getting cast as Integer
+	 * Does NOT perform BoxLang casting, only Java cast so the object needs to actually be castable
+	 */
+	default Integer getAsInteger( Key key ) {
+		return ( Integer ) DynamicObject.unWrap( get( key ) );
+	}
+
+	/**
+	 * Convenience method for getting cast as Boolean
+	 * Does NOT perform BoxLang casting, only Java cast so the object needs to actually be castable
+	 */
+	default Boolean getAsBoolean( Key key ) {
+		return ( Boolean ) DynamicObject.unWrap( get( key ) );
+	}
+
+	/**
+	 * Convenience method for getting cast as Function
+	 * Does NOT perform BoxLang casting, only Java cast so the object needs to actually be castable
+	 */
+	default Function getAsFunction( Key key ) {
+		return ( Function ) DynamicObject.unWrap( get( key ) );
+	}
+
+	/**
+	 * Convenience method for getting cast as Query
+	 * Does NOT perform BoxLang casting, only Java cast so the object needs to actually be castable
+	 */
+	default Query getAsQuery( Key key ) {
+		return ( Query ) DynamicObject.unWrap( get( key ) );
+	}
+
+	/**
+	 * Convenience method for getting cast as XML
+	 * Does NOT perform BoxLang casting, only Java cast so the object needs to actually be castable
+	 */
+	default XML getAsXML( Key key ) {
+		return ( XML ) DynamicObject.unWrap( get( key ) );
+	}
+
+	/**
+	 * Convenience method for getting cast as BoxRunnable
+	 * Does NOT perform BoxLang casting, only Java cast so the object needs to actually be castable
+	 */
+	default IClassRunnable getAsClassRunnable( Key key ) {
+		return ( IClassRunnable ) DynamicObject.unWrap( get( key ) );
+	}
 
 }

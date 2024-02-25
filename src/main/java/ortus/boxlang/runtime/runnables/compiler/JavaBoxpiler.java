@@ -704,7 +704,7 @@ public class JavaBoxpiler {
 			if ( boxPackagePath.endsWith( "." ) ) {
 				boxPackagePath = boxPackagePath.substring( 0, boxPackagePath.length() - 1 );
 			}
-			packagePath = "boxclass." + packagePath;
+			packagePath = "boxgenerated.boxclass." + packagePath;
 			// trim trailing period
 			if ( packagePath.endsWith( "." ) ) {
 				packagePath = packagePath.substring( 0, packagePath.length() - 1 );

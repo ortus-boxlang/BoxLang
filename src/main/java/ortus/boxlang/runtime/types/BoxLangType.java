@@ -35,6 +35,9 @@ public enum BoxLangType {
 	QUERY( Key._QUERY ),
 	STRING( Key._STRING ),
 	STRUCT( Key._STRUCT ),
+	UDF( Key._UDF ),
+	CLOSURE( Key.closure ),
+	LAMBDA( Key.lambda ),
 	XML( Key.XML );
 
 	/**

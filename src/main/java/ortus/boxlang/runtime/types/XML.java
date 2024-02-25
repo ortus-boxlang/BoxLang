@@ -22,9 +22,11 @@ import java.io.Serializable;
 import java.io.StringReader;
 import java.io.StringWriter;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -50,9 +52,9 @@ import org.xml.sax.SAXException;
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.bifs.MemberDescriptor;
 import ortus.boxlang.runtime.context.IBoxContext;
-import ortus.boxlang.runtime.dynamic.IReferenceable;
 import ortus.boxlang.runtime.dynamic.casters.CastAttempt;
 import ortus.boxlang.runtime.dynamic.casters.DoubleCaster;
+import ortus.boxlang.runtime.dynamic.casters.KeyCaster;
 import ortus.boxlang.runtime.interop.DynamicInteropService;
 import ortus.boxlang.runtime.scopes.IntKey;
 import ortus.boxlang.runtime.scopes.Key;
@@ -65,7 +67,7 @@ import ortus.boxlang.runtime.types.meta.GenericMeta;
 /**
  * This class represents a XML Node.
  */
-public class XML implements IType, IReferenceable, Serializable /* , Collection<XML> */ {
+public class XML implements Serializable, IStruct {
 
 	/**
 	 * XML data as List of arrays
@@ -209,8 +211,8 @@ public class XML implements IType, IReferenceable, Serializable /* , Collection<
 	 *
 	 * @return the attributes of this XML node as a struct
 	 */
-	public Struct getXMLAttributes() {
-		Struct			attributes	= new Struct( IStruct.TYPES.LINKED );
+	public IStruct getXMLAttributes() {
+		IStruct			attributes	= new Struct( IStruct.TYPES.LINKED );
 		NamedNodeMap	attrs		= node.getAttributes();
 		for ( int i = 0; i < attrs.getLength(); i++ ) {
 			Node attr = attrs.item( i );
@@ -534,6 +536,168 @@ public class XML implements IType, IReferenceable, Serializable /* , Collection<
 			}
 		}
 		return index;
+	}
+
+	// Implement IStruct methods
+	@Override
+	public Object get( String key ) {
+		return getRaw( KeyCaster.cast( key ) );
+	}
+
+	@Override
+	public Object get( Object key ) {
+		return getRaw( KeyCaster.cast( key ) );
+	}
+
+	@Override
+	public Object getRaw( Key key ) {
+		return getFirstChildOfName( key.getName() );
+	}
+
+	@Override
+	public Object remove( String key ) {
+		throw new UnsupportedOperationException( "XML modification not implemented yet" );
+	}
+
+	@Override
+	public int size() {
+		return getXMLChildrenAsList().size();
+	}
+
+	@Override
+	public boolean isEmpty() {
+		return getXMLChildrenAsList().isEmpty();
+	}
+
+	@Override
+	public boolean containsKey( Object key ) {
+		return getFirstChildOfName( KeyCaster.cast( key ).getName() ) != null;
+	}
+
+	@Override
+	public boolean containsValue( Object value ) {
+		return getXMLChildrenAsList().contains( value );
+	}
+
+	@Override
+	public Object put( Key key, Object value ) {
+		throw new UnsupportedOperationException( "XML modification not implemented yet" );
+	}
+
+	@Override
+	public Object remove( Object key ) {
+		throw new UnsupportedOperationException( "XML modification not implemented yet" );
+	}
+
+	@Override
+	public void putAll( Map<? extends Key, ? extends Object> m ) {
+		throw new UnsupportedOperationException( "XML modification not implemented yet" );
+	}
+
+	@Override
+	public void clear() {
+		throw new UnsupportedOperationException( "XML modification not implemented yet" );
+	}
+
+	@Override
+	public Set<Key> keySet() {
+		return getXMLChildrenAsList().stream().map( XML::getXMLName ).map( Key::of ).collect( Collectors.toSet() );
+	}
+
+	@Override
+	public Collection<Object> values() {
+		return getXMLChildrenAsList().stream().collect( Collectors.toList() );
+	}
+
+	@Override
+	public Set<Entry<Key, Object>> entrySet() {
+		// The (Object) cast is necessary to avoid the compiler error:
+		return getXMLChildrenAsList().stream().map( xml -> Map.entry( Key.of( xml.getXMLName() ), ( Object ) xml ) ).collect( Collectors.toSet() );
+	}
+
+	@Override
+	public Boolean isSoftReferenced() {
+		return false;
+	}
+
+	@Override
+	public List<String> getKeysAsStrings() {
+		return getXMLChildrenAsList().stream().map( XML::getXMLName ).collect( Collectors.toList() );
+	}
+
+	@Override
+	public void addAll( Map<? extends Object, ? extends Object> m ) {
+		throw new UnsupportedOperationException( "XML modification not implemented yet" );
+	}
+
+	@Override
+	public Object getOrDefault( String key, Object defaultValue ) {
+		return getOrDefault( KeyCaster.cast( key ), defaultValue );
+	}
+
+	@Override
+	public Object getOrDefault( Key key, Object defaultValue ) {
+		Object res = get( key );
+		if ( res == null ) {
+			return defaultValue;
+		}
+		return res;
+	}
+
+	@Override
+	public boolean containsKey( String key ) {
+		return getFirstChildOfName( key ) != null;
+	}
+
+	@Override
+	public boolean containsKey( Key key ) {
+		return containsKey( key.getName() );
+	}
+
+	@Override
+	public Object put( String key, Object value ) {
+		throw new UnsupportedOperationException( "XML modification not implemented yet" );
+	}
+
+	@Override
+	public String toStringWithCase() {
+		return toString();
+	}
+
+	@Override
+	public IStruct.TYPES getType() {
+		return IStruct.TYPES.DEFAULT;
+	}
+
+	@Override
+	public Boolean isCaseSensitive() {
+		return false;
+	}
+
+	@Override
+	public Map<Key, Object> getWrapped() {
+		throw new UnsupportedOperationException(
+		    "XML nodes don't support getting the wrapped Map.  Even though they behave like a struct, they really aren't one." );
+	}
+
+	@Override
+	public Object putIfAbsent( String key, Object value ) {
+		throw new UnsupportedOperationException( "XML modification not implemented yet" );
+	}
+
+	@Override
+	public Object putIfAbsent( Key key, Object value ) {
+		throw new UnsupportedOperationException( "XML modification not implemented yet" );
+	}
+
+	@Override
+	public List<Key> getKeys() {
+		return keySet().stream().collect( Collectors.toList() );
+	}
+
+	@Override
+	public Object remove( Key key ) {
+		throw new UnsupportedOperationException( "XML modification not implemented yet" );
 	}
 
 }
