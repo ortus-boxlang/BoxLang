@@ -388,6 +388,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		username					= Key.of( "username" );
 	public static final Key		password					= Key.of( "password" );
 	public static final Key		databaseName				= Key.of( "databaseName" );
+	public static final Key		table						= Key.of( "table" );
 
 	/**
 	 * --------------------------------------------------------------------------
