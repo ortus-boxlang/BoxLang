@@ -976,5 +976,5 @@ public class Struct implements IStruct, IListenable, Serializable {
 			listeners = new ConcurrentHashMap<Key, IChangeListener>();
 		}
 	}
-	
+
 }
