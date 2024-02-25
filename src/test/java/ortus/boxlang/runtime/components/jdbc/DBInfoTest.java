@@ -19,6 +19,7 @@
 
 package ortus.boxlang.runtime.components.jdbc;
 
+import static org.junit.Assert.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -26,6 +27,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -37,6 +39,7 @@ import ortus.boxlang.runtime.jdbc.DataSourceManager;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
+import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Query;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.BoxValidationException;
@@ -54,7 +57,7 @@ public class DBInfoTest {
 		instance			= BoxRuntime.getInstance( true );
 		datasourceManager	= DataSourceManager.getInstance();
 		DataSource defaultDatasource = new DataSource( Struct.of(
-		    "jdbcUrl", "jdbc:derby:src/test/resources/tmp/DataSourceTests/testDB;create=true"
+		    "jdbcUrl", "jdbc:derby:memory:BoxlangDB;create=true"
 		) );
 		datasourceManager.setDefaultDatasource( defaultDatasource );
 	}
@@ -79,6 +82,7 @@ public class DBInfoTest {
 		assertThrows( BoxValidationException.class, () -> {
 			instance.executeStatement( "CFDBInfo( type='foo' );" );
 		} );
+		// This DOES throw, and i don't know why. 😢
 		// assertDoesNotThrow( () -> {
 		// instance.executeStatement( "CFDBInfo( type='version', name='result' );" );
 		// } );
@@ -113,6 +117,36 @@ public class DBInfoTest {
 		assertEquals( 6, versionQuery.getColumns().size() );
 
 		assertEquals( "Apache Derby Embedded JDBC Driver", versionQuery.getRowAsStruct( 0 ).getAsString( Key.of( "DRIVER_NAME" ) ) );
+	}
+
+	@Disabled( "Result object is missing expected database name." )
+	@DisplayName( "Can get catalog and schema names" )
+	@Test
+	public void testDBNames() {
+		instance.executeSource(
+		    """
+		        cfdbinfo( type='dbnames', name='result' )
+		    """,
+		    context );
+		Object theResult = variables.get( result );
+		assertTrue( theResult instanceof Query );
+		Query dbNamesQuery = ( Query ) theResult;
+		assertTrue( dbNamesQuery.size() > 0 );
+		assertEquals( 2, dbNamesQuery.getColumns().size() );
+
+		IStruct ourDBRow = dbNamesQuery.stream()
+		    .filter( row -> row.getAsString( Key.of( "DBNAME" ) ).equals( "boxlang" ) )
+		    .findFirst()
+		    .orElse( null );
+
+		// @TODO: Fix this assertion!
+		// for unknown reasons, the boxlang database is not found.
+		// Possibly Apache Derby isn't playing nice with our connection string... dunno. Until then,
+		// this test will have to stay disabled.
+		// SeeDerby database name docs: https://db.apache.org/derby/docs/10.17/devguide/rdevdvlp847152.html
+		assertNotNull( ourDBRow );
+		assertEquals( "CATALOG", ourDBRow.getAsString( Key.type ) );
+		assertEquals( "testDB", ourDBRow.getAsString( Key.of( "DBNAME" ) ) );
 	}
 
 }

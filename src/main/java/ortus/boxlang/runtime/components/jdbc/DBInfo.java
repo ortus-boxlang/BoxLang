@@ -19,6 +19,7 @@ package ortus.boxlang.runtime.components.jdbc;
 
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Set;
 
@@ -91,29 +92,61 @@ public class DBInfo extends Component {
 		// DataSourceManager manager = context.getRuntime().getDatasourceManager();
 		DataSourceManager	manager		= DataSourceManager.getInstance();
 		DataSource			datasource	= attributes.containsKey( Key.datasource )
-		    ? manager.getDatasource( attributes.getAsKey( Key.datasource ) )
+		    ? manager.getDatasource( Key.of( attributes.getAsString( Key.datasource ) ) )
 		    : manager.getDefaultDatasource();
 		Query				result		= null;
 		switch ( DBInfoType.fromString( attributes.getAsString( Key.type ) ) ) {
+			case DBNAMES :
+				result = getDbNames( datasource );
+				break;
 			case VERSION :
 				result = getVersion( datasource );
-				// @TODO: Implement remaining types.
-				// case COLUMNS :
-				// result = getColumns( context, attributes );
-				// case DBNAMES :
-				// result = getDbNames( context );
-				// case TABLES :
-				// result = getTables( context );
-				// case FOREIGNKEYS :
-				// result = getForeignKeys( context, attributes );
-				// case INDEX :
-				// result = getIndex( context, attributes );
-				// case PROCEDURES :
-				// result = getProcedures( context );
+				break;
+			// @TODO: Implement remaining types.
+			// case COLUMNS :
+			// result = getColumns( context, attributes );
+			// case TABLES :
+			// result = getTables( context );
+			// case FOREIGNKEYS :
+			// result = getForeignKeys( context, attributes );
+			// case INDEX :
+			// result = getIndex( context, attributes );
+			// case PROCEDURES :
+			// result = getProcedures( context );
 		}
 		ExpressionInterpreter.setVariable( context, attributes.getAsString( Key._NAME ), result );
 		// @TODO: Return null???
 		return DEFAULT_RETURN;
+	}
+
+	/**
+	 * Build a Query object of database names for both SCHEMA and CATALOG types.
+	 *
+	 * @param datasource Datasource on which to pull database names
+	 *
+	 * @return Query object populated with database names for this datasource.
+	 */
+	private Query getDbNames( DataSource datasource ) {
+		try ( Connection conn = datasource.getConnection(); ) {
+			Query result = new Query();
+			result.addColumn( Key.of( "DBNAME" ), QueryColumnType.VARCHAR );
+			result.addColumn( Key.of( "type" ), QueryColumnType.VARCHAR );
+			// @TODO: Support `pattern` attribute here, like Lucee does, to filter the results.
+			try ( ResultSet catalogs = conn.getMetaData().getCatalogs() ) {
+				while ( catalogs.next() ) {
+					result.addRow( new Object[] { catalogs.getObject( 1 ), "DATABASE" } );
+				}
+			}
+			// @TODO: Support `pattern` attribute here, like Lucee does, to filter the results.
+			try ( ResultSet schemas = conn.getMetaData().getSchemas(); ) {
+				while ( schemas.next() ) {
+					result.addRow( new Object[] { schemas.getObject( 1 ), "SCHEMA" } );
+				}
+			}
+			return result;
+		} catch ( SQLException e ) {
+			throw new DatabaseException( "Unable to read database names", e );
+		}
 	}
 
 	/**
@@ -122,7 +155,7 @@ public class DBInfo extends Component {
 	 *
 	 * @param datasource Datasource on which to check version info.
 	 *
-	 * @return
+	 * @return Query object populated with JDBC driver version info.
 	 */
 	private Query getVersion( DataSource datasource ) {
 		try ( Connection conn = datasource.getConnection(); ) {
@@ -158,7 +191,7 @@ public class DBInfo extends Component {
 	private enum DBInfoType {
 
 	    // COLUMNS,
-	    // DBNAMES,
+		DBNAMES,
 	    // TABLES,
 	    // FOREIGNKEYS,
 	    // INDEX,
