@@ -22,12 +22,17 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.ByteBuffer;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 // import java.lang.StackWalker.StackFrame;
 import java.util.Map;
+import java.util.Set;
+
+import org.apache.commons.lang3.ClassUtils;
 
 import com.sun.jdi.AbsentInformationException;
 import com.sun.jdi.Bootstrap;
@@ -64,6 +69,7 @@ import ortus.boxlang.debugger.types.Breakpoint;
 import ortus.boxlang.debugger.types.Variable;
 import ortus.boxlang.runtime.runnables.compiler.JavaBoxpiler;
 import ortus.boxlang.runtime.runnables.compiler.JavaBoxpiler.ClassInfo;
+import ortus.boxlang.runtime.runnables.compiler.SourceMap;
 import ortus.boxlang.runtime.runnables.compiler.SourceMap.SourceMapRecord;
 import ortus.boxlang.runtime.types.BoxLangType;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
@@ -89,6 +95,8 @@ public class BoxLangDebugger implements IBoxLangDebugger {
 	private InputStream				vmInput;
 	private InputStream				vmErrorInput;
 	public BreakpointEvent			bpe;
+
+	private Map<String, SourceMap>	sourceMaps	= new HashMap<String, SourceMap>();
 
 	private ClassType				keyClassRef	= null;
 
@@ -331,6 +339,7 @@ public class BoxLangDebugger implements IBoxLangDebugger {
 		return matchingThreadRef.frames()
 		    .stream()
 		    .filter( ( stackFrame ) -> stackFrame.location().declaringType().name().contains( "boxgenerated" ) )
+		    .filter( ( stackFrame ) -> !stackFrame.location().method().name().contains( "dereferenceAndInvoke" ) )
 		    .map( ( sf ) -> {
 			    try {
 
@@ -366,7 +375,8 @@ public class BoxLangDebugger implements IBoxLangDebugger {
 				handleDeathEvent( de );
 			}
 			if ( event instanceof ClassPrepareEvent cpe ) {
-				vmClasses.add( cpe.referenceType() );
+
+				handleClassPrepareEvent( cpe );
 			}
 			if ( event instanceof BreakpointEvent bpe ) {
 				handleBreakPointEvent( bpe );
@@ -378,6 +388,12 @@ public class BoxLangDebugger implements IBoxLangDebugger {
 		}
 
 		setAllBreakpoints();
+	}
+
+	private void handleClassPrepareEvent( ClassPrepareEvent event ) {
+		vmClasses.add( event.referenceType() );
+		SourceMap map = javaBoxpiler.getSourceMapFromFQN( event.referenceType().name() );
+		this.sourceMaps.put( map.source, map );
 	}
 
 	private void handleDeathEvent( VMDeathEvent de ) {
@@ -457,8 +473,7 @@ public class BoxLangDebugger implements IBoxLangDebugger {
 		for ( String fileName : this.breakpoints.keySet() ) {
 
 			for ( Breakpoint breakpoint : this.breakpoints.get( fileName ) ) {
-				List<ReferenceType>	matchingTypes		= getMatchingReferenceTypes( fileName );
-				List<Location>		possibleLocations	= new ArrayList<Location>();
+				List<ReferenceType> matchingTypes = getMatchingReferenceTypes( fileName );
 
 				if ( matchingTypes.size() == 0 ) {
 					continue;
@@ -467,7 +482,7 @@ public class BoxLangDebugger implements IBoxLangDebugger {
 				for ( ReferenceType vmClass : matchingTypes ) {
 					try {
 						SourceMapRecord	foundMapRecord	= javaBoxpiler.getSourceMapFromFQN( vmClass.name() ).findClosestSourceMapRecord( breakpoint.line );
-						String			sourceName		= foundMapRecord.javaSourceClassName.replaceAll( "(\\d)(\\.)", "$1\\$" );
+						String			sourceName		= convertSourceMapSourceClassName( foundMapRecord.javaSourceClassName );
 						if ( sourceName.compareToIgnoreCase( vmClass.name() ) != 0 ) {
 							continue;
 						}
@@ -501,14 +516,31 @@ public class BoxLangDebugger implements IBoxLangDebugger {
 
 	private List<ReferenceType> getMatchingReferenceTypes( String fileName ) {
 		ClassInfo classInfo = getClassInfo( fileName );
-		return vmClasses.stream().filter( ( rt ) -> classInfo.matchesFQNWithoutCompileCount( rt.name() ) ).toList();
+
+		if ( !this.sourceMaps.containsKey( fileName ) ) {
+			return new ArrayList<ReferenceType>();
+		}
+
+		SourceMap	map				= this.sourceMaps.get( fileName );
+
+		Set<String>	referenceTypes	= new HashSet<String>();
+
+		for ( SourceMapRecord record : map.sourceMapRecords ) {
+			referenceTypes.add( convertSourceMapSourceClassName( record.javaSourceClassName ) );
+		}
+
+		return vmClasses.stream().filter( ( rt ) -> referenceTypes.contains( rt.name() ) ).toList();
 	}
 
 	private ClassInfo getClassInfo( String fileName ) {
 		if ( fileName.endsWith( "bx" ) ) {
-			return ClassInfo.forClass( Path.of( fileName ), fileName );
+			return ClassInfo.forClass( Path.of( fileName ), JavaBoxpiler.getPackageName( Paths.get( ClassUtils.getPackageName( fileName ) ).toFile() ) );
 		}
 
 		return ClassInfo.forTemplate( Path.of( fileName ), fileName );
+	}
+
+	private String convertSourceMapSourceClassName( String sourceClassName ) {
+		return sourceClassName.replaceAll( "(\\d)(\\.)", "$1\\$" );
 	}
 }

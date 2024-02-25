@@ -196,6 +196,15 @@ public class JDITools {
 		}
 
 		/**
+		 * Convenience method for casting to a DoubleValue.
+		 * 
+		 * @return
+		 */
+		public IntegerValue asIntegerValue() {
+			return ( IntegerValue ) value;
+		}
+
+		/**
 		 * Convenience method for casting to an ArrayReference.
 		 * 
 		 * @return
@@ -395,7 +404,10 @@ public class JDITools {
 		var.value	= "";
 		var.type	= "null";
 
-		if ( val instanceof StringReference stringRef ) {
+		if ( val == null ) {
+			var.value	= "null";
+			var.type	= "null";
+		} else if ( val instanceof StringReference stringRef ) {
 			var.value	= "\"" + stringRef.value() + "\"";
 			var.type	= "String";
 		} else if ( val instanceof IntegerValue integerVal ) {
@@ -407,6 +419,9 @@ public class JDITools {
 		} else if ( wrapped.isOfType( "java.lang.Boolean" ) ) {
 			var.value	= StringCaster.cast( wrapped.property( "value" ).asBooleanValue().booleanValue() );
 			var.type	= "boolean";
+		} else if ( wrapped.isOfType( "java.lang.integer" ) ) {
+			var.value	= StringCaster.cast( wrapped.property( "value" ).asIntegerValue().intValue() );
+			var.type	= "numeric";
 		} else if ( wrapped.isOfType( "java.lang.double" ) ) {
 			var.value	= StringCaster.cast( wrapped.property( "value" ).asDoubleValue().doubleValue() );
 			var.type	= "numeric";

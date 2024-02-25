@@ -23,11 +23,10 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.net.SocketException;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 import org.apache.commons.lang3.NotImplementedException;
 import org.slf4j.Logger;
@@ -84,7 +83,7 @@ public class DebugAdapter {
 	private JavaBoxpiler					javaBoxpiler;
 	private AdapterProtocolMessageReader	DAPReader;
 
-	private Map<Integer, BreakpointRequest>	breakpoints	= new HashMap<Integer, BreakpointRequest>();
+	private List<BreakpointRequest>			breakpoints	= new ArrayList<BreakpointRequest>();
 
 	/**
 	 * Constructor
@@ -248,7 +247,7 @@ public class DebugAdapter {
 	public void visit( SetBreakpointsRequest debugRequest ) {
 		for ( Breakpoint bp : debugRequest.arguments.breakpoints ) {
 			this.debugger.addBreakpoint( debugRequest.arguments.source.path, bp );
-			this.breakpoints.put( bp.id, new BreakpointRequest( bp.id, bp.line, debugRequest.arguments.source.path.toLowerCase() ) );
+			this.breakpoints.add( new BreakpointRequest( bp.id, bp.line, debugRequest.arguments.source.path.toLowerCase() ) );
 		}
 
 		new SetBreakpointsResponse( debugRequest ).send( this.outputStream );
@@ -326,6 +325,7 @@ public class DebugAdapter {
 				    com.sun.jdi.Location location	= tuple.location();
 				    StackFrame			sf			= new StackFrame();
 				    SourceMap			map			= javaBoxpiler.getSourceMapFromFQN( location.declaringType().name() );
+				    String				fileName	= Path.of( map.source ).getFileName().toString();
 
 				    sf.id	= tuple.id();
 				    sf.line	= location.lineNumber();
@@ -340,35 +340,32 @@ public class DebugAdapter {
 				    BoxLangType blType = this.debugger.determineBoxLangType( location.declaringType() );
 
 				    if ( blType == BoxLangType.UDF ) {
-					    sf.name		= this.debugger.getObjectFromStackFrame( stackFrame )
+					    sf.name	= this.debugger.getObjectFromStackFrame( stackFrame )
 					        .property( "name" )
 					        .property( "originalValue" )
 					        .asStringReference().value();
-					    sf.source	= new Source();
-					    sf.source.path = map.source.toString();
-					    sf.source.name = sf.name + "(UDF)";
+					    sf.source = new Source();
 				    } else if ( blType == BoxLangType.CLOSURE ) {
 					    // TODO figure out how to get the name of the closure from a parent context
 					    String calledName = this.debugger.getContextForStackFrame( tuple ).invoke( "findClosestFunctionName" ).invoke( "getOriginalValue" )
 					        .asStringReference().value();
 
-					    sf.name		= calledName + "(closure)";
-					    sf.source	= new Source();
-					    sf.source.path = map.source.toString();
-					    sf.source.name = sf.name;
+					    sf.name	= calledName + " (closure)";
+					    sf.source = new Source();
 				    } else if ( blType == BoxLangType.LAMBDA ) {
-					    sf.name		= this.debugger.getObjectFromStackFrame( stackFrame )
-					        .property( "name" )
-					        .property( "originalValue" )
+					    String calledName = this.debugger.getContextForStackFrame( tuple ).invoke( "findClosestFunctionName" ).invoke( "getOriginalValue" )
 					        .asStringReference().value();
-					    sf.source	= new Source();
-					    sf.source.path = map.source.toString();
-					    sf.source.name = sf.name + "(LAMBDA)";
+					    sf.name	= calledName + " (lambda)";
+					    sf.source = new Source();
 				    } else if ( map != null && map.isTemplate() ) {
-					    sf.name		= map.getFileName();
-					    sf.source	= new Source();
+					    sf.name	= map.getFileName();
+					    sf.source = new Source();
+
+				    }
+
+				    if ( sf.source != null ) {
 					    sf.source.path = map.source.toString();
-					    sf.source.name = sf.name;
+					    sf.source.name = fileName;
 				    }
 
 				    return sf;
@@ -458,11 +455,15 @@ public class DebugAdapter {
 
 		BreakpointRequest	bp			= null;
 
-		for ( BreakpointRequest b : this.breakpoints.values() ) {
+		for ( BreakpointRequest b : this.breakpoints ) {
 			if ( b.source.compareToIgnoreCase( sourcePath ) == 0 ) {
 				bp = b;
 				break;
 			}
+		}
+
+		if ( bp == null ) {
+			return;
 		}
 		// TODO convert this file/line number to boxlang
 		StoppedEvent.breakpoint( breakpointEvent, bp.id ).send( this.outputStream );
