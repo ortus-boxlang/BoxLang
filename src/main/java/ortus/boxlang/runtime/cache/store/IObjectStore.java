@@ -21,6 +21,7 @@ import java.util.stream.Stream;
 
 import ortus.boxlang.runtime.cache.ICacheEntry;
 import ortus.boxlang.runtime.cache.filters.ICacheKeyFilter;
+import ortus.boxlang.runtime.cache.providers.ICacheProvider;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.IStruct;
 
@@ -42,10 +43,23 @@ import ortus.boxlang.runtime.types.IStruct;
 public interface IObjectStore {
 
 	/**
-	 * Some storages require a startup method to initialize the storage or do
-	 * object loading. This method is called when the cache provider is started.
+	 * Get the configuration for the store
 	 */
-	public void startup();
+	public IStruct getConfig();
+
+	/**
+	 * Get the associated cache provider
+	 */
+	public ICacheProvider getProvider();
+
+	/**
+	 * Some storages require a method to initialize the storage or do
+	 * object loading. This method is called when the cache provider is started.
+	 *
+	 * @param provider The cache provider associated with this store
+	 * @param config   The configuration for the store
+	 */
+	public void init( ICacheProvider provider, IStruct config );
 
 	/**
 	 * Some storages require a shutdown method to close the storage or do

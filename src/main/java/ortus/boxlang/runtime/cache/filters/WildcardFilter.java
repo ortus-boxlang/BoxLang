@@ -26,6 +26,7 @@ import ortus.boxlang.runtime.types.exceptions.BoxValidationException;
 /**
  * A filter that uses globbing style wildcards to filter cache keys case-sensitive or not.
  * Ex: hello*world, hello?world, hello[abc]world, hello[^abc]world, lui?, lui*, lui[abc]world, lui[^abc]world
+ * Ex: box:* will match all keys that start with box:
  */
 public class WildcardFilter implements ICacheKeyFilter {
 
@@ -55,13 +56,20 @@ public class WildcardFilter implements ICacheKeyFilter {
 	 * @param ignoreCase Whether the wildcard should be case-sensitive
 	 */
 	public WildcardFilter( String wildcard, boolean ignoreCase ) {
-		// Escape the wildcard
+		// Escape the special characters
 		String regex = wildcard;
 		for ( char c : SPECIALS.toCharArray() ) {
 			regex = regex.replace( String.valueOf( c ), "\\" + c );
 		}
 		// Replace the wildcards
-		regex = regex.replace( "?", "." ).replace( "*", ".*" ).replace( "[!", "[^" );
+		regex = regex
+		    // Single character
+		    .replace( "?", "." )
+		    // Multiple characters
+		    .replace( "**", "*" )
+		    .replace( "*", ".*" )
+		    // Character set
+		    .replace( "[!", "[^" );
 		// Compile the regex
 		try {
 			regexPattern = Pattern.compile( regex, ignoreCase ? 0 : Pattern.CASE_INSENSITIVE );
