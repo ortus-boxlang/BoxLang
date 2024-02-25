@@ -58,13 +58,27 @@ public class DBInfo extends Component {
 		        Validator.REQUIRED,
 		        Validator.NON_EMPTY
 		    ) ),
-		    new Attribute( Key.table, "string" ),
-		    new Attribute( Key.datasource, "string" )
+		    new Attribute( Key.datasource, "string" ),
+			// @TODO: Implement
+			// new Attribute( Key.table, "string" ),
+			// new Attribute( Key.pattern, "string" ),
+			// new Attribute( Key.dbname, "string" ),
+			// new Attribute( Key.username, "string" ),
+			// new Attribute( Key.password, "string" )
 		};
 	}
 
 	/**
-	 * Retrieve database metadata for a given datasource
+	 * Retrieve database metadata for a given datasource.
+	 * <p>
+	 *
+	 * @attribute.type Type of metadata to retrieve. One of: `columns`, `dbnames`, `tables`, `foreignkeys`, `index`, `procedures`, or `version`.
+	 *
+	 * @attribute.name Name of the variable to which the result will be assigned. Required.
+	 *
+	 * @attribute.table Table name for which to retrieve metadata. Required for `columns`, `foreignkeys`, and `index` types.
+	 *
+	 * @attribute.datasource Name of the datasource to check metadata on. If not provided, the default datasource will be used.
 	 *
 	 * @param context        The context in which the Component is being invoked
 	 * @param attributes     The attributes to the Component
@@ -81,26 +95,35 @@ public class DBInfo extends Component {
 		    : manager.getDefaultDatasource();
 		Query				result		= null;
 		switch ( DBInfoType.fromString( attributes.getAsString( Key.type ) ) ) {
-			// case COLUMNS :
-			// result = getColumns( context, attributes );
-			// case DBNAMES :
-			// result = getDbNames( context );
-			// case TABLES :
-			// result = getTables( context );
-			// case FOREIGNKEYS :
-			// result = getForeignKeys( context, attributes );
-			// case INDEX :
-			// result = getIndex( context, attributes );
-			// case PROCEDURES :
-			// result = getProcedures( context );
 			case VERSION :
 				result = getVersion( datasource );
+				// @TODO: Implement remaining types.
+				// case COLUMNS :
+				// result = getColumns( context, attributes );
+				// case DBNAMES :
+				// result = getDbNames( context );
+				// case TABLES :
+				// result = getTables( context );
+				// case FOREIGNKEYS :
+				// result = getForeignKeys( context, attributes );
+				// case INDEX :
+				// result = getIndex( context, attributes );
+				// case PROCEDURES :
+				// result = getProcedures( context );
 		}
 		ExpressionInterpreter.setVariable( context, attributes.getAsString( Key._NAME ), result );
 		// @TODO: Return null???
 		return DEFAULT_RETURN;
 	}
 
+	/**
+	 * Build a Query object with the database version info.
+	 * For historical reasons, the first six columns must match the historical column names.
+	 *
+	 * @param datasource Datasource on which to check version info.
+	 *
+	 * @return
+	 */
 	private Query getVersion( DataSource datasource ) {
 		try ( Connection conn = datasource.getConnection(); ) {
 			Query				result				= new Query();
@@ -129,6 +152,9 @@ public class DBInfo extends Component {
 		}
 	}
 
+	/**
+	 * Enumeration of all possible `type` attribute values.
+	 */
 	private enum DBInfoType {
 
 	    // COLUMNS,
