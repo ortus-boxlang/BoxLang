@@ -18,10 +18,9 @@
 package ortus.boxlang.runtime.components.jdbc;
 
 import java.sql.Connection;
+import java.sql.DatabaseMetaData;
 import java.sql.SQLException;
 import java.util.Set;
-
-import javax.management.Query;
 
 import ortus.boxlang.runtime.components.Attribute;
 import ortus.boxlang.runtime.components.BoxComponent;
@@ -33,6 +32,8 @@ import ortus.boxlang.runtime.jdbc.DataSource;
 import ortus.boxlang.runtime.jdbc.DataSourceManager;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.IStruct;
+import ortus.boxlang.runtime.types.Query;
+import ortus.boxlang.runtime.types.QueryColumnType;
 import ortus.boxlang.runtime.types.exceptions.DatabaseException;
 
 @BoxComponent( allowsBody = false )
@@ -47,10 +48,11 @@ public class DBInfo extends Component {
 		    new Attribute( Key.type, "string", Set.of(
 		        Validator.REQUIRED,
 		        Validator.NON_EMPTY,
-		        Validator.valueOneOf( "columns", "dbnames", "tables", "foreignkeys", "index", "procedures", "version" ),
-		        Validator.valueRequires( "columns", Key.table ),
-		        Validator.valueRequires( "foreignkeys", Key.table ),
-		        Validator.valueRequires( "index", Key.table )
+		        Validator.valueOneOf( "columns", "dbnames", "tables", "foreignkeys", "index", "procedures", "version" )
+			// @TODO: Figure out why the `valueRequires` validator s requiring the `table` argument regardless of the `type` value!
+			// Validator.valueRequires( "columns", Key.table ),
+			// Validator.valueRequires( "foreignkeys", Key.table ),
+			// Validator.valueRequires( "index", Key.table )
 		    ) ),
 		    new Attribute( Key._NAME, "string", Set.of(
 		        Validator.REQUIRED,
@@ -92,18 +94,35 @@ public class DBInfo extends Component {
 			// case PROCEDURES :
 			// result = getProcedures( context );
 			case VERSION :
-				result = getVersion( context, datasource );
+				result = getVersion( datasource );
 		}
 		ExpressionInterpreter.setVariable( context, attributes.getAsString( Key._NAME ), result );
 		// @TODO: Return null???
 		return DEFAULT_RETURN;
 	}
 
-	private Query getVersion( IBoxContext context, DataSource datasource ) {
-		Query result = new Query();
+	private Query getVersion( DataSource datasource ) {
 		try ( Connection conn = datasource.getConnection(); ) {
-			// conn.getMetaData().getDatabaseProductVersion();
-			// result.add( "version", conn.getMetaData().getDatabaseProductVersion() );
+			Query				result				= new Query();
+			DatabaseMetaData	databaseMetadata	= conn.getMetaData();
+			result.addColumn( Key.of( "DATABASE_PRODUCTNAME" ), QueryColumnType.VARCHAR, new Object[] {
+			    databaseMetadata.getDatabaseProductName()
+			} );
+			result.addColumn( Key.of( "DATABASE_VERSION" ), QueryColumnType.VARCHAR, new Object[] {
+			    databaseMetadata.getDatabaseProductVersion()
+			} );
+			result.addColumn( Key.of( "DRIVER_NAME" ), QueryColumnType.VARCHAR, new Object[] {
+			    databaseMetadata.getDriverName()
+			} );
+			result.addColumn( Key.of( "DRIVER_VERSION" ), QueryColumnType.VARCHAR, new Object[] {
+			    databaseMetadata.getDriverVersion()
+			} );
+			result.addColumn( Key.of( "JDBC_MAJOR_VERSION" ), QueryColumnType.VARCHAR, new Object[] {
+			    Double.valueOf( databaseMetadata.getJDBCMajorVersion() )
+			} );
+			result.addColumn( Key.of( "JDBC_MINOR_VERSION" ), QueryColumnType.DOUBLE, new Object[] {
+			    Double.valueOf( databaseMetadata.getJDBCMinorVersion() )
+			} );
 			return result;
 		} catch ( SQLException e ) {
 			throw new DatabaseException( "Unable to read database version info", e );
