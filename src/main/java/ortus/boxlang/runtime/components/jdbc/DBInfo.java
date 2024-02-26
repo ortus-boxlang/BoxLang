@@ -96,8 +96,16 @@ public class DBInfo extends Component {
 		DataSource			datasource	= attributes.containsKey( Key.datasource )
 		    ? manager.getDatasource( Key.of( attributes.getAsString( Key.datasource ) ) )
 		    : manager.getDefaultDatasource();
-		// @TODO: Throw if datasource is null/not found.
-		Query				result		= null;
+		if ( datasource == null ) {
+			if ( attributes.containsKey( Key.datasource ) ) {
+				throw new DatabaseException( String.format( "Datasource not found for string name [%s]", attributes.getAsString( Key.datasource ) ) );
+			} else {
+				throw new DatabaseException(
+				    "Default datasource not found; You must supply a `datasource` attribute or define a default datasource in Application.bx"
+				);
+			}
+		}
+		Query result = null;
 		switch ( DBInfoType.fromString( attributes.getAsString( Key.type ) ) ) {
 			case DBNAMES :
 				result = getDbNames( datasource );
@@ -232,10 +240,8 @@ public class DBInfo extends Component {
 					row.put( Key.of( "REFERENCED_PRIMARYKEY_TABLE" ), referencedKeyTable );
 					result.addRow( row );
 				}
-				if ( result.isEmpty() ) {
-					if ( !databaseMetadata.getTables( null, null, tableName, null ).next() ) {
-						throw new DatabaseException( "Table not found: " + tableName );
-					}
+				if ( result.isEmpty() && ( !databaseMetadata.getTables( null, null, tableName, null ).next() ) ) {
+					throw new DatabaseException( String.format( "Table not found for pattern [%s] ", tableName ) );
 				}
 			}
 			return result;

@@ -117,6 +117,15 @@ public class DBInfoTest {
 		} );
 	}
 
+	@DisplayName( "Throws on non-existent datasource" )
+	@Test
+	public void testDatasourceAttribute() {
+		assertThrows(
+		    DatabaseException.class,
+		    () -> instance.executeStatement( "cfdbinfo( type='version', name='result', datasource='foobar' )" )
+		);
+	}
+
 	@DisplayName( "Can get JDBC driver version info" )
 	@Test
 	public void testVersionType() {
