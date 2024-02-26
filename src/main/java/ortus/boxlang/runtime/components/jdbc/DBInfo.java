@@ -131,18 +131,17 @@ public class DBInfo extends Component {
 			Query result = new Query();
 			result.addColumn( Key.of( "DBNAME" ), QueryColumnType.VARCHAR );
 			result.addColumn( Key.of( "type" ), QueryColumnType.VARCHAR );
-			// @TODO: Support `pattern` attribute here, like Lucee does, to filter the results.
 			try ( ResultSet catalogs = conn.getMetaData().getCatalogs() ) {
 				while ( catalogs.next() ) {
-					result.addRow( new Object[] { catalogs.getObject( 1 ), "DATABASE" } );
+					result.addRow( new Object[] { catalogs.getObject( 1 ), "CATALOG" } );
 				}
 			}
-			// @TODO: Support `pattern` attribute here, like Lucee does, to filter the results.
 			try ( ResultSet schemas = conn.getMetaData().getSchemas(); ) {
 				while ( schemas.next() ) {
 					result.addRow( new Object[] { schemas.getObject( 1 ), "SCHEMA" } );
 				}
 			}
+			// @TODO: Support `pattern` attribute here, like Lucee does, to filter the results.
 			return result;
 		} catch ( SQLException e ) {
 			throw new DatabaseException( "Unable to read database names", e );

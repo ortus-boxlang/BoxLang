@@ -27,9 +27,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.EnabledIf;
 
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.IBoxContext;
@@ -50,7 +50,8 @@ public class DBInfoTest {
 	static BoxRuntime			instance;
 	IBoxContext					context;
 	IScope						variables;
-	static Key					result	= new Key( "result" );
+	static Key					result			= new Key( "result" );
+	static Key					MySQLDataSource	= new Key( "MYSQLDB" );
 
 	@BeforeAll
 	public static void setUp() {
@@ -119,31 +120,35 @@ public class DBInfoTest {
 		assertEquals( "Apache Derby Embedded JDBC Driver", versionQuery.getRowAsStruct( 0 ).getAsString( Key.of( "DRIVER_NAME" ) ) );
 	}
 
-	@Disabled( "Result object is missing expected database name." )
+	@EnabledIf( "tools.JDBCTestUtils#hasMySQLDriver" )
 	@DisplayName( "Can get catalog and schema names" )
 	@Test
 	public void testDBNames() {
+
+		datasourceManager.registerDatasource( MySQLDataSource, Struct.of(
+		    "jdbcUrl", "jdbc:mysql://localhost:3306",
+		    "username", "root",
+		    "password", "secret"
+		) );
+		datasourceManager.getDatasource( MySQLDataSource ).execute( "CREATE DATABASE IF NOT EXISTS testDB", null );
+
 		instance.executeSource(
 		    """
-		        cfdbinfo( type='dbnames', name='result' )
+		        cfdbinfo( type='dbnames', name='result', datasource='MYSQLDB' )
 		    """,
 		    context );
 		Object theResult = variables.get( result );
 		assertTrue( theResult instanceof Query );
+
 		Query dbNamesQuery = ( Query ) theResult;
 		assertTrue( dbNamesQuery.size() > 0 );
 		assertEquals( 2, dbNamesQuery.getColumns().size() );
 
 		IStruct ourDBRow = dbNamesQuery.stream()
-		    .filter( row -> row.getAsString( Key.of( "DBNAME" ) ).equals( "boxlang" ) )
+		    .filter( row -> row.getAsString( Key.of( "DBNAME" ) ).equals( "testDB" ) )
 		    .findFirst()
 		    .orElse( null );
 
-		// @TODO: Fix this assertion!
-		// for unknown reasons, the boxlang database is not found.
-		// Possibly Apache Derby isn't playing nice with our connection string... dunno. Until then,
-		// this test will have to stay disabled.
-		// SeeDerby database name docs: https://db.apache.org/derby/docs/10.17/devguide/rdevdvlp847152.html
 		assertNotNull( ourDBRow );
 		assertEquals( "CATALOG", ourDBRow.getAsString( Key.type ) );
 		assertEquals( "testDB", ourDBRow.getAsString( Key.of( "DBNAME" ) ) );
