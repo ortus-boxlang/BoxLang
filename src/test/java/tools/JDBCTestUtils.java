@@ -18,7 +18,7 @@ public class JDBCTestUtils {
 	 *
 	 * @return
 	 */
-	static boolean hasMySQLDriver() {
+	public static boolean hasMySQLDriver() {
 		return DriverManager.drivers()
 		    .filter( driver -> {
 			    String driverName = driver.getClass().getName();

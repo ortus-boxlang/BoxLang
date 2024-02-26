@@ -43,6 +43,7 @@ import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Query;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.BoxValidationException;
+import ortus.boxlang.runtime.types.exceptions.DatabaseException;
 
 public class DBInfoTest {
 
@@ -50,8 +51,8 @@ public class DBInfoTest {
 	static BoxRuntime			instance;
 	IBoxContext					context;
 	IScope						variables;
-	static Key					result			= new Key( "result" );
-	static Key					MySQLDataSource	= new Key( "MYSQLDB" );
+	static Key					result	= new Key( "result" );
+	static DataSource			MySQLDataSource;
 
 	@BeforeAll
 	public static void setUp() {
@@ -61,6 +62,19 @@ public class DBInfoTest {
 		    "jdbcUrl", "jdbc:derby:memory:BoxlangDB;create=true"
 		) );
 		datasourceManager.setDefaultDatasource( defaultDatasource );
+		defaultDatasource.execute( "CREATE TABLE developers ( id INTEGER, name VARCHAR(155) )", null );
+
+		if ( tools.JDBCTestUtils.hasMySQLDriver() ) {
+			Key MySQLDataSourceName = Key.of( "MYSQLDB" );
+			datasourceManager.registerDatasource( MySQLDataSourceName, Struct.of(
+			    "jdbcUrl", "jdbc:mysql://localhost:3306",
+			    "username", "root",
+			    "password", "secret"
+			) );
+			MySQLDataSource = datasourceManager.getDatasource( MySQLDataSourceName );
+			MySQLDataSource.execute( "CREATE DATABASE IF NOT EXISTS testDB", null );
+			MySQLDataSource.execute( "USE testDB", null );
+		}
 	}
 
 	@AfterAll
@@ -105,7 +119,7 @@ public class DBInfoTest {
 
 	@DisplayName( "Can get JDBC driver version info" )
 	@Test
-	public void testVersion() {
+	public void testVersionType() {
 		instance.executeSource(
 		    """
 		        cfdbinfo( type='version', name='result' )
@@ -123,15 +137,7 @@ public class DBInfoTest {
 	@EnabledIf( "tools.JDBCTestUtils#hasMySQLDriver" )
 	@DisplayName( "Can get catalog and schema names" )
 	@Test
-	public void testDBNames() {
-
-		datasourceManager.registerDatasource( MySQLDataSource, Struct.of(
-		    "jdbcUrl", "jdbc:mysql://localhost:3306",
-		    "username", "root",
-		    "password", "secret"
-		) );
-		datasourceManager.getDatasource( MySQLDataSource ).execute( "CREATE DATABASE IF NOT EXISTS testDB", null );
-
+	public void testDBNamesType() {
 		instance.executeSource(
 		    """
 		        cfdbinfo( type='dbnames', name='result', datasource='MYSQLDB' )
@@ -154,4 +160,37 @@ public class DBInfoTest {
 		assertEquals( "testDB", ourDBRow.getAsString( Key.of( "DBNAME" ) ) );
 	}
 
+	@DisplayName( "Can get table column data" )
+	@Test
+	public void testColumnsType() {
+		instance.executeSource(
+		    """
+		        cfdbinfo( type='columns', name='result', table='DEVELOPERS' )
+		    """,
+		    context );
+		Object theResult = variables.get( result );
+		assertTrue( theResult instanceof Query );
+
+		Query dbNamesQuery = ( Query ) theResult;
+		assertTrue( dbNamesQuery.size() > 0 );
+
+		// @TODO: Enable this assertion once we've added support for Lucee's custom foreign key and primary key fields.
+		// assertEquals( 28, dbNamesQuery.getColumns().size() );
+
+		IStruct nameColumn = dbNamesQuery.stream()
+		    .filter( row -> row.getAsString( Key.of( "COLUMN_NAME" ) ).equals( "NAME" ) )
+		    .findFirst()
+		    .orElse( null );
+
+		assertNotNull( nameColumn );
+		assertEquals( "NAME", nameColumn.getAsString( Key.of( "COLUMN_NAME" ) ) );
+		assertEquals( "VARCHAR", nameColumn.getAsString( Key.of( "TYPE_NAME" ) ) );
+		assertEquals( 155, nameColumn.getAsInteger( Key.of( "COLUMN_SIZE" ) ) );
+	}
+
+	@DisplayName( "Throws on non-existent tablename" )
+	@Test
+	public void testColumnsTypeWithNonExistentTable() {
+		assertThrows( DatabaseException.class, () -> instance.executeStatement( "cfdbinfo( type='columns', name='result', table='404NotFound' )" ) );
+	}
 }

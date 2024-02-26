@@ -87,7 +87,6 @@ public class DataSourceTest {
 	@Test
 	void testMySQLConnection() throws SQLException {
 		DataSource	myDatasource	= new DataSource( Struct.of(
-		    // "driver", "mysql",
 		    "username", "root",
 		    "password", "secret",
 		    "jdbcUrl", "jdbc:mysql://localhost:3306"
