@@ -36,6 +36,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.EnabledIf;
 
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Array;
@@ -81,8 +82,7 @@ public class DataSourceTest {
 		derbyDB.shutdown();
 	}
 
-	// @TODO: Move to mysql JDBC module tests?
-	@Disabled( "Need ability to enable/disable tests based on available third-party services." )
+	@EnabledIf( "tools.JDBCTestUtils#hasMySQLDriver" )
 	@DisplayName( "It can get a MySQL JDBC connection" )
 	@Test
 	void testMySQLConnection() throws SQLException {
@@ -90,7 +90,6 @@ public class DataSourceTest {
 		    // "driver", "mysql",
 		    "username", "root",
 		    "password", "secret",
-		    "databaseName", "test",
 		    "jdbcUrl", "jdbc:mysql://localhost:3306"
 		) );
 		Connection	conn			= myDatasource.getConnection();
