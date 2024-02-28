@@ -34,7 +34,7 @@ import ortus.boxlang.runtime.operators.EqualsEquals;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Query;
-import ortus.boxlang.runtime.util.ListUtil;
+import ortus.boxlang.runtime.types.util.ListUtil;
 
 @BoxComponent( requiresBody = true )
 public class Output extends Component {

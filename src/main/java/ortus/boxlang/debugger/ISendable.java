@@ -27,7 +27,7 @@ import com.fasterxml.jackson.jr.ob.JSON;
 import com.fasterxml.jackson.jr.ob.JSONObjectException;
 
 import ortus.boxlang.runtime.BoxRuntime;
-import ortus.boxlang.runtime.util.JSONUtil;
+import ortus.boxlang.runtime.types.util.JSONUtil;
 
 /**
  * Interface for messages that will be sent to the debugger tool.

@@ -32,7 +32,7 @@ import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.BoxLangType;
 import ortus.boxlang.runtime.types.IStruct;
-import ortus.boxlang.runtime.util.StructUtil;
+import ortus.boxlang.runtime.types.util.StructUtil;
 
 @BoxBIF
 @BoxMember( type = BoxLangType.STRUCT )

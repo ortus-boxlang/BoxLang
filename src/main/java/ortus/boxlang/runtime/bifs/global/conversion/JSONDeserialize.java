@@ -34,7 +34,7 @@ import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Query;
 import ortus.boxlang.runtime.types.QueryColumnType;
 import ortus.boxlang.runtime.types.Struct;
-import ortus.boxlang.runtime.util.JSONUtil;
+import ortus.boxlang.runtime.types.util.JSONUtil;
 
 @BoxBIF
 public class JSONDeserialize extends BIF {

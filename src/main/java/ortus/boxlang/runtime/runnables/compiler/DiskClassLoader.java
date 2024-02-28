@@ -26,7 +26,7 @@ import javax.tools.JavaFileObject;
 
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
-import ortus.boxlang.runtime.util.JSONUtil;
+import ortus.boxlang.runtime.types.util.JSONUtil;
 
 /**
  * Dynamic in Memory classloader

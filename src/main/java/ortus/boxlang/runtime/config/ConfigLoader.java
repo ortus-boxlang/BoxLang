@@ -28,7 +28,7 @@ import org.slf4j.LoggerFactory;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.ConfigurationException;
-import ortus.boxlang.runtime.util.JSONUtil;
+import ortus.boxlang.runtime.types.util.JSONUtil;
 
 /**
  * This class is responsible for loading the core configuration file from the `resources` folder

@@ -36,7 +36,7 @@ import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Query;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
-import ortus.boxlang.runtime.util.ListUtil;
+import ortus.boxlang.runtime.types.util.ListUtil;
 
 @BoxComponent( requiresBody = true )
 public class Loop extends Component {

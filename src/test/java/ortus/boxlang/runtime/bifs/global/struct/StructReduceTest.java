@@ -38,7 +38,7 @@ import ortus.boxlang.runtime.scopes.VariablesScope;
 import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
-import ortus.boxlang.runtime.util.ListUtil;
+import ortus.boxlang.runtime.types.util.ListUtil;
 
 public class StructReduceTest {
 

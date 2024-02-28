@@ -16,7 +16,7 @@ import com.fasterxml.jackson.jr.ob.JSONObjectException;
 import ortus.boxlang.debugger.AdapterProtocolMessageReader;
 import ortus.boxlang.debugger.DebugAdapter;
 import ortus.boxlang.debugger.IAdapterProtocolMessage;
-import ortus.boxlang.runtime.util.JSONUtil;
+import ortus.boxlang.runtime.types.util.JSONUtil;
 
 public class IntegrationTest {
 

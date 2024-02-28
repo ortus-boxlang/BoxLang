@@ -35,8 +35,8 @@ import ortus.boxlang.runtime.types.Query;
 import ortus.boxlang.runtime.types.QueryColumn;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
-import ortus.boxlang.runtime.util.JSONUtil;
-import ortus.boxlang.runtime.util.ListUtil;
+import ortus.boxlang.runtime.types.util.JSONUtil;
+import ortus.boxlang.runtime.types.util.ListUtil;
 
 @BoxBIF
 @BoxMember( type = BoxLangType.STRING, name = "toJSON" )
