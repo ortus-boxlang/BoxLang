@@ -19,6 +19,7 @@ package ortus.boxlang.runtime.types.util;
 
 import static com.google.common.truth.Truth.assertThat;
 
+import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 import org.junit.jupiter.api.Test;
@@ -36,6 +37,19 @@ class BLCollectorTest {
 		assertThat( result.get( 0 ) ).isEqualTo( "string1" );
 		assertThat( result.get( 1 ) ).isEqualTo( "string2" );
 		assertThat( result.get( 2 ) ).isEqualTo( "string3" );
+
+	}
+
+	@Test
+	void testToArrayIntStream() {
+
+		Array result = IntStream.of( 1, 2, 3, 4, 5 ).boxed().collect( BLCollector.toArray() );
+		assertThat( result.size() ).isEqualTo( 5 );
+		assertThat( result.get( 0 ) ).isEqualTo( 1 );
+		assertThat( result.get( 1 ) ).isEqualTo( 2 );
+		assertThat( result.get( 2 ) ).isEqualTo( 3 );
+		assertThat( result.get( 3 ) ).isEqualTo( 4 );
+		assertThat( result.get( 4 ) ).isEqualTo( 5 );
 
 	}
 

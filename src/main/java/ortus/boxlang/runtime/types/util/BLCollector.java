@@ -20,4 +20,5 @@ public class BLCollector {
 		    Collector.Characteristics.IDENTITY_FINISH
 		);
 	}
+
 }
