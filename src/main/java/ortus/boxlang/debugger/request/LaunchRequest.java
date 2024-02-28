@@ -28,7 +28,8 @@ public class LaunchRequest extends AbstractRequest {
 
 	public static class LaunchRequestArguments {
 
-		public String program;
+		public String	program;
+		public Integer	serverPort;
 	}
 
 	@Override

@@ -35,7 +35,6 @@ import java.util.Set;
 import org.apache.commons.lang3.ClassUtils;
 
 import com.sun.jdi.AbsentInformationException;
-import com.sun.jdi.Bootstrap;
 import com.sun.jdi.ClassNotLoadedException;
 import com.sun.jdi.ClassType;
 import com.sun.jdi.IncompatibleThreadStateException;
@@ -49,8 +48,6 @@ import com.sun.jdi.StackFrame;
 import com.sun.jdi.ThreadReference;
 import com.sun.jdi.Value;
 import com.sun.jdi.VirtualMachine;
-import com.sun.jdi.connect.Connector;
-import com.sun.jdi.connect.LaunchingConnector;
 import com.sun.jdi.event.BreakpointEvent;
 import com.sun.jdi.event.ClassPrepareEvent;
 import com.sun.jdi.event.Event;
@@ -82,23 +79,21 @@ public class BoxLangDebugger implements IBoxLangDebugger {
 		seenStacks = new HashMap<Integer, StackFrameTuple>();
 	}
 
-	public VirtualMachine			vm;
-	private Class					debugClass;
-	private int[]					breakPointLines;
-	private String					cliArgs;
-	private OutputStream			debugAdapterOutput;
-	Map<String, List<Breakpoint>>	breakpoints;
-	private List<ReferenceType>		vmClasses;
-	private JavaBoxpiler			javaBoxpiler;
-	private Status					status;
-	private DebugAdapter			debugAdapter;
-	private InputStream				vmInput;
-	private InputStream				vmErrorInput;
-	public BreakpointEvent			bpe;
+	public VirtualMachine				vm;
+	private OutputStream				debugAdapterOutput;
+	Map<String, List<Breakpoint>>		breakpoints;
+	private List<ReferenceType>			vmClasses;
+	private JavaBoxpiler				javaBoxpiler;
+	private Status						status;
+	private DebugAdapter				debugAdapter;
+	private InputStream					vmInput;
+	private InputStream					vmErrorInput;
+	public BreakpointEvent				bpe;
 
-	private Map<String, SourceMap>	sourceMaps	= new HashMap<String, SourceMap>();
+	private Map<String, SourceMap>		sourceMaps	= new HashMap<String, SourceMap>();
 
-	private ClassType				keyClassRef	= null;
+	private ClassType					keyClassRef	= null;
+	private IVMInitializationStrategy	initStrat;
 
 	public enum Status {
 		NOT_STARTED,
@@ -109,10 +104,8 @@ public class BoxLangDebugger implements IBoxLangDebugger {
 		DONE
 	}
 
-	public BoxLangDebugger( Class<?> debugClass, String cliArgs, OutputStream debugAdapterOutput, DebugAdapter debugAdapter ) {
-		this.debugClass			= debugClass;
-		this.breakPointLines	= new int[] {};
-		this.cliArgs			= cliArgs;
+	public BoxLangDebugger( IVMInitializationStrategy initStrat, OutputStream debugAdapterOutput, DebugAdapter debugAdapter ) {
+		this.initStrat			= initStrat;
 		this.debugAdapterOutput	= debugAdapterOutput;
 		breakpoints				= new HashMap<>();
 		vmClasses				= new ArrayList<>();
@@ -123,17 +116,19 @@ public class BoxLangDebugger implements IBoxLangDebugger {
 
 	public void initialize() {
 		try {
-			this.vm = connectAndLaunchVM();
+			this.vm = this.initStrat.initialize();
 		} catch ( Exception e ) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 		enableClassPrepareRequest( vm );
 
-		this.vmInput		= vm.process().getInputStream();
-		this.vmErrorInput	= vm.process().getErrorStream();
+		if ( vm.process() != null ) {
+			this.vmInput		= vm.process().getInputStream();
+			this.vmErrorInput	= vm.process().getErrorStream();
+		}
 
-		this.status			= Status.RUNNING;
+		this.status = Status.RUNNING;
 	}
 
 	public void keepWorking() {
@@ -181,18 +176,6 @@ public class BoxLangDebugger implements IBoxLangDebugger {
 		// pass
 	}
 
-	public VirtualMachine connectAndLaunchVM() throws Exception {
-
-		LaunchingConnector				launchingConnector	= Bootstrap.virtualMachineManager()
-		    .defaultConnector();
-		Map<String, Connector.Argument>	arguments			= launchingConnector.defaultArguments();
-		arguments.get( "options" ).setValue( "-cp " + System.getProperty( "java.class.path" ) );
-		arguments.get( "main" ).setValue( debugClass.getName() + " " + cliArgs );
-		VirtualMachine vm = launchingConnector.launch( arguments );
-
-		return vm;
-	}
-
 	public void addBreakpoint( String filePath, Breakpoint breakpoint ) {
 		List<Breakpoint> breakpoints = this.breakpoints.computeIfAbsent( filePath, ( key ) -> new ArrayList<Breakpoint>() );
 		breakpoints.add( breakpoint );
@@ -203,15 +186,6 @@ public class BoxLangDebugger implements IBoxLangDebugger {
 		ClassPrepareRequest classPrepareRequest = vm.eventRequestManager().createClassPrepareRequest();
 		classPrepareRequest.addClassFilter( "boxgenerated.*" );
 		classPrepareRequest.enable();
-	}
-
-	public void setBreakPoints( VirtualMachine vm, ClassPrepareEvent event ) throws AbsentInformationException {
-		ReferenceType classType = event.referenceType();
-		for ( int lineNumber : breakPointLines ) {
-			Location			location	= classType.locationsOfLine( lineNumber ).get( 0 );
-			BreakpointRequest	bpReq		= vm.eventRequestManager().createBreakpointRequest( location );
-			bpReq.enable();
-		}
 	}
 
 	public void enableStepRequest( VirtualMachine vm, BreakpointEvent event ) {
@@ -347,10 +321,12 @@ public class BoxLangDebugger implements IBoxLangDebugger {
 			    } catch ( AbsentInformationException e ) {
 				    // TODO handle exception
 				    e.printStackTrace();
+				    return null;
 			    }
 
 			    return seenStacks.get( sf.hashCode() );
 		    } )
+		    .filter( ( sf ) -> sf != null )
 		    .toList();
 	}
 
@@ -377,6 +353,7 @@ public class BoxLangDebugger implements IBoxLangDebugger {
 			if ( event instanceof ClassPrepareEvent cpe ) {
 
 				handleClassPrepareEvent( cpe );
+				setAllBreakpoints();
 			}
 			if ( event instanceof BreakpointEvent bpe ) {
 				handleBreakPointEvent( bpe );
@@ -393,7 +370,10 @@ public class BoxLangDebugger implements IBoxLangDebugger {
 	private void handleClassPrepareEvent( ClassPrepareEvent event ) {
 		vmClasses.add( event.referenceType() );
 		SourceMap map = javaBoxpiler.getSourceMapFromFQN( event.referenceType().name() );
-		this.sourceMaps.put( map.source, map );
+		if ( map == null ) {
+			return;
+		}
+		this.sourceMaps.put( map.source.toLowerCase(), map );
 	}
 
 	private void handleDeathEvent( VMDeathEvent de ) {
@@ -515,13 +495,13 @@ public class BoxLangDebugger implements IBoxLangDebugger {
 	}
 
 	private List<ReferenceType> getMatchingReferenceTypes( String fileName ) {
-		ClassInfo classInfo = getClassInfo( fileName );
+		String lCaseFileName = fileName.toLowerCase();
 
-		if ( !this.sourceMaps.containsKey( fileName ) ) {
+		if ( !this.sourceMaps.containsKey( lCaseFileName ) ) {
 			return new ArrayList<ReferenceType>();
 		}
 
-		SourceMap	map				= this.sourceMaps.get( fileName );
+		SourceMap	map				= this.sourceMaps.get( lCaseFileName );
 
 		Set<String>	referenceTypes	= new HashSet<String>();
 

@@ -22,6 +22,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
+import java.net.ServerSocket;
+import java.net.Socket;
 import java.net.SocketException;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -62,7 +64,6 @@ import ortus.boxlang.debugger.types.Scope;
 import ortus.boxlang.debugger.types.Source;
 import ortus.boxlang.debugger.types.StackFrame;
 import ortus.boxlang.debugger.types.Variable;
-import ortus.boxlang.runtime.BoxRunner;
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.runnables.compiler.JavaBoxpiler;
 import ortus.boxlang.runtime.runnables.compiler.SourceMap;
@@ -84,6 +85,27 @@ public class DebugAdapter {
 	private AdapterProtocolMessageReader	DAPReader;
 
 	private List<BreakpointRequest>			breakpoints	= new ArrayList<BreakpointRequest>();
+
+	public static void startDAPServer( int port ) {
+
+		System.out.println( "starting the debug server" );
+
+		try ( ServerSocket socket = new ServerSocket( port ) ) {
+			while ( true ) {
+				Socket			connectionSocket	= socket.accept();
+				DebugAdapter	adapter				= new DebugAdapter( connectionSocket.getInputStream(), connectionSocket.getOutputStream() );
+
+				while ( adapter.isRunning() ) {
+					// wait until adapter is finished
+				}
+
+				connectionSocket.close();
+				System.out.println( "Closing debug connection" );
+			}
+		} catch ( IOException e ) {
+			e.printStackTrace();
+		}
+	}
 
 	/**
 	 * Constructor
@@ -236,7 +258,8 @@ public class DebugAdapter {
 	 */
 	public void visit( LaunchRequest debugRequest ) {
 		new NoBodyResponse( debugRequest ).send( this.outputStream );
-		this.debugger = new BoxLangDebugger( BoxRunner.class, debugRequest.arguments.program, this.outputStream, this );
+
+		this.debugger = new BoxLangDebugger( getInitStrategy( debugRequest ), this.outputStream, this );
 	}
 
 	/**
@@ -272,9 +295,9 @@ public class DebugAdapter {
 	public void visit( ThreadsRequest debugRequest ) {
 		List<ortus.boxlang.debugger.types.Thread> threads = this.debugger.getAllThreadReferences()
 		    .stream()
-		    .filter( ( threadReference ) -> {
-			    return threadReference.name().compareToIgnoreCase( "main" ) == 0;
-		    } )
+		    // .filter( ( threadReference ) -> {
+		    // return threadReference.name().compareToIgnoreCase( "main" ) == 0;
+		    // } )
 		    .map( ( threadReference ) -> {
 			    ortus.boxlang.debugger.types.Thread t = new ortus.boxlang.debugger.types.Thread();
 			    t.id = ( int ) threadReference.uniqueID();
@@ -405,6 +428,17 @@ public class DebugAdapter {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
+	}
+
+	private IVMInitializationStrategy getInitStrategy( LaunchRequest launchRequest ) {
+
+		if ( launchRequest.arguments.program != null ) {
+			return new InlineStrategy( launchRequest.arguments.program );
+		} else if ( launchRequest.arguments.serverPort != null ) {
+			return new AttachStrategy( launchRequest.arguments.serverPort );
+		}
+
+		throw new RuntimeException( "Invalid launch request arguments" );
 	}
 
 	private Scope scopeByName( WrappedValue context, String key ) {
