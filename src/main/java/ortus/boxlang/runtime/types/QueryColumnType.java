@@ -86,7 +86,7 @@ public enum QueryColumnType {
 	public static QueryColumnType fromSQLType( int type ) {
 		switch ( type ) {
 			case Types.ARRAY :
-				return OBJECT;
+				return OTHER;
 			case Types.BIGINT :
 				return BIGINT;
 			case Types.BINARY :
@@ -95,20 +95,21 @@ public enum QueryColumnType {
 				return BIT;
 			case Types.BLOB :
 				return OBJECT;
+			case Types.BOOLEAN :
+				return BIT;
+			case Types.CHAR :
+				return VARCHAR;
 			case Types.CLOB :
 				return OBJECT;
-			case Types.NCLOB :
-				return OBJECT;
 			case Types.DATALINK :
-				return OBJECT;
+				return OTHER;
 			case Types.DATE :
 				return DATE;
 			case Types.DECIMAL :
 				return DECIMAL;
 			case Types.DISTINCT :
-				return OBJECT;
+				return OTHER;
 			case Types.DOUBLE :
-			case Types.NUMERIC :
 				return DOUBLE;
 			case Types.FLOAT :
 				return DOUBLE;
@@ -116,45 +117,54 @@ public enum QueryColumnType {
 				return INTEGER;
 			case Types.JAVA_OBJECT :
 				return OBJECT;
+			case Types.LONGNVARCHAR :
+				return VARCHAR;
+			case Types.LONGVARBINARY :
+				return BINARY;
+			case Types.LONGVARCHAR :
+				return VARCHAR;
+			case Types.NCHAR :
+				return VARCHAR;
+			case Types.NCLOB :
+				return OBJECT;
 			case Types.NULL :
-				return OBJECT;
+				return OTHER;
+			case Types.NUMERIC :
+				return DOUBLE;
+			case Types.NVARCHAR :
+				return VARCHAR;
 			case Types.OTHER :
-				return OBJECT;
+				return OTHER;
+			case Types.REAL :
+				return DOUBLE;
 			case Types.REF :
-				return OBJECT;
+				return OTHER;
+			case Types.REF_CURSOR :
+				return OTHER;
+			case Types.ROWID :
+				return OTHER;
+			case Types.SMALLINT :
+				return INTEGER;
+			case Types.SQLXML :
+				return OTHER;
 			case Types.STRUCT :
-				return OBJECT;
+				return OTHER;
 			case Types.TIME :
+				return TIME;
+			case Types.TIME_WITH_TIMEZONE :
 				return TIME;
 			case Types.TIMESTAMP :
 				return TIMESTAMP;
+			case Types.TIMESTAMP_WITH_TIMEZONE :
+				return TIMESTAMP;
+			case Types.TINYINT :
+				return INTEGER;
+			case Types.VARBINARY :
+				return BINARY;
 			case Types.VARCHAR :
 				return VARCHAR;
-			// @TODO: Implement these return types.
-			// case Types.BOOLEAN:
-			// return BOOLEAN;
-			// case Types.CHAR:
-			// return CHAR;
-			// case Types.NCHAR:
-			// return NCHAR;
-			// case Types.LONGVARBINARY:
-			// return LONGVARBINARY;
-			// case Types.LONGVARCHAR:
-			// return LONGVARCHAR;
-			// case Types.REAL:
-			// return REAL;
-			// case Types.TINYINT:
-			// return TINYINT;
-			// case Types.VARBINARY:
-			// return VARBINARY;
-			// case Types.NVARCHAR:
-			// return NVARCHAR;
-			// case Types.SQLXML:
-			// return SQLXML;
-			// case Types.SMALLINT:
-			// return SMALLINT;
 			default :
-				return VARCHAR;
+				return OTHER;
 		}
 	}
 }
