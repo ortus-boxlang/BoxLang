@@ -39,8 +39,6 @@ import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.dynamic.casters.KeyCaster;
 import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 import ortus.boxlang.runtime.interop.DynamicInteropService;
-import ortus.boxlang.runtime.interop.DynamicObject;
-import ortus.boxlang.runtime.runnables.IClassRunnable;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.KeyCased;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
@@ -122,21 +120,13 @@ public class Struct implements IStruct, IListenable, Serializable {
 		this.type = type;
 
 		// Initialize the wrapped map
-		if ( type.equals( TYPES.DEFAULT ) || type.equals( TYPES.CASE_SENSITIVE ) || type.equals( TYPES.SOFT ) ) {
-			this.wrapped = new ConcurrentHashMap<>( INITIAL_CAPACITY );
-			return;
-		} else if ( type.equals( TYPES.LINKED ) || type.equals( TYPES.LINKED_CASE_SENSITIVE ) ) {
-			this.wrapped = Collections.synchronizedMap( new LinkedHashMap<Key, Object>( INITIAL_CAPACITY ) );
-			return;
-		} else if ( type.equals( TYPES.SORTED ) ) {
-			this.wrapped = new ConcurrentSkipListMap<>();
-			return;
-		} else if ( type.equals( TYPES.WEAK ) ) {
-			this.wrapped = new WeakHashMap<Key, Object>( INITIAL_CAPACITY );
-			return;
-		}
-
-		throw new BoxRuntimeException( "Invalid struct type [" + type.name() + "]" );
+		this.wrapped = switch (type) {
+			case DEFAULT, CASE_SENSITIVE, SOFT -> new ConcurrentHashMap<>(INITIAL_CAPACITY);
+			case LINKED, LINKED_CASE_SENSITIVE -> Collections.synchronizedMap(new LinkedHashMap<>(INITIAL_CAPACITY));
+			case SORTED -> new ConcurrentSkipListMap<>();
+			case WEAK -> new WeakHashMap<>(INITIAL_CAPACITY);
+			default -> throw new BoxRuntimeException("Invalid struct type [" + type.name() + "]");
+		};
 	}
 
 	/**

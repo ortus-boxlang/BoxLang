@@ -42,6 +42,8 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		_10							= Key.of( 10 );
 
 	// Reserved Words Dictionary
+
+	// Global Dictionary
 	public static final Key		__functionName				= Key.of( "__functionName" );
 	public static final Key		__isMemberExecution			= Key.of( "__isMemberExecution" );
 	public static final Key		_ANY						= Key.of( "any" );
@@ -61,8 +63,6 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		_STRING						= Key.of( "string" );
 	public static final Key		_STRUCT						= Key.of( "struct" );
 	public static final Key		_UDF						= Key.of( "udf" );
-
-	// Global Dictionary
 	public static final Key		$bx							= Key.of( "$bx" );
 	public static final Key		access						= Key.of( "access" );
 	public static final Key		accessors					= Key.of( "accessors" );
@@ -94,7 +94,6 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		callback					= Key.of( "callback" );
 	public static final Key		caller						= Key.of( "caller" );
 	public static final Key		canonicalize				= Key.of( "canonicalize" );
-	public static final Key		contextual					= Key.of( "contextual" );
 	public static final Key		cfsqltype					= Key.of( "cfsqltype" );
 	public static final Key		charset						= Key.of( "charset" );
 	public static final Key		charsetOrBufferSize			= Key.of( "charsetOrBufferSize" );
@@ -114,6 +113,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		configure					= Key.of( "configure" );
 	public static final Key		contains					= Key.of( "contains" );
 	public static final Key		context						= Key.of( "context" );
+	public static final Key		contextual					= Key.of( "contextual" );
 	public static final Key		conversionType				= Key.of( "conversionType" );
 	public static final Key		count						= Key.of( "count" );
 	public static final Key		country						= Key.of( "country" );
@@ -152,6 +152,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		dspLocale					= Key.of( "dspLocale" );
 	public static final Key		dump						= Key.of( "dump" );
 	public static final Key		duration					= Key.of( "duration" );
+	public static final Key		elapsedTime					= Key.of( "elapsedTime" );
 	public static final Key		elem						= Key.of( "elem" );
 	public static final Key		elementCountForRemoval		= Key.of( "elementCountForRemoval" );
 	public static final Key		EMPTY						= Key.of( "" );
@@ -160,10 +161,11 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		encoding					= Key.of( "encoding" );
 	public static final Key		end							= Key.of( "end" );
 	public static final Key		environment					= Key.of( "environment" );
+	public static final Key		error						= Key.of( "error" );
 	public static final Key		errorcode					= Key.of( "errorcode" );
+	public static final Key		evictionPolicy				= Key.of( "evictionPolicy" );
 	public static final Key		executionMode				= Key.of( "executionMode" );
 	public static final Key		extendedinfo				= Key.of( "extendedinfo" );
-	public static final Key		evictionPolicy				= Key.of( "evictionPolicy" );
 	public static final Key		file						= Key.of( "file" );
 	public static final Key		fileContent					= Key.of( "fileContent" );
 	public static final Key		filepath					= Key.of( "filepath" );
@@ -235,6 +237,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		maxThreads					= Key.of( "maxThreads" );
 	public static final Key		merge						= Key.of( "merge" );
 	public static final Key		message						= Key.of( "message" );
+	public static final Key		metadata					= Key.of( "metadata" );
 	public static final Key		millisecond					= Key.of( "millisecond" );
 	public static final Key		milliseconds				= Key.of( "milliseconds" );
 	public static final Key		mimetype					= Key.of( "mimetype " );
@@ -327,7 +330,10 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		stackTrace					= Key.of( "stackTrace" );
 	public static final Key		start						= Key.of( "start" );
 	public static final Key		startRow					= Key.of( "startRow" );
+	public static final Key		startTicks					= Key.of( "startTicks" );
+	public static final Key		startTime					= Key.of( "startTime" );
 	public static final Key		state						= Key.of( "state" );
+	public static final Key		status						= Key.of( "status" );
 	public static final Key		statusCode					= Key.of( "statusCode" );
 	public static final Key		statusText					= Key.of( "statusText" );
 	public static final Key		strict						= Key.of( "strict" );

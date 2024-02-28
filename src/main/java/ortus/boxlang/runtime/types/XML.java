@@ -169,6 +169,7 @@ public class XML implements Serializable, IStruct {
 	 * @return the element children
 	 */
 	public Array getXMLChildren() {
+		// TODO: attach change listener to the array so changes in the array will be reflected in the XML
 		return new Array( getXMLChildrenAsList() );
 	}
 
@@ -212,6 +213,7 @@ public class XML implements Serializable, IStruct {
 	 * @return the attributes of this XML node as a struct
 	 */
 	public IStruct getXMLAttributes() {
+		// TODO: attach change listener to the struct so changes in the struct will be reflected in the XML
 		IStruct			attributes	= new Struct( IStruct.TYPES.LINKED );
 		NamedNodeMap	attrs		= node.getAttributes();
 		for ( int i = 0; i < attrs.getLength(); i++ ) {
@@ -464,7 +466,9 @@ public class XML implements Serializable, IStruct {
 	@Override
 	public Object assign( IBoxContext context, Key name, Object value ) {
 		// TODO: Implement this
-		return value;
+		// Need to check for all keys which are sett-able and modify the XML Node accordingly
+		throw new UnsupportedOperationException( "XML modification not implemented yet" );
+		// return value;
 	}
 
 	public String asString( IStruct transformerOptions ) {

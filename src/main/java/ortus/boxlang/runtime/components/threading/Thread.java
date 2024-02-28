@@ -24,12 +24,14 @@ import ortus.boxlang.runtime.components.BoxComponent;
 import ortus.boxlang.runtime.components.Component;
 import ortus.boxlang.runtime.components.validators.Validator;
 import ortus.boxlang.runtime.context.IBoxContext;
+import ortus.boxlang.runtime.context.RequestBoxContext;
 import ortus.boxlang.runtime.context.ThreadBoxContext;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.LocalScope;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.exceptions.AbortException;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
+import ortus.boxlang.runtime.util.RequestThreadManager;
 
 @BoxComponent( allowsBody = true )
 public class Thread extends Component {
@@ -110,30 +112,35 @@ public class Thread extends Component {
 	}
 
 	private void run( IBoxContext context, String name, String priority, IStruct attributes, ComponentBody body ) {
+		RequestThreadManager	threadManager	= context.getParentOfType( RequestBoxContext.class ).getThreadManager();
+		final Key				nameKey			= Key.of( name );
 		if ( name == null || name.isEmpty() ) {
 			// generate random name
 			name = "BoxLang-Thread-" + java.util.UUID.randomUUID().toString();
 		}
 		ThreadBoxContext	tContext	= new ThreadBoxContext( context );
 		java.lang.Thread	thread		= new java.lang.Thread( () -> {
-											StringBuffer buffer = new StringBuffer();
+											StringBuffer	buffer		= new StringBuffer();
+											Throwable		exception	= null;
 											try {
 												processBody( tContext, body, buffer );
 											} catch ( AbortException e ) {
 												// Nothing to do here
 											} catch ( Throwable e ) {
-												e.printStackTrace();
-												// TODO: put exception into thread scope
+												exception = e;
 											} finally {
-												// TODO: put buffer into thread scope
+												threadManager.completeThread( nameKey, buffer.toString(), exception );
 											}
 										} );
 
+		// This may or may not be unique for the entire JVM
+		thread.setName( "BL-Thread-" + name );
 		tContext.setThread( thread );
+
 		LocalScope local = ( LocalScope ) tContext.getScopeNearby( LocalScope.name );
 		local.put( Key.attributes, attributes );
 
-		// TODO: register thread with thread manager
+		threadManager.regsiterThread( nameKey, tContext );
 
 		thread.start();
 	}

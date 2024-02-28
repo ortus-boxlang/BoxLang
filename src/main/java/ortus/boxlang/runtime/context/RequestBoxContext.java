@@ -22,14 +22,16 @@ import java.util.Locale;
 
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.IStruct;
+import ortus.boxlang.runtime.util.RequestThreadManager;
 
 /**
  * A request-type context. I track additional things related to a request.
  */
 public abstract class RequestBoxContext extends BaseBoxContext {
 
-	private Locale	locale		= null;
-	private ZoneId	timezone	= null;
+	private Locale					locale			= null;
+	private ZoneId					timezone		= null;
+	private RequestThreadManager	threadManager	= null;
 
 	/**
 	 * Creates a new execution context with a bounded execution template and parent context
@@ -71,6 +73,25 @@ public abstract class RequestBoxContext extends BaseBoxContext {
 		}
 
 		return config;
+	}
+
+	/**
+	 * Get the thread manager for this request.
+	 * Created as needed.
+	 *
+	 * @return The thread manager
+	 */
+	public RequestThreadManager getThreadManager() {
+		if ( threadManager != null ) {
+			return threadManager;
+		}
+		synchronized ( this ) {
+			if ( threadManager != null ) {
+				return threadManager;
+			}
+			threadManager = new RequestThreadManager();
+		}
+		return threadManager;
 	}
 
 }

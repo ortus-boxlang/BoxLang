@@ -126,6 +126,11 @@ public interface IClassRunnable extends ITemplateRunnable, IStruct {
 
 	public Map<Key, Property> getSetterLookup();
 
+	/*
+	 * These methods allow IClassRunnable to extend IStruct without putting the actual implementations in the BoxClassTransformer
+	 * This is what allows a Box Class to be used as a struct
+	 */
+
 	@Override
 	default Object get( Object key ) {
 		return getThisScope().get( key );

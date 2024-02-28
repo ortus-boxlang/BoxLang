@@ -116,12 +116,6 @@ public class ThreadBoxContext extends BaseBoxContext {
 			return new ScopeSearchResult( variablesScope, Struct.unWrapNull( result ) );
 		}
 
-		result = threadScope.getRaw( key );
-		// Null means not found
-		if ( result != null ) {
-			return new ScopeSearchResult( threadScope, Struct.unWrapNull( result ) );
-		}
-
 		// In query loop?
 		var querySearch = queryFindNearby( key );
 		if ( querySearch != null ) {
@@ -132,8 +126,7 @@ public class ThreadBoxContext extends BaseBoxContext {
 			return null;
 		}
 
-		// A custom tag cannot see nearby scopes above it
-		return parent.scopeFind( key, defaultScope );
+		return scopeFind( key, defaultScope );
 
 	}
 
@@ -147,8 +140,14 @@ public class ThreadBoxContext extends BaseBoxContext {
 	 */
 	@Override
 	public ScopeSearchResult scopeFind( Key key, IScope defaultScope ) {
-		// The custom tag has no "global" scopes, so just defer to parent
-		return parent.scopeFind( key, defaultScope );
+
+		Object result = threadScope.getRaw( key );
+		// Null means not found
+		if ( result != null ) {
+			return new ScopeSearchResult( threadScope, Struct.unWrapNull( result ) );
+		}
+
+		return scopeFind( key, defaultScope );
 	}
 
 	/**
@@ -160,7 +159,11 @@ public class ThreadBoxContext extends BaseBoxContext {
 	 */
 	@Override
 	public IScope getScope( Key name ) throws ScopeNotFoundException {
-		// The thread has no "global" scopes, so just defer to parent
+
+		if ( name.equals( ThreadScope.name ) ) {
+			return threadScope;
+		}
+
 		return parent.getScope( name );
 	}
 
@@ -203,6 +206,15 @@ public class ThreadBoxContext extends BaseBoxContext {
 	@Override
 	public void registerUDF( UDF udf ) {
 		variablesScope.put( udf.getName(), udf );
+	}
+
+	/**
+	 * Get the thread
+	 * 
+	 * @return The thread
+	 */
+	public Thread getThread() {
+		return thread;
 	}
 
 }
