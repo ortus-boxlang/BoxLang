@@ -16,7 +16,6 @@ package ortus.boxlang.runtime.jdbc;
 
 import java.sql.Connection;
 import java.sql.SQLException;
-import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
@@ -24,11 +23,8 @@ import java.util.Properties;
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
 
-import ortus.boxlang.runtime.dynamic.ExpressionInterpreter;
-import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.IStruct;
-import ortus.boxlang.runtime.types.Query;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.exceptions.DatabaseException;
@@ -158,7 +154,7 @@ public class DataSource {
 	 * @param parameters
 	 * @param conn
 	 * @param queryOptions
-	 * 
+	 *
 	 * @return
 	 */
 	public ExecutedQuery execute( String query, List<QueryParameter> parameters, Connection conn, IStruct queryOptions ) {
@@ -172,7 +168,7 @@ public class DataSource {
 	 * @param query
 	 * @param parameters
 	 * @param queryOptions
-	 * 
+	 *
 	 * @return
 	 */
 	public ExecutedQuery execute( String query, List<QueryParameter> parameters, IStruct queryOptions ) {
@@ -190,7 +186,7 @@ public class DataSource {
 	 * @param parameters
 	 * @param conn
 	 * @param queryOptions
-	 * 
+	 *
 	 * @return
 	 */
 	public ExecutedQuery execute( String query, Array parameters, Connection conn, IStruct queryOptions ) {
@@ -204,7 +200,7 @@ public class DataSource {
 	 * @param query
 	 * @param parameters
 	 * @param queryOptions
-	 * 
+	 *
 	 * @return
 	 */
 	public ExecutedQuery execute( String query, Array parameters, IStruct queryOptions ) {
@@ -222,7 +218,7 @@ public class DataSource {
 	 * @param parameters
 	 * @param conn
 	 * @param queryOptions
-	 * 
+	 *
 	 * @return
 	 */
 	public ExecutedQuery execute( String query, IStruct parameters, Connection conn, IStruct queryOptions ) {
@@ -236,7 +232,7 @@ public class DataSource {
 	 * @param query
 	 * @param parameters
 	 * @param queryOptions
-	 * 
+	 *
 	 * @return
 	 */
 	public ExecutedQuery execute( String query, IStruct parameters, IStruct queryOptions ) {
