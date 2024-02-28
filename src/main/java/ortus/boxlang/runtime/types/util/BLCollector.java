@@ -26,7 +26,8 @@ public class BLCollector {
 			    left.addAll( right );
 			    return left;
 		    }, // combiner
-		    Collector.Characteristics.IDENTITY_FINISH
+		    Collector.Characteristics.IDENTITY_FINISH,
+		    Collector.Characteristics.CONCURRENT
 		);
 	}
 
@@ -43,7 +44,9 @@ public class BLCollector {
 			    left.putAll( right );
 			    return left;
 		    }, // combiner
-		    Collector.Characteristics.IDENTITY_FINISH
+		    Collector.Characteristics.IDENTITY_FINISH,
+		    Collector.Characteristics.CONCURRENT,
+		    Collector.Characteristics.UNORDERED
 		);
 	}
 
@@ -55,6 +58,13 @@ public class BLCollector {
 	 * @return The populated Struct
 	 */
 	public static Collector<Map.Entry<Key, Object>, ?, Struct> toStruct( IStruct.TYPES type ) {
+		Collector.Characteristics[] characteristics;
+		if ( type == IStruct.TYPES.LINKED ) {
+			characteristics = new Collector.Characteristics[] { Collector.Characteristics.IDENTITY_FINISH, Collector.Characteristics.CONCURRENT };
+		} else {
+			characteristics = new Collector.Characteristics[] { Collector.Characteristics.IDENTITY_FINISH, Collector.Characteristics.CONCURRENT,
+			    Collector.Characteristics.UNORDERED };
+		}
 		return Collector.of(
 		    () -> new Struct( type ), // supplier
 		    ( struct, entry ) -> struct.put( entry.getKey(), entry.getValue() ), // accumulator
@@ -62,7 +72,7 @@ public class BLCollector {
 			    left.putAll( right );
 			    return left;
 		    }, // combiner
-		    Collector.Characteristics.IDENTITY_FINISH
+		    characteristics
 		);
 	}
 
