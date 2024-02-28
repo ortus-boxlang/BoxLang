@@ -46,9 +46,6 @@ public class BoxClosureTransformer extends AbstractTransformer {
 	private String template = """
 		package ${packageName};
 
-		import ortus.boxlang.runtime.types.Argument;
-		import ortus.boxlang.runtime.types.Closure;
-		import ortus.boxlang.runtime.types.Struct;
 		import ortus.boxlang.runtime.scopes.IScope;
 		import ortus.boxlang.runtime.scopes.Key;
 		import ortus.boxlang.runtime.context.FunctionBoxContext;
@@ -72,6 +69,8 @@ public class BoxClosureTransformer extends AbstractTransformer {
 		import java.lang.Double;
 		import java.lang.Integer;
 		import java.util.*;
+		import ortus.boxlang.runtime.types.*;
+		import ortus.boxlang.runtime.types.util.*;
 		import java.util.LinkedHashMap;
 		import java.nio.file.*;
 
