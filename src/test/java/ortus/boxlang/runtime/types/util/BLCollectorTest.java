@@ -25,13 +25,14 @@ import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
 
 import ortus.boxlang.runtime.types.Array;
+import ortus.boxlang.runtime.types.IStruct;
+import ortus.boxlang.runtime.types.Struct;
 
 class BLCollectorTest {
 
 	@Test
 	void testToArray() {
 
-		// IntStream.of( 1, 2, 3, 4, 5 ).collect( BLCollector.toArray() );
 		Array result = Stream.of( "string1", "string2", "string3" ).collect( BLCollector.toArray() );
 		assertThat( result.size() ).isEqualTo( 3 );
 		assertThat( result.get( 0 ) ).isEqualTo( "string1" );
@@ -50,6 +51,30 @@ class BLCollectorTest {
 		assertThat( result.get( 2 ) ).isEqualTo( 3 );
 		assertThat( result.get( 3 ) ).isEqualTo( 4 );
 		assertThat( result.get( 4 ) ).isEqualTo( 5 );
+
+	}
+
+	@Test
+	void testToStruct() {
+
+		IStruct result = Struct.of( "brad", "wood", "luis", "majano", "jon", "clausen" ).entrySet().stream().collect( BLCollector.toStruct() );
+		assertThat( result.size() ).isEqualTo( 3 );
+		assertThat( result.get( "brad" ) ).isEqualTo( "wood" );
+		assertThat( result.get( "luis" ) ).isEqualTo( "majano" );
+		assertThat( result.get( "jon" ) ).isEqualTo( "clausen" );
+
+	}
+
+	@Test
+	void testToStructType() {
+
+		IStruct result = Struct.of( "brad", "wood", "luis", "majano", "jon", "clausen" ).entrySet().stream()
+		    .collect( BLCollector.toStruct( IStruct.TYPES.LINKED ) );
+		assertThat( result.size() ).isEqualTo( 3 );
+		assertThat( result.getType() ).isEqualTo( IStruct.TYPES.LINKED );
+		assertThat( result.get( "brad" ) ).isEqualTo( "wood" );
+		assertThat( result.get( "luis" ) ).isEqualTo( "majano" );
+		assertThat( result.get( "jon" ) ).isEqualTo( "clausen" );
 
 	}
 
