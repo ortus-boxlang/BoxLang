@@ -488,6 +488,18 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 		return data.toArray( a );
 	}
 
+	/**
+	 * Get the data as a Boxlang Array of Structs. Useful for queries with `returntype: "array"`.
+	 */
+	public Array toStructArray() {
+		Iterator<IStruct>	it			= iterator();
+		Array				structArray	= new Array();
+		while ( it.hasNext() ) {
+			structArray.add( it.next() );
+		}
+		return structArray;
+	}
+
 	@Override
 	public boolean add( IStruct row ) {
 		addRow( row );

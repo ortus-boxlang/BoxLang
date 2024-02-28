@@ -21,28 +21,23 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Query;
+import ortus.boxlang.runtime.types.QueryColumnType;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.DatabaseException;
-import ortus.boxlang.runtime.util.ListUtil;
 
 public class ExecutedQuery {
 
-	public final PendingQuery		pendingQuery;
-	public final PreparedStatement	statement;
-	public final long				executionTime;
-	public final ResultSet			resultSet;
-	public final List<Struct>		results;
-	public final int				recordCount;
-	public final List<QueryColumn>	columns;
+	private final PendingQuery		pendingQuery;
+	private final PreparedStatement	statement;
+	private final long				executionTime;
+	private final Query				results;
 	private Object					generatedKey;
 
 	public ExecutedQuery( PendingQuery pendingQuery, PreparedStatement statement, long executionTime, boolean hasResults ) {
@@ -51,34 +46,29 @@ public class ExecutedQuery {
 		this.executionTime	= executionTime;
 
 		try ( ResultSet rs = this.statement.getResultSet() ) {
-			this.resultSet	= rs;
+			this.results = new Query();
 
-			this.results	= new ArrayList<>();
-			this.columns	= new ArrayList<>();
-
-			if ( this.resultSet != null ) {
-				ResultSetMetaData	resultSetMetaData	= this.resultSet.getMetaData();
+			if ( rs != null ) {
+				ResultSetMetaData	resultSetMetaData	= rs.getMetaData();
 				int					columnCount			= resultSetMetaData.getColumnCount();
 
 				// The column count starts from 1
 				for ( int i = 1; i <= columnCount; i++ ) {
-					columns.add( new QueryColumn(
-					    resultSetMetaData.getColumnLabel( i ),
-					    resultSetMetaData.getColumnType( i )
-					) );
+					this.results.addColumn(
+					    Key.of( resultSetMetaData.getColumnLabel( i ) ),
+					    QueryColumnType.fromSQLType( resultSetMetaData.getColumnType( i ) )
+					);
 				}
 
-				while ( this.resultSet.next() ) {
+				while ( rs.next() ) {
 					Struct row = new Struct( IStruct.TYPES.LINKED );
-					for ( int i = 1; i <= this.columns.size(); i++ ) {
-						QueryColumn column = this.columns.get( i - 1 );
-						row.put( column.name, this.resultSet.getObject( i ) );
+					for ( int i = 1; i <= columnCount; i++ ) {
+						// @TODO: Fix the duplicate Key.of() call here
+						row.put( Key.of( resultSetMetaData.getColumnLabel( i ) ), rs.getObject( i ) );
 					}
-					this.results.add( row );
+					this.results.addRow( row );
 				}
 			}
-
-			this.recordCount = this.results.size();
 		} catch ( SQLException e ) {
 			throw new DatabaseException( e.getMessage(), e );
 		}
@@ -95,30 +85,25 @@ public class ExecutedQuery {
 		// }
 	}
 
-	public List<Struct> getResults() {
+	public Query getResults() {
 		return this.results;
 	}
 
 	public Array getResultsAsArray() {
-		return Array.fromList( this.results );
-	}
-
-	public Query getResultsAsQuery() {
-		Query q = new Query();
-		for ( QueryColumn column : this.columns ) {
-			q.addColumn( Key.of( column.name ), column.getTypeAsQueryColumnType() );
-		}
-		q.addAll( this.results );
-		return q;
+		return this.results.toStructArray();
 	}
 
 	public IStruct getResultsAsStruct( String key ) {
-		Map<Object, List<Struct>>	groupedResults	= this.results.stream().collect( groupingBy( r -> r.get( key ) ) );
+		Map<Object, List<IStruct>>	groupedResults	= this.results.stream().collect( groupingBy( r -> r.get( key ) ) );
 		Map<Object, Object>			groupedArray	= groupedResults.entrySet().stream().collect( toMap( Map.Entry::getKey, e -> new Array( e.getValue() ) ) );
 		return Struct.fromMap(
 		    IStruct.TYPES.LINKED,
 		    groupedArray
 		);
+	}
+
+	public int getRecordCount() {
+		return this.results.size();
 	}
 
 	public Struct getResultStruct() {
@@ -132,12 +117,11 @@ public class ExecutedQuery {
 		 * * GENERATEDKEY: CF 9+ If the query was an INSERT with an identity or auto-increment value the value of that ID is placed in this variable.
 		 */
 		Struct result = new Struct();
-		result.put( "sql", statement.toString() );
+		result.put( "sql", this.statement.toString() );
 		result.put( "cached", false );
-		result.put( "sqlParameters", Array.fromList( pendingQuery.getParameterValues() ) );
-		result.put( "recordCount", this.recordCount );
-		result.put( "columnList",
-		    ListUtil.asString( Array.fromList( this.columns.stream().map( column -> column.name ).collect( Collectors.toList() ) ), "," ) );
+		result.put( "sqlParameters", Array.fromList( this.pendingQuery.getParameterValues() ) );
+		result.put( "recordCount", getRecordCount() );
+		result.put( "columnList", this.results.getColumnList() );
 		result.put( "executionTime", this.executionTime );
 		if ( this.generatedKey != null ) {
 			result.put( "generatedKey", this.generatedKey );

@@ -28,7 +28,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.sql.Connection;
 import java.sql.SQLException;
-import java.util.List;
 
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -40,6 +39,7 @@ import org.junit.jupiter.api.condition.EnabledIf;
 
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Array;
+import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Query;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.DatabaseException;
@@ -127,7 +127,7 @@ public class DataSourceTest {
 		try ( Connection conn = datasource.getConnection() ) {
 			assertDoesNotThrow( () -> {
 				ExecutedQuery executedQuery = datasource.execute( "SELECT * FROM developers", conn, null );
-				assertEquals( 2, executedQuery.recordCount );
+				assertEquals( 2, executedQuery.getRecordCount() );
 			} );
 		} catch ( SQLException e ) {
 			throw new RuntimeException( e );
@@ -140,10 +140,10 @@ public class DataSourceTest {
 		try ( Connection conn = datasource.getConnection() ) {
 			assertDoesNotThrow( () -> {
 				ExecutedQuery executedQuery = datasource.execute( "SELECT * FROM developers", conn, null );
-				assertEquals( 2, executedQuery.recordCount );
-				List<Struct> results = executedQuery.getResults();
+				assertEquals( 2, executedQuery.getRecordCount() );
+				Query results = executedQuery.getResults();
 				assertEquals( 2, results.size() );
-				Struct developer = results.get( 0 );
+				IStruct developer = results.getRowAsStruct( 0 );
 				assertEquals( 77, developer.get( "id" ) );
 				assertEquals( "Michael Born", developer.get( "name" ) );
 			} );
@@ -156,7 +156,7 @@ public class DataSourceTest {
 	@Test
 	void testQueryExecuteQueryResults() {
 		ExecutedQuery	executedQuery	= datasource.execute( "SELECT * FROM developers WHERE id=1", null );
-		Query			results			= executedQuery.getResultsAsQuery();
+		Object			results			= executedQuery.getResults();
 		assertTrue( results instanceof Query );
 		Query queryResults = ( Query ) results;
 
@@ -182,6 +182,8 @@ public class DataSourceTest {
 		Array			results			= executedQuery.getResultsAsArray();
 		assertNotEquals( 0, results.size() );
 
+		Object theRow = results.get( 0 );
+		assert ( theRow instanceof Struct );
 		Struct firstRow = ( Struct ) results.get( 0 );
 		assert ( firstRow.containsKey( "id" ) );
 		assert ( firstRow.containsKey( "name" ) );
