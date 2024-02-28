@@ -26,6 +26,7 @@ import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.math.BigDecimal;
 import java.sql.Connection;
 import java.sql.SQLException;
 
@@ -190,6 +191,26 @@ public class DataSourceTest {
 
 		assert ( firstRow.getAsInteger( Key.of( "id" ) ) == 1 );
 		assert ( firstRow.getAsString( Key.of( "name" ) ).equals( "Luis Majano" ) );
+	}
+
+	@DisplayName( "It can retrieve the generated keys from an insert query" )
+	@Test
+	void testGeneratedKeysOnInsert() {
+		try ( Connection conn = datasource.getConnection() ) {
+			assertDoesNotThrow( () -> {
+				datasource.execute(
+				    "CREATE TABLE developers2 (id INTEGER PRIMARY KEY GENERATED ALWAYS AS IDENTITY(START WITH 1, INCREMENT BY 1), name VARCHAR(155) NOT NULL)",
+				    null );
+				ExecutedQuery executedQuery = datasource.execute( "INSERT INTO developers2 (name) VALUES ('Eric Peterson')", conn, null );
+				assertEquals( 0, executedQuery.getRecordCount() );
+				BigDecimal generatedKey = ( BigDecimal ) executedQuery.getGeneratedKey();
+				assertEquals( 1, generatedKey.intValue() );
+			} );
+		} catch ( SQLException e ) {
+			throw new RuntimeException( e );
+		} finally {
+			datasource.execute( "DROP TABLE developers2", null );
+		}
 	}
 
 	@DisplayName( "It can execute queries in a transaction, with or without providing a specific connection" )

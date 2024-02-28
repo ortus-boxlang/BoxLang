@@ -117,16 +117,16 @@ public class Struct implements IStruct, IListenable, Serializable {
 	 * @throws BoxRuntimeException If an invalid type is specified: DEFAULT, LINKED, SORTED
 	 */
 	public Struct( TYPES type ) {
-		this.type = type;
+		this.type		= type;
 
 		// Initialize the wrapped map
-		this.wrapped = switch (type) {
-			case DEFAULT, CASE_SENSITIVE, SOFT -> new ConcurrentHashMap<>(INITIAL_CAPACITY);
-			case LINKED, LINKED_CASE_SENSITIVE -> Collections.synchronizedMap(new LinkedHashMap<>(INITIAL_CAPACITY));
-			case SORTED -> new ConcurrentSkipListMap<>();
-			case WEAK -> new WeakHashMap<>(INITIAL_CAPACITY);
-			default -> throw new BoxRuntimeException("Invalid struct type [" + type.name() + "]");
-		};
+		this.wrapped	= switch ( type ) {
+							case DEFAULT, CASE_SENSITIVE, SOFT -> new ConcurrentHashMap<>( INITIAL_CAPACITY );
+							case LINKED, LINKED_CASE_SENSITIVE -> Collections.synchronizedMap( new LinkedHashMap<>( INITIAL_CAPACITY ) );
+							case SORTED -> new ConcurrentSkipListMap<>();
+							case WEAK -> new WeakHashMap<>( INITIAL_CAPACITY );
+							default -> throw new BoxRuntimeException( "Invalid struct type [" + type.name() + "]" );
+						};
 	}
 
 	/**

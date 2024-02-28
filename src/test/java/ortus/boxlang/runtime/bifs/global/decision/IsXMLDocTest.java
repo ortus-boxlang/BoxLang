@@ -47,7 +47,7 @@ public class IsXMLDocTest {
 
 	@AfterAll
 	public static void teardown() {
-		
+
 	}
 
 	@BeforeEach

@@ -17,10 +17,7 @@ package ortus.boxlang.runtime.jdbc;
 import static java.util.stream.Collectors.groupingBy;
 import static java.util.stream.Collectors.toMap;
 
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.ResultSetMetaData;
-import java.sql.SQLException;
+import java.sql.*;
 import java.util.List;
 import java.util.Map;
 
@@ -73,16 +70,26 @@ public class ExecutedQuery {
 			throw new DatabaseException( e.getMessage(), e );
 		}
 
-		// @TODO Figure out why uncommenting this breaks things
-		// if (hasResults) {
-		// try (ResultSet keys = this.statement.getGeneratedKeys()) {
-		// if (keys != null && keys.next()) {
-		// this.generatedKey = keys.getObject(keys.getRow());
-		// }
-		// } catch (SQLException e) {
-		// throw new DatabaseException(e.getMessage(), e);
-		// }
-		// }
+		try {
+			try ( ResultSet keys = this.statement.getGeneratedKeys() ) {
+				if ( keys != null && keys.next() ) {
+					this.generatedKey = keys.getObject( 1 );
+				}
+			} catch ( SQLException e ) {
+				throw new DatabaseException( e.getMessage(), e );
+			}
+		} catch ( NullPointerException e ) {
+			// This is likely due to Hikari wrapping a null ResultSet.
+			// There should not be a null ResultSet returned from getGeneratedKeys
+			// (https://docs.oracle.com/javase/8/docs/api/java/sql/Statement.html#getGeneratedKeys--)
+			// but some JDBC drivers do anyway.
+			// Since Hikari wraps the null value, we can't get access to it,
+			// so instead we have to catch it here and ignore it.
+			// We do check the message to try to be very particular about what NullPointerExceptions we are catching
+			if ( !e.getMessage().equals( "Cannot invoke \"java.sql.ResultSet.next()\" because \"this.delegate\" is null" ) ) {
+				throw e;
+			}
+		}
 	}
 
 	public Query getResults() {
@@ -127,5 +134,9 @@ public class ExecutedQuery {
 			result.put( "generatedKey", this.generatedKey );
 		}
 		return result;
+	}
+
+	public Object getGeneratedKey() {
+		return this.generatedKey;
 	}
 }
