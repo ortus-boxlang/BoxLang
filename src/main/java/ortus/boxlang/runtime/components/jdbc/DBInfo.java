@@ -43,6 +43,24 @@ import ortus.boxlang.runtime.types.exceptions.DatabaseException;
 public class DBInfo extends Component {
 
 	/**
+	 * Enumeration of all possible `type` attribute values.
+	 */
+	private enum DBInfoType {
+
+		COLUMNS,
+		DBNAMES,
+	    // TABLES,
+	    // FOREIGNKEYS,
+	    // INDEX,
+	    // PROCEDURES,
+		VERSION;
+
+		public static DBInfoType fromString( String type ) {
+			return DBInfoType.valueOf( type.trim().toUpperCase() );
+		}
+	}
+
+	/**
 	 * Constructor
 	 */
 	public DBInfo() {
@@ -247,24 +265,6 @@ public class DBInfo extends Component {
 			return result;
 		} catch ( SQLException e ) {
 			throw new DatabaseException( "Unable to read column metadata", e );
-		}
-	}
-
-	/**
-	 * Enumeration of all possible `type` attribute values.
-	 */
-	private enum DBInfoType {
-
-		COLUMNS,
-		DBNAMES,
-	    // TABLES,
-	    // FOREIGNKEYS,
-	    // INDEX,
-	    // PROCEDURES,
-		VERSION;
-
-		public static DBInfoType fromString( String type ) {
-			return DBInfoType.valueOf( type.trim().toUpperCase() );
 		}
 	}
 }
