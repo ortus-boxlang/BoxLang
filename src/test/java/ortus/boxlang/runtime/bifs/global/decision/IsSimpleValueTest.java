@@ -23,7 +23,6 @@ import static com.google.common.truth.Truth.assertThat;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -94,11 +93,10 @@ public class IsSimpleValueTest {
 		assertThat( ( Boolean ) variables.get( Key.of( "aJavaClass" ) ) ).isFalse();
 	}
 
-	@Disabled( "QueryNew is not yet implemented." )
 	@DisplayName( "It returns false for queries" )
 	@Test
 	public void testQuery() {
-		assertThat( ( Boolean ) instance.executeStatement( "isSimpleValue( queryNew( 'id' ) )" ) ).isFalse();
+		assertThat( ( Boolean ) instance.executeStatement( "isSimpleValue( queryNew( 'id', 'varchar' ) )" ) ).isFalse();
 	}
 
 }

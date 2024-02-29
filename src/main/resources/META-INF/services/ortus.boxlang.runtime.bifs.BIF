@@ -51,8 +51,10 @@ ortus.boxlang.runtime.bifs.global.conversion.JSONDeserialize
 ortus.boxlang.runtime.bifs.global.conversion.JSONSerialize
 ortus.boxlang.runtime.bifs.global.conversion.ParseNumber
 ortus.boxlang.runtime.bifs.global.conversion.ToBase64
+ortus.boxlang.runtime.bifs.global.conversion.ToBinary
 ortus.boxlang.runtime.bifs.global.conversion.ToString
 ortus.boxlang.runtime.bifs.global.decision.IsArray
+ortus.boxlang.runtime.bifs.global.decision.IsBinary
 ortus.boxlang.runtime.bifs.global.decision.IsBoolean
 ortus.boxlang.runtime.bifs.global.decision.IsClosure
 ortus.boxlang.runtime.bifs.global.decision.IsCustomFunction
@@ -63,10 +65,12 @@ ortus.boxlang.runtime.bifs.global.decision.IsDefined
 ortus.boxlang.runtime.bifs.global.decision.IsEmpty
 ortus.boxlang.runtime.bifs.global.decision.IsFileObject
 ortus.boxlang.runtime.bifs.global.decision.IsIPv6
+ortus.boxlang.runtime.bifs.global.decision.IsJSON
 ortus.boxlang.runtime.bifs.global.decision.IsLeapYear
 ortus.boxlang.runtime.bifs.global.decision.IsLocalHost
 ortus.boxlang.runtime.bifs.global.decision.IsNull
 ortus.boxlang.runtime.bifs.global.decision.IsNumeric
+ortus.boxlang.runtime.bifs.global.decision.IsObject
 ortus.boxlang.runtime.bifs.global.decision.IsQuery
 ortus.boxlang.runtime.bifs.global.decision.IsSimpleValue
 ortus.boxlang.runtime.bifs.global.decision.IsStruct

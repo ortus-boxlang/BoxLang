@@ -34,7 +34,6 @@ import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
 
-@Disabled( "Unimplemented" )
 public class IsArrayTest {
 
 	static BoxRuntime	instance;
@@ -90,6 +89,7 @@ public class IsArrayTest {
 
 	@DisplayName( "It supports the dimension argument" )
 	@Test
+	@Disabled( "Unimplemented" )
 	public void testDimensionArgument() {
 		instance.executeSource(
 		    """

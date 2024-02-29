@@ -23,8 +23,6 @@ import static com.google.common.truth.Truth.assertThat;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
-import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import ortus.boxlang.runtime.BoxRuntime;
@@ -34,7 +32,6 @@ import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
 
-@Disabled( "Unimplemented" )
 public class IsObjectTest {
 
 	static BoxRuntime	instance;
@@ -57,20 +54,40 @@ public class IsObjectTest {
 		variables	= context.getScopeNearby( VariablesScope.name );
 	}
 
-	@DisplayName( "It detects binary values" )
 	@Test
 	public void testTrueConditions() {
 		instance.executeSource(
 		    """
-		    result = isBinary( toBinary( toBase64( "boxlang" ) ) );
-		    """,
+		    result1 = isObject( new src.test.java.TestCases.phase3.Chihuahua() );
+		    result2 = isObject( new java.util.ArrayList() );
+		      """,
 		    context );
-		assertThat( ( Boolean ) variables.get( Key.of( "result" ) ) ).isTrue();
+		assertThat( variables.getAsBoolean( Key.of( "result1" ) ) ).isTrue();
+		assertThat( variables.getAsBoolean( Key.of( "result2" ) ) ).isTrue();
 	}
 
-	@DisplayName( "It returns false for non-binary values" )
 	@Test
 	public void testFalseConditions() {
+		instance.executeSource(
+		    """
+		    result1 = isObject( "test" );
+		    result2 = isObject( 53 );
+		    result3 = isObject( {} );
+		    result4 = isObject( [] );
+		    result5 = isObject( queryNew( "" ) );
+		    result6 = isObject( now() );
+		    result7 = isObject( true );
+		    result8 = isObject( 45.67 );
+		        """,
+		    context );
+		assertThat( variables.getAsBoolean( Key.of( "result1" ) ) ).isFalse();
+		assertThat( variables.getAsBoolean( Key.of( "result2" ) ) ).isFalse();
+		assertThat( variables.getAsBoolean( Key.of( "result3" ) ) ).isFalse();
+		assertThat( variables.getAsBoolean( Key.of( "result4" ) ) ).isFalse();
+		assertThat( variables.getAsBoolean( Key.of( "result5" ) ) ).isFalse();
+		assertThat( variables.getAsBoolean( Key.of( "result6" ) ) ).isFalse();
+		assertThat( variables.getAsBoolean( Key.of( "result7" ) ) ).isFalse();
+		assertThat( variables.getAsBoolean( Key.of( "result8" ) ) ).isFalse();
 	}
 
 }

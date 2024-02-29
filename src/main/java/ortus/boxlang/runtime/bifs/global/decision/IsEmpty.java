@@ -20,6 +20,7 @@ import ortus.boxlang.runtime.bifs.BoxMember;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.dynamic.casters.ArrayCaster;
 import ortus.boxlang.runtime.dynamic.casters.CastAttempt;
+import ortus.boxlang.runtime.dynamic.casters.QueryCaster;
 import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 import ortus.boxlang.runtime.dynamic.casters.StructCaster;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
@@ -28,6 +29,7 @@ import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.BoxLangType;
 import ortus.boxlang.runtime.types.IStruct;
+import ortus.boxlang.runtime.types.Query;
 
 @BoxBIF
 @BoxBIF( alias = "structIsEmpty" )
@@ -67,6 +69,10 @@ public class IsEmpty extends BIF {
 		CastAttempt<IStruct> structAttempt = StructCaster.attempt( object );
 		if ( structAttempt.wasSuccessful() ) {
 			return structAttempt.get().isEmpty();
+		}
+		CastAttempt<Query> queryAttempt = QueryCaster.attempt( object );
+		if ( queryAttempt.wasSuccessful() ) {
+			return queryAttempt.get().isEmpty();
 		}
 		CastAttempt<String> stringAttempt = StringCaster.attempt( object );
 		if ( stringAttempt.wasSuccessful() ) {

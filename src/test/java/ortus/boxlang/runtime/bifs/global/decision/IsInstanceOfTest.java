@@ -23,7 +23,6 @@ import static com.google.common.truth.Truth.assertThat;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -34,7 +33,6 @@ import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
 
-@Disabled( "Unimplemented" )
 public class IsInstanceOfTest {
 
 	static BoxRuntime	instance;
@@ -63,11 +61,11 @@ public class IsInstanceOfTest {
 		instance.executeSource(
 		    """
 		       aJavaString           = isInstanceOf( "boxlang", "java.lang.String" );
-		       aDateObject           = isInstanceOf( now(), "java.util.Date" );
+		       aDateObject           = isInstanceOf( now(), "ortus.boxlang.runtime.types.DateTime" );
 		       aStruct               = isInstanceOf( {}, "java.util.Map" );
 		       anArray               = isInstanceOf( [], "Array" );
-		    aBoxLangClass         = isInstanceOf( new tests.resources.BoxLang.KitchenSink(), "KitchenSink" );
-		    aBoxLangClassFullPath = isInstanceOf( new tests.resources.BoxLang.KitchenSink(), "tests.resources.BoxLang.KitchenSink" );
+		    aBoxLangClass         = isInstanceOf( new src.test.java.TestCases.phase3.Chihuahua(), "Chihuahua" );
+		    aBoxLangClassFullPath = isInstanceOf( new src.test.java.TestCases.phase3.Chihuahua(), "src.test.java.TestCases.phase3.Chihuahua" );
 		       """,
 		    context );
 		assertThat( ( Boolean ) variables.get( Key.of( "aJavaString" ) ) ).isTrue();
@@ -86,9 +84,9 @@ public class IsInstanceOfTest {
 		    """
 		       aJavaString           = isInstanceOf( "gibberish", "aJavaString" );
 		       aDateObject           = isInstanceOf( now(), "java.bad.path.to.Date" );
-		       anArray               = isInstanceOf( {}, "java.util.Map" );
-		    aBoxLangClass         = isInstanceOf( new tests.resources.BoxLang.Auto(), "KitchenSink" );
-		    aBoxLangClassFullPath = isInstanceOf( new tests.resources.BoxLang.KitchenSink(), "tests.nowhere.BoxLang.KitchenSink" );
+		       anArray               = isInstanceOf( [], "java.util.Map" );
+		    aBoxLangClass         = isInstanceOf( new src.test.java.TestCases.phase3.Chihuahua(), "somethingElse" );
+		    aBoxLangClassFullPath = isInstanceOf( new src.test.java.TestCases.phase3.Chihuahua(), "src.nope.java.TestCases.phase3.Chihuahua" );
 		       """,
 		    context );
 		assertThat( ( Boolean ) variables.get( Key.of( "aJavaString" ) ) ).isFalse();

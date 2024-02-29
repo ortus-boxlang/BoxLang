@@ -16,15 +16,15 @@
  * limitations under the License.
  */
 
-package ortus.boxlang.runtime.components.threading;
+package ortus.boxlang.runtime.bifs.global.conversion;
+
+import static com.google.common.truth.Truth.assertThat;
 
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-import ortus.boxlang.parser.BoxScriptType;
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
@@ -32,7 +32,7 @@ import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
 
-public class ThreadTest {
+public class ToBinaryTest {
 
 	static BoxRuntime	instance;
 	IBoxContext			context;
@@ -55,56 +55,24 @@ public class ThreadTest {
 		variables	= context.getScopeNearby( VariablesScope.name );
 	}
 
-	@DisplayName( "It can thread tag" )
 	@Test
-	public void testCanthreadTag() {
-
+	public void testCanConvertBytes() {
 		instance.executeSource(
 		    """
-		        <cfthread name="myThread" foo="bar">
-		          	<cfset printLn( "thread is done!" )>
-		          	<cfset sleep( 1000 )>
-		          </cfthread>
-		       <cfset printLn( "thread tag done" )>
-		    <cfset sleep( 2000 ) >
-		    <cfset printLn( "test is done done" )>
-
-		                """,
-		    context, BoxScriptType.CFMARKUP );
+		    result = toBinary( "Hello World".getBytes() )
+		    """,
+		    context );
+		assertThat( variables.get( result ) ).isEqualTo( "Hello World".getBytes() );
 	}
 
-	@DisplayName( "It can thread script" )
 	@Test
-	public void testCanthreadScript() {
-
+	public void testCanConvertString() {
 		instance.executeSource(
 		    """
-		    thread name="myThread" foo="bar"{
-		    	printLn( "thread is done!" )
-		    	sleep( 1000 )
-		    }
-		    printLn( "thread tag done" )
-		    sleep( 2000 )
-		    printLn( "test is done done" )
-		          """,
+		    result = toBinary( "SGVsbG8gV29ybGQ=" )
+		    """,
 		    context );
-	}
-
-	@DisplayName( "It can thread ACF script" )
-	@Test
-	public void testCanthreadACFScript() {
-
-		instance.executeSource(
-		    """
-		    cfthread( name="myThread", foo="bar" ){
-		    	printLn( "thread is done!" )
-		    	sleep( 1000 )
-		    }
-		    printLn( "thread tag done" )
-		    sleep( 2000 )
-		    printLn( "test is done done" )
-		         """,
-		    context );
+		assertThat( new String( ( byte[] ) variables.get( result ) ) ).isEqualTo( "Hello World" );
 	}
 
 }

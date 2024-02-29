@@ -131,7 +131,6 @@ public class ListReduceTest {
 		assertThat( variables.get( result ) ).isEqualTo( 15 );
 	}
 
-	// @Disabled
 	@DisplayName( "It should handle complex objects being used as the accumulator" )
 	@Test
 	public void testComplexAccumulator() {
