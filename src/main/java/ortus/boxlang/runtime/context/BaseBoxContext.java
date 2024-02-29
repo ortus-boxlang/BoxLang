@@ -22,6 +22,7 @@ import java.util.ArrayDeque;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Predicate;
 
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.bifs.BIFDescriptor;
@@ -186,10 +187,19 @@ public class BaseBoxContext implements IBoxContext {
 	 * @return The execution state for the closest component, null if none was found
 	 */
 	public IStruct findClosestComponent( Key name ) {
+		return findClosestComponent( name, null );
+	}
+
+	/**
+	 * Gets the execution state for the closest component with a predicate to filter.
+	 *
+	 * @return The execution state for the closest component, null if none was found
+	 */
+	public IStruct findClosestComponent( Key name, Predicate<IStruct> predicate ) {
 		IStruct[] componentArray = getComponents();
-		for ( int i = 1; i < componentArray.length; i++ ) {
+		for ( int i = 0; i < componentArray.length; i++ ) {
 			IStruct component = componentArray[ i ];
-			if ( component.get( Key._NAME ).equals( name ) ) {
+			if ( component.get( Key._NAME ).equals( name ) && ( predicate == null || predicate.test( component ) ) ) {
 				return component;
 			}
 		}
@@ -795,8 +805,37 @@ public class BaseBoxContext implements IBoxContext {
 	 * @return This context
 	 */
 	public IBoxContext writeToBuffer( Object o ) {
-		getBuffer().append( StringCaster.cast( o ) );
+		Boolean	explicitOutput	= ( Boolean ) getConfigItem( Key.enforceExplicitOutput, false );
+		IStruct	outputState		= null;
+		if ( explicitOutput ) {
+			// If we are requiring to be in an output component, let's look for it
+			outputState = findClosestComponent( Key.output );
+			if ( outputState == null ) {
+				return this;
+			}
+		}
+
+		String content = StringCaster.cast( o );
+		// If the closest output didn't have an encode for, let's look a little harder to see if we can find one.
+		if ( outputState == null || outputState.getAsString( Key.encodefor ) == null ) {
+			outputState = findClosestComponent( Key.output, state -> state.get( Key.encodefor ) != null );
+		}
+		if ( outputState != null ) {
+			String encodeFor = outputState.getAsString( Key.encodefor );
+			// TODO: encode the content
+			// Waiting on ESAPI implementation
+		}
+
+		getBuffer().append( content );
 		return this;
+	}
+
+	/**
+	 * Can the current context output to the response stream?
+	 * Contexts tied to a specific object like a function or class may override this to return false based on their own logic.
+	 */
+	public Boolean canOutput() {
+		return true;
 	}
 
 	/**
@@ -807,6 +846,10 @@ public class BaseBoxContext implements IBoxContext {
 	 * @return This context
 	 */
 	public IBoxContext flushBuffer( boolean force ) {
+		if ( !canOutput() && !force ) {
+			return this;
+		}
+
 		// If there are extra buffers registered, we ignore flush requests since someone
 		// out there is wanting to capture our buffer instead.
 		if ( hasParent() && buffers.size() == 1 ) {

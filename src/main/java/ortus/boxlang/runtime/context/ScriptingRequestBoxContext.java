@@ -235,6 +235,9 @@ public class ScriptingRequestBoxContext extends RequestBoxContext {
 	 * @return This context
 	 */
 	public IBoxContext flushBuffer( boolean force ) {
+		if ( !canOutput() && !force ) {
+			return this;
+		}
 		String output;
 		// If there are extra buffers registered, we ignore flush requests since someone
 		// out there is wanting to capture our buffer instead.

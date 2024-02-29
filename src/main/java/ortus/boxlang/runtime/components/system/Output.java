@@ -67,6 +67,17 @@ public class Output extends Component {
 	 *
 	 */
 	public BodyResult _invoke( IBoxContext context, IStruct attributes, ComponentBody body, IStruct executionState ) {
+		// This will allow the current encode for value to be looked up in our context
+		String encodeFor = attributes.getAsString( Key.encodefor );
+		// If this output component didn't explicitly set an encodeFor, we'll look for the closest parent component that did
+		if ( encodeFor == null ) {
+			IStruct parent = context.findClosestComponent( Key.output, state -> state.get( Key.encodefor ) != null );
+			if ( parent != null ) {
+				encodeFor = parent.getAsString( Key.encodefor );
+			}
+		}
+		executionState.put( Key.encodefor, encodeFor );
+
 		Object queryOrName = attributes.get( Key.query );
 		// Short circuit if there's no query
 		if ( queryOrName == null ) {
@@ -83,8 +94,6 @@ public class Output extends Component {
 		Boolean				groupCaseSensitive	= attributes.getAsBoolean( Key.groupCaseSensitive );
 		Integer				startRow			= attributes.getAsInteger( Key.startRow );
 		Integer				maxRows				= attributes.getAsInteger( Key.maxRows );
-		// TODO: Use this
-		String				encodefor			= attributes.getAsString( Key.encodefor );
 
 		CastAttempt<String>	queryName			= StringCaster.attempt( queryOrName );
 		Query				theQuery;

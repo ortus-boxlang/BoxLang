@@ -302,6 +302,9 @@ public class WebRequestBoxContext extends RequestBoxContext {
 	 */
 	@Override
 	public IBoxContext flushBuffer( boolean force ) {
+		if ( !canOutput() && !force ) {
+			return this;
+		}
 		String output = "";
 		// If there are extra buffers registered, we ignore flush requests since someone
 		// out there is wanting to capture our buffer instead.

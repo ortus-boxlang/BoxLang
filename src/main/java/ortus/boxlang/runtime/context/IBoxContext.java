@@ -20,6 +20,7 @@ package ortus.boxlang.runtime.context;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Predicate;
 
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.components.Component;
@@ -300,6 +301,13 @@ public interface IBoxContext {
 	public IStruct findClosestComponent( Key name );
 
 	/**
+	 * Gets the execution state for the closest component with a predicate to filter.
+	 *
+	 * @return The execution state for the closest component, null if none was found
+	 */
+	public IStruct findClosestComponent( Key name, Predicate<IStruct> predicate );
+
+	/**
 	 * Has the execution context been bound to a template?
 	 *
 	 * @return True if bound, else false
@@ -412,6 +420,12 @@ public interface IBoxContext {
 	 * @return This context
 	 */
 	public IBoxContext writeToBuffer( Object o );
+
+	/**
+	 * Can the current context output to the response stream?
+	 * Contexts tied to a specific object like a function or class may override this to return false based on their own logic.
+	 */
+	public Boolean canOutput();
 
 	/**
 	 * Flush the buffer to the output stream. The default implementation simply flushes the buffer in this context

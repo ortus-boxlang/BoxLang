@@ -45,6 +45,8 @@ public class Key implements Comparable<Key>, Serializable {
 
 	// Global Dictionary
 	public static final Key		__functionName				= Key.of( "__functionName" );
+	public static final Key		enableOutputOnly			= Key.of( "enableOutputOnly" );
+	public static final Key		showDebugOutput				= Key.of( "showDebugOutput" );
 	public static final Key		__isMemberExecution			= Key.of( "__isMemberExecution" );
 	public static final Key		_ANY						= Key.of( "any" );
 	public static final Key		_ARRAY						= Key.of( "array" );
@@ -159,6 +161,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		encoded						= Key.of( "encoded" );
 	public static final Key		encodefor					= Key.of( "encodefor" );
 	public static final Key		encoding					= Key.of( "encoding" );
+	public static final Key		enforceExplicitOutput		= Key.of( "enforceExplicitOutput" );
 	public static final Key		end							= Key.of( "end" );
 	public static final Key		environment					= Key.of( "environment" );
 	public static final Key		error						= Key.of( "error" );
@@ -293,6 +296,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		quarter						= Key.of( "quarter" );
 	public static final Key		query						= Key.of( "query" );
 	public static final Key		queryFormat					= Key.of( "queryFormat" );
+	public static final Key		requestTimeout				= Key.of( "requestTimeout" );
 	public static final Key		radix						= Key.of( "radix" );
 	public static final Key		Raw_Trace					= Key.of( "Raw_Trace" );
 	public static final Key		recordCount					= Key.of( "recordCount" );

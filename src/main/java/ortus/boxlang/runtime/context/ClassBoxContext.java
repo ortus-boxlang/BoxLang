@@ -200,10 +200,21 @@ public class ClassBoxContext extends BaseBoxContext {
 	 * @return This context
 	 */
 	public IBoxContext flushBuffer( boolean force ) {
-		// direct flushing ignored if we can't output
-		if ( force || getThisClass().canOutput() ) {
-			super.flushBuffer( force );
+		if ( !canOutput() && !force ) {
+			return this;
 		}
+		super.flushBuffer( force );
 		return this;
+	}
+
+	/**
+	 * A helper to look at the "output" annotation, caching the result
+	 *
+	 * @param context If not null, will be checked for an output annotation
+	 *
+	 * @return Whether the function can output
+	 */
+	public Boolean canOutput() {
+		return getThisClass().canOutput();
 	}
 }

@@ -29,9 +29,12 @@ import ortus.boxlang.runtime.util.RequestThreadManager;
  */
 public abstract class RequestBoxContext extends BaseBoxContext {
 
-	private Locale					locale			= null;
-	private ZoneId					timezone		= null;
-	private RequestThreadManager	threadManager	= null;
+	private Locale					locale					= null;
+	private ZoneId					timezone				= null;
+	private RequestThreadManager	threadManager			= null;
+	private boolean					enforceExplicitOutput	= false;
+	private Long					requestTimeout			= null;
+	private Long					requestStartMS			= System.currentTimeMillis();
 
 	/**
 	 * Creates a new execution context with a bounded execution template and parent context
@@ -71,6 +74,11 @@ public abstract class RequestBoxContext extends BaseBoxContext {
 		if ( timezone != null ) {
 			config.put( Key.timezone, timezone );
 		}
+		config.put( Key.enforceExplicitOutput, enforceExplicitOutput );
+
+		if ( requestTimeout != null ) {
+			config.put( Key.requestTimeout, requestTimeout );
+		}
 
 		return config;
 	}
@@ -92,6 +100,58 @@ public abstract class RequestBoxContext extends BaseBoxContext {
 			threadManager = new RequestThreadManager();
 		}
 		return threadManager;
+	}
+
+	/**
+	 * Set the enforceExplicitOutput flag. This determines if templating output is requried to be inside an output component
+	 * Get this setting by asking your local context for config item "enforceExplicitOutput"
+	 * 
+	 * @param enforceExplicitOutput true to enforce explicit output
+	 * 
+	 * @return this context
+	 */
+	public RequestBoxContext setEnforceExplicitOutput( boolean enforceExplicitOutput ) {
+		this.enforceExplicitOutput = enforceExplicitOutput;
+		return this;
+	}
+
+	/**
+	 * Get the enforceExplicitOutput flag. This determines if templating output is requried to be inside an output component
+	 * 
+	 * @return true if explicit output is enforced
+	 */
+	public boolean isEnforceExplicitOutput() {
+		return enforceExplicitOutput;
+	}
+
+	/**
+	 * Set the request timeout in milliseconds
+	 * 
+	 * @param requestTimeout The timeout in milliseconds
+	 * 
+	 * @return this context
+	 */
+	public RequestBoxContext setRequestTimeout( Long requestTimeout ) {
+		this.requestTimeout = requestTimeout;
+		return this;
+	}
+
+	/**
+	 * Get the request timeout in milliseconds
+	 * 
+	 * @return The timeout in milliseconds
+	 */
+	public Long getRequestTimeout() {
+		return requestTimeout;
+	}
+
+	/**
+	 * Get the time in milliseconds when the request started
+	 * 
+	 * @return The time in milliseconds when the request started
+	 */
+	public Long getRequestStartMS() {
+		return requestStartMS;
 	}
 
 }

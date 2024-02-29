@@ -21,6 +21,8 @@ import ortus.boxlang.runtime.components.Attribute;
 import ortus.boxlang.runtime.components.BoxComponent;
 import ortus.boxlang.runtime.components.Component;
 import ortus.boxlang.runtime.context.IBoxContext;
+import ortus.boxlang.runtime.context.RequestBoxContext;
+import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.IStruct;
 
 @BoxComponent
@@ -29,6 +31,11 @@ public class Setting extends Component {
 	public Setting() {
 		super();
 		declaredAttributes = new Attribute[] {
+		    // TODO: TRANSPILE enablecfoutputonly into enableOutputOnly!
+		    new Attribute( Key.enableOutputOnly, "boolean" ),
+		    new Attribute( Key.showDebugOutput, "boolean" ),
+		    new Attribute( Key.requestTimeout, "long" )
+
 		};
 	}
 
@@ -43,7 +50,24 @@ public class Setting extends Component {
 	 *
 	 */
 	public BodyResult _invoke( IBoxContext context, IStruct attributes, ComponentBody body, IStruct executionState ) {
-		// TODO: Make this do something
+		Boolean				showDebugOutput		= attributes.getAsBoolean( Key.showDebugOutput );
+		Boolean				enableOutputOnly	= attributes.getAsBoolean( Key.enableOutputOnly );
+		Long				requestTimeout		= attributes.getAsLong( Key.requestTimeout );
+
+		RequestBoxContext	requestContext		= context.getParentOfType( RequestBoxContext.class );
+
+		if ( enableOutputOnly != null ) {
+			// This will change the setting for the request of the request
+			requestContext.setEnforceExplicitOutput( enableOutputOnly );
+		}
+		if ( requestTimeout != null ) {
+			// This will change the setting for the request of the request
+			requestContext.setRequestTimeout( requestTimeout );
+		}
+
+		// TODO: Implemet showDebugOutput. It feels like this should be specific to a web server, but since the setting component is core, maybe we add it to
+		// the core
+
 		return DEFAULT_RETURN;
 	}
 }

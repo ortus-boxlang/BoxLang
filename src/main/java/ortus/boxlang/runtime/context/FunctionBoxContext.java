@@ -385,10 +385,10 @@ public class FunctionBoxContext extends BaseBoxContext {
 	 * @return This context
 	 */
 	public IBoxContext flushBuffer( boolean force ) {
-		// direct flushing ignored if we can't output
-		if ( force || getFunction().canOutput( this ) ) {
-			super.flushBuffer( force );
+		if ( !canOutput() && !force ) {
+			return this;
 		}
+		super.flushBuffer( force );
 		return this;
 	}
 
@@ -462,6 +462,14 @@ public class FunctionBoxContext extends BaseBoxContext {
 			cfc.getVariablesScope().put( udf.getName(), udf );
 		}
 		getParent().registerUDF( udf );
+	}
+
+	/**
+	 * Can the current context output to the response stream?
+	 * Contexts tied to a specific object like a function or class may override this to return false based on their own logic.
+	 */
+	public Boolean canOutput() {
+		return getFunction().canOutput( this );
 	}
 
 }

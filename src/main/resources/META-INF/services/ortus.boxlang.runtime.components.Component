@@ -11,4 +11,5 @@ ortus.boxlang.runtime.components.system.Output
 ortus.boxlang.runtime.components.system.Param
 ortus.boxlang.runtime.components.system.SaveContent
 ortus.boxlang.runtime.components.system.Setting
+ortus.boxlang.runtime.components.system.Silent
 ortus.boxlang.runtime.components.threading.Thread
