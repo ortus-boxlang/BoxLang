@@ -173,7 +173,6 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		evictionPolicy				= Key.of( "evictionPolicy" );
 	public static final Key		executionMode				= Key.of( "executionMode" );
 	public static final Key		extendedinfo				= Key.of( "extendedinfo" );
-	public static final Key		evictionPolicy				= Key.of( "evictionPolicy" );
 	public static final Key		evictCount					= Key.of( "evictCount" );
 	public static final Key		file						= Key.of( "file" );
 	public static final Key		fileContent					= Key.of( "fileContent" );

@@ -43,6 +43,7 @@ import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Query;
 import ortus.boxlang.runtime.types.Struct;
+import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.exceptions.DatabaseException;
 
 public class DataSourceTest {
@@ -140,14 +141,60 @@ public class DataSourceTest {
 	void testDatasourceWithParamsExecute() {
 		try ( Connection conn = datasource.getConnection() ) {
 			assertDoesNotThrow( () -> {
-				ExecutedQuery executedQuery = datasource.execute( "SELECT * FROM developers", conn, null );
-				assertEquals( 2, executedQuery.getRecordCount() );
+				ExecutedQuery executedQuery = datasource.execute(
+					"SELECT * FROM developers WHERE name = ?",
+					Array.of( "Michael Born" ),
+					conn,
+					null
+				);
+				assertEquals( 1, executedQuery.getRecordCount() );
 				Query results = executedQuery.getResults();
-				assertEquals( 2, results.size() );
+				assertEquals( 1, results.size() );
 				IStruct developer = results.getRowAsStruct( 0 );
 				assertEquals( 77, developer.get( "id" ) );
 				assertEquals( "Michael Born", developer.get( "name" ) );
 			} );
+		} catch ( SQLException e ) {
+			throw new RuntimeException( e );
+		}
+	}
+
+	@DisplayName( "It can execute queries with parameters without providing a connection" )
+	@Test
+	void testDatasourceWithNamedParamsExecute() {
+		try ( Connection conn = datasource.getConnection() ) {
+			assertDoesNotThrow( () -> {
+				ExecutedQuery executedQuery = datasource.execute(
+					"SELECT * FROM developers WHERE name = :name",
+					Struct.of( "name", "Michael Born" ),
+					conn,
+					null
+				);
+				assertEquals( 1, executedQuery.getRecordCount() );
+				Query results = executedQuery.getResults();
+				assertEquals( 1, results.size() );
+				IStruct developer = results.getRowAsStruct( 0 );
+				assertEquals( 77, developer.get( "id" ) );
+				assertEquals( "Michael Born", developer.get( "name" ) );
+			} );
+		} catch ( SQLException e ) {
+			throw new RuntimeException( e );
+		}
+	}
+
+	@DisplayName( "It throws an exception if a named param is missing" )
+	@Test
+	void testDatasourceWithMissingNamedParams() {
+		try ( Connection conn = datasource.getConnection() ) {
+			BoxRuntimeException exception = assertThrows(BoxRuntimeException.class, () -> {
+				datasource.execute(
+					"SELECT * FROM developers WHERE name = :name",
+					Struct.of( "developer", "Michael Born" ),
+					conn,
+					null
+				);
+			} );
+			assertEquals("Missing param in query: [name]. SQL: SELECT * FROM developers WHERE name = :name", exception.getMessage());
 		} catch ( SQLException e ) {
 			throw new RuntimeException( e );
 		}
