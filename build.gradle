@@ -85,6 +85,8 @@ dependencies {
 	implementation 'org.slf4j:slf4j-api:2.0.11'
 	// https://mvnrepository.com/artifact/org.slf4j/slf4j-jdk14
 	implementation 'org.slf4j:slf4j-jdk14:2.0.11'
+	// https://mvnrepository.com/artifact/org.jetbrains/annotations
+	implementation 'org.jetbrains:annotations:24.0.0'
 
 	// MOVE TO BOXLANG WEB PROJECT
 	// https://mvnrepository.com/artifact/io.undertow/undertow-core/2.3.10.Final

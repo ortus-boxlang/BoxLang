@@ -51,7 +51,7 @@ final class ExecutedQuery {
 	/**
 	 * The execution time of the query.
 	 */
-	private final long			executionTime;
+	private final long					executionTime;
 
 	/**
 	 * A Query object holding the results of the query.
@@ -59,12 +59,12 @@ final class ExecutedQuery {
 	 *
 	 * @see Query
 	 */
-	private @NotNull final Query			results;
+	private @NotNull final Query		results;
 
 	/**
 	 * The generated key of the request, if any.
 	 */
-	private @Nullable Object				generatedKey;
+	private @Nullable Object			generatedKey;
 
 	/**
 	 * Creates an ExecutedQuery instance.
