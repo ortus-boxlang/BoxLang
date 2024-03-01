@@ -59,7 +59,7 @@ public interface IObjectStore {
 	 * @param provider The cache provider associated with this store
 	 * @param config   The configuration for the store
 	 */
-	public void init( ICacheProvider provider, IStruct config );
+	public IObjectStore init( ICacheProvider provider, IStruct config );
 
 	/**
 	 * Some storages require a shutdown method to close the storage or do

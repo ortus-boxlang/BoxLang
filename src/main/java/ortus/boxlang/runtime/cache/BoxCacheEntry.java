@@ -76,7 +76,7 @@ public class BoxCacheEntry implements ICacheEntry, Serializable {
 	 * @param value             The value
 	 * @param metadata          The metadata
 	 */
-	protected BoxCacheEntry(
+	public BoxCacheEntry(
 	    Key cacheName,
 	    long timeout,
 	    long lastAccessTimeout,

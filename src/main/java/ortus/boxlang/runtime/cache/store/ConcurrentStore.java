@@ -61,10 +61,11 @@ public class ConcurrentStore extends AbstractStore implements IObjectStore {
 	 * @param provider The cache provider associated with this store
 	 * @param config   The configuration for the store
 	 */
-	@Override
-	public void init( ICacheProvider provider, IStruct config ) {
-		super.init( provider, config );
-		this.pool = new ConcurrentHashMap<>( config.getAsInteger( Key.maxObjects ) / 4 );
+	public IObjectStore init( ICacheProvider provider, IStruct config ) {
+		this.provider	= provider;
+		this.config		= config;
+		this.pool		= new ConcurrentHashMap<>( config.getAsInteger( Key.maxObjects ) / 4 );
+		return this;
 	}
 
 	/**

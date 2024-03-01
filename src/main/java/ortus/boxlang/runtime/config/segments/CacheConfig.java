@@ -34,27 +34,22 @@ public class CacheConfig {
 	/**
 	 * The name of the cache engine, default is ='default'
 	 */
-	public Key						name		= Key._DEFAULT;
+	public Key					name		= Key._DEFAULT;
 
 	/**
 	 * The default cache engine provider is BoxLang
 	 */
-	public Key						provider	= Key.boxlang;
+	public Key					provider	= Key.boxlang;
 
 	/**
 	 * The properties for the cache engine, based on {@code DEFAULTS}
 	 */
-	public IStruct					properties	= new Struct( DEFAULTS );
-
-	/**
-	 * Logger
-	 */
-	private static final Logger		logger		= LoggerFactory.getLogger( CacheConfig.class );
+	public IStruct				properties	= new Struct( DEFAULTS );
 
 	/**
 	 * BoxLang Cache Provider Defaults
 	 */
-	private static final IStruct	DEFAULTS	= Struct.of(
+	public static final IStruct	DEFAULTS	= Struct.of(
 	    // How many to evict at a time once a policy is triggered
 	    "evictCount", 1,
 	    // The eviction policy to use: Least Recently Used
@@ -84,6 +79,11 @@ public class CacheConfig {
 	    // If enabled, the last access timeout will be used to evict objects from the cache
 	    "useLastAccessTimeouts", true
 	);
+
+	/**
+	 * Logger
+	 */
+	private static final Logger	logger		= LoggerFactory.getLogger( CacheConfig.class );
 
 	/**
 	 * --------------------------------------------------------------------------

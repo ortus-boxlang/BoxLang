@@ -63,18 +63,6 @@ public abstract class AbstractStore {
 	}
 
 	/**
-	 * Some storages require a method to initialize the storage or do
-	 * object loading. This method is called when the cache provider is started.
-	 *
-	 * @param provider The cache provider associated with this store
-	 * @param config   The configuration for the store
-	 */
-	public void init( ICacheProvider provider, IStruct config ) {
-		this.provider	= provider;
-		this.config		= config;
-	}
-
-	/**
 	 * Get a policy for usage by the store.
 	 *
 	 * The policies are stored in the ortus.boxlang.runtime.cache.policies package.
