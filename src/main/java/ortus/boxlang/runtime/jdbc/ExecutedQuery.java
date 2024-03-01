@@ -21,7 +21,8 @@ import java.sql.*;
 import java.util.List;
 import java.util.Map;
 
-import javax.annotation.Nullable;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Array;
@@ -40,12 +41,12 @@ final class ExecutedQuery {
 	/**
 	 * The {@link PendingQuery} executed.
 	 */
-	private final PendingQuery	pendingQuery;
+	private @NotNull final PendingQuery	pendingQuery;
 
 	/**
 	 * The executed sql string with the bindings used in the String.
 	 */
-	private final String		executedSql;
+	private @NotNull final String		executedSql;
 
 	/**
 	 * The execution time of the query.
@@ -55,16 +56,15 @@ final class ExecutedQuery {
 	/**
 	 * A Query object holding the results of the query.
 	 * If there were no results, the Query object will have no rows.
-	 * 
+	 *
 	 * @see Query
 	 */
-	private final Query			results;
+	private @NotNull final Query			results;
 
 	/**
 	 * The generated key of the request, if any.
 	 */
-	@Nullable
-	private Object				generatedKey;
+	private @Nullable Object				generatedKey;
 
 	/**
 	 * Creates an ExecutedQuery instance.
@@ -74,7 +74,7 @@ final class ExecutedQuery {
 	 * @param executionTime The execution time the query took.
 	 * @param hasResults    Boolean flag from {@link PreparedStatement#execute()} designating if the execution returned any results.
 	 */
-	public ExecutedQuery( PendingQuery pendingQuery, PreparedStatement statement, long executionTime, boolean hasResults ) {
+	public ExecutedQuery( @NotNull PendingQuery pendingQuery, @NotNull PreparedStatement statement, long executionTime, boolean hasResults ) {
 		this.pendingQuery	= pendingQuery;
 		this.executedSql	= statement.toString();
 		this.executionTime	= executionTime;
@@ -132,30 +132,30 @@ final class ExecutedQuery {
 
 	/**
 	 * Returns the Query object of results of the query.
-	 * 
+	 *
 	 * @return A Query object of results.
 	 */
-	public Query getResults() {
+	public @NotNull Query getResults() {
 		return this.results;
 	}
 
 	/**
 	 * Returns an {@link Array} of {@link Struct} instances representing the {@link Query} results.
-	 * 
+	 *
 	 * @return An Array of Structs representing the Query
 	 */
-	public Array getResultsAsArray() {
+	public @NotNull Array getResultsAsArray() {
 		return this.results.toStructArray();
 	}
 
 	/**
 	 * Returns a {@link Struct} instance grouping the results by the given key.
-	 * 
+	 *
 	 * @param key The column to group the results by.
-	 * 
+	 *
 	 * @return A struct of String to Struct instances representing the Query results.
 	 */
-	public IStruct getResultsAsStruct( String key ) {
+	public @NotNull IStruct getResultsAsStruct( @NotNull String key ) {
 		Map<Object, List<IStruct>>	groupedResults	= this.results.stream().collect( groupingBy( r -> r.get( key ) ) );
 		Map<Object, Object>			groupedArray	= groupedResults.entrySet().stream().collect( toMap( Map.Entry::getKey, e -> new Array( e.getValue() ) ) );
 		return Struct.fromMap(
@@ -166,7 +166,7 @@ final class ExecutedQuery {
 
 	/**
 	 * Returns the total count of records returned by the query.
-	 * 
+	 *
 	 * @return The total count of records.
 	 */
 	public int getRecordCount() {
@@ -175,10 +175,10 @@ final class ExecutedQuery {
 
 	/**
 	 * Returns the `result` struct returned from `queryExecute` and `cfquery`.
-	 * 
+	 *
 	 * @return A `result` struct
 	 */
-	public Struct getResultStruct() {
+	public @NotNull Struct getResultStruct() {
 		/*
 		 * * SQL: The SQL statement that was executed. (string)
 		 * * Cached: If the query was cached. (boolean)
@@ -203,11 +203,10 @@ final class ExecutedQuery {
 
 	/**
 	 * Returns the generated key of the query, if any
-	 * 
+	 *
 	 * @return The generated key of the query.
 	 */
-	@Nullable
-	public Object getGeneratedKey() {
+	public @Nullable Object getGeneratedKey() {
 		return this.generatedKey;
 	}
 }
