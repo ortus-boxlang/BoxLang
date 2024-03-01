@@ -18,9 +18,7 @@
 package ortus.boxlang.runtime.cache.store;
 
 import java.lang.reflect.InvocationTargetException;
-import java.util.Comparator;
 
-import ortus.boxlang.runtime.cache.ICacheEntry;
 import ortus.boxlang.runtime.cache.policies.ICachePolicy;
 import ortus.boxlang.runtime.cache.providers.ICacheProvider;
 import ortus.boxlang.runtime.scopes.Key;
@@ -44,6 +42,11 @@ public abstract class AbstractStore {
 	 * The configuration for the store
 	 */
 	protected IStruct			config;
+
+	/**
+	 * The Eviction policy we lazy load in.
+	 */
+	private ICachePolicy		policy;
 
 	/**
 	 * Get the configuration for the store
@@ -86,20 +89,34 @@ public abstract class AbstractStore {
 	 *
 	 * You can also register your own policy by implementing the ICachePolicy interface.
 	 */
-	protected Comparator<ICacheEntry> getPolicy() {
-		Object policy = config.get( Key.evictionPolicy );
+	public ICachePolicy getPolicy() {
+
+		if ( this.policy == null ) {
+			this.policy = buildPolicy();
+		}
+
+		return this.policy;
+	}
+
+	/**
+	 * Build the cache policy from the configuration
+	 *
+	 * @return The built policy
+	 */
+	private synchronized ICachePolicy buildPolicy() {
+		Object thisPolicy = this.config.get( Key.evictionPolicy );
 
 		// Is it a policy object?
-		if ( policy instanceof ICachePolicy castedPolicy ) {
-			return castedPolicy.getComparator();
+		if ( thisPolicy instanceof ICachePolicy castedPolicy ) {
+			return castedPolicy;
 		}
 		// else if it's a string
-		else if ( policy instanceof String castedPolicy ) {
+		else if ( thisPolicy instanceof String castedPolicy ) {
 			// If the policy is not one of: LRU, MRU, LFU, MFU, FIFO, LIFO, Random then throw an exception
 			if ( !castedPolicy.matches( VALID_POLICIES ) ) {
 				throw new BoxRuntimeException( "The eviction policy is not a valid policy." + policy.toString() );
 			}
-			return getPolicyByName( castedPolicy );
+			return buildPolicyByName( castedPolicy );
 		}
 		// Else throw an exception
 		else {
@@ -114,23 +131,20 @@ public abstract class AbstractStore {
 	 *
 	 * @return The policy
 	 */
-	protected Comparator<ICacheEntry> getPolicyByName( String policyName ) {
+	protected ICachePolicy buildPolicyByName( String policyName ) {
 		// Access the class by name
-		String policy = POLICIES_PACKAGE + "." + policyName;
+		String targetPolicy = POLICIES_PACKAGE + "." + policyName;
 
 		try {
 			// Load the class
-			Class<?> clazz = Class.forName( policy );
+			Class<?> clazz = Class.forName( targetPolicy );
 			if ( ICachePolicy.class.isAssignableFrom( clazz ) ) {
 				// Create an instance of the class
-				ICachePolicy instance;
 				try {
-					instance = ( ICachePolicy ) clazz.getDeclaredConstructor().newInstance();
+					return ( ICachePolicy ) clazz.getDeclaredConstructor().newInstance();
 				} catch ( IllegalArgumentException | InvocationTargetException | NoSuchMethodException | SecurityException e ) {
 					throw new BoxRuntimeException( "Cannot call the constructor on the policy: " + policy, e );
 				}
-				// Return the policy
-				return instance.getComparator();
 			} else {
 				throw new BoxRuntimeException( "The policy does not implement ICachePolicy: " + policy );
 			}

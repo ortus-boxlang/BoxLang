@@ -33,8 +33,17 @@ import ortus.boxlang.runtime.types.Struct;
  */
 public class BoxCacheEntry implements ICacheEntry, Serializable {
 
-	// Add a serialVersionUID to avoid warning
-	private static final long	serialVersionUID	= 1L;
+	/**
+	 * Empty Cache Entry
+	 */
+	public static final ICacheEntry	EMPTY				= new BoxCacheEntry(
+	    Key._EMPTY,
+	    0,
+	    0,
+	    Key._EMPTY,
+	    null,
+	    new Struct()
+	);
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -42,16 +51,20 @@ public class BoxCacheEntry implements ICacheEntry, Serializable {
 	 * --------------------------------------------------------------------------
 	 */
 
-	private Key					cacheName;
-	private AtomicLong			hits				= new AtomicLong( 0 );
-	private long				timeout;
-	private long				lastAccessTimeout;
-	private Instant				created				= Instant.now();
-	private Instant				lastAccessed;
-	private Key					key;
-	private Object				value;
-	private Struct				metadata			= new Struct();
-	private AtomicBoolean		isExpired			= new AtomicBoolean( false );
+	// Add a serialVersionUID to avoid warning
+	private static final long		serialVersionUID	= 1L;
+	private Key						cacheName;
+	private AtomicLong				hits				= new AtomicLong( 0 );
+	private long					timeout;
+	private long					lastAccessTimeout;
+	private Instant					created				= Instant.now();
+	private Instant					lastAccessed;
+	private Key						key;
+	private Object					value;
+	private Struct					metadata			= new Struct();
+	private AtomicBoolean			isExpired			= new AtomicBoolean( false );
+	// Calculated hashcode
+	private int						hashCode;
 
 	/**
 	 * Constructor with metadata
@@ -77,6 +90,14 @@ public class BoxCacheEntry implements ICacheEntry, Serializable {
 		this.key				= key;
 		this.value				= value;
 		this.metadata			= metadata;
+
+		// Build out the hash code which doesn't use the object value since it's a cache entry
+		final int prime = 31;
+		this.hashCode	= 1;
+		this.hashCode	= prime * this.hashCode + key.hashCode();
+		this.hashCode	= prime * this.hashCode + cacheName.hashCode();
+		this.hashCode	= prime * this.hashCode + Long.hashCode( timeout );
+		this.hashCode	= prime * this.hashCode + Long.hashCode( lastAccessTimeout );
 	}
 
 	/**
@@ -84,6 +105,34 @@ public class BoxCacheEntry implements ICacheEntry, Serializable {
 	 * Helper Methods
 	 * --------------------------------------------------------------------------
 	 */
+
+	/**
+	 * Build out a hashcode for this entry based
+	 * on the key, timeout, lastAccessTimeout, and cacheName
+	 */
+	@Override
+	public int hashCode() {
+		return this.hashCode;
+	}
+
+	/**
+	 * Check if the entry is equal to another entry
+	 * Remember this doesn't account for object values
+	 */
+	@Override
+	public boolean equals( Object obj ) {
+		if ( obj == null ) {
+			return false;
+		}
+		if ( this == obj ) {
+			return true;
+		}
+		if ( getClass() != obj.getClass() ) {
+			return false;
+		}
+		BoxCacheEntry other = ( BoxCacheEntry ) obj;
+		return other.hashCode() == this.hashCode();
+	}
 
 	/**
 	 * Set the value of the cache entry
@@ -102,10 +151,10 @@ public class BoxCacheEntry implements ICacheEntry, Serializable {
 	}
 
 	/**
-	 * Set the last accessed date
+	 * Reset the last accessed date
 	 */
-	public ICacheEntry setLastAccessed( Instant lastAccessed ) {
-		this.lastAccessed = lastAccessed;
+	public ICacheEntry touchLastAccessed() {
+		this.lastAccessed = Instant.now();
 		return this;
 	}
 
@@ -173,6 +222,11 @@ public class BoxCacheEntry implements ICacheEntry, Serializable {
 	@Override
 	public boolean isExpired() {
 		return this.isExpired.get();
+	}
+
+	@Override
+	public boolean isEternal() {
+		return this.timeout == 0;
 	}
 
 	@Override

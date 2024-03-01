@@ -21,10 +21,13 @@ import java.util.Comparator;
 
 import ortus.boxlang.runtime.cache.ICacheEntry;
 
+/**
+ * MFU - Compare by hits descending
+ */
 public class MFU implements ICachePolicy {
 
 	/**
-	 * Compare by last accessed ascending
+	 * Get the comparator for HashMaps
 	 */
 	public Comparator<ICacheEntry> getComparator() {
 		return Comparator.comparing( ICacheEntry::hits ).reversed();

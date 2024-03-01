@@ -50,7 +50,7 @@ public class RegexFilter implements ICacheKeyFilter {
 	 */
 	public RegexFilter( String regex, boolean ignoreCase ) {
 		try {
-			regexPattern = Pattern.compile( regex, ignoreCase ? 0 : Pattern.CASE_INSENSITIVE );
+			regexPattern = Pattern.compile( regex, ignoreCase ? Pattern.CASE_INSENSITIVE : 0 );
 		} catch ( PatternSyntaxException e ) {
 			throw new BoxValidationException( "Invalid regex: " + regex, e );
 		}
@@ -62,6 +62,6 @@ public class RegexFilter implements ICacheKeyFilter {
 	@SuppressWarnings( "null" )
 	@Override
 	public boolean apply( Key input ) {
-		return regexPattern.matcher( input.toString() ).matches();
+		return regexPattern.matcher( input.getName() ).matches();
 	}
 }

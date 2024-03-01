@@ -56,6 +56,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		_DATE						= Key.of( "date" );
 	public static final Key		_DATETIME					= Key.of( "datetime" );
 	public static final Key		_DEFAULT					= Key.of( "default" );
+	public static final Key		_EMPTY						= Key.of( "" );
 	public static final Key		_EXTENDS					= Key.of( "extends" );
 	public static final Key		_FILE						= Key.of( "file" );
 	public static final Key		_HASHCODE					= Key.of( "hashcode" );
@@ -172,6 +173,8 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		evictionPolicy				= Key.of( "evictionPolicy" );
 	public static final Key		executionMode				= Key.of( "executionMode" );
 	public static final Key		extendedinfo				= Key.of( "extendedinfo" );
+	public static final Key		evictionPolicy				= Key.of( "evictionPolicy" );
+	public static final Key		evictCount					= Key.of( "evictCount" );
 	public static final Key		file						= Key.of( "file" );
 	public static final Key		fileContent					= Key.of( "fileContent" );
 	public static final Key		filepath					= Key.of( "filepath" );
@@ -241,6 +244,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		maxLength					= Key.of( "maxLength" );
 	public static final Key		maxRows						= Key.of( "maxRows" );
 	public static final Key		maxThreads					= Key.of( "maxThreads" );
+	public static final Key		maxObjects					= Key.of( "maxObjects" );
 	public static final Key		merge						= Key.of( "merge" );
 	public static final Key		message						= Key.of( "message" );
 	public static final Key		metadata					= Key.of( "metadata" );
@@ -312,6 +316,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		replacements				= Key.of( "replacements" );
 	public static final Key		required					= Key.of( "required" );
 	public static final Key		result						= Key.of( "result" );
+	public static final Key		resetTimeoutOnAccess		= Key.of( "resetTimeoutOnAccess" );
 	public static final Key		retainKeys					= Key.of( "retainKeys" );
 	public static final Key		returnType					= Key.of( "returnType" );
 	public static final Key		rJustify					= Key.of( "rJustify" );

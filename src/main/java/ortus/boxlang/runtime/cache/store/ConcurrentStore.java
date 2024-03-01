@@ -17,7 +17,8 @@
  */
 package ortus.boxlang.runtime.cache.store;
 
-import java.util.concurrent.ConcurrentSkipListMap;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Stream;
 
 import org.slf4j.Logger;
@@ -42,9 +43,9 @@ public class ConcurrentStore extends AbstractStore implements IObjectStore {
 	private static final Logger						logger	= LoggerFactory.getLogger( ConcurrentStore.class );
 
 	/**
-	 * The pool that holds the objects: Ordered by created timestamp
+	 * The pool that holds the objects
 	 */
-	private ConcurrentSkipListMap<Key, ICacheEntry>	pool;
+	protected ConcurrentHashMap<Key, ICacheEntry>	pool;
 
 	/**
 	 * Constructor
@@ -60,8 +61,10 @@ public class ConcurrentStore extends AbstractStore implements IObjectStore {
 	 * @param provider The cache provider associated with this store
 	 * @param config   The configuration for the store
 	 */
+	@Override
 	public void init( ICacheProvider provider, IStruct config ) {
 		super.init( provider, config );
+		this.pool = new ConcurrentHashMap<>( config.getAsInteger( Key.maxObjects ) / 4 );
 	}
 
 	/**
@@ -82,36 +85,48 @@ public class ConcurrentStore extends AbstractStore implements IObjectStore {
 	 * Flush the store to a permanent storage.
 	 * Only applicable to stores that support it.
 	 *
+	 * Not supported by this pool.
+	 *
 	 * @return The number of objects flushed
 	 */
 	public int flush() {
-		// implement
 		return 0;
 	}
 
 	/**
-	 * Reap the storage for expired objects
-	 *
-	 * @return The number of objects reaped
+	 * Reap the storage for expired objects by running the eviction policy and count.
 	 */
-	public int reap() {
-		// implement
-		return 0;
+	public void reap() {
+
+		this.pool.entrySet()
+		    // Stream it
+		    .parallelStream()
+		    // Sort using the policy comparator
+		    .sorted( Map.Entry.comparingByValue( getPolicy().getComparator() ) )
+		    // Get only the non-expired entries or non-eternal entries
+		    .filter( entry -> !entry.getValue().isExpired() && !entry.getValue().isEternal() )
+		    // Check how many to expire according to the config count
+		    .limit( this.config.getAsInteger( Key.evictCount ) )
+		    // Evict it & Log Stats
+		    .forEach( entry -> {
+			    this.pool.remove( entry.getKey() );
+			    getProvider().getStats().recordEviction();
+		    } );
+
 	}
 
 	/**
 	 * Get the size of the store, not the size in bytes but the number of objects in the store
 	 */
 	public int getSize() {
-		// implement
-		return 0;
+		return this.pool.size();
 	}
 
 	/**
 	 * Clear all the elements in the store
 	 */
 	public void clearAll() {
-		// implement
+		this.pool.clear();
 	}
 
 	/**
@@ -121,7 +136,7 @@ public class ConcurrentStore extends AbstractStore implements IObjectStore {
 	 * @param filter The filter that determines which keys to clear
 	 */
 	public void clearAll( ICacheKeyFilter filter ) {
-		// implement
+		this.pool.keySet().removeIf( filter );
 	}
 
 	/**
@@ -132,8 +147,7 @@ public class ConcurrentStore extends AbstractStore implements IObjectStore {
 	 * @return True if the object was cleared, false otherwise (if the object was not found in the store)
 	 */
 	public boolean clear( Key key ) {
-		// implement
-		return false;
+		return this.pool.remove( key ) != null;
 	}
 
 	/**
@@ -141,11 +155,14 @@ public class ConcurrentStore extends AbstractStore implements IObjectStore {
 	 *
 	 * @param key The keys to clear
 	 *
-	 * @return A struct of keys and their clear status
+	 * @return A struct of keys and their clear status: true if the object was cleared, false otherwise (if the object was not found in the store)
 	 */
 	public IStruct clear( Key... keys ) {
-		// implement
-		return new Struct();
+		IStruct results = new Struct();
+		for ( Key key : keys ) {
+			results.put( key, clear( key ) );
+		}
+		return results;
 	}
 
 	/**
@@ -154,8 +171,7 @@ public class ConcurrentStore extends AbstractStore implements IObjectStore {
 	 * @return An array of keys in the cache
 	 */
 	public Key[] getKeys() {
-		// implement
-		return new Key[ 0 ];
+		return this.pool.keySet().toArray( new Key[ 0 ] );
 	}
 
 	/**
@@ -166,8 +182,7 @@ public class ConcurrentStore extends AbstractStore implements IObjectStore {
 	 * @return An array of keys in the cache
 	 */
 	public Key[] getKeys( ICacheKeyFilter filter ) {
-		// implement
-		return new Key[ 0 ];
+		return this.pool.keySet().parallelStream().filter( filter ).toArray( Key[]::new );
 	}
 
 	/**
@@ -176,8 +191,7 @@ public class ConcurrentStore extends AbstractStore implements IObjectStore {
 	 * @return A stream of keys in the cache
 	 */
 	public Stream<Key> getKeysStream() {
-		// implement
-		return null;
+		return this.pool.keySet().stream();
 	}
 
 	/**
@@ -188,20 +202,22 @@ public class ConcurrentStore extends AbstractStore implements IObjectStore {
 	 * @return A stream of keys in the cache
 	 */
 	public Stream<Key> getKeysStream( ICacheKeyFilter filter ) {
-		// implement
-		return null;
+		return this.pool.keySet().stream().filter( filter );
 	}
 
 	/**
-	 * Check if an object is in the store
+	 * Check if an object is in the store and not expired
 	 *
 	 * @param key The key to lookup in the store
 	 *
 	 * @return True if the object is in the store, false otherwise
 	 */
 	public boolean lookup( Key key ) {
-		// implement
-		return false;
+		// Key is in the store and not expired
+		return this.pool.computeIfPresent(
+		    key,
+		    ( k, cacheEntry ) -> cacheEntry.isExpired() ? null : cacheEntry
+		) != null;
 	}
 
 	/**
@@ -212,8 +228,11 @@ public class ConcurrentStore extends AbstractStore implements IObjectStore {
 	 * @return A struct of keys and their lookup status
 	 */
 	public IStruct lookup( Key... keys ) {
-		// implement
-		return new Struct();
+		IStruct results = new Struct();
+		for ( Key key : keys ) {
+			results.put( key, lookup( key ) );
+		}
+		return results;
 	}
 
 	/**
@@ -224,8 +243,12 @@ public class ConcurrentStore extends AbstractStore implements IObjectStore {
 	 * @return A struct of keys and their lookup status
 	 */
 	public IStruct lookup( ICacheKeyFilter filter ) {
-		// implement
-		return new Struct();
+		IStruct results = new Struct();
+		this.pool.keySet()
+		    .parallelStream()
+		    .filter( filter )
+		    .forEach( key -> results.put( key, true ) );
+		return results;
 	}
 
 	/**
@@ -233,11 +256,23 @@ public class ConcurrentStore extends AbstractStore implements IObjectStore {
 	 *
 	 * @param key The key to retrieve
 	 *
-	 * @return The cache entry retrieved or an empty cache entry if not found
+	 * @return The cache entry retrieved or null if not found
 	 */
 	public ICacheEntry get( Key key ) {
-		// implement
-		return null;
+		var results = this.pool.getOrDefault( key, null );
+
+		if ( results != null ) {
+			// Update Stats
+			results
+			    .incrementHits()
+			    .touchLastAccessed();
+			// Is resetTimeoutOnAccess enabled? If so, jump up the creation time to increase the timeout
+			if ( this.config.getAsBoolean( Key.resetTimeoutOnAccess ) ) {
+				results.resetCreated();
+			}
+		}
+
+		return results;
 	}
 
 	/**
@@ -248,8 +283,11 @@ public class ConcurrentStore extends AbstractStore implements IObjectStore {
 	 * @return A struct of keys and their cache entries
 	 */
 	public IStruct get( Key... keys ) {
-		// implement
-		return new Struct();
+		IStruct results = new Struct();
+		for ( Key key : keys ) {
+			results.put( key, get( key ) );
+		}
+		return results;
 	}
 
 	/**
@@ -260,8 +298,12 @@ public class ConcurrentStore extends AbstractStore implements IObjectStore {
 	 * @return A struct of keys and their cache entries
 	 */
 	public IStruct get( ICacheKeyFilter filter ) {
-		// implement
-		return new Struct();
+		IStruct results = new Struct();
+		this.pool.keySet()
+		    .parallelStream()
+		    .filter( filter )
+		    .forEach( key -> results.put( key, get( key ) ) );
+		return results;
 	}
 
 	/**
@@ -269,11 +311,10 @@ public class ConcurrentStore extends AbstractStore implements IObjectStore {
 	 *
 	 * @param key The key to retrieve
 	 *
-	 * @return The cache entry retrieved or an empty cache entry if not found
+	 * @return The cache entry retrieved or null if not found
 	 */
 	public ICacheEntry getQuiet( Key key ) {
-		// implement
-		return null;
+		return this.pool.getOrDefault( key, null );
 	}
 
 	/**
@@ -284,8 +325,11 @@ public class ConcurrentStore extends AbstractStore implements IObjectStore {
 	 * @return A struct of keys and their cache entries
 	 */
 	public IStruct getQuiet( Key... keys ) {
-		// implement
-		return new Struct();
+		IStruct results = new Struct();
+		for ( Key key : keys ) {
+			results.put( key, getQuiet( key ) );
+		}
+		return results;
 	}
 
 	/**
@@ -296,8 +340,12 @@ public class ConcurrentStore extends AbstractStore implements IObjectStore {
 	 * @return A struct of keys and their cache entries
 	 */
 	public IStruct getQuiet( ICacheKeyFilter filter ) {
-		// implement
-		return new Struct();
+		IStruct results = new Struct();
+		this.pool.keySet()
+		    .parallelStream()
+		    .filter( filter )
+		    .forEach( key -> results.put( key, getQuiet( key ) ) );
+		return results;
 	}
 
 	/**
@@ -308,7 +356,11 @@ public class ConcurrentStore extends AbstractStore implements IObjectStore {
 	 * @return True if the object was expired, false otherwise (if the object was not found in the store)
 	 */
 	public boolean expire( Key key ) {
-		// implement
+		var results = this.pool.getOrDefault( key, null );
+		if ( results != null ) {
+			results.expire();
+			return true;
+		}
 		return false;
 	}
 
@@ -320,8 +372,8 @@ public class ConcurrentStore extends AbstractStore implements IObjectStore {
 	 * @return True if the object is expired, false otherwise (could be not found in the store or not expired yet)
 	 */
 	public boolean isExpired( Key key ) {
-		// implement
-		return false;
+		var results = this.pool.getOrDefault( key, null );
+		return results != null && results.isExpired();
 	}
 
 	/**
@@ -331,7 +383,7 @@ public class ConcurrentStore extends AbstractStore implements IObjectStore {
 	 * @param entry The cache entry to store
 	 */
 	public void set( Key key, ICacheEntry entry ) {
-		// implement
+		this.pool.put( key, entry );
 	}
 
 	/**
@@ -340,7 +392,7 @@ public class ConcurrentStore extends AbstractStore implements IObjectStore {
 	 * @param entries The keys and cache entries to store
 	 */
 	public void set( IStruct entries ) {
-		// implement
+		entries.forEach( ( key, value ) -> set( key, ( ICacheEntry ) value ) );
 	}
 
 }

@@ -82,6 +82,13 @@ public interface ICacheEntry {
 	public boolean isExpired();
 
 	/**
+	 * Is this an eternal object
+	 *
+	 * @return True if the object is eternal, false otherwise
+	 */
+	public boolean isEternal();
+
+	/**
 	 * The key associated with this entry
 	 *
 	 * @return The key
@@ -101,5 +108,37 @@ public interface ICacheEntry {
 	 * @return A struct with the metadata
 	 */
 	public Struct metadata();
+
+	/**
+	 * Set the value of the cache entry
+	 */
+	public ICacheEntry setValue( Object value );
+
+	/**
+	 * Set the metadata of the cache entry
+	 *
+	 * @param metadata The metadata
+	 */
+	public ICacheEntry setMetadata( Struct metadata );
+
+	/**
+	 * Resets the last accessed date
+	 */
+	public ICacheEntry touchLastAccessed();
+
+	/**
+	 * Reset the created date
+	 */
+	public ICacheEntry resetCreated();
+
+	/**
+	 * Increment the hits
+	 */
+	public ICacheEntry incrementHits();
+
+	/**
+	 * Mark the entry as expired
+	 */
+	public ICacheEntry expire();
 
 }

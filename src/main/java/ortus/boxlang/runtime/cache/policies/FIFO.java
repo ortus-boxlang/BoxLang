@@ -21,10 +21,13 @@ import java.util.Comparator;
 
 import ortus.boxlang.runtime.cache.ICacheEntry;
 
+/**
+ * FIFO - Compare by created ascending
+ */
 public class FIFO implements ICachePolicy {
 
 	/**
-	 * Compare by last accessed ascending
+	 * Get the comparator for HashMaps
 	 */
 	public Comparator<ICacheEntry> getComparator() {
 		return Comparator.comparing( ICacheEntry::created );

@@ -21,12 +21,15 @@ import java.util.Comparator;
 
 import ortus.boxlang.runtime.cache.ICacheEntry;
 
+/**
+ * Random - Compare randomly
+ */
 public class Random implements ICachePolicy {
 
 	private final java.util.Random randomGenerator = new java.util.Random();
 
 	/**
-	 * Compare randomly
+	 * Get the comparator for HashMaps
 	 */
 	public Comparator<ICacheEntry> getComparator() {
 		return ( entry1, entry2 ) -> randomGenerator.nextInt( 3 ) - 1;

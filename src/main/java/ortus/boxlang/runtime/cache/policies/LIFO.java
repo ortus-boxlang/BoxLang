@@ -21,10 +21,13 @@ import java.util.Comparator;
 
 import ortus.boxlang.runtime.cache.ICacheEntry;
 
+/**
+ * LIFO - Compare by created descending
+ */
 public class LIFO implements ICachePolicy {
 
 	/**
-	 * Compare by last accessed ascending
+	 * Get the comparator for HashMaps
 	 */
 	public Comparator<ICacheEntry> getComparator() {
 		return Comparator.comparing( ICacheEntry::created ).reversed();

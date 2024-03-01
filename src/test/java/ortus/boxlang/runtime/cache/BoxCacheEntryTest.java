@@ -76,7 +76,7 @@ public class BoxCacheEntryTest {
 		Instant newLastAccessed = Instant.now();
 
 		// When
-		cacheEntry.setLastAccessed( newLastAccessed );
+		cacheEntry.touchLastAccessed();
 		cacheEntry.setValue( newLastAccessed );
 		cacheEntry.incrementHits();
 		Instant originalCreated = cacheEntry.created();

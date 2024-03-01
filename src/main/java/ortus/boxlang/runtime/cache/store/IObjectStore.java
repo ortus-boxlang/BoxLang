@@ -76,11 +76,10 @@ public interface IObjectStore {
 	public int flush();
 
 	/**
-	 * Reap the storage for expired objects
-	 *
-	 * @return The number of objects reaped
+	 * Goes over the storage and reaps any objects that need to be expired
+	 * by marking them for expiration.
 	 */
-	public int reap();
+	public void reap();
 
 	/**
 	 * Get the size of the store, not the size in bytes but the number of objects in the store
@@ -182,7 +181,7 @@ public interface IObjectStore {
 	 *
 	 * @param key The key to retrieve
 	 *
-	 * @return The cache entry retrieved or an empty cache entry if not found
+	 * @return The cache entry retrieved or null
 	 */
 	public ICacheEntry get( Key key );
 
@@ -209,7 +208,7 @@ public interface IObjectStore {
 	 *
 	 * @param key The key to retrieve
 	 *
-	 * @return The cache entry retrieved or an empty cache entry if not found
+	 * @return The cache entry retrieved or null
 	 */
 	public ICacheEntry getQuiet( Key key );
 

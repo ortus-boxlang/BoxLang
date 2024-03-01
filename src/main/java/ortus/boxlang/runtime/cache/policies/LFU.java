@@ -21,10 +21,14 @@ import java.util.Comparator;
 
 import ortus.boxlang.runtime.cache.ICacheEntry;
 
+/**
+ * Least Frequently Used cache policy
+ * Hit count ascending
+ */
 public class LFU implements ICachePolicy {
 
 	/**
-	 * Compare by last accessed ascending
+	 * Get the comparator for HashMaps
 	 */
 	public Comparator<ICacheEntry> getComparator() {
 		return Comparator.comparing( ICacheEntry::hits );

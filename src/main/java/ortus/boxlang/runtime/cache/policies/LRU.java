@@ -21,10 +21,13 @@ import java.util.Comparator;
 
 import ortus.boxlang.runtime.cache.ICacheEntry;
 
+/**
+ * LRU - Compare by last accessed ascending
+ */
 public class LRU implements ICachePolicy {
 
 	/**
-	 * Compare by last accessed
+	 * Get the comparator for HashMaps
 	 */
 	public Comparator<ICacheEntry> getComparator() {
 		return Comparator.comparing( ICacheEntry::lastAccessed );

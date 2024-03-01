@@ -117,4 +117,24 @@ public interface ICacheStats {
 	 */
 	public IStruct toStruct();
 
+	/**
+	 * Record an eviction hit
+	 */
+	public ICacheStats recordEviction();
+
+	/**
+	 * Record a cache hit
+	 */
+	public ICacheStats recordHit();
+
+	/**
+	 * Record a cache miss
+	 */
+	public ICacheStats recordMiss();
+
+	/**
+	 * Record a cache garbage collection
+	 */
+	public ICacheStats recordGCHit();
+
 }
