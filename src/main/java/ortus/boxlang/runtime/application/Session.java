@@ -17,6 +17,8 @@
  */
 package ortus.boxlang.runtime.application;
 
+import ortus.boxlang.runtime.context.IBoxContext;
+import ortus.boxlang.runtime.context.RequestBoxContext;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.SessionScope;
 
@@ -36,12 +38,30 @@ public class Session {
 	private SessionScope	sessionScope;
 
 	/**
+	 * Flag for when session has been started
+	 */
+	private boolean			isNew	= true;
+
+	/**
 	 * Constructor
 	 */
 	public Session( Key ID ) {
-		// TODO: onSessionStart
 		this.ID			= ID;
 		sessionScope	= new SessionScope();
+	}
+
+	/**
+	 * Start the session if not already started
+	 * 
+	 * @param context The context
+	 */
+	public Session start( IBoxContext context ) {
+		if ( !isNew ) {
+			return this;
+		}
+		context.getParentOfType( RequestBoxContext.class ).getApplicationListener().onSessionStart( context, new Object[] {} );
+		this.isNew = false;
+		return this;
 	}
 
 	/**

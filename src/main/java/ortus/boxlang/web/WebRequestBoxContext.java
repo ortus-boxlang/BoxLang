@@ -18,11 +18,15 @@
 package ortus.boxlang.web;
 
 import java.io.IOException;
+import java.net.URI;
 import java.nio.ByteBuffer;
+import java.util.UUID;
 
 import org.xnio.channels.StreamSinkChannel;
 
 import io.undertow.server.HttpServerExchange;
+import io.undertow.server.handlers.Cookie;
+import io.undertow.server.handlers.CookieImpl;
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.RequestBoxContext;
@@ -105,7 +109,7 @@ public class WebRequestBoxContext extends RequestBoxContext {
 	 *
 	 * @param parent The parent context
 	 */
-	public WebRequestBoxContext( IBoxContext parent, HttpServerExchange exchange ) {
+	public WebRequestBoxContext( IBoxContext parent, HttpServerExchange exchange, URI template ) {
 		super( parent );
 		this.exchange	= exchange;
 		channel			= exchange.getResponseChannel();
@@ -113,6 +117,17 @@ public class WebRequestBoxContext extends RequestBoxContext {
 		formScope		= new FormScope( exchange );
 		CGIScope		= new CGIScope( exchange );
 		cookieScope		= new CookieScope( exchange );
+
+		loadApplicationDescriptor( template );
+	}
+
+	/**
+	 * Creates a new execution context with a bounded execution template and parent context
+	 *
+	 * @param parent The parent context
+	 */
+	public WebRequestBoxContext( IBoxContext parent, HttpServerExchange exchange ) {
+		this( parent, exchange, null );
 	}
 
 	/**
@@ -120,6 +135,26 @@ public class WebRequestBoxContext extends RequestBoxContext {
 	 * Getters & Setters
 	 * --------------------------------------------------------------------------
 	 */
+
+	/**
+	 * Get the session key for this request
+	 * 
+	 * @return The session key
+	 */
+	public Key getSessionID() {
+		// TODO: make this logic configurable
+		Cookie	sessionCookie	= exchange.getRequestCookie( "jsessionid" );
+		String	sessionID;
+		if ( sessionCookie != null ) {
+			sessionID = sessionCookie.getValue();
+		} else {
+			sessionID = UUID.randomUUID().toString();
+			// TODO: secure, domain, etc
+			exchange.setResponseCookie( new CookieImpl( "jsessionid", sessionID ) );
+		}
+		return Key.of( sessionID );
+	}
+
 	public IStruct getVisibleScopes( IStruct scopes, boolean nearby, boolean shallow ) {
 		if ( hasParent() && !shallow ) {
 			getParent().getVisibleScopes( scopes, false, false );

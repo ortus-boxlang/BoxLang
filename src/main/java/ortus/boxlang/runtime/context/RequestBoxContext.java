@@ -17,11 +17,25 @@
  */
 package ortus.boxlang.runtime.context;
 
+import java.io.File;
+import java.net.URI;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.time.ZoneId;
 import java.util.Locale;
 
+import ortus.boxlang.runtime.application.Application;
+import ortus.boxlang.runtime.application.ApplicationListener;
+import ortus.boxlang.runtime.application.Session;
+import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
+import ortus.boxlang.runtime.interop.DynamicObject;
+import ortus.boxlang.runtime.runnables.IClassRunnable;
+import ortus.boxlang.runtime.runnables.RunnableLoader;
 import ortus.boxlang.runtime.scopes.Key;
+import ortus.boxlang.runtime.types.Function;
 import ortus.boxlang.runtime.types.IStruct;
+import ortus.boxlang.runtime.types.Struct;
+import ortus.boxlang.runtime.types.util.BLCollector;
 import ortus.boxlang.runtime.util.RequestThreadManager;
 
 /**
@@ -35,9 +49,19 @@ public abstract class RequestBoxContext extends BaseBoxContext {
 	private boolean					enforceExplicitOutput	= false;
 	private Long					requestTimeout			= null;
 	private Long					requestStartMS			= System.currentTimeMillis();
+	// This is a general hold-ground for all settings that can be set for the duration of a request.
+	// This can be done via the application component or via Application.cfc
+	// TODO: Stub out some keys which should always exist?
+	private IStruct					settings				= Struct.of( "mappings", Struct.of() );
 
 	/**
-	 * Creates a new execution context with a bounded execution template and parent context
+	 * Application.cfc listener for this request
+	 * null if there is none
+	 */
+	ApplicationListener				applicationListener;
+
+	/**
+	 * Creates a new execution context with a parent context
 	 *
 	 * @param parent The parent context
 	 */
@@ -45,7 +69,85 @@ public abstract class RequestBoxContext extends BaseBoxContext {
 		super( parent );
 	}
 
-	// getters/setters for request-specific data
+	/**
+	 * This will look for an Application.cfc file in the root mapping, load it if found, and configure the Application settings
+	 */
+	protected void loadApplicationDescriptor( URI template ) {
+
+		if ( template == null ) {
+			applicationListener = new ApplicationListener();
+			return;
+		}
+
+		Path	descriptorPath		= null;
+		String	directoryOfTemplate	= null;
+		String	packagePath			= "";
+		if ( template.isAbsolute() ) {
+			directoryOfTemplate	= new File( template ).getParent();
+			descriptorPath		= Paths.get( directoryOfTemplate, "Application.cfc" );
+			if ( !descriptorPath.toFile().exists() ) {
+				descriptorPath = null;
+			}
+		} else {
+			directoryOfTemplate = new File( template.toString() ).getParent();
+			String	rootMapping	= getConfig().getAsStruct( Key.runtime ).getAsStruct( Key.mappings ).getAsString( Key._slash );
+			boolean	found		= false;
+			while ( directoryOfTemplate != null ) {
+				descriptorPath = Paths.get( rootMapping, directoryOfTemplate, "Application.cfc" );
+				if ( descriptorPath.toFile().exists() ) {
+					found		= true;
+					// set packagePath to the relative path from the rootMapping to the directoryOfTemplate with slashes replaced with dots
+					packagePath	= directoryOfTemplate.replace( File.separator, "." );
+					if ( packagePath.endsWith( "." ) ) {
+						packagePath = packagePath.substring( 0, packagePath.length() - 1 );
+					}
+					break;
+				}
+				directoryOfTemplate = new File( directoryOfTemplate ).getParent();
+			}
+			if ( !found ) {
+				descriptorPath = null;
+			}
+		}
+		if ( descriptorPath != null ) {
+			applicationListener = new ApplicationListener( ( IClassRunnable ) DynamicObject.of(
+			    RunnableLoader.getInstance()
+			        .loadClass( descriptorPath, packagePath, this )
+			)
+			    .invokeConstructor( this )
+			    .getTargetInstance()
+			);
+			// Extract settings from the this scope of the Application.cfc
+			settings.addAll( applicationListener.getListener().getThisScope().entrySet().stream().filter( e -> ! ( e.getValue() instanceof Function ) )
+			    .collect( BLCollector.toStruct() ) );
+
+			Application thisApp = getRuntime().getApplicationService().getApplication( Key.of( settings.getOrDefault( Key._NAME, "Application" ) ) );
+			injectTopParentContext( new ApplicationBoxContext( thisApp ) );
+			// Only starts the first time
+			thisApp.start( this );
+
+			if ( BooleanCaster.cast( settings.getOrDefault( Key.sessionManagement, false ) ) ) {
+				Session thisSession = thisApp.getSession( getSessionID() );
+				injectTopParentContext( new SessionBoxContext( thisSession ) );
+				// Only starts the first time
+				thisSession.start( this );
+			}
+		} else {
+			applicationListener = new ApplicationListener();
+		}
+
+	}
+
+	/**
+	 * Get the session key for this request
+	 * 
+	 * @return The session key
+	 */
+	abstract public Key getSessionID();
+
+	public ApplicationListener getApplicationListener() {
+		return applicationListener;
+	}
 
 	public Locale getLocale() {
 		return locale;
@@ -78,6 +180,16 @@ public abstract class RequestBoxContext extends BaseBoxContext {
 
 		if ( requestTimeout != null ) {
 			config.put( Key.requestTimeout, requestTimeout );
+		}
+
+		// Make the request settings generically available in the config struct.
+		// This doesn't mean we won't strategically place specific settings like mappings into specific parts
+		// of the config struct, but this at least ensure everything is available for whomever wants to use it
+		config.put( Key.applicationSettings, settings );
+
+		IStruct mappings = settings.getAsStruct( Key.mappings );
+		if ( mappings != null ) {
+			config.getAsStruct( Key.runtime ).getAsStruct( Key.mappings ).putAll( mappings );
 		}
 
 		return config;
@@ -143,6 +255,14 @@ public abstract class RequestBoxContext extends BaseBoxContext {
 	 */
 	public Long getRequestTimeout() {
 		return requestTimeout;
+	}
+
+	/**
+	 * Get the settings for this request. These are known as "application settings" since they configure the
+	 * application that uses them, but they are really set every request.
+	 */
+	public IStruct getSettings() {
+		return settings;
 	}
 
 	/**

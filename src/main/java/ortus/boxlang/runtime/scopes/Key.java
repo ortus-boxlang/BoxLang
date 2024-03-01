@@ -40,6 +40,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		_8							= Key.of( 8 );
 	public static final Key		_9							= Key.of( 9 );
 	public static final Key		_10							= Key.of( 10 );
+	public static final Key		_slash						= Key.of( "/" );
 
 	// Reserved Words Dictionary
 
@@ -72,6 +73,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		algorithm					= Key.of( "algorithm" );
 	public static final Key		allowRealPath				= Key.of( "allowRealPath" );
 	public static final Key		annotations					= Key.of( "annotations" );
+	public static final Key		applicationSettings			= Key.of( "applicationSettings" );
 	public static final Key		ANONYMOUSCLOSURE			= Key.of( "ANONYMOUSCLOSURE" );
 	public static final Key		ANONYMOUSLAMBDA				= Key.of( "ANONYMOUSLAMBDA" );
 	public static final Key		append						= Key.of( "append" );
@@ -275,8 +277,11 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		onApplicationEnd			= Key.of( "onApplicationEnd" );
 	public static final Key		onApplicationRestart		= Key.of( "onApplicationRestart" );
 	public static final Key		onApplicationStart			= Key.of( "onApplicationStart" );
+	public static final Key		onSessionStart				= Key.of( "onSessionStart" );
 	public static final Key		onLoad						= Key.of( "onLoad" );
 	public static final Key		onMissingMethod				= Key.of( "onMissingMethod" );
+	public static final Key		onRequestStart				= Key.of( "onRequestStart" );
+	public static final Key		onRequest					= Key.of( "onRequest" );
 	public static final Key		onParse						= Key.of( "onParse" );
 	public static final Key		onUnload					= Key.of( "onUnload" );
 	public static final Key		ordered						= Key.of( "ordered" );
@@ -324,6 +329,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		server						= Key.of( "server" );
 	public static final Key		servlet						= Key.of( "servlet" );
 	public static final Key		settings					= Key.of( "settings" );
+	public static final Key		sessionManagement			= Key.of( "sessionManagement" );
 	public static final Key		showerror					= Key.of( "showerror" );
 	public static final Key		size						= Key.of( "size" );
 	public static final Key		sleep						= Key.of( "sleep" );

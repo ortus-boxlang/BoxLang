@@ -21,6 +21,8 @@ import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.net.URI;
+import java.nio.ByteBuffer;
 import java.nio.file.Files;
 import java.util.List;
 
@@ -43,29 +45,40 @@ public class BLHandler implements HttpHandler {
 
 	@Override
 	public void handleRequest( io.undertow.server.HttpServerExchange exchange ) throws Exception {
-		WebRequestBoxContext context = new WebRequestBoxContext( BoxRuntime.getInstance().getRuntimeContext(), exchange );
+		WebRequestBoxContext context = null;
 		try {
 			String requestPath = exchange.getRequestPath();
+			context = new WebRequestBoxContext( BoxRuntime.getInstance().getRuntimeContext(), exchange,
+			    new URI( requestPath ) );
+
 			// Set default content type to text/html
 			exchange.getResponseHeaders().put( new HttpString( "Content-Type" ), "text/html" );
-			context.includeTemplate( requestPath );
+
+			boolean result = context.getApplicationListener().onRequestStart( context, new Object[] { requestPath } );
+			if ( result ) {
+				context.getApplicationListener().onRequest( context, new Object[] { requestPath } );
+			}
 
 		} catch ( AbortException e ) {
-			context.flushBuffer( true );
+			if ( context != null )
+				context.flushBuffer( true );
 			if ( e.getCause() != null ) {
 				// This will always be an instance of CustomException
 				throw ( RuntimeException ) e.getCause();
 			}
 		} catch ( Throwable e ) {
-			context.flushBuffer( true );
+			if ( context != null )
+				context.flushBuffer( true );
 			handleError( e, exchange, context );
 		} finally {
-			context.flushBuffer( false );
+			if ( context != null )
+				context.flushBuffer( false );
 			exchange.endExchange();
 		}
 	}
 
 	public void handleError( Throwable e, HttpServerExchange exchange, WebRequestBoxContext context ) {
+		e.printStackTrace();
 		try {
 			StringBuilder errorOutput = new StringBuilder();
 			errorOutput.append( "<h1>BoxLang Error</h1>" )
@@ -115,10 +128,19 @@ public class BLHandler implements HttpHandler {
 
 			errorOutput.append( "</pre>" );
 
-			context.writeToBuffer( errorOutput.toString() );
-			context.flushBuffer( true );
+			if ( context != null ) {
+				context.writeToBuffer( errorOutput.toString() );
+				context.flushBuffer( true );
+			} else {
+				// fail safe
+				ByteBuffer bBuffer = ByteBuffer.wrap( errorOutput.toString().getBytes() );
+				try {
+					exchange.getResponseChannel().write( bBuffer );
+				} catch ( IOException e2 ) {
+					e2.printStackTrace();
+				}
+			}
 
-			e.printStackTrace();
 		} catch ( Throwable t ) {
 			e.printStackTrace();
 			t.printStackTrace();

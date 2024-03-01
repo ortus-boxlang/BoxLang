@@ -17,6 +17,9 @@
  */
 package ortus.boxlang.runtime.context;
 
+import java.net.URI;
+import java.util.UUID;
+
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
@@ -58,6 +61,9 @@ public class ScriptingRequestBoxContext extends RequestBoxContext {
 	 */
 	protected IScope			requestScope	= new RequestScope();
 
+	// default random key GUID
+	private Key					sessionID		= new Key( UUID.randomUUID().toString() );
+
 	/**
 	 * --------------------------------------------------------------------------
 	 * Constructors
@@ -65,19 +71,40 @@ public class ScriptingRequestBoxContext extends RequestBoxContext {
 	 */
 
 	/**
-	 * Creates a new execution context with a bounded execution template and parent context
+	 * Creates a new execution context with a parent context
 	 *
 	 * @param parent The parent context
 	 */
 	public ScriptingRequestBoxContext( IBoxContext parent ) {
 		super( parent );
+		loadApplicationDescriptor( null );
+	}
+
+	/**
+	 * Creates a new execution context with a parent context, and template
+	 *
+	 * @param parent The parent context
+	 */
+	public ScriptingRequestBoxContext( IBoxContext parent, URI template ) {
+		super( parent );
+		loadApplicationDescriptor( template );
+	}
+
+	/**
+	 * Creates a new execution context with a template
+	 *
+	 * @param parent The parent context
+	 */
+	public ScriptingRequestBoxContext( URI template ) {
+		super( null );
+		loadApplicationDescriptor( template );
 	}
 
 	/**
 	 * Creates a new execution context
 	 */
 	public ScriptingRequestBoxContext() {
-		this( runtime.getRuntimeContext() );
+		this( runtime.getRuntimeContext(), null );
 	}
 
 	/**
@@ -85,6 +112,24 @@ public class ScriptingRequestBoxContext extends RequestBoxContext {
 	 * Getters & Setters
 	 * --------------------------------------------------------------------------
 	 */
+
+	/**
+	 * Get the session ID for this request
+	 * 
+	 * @return The session ID
+	 */
+	public Key getSessionID() {
+		return sessionID;
+	}
+
+	/**
+	 * The session ID can be set externally
+	 * 
+	 * @param sessionID
+	 */
+	public void setSessionID( Key sessionID ) {
+		this.sessionID = sessionID;
+	}
 
 	public IStruct getVisibleScopes( IStruct scopes, boolean nearby, boolean shallow ) {
 		if ( hasParent() && !shallow ) {

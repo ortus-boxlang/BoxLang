@@ -21,6 +21,7 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.file.Files;
@@ -39,6 +40,7 @@ import ortus.boxlang.parser.ParsingResult;
 import ortus.boxlang.runtime.config.ConfigLoader;
 import ortus.boxlang.runtime.config.Configuration;
 import ortus.boxlang.runtime.context.IBoxContext;
+import ortus.boxlang.runtime.context.RequestBoxContext;
 import ortus.boxlang.runtime.context.RuntimeBoxContext;
 import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
 import ortus.boxlang.runtime.interceptors.ASTCapture;
@@ -49,7 +51,6 @@ import ortus.boxlang.runtime.runnables.BoxTemplate;
 import ortus.boxlang.runtime.runnables.RunnableLoader;
 import ortus.boxlang.runtime.runnables.compiler.JavaBoxpiler;
 import ortus.boxlang.runtime.scopes.Key;
-import ortus.boxlang.runtime.scopes.VariablesScope;
 import ortus.boxlang.runtime.services.ApplicationService;
 import ortus.boxlang.runtime.services.AsyncService;
 import ortus.boxlang.runtime.services.CacheService;
@@ -63,7 +64,6 @@ import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.AbortException;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.exceptions.MissingIncludeException;
-import ortus.boxlang.runtime.types.exceptions.ScopeNotFoundException;
 import ortus.boxlang.runtime.util.Timer;
 
 /**
@@ -656,7 +656,7 @@ public class BoxRuntime {
 		/* timerUtil.start( "execute-" + template.hashCode() ); */
 		instance.logger.atDebug().log( "Executing template [{}]", template.getRunnablePath() );
 
-		IBoxContext scriptingContext = ensureContextWithVariables( context );
+		IBoxContext scriptingContext = ensureRequestTypeContext( context, template.getRunnablePath().toUri() );
 
 		try {
 			// Fire!!!
@@ -710,7 +710,7 @@ public class BoxRuntime {
 		/* timerUtil.start( "execute-" + source.hashCode() ); */
 		instance.logger.atDebug().log( "Executing source " );
 
-		IBoxContext scriptingContext = ensureContextWithVariables( context );
+		IBoxContext scriptingContext = ensureRequestTypeContext( context );
 		try {
 			// Fire!!!
 			return scriptRunnable.invoke( scriptingContext );
@@ -768,7 +768,7 @@ public class BoxRuntime {
 		/* timerUtil.start( "execute-" + source.hashCode() ); */
 		instance.logger.atDebug().log( "Executing source " );
 
-		IBoxContext scriptingContext = ensureContextWithVariables( context );
+		IBoxContext scriptingContext = ensureRequestTypeContext( context );
 		try {
 			// Fire!!!
 			scriptRunnable.invoke( scriptingContext );
@@ -807,7 +807,7 @@ public class BoxRuntime {
 	 * @param context      The context to execute the source in
 	 */
 	public void executeSource( InputStream sourceStream, IBoxContext context ) {
-		IBoxContext		scriptingContext	= ensureContextWithVariables( context );
+		IBoxContext		scriptingContext	= ensureRequestTypeContext( context );
 		BufferedReader	reader				= new BufferedReader( new InputStreamReader( sourceStream ) );
 		String			source;
 
@@ -892,11 +892,24 @@ public class BoxRuntime {
 	 *
 	 * @return The context with a variables scope
 	 */
-	private IBoxContext ensureContextWithVariables( IBoxContext context ) {
-		try {
-			context.getScopeNearby( VariablesScope.name );
+	private IBoxContext ensureRequestTypeContext( IBoxContext context ) {
+		return ensureRequestTypeContext( context, null );
+	}
+
+	/**
+	 * Check the given context to see if it has a variables scope. If not, create a new scripting
+	 * context that has a variables scope and return that with the original context as the parent.
+	 *
+	 * @param context The context to check
+	 *
+	 * @return The context with a variables scope
+	 */
+	private IBoxContext ensureRequestTypeContext( IBoxContext context, URI template ) {
+		if ( context.getParentOfType( RequestBoxContext.class ) != null ) {
 			return context;
-		} catch ( ScopeNotFoundException e ) {
+		} else if ( template != null ) {
+			return new ScriptingRequestBoxContext( context, template );
+		} else {
 			return new ScriptingRequestBoxContext( context );
 		}
 	}

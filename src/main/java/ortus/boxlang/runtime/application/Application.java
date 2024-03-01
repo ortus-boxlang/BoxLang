@@ -25,6 +25,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import ortus.boxlang.runtime.BoxRuntime;
+import ortus.boxlang.runtime.context.IBoxContext;
+import ortus.boxlang.runtime.context.RequestBoxContext;
 import ortus.boxlang.runtime.scopes.ApplicationScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Struct;
@@ -61,6 +63,11 @@ public class Application {
 	private ApplicationScope	applicationScope;
 
 	/**
+	 * Flag for when application has been started
+	 */
+	private boolean				isNew		= true;
+
+	/**
 	 * The sessions for this application
 	 * TODO: timeout sessions
 	 */
@@ -92,6 +99,25 @@ public class Application {
 	 * Methods
 	 * --------------------------------------------------------------------------
 	 */
+
+	/**
+	 * Start the application if not already started
+	 * 
+	 * @param context The context
+	 */
+	public Application start( IBoxContext context ) {
+		if ( !isNew ) {
+			return this;
+		}
+		synchronized ( this ) {
+			if ( !isNew ) {
+				return this;
+			}
+			context.getParentOfType( RequestBoxContext.class ).getApplicationListener().onApplicationStart( context, new Object[] {} );
+			this.isNew = false;
+		}
+		return this;
+	}
 
 	/**
 	 * Get a session by ID for this application, creating if neccessary if not found

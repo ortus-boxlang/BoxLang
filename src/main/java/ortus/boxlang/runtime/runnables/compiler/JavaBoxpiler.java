@@ -774,7 +774,7 @@ public class JavaBoxpiler {
 		}
 
 		public String toString() {
-			return "Class Info: " + sourcePath + ", " + packageName + ", " + className;
+			return "Class Info-- sourcePath: [" + sourcePath + "], packageName: [" + packageName + "], className: [" + className + "]";
 		}
 
 	}

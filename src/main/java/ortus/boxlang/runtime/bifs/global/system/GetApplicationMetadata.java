@@ -20,8 +20,8 @@ package ortus.boxlang.runtime.bifs.global.system;
 import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
 import ortus.boxlang.runtime.context.IBoxContext;
+import ortus.boxlang.runtime.context.RequestBoxContext;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
-import ortus.boxlang.runtime.types.Struct;
 
 @BoxBIF
 public class GetApplicationMetadata extends BIF {
@@ -42,8 +42,6 @@ public class GetApplicationMetadata extends BIF {
 	 * @argument.message The message to print
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
-		return Struct.of(
-		    "mappings", runtime.getConfiguration().runtime.mappings
-		);
+		return context.getParentOfType( RequestBoxContext.class ).getSettings();
 	}
 }

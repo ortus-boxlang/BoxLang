@@ -171,7 +171,9 @@ public class RunnableLoader {
 	 * Load the class for a BL class, JIT compiling if needed
 	 * Returns the class instantiated and the init() method run
 	 *
-	 * @param source The source to load
+	 * @param source  The source to load
+	 * @param context The context to use
+	 * @param type    The type of source to parse
 	 *
 	 * @return
 	 */
@@ -183,9 +185,11 @@ public class RunnableLoader {
 	 * Load the class for a BL class, JIT compiling if needed
 	 * Returns the class instantiated and the init() method run
 	 *
-	 * @param source The source to load
+	 * @param path        The path to the source to load
+	 * @param packagePath The package path to use
+	 * @param context     The context to use
 	 *
-	 * @return
+	 * @return The class
 	 */
 	public Class<IClassRunnable> loadClass( Path path, String packagePath, IBoxContext context ) {
 		return JavaBoxpiler.getInstance().compileClass( path.toAbsolutePath(), packagePath );

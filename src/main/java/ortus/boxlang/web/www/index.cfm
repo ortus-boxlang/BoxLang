@@ -13,7 +13,6 @@
 	<b>cgi.SCRIPT_NAME:</b> #cgi.SCRIPT_NAME# <br>
 	#cookie.asString()#
 	<cfset cookie.lastHit = now()>
-
 	<cfset dump( {
 		foo : "bar", 
 		baz : "bum", 

@@ -128,9 +128,6 @@ public class Loop extends Component {
 			// Run the code inside of the output loop
 			BodyResult bodyResult = processBody( context, body );
 			// IF there was a return statement inside our body, we early exit now
-			System.out.println( "bodyResult.isEarlyExit(): " + bodyResult.isEarlyExit() );
-			System.out.println( "bodyResult.isContinue(): " + bodyResult.isContinue() );
-			System.out.println( "bodyResult.isBreak(): " + bodyResult.isBreak() );
 			if ( bodyResult.isEarlyExit() ) {
 				if ( bodyResult.isContinue() ) {
 					continue;

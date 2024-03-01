@@ -98,6 +98,14 @@ public class ScopeWrapper extends BaseScope {
 		return wrappedScope.get( name );
 	}
 
+	public Object getRaw( Key key ) {
+		Object result = super.getRaw( key );
+		if ( result != null ) {
+			return result;
+		}
+		return wrappedScope.getRaw( key );
+	}
+
 	@Override
 	public Object put( Key name, Object value ) {
 		if ( super.containsKey( name ) ) {
