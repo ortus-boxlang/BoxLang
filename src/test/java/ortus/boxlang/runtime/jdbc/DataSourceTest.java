@@ -142,10 +142,10 @@ public class DataSourceTest {
 		try ( Connection conn = datasource.getConnection() ) {
 			assertDoesNotThrow( () -> {
 				ExecutedQuery executedQuery = datasource.execute(
-					"SELECT * FROM developers WHERE name = ?",
-					Array.of( "Michael Born" ),
-					conn,
-					null
+				    "SELECT * FROM developers WHERE name = ?",
+				    Array.of( "Michael Born" ),
+				    conn,
+				    null
 				);
 				assertEquals( 1, executedQuery.getRecordCount() );
 				Query results = executedQuery.getResults();
@@ -165,10 +165,10 @@ public class DataSourceTest {
 		try ( Connection conn = datasource.getConnection() ) {
 			assertDoesNotThrow( () -> {
 				ExecutedQuery executedQuery = datasource.execute(
-					"SELECT * FROM developers WHERE name = :name",
-					Struct.of( "name", "Michael Born" ),
-					conn,
-					null
+				    "SELECT * FROM developers WHERE name = :name",
+				    Struct.of( "name", "Michael Born" ),
+				    conn,
+				    null
 				);
 				assertEquals( 1, executedQuery.getRecordCount() );
 				Query results = executedQuery.getResults();
@@ -186,15 +186,15 @@ public class DataSourceTest {
 	@Test
 	void testDatasourceWithMissingNamedParams() {
 		try ( Connection conn = datasource.getConnection() ) {
-			BoxRuntimeException exception = assertThrows(BoxRuntimeException.class, () -> {
+			BoxRuntimeException exception = assertThrows( BoxRuntimeException.class, () -> {
 				datasource.execute(
-					"SELECT * FROM developers WHERE name = :name",
-					Struct.of( "developer", "Michael Born" ),
-					conn,
-					null
+				    "SELECT * FROM developers WHERE name = :name",
+				    Struct.of( "developer", "Michael Born" ),
+				    conn,
+				    null
 				);
 			} );
-			assertEquals("Missing param in query: [name]. SQL: SELECT * FROM developers WHERE name = :name", exception.getMessage());
+			assertEquals( "Missing param in query: [name]. SQL: SELECT * FROM developers WHERE name = :name", exception.getMessage() );
 		} catch ( SQLException e ) {
 			throw new RuntimeException( e );
 		}

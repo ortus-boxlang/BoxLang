@@ -21,6 +21,8 @@ import java.sql.*;
 import java.util.List;
 import java.util.Map;
 
+import javax.annotation.Nullable;
+
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.IStruct;
@@ -29,20 +31,55 @@ import ortus.boxlang.runtime.types.QueryColumnType;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.DatabaseException;
 
-public class ExecutedQuery {
+/**
+ * This class represents a query that has been executed and contains the results of executing that query.
+ * It contains a reference to the {@link PendingQuery} that was executed to create this.
+ */
+final class ExecutedQuery {
 
-	private final PendingQuery		pendingQuery;
-	private final PreparedStatement	statement;
-	private final long				executionTime;
-	private final Query				results;
-	private Object					generatedKey;
+	/**
+	 * The {@link PendingQuery} executed.
+	 */
+	private final PendingQuery	pendingQuery;
 
+	/**
+	 * The executed sql string with the bindings used in the String.
+	 */
+	private final String		executedSql;
+
+	/**
+	 * The execution time of the query.
+	 */
+	private final long			executionTime;
+
+	/**
+	 * A Query object holding the results of the query.
+	 * If there were no results, the Query object will have no rows.
+	 * 
+	 * @see Query
+	 */
+	private final Query			results;
+
+	/**
+	 * The generated key of the request, if any.
+	 */
+	@Nullable
+	private Object				generatedKey;
+
+	/**
+	 * Creates an ExecutedQuery instance.
+	 *
+	 * @param pendingQuery  The {@link PendingQuery} executed.
+	 * @param statement     The {@link PreparedStatement} instance executed.
+	 * @param executionTime The execution time the query took.
+	 * @param hasResults    Boolean flag from {@link PreparedStatement#execute()} designating if the execution returned any results.
+	 */
 	public ExecutedQuery( PendingQuery pendingQuery, PreparedStatement statement, long executionTime, boolean hasResults ) {
 		this.pendingQuery	= pendingQuery;
-		this.statement		= statement;
+		this.executedSql	= statement.toString();
 		this.executionTime	= executionTime;
 
-		try ( ResultSet rs = this.statement.getResultSet() ) {
+		try ( ResultSet rs = statement.getResultSet() ) {
 			this.results = new Query();
 
 			if ( rs != null ) {
@@ -70,8 +107,9 @@ public class ExecutedQuery {
 			throw new DatabaseException( e.getMessage(), e );
 		}
 
+		// Capture generated keys, if any.
 		try {
-			try ( ResultSet keys = this.statement.getGeneratedKeys() ) {
+			try ( ResultSet keys = statement.getGeneratedKeys() ) {
 				if ( keys != null && keys.next() ) {
 					this.generatedKey = keys.getObject( 1 );
 				}
@@ -92,14 +130,31 @@ public class ExecutedQuery {
 		}
 	}
 
+	/**
+	 * Returns the Query object of results of the query.
+	 * 
+	 * @return A Query object of results.
+	 */
 	public Query getResults() {
 		return this.results;
 	}
 
+	/**
+	 * Returns an {@link Array} of {@link Struct} instances representing the {@link Query} results.
+	 * 
+	 * @return An Array of Structs representing the Query
+	 */
 	public Array getResultsAsArray() {
 		return this.results.toStructArray();
 	}
 
+	/**
+	 * Returns a {@link Struct} instance grouping the results by the given key.
+	 * 
+	 * @param key The column to group the results by.
+	 * 
+	 * @return A struct of String to Struct instances representing the Query results.
+	 */
 	public IStruct getResultsAsStruct( String key ) {
 		Map<Object, List<IStruct>>	groupedResults	= this.results.stream().collect( groupingBy( r -> r.get( key ) ) );
 		Map<Object, Object>			groupedArray	= groupedResults.entrySet().stream().collect( toMap( Map.Entry::getKey, e -> new Array( e.getValue() ) ) );
@@ -109,10 +164,20 @@ public class ExecutedQuery {
 		);
 	}
 
+	/**
+	 * Returns the total count of records returned by the query.
+	 * 
+	 * @return The total count of records.
+	 */
 	public int getRecordCount() {
 		return this.results.size();
 	}
 
+	/**
+	 * Returns the `result` struct returned from `queryExecute` and `cfquery`.
+	 * 
+	 * @return A `result` struct
+	 */
 	public Struct getResultStruct() {
 		/*
 		 * * SQL: The SQL statement that was executed. (string)
@@ -124,7 +189,7 @@ public class ExecutedQuery {
 		 * * GENERATEDKEY: CF 9+ If the query was an INSERT with an identity or auto-increment value the value of that ID is placed in this variable.
 		 */
 		Struct result = new Struct();
-		result.put( "sql", this.statement.toString() );
+		result.put( "sql", this.executedSql );
 		result.put( "cached", false );
 		result.put( "sqlParameters", Array.fromList( this.pendingQuery.getParameterValues() ) );
 		result.put( "recordCount", getRecordCount() );
@@ -136,6 +201,12 @@ public class ExecutedQuery {
 		return result;
 	}
 
+	/**
+	 * Returns the generated key of the query, if any
+	 * 
+	 * @return The generated key of the query.
+	 */
+	@Nullable
 	public Object getGeneratedKey() {
 		return this.generatedKey;
 	}

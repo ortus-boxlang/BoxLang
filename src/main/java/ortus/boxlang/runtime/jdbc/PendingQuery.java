@@ -55,6 +55,7 @@ public class PendingQuery {
 
 	/**
 	 * A List of QueryParameter instances. The store the value and SQL type of the parameters, in order.
+	 * 
 	 * @see QueryParameter
 	 */
 	private final List<QueryParameter>	parameters;
@@ -76,8 +77,8 @@ public class PendingQuery {
 	 * Creates a new PendingQuery instance from a SQL string and a list of parameters.
 	 * This constructor uses the provided SQL string as the original SQL.
 	 *
-	 * @param sql         The SQL string to execute
-	 * @param parameters  A list of {@link QueryParameter} to use as bindings.
+	 * @param sql        The SQL string to execute
+	 * @param parameters A list of {@link QueryParameter} to use as bindings.
 	 */
 	public PendingQuery( @Nonnull String sql, @Nonnull List<QueryParameter> parameters ) {
 		this( sql, parameters, sql );
@@ -86,8 +87,8 @@ public class PendingQuery {
 	/**
 	 * Creates a new PendingQuery instance from a SQL string, a list of parameters, and the original SQL string.
 	 *
-	 * @param sql         The SQL string to execute
-	 * @param parameters  An {@link Array} of `queryparam` {@link IStruct} instances to convert to {@link QueryParameter} instances and use as bindings.
+	 * @param sql        The SQL string to execute
+	 * @param parameters An {@link Array} of `queryparam` {@link IStruct} instances to convert to {@link QueryParameter} instances and use as bindings.
 	 */
 	public PendingQuery( @Nonnull String sql, @Nonnull Array parameters ) {
 		this( sql, parameters.stream().map( QueryParameter::new ).collect( Collectors.toList() ) );
@@ -96,7 +97,7 @@ public class PendingQuery {
 	/**
 	 * Creates a new PendingQuery instance from a SQL string with no parameters.
 	 *
-	 * @param sql         The SQL string to execute
+	 * @param sql The SQL string to execute
 	 */
 	public PendingQuery( @Nonnull String sql ) {
 		this( sql, new ArrayList<>(), sql );
@@ -106,8 +107,8 @@ public class PendingQuery {
 	 * Creates a new PendingQuery instance from a SQL string and an {@link IStruct} of named parameters.
 	 * The `IStruct` should map the `String` `name` to either an `Object` `value` or a `queryparam` `IStruct`.
 	 *
-	 * @param sql         The SQL string to execute
-	 * @param parameters  An `IStruct` of `String` `name` to either an `Object` `value` or a `queryparam` `IStruct`.
+	 * @param sql        The SQL string to execute
+	 * @param parameters An `IStruct` of `String` `name` to either an `Object` `value` or a `queryparam` `IStruct`.
 	 */
 	public static @Nonnull PendingQuery fromStructParameters( @Nonnull String sql, @Nonnull IStruct parameters ) {
 		List<QueryParameter>	params	= new ArrayList<>();
@@ -127,6 +128,7 @@ public class PendingQuery {
 
 	/**
 	 * Returns a list of parameter `Object` values from the `List<QueryParameter>`.
+	 * 
 	 * @return A list of parameter values as `Object`s.
 	 */
 	public @Nonnull List<Object> getParameterValues() {
