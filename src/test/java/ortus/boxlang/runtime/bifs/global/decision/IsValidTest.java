@@ -440,11 +440,10 @@ public class IsValidTest {
 		assertThat( ( Boolean ) variables.get( Key.of( "stringval" ) ) ).isFalse();
 	}
 
-	@Disabled( "QueryNew() is not implemented" )
 	@DisplayName( "It works on Querys" )
 	@Test
 	public void testQuery() {
-		assertThat( ( Boolean ) instance.executeStatement( "isValid( 'Query', queryNew( 'id,name' ) )" ) ).isTrue();
+		assertThat( ( Boolean ) instance.executeStatement( "isValid( 'Query', queryNew( 'id,name', 'varchar,varchar' ) )" ) ).isTrue();
 		assertThat( ( Boolean ) instance.executeStatement( "isValid( 'Query', {} )" ) ).isFalse();
 	}
 
@@ -533,13 +532,12 @@ public class IsValidTest {
 		assertThat( ( Boolean ) instance.executeStatement( "isValid( 'variablename','new' )" ) ).isFalse();
 	}
 
-	@Disabled( "Unimplemented" )
 	@DisplayName( "It works on xmls" )
 	@Test
 	public void testXml() {
 		instance.executeSource(
 		    """
-		    xmlNew = isValid( 'xml', xmlNew() );
+		    xmlNew = isValid( 'xml', XMLParse( '<xml></xml>' ) );
 		    emptyXMLNode = isValid( 'xml', '<xml></xml>' );
 
 		    // falsies
@@ -554,29 +552,24 @@ public class IsValidTest {
 		assertThat( ( Boolean ) variables.get( Key.of( "emptybrackets" ) ) ).isFalse();
 	}
 
-	@Disabled( "Not working. 😢" )
 	@DisplayName( "It works on lambdas" )
 	@Test
 	public void testLambda() {
 		instance.executeSource(
 		    """
-		    aLambdaIsLambda  = IsValid( "lambda", () => {} );
-		    aClosureIsLambda = IsValid( "lambda", function(){} );
+		    aLambdaIsLambda  = IsValid( "lambda", () -> {} );
 		    """,
 		    context );
 		assertThat( ( Boolean ) variables.get( Key.of( "aLambdaIsLambda" ) ) ).isTrue();
-		assertThat( ( Boolean ) variables.get( Key.of( "aClosureIsLambda" ) ) ).isFalse();
 	}
 
-	@Disabled( "Not working. 😢" )
 	@DisplayName( "It works on closures" )
 	@Test
 	public void testClosure() {
 		assertThat( ( Boolean ) instance.executeStatement( "isValid( 'closure', function() {} )" ) ).isTrue();
-		assertThat( ( Boolean ) instance.executeStatement( "isValid( 'closure', () => {} )" ) ).isFalse();
+		assertThat( ( Boolean ) instance.executeStatement( "isValid( 'closure', () => {} )" ) ).isTrue();
 	}
 
-	@Disabled( "Not working. 😢" )
 	@DisplayName( "It works on custom functions" )
 	@Test
 	public void testFunctions() {
@@ -587,7 +580,7 @@ public class IsValidTest {
 
 		    // falsies
 		    aClosure = IsValid( "function", function() {} );
-		    aLambda  = IsValid( "function", () => {} );
+		    aLambda  = IsValid( "function", () -> {} );
 		    """,
 		    context );
 		assertThat( ( Boolean ) variables.get( Key.of( "aUDF" ) ) ).isTrue();

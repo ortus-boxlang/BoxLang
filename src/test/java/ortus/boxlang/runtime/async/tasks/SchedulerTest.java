@@ -214,7 +214,6 @@ class SchedulerTest {
 	}
 
 	// @Test
-	// @Disabled
 	// void testFullSchedulerLifecycle() {
 	// IScheduler scheduler = new modules.test.config.Scheduler();
 	// scheduler.configure();

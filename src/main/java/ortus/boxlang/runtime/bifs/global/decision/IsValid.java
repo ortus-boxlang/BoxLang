@@ -73,6 +73,8 @@ public class IsValid extends BIF {
 			case STRING -> GenericCaster.attempt( context, arguments.get( Key.value ), "string" ).wasSuccessful();
 			case STRUCT -> GenericCaster.attempt( context, arguments.get( Key.value ), "struct" ).wasSuccessful();
 			case TIME -> GenericCaster.attempt( context, arguments.get( Key.value ), "datetime" ).wasSuccessful();
+			case QUERY -> GenericCaster.attempt( context, arguments.get( Key.value ), "query" ).wasSuccessful();
+			case XML -> GenericCaster.attempt( context, arguments.get( Key.value ), "xml" ).wasSuccessful();
 
 			/*
 			 * Implemented in ValidationUtil
@@ -96,11 +98,9 @@ public class IsValid extends BIF {
 			// case BINARY -> ValidationUtil.isValidBINARY( arguments.get( Key.value ) );
 			// case EMAIL -> ValidationUtil.isValidEMAIL( arguments.getAsString( Key.value ) );
 			// case FLOAT -> value instanceof Float || ???
-			// case QUERY -> ValidationUtil.isValidQUERY( value );
 			// case RANGE -> ValidationUtil.isValidRANGE( value );
 			// case REGEX, REGULAR_EXPRESSION -> ValidationUtil.isValidREGEX( arguments.getAsString( Key.value ) );
 			// case VARIABLENAME -> ValidationUtil.isValidVARIABLENAME( value );
-			// case XML -> ValidationUtil.isValidXML( value );
 
 			/*
 			 * Lucee Only:
@@ -125,7 +125,7 @@ public class IsValid extends BIF {
 		GUID,
 		INTEGER,
 		NUMERIC,
-	    // QUERY,
+		QUERY,
 	    // RANGE,
 	    // REGEX,
 	    // REGULAR_EXPRESSION,
@@ -139,7 +139,7 @@ public class IsValid extends BIF {
 		UUID,
 		USDATE,
 	    // VARIABLENAME,
-	    // XML,
+		XML,
 		ZIPCODE,
 	    // Lucee Only:
 		LAMBDA,

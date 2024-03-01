@@ -21,11 +21,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 import java.io.IOException;
-import java.nio.file.Path;
-import java.util.List;
-import java.util.Set;
 
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import ortus.boxlang.ast.expression.BoxBinaryOperation;
@@ -70,20 +66,6 @@ public class TestAST extends TestBase {
 				assertEquals( it.getParent(), operation );
 			} );
 
-		}
-	}
-
-	@Test
-	@Disabled
-	public void testParser() throws IOException {
-		List<Path> files = scanForFiles( "../boxlang/examples/cf_to_java/HelloWorld", Set.of( "cfc", "cfm", "cfml" ) );
-		System.out.printf( "Testing parser against %s file(s)%n", files.size() );
-		for ( Path file : files ) {
-			System.out.println( "Testing " + file );
-			ParsingResult result = parser.parse( file.toFile() );
-			if ( !result.isCorrect() ) {
-				result.getIssues().forEach( System.out::println );
-			}
 		}
 	}
 
