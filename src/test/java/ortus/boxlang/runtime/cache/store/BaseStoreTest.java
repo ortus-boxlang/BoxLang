@@ -17,27 +17,52 @@
  */
 package ortus.boxlang.runtime.cache.store;
 
+import static com.google.common.truth.Truth.assertThat;
 import static org.mockito.Mockito.when;
 
 import java.time.Instant;
 
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
 import ortus.boxlang.runtime.cache.BoxCacheEntry;
 import ortus.boxlang.runtime.cache.ICacheEntry;
+import ortus.boxlang.runtime.cache.filters.WildcardFilter;
 import ortus.boxlang.runtime.cache.providers.ICacheProvider;
 import ortus.boxlang.runtime.cache.util.ICacheStats;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
 
-public class BaseStoreTest {
+public abstract class BaseStoreTest {
 
-	public IStruct		mockConfig		= new Struct();
-	public ICacheStats	mockStats		= Mockito.mock( ICacheStats.class );
-	public Key			testKey			= Key.of( "test" );
-	public Key			eternalKey		= Key.of( "eternal" );
-	public ICacheEntry	testEntry		= new BoxCacheEntry(
+	/**
+	 * The target store to test
+	 */
+	public IObjectStore		store;
+
+	/**
+	 * The target provider to test
+	 */
+	public ICacheProvider	mockProvider;
+
+	/**
+	 * The mock config to use for the provider and store
+	 */
+	public IStruct			mockConfig		= new Struct();
+
+	/**
+	 * Mock Stats
+	 */
+	public ICacheStats		mockStats		= Mockito.mock( ICacheStats.class );
+
+	/**
+	 * Mock Fixtures
+	 */
+	public Key				testKey			= Key.of( "test" );
+	public Key				eternalKey		= Key.of( "eternal" );
+	public ICacheEntry		testEntry		= new BoxCacheEntry(
 	    Key.of( "test" ),
 	    60,
 	    10,
@@ -45,7 +70,7 @@ public class BaseStoreTest {
 	    Instant.now(),
 	    new Struct()
 	);
-	public ICacheEntry	eternalEntry	= new BoxCacheEntry(
+	public ICacheEntry		eternalEntry	= new BoxCacheEntry(
 	    Key.of( "test" ),
 	    0,
 	    0,
@@ -69,6 +94,93 @@ public class BaseStoreTest {
 		when( mockProvider.getConfig() ).thenReturn( mockConfig );
 
 		return mockProvider;
+	}
+
+	/**
+	 * -- Test Methods --
+	 * These methods must be run from the parent class
+	 */
+
+	public void setup() {
+		populateCacheEntries( store );
+	}
+
+	@Test
+	@DisplayName( "BaseTest: Can get config and provider" )
+	public void testGetConfigAndProvider() {
+		assertThat( store.getConfig() ).isEqualTo( mockConfig );
+		assertThat( store.getProvider() ).isEqualTo( mockProvider );
+	}
+
+	@Test
+	@DisplayName( "BaseTest: Can shutdown the store" )
+	public void testShutdown() {
+		store.set( Key.of( "test" ), testEntry );
+		store.shutdown();
+		assertThat( store.getSize() ).isEqualTo( 0 );
+	}
+
+	@Test
+	@DisplayName( "BaseTest: Can flush the store" )
+	public void testFlush() {
+		var results = store.flush();
+		assertThat( results ).isNotNull();
+	}
+
+	@Test
+	@DisplayName( "BaseTest: Can clear all and check size" )
+	public void testClearAll() {
+		store.set( Key.of( "test" ), testEntry );
+		store.clearAll();
+		assertThat( store.getSize() ).isEqualTo( 0 );
+	}
+
+	@Test
+	@DisplayName( "BaseTest: Can clear all using a filter" )
+	public void testClearAllWithFilter() {
+		store.set( Key.of( "test" ), testEntry );
+		store.set( Key.of( "testing" ), testEntry );
+
+		store.clearAll( new WildcardFilter( "test*" ) );
+		assertThat( store.lookup( Key.of( "test" ) ) ).isNull();
+		assertThat( store.lookup( Key.of( "testing" ) ) ).isNull();
+	}
+
+	@Test
+	@DisplayName( "BaseTest: Can clear a key" )
+	public void testClear() {
+		store.set( Key.of( "test" ), testEntry );
+		assertThat( store.clear( Key.of( "test" ) ) ).isTrue();
+		assertThat( store.lookup( Key.of( "test" ) ) ).isNull();
+
+		assertThat( store.clear( Key.of( "testinnnnnn" ) ) ).isFalse();
+	}
+
+	@Test
+	@DisplayName( "BaseTest: Can clear multiple keys" )
+	public void testClearMultiple() {
+		store.set( Key.of( "test" ), testEntry );
+		store.set( Key.of( "testing" ), testEntry );
+
+		IStruct results = store.clear(
+		    Key.of( "test" ),
+		    Key.of( "testing" ),
+		    Key.of( "bogus" )
+		);
+		assertThat( results ).isNotNull();
+		assertThat( results.getAsBoolean( Key.of( "test" ) ) ).isTrue();
+		assertThat( results.getAsBoolean( Key.of( "testing" ) ) ).isTrue();
+		assertThat( results.getAsBoolean( Key.of( "bogus" ) ) ).isFalse();
+
+		assertThat( store.lookup( Key.of( "test" ) ) ).isNull();
+		assertThat( store.lookup( Key.of( "testing" ) ) ).isNull();
+	}
+
+	@Test
+	@DisplayName( "BaseTest: Can get all keys" )
+	public void testGetKeys() {
+		store.set( Key.of( "test" ), testEntry );
+		store.set( Key.of( "testing" ), testEntry );
 	}
 
 }

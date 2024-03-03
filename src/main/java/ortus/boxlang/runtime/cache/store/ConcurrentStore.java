@@ -61,6 +61,7 @@ public class ConcurrentStore extends AbstractStore implements IObjectStore {
 	 * @param provider The cache provider associated with this store
 	 * @param config   The configuration for the store
 	 */
+	@Override
 	public IObjectStore init( ICacheProvider provider, IStruct config ) {
 		this.provider	= provider;
 		this.config		= config;
@@ -79,7 +80,7 @@ public class ConcurrentStore extends AbstractStore implements IObjectStore {
 	 * object saving. This method is called when the cache provider is stopped.
 	 */
 	public void shutdown() {
-		// implement
+		this.pool.clear();
 	}
 
 	/**
