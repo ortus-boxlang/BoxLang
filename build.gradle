@@ -82,9 +82,9 @@ dependencies {
 	// https://mvnrepository.com/artifact/com.fasterxml.jackson.jr/jackson-jr-annotation-support
 	implementation 'com.fasterxml.jackson.jr:jackson-jr-annotation-support:2.16.1'
 	// https://mvnrepository.com/artifact/org.slf4j/slf4j-api
-	implementation 'org.slf4j:slf4j-api:2.0.11'
-	// https://mvnrepository.com/artifact/org.slf4j/slf4j-jdk14
-	implementation 'org.slf4j:slf4j-jdk14:2.0.11'
+	implementation 'org.slf4j:slf4j-api:2.0.12'
+	// https://mvnrepository.com/artifact/ch.qos.logback/logback-classic
+	implementation 'ch.qos.logback:logback-classic:1.5.2'
 	// https://mvnrepository.com/artifact/org.jetbrains/annotations
 	implementation 'org.jetbrains:annotations:24.0.0'
 

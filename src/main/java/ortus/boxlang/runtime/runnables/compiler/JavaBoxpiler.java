@@ -132,7 +132,7 @@ public class JavaBoxpiler {
 		// If we are in debug mode, let's clean out the class generation directory
 		if ( BoxRuntime.getInstance().inDebugMode() ) {
 			try {
-				logger.info( "Running in debugmode, first startup cleaning out class generation directory: " + classGenerationDirectory );
+				logger.debug( "Running in debugmode, first startup cleaning out class generation directory: " + classGenerationDirectory );
 				FileUtils.cleanDirectory( classGenerationDirectory.toFile() );
 			} catch ( IOException e ) {
 				throw new BoxRuntimeException( "Error cleaning out class generation directory on first run", e );

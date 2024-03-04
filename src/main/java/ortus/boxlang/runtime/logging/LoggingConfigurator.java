@@ -17,49 +17,37 @@
  */
 package ortus.boxlang.runtime.logging;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.nio.charset.StandardCharsets;
-import java.util.logging.LogManager;
+import org.slf4j.LoggerFactory;
 
-import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
+import ch.qos.logback.classic.Level;
+import ch.qos.logback.classic.Logger;
+import ch.qos.logback.classic.LoggerContext;
+import ch.qos.logback.classic.encoder.PatternLayoutEncoder;
+import ch.qos.logback.classic.spi.ILoggingEvent;
+import ch.qos.logback.core.ConsoleAppender;
 
 /**
  * Configures the bundled SLF4J provider.
  *
- * This class serves as a single endpoint for configuring the slf4j logging provider, whether it is:
+ * This class serves as a single endpoint for configuring the slf4j logging provider. Currently that is logback, but in the future it may be another
+ * provider.
  *
- * <ul>
- * <li>java.util.logging</li>
- * <li>logback</li>
- * <li>Apache Commons Logging</li>
- * </ul>
- *
- * or anything else, this class will ensure the provider logs according to the defined configuration.
+ * See https://logback.qos.ch/manual/configuration.html for more information on logback configuration.
  */
 public class LoggingConfigurator {
 
 	/**
-	 * Please see the Java docs for this obtuse logger format...
-	 * ... but in a nutshell:
-	 * <li>`1$` inserts the date
-	 * <li>`3$` inserts the logger name
-	 * <li>`4$` inserts the log level
+	 * Logback-specific encoder pattern. Thankfully, this is fairly legible compared to the JUL pattern.
+	 * https://logback.qos.ch/manual/layouts.html#conversionWord
 	 *
-	 * Formats:
-	 * <li>`tF` formats timestamp to `"%tY-%tm-%td"`
-	 * <li>`tT` formats timestamp to 24-hour `"%tH:%tM:%tS`
-	 * <li>`s` formats string as, uh, string.
-	 * <li>`%n` inserts line separator
-	 *
-	 * @see https://docs.oracle.com/en/java/javase/17/docs/api/java.logging/java/util/logging/SimpleFormatter.html#format(java.util.logging.LogRecord)
+	 * @see https://logback.qos.ch/manual/layouts.html#conversionWord
 	 */
-	private static String		logFormat			= "[%1$tF %1$tT] [%3$s] [%4$s] %5$s %n";
+	private static String		logFormat			= "%date %logger{0} [%level] %message %n";
 
 	/**
 	 * The default logging file to load
 	 */
-	private static final String	DEFAULT_CONFIG_FILE	= "config/logging.properties";
+	private static final String	DEFAULT_CONFIG_FILE	= "config/logback.xml";
 
 	/**
 	 * Read and apply configuration for the currently installed SLF4J provider
@@ -67,43 +55,24 @@ public class LoggingConfigurator {
 	 * @param debugMode Whether or not to enable debug mode
 	 */
 	public static void configure( Boolean debugMode ) {
-		try {
-			LogManager.getLogManager().readConfiguration( true
-			    ? loadDynamicConfig( java.util.logging.Level.FINE )
-			    : loadFromPropertiesFile()
-			);
-		} catch ( IOException e ) {
-			// use logger for this, or rethrow
-			e.printStackTrace();
-		}
-	}
+		// Set directory to look for logback.xml
+		System.setProperty( "Logback.configurationFile", DEFAULT_CONFIG_FILE );
 
-	/**
-	 * Read logging configuration from the `logging.properties` file
-	 */
-	private static InputStream loadFromPropertiesFile() {
-		InputStream configFile = LoggingConfigurator.class.getClassLoader().getResourceAsStream( DEFAULT_CONFIG_FILE );
-		if ( configFile == null ) {
-			throw new BoxRuntimeException( "Unable to load logging configuration from classpath resource: " + DEFAULT_CONFIG_FILE );
-		}
-		return configFile;
-	}
+		Level					logLevel		= Boolean.TRUE.equals( debugMode ) ? Level.DEBUG : Level.INFO;
+		Logger					rootLogger		= ( Logger ) LoggerFactory.getLogger( Logger.ROOT_LOGGER_NAME );
+		LoggerContext			loggerContext	= rootLogger.getLoggerContext();
 
-	/**
-	 * Build JDK logging configuration dynamically using the provided parameters.
-	 *
-	 * @param rootLogLevel Default log level for root loggers.
-	 *
-	 * @return an InputStream safe for feeding to the JDK LogManager's `readConfiguration()` method.
-	 */
-	private static InputStream loadDynamicConfig( java.util.logging.Level rootLogLevel ) {
-		String logConfig = """
-		                   .level=%s
-		                   handlers=java.util.logging.ConsoleHandler
-		                   java.util.logging.ConsoleHandler.formatter = java.util.logging.SimpleFormatter
-		                   java.util.logging.SimpleFormatter.format=%s
-		                   """
-		    .formatted( rootLogLevel, logFormat );
-		return new java.io.ByteArrayInputStream( logConfig.getBytes( StandardCharsets.UTF_8 ) );
+		PatternLayoutEncoder	encoder			= new PatternLayoutEncoder();
+		encoder.setContext( loggerContext );
+		encoder.setPattern( logFormat );
+		encoder.start();
+
+		ConsoleAppender<ILoggingEvent> appender = new ConsoleAppender<>();
+		appender.setContext( loggerContext );
+		appender.setEncoder( encoder );
+		appender.start();
+
+		rootLogger.setLevel( logLevel );
+		rootLogger.addAppender( appender );
 	}
 }
