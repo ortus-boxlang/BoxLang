@@ -117,6 +117,8 @@ public class BoxLangDebugger implements IBoxLangDebugger {
 	public void initialize() {
 		try {
 			this.vm = this.initStrat.initialize();
+
+			lookForBoxLangClasses();
 		} catch ( Exception e ) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -167,6 +169,17 @@ public class BoxLangDebugger implements IBoxLangDebugger {
 		this.status = Status.RUNNING;
 	}
 
+	public void continueExecution() {
+		BreakpointEvent old = this.bpe;
+		this.bpe	= null;
+
+		seenStacks	= new HashMap<Integer, StackFrameTuple>();
+		JDITools.clearMemory();
+
+		old.thread().resume();
+		this.status = Status.RUNNING;
+	}
+
 	public void forceResume() {
 		this.status = Status.RUNNING;
 		this.bpe.thread().resume();
@@ -176,9 +189,9 @@ public class BoxLangDebugger implements IBoxLangDebugger {
 		// pass
 	}
 
-	public void addBreakpoint( String filePath, Breakpoint breakpoint ) {
-		List<Breakpoint> breakpoints = this.breakpoints.computeIfAbsent( filePath, ( key ) -> new ArrayList<Breakpoint>() );
-		breakpoints.add( breakpoint );
+	public void setBreakpointsForFile( String filePath, List<Breakpoint> breakpoints ) {
+		this.breakpoints.put( filePath, new ArrayList<Breakpoint>() );
+		this.breakpoints.get( filePath ).addAll( breakpoints );
 		setAllBreakpoints();
 	}
 
@@ -365,6 +378,19 @@ public class BoxLangDebugger implements IBoxLangDebugger {
 		}
 
 		setAllBreakpoints();
+	}
+
+	private void lookForBoxLangClasses() {
+		this.vm.allClasses().stream()
+		    .filter( ( refType ) -> refType.name().toLowerCase().contains( "boxgenerated" ) )
+		    .forEach( ( refType ) -> {
+			    vmClasses.add( refType );
+			    SourceMap map = javaBoxpiler.getSourceMapFromFQN( refType.name() );
+			    if ( map == null ) {
+				    return;
+			    }
+			    this.sourceMaps.put( map.source.toLowerCase(), map );
+		    } );
 	}
 
 	private void handleClassPrepareEvent( ClassPrepareEvent event ) {

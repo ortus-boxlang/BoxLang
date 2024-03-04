@@ -42,6 +42,11 @@ public class JDITools {
 		mirrorToId	= new HashMap<Long, Long>();
 	}
 
+	public static void clearMemory() {
+		values		= new HashMap<Long, WrappedValue>();
+		mirrorToId	= new HashMap<Long, Long>();
+	}
+
 	/**
 	 * Produce a WrappedValue for a given thread and value.
 	 * 

@@ -247,7 +247,7 @@ public class DebugAdapter {
 	 * @param debugRequest
 	 */
 	public void visit( ContinueRequest debugRequest ) {
-		this.debugger.forceResume();
+		this.debugger.continueExecution();
 		new ContinueResponse( debugRequest, true ).send( this.outputStream );
 	}
 
@@ -268,8 +268,9 @@ public class DebugAdapter {
 	 * @param debugRequest
 	 */
 	public void visit( SetBreakpointsRequest debugRequest ) {
+		this.debugger.setBreakpointsForFile( debugRequest.arguments.source.path, Arrays.asList( debugRequest.arguments.breakpoints ) );
+
 		for ( Breakpoint bp : debugRequest.arguments.breakpoints ) {
-			this.debugger.addBreakpoint( debugRequest.arguments.source.path, bp );
 			this.breakpoints.add( new BreakpointRequest( bp.id, bp.line, debugRequest.arguments.source.path.toLowerCase() ) );
 		}
 
