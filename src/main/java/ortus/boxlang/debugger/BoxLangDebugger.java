@@ -71,7 +71,7 @@ import ortus.boxlang.runtime.runnables.compiler.SourceMap.SourceMapRecord;
 import ortus.boxlang.runtime.types.BoxLangType;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
-public class BoxLangDebugger implements IBoxLangDebugger {
+public class BoxLangDebugger {
 
 	private static Map<Integer, StackFrameTuple> seenStacks;
 
@@ -224,6 +224,16 @@ public class BoxLangDebugger implements IBoxLangDebugger {
 
 	public WrappedValue getContextForStackFrame( StackFrameTuple tuple ) {
 		return findVariableyName( tuple, "context" );
+	}
+
+	public WrappedValue evaluateInContext( String expression ) {
+		int i = 4 + 4;
+		// get current stackframe of breakpoint thread
+		// get the context
+		// get the runtime
+		// execute the expression
+
+		return null;
 	}
 
 	public StackFrame findStackFrame( int id ) {
