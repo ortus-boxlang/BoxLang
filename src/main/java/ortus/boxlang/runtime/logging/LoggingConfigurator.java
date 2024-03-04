@@ -42,7 +42,7 @@ public class LoggingConfigurator {
 	 *
 	 * @see https://logback.qos.ch/manual/layouts.html#conversionWord
 	 */
-	private static String		logFormat			= "%date %logger{0} [%level] %message %n";
+	private static String		logFormat			= "%date %logger{0} [%level] %kvp %message%n";
 
 	/**
 	 * The default logging file to load
