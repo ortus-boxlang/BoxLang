@@ -81,11 +81,12 @@ public class DBInfo extends Component {
 		    ) ),
 		    new Attribute( Key.datasource, "string" ),
 		    new Attribute( Key.table, "string" ),
-		    // @TODO: Implement
-		    // new Attribute( Key.pattern, "string" ),
+		    new Attribute( Key.pattern, "string" ),
 		    new Attribute( Key.dbname, "string" ),
+			// @TODO: Implement
 			// new Attribute( Key.username, "string" ),
 			// new Attribute( Key.password, "string" )
+			// NOTE: Lucee also supports a `filter` attribute, but ONLY for `type="tables"`. IMO, this should be handled by a query filter instead.
 		};
 	}
 
@@ -135,7 +136,7 @@ public class DBInfo extends Component {
 				result = getColumnsForTable( datasource, attributes.getAsString( Key.table ) );
 				break;
 			case TABLES :
-				result = getTables( datasource, attributes.getAsString( Key.dbname ) );
+				result = getTables( datasource, attributes.getAsString( Key.dbname ), attributes.getAsString( Key.pattern ) );
 				// @TODO: Implement remaining types.
 				// case FOREIGNKEYS :
 				// result = getForeignKeys( context, attributes );
@@ -217,6 +218,8 @@ public class DBInfo extends Component {
 	/**
 	 * Retrieve column metadata for a given table name.
 	 *
+	 * @TODO: Add support for Lucee's custom foreign key and primary key fields.
+	 *
 	 * @param datasource Datasource on which the table resides.
 	 *
 	 * @return Query object where each row represents a column on the given table.
@@ -268,12 +271,12 @@ public class DBInfo extends Component {
 		}
 	}
 
-	private Query getTables( DataSource datasource, String databaseName ) {
+	private Query getTables( DataSource datasource, String databaseName, String tableNamePattern ) {
 		try ( Connection conn = datasource.getConnection(); ) {
 			Query				result				= new Query();
 			DatabaseMetaData	databaseMetadata	= conn.getMetaData();
 
-			try ( ResultSet resultSet = databaseMetadata.getTables( null, null, null, null ) ) {
+			try ( ResultSet resultSet = databaseMetadata.getTables( databaseName, null, tableNamePattern, null ) ) {
 				ResultSetMetaData	resultSetMetaData	= resultSet.getMetaData();
 				int					columnCount			= resultSetMetaData.getColumnCount();
 
@@ -294,9 +297,6 @@ public class DBInfo extends Component {
 						);
 					}
 					result.addRow( row );
-				}
-				if ( result.isEmpty() && ( !databaseMetadata.getTables( null, null, databaseName, null ).next() ) ) {
-					throw new DatabaseException( String.format( "Table not found for pattern [%s] ", databaseName ) );
 				}
 			}
 			return result;

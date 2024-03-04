@@ -24,6 +24,8 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.util.Map;
+
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -41,6 +43,7 @@ import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Query;
+import ortus.boxlang.runtime.types.QueryColumn;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.BoxValidationException;
 import ortus.boxlang.runtime.types.exceptions.DatabaseException;
@@ -180,13 +183,13 @@ public class DBInfoTest {
 		Object theResult = variables.get( result );
 		assertTrue( theResult instanceof Query );
 
-		Query dbNamesQuery = ( Query ) theResult;
-		assertTrue( dbNamesQuery.size() > 0 );
+		Query resultQuery = ( Query ) theResult;
+		assertTrue( resultQuery.size() > 0 );
 
 		// @TODO: Enable this assertion once we've added support for Lucee's custom foreign key and primary key fields.
-		// assertEquals( 28, dbNamesQuery.getColumns().size() );
+		// assertEquals( 28, resultQuery.getColumns().size() );
 
-		IStruct nameColumn = dbNamesQuery.stream()
+		IStruct nameColumn = resultQuery.stream()
 		    .filter( row -> row.getAsString( Key.of( "COLUMN_NAME" ) ).equals( "NAME" ) )
 		    .findFirst()
 		    .orElse( null );
@@ -208,20 +211,76 @@ public class DBInfoTest {
 	public void testTablesType() {
 		instance.executeSource(
 		    """
-		        cfdbinfo( type='tables', name='result', dbname="BoxlangDB" )
+		        cfdbinfo( type='tables', name='result' )
 		    """,
 		    context );
 		Object theResult = variables.get( result );
 		assertTrue( theResult instanceof Query );
 
-		Query dbTablesQuery = ( Query ) theResult;
-		assertTrue( dbTablesQuery.size() > 0 );
-		assertTrue( dbTablesQuery.getColumns().size() == 10 );
+		Query resultQuery = ( Query ) theResult;
+		assertTrue( resultQuery.size() > 0 );
+		Map<Key, QueryColumn> columns = resultQuery.getColumns();
 
-		IStruct testTableRow = dbTablesQuery.stream()
+		assertTrue( columns.size() == 10 );
+		assertTrue( columns.containsKey( Key.of( "TABLE_CAT" ) ) );
+		assertTrue( columns.containsKey( Key.of( "TABLE_SCHEM" ) ) );
+		assertTrue( columns.containsKey( Key.of( "TABLE_NAME" ) ) );
+		assertTrue( columns.containsKey( Key.of( "TABLE_TYPE" ) ) );
+		assertTrue( columns.containsKey( Key.of( "REMARKS" ) ) );
+		assertTrue( columns.containsKey( Key.of( "TYPE_CAT" ) ) );
+		assertTrue( columns.containsKey( Key.of( "TYPE_SCHEM" ) ) );
+		assertTrue( columns.containsKey( Key.of( "TYPE_NAME" ) ) );
+		assertTrue( columns.containsKey( Key.of( "SELF_REFERENCING_COL_NAME" ) ) );
+		assertTrue( columns.containsKey( Key.of( "REF_GENERATION" ) ) );
+
+		IStruct testTableRow = resultQuery.stream()
 		    .filter( row -> row.getAsString( Key.of( "TABLE_NAME" ) ).equals( "DEVELOPERS" ) )
 		    .findFirst()
 		    .orElse( null );
 		assertNotNull( testTableRow );
+	}
+
+	@DisplayName( "Can get db tables when type=tables" )
+	@Test
+	public void testTablesTypeWithDBName() {
+		instance.executeSource(
+		    """
+		        cfdbinfo( type='tables', name='result', dbname="BoxlangDB" )
+		    """,
+		    context );
+		Query resultQuery = ( Query ) variables.get( result );
+		assertTrue( resultQuery.size() > 0 );
+		Boolean isCorrectDBName = resultQuery.stream()
+		    .allMatch( row -> row.getAsString( Key.of( "TABLE_CAT" ) ).equals( "BoxlangDB" ) );
+		assertNotNull( isCorrectDBName );
+	}
+
+	// Derby's database filters apparently don't work right, so this test is MySQL-only.
+	@EnabledIf( "tools.JDBCTestUtils#hasMySQLDriver" )
+	@DisplayName( "Gets empty tables query when unmatched database name is provided" )
+	@Test
+	public void testTablesTypeBadDBName() {
+		instance.executeSource(
+		    """
+		        cfdbinfo( type='tables', name='result', datasource="MYSQLDB", dbname="foo" )
+		    """,
+		    context );
+		Query resultQuery = ( Query ) variables.get( result );
+		assertTrue( resultQuery.size() == 0 );
+	}
+
+	@DisplayName( "Can get filter table results by pattern name" )
+	@Test
+	public void testTablesTypeWithTablePattern() {
+		instance.executeSource(
+		    """
+		        cfdbinfo( type='tables', name='result', pattern="DEV%" )
+		    """,
+		    context );
+		Query resultQuery = ( Query ) variables.get( result );
+		assertTrue( resultQuery.size() == 1 );
+		Boolean isDeveloperTable = resultQuery.stream()
+		    .allMatch( row -> row.getAsString( Key.of( "TABLE_NAME" ) ).equals( "DEVELOPERS" ) );
+		assertNotNull( isDeveloperTable );
 	}
 }
