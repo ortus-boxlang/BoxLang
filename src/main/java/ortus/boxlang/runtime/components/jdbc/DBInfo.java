@@ -49,7 +49,7 @@ public class DBInfo extends Component {
 
 		COLUMNS,
 		DBNAMES,
-	    // TABLES,
+		TABLES,
 	    // FOREIGNKEYS,
 	    // INDEX,
 	    // PROCEDURES,
@@ -80,10 +80,10 @@ public class DBInfo extends Component {
 		        Validator.NON_EMPTY
 		    ) ),
 		    new Attribute( Key.datasource, "string" ),
-			// @TODO: Implement
-			// new Attribute( Key.table, "string" ),
-			// new Attribute( Key.pattern, "string" ),
-			// new Attribute( Key.dbname, "string" ),
+		    new Attribute( Key.table, "string" ),
+		    // @TODO: Implement
+		    // new Attribute( Key.pattern, "string" ),
+		    new Attribute( Key.dbname, "string" ),
 			// new Attribute( Key.username, "string" ),
 			// new Attribute( Key.password, "string" )
 		};
@@ -134,15 +134,15 @@ public class DBInfo extends Component {
 			case COLUMNS :
 				result = getColumnsForTable( datasource, attributes.getAsString( Key.table ) );
 				break;
-			// @TODO: Implement remaining types.
-			// case TABLES :
-			// result = getTables( context );
-			// case FOREIGNKEYS :
-			// result = getForeignKeys( context, attributes );
-			// case INDEX :
-			// result = getIndex( context, attributes );
-			// case PROCEDURES :
-			// result = getProcedures( context );
+			case TABLES :
+				result = getTables( datasource, attributes.getAsString( Key.dbname ) );
+				// @TODO: Implement remaining types.
+				// case FOREIGNKEYS :
+				// result = getForeignKeys( context, attributes );
+				// case INDEX :
+				// result = getIndex( context, attributes );
+				// case PROCEDURES :
+				// result = getProcedures( context );
 		}
 		ExpressionInterpreter.setVariable( context, attributes.getAsString( Key._NAME ), result );
 		// @TODO: Return null???
@@ -260,6 +260,43 @@ public class DBInfo extends Component {
 				}
 				if ( result.isEmpty() && ( !databaseMetadata.getTables( null, null, tableName, null ).next() ) ) {
 					throw new DatabaseException( String.format( "Table not found for pattern [%s] ", tableName ) );
+				}
+			}
+			return result;
+		} catch ( SQLException e ) {
+			throw new DatabaseException( "Unable to read column metadata", e );
+		}
+	}
+
+	private Query getTables( DataSource datasource, String databaseName ) {
+		try ( Connection conn = datasource.getConnection(); ) {
+			Query				result				= new Query();
+			DatabaseMetaData	databaseMetadata	= conn.getMetaData();
+
+			try ( ResultSet resultSet = databaseMetadata.getTables( null, null, null, null ) ) {
+				ResultSetMetaData	resultSetMetaData	= resultSet.getMetaData();
+				int					columnCount			= resultSetMetaData.getColumnCount();
+
+				// The column count starts from 1
+				for ( int i = 1; i <= columnCount; i++ ) {
+					result.addColumn(
+					    Key.of( resultSetMetaData.getColumnLabel( i ) ),
+					    QueryColumnType.fromSQLType( resultSetMetaData.getColumnType( i ) )
+					);
+				}
+
+				while ( resultSet.next() ) {
+					Struct row = new Struct( IStruct.TYPES.LINKED );
+					for ( int i = 1; i <= columnCount; i++ ) {
+						row.put(
+						    Key.of( resultSetMetaData.getColumnLabel( i ) ),
+						    resultSet.getObject( i )
+						);
+					}
+					result.addRow( row );
+				}
+				if ( result.isEmpty() && ( !databaseMetadata.getTables( null, null, databaseName, null ).next() ) ) {
+					throw new DatabaseException( String.format( "Table not found for pattern [%s] ", databaseName ) );
 				}
 			}
 			return result;

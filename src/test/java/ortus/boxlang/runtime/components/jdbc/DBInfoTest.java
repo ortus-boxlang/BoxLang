@@ -202,4 +202,26 @@ public class DBInfoTest {
 	public void testColumnsTypeWithNonExistentTable() {
 		assertThrows( DatabaseException.class, () -> instance.executeStatement( "cfdbinfo( type='columns', name='result', table='404NotFound' )" ) );
 	}
+
+	@DisplayName( "Can get db tables when type=tables" )
+	@Test
+	public void testTablesType() {
+		instance.executeSource(
+		    """
+		        cfdbinfo( type='tables', name='result', dbname="BoxlangDB" )
+		    """,
+		    context );
+		Object theResult = variables.get( result );
+		assertTrue( theResult instanceof Query );
+
+		Query dbTablesQuery = ( Query ) theResult;
+		assertTrue( dbTablesQuery.size() > 0 );
+		assertTrue( dbTablesQuery.getColumns().size() == 10 );
+
+		IStruct testTableRow = dbTablesQuery.stream()
+		    .filter( row -> row.getAsString( Key.of( "TABLE_NAME" ) ).equals( "DEVELOPERS" ) )
+		    .findFirst()
+		    .orElse( null );
+		assertNotNull( testTableRow );
+	}
 }
