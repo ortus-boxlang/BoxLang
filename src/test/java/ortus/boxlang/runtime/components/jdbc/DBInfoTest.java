@@ -61,16 +61,17 @@ public class DBInfoTest {
 	public static void setUp() {
 		instance			= BoxRuntime.getInstance( true );
 		datasourceManager	= DataSourceManager.getInstance();
-		DataSource defaultDatasource = new DataSource( Struct.of(
+		DataSource defaultDataSource = new DataSource( Struct.of(
 		    "jdbcUrl", "jdbc:derby:memory:BoxlangDB;create=true"
 		) );
-		datasourceManager.setDefaultDatasource( defaultDatasource );
-		defaultDatasource.execute( "CREATE TABLE developers ( id INTEGER PRIMARY KEY, name VARCHAR(155) )" );
-		defaultDatasource.execute( "CREATE TABLE projects ( id INTEGER, leadDev INTEGER, CONSTRAINT devID FOREIGN KEY (leadDev) REFERENCES developers(id) )" );
+
+		datasourceManager.setDefaultDataSource( defaultDataSource );
+		defaultDataSource.execute( "CREATE TABLE developers ( id INTEGER PRIMARY KEY, name VARCHAR(155) )" );
+		defaultDataSource.execute( "CREATE TABLE projects ( id INTEGER, leadDev INTEGER, CONSTRAINT devID FOREIGN KEY (leadDev) REFERENCES developers(id) )" );
 
 		if ( tools.JDBCTestUtils.hasMySQLDriver() ) {
 			Key MySQLDataSourceName = Key.of( "MYSQLDB" );
-			MySQLDataSource = datasourceManager.registerDatasource( MySQLDataSourceName, Struct.of(
+			MySQLDataSource = datasourceManager.registerDataSource( MySQLDataSourceName, Struct.of(
 			    "jdbcUrl", "jdbc:mysql://localhost:3306",
 			    "username", "root",
 			    "password", "secret"
@@ -122,7 +123,7 @@ public class DBInfoTest {
 
 	@DisplayName( "Throws on non-existent datasource" )
 	@Test
-	public void testDatasourceAttribute() {
+	public void testDataSourceAttribute() {
 		assertThrows(
 		    DatabaseException.class,
 		    () -> instance.executeStatement( "cfdbinfo( type='version', name='result', datasource='foobar' )" )

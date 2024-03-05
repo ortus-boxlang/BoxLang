@@ -114,12 +114,12 @@ public class DBInfo extends Component {
 	 *
 	 */
 	public BodyResult _invoke( IBoxContext context, IStruct attributes, ComponentBody body, IStruct executionState ) {
-		// @TODO: Add a DatasourceManager to the runtime. For now, we'll manually construct one.
-		// DataSourceManager manager = context.getRuntime().getDatasourceManager();
+		// @TODO: Add a DataSourceManager to the runtime. For now, we'll manually construct one.
+		// DataSourceManager manager = context.getRuntime().getDataSourceManager();
 		DataSourceManager	manager		= DataSourceManager.getInstance();
 		DataSource			datasource	= attributes.containsKey( Key.datasource )
-		    ? manager.getDatasource( Key.of( attributes.getAsString( Key.datasource ) ) )
-		    : manager.getDefaultDatasource();
+		    ? manager.getDataSource( Key.of( attributes.getAsString( Key.datasource ) ) )
+		    : manager.getDefaultDataSource();
 		if ( datasource == null ) {
 			if ( attributes.containsKey( Key.datasource ) ) {
 				throw new DatabaseException( String.format( "Datasource not found for string name [%s]", attributes.getAsString( Key.datasource ) ) );
@@ -152,7 +152,7 @@ public class DBInfo extends Component {
 	/**
 	 * Build a Query object of database names for both SCHEMA and CATALOG types.
 	 *
-	 * @param datasource Datasource on which to pull database names
+	 * @param datasource DataSource on which to pull database names
 	 *
 	 * @return A Query object where each row represents a catalog name or schema name within this datasource.
 	 */

@@ -10,7 +10,7 @@
  * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distribu ted on an "AS IS" BASIS,
+ * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
@@ -33,7 +33,7 @@ import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
 
-public class DatasourceManagerTest {
+public class DataSourceManagerTest {
 
 	static DataSourceManager	manager;
 
@@ -55,45 +55,45 @@ public class DatasourceManagerTest {
 		IStruct config = Struct.of(
 		    "jdbcUrl", "jdbc:foobar:myDB"
 		);
-		assertThrows( RuntimeException.class, () -> {
-			manager.registerDatasource( datasourceName, config );
-		} );
+		assertThrows( RuntimeException.class, () -> manager.registerDataSource( datasourceName, config ));
 	}
 
 	@DisplayName( "It can set and get datasources by name" )
 	@Test
-	void testRegisterDatasource() {
-		assertThat( manager.getDatasource( datasourceName ) ).isNull();
-		manager.registerDatasource( datasourceName, Struct.of(
+	void testRegisterDataSource() {
+		assertThat( manager.getDataSource( datasourceName ) ).isNull();
+		manager.registerDataSource( datasourceName, Struct.of(
 		    "jdbcUrl", "jdbc:derby:memory:testDB;create=true"
 		) );
-		assertThat( manager.getDatasource( datasourceName ) ).isInstanceOf( DataSource.class );
+		assertThat( manager.getDataSource( datasourceName ) ).isInstanceOf( DataSource.class );
 	}
 
 	@DisplayName( "It can get the default datasource" )
 	@Test
-	void testDefaultDatasource() {
-		assertThat( manager.getDefaultDatasource() ).isNull();
-		DataSource defaultDatasource = new DataSource( Struct.of(
+	void testDefaultDataSource() {
+		assertThat( manager.getDefaultDataSource() ).isNull();
+		DataSource defaultDataSource = new DataSource( Struct.of(
 		    "jdbcUrl", "jdbc:derby:memory:testDB;create=true"
 		) );
-		manager.setDefaultDatasource( defaultDatasource );
+		manager.setDefaultDataSource( defaultDataSource );
 
-		assertThat( manager.getDefaultDatasource() ).isEqualTo( defaultDatasource );
-		assertThat( manager.getDatasource( Key._DEFAULT ) ).isEqualTo( defaultDatasource );
+		assertThat( manager.getDefaultDataSource() ).isEqualTo( defaultDataSource );
+		assertThat( manager.getDataSource( Key._DEFAULT ) ).isEqualTo( defaultDataSource );
 	}
 
 	@DisplayName( "It can clear all registered datasources" )
 	@Test
 	void testClear() throws SQLException {
-		manager.registerDatasource( datasourceName, Struct.of(
+		manager.registerDataSource( datasourceName, Struct.of(
 		    "jdbcUrl", "jdbc:derby:memory:testDB;create=true"
 		) );
-		assertThat( manager.getDatasource( datasourceName ) ).isInstanceOf( DataSource.class );
-		Connection connection = manager.getDatasource( datasourceName ).getConnection();
+		DataSource datasource = manager.getDataSource( datasourceName );
+		assertThat( datasource ).isInstanceOf( DataSource.class );
+        assert datasource != null;
+        Connection connection = datasource.getConnection();
 		assertThat( connection ).isInstanceOf( Connection.class );
 		manager.clear( true );
-		assertThat( manager.getDatasource( datasourceName ) ).isNull();
+		assertThat( manager.getDataSource( datasourceName ) ).isNull();
 		// The manager should close datasources, connection pools, and connections upon calling .clear()
 		assertThat( connection.isValid( 1 ) ).isFalse();
 	}
@@ -101,14 +101,16 @@ public class DatasourceManagerTest {
 	@DisplayName( "It can shut down" )
 	@Test
 	void testShutdown() throws SQLException {
-		manager.registerDatasource( datasourceName, Struct.of(
+		manager.registerDataSource( datasourceName, Struct.of(
 		    "jdbcUrl", "jdbc:derby:memory:testDB;create=true"
 		) );
-		assertThat( manager.getDatasource( datasourceName ) ).isInstanceOf( DataSource.class );
-		Connection connection = manager.getDatasource( datasourceName ).getConnection();
+		DataSource datasource = manager.getDataSource( datasourceName );
+		assertThat( datasource ).isInstanceOf( DataSource.class );
+		assert datasource != null;
+		Connection connection = datasource.getConnection();
 		assertThat( connection ).isInstanceOf( Connection.class );
 		manager.shutdown();
-		assertThat( manager.getDatasource( datasourceName ) ).isNull();
+		assertThat( manager.getDataSource( datasourceName ) ).isNull();
 		// The manager should close datasources, connection pools, and connections upon calling .clear()
 		assertThat( connection.isValid( 1 ) ).isFalse();
 	}

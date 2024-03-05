@@ -31,12 +31,15 @@ import ortus.boxlang.runtime.types.exceptions.DatabaseException;
 import ortus.boxlang.runtime.types.util.ListUtil;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 
 /**
  * This class represents a query and any parameters/bindings before being executed.
  * After calling {@link #execute(Connection)}, it returns an {@link ExecutedQuery} with a reference to this object.
  */
 public class PendingQuery {
+
+	private static final Pattern				pattern	= Pattern.compile( ":\\w+" );
 
 	/**
 	 * The SQL string to execute.
@@ -60,6 +63,8 @@ public class PendingQuery {
 	 */
 	private @Nonnull final List<QueryParameter>	parameters;
 
+	// private @Nullable Long queryTimeout;
+
 	/**
 	 * Creates a new PendingQuery instance from a SQL string, a list of parameters, and the original SQL string.
 	 *
@@ -67,10 +72,16 @@ public class PendingQuery {
 	 * @param parameters  A list of {@link QueryParameter} to use as bindings.
 	 * @param originalSql The original sql string. This will include named parameters if the `PendingQuery` was constructed using an {@link IStruct}.
 	 */
-	public PendingQuery( @Nonnull String sql, @Nonnull List<QueryParameter> parameters, @Nonnull String originalSql ) {
+	public PendingQuery(
+	    @Nonnull String sql,
+	    @Nonnull List<QueryParameter> parameters,
+	    @Nonnull String originalSql
+	// @Nullable Long queryTimeout
+	) {
 		this.sql			= sql;
 		this.originalSql	= originalSql;
 		this.parameters		= parameters;
+		// this.queryTimeout = queryTimeout;
 	}
 
 	/**
@@ -112,7 +123,6 @@ public class PendingQuery {
 	 */
 	public static @Nonnull PendingQuery fromStructParameters( @Nonnull String sql, @Nonnull IStruct parameters ) {
 		List<QueryParameter>	params	= new ArrayList<>();
-		Pattern					pattern	= Pattern.compile( ":\\w+" );
 		Matcher					matcher	= pattern.matcher( sql );
 		while ( matcher.find() ) {
 			String paramName = matcher.group();

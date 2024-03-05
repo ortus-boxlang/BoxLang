@@ -25,14 +25,13 @@ import com.zaxxer.hikari.HikariDataSource;
 
 import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.IStruct;
-import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.exceptions.DatabaseException;
 
 /**
  * Encapsulates a datasource configuration and connection pool, providing methods for executing queries (transactionally or single) on the datasource.
  * <p>
- * <strong>Warning:</strong> Datasource configuration is currently case-sensitive. This will be fixed in a future release. Refer to the
+ * <strong>Warning:</strong> DataSource configuration is currently case-sensitive. This will be fixed in a future release. Refer to the
  * {@link <a href="https://github.com/brettwooldridge/HikariCP?tab=readme-ov-file#gear-configuration-knobs-baby">HikariCP
  * configuration docs</a>} for a list of valid configuration properties:
  *

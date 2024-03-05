@@ -83,12 +83,12 @@ public class DataSourceTest {
 	@DisplayName( "It can get a MySQL JDBC connection" )
 	@Test
 	void testMySQLConnection() throws SQLException {
-		DataSource	myDatasource	= new DataSource( Struct.of(
+		DataSource	myDataSource	= new DataSource( Struct.of(
 		    "username", "root",
 		    "password", "secret",
 		    "jdbcUrl", "jdbc:mysql://localhost:3306"
 		) );
-		Connection	conn			= myDatasource.getConnection();
+		Connection	conn			= myDataSource.getConnection();
 		assertThat( conn ).isInstanceOf( Connection.class );
 	}
 
@@ -96,31 +96,31 @@ public class DataSourceTest {
 	@DisplayName( "It can get a JDBC connection regardless of key casing" )
 	@Test
 	void testDerbyConnectionFunnyKeyCasing() throws SQLException {
-		DataSource	funkyDatasource	= new DataSource( Struct.of(
+		DataSource	funkyDataSource	= new DataSource( Struct.of(
 		    "JDBCurl", "jdbc:derby:src/test/resources/tmp/DataSourceTests/testDB;create=true"
 		) );
-		Connection	conn			= funkyDatasource.getConnection();
+		Connection	conn			= funkyDataSource.getConnection();
 		assertThat( conn ).isInstanceOf( Connection.class );
 	}
 
 	@DisplayName( "It closes datasource connections on shutdown" )
 	@Test
-	void testDatasourceClose() throws SQLException {
-		DataSource	myDatasource	= new DataSource( Struct.of(
+	void testDataSourceClose() throws SQLException {
+		DataSource	myDataSource	= new DataSource( Struct.of(
 		    "username", "user",
 		    "password", "password",
 		    "jdbcUrl", "jdbc:derby:src/test/resources/tmp/DataSourceTests/testDB;create=true"
 		) );
-		Connection	conn			= myDatasource.getConnection();
+		Connection	conn			= myDataSource.getConnection();
 		assertThat( conn ).isInstanceOf( Connection.class );
 
-		myDatasource.shutdown();
+		myDataSource.shutdown();
 		assertThat( conn.isValid( 5 ) ).isFalse();
 	}
 
 	@DisplayName( "It can execute simple queries without providing a connection" )
 	@Test
-	void testDatasourceExecute() {
+	void testDataSourceExecute() {
 		try ( Connection conn = datasource.getConnection() ) {
 			assertDoesNotThrow( () -> {
 				ExecutedQuery executedQuery = datasource.execute( "SELECT * FROM developers", conn );
@@ -133,7 +133,7 @@ public class DataSourceTest {
 
 	@DisplayName( "It can execute queries with parameters without providing a connection" )
 	@Test
-	void testDatasourceWithParamsExecute() {
+	void testDataSourceWithParamsExecute() {
 		try ( Connection conn = datasource.getConnection() ) {
 			assertDoesNotThrow( () -> {
 				ExecutedQuery executedQuery = datasource.execute(
@@ -155,7 +155,7 @@ public class DataSourceTest {
 
 	@DisplayName( "It can execute queries with parameters without providing a connection" )
 	@Test
-	void testDatasourceWithNamedParamsExecute() {
+	void testDataSourceWithNamedParamsExecute() {
 		try ( Connection conn = datasource.getConnection() ) {
 			assertDoesNotThrow( () -> {
 				ExecutedQuery executedQuery = datasource.execute(

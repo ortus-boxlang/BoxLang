@@ -44,11 +44,6 @@ public final class ExecutedQuery {
 	private @Nonnull final PendingQuery	pendingQuery;
 
 	/**
-	 * The executed sql string with the bindings used in the String.
-	 */
-	private @Nonnull final String		executedSql;
-
-	/**
 	 * The execution time of the query.
 	 */
 	private final long					executionTime;
@@ -76,7 +71,6 @@ public final class ExecutedQuery {
 	 */
 	public ExecutedQuery( @Nonnull PendingQuery pendingQuery, @Nonnull PreparedStatement statement, long executionTime, boolean hasResults ) {
 		this.pendingQuery	= pendingQuery;
-		this.executedSql	= statement.toString();
 		this.executionTime	= executionTime;
 
 		try ( ResultSet rs = statement.getResultSet() ) {
@@ -95,10 +89,9 @@ public final class ExecutedQuery {
 				}
 
 				while ( rs.next() ) {
-					Struct row = new Struct( IStruct.TYPES.LINKED );
+					Object[] row = new Object[ columnCount ];
 					for ( int i = 1; i <= columnCount; i++ ) {
-						// @TODO: Fix the duplicate Key.of() call here
-						row.put( Key.of( resultSetMetaData.getColumnLabel( i ) ), rs.getObject( i ) );
+						row[ i - 1 ] = rs.getObject( i );
 					}
 					this.results.addRow( row );
 				}
@@ -114,6 +107,7 @@ public final class ExecutedQuery {
 					this.generatedKey = keys.getObject( 1 );
 				}
 			} catch ( SQLException e ) {
+				// @TODO Add in more info to this
 				throw new DatabaseException( e.getMessage(), e );
 			}
 		} catch ( NullPointerException e ) {
@@ -156,6 +150,7 @@ public final class ExecutedQuery {
 	 * @return A struct of String to Struct instances representing the Query results.
 	 */
 	public @Nonnull IStruct getResultsAsStruct( @Nonnull String key ) {
+		// @TODO get brad to make this better
 		Map<Object, List<IStruct>>	groupedResults	= this.results.stream().collect( groupingBy( r -> r.get( key ) ) );
 		Map<Object, Object>			groupedArray	= groupedResults.entrySet().stream().collect( toMap( Map.Entry::getKey, e -> new Array( e.getValue() ) ) );
 		return Struct.fromMap(

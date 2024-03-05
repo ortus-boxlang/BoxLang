@@ -25,7 +25,7 @@ import javax.annotation.Nullable;
 public class DataSourceManager {
 
 	/**
-	 * Singleton instance of the DatasourceManager.
+	 * Singleton instance of the DataSourceManager.
 	 */
 	private static DataSourceManager	instance;
 
@@ -46,11 +46,11 @@ public class DataSourceManager {
 	}
 
 	/**
-	 * Get the singleton instance of the DatasourceManager.
+	 * Get the singleton instance of the DataSourceManager.
 	 * <p>
 	 * Will construct a new instance if one does not already exist, otherwise returns the existing instance.
 	 *
-	 * @return The DatasourceManager instance.
+	 * @return The DataSourceManager instance.
 	 */
 	public static DataSourceManager getInstance() {
 		if ( instance == null ) {
@@ -64,13 +64,13 @@ public class DataSourceManager {
 	 * <p>
 	 * Stores a datasource in the manager for later retrieval by key name.
 	 * <p>
-	 * It is preferred that you use `setDefaultDatasource` to set the default datasource for the application. All other datasources should be registered
+	 * It is preferred that you use `setDefaultDataSource` to set the default datasource for the application. All other datasources should be registered
 	 * with this method.
 	 *
 	 * @param name       Name of the datasource. This will be used in retrieving the datasource later.
 	 * @param datasource Struct of datasource properties for configuring the datasource.
 	 */
-	public DataSource registerDatasource( Key name, IStruct datasource ) {
+	public DataSource registerDataSource( Key name, IStruct datasource ) {
 		DataSource ds = new DataSource( datasource );
 		this.datasources.put( name, ds );
 		return ds;
@@ -81,13 +81,13 @@ public class DataSourceManager {
 	 * <p>
 	 * Stores a datasource in the manager for later retrieval by key name.
 	 * <p>
-	 * It is preferred that you use `setDefaultDatasource` to set the default datasource for the application. All other datasources should be registered
+	 * It is preferred that you use `setDefaultDataSource` to set the default datasource for the application. All other datasources should be registered
 	 * with this method.
 	 *
 	 * @param name       Name of the datasource. This will be used in retrieving the datasource later.
 	 * @param datasource Struct of datasource properties for configuring the datasource.
 	 */
-	public DataSource registerDatasource( Key name, DataSource datasource ) {
+	public DataSource registerDataSource( Key name, DataSource datasource ) {
 		this.datasources.put( name, datasource );
 		return datasource;
 	}
@@ -99,7 +99,7 @@ public class DataSourceManager {
 	 *
 	 * @return An instance of the datasource, if found, or `null`.
 	 */
-	public @Nullable DataSource getDatasource( Key name ) {
+	public @Nullable DataSource getDataSource( Key name ) {
 		return this.datasources.get( name );
 	}
 
@@ -110,7 +110,7 @@ public class DataSourceManager {
 	 *
 	 * @param datasourceName The datasource to set as the default. Almost always configured via <code>this.datasource = {}</code> in the Application.cfc.
 	 */
-	public DataSourceManager setDefaultDatasource( Key datasourceName ) {
+	public DataSourceManager setDefaultDataSource( Key datasourceName ) {
 		this.datasources.put( Key._DEFAULT, this.datasources.get( datasourceName ) );
 		return this;
 	}
@@ -122,7 +122,7 @@ public class DataSourceManager {
 	 *
 	 * @param datasource The datasource to set as the default. Almost always configured via <code>this.datasource = {}</code> in the Application.cfc.
 	 */
-	public DataSourceManager setDefaultDatasource( DataSource datasource ) {
+	public DataSourceManager setDefaultDataSource( DataSource datasource ) {
 		this.datasources.put( Key._DEFAULT, datasource );
 		return this;
 	}
@@ -132,7 +132,7 @@ public class DataSourceManager {
 	 *
 	 * @return An instance of the default datasource, if configured, or null.
 	 */
-	public DataSource getDefaultDatasource() {
+	public DataSource getDefaultDataSource() {
 		return this.datasources.get( Key._DEFAULT );
 	}
 

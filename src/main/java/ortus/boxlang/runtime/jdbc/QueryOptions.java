@@ -21,7 +21,7 @@ public class QueryOptions {
 
 	public QueryOptions( IStruct options ) {
 		this.options = options;
-		determineDatasource();
+		determineDataSource();
 		determineReturnType();
 		this.resultVariableName = options.getAsString( Key.result );
 	}
@@ -47,7 +47,7 @@ public class QueryOptions {
 		};
 	}
 
-	private void determineDatasource() {
+	private void determineDataSource() {
 		if ( this.options.containsKey( "datasource" ) ) {
 			Object					datasourceObject	= this.options.get( Key.datasource );
 			CastAttempt<IStruct>	datasourceAsStruct	= StructCaster.attempt( datasourceObject );
@@ -56,13 +56,13 @@ public class QueryOptions {
 			} else {
 				CastAttempt<String>	datasourceAsString	= StringCaster.attempt( datasourceObject );
 				String				datasourceName		= datasourceAsString.getOrFail();
-				this.datasource = manager.getDatasource( Key.of( datasourceName ) );
+				this.datasource = manager.getDataSource( Key.of( datasourceName ) );
 				if ( this.datasource == null ) {
 					throw new BoxRuntimeException( "No [" + datasourceName + "] datasource defined." );
 				}
 			}
 		} else {
-			this.datasource = manager.getDefaultDatasource();
+			this.datasource = manager.getDefaultDataSource();
 			if ( this.datasource == null ) {
 				throw new BoxRuntimeException(
 				    "No default datasource has been defined. Either register a default datasource or provide a datasource name in the query options." );

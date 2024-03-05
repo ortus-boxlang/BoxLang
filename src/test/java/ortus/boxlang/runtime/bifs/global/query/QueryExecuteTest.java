@@ -87,7 +87,7 @@ public class QueryExecuteTest {
 	@DisplayName( "It can execute a query with no bindings on the default datasource" )
 	@Test
 	public void testSimpleExecute() {
-		datasourceManager.setDefaultDatasource( datasource );
+		datasourceManager.setDefaultDataSource( datasource );
 		instance.executeSource(
 		    """
 		    result = queryExecute( "SELECT * FROM developers ORDER BY id" );
@@ -116,7 +116,7 @@ public class QueryExecuteTest {
 	@DisplayName( "It can execute a query with array bindings on the default datasource" )
 	@Test
 	public void testArrayBindings() {
-		datasourceManager.setDefaultDatasource( datasource );
+		datasourceManager.setDefaultDataSource( datasource );
 		instance.executeSource(
 		    """
 		    result = queryExecute( "SELECT * FROM developers WHERE id = ?", [ 77 ] );
@@ -135,7 +135,7 @@ public class QueryExecuteTest {
 	@DisplayName( "It can execute a query with struct bindings on the default datasource" )
 	@Test
 	public void testStructBindings() {
-		datasourceManager.setDefaultDatasource( datasource );
+		datasourceManager.setDefaultDataSource( datasource );
 		instance.executeSource(
 		    """
 		    result = queryExecute( "SELECT * FROM developers WHERE id = :id", { "id": 77 } );
@@ -154,7 +154,7 @@ public class QueryExecuteTest {
 	@DisplayName( "It throws an exception if the query is missing a named binding" )
 	@Test
 	public void testMissingStructBinding() {
-		datasourceManager.setDefaultDatasource( datasource );
+		datasourceManager.setDefaultDataSource( datasource );
 		BoxRuntimeException e = assertThrows( BoxRuntimeException.class, () -> instance.executeSource(
 		    """
 		    result = queryExecute( "SELECT * FROM developers WHERE id = :id", { "name": "Michael Born" } );
@@ -167,7 +167,7 @@ public class QueryExecuteTest {
 
 	@DisplayName( "It throws an exception if no default datasource is defined and no datasource is specified" )
 	@Test
-	public void testMissingDefaultDatasource() {
+	public void testMissingDefaultDataSource() {
 		BoxRuntimeException e = assertThrows( BoxRuntimeException.class, () -> instance.executeSource(
 		    """
 		    result = queryExecute( "SELECT * FROM developers" );
@@ -181,8 +181,8 @@ public class QueryExecuteTest {
 
 	@DisplayName( "It can execute a query on a named datasource" )
 	@Test
-	public void testNamedDatasource() {
-		datasourceManager.registerDatasource( Key.of( "derby" ), datasource );
+	public void testNamedDataSource() {
+		datasourceManager.registerDataSource( Key.of( "derby" ), datasource );
 		instance.executeSource(
 		    """
 		    result = queryExecute( "SELECT * FROM developers ORDER BY id", [], { "datasource": "derby" } );
@@ -210,7 +210,7 @@ public class QueryExecuteTest {
 
 	@DisplayName( "It throws an exception if the specified datasource is not registered" )
 	@Test
-	public void testMissingNamedDatasource() {
+	public void testMissingNamedDataSource() {
 		BoxRuntimeException e = assertThrows( BoxRuntimeException.class, () -> instance.executeSource(
 		    """
 		    result = queryExecute( "SELECT * FROM developers WHERE id = :id", { "name": "Michael Born" }, { "datasource": "derby" } );
@@ -224,7 +224,7 @@ public class QueryExecuteTest {
 	@DisplayName( "It can return query results as an array" )
 	@Test
 	public void testReturnTypeArray() {
-		datasourceManager.setDefaultDatasource( datasource );
+		datasourceManager.setDefaultDataSource( datasource );
 		instance.executeSource(
 		    """
 		    result = queryExecute( "SELECT * FROM developers ORDER BY id", [], { "returntype": "array" } );
@@ -259,7 +259,7 @@ public class QueryExecuteTest {
 	@DisplayName( "It can return query results as a struct" )
 	@Test
 	public void testReturnTypeStruct() {
-		datasourceManager.setDefaultDatasource( datasource );
+		datasourceManager.setDefaultDataSource( datasource );
 		instance.executeSource(
 		    """
 		    result = queryExecute( "SELECT * FROM developers ORDER BY id", [], { "returntype": "struct", "columnKey": "role" } );
@@ -305,7 +305,7 @@ public class QueryExecuteTest {
 	@DisplayName( "It throws an exception if the returnType is struct but no columnKey is provided" )
 	@Test
 	public void testMissingColumnKey() {
-		datasourceManager.setDefaultDatasource( datasource );
+		datasourceManager.setDefaultDataSource( datasource );
 		BoxRuntimeException e = assertThrows( BoxRuntimeException.class, () -> instance.executeSource(
 		    """
 		    result = queryExecute( "SELECT * FROM developers ORDER BY id", [], { "returnType": "struct" } );
@@ -319,7 +319,7 @@ public class QueryExecuteTest {
 	@DisplayName( "It throws an exception if the returnType is invalid" )
 	@Test
 	public void testInvalidReturnType() {
-		datasourceManager.setDefaultDatasource( datasource );
+		datasourceManager.setDefaultDataSource( datasource );
 		BoxRuntimeException e = assertThrows( BoxRuntimeException.class, () -> instance.executeSource(
 		    """
 		    result = queryExecute( "SELECT * FROM developers ORDER BY id", [], { "returnType": "foobar" } );
@@ -333,7 +333,7 @@ public class QueryExecuteTest {
 	@DisplayName( "It can access the results of a queryExecute call" )
 	@Test
 	public void testResultVariable() {
-		datasourceManager.setDefaultDatasource( datasource );
+		datasourceManager.setDefaultDataSource( datasource );
 		instance.executeSource(
 		    """
 		    result = queryExecute( "SELECT * FROM developers WHERE role = ?", [ 'Developer' ], { "result": "queryResults" } );
@@ -366,7 +366,7 @@ public class QueryExecuteTest {
 
 	@DisplayName( "It can execute a query against an ad-hoc datasource" )
 	@Test
-	public void testAdHocDatasource() {
+	public void testAdHocDataSource() {
 		DatabaseException e = assertThrows( DatabaseException.class, () -> {
 			// @TODO: Use standard datasource struct names
 			instance.executeSource(

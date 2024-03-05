@@ -86,7 +86,7 @@ component{
 		}
 
 		/**
-		 * Datasources can be defined by a module and they will be registered
+		 * DataSources can be defined by a module and they will be registered
 		 * for you in the runtime
 		 */
 		datasources = {
