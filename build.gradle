@@ -162,7 +162,7 @@ shadowJar {
 		attributes 'Description': 'This is the Ortus BoxLang Distribution JAR'
 	}
 	minimize {
-		exclude( dependency( 'org.slf4j:slf4j-jdk14:.*' ) )
+		exclude( dependency( 'ch.qos.logback:logback-classic:.*' ) )
 	}
 }
 
