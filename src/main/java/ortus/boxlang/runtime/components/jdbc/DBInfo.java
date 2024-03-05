@@ -56,7 +56,7 @@ public class DBInfo extends Component {
 		DBNAMES,
 		TABLES,
 		FOREIGNKEYS,
-	    // INDEX,
+		INDEX,
 	    // PROCEDURES,
 		VERSION;
 
@@ -142,12 +142,13 @@ public class DBInfo extends Component {
 				break;
 			case TABLES :
 				result = getTables( datasource, attributes.getAsString( Key.dbname ), attributes.getAsString( Key.pattern ) );
-				// @TODO: Implement remaining types.
 			case FOREIGNKEYS :
 				result = getForeignKeys( datasource, attributes.getAsString( Key.dbname ), attributes.getAsString( Key.table ) );
 				break;
-			// case INDEX :
-			// result = getIndex( context, attributes );
+			case INDEX :
+				result = getIndexes( datasource, attributes.getAsString( Key.dbname ), attributes.getAsString( Key.table ) );
+				break;
+			// @TODO: Implement remaining types.
 			// case PROCEDURES :
 			// result = getProcedures( context );
 		}
@@ -353,6 +354,67 @@ public class DBInfo extends Component {
 						    resultSet.getObject( i )
 						);
 					}
+					result.addRow( row );
+				}
+				if ( result.isEmpty() && ( !databaseMetadata.getTables( null, null, tableName, null ).next() ) ) {
+					throw new DatabaseException( String.format( "Table not found for pattern [%s] ", tableName ) );
+				}
+			}
+			return result;
+		} catch ( SQLException e ) {
+			throw new DatabaseException( "Unable to read foreign key metadata", e );
+		}
+	}
+
+	private Query getIndexes( DataSource datasource, String databaseName, String tableName ) {
+		try ( Connection conn = datasource.getConnection(); ) {
+			Query				result				= new Query();
+			DatabaseMetaData	databaseMetadata	= conn.getMetaData();
+
+			// Lucee compat: Default to the database name set on the connection (provided by the datasource config).
+			if ( databaseName == null ) {
+				databaseName = getDatabaseNameFromConnection( conn );
+			}
+
+			String schema = null;
+			if ( tableName.contains( "." ) ) {
+				String[] parts = tableName.split( "\\." );
+				databaseName	= parts[ 0 ];
+				tableName		= parts[ 1 ];
+			}
+
+			try ( ResultSet resultSet = databaseMetadata.getIndexInfo( databaseName, schema, tableName, false, true ) ) {
+				ResultSetMetaData	resultSetMetaData	= resultSet.getMetaData();
+				int					columnCount			= resultSetMetaData.getColumnCount();
+
+				// The column count starts from 1
+				for ( int i = 1; i <= columnCount; i++ ) {
+					result.addColumn(
+					    Key.of( resultSetMetaData.getColumnLabel( i ) ),
+					    QueryColumnType.fromSQLType( resultSetMetaData.getColumnType( i ) )
+					);
+				}
+
+				while ( resultSet.next() ) {
+					Struct row = new Struct( IStruct.TYPES.LINKED );
+					for ( int i = 1; i <= columnCount; i++ ) {
+						row.put(
+						    Key.of( resultSetMetaData.getColumnLabel( i ) ),
+						    resultSet.getObject( i )
+						);
+					}
+					// type
+					Integer	indexType		= row.getAsInteger( Key.type );
+					String	stringIndexType	= switch ( indexType ) {
+												case 0 -> "Table Statistic";
+												case 1 -> "Clustered Index";
+												case 2 -> "Hashed Index";
+												case 3 -> "Other Index";
+												default -> row.getAsString( Key.type );
+											};
+					row.put( Key.type, stringIndexType );
+
+					// Lucee compat: Lucee actually converts the "CARDINALITY" value to a Double here. Do we care??
 					result.addRow( row );
 				}
 				if ( result.isEmpty() && ( !databaseMetadata.getTables( null, null, tableName, null ).next() ) ) {

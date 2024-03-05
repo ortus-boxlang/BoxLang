@@ -324,4 +324,42 @@ public class DBInfoTest {
 		assertNotNull( testTableRow );
 
 	}
+
+	@DisplayName( "Can get table indices via type=index" )
+	@Test
+	public void testIndexType() {
+		instance.executeSource(
+		    """
+		        cfdbinfo( type='index', table="DEVELOPERS", name='result' )
+		    """,
+		    context );
+		Object theResult = variables.get( result );
+		assertTrue( theResult instanceof Query );
+
+		Query resultQuery = ( Query ) theResult;
+		assertTrue( resultQuery.size() > 0 );
+		Map<Key, QueryColumn> columns = resultQuery.getColumns();
+
+		assertEquals( 13, columns.size() );
+		assertTrue( columns.containsKey( Key.of( "TABLE_CAT" ) ) );
+		assertTrue( columns.containsKey( Key.of( "TABLE_SCHEM" ) ) );
+		assertTrue( columns.containsKey( Key.of( "TABLE_NAME" ) ) );
+		assertTrue( columns.containsKey( Key.of( "NON_UNIQUE" ) ) );
+		assertTrue( columns.containsKey( Key.of( "INDEX_QUALIFIER" ) ) );
+		assertTrue( columns.containsKey( Key.of( "INDEX_NAME" ) ) );
+		assertTrue( columns.containsKey( Key.of( "TYPE" ) ) );
+		assertTrue( columns.containsKey( Key.of( "ORDINAL_POSITION" ) ) );
+		assertTrue( columns.containsKey( Key.of( "COLUMN_NAME" ) ) );
+		assertTrue( columns.containsKey( Key.of( "ASC_OR_DESC" ) ) );
+		assertTrue( columns.containsKey( Key.of( "CARDINALITY" ) ) );
+		assertTrue( columns.containsKey( Key.of( "PAGES" ) ) );
+		assertTrue( columns.containsKey( Key.of( "FILTER_CONDITION" ) ) );
+
+		IStruct testTableRow = resultQuery.stream()
+		    .filter( row -> row.getAsString( Key.of( "COLUMN_NAME" ) ).equals( "ID" ) )
+		    .findFirst()
+		    .orElse( null );
+		assertNotNull( testTableRow );
+
+	}
 }
