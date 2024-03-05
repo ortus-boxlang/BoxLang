@@ -24,6 +24,9 @@ import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.util.Set;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import ortus.boxlang.runtime.components.Attribute;
 import ortus.boxlang.runtime.components.BoxComponent;
 import ortus.boxlang.runtime.components.Component;
@@ -42,6 +45,8 @@ import ortus.boxlang.runtime.types.exceptions.DatabaseException;
 @BoxComponent( allowsBody = false )
 public class DBInfo extends Component {
 
+	Logger log = LoggerFactory.getLogger( DBInfo.class );
+
 	/**
 	 * Enumeration of all possible `type` attribute values.
 	 */
@@ -50,7 +55,7 @@ public class DBInfo extends Component {
 		COLUMNS,
 		DBNAMES,
 		TABLES,
-	    // FOREIGNKEYS,
+		FOREIGNKEYS,
 	    // INDEX,
 	    // PROCEDURES,
 		VERSION;
@@ -138,12 +143,13 @@ public class DBInfo extends Component {
 			case TABLES :
 				result = getTables( datasource, attributes.getAsString( Key.dbname ), attributes.getAsString( Key.pattern ) );
 				// @TODO: Implement remaining types.
-				// case FOREIGNKEYS :
-				// result = getForeignKeys( context, attributes );
-				// case INDEX :
-				// result = getIndex( context, attributes );
-				// case PROCEDURES :
-				// result = getProcedures( context );
+			case FOREIGNKEYS :
+				result = getForeignKeys( datasource, attributes.getAsString( Key.dbname ), attributes.getAsString( Key.table ) );
+				break;
+			// case INDEX :
+			// result = getIndex( context, attributes );
+			// case PROCEDURES :
+			// result = getProcedures( context );
 		}
 		ExpressionInterpreter.setVariable( context, attributes.getAsString( Key._NAME ), result );
 		// @TODO: Return null???
@@ -276,6 +282,11 @@ public class DBInfo extends Component {
 			Query				result				= new Query();
 			DatabaseMetaData	databaseMetadata	= conn.getMetaData();
 
+			// Lucee compat: Default to the database name set on the connection (provided by the datasource config).
+			if ( databaseName == null ) {
+				databaseName = getDatabaseNameFromConnection( conn );
+			}
+
 			try ( ResultSet resultSet = databaseMetadata.getTables( databaseName, null, tableNamePattern, null ) ) {
 				ResultSetMetaData	resultSetMetaData	= resultSet.getMetaData();
 				int					columnCount			= resultSetMetaData.getColumnCount();
@@ -302,6 +313,64 @@ public class DBInfo extends Component {
 			return result;
 		} catch ( SQLException e ) {
 			throw new DatabaseException( "Unable to read column metadata", e );
+		}
+	}
+
+	private Query getForeignKeys( DataSource datasource, String databaseName, String tableName ) {
+		try ( Connection conn = datasource.getConnection(); ) {
+			Query				result				= new Query();
+			DatabaseMetaData	databaseMetadata	= conn.getMetaData();
+
+			// Lucee compat: Default to the database name set on the connection (provided by the datasource config).
+			if ( databaseName == null ) {
+				databaseName = getDatabaseNameFromConnection( conn );
+			}
+
+			String schema = null;
+			if ( tableName.contains( "." ) ) {
+				String[] parts = tableName.split( "\\." );
+				databaseName	= parts[ 0 ];
+				tableName		= parts[ 1 ];
+			}
+
+			try ( ResultSet resultSet = databaseMetadata.getExportedKeys( databaseName, schema, tableName ) ) {
+				ResultSetMetaData	resultSetMetaData	= resultSet.getMetaData();
+				int					columnCount			= resultSetMetaData.getColumnCount();
+
+				// The column count starts from 1
+				for ( int i = 1; i <= columnCount; i++ ) {
+					result.addColumn(
+					    Key.of( resultSetMetaData.getColumnLabel( i ) ),
+					    QueryColumnType.fromSQLType( resultSetMetaData.getColumnType( i ) )
+					);
+				}
+
+				while ( resultSet.next() ) {
+					Struct row = new Struct( IStruct.TYPES.LINKED );
+					for ( int i = 1; i <= columnCount; i++ ) {
+						row.put(
+						    Key.of( resultSetMetaData.getColumnLabel( i ) ),
+						    resultSet.getObject( i )
+						);
+					}
+					result.addRow( row );
+				}
+				if ( result.isEmpty() && ( !databaseMetadata.getTables( null, null, tableName, null ).next() ) ) {
+					throw new DatabaseException( String.format( "Table not found for pattern [%s] ", tableName ) );
+				}
+			}
+			return result;
+		} catch ( SQLException e ) {
+			throw new DatabaseException( "Unable to read column metadata", e );
+		}
+	}
+
+	private String getDatabaseNameFromConnection( Connection conn ) {
+		try {
+			return conn.getCatalog();
+		} catch ( SQLException e ) {
+			log.warn( "Unable to read database name from connection", e );
+			return null;
 		}
 	}
 }

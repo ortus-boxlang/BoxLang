@@ -65,7 +65,9 @@ public class DBInfoTest {
 		    "jdbcUrl", "jdbc:derby:memory:BoxlangDB;create=true"
 		) );
 		datasourceManager.setDefaultDatasource( defaultDatasource );
-		defaultDatasource.execute( "CREATE TABLE developers ( id INTEGER, name VARCHAR(155) )", null );
+		defaultDatasource.execute( "CREATE TABLE developers ( id INTEGER PRIMARY KEY, name VARCHAR(155) )", null );
+		defaultDatasource.execute( "CREATE TABLE projects ( id INTEGER, leadDev INTEGER, CONSTRAINT devID FOREIGN KEY (leadDev) REFERENCES developers(id) )",
+		    null );
 
 		if ( tools.JDBCTestUtils.hasMySQLDriver() ) {
 			Key MySQLDataSourceName = Key.of( "MYSQLDB" );
@@ -221,7 +223,7 @@ public class DBInfoTest {
 		assertTrue( resultQuery.size() > 0 );
 		Map<Key, QueryColumn> columns = resultQuery.getColumns();
 
-		assertTrue( columns.size() == 10 );
+		assertEquals( 10, columns.size() );
 		assertTrue( columns.containsKey( Key.of( "TABLE_CAT" ) ) );
 		assertTrue( columns.containsKey( Key.of( "TABLE_SCHEM" ) ) );
 		assertTrue( columns.containsKey( Key.of( "TABLE_NAME" ) ) );
@@ -282,5 +284,44 @@ public class DBInfoTest {
 		Boolean isDeveloperTable = resultQuery.stream()
 		    .allMatch( row -> row.getAsString( Key.of( "TABLE_NAME" ) ).equals( "DEVELOPERS" ) );
 		assertNotNull( isDeveloperTable );
+	}
+
+	@DisplayName( "Can get foreign keys on a table via type=foreignkeys" )
+	@Test
+	public void testForeignKeysType() {
+		instance.executeSource(
+		    """
+		        cfdbinfo( type='foreignkeys', table="DEVELOPERS", name='result' )
+		    """,
+		    context );
+		Object theResult = variables.get( result );
+		assertTrue( theResult instanceof Query );
+
+		Query resultQuery = ( Query ) theResult;
+		assertTrue( resultQuery.size() > 0 );
+		Map<Key, QueryColumn> columns = resultQuery.getColumns();
+
+		assertEquals( 14, columns.size() );
+		assertTrue( columns.containsKey( Key.of( "PKTABLE_CAT" ) ) );
+		assertTrue( columns.containsKey( Key.of( "PKTABLE_SCHEM" ) ) );
+		assertTrue( columns.containsKey( Key.of( "PKTABLE_NAME" ) ) );
+		assertTrue( columns.containsKey( Key.of( "PKCOLUMN_NAME" ) ) );
+		assertTrue( columns.containsKey( Key.of( "FKTABLE_CAT" ) ) );
+		assertTrue( columns.containsKey( Key.of( "FKTABLE_SCHEM" ) ) );
+		assertTrue( columns.containsKey( Key.of( "FKTABLE_NAME" ) ) );
+		assertTrue( columns.containsKey( Key.of( "FKCOLUMN_NAME" ) ) );
+		assertTrue( columns.containsKey( Key.of( "KEY_SEQ" ) ) );
+		assertTrue( columns.containsKey( Key.of( "UPDATE_RULE" ) ) );
+		assertTrue( columns.containsKey( Key.of( "DELETE_RULE" ) ) );
+		assertTrue( columns.containsKey( Key.of( "FK_NAME" ) ) );
+		assertTrue( columns.containsKey( Key.of( "PK_NAME" ) ) );
+		assertTrue( columns.containsKey( Key.of( "DEFERRABILITY" ) ) );
+
+		IStruct testTableRow = resultQuery.stream()
+		    .filter( row -> row.getAsString( Key.of( "FK_NAME" ) ).equals( "DEVID" ) )
+		    .findFirst()
+		    .orElse( null );
+		assertNotNull( testTableRow );
+
 	}
 }
