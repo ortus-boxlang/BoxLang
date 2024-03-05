@@ -366,7 +366,6 @@ reservedKeyword:
 	| IS
 	| JAVA
 	| LESS
-	| LOCAL
 	| MOD
 	| MESSAGE
 	| NEW

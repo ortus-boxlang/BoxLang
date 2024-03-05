@@ -22,13 +22,12 @@ package ortus.boxlang.runtime.bifs.global.io;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.io.File;
 import java.io.IOException;
-import java.nio.file.FileSystems;
 import java.nio.file.Path;
 
 import org.junit.Ignore;
 import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -55,12 +54,8 @@ public class GetDirectoryFromPathTest {
 	public static void setUp() throws IOException {
 		instance = BoxRuntime.getInstance( true );
 
-		Assumptions.assumeTrue( FileSystems.getDefault().supportedFileAttributeViews().contains( "posix" ),
-		    "The underlying file system is not posix compliant." );
-
 		if ( !FileSystemUtil.exists( testTextFile ) ) {
 			FileSystemUtil.write( testTextFile, "file modified time test!".getBytes( "UTF-8" ), true );
-			FileSystemUtil.setPosixPermissions( testTextFile, "555" );
 		}
 	}
 
@@ -89,7 +84,7 @@ public class GetDirectoryFromPathTest {
 		       """,
 		    context );
 		assertTrue( variables.get( Key.of( "result" ) ) instanceof String );
-		assertEquals( variables.getAsString( Key.of( "result" ) ), Path.of( tmpDirectory ).toAbsolutePath().toString() );
+		assertEquals( variables.getAsString( Key.of( "result" ) ), Path.of( tmpDirectory ).toAbsolutePath().toString() + File.separator );
 	}
 
 }

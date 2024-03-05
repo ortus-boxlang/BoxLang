@@ -28,7 +28,6 @@ import java.nio.file.FileSystems;
 import java.nio.file.Path;
 
 import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -59,12 +58,8 @@ public class FileInfoTest {
 	public static void setUp() throws IOException {
 		instance = BoxRuntime.getInstance( true );
 
-		Assumptions.assumeTrue( FileSystems.getDefault().supportedFileAttributeViews().contains( "posix" ),
-		    "The underlying file system is not posix compliant." );
-
 		if ( !FileSystemUtil.exists( testTextFile ) ) {
 			FileSystemUtil.write( testTextFile, "file modified time test!".getBytes( "UTF-8" ), true );
-			FileSystemUtil.setPosixPermissions( testTextFile, "555" );
 		}
 	}
 
@@ -105,7 +100,9 @@ public class FileInfoTest {
 		assertTrue( result.get( "execute" ) instanceof Boolean );
 		assertTrue( result.containsKey( Key.of( "mode" ) ) );
 		assertTrue( result.get( "mode" ) instanceof String );
-		assertEquals( StringCaster.cast( result.get( "mode" ) ).length(), 3 );
+		if ( FileSystems.getDefault().supportedFileAttributeViews().contains( "posix" ) ) {
+			assertEquals( StringCaster.cast( result.get( "mode" ) ).length(), 3 );
+		}
 		assertTrue( result.containsKey( Key.of( "name" ) ) );
 		assertTrue( result.get( "name" ) instanceof String );
 		assertTrue( result.containsKey( Key.of( "path" ) ) );
@@ -142,7 +139,9 @@ public class FileInfoTest {
 		assertTrue( result.get( "execute" ) instanceof Boolean );
 		assertTrue( result.containsKey( Key.of( "mode" ) ) );
 		assertTrue( result.get( "mode" ) instanceof String );
-		assertEquals( StringCaster.cast( result.get( "mode" ) ).length(), 3 );
+		if ( FileSystems.getDefault().supportedFileAttributeViews().contains( "posix" ) ) {
+			assertEquals( StringCaster.cast( result.get( "mode" ) ).length(), 3 );
+		}
 		assertTrue( result.containsKey( Key.of( "name" ) ) );
 		assertTrue( result.get( "name" ) instanceof String );
 		assertTrue( result.containsKey( Key.of( "path" ) ) );
@@ -180,7 +179,9 @@ public class FileInfoTest {
 		assertTrue( result.get( "execute" ) instanceof Boolean );
 		assertTrue( result.containsKey( Key.of( "mode" ) ) );
 		assertTrue( result.get( "mode" ) instanceof String );
-		assertEquals( StringCaster.cast( result.get( "mode" ) ).length(), 3 );
+		if ( FileSystems.getDefault().supportedFileAttributeViews().contains( "posix" ) ) {
+			assertEquals( StringCaster.cast( result.get( "mode" ) ).length(), 3 );
+		}
 		assertTrue( result.containsKey( Key.of( "name" ) ) );
 		assertTrue( result.get( "name" ) instanceof String );
 		assertTrue( result.containsKey( Key.of( "path" ) ) );

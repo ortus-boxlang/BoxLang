@@ -225,7 +225,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		lambda						= Key.of( "lambda" );
 	public static final Key		language					= Key.of( "language" );
 	public static final Key		leaveIndex					= Key.of( "leaveIndex" );
-	public static final Key		len							= Key.of( "lem" );
+	public static final Key		len							= Key.of( "len" );
 	public static final Key		length						= Key.of( "length" );
 	public static final Key		lexical						= Key.of( "lexical" );
 	public static final Key		line						= Key.of( "line" );
