@@ -108,4 +108,35 @@ public class ListValueCountTest {
 		assertThat( variables.getAsLong( result ) ).isEqualTo( 2l );
 	}
 
+	@DisplayName( "Tests the BIF listValueCountNoCase" )
+	@Test
+	public void testBIFListValueCountNoCase() {
+		instance.executeSource(
+		    """
+		    	letters = "a,B,b,c,d,e";
+		    	result = listValueCount( letters, "b" );
+		    """,
+		    context );
+		assertThat( variables.getAsLong( result ) ).isEqualTo( 1l );
+		instance.executeSource(
+		    """
+		    	letters = "a,B,b,c,d,e";
+		    	result = listValueCountNoCase( letters, "b" );
+		    """,
+		    context );
+		assertThat( variables.getAsLong( result ) ).isEqualTo( 2l );
+	}
+
+	@DisplayName( "Tests the Member function list.ValueCountNoCase" )
+	@Test
+	public void testListValueCountNoCaseMember() {
+		instance.executeSource(
+		    """
+		    	letters = "a,B,b,c,d,e";
+		    	result = letters.listValueCountNoCase( "b" );
+		    """,
+		    context );
+		assertThat( variables.getAsLong( result ) ).isEqualTo( 2l );
+	}
+
 }

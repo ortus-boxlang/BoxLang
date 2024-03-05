@@ -19,10 +19,13 @@
 
 package ortus.boxlang.runtime.bifs.global.list;
 
+import java.util.function.Predicate;
+
 import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
 import ortus.boxlang.runtime.bifs.BoxMember;
 import ortus.boxlang.runtime.context.IBoxContext;
+import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
@@ -30,9 +33,13 @@ import ortus.boxlang.runtime.types.BoxLangType;
 import ortus.boxlang.runtime.types.util.ListUtil;
 
 @BoxBIF
+@BoxBIF( alias = "ListValueCountNoCase" )
 @BoxMember( type = BoxLangType.STRING, name = "ListValueCount" )
+@BoxMember( type = BoxLangType.STRING, name = "ListValueCountNoCase" )
 
 public class ListValueCount extends BIF {
+
+	private static final Key bifMethodNoCase = Key.of( "ListValueCountNoCase" );
 
 	/**
 	 * Constructor
@@ -62,12 +69,21 @@ public class ListValueCount extends BIF {
 	 * @argument.includeEmptyFields Whether to include empty fields in the search
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
+		Key					bifMethodKey	= arguments.getAsKey( BIF.__functionName );
+		String				comparator		= bifMethodKey.equals( bifMethodNoCase )
+		    ? arguments.getAsString( Key.value ).toLowerCase()
+		    : arguments.getAsString( Key.value );
+
+		Predicate<Object>	test			= item -> bifMethodKey.equals( bifMethodNoCase )
+		    ? StringCaster.cast( item ).toLowerCase().equals( comparator )
+		    : StringCaster.cast( item ).equals( comparator );
+
 		return ListUtil.asList(
 		    arguments.getAsString( Key.list ),
 		    arguments.getAsString( Key.delimiter ),
 		    arguments.getAsBoolean( Key.includeEmptyFields ),
 		    true
-		).stream().filter( item -> item.equals( arguments.getAsString( Key.value ) ) ).count();
+		).stream().filter( test ).count();
 	}
 
 }
