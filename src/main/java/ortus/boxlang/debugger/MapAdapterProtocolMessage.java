@@ -21,15 +21,18 @@ public class MapAdapterProtocolMessage implements IAdapterProtocolMessage {
 	}
 
 	@Override
+	public String getType() {
+		return ( String ) this.messageData.get( "type" );
+	}
+
+	@Override
 	public String getCommand() {
-		// TODO Auto-generated method stub
-		throw new UnsupportedOperationException( "Unimplemented method 'getCommand'" );
+		return ( String ) this.messageData.get( "command" );
 	}
 
 	@Override
 	public int getSeq() {
-		// TODO Auto-generated method stub
-		throw new UnsupportedOperationException( "Unimplemented method 'getSeq'" );
+		return ( int ) this.messageData.get( "seq" );
 	}
 
 	@Override

@@ -39,6 +39,10 @@ public abstract class AbstractRequest implements IAdapterProtocolMessage {
 		return this.messageData;
 	}
 
+	public String getType() {
+		return "request";
+	}
+
 	/**
 	 * The command for the debugger to execute
 	 */

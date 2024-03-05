@@ -148,7 +148,7 @@ public class IntegrationTest {
 	@Test
 	public void testBreakpointEvent() {
 
-		List<TriConsumer<byte[], ByteArrayInputStream, ByteArrayOutputStream>> steps = Arrays.asList(
+		List<TriConsumer<byte[], ByteArrayInputStream, ByteArrayOutputStream>>	steps			= Arrays.asList(
 		    sendMessageStep( DebugMessages.getInitRequest( 1 ) ),
 		    waitForMessage( "response", "initialize" ),
 		    waitForMessage( "event", "initialized" ),
@@ -161,17 +161,17 @@ public class IntegrationTest {
 		    waitForMessage( "event", "stopped", 3000 )
 		);
 
-		try {
-			List<IAdapterProtocolMessage>	messages		= runDebugger( steps );
+		List<IAdapterProtocolMessage>											messages		= runDebugger( steps );
 
-			Map<String, Object>				debugMessage	= messages.get( 6 ).getRawMessageData();
-			assertThat( debugMessage.get( "type" ) ).isEqualTo( "event" );
-			assertThat( ( ( Map ) debugMessage.get( "body" ) ).get( "reason" ) ).isEqualTo( "breakpoint" );
-			assertThat( ( ( List<Integer> ) ( ( Map ) debugMessage.get( "body" ) ).get( "hitBreakpointIds" ) ).get( 0 ) ).isEqualTo( 0 );
-		} catch ( Exception e ) {
-			e.printStackTrace();
-			assertThat( false ).isEqualTo( true );
-		}
+		Map<String, Object>														debugMessage	= messages.stream().filter( ( message ) -> {
+																									return DebugMessages.getMessageMatcher( "event", "stopped" )
+																									    .test( message.getRawMessageData() );
+																								} )
+		    .findFirst().get().getRawMessageData();
+
+		assertThat( debugMessage.get( "type" ) ).isEqualTo( "event" );
+		assertThat( ( ( Map ) debugMessage.get( "body" ) ).get( "reason" ) ).isEqualTo( "breakpoint" );
+		assertThat( ( ( List<Integer> ) ( ( Map ) debugMessage.get( "body" ) ).get( "hitBreakpointIds" ) ).get( 0 ) ).isEqualTo( 0 );
 	}
 
 }

@@ -18,6 +18,15 @@ import ortus.boxlang.runtime.types.util.JSONUtil;
 
 public class DebugMessages {
 
+	public static Predicate<Map<String, Object>> getMessageMatcher( String type, String name ) {
+		return ( data ) -> {
+			String key = type == "event" ? "event" : "command";
+
+			return ( ( String ) data.get( "type" ) ).equalsIgnoreCase( type )
+			    && ( ( String ) data.get( key ) ).equalsIgnoreCase( name );
+		};
+	}
+
 	public static interface TriConsumer<A, B, C> {
 
 		public void accept( A a, B b, C c );

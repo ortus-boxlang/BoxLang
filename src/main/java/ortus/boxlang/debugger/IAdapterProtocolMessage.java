@@ -9,6 +9,11 @@ public interface IAdapterProtocolMessage {
 	public Map<String, Object> getRawMessageData();
 
 	/**
+	 * @return The type of message event | request | request
+	 */
+	public String getType();
+
+	/**
 	 * @return The command that was issued by the debug tool
 	 */
 	public String getCommand();
