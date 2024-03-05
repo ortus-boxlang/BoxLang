@@ -129,29 +129,21 @@ public class DBInfo extends Component {
 				);
 			}
 		}
-		Query result = null;
-		switch ( DBInfoType.fromString( attributes.getAsString( Key.type ) ) ) {
-			case DBNAMES :
-				result = getDbNames( datasource );
-				break;
-			case VERSION :
-				result = getVersion( datasource );
-				break;
-			case COLUMNS :
-				result = getColumnsForTable( datasource, attributes.getAsString( Key.table ) );
-				break;
-			case TABLES :
-				result = getTables( datasource, attributes.getAsString( Key.dbname ), attributes.getAsString( Key.pattern ) );
-			case FOREIGNKEYS :
-				result = getForeignKeys( datasource, attributes.getAsString( Key.dbname ), attributes.getAsString( Key.table ) );
-				break;
-			case INDEX :
-				result = getIndexes( datasource, attributes.getAsString( Key.dbname ), attributes.getAsString( Key.table ) );
-				break;
-			// @TODO: Implement remaining types.
-			// case PROCEDURES :
-			// result = getProcedures( context );
-		}
+		String		databaseName	= attributes.getAsString( Key.dbname );
+		String		tableName		= attributes.getAsString( Key.table );
+
+		DBInfoType	type			= DBInfoType.fromString( attributes.getAsString( Key.type ) );
+		Query		result			= ( switch ( type ) {
+										case DBNAMES -> getDbNames( datasource );
+										case VERSION -> getVersion( datasource );
+										case COLUMNS -> getColumnsForTable( datasource, databaseName, tableName );
+										case TABLES -> getTables( datasource, databaseName, attributes.getAsString( Key.pattern ) );
+										case FOREIGNKEYS -> getForeignKeys( datasource, databaseName, tableName );
+										case INDEX -> getIndexes( datasource, databaseName, tableName );
+										// @TODO: Implement remaining types.
+										// case PROCEDURES :
+										// result = getProcedures( context );
+									} );
 		ExpressionInterpreter.setVariable( context, attributes.getAsString( Key._NAME ), result );
 		// @TODO: Return null???
 		return DEFAULT_RETURN;
@@ -227,16 +219,31 @@ public class DBInfo extends Component {
 	 *
 	 * @TODO: Add support for Lucee's custom foreign key and primary key fields.
 	 *
-	 * @param datasource Datasource on which the table resides.
+	 * @param datasource   Datasource on which the table resides.
+	 * @param databaseName Name of the database to check for tables. If not provided, the database name from the connection will be used.
+	 * @param tableName    Optional pattern to filter table names by. Can use wildcards or any `LIKE`-compatible pattern such as `tbl_%`. Can use
+	 *                     `schemaName.tableName` syntax to additionally filter by schema.
 	 *
 	 * @return Query object where each row represents a column on the given table.
 	 */
-	private Query getColumnsForTable( DataSource datasource, String tableName ) {
+	private Query getColumnsForTable( DataSource datasource, String databaseName, String tableName ) {
 		try ( Connection conn = datasource.getConnection(); ) {
 			Query				result				= new Query();
 			DatabaseMetaData	databaseMetadata	= conn.getMetaData();
 
-			try ( ResultSet resultSet = databaseMetadata.getColumns( null, null, tableName, null ) ) {
+			// Lucee compat: Default to the database name set on the connection (provided by the datasource config).
+			if ( databaseName == null ) {
+				databaseName = getDatabaseNameFromConnection( conn );
+			}
+
+			String schema = null;
+			if ( tableName.contains( "." ) ) {
+				String[] parts = tableName.split( "\\." );
+				schema		= parts[ 0 ];
+				tableName	= parts[ 1 ];
+			}
+
+			try ( ResultSet resultSet = databaseMetadata.getColumns( databaseName, schema, tableName, null ) ) {
 				ResultSetMetaData	resultSetMetaData	= resultSet.getMetaData();
 				int					columnCount			= resultSetMetaData.getColumnCount();
 
@@ -278,7 +285,17 @@ public class DBInfo extends Component {
 		}
 	}
 
-	private Query getTables( DataSource datasource, String databaseName, String tableNamePattern ) {
+	/**
+	 * Retrieve table metadata, optionally filtering by a table name LIKE pattern.
+	 *
+	 * @param datasource   Datasource on which the table resides.
+	 * @param databaseName Name of the database to check for tables. If not provided, the database name from the connection will be used.
+	 * @param tableName    Optional pattern to filter table names by. Can use wildcards or any `LIKE`-compatible pattern such as `tbl_%`. Can use
+	 *                     `schemaName.tableName` syntax to additionally filter by schema.
+	 *
+	 * @return Query object where each row represents a table in the provided database.
+	 */
+	private Query getTables( DataSource datasource, String databaseName, String tableName ) {
 		try ( Connection conn = datasource.getConnection(); ) {
 			Query				result				= new Query();
 			DatabaseMetaData	databaseMetadata	= conn.getMetaData();
@@ -288,7 +305,14 @@ public class DBInfo extends Component {
 				databaseName = getDatabaseNameFromConnection( conn );
 			}
 
-			try ( ResultSet resultSet = databaseMetadata.getTables( databaseName, null, tableNamePattern, null ) ) {
+			String schema = null;
+			if ( tableName.contains( "." ) ) {
+				String[] parts = tableName.split( "\\." );
+				schema		= parts[ 0 ];
+				tableName	= parts[ 1 ];
+			}
+
+			try ( ResultSet resultSet = databaseMetadata.getTables( databaseName, schema, tableName, null ) ) {
 				ResultSetMetaData	resultSetMetaData	= resultSet.getMetaData();
 				int					columnCount			= resultSetMetaData.getColumnCount();
 
@@ -317,6 +341,15 @@ public class DBInfo extends Component {
 		}
 	}
 
+	/**
+	 * Retrieve foreign keys referencing the specified table from the specified (or datasource-configured) database.
+	 *
+	 * @param datasource   Datasource to connect on.
+	 * @param databaseName Name of the database to filter by. If not provided, the database name from the connection will be used.
+	 * @param tableName    Table name on which to retrieve foreign keys. Can use `schemaName.tableName` syntax to additionally filter by schema.
+	 *
+	 * @return Query object where each row represents a foreign key on the specified table.
+	 */
 	private Query getForeignKeys( DataSource datasource, String databaseName, String tableName ) {
 		try ( Connection conn = datasource.getConnection(); ) {
 			Query				result				= new Query();
@@ -330,8 +363,8 @@ public class DBInfo extends Component {
 			String schema = null;
 			if ( tableName.contains( "." ) ) {
 				String[] parts = tableName.split( "\\." );
-				databaseName	= parts[ 0 ];
-				tableName		= parts[ 1 ];
+				schema		= parts[ 0 ];
+				tableName	= parts[ 1 ];
 			}
 
 			try ( ResultSet resultSet = databaseMetadata.getExportedKeys( databaseName, schema, tableName ) ) {
@@ -366,6 +399,15 @@ public class DBInfo extends Component {
 		}
 	}
 
+	/**
+	 * Retrieve indices on the specified table from the specified (or datasource-configured) database.
+	 *
+	 * @param datasource   Datasource to connect on.
+	 * @param databaseName Name of the database to filter by. If not provided, the database name from the connection will be used.
+	 * @param tableName    Table name on which to retrieve indices. Can use `schemaName.tableName` syntax to additionally filter by schema.
+	 *
+	 * @return Query object where each row represents an index on the specified table.
+	 */
 	private Query getIndexes( DataSource datasource, String databaseName, String tableName ) {
 		try ( Connection conn = datasource.getConnection(); ) {
 			Query				result				= new Query();
@@ -379,8 +421,8 @@ public class DBInfo extends Component {
 			String schema = null;
 			if ( tableName.contains( "." ) ) {
 				String[] parts = tableName.split( "\\." );
-				databaseName	= parts[ 0 ];
-				tableName		= parts[ 1 ];
+				schema		= parts[ 0 ];
+				tableName	= parts[ 1 ];
 			}
 
 			try ( ResultSet resultSet = databaseMetadata.getIndexInfo( databaseName, schema, tableName, false, true ) ) {
