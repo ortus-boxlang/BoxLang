@@ -46,95 +46,12 @@ public class BoxScopeTransformer extends AbstractTransformer {
 											}
 										};
 		String				template	= "";
-		if ( "local".equalsIgnoreCase( scope.getName() ) ) {
-			template = "${contextName}.getScopeNearby( LocalScope.name )";
-		} else if ( "variables".equalsIgnoreCase( scope.getName() ) ) {
+		if ( "variables".equalsIgnoreCase( scope.getName() ) ) {
 			template = "${contextName}.getScopeNearby( VariablesScope.name )";
 		} else if ( "request".equalsIgnoreCase( scope.getName() ) ) {
 			template = "${contextName}.getScopeNearby( RequestScope.name )";
 		} else if ( "server".equalsIgnoreCase( scope.getName() ) ) {
 			template = "${contextName}.getScopeNearby( ServerScope.name )";
-		} else if ( "arguments".equalsIgnoreCase( scope.getName() ) ) {
-			template = "${contextName}.getScopeNearby( ArgumentsScope.name )";
-		} else if ( "application".equalsIgnoreCase( scope.getName() ) ) {
-			template = "${contextName}.getScopeNearby( ApplicationScope.name )";
-		} else if ( "session".equalsIgnoreCase( scope.getName() ) ) {
-			template = "${contextName}.getScopeNearby( SessionScope.name )";
-		} else if ( "url".equalsIgnoreCase( scope.getName() ) ) {
-			template = "${contextName}.getScopeNearby( URLScope.name )";
-		} else if ( "form".equalsIgnoreCase( scope.getName() ) ) {
-			template = "${contextName}.getScopeNearby( FormScope.name )";
-		} else if ( "cgi".equalsIgnoreCase( scope.getName() ) ) {
-			template = "${contextName}.getScopeNearby( CGIScope.name )";
-		} else if ( "cookie".equalsIgnoreCase( scope.getName() ) ) {
-			template = "${contextName}.getScopeNearby( CookieScope.name )";
-		} else if ( "thread".equalsIgnoreCase( scope.getName() ) ) {
-			// TODO: If this code is not in a thread, this needs to not be a scope, but just a normal variable.
-			// Perhaps do a scope search for a "thread" variable and return that instead?
-			template = "${contextName}.getScopeNearby( ThreadScope.name )";
-		} else if ( "this".equalsIgnoreCase( scope.getName() ) ) {
-
-	// @formatter:off
-			template = """
-					// using a switch so I can wrap up logic that possibly thrown an exception as an expression.
-					( switch ( 1 ) {
-						case 1 -> {
-							Object javaIsStupid = ${contextName};
-							if( javaIsStupid instanceof ClassBoxContext ) {
-								ClassBoxContext bc = (ClassBoxContext) javaIsStupid;
-								yield bc.getThisClass();
-							} else if(javaIsStupid instanceof FunctionBoxContext ) {
-								FunctionBoxContext fc = (FunctionBoxContext) javaIsStupid;
-								if( fc.isInClass() ) {
-									yield fc.getThisClass().getBottomClass();
-								} else {
-									throw new BoxRuntimeException( "Cannot get [this] from the current context because this function is not executing in a class." );
-								}
-							} else {
-								throw new BoxRuntimeException( "Cannot get [this] from the current context" );
-							}
-						}
-						default -> throw new BoxRuntimeException( "This code can never be run, but Java demands it" );
-					} )
-				""";
-			// @formatter:on
-
-		} else if ( "super".equalsIgnoreCase( scope.getName() ) ) {
-
-	// @formatter:off
-			template = """
-				// using a switch so I can wrap up logic that possibly thrown an exception as an expression.
-				( switch ( 1 ) {
-					case 1 -> {
-						Object javaIsStupid = ${contextName};
-						if( javaIsStupid instanceof ClassBoxContext ) {
-							ClassBoxContext bc = (ClassBoxContext) javaIsStupid;
-							if( bc.getThisClass().getSuper() != null ) {
-								yield bc.getThisClass().getSuper();
-							} else {
-								throw new BoxRuntimeException( "Cannot get [super] from the current context because this class does not extend another class." );
-							}
-						} else if( ${contextName} instanceof FunctionBoxContext ) {
-							FunctionBoxContext fc = (FunctionBoxContext) ${contextName};
-							if( fc.isInClass() ) {
-								if( fc.getThisClass().getSuper() != null ) {
-									yield fc.getThisClass().getSuper();
-								} else {
-									throw new BoxRuntimeException( "Cannot get [super] from the current context because this class does not extend another class." );
-								}
-							} else {
-								throw new BoxRuntimeException( "Cannot get [super] from the current context because this function is not executing in a class." );
-							}
-						} else {
-							throw new BoxRuntimeException( "Cannot get [super] from the current context" );
-						}
-					}
-					default -> throw new BoxRuntimeException( "This code can never be run, but Java demands it" );
-
-				} )
-				""";
-				// @formatter:on
-
 		} else {
 			throw new IllegalStateException( "Scope transformation not implemented: " + scope.getName() );
 		}

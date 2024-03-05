@@ -648,17 +648,17 @@ public class BaseBoxContext implements IBoxContext {
 			for ( int i = queries.length - 1; i >= 0; i-- ) {
 				Query query = queries[ i ];
 				if ( key.equals( Key.recordCount ) ) {
-					return new ScopeSearchResult( null, query.size() );
+					return new ScopeSearchResult( null, query.size(), key );
 				}
 				if ( key.equals( Key.currentRow ) ) {
-					return new ScopeSearchResult( null, queryLoops.get( query ) + 1 );
+					return new ScopeSearchResult( null, queryLoops.get( query ) + 1, key );
 				}
 				if ( key.equals( Key.columnList ) ) {
-					return new ScopeSearchResult( null, query.getColumnList() );
+					return new ScopeSearchResult( null, query.getColumnList(), key );
 				}
 				if ( query.hasColumn( key ) ) {
 					// TODO: create query scope wrapper for edge cases
-					return new ScopeSearchResult( null, query.getCell( key, queryLoops.get( query ) ) );
+					return new ScopeSearchResult( null, query.getCell( key, queryLoops.get( query ) ), key );
 				}
 			}
 		}

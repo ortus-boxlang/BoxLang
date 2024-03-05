@@ -416,23 +416,9 @@ reservedKeyword:
 
 // ANY NEW LEXER RULES IN DEFAULT MODE FOR WORDS NEED ADDED HERE
 
-// Known scope names. TODO: Should the core parser "know" about scopes in modules that may not be installed?
-scope:
-	APPLICATION
-	| ARGUMENTS
-	| LOCAL
-	| REQUEST
-	| VARIABLES
-	| THIS
-	| SUPER
-	| CGI
-	| THREAD
-	| SESSION
-	| COOKIE
-	| URL
-	| FORM
-	| SERVER;
-//  TODO add additional known scopes
+// These are ONLY the scopes that always exist and never go away. All other scopes that may or may
+// not exist at runtime, are handled dynamically in the runtime.
+scope: REQUEST | VARIABLES | SERVER;
 
 /*
  ```

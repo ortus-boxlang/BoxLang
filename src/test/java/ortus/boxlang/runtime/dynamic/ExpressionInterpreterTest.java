@@ -23,10 +23,18 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
+import ortus.boxlang.runtime.context.FunctionBoxContext;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
+import ortus.boxlang.runtime.scopes.IScope;
+import ortus.boxlang.runtime.scopes.Key;
+import ortus.boxlang.runtime.scopes.LocalScope;
 import ortus.boxlang.runtime.scopes.VariablesScope;
+import ortus.boxlang.runtime.types.Argument;
+import ortus.boxlang.runtime.types.IStruct;
+import ortus.boxlang.runtime.types.SampleUDF;
 import ortus.boxlang.runtime.types.Struct;
+import ortus.boxlang.runtime.types.UDF;
 import ortus.boxlang.runtime.types.exceptions.ExpressionException;
 import ortus.boxlang.runtime.types.exceptions.KeyNotFoundException;
 
@@ -46,6 +54,15 @@ public class ExpressionInterpreterTest {
 	void testItCanGetAScopedVar() {
 		context.getScopeNearby( VariablesScope.name ).put( "brad", "Wood" );
 		Object result = ExpressionInterpreter.getVariable( context, "variables.brad", false );
+		assertThat( result ).isEqualTo( "Wood" );
+	}
+
+	@DisplayName( "It can get a scoped variable2" )
+	@Test
+	void testItCanGetAScopedVar2() {
+		IBoxContext fContext = new FunctionBoxContext( context, new SampleUDF( UDF.Access.PUBLIC, Key.of( "foo" ), "any", new Argument[] {}, null ) );
+		fContext.getScopeNearby( LocalScope.name ).put( "brad", "Wood" );
+		Object result = ExpressionInterpreter.getVariable( fContext, "local.brad", false );
 		assertThat( result ).isEqualTo( "Wood" );
 	}
 
@@ -79,6 +96,43 @@ public class ExpressionInterpreterTest {
 		assertThrows( ExpressionException.class, () -> ExpressionInterpreter.getVariable( context, ".foo", false ) );
 		assertThrows( ExpressionException.class, () -> ExpressionInterpreter.getVariable( context, "foo.", false ) );
 		assertThrows( KeyNotFoundException.class, () -> ExpressionInterpreter.getVariable( context, "does.not.exist", false ) );
+	}
+
+	@DisplayName( "It can set a scoped variable" )
+	@Test
+	void testItCanSetAScopedVar() {
+		Object result = ExpressionInterpreter.setVariable( context, "variables.brad", "Wood" );
+		assertThat( result ).isEqualTo( "Wood" );
+		assertThat( context.getScopeNearby( VariablesScope.name ).get( "brad" ) ).isEqualTo( "Wood" );
+	}
+
+	@DisplayName( "It can get a scoped variable2" )
+	@Test
+	void testItCanSetAScopedVar2() {
+		IBoxContext	fContext	= new FunctionBoxContext( context, new SampleUDF( UDF.Access.PUBLIC, Key.of( "foo" ), "any", new Argument[] {}, null ) );
+		Object		result		= ExpressionInterpreter.setVariable( fContext, "local.brad", "Wood" );
+		assertThat( result ).isEqualTo( "Wood" );
+		assertThat( fContext.getScopeNearby( LocalScope.name ).get( "brad" ) ).isEqualTo( "Wood" );
+	}
+
+	@DisplayName( "It can set an unscoped variable" )
+	@Test
+	void testItCanSetAnUnscopedVar() {
+		Object result = ExpressionInterpreter.setVariable( context, "brad", "Wood" );
+		assertThat( result ).isEqualTo( "Wood" );
+		assertThat( context.getScopeNearby( VariablesScope.name ).get( "brad" ) ).isEqualTo( "Wood" );
+	}
+
+	@DisplayName( "It can get a deep variable" )
+	@Test
+	void testItCanSetADeepVar() {
+		Object result = ExpressionInterpreter.setVariable( context, "foo.bar.baz", "bum" );
+		assertThat( result ).isEqualTo( "bum" );
+		IScope variables = context.getScopeNearby( VariablesScope.name );
+		assertThat( variables.get( "foo" ) ).isInstanceOf( IStruct.class );
+		assertThat( variables.getAsStruct( Key.of( "foo" ) ).get( "bar" ) ).isInstanceOf( IStruct.class );
+		assertThat( variables.getAsStruct( Key.of( "foo" ) ).getAsStruct( Key.of( "bar" ) ) ).isInstanceOf( IStruct.class );
+		assertThat( variables.getAsStruct( Key.of( "foo" ) ).getAsStruct( Key.of( "bar" ) ).get( "baz" ) ).isEqualTo( "bum" );
 	}
 
 }

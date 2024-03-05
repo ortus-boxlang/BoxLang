@@ -24,6 +24,7 @@ import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.LocalScope;
+import ortus.boxlang.runtime.scopes.ThisScope;
 import ortus.boxlang.runtime.scopes.VariablesScope;
 import ortus.boxlang.runtime.types.Function;
 import ortus.boxlang.runtime.types.IStruct;
@@ -200,18 +201,34 @@ public class FunctionBoxContext extends BaseBoxContext {
 	@Override
 	public ScopeSearchResult scopeFindNearby( Key key, IScope defaultScope, boolean shallow ) {
 
+		if ( key.equals( localScope.getName() ) ) {
+			return new ScopeSearchResult( localScope, localScope, key, true );
+		}
+
+		if ( key.equals( argumentsScope.getName() ) ) {
+			return new ScopeSearchResult( argumentsScope, argumentsScope, key, true );
+		}
+
+		if ( key.equals( ThisScope.name ) && isInClass() ) {
+			return new ScopeSearchResult( getThisClass().getBottomClass(), getThisClass().getBottomClass(), key, true );
+		}
+
+		if ( key.equals( Key._super ) && getThisClass().getSuper() != null ) {
+			return new ScopeSearchResult( getThisClass().getSuper(), getThisClass().getSuper(), key, true );
+		}
+
 		Object result = localScope.getRaw( key );
 		// Null means not found
 		if ( result != null ) {
 			// Unwrap the value now in case it was really actually null for real
-			return new ScopeSearchResult( localScope, Struct.unWrapNull( result ) );
+			return new ScopeSearchResult( localScope, Struct.unWrapNull( result ), key );
 		}
 
 		result = argumentsScope.getRaw( key );
 		// Null means not found
 		if ( result != null ) {
 			// Unwrap the value now in case it was really actually null for real
-			return new ScopeSearchResult( argumentsScope, Struct.unWrapNull( result ) );
+			return new ScopeSearchResult( argumentsScope, Struct.unWrapNull( result ), key );
 		}
 
 		// In query loop?
@@ -228,7 +245,7 @@ public class FunctionBoxContext extends BaseBoxContext {
 			// Null means not found
 			if ( result != null ) {
 				// Unwrap the value now in case it was really actually null for real
-				return new ScopeSearchResult( classVariablesScope, Struct.unWrapNull( result ) );
+				return new ScopeSearchResult( classVariablesScope, Struct.unWrapNull( result ), key );
 			}
 
 			if ( shallow ) {

@@ -423,6 +423,18 @@ public class OperatorsTest {
 
 		instance.executeSource(
 		    """
+		    function foo(){
+		    	local.result = 5;
+		    	local.result += 5;
+		    	return result;
+		    }
+		    result = foo();
+		       """,
+		    context );
+		assertThat( variables.get( resultKey ) ).isEqualTo( 10 );
+
+		instance.executeSource(
+		    """
 		    result = 5;
 		    variables.result += 5;
 		    """,

@@ -46,6 +46,7 @@ public class Key implements Comparable<Key>, Serializable {
 
 	// Global Dictionary
 	public static final Key		__functionName				= Key.of( "__functionName" );
+	public static final Key		_super						= Key.of( "super" );
 	public static final Key		enableOutputOnly			= Key.of( "enableOutputOnly" );
 	public static final Key		showDebugOutput				= Key.of( "showDebugOutput" );
 	public static final Key		__isMemberExecution			= Key.of( "__isMemberExecution" );

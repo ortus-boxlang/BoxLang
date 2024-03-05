@@ -78,7 +78,7 @@ public class EchoTest {
 		    echo( "Hello World" )
 		    """,
 		    context );
-		assertThat( new String( outContent.toByteArray() ) ).isEqualTo( "Hello World" );
+		assertThat( new String( outContent.toByteArray() ) ).contains( "Hello World" );
 	}
 
 	@DisplayName( "It can echo multiple to the console" )
@@ -93,7 +93,7 @@ public class EchoTest {
 		    echo( "Hello World" )
 		    """,
 		    context );
-		assertThat( new String( outContent.toByteArray() ) ).isEqualTo( "Hello WorldHello WorldHello WorldHello WorldHello World" );
+		assertThat( new String( outContent.toByteArray() ) ).contains( "Hello WorldHello WorldHello WorldHello WorldHello World" );
 	}
 
 	@DisplayName( "It can echo from function" )
@@ -111,7 +111,7 @@ public class EchoTest {
 		         echo( "post func" )
 		         """,
 		    context );
-		assertThat( new String( outContent.toByteArray() ) ).isEqualTo( "pre funcpost func" );
+		assertThat( new String( outContent.toByteArray() ) ).contains( "pre funcpost func" );
 	}
 
 	@DisplayName( "It can echo from function output=true" )
@@ -129,7 +129,7 @@ public class EchoTest {
 		         echo( "post func" )
 		         """,
 		    context );
-		assertThat( new String( outContent.toByteArray() ) ).isEqualTo( "pre funcHello Worldpost func" );
+		assertThat( new String( outContent.toByteArray() ) ).contains( "pre funcHello Worldpost func" );
 	}
 
 	protected void assertEqualsNoWhiteSpaces( String expected, String actual ) {

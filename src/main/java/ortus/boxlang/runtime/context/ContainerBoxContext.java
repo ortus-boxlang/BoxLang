@@ -96,7 +96,7 @@ public class ContainerBoxContext extends BaseBoxContext {
 		// Null means not found
 		if ( result != null ) {
 			// Unwrap the value now in case it was really actually null for real
-			return new ScopeSearchResult( variablesScope, Struct.unWrapNull( result ) );
+			return new ScopeSearchResult( variablesScope, Struct.unWrapNull( result ), key );
 		}
 
 		if ( shallow ) {

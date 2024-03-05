@@ -203,42 +203,43 @@ public class ClassTest {
 
 		IClassRunnable	cfc			= ( IClassRunnable ) DynamicObject.of( RunnableLoader.getInstance().loadClass(
 		    """
-		                  import foo;
-		         import java.lang.System;
+		                    import foo;
+		           import java.lang.System;
 
-		               /**
-		                * This is my class description
-		                *
-		                * @brad wood
-		                * @luis
-		                */
-		                  @foo "bar"
-		                  component  implements="Luis,Jorge" singleton gavin="pickin" inject {
-		                  	variables.setup=true;
-		    	System.out.println( "word" );
-		    	request.foo="bar";
-		    isInitted = false;
-		    println( "current template is " & getCurrentTemplatePath() );
-		    	printLn( foo() )
-		                  		function init() {
-		       				isInitted = true;
-		       		}
-		                     function foo() {
-		             		return "I work! #bar()# #variables.setup# #setup# #request.foo# #isInitted#";
-		             	}
-		           private function bar() {
-		           	return "whee";
-		           }
-		        function getThis() {
-		        return this;
-		        }
-		        function runThisFoo() {
-		        return this.foo();
-		        }
+		                 /**
+		                  * This is my class description
+		                  *
+		                  * @brad wood
+		                  * @luis
+		                  */
+		                    @foo "bar"
+		                    component  implements="Luis,Jorge" singleton gavin="pickin" inject {
+		                    	variables.setup=true;
+		      	System.out.println( "word" );
+		      	request.foo="bar";
+		    println( request.asString())
+		      isInitted = false;
+		      println( "current template is " & getCurrentTemplatePath() );
+		      	printLn( foo() )
+		                    		function init() {
+		         				isInitted = true;
+		         		}
+		                       function foo() {
+		               		return "I work! #bar()# #variables.setup# #setup# #request.foo# #isInitted#";
+		               	}
+		             private function bar() {
+		             	return "whee";
 		             }
+		          function getThis() {
+		          return this;
+		          }
+		          function runThisFoo() {
+		          return this.foo();
+		          }
+		               }
 
 
-		                    """, context, BoxScriptType.CFSCRIPT ) ).invokeConstructor( context ).getTargetInstance();
+		                      """, context, BoxScriptType.CFSCRIPT ) ).invokeConstructor( context ).getTargetInstance();
 
 		// execute public method
 		Object			funcResult	= cfc.dereferenceAndInvoke( context, Key.of( "foo" ), new Object[] {}, false );

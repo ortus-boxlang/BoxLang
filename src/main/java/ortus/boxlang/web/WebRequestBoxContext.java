@@ -194,7 +194,7 @@ public class WebRequestBoxContext extends RequestBoxContext {
 		// Null means not found
 		if ( result != null ) {
 			// Unwrap the value now in case it was really actually null for real
-			return new ScopeSearchResult( variablesScope, Struct.unWrapNull( result ) );
+			return new ScopeSearchResult( variablesScope, Struct.unWrapNull( result ), key );
 		}
 
 		if ( shallow ) {
@@ -218,25 +218,37 @@ public class WebRequestBoxContext extends RequestBoxContext {
 	@Override
 	public ScopeSearchResult scopeFind( Key key, IScope defaultScope ) {
 
+		if ( key.equals( CGIScope.getName() ) ) {
+			return new ScopeSearchResult( CGIScope, CGIScope, key, true );
+		}
+		if ( key.equals( URLScope.getName() ) ) {
+			return new ScopeSearchResult( URLScope, URLScope, key, true );
+		}
+		if ( key.equals( formScope.getName() ) ) {
+			return new ScopeSearchResult( formScope, formScope, key, true );
+		}
+		if ( key.equals( cookieScope.getName() ) ) {
+			return new ScopeSearchResult( cookieScope, cookieScope, key, true );
+		}
 		Object result = CGIScope.getRaw( key );
 		// Null means not found
 		if ( result != null ) {
 			// Unwrap the value now in case it was really actually null for real
-			return new ScopeSearchResult( CGIScope, Struct.unWrapNull( result ) );
+			return new ScopeSearchResult( CGIScope, Struct.unWrapNull( result ), key );
 		}
 
 		result = URLScope.getRaw( key );
 		// Null means not found
 		if ( result != null ) {
 			// Unwrap the value now in case it was really actually null for real
-			return new ScopeSearchResult( URLScope, Struct.unWrapNull( result ) );
+			return new ScopeSearchResult( URLScope, Struct.unWrapNull( result ), key );
 		}
 
 		result = formScope.getRaw( key );
 		// Null means not found
 		if ( result != null ) {
 			// Unwrap the value now in case it was really actually null for real
-			return new ScopeSearchResult( formScope, Struct.unWrapNull( result ) );
+			return new ScopeSearchResult( formScope, Struct.unWrapNull( result ), key );
 		}
 
 		if ( parent != null ) {
@@ -245,7 +257,7 @@ public class WebRequestBoxContext extends RequestBoxContext {
 
 		// Default scope requested for missing keys
 		if ( defaultScope != null ) {
-			return new ScopeSearchResult( defaultScope, null );
+			return new ScopeSearchResult( defaultScope, null, key );
 		}
 		// Not found anywhere
 		throw new KeyNotFoundException(

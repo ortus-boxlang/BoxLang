@@ -107,7 +107,7 @@ public class CatchBoxContext extends BaseBoxContext {
 		// Null means not found
 		if ( result != null ) {
 			// Unwrap the value now in case it was really actually null for real
-			return new ScopeSearchResult( variablesScope, Struct.unWrapNull( result ) );
+			return new ScopeSearchResult( variablesScope, Struct.unWrapNull( result ), key );
 		}
 
 		if ( shallow ) {
@@ -137,7 +137,7 @@ public class CatchBoxContext extends BaseBoxContext {
 
 		// Default scope requested for missing keys
 		if ( defaultScope != null ) {
-			return new ScopeSearchResult( defaultScope, null );
+			return new ScopeSearchResult( defaultScope, null, key );
 		}
 
 		// Not found anywhere

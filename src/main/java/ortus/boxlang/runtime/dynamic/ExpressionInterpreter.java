@@ -20,45 +20,26 @@ package ortus.boxlang.runtime.dynamic;
 import java.util.Set;
 
 import ortus.boxlang.runtime.context.IBoxContext;
-import ortus.boxlang.runtime.scopes.ApplicationScope;
-import ortus.boxlang.runtime.scopes.ArgumentsScope;
+import ortus.boxlang.runtime.context.IBoxContext.ScopeSearchResult;
 import ortus.boxlang.runtime.scopes.Key;
-import ortus.boxlang.runtime.scopes.LocalScope;
 import ortus.boxlang.runtime.scopes.RequestScope;
 import ortus.boxlang.runtime.scopes.ServerScope;
-import ortus.boxlang.runtime.scopes.SessionScope;
-import ortus.boxlang.runtime.scopes.ThisScope;
 import ortus.boxlang.runtime.scopes.VariablesScope;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.exceptions.ExpressionException;
 import ortus.boxlang.runtime.types.exceptions.KeyNotFoundException;
 import ortus.boxlang.runtime.types.exceptions.ScopeNotFoundException;
-import ortus.boxlang.web.scopes.CGIScope;
-import ortus.boxlang.web.scopes.CookieScope;
-import ortus.boxlang.web.scopes.FormScope;
-import ortus.boxlang.web.scopes.URLScope;
 
 /**
  * I handle interpreting expressions
  */
 public class ExpressionInterpreter {
 
-	// TODO: This should be dynamic from the runtime based on the registered modules
+	// These are the only scopes that will always exist
 	private static Set<Key> scopes = Set.of(
 	    VariablesScope.name,
-	    ArgumentsScope.name,
-	    ThisScope.name,
 	    RequestScope.name,
-	    SessionScope.name,
-	    ApplicationScope.name,
-	    ServerScope.name,
-	    CookieScope.name,
-	    FormScope.name,
-	    LocalScope.name,
-	    URLScope.name,
-	    // ThreadScope.name,
-	    // ClientScope.name,
-	    CGIScope.name
+	    ServerScope.name
 	);
 
 	/**
@@ -143,11 +124,20 @@ public class ExpressionInterpreter {
 			}
 		} else {
 			// Unscoped variable like foo.bar. We need to search and find what scope it lives in, if any.
-			ref		= context.scopeFindNearby( refName, context.getDefaultAssignmentScope() ).scope();
-			// create Key[] out of all parts
-			keys	= new Key[ parts.length ];
-			for ( int i = 0; i < parts.length; i++ ) {
-				keys[ i ] = Key.of( parts[ i ] );
+			ScopeSearchResult scopeSearchResult = context.scopeFindNearby( refName, context.getDefaultAssignmentScope() );
+			ref = scopeSearchResult.scope();
+			if ( scopeSearchResult.isScope() ) {
+				// create Key[] out of remaining strings in parts
+				keys = new Key[ parts.length - 1 ];
+				for ( int i = 1; i < parts.length; i++ ) {
+					keys[ i - 1 ] = Key.of( parts[ i ] );
+				}
+			} else {
+				// create Key[] out of all parts
+				keys = new Key[ parts.length ];
+				for ( int i = 0; i < parts.length; i++ ) {
+					keys[ i ] = Key.of( parts[ i ] );
+				}
 			}
 		}
 

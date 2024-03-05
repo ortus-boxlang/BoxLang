@@ -106,14 +106,14 @@ public class ThreadBoxContext extends BaseBoxContext {
 		// Null means not found
 		if ( result != null ) {
 			// Unwrap the value now in case it was really actually null for real
-			return new ScopeSearchResult( localScope, Struct.unWrapNull( result ) );
+			return new ScopeSearchResult( localScope, Struct.unWrapNull( result ), key );
 		}
 
 		result = variablesScope.getRaw( key );
 		// Null means not found
 		if ( result != null ) {
 			// A thread has special permission to "see" the variables scope from its parent, even though it's not "nearby" to any other scopes
-			return new ScopeSearchResult( variablesScope, Struct.unWrapNull( result ) );
+			return new ScopeSearchResult( variablesScope, Struct.unWrapNull( result ), key );
 		}
 
 		// In query loop?
@@ -141,10 +141,14 @@ public class ThreadBoxContext extends BaseBoxContext {
 	@Override
 	public ScopeSearchResult scopeFind( Key key, IScope defaultScope ) {
 
+		if ( key.equals( threadScope.getName() ) ) {
+			return new ScopeSearchResult( threadScope, threadScope, key, true );
+		}
+
 		Object result = threadScope.getRaw( key );
 		// Null means not found
 		if ( result != null ) {
-			return new ScopeSearchResult( threadScope, Struct.unWrapNull( result ) );
+			return new ScopeSearchResult( threadScope, Struct.unWrapNull( result ), key );
 		}
 
 		return scopeFind( key, defaultScope );

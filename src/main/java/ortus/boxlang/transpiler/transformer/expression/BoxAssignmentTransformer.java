@@ -120,7 +120,7 @@ public class BoxAssignmentTransformer extends AbstractTransformer {
 				throw new ExpressionException( "You cannot use the [var] keyword before " + furthestLeft.getClass().getSimpleName(), furthestLeft.getPosition(),
 				    furthestLeft.getSourceText() );
 			}
-			furthestLeft = new BoxScope( "local", null, null );
+			furthestLeft = new BoxIdentifier( "local", null, null );
 		}
 
 		if ( furthestLeft instanceof BoxIdentifier id ) {
@@ -131,29 +131,37 @@ public class BoxAssignmentTransformer extends AbstractTransformer {
 
 			Node	keyNode	= createKey( id.getName() );
 			String	thisKey	= keyNode.toString();
-			accessKeys.add( 0, keyNode );
 			values.put( "accessKey", thisKey );
 			values.put( "furthestLeft",
-			    PlaceholderHelper.resolve( "${contextName}.scopeFindNearby( ${accessKey}, ${contextName}.getDefaultAssignmentScope() ).scope()",
+			    PlaceholderHelper.resolve( ".scope()",
 			        values ) );
 
+			values.put( "accessKeys",
+			    ( accessKeys.size() > 0 ? "," : "" ) + accessKeys.stream().map( it -> it.toString() ).collect( Collectors.joining( "," ) ) );
+			template = """
+			           		  Referencer.setDeep(
+			           ${contextName},
+			           ${contextName}.scopeFindNearby( ${accessKey}, ${contextName}.getDefaultAssignmentScope() ),
+			           ${right}
+			           ${accessKeys}
+			           )
+			           """;
 		} else {
 			if ( accessKeys.size() == 0 ) {
 				throw new ExpressionException( "You cannot assign a value to " + left.getClass().getSimpleName(), left.getPosition(), left.getSourceText() );
 			}
 			values.put( "furthestLeft", transpiler.transform( furthestLeft, TransformerContext.NONE ).toString() );
 
+			values.put( "accessKeys", accessKeys.stream().map( it -> it.toString() ).collect( Collectors.joining( "," ) ) );
+			template = """
+			           		  Referencer.setDeep(
+			           ${contextName},
+			           ${furthestLeft},
+			           ${right},
+			           ${accessKeys}
+			           )
+			           """;
 		}
-
-		values.put( "accessKeys", accessKeys.stream().map( it -> it.toString() ).collect( Collectors.joining( "," ) ) );
-		template = """
-		                              Referencer.setDeep(
-		           ${contextName},
-		           ${furthestLeft},
-		           ${right},
-		           ${accessKeys}
-		           )
-		                    """;
 
 		Node javaExpr = parseExpression( template, values );
 		logger.debug( sourceText + " -> " + javaExpr.toString() );

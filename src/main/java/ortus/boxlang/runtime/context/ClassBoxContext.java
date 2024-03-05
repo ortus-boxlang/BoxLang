@@ -90,6 +90,14 @@ public class ClassBoxContext extends BaseBoxContext {
 	@Override
 	public ScopeSearchResult scopeFindNearby( Key key, IScope defaultScope, boolean shallow ) {
 
+		if ( key.equals( thisScope.getName() ) ) {
+			return new ScopeSearchResult( getThisClass(), getThisClass(), key, true );
+		}
+
+		if ( key.equals( Key._super ) && getThisClass().getSuper() != null ) {
+			return new ScopeSearchResult( getThisClass().getSuper(), getThisClass().getSuper(), key, true );
+		}
+
 		// In query loop?
 		var querySearch = queryFindNearby( key );
 		if ( querySearch != null ) {
@@ -100,7 +108,7 @@ public class ClassBoxContext extends BaseBoxContext {
 		// Null means not found
 		if ( result != null ) {
 			// Unwrap the value now in case it was really actually null for real
-			return new ScopeSearchResult( variablesScope, Struct.unWrapNull( result ) );
+			return new ScopeSearchResult( variablesScope, Struct.unWrapNull( result ), key );
 		}
 
 		if ( shallow ) {

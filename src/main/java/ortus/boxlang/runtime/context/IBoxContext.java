@@ -355,8 +355,28 @@ public interface IBoxContext {
 	 * @param scope The scope which was found
 	 * @param value The value of the key in the scope
 	 */
-	public record ScopeSearchResult( IScope scope, Object value ) {
-		// The record automatically generates the constructor, getters, equals, hashCode, and toString methods.
+	public record ScopeSearchResult( IStruct scope, Object value, Key key, boolean isScope ) {
+
+		public ScopeSearchResult( IStruct scope, Object value, Key key ) {
+			this( scope, value, key, false );
+		}
+
+		/**
+		 * This allow abstraction of the use cases where
+		 * local.foo = 1
+		 * should really be
+		 * variables.local.foo = 1
+		 */
+		public Key[] getAssignmentKeys( Key... keys ) {
+			if ( isScope ) {
+				return keys;
+			}
+			Key[] result = new Key[ keys.length + 1 ];
+			result[ 0 ] = key;
+			System.arraycopy( keys, 0, result, 1, keys.length );
+			return result;
+		}
+
 	}
 
 	/**

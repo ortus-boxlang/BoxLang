@@ -100,6 +100,10 @@ public class SessionBoxContext extends BaseBoxContext {
 	 *
 	 */
 	public ScopeSearchResult scopeFind( Key key, IScope defaultScope ) {
+		if ( key.equals( sessionScope.getName() ) ) {
+			return new ScopeSearchResult( sessionScope, sessionScope, key, true );
+		}
+
 		return parent.scopeFind( key, defaultScope );
 	}
 

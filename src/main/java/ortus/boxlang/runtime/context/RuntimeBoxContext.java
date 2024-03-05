@@ -126,7 +126,7 @@ public class RuntimeBoxContext extends BaseBoxContext {
 
 		// Default scope requested for missing keys
 		if ( defaultScope != null ) {
-			return new ScopeSearchResult( defaultScope, null );
+			return new ScopeSearchResult( defaultScope, null, key );
 		}
 		// Not found anywhere
 		throw new KeyNotFoundException(

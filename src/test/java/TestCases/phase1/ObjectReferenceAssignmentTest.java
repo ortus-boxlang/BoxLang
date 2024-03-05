@@ -240,9 +240,10 @@ public class ObjectReferenceAssignmentTest {
 		    new SampleUDF( Access.PUBLIC, Key.of( "func" ), "any", new Argument[] {}, "" ) );
 		instance.executeSource(
 		    """
-		    var foo = 5;
-		    local.bar = 6;
-		    """,
+		       var foo = 5;
+		       local.bar = 6;
+		    println(local.asString())
+		       """,
 		    functionBoxContext );
 
 		IScope localScope = functionBoxContext.getScopeNearby( LocalScope.name );

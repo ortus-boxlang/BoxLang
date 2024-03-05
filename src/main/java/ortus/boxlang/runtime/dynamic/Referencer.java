@@ -20,6 +20,7 @@ package ortus.boxlang.runtime.dynamic;
 import java.util.Map;
 
 import ortus.boxlang.runtime.context.IBoxContext;
+import ortus.boxlang.runtime.context.IBoxContext.ScopeSearchResult;
 import ortus.boxlang.runtime.interop.DynamicInteropService;
 import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.scopes.Key;
@@ -169,6 +170,24 @@ public class Referencer {
 		}
 
 		return value;
+	}
+
+	/**
+	 * Used to implement any time an object is assigned via deep keys like
+	 * foo.bar.baz=1
+	 * Missing keys will be created as needed as HashMaps
+	 * An exception will be thrown if any intermediate keys exists, but are not a
+	 * Map.
+	 *
+	 * @param context The context we're executing inside of
+	 * @param object  The object to dereference
+	 * @param value   The value to assign
+	 * @param keys    The keys to dereference
+	 *
+	 * @return The value that was assigned
+	 */
+	public static Object setDeep( IBoxContext context, ScopeSearchResult scopeSearchResult, Object value, Key... keys ) {
+		return setDeep( context, scopeSearchResult.scope(), value, scopeSearchResult.getAssignmentKeys( keys ) );
 	}
 
 }

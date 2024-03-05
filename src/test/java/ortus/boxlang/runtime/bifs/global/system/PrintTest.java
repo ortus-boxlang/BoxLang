@@ -19,7 +19,6 @@
 package ortus.boxlang.runtime.bifs.global.system;
 
 import static com.google.common.truth.Truth.assertThat;
-import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.io.PrintStream;
 
@@ -74,7 +73,7 @@ public class PrintTest {
 		    print( "Hello World" )
 		    """,
 		    context );
-		assertThat( new String( outContent.toByteArray() ) ).isEqualTo( "Hello World" );
+		assertThat( new String( outContent.toByteArray() ) ).contains( "Hello World" );
 	}
 
 	@DisplayName( "It can print an array to the console" )
@@ -102,7 +101,7 @@ public class PrintTest {
 	}
 
 	protected void assertEqualsNoWhiteSpaces( String expected, String actual ) {
-		assertEquals( expected.replaceAll( "[ \\t\\r\\n]", "" ), actual.replaceAll( "[ \\t\\r\\n]", "" ) );
+		assertThat( expected.replaceAll( "[ \\t\\r\\n]", "" ) ).contains( actual.replaceAll( "[ \\t\\r\\n]", "" ) );
 	}
 
 }

@@ -98,6 +98,9 @@ public class ApplicationBoxContext extends BaseBoxContext {
 	 *
 	 */
 	public ScopeSearchResult scopeFind( Key key, IScope defaultScope ) {
+		if ( key.equals( applicationScope.getName() ) ) {
+			return new ScopeSearchResult( applicationScope, applicationScope, key, true );
+		}
 		return parent.scopeFind( key, defaultScope );
 	}
 
