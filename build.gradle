@@ -172,6 +172,7 @@ shadowJar {
 javadoc {
 	options.addBooleanOption("Xdoclint:none", true)
 	exclude '**/boxlang/parser/**'
+	options.addBooleanOption('html5', true)
 }
 
 /**
