@@ -145,6 +145,7 @@ ortus.boxlang.runtime.bifs.global.list.ListSetAt
 ortus.boxlang.runtime.bifs.global.list.ListSome
 ortus.boxlang.runtime.bifs.global.list.ListSort
 ortus.boxlang.runtime.bifs.global.list.ListToArray
+ortus.boxlang.runtime.bifs.global.list.ListValueCount
 ortus.boxlang.runtime.bifs.global.math.Abs
 ortus.boxlang.runtime.bifs.global.math.Acos
 ortus.boxlang.runtime.bifs.global.math.Asin
