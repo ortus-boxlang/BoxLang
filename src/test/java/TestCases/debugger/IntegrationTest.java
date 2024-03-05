@@ -1,8 +1,7 @@
 package TestCases.debugger;
 
-import static TestCases.debugger.DebugMessages.delayStep;
-import static TestCases.debugger.DebugMessages.readMessageStep;
 import static TestCases.debugger.DebugMessages.sendMessageStep;
+import static TestCases.debugger.DebugMessages.waitForMessage;
 import static com.google.common.truth.Truth.assertThat;
 
 import java.io.ByteArrayInputStream;
@@ -16,16 +15,14 @@ import java.util.Map;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-import com.fasterxml.jackson.jr.ob.JSONObjectException;
-
 import TestCases.debugger.DebugMessages.TriConsumer;
 import ortus.boxlang.debugger.AdapterProtocolMessageReader;
 import ortus.boxlang.debugger.DebugAdapter;
+import ortus.boxlang.debugger.IAdapterProtocolMessage;
 
 public class IntegrationTest {
 
-	private void runDebugger( List<TriConsumer<byte[], ByteArrayInputStream, AdapterProtocolMessageReader>> steps )
-	    throws JSONObjectException, IOException, InterruptedException {
+	private List<IAdapterProtocolMessage> runDebugger( List<TriConsumer<byte[], ByteArrayInputStream, ByteArrayOutputStream>> steps ) {
 		byte[]					buffer		= new byte[ 2048 ];
 		ByteArrayInputStream	inputStream	= new ByteArrayInputStream( buffer );
 		ByteArrayOutputStream	output		= new ByteArrayOutputStream();
@@ -47,62 +44,68 @@ public class IntegrationTest {
 
 		task.start();
 
-		for ( TriConsumer<byte[], ByteArrayInputStream, AdapterProtocolMessageReader> step : steps ) {
-			AdapterProtocolMessageReader reader = new AdapterProtocolMessageReader( new ByteArrayInputStream( output.toByteArray() ) );
-			reader.throwOnUnregisteredCommand = false;
-			step.accept( buffer, inputStream, reader );
+		for ( TriConsumer<byte[], ByteArrayInputStream, ByteArrayOutputStream> step : steps ) {
+			step.accept( buffer, inputStream, output );
 		}
 
 		task.interrupt();
+
+		List<IAdapterProtocolMessage>	messages	= new ArrayList<IAdapterProtocolMessage>();
+		AdapterProtocolMessageReader	reader;
+		try {
+			reader								= new AdapterProtocolMessageReader( new ByteArrayInputStream( output.toByteArray() ) );
+
+			reader.throwOnUnregisteredCommand	= false;
+
+			IAdapterProtocolMessage message = reader.read();
+
+			while ( message != null ) {
+				messages.add( message );
+				message = reader.read();
+			}
+		} catch ( IOException e ) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+
+		return messages;
 	}
 
 	@DisplayName( "It should respond to an initialize request with capabilities" )
 	@Test
 	public void testRespondToInitializeRequest() {
 
-		List<Map<String, Object>>														messages	= new ArrayList<Map<String, Object>>();
-
-		List<TriConsumer<byte[], ByteArrayInputStream, AdapterProtocolMessageReader>>	steps		= Arrays.asList(
+		List<TriConsumer<byte[], ByteArrayInputStream, ByteArrayOutputStream>>	steps				= Arrays.asList(
 		    sendMessageStep( DebugMessages.getInitRequest( 1 ) ),
-		    delayStep( 750 ),
-		    readMessageStep( messages ),
-		    readMessageStep( messages )
+		    waitForMessage( "response", "initialize" )
 		);
 
-		try {
-			runDebugger( steps );
+		List<IAdapterProtocolMessage>											messages			= runDebugger( steps );
 
-			Map<String, Object> initializedResponse = messages.get( 0 );
-			assertThat( initializedResponse.get( "success" ) ).isEqualTo( true );
-			assertThat( initializedResponse.get( "type" ) ).isEqualTo( "response" );
-			assertThat( initializedResponse.get( "request_seq" ) ).isEqualTo( 1 );
-		} catch ( Exception e ) {
-			e.printStackTrace();
-			assertThat( false ).isEqualTo( true );
-		}
+		Map<String, Object>														initializedResponse	= messages.get( 0 ).getRawMessageData();
+		assertThat( initializedResponse.get( "success" ) ).isEqualTo( true );
+		assertThat( initializedResponse.get( "type" ) ).isEqualTo( "response" );
+		assertThat( initializedResponse.get( "request_seq" ) ).isEqualTo( 1 );
 	}
 
 	@DisplayName( "It should respond to a launch request" )
 	@Test
 	public void testRespondToLaunchRequest() {
 
-		List<Map<String, Object>>														messages	= new ArrayList<Map<String, Object>>();
-
-		List<TriConsumer<byte[], ByteArrayInputStream, AdapterProtocolMessageReader>>	steps		= Arrays.asList(
+		List<TriConsumer<byte[], ByteArrayInputStream, ByteArrayOutputStream>> steps = Arrays.asList(
 		    sendMessageStep( DebugMessages.getInitRequest( 1 ) ),
-		    delayStep( 750 ),
-		    readMessageStep( messages ),
-		    readMessageStep( messages ),
+		    waitForMessage( "response", "initialize" ),
+		    waitForMessage( "event", "initialized" ),
 		    sendMessageStep( DebugMessages.getLaunchRequest( 2 ) ),
-		    delayStep( 750 ),
-		    readMessageStep( messages )
+		    waitForMessage( "response", "launch" )
 		);
 
 		try {
-			runDebugger( steps );
+			List<IAdapterProtocolMessage>	messages		= runDebugger( steps );
 
-			Map<String, Object> launchResponse = messages.get( 2 );
+			Map<String, Object>				launchResponse	= messages.get( 2 ).getRawMessageData();
 			assertThat( launchResponse.get( "type" ) ).isEqualTo( "response" );
+			assertThat( launchResponse.get( "command" ) ).isEqualTo( "launch" );
 			assertThat( launchResponse.get( "request_seq" ) ).isEqualTo( 2 );
 		} catch ( Exception e ) {
 			e.printStackTrace();
@@ -114,25 +117,20 @@ public class IntegrationTest {
 	@Test
 	public void testRespondToBreakpointRequest() {
 
-		List<Map<String, Object>>														messages	= new ArrayList<Map<String, Object>>();
-
-		List<TriConsumer<byte[], ByteArrayInputStream, AdapterProtocolMessageReader>>	steps		= Arrays.asList(
+		List<TriConsumer<byte[], ByteArrayInputStream, ByteArrayOutputStream>> steps = Arrays.asList(
 		    sendMessageStep( DebugMessages.getInitRequest( 1 ) ),
-		    delayStep( 750 ),
-		    readMessageStep( messages ),
-		    readMessageStep( messages ),
+		    waitForMessage( "response", "initialize" ),
+		    waitForMessage( "event", "initialized" ),
 		    sendMessageStep( DebugMessages.getLaunchRequest( 2 ) ),
-		    delayStep( 750 ),
-		    readMessageStep( messages ),
+		    waitForMessage( "response", "launch" ),
 		    sendMessageStep( DebugMessages.getSetBreakpointsRequest( 3 ) ),
-		    delayStep( 750 ),
-		    readMessageStep( messages )
+		    waitForMessage( "response", "setbreakpoints" )
 		);
 
 		try {
-			runDebugger( steps );
+			List<IAdapterProtocolMessage>	messages		= runDebugger( steps );
 
-			Map<String, Object> launchResponse = messages.get( 3 );
+			Map<String, Object>				launchResponse	= messages.get( 3 ).getRawMessageData();
 			assertThat( launchResponse.get( "type" ) ).isEqualTo( "response" );
 			assertThat( launchResponse.get( "request_seq" ) ).isEqualTo( 3 );
 			Map<String, Object> breakpoint = ( Map ) ( ( List ) ( ( Map ) launchResponse.get( "body" ) ).get( "breakpoints" ) ).get( 0 );
@@ -150,40 +148,23 @@ public class IntegrationTest {
 	@Test
 	public void testBreakpointEvent() {
 
-		List<Map<String, Object>>														messages	= new ArrayList<Map<String, Object>>();
-
-		List<TriConsumer<byte[], ByteArrayInputStream, AdapterProtocolMessageReader>>	steps		= Arrays.asList(
+		List<TriConsumer<byte[], ByteArrayInputStream, ByteArrayOutputStream>> steps = Arrays.asList(
 		    sendMessageStep( DebugMessages.getInitRequest( 1 ) ),
-		    delayStep( 750 ),
-		    readMessageStep( messages ),
-		    readMessageStep( messages ),
+		    waitForMessage( "response", "initialize" ),
+		    waitForMessage( "event", "initialized" ),
 		    sendMessageStep( DebugMessages.getLaunchRequest( 2 ) ),
-		    delayStep( 750 ),
-		    readMessageStep( messages ),
+		    waitForMessage( "response", "launch" ),
 		    sendMessageStep( DebugMessages.getSetBreakpointsRequest( 3 ) ),
-		    delayStep( 750 ),
-		    readMessageStep( messages ),
+		    waitForMessage( "response", "setbreakpoints" ),
 		    sendMessageStep( DebugMessages.getConfigurationDoneRequest( 4 ) ),
-		    delayStep( 750 ),
-		    readMessageStep( messages ),
-		    delayStep( 3000 ),
-		    readMessageStep( messages ),
-		    readMessageStep( messages ),
-		    readMessageStep( messages )
+		    waitForMessage( "response", "configurationdone" ),
+		    waitForMessage( "event", "stopped", 3000 )
 		);
 
-		// todo add step to handle outputs skip/collect
-		// todo add way to target the message I want to test other than index
-
 		try {
-			runDebugger( steps );
+			List<IAdapterProtocolMessage>	messages		= runDebugger( steps );
 
-			Map<String, Object> debugMessage = messages.stream()
-			    .filter( ( m ) -> m.containsKey( "type" ) && ( ( String ) m.get( "type" ) ).compareToIgnoreCase( "event" ) == 0
-			        && ( ( String ) m.get( "event" ) ).compareToIgnoreCase( "stopped" ) == 0 )
-			    .findFirst()
-			    .get();
-
+			Map<String, Object>				debugMessage	= messages.get( 6 ).getRawMessageData();
 			assertThat( debugMessage.get( "type" ) ).isEqualTo( "event" );
 			assertThat( ( ( Map ) debugMessage.get( "body" ) ).get( "reason" ) ).isEqualTo( "breakpoint" );
 			assertThat( ( ( List<Integer> ) ( ( Map ) debugMessage.get( "body" ) ).get( "hitBreakpointIds" ) ).get( 0 ) ).isEqualTo( 0 );

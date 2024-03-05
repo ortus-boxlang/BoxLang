@@ -1,11 +1,14 @@
 package TestCases.debugger;
 
 import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Consumer;
+import java.util.function.Predicate;
 
 import com.fasterxml.jackson.jr.ob.JSONObjectException;
 
@@ -20,9 +23,102 @@ public class DebugMessages {
 		public void accept( A a, B b, C c );
 	}
 
-	public static <A, B, C> TriConsumer<byte[], ByteArrayInputStream, AdapterProtocolMessageReader> readMessageStep( List<Map<String, Object>> messages ) {
-		return ( a, b, reader ) -> {
+	public static <A, B, C> TriConsumer<byte[], ByteArrayInputStream, ByteArrayOutputStream> waitForSeq( int seq ) {
+		return waitForMessage(
+		    ( message ) -> {
+			    Map<String, Object> data = message.getRawMessageData();
+
+			    return ( ( int ) data.get( "seq" ) ) == seq;
+		    },
+		    ( message ) -> {
+		    },
+		    1000L
+		);
+	}
+
+	public static <A, B, C> TriConsumer<byte[], ByteArrayInputStream, ByteArrayOutputStream> waitForMessage(
+	    String type,
+	    String command,
+	    long timeout ) {
+		return waitForMessage(
+		    ( message ) -> {
+			    Map<String, Object> data = message.getRawMessageData();
+
+			    String			key		= type == "event" ? "event" : "command";
+
+			    return ( ( String ) data.get( "type" ) ).equalsIgnoreCase( type )
+			        && ( ( String ) data.get( key ) ).equalsIgnoreCase( command );
+		    },
+		    ( message ) -> {
+		    },
+		    timeout
+		);
+	}
+
+	public static <A, B, C> TriConsumer<byte[], ByteArrayInputStream, ByteArrayOutputStream> waitForMessage(
+	    String type,
+	    String command ) {
+		return waitForMessage(
+		    ( message ) -> {
+			    Map<String, Object> data = message.getRawMessageData();
+
+			    String			key		= type == "event" ? "event" : "command";
+
+			    return ( ( String ) data.get( "type" ) ).equalsIgnoreCase( type )
+			        && ( ( String ) data.get( key ) ).equalsIgnoreCase( command );
+		    },
+		    ( message ) -> {
+		    },
+		    1000L
+		);
+	}
+
+	public static <A, B, C> TriConsumer<byte[], ByteArrayInputStream, ByteArrayOutputStream> waitForMessage( Predicate<IAdapterProtocolMessage> test ) {
+		return waitForMessage( test, ( message ) -> {
+		}, 1000L );
+	}
+
+	public static <A, B, C> TriConsumer<byte[], ByteArrayInputStream, ByteArrayOutputStream> waitForMessage( Predicate<IAdapterProtocolMessage> test,
+	    Consumer<IAdapterProtocolMessage> onMessage ) {
+		return waitForMessage( test, onMessage, 1000L );
+	}
+
+	public static <A, B, C> TriConsumer<byte[], ByteArrayInputStream, ByteArrayOutputStream> waitForMessage( Predicate<IAdapterProtocolMessage> test,
+	    Consumer<IAdapterProtocolMessage> onMessage, long timeout ) {
+		return ( a, b, output ) -> {
+			long startTime = System.currentTimeMillis();
+
+			while ( System.currentTimeMillis() - startTime <= timeout ) {
+				try {
+					AdapterProtocolMessageReader reader = new AdapterProtocolMessageReader( new ByteArrayInputStream( output.toByteArray() ) );
+					reader.throwOnUnregisteredCommand = false;
+					IAdapterProtocolMessage message = reader.read();
+
+					while ( message != null ) {
+						if ( test.test( message ) ) {
+							onMessage.accept( message );
+							return;
+						}
+						message = reader.read();
+					}
+
+					Thread.sleep( 50 );
+
+				} catch ( IOException e ) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				} catch ( InterruptedException e ) {
+					// pass
+				}
+			}
+		};
+	}
+
+	public static <A, B, C> TriConsumer<byte[], ByteArrayInputStream, ByteArrayOutputStream> readMessageStep( List<Map<String, Object>> messages ) {
+		return ( a, b, output ) -> {
 			try {
+				AdapterProtocolMessageReader reader = new AdapterProtocolMessageReader( new ByteArrayInputStream( output.toByteArray() ) );
+				reader.throwOnUnregisteredCommand = false;
 				IAdapterProtocolMessage	message	= reader.read();
 				int						i		= 0;
 
@@ -41,7 +137,7 @@ public class DebugMessages {
 		};
 	}
 
-	public static <A, B, C> TriConsumer<byte[], ByteArrayInputStream, AdapterProtocolMessageReader> delayStep( long delay ) {
+	public static <A, B, C> TriConsumer<byte[], ByteArrayInputStream, ByteArrayOutputStream> delayStep( long delay ) {
 		return ( a, b, reader ) -> {
 			try {
 				Thread.sleep( delay );
@@ -52,7 +148,7 @@ public class DebugMessages {
 		};
 	}
 
-	public static <A, B, C> TriConsumer<byte[], ByteArrayInputStream, AdapterProtocolMessageReader> sendMessageStep( Map<String, Object> map ) {
+	public static <A, B, C> TriConsumer<byte[], ByteArrayInputStream, ByteArrayOutputStream> sendMessageStep( Map<String, Object> map ) {
 		return ( byteArray, inputStream, reader ) -> {
 
 			// clear buffer
