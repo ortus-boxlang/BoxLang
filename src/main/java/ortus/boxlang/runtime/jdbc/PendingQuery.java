@@ -177,9 +177,13 @@ public class PendingQuery {
 			    hasResults
 			);
 		} catch ( SQLException e ) {
+			String detail = "";
+			if ( e.getCause() != null ) {
+				detail = e.getCause().getMessage();
+			}
 			throw new DatabaseException(
 			    e.getMessage(),
-			    "detail message", // TODO: fill this out with the actual detail message
+			    detail,
 			    String.valueOf( e.getErrorCode() ),
 			    e.getSQLState(),
 			    originalSql,

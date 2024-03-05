@@ -65,18 +65,17 @@ public class DBInfoTest {
 		    "jdbcUrl", "jdbc:derby:memory:BoxlangDB;create=true"
 		) );
 		datasourceManager.setDefaultDatasource( defaultDatasource );
-		defaultDatasource.execute( "CREATE TABLE developers ( id INTEGER, name VARCHAR(155) )", null );
+		defaultDatasource.execute( "CREATE TABLE developers ( id INTEGER, name VARCHAR(155) )" );
 
 		if ( tools.JDBCTestUtils.hasMySQLDriver() ) {
 			Key MySQLDataSourceName = Key.of( "MYSQLDB" );
-			datasourceManager.registerDatasource( MySQLDataSourceName, Struct.of(
+			MySQLDataSource = datasourceManager.registerDatasource( MySQLDataSourceName, Struct.of(
 			    "jdbcUrl", "jdbc:mysql://localhost:3306",
 			    "username", "root",
 			    "password", "secret"
 			) );
-			MySQLDataSource = datasourceManager.getDatasource( MySQLDataSourceName );
-			MySQLDataSource.execute( "CREATE DATABASE IF NOT EXISTS testDB", null );
-			MySQLDataSource.execute( "USE testDB", null );
+			MySQLDataSource.execute( "CREATE DATABASE IF NOT EXISTS testDB" );
+			MySQLDataSource.execute( "USE testDB" );
 		}
 	}
 

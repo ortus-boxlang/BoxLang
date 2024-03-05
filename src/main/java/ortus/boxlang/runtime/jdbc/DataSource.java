@@ -64,17 +64,10 @@ public class DataSource {
 	/**
 	 * Underlying HikariDataSource object, used in connection pooling.
 	 */
-	private HikariDataSource hikariDataSource;
+	private final HikariDataSource hikariDataSource;
 
 	/**
 	 * Configure and initialize a new DataSourceRecord object from a struct of properties.
-	 *
-	 * @see https://github.com/brettwooldridge/HikariCP?tab=readme-ov-file#gear-configuration-knobs-baby
-	 *
-	 * @param properties Struct of properties for configuring the datasource. Be aware that the struct keys are case-sensitive and must match the Hikari
-	 *                   configuration property names. (We'll be adding support for case-insensitive keys in the near future.)
-	 *
-	 * @return
 	 */
 	public DataSource( IStruct config ) {
 		Properties properties = new Properties();
@@ -82,7 +75,13 @@ public class DataSource {
 
 		HikariConfig hikariConfig = new HikariConfig( properties );
 		this.hikariDataSource = new HikariDataSource( hikariConfig );
+	}
 
+	public static DataSource fromDataSourceStruct( IStruct config ) {
+		if ( config.containsKey( "connectionString" ) ) {
+			config.put( "jdbcUrl", config.get( "connectionString" ) );
+		}
+		return new DataSource( config );
 	}
 
 	/**
@@ -90,11 +89,27 @@ public class DataSource {
 	 *
 	 * @return A JDBC connection to the configured datasource.
 	 *
-	 * @throws SQLException if connection could not be established.
+	 * @throws BoxRuntimeException if connection could not be established.
 	 */
 	public Connection getConnection() {
 		try {
 			return hikariDataSource.getConnection();
+		} catch ( SQLException e ) {
+			// @TODO: Recast as BoxSQLException?
+			throw new BoxRuntimeException( "Unable to open connection:", e );
+		}
+	}
+
+	/**
+	 * Get a connection to the configured datasource with the provided username and password.
+	 *
+	 * @return A JDBC connection to the configured datasource.
+	 *
+	 * @throws BoxRuntimeException if connection could not be established.
+	 */
+	public Connection getConnection( String username, String password ) {
+		try {
+			return hikariDataSource.getConnection( username, password );
 		} catch ( SQLException e ) {
 			// @TODO: Recast as BoxSQLException?
 			throw new BoxRuntimeException( "Unable to open connection:", e );
@@ -120,25 +135,8 @@ public class DataSource {
 	 *         array is returned.
 	 */
 	public ExecutedQuery execute( String query ) {
-		try ( Connection conn = getConnection(); ) {
-			return execute( query, conn, new Struct() );
-		} catch ( SQLException e ) {
-			throw new DatabaseException( e.getMessage(), e );
-		}
-	}
-
-	/**
-	 * Execute a query on the connection, using a connection from the connection pool which is autoclosed upon query completion.
-	 *
-	 * @param query        The SQL query to execute.
-	 * @param queryOptions Struct of query options to influence the query execution or result.
-	 *
-	 * @return An array of Structs, each representing a row of the result set (if any). If there are no results (say, for an UPDATE statement), an empty
-	 *         array is returned.
-	 */
-	public ExecutedQuery execute( String query, IStruct queryOptions ) {
-		try ( Connection conn = getConnection(); ) {
-			return execute( query, conn, queryOptions );
+		try ( Connection conn = getConnection() ) {
+			return execute( query, conn );
 		} catch ( SQLException e ) {
 			throw new DatabaseException( e.getMessage(), e );
 		}
@@ -150,46 +148,32 @@ public class DataSource {
 	 * Note the connection passed in is NOT closed automatically. It is up to the caller to close the connection when they are done with it. If you want
 	 * an automanaged, i.e. autoclosed connection, use the <code>execute(String)</code> method.
 	 *
-	 * @param query        The SQL query to execute.
-	 * @param conn         The connection to execute the query on. A connection is required - use <code>execute(String)</code> if you don't wish to
-	 *                     provide one.
-	 * @param queryOptions Struct of query options to influence the query execution or result.
+	 * @param query The SQL query to execute.
+	 * @param conn  The connection to execute the query on. A connection is required - use <code>execute(String)</code> if you don't wish to
+	 *              provide one.
 	 *
 	 * @return An array of Structs, each representing a row of the result set (if any). If there are no results (say, for an UPDATE statement), an empty
 	 *         array is returned.
 	 */
-	public ExecutedQuery execute( String query, Connection conn, IStruct queryOptions ) {
+	public ExecutedQuery execute( String query, Connection conn ) {
 		PendingQuery pendingQuery = new PendingQuery( query, new ArrayList<>() );
-		return executePendingQuery( pendingQuery, conn, queryOptions );
+		return executePendingQuery( pendingQuery, conn );
 	}
 
 	/**
 	 * Execute a query with a List of parameters on a given connection.
-	 *
-	 * @param query
-	 * @param parameters
-	 * @param conn
-	 * @param queryOptions
-	 *
-	 * @return
 	 */
-	public ExecutedQuery execute( String query, List<QueryParameter> parameters, Connection conn, IStruct queryOptions ) {
+	public ExecutedQuery execute( String query, List<QueryParameter> parameters, Connection conn ) {
 		PendingQuery pendingQuery = new PendingQuery( query, parameters );
-		return executePendingQuery( pendingQuery, conn, queryOptions );
+		return executePendingQuery( pendingQuery, conn );
 	}
 
 	/**
 	 * Execute a query with a List of parameters on the default connection.
-	 *
-	 * @param query
-	 * @param parameters
-	 * @param queryOptions
-	 *
-	 * @return
 	 */
-	public ExecutedQuery execute( String query, List<QueryParameter> parameters, IStruct queryOptions ) {
-		try ( Connection conn = getConnection(); ) {
-			return execute( query, parameters, conn, queryOptions );
+	public ExecutedQuery execute( String query, List<QueryParameter> parameters ) {
+		try ( Connection conn = getConnection() ) {
+			return execute( query, parameters, conn );
 		} catch ( SQLException e ) {
 			throw new DatabaseException( e.getMessage(), e );
 		}
@@ -197,31 +181,18 @@ public class DataSource {
 
 	/**
 	 * Execute a query with an array of parameters on a given connection.
-	 *
-	 * @param query
-	 * @param parameters
-	 * @param conn
-	 * @param queryOptions
-	 *
-	 * @return
 	 */
-	public ExecutedQuery execute( String query, Array parameters, Connection conn, IStruct queryOptions ) {
+	public ExecutedQuery execute( String query, Array parameters, Connection conn ) {
 		PendingQuery pendingQuery = new PendingQuery( query, parameters );
-		return executePendingQuery( pendingQuery, conn, queryOptions );
+		return executePendingQuery( pendingQuery, conn );
 	}
 
 	/**
 	 * Execute a query with an array of parameters on the default connection.
-	 *
-	 * @param query
-	 * @param parameters
-	 * @param queryOptions
-	 *
-	 * @return
 	 */
-	public ExecutedQuery execute( String query, Array parameters, IStruct queryOptions ) {
-		try ( Connection conn = getConnection(); ) {
-			return execute( query, parameters, conn, queryOptions );
+	public ExecutedQuery execute( String query, Array parameters ) {
+		try ( Connection conn = getConnection() ) {
+			return execute( query, parameters, conn );
 		} catch ( SQLException e ) {
 			throw new DatabaseException( e.getMessage(), e );
 		}
@@ -229,48 +200,25 @@ public class DataSource {
 
 	/**
 	 * Execute a query with a struct of parameters on a given connection.
-	 *
-	 * @param query
-	 * @param parameters
-	 * @param conn
-	 * @param queryOptions
-	 *
-	 * @return
 	 */
-	public ExecutedQuery execute( String query, IStruct parameters, Connection conn, IStruct queryOptions ) {
+	public ExecutedQuery execute( String query, IStruct parameters, Connection conn ) {
 		PendingQuery pendingQuery = PendingQuery.fromStructParameters( query, parameters );
-		return executePendingQuery( pendingQuery, conn, queryOptions );
+		return executePendingQuery( pendingQuery, conn );
 	}
 
 	/**
 	 * Execute a query with a struct of parameters on the default connection.
-	 *
-	 * @param query
-	 * @param parameters
-	 * @param queryOptions
-	 *
-	 * @return
 	 */
-	public ExecutedQuery execute( String query, IStruct parameters, IStruct queryOptions ) {
+	public ExecutedQuery execute( String query, IStruct parameters ) {
 		try ( Connection conn = getConnection() ) {
-			return execute( query, parameters, conn, queryOptions );
+			return execute( query, parameters, conn );
 		} catch ( SQLException e ) {
 			throw new DatabaseException( e.getMessage(), e );
 		}
 	}
 
-	public ExecutedQuery executePendingQuery( PendingQuery pendingQuery, Connection conn, IStruct queryOptions ) {
+	public ExecutedQuery executePendingQuery( PendingQuery pendingQuery, Connection conn ) {
 		return pendingQuery.execute( conn );
-		// String resultVariable = queryOptions.getAsString(Key.result);
-		// return switch (queryOptions.getAsString(Key.returnType)) {
-		// // @TODO: Validate the returntype argument? Or simply fall back to the query result?
-		// // @TODO: Implement these return types.
-		// // case "array_of_entity":
-		// // break;
-		// case "struct" -> executedQuery.getResultsAsStruct(queryOptions.getAsString(Key.columnKey));
-		// case "array" -> executedQuery.getResultsAsArray();
-		// default -> executedQuery.getResultsAsQuery();
-		// };
 	}
 
 	/**
@@ -326,14 +274,4 @@ public class DataSource {
 		}
 	}
 
-	/**
-	 * Defines the default query options
-	 *
-	 * @return A struct of default query options.
-	 */
-	private IStruct getDefaultQueryOptions() {
-		return Struct.of(
-		    "returntype", "array"
-		);
-	}
 }

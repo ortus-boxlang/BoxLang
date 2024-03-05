@@ -22,14 +22,14 @@ import ortus.boxlang.runtime.dynamic.casters.*;
 import ortus.boxlang.runtime.jdbc.DataSource;
 import ortus.boxlang.runtime.jdbc.DataSourceManager;
 import ortus.boxlang.runtime.jdbc.ExecutedQuery;
+import ortus.boxlang.runtime.jdbc.QueryOptions;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.*;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
-import ortus.boxlang.runtime.types.util.ListUtil;
 
-import javax.annotation.Nullable;
-import javax.swing.*;
+import javax.annotation.Nonnull;
+import java.util.Optional;
 
 @BoxBIF
 public class QueryExecute extends BIF {
@@ -60,82 +60,43 @@ public class QueryExecute extends BIF {
 	 *
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
-		DataSourceManager		manager			= DataSourceManager.getInstance();
-
 		CastAttempt<IStruct>	optionsAsStruct	= StructCaster.attempt( arguments.get( Key.options ) );
-		IStruct					options			= optionsAsStruct.getOrDefault( new Struct() );
+		QueryOptions			options			= new QueryOptions( optionsAsStruct.getOrDefault( new Struct() ) );
 
-		DataSource				datasource;
-		if ( options.containsKey( "datasource" ) ) {
-			String datasourceName = options.getAsString( Key.datasource );
-			datasource = manager.getDatasource( Key.of( datasourceName ) );
-			if ( datasource == null ) {
-				throw new BoxRuntimeException( "No [" + datasourceName + "] datasource defined." );
-			}
-		} else {
-			datasource = manager.getDefaultDatasource();
-			if ( datasource == null ) {
-				throw new BoxRuntimeException(
-				    "No default datasource has been defined. Either register a default datasource or provide a datasource name in the query options." );
-			}
+		String					sql				= arguments.getAsString( Key.sql );
+		Object					bindings		= arguments.get( Key.params );
+		ExecutedQuery			query			= executeWithBindings( sql, bindings, options );
+
+		if ( options.wantsResultStruct() ) {
+			assert options.getResultVariableName() != null;
+			ExpressionInterpreter.setVariable( context, options.getResultVariableName(), query.getResultStruct() );
 		}
 
-		String			sql			= arguments.getAsString( Key.sql );
+		return options.castAsReturnType( query );
+	}
 
-		ExecutedQuery	query		= null;
+	private ExecutedQuery executeWithBindings( @Nonnull String sql, Object bindings, QueryOptions options ) {
+		ExecutedQuery query = null;
 
-		Object			bindings	= arguments.get( Key.params );
 		if ( bindings == null ) {
-			query = datasource.execute( sql, options );
+			return options.getDataSource().execute( sql );
 		}
 
-		if ( query == null ) {
-			CastAttempt<Array> castAsArray = ArrayCaster.attempt( bindings );
-			if ( castAsArray.wasSuccessful() ) {
-				query = datasource.execute( sql, castAsArray.getOrFail(), options );
-			}
+		CastAttempt<Array> castAsArray = ArrayCaster.attempt( bindings );
+		if ( castAsArray.wasSuccessful() ) {
+			return options.getDataSource().execute( sql, castAsArray.getOrFail() );
 		}
 
-		if ( query == null ) {
-			CastAttempt<IStruct> castAsStruct = StructCaster.attempt( bindings );
-			if ( castAsStruct.wasSuccessful() ) {
-				query = datasource.execute( sql, castAsStruct.getOrFail(), options );
-			}
+		CastAttempt<IStruct> castAsStruct = StructCaster.attempt( bindings );
+		if ( castAsStruct.wasSuccessful() ) {
+			return options.getDataSource().execute( sql, castAsStruct.getOrFail() );
 		}
 
-		if ( query == null ) {
-			String className = "null";
-			if ( bindings != null ) {
-				className = bindings.getClass().getName();
-			}
-			throw new BoxRuntimeException( "Invalid type for params. Expected array or struct. Received: " + className );
+		String className = "null";
+		if ( bindings != null ) {
+			className = bindings.getClass().getName();
 		}
-
-		Object				returnTypeObject	= options.getOrDefault( Key.returnType, "query" );
-		CastAttempt<String>	returnTypeAsString	= StringCaster.attempt( returnTypeObject );
-		String				returnType			= returnTypeAsString.getOrDefault( "query" );
-
-		String				resultsVariableName	= options.getAsString( Key.result );
-		if ( resultsVariableName != null ) {
-			ExpressionInterpreter.setVariable( context, resultsVariableName, query.getResultStruct() );
-		}
-
-        switch (returnType) {
-            case "query" -> {
-                return query.getResults();
-            }
-            case "array" -> {
-                return query.getResultsAsArray();
-            }
-            case "struct" -> {
-                String columnKey = options.getAsString(Key.columnKey);
-                if (columnKey == null) {
-                    throw new BoxRuntimeException("You must defined a `columnKey` option when using `returnType: struct`.");
-                }
-                return query.getResultsAsStruct(columnKey);
-            }
-            default -> throw new BoxRuntimeException("Unknown return type: " + returnType);
-        }
+		throw new BoxRuntimeException( "Invalid type for params. Expected array or struct. Received: " + className );
 	}
 
 }
