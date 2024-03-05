@@ -19,12 +19,11 @@
 
 package ortus.boxlang.runtime.bifs.global.list;
 
-import java.util.function.Predicate;
-
 import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
 import ortus.boxlang.runtime.bifs.BoxMember;
 import ortus.boxlang.runtime.context.IBoxContext;
+import ortus.boxlang.runtime.dynamic.casters.ArrayCaster;
 import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
@@ -33,57 +32,56 @@ import ortus.boxlang.runtime.types.BoxLangType;
 import ortus.boxlang.runtime.types.util.ListUtil;
 
 @BoxBIF
-@BoxBIF( alias = "ListValueCountNoCase" )
-@BoxMember( type = BoxLangType.STRING, name = "ListValueCount" )
-@BoxMember( type = BoxLangType.STRING, name = "ListValueCountNoCase" )
+@BoxMember( type = BoxLangType.STRING, name = "ListQualify" )
 
-public class ListValueCount extends BIF {
+public class ListQualify extends BIF {
 
-	private static final Key bifMethodNoCase = Key.of( "ListValueCountNoCase" );
+	private final String elementsChar = "char";
 
 	/**
 	 * Constructor
 	 */
-	public ListValueCount() {
+	public ListQualify() {
 		super();
 		declaredArguments = new Argument[] {
 		    new Argument( true, "string", Key.list ),
-		    new Argument( true, "string", Key.value ),
+		    new Argument( true, "string", Key.qualifier ),
 		    new Argument( false, "string", Key.delimiter, ListUtil.DEFAULT_DELIMITER ),
+		    new Argument( false, "string", Key.elements, "all" ),
 		    new Argument( false, "boolean", Key.includeEmptyFields, false )
 		};
 	}
 
 	/**
-	 * returns a count of the number of occurrences of a value in a list
+	 * Describe what the invocation of your bif function does
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.list The list to be searched.
-	 *
-	 * @argument.value The value to locale
-	 *
-	 * @argument.delimiter The list delimiter(s)
-	 *
-	 * @argument.includeEmptyFields Whether to include empty fields in the search
+	 * @argument.foo Describe any expected arguments
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
-		Key					bifMethodKey	= arguments.getAsKey( BIF.__functionName );
-		String				comparator		= bifMethodKey.equals( bifMethodNoCase )
-		    ? arguments.getAsString( Key.value ).toLowerCase()
-		    : arguments.getAsString( Key.value );
 
-		Predicate<Object>	test			= item -> bifMethodKey.equals( bifMethodNoCase )
-		    ? StringCaster.cast( item ).toLowerCase().equals( comparator )
-		    : StringCaster.cast( item ).equals( comparator );
+		String	elements	= arguments.getAsString( Key.elements );
+		String	qualifier	= arguments.getAsString( Key.qualifier );
 
-		return ListUtil.asList(
-		    arguments.getAsString( Key.list ),
-		    arguments.getAsString( Key.delimiter ),
-		    arguments.getAsBoolean( Key.includeEmptyFields ),
-		    true
-		).stream().filter( test ).count();
+		return ListUtil.asString(
+		    ArrayCaster.cast(
+		        ListUtil.asList(
+		            arguments.getAsString( Key.list ),
+		            arguments.getAsString( Key.delimiter ),
+		            arguments.getAsBoolean( Key.includeEmptyFields ),
+		            true
+		        ).stream().map( item -> {
+			        if ( elements.equals( elementsChar ) ? StringCaster.cast( item ).matches( "^[a-zA-Z]*$" ) : true ) {
+				        return qualifier + item + qualifier;
+			        } else {
+				        return item;
+			        }
+		        } ).toArray()
+		    ),
+		    arguments.getAsString( Key.delimiter )
+		);
 	}
 
 }

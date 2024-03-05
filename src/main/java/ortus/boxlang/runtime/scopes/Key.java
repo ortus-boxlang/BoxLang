@@ -159,6 +159,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		duration					= Key.of( "duration" );
 	public static final Key		elapsedTime					= Key.of( "elapsedTime" );
 	public static final Key		elem						= Key.of( "elem" );
+	public static final Key		elements					= Key.of( "elements" );
 	public static final Key		elementCountForRemoval		= Key.of( "elementCountForRemoval" );
 	public static final Key		EMPTY						= Key.of( "" );
 	public static final Key		enableOutputOnly			= Key.of( "enableOutputOnly" );
@@ -307,6 +308,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		position2					= Key.of( "position2" );
 	public static final Key		priority					= Key.of( "priority" );
 	public static final Key		properties					= Key.of( "properties" );
+	public static final Key		qualifier					= Key.of( "qualifier" );
 	public static final Key		quarter						= Key.of( "quarter" );
 	public static final Key		query						= Key.of( "query" );
 	public static final Key		queryFormat					= Key.of( "queryFormat" );
