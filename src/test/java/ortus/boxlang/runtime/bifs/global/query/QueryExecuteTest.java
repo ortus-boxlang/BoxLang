@@ -33,6 +33,7 @@ import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Query;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
+import ortus.boxlang.runtime.types.exceptions.DatabaseException;
 
 import java.sql.SQLException;
 import java.util.List;
@@ -57,7 +58,7 @@ public class QueryExecuteTest {
 		datasource			= new DataSource( Struct.of(
 		    "jdbcUrl", "jdbc:derby:memory:testDB;create=true"
 		) );
-		datasource.execute( "CREATE TABLE developers ( id INTEGER, name VARCHAR(155), role VARCHAR(155) )", null );
+		datasource.execute( "CREATE TABLE developers ( id INTEGER, name VARCHAR(155), role VARCHAR(155) )" );
 	}
 
 	@AfterAll
@@ -69,10 +70,10 @@ public class QueryExecuteTest {
 	@BeforeEach
 	public void resetTable() {
 		assertDoesNotThrow( () -> {
-			datasource.execute( "TRUNCATE TABLE developers", null );
-			datasource.execute( "INSERT INTO developers ( id, name, role ) VALUES ( 77, 'Michael Born', 'Developer' )", null );
-			datasource.execute( "INSERT INTO developers ( id, name, role ) VALUES ( 1, 'Luis Majano', 'CEO' )", null );
-			datasource.execute( "INSERT INTO developers ( id, name, role ) VALUES ( 42, 'Eric Peterson', 'Developer' )", null );
+			datasource.execute( "TRUNCATE TABLE developers" );
+			datasource.execute( "INSERT INTO developers ( id, name, role ) VALUES ( 77, 'Michael Born', 'Developer' )" );
+			datasource.execute( "INSERT INTO developers ( id, name, role ) VALUES ( 1, 'Luis Majano', 'CEO' )" );
+			datasource.execute( "INSERT INTO developers ( id, name, role ) VALUES ( 42, 'Eric Peterson', 'Developer' )" );
 		} );
 	}
 
@@ -89,8 +90,8 @@ public class QueryExecuteTest {
 		datasourceManager.setDefaultDatasource( datasource );
 		instance.executeSource(
 		    """
-			result = queryExecute( "SELECT * FROM developers ORDER BY id" );
-			""",
+		    result = queryExecute( "SELECT * FROM developers ORDER BY id" );
+		    """,
 		    context );
 		assertThat( variables.get( result ) ).isInstanceOf( Query.class );
 		Query query = variables.getAsQuery( result );
@@ -118,8 +119,8 @@ public class QueryExecuteTest {
 		datasourceManager.setDefaultDatasource( datasource );
 		instance.executeSource(
 		    """
-			result = queryExecute( "SELECT * FROM developers WHERE id = ?", [ 77 ] );
-			""",
+		    result = queryExecute( "SELECT * FROM developers WHERE id = ?", [ 77 ] );
+		    """,
 		    context );
 		assertThat( variables.get( result ) ).isInstanceOf( Query.class );
 		Query query = variables.getAsQuery( result );
@@ -137,8 +138,8 @@ public class QueryExecuteTest {
 		datasourceManager.setDefaultDatasource( datasource );
 		instance.executeSource(
 		    """
-			result = queryExecute( "SELECT * FROM developers WHERE id = :id", { "id": 77 } );
-			""",
+		    result = queryExecute( "SELECT * FROM developers WHERE id = :id", { "id": 77 } );
+		    """,
 		    context );
 		assertThat( variables.get( result ) ).isInstanceOf( Query.class );
 		Query query = variables.getAsQuery( result );
@@ -155,10 +156,10 @@ public class QueryExecuteTest {
 	public void testMissingStructBinding() {
 		datasourceManager.setDefaultDatasource( datasource );
 		BoxRuntimeException e = assertThrows( BoxRuntimeException.class, () -> instance.executeSource(
-            """
-            result = queryExecute( "SELECT * FROM developers WHERE id = :id", { "name": "Michael Born" } );
-            """,
-            context ));
+		    """
+		    result = queryExecute( "SELECT * FROM developers WHERE id = :id", { "name": "Michael Born" } );
+		    """,
+		    context ) );
 
 		assertThat( e.getMessage() ).isEqualTo( "Missing param in query: [id]. SQL: SELECT * FROM developers WHERE id = :id" );
 		assertNull( variables.get( result ) );
@@ -168,10 +169,10 @@ public class QueryExecuteTest {
 	@Test
 	public void testMissingDefaultDatasource() {
 		BoxRuntimeException e = assertThrows( BoxRuntimeException.class, () -> instance.executeSource(
-            """
-            result = queryExecute( "SELECT * FROM developers" );
-            """,
-            context ));
+		    """
+		    result = queryExecute( "SELECT * FROM developers" );
+		    """,
+		    context ) );
 
 		assertThat( e.getMessage() )
 		    .isEqualTo( "No default datasource has been defined. Either register a default datasource or provide a datasource name in the query options." );
@@ -184,8 +185,8 @@ public class QueryExecuteTest {
 		datasourceManager.registerDatasource( Key.of( "derby" ), datasource );
 		instance.executeSource(
 		    """
-			result = queryExecute( "SELECT * FROM developers ORDER BY id", [], { "datasource": "derby" } );
-			""",
+		    result = queryExecute( "SELECT * FROM developers ORDER BY id", [], { "datasource": "derby" } );
+		    """,
 		    context );
 		assertThat( variables.get( result ) ).isInstanceOf( Query.class );
 		Query query = variables.getAsQuery( result );
@@ -211,10 +212,10 @@ public class QueryExecuteTest {
 	@Test
 	public void testMissingNamedDatasource() {
 		BoxRuntimeException e = assertThrows( BoxRuntimeException.class, () -> instance.executeSource(
-            """
-            result = queryExecute( "SELECT * FROM developers WHERE id = :id", { "name": "Michael Born" }, { "datasource": "derby" } );
-            """,
-            context ));
+		    """
+		    result = queryExecute( "SELECT * FROM developers WHERE id = :id", { "name": "Michael Born" }, { "datasource": "derby" } );
+		    """,
+		    context ) );
 
 		assertThat( e.getMessage() ).isEqualTo( "No [derby] datasource defined." );
 		assertNull( variables.get( result ) );
@@ -226,8 +227,8 @@ public class QueryExecuteTest {
 		datasourceManager.setDefaultDatasource( datasource );
 		instance.executeSource(
 		    """
-			result = queryExecute( "SELECT * FROM developers ORDER BY id", [], { "returntype": "array" } );
-			""",
+		    result = queryExecute( "SELECT * FROM developers ORDER BY id", [], { "returntype": "array" } );
+		    """,
 		    context );
 		assertThat( variables.get( result ) ).isInstanceOf( Array.class );
 		Array results = variables.getAsArray( result );
@@ -261,8 +262,8 @@ public class QueryExecuteTest {
 		datasourceManager.setDefaultDatasource( datasource );
 		instance.executeSource(
 		    """
-			result = queryExecute( "SELECT * FROM developers ORDER BY id", [], { "returntype": "struct", "columnKey": "role" } );
-			""",
+		    result = queryExecute( "SELECT * FROM developers ORDER BY id", [], { "returntype": "struct", "columnKey": "role" } );
+		    """,
 		    context );
 		assertThat( variables.get( result ) ).isInstanceOf( IStruct.class );
 		IStruct results = variables.getAsStruct( result );
@@ -306,10 +307,10 @@ public class QueryExecuteTest {
 	public void testMissingColumnKey() {
 		datasourceManager.setDefaultDatasource( datasource );
 		BoxRuntimeException e = assertThrows( BoxRuntimeException.class, () -> instance.executeSource(
-            """
-            result = queryExecute( "SELECT * FROM developers ORDER BY id", [], { "returnType": "struct" } );
-            """,
-            context ));
+		    """
+		    result = queryExecute( "SELECT * FROM developers ORDER BY id", [], { "returnType": "struct" } );
+		    """,
+		    context ) );
 
 		assertThat( e.getMessage() ).isEqualTo( "You must defined a `columnKey` option when using `returnType: struct`." );
 		assertNull( variables.get( result ) );
@@ -320,10 +321,10 @@ public class QueryExecuteTest {
 	public void testInvalidReturnType() {
 		datasourceManager.setDefaultDatasource( datasource );
 		BoxRuntimeException e = assertThrows( BoxRuntimeException.class, () -> instance.executeSource(
-            """
-            result = queryExecute( "SELECT * FROM developers ORDER BY id", [], { "returnType": "foobar" } );
-            """,
-            context ));
+		    """
+		    result = queryExecute( "SELECT * FROM developers ORDER BY id", [], { "returnType": "foobar" } );
+		    """,
+		    context ) );
 
 		assertThat( e.getMessage() ).isEqualTo( "Unknown return type: foobar" );
 		assertNull( variables.get( result ) );
@@ -335,8 +336,8 @@ public class QueryExecuteTest {
 		datasourceManager.setDefaultDatasource( datasource );
 		instance.executeSource(
 		    """
-			result = queryExecute( "SELECT * FROM developers WHERE role = ?", [ 'Developer' ], { "result": "queryResults" } );
-			""",
+		    result = queryExecute( "SELECT * FROM developers WHERE role = ?", [ 'Developer' ], { "result": "queryResults" } );
+		    """,
 		    context );
 		Object resultObject = variables.get( Key.of( "queryResults" ) );
 		assertInstanceOf( IStruct.class, resultObject );
@@ -361,6 +362,20 @@ public class QueryExecuteTest {
 		assertThat( result.getAsLong( Key.executionTime ) ).isAtLeast( 0 );
 
 		assertFalse( result.containsKey( "generatedKey" ) );
+	}
+
+	@DisplayName( "It can execute a query against an ad-hoc datasource" )
+	@Test
+	public void testAdHocDatasource() {
+		DatabaseException e = assertThrows( DatabaseException.class, () -> {
+			// @TODO: Use standard datasource struct names
+			instance.executeSource(
+			    """
+			    result = queryExecute( "SELECT * FROM developers ORDER BY id", [], { "datasource": { "jdbcUrl": "jdbc:derby:memory:anotherTestDB;create=true" } } );
+			    """,
+			    context );
+		} );
+		assertEquals( "Table/View 'DEVELOPERS' does not exist.", e.getMessage() );
 	}
 
 }

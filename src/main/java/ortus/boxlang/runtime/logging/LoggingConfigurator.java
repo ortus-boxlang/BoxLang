@@ -58,7 +58,7 @@ public class LoggingConfigurator {
 		// Set directory to look for logback.xml
 		System.setProperty( "Logback.configurationFile", DEFAULT_CONFIG_FILE );
 
-		Level					logLevel		= debugMode ? Level.DEBUG : Level.INFO;
+		// Level logLevel = debugMode ? Level.DEBUG : Level.INFO;
 		Logger					rootLogger		= ( Logger ) LoggerFactory.getLogger( Logger.ROOT_LOGGER_NAME );
 		LoggerContext			loggerContext	= rootLogger.getLoggerContext();
 
@@ -72,7 +72,7 @@ public class LoggingConfigurator {
 		appender.setEncoder( encoder );
 		appender.start();
 
-		rootLogger.setLevel( logLevel );
+		// rootLogger.setLevel( logLevel );
 		rootLogger.addAppender( appender );
 	}
 }
