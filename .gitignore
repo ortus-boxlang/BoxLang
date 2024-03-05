@@ -28,6 +28,8 @@ cfml-parser-tests/**
 src/main/resources/modules/**/*.class
 src/main/java/ortus/boxlang/web/www/testbox/
 
+/src/main/java/ortus/boxlang/web/www/coldbox
 
 # JDBC artifacts
 derby.log
+
