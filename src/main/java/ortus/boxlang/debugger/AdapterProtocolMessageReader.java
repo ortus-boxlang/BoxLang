@@ -71,7 +71,11 @@ public class AdapterProtocolMessageReader {
 
 	public IAdapterProtocolMessage read() throws IOException {
 		String line = bufferedReader.readLine();
-		System.out.println( line );
+
+		if ( line == null ) {
+			return null;
+		}
+
 		Pattern	p	= Pattern.compile( "Content-Length: (\\d+)" );
 		Matcher	m	= p.matcher( line );
 

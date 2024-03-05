@@ -1,0 +1,6 @@
+value = 4;
+color = "green";
+
+value = value + 2;
+
+println( value );
