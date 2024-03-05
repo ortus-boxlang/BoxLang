@@ -60,6 +60,7 @@ public class ApplicationBoxContext extends BaseBoxContext {
 		super( null );
 		this.application		= application;
 		this.applicationScope	= application.getApplicationScope();
+		applicationScope.put( Key.applicationName, application.getName() );
 	}
 
 	public IStruct getVisibleScopes( IStruct scopes, boolean nearby, boolean shallow ) {

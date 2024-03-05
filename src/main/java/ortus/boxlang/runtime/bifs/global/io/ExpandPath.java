@@ -17,6 +17,7 @@ package ortus.boxlang.runtime.bifs.global.io;
 
 import java.io.File;
 import java.nio.file.Path;
+import java.util.Map;
 
 import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
@@ -63,17 +64,17 @@ public class ExpandPath extends BIF {
 		if ( !path.startsWith( "/" ) ) {
 			path = "/" + path;
 		}
-		final String	finalPath		= path;
-		String			matchingMapping	= context.getConfig().getAsStruct( Key.runtime ).getAsStruct( Key.mappings )
+		final String			finalPath				= path;
+		Map.Entry<Key, Object>	matchingMappingEntry	= context.getConfig().getAsStruct( Key.runtime ).getAsStruct( Key.mappings )
 		    .entrySet()
 		    .stream()
 		    .sorted(
 		        ( e1, e2 ) -> Integer.compare( e2.getValue().toString().length(), e1.getValue().toString().length() ) )
 		    .filter( e -> finalPath.startsWith( e.getKey().getName() ) )
 		    .findFirst()
-		    .get()
-		    .getValue()
-		    .toString();
+		    .get();
+		path = path.substring( matchingMappingEntry.getKey().getName().length() );
+		String matchingMapping = matchingMappingEntry.getValue().toString();
 
 		return new File( matchingMapping, path ).getAbsolutePath();
 	}

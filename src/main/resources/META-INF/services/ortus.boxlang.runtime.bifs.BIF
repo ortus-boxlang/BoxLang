@@ -187,6 +187,7 @@ ortus.boxlang.runtime.bifs.global.string.ListReduce
 ortus.boxlang.runtime.bifs.global.string.Mid
 ortus.boxlang.runtime.bifs.global.string.RTrim
 ortus.boxlang.runtime.bifs.global.string.ReReplace
+ortus.boxlang.runtime.bifs.global.string.ReReplaceNoCase
 ortus.boxlang.runtime.bifs.global.string.RepeatString
 ortus.boxlang.runtime.bifs.global.string.Replace
 ortus.boxlang.runtime.bifs.global.string.ReplaceNoCase

@@ -186,8 +186,8 @@ public class JavaBoxpiler {
 	public Class<IBoxRunnable> compileStatement( String source, BoxScriptType type ) {
 		ClassInfo classInfo = ClassInfo.forStatement( source, type );
 		if ( !classLoader.hasClass( classInfo.FQN() ) ) {
-			if ( diskClassLoader.hasClass( classInfo.FQN() ) ) {
-				return getDiskClass( classInfo.FQN() );
+			if ( diskClassLoader.hasClass( classInfo.originalFQN() ) ) {
+				return getDiskClass( classInfo.originalFQN() );
 			} else {
 				ParsingResult result = parseOrFail( source, BoxScriptType.CFSCRIPT );
 				compileSource( generateJavaSource( result.getRoot(), classInfo ), classInfo.FQN() );
@@ -209,8 +209,8 @@ public class JavaBoxpiler {
 		ClassInfo classInfo = ClassInfo.forScript( source, type );
 
 		if ( !classLoader.hasClass( classInfo.FQN() ) ) {
-			if ( diskClassLoader.hasClass( classInfo.FQN() ) ) {
-				return getDiskClass( classInfo.FQN() );
+			if ( diskClassLoader.hasClass( classInfo.originalFQN() ) ) {
+				return getDiskClass( classInfo.originalFQN() );
 			} else {
 				ParsingResult result = parseOrFail( source, type );
 				compileSource( generateJavaSource( result.getRoot(), classInfo ), classInfo.FQN() );
@@ -232,8 +232,8 @@ public class JavaBoxpiler {
 		long		lastModified	= path.toFile().lastModified();
 
 		if ( !classLoader.hasClass( classInfo.FQN(), lastModified ) ) {
-			if ( diskClassLoader.hasClass( classInfo.FQN(), lastModified ) ) {
-				return getDiskClass( classInfo.FQN() );
+			if ( diskClassLoader.hasClass( classInfo.originalFQN(), lastModified ) ) {
+				return getDiskClass( classInfo.originalFQN() );
 			} else {
 				classInfo = classInfo.next();
 				classCounter.put( classInfo.originalFQN(), classInfo.compileCount() );
@@ -255,8 +255,8 @@ public class JavaBoxpiler {
 		ClassInfo classInfo = ClassInfo.forClass( source );
 
 		if ( !classLoader.hasClass( classInfo.FQN() ) ) {
-			if ( diskClassLoader.hasClass( classInfo.FQN() ) ) {
-				return getDiskClassClass( classInfo.FQN() );
+			if ( diskClassLoader.hasClass( classInfo.originalFQN() ) ) {
+				return getDiskClassClass( classInfo.originalFQN() );
 			} else {
 				ParsingResult result = parseOrFail( source, type );
 				compileSource( generateJavaSource( result.getRoot(), classInfo ), classInfo.FQN() );
@@ -278,8 +278,8 @@ public class JavaBoxpiler {
 		long		lastModified	= path.toFile().lastModified();
 
 		if ( !classLoader.hasClass( classInfo.FQN(), lastModified ) ) {
-			if ( diskClassLoader.hasClass( classInfo.FQN(), lastModified ) ) {
-				return getDiskClassClass( classInfo.FQN() );
+			if ( diskClassLoader.hasClass( classInfo.originalFQN(), lastModified ) ) {
+				return getDiskClassClass( classInfo.originalFQN() );
 			} else {
 				classInfo = classInfo.next();
 				classCounter.put( classInfo.originalFQN(), classInfo.compileCount() );
@@ -753,10 +753,6 @@ public class JavaBoxpiler {
 
 		public String FQN() {
 			return packageName + "." + className();
-		}
-
-		public String className() {
-			return className + compileCount;
 		}
 
 		public String originalClassName() {

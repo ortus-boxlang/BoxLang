@@ -118,7 +118,6 @@ public class WebRequestBoxContext extends RequestBoxContext {
 		CGIScope		= new CGIScope( exchange );
 		cookieScope		= new CookieScope( exchange );
 
-		loadApplicationDescriptor( template );
 	}
 
 	/**

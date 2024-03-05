@@ -72,7 +72,7 @@ public abstract class RequestBoxContext extends BaseBoxContext {
 	/**
 	 * This will look for an Application.cfc file in the root mapping, load it if found, and configure the Application settings
 	 */
-	protected void loadApplicationDescriptor( URI template ) {
+	public void loadApplicationDescriptor( URI template ) {
 
 		if ( template == null ) {
 			applicationListener = new ApplicationListener();
