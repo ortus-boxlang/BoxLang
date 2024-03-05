@@ -98,6 +98,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		boxRuntime					= Key.of( "boxRuntime" );
 	public static final Key		buffersize					= Key.of( "buffersize" );
 	public static final Key		caches						= Key.of( "caches" );
+	public static final Key		cached						= Key.of( "cached" );
 	public static final Key		callback					= Key.of( "callback" );
 	public static final Key		caller						= Key.of( "caller" );
 	public static final Key		canonicalize				= Key.of( "canonicalize" );
@@ -172,6 +173,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		error						= Key.of( "error" );
 	public static final Key		errorcode					= Key.of( "errorcode" );
 	public static final Key		executionMode				= Key.of( "executionMode" );
+	public static final Key		executionTime				= Key.of( "executionTime" );
 	public static final Key		extendedinfo				= Key.of( "extendedinfo" );
 	public static final Key		evictCount					= Key.of( "evictCount" );
 	public static final Key		evictionPolicy				= Key.of( "evictionPolicy" );
@@ -288,6 +290,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		onRequest					= Key.of( "onRequest" );
 	public static final Key		onParse						= Key.of( "onParse" );
 	public static final Key		onUnload					= Key.of( "onUnload" );
+	public static final Key		options						= Key.of( "options" );
 	public static final Key		ordered						= Key.of( "ordered" );
 	public static final Key		os							= Key.of( "os" );
 	public static final Key		output						= Key.of( "output" );
@@ -342,6 +345,8 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		sortOrder					= Key.of( "sortOrder" );
 	public static final Key		sortType					= Key.of( "sortType" );
 	public static final Key		source						= Key.of( "source" );
+	public static final Key		sql							= Key.of( "sql" );
+	public static final Key		sqlParameters				= Key.of( "sqlParameters" );
 	public static final Key		sqltype						= Key.of( "sqltype" );
 	public static final Key		stackTrace					= Key.of( "stackTrace" );
 	public static final Key		start						= Key.of( "start" );
@@ -671,7 +676,7 @@ public class Key implements Comparable<Key>, Serializable {
 	 */
 	@Override
 	public String toString() {
-		// This is currenltly needed for JSON serialization via Jackson Jr.
+		// This is currently needed for JSON serialization via Jackson Jr.
 		return getName();
 	}
 

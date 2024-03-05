@@ -21,9 +21,6 @@ import java.sql.*;
 import java.util.List;
 import java.util.Map;
 
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
-
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.IStruct;
@@ -32,21 +29,24 @@ import ortus.boxlang.runtime.types.QueryColumnType;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.DatabaseException;
 
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
+
 /**
  * This class represents a query that has been executed and contains the results of executing that query.
  * It contains a reference to the {@link PendingQuery} that was executed to create this.
  */
-final class ExecutedQuery {
+public final class ExecutedQuery {
 
 	/**
 	 * The {@link PendingQuery} executed.
 	 */
-	private @NotNull final PendingQuery	pendingQuery;
+	private @Nonnull final PendingQuery	pendingQuery;
 
 	/**
 	 * The executed sql string with the bindings used in the String.
 	 */
-	private @NotNull final String		executedSql;
+	private @Nonnull final String		executedSql;
 
 	/**
 	 * The execution time of the query.
@@ -59,7 +59,7 @@ final class ExecutedQuery {
 	 *
 	 * @see Query
 	 */
-	private @NotNull final Query		results;
+	private @Nonnull final Query		results;
 
 	/**
 	 * The generated key of the request, if any.
@@ -74,7 +74,7 @@ final class ExecutedQuery {
 	 * @param executionTime The execution time the query took.
 	 * @param hasResults    Boolean flag from {@link PreparedStatement#execute()} designating if the execution returned any results.
 	 */
-	public ExecutedQuery( @NotNull PendingQuery pendingQuery, @NotNull PreparedStatement statement, long executionTime, boolean hasResults ) {
+	public ExecutedQuery( @Nonnull PendingQuery pendingQuery, @Nonnull PreparedStatement statement, long executionTime, boolean hasResults ) {
 		this.pendingQuery	= pendingQuery;
 		this.executedSql	= statement.toString();
 		this.executionTime	= executionTime;
@@ -135,7 +135,7 @@ final class ExecutedQuery {
 	 *
 	 * @return A Query object of results.
 	 */
-	public @NotNull Query getResults() {
+	public @Nonnull Query getResults() {
 		return this.results;
 	}
 
@@ -144,7 +144,7 @@ final class ExecutedQuery {
 	 *
 	 * @return An Array of Structs representing the Query
 	 */
-	public @NotNull Array getResultsAsArray() {
+	public @Nonnull Array getResultsAsArray() {
 		return this.results.toStructArray();
 	}
 
@@ -155,7 +155,7 @@ final class ExecutedQuery {
 	 *
 	 * @return A struct of String to Struct instances representing the Query results.
 	 */
-	public @NotNull IStruct getResultsAsStruct( @NotNull String key ) {
+	public @Nonnull IStruct getResultsAsStruct( @Nonnull String key ) {
 		Map<Object, List<IStruct>>	groupedResults	= this.results.stream().collect( groupingBy( r -> r.get( key ) ) );
 		Map<Object, Object>			groupedArray	= groupedResults.entrySet().stream().collect( toMap( Map.Entry::getKey, e -> new Array( e.getValue() ) ) );
 		return Struct.fromMap(
@@ -178,7 +178,7 @@ final class ExecutedQuery {
 	 *
 	 * @return A `result` struct
 	 */
-	public @NotNull Struct getResultStruct() {
+	public @Nonnull Struct getResultStruct() {
 		/*
 		 * * SQL: The SQL statement that was executed. (string)
 		 * * Cached: If the query was cached. (boolean)
@@ -189,7 +189,7 @@ final class ExecutedQuery {
 		 * * GENERATEDKEY: CF 9+ If the query was an INSERT with an identity or auto-increment value the value of that ID is placed in this variable.
 		 */
 		Struct result = new Struct();
-		result.put( "sql", this.executedSql );
+		result.put( "sql", this.pendingQuery.getOriginalSql() );
 		result.put( "cached", false );
 		result.put( "sqlParameters", Array.fromList( this.pendingQuery.getParameterValues() ) );
 		result.put( "recordCount", getRecordCount() );

@@ -92,7 +92,7 @@ public class DatasourceManagerTest {
 		assertThat( manager.getDatasource( datasourceName ) ).isInstanceOf( DataSource.class );
 		Connection connection = manager.getDatasource( datasourceName ).getConnection();
 		assertThat( connection ).isInstanceOf( Connection.class );
-		manager.clear();
+		manager.clear( true );
 		assertThat( manager.getDatasource( datasourceName ) ).isNull();
 		// The manager should close datasources, connection pools, and connections upon calling .clear()
 		assertThat( connection.isValid( 1 ) ).isFalse();

@@ -24,14 +24,13 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
-
 import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.exceptions.DatabaseException;
 import ortus.boxlang.runtime.types.util.ListUtil;
+
+import javax.annotation.Nonnull;
 
 /**
  * This class represents a query and any parameters/bindings before being executed.
@@ -44,7 +43,7 @@ public class PendingQuery {
 	 * If this SQL has parameters, they should be represented either as question marks (`?`)
 	 * or as named bindings, prefixed with a colon (`:`)
 	 */
-	private @NotNull final String				sql;
+	private @Nonnull final String				sql;
 
 	/**
 	 * The original SQL provided to the constructor. When constructing a `PendingQuery` with an
@@ -52,14 +51,14 @@ public class PendingQuery {
 	 * are replaced with question marks to work with the JDBC query. The SQL string with question marks
 	 * is set as `sql` and the original SQL provided with named parameters is set as `originalSql`.
 	 */
-	private @NotNull final String				originalSql;
+	private @Nonnull final String				originalSql;
 
 	/**
 	 * A List of QueryParameter instances. The store the value and SQL type of the parameters, in order.
 	 *
 	 * @see QueryParameter
 	 */
-	private @NotNull final List<QueryParameter>	parameters;
+	private @Nonnull final List<QueryParameter>	parameters;
 
 	/**
 	 * Creates a new PendingQuery instance from a SQL string, a list of parameters, and the original SQL string.
@@ -68,7 +67,7 @@ public class PendingQuery {
 	 * @param parameters  A list of {@link QueryParameter} to use as bindings.
 	 * @param originalSql The original sql string. This will include named parameters if the `PendingQuery` was constructed using an {@link IStruct}.
 	 */
-	public PendingQuery( @NotNull String sql, @NotNull List<QueryParameter> parameters, @NotNull String originalSql ) {
+	public PendingQuery( @Nonnull String sql, @Nonnull List<QueryParameter> parameters, @Nonnull String originalSql ) {
 		this.sql			= sql;
 		this.originalSql	= originalSql;
 		this.parameters		= parameters;
@@ -81,7 +80,7 @@ public class PendingQuery {
 	 * @param sql        The SQL string to execute
 	 * @param parameters A list of {@link QueryParameter} to use as bindings.
 	 */
-	public PendingQuery( @NotNull String sql, @NotNull List<QueryParameter> parameters ) {
+	public PendingQuery( @Nonnull String sql, @Nonnull List<QueryParameter> parameters ) {
 		this( sql, parameters, sql );
 	}
 
@@ -91,7 +90,7 @@ public class PendingQuery {
 	 * @param sql        The SQL string to execute
 	 * @param parameters An {@link Array} of `queryparam` {@link IStruct} instances to convert to {@link QueryParameter} instances and use as bindings.
 	 */
-	public PendingQuery( @NotNull String sql, @NotNull Array parameters ) {
+	public PendingQuery( @Nonnull String sql, @Nonnull Array parameters ) {
 		this( sql, parameters.stream().map( QueryParameter::new ).collect( Collectors.toList() ) );
 	}
 
@@ -100,7 +99,7 @@ public class PendingQuery {
 	 *
 	 * @param sql The SQL string to execute
 	 */
-	public PendingQuery( @NotNull String sql ) {
+	public PendingQuery( @Nonnull String sql ) {
 		this( sql, new ArrayList<>(), sql );
 	}
 
@@ -111,7 +110,7 @@ public class PendingQuery {
 	 * @param sql        The SQL string to execute
 	 * @param parameters An `IStruct` of `String` `name` to either an `Object` `value` or a `queryparam` `IStruct`.
 	 */
-	public static @NotNull PendingQuery fromStructParameters( @NotNull String sql, @NotNull IStruct parameters ) {
+	public static @Nonnull PendingQuery fromStructParameters( @Nonnull String sql, @Nonnull IStruct parameters ) {
 		List<QueryParameter>	params	= new ArrayList<>();
 		Pattern					pattern	= Pattern.compile( ":\\w+" );
 		Matcher					matcher	= pattern.matcher( sql );
@@ -128,11 +127,20 @@ public class PendingQuery {
 	}
 
 	/**
+	 * Returns the original sql for this PendingQuery
+	 *
+	 * @return The original sql string
+	 */
+	public @Nonnull String getOriginalSql() {
+		return this.originalSql;
+	}
+
+	/**
 	 * Returns a list of parameter `Object` values from the `List<QueryParameter>`.
 	 *
 	 * @return A list of parameter values as `Object`s.
 	 */
-	public @NotNull List<Object> getParameterValues() {
+	public @Nonnull List<Object> getParameterValues() {
 		return this.parameters.stream().map( QueryParameter::getValue ).collect( Collectors.toList() );
 	}
 
@@ -147,7 +155,7 @@ public class PendingQuery {
 	 *
 	 * @see ExecutedQuery
 	 */
-	public @NotNull ExecutedQuery execute( @NotNull Connection conn ) {
+	public @Nonnull ExecutedQuery execute( @Nonnull Connection conn ) {
 		try ( PreparedStatement statement = conn.prepareStatement( this.sql, Statement.RETURN_GENERATED_KEYS ) ) {
 			// The param index starts from 1
 			for ( int i = 1; i <= this.parameters.size(); i++ ) {

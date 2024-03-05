@@ -20,6 +20,8 @@ import java.util.Map;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.IStruct;
 
+import javax.annotation.Nullable;
+
 public class DataSourceManager {
 
 	/**
@@ -68,9 +70,26 @@ public class DataSourceManager {
 	 * @param name       Name of the datasource. This will be used in retrieving the datasource later.
 	 * @param datasource Struct of datasource properties for configuring the datasource.
 	 */
-	public DataSourceManager registerDatasource( Key name, IStruct datasource ) {
-		this.datasources.put( name, new DataSource( datasource ) );
-		return this;
+	public DataSource registerDatasource( Key name, IStruct datasource ) {
+		DataSource ds = new DataSource( datasource );
+		this.datasources.put( name, ds );
+		return ds;
+	}
+
+	/**
+	 * Register a datasource with the manager.
+	 * <p>
+	 * Stores a datasource in the manager for later retrieval by key name.
+	 * <p>
+	 * It is preferred that you use `setDefaultDatasource` to set the default datasource for the application. All other datasources should be registered
+	 * with this method.
+	 *
+	 * @param name       Name of the datasource. This will be used in retrieving the datasource later.
+	 * @param datasource Struct of datasource properties for configuring the datasource.
+	 */
+	public DataSource registerDatasource( Key name, DataSource datasource ) {
+		this.datasources.put( name, datasource );
+		return datasource;
 	}
 
 	/**
@@ -80,8 +99,20 @@ public class DataSourceManager {
 	 *
 	 * @return An instance of the datasource, if found, or `null`.
 	 */
-	public DataSource getDatasource( Key name ) {
+	public @Nullable DataSource getDatasource( Key name ) {
 		return this.datasources.get( name );
+	}
+
+	/**
+	 * Set the default datasource.
+	 * <p>
+	 * Chainable method to set the default datasource for this application/runtime.
+	 *
+	 * @param datasourceName The datasource to set as the default. Almost always configured via <code>this.datasource = {}</code> in the Application.cfc.
+	 */
+	public DataSourceManager setDefaultDatasource( Key datasourceName ) {
+		this.datasources.put( Key._DEFAULT, this.datasources.get( datasourceName ) );
+		return this;
 	}
 
 	/**
@@ -110,8 +141,10 @@ public class DataSourceManager {
 	 * <p>
 	 * Will close all open connections and remove all datasources (including the default) from the manager.
 	 */
-	public DataSourceManager clear() {
-		this.datasources.forEach( ( name, datasource ) -> datasource.shutdown() );
+	public DataSourceManager clear( boolean shutdown ) {
+		if ( shutdown ) {
+			this.datasources.forEach( ( name, datasource ) -> datasource.shutdown() );
+		}
 		this.datasources.clear();
 		return this;
 	}
@@ -122,7 +155,7 @@ public class DataSourceManager {
 	 * Will self-destruct, at which point a new instance can be obtained via `DataSourceManager.getInstance()`.
 	 */
 	public void shutdown() {
-		this.clear();
+		this.clear( true );
 		instance = null;
 	}
 }

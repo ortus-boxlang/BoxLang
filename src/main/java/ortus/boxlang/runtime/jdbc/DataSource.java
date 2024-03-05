@@ -112,6 +112,22 @@ public class DataSource {
 	}
 
 	/**
+	 * Execute a query on the default connection
+	 *
+	 * @param query The SQL query to execute.
+	 *
+	 * @return An array of Structs, each representing a row of the result set (if any). If there are no results (say, for an UPDATE statement), an empty
+	 *         array is returned.
+	 */
+	public ExecutedQuery execute( String query ) {
+		try ( Connection conn = getConnection(); ) {
+			return execute( query, conn, new Struct() );
+		} catch ( SQLException e ) {
+			throw new DatabaseException( e.getMessage(), e );
+		}
+	}
+
+	/**
 	 * Execute a query on the connection, using a connection from the connection pool which is autoclosed upon query completion.
 	 *
 	 * @param query        The SQL query to execute.
