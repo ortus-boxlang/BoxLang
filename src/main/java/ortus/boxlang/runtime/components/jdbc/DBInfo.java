@@ -306,7 +306,7 @@ public class DBInfo extends Component {
 			}
 
 			String schema = null;
-			if ( tableName.contains( "." ) ) {
+			if ( tableName != null && tableName.contains( "." ) ) {
 				String[] parts = tableName.split( "\\." );
 				schema		= parts[ 0 ];
 				tableName	= parts[ 1 ];

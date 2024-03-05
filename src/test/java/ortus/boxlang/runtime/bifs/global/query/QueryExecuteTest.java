@@ -56,7 +56,7 @@ public class QueryExecuteTest {
 		instance			= BoxRuntime.getInstance( true );
 		datasourceManager	= DataSourceManager.getInstance();
 		datasource			= new DataSource( Struct.of(
-		    "jdbcUrl", "jdbc:derby:memory:testDB;create=true"
+		    "jdbcUrl", "jdbc:derby:memory:testQueryExecuteDB;create=true"
 		) );
 		datasource.execute( "CREATE TABLE developers ( id INTEGER, name VARCHAR(155), role VARCHAR(155) )" );
 	}

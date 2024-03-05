@@ -48,7 +48,7 @@ public class DataSourceTest {
 	@BeforeAll
 	public static void setUp() {
 		datasource = new DataSource( Struct.of(
-		    "jdbcUrl", "jdbc:derby:memory:testDB;create=true"
+		    "jdbcUrl", "jdbc:derby:memory:testDatasourceDB;create=true"
 		) );
 		datasource.execute( "CREATE TABLE developers ( id INTEGER, name VARCHAR(155) )" );
 	}

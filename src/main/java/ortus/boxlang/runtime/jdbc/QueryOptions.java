@@ -8,6 +8,7 @@ import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
 import javax.annotation.Nullable;
+import java.sql.Connection;
 
 public class QueryOptions {
 
@@ -18,16 +19,47 @@ public class QueryOptions {
 	private @Nullable String				resultVariableName;
 	private String							returnType;
 	private String							columnKey;
+	private String							username;
+	private String							password;
+	private Integer							queryTimeout;
+	private Long							maxRows;
 
 	public QueryOptions( IStruct options ) {
 		this.options = options;
 		determineDataSource();
 		determineReturnType();
-		this.resultVariableName = options.getAsString( Key.result );
+		this.resultVariableName	= options.getAsString( Key.result );
+		this.username			= options.getAsString( Key.username );
+		this.password			= options.getAsString( Key.password );
+		this.queryTimeout		= options.getAsInteger( Key.queryTimeout );
+		this.maxRows			= options.getAsLong( Key.maxRows );
+		if ( this.maxRows == null ) {
+			this.maxRows = -1L;
+		}
 	}
 
 	public DataSource getDataSource() {
 		return this.datasource;
+	}
+
+	public Connection getConnnection() {
+		if ( wantsUsernameAndPassword() ) {
+			return getDataSource().getConnection( getUsername(), getPassword() );
+		} else {
+			return getDataSource().getConnection();
+		}
+	}
+
+	private boolean wantsUsernameAndPassword() {
+		return this.username != null;
+	}
+
+	private String getUsername() {
+		return this.username;
+	}
+
+	private String getPassword() {
+		return this.password;
 	}
 
 	public boolean wantsResultStruct() {
@@ -88,4 +120,11 @@ public class QueryOptions {
 		}
 	}
 
+	public Integer getQueryTimeout() {
+		return queryTimeout;
+	}
+
+	public Long getMaxRows() {
+		return maxRows;
+	}
 }

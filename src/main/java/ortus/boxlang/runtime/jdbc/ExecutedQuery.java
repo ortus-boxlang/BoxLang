@@ -65,11 +65,11 @@ public final class ExecutedQuery {
 	 * Creates an ExecutedQuery instance.
 	 *
 	 * @param pendingQuery  The {@link PendingQuery} executed.
-	 * @param statement     The {@link PreparedStatement} instance executed.
+	 * @param statement     The {@link Statement} instance executed.
 	 * @param executionTime The execution time the query took.
 	 * @param hasResults    Boolean flag from {@link PreparedStatement#execute()} designating if the execution returned any results.
 	 */
-	public ExecutedQuery( @Nonnull PendingQuery pendingQuery, @Nonnull PreparedStatement statement, long executionTime, boolean hasResults ) {
+	public ExecutedQuery( @Nonnull PendingQuery pendingQuery, @Nonnull Statement statement, long executionTime, boolean hasResults ) {
 		this.pendingQuery	= pendingQuery;
 		this.executionTime	= executionTime;
 

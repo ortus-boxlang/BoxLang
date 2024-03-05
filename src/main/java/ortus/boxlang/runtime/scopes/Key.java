@@ -312,6 +312,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		quarter						= Key.of( "quarter" );
 	public static final Key		query						= Key.of( "query" );
 	public static final Key		queryFormat					= Key.of( "queryFormat" );
+	public static final Key		queryTimeout				= Key.of( "queryTimeout" );
 	public static final Key		radix						= Key.of( "radix" );
 	public static final Key		Raw_Trace					= Key.of( "Raw_Trace" );
 	public static final Key		recordCount					= Key.of( "recordCount" );

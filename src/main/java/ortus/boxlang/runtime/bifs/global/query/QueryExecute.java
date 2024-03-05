@@ -19,16 +19,14 @@ import ortus.boxlang.runtime.bifs.BoxBIF;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.dynamic.ExpressionInterpreter;
 import ortus.boxlang.runtime.dynamic.casters.*;
-import ortus.boxlang.runtime.jdbc.DataSource;
-import ortus.boxlang.runtime.jdbc.DataSourceManager;
-import ortus.boxlang.runtime.jdbc.ExecutedQuery;
-import ortus.boxlang.runtime.jdbc.QueryOptions;
+import ortus.boxlang.runtime.jdbc.*;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.*;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
 import javax.annotation.Nonnull;
+import java.sql.Connection;
 import java.util.Optional;
 
 @BoxBIF
@@ -65,31 +63,36 @@ public class QueryExecute extends BIF {
 
 		String					sql				= arguments.getAsString( Key.sql );
 		Object					bindings		= arguments.get( Key.params );
-		ExecutedQuery			query			= executeWithBindings( sql, bindings, options );
+		PendingQuery			pendingQuery	= createPendingQueryWithBindings( sql, bindings, options );
+
+		pendingQuery.setQueryTimeout( options.getQueryTimeout() );
+		pendingQuery.setMaxRows( options.getMaxRows() );
+
+		ExecutedQuery executedQuery = pendingQuery.execute( options.getConnnection() );
 
 		if ( options.wantsResultStruct() ) {
 			assert options.getResultVariableName() != null;
-			ExpressionInterpreter.setVariable( context, options.getResultVariableName(), query.getResultStruct() );
+			ExpressionInterpreter.setVariable( context, options.getResultVariableName(), executedQuery.getResultStruct() );
 		}
 
-		return options.castAsReturnType( query );
+		return options.castAsReturnType( executedQuery );
 	}
 
-	private ExecutedQuery executeWithBindings( @Nonnull String sql, Object bindings, QueryOptions options ) {
-		ExecutedQuery query = null;
+	private PendingQuery createPendingQueryWithBindings( @Nonnull String sql, Object bindings, QueryOptions options ) {
+		PendingQuery query = null;
 
 		if ( bindings == null ) {
-			return options.getDataSource().execute( sql );
+			return new PendingQuery( sql );
 		}
 
 		CastAttempt<Array> castAsArray = ArrayCaster.attempt( bindings );
 		if ( castAsArray.wasSuccessful() ) {
-			return options.getDataSource().execute( sql, castAsArray.getOrFail() );
+			return new PendingQuery( sql, castAsArray.getOrFail() );
 		}
 
 		CastAttempt<IStruct> castAsStruct = StructCaster.attempt( bindings );
 		if ( castAsStruct.wasSuccessful() ) {
-			return options.getDataSource().execute( sql, castAsStruct.getOrFail() );
+			return PendingQuery.fromStructParameters( sql, castAsStruct.getOrFail() );
 		}
 
 		String className = "null";

@@ -55,7 +55,7 @@ public class DataSourceManagerTest {
 		IStruct config = Struct.of(
 		    "jdbcUrl", "jdbc:foobar:myDB"
 		);
-		assertThrows( RuntimeException.class, () -> manager.registerDataSource( datasourceName, config ));
+		assertThrows( RuntimeException.class, () -> manager.registerDataSource( datasourceName, config ) );
 	}
 
 	@DisplayName( "It can set and get datasources by name" )
@@ -89,8 +89,8 @@ public class DataSourceManagerTest {
 		) );
 		DataSource datasource = manager.getDataSource( datasourceName );
 		assertThat( datasource ).isInstanceOf( DataSource.class );
-        assert datasource != null;
-        Connection connection = datasource.getConnection();
+		assert datasource != null;
+		Connection connection = datasource.getConnection();
 		assertThat( connection ).isInstanceOf( Connection.class );
 		manager.clear( true );
 		assertThat( manager.getDataSource( datasourceName ) ).isNull();

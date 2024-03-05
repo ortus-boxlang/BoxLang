@@ -63,7 +63,9 @@ public class PendingQuery {
 	 */
 	private @Nonnull final List<QueryParameter>	parameters;
 
-	// private @Nullable Long queryTimeout;
+	private @Nullable Integer					queryTimeout;
+
+	private long								maxRows;
 
 	/**
 	 * Creates a new PendingQuery instance from a SQL string, a list of parameters, and the original SQL string.
@@ -75,13 +77,11 @@ public class PendingQuery {
 	public PendingQuery(
 	    @Nonnull String sql,
 	    @Nonnull List<QueryParameter> parameters,
-	    @Nonnull String originalSql
-	// @Nullable Long queryTimeout
-	) {
+	    @Nonnull String originalSql ) {
 		this.sql			= sql;
 		this.originalSql	= originalSql;
 		this.parameters		= parameters;
-		// this.queryTimeout = queryTimeout;
+		this.maxRows		= 0L;
 	}
 
 	/**
@@ -166,26 +166,12 @@ public class PendingQuery {
 	 * @see ExecutedQuery
 	 */
 	public @Nonnull ExecutedQuery execute( @Nonnull Connection conn ) {
-		try ( PreparedStatement statement = conn.prepareStatement( this.sql, Statement.RETURN_GENERATED_KEYS ) ) {
-			// The param index starts from 1
-			for ( int i = 1; i <= this.parameters.size(); i++ ) {
-				QueryParameter	param			= this.parameters.get( i - 1 );
-				Integer			scaleOrLength	= param.getScaleOrLength();
-				if ( scaleOrLength == null ) {
-					statement.setObject( i, param.getValue(), param.getSqlTypeAsInt() );
-				} else {
-					statement.setObject( i, param.getValue(), param.getSqlTypeAsInt(), scaleOrLength );
-				}
+		try {
+			if ( this.parameters.isEmpty() ) {
+				return executeStatement( conn );
+			} else {
+				return executePreparedStatement( conn );
 			}
-			long	startTick	= System.currentTimeMillis();
-			boolean	hasResults	= statement.execute();
-			long	endTick		= System.currentTimeMillis();
-			return new ExecutedQuery(
-			    this,
-			    statement,
-			    endTick - startTick,
-			    hasResults
-			);
 		} catch ( SQLException e ) {
 			String detail = "";
 			if ( e.getCause() != null ) {
@@ -204,4 +190,67 @@ public class PendingQuery {
 		}
 	}
 
+	private ExecutedQuery executeStatement( Connection conn ) throws SQLException {
+		Statement statement = conn.createStatement();
+
+		applyStatementOptions( statement );
+
+		long	startTick	= System.currentTimeMillis();
+		boolean	hasResults	= statement.execute( this.sql, Statement.RETURN_GENERATED_KEYS );
+		long	endTick		= System.currentTimeMillis();
+
+		return new ExecutedQuery(
+		    this,
+		    statement,
+		    endTick - startTick,
+		    hasResults
+		);
+	}
+
+	private ExecutedQuery executePreparedStatement( Connection conn ) throws SQLException {
+		PreparedStatement statement = conn.prepareStatement( this.sql, Statement.RETURN_GENERATED_KEYS );
+		// The param index starts from 1
+		for ( int i = 1; i <= this.parameters.size(); i++ ) {
+			QueryParameter	param			= this.parameters.get( i - 1 );
+			Integer			scaleOrLength	= param.getScaleOrLength();
+			if ( scaleOrLength == null ) {
+				statement.setObject( i, param.getValue(), param.getSqlTypeAsInt() );
+			} else {
+				statement.setObject( i, param.getValue(), param.getSqlTypeAsInt(), scaleOrLength );
+			}
+		}
+
+		applyStatementOptions( statement );
+
+		long	startTick	= System.currentTimeMillis();
+		boolean	hasResults	= statement.execute();
+		long	endTick		= System.currentTimeMillis();
+
+		return new ExecutedQuery(
+		    this,
+		    statement,
+		    endTick - startTick,
+		    hasResults
+		);
+	}
+
+	private void applyStatementOptions( Statement statement ) throws SQLException {
+		if ( this.queryTimeout != null ) {
+			statement.setQueryTimeout( this.queryTimeout );
+		}
+
+		if ( this.maxRows > 0 ) {
+			statement.setLargeMaxRows( this.maxRows );
+		}
+	}
+
+	public PendingQuery setQueryTimeout( @Nullable Integer queryTimeout ) {
+		this.queryTimeout = queryTimeout;
+		return this;
+	}
+
+	public PendingQuery setMaxRows( long maxRows ) {
+		this.maxRows = maxRows;
+		return this;
+	}
 }
