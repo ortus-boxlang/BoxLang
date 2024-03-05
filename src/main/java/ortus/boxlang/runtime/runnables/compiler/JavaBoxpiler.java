@@ -20,6 +20,7 @@ package ortus.boxlang.runtime.runnables.compiler;
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Collections;
@@ -130,7 +131,7 @@ public class JavaBoxpiler {
 		this.classGenerationDirectory	= Paths.get( BoxRuntime.getInstance().getConfiguration().compiler.classGenerationDirectory );
 
 		// If we are in debug mode, let's clean out the class generation directory
-		if ( BoxRuntime.getInstance().inDebugMode() ) {
+		if ( BoxRuntime.getInstance().inDebugMode() && Files.exists( this.classGenerationDirectory ) ) {
 			try {
 				logger.debug( "Running in debugmode, first startup cleaning out class generation directory: " + classGenerationDirectory );
 				FileUtils.cleanDirectory( classGenerationDirectory.toFile() );
