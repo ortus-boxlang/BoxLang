@@ -21,6 +21,7 @@ import java.io.Serializable;
 import java.time.LocalDateTime;
 import java.util.Map;
 
+import ortus.boxlang.parser.BoxScriptType;
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.ClosureBoxContext;
 import ortus.boxlang.runtime.context.FunctionBoxContext;
@@ -293,7 +294,8 @@ public abstract class Function implements IType, IFunctionRunnable, Serializable
 		meta.put( Key._NAME, getName().getName() );
 		meta.put( Key.returnType, getReturnType() );
 		meta.putIfAbsent( Key.hint, "" );
-		meta.putIfAbsent( Key.output, false );
+		// Passing null to canOutput will skip the CFC check
+		meta.putIfAbsent( Key.output, canOutput( null ) );
 		meta.put( Key.access, getAccess().toString().toLowerCase() );
 		Array params = new Array();
 		for ( Argument argument : getArguments() ) {
@@ -379,7 +381,13 @@ public abstract class Function implements IType, IFunctionRunnable, Serializable
 	public boolean canOutput( FunctionBoxContext context ) {
 		// Initialize if neccessary
 		if ( this.canOutput == null ) {
-			this.canOutput = BooleanCaster.cast( getAnnotations().getOrDefault( Key.output, false ) );
+			this.canOutput = BooleanCaster.cast(
+			    getAnnotations()
+			        .getOrDefault(
+			            Key.output,
+			            ( getSourceType().equals( BoxScriptType.CFSCRIPT ) || getSourceType().equals( BoxScriptType.CFMARKUP ) ? true : false )
+			        )
+			);
 		}
 
 		if ( this.canOutput ) {

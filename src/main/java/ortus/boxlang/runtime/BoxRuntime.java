@@ -753,7 +753,7 @@ public class BoxRuntime {
 	 *
 	 */
 	public void executeSource( String source, IBoxContext context ) {
-		executeSource( source, context, BoxScriptType.CFSCRIPT );
+		executeSource( source, context, BoxScriptType.BOXSCRIPT );
 	}
 
 	/**
@@ -866,7 +866,7 @@ public class BoxRuntime {
 	}
 
 	public void printTranspiledJavaCode( String filePath ) {
-		JavaBoxpiler.ClassInfo	classInfo	= JavaBoxpiler.ClassInfo.forTemplate( Path.of( filePath ), "boxclass.generated" );
+		JavaBoxpiler.ClassInfo	classInfo	= JavaBoxpiler.ClassInfo.forTemplate( Path.of( filePath ), "boxclass.generated", BoxScriptType.BOXSCRIPT );
 		ParsingResult			result		= javaBoxpiler.parseOrFail( Path.of( filePath ).toFile() );
 
 		System.out.print( javaBoxpiler.generateJavaSource( result.getRoot(), classInfo ) );
@@ -879,7 +879,7 @@ public class BoxRuntime {
 	 *
 	 */
 	public void printSourceAST( String source ) {
-		ParsingResult result = javaBoxpiler.parseOrFail( source, BoxScriptType.CFSCRIPT );
+		ParsingResult result = javaBoxpiler.parseOrFail( source, BoxScriptType.BOXSCRIPT );
 		System.out.println( result.getRoot().toJSON() );
 	}
 

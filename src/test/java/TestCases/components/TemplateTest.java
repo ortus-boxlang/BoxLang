@@ -203,7 +203,7 @@ public class TemplateTest {
 		    if ( i == 1 ) {
 		    	result = 'it worked'
 		    }
-		                   """, context, BoxScriptType.CFSCRIPT );
+		                   """, context, BoxScriptType.BOXSCRIPT );
 
 		assertThat( variables.get( result ) ).isEqualTo( "it worked" );
 		assertThat( variables.get( Key.of( "foo" ) ) ).isEqualTo( "bar" );
@@ -228,7 +228,7 @@ public class TemplateTest {
 		    	<cfset result &= " six">
 		    ```
 		    result &= " seven"
-		                      """, context, BoxScriptType.CFSCRIPT );
+		                      """, context, BoxScriptType.BOXSCRIPT );
 
 		assertThat( variables.get( result ) ).isEqualTo( "one two three four five six seven" );
 	}
@@ -669,7 +669,7 @@ public class TemplateTest {
 
 		    cfhttp( url="http://google.com",  throwOnTimeout=true )
 		                  """,
-		    context, BoxScriptType.CFSCRIPT );
+		    context, BoxScriptType.BOXSCRIPT );
 	}
 
 	@Test
@@ -679,7 +679,7 @@ public class TemplateTest {
 		    brad {
 		    }
 		          """,
-		    context, BoxScriptType.CFSCRIPT ) );
+		    context, BoxScriptType.BOXSCRIPT ) );
 		assertThat( e.getMessage() ).contains( "[brad] was not located" );
 	}
 
