@@ -49,12 +49,18 @@ public class ListRest extends BIF {
 	}
 
 	/**
-	 * Describe what the invocation of your bif function does
+	 * Returns the remainder of a list after removing the first item
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.foo Describe any expected arguments
+	 * @argument.list The delimited list to perform operations on
+	 *
+	 * @argument.delimiter string the list delimiter
+	 *
+	 * @argument.includeEmptyFields boolean whether to include empty fields in the returned result
+	 *
+	 * @argument.multiCharacterDelimiter boolean whether the delimiter is multi-character
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		Integer	offset	= arguments.getAsInteger( Key.offset );

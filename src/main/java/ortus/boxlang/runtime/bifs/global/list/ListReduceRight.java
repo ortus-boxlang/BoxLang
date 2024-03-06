@@ -49,12 +49,22 @@ public class ListReduceRight extends ArrayReduce {
 	}
 
 	/**
-	 * Describe what the invocation of your bif function does
+	 * Run the provided udf over a reversed delimited list to reduce the values to a single output
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.foo Describe any expected arguments
+	 * @argument.list The delimited list to perform operations on
+	 *
+	 * @argument.callback The function to invoke for each item. The function will be passed 3 arguments: the value, the index, the array.
+	 *
+	 * @argument.initialValue The initial value of the reduction
+	 *
+	 * @argument.delimiter string the list delimiter
+	 *
+	 * @argument.includeEmptyFields boolean whether to include empty fields in the returned result
+	 *
+	 * @argument.multiCharacterDelimiter boolean whether the delimiter is multi-character
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		arguments.put(

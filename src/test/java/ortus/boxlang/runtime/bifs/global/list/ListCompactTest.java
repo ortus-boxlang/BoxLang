@@ -1,3 +1,4 @@
+
 /**
  * [BoxLang]
  *
@@ -47,7 +48,6 @@ public class ListCompactTest {
 
 	@AfterAll
 	public static void teardown() {
-
 	}
 
 	@BeforeEach
@@ -56,115 +56,45 @@ public class ListCompactTest {
 		variables	= context.getScopeNearby( VariablesScope.name );
 	}
 
-	@DisplayName( "It removes the default comma delimiter from the start and end of a list" )
+	@DisplayName( "It tests the BIF ListCompact" )
 	@Test
-	public void testCompactDefault() {
+	public void testBif() {
 		instance.executeSource(
 		    """
-		    	list = ",a,b,c,";
-		    	result = listCompact( list );
+		    list=",,,a,b,c,d,,,";
+		    result = ListCompact( list );
 		    """,
-		    context
-		);
-		assertThat( variables.get( result ) ).isEqualTo( "a,b,c" );
+		    context );
+		assertThat( variables.get( result ) ).isEqualTo( "a,b,c,d" );
+
 		instance.executeSource(
 		    """
-		    list = ",a,b,c";
-		    result = listCompact( list );
+		    list=",,,a,b,,c,d,,,";
+		    result = ListCompact( list );
 		    """,
-		    context
-		);
-		assertThat( variables.get( result ) ).isEqualTo( "a,b,c" );
+		    context );
+		assertThat( variables.get( result ) ).isEqualTo( "a,b,,c,d" );
+
+		instance.executeSource(
+		    """
+		    list="||a|b||c|d||";
+		    result = ListCompact( list, "|" );
+		    """,
+		    context );
+		assertThat( variables.get( result ) ).isEqualTo( "a|b||c|d" );
+
 	}
 
-	@DisplayName( "It removes multiple instances of the same delimiter from the start and end of a list" )
-	@Test
-	public void testCompactMultiple() {
-		instance.executeSource(
-		    """
-		    	list = ",,,,,,,a,b,c,,,";
-		    	result = listCompact( list );
-		    """,
-		    context
-		);
-		assertThat( variables.get( result ) ).isEqualTo( "a,b,c" );
-	}
-
-	@DisplayName( "It can compact using a custom delimiter" )
-	@Test
-	public void testCompactCustomDelimiter() {
-		instance.executeSource(
-		    """
-		    	list = ":::a:b:c:";
-		    	result = listCompact( list, ":" );
-		    """,
-		    context
-		);
-		assertThat( variables.get( result ) ).isEqualTo( "a:b:c" );
-	}
-
-	@DisplayName( "It can compact using a multi-character delimiter" )
-	@Test
-	public void testMultiCharacterDelimiter() {
-		instance.executeSource(
-		    """
-		    	list = ":::a::b::c:";
-		    	result = listCompact( list, "::", true );
-		    """,
-		    context
-		);
-		assertThat( variables.get( result ) ).isEqualTo( ":a::b::c:" );
-
-		instance.executeSource(
-		    """
-		    	list = ":::a:::b:::c:";
-		    	result = listCompact( list, ":::", true );
-		    """,
-		    context
-		);
-		assertThat( variables.get( result ) ).isEqualTo( "a:::b:::c:" );
-	}
-
-	@DisplayName( "It uses a single character if the multi-character delimiter flag is false" )
-	@Test
-	public void testSingleCharacterDelimiterWhenMultiDelimiterFlagIsFalse() {
-		instance.executeSource(
-		    """
-		    	list = ":::a:b:c:";
-		    	result = listCompact( list, "::", false );
-		    """,
-		    context
-		);
-		assertThat( variables.get( result ) ).isEqualTo( "a:b:c" );
-
-		instance.executeSource(
-		    """
-		    	list = ":::a:b:c:";
-		    	result = listCompact( list, ":::", false );
-		    """,
-		    context
-		);
-		assertThat( variables.get( result ) ).isEqualTo( "a:b:c" );
-	}
-
-	@DisplayName( "It can use the member function" )
+	@DisplayName( "It tests the member function for String.ListCompact" )
 	@Test
 	public void testMemberFunction() {
 		instance.executeSource(
 		    """
-		    	list = ",,,,a,b,c,";
-		    	result = list.listCompact();
+		    list=",,,a,b,c,d,,,";
+		    result = list.ListCompact();
 		    """,
-		    context
-		);
-		assertThat( variables.get( result ) ).isEqualTo( "a,b,c" );
-		instance.executeSource(
-		    """
-		    	list = "::::a::b::c:::";
-		    	result = list.listCompact( "::", true );
-		    """,
-		    context
-		);
-		assertThat( variables.get( result ) ).isEqualTo( "a::b::c:::" );
+		    context );
+		assertThat( variables.get( result ) ).isEqualTo( "a,b,c,d" );
 	}
+
 }

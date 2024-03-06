@@ -42,18 +42,23 @@ public class ListAvg extends ArrayAvg {
 		declaredArguments = new Argument[] {
 		    new Argument( true, "string", Key.list ),
 		    new Argument( false, "string", Key.delimiter, ListUtil.DEFAULT_DELIMITER ),
-		    new Argument( false, "boolean", Key.multiCharacterDelimiter, false ),
-		    new Argument( false, "boolean", Key.includeEmptyFields, false )
+		    new Argument( false, "boolean", Key.multiCharacterDelimiter, false )
 		};
 	}
 
 	/**
-	 * Describe what the invocation of your bif function does
+	 * Gets the average of all values in a list
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.foo Describe any expected arguments
+	 * @argument.list The list to compact
+	 *
+	 * @argument.delimiter string the list delimiter
+	 *
+	 * @argument.multiCharacterDelimiter boolean whether the delimiter is multi-character
+	 *
+	 * @argument.includeEmptyFields whether to include empty fields in the average
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		arguments.put(
@@ -61,7 +66,7 @@ public class ListAvg extends ArrayAvg {
 		    ListUtil.asList(
 		        arguments.getAsString( Key.list ),
 		        arguments.getAsString( Key.delimiter ),
-		        arguments.getAsBoolean( Key.includeEmptyFields ),
+		        false,
 		        arguments.getAsBoolean( Key.multiCharacterDelimiter )
 		    )
 		);
