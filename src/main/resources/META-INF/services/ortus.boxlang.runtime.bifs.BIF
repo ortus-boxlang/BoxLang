@@ -208,6 +208,7 @@ ortus.boxlang.runtime.bifs.global.string.StringMap
 ortus.boxlang.runtime.bifs.global.string.StringReduce
 ortus.boxlang.runtime.bifs.global.string.StringReduceRight
 ortus.boxlang.runtime.bifs.global.string.StringSome
+ortus.boxlang.runtime.bifs.global.string.StringSort
 ortus.boxlang.runtime.bifs.global.string.StripCR
 ortus.boxlang.runtime.bifs.global.string.Trim
 ortus.boxlang.runtime.bifs.global.string.TrueFalseFormat
