@@ -240,7 +240,6 @@ public class FunctionBoxContext extends BaseBoxContext {
 		if ( isInClass() ) {
 			// A function executing in a class can see the class variables
 			IScope classVariablesScope = getThisClass().getBottomClass().getVariablesScope();
-
 			result = classVariablesScope.getRaw( key );
 			// Null means not found
 			if ( result != null ) {
@@ -389,7 +388,7 @@ public class FunctionBoxContext extends BaseBoxContext {
 	 *
 	 * @param enclosingBoxClass The class in which this function is executing
 	 */
-	public IBoxContext setThisClass( IClassRunnable enclosingBoxClass ) {
+	public FunctionBoxContext setThisClass( IClassRunnable enclosingBoxClass ) {
 		this.enclosingBoxClass = enclosingBoxClass;
 		return this;
 	}
@@ -401,7 +400,7 @@ public class FunctionBoxContext extends BaseBoxContext {
 	 *
 	 * @return This context
 	 */
-	public IBoxContext flushBuffer( boolean force ) {
+	public FunctionBoxContext flushBuffer( boolean force ) {
 		if ( !canOutput() && !force ) {
 			return this;
 		}

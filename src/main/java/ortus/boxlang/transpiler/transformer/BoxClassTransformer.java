@@ -132,7 +132,7 @@ public class BoxClassTransformer extends AbstractTransformer {
 			private final static Map<Key,Property>	getterLookup=null;
 			private final static Map<Key,Property>	setterLookup=null;
 
-			private VariablesScope variablesScope = new VariablesScope();
+			private VariablesScope variablesScope = new ClassVariablesScope(this);
 			private ThisScope thisScope = new ThisScope();
 			private Key name = ${boxClassName};
 			private IClassRunnable _super = null;

@@ -35,6 +35,7 @@ import java.util.stream.Collectors;
 
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.bifs.MemberDescriptor;
+import ortus.boxlang.runtime.context.FunctionBoxContext;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.dynamic.casters.KeyCaster;
 import ortus.boxlang.runtime.dynamic.casters.StringCaster;
@@ -797,13 +798,14 @@ public class Struct implements IStruct, IListenable, Serializable {
 		if ( value != null ) {
 
 			if ( value instanceof Function function ) {
+				FunctionBoxContext fContext = Function.generateFunctionContext(
+				    function,
+				    context.getFunctionParentContext(),
+				    name,
+				    positionalArguments
+				);
 				return function.invoke(
-				    Function.generateFunctionContext(
-				        function,
-				        context.getFunctionParentContext(),
-				        name,
-				        positionalArguments
-				    )
+				    setupFunctionContextForInvoke( fContext )
 				);
 			} else if ( memberDescriptor == null ) {
 				throw new BoxRuntimeException(
@@ -834,13 +836,14 @@ public class Struct implements IStruct, IListenable, Serializable {
 		Object				value				= dereference( context, name, safe );
 		if ( value != null ) {
 			if ( value instanceof Function function ) {
+				FunctionBoxContext fContext = Function.generateFunctionContext(
+				    function,
+				    context.getFunctionParentContext(),
+				    name,
+				    namedArguments
+				);
 				return function.invoke(
-				    Function.generateFunctionContext(
-				        function,
-				        context.getFunctionParentContext(),
-				        name,
-				        namedArguments
-				    )
+				    setupFunctionContextForInvoke( fContext )
 				);
 			} else if ( memberDescriptor == null ) {
 				throw new BoxRuntimeException(
@@ -853,6 +856,10 @@ public class Struct implements IStruct, IListenable, Serializable {
 		}
 
 		return DynamicInteropService.invoke( this, name.getName(), safe, namedArguments );
+	}
+
+	public FunctionBoxContext setupFunctionContextForInvoke( FunctionBoxContext fContext ) {
+		return fContext;
 	}
 
 	/**
