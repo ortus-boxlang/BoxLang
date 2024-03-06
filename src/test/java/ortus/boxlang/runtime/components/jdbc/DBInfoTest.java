@@ -323,7 +323,21 @@ public class DBInfoTest {
 		    .findFirst()
 		    .orElse( null );
 		assertNotNull( testTableRow );
+	}
 
+	@DisplayName( "Can get table indices on any table case" )
+	@Test
+	public void testTableNameCasing() {
+		instance.executeSource(
+		    """
+		    	cfdbinfo( type='index', table="deVELopERs", name='result' )
+		    """,
+		    context );
+		Object theResult = variables.get( result );
+		assertTrue( theResult instanceof Query );
+
+		Query resultQuery = ( Query ) theResult;
+		assertTrue( resultQuery.size() > 0 );
 	}
 
 	@DisplayName( "Can get table indices via type=index" )

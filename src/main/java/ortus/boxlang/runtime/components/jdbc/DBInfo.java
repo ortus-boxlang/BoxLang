@@ -224,21 +224,18 @@ public class DBInfo extends Component {
 	 *
 	 * @return Query object where each row represents a column on the given table.
 	 */
-	private Query getColumnsForTable( DataSource datasource, String databaseName, String tableName ) {
+	private Query getColumnsForTable( DataSource datasource, String databaseName, String tableNameLookup ) {
 		try ( Connection conn = datasource.getConnection(); ) {
 			Query				result				= new Query();
 			DatabaseMetaData	databaseMetadata	= conn.getMetaData();
 
 			// Lucee compat: Default to the database name set on the connection (provided by the datasource config).
-			databaseName = databaseName != null ? databaseName : getDatabaseNameFromConnection( conn );
-			// @TODO: Lucee compat: Normalizing casing to match the database storage preference (i.e. uppercase vs lowercase).
+			databaseName	= databaseName != null ? databaseName : getDatabaseNameFromConnection( conn );
 
-			String schema = null;
-			if ( tableName != null && tableName.contains( "." ) ) {
-				String[] parts = tableName.split( "\\." );
-				schema		= parts[ 0 ];
-				tableName	= parts[ 1 ];
-			}
+			// Lucee compat: Pull table name and schema name from a dot-delimited string, like "mySchema.tblUsers"
+			tableNameLookup	= normalizeTableNameCasing( databaseMetadata, tableNameLookup );
+			String	tableName	= parseTableName( tableNameLookup );
+			String	schema		= parseSchemaFromTableName( tableNameLookup );
 
 			try ( ResultSet resultSet = databaseMetadata.getColumns( databaseName, schema, tableName, null ) ) {
 				ResultSetMetaData	resultSetMetaData	= resultSet.getMetaData();
@@ -272,8 +269,8 @@ public class DBInfo extends Component {
 					row.put( Key.of( "REFERENCED_PRIMARYKEY_TABLE" ), referencedKeyTable );
 					result.addRow( row );
 				}
-				if ( result.isEmpty() && ( !databaseMetadata.getTables( null, null, tableName, null ).next() ) ) {
-					throw new DatabaseException( String.format( "Table not found for pattern [%s] ", tableName ) );
+				if ( result.isEmpty() && ( !databaseMetadata.getTables( null, schema, tableName, null ).next() ) ) {
+					throw new DatabaseException( String.format( "Table not found for pattern [%s] on schema [%s]", tableName, schema ) );
 				}
 			}
 			return result;
@@ -292,21 +289,18 @@ public class DBInfo extends Component {
 	 *
 	 * @return Query object where each row represents a table in the provided database.
 	 */
-	private Query getTables( DataSource datasource, String databaseName, String tableName ) {
+	private Query getTables( DataSource datasource, String databaseName, String tableNameLookup ) {
 		try ( Connection conn = datasource.getConnection(); ) {
 			Query				result				= new Query();
 			DatabaseMetaData	databaseMetadata	= conn.getMetaData();
 
 			// Lucee compat: Default to the database name set on the connection (provided by the datasource config).
-			databaseName = databaseName != null ? databaseName : getDatabaseNameFromConnection( conn );
-			// @TODO: Lucee compat: Normalizing casing to match the database storage preference (i.e. uppercase vs lowercase).
+			databaseName	= databaseName != null ? databaseName : getDatabaseNameFromConnection( conn );
 
-			String schema = null;
-			if ( tableName != null && tableName.contains( "." ) ) {
-				String[] parts = tableName.split( "\\." );
-				schema		= parts[ 0 ];
-				tableName	= parts[ 1 ];
-			}
+			// Lucee compat: Pull table name and schema name from a dot-delimited string, like "mySchema.tblUsers"
+			tableNameLookup	= normalizeTableNameCasing( databaseMetadata, tableNameLookup );
+			String	tableName	= parseTableName( tableNameLookup );
+			String	schema		= parseSchemaFromTableName( tableNameLookup );
 
 			try ( ResultSet resultSet = databaseMetadata.getTables( databaseName, schema, tableName, null ) ) {
 				ResultSetMetaData	resultSetMetaData	= resultSet.getMetaData();
@@ -346,21 +340,18 @@ public class DBInfo extends Component {
 	 *
 	 * @return Query object where each row represents a foreign key on the specified table.
 	 */
-	private Query getForeignKeys( DataSource datasource, String databaseName, String tableName ) {
+	private Query getForeignKeys( DataSource datasource, String databaseName, String tableNameLookup ) {
 		try ( Connection conn = datasource.getConnection(); ) {
 			Query				result				= new Query();
 			DatabaseMetaData	databaseMetadata	= conn.getMetaData();
 
 			// Lucee compat: Default to the database name set on the connection (provided by the datasource config).
-			databaseName = databaseName != null ? databaseName : getDatabaseNameFromConnection( conn );
-			// @TODO: Lucee compat: Normalizing casing to match the database storage preference (i.e. uppercase vs lowercase).
+			databaseName	= databaseName != null ? databaseName : getDatabaseNameFromConnection( conn );
 
-			String schema = null;
-			if ( tableName != null && tableName.contains( "." ) ) {
-				String[] parts = tableName.split( "\\." );
-				schema		= parts[ 0 ];
-				tableName	= parts[ 1 ];
-			}
+			// Lucee compat: Pull table name and schema name from a dot-delimited string, like "mySchema.tblUsers"
+			tableNameLookup	= normalizeTableNameCasing( databaseMetadata, tableNameLookup );
+			String	tableName	= parseTableName( tableNameLookup );
+			String	schema		= parseSchemaFromTableName( tableNameLookup );
 
 			try ( ResultSet resultSet = databaseMetadata.getExportedKeys( databaseName, schema, tableName ) ) {
 				ResultSetMetaData	resultSetMetaData	= resultSet.getMetaData();
@@ -384,8 +375,8 @@ public class DBInfo extends Component {
 					}
 					result.addRow( row );
 				}
-				if ( result.isEmpty() && ( !databaseMetadata.getTables( null, null, tableName, null ).next() ) ) {
-					throw new DatabaseException( String.format( "Table not found for pattern [%s] ", tableName ) );
+				if ( result.isEmpty() && ( !databaseMetadata.getTables( null, schema, tableName, null ).next() ) ) {
+					throw new DatabaseException( String.format( "Table not found for pattern [%s] on schema [%s]", tableName, schema ) );
 				}
 			}
 			return result;
@@ -403,21 +394,18 @@ public class DBInfo extends Component {
 	 *
 	 * @return Query object where each row represents an index on the specified table.
 	 */
-	private Query getIndexes( DataSource datasource, String databaseName, String tableName ) {
+	private Query getIndexes( DataSource datasource, String databaseName, String tableNameLookup ) {
 		try ( Connection conn = datasource.getConnection(); ) {
 			Query				result				= new Query();
 			DatabaseMetaData	databaseMetadata	= conn.getMetaData();
 
 			// Lucee compat: Default to the database name set on the connection (provided by the datasource config).
-			databaseName = databaseName != null ? databaseName : getDatabaseNameFromConnection( conn );
-			// @TODO: Lucee compat: Normalizing casing to match the database storage preference (i.e. uppercase vs lowercase).
+			databaseName	= databaseName != null ? databaseName : getDatabaseNameFromConnection( conn );
 
-			String schema = null;
-			if ( tableName != null && tableName.contains( "." ) ) {
-				String[] parts = tableName.split( "\\." );
-				schema		= parts[ 0 ];
-				tableName	= parts[ 1 ];
-			}
+			// Lucee compat: Pull table name and schema name from a dot-delimited string, like "mySchema.tblUsers"
+			tableNameLookup	= normalizeTableNameCasing( databaseMetadata, tableNameLookup );
+			String	tableName	= parseTableName( tableNameLookup );
+			String	schema		= parseSchemaFromTableName( tableNameLookup );
 
 			try ( ResultSet resultSet = databaseMetadata.getIndexInfo( databaseName, schema, tableName, false, true ) ) {
 				ResultSetMetaData	resultSetMetaData	= resultSet.getMetaData();
@@ -453,8 +441,8 @@ public class DBInfo extends Component {
 					// Lucee compat: Lucee actually converts the "CARDINALITY" value to a Double here. Do we care??
 					result.addRow( row );
 				}
-				if ( result.isEmpty() && ( !databaseMetadata.getTables( null, null, tableName, null ).next() ) ) {
-					throw new DatabaseException( String.format( "Table not found for pattern [%s] ", tableName ) );
+				if ( result.isEmpty() && ( !databaseMetadata.getTables( null, schema, tableName, null ).next() ) ) {
+					throw new DatabaseException( String.format( "Table not found for pattern [%s] on schema [%s]", tableName, schema ) );
 				}
 			}
 			return result;
@@ -479,9 +467,11 @@ public class DBInfo extends Component {
 
 			// Lucee compat: Default to the database name set on the connection (provided by the datasource config).
 			databaseName	= databaseName != null ? databaseName : getDatabaseNameFromConnection( conn );
-			pattern			= pattern == null ? String.valueOf( '%' ) : pattern.isBlank() ? null : pattern;
-			// @TODO: Lucee compat: Normalizing casing to match the database storage preference (i.e. uppercase vs lowercase).
-			try ( ResultSet resultSet = databaseMetadata.getProcedures( databaseName, null, pattern ) ) {
+			// Lucee compat: Pull table name and schema name from a dot-delimited string, like "mySchema.tblUsers"
+			pattern			= normalizeTableNameCasing( databaseMetadata, pattern );
+			String	tableName	= parseTableName( pattern );
+			String	schema		= parseSchemaFromTableName( pattern );
+			try ( ResultSet resultSet = databaseMetadata.getProcedures( databaseName, schema, tableName ) ) {
 				ResultSetMetaData	resultSetMetaData	= resultSet.getMetaData();
 				int					columnCount			= resultSetMetaData.getColumnCount();
 
@@ -508,6 +498,53 @@ public class DBInfo extends Component {
 		} catch ( SQLException e ) {
 			throw new DatabaseException( "Unable to read column metadata", e );
 		}
+	}
+
+	/**
+	 * Extract the table name from a dot-delimited string, or return the input string if no period is present.
+	 *
+	 * @param tableName Table name to parse. Can be a table name like "tblUsers", or a dot-delimited string like "mySchema.tblUsers".
+	 *
+	 * @return The table name portion of the input string, or null if tableName is null.
+	 */
+	private String parseTableName( String tableName ) {
+		if ( tableName != null && tableName.contains( "." ) ) {
+			return tableName.split( "\\." )[ 0 ];
+		}
+		return tableName;
+	}
+
+	/**
+	 * Extract the schema name from a dot-delimited string.
+	 *
+	 * @param tableName Table name to parse. Can be a table name like "tblUsers", or a dot-delimited string like "mySchema.tblUsers".
+	 *
+	 * @return The schema name portion of the input string IF the input is non-null and contains a period. Else null.
+	 */
+	private String parseSchemaFromTableName( String tableName ) {
+		if ( tableName != null && tableName.contains( "." ) ) {
+			return tableName.split( "\\." )[ 1 ];
+		}
+		return null;
+	}
+
+	/**
+	 * Correct the schema or table name identifier case based on what the database vendor claims to store identifiers as - lower or upper case.
+	 *
+	 * @param metaData      The DatabaseMetaData object from which to read identifier casing preferences.
+	 * @param tableOrSchema The table or schema name to normalize, or even a dot-delimited string like "mySchema.tblUsers".
+	 *
+	 * @throws SQLException
+	 */
+	private String normalizeTableNameCasing( DatabaseMetaData metaData, String tableOrSchema ) throws SQLException {
+		if ( tableOrSchema == null ) {
+			return null;
+		}
+		if ( metaData.storesLowerCaseIdentifiers() )
+			return tableOrSchema.toLowerCase();
+		if ( metaData.storesUpperCaseIdentifiers() )
+			return tableOrSchema.toUpperCase();
+		return tableOrSchema;
 	}
 
 	private String getDatabaseNameFromConnection( Connection conn ) {
