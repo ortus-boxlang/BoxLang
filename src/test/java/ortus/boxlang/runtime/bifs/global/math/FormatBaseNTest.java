@@ -84,9 +84,9 @@ public class FormatBaseNTest {
 
 		instance.executeSource(
 		    """
-				someNumber = 10.75;
-		    	result = someNumber.formatBaseN(2);
-		    """,
+		    someNumber = 10.75;
+		      	result = someNumber.formatBaseN(2);
+		      """,
 		    context );
 		assertThat( variables.get( result ) ).isEqualTo( "1010" );
 	}

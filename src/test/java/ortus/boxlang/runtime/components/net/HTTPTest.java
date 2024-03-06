@@ -230,8 +230,6 @@ public class HTTPTest {
 		Assertions.assertTrue( headers.containsKey( Key.of( "x-ratelimit-remaining" ) ) );
 
 		Assertions.assertTrue( headers.containsKey( Key.of( "reporting-endpoints" ) ) );
-		assertThat( headers.get( Key.of( "reporting-endpoints" ) ) ).isEqualTo(
-		    "heroku-nel=https://nel.heroku.com/reports?ts=1709586771&sid=e11707d5-02a7-43ef-b45e-2cf4d2036f7d&s=4SezAwb%2BZetUNTPpjh2Z3bLupZCROMh3BmptfECslZ0%3D" );
 
 		Assertions.assertTrue( headers.containsKey( Key.of( "cf-cache-status" ) ) );
 
