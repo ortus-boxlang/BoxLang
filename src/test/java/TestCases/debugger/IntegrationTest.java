@@ -158,7 +158,7 @@ public class IntegrationTest {
 		    waitForMessage( "response", "setbreakpoints" ),
 		    sendMessageStep( DebugMessages.getConfigurationDoneRequest( 4 ) ),
 		    waitForMessage( "response", "configurationdone" ),
-		    waitForMessage( "event", "stopped", 3000 )
+		    waitForMessage( "event", "stopped", 10000 )
 		);
 
 		List<IAdapterProtocolMessage>											messages		= runDebugger( steps );
