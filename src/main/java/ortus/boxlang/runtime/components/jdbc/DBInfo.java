@@ -129,20 +129,36 @@ public class DBInfo extends Component {
 				);
 			}
 		}
-		String		databaseName	= attributes.getAsString( Key.dbname );
-		String		tableName		= attributes.getAsString( Key.table );
+		String	databaseName	= attributes.getAsString( Key.dbname );
+		String	tableNameLookup	= attributes.getAsString( Key.table );
+		if ( tableNameLookup == null ) {
+			tableNameLookup = attributes.getAsString( Key.pattern );
+		}
 
-		DBInfoType	type			= DBInfoType.fromString( attributes.getAsString( Key.type ) );
-		Query		result			= ( switch ( type ) {
-										case DBNAMES -> getDbNames( datasource );
-										case VERSION -> getVersion( datasource );
-										case COLUMNS -> getColumnsForTable( datasource, databaseName, tableName );
-										case TABLES -> getTables( datasource, databaseName, attributes.getAsString( Key.pattern ) );
-										case FOREIGNKEYS -> getForeignKeys( datasource, databaseName, tableName );
-										case INDEX -> getIndexes( datasource, databaseName, tableName );
-										case PROCEDURES -> getProcedures( datasource, databaseName, attributes.getAsString( Key.pattern ) );
-									} );
-		ExpressionInterpreter.setVariable( context, attributes.getAsString( Key._NAME ), result );
+		DBInfoType type = DBInfoType.fromString( attributes.getAsString( Key.type ) );
+
+		try ( Connection conn = datasource.getConnection(); ) {
+			DatabaseMetaData databaseMetadata = conn.getMetaData();
+			// Lucee compat: Default to the database name set on the connection (provided by the datasource config).
+			databaseName	= databaseName != null ? databaseName : getDatabaseNameFromConnection( conn );
+
+			// Lucee compat: Pull table name and schema name from a dot-delimited string, like "mySchema.tblUsers"
+			tableNameLookup	= normalizeTableNameCasing( databaseMetadata, tableNameLookup );
+			String	tableName	= parseTableName( tableNameLookup );
+			String	schema		= parseSchemaFromTableName( tableNameLookup );
+			Query	result		= ( switch ( type ) {
+									case DBNAMES -> getDbNames( databaseMetadata );
+									case VERSION -> getVersion( databaseMetadata );
+									case COLUMNS -> getColumnsForTable( databaseMetadata, databaseName, schema, tableName );
+									case TABLES -> getTables( databaseMetadata, databaseName, schema, tableName );
+									case FOREIGNKEYS -> getForeignKeys( databaseMetadata, databaseName, schema, tableName );
+									case INDEX -> getIndexes( databaseMetadata, databaseName, schema, tableName );
+									case PROCEDURES -> getProcedures( databaseMetadata, databaseName, schema, tableName );
+								} );
+			ExpressionInterpreter.setVariable( context, attributes.getAsString( Key._NAME ), result );
+		} catch ( SQLException e ) {
+			throw new DatabaseException( "Unable to read " + attributes.getAsString( Key.type ) + " metadata", e );
+		}
 		// @TODO: Return null???
 		return DEFAULT_RETURN;
 	}
@@ -154,26 +170,22 @@ public class DBInfo extends Component {
 	 *
 	 * @return A Query object where each row represents a catalog name or schema name within this datasource.
 	 */
-	private Query getDbNames( DataSource datasource ) {
-		try ( Connection conn = datasource.getConnection(); ) {
-			Query result = new Query();
-			result.addColumn( Key.of( "DBNAME" ), QueryColumnType.VARCHAR );
-			result.addColumn( Key.of( "type" ), QueryColumnType.VARCHAR );
-			try ( ResultSet catalogs = conn.getMetaData().getCatalogs() ) {
-				while ( catalogs.next() ) {
-					result.addRow( new Object[] { catalogs.getObject( 1 ), "CATALOG" } );
-				}
+	private Query getDbNames( DatabaseMetaData databaseMetadata ) throws SQLException {
+		Query result = new Query();
+		result.addColumn( Key.of( "DBNAME" ), QueryColumnType.VARCHAR );
+		result.addColumn( Key.of( "type" ), QueryColumnType.VARCHAR );
+		try ( ResultSet catalogs = databaseMetadata.getCatalogs() ) {
+			while ( catalogs.next() ) {
+				result.addRow( new Object[] { catalogs.getObject( 1 ), "CATALOG" } );
 			}
-			try ( ResultSet schemas = conn.getMetaData().getSchemas(); ) {
-				while ( schemas.next() ) {
-					result.addRow( new Object[] { schemas.getObject( 1 ), "SCHEMA" } );
-				}
-			}
-			// @TODO: Support `pattern` attribute here, like Lucee does, to filter the results.
-			return result;
-		} catch ( SQLException e ) {
-			throw new DatabaseException( "Unable to read database names", e );
 		}
+		try ( ResultSet schemas = databaseMetadata.getSchemas(); ) {
+			while ( schemas.next() ) {
+				result.addRow( new Object[] { schemas.getObject( 1 ), "SCHEMA" } );
+			}
+		}
+		// @TODO: Support `pattern` attribute here, like Lucee does, to filter the results.
+		return result;
 	}
 
 	/**
@@ -184,32 +196,27 @@ public class DBInfo extends Component {
 	 *
 	 * @return A single-row Query object populated with JDBC driver version info.
 	 */
-	private Query getVersion( DataSource datasource ) {
-		try ( Connection conn = datasource.getConnection(); ) {
-			Query				result				= new Query();
-			DatabaseMetaData	databaseMetadata	= conn.getMetaData();
-			result.addColumn( Key.of( "DATABASE_PRODUCTNAME" ), QueryColumnType.VARCHAR, new Object[] {
-			    databaseMetadata.getDatabaseProductName()
-			} );
-			result.addColumn( Key.of( "DATABASE_VERSION" ), QueryColumnType.VARCHAR, new Object[] {
-			    databaseMetadata.getDatabaseProductVersion()
-			} );
-			result.addColumn( Key.of( "DRIVER_NAME" ), QueryColumnType.VARCHAR, new Object[] {
-			    databaseMetadata.getDriverName()
-			} );
-			result.addColumn( Key.of( "DRIVER_VERSION" ), QueryColumnType.VARCHAR, new Object[] {
-			    databaseMetadata.getDriverVersion()
-			} );
-			result.addColumn( Key.of( "JDBC_MAJOR_VERSION" ), QueryColumnType.VARCHAR, new Object[] {
-			    Double.valueOf( databaseMetadata.getJDBCMajorVersion() )
-			} );
-			result.addColumn( Key.of( "JDBC_MINOR_VERSION" ), QueryColumnType.DOUBLE, new Object[] {
-			    Double.valueOf( databaseMetadata.getJDBCMinorVersion() )
-			} );
-			return result;
-		} catch ( SQLException e ) {
-			throw new DatabaseException( "Unable to read database version info", e );
-		}
+	private Query getVersion( DatabaseMetaData databaseMetadata ) throws SQLException {
+		Query result = new Query();
+		result.addColumn( Key.of( "DATABASE_PRODUCTNAME" ), QueryColumnType.VARCHAR, new Object[] {
+		    databaseMetadata.getDatabaseProductName()
+		} );
+		result.addColumn( Key.of( "DATABASE_VERSION" ), QueryColumnType.VARCHAR, new Object[] {
+		    databaseMetadata.getDatabaseProductVersion()
+		} );
+		result.addColumn( Key.of( "DRIVER_NAME" ), QueryColumnType.VARCHAR, new Object[] {
+		    databaseMetadata.getDriverName()
+		} );
+		result.addColumn( Key.of( "DRIVER_VERSION" ), QueryColumnType.VARCHAR, new Object[] {
+		    databaseMetadata.getDriverVersion()
+		} );
+		result.addColumn( Key.of( "JDBC_MAJOR_VERSION" ), QueryColumnType.VARCHAR, new Object[] {
+		    Double.valueOf( databaseMetadata.getJDBCMajorVersion() )
+		} );
+		result.addColumn( Key.of( "JDBC_MINOR_VERSION" ), QueryColumnType.DOUBLE, new Object[] {
+		    Double.valueOf( databaseMetadata.getJDBCMinorVersion() )
+		} );
+		return result;
 	}
 
 	/**
@@ -224,59 +231,45 @@ public class DBInfo extends Component {
 	 *
 	 * @return Query object where each row represents a column on the given table.
 	 */
-	private Query getColumnsForTable( DataSource datasource, String databaseName, String tableNameLookup ) {
-		try ( Connection conn = datasource.getConnection(); ) {
-			Query				result				= new Query();
-			DatabaseMetaData	databaseMetadata	= conn.getMetaData();
+	private Query getColumnsForTable( DatabaseMetaData databaseMetadata, String databaseName, String schema, String tableName ) throws SQLException {
+		Query result = new Query();
+		try ( ResultSet resultSet = databaseMetadata.getColumns( databaseName, schema, tableName, null ) ) {
+			ResultSetMetaData	resultSetMetaData	= resultSet.getMetaData();
+			int					columnCount			= resultSetMetaData.getColumnCount();
 
-			// Lucee compat: Default to the database name set on the connection (provided by the datasource config).
-			databaseName	= databaseName != null ? databaseName : getDatabaseNameFromConnection( conn );
+			// The column count starts from 1
+			for ( int i = 1; i <= columnCount; i++ ) {
+				result.addColumn(
+				    Key.of( resultSetMetaData.getColumnLabel( i ) ),
+				    QueryColumnType.fromSQLType( resultSetMetaData.getColumnType( i ) )
+				);
+			}
 
-			// Lucee compat: Pull table name and schema name from a dot-delimited string, like "mySchema.tblUsers"
-			tableNameLookup	= normalizeTableNameCasing( databaseMetadata, tableNameLookup );
-			String	tableName	= parseTableName( tableNameLookup );
-			String	schema		= parseSchemaFromTableName( tableNameLookup );
-
-			try ( ResultSet resultSet = databaseMetadata.getColumns( databaseName, schema, tableName, null ) ) {
-				ResultSetMetaData	resultSetMetaData	= resultSet.getMetaData();
-				int					columnCount			= resultSetMetaData.getColumnCount();
-
-				// The column count starts from 1
+			while ( resultSet.next() ) {
+				Struct row = new Struct( IStruct.TYPES.LINKED );
 				for ( int i = 1; i <= columnCount; i++ ) {
-					result.addColumn(
+					row.put(
 					    Key.of( resultSetMetaData.getColumnLabel( i ) ),
-					    QueryColumnType.fromSQLType( resultSetMetaData.getColumnType( i ) )
+					    resultSet.getObject( i )
 					);
 				}
-
-				while ( resultSet.next() ) {
-					Struct row = new Struct( IStruct.TYPES.LINKED );
-					for ( int i = 1; i <= columnCount; i++ ) {
-						row.put(
-						    Key.of( resultSetMetaData.getColumnLabel( i ) ),
-						    resultSet.getObject( i )
-						);
-					}
-					// @TODO: Implement primary key detection and columns
-					boolean	isPrimaryKey		= false;
-					// @TODO: Implement foreign key detection and columns
-					boolean	isForeignKey		= false;
-					String	referencedKeyColumn	= "N/A";
-					String	referencedKeyTable	= "N/A";
-					row.put( Key.of( "IS_PRIMARYKEY" ), isPrimaryKey );
-					row.put( Key.of( "IS_FOREIGNKEY" ), isForeignKey );
-					row.put( Key.of( "REFERENCED_PRIMARYKEY" ), referencedKeyColumn );
-					row.put( Key.of( "REFERENCED_PRIMARYKEY_TABLE" ), referencedKeyTable );
-					result.addRow( row );
-				}
-				if ( result.isEmpty() && ( !databaseMetadata.getTables( null, schema, tableName, null ).next() ) ) {
-					throw new DatabaseException( String.format( "Table not found for pattern [%s] on schema [%s]", tableName, schema ) );
-				}
+				// @TODO: Implement primary key detection and columns
+				boolean	isPrimaryKey		= false;
+				// @TODO: Implement foreign key detection and columns
+				boolean	isForeignKey		= false;
+				String	referencedKeyColumn	= "N/A";
+				String	referencedKeyTable	= "N/A";
+				row.put( Key.of( "IS_PRIMARYKEY" ), isPrimaryKey );
+				row.put( Key.of( "IS_FOREIGNKEY" ), isForeignKey );
+				row.put( Key.of( "REFERENCED_PRIMARYKEY" ), referencedKeyColumn );
+				row.put( Key.of( "REFERENCED_PRIMARYKEY_TABLE" ), referencedKeyTable );
+				result.addRow( row );
 			}
-			return result;
-		} catch ( SQLException e ) {
-			throw new DatabaseException( "Unable to read column metadata", e );
+			if ( result.isEmpty() && ( !databaseMetadata.getTables( null, schema, tableName, null ).next() ) ) {
+				throw new DatabaseException( String.format( "Table not found for pattern [%s] on schema [%s]", tableName, schema ) );
+			}
 		}
+		return result;
 	}
 
 	/**
@@ -289,46 +282,33 @@ public class DBInfo extends Component {
 	 *
 	 * @return Query object where each row represents a table in the provided database.
 	 */
-	private Query getTables( DataSource datasource, String databaseName, String tableNameLookup ) {
-		try ( Connection conn = datasource.getConnection(); ) {
-			Query				result				= new Query();
-			DatabaseMetaData	databaseMetadata	= conn.getMetaData();
+	private Query getTables( DatabaseMetaData databaseMetadata, String databaseName, String schema, String tableName ) throws SQLException {
+		Query result = new Query();
 
-			// Lucee compat: Default to the database name set on the connection (provided by the datasource config).
-			databaseName	= databaseName != null ? databaseName : getDatabaseNameFromConnection( conn );
+		try ( ResultSet resultSet = databaseMetadata.getTables( databaseName, schema, tableName, null ) ) {
+			ResultSetMetaData	resultSetMetaData	= resultSet.getMetaData();
+			int					columnCount			= resultSetMetaData.getColumnCount();
 
-			// Lucee compat: Pull table name and schema name from a dot-delimited string, like "mySchema.tblUsers"
-			tableNameLookup	= normalizeTableNameCasing( databaseMetadata, tableNameLookup );
-			String	tableName	= parseTableName( tableNameLookup );
-			String	schema		= parseSchemaFromTableName( tableNameLookup );
+			// The column count starts from 1
+			for ( int i = 1; i <= columnCount; i++ ) {
+				result.addColumn(
+				    Key.of( resultSetMetaData.getColumnLabel( i ) ),
+				    QueryColumnType.fromSQLType( resultSetMetaData.getColumnType( i ) )
+				);
+			}
 
-			try ( ResultSet resultSet = databaseMetadata.getTables( databaseName, schema, tableName, null ) ) {
-				ResultSetMetaData	resultSetMetaData	= resultSet.getMetaData();
-				int					columnCount			= resultSetMetaData.getColumnCount();
-
-				// The column count starts from 1
+			while ( resultSet.next() ) {
+				Struct row = new Struct( IStruct.TYPES.LINKED );
 				for ( int i = 1; i <= columnCount; i++ ) {
-					result.addColumn(
+					row.put(
 					    Key.of( resultSetMetaData.getColumnLabel( i ) ),
-					    QueryColumnType.fromSQLType( resultSetMetaData.getColumnType( i ) )
+					    resultSet.getObject( i )
 					);
 				}
-
-				while ( resultSet.next() ) {
-					Struct row = new Struct( IStruct.TYPES.LINKED );
-					for ( int i = 1; i <= columnCount; i++ ) {
-						row.put(
-						    Key.of( resultSetMetaData.getColumnLabel( i ) ),
-						    resultSet.getObject( i )
-						);
-					}
-					result.addRow( row );
-				}
+				result.addRow( row );
 			}
-			return result;
-		} catch ( SQLException e ) {
-			throw new DatabaseException( "Unable to read column metadata", e );
 		}
+		return result;
 	}
 
 	/**
@@ -340,49 +320,35 @@ public class DBInfo extends Component {
 	 *
 	 * @return Query object where each row represents a foreign key on the specified table.
 	 */
-	private Query getForeignKeys( DataSource datasource, String databaseName, String tableNameLookup ) {
-		try ( Connection conn = datasource.getConnection(); ) {
-			Query				result				= new Query();
-			DatabaseMetaData	databaseMetadata	= conn.getMetaData();
+	private Query getForeignKeys( DatabaseMetaData databaseMetadata, String databaseName, String schema, String tableName ) throws SQLException {
+		Query result = new Query();
+		try ( ResultSet resultSet = databaseMetadata.getExportedKeys( databaseName, schema, tableName ) ) {
+			ResultSetMetaData	resultSetMetaData	= resultSet.getMetaData();
+			int					columnCount			= resultSetMetaData.getColumnCount();
 
-			// Lucee compat: Default to the database name set on the connection (provided by the datasource config).
-			databaseName	= databaseName != null ? databaseName : getDatabaseNameFromConnection( conn );
+			// The column count starts from 1
+			for ( int i = 1; i <= columnCount; i++ ) {
+				result.addColumn(
+				    Key.of( resultSetMetaData.getColumnLabel( i ) ),
+				    QueryColumnType.fromSQLType( resultSetMetaData.getColumnType( i ) )
+				);
+			}
 
-			// Lucee compat: Pull table name and schema name from a dot-delimited string, like "mySchema.tblUsers"
-			tableNameLookup	= normalizeTableNameCasing( databaseMetadata, tableNameLookup );
-			String	tableName	= parseTableName( tableNameLookup );
-			String	schema		= parseSchemaFromTableName( tableNameLookup );
-
-			try ( ResultSet resultSet = databaseMetadata.getExportedKeys( databaseName, schema, tableName ) ) {
-				ResultSetMetaData	resultSetMetaData	= resultSet.getMetaData();
-				int					columnCount			= resultSetMetaData.getColumnCount();
-
-				// The column count starts from 1
+			while ( resultSet.next() ) {
+				Struct row = new Struct( IStruct.TYPES.LINKED );
 				for ( int i = 1; i <= columnCount; i++ ) {
-					result.addColumn(
+					row.put(
 					    Key.of( resultSetMetaData.getColumnLabel( i ) ),
-					    QueryColumnType.fromSQLType( resultSetMetaData.getColumnType( i ) )
+					    resultSet.getObject( i )
 					);
 				}
-
-				while ( resultSet.next() ) {
-					Struct row = new Struct( IStruct.TYPES.LINKED );
-					for ( int i = 1; i <= columnCount; i++ ) {
-						row.put(
-						    Key.of( resultSetMetaData.getColumnLabel( i ) ),
-						    resultSet.getObject( i )
-						);
-					}
-					result.addRow( row );
-				}
-				if ( result.isEmpty() && ( !databaseMetadata.getTables( null, schema, tableName, null ).next() ) ) {
-					throw new DatabaseException( String.format( "Table not found for pattern [%s] on schema [%s]", tableName, schema ) );
-				}
+				result.addRow( row );
 			}
-			return result;
-		} catch ( SQLException e ) {
-			throw new DatabaseException( "Unable to read foreign key metadata", e );
+			if ( result.isEmpty() && ( !databaseMetadata.getTables( null, schema, tableName, null ).next() ) ) {
+				throw new DatabaseException( String.format( "Table not found for pattern [%s] on schema [%s]", tableName, schema ) );
+			}
 		}
+		return result;
 	}
 
 	/**
@@ -394,61 +360,47 @@ public class DBInfo extends Component {
 	 *
 	 * @return Query object where each row represents an index on the specified table.
 	 */
-	private Query getIndexes( DataSource datasource, String databaseName, String tableNameLookup ) {
-		try ( Connection conn = datasource.getConnection(); ) {
-			Query				result				= new Query();
-			DatabaseMetaData	databaseMetadata	= conn.getMetaData();
+	private Query getIndexes( DatabaseMetaData databaseMetadata, String databaseName, String schema, String tableName ) throws SQLException {
+		Query result = new Query();
+		try ( ResultSet resultSet = databaseMetadata.getIndexInfo( databaseName, schema, tableName, false, true ) ) {
+			ResultSetMetaData	resultSetMetaData	= resultSet.getMetaData();
+			int					columnCount			= resultSetMetaData.getColumnCount();
 
-			// Lucee compat: Default to the database name set on the connection (provided by the datasource config).
-			databaseName	= databaseName != null ? databaseName : getDatabaseNameFromConnection( conn );
+			// The column count starts from 1
+			for ( int i = 1; i <= columnCount; i++ ) {
+				result.addColumn(
+				    Key.of( resultSetMetaData.getColumnLabel( i ) ),
+				    QueryColumnType.fromSQLType( resultSetMetaData.getColumnType( i ) )
+				);
+			}
 
-			// Lucee compat: Pull table name and schema name from a dot-delimited string, like "mySchema.tblUsers"
-			tableNameLookup	= normalizeTableNameCasing( databaseMetadata, tableNameLookup );
-			String	tableName	= parseTableName( tableNameLookup );
-			String	schema		= parseSchemaFromTableName( tableNameLookup );
-
-			try ( ResultSet resultSet = databaseMetadata.getIndexInfo( databaseName, schema, tableName, false, true ) ) {
-				ResultSetMetaData	resultSetMetaData	= resultSet.getMetaData();
-				int					columnCount			= resultSetMetaData.getColumnCount();
-
-				// The column count starts from 1
+			while ( resultSet.next() ) {
+				Struct row = new Struct( IStruct.TYPES.LINKED );
 				for ( int i = 1; i <= columnCount; i++ ) {
-					result.addColumn(
+					row.put(
 					    Key.of( resultSetMetaData.getColumnLabel( i ) ),
-					    QueryColumnType.fromSQLType( resultSetMetaData.getColumnType( i ) )
+					    resultSet.getObject( i )
 					);
 				}
+				// type
+				Integer	indexType		= row.getAsInteger( Key.type );
+				String	stringIndexType	= switch ( indexType ) {
+											case 0 -> "Table Statistic";
+											case 1 -> "Clustered Index";
+											case 2 -> "Hashed Index";
+											case 3 -> "Other Index";
+											default -> row.getAsString( Key.type );
+										};
+				row.put( Key.type, stringIndexType );
 
-				while ( resultSet.next() ) {
-					Struct row = new Struct( IStruct.TYPES.LINKED );
-					for ( int i = 1; i <= columnCount; i++ ) {
-						row.put(
-						    Key.of( resultSetMetaData.getColumnLabel( i ) ),
-						    resultSet.getObject( i )
-						);
-					}
-					// type
-					Integer	indexType		= row.getAsInteger( Key.type );
-					String	stringIndexType	= switch ( indexType ) {
-												case 0 -> "Table Statistic";
-												case 1 -> "Clustered Index";
-												case 2 -> "Hashed Index";
-												case 3 -> "Other Index";
-												default -> row.getAsString( Key.type );
-											};
-					row.put( Key.type, stringIndexType );
-
-					// Lucee compat: Lucee actually converts the "CARDINALITY" value to a Double here. Do we care??
-					result.addRow( row );
-				}
-				if ( result.isEmpty() && ( !databaseMetadata.getTables( null, schema, tableName, null ).next() ) ) {
-					throw new DatabaseException( String.format( "Table not found for pattern [%s] on schema [%s]", tableName, schema ) );
-				}
+				// Lucee compat: Lucee actually converts the "CARDINALITY" value to a Double here. Do we care??
+				result.addRow( row );
 			}
-			return result;
-		} catch ( SQLException e ) {
-			throw new DatabaseException( "Unable to read column metadata", e );
+			if ( result.isEmpty() && ( !databaseMetadata.getTables( null, schema, tableName, null ).next() ) ) {
+				throw new DatabaseException( String.format( "Table not found for pattern [%s] on schema [%s]", tableName, schema ) );
+			}
 		}
+		return result;
 	}
 
 	/**
@@ -456,48 +408,37 @@ public class DBInfo extends Component {
 	 *
 	 * @param datasource   Datasource to connect on.
 	 * @param databaseName Name of the database to filter by. If not provided, the database name from the connection will be used.
-	 * @param pattern      Optional pattern to filter procedure names by. Can use wildcards or any `LIKE`-compatible pattern such as `proc_%`.
+	 * @param schema       Optional schema name to filter by.
+	 * @param tableName    Optional pattern to filter table names by. Can use wildcards or any `LIKE`-compatible pattern such as `tbl_%`.
 	 *
 	 * @return Query object where each row represents an index on the specified table.
 	 */
-	private Query getProcedures( DataSource datasource, String databaseName, String pattern ) {
-		try ( Connection conn = datasource.getConnection(); ) {
-			Query				result				= new Query();
-			DatabaseMetaData	databaseMetadata	= conn.getMetaData();
+	private Query getProcedures( DatabaseMetaData databaseMetadata, String databaseName, String schema, String tableName ) throws SQLException {
+		Query result = new Query();
+		try ( ResultSet resultSet = databaseMetadata.getProcedures( databaseName, schema, tableName ) ) {
+			ResultSetMetaData	resultSetMetaData	= resultSet.getMetaData();
+			int					columnCount			= resultSetMetaData.getColumnCount();
 
-			// Lucee compat: Default to the database name set on the connection (provided by the datasource config).
-			databaseName	= databaseName != null ? databaseName : getDatabaseNameFromConnection( conn );
-			// Lucee compat: Pull table name and schema name from a dot-delimited string, like "mySchema.tblUsers"
-			pattern			= normalizeTableNameCasing( databaseMetadata, pattern );
-			String	tableName	= parseTableName( pattern );
-			String	schema		= parseSchemaFromTableName( pattern );
-			try ( ResultSet resultSet = databaseMetadata.getProcedures( databaseName, schema, tableName ) ) {
-				ResultSetMetaData	resultSetMetaData	= resultSet.getMetaData();
-				int					columnCount			= resultSetMetaData.getColumnCount();
+			// The column count starts from 1
+			for ( int i = 1; i <= columnCount; i++ ) {
+				result.addColumn(
+				    Key.of( resultSetMetaData.getColumnLabel( i ) ),
+				    QueryColumnType.fromSQLType( resultSetMetaData.getColumnType( i ) )
+				);
+			}
 
-				// The column count starts from 1
+			while ( resultSet.next() ) {
+				Struct row = new Struct( IStruct.TYPES.LINKED );
 				for ( int i = 1; i <= columnCount; i++ ) {
-					result.addColumn(
+					row.put(
 					    Key.of( resultSetMetaData.getColumnLabel( i ) ),
-					    QueryColumnType.fromSQLType( resultSetMetaData.getColumnType( i ) )
+					    resultSet.getObject( i )
 					);
 				}
-
-				while ( resultSet.next() ) {
-					Struct row = new Struct( IStruct.TYPES.LINKED );
-					for ( int i = 1; i <= columnCount; i++ ) {
-						row.put(
-						    Key.of( resultSetMetaData.getColumnLabel( i ) ),
-						    resultSet.getObject( i )
-						);
-					}
-					result.addRow( row );
-				}
+				result.addRow( row );
 			}
-			return result;
-		} catch ( SQLException e ) {
-			throw new DatabaseException( "Unable to read column metadata", e );
 		}
+		return result;
 	}
 
 	/**
