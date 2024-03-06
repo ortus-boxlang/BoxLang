@@ -33,6 +33,11 @@ import ortus.boxlang.runtime.types.util.ListUtil;
 
 @BoxBIF
 @BoxMember( type = BoxLangType.STRING, name = "ListCompact" )
+/**
+ * @Deprecated
+ */
+@BoxBIF( alias = "ListTrim" )
+@BoxMember( type = BoxLangType.STRING, name = "ListTrim" )
 
 public class ListCompact extends BIF {
 
