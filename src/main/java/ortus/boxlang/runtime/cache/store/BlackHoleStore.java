@@ -154,44 +154,6 @@ public class BlackHoleStore extends AbstractStore implements IObjectStore {
 	}
 
 	@Override
-	public boolean expire( Key key ) {
-		return true;
-	}
-
-	@Override
-	public IStruct expire( Key... keys ) {
-		var results = new Struct();
-		for ( Key key : keys ) {
-			results.put( key, true );
-		}
-		return results;
-	}
-
-	@Override
-	public IStruct expire( ICacheKeyFilter filter ) {
-		return new Struct();
-	}
-
-	@Override
-	public boolean isExpired( Key key ) {
-		return false;
-	}
-
-	@Override
-	public IStruct isExpired( Key... keys ) {
-		var results = new Struct();
-		for ( Key key : keys ) {
-			results.put( key, false );
-		}
-		return results;
-	}
-
-	@Override
-	public IStruct isExpired( ICacheKeyFilter filter ) {
-		return new Struct();
-	}
-
-	@Override
 	public void set( Key key, ICacheEntry entry ) {
 		// do nothing
 	}
