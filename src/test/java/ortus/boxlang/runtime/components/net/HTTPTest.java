@@ -18,9 +18,14 @@
 
 package ortus.boxlang.runtime.components.net;
 
+import static com.github.tomakehurst.wiremock.client.WireMock.*;
 import static com.google.common.truth.Truth.assertThat;
+
 import static org.junit.Assert.*;
 
+import com.github.tomakehurst.wiremock.junit5.WireMockRuntimeInfo;
+import com.github.tomakehurst.wiremock.junit5.WireMockTest;
+import org.junit.Rule;
 import org.junit.jupiter.api.*;
 
 import ortus.boxlang.parser.BoxScriptType;
@@ -33,12 +38,14 @@ import ortus.boxlang.runtime.scopes.VariablesScope;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Query;
 
+@WireMockTest
 public class HTTPTest {
 
 	static BoxRuntime	instance;
 	IBoxContext			context;
 	IScope				variables;
 	static Key			result	= new Key( "result" );
+	static Key			cfhttp	= new Key( "cfhttp" );
 
 	@BeforeAll
 	public static void setUp() {
@@ -58,14 +65,17 @@ public class HTTPTest {
 
 	@DisplayName( "It can make HTTP call script" )
 	@Test
-	public void testCanMakeHTTPCallScript() {
-		instance.executeSource(
-		    """
-		     http url="https://jsonplaceholder.typicode.com/posts/1" {
-		         httpparam type="header" name="User-Agent" value="Mozilla";
-		    }
-		    result = cfhttp;
-		     """,
+	public void testCanMakeHTTPCallScript( WireMockRuntimeInfo wmRuntimeInfo ) {
+		stubFor( get( "/posts/1" ).willReturn( aResponse().withBody( "Done" ).withStatus( 200 ) ) );
+
+		String baseURL = wmRuntimeInfo.getHttpBaseUrl();
+
+		instance.executeSource( String.format( """
+		                                        http url="%s" {
+		                                            httpparam type="header" name="User-Agent" value="Mozilla";
+		                                       }
+		                                       result = cfhttp;
+		                                        """, baseURL + "/posts/1" ),
 		    context );
 
 		assertThat( variables.get( result ) ).isInstanceOf( IStruct.class );
@@ -73,16 +83,50 @@ public class HTTPTest {
 		IStruct cfhttp = variables.getAsStruct( result );
 		assertThat( cfhttp.get( Key.statusCode ) ).isEqualTo( 200 );
 		assertThat( cfhttp.get( Key.statusText ) ).isEqualTo( "OK" );
-		assertThat( cfhttp.getAsString( Key.fileContent ).replaceAll( "\\s+", "" ) ).isEqualTo(
-		    """
-		    {
-		      "userId": 1,
-		      "id": 1,
-		      "title": "sunt aut facere repellat provident occaecati excepturi optio reprehenderit",
-		      "body": "quia et suscipit\\nsuscipit recusandae consequuntur expedita et cum\\nreprehenderit molestiae ut ut quas totam\\nnostrum rerum est autem sunt rem eveniet architecto"
-		    }
-		    """.replaceAll(
-		        "\\s+", "" ) );
+		assertThat( cfhttp.getAsString( Key.fileContent ).replaceAll( "\\s+", "" ) ).isEqualTo( "Done" );
+	}
+
+	@DisplayName( "It parses returned cookies into a Cookies query object" )
+	@Test
+	public void testCookiesInQuery( WireMockRuntimeInfo wmRuntimeInfo ) {
+		stubFor( get( "/cookies" ).willReturn( ok().withHeader( "Set-Cookie", "foo=bar;path=/;secure;samesite=none;httponly" ) ) );
+
+		instance.executeSource( String.format( "http url=\"%s\" {}", wmRuntimeInfo.getHttpBaseUrl() + "/cookies" ),
+		    context );
+
+		assertThat( variables.get( cfhttp ) ).isInstanceOf( IStruct.class );
+
+		IStruct res = variables.getAsStruct( cfhttp );
+		assertThat( res.get( Key.statusCode ) ).isEqualTo( 200 );
+		assertThat( res.get( Key.statusText ) ).isEqualTo( "OK" );
+		Query cookies = res.getAsQuery( Key.cookies );
+		Assertions.assertEquals( 1, cookies.size() );
+		Object[] row = cookies.getRow( 0 );
+		assertThat( row ).isEqualTo( new Object[] { "foo", "bar", "/", "", "", true, true, "none" } );
+	}
+
+	@DisplayName( "It parses returned cookies into a Cookies query object" )
+	@Test
+	public void testMultipleCookies( WireMockRuntimeInfo wmRuntimeInfo ) {
+		stubFor( get( "/cookies" ).willReturn( ok()
+		    .withHeader( "Set-Cookie", "foo=bar;path=/;secure;samesite=none;httponly" )
+		    .withHeader( "Set-Cookie", "baz=qux;path=/;expires=Mon, 31 Dec 2038 23:59:59 GMT" )
+		    .withHeader( "Set-Cookie", "one=two;max-age=2592000;domain=example.com" )
+		) );
+
+		instance.executeSource( String.format( "http url=\"%s\" {}", wmRuntimeInfo.getHttpBaseUrl() + "/cookies" ),
+		    context );
+
+		assertThat( variables.get( cfhttp ) ).isInstanceOf( IStruct.class );
+
+		IStruct res = variables.getAsStruct( cfhttp );
+		assertThat( res.get( Key.statusCode ) ).isEqualTo( 200 );
+		assertThat( res.get( Key.statusText ) ).isEqualTo( "OK" );
+		Query cookies = res.getAsQuery( Key.cookies );
+		Assertions.assertEquals( 3, cookies.size() );
+		assertThat( cookies.getRow( 0 ) ).isEqualTo( new Object[] { "foo", "bar", "/", "", "", true, true, "none" } );
+		assertThat( cookies.getRow( 1 ) ).isEqualTo( new Object[] { "baz", "qux", "/", "", "Mon, 31 Dec 2038 23:59:59 GMT", "", "", "" } );
+		assertThat( cookies.getRow( 2 ) ).isEqualTo( new Object[] { "one", "two", "", "example.com", "30", "", "", "" } );
 	}
 
 	@DisplayName( "It can make HTTP call ACF script" )

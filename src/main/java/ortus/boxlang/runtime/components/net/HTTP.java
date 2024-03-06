@@ -32,10 +32,7 @@ import ortus.boxlang.runtime.components.Component;
 import ortus.boxlang.runtime.components.validators.Validator;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.dynamic.ExpressionInterpreter;
-import ortus.boxlang.runtime.dynamic.casters.ArrayCaster;
-import ortus.boxlang.runtime.dynamic.casters.CastAttempt;
-import ortus.boxlang.runtime.dynamic.casters.StringCaster;
-import ortus.boxlang.runtime.dynamic.casters.StructCaster;
+import ortus.boxlang.runtime.dynamic.casters.*;
 import ortus.boxlang.runtime.net.HttpManager;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.*;
@@ -251,6 +248,12 @@ public class HTTP extends Component {
 				    if ( metadataParts.length == 2 ) {
 					    metadataValue = metadataParts[ 1 ];
 				    }
+
+				    if ( metadataType.equals( Key.of( "max-age" ) ) ) {
+					    metadataType = Key.expires;
+					    metadataValue = StringCaster.cast( DoubleCaster.cast( metadataValue ) / 60 / 60 / 24 );
+				    }
+
 				    cookieStruct.put( metadataType, metadataValue );
 			    } );
 		}
