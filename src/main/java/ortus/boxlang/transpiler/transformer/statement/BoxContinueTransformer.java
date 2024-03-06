@@ -38,7 +38,7 @@ public class BoxContinueTransformer extends AbstractTransformer {
 			template = "if(true) continue;";
 		}
 		Node javaStmt = parseStatement( template, new HashMap<>() );
-		logger.trace( node.getSourceText() + " -> " + javaStmt );
+		logger.atTrace().log( node.getSourceText() + " -> " + javaStmt );
 		addIndex( javaStmt, node );
 		return javaStmt;
 	}

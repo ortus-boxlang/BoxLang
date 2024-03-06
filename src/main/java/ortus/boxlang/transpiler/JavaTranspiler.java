@@ -260,7 +260,7 @@ public class JavaTranspiler extends Transpiler {
 		Transformer transformer = registry.get( node.getClass() );
 		if ( transformer != null ) {
 			Node javaNode = transformer.transform( node, context );
-			// logger.debug(transformer.getClass().getSimpleName() + " : " + node.getSourceText() + " -> " + javaNode );
+			// logger.atDebug().log(transformer.getClass().getSimpleName() + " : " + node.getSourceText() + " -> " + javaNode );
 			return javaNode;
 		}
 		throw new IllegalStateException( "unsupported: " + node.getClass().getSimpleName() + " : " + node.getSourceText() );

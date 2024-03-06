@@ -1853,7 +1853,7 @@ public class ScheduledTask implements Runnable {
 			    "args", args == null ? "<no args>" : args.toString()
 			);
 
-			logger.debug( message.toString() );
+			logger.atDebug().log( message.toString() );
 		}
 	}
 

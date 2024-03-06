@@ -77,7 +77,7 @@ public class BoxForIndexTransformer extends AbstractTransformer {
 		ExpressionStmt stepStmt = new ExpressionStmt( step );
 		whileStmt.getBody().asBlockStmt().addStatement( stepStmt );
 		stmt.addStatement( whileStmt );
-		logger.trace( node.getSourceText() + " -> " + stmt );
+		logger.atTrace().log( node.getSourceText() + " -> " + stmt );
 		addIndex( stmt, node );
 		return stmt;
 	}

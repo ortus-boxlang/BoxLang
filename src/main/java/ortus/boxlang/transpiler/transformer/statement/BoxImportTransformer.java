@@ -64,7 +64,7 @@ public class BoxImportTransformer extends AbstractTransformer {
 		String				template	= "ImportDefinition.parse( \"${namespace}\" )";
 
 		Node				javaStmt	= parseExpression( template, values );
-		logger.trace( node.getSourceText() + " -> " + javaStmt );
+		logger.atTrace().log( node.getSourceText() + " -> " + javaStmt );
 		addIndex( javaStmt, node );
 		transpiler.addImport( namespace.toString() + alias );
 		return javaStmt;

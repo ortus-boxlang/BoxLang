@@ -87,7 +87,7 @@ public class BoxComparisonOperationTransformer extends AbstractTransformer {
 			throw new IllegalStateException( "not implemented" );
 		}
 		Node javaExpr = parseExpression( template, values );
-		logger.trace( node.getSourceText() + " (" + context.name() + ") -> " + javaExpr );
+		logger.atTrace().log( node.getSourceText() + " (" + context.name() + ") -> " + javaExpr );
 		addIndex( javaExpr, node );
 		return javaExpr;
 	}

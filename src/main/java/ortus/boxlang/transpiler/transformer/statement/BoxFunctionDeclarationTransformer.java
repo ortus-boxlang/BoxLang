@@ -222,7 +222,7 @@ public class BoxFunctionDeclarationTransformer extends AbstractTransformer {
 		    Map.entry( "enclosingClassName", enclosingClassName )
 		);
 		Statement javaStmt = parseStatement( registrationTemplate, values );
-		logger.trace( node.getSourceText() + " -> " + javaStmt );
+		logger.atTrace().log( node.getSourceText() + " -> " + javaStmt );
 		addIndex( javaStmt, node );
 		( ( JavaTranspiler ) transpiler ).getUDFDeclarations().add( javaStmt );
 
