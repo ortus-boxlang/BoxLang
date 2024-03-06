@@ -774,7 +774,7 @@ public class Struct implements IStruct, IListenable, Serializable {
 		if ( value == null && !safe ) {
 			throw new KeyNotFoundException(
 			    // TODO: Limit the number of keys. There could be thousands!
-			    String.format( "The key %s was not found in the struct. Valid keys are (%s)", key.getName(), getKeysAsStrings() ), this
+			    String.format( "The key [%s] was not found in the struct. Valid keys are (%s)", key.getName(), getKeysAsStrings() ), this
 			);
 		}
 		return unWrapNull( value );

@@ -57,7 +57,7 @@ public class BoxBufferOutputTransformer extends AbstractTransformer {
 		MethodCallExpr	methodCallExpr	= new MethodCallExpr( nameExpr, "writeToBuffer" );
 		methodCallExpr.addArgument( ( Expression ) transpiler.transform( bufferOuput.getExpression(), TransformerContext.NONE ) );
 		Statement jStatement = new ExpressionStmt( methodCallExpr );
-		logger.debug( "{} -> {}", node.getSourceText(), jStatement );
+		logger.trace( "{} -> {}", node.getSourceText(), jStatement );
 		addIndex( jStatement, node );
 		return jStatement;
 	}

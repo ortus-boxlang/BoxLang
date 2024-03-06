@@ -21,7 +21,10 @@ import java.util.Map;
 
 import com.github.javaparser.ast.Node;
 import com.github.javaparser.ast.expr.Expression;
+import com.github.javaparser.ast.expr.MethodCallExpr;
+import com.github.javaparser.ast.expr.VariableDeclarationExpr;
 import com.github.javaparser.ast.stmt.BlockStmt;
+import com.github.javaparser.ast.stmt.ExpressionStmt;
 import com.github.javaparser.ast.stmt.IfStmt;
 import com.github.javaparser.ast.stmt.Statement;
 import com.github.javaparser.ast.stmt.WhileStmt;
@@ -57,7 +60,7 @@ public class BoxForInTransformer extends AbstractTransformer {
 	@Override
 	public Node transform( BoxNode node, TransformerContext context ) throws IllegalStateException {
 		BoxForIn					boxFor			= ( BoxForIn ) node;
-		Node						collection		= transpiler.transform( boxFor.getExpression() );
+		Expression					collection		= ( Expression ) transpiler.transform( boxFor.getExpression() );
 		int							forInCount		= transpiler.incrementAndGetForInCounter();
 		String						jVarName		= "forInIterator" + forInCount;
 		String						jisQueryName	= "isQuery" + forInCount;
@@ -74,7 +77,7 @@ public class BoxForInTransformer extends AbstractTransformer {
 															put( "isStructName", jisStructName );
 															put( "jVarName", jVarName );
 															put( "collectionName", jCollectionName );
-															put( "collection", collection.toString() );
+															// put( "collection", collection.toString() );
 															put( "contextName", transpiler.peekContextName() );
 														}
 													};
@@ -94,7 +97,7 @@ public class BoxForInTransformer extends AbstractTransformer {
 		values.put( "loopAssignment", loopAssignment.toString() );
 
 		String		template1			= """
-		                                  Object ${collectionName} = DynamicObject.unWrap( ${collection} );
+		                                  Object ${collectionName} = DynamicObject.unWrap(  );
 		                                                     """;
 		String		template1a			= """
 		                                  Boolean ${isQueryName} = ${collectionName} instanceof Query;
@@ -131,7 +134,10 @@ public class BoxForInTransformer extends AbstractTransformer {
 		                                                                             """;
 		WhileStmt	whileStmt			= ( WhileStmt ) parseStatement( template2a, values );
 		IfStmt		incrementQueryStmt	= ( IfStmt ) parseStatement( template2b, values );
-		stmt.addStatement( ( Statement ) parseStatement( template1, values ) );
+		Statement	tempStmt			= ( Statement ) parseStatement( template1, values );
+		( ( MethodCallExpr ) ( ( VariableDeclarationExpr ) ( ( ExpressionStmt ) tempStmt ).getExpression() ).getVariable( 0 ).getInitializer().get() )
+		    .addArgument( collection );
+		stmt.addStatement( tempStmt );
 		stmt.addStatement( ( Statement ) parseStatement( template1a, values ) );
 		stmt.addStatement( ( Statement ) parseStatement( template1b, values ) );
 		stmt.addStatement( ( Statement ) parseStatement( template1c, values ) );
@@ -142,7 +148,7 @@ public class BoxForInTransformer extends AbstractTransformer {
 		whileStmt.getBody().asBlockStmt().addStatement( incrementQueryStmt );
 		stmt.addStatement( whileStmt );
 		stmt.addStatement( ( Statement ) parseStatement( template3, values ) );
-		logger.debug( node.getSourceText() + " -> " + stmt );
+		logger.trace( node.getSourceText() + " -> " + stmt );
 		addIndex( stmt, node );
 		return stmt;
 	}

@@ -701,7 +701,7 @@ public class JavaBoxpiler {
 		}
 
 		public static ClassInfo forClass( Path path, String packagePath ) {
-			String boxPackagePath = "boxgenerated." + packagePath;
+			String boxPackagePath = packagePath;
 			if ( boxPackagePath.endsWith( "." ) ) {
 				boxPackagePath = boxPackagePath.substring( 0, boxPackagePath.length() - 1 );
 			}
@@ -729,7 +729,7 @@ public class JavaBoxpiler {
 			    "generated",
 			    "Class_" + MD5( source ),
 			    0,
-			    "boxgenerated.generated",
+			    "",
 			    null,
 			    null
 			);

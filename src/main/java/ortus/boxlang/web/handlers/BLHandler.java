@@ -49,10 +49,9 @@ public class BLHandler implements HttpHandler {
 		try {
 			String requestPath = exchange.getRequestPath();
 			context = new WebRequestBoxContext( BoxRuntime.getInstance().getRuntimeContext(), exchange );
-			context.loadApplicationDescriptor( new URI( requestPath ) );
-
 			// Set default content type to text/html
 			exchange.getResponseHeaders().put( new HttpString( "Content-Type" ), "text/html" );
+			context.loadApplicationDescriptor( new URI( requestPath ) );
 
 			boolean result = context.getApplicationListener().onRequestStart( context, new Object[] { requestPath } );
 			if ( result ) {

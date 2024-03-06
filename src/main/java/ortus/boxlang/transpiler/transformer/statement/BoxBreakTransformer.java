@@ -40,7 +40,7 @@ public class BoxBreakTransformer extends AbstractTransformer {
 			template = "if(true) break;";
 		}
 		Node javaStmt = parseStatement( template, new HashMap<>() );
-		logger.debug( node.getSourceText() + " -> " + javaStmt );
+		logger.trace( node.getSourceText() + " -> " + javaStmt );
 		addIndex( javaStmt, node );
 		return javaStmt;
 	}

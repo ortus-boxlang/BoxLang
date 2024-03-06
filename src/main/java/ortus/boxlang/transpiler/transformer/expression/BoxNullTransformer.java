@@ -42,7 +42,7 @@ public class BoxNullTransformer extends AbstractTransformer {
 	@Override
 	public Node transform( BoxNode node, TransformerContext context ) throws IllegalStateException {
 		Node javaExpr = new NullLiteralExpr();
-		logger.debug( node.getSourceText() + " -> " + javaExpr );
+		logger.trace( node.getSourceText() + " -> " + javaExpr );
 		addIndex( javaExpr, node );
 		return javaExpr;
 	}

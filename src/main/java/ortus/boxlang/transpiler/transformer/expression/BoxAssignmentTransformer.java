@@ -87,7 +87,7 @@ public class BoxAssignmentTransformer extends AbstractTransformer {
 			           	""";
 
 			Node javaExpr = parseExpression( template, values );
-			logger.debug( sourceText + " -> " + javaExpr.toString() );
+			logger.trace( sourceText + " -> " + javaExpr.toString() );
 			return javaExpr;
 		}
 
@@ -164,7 +164,7 @@ public class BoxAssignmentTransformer extends AbstractTransformer {
 		}
 
 		Node javaExpr = parseExpression( template, values );
-		logger.debug( sourceText + " -> " + javaExpr.toString() );
+		logger.trace( sourceText + " -> " + javaExpr.toString() );
 		return javaExpr;
 	}
 
@@ -207,7 +207,7 @@ public class BoxAssignmentTransformer extends AbstractTransformer {
 
 		template = getMethodCallTemplate( assigment );
 		Node javaExpr = parseExpression( template, values );
-		logger.debug( assigment.getSourceText() + " -> " + javaExpr.toString() );
+		logger.trace( assigment.getSourceText() + " -> " + javaExpr.toString() );
 		return javaExpr;
 	}
 

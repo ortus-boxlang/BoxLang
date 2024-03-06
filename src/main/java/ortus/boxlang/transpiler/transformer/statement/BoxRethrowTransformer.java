@@ -49,7 +49,7 @@ public class BoxRethrowTransformer extends AbstractTransformer {
 											}
 										};
 		Node				javaStmt	= parseStatement( template, values );
-		logger.debug( node.getSourceText() + " -> " + javaStmt );
+		logger.trace( node.getSourceText() + " -> " + javaStmt );
 		addIndex( javaStmt, node );
 		return javaStmt;
 	}

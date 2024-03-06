@@ -183,7 +183,7 @@ public class BoxComponentTransformer extends AbstractTransformer {
 			}
 		}
 
-		logger.debug( node.getSourceText() + " -> " + jBlock );
+		logger.trace( node.getSourceText() + " -> " + jBlock );
 		addIndex( jStatement, node );
 		return jBlock;
 	}

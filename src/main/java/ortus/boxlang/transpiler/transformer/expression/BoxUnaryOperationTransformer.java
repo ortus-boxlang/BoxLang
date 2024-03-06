@@ -103,7 +103,7 @@ public class BoxUnaryOperationTransformer extends AbstractTransformer {
 		}
 
 		Node javaExpr = parseExpression( template, values );
-		logger.debug( "{} -> {}", node.getSourceText(), javaExpr );
+		logger.trace( "{} -> {}", node.getSourceText(), javaExpr );
 		addIndex( javaExpr, node );
 		return javaExpr;
 	}

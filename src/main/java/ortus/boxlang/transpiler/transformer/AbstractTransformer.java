@@ -265,6 +265,7 @@ public abstract class AbstractTransformer implements Transformer {
 		return transformAnnotations( annotations, false );
 	}
 
+	// TODO: This loses line number mapping. Stop parsing and start building the AST directly
 	protected String generateArguments( List<BoxArgument> arguments ) {
 		StringBuilder sb = new StringBuilder( "" );
 

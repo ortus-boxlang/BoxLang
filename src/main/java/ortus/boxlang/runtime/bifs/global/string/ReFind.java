@@ -95,7 +95,6 @@ public class ReFind extends BIF {
 
 		while ( matcher.find() ) {
 
-			System.out.println( "Found match: " + matcher.group( 0 ) );
 			int		groupCount	= matcher.groupCount();
 			Array	lenArray	= Array.of( matcher.group().length() );
 			Array	matchArray	= Array.of( matcher.group() );
