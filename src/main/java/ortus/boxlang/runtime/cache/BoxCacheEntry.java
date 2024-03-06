@@ -24,6 +24,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 
 import ortus.boxlang.runtime.scopes.Key;
+import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
 
 /**
@@ -58,7 +59,7 @@ public class BoxCacheEntry implements ICacheEntry, Serializable {
 	private long					timeout;
 	private long					lastAccessTimeout;
 	private Instant					created				= Instant.now();
-	private Instant					lastAccessed;
+	private Instant					lastAccessed		= Instant.now();
 	private Key						key;
 	private Object					value;
 	private Struct					metadata			= new Struct();
@@ -242,6 +243,22 @@ public class BoxCacheEntry implements ICacheEntry, Serializable {
 	@Override
 	public Struct metadata() {
 		return this.metadata;
+	}
+
+	@Override
+	public IStruct toStruct() {
+		return Struct.of(
+		    "cacheName", this.cacheName,
+		    "hits", this.hits.get(),
+		    "timeout", this.timeout,
+		    "lastAccessTimeout", this.lastAccessTimeout,
+		    "created", this.created,
+		    "lastAccessed", this.lastAccessed,
+		    "isExpired", this.isExpired.get(),
+		    "key", this.key,
+		    "value", this.value,
+		    "metadata", this.metadata
+		);
 	}
 
 }
