@@ -90,6 +90,33 @@ public class ReplaceListTest {
 
 	}
 
+	@DisplayName( "It tests the BIF ReplaceListNoCase" )
+	@Test
+	public void testBifNoCase() {
+		instance.executeSource(
+		    """
+		    myList="xxxaBcDxxxAbcD";
+		    result = ReplaceListNoCase( myList , "a,b,c,d", "0,1,2,3");
+		    """,
+		    context );
+		assertThat( "xxx0123xxx0123" ).isEqualTo( variables.get( result ) );
+		instance.executeSource(
+		    """
+		    myList="xxxabcdxxxAbcd";
+		    result = ReplaceListNoCase( myList , "a", "1,2,3");
+		    """,
+		    context );
+		assertThat( "xxx1bcdxxx1bcd" ).isEqualTo( variables.get( result ) );
+		instance.executeSource(
+		    """
+		    myList="xxxabCdxxxaBcd";
+		    result = ReplaceListNoCase( myList , "a,b,c,d", "11");
+		    """,
+		    context );
+		assertThat( "xxx11xxx11" ).isEqualTo( variables.get( result ) );
+
+	}
+
 	@DisplayName( "It tests the member function for ReplaceList" )
 	@Test
 	public void testMemberFunction() {
@@ -97,6 +124,18 @@ public class ReplaceListTest {
 		    """
 		    myList="xxxabcdxxxabcd";
 		    result = myList.ReplaceList( "a,b,c,d", "0,1,2,3");
+		    """,
+		    context );
+		assertThat( "xxx0123xxx0123" ).isEqualTo( variables.get( result ) );
+	}
+
+	@DisplayName( "It tests the member function for ReplaceListNoCase" )
+	@Test
+	public void testMemberFunctionNoCase() {
+		instance.executeSource(
+		    """
+		    myList="xxxaBcDxxxAbcD";
+		    result = myList.ReplaceListNoCase( "a,b,c,d", "0,1,2,3");
 		    """,
 		    context );
 		assertThat( "xxx0123xxx0123" ).isEqualTo( variables.get( result ) );

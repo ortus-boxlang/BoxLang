@@ -36,7 +36,9 @@ import ortus.boxlang.runtime.types.BoxLangType;
 import ortus.boxlang.runtime.types.util.ListUtil;
 
 @BoxBIF
+@BoxBIF( alias = "ReplaceListNoCase" )
 @BoxMember( type = BoxLangType.STRING, name = "ReplaceList" )
+@BoxMember( type = BoxLangType.STRING, name = "ReplaceListNoCase" )
 
 public class ReplaceList extends BIF {
 
@@ -44,6 +46,7 @@ public class ReplaceList extends BIF {
 	private static final Key	list2Key	= Key.of( "list2" );
 	private static final Key	delims1Key	= Key.of( "delimiter_list1" );
 	private static final Key	delims2Key	= Key.of( "delimiter_list2" );
+	private static final Key	noCaseKey	= Key.of( "ReplaceListNoCase" );
 
 	/**
 	 * Constructor
@@ -71,42 +74,56 @@ public class ReplaceList extends BIF {
 	 * @argument.list1 The first delimited list of search values
 	 *
 	 * @argument.list2 The second delimited list of replacement values
-	 * 
+	 *
 	 * @argument.delimiter_list1 The delimiters for list 1
-	 * 
+	 *
 	 * @argument.delimiter_list2 The delimiters for list 2
-	 * 
+	 *
 	 * @argument.includeEmptyFields Whether to include empty fields in the final result
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
-		String								ref			= arguments.getAsString( Key.string );
-		Array								list1		= ListUtil.asList(
+		Key									bifMethodKey	= arguments.getAsKey( BIF.__functionName );
+		String								ref				= arguments.getAsString( Key.string );
+		Array								list1			= ListUtil.asList(
 		    arguments.getAsString( list1Key ),
 		    arguments.getAsString( delims1Key ),
 		    arguments.getAsBoolean( Key.includeEmptyFields ),
 		    true
 		);
-		Array								list2		= ListUtil.asList(
+		Array								list2			= ListUtil.asList(
 		    arguments.getAsString( list2Key ),
 		    arguments.getAsString( delims1Key ),
 		    arguments.getAsBoolean( Key.includeEmptyFields ),
 		    true
 		);
 
-		BiFunction<Object, Integer, Object>	reduction	= ( acc, idx ) -> {
-															if ( list2.size() >= idx + 1 ) {
-																return StringUtils.replace( StringCaster.cast( acc ), StringCaster.cast( list1.get( idx ) ),
-																    StringCaster.cast( list2.get( idx ) ) );
-															} else if ( list2.size() > 0 ) {
-																return StringUtils.replaceChars(
-																    StringCaster.cast( acc ),
-																    ListUtil.asString( list1, arguments.getAsString( delims1Key ) ),
-																    ListUtil.asString( list2, arguments.getAsString( delims2Key ) )
-																);
-															} else {
-																return acc;
-															}
-														};
+		BiFunction<Object, Integer, Object>	reduction		= ( acc, idx ) -> {
+																if ( list2.size() >= idx + 1 ) {
+																	return !bifMethodKey.equals( noCaseKey )
+																	    ? StringUtils.replace( StringCaster.cast( acc ), StringCaster.cast( list1.get( idx ) ),
+																	        StringCaster.cast( list2.get( idx ) ) )
+																	    : StringUtils.replaceIgnoreCase( StringCaster.cast( acc ),
+																	        StringCaster.cast( list1.get( idx ) ),
+																	        StringCaster.cast( list2.get( idx ) ) );
+																} else if ( list2.size() > 0 ) {
+																	if ( bifMethodKey.equals( noCaseKey ) ) {
+																		// we need to normalize the casing in order for our replaceChars invokation to work
+																		acc = list1.stream().reduce(
+																		    acc,
+																		    ( result, c ) -> StringUtils.replaceIgnoreCase( StringCaster.cast( result ),
+																		        StringCaster.cast( c ), StringCaster.cast( c ) ),
+																		    ( result, intermediate ) -> result
+																		);
+																	}
+																	return StringUtils.replaceChars(
+																	    StringCaster.cast( acc ),
+																	    ListUtil.asString( list1, arguments.getAsString( delims1Key ) ),
+																	    ListUtil.asString( list2, arguments.getAsString( delims2Key ) )
+																	);
+																} else {
+																	return acc;
+																}
+															};
 
 		return list1.intStream().boxed().reduce(
 		    ref,
