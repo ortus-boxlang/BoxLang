@@ -705,12 +705,11 @@ public class BoxRuntime {
 	 *
 	 */
 	public Object executeStatement( String source, IBoxContext context ) {
-		BoxScript scriptRunnable = RunnableLoader.getInstance().loadStatement( source );
+		BoxScript	scriptRunnable		= RunnableLoader.getInstance().loadStatement( source );
 		// Debugging Timers
 		/* timerUtil.start( "execute-" + source.hashCode() ); */
-		instance.logger.atDebug().log( "Executing source " );
 
-		IBoxContext scriptingContext = ensureRequestTypeContext( context );
+		IBoxContext	scriptingContext	= ensureRequestTypeContext( context );
 		try {
 			// Fire!!!
 			return scriptRunnable.invoke( scriptingContext );
@@ -763,12 +762,11 @@ public class BoxRuntime {
 	 *
 	 */
 	public void executeSource( String source, IBoxContext context, BoxScriptType type ) {
-		BoxScript scriptRunnable = RunnableLoader.getInstance().loadSource( source, type );
+		BoxScript	scriptRunnable		= RunnableLoader.getInstance().loadSource( source, type );
 		// Debugging Timers
 		/* timerUtil.start( "execute-" + source.hashCode() ); */
-		instance.logger.atDebug().log( "Executing source " );
 
-		IBoxContext scriptingContext = ensureRequestTypeContext( context );
+		IBoxContext	scriptingContext	= ensureRequestTypeContext( context );
 		try {
 			// Fire!!!
 			scriptRunnable.invoke( scriptingContext );
@@ -829,7 +827,6 @@ public class BoxRuntime {
 
 				// Debugging Timers
 				/* timerUtil.start( "execute-" + source.hashCode() ); */
-				instance.logger.atDebug().log( "Executing source " );
 
 				try {
 
