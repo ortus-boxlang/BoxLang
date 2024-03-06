@@ -73,12 +73,13 @@ public class BoxMethodInvocationTransformer extends AbstractTransformer {
 		values.put( "methodKey", accessKey.toString() );
 		template = getTemplate( invocation );
 		Node javaExpr = parseExpression( template, values );
-		// logger.debug( side + node.getSourceText() + " -> " + javaExpr );
+		// logger.atTrace().log( side + node.getSourceText() + " -> " + javaExpr );
 		addIndex( javaExpr, node );
 		return javaExpr;
 	}
 
 	private String getTemplate( BoxMethodInvocation function ) {
+		// TODO: This loses line number mapping. Stop parsing and start building the AST directly
 		StringBuilder sb = new StringBuilder( "Referencer.getAndInvoke(${contextName},${expr},${methodKey}," );
 
 		sb.append( generateArguments( function.getArguments() ) );

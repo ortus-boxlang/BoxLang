@@ -16,6 +16,7 @@ package ortus.boxlang.transpiler.transformer.expression;
 
 import com.github.javaparser.ast.Node;
 import com.github.javaparser.ast.expr.BooleanLiteralExpr;
+
 import ortus.boxlang.ast.BoxNode;
 import ortus.boxlang.ast.expression.BoxBooleanLiteral;
 import ortus.boxlang.transpiler.JavaTranspiler;
@@ -43,7 +44,7 @@ public class BoxBooleanLiteralTransformer extends AbstractTransformer {
 	public Node transform( BoxNode node, TransformerContext context ) throws IllegalStateException {
 		BoxBooleanLiteral	literal		= ( BoxBooleanLiteral ) node;
 		BooleanLiteralExpr	javaExpr	= new BooleanLiteralExpr( "true".equalsIgnoreCase( literal.getValue() ) );
-		logger.debug( node.getSourceText() + " -> " + javaExpr );
+		logger.atTrace().log( node.getSourceText() + " -> " + javaExpr );
 		addIndex( javaExpr, node );
 		return javaExpr;
 	}

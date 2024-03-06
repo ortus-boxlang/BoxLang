@@ -858,6 +858,9 @@ public class BaseBoxContext implements IBoxContext {
 				getParent().writeToBuffer( thisBuffer.toString() );
 				thisBuffer.setLength( 0 );
 			}
+			if ( force ) {
+				getParent().flushBuffer( true );
+			}
 		} else if ( force && hasParent() ) {
 			for ( StringBuffer buf : buffers ) {
 				synchronized ( buf ) {

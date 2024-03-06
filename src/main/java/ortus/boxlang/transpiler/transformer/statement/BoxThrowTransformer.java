@@ -122,7 +122,7 @@ public class BoxThrowTransformer extends AbstractTransformer {
 
 		String	template	= "ExceptionUtil.throwException(${expr});";
 		Node	javaStmt	= parseStatement( template, values );
-		logger.debug( node.getSourceText() + " -> " + javaStmt );
+		logger.atTrace().log( node.getSourceText() + " -> " + javaStmt );
 		addIndex( javaStmt, node );
 		return javaStmt;
 

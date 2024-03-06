@@ -276,7 +276,7 @@ public class CoreLangTest {
 		    context );
 		assertThat( variables.get( Key.of( "one" ) ) ).isEqualTo( "You cannot divide by zero." );
 		assertThat( variables.get( Key.of( "two" ) ) )
-		    .isEqualTo( "The key bar was not found in the struct. Valid keys are ([e, one])" );
+		    .isEqualTo( "The key [bar] was not found in the struct. Valid keys are ([e, one])" );
 		assertThat( variables.get( Key.of( "three" ) ) ).isEqualTo( "You cannot divide by zero." );
 
 	}

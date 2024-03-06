@@ -12,7 +12,7 @@ on:
   workflow_call:
     inputs:
       snapshot:
-        description: 'Is this a snapshot build?'
+        description: "Is this a snapshot build?"
         required: false
         default: false
         type: boolean
@@ -21,10 +21,15 @@ on:
   workflow_dispatch:
     inputs:
       lts:
-        description: 'The LTS marker'
+        description: "The LTS marker"
         required: false
         default: true
         type: boolean
+
+#Cancel running builds if another push to branch is made while this build is running
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
 
 env:
   SNAPSHOT: ${{ inputs.snapshot || false }}
@@ -89,7 +94,7 @@ jobs:
         with:
           author_name: Github Actions
           author_email: info@ortussolutions.com
-          message: 'Finalized changelog for v${{ env.VERSION }}'
+          message: "Finalized changelog for v${{ env.VERSION }}"
           add: changelog.md
 
       - name: Tag Version
@@ -171,7 +176,7 @@ jobs:
           SLACK_CHANNEL: coding
           SLACK_COLOR: ${{ job.status }} # or a specific color like 'green' or '#ff00ff'
           SLACK_ICON_EMOJI: ":bell:"
-          SLACK_MESSAGE: 'BoxLang ${{ env.VERSION }} Built with ${{ job.status }}!'
+          SLACK_MESSAGE: "BoxLang ${{ env.VERSION }} Built with ${{ job.status }}!"
           SLACK_TITLE: "BoxLang Build"
           SLACK_USERNAME: CI
           SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK_URL }}
@@ -183,7 +188,7 @@ jobs:
     name: Prep Next Release
     if: github.ref != 'refs/heads/development'
     runs-on: ubuntu-latest
-    needs: [ build ]
+    needs: [build]
     steps:
       - name: Checkout Development Repository
         uses: actions/checkout@v4
@@ -220,7 +225,7 @@ jobs:
         with:
           author_name: Github Actions
           author_email: info@ortussolutions.com
-          message: 'Version bump'
+          message: "Version bump"
           add: |
             gradle.properties
             changelog.md

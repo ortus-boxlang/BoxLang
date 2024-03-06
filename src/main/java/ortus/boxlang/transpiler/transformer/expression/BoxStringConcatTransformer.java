@@ -67,7 +67,7 @@ public class BoxStringConcatTransformer extends AbstractTransformer {
 			operands.forEach( methodCallExpr::addArgument );
 			javaExpr = methodCallExpr;
 		}
-		logger.debug( "{} -> {}", node.getSourceText(), javaExpr );
+		logger.atTrace().log( "{} -> {}", node.getSourceText(), javaExpr );
 		addIndex( javaExpr, node );
 		return javaExpr;
 	}
