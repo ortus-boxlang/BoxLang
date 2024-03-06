@@ -26,9 +26,13 @@ public class ContinueResponse extends AbstractResponse {
 
 	public ContinueResponseBody body;
 
-	public class ContinueResponseBody {
+	public static class ContinueResponseBody {
 
 		public boolean allThreadsContinued;
+	}
+
+	public ContinueResponse() {
+
 	}
 
 	/**

@@ -26,7 +26,7 @@ public class TerminatedEvent extends Event {
 
 	public TerminatedBody body;
 
-	private class TerminatedBody {
+	public static class TerminatedBody {
 
 		@SuppressWarnings( value = { "unused" } )
 		public boolean restart;

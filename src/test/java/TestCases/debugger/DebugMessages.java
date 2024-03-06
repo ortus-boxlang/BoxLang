@@ -50,7 +50,7 @@ public class DebugMessages {
 			reader.register( "variables", VariablesResponse.class );
 			reader.register( "launch", NoBodyResponse.class );
 			reader.register( "continued", ContinuedEvent.class );
-			reader.register( "exit", ExitEvent.class );
+			reader.register( "exited", ExitEvent.class );
 			reader.register( "output", OutputEvent.class );
 			reader.register( "stopped", StoppedEvent.class );
 			reader.register( "terminated", TerminatedEvent.class );
@@ -448,6 +448,15 @@ Content-Length: %d
 		Map<String, Object> arguments = new HashMap<String, Object>();
 		request.put( "arguments", arguments );
 		arguments.put( "variablesReference", variablesReference );
+
+		return request;
+	}
+	
+	public static Map<String, Object> getContinueRequest( int seq ) {
+		Map<String, Object> request = new HashMap<String, Object>();
+		request.put( "command", "continue" );
+		request.put( "type", "request" );
+		request.put( "seq", seq );
 
 		return request;
 	}

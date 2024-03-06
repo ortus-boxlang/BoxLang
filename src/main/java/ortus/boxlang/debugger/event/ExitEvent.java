@@ -26,10 +26,14 @@ public class ExitEvent extends Event {
 
 	public ExitBody body;
 
-	private class ExitBody {
+	public static class ExitBody {
 
 		@SuppressWarnings( value = { "unused" } )
 		public int exitCode;
+	}
+
+	public ExitEvent() {
+
 	}
 
 	/**

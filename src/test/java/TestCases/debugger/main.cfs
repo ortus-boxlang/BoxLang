@@ -5,4 +5,4 @@ data = { test: true };
 
 value = value + 2;
 
-println( value );
+println( "The value is: #value#" );

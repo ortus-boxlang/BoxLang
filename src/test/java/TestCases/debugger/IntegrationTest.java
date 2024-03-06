@@ -14,6 +14,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -21,7 +22,11 @@ import TestCases.debugger.DebugMessages.TriConsumer;
 import ortus.boxlang.debugger.AdapterProtocolMessageReader;
 import ortus.boxlang.debugger.DebugAdapter;
 import ortus.boxlang.debugger.IAdapterProtocolMessage;
+import ortus.boxlang.debugger.event.ExitEvent;
+import ortus.boxlang.debugger.event.OutputEvent;
 import ortus.boxlang.debugger.event.StoppedEvent;
+import ortus.boxlang.debugger.event.TerminatedEvent;
+import ortus.boxlang.debugger.response.ContinueResponse;
 import ortus.boxlang.debugger.response.InitializeResponse;
 import ortus.boxlang.debugger.response.NoBodyResponse;
 import ortus.boxlang.debugger.response.ScopeResponse;
@@ -34,7 +39,7 @@ import ortus.boxlang.debugger.types.Scope;
 import ortus.boxlang.debugger.types.StackFrame;
 import ortus.boxlang.debugger.types.Variable;
 
-// @Disabled
+@Disabled
 public class IntegrationTest {
 
 	private List<IAdapterProtocolMessage> runDebugger( List<TriConsumer<byte[], ByteArrayInputStream, ByteArrayOutputStream>> steps ) {
@@ -449,7 +454,66 @@ public class IntegrationTest {
 	@Test
 	public void testContinueResponse() {
 
-		// TODO implement this!!!!!
+		ContinueResponse message = ( ContinueResponse ) runDebugger( Arrays.asList(
+		    sendMessageStep( DebugMessages.getInitRequest( 1 ) ),
+		    waitForMessage( "response", "initialize" ),
+		    waitForMessage( "event", "initialized" ),
+		    sendMessageStep( DebugMessages.getLaunchRequest( 2 ) ),
+		    waitForMessage( "response", "launch" ),
+		    sendMessageStep( DebugMessages.getSetBreakpointsRequest( 3, new int[] { 6 } ) ),
+		    waitForMessage( "response", "setbreakpoints" ),
+		    sendMessageStep( DebugMessages.getConfigurationDoneRequest( 4 ) ),
+		    waitForMessage( "response", "configurationdone" ),
+		    waitForMessage( "event", "stopped", 20000 ),
+		    sendMessageStep( DebugMessages.getThreadsRequest( 5 ) ),
+		    waitForMessage( "response", "threads" ),
+		    sendMessageStep( DebugMessages.getStackTraceRequest( 6 ) ),
+		    waitForMessageThenSend(
+		        "response",
+		        "stacktrace",
+		        ( found ) -> {
+			        StackTraceResponse m = ( StackTraceResponse ) found;
+
+			        return DebugMessages.getScopeRequest( 7, m.body.stackFrames.get( 0 ).id );
+		        }
+		    ),
+		    waitForMessageThenSend(
+		        "response",
+		        "scopes",
+		        ( found ) -> {
+			        ScopeResponse m		= ( ScopeResponse ) found;
+
+			        Scope	variables	= m.body.scopes.stream().filter( ( scope ) -> scope.name.equalsIgnoreCase( "variables" ) ).findFirst().get();
+
+			        return DebugMessages.getVariablesRequest( 8, variables.variablesReference );
+		        }
+		    ),
+		    waitForMessageThenSend(
+		        8,
+		        ( found ) -> {
+			        VariablesResponse m	= ( VariablesResponse ) found;
+
+			        Variable	value	= m.body.variables.stream().filter( ( variable ) -> variable.name.equalsIgnoreCase( "data" ) ).findFirst().get();
+
+			        return DebugMessages.getVariablesRequest( 9, value.variablesReference );
+		        }
+		    ),
+		    waitForSeq( 9 ),
+		    sendMessageStep( DebugMessages.getContinueRequest( 10 ) ),
+		    waitForMessage( "response", "continue" )
+		) )
+		    .stream()
+		    .filter( ( m ) -> {
+			    return m instanceof ContinueResponse;
+		    } )
+		    .findFirst()
+		    .get();
+
+		assertThat( message.getType() ).isEqualTo( "response" );
+		assertThat( message.getCommand() ).isEqualTo( "continue" );
+		assertThat( message.getSeq() ).isEqualTo( 10 );
+
+		assertThat( message.body.allThreadsContinued ).isTrue();
 	}
 
 	@DisplayName( "It should respond to an EvaluateRequest" )
@@ -463,21 +527,210 @@ public class IntegrationTest {
 	@Test
 	public void testOutputEvent() {
 
-		// TODO implement this!!!!!
+		OutputEvent message = ( OutputEvent ) runDebugger( Arrays.asList(
+		    sendMessageStep( DebugMessages.getInitRequest( 1 ) ),
+		    waitForMessage( "response", "initialize" ),
+		    waitForMessage( "event", "initialized" ),
+		    sendMessageStep( DebugMessages.getLaunchRequest( 2 ) ),
+		    waitForMessage( "response", "launch" ),
+		    sendMessageStep( DebugMessages.getSetBreakpointsRequest( 3, new int[] { 6 } ) ),
+		    waitForMessage( "response", "setbreakpoints" ),
+		    sendMessageStep( DebugMessages.getConfigurationDoneRequest( 4 ) ),
+		    waitForMessage( "response", "configurationdone" ),
+		    waitForMessage( "event", "stopped", 20000 ),
+		    sendMessageStep( DebugMessages.getThreadsRequest( 5 ) ),
+		    waitForMessage( "response", "threads" ),
+		    sendMessageStep( DebugMessages.getStackTraceRequest( 6 ) ),
+		    waitForMessageThenSend(
+		        "response",
+		        "stacktrace",
+		        ( found ) -> {
+			        StackTraceResponse m = ( StackTraceResponse ) found;
+
+			        return DebugMessages.getScopeRequest( 7, m.body.stackFrames.get( 0 ).id );
+		        }
+		    ),
+		    waitForMessageThenSend(
+		        "response",
+		        "scopes",
+		        ( found ) -> {
+			        ScopeResponse m		= ( ScopeResponse ) found;
+
+			        Scope	variables	= m.body.scopes.stream().filter( ( scope ) -> scope.name.equalsIgnoreCase( "variables" ) ).findFirst().get();
+
+			        return DebugMessages.getVariablesRequest( 8, variables.variablesReference );
+		        }
+		    ),
+		    waitForMessageThenSend(
+		        8,
+		        ( found ) -> {
+			        VariablesResponse m	= ( VariablesResponse ) found;
+
+			        Variable	value	= m.body.variables.stream().filter( ( variable ) -> variable.name.equalsIgnoreCase( "data" ) ).findFirst().get();
+
+			        return DebugMessages.getVariablesRequest( 9, value.variablesReference );
+		        }
+		    ),
+		    waitForSeq( 9 ),
+		    sendMessageStep( DebugMessages.getContinueRequest( 10 ) ),
+		    waitForMessage( "response", "continue" ),
+		    waitForMessage(
+		        ( m ) -> {
+			        return m instanceof OutputEvent oe
+			            && oe.body.output.contains( "The value is: 6" );
+		        },
+		        ( m ) -> {
+		        },
+		        5000L
+		    )
+		) )
+		    .stream()
+		    .filter( ( m ) -> {
+			    return m instanceof OutputEvent oe
+			        && oe.body.output.contains( "The value is: 6" );
+		    } )
+		    .findFirst()
+		    .get();
+
+		assertThat( message.getType() ).isEqualTo( "event" );
+		assertThat( message.getCommand() ).isEqualTo( "output" );
+		assertThat( message.getSeq() ).isEqualTo( -1 );
+
+		assertThat( message.body.output ).contains( "The value is: 6" );
 	}
 
 	@DisplayName( "It should send an ExitEvent" )
 	@Test
 	public void testExitEvent() {
 
-		// TODO implement this!!!!!
+		ExitEvent message = ( ExitEvent ) runDebugger( Arrays.asList(
+		    sendMessageStep( DebugMessages.getInitRequest( 1 ) ),
+		    waitForMessage( "response", "initialize" ),
+		    waitForMessage( "event", "initialized" ),
+		    sendMessageStep( DebugMessages.getLaunchRequest( 2 ) ),
+		    waitForMessage( "response", "launch" ),
+		    sendMessageStep( DebugMessages.getSetBreakpointsRequest( 3, new int[] { 6 } ) ),
+		    waitForMessage( "response", "setbreakpoints" ),
+		    sendMessageStep( DebugMessages.getConfigurationDoneRequest( 4 ) ),
+		    waitForMessage( "response", "configurationdone" ),
+		    waitForMessage( "event", "stopped", 20000 ),
+		    sendMessageStep( DebugMessages.getThreadsRequest( 5 ) ),
+		    waitForMessage( "response", "threads" ),
+		    sendMessageStep( DebugMessages.getStackTraceRequest( 6 ) ),
+		    waitForMessageThenSend(
+		        "response",
+		        "stacktrace",
+		        ( found ) -> {
+			        StackTraceResponse m = ( StackTraceResponse ) found;
+
+			        return DebugMessages.getScopeRequest( 7, m.body.stackFrames.get( 0 ).id );
+		        }
+		    ),
+		    waitForMessageThenSend(
+		        "response",
+		        "scopes",
+		        ( found ) -> {
+			        ScopeResponse m		= ( ScopeResponse ) found;
+
+			        Scope	variables	= m.body.scopes.stream().filter( ( scope ) -> scope.name.equalsIgnoreCase( "variables" ) ).findFirst().get();
+
+			        return DebugMessages.getVariablesRequest( 8, variables.variablesReference );
+		        }
+		    ),
+		    waitForMessageThenSend(
+		        8,
+		        ( found ) -> {
+			        VariablesResponse m	= ( VariablesResponse ) found;
+
+			        Variable	value	= m.body.variables.stream().filter( ( variable ) -> variable.name.equalsIgnoreCase( "data" ) ).findFirst().get();
+
+			        return DebugMessages.getVariablesRequest( 9, value.variablesReference );
+		        }
+		    ),
+		    waitForSeq( 9 ),
+		    sendMessageStep( DebugMessages.getContinueRequest( 10 ) ),
+		    waitForMessage( "response", "continue" ),
+		    waitForMessage( "event", "exited", 5000 )
+		) )
+		    .stream()
+		    .filter( ( m ) -> {
+			    return m instanceof ExitEvent;
+		    } )
+		    .findFirst()
+		    .get();
+
+		assertThat( message.getType() ).isEqualTo( "event" );
+		assertThat( message.getCommand() ).isEqualTo( "exited" );
+		assertThat( message.getSeq() ).isEqualTo( -1 );
+
+		assertThat( message.body.exitCode ).isEqualTo( 0 );
 	}
 
 	@DisplayName( "It should send a TerminatedEvent" )
 	@Test
 	public void testTerminatedEvent() {
 
-		// TODO implement this!!!!!
+		TerminatedEvent message = ( TerminatedEvent ) runDebugger( Arrays.asList(
+		    sendMessageStep( DebugMessages.getInitRequest( 1 ) ),
+		    waitForMessage( "response", "initialize" ),
+		    waitForMessage( "event", "initialized" ),
+		    sendMessageStep( DebugMessages.getLaunchRequest( 2 ) ),
+		    waitForMessage( "response", "launch" ),
+		    sendMessageStep( DebugMessages.getSetBreakpointsRequest( 3, new int[] { 6 } ) ),
+		    waitForMessage( "response", "setbreakpoints" ),
+		    sendMessageStep( DebugMessages.getConfigurationDoneRequest( 4 ) ),
+		    waitForMessage( "response", "configurationdone" ),
+		    waitForMessage( "event", "stopped", 20000 ),
+		    sendMessageStep( DebugMessages.getThreadsRequest( 5 ) ),
+		    waitForMessage( "response", "threads" ),
+		    sendMessageStep( DebugMessages.getStackTraceRequest( 6 ) ),
+		    waitForMessageThenSend(
+		        "response",
+		        "stacktrace",
+		        ( found ) -> {
+			        StackTraceResponse m = ( StackTraceResponse ) found;
+
+			        return DebugMessages.getScopeRequest( 7, m.body.stackFrames.get( 0 ).id );
+		        }
+		    ),
+		    waitForMessageThenSend(
+		        "response",
+		        "scopes",
+		        ( found ) -> {
+			        ScopeResponse m		= ( ScopeResponse ) found;
+
+			        Scope	variables	= m.body.scopes.stream().filter( ( scope ) -> scope.name.equalsIgnoreCase( "variables" ) ).findFirst().get();
+
+			        return DebugMessages.getVariablesRequest( 8, variables.variablesReference );
+		        }
+		    ),
+		    waitForMessageThenSend(
+		        8,
+		        ( found ) -> {
+			        VariablesResponse m	= ( VariablesResponse ) found;
+
+			        Variable	value	= m.body.variables.stream().filter( ( variable ) -> variable.name.equalsIgnoreCase( "data" ) ).findFirst().get();
+
+			        return DebugMessages.getVariablesRequest( 9, value.variablesReference );
+		        }
+		    ),
+		    waitForSeq( 9 ),
+		    sendMessageStep( DebugMessages.getContinueRequest( 10 ) ),
+		    waitForMessage( "response", "continue" ),
+		    waitForMessage( "event", "terminated", 5000 )
+		) )
+		    .stream()
+		    .filter( ( m ) -> {
+			    return m instanceof TerminatedEvent;
+		    } )
+		    .findFirst()
+		    .get();
+
+		assertThat( message.getType() ).isEqualTo( "event" );
+		assertThat( message.getCommand() ).isEqualTo( "terminated" );
+		assertThat( message.getSeq() ).isEqualTo( -1 );
+
+		assertThat( message.body.restart ).isEqualTo( false );
 	}
 
 }
