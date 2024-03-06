@@ -161,7 +161,6 @@ class ModuleRecordTest {
 		).isTrue();
 
 		// Verify interceptor points were registered
-		System.out.println( runtime.getInterceptorService().getInterceptionPoints() );
 		assertThat(
 		    runtime.getInterceptorService().hasInterceptionPoint( Key.of( "onBxTestModule" ) )
 		).isTrue();

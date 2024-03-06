@@ -70,7 +70,6 @@ class StructTest {
 
 		// Test toString()
 		String actual = struct.toString();
-		System.out.println( actual );
 		assertThat( actual ).contains( "NAME=BoxLang" );
 		assertThat( actual ).contains( "AGE=1" );
 		assertThat( actual ).contains( "LOCATION=Spain" );
@@ -85,7 +84,6 @@ class StructTest {
 
 		// Test toString()
 		String actual = struct.toStringWithCase();
-		System.out.println( actual );
 		assertThat( actual ).contains( "name=BoxLang" );
 		assertThat( actual ).contains( "AgE=1" );
 		assertThat( actual ).contains( "Location=Spain" );
@@ -185,7 +183,6 @@ class StructTest {
 		struct.put( "flea", "flah" );
 
 		assertThat( struct.size() ).isEqualTo( 2 );
-		System.out.println( struct.asString() );
 		assertTrue( struct.containsKey( "foo" ) );
 		assertFalse( struct.containsKey( "fOO" ) );
 		assertTrue( struct.containsKey( "flea" ) );

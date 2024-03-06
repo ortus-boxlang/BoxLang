@@ -103,7 +103,6 @@ public class DynamicObjectTest {
 	@Test
 	void testItCanCallConstructorsWithManyArguments() {
 		DynamicObject target = new DynamicObject( LinkedHashMap.class );
-		System.out.println( int.class );
 		target.invokeConstructor( null, 16, 0.75f, true );
 		assertThat( target.getTargetClass() ).isEqualTo( LinkedHashMap.class );
 	}

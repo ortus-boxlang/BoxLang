@@ -99,8 +99,6 @@ public class DateConvertTest {
 		    context );
 		DateTime result = DateTimeCaster.cast( variables.get( Key.of( "result" ) ) );
 		assertNotEquals( result.getWrapped().getZone(), utcZone );
-		System.out.println( result.getWrapped().toString() );
-		System.out.println( conversionRef.getWrapped().toString() );
 		assertTrue( result.getWrapped().equals( conversionRef.getWrapped() ) );
 	}
 

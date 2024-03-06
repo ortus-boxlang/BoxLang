@@ -93,7 +93,6 @@ public class KeyTest {
 	public void testTheOriginalValue() {
 		Array	arr	= Array.of( 1, 2, 3 );
 		Key		key	= Key.of( arr );
-		System.out.println( key );
 		assertThat( key.getOriginalValue() instanceof Array ).isTrue();
 		assertThat( key.getOriginalValue() ).isEqualTo( arr );
 

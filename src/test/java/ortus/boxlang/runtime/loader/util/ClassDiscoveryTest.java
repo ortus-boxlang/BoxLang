@@ -25,7 +25,6 @@ import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.Arrays;
 import java.util.List;
 
 import org.junit.jupiter.api.Disabled;
@@ -38,7 +37,6 @@ class ClassDiscoveryTest {
 	@Test
 	void testGetClassFiles() throws IOException {
 		String[] classes = ClassDiscovery.getClassFiles( "ortus.boxlang.runtime.loader", false );
-		System.out.println( Arrays.deepToString( classes ) );
 		assertThat( classes ).isNotEmpty();
 		assertThat( classes ).asList().contains( "ortus.boxlang.runtime.loader.ClassLocator" );
 	}
@@ -47,7 +45,6 @@ class ClassDiscoveryTest {
 	@Test
 	void testGetClassFilesRecursively() throws IOException {
 		String[] classes = ClassDiscovery.getClassFiles( "ortus.boxlang.runtime.loader", true );
-		System.out.println( Arrays.deepToString( classes ) );
 		assertThat( classes ).isNotEmpty();
 		assertThat( classes ).asList().contains( "ortus.boxlang.runtime.loader.util.ClassDiscovery" );
 	}
@@ -94,7 +91,6 @@ class ClassDiscoveryTest {
 		    new Class[] {}
 		);
 
-		System.out.println( "Classes: " + classes.size() );
 	}
 
 }

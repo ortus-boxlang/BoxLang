@@ -55,7 +55,6 @@ class ModuleServiceTest {
 	@DisplayName( "Test it can get and load the initial module paths" )
 	@Test
 	void testItCanLoadModulePaths() {
-		System.out.println( service.getModulePaths() );
 		assertThat( service.getModulePaths().size() ).isGreaterThan( 0 );
 	}
 

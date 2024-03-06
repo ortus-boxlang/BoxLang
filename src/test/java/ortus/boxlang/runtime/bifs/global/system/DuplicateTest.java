@@ -263,8 +263,6 @@ public class DuplicateTest {
 		          totalTime = ( end - start );
 		                  """,
 		    context );
-		System.out.println( variables.get( Key.of( "onceTime" ) ) );
-		System.out.println( variables.get( Key.of( "totalTime" ) ) );
 	}
 
 	@Disabled( "Performance benchmark test on an array" )
@@ -284,8 +282,6 @@ public class DuplicateTest {
 		       totalTime = ( end - start );
 		               """,
 		    context );
-		System.out.println( variables.get( Key.of( "onceTime" ) ) );
-		System.out.println( variables.get( Key.of( "totalTime" ) ) );
 	}
 
 }

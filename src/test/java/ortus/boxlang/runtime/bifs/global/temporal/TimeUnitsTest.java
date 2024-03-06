@@ -710,7 +710,6 @@ public class TimeUnitsTest {
 	public void testBifGetNumericDays() {
 		DateTime	refDate			= new DateTime();
 		Double		refNumericDate	= refDate.toEpochMillis().doubleValue() / LongCaster.cast( 86400000l ).doubleValue();
-		System.out.println( refNumericDate );
 		variables.put( Key.of( "date" ), refDate );
 		instance.executeSource(
 		    """

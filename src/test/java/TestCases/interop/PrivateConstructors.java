@@ -42,7 +42,5 @@ public class PrivateConstructors {
 
 	public static void main( String[] args ) {
 		new PrivateConstructors();
-		System.out.println( PrivateConstructors.toUpperCase( "test" ) );
-		System.out.println( PrivateConstructors.toLowerCase( "test" ) );
 	}
 }

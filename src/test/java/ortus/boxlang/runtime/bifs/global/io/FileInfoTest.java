@@ -92,7 +92,6 @@ public class FileInfoTest {
 		assertTrue( result.get( "attributes" ) instanceof String );
 		assertTrue( result.containsKey( Key.of( "checksum" ) ) );
 		assertTrue( result.get( "checksum" ) instanceof String );
-		System.out.println( result.getAsString( Key.of( "checksum" ) ) );
 		assertThat( result.getAsString( Key.of( "checksum" ) ).length() ).isEqualTo( 32 );
 		assertTrue( result.containsKey( Key.of( "dateLastModified" ) ) );
 		assertTrue( result.get( "dateLastModified" ) instanceof DateTime );

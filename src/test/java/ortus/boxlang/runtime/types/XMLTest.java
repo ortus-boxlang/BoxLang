@@ -67,7 +67,6 @@ class XMLTest {
 		                   post
 		                                 </root>
 		                                 """ );
-		System.out.println( xml.asString() );
 	}
 
 	@DisplayName( "access document fields" )

@@ -164,7 +164,6 @@ public class ListFindTest {
 		    totalTime = ( end - start );
 		            """,
 		    context );
-		System.out.println( variables.get( Key.of( "totalTime" ) ) );
 	}
 
 }

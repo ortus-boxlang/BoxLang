@@ -75,7 +75,6 @@ public class HmacTest {
 		    context );
 		var result = variables.get( Key.of( "result" ) );
 		assertThat( result ).isInstanceOf( String.class );
-		System.out.println( variables.getAsString( Key.of( "result" ) ) );
 		assertThat( variables.getAsString( Key.of( "result" ) ).length() ).isEqualTo( referenceMac.length() );
 	}
 
@@ -90,7 +89,6 @@ public class HmacTest {
 		    context );
 		var result = variables.get( Key.of( "result" ) );
 		assertThat( result ).isInstanceOf( String.class );
-		System.out.println( variables.getAsString( Key.of( "result" ) ) );
 		assertThat( variables.getAsString( Key.of( "result" ) ).length() ).isEqualTo( referenceMac.length() );
 	}
 

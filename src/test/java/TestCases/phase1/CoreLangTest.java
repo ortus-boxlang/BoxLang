@@ -1133,8 +1133,6 @@ public class CoreLangTest {
 
 		// instance.getConfiguration().asStruct();
 		// new Struct();
-		System.out.println( TimeUnit.NANOSECONDS.toMillis( System.nanoTime() ) - start );
-		System.out.println( System.nanoTime() - startn );
 
 	}
 

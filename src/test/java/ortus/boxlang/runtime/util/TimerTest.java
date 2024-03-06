@@ -46,7 +46,6 @@ public class TimerTest {
 		} );
 
 		Truth.assertThat( elapsedTime ).isNotNull();
-		System.out.println( "Elapsed Time: " + elapsedTime );
 	}
 
 	@Test
@@ -63,7 +62,6 @@ public class TimerTest {
 		long elapsedSeconds = timer.stopAndGetSeconds( "testTimer" );
 
 		Truth.assertThat( elapsedSeconds ).isAtLeast( 0L );
-		System.out.println( "Elapsed Seconds: " + elapsedSeconds );
 	}
 
 	@Test
@@ -80,7 +78,6 @@ public class TimerTest {
 		long elapsedMillis = timer.stopAndGetMillis( "testTimer" );
 
 		Truth.assertThat( elapsedMillis ).isAtLeast( 0L );
-		System.out.println( "Elapsed Milliseconds: " + elapsedMillis );
 	}
 
 	@Test
@@ -97,28 +94,26 @@ public class TimerTest {
 		long elapsedNanos = timer.stopAndGetNanos( "testTimer" );
 
 		Truth.assertThat( elapsedNanos ).isAtLeast( 0L );
-		System.out.println( "Elapsed Nanoseconds: " + elapsedNanos );
 	}
 
 	@DisplayName( "Can time a runnable lambda" )
 	@Test
 	void testCanTimeRunnableLambda() {
 		// Given
-		Runnable	runnable	= () -> {
-									// Simulate some work
-									try {
-										Thread.sleep( 100 );
-									} catch ( InterruptedException e ) {
-										throw new BoxRuntimeException( e.getMessage(), e );
-									}
-								};
+		Runnable runnable = () -> {
+			// Simulate some work
+			try {
+				Thread.sleep( 100 );
+			} catch ( InterruptedException e ) {
+				throw new BoxRuntimeException( e.getMessage(), e );
+			}
+		};
 
 		// When
-		String		elapsedTime	= timer.timeIt( runnable );
+		String elapsedTime = timer.timeIt( runnable );
 
 		// Then
 		Truth.assertThat( elapsedTime ).isNotNull();
-		System.out.println( "Lambda Elapsed Time: " + elapsedTime );
 	}
 
 	@DisplayName( "Time and print a lambda using the default of milliseconds" )

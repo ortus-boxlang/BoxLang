@@ -110,7 +110,6 @@ public class ListRemoveDuplicatesTest {
 		    """,
 		    context );
 		Array list = ListUtil.asList( StringCaster.cast( variables.get( result ) ), "," );
-		System.out.println( list );
 		assertThat( list.size() ).isEqualTo( 3 );
 		assertEquals( list.get( 0 ), "Brad" );
 		assertEquals( list.get( 1 ), "Luis" );
@@ -127,7 +126,6 @@ public class ListRemoveDuplicatesTest {
 		    """,
 		    context );
 		Array list = ListUtil.asList( StringCaster.cast( variables.get( result ) ), "," );
-		System.out.println( list );
 		assertThat( list.size() ).isEqualTo( 3 );
 		assertEquals( list.get( 0 ), "Brad" );
 		assertEquals( list.get( 1 ), "Luis" );

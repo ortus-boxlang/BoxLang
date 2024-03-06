@@ -74,7 +74,6 @@ public class TestClosure extends TestBase {
 		} );
 
 		CompilationUnit javaAST = ( CompilationUnit ) transformClosure( code );
-		System.out.println( javaAST.toString() );
 	}
 
 	@Test
@@ -100,7 +99,6 @@ public class TestClosure extends TestBase {
 		} );
 
 		CompilationUnit javaAST = ( CompilationUnit ) transformClosure( code );
-		System.out.println( javaAST.toString() );
 	}
 
 	@Test
@@ -113,7 +111,6 @@ public class TestClosure extends TestBase {
 		assertTrue( result.isCorrect() );
 
 		CompilationUnit javaAST = ( CompilationUnit ) transformClosure( code );
-		System.out.println( javaAST.toString() );
 	}
 
 }

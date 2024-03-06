@@ -61,16 +61,13 @@ public class TestExecution extends TestBase {
 		                        while(a < 10) {
 		                           switch(variables.a) {
 		                           case 0: {
-		                             variables.system.out.println("zero");
 		                             break;
 		                           }
 		                          default: {
-		                             variables.system.out.println("non zero");
 		                             break;
 		                           }
 		                        }
 		                        if(!a % 2 == 0) {
-		                            variables.system.out.println("even and a=#variables.a#");
 		                        }
 		                        a +=1;
 
@@ -89,7 +86,6 @@ public class TestExecution extends TestBase {
 		                                                               variables['system'] = createObject('java','java.lang.System');
 		                        variables.a = 0;
 		                                                               for(a = 0; a < 10; a=a+1){
-		                                                               	variables.system.out.println(a);
 		                                                               }
 		                                        assert(variables["a"] == 10);
 		                                                               """ );

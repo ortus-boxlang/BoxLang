@@ -17,8 +17,6 @@ public class ComponentServiceProviderGenerator {
 		String	targetPackage	= "ortus.boxlang.runtime.components";
 		String	targetPath		= "src/main/resources/META-INF/services/ortus.boxlang.runtime.components.Component";
 
-		System.out.println( "Generating Component Service Provider file " + targetPath + " for package " + targetPackage );
-
 		// Delete the file if it exists
 		try {
 			java.nio.file.Files.delete( java.nio.file.Paths.get( targetPath ) );
@@ -44,8 +42,6 @@ public class ComponentServiceProviderGenerator {
 		} catch ( IOException e ) {
 			e.printStackTrace();
 		}
-
-		System.out.println( "Done" );
 
 	}
 }

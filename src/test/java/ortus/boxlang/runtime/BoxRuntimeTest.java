@@ -154,16 +154,13 @@ public class BoxRuntimeTest {
 		                          while(a < 10) {
 		                             switch(variables.a) {
 		                             case 0: {
-		                          	 variables.system.out.println("zero");
 		                          	 break;
 		                             }
 		                            default: {
-		                          	 variables.system.out.println("non zero");
 		                          	 break;
 		                             }
 		                          }
 		                          if(!a % 2 == 0) {
-		                          	variables.system.out.println("even and a=#variables.a#");
 		                          }
 		                          a +=1;
 

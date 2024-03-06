@@ -26,8 +26,6 @@ public class MockInterceptor {
 	}
 
 	public void onRequestStart( IStruct data ) {
-		System.out.println( "Executed mock interceptor" );
-
 		// Check incoming counter
 		Key counterKey = new Key( "counter" );
 		// Add to it

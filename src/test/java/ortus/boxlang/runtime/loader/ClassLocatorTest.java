@@ -38,7 +38,6 @@ public class ClassLocatorTest {
 	@Test
 	public void testCanRegisterCoreResolvers() {
 		ClassLocator locator = ClassLocator.getInstance();
-		System.out.println( "prefixes " + locator.getResolvedPrefixes() );
 		assertThat( locator.hasResolver( "bx" ) ).isTrue();
 		assertThat( locator.hasResolver( "java" ) ).isTrue();
 		assertThat( locator.getResolvedPrefixes() ).containsAtLeast( "bx", "java" );

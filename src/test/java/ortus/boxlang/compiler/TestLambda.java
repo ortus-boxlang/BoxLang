@@ -77,9 +77,8 @@ public class TestLambda extends TestBase {
 			} );
 		} );
 
-		CompilationUnit javaAST = ( CompilationUnit ) transformLambda( code );
-		System.out.println( javaAST.toString() );
-		VariableDeclarator arguments = javaAST.getType( 0 ).getFieldByName( "arguments" ).get().getVariable( 0 );
+		CompilationUnit		javaAST		= ( CompilationUnit ) transformLambda( code );
+		VariableDeclarator	arguments	= javaAST.getType( 0 ).getFieldByName( "arguments" ).get().getVariable( 0 );
 		Assertions.assertEquals( 2, arguments.getInitializer().get().asArrayInitializerExpr().getValues().size() );
 		VariableDeclarator annotations = javaAST.getType( 0 ).getFieldByName( "annotations" ).get().getVariable( 0 );
 

@@ -136,7 +136,6 @@ public class StructKeyTranslateTest {
 		      """,
 		    context );
 		assertTrue( variables.get( result ) instanceof IStruct );
-		System.out.println( variables.getAsStruct( result ).toString() );
 		assertTrue( variables.getAsStruct( result ).containsKey( Key.of( "cow" ) ) );
 		assertTrue( variables.getAsStruct( result ).containsKey( Key.of( "bird" ) ) );
 		assertFalse( variables.getAsStruct( result ).containsKey( Key.of( "bird.noise" ) ) );

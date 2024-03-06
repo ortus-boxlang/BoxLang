@@ -72,7 +72,6 @@ public class GetLocaleDisplayNameTest {
 		    """,
 		    context );
 		var result = variables.get( Key.of( "result" ) );
-		System.out.println( result );
 		assertEquals( result, refDisplayName );
 
 	}
@@ -82,14 +81,12 @@ public class GetLocaleDisplayNameTest {
 	public void testGetLocaleDisplayNameSingleArg() {
 		Locale	contextLocale	= ( Locale ) context.getConfigItem( Key.locale );
 		String	refDisplayName	= contextLocale.getDisplayName( contextLocale );
-		System.out.println( refDisplayName );
 		instance.executeSource(
 		    """
 		    result = GetLocaleDisplayName( "en-US" );
 		    """,
 		    context );
 		var result = variables.get( Key.of( "result" ) );
-		System.out.println( result );
 		assertEquals( result, refDisplayName );
 
 	}
@@ -99,7 +96,6 @@ public class GetLocaleDisplayNameTest {
 	public void testGetLocaleDisplayNameBothArgs() {
 		Locale	contextLocale	= ( Locale ) context.getConfigItem( Key.locale );
 		String	refDisplayName	= contextLocale.getDisplayName( contextLocale );
-		System.out.println( refDisplayName );
 		// Set a different locale to test whether our explicit args are being honored
 		context.getParentOfType( RequestBoxContext.class ).setLocale( Locale.GERMANY );
 		instance.executeSource(
@@ -108,7 +104,6 @@ public class GetLocaleDisplayNameTest {
 		    """,
 		    context );
 		var result = variables.get( Key.of( "result" ) );
-		System.out.println( result );
 		assertEquals( result, refDisplayName );
 
 	}
@@ -118,14 +113,12 @@ public class GetLocaleDisplayNameTest {
 	public void testGetLocaleDisplayNameDspArg() {
 		Locale	contextLocale	= ( Locale ) context.getConfigItem( Key.locale );
 		String	refDisplayName	= contextLocale.getDisplayName( Locale.GERMANY );
-		System.out.println( refDisplayName );
 		instance.executeSource(
 		    """
 		    result = GetLocaleDisplayName( dspLocale="Germany" );
 		    """,
 		    context );
 		var result = variables.get( Key.of( "result" ) );
-		System.out.println( result );
 		assertEquals( result, refDisplayName );
 
 	}

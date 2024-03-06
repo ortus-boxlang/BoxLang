@@ -72,7 +72,6 @@ public class StructMetaTest {
 		$bx.registerChangeListener( ( key, newValue, oldValue ) -> {
 			assertThat( newValue == null ).isEqualTo( false );
 			assertThat( oldValue == null ).isEqualTo( true );
-			System.out.println( "setting '" + newValue + "' into key " + key.getName() );
 			return newValue;
 		} );
 

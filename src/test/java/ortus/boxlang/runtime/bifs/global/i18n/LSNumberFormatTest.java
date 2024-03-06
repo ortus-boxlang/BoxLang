@@ -102,7 +102,6 @@ public class LSNumberFormatTest {
 		    result = LSnumberFormat( 12345, "_,__0.00", "German (Austrian)");
 		    """,
 		    context );
-		System.out.println( variables.getAsString( result ) );
 		assertEquals( variables.getAsString( result ), refGrouped );
 	}
 
@@ -115,7 +114,6 @@ public class LSNumberFormatTest {
 		    result = LSnumberFormat( 12345, "ls$", "German (Austrian)" );
 		    """,
 		    context );
-		System.out.println( variables.getAsString( result ) );
 		assertEquals( variables.getAsString( result ), formatter.format( 12345D ) );
 	}
 

@@ -4,7 +4,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.IOException;
 
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import ortus.boxlang.parser.BoxCFParser;
@@ -25,7 +24,6 @@ public class TestRecover {
 
 		BoxCFParser		parser	= new BoxCFParser();
 		ParsingResult	result	= parser.parse( code );
-		System.out.println( result.getIssues() );
 		assertTrue( result.isCorrect() );
 	}
 
@@ -40,7 +38,6 @@ public class TestRecover {
 
 		BoxCFParser		parser	= new BoxCFParser();
 		ParsingResult	result	= parser.parse( code );
-		System.out.println( result.getIssues() );
 		assertTrue( result.isCorrect() );
 	}
 
@@ -57,7 +54,6 @@ public class TestRecover {
 
 		BoxCFParser		parser	= new BoxCFParser();
 		ParsingResult	result	= parser.parse( code );
-		System.out.println( result.getIssues() );
 		assertTrue( result.isCorrect() );
 	}
 
@@ -74,7 +70,6 @@ public class TestRecover {
 
 		BoxCFParser		parser	= new BoxCFParser();
 		ParsingResult	result	= parser.parse( code );
-		System.out.println( result.getIssues() );
 		assertTrue( result.isCorrect() );
 	}
 
@@ -93,7 +88,6 @@ public class TestRecover {
 
 		BoxCFParser		parser	= new BoxCFParser();
 		ParsingResult	result	= parser.parse( code );
-		System.out.println( result.getIssues() );
 		assertTrue( result.isCorrect() );
 	}
 
@@ -106,7 +100,6 @@ public class TestRecover {
 
 		BoxCFParser		parser	= new BoxCFParser();
 		ParsingResult	result	= parser.parse( code );
-		System.out.println( result.getIssues() );
 		assertTrue( result.isCorrect() );
 	}
 
@@ -120,7 +113,6 @@ public class TestRecover {
 
 		BoxCFParser		parser	= new BoxCFParser();
 		ParsingResult	result	= parser.parse( code );
-		System.out.println( result.getIssues() );
 		assertTrue( result.isCorrect() );
 	}
 
@@ -133,7 +125,6 @@ public class TestRecover {
 
 		BoxCFParser		parser	= new BoxCFParser();
 		ParsingResult	result	= parser.parse( code );
-		System.out.println( result.getIssues() );
 		assertTrue( result.isCorrect() );
 	}
 
@@ -153,7 +144,6 @@ public class TestRecover {
 
 		BoxCFParser		parser	= new BoxCFParser();
 		ParsingResult	result	= parser.parse( code );
-		System.out.println( result.getIssues() );
 		assertTrue( result.isCorrect() );
 	}
 }

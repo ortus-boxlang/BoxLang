@@ -202,7 +202,6 @@ public class UDFFunctionTest {
 		// Now we test our "new" meta view which breaks out actual UDF meta, javaadoc, and annotations (inline and @)
 		FunctionMeta	$bx			= ( ( FunctionMeta ) Referencer.get( context, UDFfoo, BoxMeta.key, false ) );
 		IStruct			annotations	= ( IStruct ) $bx.meta.get( Key.of( "annotations" ) );
-		System.out.println( annotations );
 		assertThat( annotations.get( Key.of( "k1" ) ) ).isEqualTo( "" );
 		assertThat( annotations.get( Key.of( "k2" ) ) ).isEqualTo( "v2" );
 		assertThat( annotations.get( Key.of( "k3" ) ) ).isEqualTo( "" );
@@ -417,7 +416,6 @@ public class UDFFunctionTest {
 		    context );
 
 		ArgumentsScope argsScope = ( ArgumentsScope ) variables.get( Key.of( "result" ) );
-		System.out.println( argsScope.asString() );
 		assertThat( argsScope.size() ).isEqualTo( 4 );
 		Object[] args = argsScope.asNativeArray();
 		assertThat( args[ 0 ] ).isEqualTo( "value1" );
@@ -426,7 +424,6 @@ public class UDFFunctionTest {
 		assertThat( args[ 3 ] ).isEqualTo( "value4" );
 
 		List<String> keys = argsScope.getKeysAsStrings();
-		System.out.println( keys );
 		assertThat( keys.get( 0 ) ).isEqualTo( "param1" );
 		assertThat( keys.get( 1 ) ).isEqualTo( "param2" );
 		assertThat( keys.get( 2 ) ).isEqualTo( "param3" );

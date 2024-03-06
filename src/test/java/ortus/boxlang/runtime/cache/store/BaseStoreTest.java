@@ -512,8 +512,6 @@ public abstract class BaseStoreTest {
 		// Run the eviction process
 		store.evict();
 
-		System.out.println( "EvictionCount ===> " + mockProvider.getStats().evictionCount() );
-
 		assertThat( store.getSize() ).isEqualTo( 1 );
 		assertThat( store.lookup( Key.of( "test" ) ) ).isFalse();
 		assertThat( store.lookup( Key.of( "testing" ) ) ).isTrue();

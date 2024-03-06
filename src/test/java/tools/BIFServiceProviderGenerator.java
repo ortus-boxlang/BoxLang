@@ -48,8 +48,6 @@ public class BIFServiceProviderGenerator {
 			e.printStackTrace();
 		}
 
-		System.out.println( "Done" );
-
 	}
 
 }

@@ -55,7 +55,6 @@ public class TestAST extends TestBase {
 		};
 
 		for ( int i = 0; i < epressions.length; i++ ) {
-			System.out.println( epressions[ i ] );
 			ParsingResult result = parser.parseExpression( epressions[ i ] );
 			assertTrue( result.isCorrect() );
 			assertTrue( "Root is " + result.getRoot().getClass().getName(), result.getRoot() instanceof BoxBinaryOperation );

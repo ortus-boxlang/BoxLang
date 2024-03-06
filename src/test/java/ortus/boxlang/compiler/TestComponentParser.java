@@ -44,7 +44,6 @@ public class TestComponentParser extends TestBase {
 		                                                                                                                                                   """;
 
 		ParsingResult	result		= parseStatement( statement );
-		System.out.println( result.getRoot().getSourceText() );
 	}
 
 }

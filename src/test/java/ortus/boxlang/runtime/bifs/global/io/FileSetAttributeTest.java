@@ -33,7 +33,6 @@ import java.nio.file.attribute.PosixFilePermissions;
 import java.time.Instant;
 import java.util.Set;
 
-import org.apache.commons.lang3.SystemUtils;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.BeforeAll;
@@ -174,7 +173,6 @@ public class FileSetAttributeTest {
 	@DisplayName( "It tests ability to set or ignore the 'hidden' attribute" )
 	@Test
 	public void testSetAttributeHidden() throws IOException {
-		System.out.println( SystemUtils.IS_OS_WINDOWS );
 		assertFalse( FileSystemUtil.IS_WINDOWS );
 		variables.put( Key.of( "testFile" ), Path.of( testTextFile ).toAbsolutePath().toString() );
 		Set<PosixFilePermission> initialPermissions = FileSystemUtil.getPosixPermissions( testTextFile );
