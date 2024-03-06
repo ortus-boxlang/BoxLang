@@ -17,6 +17,8 @@
  */
 package ortus.boxlang.debugger.event;
 
+import ortus.boxlang.debugger.DebugAdapter;
+
 /**
  * Models the Exit event for the Debug Protocol
  */
@@ -40,6 +42,11 @@ public class TerminatedEvent extends Event {
 
 		this.body			= new TerminatedBody();
 		this.body.restart	= false;
+	}
+
+	@Override
+	public void accept( DebugAdapter adapter ) {
+		adapter.visit( this );
 	}
 
 }

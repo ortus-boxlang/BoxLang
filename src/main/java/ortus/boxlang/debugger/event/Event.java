@@ -17,15 +17,47 @@
  */
 package ortus.boxlang.debugger.event;
 
+import java.util.Map;
+
+import ortus.boxlang.debugger.DebugAdapter;
+import ortus.boxlang.debugger.IAdapterProtocolMessage;
 import ortus.boxlang.debugger.ISendable;
 
-public class Event implements ISendable {
+public class Event implements ISendable, IAdapterProtocolMessage {
 
-	public String	type	= "event";
-	public String	event;
+	public String				type	= "event";
+	public String				event;
+
+	private Map<String, Object>	messageData;
+
+	public Event() {
+
+	}
 
 	public Event( String event ) {
 		this.event = event;
+	}
+
+	public void setRawMessageData( Map<String, Object> messageData ) {
+		this.messageData = messageData;
+	}
+
+	public Map<String, Object> getRawMessageData() {
+		return this.messageData;
+	}
+
+	/**
+	 * The command for the debugger to execute
+	 */
+	public String getCommand() {
+		return event;
+	}
+
+	/**
+	 * Returns the sequence number of this request
+	 */
+	public int getSeq() {
+		return -1;
 	}
 
 	/**
@@ -43,4 +75,10 @@ public class Event implements ISendable {
 	public String getName() {
 		return event;
 	}
+
+	@Override
+	public void accept( DebugAdapter adapter ) {
+		adapter.visit( this );
+	}
+
 }

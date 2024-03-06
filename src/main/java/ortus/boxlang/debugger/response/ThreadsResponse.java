@@ -29,9 +29,13 @@ public class ThreadsResponse extends AbstractResponse {
 
 	public ThreadsResponseBody body;
 
-	public class ThreadsResponseBody {
+	public static class ThreadsResponseBody {
 
 		public List<Thread> threads;
+	}
+
+	public ThreadsResponse() {
+
 	}
 
 	/**

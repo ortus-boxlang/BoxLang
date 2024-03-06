@@ -31,6 +31,10 @@ public class AdapterProtocolMessageReader {
 		this.parseMap		= new HashMap<String, Class>();
 	}
 
+	public void changeInputStream( InputStream inputStream ) {
+		this.bufferedReader = new BufferedReader( new InputStreamReader( inputStream ), 4096 );
+	}
+
 	/**
 	 * Parse a debug request and deserialie it into its associated class.
 	 * 
@@ -40,12 +44,16 @@ public class AdapterProtocolMessageReader {
 	 */
 	private IAdapterProtocolMessage parseAdapterProtocolMessage( String json ) {
 		Map<String, Object>	requestData	= ( Map<String, Object> ) JSONUtil.fromJSON( json );
-		String				command		= ( String ) requestData.get( "command" );
+		String				name		= getMessageName( requestData );
 
-		this.logger.info( "Received command {}", command );
+		if ( name.equalsIgnoreCase( "setbreakpoints" ) ) {
+			int i = 4;
+		}
+
+		this.logger.info( "Received command {}", name );
 		this.logger.info( "Received command {}", json );
 
-		Class parseTarget = this.parseMap.get( command );
+		Class parseTarget = this.parseMap.get( name.toLowerCase() );
 
 		if ( parseTarget != null ) {
 			IAdapterProtocolMessage message = ( IAdapterProtocolMessage ) JSONUtil.fromJSON( parseTarget, json );
@@ -55,7 +63,7 @@ public class AdapterProtocolMessageReader {
 		}
 
 		if ( throwOnUnregisteredCommand ) {
-			throw new NotImplementedException( command );
+			throw new NotImplementedException( name );
 		}
 
 		IAdapterProtocolMessage message = new MapAdapterProtocolMessage();
@@ -64,7 +72,7 @@ public class AdapterProtocolMessageReader {
 	}
 
 	public AdapterProtocolMessageReader register( String command, Class parseTarget ) {
-		this.parseMap.put( command, parseTarget );
+		this.parseMap.put( command.toLowerCase(), parseTarget );
 
 		return this;
 	}
@@ -87,6 +95,18 @@ public class AdapterProtocolMessageReader {
 			bufferedReader.read( buf );
 
 			return parseAdapterProtocolMessage( new String( buf.array() ) );
+		}
+
+		return null;
+	}
+
+	private String getMessageName( Map<String, Object> data ) {
+		String type = ( String ) data.get( "type" );
+
+		if ( type.equals( "request" ) || type.equals( "response" ) ) {
+			return ( String ) data.get( "command" );
+		} else if ( type.equals( "event" ) ) {
+			return ( String ) data.get( "event" );
 		}
 
 		return null;

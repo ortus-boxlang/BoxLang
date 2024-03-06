@@ -24,6 +24,10 @@ import ortus.boxlang.debugger.IAdapterProtocolMessage;
  */
 public class NoBodyResponse extends AbstractResponse {
 
+	public NoBodyResponse() {
+
+	}
+
 	public NoBodyResponse( IAdapterProtocolMessage request ) {
 		super( request.getCommand(), request.getSeq(), true );
 	}

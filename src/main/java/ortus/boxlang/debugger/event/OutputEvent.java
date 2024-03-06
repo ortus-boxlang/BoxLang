@@ -17,6 +17,8 @@
  */
 package ortus.boxlang.debugger.event;
 
+import ortus.boxlang.debugger.DebugAdapter;
+
 /**
  * Models the Output event for the Debug Protocol
  */
@@ -24,13 +26,16 @@ public class OutputEvent extends Event {
 
 	public OutputBody body;
 
-	private class OutputBody {
+	public static class OutputBody {
 
 		@SuppressWarnings( value = { "unused" } )
 		public String	category;
 
 		@SuppressWarnings( value = { "unused" } )
 		public String	output;
+	}
+
+	public OutputEvent() {
 	}
 
 	/**
@@ -45,6 +50,11 @@ public class OutputEvent extends Event {
 		this.body			= new OutputBody();
 		this.body.category	= category;
 		this.body.output	= output;
+	}
+
+	@Override
+	public void accept( DebugAdapter adapter ) {
+		adapter.visit( this );
 	}
 
 }

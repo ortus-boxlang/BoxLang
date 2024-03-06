@@ -17,7 +17,12 @@
  */
 package ortus.boxlang.debugger.event;
 
+import java.util.List;
+import java.util.stream.IntStream;
+
 import com.sun.jdi.event.BreakpointEvent;
+
+import ortus.boxlang.debugger.DebugAdapter;
 
 /**
  * Models the Stopped event for the Debug Protocol
@@ -26,15 +31,19 @@ public class StoppedEvent extends Event {
 
 	public StoppedBody body;
 
-	private class StoppedBody {
+	public static class StoppedBody {
 
 		@SuppressWarnings( value = { "unused" } )
-		public String	reason;
+		public String			reason;
 		@SuppressWarnings( value = { "unused" } )
-		public int		threadId;
+		public int				threadId;
 
 		@SuppressWarnings( value = { "unused" } )
-		public int[]	hitBreakpointIds;
+		public List<Integer>	hitBreakpointIds;
+	}
+
+	public StoppedEvent() {
+		super( "stopped" );
 	}
 
 	/**
@@ -51,7 +60,7 @@ public class StoppedEvent extends Event {
 		this.body					= new StoppedBody();
 		this.body.reason			= reason;
 		this.body.threadId			= threadId;
-		this.body.hitBreakpointIds	= hitBreakpointIds;
+		this.body.hitBreakpointIds	= IntStream.of( hitBreakpointIds ).boxed().toList();
 	}
 
 	public static StoppedEvent breakpoint( int threadId ) {
@@ -61,6 +70,11 @@ public class StoppedEvent extends Event {
 	public static StoppedEvent breakpoint( BreakpointEvent breakpointEvent, int breakpointId ) {
 
 		return new StoppedEvent( "breakpoint", ( int ) breakpointEvent.thread().uniqueID(), new int[] { breakpointId } );
+	}
+
+	@Override
+	public void accept( DebugAdapter adapter ) {
+		adapter.visit( this );
 	}
 
 }

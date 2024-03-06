@@ -14,9 +14,54 @@ import com.fasterxml.jackson.jr.ob.JSONObjectException;
 
 import ortus.boxlang.debugger.AdapterProtocolMessageReader;
 import ortus.boxlang.debugger.IAdapterProtocolMessage;
+import ortus.boxlang.debugger.event.ContinuedEvent;
+import ortus.boxlang.debugger.event.ExitEvent;
+import ortus.boxlang.debugger.event.OutputEvent;
+import ortus.boxlang.debugger.event.StoppedEvent;
+import ortus.boxlang.debugger.event.TerminatedEvent;
+import ortus.boxlang.debugger.response.ContinueResponse;
+import ortus.boxlang.debugger.response.InitializeResponse;
+import ortus.boxlang.debugger.response.NoBodyResponse;
+import ortus.boxlang.debugger.response.ScopeResponse;
+import ortus.boxlang.debugger.response.SetBreakpointsResponse;
+import ortus.boxlang.debugger.response.StackTraceResponse;
+import ortus.boxlang.debugger.response.ThreadsResponse;
+import ortus.boxlang.debugger.response.VariablesResponse;
 import ortus.boxlang.runtime.types.util.JSONUtil;
 
 public class DebugMessages {
+
+	public static AdapterProtocolMessageReader messageReader = getMessageReader();
+
+	public static AdapterProtocolMessageReader getMessageReader() {
+		try {
+			AdapterProtocolMessageReader reader = new AdapterProtocolMessageReader( new ByteArrayInputStream( new byte[ 2048 ] ) );
+
+			reader.throwOnUnregisteredCommand = false;
+
+			reader.register( "threads", ThreadsResponse.class );
+			reader.register( "continue", ContinueResponse.class );
+			reader.register( "initialize", InitializeResponse.class );
+			reader.register( "scope", ScopeResponse.class );
+			reader.register( "setbreakpoints", SetBreakpointsResponse.class );
+			reader.register( "stacktrace", StackTraceResponse.class );
+			reader.register( "variables", VariablesResponse.class );
+			reader.register( "launch", NoBodyResponse.class );
+			reader.register( "continued", ContinuedEvent.class );
+			reader.register( "exit", ExitEvent.class );
+			reader.register( "output", OutputEvent.class );
+			reader.register( "stopped", StoppedEvent.class );
+			reader.register( "terminated", TerminatedEvent.class );
+
+			return reader;
+
+		} catch ( IOException e ) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+
+		return null;
+	}
 
 	public static Predicate<Map<String, Object>> getMessageMatcher( String type, String name ) {
 		return ( data ) -> {
@@ -42,6 +87,43 @@ public class DebugMessages {
 		    ( message ) -> {
 		    },
 		    1000L
+		);
+	}
+
+	public static <A, B, C> TriConsumer<byte[], ByteArrayInputStream, ByteArrayOutputStream> waitForMessage(
+	    String type,
+	    String command,
+	    List<IAdapterProtocolMessage> messages,
+	    int skip ) {
+		var ref = new Object() {
+
+			public int toSkip = skip;
+		};
+
+		return waitForMessage(
+		    ( message ) -> {
+			    Map<String, Object> data = message.getRawMessageData();
+
+			    String			key		= type == "event" ? "event" : "command";
+
+			    boolean			matches	= ( ( String ) data.get( "type" ) ).equalsIgnoreCase( type )
+			        && ( ( String ) data.get( key ) ).equalsIgnoreCase( command );
+
+			    if ( !matches ) {
+				    return false;
+			    }
+
+			    if ( ref.toSkip > 0 ) {
+				    ref.toSkip--;
+				    return false;
+			    }
+
+			    return true;
+		    },
+		    ( message ) -> {
+			    messages.add( message );
+		    },
+		    10000
 		);
 	}
 
@@ -99,7 +181,8 @@ public class DebugMessages {
 
 			while ( System.currentTimeMillis() - startTime <= timeout ) {
 				try {
-					AdapterProtocolMessageReader reader = new AdapterProtocolMessageReader( new ByteArrayInputStream( output.toByteArray() ) );
+					messageReader.changeInputStream( new ByteArrayInputStream( output.toByteArray() ) );
+					AdapterProtocolMessageReader reader = messageReader;
 					reader.throwOnUnregisteredCommand = false;
 					IAdapterProtocolMessage message = reader.read();
 
@@ -268,6 +351,15 @@ Content-Length: %d
 	public static Map<String, Object> getConfigurationDoneRequest( int seq ) {
 		Map<String, Object> request = new HashMap<String, Object>();
 		request.put( "command", "configurationDone" );
+		request.put( "type", "request" );
+		request.put( "seq", seq );
+
+		return request;
+	}
+
+	public static Map<String, Object> getThreadsRequest( int seq ) {
+		Map<String, Object> request = new HashMap<String, Object>();
+		request.put( "command", "threads" );
 		request.put( "type", "request" );
 		request.put( "seq", seq );
 

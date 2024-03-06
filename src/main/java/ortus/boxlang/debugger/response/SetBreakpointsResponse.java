@@ -27,9 +27,12 @@ public class SetBreakpointsResponse extends AbstractResponse {
 
 	public SetBreakpointsResponseBody body;
 
-	public class SetBreakpointsResponseBody {
+	public static class SetBreakpointsResponseBody {
 
 		public Breakpoint[] breakpoints;
+	}
+
+	public SetBreakpointsResponse() {
 	}
 
 	/**

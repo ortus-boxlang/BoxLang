@@ -17,6 +17,8 @@
  */
 package ortus.boxlang.debugger.event;
 
+import ortus.boxlang.debugger.DebugAdapter;
+
 /**
  * Models the Continued event for the Debug Protocol
  */
@@ -40,6 +42,11 @@ public class ContinuedEvent extends Event {
 
 		this.body			= new ContinuedBody();
 		this.body.threadId	= threadId;
+	}
+
+	@Override
+	public void accept( DebugAdapter adapter ) {
+		adapter.visit( this );
 	}
 
 }

@@ -216,6 +216,14 @@ public class InitializeResponse extends AbstractResponse {
 	 * 
 	 * @param request The request to respond to
 	 */
+	public InitializeResponse() {
+	}
+
+	/**
+	 * Constructor
+	 * 
+	 * @param request The request to respond to
+	 */
 	public InitializeResponse( IAdapterProtocolMessage request ) {
 		super( request.getCommand(), request.getSeq(), true );
 		this.request	= request;
