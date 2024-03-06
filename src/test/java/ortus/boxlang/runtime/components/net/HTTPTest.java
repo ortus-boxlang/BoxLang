@@ -61,13 +61,9 @@ public class HTTPTest {
 	@DisplayName( "It can make HTTP call script" )
 	@Test
 	public void testCanMakeHTTPCallScript() {
-
 		instance.executeSource(
 		    """
-		     http url="http://www.google.com" {
-		         httpparam type="header" name="Accept-Encoding" value="gzip,deflate";
-		         httpparam type="header" name="Accept" value="text/html";
-		         httpparam type="header" name="Accept-Language" value="en-US,en;q=0.5";
+		     http url="https://jsonplaceholder.typicode.com/posts/1" {
 		         httpparam type="header" name="User-Agent" value="Mozilla";
 		    }
 		    result = cfhttp;
@@ -79,7 +75,16 @@ public class HTTPTest {
 		IStruct cfhttp = variables.getAsStruct( result );
 		assertThat( cfhttp.get( Key.statusCode ) ).isEqualTo( 200 );
 		assertThat( cfhttp.get( Key.statusText ) ).isEqualTo( "OK" );
-		assertThat( cfhttp.get( Key.fileContent ) ).isEqualTo( "This is the response text" );
+		assertThat( cfhttp.getAsString( Key.fileContent ).replaceAll( "\\s+", "" ) ).isEqualTo(
+		    """
+		    {
+		      "userId": 1,
+		      "id": 1,
+		      "title": "sunt aut facere repellat provident occaecati excepturi optio reprehenderit",
+		      "body": "quia et suscipit\\nsuscipit recusandae consequuntur expedita et cum\\nreprehenderit molestiae ut ut quas totam\\nnostrum rerum est autem sunt rem eveniet architecto"
+		    }
+		    """.replaceAll(
+		        "\\s+", "" ) );
 	}
 
 	@DisplayName( "It can make HTTP call ACF script" )
@@ -88,10 +93,7 @@ public class HTTPTest {
 
 		instance.executeSource(
 		    """
-		     cfhttp( url="http://www.google.com" ) {
-		         cfhttpparam( type="header", name="Accept-Encoding", value="gzip,deflate");
-		         cfhttpparam( type="header", name="Accept", value="text/html");
-		         cfhttpparam( type="header", name="Accept-Language", value="en-US,en;q=0.5");
+		     cfhttp( url="https://jsonplaceholder.typicode.com/posts/1" ) {
 		         cfhttpparam( type="header", name="User-Agent", value="Mozilla");
 		    }
 		    result = cfhttp;
@@ -103,23 +105,28 @@ public class HTTPTest {
 		IStruct cfhttp = variables.getAsStruct( result );
 		assertThat( cfhttp.get( Key.statusCode ) ).isEqualTo( 200 );
 		assertThat( cfhttp.get( Key.statusText ) ).isEqualTo( "OK" );
-		assertThat( cfhttp.get( Key.fileContent ) ).isEqualTo( "This is the response text" );
+		assertThat( cfhttp.getAsString( Key.fileContent ).replaceAll( "\\s+", "" ) ).isEqualTo(
+		    """
+		    {
+		      "userId": 1,
+		      "id": 1,
+		      "title": "sunt aut facere repellat provident occaecati excepturi optio reprehenderit",
+		      "body": "quia et suscipit\\nsuscipit recusandae consequuntur expedita et cum\\nreprehenderit molestiae ut ut quas totam\\nnostrum rerum est autem sunt rem eveniet architecto"
+		    }
+		    """.replaceAll(
+		        "\\s+", "" ) );
 	}
 
-	@DisplayName( "It can make HTTP call tag" )
+	@DisplayName( "It can make a default GET request" )
 	@Test
 	public void testCanMakeHTTPCallTag() {
-
 		instance.executeSource(
 		    """
-		       <cfhttp url="http://www.google.com">
-		           <cfhttpparam type="header" name="Accept-Encoding" value="gzip,deflate" />
-		           <cfhttpparam type="header" name="Accept" value="text/html" />
-		           <cfhttpparam type="header" name="Accept-Language" value="en-US,en;q=0.5" />
-		           <cfhttpparam type="header" name="User-Agent" value="Mozilla" />
-		       </cfhttp>
+		      <cfhttp url="https://jsonplaceholder.typicode.com/posts/1">
+		          <cfhttpparam type="header" name="User-Agent" value="Mozilla" />
+		      </cfhttp>
 		    <cfset result = cfhttp>
-		       """,
+		      """,
 		    context, BoxScriptType.CFMARKUP );
 
 		assertThat( variables.get( result ) ).isInstanceOf( IStruct.class );
@@ -127,8 +134,16 @@ public class HTTPTest {
 		IStruct cfhttp = variables.getAsStruct( result );
 		assertThat( cfhttp.get( Key.statusCode ) ).isEqualTo( 200 );
 		assertThat( cfhttp.get( Key.statusText ) ).isEqualTo( "OK" );
-		assertThat( cfhttp.get( Key.fileContent ) ).isEqualTo( "This is the response text" );
-
+		assertThat( cfhttp.getAsString( Key.fileContent ).replaceAll( "\\s+", "" ) ).isEqualTo(
+		    """
+		    {
+		      "userId": 1,
+		      "id": 1,
+		      "title": "sunt aut facere repellat provident occaecati excepturi optio reprehenderit",
+		      "body": "quia et suscipit\\nsuscipit recusandae consequuntur expedita et cum\\nreprehenderit molestiae ut ut quas totam\\nnostrum rerum est autem sunt rem eveniet architecto"
+		    }
+		    """.replaceAll(
+		        "\\s+", "" ) );
 	}
 
 	@DisplayName( "It can make HTTP call tag attributeCollection" )
@@ -138,11 +153,11 @@ public class HTTPTest {
 		instance.executeSource(
 		    """
 		    <cfset attrs = { type="header", name="Accept-Encoding", value="gzip,deflate" }>
-		          <cfhttp url="http://www.google.com">
-		              <cfhttpparam attributeCollection="#attrs#" value="sdf" />
-		          </cfhttp>
+		       <cfhttp url="https://jsonplaceholder.typicode.com/posts/1">
+		       	<cfhttpparam attributeCollection="#attrs#" value="sdf" />
+		       </cfhttp>
 		       <cfset result = cfhttp>
-		          """,
+		         """,
 		    context, BoxScriptType.CFMARKUP );
 
 		assertThat( variables.get( result ) ).isInstanceOf( IStruct.class );
@@ -150,7 +165,16 @@ public class HTTPTest {
 		IStruct cfhttp = variables.getAsStruct( result );
 		assertThat( cfhttp.get( Key.statusCode ) ).isEqualTo( 200 );
 		assertThat( cfhttp.get( Key.statusText ) ).isEqualTo( "OK" );
-		assertThat( cfhttp.get( Key.fileContent ) ).isEqualTo( "This is the response text" );
+		assertThat( cfhttp.getAsString( Key.fileContent ).replaceAll( "\\s+", "" ) ).isEqualTo(
+		    """
+		    {
+		      "userId": 1,
+		      "id": 1,
+		      "title": "sunt aut facere repellat provident occaecati excepturi optio reprehenderit",
+		      "body": "quia et suscipit\\nsuscipit recusandae consequuntur expedita et cum\\nreprehenderit molestiae ut ut quas totam\\nnostrum rerum est autem sunt rem eveniet architecto"
+		    }
+		    """.replaceAll(
+		        "\\s+", "" ) );
 
 	}
 

@@ -252,6 +252,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		merge						= Key.of( "merge" );
 	public static final Key		message						= Key.of( "message" );
 	public static final Key		metadata					= Key.of( "metadata" );
+	public static final Key		method						= Key.of( "method" );
 	public static final Key		millisecond					= Key.of( "millisecond" );
 	public static final Key		milliseconds				= Key.of( "milliseconds" );
 	public static final Key		mimetype					= Key.of( "mimetype " );
