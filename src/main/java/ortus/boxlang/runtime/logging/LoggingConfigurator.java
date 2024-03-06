@@ -19,7 +19,6 @@ package ortus.boxlang.runtime.logging;
 
 import org.slf4j.LoggerFactory;
 
-import ch.qos.logback.classic.Level;
 import ch.qos.logback.classic.Logger;
 import ch.qos.logback.classic.LoggerContext;
 import ch.qos.logback.classic.encoder.PatternLayoutEncoder;
@@ -42,12 +41,7 @@ public class LoggingConfigurator {
 	 *
 	 * @see https://logback.qos.ch/manual/layouts.html#conversionWord
 	 */
-	private static String		logFormat			= "%date %logger{0} [%level] %kvp %message%n";
-
-	/**
-	 * The default logging file to load
-	 */
-	private static final String	DEFAULT_CONFIG_FILE	= "config/logback.xml";
+	private static String logFormat = "%date %logger{0} [%level] %kvp %message%n";
 
 	/**
 	 * Read and apply configuration for the currently installed SLF4J provider
@@ -55,9 +49,6 @@ public class LoggingConfigurator {
 	 * @param debugMode Whether or not to enable debug mode
 	 */
 	public static void configure( Boolean debugMode ) {
-		// Set directory to look for logback.xml
-		System.setProperty( "Logback.configurationFile", DEFAULT_CONFIG_FILE );
-
 		// Level logLevel = debugMode ? Level.DEBUG : Level.INFO;
 		Logger					rootLogger		= ( Logger ) LoggerFactory.getLogger( Logger.ROOT_LOGGER_NAME );
 		LoggerContext			loggerContext	= rootLogger.getLoggerContext();
