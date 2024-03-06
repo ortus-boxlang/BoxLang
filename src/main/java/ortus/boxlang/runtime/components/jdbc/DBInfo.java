@@ -57,7 +57,7 @@ public class DBInfo extends Component {
 		TABLES,
 		FOREIGNKEYS,
 		INDEX,
-	    // PROCEDURES,
+		PROCEDURES,
 		VERSION;
 
 		public static DBInfoType fromString( String type ) {
@@ -140,9 +140,7 @@ public class DBInfo extends Component {
 										case TABLES -> getTables( datasource, databaseName, attributes.getAsString( Key.pattern ) );
 										case FOREIGNKEYS -> getForeignKeys( datasource, databaseName, tableName );
 										case INDEX -> getIndexes( datasource, databaseName, tableName );
-										// @TODO: Implement remaining types.
-										// case PROCEDURES :
-										// result = getProcedures( context );
+										case PROCEDURES -> getProcedures( datasource, databaseName, attributes.getAsString( Key.pattern ) );
 									} );
 		ExpressionInterpreter.setVariable( context, attributes.getAsString( Key._NAME ), result );
 		// @TODO: Return null???
@@ -232,12 +230,11 @@ public class DBInfo extends Component {
 			DatabaseMetaData	databaseMetadata	= conn.getMetaData();
 
 			// Lucee compat: Default to the database name set on the connection (provided by the datasource config).
-			if ( databaseName == null ) {
-				databaseName = getDatabaseNameFromConnection( conn );
-			}
+			databaseName = databaseName != null ? databaseName : getDatabaseNameFromConnection( conn );
+			// @TODO: Lucee compat: Normalizing casing to match the database storage preference (i.e. uppercase vs lowercase).
 
 			String schema = null;
-			if ( tableName.contains( "." ) ) {
+			if ( tableName != null && tableName.contains( "." ) ) {
 				String[] parts = tableName.split( "\\." );
 				schema		= parts[ 0 ];
 				tableName	= parts[ 1 ];
@@ -301,9 +298,8 @@ public class DBInfo extends Component {
 			DatabaseMetaData	databaseMetadata	= conn.getMetaData();
 
 			// Lucee compat: Default to the database name set on the connection (provided by the datasource config).
-			if ( databaseName == null ) {
-				databaseName = getDatabaseNameFromConnection( conn );
-			}
+			databaseName = databaseName != null ? databaseName : getDatabaseNameFromConnection( conn );
+			// @TODO: Lucee compat: Normalizing casing to match the database storage preference (i.e. uppercase vs lowercase).
 
 			String schema = null;
 			if ( tableName != null && tableName.contains( "." ) ) {
@@ -356,12 +352,11 @@ public class DBInfo extends Component {
 			DatabaseMetaData	databaseMetadata	= conn.getMetaData();
 
 			// Lucee compat: Default to the database name set on the connection (provided by the datasource config).
-			if ( databaseName == null ) {
-				databaseName = getDatabaseNameFromConnection( conn );
-			}
+			databaseName = databaseName != null ? databaseName : getDatabaseNameFromConnection( conn );
+			// @TODO: Lucee compat: Normalizing casing to match the database storage preference (i.e. uppercase vs lowercase).
 
 			String schema = null;
-			if ( tableName.contains( "." ) ) {
+			if ( tableName != null && tableName.contains( "." ) ) {
 				String[] parts = tableName.split( "\\." );
 				schema		= parts[ 0 ];
 				tableName	= parts[ 1 ];
@@ -414,12 +409,11 @@ public class DBInfo extends Component {
 			DatabaseMetaData	databaseMetadata	= conn.getMetaData();
 
 			// Lucee compat: Default to the database name set on the connection (provided by the datasource config).
-			if ( databaseName == null ) {
-				databaseName = getDatabaseNameFromConnection( conn );
-			}
+			databaseName = databaseName != null ? databaseName : getDatabaseNameFromConnection( conn );
+			// @TODO: Lucee compat: Normalizing casing to match the database storage preference (i.e. uppercase vs lowercase).
 
 			String schema = null;
-			if ( tableName.contains( "." ) ) {
+			if ( tableName != null && tableName.contains( "." ) ) {
 				String[] parts = tableName.split( "\\." );
 				schema		= parts[ 0 ];
 				tableName	= parts[ 1 ];
@@ -461,6 +455,53 @@ public class DBInfo extends Component {
 				}
 				if ( result.isEmpty() && ( !databaseMetadata.getTables( null, null, tableName, null ).next() ) ) {
 					throw new DatabaseException( String.format( "Table not found for pattern [%s] ", tableName ) );
+				}
+			}
+			return result;
+		} catch ( SQLException e ) {
+			throw new DatabaseException( "Unable to read column metadata", e );
+		}
+	}
+
+	/**
+	 * Retrieve procedures from the specified (or datasource-configured) database.
+	 *
+	 * @param datasource   Datasource to connect on.
+	 * @param databaseName Name of the database to filter by. If not provided, the database name from the connection will be used.
+	 * @param pattern      Optional pattern to filter procedure names by. Can use wildcards or any `LIKE`-compatible pattern such as `proc_%`.
+	 *
+	 * @return Query object where each row represents an index on the specified table.
+	 */
+	private Query getProcedures( DataSource datasource, String databaseName, String pattern ) {
+		try ( Connection conn = datasource.getConnection(); ) {
+			Query				result				= new Query();
+			DatabaseMetaData	databaseMetadata	= conn.getMetaData();
+
+			// Lucee compat: Default to the database name set on the connection (provided by the datasource config).
+			databaseName	= databaseName != null ? databaseName : getDatabaseNameFromConnection( conn );
+			pattern			= pattern == null ? String.valueOf( '%' ) : pattern.isBlank() ? null : pattern;
+			// @TODO: Lucee compat: Normalizing casing to match the database storage preference (i.e. uppercase vs lowercase).
+			try ( ResultSet resultSet = databaseMetadata.getProcedures( databaseName, null, pattern ) ) {
+				ResultSetMetaData	resultSetMetaData	= resultSet.getMetaData();
+				int					columnCount			= resultSetMetaData.getColumnCount();
+
+				// The column count starts from 1
+				for ( int i = 1; i <= columnCount; i++ ) {
+					result.addColumn(
+					    Key.of( resultSetMetaData.getColumnLabel( i ) ),
+					    QueryColumnType.fromSQLType( resultSetMetaData.getColumnType( i ) )
+					);
+				}
+
+				while ( resultSet.next() ) {
+					Struct row = new Struct( IStruct.TYPES.LINKED );
+					for ( int i = 1; i <= columnCount; i++ ) {
+						row.put(
+						    Key.of( resultSetMetaData.getColumnLabel( i ) ),
+						    resultSet.getObject( i )
+						);
+					}
+					result.addRow( row );
 				}
 			}
 			return result;

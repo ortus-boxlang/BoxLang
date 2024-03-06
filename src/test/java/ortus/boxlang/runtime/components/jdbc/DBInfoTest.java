@@ -68,6 +68,8 @@ public class DBInfoTest {
 		datasourceManager.setDefaultDataSource( defaultDataSource );
 		defaultDataSource.execute( "CREATE TABLE developers ( id INTEGER PRIMARY KEY, name VARCHAR(155) )" );
 		defaultDataSource.execute( "CREATE TABLE projects ( id INTEGER, leadDev INTEGER, CONSTRAINT devID FOREIGN KEY (leadDev) REFERENCES developers(id) )" );
+		defaultDataSource.execute(
+		    "CREATE PROCEDURE FOO(IN S_MONTH INTEGER, IN S_YEAR INTEGER, OUT TOTAL DECIMAL(10,2)) PARAMETER STYLE JAVA READS SQL DATA LANGUAGE JAVA EXTERNAL NAME 'com.example.sales.calculateRevenueByMonth'" );
 
 		if ( tools.JDBCTestUtils.hasMySQLDriver() ) {
 			Key MySQLDataSourceName = Key.of( "MYSQLDB" );
@@ -359,6 +361,38 @@ public class DBInfoTest {
 		    .findFirst()
 		    .orElse( null );
 		assertNotNull( testTableRow );
+	}
 
+	@DisplayName( "Can get procedures via type=index" )
+	@Test
+	public void testProceduresType() {
+		instance.executeSource(
+		    """
+		        cfdbinfo( type='procedures', name='result' )
+		    """,
+		    context );
+		Object theResult = variables.get( result );
+		assertTrue( theResult instanceof Query );
+
+		Query resultQuery = ( Query ) theResult;
+		assertTrue( resultQuery.size() > 0 );
+		Map<Key, QueryColumn> columns = resultQuery.getColumns();
+
+		assertEquals( 9, columns.size() );
+		assertTrue( columns.containsKey( Key.of( "PROCEDURE_CAT" ) ) );
+		assertTrue( columns.containsKey( Key.of( "PROCEDURE_SCHEM" ) ) );
+		assertTrue( columns.containsKey( Key.of( "PROCEDURE_NAME" ) ) );
+		assertTrue( columns.containsKey( Key.of( "RESERVED1" ) ) );
+		assertTrue( columns.containsKey( Key.of( "RESERVED2" ) ) );
+		assertTrue( columns.containsKey( Key.of( "RESERVED3" ) ) );
+		assertTrue( columns.containsKey( Key.of( "REMARKS" ) ) );
+		assertTrue( columns.containsKey( Key.of( "PROCEDURE_TYPE" ) ) );
+		assertTrue( columns.containsKey( Key.of( "SPECIFIC_NAME" ) ) );
+
+		IStruct testTableRow = resultQuery.stream()
+		    .filter( row -> row.getAsString( Key.of( "PROCEDURE_NAME" ) ).equals( "FOO" ) )
+		    .findFirst()
+		    .orElse( null );
+		assertNotNull( testTableRow );
 	}
 }
