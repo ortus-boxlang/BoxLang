@@ -29,9 +29,12 @@ public class VariablesResponse extends AbstractResponse {
 
 	public VariablesResponseBody body;
 
-	public class VariablesResponseBody {
+	public static class VariablesResponseBody {
 
 		public List<Variable> variables;
+	}
+
+	public VariablesResponse() {
 	}
 
 	/**

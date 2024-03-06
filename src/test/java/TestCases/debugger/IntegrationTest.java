@@ -2,6 +2,8 @@ package TestCases.debugger;
 
 import static TestCases.debugger.DebugMessages.sendMessageStep;
 import static TestCases.debugger.DebugMessages.waitForMessage;
+import static TestCases.debugger.DebugMessages.waitForMessageThenSend;
+import static TestCases.debugger.DebugMessages.waitForSeq;
 import static com.google.common.truth.Truth.assertThat;
 
 import java.io.ByteArrayInputStream;
@@ -22,9 +24,15 @@ import ortus.boxlang.debugger.IAdapterProtocolMessage;
 import ortus.boxlang.debugger.event.StoppedEvent;
 import ortus.boxlang.debugger.response.InitializeResponse;
 import ortus.boxlang.debugger.response.NoBodyResponse;
+import ortus.boxlang.debugger.response.ScopeResponse;
 import ortus.boxlang.debugger.response.SetBreakpointsResponse;
+import ortus.boxlang.debugger.response.StackTraceResponse;
 import ortus.boxlang.debugger.response.ThreadsResponse;
+import ortus.boxlang.debugger.response.VariablesResponse;
 import ortus.boxlang.debugger.types.Breakpoint;
+import ortus.boxlang.debugger.types.Scope;
+import ortus.boxlang.debugger.types.StackFrame;
+import ortus.boxlang.debugger.types.Variable;
 
 // @Disabled
 public class IntegrationTest {
@@ -132,7 +140,7 @@ public class IntegrationTest {
 		    waitForMessage( "event", "initialized" ),
 		    sendMessageStep( DebugMessages.getLaunchRequest( 2 ) ),
 		    waitForMessage( "response", "launch" ),
-		    sendMessageStep( DebugMessages.getSetBreakpointsRequest( 3 ) ),
+		    sendMessageStep( DebugMessages.getSetBreakpointsRequest( 3, new int[] { 6 } ) ),
 		    waitForMessage( "response", "setbreakpoints" )
 		) )
 		    .stream()
@@ -164,7 +172,7 @@ public class IntegrationTest {
 		    waitForMessage( "event", "initialized" ),
 		    sendMessageStep( DebugMessages.getLaunchRequest( 2 ) ),
 		    waitForMessage( "response", "launch" ),
-		    sendMessageStep( DebugMessages.getSetBreakpointsRequest( 3 ) ),
+		    sendMessageStep( DebugMessages.getSetBreakpointsRequest( 3, new int[] { 6 } ) ),
 		    waitForMessage( "response", "setbreakpoints" ),
 		    sendMessageStep( DebugMessages.getConfigurationDoneRequest( 4 ) ),
 		    waitForMessage( "response", "configurationdone" ),
@@ -193,7 +201,7 @@ public class IntegrationTest {
 		    waitForMessage( "event", "initialized" ),
 		    sendMessageStep( DebugMessages.getLaunchRequest( 2 ) ),
 		    waitForMessage( "response", "launch" ),
-		    sendMessageStep( DebugMessages.getSetBreakpointsRequest( 3 ) ),
+		    sendMessageStep( DebugMessages.getSetBreakpointsRequest( 3, new int[] { 6 } ) ),
 		    waitForMessage( "response", "setbreakpoints" ),
 		    sendMessageStep( DebugMessages.getConfigurationDoneRequest( 4 ) ),
 		    waitForMessage( "response", "configurationdone" ),
@@ -213,8 +221,10 @@ public class IntegrationTest {
 
 		assertThat( message.body.threads.size() ).isGreaterThan( 0 );
 
-		Optional<ortus.boxlang.debugger.types.Thread> mainThread = message.body.threads.stream().filter( ( t ) -> t.name.equalsIgnoreCase( "main" ) )
+		Optional<ortus.boxlang.debugger.types.Thread> mainThread = message.body.threads.stream()
+		    .filter( ( t ) -> t.name.equalsIgnoreCase( "main" ) )
 		    .findFirst();
+
 		assertThat( mainThread.isPresent() ).isTrue();
 	}
 
@@ -222,21 +232,217 @@ public class IntegrationTest {
 	@Test
 	public void testStackTraceResponse() {
 
-		// TODO implement this!!!!!
+		StackTraceResponse message = ( StackTraceResponse ) runDebugger( Arrays.asList(
+		    sendMessageStep( DebugMessages.getInitRequest( 1 ) ),
+		    waitForMessage( "response", "initialize" ),
+		    waitForMessage( "event", "initialized" ),
+		    sendMessageStep( DebugMessages.getLaunchRequest( 2 ) ),
+		    waitForMessage( "response", "launch" ),
+		    sendMessageStep( DebugMessages.getSetBreakpointsRequest( 3, new int[] { 6 } ) ),
+		    waitForMessage( "response", "setbreakpoints" ),
+		    sendMessageStep( DebugMessages.getConfigurationDoneRequest( 4 ) ),
+		    waitForMessage( "response", "configurationdone" ),
+		    waitForMessage( "event", "stopped", 20000 ),
+		    sendMessageStep( DebugMessages.getThreadsRequest( 5 ) ),
+		    waitForMessage( "response", "threads" ),
+		    sendMessageStep( DebugMessages.getStackTraceRequest( 6 ) ),
+		    waitForMessage( "response", "stacktrace" )
+		) )
+		    .stream()
+		    .filter( ( m ) -> {
+			    return m instanceof StackTraceResponse;
+		    } )
+		    .findFirst()
+		    .get();
+
+		assertThat( message.getType() ).isEqualTo( "response" );
+		assertThat( message.getCommand() ).isEqualTo( "stacktrace" );
+
+		assertThat( message.body.stackFrames.size() ).isGreaterThan( 0 );
+
+		StackFrame frame = message.body.stackFrames.get( 0 );
+
+		assertThat( frame.name ).isEqualTo( "main.cfs" );
+		assertThat( frame.line ).isEqualTo( 4 );
 	}
 
 	@DisplayName( "It should respond to a ScopeRequest" )
 	@Test
 	public void testScopeResponse() {
 
-		// TODO implement this!!!!!
+		ScopeResponse message = ( ScopeResponse ) runDebugger( Arrays.asList(
+		    sendMessageStep( DebugMessages.getInitRequest( 1 ) ),
+		    waitForMessage( "response", "initialize" ),
+		    waitForMessage( "event", "initialized" ),
+		    sendMessageStep( DebugMessages.getLaunchRequest( 2 ) ),
+		    waitForMessage( "response", "launch" ),
+		    sendMessageStep( DebugMessages.getSetBreakpointsRequest( 3, new int[] { 6 } ) ),
+		    waitForMessage( "response", "setbreakpoints" ),
+		    sendMessageStep( DebugMessages.getConfigurationDoneRequest( 4 ) ),
+		    waitForMessage( "response", "configurationdone" ),
+		    waitForMessage( "event", "stopped", 20000 ),
+		    sendMessageStep( DebugMessages.getThreadsRequest( 5 ) ),
+		    waitForMessage( "response", "threads" ),
+		    sendMessageStep( DebugMessages.getStackTraceRequest( 6 ) ),
+		    waitForMessageThenSend(
+		        "response",
+		        "stacktrace",
+		        ( found ) -> {
+			        StackTraceResponse m = ( StackTraceResponse ) found;
+
+			        return DebugMessages.getScopeRequest( 7, m.body.stackFrames.get( 0 ).id );
+		        }
+		    ),
+		    waitForMessage( "response", "scopes" )
+		) )
+		    .stream()
+		    .filter( ( m ) -> {
+			    return m instanceof ScopeResponse;
+		    } )
+		    .findFirst()
+		    .get();
+
+		assertThat( message.getType() ).isEqualTo( "response" );
+		assertThat( message.getCommand() ).isEqualTo( "scopes" );
+
+		assertThat( message.body.scopes.size() ).isGreaterThan( 0 );
+
+		Scope variables = message.body.scopes.stream().filter( ( scope ) -> scope.name.equalsIgnoreCase( "variables" ) ).findFirst().get();
+
+		assertThat( variables.name ).isEqualTo( "variables" );
 	}
 
 	@DisplayName( "It should respond to a VariablesRequest" )
 	@Test
 	public void testVariablesResponse() {
 
-		// TODO implement this!!!!!
+		VariablesResponse message = ( VariablesResponse ) runDebugger( Arrays.asList(
+		    sendMessageStep( DebugMessages.getInitRequest( 1 ) ),
+		    waitForMessage( "response", "initialize" ),
+		    waitForMessage( "event", "initialized" ),
+		    sendMessageStep( DebugMessages.getLaunchRequest( 2 ) ),
+		    waitForMessage( "response", "launch" ),
+		    sendMessageStep( DebugMessages.getSetBreakpointsRequest( 3, new int[] { 6 } ) ),
+		    waitForMessage( "response", "setbreakpoints" ),
+		    sendMessageStep( DebugMessages.getConfigurationDoneRequest( 4 ) ),
+		    waitForMessage( "response", "configurationdone" ),
+		    waitForMessage( "event", "stopped", 20000 ),
+		    sendMessageStep( DebugMessages.getThreadsRequest( 5 ) ),
+		    waitForMessage( "response", "threads" ),
+		    sendMessageStep( DebugMessages.getStackTraceRequest( 6 ) ),
+		    waitForMessageThenSend(
+		        "response",
+		        "stacktrace",
+		        ( found ) -> {
+			        StackTraceResponse m = ( StackTraceResponse ) found;
+
+			        return DebugMessages.getScopeRequest( 7, m.body.stackFrames.get( 0 ).id );
+		        }
+		    ),
+		    waitForMessageThenSend(
+		        "response",
+		        "scopes",
+		        ( found ) -> {
+			        ScopeResponse m		= ( ScopeResponse ) found;
+
+			        Scope	variables	= m.body.scopes.stream().filter( ( scope ) -> scope.name.equalsIgnoreCase( "variables" ) ).findFirst().get();
+
+			        return DebugMessages.getVariablesRequest( 7, variables.variablesReference );
+		        }
+		    ),
+		    waitForMessage( "response", "variables" )
+		) )
+		    .stream()
+		    .filter( ( m ) -> {
+			    return m instanceof VariablesResponse;
+		    } )
+		    .findFirst()
+		    .get();
+
+		assertThat( message.getType() ).isEqualTo( "response" );
+		assertThat( message.getCommand() ).isEqualTo( "variables" );
+
+		assertThat( message.body.variables.size() ).isGreaterThan( 0 );
+
+		Variable	value	= message.body.variables.stream().filter( ( variable ) -> variable.name.equalsIgnoreCase( "value" ) ).findFirst().get();
+		Variable	color	= message.body.variables.stream().filter( ( variable ) -> variable.name.equalsIgnoreCase( "color" ) ).findFirst().get();
+
+		assertThat( value.name ).isEqualTo( "value" );
+		assertThat( value.type ).isEqualTo( "numeric" );
+		assertThat( value.value ).isEqualTo( "4" );
+
+		assertThat( color.name ).isEqualTo( "color" );
+		assertThat( color.type ).isEqualTo( "String" );
+		assertThat( color.value ).isEqualTo( "\"green\"" );
+	}
+
+	@DisplayName( "It should respond with the variables of a struct" )
+	@Test
+	public void testStructVariablesResponse() {
+
+		VariablesResponse message = ( VariablesResponse ) runDebugger( Arrays.asList(
+		    sendMessageStep( DebugMessages.getInitRequest( 1 ) ),
+		    waitForMessage( "response", "initialize" ),
+		    waitForMessage( "event", "initialized" ),
+		    sendMessageStep( DebugMessages.getLaunchRequest( 2 ) ),
+		    waitForMessage( "response", "launch" ),
+		    sendMessageStep( DebugMessages.getSetBreakpointsRequest( 3, new int[] { 6 } ) ),
+		    waitForMessage( "response", "setbreakpoints" ),
+		    sendMessageStep( DebugMessages.getConfigurationDoneRequest( 4 ) ),
+		    waitForMessage( "response", "configurationdone" ),
+		    waitForMessage( "event", "stopped", 20000 ),
+		    sendMessageStep( DebugMessages.getThreadsRequest( 5 ) ),
+		    waitForMessage( "response", "threads" ),
+		    sendMessageStep( DebugMessages.getStackTraceRequest( 6 ) ),
+		    waitForMessageThenSend(
+		        "response",
+		        "stacktrace",
+		        ( found ) -> {
+			        StackTraceResponse m = ( StackTraceResponse ) found;
+
+			        return DebugMessages.getScopeRequest( 7, m.body.stackFrames.get( 0 ).id );
+		        }
+		    ),
+		    waitForMessageThenSend(
+		        "response",
+		        "scopes",
+		        ( found ) -> {
+			        ScopeResponse m		= ( ScopeResponse ) found;
+
+			        Scope	variables	= m.body.scopes.stream().filter( ( scope ) -> scope.name.equalsIgnoreCase( "variables" ) ).findFirst().get();
+
+			        return DebugMessages.getVariablesRequest( 8, variables.variablesReference );
+		        }
+		    ),
+		    waitForMessageThenSend(
+		        8,
+		        ( found ) -> {
+			        VariablesResponse m	= ( VariablesResponse ) found;
+
+			        Variable	value	= m.body.variables.stream().filter( ( variable ) -> variable.name.equalsIgnoreCase( "data" ) ).findFirst().get();
+
+			        return DebugMessages.getVariablesRequest( 9, value.variablesReference );
+		        }
+		    ),
+		    waitForSeq( 9 )
+		) )
+		    .stream()
+		    .filter( ( m ) -> {
+			    return m instanceof VariablesResponse vr && vr.getSeq() == 9;
+		    } )
+		    .findFirst()
+		    .get();
+
+		assertThat( message.getType() ).isEqualTo( "response" );
+		assertThat( message.getCommand() ).isEqualTo( "variables" );
+
+		assertThat( message.body.variables.size() ).isGreaterThan( 0 );
+
+		Variable test = message.body.variables.stream().filter( ( variable ) -> variable.name.equalsIgnoreCase( "test" ) ).findFirst().get();
+
+		assertThat( test.name ).isEqualTo( "test" );
+		assertThat( test.type ).isEqualTo( "boolean" );
+		assertThat( test.value ).isEqualTo( "true" );
 	}
 
 	@DisplayName( "It should respond to a ContinueRequest" )

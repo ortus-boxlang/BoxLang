@@ -29,9 +29,12 @@ public class StackTraceResponse extends AbstractResponse {
 
 	public StackTraceResponseBody body;
 
-	public class StackTraceResponseBody {
+	public static class StackTraceResponseBody {
 
 		public List<StackFrame> stackFrames;
+	}
+
+	public StackTraceResponse() {
 	}
 
 	/**

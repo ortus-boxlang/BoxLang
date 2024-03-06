@@ -8,7 +8,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.function.Predicate;
+import java.util.stream.IntStream;
 
 import com.fasterxml.jackson.jr.ob.JSONObjectException;
 
@@ -42,7 +44,7 @@ public class DebugMessages {
 			reader.register( "threads", ThreadsResponse.class );
 			reader.register( "continue", ContinueResponse.class );
 			reader.register( "initialize", InitializeResponse.class );
-			reader.register( "scope", ScopeResponse.class );
+			reader.register( "scopes", ScopeResponse.class );
 			reader.register( "setbreakpoints", SetBreakpointsResponse.class );
 			reader.register( "stacktrace", StackTraceResponse.class );
 			reader.register( "variables", VariablesResponse.class );
@@ -144,6 +146,46 @@ public class DebugMessages {
 		    },
 		    timeout
 		);
+	}
+
+	public static <A, B, C, D> TriConsumer<byte[], ByteArrayInputStream, ByteArrayOutputStream> waitForMessageThenSend(
+	    int seq,
+	    Function func ) {
+		return ( byteArray, inputStream, reader ) -> {
+			waitForMessage(
+			    ( message ) -> {
+				    Map<String, Object> data = message.getRawMessageData();
+
+				    return ( ( Integer ) data.get( "seq" ) ).equals( seq );
+			    },
+			    ( message ) -> {
+				    sendMessageStep( ( Map<String, Object> ) func.apply( ( IAdapterProtocolMessage ) message ) ).accept( byteArray, inputStream, reader );
+			    },
+			    5000
+			).accept( byteArray, inputStream, reader );
+		};
+	}
+
+	public static <A, B, C, D> TriConsumer<byte[], ByteArrayInputStream, ByteArrayOutputStream> waitForMessageThenSend(
+	    String type,
+	    String command,
+	    Function func ) {
+		return ( byteArray, inputStream, reader ) -> {
+			waitForMessage(
+			    ( message ) -> {
+				    Map<String, Object> data = message.getRawMessageData();
+
+				    String			key		= type == "event" ? "event" : "command";
+
+				    return ( ( String ) data.get( "type" ) ).equalsIgnoreCase( type )
+				        && ( ( String ) data.get( key ) ).equalsIgnoreCase( command );
+			    },
+			    ( message ) -> {
+				    sendMessageStep( ( Map<String, Object> ) func.apply( ( IAdapterProtocolMessage ) message ) ).accept( byteArray, inputStream, reader );
+			    },
+			    5000
+			).accept( byteArray, inputStream, reader );
+		};
 	}
 
 	public static <A, B, C> TriConsumer<byte[], ByteArrayInputStream, ByteArrayOutputStream> waitForMessage(
@@ -323,7 +365,7 @@ Content-Length: %d
 		return launchRequest;
 	}
 
-	public static Map<String, Object> getSetBreakpointsRequest( int seq ) {
+	public static Map<String, Object> getSetBreakpointsRequest( int seq, int[] lines ) {
 		Map<String, Object> request = new HashMap<String, Object>();
 		request.put( "command", "setBreakpoints" );
 		request.put( "type", "request" );
@@ -337,10 +379,15 @@ Content-Length: %d
 		source.put( "name", "main.cfs" );
 		source.put( "path", Paths.get( "src/test/java/TestCases/debugger/main.cfs" ).toAbsolutePath().toString() );
 
-		arguments.put( "lines", new int[] { 4 } );
-		Map<String, Object> lineMap = new HashMap<String, Object>();
-		lineMap.put( "line", 4 );
-		arguments.put( "breakpoints", new Map[] { lineMap } );
+		arguments.put( "lines", lines );
+		List<Map<String,Object>> lineMaps = IntStream.of( lines ).mapToObj( ( lineNum ) -> {
+			Map<String, Object> lineMap = new HashMap<String, Object>();
+			lineMap.put( "line", lineNum );
+
+			return lineMap;
+		}).toList();
+		
+		arguments.put( "breakpoints", lineMaps );
 
 		return request;
 	}
@@ -362,6 +409,45 @@ Content-Length: %d
 		request.put( "command", "threads" );
 		request.put( "type", "request" );
 		request.put( "seq", seq );
+
+		return request;
+	}
+	
+	public static Map<String, Object> getStackTraceRequest( int seq ) {
+		Map<String, Object> request = new HashMap<String, Object>();
+		request.put( "command", "stacktrace" );
+		request.put( "type", "request" );
+		request.put( "seq", seq );
+
+		Map<String, Object> arguments = new HashMap<String, Object>();
+		request.put( "arguments", arguments );
+		arguments.put( "threadId", 1 );
+
+		return request;
+	}
+	
+	public static Map<String, Object> getScopeRequest( int seq, int frameId ) {
+		Map<String, Object> request = new HashMap<String, Object>();
+		request.put( "command", "scopes" );
+		request.put( "type", "request" );
+		request.put( "seq", seq );
+
+		Map<String, Object> arguments = new HashMap<String, Object>();
+		request.put( "arguments", arguments );
+		arguments.put( "frameId", frameId );
+
+		return request;
+	}
+
+	public static Map<String, Object> getVariablesRequest( int seq, int variablesReference ) {
+		Map<String, Object> request = new HashMap<String, Object>();
+		request.put( "command", "variables" );
+		request.put( "type", "request" );
+		request.put( "seq", seq );
+
+		Map<String, Object> arguments = new HashMap<String, Object>();
+		request.put( "arguments", arguments );
+		arguments.put( "variablesReference", variablesReference );
 
 		return request;
 	}

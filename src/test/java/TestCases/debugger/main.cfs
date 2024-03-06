@@ -1,6 +1,8 @@
 value = 4;
 color = "green";
 
+data = { test: true };
+
 value = value + 2;
 
 println( value );

@@ -29,9 +29,13 @@ public class ScopeResponse extends AbstractResponse {
 
 	public ScopeResponseBody body;
 
-	public class ScopeResponseBody {
+	public static class ScopeResponseBody {
 
 		public List<Scope> scopes;
+	}
+
+	public ScopeResponse() {
+
 	}
 
 	/**
