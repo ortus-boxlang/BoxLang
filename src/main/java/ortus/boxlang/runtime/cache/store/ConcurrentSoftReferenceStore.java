@@ -1,358 +1,237 @@
-// /**
-// * [BoxLang]
-// *
-// * Copyright [2023] [Ortus Solutions, Corp]
-// *
-// * Licensed under the Apache License, Version 2.0 (the "License");
-// * you may not use this file except in compliance with the License.
-// * You may obtain a copy of the License at
-// *
-// * http://www.apache.org/licenses/LICENSE-2.0
-// *
-// * Unless required by applicable law or agreed to in writing, software
-// * distributed under the License is distributed on an "AS IS" BASIS,
-// * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// * See the License for the specific language governing permissions and
-// * limitations under the License.
-// */
-// package ortus.boxlang.runtime.cache.store;
+/**
+ * [BoxLang]
+ *
+ * Copyright [2023] [Ortus Solutions, Corp]
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package ortus.boxlang.runtime.cache.store;
 
-// import java.lang.ref.ReferenceQueue;
-// import java.lang.ref.SoftReference;
-// import java.util.Map;
-// import java.util.concurrent.ConcurrentHashMap;
+import java.lang.ref.ReferenceQueue;
+import java.lang.ref.SoftReference;
+import java.util.concurrent.ConcurrentHashMap;
 
-// import org.slf4j.Logger;
-// import org.slf4j.LoggerFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-// import ortus.boxlang.runtime.cache.ICacheEntry;
-// import ortus.boxlang.runtime.cache.filters.ICacheKeyFilter;
-// import ortus.boxlang.runtime.cache.providers.ICacheProvider;
-// import ortus.boxlang.runtime.scopes.Key;
-// import ortus.boxlang.runtime.types.IStruct;
-// import ortus.boxlang.runtime.types.Struct;
+import ortus.boxlang.runtime.cache.ICacheEntry;
+import ortus.boxlang.runtime.cache.filters.ICacheKeyFilter;
+import ortus.boxlang.runtime.cache.providers.ICacheProvider;
+import ortus.boxlang.runtime.scopes.Key;
+import ortus.boxlang.runtime.types.IStruct;
 
-// /**
-// * This object store keeps all objects in heap using Concurrent classes.
-// * Naturally the store is ordered by {@code created} timestamp and can be used for concurrent access.
-// */
-// public class ConcurrentSoftReferenceStore extends ConcurrentStore implements IObjectStore {
+/**
+ * This object store keeps all objects in heap using Concurrent classes.
+ * Naturally the store is ordered by {@code created} timestamp and can be used for concurrent access.
+ */
+public class ConcurrentSoftReferenceStore extends ConcurrentStore implements IObjectStore {
 
-// /**
-// * Logger
-// */
-// private static final Logger logger = LoggerFactory.getLogger( ConcurrentSoftReferenceStore.class );
+	/**
+	 * Logger
+	 */
+	private static final Logger										logger	= LoggerFactory.getLogger( ConcurrentSoftReferenceStore.class );
 
-// /**
-// * Reverse lookup map for soft references
-// */
-// private Map<Integer, Key> softRefKeyMap;
+	/**
+	 * The concurrent pool of objects based on a soft reference
+	 */
+	protected ConcurrentHashMap<Key, SoftReference<ICacheEntry>>	pool;
 
-// /**
-// * The concurrent pool of objects
-// * The value can be a ICacheEntry, or a soft reference
-// */
-// private Map<Key, Object> pool;
+	/**
+	 * Reverse lookup map for soft references
+	 */
+	private ConcurrentHashMap<Integer, Key>							softRefKeyMap;
 
-// /**
-// * Reference queue for soft references
-// */
-// private ReferenceQueue<ICacheEntry> referenceQueue;
+	/**
+	 * Reference queue for soft references
+	 */
+	private ReferenceQueue<ICacheEntry>								referenceQueue;
 
-// /**
-// * Constructor
-// */
-// public ConcurrentSoftReferenceStore() {
-// // Empty constructor
-// }
+	/**
+	 * Constructor
+	 */
+	public ConcurrentSoftReferenceStore() {
+		// Empty constructor
+	}
 
-// /**
-// * Some storages require a method to initialize the storage or do
-// * object loading. This method is called when the cache provider is started.
-// *
-// * @param provider The cache provider associated with this store
-// * @param config The configuration for the store
-// */
-// @Override
-// public void init( ICacheProvider provider, IStruct config ) {
-// super.init( provider, config );
-// this.pool = new ConcurrentHashMap<>( config.getAsInteger( Key.maxObjects ) / 4 );
-// this.softRefKeyMap = new ConcurrentHashMap<>( config.getAsInteger( Key.maxObjects ) / 4 );
-// this.referenceQueue = new ReferenceQueue<>();
-// }
+	/**
+	 * Some storages require a method to initialize the storage or do
+	 * object loading. This method is called when the cache provider is started.
+	 *
+	 * @param provider The cache provider associated with this store
+	 * @param config   The configuration for the store
+	 */
+	@Override
+	public IObjectStore init( ICacheProvider provider, IStruct config ) {
+		this.provider		= provider;
+		this.config			= config;
+		this.pool			= new ConcurrentHashMap<>( config.getAsInteger( Key.maxObjects ) / 4 );
+		this.softRefKeyMap	= new ConcurrentHashMap<>( config.getAsInteger( Key.maxObjects ) / 4 );
+		this.referenceQueue	= new ReferenceQueue<>();
 
-// /**
-// * --------------------------------------------------------------------------
-// * Interface Methods
-// * --------------------------------------------------------------------------
-// */
+		logger.atDebug().log(
+		    "ConcurrentSoftReferenceStore({}) initialized with a max size of {}",
+		    provider.getName(),
+		    config.getAsInteger( Key.maxObjects )
+		);
 
-// /**
-// * Reap the storage for expired objects by running the eviction policy and count.
-// */
-// @Override
-// public void reap() {
+		return this;
+	}
 
-// // this.pool.entrySet()
-// // // Stream it
-// // .parallelStream()
-// // // Sort using the policy comparator
-// // .sorted( Map.Entry.comparingByValue( getPolicy().getComparator() ) )
-// // // Get only the non-expired entries or non-eternal entries
-// // .filter( entry -> !entry.getValue().isExpired() && !entry.getValue().isEternal() )
-// // // Check how many to expire according to the config count
-// // .limit( this.config.getAsInteger( Key.evictCount ) )
-// // // Evict it & Log Stats
-// // .forEach( entry -> {
-// // this.pool.remove( entry.getKey() );
-// // getProvider().getStats().recordEviction();
-// // } );
+	/**
+	 * --------------------------------------------------------------------------
+	 * Interface Methods
+	 * --------------------------------------------------------------------------
+	 */
 
-// }
+	@Override
+	public void clearAll() {
+		super.clearAll();
+		this.softRefKeyMap.clear();
+	}
 
-// /**
-// * Clear all the elements in the store
-// */
-// @Override
-// public void clearAll() {
-// this.pool.clear();
-// this.softRefKeyMap.clear();
-// this.referenceQueue = new ReferenceQueue<>();
-// }
+	@Override
+	public void clearAll( ICacheKeyFilter filter ) {
+		super.clearAll( filter );
+		this.softRefKeyMap.values().removeIf( filter );
+	}
 
-// /**
-// * Clear all the elements in the store with a ${@link ICacheKeyFilter}.
-// * This can be a lambda or method reference since it's a functional interface.
-// *
-// * @param filter The filter that determines which keys to clear
-// */
-// public void clearAll( ICacheKeyFilter filter ) {
-// this.pool.keySet().removeIf( filter );
-// // TODO: ref key map clear
-// }
+	@Override
+	public boolean clear( Key key ) {
+		// Remove the soft reference from the pool
+		SoftReference<ICacheEntry> reference = this.pool.remove( key );
+		if ( reference != null ) {
+			// Remove the soft reference from the reverse lookup map
+			this.softRefKeyMap.remove( reference.hashCode() );
+			return true;
+		}
+		return false;
+	}
 
-// /**
-// * Clears an object from the storage
-// *
-// * @param key The object key to clear
-// *
-// * @return True if the object was cleared, false otherwise (if the object was not found in the store)
-// */
-// @Override
-// public boolean clear( Key key ) {
-// var softReference = this.pool.remove( key );
-// if ( softReference != null ) {
-// this.softRefKeyMap.remove( softReference.hashCode() );
-// return true;
-// }
-// }
+	@Override
+	public void evict() {
+		super.evict();
+		// Evict all garbage collected soft references
+		evictSoftReferences();
+	}
 
-// /**
-// * Check if an object is in the store and not expired
-// *
-// * @param key The key to lookup in the store
-// *
-// * @return True if the object is in the store, false otherwise
-// */
-// public boolean lookup( Key key ) {
-// // Key is in the store and not expired
-// return this.pool.computeIfPresent(
-// key,
-// ( k, cacheEntry ) -> cacheEntry.isExpired() ? null : cacheEntry
-// ) != null;
-// }
+	@Override
+	public boolean lookup( Key key ) {
+		var entry = this.pool.get( key );
 
-// /**
-// * Check if multiple objects are in the store
-// *
-// * @param key A varargs of keys to lookup in the store
-// *
-// * @return A struct of keys and their lookup status
-// */
-// public IStruct lookup( Key... keys ) {
-// IStruct results = new Struct();
-// for ( Key key : keys ) {
-// results.put( key, lookup( key ) );
-// }
-// return results;
-// }
+		if ( entry != null ) {
+			ICacheEntry cacheEntry = entry.get();
+			// If the entry is null, it was collected by the GC
+			if ( cacheEntry == null ) {
+				clear( key );
+				getProvider().getStats().recordGCHit();
+				return false;
+			}
+			// Has it expired?
+			return !cacheEntry.isExpired();
+		}
 
-// /**
-// * Check if multiple objects are in the store using a filter
-// *
-// * @param filter The filter that determines which keys to return
-// *
-// * @return A struct of keys and their lookup status
-// */
-// public IStruct lookup( ICacheKeyFilter filter ) {
-// IStruct results = new Struct();
-// this.pool.keySet()
-// .parallelStream()
-// .filter( filter )
-// .forEach( key -> results.put( key, true ) );
-// return results;
-// }
+		return false;
+	}
 
-// /**
-// * Get an object from the store with metadata tracking
-// *
-// * @param key The key to retrieve
-// *
-// * @return The cache entry retrieved or null if not found
-// */
-// public ICacheEntry get( Key key ) {
-// var results = this.pool.getOrDefault( key, null );
+	@Override
+	public ICacheEntry getQuiet( Key key ) {
+		var reference = this.pool.get( key );
 
-// if ( results != null ) {
-// // Update Stats
-// results
-// .incrementHits()
-// .touchLastAccessed();
-// // Is resetTimeoutOnAccess enabled? If so, jump up the creation time to increase the timeout
-// if ( this.config.getAsBoolean( Key.resetTimeoutOnAccess ) ) {
-// results.resetCreated();
-// }
-// }
+		if ( reference != null ) {
+			ICacheEntry cacheEntry = reference.get();
+			// If the entry is null, it was collected by the GC
+			if ( cacheEntry == null ) {
+				clear( key );
+				getProvider().getStats().recordGCHit();
+			} else {
+				return cacheEntry;
+			}
+		}
 
-// return results;
-// }
+		return null;
+	}
 
-// /**
-// * Get multiple objects from the store with metadata tracking
-// *
-// * @param key The keys to retrieve
-// *
-// * @return A struct of keys and their cache entries
-// */
-// public IStruct get( Key... keys ) {
-// IStruct results = new Struct();
-// for ( Key key : keys ) {
-// results.put( key, get( key ) );
-// }
-// return results;
-// }
+	@Override
+	public void set( Key key, ICacheEntry entry ) {
+		// Create Soft Reference Wrapper and register with Queue
+		SoftReference<ICacheEntry> softReference = createSoftReference( key, entry );
+		// Store the soft reference in the pool
+		this.pool.put( key, softReference );
+	}
 
-// /**
-// * Get multiple objects from the store with metadata tracking using a filter
-// *
-// * @param filter The filter that determines which keys to return
-// *
-// * @return A struct of keys and their cache entries
-// */
-// public IStruct get( ICacheKeyFilter filter ) {
-// IStruct results = new Struct();
-// this.pool.keySet()
-// .parallelStream()
-// .filter( filter )
-// .forEach( key -> results.put( key, get( key ) ) );
-// return results;
-// }
+	/**
+	 * --------------------------------------------------------------------------
+	 * Helper Methods
+	 * --------------------------------------------------------------------------
+	 */
 
-// /**
-// * Get an object from cache with no metadata tracking
-// *
-// * @param key The key to retrieve
-// *
-// * @return The cache entry retrieved or null if not found
-// */
-// @SuppressWarnings( "unchecked" )
-// @Override
-// public ICacheEntry getQuiet( Key key ) {
-// var results = this.pool.getOrDefault( key, null );
+	/**
+	 * Evict soft references from the store that have been collected
+	 */
+	@SuppressWarnings( "unchecked" )
+	void evictSoftReferences() {
+		SoftReference<ICacheEntry> collected;
+		while ( ( collected = ( SoftReference<ICacheEntry> ) this.referenceQueue.poll() ) != null ) {
+			if ( verifySoftReference( collected ) ) {
+				clear( getSoftReferenceKey( collected ) );
+				this.softRefKeyMap.remove( collected.hashCode() );
+				getProvider().getStats().recordGCHit();
+			}
+		}
+	}
 
-// if ( results instanceof SoftReference ) {
-// results = ( ( SoftReference<?> ) results ).get();
-// }
+	/**
+	 * --------------------------------------------------------------------------
+	 * Private Methods
+	 * --------------------------------------------------------------------------
+	 */
 
-// // We do null checks, since the soft reference could have been cleared
-// return results == null ? null : ( ICacheEntry ) results;
-// }
+	/**
+	 * Create a soft reference for an incoming entry
+	 *
+	 * @param key   The key to store the object under
+	 * @param entry The cache entry to store
+	 *
+	 * @return The soft reference created
+	 */
+	private SoftReference<ICacheEntry> createSoftReference( Key key, ICacheEntry entry ) {
+		// Create Soft Reference Wrapper and register with Queue
+		SoftReference<ICacheEntry> softReference = new SoftReference<>( entry, this.referenceQueue );
+		// Create a reverse lookup map for the soft reference key
+		this.softRefKeyMap.put( softReference.hashCode(), key );
+		return softReference;
+	}
 
-// /**
-// * Expire an object from the store
-// *
-// * @param key The key to expire
-// *
-// * @return True if the object was expired, false otherwise (if the object was not found in the store)
-// */
-// public boolean expire( Key key ) {
-// var results = getQuiet( key );
-// if ( results != null ) {
-// results.expire();
-// return true;
-// }
-// return false;
-// }
+	/**
+	 * Verify if the soft reference is in the key map
+	 *
+	 * @param softReference The soft reference to verify
+	 *
+	 * @return True if the soft reference is in the key map via the hash code
+	 */
+	private boolean verifySoftReference( SoftReference<ICacheEntry> softReference ) {
+		return this.softRefKeyMap.containsKey( softReference.hashCode() );
+	}
 
-// /**
-// * Expire check for an object in the store
-// *
-// * @param key The key to check
-// *
-// * @return True if the object is expired, false otherwise (could be not found in the store or not expired yet)
-// */
-// @Override
-// public boolean isExpired( Key key ) {
-// var results = getQuiet( key );
-// return results == null ? false : results.isExpired();
-// }
+	/**
+	 * Get the soft reference key from the key map
+	 *
+	 * @param softReference The soft reference to get the key for
+	 *
+	 * @return The key for the soft reference
+	 */
+	private Key getSoftReferenceKey( SoftReference<ICacheEntry> softReference ) {
+		return this.softRefKeyMap.get( softReference.hashCode() );
+	}
 
-// /**
-// * Sets an object in the storage
-// *
-// * @param key The key to store the object under
-// * @param entry The cache entry to store
-// */
-// @Override
-// public void set( Key key, ICacheEntry entry ) {
-// // Check if the entry is eternal, else do a soft reference
-// if ( entry.isEternal() ) {
-// this.pool.put( key, entry );
-// } else {
-// this.pool.put( key, createSoftReference( key, entry ) );
-// }
-// }
-
-// /**
-// * --------------------------------------------------------------------------
-// * Private Methods
-// * --------------------------------------------------------------------------
-// */
-
-// /**
-// * Create a soft reference for the entry
-// *
-// * @param key The key to store the object under
-// * @param entry The cache entry to store
-// *
-// * @return The soft reference created
-// */
-// private SoftReference<ICacheEntry> createSoftReference( Key key, ICacheEntry entry ) {
-// // Create Soft Reference Wrapper and register with Queue
-// SoftReference<ICacheEntry> softReference = new SoftReference<>( entry, this.referenceQueue );
-// // Create a reverse lookup map for the soft reference key
-// this.softRefKeyMap.put( softReference.hashCode(), key );
-// return softReference;
-// }
-
-// /**
-// * Verify if the soft reference is in the key map
-// *
-// * @param softReference The soft reference to verify
-// */
-// private boolean verifySoftReference( SoftReference<ICacheEntry> softReference ) {
-// return this.softRefKeyMap.containsKey( softReference.hashCode() );
-// }
-
-// /**
-// * Get the soft reference key from the key map
-// *
-// * @param softReference The soft reference to get the key for
-// *
-// * @return The key for the soft reference
-// */
-// private Key getSoftReferenceKey( SoftReference<ICacheEntry> softReference ) {
-// return this.softRefKeyMap.get( softReference.hashCode() );
-// }
-
-// }
+}

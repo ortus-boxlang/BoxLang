@@ -82,7 +82,7 @@ public class ConcurrentStore extends AbstractStore implements IObjectStore {
 	 *
 	 * @return The pool of objects
 	 */
-	public ConcurrentMap<Key, ICacheEntry> getPool() {
+	public ConcurrentMap<Key, ?> getPool() {
 		return this.pool;
 	}
 
