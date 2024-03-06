@@ -23,8 +23,10 @@ import ch.qos.logback.classic.Level;
 import ch.qos.logback.classic.Logger;
 import ch.qos.logback.classic.LoggerContext;
 import ch.qos.logback.classic.encoder.PatternLayoutEncoder;
+import ch.qos.logback.classic.spi.Configurator;
 import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.core.ConsoleAppender;
+import ch.qos.logback.core.spi.ContextAwareBase;
 
 /**
  * Configures the bundled SLF4J provider.
@@ -34,7 +36,7 @@ import ch.qos.logback.core.ConsoleAppender;
  *
  * See https://logback.qos.ch/manual/configuration.html for more information on logback configuration.
  */
-public class LoggingConfigurator {
+public class LoggingConfigurator extends ContextAwareBase implements Configurator {
 
 	/**
 	 * Logback-specific encoder pattern. Thankfully, this is fairly legible compared to the JUL pattern.
@@ -44,17 +46,16 @@ public class LoggingConfigurator {
 	 */
 	private static String logFormat = "%date %logger{0} [%level] %kvp %message%n";
 
-	/**
-	 * Read and apply configuration for the currently installed SLF4J provider
-	 *
-	 * @param debugMode Whether or not to enable debug mode
-	 */
-	public static void configure( Boolean debugMode ) {
-		Level					logLevel		= debugMode ? Level.DEBUG : Level.INFO;
-		Logger					rootLogger		= ( Logger ) LoggerFactory.getLogger( Logger.ROOT_LOGGER_NAME );
-		LoggerContext			loggerContext	= rootLogger.getLoggerContext();
+	public LoggingConfigurator() {
+		// Empty constructor; are you ok with that?
+	}
 
-		PatternLayoutEncoder	encoder			= new PatternLayoutEncoder();
+	public ExecutionStatus configure( LoggerContext loggerContext ) {
+		Boolean					debugMode	= Boolean.parseBoolean( System.getProperty( "debugMode", "false" ) );
+		Level					logLevel	= Boolean.TRUE.equals( debugMode ) ? Level.DEBUG : Level.INFO;
+		Logger					rootLogger	= loggerContext.getLogger( Logger.ROOT_LOGGER_NAME );
+
+		PatternLayoutEncoder	encoder		= new PatternLayoutEncoder();
 		encoder.setContext( loggerContext );
 		encoder.setPattern( logFormat );
 		encoder.start();
@@ -66,5 +67,22 @@ public class LoggingConfigurator {
 
 		rootLogger.setLevel( logLevel );
 		rootLogger.addAppender( appender );
+
+		// We should be the last configurator to run, so stop searching for further configurators.
+		return ExecutionStatus.DO_NOT_INVOKE_NEXT_IF_ANY;
+	}
+
+	/**
+	 * Reset configuration according to the provided debug mode.
+	 *
+	 * @param debugMode Whether or not to enable debug mode
+	 */
+	public static void reloadConfiguration( Boolean debugMode ) {
+		System.setProperty( "debugMode", debugMode.toString() );
+		LoggerContext		loggerContext	= ( LoggerContext ) LoggerFactory.getILoggerFactory();
+		LoggingConfigurator	configurator	= new LoggingConfigurator();
+		configurator.setContext( loggerContext );
+		loggerContext.reset();
+		configurator.configure( loggerContext );
 	}
 }

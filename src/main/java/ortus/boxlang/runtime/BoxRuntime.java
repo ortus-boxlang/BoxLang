@@ -225,7 +225,7 @@ public class BoxRuntime {
 		}
 
 		// Startup basic logging
-		LoggingConfigurator.configure( this.debugMode );
+		LoggingConfigurator.reloadConfiguration( this.debugMode );
 		this.logger = LoggerFactory.getLogger( BoxRuntime.class );
 
 		// We can now log the startup
@@ -286,7 +286,7 @@ public class BoxRuntime {
 			this.debugMode = this.configuration.debugMode;
 			// Reconfigure the logging if enabled
 			if ( this.debugMode ) {
-				LoggingConfigurator.configure( debugMode );
+				LoggingConfigurator.reloadConfiguration( debugMode );
 			}
 			this.logger.atInfo().log( "+ DebugMode detected in config, overriding to {}", this.debugMode );
 		}
