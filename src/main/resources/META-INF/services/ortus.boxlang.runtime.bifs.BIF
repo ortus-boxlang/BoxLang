@@ -182,6 +182,7 @@ ortus.boxlang.runtime.bifs.global.string.Char
 ortus.boxlang.runtime.bifs.global.string.Compare
 ortus.boxlang.runtime.bifs.global.string.CompareNoCase
 ortus.boxlang.runtime.bifs.global.string.Find
+ortus.boxlang.runtime.bifs.global.string.FindOneOf
 ortus.boxlang.runtime.bifs.global.string.Insert
 ortus.boxlang.runtime.bifs.global.string.Justify
 ortus.boxlang.runtime.bifs.global.string.LCase

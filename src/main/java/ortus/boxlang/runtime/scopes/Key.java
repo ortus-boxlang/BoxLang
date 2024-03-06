@@ -346,6 +346,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		server						= Key.of( "server" );
 	public static final Key		servlet						= Key.of( "servlet" );
 	public static final Key		sessionManagement			= Key.of( "sessionManagement" );
+	public static final Key		set							= Key.of( "set" );
 	public static final Key		settings					= Key.of( "settings" );
 	public static final Key		showDebugOutput				= Key.of( "showDebugOutput" );
 	public static final Key		showerror					= Key.of( "showerror" );
