@@ -192,6 +192,7 @@ ortus.boxlang.runtime.bifs.global.string.LTrim
 ortus.boxlang.runtime.bifs.global.string.Left
 ortus.boxlang.runtime.bifs.global.string.ListReduce
 ortus.boxlang.runtime.bifs.global.string.Mid
+ortus.boxlang.runtime.bifs.global.string.ParagraphFormat
 ortus.boxlang.runtime.bifs.global.string.RTrim
 ortus.boxlang.runtime.bifs.global.string.ReFind
 ortus.boxlang.runtime.bifs.global.string.ReReplace
