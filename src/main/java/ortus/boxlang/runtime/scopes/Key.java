@@ -89,6 +89,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		attributes					= Key.of( "attributes" );
 	public static final Key		author						= Key.of( "author" );
 	public static final Key		base64_or_object			= Key.of( "base64_or_object " );
+	public static final Key		binary						= Key.of( "binary" );
 	public static final Key		boxBif						= Key.of( "BoxBif" );
 	public static final Key		boxlang						= Key.of( "boxlang" );
 	public static final Key		boxMember					= Key.of( "BoxMember" );
@@ -166,6 +167,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		EMPTY						= Key.of( "" );
 	public static final Key		enableOutputOnly			= Key.of( "enableOutputOnly" );
 	public static final Key		encoded						= Key.of( "encoded" );
+	public static final Key		encoded_binary				= Key.of( "encoded_binary" );
 	public static final Key		encodefor					= Key.of( "encodefor" );
 	public static final Key		encoding					= Key.of( "encoding" );
 	public static final Key		end							= Key.of( "end" );

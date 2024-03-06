@@ -181,6 +181,8 @@ ortus.boxlang.runtime.bifs.global.query.QueryNew
 ortus.boxlang.runtime.bifs.global.query.QuerySort
 ortus.boxlang.runtime.bifs.global.string.Ascii
 ortus.boxlang.runtime.bifs.global.string.Char
+ortus.boxlang.runtime.bifs.global.string.CharsetDecode
+ortus.boxlang.runtime.bifs.global.string.CharsetEncode
 ortus.boxlang.runtime.bifs.global.string.Compare
 ortus.boxlang.runtime.bifs.global.string.CompareNoCase
 ortus.boxlang.runtime.bifs.global.string.Find
