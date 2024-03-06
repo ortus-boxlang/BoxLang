@@ -196,6 +196,7 @@ ortus.boxlang.runtime.bifs.global.string.ReReplace
 ortus.boxlang.runtime.bifs.global.string.ReReplaceNoCase
 ortus.boxlang.runtime.bifs.global.string.RepeatString
 ortus.boxlang.runtime.bifs.global.string.Replace
+ortus.boxlang.runtime.bifs.global.string.ReplaceList
 ortus.boxlang.runtime.bifs.global.string.ReplaceNoCase
 ortus.boxlang.runtime.bifs.global.string.Reverse
 ortus.boxlang.runtime.bifs.global.string.Right
