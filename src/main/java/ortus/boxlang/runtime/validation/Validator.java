@@ -15,25 +15,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package ortus.boxlang.runtime.components.validators;
+package ortus.boxlang.runtime.validation;
 
 import java.util.Set;
 
-import ortus.boxlang.runtime.components.Attribute;
 import ortus.boxlang.runtime.components.Component;
-import ortus.boxlang.runtime.components.validators.dynamic.Max;
-import ortus.boxlang.runtime.components.validators.dynamic.MaxLength;
-import ortus.boxlang.runtime.components.validators.dynamic.Min;
-import ortus.boxlang.runtime.components.validators.dynamic.MinLength;
-import ortus.boxlang.runtime.components.validators.dynamic.Requires;
-import ortus.boxlang.runtime.components.validators.dynamic.ValueOneOf;
-import ortus.boxlang.runtime.components.validators.dynamic.ValueRequires;
+import ortus.boxlang.runtime.validation.dynamic.Max;
+import ortus.boxlang.runtime.validation.dynamic.MaxLength;
+import ortus.boxlang.runtime.validation.dynamic.Min;
+import ortus.boxlang.runtime.validation.dynamic.MinLength;
+import ortus.boxlang.runtime.validation.dynamic.Requires;
+import ortus.boxlang.runtime.validation.dynamic.ValueOneOf;
+import ortus.boxlang.runtime.validation.dynamic.ValueRequires;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.IStruct;
 
 /**
- * I help validate attributes
+ * I help validate records
  */
 @FunctionalInterface
 public interface Validator {
@@ -41,20 +40,21 @@ public interface Validator {
 	// These are static validator which can be re-used
 	public static final Validator	REQUIRED		= new Required();
 	public static final Validator	NON_EMPTY		= new MinLength( 1 );
-	// This validator will get the type from the attribute record
+	// This validator will get the type from the validatable record
 	public static final Validator	TYPE			= new Type();
-	// This validator will get the default value from the attribute record
+	// This validator will get the default value from the validatable record
 	public static final Validator	DEFAULT_VALUE	= new DefaultValue();
+	public static final Validator	NOT_IMPLEMENTED	= new NotImplemented();
 
 	/**
-	 * Validate an attribute.
-	 * 
-	 * @param context    The current Box context
-	 * @param component  The component being validated
-	 * @param attribute  The specific attribute being validated
-	 * @param attributes All the attributes being validated
+	 * Validate a record instance.
+	 *
+	 * @param context   The current Box context
+	 * @param component The component being validated
+	 * @param record    The specific record being validated
+	 * @param records   All the records being validated
 	 */
-	public void validate( IBoxContext context, Component component, Attribute attribute, IStruct attributes );
+	public void validate( IBoxContext context, Component component, Validatable record, IStruct records );
 
 	/****************************************************************************************
 	 * These are builder methods to create validators that hold some state
@@ -63,9 +63,9 @@ public interface Validator {
 
 	/**
 	 * Builder method to create a Min validator
-	 * 
+	 *
 	 * @param min The minimum value
-	 * 
+	 *
 	 * @return The Min validator
 	 */
 	public static Validator min( Number min ) {
@@ -74,9 +74,9 @@ public interface Validator {
 
 	/**
 	 * Builder method to create a Max validator
-	 * 
+	 *
 	 * @param max The maximum value
-	 * 
+	 *
 	 * @return The Max validator
 	 */
 	public static Validator max( Number max ) {
@@ -85,9 +85,9 @@ public interface Validator {
 
 	/**
 	 * Builder method to create a MaxLength validator
-	 * 
+	 *
 	 * @param maxLength The maximum length
-	 * 
+	 *
 	 * @return The MaxLength validator
 	 */
 	public static Validator maxLength( Number maxLength ) {
@@ -96,9 +96,9 @@ public interface Validator {
 
 	/**
 	 * Builder method to create a MinLength validator
-	 * 
+	 *
 	 * @param minLength The minimum length
-	 * 
+	 *
 	 * @return The MinLength validator
 	 */
 	public static Validator minLength( Number minLength ) {
@@ -107,31 +107,31 @@ public interface Validator {
 
 	/**
 	 * Builder method to create a Requires validator
-	 * 
-	 * @param attributeNames The names of the attributes that are required if this attribute is present
-	 * 
+	 *
+	 * @param recordNames The names of the records that are required if this record is present
+	 *
 	 * @return The Requires validator
 	 */
-	public static Validator requires( Key... attributeNames ) {
-		return new Requires( Set.of( attributeNames ) );
+	public static Validator requires( Key... recordNames ) {
+		return new Requires( Set.of( recordNames ) );
 	}
 
 	/**
 	 * Builder method to create a Requires validator
-	 * 
-	 * @param attributeNames The names of the attributes that are required if this attribute is present
-	 * 
+	 *
+	 * @param recordNames The names of the records that are required if this record is present
+	 *
 	 * @return The Requires validator
 	 */
-	public static Validator valueRequires( String value, Key... attributeNames ) {
-		return new ValueRequires( value, Set.of( attributeNames ) );
+	public static Validator valueRequires( String value, Key... recordNames ) {
+		return new ValueRequires( value, Set.of( recordNames ) );
 	}
 
 	/**
 	 * Builder method to create a ValueOneOf validator
-	 * 
+	 *
 	 * @param validValues The valid values
-	 * 
+	 *
 	 * @return The ValueOneOf validator
 	 */
 	public static Validator valueOneOf( String... validValues ) {

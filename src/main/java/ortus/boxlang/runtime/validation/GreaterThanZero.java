@@ -15,33 +15,26 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package ortus.boxlang.runtime.components.validators.dynamic;
+package ortus.boxlang.runtime.validation;
 
 import ortus.boxlang.runtime.components.Attribute;
 import ortus.boxlang.runtime.components.Component;
-import ortus.boxlang.runtime.components.validators.Validator;
 import ortus.boxlang.runtime.context.IBoxContext;
-import ortus.boxlang.runtime.dynamic.casters.StringCaster;
+import ortus.boxlang.runtime.dynamic.casters.DoubleCaster;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.exceptions.BoxValidationException;
 
 /**
- * I require a string arg that cannot be of greater length than the threshold I'm instantiated with
+ * I require numberic value greater than zero. If the record was not passed, I do nothing.
  */
-public class MaxLength implements Validator {
+public class GreaterThanZero implements Validator {
 
-	private Number maxLength;
-
-	public MaxLength( Number maxLength ) {
-		this.maxLength = maxLength;
-	}
-
-	public void validate( IBoxContext context, Component component, Attribute attribute, IStruct attributes ) {
+	public void validate( IBoxContext context, Component component, Validatable record, IStruct records ) {
 		// If it was passed...
-		if ( attributes.get( attribute.name() ) != null ) {
-			// then make sure it's not greater than our threshold
-			if ( StringCaster.cast( attributes.get( attribute.name() ) ).length() > this.maxLength.doubleValue() ) {
-				throw new BoxValidationException( component, attribute, "cannot be longer than [" + StringCaster.cast( this.maxLength ) + "] character(s)." );
+		if ( records.get( record.name() ) != null ) {
+			// But also check for non-empty
+			if ( DoubleCaster.cast( records.get( record.name() ) ) > 0 ) {
+				throw new BoxValidationException( component, record, "must be greater than zero." );
 			}
 		}
 	}

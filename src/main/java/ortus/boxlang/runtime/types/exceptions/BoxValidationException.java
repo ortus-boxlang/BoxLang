@@ -17,8 +17,8 @@
  */
 package ortus.boxlang.runtime.types.exceptions;
 
-import ortus.boxlang.runtime.components.Attribute;
 import ortus.boxlang.runtime.components.Component;
+import ortus.boxlang.runtime.validation.Validatable;
 
 /**
  * Configuration exceptions within BoxLang
@@ -39,8 +39,8 @@ public class BoxValidationException extends BoxRuntimeException {
 	 *
 	 * @param message The message
 	 */
-	public BoxValidationException( Component component, Attribute attribute, String message ) {
-		this( "Attribute [" + attribute.name().getName() + "] for component [" + component.getName().getName() + "] " + message, null );
+	public BoxValidationException( Component component, Validatable attribute, String message ) {
+		this( "Record [" + attribute.name().getName() + "] for component [" + component.getName().getName() + "] " + message, null );
 	}
 
 	/**

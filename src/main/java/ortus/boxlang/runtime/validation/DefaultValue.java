@@ -15,25 +15,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package ortus.boxlang.runtime.components.validators;
+package ortus.boxlang.runtime.validation;
 
 import ortus.boxlang.runtime.components.Attribute;
 import ortus.boxlang.runtime.components.Component;
 import ortus.boxlang.runtime.context.IBoxContext;
-import ortus.boxlang.runtime.dynamic.casters.GenericCaster;
 import ortus.boxlang.runtime.types.IStruct;
 
 /**
- * I require a specific type
+ * I apply a default value to the record if it is not present
  */
-public class Type implements Validator {
+public class DefaultValue implements Validator {
 
-	public void validate( IBoxContext context, Component component, Attribute attribute, IStruct attributes ) {
-		// If there is a type on the attribute, enforce it
-		if ( attribute.type() != null ) {
-			Object value = attributes.get( attribute.name() );
-			if ( value != null ) {
-				attributes.put( attribute.name(), GenericCaster.cast( context, value, attribute.type() ) );
+	public void validate( IBoxContext context, Component component, Validatable record, IStruct records ) {
+		// If there is a default on the record, enforce it
+		if ( record.defaultValue() != null ) {
+			if ( records.get( record.name() ) == null ) {
+				records.put( record.name(), record.defaultValue() );
 			}
 		}
 	}

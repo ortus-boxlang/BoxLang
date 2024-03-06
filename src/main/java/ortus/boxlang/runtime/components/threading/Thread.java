@@ -22,7 +22,7 @@ import java.util.Set;
 import ortus.boxlang.runtime.components.Attribute;
 import ortus.boxlang.runtime.components.BoxComponent;
 import ortus.boxlang.runtime.components.Component;
-import ortus.boxlang.runtime.components.validators.Validator;
+import ortus.boxlang.runtime.validation.Validator;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.RequestBoxContext;
 import ortus.boxlang.runtime.context.ThreadBoxContext;
@@ -75,15 +75,15 @@ public class Thread extends Component {
 	 * @param attributes     The attributes to the Component
 	 * @param body           The body of the Component
 	 * @param executionState The execution state of the Component
-	 * 
+	 *
 	 * @attribute.name The name of the thread.
-	 * 
+	 *
 	 * @attribute.action The action to perform. The default value is "run". The following are the possible values: "join", "run", "sleep", "terminate".
-	 * 
+	 *
 	 * @attribute.duration The number of milliseconds to pause the thread. This attribute is required if the action attribute is set to "sleep".
-	 * 
+	 *
 	 * @attribute.priority The priority of the thread. The default value is "normal". The following are the possible values: "high", "low", "normal".
-	 * 
+	 *
 	 * @attribute.timeout The number of milliseconds to wait for the thread to finish. If the thread does not finish within the specified time, the thread
 	 *                    is
 	 *                    terminated. If the timeout attribute is not specified, the thread runs until it finishes.

@@ -15,26 +15,35 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package ortus.boxlang.runtime.components.validators;
+package ortus.boxlang.runtime.validation.dynamic;
 
 import ortus.boxlang.runtime.components.Attribute;
 import ortus.boxlang.runtime.components.Component;
+import ortus.boxlang.runtime.validation.Validatable;
+import ortus.boxlang.runtime.validation.Validator;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.dynamic.casters.DoubleCaster;
+import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.exceptions.BoxValidationException;
 
 /**
- * I require numberic value greater than zero. If the attribute was not passed, I do nothing.
+ * I require a numeric record that cannot be greater than the number I'm instantiated with
  */
-public class GreaterThanZero implements Validator {
+public class Min implements Validator {
 
-	public void validate( IBoxContext context, Component component, Attribute attribute, IStruct attributes ) {
+	private final Number min;
+
+	public Min( Number min ) {
+		this.min = min;
+	}
+
+	public void validate( IBoxContext context, Component component, Validatable record, IStruct records ) {
 		// If it was passed...
-		if ( attributes.get( attribute.name() ) != null ) {
-			// But also check for non-empty
-			if ( DoubleCaster.cast( attributes.get( attribute.name() ) ) > 0 ) {
-				throw new BoxValidationException( component, attribute, "must be greater than zero." );
+		if ( records.get( record.name() ) != null ) {
+			// then make sure it's not less than our threshold
+			if ( DoubleCaster.cast( records.get( record.name() ) ) < this.min.doubleValue() ) {
+				throw new BoxValidationException( component, record, "cannot be less than [" + StringCaster.cast( this.min ) + "]." );
 			}
 		}
 	}

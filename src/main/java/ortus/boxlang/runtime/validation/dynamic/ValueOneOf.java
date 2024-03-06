@@ -15,34 +15,34 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package ortus.boxlang.runtime.components.validators.dynamic;
+package ortus.boxlang.runtime.validation.dynamic;
+
+import java.util.Set;
 
 import ortus.boxlang.runtime.components.Attribute;
 import ortus.boxlang.runtime.components.Component;
-import ortus.boxlang.runtime.components.validators.Validator;
+import ortus.boxlang.runtime.validation.Validatable;
+import ortus.boxlang.runtime.validation.Validator;
 import ortus.boxlang.runtime.context.IBoxContext;
-import ortus.boxlang.runtime.dynamic.casters.DoubleCaster;
-import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.exceptions.BoxValidationException;
 
 /**
- * I require a numeric arg that cannot be greater than the number I'm instantiated with
+ * If this record is present, ensure it is one of the valid string values (case insensitive)
  */
-public class Max implements Validator {
+public class ValueOneOf implements Validator {
 
-	private Number max;
+	private Set<String> validValues;
 
-	public Max( Number max ) {
-		this.max = max;
+	public ValueOneOf( Set<String> validValues ) {
+		this.validValues = validValues;
 	}
 
-	public void validate( IBoxContext context, Component component, Attribute attribute, IStruct attributes ) {
-		// If it was passed...
-		if ( attributes.get( attribute.name() ) != null ) {
-			// then make sure it's not greater than our threshold
-			if ( DoubleCaster.cast( attributes.get( attribute.name() ) ) > this.max.doubleValue() ) {
-				throw new BoxValidationException( component, attribute, "cannot be greater than [" + StringCaster.cast( this.max ) + "]." );
+	public void validate( IBoxContext context, Component component, Validatable record, IStruct records ) {
+		if ( records.containsKey( record.name() ) ) {
+			String value = records.getAsString( record.name() );
+			if ( !validValues.stream().map( String::toLowerCase ).anyMatch( value.toLowerCase()::equals ) ) {
+				throw new BoxValidationException( component, record, "must be one of the following values: " + String.join( ", ", validValues ) );
 			}
 		}
 	}

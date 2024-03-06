@@ -15,24 +15,22 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package ortus.boxlang.runtime.components.validators;
+package ortus.boxlang.runtime.validation;
 
 import ortus.boxlang.runtime.components.Attribute;
 import ortus.boxlang.runtime.components.Component;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.types.IStruct;
+import ortus.boxlang.runtime.types.exceptions.BoxValidationException;
 
 /**
- * I apply a default value to the attribute if it is not present
+ * I ensure this value is not passed yet since we don't implement this feature.
  */
-public class DefaultValue implements Validator {
+public class NotImplemented implements Validator {
 
-	public void validate( IBoxContext context, Component component, Attribute attribute, IStruct attributes ) {
-		// If there is a default on the attribute, enforce it
-		if ( attribute.defaultValue() != null ) {
-			if ( attributes.get( attribute.name() ) == null ) {
-				attributes.put( attribute.name(), attribute.defaultValue() );
-			}
+	public void validate( IBoxContext context, Component component, Validatable record, IStruct records ) {
+		if ( records.get( record.name() ) != null ) {
+			throw new BoxValidationException( component, record, "is not implemented yet and should not be provided." );
 		}
 	}
 

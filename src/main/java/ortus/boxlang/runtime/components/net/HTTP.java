@@ -31,7 +31,7 @@ import java.util.stream.Collectors;
 import ortus.boxlang.runtime.components.Attribute;
 import ortus.boxlang.runtime.components.BoxComponent;
 import ortus.boxlang.runtime.components.Component;
-import ortus.boxlang.runtime.components.validators.Validator;
+import ortus.boxlang.runtime.validation.Validator;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.dynamic.ExpressionInterpreter;
 import ortus.boxlang.runtime.dynamic.casters.*;
@@ -67,41 +67,51 @@ public class HTTP extends Component {
 			        }
 		        }
 		    ) ),
-		    new Attribute( Key.result, "string" )
-			/*
-			 * TODO:
-			 * port
-			 * method
-			 * proxyserver
-			 * proxyport
-			 * proxyuser
-			 * proxypassword
-			 * username
-			 * password
-			 * useragent
-			 * charset
-			 * resolveurl
-			 * throwonerror
-			 * redirect
-			 * timeout
-			 * getasbinary
-			 * delimiter
-			 * name
-			 * columns
-			 * firstrowasheaders
-			 * textqualifier
-			 * file
-			 * multipart
-			 * clientcertpassword
-			 * clientcert
-			 * path
-			 * compression
-			 * authType
-			 * domain
-			 * workstation
-			 * cachedWithin
-			 * encodeURL
-			 */
+		    new Attribute( Key.port, "numeric" ),
+		    new Attribute( Key.method, "string", "GET", Set.of(
+		        Validator.REQUIRED,
+		        Validator.NON_EMPTY,
+		        Validator.valueOneOf( "GET", "POST", "PUT", "DELETE", "HEAD", "TRACE", "OPTIONS", "PATCH" )
+		    ) ),
+		    new Attribute( Key.proxyServer, "string" ),
+		    new Attribute( Key.proxyPort, "string" ),
+		    new Attribute( Key.proxyUser, "string" ),
+		    new Attribute( Key.proxyPassword, "string" ),
+		    new Attribute( Key.username, "string" ),
+		    new Attribute( Key.password, "string" ),
+		    new Attribute( Key.userAgent, "string", "BoxLang" ),
+		    new Attribute( Key.charset, "string", "UTF-8" ),
+		    new Attribute( Key.resolveUrl, "boolean", false ),
+		    new Attribute( Key.throwOnError, "boolean", true ),
+		    new Attribute( Key.redirect, "boolean", true ),
+		    new Attribute( Key.timeout, "numeric", Set.of( Validator.min( 1 ) ) ),
+		    new Attribute( Key.getAsBinary, "string", "auto", Set.of(
+		        Validator.REQUIRED,
+		        Validator.NON_EMPTY,
+		        Validator.valueOneOf( "auto", "no", "yes", "never" )
+		    ) ),
+		    new Attribute( Key.result, "string", "cfhttp", Set.of(
+		        Validator.REQUIRED,
+		        Validator.NON_EMPTY
+		    ) ),
+		    new Attribute( Key.delimiter, "string", Set.of( Validator.NOT_IMPLEMENTED ) ),
+		    new Attribute( Key._NAME, "string", Set.of( Validator.NOT_IMPLEMENTED ) ),
+		    new Attribute( Key.columns, "string", Set.of( Validator.NOT_IMPLEMENTED ) ),
+		    new Attribute( Key.firstRowAsHeaders, "boolean", Set.of( Validator.NOT_IMPLEMENTED ) ),
+		    new Attribute( Key.textQualifier, "string", Set.of( Validator.NOT_IMPLEMENTED ) ),
+		    new Attribute( Key.file, "string", Set.of( Validator.requires( Key.path ) ) ),
+		    new Attribute( Key.multipart, "boolean", false, Set.of( Validator.TYPE ) ),
+		    new Attribute( Key.multipartType, "string", "form-data",
+		        Set.of( Validator.REQUIRED, Validator.NON_EMPTY, Validator.valueOneOf( "form-data", "related" ) ) ),
+		    new Attribute( Key.clientCertPassword, "string" ),
+		    new Attribute( Key.path, "string", Set.of( Validator.requires( Key.file ) ) ),
+		    new Attribute( Key.clientCert, "string" ),
+		    new Attribute( Key.compression, "string" ),
+		    new Attribute( Key.authType, "string", "BASIC", Set.of( Validator.REQUIRED, Validator.NON_EMPTY, Validator.valueOneOf( "BASIC", "NTLM" ) ) ),
+		    new Attribute( Key.domain, "string" ),
+		    new Attribute( Key.workstation, "string" ),
+		    new Attribute( Key.cachedWithin, "string" ),
+		    new Attribute( Key.encodeUrl, "boolean", true, Set.of( Validator.TYPE ) ),
 		};
 	}
 

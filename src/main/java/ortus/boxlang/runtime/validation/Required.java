@@ -15,9 +15,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package ortus.boxlang.runtime.components.validators;
+package ortus.boxlang.runtime.validation;
 
-import ortus.boxlang.runtime.components.Attribute;
 import ortus.boxlang.runtime.components.Component;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.types.IStruct;
@@ -28,9 +27,9 @@ import ortus.boxlang.runtime.types.exceptions.BoxValidationException;
  */
 public class Required implements Validator {
 
-	public void validate( IBoxContext context, Component component, Attribute attribute, IStruct attributes ) {
-		if ( attributes.get( attribute.name() ) == null ) {
-			throw new BoxValidationException( component, attribute, "is required." );
+	public void validate( IBoxContext context, Component component, Validatable record, IStruct records ) {
+		if ( records.getOrDefault( record.name(), record.defaultValue() ) == null ) {
+			throw new BoxValidationException( component, record, "is required." );
 		}
 	}
 
