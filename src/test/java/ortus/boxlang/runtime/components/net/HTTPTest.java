@@ -19,12 +19,9 @@
 package ortus.boxlang.runtime.components.net;
 
 import static com.google.common.truth.Truth.assertThat;
+import static org.junit.Assert.*;
 
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 
 import ortus.boxlang.parser.BoxScriptType;
 import ortus.boxlang.runtime.BoxRuntime;
@@ -34,6 +31,7 @@ import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
 import ortus.boxlang.runtime.types.IStruct;
+import ortus.boxlang.runtime.types.Query;
 
 public class HTTPTest {
 
@@ -176,6 +174,130 @@ public class HTTPTest {
 		    """.replaceAll(
 		        "\\s+", "" ) );
 
+	}
+
+	@DisplayName( "It can make a GET request with URL params" )
+	@Test
+	public void testGetWithParams() {
+		instance.executeSource(
+		    """
+		     http url="https://jsonplaceholder.typicode.com/posts" {
+		    	 httpparam type="header" name="User-Agent" value="Mozilla";
+		    	 httpparam type="url" name="userId" value=1;
+		    }
+		    result = cfhttp;
+		     """,
+		    context );
+
+		assertThat( variables.get( result ) ).isInstanceOf( IStruct.class );
+
+		IStruct cfhttp = variables.getAsStruct( result );
+
+		Assertions.assertTrue( cfhttp.containsKey( Key.statusCode ) );
+		assertThat( cfhttp.get( Key.statusCode ) ).isEqualTo( 200 );
+		Assertions.assertTrue( cfhttp.containsKey( Key.status_code ) );
+		assertThat( cfhttp.get( Key.status_code ) ).isEqualTo( 200 );
+
+		Assertions.assertTrue( cfhttp.containsKey( Key.statusText ) );
+		assertThat( cfhttp.get( Key.statusText ) ).isEqualTo( "OK" );
+		Assertions.assertTrue( cfhttp.containsKey( Key.status_text ) );
+		assertThat( cfhttp.get( Key.status_text ) ).isEqualTo( "OK" );
+
+		Assertions.assertTrue( cfhttp.containsKey( Key.HTTP_Version ) );
+		assertThat( cfhttp.getAsString( Key.HTTP_Version ) ).isEqualTo( "HTTP/2" );
+
+		Assertions.assertTrue( cfhttp.containsKey( Key.errorDetail ) );
+		assertThat( cfhttp.getAsString( Key.errorDetail ) ).isEqualTo( "" );
+
+		Assertions.assertTrue( cfhttp.containsKey( Key.mimetype ) );
+		assertThat( cfhttp.getAsString( Key.mimetype ) ).isEqualTo( "application/json" );
+
+		Assertions.assertTrue( cfhttp.containsKey( Key.charset ) );
+		assertThat( cfhttp.getAsString( Key.charset ) ).isEqualTo( "utf-8" );
+
+		Assertions.assertTrue( cfhttp.containsKey( Key.cookies ) );
+		Query cookies = cfhttp.getAsQuery( Key.cookies );
+		Assertions.assertNotNull( cookies );
+		assertThat( cookies ).isInstanceOf( Query.class );
+		Assertions.assertEquals( 0, cookies.size() );
+
+		Assertions.assertTrue( cfhttp.containsKey( Key.responseHeader ) );
+		IStruct headers = cfhttp.getAsStruct( Key.responseHeader );
+		Assertions.assertNotNull( headers );
+		assertThat( headers ).isInstanceOf( IStruct.class );
+		Assertions.assertEquals( 25, headers.size() );
+
+		Assertions.assertTrue( headers.containsKey( Key.of( "x-ratelimit-remaining" ) ) );
+
+		Assertions.assertTrue( headers.containsKey( Key.of( "reporting-endpoints" ) ) );
+		assertThat( headers.get( Key.of( "reporting-endpoints" ) ) ).isEqualTo(
+		    "heroku-nel=https://nel.heroku.com/reports?ts=1709586771&sid=e11707d5-02a7-43ef-b45e-2cf4d2036f7d&s=4SezAwb%2BZetUNTPpjh2Z3bLupZCROMh3BmptfECslZ0%3D" );
+
+		Assertions.assertTrue( headers.containsKey( Key.of( "cf-cache-status" ) ) );
+
+		Assertions.assertTrue( headers.containsKey( Key.of( "http_version" ) ) );
+		assertThat( headers.get( Key.of( "http_version" ) ) ).isEqualTo( "HTTP/2" );
+
+		Assertions.assertTrue( headers.containsKey( Key.of( "explanation" ) ) );
+		assertThat( headers.get( Key.of( "explanation" ) ) ).isEqualTo( "OK" );
+
+		Assertions.assertTrue( headers.containsKey( Key.of( "expires" ) ) );
+		assertThat( headers.get( Key.of( "expires" ) ) ).isEqualTo( "-1" );
+
+		Assertions.assertTrue( headers.containsKey( Key.of( "server" ) ) );
+		assertThat( headers.get( Key.of( "server" ) ) ).isEqualTo( "cloudflare" );
+
+		Assertions.assertTrue( headers.containsKey( Key.of( "x-powered-by" ) ) );
+		assertThat( headers.get( Key.of( "x-powered-by" ) ) ).isEqualTo( "Express" );
+
+		Assertions.assertTrue( headers.containsKey( Key.of( "content-type" ) ) );
+		assertThat( headers.get( Key.of( "content-type" ) ) ).isEqualTo( "application/json; charset=utf-8" );
+
+		Assertions.assertTrue( headers.containsKey( Key.of( "pragma" ) ) );
+		assertThat( headers.get( Key.of( "pragma" ) ) ).isEqualTo( "no-cache" );
+
+		Assertions.assertTrue( headers.containsKey( Key.of( "vary" ) ) );
+		assertThat( headers.get( Key.of( "vary" ) ) ).isEqualTo( "Origin, Accept-Encoding" );
+
+		Assertions.assertTrue( headers.containsKey( Key.of( "x-ratelimit-limit" ) ) );
+
+		Assertions.assertTrue( headers.containsKey( Key.of( "age" ) ) );
+
+		Assertions.assertTrue( headers.containsKey( Key.of( "cache-control" ) ) );
+		assertThat( headers.get( Key.of( "cache-control" ) ) ).isEqualTo( "max-age=43200" );
+
+		Assertions.assertTrue( headers.containsKey( Key.of( "cf-ray" ) ) );
+
+		Assertions.assertTrue( headers.containsKey( Key.of( "alt-svc" ) ) );
+
+		Assertions.assertTrue( headers.containsKey( Key.of( "status_code" ) ) );
+		assertThat( headers.get( Key.of( "status_code" ) ) ).isEqualTo( "200" );
+
+		Assertions.assertTrue( headers.containsKey( Key.of( "via" ) ) );
+		assertThat( headers.get( Key.of( "via" ) ) ).isEqualTo( "1.1 vegur" );
+
+		Assertions.assertTrue( headers.containsKey( Key.of( "date" ) ) );
+
+		Assertions.assertTrue( headers.containsKey( Key.of( "x-ratelimit-reset" ) ) );
+
+		Assertions.assertTrue( headers.containsKey( Key.of( "nel" ) ) );
+
+		Assertions.assertTrue( headers.containsKey( Key.of( "etag" ) ) );
+
+		Assertions.assertTrue( headers.containsKey( Key.of( "x-content-type-options" ) ) );
+		assertThat( headers.get( Key.of( "x-content-type-options" ) ) ).isEqualTo( "nosniff" );
+
+		Assertions.assertTrue( headers.containsKey( Key.of( "access-control-allow-credentials" ) ) );
+		assertThat( headers.get( Key.of( "access-control-allow-credentials" ) ) ).isEqualTo( "true" );
+
+		Assertions.assertTrue( headers.containsKey( Key.of( "report-to" ) ) );
+
+		Assertions.assertTrue( cfhttp.containsKey( Key.fileContent ) );
+		assertThat( cfhttp.getAsString( Key.fileContent ).replaceAll( "\\s+", "" ) ).isEqualTo(
+		    """
+		    	[{"userId":1,"id":1,"title":"suntautfacererepellatprovidentoccaecatiexcepturioptioreprehenderit","body":"quiaetsuscipit\\nsuscipitrecusandaeconsequunturexpeditaetcum\\nreprehenderitmolestiaeututquastotam\\nnostrumrerumestautemsuntremevenietarchitecto"},{"userId":1,"id":2,"title":"quiestesse","body":"estrerumtemporevitae\\nsequisintnihilreprehenderitdolorbeataeeadoloresneque\\nfugiatblanditiisvoluptateporrovelnihilmolestiaeutreiciendis\\nquiaperiamnondebitispossimusquinequenisinulla"},{"userId":1,"id":3,"title":"eamolestiasquasiexercitationemrepellatquiipsasitaut","body":"etiustosedquoiure\\nvoluptatemoccaecatiomniseligendiautad\\nvoluptatemdoloribusvelaccusantiumquispariatur\\nmolestiaeporroeiusodioetlaboreetvelitaut"},{"userId":1,"id":4,"title":"eumetestoccaecati","body":"ullametsaepereiciendisvoluptatemadipisci\\nsitametautemassumendaprovidentrerumculpa\\nquishiccommodinesciuntremteneturdoloremqueipsamiure\\nquissuntvoluptatemrerumillovelit"},{"userId":1,"id":5,"title":"nesciuntquasodio","body":"repudiandaeveniamquaeratsuntsed\\naliasautfugiatsitautemsedest\\nvoluptatemomnispossimusessevoluptatibusquis\\nestautteneturdolorneque"},{"userId":1,"id":6,"title":"doloremeummagnieosaperiamquia","body":"utaspernaturcorporisharumnihilquisprovidentsequi\\nmollitianobisaliquidmolestiae\\nperspiciatiseteanemoabreprehenderitaccusantiumquas\\nvoluptatedoloresvelitetdoloremquemolestiae"},{"userId":1,"id":7,"title":"magnamfacilisautem","body":"doloreplaceatquibusdameaquovitae\\nmagniquisenimquiquisquonemoautsaepe\\nquidemrepellatexcepturiutquia\\nsuntutsequieoseasedquas"},{"userId":1,"id":8,"title":"doloremdoloreestipsam","body":"dignissimosaperiamdoloremquieum\\nfacilisquibusdamanimisintsuscipitquisintpossimuscum\\nquaeratmagnimaioresexcepturi\\nipsamutcommodidolorvoluptatummodiautvitae"},{"userId":1,"id":9,"title":"nesciuntiureomnisdoloremtemporaetaccusantium","body":"consecteturaniminesciuntiuredolore\\nenimquiaad\\nveniamautemutquamautnobis\\netestautquodautprovidentvoluptasautemvoluptas"},{"userId":1,"id":10,"title":"optiomolestiasidquiaeum","body":"quoetexpeditamodicumofficiavelmagni\\ndoloribusquirepudiandae\\nveronisisit\\nquosveniamquodsedaccusamusveritatiserror"}]
+		    """.replaceAll(
+		        "\\s+", "" ) );
 	}
 
 }

@@ -109,7 +109,7 @@ public class ImmutableStruct extends Struct implements IImmutable {
 	 *
 	 * @param map The map to create the struct from
 	 */
-	public static ImmutableStruct fromMap( Map<Object, Object> map ) {
+	public static ImmutableStruct fromMap( Map<? extends Object, ? extends Object> map ) {
 		return new ImmutableStruct( map );
 	}
 
