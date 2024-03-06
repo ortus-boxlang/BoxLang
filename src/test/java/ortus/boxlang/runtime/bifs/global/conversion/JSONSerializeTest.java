@@ -155,11 +155,11 @@ public class JSONSerializeTest {
 		              """,
 		    context );
 		String expected = """
-		                  [
-		                  	{"col3":true, "col2":"brad", "col1":1},
-		                  	{"col3":false, "col2":"wood", "col1":2}
-		                  ]
-		                                                    """;
+		                               [
+		                               { "col1": 1, "col2": "brad", "col3": true},
+		                  { "col1": 2, "col2": "wood", "col3": false }
+		                               ]
+		                                                                 """;
 		assertThat( variables.getAsString( result ).replaceAll( "\\s", "" ) ).isEqualTo( expected.replaceAll( "\\s", "" ) );
 	}
 
@@ -319,11 +319,11 @@ public class JSONSerializeTest {
 		              """,
 		    context );
 		String expected = """
-		                  [
-		                  	{"col3":true, "col2":"brad", "col1":1},
-		                  	{"col3":false, "col2":"wood", "col1":2}
-		                  ]
-		                                                    """;
+		                               [
+		                                {"col1":1, "col2":"brad", "col3":true},
+		                  {"col1":2, "col2":"wood", "col3":false}
+		                               ]
+		                                                                 """;
 		assertThat( variables.getAsString( result ).replaceAll( "\\s", "" ) ).isEqualTo( expected.replaceAll( "\\s", "" ) );
 	}
 
