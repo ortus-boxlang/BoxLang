@@ -19,6 +19,7 @@ package ortus.boxlang.runtime.logging;
 
 import org.slf4j.LoggerFactory;
 
+import ch.qos.logback.classic.Level;
 import ch.qos.logback.classic.Logger;
 import ch.qos.logback.classic.LoggerContext;
 import ch.qos.logback.classic.encoder.PatternLayoutEncoder;
@@ -49,7 +50,7 @@ public class LoggingConfigurator {
 	 * @param debugMode Whether or not to enable debug mode
 	 */
 	public static void configure( Boolean debugMode ) {
-		// Level logLevel = debugMode ? Level.DEBUG : Level.INFO;
+		Level					logLevel		= debugMode ? Level.DEBUG : Level.INFO;
 		Logger					rootLogger		= ( Logger ) LoggerFactory.getLogger( Logger.ROOT_LOGGER_NAME );
 		LoggerContext			loggerContext	= rootLogger.getLoggerContext();
 
@@ -63,7 +64,7 @@ public class LoggingConfigurator {
 		appender.setEncoder( encoder );
 		appender.start();
 
-		// rootLogger.setLevel( logLevel );
+		rootLogger.setLevel( logLevel );
 		rootLogger.addAppender( appender );
 	}
 }
