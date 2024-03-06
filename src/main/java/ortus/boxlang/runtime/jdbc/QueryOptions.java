@@ -24,6 +24,9 @@ public class QueryOptions {
 	private Integer							queryTimeout;
 	private Long							maxRows;
 
+	public QueryOptions() {
+	}
+
 	public QueryOptions( IStruct options ) {
 		this.options = options;
 		determineDataSource();
@@ -31,11 +34,9 @@ public class QueryOptions {
 		this.resultVariableName	= options.getAsString( Key.result );
 		this.username			= options.getAsString( Key.username );
 		this.password			= options.getAsString( Key.password );
-		this.queryTimeout		= options.getAsInteger( Key.queryTimeout );
-		this.maxRows			= options.getAsLong( Key.maxRows );
-		if ( this.maxRows == null ) {
-			this.maxRows = -1L;
-		}
+		this.queryTimeout		= options.getAsInteger( Key.timeout );
+		Integer intMaxRows = options.getAsInteger( Key.maxRows );
+		this.maxRows = Long.valueOf( intMaxRows != null ? intMaxRows : -1 );
 	}
 
 	public DataSource getDataSource() {

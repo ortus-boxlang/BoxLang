@@ -79,7 +79,7 @@ public class PendingQuery {
 	    @Nonnull List<QueryParameter> parameters,
 	    @Nonnull String originalSql ) {
 		this.sql			= sql;
-		this.originalSql	= originalSql;
+		this.originalSql	= originalSql.trim();
 		this.parameters		= parameters;
 		this.maxRows		= 0L;
 	}
@@ -102,7 +102,7 @@ public class PendingQuery {
 	 * @param parameters An {@link Array} of `queryparam` {@link IStruct} instances to convert to {@link QueryParameter} instances and use as bindings.
 	 */
 	public PendingQuery( @Nonnull String sql, @Nonnull Array parameters ) {
-		this( sql, parameters.stream().map( QueryParameter::new ).collect( Collectors.toList() ) );
+		this( sql, parameters.stream().map( QueryParameter::fromAny ).collect( Collectors.toList() ) );
 	}
 
 	/**
@@ -131,7 +131,7 @@ public class PendingQuery {
 			if ( paramValue == null ) {
 				throw new BoxRuntimeException( "Missing param in query: [" + paramName + "]. SQL: " + sql );
 			}
-			params.add( new QueryParameter( paramValue ) );
+			params.add( QueryParameter.fromAny( paramValue ) );
 		}
 		return new PendingQuery( matcher.replaceAll( "?" ), params, sql );
 	}

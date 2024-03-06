@@ -43,7 +43,7 @@ public class ValueRequires implements Validator {
 	}
 
 	public void validate( IBoxContext context, Component component, Attribute attribute, IStruct attributes ) {
-		if ( attributes.containsKey( attribute.name() ) ) {
+		if ( attributes.containsKey( attribute.name() ) && attributes.getAsString( attribute.name() ).equals( this.value ) ) {
 			List<String> missingAttributes = new ArrayList<>();
 			for ( Key required : attributeNames ) {
 				if ( !attributes.containsKey( required ) ) {

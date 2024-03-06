@@ -1,3 +1,4 @@
+
 /**
  * [BoxLang]
  *
@@ -16,9 +17,11 @@
  * limitations under the License.
  */
 
-package ortus.boxlang.runtime.bifs.global.query;
+package ortus.boxlang.runtime.components.jdbc;
 
 import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.condition.EnabledIf;
+import ortus.boxlang.parser.BoxScriptType;
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
@@ -28,26 +31,26 @@ import ortus.boxlang.runtime.jdbc.DataSourceManager;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
-import ortus.boxlang.runtime.types.Array;
-import ortus.boxlang.runtime.types.IStruct;
-import ortus.boxlang.runtime.types.Query;
-import ortus.boxlang.runtime.types.Struct;
+import ortus.boxlang.runtime.types.*;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
+import ortus.boxlang.runtime.types.exceptions.BoxValidationException;
 import ortus.boxlang.runtime.types.exceptions.DatabaseException;
 
 import java.sql.SQLException;
 import java.util.List;
+import java.util.Map;
 
 import static com.google.common.truth.Truth.assertThat;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.jupiter.api.Assertions.*;
 
-public class QueryExecuteTest {
+public class CFQueryTest {
 
 	static BoxRuntime			instance;
 	IBoxContext					context;
 	IScope						variables;
 	static Key					result	= new Key( "result" );
-
+	static DataSource			MySQLDataSource;
 	static DataSourceManager	datasourceManager;
 	static DataSource			datasource;
 
@@ -56,7 +59,7 @@ public class QueryExecuteTest {
 		instance			= BoxRuntime.getInstance( true );
 		datasourceManager	= DataSourceManager.getInstance();
 		datasource			= new DataSource( Struct.of(
-		    "jdbcUrl", "jdbc:derby:memory:testQueryExecuteDB;create=true"
+		    "jdbcUrl", "jdbc:derby:memory:testQueryComponentDB;create=true"
 		) );
 		datasource.execute( "CREATE TABLE developers ( id INTEGER, name VARCHAR(155), role VARCHAR(155) )" );
 	}
@@ -90,11 +93,13 @@ public class QueryExecuteTest {
 		datasourceManager.setDefaultDataSource( datasource );
 		instance.executeSource(
 		    """
-		    result = queryExecute( "SELECT * FROM developers ORDER BY id" );
+		    			<cfquery name="result">
+		    SELECT * FROM developers ORDER BY id
+		    </cfquery>
 		    """,
-		    context );
-		assertThat( variables.get( result ) ).isInstanceOf( Query.class );
-		Query query = variables.getAsQuery( result );
+		    context, BoxScriptType.CFMARKUP );
+		assertThat( variables.get( result ) ).isInstanceOf( ortus.boxlang.runtime.types.Query.class );
+		ortus.boxlang.runtime.types.Query query = variables.getAsQuery( result );
 		assertEquals( 3, query.size() );
 
 		IStruct luis = query.getRowAsStruct( 0 );
@@ -113,56 +118,56 @@ public class QueryExecuteTest {
 		assertEquals( "Developer", michael.get( "role" ) );
 	}
 
-	@DisplayName( "It can execute a query with array bindings on the default datasource" )
+	@DisplayName( "It uses the default name of cfquery for the query results" )
+	@Test
+	public void testDefaultName() {
+		datasourceManager.setDefaultDataSource( datasource );
+		instance.executeSource(
+		    """
+		    			<cfquery>
+		    SELECT * FROM developers ORDER BY id
+		    </cfquery>
+		    """,
+		    context, BoxScriptType.CFMARKUP );
+		assertThat( variables.get( "cfquery" ) ).isInstanceOf( ortus.boxlang.runtime.types.Query.class );
+		ortus.boxlang.runtime.types.Query query = variables.getAsQuery( Key.of( "cfquery" ) );
+		assertEquals( 3, query.size() );
+
+		IStruct luis = query.getRowAsStruct( 0 );
+		assertEquals( 1, luis.get( "id" ) );
+		assertEquals( "Luis Majano", luis.get( "name" ) );
+		assertEquals( "CEO", luis.get( "role" ) );
+
+		IStruct eric = query.getRowAsStruct( 1 );
+		assertEquals( 42, eric.get( "id" ) );
+		assertEquals( "Eric Peterson", eric.get( "name" ) );
+		assertEquals( "Developer", eric.get( "role" ) );
+
+		IStruct michael = query.getRowAsStruct( 2 );
+		assertEquals( 77, michael.get( "id" ) );
+		assertEquals( "Michael Born", michael.get( "name" ) );
+		assertEquals( "Developer", michael.get( "role" ) );
+	}
+
+	@DisplayName( "It can execute a query with query param bindings on the default datasource" )
 	@Test
 	public void testArrayBindings() {
 		datasourceManager.setDefaultDataSource( datasource );
 		instance.executeSource(
 		    """
-		    result = queryExecute( "SELECT * FROM developers WHERE id = ?", [ 77 ] );
+		    			<cfquery name="result">
+		    SELECT * FROM developers WHERE id = <cfqueryparam value="77" />
+		    </cfquery>
 		    """,
-		    context );
-		assertThat( variables.get( result ) ).isInstanceOf( Query.class );
-		Query query = variables.getAsQuery( result );
+		    context, BoxScriptType.CFMARKUP );
+		assertThat( variables.get( result ) ).isInstanceOf( ortus.boxlang.runtime.types.Query.class );
+		ortus.boxlang.runtime.types.Query query = variables.getAsQuery( result );
 		assertEquals( 1, query.size() );
 
 		IStruct michael = query.getRowAsStruct( 0 );
 		assertEquals( 77, michael.get( "id" ) );
 		assertEquals( "Michael Born", michael.get( "name" ) );
 		assertEquals( "Developer", michael.get( "role" ) );
-	}
-
-	@DisplayName( "It can execute a query with struct bindings on the default datasource" )
-	@Test
-	public void testStructBindings() {
-		datasourceManager.setDefaultDataSource( datasource );
-		instance.executeSource(
-		    """
-		    result = queryExecute( "SELECT * FROM developers WHERE id = :id", { "id": 77 } );
-		    """,
-		    context );
-		assertThat( variables.get( result ) ).isInstanceOf( Query.class );
-		Query query = variables.getAsQuery( result );
-		assertEquals( 1, query.size() );
-
-		IStruct michael = query.getRowAsStruct( 0 );
-		assertEquals( 77, michael.get( "id" ) );
-		assertEquals( "Michael Born", michael.get( "name" ) );
-		assertEquals( "Developer", michael.get( "role" ) );
-	}
-
-	@DisplayName( "It throws an exception if the query is missing a named binding" )
-	@Test
-	public void testMissingStructBinding() {
-		datasourceManager.setDefaultDataSource( datasource );
-		BoxRuntimeException e = assertThrows( BoxRuntimeException.class, () -> instance.executeSource(
-		    """
-		    result = queryExecute( "SELECT * FROM developers WHERE id = :id", { "name": "Michael Born" } );
-		    """,
-		    context ) );
-
-		assertThat( e.getMessage() ).isEqualTo( "Missing param in query: [id]. SQL: SELECT * FROM developers WHERE id = :id" );
-		assertNull( variables.get( result ) );
 	}
 
 	@DisplayName( "It throws an exception if no default datasource is defined and no datasource is specified" )
@@ -170,9 +175,11 @@ public class QueryExecuteTest {
 	public void testMissingDefaultDataSource() {
 		BoxRuntimeException e = assertThrows( BoxRuntimeException.class, () -> instance.executeSource(
 		    """
-		    result = queryExecute( "SELECT * FROM developers" );
+		    			<cfquery name="result">
+		    SELECT * FROM developers WHERE id = <cfqueryparam value="77" />
+		    </cfquery>
 		    """,
-		    context ) );
+		    context, BoxScriptType.CFMARKUP ) );
 
 		assertThat( e.getMessage() )
 		    .isEqualTo( "No default datasource has been defined. Either register a default datasource or provide a datasource name in the query options." );
@@ -185,11 +192,13 @@ public class QueryExecuteTest {
 		datasourceManager.registerDataSource( Key.of( "derby" ), datasource );
 		instance.executeSource(
 		    """
-		    result = queryExecute( "SELECT * FROM developers ORDER BY id", [], { "datasource": "derby" } );
+		    			<cfquery name="result" datasource="derby">
+		    SELECT * FROM developers ORDER BY id
+		    </cfquery>
 		    """,
-		    context );
-		assertThat( variables.get( result ) ).isInstanceOf( Query.class );
-		Query query = variables.getAsQuery( result );
+		    context, BoxScriptType.CFMARKUP );
+		assertThat( variables.get( result ) ).isInstanceOf( ortus.boxlang.runtime.types.Query.class );
+		ortus.boxlang.runtime.types.Query query = variables.getAsQuery( result );
 		assertEquals( 3, query.size() );
 
 		IStruct luis = query.getRowAsStruct( 0 );
@@ -213,7 +222,9 @@ public class QueryExecuteTest {
 	public void testMissingNamedDataSource() {
 		BoxRuntimeException e = assertThrows( BoxRuntimeException.class, () -> instance.executeSource(
 		    """
-		    result = queryExecute( "SELECT * FROM developers WHERE id = :id", { "name": "Michael Born" }, { "datasource": "derby" } );
+		    			cfquery( name="result", datasource="derby" ) {
+		    	SELECT * FROM developers ORDER BY id
+		    }
 		    """,
 		    context ) );
 
@@ -227,7 +238,9 @@ public class QueryExecuteTest {
 		datasourceManager.setDefaultDataSource( datasource );
 		instance.executeSource(
 		    """
-		    result = queryExecute( "SELECT * FROM developers ORDER BY id", [], { "returntype": "array" } );
+		    			cfquery( name="result", returntype = "array" ) {
+		    	writeOutput( "SELECT * FROM developers ORDER BY id" );
+		    };
 		    """,
 		    context );
 		assertThat( variables.get( result ) ).isInstanceOf( Array.class );
@@ -262,7 +275,9 @@ public class QueryExecuteTest {
 		datasourceManager.setDefaultDataSource( datasource );
 		instance.executeSource(
 		    """
-		    result = queryExecute( "SELECT * FROM developers ORDER BY id", [], { "returntype": "struct", "columnKey": "role" } );
+		    			query name="result" returntype="struct" columnKey="role" {
+		    	echo( "SELECT * FROM developers ORDER BY id" );
+		    };
 		    """,
 		    context );
 		assertThat( variables.get( result ) ).isInstanceOf( IStruct.class );
@@ -308,11 +323,13 @@ public class QueryExecuteTest {
 		datasourceManager.setDefaultDataSource( datasource );
 		BoxRuntimeException e = assertThrows( BoxRuntimeException.class, () -> instance.executeSource(
 		    """
-		    result = queryExecute( "SELECT * FROM developers ORDER BY id", [], { "returnType": "struct" } );
+		    			query name="result" returntype="struct" {
+		    	echo( "SELECT * FROM developers ORDER BY id" );
+		    };
 		    """,
 		    context ) );
 
-		assertThat( e.getMessage() ).isEqualTo( "You must defined a `columnKey` option when using `returnType: struct`." );
+		assertThat( e.getMessage() ).isEqualTo( "Attribute [returnType] for component [Query] requires the following attributes to be present: columnKey" );
 		assertNull( variables.get( result ) );
 	}
 
@@ -322,9 +339,11 @@ public class QueryExecuteTest {
 		datasourceManager.setDefaultDataSource( datasource );
 		BoxRuntimeException e = assertThrows( BoxRuntimeException.class, () -> instance.executeSource(
 		    """
-		    result = queryExecute( "SELECT * FROM developers ORDER BY id", [], { "returnType": "foobar" } );
+		    			<cfquery name="result" returntype="foobar">
+		    SELECT * FROM developers WHERE id = <cfqueryparam value="77" />
+		    </cfquery>
 		    """,
-		    context ) );
+		    context, BoxScriptType.CFMARKUP ) );
 
 		assertThat( e.getMessage() ).isEqualTo( "Unknown return type: foobar" );
 		assertNull( variables.get( result ) );
@@ -336,9 +355,11 @@ public class QueryExecuteTest {
 		datasourceManager.setDefaultDataSource( datasource );
 		instance.executeSource(
 		    """
-		    result = queryExecute( "SELECT * FROM developers WHERE role = ?", [ 'Developer' ], { "result": "queryResults" } );
+		    			<cfquery name="result" result="queryResults">
+		    SELECT * FROM developers WHERE role = <cfqueryparam value="Developer" />
+		    </cfquery>
 		    """,
-		    context );
+		    context, BoxScriptType.CFMARKUP );
 		Object resultObject = variables.get( Key.of( "queryResults" ) );
 		assertInstanceOf( IStruct.class, resultObject );
 		IStruct result = StructCaster.cast( resultObject );
@@ -362,42 +383,6 @@ public class QueryExecuteTest {
 		assertThat( result.getAsLong( Key.executionTime ) ).isAtLeast( 0 );
 
 		assertFalse( result.containsKey( "generatedKey" ) );
-	}
-
-	@DisplayName( "It can execute a query against an ad-hoc datasource" )
-	@Test
-	public void testAdHocDataSource() {
-		DatabaseException e = assertThrows( DatabaseException.class, () -> {
-			// @TODO: Use standard datasource struct names
-			instance.executeSource(
-			    """
-			    result = queryExecute( "SELECT * FROM developers ORDER BY id", [], { "datasource": { "jdbcUrl": "jdbc:derby:memory:anotherTestDB;create=true" } } );
-			    """,
-			    context );
-		} );
-		assertEquals( "Table/View 'DEVELOPERS' does not exist.", e.getMessage() );
-	}
-
-	/**
-	 * This feature is not supported in Hikari https://github.com/brettwooldridge/HikariCP/issues/231
-	 */
-	@DisplayName( "It can execute a query with a custom username and password" )
-	@Test
-	@Disabled
-	public void testCustomUsernameAndPassword() {
-		DataSource alternateDataSource = new DataSource( Struct.of(
-		    "jdbcUrl", "jdbc:derby:memory:testQueryExecuteAlternateUserDB;user=foo;password=bar;create=true"
-		) );
-		alternateDataSource.execute( "CREATE TABLE developers ( id INTEGER, name VARCHAR(155), role VARCHAR(155) )" );
-		datasourceManager.setDefaultDataSource( alternateDataSource );
-		instance.executeSource(
-		    """
-		    result = queryExecute( "SELECT * FROM developers ORDER BY id", [], { "username": "foo", "password": "bar" } );
-		    """,
-		    context );
-		assertThat( variables.get( result ) ).isInstanceOf( Query.class );
-		Query query = variables.getAsQuery( result );
-		assertEquals( 0, query.size() );
 	}
 
 }

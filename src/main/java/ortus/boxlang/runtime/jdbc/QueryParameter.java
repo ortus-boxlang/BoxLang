@@ -14,6 +14,8 @@
  */
 package ortus.boxlang.runtime.jdbc;
 
+import ortus.boxlang.runtime.dynamic.casters.CastAttempt;
+import ortus.boxlang.runtime.dynamic.casters.StructCaster;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.QueryColumnType;
@@ -27,7 +29,7 @@ public class QueryParameter {
 	private final Integer			maxLength;
 	private final Integer			scale;
 
-	public QueryParameter( IStruct param ) {
+	private QueryParameter( IStruct param ) {
 		String sqltype = ( String ) param.getOrDefault( Key.cfsqltype, "VARCHAR" );
 		if ( ( Boolean ) param.getOrDefault( Key.nulls, false ) ) {
 			sqltype = "NULL";
@@ -45,8 +47,12 @@ public class QueryParameter {
 		this.scale		= param.getAsInteger( Key.scale );
 	}
 
-	public QueryParameter( Object value ) {
-		this( Struct.of( "value", value ) );
+	public static QueryParameter fromAny( Object value ) {
+		CastAttempt<IStruct> castAsStruct = StructCaster.attempt( value );
+		if ( castAsStruct.wasSuccessful() ) {
+			return new QueryParameter( castAsStruct.getOrFail() );
+		}
+		return new QueryParameter( Struct.of( "value", value ) );
 	}
 
 	public Object getValue() {
