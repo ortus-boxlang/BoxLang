@@ -229,6 +229,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		len							= Key.of( "len" );
 	public static final Key		length						= Key.of( "length" );
 	public static final Key		lexical						= Key.of( "lexical" );
+	public static final Key		limit						= Key.of( "limit" );
 	public static final Key		line						= Key.of( "line" );
 	public static final Key		list						= Key.of( "list" );
 	public static final Key		listInfo					= Key.of( "listInfo" );
@@ -371,6 +372,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		string_or_object			= Key.of( "string_or_object" );
 	public static final Key		string1						= Key.of( "string1" );
 	public static final Key		string2						= Key.of( "string2" );
+	public static final Key		strip						= Key.of( "strip" );
 	public static final Key		struct						= Key.of( "struct" );
 	public static final Key		struct1						= Key.of( "struct1" );
 	public static final Key		struct2						= Key.of( "struct2" );

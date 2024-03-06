@@ -208,6 +208,7 @@ ortus.boxlang.runtime.bifs.global.string.TrueFalseFormat
 ortus.boxlang.runtime.bifs.global.string.UCFirst
 ortus.boxlang.runtime.bifs.global.string.UCase
 ortus.boxlang.runtime.bifs.global.string.Val
+ortus.boxlang.runtime.bifs.global.string.Wrap
 ortus.boxlang.runtime.bifs.global.string.YesNoFormat
 ortus.boxlang.runtime.bifs.global.struct.StructAppend
 ortus.boxlang.runtime.bifs.global.struct.StructClear
