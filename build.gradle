@@ -94,6 +94,9 @@ dependencies {
 	// https://mvnrepository.com/artifact/org.apache.derby/derby
 	testImplementation 'org.apache.derby:derby:10.16.1.1'
 
+	// https://wiremock.org/
+	testImplementation "org.wiremock:wiremock:3.4.1"
+
 	// MOVE TO GENERIC JDBC MODULE
 	// https://mvnrepository.com/artifact/com.zaxxer/HikariCP
 	implementation 'com.zaxxer:HikariCP:5.1.0'

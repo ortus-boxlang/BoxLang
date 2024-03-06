@@ -96,7 +96,9 @@ public class BoxRuntime {
 	    "onScopeCreation",
 	    "onConfigurationLoad",
 	    "onConfigurationOverrideLoad",
-	    "onParse"
+	    "onParse",
+	    "preQueryExecute",
+	    "postQueryExecute"
 	).collect( Collectors.toMap(
 	    eventName -> eventName,
 	    Key::of

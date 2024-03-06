@@ -18,7 +18,6 @@
 package ortus.boxlang.runtime.components.net;
 
 import java.io.IOException;
-import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.http.HttpClient;
 import java.net.http.HttpHeaders;
@@ -37,12 +36,13 @@ import ortus.boxlang.runtime.dynamic.casters.ArrayCaster;
 import ortus.boxlang.runtime.dynamic.casters.CastAttempt;
 import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 import ortus.boxlang.runtime.dynamic.casters.StructCaster;
+import ortus.boxlang.runtime.net.HttpManager;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.*;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.exceptions.BoxValidationException;
-import ortus.boxlang.runtime.util.HTTP.HTTPStatusReasons;
-import ortus.boxlang.runtime.util.HTTP.URIBuilder;
+import ortus.boxlang.runtime.net.HTTPStatusReasons;
+import ortus.boxlang.runtime.net.URIBuilder;
 
 @BoxComponent( allowsBody = true )
 public class HTTP extends Component {
@@ -154,7 +154,7 @@ public class HTTP extends Component {
 			builder.method( method, bodyPublisher );
 			builder.uri( uriBuilder.build() );
 			HttpRequest				request				= builder.build();
-			HttpClient				client				= HttpClient.newHttpClient();
+			HttpClient				client				= HttpManager.getClient();
 			HttpResponse<String>	response			= client.send( request, HttpResponse.BodyHandlers.ofString() );
 
 			HttpHeaders				httpHeaders			= response.headers();

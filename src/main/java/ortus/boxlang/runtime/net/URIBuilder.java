@@ -1,6 +1,6 @@
-package ortus.boxlang.runtime.util.HTTP;
+package ortus.boxlang.runtime.net;
 
-import org.checkerframework.checker.units.qual.A;
+import ortus.boxlang.runtime.net.NameValuePair;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -9,7 +9,6 @@ import java.net.URISyntaxException;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.stream.Collectors;
 
 public class URIBuilder {
