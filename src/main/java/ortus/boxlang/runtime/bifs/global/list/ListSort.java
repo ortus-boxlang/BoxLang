@@ -57,7 +57,7 @@ public class ListSort extends ArraySort {
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.array The array to sort
+	 * @argument.list The list to sort
 	 *
 	 * @argument.sortType Options are text, numeric, or textnocase
 	 *

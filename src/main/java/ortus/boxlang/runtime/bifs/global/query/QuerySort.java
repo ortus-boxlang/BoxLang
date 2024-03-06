@@ -60,5 +60,5 @@ public class QuerySort extends BIF {
 
 		return true;
 	}
- 
+
 }
