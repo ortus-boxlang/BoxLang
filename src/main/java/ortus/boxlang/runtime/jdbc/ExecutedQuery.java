@@ -21,7 +21,9 @@ import java.sql.*;
 import java.util.List;
 import java.util.Map;
 
+import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.scopes.Key;
+import ortus.boxlang.runtime.services.InterceptorService;
 import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Query;
@@ -38,15 +40,17 @@ import javax.annotation.Nullable;
  */
 public final class ExecutedQuery {
 
+	private static final InterceptorService	interceptorService	= BoxRuntime.getInstance().getInterceptorService();
+
 	/**
 	 * The {@link PendingQuery} executed.
 	 */
-	private @Nonnull final PendingQuery	pendingQuery;
+	private @Nonnull final PendingQuery		pendingQuery;
 
 	/**
 	 * The execution time of the query.
 	 */
-	private final long					executionTime;
+	private final long						executionTime;
 
 	/**
 	 * A Query object holding the results of the query.
@@ -54,12 +58,12 @@ public final class ExecutedQuery {
 	 *
 	 * @see Query
 	 */
-	private @Nonnull final Query		results;
+	private @Nonnull final Query			results;
 
 	/**
 	 * The generated key of the request, if any.
 	 */
-	private @Nullable Object			generatedKey;
+	private @Nullable Object				generatedKey;
 
 	/**
 	 * Creates an ExecutedQuery instance.
@@ -122,6 +126,16 @@ public final class ExecutedQuery {
 				throw e;
 			}
 		}
+
+		interceptorService.announce( BoxRuntime.RUNTIME_EVENTS.get( "preQueryExecute" ), Struct.of(
+		    "sql", this.pendingQuery.getOriginalSql(),
+		    "bindings", this.pendingQuery.getParameterValues(),
+		    "executionTime", executionTime,
+		    "data", results,
+		    "result", getResultStruct(),
+		    "pendingQuery", this.pendingQuery,
+		    "executedQuery", this
+		) );
 	}
 
 	/**
