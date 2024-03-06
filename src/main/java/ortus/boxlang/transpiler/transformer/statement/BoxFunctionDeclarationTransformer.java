@@ -121,6 +121,13 @@ public class BoxFunctionDeclarationTransformer extends AbstractTransformer {
 				return ${enclosingClassName}.path;
 			}
 
+			/**
+			 * The original source type
+			 */
+			public BoxScriptType getSourceType() {
+				return ${enclosingClassName}.sourceType;
+			}
+
 			@Override
 			public Object _invoke( FunctionBoxContext context ) {
 				ClassLocator classLocator = ClassLocator.getInstance();

@@ -1,4 +1,4 @@
-package ortus.boxlang.runtime.util.HTTP;
+package ortus.boxlang.runtime.net;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;

@@ -16,13 +16,9 @@
  * limitations under the License.
  */
 
-package ortus.boxlang.runtime.bifs.global.system;
+package ortus.boxlang.runtime.bifs.global.query;
 
 import static com.google.common.truth.Truth.assertThat;
-
-import java.nio.file.Path;
-import java.time.LocalDateTime;
-import java.util.List;
 
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -30,17 +26,15 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-import ortus.boxlang.parser.BoxScriptType;
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
-import ortus.boxlang.runtime.loader.ImportDefinition;
-import ortus.boxlang.runtime.runnables.BoxTemplate;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
+import ortus.boxlang.runtime.types.Query;
 
-public class GetCurrentTemplatePathTest {
+public class QuerySortTest {
 
 	static BoxRuntime	instance;
 	IBoxContext			context;
@@ -63,67 +57,30 @@ public class GetCurrentTemplatePathTest {
 		variables	= context.getScopeNearby( VariablesScope.name );
 	}
 
-	@DisplayName( "It gets current template path" )
+	@DisplayName( "It should sort the query based on a function provided" )
 	@Test
-	public void testCurrentTemplate() {
-		context.pushTemplate( new BoxTemplate() {
-
-			@Override
-			public List<ImportDefinition> getImports() {
-				return null;
-			}
-
-			@Override
-			public void _invoke( IBoxContext context ) {
-			}
-
-			@Override
-			public long getRunnableCompileVersion() {
-				return 1;
-			}
-
-			@Override
-			public LocalDateTime getRunnableCompiledOn() {
-				return null;
-			}
-
-			@Override
-			public Object getRunnableAST() {
-				return null;
-			}
-
-			@Override
-			public Path getRunnablePath() {
-				return Path.of( "/tmp/test.bxs" );
-			}
-
-			public BoxScriptType getSourceType() {
-				return BoxScriptType.BOXSCRIPT;
-			}
-
-		} );
-
+	public void testSort() {
 		instance.executeSource(
 		    """
-		    result = getCurrentTemplatePath();
-		     """,
+		       	result = queryNew("col1","integer");
+		           queryAddRow(result, [ 200 ]);
+		     queryAddRow( result, [ 100 ]);
+		     querySort( result, function( a, b ) {
+		     	if ( a.col1 < b.col1 ) {
+		     		return -1;
+		      } else if ( a.col1 == b.col1 ) {
+		    return 0;
+		     	} else {
+		     		return 1;
+		     	}
+		     } );
+
+		          """,
 		    context );
-		assertThat( variables.get( result ).toString().contains( "test.bxs" ) ).isTrue();
 
-		context.popTemplate();
+		Query qry = variables.getAsQuery( result );
+		assertThat( qry.size() ).isEqualTo( 2 );
+		assertThat( qry.getRowAsStruct( 0 ).getAsInteger( Key.of( "col1" ) ) ).isEqualTo( 100 );
+		assertThat( qry.getRowAsStruct( 1 ).getAsInteger( Key.of( "col1" ) ) ).isEqualTo( 200 );
 	}
-
-	@DisplayName( "It gets current template path in include" )
-	@Test
-	public void testCurrentTemplateInclude() {
-
-		instance.executeSource(
-		    """
-		    include "src/test/java/ortus/boxlang/runtime/bifs/global/system/IncludeTest.cfs";
-		     """,
-		    context );
-		assertThat( variables.get( result ).toString().contains( "IncludeTest.cfs" ) ).isTrue();
-
-	}
-
 }

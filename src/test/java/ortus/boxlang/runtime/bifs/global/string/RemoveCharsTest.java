@@ -16,9 +16,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package ortus.boxlang.runtime.bifs.global.string;
 
-import static com.google.common.truth.Truth.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -33,14 +34,12 @@ import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
 
-public class WrapTest {
+public class RemoveCharsTest {
 
 	static BoxRuntime	instance;
 	IBoxContext			context;
 	IScope				variables;
-	static Key			result			= new Key( "result" );
-
-	String				lineSeparator	= System.lineSeparator();
+	static Key			result	= new Key( "result" );
 
 	@BeforeAll
 	public static void setUp() {
@@ -57,39 +56,18 @@ public class WrapTest {
 		variables	= context.getScopeNearby( VariablesScope.name );
 	}
 
-	@DisplayName( "It tests the BIF Wrap" )
+	@DisplayName( "It tests the BIF RemoveChars" )
 	@Test
 	public void testBif() {
-		instance.executeSource(
-		    """
-		       	myText = "this is a test of of the wrap function";
-		       	result = wrap( myText, 10, false );
-		    """,
-		    context
-		);
-
-		assertThat( variables.getAsString( result ) ).isEqualTo( "this is a" + lineSeparator + //
-		    "test of of" + lineSeparator +
-		    "the wrap" + lineSeparator +
-		    "function" );
+		assertEquals( "Hi buddy!", instance.executeStatement( "removeChars( 'Hi buddy!, Have a nice day.', 10, 18 )" ) );
+		assertEquals( "BoxLang", instance.executeStatement( "removeChars( 'I love BoxLang', 1, 7 )" ) );
 	}
 
-	@DisplayName( "It tests the member function for Wrap" )
+	@DisplayName( "It tests the member function for RemoveChars" )
 	@Test
 	public void testMemberFunction() {
-		instance.executeSource(
-		    """
-		       	myText = "this is a test of of the wrap function";
-		    	result = myText.wrap( 10 );
-
-		    """,
-		    context
-		);
-
-		assertThat( variables.getAsString( result ) ).isEqualTo( "this is a" + lineSeparator +
-		    "test of of" + lineSeparator +
-		    "the wrap" + lineSeparator +
-		    "function" );
+		assertEquals( "Hi buddy!", instance.executeStatement( "'Hi buddy! Have a nice day.'.removeChars( 10, 18 )" ) );
+		assertEquals( "BoxLang", instance.executeStatement( "'I love BoxLang'.removeChars( 1, 7 )" ) );
 	}
 
 }

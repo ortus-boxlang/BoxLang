@@ -160,6 +160,7 @@ ortus.boxlang.runtime.bifs.global.math.DecrementValue
 ortus.boxlang.runtime.bifs.global.math.Exp
 ortus.boxlang.runtime.bifs.global.math.Fix
 ortus.boxlang.runtime.bifs.global.math.Floor
+ortus.boxlang.runtime.bifs.global.math.FormatBaseN
 ortus.boxlang.runtime.bifs.global.math.IncrementValue
 ortus.boxlang.runtime.bifs.global.math.Int
 ortus.boxlang.runtime.bifs.global.math.Log
@@ -177,6 +178,7 @@ ortus.boxlang.runtime.bifs.global.math.Tan
 ortus.boxlang.runtime.bifs.global.query.QueryAddRow
 ortus.boxlang.runtime.bifs.global.query.QueryExecute
 ortus.boxlang.runtime.bifs.global.query.QueryNew
+ortus.boxlang.runtime.bifs.global.query.QuerySort
 ortus.boxlang.runtime.bifs.global.string.Ascii
 ortus.boxlang.runtime.bifs.global.string.Char
 ortus.boxlang.runtime.bifs.global.string.Compare
@@ -194,8 +196,10 @@ ortus.boxlang.runtime.bifs.global.string.RTrim
 ortus.boxlang.runtime.bifs.global.string.ReFind
 ortus.boxlang.runtime.bifs.global.string.ReReplace
 ortus.boxlang.runtime.bifs.global.string.ReReplaceNoCase
+ortus.boxlang.runtime.bifs.global.string.RemoveChars
 ortus.boxlang.runtime.bifs.global.string.RepeatString
 ortus.boxlang.runtime.bifs.global.string.Replace
+ortus.boxlang.runtime.bifs.global.string.ReplaceList
 ortus.boxlang.runtime.bifs.global.string.ReplaceNoCase
 ortus.boxlang.runtime.bifs.global.string.Reverse
 ortus.boxlang.runtime.bifs.global.string.Right
@@ -204,6 +208,9 @@ ortus.boxlang.runtime.bifs.global.string.StringEvery
 ortus.boxlang.runtime.bifs.global.string.StringFilter
 ortus.boxlang.runtime.bifs.global.string.StringMap
 ortus.boxlang.runtime.bifs.global.string.StringReduce
+ortus.boxlang.runtime.bifs.global.string.StringReduceRight
+ortus.boxlang.runtime.bifs.global.string.StringSome
+ortus.boxlang.runtime.bifs.global.string.StringSort
 ortus.boxlang.runtime.bifs.global.string.StripCR
 ortus.boxlang.runtime.bifs.global.string.Trim
 ortus.boxlang.runtime.bifs.global.string.TrueFalseFormat

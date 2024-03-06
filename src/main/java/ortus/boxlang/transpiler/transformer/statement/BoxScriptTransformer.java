@@ -80,6 +80,7 @@ public class BoxScriptTransformer extends AbstractTransformer {
 		import ortus.boxlang.runtime.types.exceptions.*;
 		import ortus.boxlang.runtime.util.*;
 		import ortus.boxlang.web.scopes.*;
+		import ortus.boxlang.parser.BoxScriptType;
 
 		// Java Imports
 		import java.nio.file.Path;
@@ -98,6 +99,7 @@ public class BoxScriptTransformer extends AbstractTransformer {
 
 			private static final List<ImportDefinition>	imports			= List.of();
 			private static final Path					path			= Paths.get( "${fileFolderPath}" );
+			private static final BoxScriptType			sourceType		= BoxScriptType.${sourceType};
 			private static final long					compileVersion	= ${compileVersion};
 			private static final LocalDateTime			compiledOn		= ${compiledOnTimestamp};
 			private static final Object					ast				= null;
@@ -152,6 +154,13 @@ public class BoxScriptTransformer extends AbstractTransformer {
 			}
 
 			/**
+			 * The original source type
+			 */
+			public BoxScriptType getSourceType() {
+				return sourceType;
+			}
+
+			/**
 			 * The imports for this runnable
 			 */
 			public List<ImportDefinition> getImports() {
@@ -188,19 +197,21 @@ public class BoxScriptTransformer extends AbstractTransformer {
 		String	baseClass	= transpiler.getProperty( "baseclass" ) != null ? transpiler.getProperty( "baseclass" ) : "BoxScript";
 		String	returnType	= baseClass.equals( "BoxScript" ) ? "Object" : "void";
 		returnType = transpiler.getProperty( "returnType" ) != null ? transpiler.getProperty( "returnType" ) : returnType;
+		String							sourceType	= transpiler.getProperty( "sourceType" );
 
-		Map<String, String>				values	= Map.ofEntries(
+		Map<String, String>				values		= Map.ofEntries(
 		    Map.entry( "packagename", packageName ),
 		    Map.entry( "className", className ),
 		    Map.entry( "fileName", fileName ),
 		    Map.entry( "baseclass", baseClass ),
 		    Map.entry( "returnType", returnType ),
+		    Map.entry( "sourceType", sourceType ),
 		    Map.entry( "fileExtension", fileExt ),
 		    Map.entry( "fileFolderPath", filePath.replaceAll( "\\\\", "\\\\\\\\" ) ),
 		    Map.entry( "compiledOnTimestamp", transpiler.getDateTime( LocalDateTime.now() ) ),
 		    Map.entry( "compileVersion", "1L" )
 		);
-		String							code	= PlaceholderHelper.resolve( template, values );
+		String							code		= PlaceholderHelper.resolve( template, values );
 		ParseResult<CompilationUnit>	result;
 
 		try {

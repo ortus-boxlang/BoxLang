@@ -20,7 +20,6 @@ package ortus.boxlang.runtime.cache;
 import java.io.Serializable;
 import java.time.Instant;
 import java.util.Optional;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 
 import ortus.boxlang.runtime.scopes.Key;
@@ -63,7 +62,6 @@ public class BoxCacheEntry implements ICacheEntry, Serializable {
 	private Key						key;
 	private Object					value;
 	private Struct					metadata			= new Struct();
-	private AtomicBoolean			isExpired			= new AtomicBoolean( false );
 	// Calculated hashcode
 	private int						hashCode;
 
@@ -176,14 +174,6 @@ public class BoxCacheEntry implements ICacheEntry, Serializable {
 	}
 
 	/**
-	 * Mark the entry as expired
-	 */
-	public ICacheEntry expire() {
-		this.isExpired.set( true );
-		return this;
-	}
-
-	/**
 	 * --------------------------------------------------------------------------
 	 * Interface Methods
 	 * --------------------------------------------------------------------------
@@ -221,11 +211,6 @@ public class BoxCacheEntry implements ICacheEntry, Serializable {
 	}
 
 	@Override
-	public boolean isExpired() {
-		return this.isExpired.get();
-	}
-
-	@Override
 	public boolean isEternal() {
 		return this.timeout == 0;
 	}
@@ -254,7 +239,6 @@ public class BoxCacheEntry implements ICacheEntry, Serializable {
 		    "lastAccessTimeout", this.lastAccessTimeout,
 		    "created", this.created,
 		    "lastAccessed", this.lastAccessed,
-		    "isExpired", this.isExpired.get(),
 		    "key", this.key,
 		    "value", this.value,
 		    "metadata", this.metadata

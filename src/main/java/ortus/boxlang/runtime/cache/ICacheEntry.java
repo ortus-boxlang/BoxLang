@@ -76,13 +76,6 @@ public interface ICacheEntry {
 	public Instant lastAccessed();
 
 	/**
-	 * Has this cache entry expired
-	 *
-	 * @return True if the cache entry has expired, false otherwise
-	 */
-	public boolean isExpired();
-
-	/**
 	 * Is this an eternal object
 	 *
 	 * @return True if the object is eternal, false otherwise
@@ -136,11 +129,6 @@ public interface ICacheEntry {
 	 * Increment the hits
 	 */
 	public ICacheEntry incrementHits();
-
-	/**
-	 * Mark the entry as expired
-	 */
-	public ICacheEntry expire();
 
 	/**
 	 * Get the state of the entry as a struct

@@ -1,3 +1,4 @@
+
 /**
  * [BoxLang]
  *
@@ -15,7 +16,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package ortus.boxlang.runtime.bifs.global.list;
+
+package ortus.boxlang.runtime.bifs.global.string;
+
+import org.apache.commons.lang3.Range;
+import org.apache.commons.lang3.StringUtils;
 
 import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
@@ -24,47 +29,48 @@ import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
+import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.BoxLangType;
 import ortus.boxlang.runtime.types.util.ListUtil;
 
 @BoxBIF
-@BoxMember( type = BoxLangType.STRING, name = "ListToArray" )
-public class ListToArray extends BIF {
+@BoxMember( type = BoxLangType.STRING, name = "RemoveChars" )
+
+public class RemoveChars extends BIF {
 
 	/**
 	 * Constructor
 	 */
-	public ListToArray() {
+	public RemoveChars() {
 		super();
 		declaredArguments = new Argument[] {
-		    new Argument( true, "string", Key.list ),
-		    new Argument( false, "string", Key.delimiter, ListUtil.DEFAULT_DELIMITER ),
-		    new Argument( false, "boolean", Key.includeEmptyFields, false ),
-		    new Argument( false, "boolean", Key.multiCharacterDelimiter, false ),
-
+		    new Argument( true, "string", Key.string ),
+		    new Argument( true, "integer", Key.start ),
+		    new Argument( true, "integer", Key.count )
 		};
 	}
 
 	/**
-	 * Converts a delimited list to an array
+	 * Describe what the invocation of your bif function does
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.list string list to filter entries from
-	 *
-	 * @argument.delimiter string the list delimiter
-	 *
-	 * @argument.includeEmptyFields boolean whether to include empty fields in the returned result
-	 *
-	 * @argument.multiCharacterDelimiter boolean whether the delimiter is multi-character
+	 * @argument.foo Describe any expected arguments
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
-		return ListUtil.asList(
-		    arguments.getAsString( Key.list ),
-		    arguments.getAsString( Key.delimiter ),
-		    arguments.getAsBoolean( Key.includeEmptyFields ),
-		    arguments.getAsBoolean( Key.multiCharacterDelimiter )
+		String			ref		= arguments.getAsString( Key.string );
+		Integer			rmStart	= arguments.getAsInteger( Key.start ) - 1;
+		Integer			rmEnd	= rmStart + arguments.getAsInteger( Key.count ) - 1;
+		Range<Integer>	scope	= Range.of( rmStart, rmEnd );
+		return ListUtil.asString(
+		    new Array(
+		        ListUtil.asList(
+		            arguments.getAsString( Key.string ),
+		            ""
+		        ).intStream().filter( idx -> !scope.contains( idx ) ).mapToObj( idx -> StringUtils.substring( ref, idx, idx + 1 ) ).toArray()
+		    ),
+		    ""
 		);
 	}
 

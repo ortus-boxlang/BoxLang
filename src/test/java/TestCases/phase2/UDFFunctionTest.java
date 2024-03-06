@@ -584,6 +584,10 @@ public class UDFFunctionTest {
 			public Path getRunnablePath() {
 				return Path.of( "unknown" );
 			}
+
+			public BoxScriptType getSourceType() {
+				return BoxScriptType.BOXSCRIPT;
+			}
 		};
 
 		variables.put( Key.of( "myFunc" ), func );
@@ -593,7 +597,7 @@ public class UDFFunctionTest {
 		    result = myFunc( "brad" );
 		    println( result )
 		       """,
-		    context, BoxScriptType.CFSCRIPT );
+		    context, BoxScriptType.BOXSCRIPT );
 
 	}
 

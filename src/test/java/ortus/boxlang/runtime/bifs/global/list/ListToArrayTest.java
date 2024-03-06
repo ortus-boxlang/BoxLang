@@ -66,6 +66,14 @@ public class ListToArrayTest {
 		assertEquals( result.get( 0 ), "foo" );
 	}
 
+	@DisplayName( "It tests the BIF ListToArray with the defaults member" )
+	@Test
+	public void testBifMember() {
+		Array result = ( Array ) instance.executeStatement( "'foo,bar'.listToArray(  )" );
+		assertEquals( result.size(), 2 );
+		assertEquals( result.get( 0 ), "foo" );
+	}
+
 	@DisplayName( "It tests the BIF ListToArray with a custom delimiter" )
 	@Test
 	public void testDelim() {

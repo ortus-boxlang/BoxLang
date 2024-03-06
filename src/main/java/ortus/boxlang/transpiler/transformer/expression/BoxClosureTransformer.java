@@ -58,6 +58,7 @@ public class BoxClosureTransformer extends AbstractTransformer {
 		import ortus.boxlang.runtime.dynamic.ExpressionInterpreter;
 		import java.util.Optional;
 		import ortus.boxlang.runtime.components.Component;
+		import ortus.boxlang.parser.BoxScriptType;
 
 		// Classes Auto-Imported on all Templates and Classes by BoxLang
 		import java.time.LocalDateTime;
@@ -140,6 +141,13 @@ public class BoxClosureTransformer extends AbstractTransformer {
 
 			public Path getRunnablePath() {
 				return ${enclosingClassName}.path;
+			}
+
+			/**
+			 * The original source type
+			 */
+			public BoxScriptType getSourceType() {
+				return ${enclosingClassName}.sourceType;
 			}
 
   		}

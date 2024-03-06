@@ -130,9 +130,9 @@ public class ConcurrentStore extends AbstractStore implements IObjectStore {
 		    .parallelStream()
 		    // Sort using the policy comparator
 		    .sorted( Map.Entry.comparingByValue( getPolicy().getComparator() ) )
-		    // Exclude eternal objects and already expired objects they will be removed by the reaper
-		    .filter( entry -> !entry.getValue().isEternal() && !entry.getValue().isExpired() )
-		    // Check how many to expire according to the config count
+		    // Exclude eternal objects from eviction
+		    .filter( entry -> !entry.getValue().isEternal() )
+		    // Check how many to evict according to the config count
 		    .limit( this.config.getAsInteger( Key.evictCount ) )
 		    // Evict it & Log Stats
 		    .forEach( entry -> {
@@ -237,18 +237,14 @@ public class ConcurrentStore extends AbstractStore implements IObjectStore {
 	}
 
 	/**
-	 * Check if an object is in the store and not expired
+	 * Check if an object is in the store
 	 *
 	 * @param key The key to lookup in the store
 	 *
 	 * @return True if the object is in the store, false otherwise
 	 */
 	public boolean lookup( Key key ) {
-		// Key is in the store and not expired
-		return this.pool.computeIfPresent(
-		    key,
-		    ( k, cacheEntry ) -> cacheEntry.isExpired() ? null : cacheEntry
-		) != null;
+		return this.pool.containsKey( key );
 	}
 
 	/**
@@ -271,18 +267,15 @@ public class ConcurrentStore extends AbstractStore implements IObjectStore {
 	 *
 	 * @param filter The filter that determines which keys to return
 	 *
-	 * @return A struct of the keys found. True if the object is in the store, false otherwise or expired
+	 * @return A struct of the keys found. True if the object is in the store, false otherwise
 	 */
 	public IStruct lookup( ICacheKeyFilter filter ) {
 		IStruct results = new Struct();
 		this.pool
-		    .entrySet()
-		    .stream()
-		    .filter( entry -> filter.test( entry.getKey() ) )
-		    .forEach( entry -> results.put(
-		        entry.getKey(),
-		        !entry.getValue().isExpired()
-		    ) );
+		    .keySet()
+		    .parallelStream()
+		    .filter( filter )
+		    .forEach( key -> results.put( key, true ) );
 		return results;
 	}
 
@@ -380,96 +373,6 @@ public class ConcurrentStore extends AbstractStore implements IObjectStore {
 		    .parallelStream()
 		    .filter( filter )
 		    .forEach( key -> results.put( key, getQuiet( key ) ) );
-		return results;
-	}
-
-	/**
-	 * Expire an object from the store
-	 *
-	 * @param key The key to expire
-	 *
-	 * @return True if the object was expired, false otherwise (if the object was not found in the store)
-	 */
-	public boolean expire( Key key ) {
-		var results = getQuiet( key );
-		if ( results != null ) {
-			results.expire();
-			return true;
-		}
-		return false;
-	}
-
-	/**
-	 * Expire multiple objects from the store
-	 *
-	 * @param keys The keys to expire
-	 *
-	 * @return A struct of keys and their expire status
-	 */
-	public IStruct expire( Key... keys ) {
-		IStruct results = new Struct();
-		for ( Key key : keys ) {
-			results.put( key, expire( key ) );
-		}
-		return results;
-	}
-
-	/**
-	 * Expire multiple objects from the store using a filter
-	 *
-	 * @param filter The filter that determines which keys to expire
-	 *
-	 * @return A struct of keys and their expire status
-	 */
-	public IStruct expire( ICacheKeyFilter filter ) {
-		IStruct results = new Struct();
-		this.pool.keySet()
-		    .parallelStream()
-		    .filter( filter )
-		    .forEach( key -> results.put( key, expire( key ) ) );
-		return results;
-	}
-
-	/**
-	 * Expire check for an object in the store
-	 *
-	 * @param key The key to check
-	 *
-	 * @return True if the object is expired, false otherwise (could be not found in the store or not expired yet)
-	 */
-	public boolean isExpired( Key key ) {
-		var results = getQuiet( key );
-		return results != null && results.isExpired();
-	}
-
-	/**
-	 * Expire check for multiple objects in the store
-	 *
-	 * @param keys The keys to check
-	 *
-	 * @return A struct of keys and their expire status
-	 */
-	public IStruct isExpired( Key... keys ) {
-		IStruct results = new Struct();
-		for ( Key key : keys ) {
-			results.put( key, isExpired( key ) );
-		}
-		return results;
-	}
-
-	/**
-	 * Expire check for multiple objects in the store using a filter
-	 *
-	 * @param filter The filter that determines which keys to check
-	 *
-	 * @return A struct of keys and their expire status
-	 */
-	public IStruct isExpired( ICacheKeyFilter filter ) {
-		IStruct results = new Struct();
-		this.pool.keySet()
-		    .parallelStream()
-		    .filter( filter )
-		    .forEach( key -> results.put( key, isExpired( key ) ) );
 		return results;
 	}
 

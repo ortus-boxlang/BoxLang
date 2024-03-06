@@ -194,7 +194,7 @@ public class Struct implements IStruct, IListenable, Serializable {
 	 *
 	 * @return The struct created from the map
 	 */
-	public static IStruct fromMap( Map<Object, Object> map ) {
+	public static IStruct fromMap( Map<? extends Object, ? extends Object> map ) {
 		return new Struct( map );
 	}
 

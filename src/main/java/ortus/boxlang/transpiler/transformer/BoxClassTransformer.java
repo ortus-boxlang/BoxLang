@@ -19,8 +19,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 
 import com.github.javaparser.ParseResult;
 import com.github.javaparser.ast.CompilationUnit;
@@ -91,6 +89,7 @@ public class BoxClassTransformer extends AbstractTransformer {
 		import ortus.boxlang.runtime.types.Property;
 		import ortus.boxlang.runtime.util.*;
 		import ortus.boxlang.web.scopes.*;
+		import ortus.boxlang.parser.BoxScriptType;
 
 		// Java Imports
 		import java.nio.file.Path;
@@ -110,6 +109,7 @@ public class BoxClassTransformer extends AbstractTransformer {
 
 			private static final List<ImportDefinition>	imports			= List.of();
 			private static final Path					path			= Paths.get( "${fileFolderPath}" );
+			private static final BoxScriptType			sourceType		= BoxScriptType.${sourceType};
 			private static final long					compileVersion	= ${compileVersion};
 			private static final LocalDateTime			compiledOn		= ${compiledOnTimestamp};
 			private static final Object					ast				= null;
@@ -199,6 +199,13 @@ public class BoxClassTransformer extends AbstractTransformer {
 			}
 
 			/**
+			 * The original source type
+			 */
+			public BoxScriptType getSourceType() {
+				return sourceType;
+			}
+
+			/**
 			 * The imports for this runnable
 			 */
 			public List<ImportDefinition> getImports() {
@@ -265,7 +272,13 @@ public class BoxClassTransformer extends AbstractTransformer {
 			public boolean canOutput() {
 				// Initialize if neccessary
 				if ( this.canOutput == null ) {
-					this.canOutput = BooleanCaster.cast( getAnnotations().getOrDefault( Key.output, false ) );
+					this.canOutput = BooleanCaster.cast( 
+						getAnnotations()
+							.getOrDefault( 
+								Key.output, 
+								( sourceType.equals( BoxScriptType.CFSCRIPT ) || sourceType.equals( BoxScriptType.CFMARKUP ) ? true : false )
+							) 
+					);
 				}
 				return this.canOutput;
 			}
@@ -283,9 +296,22 @@ public class BoxClassTransformer extends AbstractTransformer {
 			public void setSuper( IClassRunnable _super ) {
 				this._super = _super;
 				_super.setChild( this );
+				// This runs before the psedu constructor and init, so the base class will override anything it declares
+				//System.out.println( "Setting super class: " + _super.getName().getName() );
+				//System.out.println( "Setting super class variables: " + _super.getVariablesScope().asString() );
 				variablesScope.addAll( _super.getVariablesScope().getWrapped() );
 				thisScope.addAll( _super.getThisScope().getWrapped() );
-				// TODO: merge properties
+				
+				// merge properties that don't already exist
+				for ( var entry : _super.getProperties().entrySet() ) {
+					if ( !properties.containsKey( entry.getKey() ) ) {
+						properties.put( entry.getKey(), entry.getValue() );
+					}
+				}
+				// merge getterLookup and setterLookup
+				getterLookup.putAll( _super.getGetterLookup() );
+				setterLookup.putAll( _super.getSetterLookup() );
+
 			}
 
 			/**
@@ -505,7 +531,7 @@ public class BoxClassTransformer extends AbstractTransformer {
 					meta.putAll( getAnnotations() );
 				}
 				meta.putIfAbsent( "hint", "" );
-				meta.putIfAbsent( "output", false );
+				meta.putIfAbsent( "output", canOutput() );
 
 				// Assemble the metadata
 				var functions = new ArrayList<Object>();
@@ -548,7 +574,6 @@ public class BoxClassTransformer extends AbstractTransformer {
 				meta.put( "fullname", getName().getName() );
 				meta.put( "path", getRunnablePath().toString() );
 				meta.put( "persisent", false );
-				meta.put( "output", false );
 
 				return meta;
 			}
@@ -575,10 +600,11 @@ public class BoxClassTransformer extends AbstractTransformer {
 		String		boxPackageName	= transpiler.getProperty( "boxPackageName" );
 		String		className		= transpiler.getProperty( "classname" );
 		String		fileName		= source instanceof SourceFile file && file.getFile() != null ? file.getFile().getName() : "unknown";
-		String		fileExt			= fileName.substring( fileName.lastIndexOf( "." ) + 1 );
 		String		filePath		= source instanceof SourceFile file && file.getFile() != null ? file.getFile().getAbsolutePath()
 		    : "unknown";
 		String		boxClassName	= boxPackageName + "." + fileName.replace( ".bx", "" ).replace( ".cfc", "" );
+		String		sourceType		= transpiler.getProperty( "sourceType" );
+
 		// trim leading . if exists
 		if ( boxClassName.startsWith( "." ) ) {
 			boxClassName = boxClassName.substring( 1 );
@@ -589,7 +615,7 @@ public class BoxClassTransformer extends AbstractTransformer {
 		    Map.entry( "boxPackageName", boxPackageName ),
 		    Map.entry( "className", className ),
 		    Map.entry( "fileName", fileName ),
-		    Map.entry( "fileExtension", fileExt ),
+		    Map.entry( "sourceType", sourceType ),
 		    Map.entry( "fileFolderPath", filePath.replaceAll( "\\\\", "\\\\\\\\" ) ),
 		    Map.entry( "compiledOnTimestamp", transpiler.getDateTime( LocalDateTime.now() ) ),
 		    Map.entry( "compileVersion", "1L" ),
@@ -698,12 +724,6 @@ public class BoxClassTransformer extends AbstractTransformer {
 		}
 
 		transpiler.popContextName();
-		String	text			= entryPoint.toString();
-		String	numberedText	= IntStream.range( 0, text.split( "\n" ).length )
-		    .mapToObj( index -> ( index + 1 ) + " " + text.split( "\n" )[ index ] )
-		    .collect( Collectors.joining( "\n" ) );
-
-		// System.out.println( numberedText );
 
 		return entryPoint;
 	}
@@ -846,8 +866,9 @@ public class BoxClassTransformer extends AbstractTransformer {
 			}
 		} );
 		if ( members.isEmpty() ) {
-			Expression emptyMap = ( Expression ) parseExpression( "Collections.emptyMap()", new HashMap<>() );
-			return List.of( emptyMap, emptyMap, emptyMap );
+			Expression	emptyMap	= ( Expression ) parseExpression( "MapHelper.LinkedHashMapOfProperties()", new HashMap<>() );
+			Expression	emptyMap2	= ( Expression ) parseExpression( "MapHelper.HashMapOfProperties()", new HashMap<>() );
+			return List.of( emptyMap, emptyMap2, emptyMap2 );
 		} else {
 			MethodCallExpr	propertiesStruct	= ( MethodCallExpr ) parseExpression( "MapHelper.LinkedHashMapOfProperties()", new HashMap<>() );
 			MethodCallExpr	getterStruct		= ( MethodCallExpr ) parseExpression( "MapHelper.HashMapOfProperties()", new HashMap<>() );

@@ -237,17 +237,6 @@ public abstract class BaseStoreTest {
 	}
 
 	@Test
-	@DisplayName( "BaseTest: Can check if an expired key exists" )
-	public void testLookupExpired() {
-		var testEntry = newTestEntry( "test" );
-		store.set( Key.of( "test" ), testEntry );
-		assertThat( store.lookup( Key.of( "test" ) ) ).isTrue();
-		// Expire the key and test it
-		testEntry.expire();
-		assertThat( store.lookup( Key.of( "test" ) ) ).isFalse();
-	}
-
-	@Test
 	@DisplayName( "BaseTest: Can check if multiple keys exist" )
 	public void testLookupMultiple() {
 		store.set( Key.of( "test" ), newTestEntry( "test" ) );
@@ -270,11 +259,9 @@ public abstract class BaseStoreTest {
 		store.set( Key.of( "test" ), newTestEntry( "test" ) );
 		store.set( Key.of( "testing" ), newTestEntry( "testing" ) );
 
-		store.get( Key.of( "test" ) ).expire();
-
 		IStruct results = store.lookup( new WildcardFilter( "test*" ) );
 		assertThat( results ).isNotNull();
-		assertThat( results.getAsBoolean( Key.of( "test" ) ) ).isFalse();
+		assertThat( results.getAsBoolean( Key.of( "test" ) ) ).isTrue();
 		assertThat( results.getAsBoolean( Key.of( "testing" ) ) ).isTrue();
 	}
 
@@ -367,113 +354,6 @@ public abstract class BaseStoreTest {
 		assertThat( results ).isNotNull();
 		assertThat( results.get( Key.of( "test" ) ) ).isEqualTo( testEntry );
 		assertThat( results.get( Key.of( "testing" ) ) ).isEqualTo( testingEntry );
-	}
-
-	@Test
-	@DisplayName( "BaseTest: Can expire an entry" )
-	public void testExpire() {
-		var testEntry = newTestEntry( "test" );
-		store.set( Key.of( "test" ), testEntry );
-		assertThat( store.expire( Key.of( "test" ) ) ).isTrue();
-		assertThat( store.lookup( Key.of( "test" ) ) ).isFalse();
-	}
-
-	@Test
-	@DisplayName( "BaseTest: Can expire multiple entries" )
-	public void testExpireMultiple() {
-		var	testEntry		= newTestEntry( "test" );
-		var	testingEntry	= newTestEntry( "testing" );
-
-		store.set( Key.of( "test" ), testEntry );
-		store.set( Key.of( "testing" ), testingEntry );
-
-		IStruct results = store.expire(
-		    Key.of( "test" ),
-		    Key.of( "testing" ),
-		    Key.of( "bogus" )
-		);
-		assertThat( results ).isNotNull();
-		assertThat( results.getAsBoolean( Key.of( "test" ) ) ).isTrue();
-		assertThat( results.getAsBoolean( Key.of( "testing" ) ) ).isTrue();
-		assertThat( results.getAsBoolean( Key.of( "bogus" ) ) ).isFalse();
-
-		assertThat( store.lookup( Key.of( "test" ) ) ).isFalse();
-		assertThat( store.lookup( Key.of( "testing" ) ) ).isFalse();
-	}
-
-	@Test
-	@DisplayName( "BaseTest: Can expire entries with a filter" )
-	public void testExpireWithFilter() {
-		var	testEntry		= newTestEntry( "test" );
-		var	testingEntry	= newTestEntry( "testing" );
-
-		store.set( Key.of( "test" ), testEntry );
-		store.set( Key.of( "testing" ), testingEntry );
-
-		IStruct results = store.expire( new WildcardFilter( "test*" ) );
-		assertThat( results ).isNotNull();
-		assertThat( results.getAsBoolean( Key.of( "test" ) ) ).isTrue();
-		assertThat( results.getAsBoolean( Key.of( "testing" ) ) ).isTrue();
-
-		assertThat( store.lookup( Key.of( "test" ) ) ).isFalse();
-		assertThat( store.lookup( Key.of( "testing" ) ) ).isFalse();
-	}
-
-	@Test
-	@DisplayName( "BaseTest: Verify if an entry is expired" )
-	public void testIsExpired() {
-		var testEntry = newTestEntry( "test" );
-		store.set( Key.of( "test" ), testEntry );
-		assertThat( store.isExpired( Key.of( "test" ) ) ).isFalse();
-		testEntry.expire();
-		assertThat( store.isExpired( Key.of( "test" ) ) ).isTrue();
-	}
-
-	@Test
-	@DisplayName( "BaseTest: Verify if multiple entries are expired" )
-	public void testIsExpiredMultiple() {
-		var	testEntry		= newTestEntry( "test" );
-		var	testingEntry	= newTestEntry( "testing" );
-
-		store.set( Key.of( "test" ), testEntry );
-		store.set( Key.of( "testing" ), testingEntry );
-
-		IStruct results = store.isExpired(
-		    Key.of( "test" ),
-		    Key.of( "testing" ),
-		    Key.of( "bogus" )
-		);
-		assertThat( results ).isNotNull();
-		assertThat( results.getAsBoolean( Key.of( "test" ) ) ).isFalse();
-		assertThat( results.getAsBoolean( Key.of( "testing" ) ) ).isFalse();
-		assertThat( results.getAsBoolean( Key.of( "bogus" ) ) ).isFalse();
-
-		testEntry.expire();
-		results = store.isExpired(
-		    Key.of( "test" ),
-		    Key.of( "testing" ),
-		    Key.of( "bogus" )
-		);
-		assertThat( results ).isNotNull();
-		assertThat( results.getAsBoolean( Key.of( "test" ) ) ).isTrue();
-		assertThat( results.getAsBoolean( Key.of( "testing" ) ) ).isFalse();
-		assertThat( results.getAsBoolean( Key.of( "bogus" ) ) ).isFalse();
-	}
-
-	@Test
-	@DisplayName( "BaseTest: Verify if entries are expired with a filter" )
-	public void testIsExpiredWithFilter() {
-		var	testEntry		= newTestEntry( "test" );
-		var	testingEntry	= newTestEntry( "testing" );
-
-		store.set( Key.of( "test" ), testEntry );
-		store.set( Key.of( "testing" ), testingEntry );
-
-		testEntry.expire();
-		IStruct results = store.isExpired( new WildcardFilter( "test*" ) );
-		assertThat( results ).isNotNull();
-		assertThat( results.getAsBoolean( Key.of( "test" ) ) ).isTrue();
-		assertThat( results.getAsBoolean( Key.of( "testing" ) ) ).isFalse();
 	}
 
 	@Test

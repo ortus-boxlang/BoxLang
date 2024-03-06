@@ -136,8 +136,7 @@ public class ConcurrentSoftReferenceStore extends ConcurrentStore implements IOb
 				getProvider().getStats().recordGCHit();
 				return false;
 			}
-			// Has it expired?
-			return !cacheEntry.isExpired();
+			return true;
 		}
 
 		return false;

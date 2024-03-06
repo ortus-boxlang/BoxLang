@@ -151,8 +151,7 @@ public class RunnableLoader {
 	 * @return
 	 */
 	public BoxScript loadSource( String source ) {
-		// TODO: Change to BoxLangScript once implemented
-		return loadSource( source, BoxScriptType.CFSCRIPT );
+		return loadSource( source, BoxScriptType.BOXSCRIPT );
 	}
 
 	/**
@@ -163,7 +162,7 @@ public class RunnableLoader {
 	 * @return
 	 */
 	public BoxScript loadStatement( String source ) {
-		Class<IBoxRunnable> clazz = JavaBoxpiler.getInstance().compileStatement( source, BoxScriptType.CFSCRIPT );
+		Class<IBoxRunnable> clazz = JavaBoxpiler.getInstance().compileStatement( source, BoxScriptType.BOXSCRIPT );
 		return ( BoxScript ) DynamicObject.of( clazz ).invokeStatic( "getInstance" );
 	}
 

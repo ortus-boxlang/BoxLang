@@ -1,3 +1,4 @@
+
 /**
  * [BoxLang]
  *
@@ -16,13 +17,9 @@
  * limitations under the License.
  */
 
-package ortus.boxlang.runtime.bifs.global.system;
+package ortus.boxlang.runtime.bifs.global.string;
 
-import static com.google.common.truth.Truth.assertThat;
-
-import java.nio.file.Path;
-import java.time.LocalDateTime;
-import java.util.List;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -30,17 +27,14 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-import ortus.boxlang.parser.BoxScriptType;
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
-import ortus.boxlang.runtime.loader.ImportDefinition;
-import ortus.boxlang.runtime.runnables.BoxTemplate;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
 
-public class GetCurrentTemplatePathTest {
+public class StringSortTest {
 
 	static BoxRuntime	instance;
 	IBoxContext			context;
@@ -54,7 +48,6 @@ public class GetCurrentTemplatePathTest {
 
 	@AfterAll
 	public static void teardown() {
-
 	}
 
 	@BeforeEach
@@ -63,67 +56,30 @@ public class GetCurrentTemplatePathTest {
 		variables	= context.getScopeNearby( VariablesScope.name );
 	}
 
-	@DisplayName( "It gets current template path" )
+	@DisplayName( "It should sort text ascending" )
 	@Test
-	public void testCurrentTemplate() {
-		context.pushTemplate( new BoxTemplate() {
-
-			@Override
-			public List<ImportDefinition> getImports() {
-				return null;
-			}
-
-			@Override
-			public void _invoke( IBoxContext context ) {
-			}
-
-			@Override
-			public long getRunnableCompileVersion() {
-				return 1;
-			}
-
-			@Override
-			public LocalDateTime getRunnableCompiledOn() {
-				return null;
-			}
-
-			@Override
-			public Object getRunnableAST() {
-				return null;
-			}
-
-			@Override
-			public Path getRunnablePath() {
-				return Path.of( "/tmp/test.bxs" );
-			}
-
-			public BoxScriptType getSourceType() {
-				return BoxScriptType.BOXSCRIPT;
-			}
-
-		} );
-
+	public void testTextASC() {
 		instance.executeSource(
 		    """
-		    result = getCurrentTemplatePath();
-		     """,
+		        list = "bdca";
+		        result = stringSort( list );
+		    """,
 		    context );
-		assertThat( variables.get( result ).toString().contains( "test.bxs" ) ).isTrue();
 
-		context.popTemplate();
+		assertEquals( "abcd", variables.getAsString( result ) );
 	}
 
-	@DisplayName( "It gets current template path in include" )
+	@DisplayName( "It tests the member function for StringSort" )
 	@Test
-	public void testCurrentTemplateInclude() {
-
+	public void testMemberFunction() {
 		instance.executeSource(
 		    """
-		    include "src/test/java/ortus/boxlang/runtime/bifs/global/system/IncludeTest.cfs";
-		     """,
+		        list = "bdca";
+		        result = list.stringSort();
+		    """,
 		    context );
-		assertThat( variables.get( result ).toString().contains( "IncludeTest.cfs" ) ).isTrue();
 
+		assertEquals( "abcd", variables.getAsString( result ) );
 	}
 
 }

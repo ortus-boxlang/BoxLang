@@ -16,13 +16,10 @@
  * limitations under the License.
  */
 
-package ortus.boxlang.runtime.bifs.global.system;
+package ortus.boxlang.runtime.bifs.global.math;
 
 import static com.google.common.truth.Truth.assertThat;
-
-import java.nio.file.Path;
-import java.time.LocalDateTime;
-import java.util.List;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -30,17 +27,15 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-import ortus.boxlang.parser.BoxScriptType;
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
-import ortus.boxlang.runtime.loader.ImportDefinition;
-import ortus.boxlang.runtime.runnables.BoxTemplate;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
+import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
-public class GetCurrentTemplatePathTest {
+public class FormatBaseNTest {
 
 	static BoxRuntime	instance;
 	IBoxContext			context;
@@ -63,67 +58,50 @@ public class GetCurrentTemplatePathTest {
 		variables	= context.getScopeNearby( VariablesScope.name );
 	}
 
-	@DisplayName( "It gets current template path" )
+	@DisplayName( "It returns formatBaseN" )
 	@Test
-	public void testCurrentTemplate() {
-		context.pushTemplate( new BoxTemplate() {
-
-			@Override
-			public List<ImportDefinition> getImports() {
-				return null;
-			}
-
-			@Override
-			public void _invoke( IBoxContext context ) {
-			}
-
-			@Override
-			public long getRunnableCompileVersion() {
-				return 1;
-			}
-
-			@Override
-			public LocalDateTime getRunnableCompiledOn() {
-				return null;
-			}
-
-			@Override
-			public Object getRunnableAST() {
-				return null;
-			}
-
-			@Override
-			public Path getRunnablePath() {
-				return Path.of( "/tmp/test.bxs" );
-			}
-
-			public BoxScriptType getSourceType() {
-				return BoxScriptType.BOXSCRIPT;
-			}
-
-		} );
+	public void testItReturnsFormatBaseN() {
+		instance.executeSource(
+		    """
+		    result = formatBaseN(10,2);
+		    """,
+		    context );
+		assertThat( variables.get( result ) ).isEqualTo( "1010" );
 
 		instance.executeSource(
 		    """
-		    result = getCurrentTemplatePath();
-		     """,
+		    result = formatBaseN(1024,16);
+		    """,
 		    context );
-		assertThat( variables.get( result ).toString().contains( "test.bxs" ) ).isTrue();
-
-		context.popTemplate();
-	}
-
-	@DisplayName( "It gets current template path in include" )
-	@Test
-	public void testCurrentTemplateInclude() {
+		assertThat( variables.get( result ) ).isEqualTo( "400" );
 
 		instance.executeSource(
 		    """
-		    include "src/test/java/ortus/boxlang/runtime/bifs/global/system/IncludeTest.cfs";
-		     """,
+		    result = formatBaseN(10.75,2);
+		    """,
 		    context );
-		assertThat( variables.get( result ).toString().contains( "IncludeTest.cfs" ) ).isTrue();
+		assertThat( variables.get( result ) ).isEqualTo( "1010" );
 
+		instance.executeSource(
+		    """
+				someNumber = 10.75;
+		    	result = someNumber.formatBaseN(2);
+		    """,
+		    context );
+		assertThat( variables.get( result ) ).isEqualTo( "1010" );
 	}
 
+	@DisplayName( "It throws exception for bad radix" )
+	@Test
+	public void testItThrowsExceptionForBadRadix() {
+
+		assertThrows(
+		    BoxRuntimeException.class,
+		    () -> instance.executeSource(
+		        """
+		        result = formatBaseN(10,1);
+		        """,
+		        context )
+		);
+	}
 }

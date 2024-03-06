@@ -64,6 +64,7 @@ import ortus.boxlang.debugger.event.OutputEvent;
 import ortus.boxlang.debugger.event.TerminatedEvent;
 import ortus.boxlang.debugger.types.Breakpoint;
 import ortus.boxlang.debugger.types.Variable;
+import ortus.boxlang.parser.BoxScriptType;
 import ortus.boxlang.runtime.runnables.compiler.JavaBoxpiler;
 import ortus.boxlang.runtime.runnables.compiler.JavaBoxpiler.ClassInfo;
 import ortus.boxlang.runtime.runnables.compiler.SourceMap;
@@ -550,10 +551,11 @@ public class BoxLangDebugger {
 
 	private ClassInfo getClassInfo( String fileName ) {
 		if ( fileName.endsWith( "bx" ) ) {
-			return ClassInfo.forClass( Path.of( fileName ), JavaBoxpiler.getPackageName( Paths.get( ClassUtils.getPackageName( fileName ) ).toFile() ) );
+			return ClassInfo.forClass( Path.of( fileName ), JavaBoxpiler.getPackageName( Paths.get( ClassUtils.getPackageName( fileName ) ).toFile() ),
+			    BoxScriptType.BOXSCRIPT );
 		}
 
-		return ClassInfo.forTemplate( Path.of( fileName ), fileName );
+		return ClassInfo.forTemplate( Path.of( fileName ), fileName, BoxScriptType.BOXMARKUP );
 	}
 
 	private String convertSourceMapSourceClassName( String sourceClassName ) {

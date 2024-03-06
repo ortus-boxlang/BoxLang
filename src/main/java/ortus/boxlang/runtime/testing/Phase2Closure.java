@@ -23,6 +23,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 
+import ortus.boxlang.parser.BoxScriptType;
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.dynamic.Referencer;
@@ -167,6 +168,13 @@ public class Phase2Closure extends BoxTemplate {
      */
     public Path getRunnablePath() {
         return Phase2Closure.path;
+    }
+
+    /**
+     * The original source type
+     */
+    public BoxScriptType getSourceType() {
+        return BoxScriptType.BOXSCRIPT;
     }
 
     /**

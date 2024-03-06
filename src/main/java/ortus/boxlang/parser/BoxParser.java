@@ -128,7 +128,13 @@ public class BoxParser {
 				parser = new BoxCFMLParser();
 			}
 			case BOXSCRIPT -> {
-				parser = new BoxLangScriptParser();
+				parser = new BoxCFParser();
+				// TODO: Swith after splitting parsers
+				// parser = new BoxLangScriptParser();
+			}
+			case BOXMARKUP -> {
+				// TODO: Swith after splitting parsers
+				parser = new BoxCFMLParser();
 			}
 			default -> {
 				throw new RuntimeException( "Unsupported file: " + file.getAbsolutePath() );
@@ -163,6 +169,12 @@ public class BoxParser {
 				parser = new BoxCFParser();
 			}
 			case CFMARKUP -> {
+				parser = new BoxCFMLParser();
+			}
+			case BOXSCRIPT -> {
+				parser = new BoxCFParser();
+			}
+			case BOXMARKUP -> {
 				parser = new BoxCFMLParser();
 			}
 			default -> {

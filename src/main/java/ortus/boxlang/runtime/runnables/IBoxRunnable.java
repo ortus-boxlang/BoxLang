@@ -21,6 +21,7 @@ import java.nio.file.Path;
 import java.time.LocalDateTime;
 import java.util.List;
 
+import ortus.boxlang.parser.BoxScriptType;
 import ortus.boxlang.runtime.loader.ImportDefinition;
 
 public interface IBoxRunnable {
@@ -55,4 +56,9 @@ public interface IBoxRunnable {
 	 * The path to the template
 	 */
 	public Path getRunnablePath();
+
+	/**
+	 * The original source type
+	 */
+	public BoxScriptType getSourceType();
 }

@@ -192,7 +192,7 @@ public class ClassTest {
 		    	 */
 		    }
 
-		      """, context, BoxScriptType.CFSCRIPT ) )
+		      """, context, BoxScriptType.BOXSCRIPT ) )
 		    .invokeConstructor( context )
 		    .getTargetInstance();
 	}
@@ -239,7 +239,7 @@ public class ClassTest {
 		               }
 
 
-		                      """, context, BoxScriptType.CFSCRIPT ) ).invokeConstructor( context ).getTargetInstance();
+		                      """, context, BoxScriptType.BOXSCRIPT ) ).invokeConstructor( context ).getTargetInstance();
 
 		// execute public method
 		Object			funcResult	= cfc.dereferenceAndInvoke( context, Key.of( "foo" ), new Object[] {}, false );
@@ -313,7 +313,7 @@ public class ClassTest {
 		assertThat( meta.get( Key.of( "functions" ) ) instanceof Array ).isTrue();
 		assertThat( meta.getAsArray( Key.of( "functions" ) ).size() ).isEqualTo( 4 );
 		assertThat( meta.get( Key.of( "extends" ) ) instanceof IStruct ).isTrue();
-		assertThat( meta.get( Key.of( "output" ) ) ).isEqualTo( false );
+		assertThat( meta.get( Key.of( "output" ) ) ).isEqualTo( true );
 		assertThat( meta.get( Key.of( "persisent" ) ) ).isEqualTo( false );
 		assertThat( meta.get( Key.of( "accessors" ) ) ).isEqualTo( false );
 	}

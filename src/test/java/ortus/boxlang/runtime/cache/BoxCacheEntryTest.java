@@ -64,7 +64,6 @@ public class BoxCacheEntryTest {
 		assertThat( cacheEntry.metadata() ).isNotNull();
 		assertThat( cacheEntry.timeout() ).isEqualTo( 60 );
 		assertThat( cacheEntry.lastAccessTimeout() ).isEqualTo( 0 );
-		assertThat( cacheEntry.isExpired() ).isFalse();
 		assertThat( created ).isNotNull();
 		assertThat( initialHits ).isEqualTo( 0L );
 	}
@@ -91,21 +90,6 @@ public class BoxCacheEntryTest {
 		// assertThat( cacheEntry.lastAccessed() ).isEqualTo( newLastAccessed );
 		assertThat( cacheEntry.hits() ).isEqualTo( 1L );
 		assertThat( cacheEntry.created() ).isNotEqualTo( originalCreated );
-	}
-
-	// Add more test cases as needed
-
-	// Example of additional test case:
-	@Test
-	@DisplayName( "When marking BoxCacheEntry as expired, it should be reflected" )
-	void testBoxCacheEntryExpiration() {
-		assertThat( cacheEntry.isExpired() ).isFalse();
-
-		// When
-		cacheEntry.expire();
-
-		// Then
-		assertThat( cacheEntry.isExpired() ).isTrue();
 	}
 
 	@Test
@@ -142,7 +126,6 @@ public class BoxCacheEntryTest {
 		assertThat( inflatedEntry.metadata() ).isNotNull();
 		assertThat( inflatedEntry.timeout() ).isEqualTo( 60 );
 		assertThat( inflatedEntry.lastAccessTimeout() ).isEqualTo( 0 );
-		assertThat( inflatedEntry.isExpired() ).isFalse();
 		assertThat( inflatedEntry.created() ).isNotNull();
 		assertThat( inflatedEntry.hits() ).isEqualTo( 0L );
 

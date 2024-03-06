@@ -189,7 +189,7 @@ public class JavaBoxpiler {
 			if ( diskClassLoader.hasClass( classInfo.originalFQN() ) ) {
 				return getDiskClass( classInfo.originalFQN() );
 			} else {
-				ParsingResult result = parseOrFail( source, BoxScriptType.CFSCRIPT );
+				ParsingResult result = parseOrFail( source, type );
 				compileSource( generateJavaSource( result.getRoot(), classInfo ), classInfo.FQN() );
 			}
 		}
@@ -228,7 +228,7 @@ public class JavaBoxpiler {
 	 * @return The loaded class
 	 */
 	public Class<IBoxRunnable> compileTemplate( Path path, String packagePath ) {
-		ClassInfo	classInfo		= ClassInfo.forTemplate( path, packagePath );
+		ClassInfo	classInfo		= ClassInfo.forTemplate( path, packagePath, BoxParser.detectFile( path.toFile() ) );
 		long		lastModified	= path.toFile().lastModified();
 
 		if ( !classLoader.hasClass( classInfo.FQN(), lastModified ) ) {
@@ -252,7 +252,7 @@ public class JavaBoxpiler {
 	 * @return The loaded class
 	 */
 	public Class<IClassRunnable> compileClass( String source, BoxScriptType type ) {
-		ClassInfo classInfo = ClassInfo.forClass( source );
+		ClassInfo classInfo = ClassInfo.forClass( source, type );
 
 		if ( !classLoader.hasClass( classInfo.FQN() ) ) {
 			if ( diskClassLoader.hasClass( classInfo.originalFQN() ) ) {
@@ -274,7 +274,7 @@ public class JavaBoxpiler {
 	 * @return The loaded class
 	 */
 	public Class<IClassRunnable> compileClass( Path path, String packagePath ) {
-		ClassInfo	classInfo		= ClassInfo.forClass( path, packagePath );
+		ClassInfo	classInfo		= ClassInfo.forClass( path, packagePath, BoxParser.detectFile( path.toFile() ) );
 		long		lastModified	= path.toFile().lastModified();
 
 		if ( !classLoader.hasClass( classInfo.FQN(), lastModified ) ) {
@@ -374,6 +374,7 @@ public class JavaBoxpiler {
 		transpiler.setProperty( "boxPackageName", classInfo.boxPackageName() );
 		transpiler.setProperty( "baseclass", classInfo.baseclass() );
 		transpiler.setProperty( "returnType", classInfo.returnType() );
+		transpiler.setProperty( "sourceType", classInfo.sourceType().name() );
 		TranspiledCode javaASTs;
 		try {
 			javaASTs = transpiler.transpile( node );
@@ -413,7 +414,7 @@ public class JavaBoxpiler {
 	}
 
 	public boolean doesFilePathMatchFQNWithoutGeneration( Path sourcePath, String FQN ) {
-		ClassInfo classInfo = ClassInfo.forTemplate( sourcePath, sourcePath.toString() );
+		ClassInfo classInfo = ClassInfo.forTemplate( sourcePath, sourcePath.toString(), BoxScriptType.BOXSCRIPT );
 
 		return classInfo.matchesFQNWithoutCompileCount( FQN );
 	}
@@ -426,7 +427,7 @@ public class JavaBoxpiler {
 	 */
 	@SuppressWarnings( "unused" )
 	public void compileSource( String javaSource, String fqn ) {
-		// System.out.println( "Compiling " + fqn );
+		System.out.println( "Compiling " + fqn );
 
 		// This is just for debugging. Remove later.
 		diskClassLoader.writeJavaSource( fqn, javaSource );
@@ -662,25 +663,27 @@ public class JavaBoxpiler {
 	 * A Record that represents the information about a class to be compiled
 	 */
 	public record ClassInfo( String sourcePath, String packageName, String className, int compileCount, String boxPackageName, String baseclass,
-	    String returnType ) {
+	    String returnType, BoxScriptType sourceType ) {
 
-		public static ClassInfo forScript( String source, BoxScriptType type ) {
+		public static ClassInfo forScript( String source, BoxScriptType sourceType ) {
 			return new ClassInfo(
 			    null,
 			    "generated",
-			    "Script_" + MD5( type.toString() + source ),
+			    "Script_" + MD5( sourceType.toString() + source ),
 			    0,
 			    "boxgenerated.generated",
 			    "BoxScript",
-			    "Object"
+			    "Object",
+			    sourceType
 			);
 		}
 
-		public static ClassInfo forStatement( String source, BoxScriptType type ) {
-			return new ClassInfo( null, "generated", "Statement_" + MD5( type.toString() + source ), 0, "boxgenerated.generated", "BoxScript", "Object" );
+		public static ClassInfo forStatement( String source, BoxScriptType sourceType ) {
+			return new ClassInfo( null, "generated", "Statement_" + MD5( sourceType.toString() + source ), 0, "boxgenerated.generated", "BoxScript", "Object",
+			    sourceType );
 		}
 
-		public static ClassInfo forTemplate( Path path, String packagePath ) {
+		public static ClassInfo forTemplate( Path path, String packagePath, BoxScriptType sourceType ) {
 			File	lcaseFile	= new File( packagePath.toString().toLowerCase() );
 			String	packageName	= getPackageName( lcaseFile );
 			// if package name has starting dot, remove it
@@ -696,11 +699,12 @@ public class JavaBoxpiler {
 			    JavaBoxpiler.getInstance().getClassCounter().getOrDefault( packageName + "." + className, 0 ),
 			    packageName,
 			    "BoxTemplate",
-			    "void"
+			    "void",
+			    sourceType
 			);
 		}
 
-		public static ClassInfo forClass( Path path, String packagePath ) {
+		public static ClassInfo forClass( Path path, String packagePath, BoxScriptType sourceType ) {
 			String boxPackagePath = packagePath;
 			if ( boxPackagePath.endsWith( "." ) ) {
 				boxPackagePath = boxPackagePath.substring( 0, boxPackagePath.length() - 1 );
@@ -719,11 +723,12 @@ public class JavaBoxpiler {
 			    JavaBoxpiler.getInstance().getClassCounter().getOrDefault( packagePath + "." + className, 0 ),
 			    boxPackagePath,
 			    null,
-			    null
+			    null,
+			    sourceType
 			);
 		}
 
-		public static ClassInfo forClass( String source ) {
+		public static ClassInfo forClass( String source, BoxScriptType sourceType ) {
 			return new ClassInfo(
 			    null,
 			    "generated",
@@ -731,7 +736,8 @@ public class JavaBoxpiler {
 			    0,
 			    "",
 			    null,
-			    null
+			    null,
+			    sourceType
 			);
 		}
 
@@ -748,7 +754,8 @@ public class JavaBoxpiler {
 			    this.compileCount + 1,
 			    this.boxPackageName,
 			    this.baseclass,
-			    this.returnType );
+			    this.returnType,
+			    this.sourceType );
 		}
 
 		public String FQN() {
@@ -771,7 +778,10 @@ public class JavaBoxpiler {
 		}
 
 		public String toString() {
-			return "Class Info-- sourcePath: [" + sourcePath + "], packageName: [" + packageName + "], className: [" + className + "]";
+			if ( sourcePath != null )
+				return "Class Info-- sourcePath: [" + sourcePath + "], packageName: [" + packageName + "], className: [" + className + "]";
+			else
+				return "Class Info-- type: [" + sourceType + "], packageName: [" + packageName + "], className: [" + className + "]";
 		}
 
 	}

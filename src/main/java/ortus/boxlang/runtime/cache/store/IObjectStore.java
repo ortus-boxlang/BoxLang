@@ -231,60 +231,6 @@ public interface IObjectStore {
 	public IStruct getQuiet( ICacheKeyFilter filter );
 
 	/**
-	 * Expire an object from the store
-	 *
-	 * @param key The key to expire
-	 *
-	 * @return True if the object was expired, false otherwise (if the object was not found in the store)
-	 */
-	public boolean expire( Key key );
-
-	/**
-	 * Expire multiple objects from the store
-	 *
-	 * @param key The keys to expire
-	 *
-	 * @return A struct of keys and their expire status
-	 */
-	public IStruct expire( Key... keys );
-
-	/**
-	 * Expire multiple objects from the store using a filter
-	 *
-	 * @param filter The filter that determines which keys to expire
-	 *
-	 * @return A struct of keys and their expire status
-	 */
-	public IStruct expire( ICacheKeyFilter filter );
-
-	/**
-	 * Expire check for an object in the store
-	 *
-	 * @param key The key to check
-	 *
-	 * @return True if the object is expired, false otherwise (could be not found in the store or not expired yet)
-	 */
-	public boolean isExpired( Key key );
-
-	/**
-	 * Expire check for multiple objects in the store
-	 *
-	 * @param key The keys to check
-	 *
-	 * @return A struct of keys and their expire status
-	 */
-	public IStruct isExpired( Key... keys );
-
-	/**
-	 * Expire check for multiple objects in the store using a filter
-	 *
-	 * @param filter The filter that determines which keys to check
-	 *
-	 * @return A struct of keys and their expire status
-	 */
-	public IStruct isExpired( ICacheKeyFilter filter );
-
-	/**
 	 * Sets an object in the storage
 	 *
 	 * @param key   The key to store the object under
