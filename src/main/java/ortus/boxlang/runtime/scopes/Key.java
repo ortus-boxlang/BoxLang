@@ -364,6 +364,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		size						= Key.of( "size" );
 	public static final Key		sleep						= Key.of( "sleep" );
 	public static final Key		sort						= Key.of( "sort" );
+	public static final Key		sortFunc					= Key.of( "sortFunc" );
 	public static final Key		sortOrder					= Key.of( "sortOrder" );
 	public static final Key		sortType					= Key.of( "sortType" );
 	public static final Key		source						= Key.of( "source" );

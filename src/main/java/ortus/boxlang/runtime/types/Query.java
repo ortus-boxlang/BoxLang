@@ -21,11 +21,14 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
+import java.util.stream.Stream;
 
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.bifs.MemberDescriptor;
@@ -369,7 +372,7 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 	 */
 	public IStruct getRowAsStruct( int index ) {
 		validateRow( index );
-		IStruct		struct	= new Struct();
+		IStruct		struct	= new Struct( IStruct.TYPES.LINKED );
 		Object[]	row		= data.get( index );
 		int			i		= 0;
 		for ( QueryColumn column : columns.values() ) {
@@ -439,6 +442,21 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 	 */
 	public String getColumnList() {
 		return getColumns().keySet().stream().map( Key::getName ).collect( Collectors.joining( "," ) );
+	}
+
+	/**
+	 * Sort the query
+	 *
+	 * @param compareFunc function to use for sorting
+	 */
+	public void sort( Comparator<IStruct> compareFunc ) {
+		// data.sort( compareFunc );
+		Stream<IStruct> sorted = IntStream.range( 0, data.size() )
+		    .mapToObj( index -> getRowAsStruct( index ) )
+		    .sorted( compareFunc );
+
+		data = sorted.map( row -> row.getWrapped().entrySet().stream().map( entry -> entry.getValue() ).toArray() )
+		    .collect( Collectors.toList() );
 	}
 
 	/***************************
