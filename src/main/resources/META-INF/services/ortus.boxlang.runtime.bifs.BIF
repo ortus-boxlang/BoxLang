@@ -141,7 +141,9 @@ ortus.boxlang.runtime.bifs.global.list.ListLen
 ortus.boxlang.runtime.bifs.global.list.ListMap
 ortus.boxlang.runtime.bifs.global.list.ListPrepend
 ortus.boxlang.runtime.bifs.global.list.ListQualify
+ortus.boxlang.runtime.bifs.global.list.ListReduceRight
 ortus.boxlang.runtime.bifs.global.list.ListRemoveDuplicates
+ortus.boxlang.runtime.bifs.global.list.ListRest
 ortus.boxlang.runtime.bifs.global.list.ListSetAt
 ortus.boxlang.runtime.bifs.global.list.ListSome
 ortus.boxlang.runtime.bifs.global.list.ListSort

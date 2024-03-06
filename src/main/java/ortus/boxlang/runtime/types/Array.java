@@ -359,6 +359,14 @@ public class Array implements List<Object>, IType, IReferenceable, IListenable, 
 		return IntStream.range( 0, size() );
 	}
 
+	/*
+	 * Reverses the elements in the underlying list
+	 */
+	public Array reverse() {
+		Collections.reverse( this.wrapped );
+		return this;
+	}
+
 	/**
 	 * Verifies equality with the following rules:
 	 * - Same object

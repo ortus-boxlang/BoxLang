@@ -76,10 +76,10 @@ public interface IObjectStore {
 	public int flush();
 
 	/**
-	 * Goes over the storage and reaps any objects that need to be expired
-	 * by marking them for expiration.
+	 * Runs the eviction algorithm to remove objects from the store based on the eviction policy
+	 * and eviction count.
 	 */
-	public void reap();
+	public void evict();
 
 	/**
 	 * Get the size of the store, not the size in bytes but the number of objects in the store
@@ -125,7 +125,7 @@ public interface IObjectStore {
 	public Key[] getKeys();
 
 	/**
-	 * Get all the keys in the store
+	 * Get all the keys in the store using a filter
 	 *
 	 * @param filter The filter that determines which keys to return
 	 *
@@ -240,6 +240,24 @@ public interface IObjectStore {
 	public boolean expire( Key key );
 
 	/**
+	 * Expire multiple objects from the store
+	 *
+	 * @param key The keys to expire
+	 *
+	 * @return A struct of keys and their expire status
+	 */
+	public IStruct expire( Key... keys );
+
+	/**
+	 * Expire multiple objects from the store using a filter
+	 *
+	 * @param filter The filter that determines which keys to expire
+	 *
+	 * @return A struct of keys and their expire status
+	 */
+	public IStruct expire( ICacheKeyFilter filter );
+
+	/**
 	 * Expire check for an object in the store
 	 *
 	 * @param key The key to check
@@ -247,6 +265,24 @@ public interface IObjectStore {
 	 * @return True if the object is expired, false otherwise (could be not found in the store or not expired yet)
 	 */
 	public boolean isExpired( Key key );
+
+	/**
+	 * Expire check for multiple objects in the store
+	 *
+	 * @param key The keys to check
+	 *
+	 * @return A struct of keys and their expire status
+	 */
+	public IStruct isExpired( Key... keys );
+
+	/**
+	 * Expire check for multiple objects in the store using a filter
+	 *
+	 * @param filter The filter that determines which keys to check
+	 *
+	 * @return A struct of keys and their expire status
+	 */
+	public IStruct isExpired( ICacheKeyFilter filter );
 
 	/**
 	 * Sets an object in the storage

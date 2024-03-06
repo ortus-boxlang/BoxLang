@@ -21,6 +21,7 @@ import java.time.Instant;
 import java.util.Optional;
 
 import ortus.boxlang.runtime.scopes.Key;
+import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
 
 /**
@@ -140,5 +141,10 @@ public interface ICacheEntry {
 	 * Mark the entry as expired
 	 */
 	public ICacheEntry expire();
+
+	/**
+	 * Get the state of the entry as a struct
+	 */
+	public IStruct toStruct();
 
 }

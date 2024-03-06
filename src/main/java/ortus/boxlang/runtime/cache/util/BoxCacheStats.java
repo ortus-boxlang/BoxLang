@@ -42,7 +42,7 @@ public class BoxCacheStats implements ICacheStats {
 	/**
 	 * Constructor
 	 */
-	BoxCacheStats() {
+	public BoxCacheStats() {
 		reset();
 	}
 

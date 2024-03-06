@@ -15,8 +15,6 @@
 
 package ortus.boxlang.runtime.bifs.global.array;
 
-import java.util.stream.IntStream;
-
 import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
 import ortus.boxlang.runtime.bifs.BoxMember;
@@ -52,13 +50,10 @@ public class ArrayReverse extends BIF {
 	 * @argument.array The array to reverse
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
-		Array	actualObj	= arguments.getAsArray( Key.array );
-		int		size		= actualObj.size();
-
-		return Array.fromList( IntStream.iterate( size - 1, i -> i - 1 )
-		    .limit( size )
-		    .mapToObj( i -> actualObj.get( i ) )
-		    .toList() );
+		return Array.of(
+		    arguments.getAsArray( Key.array )
+		        .stream().collect( java.util.stream.Collectors.toList() ).toArray()
+		).reverse();
 	}
 
 }
