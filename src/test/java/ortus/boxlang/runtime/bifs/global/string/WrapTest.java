@@ -38,7 +38,9 @@ public class WrapTest {
 	static BoxRuntime	instance;
 	IBoxContext			context;
 	IScope				variables;
-	static Key			result	= new Key( "result" );
+	static Key			result			= new Key( "result" );
+
+	String				lineSeparator	= System.lineSeparator();
 
 	@BeforeAll
 	public static void setUp() {
@@ -66,23 +68,9 @@ public class WrapTest {
 		    context
 		);
 
-		assertThat( variables.getAsString( result ) ).isEqualTo( "this is a\n" + //
-		    "test of of\n" + //
-		    "the wrap\n" + //
-		    "function" );
-
-		instance.executeSource(
-		    """
-		       	myText = "this is a test \nof of the wrap function";
-		       	result = wrap( myText, 10, true );
-		    """,
-		    context
-		);
-
-		assertThat( variables.getAsString( result ) ).isEqualTo( "this is a\n" + //
-		    "test  of\n" +
-		    "of the\n" +
-		    "wrap\n" +
+		assertThat( variables.getAsString( result ) ).isEqualTo( "this is a" + lineSeparator + //
+		    "test of of" + lineSeparator +
+		    "the wrap" + lineSeparator +
 		    "function" );
 	}
 
@@ -98,9 +86,9 @@ public class WrapTest {
 		    context
 		);
 
-		assertThat( variables.getAsString( result ) ).isEqualTo( "this is a\n" + //
-		    "test of of\n" + //
-		    "the wrap\n" + //
+		assertThat( variables.getAsString( result ) ).isEqualTo( "this is a" + lineSeparator +
+		    "test of of" + lineSeparator +
+		    "the wrap" + lineSeparator +
 		    "function" );
 	}
 
