@@ -283,9 +283,22 @@ public class BoxClassTransformer extends AbstractTransformer {
 			public void setSuper( IClassRunnable _super ) {
 				this._super = _super;
 				_super.setChild( this );
+				// This runs before the psedu constructor and init, so the base class will override anything it declares
+				//System.out.println( "Setting super class: " + _super.getName().getName() );
+				//System.out.println( "Setting super class variables: " + _super.getVariablesScope().asString() );
 				variablesScope.addAll( _super.getVariablesScope().getWrapped() );
 				thisScope.addAll( _super.getThisScope().getWrapped() );
-				// TODO: merge properties
+				
+				// merge properties that don't already exist
+				for ( var entry : _super.getProperties().entrySet() ) {
+					if ( !properties.containsKey( entry.getKey() ) ) {
+						properties.put( entry.getKey(), entry.getValue() );
+					}
+				}
+				// merge getterLookup and setterLookup
+				getterLookup.putAll( _super.getGetterLookup() );
+				setterLookup.putAll( _super.getSetterLookup() );
+
 			}
 
 			/**
@@ -846,8 +859,9 @@ public class BoxClassTransformer extends AbstractTransformer {
 			}
 		} );
 		if ( members.isEmpty() ) {
-			Expression emptyMap = ( Expression ) parseExpression( "Collections.emptyMap()", new HashMap<>() );
-			return List.of( emptyMap, emptyMap, emptyMap );
+			Expression	emptyMap	= ( Expression ) parseExpression( "MapHelper.LinkedHashMapOfProperties()", new HashMap<>() );
+			Expression	emptyMap2	= ( Expression ) parseExpression( "MapHelper.HashMapOfProperties()", new HashMap<>() );
+			return List.of( emptyMap, emptyMap2, emptyMap2 );
 		} else {
 			MethodCallExpr	propertiesStruct	= ( MethodCallExpr ) parseExpression( "MapHelper.LinkedHashMapOfProperties()", new HashMap<>() );
 			MethodCallExpr	getterStruct		= ( MethodCallExpr ) parseExpression( "MapHelper.HashMapOfProperties()", new HashMap<>() );

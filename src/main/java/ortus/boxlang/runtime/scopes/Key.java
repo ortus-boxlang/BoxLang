@@ -94,8 +94,8 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		boxMember					= Key.of( "BoxMember" );
 	public static final Key		boxRuntime					= Key.of( "boxRuntime" );
 	public static final Key		buffersize					= Key.of( "buffersize" );
-	public static final Key		caches						= Key.of( "caches" );
 	public static final Key		cached						= Key.of( "cached" );
+	public static final Key		caches						= Key.of( "caches" );
 	public static final Key		callback					= Key.of( "callback" );
 	public static final Key		caller						= Key.of( "caller" );
 	public static final Key		canonicalize				= Key.of( "canonicalize" );
@@ -159,8 +159,8 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		duration					= Key.of( "duration" );
 	public static final Key		elapsedTime					= Key.of( "elapsedTime" );
 	public static final Key		elem						= Key.of( "elem" );
-	public static final Key		elements					= Key.of( "elements" );
 	public static final Key		elementCountForRemoval		= Key.of( "elementCountForRemoval" );
+	public static final Key		elements					= Key.of( "elements" );
 	public static final Key		EMPTY						= Key.of( "" );
 	public static final Key		enableOutputOnly			= Key.of( "enableOutputOnly" );
 	public static final Key		encoded						= Key.of( "encoded" );
@@ -171,10 +171,10 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		environment					= Key.of( "environment" );
 	public static final Key		error						= Key.of( "error" );
 	public static final Key		errorcode					= Key.of( "errorcode" );
-	public static final Key		executionTime				= Key.of( "executionTime" );
 	public static final Key		evictCount					= Key.of( "evictCount" );
 	public static final Key		evictionPolicy				= Key.of( "evictionPolicy" );
 	public static final Key		executionMode				= Key.of( "executionMode" );
+	public static final Key		executionTime				= Key.of( "executionTime" );
 	public static final Key		extendedinfo				= Key.of( "extendedinfo" );
 	public static final Key		file						= Key.of( "file" );
 	public static final Key		fileContent					= Key.of( "fileContent" );
