@@ -160,6 +160,7 @@ ortus.boxlang.runtime.bifs.global.math.DecrementValue
 ortus.boxlang.runtime.bifs.global.math.Exp
 ortus.boxlang.runtime.bifs.global.math.Fix
 ortus.boxlang.runtime.bifs.global.math.Floor
+ortus.boxlang.runtime.bifs.global.math.FormatBaseN
 ortus.boxlang.runtime.bifs.global.math.IncrementValue
 ortus.boxlang.runtime.bifs.global.math.Int
 ortus.boxlang.runtime.bifs.global.math.Log
