@@ -24,6 +24,9 @@ import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
 
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
+
 @BoxBIF
 public class URLEncodedFormat extends BIF {
 
@@ -40,7 +43,7 @@ public class URLEncodedFormat extends BIF {
 	/**
 	 * Generates a URL-encoded string. For example, it replaces spaces with %20, and non-alphanumeric characters with equivalent hexadecimal escape
 	 * sequences. Passes arbitrary strings within a URL. *
-	 * 
+	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *

@@ -129,6 +129,54 @@ public class HTTPTest {
 		assertThat( cookies.getRow( 2 ) ).isEqualTo( new Object[] { "one", "two", "", "example.com", "30", "", "", "" } );
 	}
 
+	@DisplayName( "It can make a post request with form params" )
+	@Test
+	public void testPostFormParams( WireMockRuntimeInfo wmRuntimeInfo ) {
+		stubFor(
+		    post( "/posts" )
+		        .withFormParam( "name", equalTo( "foobar" ) )
+		        .withFormParam( "body", equalTo( "lorem ipsum dolor" ) )
+		        .willReturn( created().withBody( "{\"id\": 1, \"name\": \"foobar\", \"body\": \"lorem ipsum dolor\"}" ) ) );
+
+		instance.executeSource( String.format( """
+		                                       http method="POST" url="%s" {
+		                                       	httpparam type="formfield" name="name" value="foobar";
+		                                       	httpparam type="formfield" name="body" value="lorem ipsum dolor";
+		                                       }
+		                                       """, wmRuntimeInfo.getHttpBaseUrl() + "/posts" ), context );
+
+		assertThat( variables.get( cfhttp ) ).isInstanceOf( IStruct.class );
+
+		IStruct res = variables.getAsStruct( cfhttp );
+		assertThat( res.get( Key.statusCode ) ).isEqualTo( 201 );
+		assertThat( res.get( Key.statusText ) ).isEqualTo( "Created" );
+		String body = res.getAsString( Key.fileContent );
+		assertThat( body ).isEqualTo( "{\"id\": 1, \"name\": \"foobar\", \"body\": \"lorem ipsum dolor\"}" );
+	}
+
+	@DisplayName( "It can make a post request with a json body" )
+	@Test
+	public void testPostJsonBody( WireMockRuntimeInfo wmRuntimeInfo ) {
+		stubFor(
+		    post( "/posts" )
+		        .withRequestBody( equalToJson( "{\"name\": \"foobar\", \"body\": \"lorem ipsum dolor\"}" ) )
+		        .willReturn( created().withBody( "{\"id\": 1, \"name\": \"foobar\", \"body\": \"lorem ipsum dolor\"}" ) ) );
+
+		instance.executeSource( String.format( """
+		                                       http method="POST" url="%s" {
+		                                       	httpparam type="body" value="#JSONSerialize( { 'name': 'foobar', 'body': 'lorem ipsum dolor' } )#";
+		                                       }
+		                                       """, wmRuntimeInfo.getHttpBaseUrl() + "/posts" ), context );
+
+		assertThat( variables.get( cfhttp ) ).isInstanceOf( IStruct.class );
+
+		IStruct res = variables.getAsStruct( cfhttp );
+		assertThat( res.get( Key.statusCode ) ).isEqualTo( 201 );
+		assertThat( res.get( Key.statusText ) ).isEqualTo( "Created" );
+		String body = res.getAsString( Key.fileContent );
+		assertThat( body ).isEqualTo( "{\"id\": 1, \"name\": \"foobar\", \"body\": \"lorem ipsum dolor\"}" );
+	}
+
 	@DisplayName( "It can make HTTP call ACF script" )
 	@Test
 	public void testCanMakeHTTPCallACFScript() {

@@ -19,10 +19,12 @@ package ortus.boxlang.runtime.components.net;
 
 import java.io.IOException;
 import java.net.URISyntaxException;
+import java.net.URLEncoder;
 import java.net.http.HttpClient;
 import java.net.http.HttpHeaders;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -131,6 +133,8 @@ public class HTTP extends Component {
 			HttpRequest.Builder			builder			= HttpRequest.newBuilder();
 			URIBuilder					uriBuilder		= new URIBuilder( theURL );
 			HttpRequest.BodyPublisher	bodyPublisher	= HttpRequest.BodyPublishers.noBody();
+			Map<String, String>			formFields		= new HashMap<>();
+			builder.header( "User-Agent", "BoxLang" );
 			for ( Object p : params ) {
 				IStruct	param	= StructCaster.cast( p );
 				String	type	= param.getAsString( Key.type );
@@ -145,9 +149,29 @@ public class HTTP extends Component {
 					case "cgi" -> builder.header( param.getAsString( Key._NAME ), java.net.URLEncoder.encode( param.getAsString( Key.value ) ) );
 					case "file" -> throw new BoxRuntimeException( "Unhandled HTTPParam type: " + type );
 					case "url" -> uriBuilder.addParameter( param.getAsString( Key._NAME ), StringCaster.cast( param.get( Key.value ) ) );
+					case "formfield" -> {
+						String value = param.getAsString( Key.value );
+						if ( BooleanCaster.cast( param.getOrDefault( Key.encoded, true ) ) ) {
+							value = URLEncoder.encode( value, StandardCharsets.UTF_8 );
+						}
+						formFields.put( param.getAsString( Key._NAME ), value );
+					}
+					case "cookie" -> builder.header( "Cookie",
+					    param.getAsString( Key._NAME ) + "=" + URLEncoder.encode( param.getAsString( Key.value ), StandardCharsets.UTF_8 ) );
 					default -> throw new BoxRuntimeException( "Unhandled HTTPParam type: " + type );
 				}
 			}
+
+			if ( !formFields.isEmpty() ) {
+				bodyPublisher = HttpRequest.BodyPublishers.ofString(
+				    formFields.entrySet()
+				        .stream()
+				        .map( e -> e.getKey() + "=" + e.getValue() )
+				        .collect( Collectors.joining( "&" ) )
+				);
+				builder.header( "Content-Type", "application/x-www-form-urlencoded" );
+			}
+
 			builder.method( method, bodyPublisher );
 			builder.uri( uriBuilder.build() );
 			HttpRequest				request				= builder.build();
