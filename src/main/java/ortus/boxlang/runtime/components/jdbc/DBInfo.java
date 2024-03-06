@@ -234,25 +234,11 @@ public class DBInfo extends Component {
 	private Query getColumnsForTable( DatabaseMetaData databaseMetadata, String databaseName, String schema, String tableName ) throws SQLException {
 		Query result = new Query();
 		try ( ResultSet resultSet = databaseMetadata.getColumns( databaseName, schema, tableName, null ) ) {
-			ResultSetMetaData	resultSetMetaData	= resultSet.getMetaData();
-			int					columnCount			= resultSetMetaData.getColumnCount();
-
-			// The column count starts from 1
-			for ( int i = 1; i <= columnCount; i++ ) {
-				result.addColumn(
-				    Key.of( resultSetMetaData.getColumnLabel( i ) ),
-				    QueryColumnType.fromSQLType( resultSetMetaData.getColumnType( i ) )
-				);
-			}
+			ResultSetMetaData resultSetMetaData = resultSet.getMetaData();
+			buildQueryColumns( result, resultSetMetaData );
 
 			while ( resultSet.next() ) {
-				Struct row = new Struct( IStruct.TYPES.LINKED );
-				for ( int i = 1; i <= columnCount; i++ ) {
-					row.put(
-					    Key.of( resultSetMetaData.getColumnLabel( i ) ),
-					    resultSet.getObject( i )
-					);
-				}
+				IStruct	row					= buildQueryRow( resultSet, resultSetMetaData );
 				// @TODO: Implement primary key detection and columns
 				boolean	isPrimaryKey		= false;
 				// @TODO: Implement foreign key detection and columns
@@ -286,25 +272,11 @@ public class DBInfo extends Component {
 		Query result = new Query();
 
 		try ( ResultSet resultSet = databaseMetadata.getTables( databaseName, schema, tableName, null ) ) {
-			ResultSetMetaData	resultSetMetaData	= resultSet.getMetaData();
-			int					columnCount			= resultSetMetaData.getColumnCount();
-
-			// The column count starts from 1
-			for ( int i = 1; i <= columnCount; i++ ) {
-				result.addColumn(
-				    Key.of( resultSetMetaData.getColumnLabel( i ) ),
-				    QueryColumnType.fromSQLType( resultSetMetaData.getColumnType( i ) )
-				);
-			}
+			ResultSetMetaData resultSetMetaData = resultSet.getMetaData();
+			buildQueryColumns( result, resultSetMetaData );
 
 			while ( resultSet.next() ) {
-				Struct row = new Struct( IStruct.TYPES.LINKED );
-				for ( int i = 1; i <= columnCount; i++ ) {
-					row.put(
-					    Key.of( resultSetMetaData.getColumnLabel( i ) ),
-					    resultSet.getObject( i )
-					);
-				}
+				IStruct row = buildQueryRow( resultSet, resultSetMetaData );
 				result.addRow( row );
 			}
 		}
@@ -323,25 +295,11 @@ public class DBInfo extends Component {
 	private Query getForeignKeys( DatabaseMetaData databaseMetadata, String databaseName, String schema, String tableName ) throws SQLException {
 		Query result = new Query();
 		try ( ResultSet resultSet = databaseMetadata.getExportedKeys( databaseName, schema, tableName ) ) {
-			ResultSetMetaData	resultSetMetaData	= resultSet.getMetaData();
-			int					columnCount			= resultSetMetaData.getColumnCount();
-
-			// The column count starts from 1
-			for ( int i = 1; i <= columnCount; i++ ) {
-				result.addColumn(
-				    Key.of( resultSetMetaData.getColumnLabel( i ) ),
-				    QueryColumnType.fromSQLType( resultSetMetaData.getColumnType( i ) )
-				);
-			}
+			ResultSetMetaData resultSetMetaData = resultSet.getMetaData();
+			buildQueryColumns( result, resultSetMetaData );
 
 			while ( resultSet.next() ) {
-				Struct row = new Struct( IStruct.TYPES.LINKED );
-				for ( int i = 1; i <= columnCount; i++ ) {
-					row.put(
-					    Key.of( resultSetMetaData.getColumnLabel( i ) ),
-					    resultSet.getObject( i )
-					);
-				}
+				IStruct row = buildQueryRow( resultSet, resultSetMetaData );
 				result.addRow( row );
 			}
 			if ( result.isEmpty() && ( !databaseMetadata.getTables( null, schema, tableName, null ).next() ) ) {
@@ -363,25 +321,11 @@ public class DBInfo extends Component {
 	private Query getIndexes( DatabaseMetaData databaseMetadata, String databaseName, String schema, String tableName ) throws SQLException {
 		Query result = new Query();
 		try ( ResultSet resultSet = databaseMetadata.getIndexInfo( databaseName, schema, tableName, false, true ) ) {
-			ResultSetMetaData	resultSetMetaData	= resultSet.getMetaData();
-			int					columnCount			= resultSetMetaData.getColumnCount();
-
-			// The column count starts from 1
-			for ( int i = 1; i <= columnCount; i++ ) {
-				result.addColumn(
-				    Key.of( resultSetMetaData.getColumnLabel( i ) ),
-				    QueryColumnType.fromSQLType( resultSetMetaData.getColumnType( i ) )
-				);
-			}
+			ResultSetMetaData resultSetMetaData = resultSet.getMetaData();
+			buildQueryColumns( result, resultSetMetaData );
 
 			while ( resultSet.next() ) {
-				Struct row = new Struct( IStruct.TYPES.LINKED );
-				for ( int i = 1; i <= columnCount; i++ ) {
-					row.put(
-					    Key.of( resultSetMetaData.getColumnLabel( i ) ),
-					    resultSet.getObject( i )
-					);
-				}
+				IStruct	row				= buildQueryRow( resultSet, resultSetMetaData );
 				// type
 				Integer	indexType		= row.getAsInteger( Key.type );
 				String	stringIndexType	= switch ( indexType ) {
@@ -416,29 +360,54 @@ public class DBInfo extends Component {
 	private Query getProcedures( DatabaseMetaData databaseMetadata, String databaseName, String schema, String tableName ) throws SQLException {
 		Query result = new Query();
 		try ( ResultSet resultSet = databaseMetadata.getProcedures( databaseName, schema, tableName ) ) {
-			ResultSetMetaData	resultSetMetaData	= resultSet.getMetaData();
-			int					columnCount			= resultSetMetaData.getColumnCount();
-
-			// The column count starts from 1
-			for ( int i = 1; i <= columnCount; i++ ) {
-				result.addColumn(
-				    Key.of( resultSetMetaData.getColumnLabel( i ) ),
-				    QueryColumnType.fromSQLType( resultSetMetaData.getColumnType( i ) )
-				);
-			}
+			ResultSetMetaData resultSetMetaData = resultSet.getMetaData();
+			buildQueryColumns( result, resultSetMetaData );
 
 			while ( resultSet.next() ) {
-				Struct row = new Struct( IStruct.TYPES.LINKED );
-				for ( int i = 1; i <= columnCount; i++ ) {
-					row.put(
-					    Key.of( resultSetMetaData.getColumnLabel( i ) ),
-					    resultSet.getObject( i )
-					);
-				}
+				IStruct row = buildQueryRow( resultSet, resultSetMetaData );
 				result.addRow( row );
 			}
 		}
 		return result;
+	}
+
+	/**
+	 * Acquire a Struct instance for populating a Query row from a ResultSet.
+	 *
+	 * @param resultSet         JDBC ResultSet from which to read row data.
+	 * @param resultSetMetaData JDBC ResultSetMetaData used for column names.
+	 *
+	 * @throws SQLException
+	 */
+	private IStruct buildQueryRow( ResultSet resultSet, ResultSetMetaData resultSetMetaData ) throws SQLException {
+		int		columnCount	= resultSetMetaData.getColumnCount();
+		Struct	row			= new Struct( IStruct.TYPES.LINKED );
+		for ( int i = 1; i <= columnCount; i++ ) {
+			row.put(
+			    Key.of( resultSetMetaData.getColumnLabel( i ) ),
+			    resultSet.getObject( i )
+			);
+		}
+		return row;
+	}
+
+	/**
+	 * Append columns to a Query object based on the column names and types in a ResultSet.
+	 *
+	 * @param result            Result Query object to add columns to.
+	 * @param resultSetMetaData JDBC ResultSetMetaData used for column names.
+	 *
+	 * @throws SQLException
+	 */
+	private void buildQueryColumns( Query result, ResultSetMetaData resultSetMetaData ) throws SQLException {
+		int columnCount = resultSetMetaData.getColumnCount();
+		// The column count starts from 1
+		for ( int i = 1; i <= columnCount; i++ ) {
+			result.addColumn(
+			    Key.of( resultSetMetaData.getColumnLabel( i ) ),
+			    QueryColumnType.fromSQLType( resultSetMetaData.getColumnType( i ) )
+			);
+		}
 	}
 
 	/**
