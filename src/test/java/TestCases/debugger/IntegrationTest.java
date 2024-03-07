@@ -16,7 +16,7 @@ import java.util.Optional;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.condition.DisabledIfEnvironmentVariable;
+import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
 
 import TestCases.debugger.DebugMessages.TriConsumer;
 import ortus.boxlang.debugger.AdapterProtocolMessageReader;
@@ -40,7 +40,7 @@ import ortus.boxlang.debugger.types.Scope;
 import ortus.boxlang.debugger.types.StackFrame;
 import ortus.boxlang.debugger.types.Variable;
 
-@DisabledIfEnvironmentVariable( named = "CI", matches = ".+", disabledReason = "These tests are resource intensive and have been killing our CI" )
+@EnabledIfEnvironmentVariable( named = "BOXLANG_DEBUGGER_TESTS", matches = ".+", disabledReason = "These tests are resource intensive and have been killing our CI" )
 public class IntegrationTest {
 
 	private List<IAdapterProtocolMessage> runDebugger( List<TriConsumer<byte[], ByteArrayInputStream, ByteArrayOutputStream>> steps ) {
