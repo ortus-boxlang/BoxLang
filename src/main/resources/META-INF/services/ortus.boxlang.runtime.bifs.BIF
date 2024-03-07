@@ -54,6 +54,7 @@ ortus.boxlang.runtime.bifs.global.conversion.JSONSerialize
 ortus.boxlang.runtime.bifs.global.conversion.ParseNumber
 ortus.boxlang.runtime.bifs.global.conversion.ToBase64
 ortus.boxlang.runtime.bifs.global.conversion.ToBinary
+ortus.boxlang.runtime.bifs.global.conversion.ToNumeric
 ortus.boxlang.runtime.bifs.global.conversion.ToString
 ortus.boxlang.runtime.bifs.global.decision.IsArray
 ortus.boxlang.runtime.bifs.global.decision.IsBinary
