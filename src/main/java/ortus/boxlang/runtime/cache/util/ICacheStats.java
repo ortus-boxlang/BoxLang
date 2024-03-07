@@ -137,4 +137,9 @@ public interface ICacheStats {
 	 */
 	public ICacheStats recordGCHit();
 
+	/**
+	 * Record a cache reap
+	 */
+	public ICacheStats recordReap();
+
 }

@@ -61,7 +61,7 @@ public class BoxCacheEntry implements ICacheEntry, Serializable {
 	private Instant					lastAccessed		= Instant.now();
 	private Key						key;
 	private Object					value;
-	private Struct					metadata			= new Struct();
+	private IStruct					metadata			= new Struct();
 	// Calculated hashcode
 	private int						hashCode;
 
@@ -81,7 +81,7 @@ public class BoxCacheEntry implements ICacheEntry, Serializable {
 	    long lastAccessTimeout,
 	    Key key,
 	    Object value,
-	    Struct metadata ) {
+	    IStruct metadata ) {
 		// Prep the entry
 		this.cacheName			= cacheName;
 		this.timeout			= timeout;
@@ -226,7 +226,7 @@ public class BoxCacheEntry implements ICacheEntry, Serializable {
 	}
 
 	@Override
-	public Struct metadata() {
+	public IStruct metadata() {
 		return this.metadata;
 	}
 
@@ -240,9 +240,20 @@ public class BoxCacheEntry implements ICacheEntry, Serializable {
 		    "created", this.created,
 		    "lastAccessed", this.lastAccessed,
 		    "key", this.key,
-		    "value", this.value,
-		    "metadata", this.metadata
+		    "metadata", this.metadata,
+		    "isEternal", this.isEternal()
 		);
+	}
+
+	/**
+	 * Get the memento of the cache entry
+	 *
+	 * @return The memento
+	 */
+	public IStruct getMemento() {
+		var results = toStruct();
+		results.put( "value", value );
+		return results;
 	}
 
 }

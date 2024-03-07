@@ -101,7 +101,7 @@ public interface ICacheEntry {
 	 *
 	 * @return A struct with the metadata
 	 */
-	public Struct metadata();
+	public IStruct metadata();
 
 	/**
 	 * Set the value of the cache entry

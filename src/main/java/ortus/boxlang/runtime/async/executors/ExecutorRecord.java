@@ -23,12 +23,14 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.ForkJoinTask;
+import java.util.concurrent.Future;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import ortus.boxlang.runtime.async.tasks.ScheduledTask;
 import ortus.boxlang.runtime.services.AsyncService;
 import ortus.boxlang.runtime.services.AsyncService.ExecutorType;
 import ortus.boxlang.runtime.types.IStruct;
@@ -115,6 +117,39 @@ public record ExecutorRecord( ExecutorService executor, String name, ExecutorTyp
 	}
 
 	/**
+	 * Build out a new scheduled task bound to this executor
+	 * Calling this method is not the mean that the task will be executed.
+	 * It just builds out a record for the task. It will be your job to call the {@code start()} method on it to start the task.
+	 *
+	 * This can be used to create a task and then schedule it to run at a later time and not
+	 * bound to a Scheduler.
+	 *
+	 * @param name The name of the task
+	 *
+	 * @return The new task bound to this executor
+	 */
+	public ScheduledTask newTask( String name ) {
+		return new ScheduledTask( name, this );
+	}
+
+	/**
+	 * Build out a new scheduled task bound to this executor
+	 * Calling this method is not the mean that the task will be executed.
+	 * It just builds out a record for the task. It will be your job to call the {@code start()} method on it to start the task.
+	 *
+	 * This can be used to create a task and then schedule it to run at a later time and not
+	 * bound to a Scheduler.
+	 *
+	 * The name will be auto-generated
+	 *
+	 * @return The new task bound to this executor
+	 */
+	public ScheduledTask newTask() {
+		var name = "Task-" + System.currentTimeMillis();
+		return new ScheduledTask( name, this );
+	}
+
+	/**
 	 * Our very own stats struct map to give you a holistic view of the executor
 	 *
 	 * @return The stats struct
@@ -182,6 +217,28 @@ public record ExecutorRecord( ExecutorService executor, String name, ExecutorTyp
 			default :
 				return new Struct();
 		}
+	}
+
+	/**
+	 * Submit proxy to the executor
+	 *
+	 * @param runnable The runnable to submit
+	 *
+	 * @return The future
+	 */
+	public Future<?> submit( Runnable runnable ) {
+		return this.executor.submit( runnable );
+	}
+
+	/**
+	 * Submit proxy to the executor
+	 *
+	 * @param callable The callable to submit
+	 *
+	 * @return The future
+	 */
+	public Future<?> submit( Callable<?> callable ) {
+		return this.executor.submit( callable );
 	}
 
 	/**

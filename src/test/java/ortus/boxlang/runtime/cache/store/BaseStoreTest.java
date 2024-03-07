@@ -34,6 +34,7 @@ import ortus.boxlang.runtime.cache.filters.WildcardFilter;
 import ortus.boxlang.runtime.cache.providers.ICacheProvider;
 import ortus.boxlang.runtime.cache.util.BoxCacheStats;
 import ortus.boxlang.runtime.cache.util.ICacheStats;
+import ortus.boxlang.runtime.config.segments.CacheConfig;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
@@ -53,7 +54,7 @@ public abstract class BaseStoreTest {
 	/**
 	 * The mock config to use for the provider and store: Set by the child class
 	 */
-	public static IStruct			mockConfig	= new Struct();
+	public static CacheConfig		mockConfig	= new CacheConfig();
 
 	/**
 	 * Mock Stats
@@ -91,7 +92,7 @@ public abstract class BaseStoreTest {
 		ICacheProvider mockProvider = Mockito.mock( ICacheProvider.class );
 
 		when( mockProvider.getStats() ).thenReturn( mockStats );
-		when( mockProvider.getName() ).thenReturn( name );
+		when( mockProvider.getName() ).thenReturn( Key.of( name ) );
 		when( mockProvider.getType() ).thenReturn( "boxlang" );
 		when( mockProvider.getConfig() ).thenReturn( mockConfig );
 

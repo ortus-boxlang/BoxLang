@@ -915,6 +915,18 @@ public class ScheduledTask implements Runnable {
 	/**
 	 * Set an initial delay in the running of the task that will be registered with this schedule in milliseconds
 	 *
+	 * @param delay    The delay that will be used before executing the task
+	 * @param timeunit The time unit to use, available units are: days, hours, microseconds, milliseconds, minutes, nanoseconds, and seconds. The default
+	 *
+	 * @return The ScheduledTask instance
+	 */
+	public ScheduledTask delay( long delay, TimeUnit timeunit ) {
+		return delay( delay, timeunit, false );
+	}
+
+	/**
+	 * Set an initial delay in the running of the task that will be registered with this schedule in milliseconds
+	 *
 	 * @param delay The delay that will be used before executing the task
 	 *
 	 * @return The ScheduledTask instance

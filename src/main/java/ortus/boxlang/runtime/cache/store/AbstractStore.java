@@ -28,7 +28,7 @@ import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 /**
  * The base implementation of a cache store in BoxLang.
  */
-public abstract class AbstractStore {
+public abstract class AbstractStore implements IObjectStore {
 
 	private static final String	POLICIES_PACKAGE	= "ortus.boxlang.runtime.cache.policies";
 	private static final String	VALID_POLICIES		= "LRU|MRU|LFU|MFU|FIFO|LIFO|Random";
@@ -118,27 +118,31 @@ public abstract class AbstractStore {
 	 * @param policyName The name of the policy
 	 *
 	 * @return The policy
+	 *
+	 * @throws BoxRuntimeException If the policy cannot be loaded
+	 * @throws BoxRuntimeException If the policy does not implement ICachePolicy
+	 * @throws BoxRuntimeException If the policy cannot be instantiated
 	 */
 	protected ICachePolicy buildPolicyByName( String policyName ) {
 		// Access the class by name
 		String targetPolicy = POLICIES_PACKAGE + "." + policyName;
 
 		try {
-			// Load the class
+			// Load the class: TODO Change to JavaResolver later
 			Class<?> clazz = Class.forName( targetPolicy );
 			if ( ICachePolicy.class.isAssignableFrom( clazz ) ) {
 				// Create an instance of the class
 				try {
 					return ( ICachePolicy ) clazz.getDeclaredConstructor().newInstance();
 				} catch ( IllegalArgumentException | InvocationTargetException | NoSuchMethodException | SecurityException e ) {
-					throw new BoxRuntimeException( "Cannot call the constructor on the policy: " + policy, e );
+					throw new BoxRuntimeException( "Cannot call the constructor on the policy: " + targetPolicy, e );
 				}
 			} else {
-				throw new BoxRuntimeException( "The policy does not implement ICachePolicy: " + policy );
+				throw new BoxRuntimeException( "The policy does not implement ICachePolicy: " + targetPolicy );
 			}
 		} catch ( ClassNotFoundException | InstantiationException | IllegalAccessException e ) {
 			// Log the error
-			throw new BoxRuntimeException( "Unable to load the policy: " + policy, e );
+			throw new BoxRuntimeException( "Unable to load the policy: " + targetPolicy, e );
 		}
 	}
 

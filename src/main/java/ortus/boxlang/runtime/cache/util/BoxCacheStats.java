@@ -85,6 +85,15 @@ public class BoxCacheStats implements ICacheStats {
 	}
 
 	/**
+	 * Record a cache reap
+	 */
+	public ICacheStats recordReap() {
+		this.reapCount.incrementAndGet();
+		this.lastReapDatetime = Instant.now();
+		return this;
+	}
+
+	/**
 	 * --------------------------------------------------------------------------
 	 * Interface Methods
 	 * --------------------------------------------------------------------------

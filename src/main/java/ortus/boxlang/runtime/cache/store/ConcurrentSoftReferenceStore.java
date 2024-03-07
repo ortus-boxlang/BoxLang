@@ -20,6 +20,8 @@ package ortus.boxlang.runtime.cache.store;
 import java.lang.ref.ReferenceQueue;
 import java.lang.ref.SoftReference;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+import java.util.stream.Stream;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -29,32 +31,33 @@ import ortus.boxlang.runtime.cache.filters.ICacheKeyFilter;
 import ortus.boxlang.runtime.cache.providers.ICacheProvider;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.IStruct;
+import ortus.boxlang.runtime.types.Struct;
 
 /**
  * This object store keeps all objects in heap using Concurrent classes.
  * Naturally the store is ordered by {@code created} timestamp and can be used for concurrent access.
  */
-public class ConcurrentSoftReferenceStore extends ConcurrentStore implements IObjectStore {
+public class ConcurrentSoftReferenceStore extends AbstractStore implements IObjectStore {
 
 	/**
 	 * Logger
 	 */
-	private static final Logger										logger	= LoggerFactory.getLogger( ConcurrentSoftReferenceStore.class );
+	private static final Logger									logger	= LoggerFactory.getLogger( ConcurrentSoftReferenceStore.class );
 
 	/**
 	 * The concurrent pool of objects based on a soft reference
 	 */
-	protected ConcurrentHashMap<Key, SoftReference<ICacheEntry>>	pool;
+	private ConcurrentHashMap<Key, SoftReference<ICacheEntry>>	pool;
 
 	/**
 	 * Reverse lookup map for soft references
 	 */
-	private ConcurrentHashMap<Integer, Key>							softRefKeyMap;
+	private ConcurrentHashMap<Integer, Key>						softRefKeyMap;
 
 	/**
 	 * Reference queue for soft references
 	 */
-	private ReferenceQueue<ICacheEntry>								referenceQueue;
+	private ReferenceQueue<ICacheEntry>							referenceQueue;
 
 	/**
 	 * Constructor
@@ -88,24 +91,114 @@ public class ConcurrentSoftReferenceStore extends ConcurrentStore implements IOb
 	}
 
 	/**
+	 * Get the pool of objects
+	 * ConcurrentStore uses a ConcurrentHashMap to store the objects
+	 *
+	 * @return The pool of objects
+	 */
+	public ConcurrentMap<Key, SoftReference<ICacheEntry>> getPool() {
+		return this.pool;
+	}
+
+	/**
 	 * --------------------------------------------------------------------------
 	 * Interface Methods
 	 * --------------------------------------------------------------------------
 	 */
 
-	@Override
+	/**
+	 * Some storages require a shutdown method to close the storage or do
+	 * object saving. This method is called when the cache provider is stopped.
+	 */
+	public void shutdown() {
+		getPool().clear();
+		logger.atDebug().log(
+		    "ConcurrentSoftReferenceStore({}) was shutdown",
+		    provider.getName()
+		);
+	}
+
+	/**
+	 * Flush the store to a permanent storage.
+	 * Only applicable to stores that support it.
+	 *
+	 * Not supported by this pool.
+	 *
+	 * @return The number of objects flushed
+	 */
+	public int flush() {
+		logger.atDebug().log(
+		    "ConcurrentSoftReferenceStore({}) was flushed",
+		    provider.getName()
+		);
+		return 0;
+	}
+
+	/**
+	 * Runs the eviction algorithm to remove objects from the store based on the eviction policy
+	 * and eviction count.
+	 */
+	public synchronized void evict() {
+		getPool()
+		    .entrySet()
+		    // Stream it
+		    .parallelStream()
+		    // Map it to the cache entry from the soft reference
+		    .map( reference -> reference.getValue().get() )
+		    // Exclude eternal objects from eviction or nulls
+		    .filter( entry -> entry != null && !entry.isEternal() )
+		    // Sort using the policy comparator
+		    .sorted( getPolicy().getComparator() )
+		    // Check how many to evict according to the config count
+		    .limit( this.config.getAsInteger( Key.evictCount ) )
+		    // Evict it & Log Stats
+		    .forEach( entry -> {
+			    logger.atDebug().log(
+			        "ConcurrentSoftReferenceStore({}) evicted [{}]",
+			        provider.getName(),
+			        entry.key()
+			    );
+			    getPool().remove( entry.key() );
+			    getProvider().getStats().recordEviction();
+		    } );
+
+		// Evict all garbage collected soft references
+		evictSoftReferences();
+	}
+
+	/**
+	 * Get the size of the store, not the size in bytes but the number of objects in the store
+	 */
+	public int getSize() {
+		return getPool().size();
+	}
+
+	/**
+	 * Clear all the elements in the store
+	 */
 	public void clearAll() {
-		super.clearAll();
+		getPool().clear();
 		this.softRefKeyMap.clear();
 	}
 
-	@Override
+	/**
+	 * Clear all the elements in the store with a ${@link ICacheKeyFilter}.
+	 * This can be a lambda or method reference since it's a functional interface.
+	 *
+	 * @param filter The filter that determines which keys to clear
+	 */
 	public void clearAll( ICacheKeyFilter filter ) {
-		super.clearAll( filter );
+		getPool().keySet().removeIf( filter );
 		this.softRefKeyMap.values().removeIf( filter );
 	}
 
-	@Override
+	/**
+	 * Clears an object from the storage
+	 *
+	 * @param key The object key to clear
+	 *
+	 * @return True if the object was cleared, false otherwise (if the object was not found in the store)
+	 */
 	public boolean clear( Key key ) {
 		// Remove the soft reference from the pool
 		SoftReference<ICacheEntry> reference = this.pool.remove( key );
@@ -117,14 +210,68 @@ public class ConcurrentSoftReferenceStore extends ConcurrentStore implements IOb
 		return false;
 	}
 
-	@Override
-	public void evict() {
-		super.evict();
-		// Evict all garbage collected soft references
-		evictSoftReferences();
+	/**
+	 * Clears multiple objects from the storage
+	 *
+	 * @param key The keys to clear
+	 *
+	 * @return A struct of keys and their clear status: true if the object was cleared, false otherwise (if the object was not found in the store)
+	 */
+	public IStruct clear( Key... keys ) {
+		IStruct results = new Struct();
+		for ( Key key : keys ) {
+			results.put( key, clear( key ) );
+		}
+		return results;
 	}
 
-	@Override
+	/**
+	 * Get all the keys in the store
+	 *
+	 * @return An array of keys in the cache
+	 */
+	public Key[] getKeys() {
+		return getPool().keySet().toArray( new Key[ 0 ] );
+	}
+
+	/**
+	 * Get all the keys in the store using a filter
+	 *
+	 * @param filter The filter that determines which keys to return
+	 *
+	 * @return An array of keys in the cache
+	 */
+	public Key[] getKeys( ICacheKeyFilter filter ) {
+		return getPool().keySet().parallelStream().filter( filter ).toArray( Key[]::new );
+	}
+
+	/**
+	 * Get all the keys in the store as a stream
+	 *
+	 * @return A stream of keys in the cache
+	 */
+	public Stream<Key> getKeysStream() {
+		return getPool().keySet().stream();
+	}
+
+	/**
+	 * Get all the keys in the store as a stream
+	 *
+	 * @param filter The filter that determines which keys to return
+	 *
+	 * @return A stream of keys in the cache
+	 */
+	public Stream<Key> getKeysStream( ICacheKeyFilter filter ) {
+		return getPool().keySet().stream().filter( filter );
+	}
+
+	/**
+	 * Check if an object is in the store
+	 *
+	 * @param key The key to lookup in the store
+	 *
+	 * @return True if the object is in the store, false otherwise
+	 */
 	public boolean lookup( Key key ) {
 		var entry = this.pool.get( key );
 
@@ -142,7 +289,133 @@ public class ConcurrentSoftReferenceStore extends ConcurrentStore implements IOb
 		return false;
 	}
 
-	@Override
+	/**
+	 * Check if multiple objects are in the store
+	 *
+	 * @param key A varargs of keys to lookup in the store
+	 *
+	 * @return A struct of keys and their lookup status
+	 */
+	public IStruct lookup( Key... keys ) {
+		IStruct results = new Struct();
+		for ( Key key : keys ) {
+			results.put( key, lookup( key ) );
+		}
+		return results;
+	}
+
+	/**
+	 * Check if multiple objects are in the store using a filter
+	 *
+	 * @param filter The filter that determines which keys to return
+	 *
+	 * @return A struct of the keys found. True if the object is in the store, false otherwise
+	 */
+	public IStruct lookup( ICacheKeyFilter filter ) {
+		IStruct results = new Struct();
+		getPool()
+		    .keySet()
+		    .parallelStream()
+		    .filter( filter )
+		    .forEach( key -> results.put( key, true ) );
+		return results;
+	}
+
+	/**
+	 * Get an object from the store with metadata tracking: hits, lastAccess, etc
+	 *
+	 * @param key The key to retrieve
+	 *
+	 * @return The cache entry retrieved or null if not found
+	 */
+	public ICacheEntry get( Key key ) {
+		var results = getQuiet( key );
+
+		if ( results != null ) {
+			// Update Stats
+			results
+			    .incrementHits()
+			    .touchLastAccessed();
+			// Is resetTimeoutOnAccess enabled? If so, jump up the creation time to increase the timeout
+			if ( this.config.getAsBoolean( Key.resetTimeoutOnAccess ) ) {
+				results.resetCreated();
+			}
+		}
+
+		return results;
+	}
+
+	/**
+	 * Get multiple objects from the store with metadata tracking
+	 *
+	 * @param key The keys to retrieve
+	 *
+	 * @return A struct of keys and their cache entries
+	 */
+	public IStruct get( Key... keys ) {
+		IStruct results = new Struct();
+		for ( Key key : keys ) {
+			results.put( key, get( key ) );
+		}
+		return results;
+	}
+
+	/**
+	 * Get multiple objects from the store with metadata tracking using a filter
+	 *
+	 * @param filter The filter that determines which keys to return
+	 *
+	 * @return A struct of keys and their cache entries
+	 */
+	public IStruct get( ICacheKeyFilter filter ) {
+		IStruct results = new Struct();
+		getPool()
+		    .keySet()
+		    .parallelStream()
+		    .filter( filter )
+		    .forEach( key -> results.put( key, get( key ) ) );
+		return results;
+	}
+
+	/**
+	 * Get multiple objects from the store with no metadata tracking
+	 *
+	 * @param key The keys to retrieve
+	 *
+	 * @return A struct of keys and their cache entries
+	 */
+	public IStruct getQuiet( Key... keys ) {
+		IStruct results = new Struct();
+		for ( Key key : keys ) {
+			results.put( key, getQuiet( key ) );
+		}
+		return results;
+	}
+
+	/**
+	 * Get multiple objects from the store with no metadata tracking using a filter
+	 *
+	 * @param filter The filter that determines which keys to return
+	 *
+	 * @return A struct of keys and their cache entries
+	 */
+	public IStruct getQuiet( ICacheKeyFilter filter ) {
+		IStruct results = new Struct();
+		getPool()
+		    .keySet()
+		    .parallelStream()
+		    .filter( filter )
+		    .forEach( key -> results.put( key, getQuiet( key ) ) );
+		return results;
+	}
+
+	/**
+	 * Get an object from cache with no metadata tracking
+	 *
+	 * @param key The key to retrieve
+	 *
+	 * @return The cache entry retrieved or null if not found
+	 */
 	public ICacheEntry getQuiet( Key key ) {
 		var reference = this.pool.get( key );
 
@@ -160,12 +433,26 @@ public class ConcurrentSoftReferenceStore extends ConcurrentStore implements IOb
 		return null;
 	}
 
-	@Override
+	/**
+	 * Sets an object in the storage
+	 *
+	 * @param key   The key to store the object under
+	 * @param entry The cache entry to store
+	 */
 	public void set( Key key, ICacheEntry entry ) {
 		// Create Soft Reference Wrapper and register with Queue
 		SoftReference<ICacheEntry> softReference = createSoftReference( key, entry );
 		// Store the soft reference in the pool
 		this.pool.put( key, softReference );
+	}
+
+	/**
+	 * Set's multiple objects in the storage
+	 *
+	 * @param entries The keys and cache entries to store
+	 */
+	public void set( IStruct entries ) {
+		entries.forEach( ( key, value ) -> set( key, ( ICacheEntry ) value ) );
 	}
 
 	/**
@@ -178,7 +465,7 @@ public class ConcurrentSoftReferenceStore extends ConcurrentStore implements IOb
 	 * Evict soft references from the store that have been collected
 	 */
 	@SuppressWarnings( "unchecked" )
-	void evictSoftReferences() {
+	public synchronized void evictSoftReferences() {
 		SoftReference<ICacheEntry> collected;
 		while ( ( collected = ( SoftReference<ICacheEntry> ) this.referenceQueue.poll() ) != null ) {
 			if ( verifySoftReference( collected ) ) {

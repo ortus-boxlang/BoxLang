@@ -53,6 +53,7 @@ public class CacheConfig {
 	    // How many to evict at a time once a policy is triggered
 	    "evictCount", 1,
 	    // The eviction policy to use: Least Recently Used
+	    // Other policies are: LRU, LFU, FIFO, LIFO, RANDOM
 	    "evictionPolicy", "LRU",
 	    // The free memory percentage threshold to trigger eviction
 	    // 0 = disabled, 1-100 = percentage of available free memory in heap
@@ -62,10 +63,10 @@ public class CacheConfig {
 	    "maxObjects", 1000,
 	    // The maximum in seconds to keep an object in the cache since it's last access
 	    // So if an object is not accessed in this time or greater, it will be removed from the cache
-	    "defaultLastAccessTimeout", 30,
+	    "defaultLastAccessTimeout", 30 * 60,
 	    // The maximum time in seconds to keep an object in the cache regardless if it's used or not
 	    // A default timeout of 0 = never expire, careful with this setting
-	    "defaultTimeout", 120,
+	    "defaultTimeout", 60 * 60,
 	    // The object store to use to store the objects.
 	    // The default is a ConcurrentSoftReferenceStore which is a memory sensitive store
 	    "objectStore", "ConcurrentSoftReferenceStore",
@@ -166,6 +167,17 @@ public class CacheConfig {
 		}
 
 		return this;
+	}
+
+	/**
+	 * Returns the cache configuration as a struct
+	 */
+	public IStruct toStruct() {
+		return Struct.of(
+		    "name", this.name.getName(),
+		    "provider", this.provider.getName(),
+		    "properties", this.properties
+		);
 	}
 
 }

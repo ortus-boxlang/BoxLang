@@ -30,29 +30,19 @@ import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Struct;
 
 /**
- * This is a service that provides caching functionality to BoxLang
- * based on the CacheBox library.
+ * This is a service that provides caching functionality to BoxLang.
+ * It is a core service and is started up when the runtime starts.
+ * It consists on the ability to register/build cache providers
+ * that can be used anywhere in BoxLang.
  */
 public class CacheService extends BaseService {
 
 	/**
-	 * --------------------------------------------------------------------------
-	 * Private Properties
-	 * --------------------------------------------------------------------------
-	 */
-
-	/**
-	 * Logger
-	 */
-	private static final Logger				logger			= LoggerFactory.getLogger( CacheService.class );
-
-	/**
 	 * Service Events
 	 */
-	private static final Map<String, Key>	CACHE_EVENTS	= Stream.of(
+	public static final Map<String, Key>	CACHE_EVENTS	= Stream.of(
 	    "afterCacheElementInsert",
 	    "afterCacheElementRemoved",
-	    "afterCacheElementExpired",
 	    "afterCacheElementUpdated",
 	    "afterCacheClearAll",
 	    "afterCacheRegistration",
@@ -68,6 +58,17 @@ public class CacheService extends BaseService {
 	    eventName -> eventName,
 	    Key::of
 	) );
+
+	/**
+	 * --------------------------------------------------------------------------
+	 * Private Properties
+	 * --------------------------------------------------------------------------
+	 */
+
+	/**
+	 * Logger
+	 */
+	private static final Logger				logger			= LoggerFactory.getLogger( CacheService.class );
 
 	/**
 	 * The async service
@@ -103,6 +104,21 @@ public class CacheService extends BaseService {
 		this.interceptorService.registerInterceptionPoint( CACHE_EVENTS.values().toArray( Key[]::new ) );
 		// Register the scheduled executor service
 		this.executor = this.asyncService.newScheduledExecutor( "cacheservice-tasks", 20 );
+	}
+
+	/**
+	 * --------------------------------------------------------------------------
+	 * Public Methods
+	 * --------------------------------------------------------------------------
+	 */
+
+	/**
+	 * Get the scheduled executor service assigned to all caching services
+	 *
+	 * @return The scheduled executor record
+	 */
+	public ExecutorRecord getTaskScheduler() {
+		return this.executor;
 	}
 
 	/**

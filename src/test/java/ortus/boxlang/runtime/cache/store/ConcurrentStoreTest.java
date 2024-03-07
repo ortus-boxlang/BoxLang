@@ -19,16 +19,13 @@ package ortus.boxlang.runtime.cache.store;
 
 import org.junit.jupiter.api.BeforeAll;
 
-import ortus.boxlang.runtime.config.segments.CacheConfig;
-
 class ConcurrentStoreTest extends BaseStoreTest {
 
 	@BeforeAll
 	static void setUp() {
 		// Prep the fields to use in the base test
-		mockConfig		= CacheConfig.DEFAULTS;
 		mockProvider	= getMockProvider( "test" );
-		store			= new ConcurrentStore().init( mockProvider, mockConfig );
+		store			= new ConcurrentStore().init( mockProvider, mockConfig.properties );
 	}
 
 }
