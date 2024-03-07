@@ -166,7 +166,7 @@ public class ComponentDescriptor {
 
 		// call validators on attributes)
 		for ( var attribute : component.getDeclaredAttributes() ) {
-			attribute.validate( context, component, attributes );
+			attribute.validate( context, component.getName(), attributes );
 		}
 		// Invoke the component here. The component is responsible for calling its body, if one exists.
 		return component.invoke( context, attributes, componentBody );
@@ -204,7 +204,7 @@ public class ComponentDescriptor {
 		attributes.put( Key.attributes, moduleAttributes );
 		// call validators on attributes)
 		for ( var attribute : component.getDeclaredAttributes() ) {
-			attribute.validate( context, component, attributes );
+			attribute.validate( context, component.getName(), attributes );
 		}
 		// Invoke the component here. The component is responsible for calling its body, if one exists.
 		return component.invoke( context, attributes, componentBody );

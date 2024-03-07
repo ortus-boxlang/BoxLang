@@ -42,7 +42,7 @@ public class ValueRequires implements Validator {
 		this.value			= value;
 	}
 
-	public void validate( IBoxContext context, Component component, Validatable record, IStruct records ) {
+	public void validate( IBoxContext context, Key caller, Validatable record, IStruct records ) {
 		if ( records.containsKey( record.name() ) && records.getAsString( record.name() ).equals( this.value ) ) {
 			List<String> missingAttributes = new ArrayList<>();
 			for ( Key required : recordNames ) {
@@ -52,7 +52,7 @@ public class ValueRequires implements Validator {
 			}
 			if ( !missingAttributes.isEmpty() ) {
 				String missingAttributesString = String.join( ", ", missingAttributes );
-				throw new BoxValidationException( component, record, "requires the following records to be present: " + missingAttributesString );
+				throw new BoxValidationException( caller, record, "requires the following records to be present: " + missingAttributesString );
 			}
 		}
 	}

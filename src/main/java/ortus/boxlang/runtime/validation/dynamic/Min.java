@@ -19,6 +19,7 @@ package ortus.boxlang.runtime.validation.dynamic;
 
 import ortus.boxlang.runtime.components.Attribute;
 import ortus.boxlang.runtime.components.Component;
+import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.validation.Validatable;
 import ortus.boxlang.runtime.validation.Validator;
 import ortus.boxlang.runtime.context.IBoxContext;
@@ -38,12 +39,12 @@ public class Min implements Validator {
 		this.min = min;
 	}
 
-	public void validate( IBoxContext context, Component component, Validatable record, IStruct records ) {
+	public void validate( IBoxContext context, Key caller, Validatable record, IStruct records ) {
 		// If it was passed...
 		if ( records.get( record.name() ) != null ) {
 			// then make sure it's not less than our threshold
 			if ( DoubleCaster.cast( records.get( record.name() ) ) < this.min.doubleValue() ) {
-				throw new BoxValidationException( component, record, "cannot be less than [" + StringCaster.cast( this.min ) + "]." );
+				throw new BoxValidationException( caller, record, "cannot be less than [" + StringCaster.cast( this.min ) + "]." );
 			}
 		}
 	}

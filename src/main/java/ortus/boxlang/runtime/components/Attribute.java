@@ -21,18 +21,15 @@ import java.util.Set;
 
 import ortus.boxlang.runtime.validation.Validatable;
 import ortus.boxlang.runtime.validation.Validator;
-import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.scopes.Key;
-import ortus.boxlang.runtime.types.IStruct;
 
 /**
  * Represents an attribute to a Component
  *
  * @param name         The name of the attribute
  * @param type         The type of the attribute
- * @param validators   Validators for the attribute
  * @param defaultValue The default value of the attribute
- * @param requires     Attributes that are required for this attribute to be valid
+ * @param validators   Validators for the attribute
  *
  */
 public record Attribute( Key name, String type, Object defaultValue, Set<Validator> validators ) implements Validatable {
@@ -70,31 +67,12 @@ public record Attribute( Key name, String type, Object defaultValue, Set<Validat
 	/**
 	 * Create an attribute declaration with a name and type and validators but no default value.
 	 *
-	 * @param name         The name of the attribute
-	 * @param type         The type of the attribute
-	 * @param defaultValue The default value of the attribute
-	 * @param validators   Validators for the attribute
+	 * @param name       The name of the attribute
+	 * @param type       The type of the attribute
+	 * @param validators Validators for the attribute
 	 */
 	public Attribute( Key name, String type, Set<Validator> validators ) {
 		this( name, type, null, validators );
-	}
-
-	/**
-	 * Validate myself
-	 *
-	 * @param context
-	 * @param component
-	 * @param attributes
-	 */
-	public void validate( IBoxContext context, Component component, IStruct attributes ) {
-		// Automatically enforce type, if set. This always happens first.
-		Validator.TYPE.validate( context, component, this, attributes );
-		// loop over validators and call
-		for ( Validator validator : this.validators() ) {
-			validator.validate( context, component, this, attributes );
-		}
-		// Automatically enforce default value, if set. This always happens last.
-		Validator.DEFAULT_VALUE.validate( context, component, this, attributes );
 	}
 
 }

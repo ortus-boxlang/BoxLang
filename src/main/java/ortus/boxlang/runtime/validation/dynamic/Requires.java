@@ -40,7 +40,7 @@ public class Requires implements Validator {
 		this.recordNames = recordNames;
 	}
 
-	public void validate( IBoxContext context, Component component, Validatable record, IStruct records ) {
+	public void validate( IBoxContext context, Key caller, Validatable record, IStruct records ) {
 		if ( records.containsKey( record.name() ) ) {
 			List<String> missingRecords = new ArrayList<>();
 			for ( Key required : recordNames ) {
@@ -50,7 +50,7 @@ public class Requires implements Validator {
 			}
 			if ( !missingRecords.isEmpty() ) {
 				String missingRecordsString = String.join( ", ", missingRecords );
-				throw new BoxValidationException( component, record, "requires the following records to be present: " + missingRecordsString );
+				throw new BoxValidationException( caller, record, "requires the following records to be present: " + missingRecordsString );
 			}
 		}
 	}

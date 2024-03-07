@@ -24,10 +24,12 @@ import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.*;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
+import ortus.boxlang.runtime.validation.Validator;
 
 import javax.annotation.Nonnull;
 import java.sql.Connection;
 import java.util.Optional;
+import java.util.Set;
 
 @BoxBIF
 public class QueryExecute extends BIF {
@@ -38,8 +40,8 @@ public class QueryExecute extends BIF {
 	public QueryExecute() {
 		super();
 		declaredArguments = new Argument[] {
-		    new Argument( true, "String", Key.sql ),
-		    new Argument( false, "any", Key.params, new Array() ),
+		    new Argument( true, "String", Key.sql, Set.of( Validator.REQUIRED, Validator.NON_EMPTY ) ),
+		    new Argument( false, "any", Key.params, new Array(), Set.of( Validator.typeOneOf( "array", "struct" ) ) ),
 		    new Argument( false, "struct", Key.options )
 		};
 	}

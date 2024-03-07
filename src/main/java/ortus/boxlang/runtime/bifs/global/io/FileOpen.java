@@ -23,6 +23,8 @@ import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.File;
 
+import java.util.Set;
+
 @BoxBIF
 
 public class FileOpen extends BIF {
@@ -36,7 +38,7 @@ public class FileOpen extends BIF {
 		    new Argument( true, "string", Key.file ),
 		    new Argument( false, "string", Key.mode, "read" ),
 		    new Argument( false, "string", Key.charset, "utf-8" ),
-		    new Argument( false, "boolean", Key.seekable, null )
+		    new Argument( false, "boolean", Key.seekable, null, Set.of() )
 		};
 	}
 

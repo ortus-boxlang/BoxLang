@@ -20,13 +20,7 @@ package ortus.boxlang.runtime.validation;
 import java.util.Set;
 
 import ortus.boxlang.runtime.components.Component;
-import ortus.boxlang.runtime.validation.dynamic.Max;
-import ortus.boxlang.runtime.validation.dynamic.MaxLength;
-import ortus.boxlang.runtime.validation.dynamic.Min;
-import ortus.boxlang.runtime.validation.dynamic.MinLength;
-import ortus.boxlang.runtime.validation.dynamic.Requires;
-import ortus.boxlang.runtime.validation.dynamic.ValueOneOf;
-import ortus.boxlang.runtime.validation.dynamic.ValueRequires;
+import ortus.boxlang.runtime.validation.dynamic.*;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.IStruct;
@@ -49,12 +43,12 @@ public interface Validator {
 	/**
 	 * Validate a record instance.
 	 *
-	 * @param context   The current Box context
-	 * @param component The component being validated
-	 * @param record    The specific record being validated
-	 * @param records   All the records being validated
+	 * @param context The current Box context
+	 * @param caller  The component being validated
+	 * @param record  The specific record being validated
+	 * @param records All the records being validated
 	 */
-	public void validate( IBoxContext context, Component component, Validatable record, IStruct records );
+	public void validate( IBoxContext context, Key caller, Validatable record, IStruct records );
 
 	/****************************************************************************************
 	 * These are builder methods to create validators that hold some state
@@ -136,6 +130,10 @@ public interface Validator {
 	 */
 	public static Validator valueOneOf( String... validValues ) {
 		return new ValueOneOf( Set.of( validValues ) );
+	}
+
+	public static Validator typeOneOf( String... validTypes ) {
+		return new TypeOneOf( Set.of( validTypes ) );
 	}
 
 }

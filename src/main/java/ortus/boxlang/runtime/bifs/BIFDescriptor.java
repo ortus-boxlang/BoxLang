@@ -23,6 +23,7 @@ import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
+import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.util.ArgumentUtil;
 
 /**
@@ -133,7 +134,11 @@ public class BIFDescriptor {
 	public Object invoke( IBoxContext context, boolean isMember ) {
 		ArgumentsScope scope = new ArgumentsScope();
 		scope.put( BIF.__isMemberExecution, isMember );
-		scope.put( BIF.__functionName, name );
+		scope.put( BIF.__functionName, this.name );
+		// call validators on arguments
+		for ( var argument : getBIF().getDeclaredArguments() ) {
+			argument.validate( context, this.name, scope );
+		}
 		return this.getBIF().invoke( context, scope );
 	}
 
@@ -147,10 +152,15 @@ public class BIFDescriptor {
 	 * @return The result of the invocation
 	 */
 	public Object invoke( IBoxContext context, Object[] positionalArguments, boolean isMember, Key name ) {
-		ArgumentsScope scope = new ArgumentsScope();
-		ArgumentUtil.createArgumentsScope( context, positionalArguments, getBIF().getDeclaredArguments(), scope );
+		ArgumentsScope	scope				= new ArgumentsScope();
+		Argument[]		declaredArguments	= getBIF().getDeclaredArguments();
+		ArgumentUtil.createArgumentsScope( context, positionalArguments, declaredArguments, scope );
 		scope.put( BIF.__isMemberExecution, isMember );
 		scope.put( BIF.__functionName, name );
+		// call validators on arguments
+		for ( var argument : declaredArguments ) {
+			argument.validate( context, name, scope );
+		}
 		// Invoke it baby!
 		return this.getBIF().invoke( context, scope );
 	}
@@ -165,10 +175,15 @@ public class BIFDescriptor {
 	 * @return The result of the invocation
 	 */
 	public Object invoke( IBoxContext context, Map<Key, Object> namedArguments, boolean isMember, Key name ) {
-		ArgumentsScope scope = new ArgumentsScope();
-		ArgumentUtil.createArgumentsScope( context, namedArguments, getBIF().getDeclaredArguments(), scope );
+		ArgumentsScope	scope				= new ArgumentsScope();
+		Argument[]		declaredArguments	= getBIF().getDeclaredArguments();
+		ArgumentUtil.createArgumentsScope( context, namedArguments, declaredArguments, scope );
 		scope.put( BIF.__isMemberExecution, isMember );
 		scope.put( BIF.__functionName, name );
+		// call validators on arguments
+		for ( var argument : declaredArguments ) {
+			argument.validate( context, name, scope );
+		}
 		// Invoke it baby!
 		return this.getBIF().invoke( context, scope );
 	}

@@ -21,6 +21,7 @@ import java.util.Set;
 
 import ortus.boxlang.runtime.components.Attribute;
 import ortus.boxlang.runtime.components.Component;
+import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.validation.Validatable;
 import ortus.boxlang.runtime.validation.Validator;
 import ortus.boxlang.runtime.context.IBoxContext;
@@ -38,11 +39,11 @@ public class ValueOneOf implements Validator {
 		this.validValues = validValues;
 	}
 
-	public void validate( IBoxContext context, Component component, Validatable record, IStruct records ) {
+	public void validate( IBoxContext context, Key caller, Validatable record, IStruct records ) {
 		if ( records.containsKey( record.name() ) ) {
 			String value = records.getAsString( record.name() );
 			if ( !validValues.stream().map( String::toLowerCase ).anyMatch( value.toLowerCase()::equals ) ) {
-				throw new BoxValidationException( component, record, "must be one of the following values: " + String.join( ", ", validValues ) );
+				throw new BoxValidationException( caller, record, "must be one of the following values: " + String.join( ", ", validValues ) );
 			}
 		}
 	}

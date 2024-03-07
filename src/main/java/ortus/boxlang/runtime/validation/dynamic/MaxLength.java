@@ -19,6 +19,7 @@ package ortus.boxlang.runtime.validation.dynamic;
 
 import ortus.boxlang.runtime.components.Attribute;
 import ortus.boxlang.runtime.components.Component;
+import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.validation.Validatable;
 import ortus.boxlang.runtime.validation.Validator;
 import ortus.boxlang.runtime.context.IBoxContext;
@@ -37,12 +38,12 @@ public class MaxLength implements Validator {
 		this.maxLength = maxLength;
 	}
 
-	public void validate( IBoxContext context, Component component, Validatable record, IStruct records ) {
+	public void validate( IBoxContext context, Key caller, Validatable record, IStruct records ) {
 		// If it was passed...
 		if ( records.get( record.name() ) != null ) {
 			// then make sure it's not greater than our threshold
 			if ( StringCaster.cast( records.get( record.name() ) ).length() > this.maxLength.doubleValue() ) {
-				throw new BoxValidationException( component, record, "cannot be longer than [" + StringCaster.cast( this.maxLength ) + "] character(s)." );
+				throw new BoxValidationException( caller, record, "cannot be longer than [" + StringCaster.cast( this.maxLength ) + "] character(s)." );
 			}
 		}
 	}

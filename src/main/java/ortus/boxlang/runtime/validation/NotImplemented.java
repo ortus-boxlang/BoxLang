@@ -20,6 +20,7 @@ package ortus.boxlang.runtime.validation;
 import ortus.boxlang.runtime.components.Attribute;
 import ortus.boxlang.runtime.components.Component;
 import ortus.boxlang.runtime.context.IBoxContext;
+import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.exceptions.BoxValidationException;
 
@@ -28,9 +29,9 @@ import ortus.boxlang.runtime.types.exceptions.BoxValidationException;
  */
 public class NotImplemented implements Validator {
 
-	public void validate( IBoxContext context, Component component, Validatable record, IStruct records ) {
+	public void validate( IBoxContext context, Key caller, Validatable record, IStruct records ) {
 		if ( records.get( record.name() ) != null ) {
-			throw new BoxValidationException( component, record, "is not implemented yet and should not be provided." );
+			throw new BoxValidationException( caller, record, "is not implemented yet and should not be provided." );
 		}
 	}
 
