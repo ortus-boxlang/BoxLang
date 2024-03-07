@@ -14,7 +14,6 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -27,6 +26,7 @@ import ortus.boxlang.debugger.event.OutputEvent;
 import ortus.boxlang.debugger.event.StoppedEvent;
 import ortus.boxlang.debugger.event.TerminatedEvent;
 import ortus.boxlang.debugger.response.ContinueResponse;
+import ortus.boxlang.debugger.response.EvaluateResponse;
 import ortus.boxlang.debugger.response.InitializeResponse;
 import ortus.boxlang.debugger.response.NoBodyResponse;
 import ortus.boxlang.debugger.response.ScopeResponse;
@@ -39,7 +39,7 @@ import ortus.boxlang.debugger.types.Scope;
 import ortus.boxlang.debugger.types.StackFrame;
 import ortus.boxlang.debugger.types.Variable;
 
-@Disabled
+// @Disabled
 public class IntegrationTest {
 
 	private List<IAdapterProtocolMessage> runDebugger( List<TriConsumer<byte[], ByteArrayInputStream, ByteArrayOutputStream>> steps ) {
@@ -163,7 +163,7 @@ public class IntegrationTest {
 
 		assertThat( breakpoints[ 0 ].column ).isEqualTo( 0 );
 		assertThat( breakpoints[ 0 ].id ).isEqualTo( 0 );
-		assertThat( breakpoints[ 0 ].line ).isEqualTo( 4 );
+		assertThat( breakpoints[ 0 ].line ).isEqualTo( 6 );
 		assertThat( breakpoints[ 0 ].verified ).isEqualTo( true );
 	}
 
@@ -520,7 +520,85 @@ public class IntegrationTest {
 	@Test
 	public void testEvaluateResponse() {
 
-		// TODO implement this!!!!!
+		EvaluateResponse message = ( EvaluateResponse ) runDebugger( Arrays.asList(
+		    sendMessageStep( DebugMessages.getInitRequest( 1 ) ),
+		    waitForMessage( "response", "initialize" ),
+		    waitForMessage( "event", "initialized" ),
+		    sendMessageStep( DebugMessages.getLaunchRequest( 2 ) ),
+		    waitForMessage( "response", "launch" ),
+		    sendMessageStep( DebugMessages.getSetBreakpointsRequest( 3, new int[] { 6 } ) ),
+		    waitForMessage( "response", "setbreakpoints" ),
+		    sendMessageStep( DebugMessages.getConfigurationDoneRequest( 4 ) ),
+		    waitForMessage( "response", "configurationdone" ),
+		    waitForMessage( "event", "stopped", 10000 ),
+		    sendMessageStep( DebugMessages.getThreadsRequest( 5 ) ),
+		    waitForMessage( "response", "threads" ),
+		    sendMessageStep( DebugMessages.getStackTraceRequest( 6 ) ),
+		    waitForMessageThenSend(
+		        "response",
+		        "stacktrace",
+		        ( found ) -> {
+			        StackTraceResponse m = ( StackTraceResponse ) found;
+
+			        return DebugMessages.getEvaluateRequest( 7, "value * 2", m.body.stackFrames.get( 0 ).id );
+		        }
+		    ),
+		    waitForMessage( "response", "evaluate", 10000 )
+
+		) )
+		    .stream()
+		    .filter( ( m ) -> {
+			    return m instanceof EvaluateResponse;
+		    } )
+		    .findFirst()
+		    .get();
+
+		assertThat( message.getType() ).isEqualTo( "response" );
+		assertThat( message.body.result ).isEqualTo( "8" );
+		assertThat( message.body.type ).isEqualTo( "numeric" );
+		assertThat( message.body.variablesReference ).isEqualTo( 0 );
+	}
+
+	@DisplayName( "It should respond to an EvaluateRequest that produces an error" )
+	@Test
+	public void testEvaluateErrorResponse() {
+
+		EvaluateResponse message = ( EvaluateResponse ) runDebugger( Arrays.asList(
+		    sendMessageStep( DebugMessages.getInitRequest( 1 ) ),
+		    waitForMessage( "response", "initialize" ),
+		    waitForMessage( "event", "initialized" ),
+		    sendMessageStep( DebugMessages.getLaunchRequest( 2 ) ),
+		    waitForMessage( "response", "launch" ),
+		    sendMessageStep( DebugMessages.getSetBreakpointsRequest( 3, new int[] { 6 } ) ),
+		    waitForMessage( "response", "setbreakpoints" ),
+		    sendMessageStep( DebugMessages.getConfigurationDoneRequest( 4 ) ),
+		    waitForMessage( "response", "configurationdone" ),
+		    waitForMessage( "event", "stopped", 10000 ),
+		    sendMessageStep( DebugMessages.getThreadsRequest( 5 ) ),
+		    waitForMessage( "response", "threads" ),
+		    sendMessageStep( DebugMessages.getStackTraceRequest( 6 ) ),
+		    waitForMessageThenSend(
+		        "response",
+		        "stacktrace",
+		        ( found ) -> {
+			        StackTraceResponse m = ( StackTraceResponse ) found;
+
+			        return DebugMessages.getEvaluateRequest( 7, "foo * 2", m.body.stackFrames.get( 0 ).id );
+		        }
+		    ),
+		    waitForMessage( "response", "evaluate", 10000 )
+
+		) )
+		    .stream()
+		    .filter( ( m ) -> {
+			    return m instanceof EvaluateResponse;
+		    } )
+		    .findFirst()
+		    .get();
+
+		assertThat( message.success ).isFalse();
+		assertThat( message.getType() ).isEqualTo( "response" );
+		assertThat( message.body.error.format ).containsMatch( "(?i)the requested key \\[foo\\]" );
 	}
 
 	@DisplayName( "It should send an OutputEvent" )

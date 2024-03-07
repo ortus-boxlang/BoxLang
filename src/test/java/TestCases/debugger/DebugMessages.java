@@ -22,6 +22,7 @@ import ortus.boxlang.debugger.event.OutputEvent;
 import ortus.boxlang.debugger.event.StoppedEvent;
 import ortus.boxlang.debugger.event.TerminatedEvent;
 import ortus.boxlang.debugger.response.ContinueResponse;
+import ortus.boxlang.debugger.response.EvaluateResponse;
 import ortus.boxlang.debugger.response.InitializeResponse;
 import ortus.boxlang.debugger.response.NoBodyResponse;
 import ortus.boxlang.debugger.response.ScopeResponse;
@@ -48,6 +49,7 @@ public class DebugMessages {
 			reader.register( "setbreakpoints", SetBreakpointsResponse.class );
 			reader.register( "stacktrace", StackTraceResponse.class );
 			reader.register( "variables", VariablesResponse.class );
+			reader.register( "evaluate", EvaluateResponse.class );
 			reader.register( "launch", NoBodyResponse.class );
 			reader.register( "continued", ContinuedEvent.class );
 			reader.register( "exited", ExitEvent.class );
@@ -457,6 +459,21 @@ Content-Length: %d
 		request.put( "command", "continue" );
 		request.put( "type", "request" );
 		request.put( "seq", seq );
+
+		return request;
+	}
+
+	public static Map<String, Object> getEvaluateRequest( int seq, String expression, int frameId ) {
+		Map<String, Object> request = new HashMap<String, Object>();
+		request.put( "command", "evaluate" );
+		request.put( "type", "request" );
+		request.put( "seq", seq );
+
+		Map<String, Object> arguments = new HashMap<String, Object>();
+		request.put( "arguments", arguments );
+		arguments.put( "expression", expression );
+		arguments.put( "frameId", frameId );
+		arguments.put( "context", "repl" );
 
 		return request;
 	}

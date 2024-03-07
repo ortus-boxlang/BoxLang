@@ -35,6 +35,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.sun.jdi.IncompatibleThreadStateException;
+import com.sun.jdi.InvocationException;
 import com.sun.jdi.ObjectReference;
 import com.sun.jdi.event.BreakpointEvent;
 
@@ -44,6 +45,7 @@ import ortus.boxlang.debugger.event.StoppedEvent;
 import ortus.boxlang.debugger.request.ConfigurationDoneRequest;
 import ortus.boxlang.debugger.request.ContinueRequest;
 import ortus.boxlang.debugger.request.DisconnectRequest;
+import ortus.boxlang.debugger.request.EvaluateRequest;
 import ortus.boxlang.debugger.request.InitializeRequest;
 import ortus.boxlang.debugger.request.LaunchRequest;
 import ortus.boxlang.debugger.request.ScopeRequest;
@@ -52,6 +54,7 @@ import ortus.boxlang.debugger.request.StackTraceRequest;
 import ortus.boxlang.debugger.request.ThreadsRequest;
 import ortus.boxlang.debugger.request.VariablesRequest;
 import ortus.boxlang.debugger.response.ContinueResponse;
+import ortus.boxlang.debugger.response.EvaluateResponse;
 import ortus.boxlang.debugger.response.InitializeResponse;
 import ortus.boxlang.debugger.response.NoBodyResponse;
 import ortus.boxlang.debugger.response.ScopeResponse;
@@ -124,6 +127,7 @@ public class DebugAdapter {
 
 			this.DAPReader.register( "initialize", InitializeRequest.class )
 			    .register( "launch", LaunchRequest.class )
+			    .register( "evaluate", EvaluateRequest.class )
 			    .register( "setBreakpoints", SetBreakpointsRequest.class )
 			    .register( "configurationDone", ConfigurationDoneRequest.class )
 			    .register( "threads", ThreadsRequest.class )
@@ -286,6 +290,26 @@ public class DebugAdapter {
 		new NoBodyResponse( debugRequest ).send( this.outputStream );
 
 		this.debugger.initialize();
+	}
+
+	/**
+	 * Visit EvaluateRequest instances. Will evalauate the expression in either the global scope or a specific stackframe.
+	 * 
+	 * @param debugRequest
+	 */
+	public void visit( EvaluateRequest debugRequest ) {
+
+		try {
+			WrappedValue	value		= this.debugger.evaluateInContext( debugRequest.arguments.expression, debugRequest.arguments.frameId );
+			Variable		varValue	= JDITools.getVariable( "evaluated", value );
+			new EvaluateResponse( debugRequest, varValue ).send( this.outputStream );
+		} catch ( InvocationException e ) {
+			String message = JDITools.wrap( this.debugger.bpe.thread(), e.exception() ).invoke( "getMessage" ).asStringReference().value();
+			new EvaluateResponse( debugRequest, message ).send( this.outputStream );
+		} catch ( Exception e ) {
+			new EvaluateResponse( debugRequest, e.toString() ).send( this.outputStream );
+		}
+
 	}
 
 	/**

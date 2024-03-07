@@ -275,15 +275,7 @@ public class JDITools {
 		 */
 		public WrappedValue invokeByNameAndArgs( String methodName, List<String> argTypes, List<Value> args ) {
 			try {
-				Value val = ( ( ObjectReference ) this.value )
-				    .invokeMethod(
-				        thread,
-				        JDITools.findMethodByNameAndArgs( ( ClassType ) ( ( ObjectReference ) value ).referenceType(), methodName, argTypes ),
-				        args,
-				        ObjectReference.INVOKE_SINGLE_THREADED
-				    );
-
-				return wrap( thread, val );
+				return invokeByNameAndArgsWithError( methodName, argTypes, args );
 			} catch ( InvalidTypeException e ) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
@@ -299,6 +291,19 @@ public class JDITools {
 			}
 
 			return null;
+		}
+
+		public WrappedValue invokeByNameAndArgsWithError( String methodName, List<String> argTypes, List<Value> args )
+		    throws InvalidTypeException, ClassNotLoadedException, IncompatibleThreadStateException, InvocationException {
+			Value val = ( ( ObjectReference ) this.value )
+			    .invokeMethod(
+			        thread,
+			        JDITools.findMethodByNameAndArgs( ( ClassType ) ( ( ObjectReference ) value ).referenceType(), methodName, argTypes ),
+			        args,
+			        ObjectReference.INVOKE_SINGLE_THREADED
+			    );
+
+			return wrap( thread, val );
 		}
 
 		public WrappedValue invoke( String methodName, List<Value> args ) {
@@ -403,7 +408,7 @@ public class JDITools {
 		    } ).toList();
 	}
 
-	private static Variable getVariable( String name, WrappedValue wrapped ) {
+	public static Variable getVariable( String name, WrappedValue wrapped ) {
 		Value		val	= wrapped.value;
 		Variable	var	= new Variable();
 		var.value	= "";

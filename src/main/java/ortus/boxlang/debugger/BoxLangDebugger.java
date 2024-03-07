@@ -21,8 +21,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.ByteBuffer;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -31,8 +29,6 @@ import java.util.List;
 // import java.lang.StackWalker.StackFrame;
 import java.util.Map;
 import java.util.Set;
-
-import org.apache.commons.lang3.ClassUtils;
 
 import com.sun.jdi.AbsentInformationException;
 import com.sun.jdi.ClassNotLoadedException;
@@ -64,9 +60,7 @@ import ortus.boxlang.debugger.event.OutputEvent;
 import ortus.boxlang.debugger.event.TerminatedEvent;
 import ortus.boxlang.debugger.types.Breakpoint;
 import ortus.boxlang.debugger.types.Variable;
-import ortus.boxlang.parser.BoxScriptType;
 import ortus.boxlang.runtime.runnables.compiler.JavaBoxpiler;
-import ortus.boxlang.runtime.runnables.compiler.JavaBoxpiler.ClassInfo;
 import ortus.boxlang.runtime.runnables.compiler.SourceMap;
 import ortus.boxlang.runtime.runnables.compiler.SourceMap.SourceMapRecord;
 import ortus.boxlang.runtime.types.BoxLangType;
@@ -227,12 +221,49 @@ public class BoxLangDebugger {
 		return findVariableyName( tuple, "context" );
 	}
 
-	public WrappedValue evaluateInContext( String expression ) {
-		int i = 4 + 4;
+	public WrappedValue evaluateInContext( String expression, int frameId )
+	    throws InvalidTypeException, ClassNotLoadedException, IncompatibleThreadStateException, InvocationException {
 		// get current stackframe of breakpoint thread
+		StackFrameTuple	sf		= getSeenStack( frameId );
 		// get the context
+		WrappedValue	context	= findVariableyName( sf, "context" );
 		// get the runtime
+		WrappedValue	runtime	= getRuntime();
 		// execute the expression
+
+		return runtime.invokeByNameAndArgsWithError(
+		    "executeStatement",
+		    Arrays.asList( "java.lang.String", "ortus.boxlang.runtime.context.IBoxContext" ),
+		    Arrays.asList(
+		        this.vm.mirrorOf( expression ),
+		        context.value()
+		    )
+		);
+	}
+
+	private WrappedValue getRuntime() {
+		ClassType	boxRuntime	= ( ClassType ) this.vm.allClasses().stream().filter( ( refType ) -> {
+									return refType.name().equalsIgnoreCase( "ortus.boxlang.runtime.BoxRuntime" );
+								} ).findFirst().get();
+		Method		getInstance	= JDITools.findMethodByNameAndArgs( boxRuntime, "getInstance", new ArrayList<String>() );
+
+		try {
+			Value boxRuntimeInstance = boxRuntime.invokeMethod( this.bpe.thread(), getInstance, new ArrayList<Value>(), 0 );
+
+			return JDITools.wrap( this.bpe.thread(), boxRuntimeInstance );
+		} catch ( InvalidTypeException e ) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch ( ClassNotLoadedException e ) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch ( IncompatibleThreadStateException e ) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch ( InvocationException e ) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 
 		return null;
 	}
@@ -499,8 +530,9 @@ public class BoxLangDebugger {
 				for ( ReferenceType vmClass : matchingTypes ) {
 					try {
 						SourceMapRecord	foundMapRecord	= javaBoxpiler.getSourceMapFromFQN( vmClass.name() ).findClosestSourceMapRecord( breakpoint.line );
-						String			sourceName		= convertSourceMapSourceClassName( foundMapRecord.javaSourceClassName );
-						if ( sourceName.compareToIgnoreCase( vmClass.name() ) != 0 ) {
+						String			sourceName		= normalizeName( foundMapRecord.javaSourceClassName );
+
+						if ( !sourceName.equals( normalizeName( vmClass.name() ) ) ) {
 							continue;
 						}
 
@@ -543,22 +575,13 @@ public class BoxLangDebugger {
 		Set<String>	referenceTypes	= new HashSet<String>();
 
 		for ( SourceMapRecord record : map.sourceMapRecords ) {
-			referenceTypes.add( convertSourceMapSourceClassName( record.javaSourceClassName ) );
+			referenceTypes.add( normalizeName( record.javaSourceClassName ) );
 		}
 
-		return vmClasses.stream().filter( ( rt ) -> referenceTypes.contains( rt.name() ) ).toList();
+		return vmClasses.stream().filter( ( rt ) -> referenceTypes.contains( normalizeName( rt.name() ) ) ).toList();
 	}
 
-	private ClassInfo getClassInfo( String fileName ) {
-		if ( fileName.endsWith( "bx" ) ) {
-			return ClassInfo.forClass( Path.of( fileName ), JavaBoxpiler.getPackageName( Paths.get( ClassUtils.getPackageName( fileName ) ).toFile() ),
-			    BoxScriptType.BOXSCRIPT );
-		}
-
-		return ClassInfo.forTemplate( Path.of( fileName ), fileName, BoxScriptType.BOXMARKUP );
-	}
-
-	private String convertSourceMapSourceClassName( String sourceClassName ) {
-		return sourceClassName.replaceAll( "(\\d)(\\.)", "$1\\$" );
+	private String normalizeName( String className ) {
+		return className.replaceAll( "\\W", "" ).toLowerCase();
 	}
 }
