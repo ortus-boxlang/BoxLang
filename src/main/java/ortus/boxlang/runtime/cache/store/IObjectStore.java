@@ -43,6 +43,13 @@ import ortus.boxlang.runtime.types.IStruct;
 public interface IObjectStore {
 
 	/**
+	 * Get the name of the store
+	 *
+	 * @return The name of the store
+	 */
+	public String getName();
+
+	/**
 	 * Get the configuration for the store
 	 */
 	public IStruct getConfig();

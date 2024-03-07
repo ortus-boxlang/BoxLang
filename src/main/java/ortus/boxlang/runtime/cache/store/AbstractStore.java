@@ -49,6 +49,13 @@ public abstract class AbstractStore implements IObjectStore {
 	private ICachePolicy		policy;
 
 	/**
+	 * Get the name of the store
+	 */
+	public String getName() {
+		return getClass().getSimpleName();
+	}
+
+	/**
 	 * Get the configuration for the store
 	 */
 	public IStruct getConfig() {

@@ -94,7 +94,14 @@ public interface ICacheEntry {
 	 *
 	 * @return The optional that represents the value
 	 */
-	public Optional<?> value();
+	public Optional<Object> value();
+
+	/**
+	 * The raw value of the cache entry
+	 *
+	 * @return The raw value or null
+	 */
+	public Object rawValue();
 
 	/**
 	 * An entry can store custom information to the entry

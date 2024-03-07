@@ -21,7 +21,9 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Supplier;
 import java.util.stream.Stream;
 
 import org.slf4j.Logger;
@@ -67,6 +69,28 @@ public class BoxCacheProvider extends AbstractCacheProvider {
 	private IObjectStore		objectStore;
 
 	/**
+	 * The TaskManager reaping future
+	 * Can be used to cancel the reaping task
+	 * or debugging
+	 */
+	private ScheduledFuture<?>	reapingFuture;
+
+	/**
+	 * The default timeout for the cache
+	 */
+	private Duration			defaultTimeout;
+
+	/**
+	 * The default last access timeout for the cache
+	 */
+	private Duration			defaultLastAccessTimeout;
+
+	/**
+	 * Max Objects
+	 */
+	private int					maxObjects;
+
+	/**
 	 * --------------------------------------------------------------------------
 	 * Constructor
 	 * --------------------------------------------------------------------------
@@ -102,21 +126,28 @@ public class BoxCacheProvider extends AbstractCacheProvider {
 		);
 
 		// Create the stats
-		this.stats				= new BoxCacheStats();
+		this.stats						= new BoxCacheStats();
 		// Create the object store and initialize it
-		this.objectStore		= buildObjectStore( config ).init( this, config.properties );
+		this.objectStore				= buildObjectStore( config ).init( this, config.properties );
 		// Enable reporting
-		this.reportingEnabled	= true;
+		this.reportingEnabled			= true;
+		// Default Max Size
+		this.maxObjects					= config.properties.getAsInteger( Key.maxObjects );
+		// Store default timeouts
+		this.defaultTimeout				= Duration.ofSeconds( config.properties.getAsInteger( Key.defaultTimeout ).longValue() );
+		this.defaultLastAccessTimeout	= Duration.ofSeconds( config.properties.getAsInteger( Key.defaultLastAccessTimeout ).longValue() );
+
+		Long frequency = config.properties.getAsInteger( Key.reapFrequency ).longValue();
 		// Create the reaping scheduled task using the CacheService executor
-		this.cacheService.getTaskScheduler()
+		this.reapingFuture = this.cacheService.getTaskScheduler()
 		    // Get a new task
 		    .newTask( "boxcache-reaper-" + getName().getName() )
 		    // Don't start immediately, wait for the first reaping
-		    .delay( config.properties.getAsLong( Key.reapFrequency ), TimeUnit.SECONDS )
+		    .delay( frequency, TimeUnit.SECONDS )
 		    // Reap every x seconds according to the config
-		    .spacedDelay( config.properties.getAsLong( Key.reapFrequency ), TimeUnit.SECONDS )
+		    .spacedDelay( frequency, TimeUnit.SECONDS )
 		    // Register the reaper
-		    .call( () -> reap() )
+		    .call( this::reap )
 		    // Fire away!
 		    .start();
 
@@ -178,8 +209,18 @@ public class BoxCacheProvider extends AbstractCacheProvider {
 		IStruct report = new Struct();
 		this.objectStore.getKeysStream()
 		    .limit( limit )
-		    .forEach( key -> report.put( key, this.objectStore.getQuiet( key ).toStruct() ) );
+		    .forEach( key -> {
+			    var results = this.objectStore.getQuiet( key );
+			    report.put( key, results != null ? results.toStruct() : new Struct() );
+		    } );
 		return report;
+	}
+
+	/**
+	 * Get the store metadata report with no limit
+	 */
+	public IStruct getStoreMetadataReport() {
+		return getStoreMetadataReport( Integer.MAX_VALUE );
 	}
 
 	/**
@@ -469,9 +510,8 @@ public class BoxCacheProvider extends AbstractCacheProvider {
 	 * @return The cache entry retrieved or null
 	 */
 	public Optional<Object> getQuiet( String key ) {
-		return Optional.ofNullable(
-		    this.objectStore.getQuiet( Key.of( key ) )
-		);
+		var results = this.objectStore.get( Key.of( key ) );
+		return results != null ? results.value() : Optional.empty();
 	}
 
 	/**
@@ -593,6 +633,195 @@ public class BoxCacheProvider extends AbstractCacheProvider {
 	}
 
 	/**
+	 * Sets an object in the storage
+	 *
+	 * @param key               The key to store
+	 * @param value             The value to store
+	 * @param timeout           The timeout in seconds
+	 * @param lastAccessTimeout The last access timeout in seconds
+	 */
+	@Override
+	public void set( String key, Object value, Duration timeout, Duration lastAccessTimeout ) {
+		set( key, value, timeout, lastAccessTimeout, new Struct() );
+	}
+
+	/**
+	 * Sets an object in the storage with a default last access timeout
+	 *
+	 * @param key     The key to store
+	 * @param value   The value to store
+	 * @param timeout The timeout in seconds
+	 */
+	@Override
+	public void set( String key, Object value, Duration timeout ) {
+		Duration lastAccessTimeout = this.defaultLastAccessTimeout;
+
+		set( key, value, timeout, lastAccessTimeout, new Struct() );
+	}
+
+	/**
+	 * Sets an object in the storage using the default timeout and last access timeout
+	 *
+	 * @param key   The key to store
+	 * @param value The value to store
+	 */
+	@Override
+	public void set( String key, Object value ) {
+		Duration	timeout				= this.defaultTimeout;
+		Duration	lastAccessTimeout	= this.defaultLastAccessTimeout;
+
+		set( key, value, timeout, lastAccessTimeout );
+	}
+
+	/**
+	 * Set's multiple objects in the storage using all the same default timeout and last access timeouts
+	 *
+	 * @param entries The keys and cache entries to store
+	 */
+	@Override
+	public void set( IStruct entries ) {
+		Duration	timeout				= this.defaultTimeout;
+		Duration	lastAccessTimeout	= this.defaultLastAccessTimeout;
+
+		entries.forEach( ( key, value ) -> this.set( key.getName(), value, timeout, lastAccessTimeout ) );
+	}
+
+	/**
+	 * Set's multiple objects in the storage using all the same default timeout and last access timeouts
+	 *
+	 * @param entries           The keys and cache entries to store in the cache
+	 * @param timeout           The timeout in seconds
+	 * @param lastAccessTimeout The last access timeout in seconds
+	 */
+	@Override
+	public void set( IStruct entries, Duration timeout, Duration lastAccessTimeout ) {
+		entries.forEach( ( key, value ) -> this.set( key.getName(), value, timeout, lastAccessTimeout ) );
+	}
+
+	/**
+	 * Tries to get an object from the cache, if not found, it will call the lambda to get the value and store it in the cache
+	 * with the default timeout and last access timeout
+	 * <p>
+	 * This is a convenience method to avoid the double lookup pattern
+	 * <p>
+	 * <code>
+	 * var value =
+	 * cache.getOrSet( "myKey", () -> {
+	 * return "myValue";
+	 * });
+	 * </code>
+	 * <p>
+	 * This is the same as:
+	 * <code>
+	 * var value = cache.get( "myKey" ).orElseGet( () -> {
+	 * var value = "myValue";
+	 * cache.set( "myKey", value );
+	 * return value;
+	 * });
+	 * </code>
+	 * <p>
+	 * This method is thread safe and will only call the lambda once if the key is not found in the cache
+	 * </p>
+	 *
+	 * @param key               The key to retrieve
+	 * @param provider          The lambda to call if the key is not found
+	 * @param timeout           The timeout in seconds
+	 * @param lastAccessTimeout The last access timeout in seconds
+	 * @param metadata          The metadata to store
+	 */
+	@Override
+	public Optional<Object> getOrSet( String key, Supplier<Object> provider, Duration timeout, Duration lastAccessTimeout, IStruct metadata ) {
+
+		// Do we have it ?
+		var results = this.get( key );
+		if ( results.isPresent() ) {
+			return results;
+		}
+
+		// Get the object
+		var lockKey = this.getName().getNameNoCase() + "-" + key;
+		// Double lock or produce
+		synchronized ( lockKey.intern() ) {
+			return this.get( key )
+			    .or( () -> {
+				    // Get the value
+				    Object value = provider.get();
+				    // Set it
+				    this.set( key, value, timeout, lastAccessTimeout, metadata );
+				    // Return it
+				    return Optional.ofNullable( value );
+			    } );
+		}
+	}
+
+	/**
+	 * Tries to get an object from the cache, if not found, it will call the lambda to get the value and store it in the cache
+	 * with the default timeout and last access timeout
+	 *
+	 * @param key               The key to retrieve
+	 * @param provider          The lambda to call if the key is not found
+	 * @param timeout           The timeout in seconds
+	 * @param lastAccessTimeout The last access timeout in seconds
+	 *
+	 * @return The object
+	 */
+	@Override
+	public Optional<Object> getOrSet( String key, Supplier<Object> provider, Duration timeout, Duration lastAccessTimeout ) {
+		return this.getOrSet( key, provider, timeout, lastAccessTimeout, new Struct() );
+	}
+
+	/**
+	 * Tries to get an object from the cache, if not found, it will call the lambda to get the value and store it in the cache
+	 * with the default timeout and last access timeout
+	 *
+	 * @param key      The key to retrieve
+	 * @param provider The lambda to call if the key is not found
+	 * @param timeout  The timeout in seconds
+	 *
+	 * @return The object
+	 */
+	@Override
+	public Optional<Object> getOrSet( String key, Supplier<Object> provider, Duration timeout ) {
+		Duration lastAccessTimeout = this.defaultLastAccessTimeout;
+		return this.getOrSet( key, provider, timeout, lastAccessTimeout );
+	}
+
+	/**
+	 * Tries to get an object from the cache, if not found, it will call the lambda to get the value and store it in the cache
+	 * with the default timeout and last access timeout
+	 *
+	 * @param key      The key to retrieve
+	 * @param provider The lambda to call if the key is not found
+	 *
+	 * @return The object
+	 */
+	@Override
+	public Optional<Object> getOrSet( String key, Supplier<Object> provider ) {
+		Duration	timeout				= this.defaultTimeout;
+		Duration	lastAccessTimeout	= this.defaultLastAccessTimeout;
+		return this.getOrSet( key, provider, timeout, lastAccessTimeout );
+	}
+
+	/**
+	 * --------------------------------------------------------------------------
+	 * Non - Interface Methods
+	 * --------------------------------------------------------------------------
+	 */
+
+	/**
+	 * Get the reaping future
+	 */
+	public ScheduledFuture<?> getReapingFuture() {
+		return this.reapingFuture;
+	}
+
+	/**
+	 * --------------------------------------------------------------------------
+	 * Private Methods
+	 * --------------------------------------------------------------------------
+	 */
+
+	/**
 	 * Runs the eviction checks against the cache provider rules
 	 */
 	private void evictChecks() {
@@ -604,7 +833,7 @@ public class BoxCacheProvider extends AbstractCacheProvider {
 		}
 
 		// Max Objects Check
-		if ( getSize() >= this.config.properties.getAsInteger( Key.maxObjects ) ) {
+		if ( getSize() >= this.maxObjects ) {
 			runEvict = true;
 		}
 

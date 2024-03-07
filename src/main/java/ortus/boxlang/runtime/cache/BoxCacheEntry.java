@@ -221,8 +221,13 @@ public class BoxCacheEntry implements ICacheEntry, Serializable {
 	}
 
 	@Override
-	public Optional<?> value() {
+	public Optional<Object> value() {
 		return Optional.ofNullable( this.value );
+	}
+
+	@Override
+	public Object rawValue() {
+		return this.value;
 	}
 
 	@Override

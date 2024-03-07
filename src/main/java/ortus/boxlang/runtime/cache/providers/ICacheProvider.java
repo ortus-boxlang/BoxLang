@@ -117,6 +117,13 @@ public interface ICacheProvider {
 	public IStruct getStoreMetadataReport( int limit );
 
 	/**
+	 * Get a structure of all the keys in the cache with their appropriate metadata structures. This is used to build the
+	 * reporting.[keyX->[metadataStructure]]
+	 * This should be using a limit of 0, or all keys
+	 */
+	public IStruct getStoreMetadataReport();
+
+	/**
 	 * Get a key lookup structure where cachebox can build the report on.
 	 * Ex: [timeout=timeout, lastAccessTimeout=idleTimeout]. It is a way for the
 	 * visualizer to construct the columns correctly on the reports
@@ -397,7 +404,7 @@ public interface ICacheProvider {
 	 * @param lastAccessTimeout The last access timeout in seconds
 	 * @param metadata          The metadata to store
 	 */
-	public Object getOrSet( String key, Supplier<Object> provider, Duration timeout, Duration lastAccessTimeout, IStruct metadata );
+	public Optional<Object> getOrSet( String key, Supplier<Object> provider, Duration timeout, Duration lastAccessTimeout, IStruct metadata );
 
 	/**
 	 * Tries to get an object from the cache, if not found, it will call the lambda to get the value and store it in the cache
@@ -410,7 +417,7 @@ public interface ICacheProvider {
 	 *
 	 * @return The object
 	 */
-	public Object getOrSet( String key, Supplier<Object> provider, Duration timeout, Duration lastAccessTimeout );
+	public Optional<Object> getOrSet( String key, Supplier<Object> provider, Duration timeout, Duration lastAccessTimeout );
 
 	/**
 	 * Tries to get an object from the cache, if not found, it will call the lambda to get the value and store it in the cache
@@ -422,7 +429,7 @@ public interface ICacheProvider {
 	 *
 	 * @return The object
 	 */
-	public Object getOrSet( String key, Supplier<Object> provider, Duration timeout );
+	public Optional<Object> getOrSet( String key, Supplier<Object> provider, Duration timeout );
 
 	/**
 	 * Tries to get an object from the cache, if not found, it will call the lambda to get the value and store it in the cache
@@ -433,5 +440,5 @@ public interface ICacheProvider {
 	 *
 	 * @return The object
 	 */
-	public Object getOrSet( String key, Supplier<Object> provider );
+	public Optional<Object> getOrSet( String key, Supplier<Object> provider );
 }
