@@ -196,8 +196,8 @@ compileJava {
 }
 
 task compileCoreModules( type: JavaCompile ) {
-    source = files( [ 'src/main/resources/modules' ] ).asFileTree
-    destinationDir = file( 'src/main/resources' )
+    source = files( [ 'src/main/resources/modules/test' ] ).asFileTree
+    destinationDir = file( 'src/main/resources/modules/test' )
     classpath = files( [ sourceSets.main.compileClasspath, sourceSets.main.output ] )
 }
 compileJava.finalizedBy( compileCoreModules )
