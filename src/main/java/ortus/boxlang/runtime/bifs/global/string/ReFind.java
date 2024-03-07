@@ -29,8 +29,12 @@ import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
 @BoxBIF
-@BoxMember( type = BoxLangType.STRING, name = "ReFind" )
+@BoxBIF( alias = "reFindNoCase" )
+@BoxMember( type = BoxLangType.STRING, name = "reFind" )
+@BoxMember( type = BoxLangType.STRING, name = "reFindNoCase" )
 public class ReFind extends BIF {
+
+	private static final Key reFindNoCase = Key.of( "reFindNoCase" );
 
 	/**
 	 * Constructor
@@ -75,6 +79,11 @@ public class ReFind extends BIF {
 		Integer	start					= arguments.getAsInteger( Key.start );
 		Boolean	returnSubExpressions	= arguments.getAsBoolean( Key.returnSubExpressions );
 		String	scope					= arguments.getAsString( Key.scope ).toLowerCase();
+		boolean	noCase					= arguments.get( BIF.__functionName ).equals( reFindNoCase );
+
+		if ( noCase ) {
+			reg_expression = "(?i)" + reg_expression;
+		}
 
 		// Check if the start position is within valid bounds
 		if ( start < 1 ) {

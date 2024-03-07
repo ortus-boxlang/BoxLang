@@ -44,14 +44,15 @@ public class ArgumentUtil {
 	 *
 	 * @return The arguments scope
 	 */
-	public static ArgumentsScope createArgumentsScope( IBoxContext context, Object[] positionalArguments, Argument[] arguments, ArgumentsScope scope ) {
+	public static ArgumentsScope createArgumentsScope( IBoxContext context, Object[] positionalArguments, Argument[] arguments, ArgumentsScope scope,
+	    Key functionName ) {
 		// Add all incoming args to the scope, using the name if declared, otherwise using the position
 		for ( int i = 0; i < positionalArguments.length; i++ ) {
 			Key		name;
 			Object	value	= positionalArguments[ i ];
 			if ( arguments.length - 1 >= i ) {
 				name	= arguments[ i ].name();
-				value	= ensureArgumentType( context, name, value, arguments[ i ].type() );
+				value	= ensureArgumentType( context, name, value, arguments[ i ].type(), functionName );
 			} else {
 				name = Key.of( Integer.toString( i + 1 ) );
 			}
@@ -65,7 +66,8 @@ public class ArgumentUtil {
 					throw new BoxRuntimeException( "Required argument " + arguments[ i ].name().getName() + " is missing" );
 				}
 				scope.put( arguments[ i ].name(),
-				    ensureArgumentType( context, arguments[ i ].name(), arguments[ i ].getDefaultValue( context ), arguments[ i ].type() ) );
+				    ensureArgumentType( context, arguments[ i ].name(), arguments[ i ].getDefaultValue( context ), arguments[ i ].type(), functionName )
+				);
 			}
 		}
 		return scope;
@@ -79,7 +81,8 @@ public class ArgumentUtil {
 	 *
 	 * @return The arguments scope
 	 */
-	public static ArgumentsScope createArgumentsScope( IBoxContext context, Map<Key, Object> namedArguments, Argument[] arguments, ArgumentsScope scope ) {
+	public static ArgumentsScope createArgumentsScope( IBoxContext context, Map<Key, Object> namedArguments, Argument[] arguments, ArgumentsScope scope,
+	    Key functionName ) {
 		// If argumentCollection exists, add it
 		if ( namedArguments.containsKey( Function.ARGUMENT_COLLECTION ) ) {
 			Object argCollection = namedArguments.get( Function.ARGUMENT_COLLECTION );
@@ -119,11 +122,12 @@ public class ArgumentUtil {
 					throw new BoxRuntimeException( "Required argument " + argument.name().getName() + " is missing" );
 				}
 				// Make sure the default value is valid
-				scope.put( argument.name(), ensureArgumentType( context, argument.name(), argument.getDefaultValue( context ), argument.type() ) );
+				scope.put( argument.name(),
+				    ensureArgumentType( context, argument.name(), argument.getDefaultValue( context ), argument.type(), functionName ) );
 				// If they are here, confirm their types
 			} else {
 				scope.put( argument.name(),
-				    ensureArgumentType( context, argument.name(), scope.get( argument.name() ), argument.type() ) );
+				    ensureArgumentType( context, argument.name(), scope.get( argument.name() ), argument.type(), functionName ) );
 			}
 		}
 		return scope;
@@ -136,8 +140,8 @@ public class ArgumentUtil {
 	 *
 	 * @return The arguments scope
 	 */
-	public static ArgumentsScope createArgumentsScope( IBoxContext context, Argument[] arguments, ArgumentsScope scope ) {
-		return createArgumentsScope( context, new Object[] {}, arguments, scope );
+	public static ArgumentsScope createArgumentsScope( IBoxContext context, Argument[] arguments, ArgumentsScope scope, Key functionName ) {
+		return createArgumentsScope( context, new Object[] {}, arguments, scope, functionName );
 	}
 
 	/**
@@ -150,15 +154,16 @@ public class ArgumentUtil {
 	 * @return The value of the argument
 	 *
 	 */
-	public static Object ensureArgumentType( IBoxContext context, Key name, Object value, String type ) {
+	public static Object ensureArgumentType( IBoxContext context, Key name, Object value, String type, Key functionName ) {
 		if ( value == null ) {
 			return null;
 		}
 		CastAttempt<Object> typeCheck = GenericCaster.attempt( context, value, type, true );
 		if ( !typeCheck.wasSuccessful() ) {
 			throw new BoxRuntimeException(
-			    String.format( "Argument [%s] with a type of [%s] does not match the declared type of [%s]",
-			        name.getName(), DynamicObject.unWrap( value ).getClass().getName(), type )
+			    String.format( "In function [%s], argument [%s] with a type of [%s] does not match the declared type of [%s]",
+			        functionName.getName(), name.getName(), DynamicObject.unWrap( value ).getClass().getName(),
+			        type )
 			);
 		}
 		// Should we actually return the casted value??? Not CFML Compat! If so, return typeCheck.get() with check for NullValue instances.

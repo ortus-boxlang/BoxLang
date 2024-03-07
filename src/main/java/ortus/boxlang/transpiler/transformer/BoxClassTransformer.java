@@ -41,6 +41,7 @@ import ortus.boxlang.ast.BoxNode;
 import ortus.boxlang.ast.BoxStatement;
 import ortus.boxlang.ast.Source;
 import ortus.boxlang.ast.SourceFile;
+import ortus.boxlang.ast.expression.BoxBooleanLiteral;
 import ortus.boxlang.ast.expression.BoxFQN;
 import ortus.boxlang.ast.expression.BoxIntegerLiteral;
 import ortus.boxlang.ast.expression.BoxNull;
@@ -425,7 +426,7 @@ public class BoxClassTransformer extends AbstractTransformer {
 						return variablesScope.dereference( context, getterLookup.get( name ).name(), safe );
 					}
 					Property setterProperty = setterLookup.get( name );
-					System.out.println( "setterProperty lookup: " + setterProperty );
+					//System.out.println( "setterProperty lookup: " + setterProperty );
 					if( setterProperty != null ) {
 						Key thisName = setterProperty.name();
 						if( positionalArguments.length == 0 ) {
@@ -551,8 +552,6 @@ public class BoxClassTransformer extends AbstractTransformer {
 				meta.put( "accessors", false );
 				if( getSuper() != null ) {
 					meta.put( "extends", getSuper().getMetaData() );
-				} else {
-					meta.put( "extends", Struct.EMPTY );
 				}
 				meta.put( "functions", Array.fromList( functions ) );
 				meta.put( "hashCode", hashCode() );
@@ -854,16 +853,16 @@ public class BoxClassTransformer extends AbstractTransformer {
 			members.add( jNameKey );
 			members.add( javaExpr );
 
-			// Check if getter key annotation is defined in finalAnnotations and false
+			// Check if getter key annotation is defined in finalAnnotations and false. I don't love this as annotations can technically be any literal
 			boolean getter = !finalAnnotations.stream()
-			    .anyMatch( it -> it.getKey().getValue().equalsIgnoreCase( "getter" ) && !BooleanCaster.cast( it.getValue() ) );
+			    .anyMatch( it -> it.getKey().getValue().equalsIgnoreCase( "getter" ) && !BooleanCaster.cast( getBoxExprAsString( it.getValue() ) ) );
 			if ( getter ) {
 				getterLookup.add( jGetNameKey );
 				getterLookup.add( ( Expression ) parseExpression( "properties.get( ${name} )", values ) );
 			}
-			// Check if setter key annotation is defined in finalAnnotations and false
+			// Check if setter key annotation is defined in finalAnnotations and false. I don't love this as annotations can technically be any literal
 			boolean setter = !finalAnnotations.stream()
-			    .anyMatch( it -> it.getKey().getValue().equalsIgnoreCase( "setter" ) && !BooleanCaster.cast( it.getValue() ) );
+			    .anyMatch( it -> it.getKey().getValue().equalsIgnoreCase( "setter" ) && !BooleanCaster.cast( getBoxExprAsString( it.getValue() ) ) );
 			if ( setter ) {
 				setterLookup.add( jSetNameKey );
 				setterLookup.add( ( Expression ) parseExpression( "properties.get( ${name} )", values ) );
@@ -881,6 +880,27 @@ public class BoxClassTransformer extends AbstractTransformer {
 			getterStruct.getArguments().addAll( getterLookup );
 			setterStruct.getArguments().addAll( setterLookup );
 			return List.of( propertiesStruct, getterStruct, setterStruct );
+		}
+	}
+
+	/**
+	 * Janky workaround to extract value from a literal expression.
+	 * 
+	 * @param expr the expression to extract the value from
+	 * 
+	 * @return the value as a string
+	 */
+	private String getBoxExprAsString( BoxExpr expr ) {
+		if ( expr == null ) {
+			return "";
+		}
+		if ( expr instanceof BoxStringLiteral str ) {
+			return str.getValue();
+		}
+		if ( expr instanceof BoxBooleanLiteral bool ) {
+			return bool.getValue();
+		} else {
+			throw new BoxRuntimeException( "Unsupported BoxExpr type: " + expr.getClass().getSimpleName() );
 		}
 	}
 

@@ -566,6 +566,9 @@ public class DynamicObject implements IReferenceable {
 	 * @return The requested return value or null
 	 */
 	public Object dereferenceAndInvoke( IBoxContext context, Key name, Object[] positionalArguments, Boolean safe ) {
+		if ( name.equals( Key.init ) ) {
+			return DynamicInteropService.invokeConstructor( context, this.targetClass, positionalArguments );
+		}
 		return DynamicInteropService.dereferenceAndInvoke( this.targetClass, this.targetInstance, context, name, positionalArguments, safe );
 	}
 

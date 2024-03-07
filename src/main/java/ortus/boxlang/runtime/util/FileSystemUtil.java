@@ -632,7 +632,7 @@ public final class FileSystemUtil {
 			infoStruct.put( "path", path.toAbsolutePath().toString() );
 			infoStruct.put( "size", Files.isDirectory( path ) ? 0l : Files.size( path ) );
 			infoStruct.put( "type", Files.isDirectory( path ) ? "dir" : "file" );
-			infoStruct.put( "dateLastModified", new DateTime( Files.getLastModifiedTime( path ).toInstant() ).setFormat( "MMMM, d, yyyy HH:mm:ss Z" ) );
+			infoStruct.put( "lastModified", new DateTime( Files.getLastModifiedTime( path ).toInstant() ).setFormat( "MMMM, d, yyyy HH:mm:ss Z" ) );
 			if ( verbose == null || !verbose ) {
 				// fileInfo method compatibile keys
 				infoStruct.put( "attributes", "" );

@@ -312,7 +312,7 @@ public class ClassTest {
 		assertThat( meta.get( Key.of( "properties" ) ) ).isInstanceOf( Array.class );
 		assertThat( meta.get( Key.of( "functions" ) ) instanceof Array ).isTrue();
 		assertThat( meta.getAsArray( Key.of( "functions" ) ).size() ).isEqualTo( 4 );
-		assertThat( meta.get( Key.of( "extends" ) ) instanceof IStruct ).isTrue();
+		assertThat( meta.get( Key.of( "extends" ) ) ).isNull();
 		assertThat( meta.get( Key.of( "output" ) ) ).isEqualTo( true );
 		assertThat( meta.get( Key.of( "persisent" ) ) ).isEqualTo( false );
 		assertThat( meta.get( Key.of( "accessors" ) ) ).isEqualTo( false );

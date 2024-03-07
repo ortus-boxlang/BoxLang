@@ -268,6 +268,7 @@ ortus.boxlang.runtime.bifs.global.system.GetBaseTemplatePath
 ortus.boxlang.runtime.bifs.global.system.GetBoxContext
 ortus.boxlang.runtime.bifs.global.system.GetBoxRuntime
 ortus.boxlang.runtime.bifs.global.system.GetComponentMetadata
+ortus.boxlang.runtime.bifs.global.system.GetContextRoot
 ortus.boxlang.runtime.bifs.global.system.GetCurrentTemplatePath
 ortus.boxlang.runtime.bifs.global.system.GetFileFromPath
 ortus.boxlang.runtime.bifs.global.system.GetFunctionList

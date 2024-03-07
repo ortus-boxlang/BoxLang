@@ -123,7 +123,7 @@ closure:
 anonymousFunctionBody: statementBlock | simpleStatement;
 
 // { statement; statement; }
-statementBlock: LBRACE (statement)* RBRACE;
+statementBlock: LBRACE (statement)* RBRACE eos?;
 
 // Any top-level statement that can be in a block.
 statement: (

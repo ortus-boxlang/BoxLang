@@ -590,4 +590,26 @@ public class DynamicObjectTest {
 		assertThat( myInvoker.dereference( context, Key.of( 50 ), true ) ).isEqualTo( null );
 	}
 
+	@DisplayName( "It can init class" )
+	@Test
+	void testItCanInitClass() {
+		DynamicObject	stringClass	= DynamicObject.of( String.class );
+		String			myString	= ( String ) stringClass.dereferenceAndInvoke( context, Key.init, new Object[] { "my string" }, false );
+		String			yourString	= ( String ) stringClass.dereferenceAndInvoke( context, Key.init, new Object[] { "your string" }, false );
+		assertThat( myString ).isEqualTo( "my string" );
+		assertThat( yourString ).isEqualTo( "your string" );
+
+	}
+
+	@DisplayName( "It can init instance" )
+	@Test
+	void testItCanInitInstance() {
+		DynamicObject	stringClass	= DynamicObject.of( new String( "some existing string" ) );
+		String			myString	= ( String ) stringClass.dereferenceAndInvoke( context, Key.init, new Object[] { "my string" }, false );
+		String			yourString	= ( String ) stringClass.dereferenceAndInvoke( context, Key.init, new Object[] { "your string" }, false );
+		assertThat( myString ).isEqualTo( "my string" );
+		assertThat( yourString ).isEqualTo( "your string" );
+
+	}
+
 }

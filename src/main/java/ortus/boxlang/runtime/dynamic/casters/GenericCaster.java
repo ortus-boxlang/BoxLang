@@ -183,7 +183,7 @@ public class GenericCaster {
 		if ( type.equals( "array" ) ) {
 			return ArrayCaster.cast( object, fail );
 		}
-		if ( type.equals( "datetime" ) ) {
+		if ( type.equals( "datetime" ) || type.equals( "date" ) ) {
 			return DateTimeCaster.cast( object, fail );
 		}
 		if ( type.equals( "modifiablearray" ) ) {

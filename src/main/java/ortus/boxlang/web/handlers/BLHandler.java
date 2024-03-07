@@ -30,12 +30,14 @@ import io.undertow.server.HttpHandler;
 import io.undertow.server.HttpServerExchange;
 import io.undertow.util.HttpString;
 import ortus.boxlang.runtime.BoxRuntime;
+import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.exceptions.AbortException;
 import ortus.boxlang.runtime.types.exceptions.BoxLangException;
 import ortus.boxlang.runtime.types.exceptions.ExceptionUtil;
+import ortus.boxlang.runtime.util.FRTransService;
 import ortus.boxlang.web.WebRequestBoxContext;
 
 /**
@@ -45,10 +47,15 @@ public class BLHandler implements HttpHandler {
 
 	@Override
 	public void handleRequest( io.undertow.server.HttpServerExchange exchange ) throws Exception {
-		WebRequestBoxContext context = null;
+		WebRequestBoxContext	context			= null;
+		DynamicObject			trans			= null;
+		FRTransService			frTransService	= null;
+
 		try {
+			frTransService = FRTransService.getInstance();
 			String requestPath = exchange.getRequestPath();
-			context = new WebRequestBoxContext( BoxRuntime.getInstance().getRuntimeContext(), exchange );
+			trans	= frTransService.startTransaction( "Run Source", requestPath );
+			context	= new WebRequestBoxContext( BoxRuntime.getInstance().getRuntimeContext(), exchange );
 			// Set default content type to text/html
 			exchange.getResponseHeaders().put( new HttpString( "Content-Type" ), "text/html" );
 			context.loadApplicationDescriptor( new URI( requestPath ) );
@@ -66,6 +73,16 @@ public class BLHandler implements HttpHandler {
 				throw ( RuntimeException ) e.getCause();
 			}
 		} catch ( Throwable e ) {
+			e.printStackTrace();
+
+			if ( frTransService != null ) {
+				if ( e instanceof Exception ee ) {
+					frTransService.errorTransaction( trans, ee );
+				} else {
+					frTransService.errorTransaction( trans, new Exception( e ) );
+				}
+			}
+
 			if ( context != null )
 				context.flushBuffer( true );
 			handleError( e, exchange, context );
@@ -73,11 +90,13 @@ public class BLHandler implements HttpHandler {
 			if ( context != null )
 				context.flushBuffer( false );
 			exchange.endExchange();
+			if ( frTransService != null ) {
+				frTransService.endTransaction( trans );
+			}
 		}
 	}
 
 	public void handleError( Throwable e, HttpServerExchange exchange, WebRequestBoxContext context ) {
-		e.printStackTrace();
 		try {
 			StringBuilder errorOutput = new StringBuilder();
 			errorOutput.append( "<h1>BoxLang Error</h1>" )

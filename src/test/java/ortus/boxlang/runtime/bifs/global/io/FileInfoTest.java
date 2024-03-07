@@ -93,8 +93,8 @@ public class FileInfoTest {
 		assertTrue( result.containsKey( Key.of( "checksum" ) ) );
 		assertTrue( result.get( "checksum" ) instanceof String );
 		assertThat( result.getAsString( Key.of( "checksum" ) ).length() ).isEqualTo( 32 );
-		assertTrue( result.containsKey( Key.of( "dateLastModified" ) ) );
-		assertTrue( result.get( "dateLastModified" ) instanceof DateTime );
+		assertTrue( result.containsKey( Key.of( "lastModified" ) ) );
+		assertTrue( result.get( "lastModified" ) instanceof DateTime );
 		assertTrue( result.containsKey( Key.of( "execute" ) ) );
 		assertTrue( result.get( "execute" ) instanceof Boolean );
 		assertTrue( result.containsKey( Key.of( "mode" ) ) );
@@ -132,8 +132,8 @@ public class FileInfoTest {
 		assertTrue( result.get( "attributes" ) instanceof String );
 		assertTrue( result.containsKey( Key.of( "checksum" ) ) );
 		assertTrue( result.get( "checksum" ) instanceof String );
-		assertTrue( result.containsKey( Key.of( "dateLastModified" ) ) );
-		assertTrue( result.get( "dateLastModified" ) instanceof DateTime );
+		assertTrue( result.containsKey( Key.of( "lastModified" ) ) );
+		assertTrue( result.get( "lastModified" ) instanceof DateTime );
 		assertTrue( result.containsKey( Key.of( "execute" ) ) );
 		assertTrue( result.get( "execute" ) instanceof Boolean );
 		assertTrue( result.containsKey( Key.of( "mode" ) ) );
@@ -172,8 +172,8 @@ public class FileInfoTest {
 		assertTrue( result.get( "attributes" ) instanceof String );
 		assertTrue( result.containsKey( Key.of( "checksum" ) ) );
 		assertTrue( result.get( "checksum" ) instanceof String );
-		assertTrue( result.containsKey( Key.of( "dateLastModified" ) ) );
-		assertTrue( result.get( "dateLastModified" ) instanceof DateTime );
+		assertTrue( result.containsKey( Key.of( "lastModified" ) ) );
+		assertTrue( result.get( "lastModified" ) instanceof DateTime );
 		assertTrue( result.containsKey( Key.of( "execute" ) ) );
 		assertTrue( result.get( "execute" ) instanceof Boolean );
 		assertTrue( result.containsKey( Key.of( "mode" ) ) );
@@ -209,8 +209,8 @@ public class FileInfoTest {
 		IStruct result = variables.getAsStruct( Key.of( "result" ) );
 		assertTrue( result.containsKey( Key.of( "isAttributesSupported" ) ) );
 		assertTrue( result.get( "isAttributesSupported" ) instanceof Boolean );
-		assertTrue( result.containsKey( Key.of( "dateLastModified" ) ) );
-		assertTrue( result.get( "dateLastModified" ) instanceof DateTime );
+		assertTrue( result.containsKey( Key.of( "lastModified" ) ) );
+		assertTrue( result.get( "lastModified" ) instanceof DateTime );
 		assertTrue( result.containsKey( Key.of( "name" ) ) );
 		assertTrue( result.get( "name" ) instanceof String );
 		assertTrue( result.containsKey( Key.of( "path" ) ) );

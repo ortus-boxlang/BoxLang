@@ -120,7 +120,7 @@ public abstract class Function implements IType, IFunctionRunnable, Serializable
 	 * @return The arguments scope
 	 */
 	public ArgumentsScope createArgumentsScope( IBoxContext context, Object[] positionalArguments ) {
-		return ArgumentUtil.createArgumentsScope( context, positionalArguments, getArguments(), new ArgumentsScope() );
+		return ArgumentUtil.createArgumentsScope( context, positionalArguments, getArguments(), new ArgumentsScope(), getName() );
 	}
 
 	/**
@@ -131,7 +131,7 @@ public abstract class Function implements IType, IFunctionRunnable, Serializable
 	 * @return The arguments scope
 	 */
 	public ArgumentsScope createArgumentsScope( IBoxContext context, Map<Key, Object> namedArguments ) {
-		return ArgumentUtil.createArgumentsScope( context, namedArguments, getArguments(), new ArgumentsScope() );
+		return ArgumentUtil.createArgumentsScope( context, namedArguments, getArguments(), new ArgumentsScope(), getName() );
 	}
 
 	/**
@@ -140,7 +140,7 @@ public abstract class Function implements IType, IFunctionRunnable, Serializable
 	 * @return The arguments scope
 	 */
 	public ArgumentsScope createArgumentsScope( IBoxContext context ) {
-		return ArgumentUtil.createArgumentsScope( context, getArguments(), new ArgumentsScope() );
+		return ArgumentUtil.createArgumentsScope( context, getArguments(), new ArgumentsScope(), getName() );
 	}
 
 	/**
@@ -193,8 +193,8 @@ public abstract class Function implements IType, IFunctionRunnable, Serializable
 		CastAttempt<Object> typeCheck = GenericCaster.attempt( context, value, getReturnType(), true );
 		if ( !typeCheck.wasSuccessful() ) {
 			throw new BoxRuntimeException(
-			    String.format( "The return value of the function [%s] does not match the declared type of [%s]",
-			        value.getClass().getName(), getReturnType() )
+			    String.format( "The return value of the function [%s] is of type [%s] does not match the declared type of [%s]",
+			        getName().getName(), value.getClass().getName(), getReturnType() )
 			);
 		}
 		// Should we actually return the casted value??? Not CFML Compat! If so, return typeCheck.get() with check for NullValue instances.

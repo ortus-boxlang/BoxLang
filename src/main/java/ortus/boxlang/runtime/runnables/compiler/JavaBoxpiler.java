@@ -53,11 +53,13 @@ import ortus.boxlang.parser.BoxParser;
 import ortus.boxlang.parser.BoxScriptType;
 import ortus.boxlang.parser.ParsingResult;
 import ortus.boxlang.runtime.BoxRuntime;
+import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.runnables.IBoxRunnable;
 import ortus.boxlang.runtime.runnables.IClassRunnable;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.exceptions.ExpressionException;
 import ortus.boxlang.runtime.types.exceptions.ParseException;
+import ortus.boxlang.runtime.util.FRTransService;
 import ortus.boxlang.transpiler.CustomPrettyPrinter;
 import ortus.boxlang.transpiler.TranspiledCode;
 import ortus.boxlang.transpiler.Transpiler;
@@ -114,6 +116,8 @@ public class JavaBoxpiler {
 	 * The directory where the generated classes are stored
 	 */
 	private Path					classGenerationDirectory;
+
+	private FRTransService			frTransService	= FRTransService.getInstance();
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -298,11 +302,14 @@ public class JavaBoxpiler {
 	 * @return The parsed AST nodes and any issues if encountered while parsing.
 	 */
 	public ParsingResult parse( File file ) {
-		BoxParser parser = new BoxParser();
+		DynamicObject	trans	= frTransService.startTransaction( "BL File Parse", file.toString() );
+		BoxParser		parser	= new BoxParser();
 		try {
 			return parser.parse( file );
 		} catch ( IOException e ) {
 			throw new BoxRuntimeException( "Error compiling source " + file.toString(), e );
+		} finally {
+			frTransService.endTransaction( trans );
 		}
 	}
 
@@ -314,11 +321,14 @@ public class JavaBoxpiler {
 	 * @return The parsed AST nodes and any issues if encountered while parsing.
 	 */
 	public ParsingResult parse( String source, BoxScriptType type ) {
-		BoxParser parser = new BoxParser();
+		DynamicObject	trans	= frTransService.startTransaction( "BL Source Parse", type.name() );
+		BoxParser		parser	= new BoxParser();
 		try {
 			return parser.parse( source, type );
 		} catch ( IOException e ) {
 			throw new BoxRuntimeException( "Error compiling source", e );
+		} finally {
+			frTransService.endTransaction( trans );
 		}
 	}
 
@@ -375,7 +385,8 @@ public class JavaBoxpiler {
 		transpiler.setProperty( "baseclass", classInfo.baseclass() );
 		transpiler.setProperty( "returnType", classInfo.returnType() );
 		transpiler.setProperty( "sourceType", classInfo.sourceType().name() );
-		TranspiledCode javaASTs;
+		TranspiledCode	javaASTs;
+		DynamicObject	trans	= frTransService.startTransaction( "Java Transpilation", classInfo.toString() );
 		try {
 			javaASTs = transpiler.transpile( node );
 		} catch ( ExpressionException e ) {
@@ -384,6 +395,8 @@ public class JavaBoxpiler {
 		} catch ( Exception e ) {
 			// This is for low-level bugs in the actual compilatin that are unexpected and can be hard to debug
 			throw new BoxRuntimeException( "Error transpiling BoxLang to Java. " + classInfo.toString(), e );
+		} finally {
+			frTransService.endTransaction( trans );
 		}
 		ClassOrInterfaceDeclaration outerClass = javaASTs.getEntryPoint().getClassByName( classInfo.className() ).get();
 
@@ -427,22 +440,26 @@ public class JavaBoxpiler {
 	 */
 	@SuppressWarnings( "unused" )
 	public void compileSource( String javaSource, String fqn ) {
+		DynamicObject trans = frTransService.startTransaction( "Java Compilation", fqn );
 		System.out.println( "Compiling " + fqn );
 
 		// This is just for debugging. Remove later.
 		diskClassLoader.writeJavaSource( fqn, javaSource );
+		try {
+			DiagnosticCollector<JavaFileObject>	diagnostics		= new DiagnosticCollector<>();
+			String								javaRT			= System.getProperty( "java.class.path" );
+			List<JavaFileObject>				sourceFiles		= Collections.singletonList( new JavaSourceString( fqn, javaSource ) );
+			List<String>						options			= List.of( "-g" );
+			JavaCompiler.CompilationTask		task			= compiler.getTask( null, manager, diagnostics, options, null, sourceFiles );
+			boolean								compilerResult	= task.call();
 
-		DiagnosticCollector<JavaFileObject>	diagnostics		= new DiagnosticCollector<>();
-		String								javaRT			= System.getProperty( "java.class.path" );
-		List<JavaFileObject>				sourceFiles		= Collections.singletonList( new JavaSourceString( fqn, javaSource ) );
-		List<String>						options			= List.of( "-g" );
-		JavaCompiler.CompilationTask		task			= compiler.getTask( null, manager, diagnostics, options, null, sourceFiles );
-		boolean								compilerResult	= task.call();
-
-		if ( !compilerResult ) {
-			String errors = diagnostics.getDiagnostics().stream().map( d -> d.toString() )
-			    .collect( Collectors.joining( "\n" ) );
-			throw new BoxRuntimeException( errors + "\n" + javaSource );
+			if ( !compilerResult ) {
+				String errors = diagnostics.getDiagnostics().stream().map( d -> d.toString() )
+				    .collect( Collectors.joining( "\n" ) );
+				throw new BoxRuntimeException( errors + "\n" + javaSource );
+			}
+		} finally {
+			frTransService.endTransaction( trans );
 		}
 
 	}

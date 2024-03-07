@@ -19,6 +19,7 @@ package ortus.boxlang.runtime.context;
 
 import java.util.Map;
 
+import ortus.boxlang.parser.BoxScriptType;
 import ortus.boxlang.runtime.runnables.IClassRunnable;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.IScope;
@@ -137,11 +138,11 @@ public class FunctionBoxContext extends BaseBoxContext {
 		if ( function == null ) {
 			throw new BoxRuntimeException( "function cannot be null for FunctionBoxContext" );
 		}
-		this.localScope		= new LocalScope();
-		this.argumentsScope	= new ArgumentsScope();
-		ArgumentUtil.createArgumentsScope( this, positionalArguments, function.getArguments(), this.argumentsScope );
+		this.localScope			= new LocalScope();
+		this.argumentsScope		= new ArgumentsScope();
 		this.function			= function;
 		this.functionCalledName	= functionCalledName;
+		ArgumentUtil.createArgumentsScope( this, positionalArguments, function.getArguments(), this.argumentsScope, function.getName() );
 	}
 
 	/**
@@ -160,11 +161,11 @@ public class FunctionBoxContext extends BaseBoxContext {
 		if ( function == null ) {
 			throw new BoxRuntimeException( "function cannot be null for FunctionBoxContext" );
 		}
-		this.localScope		= new LocalScope();
-		this.argumentsScope	= new ArgumentsScope();
-		ArgumentUtil.createArgumentsScope( this, namedArguments, function.getArguments(), this.argumentsScope );
+		this.localScope			= new LocalScope();
+		this.argumentsScope		= new ArgumentsScope();
 		this.function			= function;
 		this.functionCalledName	= functionCalledName;
+		ArgumentUtil.createArgumentsScope( this, namedArguments, function.getArguments(), this.argumentsScope, function.getName() );
 	}
 
 	public IStruct getVisibleScopes( IStruct scopes, boolean nearby, boolean shallow ) {
@@ -350,8 +351,10 @@ public class FunctionBoxContext extends BaseBoxContext {
 	 */
 	@Override
 	public IScope getDefaultAssignmentScope() {
-		// DIFFERENT FROM CFML ENGINES! Same as Lucee's "local mode"
-		return localScope;
+		// CF Source sets into variable scope. BoxLang defaults to local scope
+		return getFunction().getSourceType().equals( BoxScriptType.CFSCRIPT ) || getFunction().getSourceType().equals( BoxScriptType.CFMARKUP )
+		    ? getScopeNearby( VariablesScope.name )
+		    : localScope;
 	}
 
 	/**
