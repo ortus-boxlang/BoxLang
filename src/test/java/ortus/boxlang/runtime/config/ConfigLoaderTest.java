@@ -65,7 +65,7 @@ class ConfigLoaderTest {
 		// Import Cache Checks
 		CacheConfig importCache = ( CacheConfig ) config.runtime.caches.get( "imports" );
 		assertThat( importCache.name.getNameNoCase() ).isEqualTo( "IMPORTS" );
-		assertThat( importCache.provider.getNameNoCase() ).isEqualTo( "BOXLANG" );
+		assertThat( importCache.provider.getNameNoCase() ).isEqualTo( "BOXCACHEPROVIDER" );
 		assertThat( importCache.properties ).isNotNull();
 		assertThat( importCache.properties.get( "maxObjects" ) ).isEqualTo( 200 );
 		assertThat( importCache.properties.get( "reapFrequency" ) ).isEqualTo( 2 );
