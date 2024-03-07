@@ -1,0 +1,10 @@
+/**
+ * In-memory DB:
+ * https://db.apache.org/derby/docs/10.17/devguide/cdevdvlpinmemdb.html
+ *
+ * General:
+ * https://db.apache.org/derby/docs/10.17/devguide/rdevdvlp22102.html
+ */
+component{
+	// @TODO: Custom Derby Driver implementation with helper utilities
+}

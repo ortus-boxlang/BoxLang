@@ -23,7 +23,11 @@ import java.net.MalformedURLException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.sql.Driver;
+import java.sql.DriverManager;
+import java.sql.SQLException;
 import java.time.Instant;
+import java.util.Arrays;
 import java.util.ServiceLoader;
 import java.util.UUID;
 
@@ -40,6 +44,7 @@ import ortus.boxlang.runtime.bifs.MemberDescriptor;
 import ortus.boxlang.runtime.components.Component;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.interop.DynamicObject;
+import ortus.boxlang.runtime.jdbc.DriverShim;
 import ortus.boxlang.runtime.loader.DynamicClassLoader;
 import ortus.boxlang.runtime.runnables.IClassRunnable;
 import ortus.boxlang.runtime.runnables.RunnableLoader;
@@ -97,7 +102,7 @@ public class ModuleRecord {
 	 * All mappings have a prefix of {@link ModuleService#MODULE_MAPPING_INVOCATION_PREFIX}
 	 *
 	 */
-	public String				mapping						= "";
+	public String				mapping;
 
 	/**
 	 * If the module is disabled for activation, defaults to false
@@ -161,7 +166,7 @@ public class ModuleRecord {
 	 * Example: {@code /bxModules/MyModule} is the mapping for the module
 	 * the invocation path would be {@code bxModules.MyModule}
 	 */
-	public String				invocationPath				= "";
+	public String				invocationPath;
 
 	/**
 	 * The timestamp when the module was registered
@@ -193,7 +198,7 @@ public class ModuleRecord {
 	 */
 	public IClassRunnable		moduleConfig;
 
-	/**
+	/*
 	 * --------------------------------------------------------------------------
 	 * Private Properties
 	 * --------------------------------------------------------------------------
@@ -209,7 +214,7 @@ public class ModuleRecord {
 	 */
 	private static final Logger	logger						= LoggerFactory.getLogger( ModuleRecord.class );
 
-	/**
+	/*
 	 * --------------------------------------------------------------------------
 	 * Constructors
 	 * --------------------------------------------------------------------------
@@ -233,7 +238,7 @@ public class ModuleRecord {
 		this.invocationPath	= ModuleService.MODULE_MAPPING_INVOCATION_PREFIX + name.getName();
 	}
 
-	/**
+	/*
 	 * --------------------------------------------------------------------------
 	 * Loaders
 	 * --------------------------------------------------------------------------
@@ -284,7 +289,7 @@ public class ModuleRecord {
 		variablesScope.computeIfAbsent( Key.interceptors, k -> Array.of() );
 		variablesScope.computeIfAbsent( Key.customInterceptionPoints, k -> Array.of() );
 
-		/**
+		/*
 		 * --------------------------------------------------------------------------
 		 * DI Injections
 		 * --------------------------------------------------------------------------
@@ -382,6 +387,18 @@ public class ModuleRecord {
 			}
 		}
 
+		// Load any JDBC drivers
+		ServiceLoader.load( Driver.class, this.classLoader )
+		    .stream()
+		    .map( ServiceLoader.Provider::get )
+		    .forEach( driver -> {
+			    try {
+				    DriverManager.registerDriver( new DriverShim( driver ) );
+			    } catch ( SQLException e ) {
+				    throw new BoxRuntimeException( e.getMessage() );
+			    }
+		    } );
+
 		// Do we have any Java BIFs to load?
 		ServiceLoader.load( BIF.class, this.classLoader )
 		    .stream()
@@ -435,7 +452,7 @@ public class ModuleRecord {
 		).invokeConstructor( context )
 		    .getTargetInstance();
 
-		/**
+		/*
 		 * --------------------------------------------------------------------------
 		 * DI Injections
 		 * --------------------------------------------------------------------------
@@ -453,7 +470,7 @@ public class ModuleRecord {
 		oBIF.getVariablesScope().put( Key.interceptorService, interceptorService );
 		oBIF.getVariablesScope().put( Key.log, LoggerFactory.getLogger( oBIF.getClass() ) );
 
-		/**
+		/*
 		 * --------------------------------------------------------------------------
 		 * BIF Registration
 		 * --------------------------------------------------------------------------
@@ -483,7 +500,7 @@ public class ModuleRecord {
 			this.bifs.push( bifAlias );
 		}
 
-		/**
+		/*
 		 * --------------------------------------------------------------------------
 		 * BIF Member Method(s) Registration
 		 * --------------------------------------------------------------------------
@@ -501,7 +518,7 @@ public class ModuleRecord {
 			        memberKey,
 			        memberType,
 			        // Pass null if objectArgument is empty
-			        objectArgument.equals( "" ) ? null : Key.of( objectArgument ),
+			        objectArgument.isEmpty() ? null : Key.of( objectArgument ),
 			        bifDescriptor
 			    )
 			);
@@ -549,7 +566,7 @@ public class ModuleRecord {
 			if ( !BoxLangType.isValid( castedBoxMember ) ) {
 				throw new BoxRuntimeException(
 				    className.getName() + " BoxMember annotation has an invalid type value [" + castedBoxMember + "]" +
-				        "Valid types are: " + BoxLangType.values()
+				        "Valid types are: " + Arrays.toString( BoxLangType.values() )
 				);
 			}
 			BoxLangType boxType = BoxLangType.valueOf( castedBoxMember.toUpperCase() );
@@ -575,25 +592,24 @@ public class ModuleRecord {
 				if ( !BoxLangType.isValid( type ) ) {
 					throw new BoxRuntimeException(
 					    className.getName() + " BoxMember annotation has an invalid type value [" + type.getName() + "]" +
-					        "Valid types are: " + BoxLangType.values()
+					        "Valid types are: " + Arrays.toString( BoxLangType.values() )
 					);
 				}
 
 				// Now the value of this key must be a struct with the following keys: name, objectArgument
 				// Validate the value is a struct
-				if ( ! ( entry.getValue() instanceof IStruct ) ) {
+				if ( ! ( entry.getValue() instanceof IStruct memberRecord ) ) {
 					throw new BoxRuntimeException(
 					    className.getName() + " BoxMember annotation value must be a struct with the following keys: [name], [objectArgument]"
 					);
 				}
 
 				// Prepare the record now
-				IStruct		memberRecord	= ( IStruct ) entry.getValue();
-				BoxLangType	boxType			= BoxLangType.valueOf( type.getNameNoCase() );
+				BoxLangType boxType = BoxLangType.valueOf( type.getNameNoCase() );
 				memberRecord.put( Key.type, boxType );
 				memberRecord.computeIfAbsent( Key._NAME, k -> className.getNameNoCase().replaceAll( type.getNameNoCase(), "" )
 				);
-				memberRecord.computeIfAbsent( Key.objectArgument, k -> "" );
+				memberRecord.putIfAbsent( Key.objectArgument, "" );
 				result.push( memberRecord );
 			}
 
@@ -729,14 +745,14 @@ public class ModuleRecord {
 		ThisScope			thisScope			= this.moduleConfig.getThisScope();
 		InterceptorService	interceptorService	= BoxRuntime.getInstance().getInterceptorService();
 
-		/**
+		/*
 		 * --------------------------------------------------------------------------
 		 * Register the ModuleConfig as an Interceptor
 		 * --------------------------------------------------------------------------
 		 */
 		interceptorService.register( this.moduleConfig );
 
-		/**
+		/*
 		 * --------------------------------------------------------------------------
 		 * Register module Interceptors
 		 * --------------------------------------------------------------------------
@@ -767,7 +783,7 @@ public class ModuleRecord {
 			}
 		}
 
-		/**
+		/*
 		 * --------------------------------------------------------------------------
 		 * onLoad()
 		 * --------------------------------------------------------------------------
@@ -789,7 +805,7 @@ public class ModuleRecord {
 		return this;
 	}
 
-	/**
+	/*
 	 * --------------------------------------------------------------------------
 	 * Getters
 	 * --------------------------------------------------------------------------

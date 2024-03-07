@@ -22,7 +22,7 @@ public class FRTransService {
 			FRAPI		= DynamicObject.of( FRAPIObject );
 			FREnabled	= true;
 		} catch ( Throwable e ) {
-			//  e.printStackTrace();
+			// e.printStackTrace();
 			FREnabled = false;
 		}
 	}
