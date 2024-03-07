@@ -5,6 +5,11 @@ on:
     branches:
       - development
 
+#Cancel running builds if another push to branch is made while this build is running
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
 jobs:
   #############################################
   # Tests First baby! We fail, no build :(
@@ -44,7 +49,7 @@ jobs:
   #############################################
   build:
     uses: ./.github/workflows/release.yml
-    needs: [ tests, format ]
+    needs: [tests, format]
     secrets: inherit
     permissions:
       checks: write
