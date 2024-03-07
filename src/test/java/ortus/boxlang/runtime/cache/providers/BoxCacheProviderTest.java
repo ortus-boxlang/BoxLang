@@ -244,4 +244,29 @@ public class BoxCacheProviderTest {
 		assertThat( results.getAsOptional( Key.of( "testKey2" ) ).get() ).isEqualTo( "test" );
 	}
 
+	@Test
+	@DisplayName( "It can get multiple cache items with a filter" )
+	void testGetMultipleWithFilter() {
+		boxCache.set( "testKey", "test" );
+		boxCache.set( "testKey2", "test" );
+		boxCache.set( "asdfsd1", "test" );
+		boxCache.set( "asdfsd2", "test" );
+
+		IStruct results = boxCache.get( new WildcardFilter( "testKe*" ) );
+
+		assertThat( results.getAsOptional( Key.of( "testKey" ) ).get() ).isEqualTo( "test" );
+		assertThat( results.getAsOptional( Key.of( "testKey2" ) ).get() ).isEqualTo( "test" );
+	}
+
+	@Test
+	@DisplayName( "It can do getOrSet() operations" )
+	void testGetOrSet() {
+		// Clear just in case
+		boxCache.clear( "testKey" );
+		assertThat( boxCache.getOrSet( "testKey", () -> "test" ).get() ).isEqualTo( "test" );
+		// Lookkup test
+		assertThat( boxCache.lookup( "testKey" ) ).isTrue();
+		assertThat( boxCache.getOrSet( "testKey", () -> "test" ).get() ).isEqualTo( "test" );
+	}
+
 }
