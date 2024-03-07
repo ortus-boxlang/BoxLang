@@ -36,6 +36,7 @@ import org.slf4j.LoggerFactory;
 
 import com.sun.jdi.IncompatibleThreadStateException;
 import com.sun.jdi.InvocationException;
+import com.sun.jdi.Location;
 import com.sun.jdi.ObjectReference;
 import com.sun.jdi.event.BreakpointEvent;
 
@@ -48,6 +49,7 @@ import ortus.boxlang.debugger.request.DisconnectRequest;
 import ortus.boxlang.debugger.request.EvaluateRequest;
 import ortus.boxlang.debugger.request.InitializeRequest;
 import ortus.boxlang.debugger.request.LaunchRequest;
+import ortus.boxlang.debugger.request.PauseRequest;
 import ortus.boxlang.debugger.request.ScopeRequest;
 import ortus.boxlang.debugger.request.SetBreakpointsRequest;
 import ortus.boxlang.debugger.request.StackTraceRequest;
@@ -135,6 +137,7 @@ public class DebugAdapter {
 			    .register( "scopes", ScopeRequest.class )
 			    .register( "variables", VariablesRequest.class )
 			    .register( "continue", ContinueRequest.class )
+			    .register( "pause", PauseRequest.class )
 			    .register( "disconnect", DisconnectRequest.class );
 		} catch ( IOException e ) {
 			// TODO Auto-generated catch block
@@ -251,7 +254,8 @@ public class DebugAdapter {
 	 * @param debugRequest
 	 */
 	public void visit( ContinueRequest debugRequest ) {
-		this.debugger.continueExecution();
+		this.debugger.continueExecution( debugRequest.arguments.threadId, debugRequest.arguments.singleThread );
+
 		new ContinueResponse( debugRequest, true ).send( this.outputStream );
 	}
 
@@ -290,6 +294,20 @@ public class DebugAdapter {
 		new NoBodyResponse( debugRequest ).send( this.outputStream );
 
 		this.debugger.initialize();
+	}
+
+	/**
+	 * Visit ConfigurationDoneRequest instances. After responding the debugger can begin executing.
+	 * 
+	 * @param debugRequest
+	 */
+	public void visit( PauseRequest debugRequest ) {
+		new NoBodyResponse( debugRequest ).send( this.outputStream );
+
+		this.debugger.pauseThread( debugRequest.arguments.threadId ).ifPresent( ( location ) -> {
+			var sourceMap = getSourceMapFromJavaLocation( location );
+			this.breakpoints.add( new BreakpointRequest( -1, 0, sourceMap.source ) );
+		} );
 	}
 
 	/**
@@ -377,7 +395,7 @@ public class DebugAdapter {
 
 				    sf.id	= tuple.id();
 				    sf.line	= location.lineNumber();
-				    sf.column = 0;
+				    sf.column = 1;
 				    sf.name	= location.method().name();
 
 				    Integer sourceLine = map.convertJavaLineToSourceLine( sf.line );
@@ -502,6 +520,10 @@ public class DebugAdapter {
 	public void visit( DisconnectRequest debugRequest ) {
 		this.running = false;
 		new NoBodyResponse( debugRequest ).send( this.outputStream );
+	}
+
+	private SourceMap getSourceMapFromJavaLocation( Location location ) {
+		return javaBoxpiler.getSourceMapFromFQN( location.declaringType().name() );
 	}
 
 	// ===================================================

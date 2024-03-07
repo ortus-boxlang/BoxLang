@@ -20,16 +20,15 @@ package ortus.boxlang.debugger.request;
 import ortus.boxlang.debugger.DebugAdapter;
 
 /**
- * Models the command to initialize a debug session.
+ * Models the request to pause a thread
  */
-public class ContinueRequest extends AbstractRequest {
+public class PauseRequest extends AbstractRequest {
 
-	public ContinueRequestArguments arguments;
+	public PauseRequestArguments arguments;
 
-	public static class ContinueRequestArguments {
+	public static class PauseRequestArguments {
 
-		public Integer	threadId;
-		public Boolean	singleThread	= false;
+		public int threadId;
 	}
 
 	@Override

@@ -15,21 +15,38 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package ortus.boxlang.debugger.request;
+package ortus.boxlang.debugger.event;
 
 import ortus.boxlang.debugger.DebugAdapter;
+import ortus.boxlang.debugger.types.Breakpoint;
 
 /**
- * Models the command to initialize a debug session.
+ * Models the Breakpoint event for the Debug Protocol
  */
-public class ContinueRequest extends AbstractRequest {
+public class BreakpointEvent extends Event {
 
-	public ContinueRequestArguments arguments;
+	public BreakpointBody body;
 
-	public static class ContinueRequestArguments {
+	public static class BreakpointBody {
 
-		public Integer	threadId;
-		public Boolean	singleThread	= false;
+		public String		reason;
+		public Breakpoint	breakpoint;
+	}
+
+	public BreakpointEvent() {
+	}
+
+	/**
+	 * Constructor
+	 * 
+	 * @param threadId The id of the thread being Breakpoint
+	 */
+	public BreakpointEvent( String reason, Breakpoint breakpoint ) {
+		super( "breakpoint" );
+
+		this.body				= new BreakpointBody();
+		this.body.reason		= reason;
+		this.body.breakpoint	= breakpoint;
 	}
 
 	@Override

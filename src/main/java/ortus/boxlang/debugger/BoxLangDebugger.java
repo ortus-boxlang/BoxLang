@@ -28,6 +28,7 @@ import java.util.HashSet;
 import java.util.List;
 // import java.lang.StackWalker.StackFrame;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 
 import com.sun.jdi.AbsentInformationException;
@@ -74,21 +75,22 @@ public class BoxLangDebugger {
 		seenStacks = new HashMap<Integer, StackFrameTuple>();
 	}
 
-	public VirtualMachine				vm;
-	private OutputStream				debugAdapterOutput;
-	Map<String, List<Breakpoint>>		breakpoints;
-	private List<ReferenceType>			vmClasses;
-	private JavaBoxpiler				javaBoxpiler;
-	private Status						status;
-	private DebugAdapter				debugAdapter;
-	private InputStream					vmInput;
-	private InputStream					vmErrorInput;
-	public BreakpointEvent				bpe;
+	public VirtualMachine						vm;
+	private OutputStream						debugAdapterOutput;
+	Map<String, List<Breakpoint>>				breakpoints;
+	private List<ReferenceType>					vmClasses;
+	private JavaBoxpiler						javaBoxpiler;
+	private Status								status;
+	private DebugAdapter						debugAdapter;
+	private InputStream							vmInput;
+	private InputStream							vmErrorInput;
+	public BreakpointEvent						bpe;
 
-	private Map<String, SourceMap>		sourceMaps	= new HashMap<String, SourceMap>();
+	private Map<String, SourceMap>				sourceMaps		= new HashMap<String, SourceMap>();
 
-	private ClassType					keyClassRef	= null;
-	private IVMInitializationStrategy	initStrat;
+	private ClassType							keyClassRef		= null;
+	private IVMInitializationStrategy			initStrat;
+	private Map<Integer, CachedThreadReference>	cachedThreads	= new HashMap<Integer, CachedThreadReference>();
 
 	public enum Status {
 		NOT_STARTED,
@@ -164,14 +166,19 @@ public class BoxLangDebugger {
 		this.status = Status.RUNNING;
 	}
 
-	public void continueExecution() {
-		BreakpointEvent old = this.bpe;
-		this.bpe	= null;
-
-		seenStacks	= new HashMap<Integer, StackFrameTuple>();
+	public void continueExecution( int threadId, boolean singleThread ) {
+		seenStacks			= new HashMap<Integer, StackFrameTuple>();
+		this.cachedThreads	= new HashMap<Integer, CachedThreadReference>();
 		JDITools.clearMemory();
+		BreakpointEvent old = this.bpe;
+		this.bpe = null;
 
-		old.thread().resume();
+		if ( singleThread ) {
+			old.thread().resume();
+		} else {
+			vm.resume();
+		}
+
 		this.status = Status.RUNNING;
 	}
 
@@ -268,23 +275,6 @@ public class BoxLangDebugger {
 		return null;
 	}
 
-	public StackFrame findStackFrame( int id ) {
-		for ( ThreadReference thread : getAllThreadReferences() ) {
-			try {
-				for ( StackFrame stackFrame : getStackFrames( thread.hashCode() ) ) {
-					if ( stackFrame.hashCode() == id ) {
-						return stackFrame;
-					}
-				}
-			} catch ( IncompatibleThreadStateException e ) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
-		}
-
-		return null;
-	}
-
 	public boolean hasSeen( long variableReference ) {
 		return JDITools.hasSeen( variableReference );
 	}
@@ -343,46 +333,69 @@ public class BoxLangDebugger {
 		return matchingThreadRef.frames();
 	}
 
-	public record StackFrameTuple( StackFrame stackFrame, Location location, int id, Map<LocalVariable, Value> values ) {
+	public record StackFrameTuple( StackFrame stackFrame, Location location, int id, Map<LocalVariable, Value> values, ThreadReference thread ) {
 
 	}
 
 	public StackFrameTuple getSeenStack( int stackFrameId ) {
-		return seenStacks.get( stackFrameId );
-	}
-
-	public List<StackFrameTuple> getBoxLangStackFrames( int threadId ) throws IncompatibleThreadStateException {
-		ThreadReference matchingThreadRef = null;
-
-		for ( ThreadReference threadReference : this.vm.allThreads() ) {
-			if ( threadReference.uniqueID() == threadId ) {
-				matchingThreadRef = threadReference;
-				break;
+		for ( CachedThreadReference ref : cachedThreads.values() ) {
+			for ( StackFrameTuple sft : ref.getBoxLangStackFrames() ) {
+				if ( sft.id == stackFrameId ) {
+					return sft;
+				}
 			}
 		}
 
-		if ( matchingThreadRef == null ) {
-			throw ( new BoxRuntimeException( "Couldn't find thread: " + threadId ) );
+		return null;
+	}
+
+	public Optional<Location> pauseThread( int threadId ) {
+		return this.vm.allThreads()
+		    .stream().filter( ( tr ) -> ( int ) tr.uniqueID() == threadId )
+		    .findFirst()
+		    .map( ( tr ) -> {
+			    tr.suspend();
+			    this.status = Status.STOPPED;
+			    return tr;
+		    } )
+		    .map( ( tr ) -> this.cacheOrGetThread( threadId ) )
+		    .map( ( ctr ) -> {
+			    var				topFrame	= ctr.getBoxLangStackFrames().get( 0 );
+
+			    BreakpointRequest bpReq		= vm.eventRequestManager().createBreakpointRequest( topFrame.location() );
+			    bpReq.enable();
+
+			    continueExecution( threadId, false );
+
+			    return topFrame.location();
+		    } );
+	}
+
+	public List<StackFrameTuple> getBoxLangStackFrames( int threadId ) throws IncompatibleThreadStateException {
+		return this.cacheOrGetThread( threadId ).getBoxLangStackFrames();
+	}
+
+	private CachedThreadReference cacheOrGetThread( int threadId ) {
+		if ( !this.cachedThreads.containsKey( threadId ) ) {
+			ThreadReference matchingThreadRef = null;
+
+			for ( ThreadReference threadReference : this.vm.allThreads() ) {
+				if ( threadReference.uniqueID() == threadId ) {
+					matchingThreadRef = threadReference;
+					break;
+				}
+			}
+
+			if ( matchingThreadRef == null ) {
+				throw ( new BoxRuntimeException( "Couldn't find thread: " + threadId ) );
+			}
+
+			CachedThreadReference ref = new CachedThreadReference( matchingThreadRef );
+
+			this.cachedThreads.put( threadId, ref );
 		}
 
-		return matchingThreadRef.frames()
-		    .stream()
-		    .filter( ( stackFrame ) -> stackFrame.location().declaringType().name().contains( "boxgenerated" ) )
-		    .filter( ( stackFrame ) -> !stackFrame.location().method().name().contains( "dereferenceAndInvoke" ) )
-		    .map( ( sf ) -> {
-			    try {
-
-				    seenStacks.put( sf.hashCode(), new StackFrameTuple( sf, sf.location(), sf.hashCode(), sf.getValues( sf.visibleVariables() ) ) );
-			    } catch ( AbsentInformationException e ) {
-				    // TODO handle exception
-				    e.printStackTrace();
-				    return null;
-			    }
-
-			    return seenStacks.get( sf.hashCode() );
-		    } )
-		    .filter( ( sf ) -> sf != null )
-		    .toList();
+		return this.cachedThreads.get( threadId );
 	}
 
 	private ClassType getKeyClassType() {
@@ -473,12 +486,16 @@ public class BoxLangDebugger {
 		}
 	}
 
+	public Optional<ThreadReference> getThreadReference( int threadId ) {
+		return this.vm.allThreads().stream().filter( ( ref ) -> ref.uniqueID() == threadId ).findFirst();
+	}
+
 	public WrappedValue findVariableyName( StackFrameTuple tuple, String name ) {
 		Map<LocalVariable, Value> visibleVariables = tuple.values;
 
 		for ( Map.Entry<LocalVariable, Value> entry : visibleVariables.entrySet() ) {
 			if ( entry.getKey().name().compareTo( name ) == 0 ) {
-				return JDITools.wrap( bpe.thread(), entry.getValue() );
+				return JDITools.wrap( tuple.thread, entry.getValue() );
 			}
 		}
 
@@ -509,6 +526,7 @@ public class BoxLangDebugger {
 		this.status = Status.STOPPED;
 		this.debugAdapter.sendStoppedEventForBreakpoint( bpe );
 		this.bpe = bpe;
+		this.cacheOrGetThread( ( int ) this.bpe.thread().uniqueID() );
 	}
 
 	private void setAllBreakpoints() {

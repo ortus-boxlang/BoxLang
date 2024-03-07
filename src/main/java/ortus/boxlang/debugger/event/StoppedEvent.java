@@ -54,6 +54,22 @@ public class StoppedEvent extends Event {
 	 *                | string;
 	 * @param stopped The data to Stopped
 	 */
+	public StoppedEvent( String reason, int threadId ) {
+		super( "stopped" );
+
+		this.body			= new StoppedBody();
+		this.body.reason	= reason;
+		this.body.threadId	= threadId;
+	}
+
+	/**
+	 * Constructor
+	 * 
+	 * @param reason  One of 'step' | 'breakpoint' | 'exception' | 'pause' | 'entry' | 'goto'
+	 *                | 'function breakpoint' | 'data breakpoint' | 'instruction breakpoint'
+	 *                | string;
+	 * @param stopped The data to Stopped
+	 */
 	public StoppedEvent( String reason, int threadId, int[] hitBreakpointIds ) {
 		super( "stopped" );
 

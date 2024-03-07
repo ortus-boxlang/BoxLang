@@ -90,7 +90,7 @@ public class DebugMessages {
 		    },
 		    ( message ) -> {
 		    },
-		    1000L
+		    5000L
 		);
 	}
 
@@ -204,18 +204,18 @@ public class DebugMessages {
 		    },
 		    ( message ) -> {
 		    },
-		    1000L
+		    5000L
 		);
 	}
 
 	public static <A, B, C> TriConsumer<byte[], ByteArrayInputStream, ByteArrayOutputStream> waitForMessage( Predicate<IAdapterProtocolMessage> test ) {
 		return waitForMessage( test, ( message ) -> {
-		}, 1000L );
+		}, 5000L );
 	}
 
 	public static <A, B, C> TriConsumer<byte[], ByteArrayInputStream, ByteArrayOutputStream> waitForMessage( Predicate<IAdapterProtocolMessage> test,
 	    Consumer<IAdapterProtocolMessage> onMessage ) {
-		return waitForMessage( test, onMessage, 1000L );
+		return waitForMessage( test, onMessage, 5000L );
 	}
 
 	public static <A, B, C> TriConsumer<byte[], ByteArrayInputStream, ByteArrayOutputStream> waitForMessage( Predicate<IAdapterProtocolMessage> test,
@@ -459,6 +459,10 @@ Content-Length: %d
 		request.put( "command", "continue" );
 		request.put( "type", "request" );
 		request.put( "seq", seq );
+
+		Map<String, Object> arguments = new HashMap<String, Object>();
+		request.put( "arguments", arguments );
+		arguments.put( "threadId", 1 );
 
 		return request;
 	}

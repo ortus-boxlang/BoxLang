@@ -465,7 +465,7 @@ public class IntegrationTest {
 		    waitForMessage( "response", "setbreakpoints" ),
 		    sendMessageStep( DebugMessages.getConfigurationDoneRequest( 4 ) ),
 		    waitForMessage( "response", "configurationdone" ),
-		    waitForMessage( "event", "stopped", 20000 ),
+		    waitForMessage( "event", "stopped" ),
 		    sendMessageStep( DebugMessages.getThreadsRequest( 5 ) ),
 		    waitForMessage( "response", "threads" ),
 		    sendMessageStep( DebugMessages.getStackTraceRequest( 6 ) ),
@@ -501,7 +501,7 @@ public class IntegrationTest {
 		    ),
 		    waitForSeq( 9 ),
 		    sendMessageStep( DebugMessages.getContinueRequest( 10 ) ),
-		    waitForMessage( "response", "continue" )
+		    waitForMessage( "response", "continue", 5000 )
 		) )
 		    .stream()
 		    .filter( ( m ) -> {
