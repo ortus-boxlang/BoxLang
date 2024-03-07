@@ -18,7 +18,25 @@
 
 package ortus.boxlang.runtime.bifs.global.query;
 
-import org.junit.jupiter.api.*;
+import static com.google.common.truth.Truth.assertThat;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+import java.sql.SQLException;
+import java.util.List;
+
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
@@ -34,12 +52,6 @@ import ortus.boxlang.runtime.types.Query;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.exceptions.DatabaseException;
-
-import java.sql.SQLException;
-import java.util.List;
-
-import static com.google.common.truth.Truth.assertThat;
-import static org.junit.jupiter.api.Assertions.*;
 
 public class QueryExecuteTest {
 
@@ -378,12 +390,26 @@ public class QueryExecuteTest {
 		assertEquals( "Table/View 'DEVELOPERS' does not exist.", e.getMessage() );
 	}
 
+	@DisplayName( "It can specify a max result size" )
+	@Test
+	public void testMaxRows() {
+		datasourceManager.setDefaultDataSource( datasource );
+		instance.executeSource(
+		    """
+		    result = queryExecute( "SELECT * FROM developers", {}, { maxrows : 1 } );
+		    """,
+		    context );
+		assertThat( variables.get( result ) ).isInstanceOf( Query.class );
+		Query query = variables.getAsQuery( result );
+		assertEquals( 1, query.size() );
+	}
+
 	/**
 	 * This feature is not supported in Hikari https://github.com/brettwooldridge/HikariCP/issues/231
 	 */
 	@DisplayName( "It can execute a query with a custom username and password" )
 	@Test
-	@Disabled
+	@Disabled( "Lacking support in HikariCP" )
 	public void testCustomUsernameAndPassword() {
 		DataSource alternateDataSource = new DataSource( Struct.of(
 		    "jdbcUrl", "jdbc:derby:memory:testQueryExecuteAlternateUserDB;user=foo;password=bar;create=true"
