@@ -16,7 +16,7 @@
 		"defaultCache": {},
 		"caches": {
 			"imports": {
-				"provider": "BoxLang",
+				"provider": "BoxCacheProvider",
 				"properties": {
 					"evictCount": 1,
 					"evictionPolicy": "LRU",
