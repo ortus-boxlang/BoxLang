@@ -236,13 +236,15 @@ param: PARAM type? accessExpression ( EQUALSIGN expression)?;
 // We support if blocks with or without else blocks, and if statements without else blocks. That's
 // it - no other valid if constructs.
 if:
-	IF LPAREN expression RPAREN ifStmtBlock = statementBlock (
+	IF LPAREN expression RPAREN (
+		ifStmtBlock = statementBlock
+		| ifStmt = statement
+	) (
 		ELSE (
 			elseStmtBlock = statementBlock
 			| elseStmt = statement
 		)
-	)?
-	| IF LPAREN expression RPAREN ifStmt = statement;
+	)?;
 
 /*
  for( var i = 0; i < 10; i++ ) {}

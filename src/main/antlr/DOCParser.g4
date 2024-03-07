@@ -35,7 +35,8 @@ descriptionLineNoSpaceNoAt:
 	| STAR
 	| SLASH
 	| BRACE_OPEN
-	| BRACE_CLOSE;
+	| BRACE_CLOSE
+	| JAVADOC_START;
 
 descriptionLineElement: inlineTag | descriptionLineText;
 

@@ -297,7 +297,7 @@ public class BoxClassTransformer extends AbstractTransformer {
 				this._super = _super;
 				_super.setChild( this );
 				// This runs before the psedu constructor and init, so the base class will override anything it declares
-				//System.out.println( "Setting super class: " + _super.getName().getName() );
+				//System.out.println( "Setting super class: " + _super.getName().getName() + " into " + this.getName().getName() );
 				//System.out.println( "Setting super class variables: " + _super.getVariablesScope().asString() );
 				variablesScope.addAll( _super.getVariablesScope().getWrapped() );
 				thisScope.addAll( _super.getThisScope().getWrapped() );
@@ -311,6 +311,9 @@ public class BoxClassTransformer extends AbstractTransformer {
 				// merge getterLookup and setterLookup
 				getterLookup.putAll( _super.getGetterLookup() );
 				setterLookup.putAll( _super.getSetterLookup() );
+
+				// merge annotations
+				annotations.putAll( _super.getAnnotations() );
 
 			}
 
@@ -422,6 +425,7 @@ public class BoxClassTransformer extends AbstractTransformer {
 						return variablesScope.dereference( context, getterLookup.get( name ).name(), safe );
 					}
 					Property setterProperty = setterLookup.get( name );
+					System.out.println( "setterProperty lookup: " + setterProperty );
 					if( setterProperty != null ) {
 						Key thisName = setterProperty.name();
 						if( positionalArguments.length == 0 ) {

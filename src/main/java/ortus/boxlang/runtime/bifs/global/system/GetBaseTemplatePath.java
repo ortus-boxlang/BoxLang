@@ -23,6 +23,8 @@ import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 
 @BoxBIF
+// TODO: Remove in BL and transpile from CF
+@BoxBIF( alias = "getTemplatePath" )
 public class GetBaseTemplatePath extends BIF {
 
 	/**
