@@ -42,17 +42,19 @@ public class CharsetDecode extends BIF {
 		super();
 		declaredArguments = new Argument[] {
 		    new Argument( true, "string", Key.encoded_binary ),
-		    new Argument( true, "string", Key.encoding )
+		    new Argument( false, "string", Key.encoding, "utf-8" )
 		};
 	}
 
 	/**
-	 * Describe what the invocation of your bif function does
+	 * Encodes a string to a binary representation
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.foo Describe any expected arguments
+	 * @argument.encoded_binary The string to encode to binary
+	 * 
+	 * @argument.encoding The charset encoding to use (default: utf-8 )
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		return arguments.getAsString( Key.encoded_binary )

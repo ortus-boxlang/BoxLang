@@ -180,6 +180,10 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		encodefor						= Key.of( "encodefor" );
 	public static final Key		encodeUrl						= Key.of( "encodeUrl" );
 	public static final Key		encoding						= Key.of( "encoding" );
+	public static final Key		encodingHex					= Key.of( "Hex" );
+	public static final Key		encodingUU					= Key.of( "UU" );
+	public static final Key		encodingBase64				= Key.of( "Base64" );
+	public static final Key		encodingBase64Url			= Key.of( "Base64Url" );
 	public static final Key		end								= Key.of( "end" );
 	public static final Key		enforceExplicitOutput			= Key.of( "enforceExplicitOutput" );
 	public static final Key		environment						= Key.of( "environment" );

@@ -39,6 +39,8 @@ ortus.boxlang.runtime.bifs.global.array.ArraySwap
 ortus.boxlang.runtime.bifs.global.array.ArrayToList
 ortus.boxlang.runtime.bifs.global.array.ArrayToStruct
 ortus.boxlang.runtime.bifs.global.array.ArrayUnshift
+ortus.boxlang.runtime.bifs.global.binary.BinaryDecode
+ortus.boxlang.runtime.bifs.global.binary.BinaryEncode
 ortus.boxlang.runtime.bifs.global.binary.BitAnd
 ortus.boxlang.runtime.bifs.global.binary.BitMaskClear
 ortus.boxlang.runtime.bifs.global.binary.BitMaskRead

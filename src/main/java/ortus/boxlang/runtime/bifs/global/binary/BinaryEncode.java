@@ -17,11 +17,9 @@
  * limitations under the License.
  */
 
-package ortus.boxlang.runtime.bifs.global.string;
+package ortus.boxlang.runtime.bifs.global.binary;
 
-import java.nio.charset.Charset;
-
-import org.apache.commons.lang3.StringUtils;
+import java.util.Base64;
 
 import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
@@ -33,39 +31,50 @@ import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
 @BoxBIF
 
-public class CharsetEncode extends BIF {
+public class BinaryEncode extends BIF {
 
 	/**
 	 * Constructor
 	 */
-	public CharsetEncode() {
+	public BinaryEncode() {
 		super();
 		declaredArguments = new Argument[] {
 		    new Argument( true, "any", Key.binary ),
-		    new Argument( false, "string", Key.encoding, "utf-8" )
+		    new Argument( true, "string", Key.encoding )
 		};
 	}
 
 	/**
-	 * Encodes a binary string representation to an encoded string
+	 * Encodes binary data to a string with the specified algorithm
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.binary The binary data to encode to a string
-	 *
-	 * @argument.encoding The charset encoding to use (default: utf-8 )
+	 * @argument.foo Describe any expected arguments
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
+		Key		encodingKey	= Key.of( arguments.getAsString( Key.encoding ) );
+		byte[]	binaryData	= ( byte[] ) arguments.get( Key.binary );
 
-		if ( ! ( arguments.get( Key.binary ) instanceof byte[] ) ) {
-			throw new BoxRuntimeException( "The binary value passed to the function [charsetEncode] is not a valid binary object" );
+		if ( encodingKey.equals( Key.encodingHex ) ) {
+			StringBuilder sb = new StringBuilder( binaryData.length * 2 );
+			for ( byte b : binaryData )
+				sb.append( String.format( "%02x", b ) );
+			return sb.toString();
+		} else if ( encodingKey.equals( Key.encodingUU ) ) {
+			return Base64.getMimeEncoder().encodeToString( binaryData );
+		} else if ( encodingKey.equals( Key.encodingBase64 ) ) {
+			return Base64.getEncoder().encodeToString( binaryData );
+		} else if ( encodingKey.equals( Key.encodingBase64Url ) ) {
+			return Base64.getUrlEncoder().encodeToString( binaryData );
+		} else {
+			throw new BoxRuntimeException(
+			    String.format(
+			        "The encoding argument [%s] is not a valid encoding type for the function BinaryEncode",
+			        encodingKey.getName()
+			    )
+			);
 		}
-
-		return StringUtils.toEncodedString(
-		    ( byte[] ) arguments.get( Key.binary ),
-		    Charset.forName( arguments.getAsString( Key.encoding ) )
-		);
 
 	}
 
