@@ -269,7 +269,7 @@ public class IntegrationTest {
 		StackFrame frame = message.body.stackFrames.get( 0 );
 
 		assertThat( frame.name ).isEqualTo( "main.cfs" );
-		assertThat( frame.line ).isEqualTo( 4 );
+		assertThat( frame.line ).isEqualTo( 6 );
 	}
 
 	@DisplayName( "It should respond to a ScopeRequest" )
