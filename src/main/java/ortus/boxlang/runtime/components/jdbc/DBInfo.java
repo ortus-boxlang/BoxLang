@@ -30,7 +30,6 @@ import org.slf4j.LoggerFactory;
 import ortus.boxlang.runtime.components.Attribute;
 import ortus.boxlang.runtime.components.BoxComponent;
 import ortus.boxlang.runtime.components.Component;
-import ortus.boxlang.runtime.validation.Validator;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.dynamic.ExpressionInterpreter;
 import ortus.boxlang.runtime.jdbc.DataSource;
@@ -41,6 +40,7 @@ import ortus.boxlang.runtime.types.Query;
 import ortus.boxlang.runtime.types.QueryColumnType;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.DatabaseException;
+import ortus.boxlang.runtime.validation.Validator;
 
 @BoxComponent( allowsBody = false )
 public class DBInfo extends Component {
@@ -74,11 +74,10 @@ public class DBInfo extends Component {
 		    new Attribute( Key.type, "string", Set.of(
 		        Validator.REQUIRED,
 		        Validator.NON_EMPTY,
-		        Validator.valueOneOf( "columns", "dbnames", "tables", "foreignkeys", "index", "procedures", "version" )
-			// @TODO: Figure out why the `valueRequires` validator s requiring the `table` argument regardless of the `type` value!
-			// Validator.valueRequires( "columns", Key.table ),
-			// Validator.valueRequires( "foreignkeys", Key.table ),
-			// Validator.valueRequires( "index", Key.table )
+		        Validator.valueOneOf( "columns", "dbnames", "tables", "foreignkeys", "index", "procedures", "version" ),
+		        Validator.valueRequires( "columns", Key.table ),
+		        Validator.valueRequires( "foreignkeys", Key.table ),
+		        Validator.valueRequires( "index", Key.table )
 		    ) ),
 		    new Attribute( Key._NAME, "string", Set.of(
 		        Validator.REQUIRED,
@@ -88,10 +87,15 @@ public class DBInfo extends Component {
 		    new Attribute( Key.table, "string" ),
 		    new Attribute( Key.pattern, "string" ),
 		    new Attribute( Key.dbname, "string" ),
-			// @TODO: Implement
-			// new Attribute( Key.username, "string" ),
-			// new Attribute( Key.password, "string" )
-			// NOTE: Lucee also supports a `filter` attribute, but ONLY for `type="tables"`. IMO, this should be handled by a query filter instead.
+		    new Attribute( Key.username, "string", Set.of(
+		        Validator.NOT_IMPLEMENTED
+		    ) ),
+		    new Attribute( Key.password, "string", Set.of(
+		        Validator.NOT_IMPLEMENTED
+		    ) ),
+		    new Attribute( Key.filter, "filter", Set.of(
+		        Validator.NOT_IMPLEMENTED
+		    ) )
 		};
 	}
 
@@ -106,6 +110,13 @@ public class DBInfo extends Component {
 	 * @attribute.table Table name for which to retrieve metadata. Required for `columns`, `foreignkeys`, and `index` types.
 	 *
 	 * @attribute.datasource Name of the datasource to check metadata on. If not provided, the default datasource will be used.
+	 *
+	 * @attribute.username Not currently implemented.
+	 *
+	 * @attribute.password Not currently implemented.
+	 *
+	 * @attribute.filter A lucee-only attribute to perform additional filtering on <code>type="tables"</code> results. Not currently implemented, as this
+	 *                   should be performed by a queryFilter() call.
 	 *
 	 * @param context        The context in which the Component is being invoked
 	 * @param attributes     The attributes to the Component

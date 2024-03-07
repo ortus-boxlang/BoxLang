@@ -20,6 +20,7 @@
 package ortus.boxlang.runtime.components.jdbc;
 
 import static org.junit.Assert.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -103,10 +104,9 @@ public class DBInfoTest {
 		assertThrows( BoxValidationException.class, () -> {
 			instance.executeStatement( "CFDBInfo( type='foo' );" );
 		} );
-		// This DOES throw, and i don't know why. 😢
-		// assertDoesNotThrow( () -> {
-		// instance.executeStatement( "CFDBInfo( type='version', name='result' );" );
-		// } );
+		assertDoesNotThrow( () -> {
+			instance.executeStatement( "CFDBInfo( type='version', name='result' );" );
+		} );
 	}
 
 	@DisplayName( "It requires the `table` argument on column, foreignkeys, and index types`" )
