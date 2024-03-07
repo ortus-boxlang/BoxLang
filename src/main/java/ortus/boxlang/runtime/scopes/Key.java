@@ -104,6 +104,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		caller							= Key.of( "caller" );
 	public static final Key		canonicalize					= Key.of( "canonicalize" );
 	public static final Key		cfsqltype						= Key.of( "cfsqltype" );
+	public static final Key		cfvar							= Key.of( "cfvar" );
 	public static final Key		charset							= Key.of( "charset" );
 	public static final Key		charsetOrBufferSize				= Key.of( "charsetOrBufferSize" );
 	public static final Key		childname						= Key.of( "childname" );
@@ -246,6 +247,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		iso								= Key.of( "iso" );
 	public static final Key		item							= Key.of( "item" );
 	public static final Key		java							= Key.of( "java" );
+	public static final Key		javascriptvar					= Key.of( "javascriptvar" );
 	public static final Key		join							= Key.of( "join" );
 	public static final Key		json							= Key.of( "json" );
 	public static final Key		key								= Key.of( "key" );
