@@ -14,6 +14,10 @@
 
 component{
 
+	property name="moduleRecord";
+	property name="boxRuntime";
+	property name="log";
+
 	/**
 	 * --------------------------------------------------------------------------
 	 * Module Properties
