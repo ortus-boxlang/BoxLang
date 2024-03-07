@@ -22,4 +22,5 @@ public enum BoxUnaryOperator {
 	PostPlusPlus,
 	PostMinusMinus,
 	Not,
+	BitwiseComplement
 }

@@ -4,7 +4,7 @@ options {
 	tokenVocab = CFLexer;
 }
 
-@members { 
+@members {
 	// This allows script components to be verified at parse time.
  	public ortus.boxlang.runtime.services.ComponentService componentService = ortus.boxlang.runtime.BoxRuntime.getInstance().getComponentService();
  }
@@ -46,10 +46,10 @@ functionSignature:
 	javadoc? (preannotation)* accessModifier? STATIC? returnType? FUNCTION identifier LPAREN
 		functionParamList? RPAREN;
 
-// UDF 
+// UDF
 function:
 	functionSignature (postannotation)* statementBlock
-	// This will "eat" random extra ; at the end of statements 
+	// This will "eat" random extra ; at the end of statements
 	eos*;
 
 // Declared arguments for a function
@@ -125,7 +125,7 @@ anonymousFunctionBody: statementBlock | simpleStatement;
 // { statement; statement; }
 statementBlock: LBRACE (statement)* RBRACE;
 
-// Any top-level statement that can be in a block.  
+// Any top-level statement that can be in a block.
 statement: (
 		do
 		| for
@@ -137,7 +137,7 @@ statement: (
 		| simpleStatement
 		| componentIsland
 	)
-	// This will "eat" random extra ; at the end of statements 
+	// This will "eat" random extra ; at the end of statements
 	eos*;
 
 // Simple statements have no body
@@ -214,10 +214,10 @@ argumentList:
 		COMMA (namedArgument | positionalArgument)
 	)*;
 
-/* 
+/*
  func( foo = bar, baz = qux )
  func( foo : bar, baz : qux )
- func( "foo" = bar, "baz" = qux ) 
+ func( "foo" = bar, "baz" = qux )
  func( 'foo' : bar, 'baz' : qux )
  */
 namedArgument: (identifier | stringLiteral) (EQUALSIGN | COLON) expression;
@@ -432,14 +432,14 @@ componentIslandBody: COMPONENT_ISLAND_BODY*;
 
 /*
  try {
- 
+
  } catch( e ) {
  } finally {
  }
  */
 try: TRY statementBlock ( catch_)* finally_?;
 
-// catch( e ) {} 
+// catch( e ) {}
 catch_:
 	CATCH LPAREN catchType? (PIPE catchType)* expression RPAREN statementBlock;
 
@@ -490,7 +490,7 @@ structMember:
 	| stringLiteral (COLON | EQUALSIGN) expression;
 
 // +foo -bar
-unary: (MINUS | PLUS) expression;
+unary: (MINUS | PLUS | BITWISE_COMPLEMENT) expression;
 
 // new java:String( param1 )
 new:
@@ -502,7 +502,7 @@ fqn: (identifier DOT)* identifier;
 expression:
 	// foo = bar
 	assignment
-	// null 
+	// null
 	| NULL
 	| anonymousFunction
 	| accessExpression
@@ -515,6 +515,7 @@ expression:
 	| expression ( POWER) expression
 	| expression (STAR | SLASH | PERCENT | BACKSLASH) expression
 	| expression (PLUS | MINUS | MOD) expression
+	| expression ( BITWISE_SIGNED_LEFT_SHIFT | BITWISE_SIGNED_RIGHT_SHIFT | BITWISE_UNSIGNED_RIGHT_SHIFT ) expression
 	| expression ( XOR | INSTANCEOF) expression
 	| expression (AMPERSAND expression)+
 	| expression (
@@ -534,6 +535,9 @@ expression:
 		| NOT CONTAINS
 		| TEQ
 	) expression // Comparision
+	| expression BITWISE_AND expression // Bitwise AND operator
+	| expression BITWISE_XOR expression // Bitwise XOR operator
+	| expression BITWISE_OR expression // Bitwise OR operator
 	| expression ELVIS expression // Elvis operator
 	| expression IS expression // IS operator
 	| expression CASTAS expression // CastAs operator

@@ -42,11 +42,11 @@ public class NegateTest {
 	@Test
 	void testItCanNegateBoolean() {
 		assertThat( Negate.invoke( true ) ).isEqualTo( -1 );
-		assertThat( Negate.invoke( false ) == 0 ).isTrue();
+		assertThat( Negate.invoke( false ) ).isEqualTo( 0 );
 		assertThat( Negate.invoke( "true" ) ).isEqualTo( -1 );
-		assertThat( Negate.invoke( "false" ) == 0 ).isTrue();
+		assertThat( Negate.invoke( "false" ) ).isEqualTo( 0 );
 		assertThat( Negate.invoke( "yes" ) ).isEqualTo( -1 );
-		assertThat( Negate.invoke( "no" ) == 0 ).isTrue();
+		assertThat( Negate.invoke( "no" ) ).isEqualTo( 0 );
 	}
 
 }

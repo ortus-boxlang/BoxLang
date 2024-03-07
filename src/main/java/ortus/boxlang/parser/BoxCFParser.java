@@ -575,8 +575,8 @@ public class BoxCFParser extends BoxAbstractParser {
 	/**
 	 * Converts the ComponentIslandContext parser rule to the corresponding AST node
 	 *
-	 * @param file source file, if any
-	 * @param node ANTLR ComponentIslandContext rule
+	 * @param file            source file, if any
+	 * @param componentIsland ANTLR ComponentIslandContext rule
 	 *
 	 * @return the corresponding AST BoxComponentIsland
 	 *
@@ -709,7 +709,7 @@ public class BoxCFParser extends BoxAbstractParser {
 	 */
 	private BoxStatement toAst( File file, CFParser.TryContext node ) {
 		List<BoxStatement>	tryBody		= toAst( file, node.statementBlock() );
-		List<BoxTryCatch>	catches		= node.catch_().stream().map( it -> toAst( file, it ) ).toList();
+		List<BoxTryCatch>	catches		= node.catch_().stream().map( it -> toAst( file, it ) ).collect( Collectors.toList() );
 		List<BoxStatement>	finallyBody	= new ArrayList<>();
 		if ( node.finally_() != null ) {
 			finallyBody.addAll( toAst( file, node.finally_().statementBlock() ) );
@@ -923,7 +923,7 @@ public class BoxCFParser extends BoxAbstractParser {
 	 * @see BoxStatement
 	 */
 	private List<BoxStatement> toAst( File file, CFParser.StatementBlockContext node ) {
-		return node.statement().stream().map( stmt -> toAst( file, stmt ) ).toList();
+		return node.statement().stream().map( stmt -> toAst( file, stmt ) ).collect( Collectors.toList() );
 	}
 
 	/**
@@ -1165,10 +1165,10 @@ public class BoxCFParser extends BoxAbstractParser {
 
 	/**
 	 * Escape double up quotes and pounds in a string literal
-	 * 
+	 *
 	 * @param quoteChar the quote character used to surround the string
 	 * @param string    the string to escape
-	 * 
+	 *
 	 * @return the escaped string
 	 */
 	private String escapeStringLiteral( String quoteChar, String string ) {
@@ -1357,6 +1357,32 @@ public class BoxCFParser extends BoxAbstractParser {
 			return new BoxAssignment( left, op, right, modifiers, getPosition( expression ), getSourceText( expression ) );
 		} else if ( expression.NULL() != null ) {
 			return new BoxNull( getPosition( expression ), getSourceText( expression ) );
+		} else if ( expression.BITWISE_SIGNED_LEFT_SHIFT() != null ) {
+			BoxExpr	left	= toAst( file, expression.expression( 0 ) );
+			BoxExpr	right	= toAst( file, expression.expression( 1 ) );
+			return new BoxBinaryOperation( left, BoxBinaryOperator.BitwiseSignedLeftShift, right, getPosition( expression ), getSourceText( expression ) );
+		} else if ( expression.BITWISE_SIGNED_RIGHT_SHIFT() != null ) {
+			BoxExpr	left	= toAst( file, expression.expression( 0 ) );
+			BoxExpr	right	= toAst( file, expression.expression( 1 ) );
+			return new BoxBinaryOperation( left, BoxBinaryOperator.BitwiseSignedRightShift, right, getPosition( expression ), getSourceText( expression ) );
+		} else if ( expression.BITWISE_UNSIGNED_RIGHT_SHIFT() != null ) {
+			BoxExpr	left	= toAst( file, expression.expression( 0 ) );
+			BoxExpr	right	= toAst( file, expression.expression( 1 ) );
+			return new BoxBinaryOperation( left, BoxBinaryOperator.BitwiseUnsignedRightShift, right, getPosition( expression ),
+			    getSourceText( expression ) );
+		} else if ( expression.BITWISE_AND() != null ) {
+			System.out.println( "here" );
+			BoxExpr	left	= toAst( file, expression.expression( 0 ) );
+			BoxExpr	right	= toAst( file, expression.expression( 1 ) );
+			return new BoxBinaryOperation( left, BoxBinaryOperator.BitwiseAnd, right, getPosition( expression ), getSourceText( expression ) );
+		} else if ( expression.BITWISE_OR() != null ) {
+			BoxExpr	left	= toAst( file, expression.expression( 0 ) );
+			BoxExpr	right	= toAst( file, expression.expression( 1 ) );
+			return new BoxBinaryOperation( left, BoxBinaryOperator.BitwiseOr, right, getPosition( expression ), getSourceText( expression ) );
+		} else if ( expression.BITWISE_XOR() != null ) {
+			BoxExpr	left	= toAst( file, expression.expression( 0 ) );
+			BoxExpr	right	= toAst( file, expression.expression( 1 ) );
+			return new BoxBinaryOperation( left, BoxBinaryOperator.BitwiseXor, right, getPosition( expression ), getSourceText( expression ) );
 		} else if ( expression.anonymousFunction() != null ) {
 			/* Lambda declaration */
 			if ( expression.anonymousFunction().lambda() != null ) {
@@ -1453,7 +1479,8 @@ public class BoxCFParser extends BoxAbstractParser {
 	private BoxExpr toAst( File file, CFParser.UnaryContext node ) {
 
 		BoxExpr				expr	= toAst( file, node.expression() );
-		BoxUnaryOperator	op		= node.MINUS() != null ? BoxUnaryOperator.Minus : BoxUnaryOperator.Plus;
+		BoxUnaryOperator	op		= node.MINUS() != null ? BoxUnaryOperator.Minus
+		    : ( node.PLUS() != null ? BoxUnaryOperator.Plus : BoxUnaryOperator.BitwiseComplement );
 		if ( expr instanceof BoxBinaryOperation bop ) {
 			return new BoxBinaryOperation(
 			    new BoxUnaryOperation( bop.getLeft(), op, getPosition( node ), getSourceText( node ) ),
@@ -1874,8 +1901,8 @@ public class BoxCFParser extends BoxAbstractParser {
 	/**
 	 * Converts the pre annotation parser rule to the corresponding AST node.
 	 *
-	 * @param file source file, if any
-	 * @param node ANTLR PreannotationContext rule
+	 * @param file       source file, if any
+	 * @param annotation ANTLR PreannotationContext rule
 	 *
 	 * @return corresponding AST PreannotationContext
 	 *

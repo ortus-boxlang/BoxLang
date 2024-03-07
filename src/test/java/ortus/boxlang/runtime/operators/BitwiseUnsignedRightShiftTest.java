@@ -17,34 +17,19 @@
  */
 package ortus.boxlang.runtime.operators;
 
-import ortus.boxlang.runtime.dynamic.casters.DoubleCaster;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
 
-/**
- * Performs mathematic Negation
- * {@code a = -num}
- */
-public class Negate implements IOperator {
+import static com.google.common.truth.Truth.assertThat;
 
-	/**
-	 * @param object The object to negate
-	 *
-	 * @return The result
-	 */
-	public static Number invoke( Object object ) {
-		if ( object instanceof Number n ) {
-			if ( n.intValue() == n.doubleValue() ) {
-				return -n.intValue();
-			} else {
-				return -n.doubleValue();
-			}
-		} else {
-			Double d = DoubleCaster.cast( object );
-			if ( d % 1 == 0 ) {
-				return -d.intValue();
-			} else {
-				return -d;
-			}
-		}
+public class BitwiseUnsignedRightShiftTest {
+
+	@DisplayName( "It can BitwiseUnsignedRightShift numbers" )
+	@Test
+	void testNumbers() {
+		assertThat( BitwiseUnsignedRightShift.invoke( 12, 2 ) ).isEqualTo( 3 );
+		assertThat( BitwiseUnsignedRightShift.invoke( -12, 2 ) ).isEqualTo( 1073741821 );
+		assertThat( BitwiseUnsignedRightShift.invoke( -12L, 2 ) ).isEqualTo( 4611686018427387901L );
 	}
 
 }

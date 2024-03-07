@@ -121,6 +121,7 @@ public class BoxUnaryOperationTransformer extends AbstractTransformer {
 			case PreMinusMinus -> "Decrement.invoke( ${expr} )";
 			// 5-- is the same as 5
 			case PostMinusMinus -> "${expr}";
+			case BitwiseComplement -> "BitwiseComplement.invoke( ${expr} )";
 			default -> throw new ExpressionException( "Unknown unary operator " + operator.toString(), operation.getPosition(), operation.getSourceText() );
 		};
 	}

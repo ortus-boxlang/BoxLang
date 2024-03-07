@@ -32,6 +32,13 @@ public enum BoxBinaryOperator {
 	And,
 	Or,
 	Equivalence,
-	Implies
+	Implies,
+
+	BitwiseAnd,
+	BitwiseOr,
+	BitwiseXor,
+	BitwiseSignedLeftShift,
+	BitwiseSignedRightShift,
+	BitwiseUnsignedRightShift,
 
 }

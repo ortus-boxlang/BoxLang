@@ -18,7 +18,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import com.github.javaparser.ast.Node;
-import com.github.javaparser.ast.expr.Expression;
+import com.github.javaparser.ast.expr.*;
 
 import ortus.boxlang.ast.BoxNode;
 import ortus.boxlang.ast.expression.BoxBinaryOperation;
@@ -26,6 +26,8 @@ import ortus.boxlang.ast.expression.BoxBinaryOperator;
 import ortus.boxlang.transpiler.JavaTranspiler;
 import ortus.boxlang.transpiler.transformer.AbstractTransformer;
 import ortus.boxlang.transpiler.transformer.TransformerContext;
+
+import javax.annotation.Nonnull;
 
 /**
  * Transform a BoxBinaryOperation Node the equivalent Java Parser AST nodes
@@ -56,60 +58,129 @@ public class BoxBinaryOperationTransformer extends AbstractTransformer {
 		Expression			left		= ( Expression ) transpiler.transform( operation.getLeft(), safe );
 		Expression			right		= ( Expression ) transpiler.transform( operation.getRight(), context );
 
-		Map<String, String>	values		= new HashMap<>() {
+		Node				javaExpr	= switch ( operation.getOperator() ) {
+											case Plus -> // "Plus.invoke(${left},${right})";
+											    generateBinaryMethodCallExpr( "Plus", left, right );
 
-											{
-												put( "left", left.toString() );
-												put( "right", right.toString() );
-												put( "contextName", transpiler.peekContextName() );
+											case Minus -> // "Minus.invoke(${left},${right})";
+											    generateBinaryMethodCallExpr( "Minus", left, right );
 
+											case Star -> // "Multiply.invoke(${left},${right})";
+											    generateBinaryMethodCallExpr( "Multiply", left, right );
+
+											case Slash -> // "Divide.invoke(${left},${right})";
+											    generateBinaryMethodCallExpr( "Divide", left, right );
+
+											case Backslash -> // "IntegerDivide.invoke(${left},${right})";
+											    generateBinaryMethodCallExpr( "IntegerDivide", left, right );
+
+											case Power -> // "Power.invoke(${left},${right})";
+											    generateBinaryMethodCallExpr( "Power", left, right );
+
+											case Xor -> // "XOR.invoke(${left},${right})";
+											    generateBinaryMethodCallExpr( "XOR", left, right );
+
+											case Mod -> // "Modulus.invoke(${left},${right})";
+											    generateBinaryMethodCallExpr( "Modulus", left, right );
+
+											case And -> {
+												// "BooleanCaster.cast( ${left} ) && BooleanCaster.cast( ${right} )";
+												BinaryExpr		binaryExpr		= new BinaryExpr();
+												NameExpr		booleanNameExpr	= new NameExpr( "BooleanCaster" );
+
+												MethodCallExpr	leftExpr		= new MethodCallExpr( booleanNameExpr, "cast" );
+												leftExpr.addArgument( left );
+												binaryExpr.setLeft( leftExpr );
+
+												binaryExpr.setOperator( BinaryExpr.Operator.BINARY_AND );
+
+												MethodCallExpr rightExpr = new MethodCallExpr( booleanNameExpr, "cast" );
+												rightExpr.addArgument( right );
+												binaryExpr.setRight( rightExpr );
+
+												yield binaryExpr;
 											}
-										};
+											case Or -> {
+												// "BooleanCaster.cast( ${left} ) || BooleanCaster.cast( ${right} )";
+												BinaryExpr		binaryExpr		= new BinaryExpr();
+												NameExpr		booleanNameExpr	= new NameExpr( "BooleanCaster" );
 
-		String				template	= "";
-		if ( operation.getOperator() == BoxBinaryOperator.Plus ) {
-			template = "Plus.invoke(${left},${right})";
-		} else if ( operation.getOperator() == BoxBinaryOperator.Minus ) {
-			template = "Minus.invoke(${left},${right})";
-		} else if ( operation.getOperator() == BoxBinaryOperator.Star ) {
-			template = "Multiply.invoke(${left},${right})";
-		} else if ( operation.getOperator() == BoxBinaryOperator.Slash ) {
-			template = "Divide.invoke(${left},${right})";
-		} else if ( operation.getOperator() == BoxBinaryOperator.Backslash ) {
-			template = "IntegerDivide.invoke(${left},${right})";
-		} else if ( operation.getOperator() == BoxBinaryOperator.Power ) {
-			template = "Power.invoke(${left},${right})";
-		} else if ( operation.getOperator() == BoxBinaryOperator.Xor ) {
-			template = "XOR.invoke(${left},${right})";
-		} else if ( operation.getOperator() == BoxBinaryOperator.Mod ) {
-			template = "Modulus.invoke(${left},${right})";
-		} else if ( operation.getOperator() == BoxBinaryOperator.And ) {
-			// template = "And.invoke(${left},${right})";
-			template = "BooleanCaster.cast( ${left} ) && BooleanCaster.cast( ${right} )";
-		} else if ( operation.getOperator() == BoxBinaryOperator.Or ) {
-			// template = "Or.invoke(${left},${right})";
-			template = "BooleanCaster.cast( ${left} ) || BooleanCaster.cast( ${right} )";
-		} else if ( operation.getOperator() == BoxBinaryOperator.Equivalence ) {
-			template = "Equivalence.invoke(${left},${right})";
-		} else if ( operation.getOperator() == BoxBinaryOperator.Implies ) {
-			template = "Implies.invoke(${left},${right})";
-		} else if ( operation.getOperator() == BoxBinaryOperator.Elvis ) {
-			template = "Elvis.invoke(${left},${right})";
-		} else if ( operation.getOperator() == BoxBinaryOperator.InstanceOf ) {
-			template = "InstanceOf.invoke(${contextName},${left},${right})";
-		} else if ( operation.getOperator() == BoxBinaryOperator.Contains ) {
-			template = "Contains.invoke(${left},${right})";
-		} else if ( operation.getOperator() == BoxBinaryOperator.NotContains ) {
-			template = "!Contains.invoke(${left},${right})";
-		} else if ( operation.getOperator() == BoxBinaryOperator.CastAs ) {
-			template = "CastAs.invoke(${contextName},${left},${right})";
-		} else {
-			throw new IllegalStateException( "not implemented" );
-		}
-		Node javaExpr = parseExpression( template, values );
+												MethodCallExpr	leftExpr		= new MethodCallExpr( booleanNameExpr, "cast" );
+												leftExpr.addArgument( left );
+												binaryExpr.setLeft( leftExpr );
+
+												binaryExpr.setOperator( BinaryExpr.Operator.BINARY_OR );
+
+												MethodCallExpr rightExpr = new MethodCallExpr( booleanNameExpr, "cast" );
+												rightExpr.addArgument( right );
+												binaryExpr.setRight( rightExpr );
+
+												yield binaryExpr;
+											}
+											case Equivalence -> // "Equivalence.invoke(${left},${right})";
+											    generateBinaryMethodCallExpr( "Equivalence", left, right );
+
+											case Implies -> // "Implies.invoke(${left},${right})";
+											    generateBinaryMethodCallExpr( "Implies", left, right );
+
+											case Elvis -> // "Elvis.invoke(${left},${right})";
+											    generateBinaryMethodCallExpr( "Elvis", left, right );
+
+											case InstanceOf -> // "InstanceOf.invoke(${contextName},${left},${right})";
+											    generateBinaryMethodCallExpr( "InstanceOf", transpiler.peekContextName(), left, right );
+
+											case Contains -> // "Contains.invoke(${left},${right})";
+											    generateBinaryMethodCallExpr( "Contains", left, right );
+
+											case NotContains -> // "!Contains.invoke(${left},${right})";
+											    new UnaryExpr( generateBinaryMethodCallExpr( "Contains", left, right ), UnaryExpr.Operator.LOGICAL_COMPLEMENT );
+
+											case CastAs -> // "CastAs.invoke(${contextName},${left},${right})";
+											    generateBinaryMethodCallExpr( "CastAs", transpiler.peekContextName(), left, right );
+
+											case BitwiseAnd -> // "BitwiseAnd.invoke(${left},${right})";
+											    generateBinaryMethodCallExpr( "BitwiseAnd", left, right );
+
+											case BitwiseOr -> // "BitwiseOr.invoke(${left},${right})";
+											    generateBinaryMethodCallExpr( "BitwiseOr", left, right );
+
+											case BitwiseXor -> // "BitwiseXor.invoke(${left},${right})";
+											    generateBinaryMethodCallExpr( "BitwiseXor", left, right );
+
+											case BitwiseSignedLeftShift -> // "BitwiseSignedLeftShift.invoke(${left},${right})";
+											    generateBinaryMethodCallExpr( "BitwiseSignedLeftShift", left, right );
+
+											case BitwiseSignedRightShift -> // "BitwiseSignedRightShift.invoke(${left},${right})";
+											    generateBinaryMethodCallExpr( "BitwiseSignedRightShift", left, right );
+
+											case BitwiseUnsignedRightShift -> // "BitwiseUnsignedRightShift.invoke(${left},${right})";
+											    generateBinaryMethodCallExpr( "BitwiseUnsignedRightShift", left, right );
+
+											default -> throw new IllegalStateException( "not implemented" );
+										};
 		logger.atTrace().log( node.getSourceText() + " (" + context.name() + ") -> " + javaExpr );
 		// addIndex( javaExpr, node );
 		return javaExpr;
+	}
+
+	@Nonnull
+	private static MethodCallExpr generateBinaryMethodCallExpr( String methodName, Object... args ) {
+		NameExpr		nameExpr		= new NameExpr( methodName );
+		MethodCallExpr	methodCallExpr	= new MethodCallExpr( nameExpr, "invoke" );
+		for ( Object o : args ) {
+			if ( o instanceof Expression expr ) {
+				methodCallExpr.addArgument( expr );
+			} else if ( o instanceof String s ) {
+				methodCallExpr.addArgument( s );
+			} else {
+				String type = "null";
+				if ( o != null ) {
+					type = o.getClass().getName();
+				}
+				throw new IllegalStateException( "Invalid argument type: " + type );
+			}
+		}
+		return methodCallExpr;
 	}
 
 }
