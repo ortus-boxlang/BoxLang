@@ -47,7 +47,7 @@ public class ConfigLoader {
 	/**
 	 * Path to the core config file in the `resources` folder
 	 */
-	private static final String	DEFAULT_CONFIG_FILE	= "config/config.json";
+	private static final String	DEFAULT_CONFIG_FILE	= "config/boxlang.json";
 
 	/**
 	 * The ConfigLoader instance
@@ -91,7 +91,7 @@ public class ConfigLoader {
 	 */
 
 	/**
-	 * Load the default internal core config file <code>resources/config/config.json</code>
+	 * Load the default internal core config file <code>resources/config/boxlang.json</code>
 	 *
 	 * @return The parsed configuration
 	 */

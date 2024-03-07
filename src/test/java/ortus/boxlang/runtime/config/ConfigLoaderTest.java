@@ -129,14 +129,14 @@ class ConfigLoaderTest {
 	@DisplayName( "It can load a custom config file using a string" )
 	@Test
 	void testItCanLoadACustomConfig() {
-		Configuration config = ConfigLoader.getInstance().loadFromFile( "src/test/resources/test-config.json" );
+		Configuration config = ConfigLoader.getInstance().loadFromFile( "src/test/resources/test-boxlang.json" );
 		assertConfigTest( config );
 	}
 
 	@DisplayName( "It can load a custom config file using a URL" )
 	@Test
 	void testItCanLoadACustomConfigUsingAURL() {
-		URL				url		= ConfigLoaderTest.class.getClassLoader().getResource( "test-config.json" );
+		URL				url		= ConfigLoaderTest.class.getClassLoader().getResource( "test-boxlang.json" );
 		Configuration	config	= ConfigLoader.getInstance().loadFromFile( url );
 		assertConfigTest( config );
 	}
@@ -145,7 +145,7 @@ class ConfigLoaderTest {
 	@Test
 	void testItCanLoadACustomConfigUsingAPath() {
 		Configuration config = ConfigLoader.getInstance().loadFromFile(
-		    Path.of( "src/test/resources/test-config.json" )
+		    Path.of( "src/test/resources/test-boxlang.json" )
 		);
 		assertConfigTest( config );
 	}

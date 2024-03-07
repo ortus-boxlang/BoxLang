@@ -261,10 +261,10 @@ public class BoxRuntime {
 		    Struct.of( "config", this.configuration )
 		);
 
-		// User-HOME Override? Check user home for a ${user.home}/.boxlang/config.json
+		// User-HOME Override? Check user home for a ${user.home}/.boxlang/boxlang.json
 		String userHomeConfigPath = Paths.get( System.getProperty( "user.home" ) )
 		    .resolve( ".boxlang" )
-		    .resolve( "config.json" )
+		    .resolve( "boxlang.json" )
 		    .toString();
 		if ( Files.exists( Path.of( userHomeConfigPath ) ) ) {
 			this.configuration.process( ConfigLoader.getInstance().deserializeConfig( userHomeConfigPath ) );
