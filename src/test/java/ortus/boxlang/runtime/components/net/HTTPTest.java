@@ -23,6 +23,7 @@ import static com.google.common.truth.Truth.assertThat;
 
 import static org.junit.Assert.*;
 
+import com.github.tomakehurst.wiremock.client.WireMock;
 import com.github.tomakehurst.wiremock.junit5.WireMockRuntimeInfo;
 import com.github.tomakehurst.wiremock.junit5.WireMockTest;
 import org.junit.Rule;
@@ -179,16 +180,20 @@ public class HTTPTest {
 
 	@DisplayName( "It can make HTTP call ACF script" )
 	@Test
-	public void testCanMakeHTTPCallACFScript() {
+	public void testCanMakeHTTPCallACFScript( WireMockRuntimeInfo wmRuntimeInfo ) {
+		stubFor(
+		    get( "/posts/1" )
+		        .willReturn( ok().withHeader( "Content-Type", "application/json; charset=utf-8" ).withBody(
+		            """
+		            {
+		              "userId": 1,
+		              "id": 1,
+		              "title": "sunt aut facere repellat provident occaecati excepturi optio reprehenderit",
+		              "body": "quia et suscipit\\nsuscipit recusandae consequuntur expedita et cum\\nreprehenderit molestiae ut ut quas totam\\nnostrum rerum est autem sunt rem eveniet architecto"
+		            }
+		            """ ) ) );
 
-		instance.executeSource(
-		    """
-		     cfhttp( url="https://jsonplaceholder.typicode.com/posts/1" ) {
-		         cfhttpparam( type="header", name="User-Agent", value="Mozilla");
-		    }
-		    result = cfhttp;
-		     """,
-		    context );
+		instance.executeSource( String.format( "cfhttp( url=\"%s\", result=\"result\" ) {}", wmRuntimeInfo.getHttpBaseUrl() + "/posts/1" ), context );
 
 		assertThat( variables.get( result ) ).isInstanceOf( IStruct.class );
 
@@ -209,14 +214,23 @@ public class HTTPTest {
 
 	@DisplayName( "It can make a default GET request" )
 	@Test
-	public void testCanMakeHTTPCallTag() {
+	public void testCanMakeHTTPCallTag( WireMockRuntimeInfo wmRuntimeInfo ) {
+		stubFor(
+		    get( "/posts/1" )
+		        .willReturn( ok().withHeader( "Content-Type", "application/json; charset=utf-8" ).withBody(
+		            """
+		            {
+		              "userId": 1,
+		              "id": 1,
+		              "title": "sunt aut facere repellat provident occaecati excepturi optio reprehenderit",
+		              "body": "quia et suscipit\\nsuscipit recusandae consequuntur expedita et cum\\nreprehenderit molestiae ut ut quas totam\\nnostrum rerum est autem sunt rem eveniet architecto"
+		            }
+		            """ ) ) );
+
 		instance.executeSource(
-		    """
-		      <cfhttp url="https://jsonplaceholder.typicode.com/posts/1">
-		          <cfhttpparam type="header" name="User-Agent" value="Mozilla" />
-		      </cfhttp>
-		    <cfset result = cfhttp>
-		      """,
+		    String.format( """
+		                     <cfhttp result="result" url="%s"></cfhttp>
+		                   """, wmRuntimeInfo.getHttpBaseUrl() + "/posts/1" ),
 		    context, BoxScriptType.CFMARKUP );
 
 		assertThat( variables.get( result ) ).isInstanceOf( IStruct.class );
@@ -238,16 +252,28 @@ public class HTTPTest {
 
 	@DisplayName( "It can make HTTP call tag attributeCollection" )
 	@Test
-	public void testCanMakeHTTPCallTagAttributeCollection() {
+	public void testCanMakeHTTPCallTagAttributeCollection( WireMockRuntimeInfo wmRuntimeInfo ) {
+		stubFor(
+		    get( "/posts/1" )
+		        .withHeader( "Accept-Encoding", equalTo( "sdf" ) )
+		        .willReturn( ok().withHeader( "Content-Type", "application/json; charset=utf-8" ).withBody(
+		            """
+		            {
+		              "userId": 1,
+		              "id": 1,
+		              "title": "sunt aut facere repellat provident occaecati excepturi optio reprehenderit",
+		              "body": "quia et suscipit\\nsuscipit recusandae consequuntur expedita et cum\\nreprehenderit molestiae ut ut quas totam\\nnostrum rerum est autem sunt rem eveniet architecto"
+		            }
+		            """ ) ) );
 
 		instance.executeSource(
-		    """
-		    <cfset attrs = { type="header", name="Accept-Encoding", value="gzip,deflate" }>
-		       <cfhttp url="https://jsonplaceholder.typicode.com/posts/1">
-		       	<cfhttpparam attributeCollection="#attrs#" value="sdf" />
-		       </cfhttp>
-		       <cfset result = cfhttp>
-		         """,
+		    String.format( """
+		                   <cfset attrs = { type="header", name="Accept-Encoding", value="gzip,deflate" }>
+		                      <cfhttp url="%s">
+		                      	<cfhttpparam attributeCollection="#attrs#" value="sdf" />
+		                      </cfhttp>
+		                      <cfset result = cfhttp>
+		                        """, wmRuntimeInfo.getHttpBaseUrl() + "/posts/1" ),
 		    context, BoxScriptType.CFMARKUP );
 
 		assertThat( variables.get( result ) ).isInstanceOf( IStruct.class );
