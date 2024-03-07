@@ -19,6 +19,7 @@ package ortus.boxlang.runtime.types;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 
 import ortus.boxlang.runtime.dynamic.IReferenceable;
@@ -31,7 +32,7 @@ public interface IStruct extends Map<Key, Object>, IType, IReferenceable {
 	/**
 	 * The Available types of structs
 	 */
-	public static enum TYPES {
+	public enum TYPES {
 		LINKED,
 		SORTED,
 		DEFAULT,
@@ -312,6 +313,15 @@ public interface IStruct extends Map<Key, Object>, IType, IReferenceable {
 	 */
 	default XML getAsXML( Key key ) {
 		return ( XML ) DynamicObject.unWrap( get( key ) );
+	}
+
+	/**
+	 * Convenience method for getting cast as Optional
+	 * Does NOT perform BoxLang casting, only Java cast so the object needs to actually be castable
+	 */
+	@SuppressWarnings( "unchecked" )
+	default Optional<Object> getAsOptional( Key key ) {
+		return ( Optional<Object> ) DynamicObject.unWrap( get( key ) );
 	}
 
 	/**

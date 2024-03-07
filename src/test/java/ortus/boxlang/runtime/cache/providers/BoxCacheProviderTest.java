@@ -33,6 +33,7 @@ import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.services.AsyncService;
 import ortus.boxlang.runtime.services.AsyncService.ExecutorType;
 import ortus.boxlang.runtime.services.CacheService;
+import ortus.boxlang.runtime.types.IStruct;
 
 public class BoxCacheProviderTest {
 
@@ -227,6 +228,32 @@ public class BoxCacheProviderTest {
 		assertThat( results.size() ).isEqualTo( 2 );
 		assertThat( results.getAsBoolean( Key.of( "testKey" ) ) ).isTrue();
 		assertThat( results.getAsBoolean( Key.of( "testKey2" ) ) ).isTrue();
+	}
+
+	@Test
+	@DisplayName( "It can get a cache item with stats" )
+	void testGet() {
+		boxCache.set( "testKey", "test" );
+		assertThat( boxCache.get( "testKey" ).get() ).isEqualTo( "test" );
+		assertThat( boxCache.getStats().hits() ).isEqualTo( 1 );
+		assertThat( boxCache.getStats().misses() ).isEqualTo( 0 );
+		// Invalid one
+		assertThat( boxCache.get( "testKey2" ).isPresent() ).isFalse();
+		assertThat( boxCache.getStats().hits() ).isEqualTo( 1 );
+		assertThat( boxCache.getStats().misses() ).isEqualTo( 1 );
+	}
+
+	@Test
+	@DisplayName( "It can get multiple cache items" )
+	void testGetMultiple() {
+		boxCache.set( "testKey", "test" );
+		boxCache.set( "testKey2", "test" );
+
+		IStruct results = boxCache.get( "testKey", "testKey2" );
+
+		assertThat( results.size() ).isEqualTo( 2 );
+		assertThat( results.getAsOptional( Key.of( "testKey" ) ).get() ).isEqualTo( "test" );
+		assertThat( results.getAsOptional( Key.of( "testKey2" ) ).get() ).isEqualTo( "test" );
 	}
 
 }
