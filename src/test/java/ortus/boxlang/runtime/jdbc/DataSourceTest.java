@@ -19,7 +19,12 @@
 package ortus.boxlang.runtime.jdbc;
 
 import static com.google.common.truth.Truth.assertThat;
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.math.BigDecimal;
 import java.sql.Connection;
@@ -55,7 +60,7 @@ public class DataSourceTest {
 
 	@AfterAll
 	public static void teardown() throws SQLException {
-		datasource.shutdown();
+		// datasource.shutdown();
 	}
 
 	@BeforeEach

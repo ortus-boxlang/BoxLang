@@ -1,12 +1,15 @@
 package ortus.boxlang.runtime.jdbc;
 
+import static com.google.common.truth.Truth.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
+import java.nio.file.Paths;
 import java.sql.SQLException;
 
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import java.nio.file.Paths;
 
 import ortus.boxlang.parser.BoxScriptType;
 import ortus.boxlang.runtime.BoxRuntime;
@@ -19,10 +22,6 @@ import ortus.boxlang.runtime.services.ModuleService;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Query;
 import ortus.boxlang.runtime.types.Struct;
-
-import static com.google.common.truth.Truth.assertThat;
-import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
-import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class DerbyModuleTest {
 
@@ -40,7 +39,7 @@ public class DerbyModuleTest {
 
 	@AfterAll
 	public static void teardown() throws SQLException {
-		dataSourceManager.shutdown();
+		// dataSourceManager.shutdown();
 	}
 
 	@BeforeEach

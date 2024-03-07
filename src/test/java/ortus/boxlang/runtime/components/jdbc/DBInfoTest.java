@@ -86,7 +86,7 @@ public class DBInfoTest {
 
 	@AfterAll
 	public static void teardown() {
-		datasourceManager.shutdown();
+		// datasourceManager.shutdown();
 	}
 
 	@BeforeEach
@@ -128,7 +128,7 @@ public class DBInfoTest {
 	public void testDataSourceAttribute() {
 		assertThrows(
 		    DatabaseException.class,
-		    () -> instance.executeStatement( "cfdbinfo( type='version', name='result', datasource='foobar' )" )
+		    () -> instance.executeStatement( "cfdbinfo( type='version', name='result', datasource='not_found' )" )
 		);
 	}
 
