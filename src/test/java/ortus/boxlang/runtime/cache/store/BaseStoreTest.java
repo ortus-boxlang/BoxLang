@@ -111,7 +111,7 @@ public abstract class BaseStoreTest {
 	@Test
 	@DisplayName( "BaseTest: Can get config and provider" )
 	public void testGetConfigAndProvider() {
-		assertThat( store.getConfig() ).isEqualTo( mockConfig );
+		assertThat( store.getConfig() ).isEqualTo( mockConfig.properties );
 		assertThat( store.getProvider() ).isEqualTo( mockProvider );
 	}
 
