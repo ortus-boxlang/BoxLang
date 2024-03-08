@@ -17,6 +17,7 @@
  */
 package ortus.boxlang.runtime.services;
 
+import java.util.Arrays;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
@@ -27,7 +28,10 @@ import org.slf4j.LoggerFactory;
 
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.async.executors.ExecutorRecord;
+import ortus.boxlang.runtime.cache.providers.BoxCacheProvider;
+import ortus.boxlang.runtime.cache.providers.CoreProviderType;
 import ortus.boxlang.runtime.cache.providers.ICacheProvider;
+import ortus.boxlang.runtime.config.segments.CacheConfig;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
@@ -41,24 +45,33 @@ import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 public class CacheService extends BaseService {
 
 	/**
+	 * --------------------------------------------------------------------------
+	 * Public Properties
+	 * --------------------------------------------------------------------------
+	 */
+
+	public static final Class<CoreProviderType>				CORE_TYPES		= CoreProviderType.class;
+
+	/**
 	 * Service Events
 	 */
-	public static final Map<String, Key>	CACHE_EVENTS	= Stream.of(
+	public static final Map<String, Key>					CACHE_EVENTS	= Stream.of(
 	    // Cache Events
 	    "afterCacheElementInsert",
 	    "afterCacheElementRemoved",
 	    "afterCacheElementUpdated",
+	    // Cache Provider Events
 	    "afterCacheClearAll",
-	    // Factory Events
 	    "afterCacheRegistration",
 	    "afterCacheRemoval",
 	    "beforeCacheRemoval",
 	    "beforeCacheReplacement",
-	    "afterCacheServiceConfiguration",
-	    "beforeCacheServiceShutdown",
-	    "afterCacheServiceShutdown",
 	    "beforeCacheShutdown",
-	    "afterCacheShutdown"
+	    "afterCacheShutdown",
+	    // Service Events
+	    "afterCacheServiceStartup",
+	    "beforeCacheServiceShutdown",
+	    "afterCacheServiceShutdown"
 	).collect( Collectors.toMap(
 	    eventName -> eventName,
 	    Key::of
@@ -73,27 +86,35 @@ public class CacheService extends BaseService {
 	/**
 	 * Logger
 	 */
-	private static final Logger				logger			= LoggerFactory.getLogger( CacheService.class );
+	private static final Logger								logger			= LoggerFactory.getLogger( CacheService.class );
 
 	/**
 	 * The async service
 	 */
-	private final AsyncService				asyncService;
+	private final AsyncService								asyncService;
 
 	/**
 	 * The interceptor service
 	 */
-	private final InterceptorService		interceptorService;
+	private final InterceptorService						interceptorService;
 
 	/**
 	 * The scheduled executor service record
 	 */
-	private final ExecutorRecord			executor;
+	private final ExecutorRecord							executor;
 
 	/**
 	 * The caches registry
 	 */
-	private final Map<Key, ICacheProvider>	caches			= new ConcurrentHashMap<>();
+	private final Map<Key, ICacheProvider>					caches			= new ConcurrentHashMap<>();
+
+	/**
+	 * Registry of cache provider classes that you can register in BoxCache.
+	 * These can be registered manually or via modules.
+	 *
+	 * The key is the unique provider name, and the value is the Class we will use to build out a new provider
+	 */
+	private final Map<Key, Class<? extends ICacheProvider>>	providers		= new ConcurrentHashMap<>();
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -152,7 +173,7 @@ public class CacheService extends BaseService {
 
 		// Announce it
 		announce(
-		    CACHE_EVENTS.get( "afterCacheServiceConfiguration" ),
+		    CACHE_EVENTS.get( "afterCacheServiceStartup" ),
 		    Struct.of( "cacheService", this )
 		);
 
@@ -203,7 +224,7 @@ public class CacheService extends BaseService {
 	 *
 	 * @param name The name of the cache
 	 */
-	public void shutdownCache( Key name ) {
+	public synchronized void shutdownCache( Key name ) {
 		// Verify it exists or skip out
 		if ( !this.caches.containsKey( name ) ) {
 			return;
@@ -215,14 +236,15 @@ public class CacheService extends BaseService {
 		// Get the cache
 		var cache = this.caches.get( name );
 
-		// Announce it
-		announce(
-		    CACHE_EVENTS.get( "beforeCacheShutdown" ),
-		    Struct.of( "cacheService", this, "cache", cache )
-		);
-
 		// Shutdown the cache
 		try {
+
+			// Announce it
+			announce(
+			    CACHE_EVENTS.get( "beforeCacheShutdown" ),
+			    Struct.of( "cacheService", this, "cache", cache )
+			);
+
 			cache.shutdown();
 
 			// Announce it
@@ -238,8 +260,20 @@ public class CacheService extends BaseService {
 			logger.atError().log( "Error shutting down cache [{}]: {}", name, e.getMessage() );
 		}
 
+		// Announce
+		announce(
+		    CACHE_EVENTS.get( "beforeCacheRemoval" ),
+		    Struct.of( "cacheService", this, "cache", cache )
+		);
+
 		// Remove it from the registry
 		this.caches.remove( name );
+
+		// announce it
+		announce(
+		    CACHE_EVENTS.get( "afterCacheRemoval" ),
+		    Struct.of( "cacheService", this, "cacheName", name )
+		);
 	}
 
 	/**
@@ -320,7 +354,7 @@ public class CacheService extends BaseService {
 	 *
 	 * @throws BoxRuntimeException If a cache with the same name already exists
 	 */
-	public void registerCache( ICacheProvider provider ) {
+	public ICacheProvider registerCache( ICacheProvider provider ) {
 		// Do we have one already with the name throw an exception
 		if ( this.hasCache( provider.getName() ) ) {
 			throw new BoxRuntimeException( "Cache [" + provider.getName() + "] already exists." );
@@ -334,6 +368,44 @@ public class CacheService extends BaseService {
 		    CACHE_EVENTS.get( "afterCacheRegistration" ),
 		    Struct.of( "cacheService", this, "cache", provider )
 		);
+
+		return provider;
+	}
+
+	/**
+	 * Create a new named default cache, register it and return it.
+	 *
+	 * @param name The name of the cache
+	 *
+	 * @return The created and registered cache
+	 */
+	public ICacheProvider createDefaultCache( Key name ) {
+		return createDefaultCache( name, new CacheConfig() );
+	}
+
+	/**
+	 * Create a new named default cache with a custom config, register it and return it.
+	 *
+	 * @param name   The name of the cache
+	 * @param config The cache configuration
+	 *
+	 * @return The created and registered cache
+	 */
+	public ICacheProvider createDefaultCache( Key name, CacheConfig config ) {
+		// If the name exists throw an exception
+		if ( this.hasCache( name ) ) {
+			throw new BoxRuntimeException( "Cache [" + name + "] already exists." );
+		}
+
+		// Create the cache
+		var cache = new BoxCacheProvider()
+		    .setName( name )
+		    .configure( this, config );
+
+		// Register it
+		registerCache( cache );
+
+		return cache;
 	}
 
 	/**
@@ -349,16 +421,97 @@ public class CacheService extends BaseService {
 	}
 
 	/**
-	 * Create a new cache according to the provider and properties, register it and returns it.
+	 * Create a new cache according to the name, provider and properties structure
 	 *
 	 * @param name       The name of the cache
 	 * @param provider   A valid cache provider
 	 * @param properties The properties to configure the cache
 	 *
-	 * @return
+	 * @return The created and registered cache
 	 */
-	public static ICacheProvider createCache( Key name, Key provider, Struct properties ) {
-		return null;
+	public ICacheProvider createCache( Key name, Key provider, Struct properties ) {
+		// Check if the name is available else throw an exception
+		if ( hasCache( name ) ) {
+			throw new BoxRuntimeException( "Cache [" + name + "] already exists." );
+		}
+
+		// Build the cache provider
+		ICacheProvider cache = buildCacheProvider( provider )
+		    .setName( name )
+		    .configure( this, new CacheConfig( name, provider, properties ) );
+
+		// Register it and return it
+		return registerCache( cache );
+	}
+
+	/**
+	 * Get an array of registered providers as strings
+	 */
+	public String[] getRegisteredProviders() {
+		return this.providers.keySet()
+		    .stream()
+		    .map( Key::getName )
+		    .toArray( String[]::new );
+	}
+
+	/**
+	 * Check if a provider exists
+	 *
+	 * @param provider The provider to check
+	 */
+	public boolean hasProvider( Key provider ) {
+		return this.providers.containsKey( provider );
+	}
+
+	/**
+	 * Get the requested provider by name or throw an exception if it does not exist
+	 *
+	 * @param provider The name of the provider
+	 *
+	 * @return The provider class
+	 */
+	public Class<? extends ICacheProvider> getProvider( Key provider ) {
+		Class<? extends ICacheProvider> results = this.providers.get( provider );
+
+		if ( results == null ) {
+			throw new BoxRuntimeException(
+			    "Cache Provider [" + provider + "] does not exist. Valid providers are: " + Arrays.toString( getRegisteredProviders() ) );
+		}
+
+		return results;
+	}
+
+	/**
+	 * Register a new cache provider
+	 * If the provider already exists, it will throw an exception
+	 *
+	 * @param name     The name of the provider
+	 * @param provider The provider class
+	 *
+	 * @return The CacheService
+	 */
+	public CacheService registerProvider( Key name, Class<? extends ICacheProvider> provider ) {
+		// If it exists throw an exception
+		if ( this.providers.containsKey( name ) ) {
+			throw new BoxRuntimeException( "Custom Provider [" + name + "] already exists." );
+		}
+
+		// Register it
+		this.providers.put( name, provider );
+
+		return this;
+	}
+
+	/**
+	 * Remove a registered provider by name
+	 * If the provider does not exist, it will skip out
+	 *
+	 * @param name The name of the provider
+	 *
+	 * @return True if the provider was removed, false otherwise
+	 */
+	public boolean removeProvider( Key name ) {
+		return this.providers.remove( name ) != null;
 	}
 
 	/**
@@ -397,6 +550,40 @@ public class CacheService extends BaseService {
 		this.caches.values()
 		    .parallelStream()
 		    .forEach( ICacheProvider::reap );
+	}
+
+	/**
+	 * --------------------------------------------------------------------------
+	 * Private Methods
+	 * --------------------------------------------------------------------------
+	 */
+
+	/**
+	 * Build a core/custom provider
+	 *
+	 * @param provider The provider to build
+	 *
+	 * @return The built provider
+	 */
+	private ICacheProvider buildCacheProvider( Key provider ) {
+		// Is this a core provider?
+		if ( CoreProviderType.isCore( provider ) ) {
+			return CoreProviderType.getValueByKey( provider ).buildProvider();
+		}
+
+		// Verify if we have this type of provider registered
+		if ( hasProvider( provider ) ) {
+			try {
+				return getProvider( provider ).getDeclaredConstructor().newInstance();
+			} catch ( Exception e ) {
+				throw new BoxRuntimeException( "Error building cache provider [" + provider + "]: " + e.getMessage() );
+			}
+		}
+
+		// Else throw an exception
+		throw new BoxRuntimeException(
+		    "No cache provider with the name [" + provider + "] is registered. Available providers are: " + Arrays.toString( getRegisteredProviders() )
+		);
 	}
 
 }
