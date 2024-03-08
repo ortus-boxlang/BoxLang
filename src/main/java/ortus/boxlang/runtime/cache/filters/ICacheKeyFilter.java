@@ -17,7 +17,7 @@
  */
 package ortus.boxlang.runtime.cache.filters;
 
-import java.util.function.Predicate;
+import com.google.common.base.Predicate;
 
 import ortus.boxlang.runtime.scopes.Key;
 
