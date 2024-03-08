@@ -22,11 +22,11 @@ public class RegexFilterTest {
 		Key			key4		= new Key( "Hat" );
 		Key			key5		= new Key( "hut" );
 
-		assertThat( regexFilter.apply( key1 ) ).isTrue();
-		assertThat( regexFilter.apply( key2 ) ).isTrue();
-		assertThat( regexFilter.apply( key3 ) ).isTrue();
-		assertThat( regexFilter.apply( key4 ) ).isTrue();
-		assertThat( regexFilter.apply( key5 ) ).isFalse();
+		assertThat( regexFilter.test( key1 ) ).isTrue();
+		assertThat( regexFilter.test( key2 ) ).isTrue();
+		assertThat( regexFilter.test( key3 ) ).isTrue();
+		assertThat( regexFilter.test( key4 ) ).isTrue();
+		assertThat( regexFilter.test( key5 ) ).isFalse();
 	}
 
 	@Test
@@ -42,10 +42,10 @@ public class RegexFilterTest {
 		Key			key4		= new Key( "Hat" );
 		Key			key5		= new Key( "hut" );
 
-		assertThat( regexFilter.apply( key1 ) ).isTrue();
-		assertThat( regexFilter.apply( key2 ) ).isFalse();
-		assertThat( regexFilter.apply( key3 ) ).isTrue();
-		assertThat( regexFilter.apply( key4 ) ).isFalse();
-		assertThat( regexFilter.apply( key5 ) ).isFalse();
+		assertThat( regexFilter.test( key1 ) ).isTrue();
+		assertThat( regexFilter.test( key2 ) ).isFalse();
+		assertThat( regexFilter.test( key3 ) ).isTrue();
+		assertThat( regexFilter.test( key4 ) ).isFalse();
+		assertThat( regexFilter.test( key5 ) ).isFalse();
 	}
 }
