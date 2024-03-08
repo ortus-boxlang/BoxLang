@@ -123,7 +123,11 @@ public class DoubleCaster {
 			}
 			// test for fractions
 		} else if ( StringCaster.cast( value ).split( "/" ).length > 1 ) {
-			return Fraction.getFraction( value ).doubleValue();
+			try {
+				return Fraction.getFraction( value ).doubleValue();
+			} catch ( Exception e ) {
+				return null;
+			}
 		}
 
 		return null;
