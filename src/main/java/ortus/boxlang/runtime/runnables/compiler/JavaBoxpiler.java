@@ -95,8 +95,10 @@ public class JavaBoxpiler {
 	 */
 	private Map<String, ClassInfo>	classPool		= new HashMap<>();
 
-	// Replace with a util for dealing with JSON files in class output dir
-	private DiskClassLoader			diskClassLoader;
+	/**
+	 * The disk class util
+	 */
+	private DiskClassUtil			diskClassUtil;
 
 	/**
 	 * Logger
@@ -108,6 +110,9 @@ public class JavaBoxpiler {
 	 */
 	private Path					classGenerationDirectory;
 
+	/**
+	 * The transaction service used to track subtransactions
+	 */
 	private FRTransService			frTransService	= FRTransService.getInstance();
 
 	/**
@@ -120,9 +125,10 @@ public class JavaBoxpiler {
 	 * Private constructor
 	 */
 	private JavaBoxpiler() {
-
 		this.compiler					= ToolProvider.getSystemJavaCompiler();
 		this.classGenerationDirectory	= Paths.get( BoxRuntime.getInstance().getConfiguration().compiler.classGenerationDirectory );
+		this.diskClassUtil				= new DiskClassUtil( classGenerationDirectory );
+		this.classGenerationDirectory.toFile().mkdirs();
 
 		// If we are in debug mode, let's clean out the class generation directory
 		if ( BoxRuntime.getInstance().inDebugMode() && Files.exists( this.classGenerationDirectory ) ) {
@@ -134,15 +140,6 @@ public class JavaBoxpiler {
 				throw new BoxRuntimeException( "Error cleaning out class generation directory on first run", e );
 			}
 		}
-
-		this.diskClassLoader = new DiskClassLoader(
-		    new URL[] {},
-		    this.getClass().getClassLoader(),
-		    Paths.get( BoxRuntime.getInstance().getConfiguration().compiler.classGenerationDirectory ),
-
-		    this
-		);
-
 	}
 
 	/**
@@ -388,7 +385,7 @@ public class JavaBoxpiler {
 			throw new BoxRuntimeException( javaSource );
 
 		// Capture the line numbers of each Java AST node from printing the Java source
-		diskClassLoader.writeLineNumbers( classInfo.FQN(), generateLineNumberJSON( classInfo, prettyPrinter.getVisitor().getLineNumbers() ) );
+		diskClassUtil.writeLineNumbers( classInfo.FQN(), generateLineNumberJSON( classInfo, prettyPrinter.getVisitor().getLineNumbers() ) );
 		return javaSource;
 	}
 
@@ -398,7 +395,7 @@ public class JavaBoxpiler {
 		if ( m.find() ) {
 			FQN = m.group( 1 );
 		}
-		return diskClassLoader.readLineNumbers( FQN );
+		return diskClassUtil.readLineNumbers( FQN );
 	}
 
 	public void compileClassInfo( String FQN ) {
@@ -427,7 +424,7 @@ public class JavaBoxpiler {
 		System.out.println( "Compiling " + fqn );
 
 		// This is just for debugging. Remove later.
-		diskClassLoader.writeJavaSource( fqn, javaSource );
+		diskClassUtil.writeJavaSource( fqn, javaSource );
 		try {
 
 			DiagnosticCollector<JavaFileObject>	diagnostics	= new DiagnosticCollector<>();
@@ -606,7 +603,7 @@ public class JavaBoxpiler {
 	 * @return The line numbers
 	 */
 	public SourceMap getLineNumbers( String fqn ) {
-		return diskClassLoader.readLineNumbers( fqn );
+		return diskClassUtil.readLineNumbers( fqn );
 	}
 
 	/**
