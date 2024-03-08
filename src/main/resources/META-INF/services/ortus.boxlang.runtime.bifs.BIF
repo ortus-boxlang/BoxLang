@@ -188,6 +188,7 @@ ortus.boxlang.runtime.bifs.global.query.QueryDeleteRow
 ortus.boxlang.runtime.bifs.global.query.QueryEach
 ortus.boxlang.runtime.bifs.global.query.QueryEvery
 ortus.boxlang.runtime.bifs.global.query.QueryExecute
+ortus.boxlang.runtime.bifs.global.query.QueryGetCell
 ortus.boxlang.runtime.bifs.global.query.QueryKeyExists
 ortus.boxlang.runtime.bifs.global.query.QueryMap
 ortus.boxlang.runtime.bifs.global.query.QueryNew

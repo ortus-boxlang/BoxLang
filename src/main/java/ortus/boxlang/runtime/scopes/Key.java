@@ -125,6 +125,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		columnList						= Key.of( "columnList" );
 	public static final Key		columns							= Key.of( "columns" );
 	public static final Key		columnTypeList					= Key.of( "columnTypeList" );
+	public static final Key		column_name						= Key.of( "column_name" );
 	public static final Key		compiler						= Key.of( "compiler" );
 	public static final Key		compression						= Key.of( "compression" );
 	public static final Key		configure						= Key.of( "configure" );
@@ -377,6 +378,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		rJustify						= Key.of( "rJustify" );
 	public static final Key		row								= Key.of( "row" );
 	public static final Key		rowData							= Key.of( "rowData" );
+	public static final Key		row_number						= Key.of( "row_number" );
 	public static final Key		run								= Key.of( "run" );
 	public static final Key		runtime							= Key.of( "runtime" );
 	public static final Key		samesite						= Key.of( "samesite" );
