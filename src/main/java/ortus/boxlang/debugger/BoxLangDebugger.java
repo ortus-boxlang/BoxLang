@@ -87,7 +87,7 @@ public class BoxLangDebugger {
 	private ClassType							keyClassRef			= null;
 	private IVMInitializationStrategy			initStrat;
 	private Map<Integer, CachedThreadReference>	cachedThreads		= new HashMap<Integer, CachedThreadReference>();
-	private NextStepStrategy					stepStrategy;
+	private IStepStrategy						stepStrategy;
 
 	public enum Status {
 		NOT_STARTED,
@@ -164,7 +164,7 @@ public class BoxLangDebugger {
 	}
 
 	public void continueExecution( int threadId, boolean singleThread ) {
-		this.cachedThreads = new HashMap<Integer, CachedThreadReference>();
+		clearCachedThreads();
 		JDITools.clearMemory();
 		this.bpe		= null;
 		this.lastThread	= null;
@@ -177,15 +177,6 @@ public class BoxLangDebugger {
 		}
 
 		this.status = Status.RUNNING;
-	}
-
-	public void forceResume() {
-		this.status = Status.RUNNING;
-		this.bpe.thread().resume();
-	}
-
-	public void startDebugSession() {
-		// pass
 	}
 
 	public void setBreakpointsForFile( String filePath, List<Breakpoint> breakpoints ) {
@@ -201,7 +192,7 @@ public class BoxLangDebugger {
 	}
 
 	public WrappedValue getObjectFromStackFrame( StackFrame stackFrame ) {
-		return JDITools.wrap( this.bpe.thread(), stackFrame.thisObject() );
+		return JDITools.wrap( this.lastThread, stackFrame.thisObject() );
 	}
 
 	public BoxLangType determineBoxLangType( ReferenceType type ) {
@@ -300,8 +291,8 @@ public class BoxLangDebugger {
 
 	}
 
-	public List<ThreadReference> getAllThreadReferences() {
-		return this.vm.allThreads();
+	public List<CachedThreadReference> getAllThreadReferences() {
+		return this.vm.allThreads().stream().map( ( tr ) -> cacheOrGetThread( tr ) ).toList();
 	}
 
 	public List<StackFrame> getStackFrames( int threadId ) throws IncompatibleThreadStateException {
@@ -348,9 +339,9 @@ public class BoxLangDebugger {
 		return null;
 	}
 
-	public void startStepping( int threadId ) {
+	public void startStepping( int threadId, IStepStrategy stepStrategy ) {
 
-		this.stepStrategy = new NextStepStrategy();
+		this.stepStrategy = stepStrategy;
 
 		this.stepStrategy.startStepping( this.cacheOrGetThread( threadId ) );
 
@@ -443,9 +434,9 @@ public class BoxLangDebugger {
 				    .ifPresent( ( sft ) -> {
 					    new StoppedEvent( "step", ( int ) stepEvent.thread().uniqueID() ).send( this.debugAdapterOutput );
 
-					    this.status		= Status.STOPPED;
-					    this.lastThread	= stepEvent.thread();
-					    this.cachedThreads = new HashMap<Integer, CachedThreadReference>();
+					    this.status	= Status.STOPPED;
+					    this.lastThread = stepEvent.thread();
+					    clearCachedThreads();
 
 					    this.stepStrategy.dispose();
 					    this.stepStrategy = null;
@@ -549,9 +540,14 @@ public class BoxLangDebugger {
 	private void handleBreakPointEvent( BreakpointEvent bpe ) throws IncompatibleThreadStateException, AbsentInformationException {
 		this.status = Status.STOPPED;
 		this.debugAdapter.sendStoppedEventForBreakpoint( bpe );
+		clearCachedThreads();
 		this.bpe = bpe;
 		this.cacheOrGetThread( ( int ) this.bpe.thread().uniqueID() );
 		this.lastThread = this.bpe.thread();
+	}
+
+	private void clearCachedThreads() {
+		this.cachedThreads = new HashMap<Integer, CachedThreadReference>();
 	}
 
 	private void setAllBreakpoints() {

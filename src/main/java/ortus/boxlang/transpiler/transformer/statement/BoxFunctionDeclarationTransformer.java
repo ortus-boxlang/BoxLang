@@ -230,7 +230,9 @@ public class BoxFunctionDeclarationTransformer extends AbstractTransformer {
 		);
 		Statement javaStmt = parseStatement( registrationTemplate, values );
 		logger.atTrace().log( node.getSourceText() + " -> " + javaStmt );
-		addIndex( javaStmt, node );
+		// commenting this out to prevent BoxFunctionDeclarationTransformer nodes in the SourceMaps
+		// This caused the debugger's stepping behavior to hit locations it shouldn't be stopping on
+		// addIndex( javaStmt, node );
 		( ( JavaTranspiler ) transpiler ).getUDFDeclarations().add( javaStmt );
 
 		// The actual declaration is hoisted to the top, so I just need a dummy node to return here

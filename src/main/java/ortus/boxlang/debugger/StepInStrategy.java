@@ -6,7 +6,7 @@ import com.sun.jdi.request.StepRequest;
 
 import ortus.boxlang.debugger.BoxLangDebugger.StackFrameTuple;
 
-public class NextStepStrategy implements IStepStrategy {
+public class StepInStrategy implements IStepStrategy {
 
 	private StepRequest		stepRequest;
 	private StackFrameTuple	originalFrame	= null;
@@ -15,7 +15,7 @@ public class NextStepStrategy implements IStepStrategy {
 	public void startStepping( CachedThreadReference ref ) {
 		originalFrame	= ref.getBoxLangStackFrames().get( 0 );
 
-		stepRequest		= ref.vm.eventRequestManager().createStepRequest( ref.threadReference, StepRequest.STEP_LINE, StepRequest.STEP_OVER );
+		stepRequest		= ref.vm.eventRequestManager().createStepRequest( ref.threadReference, StepRequest.STEP_LINE, StepRequest.STEP_INTO );
 		stepRequest.addClassFilter( "boxgenerated.*" );
 		stepRequest.enable();
 	}

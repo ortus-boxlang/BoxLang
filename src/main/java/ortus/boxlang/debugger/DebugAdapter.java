@@ -54,6 +54,8 @@ import ortus.boxlang.debugger.request.PauseRequest;
 import ortus.boxlang.debugger.request.ScopeRequest;
 import ortus.boxlang.debugger.request.SetBreakpointsRequest;
 import ortus.boxlang.debugger.request.StackTraceRequest;
+import ortus.boxlang.debugger.request.StepInRequest;
+import ortus.boxlang.debugger.request.StepOutRequest;
 import ortus.boxlang.debugger.request.ThreadsRequest;
 import ortus.boxlang.debugger.request.VariablesRequest;
 import ortus.boxlang.debugger.response.ContinueResponse;
@@ -136,6 +138,8 @@ public class DebugAdapter {
 			    .register( "threads", ThreadsRequest.class )
 			    .register( "stackTrace", StackTraceRequest.class )
 			    .register( "next", NextRequest.class )
+			    .register( "stepin", StepInRequest.class )
+			    .register( "stepout", StepOutRequest.class )
 			    .register( "scopes", ScopeRequest.class )
 			    .register( "variables", VariablesRequest.class )
 			    .register( "continue", ContinueRequest.class )
@@ -267,7 +271,19 @@ public class DebugAdapter {
 	 * @param debugRequest
 	 */
 	public void visit( NextRequest debugRequest ) {
-		this.debugger.startStepping( debugRequest.arguments.threadId );
+		this.debugger.startStepping( debugRequest.arguments.threadId, new NextStepStrategy() );
+
+		new NoBodyResponse( debugRequest ).send( this.outputStream );
+	}
+
+	public void visit( StepInRequest debugRequest ) {
+		this.debugger.startStepping( debugRequest.arguments.threadId, new StepInStrategy() );
+
+		new NoBodyResponse( debugRequest ).send( this.outputStream );
+	}
+
+	public void visit( StepOutRequest debugRequest ) {
+		this.debugger.startStepping( debugRequest.arguments.threadId, new StepOutStrategy() );
 
 		new NoBodyResponse( debugRequest ).send( this.outputStream );
 	}
@@ -351,13 +367,11 @@ public class DebugAdapter {
 	public void visit( ThreadsRequest debugRequest ) {
 		List<ortus.boxlang.debugger.types.Thread> threads = this.debugger.getAllThreadReferences()
 		    .stream()
-		    // .filter( ( threadReference ) -> {
-		    // return threadReference.name().compareToIgnoreCase( "main" ) == 0;
-		    // } )
-		    .map( ( threadReference ) -> {
+		    .filter( ( ctr ) -> ctr.getBoxLangStackFrames().size() > 0 )
+		    .map( ( ctr ) -> {
 			    ortus.boxlang.debugger.types.Thread t = new ortus.boxlang.debugger.types.Thread();
-			    t.id = ( int ) threadReference.uniqueID();
-			    t.name = threadReference.name();
+			    t.id = ( int ) ctr.threadReference.uniqueID();
+			    t.name = ctr.threadReference.name();
 
 			    return t;
 		    } )

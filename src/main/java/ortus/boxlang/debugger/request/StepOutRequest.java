@@ -22,11 +22,11 @@ import ortus.boxlang.debugger.DebugAdapter;
 /**
  * Models the command to initialize a debug session.
  */
-public class NextRequest extends AbstractRequest {
+public class StepOutRequest extends AbstractRequest {
 
-	public NextRequestArguments arguments;
+	public StepOutRequestArguments arguments;
 
-	public static class NextRequestArguments {
+	public static class StepOutRequestArguments {
 
 		public Integer	threadId;
 		public Boolean	singleThread	= false;
