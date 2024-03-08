@@ -41,7 +41,7 @@ component{
 	/**
 	 * The module description
 	 */
-	this.description = "This module does more amazing things";
+	this.description = "Provides the Apache Derby embedded database and JDBC driver for connectivity.";
 
 	/**
 	 * The module web URL
@@ -75,7 +75,6 @@ component{
 		 * The module interceptors to register into the runtime
 		 */
 		interceptors = [
-			// { class="path.to.Interceptor", properties={} }
 		];
 
 		/**
