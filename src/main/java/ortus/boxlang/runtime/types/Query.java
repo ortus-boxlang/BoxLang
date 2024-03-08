@@ -81,6 +81,22 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 		functionService = BoxRuntime.getInstance().getFunctionService();
 	}
 
+	/*
+	 * Create a new query with columns and data
+	 */
+	public Query( Array columnNames, Array columnTypes, Object rowData ) {
+		int i = 0;
+		for ( var columnName : columnNames ) {
+			addColumn( Key.of( columnName ), QueryColumnType.fromString( ( String ) columnTypes.get( i ) ) );
+			i++;
+		}
+		if ( rowData == null ) {
+			return;
+		}
+		addData( rowData );
+		return;
+	}
+
 	/**
 	 * Get the list of column definitions for this query
 	 *
