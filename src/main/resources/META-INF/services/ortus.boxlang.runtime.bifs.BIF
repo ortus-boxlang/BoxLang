@@ -180,6 +180,7 @@ ortus.boxlang.runtime.bifs.global.math.Sin
 ortus.boxlang.runtime.bifs.global.math.Sqr
 ortus.boxlang.runtime.bifs.global.math.Tan
 ortus.boxlang.runtime.bifs.global.query.QueryAddRow
+ortus.boxlang.runtime.bifs.global.query.QueryClear
 ortus.boxlang.runtime.bifs.global.query.QueryExecute
 ortus.boxlang.runtime.bifs.global.query.QueryNew
 ortus.boxlang.runtime.bifs.global.query.QueryRecordCount
