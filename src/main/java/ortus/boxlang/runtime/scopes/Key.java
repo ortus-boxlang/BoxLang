@@ -445,6 +445,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		trim							= Key.of( "trim" );
 	public static final Key		type							= Key.of( "type" );
 	public static final Key		typename						= Key.of( "typename" );
+	public static final Key		useRegex						= Key.of( "useRegex" );
 	public static final Key		URL								= Key.of( "URL" );
 	public static final Key		useCustomSerializer				= Key.of( "useCustomSerializer" );
 	public static final Key		useLastAccessTimeouts			= Key.of( "useLastAccessTimeouts" );

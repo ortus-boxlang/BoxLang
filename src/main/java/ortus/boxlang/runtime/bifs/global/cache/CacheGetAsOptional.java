@@ -51,9 +51,9 @@ public class CacheGetAsOptional extends BIF {
 	 *
 	 * @argument.cacheName The cache name to retrieve the id from, defaults to {@code default}
 	 *
-	 * @return The value of the object in the cache or null if not found, or the default value if provided
+	 * @return The object from the cache, or an empty {@link Optional} if the object does not exist.
 	 */
-	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
+	public Optional<Object> _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		// Get the requested cache
 		ICacheProvider cache = cacheService.getCache( arguments.getAsKey( Key.cacheName ) );
 		// Get it

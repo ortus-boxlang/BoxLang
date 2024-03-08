@@ -52,9 +52,10 @@ public class CacheGetOrFail extends BIF {
 	 *
 	 * @argument.cacheName The cache name to retrieve the id from, defaults to {@code default}
 	 *
+	 * @throws BoxRuntimeException if the id is not found in the cache
+	 *
 	 * @return The value of the object in the cache or null if not found, or the default value if provided
 	 *
-	 * @throws BoxRuntimeException if the id is not found in the cache
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		// Get the requested cache
