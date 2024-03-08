@@ -41,10 +41,12 @@ public class CacheService extends BaseService {
 	 * Service Events
 	 */
 	public static final Map<String, Key>	CACHE_EVENTS	= Stream.of(
+	    // Cache Events
 	    "afterCacheElementInsert",
 	    "afterCacheElementRemoved",
 	    "afterCacheElementUpdated",
 	    "afterCacheClearAll",
+	    // Factory Events
 	    "afterCacheRegistration",
 	    "afterCacheRemoval",
 	    "beforeCacheRemoval",
