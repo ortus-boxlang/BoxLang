@@ -191,6 +191,7 @@ ortus.boxlang.runtime.bifs.global.query.QueryExecute
 ortus.boxlang.runtime.bifs.global.query.QueryKeyExists
 ortus.boxlang.runtime.bifs.global.query.QueryNew
 ortus.boxlang.runtime.bifs.global.query.QueryRecordCount
+ortus.boxlang.runtime.bifs.global.query.QueryReduce
 ortus.boxlang.runtime.bifs.global.query.QuerySome
 ortus.boxlang.runtime.bifs.global.query.QuerySort
 ortus.boxlang.runtime.bifs.global.string.Ascii
