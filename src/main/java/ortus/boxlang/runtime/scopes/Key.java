@@ -100,6 +100,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		buffersize						= Key.of( "buffersize" );
 	public static final Key		boxCacheProvider				= Key.of( "BoxCacheProvider" );
 	public static final Key		cached							= Key.of( "cached" );
+	public static final Key		cacheName						= Key.of( "cacheName" );
 	public static final Key		cachedWithin					= Key.of( "cachedWithin" );
 	public static final Key		caches							= Key.of( "caches" );
 	public static final Key		callback						= Key.of( "callback" );

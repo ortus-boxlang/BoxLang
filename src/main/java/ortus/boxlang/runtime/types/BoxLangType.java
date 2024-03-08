@@ -90,4 +90,12 @@ public enum BoxLangType {
 		return isValid( Key.of( value ) );
 	}
 
+	/**
+	 * Returns the BoxLangType for the given key as a string.
+	 */
+	@Override
+	public String toString() {
+		return this.key.getName();
+	}
+
 }
