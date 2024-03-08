@@ -53,6 +53,7 @@ import ortus.boxlang.debugger.request.NextRequest;
 import ortus.boxlang.debugger.request.PauseRequest;
 import ortus.boxlang.debugger.request.ScopeRequest;
 import ortus.boxlang.debugger.request.SetBreakpointsRequest;
+import ortus.boxlang.debugger.request.SetExceptionBreakpointsRequest;
 import ortus.boxlang.debugger.request.StackTraceRequest;
 import ortus.boxlang.debugger.request.StepInRequest;
 import ortus.boxlang.debugger.request.StepOutRequest;
@@ -138,6 +139,7 @@ public class DebugAdapter {
 			    .register( "threads", ThreadsRequest.class )
 			    .register( "stackTrace", StackTraceRequest.class )
 			    .register( "next", NextRequest.class )
+			    .register( "setexceptionbreakpoints", SetExceptionBreakpointsRequest.class )
 			    .register( "stepin", StepInRequest.class )
 			    .register( "stepout", StepOutRequest.class )
 			    .register( "scopes", ScopeRequest.class )
@@ -263,6 +265,27 @@ public class DebugAdapter {
 		this.debugger.continueExecution( debugRequest.arguments.threadId, debugRequest.arguments.singleThread );
 
 		new ContinueResponse( debugRequest, true ).send( this.outputStream );
+	}
+
+	public void visit( SetExceptionBreakpointsRequest debugRequest ) {
+		boolean	any		= false;
+		String	matcher	= null;
+
+		for ( String filter : debugRequest.arguments.filters ) {
+			if ( filter.equalsIgnoreCase( "any" ) ) {
+				any = true;
+				continue;
+			}
+
+			if ( filter.equalsIgnoreCase( "matcher" ) ) {
+				matcher = "";
+				continue;
+			}
+		}
+
+		this.debugger.configureExceptionBreakpoints( any, matcher );
+
+		new NoBodyResponse( debugRequest ).send( this.outputStream );
 	}
 
 	/**
