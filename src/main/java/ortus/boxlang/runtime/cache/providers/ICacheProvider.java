@@ -169,7 +169,7 @@ public interface ICacheProvider {
 	 *
 	 * @param filter The filter that determines which keys to clear
 	 */
-	public void clearAll( ICacheKeyFilter filter );
+	public boolean clearAll( ICacheKeyFilter filter );
 
 	/**
 	 * Clears an object from the cache provider with no stats updated or listeners

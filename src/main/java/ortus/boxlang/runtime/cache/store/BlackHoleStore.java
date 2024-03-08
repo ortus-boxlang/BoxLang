@@ -65,8 +65,8 @@ public class BlackHoleStore extends AbstractStore implements IObjectStore {
 	}
 
 	@Override
-	public void clearAll( ICacheKeyFilter filter ) {
-		// do nothing
+	public boolean clearAll( ICacheKeyFilter filter ) {
+		return false;
 	}
 
 	@Override

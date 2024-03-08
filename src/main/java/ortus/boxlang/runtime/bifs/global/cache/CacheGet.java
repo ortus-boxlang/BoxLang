@@ -25,6 +25,7 @@ import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
+import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.validation.Validator;
 
 @BoxBIF
@@ -38,7 +39,7 @@ public class CacheGet extends BIF {
 	public CacheGet() {
 		super();
 		declaredArguments = new Argument[] {
-		    new Argument( true, Argument.STRING, Key.id ),
+		    new Argument( true, Argument.ANY, Key.id ),
 		    new Argument( false, Argument.STRING, Key.cacheName, Key._DEFAULT, Set.of( cacheExistsValidator ) ),
 		    new Argument( false, Argument.ANY, Key.defaultValue )
 		};
@@ -51,17 +52,24 @@ public class CacheGet extends BIF {
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.id The cache id to retrieve
+	 * @argument.id The cache id to retrieve, or an array of ids to retrieve
 	 *
 	 * @argument.cacheName The cache name to retrieve the id from, defaults to {@code default}
 	 *
-	 * @argument.defaultValue The default value to return if the id is not found in the cache
+	 * @argument.defaultValue The default value to return if the id is not found in the cache. Only applies to single ids.
 	 *
 	 * @return The value of the object in the cache or null if not found, or the default value if provided
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		// Get the requested cache
 		ICacheProvider cache = cacheService.getCache( arguments.getAsKey( Key.cacheName ) );
+
+		// Single or multiple ids
+		if ( arguments.get( Key.id ) instanceof Array casteId ) {
+			// Convert the BoxLang array to an array of Strings
+			return cache.get( ( String[] ) casteId.stream().map( Object::toString ).toArray() );
+		}
+
 		// Get the value
 		Optional<Object> results = cache.get( arguments.getAsString( Key.id ) );
 		// If we have a value return it, else do we have a defaultValue, else return null

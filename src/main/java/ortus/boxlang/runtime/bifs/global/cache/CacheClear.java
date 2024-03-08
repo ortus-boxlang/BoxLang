@@ -27,7 +27,6 @@ import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
-import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.validation.Validator;
 
 @BoxBIF
@@ -62,22 +61,17 @@ public class CacheClear extends BIF {
 	 *
 	 * @argument.useRegex If true, the filter will be treated as a full regular expression filter. Default is false.
 	 *
-	 * @return The keys in the cache that match the filter.
+	 * @return True if the keys were cleared, false otherwise
 	 */
-	public Array _invoke( IBoxContext context, ArgumentsScope arguments ) {
+	public Boolean _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		ICacheProvider	cache		= cacheService.getCache( arguments.getAsKey( Key.cacheName ) );
 		String			filter		= arguments.getAsString( Key.filter );
 		Boolean			useRegex	= arguments.getAsBoolean( Key.useRegex );
 
-		// No filter? get all of them
-		if ( filter.isEmpty() ) {
-			return new Array( cache.getKeys() );
-		}
-
 		// Build the right filter
-		ICacheKeyFilter keyFilter = useRegex ? new RegexFilter( filter ) : new WildcardFilter( filter );
+		ICacheKeyFilter	keyFilter	= useRegex ? new RegexFilter( filter ) : new WildcardFilter( filter );
 
 		// Filter the keys
-		return new Array( cache.getKeys( keyFilter ) );
+		return cache.clearAll( keyFilter );
 	}
 }
