@@ -19,8 +19,6 @@ package ortus.boxlang.runtime.types;
 
 import java.util.Set;
 
-import javax.annotation.Nonnull;
-
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.validation.Validatable;
@@ -68,7 +66,7 @@ public record Argument( boolean required, String type, Key name, Object defaultV
 		this( false, "any", name );
 	}
 
-	public Argument( Key name, @Nonnull Set<Validator> validators ) {
+	public Argument( Key name, Set<Validator> validators ) {
 		this( false, "any", name, validators );
 	}
 
@@ -76,7 +74,7 @@ public record Argument( boolean required, String type, Key name, Object defaultV
 		this( required, type, name, null, null, Struct.EMPTY, Struct.EMPTY, Set.of() );
 	}
 
-	public Argument( boolean required, String type, Key name, @Nonnull Set<Validator> validators ) {
+	public Argument( boolean required, String type, Key name, Set<Validator> validators ) {
 		this( required, type, name, null, null, Struct.EMPTY, Struct.EMPTY, validators );
 	}
 
@@ -84,7 +82,7 @@ public record Argument( boolean required, String type, Key name, Object defaultV
 		this( required, type, name, defaultValue, null, Struct.EMPTY, Struct.EMPTY, Set.of() );
 	}
 
-	public Argument( boolean required, String type, Key name, Object defaultValue, @Nonnull Set<Validator> validators ) {
+	public Argument( boolean required, String type, Key name, Object defaultValue, Set<Validator> validators ) {
 		this( required, type, name, defaultValue, null, Struct.EMPTY, Struct.EMPTY, validators );
 	}
 
@@ -92,7 +90,7 @@ public record Argument( boolean required, String type, Key name, Object defaultV
 		this( required, type, name, defaultValue, null, annotations, Struct.EMPTY, Set.of() );
 	}
 
-	public Argument( boolean required, String type, Key name, Object defaultValue, IStruct annotations, @Nonnull Set<Validator> validators ) {
+	public Argument( boolean required, String type, Key name, Object defaultValue, IStruct annotations, Set<Validator> validators ) {
 		this( required, type, name, defaultValue, null, annotations, Struct.EMPTY, validators );
 	}
 
@@ -102,7 +100,7 @@ public record Argument( boolean required, String type, Key name, Object defaultV
 	}
 
 	public Argument( boolean required, String type, Key name, Object defaultValue, DefaultExpression defaultExpression, IStruct annotations,
-	    IStruct documentation, @Nonnull Set<Validator> validators ) {
+	    IStruct documentation, Set<Validator> validators ) {
 		this.required			= required;
 		this.type				= type;
 		this.name				= name;

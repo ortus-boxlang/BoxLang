@@ -73,8 +73,8 @@ public class CacheConfig {
 	    // A default timeout of 0 = never expire, careful with this setting
 	    "defaultTimeout", 60 * 60,
 	    // The object store to use to store the objects.
-	    // The default is a ConcurrentSoftReferenceStore which is a memory sensitive store
-	    "objectStore", "ConcurrentSoftReferenceStore",
+	    // The default is a ConcurrentStore which is a memory sensitive store
+	    "objectStore", "ConcurrentStore",
 	    // The frequency in seconds to check for expired objects and expire them using the policy
 	    // This creates a BoxLang task that runs every X seconds to check for expired objects
 	    "reapFrequency", 10,

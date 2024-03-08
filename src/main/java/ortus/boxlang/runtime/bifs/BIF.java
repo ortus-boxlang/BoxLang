@@ -21,6 +21,8 @@ import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
+import ortus.boxlang.runtime.services.AsyncService;
+import ortus.boxlang.runtime.services.CacheService;
 import ortus.boxlang.runtime.services.FunctionService;
 import ortus.boxlang.runtime.services.InterceptorService;
 import ortus.boxlang.runtime.types.Argument;
@@ -61,6 +63,16 @@ public abstract class BIF {
 	 * The interceptor service helper
 	 */
 	protected InterceptorService	interceptorService	= BoxRuntime.getInstance().getInterceptorService();
+
+	/**
+	 * The cache service helper
+	 */
+	protected CacheService			cacheService		= BoxRuntime.getInstance().getCacheService();
+
+	/**
+	 * The async service helper
+	 */
+	protected AsyncService			asyncService		= BoxRuntime.getInstance().getAsyncService();
 
 	/**
 	 * Invoke the BIF with the given arguments

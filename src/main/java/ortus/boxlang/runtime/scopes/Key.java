@@ -80,6 +80,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		applicationSettings				= Key.of( "applicationSettings" );
 	public static final Key		argumentCollection				= Key.of( "argumentCollection" );
 	public static final Key		arguments						= Key.of( "arguments" );
+	public static final Key		asOptional						= Key.of( "asOptional" );
 	public static final Key		array							= Key.of( "array" );
 	public static final Key		array1							= Key.of( "array1" );
 	public static final Key		array2							= Key.of( "array2" );
