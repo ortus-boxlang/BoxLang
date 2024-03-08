@@ -1,2 +1,2 @@
 <!--- Struct template --->
-&lt;Null&gt;
+&lt;null&gt;

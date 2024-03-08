@@ -104,10 +104,12 @@ import ortus.boxlang.ast.statement.component.BoxComponent;
 import ortus.boxlang.ast.statement.component.BoxTemplateIsland;
 import ortus.boxlang.parser.antlr.CFLexer;
 import ortus.boxlang.parser.antlr.CFParser;
+import ortus.boxlang.parser.antlr.CFParser.AssignmentContext;
 import ortus.boxlang.parser.antlr.CFParser.BoxClassContext;
 import ortus.boxlang.parser.antlr.CFParser.ComponentContext;
 import ortus.boxlang.parser.antlr.CFParser.ComponentIslandContext;
 import ortus.boxlang.parser.antlr.CFParser.NewContext;
+import ortus.boxlang.parser.antlr.CFParser.NotTernaryExpressionContext;
 import ortus.boxlang.parser.antlr.CFParser.ParamContext;
 import ortus.boxlang.parser.antlr.CFParser.PreannotationContext;
 import ortus.boxlang.runtime.BoxRuntime;
@@ -1189,127 +1191,138 @@ public class BoxCFParser extends BoxAbstractParser {
 	 * @see BoxBinaryOperator
 	 */
 	private BoxExpr toAst( File file, CFParser.ExpressionContext expression ) {
+		if ( expression.ternary() != null ) {
+			BoxExpr	condition	= toAst( file, expression.ternary().notTernaryExpression() );
+			BoxExpr	whenTrue	= toAst( file, expression.ternary().expression( 0 ) );
+			BoxExpr	whenFalse	= toAst( file, expression.ternary().expression( 1 ) );
+			return new BoxTernaryOperation( condition, whenTrue, whenFalse, getPosition( expression ), getSourceText( expression ) );
+		}
+		if ( expression.assignment() != null ) {
+			return toAst( file, expression.assignment() );
+		} else if ( expression.notTernaryExpression() != null ) {
+			return toAst( file, expression.notTernaryExpression() );
+		}
+
+		throw new IllegalStateException( "expression not implemented: " + getSourceText( expression ) );
+	}
+
+	private BoxExpr toAst( File file, NotTernaryExpressionContext expression ) {
 		if ( expression.accessExpression() != null ) {
 			return toAst( file, expression.accessExpression() );
 		} else if ( expression.and() != null ) {
-			BoxExpr	left	= toAst( file, expression.expression( 0 ) );
-			BoxExpr	right	= toAst( file, expression.expression( 1 ) );
+			BoxExpr	left	= toAst( file, expression.notTernaryExpression( 0 ) );
+			BoxExpr	right	= toAst( file, expression.notTernaryExpression( 1 ) );
 			return new BoxBinaryOperation( left, BoxBinaryOperator.And, right, getPosition( expression ), getSourceText( expression ) );
 		} else if ( expression.or() != null && ( expression.THAN() == null ) ) {
-			BoxExpr	left	= toAst( file, expression.expression( 0 ) );
-			BoxExpr	right	= toAst( file, expression.expression( 1 ) );
+			BoxExpr	left	= toAst( file, expression.notTernaryExpression( 0 ) );
+			BoxExpr	right	= toAst( file, expression.notTernaryExpression( 1 ) );
 			return new BoxBinaryOperation( left, BoxBinaryOperator.Or, right, getPosition( expression ), getSourceText( expression ) );
 		} else if ( expression.PLUS() != null ) {
-			BoxExpr	left	= toAst( file, expression.expression( 0 ) );
-			BoxExpr	right	= toAst( file, expression.expression( 1 ) );
+			BoxExpr	left	= toAst( file, expression.notTernaryExpression( 0 ) );
+			BoxExpr	right	= toAst( file, expression.notTernaryExpression( 1 ) );
 			return new BoxBinaryOperation( left, BoxBinaryOperator.Plus, right, getPosition( expression ), getSourceText( expression ) );
 		} else if ( expression.MINUS() != null ) {
-			BoxExpr	left	= toAst( file, expression.expression( 0 ) );
-			BoxExpr	right	= toAst( file, expression.expression( 1 ) );
+			BoxExpr	left	= toAst( file, expression.notTernaryExpression( 0 ) );
+			BoxExpr	right	= toAst( file, expression.notTernaryExpression( 1 ) );
 			return new BoxBinaryOperation( left, BoxBinaryOperator.Minus, right, getPosition( expression ), getSourceText( expression ) );
 		} else if ( expression.STAR() != null ) {
-			BoxExpr	left	= toAst( file, expression.expression( 0 ) );
-			BoxExpr	right	= toAst( file, expression.expression( 1 ) );
+			BoxExpr	left	= toAst( file, expression.notTernaryExpression( 0 ) );
+			BoxExpr	right	= toAst( file, expression.notTernaryExpression( 1 ) );
 			return new BoxBinaryOperation( left, BoxBinaryOperator.Star, right, getPosition( expression ), getSourceText( expression ) );
 		} else if ( expression.SLASH() != null ) {
-			BoxExpr	left	= toAst( file, expression.expression( 0 ) );
-			BoxExpr	right	= toAst( file, expression.expression( 1 ) );
+			BoxExpr	left	= toAst( file, expression.notTernaryExpression( 0 ) );
+			BoxExpr	right	= toAst( file, expression.notTernaryExpression( 1 ) );
 			return new BoxBinaryOperation( left, BoxBinaryOperator.Slash, right, getPosition( expression ), getSourceText( expression ) );
 		} else if ( expression.BACKSLASH() != null ) {
-			BoxExpr	left	= toAst( file, expression.expression( 0 ) );
-			BoxExpr	right	= toAst( file, expression.expression( 1 ) );
+			BoxExpr	left	= toAst( file, expression.notTernaryExpression( 0 ) );
+			BoxExpr	right	= toAst( file, expression.notTernaryExpression( 1 ) );
 			return new BoxBinaryOperation( left, BoxBinaryOperator.Backslash, right, getPosition( expression ), getSourceText( expression ) );
 		} else if ( expression.unary() != null ) {
 			return toAst( file, expression.unary() );
 		} else if ( expression.POWER() != null ) {
-			BoxExpr	left	= toAst( file, expression.expression( 0 ) );
-			BoxExpr	right	= toAst( file, expression.expression( 1 ) );
+			BoxExpr	left	= toAst( file, expression.notTernaryExpression( 0 ) );
+			BoxExpr	right	= toAst( file, expression.notTernaryExpression( 1 ) );
 			return new BoxBinaryOperation( left, BoxBinaryOperator.Power, right, getPosition( expression ), getSourceText( expression ) );
 		} else if ( expression.XOR() != null ) {
-			BoxExpr	left	= toAst( file, expression.expression( 0 ) );
-			BoxExpr	right	= toAst( file, expression.expression( 1 ) );
+			BoxExpr	left	= toAst( file, expression.notTernaryExpression( 0 ) );
+			BoxExpr	right	= toAst( file, expression.notTernaryExpression( 1 ) );
 			return new BoxBinaryOperation( left, BoxBinaryOperator.Xor, right, getPosition( expression ), getSourceText( expression ) );
 		} else if ( expression.PERCENT() != null || expression.MOD() != null ) {
-			BoxExpr	left	= toAst( file, expression.expression( 0 ) );
-			BoxExpr	right	= toAst( file, expression.expression( 1 ) );
+			BoxExpr	left	= toAst( file, expression.notTernaryExpression( 0 ) );
+			BoxExpr	right	= toAst( file, expression.notTernaryExpression( 1 ) );
 			return new BoxBinaryOperation( left, BoxBinaryOperator.Mod, right, getPosition( expression ), getSourceText( expression ) );
 		} else if ( expression.INSTANCEOF() != null ) {
-			BoxExpr	left	= toAst( file, expression.expression( 0 ) );
-			BoxExpr	right	= toAst( file, expression.expression( 1 ) );
+			BoxExpr	left	= toAst( file, expression.notTernaryExpression( 0 ) );
+			BoxExpr	right	= toAst( file, expression.notTernaryExpression( 1 ) );
 			return new BoxBinaryOperation( left, BoxBinaryOperator.InstanceOf, right, getPosition( expression ), getSourceText( expression ) );
 		} else if ( expression.TEQ() != null ) {
-			BoxExpr	left	= toAst( file, expression.expression( 0 ) );
-			BoxExpr	right	= toAst( file, expression.expression( 1 ) );
+			BoxExpr	left	= toAst( file, expression.notTernaryExpression( 0 ) );
+			BoxExpr	right	= toAst( file, expression.notTernaryExpression( 1 ) );
 			return new BoxComparisonOperation( left, BoxComparisonOperator.TEqual, right, getPosition( expression ), getSourceText( expression ) );
 		} else if ( expression.neq() != null ) {
-			BoxExpr	left	= toAst( file, expression.expression( 0 ) );
-			BoxExpr	right	= toAst( file, expression.expression( 1 ) );
+			BoxExpr	left	= toAst( file, expression.notTernaryExpression( 0 ) );
+			BoxExpr	right	= toAst( file, expression.notTernaryExpression( 1 ) );
 			return new BoxComparisonOperation( left, BoxComparisonOperator.NotEqual, right, getPosition( expression ), getSourceText( expression ) );
 		} else if ( expression.gt() != null || ( expression.GREATER() != null && expression.THAN() != null ) && expression.OR() == null ) {
-			BoxExpr	left	= toAst( file, expression.expression( 0 ) );
-			BoxExpr	right	= toAst( file, expression.expression( 1 ) );
+			BoxExpr	left	= toAst( file, expression.notTernaryExpression( 0 ) );
+			BoxExpr	right	= toAst( file, expression.notTernaryExpression( 1 ) );
 			return new BoxComparisonOperation( left, BoxComparisonOperator.GreaterThan, right, getPosition( expression ), getSourceText( expression ) );
 		} else if ( expression.gte() != null || ( expression.GREATER() != null && expression.THAN() != null ) && expression.OR() != null ) {
-			BoxExpr	left	= toAst( file, expression.expression( 0 ) );
-			BoxExpr	right	= toAst( file, expression.expression( 1 ) );
+			BoxExpr	left	= toAst( file, expression.notTernaryExpression( 0 ) );
+			BoxExpr	right	= toAst( file, expression.notTernaryExpression( 1 ) );
 			return new BoxComparisonOperation( left, BoxComparisonOperator.GreaterThanEquals, right, getPosition( expression ), getSourceText( expression ) );
 		} else if ( expression.lt() != null || ( expression.LESS() != null && expression.THAN() != null && expression.OR() == null ) ) {
-			BoxExpr	left	= toAst( file, expression.expression( 0 ) );
-			BoxExpr	right	= toAst( file, expression.expression( 1 ) );
+			BoxExpr	left	= toAst( file, expression.notTernaryExpression( 0 ) );
+			BoxExpr	right	= toAst( file, expression.notTernaryExpression( 1 ) );
 			return new BoxComparisonOperation( left, BoxComparisonOperator.LessThan, right, getPosition( expression ), getSourceText( expression ) );
 		} else if ( expression.lte() != null || ( expression.LESS() != null && expression.THAN() != null && expression.OR() != null ) ) {
-			BoxExpr	left	= toAst( file, expression.expression( 0 ) );
-			BoxExpr	right	= toAst( file, expression.expression( 1 ) );
+			BoxExpr	left	= toAst( file, expression.notTernaryExpression( 0 ) );
+			BoxExpr	right	= toAst( file, expression.notTernaryExpression( 1 ) );
 			return new BoxComparisonOperation( left, BoxComparisonOperator.LesslThanEqual, right, getPosition( expression ), getSourceText( expression ) );
 		} else if ( expression.eq() != null || expression.IS() != null ) {
-			BoxExpr	left	= toAst( file, expression.expression( 0 ) );
-			BoxExpr	right	= toAst( file, expression.expression( 1 ) );
+			BoxExpr	left	= toAst( file, expression.notTernaryExpression( 0 ) );
+			BoxExpr	right	= toAst( file, expression.notTernaryExpression( 1 ) );
 			return new BoxComparisonOperation( left, BoxComparisonOperator.Equal, right, getPosition( expression ), getSourceText( expression ) );
 		} else if ( expression.AMPERSAND().size() > 0 ) {
-			List<BoxExpr>				parts	= new ArrayList<>();
-			CFParser.ExpressionContext	current	= expression;
+			List<BoxExpr>							parts	= new ArrayList<>();
+			CFParser.NotTernaryExpressionContext	current	= expression;
 			do {
-				parts.add( toAst( file, ( CFParser.ExpressionContext ) current.expression().get( 0 ) ) );
-				current = current.expression().get( 1 );
+				parts.add( toAst( file, ( CFParser.NotTernaryExpressionContext ) current.notTernaryExpression().get( 0 ) ) );
+				current = current.notTernaryExpression().get( 1 );
 			} while ( current.AMPERSAND() != null && current.AMPERSAND().size() > 0 );
-			parts.add( toAst( file, ( CFParser.ExpressionContext ) current ) );
+			parts.add( toAst( file, ( CFParser.NotTernaryExpressionContext ) current ) );
 
 			return new BoxStringConcat( parts, getPosition( expression ), getSourceText( expression ) );
 
 		} else if ( expression.EQV() != null ) {
-			BoxExpr	left	= toAst( file, expression.expression( 0 ) );
+			BoxExpr	left	= toAst( file, expression.notTernaryExpression( 0 ) );
 
-			BoxExpr	right	= toAst( file, expression.expression( 1 ) );
+			BoxExpr	right	= toAst( file, expression.notTernaryExpression( 1 ) );
 			return new BoxBinaryOperation( left, BoxBinaryOperator.Equivalence, right, getPosition( expression ), getSourceText( expression ) );
 		} else if ( expression.IMP() != null ) {
-			BoxExpr	left	= toAst( file, expression.expression( 0 ) );
+			BoxExpr	left	= toAst( file, expression.notTernaryExpression( 0 ) );
 
-			BoxExpr	right	= toAst( file, expression.expression( 1 ) );
+			BoxExpr	right	= toAst( file, expression.notTernaryExpression( 1 ) );
 			return new BoxBinaryOperation( left, BoxBinaryOperator.Implies, right, getPosition( expression ), getSourceText( expression ) );
 		} else if ( expression.ELVIS() != null ) {
-			BoxExpr	left	= toAst( file, expression.expression( 0 ) );
+			BoxExpr	left	= toAst( file, expression.notTernaryExpression( 0 ) );
 
-			BoxExpr	right	= toAst( file, expression.expression( 1 ) );
+			BoxExpr	right	= toAst( file, expression.notTernaryExpression( 1 ) );
 			return new BoxBinaryOperation( left, BoxBinaryOperator.Elvis, right, getPosition( expression ), getSourceText( expression ) );
-		} else if ( expression.QM() != null ) {
-			BoxExpr	condition	= toAst( file, expression.expression( 0 ) );
-			BoxExpr	whenTrue	= toAst( file, expression.expression( 1 ) );
-			BoxExpr	whenFalse	= toAst( file, expression.expression( 2 ) );
-			return new BoxTernaryOperation( condition, whenTrue, whenFalse, getPosition( expression ), getSourceText( expression ) );
 		} else if ( expression.notOrBang() != null && expression.CONTAIN() == null ) {
-			BoxExpr expr = toAst( file, expression.expression( 0 ) );
+			BoxExpr expr = toAst( file, expression.notTernaryExpression( 0 ) );
 			return new BoxUnaryOperation( expr, BoxUnaryOperator.Not, getPosition( expression ), getSourceText( expression ) );
 			// return new BoxNegateOperation( expr, BoxNegateOperator.Not, getPosition( expression ), getSourceText( expression ) );
 		} else if ( expression.CONTAINS() != null ) {
-			BoxExpr	left	= toAst( file, expression.expression( 0 ) );
-			BoxExpr	right	= toAst( file, expression.expression( 1 ) );
+			BoxExpr	left	= toAst( file, expression.notTernaryExpression( 0 ) );
+			BoxExpr	right	= toAst( file, expression.notTernaryExpression( 1 ) );
 			return new BoxBinaryOperation( left, BoxBinaryOperator.Contains, right, getPosition( expression ), getSourceText( expression ) );
 		} else if ( expression.CONTAIN() != null && expression.DOES() != null && expression.NOT() != null ) {
-			BoxExpr	left	= toAst( file, expression.expression( 0 ) );
-			BoxExpr	right	= toAst( file, expression.expression( 1 ) );
+			BoxExpr	left	= toAst( file, expression.notTernaryExpression( 0 ) );
+			BoxExpr	right	= toAst( file, expression.notTernaryExpression( 1 ) );
 			return new BoxBinaryOperation( left, BoxBinaryOperator.NotContains, right, getPosition( expression ), getSourceText( expression ) );
 		} else if ( expression.pre != null ) {
-			BoxExpr expr = toAst( file, expression.expression( 0 ) );
+			BoxExpr expr = toAst( file, expression.notTernaryExpression( 0 ) );
 			if ( expression.PLUSPLUS() != null ) {
 				return new BoxUnaryOperation( expr, BoxUnaryOperator.PrePlusPlus, getPosition( expression ), getSourceText( expression ) );
 			}
@@ -1317,7 +1330,7 @@ public class BoxCFParser extends BoxAbstractParser {
 				return new BoxUnaryOperation( expr, BoxUnaryOperator.PreMinusMinus, getPosition( expression ), getSourceText( expression ) );
 			}
 		} else if ( expression.post != null ) {
-			BoxExpr expr = toAst( file, expression.expression( 0 ) );
+			BoxExpr expr = toAst( file, expression.notTernaryExpression( 0 ) );
 			if ( expression.PLUSPLUS() != null ) {
 				return new BoxUnaryOperation( expr, BoxUnaryOperator.PostPlusPlus, getPosition( expression ), getSourceText( expression ) );
 			}
@@ -1325,63 +1338,40 @@ public class BoxCFParser extends BoxAbstractParser {
 				return new BoxUnaryOperation( expr, BoxUnaryOperator.PostMinusMinus, getPosition( expression ), getSourceText( expression ) );
 			}
 		} else if ( expression.CASTAS() != null ) {
-			BoxExpr	left	= toAst( file, expression.expression( 0 ) );
-			BoxExpr	right	= toAst( file, expression.expression( 1 ) );
+			BoxExpr	left	= toAst( file, expression.notTernaryExpression( 0 ) );
+			BoxExpr	right	= toAst( file, expression.notTernaryExpression( 1 ) );
 			return new BoxBinaryOperation( left, BoxBinaryOperator.CastAs, right, getPosition( expression ), getSourceText( expression ) );
 		} else if ( !expression.ICHAR().isEmpty() ) {
-			return toAst( file, expression.expression( 0 ) );
+			return toAst( file, expression.notTernaryExpression( 0 ) );
 		} else if ( expression.assignment() != null ) {
-			CFParser.AssignmentContext	node	= expression.assignment();
-			BoxExpr						left	= toAst( file, expression.assignment().assignmentLeft().accessExpression() );
-			BoxExpr						right	= toAst( file, expression.assignment().assignmentRight().expression() );
-			BoxAssignmentOperator		op		= BoxAssignmentOperator.Equal;
-			if ( node.PLUSEQUAL() != null ) {
-				op = BoxAssignmentOperator.PlusEqual;
-			} else if ( node.MINUSEQUAL() != null ) {
-				op = BoxAssignmentOperator.MinusEqual;
-			} else if ( node.STAREQUAL() != null ) {
-				op = BoxAssignmentOperator.StarEqual;
-			} else if ( node.SLASHEQUAL() != null ) {
-				op = BoxAssignmentOperator.SlashEqual;
-			} else if ( node.MODEQUAL() != null ) {
-				op = BoxAssignmentOperator.ModEqual;
-			} else if ( node.CONCATEQUAL() != null ) {
-				op = BoxAssignmentOperator.ConcatEqual;
-			}
-			// In the future, we expect there to be more than just var here, thus the list.
-			List<BoxAssignmentModifier> modifiers = new ArrayList<BoxAssignmentModifier>();
-			if ( node.VAR() != null ) {
-				modifiers.add( BoxAssignmentModifier.VAR );
-			}
-
-			return new BoxAssignment( left, op, right, modifiers, getPosition( expression ), getSourceText( expression ) );
+			return toAst( file, expression.assignment() );
 		} else if ( expression.NULL() != null ) {
 			return new BoxNull( getPosition( expression ), getSourceText( expression ) );
 		} else if ( expression.BITWISE_SIGNED_LEFT_SHIFT() != null ) {
-			BoxExpr	left	= toAst( file, expression.expression( 0 ) );
-			BoxExpr	right	= toAst( file, expression.expression( 1 ) );
+			BoxExpr	left	= toAst( file, expression.notTernaryExpression( 0 ) );
+			BoxExpr	right	= toAst( file, expression.notTernaryExpression( 1 ) );
 			return new BoxBinaryOperation( left, BoxBinaryOperator.BitwiseSignedLeftShift, right, getPosition( expression ), getSourceText( expression ) );
 		} else if ( expression.BITWISE_SIGNED_RIGHT_SHIFT() != null ) {
-			BoxExpr	left	= toAst( file, expression.expression( 0 ) );
-			BoxExpr	right	= toAst( file, expression.expression( 1 ) );
+			BoxExpr	left	= toAst( file, expression.notTernaryExpression( 0 ) );
+			BoxExpr	right	= toAst( file, expression.notTernaryExpression( 1 ) );
 			return new BoxBinaryOperation( left, BoxBinaryOperator.BitwiseSignedRightShift, right, getPosition( expression ), getSourceText( expression ) );
 		} else if ( expression.BITWISE_UNSIGNED_RIGHT_SHIFT() != null ) {
-			BoxExpr	left	= toAst( file, expression.expression( 0 ) );
-			BoxExpr	right	= toAst( file, expression.expression( 1 ) );
+			BoxExpr	left	= toAst( file, expression.notTernaryExpression( 0 ) );
+			BoxExpr	right	= toAst( file, expression.notTernaryExpression( 1 ) );
 			return new BoxBinaryOperation( left, BoxBinaryOperator.BitwiseUnsignedRightShift, right, getPosition( expression ),
 			    getSourceText( expression ) );
 		} else if ( expression.BITWISE_AND() != null ) {
 			System.out.println( "here" );
-			BoxExpr	left	= toAst( file, expression.expression( 0 ) );
-			BoxExpr	right	= toAst( file, expression.expression( 1 ) );
+			BoxExpr	left	= toAst( file, expression.notTernaryExpression( 0 ) );
+			BoxExpr	right	= toAst( file, expression.notTernaryExpression( 1 ) );
 			return new BoxBinaryOperation( left, BoxBinaryOperator.BitwiseAnd, right, getPosition( expression ), getSourceText( expression ) );
 		} else if ( expression.BITWISE_OR() != null ) {
-			BoxExpr	left	= toAst( file, expression.expression( 0 ) );
-			BoxExpr	right	= toAst( file, expression.expression( 1 ) );
+			BoxExpr	left	= toAst( file, expression.notTernaryExpression( 0 ) );
+			BoxExpr	right	= toAst( file, expression.notTernaryExpression( 1 ) );
 			return new BoxBinaryOperation( left, BoxBinaryOperator.BitwiseOr, right, getPosition( expression ), getSourceText( expression ) );
 		} else if ( expression.BITWISE_XOR() != null ) {
-			BoxExpr	left	= toAst( file, expression.expression( 0 ) );
-			BoxExpr	right	= toAst( file, expression.expression( 1 ) );
+			BoxExpr	left	= toAst( file, expression.notTernaryExpression( 0 ) );
+			BoxExpr	right	= toAst( file, expression.notTernaryExpression( 1 ) );
 			return new BoxBinaryOperation( left, BoxBinaryOperator.BitwiseXor, right, getPosition( expression ), getSourceText( expression ) );
 		} else if ( expression.anonymousFunction() != null ) {
 			/* Lambda declaration */
@@ -1451,8 +1441,33 @@ public class BoxCFParser extends BoxAbstractParser {
 				return new BoxClosure( args, annotations, body, getPosition( expression ), getSourceText( expression ) );
 			}
 		}
-		// TODO: add other cases
 		throw new IllegalStateException( "expression not implemented: " + getSourceText( expression ) );
+	}
+
+	private BoxExpr toAst( File file, AssignmentContext node ) {
+		BoxExpr					left	= toAst( file, node.assignmentLeft().accessExpression() );
+		BoxExpr					right	= toAst( file, node.assignmentRight().expression() );
+		BoxAssignmentOperator	op		= BoxAssignmentOperator.Equal;
+		if ( node.PLUSEQUAL() != null ) {
+			op = BoxAssignmentOperator.PlusEqual;
+		} else if ( node.MINUSEQUAL() != null ) {
+			op = BoxAssignmentOperator.MinusEqual;
+		} else if ( node.STAREQUAL() != null ) {
+			op = BoxAssignmentOperator.StarEqual;
+		} else if ( node.SLASHEQUAL() != null ) {
+			op = BoxAssignmentOperator.SlashEqual;
+		} else if ( node.MODEQUAL() != null ) {
+			op = BoxAssignmentOperator.ModEqual;
+		} else if ( node.CONCATEQUAL() != null ) {
+			op = BoxAssignmentOperator.ConcatEqual;
+		}
+		// In the future, we expect there to be more than just var here, thus the list.
+		List<BoxAssignmentModifier> modifiers = new ArrayList<BoxAssignmentModifier>();
+		if ( node.VAR() != null ) {
+			modifiers.add( BoxAssignmentModifier.VAR );
+		}
+
+		return new BoxAssignment( left, op, right, modifiers, getPosition( node ), getSourceText( node ) );
 	}
 
 	/**
