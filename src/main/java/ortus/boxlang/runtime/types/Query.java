@@ -43,6 +43,7 @@ import ortus.boxlang.runtime.services.FunctionService;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.meta.BoxMeta;
 import ortus.boxlang.runtime.types.meta.GenericMeta;
+import ortus.boxlang.runtime.types.util.BLCollector;
 
 /**
  * This class represents a query.
@@ -455,6 +456,15 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 	 */
 	public String getColumnList() {
 		return getColumns().keySet().stream().map( Key::getName ).collect( Collectors.joining( "," ) );
+	}
+
+	/**
+	 * Get the list of column names as an array
+	 * 
+	 * @return column names as array
+	 */
+	public Array getColumnArray() {
+		return getColumns().keySet().stream().map( Key::getName ).collect( BLCollector.toArray() );
 	}
 
 	/**
