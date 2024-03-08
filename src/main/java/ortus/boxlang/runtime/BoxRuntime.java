@@ -320,7 +320,6 @@ public class BoxRuntime {
 		// Announce Startup to Services only
 		this.asyncService.onStartup();
 		this.interceptorService.onStartup();
-		this.cacheService.onStartup();
 		this.functionService.onStartup();
 		this.componentService.onStartup();
 		this.applicationService.onStartup();
@@ -331,7 +330,9 @@ public class BoxRuntime {
 
 		// Now startup the modules so we can have a runtime context available to them
 		this.moduleService.onStartup();
-		// Now all schedulers can be started
+		// Now the cache service can be started, this allows for modules to register caches
+		this.cacheService.onStartup();
+		// Now all schedulers can be started, this allows for modules to register schedulers
 		this.schedulerService.onStartup();
 
 		// Runtime Started log it

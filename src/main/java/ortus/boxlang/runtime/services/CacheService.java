@@ -33,6 +33,7 @@ import ortus.boxlang.runtime.cache.providers.CoreProviderType;
 import ortus.boxlang.runtime.cache.providers.ICacheProvider;
 import ortus.boxlang.runtime.config.segments.CacheConfig;
 import ortus.boxlang.runtime.scopes.Key;
+import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
@@ -160,16 +161,24 @@ public class CacheService extends BaseService {
 
 	/**
 	 * The startup event is fired when the runtime starts up
+	 * This will create all the core caches and register them
 	 */
 	@Override
 	public void onStartup() {
 		BoxRuntime.timerUtil.start( "cacheservice-startup" );
 		logger.atInfo().log( "+ Starting up Cache Service..." );
 
-		// Read the configuration from disk
-		// this.config = this.runtime.getConfiguration().runtime.caches;
+		// Create the default cache according to the configuration settings
+		createDefaultCache( Key._DEFAULT, getRuntime().getConfiguration().runtime.defaultCache );
 
-		// Register the core providers
+		// Create now all the registerd configured caches async
+		this.runtime.getConfiguration().runtime.caches
+		    .entrySet()
+		    .parallelStream()
+		    .forEach( entry -> {
+			    CacheConfig config = ( CacheConfig ) entry.getValue();
+			    createCache( entry.getKey(), config.provider, config.properties );
+		    } );
 
 		// Announce it
 		announce(
@@ -429,7 +438,7 @@ public class CacheService extends BaseService {
 	 *
 	 * @return The created and registered cache
 	 */
-	public ICacheProvider createCache( Key name, Key provider, Struct properties ) {
+	public ICacheProvider createCache( Key name, Key provider, IStruct properties ) {
 		// Check if the name is available else throw an exception
 		if ( hasCache( name ) ) {
 			throw new BoxRuntimeException( "Cache [" + name + "] already exists." );
