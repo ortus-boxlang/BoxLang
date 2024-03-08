@@ -49,6 +49,7 @@ import ortus.boxlang.debugger.request.DisconnectRequest;
 import ortus.boxlang.debugger.request.EvaluateRequest;
 import ortus.boxlang.debugger.request.InitializeRequest;
 import ortus.boxlang.debugger.request.LaunchRequest;
+import ortus.boxlang.debugger.request.NextRequest;
 import ortus.boxlang.debugger.request.PauseRequest;
 import ortus.boxlang.debugger.request.ScopeRequest;
 import ortus.boxlang.debugger.request.SetBreakpointsRequest;
@@ -134,6 +135,7 @@ public class DebugAdapter {
 			    .register( "configurationDone", ConfigurationDoneRequest.class )
 			    .register( "threads", ThreadsRequest.class )
 			    .register( "stackTrace", StackTraceRequest.class )
+			    .register( "next", NextRequest.class )
 			    .register( "scopes", ScopeRequest.class )
 			    .register( "variables", VariablesRequest.class )
 			    .register( "continue", ContinueRequest.class )
@@ -260,6 +262,17 @@ public class DebugAdapter {
 	}
 
 	/**
+	 * Visit InitializeRequest instances. Respond to the initialize request and send an initialized event.
+	 * 
+	 * @param debugRequest
+	 */
+	public void visit( NextRequest debugRequest ) {
+		this.debugger.startStepping( debugRequest.arguments.threadId );
+
+		new NoBodyResponse( debugRequest ).send( this.outputStream );
+	}
+
+	/**
 	 * Visit LaunchRequest instances. Send a NobodyResponse and setup a BoxLangDebugger.
 	 * 
 	 * @param debugRequest
@@ -365,25 +378,6 @@ public class DebugAdapter {
 	 */
 	public void visit( StackTraceRequest debugRequest ) {
 		try {
-			// TODO convert from java info to boxlang info when possible
-			// TODO decide if we should filter out java stack or make it available
-
-			/*
-			 * You cannot get a stackfrme, call invoke, and then try to reuse that stackframe as the thread will resume and invalidate the stackframe
-			 * we have some options
-			 * 
-			 * 1) do not use invoke while working with a stackframe
-			 * pros - keeps the vm state nice and clean
-			 * cons - tightly couples implementation, lots of work to navigate, won't be able to access stackinformation after eval either
-			 * 
-			 * 2) gather all the necessary information for a stack ahead of time before it is invalidated
-			 * pros - makes sure we have all the data early, lets us keep invoke
-			 * cons - overly eager implementation, will cause problems when vscode requests a stackframe later
-			 * 
-			 * 3) track stackframes our own way and when a stackframe is invalidated get its' equivalent from the vm
-			 * pros - lets us do whatever we want
-			 * cons - how do we match them up? a stackframe may not be findable again... what do we do when null?
-			 */
 
 			List<StackFrame> stackFrames = this.debugger.getBoxLangStackFrames( debugRequest.arguments.threadId ).stream()
 			    .map( ( tuple ) -> {

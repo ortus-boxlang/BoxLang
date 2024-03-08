@@ -53,11 +53,11 @@ import com.sun.jdi.event.StepEvent;
 import com.sun.jdi.event.VMDeathEvent;
 import com.sun.jdi.request.BreakpointRequest;
 import com.sun.jdi.request.ClassPrepareRequest;
-import com.sun.jdi.request.StepRequest;
 
 import ortus.boxlang.debugger.JDITools.WrappedValue;
 import ortus.boxlang.debugger.event.ExitEvent;
 import ortus.boxlang.debugger.event.OutputEvent;
+import ortus.boxlang.debugger.event.StoppedEvent;
 import ortus.boxlang.debugger.event.TerminatedEvent;
 import ortus.boxlang.debugger.types.Breakpoint;
 import ortus.boxlang.debugger.types.Variable;
@@ -69,12 +69,6 @@ import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
 public class BoxLangDebugger {
 
-	private static Map<Integer, StackFrameTuple> seenStacks;
-
-	static {
-		seenStacks = new HashMap<Integer, StackFrameTuple>();
-	}
-
 	public VirtualMachine						vm;
 	private OutputStream						debugAdapterOutput;
 	Map<String, List<Breakpoint>>				breakpoints;
@@ -85,12 +79,15 @@ public class BoxLangDebugger {
 	private InputStream							vmInput;
 	private InputStream							vmErrorInput;
 	public BreakpointEvent						bpe;
+	public ThreadReference						lastThread;
 
-	private Map<String, SourceMap>				sourceMaps		= new HashMap<String, SourceMap>();
+	public Map<String, SourceMap>				sourceMaps			= new HashMap<String, SourceMap>();
+	public static Map<String, SourceMap>		sourceMapsFromFQN	= new HashMap<String, SourceMap>();
 
-	private ClassType							keyClassRef		= null;
+	private ClassType							keyClassRef			= null;
 	private IVMInitializationStrategy			initStrat;
-	private Map<Integer, CachedThreadReference>	cachedThreads	= new HashMap<Integer, CachedThreadReference>();
+	private Map<Integer, CachedThreadReference>	cachedThreads		= new HashMap<Integer, CachedThreadReference>();
+	private NextStepStrategy					stepStrategy;
 
 	public enum Status {
 		NOT_STARTED,
@@ -167,14 +164,14 @@ public class BoxLangDebugger {
 	}
 
 	public void continueExecution( int threadId, boolean singleThread ) {
-		seenStacks			= new HashMap<Integer, StackFrameTuple>();
-		this.cachedThreads	= new HashMap<Integer, CachedThreadReference>();
+		this.cachedThreads = new HashMap<Integer, CachedThreadReference>();
 		JDITools.clearMemory();
-		BreakpointEvent old = this.bpe;
-		this.bpe = null;
+		this.bpe		= null;
+		this.lastThread	= null;
 
-		if ( singleThread ) {
-			old.thread().resume();
+		if ( singleThread && this.bpe != null ) {
+			this.bpe.thread().resume();
+			this.bpe = null;
 		} else {
 			vm.resume();
 		}
@@ -201,15 +198,6 @@ public class BoxLangDebugger {
 		ClassPrepareRequest classPrepareRequest = vm.eventRequestManager().createClassPrepareRequest();
 		classPrepareRequest.addClassFilter( "boxgenerated.*" );
 		classPrepareRequest.enable();
-	}
-
-	public void enableStepRequest( VirtualMachine vm, BreakpointEvent event ) {
-		// enable step request for last break point
-		// if ( event.location().toString().contains( debugClass.getName() + ":" + breakPointLines[ breakPointLines.length - 1 ] ) ) {
-		StepRequest stepRequest = vm.eventRequestManager()
-		    .createStepRequest( event.thread(), StepRequest.STEP_LINE, StepRequest.STEP_OVER );
-		stepRequest.enable();
-		// }
 	}
 
 	public WrappedValue getObjectFromStackFrame( StackFrame stackFrame ) {
@@ -293,7 +281,7 @@ public class BoxLangDebugger {
 		    .get();
 
 		try {
-			return ref.newInstance( bpe.thread(), contstructor, Arrays.asList( this.vm.mirrorOf( name ) ), 0 );
+			return ref.newInstance( lastThread, contstructor, Arrays.asList( this.vm.mirrorOf( name ) ), 0 );
 		} catch ( InvalidTypeException e ) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -335,6 +323,17 @@ public class BoxLangDebugger {
 
 	public record StackFrameTuple( StackFrame stackFrame, Location location, int id, Map<LocalVariable, Value> values, ThreadReference thread ) {
 
+		public String sourceFile() {
+			var sourceMap = sourceMapsFromFQN.get( this.location().declaringType().name() );
+
+			return sourceMap.getSource();
+		}
+
+		public int sourceLine() {
+			SourceMap sourceMap = sourceMapsFromFQN.get( this.location().declaringType().name() );
+
+			return sourceMap.convertJavaLineToSourceLine( this.location().lineNumber() );
+		}
 	}
 
 	public StackFrameTuple getSeenStack( int stackFrameId ) {
@@ -347,6 +346,15 @@ public class BoxLangDebugger {
 		}
 
 		return null;
+	}
+
+	public void startStepping( int threadId ) {
+
+		this.stepStrategy = new NextStepStrategy();
+
+		this.stepStrategy.startStepping( this.cacheOrGetThread( threadId ) );
+
+		this.continueExecution( 0, true );
 	}
 
 	public Optional<Location> pauseThread( int threadId ) {
@@ -376,21 +384,15 @@ public class BoxLangDebugger {
 	}
 
 	private CachedThreadReference cacheOrGetThread( int threadId ) {
+		return cacheOrGetThread( getThreadReference( threadId ).get() );
+
+	}
+
+	private CachedThreadReference cacheOrGetThread( ThreadReference thread ) {
+		int threadId = ( int ) thread.uniqueID();
+
 		if ( !this.cachedThreads.containsKey( threadId ) ) {
-			ThreadReference matchingThreadRef = null;
-
-			for ( ThreadReference threadReference : this.vm.allThreads() ) {
-				if ( threadReference.uniqueID() == threadId ) {
-					matchingThreadRef = threadReference;
-					break;
-				}
-			}
-
-			if ( matchingThreadRef == null ) {
-				throw ( new BoxRuntimeException( "Couldn't find thread: " + threadId ) );
-			}
-
-			CachedThreadReference ref = new CachedThreadReference( matchingThreadRef );
+			CachedThreadReference ref = new CachedThreadReference( thread );
 
 			this.cachedThreads.put( threadId, ref );
 		}
@@ -426,8 +428,28 @@ public class BoxLangDebugger {
 			if ( event instanceof BreakpointEvent bpe ) {
 				handleBreakPointEvent( bpe );
 			}
-			if ( event instanceof StepEvent ) {
-				// pass
+			if ( event instanceof StepEvent stepEvent ) {
+				if ( this.stepStrategy == null ) {
+					this.vm.eventRequestManager().stepRequests().forEach( ( sr ) -> {
+						sr.disable();
+					} );
+
+					this.vm.eventRequestManager().deleteEventRequests( this.vm.eventRequestManager().stepRequests() );
+
+					continue;
+				}
+
+				this.stepStrategy.checkStepEvent( new CachedThreadReference( stepEvent.thread() ) )
+				    .ifPresent( ( sft ) -> {
+					    new StoppedEvent( "step", ( int ) stepEvent.thread().uniqueID() ).send( this.debugAdapterOutput );
+
+					    this.status		= Status.STOPPED;
+					    this.lastThread	= stepEvent.thread();
+					    this.cachedThreads = new HashMap<Integer, CachedThreadReference>();
+
+					    this.stepStrategy.dispose();
+					    this.stepStrategy = null;
+				    } );
 			}
 
 		}
@@ -445,6 +467,7 @@ public class BoxLangDebugger {
 				    return;
 			    }
 			    this.sourceMaps.put( map.source.toLowerCase(), map );
+			    this.sourceMapsFromFQN.put( refType.name(), map );
 		    } );
 	}
 
@@ -455,6 +478,7 @@ public class BoxLangDebugger {
 			return;
 		}
 		this.sourceMaps.put( map.source.toLowerCase(), map );
+		this.sourceMapsFromFQN.put( event.referenceType().name(), map );
 	}
 
 	private void handleDeathEvent( VMDeathEvent de ) {
@@ -527,6 +551,7 @@ public class BoxLangDebugger {
 		this.debugAdapter.sendStoppedEventForBreakpoint( bpe );
 		this.bpe = bpe;
 		this.cacheOrGetThread( ( int ) this.bpe.thread().uniqueID() );
+		this.lastThread = this.bpe.thread();
 	}
 
 	private void setAllBreakpoints() {

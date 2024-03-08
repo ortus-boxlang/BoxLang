@@ -6,16 +6,19 @@ import java.util.List;
 import com.sun.jdi.AbsentInformationException;
 import com.sun.jdi.IncompatibleThreadStateException;
 import com.sun.jdi.ThreadReference;
+import com.sun.jdi.VirtualMachine;
 
 import ortus.boxlang.debugger.BoxLangDebugger.StackFrameTuple;
 
 public class CachedThreadReference {
 
-	private ThreadReference			threadReference;
+	public final ThreadReference	threadReference;
+	public final VirtualMachine		vm;
 	private List<StackFrameTuple>	stackFrames	= new ArrayList<StackFrameTuple>();
 
 	public CachedThreadReference( ThreadReference threadReference ) {
-		this.threadReference = threadReference;
+		this.threadReference	= threadReference;
+		this.vm					= threadReference.virtualMachine();
 
 		this.cacheStackFrames();
 	}
