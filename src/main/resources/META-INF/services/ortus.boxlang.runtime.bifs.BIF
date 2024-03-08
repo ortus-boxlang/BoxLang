@@ -182,6 +182,7 @@ ortus.boxlang.runtime.bifs.global.math.Tan
 ortus.boxlang.runtime.bifs.global.query.QueryAddRow
 ortus.boxlang.runtime.bifs.global.query.QueryExecute
 ortus.boxlang.runtime.bifs.global.query.QueryNew
+ortus.boxlang.runtime.bifs.global.query.QuerySome
 ortus.boxlang.runtime.bifs.global.query.QuerySort
 ortus.boxlang.runtime.bifs.global.string.Ascii
 ortus.boxlang.runtime.bifs.global.string.Char
