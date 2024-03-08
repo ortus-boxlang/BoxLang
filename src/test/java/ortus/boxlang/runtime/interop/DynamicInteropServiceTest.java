@@ -20,19 +20,26 @@ package ortus.boxlang.runtime.interop;
 import static com.google.common.truth.Truth.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
+import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.MethodType;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.time.Duration;
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import TestCases.interop.InvokeDynamicFields;
+import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
 import ortus.boxlang.runtime.scopes.Key;
@@ -539,6 +546,56 @@ public class DynamicInteropServiceTest {
 		assertThat( DynamicInteropService.dereference( context, list, Key.of( 0 ), true ) ).isEqualTo( null );
 		assertThat( DynamicInteropService.dereference( context, list, Key.of( 1.5 ), true ) ).isEqualTo( null );
 		assertThat( DynamicInteropService.dereference( context, list, Key.of( 50 ), true ) ).isEqualTo( null );
+	}
+
+	@DisplayName( "Invoke Public Method Inherited From Private Class Example" )
+	@Test
+	@Disabled
+	void testInvokePublicMethodInheritedFromPrivateClassExample() {
+
+		// Create an instance of UnmodifiableCollection
+		Collection<String>		collection	= Collections.unmodifiableCollection( new ArrayList<>() );
+
+		// Get a MethodHandles.Lookup object
+		MethodHandles.Lookup	lookup		= MethodHandles.lookup();
+
+		// Get a MethodHandle for the hashCode() method
+		MethodHandle			methodHandle;
+		try {
+			// no worky
+			methodHandle = lookup.findVirtual( collection.getClass(), "hashCode", MethodType.methodType( int.class ) );
+			int hashCode2 = ( int ) methodHandle.invokeExact( collection );
+			System.out.println( hashCode2 );
+
+			// Worky
+			MethodHandle	superMethodHandle	= lookup.findVirtual( collection.getClass().getSuperclass(), "hashCode", MethodType.methodType( int.class ) );
+			int				hashCode			= ( int ) superMethodHandle.invokeExact( ( Object ) collection );
+			System.out.println( hashCode );
+
+		} catch ( Throwable e ) {
+			throw new RuntimeException( e );
+		}
+	}
+
+	@DisplayName( "Invoke Public Method Inherited From Private Class" )
+	@Test
+	@Disabled
+	void testInvokePublicMethodInheritedFromPrivateClass() {
+		// Wrap instance of private class
+		// DynamicObject collection = DynamicObject.of( Collections.unmodifiableCollection( new ArrayList<>() ) );
+
+		// Invoke the hashCode method which is not visible
+		// System.out.println( collection.dereferenceAndInvoke( context, Key.of( "hashCode" ), new Object[] {}, false ) );
+		// System.out.println( DynamicInteropService.dereferenceAndInvoke( Collections.unmodifiableCollection( new ArrayList<>() ), context, Key.of(
+		// "hashCode" ),
+		// new Object[] {}, false ) );
+		BoxRuntime.getInstance()
+		    .executeSource(
+		        """
+		           result = createObject( 'java', 'java.util.Collections' ).unmodifiableCollection( createObject( 'java', 'java.util.ArrayList' ) ).hashCode()
+		           println( result)
+		        """ );
+
 	}
 
 }
