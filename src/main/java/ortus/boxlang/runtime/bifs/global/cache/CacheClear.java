@@ -27,54 +27,57 @@ import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
-import ortus.boxlang.runtime.types.IStruct;
+import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.validation.Validator;
 
 @BoxBIF
-public class CacheGetAll extends BIF {
+public class CacheClear extends BIF {
 
 	private static final Validator cacheExistsValidator = new CacheExistsValidator();
 
 	/**
 	 * Constructor
 	 */
-	public CacheGetAll() {
+	public CacheClear() {
 		super();
 		declaredArguments = new Argument[] {
-		    new Argument( false, Argument.STRING, Key.filter, "*" ),
+		    new Argument( true, Argument.STRING, Key.filter ),
 		    new Argument( false, Argument.STRING, Key.cacheName, Key._DEFAULT, Set.of( cacheExistsValidator ) ),
 		    new Argument( false, Argument.BOOLEAN, Key.useRegex, false ),
 		};
 	}
 
 	/**
-	 * Get all the objects in the cache. Careful, use this with caution as it can be a very expensive operation.
-	 * Use a filter if possible please, since the default filter is EVERYTHING.
-	 *
+	 * Clear multiples keys in the cache based on a filter.
 	 * If no cache name is provided, the default cache is used.
-	 * If a filter is provided, only keys that match the filter will be returned.
 	 * A filter is a simple string that can contain wildcards and will leverage the {@link WildcardFilter} to match keys.
+	 * Or you can use a regex filter by setting the {@code useRegex} argument to true.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.filter The filter to apply to the keys, this can be a simple Wildcard filter or a regex filter. The default is a simple wildcard filter.
+	 * @argument.filter The filter to apply to the keys, this can be a simple Wildcard filter or a regex filter.
 	 *
 	 * @argument.cacheName The name of the cache to get the keys from. Default is the default cache.
 	 *
 	 * @argument.useRegex If true, the filter will be treated as a full regular expression filter. Default is false.
 	 *
-	 * @return A struct containing the keys and their values from the cache.
+	 * @return The keys in the cache that match the filter.
 	 */
-	public IStruct _invoke( IBoxContext context, ArgumentsScope arguments ) {
+	public Array _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		ICacheProvider	cache		= cacheService.getCache( arguments.getAsKey( Key.cacheName ) );
 		String			filter		= arguments.getAsString( Key.filter );
 		Boolean			useRegex	= arguments.getAsBoolean( Key.useRegex );
 
-		// Build the right filter
-		ICacheKeyFilter	keyFilter	= useRegex ? new RegexFilter( filter ) : new WildcardFilter( filter );
+		// No filter? get all of them
+		if ( filter.isEmpty() ) {
+			return new Array( cache.getKeys() );
+		}
 
-		// Filter the objects
-		return cache.get( keyFilter );
+		// Build the right filter
+		ICacheKeyFilter keyFilter = useRegex ? new RegexFilter( filter ) : new WildcardFilter( filter );
+
+		// Filter the keys
+		return new Array( cache.getKeys( keyFilter ) );
 	}
 }

@@ -27,9 +27,12 @@ import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
+import ortus.boxlang.runtime.validation.Validator;
 
 @BoxBIF
 public class CacheGetKeysStream extends BIF {
+
+	private static final Validator cacheExistsValidator = new CacheExistsValidator();
 
 	/**
 	 * Constructor
@@ -38,7 +41,7 @@ public class CacheGetKeysStream extends BIF {
 		super();
 		declaredArguments = new Argument[] {
 		    new Argument( false, Argument.STRING, Key.filter, "" ),
-		    new Argument( false, Argument.STRING, Key.cacheName, Key._DEFAULT, Set.of( new CacheExistsValidator() ) ),
+		    new Argument( false, Argument.STRING, Key.cacheName, Key._DEFAULT, Set.of( cacheExistsValidator ) ),
 		    new Argument( false, Argument.BOOLEAN, Key.useRegex, false ),
 		};
 	}
