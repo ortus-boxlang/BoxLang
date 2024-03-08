@@ -26,33 +26,33 @@ import ortus.boxlang.runtime.types.util.QueryUtil;
 
 @BoxBIF
 @BoxMember( type = BoxLangType.QUERY )
-public class QueryColumnExists extends BIF {
+public class QueryKeyExists extends BIF {
 
 	/**
 	 * Constructor
 	 */
-	public QueryColumnExists() {
+	public QueryKeyExists() {
 		super();
 		declaredArguments = new Argument[] {
 		    new Argument( true, "query", Key.query ),
-		    new Argument( true, "string", Key.column )
+		    new Argument( true, "string", Key.key )
 		};
 	}
 
 	/**
-	 * This function returns true if the column exists in the query
+	 * This function returns true if the key exists in the query
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.query The query to check for the column
+	 * @argument.query The query to check for the key
 	 * 
-	 * @argument.column The column to check for
+	 * @argument.key The key to check for
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		return QueryUtil.columnExists(
 		    arguments.getAsQuery( Key.query ),
-		    arguments.getAsString( Key.column )
+		    arguments.getAsString( Key.key )
 		);
 	}
 }

@@ -22,37 +22,48 @@ import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.BoxLangType;
-import ortus.boxlang.runtime.types.util.QueryUtil;
+import ortus.boxlang.runtime.types.util.ListUtil;
 
 @BoxBIF
 @BoxMember( type = BoxLangType.QUERY )
-public class QueryColumnExists extends BIF {
+public class QueryEvery extends BIF {
 
 	/**
 	 * Constructor
 	 */
-	public QueryColumnExists() {
+	public QueryEvery() {
 		super();
 		declaredArguments = new Argument[] {
 		    new Argument( true, "query", Key.query ),
-		    new Argument( true, "string", Key.column )
+		    new Argument( true, "function", Key.closure ),
+		    new Argument( false, "boolean", Key.parallel, false ),
+		    new Argument( false, "integer", Key.maxThreads ),
+		    new Argument( Key.initialValue )
 		};
 	}
 
 	/**
-	 * This function returns true if the column exists in the query
+	 * Executes a callback/closure against every row in a query and returns true if the callback/closure returned true for every row.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.query The query to check for the column
-	 * 
-	 * @argument.column The column to check for
+	 * @argument.query The query to iterate over
+	 *
+	 * @argument.closure The function to invoke for each item. The function will be passed 1 argument: the row.
+	 *
+	 * @argument.parallel Specifies whether the items can be executed in parallel
+	 *
+	 * @argument.maxThreads The maximum number of threads to use when parallel = true
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
-		return QueryUtil.columnExists(
-		    arguments.getAsQuery( Key.query ),
-		    arguments.getAsString( Key.column )
+		return ListUtil.every(
+		    arguments.getAsQuery( Key.query ).toStructArray(),
+		    arguments.getAsFunction( Key.closure ),
+		    context,
+		    arguments.getAsBoolean( Key.parallel ),
+		    // we can't use the integer caster here because we need a cast null for the filter method signature
+		    ( Integer ) arguments.get( "maxThreads" )
 		);
 	}
 }

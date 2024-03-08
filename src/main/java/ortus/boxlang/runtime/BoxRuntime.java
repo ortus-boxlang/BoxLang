@@ -29,6 +29,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Instant;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -138,6 +139,12 @@ public class BoxRuntime {
 	 * The path to the configuration file to load as overrides
 	 */
 	private String							configPath;
+
+	/**
+	 * Runtime global services.
+	 * This can be used to store ANY service and make it available to the entire runtime as a singleton.
+	 */
+	private ConcurrentHashMap<Key, Object>	globalServices	= new ConcurrentHashMap<>();
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -577,6 +584,38 @@ public class BoxRuntime {
 
 		// Shutdown the runtime
 		instance = null;
+	}
+
+	/**
+	 * Get a global service from the runtime
+	 *
+	 * @param name The name of the service to get
+	 *
+	 * @return The service or null if not found
+	 */
+	public Object getGlobalService( Key name ) {
+		return this.globalServices.get( name );
+	}
+
+	/**
+	 * Has a global service been set
+	 *
+	 * @param name The name of the service to check
+	 *
+	 * @return true if the service exists
+	 */
+	public boolean hasGlobalService( Key name ) {
+		return this.globalServices.containsKey( name );
+	}
+
+	/**
+	 * Set a global service into the runtime
+	 *
+	 * @param name    The name of the service to set
+	 * @param service The service to set
+	 */
+	public void setGlobalService( Key name, Object service ) {
+		this.globalServices.put( name, service );
 	}
 
 	/**

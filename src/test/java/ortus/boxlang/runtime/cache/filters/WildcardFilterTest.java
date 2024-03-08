@@ -17,9 +17,9 @@ public class WildcardFilterTest {
 		Key				key2	= new Key( "helloABCworld" );
 		Key				key3	= new Key( "hello" );
 
-		assertThat( filter.apply( key1 ) ).isTrue();
-		assertThat( filter.apply( key2 ) ).isTrue();
-		assertThat( filter.apply( key3 ) ).isFalse();
+		assertThat( filter.test( key1 ) ).isTrue();
+		assertThat( filter.test( key2 ) ).isTrue();
+		assertThat( filter.test( key3 ) ).isFalse();
 	}
 
 	@Test
@@ -30,9 +30,9 @@ public class WildcardFilterTest {
 		Key				key2	= new Key( "helloABCworld" );
 		Key				key3	= new Key( "Hello123world" );
 
-		assertThat( filter.apply( key1 ) ).isTrue();
-		assertThat( filter.apply( key2 ) ).isTrue();
-		assertThat( filter.apply( key3 ) ).isFalse();
+		assertThat( filter.test( key1 ) ).isTrue();
+		assertThat( filter.test( key2 ) ).isTrue();
+		assertThat( filter.test( key3 ) ).isFalse();
 	}
 
 	@Test
@@ -43,9 +43,9 @@ public class WildcardFilterTest {
 		Key				key2	= new Key( "lui2" );
 		Key				key3	= new Key( "lui" );
 
-		assertThat( filter.apply( key1 ) ).isTrue();
-		assertThat( filter.apply( key2 ) ).isTrue();
-		assertThat( filter.apply( key3 ) ).isFalse();
+		assertThat( filter.test( key1 ) ).isTrue();
+		assertThat( filter.test( key2 ) ).isTrue();
+		assertThat( filter.test( key3 ) ).isFalse();
 	}
 
 }

@@ -81,9 +81,8 @@ public class WildcardFilter implements ICacheKeyFilter {
 	/**
 	 * Apply the regex to the key
 	 */
-	@SuppressWarnings( "null" )
 	@Override
-	public boolean apply( Key input ) {
+	public boolean test( Key input ) {
 		return regexPattern.matcher( input.toString() ).matches();
 	}
 }

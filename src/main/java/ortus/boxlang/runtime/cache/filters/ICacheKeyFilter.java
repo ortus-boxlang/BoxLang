@@ -17,7 +17,7 @@
  */
 package ortus.boxlang.runtime.cache.filters;
 
-import com.google.common.base.Predicate;
+import java.util.function.Predicate;
 
 import ortus.boxlang.runtime.scopes.Key;
 
@@ -28,11 +28,11 @@ import ortus.boxlang.runtime.scopes.Key;
  * It is functional and can be used as a lambda or method reference.
  *
  * <pre>
- * apply( Key t )
+ * test( Key t )
  * </pre>
  */
 @FunctionalInterface
 public interface ICacheKeyFilter extends Predicate<Key> {
 	// No methods to implement since it's a functional interface and only has one method
-	// apply(T t);
+	// test(T t);
 }
