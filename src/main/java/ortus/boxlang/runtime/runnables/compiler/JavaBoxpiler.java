@@ -248,7 +248,7 @@ public class JavaBoxpiler {
 	 * @return The loaded class
 	 */
 	public Class<IClassRunnable> compileClass( Path path, String packagePath ) {
-		ClassInfo classInfo = ClassInfo.forClass( path, packagePath, BoxParser.detectFile( path.toFile() ) );
+		ClassInfo classInfo = ClassInfo.forClass( path, packagePath.replace( "-", "_" ), BoxParser.detectFile( path.toFile() ) );
 		classPool.putIfAbsent( classInfo.FQN(), classInfo );
 		// If the new class is newer than the one on disk, recompile it
 		if ( classPool.get( classInfo.FQN() ).lastModified() < classInfo.lastModified() ) {
