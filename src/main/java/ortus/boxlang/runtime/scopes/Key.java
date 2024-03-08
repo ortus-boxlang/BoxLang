@@ -372,6 +372,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		returnSubExpressions			= Key.of( "returnSubExpressions" );
 	public static final Key		returnType						= Key.of( "returnType" );
 	public static final Key		rJustify						= Key.of( "rJustify" );
+	public static final Key		row								= Key.of( "row" );
 	public static final Key		rowData							= Key.of( "rowData" );
 	public static final Key		run								= Key.of( "run" );
 	public static final Key		runtime							= Key.of( "runtime" );

@@ -316,6 +316,19 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 		return lastRow;
 	}
 
+	/*
+	 * Delete a row from the query
+	 * 
+	 * @param index row index, starting at 0
+	 * 
+	 * @return this query
+	 */
+	public Query deleteRow( int index ) {
+		validateRow( index );
+		data.remove( index );
+		return this;
+	}
+
 	/**
 	 * Helper method for queryNew() and queryAddRow() to handle the different scenarios for adding data to a query
 	 *

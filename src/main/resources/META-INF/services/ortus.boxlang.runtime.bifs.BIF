@@ -183,6 +183,7 @@ ortus.boxlang.runtime.bifs.global.query.QueryAddRow
 ortus.boxlang.runtime.bifs.global.query.QueryClear
 ortus.boxlang.runtime.bifs.global.query.QueryColumnCount
 ortus.boxlang.runtime.bifs.global.query.QueryColumnExists
+ortus.boxlang.runtime.bifs.global.query.QueryDeleteRow
 ortus.boxlang.runtime.bifs.global.query.QueryExecute
 ortus.boxlang.runtime.bifs.global.query.QueryNew
 ortus.boxlang.runtime.bifs.global.query.QueryRecordCount
