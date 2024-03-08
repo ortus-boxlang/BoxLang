@@ -16,54 +16,60 @@ package ortus.boxlang.runtime.bifs.global.query;
 
 import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
+import ortus.boxlang.runtime.bifs.BoxMember;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.Array;
+import ortus.boxlang.runtime.types.BoxLangType;
 import ortus.boxlang.runtime.types.Query;
-import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.util.ListUtil;
 
 @BoxBIF
-public class QueryNew extends BIF {
+@BoxMember( type = BoxLangType.QUERY )
+public class QueryMap extends BIF {
 
 	/**
 	 * Constructor
 	 */
-	public QueryNew() {
+	public QueryMap() {
 		super();
 		declaredArguments = new Argument[] {
-		    new Argument( true, "String", Key.columnList ),
-		    new Argument( false, "string", Key.columnTypeList, "" ),
-		    new Argument( false, "any", Key.rowData )
+		    new Argument( true, "query", Key.query ),
+		    new Argument( true, "function", Key.callback ),
+		    new Argument( false, "boolean", Key.parallel, false ),
+		    new Argument( false, "integer", Key.maxThreads )
 		};
 	}
 
 	/**
-	 * Return new query
+	 * This function maps the query to a new query.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.columnList The column list to be used in the query. Delimited list of column names, or an empty string.
+	 * @argument.query The query to iterate over
 	 *
-	 * @argument.columnTypeList Comma-delimited list specifying column data types.
+	 * @argument.callback The function to invoke for each item. The function will be passed 3 arguments: the row, the currentRow, the query.
 	 *
-	 * @argument.rowData Data to populate the query. Can be a struct (with keys matching column names), an array of structs, or an array of arrays (in
-	 *                   same order as columnList)
-	 *
+	 * @argument.parallel Specifies whether the items can be executed in parallel
+	 * 
+	 * @argument.maxThreads The maximum number of threads to use when parallel = true
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
-		Array	columnNames	= ListUtil.asList( arguments.getAsString( Key.columnList ), "," );
-		Array	columnTypes	= ListUtil.asList( arguments.getAsString( Key.columnTypeList ), "," );
-		Object	rowData		= arguments.get( Key.rowData );
+		Query	query			= arguments.getAsQuery( Key.query );
 
-		if ( columnNames.size() != columnTypes.size() ) {
-			throw new BoxRuntimeException( "columnList and columnTypeList must have the same number of elements" );
-		}
+		Array	mappedResult	= ListUtil.map(
+		    query.toStructArray(),
+		    arguments.getAsFunction( Key.callback ),
+		    context,
+		    arguments.getAsBoolean( Key.parallel ),
+		    arguments.getAsInteger( Key.maxThreads )
+		);
 
-		return Query.fromArray( columnNames, columnTypes, rowData );
+		query.clear();
+		query.addData( mappedResult );
+		return query;
 	}
-
 }

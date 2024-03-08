@@ -84,17 +84,18 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 	/*
 	 * Create a new query with columns and data
 	 */
-	public Query( Array columnNames, Array columnTypes, Object rowData ) {
-		int i = 0;
+	public static Query fromArray( Array columnNames, Array columnTypes, Object rowData ) {
+		Query	q	= new Query();
+		int		i	= 0;
 		for ( var columnName : columnNames ) {
-			addColumn( Key.of( columnName ), QueryColumnType.fromString( ( String ) columnTypes.get( i ) ) );
+			q.addColumn( Key.of( columnName ), QueryColumnType.fromString( ( String ) columnTypes.get( i ) ) );
 			i++;
 		}
 		if ( rowData == null ) {
-			return;
+			return q;
 		}
-		addData( rowData );
-		return;
+		q.addData( rowData );
+		return q;
 	}
 
 	/**
