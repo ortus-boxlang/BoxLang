@@ -54,7 +54,7 @@ public class BLHandler implements HttpHandler {
 		try {
 			frTransService = FRTransService.getInstance();
 			String requestPath = exchange.getRequestPath();
-			trans	= frTransService.startTransaction( "Run Source", requestPath );
+			trans	= frTransService.startTransaction( "Web Request", requestPath );
 			context	= new WebRequestBoxContext( BoxRuntime.getInstance().getRuntimeContext(), exchange );
 			// Set default content type to text/html
 			exchange.getResponseHeaders().put( new HttpString( "Content-Type" ), "text/html" );

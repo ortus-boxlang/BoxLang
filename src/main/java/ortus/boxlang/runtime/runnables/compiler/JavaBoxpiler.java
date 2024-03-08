@@ -23,6 +23,7 @@ import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -35,6 +36,8 @@ import java.util.stream.Collectors;
 import javax.tools.DiagnosticCollector;
 import javax.tools.JavaCompiler;
 import javax.tools.JavaFileObject;
+import javax.tools.StandardJavaFileManager;
+import javax.tools.StandardLocation;
 import javax.tools.ToolProvider;
 
 import org.apache.commons.io.FileUtils;
@@ -83,29 +86,17 @@ public class JavaBoxpiler {
 	private static JavaBoxpiler		instance;
 
 	/**
-	 * In-memory class loader for compiled classes
-	 */
-	private JavaMemoryManager		manager;
-
-	/**
 	 * The Java compiler
 	 */
 	private JavaCompiler			compiler;
 
 	/**
-	 * The class loader for compiled classes
+	 * Keeps track of the classes we've compiled
 	 */
-	private JavaDynamicClassLoader	classLoader;
+	private Map<String, ClassInfo>	classPool		= new HashMap<>();
 
-	/**
-	 * The disk class loader
-	 */
+	// Replace with a util for dealing with JSON files in class output dir
 	private DiskClassLoader			diskClassLoader;
-
-	/**
-	 * Keeps track of how many times a class has been compiled
-	 */
-	private Map<String, Integer>	classCounter	= new HashMap<>();
 
 	/**
 	 * Logger
@@ -131,34 +122,27 @@ public class JavaBoxpiler {
 	private JavaBoxpiler() {
 
 		this.compiler					= ToolProvider.getSystemJavaCompiler();
-		this.manager					= new JavaMemoryManager( compiler.getStandardFileManager( null, null, null ) );
 		this.classGenerationDirectory	= Paths.get( BoxRuntime.getInstance().getConfiguration().compiler.classGenerationDirectory );
 
 		// If we are in debug mode, let's clean out the class generation directory
 		if ( BoxRuntime.getInstance().inDebugMode() && Files.exists( this.classGenerationDirectory ) ) {
 			try {
 				logger.atDebug().log( "Running in debugmode, first startup cleaning out class generation directory: " + classGenerationDirectory );
+				// if ( false )
 				FileUtils.cleanDirectory( classGenerationDirectory.toFile() );
 			} catch ( IOException e ) {
 				throw new BoxRuntimeException( "Error cleaning out class generation directory on first run", e );
 			}
 		}
 
-		this.diskClassLoader	= new DiskClassLoader(
+		this.diskClassLoader = new DiskClassLoader(
 		    new URL[] {},
 		    this.getClass().getClassLoader(),
 		    Paths.get( BoxRuntime.getInstance().getConfiguration().compiler.classGenerationDirectory ),
-		    manager
+
+		    this
 		);
 
-		this.classLoader		= new JavaDynamicClassLoader(
-		    new URL[] {
-			// new File( boxRT ).toURI().toURL()
-		    },
-		    this.getClass().getClassLoader(),
-		    manager,
-		    this.diskClassLoader
-		);
 	}
 
 	/**
@@ -179,6 +163,10 @@ public class JavaBoxpiler {
 	 * --------------------------------------------------------------------------
 	 */
 
+	public Map<String, ClassInfo> getClassPool() {
+		return classPool;
+	}
+
 	/**
 	 * Compile a single BoxLang statement into a Java class
 	 *
@@ -189,15 +177,10 @@ public class JavaBoxpiler {
 	 */
 	public Class<IBoxRunnable> compileStatement( String source, BoxScriptType type ) {
 		ClassInfo classInfo = ClassInfo.forStatement( source, type );
-		if ( !classLoader.hasClass( classInfo.FQN() ) ) {
-			if ( diskClassLoader.hasClass( classInfo.originalFQN() ) ) {
-				return getDiskClass( classInfo.originalFQN() );
-			} else {
-				ParsingResult result = parseOrFail( source, type );
-				compileSource( generateJavaSource( result.getRoot(), classInfo ), classInfo.FQN() );
-			}
-		}
-		return getClass( classInfo.FQN() );
+		classPool.putIfAbsent( classInfo.FQN(), classInfo );
+		classInfo = classPool.get( classInfo.FQN() );
+
+		return classInfo.getDiskClass();
 
 	}
 
@@ -211,16 +194,10 @@ public class JavaBoxpiler {
 	 */
 	public Class<IBoxRunnable> compileScript( String source, BoxScriptType type ) {
 		ClassInfo classInfo = ClassInfo.forScript( source, type );
+		classPool.putIfAbsent( classInfo.FQN(), classInfo );
+		classInfo = classPool.get( classInfo.FQN() );
 
-		if ( !classLoader.hasClass( classInfo.FQN() ) ) {
-			if ( diskClassLoader.hasClass( classInfo.originalFQN() ) ) {
-				return getDiskClass( classInfo.originalFQN() );
-			} else {
-				ParsingResult result = parseOrFail( source, type );
-				compileSource( generateJavaSource( result.getRoot(), classInfo ), classInfo.FQN() );
-			}
-		}
-		return getClass( classInfo.FQN() );
+		return classInfo.getDiskClass();
 	}
 
 	/**
@@ -232,20 +209,22 @@ public class JavaBoxpiler {
 	 * @return The loaded class
 	 */
 	public Class<IBoxRunnable> compileTemplate( Path path, String packagePath ) {
-		ClassInfo	classInfo		= ClassInfo.forTemplate( path, packagePath, BoxParser.detectFile( path.toFile() ) );
-		long		lastModified	= path.toFile().lastModified();
-
-		if ( !classLoader.hasClass( classInfo.FQN(), lastModified ) ) {
-			if ( diskClassLoader.hasClass( classInfo.originalFQN(), lastModified ) ) {
-				return getDiskClass( classInfo.originalFQN() );
-			} else {
-				classInfo = classInfo.next();
-				classCounter.put( classInfo.originalFQN(), classInfo.compileCount() );
-				ParsingResult result = parseOrFail( path.toFile() );
-				compileSource( generateJavaSource( result.getRoot(), classInfo ), classInfo.FQN() );
+		ClassInfo classInfo = ClassInfo.forTemplate( path, packagePath, BoxParser.detectFile( path.toFile() ) );
+		classPool.putIfAbsent( classInfo.FQN(), classInfo );
+		// If the new class is newer than the one on disk, recompile it
+		if ( classPool.get( classInfo.FQN() ).lastModified() < classInfo.lastModified() ) {
+			try {
+				// Don't know if this does anything, but calling it for good measure
+				classPool.get( classInfo.FQN() ).getClassLoader().close();
+			} catch ( IOException e ) {
+				e.printStackTrace();
 			}
+			classPool.put( classInfo.FQN(), classInfo );
+			compileClassInfo( classInfo.FQN() );
+		} else {
+			classInfo = classPool.get( classInfo.FQN() );
 		}
-		return getClass( classInfo.FQN() );
+		return classInfo.getDiskClass();
 	}
 
 	/**
@@ -257,16 +236,10 @@ public class JavaBoxpiler {
 	 */
 	public Class<IClassRunnable> compileClass( String source, BoxScriptType type ) {
 		ClassInfo classInfo = ClassInfo.forClass( source, type );
+		classPool.putIfAbsent( classInfo.FQN(), classInfo );
+		classInfo = classPool.get( classInfo.FQN() );
 
-		if ( !classLoader.hasClass( classInfo.FQN() ) ) {
-			if ( diskClassLoader.hasClass( classInfo.originalFQN() ) ) {
-				return getDiskClassClass( classInfo.originalFQN() );
-			} else {
-				ParsingResult result = parseOrFail( source, type );
-				compileSource( generateJavaSource( result.getRoot(), classInfo ), classInfo.FQN() );
-			}
-		}
-		return getClassClass( classInfo.FQN() );
+		return classInfo.getDiskClassClass();
 	}
 
 	/**
@@ -278,20 +251,22 @@ public class JavaBoxpiler {
 	 * @return The loaded class
 	 */
 	public Class<IClassRunnable> compileClass( Path path, String packagePath ) {
-		ClassInfo	classInfo		= ClassInfo.forClass( path, packagePath, BoxParser.detectFile( path.toFile() ) );
-		long		lastModified	= path.toFile().lastModified();
-
-		if ( !classLoader.hasClass( classInfo.FQN(), lastModified ) ) {
-			if ( diskClassLoader.hasClass( classInfo.originalFQN(), lastModified ) ) {
-				return getDiskClassClass( classInfo.originalFQN() );
-			} else {
-				classInfo = classInfo.next();
-				classCounter.put( classInfo.originalFQN(), classInfo.compileCount() );
-				ParsingResult result = parseOrFail( path.toFile() );
-				compileSource( generateJavaSource( result.getRoot(), classInfo ), classInfo.FQN() );
+		ClassInfo classInfo = ClassInfo.forClass( path, packagePath, BoxParser.detectFile( path.toFile() ) );
+		classPool.putIfAbsent( classInfo.FQN(), classInfo );
+		// If the new class is newer than the one on disk, recompile it
+		if ( classPool.get( classInfo.FQN() ).lastModified() < classInfo.lastModified() ) {
+			try {
+				// Don't know if this does anything, but calling it for good measure
+				classPool.get( classInfo.FQN() ).getClassLoader().close();
+			} catch ( IOException e ) {
+				e.printStackTrace();
 			}
+			classPool.put( classInfo.FQN(), classInfo );
+			compileClassInfo( classInfo.FQN() );
+		} else {
+			classInfo = classPool.get( classInfo.FQN() );
 		}
-		return getClassClass( classInfo.FQN() );
+		return classInfo.getDiskClassClass();
 	}
 
 	/**
@@ -426,10 +401,18 @@ public class JavaBoxpiler {
 		return diskClassLoader.readLineNumbers( FQN );
 	}
 
-	public boolean doesFilePathMatchFQNWithoutGeneration( Path sourcePath, String FQN ) {
-		ClassInfo classInfo = ClassInfo.forTemplate( sourcePath, sourcePath.toString(), BoxScriptType.BOXSCRIPT );
-
-		return classInfo.matchesFQNWithoutCompileCount( FQN );
+	public void compileClassInfo( String FQN ) {
+		ClassInfo classInfo = classPool.get( FQN );
+		if ( classInfo == null ) {
+			throw new BoxRuntimeException( "ClassInfo not found for " + FQN );
+		}
+		if ( classInfo.path() != null ) {
+			ParsingResult result = parseOrFail( classInfo.path().toFile() );
+			compileSource( generateJavaSource( result.getRoot(), classInfo ), classInfo.FQN() );
+		} else {
+			ParsingResult result = parseOrFail( classInfo.source(), classInfo.sourceType() );
+			compileSource( generateJavaSource( result.getRoot(), classInfo ), classInfo.FQN() );
+		}
 	}
 
 	/**
@@ -446,18 +429,28 @@ public class JavaBoxpiler {
 		// This is just for debugging. Remove later.
 		diskClassLoader.writeJavaSource( fqn, javaSource );
 		try {
-			DiagnosticCollector<JavaFileObject>	diagnostics		= new DiagnosticCollector<>();
-			String								javaRT			= System.getProperty( "java.class.path" );
-			List<JavaFileObject>				sourceFiles		= Collections.singletonList( new JavaSourceString( fqn, javaSource ) );
-			List<String>						options			= List.of( "-g" );
-			JavaCompiler.CompilationTask		task			= compiler.getTask( null, manager, diagnostics, options, null, sourceFiles );
-			boolean								compilerResult	= task.call();
+
+			DiagnosticCollector<JavaFileObject>	diagnostics	= new DiagnosticCollector<>();
+
+			// Get the standard file manager
+			StandardJavaFileManager				fileManager	= compiler.getStandardFileManager( diagnostics, null, null );
+
+			// Set the location where .class files should be written
+			fileManager.setLocation( StandardLocation.CLASS_OUTPUT, Arrays.asList( classGenerationDirectory.toFile() ) );
+
+			String							javaRT			= System.getProperty( "java.class.path" );
+			List<JavaFileObject>			sourceFiles		= Collections.singletonList( new JavaSourceString( fqn, javaSource ) );
+			List<String>					options			= List.of( "-g" );
+			JavaCompiler.CompilationTask	task			= compiler.getTask( null, fileManager, diagnostics, options, null, sourceFiles );
+			boolean							compilerResult	= task.call();
 
 			if ( !compilerResult ) {
 				String errors = diagnostics.getDiagnostics().stream().map( d -> d.toString() )
 				    .collect( Collectors.joining( "\n" ) );
 				throw new BoxRuntimeException( errors + "\n" + javaSource );
 			}
+		} catch ( IOException e ) {
+			throw new BoxRuntimeException( "Error compiling source " + fqn, e );
 		} finally {
 			frTransService.endTransaction( trans );
 		}
@@ -522,66 +515,6 @@ public class JavaBoxpiler {
 		} catch ( IOException e ) {
 			e.printStackTrace();
 			return null;
-		}
-	}
-
-	/**
-	 * Get a class for a class name
-	 *
-	 * @param fqn The fully qualified name of the class
-	 *
-	 * @return The loaded class
-	 */
-	public Class<IBoxRunnable> getClass( String fqn ) {
-		try {
-			return ( Class<IBoxRunnable> ) classLoader.loadClass( fqn );
-		} catch ( ClassNotFoundException e ) {
-			throw new BoxRuntimeException( "Error compiling source " + fqn, e );
-		}
-	}
-
-	/**
-	 * Get a class for a class name from disk
-	 *
-	 * @param fqn The fully qualified name of the class
-	 *
-	 * @return The loaded class
-	 */
-	public Class<IBoxRunnable> getDiskClass( String fqn ) {
-		try {
-			return ( Class<IBoxRunnable> ) diskClassLoader.loadClass( fqn );
-		} catch ( ClassNotFoundException e ) {
-			throw new BoxRuntimeException( "Error compiling source " + fqn, e );
-		}
-	}
-
-	/**
-	 * Get a Box class for a class name
-	 *
-	 * @param fqn The fully qualified name of the class
-	 *
-	 * @return The loaded class
-	 */
-	public Class<IClassRunnable> getClassClass( String fqn ) {
-		try {
-			return ( Class<IClassRunnable> ) classLoader.loadClass( fqn );
-		} catch ( ClassNotFoundException e ) {
-			throw new BoxRuntimeException( "Error compiling source " + fqn, e );
-		}
-	}
-
-	/**
-	 * Get a Box class for a class name from disk
-	 *
-	 * @param fqn The fully qualified name of the class
-	 *
-	 * @return The loaded class
-	 */
-	public Class<IClassRunnable> getDiskClassClass( String fqn ) {
-		try {
-			return ( Class<IClassRunnable> ) diskClassLoader.loadClass( fqn );
-		} catch ( ClassNotFoundException e ) {
-			throw new BoxRuntimeException( "Error compiling source " + fqn, e );
 		}
 	}
 
@@ -679,25 +612,39 @@ public class JavaBoxpiler {
 	/**
 	 * A Record that represents the information about a class to be compiled
 	 */
-	public record ClassInfo( String sourcePath, String packageName, String className, int compileCount, String boxPackageName, String baseclass,
-	    String returnType, BoxScriptType sourceType ) {
+	public record ClassInfo( String sourcePath, String packageName, String className, String boxPackageName, String baseclass,
+	    String returnType, BoxScriptType sourceType, String source, Path path, Long lastModified, DiskClassLoader[] diskClassLoader ) {
 
 		public static ClassInfo forScript( String source, BoxScriptType sourceType ) {
 			return new ClassInfo(
 			    null,
 			    "generated",
 			    "Script_" + MD5( sourceType.toString() + source ),
-			    0,
 			    "boxgenerated.generated",
 			    "BoxScript",
 			    "Object",
-			    sourceType
+			    sourceType,
+			    source,
+			    null,
+			    null,
+			    new DiskClassLoader[ 1 ]
 			);
 		}
 
 		public static ClassInfo forStatement( String source, BoxScriptType sourceType ) {
-			return new ClassInfo( null, "generated", "Statement_" + MD5( sourceType.toString() + source ), 0, "boxgenerated.generated", "BoxScript", "Object",
-			    sourceType );
+			return new ClassInfo(
+			    null,
+			    "generated",
+			    "Statement_" + MD5( sourceType.toString() + source ),
+			    "boxgenerated.generated",
+			    "BoxScript",
+			    "Object",
+			    sourceType,
+			    source,
+			    null,
+			    null,
+			    new DiskClassLoader[ 1 ]
+			);
 		}
 
 		public static ClassInfo forTemplate( Path path, String packagePath, BoxScriptType sourceType ) {
@@ -713,11 +660,14 @@ public class JavaBoxpiler {
 			    path.toString(),
 			    packageName,
 			    className,
-			    JavaBoxpiler.getInstance().getClassCounter().getOrDefault( packageName + "." + className, 0 ),
 			    packageName,
 			    "BoxTemplate",
 			    "void",
-			    sourceType
+			    sourceType,
+			    null,
+			    path,
+			    path.toFile().lastModified(),
+			    new DiskClassLoader[ 1 ]
 			);
 		}
 
@@ -737,11 +687,14 @@ public class JavaBoxpiler {
 			    path.toString(),
 			    packagePath,
 			    className,
-			    JavaBoxpiler.getInstance().getClassCounter().getOrDefault( packagePath + "." + className, 0 ),
 			    boxPackagePath,
 			    null,
 			    null,
-			    sourceType
+			    sourceType,
+			    null,
+			    path,
+			    path.toFile().lastModified(),
+			    new DiskClassLoader[ 1 ]
 			);
 		}
 
@@ -750,48 +703,19 @@ public class JavaBoxpiler {
 			    null,
 			    "generated",
 			    "Class_" + MD5( source ),
-			    0,
 			    "",
 			    null,
 			    null,
-			    sourceType
+			    sourceType,
+			    source,
+			    null,
+			    null,
+			    new DiskClassLoader[ 1 ]
 			);
-		}
-
-		/**
-		 * Called when we need to re-compile a class because it's already been compiled
-		 *
-		 * @return new ClassInfo object with the compile count incremented
-		 */
-		public ClassInfo next() {
-			return new ClassInfo(
-			    this.sourcePath,
-			    this.packageName,
-			    this.className,
-			    this.compileCount + 1,
-			    this.boxPackageName,
-			    this.baseclass,
-			    this.returnType,
-			    this.sourceType );
 		}
 
 		public String FQN() {
 			return packageName + "." + className();
-		}
-
-		public String originalClassName() {
-			return className;
-		}
-
-		public String originalFQN() {
-			return packageName + "." + originalClassName();
-		}
-
-		public boolean matchesFQNWithoutCompileCount( String FQN ) {
-			Pattern	pattern	= Pattern.compile( originalFQN().replace( "$", "\\$" ) + ".+$" );
-			Matcher	matcher	= pattern.matcher( FQN );
-
-			return matcher.find();
 		}
 
 		public String toString() {
@@ -801,15 +725,54 @@ public class JavaBoxpiler {
 				return "Class Info-- type: [" + sourceType + "], packageName: [" + packageName + "], className: [" + className + "]";
 		}
 
-	}
+		public DiskClassLoader getClassLoader() {
+			if ( diskClassLoader[ 0 ] != null ) {
+				return diskClassLoader[ 0 ];
+			}
+			synchronized ( this ) {
+				if ( diskClassLoader[ 0 ] != null ) {
+					return diskClassLoader[ 0 ];
+				}
+				diskClassLoader[ 0 ] = new DiskClassLoader(
+				    new URL[] {},
+				    JavaBoxpiler.getInstance().getClass().getClassLoader(),
+				    Paths.get( BoxRuntime.getInstance().getConfiguration().compiler.classGenerationDirectory ),
+				    JavaBoxpiler.getInstance()
+				);
+				return diskClassLoader[ 0 ];
+			}
+		}
 
-	/**
-	 * Get the Class Counter map
-	 *
-	 * @return the classCounter
-	 */
-	public Map<String, Integer> getClassCounter() {
-		return classCounter;
+		/**
+		 * Get a class for a class name from disk
+		 *
+		 * @param fqn The fully qualified name of the class
+		 *
+		 * @return The loaded class
+		 */
+		public Class<IBoxRunnable> getDiskClass() {
+			try {
+				return ( Class<IBoxRunnable> ) getClassLoader().loadClass( FQN() );
+			} catch ( ClassNotFoundException e ) {
+				throw new BoxRuntimeException( "Error compiling source " + FQN(), e );
+			}
+		}
+
+		/**
+		 * Get a Box class for a class name from disk
+		 *
+		 * @param fqn The fully qualified name of the class
+		 *
+		 * @return The loaded class
+		 */
+		public Class<IClassRunnable> getDiskClassClass() {
+			try {
+				return ( Class<IClassRunnable> ) getClassLoader().loadClass( FQN() );
+			} catch ( ClassNotFoundException e ) {
+				throw new BoxRuntimeException( "Error compiling source " + FQN(), e );
+			}
+		}
+
 	}
 
 }

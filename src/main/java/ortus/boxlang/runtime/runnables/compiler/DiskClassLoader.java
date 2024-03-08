@@ -22,8 +22,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
-import javax.tools.JavaFileObject;
-
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.util.JSONUtil;
@@ -36,12 +34,12 @@ public class DiskClassLoader extends URLClassLoader {
 	/**
 	 * The location of the disk store
 	 */
-	private Path				diskStore;
+	private Path	diskStore;
 
 	/**
-	 * The memory manager for BoxLang
+	 * The boxpiler
 	 */
-	private JavaMemoryManager	manager;
+	JavaBoxpiler	boxPiler;
 
 	/**
 	 * Constructor
@@ -51,9 +49,9 @@ public class DiskClassLoader extends URLClassLoader {
 	 * @param diskStore disk store location path
 	 * @param manager   memory manager
 	 */
-	public DiskClassLoader( URL[] urls, ClassLoader parent, Path diskStore, JavaMemoryManager manager ) {
+	public DiskClassLoader( URL[] urls, ClassLoader parent, Path diskStore, JavaBoxpiler boxPiler ) {
 		super( urls, parent );
-		this.manager	= manager;
+		this.boxPiler	= boxPiler;
 		this.diskStore	= diskStore;
 		// Init disk store
 		diskStore.toFile().mkdirs();
@@ -64,30 +62,57 @@ public class DiskClassLoader extends URLClassLoader {
 	 *
 	 * @param name class name
 	 */
+	/*
+	 * @Override
+	 * protected Class<?> findClass( String name ) throws ClassNotFoundException {
+	 * Path diskPath = generateDiskPath( name );
+	 * if ( hasClass( diskPath ) ) {
+	 * // Read file as byte array
+	 * byte[] bytes;
+	 * try {
+	 * bytes = Files.readAllBytes( generateDiskPath( name ) );
+	 * } catch ( IOException e ) {
+	 * throw new ClassNotFoundException( "Unable to read class file from disk", e );
+	 * }
+	 * 
+	 * // once read from disk, cache in memory as well
+	 * JavaFileObject jfo = manager.getJavaFileForOutput( null, name, JavaFileObject.Kind.CLASS, null );
+	 * try {
+	 * jfo.openOutputStream().write( bytes );
+	 * } catch ( IOException e ) {
+	 * throw new ClassNotFoundException( "Unable to write class file to memory", e );
+	 * }
+	 * 
+	 * return defineClass( name, bytes, 0, bytes.length );
+	 * } else {
+	 * return super.findClass( name );
+	 * }
+	 * }
+	 */
+
+	/**
+	 * Find class on disk, if not found, delegate to parent
+	 *
+	 * @param name class name
+	 */
 	@Override
 	protected Class<?> findClass( String name ) throws ClassNotFoundException {
 		Path diskPath = generateDiskPath( name );
-		if ( hasClass( diskPath ) ) {
-			// Read file as byte array
-			byte[] bytes;
-			try {
-				bytes = Files.readAllBytes( generateDiskPath( name ) );
-			} catch ( IOException e ) {
-				throw new ClassNotFoundException( "Unable to read class file from disk", e );
-			}
-
-			// once read from disk, cache in memory as well
-			JavaFileObject jfo = manager.getJavaFileForOutput( null, name, JavaFileObject.Kind.CLASS, null );
-			try {
-				jfo.openOutputStream().write( bytes );
-			} catch ( IOException e ) {
-				throw new ClassNotFoundException( "Unable to write class file to memory", e );
-			}
-
-			return defineClass( name, bytes, 0, bytes.length );
-		} else {
-			return super.findClass( name );
+		// JIT compile
+		if ( !hasClass( diskPath ) ) {
+			// After this call, the class files will exist on disk
+			boxPiler.compileClassInfo( name );
 		}
+
+		// Read file as byte array
+		byte[] bytes;
+		try {
+			bytes = Files.readAllBytes( diskPath );
+		} catch ( IOException e ) {
+			throw new ClassNotFoundException( "Unable to read class file from disk", e );
+		}
+
+		return defineClass( name, bytes, 0, bytes.length );
 	}
 
 	/**

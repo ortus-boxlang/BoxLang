@@ -14,11 +14,14 @@
  */
 package ortus.boxlang.transpiler.transformer.expression;
 
-import java.util.HashMap;
-import java.util.Map;
+import javax.annotation.Nonnull;
 
 import com.github.javaparser.ast.Node;
-import com.github.javaparser.ast.expr.*;
+import com.github.javaparser.ast.expr.BinaryExpr;
+import com.github.javaparser.ast.expr.Expression;
+import com.github.javaparser.ast.expr.MethodCallExpr;
+import com.github.javaparser.ast.expr.NameExpr;
+import com.github.javaparser.ast.expr.UnaryExpr;
 
 import ortus.boxlang.ast.BoxNode;
 import ortus.boxlang.ast.expression.BoxBinaryOperation;
@@ -26,8 +29,6 @@ import ortus.boxlang.ast.expression.BoxBinaryOperator;
 import ortus.boxlang.transpiler.JavaTranspiler;
 import ortus.boxlang.transpiler.transformer.AbstractTransformer;
 import ortus.boxlang.transpiler.transformer.TransformerContext;
-
-import javax.annotation.Nonnull;
 
 /**
  * Transform a BoxBinaryOperation Node the equivalent Java Parser AST nodes
@@ -92,7 +93,7 @@ public class BoxBinaryOperationTransformer extends AbstractTransformer {
 												leftExpr.addArgument( left );
 												binaryExpr.setLeft( leftExpr );
 
-												binaryExpr.setOperator( BinaryExpr.Operator.BINARY_AND );
+												binaryExpr.setOperator( BinaryExpr.Operator.AND );
 
 												MethodCallExpr rightExpr = new MethodCallExpr( booleanNameExpr, "cast" );
 												rightExpr.addArgument( right );
@@ -109,7 +110,7 @@ public class BoxBinaryOperationTransformer extends AbstractTransformer {
 												leftExpr.addArgument( left );
 												binaryExpr.setLeft( leftExpr );
 
-												binaryExpr.setOperator( BinaryExpr.Operator.BINARY_OR );
+												binaryExpr.setOperator( BinaryExpr.Operator.OR );
 
 												MethodCallExpr rightExpr = new MethodCallExpr( booleanNameExpr, "cast" );
 												rightExpr.addArgument( right );
